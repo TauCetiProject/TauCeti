@@ -266,7 +266,7 @@ theorem exists_concordant_reverse_connectedSum (hn : 2 ≤ n) {ι : ℂ →ₗ�
   have hperp : ⟪ι 1, ι Complex.I⟫ = 0 := by simp [ι.inner_map_map, Complex.inner]
   obtain ⟨Φ, g, hgΦ, hg1, hgI⟩ := exists_diffeotopy_final_apply_eq_and_apply_eq (m := ∞)
     (x := ι 1) (v := ι Complex.I) (y := ι 1) (w := -ι Complex.I) hn
-    (by simp) ι.norm_map_I hperp (by simp) (by rw [norm_neg]; exact ι.norm_map_I)
+    (by simp) (by simp) hperp (by simp) (by simp)
     (by rw [inner_neg_right, hperp, neg_zero])
   set ρ := (LinearMap.range ι.toLinearMap)ᗮ.reflection
   set e := g.trans ρ

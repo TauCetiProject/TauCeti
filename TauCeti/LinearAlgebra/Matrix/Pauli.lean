@@ -9,7 +9,9 @@ public import Mathlib.LinearAlgebra.CrossProduct
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.LinearAlgebra.Complex.Module
+public import Mathlib.LinearAlgebra.Matrix.IsDiag
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -48,6 +50,7 @@ unitary matrix act on `ℝ³` by a rotation (`TauCeti.RepresentationTheory.SU2.A
 * `TauCeti.trace_pauli_mul_pauli`: `tr (pauli x * pauli y) = 2 (x ⬝ᵥ y)`.
 * `TauCeti.pauli_mul_sub_mul_pauli`: `[pauli x, pauli y] = 2 i • pauli (x ⨯₃ y)`.
 * `TauCeti.det_pauli`: `det (pauli x) = -(x ⬝ᵥ x)`.
+* `TauCeti.isDiag_of_commute_pauli_single_two`: a matrix commuting with `σ₃` is diagonal.
 
 ## References
 
@@ -80,6 +83,16 @@ def pauli : (Fin 3 → ℝ) →ₗ[ℝ] Matrix (Fin 2) (Fin 2) ℂ where
 theorem pauli_apply (x : Fin 3 → ℝ) :
     pauli x = !![(x 2 : ℂ), x 0 - x 1 * I; x 0 + x 1 * I, -(x 2 : ℂ)] :=
   (rfl)
+
+/-- A `2 × 2` matrix commuting with `σ₃ = diag(1, -1)` is diagonal: the case of
+`TauCeti.isDiag_of_commute_diagonal` for the distinct diagonal entries `1 ≠ -1`. -/
+theorem isDiag_of_commute_pauli_single_two {A : Matrix (Fin 2) (Fin 2) ℂ}
+    (h : A * pauli (Pi.single 2 1) = pauli (Pi.single 2 1) * A) : A.IsDiag := by
+  have hσ : pauli (Pi.single 2 1) = diagonal ![1, -1] := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [pauli_apply]
+  refine isDiag_of_commute_diagonal (t := ![(1 : ℂ), -1]) (fun i j hij ↦ ?_) (hσ ▸ h).symm
+  fin_cases i <;> fin_cases j <;> first | rfl | norm_num at hij
 
 /-- The coordinates `(Re A₁₀, Im A₁₀, Re A₀₀)` of a `2 × 2` complex matrix `A`. On the traceless
 Hermitian matrices these are the coordinates in the Pauli basis, so that

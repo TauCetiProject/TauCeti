@@ -182,7 +182,7 @@ theorem genusCharAtLevel_injective
   have hchar : genusCharAtLevel s hs (t ∆ u) = 1 := by
     rw [genusCharAtLevel_symmDiff, htu, ← pow_two,
       (isQuadratic_genusCharAtLevel s hs u).sq_eq_one]
-  obtain ⟨P, hP⟩ := Finset.nonempty_iff_ne_empty.mpr hne
+  obtain ⟨P, hP⟩ := Finset.ne_empty_iff_nonempty.1 hne
   let ε : ℤ → ℤˣ := fun Q => if Q = P.val then -1 else 1
   obtain ⟨a, ha⟩ := exists_forall_primeDiscriminantCharFun_eq_of_not_all_three_even hs hnoall ε
   have hcop : ∀ Q ∈ s, IsCoprime (a : ℤ) Q := by

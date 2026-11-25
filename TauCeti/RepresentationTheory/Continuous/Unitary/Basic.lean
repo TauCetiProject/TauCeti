@@ -218,6 +218,11 @@ theorem adjoint_eq_inv (hπ : IsUnitary π) (g : G) :
   intro v w
   simpa using hπ.inner_map_left g⁻¹ v w
 
+/-- The operator `star` of a unitary action operator is the action of the inverse group element. -/
+@[simp]
+theorem star_eq_inv (hπ : IsUnitary π) (g : G) : star (π g) = π g⁻¹ := by
+  rw [ContinuousLinearMap.star_eq_adjoint, hπ.adjoint_eq_inv]
+
 end IsUnitary
 
 end Group

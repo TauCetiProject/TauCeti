@@ -201,7 +201,7 @@ theorem exists_diffeotopy_final_apply_eq_and_forall_map_eq (hn : 2 ≤ n) (ι₁
     ∃ (Φ : Diffeotopy (𝓡 n) m (sphere (0 : E) 1)) (e : E ≃ₗᵢ[ℝ] E),
       (∀ z, (Φ.final z : E) = e z) ∧ ∀ w, e (ι₁ w) = ι₂ w := by
   have h1 (ι : ℂ →ₗᵢ[ℝ] E) : ‖ι 1‖ = 1 := by simp
-  have hI (ι : ℂ →ₗᵢ[ℝ] E) : ‖ι Complex.I‖ = 1 := ι.norm_map_I
+  have hI (ι : ℂ →ₗᵢ[ℝ] E) : ‖ι Complex.I‖ = 1 := by simp
   have hperp (ι : ℂ →ₗᵢ[ℝ] E) : ⟪ι 1, ι Complex.I⟫ = 0 := by simp [ι.inner_map_map, Complex.inner]
   obtain ⟨Φ, e, hΦ, he1, heI⟩ := exists_diffeotopy_final_apply_eq_and_apply_eq (m := m) hn
     (h1 ι₁) (hI ι₁) (hperp ι₁) (h1 ι₂) (hI ι₂) (hperp ι₂)

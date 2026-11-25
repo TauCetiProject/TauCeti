@@ -54,26 +54,36 @@ both its tempered distribution and this `Lᵖ` data.
 * `TauCeti.BesovSpace.block`: the block `Δⱼ u` as an `Lᵖ` function, with
   `TauCeti.BesovSpace.norm_eq_tsum_rpow` and `TauCeti.BesovSpace.hasSum_norm` (`q < ∞`) and
   `TauCeti.BesovSpace.norm_eq_ciSup` (`q = ∞`) expressing the norm through the blocks, and the
-  single-block bound `TauCeti.BesovSpace.rpow_mul_norm_block_le`; conversely
+  single-block bounds `TauCeti.BesovSpace.rpow_mul_norm_block_le` and
+  `TauCeti.BesovSpace.norm_block_le`, and the block-norm sum at negative regularity
+  `TauCeti.BesovSpace.sum_norm_block_le_of_neg`; conversely
   `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq` bounds the norm of a
-  distribution by any `ℓ^q` majorant of its weighted block norms.
+  distribution by any `ℓ^q` majorant of its weighted block norms, and
+  `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_of_forall_le` by a
+  uniform bound on them in `B^s_{p,∞}`; `TauCeti.BesovSpace.weightedBlockNorms` is the sequence of
+  weighted block norms as an element of `ℓ^q`.
 * `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_block`: a tempered distribution whose
   blocks are `L^{p'}` functions with weighted norms `2^{js'} ‖Δⱼ w‖_{p'} ≤ B 2^{js} ‖Δⱼ u‖_p` for
   some `u ∈ B^s_{p,q}` lies in `B^{s'}_{p',q}`, with norm at most `B ‖u‖`.
-* `TauCeti.BesovSpace.toDistrCLM`: for `1 ≤ q`, the continuous inclusion of `B^s_{p,q}` in the
-  tempered distributions, and the instance `CompleteSpace (TauCeti.BesovSpace F φ s p q)`:
-  `B^s_{p,q}` is a Banach space.
+* `TauCeti.BesovSpace.toDistrCLM` and `TauCeti.BesovSpace.toDistrCLM_injective`: for `1 ≤ q`, the
+  continuous injective inclusion of `B^s_{p,q}` in the tempered distributions, and the instance
+  `CompleteSpace (TauCeti.BesovSpace F φ s p q)`: `B^s_{p,q}` is a Banach space.
 * `TauCeti.BesovSpace.inclusion`: `B^s_{p,q} ⊆ B^{s'}_{p,q'}` with norm at most `1` for
   `s' ≤ s` and `q ≤ q'`.
 * `TauCeti.BesovSpace.inclusionOfLT`: `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' < s` and arbitrary
   `q, q'`, with norm at most `(1 - 2^{s' - s})⁻¹`. At the level of the predicate these inclusions
   are `TemperedDistribution.MemBesov.mono` and `TemperedDistribution.MemBesov.of_lt`.
+* `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_zero_one`: the endpoint embedding
+  `B^0_{p,1} ⊆ Lᵖ` with `‖f‖_p ≤ ‖u‖`.
+* `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_pos`: for `s > 0` an element of
+  `B^s_{p,q}` is an `Lᵖ` function, the sum of its blocks, with norm at most `(1 - 2^{-s})⁻¹ ‖u‖`.
 * `TemperedDistribution.MemBesov.of_bump` and `TauCeti.BesovSpace.bumpEquiv`: the Besov space does
   not depend on the bump function; the identity on tempered distributions is an isomorphism of
   normed spaces between the Besov spaces built from two bump functions.
 * `TauCeti.BesovSpace.continuous_block`: each block depends continuously on the element.
 * `TauCeti.BesovSpace.tendsto_rpow_mul_norm_block`: for `q < ∞` the weighted blocks vanish at high
-  frequency.
+  frequency, and `TauCeti.BesovSpace.isClosed_setOf_tendsto_rpow_mul_norm_block`: the set of
+  elements with vanishing high-frequency weighted blocks is closed in `B^s_{p,q}`.
 * `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_zero`: an `Lᵖ`
   function whose blocks vanish from some index on lies in `B^s_{p,∞}`.
 * `TauCeti.BesovSpace.inclusionOfExponentLE`: the Bernstein embedding
@@ -236,6 +246,20 @@ theorem memBesov_iff_memℓp {u : 𝓢'(E, F)} {f : ℕ → Lp F p (volume : Mea
       simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, ← hg, hf]
   rwa [hgf] at hmem
 
+/-- **A distribution with a single block.** If the Littlewood–Paley blocks of `u` vanish except
+for the block of index `m`, which is the `Lᵖ` function `f`, then `u ∈ B^s_{p,q}` for every `s` and
+`q`. -/
+theorem memBesov_of_littlewoodPaleyBlock_eq_ite {u : 𝓢'(E, F)} {m : ℕ}
+    {f : Lp F p (volume : Measure E)}
+    (hu : ∀ k, littlewoodPaleyBlock F φ k u = if k = m then (f : 𝓢'(E, F)) else 0) :
+    u.MemBesov φ s p q := by
+  refine memBesov_iff.2 ⟨fun k ↦ if k = m then f else 0, fun k ↦ ?_, ?_⟩
+  · rw [hu k]
+    by_cases hk : k = m <;> simp [hk]
+  · refine (memℓp_zero ((Set.finite_singleton m).subset fun k hk ↦ ?_)).of_exponent_ge bot_le
+    by_contra hkm
+    exact hk (by simp [Set.mem_singleton_iff.not.1 hkm])
+
 theorem MemBesov.zero : (0 : 𝓢'(E, F)).MemBesov φ s p q :=
   ⟨0, fun j ↦ by simp⟩
 
@@ -251,6 +275,14 @@ theorem MemBesov.smul {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) (c : ℂ) :
   obtain ⟨a, ha⟩ := hu
   refine ⟨c • a, fun j ↦ ?_⟩
   rw [lp.coeFn_smul, Pi.smul_apply, Lp.toTemperedDistribution_smul, ha, map_smul, smul_comm]
+
+/-- `B^s_{p,q}` is closed under scalar multiplication by any scalars acting on tempered
+distributions through `ℂ`, such as real numbers. -/
+theorem MemBesov.smul_of_tower {R : Type*} [SMul R ℂ] [SMul R 𝓢'(E, F)]
+    [IsScalarTower R ℂ 𝓢'(E, F)] {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) (c : R) :
+    (c • u).MemBesov φ s p q := by
+  rw [← smul_one_smul ℂ c u]
+  exact hu.smul _
 
 /-- **Monotonicity of the Besov scale.** `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' ≤ s` and `q ≤ q'`. -/
 theorem MemBesov.mono {u : 𝓢'(E, F)} {s' : ℝ} {q' : ℝ≥0∞} (hu : u.MemBesov φ s p q)
@@ -498,6 +530,15 @@ theorem norm_weightedBlocks_apply (u : BesovSpace F φ s p q) (j : ℕ) :
     ‖u.weightedBlocks j‖ = 2 ^ (s * j) * ‖u.block j‖ := by
   rw [weightedBlocks_apply, norm_smul, Complex.norm_of_nonneg (by positivity)]
 
+/-- The weighted block norms `2^{js} ‖Δⱼ u‖_p` of `u ∈ B^s_{p,q}`, as an element of `ℓ^q`. -/
+def weightedBlockNorms (u : BesovSpace F φ s p q) : lp (fun _ : ℕ ↦ ℝ) q :=
+  lp.normSeq u.weightedBlocks
+
+@[simp]
+theorem weightedBlockNorms_apply (u : BesovSpace F φ s p q) (j : ℕ) :
+    u.weightedBlockNorms j = 2 ^ (s * j) * ‖u.block j‖ :=
+  (lp.normSeq_apply _ j).trans (norm_weightedBlocks_apply u j)
+
 @[simp]
 theorem block_zero (j : ℕ) : (0 : BesovSpace F φ s p q).block j = 0 := by
   simp [block]
@@ -569,6 +610,35 @@ theorem rpow_mul_norm_block_le (u : BesovSpace F φ s p q) (j : ℕ) :
   rw [← norm_weightedBlocks_apply, ← norm_weightedBlocks]
   exact lp.norm_apply_le_norm (zero_lt_one.trans_le Fact.out).ne' _ j
 
+/-- The `ℓ^q` norm of the weighted block norms of `u` is the Besov norm of `u`. -/
+@[simp]
+theorem norm_weightedBlockNorms (u : BesovSpace F φ s p q) : ‖u.weightedBlockNorms‖ = ‖u‖ := by
+  rw [weightedBlockNorms, lp.norm_normSeq, norm_weightedBlocks]
+
+/-- **The single-block bound, unweighted:** `‖Δⱼ u‖_p ≤ (2^{-s})^j ‖u‖`. -/
+theorem norm_block_le (u : BesovSpace F φ s p q) (j : ℕ) :
+    ‖u.block j‖ ≤ (2 ^ (-s)) ^ j * ‖u‖ := by
+  rw [← Real.rpow_natCast, ← Real.rpow_mul zero_le_two, neg_mul, Real.rpow_neg zero_le_two,
+    ← div_eq_inv_mul, le_div_iff₀' (by positivity)]
+  exact rpow_mul_norm_block_le u j
+
+/-- **The block norms at negative regularity.** If `u ∈ B^s_{p,q}` with `s < 0`, then
+`∑_{k < m} ‖Δₖ u‖_p ≤ 2^{-s m} ‖u‖ / (2^{-s} - 1)`, since the blocks satisfy
+`‖Δₖ u‖_p ≤ 2^{-s k} ‖u‖` and `∑_{k < m} 2^{-s k} ≤ 2^{-s m} / (2^{-s} - 1)`. -/
+theorem sum_norm_block_le_of_neg (hs : s < 0) (u : BesovSpace F φ s p q) (m : ℕ) :
+    ∑ k ∈ Finset.range m, ‖u.block k‖ ≤ 2 ^ (-s * m) / (2 ^ (-s) - 1) * ‖u‖ := by
+  set x : ℝ := 2 ^ (-s)
+  have hx : 1 < x := Real.one_lt_rpow one_lt_two (neg_pos.2 hs)
+  have hpow : ∀ k : ℕ, (2 : ℝ) ^ (-s * k) = x ^ k := fun k ↦ by
+    rw [Real.rpow_mul zero_le_two, Real.rpow_natCast]
+  calc ∑ k ∈ Finset.range m, ‖u.block k‖ ≤ ∑ k ∈ Finset.range m, x ^ k * ‖u‖ :=
+        Finset.sum_le_sum fun k _ ↦ u.norm_block_le k
+    _ = (x ^ m - 1) / (x - 1) * ‖u‖ := by rw [← Finset.sum_mul, geom_sum_eq hx.ne']
+    _ ≤ x ^ m / (x - 1) * ‖u‖ := by
+        gcongr
+        linarith
+    _ = 2 ^ (-s * m) / (2 ^ (-s) - 1) * ‖u‖ := by rw [hpow]
+
 /-- **The blocks depend continuously on the element:** `‖Δⱼ u‖_p ≤ 2^{-js} ‖u‖`. -/
 theorem continuous_block (j : ℕ) : Continuous fun u : BesovSpace F φ s p q ↦ u.block j := by
   refine AddMonoidHomClass.continuous_of_bound
@@ -602,6 +672,28 @@ theorem tendsto_rpow_mul_norm_block (hq : q ≠ ∞) (u : BesovSpace F φ s p q)
   rw [Real.zero_rpow (inv_ne_zero hq0.ne')] at h
   exact h.congr fun j ↦ Real.rpow_rpow_inv (by positivity) hq0.ne'
 
+open Filter Topology in
+/-- The set of `u ∈ B^s_{p,q}` whose weighted block norms `2^{js} ‖Δⱼ u‖_p` vanish at high
+frequency is closed in `B^s_{p,q}` (nontrivial at `q = ∞`; for `q < ∞` it is the whole space by
+`tendsto_rpow_mul_norm_block`). -/
+theorem isClosed_setOf_tendsto_rpow_mul_norm_block :
+    IsClosed {u : BesovSpace F φ s p q |
+      Tendsto (fun j : ℕ ↦ (2 : ℝ) ^ (s * j) * ‖u.block j‖) atTop (𝓝 0)} := by
+  refine closure_subset_iff_isClosed.mp fun u hu ↦ Metric.tendsto_atTop.2 fun ε hε ↦ ?_
+  obtain ⟨v, hv, hvu⟩ := Metric.mem_closure_iff.1 hu (ε / 2) (half_pos hε)
+  rw [dist_eq_norm] at hvu
+  obtain ⟨J, hJ⟩ := Metric.tendsto_atTop.1 hv (ε / 2) (half_pos hε)
+  refine ⟨J, fun j hj ↦ ?_⟩
+  have hvj := hJ j hj
+  rw [Real.dist_0_eq_abs, abs_of_nonneg (by positivity)] at hvj ⊢
+  have hsub := rpow_mul_norm_block_le (u - v) j
+  rw [block_sub] at hsub
+  calc (2 : ℝ) ^ (s * j) * ‖u.block j‖
+      ≤ 2 ^ (s * j) * ‖u.block j - v.block j‖ + 2 ^ (s * j) * ‖v.block j‖ := by
+        rw [← mul_add]; gcongr; exact norm_le_norm_sub_add _ _
+    _ < ε / 2 + ε / 2 := add_lt_add_of_le_of_lt (hsub.trans hvu.le) hvj
+    _ = ε := add_halves ε
+
 /-- For `q = 2` the squared Besov norm is the sum `∑ⱼ (2^{js} ‖Δⱼ u‖_p)²`. -/
 theorem hasSum_norm_sq (u : BesovSpace F φ s p 2) :
     HasSum (fun j : ℕ ↦ (2 ^ (s * j) * ‖u.block j‖) ^ 2) (‖u‖ ^ 2) := by
@@ -632,6 +724,24 @@ theorem exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq {u : 𝓢'(E, F
   rw [norm_weightedBlocks_apply, hj]
   exact (hb j).trans (Real.le_norm_self _)
 
+/-- **Membership in `B^s_{p,∞}` from a uniform bound on the blocks.** If the blocks `Δⱼ u` of a
+tempered distribution are `Lᵖ` functions `gⱼ` with `2^{js} ‖gⱼ‖_p ≤ c` for every `j`, then `u` is
+an element of `B^s_{p,∞}` of norm at most `c`. -/
+theorem exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_of_forall_le {u : 𝓢'(E, F)}
+    (g : ℕ → Lp F p (volume : Measure E)) {c : ℝ}
+    (hg : ∀ j, littlewoodPaleyBlock F φ j u = g j) (hc : ∀ j : ℕ, 2 ^ (s * j) * ‖g j‖ ≤ c) :
+    ∃ v : BesovSpace F φ s p ∞, v.toDistr = u ∧ ‖v‖ ≤ c := by
+  have hc0 : 0 ≤ c := (by positivity : (0 : ℝ) ≤ 2 ^ (s * (0 : ℕ)) * ‖g 0‖).trans (hc 0)
+  -- The constant sequence `c` lies in `ℓ^∞` and bounds the weighted blocks.
+  let b : lp (fun _ : ℕ ↦ ℝ) ∞ :=
+    ⟨fun _ ↦ c, memℓp_infty ⟨c, by rintro _ ⟨_, rfl⟩; exact (Real.norm_of_nonneg hc0).le⟩⟩
+  -- The entries of the anonymous `lp` element `b` are `c` by definition:
+  -- `lp` coerces through `Subtype.val` and has no lemma evaluating an anonymous constructor.
+  have hbj (j : ℕ) : b j = c := rfl
+  obtain ⟨v, hv, hvb⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq g b hg
+    fun j ↦ (hc j).trans_eq (hbj j).symm
+  exact ⟨v, hv, hvb.trans (lp.norm_le_of_forall_le hc0 fun _ ↦ (Real.norm_of_nonneg hc0).le)⟩
+
 /-- **A blockwise criterion for Besov membership.** Let `u ∈ B^s_{p,q}` and `B ≥ 0`. If every
 block `Δ'ⱼ w`, for a bump function `φ'`, of a tempered distribution `w` with values in `F'` is an
 `L^{p'}` function `gⱼ` with `2^{js'} ‖gⱼ‖_{p'} ≤ B 2^{js} ‖Δⱼ u‖_p`, then `w ∈ B^{s'}_{p',q}`
@@ -643,20 +753,13 @@ theorem exists_toDistr_eq_and_norm_le_of_block {F' : Type*} [NormedAddCommGroup 
     (hg : ∀ j, littlewoodPaleyBlock F' φ' j w = g j)
     (hgn : ∀ j : ℕ, 2 ^ (s' * j) * ‖g j‖ ≤ B * (2 ^ (s * j) * ‖u.block j‖)) :
     ∃ v : BesovSpace F' φ' s' p' q, v.toDistr = w ∧ ‖v‖ ≤ B * ‖u‖ := by
-  -- The weighted block norms of `u` as an element of `ℓ^q`.
-  set b : lp (fun _ : ℕ ↦ ℝ) q := ⟨fun k ↦ ‖u.weightedBlocks k‖, (lp.memℓp _).norm⟩
-  -- The entries of the anonymous `lp` element `b` are its defining sequence by definition.
-  have hbj (j : ℕ) : b j = ‖u.weightedBlocks j‖ := rfl
-  have hb : ‖b‖ ≤ ‖u‖ := by
-    rw [← norm_weightedBlocks]
-    exact lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun k ↦ (norm_norm _).le
-  obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq g (B • b) hg
-    fun j ↦ by
-      rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, hbj, norm_weightedBlocks_apply]
-      exact hgn j
+  obtain ⟨v, hv, hvn⟩ :=
+    exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq g (B • u.weightedBlockNorms) hg
+      fun j ↦ by
+        rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, weightedBlockNorms_apply]
+        exact hgn j
   refine ⟨v, hv, hvn.trans ?_⟩
-  rw [norm_smul, Real.norm_of_nonneg hB]
-  gcongr
+  rw [norm_smul, Real.norm_of_nonneg hB, norm_weightedBlockNorms]
 
 end Normed
 
@@ -769,6 +872,10 @@ def toDistrCLM : BesovSpace F φ s p q →L[ℂ] 𝓢'(E, F) where
 @[simp]
 theorem toDistrCLM_apply (u : BesovSpace F φ s p q) : toDistrCLM F φ s p q u = u.toDistr :=
   (rfl)
+
+/-- The inclusion `B^s_{p,q} →L[ℂ] 𝓢'(E, F)` is injective. -/
+theorem toDistrCLM_injective : Function.Injective (toDistrCLM F φ s p q) :=
+  fun _ _ h ↦ ext <| by simpa only [toDistrCLM_apply] using h
 
 /-- The weighted blocks form an isometry from `B^s_{p,q}` into `ℓ^q(ℕ, Lᵖ)`. -/
 theorem isometry_weightedBlocks :
@@ -889,7 +996,49 @@ theorem norm_inclusionOfLT_le (hs : s' < s) (u : BesovSpace F φ s p q) :
     ‖inclusionOfLT F φ p q q' hs u‖ ≤ (1 - 2 ^ (s' - s))⁻¹ * ‖u‖ :=
   norm_le_of_toDistr_eq_of_lt hs (toDistr_inclusionOfLT hs u).symm
 
+open Filter in
+/-- **Elements of positive regularity are `Lᵖ` functions.** If `u ∈ B^s_{p,q}` with `0 < s`, then
+the tempered distribution of `u` is an `Lᵖ` function `f`, the sum of the absolutely convergent
+series `∑ₖ Δₖ u`, with `‖f‖_p ≤ (1 - 2^{-s})⁻¹ ‖u‖`. -/
+theorem exists_toDistr_eq_and_norm_le_of_pos (hs : 0 < s) (u : BesovSpace F φ s p q) :
+    ∃ f : Lp F p (volume : Measure E), u.toDistr = f ∧ ‖f‖ ≤ (1 - 2 ^ (-s))⁻¹ * ‖u‖ := by
+  set x : ℝ := 2 ^ (-s)
+  have hx : x < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 hs)
+  have hblock (k : ℕ) : ‖u.block k‖ ≤ ‖u‖ * x ^ k := (u.norm_block_le k).trans_eq (mul_comm ..)
+  have hgeom : Summable fun k : ℕ ↦ ‖u‖ * x ^ k :=
+    (summable_geometric_of_lt_one (by positivity) hx).mul_left _
+  have hsum : Summable fun k ↦ ‖u.block k‖ :=
+    hgeom.of_nonneg_of_le (fun _ ↦ norm_nonneg _) hblock
+  refine ⟨∑' k, u.block k, ?_, ?_⟩
+  · -- Both sides are limits of the partial sums `∑_{k < m} Δₖ u` in `𝓢'(E, F)`.
+    refine tendsto_nhds_unique (tendsto_sum_littlewoodPaleyBlock φ u.toDistr) ?_
+    have hlim := (hsum.of_norm.hasSum.map (Lp.toTemperedDistributionCLM F volume p)
+      (Lp.toTemperedDistributionCLM F volume p).continuous).tendsto_sum_nat
+    simpa only [Function.comp_def, Lp.toTemperedDistributionCLM_apply, coe_block] using hlim
+  · calc ‖∑' k, u.block k‖ ≤ ∑' k, ‖u.block k‖ := norm_tsum_le_tsum_norm hsum
+      _ ≤ ∑' k : ℕ, ‖u‖ * x ^ k := hsum.tsum_le_tsum hblock hgeom
+      _ = (1 - x)⁻¹ * ‖u‖ := by rw [tsum_mul_left, tsum_geometric_of_lt_one (by positivity) hx,
+          mul_comm]
+
 end Inclusion
+
+section PositiveSmoothness
+
+/-- **The endpoint embedding `B^0_{p,1} ⊆ Lᵖ`.** Every `u ∈ B^0_{p,1}` is the tempered distribution
+of an `Lᵖ` function `f` with `‖f‖_p ≤ ‖u‖`. -/
+theorem exists_toDistr_eq_and_norm_le_of_zero_one (u : BesovSpace F φ 0 p 1) :
+    ∃ f : Lp F p (volume : Measure E), u.toDistr = f ∧ ‖f‖ ≤ ‖u‖ := by
+  -- The `B^0_{p,1}` norm is `∑ⱼ ‖Δⱼ u‖_p`, so the series `f = ∑ⱼ Δⱼ u` converges absolutely in
+  -- `Lᵖ`, and it represents `u` by the Littlewood–Paley reconstruction `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`.
+  have hnorm : HasSum (fun j ↦ ‖u.block j‖) ‖u‖ := by
+    simpa using hasSum_norm ENNReal.one_ne_top u
+  have hsum := hnorm.summable.of_norm
+  refine ⟨∑' j, u.block j, tendsto_nhds_unique (tendsto_sum_littlewoodPaleyBlock φ u.toDistr) ?_,
+    tsum_of_norm_bounded hnorm fun _ ↦ le_rfl⟩
+  simpa [Function.comp_def] using (hsum.hasSum.map (Lp.toTemperedDistributionCLM F volume p)
+    (ContinuousLinearMap.continuous _)).tendsto_sum_nat
+
+end PositiveSmoothness
 
 section BandLimited
 
@@ -920,14 +1069,7 @@ theorem exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_zero :
         simp only [← hf k, hr k hk, Lp.toTemperedDistribution_zero]
       rw [hf0, norm_zero, mul_zero]
       positivity
-  -- The constant sequence `2^{|s| M} C ‖r‖` lies in `ℓ^∞` and bounds the weighted blocks.
-  set c : ℝ := 2 ^ (|s| * M) * max C₁ 0 * ‖r‖
-  have hc : 0 ≤ c := by positivity
-  let b : lp (fun _ : ℕ ↦ ℝ) ∞ := ⟨fun _ ↦ c, memℓp_infty ⟨c, by
-    rintro _ ⟨k, rfl⟩
-    exact (Real.norm_of_nonneg hc).le⟩⟩
-  obtain ⟨x, hx, hxb⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq f b hf hbound
-  exact ⟨x, hx, hxb.trans (lp.norm_le_of_forall_le hc fun _ ↦ (Real.norm_of_nonneg hc).le)⟩
+  exact exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_of_forall_le f hf hbound
 
 end BandLimited
 
@@ -1040,28 +1182,17 @@ private theorem exists_norm_toBesovSpace_of_bump_le (φ' : ContDiffBump (0 : E))
   refine ⟨K * (2 * L), fun u ↦ ?_⟩
   obtain ⟨f', hf', hle⟩ := hKL u.block fun k ↦ (coe_block u k).symm
   -- The weighted block norms of `u`, and their window sums, as elements of `ℓ^q`.
-  set b : lp (fun _ : ℕ ↦ ℝ) q := ⟨fun k ↦ ‖u.weightedBlocks k‖, (lp.memℓp _).norm⟩
-  set w : lp (fun _ : ℕ ↦ ℝ) q :=
-    ⟨fun j ↦ ∑ k ∈ Finset.Ico (j - L) (j + L), b k, (lp.memℓp b).sum_Ico_sub_add L⟩
-  -- The entries of the anonymous `lp` elements `b` and `w` are their defining sequences by
-  -- definition: `lp` coerces through `Subtype.val` and has no lemma evaluating an anonymous
-  -- constructor.
-  have hw (j : ℕ) : w j = ∑ k ∈ Finset.Ico (j - L) (j + L), ‖u.weightedBlocks k‖ := rfl
-  have hp : q ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
-  have hb : ‖b‖ ≤ ‖u‖ := by
-    rw [← norm_weightedBlocks]
-    exact lp.norm_mono hp fun k ↦ (norm_norm _).le
+  set b := u.weightedBlockNorms
+  obtain ⟨w, hw, hwn⟩ := lp.exists_eq_sum_Ico_sub_add_and_norm_le b L
   obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq f' (K • w) hf'
     fun j ↦ by
       rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, hw]
-      simpa only [norm_weightedBlocks_apply] using hle j
+      simpa only [b, weightedBlockNorms_apply] using hle j
   rw [← ext (hv.trans (MemBesov.toDistr_toBesovSpace _).symm)]
   calc ‖v‖ ≤ ‖K • w‖ := hvn
     _ = K * ‖w‖ := by rw [norm_smul, Real.norm_of_nonneg hK]
-    _ ≤ K * (2 * L * ‖b‖) := by
-        gcongr
-        exact lp.norm_le_of_forall_eq_sum_Ico_sub_add L fun _ ↦ rfl
-    _ ≤ K * (2 * L) * ‖u‖ := by rw [mul_assoc K]; gcongr
+    _ ≤ K * (2 * L * ‖b‖) := by gcongr
+    _ = K * (2 * L) * ‖u‖ := by rw [norm_weightedBlockNorms, mul_assoc K]
 
 variable (F) in
 /-- **Independence of the bump function.** The Besov spaces `B^s_{p,q}` built from the

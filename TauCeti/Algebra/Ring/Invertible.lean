@@ -6,11 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.Invertible
+import Mathlib.Algebra.GroupWithZero.Commute
+import Mathlib.Algebra.Ring.Commute
 
 /-!
-# Doubling when two is a unit
+# Invertible elements and `Ring.inverse`
 
-If `2` is a unit in a semiring, zero is the only element that doubles to zero.
+This file collects elementary lemmas on units in semirings and `Ring.inverse` in monoids with zero
+and distributive negation:
+
+* `IsUnit.eq_zero_of_add_self_eq_zero`: if `2` is a unit in a semiring, zero is the only element
+  that doubles to zero.
+* `TauCeti.ringInverse_neg`: `Ring.inverse` commutes with negation.
+* `TauCeti.ringInverse_neg_one_pow_mul`: multiplying on the left by `(-1) ^ k` commutes with
+  `Ring.inverse`.
+* `Commute.ringInverse_right`: an element commuting with `b` commutes with `Ring.inverse b`.
 -/
 
 public section
@@ -20,3 +30,35 @@ theorem IsUnit.eq_zero_of_add_self_eq_zero {R : Type*} [Semiring R] (h2 : IsUnit
     ∀ x : R, x + x = 0 → x = 0 := by
   intro x hx
   exact h2.mul_right_eq_zero.mp (by rwa [two_mul])
+
+namespace TauCeti
+
+variable {R : Type*} [MonoidWithZero R] [HasDistribNeg R]
+
+/-- `Ring.inverse` commutes with negation. -/
+@[simp]
+theorem ringInverse_neg (a : R) : Ring.inverse (-a) = -Ring.inverse a := by
+  by_cases ha : IsUnit a
+  · obtain ⟨ia⟩ := ha.nonempty_invertible
+    let _ : Invertible (-a) := invertibleNeg a
+    rw [Ring.inverse_invertible, Ring.inverse_invertible, invOf_neg]
+  · rw [Ring.inverse_non_unit _ (mt (IsUnit.neg_iff a).mp ha), Ring.inverse_non_unit _ ha,
+      neg_zero]
+
+/-- Multiplying on the left by `(-1) ^ k` commutes with `Ring.inverse`. -/
+@[simp]
+theorem ringInverse_neg_one_pow_mul (k : ℕ) (a : R) :
+    Ring.inverse ((-1 : R) ^ k * a) = (-1 : R) ^ k * Ring.inverse a := by
+  rcases neg_one_pow_eq_or R k with h | h <;> simp [h]
+
+end TauCeti
+
+/-- An element commuting with `b` commutes with its ring inverse. -/
+theorem Commute.ringInverse_right {M₀ : Type*} [MonoidWithZero M₀] {a b : M₀}
+    (h : Commute a b) : Commute a (Ring.inverse b) := by
+  by_cases hb : IsUnit b
+  · obtain ⟨u, rfl⟩ := hb
+    rw [Ring.inverse_unit]
+    exact h.units_inv_right
+  · rw [Ring.inverse_non_unit _ hb]
+    exact Commute.zero_right a

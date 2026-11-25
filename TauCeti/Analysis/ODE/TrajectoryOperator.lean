@@ -19,11 +19,16 @@ both the value and its weak derivative. No new Sobolev carrier is introduced.
 
 `WeakDerivStep.trajectoryOperator` is a continuous linear map. Its operator norm is at most
 `1 + ‖A‖`, and changing the coefficient changes the operator by at most the `L∞` distance
-between coefficients. Solving `D_A u = f` is equivalent to the weak ordinary differential
-equation `u' = f - A u`. For differentiable representatives with locally integrable derivative,
-the operator agrees almost everywhere with the classical expression `u' + A u`. In particular,
-for a path in `W^{1,2}(ℝ, F)` with a `C¹` representative `φ`, the squared norms of the path, of
-its weak derivative and of its image under `D_A` are `∫ ‖φ‖²`, `∫ ‖φ'‖²` and `∫ ‖φ' + A φ‖²`
+between coefficients; as a function of the coefficient it is smooth
+(`TauCeti.WeakDerivStep.contDiff_trajectoryOperator`). Conversely, an estimate
+`‖u‖_{Lᵖ} ≤ C ‖D_A u‖` on the value of a path controls its graph norm by
+`(1 + (1 + ‖A‖) C) ‖D_A u‖`
+(`TauCeti.WeakDerivStep.norm_le_mul_norm_trajectoryOperator_of_norm_prev_le`). Solving
+`D_A u = f` is equivalent to the weak ordinary differential equation `u' = f - A u`. For
+differentiable representatives with locally integrable derivative, the operator agrees almost
+everywhere with the classical expression `u' + A u`. In particular, for a path in
+`W^{1,2}(ℝ, F)` with a `C¹` representative `φ`, the squared norms of the path, of its weak
+derivative and of its image under `D_A` are `∫ ‖φ‖²`, `∫ ‖φ'‖²` and `∫ ‖φ' + A φ‖²`
 (`TauCeti.WeakDerivStep.norm_prev_sq_eq_integral`,
 `TauCeti.WeakDerivStep.norm_weakFDeriv_sq_eq_integral` and
 `TauCeti.WeakDerivStep.norm_trajectoryOperator_sq_eq_integral`).
@@ -79,8 +84,6 @@ lemma trajectoryOperator_apply (A : Lp (F →L[ℝ] F) ∞ (mu.restrict Omega))
       (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p A
         (prev (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u) := by
   simp [trajectoryOperator]
-  -- Mathlib's `compLpL` has no application equality lemma, only an a.e. formula.
-  rfl
 
 /-- On representatives, the bounded trajectory operator has the expected pointwise formula
 almost everywhere. -/
@@ -111,15 +114,8 @@ theorem norm_trajectoryOperator_le (A : Lp (F →L[ℝ] F) ∞ (mu.restrict Omeg
   let base := ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))
   have hd : ‖(ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLp
       (weakFDeriv base u)‖ ≤ ‖u‖ := by
-    have heval : ‖ContinuousLinearMap.apply ℝ F (1 : ℝ)‖ ≤ 1 := by
-      apply ContinuousLinearMap.opNorm_le_bound _ zero_le_one
-      intro T
-      simpa using T.le_opNorm (1 : ℝ)
-    calc
-      _ ≤ ‖ContinuousLinearMap.apply ℝ F (1 : ℝ)‖ * ‖weakFDeriv base u‖ :=
-        ContinuousLinearMap.norm_compLp_le _ _
-      _ ≤ 1 * ‖weakFDeriv base u‖ := by gcongr
-      _ ≤ ‖u‖ := by simpa using norm_weakFDeriv_le base u
+    rw [ContinuousLinearMap.norm_apply_one_compLp]
+    exact norm_weakFDeriv_le base u
   have hA : ‖(ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p A
       (prev base u)‖ ≤ ‖A‖ * ‖u‖ := by
     calc
@@ -147,22 +143,29 @@ theorem norm_weakFDeriv_le_norm_trajectoryOperator_add (A : Lp (F →L[ℝ] F) �
         ‖A‖ * ‖prev (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u‖ := by
   let base := ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))
   let w := weakFDeriv base u
-  -- On `ℝ →L[ℝ] F`, evaluation at `1` is an isometry, so it preserves the `Lᵖ` norm.
-  have hw : ‖w‖ = ‖(ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLp w‖ := by
-    rw [Lp.norm_def, Lp.norm_def]
-    congr 1
-    refine (eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) ?_).symm
-    filter_upwards [(ContinuousLinearMap.apply ℝ F (1 : ℝ)).coeFn_compLp w] with s hs
-    rw [hs, ContinuousLinearMap.apply_apply]
-    exact (ContinuousLinearMap.toSpanSingletonLIE ℝ F).symm.norm_map (w s)
   have hA : ‖(ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p A (prev base u)‖ ≤
       ‖A‖ * ‖prev base u‖ :=
     (ContinuousLinearMap.norm_holder_apply_apply_le _ _ _).trans
       (by gcongr; exact mul_le_of_le_one_left (norm_nonneg _) ContinuousLinearMap.norm_id_le)
   have hT := trajectoryOperator_apply A u
-  rw [hw, show (ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLp w = trajectoryOperator A u -
-    (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p A (prev base u) from eq_sub_of_add_eq hT.symm]
+  rw [← ContinuousLinearMap.norm_apply_one_compLp w,
+    show (ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLp w = trajectoryOperator A u -
+      (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p A (prev base u) from eq_sub_of_add_eq hT.symm]
   exact (norm_sub_le _ _).trans (by gcongr)
+
+/-- **An estimate on the value controls the graph norm.** If `u` satisfies
+`‖u‖_{Lᵖ} ≤ C ‖D_A u‖_{Lᵖ}`, then its graph norm satisfies
+`‖u‖ ≤ (1 + (1 + ‖A‖) C) ‖D_A u‖_{Lᵖ}`, since its weak derivative is `D_A u - A u`. -/
+theorem norm_le_mul_norm_trajectoryOperator_of_norm_prev_le
+    {A : Lp (F →L[ℝ] F) ∞ (mu.restrict Omega)} {C : ℝ}
+    (u : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))))
+    (h : ‖prev _ u‖ ≤ C * ‖trajectoryOperator A u‖) :
+    ‖u‖ ≤ (1 + (1 + ‖A‖) * C) * ‖trajectoryOperator A u‖ := by
+  have hweak := norm_weakFDeriv_le_norm_trajectoryOperator_add A u
+  have hsum := norm_le_norm_prev_add_norm_weakFDeriv _ u
+  calc ‖u‖ ≤ ‖trajectoryOperator A u‖ + (1 + ‖A‖) * ‖prev _ u‖ := by linarith
+    _ ≤ ‖trajectoryOperator A u‖ + (1 + ‖A‖) * (C * ‖trajectoryOperator A u‖) := by gcongr
+    _ = (1 + (1 + ‖A‖) * C) * ‖trajectoryOperator A u‖ := by ring
 
 /-- Subtracting two trajectory operators cancels the derivative part and leaves multiplication
 by the difference of their coefficients. -/
@@ -202,6 +205,19 @@ theorem lipschitzWith_trajectoryOperator :
   LipschitzWith.of_dist_le_mul fun A B ↦ by
     simpa only [dist_eq_norm, NNReal.coe_one, one_mul] using norm_trajectoryOperator_sub_le A B
 
+/-- The trajectory operator depends smoothly on its `L∞` coefficient: it is the operator with
+coefficient `0` plus a continuous linear function of the coefficient. -/
+theorem contDiff_trajectoryOperator {n : WithTop ℕ∞} :
+    ContDiff ℝ n (trajectoryOperator (F := F) (mu := mu) (Omega := Omega) (p := p)) := by
+  have h : trajectoryOperator (F := F) (mu := mu) (Omega := Omega) (p := p) = fun A ↦
+      trajectoryOperator 0 +
+        ((ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holderL (mu.restrict Omega) ∞ p p A).comp
+          (prevL (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) := by
+    funext A
+    rw [← sub_eq_iff_eq_add', trajectoryOperator_sub, sub_zero]
+  rw [h]
+  exact contDiff_const.add ((ContinuousLinearMap.contDiff _).clm_comp contDiff_const)
+
 /-- Solving the bounded trajectory equation is equivalent to solving the weak ordinary
 differential equation `u' = f - A u`. -/
 theorem trajectoryOperator_eq_iff_hasWeakLineDerivOn
@@ -240,22 +256,12 @@ theorem exists_prev_eq_and_trajectoryOperator_eq_of_hasWeakLineDerivOn
     ∃ u, prev (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u = x ∧
       trajectoryOperator A u = f := by
   let g := f - (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p A x
-  -- The weak derivative `g` as an `Lᵖ` path of linear maps `ℝ →L[ℝ] F`.
-  let lift := (ContinuousLinearMap.toSpanSingletonLIE ℝ F).toLinearIsometry.toContinuousLinearMap
   have hg : (fun s ↦ f s - A s (x s)) =ᵐ[mu.restrict Omega] g := by
     filter_upwards [Lp.coeFn_sub f ((ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p A x),
       (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).coeFn_holder (r := p) A x] with s hs hAs
     simp only [g, hs, Pi.sub_apply, hAs, ContinuousLinearMap.id_apply]
-  have hD : HasWeakFDerivOn mu Omega (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)) x)
-      (lift.compLp g) := by
-    rw [hasWeakFDerivOn_iff]
-    intro r
-    refine (by simpa using (h.congr_ae_deriv hg).smul_direction r :
-      HasWeakLineDerivOn _ _ _ _ r).congr_ae_deriv ?_
-    filter_upwards [lift.coeFn_compLp g] with s hs
-    simp [lift, hs]
-  refine ⟨mk _ x _ hD, prev_mk _ _ _ _, ?_⟩
-  rw [trajectoryOperator_eq_iff_hasWeakLineDerivOn, prev_mk]
+  refine ⟨mkLine _ x g (by simpa using h.congr_ae_deriv hg), prev_mkLine _ _ _ _, ?_⟩
+  rw [trajectoryOperator_eq_iff_hasWeakLineDerivOn, prev_mkLine]
   exact h
 
 end TauCeti.WeakDerivStep

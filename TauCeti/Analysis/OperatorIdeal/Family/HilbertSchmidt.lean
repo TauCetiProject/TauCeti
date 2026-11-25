@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.OperatorIdeal.Family.Schatten
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.HilbertSchmidt
 
+import TauCeti.Analysis.OperatorIdeal.Family.Modulus
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 
 /-!
@@ -19,7 +20,8 @@ any Hilbert basis `(bᵢ)` of the source. The four operator-ideal laws come dire
 of the energy, without approximation numbers: subadditivity is Minkowski's inequality for
 unconditional sums in `ℝ≥0∞`, homogeneity is the scaling of the energy, domination of the operator
 norm and the two-sided ideal inequality are the energy bounds `‖T‖ₑ² ≤ E_b(T)` and
-`E(A T B) ≤ ‖A‖ₑ² E(T) ‖B‖ₑ²`. Adjoint invariance of the energy makes the diagonal family symmetric.
+`E(A T B) ≤ ‖A‖ₑ² E(T) ‖B‖ₑ²`. Like every operator-ideal family in one universe, the diagonal family
+is adjoint invariant (`OperatorIdealFamily.gauge_adjoint`), so it is symmetric.
 
 An operator lies in the ideal exactly when its energy is finite, and there the ideal norm is the
 Hilbert–Schmidt norm `ContinuousLinearMap.hilbertSchmidtNorm`. The energy is the sum of the squared
@@ -128,11 +130,7 @@ namespace SymmetricOperatorIdealFamily
 noncomputable def hilbertSchmidt (𝕜 : Type u) [RCLike 𝕜] :
     SymmetricOperatorIdealFamily.{u, v} 𝕜 where
   toOperatorIdealFamily := OperatorIdealFamily.hilbertSchmidt.{u, v, v} 𝕜
-  gauge_adjoint {E F} _ _ _ _ _ _ T := by
-    obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
-    obtain ⟨_, c, -⟩ := exists_hilbertBasis 𝕜 F
-    rw [OperatorIdealFamily.gauge_hilbertSchmidt _ c, OperatorIdealFamily.gauge_hilbertSchmidt T b,
-      T.hilbertSchmidtEnergy_adjoint b c]
+  gauge_adjoint T := OperatorIdealFamily.gauge_adjoint _ T
 
 /-- The underlying rectangular family of the symmetric Hilbert–Schmidt family. -/
 @[simp]

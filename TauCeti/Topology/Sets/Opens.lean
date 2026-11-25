@@ -6,9 +6,11 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.Topology.Bases
+public import Mathlib.Topology.Clopen
 public import Mathlib.Topology.Compactness.SigmaCompact
 public import Mathlib.Topology.Sets.Opens
 public import Mathlib.Topology.Separation.Regular
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Carrying a basis from families of sets to families of opens
@@ -28,13 +30,24 @@ indexed by.
 * `TopologicalSpace.Opens.exists_le_preimage_coe_eq` : every open subset of an open set `Ω`,
   viewed as a subspace, is the trace of an open set contained in `Ω`.
 * `TopologicalSpace.Opens.exists_between_and_isCompact_closure` : in a locally compact regular
-  space, a compact subset of an open set `U` lies in an open set with compact closure inside `U`.
+  space, a compact subset of an open set `U` lies in an open set with compact closure inside `U`;
+  `TopologicalSpace.Opens.exists_mem_and_isCompact_closure` is the case of a point.
 * `TopologicalSpace.Opens.le_iSup_iff_subset_iUnion` : an open set lies below the supremum of a
   family of open sets exactly when their underlying sets cover it.
+* `TopologicalSpace.Opens.isEmpty_of_iSup_eq_top` : an empty family of open sets covers only the
+  empty space.
+* `TopologicalSpace.Opens.eq_bot_of_not_nonempty` : an open set with no points is the empty open
+  set.
+* `TauCeti.TopologicalSpace.Opens.isClopen_of_pairwiseDisjoint_iSup_eq_top` : every member of a
+  pairwise-disjoint open cover is clopen.
+* `TopologicalSpace.Opens.instLocallyCompactSpace` : an open subset of a locally compact space is
+  locally compact.
 * `TopologicalSpace.Opens.sigmaCompactSpace_top` : the open subset `⊤` of a σ-compact space is
   σ-compact.
 * `TopologicalSpace.Opens.IsBasis.exists_finset_sup_le_of_isCompact` : a compact subset of an
   open set has a neighbourhood inside it which is a finite union of basis members.
+* `IsCompact.preimage_val_of_pairwise_disjoint` : a compact set covered by open sets meeting it in
+  pairwise disjoint sets has compact preimage in each of them.
 -/
 
 public section
@@ -76,7 +89,7 @@ theorem isClosed_setOf_not_exists (P : Opens X → Prop) :
 its image in `X`. -/
 theorem exists_le_preimage_coe_eq (Ω : Opens X) {W : Set Ω} (hW : IsOpen W) :
     ∃ U : Opens X, U ≤ Ω ∧ ((↑) : Ω → X) ⁻¹' (U : Set X) = W :=
-  ⟨⟨(↑) '' W, Ω.isOpen.isOpenMap_subtype_val W hW⟩, Subtype.coe_image_subset _ _,
+  ⟨⟨(↑) '' W, Ω.isOpen.isOpenMap_subtypeVal W hW⟩, Subtype.coe_image_subset _ _,
     Set.preimage_image_eq W Subtype.val_injective⟩
 
 /-- In a locally compact regular space, every compact subset `K` of an open set `U` lies in an
@@ -88,11 +101,54 @@ theorem exists_between_and_isCompact_closure [LocallyCompactSpace X] [RegularSpa
   obtain ⟨V, hVo, hKV, hVU, hVc⟩ := exists_open_between_and_isCompact_closure hK U.isOpen hKU
   exact ⟨⟨V, hVo⟩, hKV, hVU, hVc⟩
 
+/-- In a locally compact regular space, every point `x` of an open set `U` lies in an open set
+whose closure is compact and contained in `U`. This is the case `K = {x}` of
+`TopologicalSpace.Opens.exists_between_and_isCompact_closure`. -/
+theorem exists_mem_and_isCompact_closure [LocallyCompactSpace X] [RegularSpace X] {x : X}
+    {U : Opens X} (hx : x ∈ U) :
+    ∃ V : Opens X, x ∈ V ∧ closure (V : Set X) ⊆ U ∧ IsCompact (closure (V : Set X)) := by
+  obtain ⟨V, hxV, hVU, hVc⟩ :=
+    exists_between_and_isCompact_closure isCompact_singleton (Set.singleton_subset_iff.2 hx)
+  exact ⟨V, hxV rfl, hVU, hVc⟩
+
 /-- An open set lies below the supremum of a family of open sets exactly when their underlying
 sets cover it. -/
 theorem le_iSup_iff_subset_iUnion {ι : Sort*} {U : Opens X} {V : ι → Opens X} :
     U ≤ ⨆ i, V i ↔ (U : Set X) ⊆ ⋃ i, (V i : Set X) := by
   rw [← SetLike.coe_subset_coe, coe_iSup]
+
+/-- An empty family of open sets covers only the empty space. -/
+theorem isEmpty_of_iSup_eq_top {ι : Sort*} [IsEmpty ι] {U : ι → Opens X}
+    (hcover : ⨆ i, U i = ⊤) : IsEmpty X :=
+  ⟨fun x ↦ isEmptyElim (Opens.mem_iSup.1 (hcover ▸ Opens.mem_top x)).choose⟩
+
+/-- An open set with no points is the empty open set. -/
+theorem eq_bot_of_not_nonempty {U : Opens X} (h : ¬ Nonempty U) : U = ⊥ :=
+  (not_nonempty_iff_eq_bot U).mp fun hne ↦ h (Set.nonempty_coe_sort.mpr hne)
+
+/-- Every member of a pairwise-disjoint open cover is clopen, without a finiteness assumption
+on the indexing type. -/
+theorem _root_.TauCeti.TopologicalSpace.Opens.isClopen_of_pairwiseDisjoint_iSup_eq_top
+    {ι : Type*} (U : ι → Opens X)
+    (hcover : ⨆ i, U i = ⊤) (hdisj : Pairwise fun i j ↦ Disjoint (U i) (U j)) (j : ι) :
+    IsClopen (U j : Set X) := by
+  classical
+  let V : Opens X := ⨆ i : {i : ι // i ≠ j}, U i.val
+  apply isClopen_of_disjoint_cover_open (b := (V : Set X)) ?_ (U j).isOpen V.isOpen ?_
+  · intro x _
+    have hxcover : x ∈ ⨆ i, U i := hcover.symm ▸ trivial
+    obtain ⟨i, hi⟩ := mem_iSup.mp hxcover
+    by_cases hij : i = j
+    · exact Or.inl (hij ▸ hi)
+    · exact Or.inr (mem_iSup.mpr ⟨⟨i, hij⟩, hi⟩)
+  · apply Set.disjoint_left.mpr
+    intro x hxj hxV
+    obtain ⟨i, hi⟩ := mem_iSup.mp hxV
+    exact (hdisj i.property).le_bot ⟨hi, hxj⟩
+
+/-- An open subset of a locally compact space is locally compact. -/
+instance instLocallyCompactSpace [LocallyCompactSpace X] (U : Opens X) : LocallyCompactSpace U :=
+  U.isOpen.locallyCompactSpace
 
 /-- The open subset `⊤` of a σ-compact space is σ-compact, being a closed subspace. -/
 instance sigmaCompactSpace_top [SigmaCompactSpace X] : SigmaCompactSpace (⊤ : Opens X) :=
@@ -111,23 +167,44 @@ theorem exists_finset_sup_le_of_isCompact (hB : Opens.IsBasis B) {K : Set X}
     ∃ s : Finset (Opens X), (∀ V ∈ s, V ∈ B) ∧ K ⊆ (s.sup id : Opens X) ∧ s.sup id ≤ U := by
   classical
   let C := {V : Opens X // V ∈ B ∧ V ≤ U}
-  obtain ⟨s, hs⟩ := hK.elim_finite_subcover (fun V : C ↦ (V.1 : Set X))
-    (fun V ↦ V.1.isOpen) (fun x hx ↦ by
+  obtain ⟨s, hs⟩ := hK.elim_finite_subcover (fun V : C ↦ (V.val : Set X))
+    (fun V ↦ V.val.isOpen) (fun x hx ↦ by
       obtain ⟨V, hV, hxV, hVU⟩ := Opens.isBasis_iff_nbhd.mp hB (hKU hx)
       exact Set.mem_iUnion.mpr ⟨⟨V, hV, hVU⟩, hxV⟩)
   refine ⟨s.image Subtype.val, ?_, ?_, ?_⟩
   · intro V hV
     obtain ⟨W, _, rfl⟩ := Finset.mem_image.mp hV
-    exact W.2.1
+    exact W.property.1
   · intro x hx
     obtain ⟨V, hVs, hxV⟩ := Set.mem_iUnion₂.mp (hs hx)
-    have hle : V.1 ≤ (s.image Subtype.val).sup id :=
+    have hle : V.val ≤ (s.image Subtype.val).sup id :=
       Finset.le_sup (f := id) (Finset.mem_image.mpr ⟨V, hVs, rfl⟩)
     exact hle hxV
   · exact Finset.sup_le fun V hV ↦ by
       obtain ⟨W, _, rfl⟩ := Finset.mem_image.mp hV
-      exact W.2.2
+      exact W.property.2
 
 end TopologicalSpace.Opens.IsBasis
+
+open Set in
+/-- A compact set `A` covered by open sets `U i` which meet `A` in pairwise disjoint sets meets each
+of them in a compact set, so its preimage in each of them is compact. -/
+theorem IsCompact.preimage_val_of_pairwise_disjoint {X ι : Type*} [TopologicalSpace X]
+    {U : ι → TopologicalSpace.Opens X} {A : Set X} (hA : IsCompact A)
+    (hU : Pairwise fun i k ↦ Disjoint (A ∩ U i) (A ∩ U k)) (hAU : A ⊆ ⋃ i, (U i : Set X))
+    (i : ι) : IsCompact ((Subtype.val : U i → X) ⁻¹' A) := by
+  -- `A` lies in `U i` together with the open union of the other `U k`, which misses `A ∩ U i`.
+  refine (U i).isOpenEmbedding'.isInducing.isCompact_preimage_of_subset_union
+    (V := ⋃ (k : ι) (_ : k ≠ i), (U k : Set X))
+    (isOpen_iUnion fun k ↦ isOpen_iUnion fun _ ↦ (U k).isOpen) hA (fun x hx ↦ ?_) ?_
+  · obtain ⟨k, hxk⟩ := mem_iUnion.1 (hAU hx)
+    rw [Subtype.range_val]
+    by_cases hki : k = i
+    · exact .inl (hki ▸ hxk)
+    · exact .inr (mem_iUnion₂.2 ⟨k, hki, hxk⟩)
+  · rw [Subtype.range_val]
+    refine disjoint_left.2 fun x hx hxV ↦ ?_
+    obtain ⟨k, hki, hxk⟩ := mem_iUnion₂.1 hxV
+    exact disjoint_left.1 (hU hki) ⟨hx.1, hxk⟩ hx
 
 end
