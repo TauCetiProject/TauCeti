@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Units
+import TauCeti.RingTheory.Valuation.Integers
 
 /-!
 # The finite ideles at a single place
@@ -107,14 +108,8 @@ theorem eventually_smul_adicCompletionIntegers (a : 𝔸ᶠ[R, K]ˣ) :
     ∀ᶠ v : HeightOneSpectrum R in Filter.cofinite,
       (a : 𝔸ᶠ[R, K]) v • (v.adicCompletionIntegers K : Set (v.adicCompletion K)) =
         v.adicCompletionIntegers K := by
-  filter_upwards [(a : 𝔸ᶠ[R, K]).cofinite_mem_adicCompletionIntegers,
-    ((a⁻¹ : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]).cofinite_mem_adicCompletionIntegers] with v ha ha'
-  ext x
-  refine ⟨?_, fun hx ↦ ⟨_ * x, mul_mem ha' hx, ?_⟩⟩
-  · rintro ⟨y, hy, rfl⟩
-    exact mul_mem ha hy
-  · simp only [smul_eq_mul, ← mul_assoc, coe_units_inv_apply,
-      mul_inv_cancel₀ (coe_units_apply_ne_zero a v), one_mul]
+  filter_upwards [eventually_valued_coe_units_apply_eq_one a] with v hv
+  exact Valued.v.units_smul_integer (u := Units.mk0 _ (coe_units_apply_ne_zero a v)) hv
 
 /-! ### The finite ideles concentrated at one place -/
 
