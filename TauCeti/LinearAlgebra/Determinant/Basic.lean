@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Multilinear.Span
 import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 import Mathlib.LinearAlgebra.SpecialLinearGroup
 import Mathlib.LinearAlgebra.Matrix.Adjugate
+import Mathlib.LinearAlgebra.Matrix.Nonsingular
 import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
@@ -91,6 +92,8 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   basis `b'` has determinant `b'.det b`.
 * `Module.Basis.det_map_eq_det_toMatrix`: evaluating `b'.det` on the image `b.map e` of a basis `b`
   under a linear equivalence `e` gives the determinant of `LinearMap.toMatrix b b' e`.
+* `Module.Basis.det_mem_nonZeroDivisors`: the determinant `b.det v` of a linearly independent
+  family `v` is a non-zero-divisor.
 * `Module.Basis.det_eq_det_of_det_eq_one`: a basis `b'` with `b.det b' = 1` has the same
   determinant form as `b`.
 * `LinearMap.det_smul_mem_range`: Cramer's rule, `det φ • x ∈ range φ`.
@@ -250,6 +253,17 @@ under a linear map `f : M → M'` gives its value on `f ∘ b` times the determi
 theorem det_comp_eq_mul (b : Basis ι R M) (b' : Basis ι R M') (f : M →ₗ[R] M') (v : ι → M) :
     b'.det (f ∘ v) = b'.det (f ∘ b) * b.det v :=
   DFunLike.congr_fun (AlternatingMap.eq_smul_basis_det b (b'.det.compLinearMap f)) v
+
+/-- The determinant of a linearly independent family `v` in a basis `b` of the same size is a
+non-zero-divisor, although `v` need not span: over `ℤ`, the family `(2)` in the basis `(1)` of `ℤ`
+has determinant `2`. -/
+theorem det_mem_nonZeroDivisors (b : Basis ι R M) {v : ι → M} (hv : LinearIndependent R v) :
+    b.det v ∈ nonZeroDivisors R := by
+  rw [det_apply, ← Matrix.nonsingular_iff_det_mem_nonZeroDivisors,
+    ← Matrix.linearIndependent_col_iff]
+  convert hv.map' b.equivFun.toLinearMap b.equivFun.ker using 1
+  ext j i
+  simp [toMatrix_apply, Matrix.col]
 
 /-- If a basis `b'` has determinant `1` in the basis `b`, then `b` and `b'` have the same
 determinant form. -/
