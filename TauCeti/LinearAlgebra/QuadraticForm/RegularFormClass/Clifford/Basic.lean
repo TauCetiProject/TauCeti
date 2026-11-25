@@ -116,9 +116,10 @@ remaining non-isometric.
   does not change the Clifford invariant.
 * `TauCeti.RegularFormClass.cliffordInvariant_baseChange`: the Clifford invariant of a scalar
   extension is the scalar extension of the Clifford invariant.
-* `TauCeti.RegularFormClass.four_nsmul_one_invariants_eq_and_ne`: over any semireal field,
-  `⟨1, 1, 1, 1⟩` and `⟨-1, -1, -1, -1⟩` share rank, discriminant, Hasse invariant, and Clifford
-  invariant while remaining non-isometric.
+* `TauCeti.RegularFormClass.cliffordInvariant_four_nsmul_mk_rankOne`: any four-fold multiple
+  `4 • ⟨a⟩ = ⟨a, a, a, a⟩` has Clifford invariant `[(-1, -1)]`, so `⟨1, 1, 1, 1⟩` and
+  `⟨-1, -1, -1, -1⟩` also share their Clifford invariant (cf.
+  `TauCeti.RegularFormClass.four_nsmul_one_ne_four_nsmul_neg_one`).
 
 ## References
 
@@ -774,38 +775,25 @@ theorem cliffordInvariant_baseChange (x : RegularFormClass K) :
 
 end BaseChange
 
-/-! ### Non-classification over semireal fields -/
+/-! ### Four-fold multiples of a line -/
 
-section Semireal
+/-- Any four-fold multiple `4 • ⟨a⟩ = ⟨a, a, a, a⟩` of a rank-one class has Clifford invariant
+`[(-1, -1)]`: `4 = ⟨1, 1, 1, 1⟩` has trivial signed discriminant (`C(4, 2) = 6` is even), so scaling
+it by `⟨a⟩` preserves its Clifford invariant `[(-1, -1)]^C(5, 4) = [(-1, -1)]`.
 
-variable [IsSemireal K]
-
-/-- **Rank, discriminant, Hasse invariant, and Clifford invariant do not classify regular forms
-over a semireal field**: `⟨1, 1, 1, 1⟩` and `⟨-1, -1, -1, -1⟩` share rank (`4`), discriminant
-(`0`), Hasse invariant (`1`), and Clifford invariant (`[(-1, -1)]`), while remaining non-isometric
-because `-1` is not a sum of squares in `K`. In particular this holds over every ordered field,
-such as `ℚ` and `ℝ`. -/
-theorem four_nsmul_one_invariants_eq_and_ne :
-    let posFour : RegularFormClass K := 4 • 1
-    let negFour : RegularFormClass K :=
-      4 • Quotient.mk (regularFormSetoid K) ⟨1, fun _ => (-1 : Kˣ)⟩
-    posFour.rank = 4 ∧ negFour.rank = 4 ∧
-      discr posFour = 0 ∧ discr negFour = 0 ∧
-      hasseInvariant posFour = 1 ∧ hasseInvariant negFour = 1 ∧
-      cliffordInvariant posFour = BrauerGroup.quaternionClass (-1 : Kˣ) (-1) ∧
-      cliffordInvariant negFour = BrauerGroup.quaternionClass (-1 : Kˣ) (-1) ∧
-      posFour ≠ negFour := by
-  obtain ⟨hr1, hr2, hd1, hd2, hs1, hs2, hne⟩ := four_nsmul_one_ne_four_nsmul_neg_one (K := K)
-  refine ⟨hr1, hr2, hd1, hd2, hs1, hs2, ?_, ?_, hne⟩
-  · rw [nsmul_one, cliffordInvariant_natCast,
-      (BrauerGroup.quaternionClass_neg_one_neg_one_pow_eq_self_iff (Nat.choose 5 4)).mpr
-        (by decide)]
-  · rw [cliffordInvariant_eq_hasseInvariant_mul, hs2, hd2, hr2,
-      BrauerGroup.quaternionClassOnSquareClasses_zero_right, one_pow, mul_one, one_mul,
-      (BrauerGroup.quaternionClass_neg_one_neg_one_pow_eq_self_iff (Nat.choose 5 4)).mpr
-        (by decide)]
-
-end Semireal
+In particular, `4 • 1 = ⟨1, 1, 1, 1⟩` (`a = 1`, via `mk_rankOne_one`) and
+`4 • ⟨-1⟩ = ⟨-1, -1, -1, -1⟩` (`a = -1`) share their Clifford invariant `[(-1, -1)]`; combined with
+`TauCeti.RegularFormClass.four_nsmul_one_ne_four_nsmul_neg_one`, this shows that over any semireal
+field, `(rank, discr, hasseInvariant, cliffordInvariant)` does not classify regular forms. -/
+theorem cliffordInvariant_four_nsmul_mk_rankOne (a : Kˣ) :
+    cliffordInvariant (4 • Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) =
+      BrauerGroup.quaternionClass (-1 : Kˣ) (-1) := by
+  have hsd : signedDiscr ((4 : ℕ) : RegularFormClass K) = 0 := by
+    rw [signedDiscr_natCast, ← squareClass_pow, squareClass_eq_zero_iff]
+    exact (by decide : Even (Nat.choose 4 2)).isSquare_pow _
+  rw [nsmul_eq_mul, mul_comm, cliffordInvariant_mk_rankOne_mul_of_signedDiscr_eq_zero a hsd,
+    cliffordInvariant_natCast, BrauerGroup.quaternionClass_pow,
+    ite_eq_right (by decide : ¬Even (Nat.choose 5 4))]
 
 end RegularFormClass
 

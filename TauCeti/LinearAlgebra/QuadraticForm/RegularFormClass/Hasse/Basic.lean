@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Descent
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Discriminant
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.TensorProduct
-import TauCeti.Algebra.BrauerGroup.Quaternion
+import Mathlib.Basic.Real.Basic
 
 /-!
 # The Hasse invariant of a regular quadratic form
@@ -362,8 +362,8 @@ theorem four_nsmul_one_ne_four_nsmul_neg_one :
   refine ⟨by rw [rank_nsmul, rank_one, mul_one], by rw [rank_nsmul, rank_mk, mul_one],
     by rw [discr_nsmul, discr_one, smul_zero], ?_,
     by rw [nsmul_one, hasseInvariant_natCast], ?_, ?_⟩
-  · rw [discr_nsmul, discr_mk, Fin.prod_univ_one, ← squareClass_pow]
-    exact (squareClass_eq_zero_iff _).mpr ⟨(-1 : Kˣ) ^ 2, by rw [← pow_add]⟩
+  · rw [discr_nsmul, discr_mk, Fin.prod_univ_one, ← squareClass_pow, squareClass_eq_zero_iff]
+    exact (by decide : Even 4).isSquare_pow _
   · rw [hasseInvariant_nsmul_mk_rankOne,
       (quaternionClass_neg_one_neg_one_pow_eq_one_iff (Nat.choose 4 2)).mpr (by decide)]
   · intro h
@@ -387,6 +387,6 @@ example : RegularFormClass.hasseInvariant
     RegularFormClass.hasseInvariant (Quotient.mk (regularFormSetoid ℝ) ⟨2, ![(1 : ℝˣ), 1]⟩) := by
   rw [RegularFormClass.hasseInvariant_mk_binary, RegularFormClass.hasseInvariant_mk_binary,
     BrauerGroup.quaternionClass_one_left]
-  simpa [BrauerGroup.quaternionClass_def] using Quaternion.mk_ne_one
+  exact BrauerGroup.quaternionClass_neg_one_neg_one_ne_one
 
 end TauCeti

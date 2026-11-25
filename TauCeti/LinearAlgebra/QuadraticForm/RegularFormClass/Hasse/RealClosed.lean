@@ -121,35 +121,4 @@ theorem hasseInvariant_formClass_realSignatureForm (p q : ℕ) :
   rw [QuadraticForm.hasseInvariant_formClass_eq_pow_choose_sigNeg, sigNeg_realSignatureForm,
     BrauerGroup.quaternionClass_neg_one_neg_one_real]
 
-/-- Over `ℝ`, the positive definite and negative definite four-dimensional normal forms have the
-same dimension `4`, trivial discriminant, and trivial Hasse invariant, yet are not isometric. -/
-example :
-    Module.finrank ℝ (Fin 4 ⊕ Fin 0 → ℝ) = Module.finrank ℝ (Fin 0 ⊕ Fin 4 → ℝ) ∧
-      RegularFormClass.discr (formClass (realSignatureForm 4 0)
-        (nondegenerate_realSignatureForm 4 0)) =
-        RegularFormClass.discr (formClass (realSignatureForm 0 4)
-          (nondegenerate_realSignatureForm 0 4)) ∧
-      RegularFormClass.hasseInvariant (formClass (realSignatureForm 4 0)
-        (nondegenerate_realSignatureForm 4 0)) = 1 ∧
-      RegularFormClass.hasseInvariant (formClass (realSignatureForm 0 4)
-        (nondegenerate_realSignatureForm 0 4)) = 1 ∧
-      ¬(realSignatureForm 4 0).Equivalent (realSignatureForm 0 4) := by
-  refine ⟨by simp, ?_, ?_, ?_, by simp⟩
-  · have h0 : RegularFormClass.discr (formClass (realSignatureForm 4 0)
-        (nondegenerate_realSignatureForm 4 0)) = 0 := by
-      rw [RegularFormClass.discr_eq_sigNeg_nsmul, sigNeg_formClass, sigNeg_realSignatureForm,
-        zero_nsmul]
-    have h4 : RegularFormClass.discr (formClass (realSignatureForm 0 4)
-        (nondegenerate_realSignatureForm 0 4)) = 0 := by
-      rw [RegularFormClass.discr_eq_sigNeg_nsmul, sigNeg_formClass, sigNeg_realSignatureForm,
-        ← squareClass_pow]
-      exact (squareClass_eq_zero_iff _).mpr ⟨(-1 : ℝˣ) ^ 2, by group⟩
-    rw [h0, h4]
-  · rw [QuadraticForm.hasseInvariant_formClass_eq_one_iff_even_choose_sigNeg,
-      sigNeg_realSignatureForm]
-    decide
-  · rw [QuadraticForm.hasseInvariant_formClass_eq_one_iff_even_choose_sigNeg,
-      sigNeg_realSignatureForm]
-    decide
-
 end TauCeti

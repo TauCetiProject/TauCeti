@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse.RealClosed
+public import TauCeti.Algebra.BrauerGroup.Quaternion
+public import TauCeti.LinearAlgebra.QuadraticForm.Real
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Clifford
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Signature
 import Mathlib.FieldTheory.IsRealClosed.Real
@@ -25,18 +26,15 @@ or regular quadratic form depends only on `σ mod 8`:
 On `⟨1, …, 1⟩` of rank `n` (`σ = n`), this generalizes the sum-of-squares computation in
 `TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Clifford.Real`, reproducing the Bott-periodic
 pattern `1, 1, [ℍ], [ℍ], [ℍ], [ℍ], 1, 1` for `n = 1, …, 8`, governed solely by the `C(n + 1, 4)`
-exponent of Lam's comparison (Lam V.3.20). On `⟨-1, -1, -1⟩` (`σ = -3`, `(-3) % 8 = 5`), `c = [ℍ]`
-while `s = [ℍ]` and both correction factors in Lam V.3.20 equal `[ℍ]`, confirming that the
-discriminant correction `[(-1, d)]^C(n - 1, 2)` cannot be omitted.
+exponent of Lam's comparison (Lam V.3.20).
 
 The formula also illustrates how additivity behaves over `ℝ` when only one summand lies in
 `I(ℝ)²`: `4 ∈ I(ℝ)²` and `3 ∉ I(ℝ)²` still satisfy `c(4 + 3) = 1 = [ℍ] · [ℍ]`. For the general
 semireal failure of additivity `c(2 + 1) ≠ c(2) · c(1)`, see
-`TauCeti.LinearAlgebra.QuadraticForm.Witt.Clifford`; for the general semireal non-classification
-witness `TauCeti.RegularFormClass.four_nsmul_one_invariants_eq_and_ne` showing that
-`⟨1, 1, 1, 1⟩` and `⟨-1, -1, -1, -1⟩` share all four invariants `(4, 0, 1, [(-1, -1)])` while
-remaining non-isometric, see
-`TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Clifford.Basic`.
+`TauCeti.LinearAlgebra.QuadraticForm.Witt.Clifford`; for why `(rank, discr, hasseInvariant,
+cliffordInvariant)` does not classify regular forms over any semireal field (`⟨1, 1, 1, 1⟩` vs.
+`⟨-1, -1, -1, -1⟩`), see `TauCeti.RegularFormClass.four_nsmul_one_ne_four_nsmul_neg_one` and
+`TauCeti.RegularFormClass.cliffordInvariant_four_nsmul_mk_rankOne`.
 
 ## Main results
 
@@ -172,7 +170,7 @@ namespace TauCeti
 
 open scoped _root_.Quaternion
 
-/-! ### Specialization to `ℝ` and worked examples -/
+/-! ### Specialization to `ℝ` and worked example -/
 
 /-- The Clifford invariant of the real normal form `p⟨1⟩ ⊥ q⟨-1⟩` is `[ℍ[ℝ]]` when
 `(p - q) % 8 ∈ {3, 4, 5, 6}` and `1` otherwise. -/
@@ -187,40 +185,6 @@ theorem cliffordInvariant_formClass_realSignatureForm (p q : ℕ) :
     sigNeg_realSignatureForm, BrauerGroup.quaternionClass_neg_one_neg_one_real]
 
 section Examples
-
-/-- **Eightfold Bott periodicity on positive definite forms `⟨1, …, 1⟩` over `ℝ`.** For
-`n = 1, …, 8`, the Clifford invariants of `n⟨1⟩` are `1, 1, [ℍ[ℝ]], [ℍ[ℝ]], [ℍ[ℝ]], [ℍ[ℝ]], 1, 1`,
-matching the Brauer classes of `ℝ`, `M₂(ℝ)`, `ℍ`, `M₂(ℍ)`, `M₂(ℍ)`, `M₄(ℍ)`, `M₈(ℝ)`, `M₁₆(ℝ)`. -/
-example :
-    let H := BrauerGroup.mk (CSA.of ℝ ℍ[ℝ])
-    [1, 2, 3, 4, 5, 6, 7, 8].map (fun n =>
-        RegularFormClass.cliffordInvariant
-          (formClass (realSignatureForm n 0) (nondegenerate_realSignatureForm n 0))) =
-      [1, 1, H, H, H, H, 1, 1] := by
-  simp [cliffordInvariant_formClass_realSignatureForm]
-
-/-- **The negative definite ternary form `⟨-1, -1, -1⟩` over `ℝ`.** Its Hasse invariant is
-`[ℍ[ℝ]]`, its discriminant correction `[(-1, d)]^C(n - 1, 2)` in Lam V.3.20 is also `[ℍ[ℝ]]`, and
-its Clifford invariant is `[ℍ[ℝ]]` (whereas omitting the discriminant correction would multiply
-`s = [ℍ[ℝ]]` by `[(-1, -1)]^C(4, 4) = [ℍ[ℝ]]` to give `1`). -/
-example :
-    let q := formClass (realSignatureForm 0 3) (nondegenerate_realSignatureForm 0 3)
-    let H := BrauerGroup.mk (CSA.of ℝ ℍ[ℝ])
-    RegularFormClass.hasseInvariant q = H ∧
-      BrauerGroup.quaternionClassOnSquareClasses (squareClass (-1 : ℝˣ))
-          (RegularFormClass.discr q) ^ (q.rank - 1).choose 2 = H ∧
-      RegularFormClass.cliffordInvariant q = H := by
-  dsimp only
-  refine ⟨?_, ?_, by simp⟩
-  · rw [hasseInvariant_formClass_realSignatureForm,
-      ← BrauerGroup.quaternionClass_neg_one_neg_one_real,
-      (BrauerGroup.quaternionClass_neg_one_neg_one_pow_eq_self_iff _).mpr (by decide)]
-  · rw [← RegularFormClass.sigPos_add_sigNeg_eq_rank, RegularFormClass.discr_eq_sigNeg_nsmul,
-      sigPos_formClass, sigNeg_formClass, sigPos_realSignatureForm, sigNeg_realSignatureForm,
-      BrauerGroup.quaternionClassOnSquareClasses_nsmul_right,
-      BrauerGroup.quaternionClassOnSquareClasses_squareClass, ← pow_mul,
-      ← BrauerGroup.quaternionClass_neg_one_neg_one_real]
-    exact (BrauerGroup.quaternionClass_neg_one_neg_one_pow_eq_self_iff _).mpr (by decide)
 
 /-- **Mixed-summand `I²` additivity over `ℝ`.** Only one summand needs to lie in `I(ℝ)²` for the
 Clifford invariant to be additive: `4 ∈ I(ℝ)²` while `3 ∉ I(ℝ)²`, and both have Clifford invariant
@@ -239,15 +203,13 @@ example :
     rw [hsig3]
     norm_num
   have h4 : WittRing.cliffordInvariant (4 : WittRing ℝ) = BrauerGroup.mk (CSA.of ℝ ℍ[ℝ]) := by
-    have h4z : (4 : WittRing ℝ) = ((4 : ℤ) : WittRing ℝ) := by norm_num
-    rw [h4z, WittRing.cliffordInvariant_eq_ite_signature, map_intCast]
+    rw [← BrauerGroup.quaternionClass_neg_one_neg_one_real,
+      WittRing.cliffordInvariant_eq_neg_one_neg_one_iff_signature, map_ofNat]
     norm_num
-    exact BrauerGroup.quaternionClass_neg_one_neg_one_real
   have h3 : WittRing.cliffordInvariant (3 : WittRing ℝ) = BrauerGroup.mk (CSA.of ℝ ℍ[ℝ]) := by
-    have h3z : (3 : WittRing ℝ) = ((3 : ℤ) : WittRing ℝ) := by norm_num
-    rw [h3z, WittRing.cliffordInvariant_eq_ite_signature, map_intCast]
+    rw [← BrauerGroup.quaternionClass_neg_one_neg_one_real,
+      WittRing.cliffordInvariant_eq_neg_one_neg_one_iff_signature, map_ofNat]
     norm_num
-    exact BrauerGroup.quaternionClass_neg_one_neg_one_real
   have h7 : WittRing.cliffordInvariant ((4 : WittRing ℝ) + 3) = 1 := by
     rw [WittRing.cliffordInvariant_add_of_mem_fundamentalIdeal_sq four_mem_fundamentalIdeal_sq,
       h4, h3, ← BrauerGroup.quaternionClass_neg_one_neg_one_real, ← pow_two,

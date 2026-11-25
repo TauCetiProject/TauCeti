@@ -190,8 +190,11 @@ theorem cliffordInvariant_two_add_one_ne :
   have h3 : ((2 : WittRing K) + 1) = ((3 : ℕ) : WittRing K) := by norm_num
   have h2 : (2 : WittRing K) = ((2 : ℕ) : WittRing K) := by norm_num
   have h1 : (1 : WittRing K) = ((1 : ℕ) : WittRing K) := by norm_num
-  rw [h3, cliffordInvariant_natCast, h2, cliffordInvariant_natCast, h1, cliffordInvariant_natCast]
-  norm_num
+  rw [h3, cliffordInvariant_natCast, h2, cliffordInvariant_natCast, h1, cliffordInvariant_natCast,
+    (BrauerGroup.quaternionClass_neg_one_neg_one_pow_eq_self_iff (Nat.choose 4 4)).mpr (by decide),
+    (BrauerGroup.quaternionClass_neg_one_neg_one_pow_eq_one_iff (Nat.choose 3 4)).mpr (by decide),
+    (BrauerGroup.quaternionClass_neg_one_neg_one_pow_eq_one_iff (Nat.choose 2 4)).mpr (by decide),
+    mul_one]
   exact BrauerGroup.quaternionClass_neg_one_neg_one_ne_one
 
 /-- The Clifford invariant is not a homomorphism from the additive group of `W(K)` to

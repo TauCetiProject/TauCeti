@@ -48,27 +48,27 @@ variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [Invertib
 
 /-- Over an ordered real closed field, a quaternion symbol with positive first parameter is
 trivial, because every positive element is a square. -/
-theorem quaternionClass_of_pos_left {a : Kˣ} (ha : 0 < (a : K)) (b : Kˣ) :
+theorem quaternionClass_eq_one_of_pos_left {a : Kˣ} (ha : 0 < (a : K)) (b : Kˣ) :
     quaternionClass a b = 1 := by
   obtain ⟨c, rfl⟩ := Units.isSquare_coe_iff.mp (IsSquare.of_nonneg ha.le)
   rw [← pow_two, quaternionClass_sq_left]
 
 /-- Over an ordered real closed field, a quaternion symbol with positive second parameter is
 trivial. -/
-theorem quaternionClass_of_pos_right (a : Kˣ) {b : Kˣ} (hb : 0 < (b : K)) :
+theorem quaternionClass_eq_one_of_pos_right (a : Kˣ) {b : Kˣ} (hb : 0 < (b : K)) :
     quaternionClass a b = 1 := by
-  rw [quaternionClass_comm, quaternionClass_of_pos_left hb]
+  rw [quaternionClass_comm, quaternionClass_eq_one_of_pos_left hb]
 
 /-- Over an ordered real closed field, a quaternion symbol whose parameters are both negative
 equals `[(-1, -1)]`. -/
-theorem quaternionClass_of_neg {a b : Kˣ} (ha : (a : K) < 0) (hb : (b : K) < 0) :
+theorem quaternionClass_eq_neg_one_neg_one_of_neg {a b : Kˣ} (ha : (a : K) < 0) (hb : (b : K) < 0) :
     quaternionClass a b = quaternionClass (-1 : Kˣ) (-1) := by
   have ha' : a = -a * (-1 : Kˣ) := by simp
   have hb' : b = -b * (-1 : Kˣ) := by simp
   rw [ha', quaternionClass_mul_left,
-    quaternionClass_of_pos_left (by simpa using neg_pos.mpr ha), one_mul,
+    quaternionClass_eq_one_of_pos_left (by simpa using neg_pos.mpr ha), one_mul,
     hb', quaternionClass_mul,
-    quaternionClass_of_pos_right _ (by simpa using neg_pos.mpr hb), one_mul]
+    quaternionClass_eq_one_of_pos_right _ (by simpa using neg_pos.mpr hb), one_mul]
 
 /-- **Closed formula for quaternion symbols over an ordered real closed field**: `[(a, b)]` is
 `[(-1, -1)]` when both parameters are negative and `1` otherwise. -/
@@ -76,12 +76,12 @@ theorem quaternionClass_eq_ite_neg (a b : Kˣ) :
     quaternionClass a b =
       if (a : K) < 0 ∧ (b : K) < 0 then quaternionClass (-1 : Kˣ) (-1) else 1 := by
   split_ifs with h
-  · exact quaternionClass_of_neg h.left h.right
+  · exact quaternionClass_eq_neg_one_neg_one_of_neg h.left h.right
   · rcases lt_or_gt_of_ne a.ne_zero with ha | ha
     · rcases lt_or_gt_of_ne b.ne_zero with hb | hb
       · exact absurd ⟨ha, hb⟩ h
-      · exact quaternionClass_of_pos_right a hb
-    · exact quaternionClass_of_pos_left ha b
+      · exact quaternionClass_eq_one_of_pos_right a hb
+    · exact quaternionClass_eq_one_of_pos_left ha b
 
 /-- Over an ordered real closed field, a quaternion symbol is trivial if and only if at least one
 of its parameters is positive. -/
