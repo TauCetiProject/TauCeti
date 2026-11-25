@@ -63,7 +63,7 @@ variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [Topolog
 
 /-- The preferred chart at `y`, read in `E'`, is differentiable at each point `p` of its source,
 its inverse is differentiable at the image of `p`, and the derivative of the inverse undoes the
-derivative of the chart there. -/
+derivative of the chart there. This is the extended chart `extChartAt I' y`, without boundary. -/
 private theorem mfderiv_chartAt_extendTrans (y : N) {p : N} (hp : p ∈ (chartAt H' y).source) :
     MDifferentiableAt I' 𝓘(ℝ, E') ((chartAt H' y).extendTrans I' (Homeomorph.refl E')) p ∧
       MDifferentiableAt 𝓘(ℝ, E') I' ((chartAt H' y).extendTrans I' (Homeomorph.refl E')).symm
@@ -72,14 +72,14 @@ private theorem mfderiv_chartAt_extendTrans (y : N) {p : N} (hp : p ∈ (chartAt
         (mfderiv 𝓘(ℝ, E') I' ((chartAt H' y).extendTrans I' (Homeomorph.refl E')).symm
           ((chartAt H' y).extendTrans I' (Homeomorph.refl E') p))
         (mfderiv I' 𝓘(ℝ, E') ((chartAt H' y).extendTrans I' (Homeomorph.refl E')) p) := by
-  have hm := IsManifold.chart_mem_maximalAtlas (I := I') (n := ∞) y
-  have hp' : p ∈ ((chartAt H' y).extendTrans I' (Homeomorph.refl E')).source := by
-    rwa [OpenPartialHomeomorph.extendTrans_source]
-  have h1 := (chartAt H' y).mdifferentiableAt_extendTrans hm (Ψ := .refl E') contDiff_id
-    (by simp) hp
-  have h2 := (chartAt H' y).mdifferentiableAt_extendTrans_symm hm (Ψ := .refl E') contDiff_id
-    (by simp) (OpenPartialHomeomorph.map_source _ hp')
-  exact ⟨h1, h2, OpenPartialHomeomorph.mfderiv_symm_apply_mfderiv_apply _ hp' h1 h2⟩
+  have hp' : p ∈ (extChartAt I' y).source := by rwa [extChartAt_source]
+  have h := mfderivWithin_extChartAt_symm_comp_mfderiv_extChartAt' hp'
+  rw [I'.range_eq_univ, mfderivWithin_univ] at h
+  rw [OpenPartialHomeomorph.coe_symm_extendTrans_refl, OpenPartialHomeomorph.coe_extendTrans_refl]
+  exact ⟨mdifferentiableAt_extChartAt hp,
+    (mdifferentiableWithinAt_extChartAt_symm ((extChartAt I' y).map_source hp')).mdifferentiableAt
+      (by simp [I'.range_eq_univ]),
+    fun v ↦ DFunLike.congr_fun h v⟩
 
 /-- On the target of the preferred chart at `y`, read in `E'`, the derivative of the chart undoes
 the derivative of its inverse. -/
@@ -89,13 +89,12 @@ private theorem mfderiv_chartAt_extendTrans_symm (y : N) {w : E'}
         (((chartAt H' y).extendTrans I' (Homeomorph.refl E')).symm w)
         (mfderiv 𝓘(ℝ, E') I' ((chartAt H' y).extendTrans I' (Homeomorph.refl E')).symm w v) =
       v := by
-  have hm := IsManifold.chart_mem_maximalAtlas (I := I') (n := ∞) y
-  have hy := OpenPartialHomeomorph.map_target _ hw
-  rw [OpenPartialHomeomorph.extendTrans_source] at hy
-  exact OpenPartialHomeomorph.mfderiv_apply_mfderiv_symm_apply _ hw
-    ((mfderiv_chartAt_extendTrans y hy).1)
-    ((chartAt H' y).mdifferentiableAt_extendTrans_symm hm (Ψ := .refl E') contDiff_id (by simp) hw)
-    v
+  have hw' : w ∈ (extChartAt I' y).target := by
+    simpa [extChartAt, OpenPartialHomeomorph.extend_target, I'.range_eq_univ] using hw
+  have h := mfderiv_extChartAt_comp_mfderivWithin_extChartAt_symm hw'
+  rw [I'.range_eq_univ, mfderivWithin_univ] at h
+  rw [OpenPartialHomeomorph.coe_symm_extendTrans_refl, OpenPartialHomeomorph.coe_extendTrans_refl]
+  exact DFunLike.congr_fun h v
 
 end Chart
 
