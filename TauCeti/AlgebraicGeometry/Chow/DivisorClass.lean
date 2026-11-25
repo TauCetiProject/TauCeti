@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.Chow.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.LocalDimension
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Principal
 import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
-import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
+import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
 
 /-!
 # The divisor class comparison: `Cl(X) ≃ CH_{n-1}(X)`

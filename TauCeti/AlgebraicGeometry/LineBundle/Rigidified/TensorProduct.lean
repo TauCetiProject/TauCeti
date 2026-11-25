@@ -193,8 +193,7 @@ lemma mk_tensorProduct_trivial_left (P : RigidifiedLineBundle s) :
   refine ⟨InvertibleSheaf.tensorProductObjIso _ _ ≪≫ λ_ P.lineBundle.obj, ?_⟩
   simp only [Iso.trans_hom, tensorIso_hom, Functor.mapIso_hom, asIso_hom, Functor.map_comp,
     Category.assoc, ← Scheme.Modules.pullback_η]
-  rw [δ_comp_η_tensorHom_assoc, ← leftUnitor_inv_naturality_assoc, Iso.inv_hom_id,
-    Category.comp_id]
+  rw [δ_comp_η_tensorHom_comp_leftUnitor_hom]
 
 /-- The tensor product of a rigidified line bundle with its dual is isomorphic to the canonically
 rigidified trivial line bundle. -/
@@ -322,8 +321,8 @@ private lemma pullbackRigidification_tensorProduct (w : s' ≫ h = g ≫ s)
           (Scheme.Modules.pullbackComp g s).inv.app Q.lineBundle.obj) ≫ k = k := by
     rw [tensorHom_comp_tensorHom_assoc, Iso.hom_inv_id_app, Iso.hom_inv_id_app,
       id_tensorHom_id, Category.id_comp]
-  rw [hc, δ_natural_assoc, ← Scheme.Modules.pullback_η, δ_comp_η_tensorHom_assoc,
-    leftUnitor_naturality, Iso.inv_hom_id_assoc]
+  rw [hc, δ_natural_assoc, ← Scheme.Modules.pullback_η,
+    δ_comp_η_tensorHom_comp_leftUnitor_hom]
   have h₁ := (Scheme.Modules.pullbackComp s' h).hom.naturality
     (InvertibleSheaf.tensorProductObjIso P.lineBundle Q.lineBundle).hom
   have h₂ := (Scheme.Modules.pullbackCongr w).hom.naturality

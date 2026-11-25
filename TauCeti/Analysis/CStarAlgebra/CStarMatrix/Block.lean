@@ -69,7 +69,7 @@ def fromBlocks (M₁₁ : CStarMatrix n l A) (M₁₂ : CStarMatrix n m A)
         (ofMatrix.symm M₂₁) (ofMatrix.symm M₂₂) := (rfl)
 
 /-- `ofMatrix` transports `Matrix.fromBlocks` to `CStarMatrix.fromBlocks`. -/
-@[simp] theorem of_fromBlocks (M₁₁ : Matrix n l A) (M₁₂ : Matrix n m A)
+theorem of_fromBlocks (M₁₁ : Matrix n l A) (M₁₂ : Matrix n m A)
     (M₂₁ : Matrix o l A) (M₂₂ : Matrix o m A) :
     ofMatrix (Matrix.fromBlocks M₁₁ M₁₂ M₂₁ M₂₂) =
       fromBlocks (ofMatrix M₁₁) (ofMatrix M₁₂) (ofMatrix M₂₁) (ofMatrix M₂₂) := (rfl)
