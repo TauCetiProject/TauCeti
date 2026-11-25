@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.SqrtNegFive.ClassNumber
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Rank
+import TauCeti.NumberTheory.QuadraticOrder.PrimeIdeal
 import TauCeti.RingTheory.PicardGroup.RankOne
 
 /-!
@@ -55,6 +56,7 @@ determine a projective class.
 
 ## Main results
 
+* `TauCeti.NumberField.SqrtNegFive.primeAboveTwo.isMaximal`: `𝔭` is a maximal ideal.
 * `TauCeti.NumberField.SqrtNegFive.primeAboveTwo.retraction_comp_inclusion`: `π ∘ ι = id`.
 * `TauCeti.NumberField.SqrtNegFive.primeAboveTwo.vecMulLinear_idempotent`,
   `TauCeti.NumberField.SqrtNegFive.primeAboveTwo.isIdempotentElem_idempotent`: `ι ∘ π` is right
@@ -131,6 +133,13 @@ theorem one_notMem : (1 : QuadraticAlgebra ℤ (-5) 0) ∉ primeAboveTwo := fun 
 
 theorem ne_bot : primeAboveTwo ≠ ⊥ :=
   ne_of_mem_of_not_mem' two_mem (by simp)
+
+/-- `𝔭 = (2, 1 + √-5) = (2, √-5 - 1)` is a maximal ideal. -/
+instance isMaximal : primeAboveTwo.IsMaximal := by
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  rw [eq_span_two_omega_sub_one]
+  simpa using isMaximal_span_natCast_omega_sub (p := 2) (a := -5) (b := 0) (r := 1)
+    (by norm_num)
 
 /-- `𝔭 (√-5 - 1) ⊆ (2)`. -/
 theorem two_dvd_mul_omega_sub_one {a : QuadraticAlgebra ℤ (-5) 0} (ha : a ∈ primeAboveTwo) :
