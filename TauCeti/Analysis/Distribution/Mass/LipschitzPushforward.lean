@@ -8,7 +8,9 @@ module
 public import TauCeti.Analysis.Distribution.CutoffPushforward
 public import TauCeti.Analysis.Distribution.Mass.Normal
 public import TauCeti.Analysis.Distribution.TestFunction.Homotopy
+import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import TauCeti.Analysis.Calculus.BumpFunction.SmoothApprox
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Distribution.Mass.Support
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
@@ -79,14 +81,10 @@ section Homotopy
 
 /-! ### The straight-line homotopy and its graph -/
 
-/-- The straight-line homotopy `(x, t) ↦ f x + t (g x - f x)` from `f` to `g`. -/
-private def lineHomotopy (f g : E → E') (p : E × ℝ) : E' :=
-  f p.1 + p.2 • (g p.1 - f p.1)
-
-/-- The graph `(x, t) ↦ (x, f x + t (g x - f x))` of the straight-line homotopy. Unlike the
-homotopy itself, it is proper on `Ω × [0, 1]` with values in `Ω × E'`. -/
+/-- The graph `(x, t) ↦ (x, AffineMap.lineMap (f x) (g x) t)` of the straight-line homotopy from
+`f` to `g`. Unlike the homotopy itself, it is proper on `Ω × [0, 1]` with values in `Ω × E'`. -/
 private def graphHomotopy (f g : E → E') (p : E × ℝ) : E × E' :=
-  (p.1, lineHomotopy f g p)
+  (p.1, AffineMap.lineMap (f p.1) (g p.1) p.2)
 
 /-- The open set `Ω × E'`, the target of the graph of the homotopy. -/
 private def graphDomain (Ω : Opens E) (E' : Type*) [TopologicalSpace E'] : Opens (E × E') :=
@@ -99,62 +97,20 @@ private theorem mem_graphDomain {p : E × E'} : p ∈ graphDomain Ω E' ↔ p.1 
 variable (hf : ContDiffOn ℝ (⊤ : ℕ∞) f Ω) (hg : ContDiffOn ℝ (⊤ : ℕ∞) g Ω)
 include hf hg
 
-private theorem contDiffAt_lineHomotopy {p : E × ℝ} (hp : p.1 ∈ Ω) :
-    ContDiffAt ℝ (⊤ : ℕ∞) (lineHomotopy f g) p := by
-  have hfp := (hf.contDiffAt (Ω.isOpen.mem_nhds hp)).comp p contDiffAt_fst
-  have hgp := (hg.contDiffAt (Ω.isOpen.mem_nhds hp)).comp p contDiffAt_fst
-  exact hfp.add (contDiffAt_snd.smul (hgp.sub hfp))
-
-private theorem hasFDerivAt_lineHomotopy {p : E × ℝ} (hp : p.1 ∈ Ω) :
-    HasFDerivAt (lineHomotopy f g)
-      ((fderiv ℝ f p.1).comp (.fst ℝ E ℝ) +
-        (p.2 • ((fderiv ℝ g p.1).comp (.fst ℝ E ℝ) - (fderiv ℝ f p.1).comp (.fst ℝ E ℝ)) +
-          (ContinuousLinearMap.snd ℝ E ℝ).smulRight (g p.1 - f p.1))) p := by
-  have hfp := ((hf.contDiffAt (Ω.isOpen.mem_nhds hp)).differentiableAt (by simp)).hasFDerivAt.comp
-    p hasFDerivAt_fst
-  have hgp := ((hg.contDiffAt (Ω.isOpen.mem_nhds hp)).differentiableAt (by simp)).hasFDerivAt.comp
-    p hasFDerivAt_fst
-  exact hfp.add (hasFDerivAt_snd.smul (hgp.sub hfp))
-
-/-- The time derivative of the straight-line homotopy is `g x - f x`. -/
-private theorem fderiv_lineHomotopy_apply_zero_one {p : E × ℝ} (hp : p.1 ∈ Ω) :
-    fderiv ℝ (lineHomotopy f g) p (0, 1) = g p.1 - f p.1 := by
-  rw [(hasFDerivAt_lineHomotopy hf hg hp).fderiv]
-  simp
-
-/-- At times `t ∈ [0, 1]`, the spatial derivative of the straight-line homotopy is the convex
-combination `(1 - t) Df + t Dg`, so it inherits a common bound on `Df` and `Dg`. -/
-private theorem norm_fderiv_lineHomotopy_comp_inl_le {p : E × ℝ} (hp : p.1 ∈ Ω)
-    (ht : p.2 ∈ Icc (0 : ℝ) 1) {L : ℝ} (hfL : ‖fderiv ℝ f p.1‖ ≤ L) (hgL : ‖fderiv ℝ g p.1‖ ≤ L) :
-    ‖(fderiv ℝ (lineHomotopy f g) p).comp (.inl ℝ E ℝ)‖ ≤ L := by
-  have heq : (fderiv ℝ (lineHomotopy f g) p).comp (.inl ℝ E ℝ) =
-      (1 - p.2) • fderiv ℝ f p.1 + p.2 • fderiv ℝ g p.1 := by
-    rw [(hasFDerivAt_lineHomotopy hf hg hp).fderiv]
-    ext v
-    simp only [ContinuousLinearMap.comp_apply, _root_.add_apply,
-      _root_.smul_apply, _root_.sub_apply, ContinuousLinearMap.inl_apply,
-      ContinuousLinearMap.coe_fst', ContinuousLinearMap.smulRight_apply,
-      ContinuousLinearMap.coe_snd', zero_smul, add_zero]
-    module
-  rw [heq]
-  calc ‖(1 - p.2) • fderiv ℝ f p.1 + p.2 • fderiv ℝ g p.1‖
-      ≤ (1 - p.2) * ‖fderiv ℝ f p.1‖ + p.2 * ‖fderiv ℝ g p.1‖ := by
-        refine (norm_add_le _ _).trans ?_
-        rw [norm_smul, norm_smul, Real.norm_of_nonneg (sub_nonneg.2 ht.2),
-          Real.norm_of_nonneg ht.1]
-    _ ≤ (1 - p.2) * L + p.2 * L := by
-        gcongr
-        exacts [sub_nonneg.2 ht.2, ht.1]
-    _ = L := by ring
+private theorem contDiffAt_lineMap {p : E × ℝ} (hp : p.1 ∈ Ω) :
+    ContDiffAt ℝ (⊤ : ℕ∞) (fun p : E × ℝ ↦ AffineMap.lineMap (f p.1) (g p.1) p.2) p :=
+  ContDiffAt.lineMap ((hf.contDiffAt (Ω.isOpen.mem_nhds hp)).comp p contDiffAt_fst)
+    ((hg.contDiffAt (Ω.isOpen.mem_nhds hp)).comp p contDiffAt_fst) contDiffAt_snd
 
 private theorem contDiffAt_graphHomotopy {p : E × ℝ} (hp : p.1 ∈ Ω) :
     ContDiffAt ℝ (⊤ : ℕ∞) (graphHomotopy f g) p :=
-  contDiffAt_fst.prodMk (contDiffAt_lineHomotopy hf hg hp)
+  contDiffAt_fst.prodMk (contDiffAt_lineMap hf hg hp)
 
 private theorem fderiv_graphHomotopy {p : E × ℝ} (hp : p.1 ∈ Ω) :
     fderiv ℝ (graphHomotopy f g) p =
-      (ContinuousLinearMap.fst ℝ E ℝ).prod (fderiv ℝ (lineHomotopy f g) p) :=
-  (hasFDerivAt_fst.prodMk ((contDiffAt_lineHomotopy hf hg hp).differentiableAt
+      (ContinuousLinearMap.fst ℝ E ℝ).prod
+        (fderiv ℝ (fun p : E × ℝ ↦ AffineMap.lineMap (f p.1) (g p.1) p.2) p) :=
+  (hasFDerivAt_fst.prodMk ((contDiffAt_lineMap hf hg hp).differentiableAt
     (by simp)).hasFDerivAt).fderiv
 
 /-- The graph of the straight-line homotopy is proper from `Ω × [0, 1]` to `Ω × E'`. -/
@@ -211,7 +167,7 @@ private theorem norm_homotopyPullbackCLM_cutoffPullbackCLM_snd_le
   rw [cutoffPullbackCLM_snd_compContinuousLinearMap, fderiv_graphHomotopy hf hg hp,
     ContinuousLinearMap.snd_comp_prod]
   -- Pull the scalar cutoff out of the contraction.
-  set A := fderiv ℝ (lineHomotopy f g) (x, t)
+  set A := fderiv ℝ (fun p : E × ℝ ↦ AffineMap.lineMap (f p.1) (g p.1) p.2) (x, t)
   set c := ψ (graphHomotopy f g (x, t))
   set α := η (graphHomotopy f g (x, t)).2
   have hc : ((c • α.compContinuousLinearMap A).curryLeft (0, 1)).compContinuousLinearMap
@@ -225,13 +181,15 @@ private theorem norm_homotopyPullbackCLM_cutoffPullbackCLM_snd_le
       α A (0, 1) (.inl ℝ E ℝ)
   rw [hc, norm_smul, Real.norm_eq_abs]
   refine (mul_le_mul_of_nonneg_left hcon (abs_nonneg _)).trans ?_
-  rw [fderiv_lineHomotopy_apply_zero_one hf hg hp]
+  have hfx := (hf.contDiffAt (Ω.isOpen.mem_nhds hx)).differentiableAt (by simp)
+  have hgx := (hg.contDiffAt (Ω.isOpen.mem_nhds hx)).differentiableAt (by simp)
+  rw [TauCeti.fderiv_lineMap_apply_zero_one hfx hgx]
   have hε0 : 0 ≤ ε := (norm_nonneg _).trans hε
   have hψ1 : |c| ≤ 1 := abs_le.2 ⟨by linarith [(hψ (graphHomotopy f g (x, t))).1], (hψ _).2⟩
   have hη : ‖α‖ ≤ ‖(η : E' →ᵇ E' [⋀^Fin (m + 1)]→L[ℝ] F)‖ :=
     BoundedContinuousFunction.norm_coe_le_norm (η : E' →ᵇ E' [⋀^Fin (m + 1)]→L[ℝ] F) _
   have hA : ‖A.comp (.inl ℝ E ℝ)‖ ≤ L :=
-    norm_fderiv_lineHomotopy_comp_inl_le hf hg hp (Ioc_subset_Icc_self ht) hfL hgL
+    TauCeti.norm_fderiv_lineMap_comp_inl_le hfx hgx (Ioc_subset_Icc_self ht) hfL hgL
   calc |c| * (‖α‖ * ‖g x - f x‖ * ‖A.comp (.inl ℝ E ℝ)‖ ^ m)
       ≤ 1 * (‖(η : E' →ᵇ E' [⋀^Fin (m + 1)]→L[ℝ] F)‖ * ε * L ^ m) := by gcongr
     _ = _ := one_mul _
@@ -240,7 +198,7 @@ omit hf hg [CompleteSpace F] in
 /-- On a slice `x ↦ (x, φ x)` of the graph of the homotopy, the pullback of the cut-off pullback
 of `η` along the projection to `E'` is the cut-off pullback of `η` along `φ`. -/
 private theorem pullbackCLM_graphHomotopy_cutoffPullbackCLM_snd_apply {t : ℝ} {φ : E → E'}
-    (hφ : ContDiffOn ℝ (⊤ : ℕ∞) φ Ω) (hgraph : ∀ x, lineHomotopy f g (x, t) = φ x)
+    (hφ : ContDiffOn ℝ (⊤ : ℕ∞) φ Ω) (hgraph : ∀ x, AffineMap.lineMap (f x) (g x) t = φ x)
     {ht : ContDiffOn ℝ (⊤ : ℕ∞) (fun x ↦ graphHomotopy f g (x, t)) Ω}
     {htp : ∀ K : Set (E × E'), IsCompact K → K ⊆ graphDomain Ω E' →
       IsCompact ((Ω : Set E) ∩ (fun x ↦ graphHomotopy f g (x, t)) ⁻¹' K)}
@@ -290,7 +248,7 @@ private theorem map_pullbackCLM_graphHomotopy_eq (T : 𝓓(Ω, E [⋀^Fin m]→L
     (hψ : ∀ x ∈ dsupport T, ∀ t ∈ Icc (0 : ℝ) 1,
       ∀ᶠ y in 𝓝 (graphHomotopy f g (x, t)), ψ y = 1)
     {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) {φ : E → E'} (hφ : ContDiffOn ℝ (⊤ : ℕ∞) φ Ω)
-    (hgraph : ∀ x, lineHomotopy f g (x, t) = φ x)
+    (hgraph : ∀ x, AffineMap.lineMap (f x) (g x) t = φ x)
     {h₁ : ContDiffOn ℝ (⊤ : ℕ∞) (fun x ↦ graphHomotopy f g (x, t)) Ω}
     {h₂ : ∀ K : Set (E × E'), IsCompact K → K ⊆ graphDomain Ω E' →
       IsCompact ((Ω : Set E) ∩ (fun x ↦ graphHomotopy f g (x, t)) ⁻¹' K)}
@@ -363,9 +321,9 @@ private theorem exists_cutoff_map_pullbackCLM_graphHomotopy_sub_eq
   obtain ⟨ψ, hψ01, hψ⟩ := exists_cutoff_graphHomotopy hf hg hKc hKΩ
   refine ⟨ψ, hψ01, hψ, fun ω _ _ _ _ ↦ ?_⟩
   rw [map_pullbackCLM_graphHomotopy_eq hf hg T hχ hψ ⟨zero_le_one, le_rfl⟩ hg
-      (fun x ↦ by simp [lineHomotopy]),
+      (fun x ↦ by simp),
     map_pullbackCLM_graphHomotopy_eq hf hg T hχ hψ ⟨le_rfl, zero_le_one⟩ hf
-      (fun x ↦ by simp [lineHomotopy])]
+      (fun x ↦ by simp)]
 
 omit hf hg
 

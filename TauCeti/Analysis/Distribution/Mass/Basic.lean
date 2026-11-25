@@ -561,11 +561,8 @@ theorem exists_tendsto_of_mass_le [CompleteSpace V] (S : ℕ → 𝓓^{n}(Ω, F)
     {C : ℝ≥0∞} (hC : C ≠ ⊤) (hS : ∀ j, mass (S j) ≤ C) (h : ∀ φ, CauchySeq fun j => S j φ) :
     ∃ S' : 𝓓^{n}(Ω, F) →L[ℝ] V, mass S' ≤ C ∧ ∀ φ, Tendsto (fun j => S j φ) atTop (𝓝 (S' φ)) := by
   have hs (φ : 𝓓^{n}(Ω, F)) := (h φ).tendsto_limUnder
-  let L : 𝓓^{n}(Ω, F) →ₗ[ℝ] V :=
-    { toFun := fun φ => limUnder atTop fun j => S j φ
-      map_add' := fun φ ψ => tendsto_nhds_unique (hs (φ + ψ)) (by simpa using (hs φ).add (hs ψ))
-      map_smul' := fun c φ => tendsto_nhds_unique (hs (c • φ)) (by
-        simpa using (hs φ).const_smul c) }
+  let L : 𝓓^{n}(Ω, F) →ₗ[ℝ] V := linearMapOfTendsto (fun φ => limUnder atTop fun j => S j φ)
+    (fun j => (S j).toLinearMap) (tendsto_pi_nhds.2 hs)
   have hL : mass L ≤ C :=
     (mass_le_liminf (f := L) hs).trans (liminf_le_of_frequently_le' (Frequently.of_forall hS))
   exact ⟨⟨L, (hasLocallyFiniteMass_of_mass_ne_top L (ne_top_of_le_ne_top hC hL)).continuous⟩,
