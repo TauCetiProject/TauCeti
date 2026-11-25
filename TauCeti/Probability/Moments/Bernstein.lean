@@ -8,10 +8,10 @@ module
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Independence.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+import Mathlib.Probability.Moments.Variance
 import TauCeti.Analysis.SpecialFunctions.Exp.QuadraticBound
 import TauCeti.MeasureTheory.Measure.Tail
 import TauCeti.Probability.Moments.Basic
-import TauCeti.Probability.Moments.Variance
 
 /-!
 # Bernstein's inequality
@@ -209,15 +209,10 @@ theorem measureReal_abs_sum_sub_sum_integral_ge_le_of_nonneg_of_le {ι : Type*} 
     simpa using
       integral_mono_ae ((hLp i hi).integrable one_le_two) (integrable_const (b : ℝ)) (hb i hi)
   have hvar i (hi : i ∈ s) : ∫ ω, (X i ω - m i) ^ 2 ∂μ ≤ b * m i := by
-    have hsq : ∫ ω, X i ω ^ 2 ∂μ ≤ b * m i := by
-      rw [← integral_const_mul]
-      refine integral_mono_ae (hLp i hi).integrable_sq
-        (((hLp i hi).integrable one_le_two).const_mul b) ?_
-      filter_upwards [h0 i hi, hb i hi] with ω h₀ h₂
-      nlinarith [mul_le_mul_of_nonneg_left h₂ h₀]
-    have heq := (hLp i hi).integral_norm_sub_integral_sq
-    simp only [Real.norm_eq_abs, sq_abs] at heq
-    exact heq.le.trans ((sub_le_self _ (sq_nonneg _)).trans hsq)
+    have hIcc : ∀ᵐ ω ∂μ, X i ω ∈ Set.Icc 0 (b : ℝ) := (h0 i hi).and (hb i hi)
+    have h := variance_le_sub_mul_sub hIcc (hX i hi)
+    rw [variance_eq_integral (hX i hi), sub_zero] at h
+    exact h.trans (mul_le_mul_of_nonneg_right (sub_le_self _ (hm0 i hi)) (hm0 i hi))
   have hcent : iIndepFun (fun i ω ↦ X i ω - m i) μ :=
     hind.comp (fun i z ↦ z - m i) (fun _ ↦ by fun_prop)
   have h := hcent.measureReal_abs_sum_ge_le_of_abs_le (s := s) (b := b)
