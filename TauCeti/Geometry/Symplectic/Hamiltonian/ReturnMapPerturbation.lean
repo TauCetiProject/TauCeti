@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.RadialTwist
 public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Topology.Algebra.Module.Cardinality
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo.Nondegenerate
 import TauCeti.Dynamics.PeriodicPts.LocalPerturbation
 
@@ -212,11 +213,8 @@ theorem exists_hamiltonianFlow_forall_det_one_sub_pow_ne_zero_of_finite {ι : Ty
   obtain ⟨C, hC⟩ := exists_hamiltonianFlow_eventuallyEq_rotation hr fun i j hij ↦ by
     simpa using horb j i 0 (hk i) (Or.inr hij)
   -- Angles at most `δ / 2` make the displacement and derivative bounds smaller than `ε`.
-  obtain ⟨δ, hδ0, hδ⟩ := Metric.eventually_nhds_iff.1
-    ((ContinuousAt.eventually_lt (f := fun D : ℝ ↦ C * D * r) (g := fun _ ↦ ε) (x₀ := 0)
-      (by fun_prop) continuousAt_const (by simpa using hε)).and
-    (ContinuousAt.eventually_lt (f := fun D : ℝ ↦ Real.exp (C * D) - 1) (g := fun _ ↦ ε)
-      (x₀ := 0) (by fun_prop) continuousAt_const (by simpa using hε)))
+  obtain ⟨δ, hδ0, hδ⟩ :=
+    Metric.eventually_nhds_iff.1 (Real.eventually_mul_lt_and_exp_mul_sub_one_lt (C * r) C hε)
   obtain ⟨hδr, hδe⟩ := hδ (show dist (δ / 2) 0 < δ by
     rw [dist_zero_right, Real.norm_of_nonneg (by positivity)]
     linarith)
@@ -237,7 +235,8 @@ theorem exists_hamiltonianFlow_forall_det_one_sub_pow_ne_zero_of_finite {ι : Ty
   -- `ψ` is the identity near the points of the orbits other than the `p i`.
   have hidorb (i : ι) (j : ℕ) (hj : 0 < j) (hjk : j < k i) : ψ =ᶠ[𝓝 (φ^[j] (p i))] id :=
     hid _ fun l ↦ horb l i j hjk (Or.inl hj)
-  refine ⟨hψp, fun w hw ↦ (hid w hw).eq_of_nhds, fun w ↦ (hdisp w).trans hδr.le,
+  refine ⟨hψp, fun w hw ↦ (hid w hw).eq_of_nhds,
+    fun w ↦ (hdisp w).trans ((mul_right_comm C _ r).trans_le hδr.le),
     fun w ↦ (hderiv w).trans hδe.le, fun i ↦ ⟨?_, _,
     (hA i).iterate_comp_of_eventuallyEq_id (hψ' i) (hk i) (hψp i) (hφ i) (hidorb i),
     fun n hn h ↦ hθ i ⟨n, hn, ?_⟩⟩⟩

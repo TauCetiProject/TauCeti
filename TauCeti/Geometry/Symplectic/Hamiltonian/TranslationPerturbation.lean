@@ -11,6 +11,7 @@ public import TauCeti.Dynamics.PeriodicPts.FixedPointIndex
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Calculus.Sard.EqualDimension
+import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 import TauCeti.Dynamics.PeriodicPts.LocalPerturbation
 import Mathlib.Topology.MetricSpace.Thickening
 
@@ -52,12 +53,11 @@ This is meant as the transversality step for making all periodic points of an ar
 surface map of period at most a cutoff nondegenerate. The orbit condition holds near a point of
 least period `k` once `W` is a small enough ball. The perturbations are arbitrarily small in
 `C¹`, not only in `C⁰`, so they can be combined with the stability of nondegeneracy under small
-`C¹` perturbations (`IsCompact.exists_pos_forall_mem_Icc_isNondegenerateFixedPt_iterate`):
-finitely many such steps make the points of period `k` away from the points of smaller period
-nondegenerate, and the localized twists of
-`TauCeti.Geometry.Symplectic.Hamiltonian.ReturnMapPerturbation` then make the resulting finitely
-many orbits nondegenerate in all iterates. That induction over the periods is not carried out
-here.
+`C¹` perturbations (`IsCompact.exists_pos_forall_mem_Icc_isNondegenerateFixedPt_iterate`). An
+induction over the periods would then use finitely many such steps to make the points of period
+`k` away from the points of smaller period nondegenerate, and the localized twists of
+`TauCeti.Geometry.Symplectic.Hamiltonian.ReturnMapPerturbation` to make the resulting finitely
+many orbits nondegenerate in all iterates.
 
 The perturbation also counts degenerate periodic points. If the points of period `k` of `φ` in an
 open set `U ⊆ W` form a compact set, possibly degenerate, then near that set the perturbed map has
@@ -268,11 +268,8 @@ theorem exists_hamiltonianFlow_isNondegenerateFixedPt_iterate {φ : V → V} {k 
   borelize V
   -- Translations by vectors of norm below `η` make the displacement and derivative bounds
   -- smaller than `ε`.
-  obtain ⟨η, hη, hηε⟩ := Metric.eventually_nhds_iff.1
-    ((ContinuousAt.eventually_lt (f := fun x : ℝ ↦ C * x) (g := fun _ ↦ ε) (x₀ := 0)
-      (by fun_prop) continuousAt_const (by simpa using hε)).and
-    (ContinuousAt.eventually_lt (f := fun x : ℝ ↦ Real.exp (C * x) - 1) (g := fun _ ↦ ε)
-      (x₀ := 0) (by fun_prop) continuousAt_const (by simpa using hε)))
+  obtain ⟨η, hη, hηε⟩ :=
+    Metric.eventually_nhds_iff.1 (Real.eventually_mul_lt_and_exp_mul_sub_one_lt C C hε)
   have hr : 0 < min (min δ ρ) η := by positivity
   obtain ⟨c, hcS, hc⟩ := (dense_setOf_forall_surjective_fderiv
     (fun y hy ↦ (hg y hy).differentiableAt) rfl).exists_mem_open isOpen_ball ⟨0, mem_ball_self hr⟩
