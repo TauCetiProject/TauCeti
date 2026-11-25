@@ -407,11 +407,6 @@ theorem isPoint_map_truncate_iff_exists_unit_mul_pow (hN : N < h)
   · rintro ⟨u, hu⟩
     exact IsPoint.map_truncate_of_det_eq_unit_mul_pow (u := u) hu
 
-omit [Fintype ι] [DecidableEq ι] [CharP R p] [PerfectRing R p] in
-private theorem map_out_map_truncate (A : Matrix ι ι (TruncatedWittVector p h R)) :
-    (A.map TruncatedWittVector.out).map (WittVector.truncate h) = A :=
-  Matrix.ext fun _ _ ↦ TruncatedWittVector.truncateFun_out _
-
 /-- Zero-padding each matrix entry gives a full lift of a determinant jet with determinant
 `p ^ N` times a unit. -/
 theorem exists_det_map_out_eq_unit_mul_pow {hN : N < h}
@@ -419,7 +414,7 @@ theorem exists_det_map_out_eq_unit_mul_pow {hN : N < h}
     ∃ u : (WittVector p R)ˣ,
       (A.map TruncatedWittVector.out).det = ↑u * (p : WittVector p R) ^ N := by
   apply (isPoint_map_truncate_iff_exists_unit_mul_pow hN _).mp
-  rwa [map_out_map_truncate]
+  rwa [Matrix.map_wittVector_truncate_map_out]
 
 /-- On a perfect base the determinant equations are equivalent to a unit times `p ^ N`
 in the truncated Witt ring itself. -/
@@ -431,8 +426,9 @@ theorem isPoint_iff_exists_unit_mul_pow (hN : N < h) (A : Matrix ι ι (Truncate
     obtain ⟨u, hu⟩ := exists_det_map_out_eq_unit_mul_pow hA
     let trunc : WittVector p R →+* TruncatedWittVector p h R := WittVector.truncate h
     refine ⟨Units.map trunc u, ?_⟩
-    simpa only [RingHom.map_det, RingHom.mapMatrix_apply, trunc, map_out_map_truncate,
-      map_mul, map_pow, map_natCast, Units.coe_map, MonoidHom.coe_ofClass] using
+    simpa only [RingHom.map_det, RingHom.mapMatrix_apply, trunc,
+      Matrix.map_wittVector_truncate_map_out, map_mul, map_pow, map_natCast,
+      Units.coe_map, MonoidHom.coe_ofClass] using
       congrArg trunc hu
   · rintro ⟨u, hu⟩
     exact IsPoint.of_det_eq_unit_mul_pow (u := u) hu
