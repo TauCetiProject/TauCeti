@@ -36,6 +36,8 @@ compared in the proof of Poincaré duality.
 * `TopCat.compactSupportCohomologyExtend_id` and `TopCat.compactSupportCohomologyExtend_comp`:
   functoriality, with `TopCat.singularCohomologyComplCompactsMapIso_hom_comp` and
   `TopCat.singularCohomologyComplCompactsMapIso_inv_comp` for the excision isomorphisms.
+* `TopCat.compactSupportCohomologyIsoOfHomeomorph`: a homeomorphism `U ≃ₜ X` induces an
+  isomorphism `Hⁿ_c(U) ≅ Hⁿ_c(X)`.
 * `TopCat.exists_compactSupportCohomologyExtend_eq` and
   `TopCat.compactSupportCohomologyι_eq_zero_of_restrict_eq_zero`: a class of `Hⁿ(X, X ∖ K)` with
   `K` inside the image of `f` is extended from `Hⁿ_c(U)`, and a class of `Hⁿ(U, U ∖ K)` vanishes in
@@ -376,6 +378,22 @@ lemma isIso_compactSupportCohomologyExtend [T2Space U] {f : U ⟶ X} [IsIso f]
       compactSupportCohomologyExtend_congr (IsIso.inv_hom_id f) _
         (by simpa using IsOpenEmbedding.id),
       compactSupportCohomologyExtend_id]
+
+variable (R k M) in
+/-- **Cohomology with compact supports is invariant under homeomorphisms**: a homeomorphism
+`e : U ≃ₜ X` induces an isomorphism `Hⁿ_c(U) ≅ Hⁿ_c(X)`, the extension along `e`. -/
+def compactSupportCohomologyIsoOfHomeomorph [T2Space U] (e : U ≃ₜ X) (n : ℕ) :
+    U.compactSupportCohomology R k M n ≅ X.compactSupportCohomology R k M n :=
+  have := isIso_compactSupportCohomologyExtend (R := R) (k := k) (M := M)
+    (f := (isoOfHomeo e).hom) e.isOpenEmbedding n
+  asIso (compactSupportCohomologyExtend (f := (isoOfHomeo e).hom) e.isOpenEmbedding n)
+
+/-- The isomorphism induced by a homeomorphism is the extension along it. -/
+@[simp]
+lemma compactSupportCohomologyIsoOfHomeomorph_hom [T2Space U] (e : U ≃ₜ X) (n : ℕ) :
+    (compactSupportCohomologyIsoOfHomeomorph R k M e n).hom =
+      compactSupportCohomologyExtend (f := (isoOfHomeo e).hom) e.isOpenEmbedding n :=
+  (rfl)
 
 variable (R k M) in
 /-- The class in `Hⁿ_c(U)` of a class of `Hⁿ(X, X ∖ S)` restricted along `f`, extended back along

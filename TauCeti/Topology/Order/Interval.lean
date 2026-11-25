@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Group.Defs
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 public import Mathlib.Topology.Order.IntermediateValue
 import Mathlib.Topology.Algebra.Order.Group
@@ -20,6 +21,8 @@ The frontier of a closed or half-open interval avoids every set that misses both
 In `ℝ`, an interval with endpoints near a point lies in the ball about that point, and the
 interval from a point of an order-connected set to a nearby point of that set stays in the ball
 about the first point.
+Two points of an order-connected set lie in a closed interval inside the set that is a
+neighbourhood of the second point within the set.
 Each point of the open interval between two endpoints that avoids a closed set is interior to a
 closed subinterval whose interior avoids that set.
 A nonempty compact subset of an open interval lies in the interior of a smaller closed interval.
@@ -40,6 +43,9 @@ A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` 
 
 ## Main results
 
+* `ContinuousOn.piecewise_Iic` — paste continuous maps across a closed cut on any set.
+* `ContinuousOn.piecewise_Iic_Icc` — the adjacent-interval version, with a conditional join.
+
 * `TauCeti.uIcc_mem_nhds_of_ne` — `uIcc a b` is a neighbourhood of each of its points other than
   `a` and `b`.
 * `TauCeti.disjoint_frontier_Icc`, `TauCeti.disjoint_frontier_Ioc` — the frontier of `[a, b]` or
@@ -48,6 +54,8 @@ A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` 
   contained in `ball x ε`.
 * `Set.OrdConnected.uIcc_subset_ball_inter` — in `ℝ`, the interval between a point `x` of an
   order-connected set `s` and a point of `ball x ε ∩ s` lies in `ball x ε ∩ s`.
+* `Set.OrdConnected.exists_Icc_mem_nhdsWithin` — for points `a` and `b` of an order-connected
+  set `I`, a closed interval in `I` contains both and is a neighbourhood of `b` within `I`.
 * `TauCeti.continuousOn_Ici_of_forall_Icc` — continuity on `Ici a` from continuity on `Icc a b`
   for every `b ≥ a`.
 * `TauCeti.exists_Icc_subset_uIcc_disjoint` — a point of the open interval between `a` and `b`
@@ -58,6 +66,8 @@ A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` 
   itself a neighbourhood of `t₀` within `[u, v]`.
 * `TauCeti.tendsto_sub_nhdsGT_nhdsWithin_Icc` — the curve `δ ↦ b - δ` tends to `b` within `[a, b]`
   as `δ → 0⁺`.
+* `TauCeti.continuous_neg_Ioo` — negation maps the symmetric open interval `(-a, a)` continuously
+  to itself.
 * `IsCompact.exists_Icc_between` — a nonempty compact subset of `Ioo a b` lies in the interior of
   a closed interval contained in `Ioo a b`.
 * `IsOpen.exists_Ioo_subset_of_uIcc_subset` — an open set containing `[[a, b]]` contains an open
@@ -88,6 +98,36 @@ A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` 
 public section
 
 open Filter Set Topology
+
+/-- Paste two continuous maps across a closed cut. Agreement at the cut is needed only when
+that point belongs to the set on which continuity is asserted. -/
+theorem ContinuousOn.piecewise_Iic {α X : Type*} [LinearOrder α] [TopologicalSpace α]
+    [OrderClosedTopology α] [TopologicalSpace X] {s : Set α} {b : α} {l₁ l₂ : α → X}
+    [∀ t, Decidable (t ∈ Iic b)] (h₁ : ContinuousOn l₁ (s ∩ Iic b))
+    (h₂ : ContinuousOn l₂ (s ∩ Ici b)) (hjoin : b ∈ s → l₁ b = l₂ b) :
+    ContinuousOn ((Iic b).piecewise l₁ l₂) s := by
+  have hclosure : closure (Iic b)ᶜ ⊆ Ici b := by
+    rw [compl_Iic]
+    exact closure_minimal Ioi_subset_Ici_self isClosed_Ici
+  apply ContinuousOn.piecewise
+  · intro t ht
+    have : t = b := frontier_Iic_subset b ht.2
+    subst t
+    exact hjoin ht.1
+  · exact h₁.mono fun _ ht ↦ ⟨ht.1, isClosed_Iic.closure_subset ht.2⟩
+  · exact h₂.mono fun _ ht ↦ ⟨ht.1, hclosure ht.2⟩
+
+/-- Two maps continuous on adjacent closed intervals have a continuous pasting on the combined
+interval. They need agree at the cut only when it lies in that combined interval; no ordering
+of the three endpoints or separation assumption on the codomain is required. -/
+theorem ContinuousOn.piecewise_Iic_Icc {α X : Type*} [LinearOrder α] [TopologicalSpace α]
+    [OrderClosedTopology α] [TopologicalSpace X] {a b d : α} {l₁ l₂ : α → X}
+    [∀ t, Decidable (t ∈ Iic b)] (h₁ : ContinuousOn l₁ (Icc a b))
+    (h₂ : ContinuousOn l₂ (Icc b d)) (hjoin : b ∈ Icc a d → l₁ b = l₂ b) :
+    ContinuousOn ((Iic b).piecewise l₁ l₂) (Icc a d) :=
+  ContinuousOn.piecewise_Iic (s := Icc a d)
+    (h₁.mono fun _ ht ↦ ⟨ht.1.1, ht.2⟩)
+    (h₂.mono fun _ ht ↦ ⟨ht.2, ht.1.2⟩) hjoin
 
 namespace TauCeti
 
@@ -146,6 +186,35 @@ theorem _root_.Set.OrdConnected.uIcc_subset_ball_inter {s : Set ℝ} (hs : s.Ord
     rw [Real.ball_eq_Ioo]
     exact ordConnected_Ioo
   exact (hball.inter hs).uIcc_subset ⟨Metric.mem_ball_self (Metric.pos_of_mem_ball hy.1), hx⟩ hy
+
+/-- For points `a` and `b` of an order-connected set `I`, some closed interval contained in `I`
+contains `a` and `b` and is a neighbourhood of `b` within `I`. -/
+theorem _root_.Set.OrdConnected.exists_Icc_mem_nhdsWithin {α : Type*} [LinearOrder α]
+    [TopologicalSpace α] [OrderClosedTopology α] {I : Set α} (hI : I.OrdConnected) {a b : α}
+    (ha : a ∈ I) (hb : b ∈ I) :
+    ∃ c d, Icc c d ⊆ I ∧ a ∈ Icc c d ∧ b ∈ Icc c d ∧ Icc c d ∈ 𝓝[I] b := by
+  obtain ⟨c, hcI, hc, hbc⟩ : ∃ c ∈ I, c ≤ min a b ∧ (c < b ∨ ∀ y ∈ I, c ≤ y) := by
+    by_cases h : ∃ c ∈ I, c < min a b
+    · obtain ⟨c, hcI, hc⟩ := h
+      exact ⟨c, hcI, hc.le, Or.inl (hc.trans_le (min_le_right _ _))⟩
+    · exact ⟨_, min_rec' (· ∈ I) ha hb, le_rfl, Or.inr fun y hy ↦ not_lt.mp fun h' ↦ h ⟨y, hy, h'⟩⟩
+  obtain ⟨d, hdI, hd, hbd⟩ : ∃ d ∈ I, max a b ≤ d ∧ (b < d ∨ ∀ y ∈ I, y ≤ d) := by
+    by_cases h : ∃ d ∈ I, max a b < d
+    · obtain ⟨d, hdI, hd⟩ := h
+      exact ⟨d, hdI, hd.le, Or.inl ((le_max_right _ _).trans_lt hd)⟩
+    · exact ⟨_, max_rec' (· ∈ I) ha hb, le_rfl, Or.inr fun y hy ↦ not_lt.mp fun h' ↦ h ⟨y, hy, h'⟩⟩
+  have hleft : ∀ᶠ y in 𝓝 b, y ∈ I → c ≤ y := by
+    rcases hbc with hbc | hbc
+    · exact (eventually_gt_nhds hbc).mono fun y hy _ ↦ hy.le
+    · exact Eventually.of_forall hbc
+  have hright : ∀ᶠ y in 𝓝 b, y ∈ I → y ≤ d := by
+    rcases hbd with hbd | hbd
+    · exact (eventually_lt_nhds hbd).mono fun y hy _ ↦ hy.le
+    · exact Eventually.of_forall hbd
+  exact ⟨c, d, hI.out hcI hdI, ⟨hc.trans (min_le_left _ _), (le_max_left _ _).trans hd⟩,
+    ⟨hc.trans (min_le_right _ _), (le_max_right _ _).trans hd⟩,
+    mem_nhdsWithin_iff_eventually.mpr
+      ((hleft.and hright).mono fun y hy hyI ↦ ⟨hy.1 hyI, hy.2 hyI⟩)⟩
 
 /-- A function into a topological space that is continuous on `[a, b]` for every `b ≥ a` is
 continuous on `[a, ∞)`. -/
@@ -349,6 +418,13 @@ theorem tendsto_sub_nhdsGT_nhdsWithin_Icc {G : Type*} [AddCommGroup G] [LinearOr
       nhdsWithin_le_nhds
   · filter_upwards [Ioo_mem_nhdsGT (sub_pos.2 hab)] with δ hδ
     exact ⟨le_sub_comm.1 hδ.2.le, sub_le_self _ hδ.1.le⟩
+
+/-- Negation `v ↦ -v` maps the symmetric open interval `(-a, a)` continuously to itself. -/
+theorem continuous_neg_Ioo {G : Type*} [AddCommGroup G] [PartialOrder G] [IsOrderedAddMonoid G]
+    [TopologicalSpace G] [ContinuousNeg G] (a : G) :
+    Continuous fun v : Ioo (-a) a ↦
+      (⟨-v, neg_lt_neg v.property.2, neg_lt.1 v.property.1⟩ : Ioo (-a) a) :=
+  continuous_subtypeVal.neg.subtype_mk _
 
 /-- A continuous function on `[a, b]` that is injective on `[a, b)` takes different values at the
 two endpoints. -/

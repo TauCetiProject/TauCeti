@@ -281,7 +281,8 @@ theorem degree_toBasedLoop_eq_sum {ι : Type*} [Fintype ι] {z₀ : ℂ} {r : �
   have hGsub := HomologicalOrientation.radialExtension_preimage_zero_subset hr hh hne
   rw [← o.localDegree_radialExtension hr hh hne hu,
     o.localDegree_eq_sum o finrank_real_complex finrank_real_complex G
-      (HomologicalOrientation.isCompact_radialExtension_preimage_zero hr hh hne) (U := D) hdisj
+      (HomologicalOrientation.isCompact_radialExtension_preimage_zero hr hh hne) (U := D)
+      (fun i k hik ↦ (hdisj hik).mono inter_subset_right inter_subset_right)
       fun w hw ↦ ?_]
   · refine Finset.sum_congr rfl fun i _ ↦
       o.localDegree_comap_ball_eq_degree_toBasedLoop (hρ i) rfl (hh.mono (hsub i)) (hne' i)

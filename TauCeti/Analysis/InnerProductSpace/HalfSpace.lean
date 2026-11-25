@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.Normed.Affine.Isometry
 
@@ -17,20 +16,16 @@ closed half-spaces are convex (`TauCeti.convex_of_halfSpace`, `TauCeti.convex_se
 The ball of radius `r` about a unit vector `x` lies in the half-space `{z | 1 - r ≤ ⟪x, z⟫}`, and
 more generally a closed ball `closedBall w r` lies in `{y | ⟪y, ν⟫ < c}` whenever
 `⟪w, ν⟫ + r * ‖ν‖ < c` (`TauCeti.closedBall_subset_setOf_inner_lt`) and in `{y | c < ⟪y, ν⟫}`
-whenever `c + r * ‖ν‖ < ⟪w, ν⟫` (`TauCeti.closedBall_subset_setOf_lt_inner`); an open ball
-`ball w r` lies in `{y | c < ⟪y, ν⟫}` already when `c + r * ‖ν‖ ≤ ⟪w, ν⟫`
-(`TauCeti.ball_subset_setOf_lt_inner`).
-For `x` in the closed half-space `{z | c ≤ ⟪z, ν⟫}`, the open ball of radius `ρ` about
-`x + (ρ / ‖ν‖) ν` lies in the open half-space `{z | c < ⟪z, ν⟫}`
-(`TauCeti.ball_add_smul_subset_setOf_lt_inner`).
-The projection `z - (⟪z, ν⟫ / ‖ν‖²) ν` lands in the boundary hyperplane `{z | ⟪z, ν⟫ = 0}` and
-does not increase norms, and neither does the projection `(⟪z, ν⟫ / ‖ν‖²) ν` onto the line
-`ℝ ∙ ν`. The foot `x - ((⟪x, ν⟫ - c) / ‖ν‖²) ν` of the perpendicular from `x` lies on the
-hyperplane `{y | ⟪y, ν⟫ = c}`, at distance `|⟪x, ν⟫ - c| / ‖ν‖` from `x`
-(`TauCeti.exists_inner_eq_and_dist_eq`), and every point of that
-hyperplane lies at distance at least `(⟪x, ν⟫ - c) / ‖ν‖` from `x`. Relative to an
-orthonormal basis `(eᵢ)`, a bilinear form splits into a part along `ν` and a part along the
-projected basis vectors `eᵢ - (⟪eᵢ, ν⟫ / ‖ν‖²) ν`. In rigid coordinates
+whenever `c + r * ‖ν‖ < ⟪w, ν⟫` (`TauCeti.closedBall_subset_setOf_lt_inner`); for `ν ≠ 0`, an
+open ball `ball w r` lies in `{y | c < ⟪y, ν⟫}` already when `c + r * ‖ν‖ ≤ ⟪w, ν⟫`
+(`TauCeti.ball_subset_setOf_lt_inner`). For `ν ≠ 0` and `x` in the closed half-space
+`{z | c ≤ ⟪z, ν⟫}`, the open ball of radius `ρ` about `x + (ρ / ‖ν‖) ν` lies in the open
+half-space `{z | c < ⟪z, ν⟫}` (`TauCeti.ball_add_smul_subset_setOf_lt_inner`). For `ν ≠ 0`, the
+foot `x - ((⟪x, ν⟫ - c) / ‖ν‖²) ν` of the perpendicular from `x` lies on the hyperplane
+`{y | ⟪y, ν⟫ = c}`, at distance `|⟪x, ν⟫ - c| / ‖ν‖` from `x`
+(`TauCeti.exists_inner_eq_and_dist_eq`), and every point of that hyperplane lies at distance at
+least `(⟪x, ν⟫ - c) / ‖ν‖` from `x`. Moving by `c ν` along a unit normal `ν` raises the height
+`⟪·, ν⟫` by `c` (`TauCeti.real_inner_add_smul_self_of_norm_eq_one`). In rigid coordinates
 `e : F ≃ᵃⁱ ℝ × E`, the normal coordinate `(e x).fst` is `⟪x, ν⟫` plus a constant, so the region
 where it is positive is a half-space.
 -/
@@ -46,16 +41,15 @@ itself. -/
 theorem mapsTo_add_smul_of_halfSpace {E : Type*} [SeminormedAddCommGroup E]
     [InnerProductSpace ℝ E] {s : Set E} {ν τ : E} {c : ℝ}
     (hΩ : ∀ x, x ∈ s ↔ c < ⟪x, ν⟫_ℝ) (hτ : ⟪τ, ν⟫_ℝ = 0) (t : ℝ) :
-    Set.MapsTo (· + t • τ) s s := fun x hx => by
-  have hx' := (hΩ x).1 hx
-  exact (hΩ _).2 (by simpa [inner_add_left, real_inner_smul_left, hτ] using hx')
+    Set.MapsTo (· + t • τ) s s := fun x hx =>
+  (hΩ _).2 (by simpa [inner_add_left, real_inner_smul_left, hτ] using (hΩ x).1 hx)
 
 /-- The half-space `{x | c < ⟪x, ν⟫}` is convex. -/
 theorem convex_of_halfSpace {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
     {s : Set E} {ν : E} {c : ℝ} (hΩ : ∀ x, x ∈ s ↔ c < ⟪x, ν⟫_ℝ) : Convex ℝ s := by
-  have h : s = {x | c < innerSL ℝ ν x} := Set.ext fun x => by simp [hΩ x, real_inner_comm]
-  rw [h]
-  exact convex_halfSpace_gt (innerSL ℝ ν).toLinearMap.isLinear c
+  obtain rfl : s = {x | c < ⟪x, ν⟫_ℝ} := Set.ext hΩ
+  simpa only [LinearMap.flip_apply, innerₗ_apply_apply] using
+    convex_halfSpace_gt ((innerₗ E).flip ν).isLinear c
 
 /-- The closed half-space `{x | c ≤ ⟪x, ν⟫}` is convex. -/
 theorem convex_setOf_le_inner {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
@@ -73,27 +67,21 @@ theorem one_sub_norm_sub_le_inner {E : Type*} [SeminormedAddCommGroup E] [InnerP
 `⟪w, ν⟫ + r * ‖ν‖ < c`. -/
 theorem closedBall_subset_setOf_inner_lt {E : Type*} [SeminormedAddCommGroup E]
     [InnerProductSpace ℝ E] {w ν : E} {r c : ℝ} (h : ⟪w, ν⟫_ℝ + r * ‖ν‖ < c) :
-    Metric.closedBall w r ⊆ {y | ⟪y, ν⟫_ℝ < c} := by
-  intro y hy
-  have hyw : ‖y - w‖ ≤ r := by rwa [Metric.mem_closedBall, dist_eq_norm] at hy
-  have hcs : ⟪y - w, ν⟫_ℝ ≤ r * ‖ν‖ :=
-    (real_inner_le_norm (y - w) ν).trans (mul_le_mul_of_nonneg_right hyw (norm_nonneg ν))
-  have hsplit : ⟪y, ν⟫_ℝ = ⟪w, ν⟫_ℝ + ⟪y - w, ν⟫_ℝ := by
-    rw [← inner_add_left, add_sub_cancel]
+    Metric.closedBall w r ⊆ {y | ⟪y, ν⟫_ℝ < c} := fun y hy => by
+  have hyw := (real_inner_le_norm (y - w) ν).trans
+    (mul_le_mul_of_nonneg_right (mem_closedBall_iff_norm.1 hy) (norm_nonneg ν))
+  rw [inner_sub_left] at hyw
   exact Set.mem_ofPred.2 (by linarith)
 
 /-- A closed ball `Metric.closedBall w r` lies in the open half-space `{y | c < ⟪y, ν⟫}` whenever
 `c + r * ‖ν‖ < ⟪w, ν⟫`. -/
 theorem closedBall_subset_setOf_lt_inner {E : Type*} [SeminormedAddCommGroup E]
     [InnerProductSpace ℝ E] {w ν : E} {r c : ℝ} (h : c + r * ‖ν‖ < ⟪w, ν⟫_ℝ) :
-    Metric.closedBall w r ⊆ {y | c < ⟪y, ν⟫_ℝ} := by
+    Metric.closedBall w r ⊆ {y | c < ⟪y, ν⟫_ℝ} := fun y hy => by
   have h' : ⟪w, -ν⟫_ℝ + r * ‖-ν‖ < -c := by
     rw [inner_neg_right, norm_neg]
     linarith
-  intro y hy
-  have hy' := closedBall_subset_setOf_inner_lt h' hy
-  rw [Set.mem_ofPred_eq, inner_neg_right, neg_lt_neg_iff] at hy'
-  exact hy'
+  simpa [inner_neg_right] using closedBall_subset_setOf_inner_lt h' hy
 
 /-- An open ball `Metric.ball w r` lies in the open half-space `{y | c < ⟪y, ν⟫}` whenever
 `ν ≠ 0` and `c + r * ‖ν‖ ≤ ⟪w, ν⟫`. -/
@@ -119,35 +107,6 @@ theorem ball_add_smul_subset_setOf_lt_inner {E : Type*} [NormedAddCommGroup E]
     rw [inner_add_left, real_inner_smul_left, real_inner_self_eq_norm_sq, h]
     linarith)
 
-/-- The projection `z - (⟪z, ν⟫ / ‖ν‖²) ν` onto the hyperplane orthogonal to `ν` is orthogonal
-to `ν`. It is the explicit form of `z - (ℝ ∙ ν).starProjection z`, by
-`Submodule.starProjection_singleton`. -/
-theorem real_inner_sub_div_norm_sq_smul_self_eq_zero {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] (z ν : E) : ⟪z - (⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) • ν, ν⟫_ℝ = 0 := by
-  rcases eq_or_ne ν 0 with rfl | hν
-  · simp
-  rw [inner_sub_left, real_inner_smul_left, real_inner_self_eq_norm_sq,
-    div_mul_cancel₀ _ (pow_pos (norm_pos_iff.2 hν) 2).ne', sub_self]
-
-/-- The projection `z - (⟪z, ν⟫ / ‖ν‖²) ν` onto the hyperplane orthogonal to `ν` does not increase
-norms. -/
-theorem norm_sub_div_norm_sq_smul_self_le {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] (z ν : E) : ‖z - (⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) • ν‖ ≤ ‖z‖ := by
-  have h := Submodule.starProjection_singleton ℝ (v := ν) z
-  simp only [RCLike.ofReal_real_eq_id, id_eq] at h
-  rw [real_inner_comm, ← h, ← Submodule.starProjection_orthogonal_val]
-  exact Submodule.norm_starProjection_apply_le _ z
-
-/-- The projection `(⟪z, ν⟫ / ‖ν‖²) ν` of `z` onto the line spanned by `ν` does not increase
-norms. It is the explicit form of `(ℝ ∙ ν).starProjection z`, by
-`Submodule.starProjection_singleton`. -/
-theorem norm_inner_div_norm_sq_smul_self_le {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] (z ν : E) : ‖(⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) • ν‖ ≤ ‖z‖ := by
-  have h := Submodule.starProjection_singleton ℝ (v := ν) z
-  simp only [RCLike.ofReal_real_eq_id, id_eq] at h
-  rw [real_inner_comm, ← h]
-  exact Submodule.norm_starProjection_apply_le _ z
-
 /-- The vector `(t / ‖ν‖²) ν` has norm `|t| / ‖ν‖`. -/
 theorem norm_div_norm_sq_smul_self {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     (t : ℝ) (ν : E) : ‖(t / ‖ν‖ ^ 2) • ν‖ = |t| / ‖ν‖ := by
@@ -163,6 +122,13 @@ theorem real_inner_sub_div_norm_sq_smul_self_eq {E : Type*} [NormedAddCommGroup 
     ⟪x - ((⟪x, ν⟫_ℝ - c) / ‖ν‖ ^ 2) • ν, ν⟫_ℝ = c := by
   rw [inner_sub_left, real_inner_smul_left, real_inner_self_eq_norm_sq,
     div_mul_cancel₀ _ (pow_pos (norm_pos_iff.2 hν) 2).ne', sub_sub_cancel]
+
+/-- For a unit vector `ν`, the height `⟪·, ν⟫` of `y + c ν` is that of `y` plus `c`. -/
+theorem real_inner_add_smul_self_of_norm_eq_one {E : Type*} [SeminormedAddCommGroup E]
+    [InnerProductSpace ℝ E] {ν : E} (hν : ‖ν‖ = 1) (y : E) (c : ℝ) :
+    ⟪y + c • ν, ν⟫_ℝ = ⟪y, ν⟫_ℝ + c := by
+  rw [inner_add_left, real_inner_smul_left, real_inner_self_eq_norm_sq, hν]
+  ring
 
 /-- Every point `w` of the hyperplane `{y | ⟪y, ν⟫ = c}` lies at distance at least
 `(⟪x, ν⟫ - c) / ‖ν‖` from `x`. -/
@@ -183,60 +149,6 @@ theorem exists_inner_eq_and_dist_eq {E : Type*} [NormedAddCommGroup E] [InnerPro
     rw [dist_eq_norm, sub_sub_cancel, norm_div_norm_sq_smul_self]⟩
 
 end TauCeti
-
-namespace OrthonormalBasis
-
-open scoped InnerProductSpace
-
-/-- Splitting a bilinear form along `ν` and the hyperplane orthogonal to it: for an orthonormal
-basis `(eᵢ)`,
-`B(g, w) = ⟪g, ν⟫ ∑ⱼ B(ν', eⱼ) ⟪w, eⱼ⟫ + ∑ᵢ ∑ⱼ ⟪g, P eᵢ⟫ B(eᵢ, eⱼ) ⟪w, eⱼ⟫`, where
-`ν' = ν / ‖ν‖²` and `P z = z - (⟪z, ν⟫ / ‖ν‖²) ν`. -/
-theorem bilin_eq_inner_mul_sum_add_sum_sum {ι E : Type*} [Fintype ι] [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] (b : OrthonormalBasis ι ℝ E) (B : E →L[ℝ] E →L[ℝ] ℝ)
-    (ν g w : E) :
-    B g w = ⟪g, ν⟫_ℝ * ∑ j, B ((‖ν‖ ^ 2)⁻¹ • ν) (b j) * ⟪w, b j⟫_ℝ +
-      ∑ i, ∑ j, ⟪g, b i - (⟪b i, ν⟫_ℝ / ‖ν‖ ^ 2) • ν⟫_ℝ * (B (b i) (b j) * ⟪w, b j⟫_ℝ) := by
-  have hw : ∀ p, B p w = ∑ j, B p (b j) * ⟪w, b j⟫_ℝ := fun p => by
-    conv_lhs => rw [← b.sum_repr' w]
-    simp only [map_sum, map_smul, smul_eq_mul, real_inner_comm, mul_comm]
-  have hν : ∑ i, (⟪b i, ν⟫_ℝ / ‖ν‖ ^ 2 * ⟪g, ν⟫_ℝ) • b i = (⟪g, ν⟫_ℝ / ‖ν‖ ^ 2) • ν := by
-    have h := congrArg (fun z => (⟪g, ν⟫_ℝ / ‖ν‖ ^ 2) • z) (b.sum_repr' ν)
-    simp only [Finset.smul_sum, smul_smul] at h
-    rw [← h]
-    exact Finset.sum_congr rfl fun i _ => by congr 1; ring
-  have hg : ⟪g, ν⟫_ℝ • (‖ν‖ ^ 2)⁻¹ • ν +
-      ∑ i, ⟪g, b i - (⟪b i, ν⟫_ℝ / ‖ν‖ ^ 2) • ν⟫_ℝ • b i = g := by
-    have hsum : ∑ i, ⟪g, b i⟫_ℝ • b i = g := by
-      simpa only [real_inner_comm] using b.sum_repr' g
-    simp only [inner_sub_right, real_inner_smul_right, sub_smul, Finset.sum_sub_distrib, hν]
-    rw [hsum, smul_smul, div_eq_mul_inv]
-    abel
-  conv_lhs => rw [← hg]
-  simp [hw, Finset.mul_sum, mul_assoc]
-
-/-- **The normal part of a bilinear form.** For an orthonormal basis `(eᵢ)`, subtracting the
-tangential parts `∑ⱼ B(ν', eⱼ) ⟪g, P eⱼ⟫` from `∑ⱼ B(ν', eⱼ) ⟪g, eⱼ⟫` leaves `B(ν', ν') ⟪g, ν⟫`,
-where `ν' = ν / ‖ν‖²` and `P z = z - (⟪z, ν⟫ / ‖ν‖²) ν`. -/
-theorem sum_smul_inner_sub_sum_smul_inner_proj {ι E : Type*} [Fintype ι] [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] (b : OrthonormalBasis ι ℝ E) (B : E →L[ℝ] E →L[ℝ] ℝ) (ν g : E) :
-    (∑ j, B ((‖ν‖ ^ 2)⁻¹ • ν) (b j) • ⟪g, b j⟫_ℝ) -
-      ∑ j, B ((‖ν‖ ^ 2)⁻¹ • ν) (b j) • ⟪g, b j - (⟪b j, ν⟫_ℝ / ‖ν‖ ^ 2) • ν⟫_ℝ =
-      B ((‖ν‖ ^ 2)⁻¹ • ν) ((‖ν‖ ^ 2)⁻¹ • ν) * ⟪g, ν⟫_ℝ := by
-  set ν' : E := (‖ν‖ ^ 2)⁻¹ • ν
-  have hν'sum : ∑ j, (⟪b j, ν⟫_ℝ / ‖ν‖ ^ 2) • b j = ν' := by
-    simp only [ν', div_eq_inv_mul, ← smul_smul, ← Finset.smul_sum, b.sum_repr']
-  have hν' : ∑ j, B ν' (b j) * (⟪b j, ν⟫_ℝ / ‖ν‖ ^ 2) = B ν' ν' := by
-    calc ∑ j, B ν' (b j) * (⟪b j, ν⟫_ℝ / ‖ν‖ ^ 2)
-        = B ν' (∑ j, (⟪b j, ν⟫_ℝ / ‖ν‖ ^ 2) • b j) := by
-          simp only [map_sum, map_smul, smul_eq_mul, mul_comm]
-      _ = B ν' ν' := by rw [hν'sum]
-  simp only [inner_sub_right, real_inner_smul_right, smul_eq_mul, mul_sub, Finset.sum_sub_distrib]
-  rw [← hν', Finset.sum_mul]
-  simp only [sub_sub_cancel]
-  exact Finset.sum_congr rfl fun j _ => by ring
-
-end OrthonormalBasis
 
 namespace AffineIsometryEquiv
 

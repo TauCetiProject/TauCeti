@@ -111,6 +111,8 @@ zero only at `0`.
 * `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
   `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
 * `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
+* `TauCeti.exists_pos_le_mul_and_mul_lt_mul_inv`: choosing a uniform cutoff constant `c > 0`
+  yielding both `δ ≤ cutoff` and `M * L < weight * δ⁻¹` from `δ ≤ c / L`.
 * `TauCeti.ciSup_le_two_mul_of_le_add_mul`: the same absorption for the supremum of a bounded
   nonnegative family `Φ` with `Φ i ≤ X + c * Φ (f i)` and `c ≤ 1 / 2`.
 * `TauCeti.div_one_add_nonneg`, `TauCeti.div_one_add_lt_one`, `TauCeti.div_one_add_le_one`,
@@ -445,6 +447,27 @@ theorem nonneg_of_le_div_pow {α : Type*} [Field α] [LinearOrder α] [IsStrictO
 theorem pos_of_mem_Ioo_neg_one_div {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
     {s t : K} (ht : t ∈ Set.Ioo (-1 / s) (1 / s)) : 0 < s :=
   one_div_pos.1 (neg_lt_self_iff.1 (by simpa only [neg_div] using ht.1.trans ht.2))
+
+/-- Given positive `cutoff`, threshold `L₀`, `weight`, and `M`, there is `c > 0` with
+`c ≤ cutoff * L₀` such that whenever `0 < δ`, `L₀ ≤ L`, and `δ ≤ c / L`, we have both
+`δ ≤ cutoff` and `M * L < weight * δ⁻¹`. -/
+theorem exists_pos_le_mul_and_mul_lt_mul_inv {α : Type*} [Semifield α] [LinearOrder α]
+    [IsStrictOrderedRing α] {cutoff L₀ weight M : α}
+    (hcutoff : 0 < cutoff) (hL₀ : 0 < L₀) (hweight : 0 < weight) (hM : 0 < M) :
+    ∃ c : α, 0 < c ∧ c ≤ cutoff * L₀ ∧
+      ∀ {δ L : α}, 0 < δ → L₀ ≤ L → δ ≤ c / L →
+        δ ≤ cutoff ∧ M * L < weight * δ⁻¹ := by
+  refine ⟨min (cutoff * L₀) (weight / (2 * M)), by positivity, min_le_left _ _,
+    fun {δ L} hδ hL hδc ↦ ?_⟩
+  have hLpos : 0 < L := hL₀.trans_le hL
+  refine ⟨hδc.trans (div_le_of_le_mul₀ hLpos.le hcutoff.le
+    ((min_le_left _ _).trans (mul_le_mul_of_nonneg_left hL hcutoff.le))), ?_⟩
+  rw [lt_mul_inv_iff₀ hδ]
+  calc M * L * δ ≤ M * L * (weight / (2 * M) / L) := by
+        gcongr
+        exact hδc.trans (div_le_div_of_nonneg_right (min_le_right _ _) hLpos.le)
+    _ = weight / 2 := by field_simp
+    _ < weight := half_lt_self hweight
 
 /-- For `0 ≤ t`, the bounded-metric gauge `t / (1 + t)` is nonnegative. -/
 theorem div_one_add_nonneg {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
