@@ -79,4 +79,4 @@ example {L : Language} {V : Type*} :
     TopologicalSpace.IsTopologicalBasis
       (Set.range fun p : Finset (Atom L V) × (Atom L V → Bool) =>
         (SymbolicDynamics.FullShift.cylinder p.1 p.2 : Set (RelationalConfiguration L V))) :=
-  SymbolicDynamics.FullShift.isTopologicalBasis_cylinder
+  SymbolicDynamics.FullShift.isTopologicalBasis_cylinders

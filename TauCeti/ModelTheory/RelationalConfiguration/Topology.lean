@@ -23,7 +23,7 @@ not import: it is clopen by `SymbolicDynamics.FullShift.isOpen_cylinder` and
 `SymbolicDynamics.FullShift.isClosed_cylinder` in `Mathlib.Dynamics.SymbolicDynamics.Basic`,
 measurable by `SymbolicDynamics.FullShift.measurableSet_cylinder` in
 `TauCeti.MeasureTheory.Constructions.Cylinder.FullShift`, and these cylinders form a basis of the
-topology by `SymbolicDynamics.FullShift.isTopologicalBasis_cylinder` in
+topology by `SymbolicDynamics.FullShift.isTopologicalBasis_cylinders` in
 `TauCeti.Dynamics.SymbolicDynamics.Basic`. On countable carriers in countable relational
 vocabularies the topology is Polish and its Borel σ-algebra is the existing product σ-algebra.
 The same construction handles finite and empty carriers.
