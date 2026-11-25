@@ -139,6 +139,10 @@ apply to all three ends.
   `TauCeti.Floer.sq_positiveEndChartScale_eq_sq_add_sq`: the derivative of the positive end chart
   at `ζ` is a rotation followed by multiplication by the conformal scale `2π |φ'_q(ζ) - c_q|`,
   whose square is the Jacobian.
+* `TauCeti.Floer.fderiv_positiveEndChart_add_fst`, `TauCeti.Floer.positiveEndChartScale_add_fst`,
+  `TauCeti.Floer.positiveEndChartScale_inv_smul_fderiv_positiveEndChart_eq_of_snd_eq`: translating
+  `ζ` by `L` along the end multiplies both `dφ'_q(ζ)` and the conformal scale by `e^{-2π (±L)}`, so
+  the rotation `r⁻¹ dφ'_q(ζ)` depends only on `t`.
 * `TauCeti.Floer.subset_preimage_truncation_union_iUnion_image_positiveEndChart`: `S` is covered
   by the truncation `S_T` and the images of the bands `(T, ∞) × [0, 1)` under the three positive
   end charts.
@@ -1082,10 +1086,11 @@ theorem fderiv_positiveEndChart_add_fst (q : Puncture) (ζ : ℝ × ℝ) (L : �
     fderiv ℝ (positiveEndChart q) (ζ + (L, 0)) =
       Real.exp (-(2 * π * (q.endSign * L))) • fderiv ℝ (positiveEndChart q) ζ := by
   refine ContinuousLinearMap.ext fun v ↦ ?_
-  rw [smul_apply, fderiv_positiveEndChart_apply,
-    fderiv_positiveEndChart_apply, fderiv_endChart_apply, fderiv_endChart_apply,
-    equivRealProdCLM_symm_endSign_smul_add_fst, q.deriv_cylindricalEndLift_add_endSign_mul,
-    mul_assoc, ← Complex.real_smul, map_smul, smul_comm]
+  rw [smul_apply, fderiv_positiveEndChart_apply, fderiv_positiveEndChart_apply,
+    fderiv_endChart_apply, fderiv_endChart_apply, equivRealProdCLM_symm_endSign_smul_add_fst,
+    q.deriv_cylindricalEndLift_add_endSign_mul]
+  simp only [← Complex.real_smul, smul_mul_assoc, map_smul]
+  module
 
 /-- Translating the positive end chart of `q` by `L` along the end multiplies its conformal scale
 by `e^{-2π (±L)}`, with the sign `±` of the end. -/
@@ -1096,8 +1101,8 @@ theorem positiveEndChartScale_add_fst (q : Puncture) (ζ : ℝ × ℝ) (L : ℝ)
     positiveEndChart_apply, endChart_apply, endChart_apply,
     ContinuousLinearEquiv.symm_apply_apply, ContinuousLinearEquiv.symm_apply_apply,
     equivRealProdCLM_symm_endSign_smul_add_fst, q.cylindricalEndLift_add_endSign_mul,
-    q.endShift_apply, add_sub_cancel_left, norm_mul, Complex.norm_real, Real.norm_eq_abs,
-    abs_of_pos (Real.exp_pos _)]
+    q.endShift_apply]
+  simp [Complex.norm_exp]
   ring
 
 /-- **The rotation of the positive end chart depends only on the angular coordinate.** The

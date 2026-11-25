@@ -56,7 +56,8 @@ to a parametrix of `D_u` spliced from inverses of its end models.
   (`TauCeti.Floer.endModelRotation_eq_of_snd_eq`), and so does the end model
   (`TauCeti.Floer.endModelCoeff_eq_of_snd_eq`).
 * **Invertibility.** Since `a² + b² = r²` and `J_t² = -1`, the rotation is invertible with inverse
-  `r⁻¹ (a - b J_t)` (`TauCeti.Floer.isInvertible_endModelRotation`), and for continuous loops it
+  `r⁻¹ (a - b J_t)` (`TauCeti.Floer.isInvertible_endModelRotation`, from
+  `TauCeti.AlmostComplexStructure.isInvertible_smul_id_add_smul`), and for continuous loops it
   depends continuously on `t` alone. Multiplication by it is therefore an isomorphism of
   `L²(ℝ × S¹, V)` (`TauCeti.CylinderSobolev.isInvertible_operatorMultiplication_comp_snd`). The
   realization `TauCeti.Floer.endModelSobolevOperator` of the end model on `W^{1,2}(ℝ × S¹, V)` is
@@ -116,39 +117,33 @@ theorem endModelRotation_apply (q : Puncture) (J : ℝ → AlmostComplexStructur
         (fderiv ℝ (positiveEndChart q) ζ (1, 0)).2 • J ζ.2 v) := by
   simp [endModelRotation_def]
 
+/-- The rotation of the end model is `a' + b' J_t`, where `(a', b') = r⁻¹ dφ'_q (1, 0)` is the image
+of the unit longitudinal vector under the rotation part of the chart. -/
+theorem endModelRotation_eq (q : Puncture) (J : ℝ → AlmostComplexStructure V) (ζ : ℝ × ℝ) :
+    endModelRotation q J ζ =
+      (((positiveEndChartScale q ζ)⁻¹ • fderiv ℝ (positiveEndChart q) ζ) (1, 0)).1 •
+          ContinuousLinearMap.id ℝ V +
+        (((positiveEndChartScale q ζ)⁻¹ • fderiv ℝ (positiveEndChart q) ζ) (1, 0)).2 •
+          (J ζ.2).toLinearMap.toContinuousLinearMap := by
+  simp [endModelRotation_def, smul_add, smul_smul]
+
 /-- **The rotation of the end model is translation invariant**: it depends only on the angular
-coordinate. -/
+coordinate, since the rotation part `r⁻¹ dφ'_q` of the chart does. -/
 theorem endModelRotation_eq_of_snd_eq (q : Puncture) (J : ℝ → AlmostComplexStructure V)
     {ζ ζ' : ℝ × ℝ} (h : ζ.2 = ζ'.2) : endModelRotation q J ζ = endModelRotation q J ζ' := by
-  have hrot := congrArg (fun A : ℝ × ℝ →L[ℝ] ℝ × ℝ ↦ A (1, 0))
-    (positiveEndChartScale_inv_smul_fderiv_positiveEndChart_eq_of_snd_eq q h)
-  simp only [smul_apply] at hrot
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  rw [endModelRotation_apply, endModelRotation_apply, smul_add, smul_smul, smul_smul, smul_add,
-    smul_smul, smul_smul, h]
-  simp only [← smul_eq_mul, ← Prod.smul_fst, ← Prod.smul_snd, hrot]
+  rw [endModelRotation_eq, endModelRotation_eq,
+    positiveEndChartScale_inv_smul_fderiv_positiveEndChart_eq_of_snd_eq q h, h]
 
-/-- The rotation of the end model is invertible: since `a² + b² = r²` and `J_t² = -1`, its
-inverse is `r⁻¹ (a - b J_t)`. -/
+/-- The rotation of the end model is invertible: it is `a' + b' J_t` with `a'² + b'² = 1`, since
+`a² + b² = r²` for `(a, b) = dφ'_q (1, 0)`. -/
 theorem isInvertible_endModelRotation (q : Puncture) (J : ℝ → AlmostComplexStructure V)
     (ζ : ℝ × ℝ) : (endModelRotation q J ζ).IsInvertible := by
   have hr : positiveEndChartScale q ζ ≠ 0 := (positiveEndChartScale_pos q ζ).ne'
-  -- Both composites are multiplication by `r⁻¹ r⁻¹ (a² + b²) = 1`.
-  have hone (v : V) : ((positiveEndChartScale q ζ)⁻¹ * (positiveEndChartScale q ζ)⁻¹ *
-      ((fderiv ℝ (positiveEndChart q) ζ (1, 0)).1 ^ 2 +
-        (fderiv ℝ (positiveEndChart q) ζ (1, 0)).2 ^ 2)) • v = v := by
-    rw [← sq_positiveEndChartScale_eq_sq_add_sq, ← mul_inv, ← sq,
-      inv_mul_cancel₀ (pow_ne_zero 2 hr), one_smul]
-  refine .of_inverse (g := (positiveEndChartScale q ζ)⁻¹ •
-      ((fderiv ℝ (positiveEndChart q) ζ (1, 0)).1 • ContinuousLinearMap.id ℝ V -
-        (fderiv ℝ (positiveEndChart q) ζ (1, 0)).2 • (J ζ.2).toLinearMap.toContinuousLinearMap))
-    (ContinuousLinearMap.ext fun v ↦ ?_) (ContinuousLinearMap.ext fun v ↦ ?_) <;>
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] <;>
-    conv_rhs => rw [← hone v]
-  all_goals
-    simp only [endModelRotation_apply, smul_apply, sub_apply, ContinuousLinearMap.id_apply,
-      LinearMap.coe_toContinuousLinearMap', map_add, map_sub, map_smul, (J ζ.2).apply_apply]
-    module
+  rw [endModelRotation_eq]
+  refine (J ζ.2).isInvertible_smul_id_add_smul ?_
+  simp only [smul_apply, Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_pow, ← mul_add,
+    ← sq_positiveEndChartScale_eq_sq_add_sq]
+  exact mul_ne_zero (pow_ne_zero 2 (inv_ne_zero hr)) (pow_ne_zero 2 hr)
 
 /-- For a continuous loop `J_t`, the rotation of the end model is continuous. -/
 theorem continuous_endModelRotation (q : Puncture) {J : ℝ → AlmostComplexStructure V}
@@ -163,11 +158,9 @@ theorem continuous_endModelRotation (q : Puncture) {J : ℝ → AlmostComplexStr
 strip. -/
 theorem memLp_endModelRotation (q : Puncture) {J : ℝ → AlmostComplexStructure V}
     (hJ : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap) :
-    MemLp (endModelRotation q J) ∞ stripMeasure := by
-  rw [show endModelRotation q J = fun z ↦ endModelRotation q J (0, z.2) from
-    funext fun z ↦ endModelRotation_eq_of_snd_eq q J rfl]
-  exact memLp_top_comp_snd ((continuous_endModelRotation q hJ).comp
-    (continuous_const.prodMk continuous_id))
+    MemLp (endModelRotation q J) ∞ stripMeasure :=
+  memLp_top_of_eq_comp_snd ((continuous_endModelRotation q hJ).comp
+    (continuous_const.prodMk continuous_id)) fun _ ↦ endModelRotation_eq_of_snd_eq q J rfl
 
 /-- The **coefficient field of the end model** of the end `q`, for loops `J_t` of almost complex
 structures and `S_t` of endomorphisms: at `ζ = (s, t)`, the coefficient field of the stationary
@@ -196,11 +189,10 @@ theorem endModelCoeff_eq_of_snd_eq (q : Puncture) (J : ℝ → AlmostComplexStru
 bounded on the strip. -/
 theorem memLp_endModelCoeff (q : Puncture) {J : ℝ → AlmostComplexStructure V}
     {S : ℝ → V →L[ℝ] V} (hJ : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap)
-    (hS : Continuous S) : MemLp (endModelCoeff q J S) ∞ stripMeasure := by
-  rw [show endModelCoeff q J S = fun z ↦ endModelCoeff q J S (0, z.2) from
-    funext fun z ↦ endModelCoeff_eq_of_snd_eq q J S rfl]
-  exact memLp_top_comp_snd (((continuous_endModelRotation q hJ).clm_comp
+    (hS : Continuous S) : MemLp (endModelCoeff q J S) ∞ stripMeasure :=
+  memLp_top_of_eq_comp_snd (((continuous_endModelRotation q hJ).clm_comp
     (continuous_stationaryJetCoeff hJ hS)).comp (continuous_const.prodMk continuous_id))
+    fun _ ↦ endModelCoeff_eq_of_snd_eq q J S rfl
 
 variable (q : Puncture) (J : ℝ → AlmostComplexStructure V) (S : ℝ → V →L[ℝ] V) in
 /-- The **end model operator** of the end `q`: the first-order operator of
@@ -215,6 +207,15 @@ theorem endModelSobolevOperator_def :
       (jetOperator stripMeasure (endModelCoeff q J S)).comp (H1 V).subtypeL :=
   (rfl)
 
+/-- For continuous loops `J_t` and `S_t`, the end model operator acts pointwise on an `L²` jet
+`x ∈ H1` by the coefficient field of the end model. -/
+theorem coeFn_endModelSobolevOperator (q : Puncture) {J : ℝ → AlmostComplexStructure V}
+    {S : ℝ → V →L[ℝ] V} (hJ : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap)
+    (hS : Continuous S) (x : H1 V) :
+    endModelSobolevOperator q J S x =ᵐ[stripMeasure]
+      fun z ↦ endModelCoeff q J S z ((x : Lp (V × V × V) 2 stripMeasure) z) :=
+  coeFn_jetOperator (memLp_endModelCoeff q hJ hS) x
+
 /-- **The end model is the stationary cylinder operator followed by a rotation.** For continuous
 loops `J_t` and `S_t`, the end model operator is the realization of `∂s + J_t (∂t - S_t)` on
 `W^{1,2}` followed by multiplication by the rotation `r⁻¹ (a + b J_t)` on `L²`. -/
@@ -225,15 +226,13 @@ theorem endModelSobolevOperator_eq_comp (q : Puncture) {J : ℝ → AlmostComple
       Lp.operatorMultiplication 2 ((memLp_endModelRotation q hJ).toLp _) ∘L
         stationarySobolevOperator J S := by
   refine ContinuousLinearMap.ext fun x ↦ Lp.ext ?_
-  rw [endModelSobolevOperator_def, stationarySobolevOperator_def]
-  filter_upwards [coeFn_jetOperator (memLp_endModelCoeff q hJ hS) (x : Lp (V × V × V) 2 _),
+  filter_upwards [coeFn_endModelSobolevOperator q hJ hS x,
     Lp.operatorMultiplication_ae ((memLp_endModelRotation q hJ).toLp _)
-      (jetOperator stripMeasure (stationaryJetCoeff J S) (x : Lp (V × V × V) 2 _)),
-    (memLp_endModelRotation q hJ).coeFn_toLp,
-    coeFn_jetOperator (memLp_stationaryJetCoeff hJ hS) (x : Lp (V × V × V) 2 _)]
+      (stationarySobolevOperator J S x),
+    (memLp_endModelRotation q hJ).coeFn_toLp, coeFn_stationarySobolevOperator hJ hS x]
     with z h₁ h₂ h₃ h₄
-  simp only [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply] at h₁ h₂ ⊢
-  rw [h₁, h₂, h₃, h₄, endModelCoeff_def, ContinuousLinearMap.comp_apply]
+  rw [ContinuousLinearMap.comp_apply, h₁, h₂, h₃, h₄, endModelCoeff_def,
+    ContinuousLinearMap.comp_apply]
 
 /-- **The end model is invertible exactly when the stationary cylinder operator is.** For
 continuous loops `J_t` and `S_t`, the end model operator
@@ -249,8 +248,8 @@ theorem isInvertible_endModelSobolevOperator_iff (q : Puncture)
     (continuous_endModelRotation q hJ).comp (continuous_const.prodMk continuous_id)
   obtain ⟨e, he⟩ := isInvertible_operatorMultiplication_comp_snd (p := 2) hR
     fun t ↦ isInvertible_endModelRotation q J (0, t)
-  rw [endModelSobolevOperator_eq_comp q hJ hS, (memLp_endModelRotation q hJ).toLp_congr
-    (memLp_top_comp_snd hR) (ae_of_all _ fun z ↦ endModelRotation_eq_of_snd_eq q J rfl), ← he,
+  rw [endModelSobolevOperator_eq_comp q hJ hS,
+    toLp_eq_toLp_comp_snd hR fun _ ↦ endModelRotation_eq_of_snd_eq q J rfl, ← he,
     ContinuousLinearMap.isInvertible_equiv_comp]
 
 end TauCeti.Floer

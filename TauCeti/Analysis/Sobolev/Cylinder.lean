@@ -40,8 +40,10 @@ setting of the linearized operators of Floer theory along Floer cylinders.
   section vanishing for `|s|` large (`TauCeti.StripSobolev.memLp_stripMeasure_of_continuous`)
   and a product section `φ(s) ψ(t)` with `φ` compactly supported
   (`TauCeti.CylinderSobolev.memLp_smul_of_hasCompactSupport`). A section depending continuously
-  on `t` alone is essentially bounded (`TauCeti.CylinderSobolev.memLp_top_comp_snd`), and
-  multiplication by a continuous family of invertible maps depending on `t` alone maps `Lᵖ` onto
+  on `t` alone is essentially bounded (`TauCeti.CylinderSobolev.memLp_top_comp_snd`,
+  `TauCeti.CylinderSobolev.memLp_top_of_eq_comp_snd`), and multiplication by a continuous family
+  of invertible maps depending on `t` alone is an isomorphism of `Lᵖ`
+  (`TauCeti.CylinderSobolev.isInvertible_operatorMultiplication_comp_snd`), in particular onto
   `Lᵖ` (`TauCeti.CylinderSobolev.surjective_operatorMultiplication_comp_snd`).
 * **Test sections** (`TauCeti.CylinderSobolev.testSection`) are the `C²` maps of period one in
   `t` that vanish for `|s|` large.
@@ -133,6 +135,22 @@ theorem memLp_top_comp_snd {f : ℝ → V} (hf : Continuous f) :
     hf.continuousOn
   exact memLp_top_of_bound (hf.comp continuous_snd).aestronglyMeasurable C
     (ae_restrict_of_forall_mem (MeasurableSet.univ.prod measurableSet_Icc) fun z hz ↦ hC z.2 hz.2)
+
+omit [NormedSpace ℝ V] in
+/-- A section `f` that depends only on `t`, that is `f (s, t) = f (0, t)`, continuously in `t`, is
+essentially bounded on the strip. -/
+theorem memLp_top_of_eq_comp_snd {f : ℝ × ℝ → V} (hc : Continuous fun t ↦ f (0, t))
+    (hf : ∀ z, f z = f (0, z.2)) : MemLp f ∞ stripMeasure := by
+  rw [show f = fun z ↦ f (0, z.2) from funext hf]
+  exact memLp_top_comp_snd hc
+
+omit [NormedSpace ℝ V] in
+/-- A section `f` that depends only on `t`, continuously in `t`, has the same `L^∞` class as the
+section `(s, t) ↦ f (0, t)`. -/
+theorem toLp_eq_toLp_comp_snd {f : ℝ × ℝ → V} (hc : Continuous fun t ↦ f (0, t))
+    (hf : ∀ z, f z = f (0, z.2)) :
+    (memLp_top_of_eq_comp_snd hc hf).toLp f = (memLp_top_comp_snd hc).toLp _ :=
+  MemLp.toLp_congr _ _ (ae_of_all _ hf)
 
 /-- A product section `φ(s) ψ(t)`, with `φ` continuous of compact support and `ψ` continuous,
 lies in every `Lᵖ` of the strip. -/
@@ -404,6 +422,23 @@ section Operator
 
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
 
+/-- Multiplication by a continuous family `Φ_t` of maps depending on `t` alone, followed by
+multiplication by a continuous family `Ψ_t` with `Ψ_t Φ_t = id`, is the identity of `Lᵖ` of the
+strip. -/
+theorem operatorMultiplication_comp_operatorMultiplication_comp_snd_eq_id {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] {Φ : ℝ → V →L[ℝ] W} {Ψ : ℝ → W →L[ℝ] V} (hΦ : Continuous Φ)
+    (hΨ : Continuous Ψ) (h : ∀ t, Ψ t ∘L Φ t = .id ℝ V) :
+    Lp.operatorMultiplication p ((memLp_top_comp_snd hΨ).toLp _) ∘L
+        Lp.operatorMultiplication p ((memLp_top_comp_snd hΦ).toLp _) =
+      .id ℝ (Lp V p stripMeasure) := by
+  refine ContinuousLinearMap.ext fun f ↦ Lp.ext ?_
+  filter_upwards [Lp.operatorMultiplication_ae ((memLp_top_comp_snd hΨ).toLp _)
+      (Lp.operatorMultiplication p ((memLp_top_comp_snd hΦ).toLp _) f),
+    Lp.operatorMultiplication_ae ((memLp_top_comp_snd hΦ).toLp _) f,
+    (memLp_top_comp_snd hΦ).coeFn_toLp, (memLp_top_comp_snd hΨ).coeFn_toLp] with z h₁ h₂ h₃ h₄
+  rw [ContinuousLinearMap.comp_apply, h₁, h₂, h₃, h₄, ← ContinuousLinearMap.comp_apply, h z.2,
+    ContinuousLinearMap.id_apply, ContinuousLinearMap.id_apply]
+
 /-- Multiplication by a continuous family `Φ_t` of invertible maps depending on `t` alone, the
 operator `f ↦ (z ↦ Φ_{z.2} (f z))`, is invertible on `Lᵖ` of the strip: multiplication by the
 inverses `Φ_t⁻¹` inverts it. -/
@@ -411,20 +446,11 @@ theorem isInvertible_operatorMultiplication_comp_snd [CompleteSpace V] {p : ℝ�
     {Φ : ℝ → V →L[ℝ] W} (hΦ : Continuous Φ) (hΦi : ∀ t, (Φ t).IsInvertible) :
     (Lp.operatorMultiplication p ((memLp_top_comp_snd hΦ).toLp _)).IsInvertible := by
   have hΦinv := ((contDiff_zero (𝕜 := ℝ).2 hΦ).clm_inverse hΦi).continuous
-  set A := (memLp_top_comp_snd hΦ).toLp _
-  set B := (memLp_top_comp_snd hΦinv).toLp _
-  refine .of_inverse (g := Lp.operatorMultiplication p B) (ContinuousLinearMap.ext fun g ↦ ?_)
-    (ContinuousLinearMap.ext fun f ↦ ?_) <;> refine Lp.ext ?_
-  · filter_upwards [Lp.operatorMultiplication_ae A (Lp.operatorMultiplication p B g),
-      Lp.operatorMultiplication_ae B g, (memLp_top_comp_snd hΦ).coeFn_toLp,
-      (memLp_top_comp_snd hΦinv).coeFn_toLp] with z h₁ h₂ h₃ h₄
-    rw [ContinuousLinearMap.comp_apply, h₁, h₂, h₃, h₄, (hΦi z.2).self_apply_inverse,
-      ContinuousLinearMap.id_apply]
-  · filter_upwards [Lp.operatorMultiplication_ae B (Lp.operatorMultiplication p A f),
-      Lp.operatorMultiplication_ae A f, (memLp_top_comp_snd hΦ).coeFn_toLp,
-      (memLp_top_comp_snd hΦinv).coeFn_toLp] with z h₁ h₂ h₃ h₄
-    rw [ContinuousLinearMap.comp_apply, h₁, h₂, h₃, h₄, (hΦi z.2).inverse_apply_self,
-      ContinuousLinearMap.id_apply]
+  exact .of_inverse
+    (operatorMultiplication_comp_operatorMultiplication_comp_snd_eq_id hΦinv hΦ
+      fun t ↦ (hΦi t).self_comp_inverse)
+    (operatorMultiplication_comp_operatorMultiplication_comp_snd_eq_id hΦ hΦinv
+      fun t ↦ (hΦi t).inverse_comp_self)
 
 /-- Multiplication by a continuous family `Φ_t` of invertible maps depending on `t` alone, the
 operator `f ↦ (z ↦ Φ_{z.2} (f z))`, maps `Lᵖ` of the strip onto `Lᵖ`. -/
