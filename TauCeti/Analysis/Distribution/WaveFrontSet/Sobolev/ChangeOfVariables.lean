@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.LocalRegularity
+public import TauCeti.Analysis.Distribution.MicrolocalRegularity
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
-import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Distribution.WaveFrontSet.ChangeOfVariables
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Decomposition
 import TauCeti.Analysis.Sobolev.BesselPotential.Local
@@ -74,6 +74,9 @@ microlocally smooth at the pulled back covector by the invariance of the wave fr
 * `Distribution.IsMicrolocallySobolevAt.compCLMOfOpenPartialHomeomorph`,
   `Distribution.isMicrolocallySobolevAt_compCLMOfOpenPartialHomeomorph_iff`: invariance of
   microlocal Sobolev regularity.
+* `Distribution.isInvariantMicrolocalRegularity_isMicrolocallySobolevAt`: being microlocally `H^s`
+  is an invariant notion of microlocal regularity
+  (`Distribution.IsInvariantMicrolocalRegularity`).
 * `Distribution.sobolevWaveFrontSet_compCLMOfOpenPartialHomeomorph`: the `H^s` wave front set of a
   pullback.
 
@@ -163,39 +166,29 @@ theorem IsMicrolocallySobolevAt.compCLMOfOpenPartialHomeomorph {s : ℝ} {T : �
   rw [map_sub] at h₂
   simpa using h₁.add h₂
 
+/-- Being microlocally `H^s` is an invariant notion of microlocal regularity: it is open, linear,
+conic, preserved by smooth multiples and pullback along smooth changes of variables, and unchanged
+by restriction to smaller open sets. -/
+theorem isInvariantMicrolocalRegularity_isMicrolocallySobolevAt (s : ℝ) :
+    IsInvariantMicrolocalRegularity
+      fun (Ω : Opens E) (T : 𝓓'(Ω, ℂ)) x ξ ↦ T.IsMicrolocallySobolevAt s x ξ where
+  isOpen_setOf _ T := isOpen_setOf_isMicrolocallySobolevAt s T
+  zero hx ξ := (isMicrolocallySmoothAt_zero hx ξ).isMicrolocallySobolevAt s
+  add hS hT := hS.add hT
+  smul c hT := hT.smul c
+  smul_covector hr hT := (isMicrolocallySobolevAt_smul_iff hr).2 hT
+  smulLeftCLM hg hT := hT.smulLeftCLM hg
+  restrictCLM_iff h _ _ hx _ := isMicrolocallySobolevAt_restrictCLM_iff h hx
+  compCLMOfOpenPartialHomeomorph _ _ _ _ _ _ _ hx hT := hT.compCLMOfOpenPartialHomeomorph hx
+
 /-- **Microlocal Sobolev regularity under a change of variables, pointwise.** For `x ∈ U`, the
 pullback `e^* T` is microlocally `H^s` at `(x, ξ)` exactly when `T` is microlocally `H^s` at
 `(e x, (De⁻¹(e x))ᵀ ξ)`. -/
 theorem isMicrolocallySobolevAt_compCLMOfOpenPartialHomeomorph_iff {s : ℝ} {T : 𝓓'(Ω, ℂ)}
     {x ξ : E} (hx : x ∈ U) :
     (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).IsMicrolocallySobolevAt s x ξ ↔
-      T.IsMicrolocallySobolevAt s (e x) (((fderiv ℝ e.symm (e x))†) ξ) := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.compCLMOfOpenPartialHomeomorph hx⟩
-  -- Pull `e^* T` back along `e⁻¹` from the image `V = e '' U`, which gives back `T` on `V`.
-  have hxs : x ∈ e.source := hU hx
-  let V : Opens E := ⟨e '' U, e.isOpen_image_of_subset_source U.isOpen hU⟩
-  have hVΩ : V ≤ Ω := image_subset_iff.2 hUΩ
-  have hVt : (V : Set E) ⊆ e.symm.source := by
-    rintro _ ⟨z, hz, rfl⟩
-    exact e.map_source (hU hz)
-  have hVU : MapsTo e.symm V U := by
-    rintro _ ⟨z, hz, rfl⟩
-    rwa [e.left_inv (hU hz)]
-  have hUV : MapsTo e U V := fun z hz ↦ ⟨z, hz, rfl⟩
-  have hres : compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T =
-      compCLMOfOpenPartialHomeomorph e he he' hU hUV (restrictCLM T) := by
-    rw [← restrictCLM_compCLMOfOpenPartialHomeomorph le_rfl hVΩ, restrictCLM_self]
-  rw [hres] at h
-  have h' : (compCLMOfOpenPartialHomeomorph e he he' hU hUV
-      (restrictCLM T)).IsMicrolocallySobolevAt s (e.symm (e x))
-        (((fderiv ℝ e.symm.symm (e.symm (e x)))†) (((fderiv ℝ e.symm (e x))†) ξ)) := by
-    simpa only [OpenPartialHomeomorph.symm_symm, e.left_inv hxs,
-      e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_contDiffOn he he' (by simp) hxs] using h
-  have h₂ := IsMicrolocallySobolevAt.compCLMOfOpenPartialHomeomorph (e := e.symm) (he := he')
-    (he' := he) (hU := hVt) (hUΩ := hVU) ⟨x, hx, rfl⟩ h'
-  refine (isMicrolocallySobolevAt_restrictCLM_iff hVΩ ⟨x, hx, rfl⟩).1 ?_
-  convert h₂ using 1
-  exact (compCLMOfOpenPartialHomeomorph_symm_apply_apply _).symm
+      T.IsMicrolocallySobolevAt s (e x) (((fderiv ℝ e.symm (e x))†) ξ) :=
+  (isInvariantMicrolocalRegularity_isMicrolocallySobolevAt s).compCLMOfOpenPartialHomeomorph_iff hx
 
 /-- **The `H^s` wave front set under a change of variables.** The `H^s` wave front set of the
 pullback `e^* T` consists of the `(x, ξ)` with `x ∈ U` and `(e x, (De⁻¹(e x))ᵀ ξ) ∈ WF_s(T)`:
@@ -205,15 +198,9 @@ theorem sobolevWaveFrontSet_compCLMOfOpenPartialHomeomorph (s : ℝ) (T : 𝓓'(
       {p : E × E | p.1 ∈ U ∧
         (e p.1, ((fderiv ℝ e.symm (e p.1))†) p.2) ∈ T.sobolevWaveFrontSet s} := by
   ext ⟨x, ξ⟩
-  simp only [mem_ofPred_eq, mem_sobolevWaveFrontSet_iff]
-  constructor
-  · rintro ⟨hx, hξ, h⟩
-    refine ⟨hx, hUΩ hx, fun h0 ↦ hξ ?_, fun h' ↦ h ?_⟩
-    · rw [← e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_contDiffOn he he' (by simp) (hU hx)
-        ξ, h0, map_zero]
-    · exact (isMicrolocallySobolevAt_compCLMOfOpenPartialHomeomorph_iff hx).2 h'
-  · rintro ⟨hx, -, hξ, h⟩
-    exact ⟨hx, fun h0 ↦ hξ (by rw [h0, map_zero]), fun h' ↦
-      h ((isMicrolocallySobolevAt_compCLMOfOpenPartialHomeomorph_iff hx).1 h')⟩
+  have h := IsInvariantMicrolocalRegularity.setOf_compCLMOfOpenPartialHomeomorph
+    (isInvariantMicrolocalRegularity_isMicrolocallySobolevAt s) (he := he) (he' := he') (hU := hU)
+    (hUΩ := hUΩ) T
+  simpa only [mem_sobolevWaveFrontSet_iff, mem_ofPred_eq] using Set.ext_iff.1 h (x, ξ)
 
 end Distribution

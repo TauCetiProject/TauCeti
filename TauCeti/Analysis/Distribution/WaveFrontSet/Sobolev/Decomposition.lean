@@ -13,6 +13,8 @@ import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import TauCeti.Analysis.Distribution.WaveFrontSet.Tempered
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Normed.Module.Cone
+import TauCeti.Analysis.Sobolev.BesselPotential.PrescribedFourier
+import TauCeti.MeasureTheory.Integral.ConicDecay
 
 /-!
 # Microlocal Sobolev regularity modulo microlocal smoothness
@@ -45,15 +47,13 @@ transform is the function `F` on `Γ` and `0` off `Γ`
 
 `(T - u) (φ e_η) = ∫ 𝓕 φ (η - ζ) F ζ dζ`, over `ζ ∉ Γ`.
 
-On a smaller cone `Γ'` around `ξ`, every `ζ ∉ Γ` is at distance at least `c (‖η‖ + ‖ζ‖)` from
-`η ∈ Γ'` (`IsOpen.exists_cone_mul_add_le_norm_sub`), so the rapid decay of `𝓕 φ` beats the
-polynomial growth of `F` (`TauCeti.exists_one_add_norm_pow_mul_one_add_norm_pow_mul_norm_mul_le`),
-and the convolution decays rapidly on `Γ'`.
+On a smaller cone `Γ'` around `ξ`, the closed ball of radius `c ‖η‖` about every `η ∈ Γ'` lies in
+`Γ` (`IsOpen.exists_cone_closedBall_subset`), where the integrand vanishes, so the rapid decay of
+`𝓕 φ` beats the polynomial growth of `F` and the convolution decays rapidly on `Γ'`
+(`TauCeti.exists_one_add_norm_pow_mul_norm_integral_le`).
 
 ## Main results
 
-* `TemperedDistribution.exists_memSobolev_fourier_apply_eq_integral`: a function `F` with
-  `⟨η⟩ ^ s F` square integrable is the Fourier transform of an element of `H^s`.
 * `Distribution.IsMicrolocallySobolevAt.exists_memSobolev_isMicrolocallySmoothAt_sub`: a
   distribution microlocally `H^s` at `(x, ξ)` is an element of `H^s` plus a distribution
   microlocally smooth at `(x, ξ)`.
@@ -76,37 +76,6 @@ open scoped Distributions Topology SchwartzMap ContDiff FourierTransform RealInn
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
-
-namespace TemperedDistribution
-
-/-- **An element of `H^s` with a prescribed Fourier transform.** If `F` is a function with
-`⟨η⟩ ^ s F = (1 + ‖η‖ ^ 2) ^ (s / 2) F` square integrable, then some element `u` of the
-Bessel-potential space `H^s` has Fourier transform the function `F`: `𝓕 u g = ∫ g η • F η` for
-every Schwartz function `g`. -/
-theorem exists_memSobolev_fourier_apply_eq_integral {s : ℝ} {F : E → ℂ}
-    (hF : MemLp (fun η ↦ (1 + ‖η‖ ^ 2) ^ (s / 2) • F η) 2 volume) :
-    ∃ u : 𝓢'(E, ℂ), MemSobolev s 2 u ∧ ∀ g : 𝓢(E, ℂ), 𝓕 u g = ∫ η, g η • F η := by
-  -- `u` is the inverse Fourier transform of `⟨η⟩ ^ (-s)` times the `L²` function `⟨η⟩ ^ s F`.
-  set w : E → ℂ := fun η ↦ (((1 + ‖η‖ ^ 2) ^ (-s / 2) : ℝ) : ℂ)
-  have hw : w.HasTemperateGrowth := by fun_prop
-  have hb : (fun η : E ↦ (((1 + ‖η‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
-  have hwb (η : E) : w η * (((1 + ‖η‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) = 1 := by
-    have hpos : (0 : ℝ) < 1 + ‖η‖ ^ 2 := by positivity
-    rw [← ofReal_mul, ← Real.rpow_add hpos, neg_div, neg_add_cancel, Real.rpow_zero, ofReal_one]
-  set v : 𝓢'(E, ℂ) := smulLeftCLM ℂ w (hF.toLp _ : 𝓢'(E, ℂ))
-  have hv : 𝓕 (𝓕⁻ v) = v := FourierTransform.fourier_fourierInv_eq v
-  refine ⟨𝓕⁻ v, memSobolev_iff_exists_smulLeftCLM_fourier.2 ⟨hF.toLp _, ?_⟩, fun g ↦ ?_⟩
-  · rw [hv, smulLeftCLM_smulLeftCLM_apply hw hb]
-    have h1 : (w * fun η : E ↦ (((1 + ‖η‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) = fun _ ↦ 1 := funext hwb
-    rw [h1, smulLeftCLM_const, one_smul]
-  · rw [hv, smulLeftCLM_apply_apply, Lp.toTemperedDistribution_apply]
-    refine integral_congr_ae (hF.coeFn_toLp.mono fun η hη ↦ ?_)
-    dsimp only at hη ⊢
-    rw [hη, SchwartzMap.smulLeftCLM_apply_apply hw]
-    simp only [smul_eq_mul, Complex.real_smul]
-    linear_combination (g η * F η) * hwb η
-
-end TemperedDistribution
 
 namespace Distribution
 
@@ -163,8 +132,7 @@ private theorem localFourier_sub_toDistribution_eq_integral (T : 𝓓'(Ω, ℂ))
       rw [TemperedDistribution.fourier_apply, FourierTransform.fourier_fourierInv_eq]
     rw [localFourier_toDistribution, huf, hu]
     simp only [smul_eq_mul]
-  rw [sub_eq_add_neg, localFourier_add, ← neg_one_smul ℂ (toDistribution Ω u), localFourier_smul,
-    hT, hu', neg_one_mul, ← sub_eq_add_neg, ← integral_sub (by
+  rw [localFourier_sub, hT, hu', ← integral_sub (by
       simpa using integrable_mul_indicator_localFourier T ψ (𝓕⁻ f) MeasurableSet.univ)
       (integrable_mul_indicator_localFourier T ψ (𝓕⁻ f) hΓ)]
   refine integral_congr_ae (ae_of_all _ fun ζ ↦ ?_)
@@ -174,43 +142,6 @@ private theorem localFourier_sub_toDistribution_eq_integral (T : 𝓓'(Ω, ℂ))
       fourier_fourierAtomMulSchwartzMap, SchwartzMap.fourier_coe, neg_add_eq_sub,
       coe_toSchwartzMapCLM]
   by_cases hζ : ζ ∈ Γ <;> simp [hζ, hf]
-
-/-- **Rapid decay of a convolution with a function vanishing on a cone.** Let `F` grow at most
-polynomially and vanish on a set `Γ`, and let every `ζ ∉ Γ` be at distance at least
-`c (‖η‖ + ‖ζ‖)` from every `η ∈ Γ'`. Then the convolution `∫ 𝓕 φ (η - ζ) F ζ dζ` of `F` with the
-Fourier transform of a test function `φ` decays rapidly on `Γ'`. -/
-private theorem exists_one_add_norm_pow_mul_norm_integral_le (φ : 𝓓(Ω, ℂ)) {F : E → ℂ}
-    (hF : ∃ (C : ℝ) (k : ℕ), ∀ ζ, ‖F ζ‖ ≤ C * (1 + ‖ζ‖) ^ k) {Γ Γ' : Set E}
-    (hFΓ : ∀ ζ ∈ Γ, F ζ = 0) {c : ℝ} (hc : 0 < c)
-    (hsep : ∀ η ∈ Γ', ∀ ζ ∉ Γ, c * (‖η‖ + ‖ζ‖) ≤ ‖ζ - η‖) (N : ℕ) :
-    ∃ C, ∀ η ∈ Γ', (1 + ‖η‖) ^ N * ‖∫ ζ, 𝓕 (φ : E → ℂ) (η - ζ) * F ζ‖ ≤ C := by
-  set d := Module.finrank ℝ E
-  set M := N + (d + 1)
-  obtain ⟨C, hC⟩ := TauCeti.exists_one_add_norm_pow_mul_one_add_norm_pow_mul_norm_mul_le
-    (ContinuousLinearMap.id ℝ E) hc (Γ := Γ) (Γ' := Γ') (fun η hη ζ hζ ↦ hsep η hη ζ hζ)
-    (g := 𝓕 (φ : E → ℂ)) (F := F)
-    (TauCeti.exists_one_add_norm_pow_mul_norm_fourier_le φ.contDiff φ.hasCompactSupport) hF
-    (fun _ ↦ ⟨0, fun ζ hζ ↦ by simp [hFΓ ζ hζ]⟩) M
-  have hint : Integrable (fun ζ : E ↦ C * (1 + ‖ζ‖) ^ (-((d : ℝ) + 1))) :=
-    (integrable_one_add_norm (by linarith)).const_mul C
-  refine ⟨∫ ζ : E, C * (1 + ‖ζ‖) ^ (-((d : ℝ) + 1)), fun η hη ↦ ?_⟩
-  rw [← Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ (1 + ‖η‖) ^ N), ← norm_smul,
-    ← integral_smul]
-  refine norm_integral_le_of_norm_le hint (.of_forall fun ζ ↦ ?_)
-  -- With `a = 1 + ‖η‖` and `b = 1 + ‖ζ‖`: `a ^ M (b ^ M X) ≤ C` gives `a ^ N X ≤ C b ^ (-(d + 1))`.
-  have ha : 1 ≤ 1 + ‖η‖ := le_add_of_nonneg_right (norm_nonneg η)
-  have hb : 1 ≤ 1 + ‖ζ‖ := le_add_of_nonneg_right (norm_nonneg ζ)
-  have hpow : (1 + ‖ζ‖) ^ (-((d : ℝ) + 1)) = ((1 + ‖ζ‖) ^ (d + 1))⁻¹ := by
-    rw [Real.rpow_neg (by positivity), ← Real.rpow_natCast, Nat.cast_succ]
-  have hCη := hC η hη ζ
-  simp only [ContinuousLinearMap.coe_id', id_eq] at hCη
-  rw [norm_smul, Real.norm_of_nonneg (by positivity), hpow, ← div_eq_mul_inv,
-    le_div_iff₀ (by positivity)]
-  calc (1 + ‖η‖) ^ N * ‖𝓕 (φ : E → ℂ) (η - ζ) * F ζ‖ * (1 + ‖ζ‖) ^ (d + 1)
-      ≤ (1 + ‖η‖) ^ M * ‖𝓕 (φ : E → ℂ) (η - ζ) * F ζ‖ * (1 + ‖ζ‖) ^ M := by
-        gcongr <;> omega
-    _ = (1 + ‖η‖) ^ M * ((1 + ‖ζ‖) ^ M * ‖𝓕 (φ : E → ℂ) (η - ζ) * F ζ‖) := by ring
-    _ ≤ C := hCη
 
 /-- **Microlocal `H^s` regularity splits off an element of `H^s`.** If `T` is microlocally `H^s` at
 `(x, ξ)`, then `T - u` is microlocally smooth at `(x, ξ)` for some element `u` of the
@@ -234,23 +165,24 @@ theorem IsMicrolocallySobolevAt.exists_memSobolev_isMicrolocallySmoothAt_sub {s 
   obtain ⟨u, hu, hFu⟩ := exists_memSobolev_fourier_apply_eq_integral hG
   refine ⟨u, hu, ?_⟩
   -- On a smaller cone `Γ'`, the frequencies off `Γ` are far from those of `Γ'`.
-  obtain ⟨Γ', hΓ'o, hξΓ', hΓ'c, c, hc, hsep⟩ :=
-    hΓo.exists_cone_mul_add_le_norm_sub hΓc hξΓ (ContinuousLinearEquiv.refl ℝ E)
+  obtain ⟨Γ', hΓ'o, hξΓ', hΓ'c, c, hc, hball⟩ := hΓo.exists_cone_closedBall_subset hΓc hξΓ
   -- A cutoff `φ` at `x` supported in `V`, where `ψ = 1`.
   obtain ⟨φ, hφV, hφx⟩ := exists_tsupport_subset_apply_eq (n := ⊤)
     (inter_mem (hVo.mem_nhds hxV) (Ω.isOpen.mem_nhds hx)) inter_subset_right (1 : ℂ)
   have hψφ : ∀ y ∈ tsupport φ, ψ y = 1 := fun y hy ↦ by
     simpa using hψV (hφV hy).1
-  refine isMicrolocallySmoothAt_iff.2 ⟨φ, by simp [hφx], Γ', hΓ'o, by simpa using hξΓ', hΓ'c,
-    fun N ↦ ?_⟩
-  obtain ⟨C, hC⟩ := exists_one_add_norm_pow_mul_norm_integral_le φ (F := Γᶜ.indicator F)
-    ((exists_norm_localFourier_le T ψ).imp fun C ⟨k, hk⟩ ↦
-      ⟨k, fun ζ ↦ (norm_indicator_le_norm_self _ ζ).trans (hk ζ)⟩)
-    (fun ζ hζ ↦ indicator_of_notMem (notMem_compl_iff.2 hζ) _) hc
-    (fun η hη ζ hζ ↦ by simpa using hsep η hη ζ (Or.inl hζ)) N
+  refine isMicrolocallySmoothAt_iff.2 ⟨φ, by simp [hφx], Γ', hΓ'o, hξΓ', hΓ'c, fun N ↦ ?_⟩
+  -- The convolution of `𝓕 φ`, rapidly decreasing, with `F` off `Γ`, which vanishes on `Γ`.
+  obtain ⟨C₀, k, hF⟩ := exists_norm_localFourier_le T ψ
+  obtain ⟨C, hC⟩ := TauCeti.exists_one_add_norm_pow_mul_norm_integral_le (μ := volume) (M := 0)
+    (K := fun θ _ ↦ 𝓕 (φ : E → ℂ) θ • ContinuousLinearMap.id ℂ ℂ)
+    (fun j ↦ (TauCeti.exists_one_add_norm_pow_mul_norm_fourier_le φ.contDiff φ.hasCompactSupport
+      j).imp fun A hA θ _ ↦ by simpa [norm_smul] using hA θ)
+    (F := Γᶜ.indicator F) (fun ζ ↦ (norm_indicator_le_norm_self _ ζ).trans (hF ζ)) hc hball
+    (N := N) ⟨0, fun η hη ↦ by simp [indicator_of_notMem (notMem_compl_iff.2 hη)]⟩
   exact ⟨C, fun η hη ↦ by
     rw [localFourier_sub_toDistribution_eq_integral T hψφ hΓo.measurableSet hFu]
-    exact hC η hη⟩
+    simpa using hC η hη⟩
 
 /-- **Microlocal `H^s` regularity is `H^s` modulo microlocal smoothness.** A distribution `T` on
 `Ω` is microlocally `H^s` at `(x, ξ)` exactly when `T - u` is microlocally smooth at `(x, ξ)` for
