@@ -214,7 +214,7 @@ theorem intersectionNumber_subschemeι_prod_pow {ι : Type*} (s : Finset ι)
     have : IsEmpty (1 : X.IdealSheafData).subscheme :=
       inferInstanceAs (IsEmpty (⊤ : X.IdealSheafData).subscheme)
     have (M : (1 : X.IdealSheafData).subscheme.Modules) (j : ℕ) :=
-      subsingleton_cohomology_of_isEmpty M j
+      M.subsingleton_cohomology_of_isEmpty j
     exact ⟨fun _ _ _ ↦ inferInstance, intersectionNumber_eq_zero_of_isEmpty k _ a⟩
   | @insert j s hj ih =>
     have hs := ih (fun i hi ↦ hI i (Finset.mem_insert_of_mem hi))

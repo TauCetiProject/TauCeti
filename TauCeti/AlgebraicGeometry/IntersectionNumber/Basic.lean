@@ -206,7 +206,7 @@ theorem intersectionNumber_eq_zero_of_eq_comp {T : Scheme.{u}} (h : C ⟶ T) (j 
 sheaf of modules has trivial cohomology. -/
 theorem intersectionNumber_eq_zero_of_isEmpty [IsEmpty C] (a : LineBundleClass X) :
     intersectionNumber k ι a = 0 := by
-  have (M : C.Modules) (j : ℕ) := subsingleton_cohomology_of_isEmpty M j
+  have (M : C.Modules) (j : ℕ) := M.subsingleton_cohomology_of_isEmpty j
   obtain ⟨L, rfl⟩ := mk_surjective a
   rw [intersectionNumber_mk, InvertibleSheaf.eulerDegree_eq_finrank_sub]
   simp only [Module.finrank_zero_of_subsingleton, Nat.cast_zero, sub_self]

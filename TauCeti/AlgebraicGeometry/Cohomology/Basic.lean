@@ -107,7 +107,8 @@ lemma cohomologyZeroEquiv_naturality {M N : X.Modules} (f : M ⟶ N) (x : Cohomo
 
 /-- On an empty scheme every sheaf of modules has trivial cohomology in every degree, as it is the
 zero sheaf. -/
-theorem subsingleton_cohomology_of_isEmpty [IsEmpty X] (M : X.Modules) (i : ℕ) :
+theorem _root_.AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_of_isEmpty [IsEmpty X]
+    (M : X.Modules) (i : ℕ) :
     Subsingleton (Cohomology M i) := by
   have hM : IsZero M := by
     rw [IsZero.iff_id_eq_zero]
