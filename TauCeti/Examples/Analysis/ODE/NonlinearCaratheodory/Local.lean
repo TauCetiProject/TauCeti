@@ -26,7 +26,7 @@ Checks for the nonlinear Carathéodory theorem on a ball
   ball of radius `r = 1` about `1` the field is Lipschitz with `L = 2(1 + r) = 4`
   (`TauCeti.Examples.NonlinearCaratheodoryLocal.lipschitzOnWith_sq`) and `|F(t, 1)| ≤ m = 1`, and
   `τ = 1/10` satisfies `τ e^{4τ} < 1`
-  (`TauCeti.Examples.NonlinearCaratheodoryLocal.integral_mul_exp_integral_sq_lt`). So the local
+  (`TauCeti.Examples.NonlinearCaratheodoryLocal.integral_mul_exp_integral_lt_one`). So the local
   form applies on `[0, 1/10]`, and every solution there is `1/(1 − t)`
   (`TauCeti.Examples.NonlinearCaratheodoryLocal.eqOn_inv_one_sub_of_picard_sq`), which indeed stays
   in the ball.
@@ -34,8 +34,9 @@ Checks for the nonlinear Carathéodory theorem on a ball
   `t < 1` and `F(t, x) = 2 √(max (x − 1) 0)` for `t ≥ 1`, with `x₀ = 0`, `t₀ = 0` and `r = 1`. On
   the ball `[−1, 1]` every `F(t, ·)` is constant, so Lipschitz with `L = 0`, and
   `|F(t, 0)| ≤ m(t) = 1_{t < 1}`, so that `(∫₀² m) e⁰ = 1 = r`
-  (`TauCeti.Examples.NonlinearCaratheodoryLocal.integral_indicator_two`). Both `min(t, 1)` and the
-  curve equal to `t` on `[0, 1]` and to `1 + (t − 1)²` on `[1, 2]` solve the equation on `[0, 2]`
+  (`TauCeti.Examples.NonlinearCaratheodoryLocal.integral_indicator_mul_exp_integral_eq_one`).
+  Both `min(t, 1)` and the curve equal to `t` on `[0, 1]` and to `1 + (t − 1)²` on `[1, 2]` solve
+  the equation on `[0, 2]`
   (`TauCeti.Examples.NonlinearCaratheodoryLocal.min_eq_picard_switch`,
   `TauCeti.Examples.NonlinearCaratheodoryLocal.escape_eq_picard_switch`); the second leaves the
   ball (`TauCeti.Examples.NonlinearCaratheodoryLocal.escape_two`). For `τ < 1` the inequality is
@@ -54,32 +55,30 @@ namespace TauCeti.Examples.NonlinearCaratheodoryLocal
 section PicardLindelof
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] {f : ℝ → E → E}
-  {tmin tmax : ℝ} {x₀ : E} {a L K : ℝ≥0}
+  {tmin tmax : ℝ} {t₀ : Icc tmin tmax} {x₀ : E} {a r L K : ℝ≥0}
 
 /-- **Agreement with Mathlib's Picard–Lindelöf theorem.** Let `f` satisfy the hypotheses
-`IsPicardLindelof` on `[tmin, tmax]` from `tmin`, with the constant Lipschitz bound `K` on the ball
+`IsPicardLindelof` on `[tmin, tmax]` from `t₀`, with the constant Lipschitz bound `K` on the ball
 of radius `a` about `x₀`, and let `α` be a solution of the initial value problem in Mathlib's sense
-(`α tmin = x₀`, `α' = f(t, α)` on `[tmin, tmax]`, values in the ball), as given by
-`IsPicardLindelof.exists_eq_forall_mem_Icc_hasDerivWithinAt₀`. Then every curve continuous on
-`[tmin, tmax]` with values in the ball that solves the integral equation of the nonlinear
-Carathéodory theorem with `L = K` is `α`. -/
-theorem eqOn_of_isPicardLindelof (ht : tmin ≤ tmax)
-    (hf : IsPicardLindelof f ⟨tmin, left_mem_Icc.2 ht⟩ x₀ a 0 L K) {α : ℝ → E}
-    (hα₀ : α tmin = x₀)
+(`α t₀ = x₀` and `α' = f(t, α)` on `[tmin, tmax]`, as given by
+`IsPicardLindelof.exists_eq_forall_mem_Icc_hasDerivWithinAt`) that moreover takes values in the
+ball. Then every curve continuous on `[tmin, tmax]` with values in the ball that solves the
+integral equation of the nonlinear Carathéodory theorem with `L = K` is `α`. -/
+theorem eqOn_of_isPicardLindelof (hf : IsPicardLindelof f t₀ x₀ a r L K) {α : ℝ → E}
+    (hα₀ : α t₀ = x₀)
     (hα : ∀ t ∈ Icc tmin tmax, HasDerivWithinAt α (f t (α t)) (Icc tmin tmax) t)
     (hαB : MapsTo α (Icc tmin tmax) (closedBall x₀ a)) {Y : ℝ → E}
     (hY : ContinuousOn Y (Icc tmin tmax)) (hYB : MapsTo Y (Icc tmin tmax) (closedBall x₀ a))
-    (h : ∀ t ∈ Icc tmin tmax, Y t = ODE.picard f tmin x₀ Y t) :
+    (h : ∀ t ∈ Icc tmin tmax, Y t = ODE.picard f t₀ x₀ Y t) :
     EqOn Y α (Icc tmin tmax) := by
-  have ht₀ : tmin ∈ Icc tmin tmax := left_mem_Icc.2 ht
   -- Mathlib's solution solves the integral equation, by the fundamental theorem of calculus.
-  have hαsol : ∀ t ∈ Icc tmin tmax, α t = ODE.picard f tmin x₀ α t := fun t htI ↦ by
-    have hsub : uIcc tmin t ⊆ Icc tmin tmax := uIcc_subset_Icc ht₀ htI
+  have hαsol : ∀ t ∈ Icc tmin tmax, α t = ODE.picard f t₀ x₀ α t := fun t htI ↦ by
+    have hsub : uIcc (t₀ : ℝ) t ⊆ Icc tmin tmax := uIcc_subset_Icc t₀.property htI
     rw [← hα₀]
     exact (ODE.picard_eq_of_hasDerivAt
       (hf.continuousOn_uncurry.mono (prod_mono hsub subset_rfl))
       (fun t' ht' ↦ (hα t' (hsub ht')).mono hsub) (hαB.mono_left hsub)).symm
-  exact eqOn_of_mapsTo_closedBall_of_forall_mem_Icc_eq_picard (L := fun _ ↦ K) ht₀
+  exact eqOn_of_mapsTo_closedBall_of_forall_mem_Icc_eq_picard (L := fun _ ↦ K) t₀.property
     (fun x hx ↦ (hf.continuousOn x hx).integrableOn_compact isCompact_Icc)
     (integrableOn_const (by simp)) (ae_restrict_of_forall_mem measurableSet_Icc hf.lipschitzOnWith)
     hY (HasDerivWithinAt.continuousOn hα) hYB hαB h hαsol
@@ -126,7 +125,7 @@ theorem lipschitzOnWith_sq : LipschitzOnWith 4 (fun x : ℝ ↦ x ^ 2) (closedBa
 
 /-- The smallness condition of the local form holds strictly for `τ = 1/10`:
 `(∫₀^τ 1) e^{∫₀^τ 4} = e^{2/5}/10 < 1`. -/
-theorem integral_mul_exp_integral_sq_lt :
+theorem integral_mul_exp_integral_lt_one :
     (∫ _ in (0 : ℝ)..1 / 10, (1 : ℝ)) * exp (∫ _ in (0 : ℝ)..1 / 10, ((4 : ℝ≥0) : ℝ)) < 1 := by
   simp only [intervalIntegral.integral_const, sub_zero, smul_eq_mul, mul_one]
   have h : exp (1 / 10 * ((4 : ℝ≥0) : ℝ)) < 10 := by
@@ -158,9 +157,9 @@ theorem eqOn_inv_one_sub_of_picard_sq {Y : ℝ → ℝ} (hY : ContinuousOn Y (Ic
   exact eqOn_of_mapsTo_closedBall_of_forall_mem_Icc_eq_picard ht₀
     (fun x _ ↦ integrableOn_const (C := x ^ 2) (by simp)) hL hLip hY hcont
     (mapsTo_closedBall_of_forall_mem_Icc_eq_picard hL hLip hm hFm
-      integral_mul_exp_integral_sq_lt hY h)
+      integral_mul_exp_integral_lt_one hY h)
     (mapsTo_closedBall_of_forall_mem_Icc_eq_picard hL hLip hm hFm
-      integral_mul_exp_integral_sq_lt hcont hsol)
+      integral_mul_exp_integral_lt_one hcont hsol)
     h hsol
 
 end Square
@@ -192,7 +191,7 @@ theorem norm_switch_zero_le (t : ℝ) :
 
 /-- `(∫₀² 1_{t < 1}) e⁰ = 1`: the smallness condition of the local form holds with equality for
 `r = 1`. -/
-theorem integral_indicator_two :
+theorem integral_indicator_mul_exp_integral_eq_one :
     (∫ t in (0 : ℝ)..2, (Iio (1 : ℝ)).indicator 1 t) * exp (∫ _ in (0 : ℝ)..2, ((0 : ℝ≥0) : ℝ)) =
       1 := by
   rw [integral_of_le (by norm_num), MeasureTheory.integral_indicator measurableSet_Iio,
@@ -203,10 +202,6 @@ theorem integral_indicator_two :
     exact ⟨fun ⟨h1, h2, _⟩ ↦ ⟨h2, h1⟩, fun ⟨h1, h2⟩ ↦ ⟨h2, h1, by linarith⟩⟩
   simp [h]
 
-/-- Almost every real number is different from `1`. -/
-private theorem ae_ne_one : ∀ᵐ s ∂(volume : Measure ℝ), s ≠ 1 := by
-  simp [ae_iff]
-
 /-- The integral of a function equal to `1` before time `1` and to a continuous `g` from time `1`
 on: `∫₀ᵗ = min t 1 + ∫₁^{max t 1} g`. -/
 private theorem integral_ite_lt_one {g : ℝ → ℝ} (hg : Continuous g) {t : ℝ} (ht : 0 ≤ t) :
@@ -215,7 +210,7 @@ private theorem integral_ite_lt_one {g : ℝ → ℝ} (hg : Continuous g) {t : �
   -- Before time `1`, `f` is `1` almost everywhere.
   have hae {b : ℝ} (hb : 0 ≤ b) (hb1 : b ≤ 1) :
       ∀ᵐ s ∂(volume : Measure ℝ), s ∈ Ι 0 b → f s = 1 := by
-    filter_upwards [ae_ne_one] with s hs hsI
+    filter_upwards [volume.ae_ne (1 : ℝ)] with s hs hsI
     rw [uIoc_of_le hb] at hsI
     simp [f, lt_of_le_of_ne (hsI.2.trans hb1) hs]
   have hI {b : ℝ} (hb : 0 ≤ b) (hb1 : b ≤ 1) : IntervalIntegrable f volume 0 b :=
