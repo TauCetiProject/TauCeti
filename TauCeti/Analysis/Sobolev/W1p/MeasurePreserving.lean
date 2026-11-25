@@ -57,8 +57,6 @@ half-space trace to that region. Since `fderiv ℝ Φ` vanishes where `Φ` is no
   `W^{1,p} → Lᵖ` transfers along an affine isometry.
 * `AffineIsometryEquiv.isFiniteMeasure_volume_restrict_preimage`: an affine-isometric preimage of
   a bounded set has finite volume.
-* `AffineIsometryEquiv.measurePreserving_restrict_of_eq_preimage`: an affine isometry preserves
-  the volume restricted to the preimage of a measurable set.
 * `TauCeti.W1p.setIntegral_inner_gradient_compAffineIsometryEquivL`: the Dirichlet pairing
   `∫ ⟪∇u, ∇φ⟫` of `u` against a test function `φ` is invariant under a linear isometric change of
   coordinates.
@@ -305,13 +303,6 @@ theorem _root_.AffineIsometryEquiv.isFiniteMeasure_volume_restrict_preimage (g :
     {t : Set F'} (ht : Bornology.IsBounded t) : IsFiniteMeasure (volume.restrict (g ⁻¹' t)) :=
   isFiniteMeasure_restrict.2 (g.isometry.antilipschitzWith.isBounded_preimage ht).measure_lt_top.ne
 
-/-- **Restricting a rigid motion.** If `s = g⁻¹(t)` for an affine isometric equivalence `g` and a
-measurable set `t`, then `g` maps the volume on `s` to the volume on `t`. -/
-theorem _root_.AffineIsometryEquiv.measurePreserving_restrict_of_eq_preimage (g : F ≃ᵃⁱ[ℝ] F')
-    {s : Set F} {t : Set F'} (ht : MeasurableSet t) (h : s = g ⁻¹' t) :
-    MeasurePreserving g (volume.restrict s) (volume.restrict t) :=
-  h ▸ g.measurePreserving.restrict_preimage ht
-
 /-- **Rigid changes of variables in `W^{1,p}`.** Precomposition with an affine isometry `g` is a
 bounded operator from `W^{1,p}(V)` to `W^{1,p}(U)` for `U = g⁻¹(V)`, of norm at most one
 (`TauCeti.W1p.norm_compAffineIsometryEquivL_le`). -/
@@ -405,7 +396,7 @@ theorem W1p.isCompactOperator_valueL_of_affineIsometryEquiv (g : F ≃ᵃⁱ[ℝ
     IsCompactOperator (W1p.valueL (mu := volume) (Omega := U) (p := p)) := by
   have hVU : (V : Set F') = g.symm ⁻¹' U :=
     hUV ▸ (g.toHomeomorph.toEquiv.symm_preimage_preimage V).symm
-  have hmp := g.measurePreserving_restrict_of_eq_preimage V.isOpen.measurableSet hUV
+  have hmp := measurePreserving_restrict g.measurePreserving hUV
   let C : Lp ℝ p (volume.restrict (V : Set F')) →L[ℝ] Lp ℝ p (volume.restrict (U : Set F)) :=
     (Lp.compMeasurePreservingₗᵢ ℝ g hmp).toContinuousLinearMap
   convert (hK.clm_comp C).comp_clm (W1p.compAffineIsometryEquivL g.symm hVU) using 1

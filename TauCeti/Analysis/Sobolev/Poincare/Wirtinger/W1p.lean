@@ -579,10 +579,8 @@ theorem W1p.eq_zero_of_gradient_eq_zero_of_setIntegral_eq_zero
   obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero hconn hu
   rw [integral_congr_ae (ae_restrict_of_ae_restrict_of_subset hS hc), setIntegral_const,
     smul_eq_mul] at hint
-  have hc0 : c = 0 := (mul_eq_zero.1 hint).resolve_left hS0
-  refine W1p.ext_value (Lp.ext ?_)
-  filter_upwards [hc, Lp.coeFn_zero ℝ p (mu.restrict (Omega : Set E))] with x hx h0
-  rw [hx, hc0, W1p.value_zero, h0, Pi.zero_apply]
+  obtain rfl : c = 0 := (mul_eq_zero.1 hint).resolve_left hS0
+  exact W1p.ext_value (by rw [W1p.value_zero]; exact Lp.eq_zero_iff_ae_eq_zero.2 hc)
 
 section IntegralL
 
