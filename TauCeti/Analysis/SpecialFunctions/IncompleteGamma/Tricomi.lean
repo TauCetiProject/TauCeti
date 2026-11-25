@@ -48,6 +48,8 @@ the error function (`erf z = z γ*(1/2, z²)`) are built.
   `γ*(1, z) = (1 − e^{−z}) / z` for `z ≠ 0`;
 * `Complex.hasDerivAt_tricomiIncompleteGamma` — `∂γ*(a, z)/∂z = −a γ*(a + 1, z)`, so that
   `γ*(a, ·)` is entire (`differentiable_tricomiIncompleteGamma`);
+* `Complex.iteratedDeriv_tricomiIncompleteGamma` — the `n`th derivative
+  `∂ⁿγ*(a, z)/∂zⁿ = (−1)ⁿ (a)ₙ γ*(a + n, z)`;
 * `Complex.differentiable_tricomiIncompleteGamma_left` — `γ*(·, z)` is entire;
 * `Complex.tricomiIncompleteGamma_ode` — the differential equation
   `z w'' + (a + 1 + z) w' + a w = 0` (DLMF 8.2.14).
@@ -183,6 +185,21 @@ theorem deriv_tricomiIncompleteGamma (a : ℂ) :
 theorem differentiable_tricomiIncompleteGamma (a : ℂ) :
     Differentiable ℂ (tricomiIncompleteGamma a) :=
   fun z => (hasDerivAt_tricomiIncompleteGamma a z).differentiableAt
+
+/-- The `n`th derivative of Tricomi's function in its argument:
+`∂ⁿγ*(a, z)/∂zⁿ = (−1)ⁿ (a)ₙ γ*(a + n, z)`. -/
+theorem iteratedDeriv_tricomiIncompleteGamma (n : ℕ) (a : ℂ) :
+    iteratedDeriv n (tricomiIncompleteGamma a) =
+      fun z => (-1) ^ n * (ascPochhammer ℂ n).eval a * tricomiIncompleteGamma (a + n) z := by
+  induction n with
+  | zero => funext z; simp
+  | succ n ih =>
+    funext z
+    rw [iteratedDeriv_succ, ih]
+    have h := ((hasDerivAt_tricomiIncompleteGamma (a + n) z).const_mul
+      ((-1) ^ n * (ascPochhammer ℂ n).eval a)).deriv
+    rw [h, ascPochhammer_succ_eval, Nat.cast_succ, ← add_assoc]
+    ring
 
 /-- The differential equation of Tricomi's function (DLMF 8.2.14):
 `z w'' + (a + 1 + z) w' + a w = 0` for `w = γ*(a, ·)`. -/
