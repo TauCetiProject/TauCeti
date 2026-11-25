@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Relrank
+public import Mathlib.Order.Minimal
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.Finrank
 public import TauCeti.FieldTheory.IntermediateField.ScalarTower
 public import TauCeti.NumberTheory.PNumber
+import Mathlib.Order.Zorn
 
 /-!
 # `P`-extensions
@@ -34,7 +36,11 @@ valued fields is stated for such fields.
   are `P`-extensions, and the notion is invariant under `K`-algebra isomorphism;
 * `TauCeti.isPExtension_tower_iff`: for a tower `M / L / K`, `M / K` is a `P`-extension exactly
   when `M / L` and `L / K` are;
-* `TauCeti.isPExtension_iSup`: a directed union of `P`-subextensions is a `P`-extension.
+* `TauCeti.isPExtension_iSup`: a directed union of `P`-subextensions is a `P`-extension;
+* `TauCeti.exists_le_maximal_isPExtension`, `TauCeti.exists_maximal_isPExtension`: by Zorn's
+  lemma, every `P`-subextension lies in a maximal one, so maximal `P`-subextensions exist;
+* `TauCeti.eq_bot_of_maximal_isPExtension`: a maximal `P`-subextension `E` of `M / K` has no
+  proper `P`-extension inside `M`.
 
 The tower law rests on the descent of degrees of composita,
 `IntermediateField.exists_finiteDimensional_finrank_adjoin_eq`: a finite subextension `L(F)` of
@@ -189,5 +195,38 @@ theorem isPExtension_iSup [Algebra K M] {ι : Type*} {E : ι → IntermediateFie
   | inr _ =>
     obtain ⟨j, hj⟩ := hE.finset_le s
     exact isPExtension_intermediateField_iff.1 (h j) |>.2 _ ((hs.trans (iSup₂_le hj))) ‹_›
+
+section Maximal
+
+variable [Algebra K M] {E : IntermediateField K M}
+
+/-- Every `P`-subextension of `M / K` is contained in a maximal one. -/
+theorem exists_le_maximal_isPExtension (hE : IsPExtension P K E) :
+    ∃ E' : IntermediateField K M, E ≤ E' ∧
+      Maximal (fun E' : IntermediateField K M ↦ IsPExtension P K E') E' := by
+  refine zorn_le_nonempty₀ {E' : IntermediateField K M | IsPExtension P K E'}
+    (fun c hcs hc _ _ ↦ ?_) E hE
+  exact ⟨⨆ E' : c, E'.val, isPExtension_iSup hc.directed fun E' ↦ hcs E'.property,
+    fun E' hE' ↦ le_iSup_of_le ⟨E', hE'⟩ le_rfl⟩
+
+variable (P K M) in
+/-- Every field extension `M / K` contains a maximal `P`-subextension. -/
+theorem exists_maximal_isPExtension :
+    ∃ E : IntermediateField K M, Maximal (fun E : IntermediateField K M ↦ IsPExtension P K E) E :=
+  (exists_le_maximal_isPExtension ((isPExtension_congr (botEquiv K M)).2
+    (isPExtension_self P K))).imp fun _ h ↦ h.2
+
+/-- A maximal `P`-subextension `E` of `M / K` has no proper `P`-extension inside `M`. -/
+theorem eq_bot_of_maximal_isPExtension
+    (hE : Maximal (fun E : IntermediateField K M ↦ IsPExtension P K E) E)
+    {N : IntermediateField E M} (hN : IsPExtension P E N) : N = ⊥ := by
+  have hNK : IsPExtension P K (N.restrictScalars K) :=
+    (isPExtension_congr (restrictScalarsAlgEquiv K N)).2 (hE.prop.trans hN)
+  have hle : E ≤ N.restrictScalars K := fun y hy ↦
+    (mem_restrictScalars K).2 (N.algebraMap_mem ⟨y, hy⟩)
+  refine eq_bot_iff.2 fun x hx ↦ mem_bot.2 ⟨⟨x, ?_⟩, rfl⟩
+  exact (hE.eq_of_le hNK hle).ge ((mem_restrictScalars K).2 hx)
+
+end Maximal
 
 end TauCeti

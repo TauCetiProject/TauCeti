@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
-public import Mathlib.Order.Minimal
 public import TauCeti.FieldTheory.PExtension
 import Mathlib.FieldTheory.Galois.Sylow
 import Mathlib.FieldTheory.PurelyInseparable.Basic
-import Mathlib.Order.Zorn
 import TauCeti.FieldTheory.Normal.FixedField
 
 /-!
@@ -18,8 +16,9 @@ import TauCeti.FieldTheory.Normal.FixedField
 
 Fix a field extension `E / F` and a set `P` of natural numbers. By Zorn's lemma, every
 `P`-subextension of `E / F` (`TauCeti.IsPExtension`: algebraic, and every finite subextension has
-a `P`-number as its degree) lies in a maximal one, and a maximal `P`-subextension `K` has no
-proper `P`-extension inside `E`.
+a `P`-number as its degree) lies in a maximal one (`TauCeti.exists_le_maximal_isPExtension`), and
+a maximal `P`-subextension `K` has no proper `P`-extension inside `E`
+(`TauCeti.eq_bot_of_maximal_isPExtension`).
 
 For a prime `p` and `P = {p}ᶜ`, the `P`-numbers are the positive numbers prime to `p`, and a
 maximal `{p}ᶜ`-subextension of `E / F` is a *prime-to-`p` closure* of `F` in `E`: a maximal
@@ -33,15 +32,11 @@ subextension of a prime-to-`p` closure has degree prime to `p` over `F`.
 
 ## Main results
 
-* `TauCeti.exists_le_maximal_isPExtension`,
-  `TauCeti.exists_maximal_isPExtension`: every `P`-subextension lies in a maximal one;
-  in particular maximal `P`-subextensions, and prime-to-`p` closures, exist.
-* `TauCeti.eq_bot_of_maximal_isPExtension`: a maximal `P`-subextension `K` has no
-  proper `P`-extension inside `E`.
 * `TauCeti.exists_finrank_eq_pow_of_maximal_isPExtension`: if `E / F` is normal, every
   finite extension of a prime-to-`p` closure inside `E` has `p`-power degree.
-* `TauCeti.maximal_isPExtension_compl_singleton_iff`: the prime-to-`p` closures are
-  exactly the `{p}ᶜ`-subextensions all of whose finite extensions in `E` have `p`-power degree.
+* `TauCeti.maximal_isPExtension_compl_singleton_iff`: for a prime `p` and `E / F` normal, the
+  prime-to-`p` closures are exactly the `{p}ᶜ`-subextensions all of whose finite extensions in `E`
+  have `p`-power degree.
 * `TauCeti.exists_finrank_eq_pow_of_maximal_isPExtension_of_isAlgClosure`: inside an
   algebraic closure, every finite field extension of a prime-to-`p` closure has `p`-power degree.
 
@@ -62,34 +57,6 @@ variable {F E : Type*} [Field F] [Field E] [Algebra F E]
 section Maximal
 
 variable {P : Set ℕ} {K : IntermediateField F E}
-
-/-- Every `P`-subextension of `E / F` is contained in a maximal one. -/
-theorem exists_le_maximal_isPExtension (hK : IsPExtension P F K) :
-    ∃ M : IntermediateField F E, K ≤ M ∧
-      Maximal (fun M : IntermediateField F E ↦ IsPExtension P F M) M := by
-  refine zorn_le_nonempty₀ {M : IntermediateField F E | IsPExtension P F M}
-    (fun c hcs hc _ _ ↦ ?_) K hK
-  exact ⟨⨆ M : c, M.val, isPExtension_iSup hc.directed fun M ↦ hcs M.property,
-    fun M hM ↦ le_iSup_of_le ⟨M, hM⟩ le_rfl⟩
-
-variable (P F E) in
-/-- Every field extension `E / F` contains a maximal `P`-subextension; for `P = {p}ᶜ`, a
-prime-to-`p` closure of `F`. -/
-theorem exists_maximal_isPExtension :
-    ∃ M : IntermediateField F E, Maximal (fun M : IntermediateField F E ↦ IsPExtension P F M) M :=
-  (exists_le_maximal_isPExtension ((isPExtension_congr (botEquiv F E)).2
-    (isPExtension_self P F))).imp fun _ h ↦ h.2
-
-/-- A maximal `P`-subextension `K` of `E / F` has no proper `P`-extension inside `E`. -/
-theorem eq_bot_of_maximal_isPExtension
-    (hK : Maximal (fun M : IntermediateField F E ↦ IsPExtension P F M) K)
-    {N : IntermediateField K E} (hN : IsPExtension P K N) : N = ⊥ := by
-  have hNF : IsPExtension P F (N.restrictScalars F) :=
-    (isPExtension_congr (restrictScalarsAlgEquiv F N)).2 (hK.prop.trans hN)
-  have hle : K ≤ N.restrictScalars F := fun y hy ↦
-    (mem_restrictScalars F).2 (N.algebraMap_mem ⟨y, hy⟩)
-  refine eq_bot_iff.2 fun x hx ↦ mem_bot.2 ⟨⟨x, ?_⟩, rfl⟩
-  exact (hK.eq_of_le hNF hle).ge ((mem_restrictScalars F).2 hx)
 
 /-- Over a maximal `P`-subextension `K`, a subextension `H` of an extension `M / K` inside `E`
 whose degree is a `P`-number is trivial. -/
