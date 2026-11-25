@@ -110,9 +110,7 @@ theorem hasStableRangeLE_one_moduleEnd (K V : Type*) [DivisionRing K] [AddCommGr
     refine Submodule.disjoint_def.mp hC.disjoint (f v) ?_ (LinearMap.mem_range_self f v)
     rw [eq_neg_of_add_eq_zero_left hsum]
     exact neg_mem (e (π v)).property
-  have hπv : π v = 0 := by
-    rw [hfv, zero_add, ZeroMemClass.coe_eq_zero, LinearEquiv.map_eq_zero_iff] at hsum
-    exact hsum
+  have hπv : π v = 0 := by simpa [hfv] using hsum
   have hπ : π v = ⟨v, hfv⟩ := Submodule.projectionOnto_apply_left hW ⟨v, hfv⟩
   simpa using congrArg Subtype.val (hπ.symm.trans hπv)
 

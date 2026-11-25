@@ -168,8 +168,7 @@ theorem HasStableRangeLE.isDedekindFiniteMonoid {R : Type*} [Ring R] (hR : HasSt
   set w := y + (1 - y * x) * c 0 with hw
   have hwd : w * d 0 = 1 := by simpa using hcd
   have hxw : x * w = 1 := by
-    rw [hw, mul_add, ← mul_assoc, mul_sub, mul_one, ← mul_assoc, hxy, one_mul, sub_self,
-      zero_mul, add_zero]
+    simp [hw, mul_add, mul_sub, ← mul_assoc, hxy]
   have hdx : d 0 = x := by
     calc d 0 = x * w * d 0 := by rw [hxw, one_mul]
       _ = x := by rw [mul_assoc, hwd, mul_one]
