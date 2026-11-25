@@ -8,28 +8,14 @@ module
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.SemifreeModel
 
 /-!
-# Brown models pushed to the base
+# Brown's model of a CW complex pushed to the base
 
-Let `B` be a space with a point `b`, and `R` a commutative ring. A Brown model
-(`TauCeti.BrownModel`) of the chains `C_*(P_b B; R)` on the Moore paths from `b` is a semi-free
-module `K_m` over the loop chains `C_*(Ω_b B; R)`, on generators `x` with rows `m_{x,y}`, with a
-quasi-isomorphism `g : K_m → C_*(P_b B; R)` linear over the loop chains. This file reads it on the
-base `B`, through the end point map `P_b B → B`.
-
-The end point does not see a loop concatenated in front of a path, so pushing chains forward along
-it is linear over the augmentation `ε : C_*(Ω_b B; R) → R`
-(`TauCeti.cubicalChainModuleLinearMap_endpoint_smul`): a loop chain of positive dimension acts by
-families of paths with the same end point, which become degenerate cubes, and a `0`-chain acts
-through the sum of its coefficients. The **base chain** of a generator `x`
-(`TauCeti.BrownModel.baseChain`) is the push-forward `e_x` of `g x` to `B`. Applying the end point
-to the equation `g(m_x) = ∂ (g x)` of the model gives
-
-`∂ e_x = ∑_y ε(m_{x,y}) e_y`
-
-(`TauCeti.BrownModel.cubicalChainModuleDifferential_baseChain`): the augmented rows of a Brown
-model are the boundary coefficients of its base chains. So `x ↦ e_x` is a chain map to `C_*(B; R)`
-from the free `R`-module on the generators, with the differential given by the augmented rows,
-which is the twisted complex `R ⊗_{C_*(Ω_b B; R)} K_m` of the ground ring.
+Let `B` be a space with a point `b`, and `R` a commutative ring. The base chain `e_x` of a
+generator `x` of a Brown model (`TauCeti.BrownModel.baseChain`) is the push-forward to `B`, along
+the end point map `P_b B → B`, of the image of `x` in the chains `C_*(P_b B; R)` on the Moore paths
+from `b`, and `∂ e_x = ∑_y ε(m_{x,y}) e_y`
+(`TauCeti.BrownModel.cubicalChainModuleDifferential_baseChain`), where `ε` is the augmentation of
+the loop chains. This file reads these base chains in Brown's model of a CW complex.
 
 For Brown's model of a CW complex `C` (`TauCeti.brownModel`), the generator of an `n`-cell `j` goes
 to a chain over the `n`-skeleton congruent to the chain of the cell modulo the
@@ -49,13 +35,8 @@ Brown's cocycle are the coefficients of the cellular boundary of the characteris
 the cellular reduction of Brown's twisting cocycle; the comparison of the classes of the
 characteristic cubes with the generators of the cellular chain groups is not made here.
 
-## Main definition
-
-* `TauCeti.BrownModel.baseChain M x`: the base chain of the generator `x` of a Brown model `M`.
-
 ## Main results
 
-* `TauCeti.BrownModel.cubicalChainModuleDifferential_baseChain`: `∂ e_x = ∑_y ε(m_{x,y}) e_y`.
 * `TauCeti.cubicalChainModuleLinearMap_endpoint_cellPathChain`: the end point of the chain of a
   cell is its characteristic cube.
 * `TauCeti.brownModel_baseChain_mem_cubicalChainModuleSupportedIn`,
@@ -79,45 +60,7 @@ noncomputable section
 
 open Set Topology Topology.RelCWComplex Finsupp
 
-universe uB uR
-
 namespace TauCeti
-
-section Endpoint
-
-variable {B : Type uB} [TopologicalSpace B] {b : B} {H : Type*} {R : Type uR} [CommRing R]
-
-namespace BrownModel
-
-variable {P : Type*} {ind : P → ℤ} (M : BrownModel B b H R P ind)
-
-/-- The **base chain** of a generator `x` of a Brown model: the push-forward to `B`, along the end
-point map `P_b B → B`, of the image of `x` in the chains on the based path space. -/
-def baseChain (x : P) : cubicalChainModule B H R :=
-  cubicalChainModuleLinearMap R (MoorePathFrom.endpoint B b) (M.comparison x)
-
-theorem baseChain_def (x : P) :
-    M.baseChain x = cubicalChainModuleLinearMap R (MoorePathFrom.endpoint B b) (M.comparison x) :=
-  (rfl)
-
-/-- The base chain of a generator of index `n` has dimension `n`. -/
-theorem baseChain_mem_cubicalChainModuleGrading (x : P) :
-    M.baseChain x ∈ cubicalChainModuleGrading B H R (-ind x) :=
-  cubicalChainModuleLinearMap_mem _ (M.comparison_mem x)
-
-/-- **The augmented rows of a Brown model are the boundary coefficients of its base chains**:
-`∂ e_x = ∑_y ε(m_{x,y}) e_y`, where `e_x` is the base chain of `x` and `ε` the augmentation of the
-loop chains. -/
-theorem cubicalChainModuleDifferential_baseChain (x : P) :
-    cubicalChainModuleDifferential B H R (M.baseChain x) =
-      (M.cocycle.m x).sum fun y a ↦ loopChainAugmentation B b R a • M.baseChain y := by
-  rw [baseChain, cubicalChainModuleDifferential_linearMap, ← M.linearCombination_comparison_m,
-    linearCombination_apply, map_finsuppSum]
-  simp only [cubicalChainModuleLinearMap_endpoint_smul, baseChain]
-
-end BrownModel
-
-end Endpoint
 
 section CW
 
@@ -163,8 +106,9 @@ variable (τ : ∀ (n : ℕ) (j : cell C n), MoorePathBetween B b (map n j 0)) (
 `n`-skeleton.** -/
 theorem brownModel_baseChain_mem_cubicalChainModuleSupportedIn (x : Σ n, cell C n) :
     (brownModel H R τ hC).baseChain x ∈
-      cubicalChainModuleSupportedIn H R (preimageSkeleton C id x.1) :=
-  cubicalChainModuleLinearMap_endpoint_mem
+      cubicalChainModuleSupportedIn H R (preimageSkeleton C id x.1) := by
+  rw [BrownModel.baseChain_def]
+  exact cubicalChainModuleLinearMap_endpoint_mem
     (brownModel_comparison_mem_pathFromChainSkeleton τ hC x)
 
 /-- **In Brown's model of a CW complex, the base chain of an `n`-cell is its characteristic cube
@@ -173,7 +117,7 @@ theorem brownModel_baseChain_sub_cellCube_mem_cubicalChainModuleSupportedIn (x :
     (brownModel H R τ hC).baseChain x -
         cubicalChainModuleLof B H R x.1 (NormalizedCubicalChain.ofCube B R (cellCube C x.1 x.2)) ∈
       cubicalChainModuleSupportedIn H R (preimageSkeleton C id ((x.1 : ℤ) - 1)) := by
-  rw [BrownModel.baseChain, ← cubicalChainModuleLinearMap_endpoint_cellPathChain τ, ← map_sub]
+  rw [BrownModel.baseChain_def, ← cubicalChainModuleLinearMap_endpoint_cellPathChain τ, ← map_sub]
   exact cubicalChainModuleLinearMap_endpoint_mem
     (brownModel_comparison_sub_cellPathChain_mem_pathFromChainSkeleton τ hC x)
 
