@@ -728,8 +728,7 @@ end GX
 
 variable (ι) in
 /-- The coordinate group `G_{R(S)} = G[X] ⧸ Rad_H(S)` of a system `S` over `H`. -/
-abbrev CoordGroup (S : Set (GX G X)) : Type _ :=
-  GX G X ⧸ Rad ι S
+abbrev CoordGroup (S : Set (GX G X)) : Type _ := GX G X ⧸ Rad ι S
 
 namespace CoordGroup
 
@@ -1032,8 +1031,7 @@ end CoordGroup
 
 variable (G) in
 /-- The group `G_S = G[X] ⧸ ncl(S)` presented over `G` by the system `S` of equations. -/
-abbrev SystemGroup (S : Set (GX G X)) : Type _ :=
-  GX G X ⧸ normalClosure S
+abbrev SystemGroup (S : Set (GX G X)) : Type _ := GX G X ⧸ normalClosure S
 
 namespace SystemGroup
 
