@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MonoidAlgebra.Basic
-public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup
+public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.Basic
 
 /-!
 # The Brauer correspondent of a block idempotent
