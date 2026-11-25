@@ -165,13 +165,10 @@ theorem isSemisimple (hθ : θ.IsCartanInvolution) : IsSemisimple K L :=
   inferInstance
 
 /-- A nontrivial abelian Lie algebra has no Cartan involution: its Killing form vanishes. -/
-theorem not_isLieAbelian [Nontrivial L] (hθ : θ.IsCartanInvolution) : ¬ IsLieAbelian L := by
-  intro _
-  obtain ⟨x, hx⟩ := exists_ne (0 : L)
-  have := hθ.killingForm_apply_apply_neg hx
-  rw [killingForm, LieModule.traceForm_eq_zero_of_isTrivial, LinearMap.zero_apply,
-    LinearMap.zero_apply] at this
-  exact this.false
+theorem not_isLieAbelian [Nontrivial L] (hθ : θ.IsCartanInvolution) : ¬ IsLieAbelian L :=
+  fun _ ↦
+  have := hθ.isSemisimple
+  not_subsingleton L (LieAlgebra.subsingleton_of_hasTrivialRadical_lie_abelian K L)
 
 /-- The `-1`-eigenspace `𝔭` of a Cartan involution is the Killing-orthogonal complement of its
 fixed subalgebra `𝔨`. -/

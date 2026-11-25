@@ -16,8 +16,8 @@ import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
 Let `θ` be a Cartan involution of a real Lie algebra `𝔤₀`, with `-1`-eigenspace `𝔭`. For
 `X ∈ 𝔭`, `ad X` is self-adjoint for the positive definite twisted Killing form `B_θ`
 (`LieEquiv.ad_mem_selfAdjointSubmodule_twistedKillingForm`), so it is diagonalizable over `ℝ`: its
-eigenspaces span `𝔤₀`, and it is a semisimple endomorphism. This is the diagonalizability clause of
-RealSemisimpleLieGroups §0.1.
+eigenspaces span `𝔤₀`, and it is a semisimple endomorphism. This feeds the restricted root space
+decomposition `LieEquiv.IsCartanInvolution.iSup_restrictedRootSpace_eq_top`.
 
 ## Main results
 

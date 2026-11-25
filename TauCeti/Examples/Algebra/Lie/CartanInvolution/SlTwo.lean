@@ -14,7 +14,8 @@ import TauCeti.Algebra.Lie.Sl2.Killing
 /-!
 # Cartan involutions of `𝔰𝔩₂(ℝ)` and of an abelian Lie algebra
 
-The Checks of RealSemisimpleLieGroups §0.1.
+Worked examples: the Cartan involution `X ↦ -Xᵀ` of `𝔰𝔩₂(ℝ)`, its `𝔨`/`𝔭` decomposition and
+twisted Killing form, and two non-examples.
 
 * On `𝔰𝔩₂(ℝ)` with `θ X = -Xᵀ`: `𝔨` is `𝔰𝔬(2)` (the skew-symmetric matrices), `𝔭` the symmetric
   trace-zero matrices, `B(X, Y) = 4 tr(XY)` (`TauCeti.killingForm_slFinTwo_apply`), and
@@ -46,16 +47,14 @@ matrices. -/
 theorem mem_fixedSubalgebra_slFinTwo_negTranspose_iff {X : sl (Fin 2) ℝ} :
     X ∈ (θ₂).toLieHom.fixedSubalgebra ↔
       (X : Matrix (Fin 2) (Fin 2) ℝ)ᵀ = -(X : Matrix (Fin 2) (Fin 2) ℝ) := by
-  rw [LieHom.mem_fixedSubalgebra, LieEquiv.coe_toLieHom, Subtype.ext_iff,
-    LieSubalgebra.coe_restrictNegConjTranspose_apply, conjTranspose_eq_transpose_of_trivial,
-    neg_eq_iff_eq_neg]
+  rw [LieSubalgebra.mem_fixedSubalgebra_restrictNegConjTranspose_iff,
+    conjTranspose_eq_transpose_of_trivial]
 
 /-- **`𝔭` is the symmetric trace-zero matrices**: the `-1`-eigenspace of `X ↦ -Xᵀ` on
 `𝔰𝔩₂(ℝ)`. -/
 theorem mem_cartanP_slFinTwo_negTranspose_iff {X : sl (Fin 2) ℝ} :
     X ∈ (θ₂).cartanP ↔ (X : Matrix (Fin 2) (Fin 2) ℝ)ᵀ = (X : Matrix (Fin 2) (Fin 2) ℝ) := by
-  rw [LieEquiv.mem_cartanP, Subtype.ext_iff, LieSubalgebra.coe_restrictNegConjTranspose_apply,
-    NegMemClass.coe_neg, neg_inj, conjTranspose_eq_transpose_of_trivial]
+  rw [LieSubalgebra.mem_cartanP_restrictNegConjTranspose_iff, conjTranspose_eq_transpose_of_trivial]
 
 /-- The Killing form of `𝔰𝔩₂(ℝ)` is `B(X, Y) = 4 tr(XY)`. -/
 example (X Y : sl (Fin 2) ℝ) :
@@ -67,9 +66,8 @@ example (X Y : sl (Fin 2) ℝ) :
 theorem twistedKillingForm_slFinTwo_negTranspose_apply_self (X : sl (Fin 2) ℝ) :
     (θ₂).twistedKillingForm X X =
       4 * ((X : Matrix (Fin 2) (Fin 2) ℝ) * (X : Matrix (Fin 2) (Fin 2) ℝ)ᵀ).trace := by
-  rw [LieEquiv.twistedKillingForm_apply, killingForm_slFinTwo_apply,
-    LieSubalgebra.coe_restrictNegConjTranspose_apply, conjTranspose_eq_transpose_of_trivial,
-    Matrix.mul_neg, trace_neg, mul_neg, neg_neg]
+  simp [LieEquiv.twistedKillingForm_apply, killingForm_slFinTwo_apply,
+    conjTranspose_eq_transpose_of_trivial]
 
 /-- `B_θ(X, X) = 4 tr(XXᵀ) > 0` for nonzero `X ∈ 𝔰𝔩₂(ℝ)`. -/
 example {X : sl (Fin 2) ℝ} (hX : X ≠ 0) :
@@ -89,6 +87,6 @@ theorem not_isCartanInvolution_refl_slFinTwo :
 /-- **No involution of the abelian Lie algebra `ℝ` is a Cartan involution**: its Killing form
 vanishes. -/
 theorem not_isCartanInvolution_real (θ : ℝ ≃ₗ⁅ℝ⁆ ℝ) : ¬ θ.IsCartanInvolution :=
-  fun h ↦ h.not_isLieAbelian ⟨fun x y ↦ (Ring.lie_def x y).trans (sub_eq_zero.mpr (mul_comm x y))⟩
+  fun h ↦ h.not_isLieAbelian (isMulCommutative_iff_isLieAbelian.mp inferInstance)
 
 end TauCeti
