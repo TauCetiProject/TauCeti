@@ -28,8 +28,7 @@ This file identifies these signs with the local indices for the canonical orient
 `X`: a positive zero has local index `1` and a negative zero local index `-1`
 (`TauCeti.sectionIndex_eq_one_of_norm_sub_smulRight_lt`,
 `TauCeti.sectionIndex_eq_neg_one_of_norm_sub_smulRight_conjCLE_lt`). Both follow from the local
-index being the sign of `det D`
-(`TauCeti.sectionIndex_eq_sign_det_of_hasFDerivAt_negPointTwistChartReading`) and
+index being the sign of `det D` (`TauCeti.sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt`) and
 the sign of `det D` under each condition (`TauCeti.det_pos_of_norm_sub_smulRight_lt`,
 `TauCeti.det_neg_of_norm_sub_smulRight_conjCLE_lt`).
 
@@ -44,8 +43,6 @@ Theorem C.1.10), which twists `L` at these zeros.
 
 ## Main results
 
-* `TauCeti.sectionIndex_eq_sign_det_of_hasFDerivAt_negPointTwistChartReading`: the local index at
-  a zero is the sign of the Jacobian of its chart reading.
 * `TauCeti.sectionIndex_eq_one_of_norm_sub_smulRight_lt`: a positive zero has local index `1`.
 * `TauCeti.sectionIndex_eq_neg_one_of_norm_sub_smulRight_conjCLE_lt`: a negative zero has local
   index `-1`.
@@ -89,20 +86,6 @@ variable [IsManifold 𝓘(ℂ, ℂ) 1 X] (x : X) {σ : ∀ z, L z}
 
 include hσx hD
 
-/-- **The local index at a zero is the sign of the Jacobian of its chart reading.** Let `σ` be a
-continuous section of a complex line bundle `L` with fibre `ℂ` over a Riemann surface `X`,
-vanishing at `x`, whose chart reading has at `φ x` a real derivative `D` with `det D ≠ 0`. Then the
-local index of `σ` at `x` is the sign of `det D`. This is
-`TauCeti.sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt` for the reading
-`TauCeti.negPointTwistChartReading`. -/
-theorem sectionIndex_eq_sign_det_of_hasFDerivAt_negPointTwistChartReading (hdet : D.det ≠ 0) :
-    (VectorBundleOrientation.reindex (finCongr (by rw [finrank_self]))
-        (VectorBundleOrientation.complex ℂ L)).sectionIndex
-        Complex.finrank_real_complex (complexHomologicalOrientation X) hσ x =
-      SignType.sign D.det := by
-  rw [funext (negPointTwistChartReading_apply ℂ x σ)] at hD
-  exact sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt x hσ hσx hD hdet
-
 /-- **A positive zero has local index one.** Let `σ` be a continuous section of a complex line
 bundle `L` with fibre `ℂ` over a Riemann surface `X`, vanishing at `x`. If the real derivative `D`
 of the chart reading of `σ` at `φ x`, for the chart `φ` of `X` at `x`, satisfies
@@ -114,7 +97,9 @@ theorem sectionIndex_eq_one_of_norm_sub_smulRight_lt
         (VectorBundleOrientation.complex ℂ L)).sectionIndex
         Complex.finrank_real_complex (complexHomologicalOrientation X) hσ x = 1 := by
   have h := det_pos_of_norm_sub_smulRight_lt hDc
-  rw [sectionIndex_eq_sign_det_of_hasFDerivAt_negPointTwistChartReading x hσ hσx hD h.ne',
+  -- `negPointTwistChartReading` is not exposed outside its module, so unfold it by its `_apply`.
+  rw [funext (negPointTwistChartReading_apply ℂ x σ)] at hD
+  rw [sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt x hσ hσx hD h.ne',
     sign_pos h, SignType.coe_one]
 
 /-- **A negative zero has local index minus one.** Let `σ` be a continuous section of a complex
@@ -128,7 +113,9 @@ theorem sectionIndex_eq_neg_one_of_norm_sub_smulRight_conjCLE_lt
         (VectorBundleOrientation.complex ℂ L)).sectionIndex
         Complex.finrank_real_complex (complexHomologicalOrientation X) hσ x = -1 := by
   have h := det_neg_of_norm_sub_smulRight_conjCLE_lt hDc
-  rw [sectionIndex_eq_sign_det_of_hasFDerivAt_negPointTwistChartReading x hσ hσx hD h.ne,
+  -- `negPointTwistChartReading` is not exposed outside its module, so unfold it by its `_apply`.
+  rw [funext (negPointTwistChartReading_apply ℂ x σ)] at hD
+  rw [sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt x hσ hσx hD h.ne,
     sign_neg h, SignType.coe_neg_one]
 
 end Index
