@@ -10,6 +10,7 @@ public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Analysis.Matrix.DotProduct
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup
 public import TauCeti.Topology.Algebra.UnitaryGroup
+public import TauCeti.Topology.Instances.Matrix
 import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 
@@ -26,8 +27,13 @@ that use the topology or the order of `ℝ` and `ℂ`.
   the form is taken conjugate-linear: for `U(p, q)`, the form
   `z ⬝ᵥ J *ᵥ star w = Σ_{i ∈ p} zᵢ star wᵢ - Σ_{j ∈ q} zⱼ star wⱼ`, linear in the first slot, has
   the same values on the diagonal and so the same isometries.
+* Over `ℝ` or `ℂ`, the form `⟨z, z⟩` of `J = indefiniteDiagonal p q 𝕜` is the real number
+  `Σ_{i ∈ p} ‖zᵢ‖² - Σ_{j ∈ q} ‖zⱼ‖²`.
 * Over a Hausdorff topological ring with continuous star, `unitaryGroupOf A` is a closed subgroup
-  of the general linear group, with the topology of units.
+  of the general linear group, with the topology of units. For invertible `A` it is also a closed
+  subset of the matrices, with the subspace topology, since its inverse `A⁻¹ * star g * A` is a
+  continuous function of `g`; over `ℝ` or `ℂ` this makes `U(p, q)` locally compact and second
+  countable.
 * The block-diagonal embedding of `U(p) × U(q)` in `U(p, q)` is continuous, so over `ℝ` or `ℂ`
   its image is compact, being the continuous image of a product of compact unitary groups.
 
@@ -35,11 +41,18 @@ that use the topology or the order of `ℝ` and `ℂ`.
 
 * `Matrix.mem_unitaryGroupOf_iff_forall_dotProduct_self`: membership in
   `unitaryGroupOf A`, for Hermitian `A`, as the preservation of the values `⟨z, z⟩`.
+* `LieAlgebra.Orthogonal.star_dotProduct_indefiniteDiagonal_mulVec_self`: the values of the
+  indefinite Hermitian form.
 * `Matrix.isClosed_unitaryGroupOf`: `unitaryGroupOf A` is closed in `GL n R`.
+* `Matrix.unitaryGroupOf.isClosedEmbedding_val`: for invertible `A`, the coercion of
+  `unitaryGroupOf A` to the matrices is a closed embedding.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.continuous_fromBlocksHom`: the block-diagonal embedding
   of `U(p) × U(q)` is continuous.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.isCompact_range_fromBlocksHom`: the block-diagonal
   subgroup `U(p) × U(q)` is compact.
+* `TauCeti.Matrix.indefiniteUnitaryGroup.instLocallyCompactSpace` and
+  `TauCeti.Matrix.indefiniteUnitaryGroup.instSecondCountableTopology`: over `ℝ` or `ℂ`, `U(p, q)`
+  is locally compact and second countable.
 -/
 
 public section
@@ -62,6 +75,33 @@ theorem isClosed_unitaryGroupOf {R : Type*} [CommRing R] [StarRing R] [Topologic
   exact isClosed_eq (((Units.continuous_val.star).matrix_mul continuous_const).matrix_mul
     Units.continuous_val) continuous_const
 
+/-- **`unitaryGroupOf A` is a closed subset of the matrices**, for invertible `A`: the coercion to
+matrices is a closed embedding. The topology of `GL n R` is that of the pair `(g, g⁻¹)`, and on
+`unitaryGroupOf A` the inverse `A⁻¹ * star g * A` is a continuous function of `g`; the image is
+cut out by the continuous equation `star M * A * M = A`, every solution of which is invertible. -/
+theorem unitaryGroupOf.isClosedEmbedding_val {R : Type*} [CommRing R] [StarRing R]
+    [TopologicalSpace R] [IsTopologicalRing R] [ContinuousStar R] [T2Space R] {A : Matrix n n R}
+    (hA : IsUnit A) :
+    Topology.IsClosedEmbedding fun g : unitaryGroupOf A => ((g : GL n R) : Matrix n n R) := by
+  have hc : Continuous fun g : unitaryGroupOf A => ((g : GL n R) : Matrix n n R) :=
+    Units.continuous_val.comp continuous_subtypeVal
+  have hrange : Set.range (fun g : unitaryGroupOf A => ((g : GL n R) : Matrix n n R)) =
+      {M | star M * A * M = A} :=
+    Set.ext fun M => ⟨fun ⟨g, hg⟩ => hg ▸ mem_unitaryGroupOf_iff.mp g.property,
+      fun hM => ⟨ofMatrix hA M hM, val_ofMatrix hA M hM⟩⟩
+  refine ⟨⟨Topology.IsInducing.of_comp hc
+      (g := fun M : Matrix n n R => (M, MulOpposite.op (A⁻¹ * star M * A)))
+      (continuous_id.prodMk (MulOpposite.continuous_op.comp
+        ((continuous_const.matrix_mul continuous_id.star).matrix_mul continuous_const))) ?_,
+    fun g h hgh => unitaryGroupOf.ext hgh⟩, ?_⟩
+  · -- The composite is `g ↦ (g, g⁻¹)`, the inducing map defining the topology of `GL n R`.
+    convert Units.isInducing_embedProduct.comp Topology.IsInducing.subtypeVal using 1
+    funext g
+    simp [Units.embedProduct_apply, val_inv_of_mem_unitaryGroupOf hA g.property]
+  · rw [hrange]
+    exact isClosed_eq ((continuous_id.star.matrix_mul continuous_const).matrix_mul continuous_id)
+      continuous_const
+
 /-- **Membership in `unitaryGroupOf A` by polarization.** Over `ℝ` or `ℂ` and for Hermitian `A`,
 `g ∈ unitaryGroupOf A` exactly when `⟨g z, g z⟩ = ⟨z, z⟩` for every `z`, where
 `⟨z, z⟩ = star z ⬝ᵥ A *ᵥ z`. -/
@@ -81,6 +121,20 @@ theorem mem_unitaryGroupOf_iff_forall_dotProduct_self {𝕜 : Type*} [RCLike �
     star_dotProduct_conjTranspose_mul_mul_mulVec]
 
 end Matrix
+
+namespace LieAlgebra.Orthogonal
+
+/-- **The values of the indefinite Hermitian form.** Over `ℝ` or `ℂ`, the form
+`⟨z, z⟩ = star z ⬝ᵥ J *ᵥ z` of `J = indefiniteDiagonal p q 𝕜` is the real number
+`Σ_{i ∈ p} ‖zᵢ‖² - Σ_{j ∈ q} ‖zⱼ‖²`. -/
+theorem star_dotProduct_indefiniteDiagonal_mulVec_self {p q 𝕜 : Type*} [Fintype p] [Fintype q]
+    [DecidableEq p] [DecidableEq q] [RCLike 𝕜] (z : p ⊕ q → 𝕜) :
+    star z ⬝ᵥ indefiniteDiagonal p q 𝕜 *ᵥ z =
+      ((∑ i, ‖z (Sum.inl i)‖ ^ 2 - ∑ j, ‖z (Sum.inr j)‖ ^ 2 : ℝ) : 𝕜) := by
+  simp [dotProduct, Fintype.sum_sum_type, indefiniteDiagonal, mulVec_diagonal, RCLike.conj_mul,
+    sub_eq_add_neg]
+
+end LieAlgebra.Orthogonal
 
 namespace TauCeti
 
@@ -102,6 +156,19 @@ theorem isCompact_range_fromBlocksHom {𝕜 : Type*} [RCLike 𝕜] :
     IsCompact ((fromBlocksHom p q 𝕜).range : Set (indefiniteUnitaryGroup p q 𝕜)) := by
   rw [MonoidHom.coe_range]
   exact isCompact_range continuous_fromBlocksHom
+
+/-- `U(p, q)` over `ℝ` or `ℂ` is locally compact, being a closed subset of the matrices
+(`Matrix.unitaryGroupOf.isClosedEmbedding_val`). -/
+instance instLocallyCompactSpace {𝕜 : Type*} [RCLike 𝕜] :
+    LocallyCompactSpace (indefiniteUnitaryGroup p q 𝕜) :=
+  (unitaryGroupOf.isClosedEmbedding_val
+    LieAlgebra.Orthogonal.isUnit_indefiniteDiagonal).locallyCompactSpace
+
+/-- `U(p, q)` over `ℝ` or `ℂ` is second countable, being a subspace of the matrices. -/
+instance instSecondCountableTopology {𝕜 : Type*} [RCLike 𝕜] :
+    SecondCountableTopology (indefiniteUnitaryGroup p q 𝕜) :=
+  (unitaryGroupOf.isClosedEmbedding_val
+    LieAlgebra.Orthogonal.isUnit_indefiniteDiagonal).isEmbedding.secondCountableTopology
 
 end indefiniteUnitaryGroup
 
