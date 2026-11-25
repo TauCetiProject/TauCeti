@@ -18,8 +18,9 @@ coordinates of `TruncatedWittVector p n A`. The correspondence is natural in the
 post-composing with `φ : A →ₐ[R] B` changes the coefficients of the Witt vector along `φ`
 (`TruncatedWittVector.algHomEquiv_comp`).
 
-So the polynomial ring corepresents the set-valued functor `A ↦ W_n(A)`; transporting the ring
-operations of `W_n` along this bijection gives its coordinate Hopf algebra.
+So the polynomial ring corepresents the set-valued functor `A ↦ W_n(A)`; transporting the
+additive group law of `W_n` (addition, zero and negation) along this bijection gives its
+coordinate Hopf algebra.
 -/
 
 public section
