@@ -107,25 +107,19 @@ theorem map_groupSchemeIsoSpecialOrthogonal_hom_comp_groupSchemeBaseChangeIso_ho
       (groupSchemeBaseChangeIso R l K).hom ≫
         (groupSchemeIsoSpecialOrthogonal l (algebraMap_mul_self_eq_neg_one K hi)).hom := by
   have hS := baseChangeMap_coordinateHopfAlgebraIsoSpecialOrthogonal_hom_comp l K hi
-  rw [← CommHopfAlgCat.baseChangeFunctor_map, ← Functor.mapIso_hom] at hS
-  have hS' := (CommSq.horiz_inv ⟨hS⟩).w
-  rw [Functor.mapIso_inv, CommHopfAlgCat.baseChangeFunctor_map] at hS'
-  have hN := AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_trans_hom_naturality
+  rw [← cancel_mono (eqToHom (SpecialOrthogonal.groupScheme_def K l)), Category.assoc,
+    Category.assoc, SpecialOrthogonal.groupSchemeBaseChangeIso_hom_comp_eqToHom,
+    groupSchemeIsoSpecialOrthogonal_hom_comp_eqToHom, ← Functor.map_comp_assoc,
+    groupSchemeIsoSpecialOrthogonal_hom_comp_eqToHom, groupSchemeBaseChangeIso_def,
+    GeneralLinear.hopfIdealBaseChangeIso_def, GeneralLinear.hopfIdealBaseChangeIso_def]
+  refine AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_trans_hom_naturality
     (coordinateHopfAlgebraIsoSpecialOrthogonal l hi).inv
     (coordinateHopfAlgebraIsoSpecialOrthogonal l (algebraMap_mul_self_eq_neg_one K hi)).inv
     (coordinateHopfAlgebraBaseChangeIso R l K)
-    (SpecialOrthogonal.coordinateHopfAlgebraBaseChangeIso R K l) hS'
-  rw [groupSchemeIsoSpecialOrthogonal_def, groupSchemeIsoSpecialOrthogonal_def,
-    SpecialOrthogonal.groupSchemeBaseChangeIso_def, groupSchemeBaseChangeIso_def,
-    GeneralLinear.hopfIdealBaseChangeIso_def, GeneralLinear.hopfIdealBaseChangeIso_def]
-  -- Postcomposing `hN` with the `eqToHom` of `SpecialOrthogonal.groupScheme_def` over `K` gives
-  -- the goal once the `eqToHom`s of the quotient-spectrum presentations cancel.
-  simpa only [Functor.comp_obj, Functor.leftOp_obj, Functor.mapIso_symm, Iso.trans_hom,
-    Iso.symm_hom, Functor.mapIso_inv, Iso.op_inv, Functor.comp_map, Functor.leftOp_map,
-    Quiver.Hom.unop_op, eqToIso.hom, Functor.map_comp, Iso.op_symm, Iso.trans_assoc,
-    Functor.mapIso_hom, Category.assoc, eqToHom_map_comp_assoc, eqToHom_refl,
-    CategoryTheory.Functor.map_id, Category.id_comp] using
-    hN =≫ eqToHom (SpecialOrthogonal.groupScheme_def K l).symm
+    (SpecialOrthogonal.coordinateHopfAlgebraBaseChangeIso R K l) ?_
+  rw [← CommHopfAlgCat.baseChangeFunctor_map, ← Functor.mapIso_hom] at hS
+  rw [← CommHopfAlgCat.baseChangeFunctor_map, ← Functor.mapIso_inv]
+  exact (CommSq.horiz_inv ⟨hS⟩).w
 
 end GroupScheme
 

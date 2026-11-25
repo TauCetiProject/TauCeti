@@ -245,6 +245,19 @@ theorem groupSchemeBaseChangeIso_def :
         eqToIso (groupScheme_def K n).symm :=
   (rfl)
 
+/-- Followed by the quotient-spectrum presentation `groupScheme_def` over `K`, the base-change
+isomorphism of `SOₙ` is the Hopf-ideal base-change comparison of `GLₙ`, after the presentation
+over `R`. -/
+@[reassoc]
+theorem groupSchemeBaseChangeIso_hom_comp_eqToHom :
+    (groupSchemeBaseChangeIso R K n).hom ≫ eqToHom (groupScheme_def K n) =
+      (Over.pullback (AlgebraicGeometry.Spec.map
+          (CommRingCat.ofHom (algebraMap R K)))).mapGrp.map (eqToHom (groupScheme_def R n)) ≫
+        (GeneralLinear.hopfIdealBaseChangeIso R K n (definingHopfIdeal R n)
+          (definingHopfIdeal K n) (coordinateHopfAlgebraBaseChangeIso R K n).symm).hom := by
+  rw [groupSchemeBaseChangeIso_def, Iso.trans_hom, Iso.trans_hom, Functor.mapIso_hom, eqToIso.hom,
+    eqToIso.hom, Category.assoc, Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
+
 /-- The inclusion of `SOₙ` into `GLₙ` is the Hopf-ideal inclusion at its defining Hopf ideal,
 after the quotient-spectrum presentation `groupScheme_def`. -/
 theorem inclusion_eq_eqToHom_comp_hopfIdealInclusion :
@@ -267,10 +280,7 @@ theorem map_inclusion_comp_groupSchemeBaseChangeIso_hom :
   have h := GeneralLinear.map_hopfIdealInclusion_comp_groupSchemeBaseChangeIso R K n _ _
     (coordinateHopfAlgebraBaseChangeIso R K n).symm he
   rw [inclusion_eq_eqToHom_comp_hopfIdealInclusion, inclusion_eq_eqToHom_comp_hopfIdealInclusion,
-    groupSchemeBaseChangeIso_def, Functor.map_comp, Category.assoc, h]
-  -- The `eqToHom`s of `groupScheme_def` over `R` cancel, the one over `K` meets its inverse.
-  simp only [Iso.trans_hom, Functor.mapIso_hom, eqToIso.hom, Category.assoc, eqToHom_trans_assoc,
-    eqToHom_refl, Category.id_comp]
+    Functor.map_comp, Category.assoc, h, groupSchemeBaseChangeIso_hom_comp_eqToHom_assoc]
 
 end GroupScheme
 
