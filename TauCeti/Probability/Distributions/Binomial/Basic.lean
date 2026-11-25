@@ -71,21 +71,17 @@ theorem pgf_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
   ring
 
 /-- Every real observable of a native binomial law has full exponential-integrability domain. -/
+@[simp]
 theorem integrableExpSet_binomial (X : ℕ → ℝ) (n : ℕ) (p : unitInterval) :
     integrableExpSet X Bin(n, p) = Set.univ :=
   Set.eq_univ_of_forall fun _ ↦ integrable_binomial _
 
-/-- Every real observable of a real-cast binomial law has full exponential-integrability
-domain. -/
-theorem integrableExpSet_map_cast_binomial (X : ℝ → ℝ) (n : ℕ) (p : unitInterval) :
-    integrableExpSet X Bin(ℝ, n, p) = Set.univ :=
+/-- Every real observable of a cast binomial law has full exponential-integrability domain. -/
+@[simp]
+theorem integrableExpSet_map_cast_binomial {R : Type*} [MeasurableSpace R]
+    [AddMonoidWithOne R] [MeasurableSingletonClass R] (X : R → ℝ) (n : ℕ)
+    (p : unitInterval) : integrableExpSet X Bin(R, n, p) = Set.univ :=
   Set.eq_univ_of_forall fun _ ↦ integrable_map_cast_binomial _
-
-/-- Every exponential moment of a real-cast binomial law exists. -/
-@[simp↓]
-theorem integrableExpSet_id_map_cast_binomial (n : ℕ) (p : unitInterval) :
-    integrableExpSet id Bin(ℝ, n, p) = Set.univ :=
-  integrableExpSet_map_cast_binomial id n p
 
 /-- The moment generating function of the real-valued binomial law. -/
 theorem mgf_id_map_cast_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
