@@ -80,8 +80,8 @@ section Ring
 
 variable {R : Type*} [Ring R] {p : R}
 
-/-- **Componentwise multiplication**: for an idempotent `e` commuting with `x` and `y`, elements of
-the form `e x + (1 - e) y` multiply componentwise, as they would in `e R e × (1 - e) R (1 - e)`. -/
+/-- **Componentwise multiplication**: for an idempotent `p` commuting with `x` and `y`, elements of
+the form `p x + (1 - p) y` multiply componentwise, as they would in `p R p × (1 - p) R (1 - p)`. -/
 theorem mul_add_one_sub_mul (he : IsIdempotentElem p) {x y : R} (hx : Commute p x)
     (hy : Commute p y) (x' y' : R) :
     (p * x + (1 - p) * y) * (p * x' + (1 - p) * y') = p * (x * x') + (1 - p) * (y * y') := by

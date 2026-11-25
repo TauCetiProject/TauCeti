@@ -33,7 +33,7 @@ whole line through it.
 ## Main results
 
 * `TauCeti.weight_smul_mem_of_exp_weight_smul_mem`: the form for entrywise weights taking finitely
-  many values, for matrices with entries in any real vector space.
+  many values, for matrices with entries in any real module.
 * `Matrix.IsHermitian.commutator_mem_of_exp_mul_mul_exp_neg_mem`: Mostow's lemma.
 
 ## References
@@ -58,7 +58,7 @@ variable {m n : Type*}
 /-- **Mostow's lemma for entrywise weights.** If scaling the entry `(i, j)` by `exp (w i j)` maps a
 real subspace of matrices into itself, so does scaling it by `w i j`, provided the weights take
 finitely many values. -/
-theorem weight_smul_mem_of_exp_weight_smul_mem {E : Type*} [AddCommGroup E] [Module ℝ E]
+theorem weight_smul_mem_of_exp_weight_smul_mem {E : Type*} [AddCommMonoid E] [Module ℝ E]
     (w : m → n → ℝ) (hw : (Set.range (Function.uncurry w)).Finite)
     {W : Submodule ℝ (Matrix m n E)}
     (hW : ∀ Y ∈ W, (of fun i j ↦ Real.exp (w i j) • Y i j) ∈ W) {Y : Matrix m n E}

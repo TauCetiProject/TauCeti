@@ -7,30 +7,30 @@ module
 
 public import Mathlib.Algebra.Algebra.Pi
 public import Mathlib.Data.Matrix.Basic
-public import Mathlib.Basic.Real.Basic
 
 /-!
-# Entrywise scaling of matrices by real weights
+# Entrywise scaling of matrices by weights
 
-Scaling the entry `(i, j)` of a matrix `Y` with entries in a real vector space `E` by `r i j` is a
-real linear endomorphism of `Matrix m n E`, multiplicative and additive in the weights `r`.
+For a commutative semiring `R` and an `R`-module `E`, scaling the entry `(i, j)` of a matrix `Y`
+with entries in `E` by `r i j : R` is an `R`-linear endomorphism of `Matrix m n E`, multiplicative
+and additive in the weights `r`.
 
 ## Main definitions
 
-* `Matrix.entrywiseSMulAlgHom`: entrywise scaling by a matrix of real weights, as an algebra
-  homomorphism into the real endomorphisms of `Matrix m n E`.
+* `Matrix.entrywiseSMulAlgHom`: entrywise scaling by a matrix of weights, as an algebra
+  homomorphism into the `R`-linear endomorphisms of `Matrix m n E`.
 -/
 
 public section
 
 namespace Matrix
 
-variable {m n : Type*}
+variable {m n R : Type*} [CommSemiring R]
 
-/-- Entrywise scaling by a real matrix of weights, as a real algebra homomorphism from the weights
-to the real linear endomorphisms of `Matrix m n E`. -/
-def entrywiseSMulAlgHom (E : Type*) [AddCommGroup E] [Module ℝ E] :
-    (m → n → ℝ) →ₐ[ℝ] Module.End ℝ (Matrix m n E) where
+/-- Entrywise scaling by a matrix of weights in `R`, as an `R`-algebra homomorphism from the
+weights to the `R`-linear endomorphisms of `Matrix m n E`. -/
+def entrywiseSMulAlgHom (E : Type*) [AddCommMonoid E] [Module R E] :
+    (m → n → R) →ₐ[R] Module.End R (Matrix m n E) where
   toFun r :=
     { toFun Y := of fun i j ↦ r i j • Y i j
       map_add' Y Z := by ext i j; simp [smul_add]
@@ -42,15 +42,15 @@ def entrywiseSMulAlgHom (E : Type*) [AddCommGroup E] [Module ℝ E] :
   commutes' c := by ext Y i j; simp
 
 /-- `entrywiseSMulAlgHom E r Y` is the matrix with entries `r i j • Y i j`. -/
-theorem entrywiseSMulAlgHom_apply {E : Type*} [AddCommGroup E] [Module ℝ E]
-    (r : m → n → ℝ) (Y : Matrix m n E) :
+theorem entrywiseSMulAlgHom_apply {E : Type*} [AddCommMonoid E] [Module R E]
+    (r : m → n → R) (Y : Matrix m n E) :
     entrywiseSMulAlgHom E r Y = of fun i j ↦ r i j • Y i j :=
   (rfl)
 
 /-- The entry `(i, j)` of `entrywiseSMulAlgHom E r Y` is `r i j • Y i j`. -/
 @[simp]
-theorem entrywiseSMulAlgHom_apply_apply {E : Type*} [AddCommGroup E] [Module ℝ E]
-    (r : m → n → ℝ) (Y : Matrix m n E) (i : m) (j : n) :
+theorem entrywiseSMulAlgHom_apply_apply {E : Type*} [AddCommMonoid E] [Module R E]
+    (r : m → n → R) (Y : Matrix m n E) (i : m) (j : n) :
     entrywiseSMulAlgHom E r Y i j = r i j • Y i j :=
   (rfl)
 
