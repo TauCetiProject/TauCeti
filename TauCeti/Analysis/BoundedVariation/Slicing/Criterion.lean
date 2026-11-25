@@ -26,7 +26,7 @@ is controlled by the `(n - 1)`-dimensional Hausdorff measure of `∂ᵉs ∩ Ω`
 * `TauCeti.exists_perimeter_ne_top_of_euclideanHausdorffMeasure_essentialBoundary_inter_ne_top`:
   **Federer's criterion**: if `Hⁿ⁻¹(∂ᵉs ∩ K) < ∞` for every compact `K ⊆ Ω`, then `s` has locally
   finite perimeter in `Ω`;
-* `TauCeti.perimeter_le_euclideanHausdorffMeasure_essentialBoundary_inter`: in dimension `n ≥ 2`,
+* `TauCeti.perimeter_le_euclideanHausdorffMeasure_essentialBoundary_inter`: in every dimension,
   the sharp bound `P(s; Ω) ≤ Hⁿ⁻¹(∂ᵉs ∩ Ω)` in `[0, ∞]`.
 
 Finite measure of the essential boundary is a hypothesis on `s` from which finite perimeter is
@@ -46,8 +46,9 @@ are infinitely many). Integrating over the hyperplane, the projection bound
 `∫ P(s_y; Ω_y) dy ≤ 2ⁿ⁻¹ Hⁿ⁻¹(∂ᵉs ∩ Ω)`
 (`TauCeti.lintegral_perimeter_lineSection_le_euclideanHausdorffMeasure`), and the converse
 slicing inequality `TauCeti.perimeter_le_sum_lintegral_perimeter_lineSection`, applied along an
-orthonormal basis, sums these bounds. The sharp bound follows from the criterion, De Giorgi's
-theorem `TauCeti.perimeter_eq_euclideanHausdorffMeasure_reducedBoundary` and the inclusion
+orthonormal basis, sums these bounds. In dimension `n ≤ 1` the factor `n 2ⁿ⁻¹` is at most `1`;
+in dimension `n ≥ 2` the sharp bound follows from the criterion, De Giorgi's theorem
+`TauCeti.perimeter_eq_euclideanHausdorffMeasure_reducedBoundary` and the inclusion
 `TauCeti.reducedBoundary_subset_essentialBoundary`.
 
 ## References
@@ -134,13 +135,19 @@ theorem exists_perimeter_ne_top_of_euclideanHausdorffMeasure_essentialBoundary_i
     (ne_top_of_le_ne_top (h _ hV hVΩ) ?_)
   exact measure_mono (inter_subset_inter_right _ subset_closure)
 
-/-- **The perimeter is at most the Hausdorff measure of the essential boundary.** In dimension
-`n ≥ 2`, every null-measurable set `s` has `P(s; Ω) ≤ Hⁿ⁻¹(∂ᵉs ∩ Ω)` in every open set `Ω`, in
-`[0, ∞]`. When the right side is finite, Federer's criterion gives locally finite perimeter, and
-De Giorgi's theorem `P(s; Ω) = Hⁿ⁻¹(∂*s)` with `∂*s ⊆ ∂ᵉs` gives the bound. -/
-theorem perimeter_le_euclideanHausdorffMeasure_essentialBoundary_inter (hn : 2 ≤ finrank ℝ E)
-    (hs : NullMeasurableSet s volume) (Ω : Opens E) :
+/-- **The perimeter is at most the Hausdorff measure of the essential boundary.** Every
+null-measurable set `s` has `P(s; Ω) ≤ Hⁿ⁻¹(∂ᵉs ∩ Ω)` in every open set `Ω`, in `[0, ∞]`. In
+dimension `n ≤ 1` this is the bound `P(s; Ω) ≤ n 2ⁿ⁻¹ Hⁿ⁻¹(∂ᵉs ∩ Ω)`. In dimension `n ≥ 2`, when
+the right side is finite, Federer's criterion gives locally finite perimeter, and De Giorgi's
+theorem `P(s; Ω) = Hⁿ⁻¹(∂*s)` with `∂*s ⊆ ∂ᵉs` gives the bound. -/
+theorem perimeter_le_euclideanHausdorffMeasure_essentialBoundary_inter (Ω : Opens E)
+    (hs : NullMeasurableSet s volume) :
     perimeter volume Ω s ≤ μHE[finrank ℝ E - 1] (essentialBoundary volume s ∩ Ω) := by
+  rcases le_or_gt (finrank ℝ E) 1 with h1 | hn
+  · refine (perimeter_le_mul_euclideanHausdorffMeasure_essentialBoundary_inter hs Ω).trans
+      (mul_le_of_le_one_left zero_le ?_)
+    obtain h | h : finrank ℝ E = 0 ∨ finrank ℝ E = 1 := by omega
+    all_goals simp [h]
   by_cases hM : μHE[finrank ℝ E - 1] (essentialBoundary volume s ∩ Ω) = ∞
   · rw [hM]
     exact le_top
