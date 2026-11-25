@@ -343,7 +343,7 @@ theorem IsHermitian.rank_eq_card_non_zero_eigenvalues₀ (hA : A.IsHermitian) :
   rw [hA.rank_eq_card_non_zero_eigs]
   exact Fintype.card_congr
     ((Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))).symm.subtypeEquiv
-      (fun _ ↦ by rw [← hA.eigenvalues_apply_equivOfCardEq, Equiv.apply_symm_apply]))
+      (fun _ ↦ by rw [hA.eigenvalues₀_equivOfCardEq_symm]))
 
 /-- Every entry of the sorted eigenvalue list of a positive-semidefinite matrix is nonnegative. -/
 theorem PosSemidef.eigenvalues₀_nonneg

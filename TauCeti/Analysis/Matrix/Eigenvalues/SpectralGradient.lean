@@ -340,6 +340,7 @@ theorem spectralGradient_sum_sq (hA : A.IsHermitian) :
 /-- **The gradient of the determinant** is the adjugate: for `f = σₙ`, `∇F_f(A) = adj A`. The
 weights `∏_{j ≠ i} λⱼ(A)` are the diagonal of the adjugate of `diag(λ(A))`, and the adjugate
 commutes with unitary conjugation. -/
+@[simp]
 theorem spectralGradient_prod (hA : A.IsHermitian) :
     hA.spectralGradient (fun μ ↦ ∏ k, μ k) = A.adjugate := by
   have hw : (fun i ↦ (hA.spectralGradientWeights (fun μ ↦ ∏ k, μ k) i : 𝕜)) =

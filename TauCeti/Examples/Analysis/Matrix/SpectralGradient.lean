@@ -17,7 +17,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
 The gradient of the spectral function `A ↦ f(λ(A))` at a Hermitian matrix `A` is
 `∇F_f(A) = U diag(∂ᵢ f(λ(A))) U*` for an eigenbasis `U` of `A`
 (`Matrix.IsHermitian.spectralGradient`). These examples compute it for the spectral functions
-`tr`, `det`, `tr(T²)` and `det^{1/2}` on explicit `2 × 2` matrices, and give the
+`det`, `tr(T²)` and `det^{1/2}` on explicit `2 × 2` matrices, and give the
 non-differentiable control `λ₁`. The gradient of `tr` is the identity at every Hermitian matrix
 (`Matrix.IsHermitian.spectralGradient_sum`).
 
