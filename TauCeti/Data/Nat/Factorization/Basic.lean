@@ -26,6 +26,11 @@ the product of all the prime factors of `n` exactly when it is coprime to `n`. M
 an injective family of primes (or fixed positive powers of their casts in characteristic zero) are
 injective on finitely supported exponent tuples.
 
+Conversely, a nonzero `n` is coprime to `q` once no prime factor of `n` divides `q`. Thus, for a
+set `S`, the nonzero `n` all of whose prime factors lie in `S` (the `S`-factored numbers) are all
+nonzero `n` when `S` contains every prime, only `1` when `S = ∅`, and the `n` coprime to `q` when
+`S = {p | ¬ p ∣ q}`.
+
 ## Provenance
 
 `Nat.coprime_prod_primeFactors_right_iff` restates `coprime_prod_primeFactors_iff_coprime` of
@@ -117,6 +122,25 @@ theorem Coprime.exists_mem_primeFactors_not_dvd {n p : ℕ} (hcop : n.Coprime p)
     ∃ q ∈ n.primeFactors, ¬ q ∣ p :=
   let ⟨q, hq⟩ := nonempty_primeFactors.2 hn
   ⟨q, hq, hcop.not_dvd_of_mem_primeFactors hq⟩
+
+/-- A nonzero `n` is coprime to `q` exactly when no prime factor of `n` divides `q`: the nonzero
+`n` coprime to `q` are those all of whose prime factors lie in `{p | ¬ p ∣ q}`. -/
+theorem coprime_iff_forall_mem_primeFactors_not_dvd {n q : ℕ} (hn : n ≠ 0) :
+    n.Coprime q ↔ ∀ p ∈ n.primeFactors, ¬ p ∣ q :=
+  ⟨fun h _ hp ↦ h.not_dvd_of_mem_primeFactors hp,
+    fun h ↦ coprime_of_dvd fun p hp hpn ↦ h p (mem_primeFactors.2 ⟨hp, hpn, hn⟩)⟩
+
+/-- If `S` contains every prime, every prime factor of every `n` lies in `S`. -/
+theorem forall_mem_primeFactors_mem_of_setOf_prime_subset {S : Set ℕ}
+    (hS : {p : ℕ | p.Prime} ⊆ S) (n : ℕ) : ∀ p ∈ n.primeFactors, p ∈ S :=
+  fun _ hp ↦ hS (prime_of_mem_primeFactors hp)
+
+/-- A nonzero `n` has all of its prime factors in `∅` exactly when `n = 1`. -/
+theorem forall_mem_primeFactors_mem_empty_iff {n : ℕ} (hn : n ≠ 0) :
+    (∀ p ∈ n.primeFactors, p ∈ (∅ : Set ℕ)) ↔ n = 1 := by
+  simp only [Set.mem_empty_iff_false, imp_false, ← Finset.eq_empty_iff_forall_notMem,
+    primeFactors_eq_empty]
+  omega
 
 end Nat
 
