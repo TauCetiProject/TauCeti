@@ -60,7 +60,7 @@ the monomials may be replaced by products `∏ᵢ Sₖᵢ(Xᵢ)` of the members 
   one, such as affine linear forms, for the variables occurring in a polynomial of total degree at
   most `m` gives a polynomial of total degree at most `m`, also when the substituted polynomials
   have coefficients in an `R`-algebra.
-* `MvPolynomial.exists_surjective_linearMap_restrictTotalDegree`: over an infinite field,
+* `Submodule.exists_surjective_linearMap_restrictTotalDegree`: over an infinite field,
   restricting the polynomials of total degree at most `m` to a subspace `W`, in coordinates on
   `W`, is onto the polynomials of total degree at most `m` in `dim W` variables, with kernel the
   polynomials vanishing on `W`.
@@ -327,8 +327,8 @@ theorem span_prod_aeval_X_le {σ R : Type*} [Fintype σ] [CommSemiring R] {p q :
 polynomials of total degree at most `m` in the variables `σ` to a subspace `W` of `σ → K`, in
 coordinates on `W`, is a linear map onto the polynomials of total degree at most `m` in `dim W`
 variables whose kernel consists of the polynomials vanishing on `W`. -/
-theorem exists_surjective_linearMap_restrictTotalDegree [Finite σ] {K : Type*} [Field K]
-    [Infinite K] (W : Submodule K (σ → K)) (m : ℕ) :
+theorem _root_.Submodule.exists_surjective_linearMap_restrictTotalDegree [Finite σ] {K : Type*}
+    [Field K] [Infinite K] (W : Submodule K (σ → K)) (m : ℕ) :
     ∃ R : restrictTotalDegree σ K m →ₗ[K] restrictTotalDegree (Fin (Module.finrank K W)) K m,
       Function.Surjective R ∧ ∀ p, R p = 0 ↔ ∀ w ∈ W, eval w (p : MvPolynomial σ K) = 0 := by
   classical

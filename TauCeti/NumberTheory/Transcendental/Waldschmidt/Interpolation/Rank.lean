@@ -115,7 +115,7 @@ theorem rank_waldschmidtInterpolationMatrix_eq_iff_of_mem [Infinite K] {κ : Typ
     simp [Ψ]
   have hrange : _ = LinearMap.range Ψ :=
     span_row_waldschmidtInterpolationMatrix_monomial α b P s T₀ T
-  obtain ⟨R, hR, hRker⟩ := exists_surjective_linearMap_restrictTotalDegree W T₀
+  obtain ⟨R, hR, hRker⟩ := W.exists_surjective_linearMap_restrictTotalDegree T₀
   -- The componentwise restriction `RT` is onto, and its kernel lies in the kernel of `Ψ`.
   let RT : (T → Pol) →ₗ[K] T → restrictTotalDegree (Fin d) K T₀ :=
     LinearMap.pi fun t ↦ R ∘ₗ LinearMap.proj t
