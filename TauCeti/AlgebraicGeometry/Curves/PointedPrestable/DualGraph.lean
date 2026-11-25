@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.Node.DualGraph
+public import TauCeti.AlgebraicGeometry.Curves.Node.DualGraph.Basic
 public import TauCeti.AlgebraicGeometry.Curves.PointedPrestable.Basic
 
 /-!

@@ -79,6 +79,8 @@ are described through them.
 * `TauCeti.relTraceIdeal_mono`, `TauCeti.relTraceIdeal_self`: `R[G]^P_S ≤ R[G]^P_Q` for
   `S ≤ Q ≤ P`, and `R[G]^P_P = R[G]^P`.
 * `TauCeti.conjInvariantsEquiv_relTrace`: `g Tr_Q^P(a) g⁻¹ = Tr_{gQg⁻¹}^{gPg⁻¹}(g a g⁻¹)`.
+* `TauCeti.mem_relTraceIdeal_conj`: a central element that is a trace from `P` is a trace from
+  every conjugate `gPg⁻¹`.
 * `TauCeti.inclusion_relTrace_eq_sum_relTrace_conj`,
   `TauCeti.inclusion_relTrace_eq_sum_doubleCoset`: the Mackey formula
   `Tr_Q^P(a) = ∑_{TxQ} Tr_{T ∩ xQx⁻¹}^T(x a x⁻¹)` in `R[G]^T` for `T ≤ P`, over any system of
@@ -494,6 +496,27 @@ theorem conjInvariantsEquiv_relTrace (g : G) {Q P : Subgroup G} [(Q.subgroupOf P
     conjRepresentation_conjRepresentation]
   congr 2
   simp [e, MulAut.smul_def, MulAut.conj_apply]
+
+/-- The relative trace into `P` depends on `P` only through its value: for `P = P'`, `Tr_Q^P` and
+`Tr_Q^{P'}` agree in `R[G]`. -/
+theorem coe_relTrace_of_eq {Q P P' : Subgroup G} (h : P = P') [(Q.subgroupOf P).FiniteIndex]
+    [(Q.subgroupOf P').FiniteIndex] (a : conjInvariants R Q) :
+    (relTrace R Q P a : MonoidAlgebra R G) = relTrace R Q P' a := by
+  subst h
+  rfl
+
+/-- **Traces from conjugate subgroups.** A central element that is a trace from `P` is a trace
+from every conjugate `gPg⁻¹`, since `g Tr_P^G(a) g⁻¹ = Tr_{gPg⁻¹}^G(g a g⁻¹)`. Applied to `g⁻¹`,
+this gives the converse. -/
+theorem mem_relTraceIdeal_conj [Finite G] {P : Subgroup G}
+    {x : conjInvariants R (⊤ : Subgroup G)} (hx : x ∈ relTraceIdeal R (le_top : P ≤ ⊤)) (g : G) :
+    x ∈ relTraceIdeal R (le_top : MulAut.conj g • P ≤ ⊤) := by
+  obtain ⟨a, rfl⟩ := (mem_relTraceIdeal_iff _).1 hx
+  refine (mem_relTraceIdeal_iff _).2 ⟨conjInvariantsEquiv R g P a, Subtype.ext ?_⟩
+  have h := congrArg Subtype.val (conjInvariantsEquiv_relTrace (R := R) g (P := ⊤) a)
+  rw [coe_conjInvariantsEquiv,
+    mem_conjInvariants_iff.1 (relTrace R P ⊤ a).property g (Subgroup.mem_top g)] at h
+  rw [h, coe_relTrace_of_eq (Subgroup.conj_smul_eq_self_of_mem (Subgroup.mem_top g))]
 
 /-- **The Mackey formula for relative traces.** For `T ≤ P`, any subgroup `Q` with `Q ∩ P` of
 finite index in `P`, and elements `xᵢ ∈ P` representing each double coset `T x Q` in `P` exactly

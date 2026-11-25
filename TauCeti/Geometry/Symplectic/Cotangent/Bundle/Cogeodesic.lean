@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Flow.Related
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ContactType
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Reeb
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Reeb.Basic
 import TauCeti.Topology.FiberBundle.Separation
 
 /-!

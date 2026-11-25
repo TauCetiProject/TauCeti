@@ -5,19 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Coprime
 public import TauCeti.Algebra.MonoidAlgebra.Twisted.Basic
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 
 /-!
-# Root-of-unity representatives of finite-group factor sets
+# Factor sets of finite groups
 
-Over an algebraically closed field, every normalized factor set of a finite group can be
-rescaled to take values in the roots of unity of order dividing the group order. This gives a
-finite set of representatives for the cohomology classes of factor sets, and hence finiteness
-of the Schur multiplier.
+Multiplying the cocycle identity of a normalized factor set `α` of a finite group `G` over its
+last variable shows that `α ^ |G|` is the coboundary of the row products `g ↦ ∏ t, α g t`
+(`TauCeti.IsFactorSet.prod_mul_pow_card`). Two consequences follow.
 
-The explicit rescaling comes from taking roots of the products of the rows of the factor set.
-It works in arbitrary characteristic and does not require a faithful projective representation.
+* If some power `α ^ m` with `m` coprime to `|G|` is a coboundary, then so is `α` itself
+  (`TauCeti.IsFactorSet.exists_rescale_eq_one_of_pow_eq_coboundary`). No hypothesis on the
+  coefficients is needed: Bézout's identity combines the two coboundaries.
+* Over an algebraically closed field, every normalized factor set of a finite group can be
+  rescaled to take values in the roots of unity of order dividing the group order. This gives a
+  finite set of representatives for the cohomology classes of factor sets, and hence finiteness
+  of the Schur multiplier. The rescaling comes from taking roots of the row products. It works
+  in arbitrary characteristic and does not require a faithful projective representation.
 
 ## References
 
@@ -27,6 +33,47 @@ It works in arbitrary characteristic and does not require a faithful projective 
 public section
 
 namespace TauCeti.IsFactorSet
+
+section CommSemiring
+
+variable {k G : Type*} [CommSemiring k] [Group G] (α : G → G → kˣ) [IsFactorSet α]
+
+/-- **The row products of a factor set.** Multiplying the cocycle identity over its last variable
+shows that `α ^ |G|` is the coboundary of the row products `g ↦ ∏ t, α g t`. -/
+theorem prod_mul_pow_card [Fintype G] (g h : G) :
+    (∏ t, α (g * h) t) * α g h ^ Fintype.card G = (∏ t, α h t) * ∏ t, α g t := by
+  have hc := congrArg (fun f : G → kˣ ↦ ∏ t, f t) (funext (IsFactorSet.cocycle (α := α) g h))
+  have hshift : (∏ t, α g (h * t)) = ∏ t, α g t := Equiv.prod_comp (Equiv.mulLeft h) (α g)
+  simpa only [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, hshift] using hc
+
+/-- **A coprime power detects coboundaries.** If a power `α ^ m` of a normalized factor set of a
+group `G` is the coboundary of some cochain `d`, and `m` is coprime to `Nat.card G`, then `α` is
+itself a coboundary: rescaling by a normalized cochain makes it trivial. For finite `G` the cochain
+is `(d ^ u * b ^ v)⁻¹`, where `b` is the row product of `TauCeti.IsFactorSet.prod_mul_pow_card` and
+`u * m + v * |G| = 1`. For infinite `G` we have `Nat.card G = 0`, so `m = 1`. -/
+theorem exists_rescale_eq_one_of_pow_eq_coboundary {m : ℕ} (hm : m.Coprime (Nat.card G))
+    (d : G → kˣ) (hd : ∀ g h, α g h ^ m = d g * d h * (d (g * h))⁻¹) :
+    ∃ c : G → kˣ, c 1 = 1 ∧ ∀ g h, c g * c h * (c (g * h))⁻¹ * α g h = 1 := by
+  classical
+  -- The `Nat.card G`-th power of `α` is a coboundary too.
+  obtain ⟨b, hb₁, hb⟩ : ∃ b : G → kˣ, b 1 = 1 ∧
+      ∀ g h, α g h ^ Nat.card G = b g * b h * (b (g * h))⁻¹ := by
+    rcases finite_or_infinite G with hG | hG
+    · let := Fintype.ofFinite G
+      refine ⟨fun g ↦ ∏ t, α g t, by simp [IsFactorSet.one_left], fun g h ↦ ?_⟩
+      rw [Nat.card_eq_fintype_card, eq_mul_inv_iff_mul_eq, mul_comm, prod_mul_pow_card, mul_comm]
+    · exact ⟨1, rfl, fun g h ↦ by simp [Nat.card_eq_zero_of_infinite]⟩
+  have hd₁ : d 1 = 1 := by
+    simpa [IsFactorSet.one_left (α := α)] using (hd 1 1).symm
+  obtain ⟨u, v, huv⟩ := TauCeti.exists_zpow_mul_zpow_eq_of_coprime (G := kˣ) hm
+  refine ⟨fun g ↦ (d g ^ u * b g ^ v)⁻¹, by simp [hd₁, hb₁], fun g h ↦ ?_⟩
+  rw [mul_eq_one_iff_inv_eq, eq_comm, ← huv (α g h), hd, hb]
+  simp only [mul_zpow, inv_zpow, mul_inv, inv_inv]
+  ac_rfl
+
+end CommSemiring
+
+section IsAlgClosed
 
 variable {k G : Type*} [Field k] [IsAlgClosed k] [Group G]
   (α : G → G → kˣ) [IsFactorSet α]
@@ -43,12 +90,8 @@ theorem exists_rescale_pow_card_eq_one :
   · exact ⟨fun _ ↦ 1, rfl, fun g h ↦ by simp [Nat.card_eq_zero_of_infinite]⟩
   let := Fintype.ofFinite G
   let b (g : G) : kˣ := ∏ t : G, α g t
-  have hb (g h : G) : b (g * h) * α g h ^ Fintype.card G = b h * b g := by
-    have hc := congrArg (fun f : G → kˣ ↦ ∏ t, f t)
-      (funext (IsFactorSet.cocycle (α := α) g h))
-    have hshift : (∏ t, α g (h * t)) = b g := Equiv.prod_comp (Equiv.mulLeft h) (α g)
-    simpa only [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ,
-      hshift] using hc
+  have hb (g h : G) : b (g * h) * α g h ^ Fintype.card G = b h * b g :=
+    prod_mul_pow_card α g h
   have hb₁ : b 1 = 1 := by simp [b, IsFactorSet.one_left]
   have hroot (g : G) : ∃ z : kˣ, z ^ Fintype.card G = (b g)⁻¹ := by
     obtain ⟨z, hz⟩ := IsAlgClosed.exists_pow_nat_eq ((b g)⁻¹ : kˣ).val
@@ -73,5 +116,7 @@ theorem exists_rescale_pow_card_eq_one :
         (b g)⁻¹ * (b h)⁻¹ * (b (g * h) * α g h ^ Fintype.card G) := by
       ac_rfl
     _ = 1 := by rw [hb]; simp [mul_assoc]
+
+end IsAlgClosed
 
 end TauCeti.IsFactorSet
