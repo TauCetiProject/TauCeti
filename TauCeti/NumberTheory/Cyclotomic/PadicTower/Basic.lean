@@ -14,7 +14,9 @@ import Mathlib.RingTheory.Norm.Basic
 import TauCeti.FieldTheory.Minpoly
 import TauCeti.NumberTheory.Cyclotomic.IntegralClosure
 import TauCeti.NumberTheory.LocalField.RootsOfUnity.Cyclotomic
+import TauCeti.RingTheory.DiscreteValuationRing.IntegralClosure
 import TauCeti.RingTheory.PowerBasis
+import TauCeti.RingTheory.RootsOfUnity.CyclotomicUnits
 
 /-!
 # The local cyclotomic tower over `ℚ_p`
@@ -264,11 +266,28 @@ theorem isPrimitiveRoot_integralRoot (n : ℕ) :
   (isPrimitiveRoot_root p Ω n).of_map_of_injective
     (f := (integralClosure ℤ_[p] (padicCyclotomicField p Ω n)).val) Subtype.val_injective
 
+/-- The chosen root minus one divides `p` in the integral closure of `ℤ_p` in `ℚ_p(ρ n)`. -/
+theorem integralRoot_sub_one_dvd_p (n : ℕ) :
+    integralRoot p Ω n - 1 ∣ (p : integralClosure ℤ_[p] (padicCyclotomicField p Ω n)) := by
+  have hpos : 0 < (p ^ (n + 1)).totient := Nat.totient_pos.mpr (pow_pos (Fact.out : p.Prime).pos _)
+  exact (dvd_pow_self _ hpos.ne').trans
+    (isPrimitiveRoot_integralRoot p Ω n).associated_sub_one_pow_totient_prime_pow.dvd
+
 /-- The power basis `1, ζ n - 1, …, (ζ n - 1) ^ (p ^ n * (p - 1) - 1)` of the integral closure of
 `ℤ_p` in `ℚ_p(ρ n)` over `ℤ_p`. -/
 noncomputable def integralPowerBasis (n : ℕ) :
     PowerBasis ℤ_[p] (integralClosure ℤ_[p] (padicCyclotomicField p Ω n)) :=
   (isPrimitiveRoot_root p Ω n).subOneIntegralClosurePowerBasis ℤ_[p] ℚ_[p] PadicInt.prime_p
+
+/-- The integral closure of `ℤ_p` in the chosen cyclotomic level is a discrete valuation ring. -/
+instance integralClosure_isDiscreteValuationRing (n : ℕ) :
+    IsDiscreteValuationRing (integralClosure ℤ_[p] (padicCyclotomicField p Ω n)) :=
+  TauCeti.integralClosure.isDiscreteValuationRing ℤ_[p] ℚ_[p] _
+
+/-- The integral closure of `ℤ_p` in the chosen cyclotomic level is a finite `ℤ_p`-module. -/
+instance integralClosure_moduleFinite (n : ℕ) :
+    Module.Finite ℤ_[p] (integralClosure ℤ_[p] (padicCyclotomicField p Ω n)) :=
+  (integralPowerBasis p Ω n).finite
 
 @[simp]
 theorem integralPowerBasis_gen (n : ℕ) : (integralPowerBasis p Ω n).gen = integralRoot p Ω n - 1 :=
