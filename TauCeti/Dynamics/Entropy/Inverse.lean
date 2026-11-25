@@ -91,8 +91,8 @@ theorem coverMincard_symm_of_image_eq {e : X ≃ X} {F : Set X} (hF : e '' F = F
     (U : SetRel X X) (n : ℕ) : coverMincard e.symm F U n = coverMincard e F U n := by
   rcases n with _ | n
   · simp only [coverMincard, IsDynCoverOf, dynEntourage_zero]
-  · rw [e.coverMincard_symm, image_iterate_eq,
-      Function.iterate_fixed (by simpa [hF] using e.symm_image_image F) n]
+  · have hF' : e.symm '' F = F := (e.eq_image_iff_symm_image_eq F F).1 hF.symm
+    rw [e.coverMincard_symm, image_iterate_eq, Function.iterate_fixed (f := image e.symm) hF' n]
 
 /-- On a set `F` with `e '' F = F`, the cover entropy of `e.symm` at an entourage is that of `e`. -/
 theorem coverEntropyEntourage_symm {e : X ≃ X} {F : Set X} (hF : e '' F = F) (U : SetRel X X) :
