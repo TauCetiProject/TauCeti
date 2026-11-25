@@ -132,11 +132,19 @@ theorem _root_.Submodule.map_orthogonalBilin (W : Submodule K V) (hℓ : Functio
     (h : ∀ u v, B' (e u) (e v) = ℓ (B u v)) :
     (W.orthogonalBilin B).map (e : V →ₗ[K] V') = (W.map (e : V →ₗ[K] V')).orthogonalBilin B' := by
   ext v
-  rw [Submodule.orthogonalBilin_map, Submodule.mem_map_equiv, Submodule.mem_orthogonalBilin,
-    Submodule.mem_orthogonalBilin]
+  simp only [Submodule.mem_map_equiv, Submodule.mem_orthogonalBilin, Submodule.orthogonalBilin_map,
+    LinearMap.comp_apply, LinearEquiv.coe_coe]
+  -- `B w (e⁻¹ v)` vanishes exactly when its image `ℓ (B w (e⁻¹ v)) = B' (e w) v` does.
   refine forall₂_congr fun w _ ↦ ?_
-  rw [LinearMap.comp_apply, LinearEquiv.coe_coe, ← e.apply_symm_apply v, h, e.apply_symm_apply,
-    ← map_zero ℓ, hℓ.eq_iff]
+  rw [← hℓ.eq_iff, map_zero, ← h, e.apply_symm_apply]
+
+/-- An equivalence `e` restricted to submodules `p` and `q = e(p)` carries the part of `p` lying in
+`W` onto the part of `q` lying in `W' = e(W)`. -/
+private theorem map_comap_subtype_ofSubmodules {p : Submodule K V} {q : Submodule K V'}
+    (hpq : p.map (e : V →ₗ[K] V') = q) (hW : W.map (e : V →ₗ[K] V') = W') :
+    (W.comap p.subtype).map (e.ofSubmodules p q hpq : p →ₗ[K] q) = W'.comap q.subtype := by
+  ext v
+  simp [← hW, Submodule.map_equiv_eq_comap_symm]
 
 variable (W W') in
 /-- **The symplectic normal spaces of corresponding subspaces.** An equivalence `e : V ≃ V'`
@@ -148,12 +156,8 @@ def symplecticNormalCongr (e : V ≃ₗ[K] V') (hℓ : Function.Injective ℓ)
     (h : ∀ u v, B' (e u) (e v) = ℓ (B u v)) (hW : W.map (e : V →ₗ[K] V') = W') :
     SymplecticNormal B W ≃ₗ[K] SymplecticNormal B' W' :=
   Submodule.Quotient.equiv _ _
-    (e.ofSubmodules _ _ (hW ▸ W.map_orthogonalBilin hℓ h)) <| by
-      ext v
-      rw [Submodule.map_equiv_eq_comap_symm, Submodule.mem_comap, Submodule.mem_comap,
-        Submodule.mem_comap, LinearEquiv.coe_coe, Submodule.subtype_apply,
-        LinearEquiv.ofSubmodules_symm_apply, Submodule.subtype_apply, ← Submodule.mem_map_equiv,
-        hW]
+    (e.ofSubmodules _ _ (hW ▸ W.map_orthogonalBilin hℓ h))
+    (map_comap_subtype_ofSubmodules _ hW)
 
 /-- The equivalence of symplectic normal spaces induced by `e` sends the class of `u` to the class
 of `e u`. -/

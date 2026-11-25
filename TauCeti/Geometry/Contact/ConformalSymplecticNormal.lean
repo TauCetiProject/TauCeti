@@ -138,25 +138,24 @@ private theorem map_mfderiv_eq {x : M} (hFx : (mfderiv I I₁ F x).IsInvertible)
     ⟨_, hFD' v hv, hFx.self_apply_inverse v⟩
 
 omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁] in
+/-- A map which is `C^n` at a point, for some `n ≥ 2`, is differentiable there. -/
+private theorem mdifferentiableAt_of_two_le {n : ℕ∞ω} {x : M} (hF : ContMDiffAt I I₁ n F x)
+    (hn : 2 ≤ n) : MDifferentiableAt I I₁ F x :=
+  hF.mdifferentiableAt (two_pos.trans_le hn).ne'
+
+omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁] in
 /-- The differential of `F` carries the part of the tangent image of `f` lying in `D` onto the part
 of the tangent image of `F ∘ f` lying in `D₁`. -/
 private theorem map_comap_range_mfderiv (hFx : (mfderiv I I₁ F (f y)).IsInvertible)
-    (hFD : ∀ u ∈ D (f y), mfderiv I I₁ F (f y) u ∈ D₁ (F (f y)))
-    (hFD' : ∀ v ∈ D₁ (F (f y)), (mfderiv I I₁ F (f y)).inverse v ∈ D (f y))
+    (hmap : (D (f y)).map (LinearEquiv.ofBijective (mfderiv I I₁ F (f y)).toLinearMap
+      hFx.bijective : TangentSpace I (f y) →ₗ[ℝ] TangentSpace I₁ (F (f y))) = D₁ (F (f y)))
     (hFd : MDifferentiableAt I I₁ F (f y)) (hf : MDifferentiableAt J I f y) :
     ((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype).map
         ((LinearEquiv.ofBijective (mfderiv I I₁ F (f y)).toLinearMap hFx.bijective).ofSubmodules
-          _ _ (map_mfderiv_eq hFx hFD hFD') : D (f y) →ₗ[ℝ] D₁ (F (f y))) =
+          _ _ hmap : D (f y) →ₗ[ℝ] D₁ (F (f y))) =
       (LinearMap.range (mfderiv J I₁ (F ∘ f) y).toLinearMap).comap (D₁ ((F ∘ f) y)).subtype := by
   ext w
-  rw [Submodule.mem_map_equiv, Submodule.mem_comap, Submodule.mem_comap, Submodule.subtype_apply,
-    Submodule.subtype_apply, LinearEquiv.ofSubmodules_symm_apply, mfderiv_comp y hFd hf,
-    LinearMap.mem_range, LinearMap.mem_range]
-  refine exists_congr fun a ↦ ?_
-  rw [ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
-    ← hFx.injective.eq_iff, show mfderiv I I₁ F (f y)
-      ((LinearEquiv.ofBijective _ hFx.bijective).symm (w : TangentSpace I₁ (F (f y)))) = w from
-      LinearEquiv.apply_ofBijective_symm_apply _ _]
+  simp [mfderiv_comp y hFd hf, LinearEquiv.eq_symm_apply]
 
 variable (J D f y) in
 /-- **The conformal symplectic normal spaces under a map carrying one distribution to another.**
@@ -174,14 +173,13 @@ def conformalSymplecticNormalEquiv {n : ℕ∞ω} (hD : IsContMDiffDistribution 
     (hFD' : ∀ᶠ z in 𝓝 (f y), ∀ v ∈ D₁ (F z), (mfderiv I I₁ F z).inverse v ∈ D z)
     (hf : MDifferentiableAt J I f y) :
     ConformalSymplecticNormal J D f y ≃ₗ[ℝ] ConformalSymplecticNormal J D₁ (F ∘ f) y :=
+  have hmap := map_mfderiv_eq hFx hFD hFD'.self_of_nhds
   LinearMap.symplecticNormalCongr _ _
     ((LinearEquiv.ofBijective (mfderiv I I₁ F (f y)).toLinearMap hFx.bijective).ofSubmodules _ _
-      (map_mfderiv_eq hFx hFD hFD'.self_of_nhds))
-    (ℓ := (Submodule.Quotient.equiv _ _ _ (map_mfderiv_eq hFx hFD hFD'.self_of_nhds)).toLinearMap)
-    (LinearEquiv.injective _)
+      hmap)
+    (ℓ := (Submodule.Quotient.equiv _ _ _ hmap).toLinearMap) (LinearEquiv.injective _)
     (fun u v ↦ distributionLeviForm_restrict_mfderiv hD hD₁ hF hn hFx hFD hFD' u v)
-    (map_comap_range_mfderiv hFx hFD hFD'.self_of_nhds
-      (hF.mdifferentiableAt (two_pos.trans_le hn).ne') hf)
+    (map_comap_range_mfderiv hFx hmap (mdifferentiableAt_of_two_le hF hn) hf)
 
 /-- The isomorphism of conformal symplectic normal spaces induced by `F` sends the class of `u` to
 the class of `dF u`. -/
@@ -247,8 +245,7 @@ theorem conformalSymplecticNormalEquiv_trans {n n₁ n₂ : ℕ∞ω}
   | H u =>
     have hcomp : mfderiv I I₂ (G ∘ F) (f y) = (mfderiv I₁ I₂ G (F (f y))).comp
         (mfderiv I I₁ F (f y)) :=
-      mfderiv_comp (f y) (hG.mdifferentiableAt (two_pos.trans_le hn₁).ne')
-        (hF.mdifferentiableAt (two_pos.trans_le hn).ne')
+      mfderiv_comp (f y) (mdifferentiableAt_of_two_le hG hn₁) (mdifferentiableAt_of_two_le hF hn)
     rw [LinearEquiv.trans_apply, conformalSymplecticNormalEquiv, conformalSymplecticNormalEquiv,
       conformalSymplecticNormalEquiv]
     -- The base points `G ((F ∘ f) y)` and `(G ∘ F ∘ f) y` agree only up to unfolding `∘`, which

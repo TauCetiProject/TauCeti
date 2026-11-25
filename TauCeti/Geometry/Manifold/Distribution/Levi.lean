@@ -357,6 +357,30 @@ variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [Compl
   [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace M'] [ChartedSpace H' M']
   [IsManifold I' 2 M'] {k' : ℕ} {D' : Π y : M', Submodule 𝕜 (TangentSpace I' y)} {f : M → M'}
 
+omit [CompleteSpace E] [IsRCLikeNormedField 𝕜] [IsManifold I 2 M] [CompleteSpace E'] in
+/-- Every vector `u` of `D x` is the value at `x` of the pullback along `f` of a vector field `V'`
+which is differentiable at `f x`, tangent to `D'` near `f x` and equal to `df_x u` at `f x`, when
+`f` is continuous at `x` with invertible differential there and its inverse differentials map
+`D' (f y)` into `D y` near `x`. That pullback is then tangent to `D` near `x`. -/
+private theorem exists_mpullback_apply_eq (hD' : IsContMDiffDistribution I' 1 k' D')
+    (hf : ContinuousAt f x) (hfx : (mfderiv I I' f x).IsInvertible)
+    (hfD : ∀ u ∈ D x, mfderiv I I' f x u ∈ D' (f x))
+    (hfD' : ∀ᶠ y in 𝓝 x, ∀ v ∈ D' (f y), (mfderiv I I' f y).inverse v ∈ D y) (u : D x) :
+    ∃ V' : Π z : M', TangentSpace I' z, MDiffAt (T% V') (f x) ∧
+      ∃ hV'D : ∀ᶠ z in 𝓝 (f x), V' z ∈ D' z,
+        (⟨V' (f x), hV'D.self_of_nhds⟩ : D' (f x)) = (mfderiv I I' f x).toLinearMap.restrict hfD u ∧
+        ∃ hVD : ∀ᶠ y in 𝓝 x, mpullback I I' f V' y ∈ D y,
+          (⟨mpullback I I' f V' x, hVD.self_of_nhds⟩ : D x) = u := by
+  obtain ⟨U, hU, hxU, V', hV', hV'D, hV'x⟩ :=
+    hD'.exists_contMDiffOn_apply_eq ((mfderiv I I' f x).toLinearMap.restrict hfD u)
+  have hVD : ∀ᶠ y in 𝓝 x, mpullback I I' f V' y ∈ D y := by
+    filter_upwards [hfD', hf.preimage_mem_nhds (hU.mem_nhds hxU)] with y hy hyU
+    exact hy _ (hV'D _ hyU)
+  have hu : mpullback I I' f V' x = u := by
+    simp [mpullback_apply, hV'x, hfx.inverse_apply_self]
+  exact ⟨V', (hV'.contMDiffAt (hU.mem_nhds hxU)).mdifferentiableAt one_ne_zero,
+    eventually_of_mem (hU.mem_nhds hxU) hV'D, Subtype.ext hV'x, hVD, Subtype.ext hu⟩
+
 /-- **Naturality of the Levi form.** Let `f : M → M'` be `C²` at `x` with invertible differential
 there, and let `D`, `D'` be `C¹` distributions such that `df_x` maps `D x` into `D' (f x)`, while
 near `x` the inverse differentials map `D' (f y)` into `D y`. Then `df_x` carries the Levi form of
@@ -376,45 +400,21 @@ theorem distributionLeviForm_restrict_mfderiv (hD : IsContMDiffDistribution I 1 
     rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
   have : IsManifold I' (minSmoothness 𝕜 2) M' := by
     rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
-  -- Extend the images of `u` and `v` to `C¹` vector fields tangent to `D'` near `f x`, and pull
-  -- them back along `f` to vector fields tangent to `D` near `x` with values `u` and `v` at `x`.
-  obtain ⟨U, hU, hxU, V', hV', hV'D, hV'x⟩ :=
-    hD'.exists_contMDiffOn_apply_eq ((mfderiv I I' f x).toLinearMap.restrict hfD u)
-  obtain ⟨U', hU', hxU', W', hW', hW'D, hW'x⟩ :=
-    hD'.exists_contMDiffOn_apply_eq ((mfderiv I I' f x).toLinearMap.restrict hfD v)
-  have hV'd : MDiffAt (T% V') (f x) :=
-    (hV'.contMDiffAt (hU.mem_nhds hxU)).mdifferentiableAt one_ne_zero
-  have hW'd : MDiffAt (T% W') (f x) :=
-    (hW'.contMDiffAt (hU'.mem_nhds hxU')).mdifferentiableAt one_ne_zero
-  have hV'D' : ∀ᶠ z in 𝓝 (f x), V' z ∈ D' z := eventually_of_mem (hU.mem_nhds hxU) hV'D
-  have hW'D' : ∀ᶠ z in 𝓝 (f x), W' z ∈ D' z := eventually_of_mem (hU'.mem_nhds hxU') hW'D
-  have hVD : ∀ᶠ y in 𝓝 x, mpullback I I' f V' y ∈ D y := by
-    filter_upwards [hfD', hf.continuousAt.preimage_mem_nhds (hU.mem_nhds hxU)] with y hy hyU
-    exact hy _ (hV'D _ hyU)
-  have hWD : ∀ᶠ y in 𝓝 x, mpullback I I' f W' y ∈ D y := by
-    filter_upwards [hfD', hf.continuousAt.preimage_mem_nhds (hU'.mem_nhds hxU')] with y hy hyU
-    exact hy _ (hW'D _ hyU)
-  have hu : mpullback I I' f V' x = u := by
-    rw [mpullback_apply, hV'x, LinearMap.coe_restrict_apply, ContinuousLinearMap.coe_coe,
-      hfx.inverse_apply_self]
-  have hv : mpullback I I' f W' x = v := by
-    rw [mpullback_apply, hW'x, LinearMap.coe_restrict_apply, ContinuousLinearMap.coe_coe,
-      hfx.inverse_apply_self]
+  -- Extend the images of `u` and `v` to vector fields tangent to `D'` near `f x` whose pullbacks
+  -- along `f` are tangent to `D` near `x` with values `u` and `v` at `x`.
+  obtain ⟨V', hV'd, hV'D, hV'x, hVD, rfl⟩ :=
+    exists_mpullback_apply_eq hD' hf.continuousAt hfx hfD hfD' u
+  obtain ⟨W', hW'd, hW'D, hW'x, hWD, rfl⟩ :=
+    exists_mpullback_apply_eq hD' hf.continuousAt hfx hfD hfD' v
   -- The Lie bracket is natural: `[V', W'] (f x) = df_x [f^* V', f^* W'] x`.
   have hbracket : mlieBracket I' V' W' (f x) =
       mfderiv I I' f x (mlieBracket I (mpullback I I' f V') (mpullback I I' f W') x) := by
     rw [← mpullback_mlieBracket hV'd hW'd hf (by rwa [minSmoothness_of_isRCLikeNormedField]),
       mpullback_apply, hfx.self_apply_inverse]
-  have hL' := distributionLeviForm_apply hD' le_rfl hV'd hW'd hV'D' hW'D'
-  rw [show (⟨V' (f x), hV'D'.self_of_nhds⟩ : D' (f x)) =
-      (mfderiv I I' f x).toLinearMap.restrict hfD u from Subtype.ext hV'x,
-    show (⟨W' (f x), hW'D'.self_of_nhds⟩ : D' (f x)) =
-      (mfderiv I I' f x).toLinearMap.restrict hfD v from Subtype.ext hW'x] at hL'
-  rw [hL', hbracket, show u = ⟨_, hVD.self_of_nhds⟩ from Subtype.ext hu.symm,
-    show v = ⟨_, hWD.self_of_nhds⟩ from Subtype.ext hv.symm, distributionLeviForm_apply hD le_rfl
-    (hV'd.mpullback_vectorField hf hfx hn) (hW'd.mpullback_vectorField hf hfx hn) hVD hWD,
-    map_neg, Submodule.mkQ_apply, Submodule.mkQ_apply, Submodule.mapQ_apply,
-    ContinuousLinearMap.coe_coe]
+  rw [← hV'x, ← hW'x, distributionLeviForm_apply hD' le_rfl hV'd hW'd hV'D hW'D,
+    distributionLeviForm_apply hD le_rfl (hV'd.mpullback_vectorField hf hfx hn)
+      (hW'd.mpullback_vectorField hf hfx hn) hVD hWD]
+  simp [hbracket]
 
 end Naturality
 
