@@ -64,6 +64,14 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `reindex_unstableFrameOrientation_eq_orientationAt_iff`: along the unstable manifold, the frame
   orientation agrees with `o` everywhere or nowhere.
 * `reindex_stableNormalOrientation_eq_orientationAt_iff`: the same along the stable manifold.
+* `stableNormalOrientation_self`: at the critical point the two frame orientations differ by
+  `(-1) ^ (ind_f x * ind_{-f} x)`, the sign of exchanging the two factors.
+* `reindex_stableNormalOrientation_eq_neg_one_pow_smul`: so if the frame orientation at `x` along
+  the unstable manifold is that of `o`, the one along the stable manifold is
+  `(-1) ^ (ind_f x * ind_{-f} x)` times that of `o` all along `W^s(x)`.
+* `complementaryOrientation`, `reindex_unstableFrameOrientation_complementaryOrientation`,
+  `complementaryOrientation_eq_iff`: the orientation of `V⁺` completing an orientation of `V⁻` to
+  that of `o` at `x`, and its characterization.
 
 ## References
 
@@ -313,6 +321,26 @@ theorem stableNormalOrientation_def (hf : IsMorse 𝓘(ℝ, E) f)
         (φ.neg hx).finrank_negativeWeight_fun φ.finrank_negativeWeight_fun :=
   (rfl)
 
+/-- **The two frame orientations at the critical point.** At the centre `x` of the chart, the
+unstable frame of `X` and that of `-X` are the inclusions of the coordinates of negative and of
+positive weight, and the normal coordinates of the stable manifolds of `X` and of `-X` read off
+the same coordinates. So `T_x M = V⁻ ⊕ V⁺`, the frame orientation along the stable manifold puts
+`V⁺` first and the one along the unstable manifold puts `V⁻` first, and they differ by
+`(-1) ^ (ind_f x * ind_{-f} x)`. -/
+theorem stableNormalOrientation_self (hf : IsMorse 𝓘(ℝ, E) f)
+    (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
+    (op : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)))
+    (op' : Orientation ℝ ({i // (φ.neg hx).weight i < 0} → ℝ)
+      (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) x)))
+    (hxs : x ∈ hX.flow.stableSet x) (hxu : x ∈ hX.flow.unstableSet x) :
+    stableNormalOrientation hφ hf hx op' op hxs =
+      (-1 : ℝˣ) ^ (manifoldMorseIndex 𝓘(ℝ, E) f x * manifoldMorseIndex 𝓘(ℝ, E) (-f) x) •
+        Orientation.reindex ℝ _ (finCongr (add_comm _ _))
+          (unstableFrameOrientation hφ hf hx op op' hxu) := by
+  rw [stableNormalOrientation_def, unstableFrameOrientation_def]
+  exact Orientation.ofExact_comm _ _ _ _ _ _ (stableNormal_unstableFrame_self hφ)
+    (stableNormal_unstableFrame_self (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hx)) _ _ _ _
+
 /-- The comparison of the frame orientation along the unstable manifold with `o`, at a point of
 `W^u(x)` and at `x`. -/
 private theorem reindex_unstableFrameOrientation_eq_orientationAt_iff_self
@@ -439,6 +467,104 @@ theorem reindex_stableNormalOrientation_eq_orientationAt_iff
   have hxs := hX.mem_stableSet_self hx.mem_criticalPoints
   (reindex_stableNormalOrientation_eq_orientationAt_iff_self hφ hf hx o e op' op hxs hy₁).trans
     (reindex_stableNormalOrientation_eq_orientationAt_iff_self hφ hf hx o e op' op hxs hy₂).symm
+
+
+/-- **The frame orientations along the stable manifold, from the order at the critical point.** If
+`op` followed by `op'` orients `T_x M` like `o`, then at every point `y` of `W^s(x)` the frame
+orientation along the stable manifold, which puts `op'` first, is `(-1) ^ (ind_f x * ind_{-f} x)`
+times the orientation of `o`: the factors are exchanged at `x` (`stableNormalOrientation_self`),
+and the comparison with `o` does not depend on the point of `W^s(x)`. -/
+theorem reindex_stableNormalOrientation_eq_neg_one_pow_smul (hf : IsMorse 𝓘(ℝ, E) f)
+    (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
+    (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (Module.finrank ℝ E)))
+    (op : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)))
+    (op' : Orientation ℝ ({i // (φ.neg hx).weight i < 0} → ℝ)
+      (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) x)))
+    (hop : Orientation.reindex ℝ _ (finCongr ((add_comm _ _).trans
+        hx.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank))
+      (unstableFrameOrientation hφ hf hx op op' (hX.mem_unstableSet_self hx.mem_criticalPoints)) =
+      o.orientationAt x)
+    {y : M} (hy : y ∈ hX.flow.stableSet x) :
+    Orientation.reindex ℝ _ (finCongr hx.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank)
+        (stableNormalOrientation hφ hf hx op' op hy) =
+      (-1 : ℝˣ) ^ (manifoldMorseIndex 𝓘(ℝ, E) f x * manifoldMorseIndex 𝓘(ℝ, E) (-f) x) •
+        o.orientationAt y := by
+  have hxs := hX.mem_stableSet_self hx.mem_criticalPoints
+  have hx' : Orientation.reindex ℝ _
+      (finCongr hx.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank)
+      (stableNormalOrientation hφ hf hx op' op hxs) =
+      (-1 : ℝˣ) ^ (manifoldMorseIndex 𝓘(ℝ, E) f x * manifoldMorseIndex 𝓘(ℝ, E) (-f) x) •
+        o.orientationAt x := by
+    rw [stableNormalOrientation_self hφ hf hx op op' hxs
+      (hX.mem_unstableSet_self hx.mem_criticalPoints), Orientation.reindex_units_smul,
+      Orientation.reindex_finCongr_reindex_finCongr, hop]
+  -- Compare with `o` or with `-o` along `W^s(x)`, according to the parity of the exponent.
+  rcases Nat.even_or_odd (manifoldMorseIndex 𝓘(ℝ, E) f x * manifoldMorseIndex 𝓘(ℝ, E) (-f) x)
+    with hk | hk
+  · rw [hk.neg_one_pow, one_smul] at hx' ⊢
+    exact (reindex_stableNormalOrientation_eq_orientationAt_iff hφ hf hx o _ op' op hy hxs).2 hx'
+  · rw [hk.neg_one_pow, Module.Ray.neg_units_smul, one_smul,
+      ← Manifold.Orientation.orientationAt_neg] at hx' ⊢
+    exact (reindex_stableNormalOrientation_eq_orientationAt_iff hφ hf hx (-o) _ op' op hy hxs).2 hx'
+
+
+variable (hX) in
+/-- **The complementary orientation.** At the centre `x` of a Morse chart `φ` in which `X` is
+linear, the orientation of the coordinates of positive weight `V⁺` such that the orientation `op`
+of the coordinates of negative weight `V⁻` followed by it is the orientation `o` of `M` at `x`,
+through the exact sequence `0 → V⁻ → T_x M → V⁺ → 0` of `unstableFrameOrientation`. The
+coordinates of positive weight are those of negative weight of the negated chart, so this orients
+the unstable manifold of `x` for `-X`. -/
+noncomputable def complementaryOrientation (hf : IsMorse 𝓘(ℝ, E) f)
+    (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
+    (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (Module.finrank ℝ E)))
+    (op : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x))) :
+    Orientation ℝ ({i // (φ.neg hx).weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) x)) :=
+  have hxu := hX.mem_unstableSet_self hx.mem_criticalPoints
+  Orientation.cokerOfExact (injective_unstableFrame_of_mem hφ hf hxu)
+    (exact_unstableFrame_neg_stableNormal hφ hf hx hxu)
+    (surjective_stableNormal_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hx)
+      ((hX.unstableSet_eq_stableSet_neg hf x).subset hxu)) op
+    (Orientation.reindex ℝ _ (finCongr ((add_comm _ _).trans
+      hx.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank).symm) (o.orientationAt x))
+    φ.finrank_negativeWeight_fun (φ.neg hx).finrank_negativeWeight_fun
+
+/-- **The complementary orientation completes `op` to the orientation of `M`.** The orientation
+`op` of the coordinates of negative weight followed by the complementary orientation of those of
+positive weight is the orientation of `o` at the critical point. -/
+theorem reindex_unstableFrameOrientation_complementaryOrientation (hf : IsMorse 𝓘(ℝ, E) f)
+    (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
+    (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (Module.finrank ℝ E)))
+    (op : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x))) :
+    Orientation.reindex ℝ _ (finCongr ((add_comm _ _).trans
+        hx.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank))
+      (unstableFrameOrientation hφ hf hx op (hX.complementaryOrientation hφ hf hx o op)
+        (hX.mem_unstableSet_self hx.mem_criticalPoints)) =
+      o.orientationAt x := by
+  rw [unstableFrameOrientation_def, complementaryOrientation, Orientation.ofExact_cokerOfExact,
+    Orientation.reindex_finCongr_reindex_finCongr, finCongr_refl, Orientation.reindex_refl,
+    Equiv.refl_apply]
+
+/-- **The characterization of the complementary orientation**: it is the only orientation of the
+coordinates of positive weight which, following `op`, orients `M` like `o` at the critical
+point. -/
+theorem complementaryOrientation_eq_iff (hf : IsMorse 𝓘(ℝ, E) f)
+    (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
+    (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (Module.finrank ℝ E)))
+    (op : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)))
+    (op' : Orientation ℝ ({i // (φ.neg hx).weight i < 0} → ℝ)
+      (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) x))) :
+    hX.complementaryOrientation hφ hf hx o op = op' ↔
+      Orientation.reindex ℝ _ (finCongr ((add_comm _ _).trans
+          hx.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank))
+        (unstableFrameOrientation hφ hf hx op op'
+          (hX.mem_unstableSet_self hx.mem_criticalPoints)) =
+        o.orientationAt x := by
+  refine ⟨fun h ↦ h ▸ reindex_unstableFrameOrientation_complementaryOrientation hφ hf hx o op,
+    fun h ↦ ?_⟩
+  rw [complementaryOrientation, Orientation.cokerOfExact_eq_iff, ← h,
+    Orientation.reindex_finCongr_reindex_finCongr, finCongr_refl, Orientation.reindex_refl,
+    Equiv.refl_apply, unstableFrameOrientation_def]
 
 end IsAdaptedPseudoGradient
 

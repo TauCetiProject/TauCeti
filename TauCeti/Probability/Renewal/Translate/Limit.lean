@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Renewal.Translate.Bounds
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
 import TauCeti.MeasureTheory.Group.Convolution.IntervalBound
-import TauCeti.MeasureTheory.Measure.Prokhorov
+import TauCeti.MeasureTheory.Measure.Vague
 import TauCeti.Topology.ContinuousMap.CompactlySupported
 import Mathlib.MeasureTheory.Group.IntegralConvolution
 import Mathlib.MeasureTheory.Integral.CompactlySupported

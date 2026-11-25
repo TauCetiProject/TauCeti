@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.SelfDual.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Codifferential
+import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Integral
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -56,7 +57,10 @@ pairing `⟨[F], [ω]⟩` and `‖ρ‖₂`. On a compact manifold this gives a 
 `w(g, η_r + ρ) ≥ r a / 8` as soon as `r a ≥ 4 a + 16 b + 4 c`. The constants `a`, `b`, `c`
 are all that the threshold depends on, so the bound is uniform over any family of metrics,
 symplectic forms and forcings with such bounds. In particular the large-parameter perturbations
-lie in the chamber `w > 0`.
+lie in the chamber `w > 0`. For a forcing with pointwise bound `|ρ| ≤ K` the forcing term is at
+least `-K ∫_M |ω| vol`, and then `w(g, η_r + ρ) ≥ r ‖ω‖₂² / 8` as soon as
+`16 |⟨[F], [ω]⟩| + 8 K ∫_M |ω| vol ≤ r ‖ω‖₂²`
+(`TauCeti.SeibergWitten.mul_div_le_integralTopForm_inner_selfDualPart_add_smul_add_sub_of_sqrt_le`).
 
 ## Main results
 
@@ -66,6 +70,9 @@ lie in the chamber `w > 0`.
   `(r / 4) ‖ω‖₂² - 2 ⟨[F], [ω]⟩ + ⟨ρ, ω⟩₂` of the wall coordinate at `η_r + ρ`.
 * `TauCeti.SeibergWitten.mul_div_le_integralTopForm_inner_selfDualPart_add_smul_add_sub`: the
   uniform wall gap `w(g, η_r + ρ) ≥ r a / 8`.
+* `TauCeti.SeibergWitten.mul_div_le_integralTopForm_inner_selfDualPart_add_smul_add_sub_of_sqrt_le`:
+  the uniform wall gap `w(g, η_r + ρ) ≥ r ‖ω‖₂² / 8` for forcings of pointwise norm at most `K`,
+  valid once `16 |⟨[F], [ω]⟩| + 8 K ∫_M |ω| vol ≤ r ‖ω‖₂²`.
 
 ## References
 
@@ -203,6 +210,38 @@ theorem mul_div_le_integralTopForm_inner_selfDualPart_add_smul_add_sub [CompactS
   have hr₄ : 4 ≤ r := le_of_mul_le_mul_right (by linarith [(abs_nonneg P).trans hb]) ha
   have hA : (r / 4 - 1 / 2) * a ≤ (r / 4 - 1 / 2) * A :=
     mul_le_mul_of_nonneg_left haω (by linarith)
+  linarith
+
+/-- **The uniform wall gap for a pointwise bounded forcing.** On a closed oriented Riemannian
+four-manifold, let `ω` be a closed self-dual two-form and `F` a closed two-form, and let `F₀` be
+any two-form and `ρ` a two-form of pointwise norm `|ρ| = √⟨ρ, ρ⟩ ≤ K`. If
+
+`16 |⟨[F], [ω]⟩| + 8 K ∫_M |ω| vol ≤ r ‖ω‖₂²`,
+
+then the wall coordinate of Taubes's perturbation is at least `r ‖ω‖₂² / 8`. The threshold does not
+depend on `F₀` or on `ρ` beyond `K`, so the gap is uniform over all forcings of norm at most `K`.
+-/
+theorem mul_div_le_integralTopForm_inner_selfDualPart_add_smul_add_sub_of_sqrt_le
+    [CompactSpace M] (hω : ω ∈ compactlySupportedClosedForms I M 2)
+    (hω' : ω ∈ SmoothForm.selfDualForms o) (hF : F ∈ closedForms I M 2) (F₀ ρ : SmoothForm I M ℝ 2)
+    {r K : ℝ} (hρ : ∀ x, √(alternatingFormInner (TangentSpace I x) 2 (ρ.val x) (ρ.val x)) ≤ K)
+    (hr : 16 * |poincarePairing I M o (deRhamCohomology.mk I 2 ⟨F, hF⟩)
+          (compactlySupportedDeRhamCohomology.mk I 2 ⟨ω, hω⟩)| +
+        8 * K * integralTopForm o (fun x ↦
+          √(alternatingFormInner (TangentSpace I x) 2 (ω.val x) (ω.val x)) •
+            riemannianVolumeForm o x) ≤
+      r * integralTopForm o (fun x ↦
+        alternatingFormInner (TangentSpace I x) 2 (ω.val x) (ω.val x) • riemannianVolumeForm o x)) :
+    r * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ω.val x) (ω.val x) •
+        riemannianVolumeForm o x) / 8 ≤
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2
+        ((SmoothForm.selfDualPart o F₀ + (r / 4) • ω + ρ - (F₀ + (2 : ℝ) • F)).val x) (ω.val x) •
+        riemannianVolumeForm o x) := by
+  rw [integralTopForm_inner_selfDualPart_add_smul_add_sub_eq o hω hω' hF]
+  have h₁ := le_abs_self (poincarePairing I M o (deRhamCohomology.mk I 2 ⟨F, hF⟩)
+    (compactlySupportedDeRhamCohomology.mk I 2 ⟨ω, hω⟩))
+  have h₂ := neg_le_of_abs_le (abs_integralTopForm_inner_smul_riemannianVolumeForm_le o
+    (ρ.isSmoothForm.of_le bot_le) (ω.isSmoothForm.of_le bot_le) hρ)
   linarith
 
 end TauCeti.SeibergWitten

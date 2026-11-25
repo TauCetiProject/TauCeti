@@ -183,6 +183,6 @@ theorem pairCutCapacity_pairCapacityWithDiagonal (S : Finset V(graph)) :
       congrFun (pairCutCapacity_eq_of_offDiagonal_eq _ _
         pairCapacityWithDiagonal_mk_of_ne) S
     _ = graph.edgeCutCapacity edgeCapacity S :=
-      Graph.pairCutCapacity_pairCapacity graph edgeCapacity S
+      congrFun (Graph.pairCutCapacity_pairCapacity graph edgeCapacity) S
 
 end TauCeti.Examples.CutAggregation

@@ -24,11 +24,11 @@ using Mathlib's expansion `Cubic.prod_X_sub_C_eq`.
 * `Polynomial.eq_cubic_of_natDegree_le_three` and `Polynomial.Monic.eq_X_pow_three_add`: the normal
   form `a * X ^ 3 + b * X ^ 2 + c * X + d` of a polynomial of degree at most three, and
   `X ^ 3 + a * X ^ 2 + b * X + c` of a monic cubic.
-* `Cubic.map_a`, `Cubic.map_b`, `Cubic.map_c`, `Cubic.map_d`: the coefficients of `Cubic.map φ P`
-  are the images under `φ` of those of `P`.
 * `TauCeti.Polynomial.add_add_eq_and_mul_add_mul_add_mul_eq`: if
   `(X - a)(X - b)(X - c) = (X - a')(X - b')(X - c')`, then `a + b + c = a' + b' + c'` and
   `ab + ac + bc = a'b' + a'c' + b'c'`.
+* `Cubic.map_a`, `Cubic.map_b`, `Cubic.map_c`, `Cubic.map_d` and `Cubic.discr_map`: mapping the
+  coefficients of a cubic along a ring homomorphism maps its coefficients and its discriminant.
 -/
 
 public section
@@ -56,16 +56,41 @@ end Polynomial
 
 namespace Cubic
 
-/-! ### Coefficients of a mapped cubic -/
-
 section Map
 
-variable {R S : Type*} [Semiring R] [Semiring S] (φ : R →+* S) (P : Cubic R)
+variable {R S : Type*}
 
-@[simp] theorem map_a : (P.map φ).a = φ P.a := (rfl)
-@[simp] theorem map_b : (P.map φ).b = φ P.b := (rfl)
-@[simp] theorem map_c : (P.map φ).c = φ P.c := (rfl)
-@[simp] theorem map_d : (P.map φ).d = φ P.d := (rfl)
+section Semiring
+
+variable [Semiring R] [Semiring S] (φ : R →+* S) (P : Cubic R)
+
+/-- The `X ^ 3` coefficient of `P.map φ` is `φ` applied to that of `P`. -/
+@[simp]
+theorem map_a : (P.map φ).a = φ P.a :=
+  rfl
+
+/-- The `X ^ 2` coefficient of `P.map φ` is `φ` applied to that of `P`. -/
+@[simp]
+theorem map_b : (P.map φ).b = φ P.b :=
+  rfl
+
+/-- The `X` coefficient of `P.map φ` is `φ` applied to that of `P`. -/
+@[simp]
+theorem map_c : (P.map φ).c = φ P.c :=
+  rfl
+
+/-- The constant coefficient of `P.map φ` is `φ` applied to that of `P`. -/
+@[simp]
+theorem map_d : (P.map φ).d = φ P.d :=
+  rfl
+
+end Semiring
+
+/-- The discriminant commutes with mapping the coefficients along a ring homomorphism. -/
+@[simp]
+theorem discr_map [Ring R] [Ring S] (φ : R →+* S) (P : Cubic R) :
+    (P.map φ).discr = φ P.discr := by
+  simp [discr, map_ofNat]
 
 end Map
 

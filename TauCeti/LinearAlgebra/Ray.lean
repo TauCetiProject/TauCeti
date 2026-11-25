@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Ray
+public import Mathlib.LinearAlgebra.TensorProduct.Basic
 import Mathlib.Order.Preorder.Finite
+import Mathlib.RingTheory.SimpleRing.DivisionRing
 import TauCeti.Algebra.GroupWithZero.Action.Basic
 
 /-!
@@ -22,6 +24,8 @@ the final value. The explicit-partition induction follows the pattern of the Apa
 [`frenzymath/Poincare-Conjecture`](https://github.com/frenzymath/Poincare-Conjecture)
 formalization, revision `24f32e4d600878bfaac6bc2f2f9324175571c321`, as used in
 `TauCeti/Geometry/Manifold/Riemannian/EDistComparison.lean`.
+
+Tensor products of vectors on the same rays lie on the same ray (`SameRay.tmul`).
 
 Negating a ray twice gives it back (`Module.Ray.neg_neg`), in a form that `rw` and `simp` find on
 orientations. Scaling a ray by a unit commutes with negating it (`Module.Ray.units_smul_neg`),
@@ -70,7 +74,45 @@ theorem Module.Ray.map_units_smul {N : Type*} [AddCommMonoid N] [Module R N] (f 
   induction v using Module.Ray.ind with | h v hv =>
     simp only [smul_rayOfNeZero, Module.Ray.map_apply, Units.smul_def, map_smul]
 
+/-- **Tensor products of vectors on the same rays lie on the same ray.** -/
+theorem SameRay.tmul {N : Type*} [AddCommMonoid N] [Module R N] {x₀ : M} {y y₀ : N}
+    (hx : SameRay R x x₀) (hy : SameRay R y y₀) : SameRay R (x ⊗ₜ[R] y) (x₀ ⊗ₜ y₀) := by
+  rcases hx with rfl | rfl | ⟨r₁, r₂, hr₁, hr₂, h⟩
+  · simp
+  · simp
+  rcases hy with rfl | rfl | ⟨s₁, s₂, hs₁, hs₂, h'⟩
+  · simp
+  · simp
+  exact Or.inr (Or.inr ⟨r₁ * s₁, r₂ * s₂, mul_pos hr₁ hs₁, mul_pos hr₂ hs₂, by
+    rw [← TensorProduct.smul_tmul_smul, h, h', TensorProduct.smul_tmul_smul]⟩)
+
 end Semiring
+
+section Semilinear
+
+/-- A semilinear map over ordered commutative semirings whose scalar homomorphism preserves strict
+positivity preserves the same-ray relation. -/
+theorem SameRay.mapSemilinear_of_pos {R R' M N : Type*} [CommSemiring R] [PartialOrder R]
+    [IsStrictOrderedRing R] [CommSemiring R'] [PartialOrder R'] [IsStrictOrderedRing R']
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R' N] {σ : R →+* R'} {x y : M}
+    (h : SameRay R x y) (g : M →ₛₗ[σ] N) (hσ : ∀ r : R, 0 < r → 0 < σ r) :
+    SameRay R' (g x) (g y) := by
+  rcases h with rfl | rfl | ⟨r₁, r₂, hr₁, hr₂, heq⟩
+  · simp
+  · simp
+  · exact Or.inr (Or.inr ⟨σ r₁, σ r₂, hσ r₁ hr₁, hσ r₂ hr₂,
+      by rw [← map_smulₛₗ, ← map_smulₛₗ, heq]⟩)
+
+/-- A semilinear map from a partially ordered field to a strictly ordered semiring along a monotone
+ring homomorphism preserves the same-ray relation. -/
+theorem SameRay.mapSemilinear {R R' M N : Type*} [Field R] [PartialOrder R] [IsStrictOrderedRing R]
+    [AddCommMonoid M] [Module R M] [CommSemiring R'] [PartialOrder R'] [IsStrictOrderedRing R']
+    [AddCommMonoid N] [Module R' N] {σ : R →+* R'} {x y : M} (h : SameRay R x y) (g : M →ₛₗ[σ] N)
+    (hσ : Monotone σ) : SameRay R' (g x) (g y) :=
+  h.mapSemilinear_of_pos g fun _ hr ↦ by
+    simpa only [map_zero] using hσ.strictMono_of_injective σ.injective hr
+
+end Semilinear
 
 section Partition
 

@@ -48,8 +48,8 @@ holomorphic, and that a homeomorphism from an open subset of a complex curve ont
   a map vanishes exactly when the derivative of its representative in the preferred charts does.
 * `TauCeti.analyticAt_comp_chartAt_symm`: a function to a complete complex normed space that is
   holomorphic near `x` has an analytic representative in the preferred chart at `x`.
-* `IsHomeomorph.mdifferentiable_symm`: the inverse of a holomorphic homeomorphism between complex
-  curves is holomorphic.
+* `IsHomeomorph.mdifferentiable_symm` and `Homeomorph.mdifferentiable_symm`: the inverse of a
+  holomorphic homeomorphism between complex curves is holomorphic.
 * `TauCeti.mdifferentiableAt_of_continuousAt_of_eventually_nhdsNE`: Riemann's removable singularity
   theorem on complex curves.
 * `TauCeti.mdifferentiableAt_of_comp_of_injOn`: a continuous lift through a locally injective
@@ -229,6 +229,12 @@ theorem _root_.IsHomeomorph.mdifferentiable_symm [IsManifold 𝓘(ℂ) 1 X]
       (c.open_source.mem_nhds hcx)] with y' hy' hgy'
   simp only [Function.comp_apply, G, c'.left_inv hy']
   exact (c.left_inv hgy').symm
+
+/-- The inverse of a holomorphic homeomorphism between complex curves is holomorphic. -/
+theorem _root_.Homeomorph.mdifferentiable_symm [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
+    (e : X ≃ₜ Y) (he : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) e) : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) e.symm := by
+  have h := e.isHomeomorph.mdifferentiable_symm he
+  rwa [show e.isHomeomorph.homeomorph e = e from Homeomorph.ext fun _ ↦ rfl] at h
 
 /-! ### Local criteria for holomorphy -/
 

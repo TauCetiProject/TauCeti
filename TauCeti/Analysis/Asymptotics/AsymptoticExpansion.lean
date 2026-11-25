@@ -47,7 +47,9 @@ elimination lemmas `IsAsymptoticScale.isLittleO`, `HasAsymptoticExpansion.isBigO
 * `Asymptotics.HasAsymptoticExpansion.add`, `const_smul`, `neg`, `sub`: linearity.
 * `Asymptotics.HasAsymptoticExpansion.smul_left`: multiplication of the function and of the scale
   by a common scalar function.
-* `Asymptotics.HasAsymptoticExpansion.comp_tendsto`: composition with `Tendsto g l' l`.
+* `Asymptotics.HasAsymptoticExpansion.comp_tendsto`: composition with `Tendsto g l' l`, and
+  `comp_inv_atTop`: the substitution `t ↦ t⁻¹` turns an expansion at `+∞` in the powers
+  `t ^ (-w k)` into one at `0+` in the powers `t ^ w k`.
 * `Asymptotics.HasAsymptoticExpansion.isLittleO`: the remainder after `N + 1` terms is `o(φ N)`.
 * `Asymptotics.HasAsymptoticExpansion.unique`: uniqueness of the coefficients.
 * `Asymptotics.isAsymptoticScale_pow`: the powers of a function tending to `0` form a scale.
@@ -220,6 +222,17 @@ theorem comp_tendsto {β : Type*} {l' : Filter β} {g : β → α}
     HasAsymptoticExpansion l' (fun n x => φ n (g x)) a (f ∘ g) :=
   fun N => (hf N).comp_tendsto hg
 
+/-- An expansion at `+∞` in the powers `t ^ (-w k)` becomes, under `t ↦ t⁻¹`, an expansion at
+`0+` in the powers `t ^ w k`, with the same coefficients. -/
+theorem comp_inv_atTop {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] {w : ℕ → ℂ}
+    {c : ℕ → F} {h : ℝ → F}
+    (hh : HasAsymptoticExpansion atTop (fun k (t : ℝ) => (t : ℂ) ^ (-w k)) c h) :
+    HasAsymptoticExpansion (𝓝[>] 0) (fun k (t : ℝ) => (t : ℂ) ^ w k) c fun t => h t⁻¹ :=
+  (hh.comp_tendsto tendsto_inv_nhdsGT_zero).congr_scale fun k => by
+    filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
+    simp only [Complex.ofReal_inv, Complex.inv_cpow_ofReal_nonneg ht.le, Complex.cpow_neg,
+      inv_inv]
+
 /-- Expansions in a common scale add coefficientwise: `f + g` has coefficients `a + b`. -/
 theorem add (hf : HasAsymptoticExpansion l φ a f) (hg : HasAsymptoticExpansion l φ b g) :
     HasAsymptoticExpansion l φ (a + b) (f + g) := fun N =>
@@ -261,7 +274,7 @@ theorem single_zero (c : E) :
     HasAsymptoticExpansion l φ (Pi.single 0 c) (fun x => φ 0 x • c) := by
   intro N
   rcases N with _ | N
-  · simpa using IsBigO.smul_const_self (φ 0) c
+  · simpa using isBigO_smul_const_self (φ 0) c (norm_smul_le · c)
   · simpa [Pi.single_apply, smul_ite, sum_ite_eq'] using isBigO_zero (φ (N + 1)) l
 
 /-- If, for every `N`, the remainder after `N + 1` terms is `o(φ N)`, then `f` has the
@@ -270,7 +283,7 @@ property. -/
 theorem of_isLittleO
     (h : ∀ N, (fun x => f x - ∑ n ∈ range (N + 1), φ n x • a n) =o[l] φ N) :
     HasAsymptoticExpansion l φ a f := fun N =>
-  ((h N).isBigO.add (IsBigO.smul_const_self (φ N) (a N))).congr_left fun x => by
+  ((h N).isBigO.add (isBigO_smul_const_self (φ N) (a N) (norm_smul_le · _))).congr_left fun x => by
     rw [sum_range_succ]; abel
 
 /-- For an asymptotic scale, the remainder after `N + 1` terms is `o(φ N)`. -/
@@ -308,7 +321,7 @@ theorem IsAsymptoticScale.hasAsymptoticExpansion_single (hφ : IsAsymptoticScale
   by_cases hk : k < N
   · simpa [Pi.single_apply, smul_ite, sum_ite_eq', hk] using isBigO_zero (φ N) l
   · simpa [Pi.single_apply, smul_ite, sum_ite_eq', hk] using
-      (IsBigO.smul_const_self (φ k) c).trans (hφ.isBigO_of_le (not_lt.mp hk))
+      (isBigO_smul_const_self (φ k) c (norm_smul_le · c)).trans (hφ.isBigO_of_le (not_lt.mp hk))
 
 /-- For an asymptotic scale, an expansion is the same as `o(φ N)` remainders after `N + 1`
 terms. -/
@@ -331,7 +344,8 @@ theorem HasAsymptoticExpansion.unique {a b : ℕ → E} {f : α → E} (hφ : Is
   have h := (ha.sub_smul_isLittleO hφ N).sub (hb.sub_smul_isLittleO hφ N)
   have h' : (fun x => φ N x • (b N - a N)) =o[l] φ N := h.congr_left fun x => by
     simp only [hsum, smul_sub]; abel
-  exact (sub_eq_zero.mp (eq_zero_of_smul_isLittleO (hne N) h')).symm
+  exact (sub_eq_zero.mp ((isLittleO_smul_const_self_iff (.of_forall fun _ ↦ norm_nonneg _)
+    ((hne N).mono fun _ ↦ norm_ne_zero_iff.mpr) (norm_smul · _)).mp h')).symm
 
 /-- The powers of a function tending to `0` along `l` form an asymptotic scale. -/
 theorem isAsymptoticScale_pow {w : α → 𝕜} (hw : Tendsto w l (𝓝 0)) :

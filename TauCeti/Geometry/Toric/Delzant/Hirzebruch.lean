@@ -160,9 +160,14 @@ theorem three_mem_activeSet_hirzebruch_iff {x : StrongDual ℝ (Fin 2 → ℝ)} 
   simp only [hirzebruchSupport_def, Matrix.cons_val]
   constructor <;> intro h <;> linarith
 
-/-- Under the hypotheses of the trapezoid, `k x(e₂) < a` whenever `0 ≤ x(e₂) ≤ b`. -/
-private theorem intCast_mul_lt (ha : 0 < a) (hab : k * b < a) {q : ℝ} (hq₀ : 0 ≤ q)
-    (hqb : q ≤ b) : k * q < a := by
+/-- For `0 < a` and `k b < a`, every point of the Hirzebruch trapezoid has `k x(e₂) < a`, so the
+facets `{x(e₁) = 0}` and `{x(e₁) + k x(e₂) = a}` never meet. -/
+theorem intCast_mul_lt_of_mem_facetPolyhedron_hirzebruch (ha : 0 < a) (hab : k * b < a)
+    {x : StrongDual ℝ (Fin 2 → ℝ)}
+    (hx : x ∈ facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k)
+      (hirzebruchSupport a b)) :
+    k * x (Pi.single 1 1) < a := by
+  obtain ⟨-, hq₀, hqb, -⟩ := mem_facetPolyhedron_hirzebruch_iff.1 hx
   rcases le_or_gt 0 k with hk | hk
   · exact (mul_le_mul_of_nonneg_left hqb (Int.cast_nonneg_iff.2 hk)).trans_lt hab
   · exact (mul_nonpos_of_nonpos_of_nonneg (by exact_mod_cast hk.le) hq₀).trans_lt ha
@@ -219,8 +224,7 @@ private theorem exists_activeSet_hirzebruch_subset_pair (hb : 0 < b) (ha : 0 < a
     ∃ i j : Fin 4, ((i, j) = (0, 1) ∨ (i, j) = (0, 2) ∨ (i, j) = (1, 3) ∨ (i, j) = (2, 3)) ∧
       activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k))
         (hirzebruchSupport a b) x ⊆ {i, j} := by
-  obtain ⟨-, hq₀, hqb, -⟩ := mem_facetPolyhedron_hirzebruch_iff.1 hx
-  have hkq := intCast_mul_lt ha hab hq₀ hqb
+  have hkq := intCast_mul_lt_of_mem_facetPolyhedron_hirzebruch ha hab hx
   have m₀ := fun h ↦ (zero_mem_activeSet_hirzebruch_iff (k := k) (a := a) (b := b) (x := x)).1 h
   have m₁ := fun h ↦ (one_mem_activeSet_hirzebruch_iff (k := k) (a := a) (b := b) (x := x)).1 h
   have m₂ := fun h ↦ (two_mem_activeSet_hirzebruch_iff (k := k) (a := a) (b := b) (x := x)).1 h
