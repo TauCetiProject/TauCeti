@@ -28,6 +28,8 @@ and scalar extension.
   factors all have degree at most one splits.
 * `Polynomial.Splits.eval₂_eq_prod_roots`: evaluated along any ring homomorphism, a split
   polynomial is its leading coefficient times the product of the linear factors over its roots.
+* `Polynomial.Splits.eval_root_derivative_eq_leadingCoeff_mul`: at a root `x`, the derivative of a
+  split polynomial is its leading coefficient times the product of `x - a` over the other roots.
 * `Polynomial.Splits.eq_C_mul_prod_roots_of_coeff_zero_ne_zero`: a split polynomial with nonzero
   constant coefficient is that coefficient times the product of the factors `1 - α⁻¹ X` over its
   roots `α`.
@@ -61,6 +63,15 @@ theorem Splits.eval₂_eq_prod_roots {R S : Type*} [CommRing R] [IsDomain R] [Co
     f.eval₂ φ x = φ f.leadingCoeff * (f.roots.map fun a ↦ x - φ a).prod := by
   conv_lhs => rw [hf.eq_prod_roots]
   simp [eval₂_multiset_prod]
+
+/-- **The derivative of a split polynomial at a root** `x` is the leading coefficient times the
+product of `x - a` over the other roots `a`, the multiplicity of `x` reduced by one. This is
+`Polynomial.Splits.eval_root_derivative` without the hypothesis that `f` is monic. -/
+theorem Splits.eval_root_derivative_eq_leadingCoeff_mul {R : Type*} [CommRing R] [IsDomain R]
+    [DecidableEq R] {f : R[X]} (hf : f.Splits) {x : R} (hx : x ∈ f.roots) :
+    f.derivative.eval x = f.leadingCoeff * ((f.roots.erase x).map (x - ·)).prod := by
+  conv_lhs => rw [hf.eq_prod_roots]
+  rw [derivative_C_mul, eval_mul, eval_C, eval_multiset_prod_X_sub_C_derivative hx]
 
 /-- **A split polynomial with nonzero constant coefficient** is that coefficient times the product
 of the factors `1 - α⁻¹ X` over its roots `α`, counted with multiplicity. This is the

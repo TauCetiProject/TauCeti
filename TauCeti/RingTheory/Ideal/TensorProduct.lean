@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.TensorProduct.Kernel
 public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 public import TauCeti.LinearAlgebra.TensorProduct.Torsion
 public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.RingTheory.PicardGroup
 
 import TauCeti.RingTheory.Ideal.Operations
 
@@ -37,7 +38,8 @@ Along a flat ring map `R → S` the base change `S ⊗[R] I` is the extended ide
 (`Ideal.liftBaseChange_idealMap_bijective`), so the fibres of `I` and `I S` at a field-valued point
 of `S` have the same dimension (`Ideal.finrank_tensor_map_of_flat`). Without flatness, over a
 commutative `S`, the map `S ⊗[R] I → I S` is still surjective
-(`Ideal.liftBaseChange_idealMap_surjective`) and its kernel
+(`Ideal.liftBaseChange_idealMap_surjective`), hence bijective when `I` and `I S` are invertible
+(`Ideal.liftBaseChange_idealMap_bijective_of_invertible`), and its kernel
 is killed by `I S` (`Ideal.isTorsionBySet_ker_liftBaseChange_idealMap`). For an `S`-module `M`
 which is flat over `R`, it follows that `I S ⊗[S] M → M` is injective, that is
 `Tor₁ˢ(S ⧸ I S, M) = 0` (`Module.Flat.map_subtype_rTensor_injective`). For an idempotent ideal
@@ -227,6 +229,13 @@ theorem liftBaseChange_idealMap_surjective :
   obtain ⟨z, hz, hzy⟩ := hle y.property
   obtain ⟨x, rfl⟩ := hz
   exact ⟨x, Subtype.ext hzy⟩
+
+/-- If an ideal `I` and its extension `I S` are invertible, the map `S ⊗[R] I → I S` induced by
+`I → I S` is bijective. -/
+theorem liftBaseChange_idealMap_bijective_of_invertible [Module.Invertible R I]
+    [Module.Invertible S (I.map (algebraMap R S))] :
+    Function.Bijective ((Algebra.idealMap S I).liftBaseChange S) :=
+  Module.Invertible.bijective_of_surjective (liftBaseChange_idealMap_surjective S I)
 
 /-- The kernel of the surjection `S ⊗[R] I → I S` is killed by the extended ideal `I S`. -/
 theorem isTorsionBySet_ker_liftBaseChange_idealMap :

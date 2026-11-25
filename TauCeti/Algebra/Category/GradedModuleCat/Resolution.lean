@@ -15,9 +15,10 @@ public import TauCeti.Algebra.Module.GradedModule.Resolution
 # Concrete graded resolutions as categorical projective resolutions
 
 A `TauCeti.GradedProjectiveResolution` records projective modules, homogeneous differentials,
-and an exact augmentation as linear maps. This file turns that data into a
-`CategoryTheory.ProjectiveResolution` in `TauCeti.GradedModuleCat`. Its terms retain their
-internal gradings, and its differentials and augmentation are the original maps.
+and an exact augmentation as linear maps. Without assuming a decomposition of `𝒜`, its terms and
+differentials form an exact `ChainComplex` (`TauCeti.GradedProjectiveResolution.complex`) in
+`TauCeti.GradedModuleCat`; when `𝒜` decomposes `A`, this data bundles into a
+`CategoryTheory.ProjectiveResolution` whose differentials and augmentation are the original maps.
 
 The resulting resolution can be used directly with Mathlib's comparison maps, uniqueness up to
 chain homotopy, and computation of Ext from projective resolutions. No enough-projectives
@@ -27,10 +28,8 @@ minimality, finite generation, nor boundedness.
 Forgetting the grading turns the same data into a projective resolution of the underlying
 `A`-module. Hence a graded resolution whose terms vanish from homological degree `n` on bounds the
 ungraded projective dimension (`TauCeti.GradedProjectiveResolution.hasProjectiveDimensionLT`).
-
-The file also supplies the generic shifted resolution
-(`TauCeti.GradedProjectiveResolution.shiftObj`) and first-syzygy tail resolution
-(`TauCeti.GradedProjectiveResolution.tail`) in `GradedModuleCat`.
+Regrading a resolution by `d` gives a resolution `r.shiftObj d` of `M{d}` whose `n`th term is
+`(r.termObj n){d}`, preserving minimality (`isMinimal_shiftObj_iff`).
 
 ## References
 
@@ -59,14 +58,6 @@ abbrev termObj (n : ℕ) : GradedModuleCat.{v} 𝒜 where
   carrier := r.X n
   grading := r.grading n
 
-/-- The underlying type of `r.termObj n` is `r.X n`. -/
-theorem coe_termObj (n : ℕ) : (r.termObj n : Type v) = r.X n :=
-  rfl
-
-/-- The internal grading of `r.termObj n` is `r.grading n`. -/
-theorem termObj_grading (n : ℕ) : (r.termObj n).grading = r.grading n :=
-  rfl
-
 /-- The differential of a concrete graded resolution as a morphism of graded modules. -/
 abbrev differential (n : ℕ) : r.termObj (n + 1) ⟶ r.termObj n :=
   GradedModuleCat.ofHom (r.d n) (r.isHomogeneous_d n)
@@ -84,91 +75,40 @@ theorem differential_comp_differential (n : ℕ) :
 theorem differential_zero_comp_augmentation : r.differential 0 ≫ r.augmentation = 0 :=
   GradedModuleCat.hom_ext r.exact_d_π.linearMap_comp_eq_zero
 
-/-- Shifting a graded projective resolution of `M` by `d` produces a graded projective resolution
-of `M.shiftObj d` with `n`-th term `(r.termObj n).shiftObj d`. -/
-abbrev shiftObj (d : ℤ) :
-    GradedProjectiveResolution.{uk, uA, v, v} 𝒜 (M.shiftObj d).grading :=
-  r.shift (-d)
+/-- The augmentation of a concrete graded resolution is an epimorphism of graded modules. -/
+instance epi_augmentation : Epi r.augmentation :=
+  (GradedModuleCat.epi_iff_surjective _).2 r.surjective_π
 
-/-- The `n`-th term of a shifted resolution is the `d`-shift of the original `n`-th term. -/
-@[simp]
-theorem termObj_shiftObj (d : ℤ) (n : ℕ) :
-    (r.shiftObj d).termObj n = (r.termObj n).shiftObj d :=
-  rfl
-
-/-- The tail (first syzygy) resolution of a graded projective resolution `r`, resolving
-`GradedModuleCat.kernelObj r.augmentation` with `n`-th term `r.X (n + 1)`. -/
-noncomputable abbrev tail :
-    GradedProjectiveResolution.{uk, uA, v, v} 𝒜
-      (GradedModuleCat.kernelObj r.augmentation).grading where
-  X n := r.X (n + 1)
-  grading n := r.grading (n + 1)
-  projective n := r.projective (n + 1)
-  d n := r.d (n + 1)
-  «π» := (r.d 0).codRestrict (LinearMap.ker r.π) fun x =>
-    LinearMap.mem_ker.mpr (r.exact_d_π.apply_apply_eq_zero x)
-  isHomogeneous_d n := r.isHomogeneous_d (n + 1)
-  isHomogeneous_π := LinearMap.isHomogeneous_def.2 fun _ _ hx => by
-    rw [InternalGrading.mem_ker_piece]
-    exact (r.isHomogeneous_d 0).map_mem hx
-  surjective_π := by
-    rintro ⟨y, hy⟩
-    obtain ⟨x, hx⟩ := (r.exact_d_π y).mp (LinearMap.mem_ker.mp hy)
-    exact ⟨x, Subtype.ext hx⟩
-  exact_d_π := fun y =>
-    ⟨fun hy => (r.exact_d_d 0 y).mp (congrArg Subtype.val hy),
-     by rintro ⟨z, rfl⟩; exact Subtype.ext ((r.exact_d_d 0).apply_apply_eq_zero z)⟩
-  exact_d_d n := r.exact_d_d (n + 1)
-
-/-- The `n`-th term of the tail resolution is the `(n + 1)`-st term of `r`. -/
-@[simp]
-theorem termObj_tail (n : ℕ) : r.tail.termObj n = r.termObj (n + 1) :=
-  rfl
-
-/-- The `n`-th differential of the tail resolution is the `(n + 1)`-st differential of `r`. -/
-@[simp]
-theorem differential_tail (n : ℕ) : r.tail.differential n = r.differential (n + 1) :=
-  rfl
-
-/-- Composing the augmentation of the tail resolution with the kernel inclusion recovers the
-degree-zero differential of `r`. -/
-@[reassoc (attr := simp)]
-theorem tail_augmentation_comp_kernelι :
-    r.tail.augmentation ≫ GradedModuleCat.kernelι r.augmentation = r.differential 0 :=
-  GradedModuleCat.hom_ext rfl
-
-/-- The underlying chain complex of a concrete graded projective resolution. -/
-@[expose]
-noncomputable def complex : ChainComplex (GradedModuleCat.{v} 𝒜) ℕ :=
+/-- The chain complex of graded modules formed by the terms and differentials of a concrete
+graded resolution. It is reducible so that the augmentation `r.augmentation : r.termObj 0 ⟶ M`
+and its `Epi` instance apply directly to the degree-zero term of the complex. -/
+noncomputable abbrev complex : ChainComplex (GradedModuleCat.{v} 𝒜) ℕ :=
   ChainComplex.of r.termObj r.differential r.differential_comp_differential
 
-/-- The `n`-th term of `r.complex` is `r.termObj n`. -/
+/-- The terms of the chain complex of a concrete graded resolution are its terms. -/
 @[simp]
 theorem complex_X (n : ℕ) : r.complex.X n = r.termObj n :=
   rfl
 
-/-- The `(n + 1)`-to-`n` differential of `r.complex` is `r.differential n`. -/
-@[simp]
+/-- The differentials of the chain complex of a concrete graded resolution are its
+differentials. -/
 theorem complex_d (n : ℕ) :
-    r.complex.d (n + 1) n = r.differential n :=
-  ChainComplex.of_d r.termObj r.differential n
+    r.complex.d (n + 1) n = r.differential n := by
+  simp [complex]
 
-/-- The degree-one differential of `r.complex` composed with the augmentation vanishes. -/
-@[reassoc]
-theorem complex_d_one_zero_comp_augmentation :
-    r.complex.d 1 0 ≫ r.augmentation = 0 := by
-  rw [r.complex_d 0]
-  exact r.differential_zero_comp_augmentation
+/-- The augmentation vanishes on the image of the first differential of the chain complex. -/
+theorem complex_d_one_zero_comp_augmentation : r.complex.d 1 0 ≫ r.augmentation = 0 := by
+  rw [complex_d]; exact r.differential_zero_comp_augmentation
 
-/-- The augmentation of `r.complex` is exact at degree zero. -/
-theorem complex_exact_d_one_zero :
+/-- The chain complex of a concrete graded resolution is exact at its augmentation. -/
+theorem exact_complex_d_one_zero :
     (ShortComplex.mk (r.complex.d 1 0) r.augmentation
       r.complex_d_one_zero_comp_augmentation).Exact :=
   ChainComplex.of_exact_d_one_zero r.termObj r.differential r.differential_comp_differential
     r.augmentation r.differential_zero_comp_augmentation
     (GradedModuleCat.exact_iff.mpr r.exact_d_π)
 
-/-- Every positive homological degree of `r.complex` is exact. -/
+/-- The chain complex of a concrete graded resolution is exact in positive degrees. -/
 theorem complex_exactAt_succ (n : ℕ) : r.complex.ExactAt (n + 1) :=
   ChainComplex.of_exactAt_succ r.termObj r.differential r.differential_comp_differential n
     (GradedModuleCat.exact_iff.mpr (r.exact_d_d n))
@@ -183,9 +123,7 @@ noncomputable def toProjectiveResolution : ProjectiveResolution M := by
     (fun n => by
       let := r.projective n
       exact inferInstanceAs (Projective (r.termObj n)))
-    ((GradedModuleCat.epi_iff_surjective r.augmentation).mpr r.surjective_π)
-    r.complex_exact_d_one_zero
-    r.complex_exactAt_succ
+    inferInstance r.exact_complex_d_one_zero r.complex_exactAt_succ
 
 /-- The terms of the categorical resolution are the original graded modules. -/
 noncomputable def toProjectiveResolutionXIso (n : ℕ) :
@@ -213,7 +151,7 @@ theorem toProjectiveResolution_π_f_zero :
   simpa [toProjectiveResolutionXIso, toProjectiveResolution,
     ChainComplex.toProjectiveResolution, complex] using
     ChainComplex.toSingle₀Equiv_symm_apply_f_zero (C := r.complex) r.augmentation
-      (by rw [complex_d]; exact r.differential_zero_comp_augmentation)
+      r.complex_d_one_zero_comp_augmentation
 
 omit [DirectSum.Decomposition 𝒜] in
 /-- **A graded resolution with vanishing tail bounds the projective dimension.** If the terms of
@@ -259,6 +197,23 @@ theorem hasProjectiveDimensionLT (n : ℕ) (h : ∀ i, n ≤ i → Subsingleton 
   refine R.hasProjectiveDimensionLT n fun i hi ↦ ?_
   have := h i hi
   exact ModuleCat.isZero_of_subsingleton (ModuleCat.of A (r.X i))
+
+omit [DirectSum.Decomposition 𝒜] in
+/-- Shift a concrete graded projective resolution of `M` to a resolution of `M{d}` (`M.shiftObj d`),
+shifting every resolution term by `d`. -/
+abbrev shiftObj (d : ℤ) : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 (M.shiftObj d).grading :=
+  r.shift (-d)
+
+omit [DirectSum.Decomposition 𝒜] in
+/-- The `n`th graded-module term of `r.shiftObj d` is `(r.termObj n).shiftObj d`. -/
+@[simp]
+theorem shiftObj_termObj (d : ℤ) (n : ℕ) :
+    (r.shiftObj d).termObj n = (r.termObj n).shiftObj d := (rfl)
+
+omit [DirectSum.Decomposition 𝒜] in
+/-- Shifting a resolution of `M` to `M{d}` preserves minimality. -/
+theorem isMinimal_shiftObj_iff (d : ℤ) : (r.shiftObj d).IsMinimal ↔ r.IsMinimal :=
+  r.isMinimal_shift_iff (-d)
 
 end GradedProjectiveResolution
 

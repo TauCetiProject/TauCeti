@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.GradedModuleCat.Betti.Basic
+public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.Betti
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedCartanMatrix
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedResolutionClass
 
@@ -111,9 +111,10 @@ theorem bettiPoincarePowerSeriesMatrix_gradedVertexSimple_apply [DecidableEq Q]
   let _ := Fintype.ofFinite Q
   let _ (a b : Q) : Finite (a ⟶ b) :=
     finite_hom_of_module_finite_pathAlgebra k Q inferInstance a b
-  rw [bettiPoincarePowerSeriesMatrix_eq_of_isMinimal (gradedVertexProjectiveClassBasis k Q) hr
-    (fun l => isMinimal_gradedVertexSimpleProjectiveResolution k Q l)
-    (fun _ hp => integerGrade_eq_bot_of_neg k Q hp), bettiPoincarePowerSeriesMatrix_apply]
+  rw [bettiPoincarePowerSeriesMatrix_eq_of_nonneg (gradedVertexProjectiveClassBasis k Q)
+    (fun _ hp => integerGrade_eq_bot_of_neg k Q hp) hr
+    (fun l => isMinimal_gradedVertexSimpleProjectiveResolution k Q l),
+    bettiPoincarePowerSeriesMatrix_apply]
   refine PowerSeries.ext fun n => ?_
   rcases n with _ | _ | m
   · rw [coeff_zero_bettiPoincarePowerSeries_gradedVertexSimpleProjectiveResolution]

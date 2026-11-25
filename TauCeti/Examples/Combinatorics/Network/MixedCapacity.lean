@@ -92,10 +92,10 @@ noncomputable def flow : Flow capacity 0 2 where
   conserve v hv₀ hv₂ := by
     fin_cases v
     · exact (hv₀ rfl).elim
-    · norm_num [capacity, excessAt_add, excessAt_walkAssignment]
+    · norm_num [capacity, excessAt_add_apply, excessAt_walkAssignment]
     · exact (hv₂ rfl).elim
   excessAt_sink_nonneg := by
-    norm_num [capacity, excessAt_add, excessAt_walkAssignment]
+    norm_num [capacity, excessAt_add_apply, excessAt_walkAssignment]
 
 @[simp]
 theorem flow_toFun : flow.toFun = capacity :=
@@ -153,7 +153,7 @@ theorem flow_respectsVertexCapacity : flow.RespectsVertexCapacity vertexCapacity
 
 /-- The explicit flow has value `5 / 6`. -/
 theorem flow_val : flow.val = 5 / 6 := by
-  norm_num [BoundedFlow.val_def, flow, capacity, excessAt_add, excessAt_walkAssignment]
+  norm_num [BoundedFlow.val_def, flow, capacity, excessAt_add_apply, excessAt_walkAssignment]
 
 /-- The displayed mixed separator has the same weight `5 / 6` as the flow. -/
 theorem separator_weight :

@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Path
+public import TauCeti.Geometry.Diffeomorphism.Evaluation
 public import TauCeti.Geometry.Diffeomorphism.FixingSubgroup.Topology
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
+public import TauCeti.Topology.Homotopy.Isotopy.MappingClassGroup
 
 /-!
 # The smooth mapping class group
@@ -26,6 +28,12 @@ diffeomorphisms.
 The definition is the same in every dimension; the classical case is that of compact connected
 surfaces.
 
+Forgetting smoothness and the boundary condition gives a homomorphism
+`Mod(M) → TauCeti.MappingClassGroupFull M` to the topological mapping class group of isotopy
+classes of all self-homeomorphisms: a path of diffeomorphisms from the identity traces an isotopy
+of homeomorphisms (`Diffeomorph.isotopic_of_joined`). The isotopies of the topological group
+are not required to fix `∂M`.
+
 ## Main definitions
 
 * `TauCeti.MappingClassGroup I M`: the mapping class group `Mod(M)`.
@@ -33,6 +41,8 @@ surfaces.
 * `TauCeti.MappingClassGroup.lift`: a homomorphism out of `Diff(M, ∂M)` that is trivial on
   diffeomorphisms isotopic to the identity relative to `∂M` descends to `Mod(M)`.
 * `TauCeti.MappingClassGroup.orientationPreserving o`: the subgroup `Mod⁺(M)`.
+* `TauCeti.MappingClassGroup.toMappingClassGroupFull`: the forgetful homomorphism to the
+  topological mapping class group `TauCeti.MappingClassGroupFull M`.
 
 ## Main results
 
@@ -156,6 +166,28 @@ theorem mk_final_eq_one (Φ : Diffeotopy I ∞ M)
   mk_eq_one_iff.mpr (JoinedIn.joined_subtype ⟨Φ.toPath, fun t =>
     Diffeomorph.mem_fixingSubgroup_of_forall fun x hx =>
       (DFunLike.congr_fun (Φ.toPath_apply t) x).trans ((Φ.timeSlice_apply t x).trans (hΦ t x hx))⟩)
+
+section Forget
+
+variable (I M) in
+/-- The forgetful homomorphism from the smooth mapping class group `Mod(M)` to the topological
+mapping class group, sending the class of a diffeomorphism fixing `∂M` pointwise to the isotopy
+class of its underlying homeomorphism. -/
+noncomputable def toMappingClassGroupFull : MappingClassGroup I M →* MappingClassGroupFull M :=
+  lift ((MappingClassGroupFull.mk M).comp (Diffeomorph.toHomeomorphHom.comp (Subgroup.subtype _)))
+    fun f hf => MappingClassGroupFull.mk_eq_one_iff.2 <| by
+      simpa [← Diffeomorph.toHomeomorphHom_apply] using
+        (Diffeomorph.isotopic_of_joined (hf.map continuous_subtypeVal)).symm
+
+/-- The forgetful homomorphism sends the class of `f` to the class of its underlying
+homeomorphism. -/
+@[simp]
+theorem toMappingClassGroupFull_mk (f : RelativeDiff I M ∞ (I.boundary M)) :
+    toMappingClassGroupFull I M (mk I M f) =
+      MappingClassGroupFull.mk M (f : Diff I M ∞).toHomeomorph := by
+  simp [toMappingClassGroupFull, Diffeomorph.toHomeomorphHom_apply]
+
+end Forget
 
 section Orientation
 

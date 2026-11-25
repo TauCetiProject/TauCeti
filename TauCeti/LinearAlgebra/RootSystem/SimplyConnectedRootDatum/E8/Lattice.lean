@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
+import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E8.Basic
 import TauCeti.LinearAlgebra.RootSystem.E8Coordinates
 

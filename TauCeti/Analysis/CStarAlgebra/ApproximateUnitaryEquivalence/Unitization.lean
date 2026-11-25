@@ -59,7 +59,8 @@ theorem unitization_iff {φ ψ : A →⋆ₙₐ[ℂ] B} :
   · intro h
     simpa only [NonUnitalStarAlgHom.id_comp] using
       h.postcomp_of_comp_eq (κ := NonUnitalStarAlgHom.id ℂ B)
-        (Unitization.starLift (NonUnitalStarAlgHom.id ℂ B)) (Unitization.starLift_comp_inr _)
+        (Unitization.starLift (NonUnitalStarAlgHom.id ℂ B)).toNonUnitalStarAlgHom
+        (Unitization.starLift_comp_inr _)
   · intro h
     rw [approximatelyUnitarilyEquivalent_def] at h ⊢
     intro F ε hε
@@ -89,6 +90,6 @@ theorem unitization_postcomp
       ((Unitization.inrNonUnitalStarAlgHom ℂ C).comp (ρ.comp ψ)) := by
   simpa only [NonUnitalStarAlgHom.comp_assoc] using
     h.postcomp_of_comp_eq (κ := (Unitization.inrNonUnitalStarAlgHom ℂ C).comp ρ)
-      (Unitization.starMap ρ) (NonUnitalStarAlgHom.ext fun _ ↦ by simp)
+      (Unitization.starMap ρ).toNonUnitalStarAlgHom (NonUnitalStarAlgHom.ext fun _ ↦ by simp)
 
 end TauCeti.ApproximatelyUnitarilyEquivalent
