@@ -78,7 +78,9 @@ theorem littleHolder_comap_atlasEquiv (hα : α ≤ 1) (hn : (k : WithTop ℕ∞
   rw [Submodule.comap_coe, coe_littleHolder, coe_littleHolder,
     ← smoothSections_comap_atlasLinearEquiv hα hn (A := A) (B := B), Submodule.comap_coe,
     ← toLinearEquiv_atlasEquiv hα hn]
-  exact (atlasEquiv A B k α hα hn).toHomeomorph.preimage_closure _
+  simpa only [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
+    ContinuousLinearEquiv.coe_toHomeomorph] using
+    (atlasEquiv A B k α hα hn).toHomeomorph.preimage_closure _
 
 /-- An element of `C^{k,α}(V)` for `A` lies in the little Hölder space of `A` exactly when its
 image under the identification of the Hölder spaces lies in that of `B`. -/
