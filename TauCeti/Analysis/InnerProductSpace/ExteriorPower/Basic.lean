@@ -55,6 +55,8 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 * `exteriorPower.inner_ιMulti_two`: `⟪a ∧ b, u ∧ w⟫ = ⟪a, u⟫ ⟪b, w⟫ - ⟪a, w⟫ ⟪b, u⟫`, and
   `exteriorPower.orthonormal_ιMulti_two_of_orthonormal`: for an orthonormal triple `e, x, y`, the
   wedges `e ∧ x` and `e ∧ y` are orthonormal.
+* `Orthonormal.orthonormal_ιMulti_two_add_one_add_two`: for an orthonormal triple `v`, the wedges
+  `v 1 ∧ v 2`, `v 2 ∧ v 0`, `v 0 ∧ v 1` are orthonormal.
 * `exteriorPower.ext_inner_ιMulti`: elements of `⋀ⁿ E` with the same inner products against all
   wedges of vectors are equal, and `exteriorPower.linearMap_ext_inner_ιMulti` is the
   corresponding extensionality principle for linear maps between exterior powers;
@@ -64,8 +66,6 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
   `⋀ⁿ E` is skew-adjoint, `⟪D_A x, y⟫ = -⟪x, D_A y⟫`.
 * `OrthonormalBasis.sum_norm_sq_ιMulti_two`: contraction of squared wedge norms in a basis.
 * `OrthonormalBasis.inner_toBasis_exteriorPower`: the induced basis of `⋀ⁿ E` is orthonormal.
-* `OrthonormalBasis.orthonormal_ιMulti_two_add_one_add_two`: for an orthonormal basis `b` of a
-  three-dimensional space, the wedges `b 1 ∧ b 2`, `b 2 ∧ b 0`, `b 0 ∧ b 1` are orthonormal.
 * `OrthonormalBasis.ιMulti_two_eq_sum`, `OrthonormalBasis.inner_ιMulti_two_eq_sum`,
   `OrthonormalBasis.eq_sum_inner_smul_ιMulti_two`,
   `OrthonormalBasis.norm_sq_eq_sum_sq_inner_ιMulti_two`: the coordinates of two-vectors in the
@@ -150,6 +150,18 @@ theorem orthonormal_ιMulti_two_of_orthonormal {e x y : E} (h : Orthonormal ℝ 
     simp only [Fin.zero_eta, Fin.mk_one, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one] <;>
     rw [inner_ιMulti_two] <;>
     simp [he, hx, hy, hex, hey, hxy, hyx]
+
+/-- For an orthonormal family `v` indexed by `Fin 3`, the wedges `v (k + 1) ∧ v (k + 2)` of
+cyclically consecutive vectors, namely `v 1 ∧ v 2`, `v 2 ∧ v 0` and `v 0 ∧ v 1`, are
+orthonormal. -/
+theorem _root_.Orthonormal.orthonormal_ιMulti_two_add_one_add_two {v : Fin 3 → E}
+    (hv : Orthonormal ℝ v) :
+    Orthonormal ℝ fun k : Fin 3 ↦ ιMulti ℝ 2 ![v (k + 1), v (k + 2)] := by
+  have hv' := orthonormal_iff_ite.mp hv
+  rw [orthonormal_iff_ite]
+  intro i j
+  rw [inner_ιMulti_two]
+  fin_cases i <;> fin_cases j <;> simp [hv', hv.1]
 
 /-- Elements of `⋀ⁿ E` are determined by their inner products with wedges of vectors, since these
 wedges span `⋀ⁿ E`. -/
@@ -386,16 +398,6 @@ theorem inner_toBasis_exteriorPower [LinearOrder ι] (b : OrthonormalBasis ι �
     ⟪b.toBasis.exteriorPower n u, b.toBasis.exteriorPower n v⟫ = if u = v then 1 else 0 := by
   rw [← OrthonormalBasis.toBasis_exteriorPower, OrthonormalBasis.coe_toBasis,
     OrthonormalBasis.inner_eq_ite]
-
-/-- For an orthonormal basis `b` indexed by `Fin 3`, the wedges `b (k + 1) ∧ b (k + 2)` of
-cyclically consecutive basis vectors, namely `b 1 ∧ b 2`, `b 2 ∧ b 0` and `b 0 ∧ b 1`, are
-orthonormal. -/
-theorem orthonormal_ιMulti_two_add_one_add_two (b : OrthonormalBasis (Fin 3) ℝ E) :
-    Orthonormal ℝ fun k : Fin 3 ↦ exteriorPower.ιMulti ℝ 2 ![b (k + 1), b (k + 2)] := by
-  rw [orthonormal_iff_ite]
-  intro i j
-  rw [exteriorPower.inner_ιMulti_two]
-  fin_cases i <;> fin_cases j <;> simp [b.inner_eq_ite]
 
 /-! ### Two-vectors in an orthonormal frame of a four-dimensional space -/
 

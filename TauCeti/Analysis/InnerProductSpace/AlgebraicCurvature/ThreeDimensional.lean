@@ -94,7 +94,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 /-- **The dimension-three identity.** For a bivector-symmetric four-tensor `r` on a space with an
 orthonormal basis `b` indexed by `Fin 3`, the matrix of the curvature operator in the orthonormal
 bivector basis `b 1 ∧ b 2, b 2 ∧ b 0, b 0 ∧ b 1` (see
-`OrthonormalBasis.orthonormal_ιMulti_two_add_one_add_two`) is `(Scal / 2) I - Ric`:
+`Orthonormal.orthonormal_ιMulti_two_add_one_add_two`) is `(Scal / 2) I - Ric`:
 `⟪R (b (i + 1) ∧ b (i + 2)), b (j + 1) ∧ b (j + 2)⟫ = (Scal / 2) ⟪b i, b j⟫ - Ric(b i, b j)`. -/
 theorem IsBivectorSymmetric.inner_curvatureEndomorphism_ιMulti_two_add_one_add_two
     {r : FourTensor V} (hr : IsBivectorSymmetric r) (b : OrthonormalBasis (Fin 3) ℝ V)
