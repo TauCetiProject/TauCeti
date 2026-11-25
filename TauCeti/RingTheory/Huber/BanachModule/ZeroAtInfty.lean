@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Group.Basic
 public import Mathlib.Analysis.Normed.Group.Completion
 public import TauCeti.Analysis.Normed.Operator.BoundedLinearMaps
 public import TauCeti.RingTheory.Huber.BanachModule.BaseChange

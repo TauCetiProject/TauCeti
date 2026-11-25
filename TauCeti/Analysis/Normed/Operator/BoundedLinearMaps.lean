@@ -15,9 +15,7 @@ Over a seminormed commutative ring `R`, which need not be a field, an `R`-biline
 scalar action with `‖r • m‖ ≤ C * ‖r‖ * ‖m‖` (`TauCeti.continuousSMul_of_norm_smul_le`).
 For an `R`-algebra `S`, a bound on the action makes the structure map bounded
 (`TauCeti.exists_norm_algebraMap_le_of_norm_smul_le`), and conversely a bound on the structure map
-makes the action bounded (`TauCeti.exists_norm_smul_le_of_norm_algebraMap_le`). Any real bound
-`‖f x‖ ≤ L * ‖x‖` upgrades to a nonnegative real bound
-(`TauCeti.exists_nnreal_norm_le_of_norm_le`).
+makes the action bounded (`TauCeti.exists_norm_smul_le_of_norm_algebraMap_le`).
 The evaluation action of bounded operators on a seminormed space is bounded
 (`ContinuousLinearMap.isBoundedSMul_apply`) and hence jointly continuous
 (`IsBoundedSMul.continuousSMul`), as is every submonoid such as the unitary group.
@@ -79,13 +77,6 @@ theorem TauCeti.exists_norm_smul_le_of_norm_algebraMap_le {S : Type*} [Seminorme
   h.imp fun C hC r s ↦ by
     rw [Algebra.smul_def]
     exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (hC r) (norm_nonneg s))
-
-/-- A real norm bound `‖f x‖ ≤ L * ‖x‖` yields a nonnegative real bound `C = max L 0`. -/
-theorem TauCeti.exists_nnreal_norm_le_of_norm_le {α β : Type*} [SeminormedAddGroup α] [Norm β]
-    {f : α → β} {L : ℝ} (hf : ∀ x, ‖f x‖ ≤ L * ‖x‖) :
-    ∃ C : ℝ≥0, ∀ x, ‖f x‖ ≤ C * ‖x‖ :=
-  ⟨⟨max L 0, le_max_right L 0⟩, fun x ↦
-    (hf x).trans (mul_le_mul_of_nonneg_right (le_max_left L 0) (norm_nonneg x))⟩
 
 /-- A fibrewise linear change of coordinates `(x, v) ↦ (x, e x v)`, with `e` continuous at `a`,
 tends to `(a, 0)` at `(a, 0)`. -/
