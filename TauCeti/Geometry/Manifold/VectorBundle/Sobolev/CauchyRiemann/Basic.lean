@@ -9,7 +9,7 @@ import TauCeti.Analysis.Sobolev.Wkp.SmoothCoefficients
 public import TauCeti.Analysis.Sobolev.Wkp.SmoothMultiplication
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Chart
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Transfer
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Transfer
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap

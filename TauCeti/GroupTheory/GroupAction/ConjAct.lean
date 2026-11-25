@@ -35,6 +35,8 @@ subgroup is the conjugate by `g` of the stabilizer of `a`.
 * `ConjAct.mk_eq_mk_iff_isConj`: conjugation orbits are the classes of `IsConj`.
 * `MonoidHom.map_conjNormal_val`: a homomorphism from a normal subgroup to a commutative monoid is
   unchanged by conjugation by an element of that subgroup.
+* `MonoidHom.map_conjNormal_eq_of_inv_mul_mem`: composed with conjugation by `g`, such a
+  homomorphism depends only on the coset `g N`.
 * `Subgroup.conjugationAction`: the explicit conjugation action on a normal subgroup.
 * `Subgroup.inv_mul_mul_mem_conjAct_smul_iff`: conjugation preserves subgroup membership.
 * `Subgroup.mem_conjAct_smul_iff`: membership in a conjugate `g H g⁻¹`.
@@ -79,6 +81,15 @@ theorem map_conjNormal_val (ψ : N →* M) (a x : N) : ψ (MulAut.conjNormal (a 
   have h : IsConj x (MulAut.conjNormal (a : G) x) :=
     isConj_iff.mpr ⟨a, by rw [MulAut.conjNormal_val, MulAut.conj_apply]⟩
   exact (isConj_iff_eq.mp (ψ.map_isConj h)).symm
+
+/-- **A homomorphism from a normal subgroup to a commutative monoid, composed with conjugation by
+`g`, depends only on the coset `g N`**: it agrees at `g` and `g₀` when `g₀⁻¹ g ∈ N`. -/
+theorem map_conjNormal_eq_of_inv_mul_mem (ψ : N →* M) {g₀ g : G} (h : g₀⁻¹ * g ∈ N) (x : N) :
+    ψ (MulAut.conjNormal g x) = ψ (MulAut.conjNormal g₀ x) := by
+  -- Write `g = g₀ a` with `a ∈ N`; conjugation by `a` does not move `ψ`.
+  obtain ⟨a, rfl⟩ : ∃ a : N, g = g₀ * a := ⟨⟨g₀⁻¹ * g, h⟩, by simp⟩
+  rw [map_mul, MulAut.mul_apply]
+  exact (ψ.comp (MulAut.conjNormal g₀).toMonoidHom).map_conjNormal_val a x
 
 end MonoidHom
 
