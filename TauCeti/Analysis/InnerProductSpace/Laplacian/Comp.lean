@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.Calculus.SecondDerivative
 
 /-!
 # The Laplacian of a composite with a nonlinear change of variables
@@ -45,33 +46,12 @@ theorem _root_.ContDiffAt.laplacian_fun_comp {f : G → F} {φ : E → G} {x : E
     Δ (fun y ↦ f (φ y)) x =
       ∑ i, iteratedFDeriv ℝ 2 f (φ x) ![fderiv ℝ φ x (b i), fderiv ℝ φ x (b i)] +
         fderiv ℝ f (φ x) (Δ φ x) := by
-  have hφd : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ φ y :=
-    (hφ.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt (by simp)
-  have hfd : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ f (φ y) :=
-    hφ.continuousAt.eventually <|
-      (hf.eventually (by simp)).mono fun z hz ↦ hz.differentiableAt (by simp)
-  have hD : fderiv ℝ (fun y ↦ f (φ y)) =ᶠ[𝓝 x]
-      fun y ↦ (fderiv ℝ f (φ y)).comp (fderiv ℝ φ y) := by
-    filter_upwards [hφd, hfd] with y hφy hfy
-    exact fderiv_comp y hfy hφy
-  have hf₂ : DifferentiableAt ℝ (fderiv ℝ f) (φ x) :=
-    (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have hφ₂ : DifferentiableAt ℝ (fderiv ℝ φ) x :=
-    (hφ.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have hc : HasFDerivAt (fun y ↦ fderiv ℝ f (φ y))
-      ((fderiv ℝ (fderiv ℝ f) (φ x)).comp (fderiv ℝ φ x)) x :=
-    hf₂.hasFDerivAt.comp x hφd.self_of_nhds.hasFDerivAt
-  -- Each diagonal Hessian entry of the composite, by differentiating the chain rule once more.
+  -- Each diagonal Hessian entry of the composite, by the second-order chain rule.
   have hterm : ∀ v, iteratedFDeriv ℝ 2 (fun y ↦ f (φ y)) x ![v, v] =
       iteratedFDeriv ℝ 2 f (φ x) ![fderiv ℝ φ x v, fderiv ℝ φ x v] +
-        fderiv ℝ f (φ x) (iteratedFDeriv ℝ 2 φ x ![v, v]) := by
-    intro v
-    rw [iteratedFDeriv_two_apply, hD.fderiv_eq, fderiv_clm_comp hc.differentiableAt hφ₂,
-      hc.fderiv, iteratedFDeriv_two_apply, iteratedFDeriv_two_apply]
-    simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
-      add_apply, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.compL_apply, ContinuousLinearMap.flip_apply]
-    abel
+        fderiv ℝ f (φ x) (iteratedFDeriv ℝ 2 φ x ![v, v]) := fun v ↦ by
+    rw [iteratedFDeriv_two_apply, iteratedFDeriv_two_apply, iteratedFDeriv_two_apply]
+    simpa [Function.comp_def] using fderiv_fderiv_comp_apply hf hφ v v
   rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis _ b) x,
     congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis φ b) x, map_sum]
   simp_rw [hterm, Finset.sum_add_distrib]

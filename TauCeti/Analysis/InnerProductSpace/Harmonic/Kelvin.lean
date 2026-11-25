@@ -41,7 +41,7 @@ of variables (`ContDiffAt.laplacian_fun_comp_of_fderiv_eq_smul`),
 `‖x‖ ^ (2 - n)` is harmonic, and in the Leibniz rule its gradient term cancels the first-order
 term exactly.
 
-In dimension `n ≥ 3`, a harmonic function `f` on an exterior region `‖x‖ > R` whose rescaling
+In dimension `n ≥ 2`, a harmonic function `f` on an exterior region `‖x‖ > R` whose rescaling
 `‖x‖ ^ (n - 2) f(x)` tends to `a` at infinity has a Kelvin transform tending to `a` at the origin
 (`TauCeti.tendsto_kelvinTransform_nhdsNE_zero`), so by the removable singularity theorem
 `K[f]`, with the value `a` at the origin, is harmonic on the whole ball `‖x‖ < R⁻¹`
@@ -135,7 +135,7 @@ theorem laplacian_inversion_zero_one {x : E} (hx : x ≠ 0) :
     Δ (inversion (0 : E) 1) x = (2 * (2 - finrank ℝ E) * ‖x‖ ^ (-4 : ℝ)) • x := by
   have hid : Δ (fun y : E ↦ y) x = 0 := by
     simpa [ContinuousLinearMap.coe_id', Function.id_def] using
-      congrFun (laplacian_continuousLinearMap (ContinuousLinearMap.id ℝ E)) x
+      congrFun (ContinuousLinearMap.id ℝ E).laplacian x
   -- The inversion is `y ↦ ‖y‖ ^ (-2) y`, including at the origin, where both sides vanish.
   have hinv : inversion (0 : E) 1 = fun y ↦ ‖y‖ ^ (-2 : ℝ) • y := by
     funext y
@@ -212,17 +212,17 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.kelvinTransform {f : E → F} {s 
     HarmonicOnNhd (kelvinTransform f) (inversion (0 : E) 1 ⁻¹' s \ {0}) :=
   fun _ hx ↦ (hf _ hx.1).kelvinTransform hx.2
 
-/-- **Closing off a harmonic end.** In dimension `n ≥ 3`, let `f` be harmonic on the exterior
+/-- **Closing off a harmonic end.** In dimension `n ≥ 2`, let `f` be harmonic on the exterior
 region `‖x‖ > R`, with `‖x‖ ^ (n - 2) f(x) → a` at infinity. Then the Kelvin transform of `f`,
 with the value `a` at the origin, is harmonic on the ball `‖x‖ < R⁻¹`. -/
-theorem harmonicOnNhd_update_kelvinTransform [DecidableEq E] (hn : 3 ≤ finrank ℝ E) {f : E → ℝ}
+theorem harmonicOnNhd_update_kelvinTransform [DecidableEq E] (hn : 2 ≤ finrank ℝ E) {f : E → ℝ}
     {R a : ℝ} (hf : HarmonicOnNhd f {x | R < ‖x‖})
     (ha : Tendsto (fun x ↦ ‖x‖ ^ (finrank ℝ E - 2 : ℝ) * f x) (Bornology.cobounded E) (𝓝 a)) :
     HarmonicOnNhd (Function.update (kelvinTransform f) 0 a) (ball 0 R⁻¹) := by
   rcases le_or_gt R 0 with hR | hR
   · rw [ball_eq_empty.2 (inv_nonpos.2 hR)]
     exact fun _ h ↦ h.elim
-  refine harmonicOnNhd_update_of_tendsto (by omega) (ball_mem_nhds 0 (inv_pos.2 hR)) (fun y hy ↦ ?_)
+  refine harmonicOnNhd_update_of_tendsto hn (ball_mem_nhds 0 (inv_pos.2 hR)) (fun y hy ↦ ?_)
     (tendsto_kelvinTransform_nhdsNE_zero (by simpa only [smul_eq_mul] using ha))
   have hy0 : y ≠ 0 := hy.2
   refine (hf _ ?_).kelvinTransform hy0

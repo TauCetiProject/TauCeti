@@ -53,7 +53,7 @@ theorem laplacian_norm_starProjection_sq (K : Submodule ℝ E) (x : E) :
   have hproj : LinearMap.IsProj K (P : E →ₗ[ℝ] E) :=
     ⟨fun v ↦ K.starProjection_apply_mem v, fun v hv ↦ K.starProjection_eq_self_iff.2 hv⟩
   -- `P` is linear, so its own Laplacian vanishes and its derivative is `P`.
-  rw [P.contDiff.contDiffAt.laplacian_norm_sq b, TauCeti.laplacian_continuousLinearMap,
+  rw [P.contDiff.contDiffAt.laplacian_norm_sq b, P.laplacian,
     Pi.zero_apply, inner_zero_right, mul_zero, add_zero,
     P.fderiv]
   have htr := LinearMap.trace_eq_sum_inner (P : E →ₗ[ℝ] E) b
