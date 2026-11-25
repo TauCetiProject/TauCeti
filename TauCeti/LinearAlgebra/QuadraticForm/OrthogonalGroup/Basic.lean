@@ -66,7 +66,10 @@ identity when `polar Q v = 0`; over a general ring it can be the identity in oth
   `TauCeti.QuadraticMap.reflectionOrthogonal_inv` are its group-level involution facts.
 * `TauCeti.QuadraticMap.reflectionOrthogonalOfNeZero Q v hv`: over a field, the same reflection
   for a vector with `hv : Q v ≠ 0`, for statements quantifying over vectors of nonzero norm, with
-  its formula, its fixed vectors, and its compatibility with restriction to a submodule.
+  its formula, its fixed vectors, its involution facts
+  `TauCeti.QuadraticMap.reflectionOrthogonalOfNeZero_mul_self` and
+  `TauCeti.QuadraticMap.reflectionOrthogonalOfNeZero_inv`, and its compatibility with restriction
+  to a submodule.
 * `QuadraticMap.negOrthogonal Q`: the isometry `x ↦ -x`, as an element of
   `orthogonalGroup Q`.
 
@@ -1139,10 +1142,17 @@ theorem reflectionOrthogonalOfNeZero_apply_of_polar_eq_zero (v : V) (hv : Q v �
   rw [reflectionOrthogonalOfNeZero_apply, hx, mul_zero, zero_smul, sub_zero]
 
 /-- The reflection in a vector of nonzero norm is an involution. -/
+@[simp]
 theorem reflectionOrthogonalOfNeZero_mul_self (v : V) (hv : Q v ≠ 0) :
     reflectionOrthogonalOfNeZero Q v hv * reflectionOrthogonalOfNeZero Q v hv = 1 := by
   let _ := invertibleOfNonzero hv
   rw [reflectionOrthogonalOfNeZero_eq, reflectionOrthogonal_mul_self]
+
+/-- The reflection in a vector of nonzero norm is its own inverse in the orthogonal group. -/
+@[simp]
+theorem reflectionOrthogonalOfNeZero_inv (v : V) (hv : Q v ≠ 0) :
+    (reflectionOrthogonalOfNeZero Q v hv)⁻¹ = reflectionOrthogonalOfNeZero Q v hv :=
+  inv_eq_of_mul_eq_one_left (reflectionOrthogonalOfNeZero_mul_self Q v hv)
 
 /-- On a submodule `U`, the reflection in a vector `v ∈ U` of the ambient form restricts to the
 reflection in `v` of the restricted form `Q.restrict U`. -/
