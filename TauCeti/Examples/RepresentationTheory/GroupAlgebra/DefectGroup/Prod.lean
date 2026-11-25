@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.IndexNormal
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.Block
 public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.Principal
 public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.Prod
+import TauCeti.GroupTheory.Perm.FinThree.Complement
+import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Classification
 
 /-!
 # Defect groups of direct products: `S₃ × C₂` and `𝔽₂[C₃ × C₃]`
@@ -35,26 +36,10 @@ open _root_.MonoidAlgebra TensorProduct GroupAlgebraBlockExamples
 
 /-! ### `S₃ × C₂` at `p = 3` -/
 
-/-- The subgroup `⟨ρ⟩` has order `3`. -/
-theorem card_zpowers_ρ : Nat.card (Subgroup.zpowers ρ) = 3 := by
-  rw [Nat.card_zpowers, orderOf_eq_prime (p := 3) (by decide) (by decide)]
-
-/-- The subgroup `⟨ρ⟩` has index `2` in `S₃`. -/
-theorem index_zpowers_ρ : (Subgroup.zpowers ρ).index = 2 := by
-  have h := (Subgroup.zpowers ρ).card_mul_index
-  rw [card_zpowers_ρ, Nat.card_perm, Nat.card_fin] at h
-  simp [Nat.factorial] at h
-  omega
-
-/-- `⟨ρ⟩` is the only Sylow `3`-subgroup of `S₃`: it is a `3`-group of index `2`, so it is a
-normal Sylow `3`-subgroup. -/
+/-- `⟨ρ⟩ = A₃` is the only Sylow `3`-subgroup of `S₃`. -/
 theorem sylow_eq_zpowers_ρ (S : Sylow 3 S₃) : (S : Subgroup S₃) = Subgroup.zpowers ρ := by
-  have hρ : IsPGroup 3 (Subgroup.zpowers ρ) :=
-    IsPGroup.of_card (n := 1) (by rw [card_zpowers_ρ, pow_one])
-  set P := hρ.toSylow (by rw [index_zpowers_ρ]; decide)
-  have := Sylow.unique_of_normal P
-    (by rw [IsPGroup.toSylow_coe]; exact Subgroup.normal_of_index_eq_two index_zpowers_ρ)
-  rw [Subsingleton.elim S P, IsPGroup.toSylow_coe]
+  rw [sylow_three_perm_fin_three_eq S, coe_alternatingGroupSylowThree, Subgroup.zpowers_eq_closure,
+    closure_finRotate_three_eq_alternatingGroup]
 
 /-- **The defect group of `1` in `𝔽₃[S₃]`** is the Sylow `3`-subgroup `⟨ρ⟩`: `1` is central with
 augmentation `1`. -/
@@ -125,30 +110,26 @@ theorem coeff_f₂ : ⇑f₂.coeff = fun g ↦ if g.1 = g.2 then 0 else 1 := by
 
 /-- `e ⊗ e = f₁ + f₂` in `𝔽₂[C₃ × C₃]`. -/
 theorem tensorEquiv_e_tmul_e : tensorEquiv (ZMod 2) (e ⊗ₜ e) = f₁ + f₂ := by
-  refine ext (Finsupp.ext fun g ↦ ?_)
-  revert g
+  refine ext (Finsupp.ext ?_)
   simp only [coeff_tensorEquiv_tmul, coeff_add, Finsupp.add_apply, coeff_f₁, coeff_f₂, of_apply,
     coeff_single, Finsupp.single_apply]
   decide
 
 /-- `f₁` is idempotent. -/
 theorem isIdempotentElem_f₁ : IsIdempotentElem f₁ := by
-  refine ext (Finsupp.ext fun g ↦ ?_)
-  revert g
+  refine ext (Finsupp.ext ?_)
   simp only [coeff_mul_eq_sum, coeff_f₁]
   decide
 
 /-- `f₂` is idempotent. -/
 theorem isIdempotentElem_f₂ : IsIdempotentElem f₂ := by
-  refine ext (Finsupp.ext fun g ↦ ?_)
-  revert g
+  refine ext (Finsupp.ext ?_)
   simp only [coeff_mul_eq_sum, coeff_f₂]
   decide
 
 /-- `f₁` and `f₂` are orthogonal. -/
 theorem f₁_mul_f₂ : f₁ * f₂ = 0 := by
-  refine ext (Finsupp.ext fun g ↦ ?_)
-  revert g
+  refine ext (Finsupp.ext ?_)
   simp only [coeff_mul_eq_sum, coeff_f₁, coeff_f₂, coeff_zero, Finsupp.zero_apply]
   decide
 
