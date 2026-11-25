@@ -7,16 +7,16 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.NonUnital
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
-public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+import Mathlib.Analysis.Real.Sqrt
 
 /-!
 # Cuntz subequivalence
 
-CStarClassification CL4.1. For positive elements `a, b` of a C⋆-algebra `A`, `a` is **Cuntz
-subequivalent** to `b`, `TauCeti.CuntzLE a b`, if there are `xₙ ∈ A` with `xₙ⋆ b xₙ → a` in norm
-(Rørdam, §4.1). The relation lives on the positive-element subtype `{a : A // 0 ≤ a}`; we define it
-as membership of `a` in the closure of `{x⋆ b x : x ∈ A}` and prove the sequential form
+For positive elements `a, b` of a C⋆-algebra `A`, `a` is **Cuntz subequivalent** to `b`,
+`TauCeti.CuntzLE a b`, if there are `xₙ ∈ A` with `xₙ⋆ b xₙ → a` in norm (Rørdam, §4.1). The
+relation lives on the positive-element subtype `{a : A // 0 ≤ a}`; we define it as membership of
+`a` in the closure of `{x⋆ b x : x ∈ A}` and prove the sequential form
 (`TauCeti.cuntzLE_iff_exists_tendsto`). The relation is written out rather than given an order
 notation: it is not the order on positive elements. Mutual subequivalence is
 `AntisymmRel CuntzLE`.
@@ -30,8 +30,9 @@ notation: it is not the order on positive elements. Mutual subequivalence is
   `(a - ε)₊ ≼ a` (`TauCeti.cuntzLE_cfcₙ_sub_posPart`): `(a - ε)₊ = x⋆ a x` for
   `x = cfcₙ (fun t ↦ √(max (t - ε) 0 / t)) a`.
 
-The Check that in `ℂ` the positive scalars `1` and `2` are mutually subequivalent, `1 ≼ 2` and
-`2 ≼ 1`, is `TauCeti.antisymmRel_cuntzLE_one_two`.
+In `ℂ`, `a ≼ b` holds exactly when `b ≠ 0` or `a = 0` (`TauCeti.cuntzLE_complex_iff`), so all
+nonzero positive scalars are mutually subequivalent (`TauCeti.antisymmRel_cuntzLE_complex`); the
+Check `1 ≼ 2` and `2 ≼ 1` is `TauCeti.antisymmRel_cuntzLE_one_two`.
 
 ## References
 
@@ -71,14 +72,11 @@ theorem cuntzLE_iff_exists_tendsto {a b : {a : A // 0 ≤ a}} :
 /-- Only `0` is Cuntz subequivalent to `0`. -/
 @[simp]
 theorem cuntzLE_zero_right_iff {a : {a : A // 0 ≤ a}} : CuntzLE a 0 ↔ a = 0 := by
-  have : (Set.range fun x : A ↦ star x * ((0 : {a : A // 0 ≤ a}) : A) * x) = {0} := by
-    ext
-    simp
-  rw [cuntzLE_def, this, closure_singleton, Set.mem_singleton_iff, ← Subtype.val_inj,
-    Nonneg.coe_zero]
+  simp [cuntzLE_def, Subtype.ext_iff]
 
 variable [StarOrderedRing A] [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
 
+/-- For positive `b` and any `x`, the compression `x⋆ b x` is Cuntz subequivalent to `b`. -/
 theorem cuntzLE_star_mul_mul (x : A) (b : {a : A // 0 ≤ a}) :
     CuntzLE ⟨star x * b * x, star_left_conjugate_nonneg b.property x⟩ b :=
   subset_closure ⟨x, rfl⟩
@@ -89,8 +87,7 @@ theorem CuntzLE.refl (a : {a : A // 0 ≤ a}) : CuntzLE a a := by
   have hl := CStarAlgebra.increasingApproximateUnit (A := A)
   have : Tendsto (fun e ↦ star e * (a : A) * e) (CStarAlgebra.approximateUnit A) (𝓝 (a : A)) :=
     (hl.tendsto_mul_self (a : A)).congr' <| hl.eventually_star_eq.mono fun e he ↦ by
-      change e * (a : A) * e = star e * (a : A) * e
-      rw [he]
+      simp only [he]
   have hne := hl.neBot
   exact mem_closure_of_tendsto this (.of_forall fun e ↦ ⟨e, rfl⟩)
 
@@ -118,7 +115,8 @@ instance : IsPreorder {a : A // 0 ≤ a} CuntzLE where
   trans _ _ _ := CuntzLE.trans
 
 /-- Star homomorphisms preserve Cuntz subequivalence. -/
-theorem CuntzLE.map {a b : {a : A // 0 ≤ a}} (h : CuntzLE a b) (φ : A →⋆ₙₐ[ℂ] B) :
+theorem CuntzLE.map {F : Type*} [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B]
+    [StarHomClass F A B] {a b : {a : A // 0 ≤ a}} (h : CuntzLE a b) (φ : F) :
     CuntzLE ⟨φ a, map_nonneg φ a.property⟩ ⟨φ b, map_nonneg φ b.property⟩ := by
   have h1 : φ a ∈ closure (φ '' Set.range fun x : A ↦ star x * b * x) :=
     map_mem_closure (map_continuous φ) h (Set.mapsTo_image _ _)
@@ -134,10 +132,10 @@ theorem cuntzLE_zero_left (b : {a : A // 0 ≤ a}) : CuntzLE 0 b := by
 
 /-- The function `t ↦ √(max (t - ε) 0 / t)` used to realize the cutdown `(a - ε)₊` as `x⋆ a x`;
 it vanishes on `t < ε`. -/
-noncomputable def cutdownRoot (ε : ℝ) (t : ℝ) : ℝ :=
+private noncomputable def cutdownRoot (ε : ℝ) (t : ℝ) : ℝ :=
   √(max (t - ε) 0 / t)
 
-theorem continuous_cutdownRoot {ε : ℝ} (hε : 0 < ε) : Continuous (cutdownRoot ε) := by
+private theorem continuous_cutdownRoot {ε : ℝ} (hε : 0 < ε) : Continuous (cutdownRoot ε) := by
   refine continuous_iff_continuousAt.mpr fun t ↦ ?_
   rcases lt_or_ge t ε with ht | ht
   · refine (continuousAt_const (y := (0 : ℝ))).congr ?_
@@ -147,16 +145,17 @@ theorem continuous_cutdownRoot {ε : ℝ} (hε : 0 < ε) : Continuous (cutdownRo
     unfold cutdownRoot
     fun_prop (disch := assumption)
 
-theorem cutdownRoot_sq_mul {ε : ℝ} (hε : 0 ≤ ε) (t : ℝ) :
+private theorem cutdownRoot_mul_mul_cutdownRoot {ε : ℝ} (hε : 0 ≤ ε) (t : ℝ) :
     cutdownRoot ε t * t * cutdownRoot ε t = max (t - ε) 0 := by
   rcases eq_or_ne t 0 with rfl | ht
   · simp [cutdownRoot, hε]
   rcases le_or_gt t ε with htε | htε
   · simp [cutdownRoot, max_eq_right (sub_nonpos.mpr htε)]
-  · have hpos : 0 ≤ max (t - ε) 0 / t := by
-      rw [max_eq_left (sub_nonneg.mpr htε.le)]
-      exact div_nonneg (sub_nonneg.mpr htε.le) (by linarith)
-    rw [cutdownRoot, mul_comm _ t, mul_assoc, Real.mul_self_sqrt hpos, mul_div_cancel₀ _ ht]
+  · have hpos : 0 ≤ (t - ε) / t := div_nonneg (by linarith) (by linarith)
+    have := Real.mul_self_sqrt hpos
+    simp only [cutdownRoot, max_eq_left (sub_nonneg.mpr htε.le)]
+    field_simp at this
+    linear_combination this
 
 /-- **Cutdown**: for positive `a` and `ε > 0`, `(a - ε)₊ ≼ a`, where
 `(a - ε)₊ = cfcₙ (fun t ↦ max (t - ε) 0) a`. -/
@@ -172,22 +171,35 @@ theorem cuntzLE_cfcₙ_sub_posPart (a : {a : A // 0 ≤ a}) {ε : ℝ} (hε : 0 
       (hf0 := by simp [h0]), cfcₙ_mul (cutdownRoot ε) (fun t ↦ t) (a : A), cfcₙ_id' ℝ (a : A)]
   convert cuntzLE_star_mul_mul (cfcₙ (cutdownRoot ε) (a : A)) a using 2
   rw [hx.star_eq, ← hprod]
-  exact cfcₙ_congr fun t _ ↦ (cutdownRoot_sq_mul hε.le t).symm
+  exact cfcₙ_congr fun t _ ↦ (cutdownRoot_mul_mul_cutdownRoot hε.le t).symm
 
-/-- In `ℂ`, the positive scalars `1` and `2` are mutually Cuntz subequivalent:
-`1 = (1/√2) 2 (1/√2)` and `2 = √2 1 √2`. So mutual subequivalence is coarser than equality. -/
+/-- In `ℂ`, a positive scalar `a` is Cuntz subequivalent to a positive scalar `b` exactly when
+`b ≠ 0` or `a = 0`: for `b ≠ 0`, `a = x⋆ b x` with `x = √(a / b)`. -/
+theorem cuntzLE_complex_iff {a b : {z : ℂ // 0 ≤ z}} : CuntzLE a b ↔ (b : ℂ) ≠ 0 ∨ a = 0 := by
+  rcases eq_or_ne (b : ℂ) 0 with hb | hb
+  · obtain rfl : b = 0 := Subtype.ext hb
+    simp
+  refine iff_of_true ?_ (.inl hb)
+  obtain ⟨r, hr, hra⟩ := RCLike.nonneg_iff_exists_ofReal.mp a.property
+  obtain ⟨s, hs, hsb⟩ := RCLike.nonneg_iff_exists_ofReal.mp b.property
+  have hs0 : s ≠ 0 := fun h ↦ hb (by simp [← hsb, h])
+  have hsq := Real.mul_self_sqrt (div_nonneg hr hs)
+  convert cuntzLE_star_mul_mul (((√(r / s) : ℝ) : ℂ)) b using 2
+  have key : r = √(r / s) * s * √(r / s) := by
+    field_simp at hsq
+    linear_combination -hsq
+  rw [← hra, ← hsb, RCLike.star_def, Complex.conj_ofReal, RCLike.ofReal_eq_complex_ofReal]
+  exact_mod_cast key
+
+/-- In `ℂ`, any two nonzero positive scalars are mutually Cuntz subequivalent. -/
+theorem antisymmRel_cuntzLE_complex {a b : {z : ℂ // 0 ≤ z}} (ha : (a : ℂ) ≠ 0)
+    (hb : (b : ℂ) ≠ 0) : AntisymmRel CuntzLE a b :=
+  ⟨cuntzLE_complex_iff.mpr (.inl hb), cuntzLE_complex_iff.mpr (.inl ha)⟩
+
+/-- In `ℂ`, the positive scalars `1` and `2` are mutually Cuntz subequivalent, so mutual
+subequivalence is coarser than equality. -/
 theorem antisymmRel_cuntzLE_one_two :
-    AntisymmRel CuntzLE (⟨1, zero_le_one⟩ : {z : ℂ // 0 ≤ z}) ⟨2, zero_le_two⟩ := by
-  have h2 : ((√2 : ℝ) : ℂ) * √2 = 2 := by
-    rw [← Complex.ofReal_mul, Real.mul_self_sqrt zero_le_two, Complex.ofReal_ofNat]
-  have hne : ((√2 : ℝ) : ℂ) ≠ 0 := by simp
-  refine ⟨?_, ?_⟩
-  · convert cuntzLE_star_mul_mul (((√2 : ℝ) : ℂ)⁻¹) ⟨2, zero_le_two⟩ using 2
-    simp only [star_inv₀, Complex.star_def, Complex.conj_ofReal]
-    field_simp
-    rw [sq, h2]
-  · convert cuntzLE_star_mul_mul (((√2 : ℝ) : ℂ)) ⟨1, zero_le_one⟩ using 2
-    simp only [Complex.star_def, Complex.conj_ofReal, mul_one]
-    exact h2.symm
+    AntisymmRel CuntzLE (⟨1, zero_le_one⟩ : {z : ℂ // 0 ≤ z}) ⟨2, zero_le_two⟩ :=
+  antisymmRel_cuntzLE_complex one_ne_zero two_ne_zero
 
 end TauCeti
