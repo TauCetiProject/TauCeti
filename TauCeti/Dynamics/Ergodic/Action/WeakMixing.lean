@@ -32,7 +32,7 @@ translation flow on `AddCircle 1` is ergodic and has the nonconstant eigenfuncti
 
 * `MeasureTheory.Measure.IsWeaklyMixing`: weak mixing of a measure under an action of `ℝ`;
 * `MeasureTheory.Measure.IsWeaklyMixing.measureReal_eq_zero_or_one`: an almost invariant
-  measurable set has measure `0` or `1`;
+  measurable set has measure `0` or `1`, read as a real number;
 * `MeasureTheory.Measure.IsWeaklyMixing.ergodicVAdd`: weak mixing of a finite invariant measure
   implies ergodicity;
 * `MeasurableEmbedding.isWeaklyMixing_map_iff`: along an equivariant measurable embedding, the
@@ -76,8 +76,9 @@ theorem isWeaklyMixing_def : IsWeaklyMixing μ ↔ ∀ A B : Set X, MeasurableSe
   Iff.rfl
 
 /-- **The zero-one law of weak mixing.** If the translates of a measurable set `s` are almost
-everywhere equal to `s`, then `μ(s)` is `0` or `1`: the integrand for `A = B = s` is the constant
-`|μ(s) − μ(s)²|`, whose time averages tend to `0` only if it vanishes. -/
+everywhere equal to `s`, then `μ.real s` is `0` or `1`: the integrand for `A = B = s` is the
+constant `|μ.real s − (μ.real s)²|`, whose time averages tend to `0` only if it vanishes. No
+finiteness is assumed, so a set of infinite measure also qualifies, its real measure being `0`. -/
 theorem IsWeaklyMixing.measureReal_eq_zero_or_one (h : IsWeaklyMixing μ) {s : Set X}
     (hs : MeasurableSet s) (hinv : ∀ t : ℝ, (fun x => t +ᵥ x) ⁻¹' s =ᵐ[μ] s) :
     μ.real s = 0 ∨ μ.real s = 1 := by
@@ -89,7 +90,8 @@ theorem IsWeaklyMixing.measureReal_eq_zero_or_one (h : IsWeaklyMixing μ) {s : S
   have hc := abs_eq_zero.1 (TauCeti.intervalIntegral.eq_zero_of_tendsto_average_const h0)
   exact eq_zero_or_one_of_sq_eq_self (by simpa only [pow_two] using (sub_eq_zero.mp hc).symm)
 
-/-- The total mass of a weakly mixing measure is `0` or `1`. -/
+/-- The total mass of a weakly mixing measure, read as a real number (`μ.real univ`), is `0` or
+`1`. An infinite measure also qualifies, since its real total mass is `0`. -/
 theorem IsWeaklyMixing.measureReal_univ_eq_zero_or_one (h : IsWeaklyMixing μ) :
     μ.real univ = 0 ∨ μ.real univ = 1 :=
   h.measureReal_eq_zero_or_one .univ fun t => by rw [preimage_univ]
