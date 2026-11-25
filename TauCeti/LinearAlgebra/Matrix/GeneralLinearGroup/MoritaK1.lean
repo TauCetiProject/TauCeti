@@ -8,6 +8,8 @@ module
 public import Mathlib.Data.Matrix.Composition
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
 
+import TauCeti.Logic.Equiv.Fin.Basic
+
 /-!
 # Morita invariance of algebraic `K₁`
 
@@ -221,18 +223,6 @@ theorem flattenGL_mem_elementarySubgroup_iff {k : ℕ} (hk : 2 ≤ k) {u : GL (F
   have : Nontrivial (Fin k) := Fin.nontrivial_iff_two_le.2 hk
   rw [flattenGL, MulEquiv.trans_apply, Equiv.reindexGL_mem_elementarySubgroup_iff,
     compGL_mem_elementarySubgroup_iff]
-
-/-- The index `c + n * i` of `Fin (l * n)` is among the first `k * n` exactly when `i < k`. -/
-private theorem finProdFinEquiv_lt_mul_iff {k l n : ℕ} (i : Fin l) (c : Fin n) :
-    (finProdFinEquiv (i, c) : ℕ) < k * n ↔ (i : ℕ) < k := by
-  rw [← Nat.div_lt_iff_lt_mul c.pos, finProdFinEquiv_apply_val, Nat.add_mul_div_left _ _ c.pos,
-    Nat.div_eq_of_lt c.isLt, zero_add]
-
-/-- Reading the index `c + n * i` of `Fin (l * n)` with `i < k` in `Fin (k * n)`. -/
-private theorem mk_finProdFinEquiv {k l n : ℕ} {i : Fin l} (c : Fin n) (hi : (i : ℕ) < k) :
-    (⟨finProdFinEquiv (i, c), (finProdFinEquiv_lt_mul_iff i c).2 hi⟩ : Fin (k * n)) =
-      finProdFinEquiv (⟨i, hi⟩, c) :=
-  Fin.ext (by simp [finProdFinEquiv_apply_val])
 
 /-- **Flattening commutes with stabilization**: flattening `u ⊕ 1` is stabilizing the
 flattening of `u`. -/
