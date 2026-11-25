@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoundedVariation.Weighted.ClusterInterface
+public import TauCeti.Analysis.BoundedVariation.Weighted.Cluster.Interface
 
 /-!
 # Regression examples: the interfaces of a two-cell cluster
@@ -24,14 +24,16 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {W : E → ℝ}
 
 /-- For a `2`-cluster, `A_12 = P_μ(Ω_1)`. -/
-theorem interfaceArea_zero_one (hW : ContDiff ℝ 1 W) (hn : 2 ≤ finrank ℝ E)
-    (Ω : Cluster W 2) : Ω.interfaceArea 0 1 = weightedPerimeter W ⊤ (Ω.cell 0) := by
+theorem interfaceArea_zero_one_eq_weightedPerimeter_cell_zero (hW : ContDiff ℝ 1 W)
+    (hn : 2 ≤ finrank ℝ E) (Ω : Cluster W 2) :
+    Ω.interfaceArea 0 1 = weightedPerimeter W ⊤ (Ω.cell 0) := by
   rw [Ω.weightedPerimeter_cell_eq_sum_interfaceArea hW hn 0,
     show ({0}ᶜ : Finset (Fin 2)) = {1} by decide, Finset.sum_singleton]
 
 /-- For a `2`-cluster, `A_12 = P_μ(Ω_2)`. -/
-theorem interfaceArea_zero_one_eq_cell_one (hW : ContDiff ℝ 1 W) (hn : 2 ≤ finrank ℝ E)
-    (Ω : Cluster W 2) : Ω.interfaceArea 0 1 = weightedPerimeter W ⊤ (Ω.cell 1) := by
+theorem interfaceArea_zero_one_eq_weightedPerimeter_cell_one (hW : ContDiff ℝ 1 W)
+    (hn : 2 ≤ finrank ℝ E) (Ω : Cluster W 2) :
+    Ω.interfaceArea 0 1 = weightedPerimeter W ⊤ (Ω.cell 1) := by
   rw [Ω.interfaceArea_comm, Ω.weightedPerimeter_cell_eq_sum_interfaceArea hW hn 1,
     show ({1}ᶜ : Finset (Fin 2)) = {0} by decide, Finset.sum_singleton]
 

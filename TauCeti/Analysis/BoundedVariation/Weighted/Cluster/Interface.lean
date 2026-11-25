@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoundedVariation.Weighted.Cluster
+public import TauCeti.Analysis.BoundedVariation.Weighted.Cluster.Basic
 public import TauCeti.Analysis.BoundedVariation.Weighted.ReducedBoundary
 import TauCeti.Analysis.BoundedVariation.Interface
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The interface decomposition of a cluster
@@ -16,7 +15,9 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
 Let `Ω = (Ω_1, …, Ω_q)` be a cluster for a `C¹` weight `W` on a Euclidean space `E` of dimension
 `n ≥ 2`, with measure `μ = e^{−W} · volume`. For `i ≠ j` the **interface** between the cells
 `Ω_i` and `Ω_j` is `Σ_ij = ∂*Ω_i ∩ ∂*Ω_j` (`TauCeti.Cluster.interface`), and its weighted area is
-`A_ij = ∫_{Σ_ij} e^{−W} dHⁿ⁻¹` (`TauCeti.Cluster.interfaceArea`). Up to an `Hⁿ⁻¹`-null set the
+`A_ij = ∫_{Σ_ij} e^{−W} dHⁿ⁻¹` (`TauCeti.Cluster.interfaceArea`); permuting the cells permutes
+the interfaces and their areas (`TauCeti.Cluster.interface_permute`,
+`TauCeti.Cluster.interfaceArea_permute`). Up to an `Hⁿ⁻¹`-null set the
 reduced boundary of a union of cells `⋃_{i ∈ S} Ω_i` is the union of the interfaces `Σ_ij` with
 `i ∈ S` and `j ∉ S` (`TauCeti.reducedBoundary_biUnion_ae_eq`), and distinct interfaces meet in an
 `Hⁿ⁻¹`-null set, since almost no point lies on the reduced boundaries of three cells
@@ -59,9 +60,22 @@ theorem interface_def (Ω : Cluster W q) (i j : Fin q) :
     Ω.interface i j = reducedBoundary volume ⊤ (Ω.cell i) ∩ reducedBoundary volume ⊤ (Ω.cell j) :=
   (rfl)
 
+/-- A point lies on the interface `Σ_ij` when it lies on the reduced boundaries of both cells. -/
+@[simp]
+theorem mem_interface {Ω : Cluster W q} {i j : Fin q} {x : E} :
+    x ∈ Ω.interface i j ↔
+      x ∈ reducedBoundary volume ⊤ (Ω.cell i) ∧ x ∈ reducedBoundary volume ⊤ (Ω.cell j) :=
+  Iff.rfl
+
 /-- The interface is symmetric. -/
 theorem interface_comm (Ω : Cluster W q) (i j : Fin q) : Ω.interface i j = Ω.interface j i :=
   inter_comm _ _
+
+/-- The interfaces of a permuted cluster. -/
+@[simp]
+theorem interface_permute (Ω : Cluster W q) (σ : Equiv.Perm (Fin q)) (i j : Fin q) :
+    (Ω.permute σ).interface i j = Ω.interface (σ i) (σ j) := by
+  simp only [interface_def, permute_cell]
 
 /-- Interfaces are measurable. -/
 theorem measurableSet_interface (Ω : Cluster W q) (i j : Fin q) :
@@ -83,14 +97,11 @@ theorem interfaceArea_comm (Ω : Cluster W q) (i j : Fin q) :
     Ω.interfaceArea i j = Ω.interfaceArea j i := by
   rw [interfaceArea_def, interfaceArea_def, interface_comm]
 
-/-- A null-measurable set of finite weighted perimeter has locally finite perimeter. -/
-private theorem hfin_of_weightedPerimeter_ne_top (hW : ContDiff ℝ 1 W) {s : Set E}
-    (hs : NullMeasurableSet s volume) (h : weightedPerimeter W ⊤ s ≠ ⊤) :
-    ∀ K, IsCompact K → K ⊆ ((⊤ : Opens E) : Set E) →
-      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U (s.indicator 1) ≠ ∞ :=
-  exists_totalVariationOn_ne_top_of_weightedVariation_ne_top hW
-    (locallyIntegrableOn_indicator_const (hs.mono Measure.restrict_le_self) 1)
-    (by rwa [← weightedPerimeter_def])
+/-- The interface areas of a permuted cluster. -/
+@[simp]
+theorem interfaceArea_permute (Ω : Cluster W q) (σ : Equiv.Perm (Fin q)) (i j : Fin q) :
+    (Ω.permute σ).interfaceArea i j = Ω.interfaceArea (σ i) (σ j) := by
+  rw [interfaceArea_def, interfaceArea_def, interface_permute]
 
 /-- **The perimeter of a union of cells is the area of its interfaces with the other cells.**
 For a `C¹` weight, in dimension `n ≥ 2`, `P_μ(⋃_{i ∈ S} Ω_i) = Σ_{i ∈ S} Σ_{j ∉ S} A_ij`. -/
@@ -100,8 +111,8 @@ theorem weightedPerimeter_biUnion_cell_eq_sum_interfaceArea (hW : ContDiff ℝ 1
   have hm := Ω.nullMeasurableSet_cell
   have hd : ∀ i j, i ≠ j → AEDisjoint volume (Ω.cell i) (Ω.cell j) :=
     fun i j hij => (Ω.pairwise_disjoint hij).aedisjoint
-  have hfin := fun i => hfin_of_weightedPerimeter_ne_top hW (hm i)
-    (Ω.weightedPerimeter_lt_top i).ne
+  have hfin := fun i => exists_totalVariationOn_indicator_ne_top_of_weightedPerimeter_ne_top hW
+    ((hm i).mono Measure.restrict_le_self) (Ω.weightedPerimeter_lt_top i).ne
   have hmS : NullMeasurableSet (⋃ i ∈ S, Ω.cell i) volume :=
     .biUnion (Finset.countable_toSet S) fun i _ => hm i
   have hPS : weightedPerimeter W ⊤ (⋃ i ∈ S, Ω.cell i) ≠ ⊤ :=
@@ -110,10 +121,11 @@ theorem weightedPerimeter_biUnion_cell_eq_sum_interfaceArea (hW : ContDiff ℝ 1
   rw [weightedPerimeter_eq_lintegral_reducedBoundary_of_ne_top hW hn
       (hmS.mono Measure.restrict_le_self) hPS,
     setLIntegral_congr (reducedBoundary_biUnion_ae_eq hn hm hd Ω.volume_compl_iUnion hfin S
-      (hfin_of_weightedPerimeter_ne_top hW hmS hPS)),
+      (exists_totalVariationOn_indicator_ne_top_of_weightedPerimeter_ne_top hW
+        (hmS.mono Measure.restrict_le_self) hPS)),
     lintegral_biUnion_finset₀ ?_ fun p _ => (Ω.measurableSet_interface p.1 p.2).nullMeasurableSet,
     Finset.sum_product]
-  · rfl
+  · simp only [interfaceArea_def, interface_def]
   · -- distinct interfaces meet in a null set: their union would carry a triple point
     rintro ⟨i, j⟩ hp ⟨i', j'⟩ hp' hne
     simp only [Finset.coe_product, mem_prod, Finset.mem_coe, Finset.mem_compl] at hp hp'

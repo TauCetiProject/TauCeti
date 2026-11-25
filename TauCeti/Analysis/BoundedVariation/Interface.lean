@@ -82,6 +82,19 @@ private theorem existsUnique_eq_half_of_sum_eq_half {ι : Type*} {S : Finset ι}
   rw [hdi, hdj, ENNReal.add_halves, hsum] at h2
   exact absurd h2 (not_le.2 hlt)
 
+/-- If values indexed by a finite type add up to `1` and two distinct ones are `1/2`, all the
+others vanish. -/
+private theorem eq_zero_of_sum_eq_one_of_eq_half {ι : Type*} [Fintype ι] {d : ι → ℝ≥0∞}
+    (hsum : ∑ l, d l = 1) {i j k : ι} (hi : d i = 1 / 2) (hj : d j = 1 / 2) (hij : i ≠ j)
+    (hki : k ≠ i) (hkj : k ≠ j) : d k = 0 := by
+  classical
+  have h3 : ∑ l ∈ ({k, i, j} : Finset ι), d l ≤ ∑ l, d l :=
+    Finset.sum_le_sum_of_subset_of_nonneg (Finset.subset_univ _) fun _ _ _ => bot_le
+  rw [Finset.sum_insert (by simp [hki, hkj]), Finset.sum_pair hij, hsum, hi, hj,
+    ENNReal.add_halves, add_comm] at h3
+  by_contra hk
+  exact absurd h3 (not_le.2 (ENNReal.lt_add_right ENNReal.one_ne_top hk))
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
   {ι : Type*} {s : ι → Set E}
@@ -113,13 +126,7 @@ theorem ae_existsUnique_mem_reducedBoundary_of_mem_reducedBoundary_biUnion [Fini
     (HasDensityAt.biUnion_finset (fun i _ => hdens i) (fun i _ j _ => hd i j)
       fun i _ => hm i).unique
       (hasDensityAt_of_mem_reducedBoundary hn hxS)
-  have huniv : HasDensityAt μ (⋃ i ∈ (Finset.univ : Finset ι), s i) x 1 :=
-    hasDensityAt_one_of_measure_compl_eq_zero (eventually_measure_closedBall_ne_zero_ne_top μ x)
-      (by simpa using hcov)
-  have hall : ∑ i, d i = 1 :=
-    (HasDensityAt.biUnion_finset (fun i _ => hdens i) (fun i _ j _ => hd i j)
-      fun i _ => hm i).unique
-      huniv
+  have hall : ∑ i, d i = 1 := sum_eq_one_of_hasDensityAt hm hd hcov hdens
   have hT : ∑ i ∈ Finset.univ.filter (· ∉ S), d i = 1 / 2 := by
     have h := Finset.sum_filter_add_sum_filter_not Finset.univ (· ∈ S) d
     have hfS : Finset.univ.filter (· ∈ S) = S := by
@@ -134,15 +141,6 @@ theorem ae_existsUnique_mem_reducedBoundary_of_mem_reducedBoundary_biUnion [Fini
   simp only [Prod.mk.injEq]
   exact ⟨hi' i' ⟨hi'S, (hdhalf i').2 hi'r⟩,
     hj' j' ⟨Finset.mem_filter.2 ⟨Finset.mem_univ _, hj'S⟩, (hdhalf j').2 hj'r⟩⟩
-
-/-- The densities of the cells of a partition at a point add up to `1`. -/
-private theorem sum_eq_one_of_hasDensityAt [Fintype ι] (hm : ∀ i, NullMeasurableSet (s i) μ)
-    (hd : ∀ i j, i ≠ j → AEDisjoint μ (s i) (s j)) (hcov : μ (⋃ i, s i)ᶜ = 0) {x : E}
-    {d : ι → ℝ≥0∞} (hdens : ∀ i, HasDensityAt μ (s i) x (d i)) : ∑ i, d i = 1 :=
-  (HasDensityAt.biUnion_finset (fun i _ => hdens i) (fun i _ j _ => hd i j)
-    fun i _ => hm i).unique
-    (hasDensityAt_one_of_measure_compl_eq_zero (eventually_measure_closedBall_ne_zero_ne_top μ x)
-      (by simpa using hcov))
 
 /-- **No triple points.** Under the hypotheses of
 `TauCeti.ae_existsUnique_mem_reducedBoundary_of_mem_reducedBoundary_biUnion`, `Hⁿ⁻¹`-almost no
@@ -162,13 +160,10 @@ theorem ae_notMem_reducedBoundary_of_mem_reducedBoundary_of_mem_reducedBoundary 
     locallyIntegrableOn_indicator_const ((hm i).mono Measure.restrict_le_self) 1
   filter_upwards [ae_forall_exists_hasDensityAt hn hu hfin] with x hx i j k hij hik hjk hi hj hk
   choose d _ hdens hdhalf using hx (reducedBoundary_subset hi)
-  have h3 : ∑ l ∈ ({i, j, k} : Finset ι), d l ≤ ∑ l, d l :=
-    Finset.sum_le_sum_of_subset_of_nonneg (Finset.subset_univ _) fun _ _ _ => bot_le
-  rw [Finset.sum_insert (by simp [hij, hik]), Finset.sum_pair hjk,
-    sum_eq_one_of_hasDensityAt hm hd hcov hdens, (hdhalf i).2 hi, (hdhalf j).2 hj,
-    (hdhalf k).2 hk, ENNReal.add_halves] at h3
-  rw [add_comm] at h3
-  exact absurd h3 (not_le.2 (ENNReal.lt_add_right ENNReal.one_ne_top (by simp)))
+  have h0 := eq_zero_of_sum_eq_one_of_eq_half (sum_eq_one_of_hasDensityAt hm hd hcov hdens)
+    ((hdhalf i).2 hi) ((hdhalf j).2 hj) hij hik.symm hjk.symm
+  rw [(hdhalf k).2 hk] at h0
+  exact absurd h0 (by simp)
 
 /-- **The reduced boundary of a union of cells is the union of its interfaces.** Under the
 hypotheses of `TauCeti.ae_existsUnique_mem_reducedBoundary_of_mem_reducedBoundary_biUnion`, if
@@ -204,17 +199,10 @@ theorem reducedBoundary_biUnion_ae_eq [Fintype ι] [DecidableEq ι]
     have hij : i ≠ j := fun h => hj (h ▸ hi)
     choose d _ hdens hdhalf using hx (reducedBoundary_subset hxi)
     -- the densities of `s i` and `s j` are `1/2`, so all other cells have density `0`
-    have hall := sum_eq_one_of_hasDensityAt hm hd hcov hdens
     have hdi := (hdhalf i).2 hxi
-    have hdj := (hdhalf j).2 hxj
-    have hzero : ∀ k, k ≠ i → k ≠ j → d k = 0 := by
-      intro k hki hkj
-      have h3 : ∑ l ∈ ({k, i, j} : Finset ι), d l ≤ ∑ l, d l :=
-        Finset.sum_le_sum_of_subset_of_nonneg (Finset.subset_univ _) fun _ _ _ => bot_le
-      rw [Finset.sum_insert (by simp [hki, hkj]), Finset.sum_pair hij, hall, hdi, hdj,
-        ENNReal.add_halves, add_comm] at h3
-      by_contra hk
-      exact absurd h3 (not_le.2 (ENNReal.lt_add_right ENNReal.one_ne_top hk))
+    have hzero (k : ι) (hki : k ≠ i) (hkj : k ≠ j) : d k = 0 :=
+      eq_zero_of_sum_eq_one_of_eq_half (sum_eq_one_of_hasDensityAt hm hd hcov hdens) hdi
+        ((hdhalf j).2 hxj) hij hki hkj
     have hsum : ∑ k ∈ S, d k = 1 / 2 := by
       rw [Finset.sum_eq_single_of_mem i hi fun k hk hki => hzero k hki fun h => hj (h ▸ hk), hdi]
     have hdensS : HasDensityAt μ (⋃ i ∈ S, s i) x (1 / 2) :=
