@@ -15,7 +15,6 @@ public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 import TauCeti.AlgebraicGeometry.Modules.Sections
-import TauCeti.AlgebraicGeometry.Modules.Sheaf
 import TauCeti.AlgebraicGeometry.Modules.Stalk
 import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 
@@ -169,8 +168,12 @@ theorem exists_mono_free_twist_finite_support (hX : ∀ x : X, Order.coheight x 
     -- The two `eqToHom` factors are isomorphisms, hence bijective on sections.
     have hiso {A B : X.Modules} (h : A = B) : Function.Bijective ((eqToHom h).app W) :=
       ConcreteCategory.bijective_of_isIso _
-    exact Scheme.Modules.Hom.bijective_app_comp (hiso h₁) (Scheme.Modules.Hom.bijective_app_comp
-      (bijective_app_freeHomEquiv_symm _ (homOfLE hDV) _ ht₀ t' ht' W hW) (hiso _))
+    have := (hiso (twist_obj_obj E L).symm).comp
+      ((bijective_app_freeHomEquiv_symm _ (homOfLE hDV) _ ht₀ t' ht' W hW).comp (hiso h₁))
+    rw [← ConcreteCategory.coe_comp, ← ConcreteCategory.coe_comp] at this
+    -- `Scheme.Modules.Hom.comp_app` holds by `rfl`, so `φ.app W` is definitionally the composite
+    -- of the maps on sections of the three factors of `φ`.
+    exact this
   have hη := hD.genericPoint_mem_nonvanishingLocus
   refine ⟨L, φ, φ.mono_of_injective_app_of_genericPoint_mem hη
     (fun W hW ↦ (hφ W hW).1) fun W W' i hW' ↦ ?_, ?_⟩
