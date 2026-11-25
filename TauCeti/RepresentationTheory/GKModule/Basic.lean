@@ -7,18 +7,15 @@ module
 
 public import Mathlib.Algebra.Lie.DirectSum
 public import Mathlib.Algebra.Lie.Quotient
-public import Mathlib.RepresentationTheory.Irreducible
-public import Mathlib.RingTheory.SimpleModule.Isotypic
-public import TauCeti.RepresentationTheory.Admissible
 public import TauCeti.RepresentationTheory.GFinite
-public import TauCeti.RepresentationTheory.Irreducible
+public import TauCeti.RepresentationTheory.Isotypic
 public import TauCeti.RepresentationTheory.LieHom
 
 /-!
 # `(𝔤, K)`-modules
 
 Let `𝔤` be a Lie algebra over a field `k` and let a group `K` act on `𝔤` by Lie algebra
-endomorphisms through a representation `Ad` (`TauCeti.IsLieAction Ad`, from
+endomorphisms through a representation `Ad` (`Representation.IsLieAction Ad`, from
 `TauCeti/RepresentationTheory/LieHom.lean`); the definitions only use that `K` is a monoid. A
 `(𝔤, K)`-module is a `𝔤`-module `V` (a Lie module over `k`) with a representation `ρ` of `K` on `V`
 which is covariant, `ρ g ⁅x, v⁆ = ⁅Ad g x, ρ g v⁆`, and locally finite: every vector is `K`-finite
@@ -38,26 +35,18 @@ condition is the further predicate `TauCeti.GKModule.IsCompatible` on a `TauCeti
 * `TauCeti.GKModule.submodule`, `TauCeti.GKModule.quotient`: the `(𝔤, K)`-module structures on a
   `(𝔤, K)`-submodule and on the quotient by it.
 * `TauCeti.GKModule.directSum`: the direct sum of a family of `(𝔤, K)`-modules.
-* `TauCeti.GKModule.isotypic M σ`: the `σ`-isotypic component, the sum of the images of the
-  `K`-equivariant maps from `σ` to `V`. It is `K`-stable (`TauCeti.GKModule.isotypicSubrep`) but
-  not `𝔤`-stable in general, since `𝔤` moves `K`-types.
 * `TauCeti.GKModule.IsHarishChandraModule`: admissible and finitely generated over `𝔤`, that is,
   over the enveloping algebra `U(𝔤)`.
 
-The multiplicity of `σ` and admissibility only involve the action of `K`: they are
-`Representation.multiplicity M.ρ σ`, the dimension of `Hom_K(σ, V)`, and
-`Representation.IsAdmissible M.ρ`, from `TauCeti/RepresentationTheory/Admissible.lean`.
+Isotypic components, multiplicities and admissibility only involve the action of `K`, so they are
+stated for representations: the `σ`-isotypic component of `M` is `Representation.isotypic M.ρ σ`
+(`TauCeti/RepresentationTheory/Isotypic.lean`), which is `K`-stable but not `𝔤`-stable in general
+since `𝔤` moves `K`-types; the multiplicity of `σ` is `Representation.multiplicity M.ρ σ`, the
+dimension of `Hom_K(σ, V)`; and `M` is admissible when `Representation.IsAdmissible M.ρ`
+(`TauCeti/RepresentationTheory/Admissible.lean`).
 
 ## Main statements
 
-* `TauCeti.GKModule.mem_isotypic_iff`: for irreducible `σ`, the isotypic component is Mathlib's
-  `isotypicComponent` of the simple `k[K]`-module `σ.asModule`.
-* `TauCeti.GKModule.evalIntertwiningMap_injective`: for irreducible `σ` and `w ≠ 0`, evaluation at
-  `w` embeds `Hom_K(σ, V)` into the isotypic component `V(σ)`.
-* `TauCeti.GKModule.multiplicity_le_rank_isotypic`: for irreducible `σ`, the multiplicity is at
-  most the dimension of the isotypic component.
-* `TauCeti.GKModule.isAdmissible_of_finiteDimensional_isotypic`: finite-dimensional isotypic
-  components give an admissible module.
 * `TauCeti.GKModule.isAdmissible_submodule`, `TauCeti.GKModule.isAdmissible_directSum`:
   admissibility passes to `(𝔤, K)`-submodules and to finite direct sums.
 * `TauCeti.GKModule.isHarishChandraModule_of_finiteDimensional`: a finite-dimensional
@@ -222,155 +211,7 @@ theorem directSum_ρ_apply_apply (M : ∀ i, GKModule Ad (V i)) (g : K) (v : ⨁
 
 end DirectSum
 
-/-! ### Isotypic components and multiplicities -/
-
-section Isotypic
-
-variable {W : Type*} [AddCommGroup W] [Module k W] (σ : Representation k K W)
-
-/-- The **`σ`-isotypic component** `V(σ)` of a `(𝔤, K)`-module: the sum of the images of the
-`K`-equivariant linear maps from `σ` to `V`. For irreducible `σ` it is the sum of the
-subrepresentations isomorphic to `σ`. It is stable under `K` (`TauCeti.GKModule.isotypicSubrep`)
-but in general not under `𝔤`. -/
-def isotypic : Submodule k V :=
-  ⨆ f : IntertwiningMap σ M.ρ, LinearMap.range f.toLinearMap
-
-/-- The isotypic component is the supremum of the ranges of the `K`-equivariant maps from `σ`. -/
-theorem isotypic_def :
-    M.isotypic σ = ⨆ f : IntertwiningMap σ M.ρ, LinearMap.range f.toLinearMap :=
-  (rfl)
-
-/-- The isotypic component is the least submodule containing the ranges of all `K`-equivariant
-maps from `σ`. -/
-theorem isotypic_le_iff {P : Submodule k V} :
-    M.isotypic σ ≤ P ↔ ∀ f : IntertwiningMap σ M.ρ, LinearMap.range f.toLinearMap ≤ P := by
-  rw [isotypic_def, iSup_le_iff]
-
-variable {σ} in
-theorem range_le_isotypic (f : IntertwiningMap σ M.ρ) :
-    LinearMap.range f.toLinearMap ≤ M.isotypic σ :=
-  (M.isotypic_le_iff σ).1 le_rfl f
-
-variable {σ} in
-theorem apply_mem_isotypic (f : IntertwiningMap σ M.ρ) (w : W) : f w ∈ M.isotypic σ :=
-  M.range_le_isotypic f ⟨w, rfl⟩
-
-variable {σ} in
-/-- The isotypic component is stable under `K`. -/
-theorem ρ_apply_mem_isotypic (g : K) {v : V} (hv : v ∈ M.isotypic σ) :
-    M.ρ g v ∈ M.isotypic σ := by
-  refine Submodule.iSup_induction _ (motive := fun v ↦ M.ρ g v ∈ M.isotypic σ) hv ?_ ?_ ?_
-  · rintro f _ ⟨w, rfl⟩
-    rw [IntertwiningMap.toLinearMap_apply, ← f.isIntertwining]
-    exact M.apply_mem_isotypic f _
-  · simp
-  · intro v v' hv hv'
-    simpa using add_mem hv hv'
-
-open scoped MonoidAlgebra in
-variable {σ} in
-/-- For irreducible `σ`, the isotypic component is Mathlib's `isotypicComponent` of the simple
-`k[K]`-module `σ.asModule` in `V`, read on `V` through `Representation.asModuleEquiv`. -/
-theorem mem_isotypic_iff [σ.IsIrreducible] {v : V} :
-    v ∈ M.isotypic σ ↔
-      M.ρ.asModuleEquiv.symm v ∈ isotypicComponent k[K] M.ρ.asModule σ.asModule := by
-  constructor
-  · intro hv
-    refine Submodule.iSup_induction _
-      (motive := fun v ↦ M.ρ.asModuleEquiv.symm v ∈ isotypicComponent k[K] _ _) hv ?_ ?_ ?_
-    · rintro f _ ⟨w, rfl⟩
-      let F := IntertwiningMap.equivLinearMapAsModule σ M.ρ f
-      have hF : LinearMap.range F ≤ isotypicComponent k[K] M.ρ.asModule σ.asModule := by
-        obtain inj | eq := F.injective_or_eq_zero
-        · exact le_sSup ⟨(LinearEquiv.ofInjective F inj).symm⟩
-        · simp [eq]
-      exact hF ⟨σ.asModuleEquiv.symm w, rfl⟩
-    · simp
-    · intro v v' hv hv'
-      simpa using add_mem hv hv'
-  · intro hv
-    rw [isotypicComponent, sSup_eq_iSup'] at hv
-    rw [← M.ρ.asModuleEquiv.apply_symm_apply v]
-    refine Submodule.iSup_induction _
-      (motive := fun x ↦ M.ρ.asModuleEquiv x ∈ M.isotypic σ) hv ?_ ?_ ?_
-    · rintro ⟨m, ⟨e⟩⟩ x hx
-      let f := (IntertwiningMap.equivLinearMapAsModule σ M.ρ).symm (m.subtype ∘ₗ e.symm.toLinearMap)
-      have : M.ρ.asModuleEquiv x = f (σ.asModuleEquiv (e ⟨x, hx⟩)) := by
-        -- Mathlib has no apply lemmas for `IntertwiningMap.equivLinearMapAsModule`, whose maps
-        -- have the same underlying functions on the type synonyms `asModule`, nor for
-        -- `Representation.asModuleEquiv`, which is the identity; so `f` is unfolded by `change`.
-        change _ = M.ρ.asModuleEquiv (m.subtype (e.symm (e ⟨x, hx⟩)))
-        rw [LinearEquiv.symm_apply_apply]
-        rfl
-      rw [this]
-      exact M.apply_mem_isotypic f _
-    · simp
-    · intro x y hx hy
-      simpa using add_mem hx hy
-
-/-- The isotypic component as a subrepresentation of `K`. -/
-def isotypicSubrep : Subrepresentation M.ρ where
-  toSubmodule := M.isotypic σ
-  apply_mem_toSubmodule g _ hv := M.ρ_apply_mem_isotypic g hv
-
-@[simp]
-theorem mem_isotypicSubrep {v : V} : v ∈ M.isotypicSubrep σ ↔ v ∈ M.isotypic σ :=
-  Iff.rfl
-
-/-- Evaluation of `K`-equivariant maps `σ → V` at a vector `w`, which lands in the isotypic
-component `V(σ)`. -/
-def evalIntertwiningMap (w : W) : IntertwiningMap σ M.ρ →ₗ[k] M.isotypic σ where
-  toFun f := ⟨f w, M.apply_mem_isotypic f w⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-
-@[simp]
-theorem evalIntertwiningMap_apply_coe (w : W) (f : IntertwiningMap σ M.ρ) :
-    (M.evalIntertwiningMap σ w f : V) = f w :=
-  (rfl)
-
-variable {σ} in
-/-- For irreducible `σ`, evaluation at a nonzero vector is injective on `Hom_K(σ, V)`: a nonzero
-equivariant map from an irreducible representation is injective. -/
-theorem evalIntertwiningMap_injective [σ.IsIrreducible] {w : W} (hw : w ≠ 0) :
-    Function.Injective (M.evalIntertwiningMap σ w) := by
-  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-  intro f hf
-  rcases IsIrreducible.injective_or_eq_zero f with hinj | h0
-  · exact absurd (hinj (by simpa using congrArg Subtype.val hf)) hw
-  · exact h0
-
-variable {σ} in
-/-- For irreducible `σ`, a finite-dimensional isotypic component `V(σ)` makes `Hom_K(σ, V)`
-finite-dimensional. -/
-theorem finiteDimensional_intertwiningMap_of_isotypic [σ.IsIrreducible]
-    [FiniteDimensional k (M.isotypic σ)] : FiniteDimensional k (IntertwiningMap σ M.ρ) := by
-  have := Representation.IsIrreducible.nontrivial (ρ := σ) inferInstance
-  obtain ⟨w, hw⟩ := exists_ne (0 : W)
-  exact Module.Finite.of_injective _ (M.evalIntertwiningMap_injective hw)
-
-variable {σ} in
-/-- For irreducible `σ`, the multiplicity is at most the dimension of the isotypic component. -/
-theorem multiplicity_le_rank_isotypic [σ.IsIrreducible] :
-    M.ρ.multiplicity σ ≤ (Module.rank k (M.isotypic σ)).toENat := by
-  have := Representation.IsIrreducible.nontrivial (ρ := σ) inferInstance
-  obtain ⟨w, hw⟩ := exists_ne (0 : W)
-  have h := OrderHomClass.mono Cardinal.toENat
-    (LinearMap.lift_rank_le_of_injective _ (M.evalIntertwiningMap_injective (σ := σ) hw))
-  rwa [Cardinal.toENat_lift, Cardinal.toENat_lift, ← multiplicity_def] at h
-
-end Isotypic
-
 /-! ### Admissible and Harish-Chandra modules -/
-
-/-- A `(𝔤, K)`-module whose isotypic components are finite-dimensional is admissible. -/
-theorem isAdmissible_of_finiteDimensional_isotypic
-    (h : ∀ U : Subrepresentation M.ρ, U.toRepresentation.IsIrreducible →
-      FiniteDimensional k (M.isotypic U.toRepresentation)) :
-    M.ρ.IsAdmissible :=
-  M.ρ.isAdmissible_iff.2 fun U hU ↦
-    have := h U hU
-    M.finiteDimensional_intertwiningMap_of_isotypic
 
 variable {M} in
 /-- A `(𝔤, K)`-submodule of an admissible module is admissible. -/

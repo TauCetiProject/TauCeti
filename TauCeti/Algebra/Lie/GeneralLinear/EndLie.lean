@@ -53,9 +53,7 @@ instance instLieModule : LieModule R (EndLie R M) M :=
   Module.End.instLieModule
 
 /-- The identification of `𝔤𝔩(M)` with the algebra `Module.End R M`. -/
--- The body is exposed so that importing modules can see that `equiv` is the identity on the
--- underlying endomorphisms.
-@[expose] def equiv : EndLie R M ≃ₐ[R] Module.End R M :=
+def equiv : EndLie R M ≃ₐ[R] Module.End R M :=
   AlgEquiv.refl
 
 variable {R M}

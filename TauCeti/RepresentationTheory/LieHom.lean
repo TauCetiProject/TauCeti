@@ -12,15 +12,15 @@ public import Mathlib.RepresentationTheory.Basic
 # Representations by Lie algebra morphisms
 
 A representation `Ad` of a monoid `K` on a Lie algebra `L` acts by Lie algebra morphisms
-(`TauCeti.IsLieAction Ad`) when `Ad k ⁅x, y⁆ = ⁅Ad k x, Ad k y⁆` for all `k`, `x` and `y`. Each
-`Ad k` is then a Lie algebra morphism (`Representation.toLieHom`), and these morphisms compose as
-the monoid does. This is how a group acting on a Lie algebra by automorphisms, as `K` acts on `𝔤`
-in a pair `(𝔤, K)`, enters the functoriality of Lie algebra cochains.
+(`Representation.IsLieAction Ad`) when `Ad k ⁅x, y⁆ = ⁅Ad k x, Ad k y⁆` for all `k`, `x` and
+`y`. Each `Ad k` is then a Lie algebra morphism (`Representation.toLieHom`), and these morphisms
+compose as the monoid does. This is how a group acting on a Lie algebra by automorphisms, as `K`
+acts on `𝔤` in a pair `(𝔤, K)`, enters the functoriality of Lie algebra cochains.
 
 ## Main definitions
 
-* `TauCeti.IsLieAction Ad`: `K` acts on `L` by Lie algebra morphisms. By
-  `TauCeti.IsLieAction.of_lieEquiv`, this holds when every `Ad k` underlies a Lie algebra
+* `Representation.IsLieAction Ad`: `K` acts on `L` by Lie algebra morphisms. By
+  `Representation.IsLieAction.of_lieEquiv`, this holds when every `Ad k` underlies a Lie algebra
   automorphism.
 * `Representation.toLieHom`: the action of `k` in a representation by Lie algebra morphisms, as a
   Lie algebra morphism.
@@ -28,7 +28,7 @@ in a pair `(𝔤, K)`, enters the functoriality of Lie algebra cochains.
 
 public section
 
-namespace TauCeti
+namespace Representation
 
 variable {R K L : Type*} [CommRing R] [Monoid K] [LieRing L] [LieAlgebra R L]
 
@@ -54,14 +54,7 @@ theorem IsLieAction.of_lieEquiv {Ad : Representation R K L} (φ : K → L ≃ₗ
 instance IsLieAction.instTrivial : IsLieAction (Representation.trivial R K L) :=
   .of_lieHom (fun _ ↦ 1) fun _ _ ↦ rfl
 
-end TauCeti
-
-namespace Representation
-
-open TauCeti
-
-variable {R K L : Type*} [CommRing R] [Monoid K] [LieRing L] [LieAlgebra R L]
-  (Ad : Representation R K L) [IsLieAction Ad]
+variable (Ad : Representation R K L) [IsLieAction Ad]
 
 /-- The action of `k` in a representation by Lie algebra morphisms, as a Lie algebra morphism. -/
 def toLieHom (k : K) : L →ₗ⁅R⁆ L :=
