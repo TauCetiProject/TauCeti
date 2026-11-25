@@ -194,22 +194,26 @@ theorem map_comp_strictRightUnit (k : StrictArrowRing →+* R) :
     WeierstrassCurve.VariableChange.map_heisenbergHom, WeierstrassCurve.map_map]
 
 /-- `η_R(a₁) = a₁ + 2s`. -/
+@[simp]
 theorem strictRightUnit_X_A₁ :
     strictRightUnit (X .A₁) = X (.inl .A₁) + 2 * X (.inr 1) := by
   simp [strictRightUnit, variableChange_a₁]
 
 /-- `η_R(a₂) = a₂ - s a₁ + 3r - s²`. -/
+@[simp]
 theorem strictRightUnit_X_A₂ :
     strictRightUnit (X .A₂) =
       X (.inl .A₂) - X (.inr 1) * X (.inl .A₁) + 3 * X (.inr 0) - X (.inr 1) ^ 2 := by
   simp [strictRightUnit, variableChange_a₂]
 
 /-- `η_R(a₃) = a₃ + r a₁ + 2t`. -/
+@[simp]
 theorem strictRightUnit_X_A₃ :
     strictRightUnit (X .A₃) = X (.inl .A₃) + X (.inr 0) * X (.inl .A₁) + 2 * X (.inr 2) := by
   simp [strictRightUnit, variableChange_a₃]
 
 /-- `η_R(a₄) = a₄ - s a₃ + 2r a₂ - (t + rs) a₁ + 3r² - 2st`. -/
+@[simp]
 theorem strictRightUnit_X_A₄ :
     strictRightUnit (X .A₄) =
       X (.inl .A₄) - X (.inr 1) * X (.inl .A₃) + 2 * X (.inr 0) * X (.inl .A₂) -
@@ -218,6 +222,7 @@ theorem strictRightUnit_X_A₄ :
   simp [strictRightUnit, variableChange_a₄]
 
 /-- `η_R(a₆) = a₆ + r a₄ + r² a₂ + r³ - t a₃ - t² - rt a₁`. -/
+@[simp]
 theorem strictRightUnit_X_A₆ :
     strictRightUnit (X .A₆) =
       X (.inl .A₆) + X (.inr 0) * X (.inl .A₄) + X (.inr 0) ^ 2 * X (.inl .A₂) + X (.inr 0) ^ 3 -
@@ -353,6 +358,7 @@ theorem strictCoproduct_X_inl (i : Coeff) : strictCoproduct (X (.inl i)) = X (.i
     id_eq] using this
 
 /-- `Δr = r₁ + r₂`. -/
+@[simp]
 theorem strictCoproduct_X_inr_zero :
     strictCoproduct (X (.inr 0)) = X (.inr (.inl 0)) + X (.inr (.inr 0)) := by
   have := congrArg HeisenbergGroup.x heisenbergGroupMap_strictCoproduct_strictChange
@@ -360,6 +366,7 @@ theorem strictCoproduct_X_inr_zero :
   simpa [add_comm] using this
 
 /-- `Δs = s₁ + s₂`. -/
+@[simp]
 theorem strictCoproduct_X_inr_one :
     strictCoproduct (X (.inr 1)) = X (.inr (.inl 1)) + X (.inr (.inr 1)) := by
   have := congrArg HeisenbergGroup.y heisenbergGroupMap_strictCoproduct_strictChange
@@ -368,6 +375,7 @@ theorem strictCoproduct_X_inr_one :
 
 /-- `Δt = t₁ + t₂ + s₁r₂`: the cross term pairs the `s` of the first arrow with the `r` of the
 second. -/
+@[simp]
 theorem strictCoproduct_X_inr_two :
     strictCoproduct (X (.inr 2)) =
       X (.inr (.inl 2)) + X (.inr (.inr 2)) + X (.inr (.inl 1)) * X (.inr (.inr 0)) := by
@@ -446,9 +454,7 @@ theorem strictCounitLeft_comp_strictCoproduct :
   MvPolynomial.ringHom_ext' (RingHom.ext_int _ _) fun i ↦ by
     rcases i with i | j
     · simp
-    · fin_cases j <;>
-        simp [strictCoproduct_X_inr_zero, strictCoproduct_X_inr_one,
-          strictCoproduct_X_inr_two]
+    · fin_cases j <;> simp
 
 /-- **The right counit law** `(id ⊗ ε) Δ = id`. -/
 theorem strictCounitRight_comp_strictCoproduct :
@@ -456,9 +462,7 @@ theorem strictCounitRight_comp_strictCoproduct :
   MvPolynomial.ringHom_ext' (RingHom.ext_int _ _) fun i ↦ by
     rcases i with i | j
     · simp
-    · fin_cases j <;>
-        simp [strictCoproduct_X_inr_zero, strictCoproduct_X_inr_one,
-          strictCoproduct_X_inr_two]
+    · fin_cases j <;> simp
 
 /-! ### Coassociativity -/
 
@@ -520,9 +524,7 @@ theorem strictCoproduct_coassoc :
   MvPolynomial.ringHom_ext' (RingHom.ext_int _ _) fun i ↦ by
     rcases i with i | j
     · simp
-    · fin_cases j <;>
-        simp [strictCoproduct_X_inr_zero,
-          strictCoproduct_X_inr_one, strictCoproduct_X_inr_two] <;> ring
+    · fin_cases j <;> simp <;> ring
 
 /-! ### The strict conjugation -/
 
@@ -596,15 +598,24 @@ theorem strictCounit_strictConjugation (x : StrictArrowRing) :
     strictCounit (strictConjugation x) = strictCounit x :=
   RingHom.congr_fun strictCounit_comp_strictConjugation x
 
+/-- `c(a) = η_R(a)` on the coefficients. -/
+@[simp]
+theorem strictConjugation_X_inl (i : Coeff) :
+    strictConjugation (X (.inl i)) = strictRightUnit (X i) := by
+  simpa using strictConjugation_strictLeftUnit (X i)
+
 /-- `c(r) = -r`. -/
+@[simp]
 theorem strictConjugation_X_inr_zero : strictConjugation (X (.inr 0)) = -X (.inr 0) := by
   simpa using congrArg HeisenbergGroup.x heisenbergGroupMap_strictConjugation_strictChange
 
 /-- `c(s) = -s`. -/
+@[simp]
 theorem strictConjugation_X_inr_one : strictConjugation (X (.inr 1)) = -X (.inr 1) := by
   simpa using congrArg HeisenbergGroup.y heisenbergGroupMap_strictConjugation_strictChange
 
 /-- `c(t) = -t + rs`. -/
+@[simp]
 theorem strictConjugation_X_inr_two :
     strictConjugation (X (.inr 2)) = -X (.inr 2) + X (.inr 0) * X (.inr 1) := by
   simpa using congrArg HeisenbergGroup.z heisenbergGroupMap_strictConjugation_strictChange
@@ -656,9 +667,7 @@ theorem isWeightedHomogeneous_strictLeftUnit {k : ℕ} {f : MvPolynomial Coeff �
 theorem isWeightedHomogeneous_strictRightUnit_X (i : Coeff) :
     (strictRightUnit (X i)).IsWeightedHomogeneous strictWeight (coefficientWeight i) :=
   isWeightedHomogeneous_of_aeval_C_pow_mul_X_eq (pow_right_injective₀ two_pos (by norm_num)) <| by
-    cases i <;>
-      simp [strictRightUnit_X_A₁, strictRightUnit_X_A₂, strictRightUnit_X_A₃,
-        strictRightUnit_X_A₄, strictRightUnit_X_A₆] <;> ring
+    cases i <;> simp <;> ring
 
 /-- **The strict right unit is graded**: it carries a polynomial of weight `k` in the coefficients
 to an element of weight `k` of `A[r, s, t]`. -/
@@ -693,9 +702,7 @@ theorem isWeightedHomogeneous_strictCoproduct {k : ℕ} {f : StrictArrowRing}
         ?_) hf
   rcases i with i | j
   · simp
-  · fin_cases j <;>
-      simp [strictCoproduct_X_inr_zero, strictCoproduct_X_inr_one,
-        strictCoproduct_X_inr_two] <;> ring
+  · fin_cases j <;> simp <;> ring
 
 /-- **The strict conjugation is graded.** -/
 theorem isWeightedHomogeneous_strictConjugation {k : ℕ} {f : StrictArrowRing}
@@ -705,15 +712,11 @@ theorem isWeightedHomogeneous_strictConjugation {k : ℕ} {f : StrictArrowRing}
   refine (WeightedHomogeneousSubmodule.map_mem_iff strictWeight
     (weightedHomogeneousSubmodule ℤ strictWeight) (.id ℕ) strictConjugation).2 (fun i ↦ ?_) hf
   rcases i with i | j
-  · have := strictConjugation_strictLeftUnit (X i)
-    rw [strictLeftUnit_X] at this
-    rw [this]
+  · rw [strictConjugation_X_inl]
     exact isWeightedHomogeneous_strictRightUnit_X i
   · refine isWeightedHomogeneous_of_aeval_C_pow_mul_X_eq
       (pow_right_injective₀ two_pos (by norm_num)) ?_
-    fin_cases j <;>
-      simp [strictConjugation_X_inr_zero, strictConjugation_X_inr_one,
-        strictConjugation_X_inr_two] <;> ring
+    fin_cases j <;> simp <;> ring
 
 /-! ### The dictionary with the Weierstrass Hopf algebroid `(A, Γ)` -/
 
