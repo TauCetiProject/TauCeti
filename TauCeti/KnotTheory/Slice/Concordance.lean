@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Group.BallSphere
 public import TauCeti.Analysis.Normed.Module.Ball.Retraction
 public import TauCeti.Geometry.Manifold.Boundary.Invariance
-public import TauCeti.Geometry.Manifold.Boundary.Collar.ClosedBall
+public import TauCeti.Geometry.Manifold.Boundary.Collar.ClosedBall.Basic
 public import TauCeti.Geometry.Manifold.Immersion.Differential
 public import TauCeti.Geometry.Manifold.Instances.Cylinder
 public import TauCeti.Geometry.Manifold.LocallyFlat.Ball
