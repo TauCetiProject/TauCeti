@@ -846,6 +846,15 @@ theorem tangentSpaceOpenEquiv_symm_apply {U : Opens M} (x : U)
     (tangentSpaceOpenEquiv (I := I) x).symm v = v := by
   exact (rfl)
 
+/-- A continuous linear map on the tangent space of an open submanifold factors through the
+canonical identification `tangentSpaceOpenEquiv` with the ambient tangent space. -/
+theorem comp_tangentSpaceOpenEquiv_symm_comp {U : Opens M} (x : U) {G : Type*} [AddCommMonoid G]
+    [Module 𝕜 G] [TopologicalSpace G] (ξ : TangentSpace I x →L[𝕜] G) :
+    (ξ.comp ((tangentSpaceOpenEquiv (I := I) x).symm : TangentSpace I (x : M) →L[𝕜] _)).comp
+      (tangentSpaceOpenEquiv (I := I) x).toContinuousLinearMap = ξ := by
+  rw [ContinuousLinearMap.comp_assoc, ContinuousLinearEquiv.coe_symm_comp_coe,
+    ContinuousLinearMap.comp_id]
+
 /-- In inherited charts, the tangent-bundle coordinate changes of an open submanifold and its
 ambient manifold agree locally. -/
 private theorem eventually_tangentBundleCore_coordChange_open_eq

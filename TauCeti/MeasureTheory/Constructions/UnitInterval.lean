@@ -55,6 +55,8 @@ top cell `[(m-1)/m, 1] = Set.Ici ((m-1)/m)`.
 * `TauCeti.unitInterval.cellIdx_mul_div` — the `m * n` cells refine the `m` cells;
 * `TauCeti.unitInterval.tendsto_cellIdx_div` — the left endpoint `cellIdx m x / m` of the cell
   of `x` tends to `x` as `m → ∞`;
+* `TauCeti.unitInterval.dist_le_one_div_of_cellIdx_eq` — two points of the same cell are at
+  distance at most `1 / m`;
 * `TauCeti.unitInterval.measurePreserving_cellFin` — the cell index carries `volume` to the uniform
   measure on `Fin m`;
 * `TauCeti.unitInterval.integral_pi_comp_cellFin_eq_inv_smul_sum` — a function of the cells of
@@ -202,6 +204,19 @@ theorem le_cellIdx_add_one_div (hm : 0 < m) (x : I) :
     linarith [Nat.lt_floor_add_one ((m : ℝ) * (x : ℝ))]
   · rw [cellIdx, min_eq_right h, Nat.cast_sub hm, Nat.cast_one, sub_add_cancel]
     exact mul_le_of_le_one_left hmR.le x.property.2
+
+/-- Two points of the same cell of the `m`-fold equipartition of `[0, 1]` are at distance at most
+`1 / m`. -/
+theorem dist_le_one_div_of_cellIdx_eq (hm : 0 < m) {x y : I} (h : cellIdx m x = cellIdx m y) :
+    dist x y ≤ 1 / m := by
+  have hx₁ := cellIdx_div_le m x
+  have hx₂ := le_cellIdx_add_one_div hm x
+  have hy₁ := cellIdx_div_le m y
+  have hy₂ := le_cellIdx_add_one_div hm y
+  rw [h] at hx₁ hx₂
+  rw [add_div] at hx₂ hy₂
+  rw [Subtype.dist_eq, Real.dist_eq, abs_le]
+  constructor <;> linarith
 
 /-- As the number of cells grows, the left endpoints of the cells containing `x` converge to
 `x`. -/

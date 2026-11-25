@@ -83,7 +83,7 @@ at `x`, such as a geodesic frame: there the Clifford multiplications `c(eᵢ)` p
 ## Proof
 
 Choose smooth vector fields `Yᵢ` that form an orthonormal basis of each tangent space near `x`
-(`TauCeti.exists_contMDiff_orthonormal_frame_nhds`). Near `x`,
+(`TauCeti.exists_nhds_orthonormal_sections`). Near `x`,
 `D σ = ∑ᵢ c(Yᵢ) ∇_{Yᵢ} σ`, so the compatibility of `c` gives
 `∇_w (D σ) = ∑ᵢ c(Yᵢ) ∇²σ(w, Yᵢ) + ∑ᵢ (c(∇ᵀ_w Yᵢ) ∇_{Yᵢ} σ + c(Yᵢ) ∇_{∇ᵀ_w Yᵢ} σ)`. Writing
 `∇ᵀ_w Yᵢ = ∑ⱼ aᵢⱼ Yⱼ`, the last sum is `∑ᵢⱼ aᵢⱼ (c(Yⱼ) ∇_{Yᵢ} σ + c(Yᵢ) ∇_{Yⱼ} σ)`: the
@@ -300,10 +300,10 @@ include hσ hcd
 multiplication is: if `c(v) s` is differentiable at `x` for all smooth vector fields `v` and
 smooth sections `s`, then so is `D σ` for every smooth section `σ`. -/
 theorem mdifferentiableAt_diracOperator : MDiffAt (T% (cov.diracOperator c σ)) x := by
-  obtain ⟨Y, hYs, hY⟩ := TauCeti.exists_contMDiff_orthonormal_frame_nhds (I := I) (F := E)
+  obtain ⟨N, hN, -, Y, hY⟩ := TauCeti.exists_nhds_orthonormal_sections (I := I) (F := E)
     (V := fun y : M ↦ TangentSpace I y) (n := ∞) x
-  refine (mdifferentiableAt_sum_frame cov c hσ hcd hYs).congr_of_eventuallyEq ?_
-  filter_upwards [eventually_diracOperator_eq cov c hY] with y hy
+  refine (mdifferentiableAt_sum_frame cov c hσ hcd fun i ↦ (Y i).contMDiff).congr_of_eventuallyEq ?_
+  filter_upwards [eventually_diracOperator_eq cov c (Filter.eventually_of_mem hN hY)] with y hy
   rw [hy]
 
 variable (hcomp : ∀ {v : Π y : M, TangentSpace I y} {s : Π y : M, V y}, CMDiff ∞ (T% v) →
@@ -340,8 +340,12 @@ theorem covariantDerivative_diracOperator_apply {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ (TangentSpace I x)) (w : TangentSpace I x) :
     cov (cov.diracOperator c σ) x w =
       ∑ i, c x (b i) (cov.secondCovariantDerivative covT σ x w (b i)) := by
-  obtain ⟨Y, hYs, hY⟩ := TauCeti.exists_contMDiff_orthonormal_frame_nhds (I := I) (F := E)
+  obtain ⟨N, hN, -, e, he⟩ := TauCeti.exists_nhds_orthonormal_sections (I := I) (F := E)
     (V := fun y : M ↦ TangentSpace I y) (n := ∞) x
+  set Y : Fin (Module.finrank ℝ E) → Π y : M, TangentSpace I y := fun i ↦ e i
+  have hYs (i) : CMDiff ∞ (T% (Y i)) := (e i).contMDiff
+  have hY : ∀ᶠ y in 𝓝 x, Orthonormal ℝ (Y · y) ∧ ⊤ ≤ Submodule.span ℝ (Set.range (Y · y)) :=
+    Filter.eventually_of_mem hN he
   rw [cov.isCovariantDerivativeOnUniv.congr_of_eventuallyEq
       (mdifferentiableAt_diracOperator cov c hσ hcd)
       (mdifferentiableAt_sum_frame cov c hσ hcd hYs) univ_mem
