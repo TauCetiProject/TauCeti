@@ -136,11 +136,11 @@ theorem eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq (b : (rootSystem 
     hφe ▸ t₁.map φ.toLieHom ((map_ne_zero_iff φ.toLieHom φ.injective).mpr t₁.h_ne_zero)
   -- Kostant's conjugacy theorem moves `(φ h₁, e₂, φ f₁)` to `(h₂, e₂, f₂)` inside `Int(L)`.
   obtain ⟨ψ, hψ, -, hψh, -⟩ := t₁'.exists_lieEquiv_apply_eq (K := K) t₂
-  let g : LinearMap.GeneralLinearGroup K L :=
-    (LinearMap.GeneralLinearGroup.generalLinearEquiv K L).symm ψ.toLinearEquiv
+  let g := LinearMap.GeneralLinearGroup.ofLinearEquiv ψ.toLinearEquiv
   have hg : g ∈ intLieAlgebra K L :=
     map_expAdSubgroup_le_intLieAlgebra e₂ ⟨ψ.toLinearEquiv, hψ, rfl⟩
-  have hgh : g • φ (h₁ : L) = (h₂ : L) := hψh
+  have hgh : g • φ (h₁ : L) = (h₂ : L) :=
+    (LinearMap.GeneralLinearGroup.ofLinearEquiv_smul _ _).trans hψh
   refine b.eq_of_forall_mem_lieInvariants_lift_eval_eq_of_dominant
     ((b.mem_dominantNeutralElements_iff h₁).mp hh₁).2
     ((b.mem_dominantNeutralElements_iff h₂).mp hh₂).2 fun p hp ↦ ?_

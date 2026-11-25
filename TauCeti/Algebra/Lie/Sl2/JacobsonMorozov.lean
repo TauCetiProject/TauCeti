@@ -263,12 +263,9 @@ theorem exists_mem_intLieAlgebra_smul_eq_of_e_mem_orbit (t : IsSl2Triple h e f) 
   -- and Kostant's conjugacy theorem conjugates that triple to the second one by `φ`
   obtain ⟨φ, hφ, hφe, hφh, hφf⟩ :=
     exists_lieEquiv_apply_eq (K := K) (t.smul_of_mem_intLieAlgebra g.property) t'
-  have hk (x : L) : (generalLinearEquiv K L).symm φ.toLinearEquiv • x = φ x := by
-    rw [Units.smul_def, Module.End.smul_def, ← coeFn_generalLinearEquiv,
-      MulEquiv.apply_symm_apply, LieEquiv.coe_toLinearEquiv]
-  refine ⟨(generalLinearEquiv K L).symm φ.toLinearEquiv * g,
+  refine ⟨ofLinearEquiv φ.toLinearEquiv * g,
     mul_mem (map_expAdSubgroup_le_intLieAlgebra (K := K) _ ⟨_, hφ, rfl⟩) g.property, ?_⟩
-  simp only [mul_smul, hk]
+  simp only [mul_smul, ofLinearEquiv_smul, LieEquiv.coe_toLinearEquiv]
   exact ⟨hφh, hφe, hφf⟩
 
 /-- **Conjugate nilpositive elements have conjugate neutral elements.** If the nilpositive elements
