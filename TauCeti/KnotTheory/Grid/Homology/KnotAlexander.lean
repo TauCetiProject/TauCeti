@@ -22,10 +22,13 @@ Alexander grading (`GridDiagram.IsKnot.UnblockedHomologyIsomorphic`). This relat
 symmetric and transitive. The maps that grid moves induce on `GH⁻` are initially packaged as
 semilinear maps over the polynomial rings in the grid variables, along a ring homomorphism such as
 a renaming of the variables. When that homomorphism commutes with the evaluation `V_j ↦ U`, the
-underlying function is `R[U]`-linear, so such a map that is bijective and preserves the Alexander
-grading witnesses the relation
-(`GridDiagram.IsKnot.UnblockedHomologyIsomorphic.of_semilinearMap`). This is the form in which the
-grid-move invariance theorems for `GH⁻` are stated.
+underlying function is `R[U]`-linear (`GridDiagram.IsKnot.unblockedHomologyLinearMapOfSemilinear`,
+in `Homology/Unblocked.lean`), so such a map that is bijective and preserves the Alexander grading
+witnesses the relation (`GridDiagram.IsKnot.UnblockedHomologyIsomorphic.of_semilinearMap`). The
+grid-move invariance theorems for `GH⁻` are stated for the bigraded relation, through
+`GridDiagram.IsKnot.BigradedUnblockedHomologyIsomorphic.of_semilinearMap`
+(`Homology/Bigraded/Relation.lean`), and the Alexander-graded relation is recovered from them by
+forgetting the Maslov grading.
 
 The Alexander grading and the convention that `U` has degree `-1` follow
 Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapters 4 and 6.
@@ -148,16 +151,11 @@ theorem UnblockedHomologyIsomorphic.of_semilinearMap
     hG.UnblockedHomologyIsomorphic hG' R := by
   let _ := hG.unblockedHomologyModule R
   let _ := hG'.unblockedHomologyModule R
-  have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hG.ne_zero⟩⟩
-  let f' : G.unblockedHomology R →ₗ[Polynomial R] G'.unblockedHomology R :=
-    { toFun := f
-      map_add' := map_add f
-      map_smul' := fun q y ↦ by
-        obtain ⟨p, rfl⟩ := MvPolynomial.aeval_const_X_surjective (Fin n) R q
-        rw [hG.aeval_smul_unblockedHomology, LinearMap.map_smulₛₗ, RingHom.id_apply, ← hσ,
-          hG'.aeval_smul_unblockedHomology] }
-  refine ⟨LinearEquiv.ofBijective f' hf, LinearMap.isHomogeneous_def.mpr fun a y hy ↦ ?_⟩
-  rw [add_zero]
+  refine ⟨LinearEquiv.ofBijective (hG.unblockedHomologyLinearMapOfSemilinear R hG' hσ f)
+    (by rwa [coe_unblockedHomologyLinearMapOfSemilinear]),
+    LinearMap.isHomogeneous_def.mpr fun a y hy ↦ ?_⟩
+  rw [add_zero, LinearEquiv.coe_coe, LinearEquiv.ofBijective_apply,
+    coe_unblockedHomologyLinearMapOfSemilinear]
   exact hA a y hy
 
 end GridDiagram.IsKnot

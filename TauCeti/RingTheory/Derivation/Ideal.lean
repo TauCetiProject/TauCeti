@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Derivation.Basic
+public import Mathlib.LinearAlgebra.SModEq.Basic
 public import Mathlib.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Derivation.Basic
 import TauCeti.RingTheory.Ideal.Operations
@@ -17,6 +18,8 @@ A derivation `D : A → M` satisfies the Leibniz rule `D (a * b) = a • D b + b
 the power `I ^ (n + 1)` of an ideal `I` of `A` into `I ^ n • M`. This is what makes every
 derivation continuous for the `I`-adic topologies. For `n = 1`, it maps the square `I ^ 2` into
 `I • M`; in particular, an element `f` of an ideal `I` with `D f ∉ I` does not lie in `I ^ 2`.
+Equivalently, `D` maps elements congruent modulo `I ^ (n + 1)` to elements congruent modulo
+`I ^ n • M`.
 
 This is the elementary half of the Jacobian criterion: if a partial derivative of `f` does not
 vanish at a point, then `f` is not in the square of the maximal ideal there. When the ambient
@@ -38,6 +41,8 @@ order bound `K` is unrestricted.
 
 * `Derivation.apply_mem_pow_smul_top_of_mem_pow_succ`: a derivation maps `I ^ (n + 1)` into
   `I ^ n • M`.
+* `Derivation.apply_smodEq_of_smodEq`: a derivation maps elements congruent modulo `I ^ (n + 1)`
+  to elements congruent modulo `I ^ n • M`.
 * `Derivation.apply_mem_smul_top_of_mem_sq`: a derivation maps `I ^ 2` into `I • M`.
 * `Derivation.apply_mem_of_mem_sq`: a derivation of `A` into itself maps `I ^ 2` into `I`.
 * `Derivation.apply_eq_zero_of_mem_span`: vanishing on generators that annihilate the target
@@ -91,6 +96,22 @@ theorem apply_mem_smul_top_of_mem_sq (D : Derivation R A M) {I : Ideal A} {x : A
 theorem apply_mem_of_mem_sq (D : Derivation R A A) {I : Ideal A} {x : A} (hx : x ∈ I ^ 2) :
     D x ∈ I := by
   simpa [smul_eq_mul] using D.apply_mem_smul_top_of_mem_sq hx
+
+section Ring
+
+variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A] [AddCommGroup M] [Module A M]
+  [Module R M]
+
+/-- A derivation maps elements congruent modulo `I ^ (n + 1)` to elements congruent modulo
+`I ^ n • M`. -/
+theorem apply_smodEq_of_smodEq (D : Derivation R A M) {I : Ideal A} {n : ℕ} {a b : A}
+    (h : a ≡ b [SMOD (I ^ (n + 1) • ⊤ : Submodule A A)]) :
+    D a ≡ D b [SMOD (I ^ n • ⊤ : Submodule A M)] := by
+  rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top] at h
+  rw [SModEq.sub_mem, ← map_sub]
+  exact D.apply_mem_pow_smul_top_of_mem_pow_succ h
+
+end Ring
 
 section Iterate
 

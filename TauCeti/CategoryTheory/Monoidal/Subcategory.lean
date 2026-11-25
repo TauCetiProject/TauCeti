@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Monoidal.Mon
 public import Mathlib.CategoryTheory.Monoidal.Subcategory
 
 /-!
-# Monoid objects and internal Homs in a monoidal full subcategory
+# Monoid objects, monoidal functors and internal Homs in a monoidal full subcategory
 
 If `P` is a monoidal property of objects of a monoidal category `C`, a monoid object in the full
 monoidal subcategory of `P` is the same as a monoid object of `C` whose underlying object satisfies
@@ -22,10 +22,17 @@ internal Homs, Mathlib makes the full subcategory of `P` closed monoidal
 This file records that its evaluation, coevaluation and precomposition maps are also those of
 `C`, so that computations with internal Homs in the subcategory reduce to computations in `C`.
 
+A strong (resp. braided) monoidal functor `F : D ⥤ C` whose values satisfy `P` lifts to a strong
+(resp. braided) monoidal functor `P.lift F hF` into the full monoidal subcategory, with the
+comparison isomorphisms of `F` (`CategoryTheory.ObjectProperty.monoidalLift`,
+`CategoryTheory.ObjectProperty.braidedLift`).
+
 ## Main declarations
 
 * `CategoryTheory.ObjectProperty.monFullSubcategoryEquivalence`: monoid objects in the full
   monoidal subcategory of `P` are monoid objects of `C` whose underlying object satisfies `P`;
+* `CategoryTheory.ObjectProperty.monoidalLift` and `CategoryTheory.ObjectProperty.braidedLift`:
+  lifts of monoidal and braided functors into the full monoidal subcategory;
 * `CategoryTheory.ObjectProperty.ihom_ev_app_hom` and
   `CategoryTheory.ObjectProperty.ihom_coev_app_hom`: evaluation and coevaluation;
 * `CategoryTheory.ObjectProperty.pre_app_hom`: precomposition with a morphism of the
@@ -192,6 +199,55 @@ theorem monFullSubcategoryEquivalence_counitIso_inv_app
   ObjectProperty.hom_ext _ (Mon.Hom.ext (rfl))
 
 end Mon
+
+section lift
+
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C] (P : ObjectProperty C) [P.IsMonoidal]
+  {D : Type*} [Category* D] [MonoidalCategory D] (F : D ⥤ C) (hF : ∀ X, P (F.obj X))
+
+/-- The lift through the monoidal full subcategory of `P` of a strong monoidal functor `F` whose
+values satisfy `P` is strong monoidal, with the comparison isomorphisms of `F`. -/
+instance monoidalLift [F.Monoidal] : (P.lift F hF).Monoidal :=
+  Functor.CoreMonoidal.toMonoidal
+    { εIso := P.isoMk (Functor.Monoidal.εIso F)
+      μIso X Y := P.isoMk (Functor.Monoidal.μIso F X Y)
+      μIso_hom_natural_left f X := P.hom_ext (Functor.LaxMonoidal.μ_natural_left F f X)
+      μIso_hom_natural_right X f := P.hom_ext (Functor.LaxMonoidal.μ_natural_right F X f)
+      associativity X Y Z := P.hom_ext (Functor.LaxMonoidal.associativity F X Y Z)
+      left_unitality X := P.hom_ext (Functor.LaxMonoidal.left_unitality F X)
+      right_unitality X := P.hom_ext (Functor.LaxMonoidal.right_unitality F X) }
+
+/-- The lift through the braided monoidal full subcategory of `P` of a braided functor whose
+values satisfy `P` is braided, with the comparison isomorphisms of `F`. -/
+instance braidedLift [BraidedCategory C] [BraidedCategory D] [F.Braided] :
+    (P.lift F hF).Braided where
+  braided X Y := P.hom_ext (Functor.LaxBraided.braided (F := F) X Y)
+
+variable [F.Monoidal]
+
+/-- The unit comparison of the lift of `F` is that of `F`. -/
+@[simp]
+lemma lift_ε_hom : (Functor.LaxMonoidal.ε (P.lift F hF)).hom = Functor.LaxMonoidal.ε F :=
+  (rfl)
+
+/-- The inverse unit comparison of the lift of `F` is that of `F`. -/
+@[simp]
+lemma lift_η_hom : (Functor.OplaxMonoidal.η (P.lift F hF)).hom = Functor.OplaxMonoidal.η F :=
+  (rfl)
+
+/-- The tensor comparison of the lift of `F` is that of `F`. -/
+@[simp]
+lemma lift_μ_hom (X Y : D) :
+    (Functor.LaxMonoidal.μ (P.lift F hF) X Y).hom = Functor.LaxMonoidal.μ F X Y :=
+  (rfl)
+
+/-- The inverse tensor comparison of the lift of `F` is that of `F`. -/
+@[simp]
+lemma lift_δ_hom (X Y : D) :
+    (Functor.OplaxMonoidal.δ (P.lift F hF) X Y).hom = Functor.OplaxMonoidal.δ F X Y :=
+  (rfl)
+
+end lift
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [MonoidalClosed C]
   (P : ObjectProperty C) [P.IsMonoidal] [P.IsMonoidalClosed]
