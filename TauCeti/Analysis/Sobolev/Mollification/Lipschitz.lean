@@ -33,7 +33,8 @@ dominated convergence, as in the Leibniz rule `TauCeti.HasWeakLineDerivOn.lipsch
 * `LipschitzWith.fderiv_normed_convolution_apply`: the directional derivative of the mollification
   is the mollification of the almost-everywhere directional derivative.
 * `LipschitzWith.norm_fderiv_normed_convolution_apply_le`: these derivatives are bounded by
-  `K ‖v‖`.
+  `K ‖v‖`, so the derivatives of the mollifications have operator norm at most `K`
+  (`LipschitzWith.norm_fderiv_normed_convolution_le`).
 * `LipschitzWith.ae_tendsto_fderiv_normed_convolution_apply`: they converge almost everywhere to
   the directional derivative as the bumps shrink.
 * `LipschitzWith.tendsto_integral_fderiv_normed_convolution_apply_smul`: integrals against the
@@ -82,6 +83,12 @@ theorem norm_fderiv_normed_convolution_apply_le (hψ : LipschitzWith K ψ)
     ρ.integral_normed (measurable_lineDeriv hψ.continuous).aestronglyMeasurable fun y _ => by
       rw [dist_zero_right]
       exact norm_lineDeriv_le_of_lipschitz ℝ hψ
+
+/-- The derivatives of the mollifications of a `K`-Lipschitz function have operator norm at
+most `K`. -/
+theorem norm_fderiv_normed_convolution_le (hψ : LipschitzWith K ψ) (ρ : ContDiffBump (0 : E))
+    (x : E) : ‖fderiv ℝ (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] ψ) x‖ ≤ K :=
+  opNorm_le_bound _ K.coe_nonneg (hψ.norm_fderiv_normed_convolution_apply_le ρ x)
 
 /-- As normalized bumps shrink to `0` with a bounded ratio of outer to inner radius, the
 derivatives in a direction `v` of the mollifications of a Lipschitz function converge almost

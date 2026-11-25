@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 public import TauCeti.Analysis.Calculus.GraphFlattening.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
+import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Sobolev.Mollification.Lipschitz
 
 /-!
@@ -38,7 +39,7 @@ public section
 
 noncomputable section
 
-open ContinuousLinearMap MeasureTheory Metric
+open ContinuousLinearMap MeasureTheory
 open scoped NNReal Convolution ContDiff
 
 namespace TauCeti
@@ -70,9 +71,9 @@ theorem norm_fderiv_graphFlattening_normed_convolution_le (hγ : LipschitzWith K
   norm_fderiv_graphFlattening_le_one_add
     ((ρ.hasCompactSupport_normed.contDiff_convolution_left (n := 1) (lsmul ℝ ℝ)
       ρ.contDiff_normed hγ.continuous.locallyIntegrable).differentiable one_ne_zero)
-    (fun y => opNorm_le_bound _ K.coe_nonneg (hγ.norm_fderiv_normed_convolution_apply_le ρ y)) z
+    (hγ.norm_fderiv_normed_convolution_le ρ) z
 
-/-- **Mollified shears converge uniformly**: the shear along `ρ ⋆ γ` is within `K · ρ.rOut` of
+/-- **Mollified shears are uniformly close**: the shear along `ρ ⋆ γ` is within `K · ρ.rOut` of
 the shear along a `K`-Lipschitz `γ`, at every point. -/
 theorem dist_graphFlattening_normed_convolution_le (hγ : LipschitzWith K γ)
     (ρ : ContDiffBump (0 : E)) (hc : Continuous (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] γ))
@@ -80,8 +81,6 @@ theorem dist_graphFlattening_normed_convolution_le (hγ : LipschitzWith K γ)
     dist (graphFlattening (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] γ) hc z)
       (graphFlattening γ hγ.continuous z) ≤ K * ρ.rOut := by
   rw [dist_graphFlattening_graphFlattening]
-  exact ContDiffBump.dist_normed_convolution_le hγ.continuous.aestronglyMeasurable
-    fun x hx => (hγ.dist_le_mul x z.snd).trans
-      (mul_le_mul_of_nonneg_left (mem_ball.1 hx).le K.coe_nonneg)
+  exact hγ.dist_normed_convolution_le ρ z.snd
 
 end TauCeti

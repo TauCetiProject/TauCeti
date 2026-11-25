@@ -120,10 +120,9 @@ variable {E : Type*} [SeminormedAddCommGroup E]
 theorem dist_graphFlattening_graphFlattening {γ₁ γ₂ : E → ℝ} (hγ₁ : Continuous γ₁)
     (hγ₂ : Continuous γ₂) (x : WithLp 2 (ℝ × E)) :
     dist (graphFlattening γ₁ hγ₁ x) (graphFlattening γ₂ hγ₂ x) = dist (γ₁ x.snd) (γ₂ x.snd) := by
-  rw [WithLp.prod_dist_eq_of_L2]
-  simp only [graphFlattening_apply, WithLp.toLp_fst, WithLp.toLp_snd, dist_self, Real.dist_eq]
-  rw [show x.fst - γ₁ x.snd - (x.fst - γ₂ x.snd) = -(γ₁ x.snd - γ₂ x.snd) by ring, abs_neg,
-    sq_abs, zero_pow two_ne_zero, add_zero, Real.sqrt_sq_eq_abs]
+  simp [WithLp.prod_dist_eq_of_L2, graphFlattening_apply, dist_comm (γ₁ x.snd), Real.dist_eq,
+    Real.sqrt_sq_eq_abs]
+  ring_nf
 
 /-- Graph flattening by a `K`-Lipschitz height is `(1 + K)`-Lipschitz. -/
 theorem lipschitzWith_graphFlattening {γ : E → ℝ} {K : ℝ≥0} (hγ : LipschitzWith K γ) :
