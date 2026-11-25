@@ -267,6 +267,7 @@ lemma ofMatrix_symm_smul [SMul R A] (r : R) (M : CStarMatrix n n A) :
 
 /-- Reading the entrywise nonunital star-algebra homomorphism as an ordinary matrix applies
 its underlying star-ring homomorphism to each entry. -/
+@[simp↓]
 lemma ofMatrix_symm_mapₙₐ {B : Type*} [Fintype n] [Semiring R]
     [NonUnitalNonAssocSemiring A] [Module R A] [Star A]
     [NonUnitalNonAssocSemiring B] [Module R B] [Star B]
