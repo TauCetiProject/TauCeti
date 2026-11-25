@@ -211,26 +211,30 @@ theorem prod (h : HasFiniteFreeResolutionLE R n M) (h' : HasFiniteFreeResolution
     HasFiniteFreeResolutionLE R n (M × N) :=
   extension LinearMap.inl_injective LinearMap.snd_surjective Function.Exact.inl_snd h h'
 
+/-- **Cokernels.** In a short exact sequence `0 → M₁ → M → M₂ → 0`, if `M₁` has a finite free
+resolution of length at most `n` and `M` one of length at most `n + 1`, then `M₂` has one of length
+at most `n + 1`. -/
+theorem cokernel {M₁ M₂ : Type u} [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂]
+    [Module R M₂] {f : M₁ →ₗ[R] M} {g : M →ₗ[R] M₂} (hf : Function.Injective f)
+    (hg : Function.Surjective g) (hfg : Function.Exact f g)
+    (h₁ : HasFiniteFreeResolutionLE R n M₁) (h : HasFiniteFreeResolutionLE R (n + 1) M) :
+    HasFiniteFreeResolutionLE R (n + 1) M₂ := by
+  obtain ⟨k, F, hF, hK⟩ := hasFiniteFreeResolutionLE_succ_iff.mp h
+  -- `0 → ker F → ker (g ∘ F) → ker g → 0` is exact and `ker g ≃ M₁`, so `ker (g ∘ F)` is an
+  -- extension.
+  obtain ⟨hi, hip, hp⟩ := TauCeti.exact_ker_comp hF g
+  exact hasFiniteFreeResolutionLE_succ_iff.mpr ⟨k, g ∘ₗ F, hg.comp hF,
+    extension hi hp hip hK (h₁.of_equiv (hfg.linearEquivOfInjective hf))⟩
+
 /-- **Removing a finite free summand.** If `M × F` has a finite free resolution of length at most
 `n` and `F` is finite free, then `M` has one of length at most `max n 1`. The length can grow from
 `0` to `1`: a stably free module that is not free is a summand of a free module. -/
 theorem of_prod {F : Type u} [AddCommGroup F] [Module R F] [Module.Finite R F] [Module.Free R F]
     (h : HasFiniteFreeResolutionLE R n (M × F)) : HasFiniteFreeResolutionLE R (max n 1) M := by
-  -- `inr : F → M × F` identifies `F` with the kernel of the projection onto `M`.
-  have hF : HasFiniteFreeResolutionLE R 0 (ker (fst R M F)) :=
-    hasFiniteFreeResolutionLE_zero.of_equiv
-      (Function.Exact.inr_fst.linearEquivOfInjective inr_injective)
-  cases n with
-  | zero =>
-    obtain ⟨_, _⟩ := hasFiniteFreeResolutionLE_zero_iff.mp h
-    exact succ_of_surjective fst_surjective hF
-  | succ n =>
-    obtain ⟨k, φ, hφ, hK⟩ := hasFiniteFreeResolutionLE_succ_iff.mp h
-    -- `0 → ker φ → ker (fst ∘ φ) → ker fst → 0` is exact and `ker fst ≃ F`.
-    obtain ⟨hi, hip, hp⟩ := TauCeti.exact_ker_comp hφ (fst R M F)
-    rw [max_eq_left (by omega)]
-    exact hasFiniteFreeResolutionLE_succ_iff.mpr ⟨k, fst R M F ∘ₗ φ,
-      (fst_surjective (R := R)).comp hφ, extension hi hp hip hK (hF.mono n.zero_le)⟩
+  -- `M` is the cokernel of `inr : F → M × F`.
+  rw [show max n 1 = max n 1 - 1 + 1 by omega]
+  exact cokernel inr_injective fst_surjective Function.Exact.inr_fst
+    (hasFiniteFreeResolutionLE_zero.mono (Nat.zero_le _)) (h.mono (by omega))
 
 /-- **Schanuel's lemma for finite free resolutions.** If `M` has a finite free resolution of length
 at most `n + 1`, then the kernel of every surjection onto `M` from a finite free module has one of
@@ -253,21 +257,6 @@ theorem ker_of_surjective {P : Type u} [AddCommGroup P] [Module R P] [Module.Fin
   exact of_prod (F := Fin k → R) (h₁.of_equiv (eK.symm.trans
     ((exact_subtype_ker_map f).prodMap_id_comp_fst.linearEquivOfInjective
       (Function.Injective.prodMap (ker f).injective_subtype Function.injective_id)).symm))
-
-/-- **Cokernels.** In a short exact sequence `0 → M₁ → M → M₂ → 0`, if `M₁` has a finite free
-resolution of length at most `n` and `M` one of length at most `n + 1`, then `M₂` has one of length
-at most `n + 1`. -/
-theorem cokernel {M₁ M₂ : Type u} [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂]
-    [Module R M₂] {f : M₁ →ₗ[R] M} {g : M →ₗ[R] M₂} (hf : Function.Injective f)
-    (hg : Function.Surjective g) (hfg : Function.Exact f g)
-    (h₁ : HasFiniteFreeResolutionLE R n M₁) (h : HasFiniteFreeResolutionLE R (n + 1) M) :
-    HasFiniteFreeResolutionLE R (n + 1) M₂ := by
-  obtain ⟨k, F, hF, hK⟩ := hasFiniteFreeResolutionLE_succ_iff.mp h
-  -- `0 → ker F → ker (g ∘ F) → ker g → 0` is exact and `ker g ≃ M₁`, so `ker (g ∘ F)` is an
-  -- extension.
-  obtain ⟨hi, hip, hp⟩ := TauCeti.exact_ker_comp hF g
-  exact hasFiniteFreeResolutionLE_succ_iff.mpr ⟨k, g ∘ₗ F, hg.comp hF,
-    extension hi hp hip hK (h₁.of_equiv (hfg.linearEquivOfInjective hf))⟩
 
 /-- **Kernels.** In a short exact sequence `0 → M₁ → M → M₂ → 0`, if `M` has a finite free
 resolution of length at most `n + 1` and `M₂` one of length at most `n + 2`, then `M₁` has one of
