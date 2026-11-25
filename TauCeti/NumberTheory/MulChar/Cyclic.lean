@@ -38,6 +38,8 @@ complex characters of order `d` exactly for `d ∣ #F - 1`.
 * `TauCeti.orderOf_ofRootOfUnity`: the character `ofRootOfUnity hζ hg` has the order of `ζ`.
 * `TauCeti.orderOf_ofRootOfUnity_of_isPrimitiveRoot`: for a primitive `n`-th root of unity `ζ`,
   it has order `n`.
+* `MulChar.card_filter_pow_eq_one_and_ne_one_le`: with values in a domain and `Mˣ` finite and
+  cyclic, at most `d - 1` nontrivial characters satisfy `χ ^ d = 1`.
 * `MulChar.existsUnique_lt_and_pow_eq`: with values in a domain, every character is `ω ^ m` for
   exactly one `m < n`, for any character `ω` of order `n`.
 * `MulChar.injective_toUnitHom_of_orderOf_eq_card`: with values in a domain, a character of
@@ -97,6 +99,19 @@ instance isCyclic [Finite Mˣ] [IsCyclic Mˣ] : IsCyclic (MulChar M R) := by
   obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := Mˣ)
   exact isCyclic_of_injective (mulEquivRootsOfUnityOfGenerator (R := R) hg).toMonoidHom
     (mulEquivRootsOfUnityOfGenerator hg).injective
+
+open Finset in
+/-- With values in a domain, a monoid with a finite cyclic unit group has at most `d - 1`
+nontrivial characters `χ` with `χ ^ d = 1`, the character group being cyclic. -/
+theorem card_filter_pow_eq_one_and_ne_one_le [Finite Mˣ] [IsCyclic Mˣ]
+    [Fintype (MulChar M R)] [DecidableEq (MulChar M R)] {d : ℕ} (hd : d ≠ 0) :
+    #{χ : MulChar M R | χ ^ d = 1 ∧ χ ≠ 1} ≤ d - 1 := by
+  have h := IsCyclic.card_pow_eq_one_le (α := MulChar M R) (Nat.pos_of_ne_zero hd)
+  have he : ({χ | χ ^ d = 1 ∧ χ ≠ 1} : Finset (MulChar M R)) =
+      ({χ | χ ^ d = 1} : Finset _).erase 1 := by
+    ext; simp [and_comm]
+  rw [he, card_erase_of_mem (by simp)]
+  omega
 
 /-- For a monoid with finitely many units and characters valued in a domain, a character `ω`
 whose order is `#Mˣ` generates the character group: every character is `ω ^ m` for exactly one

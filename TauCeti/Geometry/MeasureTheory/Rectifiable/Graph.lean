@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.TangentCone.Graph
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.TangentialFDeriv
-import TauCeti.MeasureTheory.Covering.EssentialBoundary
+import TauCeti.MeasureTheory.Covering.EssentialBoundary.Basic
 
 /-!
 # Approximate tangency and tangential calculus on differentiable normal graphs

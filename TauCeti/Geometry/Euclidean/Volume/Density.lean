@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.Rademacher
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import TauCeti.Geometry.Euclidean.Volume.Measure
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 
 /-!
@@ -397,7 +398,7 @@ theorem liminf_euclideanHausdorffMeasure_directional_closedBall_pos
       rw [show ({x₀} : Set U) + r • B = closedBall (x₀ + r • u) (c * r) by
           rw [smul_closedBall' hr.1.ne', Real.norm_of_nonneg hr.1.le, mul_comm r c, singleton_add]
           simpa only [← image_vadd, vadd_eq_add] using Metric.vadd_closedBall x₀ (r • u) (c * r),
-        TauCeti.volume_closedBall_eq_euclideanSpace]
+        TauCeti.volume_closedBall_eq_of_finrank_eq finrank_euclideanSpace_fin.symm _ 0 _]
     rw [hvolB, ← Real.coe_toNNReal c hc.le,
       ← TauCeti.div_volume_closedBall_eq_mul k _ hc' hr.1.le, ← mul_div_assoc]; gcongr
   refine pos_iff_ne_zero.2 fun h0 => (ENNReal.pow_pos (ENNReal.coe_pos.2 hc') k).ne' ?_

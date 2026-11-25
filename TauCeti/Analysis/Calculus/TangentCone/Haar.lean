@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Analysis.Calculus.FDeriv.ImageCone
-import TauCeti.MeasureTheory.Covering.EssentialBoundary
+import TauCeti.MeasureTheory.Covering.EssentialBoundary.Basic
 
 /-!
 # Tangent cones and unique differentiability at Haar density-one points

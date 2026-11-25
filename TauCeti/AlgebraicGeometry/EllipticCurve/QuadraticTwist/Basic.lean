@@ -433,6 +433,16 @@ theorem exists_smul_eq_quadraticTwistOf_quadraticTwistOf (hD : IsUnit (t ^ 2 - 4
   rw [quadraticTwistOf_quadraticTwistOf]
   exact ⟨C, by convert hC using 2 <;> ring⟩
 
+/-- **Quadratic twisting commutes with changes of variables.** If `C = (u, r, s, w)`, then the
+change of variables `(u, Dr, ts, Dtw)`, with `D = t² - 4n`, carries the twist of `E` by `(t, n)`
+to the twist of `C • E` by the same parameters. So isomorphic curves have isomorphic twists. No
+hypothesis on `t` or `n` is needed. -/
+theorem exists_smul_quadraticTwistOf_eq_quadraticTwistOf_smul (C : VariableChange A) :
+    ∃ C' : VariableChange A, C' • E.quadraticTwistOf t n = (C • E).quadraticTwistOf t n := by
+  refine ⟨⟨C.u, (t ^ 2 - 4 * n) * C.r, t * C.s, (t ^ 2 - 4 * n) * t * C.t⟩, ?_⟩
+  rw [variableChange_def, variableChange_def]
+  ext <;> simp only [quadraticTwistOf] <;> ring
+
 end QuadraticTwistOfRing
 
 section Field
@@ -466,6 +476,40 @@ theorem exists_smul_eq_quadraticTwistOf_zero_neg_sq (h2 : (2 : K) ≠ 0) {c : K}
   obtain ⟨C, hC⟩ := E.exists_smul_eq_quadraticTwistOf_add_mul (-c) c
     (isUnit_iff_ne_zero.mpr (by rw [sub_neg_eq_add, ← two_mul]; exact mul_ne_zero h2 hc))
   exact ⟨C, by rw [hC, neg_add_cancel, neg_mul, ← sq]⟩
+
+/-- **Rational tangent slopes on a curve and on its twist give a root of the twisting quadratic.**
+Let `ρ` be a root of the node polynomial of `E` and `l` a root of the node polynomial of its twist
+by `(t, n)`. If `c₄`, `c₆` and `D = t² - 4n` are nonzero, then `(tρ - l) / (2ρ + a₁)` is a root of
+`X² - tX + n`. Over `K(θ)` with `θ² - tθ + n = 0`, the slopes of the twist are the values
+`(t - 2θ)λ - θa₁` at the slopes `λ` of `E`, and this formula solves that relation for `θ`. -/
+theorem sq_sub_mul_add_eq_zero_of_isRoot_nodePolynomial (hc₄ : E.c₄ ≠ 0) (hc₆ : E.c₆ ≠ 0)
+    (hD : t ^ 2 - 4 * n ≠ 0) {ρ l : K} (hρ : E.nodePolynomial.IsRoot ρ)
+    (hl : (E.quadraticTwistOf t n).nodePolynomial.IsRoot l) :
+    ((t * ρ - l) / (2 * ρ + E.a₁)) ^ 2 - t * ((t * ρ - l) / (2 * ρ + E.a₁)) + n = 0 := by
+  have hρ' := hρ.eq_zero
+  have hl' := hl.eq_zero
+  simp only [nodePolynomial_def, Polynomial.eval_sub, Polynomial.eval_add, Polynomial.eval_mul,
+    Polynomial.eval_C, Polynomial.eval_pow, Polynomial.eval_X, a₁_quadraticTwistOf,
+    a₂_quadraticTwistOf, b₂_quadraticTwistOf, b₄_quadraticTwistOf, b₆_quadraticTwistOf,
+    c₄_quadraticTwistOf] at hρ' hl'
+  -- `c₄ (2ρ + a₁)² = 4 P(ρ) - c₆`, where `P` is the node polynomial of `E`
+  have hδ : 2 * ρ + E.a₁ ≠ 0 := by
+    intro h0
+    have hsq : E.c₄ * (2 * ρ + E.a₁) ^ 2 = -E.c₆ := by
+      simp only [c₄, c₆, b₂, b₄, b₆] at hρ' ⊢
+      linear_combination 4 * hρ'
+    rw [h0, zero_pow two_ne_zero, mul_zero, zero_eq_neg] at hsq
+    exact hc₆ hsq
+  -- the numerator of the claimed identity, cleared of the denominator `(2ρ + a₁)²`
+  have key : (t * ρ - l) ^ 2 - t * (2 * ρ + E.a₁) * (t * ρ - l) + n * (2 * ρ + E.a₁) ^ 2 = 0 := by
+    refine mul_right_injective₀ (mul_ne_zero hc₄ (pow_ne_zero 2 hD)) ?_
+    simp only [mul_zero]
+    linear_combination hl' - (t ^ 2 - 4 * n) ^ 3 * hρ'
+  have hx := div_mul_cancel₀ (t * ρ - l) hδ
+  generalize (t * ρ - l) / (2 * ρ + E.a₁) = x at hx ⊢
+  refine mul_right_injective₀ (pow_ne_zero 2 hδ) ?_
+  simp only [mul_zero]
+  linear_combination (x * (2 * ρ + E.a₁) + (t * ρ - l) - t * (2 * ρ + E.a₁)) * hx + key
 
 variable {L : Type*} [CommRing L] [Algebra K L] [Algebra.IsQuadraticExtension K L]
 
@@ -560,6 +604,31 @@ theorem j_quadraticTwist [E.IsElliptic] : (E.quadraticTwist L).j = E.j := by
   -- prescribes.
   simp_rw [h]
   exact E.j_quadraticTwistOf _ _ (E.isElliptic_quadraticTwistOf_trace_norm hθ)
+
+/-- **A quadratic twist has no rational tangent slope when `E` has one.** If the node polynomial
+of `E` has a root in `K` and `c₄`, `c₆` are nonzero, then the node polynomial of the twist of `E`
+by the separable quadratic extension `L/K` has no root in `K`. -/
+theorem not_isRoot_nodePolynomial_quadraticTwist (hc₄ : E.c₄ ≠ 0) (hc₆ : E.c₆ ≠ 0) {ρ : K}
+    (hρ : E.nodePolynomial.IsRoot ρ) (l : K) :
+    ¬ (E.quadraticTwist L).nodePolynomial.IsRoot l := by
+  obtain ⟨θ, hθ, h⟩ := E.exists_quadraticTwist_eq L
+  rw [h]
+  intro hl
+  have hx := E.sq_sub_mul_add_eq_zero_of_isRoot_nodePolynomial _ _ hc₄ hc₆
+    (discrim_ne_zero K L hθ) hρ hl
+  generalize (_ - l) / (2 * ρ + E.a₁) = x at hx
+  -- `θ` and the image of `x` are both roots of `X² - tX + n`, and `θ ∉ K`
+  have hθ₂ := Algebra.IsQuadraticExtension.sq_sub_trace_smul_add_norm_eq_zero K θ
+  have hx' := congrArg (algebraMap K L) hx
+  rw [Algebra.smul_def] at hθ₂
+  simp only [map_add, map_sub, map_mul, map_pow, map_zero] at hx'
+  have hprod : (θ - algebraMap K L x) *
+      (θ - algebraMap K L (Algebra.trace K L θ - x)) = 0 := by
+    rw [map_sub]
+    linear_combination hθ₂ - hx'
+  rcases mul_eq_zero.mp hprod with h0 | h0
+  · exact hθ ⟨x, (sub_eq_zero.mp h0).symm⟩
+  · exact hθ ⟨_, (sub_eq_zero.mp h0).symm⟩
 
 /-- The twist by the extension agrees, up to a change of variables over `K`, with the twist by
 *any* generator `θ`: the arbitrary choice in `quadraticTwist` is harmless. -/
