@@ -48,10 +48,13 @@ theorem blockFiniteInclusion_apply (r n : ℕ)
 @[simp] theorem blockFiniteInclusion_single (r n : ℕ) (i : Fin (n + 1) × Fin r) :
     blockFiniteInclusion r n (EuclideanSpace.single i 1) =
       blockHardyBasis r (i.1, i.2) := by
-  unfold blockFiniteInclusion
-  rw [← LinearIsometry.coe_toLinearMap, Orthonormal.synthesisMapIsometry_toLinearMap,
-    synthesisMap_single, one_smul]
-  rfl
+  have h := (((blockHardyBasis r).orthonormal.comp
+    (Prod.map (Fin.val : Fin (n + 1) → ℕ) id)
+    (Fin.val_injective.prodMap Function.injective_id)).synthesisMapIsometry_single i (1 : ℂ))
+  -- The native lemma fixes classical equality; finite coordinates use their concrete instance.
+  rw [show (fun a b : Fin (n + 1) × Fin r => Classical.propDecidable (a = b)) =
+    (inferInstance : DecidableEq (Fin (n + 1) × Fin r)) from Subsingleton.elim _ _] at h
+  simpa only [blockFiniteInclusion, one_smul, Function.comp_apply, Prod.map_apply, id_eq] using! h
 
 /-- The adjoint inclusion reads the selected block Hardy coefficients. -/
 @[simp] theorem adjoint_blockFiniteInclusion_apply (r n : ℕ) (f : BlockHardySpace r)
@@ -102,20 +105,6 @@ def blockFiniteSectionIndexEquiv (r n : ℕ) [NeZero r] :
   rw [blockFiniteSectionIndexEquiv, Equiv.trans_apply, finCongr_apply_coe,
     finProdFinEquiv_apply_val]
   ac_rfl
-
-/-- The inverse flattened index recovers its quotient block position. -/
-@[simp] theorem blockFiniteSectionIndexEquiv_symm_fst (r n : ℕ) [NeZero r]
-    (m : Fin ((n + 1) * r - 1 + 1)) :
-    ((blockFiniteSectionIndexEquiv r n).symm m).1.val = m.val / r := by
-  rw [blockFiniteSectionIndexEquiv, Equiv.symm_trans_apply]
-  rfl
-
-/-- The inverse flattened index recovers its remainder coordinate. -/
-@[simp] theorem blockFiniteSectionIndexEquiv_symm_snd (r n : ℕ) [NeZero r]
-    (m : Fin ((n + 1) * r - 1 + 1)) :
-    ((blockFiniteSectionIndexEquiv r n).symm m).2.val = m.val % r := by
-  rw [blockFiniteSectionIndexEquiv, Equiv.symm_trans_apply]
-  rfl
 
 /-- Flattening block coordinates gives the matrix of the native Hilbert-basis finite section. -/
 theorem reindex_blockFiniteSectionMatrix {r : ℕ} [NeZero r]

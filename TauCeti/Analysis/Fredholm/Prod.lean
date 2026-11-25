@@ -27,8 +27,6 @@ and cokernels and is provided by `TauCeti.Topology.Algebra.Module.ContinuousLine
 * `ContinuousLinearMap.index_prodMap`: the Fredholm index is additive under products.
 * `ContinuousLinearMap.IsFredholm.index_prodMap`: Fredholm hypotheses supply the finite/free
   kernel and cokernel instances for the product-index formula.
-* `ContinuousLinearMap.IsFredholm.index_conj_prodMap`: a conjugated Fredholm product has the
-  sum of the factor indices without separate kernel/cokernel instance hypotheses.
 * `ContinuousLinearMap.isFredholm_prodMap_iff`: conversely, a product is Fredholm only if both
   factors are.
 * `ContinuousLinearMap.isFredholm_withLpProdMap_iff`: the same for the block sum on an `L^p`
@@ -147,16 +145,6 @@ lemma IsFredholm.index_prodMap (hT : IsFredholm T) (hS : IsFredholm S) :
   let := Module.Free.of_divisionRing K (F₂ ⧸ S.range)
   exact ContinuousLinearMap.index_prodMap T S
 
-/-- Conjugating a product of Fredholm operators preserves the sum of their indices. -/
-lemma IsFredholm.index_conj_prodMap
-    [ContinuousConstSMul K E₁] [ContinuousConstSMul K E₂]
-    {G : Type*} [AddCommGroup G] [TopologicalSpace G] [Module K G]
-    [IsTopologicalAddGroup G] [ContinuousConstSMul K G]
-    {T : E₁ →L[K] E₁} {S : E₂ →L[K] E₂}
-    (hT : IsFredholm T) (hS : IsFredholm S) (e : (E₁ × E₂) ≃L[K] G) :
-    (e.conjContinuousAlgEquiv (T.prodMap S)).index = T.index + S.index := by
-  rw [ContinuousLinearEquiv.conjContinuousAlgEquiv_apply, index_equiv_comp,
-    index_comp_equiv, hT.index_prodMap hS]
 
 section Inclusion
 
