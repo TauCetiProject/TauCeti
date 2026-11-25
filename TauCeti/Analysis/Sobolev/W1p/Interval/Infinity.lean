@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 import TauCeti.Analysis.Calculus.Gradient
 
 /-!
-# Endpoint obstruction to approximation in `W^{1,∞}_0`
+# Boundary obstruction to approximation in `W^{1,∞}_Γ` on an interval
 
 The full `W^{1,∞}` norm detects boundary values of a continuous weak derivative, not just
 boundary values of the function. If the weak derivative of `u` has a continuous representative
