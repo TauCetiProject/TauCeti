@@ -20,12 +20,11 @@ presheaf `Hᵏ(F)` (`TauCeti.CategoryTheory.cechToCohomologySpectralSequence_pag
 the rows of the first page are, up to sign, the Čech complexes `Č(U, Hᵏ(F))` (Stacks,
 Lemma 21.10.6 (03AZ)).
 
-This goes in three steps, for any cochain complex `I` of presheaves with values in an abelian
-category with products.
+This goes in two steps, for any cochain complex `I` of presheaves with values in an abelian
+category with products, using the map `TauCeti.CategoryTheory.cechColumnD U I p` from the column
+`p` of the Čech double complex to the column `p + 1` given by the Čech differentials of the terms
+of `I`.
 
-* The Čech differential in degree `p` is natural in the presheaf
-  (`TauCeti.CategoryTheory.cechDifferentialNatTrans`); applied to the terms of `I` it is a map
-  `cechColumnD U I p` from the column `p` of the Čech double complex to the column `p + 1`.
 * The first differential of the spectral sequence of the Čech double complex is, up to the sign
   `(-1)^k`, the map induced by `cechColumnD U I p` on cohomology
   (`TauCeti.CategoryTheory.presheafCechDoubleComplexSpectralSequence_page_two_d`), from the first
@@ -62,34 +61,6 @@ section General
 variable {C : Type u} [Category.{v} C] [HasFiniteProducts C] {A : Type*} [Category* A]
   [Abelian A] [HasProducts.{w} A] {ι : Type w} (U : ι → C)
 
-/-- The Čech differential `Čᵖ(U, P) ⟶ Čᵖ⁺¹(U, P)` in degree `p`, as a natural transformation in
-the presheaf `P`. -/
-@[expose, simps]
-def cechDifferentialNatTrans (p : ℕ) :
-    cechComplexFunctor U ⋙ HomologicalComplex.eval A (ComplexShape.up ℕ) p ⟶
-      cechComplexFunctor U ⋙ HomologicalComplex.eval A (ComplexShape.up ℕ) (p + 1) where
-  app P := ((cechComplexFunctor U).obj P).d p (p + 1)
-  naturality _ _ f := ((cechComplexFunctor U).map f).comm p (p + 1)
-
-/-- The map from the column `p` of the Čech double complex of `I`, before passing to `Aᵒᵖ`, to
-the column `p + 1`, given by the Čech differentials of the presheaves `Iᵠ`. -/
-abbrev cechColumnD (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p : ℕ) :
-    cechColumn U I p ⟶ cechColumn U I (p + 1) :=
-  (NatTrans.mapHomologicalComplex (cechDifferentialNatTrans U p) (ComplexShape.up ℕ)).app I
-
-/-- The component of `cechColumnD U I p` in degree `q` is the Čech differential of `Iᵠ`. -/
-lemma cechColumnD_f (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p q : ℕ) :
-    (cechColumnD U I p).f q = ((cechComplexFunctor U).obj (I.X q)).d p (p + 1) :=
-  (rfl)
-
-/-- The differential of the Čech double complex from the column `p + 1` to the column `p` is the
-opposite of `cechColumnD U I p`. -/
-lemma presheafCechDoubleComplex_d_eq (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p : ℕ) :
-    (presheafCechDoubleComplex U I).d (p + 1) p =
-      (opFunctor A (ComplexShape.up ℕ)).map (cechColumnD U I p).op := by
-  ext q
-  rfl
-
 /-- **The first differential of the spectral sequence of the Čech double complex.** Under the
 identifications `presheafCechDoubleComplexSpectralSequenceFirstPageXIso` of the first page with
 the cohomology of the columns, the differential from `(-k - 2(p + 1), p + 1)` to `(-k - 2p, p)` is
@@ -104,29 +75,17 @@ theorem presheafCechDoubleComplexSpectralSequence_page_two_d (I : CochainComplex
     ((-1 : ℤ) ^ k) • (homologyMap (cechColumnD U I p) k).op := by
   have h := (presheafCechDoubleComplex U I).columnFiltrationSpectralSequence_page_two_d p k
   rw [Iso.inv_comp_eq] at h
+  -- The differential of the double complex is the opposite of `cechColumnD U I p`.
+  have hd : homologyMap ((presheafCechDoubleComplex U I).d (p + 1) p) k ≫
+      (homologyOp (cechColumn U I p) k).hom =
+      (homologyOp (cechColumn U I (p + 1)) k).hom ≫ (homologyMap (cechColumnD U I p) k).op := by
+    rw [presheafCechDoubleComplex_d_eq]
+    exact homologyOp_hom_naturality _ _
+  have hds := (Preadditive.zsmul_comp _ _ _).trans
+    ((congrArg ((-1 : ℤ) ^ k • ·) hd).trans (Preadditive.comp_zsmul _ _ _).symm)
   rw [Iso.inv_comp_eq, presheafCechDoubleComplexSpectralSequenceFirstPageXIso_hom,
     presheafCechDoubleComplexSpectralSequenceFirstPageXIso_hom]
-  refine ((Category.assoc _ _ _).symm.trans (h =≫ _)).trans
-    ((Category.assoc _ _ _).trans ((Category.assoc _ _ _).trans ?_).symm)
-  congr 1
-  -- The differential of the double complex is the opposite of `cechColumnD U I p`.
-  exact (Preadditive.comp_zsmul _ _ _).trans ((congrArg _
-    (homologyOp_hom_naturality (cechColumnD U I p) k).symm).trans
-      (Preadditive.zsmul_comp _ _ _).symm)
-
-/-- **The first differential on Čech cochains of the cohomology presheaf.** With exact products,
-under the identifications `presheafCechColumnHomologyIso` of the cohomology of the columns of the
-Čech double complex with Čech cochains of the cohomology presheaf of `I`, the map induced on
-cohomology by `cechColumnD U I p` is the Čech differential of the presheaf `Hᵏ(I)`. -/
-theorem presheafCechColumnHomologyIso_inv_comp_homologyMap_cechColumnD
-    (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p : ℕ)
-    [HasExactLimitsOfShape (Discrete (Fin (p + 1) → ι)) A]
-    [HasExactLimitsOfShape (Discrete (Fin (p + 1 + 1) → ι)) A] (k : ℕ) :
-    (presheafCechColumnHomologyIso U I p k).inv ≫ homologyMap (cechColumnD U I p) k ≫
-      (presheafCechColumnHomologyIso U I (p + 1) k).hom =
-    ((cechComplexFunctor U).obj (I.homology k)).d p (p + 1) := by
-  rw [presheafCechColumnHomologyIso_eq, presheafCechColumnHomologyIso_eq]
-  exact (NatTrans.app_homology (cechDifferentialNatTrans U p) (I.sc k)).symm
+  exact ((reassoc_of% h) _).trans ((_ ≫= hds).trans (Category.assoc _ _ _).symm)
 
 /-- **The first differential on Čech cochains of a presheaf isomorphic to the cohomology.** With
 exact products, under the identifications of the first page of the spectral sequence of the Čech
@@ -157,10 +116,10 @@ theorem presheafCechDoubleComplexSpectralSequence_page_two_d_comp_iso
       ((cechComplexFunctor U).obj P).d p (p + 1) ≫
         ((cechComplexFunctor U ⋙ HomologicalComplex.eval A (ComplexShape.up ℕ) (p + 1)).map
           e.inv ≫ (presheafCechColumnHomologyIso U I (p + 1) k).inv) := by
-    have hnat := (cechDifferentialNatTrans U p).naturality e.inv =≫
+    have hnat := ((cechComplexFunctor U).map e.inv).comm p (p + 1) =≫
       (presheafCechColumnHomologyIso U I (p + 1) k).inv
     rw [Category.assoc, hcol]
-    simp only [Category.assoc, cechDifferentialNatTrans_app] at hnat ⊢
+    simp only [Category.assoc] at hnat ⊢
     exact hnat
   rw [reassoc_of% h, Category.assoc, Preadditive.zsmul_comp, Preadditive.comp_zsmul,
     Preadditive.comp_zsmul, ← op_comp, ← op_comp, key, Preadditive.comp_zsmul]
