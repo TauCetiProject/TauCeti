@@ -105,8 +105,9 @@ theorem exists_eq_comp_fst_or_snd [IsLeftCancelMulZero K] (φ : E₁ × E₂ →
     exact .inr ⟨(φ'.prodFirst h1').toRingHom,
       RingHom.ext fun x ↦ by
         -- `φ'` is `φ ∘ swap`, so `φ' x.swap = φ x.swap.swap = φ x`
-        have hx : φ' x.swap = φ x := congrArg φ x.swap_swap
-        exact hx ▸ (DFunLike.congr_fun (φ'.prodFirst_comp_fst h1') x.swap).symm⟩
+        have hx : φ' x.swap = φ x := by simp [φ']
+        rw [← hx]
+        exact (DFunLike.congr_fun (φ'.prodFirst_comp_fst h1') x.swap).symm⟩
   · exact .inl ⟨(φ.toNatAlgHom.prodFirst h).toRingHom,
       RingHom.ext fun x ↦ (DFunLike.congr_fun (φ.toNatAlgHom.prodFirst_comp_fst h) x).symm⟩
 

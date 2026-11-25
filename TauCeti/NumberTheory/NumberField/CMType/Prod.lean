@@ -56,13 +56,9 @@ def prod (Φ₁ : CMType E₁) (Φ₂ : CMType E₂) : CMType (E₁ × E₂) whe
   carrier := (fun ψ : E₁ →+* ℂ ↦ ψ.comp (RingHom.fst E₁ E₂)) '' Φ₁ ∪
     (fun ψ : E₂ →+* ℂ ↦ ψ.comp (RingHom.snd E₁ E₂)) '' Φ₂
   star_mem_iff' φ := by
-    rcases φ.exists_eq_comp_fst_or_snd with ⟨ψ, rfl⟩ | ⟨ψ, rfl⟩
-    · rw [RingHom.star_def, ← RingHom.comp_assoc, ← RingHom.star_def,
-        RingHom.comp_fst_mem_union_iff, RingHom.comp_fst_mem_union_iff, SetLike.mem_coe,
-        SetLike.mem_coe, star_mem_iff]
-    · rw [RingHom.star_def, ← RingHom.comp_assoc, ← RingHom.star_def,
-        RingHom.comp_snd_mem_union_iff, RingHom.comp_snd_mem_union_iff, SetLike.mem_coe,
-        SetLike.mem_coe, star_mem_iff]
+    rcases φ.exists_eq_comp_fst_or_snd with ⟨ψ, rfl⟩ | ⟨ψ, rfl⟩ <;>
+      simp only [RingHom.star_comp_right, RingHom.comp_fst_mem_union_iff,
+        RingHom.comp_snd_mem_union_iff, SetLike.mem_coe, star_mem_iff]
 
 theorem coe_prod (Φ₁ : CMType E₁) (Φ₂ : CMType E₂) :
     (prod Φ₁ Φ₂ : Set (E₁ × E₂ →+* ℂ)) =
