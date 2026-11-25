@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.ScalarMap
-public import TauCeti.RingTheory.IntegralOrder.LeftOrder
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 import Mathlib.Analysis.Complex.Polynomial.Basic
 
