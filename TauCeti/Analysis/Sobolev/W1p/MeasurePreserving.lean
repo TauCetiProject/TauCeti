@@ -45,6 +45,9 @@ half-space trace to that region. Since `fderiv ℝ Φ` vanishes where `Φ` is no
 * `TauCeti.W1p.value_compMeasurePreservingL_ae`, `TauCeti.W1p.gradient_compMeasurePreservingL_ae`:
   its value and weak gradient.
 * `TauCeti.W1p.norm_compMeasurePreservingL_le`: the bound `‖u ∘ Φ‖ ≤ max 1 M ‖u‖`.
+* `TauCeti.W1p.isCompactOperator_valueL_of_measurePreserving`: compactness of the value map
+  `W^{1,p} → Lᵖ` transfers along a measure-preserving change of variables with a Lipschitz
+  inverse.
 * `TauCeti.W1p.compMeasurePreservingL_mem_w1p0Submodule`: zero boundary values are preserved.
 * `TauCeti.W1p.compMeasurePreservingL_mem_w1p0Submodule_of_contDiff`: the same for smooth proper
   `Φ` and every exponent, without mollification.
@@ -227,6 +230,36 @@ theorem W1p.compMeasurePreservingL_compMeasurePreservingL {Ψ : E' → E} {M' : 
     ae_restrict_mem U.isOpen.measurableSet] with x h1 h2 hx
   rw [h1, h2, hΨΦ x hx]
 
+/-- **Compactness of the value map is invariant under Lipschitz changes of variables.** Let
+`Φ : E → E'` and `Ψ : E' → E` be measure-preserving, with `U = Φ⁻¹(V)`, `V = Ψ⁻¹(U)` and `Ψ` a left
+inverse of `Φ` on `U`, and let `Ψ` be locally Lipschitz on `V` with `‖fderiv ℝ Ψ‖ ≤ M'` there. If
+the value map `W^{1,p}(V) → Lᵖ(V)` is compact, so is `W^{1,p}(U) → Lᵖ(U)`: it is the value map of
+`V` conjugated by the precompositions with `Ψ` and with `Φ`. -/
+theorem W1p.isCompactOperator_valueL_of_measurePreserving {Ψ : E' → E} {M' : ℝ}
+    (hΦ : MeasurePreserving Φ μ ν) (hΨ : MeasurePreserving Ψ ν μ)
+    (hUV : (U : Set E) = Φ ⁻¹' V) (hVU : (V : Set E') = Ψ ⁻¹' U)
+    (hΨl : LocallyLipschitzOn V Ψ) (hM' : ∀ y ∈ (V : Set E'), ‖fderiv ℝ Ψ y‖ ≤ M')
+    (hΨΦ : ∀ x ∈ (U : Set E), Ψ (Φ x) = x)
+    (hK : IsCompactOperator (W1p.valueL (mu := ν) (Omega := V) (p := p))) :
+    IsCompactOperator (W1p.valueL (mu := μ) (Omega := U) (p := p)) := by
+  have hΦr := hΦ.restrict_of_preimage_eq V.isOpen.measurableSet hUV
+  let S := W1p.compMeasurePreservingL (p := p) hΨ hVU hΨl hM'
+  let R : Lp ℝ p (ν.restrict V) →L[ℝ] Lp ℝ p (μ.restrict U) :=
+    (Lp.compMeasurePreservingₗᵢ ℝ Φ hΦr).toContinuousLinearMap
+  have heq : W1p.valueL (mu := μ) (Omega := U) (p := p) = R.comp (W1p.valueL.comp S) := by
+    ext1 u
+    refine Lp.ext ?_
+    filter_upwards [Lp.coeFn_compMeasurePreserving (W1p.value (S u)) hΦr,
+      hΦr.quasiMeasurePreserving.ae_eq_comp
+        (W1p.value_compMeasurePreservingL_ae hΨ hVU hΨl hM' u),
+      ae_restrict_mem U.isOpen.measurableSet] with x h₁ h₂ hx
+    simp only [ContinuousLinearMap.comp_apply, W1p.valueL_apply, R,
+      LinearIsometry.coe_toContinuousLinearMap, Lp.compMeasurePreservingₗᵢ_apply]
+    rw [h₁]
+    exact (h₂.trans (congrArg (W1p.value u) (hΨΦ x hx))).symm
+  rw [heq]
+  exact (hK.comp_clm S).clm_comp R
+
 /-- **Zero boundary values are preserved.** For `p < ∞` and a proper map `Φ`, precomposition
 with `Φ` maps `W^{1,p}_0(V)` into `W^{1,p}_0(U)`. -/
 theorem W1p.compMeasurePreservingL_mem_w1p0Submodule (hp : p ≠ ∞) (hΦp : IsProperMap Φ)
@@ -381,22 +414,11 @@ of `u` is the value of `u ∘ g⁻¹` composed with `g`. -/
 theorem W1p.isCompactOperator_valueL_of_affineIsometryEquiv (g : F ≃ᵃⁱ[ℝ] F')
     (hUV : (U : Set F) = g ⁻¹' V)
     (hK : IsCompactOperator (W1p.valueL (mu := volume) (Omega := V) (p := p))) :
-    IsCompactOperator (W1p.valueL (mu := volume) (Omega := U) (p := p)) := by
-  have hVU : (V : Set F') = g.symm ⁻¹' U :=
-    hUV ▸ (g.toHomeomorph.toEquiv.symm_preimage_preimage V).symm
-  have hmp := g.measurePreserving.restrict_of_preimage_eq V.isOpen.measurableSet hUV
-  let C : Lp ℝ p (volume.restrict (V : Set F')) →L[ℝ] Lp ℝ p (volume.restrict (U : Set F)) :=
-    (Lp.compMeasurePreservingₗᵢ ℝ g hmp).toContinuousLinearMap
-  convert (hK.clm_comp C).comp_clm (W1p.compAffineIsometryEquivL g.symm hVU) using 1
-  ext1 u
-  refine Lp.ext ?_
-  have hv := hmp.quasiMeasurePreserving.ae_eq_comp
-    (W1p.value_compAffineIsometryEquivL_ae g.symm hVU u)
-  filter_upwards [Lp.coeFn_compMeasurePreserving
-    (W1p.value (W1p.compAffineIsometryEquivL g.symm hVU u)) hmp, hv] with x h1 h2
-  simp only [Function.comp_apply, W1p.valueL_apply, C, LinearIsometry.coe_toContinuousLinearMap,
-    Lp.compMeasurePreservingₗᵢ_apply] at h1 h2 ⊢
-  rw [h1, h2, AffineIsometryEquiv.symm_apply_apply]
+    IsCompactOperator (W1p.valueL (mu := volume) (Omega := U) (p := p)) :=
+  W1p.isCompactOperator_valueL_of_measurePreserving g.measurePreserving g.symm.measurePreserving
+    hUV (hUV ▸ (g.toHomeomorph.toEquiv.symm_preimage_preimage V).symm)
+    g.symm.lipschitzWith.locallyLipschitz.locallyLipschitzOn (fun y _ => g.symm.norm_fderiv_le y)
+    (fun x _ => g.symm_apply_apply x) hK
 
 open scoped Distributions Gradient in
 /-- **The Dirichlet pairing under a linear isometry.** For a linear isometry equivalence `e` and

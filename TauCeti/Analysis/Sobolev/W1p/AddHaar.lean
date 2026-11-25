@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 public import TauCeti.Analysis.Sobolev.W1p.Zero
+public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Sobolev.WeakDeriv.AddHaar
 
@@ -38,6 +39,8 @@ additive Haar measure, such as the one an energy form or a boundary-value proble
 * `TauCeti.W1p.addHaarEquivL_restrictL` and `TauCeti.W1p.addHaarEquivL_ofTestFunctionₗ`: it
   commutes with restriction and with the embedding of test functions.
 * `TauCeti.W1p.addHaarEquivL_mem_w1p0Submodule_iff`: it preserves zero boundary values.
+* `TauCeti.W1p.isCompactOperator_valueL_of_addHaar`: compactness of the value map
+  `W^{1,p}(Ω) → Lᵖ(Ω)` does not depend on the Haar measure.
 -/
 
 public section
@@ -202,5 +205,30 @@ theorem W1p.addHaarEquivL_mem_w1p0Submodule_iff {u : W1p mu Omega p} :
   refine ⟨fun hu => ?_, addHaarEquivL_mem_w1p0Submodule mu nu⟩
   have h := addHaarEquivL_mem_w1p0Submodule nu mu hu
   rwa [← W1p.addHaarEquivL_symm, ContinuousLinearEquiv.symm_apply_apply] at h
+
+variable {mu nu} in
+/-- **Compactness of the value map does not depend on the Haar measure.** If the value map
+`W^{1,p}(Ω) → Lᵖ(Ω)` is compact for one additive Haar measure `ν`, it is compact for every
+additive Haar measure `μ`: it is the value map for `ν`, conjugated by the change of Haar measure
+`TauCeti.W1p.addHaarEquivL` and by the identity `Lᵖ(Ω, ν) → Lᵖ(Ω, μ)`, which is bounded since `μ`
+is a finite multiple of `ν`. -/
+theorem W1p.isCompactOperator_valueL_of_addHaar
+    (hK : IsCompactOperator (W1p.valueL (mu := nu) (Omega := Omega) (p := p))) :
+    IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := p)) := by
+  have hle := restrict_le_smul_restrict nu mu Omega
+  have h : W1p.valueL (mu := mu) (Omega := Omega) (p := p) =
+      (Lp.LpToLpOfMeasureLeSMul ENNReal.coe_ne_top hle).comp
+        ((W1p.valueL (mu := nu) (Omega := Omega) (p := p)).comp
+          ((W1p.addHaarEquivL mu nu : W1p mu Omega p ≃L[ℝ] W1p nu Omega p) :
+            W1p mu Omega p →L[ℝ] W1p nu Omega p)) := by
+    refine ContinuousLinearMap.ext fun u => Lp.ext ?_
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, W1p.valueL_apply]
+    filter_upwards [Lp.coeFn_LpToLpOfMeasureLeSMul ENNReal.coe_ne_top hle
+      (W1p.value (W1p.addHaarEquivL mu nu u)),
+      (W1p.value_addHaarEquivL_ae mu nu u).filter_mono (ae_restrict_le nu mu Omega)]
+      with x h₁ h₂
+    rw [h₁, h₂]
+  rw [h]
+  exact (hK.comp_clm _).clm_comp _
 
 end TauCeti

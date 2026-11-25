@@ -26,7 +26,9 @@ to one near `closure V` turns each Sobolev function into a zero-boundary Sobolev
 At `p = ∞`, the precise representatives are uniformly bounded and locally equi-Lipschitz,
 so Arzelà–Ascoli on the compact closure gives uniform compactness. This argument does not use
 smooth density in the `W^{1,∞}` norm, which is false. This local compactness is used when
-passing to limits in interior elliptic estimates and weak-solution arguments.
+passing to limits in interior elliptic estimates and weak-solution arguments. On a bounded open
+set with empty frontier, `closure Ω ⊆ Ω`, so the value map `W^{1,p}(Ω) → Lᵖ(Ω)` itself is compact
+(`TauCeti.W1p.isCompactOperator_valueL_of_frontier_eq_empty`).
 
 The global compactness theorem for zero-boundary functions is
 `TauCeti.W1p0.isCompactOperator_valueL`.
@@ -204,6 +206,22 @@ theorem W1p.isCompactOperator_valueL_restrictL
     simp only [ContinuousLinearMap.comp_apply, hr, Filter.EventuallyEq.rfl]
   rw [heq]
   exact hcompact.comp_clm (W1p.restrictL hU)
+
+/-- On a bounded open set with empty frontier, `closure Ω ⊆ Ω` is compact, so local
+Rellich–Kondrachov compactness makes the value map `W^{1,p}(Ω) → Lᵖ(Ω)` compact. -/
+theorem W1p.isCompactOperator_valueL_of_frontier_eq_empty
+    (hb : IsBounded (Omega : Set E)) (hfr : frontier (Omega : Set E) = ∅) :
+    IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := p)) := by
+  have hcl : closure (Omega : Set E) ⊆ (Omega : Set E) :=
+    (isClopen_iff_frontier_eq_empty.mpr hfr).isClosed.closure_subset
+  have hK : IsCompactOperator
+      ((W1p.valueL (mu := mu) (Omega := Omega) (p := p)).comp (W1p.restrictL le_rfl)) :=
+    W1p.isCompactOperator_valueL_restrictL hb.isCompact_closure hcl
+  have heq : W1p.valueL (mu := mu) (Omega := Omega) (p := p) =
+      (W1p.valueL (mu := mu) (Omega := Omega) (p := p)).comp (W1p.restrictL le_rfl) := by
+    ext1 u
+    simp
+  exact heq ▸ hK
 
 end TauCeti
 
