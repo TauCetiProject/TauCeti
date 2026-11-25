@@ -18,11 +18,16 @@ coefficient `-Ω(z - Q_q(t)) = [[f(t), -z - g(t)], [z - g(t), -f(t)]]` (`TauCeti
 
 It splits as `-z Ω + Ω Q_q(t)` (`TauCeti.diracCoeff_eq_smul_add`), where `-Ω = [[0, -1], [1, 0]]`
 is an isometry of `EuclideanSpace ℂ (Fin 2)` and `Ω Q_q(t) = [[f(t), -g(t)], [-g(t), -f(t)]]` is
-the coefficient at `z = 0`, which scales every vector by `|q(t)|`
+the coefficient at `z = 0`, which multiplies the norm of every vector by `|q(t)|`
 (`TauCeti.norm_toEuclideanCLM_diracCoeff_zero_apply`). Hence in the Euclidean operator norm
 `‖-Ω(z - Q_q(t))‖ ≤ |z| + |q(t)|` (`TauCeti.norm_toEuclideanCLM_diracCoeff_le`), and for `q`
 integrable on `[a, b]` the propagator of the Dirac coefficient is an entire function of `z`
 (`TauCeti.differentiable_propagator_diracCoeff`).
+
+## References
+
+* A. Poltoratski, *Pointwise convergence of the non-linear Fourier transform*, Ann. of Math. **200**
+  (2024), for the Dirac system and its sign convention.
 -/
 
 public section
@@ -69,7 +74,8 @@ theorem diracCoeff_eq_smul_add (q : ℝ → ℂ) (z : ℂ) (t : ℝ) :
   ext i j
   fin_cases i <;> fin_cases j <;> simp [diracCoeff_def] <;> ring
 
-/-- At `z = 0` the Dirac coefficient `Ω Q_q(t)` scales every vector of `ℂ²` by `|q(t)|`. -/
+/-- At `z = 0` the Dirac coefficient `Ω Q_q(t)` multiplies the norm of every vector of `ℂ²` by
+`|q(t)|`. -/
 theorem norm_toEuclideanCLM_diracCoeff_zero_apply (q : ℝ → ℂ) (t : ℝ)
     (v : EuclideanSpace ℂ (Fin 2)) :
     ‖toEuclideanCLM (𝕜 := ℂ) (diracCoeff q 0 t) v‖ = ‖q t‖ * ‖v‖ := by
