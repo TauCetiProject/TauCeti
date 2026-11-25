@@ -273,22 +273,22 @@ theorem OpenPartialHomeomorph.exists_holderOnWith_iteratedFDeriv_symm
   exact ⟨ρ, hρ, fun y hy ↦ (hρU hy).1, hg.mono hρU, N,
     TauCeti.holderOnWith_iteratedFDeriv_succ_iff.mpr htop⟩
 
-/-- An open partial homeomorphism that is `C^{m+1}` on its source, with `α`-Hölder `(m+1)`-th
-derivative there and invertible derivative at `a`, restricts around `a` to an open partial
-homeomorphism with the same values whose inverse is `C^{m+1}` on its target, with `α`-Hölder
-`(m+1)`-th derivative there. -/
+/-- An open partial homeomorphism that is `C^{m+1}` on a neighbourhood `s` of `a`, with
+`α`-Hölder `(m+1)`-th derivative there and invertible derivative at `a`, restricts around `a` to an
+open partial homeomorphism with the same values whose inverse is `C^{m+1}` on its target, with
+`α`-Hölder `(m+1)`-th derivative there. -/
 theorem OpenPartialHomeomorph.exists_restr_holderOnWith_iteratedFDeriv_symm
     {E : Type uE} {F : Type uF} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace E]
     {m : ℕ} {α C : ℝ≥0} (e : OpenPartialHomeomorph E F) {a : E} (ha : a ∈ e.source)
-    (he : ContDiffOn ℝ (m + 1) e e.source) (hα : α ≤ 1)
-    (hH : HolderOnWith C α (iteratedFDeriv ℝ (m + 1) e) e.source)
+    {s : Set E} (he : ContDiffOn ℝ (m + 1) e s) (hα : α ≤ 1) (hs : s ∈ 𝓝 a)
+    (hH : HolderOnWith C α (iteratedFDeriv ℝ (m + 1) e) s)
     (hinv : (fderiv ℝ e a).IsInvertible) :
     ∃ e' : OpenPartialHomeomorph E F, ⇑e' = ⇑e ∧ a ∈ e'.source ∧ e'.source ⊆ e.source ∧
       ContDiffOn ℝ (m + 1) e'.symm e'.target ∧
       ∃ K : ℝ≥0, HolderOnWith K α (iteratedFDeriv ℝ (m + 1) e'.symm) e'.target := by
-  obtain ⟨r, hr, -, hsymm, K, hK⟩ := e.exists_holderOnWith_iteratedFDeriv_symm ha he hα
-    (e.open_source.mem_nhds ha) hH hinv
+  obtain ⟨r, hr, -, hsymm, K, hK⟩ := e.exists_holderOnWith_iteratedFDeriv_symm ha he hα hs hH
+    hinv
   set e' := e.restrOpen (e.source ∩ e ⁻¹' ball (e a) r) (e.isOpen_inter_preimage isOpen_ball)
   -- The target of `e'` lies in the ball, since `e'` maps its source there.
   have ht : e'.target ⊆ ball (e a) r := fun w hw ↦ by

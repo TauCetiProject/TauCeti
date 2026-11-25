@@ -15,7 +15,8 @@ import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Complex.Beltrami.HigherHolder
-import TauCeti.Analysis.Holder.FaaDiBruno
+import TauCeti.Analysis.Holder.CompLinear
+import TauCeti.Analysis.Normed.Operator.Mul
 import TauCeti.Analysis.Holder.Inverse
 import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Analysis.Holder.Leibniz
@@ -443,13 +444,6 @@ private theorem exists_standardizing_equiv {J : ℂ → ℂ →L[ℝ] ℂ} {c : 
 
 /-! ### Hölder fields -/
 
-/-- For `z ≠ 0`, multiplication by `z⁻¹` is a two-sided inverse of multiplication by `z`, as
-real-linear maps of the plane. -/
-private theorem mul_inv_comp_mul_and_mul_comp_mul_inv {z : ℂ} (hz : z ≠ 0) :
-    ContinuousLinearMap.mul ℝ ℂ z⁻¹ ∘L ContinuousLinearMap.mul ℝ ℂ z = .id ℝ ℂ ∧
-      ContinuousLinearMap.mul ℝ ℂ z ∘L ContinuousLinearMap.mul ℝ ℂ z⁻¹ = .id ℝ ℂ := by
-  constructor <;> ext <;> simp [hz]
-
 /-- Near a point where `b ≠ -i`, the scalar normalizer `(i - b) / (conj b - i)` of a function `b`
 that is `C^n` with `α`-Hölder `n`-th derivative on an open set is again of this class. -/
 private theorem exists_holderOnWith_iteratedFDeriv_normalizer {n : ℕ} {α C : ℝ≥0} {b : ℂ → ℂ}
@@ -465,19 +459,14 @@ private theorem exists_holderOnWith_iteratedFDeriv_normalizer {n : ℕ} {α C : 
   have hH (u : ℂ) : H u = m (conj (b u) - I) := by
     simp [H, T, sub_eq_add_neg]
   have hHinv (u : ℂ) : (H u).inverse = m (conj (b u) - I)⁻¹ := by
-    rw [hH]
-    rcases eq_or_ne (conj (b u) - I) 0 with h0 | h0
-    · simp [h0]
-    · exact ContinuousLinearMap.inverse_eq (mul_inv_comp_mul_and_mul_comp_mul_inv h0).2
-        (mul_inv_comp_mul_and_mul_comp_mul_inv h0).1
+    rw [hH, ContinuousLinearMap.inverse_mul]
   have hinv : (H a).IsInvertible := by
     have h0 : conj (b a) - I ≠ 0 := by
       intro h
       apply hba
       simpa using congrArg conj (sub_eq_zero.mp h)
     rw [hH]
-    exact ContinuousLinearMap.IsInvertible.of_inverse
-      (mul_inv_comp_mul_and_mul_comp_mul_inv h0).2 (mul_inv_comp_mul_and_mul_comp_mul_inv h0).1
+    exact ContinuousLinearMap.isInvertible_mul h0
   have hHc : ContDiffOn ℝ n H s := (T.contDiff.comp_contDiffOn hb).add contDiffOn_const
   obtain ⟨r, hr, hrs, -, hIc, K₂, hK₂⟩ := hHc.exists_holderOnWith_iteratedFDeriv_clm_inverse
       (hs.mem_nhds ha) hα (holderOnWith_iteratedFDeriv_add_const _
@@ -681,7 +670,9 @@ theorem exists_isothermal_chart_ckHolder (ℓ : ℕ) {α H : ℝ≥0} (hα0 : 0 
   set F₁ := F.restrOpen V hV
   have hcF₁ : c ∈ F₁.source := ⟨(hFs c).mpr (by simpa using he0), hc⟩
   obtain ⟨E, hE, hcE, hEs, hEsymm, hEH⟩ := F₁.exists_restr_holderOnWith_iteratedFDeriv_symm hcF₁
-    (fun z hz ↦ (hFc z hz.1).contDiffWithinAt) hα1.le (hFH.mono fun z hz ↦ hz.1)
+    (s := F₁.source) (fun z hz ↦ (hFc z hz.1).contDiffWithinAt) hα1.le
+    (F₁.open_source.mem_nhds hcF₁)
+    (hFH.mono fun z hz ↦ hz.1)
     (F₁.isInvertible_fderiv hcF₁ ((hFc c hcF₁.1).differentiableAt (by simp))
       ((hFsc _ (F.map_source hcF₁.1)).differentiableAt (by simp)))
   refine ⟨E, hcE, ?_, fun z hz ↦ hVU (hEs hz).2, ?_, hEsymm, ?_, hEH, ?_⟩ <;> rw [hE]

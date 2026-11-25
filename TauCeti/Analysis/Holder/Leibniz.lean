@@ -23,9 +23,7 @@ support inside that open set
 
 For two local `C^{n,α}` maps, `ContinuousLinearMap.exists_holderOnWith_iteratedFDeriv_comp₂`
 gives a common positive ball on which their bilinear product is `C^n` and its top derivative is
-`α`-Hölder, deriving the required lower-jet bounds locally. The linear case, composition on the
-left with a continuous linear map `T` on an open set, multiplies the Hölder constant by `‖T‖`
-(`ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left`).
+`α`-Hölder, deriving the required lower-jet bounds locally.
 -/
 
 public section
@@ -348,31 +346,5 @@ theorem exists_holderOnWith_iteratedFDeriv_comp₂
     (hf.mono hρs) (hg.mono hρs) isOpen_ball
     (fun j hj x hx ↦ hfb j hj x (hρr hx)) (fun j hj x hx ↦ hgb j hj x (hρt hx))
     (fun j hj ↦ (hfH' j hj).mono hρr) (fun j hj ↦ (hgH' j hj).mono hρt)⟩
-
-/-- Composing on the left with a continuous linear map `T` keeps a Hölder bound on the top
-derivative field over an open set, multiplying its constant by `‖T‖`. -/
-theorem holderOnWith_iteratedFDeriv_comp_left {X : Type*} {Y : Type*} {Z : Type*}
-    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
-    [NormedAddCommGroup Z] [NormedSpace ℝ Z] (T : Y →L[ℝ] Z) {f : X → Y} {s : Set X} {n : ℕ}
-    {C α : ℝ≥0} (hs : IsOpen s) (hf : ContDiffOn ℝ n f s)
-    (h : HolderOnWith C α (iteratedFDeriv ℝ n f) s) :
-    HolderOnWith (‖T‖₊ * C) α (iteratedFDeriv ℝ n fun x ↦ T (f x)) s := by
-  have hd (z : X) (hz : z ∈ s) : iteratedFDeriv ℝ n (fun x ↦ T (f x)) z =
-      T.compContinuousMultilinearMap (iteratedFDeriv ℝ n f z) :=
-    T.iteratedFDeriv_comp_left (hf.contDiffAt (hs.mem_nhds hz)) le_rfl
-  set Φ := compContinuousMultilinearMapL ℝ (fun _ : Fin n ↦ X) Y Z T
-  refine HolderOnWith.of_dist_le fun x hx y hy ↦ ?_
-  rw [hd x hx, hd y hy]
-  calc dist (Φ (iteratedFDeriv ℝ n f x)) (Φ (iteratedFDeriv ℝ n f y))
-      = ‖T.compContinuousMultilinearMap (iteratedFDeriv ℝ n f x - iteratedFDeriv ℝ n f y)‖ := by
-        rw [dist_eq_norm, ← map_sub]
-        rfl
-    _ ≤ ‖T‖ * ‖iteratedFDeriv ℝ n f x - iteratedFDeriv ℝ n f y‖ :=
-        T.norm_compContinuousMultilinearMap_le _
-    _ ≤ ‖T‖ * (C * dist x y ^ (α : ℝ)) := by
-        rw [← dist_eq_norm]
-        gcongr
-        exact h.dist_le hx hy
-    _ = _ := by push_cast; ring
 
 end ContinuousLinearMap
