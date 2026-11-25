@@ -162,17 +162,6 @@ theorem chartQuantization_eq_zero (a : Symbol n ℂ ℂ m) (φ ψ : 𝓓(⟨e.ta
 
 /-! ### Reading a chart quantization in another chart -/
 
-omit [T2Space M] in
-include he in
-/-- The transition map `e ∘ e'⁻¹` between two charts of the maximal atlas, and its inverse, are
-smooth. -/
-private theorem contDiffOn_symm_trans {e' : OpenPartialHomeomorph M (CoordinateSpace n)}
-    (he' : e' ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M) :
-    ContDiffOn ℝ ∞ (e'.symm.trans e) (e'.symm.trans e).source ∧
-      ContDiffOn ℝ ∞ (e'.symm.trans e).symm (e'.symm.trans e).target :=
-  ⟨contDiffOn_symm_trans_of_mem_maximalAtlas he' he, fun _ hz ↦
-    (contDiffAt_symm_trans_symm_of_mem_maximalAtlas he' he hz).contDiffWithinAt⟩
-
 include he in
 /-- The cutoff `φ' · (φ ∘ e ∘ e'⁻¹)` for two charts: it is smooth with compact support in the source
 of the transition map `κ = e ∘ e'⁻¹`, where it is `φ'(x) φ(κ x)`. -/
@@ -214,13 +203,15 @@ theorem exists_quantizeSchwartzValue_eq_complexChartCompression_chartQuantizatio
         quantizeSchwartzValue b.toSymbol.coefficient u x =
           e'.complexChartCompression he' φ' ψ' (e.chartQuantization he a.toSymbol φ ψ)
             (ContMDiffMap.ofContDiff u (u.smooth ⊤)) x := by
-  obtain ⟨hκs, hκt⟩ := contDiffOn_symm_trans he he'
   obtain ⟨Φ, hΦ, hΦc, hΦs, hΦv⟩ := exists_transitionCutoff he he' φ' φ
   obtain ⟨Ψ, hΨ, hΨc, hΨs, hΨv⟩ := exists_transitionCutoff he he' ψ' ψ
   set κ := e'.symm.trans e with hκ
   have hΦ0 : ∀ x ∉ κ.source, Φ x = 0 := fun x hx ↦
     image_eq_zero_of_notMem_tsupport fun h ↦ hx (hΦs h)
-  obtain ⟨b, hb, hop⟩ := a.exists_smul_quantizeSchwartzValue_comp_eq κ hκs hκt hΦ hΦc hΦs hΨ hΨc hΨs
+  obtain ⟨b, hb, hop⟩ := a.exists_smul_quantizeSchwartzValue_comp_eq κ
+    (contDiffOn_symm_trans_of_mem_maximalAtlas he' he)
+    (fun _ hz ↦ (contDiffAt_symm_trans_symm_of_mem_maximalAtlas he' he hz).contDiffWithinAt)
+    hΦ hΦc hΦs hΨ hΨc hΨs
   refine ⟨b, fun x hx ξ ↦ ?_, fun x hx ξ ↦ ?_, fun u x ↦ ?_⟩
   · rw [hb, hΦv x hx, hΨv x hx]
     ring_nf
@@ -233,9 +224,12 @@ theorem exists_quantizeSchwartzValue_eq_complexChartCompression_chartQuantizatio
     intro y hy
     have hy' := hy
     rw [hκ, trans_source, symm_source] at hy'
+    -- `κ y = e (e'⁻¹ y)`, sent back to `e'⁻¹ y` by `e⁻¹` and on to `y` by `e'`.
     rw [hΨv y hy, schwartzCutoffPushforward_apply, hκ, coe_trans, Function.comp_apply,
       e.left_inv hy'.2, complexCutoffPullback_apply_of_mem he' _ _ (e'.map_target hy'.1),
-      e'.right_inv hy'.1, smul_smul, mul_comm, ContMDiffMap.coe_ofContDiff]
+      e'.right_inv hy'.1]
+    simp only [ContMDiffMap.coe_ofContDiff, Complex.real_smul, Complex.ofReal_mul]
+    ring
   have hv0 : ∀ z ∉ κ.target, v z = 0 := by
     intro z hz
     rw [schwartzCutoffPushforward_apply]
@@ -266,9 +260,7 @@ theorem chartQuantization_mem_classicalPseudodifferentialOperators (a : Classica
     e.chartQuantization he a.toSymbol φ ψ ∈ classicalPseudodifferentialOperators m := by
   refine mem_classicalPseudodifferentialOperators_iff.2
     ⟨isProperlySupported_iff.2 fun K _ ↦ ?_, fun e' he' φ' ψ' ↦ ?_⟩
-  · refine ⟨_,
-      (φ.hasCompactSupport.image_of_continuousOn (e.continuousOn_symm.mono φ.tsupport_subset)).union
-        (ψ.hasCompactSupport.image_of_continuousOn (e.continuousOn_symm.mono ψ.tsupport_subset)),
+  · refine ⟨_, (e.isCompact_symm_image_tsupport φ).union (e.isCompact_symm_image_tsupport ψ),
       fun f _ ↦ (tsupport_chartQuantization_subset he _ _ _ f).trans subset_union_left,
       fun f hf x _ ↦ ?_⟩
     rw [chartQuantization_eq_zero he _ _ _ fun p hp ↦
@@ -370,8 +362,7 @@ theorem exists_mem_classicalPseudodifferentialOperators_apply_eq_finsum (hS : Lo
   refine ⟨Q, mem_classicalPseudodifferentialOperators_iff.2
     ⟨isProperlySupported_of_apply_eq_finsum hS hSc hsupp hloc hQ, fun e he φ ψ ↦ ?_⟩, hQ⟩
   · -- In a chart, only the finitely many `Pᵢ` with `Sᵢ` meeting `e⁻¹(supp φ)` contribute.
-    have hK :=
-      φ.hasCompactSupport.image_of_continuousOn (e.continuousOn_symm.mono φ.tsupport_subset)
+    have hK := e.isCompact_symm_image_tsupport φ
     set I := (hS.finite_nonempty_inter_compact hK).toFinset
     choose a ha using fun i ↦ (mem_classicalPseudodifferentialOperators_iff.1 (hP i)).2 e he φ ψ
     refine ⟨∑ i ∈ I, a i, fun u x ↦ ?_⟩
@@ -394,9 +385,8 @@ theorem exists_mem_classicalPseudodifferentialOperators_apply_eq_finsum_chartQua
     ∃ Q ∈ classicalPseudodifferentialOperators m, ∀ f x,
       Q f x = ∑ᶠ i, (e i).chartQuantization (he i) (a i).toSymbol (φ i) (ψ i) f x :=
   exists_mem_classicalPseudodifferentialOperators_apply_eq_finsum hS
-    (fun i ↦ ((φ i).hasCompactSupport.isCompact.union
-      (ψ i).hasCompactSupport.isCompact).image_of_continuousOn ((e i).continuousOn_symm.mono
-        (union_subset (φ i).tsupport_subset (ψ i).tsupport_subset)))
+    (fun i ↦ image_union (e i).symm _ _ ▸
+      ((e i).isCompact_symm_image_tsupport (φ i)).union ((e i).isCompact_symm_image_tsupport (ψ i)))
     (fun i ↦
       (e i).chartQuantization_mem_classicalPseudodifferentialOperators (he i) (a i) (φ i) (ψ i))
     (fun i f ↦ ((e i).tsupport_chartQuantization_subset (he i) _ _ _ f).trans

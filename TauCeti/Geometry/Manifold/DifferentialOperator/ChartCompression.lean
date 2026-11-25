@@ -154,22 +154,30 @@ theorem cutoffPushforward_apply (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
 
 /-! ### Supports -/
 
+omit he [ChartedSpace E M] in
+/-- A function on `M` equal to `w ∘ e` on the chart source and to `0` elsewhere, for a function `w`
+supported in the support of a cutoff `ψ` in the chart target, is supported in the chart preimage
+of the support of `ψ`. -/
+private theorem tsupport_indicator_comp_subset {F : Type*} [NormedAddCommGroup F]
+    (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) {w : E → F} (hw : tsupport w ⊆ tsupport ψ) :
+    tsupport (e.source.indicator (w ∘ e)) ⊆ e.symm '' tsupport ψ :=
+  -- The extended chart `e.extend 𝓘(ℝ, E)` is `e` by definition.
+  (e.tsupport_indicator_comp_extend_subset (I := 𝓘(ℝ, E))
+    (ψ.hasCompactSupport.mono' ((subset_tsupport _).trans hw))
+    (by rw [extend_target', modelWithCornersSelf_coe, image_id]
+        exact hw.trans ψ.tsupport_subset)).trans (image_mono hw)
+
 /-- The pullback `(ψ f) ∘ e` is supported in the chart preimage of the support of `ψ`, a compact
 subset of the chart source. -/
 theorem tsupport_cutoffPullback_subset (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
-    (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) : tsupport (e.cutoffPullback he ψ f) ⊆ e.symm '' tsupport ψ := by
-  refine closure_minimal (fun x hx ↦ ?_) (ψ.hasCompactSupport.image_of_continuousOn
-    (e.continuousOn_symm.mono ψ.tsupport_subset)).isClosed
-  by_cases hxs : x ∈ e.source
-  · refine ⟨e x, subset_tsupport _ fun h0 ↦ hx ?_, e.left_inv hxs⟩
-    rw [cutoffPullback_apply_of_mem he _ _ hxs, h0, zero_mul]
-  · exact absurd (cutoffPullback_apply_of_notMem he _ _ hxs) hx
+    (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) : tsupport (e.cutoffPullback he ψ f) ⊆ e.symm '' tsupport ψ :=
+  e.tsupport_indicator_comp_subset ψ tsupport_mul_subset_left
 
 omit [T2Space M] in
 /-- The pushforward `φ · (h ∘ e⁻¹)` is supported in the support of `φ`. -/
 theorem tsupport_cutoffPushforward_subset (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     (h : C^∞⟮𝓘(ℝ, E), M; ℝ⟯) : tsupport (e.cutoffPushforward he φ h) ⊆ tsupport φ :=
-  closure_mono fun y hy ↦ fun h0 ↦ hy (by rw [cutoffPushforward_apply, h0, zero_mul])
+  tsupport_mul_subset_left
 
 omit [T2Space M] in
 theorem hasCompactSupport_cutoffPushforward (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
@@ -194,12 +202,10 @@ theorem tsupport_cutoffPushforward_cutoffPullback_subset {e' : OpenPartialHomeom
       tsupport_cutoffPullback_subset he φ f (subset_tsupport _ (right_ne_zero_of_mul hy))⟩
   refine (closure_minimal hsupp ((e'.continuousOn_symm.mono
     φ'.tsupport_subset).preimage_isClosed_of_isClosed (isClosed_tsupport _)
-    (φ.hasCompactSupport.image_of_continuousOn
-      (e.continuousOn_symm.mono φ.tsupport_subset)).isClosed)).trans ?_
+    (e.isCompact_symm_image_tsupport φ).isClosed)).trans ?_
   rintro y ⟨hy, z, hz, hzy⟩
-  rw [trans_source, symm_source]
-  exact ⟨φ'.tsupport_subset hy, show e'.symm y ∈ e.source from hzy ▸ e.map_target
-    (φ.tsupport_subset hz)⟩
+  rw [trans_source, symm_source, mem_inter_iff, mem_preimage, ← hzy]
+  exact ⟨φ'.tsupport_subset hy, e.map_target (φ.tsupport_subset hz)⟩
 
 /-! ### Chart compressions -/
 
@@ -438,12 +444,13 @@ compact subset of the chart source. -/
 theorem tsupport_complexCutoffPullback_subset (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     (f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯) :
     tsupport (e.complexCutoffPullback he ψ f) ⊆ e.symm '' tsupport ψ := by
-  refine closure_minimal (fun x hx ↦ ?_) (ψ.hasCompactSupport.image_of_continuousOn
-    (e.continuousOn_symm.mono ψ.tsupport_subset)).isClosed
-  by_cases hxs : x ∈ e.source
-  · refine ⟨e x, subset_tsupport _ fun h0 ↦ hx ?_, e.left_inv hxs⟩
-    rw [complexCutoffPullback_apply_of_mem he _ _ hxs, h0, zero_smul]
-  · exact absurd (complexCutoffPullback_apply_of_notMem he _ _ hxs) hx
+  have hf : ⇑(e.complexCutoffPullback he ψ f) = e.source.indicator ((fun y ↦ ψ y • f y) ∘ e) := by
+    ext x
+    by_cases hx : x ∈ e.source
+    · rw [complexCutoffPullback_apply_of_mem he _ _ hx, indicator_of_mem hx, Function.comp_apply]
+    · rw [complexCutoffPullback_apply_of_notMem he _ _ hx, indicator_of_notMem hx]
+  rw [hf]
+  exact e.tsupport_indicator_comp_subset ψ (tsupport_smul_subset_left _ _)
 
 /-- **Pushing a complex-valued function on the manifold forward to a chart.** For a cutoff `φ`
 with compact support in the target of the chart `e`, the smooth complex-valued function
@@ -464,7 +471,8 @@ omit [T2Space M] in
 /-- The complex pushforward `φ · (h ∘ e⁻¹)` is supported in the support of `φ`. -/
 theorem tsupport_complexCutoffPushforward_subset (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     (h : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯) : tsupport (e.complexCutoffPushforward he φ h) ⊆ tsupport φ :=
-  closure_mono fun y hy ↦ fun h0 ↦ hy (by rw [complexCutoffPushforward_apply, h0, zero_smul])
+  (congrArg tsupport (funext (complexCutoffPushforward_apply he φ h))).trans_subset
+    (tsupport_smul_subset_left _ _)
 
 omit [T2Space M] in
 theorem hasCompactSupport_complexCutoffPushforward (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ))

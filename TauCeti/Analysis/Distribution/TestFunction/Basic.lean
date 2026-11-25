@@ -23,7 +23,8 @@ Conversely, for a real test function `ψ` and a vector `v : F`, any continuous l
 of `ψ • v` are the multiples `b.repr v i • ψ`. These identities reduce statements about
 `F`-valued test functions to statements about real-valued ones. Pointwise complex conjugation,
 postcomposition with `Complex.conjCLE`, is an involution on complex test functions. On an
-infinite-dimensional space every test function is zero (Riesz).
+infinite-dimensional space every test function is zero (Riesz). The chart preimage of the
+support of a test function on the target of a chart is compact.
 
 ## Main declarations
 
@@ -43,6 +44,8 @@ infinite-dimensional space every test function is zero (Riesz).
   of its components in a basis, times the basis vectors.
 * `TestFunction.postcompCLM_postcompCLM_toSpanSingleton`: a continuous linear functional applied
   to `ψ • v`.
+* `OpenPartialHomeomorph.isCompact_symm_image_tsupport`: the chart preimage of the support of a
+  test function on the target of a chart is compact.
 -/
 
 public section
@@ -137,3 +140,18 @@ theorem postcompCLM_postcompCLM_toSpanSingleton (f : F →L[ℝ] ℝ) (ψ : 𝓓
   simp [mul_comm]
 
 end TestFunction
+
+namespace OpenPartialHomeomorph
+
+open scoped Distributions
+
+variable {X E F : Type*} [TopologicalSpace X] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ∞}
+
+/-- The chart preimage `e⁻¹(supp φ)` of the support of a test function `φ` on the target of a
+chart `e` is compact. -/
+theorem isCompact_symm_image_tsupport (e : OpenPartialHomeomorph X E)
+    (φ : 𝓓^{n}(⟨e.target, e.open_target⟩, F)) : IsCompact (e.symm '' tsupport φ) :=
+  φ.hasCompactSupport.image_of_continuousOn (e.continuousOn_symm.mono φ.tsupport_subset)
+
+end OpenPartialHomeomorph
