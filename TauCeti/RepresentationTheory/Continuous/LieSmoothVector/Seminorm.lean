@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
+public import TauCeti.Data.List.MonomialWord
 public import TauCeti.RepresentationTheory.Continuous.LieSmoothVector
 
 /-!
@@ -36,7 +37,6 @@ the derived action lowers the order by one: if `Y = ∑ i, c i • X i`, then
 ## Main definitions
 
 * `TauCeti.BoundedWord ι k`: the words in `ι` of length at most `k`.
-* `TauCeti.monomialWord α`: the word `1^{α₁} ⋯ m^{α_m}` of an exponent vector.
 * `TauCeti.BoundedWord.castSucc`, `TauCeti.BoundedWord.snoc`: a word of length at most `k` as a
   word of length at most `k + 1`, unchanged or with a letter appended.
 * `TauCeti.SobolevIndex m k`: the exponent vectors `α : Fin m → ℕ` with `|α| ≤ k`.
@@ -55,6 +55,10 @@ the derived action lowers the order by one: if `Y = ∑ i, c i • X i`, then
 * `ContRepresentation.wordSeminorm_lieSmoothVectorsDerivative_le`: `P_k(dπ(X_i) v) ≤ P_{k+1}(v)`.
 * `ContRepresentation.wordSeminorm_lieSmoothVectorsDerivative_le_basis`: for a real basis `b`,
   `P_k(dπ(Y) v) ≤ (∑ i, |b.repr Y i|) P_{k+1}(v)`.
+* `TauCeti.exists_sobolevIndex_monomialWord_eq`: a sorted word of length at most `k` is the
+  ordered monomial word `TauCeti.monomialWord α` of an index `α` in `SobolevIndex m k`.
+* `ContRepresentation.wordSeminorm_trivial`, `ContRepresentation.sobolevSeminorm_trivial`: for
+  the trivial representation, every nonempty word acts by zero, so `P_k = Q_k = ‖·‖`.
 
 ## References
 
@@ -78,23 +82,6 @@ abbrev BoundedWord (ι : Type*) (k : ℕ) : Type _ :=
   Σ n : Fin (k + 1), Fin n → ι
 
 variable {m : ℕ}
-
-/-- The ordered monomial word `1^{α₁} 2^{α₂} ⋯ m^{α_m}` of an exponent vector `α`. -/
-def monomialWord (α : Fin m → ℕ) : List (Fin m) :=
-  (List.finRange m).flatMap fun i ↦ List.replicate (α i) i
-
-/-- The ordered monomial word of `α` has length `|α|`. -/
-theorem length_monomialWord (α : Fin m → ℕ) : (monomialWord α).length = ∑ i, α i := by
-  simp [monomialWord, List.length_flatMap, Fin.sum_univ_def]
-
-/-- The letter `i` occurs `α i` times in the ordered monomial word of `α`. -/
-theorem count_monomialWord (α : Fin m → ℕ) (i : Fin m) : (monomialWord α).count i = α i := by
-  rw [monomialWord, List.count_flatMap, ← Fin.sum_univ_def]
-  simp [List.count_replicate]
-
-/-- An ordered monomial word determines its exponent vector. -/
-theorem monomialWord_injective : Function.Injective (monomialWord (m := m)) := fun α β h ↦
-  funext fun i ↦ by rw [← count_monomialWord α i, ← count_monomialWord β i, h]
 
 /-- The exponent vectors `α : Fin m → ℕ` of total degree `|α| = ∑ i, α i ≤ k`, with entries
 recorded in `Fin (k + 1)` so that they form a finite type. -/
@@ -135,6 +122,18 @@ theorem SobolevIndex.toBoundedWord_injective {k : ℕ} :
   have := congrArg (fun w : BoundedWord (Fin m) k ↦ List.ofFn w.2) h
   simp only [SobolevIndex.ofFn_toBoundedWord] at this
   exact SobolevIndex.exponent_injective (monomialWord_injective this)
+
+/-- A sorted word of length at most `k` is the ordered monomial word of an index in
+`SobolevIndex m k`. -/
+theorem exists_sobolevIndex_monomialWord_eq {k : ℕ} {w : List (Fin m)}
+    (hw : w.Pairwise (· ≤ ·)) (hk : w.length ≤ k) :
+    ∃ α : SobolevIndex m k, monomialWord α.exponent = w := by
+  have hsum : ∑ i, w.count i = w.length := by
+    rw [← length_monomialWord, monomialWord_count hw]
+  refine ⟨⟨fun i ↦ ⟨w.count i, Nat.lt_succ_of_le (List.count_le_length.trans hk)⟩, ?_⟩, ?_⟩
+  · simpa [hsum] using hk
+  · refine (congrArg monomialWord (funext fun i ↦ ?_)).trans (monomialWord_count hw)
+    simp only [SobolevIndex.exponent_apply]
 
 /-! ### Extending words of bounded length -/
 
@@ -239,6 +238,12 @@ theorem wordAction_append (X : ι → LeftInvariantDerivation I G) (w₁ w₂ : 
     wordAction I π X (w₁ ++ w₂) = wordAction I π X w₁ * wordAction I π X w₂ := by
   simp [wordAction]
 
+/-- For the trivial representation, every nonempty word acts by zero. -/
+theorem wordAction_trivial_of_ne_nil (X : ι → LeftInvariantDerivation I G) {w : List ι}
+    (hw : w ≠ []) : wordAction I (trivial R G V) X w = 0 := by
+  obtain ⟨i, w, rfl⟩ := List.exists_cons_of_ne_nil hw
+  simp
+
 end WordAction
 
 variable {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 V] [SMulCommClass ℝ 𝕜 V]
@@ -340,6 +345,22 @@ theorem wordSeminorm_lieSmoothVectorsDerivative_le_basis
 
 end RealCombination
 
+/-- **The word seminorms of the trivial representation are the norm**: `P_k(v) = ‖v‖` for every
+`k`, since only the empty word acts nontrivially. -/
+@[simp]
+theorem wordSeminorm_trivial (X : ι → LeftInvariantDerivation I G) (k : ℕ)
+    (v : lieSmoothVectors I (trivial 𝕜 G V)) :
+    wordSeminorm I (trivial 𝕜 G V) X k v = ‖(v : V)‖ := by
+  rw [wordSeminorm_apply, Finset.sum_eq_single (⟨0, Fin.elim0⟩ : BoundedWord ι k)]
+  · simp
+  · rintro ⟨n, w⟩ - hw
+    have hn : (n : ℕ) ≠ 0 := fun hn ↦ hw (by
+      obtain rfl : n = 0 := Fin.ext hn
+      exact congrArg _ (funext fun i ↦ i.elim0))
+    have hne : List.ofFn w ≠ [] := by simpa [List.ofFn_eq_nil_iff] using hn
+    simp [wordAction_trivial_of_ne_nil X hne]
+  · simp
+
 /-! ### The Sobolev seminorms -/
 
 variable {m : ℕ}
@@ -372,6 +393,23 @@ theorem sobolevSeminorm_apply (X : Fin m → LeftInvariantDerivation I G) (k : �
     sobolevSeminorm I π X k v =
       √(∑ α : SobolevIndex m k, ‖(wordAction I π X (monomialWord α.exponent) v : V)‖ ^ 2) := by
   simp [sobolevSeminorm, PiLp.norm_eq_of_L2]
+
+/-- **The Sobolev seminorms of the trivial representation are the norm**: `Q_k(v) = ‖v‖` for every
+`k`, since only the constant monomial acts nontrivially. -/
+@[simp]
+theorem sobolevSeminorm_trivial (X : Fin m → LeftInvariantDerivation I G) (k : ℕ)
+    (v : lieSmoothVectors I (trivial 𝕜 G V)) :
+    sobolevSeminorm I (trivial 𝕜 G V) X k v = ‖(v : V)‖ := by
+  let α₀ : SobolevIndex m k := ⟨0, by simp⟩
+  have hα₀ : α₀.exponent = 0 := funext fun _ ↦ by simp [α₀]
+  rw [sobolevSeminorm_apply, Finset.sum_eq_single α₀]
+  · simp [monomialWord_eq_nil_iff.mpr hα₀, Real.sqrt_sq (norm_nonneg _)]
+  · intro α _ hα
+    have hne : monomialWord α.exponent ≠ [] := by
+      rw [Ne, monomialWord_eq_nil_iff, ← hα₀]
+      exact SobolevIndex.exponent_injective.ne hα
+    simp [wordAction_trivial_of_ne_nil X hne]
+  · simp
 
 /-- The Sobolev seminorm is bounded by the word seminorm: every ordered monomial is a word, and
 the `ℓ²` norm of a finite family is at most its `ℓ¹` norm. -/

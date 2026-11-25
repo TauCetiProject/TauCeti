@@ -91,6 +91,8 @@ inequality of arithmetic and geometric means.
   `ℓᵖ` expression of `f` by `c` times that of `g`.
 * `Real.Lp_const_of_nonneg`: the finite `ℓᵖ` expression of a constant `t ≥ 0` over `s` is
   `#s ^ (1 / p) * t`.
+* `Real.prod_le_sqrt_sum_sq_div_sqrt_card_pow`: AM-GM comparing a product of nonnegative
+  numbers with their root mean square, `∏ i ∈ s, σ i ≤ (√(∑ i ∈ s, σ i ^ 2) / √#s) ^ #s`.
 * `Multiset.esymm_div_choose_rpow_le_rpow`,
   `Multiset.esymm_div_choose_rpow_le_rpow_of_nonneg`: Maclaurin's inequalities in root form, on
   the cone `σ_1, …, σ_l > 0` and for nonnegative reals.
@@ -449,6 +451,27 @@ theorem Lp_const_of_nonneg {ι : Type*} (s : Finset ι) {t p : ℝ} (ht : 0 ≤ 
     (∑ _i ∈ s, t ^ p) ^ (1 / p) = (s.card : ℝ) ^ (1 / p) * t := by
   rw [Finset.sum_const, nsmul_eq_mul, mul_rpow s.card.cast_nonneg (rpow_nonneg ht p), one_div,
     rpow_rpow_inv ht hp]
+
+/-- **Arithmetic and geometric means** for nonnegative numbers, comparing the product with the
+root mean square: `∏ i ∈ s, σ i ≤ (√(∑ i ∈ s, σ i ^ 2) / √#s) ^ #s`. -/
+theorem prod_le_sqrt_sum_sq_div_sqrt_card_pow {ι : Type*} (s : Finset ι) (σ : ι → ℝ)
+    (hσ : ∀ i ∈ s, 0 ≤ σ i) :
+    ∏ i ∈ s, σ i ≤ (√(∑ i ∈ s, σ i ^ 2) / √(s.card : ℝ)) ^ s.card := by
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simp
+  have hS : 0 ≤ ∑ i ∈ s, σ i ^ 2 := Finset.sum_nonneg fun i _ ↦ sq_nonneg _
+  have hnR : (0 : ℝ) < s.card := Nat.cast_pos.mpr hs.card_pos
+  -- AM-GM for the squares `σᵢ²`, with unit weights.
+  have hamgm := geom_mean_le_arith_mean s (fun _ ↦ (1 : ℝ)) (fun i ↦ σ i ^ 2)
+    (fun _ _ ↦ zero_le_one) (by simpa using hnR) (fun i _ ↦ sq_nonneg _)
+  simp only [rpow_one, Finset.sum_const, nsmul_eq_mul, mul_one, one_mul] at hamgm
+  rw [rpow_inv_le_iff_of_pos (Finset.prod_nonneg fun i _ ↦ sq_nonneg _)
+    (div_nonneg hS hnR.le) hnR, rpow_natCast, Finset.prod_pow] at hamgm
+  have hrhs : (∑ i ∈ s, σ i ^ 2) / s.card = (√(∑ i ∈ s, σ i ^ 2) / √(s.card : ℝ)) ^ 2 := by
+    rw [div_pow, sq_sqrt hS, sq_sqrt hnR.le]
+  rw [hrhs, ← pow_mul, pow_mul'] at hamgm
+  exact (pow_le_pow_iff_left₀ (Finset.prod_nonneg hσ)
+    (pow_nonneg (div_nonneg (sqrt_nonneg _) (sqrt_nonneg _)) _) two_ne_zero).mp hamgm
 
 end Real
 
