@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.Norm.Transitivity
-public import TauCeti.LinearAlgebra.Determinant.Projective
+public import TauCeti.LinearAlgebra.Determinant.Projective.Basic
 public import TauCeti.RingTheory.TensorProduct.Maps
 -- `baseChangeTowerAlgEquiv` and its comparison with `rTensor` are used only in the proof of
 -- `Algebra.projectiveNorm_rTensor`.

@@ -293,10 +293,8 @@ theorem cotangentLinearEquiv_mem_lieSubalgebra_centralizerHopfIdeal_iff
       (∀ χ, d (centralizerCoefficient π h χ) = 0) ↔ (D * P - P * D).ofConv h = 0 :=
     forall_map_centralizerCoefficient_eq_zero_iff π d h
   rw [forall_congr' hgen]
-  have hPP' : P * P' = 1 := by
-    rw [← AlgHom.toLinearMap_convMul, mul_inv_cancel, AlgHom.toLinearMap_convOne]
-  have hP'P : P' * P = 1 := by
-    rw [← AlgHom.toLinearMap_convMul, inv_mul_cancel, AlgHom.toLinearMap_convOne]
+  have hPP' : P * P' = 1 := WithConv.algHom_toConv_mul_toConv_inv p
+  have hP'P : P' * P = 1 := WithConv.algHom_toConv_inv_mul_toConv p
   -- The adjoint action of the universal point is convolution conjugation.
   have had : Derivation.adDerivation A p d' = d' ↔ P * D * P' = D := by
     constructor

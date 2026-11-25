@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Compactness
+import TauCeti.Analysis.InnerProductSpace.OfLinearIsometry
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Components
 import TauCeti.Analysis.Sobolev.LipschitzDomain.SobolevEmbedding
@@ -257,17 +258,8 @@ theorem W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image
     IsCompactOperator (W1p.valueL (mu := volume) (Omega := Ω) (p := p)) := by
   -- The inner product of `F` restricts to `E` along the isometric embedding given by `g`.
   let e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E) := g.linearIsometryEquiv
-  let ι : E →ₗᵢ[ℝ] F :=
-    { toLinearMap := e.symm.toLinearEquiv.toLinearMap.comp
-        ((WithLp.linearEquiv 2 ℝ (ℝ × E)).symm.toLinearMap.comp (LinearMap.inr ℝ ℝ E))
-      norm_map' y := by simp }
-  let _ : InnerProductSpace ℝ E :=
-    { inner x y := inner ℝ (ι x) (ι y)
-      norm_sq_eq_re_inner x := by simp
-      conj_inner_symm x y := by simp [real_inner_comm]
-      add_left x y z := by simp [inner_add_left]
-      smul_left x y r := by simp [inner_smul_left] }
-  have _ : FiniteDimensional ℝ E := Module.Finite.of_injective ι.toLinearMap ι.injective
+  let _ : InnerProductSpace ℝ E := .ofLinearIsometry e.symmInr
+  have _ : FiniteDimensional ℝ E := e.finiteDimensional_snd
   let _ : MeasurableSpace E := borel E
   have _ : BorelSpace E := ⟨rfl⟩
   let W : Opens (WithLp 2 (ℝ × E)) := ⟨g '' (Ω : Set F), ((isLipschitzDomainWith_iff _ _).1 hΩ).1⟩
@@ -300,14 +292,9 @@ theorem W1p.isCompactOperator_valueL_of_frontier_eq_empty {μ : Measure F}
 private theorem W1p.isCompactOperator_valueL_volume_of_isLipschitzDomain {Ω : Opens F}
     (hΩ : (Ω : Set F).IsLipschitzDomain E) (hb : IsBounded (Ω : Set F)) :
     IsCompactOperator (W1p.valueL (mu := volume) (Omega := Ω) (p := p)) := by
-  rcases (frontier (Ω : Set F)).eq_empty_or_nonempty with hfr | ⟨x₀, hx₀⟩
+  rcases (frontier (Ω : Set F)).eq_empty_or_nonempty with hfr | hne
   · exact W1p.isCompactOperator_valueL_of_frontier_eq_empty hb hfr
-  obtain ⟨g, -, -, -, -, -, -⟩ := isLipschitzDomain_iff_exists_mem_normalCylinder.mp hΩ x₀ hx₀
-  have hfr_cpt : IsCompact (frontier (g '' (Ω : Set F))) := by
-    rw [← g.coe_toHomeomorph, ← g.toHomeomorph.image_frontier]
-    exact (hb.isCompact_closure.of_isClosed_subset isClosed_frontier frontier_subset_closure).image
-      g.continuous
-  obtain ⟨L, hL⟩ := (hΩ.image g).exists_isLipschitzDomainWith hfr_cpt
+  obtain ⟨g, L, hL⟩ := hΩ.exists_isLipschitzDomainWith_image hb hne
   exact W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image g hL hb
 
 /-- **Rellich–Kondrachov on bounded Lipschitz domains of a Euclidean space.** Let `F` be a

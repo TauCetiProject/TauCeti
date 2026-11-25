@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Basic
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Extension
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.LocallyCompact
-import Mathlib.LinearAlgebra.Countable
+import TauCeti.NumberTheory.NumberField.Countable
 import TauCeti.Topology.Algebra.Module.ModuleTopology
 import Mathlib.Topology.Algebra.Group.OpenMapping
 import Mathlib.Topology.Baire.LocallyCompactRegular
@@ -286,7 +286,6 @@ def finiteAdeleBaseChangeEquiv :
   -- additive open mapping theorem then gives the inverse.
   letI := IsModuleTopology.isTopologicalAddGroup (FiniteAdeleRing (𝓞 K) K)
     (FiniteAdeleRing (𝓞 K) K ⊗[K] L)
-  have : Countable (𝓞 K) := Countable.of_moduleFinite (R := ℤ)
   letI := TauCeti.ModuleTopology.sigmaCompactSpace
     ((Module.finBasis K L).baseChange (FiniteAdeleRing (𝓞 K) K))
   have ho : IsOpenMap e := e.toAddMonoidHom.isOpenMap_of_sigmaCompact e.surjective hc

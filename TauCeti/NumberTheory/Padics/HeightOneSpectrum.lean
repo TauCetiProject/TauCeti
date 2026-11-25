@@ -19,6 +19,8 @@ that `ℤ` has infinitely many height-one prime ideals.
 ## Main results
 
 * `Infinite (HeightOneSpectrum ℤ)`: `ℤ` has infinitely many height-one prime ideals.
+* `Rat.HeightOneSpectrum.fact_prime_natGenerator`: the rational prime `natGenerator v` of `v` is
+  prime, as an instance.
 * `Rat.HeightOneSpectrum.valuation_eq_one_iff_padicValRat_eq_zero`: a nonzero rational number is
   a unit at `v` exactly when its `p`-adic valuation vanishes.
 -/
@@ -36,6 +38,11 @@ instance : Infinite (HeightOneSpectrum ℤ) :=
 end TauCeti
 
 namespace Rat.HeightOneSpectrum
+
+/-- The rational prime of a height-one prime of the ring of integers of `ℚ` is prime. -/
+instance fact_prime_natGenerator {R : Type*} [CommRing R] [Algebra R ℚ] [IsIntegralClosure R ℤ ℚ]
+    (v : HeightOneSpectrum R) : Fact (natGenerator v).Prime :=
+  ⟨prime_natGenerator v⟩
 
 variable {R : Type*} [CommRing R] [Algebra R ℚ] [IsIntegralClosure R ℤ ℚ] [IsDedekindDomain R]
   [IsFractionRing R ℚ]

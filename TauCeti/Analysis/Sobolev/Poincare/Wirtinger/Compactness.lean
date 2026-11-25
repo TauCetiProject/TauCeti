@@ -37,6 +37,9 @@ zero over `S`, but does not vanish.
 
 ## Main declarations
 
+* `TauCeti.W1p.exists_norm_value_le_mul_norm_gradient_of_isCompactOperator`: with compact value
+  map, `‖u‖_{Lᵖ(Ω)} ≤ C ‖∇u‖_{Lᵖ(Ω)}` on every closed subspace meeting the kernel of the gradient
+  only in `0`.
 * `TauCeti.W1p.exists_eLpNorm_value_sub_setAverage_le_of_isCompactOperator`: the inequality on a
   preconnected domain of finite measure with compact value map.
 * `TauCeti.W1p.exists_pos_mul_norm_le_norm_gradient_of_isCompactOperator`: the equivalent form
@@ -69,12 +72,28 @@ private theorem W1p.eq_zero_of_gradient_eq_zero_of_setIntegral_eq_zero
   obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero hconn hu
   rw [integral_congr_ae (ae_restrict_of_ae_restrict_of_subset hS hc), setIntegral_const,
     smul_eq_mul] at hint
-  have hc0 : c = 0 := (mul_eq_zero.1 hint).resolve_left hS0
-  apply W1p.ext_value
-  rw [← W1p.valueL_apply, ← W1p.valueL_apply, map_zero]
-  apply Lp.ext
-  filter_upwards [hc, Lp.coeFn_zero ℝ p (mu.restrict (Omega : Set E))] with x hx h0
-  rw [W1p.valueL_apply, hx, hc0, h0, Pi.zero_apply]
+  obtain rfl : c = 0 := (mul_eq_zero.1 hint).resolve_left hS0
+  exact W1p.ext_value (by rw [W1p.value_zero]; exact Lp.eq_zero_iff_ae_eq_zero.2 hc)
+
+/-- **A Poincaré inequality on a closed subspace, from compactness.** If the value map
+`W^{1,p}(Ω) → Lᵖ(Ω)` is compact and `V` is a closed subspace of `W^{1,p}(Ω)` whose only element
+with vanishing gradient is `0`, then there is a constant `C` with
+`‖u‖_{Lᵖ(Ω)} ≤ C * ‖∇u‖_{Lᵖ(Ω)}` for every `u ∈ V`. This is Peetre's compact-error estimate,
+since the Sobolev norm is at most the norm of the gradient plus the norm of the value. -/
+theorem W1p.exists_norm_value_le_mul_norm_gradient_of_isCompactOperator
+    (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := p)))
+    {V : Submodule ℝ (W1p mu Omega p)} (hV : IsClosed (V : Set (W1p mu Omega p)))
+    (hdisj : Disjoint (W1p.gradientL (mu := mu) (Omega := Omega) (p := p)).ker V) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ u ∈ V, ‖W1p.value u‖ ≤ C * ‖W1p.gradient u‖ := by
+  obtain ⟨c, hc, hcM⟩ :=
+    (W1p.gradientL (mu := mu) (Omega := Omega) (p := p)).exists_pos_mul_norm_le_of_compact_estimate
+      (C := 1) hK (fun u ↦ by
+        rw [one_mul, add_comm, W1p.gradientL_apply, W1p.valueL_apply]
+        exact W1p.norm_le_norm_value_add_norm_gradient u)
+      hV hdisj
+  refine ⟨c⁻¹, inv_nonneg.2 hc.le, fun u hu ↦ ?_⟩
+  rw [le_inv_mul_iff₀ hc, ← W1p.gradientL_apply]
+  exact (mul_le_mul_of_nonneg_left (W1p.norm_value_le u) hc.le).trans (hcM u hu)
 
 /-- **The gradient controls the Sobolev norm on functions of mean zero.** Let `Ω` be preconnected
 and of finite measure, let `S ⊆ Ω` have positive measure, and let `1 ≤ p`. If the value map
@@ -100,16 +119,15 @@ theorem W1p.exists_pos_mul_norm_le_norm_gradient_of_isCompactOperator
     rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, W1p.gradientL_apply] at hgrad
     exact W1p.eq_zero_of_gradient_eq_zero_of_setIntegral_eq_zero hconn hS hSreal hgrad
       ((hℓ u).symm.trans hmean)
-  -- Peetre's estimate makes the gradient bounded below on that kernel.
-  obtain ⟨c, hc, hcM⟩ :=
-    (W1p.gradientL (mu := mu) (Omega := Omega) (p := p)).exists_pos_mul_norm_le_of_compact_estimate
-      (C := 1) hK (fun u ↦ by
-        rw [one_mul, add_comm, W1p.gradientL_apply, W1p.valueL_apply]
-        exact W1p.norm_le_norm_value_add_norm_gradient u)
-      ℓ.isClosed_ker hdisj
-  refine ⟨c, hc, fun u hu ↦ ?_⟩
-  rw [← W1p.gradientL_apply]
-  exact hcM u (LinearMap.mem_ker.2 ((hℓ u).trans hu))
+  -- Compactness bounds the values, hence the Sobolev norm, by the gradient on that kernel.
+  obtain ⟨C, hC, hCV⟩ :=
+    W1p.exists_norm_value_le_mul_norm_gradient_of_isCompactOperator hK ℓ.isClosed_ker hdisj
+  refine ⟨(C + 1)⁻¹, by positivity, fun u hu ↦ ?_⟩
+  rw [inv_mul_le_iff₀ (by positivity)]
+  calc ‖u‖ ≤ ‖W1p.value u‖ + ‖W1p.gradient u‖ := W1p.norm_le_norm_value_add_norm_gradient u
+    _ ≤ C * ‖W1p.gradient u‖ + ‖W1p.gradient u‖ :=
+        add_le_add_left (hCV u (LinearMap.mem_ker.2 ((hℓ u).trans hu))) _
+    _ = (C + 1) * ‖W1p.gradient u‖ := by ring
 
 /-- **The Poincaré–Wirtinger inequality from compactness.** Let `Ω` be preconnected and of finite
 measure, let `S ⊆ Ω` have positive measure, and let `1 ≤ p`. If the value map

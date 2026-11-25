@@ -10,6 +10,7 @@ public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.Probability.CDF
 public import TauCeti.Probability.Distributions.Gaussian.Basic
 import TauCeti.Analysis.SpecialFunctions.Erf.Inequalities
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.MeasureTheory.Measure.Real
 import TauCeti.MeasureTheory.Measure.Tail
 import TauCeti.Probability.Distributions.Gaussian.PDF
@@ -59,6 +60,8 @@ over `Set.Iic x` is then the limit of those interval integrals, using
   densities at the bounds (`TauCeti.Probability.gaussianPDFRealEReal`) as derivative.
 * `TauCeti.Probability.measureReal_Ioi_gaussianReal` — the upper tail, in terms of
   `TauCeti.Real.erfc`.
+* `TauCeti.Probability.one_sub_cdf_gaussianReal_eq_erfc` — the standard Gaussian upper tail
+  `1 − Φ(r) = erfc (r/√2)/2`, the `erfc` counterpart of `cdf_gaussianReal_zero_one`.
 * `TauCeti.Probability.measureReal_Ioi_gaussianReal_eq_cdf` and
   `TauCeti.Probability.measureReal_Ici_gaussianReal_eq_cdf` — the open and closed upper tails in
   terms of the standard Gaussian cdf, together with closed-ray positivity
@@ -69,7 +72,22 @@ over `Set.Iic x` is then the limit of those interval integrals, using
   lower bound for the upper tail of the absolute value of a standard Gaussian.
 * `TauCeti.Probability.measureReal_gaussianReal_abs_sub_ge_le` — the two-sided tail bound
   `P(|X - m| ≥ t) ≤ exp (-t² / (2v))`, without the factor `2` of the sub-Gaussian bound.
+* `TauCeti.Probability.one_sub_cdf_gaussianReal_lt_gaussianPDFReal_div` — Mills' ratio bound
+  `1 − Φ(r) < φ(r)/r` for `r > 0`, where `Φ = cdf (gaussianReal 0 1)` and
+  `φ = gaussianPDFReal 0 1`.
+* `TauCeti.Probability.one_sub_cdf_gaussianReal_le_exp_div_two` and
+  `TauCeti.Probability.one_sub_cdf_gaussianReal_lt_exp_div_two` — the bound
+  `1 − Φ(r) ≤ e^{−r²/2}/2` for `r ≥ 0`, strict for `r > 0`; at `r = 0` both sides are `1/2`.
 * `TauCeti.Probability.measureReal_le_of_hasLaw_gaussianReal` — the random-variable corollary.
+
+## References
+
+* A. Cianchi, N. Fusco, F. Maggi and A. Pratelli, *On the isoperimetric deficit in Gauss space*,
+  Amer. J. Math. 133 (2011), 131–186, Lemma 3.4, inequality (3.2).
+* M. Ledoux, *Concentration of measure and logarithmic Sobolev inequalities*, Séminaire de
+  Probabilités XXXIII, Lecture Notes in Math. 1709, Springer, 1999, inequality (1.6), the bound
+  `1 − Φ(r) ≤ e^{−r²/2}`.
+* NIST Digital Library of Mathematical Functions, §7.8.
 -/
 
 public section
@@ -409,6 +427,48 @@ theorem measureReal_gaussianReal_abs_sub_ge_le (m : ℝ) (v : ℝ≥0) {t : ℝ}
     _ ≤ Real.exp (-t ^ 2 / (2 * v)) := by
       refine (Real.erfc_le_exp_neg_sq (by positivity)).trans_eq ?_
       rw [div_pow, Real.sq_sqrt (by positivity), neg_div]
+
+/-- The upper tail of the standard Gaussian law is half the complementary error function at
+`r/√2`. -/
+theorem one_sub_cdf_gaussianReal_eq_erfc (r : ℝ) :
+    1 - cdf (gaussianReal 0 1) r = Real.erfc (r / √2) / 2 := by
+  rw [← Measure.measureReal_Ioi_eq_one_sub_cdf, measureReal_Ioi_gaussianReal 0 one_ne_zero]
+  norm_num
+
+/-- **Mills' ratio bound** for the standard Gaussian law: for `r > 0`, the upper tail
+`1 − Φ(r)` is strictly smaller than `φ(r)/r`. This is `TauCeti.Real.erfc_lt_exp_neg_sq_div` at
+`r/√2`. -/
+theorem one_sub_cdf_gaussianReal_lt_gaussianPDFReal_div {r : ℝ} (hr : 0 < r) :
+    1 - cdf (gaussianReal 0 1) r < gaussianPDFReal 0 1 r / r := by
+  have h := Real.erfc_lt_exp_neg_sq_div (div_pos hr (by positivity : (0 : ℝ) < √2))
+  rw [Real.div_sqrt_sq zero_le_two, ← neg_div] at h
+  have h2 : √2 * √2 = 2 := Real.mul_self_sqrt zero_le_two
+  simp only [one_sub_cdf_gaussianReal_eq_erfc, gaussianPDFReal_def, NNReal.coe_one, mul_one,
+    sub_zero]
+  rw [Real.sqrt_mul zero_le_two]
+  calc Real.erfc (r / √2) / 2
+      < Real.exp (-r ^ 2 / 2) / (√π * (r / √2)) / 2 := by gcongr
+    _ = (√2 * √π)⁻¹ * Real.exp (-r ^ 2 / 2) / r := by
+        field_simp
+        linear_combination h2
+
+/-- The standard Gaussian upper tail is at most half the Gaussian factor: for `r ≥ 0`,
+`1 − Φ(r) ≤ e^{−r²/2}/2`, with equality at `r = 0`. This is `TauCeti.Real.erfc_le_exp_neg_sq` at
+`r/√2`. -/
+theorem one_sub_cdf_gaussianReal_le_exp_div_two {r : ℝ} (hr : 0 ≤ r) :
+    1 - cdf (gaussianReal 0 1) r ≤ Real.exp (-r ^ 2 / 2) / 2 := by
+  have h := Real.erfc_le_exp_neg_sq (div_nonneg hr (Real.sqrt_nonneg 2))
+  rw [Real.div_sqrt_sq zero_le_two, ← neg_div] at h
+  rw [one_sub_cdf_gaussianReal_eq_erfc]
+  gcongr
+
+/-- For `r > 0` the bound `1 − Φ(r) ≤ e^{−r²/2}/2` is strict. -/
+theorem one_sub_cdf_gaussianReal_lt_exp_div_two {r : ℝ} (hr : 0 < r) :
+    1 - cdf (gaussianReal 0 1) r < Real.exp (-r ^ 2 / 2) / 2 := by
+  have h := Real.erfc_lt_exp_neg_sq (div_pos hr (by positivity : (0 : ℝ) < √2))
+  rw [Real.div_sqrt_sq zero_le_two, ← neg_div] at h
+  rw [one_sub_cdf_gaussianReal_eq_erfc]
+  gcongr
 
 /-- A random variable with a Gaussian law of nonzero variance has the error-function cumulative
 distribution function. -/

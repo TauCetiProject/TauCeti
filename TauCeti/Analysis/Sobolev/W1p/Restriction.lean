@@ -31,7 +31,9 @@ interior regularity arguments pass from a weak solution on `Ω` to smaller open 
   the value and weak-gradient projections; their `_ae` variants identify representatives.
 * `TauCeti.W1p.value_restrictL_add_const_ae`: the value of a restriction shifted by a constant.
 * `TauCeti.W1p.value_restrictL_ofTestFunctionₗ_ae`: a restricted test function has its original
-  value almost everywhere on the smaller open set.
+  value almost everywhere on the smaller open set, and
+  `TauCeti.W1p.restrictL_ofTestFunctionₗ_eq_of_eqOn`: it is the jet of any test function on the
+  smaller set that agrees with it there.
 * `TauCeti.W1p.norm_restrictL_eq_of_value_ae_eq_zero_of_isClosed`: restriction preserves the norm
   of a function vanishing off a closed set `K` with `Ω ∩ K ⊆ U`.
 * `TauCeti.W1p.restrictL_self` and `TauCeti.W1p.restrictL_restrictL`: restriction is functorial.
@@ -241,6 +243,18 @@ with the value of `u` restricts to `u` on `U`. -/
 theorem W1p.restrictL_eq_of_value_ae_eq (hU : U ≤ Omega) {u : W1p mu U p} {w : W1p mu Omega p}
     (hvalw : W1p.value w =ᵐ[mu.restrict U] W1p.value u) : W1p.restrictL hU w = u :=
   W1p.ext_value (Lp.ext ((W1p.value_restrictL_ae hU w).trans hvalw))
+
+/-- A test function supported in `Omega` restricts on the smaller open set `U` to any test function
+supported in `U` that agrees with it on `U`. -/
+theorem W1p.restrictL_ofTestFunctionₗ_eq_of_eqOn (hU : U ≤ Omega) {φ : 𝓓(Omega, ℝ)}
+    {ψ : 𝓓(U, ℝ)} (h : EqOn φ ψ U) :
+    W1p.restrictL hU (W1p.ofTestFunctionₗ mu Omega p φ) = W1p.ofTestFunctionₗ mu U p ψ := by
+  refine W1p.restrictL_eq_of_value_ae_eq hU ?_
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hU)
+      (W1p.value_ofTestFunctionₗ_ae (mu := mu) (p := p) φ),
+    W1p.value_ofTestFunctionₗ_ae (mu := mu) (p := p) ψ,
+    ae_restrict_mem U.isOpen.measurableSet] with x hφx hψx hx
+  rw [hφx, hψx, h hx]
 
 /-- An extension operator, a right inverse of restriction to the smaller open set `U`, keeps the
 value representative on `U`. -/
