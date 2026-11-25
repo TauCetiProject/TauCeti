@@ -346,6 +346,31 @@ private theorem norm_homotopyPullbackCLM_extDerivCLM_le {ψ : 𝓓(graphDomain �
   rw [heq]
   exact norm_homotopyPullbackCLM_cutoffPullbackCLM_snd_le hf hg hψ01 _ hx hε hfL hgL
 
+omit [CompleteSpace F] in
+/-- Given a cutoff `χ` equal to one near the compact support of `T` in `Ω`, there is a cutoff `ψ`
+on `Ω × E'` with values in `[0, 1]`, equal to one near the graph of the straight-line homotopy over
+the support, such that the end slices of the graph pull the cut-off pullback of `ω` along the
+projection to `E'` back to the pushforward tests: under `T`, their difference is
+`g_# T (ω) - f_# T (ω)`. -/
+private theorem exists_cutoff_map_pullbackCLM_graphHomotopy_sub_eq
+    {T : 𝓓(Ω, E [⋀^Fin m]→L[ℝ] F) →L[ℝ] ℝ} {χ : 𝓓(Ω, ℝ)}
+    (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) :
+    ∃ ψ : 𝓓(graphDomain Ω E', ℝ), (∀ y, ψ y ∈ Icc (0 : ℝ) 1) ∧
+      (∀ x ∈ dsupport T, ∀ t ∈ Icc (0 : ℝ) 1, ∀ᶠ y in 𝓝 (graphHomotopy f g (x, t)), ψ y = 1) ∧
+      ∀ (ω : 𝓓(Ω', E' [⋀^Fin m]→L[ℝ] F)) {h₁ h₂ h₁' h₂'},
+        T (pullbackCLM (fun x ↦ graphHomotopy f g (x, 1)) h₁ h₂
+            (cutoffPullbackCLM ψ Prod.snd contDiffOn_snd ω)) -
+          T (pullbackCLM (fun x ↦ graphHomotopy f g (x, 0)) h₁' h₂'
+            (cutoffPullbackCLM ψ Prod.snd contDiffOn_snd ω)) =
+        T (cutoffPullbackCLM χ g hg ω) - T (cutoffPullbackCLM χ f hf ω) := by
+  obtain ⟨hKc, hKΩ⟩ := isCompact_dsupport_and_subset_of_eventually_eq_one hχ
+  obtain ⟨ψ, hψ01, hψ⟩ := exists_cutoff_graphHomotopy hf hg hKc hKΩ
+  refine ⟨ψ, hψ01, hψ, fun ω _ _ _ _ ↦ ?_⟩
+  rw [map_pullbackCLM_graphHomotopy_eq hf hg T hχ hψ ⟨zero_le_one, le_rfl⟩ hg
+      (fun x ↦ by simp [lineHomotopy]),
+    map_pullbackCLM_graphHomotopy_eq hf hg T hχ hψ ⟨le_rfl, zero_le_one⟩ hf
+      (fun x ↦ by simp [lineHomotopy])]
+
 omit hf hg
 
 /-- **The homotopy estimate for pushforwards**: let `T` be a normal `(k + 1)`-current whose
@@ -369,26 +394,17 @@ theorem norm_map_cutoffPullbackCLM_sub_le {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[
         L ^ k * (mass (T ∘L extDerivCLM)).toReal *
           ‖(ω : E' →ᵇ E' [⋀^Fin (k + 1)]→L[ℝ] F)‖) := by
   borelize E
-  obtain ⟨hKc, hKΩ⟩ := isCompact_dsupport_and_subset_of_eventually_eq_one hχ
-  obtain ⟨ψ, hψ01, hψ⟩ := exists_cutoff_graphHomotopy hf hg hKc hKΩ
+  have hKΩ := (isCompact_dsupport_and_subset_of_eventually_eq_one hχ).2
+  obtain ⟨ψ, hψ01, hψ, hends⟩ := exists_cutoff_map_pullbackCLM_graphHomotopy_sub_eq hf hg hχ
   -- The homotopy formula for the graph of the straight-line homotopy, evaluated on the cut-off
-  -- pullback `ω'` of `ω` to `Ω × E'`; its end slices are the pushforwards along `g` and `f`.
-  set ω' := (cutoffPullbackCLM ψ Prod.snd contDiffOn_snd ω :
-    𝓓(graphDomain Ω E', (E × E') [⋀^Fin (k + 1)]→L[ℝ] F))
-  have hG : ∀ p ∈ (Ω : Set E) ×ˢ Icc (0 : ℝ) 1, ContDiffAt ℝ (⊤ : ℕ∞) (graphHomotopy f g) p :=
-    fun _ hp ↦ contDiffAt_graphHomotopy hf hg hp.1
-  have hGp := isCompact_inter_preimage_graphHomotopy (Ω := Ω) hf hg
+  -- pullback of `ω` to `Ω × E'`; its end slices give the pushforwards along `g` and `f`.
   have hform := congr($(ContinuousLinearMap.comp_homotopyPullbackCLM_comp_extDerivCLM
-    (hH := hG) (hHp := hGp) T) ω')
+    (hH := fun _ hp ↦ contDiffAt_graphHomotopy hf hg hp.1)
+    (hHp := isCompact_inter_preimage_graphHomotopy hf hg) T)
+    (cutoffPullbackCLM ψ Prod.snd contDiffOn_snd ω))
   simp only [ContinuousLinearMap.comp_apply, _root_.sub_apply] at hform
-  rw [map_pullbackCLM_graphHomotopy_eq hf hg T hχ hψ ⟨zero_le_one, le_rfl⟩ hg
-      (fun x ↦ by simp [lineHomotopy]),
-    map_pullbackCLM_graphHomotopy_eq hf hg T hχ hψ ⟨le_rfl, zero_le_one⟩ hf
-      (fun x ↦ by simp [lineHomotopy])] at hform
-  rw [show T (cutoffPullbackCLM χ g hg ω) - T (cutoffPullbackCLM χ f hf ω) =
-      T (homotopyPullbackCLM hG hGp (extDerivCLM ω')) +
-        (T ∘L extDerivCLM) (homotopyPullbackCLM hG hGp ω') by
-    rw [ContinuousLinearMap.comp_apply, hform]; abel]
+  rw [hends ω] at hform
+  rw [← eq_sub_iff_add_eq.1 hform]
   refine (norm_add_le _ _).trans ?_
   rw [mul_add]
   gcongr
@@ -418,20 +434,14 @@ theorem norm_map_cutoffPullbackCLM_sub_le_finZero {T : 𝓓(Ω, E [⋀^Fin 0]→
     ‖T (cutoffPullbackCLM χ g hg ω) - T (cutoffPullbackCLM χ f hf ω)‖ ≤
       ε * (mass T).toReal * ‖(extDerivCLM ω : E' →ᵇ E' [⋀^Fin (0 + 1)]→L[ℝ] F)‖ := by
   borelize E
-  obtain ⟨hKc, hKΩ⟩ := isCompact_dsupport_and_subset_of_eventually_eq_one hχ
-  obtain ⟨ψ, hψ01, hψ⟩ := exists_cutoff_graphHomotopy hf hg hKc hKΩ
-  set ω' := (cutoffPullbackCLM ψ Prod.snd contDiffOn_snd ω :
-    𝓓(graphDomain Ω E', (E × E') [⋀^Fin 0]→L[ℝ] F))
-  have hG : ∀ p ∈ (Ω : Set E) ×ˢ Icc (0 : ℝ) 1, ContDiffAt ℝ (⊤ : ℕ∞) (graphHomotopy f g) p :=
-    fun _ hp ↦ contDiffAt_graphHomotopy hf hg hp.1
-  have hGp := isCompact_inter_preimage_graphHomotopy (Ω := Ω) hf hg
+  have hKΩ := (isCompact_dsupport_and_subset_of_eventually_eq_one hχ).2
+  obtain ⟨ψ, hψ01, hψ, hends⟩ := exists_cutoff_map_pullbackCLM_graphHomotopy_sub_eq hf hg hχ
   have hform := congr($(ContinuousLinearMap.comp_homotopyPullbackCLM_comp_extDerivCLM_finZero
-    (hH := hG) (hHp := hGp) T) ω')
+    (hH := fun _ hp ↦ contDiffAt_graphHomotopy hf hg hp.1)
+    (hHp := isCompact_inter_preimage_graphHomotopy hf hg) T)
+    (cutoffPullbackCLM ψ Prod.snd contDiffOn_snd ω))
   simp only [ContinuousLinearMap.comp_apply, _root_.sub_apply] at hform
-  rw [map_pullbackCLM_graphHomotopy_eq hf hg T hχ hψ ⟨zero_le_one, le_rfl⟩ hg
-      (fun x ↦ by simp [lineHomotopy]),
-    map_pullbackCLM_graphHomotopy_eq hf hg T hχ hψ ⟨le_rfl, zero_le_one⟩ hf
-      (fun x ↦ by simp [lineHomotopy])] at hform
+  rw [hends ω] at hform
   rw [← hform]
   -- No derivative bound enters in degree zero: any common bound `L` gives the factor `L ^ 0`.
   calc _ ≤ (‖(extDerivCLM ω : E' →ᵇ E' [⋀^Fin (0 + 1)]→L[ℝ] F)‖ * ε) * (mass T).toReal :=
@@ -474,18 +484,33 @@ depends only on `T`, `ω` and a common bound for the derivatives on the support.
 private theorem exists_norm_map_cutoffPullbackCLM_sub_le (hT : IsNormal T) {χ : 𝓓(Ω, ℝ)}
     (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) (L : ℝ≥0)
     (ω : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F)) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ (f g : E → E') (hf : ContDiffOn ℝ (⊤ : ℕ∞) f Ω)
+    ∃ C : ℝ, ∀ (f g : E → E') (hf : ContDiffOn ℝ (⊤ : ℕ∞) f Ω)
       (hg : ContDiffOn ℝ (⊤ : ℕ∞) g Ω) (ε : ℝ≥0), (∀ x ∈ dsupport T, ‖g x - f x‖ ≤ ε) →
       (∀ x ∈ dsupport T, ‖fderiv ℝ f x‖ ≤ L) → (∀ x ∈ dsupport T, ‖fderiv ℝ g x‖ ≤ L) →
       ‖T (cutoffPullbackCLM χ g hg ω) - T (cutoffPullbackCLM χ f hf ω)‖ ≤ ε * C := by
   cases k with
   | zero =>
     exact ⟨(mass T).toReal * ‖(extDerivCLM ω : E' →ᵇ E' [⋀^Fin (0 + 1)]→L[ℝ] F)‖,
-      by positivity, fun f g hf hg ε hε _ _ ↦
+      fun f g hf hg ε hε _ _ ↦
         (norm_map_cutoffPullbackCLM_sub_le_finZero hT.mass_ne_top hχ hf hg hε ω).trans_eq (by ring)⟩
   | succ k =>
-    exact ⟨_, by positivity, fun f g hf hg ε hε hfL hgL ↦
+    exact ⟨_, fun f g hf hg ε hε hfL hgL ↦
       norm_map_cutoffPullbackCLM_sub_le hT hχ hf hg hε hfL hgL ω⟩
+
+/-- The homotopy estimate as a modulus of continuity: for every `e > 0` there is `δ > 0` such
+that pushforwards along maps `δ`-close on the support, with derivatives bounded by `L` there,
+differ by less than `e` on `ω`. -/
+private theorem exists_norm_map_cutoffPullbackCLM_sub_lt (hT : IsNormal T) {χ : 𝓓(Ω, ℝ)}
+    (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) (L : ℝ≥0)
+    (ω : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F)) {e : ℝ} (he : 0 < e) :
+    ∃ δ : ℝ≥0, 0 < (δ : ℝ) ∧ ∀ (f g : E → E') (hf : ContDiffOn ℝ (⊤ : ℕ∞) f Ω)
+      (hg : ContDiffOn ℝ (⊤ : ℕ∞) g Ω), (∀ x ∈ dsupport T, ‖g x - f x‖ ≤ δ) →
+      (∀ x ∈ dsupport T, ‖fderiv ℝ f x‖ ≤ L) → (∀ x ∈ dsupport T, ‖fderiv ℝ g x‖ ≤ L) →
+      ‖T (cutoffPullbackCLM χ g hg ω) - T (cutoffPullbackCLM χ f hf ω)‖ < e := by
+  obtain ⟨C, hC⟩ := exists_norm_map_cutoffPullbackCLM_sub_le hT hχ L ω
+  obtain ⟨δ, hδ, hδC⟩ := exists_pos_mul_lt he C
+  exact ⟨⟨δ, hδ.le⟩, hδ, fun f g hf hg hfg hfL hgL ↦
+    (hC f g hf hg _ hfg hfL hgL).trans_lt (by rwa [mul_comm])⟩
 
 /-- Pushforwards along two sequences of smooth maps with bounded derivatives, converging
 uniformly on the support to the same map, have the same asymptotic values. -/
@@ -499,20 +524,14 @@ private theorem tendsto_map_cutoffPullbackCLM_sub (hT : IsNormal T) {χ : 𝓓(�
     (ω : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F)) :
     Tendsto (fun j ↦ T (cutoffPullbackCLM χ (g j) (hg j) ω) -
       T (cutoffPullbackCLM χ (g' j) (hg' j) ω)) atTop (𝓝 0) := by
-  obtain ⟨C, hC0, hC⟩ := exists_norm_map_cutoffPullbackCLM_sub_le hT hχ L ω
   refine Metric.tendsto_atTop.2 fun e he ↦ ?_
-  have hδ : 0 < e / (C + 1) := by positivity
-  set ε : ℝ≥0 := ⟨e / (C + 1), hδ.le⟩
-  have hε : (ε : ℝ) = e / (C + 1) := rfl
+  obtain ⟨δ, hδ, hδe⟩ := exists_norm_map_cutoffPullbackCLM_sub_lt hT hχ L ω he
   obtain ⟨N, hN⟩ := eventually_atTop.1 (Metric.tendstoUniformlyOn_iff.1 (hgf.sub hg'f) _ hδ)
   refine ⟨N, fun j hj ↦ ?_⟩
   rw [dist_zero_right]
-  have hgg' (x : E) (hx : x ∈ dsupport T) : ‖g j x - g' j x‖ ≤ ε := by
-    simpa [hε, dist_eq_norm, norm_sub_rev] using (hN j hj x hx).le
-  calc _ ≤ ε * C := hC (g' j) (g j) (hg' j) (hg j) _ hgg' (hg'L j) (hgL j)
-    _ < e := by
-        rw [hε, div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
-        nlinarith
+  have hgg' (x : E) (hx : x ∈ dsupport T) : ‖g j x - g' j x‖ ≤ δ := by
+    simpa [dist_eq_norm, norm_sub_rev] using (hN j hj x hx).le
+  exact hδe (g' j) (g j) (hg' j) (hg j) hgg' (hg'L j) (hgL j)
 
 /-- Pushforwards along a sequence of smooth maps with bounded derivatives, converging uniformly on
 the support, form a Cauchy sequence on each test form. -/
@@ -522,35 +541,36 @@ private theorem cauchySeq_map_cutoffPullbackCLM (hT : IsNormal T) {χ : 𝓓(Ω,
     {L : ℝ≥0} (hgL : ∀ j, ∀ x ∈ dsupport T, ‖fderiv ℝ (g j) x‖ ≤ L)
     (ω : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F)) :
     CauchySeq fun j ↦ T (cutoffPullbackCLM χ (g j) (hg j) ω) := by
-  obtain ⟨C, hC0, hC⟩ := exists_norm_map_cutoffPullbackCLM_sub_le hT hχ L ω
   refine Metric.cauchySeq_iff'.2 fun e he ↦ ?_
-  have hδ : 0 < e / (C + 1) := by positivity
-  set ε : ℝ≥0 := ⟨e / (C + 1), hδ.le⟩
-  have hε : (ε : ℝ) = e / (C + 1) := rfl
+  obtain ⟨δ, hδ, hδe⟩ := exists_norm_map_cutoffPullbackCLM_sub_lt hT hχ L ω he
   obtain ⟨N, hN⟩ := eventually_atTop.1
     (Metric.tendstoUniformlyOn_iff.1 hgf _ (half_pos hδ))
   refine ⟨N, fun n hn ↦ ?_⟩
-  have hnN : ∀ x ∈ dsupport T, ‖g n x - g N x‖ ≤ ε := by
+  have hnN : ∀ x ∈ dsupport T, ‖g n x - g N x‖ ≤ δ := by
     intro x hx
-    rw [hε, ← dist_eq_norm]
+    rw [← dist_eq_norm]
     linarith [dist_triangle_left (g n x) (g N x) (f x), hN n hn x hx, hN N le_rfl x hx]
   rw [dist_eq_norm]
-  calc _ ≤ ε * C := hC (g N) (g n) (hg N) (hg n) _ hnN (hgL N) (hgL n)
-    _ < e := by
-        rw [hε, div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
-        nlinarith
+  exact hδe (g N) (g n) (hg N) (hg n) hnN (hgL N) (hgL n)
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [CompleteSpace F] in
+/-- `T` is normal with compact support in `Ω`, and `f` is the uniform limit on the support of maps
+smooth on `Ω` whose derivatives are uniformly bounded on the support. -/
+private def IsApproximable (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ) (f : E → E') : Prop :=
+  IsNormal T ∧ (∃ χ : 𝓓(Ω, ℝ), ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) ∧
+    ∃ g : ℕ → E → E', (∀ j, ContDiffOn ℝ (⊤ : ℕ∞) (g j) Ω) ∧
+      TendstoUniformlyOn g f atTop (dsupport T) ∧
+      ∃ L : ℝ≥0, ∀ j, ∀ x ∈ dsupport T, ‖fderiv ℝ (g j) x‖ ≤ L
 
 /-- Given one sequence of smooth approximations of `f` on the support of `T`, there is a single
 current which is the weak limit of the pushforwards along every such sequence. -/
-private theorem exists_forall_tendsto_map_cutoffPullbackCLM (hT : IsNormal T) {χ₀ : 𝓓(Ω, ℝ)}
-    (hχ₀ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ₀ x = 1) {g₀ : ℕ → E → E'}
-    (hg₀ : ∀ j, ContDiffOn ℝ (⊤ : ℕ∞) (g₀ j) Ω) (hg₀f : TendstoUniformlyOn g₀ f atTop (dsupport T))
-    {L₀ : ℝ≥0} (hg₀L : ∀ j, ∀ x ∈ dsupport T, ‖fderiv ℝ (g₀ j) x‖ ≤ L₀) :
+private theorem IsApproximable.exists_forall_tendsto (h : IsApproximable T f) :
     ∃ S : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ, ∀ χ : 𝓓(Ω, ℝ),
       (∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) → ∀ (g : ℕ → E → E')
       (hg : ∀ j, ContDiffOn ℝ (⊤ : ℕ∞) (g j) Ω), TendstoUniformlyOn g f atTop (dsupport T) →
       ∀ L : ℝ≥0, (∀ j, ∀ x ∈ dsupport T, ‖fderiv ℝ (g j) x‖ ≤ L) → ∀ ω,
       Tendsto (fun j ↦ T (cutoffPullbackCLM χ (g j) (hg j) ω)) atTop (𝓝 (S ω)) := by
+  obtain ⟨hT, ⟨χ₀, hχ₀⟩, g₀, hg₀, hg₀f, L₀, hg₀L⟩ := h
   have hTf := hasLocallyFiniteMass_of_mass_ne_top T hT.mass_ne_top
   obtain ⟨S, -, hS⟩ := exists_tendsto_of_mass_le
     (fun j ↦ T ∘L (cutoffPullbackCLM χ₀ (g₀ j) (hg₀ j) : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] _))
@@ -570,15 +590,6 @@ private theorem exists_forall_tendsto_map_cutoffPullbackCLM (hT : IsNormal T) {�
     (fun j x hx ↦ (hg₀L j x hx).trans (le_max_right _ _)) ω
   simpa using hdiff.add (hS ω)
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [CompleteSpace F] in
-/-- `T` is normal with compact support in `Ω`, and `f` is the uniform limit on the support of maps
-smooth on `Ω` whose derivatives are uniformly bounded on the support. -/
-private def IsApproximable (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ) (f : E → E') : Prop :=
-  IsNormal T ∧ (∃ χ : 𝓓(Ω, ℝ), ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) ∧
-    ∃ g : ℕ → E → E', (∀ j, ContDiffOn ℝ (⊤ : ℕ∞) (g j) Ω) ∧
-      TendstoUniformlyOn g f atTop (dsupport T) ∧
-      ∃ L : ℝ≥0, ∀ j, ∀ x ∈ dsupport T, ‖fderiv ℝ (g j) x‖ ≤ L
-
 open Classical in
 /-- The **pushforward `f_# T` of a normal current `T` along a Lipschitz map `f`**.
 
@@ -593,10 +604,7 @@ pushforward when `f` is smooth on `Ω`
 support in `Ω`, or `f` has no such approximations, it is `0`. -/
 def lipschitzPushforward (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ) (f : E → E') :
     𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ :=
-  if h : IsApproximable T f then
-    Classical.choose (exists_forall_tendsto_map_cutoffPullbackCLM h.1 h.2.1.choose_spec
-      h.2.2.choose_spec.1 h.2.2.choose_spec.2.1 h.2.2.choose_spec.2.2.choose_spec)
-  else 0
+  if h : IsApproximable T f then Classical.choose h.exists_forall_tendsto else 0
 
 /-- **The Lipschitz pushforward is the limit of smooth pushforwards**: if smooth maps `gⱼ` converge
 to `f` uniformly on the support of a normal current `T`, with uniformly bounded derivatives there,
@@ -611,9 +619,7 @@ theorem tendsto_lipschitzPushforward (hT : IsNormal T) {χ : 𝓓(Ω, ℝ)}
       (𝓝 (lipschitzPushforward T f ω)) := by
   have h : IsApproximable T f := ⟨hT, ⟨χ, hχ⟩, g, hg, hgf, L, hgL⟩
   rw [lipschitzPushforward, dite_eq_left h]
-  exact Classical.choose_spec (exists_forall_tendsto_map_cutoffPullbackCLM h.1 h.2.1.choose_spec
-    h.2.2.choose_spec.1 h.2.2.choose_spec.2.1 h.2.2.choose_spec.2.2.choose_spec) χ hχ g hg hgf L
-    hgL ω
+  exact Classical.choose_spec h.exists_forall_tendsto χ hχ g hg hgf L hgL ω
 
 omit [CompleteSpace F] in
 /-- Smooth approximations of a map which is Lipschitz near the support, and a cutoff. -/
