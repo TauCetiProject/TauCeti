@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.FundamentalGroup.WedgeSum
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.WedgeSum
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.UniversalCover
-import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 
 /-!
 # Deck transformations of the universal cover of a wedge of circles
@@ -21,9 +20,10 @@ cover, whose deck group is the opposite of its fundamental group, the free group
 
 `deck (proj) ≃* (FreeGroup ι)ᵐᵒᵖ`
 
-(`TauCeti.WedgeSum.deckCircleMulEquiv`). Free groups are torsion-free, so no deck transformation
-of the universal cover of a wedge of circles other than the identity has finite order
-(`TauCeti.WedgeSum.isMulTorsionFree_deck_circle`). The generator `i` of the free group
+(`TauCeti.WedgeSum.deckCircleMulEquiv`). Free groups are torsion-free
+(`TauCeti.WedgeSum.isMulTorsionFree_circleFundamentalGroup`), so no deck transformation of the
+universal cover of a wedge of circles other than the identity has finite order
+(`TauCeti.UniversalCover.isMulTorsionFree_deck`). The generator `i` of the free group
 corresponds to the deck transformation given by the inverse of the loop around the `i`-th circle
 (`TauCeti.WedgeSum.deckCircleMulEquiv_symm_op_of`).
 -/
@@ -56,13 +56,5 @@ theorem deckCircleMulEquiv_symm_op_of (i : ι) :
           (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop)))⁻¹ := by
   simp [deckCircleMulEquiv,
     (MulEquiv.symm_apply_eq _).2 (circleFundamentalGroupMulEquiv_expLoop i).symm]
-
-/-- **The universal cover of a wedge of circles has no deck transformation of finite order** other
-than the identity: its deck group is the opposite of a free group, which is torsion-free. -/
-instance isMulTorsionFree_deck_circle :
-    IsMulTorsionFree
-      (deck (UniversalCover.proj : UniversalCover (base fun _ : ι ↦ (1 : Circle)) → _)) :=
-  Function.Injective.isMulTorsionFree (deckCircleMulEquiv ι).toMonoidHom
-    (deckCircleMulEquiv ι).injective
 
 end TauCeti.WedgeSum

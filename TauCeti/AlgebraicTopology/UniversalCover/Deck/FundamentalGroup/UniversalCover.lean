@@ -32,6 +32,8 @@ pinned by `TauCeti.Deck.IsRegular.deckFundamentalGroupEquiv`.
 * `TauCeti.UniversalCover.isRegular_proj`: regularity of the universal-cover projection.
 * `TauCeti.UniversalCover.deckFundamentalGroupEquiv`: the deck group of the universal cover is
   the opposite fundamental group.
+* `TauCeti.UniversalCover.isMulTorsionFree_deck`: the deck group of the universal cover is
+  torsion-free when the fundamental group of the base is.
 * `TauCeti.UniversalCover.deckFundamentalGroupEquiv_symm_mk_apply_basepointLift`: the deck
   transformation of the class of a loop `p` in the geometric fundamental group
   `TauCeti.GeometricFundamentalGroup X x₀ = (FundamentalGroup X x₀)ᵐᵒᵖ` sends the base lift to the
@@ -135,6 +137,16 @@ lemma deckFundamentalGroupEquiv_symm_op
   change ((isCoveringMap x₀).monodromy g.toPath (basepointLift x₀) :
     UniversalCover x₀) = (loopDeck x₀ g⁻¹).val (basepointLift x₀)
   simpa only [deck.smul_eq_apply, loopDeck_apply] using monodromy_basepointLift x₀ g
+
+/-- If the fundamental group of the base is torsion-free, then no deck transformation of the
+universal cover other than the identity has finite order: the deck group is the opposite of the
+fundamental group. -/
+instance isMulTorsionFree_deck
+    [LocallyPathConnectedSpace X] [PathConnectedSpace X]
+    [SemilocallySimplyConnectedSpace X] [IsMulTorsionFree (FundamentalGroup X x₀)] :
+    IsMulTorsionFree (deck (proj : UniversalCover x₀ → X)) :=
+  (deckFundamentalGroupEquiv x₀).injective.isMulTorsionFree
+    (deckFundamentalGroupEquiv x₀).toMonoidHom
 
 section Geometric
 
