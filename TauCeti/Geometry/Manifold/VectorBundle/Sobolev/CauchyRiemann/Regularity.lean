@@ -71,7 +71,8 @@ public section
 noncomputable section
 
 open Bundle MeasureTheory Module Set TopologicalSpace Complex
-open ContinuousLinearMap (complexAntilinearPartL lsmul lsmul_I_mul_lsmul_I)
+open ContinuousLinearMap
+  (complexAntilinearPartL complexAntilinearPartL_apply_one lsmul lsmul_I_mul_lsmul_I)
 open scoped Manifold ENNReal NNReal ContDiff TauCeti.ComplexManifold Distributions
 
 namespace TauCeti

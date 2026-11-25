@@ -246,16 +246,10 @@ theorem exists_contDiffOn_ae_eq_of_forall_integral_apply_cauchyRiemann_eq_zero {
 
 section ComplexAntilinear
 
-open ContinuousLinearMap (complexAntilinearPartL lsmul)
+open ContinuousLinearMap (complexAntilinearPartL complexAntilinearPartL_apply_one lsmul)
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F]
   [IsScalarTower ℝ ℂ F]
-
-/-- The value on `1` of the complex antilinear part of a real linear map `L : ℂ → F` is
-`½ (L 1 + i L i)`. -/
-theorem complexAntilinearPartL_apply_one (L : ℂ →L[ℝ] F) :
-    complexAntilinearPartL L 1 = (2⁻¹ : ℝ) • (L 1 + lsmul ℝ ℂ Complex.I (L Complex.I)) := by
-  simp
 
 /-- **The adjoint equation in planar form.** For a covector field `η`, a field `Z` of zeroth-order
 terms and a function `φ`, if `η` annihilates the value on `1` of `∂bar φ + Z φ` in integral, it

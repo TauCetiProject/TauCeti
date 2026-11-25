@@ -490,6 +490,12 @@ theorem complexAntilinearPartL_apply_apply (Ψ : E →L[ℝ] F) (v : E) :
     complexAntilinearPartL Ψ v = (2⁻¹ : ℝ) • (Ψ v + Complex.I • Ψ (Complex.I • v)) :=
   (rfl)
 
+/-- The value on `1` of the complex antilinear part of a real linear map `L : ℂ → F` is
+`½ (L 1 + i L i)`. -/
+theorem complexAntilinearPartL_apply_one (L : ℂ →L[ℝ] F) :
+    complexAntilinearPartL L 1 = (2⁻¹ : ℝ) • (L 1 + lsmul ℝ ℂ Complex.I (L Complex.I)) := by
+  simp
+
 /-- `ContinuousLinearMap.complexAntilinearPartL` is the algebraic complex-antilinear part
 `TauCeti.complexAntilinearPart` for the complex structures given by multiplication by `i`. -/
 theorem toLinearMap_complexAntilinearPartL (Ψ : E →L[ℝ] F) :
