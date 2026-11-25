@@ -152,10 +152,9 @@ theorem glue_conjAct_smul (h : G) (g : c.carrier) (s : HurwitzFiber c full n) :
   simp [← mul_assoc]
 
 /-- A constant block multiplies the boundary on the left by the corresponding power. -/
-@[simp↓]
 theorem product_glue (g : c.carrier) (s : HurwitzFiber c full n) :
     product (glue m g s).tuple = (g : G) ^ m * product s.tuple := by
-  simp [glue_tuple, product_def, List.ofFn_const]
+  simp
 
 end HurwitzFiber
 

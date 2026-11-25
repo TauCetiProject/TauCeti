@@ -104,6 +104,11 @@ theorem product_def (t : BranchTuple r G) : product t = (List.ofFn t).prod := (r
 theorem product_zero (t : BranchTuple 0 G) : product t = 1 := by
   simp [product_def]
 
+/-- The ordered product of a constant tuple is its entry raised to the tuple length. -/
+@[simp]
+theorem product_const (g : G) : product (fun _ : Fin r ↦ g) = g ^ r := by
+  rw [product_def, List.ofFn_const, List.prod_replicate]
+
 @[simp]
 theorem product_cons (g : G) (t : BranchTuple r G) :
     product (Fin.cons g t : BranchTuple (r + 1) G) = g * product t := by
