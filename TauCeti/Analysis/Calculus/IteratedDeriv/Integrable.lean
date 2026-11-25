@@ -9,10 +9,10 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Normed.Module.Completion
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 
 /-!
 # Integrability and Landau–Kolmogorov `L¹` inequality for the first derivative
@@ -323,13 +323,11 @@ theorem integrable_deriv_of_norm_le_div_one_add_sq {f : ℝ → E} (hf : ContDif
     (h0 : ∀ t : ℝ, ‖f t‖ ≤ A / (1 + t ^ 2))
     (h2 : ∀ t : ℝ, ‖iteratedDeriv 2 f t‖ ≤ A / (1 + t ^ 2)) :
     Integrable (deriv f) := by
-  have hdom : Integrable (fun t : ℝ ↦ A / (1 + t ^ 2)) := by
-    simpa only [div_eq_mul_inv] using integrable_inv_one_add_sq.const_mul A
-  have hf0 : Integrable f :=
-    hdom.mono' hf.continuous.aestronglyMeasurable (ae_of_all _ h0)
-  have hf2 : Integrable (iteratedDeriv 2 f) :=
-    hdom.mono' (hf.continuous_iteratedDeriv 2 le_rfl).aestronglyMeasurable (ae_of_all _ h2)
-  exact hf.integrable_deriv hf0 hf2
+  have hm2 : AEStronglyMeasurable (iteratedDeriv 2 f) :=
+    (hf.continuous_iteratedDeriv 2 le_rfl).aestronglyMeasurable
+  exact hf.integrable_deriv
+    (hf.continuous.aestronglyMeasurable.integrable_of_norm_le_div_one_add_sq (ae_of_all _ h0))
+    (hm2.integrable_of_norm_le_div_one_add_sq (ae_of_all _ h2))
 
 /-- Convenience form bundling integrability of `iteratedDeriv k f` for all `k ≤ 2` from
 integrability of `f` and `iteratedDeriv 2 f`. -/

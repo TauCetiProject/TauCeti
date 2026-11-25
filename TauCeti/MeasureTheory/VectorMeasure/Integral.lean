@@ -116,6 +116,7 @@ theorem integral_smul_vectorMeasure_of_smul_right [NormedField 𝕜] [NormedAlge
 /-- Embedding a real integrand into an `RCLike` field `𝕜` under `lsmul ℝ 𝕜` gives the same
 vector-measure integral as integrating over `ℝ`. Holds unconditionally without an integrability
 or completeness assumption. -/
+@[simp]
 theorem integral_ofReal_lsmul [RCLike 𝕜] [NormedSpace 𝕜 E] [IsScalarTower ℝ 𝕜 E]
     (μ : VectorMeasure X E) (ψ : X → ℝ) :
     ∫ᵛ x, (ψ x : 𝕜) ∂[lsmul ℝ 𝕜; μ] = ∫ᵛ x, ψ x ∂•μ := by

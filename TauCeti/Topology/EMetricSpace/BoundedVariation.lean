@@ -23,7 +23,10 @@ that preserves the distances between the values of the function, and proves boun
 constant extensions from closed intervals.
 Total variation on continuous maps is lower semicontinuous for the compact-open topology,
 allowing measurable path-space applications. Nested finite subsets recover the full extended
-variation, while containing any prescribed sequence of finite subsets.
+variation, while containing any prescribed sequence of finite subsets. Finally, it records the
+variation across a jump from a constant prefix or suffix, and bounds distances and norms against
+limits along nontrivial filters (in particular the sharp `2 * ‖f x‖ₑ ≤ eVariationOn f univ` bound
+when `f → 0` at `±∞`).
 
 ## Main results
 
@@ -41,6 +44,14 @@ variation, while containing any prescribed sequence of finite subsets.
 * `TauCeti.eVariationOn_id_unitInterval` and `LipschitzWith.eVariationOn_unitInterval_le`: the
   identity of the unit interval has total variation `1`, so a `C`-Lipschitz map on the unit
   interval has total variation at most `C`.
+* `eVariationOn.inter_Iic_eq_edist_of_const` and `eVariationOn.inter_Ici_eq_edist_of_const`:
+  variation on `s ∩ Iic a` (or `s ∩ Ici a`) when `f` is constant on `s ∩ Iio a` (or `s ∩ Ioi a`).
+* `eVariationOn.edist_le_of_tendsto`, `eVariationOn.eNorm_le_of_tendsto_zero`, and
+  `eVariationOn.two_mul_eNorm_le`: extended-distance and norm bounds against filter limits.
+* `BoundedVariationOn.dist_le_of_tendsto`, `BoundedVariationOn.norm_le_of_tendsto_zero`,
+  `BoundedVariationOn.two_mul_norm_le_eVariationOn_toReal`, and
+  `BoundedVariationOn.norm_le_eVariationOn_toReal_div_two`: real-valued distance and pointwise norm
+  bounds against filter limits.
 -/
 
 public section
@@ -275,4 +286,122 @@ theorem exists_monotone_finset_tendsto (f : α → E) (s : Set α) (q : ℕ → 
     (fun n ↦ (hr n).symm ▸ mono f (hrp n))
     (fun n ↦ (mono f (hp n)).trans_eq (eq_iSup_finset f s))
 
+/-- If `f` is constant with value `c` on `s ∩ Iio a`, where `s ∩ Iio a` is nonempty and `a ∈ s`,
+then the variation of `f` on `s ∩ Iic a` is the jump `edist (f a) c`. -/
+theorem inter_Iic_eq_edist_of_const {f : α → E} {s : Set α} {a : α} {c : E}
+    (hne : (s ∩ Iio a).Nonempty) (ha : a ∈ s) (h : ∀ x ∈ s ∩ Iio a, f x = c) :
+    eVariationOn f (s ∩ Iic a) = edist (f a) c := by
+  refine le_antisymm ?_ ?_
+  · let g : Bool → E := fun b ↦ bif b then f a else c
+    let φ : α → Bool := fun x ↦ decide (a ≤ x)
+    have hmono : Monotone φ := fun x y hxy ↦ by
+      simp only [φ, Bool.le_iff_imp, decide_eq_true_eq]
+      exact fun hax ↦ hax.trans hxy
+    have heq : EqOn f (g ∘ φ) (s ∩ Iic a) := fun x hx ↦ by
+      rcases hx.2.lt_or_eq with hxa | rfl
+      · simp [g, φ, not_le.mpr hxa, h x ⟨hx.1, hxa⟩]
+      · simp [g, φ]
+    rw [eVariationOn.congr heq]
+    refine (eVariationOn.comp_le_of_monotoneOn g φ (hmono.monotoneOn _)
+      (mapsTo_univ φ _)).trans ?_
+    have huniv : (univ : Set Bool) = {true, false} := by ext b; cases b <;> simp
+    rw [huniv, eVariationOn.pair]
+    simp [g]
+  · obtain ⟨b, hb⟩ := hne
+    rw [← h b hb]
+    exact eVariationOn.edist_le f ⟨ha, le_rfl⟩ ⟨hb.1, hb.2.le⟩
+
+open OrderDual in
+/-- If `f` is constant with value `c` on `s ∩ Ioi a`, where `s ∩ Ioi a` is nonempty and `a ∈ s`,
+then the variation of `f` on `s ∩ Ici a` is the jump `edist (f a) c`. -/
+theorem inter_Ici_eq_edist_of_const {f : α → E} {s : Set α} {a : α} {c : E}
+    (hne : (s ∩ Ioi a).Nonempty) (ha : a ∈ s) (h : ∀ x ∈ s ∩ Ioi a, f x = c) :
+    eVariationOn f (s ∩ Ici a) = edist (f a) c := by
+  rw [← comp_ofDual f]
+  exact inter_Iic_eq_edist_of_const (a := toDual a) hne ha h
+
 end eVariationOn
+
+section FilterLimits
+
+open scoped Topology
+
+namespace eVariationOn
+
+/-- If `f` tends to `y` along a nontrivial filter `l` supported on `s`, then the extended distance
+from `f x` (`x ∈ s`) to `y` is bounded by `eVariationOn f s`. No finiteness of variation is
+assumed. -/
+theorem edist_le_of_tendsto {α E : Type*} [LinearOrder α] [PseudoEMetricSpace E]
+    {f : α → E} {s : Set α} {l : Filter α} [l.NeBot] (hl : l ≤ 𝓟 s)
+    {x : α} (hx : x ∈ s) {y : E} (hlim : Tendsto f l (𝓝 y)) :
+    edist (f x) y ≤ eVariationOn f s := by
+  refine le_of_tendsto (tendsto_const_nhds.edist hlim) ?_
+  filter_upwards [hl (mem_principal_self s)] with z hz
+  exact eVariationOn.edist_le f hx hz
+
+/-- Seminormed-group specialization of `eVariationOn.edist_le_of_tendsto` for a zero limit. -/
+theorem eNorm_le_of_tendsto_zero {α E : Type*} [LinearOrder α] [SeminormedAddCommGroup E]
+    {f : α → E} {s : Set α} {l : Filter α} [l.NeBot] (hl : l ≤ 𝓟 s)
+    {x : α} (hx : x ∈ s) (hlim : Tendsto f l (𝓝 0)) :
+    ‖f x‖ₑ ≤ eVariationOn f s := by
+  simpa only [edist_zero_right] using edist_le_of_tendsto hl hx hlim
+
+/-- Sharp two-sided `ℝ≥0∞` bound: if `f` vanishes at both `-∞` and `+∞`, then `2 * ‖f x‖ₑ` is at
+most the total variation of `f` on `univ`. -/
+theorem two_mul_eNorm_le {α E : Type*} [LinearOrder α] [SeminormedAddCommGroup E]
+    {f : α → E} (hbot : Tendsto f atBot (𝓝 0)) (htop : Tendsto f atTop (𝓝 0)) (x : α) :
+    2 * ‖f x‖ₑ ≤ eVariationOn f univ := by
+  have : Nonempty α := ⟨x⟩
+  have hL : ‖f x‖ₑ ≤ eVariationOn f (Iic x) :=
+    eNorm_le_of_tendsto_zero (le_principal_iff.mpr (Iic_mem_atBot x)) self_mem_Iic hbot
+  have hR : ‖f x‖ₑ ≤ eVariationOn f (Ici x) :=
+    eNorm_le_of_tendsto_zero (le_principal_iff.mpr (Ici_mem_atTop x)) self_mem_Ici htop
+  calc
+    2 * ‖f x‖ₑ = ‖f x‖ₑ + ‖f x‖ₑ := two_mul _
+    _ ≤ eVariationOn f (Iic x) + eVariationOn f (Ici x) := add_le_add hL hR
+    _ = eVariationOn f (Iic x ∪ Ici x) :=
+      (eVariationOn.union f isGreatest_Iic isLeast_Ici).symm
+    _ = eVariationOn f univ := by rw [Iic_union_Ici]
+
+end eVariationOn
+
+namespace BoundedVariationOn
+
+variable {α E : Type*} [LinearOrder α]
+
+/-- Real-valued distance bound against a limit along a nontrivial filter supported on `s`. -/
+theorem dist_le_of_tendsto [PseudoMetricSpace E] {f : α → E} {s : Set α}
+    (hf : BoundedVariationOn f s) {l : Filter α} [l.NeBot] (hl : l ≤ 𝓟 s)
+    {x : α} (hx : x ∈ s) {y : E} (hlim : Tendsto f l (𝓝 y)) :
+    dist (f x) y ≤ (eVariationOn f s).toReal := by
+  rw [← ENNReal.ofReal_le_iff_le_toReal hf, ← edist_dist]
+  exact eVariationOn.edist_le_of_tendsto hl hx hlim
+
+/-- Real-valued norm bound against a zero limit along a nontrivial filter supported on `s`. -/
+theorem norm_le_of_tendsto_zero [SeminormedAddCommGroup E] {f : α → E} {s : Set α}
+    (hf : BoundedVariationOn f s) {l : Filter α} [l.NeBot] (hl : l ≤ 𝓟 s)
+    {x : α} (hx : x ∈ s) (hlim : Tendsto f l (𝓝 0)) :
+    ‖f x‖ ≤ (eVariationOn f s).toReal := by
+  simpa only [dist_zero_right] using hf.dist_le_of_tendsto hl hx hlim
+
+/-- Sharp two-sided bound: if `f` has bounded variation on `univ` and tends to `0` at both `±∞`,
+then `2 * ‖f x‖ ≤ (eVariationOn f univ).toReal`. -/
+theorem two_mul_norm_le_eVariationOn_toReal [SeminormedAddCommGroup E] {f : α → E}
+    (hf : BoundedVariationOn f univ) (hbot : Tendsto f atBot (𝓝 0))
+    (htop : Tendsto f atTop (𝓝 0)) (x : α) :
+    2 * ‖f x‖ ≤ (eVariationOn f univ).toReal := by
+  have h := eVariationOn.two_mul_eNorm_le hbot htop x
+  rw [← ENNReal.ofReal_le_iff_le_toReal hf]
+  simpa only [ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat, ofReal_norm] using h
+
+/-- Sharp two-sided pointwise norm bound: if `f` has bounded variation on `univ` and tends to `0`
+at both `±∞`, then `‖f x‖ ≤ (eVariationOn f univ).toReal / 2`. -/
+theorem norm_le_eVariationOn_toReal_div_two [SeminormedAddCommGroup E] {f : α → E}
+    (hf : BoundedVariationOn f univ) (hbot : Tendsto f atBot (𝓝 0))
+    (htop : Tendsto f atTop (𝓝 0)) (x : α) :
+    ‖f x‖ ≤ (eVariationOn f univ).toReal / 2 :=
+  (le_div_iff₀' zero_lt_two).mpr (hf.two_mul_norm_le_eVariationOn_toReal hbot htop x)
+
+end BoundedVariationOn
+
+end FilterLimits

@@ -26,6 +26,10 @@ zero and one.
 
 ## Main declarations
 
+* `MeasureTheory.AEStronglyMeasurable.integrable_of_norm_le_div_one_add_sq` and
+  `MeasureTheory.AEStronglyMeasurable.integral_norm_le_of_norm_le_div_one_add_sq`: integrability
+  and the `L¹` bound `∫ t, ‖u t‖ ≤ A * π` for a strongly measurable function dominated almost
+  everywhere by `A / (1 + t ^ 2)`.
 * `TauCeti.integrable_inv_sq_add_sq`: `(x ^ 2 + c ^ 2)⁻¹` is integrable for `c ≠ 0`.
 * `TauCeti.one_div_sqrt_mul_sqrt_le_inv_min_sq_add_sq` and
   `TauCeti.integrable_one_div_sqrt_mul_sqrt`: the inverse product of two quadratic square
@@ -455,3 +459,30 @@ theorem integral_Ioi_rpow_mul_log_of_lt {a c : ℝ} (ha : a < -1) (hc : 0 < c) :
   ring
 
 end TauCeti
+
+namespace MeasureTheory.AEStronglyMeasurable
+
+open scoped Real
+
+/-- A strongly measurable function on `ℝ` bounded in norm almost everywhere by `A / (1 + t ^ 2)` is
+integrable with respect to Lebesgue measure. -/
+theorem integrable_of_norm_le_div_one_add_sq {E : Type*} [NormedAddCommGroup E] {u : ℝ → E}
+    (hu : AEStronglyMeasurable u) {A : ℝ} (h : ∀ᵐ t : ℝ, ‖u t‖ ≤ A / (1 + t ^ 2)) :
+    Integrable u :=
+  ((integrable_inv_one_add_sq.const_mul A).congr
+    (Filter.Eventually.of_forall fun _ ↦ (div_eq_mul_inv A _).symm)).mono' hu h
+
+/-- If a strongly measurable function on `ℝ` is bounded in norm almost everywhere by
+`A / (1 + t ^ 2)`, then `∫ t, ‖u t‖ ≤ A * π`. -/
+theorem integral_norm_le_of_norm_le_div_one_add_sq {E : Type*} [NormedAddCommGroup E]
+    {u : ℝ → E} (hu : AEStronglyMeasurable u) {A : ℝ}
+    (h : ∀ᵐ t : ℝ, ‖u t‖ ≤ A / (1 + t ^ 2)) : ∫ t : ℝ, ‖u t‖ ≤ A * π := by
+  have hdom : Integrable (fun t : ℝ ↦ A / (1 + t ^ 2)) :=
+    (integrable_inv_one_add_sq.const_mul A).congr
+      (Filter.Eventually.of_forall fun _ ↦ (div_eq_mul_inv A _).symm)
+  calc
+    ∫ t : ℝ, ‖u t‖ ≤ ∫ t : ℝ, A / (1 + t ^ 2) :=
+      integral_mono_ae (hu.integrable_of_norm_le_div_one_add_sq h).norm hdom h
+    _ = A * π := by simp_rw [div_eq_mul_inv, integral_const_mul, integral_univ_inv_one_add_sq]
+
+end MeasureTheory.AEStronglyMeasurable

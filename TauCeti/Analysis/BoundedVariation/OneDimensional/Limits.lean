@@ -9,32 +9,31 @@ public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Topology.EMetricSpace.BoundedVariation
 import Mathlib.Analysis.Normed.Group.Completion
+import TauCeti.Topology.EMetricSpace.BoundedVariation
 
 /-!
-# Limits at infinity and pointwise bounds for functions of bounded variation
+# Limits at infinity and pointwise bounds for integrable functions of bounded variation
 
-If a function on a linearly ordered space approaches a limit `y` along a nontrivial filter
-supported on a set `s`, the extended distance from `f x` (`x ∈ s`) to `y` is at most
-`eVariationOn f s`. For a function taking values in a seminormed additive commutative group that
-vanishes at both `±∞`, splitting the line at `x` via `eVariationOn.union` gives the sharp bound
-`2 * ‖f x‖ₑ ≤ eVariationOn f univ`, and hence `‖f x‖ ≤ (eVariationOn f univ).toReal / 2` whenever
-`f` has bounded variation on `univ`. The factor `1 / 2` is attained by `1_[0,1]`.
+If a function on a linearly ordered measurable space has bounded variation and is integrable along
+`atTop` (or `atBot`) with respect to a measure assigning infinite measure to every element of the
+filter—in particular Lebesgue measure on `ℝ`—then it must tend to `0` at `+∞` (or `-∞`). Passing to
+`UniformSpace.Completion E` removes any completeness or vector-space assumption on the codomain `E`.
 
-If `f` is also integrable along `atTop` (or `atBot`) with respect to a measure assigning infinite
-measure to every element of the filter—in particular Lebesgue measure on `ℝ`—then bounded variation
-forces `f` to tend to `0` at `+∞` (or `-∞`). Passing to `UniformSpace.Completion E` removes any
-completeness or vector-space assumption on the codomain `E`.
+Combining vanishing at both `±∞` with `BoundedVariationOn.norm_le_eVariationOn_toReal_div_two` from
+`TauCeti.Topology.EMetricSpace.BoundedVariation` yields the sharp global supremum bound
+`‖f x‖ ≤ (eVariationOn f univ).toReal / 2` (and hence `‖f x‖ ≤ (eVariationOn f univ).toReal`) for
+every integrable function `f : ℝ → E` of bounded variation. The factor `1 / 2` is attained by
+`1_[0,1]`, and the indicator of `[0, ∞)` shows that integrability cannot be omitted.
 
 ## Main declarations
 
-* `eVariationOn.edist_le_of_tendsto`: `edist (f x) y ≤ eVariationOn f s` when `f → y` along a
-  nontrivial filter supported on `s`.
-* `eVariationOn.two_mul_eNorm_le`: `2 * ‖f x‖ₑ ≤ eVariationOn f univ` when `f → 0` at both `±∞`.
 * `BoundedVariationOn.tendsto_zero_atTop_of_measure_eq_top` and
   `BoundedVariationOn.tendsto_zero_atBot_of_measure_eq_top`: a function of bounded variation that is
   integrable along `atTop` (or `atBot`) for a measure with infinite tails tends to `0`.
-* `BoundedVariationOn.tendsto_zero_atTop` and `BoundedVariationOn.tendsto_zero_atBot`: Lebesgue
-  specializations for globally integrable functions `f : ℝ → E` of bounded variation.
+* `BoundedVariationOn.tendsto_zero_atTop_of_integrableAtFilter`,
+  `BoundedVariationOn.tendsto_zero_atBot_of_integrableAtFilter`,
+  `BoundedVariationOn.tendsto_zero_atTop`, and `BoundedVariationOn.tendsto_zero_atBot`: Lebesgue
+  specializations on `ℝ`.
 * `BoundedVariationOn.norm_le_eVariationOn_toReal_div_two_of_integrable` and
   `BoundedVariationOn.norm_le_eVariationOn_toReal_of_integrable`: pointwise supremum bounds
   `‖f x‖ ≤ (eVariationOn f univ).toReal / 2` and `‖f x‖ ≤ (eVariationOn f univ).toReal` for
@@ -51,86 +50,7 @@ public section
 open Filter MeasureTheory Set Topology UniformSpace
 open scoped ENNReal
 
-namespace eVariationOn
-
-/-- If `f` tends to `y` along a nontrivial filter `l` supported on `s`, then the extended distance
-from `f x` (`x ∈ s`) to `y` is bounded by `eVariationOn f s`. No finiteness of variation is
-assumed. -/
-theorem edist_le_of_tendsto {α E : Type*} [LinearOrder α] [PseudoEMetricSpace E]
-    {f : α → E} {s : Set α} {l : Filter α} [l.NeBot] (hl : l ≤ 𝓟 s)
-    {x : α} (hx : x ∈ s) {y : E} (hlim : Tendsto f l (𝓝 y)) :
-    edist (f x) y ≤ eVariationOn f s := by
-  refine le_of_tendsto (tendsto_const_nhds.edist hlim) ?_
-  filter_upwards [hl (mem_principal_self s)] with z hz
-  exact eVariationOn.edist_le f hx hz
-
-/-- Seminormed-group specialization of `eVariationOn.edist_le_of_tendsto` for a zero limit. -/
-theorem eNorm_le_of_tendsto_zero {α E : Type*} [LinearOrder α] [SeminormedAddCommGroup E]
-    {f : α → E} {s : Set α} {l : Filter α} [l.NeBot] (hl : l ≤ 𝓟 s)
-    {x : α} (hx : x ∈ s) (hlim : Tendsto f l (𝓝 0)) :
-    ‖f x‖ₑ ≤ eVariationOn f s := by
-  simpa only [edist_zero_right] using edist_le_of_tendsto hl hx hlim
-
-/-- Sharp two-sided `ℝ≥0∞` bound: if `f` vanishes at both `-∞` and `+∞`, then `2 * ‖f x‖ₑ` is at
-most the total variation of `f` on `univ`. -/
-theorem two_mul_eNorm_le {α E : Type*} [LinearOrder α] [SeminormedAddCommGroup E]
-    {f : α → E} (hbot : Tendsto f atBot (𝓝 0)) (htop : Tendsto f atTop (𝓝 0)) (x : α) :
-    2 * ‖f x‖ₑ ≤ eVariationOn f univ := by
-  have : Nonempty α := ⟨x⟩
-  have hL : ‖f x‖ₑ ≤ eVariationOn f (Iic x) :=
-    eNorm_le_of_tendsto_zero (le_principal_iff.mpr (Iic_mem_atBot x)) self_mem_Iic hbot
-  have hR : ‖f x‖ₑ ≤ eVariationOn f (Ici x) :=
-    eNorm_le_of_tendsto_zero (le_principal_iff.mpr (Ici_mem_atTop x)) self_mem_Ici htop
-  calc
-    2 * ‖f x‖ₑ = ‖f x‖ₑ + ‖f x‖ₑ := two_mul _
-    _ ≤ eVariationOn f (Iic x) + eVariationOn f (Ici x) := add_le_add hL hR
-    _ = eVariationOn f (Iic x ∪ Ici x) :=
-      (eVariationOn.union f isGreatest_Iic isLeast_Ici).symm
-    _ = eVariationOn f univ := by rw [Iic_union_Ici]
-
-end eVariationOn
-
 namespace BoundedVariationOn
-
-section PseudoMetric
-
-variable {α E : Type*} [LinearOrder α]
-
-/-- Real-valued distance bound against a limit along a nontrivial filter supported on `s`. -/
-theorem dist_le_of_tendsto [PseudoMetricSpace E] {f : α → E} {s : Set α}
-    (hf : BoundedVariationOn f s) {l : Filter α} [l.NeBot] (hl : l ≤ 𝓟 s)
-    {x : α} (hx : x ∈ s) {y : E} (hlim : Tendsto f l (𝓝 y)) :
-    dist (f x) y ≤ (eVariationOn f s).toReal := by
-  rw [← ENNReal.ofReal_le_iff_le_toReal hf, ← edist_dist]
-  exact eVariationOn.edist_le_of_tendsto hl hx hlim
-
-/-- Real-valued norm bound against a zero limit along a nontrivial filter supported on `s`. -/
-theorem norm_le_of_tendsto_zero [SeminormedAddCommGroup E] {f : α → E} {s : Set α}
-    (hf : BoundedVariationOn f s) {l : Filter α} [l.NeBot] (hl : l ≤ 𝓟 s)
-    {x : α} (hx : x ∈ s) (hlim : Tendsto f l (𝓝 0)) :
-    ‖f x‖ ≤ (eVariationOn f s).toReal := by
-  simpa only [dist_zero_right] using hf.dist_le_of_tendsto hl hx hlim
-
-/-- Sharp two-sided bound: if `f` has bounded variation on `univ` and tends to `0` at both `±∞`,
-then `2 * ‖f x‖ ≤ (eVariationOn f univ).toReal`. -/
-theorem two_mul_norm_le_eVariationOn_toReal [SeminormedAddCommGroup E] {f : α → E}
-    (hf : BoundedVariationOn f univ) (hbot : Tendsto f atBot (𝓝 0))
-    (htop : Tendsto f atTop (𝓝 0)) (x : α) :
-    2 * ‖f x‖ ≤ (eVariationOn f univ).toReal := by
-  have h := eVariationOn.two_mul_eNorm_le hbot htop x
-  rw [← ENNReal.ofReal_le_iff_le_toReal hf]
-  simpa only [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat,
-    ofReal_norm] using h
-
-/-- Sharp two-sided pointwise norm bound: if `f` has bounded variation on `univ` and tends to `0`
-at both `±∞`, then `‖f x‖ ≤ (eVariationOn f univ).toReal / 2`. -/
-theorem norm_le_eVariationOn_toReal_div_two [SeminormedAddCommGroup E] {f : α → E}
-    (hf : BoundedVariationOn f univ) (hbot : Tendsto f atBot (𝓝 0))
-    (htop : Tendsto f atTop (𝓝 0)) (x : α) :
-    ‖f x‖ ≤ (eVariationOn f univ).toReal / 2 := by
-  linarith [hf.two_mul_norm_le_eVariationOn_toReal hbot htop x]
-
-end PseudoMetric
 
 section MeasureLimits
 
