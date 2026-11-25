@@ -765,9 +765,8 @@ theorem isTatePoint_iff_of_isPullback (P' : 𝟙_ (Over S') ⟶ Over.mk E'.struc
   have hn (n : ℤ) (s' : S') :
       ((P'.left ≫ (E'.mulBy n).left) s' = E'.zero s') ↔
         (E.mulBy n).left (g (P'.left s')) = E.zero (f s') := by
-    rw [← Over.comp_left, left_apply_eq_zero_iff_of_isPullback hg h0, Over.comp_left,
-      ← Scheme.Hom.comp_apply, Category.assoc, mulBy_left_comp_of_isPullback hg h0,
-      ← Category.assoc, Scheme.Hom.comp_apply, Scheme.Hom.comp_apply]
+    rw [← Over.comp_left, left_apply_eq_zero_iff_of_isPullback hg h0, Over.comp_left]
+    simp only [← Scheme.Hom.comp_apply, Category.assoc, mulBy_left_comp_of_isPullback hg h0]
   rw [isTatePoint_iff]
   simp only [mem_tateLocus_iff, hP]
   refine ⟨fun ⟨h₁, h₂, h₃⟩ s' ↦ ⟨?_, (hn 2 s').not.mp (h₂ s'), (hn 3 s').not.mp (h₃ s')⟩,

@@ -22,9 +22,10 @@ fixed smooth relative dimension from smoothness together with every fibre being 
 `n`, without exhibiting standard smooth charts of that dimension.
 
 The same comparison shows that relative dimension descends along smooth surjections: if `g` is
-surjective and smooth of relative dimension `m` and `g ≫ f` is smooth of relative dimension `m + n`,
-then `f` is smooth of relative dimension `n`. This computes the relative dimension of a smooth
-scheme from a smooth cover of known relative dimension, as for the fine modular curve `Y₁(N)`.
+surjective and smooth of relative dimension `m`, `f` is locally of finite presentation, and `g ≫ f`
+is smooth of relative dimension `m + n`, then `f` is smooth of relative dimension `n`. This
+computes the relative dimension of a smooth scheme from a smooth cover of known relative dimension,
+as for the fine modular curve `Y₁(N)`.
 
 Consequently, on the smooth locus of a morphism of pure relative dimension `n` the morphism is
 smooth of relative dimension `n`. For `n = 1`, such as the smooth locus of a nodal relative curve,
@@ -37,57 +38,14 @@ Cartier divisor.
   smooth of relative dimension `n` means smooth and of pure relative dimension `n`.
 * `AlgebraicGeometry.Scheme.Hom.smoothOfRelativeDimension_smoothLocus_ι_comp`: a morphism of
   pure relative dimension `n` is smooth of relative dimension `n` on its smooth locus.
-* `AlgebraicGeometry.Smooth.exists_smoothOfRelativeDimension_ι_comp`: a smooth morphism is, near
-  every point of its source, smooth of some relative dimension.
 * `AlgebraicGeometry.SmoothOfRelativeDimension.of_comp_surjective`: if `g` is surjective and smooth
-  of relative dimension `m`, and `g ≫ f` is smooth of relative dimension `m + n`, then `f` is smooth
-  of relative dimension `n`.
+  of relative dimension `m`, `f` is locally of finite presentation, and `g ≫ f` is smooth of
+  relative dimension `m + n`, then `f` is smooth of relative dimension `n`.
 -/
 
 public section
 
 open CategoryTheory AlgebraicGeometry
-
-namespace AlgebraicGeometry.Smooth
-
-universe u
-
-/-- **Smooth morphisms have a local relative dimension.** Every point of the source of a smooth
-morphism `f` has an open neighbourhood `V` on which `f` is smooth of some relative dimension `k`:
-the relative dimension of a standard smooth chart of `f` around the point. -/
-theorem exists_smoothOfRelativeDimension_ι_comp {Y S : Scheme.{u}} (f : Y ⟶ S)
-    [Smooth f] (y : Y) :
-    ∃ (V : Y.Opens) (k : ℕ), y ∈ V ∧ SmoothOfRelativeDimension k (V.ι ≫ f) := by
-  -- the standard smooth chart `Γ(S, U) → Γ(Y, V)` has some relative dimension `k`
-  obtain ⟨k, U, hU, V, hV, hy, e, hk⟩ := f.exists_isStandardSmoothOfRelativeDimension_of_smooth y
-  have : SmoothOfRelativeDimension k (Spec.map (f.appLE U V e)) := by
-    rw [HasRingHomProperty.Spec_iff (P := @SmoothOfRelativeDimension k)]
-    exact RingHom.locally_of RingHom.isStandardSmoothOfRelativeDimension_respectsIso _ hk
-  have : SmoothOfRelativeDimension k (hV.fromSpec ≫ f) := by
-    rw [← IsAffineOpen.SpecMap_appLE_fromSpec f hU hV e]
-    exact inferInstanceAs (SmoothOfRelativeDimension (k + 0) _)
-  refine ⟨V, k, hy, ?_⟩
-  have h := (inferInstance :
-    SmoothOfRelativeDimension (0 + k) (hV.isoSpec.hom ≫ hV.fromSpec ≫ f))
-  rwa [Nat.zero_add, ← Category.assoc, hV.isoSpec_hom_fromSpec] at h
-
-end AlgebraicGeometry.Smooth
-
-namespace AlgebraicGeometry.SmoothOfRelativeDimension
-
-universe u
-
-/-- A morphism is smooth of relative dimension `n` if every point of its source has an open
-neighbourhood on which it is smooth of relative dimension `n`. This is
-`IsZariskiLocalAtSource.of_forall_exists_ι_comp`, with the locality of
-`SmoothOfRelativeDimension n` supplied explicitly: instance search does not find it. -/
-theorem of_forall_exists_ι_comp {n : ℕ} {X Y : Scheme.{u}} (f : X ⟶ Y)
-    (H : ∀ x : X, ∃ V : X.Opens, x ∈ V ∧ SmoothOfRelativeDimension n (V.ι ≫ f)) :
-    SmoothOfRelativeDimension n f :=
-  have := HasRingHomProperty.instIsZariskiLocalAtSource (P := @SmoothOfRelativeDimension n)
-  IsZariskiLocalAtSource.of_forall_exists_ι_comp H
-
-end AlgebraicGeometry.SmoothOfRelativeDimension
 
 namespace TauCeti.AlgebraicGeometry
 
@@ -102,11 +60,11 @@ theorem smoothOfRelativeDimension_iff_smooth_and_pureRelativeDimension {n : ℕ}
   -- Around every point `f` is smooth of some relative dimension `k`, and comparing pure relative
   -- dimensions on that nonempty open gives `k = n`.
   have key (x : X) : ∃ V : X.Opens, x ∈ V ∧ SmoothOfRelativeDimension n (V.ι ≫ f) := by
-    obtain ⟨V, k, hx, hk⟩ := Smooth.exists_smoothOfRelativeDimension_ι_comp f x
+    obtain ⟨V, k, hx, hk⟩ := f.exists_smoothOfRelativeDimension_ι_comp_of_smooth x
     have : Nonempty V := ⟨⟨x, hx⟩⟩
     obtain rfl := PureRelativeDimension.unique (d := k) (e := n) (V.ι ≫ f)
     exact ⟨V, hx, hk⟩
-  exact SmoothOfRelativeDimension.of_forall_exists_ι_comp f key
+  exact IsZariskiLocalAtSource.of_forall_exists_ι_comp key
 
 end TauCeti.AlgebraicGeometry
 
@@ -143,22 +101,18 @@ theorem of_comp_surjective {m n : ℕ} {X Y S : Scheme.{u}} (g : X ⟶ Y) (f : Y
   -- near a point of `Y`, `f` has the relative dimension `k` of a standard smooth chart; on the
   -- nonempty preimage of the chart, `g ≫ f` has both relative dimensions `m + k` and `m + n`
   have key (y : Y) : ∃ V : Y.Opens, y ∈ V ∧ SmoothOfRelativeDimension n (V.ι ≫ f) := by
-    obtain ⟨V, k, hy, hk⟩ := Smooth.exists_smoothOfRelativeDimension_ι_comp f y
+    obtain ⟨V, k, hy, hk⟩ := f.exists_smoothOfRelativeDimension_ι_comp_of_smooth y
     obtain ⟨x, rfl⟩ := g.surjective y
     -- on the preimage `W` of `V`, the morphism `g ≫ f` has relative dimensions `m + k`, `m + n`
     let W := g ⁻¹ᵁ V
     have : Nonempty W := ⟨⟨x, hy⟩⟩
-    have : SmoothOfRelativeDimension m (g ∣_ V) :=
-      @IsZariskiLocalAtTarget.restrict _ (HasRingHomProperty.instIsZariskiLocalAtTarget
-        (P := @SmoothOfRelativeDimension m)) _ _ _ ‹_› V
+    have : SmoothOfRelativeDimension m (g ∣_ V) := IsZariskiLocalAtTarget.restrict ‹_› V
     have : SmoothOfRelativeDimension (m + k) (W.ι ≫ g ≫ f) := by
       rw [← morphismRestrict_ι_assoc g V]
       infer_instance
-    have : SmoothOfRelativeDimension (m + n) (W.ι ≫ g ≫ f) :=
-      @IsZariskiLocalAtSource.comp _ (HasRingHomProperty.instIsZariskiLocalAtSource
-        (P := @SmoothOfRelativeDimension (m + n))) _ _ _ _ ‹_› W.ι _
+    have : SmoothOfRelativeDimension (m + n) (W.ι ≫ g ≫ f) := IsZariskiLocalAtSource.comp ‹_› W.ι
     have hkn : m + k = m + n := PureRelativeDimension.unique (W.ι ≫ g ≫ f)
     exact ⟨V, hy, Nat.add_left_cancel hkn ▸ hk⟩
-  exact of_forall_exists_ι_comp f key
+  exact IsZariskiLocalAtSource.of_forall_exists_ι_comp key
 
 end AlgebraicGeometry.SmoothOfRelativeDimension
