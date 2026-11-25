@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.DedekindDomain.Different.Basic
 public import TauCeti.FieldTheory.FunctionField.AffineModel.Extension
 
 -- Proof-only: the scalar tower `k → 𝒪_P → 𝒪_{P'}` of valuation rings.
+import TauCeti.FieldTheory.FunctionField.Place.Extension.Constants
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 
 /-!

@@ -14,7 +14,6 @@ public import TauCeti.FieldTheory.FunctionField.Place.Map
 public import TauCeti.RingTheory.Valuation.Discrete.Normalize
 -- Proof-only: nontriviality survives restriction along an algebraic extension.
 import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
-import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 import TauCeti.RingTheory.Valuation.NontrivialComap
 -- Proof-only: linear disjointness transports linear independence of the constants.
 import TauCeti.FieldTheory.IntermediateField.LinearDisjoint
@@ -330,35 +329,6 @@ end IntegralConstants
 
 section Constants
 
-/-- **Restricting the constant field of a place**: any place `Q` of `F' / k'` is also a place of
-`F' / k` with the same normalized valuation, with no integrality assumption on `k' / k`.
-
-Marked as an `abbrev` because `Place.Completion` (`P.valuation.Completion`) depends on the
-`valuation` projection: `(Q.restrictConstants k).Completion` must agree with `Q.Completion` at
-`reducible`/`implicit` transparency so `rw` and `simp` can rewrite completion statements across
-`Q.restrictConstants k` and `Q`. -/
-abbrev restrictConstants (k : Type u) [Field k] [Algebra k k'] [Algebra k F']
-    [IsScalarTower k k' F'] (Q : Place k' F') : Place k F' where
-  valuation := Q.valuation
-  valuation_surjective := Q.valuation_surjective
-  isTrivialOn := ⟨fun c hc ↦ by
-    rw [IsScalarTower.algebraMap_apply k k' F']
-    exact Q.isTrivialOn.eq_one _ fun h ↦ hc ((algebraMap k k').injective (by rw [h, map_zero]))⟩
-
-@[simp]
-theorem valuation_restrictConstants (Q : Place k' F') :
-    (Q.restrictConstants k).valuation = Q.valuation := rfl
-
-@[simp]
-theorem ord_restrictConstants (Q : Place k' F') (x : F') :
-    (Q.restrictConstants k).ord x = Q.ord x := by
-  simp [ord_def]
-
-@[simp]
-theorem integers_restrictConstants (Q : Place k' F') :
-    (Q.restrictConstants k).integers = Q.integers :=
-  SetLike.ext fun x ↦ by rw [mem_integers_iff, mem_integers_iff, valuation_restrictConstants]
-
 variable (k k' F') [Algebra.IsIntegral k k']
 
 /-- **Enlarging an algebraic constant field does not change the places**: a valuation of `F'` is
@@ -539,24 +509,6 @@ theorem restrict_eq_iff_integers_le (P : Place k F) :
     exact (mem_integers_restrict_iff k F P' f).mp hf
   · refine (eq_of_integers_le (IsConcreteLE.le_iff.mpr fun f hf ↦ ?_)).symm
     exact (mem_integers_restrict_iff k F P' f).mpr (h f hf)
-
-/-- Restricting the constant field of `P'` to `k` does not change its restriction to `F / k`. -/
-@[simp]
-theorem restrict_restrictConstants :
-    (P'.restrictConstants k).restrict k F = P'.restrict k F := by
-  refine (restrict_eq_iff_integers_le k F (P'.restrictConstants k) (P'.restrict k F)).mpr
-    fun f hf ↦ ?_
-  rw [integers_restrictConstants]
-  exact (mem_integers_restrict_iff k F P' f).mp hf
-
-omit [Field k] [Algebra k F] [Algebra k k'] [Algebra k F'] [IsScalarTower k k' F']
-  [IsScalarTower k F F'] [Algebra.IsIntegral F F'] in
-/-- Restricting the constant field of `P'` does not change its ramification index over `F`. -/
-@[simp]
-theorem ramificationIdx_restrictConstants {k₀ : Type*} [Field k₀] [Algebra k₀ k']
-    [Algebra k₀ F'] [IsScalarTower k₀ k' F'] :
-    ramificationIdx F (P'.restrictConstants k₀) = ramificationIdx F P' := by
-  simp [ramificationIdx_def]
 
 /-- **`P' ∣ P` by valuations**: `P'` lies over `P` exactly when the restriction of its valuation
 to `F` is equivalent to the valuation of `P`. The restriction need not be normalized, so an
@@ -772,20 +724,6 @@ noncomputable def relativeDegree : ℕ :=
 theorem relativeDegree_def :
     relativeDegree k F P' = Module.finrank (P'.restrict k F).ResidueField P'.ResidueField := by
   rw [relativeDegree]
-
-/-- Restricting the constant field of `P'` to `k` does not change its relative degree over
-`F / k`. -/
-@[simp]
-theorem relativeDegree_restrictConstants :
-    relativeDegree k F (P'.restrictConstants k) = relativeDegree k F P' := by
-  rw [relativeDegree_def, relativeDegree_def]
-  have h₁ : ((P'.restrictConstants k).restrict k F).integers.toSubring =
-      (P'.restrict k F).integers.toSubring :=
-    congrArg (fun R : Place k F ↦ R.integers.toSubring) (restrict_restrictConstants k F P')
-  have h₂ : (P'.restrictConstants k).integers.toSubring = P'.integers.toSubring :=
-    congrArg ValuationSubring.toSubring (integers_restrictConstants P')
-  refine finrank_residueField_eq_of_equiv_equiv
-    (RingEquiv.subringCongr h₁) (RingEquiv.subringCongr h₂) (RingHom.ext fun _ ↦ rfl)
 
 omit [Algebra k F'] [IsScalarTower k k' F'] in
 /-- Through the constants `k'`, the valuation ring of `P'` is a `k`-algebra. This is not an

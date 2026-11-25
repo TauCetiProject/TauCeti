@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Completion.Basic
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Constants
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
 
 /-!

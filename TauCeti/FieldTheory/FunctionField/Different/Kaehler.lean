@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Different.Completion
+public import TauCeti.FieldTheory.FunctionField.Different.Completion.Basic
 public import TauCeti.RingTheory.FittingIdeal.Basic
 import TauCeti.RingTheory.DedekindDomain.Different.Kaehler
 
