@@ -241,17 +241,16 @@ variable {R M N Mₚ Nₚ : Type*} [CommRing R] [AddCommGroup M] [Module R M] [A
 /-- **Spreading out a surjection.** Let `M` be finitely presented and `N` finite over `R`, and let
 `fM : M → Mₚ`, `fN : N → Nₚ` be localizations at a prime `p`. If there is a surjective
 `R`-linear map `Mₚ → Nₚ`, then there are an `R`-linear map `φ : M → N` and `s ∉ p` such that
-`φ` becomes surjective after inverting `s`.
-
-The map lifts by Mathlib's `Module.exists_localizedMap_surjective_of_surjective` and spreads out
-by `Module.exists_localizedMap_away_surjective_of_localizedMap_atPrime_surjective` (Stacks,
-Tags 0583 and 00L2), following the first step of Mathlib's
-`Module.Free.away_of_finite_of_flat_of_rankAtStalk_constant`. -/
+`φ` becomes surjective after inverting `s` (Stacks, Tags 0583 and 00L2). -/
 theorem exists_notMem_surjective_map_powers [Module.FinitePresentation R M] [Module.Finite R N]
     (p : Ideal R) [p.IsPrime] (fM : M →ₗ[R] Mₚ) (fN : N →ₗ[R] Nₚ)
     [IsLocalizedModule p.primeCompl fM] [IsLocalizedModule p.primeCompl fN] (g : Mₚ →ₗ[R] Nₚ)
     (hg : Function.Surjective g) :
     ∃ φ : M →ₗ[R] N, ∃ s ∉ p, Function.Surjective (LocalizedModule.map (.powers s) φ) := by
+  -- The map lifts by Mathlib's `Module.exists_localizedMap_surjective_of_surjective` and spreads
+  -- out by `Module.exists_localizedMap_away_surjective_of_localizedMap_atPrime_surjective`,
+  -- following the first step of Mathlib's
+  -- `Module.Free.away_of_finite_of_flat_of_rankAtStalk_constant`.
   obtain ⟨φ, -, -, hsurj⟩ := exists_localizedMap_surjective_of_surjective p.primeCompl fM fN hg
   rw [IsLocalizedModule.map_surjective_iff_localizedModuleMap_surjective fM fN] at hsurj
   obtain ⟨t, ht, h⟩ := exists_localizedMap_away_surjective_of_localizedMap_atPrime_surjective
