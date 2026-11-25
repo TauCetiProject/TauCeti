@@ -62,9 +62,13 @@ form used by its explicit Dixon-prime certificate.
   conjugates every rotation to its inverse.
 * `TauCeti.sq_eq_one_quaternionGroup_iff`, `TauCeti.orderOf_eq_two_quaternionGroup_iff`: for
   nonzero `n`, `QuaternionGroup.a n` is the unique element of order two.
-* `TauCeti.center_quaternionGroup_eq_zpowers`, `TauCeti.isMulCommutative_quaternionGroup_iff`: for
-  `n ≠ 1` the centre is `Subgroup.zpowers (QuaternionGroup.a n)` and `QuaternionGroup n` is
-  non-commutative.
+* `TauCeti.center_quaternionGroup_eq_zpowers`,
+  `TauCeti.center_quaternionGroup_le_quaternionRotations`,
+  `TauCeti.isMulCommutative_quaternionGroup_iff`: for `n ≠ 1` the centre is
+  `Subgroup.zpowers (QuaternionGroup.a n)`, it lies in the rotation subgroup, and
+  `QuaternionGroup n` is non-commutative.
+* `TauCeti.natCard_center_quaternionGroup`, `TauCeti.index_center_quaternionGroup`: for
+  `n ≠ 1` the centre has index `2 * n`, and for nonzero `n ≠ 1` it has order two.
 * `TauCeti.not_exists_isComplement'_zpowers_quaternionGroup_a`,
   `TauCeti.not_exists_isComplement'_center_quaternionGroup`,
   `TauCeti.not_exists_isComplement'_quaternionRotations`: for nonzero `n`, neither
@@ -381,6 +385,27 @@ theorem center_quaternionGroup_eq_zpowers {n : ℕ} (hn : n ≠ 1) :
       · have hval : i.val = n := Nat.eq_of_mul_eq_mul_left zero_lt_two hi
         rw [← i.natCast_zmod_val, hval]
         exact Subgroup.mem_zpowers _
+
+/-- For `n ≠ 1`, the centre of `QuaternionGroup n` lies in the rotation subgroup. -/
+theorem center_quaternionGroup_le_quaternionRotations {n : ℕ} (hn : n ≠ 1) :
+    Subgroup.center (QuaternionGroup n) ≤ quaternionRotations n := by
+  rw [center_quaternionGroup_eq_zpowers hn, Subgroup.zpowers_le]
+  exact a_mem_quaternionRotations _
+
+/-- For nonzero `n ≠ 1`, the centre of `QuaternionGroup n` has order two. -/
+theorem natCard_center_quaternionGroup [NeZero n] (hn : n ≠ 1) :
+    Nat.card (Subgroup.center (QuaternionGroup n)) = 2 := by
+  rw [center_quaternionGroup_eq_zpowers hn, Nat.card_zpowers, orderOf_quaternionGroup_a_self]
+
+/-- For `n ≠ 1`, the centre of `QuaternionGroup n` has index `2 * n`. -/
+theorem index_center_quaternionGroup {n : ℕ} (hn : n ≠ 1) :
+    (Subgroup.center (QuaternionGroup n)).index = 2 * n := by
+  rcases eq_zero_or_neZero n with rfl | _
+  · rw [center_quaternionGroup_eq_zpowers hn, Nat.cast_zero, ← QuaternionGroup.one_def,
+      Subgroup.zpowers_one_eq_bot, Subgroup.index_bot, natCard_quaternionGroup, mul_zero, mul_zero]
+  have h := (Subgroup.center (QuaternionGroup n)).card_mul_index
+  rw [natCard_center_quaternionGroup hn, natCard_quaternionGroup] at h
+  omega
 
 /-- `QuaternionGroup n` is commutative if and only if `n = 1` (where it is cyclic of order four). -/
 @[simp]
