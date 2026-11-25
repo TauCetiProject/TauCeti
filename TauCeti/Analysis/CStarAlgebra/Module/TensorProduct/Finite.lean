@@ -11,9 +11,10 @@ public import TauCeti.Analysis.CStarAlgebra.Module.Unitary
 /-!
 # Finite orthonormal coordinates for Hilbert C⋆-module tensor products
 
-For a finite orthonormal basis of `H`, `OrthonormalBasis.tensorProductUnitary` identifies
-the completed tensor product of `H` and `A` with the finite orthogonal sum of copies of the
-right self-module `A`. Its inverse sums the basis vectors tensored with their coefficients.
+For a finite orthonormal basis of `H`,
+`OrthonormalBasis.hilbertModuleTensorProductUnitary` identifies the completed tensor product of
+`H` and `A` with the finite orthogonal sum of copies of the right self-module `A`. Its inverse
+sums the basis vectors tensored with their coefficients.
 -/
 
 public section
@@ -46,7 +47,7 @@ private theorem finiteCoordinates_inner (x y : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[�
 
 /-- A finite orthonormal basis identifies the completed tensor product unitarily with the
 orthogonal sum of copies of the right self-module `A`, one for each basis vector. -/
-noncomputable def tensorProductUnitary :
+noncomputable def hilbertModuleTensorProductUnitary :
     CStarModuleUnitary Aᵐᵒᵖ (HilbertModuleTensorProduct H A) C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) := by
   let f := (finiteCoordinates (A := A) e).toLinearMap
   have h := finiteCoordinates_inner (A := A) e
@@ -54,27 +55,27 @@ noncomputable def tensorProductUnitary :
   exact ⟨IsPosSemidefCStarModuleAlong.equivOfInner (.id ℂ Aᵐᵒᵖ) f h hd,
     IsPosSemidefCStarModuleAlong.inner_equivOfInner_id f h hd⟩
 
-private theorem tensorProductUnitary_coe (x : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A)) :
-    e.tensorProductUnitary (A := A) (x : HilbertModuleTensorProduct H A) =
+private theorem hilbertModuleTensorProductUnitary_coe (x : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A)) :
+    e.hilbertModuleTensorProductUnitary (A := A) (x : HilbertModuleTensorProduct H A) =
       finiteCoordinates e x := by
-  rw [tensorProductUnitary, CStarModuleUnitary.mk_apply,
+  rw [hilbertModuleTensorProductUnitary, CStarModuleUnitary.mk_apply,
     IsPosSemidefCStarModuleAlong.equivOfInner_coe, LinearEquiv.coe_coe]
 
 /-- The unitary's `i`th coordinate on a pure tensor is the coefficient multiplied by the
 `i`th Fourier coordinate of the Hilbert-space factor. -/
-@[simp] theorem tensorProductUnitary_mk (ξ : H) (a : A) (i : ι) :
-    e.tensorProductUnitary (A := A) (HilbertModuleTensorProduct.mk H A ξ a) i =
+@[simp] theorem hilbertModuleTensorProductUnitary_mk (ξ : H) (a : A) (i : ι) :
+    e.hilbertModuleTensorProductUnitary (A := A) (HilbertModuleTensorProduct.mk H A ξ a) i =
       e.repr ξ i • a := by
-  rw [HilbertModuleTensorProduct.mk_apply, tensorProductUnitary_coe]
+  rw [HilbertModuleTensorProduct.mk_apply, hilbertModuleTensorProductUnitary_coe]
   simp [finiteCoordinates]
 
 /-- The inverse unitary sums the pure tensors of basis vectors with their coefficients. -/
-theorem tensorProductUnitary_symm_apply (a : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) :
-    (e.tensorProductUnitary (A := A)).symm a =
+theorem hilbertModuleTensorProductUnitary_symm_apply (a : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) :
+    (e.hilbertModuleTensorProductUnitary (A := A)).symm a =
       ∑ i, HilbertModuleTensorProduct.mk H A (e i) (a i) := by
-  have h : (e.tensorProductUnitary (A := A)).symm a =
+  have h : (e.hilbertModuleTensorProductUnitary (A := A)).symm a =
       ((finiteCoordinates e).symm a : HilbertModuleTensorProduct H A) := by
-    rw [CStarModuleUnitary.symm_apply_eq, tensorProductUnitary_coe]
+    rw [CStarModuleUnitary.symm_apply_eq, hilbertModuleTensorProductUnitary_coe]
     exact ((finiteCoordinates e).apply_symm_apply a).symm
   rw [h, finiteCoordinates_symm_apply, Module.Basis.tensorCoordinates_symm_apply]
   simpa only [Completion.coe_toComplL, HilbertModuleTensorProduct.mk_apply,
