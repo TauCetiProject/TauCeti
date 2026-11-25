@@ -35,7 +35,8 @@ compatibility lemmas with `AddSubmonoid.toGroupClosure`).
 ## Main results
 
 * `AddSubmonoid.nsmulSaturated_map_prod_id`: the image of a submonoid under `n ↦ (f n, n)`
-  is saturated exactly when the submonoid is saturated.
+  is saturated exactly when the submonoid is saturated, provided positive natural multiples
+  are injective on the target `M` (`[HasUniqueDiv M]`).
 * `Submonoid.PowSaturated.comap` and `Submonoid.PowSaturated.inf`: `PowSaturated` is preserved by
   pullbacks and binary intersections.
 * `Submonoid.powSaturation`: the elements of `M` having a positive power in `s`.
