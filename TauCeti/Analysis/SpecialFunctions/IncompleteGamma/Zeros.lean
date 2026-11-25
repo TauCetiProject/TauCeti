@@ -328,24 +328,9 @@ private theorem re_upperIncompleteGamma_ofReal {x : ℝ} (hx : 0 ≤ x) (a : ℝ
 private theorem upperMoment_nonneg {x : ℝ} (hx : 0 < x) (k : ℕ) (a : ℝ) : 0 ≤ upperMoment x k a :=
   setIntegral_nonneg measurableSet_Ioi fun _ ht => momentIntegrand_nonneg hx (le_of_lt ht) k a
 
-/-- `Γ(a, x)` is strictly decreasing in `x`. -/
-private theorem upperMoment_zero_lt {x y : ℝ} (hx : 0 < x) (hxy : x < y) (a : ℝ) :
-    upperMoment y 0 a < upperMoment x 0 a := by
-  have hcongr : upperMoment y 0 a = ∫ t in Ioi y, momentIntegrand x 0 a t := by
-    simp [upperMoment, momentIntegrand]
-  rw [← sub_pos, hcongr, upperMoment,
-    intervalIntegral.integral_Ioi_sub_Ioi (integrableOn_momentIntegrand hx 0 a) hxy.le]
-  refine intervalIntegral.intervalIntegral_pos_of_pos_on
-    (ContinuousOn.intervalIntegrable_of_Icc hxy.le
-      ((continuousOn_momentIntegrand hx 0 a).mono Icc_subset_Ici_self)) (fun t ht => ?_) hxy
-  have ht0 := hx.trans ht.1
-  simp only [momentIntegrand, pow_zero, one_mul]
-  positivity
-
-/-- `Γ(a, x) > 0` for `x > 0`. -/
+/-- `Complex.upperIncompleteGamma_ofReal_re_pos` for the zeroth moment. -/
 private theorem upperMoment_zero_pos {x : ℝ} (hx : 0 < x) (a : ℝ) : 0 < upperMoment x 0 a :=
-  (upperMoment_nonneg (hx.trans (lt_add_one x)) 0 a).trans_lt
-    (upperMoment_zero_lt hx (lt_add_one x) a)
+  re_upperIncompleteGamma_ofReal hx.le a ▸ Complex.upperIncompleteGamma_ofReal_re_pos a hx
 
 /-- The moment integrands tend to `0` at infinity. -/
 private theorem tendsto_momentIntegrand_atTop (x : ℝ) (k : ℕ) (a : ℝ) :
@@ -633,9 +618,9 @@ private theorem deriv_deriv_re_tricomi {x : ℝ} (hx : 0 < x) {n : ℕ} {a : ℝ
 /-- The log-gap is strictly increasing in `x`. -/
 private theorem logGap_lt_logGap {x y : ℝ} (hx : 0 < x) (hxy : x < y) (a : ℝ) :
     logGap x a < logGap y a := by
-  rw [logGap, logGap, re_upperIncompleteGamma_ofReal hx.le,
-    re_upperIncompleteGamma_ofReal (hx.trans hxy).le]
-  have := Real.log_lt_log (upperMoment_zero_pos (hx.trans hxy) a) (upperMoment_zero_lt hx hxy a)
+  rw [logGap, logGap]
+  have := Real.log_lt_log (Complex.upperIncompleteGamma_ofReal_re_pos a (hx.trans hxy))
+    (Complex.strictAntiOn_upperIncompleteGamma_ofReal_re a hx (hx.trans hxy) hxy)
   linarith
 
 /-- On the band, `Re γ*(a, x)` vanishes exactly where the log-gap does. -/
@@ -722,31 +707,24 @@ private theorem exists_zeros_of_logGap_neg {x : ℝ} (hx : 0 < x) {n : ℕ} (hn 
       · exact h
       · exact absurd hD₂ (logGap_neg_of_lt_of_lt hx hn ha hb ha₂.1 h hneg.le hDb.le).ne
 
-/-- `Γ(a, x) ≤ e^{-x}` for `a ≤ 1 ≤ x`. -/
-private theorem upperMoment_zero_le_exp_neg {x : ℝ} (hx : 1 ≤ x) {a : ℝ} (ha : a ≤ 1) :
-    upperMoment x 0 a ≤ Real.exp (-x) := by
-  rw [← integral_exp_neg_Ioi]
-  refine setIntegral_mono_on (integrableOn_momentIntegrand (by linarith) 0 a)
-    (integrableOn_exp_neg_Ioi x) measurableSet_Ioi fun t ht => ?_
-  simp only [momentIntegrand, pow_zero, one_mul]
-  have h1 : t ^ (a - 1) ≤ 1 := rpow_le_one_of_one_le_of_nonpos (hx.trans ht.le) (by linarith)
-  nlinarith [Real.exp_pos (-t)]
-
 /-- Large `x` leaves no negative value of the log-gap. -/
 private theorem exists_logGap_nonneg {n : ℕ} (hn : 1 ≤ n) :
     ∃ X : ℝ, 0 < X ∧ ∀ x, X ≤ x → ∀ a ∈ Ioo (-2 * (n : ℝ)) (1 - 2 * n), 0 ≤ logGap x a := by
   refine ⟨max 1 (Real.log (2 * n).factorial), by positivity, fun x hx a ha => ?_⟩
   have hx1 : 1 ≤ x := (le_max_left _ _).trans hx
   have hfac : (0 : ℝ) < (2 * n).factorial := by positivity
-  have hV := upperMoment_zero_le_exp_neg hx1 (show a ≤ 1 by linarith [ha.2,
-    (show (0 : ℝ) ≤ n by positivity)])
+  have ha1 : a ≤ 1 := by linarith [ha.2, (show (0 : ℝ) ≤ n by positivity)]
+  have hV : (Complex.upperIncompleteGamma a x).re ≤ Real.exp (-x) :=
+    (Complex.upperIncompleteGamma_ofReal_re_le_rpow_mul_exp_neg ha1 (by linarith)).trans
+      (mul_le_of_le_one_left (Real.exp_pos _).le
+        (rpow_le_one_of_one_le_of_nonpos hx1 (by linarith)))
   have hexp : Real.exp (-x) ≤ 1 / ((2 * n).factorial : ℝ) := by
     rw [one_div, ← Real.exp_log hfac, ← Real.exp_neg]
     exact Real.exp_le_exp.2 (by linarith [le_max_right 1 (Real.log (2 * n).factorial)])
   have hπ : 1 / ((2 * n).factorial : ℝ) ≤ π / ((2 * n).factorial : ℝ) :=
     div_le_div_of_nonneg_right (by linarith [Real.two_le_pi]) hfac.le
-  rw [logGap, re_upperIncompleteGamma_ofReal (by linarith), sub_nonneg]
-  exact Real.log_le_log (upperMoment_zero_pos (by linarith) a)
+  rw [logGap, sub_nonneg]
+  exact Real.log_le_log (Complex.upperIncompleteGamma_ofReal_re_pos a (by linarith))
     (hV.trans (hexp.trans (hπ.trans
       (Real.pi_div_factorial_le_Gamma_of_mem_Ioo hn ⟨ha.1, by linarith [ha.2]⟩))))
 
