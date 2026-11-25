@@ -66,6 +66,8 @@ residue field as `A`; to use the residue-field API, first install
   the root is `A ⧸ (f)`.
 * `TauCeti.standardTameCoverBaseChangeAlgEquiv`: base change of `A[x]/(x^e − f)` to `B` is
   `B[x]/(x^e − f)`.
+* `TauCeti.standardTameCoverPiBaseChangeAlgEquiv`: base change of a finite product of standard
+  covers to `B` is the corresponding product of standard covers over `B`.
 * `TauCeti.standardTameCoverAwayAlgEquiv`, `TauCeti.standardTameCoverPiAwayAlgEquiv`: the
   localization of a standard cover (or a finite product of standard covers) away from `f` is the
   corresponding cover (or product of covers) of `A_f` along the image of `f`.
@@ -557,6 +559,29 @@ theorem standardTameCoverBaseChangeAlgEquiv_one_tmul_mk (B : Type*) [CommRing B]
       AdjoinRoot.mk _ (p.map (algebraMap A B)) := by
   simp [standardTameCoverBaseChangeAlgEquiv]
 
+/-- Base change of a finite product `∀ i, A[x]/(x^{e i} − f)` of standard tamely ramified covers to
+an `A`-algebra `B` is the product `∀ i, B[x]/(x^{e i} − f)` of the standard covers over `B`. -/
+noncomputable def standardTameCoverPiBaseChangeAlgEquiv {ι : Type*} [Finite ι]
+    (B : Type*) [CommRing B] [Algebra A B] (f : A) (e : ι → ℕ) :
+    B ⊗[A] (∀ i, standardTameCover A f (e i)) ≃ₐ[B]
+      ∀ i, standardTameCover B (algebraMap A B f) (e i) := by
+  classical
+  let _ := Fintype.ofFinite ι
+  exact (Algebra.TensorProduct.piRight A B B _).trans <|
+    AlgEquiv.piCongrRight fun i ↦ standardTameCoverBaseChangeAlgEquiv B f (e i)
+
+/-- `standardTameCoverPiBaseChangeAlgEquiv` sends `b ⊗ x` at `i` to the base change `b ⊗ x i` of
+`x i`. -/
+@[simp]
+theorem standardTameCoverPiBaseChangeAlgEquiv_tmul {ι : Type*} [Finite ι]
+    (B : Type*) [CommRing B] [Algebra A B] (f : A) (e : ι → ℕ) (b : B)
+    (x : ∀ i, standardTameCover A f (e i)) (i : ι) :
+    standardTameCoverPiBaseChangeAlgEquiv B f e (b ⊗ₜ x) i =
+      standardTameCoverBaseChangeAlgEquiv B f (e i) (b ⊗ₜ x i) := by
+  classical
+  let _ := Fintype.ofFinite ι
+  simp [standardTameCoverPiBaseChangeAlgEquiv]
+
 /-- Being a finite product of standard tame covers is stable under base change to any `A`-algebra
 `B`. -/
 theorem IsFiniteProductOfStandardTameCovers.baseChange (B : Type*) [CommRing B] [Algebra A B]
@@ -568,8 +593,7 @@ theorem IsFiniteProductOfStandardTameCovers.baseChange (B : Type*) [CommRing B] 
   refine (isFiniteProductOfStandardTameCovers_iff _).mpr
     ⟨ι, inferInstance, e, he, fun i ↦ by simpa using (heu i).map (algebraMap A B), ⟨?_⟩⟩
   exact (Algebra.TensorProduct.congr AlgEquiv.refl σ).trans <|
-    (Algebra.TensorProduct.piRight A B B _).trans <|
-      AlgEquiv.piCongrRight fun i ↦ standardTameCoverBaseChangeAlgEquiv B f (e i)
+    standardTameCoverPiBaseChangeAlgEquiv B f e
 
 end BaseChange
 
@@ -632,8 +656,7 @@ noncomputable def standardTameCoverPiAwayAlgEquiv {C : Type*} (Sf : Type*) [Comm
   have := (Algebra.isPushout_of_isLocalization (.powers f) Af C Sf).symm
   exact (Algebra.IsPushout.equiv A Af C Sf).symm.trans <|
     (Algebra.TensorProduct.congr AlgEquiv.refl Φ).trans <|
-      (Algebra.TensorProduct.piRight A Af Af _).trans <|
-        AlgEquiv.piCongrRight fun i ↦ standardTameCoverBaseChangeAlgEquiv Af f (e_idx i)
+      standardTameCoverPiBaseChangeAlgEquiv Af f e_idx
 
 /-- `standardTameCoverPiAwayAlgEquiv` sends `algebraMap C Sf c` at `i` to the base-changed image of
 `Φ c i`. -/
