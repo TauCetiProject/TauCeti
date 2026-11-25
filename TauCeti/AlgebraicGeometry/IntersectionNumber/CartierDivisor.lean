@@ -209,6 +209,7 @@ theorem mem_numericallyTrivialSubmodule {D : K ⊗[ℤ] CartierDivisor X} :
 
 /-- **Numerical triviality of a Cartier divisor is that of its sheaf.** Over a ring `K` of
 characteristic zero, `1 ⊗ D` is numerically trivial exactly when `𝒪_X(D)` is. -/
+@[simp]
 theorem numericallyTrivial_one_tmul_iff [CharZero K] (D : CartierDivisor X) :
     NumericallyTrivial K k x (1 ⊗ₜ D) ↔
       LineBundleClass.NumericallyTrivial k x D.toLineBundleClass := by
@@ -292,6 +293,7 @@ theorem mem_relNumericallyTrivialSubmodule {D : K ⊗[ℤ] CartierDivisor X} :
 
 /-- **Relative numerical triviality of a Cartier divisor is that of its sheaf.** Over a ring `K`
 of characteristic zero, `1 ⊗ D ≡_f 0` exactly when `𝒪_X(D) ≡_f 0`. -/
+@[simp]
 theorem relNumericallyTrivial_one_tmul_iff [CharZero K] (D : CartierDivisor X) :
     RelNumericallyTrivial K f (1 ⊗ₜ D) ↔
       LineBundleClass.RelNumericallyTrivial f D.toLineBundleClass := by
@@ -375,6 +377,6 @@ theorem numericallyTrivial_one_tmul_iff_toLineBundleClass_eq_one (K : Type*) [Co
     [CharZero K] (k : Type u) [Field k] (D : Scheme.CartierDivisor (projectiveLine k)) :
     Scheme.CartierDivisor.NumericallyTrivial K k (projectiveLine k ↘ Spec (.of k)) (1 ⊗ₜ D) ↔
       D.toLineBundleClass = 1 := by
-  rw [Scheme.CartierDivisor.numericallyTrivial_one_tmul_iff, numericallyTrivial_iff_eq_one]
+  simp
 
 end TauCeti.AlgebraicGeometry.projectiveLine
