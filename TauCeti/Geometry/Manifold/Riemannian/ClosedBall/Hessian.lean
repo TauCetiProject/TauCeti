@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.ClosedBall.Isometry
 public import TauCeti.Geometry.Manifold.Riemannian.Hessian.Isometry
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.InnerProductSpace.Calculus
 
 /-!
 # The Hessian on the closed unit ball
@@ -75,16 +76,12 @@ every point including the points of the boundary sphere. -/
 theorem hessian_one_sub_norm_sq_closedBall (x : closedBall (0 : E) 1)
     (u w : TangentSpace (𝓡∂ n) x) :
     hessian (𝓡∂ n) (fun y : closedBall (0 : E) 1 ↦ 1 - ‖(y : E)‖ ^ 2) x u w = -2 * ⟪u, w⟫ := by
-  have hf : fderiv ℝ (fun y : E ↦ 1 - ‖y‖ ^ 2) = ⇑(-(2 • innerSL ℝ (E := E))) := by
-    funext y
-    rw [fderiv_const_sub, fderiv_norm_sq_apply, neg_apply, smul_apply]
+  have hf : fderiv ℝ (fun y : E ↦ 1 - ‖y‖ ^ 2) = -fderiv ℝ (fun z : E ↦ ‖z‖ ^ 2) :=
+    funext fun _ ↦ fderiv_const_sub 1
   have h := hessian_comp_subtypeVal_closedBall (f := fun y : E ↦ 1 - ‖y‖ ^ 2)
     ((contDiff_const.sub (contDiff_norm_sq ℝ)).contDiffAt (x := (x : E))) u w
   rw [Function.comp_def] at h
-  rw [h, hf,
-    ContinuousLinearMap.fderiv, inner_tangentSpace_closedBall]
-  simp only [neg_apply, smul_apply, nsmul_eq_mul, Nat.cast_ofNat]
-  rw [innerSL_apply_apply]
-  ring
+  rw [h, hf, fderiv_neg, neg_apply, neg_apply, fderiv_fderiv_norm_sq_apply,
+    inner_tangentSpace_closedBall, neg_mul]
 
 end TauCeti
