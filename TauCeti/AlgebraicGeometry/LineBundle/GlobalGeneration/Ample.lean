@@ -89,7 +89,9 @@ theorem LineBundleClass.IsAmple.exists_pos_tensorPow_finite_affine_cover_nonvani
   have hmem (U : S) : ∃ (n : ℕ) (_ : 0 < n) (t : Γ(TauCeti.tensorPow L.obj n, ⊤)),
       (TauCeti.tensorPow L.obj n).nonvanishingLocus t = U.val := by
     obtain ⟨_, n, hn, L', hL', s', hs'⟩ := hS U.val U.property
-    obtain ⟨e⟩ := LineBundleClass.mk_eq_mk_iff.mp (hL'.trans (mk_tensorPow_obj L n).symm)
+    obtain ⟨e0⟩ :=
+      LineBundleClass.mk_eq_mk_iff.mp (hL'.trans (LineBundleClass.mk_tensorPow L n).symm)
+    let e : L'.obj ≅ TauCeti.tensorPow L.obj n := e0 ≪≫ eqToIso (InvertibleSheaf.tensorPow_obj L n)
     obtain ⟨t, ht⟩ : L'.obj.nonvanishingLocus s' ∈
         Set.range ((TauCeti.tensorPow L.obj n).nonvanishingLocus (U := ⊤)) := by
       rw [← Scheme.Modules.range_nonvanishingLocus_eq_of_iso e ⊤]
@@ -105,7 +107,9 @@ theorem LineBundleClass.IsAmple.exists_pos_tensorPow_finite_affine_cover_nonvani
     let k : ℕ := d / n U
     have hnk : n U * k = d := Nat.mul_div_cancel' hdvd
     have hk : 0 < k := Nat.pos_of_ne_zero fun h0 ↦ by simp [h0] at hnk; omega
-    obtain ⟨e0⟩ := InvertibleSheaf.nonempty_tensorPow_tensorPow_obj_iso L (n U) k
+    obtain ⟨e0⟩ := InvertibleSheaf.nonempty_tensorPow_tensorPow_iso L (n U) k
+    rw [InvertibleSheaf.tensorPow_obj, InvertibleSheaf.tensorPow_obj,
+      InvertibleSheaf.tensorPow_obj] at e0
     let e := e0 ≪≫ eqToIso (congrArg (TauCeti.tensorPow L.obj) hnk)
     refine ⟨e.hom.app ⊤ (Scheme.Modules.tensorPowSection (t U) k), ?_⟩
     rw [Scheme.Modules.nonvanishingLocus_hom_app,
@@ -146,7 +150,7 @@ theorem exists_generatingSections_tensorPow_of_isAmple
       ∃ σ : ((F ⊗ tensorPow L.obj r.val) ⊗ tensorPow (tensorPow L.obj d) q).GeneratingSections,
         σ.IsFiniteType := by
     have : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) (tensorPow L.obj r.val) :=
-      isInvertible_tensorPow L.obj r.val
+      SheafOfModules.isInvertible_tensorPow L.obj r.val
     have : (tensorPow L.obj r.val).IsFinitePresentation :=
       TauCeti.SheafOfModules.IsInvertible.isFinitePresentation (R := X.ringCatSheaf)
         (M := tensorPow L.obj r.val)
@@ -165,7 +169,9 @@ theorem exists_generatingSections_tensorPow_of_isAmple
     simpa only [mul_comm] using hn
   obtain ⟨σ, hσ⟩ := hN r q ((Finset.le_sup (f := N) (Finset.mem_univ r)).trans hq)
   -- Identify `(F ⊗ L^{⊗ r}) ⊗ (L^{⊗ d})^{⊗ q}` with `F ⊗ L^{⊗ n}` via `tensorPowAddIso`.
-  obtain ⟨emul⟩ := InvertibleSheaf.nonempty_tensorPow_tensorPow_obj_iso L d q
+  obtain ⟨emul⟩ := InvertibleSheaf.nonempty_tensorPow_tensorPow_iso L d q
+  rw [InvertibleSheaf.tensorPow_obj, InvertibleSheaf.tensorPow_obj,
+    InvertibleSheaf.tensorPow_obj] at emul
   let eL : tensorPow L.obj r.val ⊗ tensorPow (tensorPow L.obj d) q ≅ tensorPow L.obj n :=
     whiskerLeftIso (tensorPow L.obj r.val) emul ≪≫
       TauCeti.tensorPowAddIso L.obj r.val (d * q) ≪≫
@@ -188,9 +194,10 @@ theorem exists_generatingSections_tensor_of_isAmple
   obtain ⟨n₀, hn₀⟩ := F.exists_generatingSections_tensorPow_of_isAmple L hL
   refine ⟨n₀, fun n hn K hK ↦ ?_⟩
   obtain ⟨σ, hσ⟩ := hn₀ n hn
-  have hclass : LineBundleClass.mk ⟨tensorPow L.obj n, inferInstance⟩ = LineBundleClass.mk K := by
-    rw [LineBundleClass.mk_tensorPow_obj, hK]
+  have hclass : LineBundleClass.mk (TauCeti.tensorPow L n) = LineBundleClass.mk K := by
+    rw [LineBundleClass.mk_tensorPow, hK]
   obtain ⟨eK⟩ := LineBundleClass.mk_eq_mk_iff.mp hclass
+  rw [InvertibleSheaf.tensorPow_obj] at eK
   let e : F ⊗ tensorPow L.obj n ≅ F ⊗ K.obj := whiskerLeftIso F eK
   exact ⟨SheafOfModules.GeneratingSections.equivOfIso e σ, ⟨hσ.finite⟩⟩
 

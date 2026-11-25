@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.Funext
 public import Mathlib.Topology.Instances.Matrix
-public import TauCeti.LinearAlgebra.Matrix.MvPolynomial
+public import TauCeti.LinearAlgebra.Matrix.MvPolynomial.Basic
 public import TauCeti.LinearAlgebra.Matrix.Rank
 public import TauCeti.Topology.Algebra.MvPolynomial.ZeroLocus
 

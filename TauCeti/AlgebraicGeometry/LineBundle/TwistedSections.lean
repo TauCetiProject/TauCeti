@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.NonvanishingLocus
-public import TauCeti.AlgebraicGeometry.LineBundle.Power
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GeneratingSections
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Sections
@@ -46,8 +45,6 @@ global section of `F ⊗ Lⁿ`. These global sections generate `F ⊗ Lⁿ`.
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus_tensorPowSection`: for `k > 0`, the
-  nonvanishing locus of `sᵏ` equals that of `s`.
 * `AlgebraicGeometry.Scheme.Modules.bijective_tmulRight_tensorPowSection_of_le_nonvanishingLocus`:
   for an invertible sheaf `L`, `t ↦ t ⊗ eⁿ` is bijective over the nonvanishing locus of `e`.
 * `AlgebraicGeometry.Scheme.Modules.exists_tmulRight_tensorPowSection_eq_zero`: a section over a
@@ -83,52 +80,6 @@ variable {X : Scheme.{u}} (F : X.Modules) {L : X.Modules}
 /-! ### Sections over the nonvanishing locus of a section of a line bundle -/
 
 variable [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X L]
-
-/-- If `e` vanishes nowhere on `U`, then `tensorPowSection e n` also vanishes nowhere on `U`. -/
-private theorem le_nonvanishingLocus_tensorPowSection {U : X.Opens} (e : Γ(L, U))
-    (he : U ≤ L.nonvanishingLocus e) (n : ℕ) :
-    U ≤ (tensorPow L n).nonvanishingLocus (tensorPowSection e n) := by
-  rw [le_nonvanishingLocus_iff _ (𝟙 U)]
-  intro W j
-  rw [Category.comp_id]
-  have he_basis := (le_nonvanishingLocus_iff e (𝟙 U)).mp he
-  simp only [Category.comp_id] at he_basis
-  exact bijective_smul_tensorPowSection e he_basis n W j
-
-/-- For a positive integer `k`, the nonvanishing locus of the tensor power section `sᵏ` equals the
-nonvanishing locus of `s`. -/
-@[simp]
-theorem nonvanishingLocus_tensorPowSection {U : X.Opens} (s : Γ(L, U)) {k : ℕ} (hk : 0 < k) :
-    (tensorPow L k).nonvanishingLocus (tensorPowSection s k) = L.nonvanishingLocus s := by
-  ext x
-  by_cases hxU : x ∈ U
-  · obtain ⟨V, t, hxV⟩ := exists_mem_trivialization L x
-    let W : X.Opens := U ⊓ V
-    let iWU : W ⟶ U := homOfLE inf_le_left
-    let iWV : W ⟶ V := homOfLE inf_le_right
-    have hxW : x ∈ (W : Set X) := ⟨hxU, hxV⟩
-    let e : Γ(L, W) := L.presheaf.map iWV.op (trivializationGenerator L t)
-    have he : W ≤ L.nonvanishingLocus e := by
-      rw [nonvanishingLocus_map, nonvanishingLocus_trivializationGenerator]
-      exact le_inf le_rfl inf_le_right
-    -- Locally on `W = U ⊓ V`, write `s = f • e`; then both loci equal `D(f)` on `W`.
-    obtain ⟨f, (hf : f • e = L.presheaf.map iWU.op s)⟩ :=
-      surjective_smul_of_le_nonvanishingLocus he (L.presheaf.map iWU.op s)
-    have hek : W ≤ (tensorPow L k).nonvanishingLocus (tensorPowSection e k) :=
-      le_nonvanishingLocus_tensorPowSection e he k
-    have hLHS : W ⊓ (tensorPow L k).nonvanishingLocus (tensorPowSection s k) = X.basicOpen f := by
-      rw [← nonvanishingLocus_map iWU, map_tensorPowSection, ← hf, tensorPowSection_smul,
-        nonvanishingLocus_smul, X.basicOpen_pow f hk,
-        inf_eq_left.mpr ((X.basicOpen_le f).trans hek)]
-    have hRHS : W ⊓ L.nonvanishingLocus s = X.basicOpen f := by
-      rw [← nonvanishingLocus_map iWU, ← hf, nonvanishingLocus_smul,
-        inf_eq_left.mpr ((X.basicOpen_le f).trans he)]
-    have hmem : x ∈ W ⊓ (tensorPow L k).nonvanishingLocus (tensorPowSection s k) ↔
-        x ∈ W ⊓ L.nonvanishingLocus s :=
-      SetLike.ext_iff.mp (hLHS.trans hRHS.symm) x
-    exact ⟨fun h ↦ (hmem.mp ⟨hxW, h⟩).2, fun h ↦ (hmem.mpr ⟨hxW, h⟩).2⟩
-  · exact ⟨fun h ↦ (hxU (nonvanishingLocus_le _ h)).elim,
-      fun h ↦ (hxU (nonvanishingLocus_le _ h)).elim⟩
 
 /-- For an invertible sheaf `L` and a section `e` of `L` over `U` that vanishes nowhere on `U`,
 tensoring with `eⁿ` is a bijection `Γ(F, U) → Γ(F ⊗ Lⁿ, U)` for every `n`. -/

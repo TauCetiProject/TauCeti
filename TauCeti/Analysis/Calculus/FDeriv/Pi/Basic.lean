@@ -35,9 +35,11 @@ the `i`-th variable the separated product with the `i`-th factor replaced by its
 * `TauCeti.fderiv_sum_comp_eval_eventuallyEq`: the same formula for the derivative near a point at
   which the summands are continuously differentiable.
 * `TauCeti.fderiv_sum_comp_eval_eq_zero_iff`: the critical points of a separated sum.
+* `TauCeti.fderiv_sum_apply_single`: the partial derivatives of the coordinate sum are all `1`.
 * `TauCeti.hasFDerivAt_prod_comp_eval`, `TauCeti.fderiv_prod_comp_eval_apply_single`: the derivative
   of a separated product `z ↦ ∏ i, φ i (z i)`, whose partial derivative in the `i`-th variable
   replaces the `i`-th factor by its derivative.
+* `TauCeti.fderiv_prod_apply_single`: the partial derivatives of the coordinate product.
 * `TauCeti.fderiv_apply_single_eq_of_comp_swap`: a function invariant under swapping two
   coordinates has equal partial derivatives in them at points where these coordinates agree.
 
@@ -116,6 +118,13 @@ theorem fderiv_sum_comp_eval_eventuallyEq (hφ : ∀ i, ContDiffAt 𝕜 1 (φ i)
   filter_upwards [eventually_all.2 hdiff] with z hz
   exact fderiv_sum_comp_eval hz
 
+/-- Every partial derivative of the coordinate sum `z ↦ ∑ i, z i` is `1`. -/
+@[simp]
+theorem fderiv_sum_apply_single [DecidableEq ι] (j : ι) :
+    fderiv 𝕜 (fun z : ι → 𝕜 ↦ ∑ i, z i) y (Pi.single j 1) = 1 := by
+  rw [(HasFDerivAt.fun_sum fun i _ ↦ hasFDerivAt_apply i y).fderiv]
+  simp [Pi.single_apply]
+
 end SumCompEval
 
 section ProdCompEval
@@ -142,6 +151,17 @@ theorem fderiv_prod_comp_eval_apply_single (hφ : ∀ i, DifferentiableAt 𝕜 (
   rw [mul_comm]
   congr 1
   exact Finset.prod_congr rfl fun j hj ↦ by rw [update_of_ne (Finset.ne_of_mem_erase hj)]
+
+/-- The partial derivative of the coordinate product `z ↦ ∏ i, z i` in the `j`-th variable is the
+product `∏ i ≠ j, y i` of the other coordinates. -/
+theorem fderiv_prod_apply_single (j : ι) :
+    fderiv 𝕜 (fun z : ι → 𝕜 ↦ ∏ i, z i) y (Pi.single j 1) = ∏ i ∈ Finset.univ.erase j, y i := by
+  have := fderiv_prod_comp_eval_apply_single (φ := fun _ ↦ id) (y := y)
+    (fun _ ↦ differentiableAt_id) j
+  rw [← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ j), update_self, deriv_id,
+    one_mul] at this
+  refine this.trans (Finset.prod_congr rfl fun i hi ↦ ?_)
+  rw [update_of_ne (Finset.ne_of_mem_erase hi), id]
 
 end ProdCompEval
 

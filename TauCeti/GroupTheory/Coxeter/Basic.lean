@@ -14,7 +14,9 @@ This file evaluates Mathlib's alternating words through an arbitrary family, spe
 evaluation to the lengths the braid relations are read off at, and computes the reversal of an
 alternating word. It splits the Coxeter relations into involutions and braid relations, and it
 also provides elementary transport and rank-zero helpers for Coxeter systems: a Coxeter system
-whose simple reflections are indexed by an empty type has a trivial group.
+whose simple reflections are indexed by an empty type has a trivial group. Finally, it builds the
+homomorphism of Coxeter groups induced by a map of index types along which the Coxeter matrices
+agree.
 
 ## Main definitions
 
@@ -43,6 +45,14 @@ whose simple reflections are indexed by an empty type has a trivial group.
   Coxeter matrix is `2`.
 * `CoxeterSystem.isConj_wordProd_append_comm`: rotating a word `l₁ ++ l₂` to `l₂ ++ l₁` conjugates
   the element it spells.
+* `CoxeterSystem.parabolicHom`: the homomorphism `W →* W'` sending `s i` to `s' (f i)`, induced by
+  a map `f` of index types along which the Coxeter matrices agree. It sends the product of a word to
+  the product of its image (`CoxeterSystem.parabolicHom_wordProd`) and is functorial in `f`
+  (`CoxeterSystem.parabolicHom_id`, `CoxeterSystem.parabolicHom_comp`); along a bijection it is the
+  identity of a reindexed system (`CoxeterSystem.parabolicHom_reindex`) and the inverse of
+  `CoxeterMatrix.reindexGroupEquiv` on the presented groups
+  (`CoxeterMatrix.toCoxeterSystem_parabolicHom_reindex`). That it is injective and
+  length-preserving is proved in `TauCeti/GroupTheory/Coxeter/Restriction.lean`.
 
 ## References
 
@@ -223,5 +233,71 @@ theorem isConj_wordProd_append_comm (l₁ l₂ : List B) :
     IsConj (cs.wordProd (l₁ ++ l₂)) (cs.wordProd (l₂ ++ l₁)) := by
   rw [wordProd_append, wordProd_append]
   exact isConj_iff.mpr ⟨(cs.wordProd l₁)⁻¹, by simp⟩
+
+/-! ### Homomorphisms induced by maps of index types -/
+
+section ParabolicHom
+
+variable {B' W' : Type*} [Group W'] {M' : CoxeterMatrix B'} (cs' : CoxeterSystem M' W')
+  {f : B → B'}
+
+/-- The homomorphism of Coxeter groups induced by a map `f : B → B'` of index types along which the
+Coxeter matrices agree, `M i j = M' (f i) (f j)`: it sends `s i` to `s' (f i)`. It is injective
+and length-preserving, with image the standard parabolic subgroup of `Set.range f`
+(`CoxeterSystem.parabolicHom_injective`, `CoxeterSystem.length_parabolicHom` and
+`CoxeterSystem.range_parabolicHom` in `TauCeti/GroupTheory/Coxeter/Restriction.lean`). -/
+def parabolicHom (hf : ∀ i j, M i j = M' (f i) (f j)) : W →* W' :=
+  cs.lift ⟨fun i ↦ cs'.simple (f i), fun i j ↦ by rw [hf]; exact cs'.simple_mul_simple_pow _ _⟩
+
+variable {cs'} (hf : ∀ i j, M i j = M' (f i) (f j))
+
+/-- The homomorphism `CoxeterSystem.parabolicHom` sends the simple reflection `s i` to
+`s' (f i)`. -/
+@[simp]
+theorem parabolicHom_simple (i : B) : cs.parabolicHom cs' hf (cs.simple i) = cs'.simple (f i) :=
+  cs.lift_apply_simple _ i
+
+/-- The homomorphism `CoxeterSystem.parabolicHom` sends the product of a word to the product of its
+image under `f`. -/
+@[simp]
+theorem parabolicHom_wordProd (ω : List B) :
+    cs.parabolicHom cs' hf (cs.wordProd ω) = cs'.wordProd (ω.map f) := by
+  induction ω with
+  | nil => simp
+  | cons i ω ih => simp [wordProd_cons, ih]
+
+/-- **The identity of index types induces the identity of `W`.** -/
+@[simp]
+theorem parabolicHom_id (hid : ∀ i j, M i j = M (id i) (id j)) :
+    cs.parabolicHom cs hid = MonoidHom.id W :=
+  cs.ext_simple fun i ↦ parabolicHom_simple cs hid i
+
+/-- **The homomorphisms `CoxeterSystem.parabolicHom` compose** along composites of maps of index
+types: extending along `f` and then along `g` is extending along `g ∘ f`. -/
+theorem parabolicHom_comp {B'' W'' : Type*} [Group W''] {M'' : CoxeterMatrix B''}
+    {cs'' : CoxeterSystem M'' W''} {g : B' → B''} (hg : ∀ i j, M' i j = M'' (g i) (g j))
+    (hgf : ∀ i j, M i j = M'' ((g ∘ f) i) ((g ∘ f) j)) :
+    (cs'.parabolicHom cs'' hg).comp (cs.parabolicHom cs' hf) = cs.parabolicHom cs'' hgf :=
+  cs.ext_simple fun i ↦ by simp
+
+/-- **Reindexing a Coxeter system along `e` does not change the group**: the homomorphism of
+`CoxeterSystem.parabolicHom` from `cs` to `cs.reindex e` along `e` is the identity of `W`. -/
+@[simp]
+theorem parabolicHom_reindex (e : B ≃ B') (he : ∀ i j, M i j = M.reindex e (e i) (e j)) :
+    cs.parabolicHom (cs.reindex e) he = MonoidHom.id W :=
+  cs.ext_simple fun i ↦ by simp
+
+/-- On the presented Coxeter groups, the homomorphism of `CoxeterSystem.parabolicHom` along a
+bijection `e` is the inverse of Mathlib's isomorphism `CoxeterMatrix.reindexGroupEquiv`. -/
+@[simp]
+theorem _root_.CoxeterMatrix.toCoxeterSystem_parabolicHom_reindex (M : CoxeterMatrix B)
+    (e : B ≃ B') (he : ∀ i j, M i j = M.reindex e (e i) (e j)) :
+    M.toCoxeterSystem.parabolicHom (M.reindex e).toCoxeterSystem he =
+      (M.reindexGroupEquiv e).symm.toMonoidHom :=
+  M.toCoxeterSystem.ext_simple fun i ↦ by
+    rw [parabolicHom_simple]
+    simp [CoxeterMatrix.reindexGroupEquiv_symm_apply_simple]
+
+end ParabolicHom
 
 end CoxeterSystem
