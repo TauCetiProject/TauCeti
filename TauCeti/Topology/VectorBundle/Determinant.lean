@@ -677,44 +677,44 @@ theorem lineEquiv_symm_apply (hF : finrank 𝕜 F = 1) (v : E x) :
   -- The inverse of `lineEquiv` is, by definition, that of the linear equivalence it bundles.
   change (lineLinearEquiv hF x).symm v = _
   apply (lineLinearEquiv hF x).injective
-  rw [LinearEquiv.apply_symm_apply, lineLinearEquiv, LinearEquiv.trans_apply,
-    LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply, key hF]
+  simp only [LinearEquiv.apply_symm_apply, lineLinearEquiv, LinearEquiv.trans_apply, key hF]
 
-/-- `TauCeti.DetBundle.lineEquiv` sends the wedge of the single vector `v 0` to `v 0`. -/
-theorem lineEquiv_ιMulti (hF : finrank 𝕜 F = 1) (v : Fin (finrank 𝕜 F) → E x) :
-    lineEquiv hF x ((linearEquiv 𝕜 F E x).symm (exteriorPower.ιMulti 𝕜 _ v)) =
-      v ⟨0, hF.symm ▸ Nat.one_pos⟩ := by
+/-- `TauCeti.DetBundle.lineEquiv` sends the wedge of a family `v` with a single member to that
+member `v i`. -/
+theorem lineEquiv_ιMulti (hF : finrank 𝕜 F = 1) (v : Fin (finrank 𝕜 F) → E x)
+    (i : Fin (finrank 𝕜 F)) :
+    lineEquiv hF x ((linearEquiv 𝕜 F E x).symm (exteriorPower.ιMulti 𝕜 _ v)) = v i := by
   have : Subsingleton (Fin (finrank 𝕜 F)) := (finCongr hF).subsingleton
-  have hv : v = fun _ ↦ v ⟨0, hF.symm ▸ Nat.one_pos⟩ :=
-    funext fun _ ↦ congrArg v (Subsingleton.elim _ _)
+  have hv : v = fun _ ↦ v i := funext fun _ ↦ congrArg v (Subsingleton.elim _ _)
   conv_lhs => rw [hv, ← lineEquiv_symm_apply hF, ContinuousLinearEquiv.apply_symm_apply]
 
 /-- In a linear trivialization `e` of a line bundle, the isomorphism `det L ≃ L` sends a vector
 with chart coordinate `c` in `det L` to the vector with coordinate `c • b` in `L`, where `b` is the
 single vector of the basis `Module.finBasis 𝕜 F` of the model fibre. -/
 theorem trivialization_lineEquiv (hF : finrank 𝕜 F = 1) (e : Trivialization F (π F E))
-    [e.IsLinear 𝕜] (hx : x ∈ e.baseSet) (v : DetBundle 𝕜 F E x) :
-    (e ⟨x, lineEquiv hF x v⟩).2 =
-      chartCoord e hx v • Module.finBasis 𝕜 F ⟨0, hF.symm ▸ Nat.one_pos⟩ := by
+    [e.IsLinear 𝕜] (hx : x ∈ e.baseSet) (v : DetBundle 𝕜 F E x) (i : Fin (finrank 𝕜 F)) :
+    (e ⟨x, lineEquiv hF x v⟩).2 = chartCoord e hx v • Module.finBasis 𝕜 F i := by
   have : Unique (Fin (finrank 𝕜 F)) := (finCongr hF).unique
+  obtain rfl : i = default := Subsingleton.elim _ _
   obtain ⟨w, rfl⟩ := (lineEquiv hF x).symm.surjective v
-  rw [ContinuousLinearEquiv.apply_symm_apply, lineEquiv_symm_apply, chartCoord_ιMulti,
-    Module.Basis.det_unique, Subsingleton.elim (⟨0, _⟩ : Fin (finrank 𝕜 F)) default]
-  simpa using ((Module.finBasis 𝕜 F).sum_repr (e ⟨x, w⟩).2).symm
+  rw [ContinuousLinearEquiv.apply_symm_apply, lineEquiv_symm_apply, chartCoord_ιMulti]
+  exact ((Module.finBasis 𝕜 F).det_unique_smul fun _ ↦ (e ⟨x, w⟩).2).symm
 
 /-- The isomorphism `det L ≃ L` is continuous on total spaces. -/
 theorem continuous_lineEquiv (hF : finrank 𝕜 F = 1) :
     Continuous fun p : TotalSpace 𝕜 (DetBundle 𝕜 F E) ↦
       TotalSpace.mk' F p.proj (lineEquiv hF p.proj p.snd) := by
+  have : Unique (Fin (finrank 𝕜 F)) := (finCongr hF).unique
   refine FiberBundle.continuous_of_forall_trivialization _ (fun _ ↦ rfl) fun p ↦ ?_
   refine ⟨trivializationAt 𝕜 (DetBundle 𝕜 F E) p.proj, trivializationAt F E p.proj,
-    fun _ c ↦ c • Module.finBasis 𝕜 F ⟨0, hF.symm ▸ Nat.one_pos⟩,
+    fun _ c ↦ c • Module.finBasis 𝕜 F default,
     mem_baseSet_trivializationAt 𝕜 _ p.proj, mem_baseSet_trivializationAt F E p.proj,
     ((trivializationAt 𝕜 (DetBundle 𝕜 F E) p.proj).continuousOn.continuousAt
       ((trivializationAt 𝕜 _ p.proj).open_source.mem_nhds
         (FiberBundle.mem_trivializationAt_proj_source))).snd.smul continuousAt_const, ?_⟩
   rintro ⟨y, v⟩ (hy : y ∈ (trivializationAt F E p.proj).baseSet) -
-  rw [trivialization_lineEquiv hF _ hy, trivializationAt_eq, trivialization_apply_mk _ hy]
+  rw [trivialization_lineEquiv hF _ hy _ default, trivializationAt_eq,
+    trivialization_apply_mk _ hy]
 
 /-- **The determinant line bundle of a line bundle is the line bundle itself**: the total spaces
 of `det L` and `L` are homeomorphic by `TauCeti.DetBundle.lineEquiv` on each fibre. -/
