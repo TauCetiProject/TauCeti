@@ -145,16 +145,6 @@ private theorem comp_right_eq_iff {𝕜 V W Z : Type*} [Semiring 𝕜]
   rw [← DFunLike.coe_injective.eq_iff, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp,
     ContinuousLinearEquiv.coe_coe, L.surjective.right_cancellable, DFunLike.coe_injective.eq_iff]
 
-/-- Postcomposing with a continuous linear equivalence cancels on the left. -/
-private theorem comp_left_eq_iff {𝕜 V W Z : Type*} [Semiring 𝕜]
-    [AddCommMonoid V] [Module 𝕜 V] [TopologicalSpace V]
-    [AddCommMonoid W] [Module 𝕜 W] [TopologicalSpace W]
-    [AddCommMonoid Z] [Module 𝕜 Z] [TopologicalSpace Z]
-    (L : W ≃L[𝕜] Z) (A B : V →L[𝕜] W) :
-    L.toContinuousLinearMap.comp A = L.toContinuousLinearMap.comp B ↔ A = B := by
-  rw [← DFunLike.coe_injective.eq_iff, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp,
-    ContinuousLinearEquiv.coe_coe, L.injective.comp_left.eq_iff, DFunLike.coe_injective.eq_iff]
-
 section NontriviallyNormedField
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -572,9 +562,12 @@ point. -/
 theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm :
     mfderiv I 𝓘(𝕜, F) f x = 0 ↔
       fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 := by
-  rw [← mvfderiv_eq_fderiv_comp_extChartAt_symm, mvfderiv]
-  exact (comp_left_eq_iff (NormedSpace.fromTangentSpace (f x))
-    (mfderiv I 𝓘(𝕜, F) f x) 0).symm.trans (by rw [ContinuousLinearMap.comp_zero]; exact Iff.rfl)
+  rw [← mvfderiv_eq_fderiv_comp_extChartAt_symm, mvfderiv,
+    ← ContinuousLinearMap.cancel_left'
+      (g := (NormedSpace.fromTangentSpace (f x)).toContinuousLinearMap)
+      (NormedSpace.fromTangentSpace (f x)).injective,
+    ContinuousLinearMap.comp_zero]
+  exact Iff.rfl
 
 /-- On a boundaryless manifold, `mvfderiv I f x`, read on the model space `E`, agrees with the
 Fréchet derivative of the preferred coordinate expression at `extChartAt I x x`, even without a
