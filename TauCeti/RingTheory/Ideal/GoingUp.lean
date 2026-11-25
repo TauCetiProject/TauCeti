@@ -28,7 +28,8 @@ is minimal as soon as it contains a minimal prime `p` with `B ⧸ p` algebraic o
 * `Ideal.primesOver_eq_singleton_under_of_primesOver_eq_singleton`: a prime alone above `p` in
   `T` contracts to a prime alone above `p` in any intermediate ring over which `T` is integral.
 * `Ideal.comap_eq_maximalIdeal_of_isIntegral`: along an integral algebra over a local ring, every
-  maximal ideal contracts to the maximal ideal.
+  maximal ideal contracts to the maximal ideal, and `Ideal.liesOver_maximalIdeal_of_isIntegral`
+  restates this as `Ideal.LiesOver`.
 * `TauCeti.radical_map_maximalIdeal_of_isIntegral`: along an integral algebra of local
   rings, the radical of the extended maximal ideal is the maximal ideal of the target.
 * `Ideal.map_le_jacobson_of_isIntegral`: along an integral algebra, the extension of an ideal in
@@ -92,6 +93,12 @@ theorem comap_eq_maximalIdeal_of_isIntegral {R : Type*} [CommRing R] [IsLocalRin
     [Algebra R S] [Algebra.IsIntegral R S] (P : Ideal S) [P.IsMaximal] :
     P.comap (algebraMap R S) = IsLocalRing.maximalIdeal R :=
   IsLocalRing.eq_maximalIdeal (IsMaximal.under R P)
+
+/-- Along an integral algebra over a local ring, every maximal ideal lies over the maximal ideal. -/
+theorem liesOver_maximalIdeal_of_isIntegral {R : Type*} [CommRing R] [IsLocalRing R]
+    [Algebra R S] [Algebra.IsIntegral R S] (P : Ideal S) [P.IsMaximal] :
+    P.LiesOver (IsLocalRing.maximalIdeal R) :=
+  ⟨(comap_eq_maximalIdeal_of_isIntegral P).symm⟩
 
 /-- **An ideal over zero above an algebraic component is minimal.** Let `B` be a `P`-algebra, `p` a
 minimal prime of `B` with `B ⧸ p` algebraic over `P`, and `q ≥ p` an ideal of `B` lying over the

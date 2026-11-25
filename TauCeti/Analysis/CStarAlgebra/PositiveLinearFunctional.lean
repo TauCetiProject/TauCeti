@@ -25,6 +25,10 @@ approximate units, so pulling a positive functional back along it does not chang
 to states along quotient maps; without surjectivity the norm can drop, for instance to `0`.
 For the same reason the norm is additive on positive functionals,
 `PositiveContinuousLinearMap.opNorm_add`.
+Along a star isomorphism `e`, pulling back along `e` and then along `e.symm` (or the other way
+round) recovers the functional,
+`PositiveContinuousLinearMap.comp_ofClass_comp_ofClass_symm` and
+`PositiveContinuousLinearMap.comp_ofClass_symm_comp_ofClass`.
 
 The bound `‖ω a‖ ^ 2 ≤ ‖ω‖ ‖ω (star a * a)‖` of Mathlib's
 `PositiveContinuousLinearMap.norm_map_sq_le_opNorm_mul` shows that a positive functional vanishes
@@ -71,6 +75,22 @@ theorem opNorm_comp_ofClass_of_surjective (ω : B →P[ℂ] ℂ) (f : F) (hf : F
   exact Complex.ofReal_injective <| tendsto_nhds_unique
     ((ω.comp (.ofClass f)).tendsto_nhds_opNorm hl)
     (Filter.tendsto_map'_iff.mp (ω.tendsto_nhds_opNorm (hl.map f hf)))
+
+/-- Pulling a positive functional back along a star isomorphism and then along its inverse
+recovers the functional. -/
+@[simp]
+theorem comp_ofClass_comp_ofClass_symm (e : A ≃⋆ₐ[ℂ] B) (ω : B →P[ℂ] ℂ) :
+    (ω.comp (.ofClass e)).comp (.ofClass e.symm) = ω := by
+  ext b
+  simp
+
+/-- Pulling a positive functional back along the inverse of a star isomorphism and then along
+the isomorphism recovers the functional. -/
+@[simp]
+theorem comp_ofClass_symm_comp_ofClass (e : A ≃⋆ₐ[ℂ] B) (ω : A →P[ℂ] ℂ) :
+    (ω.comp (.ofClass e.symm)).comp (.ofClass e) = ω := by
+  ext a
+  simp
 
 /-- The norm of a sum of positive functionals on a C⋆-algebra is the sum of their norms. -/
 theorem opNorm_add (τ σ : A →P[ℂ] ℂ) :

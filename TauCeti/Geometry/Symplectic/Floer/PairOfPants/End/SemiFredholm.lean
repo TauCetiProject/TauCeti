@@ -449,14 +449,12 @@ private theorem contDiff_covectorPullback_positiveEndChart {q : Puncture}
       ((le_max_left _ _).trans_lt hζ)] with ζ' hζ'
     simp only [M, hJeq ζ' hζ'.le, Function.comp_apply, Pi.smul_apply']
   -- The pulled-back form is `M` composed with `η ∘ φ'_q`, which is supported beyond `R`.
-  have h := (ContinuousLinearMap.compL ℝ V V ℝ).flip.contDiff_of_tsupport_subset_right hM
-    (hη.comp (contDiff_positiveEndChart q 2)).contDiffOn
-    (isOpen_lt continuous_const continuous_fst) fun ζ hζ ↦ ?_
-  · rwa [funext (covectorPullback_apply φ _ u η)]
-  · obtain ⟨-, hζR⟩ := hηR (tsupport_comp_subset_preimage _
-      (contDiff_positiveEndChart q 0).continuous hζ)
-    rw [fst_positiveEndCoord_positiveEndChart] at hζR
-    exact hR.trans_lt hζR
+  refine contDiff_covectorPullback_of_contDiffOn (isOpen_lt continuous_const continuous_fst) hM
+    (hη.comp (contDiff_positiveEndChart q 2)) fun ζ hζ ↦ ?_
+  obtain ⟨-, hζR⟩ := hηR (tsupport_comp_subset_preimage _
+    (contDiff_positiveEndChart q 0).continuous hζ)
+  rw [fst_positiveEndCoord_positiveEndChart] at hζR
+  exact hR.trans_lt hζR
 
 omit [FiniteDimensional ℝ V] in
 /-- The form `η (φ'_q ·) ∘ (a + b J)` vanishes off a band `(a, b) × ℝ` when `η ∘ φ'_q` does. -/

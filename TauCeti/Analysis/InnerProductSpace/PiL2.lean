@@ -17,6 +17,7 @@ public import TauCeti.Algebra.BigOperators.Finset.Fiber
 public import TauCeti.Analysis.Normed.Lp.PiLp
 
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
+import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
 /-!
@@ -45,6 +46,8 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq`: a quadratic form that is diagonal in the
   real Euclidean coordinates is positive definite exactly when all of its weights are positive.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
+* `EuclideanSpace.isBigO_apply_div_norm`: a real Euclidean coordinate divided by the norm,
+  `x j / ‖x‖`, is `O(1)` along any filter.
 * `EuclideanSpace.surjective_proj`: every coordinate projection is surjective.
 * `EuclideanSpace.toLp_mem_sphere_zero_one_iff`: a real vector lies on the unit sphere exactly
   when its dot product with itself is `1`.
@@ -132,6 +135,14 @@ variable {𝕜 : Type*} {ι : Type*} [Fintype ι]
 /-- The square root of the dimension of a nonzero Euclidean space is positive. -/
 theorem sqrt_card_pos [Nonempty ι] : 0 < Real.sqrt (Fintype.card ι) :=
   Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)
+
+/-- **A Euclidean coordinate divided by the norm is bounded:** `x j / ‖x‖ = O(1)` on
+`EuclideanSpace ℝ ι`, along any filter. -/
+theorem isBigO_apply_div_norm (l : Filter (EuclideanSpace ℝ ι)) (j : ι) :
+    (fun x : EuclideanSpace ℝ ι ↦ x j / ‖x‖) =O[l] fun _ ↦ (1 : ℝ) :=
+  ((Asymptotics.isBigO_inv_norm_smul_apply _ (fun _ ↦ EuclideanSpace.proj j) id).trans
+    (Asymptotics.isBigO_const_const _ one_ne_zero _)).congr_left fun x ↦ by
+      simp [div_eq_inv_mul]
 
 /-- A real vector lies on the unit sphere of Euclidean space exactly when the dot product of its
 coordinates with themselves is `1`. -/
