@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Group.HaarMeasureWithValues.Integral
 public import TauCeti.MeasureTheory.Group.HaarMeasureWithValues.Prod
 public import TauCeti.Topology.LocallyConstant.CompactSupport.Prod
+import TauCeti.Topology.LocallyConstant.Algebra
 
 /-!
 # Fubini's theorem for Haar measures with values in a ring
@@ -93,8 +94,8 @@ private theorem exists_eq_integral_sliceRight (ν : HaarMeasureWithValues A H)
   let F : LocallyConstant G M := ∑ m ∈ s,
     ⟨fun g ↦ ν ((K m).slice g) • m, (K m).isLocallyConstant_slice.comp fun T ↦ ν T • m⟩
   have hFg (g : G) : F g = ∑ m ∈ s, ν ((K m).slice g) • m := by
-    rw [← coeFnAddMonoidHom_apply, map_sum, Finset.sum_apply]
-    simp only [coeFnAddMonoidHom_apply, LocallyConstant.coe_mk]
+    rw [LocallyConstant.finsetSum_apply]
+    rfl
   refine ⟨F, HasCompactSupport.intro' (K := ⋃ m ∈ s, Prod.fst '' ((K m : Set (G × H))))
       (s.finite_toSet.isCompact_biUnion fun m _ ↦ (K m).isCompact.image continuous_fst)
       (s.finite_toSet.isClosed_biUnion fun m _ ↦

@@ -35,8 +35,9 @@ indicators `1_K • m` of compact open sets, whose slices are the indicators of 
   `y` in the first variable is `1_{K^y} • m`, where `K^y = K.swap.slice y`.
 * `LocallyConstant.compactlySupported.swap_compactOpenIndicator`: exchanging the variables of
   `1_K • m` gives `1_{K.swap} • m`.
-* `LocallyConstant.compactlySupported.sliceRight_swap`: slicing `f ∘ swap` on the right is slicing
-  `f` on the left.
+* `LocallyConstant.compactlySupported.sliceRight_swap`,
+  `LocallyConstant.compactlySupported.sliceLeft_swap`: slicing `f ∘ swap` in one variable is
+  slicing `f` in the other.
 -/
 
 public section
@@ -102,6 +103,13 @@ theorem swap_swap (f : compactlySupported R (X × Y) M) : swap R M (swap R M f) 
 theorem sliceRight_swap (y : Y) (f : compactlySupported R (X × Y) M) :
     sliceRight R M y (swap R M f) = sliceLeft R M y f :=
   compactlySupported.ext fun x ↦ by rw [sliceRight_apply, swap_apply, sliceLeft_apply,
+    Prod.swap_prod_mk]
+
+/-- Slicing `(y, x) ↦ f (x, y)` at `x` in the first variable is slicing `f` at `x`. -/
+@[simp]
+theorem sliceLeft_swap (x : X) (f : compactlySupported R (X × Y) M) :
+    sliceLeft R M x (swap R M f) = sliceRight R M x f :=
+  compactlySupported.ext fun y ↦ by rw [sliceLeft_apply, swap_apply, sliceRight_apply,
     Prod.swap_prod_mk]
 
 section Indicator

@@ -76,6 +76,7 @@ theorem mem_smul_iff_inv_smul_mem {g : G} {K : CompactOpens α} {x : α} : x ∈
 
 /-- Exchanging the factors of a translate of a compact open set in a product of groups:
 `(x • K).swap = x.swap • K.swap`. -/
+@[simp]
 theorem swap_smul {G H : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G] [Group H]
     [TopologicalSpace H] [ContinuousMul H] (x : G × H) (K : CompactOpens (G × H)) :
     (x • K).swap = x.swap • K.swap :=
