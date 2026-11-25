@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.PointedPrestable.DualGraph
-public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Category
+public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Basic
 import TauCeti.AlgebraicGeometry.Scheme.Basic
 import TauCeti.Topology.Irreducible
 

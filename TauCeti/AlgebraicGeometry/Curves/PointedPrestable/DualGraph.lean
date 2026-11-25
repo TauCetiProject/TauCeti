@@ -71,9 +71,9 @@ isomorphism of their dual graphs: the isomorphism `AlgebraicGeometry.Scheme.dual
 induced by the isomorphism of total spaces, which lies over `Spec K` and matches the markings. -/
 def dualGraphIsoOfIso [IsSepClosed K] {P Q : PointedPrestableFamily (Spec (.of K)) n}
     (e : P ≅ Q) : P.dualGraph.Iso Q.dualGraph :=
-  Scheme.dualGraphIsoOfIso (K := K) (totalIso e) (totalIso_hom_comp_toBase e) _ _ fun i ↦ by
-    rw [totalIso_hom]
-    exact e.hom.hom_markingPoint i
+  Scheme.dualGraphIsoOfIso (K := K) (X := P.total) (Y := Q.total)
+    ((Over.forget _).mapIso (toOver.mapIso e)) (Over.w (toOver.map e.hom)) _ _
+    e.hom.hom_markingPoint
 
 /-- The isomorphism of dual graphs carries a component of the blowup of the total space of `P`
 to its image under the induced isomorphism of blowups. -/
@@ -82,7 +82,8 @@ theorem coe_dualGraphVertexEquiv_dualGraphIsoOfIso_vertexEquiv [IsSepClosed K]
     {P Q : PointedPrestableFamily (Spec (.of K)) n} (e : P ≅ Q) (v : P.dualGraph.Vertex) :
     (Q.total.dualGraphVertexEquiv Q.markingPoint ((dualGraphIsoOfIso e).vertexEquiv v) :
         Set (Q.total.singularLocus K).blowup) =
-      (Scheme.singularLocusBlowupIso (R := K) (totalIso e) (totalIso_hom_comp_toBase e)).hom ''
+      (Scheme.singularLocusBlowupIso (R := K) (X := P.total) (Y := Q.total)
+          ((Over.forget _).mapIso (toOver.mapIso e)) (Over.w (toOver.map e.hom))).hom ''
         (P.total.dualGraphVertexEquiv P.markingPoint v) :=
   Scheme.coe_dualGraphVertexEquiv_dualGraphIsoOfIso_vertexEquiv ..
 
@@ -97,9 +98,8 @@ theorem image_blowupToBase_comp_dualGraphIsoOfIso_vertexEquiv [IsSepClosed K]
         (Q.total.dualGraphVertexEquiv Q.markingPoint ((dualGraphIsoOfIso e).vertexEquiv v) :
           Set (Q.total.singularLocus K).blowup) =
       ((P.total.singularLocus K).blowupToBase ≫ e.hom.hom ≫ f) ''
-        (P.total.dualGraphVertexEquiv P.markingPoint v : Set (P.total.singularLocus K).blowup) := by
-  rw [← totalIso_hom]
-  exact Scheme.image_blowupToBase_comp_dualGraphIsoOfIso_vertexEquiv ..
+        (P.total.dualGraphVertexEquiv P.markingPoint v : Set (P.total.singularLocus K).blowup) :=
+  Scheme.image_blowupToBase_comp_dualGraphIsoOfIso_vertexEquiv ..
 
 end PointedPrestableFamily
 
