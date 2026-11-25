@@ -51,6 +51,8 @@ drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
   induced-map range contained in any target subgroup.
 * `TauCeti.FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton`: the same triviality for the
   basepoint-transported induced map `FundamentalGroup.mapOfEq`.
+* `TauCeti.FundamentalGroup.mapOfEq_comp_eq_of_mapOfEq_eq`: maps inducing the same homomorphism
+  on fundamental groups still do after precomposition with any pointed map.
 * `TauCeti.FundamentalGroup.mk_map_comp_eq_of_mapOfEq_eq`: two maps inducing the same
   homomorphism on fundamental groups agree, in the fundamental groupoid of the target, on the
   class of every path `α₀ · p · α₁⁻¹` through the basepoint.
@@ -263,6 +265,18 @@ theorem FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton
   have : Subsingleton ((_root_.FundamentalGroup.mapOfEq f h).range) :=
     (Set.subsingleton_coe _).mpr ((_root_.FundamentalGroup.mapOfEq f h).subsingleton_coe_range)
   exact Subgroup.eq_bot_of_subsingleton _
+
+/-- Two maps `f g : X → Y` inducing the same homomorphism on `π₁(X, x₀)` still do after
+precomposition with any map `e : A → X` sending `a₀` to `x₀`. -/
+theorem FundamentalGroup.mapOfEq_comp_eq_of_mapOfEq_eq {Y : Type*} [TopologicalSpace Y]
+    {f g : C(X, Y)} {a₀ : A} {x₀ : X} {y₀ : Y} (e : C(A, X)) (he : e a₀ = x₀) (hf : f x₀ = y₀)
+    (hg : g x₀ = y₀)
+    (hfg : _root_.FundamentalGroup.mapOfEq f hf = _root_.FundamentalGroup.mapOfEq g hg) :
+    _root_.FundamentalGroup.mapOfEq (f.comp e) (x := a₀) (by simp [he, hf]) =
+      _root_.FundamentalGroup.mapOfEq (g.comp e) (y := y₀) (by simp [he, hg]) := by
+  ext p
+  rw [← _root_.FundamentalGroup.mapOfEq_comp f e he hf,
+    ← _root_.FundamentalGroup.mapOfEq_comp g e he hg, hfg]
 
 /-- Two maps `f` and `g` with `g x₀ = f x₀` inducing the same homomorphism on `π₁(X, x₀)` agree,
 up to the identification of `g x₀` with `f x₀`, on the class of every path `α₀ · p · α₁⁻¹`. -/

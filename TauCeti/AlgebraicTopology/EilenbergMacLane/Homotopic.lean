@@ -123,32 +123,6 @@ theorem subsingleton_relHomotopyGroup_diagonal
       (HomotopyGroup.map_map_of_comp_eq_id r _ rfl hr hrι))
     (@Function.surjective_to_subsingleton _ _ _ hYY _)
 
-/-- Two maps `X → Y` inducing the same homomorphism on `π₁(X, x₀)` induce the same homomorphism
-on `π₁(univ, x₀)` after composing with `Subtype.val : univ → X`. -/
-private theorem mapOfEq_comp_subtypeVal_univ_eq {X : Type u} [TopologicalSpace X]
-    {f g : C(X, Y)} {x₀ : X} {y₀ : Y} (hf : f x₀ = y₀) (hg : g x₀ = y₀)
-    (hfg : FundamentalGroup.mapOfEq f hf = FundamentalGroup.mapOfEq g hg) :
-    FundamentalGroup.mapOfEq (f.comp ⟨Subtype.val, continuous_subtypeVal⟩ : C((univ : Set X), Y))
-      (x := ⟨x₀, trivial⟩) hf =
-      FundamentalGroup.mapOfEq (g.comp ⟨Subtype.val, continuous_subtypeVal⟩) hg := by
-  ext p
-  rw [← FundamentalGroup.mapOfEq_comp f _ rfl hf, ← FundamentalGroup.mapOfEq_comp g _ rfl hg, hfg]
-
-/-- Two maps `X → Y` whose composites with `Subtype.val : univ → X` are homotopic relative to
-`x₀` are homotopic relative to `x₀`. -/
-private theorem homotopicRel_singleton_of_comp_subtypeVal_univ {X : Type u} [TopologicalSpace X]
-    {f g : C(X, Y)} {x₀ : X}
-    (h : (f.comp ⟨Subtype.val, continuous_subtypeVal⟩ : C((univ : Set X), Y)).HomotopicRel
-      (g.comp ⟨Subtype.val, continuous_subtypeVal⟩) {⟨x₀, trivial⟩}) :
-    f.HomotopicRel g {x₀} := by
-  let e' : C(X, univ) := ⟨fun x ↦ ⟨x, mem_univ x⟩, by fun_prop⟩
-  have he : (⟨Subtype.val, continuous_subtypeVal⟩ : C((univ : Set X), X)).comp e' =
-      ContinuousMap.id X := rfl
-  have hpre : e' ⁻¹' {⟨x₀, trivial⟩} = {x₀} := by
-    ext
-    simp [e', Subtype.ext_iff]
-  simpa only [ContinuousMap.comp_assoc, he, ContinuousMap.comp_id, hpre] using h.precomp e'
-
 section RelCWComplex
 
 variable {X : Type u} [TopologicalSpace X] [T2Space X] {C D : Set X} [RelCWComplex C D]
@@ -271,11 +245,12 @@ theorem homotopicRel_singleton_of_mapOfEq_eq_of_cwComplex [CWComplex (univ : Set
     (hf : f x₀ = y₀) (hg : g x₀ = y₀)
     (hfg : FundamentalGroup.mapOfEq f hf = FundamentalGroup.mapOfEq g hg) :
     f.HomotopicRel g {x₀} :=
-  -- Apply `homotopicRel_singleton_of_mapOfEq_eq` to `univ`, through `Subtype.val`.
-  homotopicRel_singleton_of_comp_subtypeVal_univ <|
-    homotopicRel_singleton_of_mapOfEq_eq (C := (univ : Set X)) hY (x₀ := ⟨x₀, trivial⟩)
+  -- Apply `homotopicRel_singleton_of_mapOfEq_eq` to `univ`, through `univ ≃ₜ X`.
+  (ContinuousMap.homotopicRel_comp_homeomorph_iff (Homeomorph.Set.univ X)).1 <|
+    (homotopicRel_singleton_of_mapOfEq_eq (C := (univ : Set X)) hY (x₀ := ⟨x₀, trivial⟩)
       (by ext x; simp [← SetLike.mem_coe, hx₀, Subtype.ext_iff]) hf hg
-      (mapOfEq_comp_subtypeVal_univ_eq hf hg hfg)
+      (FundamentalGroup.mapOfEq_comp_eq_of_mapOfEq_eq _ rfl hf hg hfg)).mono
+      fun _ hx ↦ Subtype.ext hx
 
 end RelCWComplex
 
@@ -419,12 +394,14 @@ theorem homotopicRel_singleton_of_mapOfEq_eq_of_mem_skeletonLT_of_cwComplex
     (hfg : FundamentalGroup.mapOfEq f hf = FundamentalGroup.mapOfEq g hg) :
     f.HomotopicRel g {x₀} := by
   -- Apply `homotopicRel_singleton_of_mapOfEq_eq_of_mem_skeletonLT` to `univ`, through
-  -- `Subtype.val`.
+  -- `univ ≃ₜ X`.
   have : PathConnectedSpace (univ : Set X) :=
     isPathConnected_iff_pathConnectedSpace.1 isPathConnected_univ
-  exact homotopicRel_singleton_of_comp_subtypeVal_univ <|
-    homotopicRel_singleton_of_mapOfEq_eq_of_mem_skeletonLT (C := (univ : Set X)) hY
-      (x₀ := ⟨x₀, trivial⟩) hx₀ hf hg (mapOfEq_comp_subtypeVal_univ_eq hf hg hfg)
+  exact (ContinuousMap.homotopicRel_comp_homeomorph_iff (Homeomorph.Set.univ X)).1 <|
+    (homotopicRel_singleton_of_mapOfEq_eq_of_mem_skeletonLT (C := (univ : Set X)) hY
+      (x₀ := ⟨x₀, trivial⟩) hx₀ hf hg
+      (FundamentalGroup.mapOfEq_comp_eq_of_mapOfEq_eq _ rfl hf hg hfg)).mono
+      fun _ hx ↦ Subtype.ext hx
 
 end Vertex
 
