@@ -287,7 +287,7 @@ theorem IsPrCompact.range_eq_range_of_split (hu : u.IsPrCompact) (hF : TauCeti.H
   obtain ⟨rfl, rfl⟩ := hu.eq_of_split v hb hv hF hN i r j s hsplit htri hQ hS hQS
   have hdeg := LinearMap.natDegree_projectiveCharpolyRev_eq_finrank_of_isUnit hunit
   -- `i` intertwines `r u i` with `u`, and Cayley–Hamilton kills `Q*(r u i)`.
-  have hsemi := TauCeti.semiconj_of_split i r j s hsplit htri
+  have hsemi := semiconj_of_split i r j s hsplit htri
   have hCH : Polynomial.aeval (r.comp (u.comp i))
       (r.comp (u.comp i) : F →ₗ[K] F).projectiveCharpolyRev.reverse = 0 := by
     refine ContinuousLinearMap.coe_injective ?_
@@ -337,7 +337,7 @@ theorem IsPrCompact.eq_comp_of_split [ContinuousConstSMul K N] (hu : u.IsPrCompa
   -- `E` kills the image of `N`: there `j` intertwines `s u j` with `u`, and `Q*(s u j)` is
   -- invertible because `Q` is coprime to `det (1 - T (s u j))`.
   have hEj (y : N) : E (j y) = 0 := by
-    have hsemi := TauCeti.semiconj_of_split j s i r ((add_comm _ _).trans hsplit) hrj
+    have hsemi := semiconj_of_split j s i r ((add_comm _ _).trans hsplit) hrj
     obtain ⟨w, hw⟩ := ((((hu.comp_clm j hN).clm_comp s hN).isUnit_aeval_reverse_iff
       hQS.isUnit_leadingCoeff).mpr (hQS.isCoprime hdist hc)).exists_right_inv
     have hy : j y ∈ LinearMap.ker (E : M →ₗ[K] M) := by
