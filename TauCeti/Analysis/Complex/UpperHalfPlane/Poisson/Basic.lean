@@ -13,11 +13,11 @@ public import TauCeti.Analysis.Complex.Pick.Herglotz.Basic
 public import TauCeti.Analysis.PDE.GreenFunction.HalfSpace
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Complex.ParametricIntegralHolomorphy
 import TauCeti.Analysis.PDE.GreenFunction.HalfPlane
 import TauCeti.Basic.Complex.OfRealSub
+import TauCeti.Probability.Distributions.Cauchy.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
@@ -496,20 +496,18 @@ theorem upperHalfPlanePoissonIntegral_dirac (a : ℝ) (z : ℂ) :
 theorem hasDerivAt_arctan_sub_re_div_im_div_pi (z : ℂ) (s : ℝ) :
     HasDerivAt (fun s => Real.arctan ((s - z.re) / z.im) / π)
       (upperHalfPlanePoissonKernel z s) s := by
-  rcases eq_or_ne z.im 0 with hz | hz
-  · simpa [hz, upperHalfPlanePoissonKernel_eq] using hasDerivAt_const s (0 : ℝ)
-  have h : HasDerivAt (fun s => Real.arctan ((s - z.re) / z.im) / π)
-      (1 / (1 + ((s - z.re) / z.im) ^ 2) * (1 / z.im) / π) s :=
-    ((Real.hasDerivAt_arctan _).comp s
-      (((hasDerivAt_id' s).sub_const z.re).div_const z.im)).div_const π
-  convert h using 1
-  rw [upperHalfPlanePoissonKernel_eq, normSq_ofReal_sub]
-  field_simp
-  ring
+  have key (w : ℂ) (hw : 0 ≤ w.im) : HasDerivAt (fun s => Real.arctan ((s - w.re) / w.im) / π)
+      (upperHalfPlanePoissonKernel w s) s := by
+    simpa only [upperHalfPlanePoissonKernel_eq_cauchyPDFReal hw, Real.coe_toNNReal _ hw] using
+      TauCeti.Probability.hasDerivAt_arctan_div_pi w.re w.im.toNNReal s
+  rcases le_or_gt 0 z.im with hz | hz
+  · exact key z hz
+  · simpa [upperHalfPlanePoissonKernel_conj, Pi.neg_def, div_neg, Real.arctan_neg, neg_div] using
+      (key (conj z) (by simpa using hz.le)).neg
 
 /-- **The Poisson integral of an interval**: for `a ≤ b`, the Poisson integral of Lebesgue measure
-on `[a, b]` is `(arctan ((b - Re z) / Im z) - arctan ((a - Re z) / Im z)) / π`, the angle under
-which `[a, b]` is seen from `z`, divided by `π`. -/
+on `[a, b]` is `(arctan ((b - Re z) / Im z) - arctan ((a - Re z) / Im z)) / π`. For `z` in the
+upper half-plane this is the angle under which `[a, b]` is seen from `z`, divided by `π`. -/
 theorem upperHalfPlanePoissonIntegral_volume_restrict_Icc {a b : ℝ} (hab : a ≤ b) (z : ℂ) :
     upperHalfPlanePoissonIntegral (volume.restrict (Icc a b)) z =
       (Real.arctan ((b - z.re) / z.im) - Real.arctan ((a - z.re) / z.im)) / π := by

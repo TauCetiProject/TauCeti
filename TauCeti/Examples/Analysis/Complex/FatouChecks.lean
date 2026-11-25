@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.Nontangential.Limit
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 public import Mathlib.MeasureTheory.Measure.Decomposition.Lebesgue
+import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Basic.Complex.OfRealSub
 
 /-!
@@ -26,14 +27,15 @@ half-plane, computed directly.
   `P[h](x + iy) = (arctan ((1 - x) / y) + arctan (x / y)) / π`
   (`upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one`). As `z → x` through the upper
   half-plane, `P[h](z) → 1` for `0 < x < 1` and `P[h](z) → 0` for `x < 0` and for `x > 1`
-  (`tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_of_mem_Ioo`,
-  `tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_of_neg`,
-  `tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_of_one_lt`). At the jump `x = 0`,
-  `P[h](ct + it) → 1/2 + arctan c / π` as `t → 0⁺`
-  (`tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_ray`), in particular `P[h](it) → 1/2`
-  (`tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_vertical`). The rays with `|c| < α`
-  are nontangential, so there is no nontangential limit at `0` for any aperture `α > 0`
-  (`not_tendsto_nontangentialFilter_upperHalfPlanePoissonIntegral_volume_restrict_Icc`).
+  (`tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_of_mem_Ioo`,
+  `tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_of_neg`,
+  `tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_of_one_lt`). At the jump
+  `x = 0`, `P[h](ct + it) → 1/2 + arctan c / π` as `t → 0⁺`
+  (`tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_ray`), in particular
+  `P[h](it) → 1/2` (`tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_vertical`).
+  The rays with `|c| < α` are nontangential, so there is no nontangential limit at `0` for any
+  aperture `α > 0`
+  (`not_tendsto_nontangentialFilter_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one`).
 -/
 
 public section
@@ -43,7 +45,7 @@ noncomputable section
 namespace TauCeti.Examples.Fatou
 
 open Complex Filter MeasureTheory Set Topology
-open UpperHalfPlane (upperHalfPlaneSet)
+open _root_.UpperHalfPlane (upperHalfPlaneSet)
 
 open scoped Real
 
@@ -86,17 +88,6 @@ theorem upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one (z : ℂ) :
   rw [upperHalfPlanePoissonIntegral_volume_restrict_Icc zero_le_one, zero_sub, neg_div,
     Real.arctan_neg, sub_neg_eq_add]
 
-/-- Along the approach through the upper half-plane, `Im z → 0⁺`. -/
-private theorem tendsto_im_nhdsWithin_upperHalfPlaneSet (x : ℝ) :
-    Tendsto im (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝[>] 0) :=
-  tendsto_nhdsWithin_iff.2 ⟨(continuous_im.tendsto' _ 0 (by simp)).mono_left nhdsWithin_le_nhds,
-    eventually_nhdsWithin_of_forall fun _ hz => hz⟩
-
-/-- Along the approach to `x` through the upper half-plane, `Re z → x`. -/
-private theorem tendsto_re_nhdsWithin_upperHalfPlaneSet (x : ℝ) :
-    Tendsto re (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 x) :=
-  (continuous_re.tendsto' _ x (by simp)).mono_left nhdsWithin_le_nhds
-
 /-- If `f → c > 0` along the approach to `x`, then `arctan (f z / Im z) → π / 2`. -/
 private theorem tendsto_arctan_div_im_of_pos {x : ℝ} {f : ℂ → ℝ} {c : ℝ} (hc : 0 < c)
     (hf : Tendsto f (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 c)) :
@@ -118,7 +109,7 @@ private theorem tendsto_arctan_div_im_of_neg {x : ℝ} {f : ℂ → ℝ} {c : �
 
 /-- **Inside the interval the boundary limit is `1`**: for `0 < x < 1`, `P[1_{[0,1]}](z) → 1` as
 `z → x` through the upper half-plane. -/
-theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_of_mem_Ioo {x : ℝ}
+theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_of_mem_Ioo {x : ℝ}
     (hx : x ∈ Ioo 0 1) :
     Tendsto (upperHalfPlanePoissonIntegral (volume.restrict (Icc 0 1)))
       (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 1) := by
@@ -130,7 +121,8 @@ theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_of_mem_Ioo {x 
   simpa only [← upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one] using this
 
 /-- **Left of the interval the boundary limit is `0`.** -/
-theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_of_neg {x : ℝ} (hx : x < 0) :
+theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_of_neg {x : ℝ}
+    (hx : x < 0) :
     Tendsto (upperHalfPlanePoissonIntegral (volume.restrict (Icc 0 1)))
       (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 0) := by
   have h₁ := tendsto_arctan_div_im_of_pos (by linarith : (0 : ℝ) < 1 - x)
@@ -141,7 +133,7 @@ theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_of_neg {x : �
   simpa only [← upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one] using this
 
 /-- **Right of the interval the boundary limit is `0`.** -/
-theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_of_one_lt {x : ℝ}
+theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_of_one_lt {x : ℝ}
     (hx : 1 < x) :
     Tendsto (upperHalfPlanePoissonIntegral (volume.restrict (Icc 0 1)))
       (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 0) := by
@@ -155,7 +147,7 @@ theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_of_one_lt {x :
 
 /-- **Limits at the jump along rays**: `P[1_{[0,1]}](ct + it) → 1/2 + arctan c / π` as
 `t → 0⁺`. -/
-theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_ray (c : ℝ) :
+theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_ray (c : ℝ) :
     Tendsto (fun t : ℝ => upperHalfPlanePoissonIntegral (volume.restrict (Icc 0 1))
       (((c * t : ℝ) : ℂ) + t * I)) (𝓝[>] 0) (𝓝 (1 / 2 + Real.arctan c / π)) := by
   have h₁ : Tendsto (fun t : ℝ => Real.arctan (t⁻¹ + -c)) (𝓝[>] 0) (𝓝 (π / 2)) :=
@@ -173,21 +165,21 @@ theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_ray (c : ℝ) 
   rw [show (1 - c * t) / t = t⁻¹ + -c by field_simp; ring, mul_div_cancel_right₀ c ht.ne']
 
 /-- **The vertical limit at the jump**: `P[1_{[0,1]}](it) → 1/2` as `t → 0⁺`. -/
-theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_vertical :
+theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_vertical :
     Tendsto (fun t : ℝ => upperHalfPlanePoissonIntegral (volume.restrict (Icc 0 1)) (t * I))
       (𝓝[>] 0) (𝓝 (1 / 2)) := by
-  simpa using tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_ray 0
+  simpa using tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_ray 0
 
 /-- **At the jump `x = 0` there is no nontangential limit**, for any aperture `α > 0`: the rays
 `ct + it` with `|c| < α` approach `0` nontangentially, and along them `P[1_{[0,1]}]` tends to the
 different values `1/2 + arctan c / π`. -/
-theorem not_tendsto_nontangentialFilter_upperHalfPlanePoissonIntegral_volume_restrict_Icc
+theorem not_tendsto_nontangentialFilter_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one
     {α : ℝ} (hα : 0 < α) (L : ℝ) :
     ¬Tendsto (upperHalfPlanePoissonIntegral (volume.restrict (Icc 0 1)))
       (nontangentialFilter α 0) (𝓝 L) := by
   intro hL
   have hray (c : ℝ) (hc : |c| < α) : 1 / 2 + Real.arctan c / π = L :=
-    tendsto_nhds_unique (tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_ray c)
+    tendsto_nhds_unique (tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_ray c)
       (by simpa only [Function.comp_def, zero_add] using
         hL.comp (tendsto_ray_nontangentialFilter hc 0))
   have h := (hray 0 (by simpa using hα)).trans

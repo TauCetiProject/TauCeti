@@ -18,7 +18,8 @@ import TauCeti.Logic.Function.Update
 # Topology of the upper half-plane
 
 Every real point lies in the closure of the open upper half-plane, so limits taken along the
-half-plane at a real point are well posed.  The half-plane is also unbounded, so the filter along
+half-plane at a real point are well posed; along them `Im z → 0⁺` and `Re z` tends to the real
+point.  The half-plane is also unbounded, so the filter along
 which it approaches infinity is nontrivial and limits taken along it are unique.
 
 For a function conjugation-symmetric near infinity, decay along the upper half-plane implies
@@ -52,6 +53,9 @@ many points, such as the vertices of a tessellation, therefore keeps `ℍ` conne
 ## Main declarations
 
 * `Real.nhdsWithin_upperHalfPlaneSet_neBot`.
+* `TauCeti.tendsto_im_nhdsWithin_upperHalfPlaneSet`,
+  `TauCeti.tendsto_re_nhdsWithin_upperHalfPlaneSet`: the coordinates along the half-plane at a
+  real point.
 * `TauCeti.mem_closedBall_and_eq_of_tendsto` — transport a boundary limit through a map
   continuous on the closed unit disc.
 * `TauCeti.cobounded_inf_principal_upperHalfPlaneSet_neBot`.
@@ -99,6 +103,18 @@ instance nhdsWithin_upperHalfPlaneSet_neBot (x : ℝ) :
 end Real
 
 namespace TauCeti
+
+/-- Along the approach to a real point through the upper half-plane, `Im z → 0⁺`. -/
+theorem tendsto_im_nhdsWithin_upperHalfPlaneSet (x : ℝ) :
+    Tendsto Complex.im (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝[>] 0) :=
+  tendsto_nhdsWithin_iff.2
+    ⟨(Complex.continuous_im.tendsto' _ 0 (by simp)).mono_left nhdsWithin_le_nhds,
+      eventually_nhdsWithin_of_forall fun _ hz => hz⟩
+
+/-- Along the approach to a real point `x` through the upper half-plane, `Re z → x`. -/
+theorem tendsto_re_nhdsWithin_upperHalfPlaneSet (x : ℝ) :
+    Tendsto Complex.re (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 x) :=
+  (Complex.continuous_re.tendsto' _ x (by simp)).mono_left nhdsWithin_le_nhds
 
 /-- Along the upper half-plane, a limit of `f = G ∘ h` at a real point `x` is `G (h x)`, when `h`
 is continuous within the half-plane at `x` and maps the upper half-plane into the closed disc, on
