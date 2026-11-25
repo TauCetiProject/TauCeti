@@ -25,7 +25,9 @@ cut into many pieces of comparable size, as in the dyadic decompositions behind 
 lemma.
 
 A function `f` in `Lᵖ(t ∩ s)` extends by zero off a measurable set `s` to a function in `Lᵖ(t)`
-(`TauCeti.memLp_indicator_of_memLp_restrict_inter`).
+(`TauCeti.memLp_indicator_of_memLp_restrict_inter`), and a function vanishing on `t \ s`, for
+measurable `s ⊆ t`, has the same `Lᵖ` seminorm on `t` as on `s`
+(`TauCeti.eLpNorm_restrict_eq_of_eqOn_zero`).
 
 Conversely, a bound `M` on the `Lᵖ` seminorms of the restrictions `1_{A k} f` to an exhausting
 sequence of measurable sets bounds `‖f‖_p` (`TauCeti.eLpNorm_le_of_forall_eLpNorm_indicator_le`).
@@ -96,6 +98,20 @@ theorem memLp_indicator_of_memLp_restrict_inter {α ε : Type*} [MeasurableSpace
     MemLp (s.indicator f) p (μ.restrict t) := by
   rwa [memLp_indicator_iff_restrict hs.nullMeasurableSet, Measure.restrict_restrict hs,
     Set.inter_comm]
+
+/-- A function vanishing on `t \ s`, for measurable `s ⊆ t`, has the same `Lᵖ` seminorm on `t`
+and on `s`. -/
+theorem eLpNorm_restrict_eq_of_eqOn_zero {α ε : Type*} [MeasurableSpace α] [TopologicalSpace ε]
+    [ESeminormedAddMonoid ε] {μ : Measure α} {p : ℝ≥0∞} {s t : Set α} {g : α → ε}
+    (hs : MeasurableSet s) (ht : MeasurableSet t) (hst : s ⊆ t) (h0 : Set.EqOn g 0 (t \ s)) :
+    eLpNorm g p (μ.restrict t) = eLpNorm g p (μ.restrict s) := by
+  have hind : g =ᵐ[μ.restrict t] s.indicator g := by
+    filter_upwards [ae_restrict_mem ht] with x hx
+    by_cases hxs : x ∈ s
+    · rw [Set.indicator_of_mem hxs]
+    · rw [Set.indicator_of_notMem hxs, h0 ⟨hx, hxs⟩, Pi.zero_apply]
+  rw [eLpNorm_congr_ae hind, eLpNorm_indicator_eq_eLpNorm_restrict hs.nullMeasurableSet,
+    Measure.restrict_restrict hs, Set.inter_eq_left.2 hst]
 
 /-- **Exhaustion.** If the restrictions of `f` to measurable sets `A k` have `Lᵖ` seminorm at
 most `M`, and almost every point where `f` does not vanish lies in `A k` for all large `k`, then
