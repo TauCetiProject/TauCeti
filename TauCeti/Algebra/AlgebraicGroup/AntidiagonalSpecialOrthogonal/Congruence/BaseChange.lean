@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.AntidiagonalSpecialOrthogonal.Congruence.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.BaseChange
+public import TauCeti.Algebra.Ring.Hom
 
 /-!
 # Naturality of `O(SO_l^J) ≅ O(SO_l)` in the base ring
@@ -42,12 +43,6 @@ universe u v
 
 variable {R : Type u} [CommRing R] [Invertible (2 : R)] (l : ℕ) {i : R}
 
-omit [Invertible (2 : R)] in
-/-- The image of a square root of `-1` in an `R`-algebra is a square root of `-1`. -/
-theorem algebraMap_mul_self_eq_neg_one (K : Type*) [CommRing K] [Algebra R K] (hi : i * i = -1) :
-    algebraMap R K i * algebraMap R K i = -1 := by
-  rw [← map_mul, hi, map_neg, map_one]
-
 section Coordinate
 
 variable (K : Type max u v) [CommRing K] [Algebra R K] [Invertible (2 : K)]
@@ -55,7 +50,7 @@ variable (K : Type max u v) [CommRing K] [Algebra R K] [Invertible (2 : K)]
 /-- **The congruence matrix is natural in the base ring.** -/
 theorem map_congrUnit (hi : i * i = -1) :
     GeneralLinearGroup.map (algebraMap R K) (congrUnit l hi) =
-      congrUnit l (algebraMap_mul_self_eq_neg_one K hi) := by
+      congrUnit l (map_mul_self_eq_neg_one (algebraMap R K) hi) := by
   have h2 : algebraMap R K ⅟2 = ⅟2 :=
     (invOf_eq_right_inv (by rw [← map_ofNat (algebraMap R K) 2, ← map_mul, mul_invOf_self,
       map_one])).symm
@@ -74,7 +69,7 @@ theorem baseChangeMap_coordinateHopfAlgebraIsoSpecialOrthogonal_hom_comp (hi : i
         (SpecialOrthogonal.coordinateHopfAlgebraBaseChangeIso R K l).hom =
       (coordinateHopfAlgebraBaseChangeIso R l K).hom ≫
         (coordinateHopfAlgebraIsoSpecialOrthogonal l
-          (algebraMap_mul_self_eq_neg_one K hi)).hom := by
+          (map_mul_self_eq_neg_one (algebraMap R K) hi)).hom := by
   rw [coordinateHopfAlgebraIsoSpecialOrthogonal_def, coordinateHopfAlgebraIsoSpecialOrthogonal_def]
   have h₁ := baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom R l K
   have h₂ :=
@@ -105,7 +100,7 @@ theorem map_groupSchemeIsoSpecialOrthogonal_hom_comp_groupSchemeBaseChangeIso_ho
           (groupSchemeIsoSpecialOrthogonal l hi).hom ≫
         (SpecialOrthogonal.groupSchemeBaseChangeIso R K l).hom =
       (groupSchemeBaseChangeIso R l K).hom ≫
-        (groupSchemeIsoSpecialOrthogonal l (algebraMap_mul_self_eq_neg_one K hi)).hom := by
+        (groupSchemeIsoSpecialOrthogonal l (map_mul_self_eq_neg_one (algebraMap R K) hi)).hom := by
   have hS := baseChangeMap_coordinateHopfAlgebraIsoSpecialOrthogonal_hom_comp l K hi
   rw [← cancel_mono (eqToHom (SpecialOrthogonal.groupScheme_def K l)), Category.assoc,
     Category.assoc, SpecialOrthogonal.groupSchemeBaseChangeIso_hom_comp_eqToHom,
@@ -114,7 +109,7 @@ theorem map_groupSchemeIsoSpecialOrthogonal_hom_comp_groupSchemeBaseChangeIso_ho
     GeneralLinear.hopfIdealBaseChangeIso_def, GeneralLinear.hopfIdealBaseChangeIso_def]
   refine AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_trans_hom_naturality
     (coordinateHopfAlgebraIsoSpecialOrthogonal l hi).inv
-    (coordinateHopfAlgebraIsoSpecialOrthogonal l (algebraMap_mul_self_eq_neg_one K hi)).inv
+    (coordinateHopfAlgebraIsoSpecialOrthogonal l (map_mul_self_eq_neg_one (algebraMap R K) hi)).inv
     (coordinateHopfAlgebraBaseChangeIso R l K)
     (SpecialOrthogonal.coordinateHopfAlgebraBaseChangeIso R K l) ?_
   rw [← CommHopfAlgCat.baseChangeFunctor_map, ← Functor.mapIso_hom] at hS
