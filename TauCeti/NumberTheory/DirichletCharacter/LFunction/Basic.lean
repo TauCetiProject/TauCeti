@@ -29,11 +29,10 @@ function `χ.LFunction`, without going through completed `L`-functions or Gamma 
   `DirichletCharacter.meromorphic_LFunction`: `χ.LFunction` is analytic at `s` if and only if
   `s ≠ 1` or `χ ≠ 1`, and is meromorphic on `ℂ` (with the forward analyticity and meromorphy
   lemmas registered as `@[fun_prop]` rules).
-* `TauCeti.meromorphicOrderAt_LFunctionTrivChar_one`,
-  `TauCeti.analyticOrderNatAt_LFunctionTrivChar_one`, and
+* `TauCeti.meromorphicOrderAt_LFunctionTrivChar_one` and
   `DirichletCharacter.meromorphicOrderAt_LFunction_pos_iff`: `LFunctionTrivChar N` has a simple
-  pole (meromorphic order `-1`, junk natural analytic order `0`) at `s = 1`, so positive
-  meromorphic order characterizes the zeros of `χ.LFunction` away from that pole.
+  pole (meromorphic order `-1`) at `s = 1`, so positive meromorphic order characterizes the zeros
+  of `χ.LFunction` away from that pole.
 * `DirichletCharacter.LFunctionTrivChar₁_apply_of_ne_one`,
   `DirichletCharacter.LFunctionTrivChar₁_one_apply_of_ne_one`,
   `DirichletCharacter.LFunctionTrivChar₁_one_ne_zero`,
@@ -160,13 +159,6 @@ theorem not_differentiableAt_LFunctionTrivChar_one {N : ℕ} [NeZero N] :
   rw [meromorphicOrderAt_LFunctionTrivChar_one] at hnonneg
   exact not_lt_of_ge hnonneg (by simpa using WithTop.coe_lt_coe.mpr (by norm_num : (-1 : ℤ) < 0))
 
-/-- The natural analytic order of the principal Dirichlet `L`-function modulo `N` at its simple
-pole `s = 1` is the junk value `0`, since the function is not analytic there. -/
-theorem analyticOrderNatAt_LFunctionTrivChar_one {N : ℕ} [NeZero N] :
-    analyticOrderNatAt (LFunctionTrivChar N) 1 = 0 :=
-  analyticOrderNatAt_of_not_analyticAt fun h ↦
-    not_differentiableAt_LFunctionTrivChar_one h.differentiableAt
-
 end TauCeti
 
 namespace DirichletCharacter
@@ -248,12 +240,9 @@ theorem meromorphicOrderAt_LFunction_eq_natCast_iff {s : ℂ} {n : ℕ} (hn : n 
   · rw [χ.meromorphicOrderAt_LFunction_eq_analyticOrderNatAt h1]
     norm_cast
   · obtain ⟨rfl, rfl⟩ := not_or.mp h1 |>.imp not_ne_iff.mp not_ne_iff.mp
-    rw [← LFunctionTrivChar, TauCeti.meromorphicOrderAt_LFunctionTrivChar_one,
-      TauCeti.analyticOrderNatAt_LFunctionTrivChar_one]
-    simp only [hn.symm, iff_false]
-    intro h
-    have : (-1 : ℤ) = n := WithTop.coe_inj.mp (by simpa using h)
-    omega
+    rw [← LFunctionTrivChar, TauCeti.meromorphicOrderAt_LFunctionTrivChar_one]
+    have h : ((-1 : ℤ) : WithTop ℤ) ≠ (n : ℤ) := WithTop.coe_injective.ne (by omega)
+    simpa [hn.symm] using h
 
 /-- Every zero of `χ.LFunction` away from the simple pole `(s = 1, χ = 1)` lies in `s.re < 1`. -/
 theorem re_lt_one_of_LFunction_eq_zero {s : ℂ} (h1 : s ≠ 1 ∨ χ ≠ 1) (h : χ.LFunction s = 0) :
