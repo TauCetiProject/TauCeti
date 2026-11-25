@@ -108,7 +108,7 @@ theorem typeDSimpleRootMatrix_mulVec_single (k : Fin n) :
 /-- **The Cartan matrix of type `Dₙ` is the Gram matrix of the simple roots.** -/
 theorem transpose_typeDSimpleRootMatrix_mul_self :
     (typeDSimpleRootMatrix n hn)ᵀ * typeDSimpleRootMatrix n hn = CartanMatrix.D n := by
-  rw [typeDSimpleRootMatrix, transpose_transpose, typeDSimpleRoot_mul_transpose_self hn]
+  rw [typeDSimpleRootMatrix, transpose_transpose, typeDSimpleRoot_mul_transpose_self (by omega)]
 
 /-- The Gram pairing of `CartanMatrix.D n` is the dot product of the classical coordinates. -/
 theorem dotProduct_cartanMatrix_D_mulVec (a b : Fin n → ℤ) :

@@ -732,7 +732,7 @@ theorem typeDSpinWeight_typeDSpinReflection_apply {n : ℕ} (hn : 4 ≤ n) (i j 
       2 * (typeDSpinWeight s j - typeDSpinWeight s i * CartanMatrix.D n i j) := by
     rw [← typeDSpinSign_dotProduct_typeDSimpleRoot hn, typeDSpinSign_typeDSpinReflection hn,
       sub_dotProduct, smul_dotProduct, typeDSpinSign_dotProduct_typeDSimpleRoot hn,
-      typeDSimpleRoot_dotProduct_typeDSimpleRoot hn]
+      typeDSimpleRoot_dotProduct_typeDSimpleRoot (by omega)]
     ring
   exact mul_left_cancel₀ (by norm_num) h2
 

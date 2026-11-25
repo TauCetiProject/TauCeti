@@ -198,7 +198,7 @@ theorem lie_typeDSimpleCorootBivector_typeDSimpleRootBivector
   · rw [dite_eq_left hi, sub_lie,
       P.lie_diagonalProduct_typeDSimpleRootBivector b hn,
       P.lie_diagonalProduct_typeDSimpleRootBivector b hn]
-    have hdot := DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot hn i j
+    have hdot := DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot (by omega) i j
     rw [DynkinType.typeDSimpleRoot_of_add_one_lt (by omega) hi, sub_dotProduct,
       single_dotProduct, single_dotProduct, one_mul] at hdot
     have hcoeff := congrArg (algebraMap ℤ K) hdot
@@ -210,7 +210,7 @@ theorem lie_typeDSimpleCorootBivector_typeDSimpleRootBivector
     have hone : ⁅(1 : CliffordAlgebra Q), P.typeDSimpleRootBivector b (by omega) j⁆ = 0 := by
       simp [Ring.lie_def]
     rw [hone, sub_zero]
-    have hdot := DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot hn i j
+    have hdot := DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot (by omega) i j
     rw [DynkinType.typeDSimpleRoot_of_not_add_one_lt (by omega) hi, add_dotProduct,
       single_dotProduct, single_dotProduct, one_mul] at hdot
     have hcoeff := congrArg (algebraMap ℤ K) hdot
@@ -231,7 +231,7 @@ theorem lie_typeDSimpleCorootBivector_typeDSimpleNegativeRootBivector
   · rw [dite_eq_left hi, sub_lie,
       P.lie_diagonalProduct_typeDSimpleNegativeRootBivector b hn,
       P.lie_diagonalProduct_typeDSimpleNegativeRootBivector b hn]
-    have hdot := DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot hn i j
+    have hdot := DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot (by omega) i j
     rw [DynkinType.typeDSimpleRoot_of_add_one_lt (by omega) hi, sub_dotProduct,
       single_dotProduct, single_dotProduct, one_mul] at hdot
     rw [← congrArg (algebraMap ℤ K) hdot]
@@ -243,7 +243,7 @@ theorem lie_typeDSimpleCorootBivector_typeDSimpleNegativeRootBivector
         P.typeDSimpleNegativeRootBivector b (by omega) j⁆ = 0 := by
       simp [Ring.lie_def]
     rw [hone, sub_zero]
-    have hdot := DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot hn i j
+    have hdot := DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot (by omega) i j
     rw [DynkinType.typeDSimpleRoot_of_not_add_one_lt (by omega) hi, add_dotProduct,
       single_dotProduct, single_dotProduct, one_mul] at hdot
     rw [← congrArg (algebraMap ℤ K) hdot]

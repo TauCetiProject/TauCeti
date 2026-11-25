@@ -123,7 +123,7 @@ theorem checkerboardLattice_form_checkerboardSimpleRoot_checkerboardSimpleRoot
     (checkerboardLattice n).form (checkerboardSimpleRoot n hn i) (checkerboardSimpleRoot n hn j) =
       ((CartanMatrix.D n i j : ℤ) : ℚ) := by
   rw [checkerboardLattice_form_apply,
-    ← DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot hn i j]
+    ← DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot (by omega) i j]
   push_cast [dotProduct]
   simp only [checkerboardSimpleRoot_apply]
 
@@ -227,7 +227,7 @@ theorem D_det (hn : 2 ≤ n) : (D n).det = 4 := by
       norm_num [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
         Matrix.cons_val_fin_one]
   have : NeZero n := ⟨by omega⟩
-  have hsq := TauCeti.DynkinType.det_cartanMatrixD_eq_det_typeDSimpleRoot_sq hn4
+  have hsq := TauCeti.DynkinType.det_cartanMatrixD_eq_det_typeDSimpleRoot_sq (by omega)
   have hnonneg : 0 ≤ (D n).det := by
     rw [hsq]
     exact sq_nonneg _

@@ -16,11 +16,11 @@ import TauCeti.LinearAlgebra.Matrix.Gram.Basic
 
 This file constructs the classical integral root set of type `Dₙ` and gives the concrete
 infrastructure needed to build its pinned integral root datum. The squared-length-two root type and
-its reflection API are rank-polymorphic. The enumeration and the identification of the Gram
-matrix of the simple roots with `CartanMatrix.D n` require `4 ≤ n`, the rank range on which
-`TauCeti.DynkinType.Valid` admits `D n`: the smaller ranks name no type of the classification,
-`D 2` being reducible and `D 3` being `A 3`. The rest of the Bourbaki simple-root API, including
-the linear independence, the coordinates and their signs, holds for `2 ≤ n`.
+its reflection API are rank-polymorphic. The enumeration requires `4 ≤ n`, the rank range on which
+`TauCeti.DynkinType.Valid` admits `D n` and on which its consumers, the simply connected root datum
+of type `Dₙ`, live: the smaller ranks name no type of the classification, `D 2` being reducible and
+`D 3` being `A 3`. The Bourbaki simple-root API, including the Gram identity with
+`CartanMatrix.D n`, the linear independence, the coordinates and their signs, holds for `2 ≤ n`.
 
 The classical roots are the `2 * n * (n - 1)` vectors `±e_a ±e_b`, `a < b`. They are first
 enumerated by a sign and an ordered pair of distinct coordinates: increasing pairs represent
@@ -408,22 +408,12 @@ theorem even_sum_sum_smul_typeDSimpleRoot (hn : 2 ≤ n) (c : Fin n → ℤ) :
 
 /-! ## The Gram matrix of the Bourbaki simple roots -/
 
-/-- The simple roots of type `Dₙ` have squared length two, so they are roots. -/
-theorem typeDSimpleRoot_dotProduct_self (hn : 2 ≤ n) (i : Fin n) :
-    typeDSimpleRoot n hn i ⬝ᵥ typeDSimpleRoot n hn i = 2 := by
-  by_cases hi : (i : ℕ) + 1 < n
-  · rw [typeDSimpleRoot_of_add_one_lt hn hi]
-    simp [dotProduct_sub, Fin.ext_iff]
-  · rw [typeDSimpleRoot_of_not_add_one_lt hn hi]
-    simp [dotProduct_add, Pi.single_apply, Fin.ext_iff]
-    omega
-
 /-- **The simple roots of type `Dₙ` have the Cartan matrix as Gram matrix.** Type `Dₙ` is simply
 laced and its roots have squared length two, so the coroot of a root is the root itself and the
 Cartan integer `⟨αᵢ, αⱼ^∨⟩` is the classical dot product. -/
 @[simp]
-theorem typeDSimpleRoot_dotProduct_typeDSimpleRoot (hn : 4 ≤ n) (i j : Fin n) :
-    typeDSimpleRoot n (by omega) i ⬝ᵥ typeDSimpleRoot n (by omega) j = CartanMatrix.D n i j := by
+theorem typeDSimpleRoot_dotProduct_typeDSimpleRoot (hn : 2 ≤ n) (i j : Fin n) :
+    typeDSimpleRoot n hn i ⬝ᵥ typeDSimpleRoot n hn j = CartanMatrix.D n i j := by
   by_cases hi : (i : ℕ) + 1 < n <;> by_cases hj : (j : ℕ) + 1 < n <;>
     simp [hi, hj, Pi.single_apply, Fin.ext_iff, CartanMatrix.D] <;>
     grind
@@ -432,17 +422,16 @@ theorem typeDSimpleRoot_dotProduct_typeDSimpleRoot (hn : 4 ≤ n) (i j : Fin n) 
 
 /-- The matrix of type-D simple roots times its transpose is the type-D Cartan matrix:
 the Gram identity whose determinant gives the type-D determinant-square calculation. -/
-theorem typeDSimpleRoot_mul_transpose_self (hn : 4 ≤ n) :
-    Matrix.of (typeDSimpleRoot n (by omega)) *
-        Matrix.transpose (Matrix.of (typeDSimpleRoot n (by omega))) =
+theorem typeDSimpleRoot_mul_transpose_self (hn : 2 ≤ n) :
+    Matrix.of (typeDSimpleRoot n hn) * Matrix.transpose (Matrix.of (typeDSimpleRoot n hn)) =
       CartanMatrix.D n := by
   ext i j
   rw [Matrix.mul_apply, ← typeDSimpleRoot_dotProduct_typeDSimpleRoot hn i j]
   simp [dotProduct]
 
 /-- The determinant of the type-D Cartan matrix is the square of the simple-root determinant. -/
-theorem det_cartanMatrixD_eq_det_typeDSimpleRoot_sq (hn : 4 ≤ n) :
-    (CartanMatrix.D n).det = (Matrix.of (typeDSimpleRoot n (by omega))).det ^ 2 := by
+theorem det_cartanMatrixD_eq_det_typeDSimpleRoot_sq (hn : 2 ≤ n) :
+    (CartanMatrix.D n).det = (Matrix.of (typeDSimpleRoot n hn)).det ^ 2 := by
   rw [← typeDSimpleRoot_mul_transpose_self hn, Matrix.det_mul, Matrix.det_transpose, sq]
 
 /-- The simple-root matrix of type `Dₙ` has determinant `2`. -/

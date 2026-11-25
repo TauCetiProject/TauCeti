@@ -486,7 +486,7 @@ theorem rootGeneratorWeight_inr_eq_neg_root_simpleIndex (i : Fin n) :
 private theorem chainCartanCoeff (i j : Fin n) (hi : (i : ℕ) + 1 < n) :
     DynkinType.typeDSimpleRoot n (by omega) j i -
         DynkinType.typeDSimpleRoot n (by omega) j (chainNext n i hi) = CartanMatrix.D n i j := by
-  rw [← DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot hn i j,
+  rw [← DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot (by omega) i j,
     DynkinType.typeDSimpleRoot_of_add_one_lt (by omega) hi, sub_dotProduct,
     single_dotProduct, single_dotProduct]
   simp [chainNext]
@@ -494,7 +494,7 @@ private theorem chainCartanCoeff (i j : Fin n) (hi : (i : ℕ) + 1 < n) :
 private theorem forkCartanCoeff (i j : Fin n) (hi : ¬(i : ℕ) + 1 < n) :
     DynkinType.typeDSimpleRoot n (by omega) j (forkLeft n hn) +
         DynkinType.typeDSimpleRoot n (by omega) j (forkRight n hn) = CartanMatrix.D n i j := by
-  rw [← DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot hn i j,
+  rw [← DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot (by omega) i j,
     DynkinType.typeDSimpleRoot_of_not_add_one_lt (by omega) hi, add_dotProduct,
     single_dotProduct, single_dotProduct]
   simp [forkLeft, forkRight]

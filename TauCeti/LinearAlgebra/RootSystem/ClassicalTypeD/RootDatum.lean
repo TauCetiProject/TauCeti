@@ -114,7 +114,7 @@ private theorem coe_typeDClassicalRootDatum_coroot :
 
 /-- The `i`-th Bourbaki simple root of type `Dₙ`, as a root. -/
 def typeDClassicalSimpleIndex (i : Fin n) : TypeDRoot n :=
-  ⟨typeDSimpleRoot n hn i, typeDSimpleRoot_dotProduct_self hn i⟩
+  ⟨typeDSimpleRoot n hn i, by simp⟩
 
 @[simp]
 theorem typeDClassicalSimpleIndex_val (i : Fin n) :
@@ -158,13 +158,9 @@ theorem mem_typeDClassicalBase_support {x : TypeDRoot n} :
   mem_simpleSupport _
 
 /-- The Bourbaki base of type `Dₙ` has `n` simple roots. -/
+@[simp]
 theorem card_typeDClassicalBase_support : (typeDClassicalBase hn).support.card = n := by
-  have h : (typeDClassicalBase hn).support = Finset.univ.image (typeDClassicalSimpleIndex hn) :=
-    Finset.coe_injective (by
-      rw [Finset.coe_image, Finset.coe_univ, image_univ]
-      exact coe_simpleSupport _)
-  rw [h, Finset.card_image_of_injective _ (typeDClassicalSimpleIndex_injective hn),
-    Finset.card_univ, Fintype.card_fin]
+  simp [typeDClassicalBase]
 
 end Base
 
