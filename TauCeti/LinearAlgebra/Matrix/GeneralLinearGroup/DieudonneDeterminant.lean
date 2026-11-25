@@ -260,8 +260,9 @@ private theorem ker_mk_two_le : (mk D 2).ker ≤ dieudonneDetGLFinTwo.ker := by
   rw [ker_mk_eq_elementarySubgroup (hasStableRangeLE_one_of_isLocalRing D) le_rfl,
     elementarySubgroup_le_iff]
   intro i j hij a
-  rw [MonoidHom.mem_ker, ← WithZero.coe_inj, coe_dieudonneDetGLFinTwo,
-    coe_transvectionUnit_eq_one_add_single, dieudonneDetFinTwo_one_add_single hij, WithZero.coe_one]
+  rw [MonoidHom.mem_ker, ← WithZero.coe_inj]
+  simp [coe_dieudonneDetGLFinTwo, coe_transvectionUnit_eq_one_add_single hij,
+    dieudonneDetFinTwo_one_add_single hij]
 
 /-- The homomorphism `K₁(D) →* Dˣ/[Dˣ, Dˣ]` induced by the `2 × 2` Dieudonné determinant, through
 the identification of `K₁(D)` with a quotient of `GL₂(D)`. -/
@@ -272,16 +273,14 @@ private def toAbelianization : AlgebraicK1 D →* Group.Abelianization Dˣ :=
 
 private theorem toAbelianization_mk_two (g : GL (Fin 2) D) :
     toAbelianization (mk D 2 g) = dieudonneDetGLFinTwo g := by
-  rw [toAbelianization, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    ← quotientKerMkEquiv_mk (hasStableRangeLE_one_of_isLocalRing D) (by norm_num : 1 ≤ 2) g,
-    MulEquiv.symm_apply_apply, QuotientGroup.lift_mk]
+  rw [← quotientKerMkEquiv_mk (hasStableRangeLE_one_of_isLocalRing D) (by norm_num : 1 ≤ 2) g]
+  simp [toAbelianization, -quotientKerMkEquiv_mk]
 
 private theorem toAbelianization_ofUnits (d : Dˣ) :
     toAbelianization (ofUnits D d) = Group.Abelianization.of d := by
   rw [ofUnits_apply, ← mk_stabilizeGL (by norm_num : 1 ≤ 2), toAbelianization_mk_two,
-    ← WithZero.coe_inj, coe_dieudonneDetGLFinTwo,
-    dieudonneDetFinTwo_apply_of_eq_zero (by simp [coe_stabilizeGL_apply])]
-  simp [coe_stabilizeGL_apply]
+    ← WithZero.coe_inj]
+  simp [coe_dieudonneDetGLFinTwo, dieudonneDetFinTwo_apply_of_eq_zero, coe_stabilizeGL_apply]
 
 variable (D) in
 /-- **`K₁` of a division ring**: algebraic `K₁(D)` is the abelianization `Dˣ/[Dˣ, Dˣ]` of the unit

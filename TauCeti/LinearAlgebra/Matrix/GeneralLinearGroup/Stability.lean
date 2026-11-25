@@ -108,9 +108,11 @@ theorem ofUnits_surjective {R : Type*} [Ring R] (hR : HasStableRangeLE R 1) :
   rw [ofUnits_apply]
   congr 1
   ext i j
+  -- Both indices of a `1 × 1` matrix are `default`, the entry read off by `uniqueRingEquiv`.
+  rw [Subsingleton.elim i default, Subsingleton.elim j default]
   simp only [RingHom.toMonoidHom_eq_coe, GeneralLinearGroup.coe_scalar, Units.coe_map,
-    MonoidHom.coe_ofClass, scalar_apply, Subsingleton.elim i 0, Subsingleton.elim j 0]
-  exact Matrix.uniqueRingEquiv_apply (A := R) (m := Fin 1) _
+    MonoidHom.coe_ofClass, scalar_apply, diagonal_apply_eq]
+  exact Matrix.uniqueRingEquiv_apply _
 
 /-- When `R` has Bass stable range at most `s` and `s ≤ n` (including at the boundary `n = s` where
 injective stability need not yet hold), `K₁(R)` is the quotient of `GL (Fin n) R` by the actual
