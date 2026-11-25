@@ -84,3 +84,18 @@ theorem Integrable.ae_eq_sum_mFourier_smul_mFourierCoeff (hf : Integrable f)
     · exact hs m hm
 
 end MeasureTheory
+
+namespace Continuous
+
+open UnitAddTorus
+
+/-- A nonzero continuous function on the torus has a nonzero Fourier coefficient. -/
+theorem exists_mFourierCoeff_ne_zero {d : Type*} [Fintype d] {f : UnitAddTorus d → ℂ}
+    (hf : Continuous f) (hne : f ≠ 0) : ∃ n, mFourierCoeff f n ≠ 0 := by
+  by_contra! hall
+  have hint : MeasureTheory.Integrable f :=
+    hf.integrable_of_hasCompactSupport (.of_compactSpace _)
+  exact hne (MeasureTheory.Measure.eq_of_ae_eq
+    (hint.ae_eq_zero_of_forall_mFourierCoeff_eq_zero hall) hf continuous_zero)
+
+end Continuous

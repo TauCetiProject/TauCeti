@@ -164,7 +164,8 @@ theorem mFourierCoeff_conjWirtingerDeriv {f : UnitAddTorus (Fin 2) → ℂ}
   have hint (w : Fin 2 → ℝ) : MeasureTheory.Integrable (lineDeriv f w) :=
     integrable_of_mem_smoothFunctions (lineDeriv_mem_smoothFunctions hf w)
   rw [conjWirtingerDeriv, mFourierCoeff_smul, mFourierCoeff_add (hint _) ((hint _).smul I),
-    mFourierCoeff_smul, mFourierCoeff_lineDeriv hf, mFourierCoeff_lineDeriv hf]
+    mFourierCoeff_smul, mFourierCoeff_lineDeriv ((mem_smoothFunctions.1 hf).of_le (by simp)),
+    mFourierCoeff_lineDeriv ((mem_smoothFunctions.1 hf).of_le (by simp))]
   simp only [Fin.sum_univ_two, Pi.single_apply, smul_eq_mul]
   simp only [Fin.isValue, ↓reduceIte, one_ne_zero, zero_ne_one, ofReal_one, ofReal_zero, mul_one,
     mul_zero, zero_add]
