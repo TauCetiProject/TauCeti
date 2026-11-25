@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Integral.NormRpow
 import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Complex.Conformal.Area
 import TauCeti.Analysis.Complex.OperatorNorm
+import Mathlib.Analysis.Complex.OpenMapping
 
 /-!
 # Branches through a power substitution and their `Lᵖ` margin
@@ -23,6 +24,9 @@ derivative is `(‖du‖ / d) ‖y - x‖ ^ (1 / d - 1)`, which is at most `C �
 `du` is bounded and blows up at exactly that rate at `x` when `‖du‖` is bounded below. This file
 computes that singularity and the resulting integrability of the derivative.
 
+* **Continuity.** If `u` is continuous on the disc `ball 0 ρ` and `V (x + zᵈ) = u z` there, then
+  `V` is continuous on the disc `ball x ρᵈ`, since the substitution is a quotient map and pulls
+  `ball x ρᵈ` back to `ball 0 ρ` (`TauCeti.continuousOn_ball_of_forall_add_pow_eq`).
 * **The branch derivative.** If `s` is a neighbourhood of `z ≠ 0` and `u` is real differentiable
   at `z`, then `V` is real differentiable at `x + zᵈ`, and its derivative is the derivative of
   `u` composed with multiplication by `(d z ^ (d - 1))⁻¹`, the inverse of the derivative of the
@@ -97,6 +101,27 @@ theorem mul_two_add_two_div_mul_one_sub_inv_lt_two_iff {m : ℝ} (hm : m ≠ 0) 
   rw [two_add_two_div_mul_one_sub_inv hm, ← mul_lt_mul_iff_of_pos_right hm2]
   have : K * (2 - 2 / m ^ 2) * m ^ 2 = 2 * (K * (m ^ 2 - 1)) := by field_simp
   constructor <;> intro h <;> nlinarith
+
+/-! ### Continuity of a branch -/
+
+/-- **A branch through a power substitution is continuous.** Let `d ≠ 0` and `V (x + zᵈ) = u z`
+for every `z` in the disc `ball 0 ρ`, with `u` continuous there. Then `V` is continuous on the disc
+`ball x (ρ ^ d)`, the image of `ball 0 ρ` under the substitution `z ↦ x + zᵈ`. No invariance of
+`u` under the rotations `z ↦ e^(2πi/d) z` is assumed separately: it is forced by the existence of
+`V`. -/
+theorem continuousOn_ball_of_forall_add_pow_eq {F : Type*} [TopologicalSpace F] {u V : ℂ → F}
+    (hd : d ≠ 0) {ρ : ℝ} (hρ : 0 ≤ ρ) (hu : ContinuousOn u (ball 0 ρ))
+    (hV : ∀ z ∈ ball (0 : ℂ) ρ, V (x + z ^ d) = u z) :
+    ContinuousOn V (ball x (ρ ^ d)) := by
+  have : NeZero d := ⟨hd⟩
+  -- the substitution is a quotient map, and the disc `ball x ρᵈ` pulls back to `ball 0 ρ`
+  have hq : Topology.IsQuotientMap ((Homeomorph.addLeft x) ∘ fun z : ℂ ↦ z ^ d) :=
+    (Homeomorph.addLeft x).isQuotientMap.comp (Complex.isOpenQuotientMap_pow d).isQuotientMap
+  have hpre : (Homeomorph.addLeft x ∘ fun z : ℂ ↦ z ^ d) ⁻¹' ball x (ρ ^ d) = ball 0 ρ := by
+    ext z
+    simp [dist_eq_norm, pow_lt_pow_iff_left₀ (norm_nonneg z) hρ hd]
+  rw [hq.continuousOn_isOpen_iff isOpen_ball, hpre]
+  exact hu.congr fun z hz ↦ hV z hz
 
 /-! ### The branch derivative -/
 
