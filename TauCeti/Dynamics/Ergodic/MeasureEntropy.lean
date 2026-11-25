@@ -201,18 +201,18 @@ theorem iteratedPartitionLabel_add (T : X → X) (a : X → ι) (m n : ℕ) :
   · simp
   · simp [← Function.iterate_add_apply, add_comm]
 
+/-- A countable label is a coarsening of every itinerary of positive length, so its entropy is at
+most the entropy of the itinerary, for every measure. -/
+theorem countablePartitionEntropy_le_iteratedPartitionLabel [Countable ι] (T : X → X)
+    (a : X → ι) {n : ℕ} (hn : 0 < n) :
+    countablePartitionEntropy μ a ≤ countablePartitionEntropy μ (iteratedPartitionLabel T a n) :=
+  (countablePartitionEntropy_comp_le _ fun u ↦ u ⟨0, hn⟩).trans_eq' <|
+    congrArg _ <| funext fun x ↦ by simp
+
 section Subadditive
 
 variable [Countable ι] [MeasurableSpace ι] [MeasurableSingletonClass ι] {T : X → X}
   {a : X → ι}
-
-/-- The label is a coarsening of every itinerary of positive length, so its entropy is at most
-the entropy of the itinerary. -/
-theorem countablePartitionEntropy_le_iteratedPartitionLabel [IsZeroOrProbabilityMeasure μ]
-    (hT : Measurable T) (ha : Measurable a) {n : ℕ} (hn : 0 < n) :
-    countablePartitionEntropy μ a ≤ countablePartitionEntropy μ (iteratedPartitionLabel T a n) :=
-  (countablePartitionEntropy_comp_le (measurable_iteratedPartitionLabel hT ha n)
-    fun u ↦ u ⟨0, hn⟩).trans_eq' (by congr)
 
 /-- **Subadditivity of itinerary entropies.** For a measure-preserving map,
 `H(join_{m+n} a) ≤ H(join_m a) + H(join_n a)`. -/
@@ -223,8 +223,7 @@ theorem countablePartitionEntropy_iteratedPartitionLabel_add_le [IsZeroOrProbabi
         countablePartitionEntropy μ (iteratedPartitionLabel T a n) := by
   have hb := measurable_iteratedPartitionLabel hT.measurable ha
   have hinj : Function.Injective fun p : (Fin m → ι) × (Fin n → ι) ↦ Fin.append p.1 p.2 :=
-    fun p q h ↦ Prod.ext (funext fun i ↦ by simpa using congrFun h (Fin.castAdd n i))
-      (funext fun j ↦ by simpa using congrFun h (Fin.natAdd m j))
+    (Fin.appendEquiv m n).injective
   rw [iteratedPartitionLabel_add, countablePartitionEntropy_comp_of_injective _ hinj]
   refine (countablePartitionEntropy_pair_le_add (hb m)
     ((hb n).comp (hT.measurable.iterate m))).trans_eq ?_
@@ -244,6 +243,14 @@ theorem countablePartitionEntropy_iteratedPartitionLabel_le_mul [IsZeroOrProbabi
       Function.const_injective, Nat.cast_succ, add_mul, one_mul]
     gcongr
 
+/-- For a measure-preserving map, a label of finite entropy has itineraries of finite
+entropy. -/
+theorem countablePartitionEntropy_iteratedPartitionLabel_ne_top [IsZeroOrProbabilityMeasure μ]
+    (hT : MeasurePreserving T μ μ) (ha : Measurable a) (hfin : countablePartitionEntropy μ a ≠ ∞)
+    (n : ℕ) : countablePartitionEntropy μ (iteratedPartitionLabel T a n) ≠ ∞ :=
+  ne_top_of_le_ne_top (ENNReal.mul_ne_top (ENNReal.natCast_ne_top n) hfin)
+    (countablePartitionEntropy_iteratedPartitionLabel_le_mul hT ha n)
+
 /-- **Fekete limit.** For a measure-preserving map of a probability space (or the zero measure)
 and a measurable countable label `a`, the normalised itinerary entropies `H(join_n a) / n`
 converge to the entropy rate, which is their infimum over `n ≥ 1`. When `H(a) = ∞` all of them
@@ -255,18 +262,15 @@ theorem tendsto_partitionEntropyRate [IsZeroOrProbabilityMeasure μ]
   set H : ℕ → ℝ≥0∞ := fun n ↦ countablePartitionEntropy μ (iteratedPartitionLabel T a n)
   rcases eq_or_ne (countablePartitionEntropy μ a) ∞ with htop | hfin
   · have hH : ∀ n, 0 < n → H n / n = ∞ := fun n hn ↦ by
-      have := countablePartitionEntropy_le_iteratedPartitionLabel hT.measurable ha hn (μ := μ)
+      have := countablePartitionEntropy_le_iteratedPartitionLabel T a hn (μ := μ)
       rw [htop, top_le_iff] at this
-      change countablePartitionEntropy μ _ / n = ∞
-      rw [this]
+      simp only [H, this]
       exact ENNReal.top_div_of_ne_top (ENNReal.natCast_ne_top n)
     have hrate : partitionEntropyRate μ T a = ∞ :=
       top_le_iff.mp (le_partitionEntropyRate_iff.mpr fun n hn ↦ (hH n hn).ge)
     rw [hrate]
     exact tendsto_const_nhds.congr' (eventually_atTop.mpr ⟨1, fun n hn ↦ (hH n hn).symm⟩)
-  have hHfin : ∀ n, H n ≠ ∞ := fun n ↦ ne_top_of_le_ne_top
-    (ENNReal.mul_ne_top (ENNReal.natCast_ne_top n) hfin)
-    (countablePartitionEntropy_iteratedPartitionLabel_le_mul hT ha n)
+  have hHfin : ∀ n, H n ≠ ∞ := countablePartitionEntropy_iteratedPartitionLabel_ne_top hT ha hfin
   set u : ℕ → ℝ := fun n ↦ (H n).toReal
   have hu : Subadditive u := fun m n ↦ by
     rw [← ENNReal.toReal_add (hHfin m) (hHfin n)]
@@ -288,14 +292,13 @@ theorem tendsto_partitionEntropyRate [IsZeroOrProbabilityMeasure μ]
 
 end Subadditive
 
-/-- **Periodic maps.** If `T^[p] = id` for some `p ≥ 1` and `T` is measurable, then `T` has
+/-- **Periodic maps.** If `T^[p] = id` for some `p ≥ 1` and `T` preserves `μ`, then `T` has
 Kolmogorov–Sinai entropy zero under a probability measure (or the zero measure): every itinerary is
 a relabeling of the length-`p` one. -/
 theorem measureEntropy_eq_zero_of_iterate_eq_id [IsZeroOrProbabilityMeasure μ] {T : X → X}
     (hT : MeasurePreserving T μ μ) {p : ℕ} (hp : 0 < p) (hTp : T^[p] = id) :
     measureEntropy μ T = 0 := by
   refine nonpos_iff_eq_zero.mp (measureEntropy_le_iff.mpr fun a ha hfin ↦ ?_)
-  have hb := measurable_iteratedPartitionLabel hT.measurable ha
   set C := countablePartitionEntropy μ (iteratedPartitionLabel T a p)
   have hle : ∀ n, countablePartitionEntropy μ (iteratedPartitionLabel T a n) ≤ C := fun n ↦ by
     have : iteratedPartitionLabel T a n =
@@ -305,9 +308,8 @@ theorem measureEntropy_eq_zero_of_iterate_eq_id [IsZeroOrProbabilityMeasure μ] 
       conv_lhs => rw [← Nat.mod_add_div (k : ℕ) p, Function.iterate_add_apply,
         Function.iterate_mul, hTp, Function.iterate_id, id]
     rw [this]
-    exact countablePartitionEntropy_comp_le (hb p) _
-  have hC : C ≠ ∞ := ne_top_of_le_ne_top (ENNReal.mul_ne_top (ENNReal.natCast_ne_top p) hfin)
-    (countablePartitionEntropy_iteratedPartitionLabel_le_mul hT ha p)
+    exact countablePartitionEntropy_comp_le _ _
+  have hC : C ≠ ∞ := countablePartitionEntropy_iteratedPartitionLabel_ne_top hT ha hfin p
   have h0 : Tendsto (fun n : ℕ ↦ countablePartitionEntropy μ (iteratedPartitionLabel T a n) / n)
       atTop (𝓝 0) := by
     have hCn : Tendsto (fun n : ℕ ↦ C * (n : ℝ≥0∞)⁻¹) atTop (𝓝 0) := by

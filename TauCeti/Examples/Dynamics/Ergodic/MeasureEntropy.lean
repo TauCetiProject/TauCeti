@@ -135,8 +135,8 @@ example : measureEntropy fairBit not = 0 :=
   measureEntropy_eq_zero_of_iterate_eq_id measurePreserving_not_fairBit two_pos
     (funext fun b ↦ by cases b <;> rfl)
 
-/-- Joining two independent fair bits does not exceed the sum of their entropies, with equality
-here: `H(fst ∨ snd) ≤ H(fst) + H(snd)`. -/
+/-- Joining two independent fair bits does not exceed the sum of their entropies:
+`H(fst ∨ snd) ≤ H(fst) + H(snd)`. -/
 example : countablePartitionEntropy twoBits (fun x ↦ (x.1, x.2)) ≤
     countablePartitionEntropy twoBits Prod.fst + countablePartitionEntropy twoBits Prod.snd :=
   countablePartitionEntropy_pair_le_add measurable_fst measurable_snd
