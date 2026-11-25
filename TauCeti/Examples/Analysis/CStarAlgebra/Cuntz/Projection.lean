@@ -13,7 +13,7 @@ public import TauCeti.Analysis.CStarAlgebra.Cuntz.Projection
 
 In `M₂(ℂ)` the matrix unit `v = e₂₁` has `v⋆v = e₁₁ = diag(1, 0)` and `vv⋆ = e₂₂ = diag(0, 1)`,
 so `diag(1, 0) ≼ diag(0, 1)` by the flip, and the two projections are mutually Cuntz
-subequivalent (CStarClassification CL4.1, Checks).
+subequivalent.
 -/
 
 public section
