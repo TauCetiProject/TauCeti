@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.PeakFunction
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.PoissonSummation
 public import Mathlib.Topology.ContinuousMap.Bounded.Basic
 public import TauCeti.Analysis.PDE.HeatKernel.Basic
+import TauCeti.Analysis.Convolution.Holder
 
 /-!
 # The heat kernel is an approximate identity
@@ -114,15 +115,10 @@ theorem tendsto_setIntegral_compl_ball_heatKernel {r : ℝ} (hr : 0 < r) :
 `‖(K_t ⋆ g)(x)‖ ≤ M` for every `t > 0` and every `x`. -/
 theorem norm_heatKernel_convolution_le {t : ℝ} (ht : 0 < t) {g : E → F} {M : ℝ}
     (hM : ∀ᵐ y, ‖g y‖ ≤ M) (x : E) : ‖(heatKernel t ⋆ g) x‖ ≤ M := by
-  have hg : ∀ᵐ z, ‖g (x - z)‖ ≤ M :=
-    (quasiMeasurePreserving_sub_left_of_right_invariant volume x).ae hM
-  calc ‖(heatKernel t ⋆ g) x‖ ≤ ∫ z, heatKernel t z * M := by
-        rw [convolution_def]
-        refine norm_integral_le_of_norm_le ((integrable_heatKernel ht).mul_const M) ?_
-        filter_upwards [hg] with z hz
-        rw [ContinuousLinearMap.lsmul_apply, norm_smul, norm_of_nonneg (heatKernel_pos ht z).le]
-        exact mul_le_mul_of_nonneg_left hz (heatKernel_pos ht z).le
-    _ = M := by rw [integral_mul_const, integral_heatKernel ht, one_mul]
+  simpa only [convolution_def, ContinuousLinearMap.lsmul_apply,
+    norm_of_nonneg (heatKernel_pos ht _).le, integral_heatKernel ht, one_mul] using
+    norm_integral_kernel_smul_sub_le (integrable_heatKernel ht)
+      ((quasiMeasurePreserving_sub_left_of_right_invariant volume x).ae hM)
 
 /-- **The approximate-identity estimate for the heat kernel.** Let `‖g‖ ≤ M` almost everywhere,
 and suppose `‖g(x - z) - a‖ ≤ ε` for all `z` in the ball of radius `r` about the origin. Then

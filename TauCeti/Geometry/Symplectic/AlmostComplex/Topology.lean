@@ -108,8 +108,7 @@ theorem mul_opNorm_le_of_eq_smul_sub_smul (J : AlmostComplexStructure V)
     r * ‖A‖ ≤ (1 + ‖J.toLinearMap.toContinuousLinearMap‖) * ‖B‖ := by
   set NJ := ‖J.toLinearMap.toContinuousLinearMap‖
   have hinv (v : V) : (a ^ 2 + b ^ 2) • A v = a • B v + b • J (B v) := by
-    rw [hAB v, map_sub, map_smul, map_smul, apply_apply]
-    module
+    rw [hAB v, J.smul_add_smul_apply_smul_sub_smul]
   have ha : |a| ≤ r := abs_le_of_sq_le_sq (by nlinarith [sq_nonneg b]) hr.le
   have hb : |b| ≤ r := abs_le_of_sq_le_sq (by nlinarith [sq_nonneg a]) hr.le
   -- Taking norms in `(a² + b²) A v = a B v + b J B v`: `r² ‖A v‖ ≤ r (1 + ‖J‖) ‖B‖ ‖v‖`.

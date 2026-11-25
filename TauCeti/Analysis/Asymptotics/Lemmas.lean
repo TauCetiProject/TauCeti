@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Asymptotics.Lemmas
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 import Mathlib.Topology.Bornology.BoundedOperation
@@ -70,6 +71,11 @@ In an ordered field, the ratio `(t + x) / (t + y)` of two translates tends to `1
 is the limit at infinity of antiderivatives built from such ratios, for example in elementary
 evaluations of elliptic integrals.
 
+A function `g` with `f x ‖g x‖` eventually bounded along a filter on which `f → ∞` tends to `0`.
+For `f y = y` on the real line, a bound on `y ‖g y‖` for large `y` also bounds `y |Im g y|` when
+`g` is complex-valued. These are the decay estimates read off along the imaginary axis from
+resolvent-type functions, which are `O(1 / y)` there.
+
 ## Main results
 
 * `Asymptotics.isLittleO_sub_mul_iff_tendsto_div`: `f - a g = o(g)` if and only if
@@ -92,6 +98,8 @@ evaluations of elliptic integrals.
   vector `c` with `‖r • c‖ ≤ ‖r‖ * ‖c‖` for every scalar `r`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici_of_isBigO_principal_Icc`: `f = O(g)` at `atTop` and
   on every `[a, b]` gives `f = O(g)` on `[a, ∞)`.
+* `Asymptotics.isBigO_inv_norm_smul_apply`: evaluating continuous linear maps `L a` at `x a` and
+  dividing by `‖x a‖` gives `O(L)`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici`: `f = O(g)` at `atTop` gives `f = O(g)` on `[a, ∞)`
   when, on each `[a, b]`, `f` is bounded and `‖g‖` is bounded below by a positive constant.
 * `Asymptotics.IsBigO.isBigO_principal_Ici_of_continuousOn`: the same conclusion when closed
@@ -104,6 +112,10 @@ evaluations of elliptic integrals.
 * `TauCeti.continuousAt_of_isBigO_dist`: `dist (u y) (u x) = O(dist y x)` as `y → x` implies
   continuity of `u` at `x`.
 * `TauCeti.tendsto_add_div_add_atTop`: `(t + x) / (t + y) → 1` as `t → ∞`.
+* `TauCeti.tendsto_zero_of_eventually_mul_norm_le`: `f x ‖g x‖ ≤ K` eventually along a filter on
+  which `f → ∞` implies `g → 0`.
+* `TauCeti.eventually_mul_abs_im_le_of_mul_norm_le`: an eventual bound on `y ‖f y‖` bounds
+  `y |Im f y|`.
 
 ## Related results
 
@@ -322,6 +334,15 @@ theorem isBigO_smul_const_self {α 𝕜 E : Type*} [Norm 𝕜] [Norm E] [SMul �
     (fun x => u x • c) =O[l] u :=
   IsBigO.of_bound ‖c‖ (Eventually.of_forall fun x => (hc (u x)).trans_eq (mul_comm _ _))
 
+/-- **Evaluation at a unit vector is bounded by the operator norm.** For continuous linear maps
+`L a` and vectors `x a`, `‖x a‖⁻¹ • L a (x a) = O(L)`, along any filter. -/
+theorem isBigO_inv_norm_smul_apply {α E F : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    [SeminormedAddCommGroup F] [NormedSpace ℝ F] (l : Filter α) (L : α → E →L[ℝ] F)
+    (x : α → E) : (fun a ↦ ‖x a‖⁻¹ • L a (x a)) =O[l] L := by
+  refine IsBigO.of_bound' (Eventually.of_forall fun a ↦ ?_)
+  rw [norm_smul, norm_inv, norm_norm, inv_mul_eq_div]
+  exact div_le_of_le_mul₀ (norm_nonneg _) (norm_nonneg _) ((L a).le_opNorm (x a))
+
 /-- **An eventual `O((log x)⁻¹)` bound holds on a whole half-line `[a, ∞)` (`a > 1`).** If
 `f = O((log x)⁻¹)` at `atTop` and `f` is bounded on every compact interval `[a, b]`, then there is
 a constant `C ≥ 0` with `‖f x‖ ≤ C / log x` for all `x ≥ a`. Unlike
@@ -379,5 +400,21 @@ theorem tendsto_add_div_add_atTop {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
   simp only [id]
   field_simp
   ring
+
+/-- If `f x ‖g x‖` is eventually bounded along a filter on which `f` tends to infinity, then `g`
+tends to `0`. -/
+theorem tendsto_zero_of_eventually_mul_norm_le {α E : Type*} [SeminormedAddCommGroup E]
+    {l : Filter α} {f : α → ℝ} {g : α → E} {K : ℝ} (hf : Tendsto f l atTop)
+    (h : ∀ᶠ x in l, f x * ‖g x‖ ≤ K) : Tendsto g l (𝓝 0) := by
+  refine squeeze_zero_norm' (a := fun x ↦ K / f x) ?_ (tendsto_const_nhds.div_atTop hf)
+  filter_upwards [h, hf.eventually_gt_atTop 0] with x hx hx0
+  rw [le_div_iff₀ hx0, mul_comm]
+  exact hx
+
+/-- A bound on `y ‖f y‖` for large `y` bounds `y |Im f y|`. -/
+theorem eventually_mul_abs_im_le_of_mul_norm_le {f : ℝ → ℂ} {C : ℝ}
+    (h : ∀ᶠ y : ℝ in atTop, y * ‖f y‖ ≤ C) : ∀ᶠ y : ℝ in atTop, y * |(f y).im| ≤ C := by
+  filter_upwards [h, eventually_gt_atTop 0] with y hy hy0
+  exact (mul_le_mul_of_nonneg_left (Complex.abs_im_le_norm _) hy0.le).trans hy
 
 end TauCeti

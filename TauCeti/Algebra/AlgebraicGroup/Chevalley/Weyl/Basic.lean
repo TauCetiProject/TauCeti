@@ -77,6 +77,13 @@ theorem torusPoints_mem_weylSubgroup (A : Type v) [CommRing A] (s : Fin t.rank �
     D.torusPoints A s ∈ D.weylSubgroup A :=
   Subgroup.subset_closure (Or.inl ⟨s, rfl⟩)
 
+/-- The actual weight-lattice torus image is contained in the Weyl subgroup over every commutative
+ring. -/
+theorem range_torusPoints_le_weylSubgroup (A : Type v) [CommRing A] :
+    (D.torusPoints A).range ≤ D.weylSubgroup A := by
+  rintro _ ⟨s, rfl⟩
+  exact D.torusPoints_mem_weylSubgroup A s
+
 /-- Each pinned simple Weyl representative belongs to the Weyl subgroup. -/
 theorem weylElement_simpleIndex_one_mem_weylSubgroup (A : Type v) [CommRing A] (i : Fin t.rank) :
     D.weylElement (t.simpleIndex ht i) A 1 ∈ D.weylSubgroup A :=

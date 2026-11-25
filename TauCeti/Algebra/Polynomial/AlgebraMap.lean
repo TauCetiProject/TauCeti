@@ -12,6 +12,8 @@ public import Mathlib.Algebra.Ring.Idempotent
 public import Mathlib.RingTheory.Ideal.Defs
 import Mathlib.Algebra.Polynomial.Div
 import Mathlib.Tactic.Abel
+import Mathlib.Tactic.Module
+import TauCeti.Algebra.Ring.SpectralIdempotent
 
 /-!
 # Irreducibility under algebra isomorphisms, evaluation modulo an ideal and faithfulness
@@ -23,13 +25,17 @@ Since `x - c` divides `p(x) - p(c)`, a congruence `(x - c) e ≡ 0` modulo an id
 `(p(x) - p(c)) e ≡ 0` for every polynomial `p` (`Polynomial.aeval_sub_algebraMap_eval_mul_mem`).
 For an idempotent `e` commuting with `u`, evaluating a polynomial `P` at `u e` or `u (1 - e)`
 splits as `P(u) e + P(0) • (1 - e)` or `P(u) (1 - e) + P(0) • e`
-(`Polynomial.aeval_mul_of_isIdempotentElem`, `Polynomial.aeval_mul_one_sub_of_isIdempotentElem`).
+(`Polynomial.aeval_mul_of_isIdempotentElem`, `Polynomial.aeval_mul_one_sub_of_isIdempotentElem`),
+and when `P(0)` is a unit and `P(u)` is invertible modulo `e`, `P(u (1 - e))` is a unit
+(`Polynomial.isUnit_aeval_mul_one_sub_of_isIdempotentElem`).
 
 For an `R[X]`-algebra `S` compatible with its `R`-algebra structure, the algebra map `R[X] → S` is
 evaluation at the image of `X` (`Polynomial.algebraMap_eq_aeval`).
 
 A monic polynomial of positive degree dividing every polynomial that vanishes at `f : B` forces
-`A` to act faithfully on `B` (`Polynomial.Monic.faithfulSMul_of_dvd`).
+`A` to act faithfully on `B` (`Polynomial.Monic.faithfulSMul_of_dvd`), and evaluating
+`1 - C c * P` at `u` recovers `c • P(u)` via `1 - (1 - C c * P)(u)`
+(`Polynomial.one_sub_aeval_one_sub_C_mul`).
 -/
 
 public section
@@ -94,6 +100,27 @@ theorem aeval_mul_one_sub_of_isIdempotentElem {R A : Type*} [CommSemiring R] [Ri
   simpa only [sub_sub_cancel] using
     aeval_mul_of_isIdempotentElem he.one_sub ((Commute.one_right u).sub_right hue) P
 
+/-- If `e` is a commuting idempotent for `u`, `P(0)` is a unit, and `P(u)` is invertible modulo
+`e`, then `P(u * (1 - e))` is invertible. -/
+theorem isUnit_aeval_mul_one_sub_of_isIdempotentElem {R A : Type*} [CommRing R] [Ring A]
+    [Algebra R A] {u e w : A} {P : R[X]} (he : IsIdempotentElem e) (hue : Commute u e)
+    (hP0 : IsUnit (P.coeff 0)) (hw₁ : aeval u P * w = 1 - e) (hw₂ : w * aeval u P = 1 - e) :
+    IsUnit (aeval (u * (1 - e)) P) := by
+  have hunit := he.isUnit_add_mul_one_sub hw₁ hw₂
+  have hscale := he.isUnit_one_add_sub_one_smul hP0
+  have hCE : Commute (aeval u P) e := by
+    have hCw : Commute (aeval u P) w := hw₁.trans hw₂.symm
+    have h1 : Commute (aeval u P) (1 - e) := hw₂ ▸ hCw.mul_right (Commute.refl _)
+    simpa using (Commute.one_right _).sub_right h1
+  have hE_mul : e * (aeval u P * (1 - e)) = 0 := by
+    rw [← mul_assoc, ← hCE.eq, mul_assoc]
+    simp [mul_sub, he.eq]
+  have heq : (1 + (P.coeff 0 - 1) • e) * (e + aeval u P * (1 - e)) = aeval (u * (1 - e)) P := by
+    rw [aeval_mul_one_sub_of_isIdempotentElem he hue]
+    simp only [add_mul, one_mul, mul_add, smul_mul_assoc, he.eq, hE_mul, smul_zero, add_zero]
+    module
+  exact heq ▸ hscale.mul hunit
+
 /-- If a monic polynomial `p` over `A` of positive degree divides every polynomial over `A`
 that vanishes at `f : B`, then `A` acts faithfully on `B`: a nonzero constant is not divisible
 by `p`. -/
@@ -105,5 +132,11 @@ theorem Monic.faithfulSMul_of_dvd {A B : Type*} [CommRing A] [Ring B] [Algebra A
   by_contra ha0
   exact hp.not_dvd_of_natDegree_lt (C_ne_zero.mpr ha0) (by rwa [natDegree_C])
     (hdvd _ (by rwa [aeval_C]))
+
+/-- Evaluating `1 - C c * P` at `u` satisfies `1 - aeval u (1 - C c * P) = c • aeval u P`. -/
+theorem one_sub_aeval_one_sub_C_mul {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
+    (u : A) (c : R) (P : R[X]) :
+    1 - aeval u (1 - C c * P) = c • aeval u P := by
+  simp [Algebra.algebraMap_eq_smul_one]
 
 end Polynomial

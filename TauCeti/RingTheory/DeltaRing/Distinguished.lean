@@ -152,18 +152,14 @@ private theorem delta_notMem_of_natCast_mem_span {d : A}
   have hdp : d ^ (p - 1) * d = d ^ p := pow_sub_one_mul hp.out.ne_zero d
   have h1 : (p : A) * (1 - b * delta p d) = (a + b * d ^ (p - 1)) * d := by
     linear_combination -hab - b * hdp
-  have h2 := congrArg (fun x => Ideal.Quotient.mk m (delta p x)) h1
-  have hpm : Ideal.Quotient.mk m (p : A) = 0 :=
-    Ideal.Quotient.eq_zero_iff_mem.2 (Ring.jacobson_le_of_isMaximal m hpJ)
-  have hdm : Ideal.Quotient.mk m d = 0 :=
-    Ideal.Quotient.eq_zero_iff_mem.2 (Ring.jacobson_le_of_isMaximal m hdJ)
-  have hδm : Ideal.Quotient.mk m (delta p d) = 0 := Ideal.Quotient.eq_zero_iff_mem.2 hδ
-  have hp0 : p ≠ 0 := hp.out.ne_zero
-  have hp1 : p - 1 ≠ 0 := Nat.sub_ne_zero_of_lt hp.out.one_lt
-  simp only [delta_mul, delta_natCast_self, map_add, map_mul, map_pow, map_sub, map_one, hpm,
-    hdm, hδm, mul_zero, sub_zero, one_pow, zero_pow hp0, zero_pow hp1, zero_mul, zero_add,
-    add_zero, mul_one] at h2
-  exact one_ne_zero h2
+  have hpm : (p : A) ∈ m := Ring.jacobson_le_of_isMaximal m hpJ
+  have hdm : d ∈ m := Ring.jacobson_le_of_isMaximal m hdJ
+  have hw : 1 - b * delta p d ∉ m := fun h =>
+    hm.ne_top ((Ideal.eq_top_iff_one m).2 (by simpa using m.add_mem h (m.mul_mem_left b hδ)))
+  refine delta_natCast_mul_notMem hm.isPrime.isRadical hpm hw ?_
+  rw [h1, delta_mul]
+  exact m.add_mem (m.add_mem (m.mul_mem_left _ hδ)
+    (m.mul_mem_right _ (m.pow_mem_of_mem hdm _ hp.out.pos))) (m.mul_mem_left _ hδ)
 
 /-- **Distinguished elements in the Jacobson radical.** If `d` and `p` lie in the Jacobson
 radical, then `d` is distinguished if and only if `p ∈ (d, φ d)` (Bhatt and Scholze, *Prisms and

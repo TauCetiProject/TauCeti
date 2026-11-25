@@ -47,10 +47,11 @@ without differentiability assumptions, and they take values in the range of the 
 boundaryless model, their domains are open. A compact coordinate set of a chart is covered by
 finitely many compact pieces, each in the overlap with one of a given family of charts at points of
 the manifold. On an open subset, extended chart targets lie in the ambient chart targets, and
-inverse charts agree through inclusion on the smaller target. Near a chart point the inverse charts
-of nested open subsets likewise differ only by the inclusion. Over `ℝ`, every chart point has a
-convex neighbourhood within the model range, inside the chart target, on which flat calculus
-applies even when the manifold has boundary.
+inverse charts agree through inclusion on the smaller target; on an open subset of a normed space
+all charts coincide and the inverse charts fix the points of the subset. Near a chart point the
+inverse charts of nested open subsets likewise differ only by the inclusion. Over `ℝ`, every chart
+point has a convex neighbourhood within the model range, inside the chart target, on which flat
+calculus applies even when the manifold has boundary.
 
 For a boundaryless model `I`, a chart `c` read in the model vector space and then moved by a
 homeomorphism `Ψ` is again a chart, `OpenPartialHomeomorph.extendTrans`. When the charts lie in the
@@ -1295,6 +1296,17 @@ theorem extChartAt_opens_target (U : Opens E) (x : U) :
     (extChartAt 𝓘(𝕜, E) x).target = (U : Set E) := by
   simp [extChartAt, Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_def]
 
+/-- All charts of an open subset of a normed space are the same restriction of the identity. -/
+theorem chartAt_opens_model_space_eq {U : Opens E} (x y : U) : chartAt E x = chartAt E y := by
+  simp only [Opens.chartAt_eq, chartAt_self_eq]
+
+/-- On an open subset of a normed space, every inverse extended chart sends a point of the subset
+to itself. -/
+theorem extChartAt_opens_model_space_symm_apply {U : Opens E} (x : U) {z : E} (hz : z ∈ U) :
+    (extChartAt 𝓘(𝕜, E) x).symm z = ⟨z, hz⟩ :=
+  Subtype.ext ((coe_extChartAt_symm_apply U x (by rwa [extChartAt_opens_target])).trans
+    (by simp))
+
 /-- The target of an inherited chart is canonically homeomorphic to the open source. -/
 noncomputable def openChartTargetHomeomorph (U : Opens E) (x : U) :
     (extChartAt 𝓘(𝕜, E) x).target ≃ₜ U :=
@@ -1394,9 +1406,7 @@ theorem extendTrans_symm_apply (v : F) :
 
 /-- The coordinates of `c.extendTrans I Ψ` are those of the extended chart `c.extend I`, moved
 by `Ψ`. -/
-theorem coe_extendTrans : ⇑(c.extendTrans I Ψ) = Ψ ∘ c.extend I := by
-  funext w
-  simp
+theorem coe_extendTrans : ⇑(c.extendTrans I Ψ) = Ψ ∘ c.extend I := funext fun _ ↦ by simp
 
 /-- Moved by the identity, the chart `c.extendTrans I` is the extended chart `c.extend I`. -/
 theorem toPartialEquiv_extendTrans_refl :
@@ -1407,6 +1417,11 @@ theorem toPartialEquiv_extendTrans_refl :
 `c.extend I`. -/
 theorem coe_extendTrans_refl : ⇑(c.extendTrans I (Homeomorph.refl E)) = c.extend I :=
   congrArg (⇑) (c.toPartialEquiv_extendTrans_refl I)
+
+/-- Moved by the identity, the inverse of `c.extendTrans I` is that of `c.extend I`. -/
+theorem coe_symm_extendTrans_refl :
+    ⇑(c.extendTrans I (Homeomorph.refl E)).symm = (c.extend I).symm :=
+  congrArg (fun e : PartialEquiv M E ↦ ⇑e.symm) (c.toPartialEquiv_extendTrans_refl I)
 
 /-- A chart with values in a normed space, read in its own self model and moved by the identity,
 is the chart itself. -/
