@@ -26,8 +26,6 @@ product of terms is additive and real-homogeneous in the pair of factors.
 ## Main declarations
 
 * `TauCeti.DomainDependentHomSection.prod`: the product of two domain-dependent Hom sections.
-* `TauCeti.DomainDependentHomSection.ext_tangentHom`: Hom sections are equal when their readings
-  in the tangent spaces agree.
 * `TauCeti.InhomogeneousTerm.prod`: the product of two inhomogeneous terms.
 
 ## References
@@ -124,14 +122,6 @@ theorem tangentHom_prod (A : DomainDependentHomSection I M IP P n)
   ext v
   rw [tangentHom_apply]
   rfl
-
-omit [FiniteDimensional ℝ EP] in
-/-- Domain-dependent Hom sections are equal when their readings in the tangent spaces agree. -/
-theorem ext_tangentHom {A B : DomainDependentHomSection I M IP P n}
-    (h : ∀ q, A.tangentHom q = B.tangentHom q) : A = B :=
-  ContMDiffSection.ext fun q ↦ ContinuousLinearMap.ext fun v ↦
-    (tangentHom_apply A q v).symm.trans
-      ((DFunLike.congr_fun (h q) v).trans (tangentHom_apply B q v))
 
 /-- The product of the zero sections is zero. -/
 @[simp]

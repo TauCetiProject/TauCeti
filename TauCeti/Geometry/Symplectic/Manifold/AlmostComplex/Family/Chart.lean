@@ -32,6 +32,8 @@ is the prescribed field.
   (`ContMDiffAlmostComplexStructureFamily.inChart_mk_eq_inChart_freezeSmooth`), which are therefore
   jointly smooth (`ContMDiffAlmostComplexStructureFamily.contDiffOn_inChart_freezeSmooth`).
 * `ContMDiffAlmostComplexStructureFamily.inChart_extChartAt_eq_conj`: conjugation on overlaps.
+* `ContMDiffAlmostComplexStructureFamily.inChart_chartSourceCentre`: on a product of chart sources,
+  the coordinate expression at the centre is conjugation by the target tangent frame.
 * `ContMDiffAlmostComplexStructureFamily.ofChart`, `inChart_ofChart`: reconstruction on the
   product of the intrinsic chart sources from a field on the product chart target.
 * `ContMDiffAlmostComplexStructureFamily.inChart_ofModel`: on a model target, the coordinate
@@ -90,6 +92,26 @@ theorem inChart_mk (J : ContMDiffAlmostComplexStructureFamily I M IP P n) (q : P
   congr 1
   ext v
   exact (J.freeze_apply _ _ v).symm
+
+/-- On a product of chart sources, a domain-dependent structure read in the product chart at the
+centre is the structure conjugated by the tangent frame of the target chart source. -/
+theorem inChart_chartSourceCentre (q : P × M)
+    (J : ContMDiffAlmostComplexStructureFamily I (chartSource (H := H) q.2) IP
+      (chartSource (H := HP) q.1) n)
+    (r : chartSource (H := HP) q.1 × chartSource (H := H) q.2) :
+    J.inChart (chartSourceCentre (H := HP) (H' := H) q)
+        (extChartAt (IP.prod I) (chartSourceCentre (H := HP) (H' := H) q) r) =
+      ((chartFrame (I := I) q.2).continuousLinearMapAt ℝ r.2).comp
+        ((J.tangentEndomorphism r).comp ((chartFrame (I := I) q.2).symmL ℝ r.2)) := by
+  rw [extChartAt_prod_apply, inChart_mk, (extChartAt IP _).left_inv,
+    ContMDiffAlmostComplexStructure.inChart_chartSource, freeze_toEndomorphism_apply]
+  · congr 2
+    ext v
+    exact (tangentEndomorphism_apply J r v).symm
+  · rw [extChartAt_source]
+    simp only [TopologicalSpace.Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_source,
+      Set.mem_preimage]
+    exact r.1.property
 
 /-- The coordinate expression of a family is jointly `Cⁿ` on the whole extended product chart
 target. For models with corners this is regularity within that target. -/

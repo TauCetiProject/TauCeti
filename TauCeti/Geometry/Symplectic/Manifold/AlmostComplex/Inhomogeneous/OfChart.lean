@@ -30,8 +30,6 @@ domain of the product defines a term there.
 * `TauCeti.DomainDependentHomSection.ofChart`: the Hom section defined by a coordinate map.
 * `TauCeti.DomainDependentHomSection.inCoordinates_ofChart_tangentHom`: read in the tangent
   coordinates at the centre of the chart sources, the section is the coordinate map.
-* `TauCeti.ContMDiffAlmostComplexStructureFamily.inChart_chartSourceCentre`: on chart sources, the
-  coordinate expression of a family at the centre is conjugation by the tangent frame.
 * `TauCeti.DomainDependentHomSection.ofChart_mem_inhomogeneousTerms`: an antilinear coordinate map
   defines an antilinear Hom section.
 * `TauCeti.InhomogeneousTerm.ofChart`: the inhomogeneous term defined by an antilinear coordinate
@@ -167,27 +165,6 @@ theorem inCoordinates_ofChart_tangentHom (q : P × M) (A : EP × E → EP →L[�
     (chartFrame (I := IP) q.1).continuousLinearMapAt_symmL hP]
 
 end DomainDependentHomSection
-
-omit [FiniteDimensional ℝ EP] [IsManifold IP ∞ P] in
-/-- On a product of chart sources, a domain-dependent structure read in the product chart at the
-centre is the structure conjugated by the tangent frame of the target chart source. -/
-theorem ContMDiffAlmostComplexStructureFamily.inChart_chartSourceCentre (q : P × M)
-    (J : ContMDiffAlmostComplexStructureFamily I (chartSource (H := H) q.2) IP
-      (chartSource (H := HP) q.1) n)
-    (r : chartSource (H := HP) q.1 × chartSource (H := H) q.2) :
-    J.inChart (chartSourceCentre (H := HP) (H' := H) q)
-        (extChartAt (IP.prod I) (chartSourceCentre (H := HP) (H' := H) q) r) =
-      ((chartFrame (I := I) q.2).continuousLinearMapAt ℝ r.2).comp
-        ((J.tangentEndomorphism r).comp ((chartFrame (I := I) q.2).symmL ℝ r.2)) := by
-  rw [extChartAt_prod_apply, inChart_mk, (extChartAt IP _).left_inv,
-    ContMDiffAlmostComplexStructure.inChart_chartSource, freeze_toEndomorphism_apply]
-  · congr 2
-    ext v
-    exact (tangentEndomorphism_apply J r v).symm
-  · rw [extChartAt_source]
-    simp only [TopologicalSpace.Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_source,
-      Set.mem_preimage]
-    exact r.1.property
 
 namespace InhomogeneousTerm
 
