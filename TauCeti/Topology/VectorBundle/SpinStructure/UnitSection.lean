@@ -36,8 +36,11 @@ elements of `Spinᶜ(n + 1)` whose rotations carry `e_{n+1}` to `u`
 corrects `p` to the adapted local section `p • g`; and the adapted points are then trivial near
 `x` (`TauCeti.PrincipalBundle.exists_trivialization_of_continuousOn_section_mem`).
 
-The adapted points as a principal bundle, and the frames of `W` they carry, are not constructed
-here.
+So the adapted points are a locally trivial reduction of `P` to the stabilizer
+(`TauCeti.SpinCStructure.isLocallyTrivialReduction_sectionPoints`), and their fibres form a
+principal bundle with that structure group
+(`TauCeti.SpinCStructure.principalBundle_sectionPoints`). The frames of `W` they carry are not
+constructed here.
 
 ## Main definitions
 
@@ -50,6 +53,9 @@ here.
   adapted exactly through the last-vector stabilizer.
 * `TauCeti.SpinCStructure.exists_trivialization_sectionPoints`: for a continuous unit section the
   adapted points are locally trivial with fibre the stabilizer, equivariantly.
+* `TauCeti.SpinCStructure.isLocallyTrivialReduction_sectionPoints`,
+  `TauCeti.SpinCStructure.principalBundle_sectionPoints`: the adapted points form a principal
+  bundle with structure group the stabilizer.
 
 ## References
 
@@ -201,6 +207,34 @@ theorem exists_trivialization_sectionPoints
     (H := realCliffordSpinCLastStabilizer n) (fun p hp g ↦ smul_mem_sectionPoints_iff hp g) hτS
     hV hτ (b := x) ⟨hx, hxU⟩
   exact ⟨t, ht ▸ ⟨hx, hxU⟩, fun g p hgp hp ↦ hteq g p hgp (ht ▸ hp)⟩
+
+/-- **The adapted points are a locally trivial reduction** of the principal `Spinᶜ(n + 1)`-bundle
+to the last-vector stabilizer `Spinᶜ(n)`, for a continuous section of unit vectors. -/
+theorem isLocallyTrivialReduction_sectionPoints
+    (hσ : Continuous fun y ↦ (⟨y, σ y⟩ : TotalSpace F E)) (hσ₁ : ∀ y, ‖σ y‖ = 1) :
+    PrincipalBundle.IsLocallyTrivialReduction (realCliffordSpinCLastStabilizer n)
+      (s.sectionPoints σ) :=
+  PrincipalBundle.isLocallyTrivialReduction_iff.mpr (exists_trivialization_sectionPoints hσ hσ₁)
+
+/-- **The adapted points form a principal `Spinᶜ(n)`-bundle.** For a continuous section of unit
+vectors, the fibres of the points of `s` adapted to `σ` form a principal bundle with structure group
+the last-vector stabilizer, the image of `Spinᶜ(n) ⊆ Spinᶜ(n + 1)`. -/
+theorem principalBundle_sectionPoints (hσ : Continuous fun y ↦ (⟨y, σ y⟩ : TotalSpace F E))
+    (hσ₁ : ∀ y, ‖σ y‖ = 1) :
+    letI := (isLocallyTrivialReduction_sectionPoints (s := s) hσ hσ₁).fiberBundle
+    letI := PrincipalBundle.reductionMulAction (H := realCliffordSpinCLastStabilizer n)
+      (S := s.sectionPoints σ) fun _ hp g ↦ smul_mem_sectionPoints_iff hp g
+    letI := MapFiber.mulAction
+      (proj := fun p : s.sectionPoints σ ↦
+        (p : TotalSpace (realCliffordSpinCGroupZero (n + 1)) s.P).proj)
+      (M := (realCliffordSpinCLastStabilizer n)ᵐᵒᵖ)
+      (PrincipalBundle.proj_reductionMulAction_smul (H := realCliffordSpinCLastStabilizer n)
+        (S := s.sectionPoints σ) fun _ hp g ↦ smul_mem_sectionPoints_iff hp g)
+    PrincipalBundle (realCliffordSpinCLastStabilizer n)
+      (MapFiber fun p : s.sectionPoints σ ↦
+        (p : TotalSpace (realCliffordSpinCGroupZero (n + 1)) s.P).proj) :=
+  (isLocallyTrivialReduction_sectionPoints (s := s) hσ hσ₁).principalBundle
+    fun _ hp g ↦ smul_mem_sectionPoints_iff hp g
 
 end Trivialization
 
