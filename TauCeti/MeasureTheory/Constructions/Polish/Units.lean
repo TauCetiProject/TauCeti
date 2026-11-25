@@ -55,20 +55,12 @@ along `Units.val` is the Borel σ-algebra of the topology of `Mˣ`. -/
 @[to_additive /-- The additive units of a Polish additive monoid form a Borel space. -/]
 instance borelSpace : BorelSpace Mˣ where
   measurable_eq := by
-    refine le_antisymm (Measurable.comap_le ?_) ?_
-    · -- `Units.val` is continuous, hence measurable for the Borel σ-algebra of `Mˣ`, which here
-      -- replaces the instance `Units.instMeasurableSpace` being identified.
-      let _ : MeasurableSpace Mˣ := borel Mˣ
-      have : BorelSpace Mˣ := ⟨rfl⟩
-      exact continuous_val.measurable
-    · refine MeasurableSpace.generateFrom_le fun U (hU : IsOpen U) ↦ ⟨val '' U, ?_, ?_⟩
-      · -- An open set of `Mˣ` is Polish, and `Units.val` restricted to it is a continuous
-        -- injection, so its image is Borel by the Lusin–Souslin theorem.
-        have : PolishSpace U := hU.polishSpace
-        rw [image_eq_range]
-        exact measurableSet_range_of_continuous_injective
-          (continuous_val.comp continuous_subtypeVal) (val_injective.comp Subtype.val_injective)
-      · exact preimage_image_eq U val_injective
+    -- Against the Borel σ-algebra of `Mˣ`, the continuous injection `Units.val` out of the Polish
+    -- space `Mˣ` is a measurable embedding (Lusin–Souslin), so pulling back along it recovers the
+    -- Borel σ-algebra.
+    let _ : MeasurableSpace Mˣ := borel Mˣ
+    have : BorelSpace Mˣ := ⟨rfl⟩
+    exact (continuous_val.measurableEmbedding val_injective).comap_eq
 
 /-- The coercion from the units of a Polish monoid is a measurable embedding. -/
 @[to_additive /-- The coercion from the additive units of a Polish additive monoid is a measurable
