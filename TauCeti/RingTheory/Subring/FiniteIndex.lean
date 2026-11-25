@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.Subgroup.Index
 public import Mathlib.Algebra.GroupWithZero.NonZeroDivisors
 public import Mathlib.Algebra.Ring.Pi
 public import Mathlib.Algebra.Ring.Subring.Basic
+public import Mathlib.GroupTheory.Index
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.RingTheory.Ideal.Span
+import TauCeti.GroupTheory.Index.Endomorphism
 import Mathlib.Algebra.Regular.Pi
 import Mathlib.Algebra.Ring.NonZeroDivisors
 import Mathlib.Data.Fintype.Pigeonhole

@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.Index
 
 /-!
-# Index comparisons under injective endomorphisms and finite products
+# Index comparisons under injective endomorphisms
 
 Let `G` be a group, `H` a subgroup of finite index, and `f : G →* G` an injective endomorphism
 mapping `H` into itself. Comparing the two subgroup chains `f(H) ≤ H ≤ G` and `f(H) ≤ f(G) ≤ G`
@@ -18,12 +18,12 @@ nonzero factor `[G : H]` cancels. Equivalently, if `g : H →* H` is the restric
 the coset spaces `H ⧸ g.range` and `G ⧸ f.range` have the same `Nat.card` and one is finite
 exactly when the other is.
 
-We also record the `FiniteIndex` instance on `Subgroup.pi` along a finite set of coordinates.
+Applied to additive groups, this compares principal quotients and matrix cokernels over a
+finite-index subring with those over the ambient ring whenever multiplication or the matrix map is
+injective on the ambient module.
 
 ## Main results
 
-* `Subgroup.instFiniteIndexPi`, `AddSubgroup.instFiniteIndexPi`: `Subgroup.pi I H` has finite index
-  whenever `I` is finite and `H i` has finite index for each `i ∈ I`.
 * `Subgroup.relIndex_map_eq_index_range`, `AddSubgroup.relIndex_map_eq_index_range`: for an
   injective endomorphism `f` stabilizing a finite-index subgroup `H`,
   `(H.map f).relIndex H = f.range.index`.
@@ -35,27 +35,6 @@ We also record the `FiniteIndex` instance on `Subgroup.pi` along a finite set of
 public section
 
 namespace Subgroup
-
-section Pi
-
-variable {ι : Type*} {G : ι → Type*} [∀ i, Group (G i)]
-
-/-- A product subgroup constrained on finitely many coordinates by finite-index subgroups has
-finite index. -/
-@[to_additive
-/-- A product additive subgroup constrained on finitely many coordinates by finite-index additive
-subgroups has finite index. -/]
-instance instFiniteIndexPi (I : Set ι) [Finite I] (H : ∀ i, Subgroup (G i))
-    [∀ i : I, (H i.1).FiniteIndex] : (Subgroup.pi I H).FiniteIndex := by
-  have hpi : Subgroup.pi I H = ⨅ i : I, (H i.1).comap (Pi.evalMonoidHom G i.1) := by
-    ext x
-    simp [Subgroup.mem_pi]
-  rw [hpi]
-  exact finiteIndex_iInf fun i ↦ inferInstance
-
-end Pi
-
-section Endomorphism
 
 variable {G : Type*} [Group G] (H : Subgroup G)
 
@@ -135,7 +114,5 @@ theorem natCard_quotient_range_eq_of_comp_subtype [H.FiniteIndex] {g : H →* H}
     (hf : Function.Injective f) (hgf : f.comp H.subtype = H.subtype.comp g) :
     Nat.card (H ⧸ g.range) = Nat.card (G ⧸ f.range) :=
   index_range_eq_of_comp_subtype hf hgf
-
-end Endomorphism
 
 end Subgroup

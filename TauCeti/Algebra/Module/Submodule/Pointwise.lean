@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Group.Submonoid.Units
 public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.Algebra.Ring.Subring.Basic
 public import Mathlib.RingTheory.Ideal.Span
+import TauCeti.Algebra.Module.Submodule.Map
 import Mathlib.Algebra.Ring.Action.Pointwise.Set
 
 /-!
@@ -72,11 +73,11 @@ theorem mem_pointwise_smul_iff_inv_smul_mem {R M G : Type*} [Semiring R] [AddCom
 theorem smul_eq_self_of_finite {α R M : Type*} [Monoid α] [Semiring R] [AddCommMonoid M]
     [Module R M] [SMul α R] [DistribMulAction α M] [SMulCommClass α R M] [IsScalarTower α R M]
     (N : Submodule R M) [Finite N] {a : α} (ha : IsSMulRegular M a) : a • N = N := by
-  refine le_antisymm (N.smul_le_self_of_tower a) fun y hy ↦ ?_
-  have hinj : Function.Injective (fun x : N ↦ (⟨a • x.1, smul_of_tower_mem N a x.2⟩ : N)) :=
-    fun x₁ x₂ h ↦ Subtype.ext (ha (congrArg Subtype.val h))
-  obtain ⟨x, hx⟩ := Finite.surjective_of_injective hinj ⟨y, hy⟩
-  exact (mem_smul_pointwise_iff_exists y a N).mpr ⟨x.1, x.2, congrArg Subtype.val hx⟩
+  have hle : N.map (DistribSMul.toLinearMap R M a) ≤ N := by
+    rw [← pointwise_smul_def]
+    exact N.smul_le_self_of_tower a
+  rw [pointwise_smul_def]
+  exact N.map_eq_self_of_finite (fun _ _ h ↦ ha h) hle
 
 variable {A : Type*} [CommRing A] {M : Type*} [AddCommMonoid M] [Module A M]
 

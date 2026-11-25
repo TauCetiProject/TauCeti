@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.Subgroup.Index
 public import TauCeti.LinearAlgebra.FreeModule.CardQuotient
 public import TauCeti.RingTheory.Ideal.Quotient.Pi
 public import TauCeti.RingTheory.Ideal.Quotient.Regular
@@ -15,6 +14,9 @@ public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 import TauCeti.Algebra.Group.Subgroup.Pi
+import TauCeti.Algebra.Module.Submodule.Map
+import TauCeti.GroupTheory.Index.Endomorphism
+import TauCeti.GroupTheory.Index.Pi
 import Mathlib.Data.ZMod.QuotientRing
 
 /-!
@@ -76,18 +78,15 @@ theorem piIdeal_le_range_mulVecLin_of_finite {A : Matrix ι ι R}
     (hA : A.det ∈ nonZeroDivisors R) :
     Submodule.pi Set.univ (fun _ : ι ↦ I) ≤ LinearMap.range A.mulVecLin := by
   let P : Submodule R (ι → R) := Submodule.pi Set.univ fun _ : ι ↦ I
-  have hPfin : Finite P :=
-    Finite.of_injective (fun x : P ↦ fun i : ι ↦ (⟨x.1 i, x.2 i trivial⟩ : I))
+  have : Finite P :=
+    Finite.of_injective (fun x : P ↦ fun i : ι ↦ (⟨x.val i, x.property i trivial⟩ : I))
       fun x y hxy ↦ Subtype.ext (funext fun i ↦ congrArg Subtype.val (congr_fun hxy i))
-  have hmap (x : P) : A.mulVecLin x.1 ∈ P := fun i _ ↦ by
+  have hmap : P.map A.mulVecLin ≤ P := by
+    rintro _ ⟨x, hx, rfl⟩ i -
     simp only [mulVecLin_apply, mulVec, dotProduct]
-    exact I.sum_mem fun j _ ↦ I.mul_mem_left (A i j) (x.2 j trivial)
-  have hinj : Function.Injective (fun x : P ↦ (⟨A.mulVecLin x.1, hmap x⟩ : P)) :=
-    fun x y hxy ↦ Subtype.ext <|
-      mulVec_injective_of_det_mem_nonZeroDivisors hA (congrArg Subtype.val hxy)
-  intro y hy
-  obtain ⟨x, hx⟩ := Finite.surjective_of_injective hinj ⟨y, hy⟩
-  exact ⟨x.1, congrArg Subtype.val hx⟩
+    exact I.sum_mem fun j _ ↦ I.mul_mem_left (A i j) (hx j trivial)
+  have heq := P.map_eq_self_of_finite (mulVec_injective_of_det_mem_nonZeroDivisors hA) hmap
+  exact heq.symm.trans_le LinearMap.map_le_range
 
 /-- **Cokernel isomorphism modulo a finite ideal.** When `I : Ideal R` is finite and
 `A.det ∈ nonZeroDivisors R`, reducing coordinates modulo `I` identifies the cokernel of `A` with the
