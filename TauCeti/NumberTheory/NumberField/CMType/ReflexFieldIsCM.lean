@@ -1,0 +1,175 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.NumberTheory.NumberField.CMType.ReflexField
+public import TauCeti.NumberTheory.NumberField.CMField.Basic
+import TauCeti.Algebra.Ring.Pi
+import TauCeti.FieldTheory.IsAlgClosed.AlgebraicEmbedding
+
+/-!
+# The reflex field is a CM field
+
+Let `Φ` be a CM type on a finite product `E` of CM fields, or more generally on a
+finite-dimensional `ℚ`-algebra `E` with a complex embedding on which every automorphism `σ` of
+`ℂ` commutes with complex conjugation (`TauCeti.CMType.StarCompCommute`). Its reflex field
+`E* ⊆ ℂ` is a CM field.
+
+Complex conjugation `ι` maps the type trace of `Φ` to that of the complementary type `ιΦ`, which
+has the same reflex field, so `ι` restricts to an automorphism of `E*`. For `σ ∈ Aut(ℂ)` the type
+trace of `σΦ` is `σ ∘ typeTrace_Φ`, and `ι(σΦ) = σ(ιΦ)`, so `σ` and `ι` agree after composing in
+either order on the type traces, hence on all of `E*`. Every complex embedding of `E*` extends to
+an automorphism of `ℂ`, so the restriction of `ι` is the complex conjugation of every complex
+embedding of `E*`. It is not the identity, since `ιΦ ≠ Φ` and `ι` fixes `E*` pointwise only if it
+preserves `Φ` (`TauCeti.CMType.mem_fixingSubgroup_reflexField_iff`). Hence `E*` is totally
+complex, and CM by `TauCeti.NumberField.IsCMField.of_forall_isConj`.
+
+## Main definitions
+
+* `TauCeti.CMType.reflexFieldConj Φ`: complex conjugation restricted to the reflex field.
+
+## Main results
+
+* `TauCeti.CMType.instStarCompCommutePi`: a finite product of rings with the commutation property,
+  such as a finite product of CM fields, has it.
+* `TauCeti.CMType.apply_conj_eq_conj_apply`: every `σ ∈ Aut(ℂ)` commutes with complex
+  conjugation on the reflex field.
+* `TauCeti.CMType.isConj_reflexFieldConj`: complex conjugation on `E*` is the conjugation of every
+  complex embedding of `E*`.
+* `TauCeti.CMType.isCMField_reflexField`: the reflex field is a CM field.
+* `TauCeti.CMType.reflexField_isCMField`: the reflex field of a CM type on a nonempty finite
+  product of CM number fields is a CM number field.
+
+## References
+
+* J. S. Milne, *Complex Multiplication*, Proposition 1.18, p.14.
+-/
+
+public section
+
+open NumberField ComplexConjugate ComplexEmbedding
+
+namespace TauCeti.CMType
+
+/-- A finite product of rings on whose complex embeddings every endomorphism of `ℂ` commutes with
+complex conjugation has the same property, since every complex embedding of the product factors
+through a projection (`RingHom.exists_eq_comp_evalRingHom`). In particular this holds for a
+finite product of CM fields. -/
+instance instStarCompCommutePi {ι : Type*} [Finite ι] (F : ι → Type*) [∀ i, CommRing (F i)]
+    [∀ i, StarCompCommute (F i)] : StarCompCommute (∀ i, F i) where
+  star_comp σ φ := by
+    obtain ⟨i, ψ, rfl⟩ := φ.exists_eq_comp_evalRingHom
+    ext x
+    exact RingHom.congr_fun (StarCompCommute.star_comp σ ψ) (x i)
+
+variable {E : Type*} [CommRing E]
+
+section FiniteEmbeddings
+
+variable [Finite (E →+* ℂ)]
+
+/-- Complex conjugation maps the reflex field into itself: it sends the type trace of `Φ` to that
+of `ιΦ`, which has the same reflex field. -/
+theorem conj_mem_reflexField (Φ : CMType E) {x : ℂ} (hx : x ∈ Φ.reflexField) :
+    conj x ∈ Φ.reflexField := by
+  rw [reflexField_def] at hx
+  induction hx using IntermediateField.adjoin_induction with
+  | mem x hx =>
+    obtain ⟨a, rfl⟩ := hx
+    rw [← typeTrace_star, ← reflexField_star Φ]
+    exact typeTrace_mem_reflexField _ a
+  | algebraMap r => simp
+  | add x y _ _ hx hy => simpa using add_mem hx hy
+  | inv x _ hx => simpa using inv_mem hx
+  | mul x y _ _ hx hy => simpa using mul_mem hx hy
+
+/-- **Complex conjugation on the reflex field**, the automorphism `x ↦ conj x` of `E*`. -/
+@[expose] noncomputable def reflexFieldConj (Φ : CMType E) : Gal(Φ.reflexField/ℚ) where
+  toFun x := ⟨conj (x : ℂ), Φ.conj_mem_reflexField x.property⟩
+  invFun x := ⟨conj (x : ℂ), Φ.conj_mem_reflexField x.property⟩
+  left_inv x := Subtype.ext (Complex.conj_conj _)
+  right_inv x := Subtype.ext (Complex.conj_conj _)
+  map_mul' x y := Subtype.ext (map_mul conj (x : ℂ) y)
+  map_add' x y := Subtype.ext (map_add conj (x : ℂ) y)
+  commutes' r := Subtype.ext (by simp)
+
+@[simp]
+theorem coe_reflexFieldConj_apply (Φ : CMType E) (x : Φ.reflexField) :
+    (Φ.reflexFieldConj x : ℂ) = conj (x : ℂ) :=
+  rfl
+
+/-- Every automorphism `σ` of `ℂ` commutes with complex conjugation on the reflex field: on a type
+trace both `σ ∘ ι` and `ι ∘ σ` give the type trace of `σ(ιΦ) = ι(σΦ)`. -/
+theorem apply_conj_eq_conj_apply [StarCompCommute E] (Φ : CMType E) (σ : RingAut ℂ) {x : ℂ}
+    (hx : x ∈ Φ.reflexField) : σ (conj x) = conj (σ x) := by
+  rw [reflexField_def] at hx
+  induction hx using IntermediateField.adjoin_induction with
+  | mem x hx =>
+    obtain ⟨a, rfl⟩ := hx
+    rw [← typeTrace_star, ← typeTrace_smul_ringAut, ← typeTrace_smul_ringAut, ← star_smul,
+      typeTrace_star]
+  | algebraMap r => simp
+  | add x y _ _ hx hy => simp only [map_add, hx, hy]
+  | inv x _ hx => simp only [map_inv₀, hx]
+  | mul x y _ _ hx hy => simp only [map_mul, hx, hy]
+
+/-- Complex conjugation on the reflex field is the conjugation of every complex embedding `ρ` of
+the reflex field: `conj ∘ ρ = ρ ∘ ι`, since `ρ` extends to an automorphism of `ℂ`. -/
+theorem isConj_reflexFieldConj [StarCompCommute E] [Algebra ℚ E] [FiniteDimensional ℚ E]
+    (Φ : CMType E) (ρ : Φ.reflexField →+* ℂ) : IsConj ρ Φ.reflexFieldConj := by
+  obtain ⟨σ, hσ⟩ := IntermediateField.exists_ringEquiv_apply_eq_of_isAlgebraic Φ.reflexField ρ
+  refine RingHom.ext fun x ↦ ?_
+  rw [conjugate_coe_eq, RingHom.comp_apply, ← hσ, ← hσ]
+  exact (Φ.apply_conj_eq_conj_apply σ x.property).symm
+
+/-- Complex conjugation is not the identity on the reflex field of a CM type on a ring with a
+complex embedding: it would then preserve `Φ`, whereas `ιΦ` is the complement of `Φ`. -/
+theorem reflexFieldConj_ne_one [Nonempty (E →+* ℂ)] (Φ : CMType E) : Φ.reflexFieldConj ≠ 1 := by
+  intro h
+  have hfix : (Complex.conjAe.restrictScalars ℚ : ℂ ≃ₐ[ℚ] ℂ) ∈ Φ.reflexField.fixingSubgroup := by
+    rw [IntermediateField.mem_fixingSubgroup_iff]
+    intro x hx
+    simpa using congrArg Subtype.val (AlgEquiv.ext_iff.mp h ⟨x, hx⟩)
+  obtain ⟨φ⟩ := ‹Nonempty (E →+* ℂ)›
+  have := (Φ.mem_fixingSubgroup_reflexField_iff _).mp hfix φ
+  rw [show ((Complex.conjAe.restrictScalars ℚ : ℂ ≃ₐ[ℚ] ℂ) : ℂ →+* ℂ).comp φ = star φ from
+    RingHom.ext fun _ ↦ rfl, star_mem_iff] at this
+  exact (iff_not_self this.symm).elim
+
+end FiniteEmbeddings
+
+section FiniteDimensional
+
+variable [Algebra ℚ E] [FiniteDimensional ℚ E] [StarCompCommute E] [Nonempty (E →+* ℂ)]
+
+/-- The reflex field of a CM type on a finite-dimensional `ℚ`-algebra with a complex embedding,
+on which automorphisms of `ℂ` commute with complex conjugation, is totally complex. -/
+theorem isTotallyComplex_reflexField (Φ : CMType E) : IsTotallyComplex Φ.reflexField :=
+  ⟨fun w ↦ InfinitePlace.isComplex_iff.mpr <|
+    (isConj_ne_one_iff (Φ.isConj_reflexFieldConj w.embedding)).mp Φ.reflexFieldConj_ne_one⟩
+
+/-- **The reflex field is a CM field.** For a CM type on a finite-dimensional `ℚ`-algebra with a
+complex embedding, on which automorphisms of `ℂ` commute with complex conjugation, such as a
+nonzero finite product of CM fields, the reflex field is a CM field, with complex conjugation
+`TauCeti.CMType.reflexFieldConj`. -/
+theorem isCMField_reflexField (Φ : CMType E) : IsCMField Φ.reflexField :=
+  have := Φ.isTotallyComplex_reflexField
+  TauCeti.NumberField.IsCMField.of_forall_isConj _ Φ.isConj_reflexFieldConj
+
+end FiniteDimensional
+
+/-- **The reflex field of a CM type on a CM algebra is a CM number field.** For a nonempty finite
+product `E = ∏ i, F i` of CM number fields and a CM type `Φ` on `E`, the reflex field `E*` is a
+number field and a CM field. -/
+theorem reflexField_isCMField {ι : Type*} [Finite ι] [Nonempty ι] (F : ι → Type*)
+    [∀ i, Field (F i)] [∀ i, NumberField (F i)] [∀ i, IsCMField (F i)] (Φ : CMType (∀ i, F i)) :
+    NumberField Φ.reflexField ∧ IsCMField Φ.reflexField := by
+  obtain ⟨i⟩ := ‹Nonempty ι›
+  obtain ⟨φ⟩ := (inferInstance : Nonempty (F i →+* ℂ))
+  have : Nonempty ((∀ i, F i) →+* ℂ) := ⟨φ.comp (Pi.evalRingHom F i)⟩
+  exact ⟨inferInstance, Φ.isCMField_reflexField⟩
+
+end TauCeti.CMType
