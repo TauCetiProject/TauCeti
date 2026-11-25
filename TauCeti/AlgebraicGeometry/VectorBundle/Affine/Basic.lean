@@ -271,6 +271,15 @@ def tildePiIsoFree (d : ℕ) :
     (Finsupp.linearEquivFunOnFinite R R _).symm).toModuleIso ≪≫ tildeFinsupp _ ≪≫
     eqToIso (free_obj (Spec R) _).symm
 
+variable (R) in
+/-- `tildePiIsoFree` is the sheafification of `R^d ≃ (ULift (Fin d) →₀ R)` followed by
+`tildeFinsupp`. -/
+lemma tildePiIsoFree_hom (d : ℕ) :
+    (tildePiIsoFree R d).hom = (tilde.functor R).map (LinearEquiv.funCongrLeft R R Equiv.ulift ≪≫ₗ
+      (Finsupp.linearEquivFunOnFinite R R _).symm).toModuleIso.hom ≫ (tildeFinsupp _).hom ≫
+        eqToHom (free_obj (Spec R) _).symm :=
+  (rfl)
+
 /-- The dimension of a free module of global sections of a finite locally free sheaf on `Spec R`
 is the rank of the sheaf, at any point. -/
 theorem finrank_moduleSpecΓ (E : FiniteLocallyFreeSheaf (Spec R))
