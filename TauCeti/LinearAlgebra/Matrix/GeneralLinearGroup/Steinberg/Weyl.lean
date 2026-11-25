@@ -51,7 +51,8 @@ commutator formula `⁅h_{ij}(u), h_{ik}(v)⁆ = h_{ij}(u) h_{ij}(v) h_{ij}(v u)
 * `TauCeti.IndexedSteinbergGroup.commutatorElement_h_h_inv_of_add_eq_one`,
   `TauCeti.IndexedSteinbergGroup.commutatorElement_h_neg_h_inv`: the exact relations
   `{u, v⁻¹} = 1` for `u + v = 1` and `{-u, u⁻¹} = 1`.
-* `TauCeti.IndexedSteinbergGroup.toGL_h`: the image of `h_{ij}(u)` is a diagonal matrix.
+* `TauCeti.IndexedSteinbergGroup.toGL_h`, `TauCeti.SteinbergGroup.toStableGL_h`: the image of
+  `h_{ij}(u)` in `GL ι R`, respectively `GL_∞(R)`, is a diagonal matrix.
 * `TauCeti.SteinbergGroup.commutatorElement_h_h_mem_ker`: over a commutative ring, symbols lie in
   `K₂(R) = ker (St(R) → GL_∞(R))`.
 * `TauCeti.SteinbergGroup.commutatorElement_h_h_mul_left`,
@@ -409,6 +410,34 @@ end FiniteIndex
 
 end IndexedSteinbergGroup
 
+namespace SteinbergGroup
+
+open IndexedSteinbergGroup
+
+variable {R : Type*} [Ring R]
+
+/-- The canonical map `Stₙ(R) →* St(R)` sends `w_{ij}(u)` to `w_{ij}(u)`. -/
+@[simp]
+theorem ofFin_w {n : ℕ} {i j : Fin n} (hij : i ≠ j) (u : Rˣ) :
+    ofFin R n (w hij u) = w (Fin.val_ne_of_ne hij) u := by
+  simp [w_def]
+
+/-- The canonical map `Stₙ(R) →* St(R)` sends `h_{ij}(u)` to `h_{ij}(u)`. -/
+@[simp]
+theorem ofFin_h {n : ℕ} {i j : Fin n} (hij : i ≠ j) (u : Rˣ) :
+    ofFin R n (h hij u) = h (Fin.val_ne_of_ne hij) u := by
+  simp [h_def]
+
+/-- The image of `h_{ij}(u)` in `GL_∞(R)` is the class of the diagonal matrix in `GL_n(R)` with `u`
+at `i`, `u⁻¹` at `j` and `1` elsewhere, for any `n` with `i, j < n`. -/
+theorem toStableGL_h {i j : ℕ} (hij : i ≠ j) (u : Rˣ) {n : ℕ} (hi : i < n) (hj : j < n) :
+    toStableGL R (h hij u) = StableGeneralLinearGroup.of R n
+      (diagGL (Pi.mulSingle (⟨i, hi⟩ : Fin n) u * Pi.mulSingle (⟨j, hj⟩ : Fin n) u⁻¹)) := by
+  have hij' : (⟨i, hi⟩ : Fin n) ≠ ⟨j, hj⟩ := fun e ↦ hij (congrArg Fin.val e)
+  rw [← toGL_h hij', ← toStableGL_ofFin, ofFin_h]
+
+end SteinbergGroup
+
 namespace IndexedSteinbergGroup
 
 variable {ι R : Type*} [CommRing R]
@@ -512,15 +541,10 @@ variable {R : Type*} [CommRing R]
 theorem commutatorElement_h_h_mem_ker {i j k l : ℕ} (hij : i ≠ j) (hkl : k ≠ l) (u v : Rˣ) :
     ⁅h hij u, h hkl v⁆ ∈ (toStableGL R).ker := by
   set n := max (max i j) (max k l) + 1
-  have hi : i < n := by omega
-  have hj : j < n := by omega
-  have hk : k < n := by omega
-  have hl : l < n := by omega
-  have hij' : (⟨i, hi⟩ : Fin n) ≠ ⟨j, hj⟩ := fun e ↦ hij (congrArg Fin.val e)
-  have hkl' : (⟨k, hk⟩ : Fin n) ≠ ⟨l, hl⟩ := fun e ↦ hkl (congrArg Fin.val e)
-  have hofFin : ofFin R n ⁅h hij' u, h hkl' v⁆ = ⁅h hij u, h hkl v⁆ := by
-    simp [map_commutatorElement, h_def, w_def]
-  rw [← hofFin, MonoidHom.mem_ker, toStableGL_ofFin, toGL_commutatorElement_h_h, map_one]
+  rw [MonoidHom.mem_ker, map_commutatorElement, toStableGL_h hij u (n := n) (by omega) (by omega),
+    toStableGL_h hkl v (n := n) (by omega) (by omega), ← map_commutatorElement,
+    ← map_commutatorElement, commutatorElement_eq_one_iff_commute.mpr (Commute.all _ _), map_one,
+    map_one]
 
 /-- Over a commutative ring, the commutator of two diagonal elements of `St(R)` is central. -/
 theorem commutatorElement_h_h_mem_center {i j k l : ℕ} (hij : i ≠ j) (hkl : k ≠ l) (u v : Rˣ) :
