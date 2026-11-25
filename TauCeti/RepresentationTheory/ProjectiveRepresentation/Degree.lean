@@ -56,9 +56,8 @@ theorem IsProjectiveRep.finrank_dvd_card [Nontrivial V]
     LinearEquiv.automorphismGroup.toLinearMapMonoidHom.comp π
   have hσ (x : (projectiveLiftingFactorSet k G).Extension) (v : V) :
       σ x v = (c x : k) • ρ (FactorSet.rightHom (projectiveLiftingFactorSet k G) x) v := by
-    change π x v = _
-    rw [hπ]
-    rfl
+    rw [MonoidHom.comp_apply, LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply,
+      LinearEquiv.coe_coe, hπ, LinearEquiv.trans_apply, LinearEquiv.smulOfUnit_apply]
   have : σ.IsIrreducible := by
     refine ⟨fun T => ?_⟩
     have hT : ∀ g, ∀ w ∈ T.toSubmodule, ρ g w ∈ T.toSubmodule := fun g w hw => by
