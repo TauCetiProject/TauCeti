@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.DiscreteSubset
 import Mathlib.Order.Interval.Set.Infinite
 import TauCeti.Analysis.Complex.Basic
+import TauCeti.Topology.Codiscrete
 import TauCeti.Topology.MetricSpace.NearestPoint
 
 /-!
@@ -127,9 +128,8 @@ theorem exists_isolating_disc_or_rightmost_real {Z : Set ℂ} {σ θ : ℝ}
       have hc' := Complex.re_le_norm (c - z)
       simp only [sub_re, hc] at hc'
       linarith only [hc'.trans hz', hR]
-    have h := (isCompact_closedBall c R).finite_sdiff_of_mem_codiscreteWithin
-      (codiscreteWithin_mono hsub hZ)
-    simpa only [Set.sdiff_compl, inter_comm] using h
+    simpa only [inter_comm] using
+      (isCompact_closedBall c R).finite_inter_of_compl_mem_codiscreteWithin hsub hZ
   have hfin' := hfin (σ : ℂ) (ofReal_re σ)
   -- Cap the nearest distance at `R`, so only points in the compact search disc matter.
   have hmin : ∃ D ≤ R, (∀ p ∈ Z, D ≤ dist (σ : ℂ) p) ∧

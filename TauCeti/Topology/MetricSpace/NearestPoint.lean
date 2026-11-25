@@ -19,8 +19,9 @@ public section
 
 open Metric Set
 
-/-- If a point strictly inside a closed ball is closer to the centre than every other point of
-`S` in that ball, a smaller open ball intersects `S` in that point alone. -/
+/-- If `S` has finitely many points in `closedBall c R`, and `p ∈ S` lies strictly inside that
+ball and strictly closer to `c` than every other such point, then some open ball `ball c r` with
+`dist p c < r ≤ R` meets `S` only in `p`. -/
 theorem Set.Finite.exists_inter_ball_eq_singleton_of_forall_dist_lt {X : Type*}
     [PseudoMetricSpace X] {S : Set X} {c p : X} {R : ℝ} (hS : (S ∩ closedBall c R).Finite)
     (hp : p ∈ S) (hd : dist p c < R)
