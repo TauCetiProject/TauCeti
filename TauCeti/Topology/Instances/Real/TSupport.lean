@@ -17,7 +17,9 @@ A function on `ℝ` whose topological support is contained in `(0, R)` has its s
 
 A function on a strip `ℝ × X` vanishing whenever the first coordinate lies outside `(a, b)` has
 its topological support in the closed strip `[a, b] × X`, so it vanishes near every point outside
-that strip.
+that strip. Conversely, a function with compact support in the image of a half-strip
+`(R, ∞) × X`, along which a continuous function grows strictly with the first coordinate, vanishes
+on the half-strip beyond some `b`.
 
 A function whose positive closed support `tsupport f ∩ Ioi 0` is compact has that support inside
 an interval `[a, b]` with `0 < a`, and the reflection `y ↦ f y⁻¹` again has compact positive
@@ -28,6 +30,9 @@ closed support. Such a function vanishes eventually at `∞` and on a right neig
 * `TauCeti.exists_lt_tsupport_subset_Ioo`: the support shrinks to `(0, R')` with `R' < R`.
 * `TauCeti.eventuallyEq_zero_of_forall_notMem_Ioo_of_fst_notMem_Icc`: a function on `ℝ × X`
   vanishing for `s ∉ (a, b)` vanishes near every point whose first coordinate is outside `[a, b]`.
+* `HasCompactSupport.exists_forall_notMem_Ioo_comp_eq_zero`: a function with compact support in
+  the image `ψ ((R, ∞) × X)` of a map along which a continuous function grows strictly with the
+  first coordinate vanishes along `ψ` outside a band `(R, b) × X`.
 * `IsCompact.exists_pos_tsupport_inter_Ioi_subset_Icc`: a compact positive closed support lies in
   some `[a, b]` with `0 < a`.
 * `IsCompact.eventuallyEq_zero_atTop_of_tsupport_inter_Ioi`,
@@ -66,6 +71,32 @@ theorem eventuallyEq_zero_of_forall_notMem_Ioo_of_fst_notMem_Icc {X : Type*} [To
   notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hz <|
     closure_minimal (t := Prod.fst ⁻¹' Icc a b) (Function.support_subset_iff'.2 fun w hw ↦
       hf w.1 w.2 fun h ↦ hw (Ioo_subset_Icc_self h)) (isClosed_Icc.preimage continuous_fst) h
+
+/-- Let a continuous function `g` read along a map `ψ : ℝ × X → Y` as a strictly increasing
+function `h` of the first coordinate. A function with compact support in `ψ ((R, ∞) × X)`, on whose
+support `g` stays below some value of `h`, vanishes along `ψ` for first coordinates outside an
+interval `(R, b)`. -/
+theorem _root_.HasCompactSupport.exists_forall_notMem_Ioo_comp_eq_zero {X Y : Type*}
+    [TopologicalSpace Y] {ψ : ℝ × X → Y} {g : Y → ℝ} (hg : Continuous g) {h : ℝ → ℝ}
+    (hh : StrictMono h) (hgψ : ∀ s x, g (ψ (s, x)) = h s) {f : Y → F} (hf : HasCompactSupport f)
+    {R : ℝ} (hfR : tsupport f ⊆ ψ '' (Ioi R ×ˢ univ)) (hlt : ∀ y ∈ tsupport f, ∃ s, g y < h s) :
+    ∃ b, ∀ s x, s ∉ Ioo R b → f (ψ (s, x)) = 0 := by
+  rcases (tsupport f).eq_empty_or_nonempty with he | hne
+  · exact ⟨R, fun s x _ ↦ image_eq_zero_of_notMem_tsupport (by simp [he])⟩
+  obtain ⟨y₀, hy₀, hmax⟩ := hf.isCompact.exists_isMaxOn hne hg.continuousOn
+  obtain ⟨b, hb⟩ := hlt y₀ hy₀
+  refine ⟨b, fun s x hs ↦ image_eq_zero_of_notMem_tsupport fun hmem ↦ ?_⟩
+  rcases le_or_gt s R with hsR | hsR
+  · -- The point `ψ (s, x)` is also `ψ (s', x')` with `s' > R`, and `g` tells `s = s'`.
+    obtain ⟨⟨s', x'⟩, ⟨hs', -⟩, heq⟩ := hfR hmem
+    have h' := hgψ s' x'
+    rw [heq, hgψ s x] at h'
+    exact (not_lt.2 hsR) (hh.injective h' ▸ hs')
+  · -- Beyond `b`, the value `h s` exceeds the maximum of `g` on the support.
+    have hbs : b ≤ s := not_lt.1 fun h ↦ hs ⟨hsR, h⟩
+    have h' : g (ψ (s, x)) ≤ g y₀ := hmax hmem
+    rw [hgψ] at h'
+    exact (not_lt.2 h') (hb.trans_le (hh.monotone hbs))
 
 /-- A compact positive closed support `tsupport f ∩ Ioi 0` lies in an interval `[a, b]` with
 `0 < a`. -/

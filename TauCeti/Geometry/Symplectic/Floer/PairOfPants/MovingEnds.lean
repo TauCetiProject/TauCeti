@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capping
 import TauCeti.Geometry.Symplectic.Floer.Pullback
+import TauCeti.Analysis.Complex.ThricePuncturedSphere.MovingEnds
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Geometry.Manifold.Algebra.Monoid
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
@@ -358,6 +359,25 @@ theorem puncturedSpherePerturbation_cylindricalEndLift_inf
   rw [puncturedSpherePerturbation_cylindricalEndLift_inf_of_le hout hH (by linarith),
     smoothTransition.one_of_one_le (by linarith), one_mul]
 
+open TauCeti.Complex (realChart) in
+/-- On the part `s > 0` of the input end `i`, the datum of a sphere with moving input ends is the
+continuation datum `β(s - 1) H_i(t) dt` in the coordinates of the end lift
+`z ↦ c i + a i φ₀(z)`. -/
+theorem perturbationPullback_realChart_puncturedSpherePerturbation
+    (hH : ∀ i, Periodic (H i) 1) (ha : ∀ i, a i ≠ 0)
+    (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) (i : ι) {w : ℝ × ℝ} (hw : 0 < w.1)
+    (v : ℝ × ℝ) (x : M) :
+    perturbationPullback (realChart fun z ↦ c i + a i * zero.cylindricalEndLift z)
+        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
+          Complex.I) v w x =
+      (Complex.equivRealProdCLM.symm v).im * (smoothTransition (w.1 - 1) * H i w.2 x) := by
+  rw [perturbationPullback_realChart _ (hasDerivAt_add_mul_cylindricalEndLift _ _ _), mul_assoc,
+    puncturedSpherePerturbation_cylindricalEndLift_of_pos hsep hout (hH i) (ha i)
+      (by simpa using hw)]
+  simp
+
 end Sphere
 
 section Smooth
@@ -518,6 +538,22 @@ theorem contDiffAt_puncturedSpherePerturbation_prod {ι : Type*} [Fintype ι] {n
     (contMDiff_prod_modelWithCornersSelf_iff.2 hHouts.contMDiff) ha hw x).comp (w, x)
     (f := fun p : ℂ × V => ((c, a), p)) (contMDiffAt_const.prodMk contMDiffAt_id)
   exact (contMDiffAt_prod_modelWithCornersSelf_iff.1 h).contDiffAt
+
+/-- Off the centers of the input ends, the components of the datum are `C^n` jointly in the domain
+point, in real coordinates, and the target point, for period-one `C^n` Hamiltonians and nonzero
+scales. -/
+theorem contDiffAt_uncurry_puncturedSpherePerturbation {ι : Type*} [Fintype ι] {n : ℕ∞}
+    {H : ι → ℝ → V → ℝ} {Hout : ℝ → V → ℝ} (hH : ∀ i, Periodic (H i) 1)
+    (hHs : ∀ i, ContDiff ℝ n (uncurry (H i))) (hHout : Periodic Hout 1)
+    (hHouts : ContDiff ℝ n (uncurry Hout)) {c a : ι → ℂ} (ha : ∀ i, a i ≠ 0) {z : ℝ × ℝ}
+    (hz : ∀ i, Complex.equivRealProdCLM.symm z ≠ c i) (x : V) (v : ℂ) :
+    ContDiffAt ℝ n
+      (uncurry fun z x ↦
+        puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x v) (z, x) :=
+  ((contDiffAt_puncturedSpherePerturbation_prod hH hHs hHout hHouts ha hz x).comp
+    (f := fun p : (ℝ × ℝ) × V ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) (z, x)
+    ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
+      contDiff_snd).contDiffAt).clm_apply contDiffAt_const
 
 /-- For a family of configurations `p ↦ (c p, a p)` over a normed space of parameters, the
 perturbation datum is `C^n` jointly in the parameter, the domain point and the target point, at

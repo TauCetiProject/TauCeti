@@ -44,6 +44,9 @@ In the namespace `TauCeti.ThricePuncturedSphere`:
 * `hasDerivAt_add_mul_cylindricalEndLift`: the complex derivative of the end lift of an input end.
 * `injOn_add_mul_cylindricalEndLift` and `injOn_realChart_add_mul_cylindricalEndLift`: the end
   lift of an input end is injective on every horizontal strip of height one.
+* `realChart_add_mul_cylindricalEndLift_add_one` and
+  `fderiv_realChart_add_mul_cylindricalEndLift_ne_zero`: in real coordinates it has period one
+  in the angular coordinate and nonzero derivative, so it is a holomorphic chart of the end.
 * `add_mul_cylindricalEndLift_mem_puncturedSphereTruncation` and
   `cylindricalEndLift_inf_mem_puncturedSphereTruncation`: the end pieces lie in `Σ_R`.
 * `exists_add_mul_cylindricalEndLift_eq`: the converse for the input ends; for the output end it
@@ -263,5 +266,26 @@ theorem injOn_realChart_add_mul_cylindricalEndLift {c a : ℂ} (ha : a ≠ 0) {S
   injOn_realChart <| (injOn_add_mul_cylindricalEndLift ha t₀).mono <| by
     rintro _ ⟨p, hp, rfl⟩
     simpa using hp.2
+
+/-- The end lift `z ↦ c + a φ₀(z)` of an input end, in real coordinates, has period one in the
+angular coordinate. -/
+theorem realChart_add_mul_cylindricalEndLift_add_one (c a : ℂ) (s t : ℝ) :
+    realChart (fun z ↦ c + a * zero.cylindricalEndLift z) (s, t + 1) =
+      realChart (fun z ↦ c + a * zero.cylindricalEndLift z) (s, t) := by
+  have h := zero.periodic_cylindricalEndLift s t
+  simp only [Complex.ofReal_add, Complex.ofReal_one] at h
+  rw [TauCeti.Complex.realChart_mk, TauCeti.Complex.realChart_mk, Complex.ofReal_add,
+    Complex.ofReal_one, h]
+
+/-- The end lift `z ↦ c + a φ₀(z)` of an input end with nonzero scale `a`, in real coordinates,
+has nonzero derivative everywhere. -/
+theorem fderiv_realChart_add_mul_cylindricalEndLift_ne_zero {c a : ℂ} (ha : a ≠ 0)
+    (w : ℝ × ℝ) : fderiv ℝ (realChart fun z ↦ c + a * zero.cylindricalEndLift z) w ≠ 0 := by
+  intro h
+  have h₁ := congrArg (fun L ↦ L (Complex.equivRealProdCLM 1)) h
+  simp only [TauCeti.Complex.fderiv_realChart_apply (hasDerivAt_add_mul_cylindricalEndLift _ _ _),
+    ContinuousLinearEquiv.symm_apply_apply, mul_one, zero_apply,
+    map_eq_zero_iff _ Complex.equivRealProdCLM.injective] at h₁
+  exact mul_ne_zero ha (zero.deriv_cylindricalEndLift_ne_zero _) h₁
 
 end TauCeti.ThricePuncturedSphere
