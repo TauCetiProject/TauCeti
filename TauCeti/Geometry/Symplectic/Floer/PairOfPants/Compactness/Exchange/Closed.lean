@@ -37,7 +37,9 @@ applies once its hypotheses are checked for the family.
   solution exceeds its topological energy `∫_S u^*ω + ∑ q, ±∫₀¹ H_q(t, x_q(t)) dt` by at most
   `B₀ + B₁ + B_∞`
   (`IsNondegenerate.abs_integral_floerEnergyDensity_exchangePerturbation_sub_le` in the namespace
-  `TauCeti.SmoothTwoForm`), and the energy over a part of `S` is at most the energy over `S`.
+  `TauCeti.SmoothTwoForm`), and the energy over a part of `S` is at most the energy over `S`, so it
+  is at most `A + B₀ + B₁ + B_∞` when the topological energy is at most `A`
+  (`IsNondegenerate.setIntegral_floerEnergyDensity_exchangePerturbation_le`).
 
 As in `TauCeti.Geometry.Symplectic.Floer.Compactness.Closed`, sizes in `M` are measured through an
 injective differentiable map `e : M → F` into a normed space, such as the Whitney embedding of a
@@ -187,14 +189,11 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
   have hΩS : Ω ⊆ S := hΩD.trans hDS
   -- The Floer energy over `Ω` is at most the energy over `S`, which exceeds the topological energy
   -- by at most `B₀ + B₁ + B_∞`.
-  refine hconv hΩ hΩD hcC (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hfl k z (hΩS hz))
-    (fun k ↦ (hint k).mono_set hΩS) fun k ↦ ?_
-  have habs := hω.abs_integral_floerEnergyDensity_exchangePerturbation_sub_le hH
-    (fun q ↦ (hHs q).of_le (by norm_num)) hB (hC₀₁ (hcC k)).1 (hC₀₁ (hcC k)).2
-    ((hu k).of_le (by norm_num)) (hx k) (hxinf k) (hint k) (harea k)
-  refine (hω.setIntegral_floerEnergyDensity_mono_set hΩS
-    isOpen_thricePuncturedSphereReal.measurableSet (hint k) (fun z hz ↦ hJt _ (hcC k) z hz _)
-    (hfl k)).trans ?_
-  linarith [(abs_sub_le_iff.1 habs).1, htop k]
+  exact hconv hΩ hΩD hcC (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hfl k z (hΩS hz))
+    (fun k ↦ (hint k).mono_set hΩS) fun k ↦
+      hω.setIntegral_floerEnergyDensity_exchangePerturbation_le hH
+        (fun q ↦ (hHs q).of_le (by norm_num)) hB (hC₀₁ (hcC k)).1 (hC₀₁ (hcC k)).2
+        ((hu k).of_le (by norm_num)) (hx k) (hxinf k) (hint k) (harea k)
+        (fun z hz ↦ hJt _ (hcC k) z hz _) (hfl k) (htop k) hΩS
 
 end TauCeti.SmoothTwoForm.IsNondegenerate
