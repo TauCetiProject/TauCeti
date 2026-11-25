@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Field.Rat
 public import Mathlib.Data.Rat.Cast.CharZero
 public import Mathlib.NumberTheory.Harmonic.Defs
 
@@ -14,7 +13,7 @@ public import Mathlib.NumberTheory.Harmonic.Defs
 
 Mathlib defines the harmonic number `harmonic n = ∑_{i < n} 1 / (i + 1)` as a rational number.
 This file records its cast to a characteristic-zero division ring as the corresponding sum
-(`TauCeti.cast_harmonic_eq_sum_range`) and its nonnegativity (`TauCeti.harmonic_nonneg`).
+(`TauCeti.cast_harmonic_eq_sum_range`), so that users need not unfold the definition.
 -/
 
 public section
@@ -29,13 +28,5 @@ theorem cast_harmonic_eq_sum_range {K : Type*} [DivisionRing K] [CharZero K] (n 
   | zero => simp
   | succ n ih =>
     rw [harmonic_succ, Rat.cast_add, Rat.cast_inv, Rat.cast_natCast, Finset.sum_range_succ, ih]
-
-/-- The harmonic numbers are nonnegative. -/
-theorem harmonic_nonneg (n : ℕ) : 0 ≤ harmonic n := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [harmonic_succ]
-    exact add_nonneg ih (inv_nonneg.2 (Nat.cast_nonneg _))
 
 end TauCeti

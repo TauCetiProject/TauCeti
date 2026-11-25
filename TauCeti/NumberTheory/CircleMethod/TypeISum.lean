@@ -293,11 +293,13 @@ private theorem sum_block_bounds_le {q M : ℕ} (hq : 0 < q) (hM : 0 < M) {X : �
     rw [div_le_div_iff₀ hL hq']
     nlinarith
   have e1 : 2 * X / L * harmonic J ≤ 4 * X / q * Λ :=
-    mul_le_mul hXL hHJ (Rat.cast_nonneg.2 (harmonic_nonneg J)) (by positivity)
+    mul_le_mul hXL hHJ ((Real.log_nonneg (by simp)).trans (log_add_one_le_harmonic J))
+      (by positivity)
   have e2 : (J : ℝ) * (4 * q * harmonic q) ≤ 8 * M * Λ := by
     calc (J : ℝ) * (4 * q * harmonic q) = J * (4 * q) * harmonic q := by ring
       _ ≤ 8 * M * Λ :=
-        mul_le_mul (by nlinarith) hHq (Rat.cast_nonneg.2 (harmonic_nonneg q)) (by positivity)
+        mul_le_mul (by nlinarith) hHq
+          ((Real.log_nonneg (by simp)).trans (log_add_one_le_harmonic q)) (by positivity)
   have e3 : 2 * (2 * (q : ℝ)) + 4 * q * harmonic q ≤ 8 * q * Λ := by nlinarith
   have hXq : 0 ≤ X / q * Λ := mul_nonneg (by positivity) (by linarith)
   calc 2 * X / L * harmonic J + J * (4 * q * harmonic q) + (2 * (2 * q) + 4 * q * harmonic q)
