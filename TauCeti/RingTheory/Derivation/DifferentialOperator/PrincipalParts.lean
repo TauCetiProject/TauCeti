@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.TensorProduct.Lift
 public import Mathlib.RingTheory.Kaehler.Basic
 public import TauCeti.RingTheory.Derivation.DifferentialOperator.Basic
+import TauCeti.RingTheory.TensorProduct.CentralBaseChange
 
 /-!
 # Modules of principal parts and universal factorization of differential operators
@@ -651,50 +652,39 @@ section ModuleAction
 
 variable (M : Type*) [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
 
-/-- The `A`-algebra action of `A ⊗[R] A` on `A ⊗[R] M` sending `a ⊗ₜ b` to
-`c ⊗ₜ x ↦ (a * c) ⊗ₜ (b • x)`. -/
-private def tensorLsmul : A ⊗[R] A →ₐ[A] Module.End A (A ⊗[R] M) :=
-  Algebra.TensorProduct.lift (Algebra.ofId A _)
-    ((Module.End.baseChangeHom R A M).comp (Algebra.lsmul R R M))
-    fun a _ ↦ by rw [Algebra.ofId_apply]; exact Algebra.commute_algebraMap_left a _
-
-private theorem tensorLsmul_tmul_tmul (a b c : A) (x : M) :
-    tensorLsmul R A M (a ⊗ₜ[R] b) (c ⊗ₜ[R] x) = (a * c) ⊗ₜ[R] (b • x) := by
-  simp [tensorLsmul, TensorProduct.liftAux_tmul, Algebra.algebraMap_eq_smul_one,
-    TensorProduct.smul_tmul']
-
-private theorem tensorLsmul_diag (a : A) :
-    tensorLsmul R A M ((1 : A) ⊗ₜ[R] a - a ⊗ₜ[R] (1 : A)) = diagDiff R a := by
+private theorem lsmul_diag (a : A) :
+    CentralBaseChange.lsmul R A A M ((1 : A) ⊗ₜ[R] a - a ⊗ₜ[R] (1 : A)) = diagDiff R a := by
   ext x
-  simp [map_sub, tensorLsmul_tmul_tmul]
+  simp [map_sub, CentralBaseChange.lsmul_tmul, TensorProduct.smul_tmul']
 
-private theorem commute_tensorLsmul_diagDiff (u : A ⊗[R] A) (a : A) :
-    Commute (tensorLsmul R A M u) (diagDiff R a) := by
-  rw [← tensorLsmul_diag]
-  exact (Commute.all u _).map (tensorLsmul R A M)
+private theorem commute_lsmul_diagDiff (u : A ⊗[R] A) (a : A) :
+    Commute (CentralBaseChange.lsmul R A A M u) (diagDiff R a) := by
+  rw [← lsmul_diag]
+  exact (Commute.all u _).map (CentralBaseChange.lsmul R A A M)
 
-private theorem map_principalPartsRel_le_of_tensorLsmul (m : ℕ) (u : A ⊗[R] A) :
-    (principalPartsRel R A M m).map (tensorLsmul R A M u) ≤ principalPartsRel R A M m := by
+private theorem map_principalPartsRel_le_of_lsmul (m : ℕ) (u : A ⊗[R] A) :
+    (principalPartsRel R A M m).map (CentralBaseChange.lsmul R A A M u) ≤
+      principalPartsRel R A M m := by
   induction m with
   | zero =>
     rw [principalPartsRel_zero, Submodule.map_iSup]
     refine iSup_mono fun a ↦ ?_
     rintro _ ⟨_, ⟨z, rfl⟩, rfl⟩
-    have hcomm := congr($((commute_tensorLsmul_diagDiff R A M u a).eq) z)
+    have hcomm := congr($((commute_lsmul_diagDiff R A M u a).eq) z)
     simp only [mul_apply_eq_comp] at hcomm
-    exact ⟨tensorLsmul R A M u z, hcomm.symm⟩
+    exact ⟨CentralBaseChange.lsmul R A A M u z, hcomm.symm⟩
   | succ m ih =>
     rw [principalPartsRel_succ, Submodule.map_iSup]
     refine iSup_mono fun a ↦ ?_
     rintro _ ⟨_, ⟨z, hz, rfl⟩, rfl⟩
-    have hcomm := congr($((commute_tensorLsmul_diagDiff R A M u a).eq) z)
+    have hcomm := congr($((commute_lsmul_diagDiff R A M u a).eq) z)
     simp only [mul_apply_eq_comp] at hcomm
     rw [hcomm]
     exact Submodule.mem_map_of_mem (ih (Submodule.mem_map_of_mem hz))
 
-private theorem tensorLsmul_mem_of_mem_ideal_pow :
+private theorem lsmul_mem_of_mem_ideal_pow :
     ∀ (m : ℕ) {u : A ⊗[R] A}, u ∈ (KaehlerDifferential.ideal R A) ^ (m + 1) →
-      ∀ z : A ⊗[R] M, tensorLsmul R A M u z ∈ principalPartsRel R A M m
+      ∀ z : A ⊗[R] M, CentralBaseChange.lsmul R A A M u z ∈ principalPartsRel R A M m
   | 0, u, hu, z => by
     rw [pow_one, ← Submodule.restrictScalars_mem A,
       ← KaehlerDifferential.submodule_span_range_eq_ideal] at hu
@@ -702,7 +692,7 @@ private theorem tensorLsmul_mem_of_mem_ideal_pow :
       (fun _ _ _ _ ih₁ ih₂ ↦ by rw [map_add, LinearMap.add_apply]; exact add_mem ih₁ ih₂)
       (fun c _ _ ih₁ ↦ by rw [map_smul, LinearMap.smul_apply]; exact Submodule.smul_mem _ c ih₁) hu
     rintro _ ⟨a, rfl⟩
-    rw [tensorLsmul_diag]
+    rw [lsmul_diag]
     exact diagDiff_mem_principalPartsRel_zero a z
   | m + 1, u, hu, z => by
     rw [pow_succ'] at hu
@@ -716,19 +706,20 @@ private theorem tensorLsmul_mem_of_mem_ideal_pow :
       (fun c _ _ ih₁ ↦ by
         rw [smul_mul_assoc, map_smul, LinearMap.smul_apply]; exact Submodule.smul_mem _ c ih₁) hv
     rintro _ ⟨a, rfl⟩
-    rw [map_mul, mul_apply_eq_comp, tensorLsmul_diag]
-    exact diagDiff_mem_principalPartsRel_succ a (tensorLsmul_mem_of_mem_ideal_pow m hw z)
+    rw [map_mul, mul_apply_eq_comp, lsmul_diag]
+    exact diagDiff_mem_principalPartsRel_succ a (lsmul_mem_of_mem_ideal_pow m hw z)
 
 private def endOfTensor (m : ℕ) (u : A ⊗[R] A) : Module.End A (PrincipalParts R A M m) :=
-  (principalPartsRel R A M m).mapQ (principalPartsRel R A M m) (tensorLsmul R A M u)
-    (Submodule.map_le_iff_le_comap.1 (map_principalPartsRel_le_of_tensorLsmul R A M m u))
+  (principalPartsRel R A M m).mapQ (principalPartsRel R A M m) (CentralBaseChange.lsmul R A A M u)
+    (Submodule.map_le_iff_le_comap.1 (map_principalPartsRel_le_of_lsmul R A M m u))
 
 private theorem endOfTensor_mkQ (m : ℕ) (u : A ⊗[R] A) (z : A ⊗[R] M) :
-    endOfTensor R A M m u (mkQ R A M m z) = mkQ R A M m (tensorLsmul R A M u z) :=
+    endOfTensor R A M m u (mkQ R A M m z) = mkQ R A M m (CentralBaseChange.lsmul R A A M u z) :=
   Submodule.mapQ_apply _ _ _ z
 
 private theorem endOfTensor_jet (m : ℕ) (u : A ⊗[R] A) (x : M) :
-    endOfTensor R A M m u (jet R A M m x) = mkQ R A M m (tensorLsmul R A M u ((1 : A) ⊗ₜ[R] x)) :=
+    endOfTensor R A M m u (jet R A M m x) =
+      mkQ R A M m (CentralBaseChange.lsmul R A A M u ((1 : A) ⊗ₜ[R] x)) :=
   endOfTensor_mkQ R A M m u ((1 : A) ⊗ₜ[R] x)
 
 private def endOfTensorAlgHom (m : ℕ) :
@@ -754,7 +745,7 @@ def quotientIdealPowLsmul (m : ℕ) :
     fun u hu ↦ hom_ext fun x ↦ by
       rw [endOfTensorAlgHom_apply, LinearMap.zero_apply, endOfTensor_jet, ← LinearMap.mem_ker,
         ker_mkQ]
-      exact tensorLsmul_mem_of_mem_ideal_pow R A M m hu ((1 : A) ⊗ₜ[R] x)
+      exact lsmul_mem_of_mem_ideal_pow R A M m hu ((1 : A) ⊗ₜ[R] x)
 
 @[simp]
 theorem quotientIdealPowLsmul_mk_jet (m : ℕ) (a b : A) (x : M) :
@@ -762,7 +753,8 @@ theorem quotientIdealPowLsmul_mk_jet (m : ℕ) (a b : A) (x : M) :
       a • jet R A M m (b • x) := by
   rw [← Ideal.Quotient.mkₐ_eq_mk A, ← AlgHom.comp_apply, quotientIdealPowLsmul,
     Ideal.Quotient.liftₐ_comp, endOfTensorAlgHom_apply, jet_apply, endOfTensor_mkQ,
-    tensorLsmul_tmul_tmul, mul_one, mkQ_tmul]
+    CentralBaseChange.lsmul_tmul]
+  simp [TensorProduct.smul_tmul']
 
 end ModuleAction
 
