@@ -210,9 +210,9 @@ theorem isConnected_roomsAndPassages :
     have := passageWidth_le k
     have := roomSide_succ k
     rw [mem_inter_iff, mem_room, mem_passage]
+    simp only [toLp_fst, toLp_snd]
     rcases hj with rfl | rfl <;>
-      exact ⟨⟨⟨by simp; linarith, by simp; linarith⟩, ⟨by simp; linarith, by simp; linarith⟩⟩,
-        ⟨⟨by simp; linarith, by simp; linarith⟩, ⟨by simp; linarith, by simp; linarith⟩⟩⟩
+      refine ⟨⟨⟨?_, ?_⟩, ?_, ?_⟩, ⟨?_, ?_⟩, ?_, ?_⟩ <;> linarith
   rw [coe_roomsAndPassages]
   refine IsConnected.iUnion_of_chain (fun k => ?_) (fun k => ?_)
   · have h := hmeet k k (Or.inl rfl)
@@ -295,8 +295,8 @@ private def witness (k : ℕ) : 𝓓((⊤ : Opens (WithLp 2 (ℝ × ℝ))), ℝ)
     cutoff.hasCompactSupport.mul_left, subset_univ _⟩
 
 private theorem witness_apply (k : ℕ) (x : WithLp 2 (ℝ × ℝ)) :
-    witness k x = step k x * cutoff x :=
-  rfl
+    witness k x = step k x * cutoff x := by
+  rw [witness, TestFunction.coe_mk]
 
 /-- Near the domain the witness is the step itself. -/
 private theorem witness_eventuallyEq {k : ℕ} {x : WithLp 2 (ℝ × ℝ)}
@@ -396,19 +396,21 @@ private theorem mem_stretch {k : ℕ} {x : WithLp 2 (ℝ × ℝ)} (hx : x ∈ ro
     · linarith [roomSide_anti (Nat.succ_le_of_lt hjk), hj.1.1, hxk.2]
 
 private theorem volume_room (k : ℕ) :
-    volume (room k) = ENNReal.ofReal (roomSide k) * ENNReal.ofReal (roomSide k) := by
+    volume (room k) = ENNReal.ofReal (roomSide k * roomSide k) := by
   rw [room, (volume_preserving_ofLp ℝ ℝ).measure_preimage
     (measurableSet_Ioo.prod measurableSet_Ioo).nullMeasurableSet, Measure.volume_eq_prod,
-    Measure.prod_prod, Real.volume_Ioo, Real.volume_Ioo, sub_zero]
-  congr 2
+    Measure.prod_prod, Real.volume_Ioo, Real.volume_Ioo, sub_zero,
+    ← ENNReal.ofReal_mul (by linarith [roomSide_pos k])]
+  congr 1
   ring
 
 private theorem volume_stretch (k : ℕ) :
-    volume (stretch k) = ENNReal.ofReal (roomSide k) * ENNReal.ofReal (passageWidth k) := by
+    volume (stretch k) = ENNReal.ofReal (roomSide k * passageWidth k) := by
   rw [stretch, (volume_preserving_ofLp ℝ ℝ).measure_preimage
     (measurableSet_Ioo.prod measurableSet_Ioo).nullMeasurableSet, Measure.volume_eq_prod,
-    Measure.prod_prod, Real.volume_Ioo, Real.volume_Ioo, sub_zero, roomSide_succ]
-  congr 2
+    Measure.prod_prod, Real.volume_Ioo, Real.volume_Ioo, sub_zero, roomSide_succ,
+    ← ENNReal.ofReal_mul (by linarith [roomSide_pos k])]
+  congr 1
   ring
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
@@ -416,13 +418,16 @@ variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 /-- The witness is `1` on the next room, so its `Lᵖ` norm on the domain is at least the
 `p`-th root of the area of that room. -/
 private theorem le_eLpNorm_value (hp : p ≠ (∞ : ℝ≥0∞)) (k : ℕ) :
-    volume (room (k + 1)) ^ p.toReal⁻¹ ≤ eLpNorm (W1p.value (W1p.restrictL
-      (le_top : roomsAndPassages ≤ ⊤) (W1p.ofTestFunctionₗ volume ⊤ p (witness k)))) p
+    ENNReal.ofReal ((roomSide (k + 1) * roomSide (k + 1)) ^ p.toReal⁻¹) ≤
+      eLpNorm (W1p.value (W1p.restrictL
+        (le_top : roomsAndPassages ≤ ⊤) (W1p.ofTestFunctionₗ volume ⊤ p (witness k)))) p
       (volume.restrict (roomsAndPassages : Set (WithLp 2 (ℝ × ℝ)))) := by
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
   have hroom : MeasurableSet (room (k + 1)) :=
     ((isOpen_Ioo.prod isOpen_Ioo).preimage (prod_continuous_ofLp 2 ℝ ℝ)).measurableSet
-  rw [eLpNorm_congr_ae (W1p.value_restrictL_ofTestFunctionₗ_ae le_top (witness k))]
+  rw [eLpNorm_congr_ae (W1p.value_restrictL_ofTestFunctionₗ_ae le_top (witness k)),
+    ← ENNReal.ofReal_rpow_of_nonneg (mul_pos (roomSide_pos _) (roomSide_pos _)).le
+      (inv_nonneg.2 ENNReal.toReal_nonneg), ← volume_room]
   calc volume (room (k + 1)) ^ p.toReal⁻¹
       = eLpNorm (fun _ => (1 : ℝ)) p (volume.restrict (room (k + 1))) := by
         rw [eLpNorm_const' _ hp0 hp, eNorm_one, one_mul, Measure.restrict_apply_univ, one_div]
@@ -437,7 +442,10 @@ private theorem eLpNorm_gradient_le {L : ℝ} (hL : ∀ τ, ‖deriv Real.smooth
     eLpNorm (W1p.gradient (W1p.restrictL (le_top : roomsAndPassages ≤ ⊤)
       (W1p.ofTestFunctionₗ volume ⊤ p (witness k)))) p
       (volume.restrict (roomsAndPassages : Set (WithLp 2 (ℝ × ℝ)))) ≤
-      volume (stretch k) ^ p.toReal⁻¹ * ENNReal.ofReal (L * (roomSide k)⁻¹) := by
+      ENNReal.ofReal ((roomSide k * passageWidth k) ^ p.toReal⁻¹ * (L * (roomSide k)⁻¹)) := by
+  have hst := mul_pos (roomSide_pos k) (passageWidth_pos k)
+  rw [ENNReal.ofReal_mul (Real.rpow_nonneg hst.le _),
+    ← ENNReal.ofReal_rpow_of_nonneg hst.le (inv_nonneg.2 ENNReal.toReal_nonneg), ← volume_stretch]
   set g := W1p.gradient (W1p.restrictL (le_top : roomsAndPassages ≤ ⊤)
     (W1p.ofTestFunctionₗ volume ⊤ p (witness k)))
   have hg : ∀ᵐ x ∂volume.restrict (roomsAndPassages : Set (WithLp 2 (ℝ × ℝ))),
@@ -496,6 +504,29 @@ private theorem exists_mul_rpow_lt {q : ℝ} (hq : 0 < q) (hq1 : q ≤ 1) {M : �
     _ < 2 * t * 1 := by gcongr; nlinarith
     _ = 2 * t := mul_one _
 
+/-- The real form of the contradiction: with `t = 2^(-(k + 1))`, if `C L (2 t^k)^q < 2 t`, then
+the bound `C (2⁻ᵏ w_k)^q L 2ᵏ` on `‖u_k‖_p` is below the lower bound `(t²)^q`. -/
+private theorem mul_rpow_mul_lt {q C L : ℝ} {k : ℕ}
+    (hk : C * L * (2 * roomSide (k + 1) ^ k) ^ q < 2 * roomSide (k + 1)) :
+    C * ((roomSide k * passageWidth k) ^ q * (L * (roomSide k)⁻¹)) <
+      (roomSide (k + 1) * roomSide (k + 1)) ^ q := by
+  have ht := roomSide_pos (k + 1)
+  have hsk : roomSide k = 2 * roomSide (k + 1) := by rw [roomSide_succ]; ring
+  have hw : roomSide k * passageWidth k =
+      roomSide (k + 1) * roomSide (k + 1) * (2 * roomSide (k + 1) ^ k) := by
+    rw [hsk, passageWidth, roomSide]
+    ring
+  rw [hw, Real.mul_rpow (by positivity) (by positivity), hsk]
+  calc C * ((roomSide (k + 1) * roomSide (k + 1)) ^ q * (2 * roomSide (k + 1) ^ k) ^ q *
+        (L * (2 * roomSide (k + 1))⁻¹))
+      = (roomSide (k + 1) * roomSide (k + 1)) ^ q *
+          (C * L * (2 * roomSide (k + 1) ^ k) ^ q / (2 * roomSide (k + 1))) := by
+        ring
+    _ < (roomSide (k + 1) * roomSide (k + 1)) ^ q * 1 :=
+        mul_lt_mul_of_pos_left ((div_lt_one (by positivity)).2 hk)
+          (Real.rpow_pos_of_pos (mul_pos ht ht) _)
+    _ = _ := mul_one _
+
 /-! ### Poincaré–Friedrichs fails -/
 
 /-- **Poincaré–Friedrichs fails on rooms and passages.** For every finite `p ≥ 1` there is no
@@ -529,29 +560,11 @@ theorem not_exists_norm_value_le_mul_norm_gradient_roomsAndPassages (hp : p ≠ 
       (hu.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _)))
   have h := (le_eLpNorm_value hp k).trans
     (hPF.trans (mul_le_mul_right (eLpNorm_gradient_le hL k) _))
-  -- In real terms, with `t = 2^(-(k + 1))`, it reads `(t²)^q ≤ C (2 t^(k+2))^q L / (2 t)`.
-  have hs := roomSide_pos (k + 1)
-  have hsk : roomSide k = 2 * roomSide (k + 1) := by rw [roomSide_succ]; ring
-  have hw : roomSide k * passageWidth k =
-      roomSide (k + 1) * roomSide (k + 1) * (2 * roomSide (k + 1) ^ k) := by
-    rw [hsk, passageWidth, roomSide]
-    ring
   have hY : 0 ≤ (roomSide k * passageWidth k) ^ p.toReal⁻¹ * (L * (roomSide k)⁻¹) :=
     mul_nonneg (Real.rpow_nonneg (mul_pos (roomSide_pos k) (passageWidth_pos k)).le _)
       (mul_nonneg hL0 (inv_pos.2 (roomSide_pos k)).le)
-  rw [volume_room, volume_stretch, ← ENNReal.ofReal_mul hs.le,
-    ← ENNReal.ofReal_mul (roomSide_pos k).le,
-    ENNReal.ofReal_rpow_of_nonneg (mul_pos hs hs).le hq.le,
-    ENNReal.ofReal_rpow_of_nonneg (mul_pos (roomSide_pos k) (passageWidth_pos k)).le hq.le,
-    ← ENNReal.ofReal_mul (Real.rpow_nonneg (mul_pos (roomSide_pos k) (passageWidth_pos k)).le _),
-    ← ENNReal.ofReal_mul hC0, ENNReal.ofReal_le_ofReal_iff (mul_nonneg hC0 hY), hw,
-    Real.mul_rpow (mul_pos hs hs).le (by positivity), hsk] at h
-  have hX : 0 < (roomSide (k + 1) * roomSide (k + 1)) ^ p.toReal⁻¹ :=
-    Real.rpow_pos_of_pos (mul_pos hs hs) _
-  have h2t : 0 < 2 * roomSide (k + 1) := by positivity
-  rw [show ∀ a b c d e : ℝ, a * (b * c * (d * e⁻¹)) = b * (a * d * c) * e⁻¹ by
-    intros; ring, le_mul_inv_iff₀ h2t] at h
-  nlinarith [mul_lt_mul_of_pos_left hk hX]
+  rw [← ENNReal.ofReal_mul hC0, ENNReal.ofReal_le_ofReal_iff (mul_nonneg hC0 hY)] at h
+  exact (mul_rpow_mul_lt hk).not_ge h
 
 /-- **Rooms and passages is not a Lipschitz domain**, with any constant: otherwise the
 Poincaré–Friedrichs inequality would hold on it. -/
