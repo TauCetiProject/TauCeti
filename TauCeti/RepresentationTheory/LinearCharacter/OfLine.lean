@@ -79,9 +79,7 @@ theorem continuous_lineCharacter [TopologicalSpace G] [ContinuousInv G] [Topolog
     Continuous (ρ.lineCharacter h) := by
   have : FiniteDimensional k V := Module.finite_of_finrank_eq_succ h
   obtain ⟨v, hv⟩ := Module.finrank_pos_iff_exists_ne_zero.mp (h ▸ Nat.one_pos : 0 < finrank k V)
-  obtain ⟨f, hf⟩ : ∃ f : Dual k V, f v = 1 := by
-    obtain ⟨f, hf⟩ := Module.Projective.exists_dual_ne_zero k hv
-    exact ⟨(f v)⁻¹ • f, by simp [hf]⟩
+  obtain ⟨f, hf⟩ := Module.Projective.exists_dual_eq_one k hv
   have hval : ∀ g, (ρ.lineCharacter h g : k) = f (ρ g v) := fun g ↦ by
     rw [lineCharacter_smul, map_smul, hf, smul_eq_mul, mul_one]
   have hc : Continuous fun g ↦ (ρ.lineCharacter h g : k) := by
