@@ -99,10 +99,6 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M]
   {F : Type*} [TopologicalSpace F] {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
 
-/-- The closed upper half-plane is locally compact, being a closed subset of `ℂ`. -/
-instance ClosedUpperHalfPlane.instLocallyCompactSpace : LocallyCompactSpace ClosedUpperHalfPlane :=
-  (isClosed_le continuous_const Complex.continuous_im).locallyCompactSpace
-
 namespace FiniteBundleAtlas
 
 variable (A : FiniteBundleAtlas ClosedUpperHalfPlane M F V)

@@ -72,36 +72,6 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M] 
   [ContMDiffVectorBundle n F V closedUpperHalfPlaneModel]
   {p : ℝ≥0∞} [Fact (1 ≤ p)] {k : ℕ}
 
-omit [T2Space M] in
-/-- **Components under a change of atlas.** If chart `jA` of `A` and chart `jB` of `B` read
-sections in the same way and the interior of the image of chart `jA` lies in that of chart `jB`,
-the chart-`jA` components of an element for `A` are the restrictions of the chart-`jB` components of
-its image for `B`. -/
-private theorem component_eq_restrictL_changeAtlas [IsManifold closedUpperHalfPlaneModel 1 M]
-    {A B : FiniteBundleAtlas ClosedUpperHalfPlane M F V} (htr : TransfersTo A B p (k + 1))
-    {jA : Fin A.n} {jB : Fin B.n} (hBA : ∀ s : ∀ x, V x, B.halfCoord jB s = A.halfCoord jA s)
-    (hle : A.halfImage jA ≤ B.halfImage jB) (x : BorderedSobolevSection A p (k + 1))
-    (m : Fin (finrank ℝ F)) :
-    (x : A.halfSectionChartData.SobolevData volume p (k + 1)) jA m =
-      Wkp.restrictL hle (k + 1)
-        ((changeAtlas htr x : B.halfSectionChartData.SobolevData volume p (k + 1)) jB m) := by
-  obtain ⟨s, hs⟩ := A.halfSectionChartData.exists_section volume p (k + 1) x
-  have hs' (i : Fin A.n) := (hs i).trans (A.halfSectionChartData_coord_ae_eq i s)
-  have hgB := (SectionChartData.chartValueL_ae_eq_coord_iff _ _ _ _).1
-    ((chartValueL_changeAtlas_ae htr hs' jB).trans (B.halfSectionChartData_coord_ae_eq jB s).symm) m
-  refine Wkp.ext (k + 1) (Lp.ext ?_)
-  filter_upwards [(SectionChartData.chartValueL_ae_eq_coord_iff _ _ _ _).1 (hs jA) m,
-    (A.halfSectionChartData_coord_ae_eq jA s).fun_comp ((finBasis ℝ F).coord m),
-    ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hle) hgB,
-    ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hle)
-      ((B.halfSectionChartData_coord_ae_eq jB s).fun_comp ((finBasis ℝ F).coord m)),
-    Wkp.value_restrictL_ae hle (k + 1)
-      ((changeAtlas htr x : B.halfSectionChartData.SobolevData volume p (k + 1)) jB m)]
-    with z h₁ h₂ h₃ h₄ h₅
-  simp only [Function.comp_apply] at h₂ h₄
-  rw [h₁, h₂, ← hBA]
-  exact h₄.symm.trans (h₃.symm.trans h₅.symm)
-
 /-- **Rellich's theorem over a base with boundary.** For a `Cⁿ` vector bundle over a Hausdorff
 `Cⁿ` manifold modelled on the closed upper half-plane, `1 ≤ p ≤ ∞` and `k + 1 ≤ n`, the inclusion
 `W^{k+1,p}(V) → W^{k,p}(V)` of Sobolev sections is a compact operator. -/
