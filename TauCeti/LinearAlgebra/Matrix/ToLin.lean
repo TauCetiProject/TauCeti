@@ -36,7 +36,9 @@ computation every matrix model of a Lie algebra performs on its root vectors.
 * `Module.Basis.toLinAlgEquiv_single_apply_basis`: the endomorphism of a matrix unit sends a basis
   vector to a single coordinate.
 * `TauCeti.matrixGeneralLinearEquiv`: matrix `GL` and the linear automorphisms of coordinate
-  vectors are equivalent over a commutative semiring.
+  vectors are equivalent over a commutative semiring; the abbreviation
+  `TauCeti.matrixLinearEquiv` lands in `(n → R) ≃ₗ[R] (n → R)`, and evaluates through
+  `TauCeti.matrixGeneralLinearEquiv_apply`.
 * `Module.Basis.toMatrixAlgEquiv_eq_single_of_apply_basis`: an endomorphism with one matrix-unit
   coordinate action has the corresponding single-entry matrix.
 * `LinearMap.vecMul_toMatrixRight'` and `LinearMap.isIdempotentElem_toMatrixRight'_iff`: over a
@@ -100,6 +102,13 @@ theorem matrixGeneralLinearEquiv_apply {R : Type*} [CommSemiring R] {n : Type*}
   rw [LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
     matrixGeneralLinearEquiv, Units.coe_mapEquiv]
   exact Matrix.toLinAlgEquiv'_apply _ _
+
+/-- Invertible matrices are the linear automorphisms of coordinate vectors, a matrix acting by
+multiplication of column vectors: `TauCeti.matrixGeneralLinearEquiv` followed by Mathlib's
+identification of `LinearMap.GeneralLinearGroup` with linear automorphisms. -/
+noncomputable abbrev matrixLinearEquiv {R : Type*} [CommSemiring R] {n : Type*} [Fintype n]
+    [DecidableEq n] : Matrix.GeneralLinearGroup n R ≃* ((n → R) ≃ₗ[R] (n → R)) :=
+  matrixGeneralLinearEquiv.trans (LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R))
 
 end TauCeti
 

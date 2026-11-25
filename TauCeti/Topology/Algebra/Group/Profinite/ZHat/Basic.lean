@@ -50,6 +50,8 @@ dense, `ℤ̂` is commutative. The identification of the maximal pro-`p` quotien
 * `TauCeti.zHat.lift_mul_apply`, `TauCeti.zHat.lift_zpow_apply`, `TauCeti.zHat.lift_comm`: the
   lift is multiplicative on commuting base elements and compatible with powers, and on `ℤ̂`
   itself it is symmetric.
+* `TauCeti.zHat.mem_zpowers_mk_up_ofAdd_one`: the image of `1` generates every quotient of the
+  defining copy of `ℤ`.
 * `TauCeti.zHat.lift_surjective`, `TauCeti.zHat.lift_injective_of_finite_quotients`,
   `TauCeti.zHat.lift_injective_of_forall_orderOf`: criteria for the lift of `a` to be surjective
   (`a` is a topological generator) and injective (`a` has images of every finite order `n` in
@@ -142,20 +144,6 @@ instance : IsMulCommutative zHat.{u} where
         (funext fun w ↦ by simp only [Function.comp, ← map_mul, mul_comm]))
     exact congrFun (denseRange_ofInt.equalizer (continuous_const.mul continuous_id)
       (continuous_id.mul continuous_const) (funext fun z ↦ h z x)) y⟩
-
-/-- The class of the generator of the defining copy of `ℤ` generates each of its finite
-quotients. -/
-theorem mem_zpowers_quotientGenerator
-    (H : FiniteIndexNormalSubgroup (ULift.{u} (Multiplicative ℤ)))
-    (x : ULift.{u} (Multiplicative ℤ) ⧸ H.toSubgroup) :
-    x ∈ Subgroup.zpowers (QuotientGroup.mk (ULift.up (Multiplicative.ofAdd 1))) := by
-  have hf : zpowersHom _ (QuotientGroup.mk (ULift.up (Multiplicative.ofAdd 1)) :
-      ULift.{u} (Multiplicative ℤ) ⧸ H.toSubgroup) =
-      (QuotientGroup.mk' H.toSubgroup).comp MulEquiv.ulift.symm.toMonoidHom :=
-    MonoidHom.ext_mint rfl
-  rw [← Subgroup.range_zpowersHom, hf]
-  exact MonoidHom.mem_range.2 (((QuotientGroup.mk'_surjective _).comp
-    MulEquiv.ulift.symm.surjective) x)
 
 section HomExt
 
@@ -331,6 +319,19 @@ theorem lift_surjective (a : P) (ha : (Subgroup.zpowers a).topologicalClosure = 
   rw [← Set.range_eq_univ, ← hclosed.closure_eq]
   exact hdense.closure_range
 
+/-- The canonical generator `1 ∈ ℤ` generates every quotient of the defining copy of `ℤ` by a
+normal subgroup: every element of such a quotient is an integral power of the image of `1`. -/
+theorem mem_zpowers_mk_up_ofAdd_one
+    (H : Subgroup (ULift.{u} (Multiplicative ℤ))) [H.Normal]
+    (x : ULift.{u} (Multiplicative ℤ) ⧸ H) :
+    x ∈ Subgroup.zpowers (QuotientGroup.mk (ULift.up (Multiplicative.ofAdd 1))) := by
+  obtain ⟨⟨y⟩, rfl⟩ := QuotientGroup.mk_surjective x
+  refine ⟨y.toAdd, ?_⟩
+  simp only [← QuotientGroup.mk_zpow]
+  congr 1
+  ext
+  simp
+
 /-- The lift of `a` is injective when every finite quotient of the defining copy of `ℤ` is
 detected by a continuous quotient of the target carrying `a` to the canonical generator. This is
 the finite-coordinate criterion used to identify a procyclic group having quotients of every
@@ -383,12 +384,12 @@ theorem lift_injective_of_forall_orderOf (a : P) (G : ℕ+ → Type w) [∀ n, G
   have hgen : ∀ x : G n, x ∈ Subgroup.zpowers (r n a) := by
     rw [← Subgroup.eq_top_iff', ← Subgroup.card_eq_iff_eq_top, Nat.card_zpowers, hord, hcard]
   let e : G n ≃* Q := (zmodMulEquivOfGenerator hgen (hcard n)).symm.trans
-    (zmodMulEquivOfGenerator (mem_zpowers_quotientGenerator H) rfl)
+    (zmodMulEquivOfGenerator (mem_zpowers_mk_up_ofAdd_one H.toSubgroup) rfl)
   refine ⟨(⟨e.toMonoidHom, continuous_of_discreteTopology⟩ : G n →ₜ* Q).comp (r n), ?_⟩
   -- The bundled composite evaluates to `e (r n a)` by unfolding `ContinuousMonoidHom.comp`.
   change e (r n a) = _
   rw [MulEquiv.trans_apply, zmodMulEquivOfGenerator_symm_apply_generator]
-  exact zmodMulEquivOfGenerator_apply_ofAdd_one (mem_zpowers_quotientGenerator H) rfl
+  exact zmodMulEquivOfGenerator_apply_ofAdd_one (mem_zpowers_mk_up_ofAdd_one H.toSubgroup) rfl
 
 variable [T2Space P]
 
