@@ -109,8 +109,7 @@ private theorem fderivWithin_add_eq_zero_of_im_pos {F : Type*} [NormedAddCommGro
   have hU : U = range closedUpperHalfPlaneModel ∩ O := inter_comm _ _
   have hUD : UniqueDiffOn ℝ U := hU ▸ closedUpperHalfPlaneModel.uniqueDiffOn.inter hO
   have hint : ∀ z ∈ O ∩ {z : ℂ | 0 < z.im}, U ∈ 𝓝 z := fun z hz ↦
-    mem_of_superset ((hO.inter (isOpen_lt continuous_const Complex.continuous_im)).mem_nhds hz)
-      fun w hw ↦ ⟨hw.1, setOf_im_pos_subset_range_closedUpperHalfPlaneModel hw.2⟩
+    mem_interior_iff_mem_nhds.1 (inter_setOf_im_pos_subset_interior hO hz)
   -- The derivative within `U` is continuous on `U`, and it is the derivative off the real axis.
   have hdf : ContinuousOn (fderivWithin ℝ f U) U := hf.continuousOn_fderivWithin hUD le_rfl
   have hG : ContinuousOn
@@ -252,9 +251,7 @@ private theorem isPseudoholomorphicWithinAt_of_isWeakPseudoholomorphicOnBordered
     (hf.mono interior_subset) (hJ.mono interior_subset) continuousOn_const).1
       (hw.mono interior_subset)
   have hG₀ := fderivWithin_add_eq_zero_of_im_pos hO (hUO ▸ hf) (hUO ▸ hJ) (fun z hz ↦ hpt z
-    (interior_maximal (fun w hw ↦ hUO ▸
-      ⟨hw.1, setOf_im_pos_subset_range_closedUpperHalfPlaneModel hw.2⟩)
-      (hO.inter (isOpen_lt continuous_const Complex.continuous_im)) hz)) (hUO ▸ hz₀)
+    (by rw [hUO]; exact inter_setOf_im_pos_subset_interior hO hz)) (hUO ▸ hz₀)
   exact (isPseudoholomorphicAt_of_fderivWithin_chart J₀
     ((hu.contMDiffAt (hs.mem_nhds hx)).mdifferentiableAt one_ne_zero)
     hG₀).isPseudoholomorphicWithinAt

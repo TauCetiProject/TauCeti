@@ -109,12 +109,8 @@ theorem _root_.TauCeti.ClosedUpperHalfPlane.mdifferentiableAt_extend_symm_of_im_
   refine φ.mdifferentiableAt_extend_symm_of_mem_interior one_ne_zero
     (borderedHolomorphicGroupoid_maximalAtlas_subset (n := 1) (by exact_mod_cast le_top) hφ) ?_
   rw [OpenPartialHomeomorph.extend_target] at hz ⊢
-  have hsub : closedUpperHalfPlaneModel.symm ⁻¹' φ.target ∩ {v : ℂ | 0 < v.im} ⊆
-      closedUpperHalfPlaneModel.symm ⁻¹' φ.target ∩ range closedUpperHalfPlaneModel :=
-    fun v hv ↦ ⟨hv.1, setOf_im_pos_subset_range_closedUpperHalfPlaneModel hv.2⟩
-  exact interior_maximal hsub
-    ((φ.open_target.preimage closedUpperHalfPlaneModel.continuous_symm).inter
-      (isOpen_lt continuous_const continuous_im)) ⟨hz.1, hzim⟩
+  exact inter_setOf_im_pos_subset_interior
+    (φ.open_target.preimage closedUpperHalfPlaneModel.continuous_symm) ⟨hz.1, hzim⟩
 
 open ClosedUpperHalfPlane in
 /-- **Inverse bordered holomorphic charts are holomorphic off the real axis.** For a bordered
