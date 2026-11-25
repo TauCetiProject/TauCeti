@@ -495,7 +495,7 @@ theorem blockDiagonalSingle_apply_same [Fintype ι] (i : ι) (x : CStarMatrix (n
 
 /-- The corner embedding at `i` vanishes on the diagonal blocks `j ≠ i`. -/
 @[simp]
-theorem blockDiagonalSingle_apply_of_ne [Fintype ι] {i j : ι} (h : j ≠ i)
+theorem blockDiagonalSingle_apply_diag_of_ne [Fintype ι] {i j : ι} (h : j ≠ i)
     (x : CStarMatrix (n i) (n i) B) (p q : n j) :
     blockDiagonalSingle R B i x ⟨j, p⟩ ⟨j, q⟩ = 0 := by
   simp [blockDiagonalSingle_apply, ofMatrix_apply, Matrix.blockDiagonal'_apply_eq, h]
