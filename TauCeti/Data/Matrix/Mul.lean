@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Data.Matrix.Mul
+import Mathlib.Data.Matrix.Basic
 
 /-!
 # Matrix products: positivity of powers, nonvanishing of factors and opposite rings
@@ -32,7 +33,9 @@ Transposing a product of rectangular matrices and passing to the opposite ring r
 factors; transposition with `MulOpposite.op` and with `MulOpposite.unop` are mutually inverse.
 
 Sandwiching a matrix over an `R`-algebra between two matrices with entries in `R` gives entries that
-are `R`-linear combinations of the entries of the middle factor.
+are `R`-linear combinations of the entries of the middle factor. Over a commutative semiring, the
+sum `∑ p, E p * M * E p` over a finite family of square matrices depends on the family only through
+its entry covariance `∑ p, E p a b * E p c d`.
 
 ## Main results
 
@@ -57,6 +60,8 @@ are `R`-linear combinations of the entries of the middle factor.
   the factors, `(M * N)ᵀ.map op = Nᵀ.map op * Mᵀ.map op`, for rectangular `M` and `N`.
 * `Matrix.map_algebraMap_mul_mul_map_algebraMap_apply`: the entries of `F * u * G`, for `F` and
   `G` with entries in `R` and `u` over an `R`-algebra, are `∑ q, ∑ p, (F i p * G q j) • u p q`.
+* `Matrix.sum_mul_mul_apply`: the entries of `∑ p, E p * M * E p` through the entry covariance
+  `∑ p, E p a b * E p c d` of the family `E`.
 -/
 
 public section
@@ -233,5 +238,17 @@ theorem map_algebraMap_mul_mul_map_algebraMap_apply {R A l m n o : Type*} [CommS
   simp only [Matrix.mul_apply, map_apply, Finset.sum_mul, Algebra.smul_def, map_mul]
   refine Finset.sum_congr rfl fun q _ ↦ Finset.sum_congr rfl fun p _ ↦ ?_
   rw [mul_assoc, ← Algebra.commutes (G q j), ← mul_assoc]
+
+/-- The entries of `∑ p, E p * M * E p` through the entry covariance `∑ p, E p a b * E p c d` of
+the family `E`. -/
+theorem sum_mul_mul_apply {ι m R : Type*} [Fintype ι] [Fintype m] [CommSemiring R]
+    (E : ι → Matrix m m R) (M : Matrix m m R) (a d : m) :
+    (∑ p, E p * M * E p) a d = ∑ b, ∑ c, M b c * ∑ p, E p a b * E p c d := by
+  simp only [Matrix.sum_apply, Matrix.mul_apply, Finset.sum_mul, Finset.mul_sum]
+  -- Reorder the sums over `(p, c, b)` to `(b, c, p)`: cycle to `(b, p, c)`, then swap `p` and `c`.
+  rw [Finset.sum_comm_cycle]
+  exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_comm.trans <|
+    Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦
+      (mul_right_comm _ _ _).trans (mul_comm _ _)
 
 end Matrix
