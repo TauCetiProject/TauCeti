@@ -86,7 +86,8 @@ theorem contDiffOn_succ_of_forall_integral_laplacian_mul_eq {f : ℂ → ℝ} {k
       (weaklyHarmonicOn_iff.2 ⟨hcont.locallyIntegrableOn V.isOpen.measurableSet, fun φ ↦ ?_⟩)
     have hw' : ∫ y, Δ (φ : ℂ → ℝ) y * w y = ∫ y, φ y * f y :=
       h ⟨φ, φ.contDiff, φ.hasCompactSupport, φ.tsupport_subset.trans hVU⟩
-    have hN' := integral_laplacian_mul_planarNewtonianKernel_convolution hg.continuous hgc
+    have hN' := integral_laplacian_mul_planarNewtonianKernel_convolution
+      (hg.continuous.integrable_of_hasCompactSupport hgc) hgc
       (φ.contDiff.of_le (by simp)) φ.hasCompactSupport
     -- The cutoff is one on the support of `φ`, so `∫ φ g = ∫ φ f`.
     have hφg : ∫ y, φ y * g y = ∫ y, φ y * f y := by

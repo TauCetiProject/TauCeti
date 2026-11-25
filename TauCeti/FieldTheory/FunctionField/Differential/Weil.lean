@@ -148,7 +148,7 @@ theorem mem_weilDifferentialFiltration_of_apply_eq_zero {D : Divisor k F}
   have hxA : x ∈ repartitionSpace k F := adeleFiltration_le_repartitionSpace D hx
   have hyA : y ∈ repartitionSpace k F := by
     have : (a : Place k F → F) - x ∈ repartitionSpace k F :=
-      (repartitionSpace k F).sub_mem a.2 hxA
+      (repartitionSpace k F).sub_mem a.property hxA
     rwa [← hxy, add_sub_cancel_left] at this
   have hsplit : a = ⟨x, hxA⟩ + ⟨y, hyA⟩ := Subtype.ext hxy.symm
   rw [hsplit, map_add, h₁ ⟨x, hxA⟩ hx, h₂ ⟨y, hyA⟩ hy, add_zero]

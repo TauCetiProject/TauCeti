@@ -65,7 +65,7 @@ private theorem multinomialWeightReal_mul_exp (p : ι → NNReal) (θ : ι → �
   rw [multinomialWeightReal_def, Finset.mul_sum, exp_sum, mul_assoc, ← Finset.prod_mul_distrib]
   congr 1
   refine Finset.prod_congr rfl fun i _ => ?_
-  rw [mul_pow, ← exp_nat_mul]
+  rw [mul_pow, ← exp_natCast_mul]
   ring_nf
 
 /-- The cell weights tilted by `exp (t * θ i)`, as a nonnegative family. -/
@@ -138,7 +138,7 @@ theorem charFun_map_multinomialToEuclidean_multinomialMeasure (n : ℕ)
   congr 1
   apply Finset.prod_congr rfl
   intro i _
-  rw [mul_pow, ← Complex.exp_nat_mul]
+  rw [mul_pow, ← Complex.exp_natCast_mul]
   congr 1
   ring_nf
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.Dirichlet
+public import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 public import TauCeti.Analysis.Meromorphic.Divisor
 
 /-!
@@ -14,10 +15,7 @@ public import TauCeti.Analysis.Meromorphic.Divisor
 Mathlib's `completedRiemannZeta` is `Λ(s) = Λ₀(s) - 1/s - 1/(1 - s)` with `Λ₀` entire
 (`completedRiemannZeta_eq`, `differentiable_completedZeta₀`). This file reads off the
 consequences in the language of meromorphic functions: `Λ` is meromorphic on `ℂ`, analytic away
-from `0` and `1`, and has a simple pole, of order exactly `-1`, at each of `0` and `1`. Since
-`ζ(s) = Λ(s) / Γ_ℝ(s)` for `s ≠ 0` and `1 / Γ_ℝ` is entire, the Riemann zeta function itself is
-meromorphic on `ℂ` too; this is what lets a factorization through `ζ` serve as a meromorphic
-continuation.
+from `0` and `1`, and has a simple pole, of order exactly `-1`, at each of `0` and `1`.
 
 ## Main results
 
@@ -25,18 +23,18 @@ continuation.
 * `TauCeti.analyticAt_completedRiemannZeta`
 * `TauCeti.meromorphicOrderAt_completedRiemannZeta_zero`,
   `TauCeti.meromorphicOrderAt_completedRiemannZeta_one`
-* `TauCeti.meromorphic_riemannZeta`: the uncompleted function `riemannZeta` is meromorphic on `ℂ`
-  as well.
 * `TauCeti.meromorphicOrderAt_completedRiemannZeta_neg_two_mul_nat_add_one`: `Λ` is regular and
   nonzero at the trivial zeros `-2(n + 1)` of `riemannZeta`, where `Γ_ℝ` has its poles.
 * `TauCeti.zero_lt_divisor_completedRiemannZeta_iff`: the points of positive divisor of `Λ` are
   exactly the zeros of `riemannZeta` excluded neither by `RiemannHypothesis` as trivial zeros nor
   as the pole `1`.
+* `TauCeti.completedRiemannZeta_two`: the value `Λ(2) = π / 6`.
 -/
 
 public section
 
 open Complex Filter Topology Set
+open scoped Real
 
 namespace TauCeti
 
@@ -79,17 +77,6 @@ theorem meromorphicOrderAt_completedRiemannZeta_one :
   rw [← h]
   congr 1
   exact funext fun z ↦ (completedRiemannZeta_one_sub z).symm
-
-/-- Mathlib's Riemann zeta function is meromorphic on `ℂ`. Away from `1` it is analytic
-(`analyticOn_riemannZeta`); its pole at `1` is that of `completedRiemannZeta`. -/
-theorem meromorphic_riemannZeta : Meromorphic riemannZeta := by
-  intro z
-  rcases eq_or_ne z 1 with rfl | hz
-  · refine ((meromorphic_completedRiemannZeta 1).mul
-      (Complex.differentiable_Gammaℝ_inv.analyticAt 1).meromorphicAt).congr ?_
-    filter_upwards [nhdsWithin_le_nhds (eventually_ne_nhds one_ne_zero)] with s hs
-    rw [riemannZeta_def_of_ne_zero hs, div_eq_mul_inv, Pi.mul_apply]
-  · exact (analyticOn_riemannZeta z hz).meromorphicAt
 
 /-- The completed Riemann zeta function does not vanish on the half-plane `1 < re s`. -/
 theorem completedRiemannZeta_ne_zero_of_one_lt_re {s : ℂ} (hs : 1 < s.re) :
@@ -176,5 +163,14 @@ theorem zero_lt_divisor_completedRiemannZeta_iff {s : ℂ} :
       cases n with
       | zero => simp at hs0
       | succ m => exact absurd ⟨m, by push_cast; ring⟩ htriv
+
+/-- The completed Riemann zeta function takes the value `π / 6` at `2`. -/
+@[simp]
+theorem completedRiemannZeta_two : completedRiemannZeta 2 = (π : ℂ) / 6 := by
+  have h := riemannZeta_def_of_ne_zero (s := 2) two_ne_zero
+  rw [riemannZeta_two, eq_div_iff (Gammaℝ_ne_zero_of_re_pos (by simp))] at h
+  rw [← h, Gammaℝ_def]
+  norm_num [cpow_neg_one]
+  field_simp
 
 end TauCeti

@@ -204,14 +204,14 @@ theorem injective_of_comp_eq_id [DecidableEq α] [DecidableEq β]
 def faceOrderHom [DecidableEq β]
     (f : _root_.PreAbstractSimplicialComplex.SimplicialMap K L) :
     SetLike.Face K →o SetLike.Face L where
-  toFun σ := ⟨σ.1.image f, f.map_face σ.2⟩
+  toFun σ := ⟨σ.val.image f, f.map_face σ.property⟩
   monotone' _ _ h := Finset.image_mono f h
 
 @[simp]
 theorem coe_faceOrderHom_apply [DecidableEq β]
     (f : _root_.PreAbstractSimplicialComplex.SimplicialMap K L)
     (σ : SetLike.Face K) :
-    (faceOrderHom f σ : Finset β) = σ.1.image f :=
+    (faceOrderHom f σ : Finset β) = σ.val.image f :=
   (rfl)
 
 private theorem faceOrderHom_comp_apply [DecidableEq β] [DecidableEq γ]
@@ -222,7 +222,7 @@ private theorem faceOrderHom_comp_apply [DecidableEq β] [DecidableEq γ]
   apply Subtype.ext
   rw [coe_faceOrderHom_apply, coe_faceOrderHom_apply, coe_faceOrderHom_apply]
   rw [← Finset.image_comp]
-  exact congrArg (fun h : α → γ => σ.1.image h)
+  exact congrArg (fun h : α → γ => σ.val.image h)
     (_root_.PreAbstractSimplicialComplex.SimplicialMap.coe_comp g f)
 
 /-- Mapping face posets along the identity is the identity order homomorphism. -/
@@ -260,27 +260,27 @@ variable [DecidableEq β]
 def map (c : RealizationCell K n)
     (f : PreAbstractSimplicialComplex.SimplicialMap
       K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
-    (hf : Set.InjOn f (↑c.1.1 : Set α)) : RealizationCell L n :=
-  ⟨TauCeti.PreAbstractSimplicialComplex.SimplicialMap.faceOrderHom f c.1, by
+    (hf : Set.InjOn f (↑c.val.val : Set α)) : RealizationCell L n :=
+  ⟨TauCeti.PreAbstractSimplicialComplex.SimplicialMap.faceOrderHom f c.val, by
     rw [TauCeti.PreAbstractSimplicialComplex.SimplicialMap.coe_faceOrderHom_apply,
-      Finset.card_image_of_injOn hf, c.2]⟩
+      Finset.card_image_of_injOn hf, c.property]⟩
 
 /-- The face underlying the image cell is the image of the original face. -/
 @[simp]
 theorem map_face (c : RealizationCell K n)
     (f : PreAbstractSimplicialComplex.SimplicialMap
       K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
-    (hf : Set.InjOn f (↑c.1.1 : Set α)) :
-    (c.map f hf).1 =
-      TauCeti.PreAbstractSimplicialComplex.SimplicialMap.faceOrderHom f c.1 :=
+    (hf : Set.InjOn f (↑c.val.val : Set α)) :
+    (c.map f hf).val =
+      TauCeti.PreAbstractSimplicialComplex.SimplicialMap.faceOrderHom f c.val :=
   (rfl)
 
 /-- The vertices of the image cell form the image of the original vertex set. -/
 theorem coe_map_face (c : RealizationCell K n)
     (f : PreAbstractSimplicialComplex.SimplicialMap
       K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
-    (hf : Set.InjOn f (↑c.1.1 : Set α)) :
-    (↑(c.map f hf).1.1 : Set β) = f '' (↑c.1.1 : Set α) := by
+    (hf : Set.InjOn f (↑c.val.val : Set α)) :
+    (↑(c.map f hf).val.val : Set β) = f '' (↑c.val.val : Set α) := by
   simp [map_face,
     TauCeti.PreAbstractSimplicialComplex.SimplicialMap.coe_faceOrderHom_apply]
 
@@ -297,10 +297,10 @@ theorem map_map {γ : Type*} [DecidableEq γ] {P : AbstractSimplicialComplex γ}
     (c : RealizationCell K n)
     (f : PreAbstractSimplicialComplex.SimplicialMap
       K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
-    (hf : Set.InjOn f (↑c.1.1 : Set α))
+    (hf : Set.InjOn f (↑c.val.val : Set α))
     (g : PreAbstractSimplicialComplex.SimplicialMap
       L.toPreAbstractSimplicialComplex P.toPreAbstractSimplicialComplex)
-    (hg : Set.InjOn g (↑(c.1.1.image f) : Set β)) :
+    (hg : Set.InjOn g (↑(c.val.val.image f) : Set β)) :
     (c.map f hf).map g (by simpa using hg) =
       c.map (g.comp f) (by
         simpa using hg.comp hf (fun _ ha => Finset.mem_image_of_mem f ha)) := by
@@ -316,7 +316,7 @@ enumeration of the image cell. -/
 theorem vertexEmbedding_map (c : RealizationCell K n)
     (f : PreAbstractSimplicialComplex.SimplicialMap
       K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
-    (hf : StrictMonoOn f (↑c.1.1 : Set α)) :
+    (hf : StrictMonoOn f (↑c.val.val : Set α)) :
     ⇑(c.map f hf.injOn).vertexEmbedding = f ∘ c.vertexEmbedding := by
   have hmono : StrictMono (f ∘ c.vertexEmbedding) := fun i j hij =>
     hf (c.vertexEmbedding_mem i) (c.vertexEmbedding_mem j) (c.strictMono_vertexEmbedding hij)
@@ -334,9 +334,9 @@ deleted-vertex face of the image cell. -/
 theorem face_map (c : RealizationCell K (n + 1))
     (f : PreAbstractSimplicialComplex.SimplicialMap
       K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
-    (hf : StrictMonoOn f (↑c.1.1 : Set α)) (j : Fin (n + 2)) :
+    (hf : StrictMonoOn f (↑c.val.val : Set α)) (j : Fin (n + 2)) :
     (c.face j).map f (hf.mono (by simp)).injOn = (c.map f hf.injOn).face j := by
-  have hj : StrictMonoOn f (↑(c.face j).1.1 : Set α) := hf.mono (by simp)
+  have hj : StrictMonoOn f (↑(c.face j).val.val : Set α) := hf.mono (by simp)
   have h : ⇑((c.face j).map f hj.injOn).vertexEmbedding =
       ⇑((c.map f hf.injOn).face j).vertexEmbedding := by
     rw [vertexEmbedding_map _ f hj, vertexEmbedding_face, vertexEmbedding_face,

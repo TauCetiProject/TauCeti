@@ -186,13 +186,13 @@ variable {S X X' : Scheme.{u}} {W W' : WeierstrassCurve Γ(S, ⊤)} {p : X ⟶ S
   {f' : X' ⟶ W'.projModel} (hX' : IsPullback f' p' W'.projModelOver S.toSpecΓ)
 
 -- Restriction of global sections to an affine open `U`.
-private noncomputable def resAffine (U : S.affineOpens) : Γ(S, ⊤) →+* Γ(S, U.1) :=
+private noncomputable def resAffine (U : S.affineOpens) : Γ(S, ⊤) →+* Γ(S, U.val) :=
   (S.presheaf.map (homOfLE le_top).op).hom
 
 private theorem fromSpec_toSpecΓ_eq (U : S.affineOpens) :
-    U.2.fromSpec ≫ S.toSpecΓ = Spec.map (CommRingCat.ofHom (resAffine U)) := by
+    U.property.fromSpec ≫ S.toSpecΓ = Spec.map (CommRingCat.ofHom (resAffine U)) := by
   rw [resAffine, CommRingCat.ofHom_hom]
-  exact U.2.fromSpec_toSpecΓ
+  exact U.property.fromSpec_toSpecΓ
 
 -- A morphism out of `X` is determined by its restrictions to the projective models over the affine
 -- opens of `S`.
@@ -204,10 +204,10 @@ private theorem hom_ext_localι {Y : Scheme.{u}} {m₁ m₂ : X ⟶ Y}
     S.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (p x)) isOpen_univ
   let V : S.affineOpens := ⟨U, hU⟩
   -- the inclusion of `p⁻¹(V)` factors through the projective model over `V`
-  have hfac := (isPullback_localι hX (fromSpec_toSpecΓ_eq V)).lift_fst (p ⁻¹ᵁ V.1).ι
-    (p ∣_ V.1 ≫ V.2.isoSpec.hom)
-    (by rw [Category.assoc, V.2.isoSpec_hom_fromSpec, morphismRestrict_ι])
-  refine ⟨p ⁻¹ᵁ V.1, hxU, ?_⟩
+  have hfac := (isPullback_localι hX (fromSpec_toSpecΓ_eq V)).lift_fst (p ⁻¹ᵁ V.val).ι
+    (p ∣_ V.val ≫ V.property.isoSpec.hom)
+    (by rw [Category.assoc, V.property.isoSpec_hom_fromSpec, morphismRestrict_ι])
+  refine ⟨p ⁻¹ᵁ V.val, hxU, ?_⟩
   rw [← hfac]
   simp only [Category.assoc, h V]
 
@@ -255,22 +255,22 @@ theorem existsUnique_hom_comp_eq_comp_projModelVariableChangeIso_hom (e : X ≅ 
   -- over each affine open `U`, `e` is induced by a unique change of variables `Cs U`
   choose Cs hCs using fun U : S.affineOpens ↦
     local_exists hX (fromSpec_toSpecΓ_eq U) hX' e he hzp hzf hzf'
-  have uniq (U : S.affineOpens) {C : VariableChange Γ(S, U.1)}
+  have uniq (U : S.affineOpens) {C : VariableChange Γ(S, U.val)}
       (hC : ∃ h : C • W'.map (resAffine U) = W.map (resAffine U),
         localι hX (fromSpec_toSpecΓ_eq U) ≫ e.hom = eqToHom (congrArg projModel h.symm) ≫
           ((W'.map (resAffine U)).projModelVariableChangeIso C).hom ≫
             localι hX' (fromSpec_toSpecΓ_eq U)) : C = Cs U :=
     hC.elim fun h hC ↦ (hCs U).elim fun h' hC' ↦ local_unique hX _ hX' e.hom h h' hC hC'
   -- the local changes of variables are compatible with restriction
-  have compat (U V : S.affineOpens) (hVU : V.1 ≤ U.1) :
+  have compat (U V : S.affineOpens) (hVU : V.val ≤ U.val) :
       (Cs U).map (S.presheaf.map (homOfLE hVU).op).hom = Cs V := by
     set ψ := (S.presheaf.map (homOfLE hVU).op).hom
     have hcomp : ψ.comp (resAffine U) = resAffine V :=
       Scheme.presheaf_map_homOfLE_comp hVU le_top
-    have hg : Spec.map (CommRingCat.ofHom ψ) ≫ U.2.fromSpec = V.2.fromSpec := by
+    have hg : Spec.map (CommRingCat.ofHom ψ) ≫ U.property.fromSpec = V.property.fromSpec := by
       rw [CommRingCat.ofHom_hom]
-      exact U.2.map_fromSpec V.2 _
-    have hg' : (Spec.map (CommRingCat.ofHom ψ) ≫ U.2.fromSpec) ≫ S.toSpecΓ =
+      exact U.property.map_fromSpec V.property _
+    have hg' : (Spec.map (CommRingCat.ofHom ψ) ≫ U.property.fromSpec) ≫ S.toSpecΓ =
         Spec.map (CommRingCat.ofHom (ψ.comp (resAffine U))) := by
       rw [Category.assoc, fromSpec_toSpecΓ_eq, ← Spec.map_comp]
       rfl

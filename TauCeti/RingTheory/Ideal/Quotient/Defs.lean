@@ -5,15 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Idempotent
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 
 /-!
-# Fibres of quotient maps by two-sided ideals
+# Quotient maps by two-sided ideals
 
 For a two-sided ideal `I` of a ring `R` and an element `x ∈ R`, the fibre of the quotient map
 `Ideal.Quotient.mk I : R →+* R ⧸ I` over `Ideal.Quotient.mk I x` is the coset `x + I`
 (`Ideal.Quotient.preimage_mk_singleton`). This specializes `Ideal.Quotient.quotient_ring_saturate`
 to a single residue class without assuming commutativity of multiplication.
+
+An element `a` is idempotent modulo `I` if and only if `a * a - a ∈ I`
+(`Ideal.Quotient.isIdempotentElem_mk_iff`).
 -/
 
 public section
@@ -31,5 +35,10 @@ theorem preimage_mk_singleton (x : R) :
   refine ⟨fun h ↦ ⟨y - x, h, add_sub_cancel x y⟩, ?_⟩
   rintro ⟨z, hz, rfl⟩
   simpa using hz
+
+variable {I} in
+/-- An element is idempotent modulo a two-sided ideal `I` if and only if `a * a - a ∈ I`. -/
+theorem isIdempotentElem_mk_iff {a : R} : IsIdempotentElem (mk I a) ↔ a * a - a ∈ I := by
+  rw [IsIdempotentElem, ← map_mul, Ideal.Quotient.eq]
 
 end Ideal.Quotient

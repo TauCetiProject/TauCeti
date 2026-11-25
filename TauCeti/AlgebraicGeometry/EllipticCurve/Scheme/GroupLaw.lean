@@ -117,8 +117,8 @@ sections of `projModel W ⟶ Spec K` and `W.toAffine.Point`, which is additive b
 noncomputable def projModelPointsMulEquiv :
     (𝟙_ (Over (Spec (.of K))) ⟶ Over.mk W.projModelOver) ≃* Multiplicative W.toAffine.Point where
   toFun x := .ofAdd (W.projModelPointsEquiv ⟨x.left, by simpa using x.w⟩)
-  invFun P := Over.homMk (W.projModelPointsEquiv.symm P.toAdd).1
-    (by simpa using (W.projModelPointsEquiv.symm P.toAdd).2)
+  invFun P := Over.homMk (W.projModelPointsEquiv.symm P.toAdd).val
+    (by simpa using (W.projModelPointsEquiv.symm P.toAdd).property)
   left_inv x := by
     ext1
     simp
@@ -141,7 +141,7 @@ theorem toAdd_projModelPointsMulEquiv (x : 𝟙_ (Over (Spec (.of K))) ⟶ Over.
 section of `projModel W ⟶ Spec K` corresponding to `P` under `projModelPointsEquiv`. -/
 @[simp]
 theorem projModelPointsMulEquiv_symm_apply_left (P : Multiplicative W.toAffine.Point) :
-    (W.projModelPointsMulEquiv.symm P).left = (W.projModelPointsEquiv.symm P.toAdd).1 :=
+    (W.projModelPointsMulEquiv.symm P).left = (W.projModelPointsEquiv.symm P.toAdd).val :=
   (rfl)
 
 end Field
