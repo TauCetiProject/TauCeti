@@ -148,12 +148,8 @@ theorem exists_eLpNormWkp_succ_clm_apply_le (hp : 2 < p) (hq : 1 < q) (hqp : q �
         C * eLpNormWkp p Ω (k + 1) A * eLpNormWkp q Ω (k + 1) u := by
   obtain ⟨C, hC⟩ := exists_eLpNormWkp_succ_bilin_le (F := F →L[ℝ] G) (G := F) (H := G) hp hq hqp k
     hU hUΩ
-  refine ⟨C, fun A u => (hC (ContinuousLinearMap.id ℝ (F →L[ℝ] G)) A u).trans ?_⟩
-  calc
-    _ ≤ C * 1 * eLpNormWkp p Ω (k + 1) A * eLpNormWkp q Ω (k + 1) u := by
-      gcongr
-      exact (ofReal_norm _).symm.trans_le (ENNReal.ofReal_le_one.2 ContinuousLinearMap.norm_id_le)
-    _ = _ := by rw [mul_one]
+  exact ⟨C, fun A u => le_mul_mul_of_le_mul_eNorm_mul_mul ContinuousLinearMap.norm_id_le
+    (hC (ContinuousLinearMap.id ℝ (F →L[ℝ] G)) A u)⟩
 
 /-- **Local bound for compositions of local Sobolev fields of linear maps.** Fix
 finite-dimensional real normed spaces `F`, `G` and `H`. For `p > 2`, `1 < q ≤ p`, every `k` and a
@@ -168,12 +164,7 @@ theorem exists_eLpNormWkp_succ_compL_le [FiniteDimensional ℝ H] (hp : 2 < p) (
         C * eLpNormWkp p Ω (k + 1) A * eLpNormWkp q Ω (k + 1) T := by
   obtain ⟨C, hC⟩ := exists_eLpNormWkp_succ_bilin_le (F := G →L[ℝ] H) (G := F →L[ℝ] G)
     (H := F →L[ℝ] H) hp hq hqp k hU hUΩ
-  refine ⟨C, fun A T => (hC (ContinuousLinearMap.compL ℝ F G H) A T).trans ?_⟩
-  calc
-    _ ≤ C * 1 * eLpNormWkp p Ω (k + 1) A * eLpNormWkp q Ω (k + 1) T := by
-      gcongr
-      exact (ofReal_norm _).symm.trans_le
-        (ENNReal.ofReal_le_one.2 (ContinuousLinearMap.norm_compL_le ℝ F G H))
-    _ = _ := by rw [mul_one]
+  exact ⟨C, fun A T => le_mul_mul_of_le_mul_eNorm_mul_mul
+    (ContinuousLinearMap.norm_compL_le ℝ F G H) (hC (ContinuousLinearMap.compL ℝ F G H) A T)⟩
 
 end TauCeti
