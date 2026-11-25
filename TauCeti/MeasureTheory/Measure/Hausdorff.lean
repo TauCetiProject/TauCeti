@@ -60,7 +60,7 @@ diameter at most `2 r`.
 * `LipschitzOnWith.hausdorffMeasure_image_eq_zero_iff` and
   `LipschitzOnWith.ae_hausdorffMeasure_image_iff`: bi-Lipschitz null-set and a.e. transport.
 * `TauCeti.hausdorffMeasure_zero_eq_count`: zero-dimensional Hausdorff measure is counting
-  measure.
+  measure, and `TauCeti.hausdorffMeasure_zero_apply`: it gives `encard` on every set.
 * `IsCompact.measurable_hausdorffMeasure_inter_preimage`: fiber measures of a continuous map on a
   compact set are measurable.
 * `IsSigmaCompact.measurable_hausdorffMeasure_inter_preimage`: the same on a σ-compact set.
@@ -171,6 +171,14 @@ theorem hausdorffMeasure_zero_eq_count {X : Type*} [EMetricSpace X] [MeasurableS
       (n : ℝ≥0∞) = count (t : Set X) := by simp [htcard]
       _ = μH[0] (t : Set X) := (hfinite t t.finite_toSet).symm
       _ ≤ μH[0] s := measure_mono ht
+
+/-- Zero-dimensional Hausdorff measure counts the points of any set, measurable or not. -/
+theorem hausdorffMeasure_zero_apply {X : Type*} [EMetricSpace X] [MeasurableSpace X]
+    [BorelSpace X] (s : Set X) : μH[0] s = s.encard := by
+  rw [hausdorffMeasure_zero_eq_count]
+  rcases s.finite_or_infinite with hfin | hinf
+  · exact count_apply hfin.measurableSet
+  · rw [count_apply_infinite hinf, hinf.encard_eq, ENat.toENNReal_top]
 
 end TauCeti
 

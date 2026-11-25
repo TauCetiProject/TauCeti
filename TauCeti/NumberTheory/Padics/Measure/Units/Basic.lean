@@ -22,7 +22,8 @@ kernel of series psi via the Amice transform. Both comparisons are linear: addit
 `ℤ_p` and multiplicative convolution on `ℤ_pˣ` are different operations.
 
 The construction uses the existing clopen restriction and pushforward APIs. Coefficients may be
-any normed commutative ring, including the zero ring; no completeness or ultrametricity is needed.
+any topological commutative ring, including the zero ring; no completeness or ultrametricity is
+needed.
 
 ## References
 
@@ -36,7 +37,7 @@ open ContinuousMap PowerSeries
 
 namespace AbstractMeasure
 
-variable {p : ℕ} [Fact p.Prime] {R : Type*} [NormedCommRing R]
+variable {p : ℕ} [Fact p.Prime] {R : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
 
 /-- Restrict an ambient measure to the intrinsic p-adic unit group. -/
 def restrictUnits : D(ℤ_[p], R) →ₗ[R] D(ℤ_[p]ˣ, R) :=

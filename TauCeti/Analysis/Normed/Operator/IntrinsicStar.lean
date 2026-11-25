@@ -23,7 +23,8 @@ intrinsic conjugation satisfy `‖(realPart (toConv f)).ofConv‖ ≤ ‖f‖` a
 `ContinuousLinearMap.norm_ofConv_imaginaryPart_toConv_le`). Over a complete nontrivially normed
 field, for finite-dimensional source spaces this operation is continuous in the operator topology
 (`ContinuousLinearMap.continuous_intrinsicStar`). In particular, entrywise conjugation
-preserves continuous families of finite matrices.
+preserves continuous families of finite matrices. Over `ℂ` it is a real continuous linear map,
+`ContinuousLinearMap.intrinsicStarL`.
 
 The operator and its algebraic laws are those of
 `Mathlib.Topology.Algebra.Star.LinearMap` (Monica Omar).
@@ -94,5 +95,26 @@ theorem continuous_intrinsicStar :
   refine continuous_clm_apply.2 fun x => ?_
   -- Intrinsic star evaluates as `star (f (star x))`; `ofConv` only removes the wrapper.
   exact (ContinuousLinearMap.apply 𝕜 F (star x)).continuous.star
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {E F : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℂ E] [StarAddMonoid E] [StarModule ℂ E]
+  [ContinuousStar E] [FiniteDimensional ℂ E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [StarAddMonoid F] [StarModule ℂ F]
+  [ContinuousStar F]
+
+/-- Intrinsic conjugation of complex operators with finite-dimensional source, as a real
+continuous linear map: it is additive and commutes with real scalars, which are self-conjugate. -/
+noncomputable def intrinsicStarL : (E →L[ℂ] F) →L[ℝ] (E →L[ℂ] F) where
+  toFun f := (star (toConv f)).ofConv
+  map_add' f g := by ext; simp
+  map_smul' c f := by ext; simp [← Complex.coe_smul]
+  cont := continuous_intrinsicStar
+
+@[simp] theorem intrinsicStarL_apply (f : E →L[ℂ] F) :
+    intrinsicStarL f = (star (toConv f)).ofConv := (rfl)
 
 end ContinuousLinearMap
