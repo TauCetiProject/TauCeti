@@ -33,7 +33,8 @@ connectedness or Borel maximality is claimed here.
 ## Main declarations
 
 * `TauCeti.AntidiagonalSpecialOrthogonal.UpperTriangular.definingHopfIdeal`: the join of the
-  defining Hopf ideals of `SO_l^J` and of the upper triangular subgroup of `GL_l`.
+  defining Hopf ideals of `SO_l^J` and of the upper triangular subgroup of `GL_l`, finitely
+  generated as an ideal by `definingHopfIdeal_toIdeal_fg`.
 * `TauCeti.AntidiagonalSpecialOrthogonal.UpperTriangular.groupScheme` and
   `TauCeti.AntidiagonalSpecialOrthogonal.UpperTriangular.inclusion`: the closed subgroup scheme
   and its closed immersion into `SO_l^J`.
@@ -138,6 +139,15 @@ theorem definingHopfIdeal_def :
 theorem le_definingHopfIdeal :
     AntidiagonalSpecialOrthogonal.definingHopfIdeal R l ≤ definingHopfIdeal R l :=
   le_sup_left
+
+/-- The defining Hopf ideal of the upper triangular subgroup of `SO_l^J` is finitely generated as
+an ideal. -/
+theorem definingHopfIdeal_toIdeal_fg : (definingHopfIdeal R l).toIdeal.FG := by
+  rw [definingHopfIdeal_def, AntidiagonalSpecialOrthogonal.definingHopfIdeal_def,
+    HopfIdeal.sup_toIdeal, HopfIdeal.sup_toIdeal, SpecialLinear.definingHopfIdeal_toIdeal]
+  exact (Submodule.FG.sup (ConstantForm.definingHopfIdeal_toIdeal_fg R l _)
+    (Submodule.fg_span_singleton _)).sup
+      (GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_fg R _)
 
 /-- The coordinate Hopf algebra of the upper triangular subgroup of `SO_l^J`. -/
 noncomputable abbrev coordinateHopfAlgebra : _root_.CommHopfAlgCat.{u} R :=

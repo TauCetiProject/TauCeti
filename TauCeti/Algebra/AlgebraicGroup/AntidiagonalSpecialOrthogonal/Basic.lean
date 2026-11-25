@@ -93,6 +93,15 @@ theorem formMatrix_apply (i j : Fin l) :
     Fin.revPerm_apply]
   exact if_congr (Option.mem_def.trans (Option.some_inj.trans eq_comm)) rfl rfl
 
+variable {α l} in
+/-- The entry of `J_l` at `(i, k)` vanishes when `i + k ≥ l`. -/
+theorem formMatrix_apply_eq_zero {i k : Fin l} (hik : l ≤ (i : ℕ) + k) :
+    formMatrix α l i k = 0 := by
+  rw [formMatrix_apply, ite_eq_right]
+  rintro rfl
+  rw [Fin.val_rev] at hik
+  omega
+
 /-- `J_l` is symmetric. -/
 @[simp]
 theorem transpose_formMatrix : (formMatrix α l)ᵀ = formMatrix α l := by
@@ -117,6 +126,20 @@ theorem formMatrix_mul_self : formMatrix T l * formMatrix T l = 1 := by
   rw [formMatrix, ← permMatrix_mul,
     show (Fin.revPerm : Equiv.Perm (Fin l)) * Fin.revPerm = 1 from Equiv.ext Fin.rev_rev,
     permMatrix_one]
+
+/-- Right multiplication by `J_l` reverses the columns. -/
+@[simp]
+theorem mul_formMatrix_apply {m : Type*} (M : Matrix m (Fin l) T) (i : m) (j : Fin l) :
+    (M * formMatrix T l) i j = M i (Fin.rev j) := by
+  rw [formMatrix, Equiv.Perm.permMatrix, PEquiv.mul_toMatrix_toPEquiv, Fin.revPerm_symm,
+    submatrix_apply, id, Fin.revPerm_apply]
+
+/-- Left multiplication by `J_l` reverses the rows. -/
+@[simp]
+theorem formMatrix_mul_apply {n : Type*} (M : Matrix (Fin l) n T) (i : Fin l) (j : n) :
+    (formMatrix T l * M) i j = M (Fin.rev i) j := by
+  rw [formMatrix, Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul, submatrix_apply, id,
+    Fin.revPerm_apply]
 
 /-- Framing `J_l` by a diagonal matrix: `diag(d) J_l diag(d)ᵀ` has the entry `d i d (l - 1 - i)` at
 `(i, l - 1 - i)` and `0` elsewhere. -/
@@ -143,6 +166,10 @@ theorem diagonal_mul_formMatrix_mul_transpose_diagonal_eq_iff (d : Fin l → T) 
     rw [diagonal_mul_formMatrix_mul_transpose_diagonal, formMatrix_apply, h]
 
 end FormMatrixRing
+
+/-- The determinant of `J_l` is a unit, as `J_l² = 1`. -/
+theorem isUnit_det_formMatrix {T : Type*} [CommRing T] {l : ℕ} : IsUnit (formMatrix T l).det :=
+  isUnit_det_of_left_inverse formMatrix_mul_self
 
 /-! ### The point groups -/
 
