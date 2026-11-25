@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Analysis.Quaternion
-public import TauCeti.Analysis.Calculus.DifferentialForm.Coordinates
+public import TauCeti.Analysis.Calculus.DifferentialForm.Flux
 public import TauCeti.Topology.Algebra.Module.Determinant
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Algebra.Order.Group.Pointwise.Interval
@@ -292,19 +292,21 @@ theorem _root_.Quaternion.sum_inner_dq_single_smul (q : ℍ) :
 Its `i`-th coefficient is `(-1) ^ i` times the `i`-th unit `1, i, j, k`, against the real
 `3`-form omitting the coordinate `i`. -/
 noncomputable def Dq : (Fin 4 → ℝ) [⋀^Fin 3]→L[ℝ] ℍ :=
-  ∑ i : Fin 4,
-    (coordMinorForm i).smulRight
-      ((-1 : ℝ) ^ (i : ℕ) • QuaternionAlgebra.basisOneIJK (-1 : ℝ) 0 (-1) i)
+  fluxForm (E := ℍ) (fun i _ ↦ QuaternionAlgebra.basisOneIJK (-1 : ℝ) 0 (-1) i) 0
 
+/-- `Dq` is the constant coordinate `fluxForm` of the quaternion basis `1, i, j, k`. -/
+theorem Dq_eq_fluxForm (x : Fin 4 → ℝ) :
+    Dq = fluxForm (E := ℍ) (fun i _ ↦ QuaternionAlgebra.basisOneIJK (-1 : ℝ) 0 (-1) i) x := by
+  ext1 v
+  rw [Dq, fluxForm_apply, fluxForm_apply]
 
 /-- `Dq v` is the sum over the coordinates `i` of `(-1) ^ i` times the minor of `v` omitting
 coordinate `i`, times the `i`-th unit of `1, i, j, k`. -/
 theorem Dq_apply (v : Fin 3 → Fin 4 → ℝ) :
     Dq v = ∑ i : Fin 4,
       ((-1 : ℝ) ^ (i : ℕ) * coordMinorForm i v) •
-        QuaternionAlgebra.basisOneIJK (-1 : ℝ) 0 (-1) i := by
-  simp only [Dq, ContinuousAlternatingMap.sum_apply, ContinuousAlternatingMap.smulRight_apply,
-    mul_comm _ (coordMinorForm _ v), mul_smul]
+        QuaternionAlgebra.basisOneIJK (-1 : ℝ) 0 (-1) i :=
+  fluxForm_apply _ 0 v
 
 /-- The real part of `Dq` is `dx∧dy∧dz`. -/
 @[simp]
@@ -333,10 +335,10 @@ theorem imK_Dq (v : Fin 3 → Fin 4 → ℝ) : (Dq v).imK = -coordMinorForm 3 v 
 theorem Dq_succAbove (i : Fin 4) :
     Dq (fun r ↦ Pi.single (i.succAbove r) 1) =
       (-1 : ℝ) ^ (i : ℕ) • QuaternionAlgebra.basisOneIJK (-1 : ℝ) 0 (-1) i := by
-  rw [← dq_single]
-  fin_cases i <;> ext <;>
-    norm_num [coordMinorForm_apply, Matrix.det_fin_three, Pi.single_apply, Fin.succAbove,
-      -dq_single]
+  have hrem : (fun r ↦ (Pi.single (i.succAbove r) 1 : Fin 4 → ℝ)) =
+      i.removeNth fun k : Fin 4 ↦ (Pi.single k 1 : Fin 4 → ℝ) := (rfl)
+  rw [Dq, hrem]
+  exact fluxForm_removeNth_single (E := ℍ) _ 0 i
 
 /-- `Dq` is the quaternionic interior product of the volume form: the real inner product of
 `dq w` with `Dq v` is the determinant of the matrix with rows `w, v 0, v 1, v 2`. -/

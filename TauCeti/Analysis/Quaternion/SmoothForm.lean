@@ -22,10 +22,10 @@ to manifold top-form integration `TauCeti.integralTopForm`.
    `B : (Fin 4 → ℝ) → ℍ →L[ℝ] E`, the weighted `3`-form `quatSurfaceForm B x = (B x) ∘ Dq` is the
    coordinate flux form `fluxForm (fun i x ↦ B x (dq (Pi.single i 1)))`. Whenever `g, f : ℍ → ℍ`
    are real differentiable at `dq x`, the exterior derivative of the ordered two-sided `3`-form
-   `g * Dq * f` is `(fueterRight (dg) * f + g * fueterLeft (df)) • coordVolumeForm`. Taking `g = 1`
-   or `f = 1` yields `d(Dq · f) = (fueterLeft df) dV` and `d(f · Dq) = (fueterRight df) dV`, as
-   well as closedness for Fueter regular functions and the affine cofactor pullback identity via
-   `extDeriv_pullback`.
+   `g * Dq * f` is `(fueterRight (dg) * f + g * fueterLeft (df))` tensored with
+   `(Pi.basisFun ℝ (Fin 4)).continuousDet`. Taking `g = 1` or `f = 1` yields
+   `d(Dq · f) = (fueterLeft df) dV` and `d(f · Dq) = (fueterRight df) dV`, as well as closedness
+   for Fueter regular functions and the affine cofactor pullback identity via `extDeriv_pullback`.
 
 2. **Individual oriented facets and `integralTopForm` comparison.** Each of the eight facets
    `(j : Fin 4, b : Bool)` of an invertible affine parallelepiped `(fun w ↦ p + L w) '' Icc 0 1`
@@ -94,7 +94,7 @@ theorem quatSurfaceForm_apply (B : (Fin 4 → ℝ) → ℍ →L[ℝ] E) (x : Fin
 theorem quatSurfaceForm_eq_fluxForm (B : (Fin 4 → ℝ) → ℍ →L[ℝ] E) :
     quatSurfaceForm B = fluxForm fun i x ↦ B x (dq (Pi.single i 1)) := by
   ext x v
-  rw [quatSurfaceForm_apply, Dq_apply, map_sum, fluxForm_apply]
+  rw [quatSurfaceForm_apply, Dq_eq_fluxForm x, fluxForm_apply, map_sum, fluxForm_apply]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [map_smul, dq_single, one_smul]
 
@@ -108,11 +108,11 @@ theorem _root_.ContinuousLinearEquiv.quatSurfaceForm_comp_affine
   rw [quatSurfaceForm_eq_fluxForm, L.fluxForm_comp_affine]
 
 /-- The exterior derivative of `quatSurfaceForm B` at `x` is the coordinate divergence of
-`i ↦ B x (dq (Pi.single i 1))` tensored with `coordVolumeForm`. -/
+`i ↦ B x (dq (Pi.single i 1))` tensored with `(Pi.basisFun ℝ (Fin 4)).continuousDet`. -/
 theorem extDeriv_quatSurfaceForm {B : (Fin 4 → ℝ) → ℍ →L[ℝ] E} {x : Fin 4 → ℝ}
     (hB : ∀ i : Fin 4, DifferentiableAt ℝ (fun y ↦ B y (dq (Pi.single i 1))) x) :
     extDeriv (quatSurfaceForm B) x =
-      coordVolumeForm.smulRight
+      (Pi.basisFun ℝ (Fin 4)).continuousDet.smulRight
         (∑ i : Fin 4, fderiv ℝ (fun y ↦ B y (dq (Pi.single i 1))) x (Pi.single i 1)) := by
   rw [quatSurfaceForm_eq_fluxForm, extDeriv_fluxForm hB]
 
@@ -141,7 +141,7 @@ theorem extDeriv_quatSurfaceForm_mulLeftRight {f g : ℍ → ℍ} {x : Fin 4 →
     (hg : DifferentiableAt ℝ g (dq x)) (hf : DifferentiableAt ℝ f (dq x)) :
     extDeriv (quatSurfaceForm fun y ↦
       ContinuousLinearMap.mulLeftRight ℝ ℍ (g (dq y)) (f (dq y))) x =
-      coordVolumeForm.smulRight
+      (Pi.basisFun ℝ (Fin 4)).continuousDet.smulRight
         (fueterRight (fderiv ℝ g (dq x)) * f (dq x) +
           g (dq x) * fueterLeft (fderiv ℝ f (dq x))) := by
   have hd (i : Fin 4) :
@@ -154,18 +154,11 @@ theorem extDeriv_quatSurfaceForm_mulLeftRight {f g : ℍ → ℍ} {x : Fin 4 →
 private theorem dq_single_zero_one : dq (Pi.single 0 1) = 1 := by
   ext <;> simp [dq_apply]
 
-private theorem differentiableAt_of_comp_dq {f : ℍ → ℍ} {x : Fin 4 → ℝ}
-    (h : DifferentiableAt ℝ (fun y ↦ f (dq y)) x) : DifferentiableAt ℝ f (dq x) := by
-  let L := (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).toContinuousLinearEquiv
-  have hex : L (dq x) = x := linearEquivTuple_dq x
-  have hid : (fun y ↦ f (dq y)) ∘ ⇑L = f := funext fun q ↦ congrArg f (dq_linearEquivTuple q)
-  exact hid ▸ (hex ▸ h).comp (dq x) L.differentiableAt
-
 /-- **Left Fueter exterior-derivative identity:** `d(Dq · f) = (fueterLeft (df)) dV` for every
 `f : ℍ → ℍ` and `x : Fin 4 → ℝ` (for `f` non-differentiable at `dq x` both sides are `0`). -/
 theorem extDeriv_op_smul_Dq (f : ℍ → ℍ) (x : Fin 4 → ℝ) :
     extDeriv (fun y ↦ MulOpposite.op (f (dq y)) • Dq) x =
-      coordVolumeForm.smulRight (fueterLeft (fderiv ℝ f (dq x))) := by
+      (Pi.basisFun ℝ (Fin 4)).continuousDet.smulRight (fueterLeft (fderiv ℝ f (dq x))) := by
   have heq : (fun y : Fin 4 → ℝ ↦ MulOpposite.op (f (dq y)) • Dq) =
       quatSurfaceForm fun y ↦ ContinuousLinearMap.mulLeftRight ℝ ℍ 1 (f (dq y)) := by
     funext y; ext1 v; simp [quatSurfaceForm_apply]
@@ -174,8 +167,14 @@ theorem extDeriv_op_smul_Dq (f : ℍ → ℍ) (x : Fin 4 → ℝ) :
     ext1 v; simp
   · have hnd : ¬ DifferentiableAt ℝ (fun y ↦ MulOpposite.op (f (dq y)) • Dq) x := by
       rw [heq, quatSurfaceForm_eq_fluxForm, differentiableAt_fluxForm_iff]
-      refine fun hall ↦ hf (differentiableAt_of_comp_dq ?_)
-      simpa only [ContinuousLinearMap.mulLeftRight_apply, dq_single_zero_one, one_mul] using hall 0
+      let e := (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm.toContinuousLinearEquiv
+      have hdq : ⇑dq = ⇑e := coe_dq.trans (LinearEquiv.coe_toContinuousLinearEquiv' _).symm
+      intro hall
+      have hcomp : DifferentiableAt ℝ (f ∘ e) x := by
+        simpa only [ContinuousLinearMap.mulLeftRight_apply, dq_single_zero_one, one_mul, hdq,
+          Function.comp_def] using hall 0
+      rw [e.comp_right_differentiableAt_iff, ← hdq] at hcomp
+      exact hf hcomp
     rw [extDeriv_of_not_differentiableAt hnd, fderiv_zero_of_not_differentiableAt hf, map_zero]
     ext1 v; simp
 
@@ -183,7 +182,7 @@ theorem extDeriv_op_smul_Dq (f : ℍ → ℍ) (x : Fin 4 → ℝ) :
 `f : ℍ → ℍ` and `x : Fin 4 → ℝ` (for `f` non-differentiable at `dq x` both sides are `0`). -/
 theorem extDeriv_smul_Dq (f : ℍ → ℍ) (x : Fin 4 → ℝ) :
     extDeriv (fun y ↦ f (dq y) • Dq) x =
-      coordVolumeForm.smulRight (fueterRight (fderiv ℝ f (dq x))) := by
+      (Pi.basisFun ℝ (Fin 4)).continuousDet.smulRight (fueterRight (fderiv ℝ f (dq x))) := by
   have heq : (fun y : Fin 4 → ℝ ↦ f (dq y) • Dq) =
       quatSurfaceForm fun y ↦ ContinuousLinearMap.mulLeftRight ℝ ℍ (f (dq y)) 1 := by
     funext y; ext1 v; simp [quatSurfaceForm_apply]
@@ -192,8 +191,14 @@ theorem extDeriv_smul_Dq (f : ℍ → ℍ) (x : Fin 4 → ℝ) :
     ext1 v; simp
   · have hnd : ¬ DifferentiableAt ℝ (fun y ↦ f (dq y) • Dq) x := by
       rw [heq, quatSurfaceForm_eq_fluxForm, differentiableAt_fluxForm_iff]
-      refine fun hall ↦ hf (differentiableAt_of_comp_dq ?_)
-      simpa only [ContinuousLinearMap.mulLeftRight_apply, dq_single_zero_one, mul_one] using hall 0
+      let e := (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm.toContinuousLinearEquiv
+      have hdq : ⇑dq = ⇑e := coe_dq.trans (LinearEquiv.coe_toContinuousLinearEquiv' _).symm
+      intro hall
+      have hcomp : DifferentiableAt ℝ (f ∘ e) x := by
+        simpa only [ContinuousLinearMap.mulLeftRight_apply, dq_single_zero_one, mul_one, hdq,
+          Function.comp_def] using hall 0
+      rw [e.comp_right_differentiableAt_iff, ← hdq] at hcomp
+      exact hf hcomp
     rw [extDeriv_of_not_differentiableAt hnd, fderiv_zero_of_not_differentiableAt hf, map_zero]
     ext1 v; simp
 
@@ -221,14 +226,15 @@ theorem RightFueterAt.extDeriv_smul_Dq_eq_zero {f : ℍ → ℍ} {x : Fin 4 → 
 
 /-- Exterior derivative of the affine-pulled-back two-sided surface form `g * Dq * f` via
 `extDeriv_pullback`: at any `u` where `g` and `f` are differentiable at `dq (p + L u)`, it equals
-`det L` times the two-sided Fueter expression tensored with `coordVolumeForm`. -/
+`det L` times the two-sided Fueter expression tensored with
+`(Pi.basisFun ℝ (Fin 4)).continuousDet`. -/
 theorem _root_.ContinuousLinearEquiv.extDeriv_pullback_quatSurfaceForm_mulLeftRight
     (L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)) (p : Fin 4 → ℝ) {f g : ℍ → ℍ} {u : Fin 4 → ℝ}
     (hg : DifferentiableAt ℝ g (dq (p + L u))) (hf : DifferentiableAt ℝ f (dq (p + L u))) :
     extDeriv (fun w ↦ (quatSurfaceForm (fun y ↦
       ContinuousLinearMap.mulLeftRight ℝ ℍ (g (dq y)) (f (dq y))) (p + L w)).compContinuousLinearMap
         L.toContinuousLinearMap) u =
-      coordVolumeForm.smulRight
+      (Pi.basisFun ℝ (Fin 4)).continuousDet.smulRight
         (LinearMap.det (L : (Fin 4 → ℝ) →ₗ[ℝ] Fin 4 → ℝ) •
           (fueterRight (fderiv ℝ g (dq (p + L u))) * f (dq (p + L u)) +
             g (dq (p + L u)) * fueterLeft (fderiv ℝ f (dq (p + L u))))) := by

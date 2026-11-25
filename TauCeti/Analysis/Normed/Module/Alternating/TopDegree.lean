@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Module.Alternating.Topology
 public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Scalar coordinates for top-degree continuous alternating forms
@@ -15,7 +16,11 @@ public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 Over a complete nontrivially normed field, evaluation on a basis identifies the space of
 top-degree forms with the scalar field as a continuous linear equivalence. Its inverse
 multiplies the continuous determinant form of that basis, so these forms make up a line
-(`Module.Basis.finrank_continuousAlternatingMap_eq_one`). This construction needs only a
+(`Module.Basis.finrank_continuousAlternatingMap_eq_one`). More generally, every vector-valued
+top-degree continuous alternating form equals `Module.Basis.continuousDet` tensored with its value
+on the basis (`ContinuousAlternatingMap.eq_continuousDet_smulRight`), and pulling
+`Module.Basis.continuousDet` back along a continuous linear endomorphism multiplies it by the
+determinant (`Module.Basis.continuousDet_compContinuousLinearMap`). This construction needs only a
 Hausdorff topological vector space, with no choice of norm or inner product.
 -/
 
@@ -43,6 +48,28 @@ theorem continuousDet_apply (b : Module.Basis ι 𝕜 E) (v : ι → E) :
 @[simp]
 theorem continuousDet_toAlternatingMap (b : Module.Basis ι 𝕜 E) :
     b.continuousDet.toAlternatingMap = b.det := by rfl
+
+/-- Pulling `b.continuousDet` back along a continuous linear endomorphism multiplies it by the
+determinant. -/
+theorem continuousDet_compContinuousLinearMap (b : Module.Basis ι 𝕜 E) (A : E →L[𝕜] E) :
+    b.continuousDet.compContinuousLinearMap A = A.toLinearMap.det • b.continuousDet := by
+  ext v
+  rw [ContinuousAlternatingMap.apply_eq_det_mul _ b v,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply_basis,
+    continuousDet_apply, b.det_self, mul_one, ContinuousAlternatingMap.smul_apply,
+    continuousDet_apply, smul_eq_mul, mul_comm]
+
+/-- Every top-degree continuous alternating map into a topological module `F` equals
+`b.continuousDet` tensored with its value on the basis `b`. -/
+theorem _root_.ContinuousAlternatingMap.eq_continuousDet_smulRight
+    {F : Type*} [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousSMul 𝕜 F]
+    (η : E [⋀^ι]→L[𝕜] F) (b : Module.Basis ι 𝕜 E) :
+    η = b.continuousDet.smulRight (η b) := by
+  ext v
+  simpa only [← ContinuousAlternatingMap.coe_toAlternatingMap,
+    ContinuousAlternatingMap.smulRight_apply, continuousDet_apply,
+    AlternatingMap.smulRight_apply] using
+    congrArg (· v) (η.toAlternatingMap.eq_basis_det_smulRight b)
 
 /-- Evaluation on a basis is a continuous linear equivalence from top-degree forms to scalars.
 The inverse sends `c` to `c` times the determinant form of the basis. -/

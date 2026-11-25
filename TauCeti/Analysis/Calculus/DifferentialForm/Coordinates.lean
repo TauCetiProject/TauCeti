@@ -7,23 +7,20 @@ module
 
 public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.Analysis.Calculus.DifferentialForm.Basic
-import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
-# Coordinate volume forms, coordinate minor forms, and signed coordinate evaluations
+# Coordinate minor forms and signed coordinate evaluations
 
 Evaluating an `n`-form on the tuples obtained by omitting one of `n + 1` vectors gives its
 signed coordinate coefficients (`ContinuousAlternatingMap.signedRemoveNth`). Summing the
 directional derivatives of these coefficients recovers the actual exterior derivative. The
 within-set identity is shared by the full-space and half-space Stokes proofs.
 
-This file also defines the foundational real coordinate volume `m`-form
-`TauCeti.coordVolumeForm` on `Fin m → ℝ` and the coordinate `n`-minor forms
-`TauCeti.coordMinorForm` on `Fin (n + 1) → ℝ` (`dx₀ ∧ ⋯ ∧ dx̂ᵢ ∧ ⋯ ∧ dxₙ`), together with the
-top-degree decomposition (`ContinuousAlternatingMap.eq_coordVolumeForm_smulRight`), determinant
-pullback law (`TauCeti.coordVolumeForm_compContinuousLinearMap`), standard-basis evaluations, and
-row-zero Laplace expansion (`TauCeti.sum_signed_mul_coordMinorForm`).
+This file also defines the real coordinate `n`-minor forms `TauCeti.coordMinorForm` on
+`Fin (n + 1) → ℝ` (`dx₀ ∧ ⋯ ∧ dx̂ᵢ ∧ ⋯ ∧ dxₙ`), together with standard-basis omission evaluation
+(`TauCeti.coordMinorForm_removeNth_single`) and row-zero Laplace expansion
+(`TauCeti.sum_signed_mul_coordMinorForm`).
 -/
 
 public section
@@ -66,68 +63,7 @@ end ContinuousAlternatingMap
 
 namespace TauCeti
 
-section VolumeAndMinor
-
-/-- The standard determinant volume `m`-form on `Fin m → ℝ`, sending an `m`-tuple of vectors to
-the determinant of the `m × m` matrix having those vectors as rows. -/
-def coordVolumeForm {m : ℕ} : (Fin m → ℝ) [⋀^Fin m]→L[ℝ] ℝ :=
-  AlternatingMap.toContinuousAlternatingMap Matrix.detRowAlternating
-
-/-- Evaluating `coordVolumeForm` on an `m`-tuple of vectors gives the determinant of the matrix
-having those vectors as rows. -/
-theorem coordVolumeForm_apply {m : ℕ} (v : Fin m → Fin m → ℝ) :
-    coordVolumeForm v = (Matrix.of v).det := by
-  rw [coordVolumeForm, AlternatingMap.coe_toContinuousAlternatingMap, ← Pi.basisFun_det,
-    Pi.basisFun_det_apply]
-
-/-- The underlying alternating map of `coordVolumeForm` is the determinant form of the standard
-coordinate basis `Pi.basisFun ℝ (Fin m)`. -/
-theorem toAlternatingMap_coordVolumeForm {m : ℕ} :
-    (coordVolumeForm (m := m)).toAlternatingMap = (Pi.basisFun ℝ (Fin m)).det := by
-  rw [← AlternatingMap.toContinuousAlternatingMap_symm_apply, coordVolumeForm,
-    LinearEquiv.symm_apply_apply, Pi.basisFun_det]
-
-/-- `coordVolumeForm` evaluates to `1` on the standard coordinate basis. -/
-@[simp]
-theorem coordVolumeForm_single {m : ℕ} :
-    coordVolumeForm (fun i : Fin m ↦ Pi.single i (1 : ℝ)) = 1 := by
-  have hb : (fun i : Fin m ↦ Pi.single i (1 : ℝ)) = Pi.basisFun ℝ (Fin m) :=
-    funext fun i ↦ (Pi.basisFun_apply ℝ (Fin m) i).symm
-  rw [hb, ← ContinuousAlternatingMap.coe_toAlternatingMap, toAlternatingMap_coordVolumeForm,
-    Module.Basis.det_self]
-
-/-- Every continuous alternating `m`-form on `Fin m → ℝ` into a real normed space `E` equals
-`coordVolumeForm` tensored with its value on the standard basis. -/
-theorem _root_.ContinuousAlternatingMap.eq_coordVolumeForm_smulRight {m : ℕ} {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] (η : (Fin m → ℝ) [⋀^Fin m]→L[ℝ] E) :
-    η = coordVolumeForm.smulRight (η (fun i ↦ Pi.single i 1)) := by
-  refine ContinuousAlternatingMap.toAlternatingMap_injective ?_
-  have hb : (Pi.basisFun ℝ (Fin m) : Fin m → Fin m → ℝ) = fun i ↦ Pi.single i 1 :=
-    funext (Pi.basisFun_apply ℝ (Fin m))
-  have h := η.toAlternatingMap.eq_basis_det_smulRight (Pi.basisFun ℝ (Fin m))
-  have hsmul :
-      ((coordVolumeForm (m := m)).smulRight (η fun i ↦ Pi.single i 1)).toAlternatingMap =
-        (coordVolumeForm (m := m)).toAlternatingMap.smulRight (η fun i ↦ Pi.single i 1) := by
-    ext v
-    simp
-  rw [hsmul, toAlternatingMap_coordVolumeForm]
-  rwa [hb, ContinuousAlternatingMap.coe_toAlternatingMap] at h
-
-/-- Pulling `coordVolumeForm` back along a continuous linear endomorphism multiplies it by the
-signed determinant. -/
-theorem coordVolumeForm_compContinuousLinearMap {m : ℕ}
-    (L : (Fin m → ℝ) →L[ℝ] (Fin m → ℝ)) :
-    coordVolumeForm.compContinuousLinearMap L =
-      LinearMap.det L.toLinearMap • coordVolumeForm := by
-  refine ContinuousAlternatingMap.toAlternatingMap_injective ?_
-  have hcomp :
-      ((coordVolumeForm (m := m)).compContinuousLinearMap L).toAlternatingMap =
-        (coordVolumeForm (m := m)).toAlternatingMap.compLinearMap L.toLinearMap := by
-    ext v
-    simp [Function.comp_def]
-  rw [hcomp, ContinuousAlternatingMap.toAlternatingMap_smul]
-  exact coordVolumeForm.toAlternatingMap.compLinearMap_eq_det_smul
-    (Pi.basisFun ℝ (Fin m)) L.toLinearMap
+section MinorForm
 
 /-- The real `n`-form on `Fin (n + 1) → ℝ` omitting coordinate `i`: the determinant of the `n × n`
 matrix of remaining coordinates of `n` vectors, i.e., `dx₀ ∧ ⋯ ∧ dx̂ᵢ ∧ ⋯ ∧ dxₙ`. -/
@@ -154,12 +90,14 @@ theorem sum_signed_mul_coordMinorForm {n : ℕ} (w : Fin (n + 1) → ℝ)
   rw [coordMinorForm_apply]
   rfl
 
-/-- `coordMinorForm i` evaluates to `1` on the standard basis omitting `i` and to `0` when a
-different basis vector is omitted. -/
+/-- `coordMinorForm i` evaluated on `j.removeNth` of the standard basis equals `1` if `i = j` and
+`0` otherwise. -/
 @[simp]
-theorem coordMinorForm_succAbove_single {n : ℕ} (i j : Fin (n + 1)) :
-    coordMinorForm i (fun r ↦ Pi.single (j.succAbove r) 1) = if i = j then 1 else 0 := by
+theorem coordMinorForm_removeNth_single {n : ℕ} (i j : Fin (n + 1)) :
+    coordMinorForm i (j.removeNth fun k : Fin (n + 1) ↦ (Pi.single k 1 : Fin (n + 1) → ℝ)) =
+      if i = j then 1 else 0 := by
   rw [coordMinorForm_apply]
+  simp only [Fin.removeNth_apply]
   split_ifs with h
   · subst h
     have h1 : (Matrix.of fun r c : Fin n ↦
@@ -171,14 +109,6 @@ theorem coordMinorForm_succAbove_single {n : ℕ} (i j : Fin (n + 1)) :
   · obtain ⟨c, hc⟩ := Fin.exists_succAbove_eq (Ne.symm h)
     exact Matrix.det_eq_zero_of_column_eq_zero c fun r ↦ by simp [hc]
 
-/-- `coordMinorForm i` evaluated on `j.removeNth` of the standard basis equals `1` if `i = j` and
-`0` otherwise. -/
-@[simp]
-theorem coordMinorForm_removeNth_single {n : ℕ} (i j : Fin (n + 1)) :
-    coordMinorForm i (j.removeNth fun k : Fin (n + 1) ↦ (Pi.single k 1 : Fin (n + 1) → ℝ)) =
-      if i = j then 1 else 0 :=
-  coordMinorForm_succAbove_single i j
-
-end VolumeAndMinor
+end MinorForm
 
 end TauCeti

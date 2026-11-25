@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.DifferentialForm.Coordinates
+public import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 public import TauCeti.MeasureTheory.Integral.DivergenceTheorem.Affine
 import Mathlib.Analysis.Calculus.FDeriv.Pi
 import TauCeti.Topology.Algebra.Module.Alternating.Topology
@@ -23,9 +24,8 @@ built from the coordinate `(n × n)` minor forms `coordMinorForm i` from
 omitting `eⱼ`, `fluxForm F x` evaluates to `(-1)^j • F j x`, so its signed omission coefficients
 (`ContinuousAlternatingMap.signedRemoveNth`) are literally `j ↦ F j x`. Consequently, whenever
 every `F i` is differentiable at `x`, the exterior derivative of `fluxForm F` at `x` is the
-divergence times the standard volume `(n + 1)`-form `coordVolumeForm`:
-
-`extDeriv (fluxForm F) x = coordVolumeForm.smulRight (∑ i, fderiv ℝ (F i) x (Pi.single i 1))`.
+divergence times the standard volume `(n + 1)`-form `(Pi.basisFun ℝ (Fin (n + 1))).continuousDet`:
+`(Pi.basisFun ℝ (Fin (n + 1))).continuousDet.smulRight (∑ i, fderiv ℝ (F i) x (Pi.single i 1))`.
 
 Under an invertible affine map `u ↦ p + L u` with `L : (Fin (n + 1) → ℝ) ≃L[ℝ] (Fin (n + 1) → ℝ)`,
 three-column Laplace/cofactor expansion of `coordMinorForm` identifies the linear pullback of
@@ -40,7 +40,7 @@ where each `F i` is merely differentiable at `p + L u`.
 * `TauCeti.differentiableAt_fluxForm_iff`: `fluxForm F` is differentiable at `x` iff every
   component `F i` is differentiable at `x`.
 * `TauCeti.extDerivWithin_fluxForm`, `TauCeti.extDeriv_fluxForm`: exterior derivative of
-  `fluxForm F` as divergence times `coordVolumeForm`.
+  `fluxForm F` as divergence times `(Pi.basisFun ℝ (Fin (n + 1))).continuousDet`.
 * `ContinuousLinearEquiv.fluxForm_comp_affine`: affine pullback of `fluxForm F` equals
   `fluxForm (L.affineFluxPullback p F)`.
 * `ContinuousLinearEquiv.extDeriv_fluxForm_affineFluxPullback`: exterior derivative of the
@@ -84,17 +84,11 @@ private theorem fluxForm_eq_sum_clm (F : Fin (n + 1) → (Fin (n + 1) → ℝ) �
   simp only [fluxForm, ← ContinuousAlternatingMap.smulRightCLM_apply, map_smul]
 
 @[simp]
-theorem fluxForm_succAbove_single (F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E)
-    (x : Fin (n + 1) → ℝ) (j : Fin (n + 1)) :
-    fluxForm F x (fun r ↦ Pi.single (j.succAbove r) 1) = (-1 : ℝ) ^ (j : ℕ) • F j x := by
-  simp [fluxForm_apply]
-
-@[simp]
 theorem fluxForm_removeNth_single (F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E)
     (x : Fin (n + 1) → ℝ) (j : Fin (n + 1)) :
     fluxForm F x (j.removeNth fun k : Fin (n + 1) ↦ (Pi.single k 1 : Fin (n + 1) → ℝ)) =
-      (-1 : ℝ) ^ (j : ℕ) • F j x :=
-  fluxForm_succAbove_single F x j
+      (-1 : ℝ) ^ (j : ℕ) • F j x := by
+  simp [fluxForm_apply]
 
 /-- The signed coordinate-omission evaluations of `fluxForm F x` recover the field components
 `j ↦ F j x`. -/
@@ -187,14 +181,15 @@ theorem extDerivWithin_fluxForm_apply_single {F : Fin (n + 1) → (Fin (n + 1) �
   rw [fderivWithin_pi hF hs, ContinuousLinearMap.pi_apply]
 
 /-- Within a set of unique differentiability, the exterior derivative of `fluxForm F` is the
-divergence tensored with `coordVolumeForm`. -/
+divergence tensored with `(Pi.basisFun ℝ (Fin (n + 1))).continuousDet`. -/
 theorem extDerivWithin_fluxForm {F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E}
     {s : Set (Fin (n + 1) → ℝ)} {x : Fin (n + 1) → ℝ} (hs : UniqueDiffWithinAt ℝ s x)
     (hF : ∀ i, DifferentiableWithinAt ℝ (F i) s x) :
     extDerivWithin (fluxForm F) s x =
-      coordVolumeForm.smulRight (∑ i : Fin (n + 1), fderivWithin ℝ (F i) s x (Pi.single i 1)) := by
-  rw [(extDerivWithin (fluxForm F) s x).eq_coordVolumeForm_smulRight,
-    extDerivWithin_fluxForm_apply_single hs hF]
+      (Pi.basisFun ℝ (Fin (n + 1))).continuousDet.smulRight
+        (∑ i : Fin (n + 1), fderivWithin ℝ (F i) s x (Pi.single i 1)) := by
+  rw [(extDerivWithin (fluxForm F) s x).eq_continuousDet_smulRight (Pi.basisFun ℝ (Fin (n + 1))),
+    funext (Pi.basisFun_apply ℝ (Fin (n + 1))), extDerivWithin_fluxForm_apply_single hs hF]
 
 /-- Evaluated on the standard coordinate frame, the exterior derivative of `fluxForm F` at `x` is
 the divergence `∑ i, ∂ᵢ (F i) x`. Only differentiability at `x` is required. -/
@@ -207,12 +202,15 @@ theorem extDeriv_fluxForm_apply_single {F : Fin (n + 1) → (Fin (n + 1) → ℝ
       fun i ↦ (hF i).differentiableWithinAt
 
 /-- The exterior derivative of `fluxForm F` at `x` equals the divergence tensored with
-`coordVolumeForm`. Only differentiability of each component at `x` is required. -/
+`(Pi.basisFun ℝ (Fin (n + 1))).continuousDet`. Only differentiability of each component at `x` is
+required. -/
 theorem extDeriv_fluxForm {F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E}
     {x : Fin (n + 1) → ℝ} (hF : ∀ i, DifferentiableAt ℝ (F i) x) :
     extDeriv (fluxForm F) x =
-      coordVolumeForm.smulRight (∑ i : Fin (n + 1), fderiv ℝ (F i) x (Pi.single i 1)) := by
-  rw [(extDeriv (fluxForm F) x).eq_coordVolumeForm_smulRight, extDeriv_fluxForm_apply_single hF]
+      (Pi.basisFun ℝ (Fin (n + 1))).continuousDet.smulRight
+        (∑ i : Fin (n + 1), fderiv ℝ (F i) x (Pi.single i 1)) := by
+  simpa only [extDerivWithin_univ, fderivWithin_univ] using
+    extDerivWithin_fluxForm uniqueDiffWithinAt_univ fun i ↦ (hF i).differentiableWithinAt
 
 end FluxForm
 
@@ -263,12 +261,12 @@ theorem fluxForm_comp_affine (F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E) (
 
 /-- By `extDeriv_pullback` along the smooth affine map `u ↦ p + L u`, the exterior derivative of
 `fluxForm (L.affineFluxPullback p F)` at `u` equals the signed determinant times the divergence of
-`F` at `p + L u` tensored with `coordVolumeForm`. Only differentiability of each `F i` at `p + L u`
-is required. -/
+`F` at `p + L u` tensored with `(Pi.basisFun ℝ (Fin (n + 1))).continuousDet`. Only differentiability
+of each `F i` at `p + L u` is required. -/
 theorem extDeriv_fluxForm_affineFluxPullback {F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E}
     {u : Fin (n + 1) → ℝ} (hF : ∀ i, DifferentiableAt ℝ (F i) (p + L u)) :
     extDeriv (fluxForm (L.affineFluxPullback p F)) u =
-      coordVolumeForm.smulRight
+      (Pi.basisFun ℝ (Fin (n + 1))).continuousDet.smulRight
         (LinearMap.det (L : (Fin (n + 1) → ℝ) →ₗ[ℝ] Fin (n + 1) → ℝ) •
           ∑ i : Fin (n + 1), fderiv ℝ (F i) (p + L u) (Pi.single i 1)) := by
   let A : (Fin (n + 1) → ℝ) → Fin (n + 1) → ℝ := fun w ↦ p + L w
@@ -283,7 +281,8 @@ theorem extDeriv_fluxForm_affineFluxPullback {F : Fin (n + 1) → (Fin (n + 1) �
   have hd : DifferentiableAt ℝ (fluxForm F) (A u) := differentiableAt_fluxForm hF
   rw [hpull, extDeriv_pullback (f := A) hd hA (by norm_num), hfderiv u, extDeriv_fluxForm hF]
   ext v
-  have hv := congrArg (· v) (coordVolumeForm_compContinuousLinearMap L.toContinuousLinearMap)
+  have hv := congrArg (· v)
+    ((Pi.basisFun ℝ (Fin (n + 1))).continuousDet_compContinuousLinearMap L.toContinuousLinearMap)
   simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply,
     ContinuousAlternatingMap.smul_apply, ContinuousLinearEquiv.coe_coe, smul_eq_mul] at hv ⊢
   simp only [ContinuousAlternatingMap.smulRight_apply]
@@ -298,7 +297,8 @@ theorem extDeriv_fluxForm_affineFluxPullback_apply_single
       LinearMap.det (L : (Fin (n + 1) → ℝ) →ₗ[ℝ] Fin (n + 1) → ℝ) •
         ∑ i : Fin (n + 1), fderiv ℝ (F i) (p + L u) (Pi.single i 1) := by
   rw [L.extDeriv_fluxForm_affineFluxPullback p hF, ContinuousAlternatingMap.smulRight_apply,
-    coordVolumeForm_single, one_smul]
+    ← funext (Pi.basisFun_apply ℝ (Fin (n + 1))), Module.Basis.continuousDet_apply,
+    Module.Basis.det_self, one_smul]
 
 end ContinuousLinearEquiv
 
