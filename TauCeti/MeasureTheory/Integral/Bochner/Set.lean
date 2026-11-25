@@ -24,10 +24,12 @@ bounded interval `[a, b)` is integrable against a locally finite measure, that t
 many disjoint measurable subsets, that an almost everywhere positive function has positive
 integral, bounds for the integral of the reciprocal of a function bounded below by a positive
 constant, the bound `∫_s ψ² ≤ K² |B|` for a function bounded by `K` and supported in a closed
-ball `B`, the integral of `Φ x (f₀ x)` for an almost everywhere zero extension `f₀` of `f`
-from `s` and an integrand `Φ` vanishing at `0`, the pairing `∫ h φ = ∫_B (φ - c) h` of a function
-`h` of integral zero vanishing off `B`, and that a continuous square-integrable function
-`h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive on nonempty open sets.
+ball `B`, the bound `∫ ‖f‖ ≤ K |s|` for a function bounded by `K` on a set `s` of finite measure
+and vanishing off it, the integral of `Φ x (f₀ x)` for an almost everywhere zero
+extension `f₀` of `f` from `s` and an integrand `Φ` vanishing at `0`, the pairing
+`∫ h φ = ∫_B (φ - c) h` of a function `h` of integral zero vanishing off `B`, and that a
+continuous square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a
+measure positive on nonempty open sets.
 It also bounds the integral over a measurable set `S` by integrals over unions with disjoint sets,
 that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K} σ`, that a pointwise
 bound `0 ≤ f ≤ c₁ g₁ + c₂ g₂` integrates to the same bound for the integrals, and turns a bound
@@ -52,6 +54,8 @@ integral.
   measurable set integrates to `∫_s f ≤ c₁ ∫_s g₁ + c₂ ∫_s g₂`.
 * `TauCeti.setIntegral_sq_le_of_support_subset_closedBall`: a function bounded by `K` on a closed
   ball `B` and vanishing off it has `∫_s ψ² ≤ K² |B|` over every set `s`.
+* `TauCeti.integral_norm_le_of_forall_compl_eq_zero`: a function bounded by `K` on a set `s` of
+  finite measure and vanishing off it has `∫ ‖f‖ ≤ K |s|`.
 * `TauCeti.integral_eq_setIntegral_of_ae_eq_indicator`: if `f₀` is almost everywhere the zero
   extension `1_s f` and `Φ x 0 = 0`, then `∫ Φ x (f₀ x) = ∫_s Φ x (f x)`.
 * `TauCeti.integral_mul_eq_setIntegral_sub_mul`: if `h` vanishes off `B` and has integral zero,
@@ -275,6 +279,16 @@ theorem setIntegral_sq_le_of_support_subset_closedBall {E : Type*} [PseudoMetric
         gcongr
         rw [measureReal_restrict_apply hmeasB]
         exact measureReal_mono inter_subset_left measure_closedBall_lt_top.ne
+
+/-- A function bounded by `K` on a set `s` of finite measure and vanishing off it has
+`∫ ‖f‖ ≤ K |s|`. -/
+theorem integral_norm_le_of_forall_compl_eq_zero {X E : Type*} [MeasurableSpace X]
+    {mu : Measure X} [SeminormedAddCommGroup E] {f : X → E} {s : Set X} {K : ℝ}
+    (hs : mu s < ∞) (hfK : ∀ x ∈ s, ‖f x‖ ≤ K) (hf0 : ∀ x ∉ s, f x = 0) :
+    ∫ x, ‖f x‖ ∂mu ≤ K * mu.real s := by
+  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by rw [hf0 x hx, norm_zero]]
+  exact (Real.le_norm_self _).trans (norm_setIntegral_le_of_norm_le_const hs
+    fun x hx => (norm_norm (f x)).trans_le (hfK x hx))
 
 /-- If `f₀` is almost everywhere the zero extension `1_s f` of `f` and `Φ x 0 = 0` for every
 `x`, then the integral of `Φ x (f₀ x)` over the whole space is the integral of `Φ x (f x)`
