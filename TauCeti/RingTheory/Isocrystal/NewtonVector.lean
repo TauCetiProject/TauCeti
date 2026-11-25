@@ -39,11 +39,13 @@ builds on the dominance order and the pairing with `2ρ` of
   totals, and leading partial sums of `ν` at most those of `ν'`. The pairing with `2ρ` is
   monotone (`TauCeti.Dominates.twoRhoPairing_le`) and strictly monotone
   (`TauCeti.Dominates.twoRhoPairing_lt`) for it.
-* For an integral cocharacter `μ`, the admissible set `B(GL_n, μ)` consists of the Newton vectors
-  `ν ≼ μ`, that is `TauCeti.Dominates ν μ` (`TauCeti.admissibleNewtonVectors`). It is finite
-  (`TauCeti.finite_admissibleNewtonVectors`): its slopes lie between the last and the first
-  coordinates of `μ`, and have denominators dividing `n!`. When `μ` is decreasing it is itself the
-  largest element of `B(GL_n, μ)`, the ordinary class. Every `ν ∈ B(GL_n, μ)` has
+* For an integral vector `μ`, `TauCeti.admissibleNewtonVectors μ` consists of the Newton vectors
+  `ν ≼ μ`, that is `TauCeti.Dominates ν μ`. The vector `μ` is used in its given order: when `μ` is
+  decreasing, the dominant representative of an integral cocharacter, this is the admissible set
+  `B(GL_n, μ)`; for other `μ` it is only the set of Newton vectors dominated by `μ`. It is finite
+  for every `μ` (`TauCeti.finite_admissibleNewtonVectors`): its slopes lie between the last and
+  the first coordinates of `μ`, and have denominators dividing `n!`. When `μ` is decreasing it is
+  itself the largest element of `B(GL_n, μ)`, the ordinary class. Every Newton vector `ν ≼ μ` has
   `⟨2ρ, ν⟩ ≤ ⟨2ρ, μ⟩` (`TauCeti.Dominates.twoRhoPairing_le`), and in a product of general linear
   groups the sums of these pairings agree only for `ν = μ`
   (`TauCeti.sum_twoRhoPairing_eq_sum_twoRhoPairing_intCast_iff`).
@@ -56,17 +58,19 @@ For instance `B(GL₂, (1, 0))` consists of the ordinary vector `(1, 0)` and the
 
 * `TauCeti.IsNewtonVector ν`: `ν` is decreasing and each slope `λ` of multiplicity `m` has
   `m λ ∈ ℤ`.
-* `TauCeti.admissibleNewtonVectors μ`: the Newton vectors `ν ≼ μ` for an integral vector `μ`.
+* `TauCeti.admissibleNewtonVectors μ`: the Newton vectors `ν ≼ μ` for an integral vector `μ`;
+  for decreasing `μ` this is `B(GL_n, μ)`.
 
 ## Main results
 
 * `TauCeti.IsNewtonVector.exists_int_factorial_mul_eq`: `n! νᵢ` is an integer.
 * `TauCeti.IsNewtonVector.exists_int_eq_of_card_eq_one`: a slope of multiplicity one is an
   integer.
-* `TauCeti.finite_admissibleNewtonVectors`: `B(GL_n, μ)` is finite.
-* `TauCeti.sum_twoRhoPairing_eq_sum_twoRhoPairing_intCast_iff`: in a product of general linear
-  groups, the sums of the pairings with `2ρ` of `ν ∈ ∏_w B(GL_n, μ_w)` and of `μ` agree only for
-  `ν = μ`.
+* `TauCeti.finite_admissibleNewtonVectors`: for every integral vector `μ`, the Newton vectors
+  `ν ≼ μ` form a finite set; for decreasing `μ` this is `B(GL_n, μ)`.
+* `TauCeti.sum_twoRhoPairing_eq_sum_twoRhoPairing_intCast_iff`: for Newton vectors `ν_w ≼ μ_w`,
+  the sums of the pairings with `2ρ` of `ν` and of `μ` agree only for `ν = μ`; for decreasing
+  `μ_w` these are the families in `∏_w B(GL_n, μ_w)`.
 * `TauCeti.admissibleNewtonVectors_one_zero`: `B(GL₂, (1, 0)) = {(1, 0), (1/2, 1/2)}`.
 
 ## References
@@ -127,14 +131,16 @@ theorem IsNewtonVector.exists_int_eq_of_card_eq_one {ν : Fin n → ℚ} (hν : 
 
 /-! ### The admissible set -/
 
-/-- The **admissible set** `B(GL_n, μ)` of an integral cocharacter `μ`: the Newton vectors
-`ν ≼ μ` (`TauCeti.Dominates ν μ`), that is with the same total slope as `μ` and leading partial
-sums at most those of `μ`. For decreasing `μ` this is the set of Newton vectors of the
-`μ`-admissible classes in `B(GL_n)`. -/
+/-- The Newton vectors `ν` dominated by an integral vector `μ`, `ν ≼ μ` (`TauCeti.Dominates ν μ`),
+that is with the same total slope as `μ` and leading partial sums at most those of `μ`. The
+vector `μ` is not sorted. When `μ` is decreasing, the dominant representative of an integral
+cocharacter, this is the **admissible set** `B(GL_n, μ)`: the set of Newton vectors of the
+`μ`-admissible classes in `B(GL_n)`. For other `μ` it is only the set of Newton vectors dominated
+by `μ`. -/
 def admissibleNewtonVectors (μ : Fin n → ℤ) : Set (Fin n → ℚ) :=
   {ν | IsNewtonVector ν ∧ Dominates ν fun i ↦ (μ i : ℚ)}
 
-/-- Membership in `B(GL_n, μ)`: a Newton vector `ν` with `ν ≼ μ`. -/
+/-- Membership in `TauCeti.admissibleNewtonVectors μ`: a Newton vector `ν` with `ν ≼ μ`. -/
 @[simp]
 theorem mem_admissibleNewtonVectors {μ : Fin n → ℤ} {ν : Fin n → ℚ} :
     ν ∈ admissibleNewtonVectors μ ↔ IsNewtonVector ν ∧ Dominates ν fun i ↦ (μ i : ℚ) :=
@@ -145,9 +151,9 @@ theorem intCast_mem_admissibleNewtonVectors {μ : Fin n → ℤ} (hμ : Antitone
     (fun i ↦ (μ i : ℚ)) ∈ admissibleNewtonVectors μ :=
   ⟨isNewtonVector_intCast hμ, Dominates.refl _⟩
 
-/-- **Finiteness of the admissible set.** For every integral cocharacter `μ`, the set
-`B(GL_n, μ)` of Newton vectors `ν ≼ μ` is finite: its coordinates lie between the last and the
-first coordinates of `μ`, and in `(1 / n!) ℤ`. -/
+/-- **Finiteness of the admissible set.** For every integral vector `μ`, the set of Newton
+vectors `ν ≼ μ` is finite: their coordinates lie between the last and the first coordinates of
+`μ`, and in `(1 / n!) ℤ`. For decreasing `μ` this is the admissible set `B(GL_n, μ)`. -/
 theorem finite_admissibleNewtonVectors (μ : Fin n → ℤ) : (admissibleNewtonVectors μ).Finite := by
   rcases n with _ | n
   · exact Set.toFinite _
@@ -159,10 +165,11 @@ theorem finite_admissibleNewtonVectors (μ : Fin n → ℤ) : (admissibleNewtonV
     hν.exists_int_factorial_mul_eq i⟩
 
 /-- **The ordinary class in a product of general linear groups.** Let `ν = (ν_w)_w` be a finite
-family with `ν_w ∈ B(GL_n, μ_w)` for every `w`. Then `∑_w ⟨2ρ, ν_w⟩ = ∑_w ⟨2ρ, μ_w⟩` only for
-`ν_w = μ_w` for every `w`. Since each `⟨2ρ, ν_w⟩ ≤ ⟨2ρ, μ_w⟩`
-(`TauCeti.Dominates.twoRhoPairing_le`), for decreasing `μ_w` and the group `∏_w GL_n` this says
-that the ordinary class is the only admissible class whose dimension `d_b` attains the maximum. -/
+family of Newton vectors with `ν_w ≼ μ_w` for every `w`. Then
+`∑_w ⟨2ρ, ν_w⟩ = ∑_w ⟨2ρ, μ_w⟩` only for `ν_w = μ_w` for every `w`. Since each
+`⟨2ρ, ν_w⟩ ≤ ⟨2ρ, μ_w⟩` (`TauCeti.Dominates.twoRhoPairing_le`), for decreasing `μ_w` and the group
+`∏_w GL_n` this says that the ordinary class is the only admissible class whose dimension `d_b`
+attains the maximum. -/
 theorem sum_twoRhoPairing_eq_sum_twoRhoPairing_intCast_iff {W : Type*} [Fintype W]
     {μ : W → Fin n → ℤ} {ν : W → Fin n → ℚ} (hν : ∀ w, ν w ∈ admissibleNewtonVectors (μ w)) :
     ∑ w, twoRhoPairing (ν w) = ∑ w, twoRhoPairing (fun i ↦ (μ w i : ℚ)) ↔
