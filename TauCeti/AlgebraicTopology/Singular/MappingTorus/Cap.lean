@@ -314,40 +314,6 @@ variable {F E : Type} [TopologicalSpace F] [T2Space F] [NormedAddCommGroup E] [N
   {n : ℕ} (o : HomologicalOrientation F E (n + 1)) (hn : Module.finrank ℝ E = n + 1)
   {φ : F ≃ₜ F}
 
-omit [ConnectedSpace F] in
-/-- `⟨i^* v, [F]⟩ = ⟨v, i_*[F]⟩`, with the fundamental class read in `Hₙ₊₁(F; ℤ)` on the left and
-through the chains with coefficients in `ULift ℤ` on the right. -/
-private lemma singularKronecker_singularCohomologyMap_incl_fundamentalClass
-    (v : (TopCat.of (MappingTorus φ)).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ
-      (𝟙_ (ModuleCat.{0} ℤ)) (n + 1)) :
-    ((TopCat.of F).singularKronecker ℤ (n + 1)
-      (TopCat.singularCohomologyMap (TopCat.ofHom (incl φ)) (n + 1) v)).hom
-        ((uliftIntHomologyIso (TopCat.of F) (n + 1)).hom.hom (o.fundamentalClass hn)) =
-      o.evalFundamentalClass hn (𝟙_ (ModuleCat.{0} ℤ)) (incl φ)
-        ((TopCat.of (MappingTorus φ)).singularCohomologyChainCoefficientMap ℤ
-          (𝟙_ (ModuleCat.{0} ℤ)) uliftIntIso.hom (n + 1) v) := by
-  -- term-mode steps: the homology objects are written through `SSet.homology` on one side and
-  -- `singularHomologyFunctor` on the other, so `rw` cannot form the motives
-  refine (congrArg (fun f ↦ ModuleCat.Hom.hom f
-    ((uliftIntHomologyIso (TopCat.of F) (n + 1)).hom.hom (o.fundamentalClass hn)))
-    (TopCat.singularKronecker_naturality (TopCat.ofHom (incl φ)) ℤ (n + 1) v)).trans ?_
-  refine Eq.trans ?_ (HomologicalOrientation.evalFundamentalClass_apply o hn _ _ _).symm
-  refine Eq.trans ?_ (congrArg (fun f ↦ ModuleCat.Hom.hom f
-      (o.mapFundamentalClass hn (incl φ)))
-    (TopCat.singularKronecker_singularCohomologyChainCoefficientMap _ ℤ uliftIntIso.hom (n + 1)
-      v)).symm
-  refine Eq.trans ?_ (congrArg (fun f ↦
-      (f ≫ (TopCat.of (MappingTorus φ)).singularKronecker ℤ (n + 1) v).hom
-        (o.mapFundamentalClass hn (incl φ)))
-    (uliftIntHomologyIso_hom (TopCat.of (MappingTorus φ)) (n + 1)))
-  refine Eq.trans ?_ (congrArg (fun x ↦ ModuleCat.Hom.hom
-    ((uliftIntHomologyIso (TopCat.of (MappingTorus φ)) (n + 1)).hom ≫
-      (TopCat.of (MappingTorus φ)).singularKronecker ℤ (n + 1) v) x)
-    (HomologicalOrientation.mapFundamentalClass_def o hn (incl φ))).symm
-  exact (congrArg (fun f ↦ (f ≫ (TopCat.of (MappingTorus φ)).singularKronecker ℤ (n + 1) v).hom
-    (o.fundamentalClass hn)) (homologyMap_comp_uliftIntHomologyIso_hom
-      (TopCat.ofHom (incl φ)) (n + 1))).symm
-
 /-- **The cup product with the base class evaluates on the fibre.** Let `φ` be a homeomorphism of a
 closed connected oriented `(n + 1)`-manifold `F` preserving its fundamental class. Then there is a
 class `y ∈ Hₙ₊₂(T_φ; ℤ)` with `⟨v ⌣ [dt], y⟩ = ⟨v, i_*[F]⟩` for every `v ∈ Hⁿ⁺¹(T_φ; ℤ)`, where
@@ -392,7 +358,8 @@ theorem exists_singularCupPairing_baseClass_eq_evalFundamentalClass
         ((wangδ φ (𝟙_ (ModuleCat.{0} ℤ)) (n + 1)).hom (ε • y)) = ε * c := by
     rw [hδ]
     exact (map_zsmul _ ε _).trans
-      (congrArg (ε • ·) (singularKronecker_singularCohomologyMap_incl_fundamentalClass o hn v))
+      (congrArg (ε • ·) (o.evalFundamentalClass_singularCohomologyChainCoefficientMap hn _
+        (incl φ) v).symm)
   refine (h φ (n + 1) (ε • y) v).trans ?_
   refine (congrArg (fun f ↦ ε * ModuleCat.Hom.hom f
     ((wangδ φ (𝟙_ (ModuleCat.{0} ℤ)) (n + 1)).hom (ε • y)))
