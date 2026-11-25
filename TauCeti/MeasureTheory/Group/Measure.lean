@@ -31,8 +31,10 @@ without any measurability hypotheses (for subgroups as typeclass instances), tha
 `volume` of left- or right-invariant measure spaces (such as Lebesgue measure on `ℝ × ℝ`) is
 left- or right-invariant, and that restricting
 an inversion-invariant measure to a symmetric set, or weighting it by an even density, keeps it
-inversion-invariant. A surjective homomorphism onto a finite group with measurable kernel splits
-a left-invariant measure evenly among its fibres, the translates of the kernel. Finally, for an
+inversion-invariant. A left-invariant probability measure gives mass `n⁻¹` to a measurable
+subgroup of finite index `n`, since its `n` cosets have equal mass and partition the group, and a
+surjective homomorphism onto a finite group with measurable kernel splits a left-invariant measure
+evenly among its fibres, the translates of the kernel. Finally, for an
 inner regular measure whose right translations are quasi-measure-preserving—in particular any
 inner regular Haar measure on a locally compact group—if an open set `U` lies up to a null set
 inside a null-measurable set `V` satisfying `V * s ⊆ V`, then `U * s` (such as the subgroup
@@ -66,6 +68,8 @@ sets forces the group to be locally compact
   `Measure.isMulRightInvariant_comap_subtype`, `Measure.isAddRightInvariant_comap_subtype`: the
   instances for the pullback of an invariant measure to a subgroup, without measurability
   hypotheses on the subgroup.
+* `Subgroup.measure_eq_inv_index`, `AddSubgroup.measure_eq_inv_index`: a left-invariant
+  probability measure gives mass `n⁻¹` to a measurable subgroup of finite index `n`.
 * `Measure.isMulLeftInvariant_volume_prod`, `Measure.isAddLeftInvariant_volume_prod`,
   `Measure.isMulRightInvariant_volume_prod`, `Measure.isAddRightInvariant_volume_prod`: the
   instances for the `volume` of a product of invariant measure spaces.
@@ -327,6 +331,19 @@ theorem isInvInvariant_withDensity [μ.IsInvInvariant] {f : G → ℝ≥0∞} (h
 end InvolutiveInv
 
 end MeasureTheory.Measure
+
+/-- A left-invariant probability measure on a group gives mass `n⁻¹` to a measurable subgroup of
+finite index `n`: its `n` left cosets have equal mass and partition the group
+(`Subgroup.index_mul_measure`). -/
+@[to_additive /-- A left-invariant probability measure on an additive group gives mass `n⁻¹` to a
+measurable additive subgroup of finite index `n`: its `n` cosets have equal mass and partition the
+group (`AddSubgroup.index_mul_measure`). -/]
+theorem Subgroup.measure_eq_inv_index {G : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G]
+    (K : Subgroup G) [K.FiniteIndex] (hK : MeasurableSet (K : Set G)) (μ : Measure G)
+    [IsProbabilityMeasure μ] [μ.IsMulLeftInvariant] : μ K = (K.index : ℝ≥0∞)⁻¹ := by
+  have h := K.index_mul_measure hK μ
+  rw [measure_univ, mul_comm] at h
+  exact ENNReal.eq_inv_of_mul_eq_one_left h
 
 namespace MeasureTheory
 
