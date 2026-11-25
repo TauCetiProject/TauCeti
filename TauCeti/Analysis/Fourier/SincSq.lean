@@ -23,13 +23,17 @@ transform is a continuous triangular tent of compact support. Rescaling `sinc²`
 nonnegative `L¹` smoothing kernels on `ℝ` whose frequency support lies in a prescribed bounded
 interval, the real-line analogue of the periodic Fejér kernel.
 
-In Mathlib's Fourier normalisation `𝓕 f w = ∫ x, exp (-2 π i x w) f x`, the transform of `sinc²`
-is `w ↦ π * max (1 - |π * w|) 0`, supported on `[-π⁻¹, π⁻¹]` (`TauCeti.fourier_sinc_sq`). Written
-in angular frequency `ω = 2 * π * w`, its cosine transform is `π * max (1 - |ω| / 2) 0`, supported
-on `[-2, 2]` (`TauCeti.integral_sinc_sq_mul_cos`).
+In Mathlib's Fourier normalisation `𝓕 f w = ∫ x, exp (-2 π i x w) f x` and
+`𝓕⁻ g x = ∫ w, exp (2 π i w x) g w`, the inverse transform of the unit triangular tent
+`w ↦ max (1 - |π * w|) 0` is `x ↦ π⁻¹ * Real.sinc x ^ 2` (`TauCeti.fourierInv_triangle`), and the
+forward transform of `sinc²` is `w ↦ π * max (1 - |π * w|) 0`, supported on `[-π⁻¹, π⁻¹]`
+(`TauCeti.fourier_sinc_sq`). Written in angular frequency `ω = 2 * π * w`, its cosine transform is
+`π * max (1 - |ω| / 2) 0`, supported on `[-2, 2]` (`TauCeti.integral_sinc_sq_mul_cos`).
 
 ## Main results
 
+* `TauCeti.fourierInv_triangle`:
+  `𝓕⁻ (fun w : ℝ ↦ ((max (1 - |π * w|) 0 : ℝ) : ℂ)) x = ((π⁻¹ * Real.sinc x ^ 2 : ℝ) : ℂ)`.
 * `TauCeti.fourier_sinc_sq`:
   `𝓕 (fun x : ℝ ↦ ((Real.sinc x ^ 2 : ℝ) : ℂ)) w = ((π * max (1 - |π * w|) 0 : ℝ) : ℂ)`.
 * `TauCeti.integral_sinc_sq_mul_cos`:
@@ -75,8 +79,10 @@ private theorem intervalIntegral_triangle_mul_cos (x : ℝ) :
   rw [harg]
   ring
 
-/-- The inverse Fourier transform of `w ↦ max (1 - |π w|) 0` is `x ↦ π⁻¹ sinc(x)²`. -/
-private theorem fourierInv_triangle (x : ℝ) :
+/-- **The inverse Fourier transform of the triangular tent.** Under Mathlib's convention
+`𝓕⁻ g x = ∫ w, exp (2 π i w x) g w`,
+`𝓕⁻ (fun w ↦ (max (1 - |π * w|) 0 : ℂ)) x = π⁻¹ * sinc x ^ 2`. -/
+theorem fourierInv_triangle (x : ℝ) :
     𝓕⁻ (fun w : ℝ ↦ ((max (1 - |π * w|) 0 : ℝ) : ℂ)) x =
       ((π⁻¹ * sinc x ^ 2 : ℝ) : ℂ) := by
   rw [Real.fourierInv_eq']

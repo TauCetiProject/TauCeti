@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.LSeries.HigherPole.SquaredSinc
 
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
-import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 /-!
 # Monotone unsmoothing for Delange's Tauberian theorem
@@ -54,38 +53,7 @@ open scoped Topology
 
 namespace TauCeti.HigherPoleTauberian
 
-/-! ### Integrability and window integrals of shifted `squaredSinc` kernels -/
-
-/-- A measurable function bounded in absolute value on a measurable set `s` is integrable on `s`
-against every shifted `squaredSinc` kernel (`0 ≤ ell`). -/
-private theorem integrableOn_mul_squaredSinc_sub {f : ℝ → ℝ} {s : Set ℝ} {B ell : ℝ}
-    (hs : MeasurableSet s) (hell : 0 ≤ ell)
-    (hf : AEStronglyMeasurable f (volume.restrict s))
-    (hbd : ∀ t ∈ s, |f t| ≤ B) (T : ℝ) :
-    IntegrableOn (fun t : ℝ ↦ f t * squaredSinc ell (t - T)) s := by
-  refine (((integrable_squaredSinc ell).comp_sub_right T).const_mul (max B 0)).integrableOn.mono'
-    (hf.mul (by fun_prop : Continuous fun t ↦ squaredSinc ell (t - T)).aestronglyMeasurable)
-    (ae_restrict_of_forall_mem hs fun t ht ↦ ?_)
-  rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (squaredSinc_nonneg hell _)]
-  exact mul_le_mul_of_nonneg_right ((hbd t ht).trans (le_max_left _ _))
-    (squaredSinc_nonneg hell _)
-
-/-- A globally bounded measurable function on `ℝ` is integrable against every shifted
-`squaredSinc` kernel (`0 ≤ ell`). -/
-private theorem integrable_mul_squaredSinc_sub {f : ℝ → ℝ} {B ell : ℝ}
-    (hell : 0 ≤ ell) (hf : AEStronglyMeasurable f volume)
-    (hbd : ∀ t : ℝ, |f t| ≤ B) (T : ℝ) :
-    Integrable (fun t : ℝ ↦ f t * squaredSinc ell (t - T)) := by
-  rw [← integrableOn_univ]
-  exact integrableOn_mul_squaredSinc_sub MeasurableSet.univ hell hf.restrict (fun t _ ↦ hbd t) T
-
-/-- Shifting the integration variable centres the window integral of `squaredSinc`. -/
-private theorem integral_Icc_squaredSinc_shift {ell T₀ h : ℝ} (hh : 0 ≤ h) :
-    ∫ t in Icc (T₀ - h) (T₀ + h), squaredSinc ell (t - T₀) =
-      ∫ v in (-h)..h, squaredSinc ell v := by
-  rw [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le (by linarith),
-    intervalIntegral.integral_comp_sub_right (squaredSinc ell) T₀,
-    sub_sub_cancel_left, add_sub_cancel_left]
+/-! ### Half-line window comparisons -/
 
 /-- Lower comparison of the half-line convolution against a window where `c ≤ J t`. -/
 private theorem mul_integral_Icc_le_convolution {J : ℝ → ℝ} {ell T₀ h c : ℝ}
@@ -109,19 +77,6 @@ private theorem mul_integral_Icc_le_convolution {J : ℝ → ℝ} {ell T₀ h c 
             (ae_restrict_of_forall_mem measurableSet_Ici fun t ht ↦
               mul_nonneg (hJ0 t ht) (squaredSinc_nonneg hell _))
             (Eventually.of_forall hsub)
-
-/-- Shifting the integration variable maps `{t | h ≤ |t - T₀|}` to `{v | h ≤ |v|}`. -/
-private theorem setIntegral_abs_sub_ge_squaredSinc (ell T₀ h : ℝ) :
-    ∫ t in {t : ℝ | h ≤ |t - T₀|}, squaredSinc ell (t - T₀) =
-      ∫ v in {v : ℝ | h ≤ |v|}, squaredSinc ell v := by
-  have hmeas1 : MeasurableSet {t : ℝ | h ≤ |t - T₀|} :=
-    measurableSet_le measurable_const
-      (continuous_abs.comp (continuous_id.sub continuous_const)).measurable
-  have hmeas2 : MeasurableSet {v : ℝ | h ≤ |v|} :=
-    measurableSet_le measurable_const continuous_abs.measurable
-  rw [← integral_indicator hmeas1, ← integral_indicator hmeas2, ← integral_sub_right_eq_self
-    (fun v : ℝ ↦ ({v : ℝ | h ≤ |v|}).indicator (squaredSinc ell) v) T₀]
-  congr 1 with t
 
 /-- Upper comparison of the half-line convolution against a window where `J t ≤ U` and a global
 bound `J t ≤ M`. -/
@@ -501,16 +456,17 @@ private theorem tendsto_weighted_of_antitoneOn_nonneg {g : ℝ → ℝ} {a C : �
 
 /-- A bounded measurable function on `[0, ∞)` vanishing beyond `t₀` is integrable against every
 shifted `squaredSinc` kernel. -/
-private theorem integrableOn_of_compact_support {D : ℝ → ℝ} {t₀ B ell : ℝ}
-    (hB : 0 ≤ B) (hell : 0 < ell)
+private theorem integrableOn_of_compact_support {D : ℝ → ℝ} {t₀ B ell : ℝ} (hB : 0 ≤ B)
     (hDmeas : AEStronglyMeasurable D (volume.restrict (Ici 0)))
     (hDsupp : ∀ t : ℝ, t₀ < t → D t = 0)
     (hDbd : ∀ t ∈ Icc (0 : ℝ) t₀, |D t| ≤ B) (T : ℝ) :
     IntegrableOn (fun t : ℝ ↦ D t * squaredSinc ell (t - T)) (Ici 0) :=
-  integrableOn_mul_squaredSinc_sub measurableSet_Ici hell.le hDmeas (fun t ht ↦ by
-    rcases le_or_gt t t₀ with hle | hgt
-    · exact hDbd t ⟨ht, hle⟩
-    · simpa [hDsupp t hgt] using hB) T
+  ((integrable_squaredSinc ell).comp_sub_right T).integrableOn.bdd_mul hDmeas
+    (ae_restrict_of_forall_mem measurableSet_Ici fun t ht ↦ by
+      rw [Real.norm_eq_abs]
+      rcases le_or_gt t t₀ with hle | hgt
+      · exact hDbd t ⟨ht, hle⟩
+      · simpa [hDsupp t hgt] using hB)
 
 /-- A bounded measurable function on `[0, ∞)` vanishing beyond `t₀` has `squaredSinc` convolution
 tending to `0` as `T → ∞`. -/
@@ -520,7 +476,7 @@ private theorem tendsto_zero_of_compact_support {D : ℝ → ℝ} {t₀ B ell : 
     (hDsupp : ∀ t : ℝ, t₀ < t → D t = 0)
     (hDbd : ∀ t ∈ Icc (0 : ℝ) t₀, |D t| ≤ B) :
     Tendsto (fun T : ℝ ↦ ∫ t in Ici (0 : ℝ), D t * squaredSinc ell (t - T)) atTop (𝓝 0) := by
-  have hint := integrableOn_of_compact_support hB hell hDmeas hDsupp hDbd
+  have hint := integrableOn_of_compact_support (ell := ell) hB hDmeas hDsupp hDbd
   have hupper : Tendsto (fun T : ℝ ↦ B * t₀ * (π * ell * (T - t₀) ^ 2)⁻¹) atTop (𝓝 0) := by
     have hsub : Tendsto (fun T : ℝ ↦ T - t₀) atTop atTop := by
       simpa only [sub_eq_add_neg, id_eq] using tendsto_id.atTop_add (tendsto_const_nhds (x := -t₀))
@@ -584,7 +540,7 @@ private theorem integrableOn_and_tendsto_zero_max_sub {α : ℝ → ℝ} {a t₀
         exact le_trans (neg_le_neg (hα le_rfl ht.1 ht.1)) (le_max_left _ _)
     rw [abs_mul]
     exact mul_le_mul (hMwe t ht) hba (abs_nonneg _) hMwe0
-  exact ⟨integrableOn_of_compact_support hB hell hDmeas hDsupp hDbd,
+  exact ⟨integrableOn_of_compact_support hB hDmeas hDsupp hDbd,
     tendsto_zero_of_compact_support ht₀ hB hell hDmeas hDsupp hDbd⟩
 
 /-- If `α` is nondecreasing on `[0, ∞)`, satisfies `0 ≤ α t₀` at some `t₀ ≥ 0`, and has frequent
@@ -677,38 +633,6 @@ theorem monotoneUnsmoothing {α : ℝ → ℝ} {a C : ℝ} {k : ℕ}
 
 /-! ### Counterexample at a single bandwidth -/
 
-/-- The convolution of `t ↦ cos (ξ * t)` with `squaredSinc ell` vanishes identically whenever
-`2 * ell ≤ |ξ|`. -/
-private theorem integral_cos_mul_squaredSinc_eq_zero {ell ξ : ℝ} (hell : 0 < ell)
-    (hξ : 2 * ell ≤ |ξ|) (T : ℝ) :
-    ∫ t : ℝ, cos (ξ * t) * squaredSinc ell (t - T) = 0 := by
-  rw [← integral_add_right_eq_self (fun t : ℝ ↦ cos (ξ * t) * squaredSinc ell (t - T)) T]
-  have hsplit : (fun v : ℝ ↦ cos (ξ * (v + T)) * squaredSinc ell (v + T - T)) =
-      fun v ↦ cos (ξ * T) * (squaredSinc ell v * cos (ξ * v)) -
-        sin (ξ * T) * (squaredSinc ell v * sin (ξ * v)) := funext fun v ↦ by
-    rw [add_sub_cancel_right, mul_add, cos_add]
-    ring
-  rw [hsplit]
-  have hint_cos : Integrable (fun v : ℝ ↦ squaredSinc ell v * cos (ξ * v)) := by
-    simpa only [sub_zero, mul_comm (cos _)] using
-      integrable_mul_squaredSinc_sub hell.le
-        (by fun_prop : Continuous fun v ↦ cos (ξ * v)).aestronglyMeasurable
-        (fun v ↦ abs_cos_le_one (ξ * v)) 0
-  have hint_sin : Integrable (fun v : ℝ ↦ squaredSinc ell v * sin (ξ * v)) := by
-    simpa only [sub_zero, mul_comm (sin _)] using
-      integrable_mul_squaredSinc_sub hell.le
-        (by fun_prop : Continuous fun v ↦ sin (ξ * v)).aestronglyMeasurable
-        (fun v ↦ abs_sin_le_one (ξ * v)) 0
-  rw [integral_sub (hint_cos.const_mul _) (hint_sin.const_mul _), integral_const_mul,
-    integral_const_mul, integral_squaredSinc_mul_cos hell ξ]
-  have hmax : max (1 - |ξ| / (2 * ell)) 0 = 0 :=
-    max_eq_right (sub_nonpos.mpr ((one_le_div (by positivity)).mpr hξ))
-  have hodd : ∫ v : ℝ, squaredSinc ell v * sin (ξ * v) = 0 :=
-    MeasureTheory.integral_eq_zero_of_odd (Filter.Eventually.of_forall fun v ↦ by
-      rw [squaredSinc_neg_right, mul_neg, sin_neg, mul_neg])
-  rw [hmax, hodd]
-  ring
-
 /-- Derivative of the auxiliary oscillatory tail `(C + ε cos (3 ell t)) exp (a t) / w_k(t)` at any
 `t > 0`. -/
 private theorem hasDerivAt_counterexample_tail {a C ell ε t : ℝ} {k : ℕ} (ht : 0 < t) :
@@ -778,35 +702,14 @@ private theorem integral_counterexample_full {C ell ε : ℝ} (hell : 0 < ell) (
       fun t ↦ C * squaredSinc ell (t - T) + ε * (cos (3 * ell * t) * squaredSinc ell (t - T)) :=
     funext fun t ↦ by ring
   have hcos_int : Integrable (fun t : ℝ ↦ cos (3 * ell * t) * squaredSinc ell (t - T)) :=
-    integrable_mul_squaredSinc_sub hell.le
+    ((integrable_squaredSinc ell).comp_sub_right T).bdd_mul
       (by fun_prop : Continuous fun t ↦ cos (3 * ell * t)).aestronglyMeasurable
-      (fun t ↦ abs_cos_le_one (3 * ell * t)) T
+      (Eventually.of_forall fun t ↦ abs_cos_le_one (3 * ell * t))
   rw [hsplit, integral_add (((integrable_squaredSinc ell).comp_sub_right T).const_mul C)
     (hcos_int.const_mul ε), integral_const_mul, integral_const_mul,
     integral_sub_right_eq_self (squaredSinc ell) T, squaredSinc_mass hell,
-    integral_cos_mul_squaredSinc_eq_zero hell (by rw [abs_of_pos (by positivity)]; linarith) T]
+    integral_cos_mul_squaredSinc_eq_zero hell.le (by rw [abs_of_pos (by positivity)]; linarith) T]
   ring
-
-/-- Left tail of `squaredSinc ell (t - T)` over `(-∞, t₀)` is bounded by the symmetric tail
-`{v | T - t₀ ≤ |v|}`. -/
-private theorem setIntegral_Iio_squaredSinc_le {ell t₀ T : ℝ} (hell : 0 < ell) :
-    ∫ t in Iio t₀, squaredSinc ell (t - T) ≤
-      ∫ v in {v : ℝ | T - t₀ ≤ |v|}, squaredSinc ell v := by
-  have hind : (fun t : ℝ ↦ (Iio t₀).indicator (fun x ↦ squaredSinc ell (x - T)) t) =
-      fun t ↦ (Iio (t₀ - T)).indicator (squaredSinc ell) (t - T) := funext fun t ↦ by
-    by_cases ht : t < t₀
-    · have ht1 : t ∈ Iio t₀ := ht
-      have ht2 : t - T ∈ Iio (t₀ - T) := sub_lt_sub_right ht T
-      rw [Set.indicator_of_mem ht1, Set.indicator_of_mem ht2]
-    · have ht1 : t ∉ Iio t₀ := ht
-      have ht2 : t - T ∉ Iio (t₀ - T) := by simpa [mem_Iio] using not_lt.mp ht
-      rw [Set.indicator_of_notMem ht1, Set.indicator_of_notMem ht2]
-  rw [← integral_indicator measurableSet_Iio, hind,
-    integral_sub_right_eq_self (fun v : ℝ ↦ (Iio (t₀ - T)).indicator (squaredSinc ell) v) T,
-    integral_indicator measurableSet_Iio]
-  refine setIntegral_mono_set (integrable_squaredSinc ell).integrableOn
-    (ae_of_all _ fun v ↦ squaredSinc_nonneg hell.le v) (Eventually.of_forall fun v hv ↦ ?_)
-  exact le_trans (by linarith [mem_Iio.mp hv]) (neg_le_abs v)
 
 /-- The truncated oscillatory profile `t ↦ if t < t₀ then 0 else C + ε cos (3 ell t)` has
 `squaredSinc ell` half-line convolution tending to `C` as `T → ∞`. -/
@@ -818,9 +721,9 @@ private theorem tendsto_counterexample_convolution {C ell ε t₀ : ℝ} (hC : 0
   have hJ0_abs : ∀ t : ℝ, |J0 t| ≤ C + ε := fun t ↦ abs_le.mpr
     ⟨by simp only [J0]; nlinarith [neg_one_le_cos (3 * ell * t)],
       by simp only [J0]; nlinarith [cos_le_one (3 * ell * t)]⟩
-  have hJ0K_int : ∀ T : ℝ, Integrable (fun t : ℝ ↦ J0 t * squaredSinc ell (t - T)) :=
-    integrable_mul_squaredSinc_sub hell.le (by fun_prop : Continuous J0).aestronglyMeasurable
-      hJ0_abs
+  have hJ0K_int : ∀ T : ℝ, Integrable (fun t : ℝ ↦ J0 t * squaredSinc ell (t - T)) := fun T ↦
+    ((integrable_squaredSinc ell).comp_sub_right T).bdd_mul
+      (by fun_prop : Continuous J0).aestronglyMeasurable (Eventually.of_forall hJ0_abs)
   rw [tendsto_iff_norm_sub_tendsto_zero]
   have hupper : Tendsto (fun T : ℝ ↦ (C + ε) * (2 / (π * ell * (T - t₀)))) atTop (𝓝 0) := by
     have hden : Tendsto (fun T : ℝ ↦ π * ell * (T - t₀)) atTop atTop :=
@@ -850,7 +753,7 @@ private theorem tendsto_counterexample_convolution {C ell ε t₀ : ℝ} (hC : 0
             exact mul_le_mul_of_nonneg_right (hJ0_abs t) (squaredSinc_nonneg hell.le _)
     _ = (C + ε) * ∫ t in Iio t₀, squaredSinc ell (t - T) := integral_const_mul _ _
     _ ≤ (C + ε) * ∫ v in {v : ℝ | T - t₀ ≤ |v|}, squaredSinc ell v :=
-        mul_le_mul_of_nonneg_left (setIntegral_Iio_squaredSinc_le hell) (by linarith)
+        mul_le_mul_of_nonneg_left (setIntegral_Iio_squaredSinc_le hell.le) (by linarith)
     _ ≤ (C + ε) * (2 / (π * ell * (T - t₀))) :=
         mul_le_mul_of_nonneg_left (integral_squaredSinc_tail_le hell.le (sub_pos.mpr hT))
           (by linarith)
@@ -858,20 +761,20 @@ private theorem tendsto_counterexample_convolution {C ell ε t₀ : ℝ} (hC : 0
 /-- The truncated oscillatory profile `t ↦ if t < t₀ then 0 else C + ε cos (3 ell t)` is
 integrable on `[0, ∞)` against every shifted `squaredSinc ell` kernel. -/
 private theorem integrableOn_counterexample_profile {C ell ε t₀ : ℝ}
-    (hC : 0 < C) (hell : 0 < ell) (hε : 0 < ε) (T : ℝ) :
+    (hC : 0 < C) (hε : 0 < ε) (T : ℝ) :
     IntegrableOn (fun t : ℝ ↦
       (if t < t₀ then 0 else C + ε * cos (3 * ell * t)) * squaredSinc ell (t - T)) (Ici 0) :=
-  integrableOn_mul_squaredSinc_sub (B := C + ε) measurableSet_Ici hell.le
+  ((integrable_squaredSinc ell).comp_sub_right T).integrableOn.bdd_mul (c := C + ε)
     (Measurable.ite measurableSet_Iio measurable_const
       (by fun_prop : Continuous fun t : ℝ ↦ C + ε * cos (3 * ell * t)).measurable
       |>.aestronglyMeasurable)
-    (fun t _ ↦ by
+    (Eventually.of_forall fun t ↦ by
+      rw [Real.norm_eq_abs]
       split_ifs
       · rw [abs_zero]
         positivity
       · exact abs_le.mpr
           ⟨by nlinarith [neg_one_le_cos (3 * ell * t)], by nlinarith [cos_le_one (3 * ell * t)]⟩)
-    T
 
 /-- If `delangeWeight k t * exp (-a * t) * α t` vanishes for `t < t₀` and equals
 `C + ε * cos (3 * ell * t)` for `t ≥ t₀` (with `0 < ell` and `0 < ε`), then the normalised ratio
@@ -958,7 +861,7 @@ theorem exists_not_tendsto_of_single_bandwidth {a C ell : ℝ} (ha : 0 < a) (hC 
         field_simp [hw, (exp_pos (a * t)).ne']
   refine ⟨α, hα_mono, hα_nonneg, ?_, ?_, not_tendsto_counterexample hell hε_pos hJeq⟩
   · intro T
-    simpa only [hJeq] using integrableOn_counterexample_profile hC hell hε_pos T
+    simpa only [hJeq] using integrableOn_counterexample_profile hC hε_pos T
   · simpa only [hJeq] using tendsto_counterexample_convolution hC hell hε_pos ht₀_pos
 
 end TauCeti.HigherPoleTauberian

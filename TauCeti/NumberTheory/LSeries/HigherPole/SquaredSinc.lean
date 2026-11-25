@@ -7,10 +7,10 @@ module
 
 public import Mathlib.MeasureTheory.Function.SpecialFunctions.Sinc
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.Fourier.SincSq
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrals.SincSq
-import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric.Fejer
+import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 /-!
 # The normalised squared-sinc kernel
@@ -43,11 +43,15 @@ only.
 * `squaredSinc_intCast_mul_pi_div`, `squaredSinc_pi_div`: `K_λ` vanishes at the nonzero multiples
   of `π / λ`.
 * `squaredSinc_mass`: `∫ v, K_λ v = 1` for `λ > 0`.
-* `squaredSinc_fourier`, `integral_squaredSinc_mul_cos`: the inverse Fourier representation and
-  forward cosine transform `∫ v, K_λ(v) cos (ξ v) = max (1 - |ξ| / (2λ)) 0`.
+* `squaredSinc_fourier`, `integral_squaredSinc_mul_cos`, `integral_cos_mul_squaredSinc_sub`,
+  `integral_cos_mul_squaredSinc_eq_zero`: the inverse Fourier representation, forward cosine
+  transform `∫ v, K_λ(v) cos (ξ v) = max (1 - |ξ| / (2λ)) 0`, shifted cosine convolution, and
+  band-limit vanishing for `2λ ≤ |ξ|`.
 * `integral_squaredSinc_tail_le`, `tendsto_intervalIntegral_squaredSinc`,
-  `tendsto_integral_squaredSinc_tail`: the quantitative tail bound `≤ 2 / (π λ h)` and
-  concentration on `[-h, h]` as `λ → ∞`.
+  `tendsto_integral_squaredSinc_tail`, `integral_Icc_squaredSinc_shift`,
+  `setIntegral_abs_sub_ge_squaredSinc`, `setIntegral_Iio_squaredSinc_le`: the quantitative tail
+  bound `≤ 2 / (π λ h)`, concentration on `[-h, h]` as `λ → ∞`, and shifted window and tail
+  integrals.
 
 ## References
 
@@ -63,7 +67,7 @@ public section
 noncomputable section
 
 open MeasureTheory Filter Set Real
-open scoped Topology
+open scoped FourierTransform Topology
 
 namespace TauCeti.HigherPoleTauberian
 
@@ -183,45 +187,25 @@ theorem integral_squaredSinc_tail_le (hell : 0 ≤ ell) (hh : 0 < h) :
     ∫ v in {v : ℝ | h ≤ |v|}, squaredSinc ell v ≤ 2 / (π * ell * h) := by
   rcases hell.eq_or_lt with rfl | hell
   · simp [squaredSinc_zero_left]
-  have hmeas : MeasurableSet {v : ℝ | h ≤ |v|} :=
-    measurableSet_le measurable_const continuous_abs.measurable
-  have hsym : ∫ v in {v : ℝ | h ≤ |v|}, squaredSinc ell v =
-      2 * ∫ v in Ioi h, squaredSinc ell v := by
-    rw [← integral_indicator hmeas]
-    have hcomp := integral_comp_abs (f := fun v : ℝ ↦ (Ici h).indicator (squaredSinc ell) v)
-    have heq : (fun v : ℝ ↦ ({v : ℝ | h ≤ |v|}).indicator (squaredSinc ell) v) =
-        fun v : ℝ ↦ (Ici h).indicator (squaredSinc ell) |v| := funext fun v ↦ by
-      by_cases hv : h ≤ |v|
-      · have hv1 : v ∈ {v : ℝ | h ≤ |v|} := hv
-        have hv2 : |v| ∈ Ici h := hv
-        rw [indicator_of_mem hv1, indicator_of_mem hv2]
-        rcases abs_choice v with h0 | h0 <;> simp [h0]
-      · have hv1 : v ∉ {v : ℝ | h ≤ |v|} := hv
-        have hv2 : |v| ∉ Ici h := hv
-        rw [indicator_of_notMem hv1, indicator_of_notMem hv2]
-    rw [heq, hcomp, integral_indicator measurableSet_Ici,
-      Measure.restrict_restrict measurableSet_Ici,
-      inter_eq_left.mpr (Ici_subset_Ioi.mpr hh), integral_Ici_eq_integral_Ioi]
-  rw [hsym]
-  have hint_rpow : IntegrableOn (fun v : ℝ ↦ (π * ell)⁻¹ * v ^ (-2 : ℝ)) (Ioi h) :=
-    (integrableOn_Ioi_rpow_of_lt (by norm_num : (-2 : ℝ) < -1) hh).const_mul _
-  have hle : ∫ v in Ioi h, squaredSinc ell v ≤ ∫ v in Ioi h, (π * ell)⁻¹ * v ^ (-2 : ℝ) := by
-    refine setIntegral_mono_on (integrable_squaredSinc ell).integrableOn hint_rpow
-      measurableSet_Ioi fun v hv ↦ ?_
-    have hv0 : 0 < v := hh.trans hv
-    have hrpow : (π * ell)⁻¹ * v ^ (-2 : ℝ) = (π * ell * v ^ 2)⁻¹ := by
-      rw [rpow_neg hv0.le, rpow_two]
-      ring
-    rw [hrpow]
-    exact squaredSinc_le_inv_mul_sq hell.le hv0.ne'
-  have hrpow_val : ∫ v in Ioi h, (π * ell)⁻¹ * v ^ (-2 : ℝ) = (π * ell * h)⁻¹ := by
-    rw [integral_const_mul, integral_Ioi_rpow_of_lt (by norm_num : (-2 : ℝ) < -1) hh]
-    have hadd : (-2 : ℝ) + 1 = -1 := by norm_num
-    rw [hadd, rpow_neg_one]
-    field_simp
-  calc 2 * ∫ v in Ioi h, squaredSinc ell v
-      ≤ 2 * (π * ell * h)⁻¹ := by linarith [hle, hrpow_val]
-    _ = 2 / (π * ell * h) := by ring
+  have hae : ({v : ℝ | h ≤ |v|} : Set ℝ) =ᵐ[volume] {v : ℝ | h < |v|} := by
+    have h1 : {v : ℝ | h ≤ |v|} = (Ioo (-h) h)ᶜ := by ext; simp [← not_lt, abs_lt]
+    have h2 : {v : ℝ | h < |v|} = (Icc (-h) h)ᶜ := by ext; simp [← not_le, abs_le]
+    rw [h1, h2]
+    exact Ioo_ae_eq_Icc.compl
+  have hint : IntegrableOn (fun v : ℝ ↦ (v ^ 2)⁻¹) {v : ℝ | h < |v|} :=
+    Integrable.of_integral_ne_zero <| by
+      rw [TauCeti.integral_lt_abs_inv_sq hh.le]
+      exact div_ne_zero two_ne_zero hh.ne'
+  rw [setIntegral_congr_set hae]
+  calc ∫ v in {v : ℝ | h < |v|}, squaredSinc ell v
+      ≤ ∫ v in {v : ℝ | h < |v|}, (π * ell)⁻¹ * (v ^ 2)⁻¹ := by
+        refine setIntegral_mono_on (integrable_squaredSinc ell).integrableOn
+          (hint.const_mul _) (measurableSet_lt measurable_const continuous_abs.measurable)
+          fun v (hv : h < |v|) ↦ ?_
+        exact (squaredSinc_le_inv_mul_sq hell.le (abs_pos.mp (hh.trans hv))).trans_eq (by ring)
+    _ = 2 / (π * ell * h) := by
+        rw [integral_const_mul, TauCeti.integral_lt_abs_inv_sq hh.le]
+        ring
 
 /-- **Tail concentration**: for `h > 0`, the mass of `K_λ` on `{v | h ≤ |v|}` tends to `0` as
 `λ → ∞`. -/
@@ -240,6 +224,35 @@ theorem tendsto_integral_squaredSinc_tail (hh : 0 < h) :
     intervalIntegral.integral_of_le (by linarith), integral_Ioc_eq_integral_Ioo,
     add_sub_cancel_right]
 
+/-- For `h ≥ 0`, the mass of `t ↦ K_λ(t - T₀)` on `[T₀ - h, T₀ + h]` equals
+`∫_{-h}^h K_λ(v) dv`. -/
+theorem integral_Icc_squaredSinc_shift {T₀ : ℝ} (hh : 0 ≤ h) :
+    ∫ t in Icc (T₀ - h) (T₀ + h), squaredSinc ell (t - T₀) =
+      ∫ v in (-h)..h, squaredSinc ell v := by
+  rw [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le (by linarith),
+    intervalIntegral.integral_comp_sub_right (squaredSinc ell) T₀,
+    sub_sub_cancel_left, add_sub_cancel_left]
+
+/-- The tail integral of `t ↦ K_λ(t - T₀)` over `{t | h ≤ |t - T₀|}` equals
+`∫_{h ≤ |v|} K_λ(v) dv`. -/
+theorem setIntegral_abs_sub_ge_squaredSinc (ell T₀ h : ℝ) :
+    ∫ t in {t : ℝ | h ≤ |t - T₀|}, squaredSinc ell (t - T₀) =
+      ∫ v in {v : ℝ | h ≤ |v|}, squaredSinc ell v :=
+  (measurePreserving_sub_right volume T₀).setIntegral_preimage_emb
+    (measurableEmbedding_subRight T₀) (squaredSinc ell) {v : ℝ | h ≤ |v|}
+
+/-- For `λ ≥ 0`, the left tail of `t ↦ K_λ(t - T)` over `(-∞, t₀)` is at most the symmetric tail
+mass over `{v | T - t₀ ≤ |v|}`. -/
+theorem setIntegral_Iio_squaredSinc_le {t₀ T : ℝ} (hell : 0 ≤ ell) :
+    ∫ t in Iio t₀, squaredSinc ell (t - T) ≤
+      ∫ v in {v : ℝ | T - t₀ ≤ |v|}, squaredSinc ell v := by
+  have hpre : (· - T) ⁻¹' Iio (t₀ - T) = Iio t₀ := by ext; simp
+  rw [← hpre, (measurePreserving_sub_right volume T).setIntegral_preimage_emb
+    (measurableEmbedding_subRight T) (squaredSinc ell) (Iio (t₀ - T))]
+  refine setIntegral_mono_set (integrable_squaredSinc ell).integrableOn
+    (ae_of_all _ fun v ↦ squaredSinc_nonneg hell v) (Eventually.of_forall fun v hv ↦ ?_)
+  exact le_trans (by linarith [mem_Iio.mp hv]) (neg_le_abs v)
+
 /-! ### The triangle formula -/
 
 /-- **The kernel is the inverse Fourier transform of the triangle.** For `λ ≥ 0` and every `v`,
@@ -249,37 +262,42 @@ theorem squaredSinc_fourier (hell : 0 ≤ ell) (v : ℝ) :
     (squaredSinc ell v : ℂ) = 1 / (2 * π) *
       ∫ y : ℝ in (-(2 * ell))..(2 * ell),
         ((1 - |y| / (2 * ell) : ℝ) : ℂ) * Complex.exp (Complex.I * y * v) := by
-  set L := 2 * ell with hLdef
-  have hL : 0 ≤ L := by positivity
-  set f : ℝ → ℂ := fun y ↦ ((1 - |y| / L : ℝ) : ℂ) * Complex.exp (Complex.I * y * v) with hf
-  have hfc : Continuous f := by fun_prop
-  -- Fold the integral over `[-L, 0]` onto `[0, L]` by `y ↦ -y`.
-  have hsplit : ∫ y in (-L)..L, f y = ∫ y in 0..L, (f (-y) + f y) := by
-    have hneg : IntervalIntegrable (fun y ↦ f (-y)) volume 0 L :=
-      (hfc.comp continuous_neg).intervalIntegrable _ _
-    rw [intervalIntegral.integral_add hneg (hfc.intervalIntegrable _ _),
-      intervalIntegral.integral_comp_neg f, neg_zero]
-    exact (intervalIntegral.integral_add_adjacent_intervals
-      (hfc.intervalIntegrable _ _) (hfc.intervalIntegrable _ _)).symm
-  -- On `[0, L]` the even part is the real function `2 (1 - y / L) cos (y v)`.
-  have heven : ∫ y in 0..L, (f (-y) + f y) =
-      ((2 * ∫ y in 0..L, (1 - y / L) * cos (y * v) : ℝ) : ℂ) := by
-    rw [← intervalIntegral.integral_const_mul, ← intervalIntegral.integral_ofReal]
-    refine intervalIntegral.integral_congr fun y hy ↦ ?_
-    rw [uIcc_of_le hL] at hy
-    have hcos : Complex.exp (Complex.I * (-y : ℝ) * v) + Complex.exp (Complex.I * y * v) =
-        2 * (cos (y * v) : ℂ) := by
-      rw [Complex.ofReal_cos, Complex.two_cos]
-      push_cast
-      ring_nf
-    simp only [hf, abs_neg, abs_of_nonneg hy.1, ← mul_add, hcos]
-    push_cast
-    ring
-  rw [hsplit, heven, integral_one_sub_div_mul_cos_mul, squaredSinc_def, hLdef]
-  have harg : 2 * ell * v / 2 = ell * v := by ring
-  rw [harg]
-  push_cast
-  ring
+  rcases hell.eq_or_lt with rfl | hell
+  · simp
+  have hfinv := (TauCeti.fourierInv_triangle (ell * v)).symm
+  rw [Real.fourierInv_eq',
+    ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Ioc (-π⁻¹) π⁻¹) fun w hw ↦ by
+      have hw' : π⁻¹ ≤ |w| := le_of_not_gt fun h ↦ hw ⟨(abs_lt.mp h).1, (abs_lt.mp h).2.le⟩
+      have h1 : 1 ≤ |π * w| := by
+        rw [abs_mul, abs_of_pos pi_pos]
+        exact (mul_inv_cancel₀ pi_pos.ne').symm.trans_le (mul_le_mul_of_nonneg_left hw' pi_pos.le)
+      rw [max_eq_right (sub_nonpos.mpr h1)]
+      simp,
+    ← intervalIntegral.integral_of_le (by linarith [inv_pos.mpr pi_pos] : -π⁻¹ ≤ π⁻¹)] at hfinv
+  set F : ℝ → ℂ := fun y ↦ ((1 - |y| / (2 * ell) : ℝ) : ℂ) * Complex.exp (Complex.I * y * v)
+  have hcomp := intervalIntegral.integral_comp_mul_left (a := -π⁻¹) (b := π⁻¹) F
+    (by positivity : (2 * π * ell : ℝ) ≠ 0)
+  have hcongr : ∫ w in (-π⁻¹)..π⁻¹, F ((2 * π * ell) * w) =
+      ∫ w in (-π⁻¹)..π⁻¹, Complex.exp (↑(2 * π * inner ℝ w (ell * v)) * Complex.I) •
+        ((max (1 - |π * w|) 0 : ℝ) : ℂ) := by
+    refine intervalIntegral.integral_congr fun w hw ↦ ?_
+    rw [uIcc_of_le (by linarith [inv_pos.mpr pi_pos] : -π⁻¹ ≤ π⁻¹)] at hw
+    have hw1 : |π * w| ≤ 1 := by
+      rw [abs_mul, abs_of_pos pi_pos]
+      nlinarith [mul_inv_cancel₀ pi_pos.ne', (abs_le.mpr hw), pi_pos]
+    have hdiv : |(2 * π * ell) * w| / (2 * ell) = |π * w| := by
+      rw [← abs_of_pos (by positivity : (0 : ℝ) < 2 * ell), ← abs_div]
+      congr 1; field_simp
+    simp only [F, hdiv, max_eq_left (sub_nonneg.mpr hw1), RCLike.inner_apply, conj_trivial,
+      smul_eq_mul]
+    push_cast; ring_nf
+  rw [(by field_simp : (2 * π * ell) * (-π⁻¹) = -(2 * ell)),
+    (by field_simp : (2 * π * ell) * π⁻¹ = 2 * ell), hcongr, ← hfinv, Complex.real_smul] at hcomp
+  calc (squaredSinc ell v : ℂ) = ell * ((π⁻¹ * sinc (ell * v) ^ 2 : ℝ) : ℂ) := by
+        rw [squaredSinc_def]; push_cast; ring
+    _ = ell * (((2 * π * ell)⁻¹ : ℝ) * ∫ y : ℝ in -(2 * ell)..2 * ell, F y) := by rw [hcomp]
+    _ = 1 / (2 * π) * ∫ y : ℝ in -(2 * ell)..2 * ell, F y := by
+        push_cast; field_simp [Complex.ofReal_ne_zero.mpr hell.ne']
 
 /-- **The cosine transform of the kernel is the triangle.** For `λ > 0` and every `ξ`,
 `∫ v, K_λ(v) cos (ξ v) = max (1 - |ξ| / (2λ)) 0`; in particular it vanishes whenever
@@ -296,5 +314,41 @@ theorem integral_squaredSinc_mul_cos (hell : 0 < ell) (ξ : ℝ) :
     Measure.integral_comp_mul_left (fun x : ℝ ↦ sinc x ^ 2 * cos ((ξ / ell) * x)) ell,
     abs_inv, abs_of_pos hell, smul_eq_mul, TauCeti.integral_sinc_sq_mul_cos, habs]
   field_simp
+
+/-- **Shifted cosine convolution of the kernel.** For `λ > 0` and all `ξ` and `T`,
+`∫ t, cos (ξ t) K_λ(t - T) = max (1 - |ξ| / (2λ)) 0 * cos (ξ T)`. -/
+theorem integral_cos_mul_squaredSinc_sub (hell : 0 < ell) (ξ T : ℝ) :
+    ∫ t : ℝ, cos (ξ * t) * squaredSinc ell (t - T) =
+      max (1 - |ξ| / (2 * ell)) 0 * cos (ξ * T) := by
+  rw [← integral_add_right_eq_self (fun t : ℝ ↦ cos (ξ * t) * squaredSinc ell (t - T)) T]
+  have hsplit : (fun v : ℝ ↦ cos (ξ * (v + T)) * squaredSinc ell (v + T - T)) =
+      fun v ↦ cos (ξ * T) * (squaredSinc ell v * cos (ξ * v)) -
+        sin (ξ * T) * (squaredSinc ell v * sin (ξ * v)) := funext fun v ↦ by
+    rw [add_sub_cancel_right, mul_add, cos_add]
+    ring
+  have hint_cos : Integrable (fun v : ℝ ↦ squaredSinc ell v * cos (ξ * v)) :=
+    (integrable_squaredSinc ell).mul_bdd
+      (by fun_prop : Continuous fun v ↦ cos (ξ * v)).aestronglyMeasurable
+      (Eventually.of_forall fun _ ↦ abs_cos_le_one _)
+  have hint_sin : Integrable (fun v : ℝ ↦ squaredSinc ell v * sin (ξ * v)) :=
+    (integrable_squaredSinc ell).mul_bdd
+      (by fun_prop : Continuous fun v ↦ sin (ξ * v)).aestronglyMeasurable
+      (Eventually.of_forall fun _ ↦ abs_sin_le_one _)
+  have hodd : ∫ v : ℝ, squaredSinc ell v * sin (ξ * v) = 0 :=
+    MeasureTheory.integral_eq_zero_of_odd (Eventually.of_forall fun v ↦ by
+      rw [squaredSinc_neg_right, mul_neg, sin_neg, mul_neg])
+  rw [hsplit, integral_sub (hint_cos.const_mul _) (hint_sin.const_mul _), integral_const_mul,
+    integral_const_mul, integral_squaredSinc_mul_cos hell ξ, hodd]
+  ring
+
+/-- **Band-limit cancellation.** For `λ ≥ 0` and `2λ ≤ |ξ|`, the convolution of `t ↦ cos (ξ t)`
+with `squaredSinc λ` vanishes at every shift `T`. -/
+theorem integral_cos_mul_squaredSinc_eq_zero {ξ : ℝ} (hell : 0 ≤ ell)
+    (hξ : 2 * ell ≤ |ξ|) (T : ℝ) :
+    ∫ t : ℝ, cos (ξ * t) * squaredSinc ell (t - T) = 0 := by
+  rcases hell.eq_or_lt with rfl | hell
+  · simp
+  rw [integral_cos_mul_squaredSinc_sub hell ξ T,
+    max_eq_right (sub_nonpos.mpr ((one_le_div (by positivity)).mpr hξ)), zero_mul]
 
 end TauCeti.HigherPoleTauberian
