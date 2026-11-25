@@ -365,9 +365,8 @@ section Existence
 
 variable {X : Type*} [PseudoMetricSpace X] {m : ℝ} {τ τ₀ : ℝ≥0} {φ : X → EReal} {x x₀ : X}
 
-/-- Midpoint quantitative stability for two points with penalized energy near the infimum `M`: if
-`z ↦ φ z + d(x, z)² / (2τ)` is bounded below by `M` and `(m + 1 / τ)`-convex along a curve from
-`v₀` to `v₁`, then `(1 + m τ) / (8τ) d(v₀, v₁)² ≤ (Ψ v₀ - M) / 2 + (Ψ v₁ - M) / 2`. -/
+/-- Midpoint stability for two points with penalized energy near the infimum `M`,
+obtained by comparing the common lower bound with the midpoint interpolation bound. -/
 private lemma mul_dist_sq_le_of_convexAlong (hτ : 0 < τ) {M ε₀ ε₁ : ℝ} {v₀ v₁ : X}
     {γ : ℝ → X} (hγ0 : γ 0 = v₀) (hγ1 : γ 1 = v₁)
     (hγ : ConvexAlong (m + (τ : ℝ)⁻¹)
@@ -376,10 +375,7 @@ private lemma mul_dist_sq_le_of_convexAlong (hτ : 0 < τ) {M ε₀ ε₁ : ℝ}
     (htop₀ : φ v₀ ≠ ⊤) (hbot₀ : φ v₀ ≠ ⊥) (htop₁ : φ v₁ ≠ ⊤) (hbot₁ : φ v₁ ≠ ⊥)
     (hv₀ : φ v₀ + (edist x v₀ ^ 2 / (2 * τ) : ℝ≥0∞) < ((M + ε₀ : ℝ) : EReal))
     (hv₁ : φ v₁ + (edist x v₁ ^ 2 / (2 * τ) : ℝ≥0∞) < ((M + ε₁ : ℝ) : EReal)) :
-    (1 + m * τ) / (8 * τ) * dist v₀ v₁ ^ 2 ≤ ε₀ / 2 + ε₁ / 2 := by
-  have hτr : (0 : ℝ) < τ := NNReal.coe_pos.2 hτ
-  have hcomb := hlow.trans (convexAlong_def.1 hγ (1 / 2) ⟨by norm_num, by norm_num⟩)
-  rw [hγ0, hγ1] at hcomb
+    ((m + (τ : ℝ)⁻¹) / 2 * dist v₀ v₁ ^ 2) / 4 ≤ (ε₀ + ε₁) / 2 := by
   set a₀ : ℝ := (φ v₀).toReal
   set a₁ : ℝ := (φ v₁).toReal
   have ha₀ : φ v₀ = a₀ := (EReal.coe_toReal htop₀ hbot₀).symm
@@ -388,13 +384,10 @@ private lemma mul_dist_sq_le_of_convexAlong (hτ : 0 < τ) {M ε₀ ε₁ : ℝ}
     rwa [coe_edist_sq_div_eq_coe_dist_sq_div hτ, ha₀, ← EReal.coe_add, EReal.coe_lt_coe_iff] at hv₀
   have hv₁' : a₁ + dist x v₁ ^ 2 / (2 * τ) < M + ε₁ := by
     rwa [coe_edist_sq_div_eq_coe_dist_sq_div hτ, ha₁, ← EReal.coe_add, EReal.coe_lt_coe_iff] at hv₁
-  rw [ha₀, ha₁] at hcomb
-  norm_cast at hcomb
-  push_cast at hcomb
-  have hcoef : (1 + m * (τ : ℝ)) / (8 * τ) = (m + (τ : ℝ)⁻¹) / 2 * (1 / 2) * (1 - 1 / 2) := by
-    field_simp
-    ring
-  rw [hcoef]
+  have hgap := hγ.mul_dist_sq_div_four_le_sub
+    (b := a₀ + dist x v₀ ^ 2 / (2 * τ)) (c := a₁ + dist x v₁ ^ 2 / (2 * τ))
+    (by rw [hγ0, ha₀, EReal.coe_add]) (by rw [hγ1, ha₁, EReal.coe_add]) hlow
+  rw [hγ0, hγ1] at hgap
   linarith
 
 /-- **Existence of a resolvent step from convexity of the penalized energy** (Ambrosio–Gigli–Savaré,
@@ -432,26 +425,22 @@ theorem moreauYosidaResolvent_nonempty_of_convexAlong [CompleteSpace X]
     exact moreauYosida_le φ τ (edist_ne_top x y)
   have hφ_ne_bot : ∀ n, φ (v n) ≠ ⊥ := fun n ↦
     apply_ne_bot_of_moreauYosida_ne_bot (edist_ne_top x (v n)) hbot
-  have hc : 0 < (1 + m * τ) / (8 * τ) := by positivity
-  have hdist_sq : ∀ n k : ℕ, (1 + m * τ) / (8 * τ) * dist (v n) (v k) ^ 2 ≤
-      (1 / ((n : ℝ) + 1)) / 2 + (1 / ((k : ℝ) + 1)) / 2 := fun n k ↦ by
+  have hκ : 0 < m + (τ : ℝ)⁻¹ := by
+    have hτr : (0 : ℝ) < τ := NNReal.coe_pos.2 hτ
+    convert div_pos hmτ hτr using 1
+    field_simp
+    ring
+  have hgap (n k : ℕ) :
+      ((m + (τ : ℝ)⁻¹) / 2 * dist (v n) (v k) ^ 2) / 4 ≤
+        (1 / ((n : ℝ) + 1) + 1 / ((k : ℝ) + 1)) / 2 - 0 := by
     obtain ⟨γ, hγ0, hγ1, hγ⟩ := h (hφ_ne_top n) (hφ_ne_top k)
+    rw [sub_zero]
     exact mul_dist_sq_le_of_convexAlong hτ hγ0 hγ1 hγ (hψ_ge (γ (1 / 2)))
       (hφ_ne_top n) (hφ_ne_bot n) (hφ_ne_top k) (hφ_ne_bot k) (hv n) (hv k)
-  have hcauchy : CauchySeq v := Metric.cauchySeq_iff.2 fun ε hε ↦ by
-    obtain ⟨N, hN⟩ := exists_nat_one_div_lt (mul_pos (pow_pos hε 2) hc)
-    refine ⟨N, fun n hn k hk ↦ ?_⟩
-    have hn' : 1 / ((n : ℝ) + 1) ≤ 1 / ((N : ℝ) + 1) := by gcongr
-    have hk' : 1 / ((k : ℝ) + 1) ≤ 1 / ((N : ℝ) + 1) := by gcongr
-    have hsq : (1 + m * τ) / (8 * τ) * dist (v n) (v k) ^ 2 <
-        (1 + m * τ) / (8 * τ) * ε ^ 2 := by
-      calc (1 + m * τ) / (8 * τ) * dist (v n) (v k) ^ 2
-          ≤ (1 / ((n : ℝ) + 1)) / 2 + (1 / ((k : ℝ) + 1)) / 2 := hdist_sq n k
-        _ ≤ 1 / ((N : ℝ) + 1) := by linarith
-        _ < ε ^ 2 * ((1 + m * τ) / (8 * τ)) := hN
-        _ = (1 + m * τ) / (8 * τ) * ε ^ 2 := mul_comm _ _
-    have hd_lt : dist (v n) (v k) ^ 2 < ε ^ 2 := lt_of_mul_lt_mul_left hsq hc.le
-    exact (pow_lt_pow_iff_left₀ dist_nonneg hε.le two_ne_zero).1 hd_lt
+  have hcauchy : CauchySeq v := cauchySeq_of_le_average_sub
+    (ω := fun r ↦ (m + (τ : ℝ)⁻¹) / 2 * r ^ 2)
+    (fun ε hε ↦ ⟨(m + (τ : ℝ)⁻¹) / 2 * ε ^ 2, by positivity, fun r hr ↦ by gcongr⟩) hgap
+    tendsto_one_div_add_atTop_nhds_zero_nat
   obtain ⟨y, hy⟩ := cauchySeq_tendsto_of_complete hcauchy
   have hliminf := le_liminf_apply_add_edist_sq_div (φ := φ) (τ := τ) (x := x)
     ((((continuous_const.edist continuous_id).tendsto y).comp hy).liminf_eq.ge)
@@ -501,74 +490,6 @@ theorem PenalizedConvex.exists_forall_mem_moreauYosidaResolvent [CompleteSpace X
       (moreauYosida_ne_bot_of_lt hττ₀ (edist_ne_top z x₀) h₀)
   choose f hf using step
   exact ⟨fun n ↦ f^[n] x, rfl, fun n ↦ by simpa only [Function.iterate_succ_apply'] using hf _⟩
-
-/-- **Metric coercivity from local lower semicontinuity and `κ`-convex interpolation**
-(Ambrosio–Gigli–Savaré, Lemma 2.4.8). Let `Ψ : X → EReal` be lower semicontinuous and finite at a
-point `x₀`, and let `κ > 0`. Suppose that every point `z` with `Ψ z ≠ ⊤` can be interpolated
-towards `x₀` at some scale `R : ℝ` so that for every `t ∈ [0, 1]` there is a point `y` at distance
-at most `t R` from `x₀` satisfying
-`Ψ y ≤ (1 - t) Ψ x₀ + t Ψ z - (κ / 2) t (1 - t) R ^ 2`.
-Then `Ψ` is bounded below by a real constant; in particular `⨅ z, Ψ z ≠ ⊥`. -/
-theorem iInf_ne_bot_of_lowerSemicontinuousAt {Ψ : X → EReal} {x₀ : X} {κ : ℝ}
-    (hΨ : LowerSemicontinuousAt Ψ x₀) (htop : Ψ x₀ ≠ ⊤) (hbot : Ψ x₀ ≠ ⊥) (hκ : 0 < κ)
-    (hinterp : ∀ z, Ψ z ≠ ⊤ → ∃ R : ℝ, ∀ t ∈ Icc (0 : ℝ) 1, ∃ y, dist x₀ y ≤ t * R ∧
-      Ψ y ≤ ((1 - t : ℝ) : EReal) * Ψ x₀ + (t : EReal) * Ψ z -
-        ((κ / 2 * t * (1 - t) * R ^ 2 : ℝ) : EReal)) :
-    (⨅ z, Ψ z) ≠ ⊥ := by
-  -- Local boundedness below near `x₀` extends to a global lower bound by choosing `t = 1` when
-  -- `R < δ` and `t = δ / (2R)` when `R ≥ δ`, then completing the square against `(κ / 4) R²`.
-  set a : ℝ := (Ψ x₀).toReal
-  have ha : Ψ x₀ = a := (EReal.coe_toReal htop hbot).symm
-  have hnhds : ∀ᶠ y in 𝓝 x₀, ((a - 1 : ℝ) : EReal) < Ψ y :=
-    hΨ _ (by simp only [gt_iff_lt, ha, EReal.coe_lt_coe_iff]; exact sub_one_lt a)
-  obtain ⟨δ, hδ, hball⟩ := Metric.nhds_basis_ball.eventually_iff.1 hnhds
-  set L : ℝ := min (a - 1) (a - 4 / (κ * δ ^ 2))
-  refine ne_bot_of_le_ne_bot (EReal.coe_ne_bot L) (le_iInf fun z ↦ ?_)
-  rcases eq_or_ne (Ψ z) ⊤ with hztop | hztop
-  · exact hztop ▸ le_top
-  obtain ⟨R, hinterp_z⟩ := hinterp z hztop
-  rcases lt_or_ge R δ with hR | hR
-  · obtain ⟨y, hy_dist, hy_le⟩ := hinterp_z 1 ⟨zero_le_one, le_rfl⟩
-    have hy_ball : y ∈ Metric.ball x₀ δ :=
-      Metric.mem_ball'.2 (hy_dist.trans_lt (by simpa only [one_mul] using hR))
-    have h1 : Ψ y ≤ Ψ z := by simpa [ha] using hy_le
-    exact (EReal.coe_le_coe_iff.2 (min_le_left _ _)).trans ((hball hy_ball).le.trans h1)
-  have hRpos : 0 < R := hδ.trans_le hR
-  set t : ℝ := δ / (2 * R)
-  have htpos : 0 < t := by positivity
-  have ht12 : t ≤ 1 / 2 := (div_le_div_iff₀ (by positivity) two_pos).2 (by linarith)
-  have htIcc : t ∈ Icc (0 : ℝ) 1 := ⟨htpos.le, ht12.trans (by norm_num)⟩
-  obtain ⟨y, hy_dist, hy_le⟩ := hinterp_z t htIcc
-  have hy_ball : y ∈ Metric.ball x₀ δ := by
-    rw [Metric.mem_ball']
-    have htR : t * R = δ / 2 := by dsimp [t]; field_simp
-    linarith
-  have hlow : ((a - 1 : ℝ) : EReal) < Ψ y := hball hy_ball
-  have hzbot : Ψ z ≠ ⊥ := fun hzbot ↦ by
-    rw [hzbot, EReal.coe_mul_bot_of_pos htpos, EReal.add_bot, EReal.bot_sub, le_bot_iff] at hy_le
-    exact not_lt_bot (hy_le ▸ hlow)
-  set b : ℝ := (Ψ z).toReal
-  have hb : Ψ z = b := (EReal.coe_toReal hztop hzbot).symm
-  rw [ha, hb] at hy_le
-  norm_cast at hy_le
-  have hmid : a - 1 ≤ (1 - t) * a + t * b - κ / 2 * t * (1 - t) * R ^ 2 := by
-    exact_mod_cast hlow.le.trans hy_le
-  have hslope : a - 2 * R / δ ≤ b - κ / 2 * (1 - t) * R ^ 2 := by
-    refine le_of_mul_le_mul_left ?_ htpos
-    have : t * (2 * R / δ) = 1 := by dsimp [t]; field_simp
-    linarith
-  have hquad : κ / 4 * R ^ 2 ≤ κ / 2 * (1 - t) * R ^ 2 := by
-    calc κ / 4 * R ^ 2 = 1 / 4 * (κ * R ^ 2) := by ring
-      _ ≤ (1 - t) / 2 * (κ * R ^ 2) :=
-        mul_le_mul_of_nonneg_right (by linarith) (by positivity)
-      _ = κ / 2 * (1 - t) * R ^ 2 := by ring
-  have hsq : -(4 / (κ * δ ^ 2)) ≤ κ / 4 * R ^ 2 - 2 * R / δ := by
-    rw [← sub_nonneg]
-    calc κ / 4 * R ^ 2 - 2 * R / δ - -(4 / (κ * δ ^ 2))
-        = (κ * δ * R - 4) ^ 2 / (4 * κ * δ ^ 2) := by field_simp; ring
-      _ ≥ 0 := div_nonneg (sq_nonneg _) (by positivity)
-  rw [hb]
-  exact EReal.coe_le_coe_iff.2 ((min_le_right _ _).trans (by linarith))
 
 /-- **Coercivity of `φ_τ` from local lower semicontinuity and penalized `(m + 1 / σ)`-convex
 interpolation** (Ambrosio–Gigli–Savaré, Lemma 2.4.8). Let `φ` be lower semicontinuous and finite at

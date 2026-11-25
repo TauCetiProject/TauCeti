@@ -5,29 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Strong
-public import Mathlib.Topology.Semicontinuity.Basic
-public import Mathlib.Order.Filter.Extr
+public import TauCeti.Analysis.Convex.Function.Uniform
 
-import TauCeti.Analysis.GradientFlow.MoreauYosida.Convex
+import Mathlib.Analysis.Normed.Affine.AddTorsor
+import TauCeti.Topology.Order.IsLUB
 import TauCeti.Topology.Semicontinuity.Sequences
-import Mathlib.Topology.Instances.EReal.Lemmas
-import Mathlib.Analysis.Convex.Function
-import Mathlib.Topology.Order.IsLUB
-import Mathlib.Topology.MetricSpace.Cauchy
 
 /-!
-# Minimizers of strongly convex functions
+# Minimizers of uniformly and strongly convex functions
 
-Strong convexity gives sharp quadratic growth at every minimizer. On a nonempty complete
-subset of a real normed space, a lower semicontinuous strongly convex function with positive
-modulus has a unique minimizer. The midpoint inequality controls the distance between points
-by their objective gaps, making minimizing sequences Cauchy.
+At every minimizer, strong convexity gives a quadratic lower bound, which is sharp
+quadratic growth when the modulus is positive. A lower semicontinuous strongly convex
+function with positive modulus attains its minimum uniquely on a nonempty complete set.
 
-The real-valued estimates use `TauCeti.ConvexAlong.apply_add_le_of_forall_le` and
-`TauCeti.iInf_ne_bot_of_lowerSemicontinuousAt` along affine segments. For the metric
-interpolation estimates, see Ambrosio, Gigli and Savaré, *Gradient Flows in Metric Spaces
-and in the Space of Probability Measures*, 2nd ed., Section 2.4.
+The Cauchy and attainment arguments also apply to bounded-below uniformly convex
+functions whose modulus is bounded away from zero off every neighborhood of zero.
+They use the same midpoint estimate as the resolvent proof
+`TauCeti.moreauYosidaResolvent_nonempty_of_convexAlong`. See Ambrosio, Gigli and
+Savaré, *Gradient Flows in Metric Spaces and in the Space of Probability Measures*,
+2nd ed., Section 2.4, Lemma 4.1.1 and Theorem 4.1.2.
 -/
 
 public section
@@ -38,61 +34,35 @@ open scoped Topology
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {s : Set E} {f : E → ℝ} {μ : ℝ} {x y : E}
 
--- Express strong convexity in the affine-segment and distance conventions of the metric lemmas.
-private theorem lineMap_le (hf : StrongConvexOn s μ f) (hx : x ∈ s) (hy : y ∈ s)
-    {t : ℝ} (ht : t ∈ Icc 0 1) :
-    f (AffineMap.lineMap x y t) ≤
-      (1 - t) * f x + t * f y - μ / 2 * t * (1 - t) * dist x y ^ 2 := by
-  rw [AffineMap.lineMap_apply_module, dist_eq_norm]
-  have h := hf.2 hx hy (sub_nonneg.2 ht.2) ht.1 (sub_add_cancel 1 t)
-  simp only [smul_eq_mul] at h
-  linarith
-
-/-- Sharp quadratic growth at a constrained minimizer. The modulus may have either sign. -/
+/-- A quadratic lower bound at a constrained minimizer, with sharp quadratic growth
+when the modulus is positive. -/
 theorem StrongConvexOn.add_mul_norm_sub_sq_le_of_isMinOn (hf : StrongConvexOn s μ f) (hx : x ∈ s)
     (hmin : IsMinOn f s x) (hy : y ∈ s) :
-    f x + μ / 2 * ‖x - y‖ ^ 2 ≤ f y := by
-  have hcurve : TauCeti.ConvexAlong μ (fun z ↦ (f z : EReal))
-      (AffineMap.lineMap x y) := by
-    rw [TauCeti.convexAlong_def]
-    intro t ht
-    simpa only [AffineMap.lineMap_apply_zero, AffineMap.lineMap_apply_one, ← EReal.coe_mul,
-      ← EReal.coe_add, ← EReal.coe_sub, EReal.coe_le_coe_iff] using lineMap_le hf hx hy ht
-  have h := hcurve.apply_add_le_of_forall_le (fun t ht ↦ by
-    simp only [AffineMap.lineMap_apply_zero, EReal.coe_le_coe_iff]
-    exact hmin (hf.1.segment_subset hx hy (lineMap_mem_segment ℝ x y ht)))
-  simpa only [AffineMap.lineMap_apply_zero, AffineMap.lineMap_apply_one, dist_eq_norm,
-    ← EReal.coe_add, EReal.coe_le_coe_iff] using h
+    f x + μ / 2 * ‖x - y‖ ^ 2 ≤ f y :=
+  UniformConvexOn.add_le_of_isMinOn hf hx hmin hy
 
-/-- The average objective gap above a common lower bound is at least `μ / 8` times the
-squared distance between two points. -/
-theorem StrongConvexOn.mul_norm_sub_sq_le_sub (hf : StrongConvexOn s μ f)
-    {a : ℝ} (hlower : ∀ z ∈ s, a ≤ f z) (hx : x ∈ s) (hy : y ∈ s) :
-    μ / 8 * ‖x - y‖ ^ 2 ≤ (f x + f y) / 2 - a := by
-  have hm := hlower _ (hf.1 hx hy (by norm_num : (0 : ℝ) ≤ 1 / 2)
-    (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num))
-  have hc := hf.2 hx hy (by norm_num : (0 : ℝ) ≤ 1 / 2)
-    (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num)
-  simp only [smul_eq_mul] at hc
-  linarith
-
-/-- A minimizing sequence for a strongly convex function with positive modulus is Cauchy. -/
-theorem StrongConvexOn.cauchySeq_of_tendsto (hf : StrongConvexOn s μ f) (hμ : 0 < μ)
+/-- A sequence whose objective values tend to a common lower bound is Cauchy when the
+uniform modulus is bounded away from zero off every neighborhood of zero. -/
+theorem UniformConvexOn.cauchySeq_of_tendsto_comp {φ : ℝ → ℝ} (hf : UniformConvexOn s φ f)
+    (hφ : ∀ ε > 0, ∃ c > 0, ∀ r ≥ ε, c ≤ φ r)
     {a : ℝ} (hlower : ∀ z ∈ s, a ≤ f z) {u : ℕ → E} (hu : ∀ n, u n ∈ s)
     (hlim : Tendsto (f ∘ u) atTop (𝓝 a)) : CauchySeq u := by
-  rw [Metric.cauchySeq_iff]
-  intro ε hε
-  have hμ8 : 0 < μ / 8 := by positivity
-  have hgap : 0 < μ / 8 * ε ^ 2 := by positivity
-  obtain ⟨N, hN⟩ := eventually_atTop.1
-    (hlim.eventually (gt_mem_nhds (lt_add_of_pos_right a hgap)))
-  simp only [Function.comp_def] at hN
-  refine ⟨N, fun m hm n hn ↦ ?_⟩
-  have hbound := hf.mul_norm_sub_sq_le_sub hlower (hu m) (hu n)
-  have hsq : ‖u m - u n‖ ^ 2 < ε ^ 2 :=
-    (mul_lt_mul_iff_right₀ hμ8).1 (by linarith [hN m hm, hN n hn])
-  rw [dist_eq_norm]
-  exact (pow_lt_pow_iff_left₀ (norm_nonneg _) hε.le two_ne_zero).1 hsq
+  refine TauCeti.cauchySeq_of_le_average_sub hφ (fun n k ↦ ?_) hlim
+  simpa only [dist_eq_norm, Function.comp_apply] using hf.div_four_le_sub hlower (hu n) (hu k)
+
+/-- A bounded-below uniformly convex function attains its minimum on a nonempty complete
+domain if it is lower semicontinuous there and its modulus is bounded away from zero
+off every neighborhood of zero. -/
+theorem UniformConvexOn.exists_isMinOn_of_bddBelow {φ : ℝ → ℝ} (hf : UniformConvexOn s φ f)
+    (hφ : ∀ ε > 0, ∃ c > 0, ∀ r ≥ ε, c ≤ φ r)
+    (hs : IsComplete s) (hne : s.Nonempty) (hlsc : LowerSemicontinuousOn f s)
+    (hbdd : BddBelow (f '' s)) : ∃ x ∈ s, IsMinOn f s x := by
+  obtain ⟨u, hu, -, hulim⟩ := TauCeti.exists_seq_forall_mem_and_tendsto_sInf hne hbdd
+  have hlower : ∀ z ∈ s, sInf (f '' s) ≤ f z := fun z hz ↦ csInf_le hbdd ⟨z, hz, rfl⟩
+  have hcauchy := hf.cauchySeq_of_tendsto_comp hφ hlower hu hulim
+  obtain ⟨x, hx, hux⟩ := cauchySeq_tendsto_of_isComplete hs hu hcauchy
+  have hfx := hlsc.seqLowerSemicontinuousOn.le_of_tendsto hx hu hux hulim
+  exact ⟨x, hx, isMinOn_iff.2 (fun y hy ↦ hfx.trans (hlower y hy))⟩
 
 /-- A strongly convex function with positive modulus is bounded below on its domain if it is
 lower semicontinuous within the domain at one of its points. -/
@@ -117,12 +87,13 @@ theorem StrongConvexOn.bddBelow_image_of_lowerSemicontinuousWithinAt
     exact EReal.coe_le_coe_iff.1 (ha.le.trans (iInf_le g ⟨y, hy⟩))
   · refine ⟨dist x (y : E), fun t ht ↦ ?_⟩
     let z : s := ⟨AffineMap.lineMap x (y : E) t,
-      hf.1.segment_subset hx y.property (lineMap_mem_segment ℝ x (y : E) ht)⟩
+      hf.1.lineMap_mem hx y.property ht⟩
     refine ⟨z, ?_, ?_⟩
     · simpa only [x₀, z, Subtype.dist_eq, Real.norm_of_nonneg ht.1] using
         (dist_left_lineMap x (y : E) t).le
-    · simpa only [g, x₀, z, Function.comp_apply, ← EReal.coe_mul, ← EReal.coe_add,
-        ← EReal.coe_sub, EReal.coe_le_coe_iff] using lineMap_le hf hx y.property ht
+    · have hcurve := hf.convexAlong_lineMap hx y.property
+      simpa only [g, x₀, z, Function.comp_apply, AffineMap.lineMap_apply_zero,
+        AffineMap.lineMap_apply_one] using TauCeti.convexAlong_def.mp hcurve t ht
 
 /-- A lower semicontinuous strongly convex function with positive modulus on a nonempty
 complete set has a unique constrained minimizer. -/
@@ -132,15 +103,10 @@ theorem StrongConvexOn.existsUnique_isMinOn (hf : StrongConvexOn s μ f) (hμ : 
   have hbdd : BddBelow (f '' s) := by
     obtain ⟨z, hz⟩ := hne
     exact hf.bddBelow_image_of_lowerSemicontinuousWithinAt hμ hz (hlsc z hz)
-  obtain ⟨v, _, hvlim, hv⟩ := exists_seq_tendsto_sInf (hne.image f) hbdd
-  choose u hu huv using hv
-  have hulim : Tendsto (f ∘ u) atTop (𝓝 (sInf (f '' s))) := by
-    simpa only [Function.comp_def, huv] using hvlim
-  have hcauchy := hf.cauchySeq_of_tendsto hμ (fun z hz ↦ csInf_le hbdd ⟨z, hz, rfl⟩)
-    hu hulim
-  obtain ⟨x, hx, hux⟩ := cauchySeq_tendsto_of_isComplete hs hu hcauchy
-  have hfx := hlsc.seqLowerSemicontinuousOn.le_of_tendsto hx hu hux hulim
-  have hmin : IsMinOn f s x :=
-    isMinOn_iff.2 (fun y hy ↦ hfx.trans (csInf_le hbdd ⟨y, hy, rfl⟩))
+  have hu : UniformConvexOn s (fun r ↦ μ / 2 * r ^ 2) f := hf
+  have hmod : ∀ ε > (0 : ℝ), ∃ c > (0 : ℝ), ∀ r ≥ ε, c ≤ μ / 2 * r ^ 2 := by
+    intro ε hε
+    exact ⟨μ / 2 * ε ^ 2, by positivity, fun r hr ↦ by gcongr⟩
+  obtain ⟨x, hx, hmin⟩ := hu.exists_isMinOn_of_bddBelow hmod hs hne hlsc hbdd
   exact ⟨x, ⟨hx, hmin⟩, fun y hy ↦
     (hf.strictConvexOn hμ).eq_of_isMinOn hy.2 hmin hy.1 hx⟩

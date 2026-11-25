@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Convex.Along
 public import TauCeti.Analysis.GradientFlow.RelaxedSlope
 public import TauCeti.Data.EReal.Operations
 public import TauCeti.Topology.MetricSpace.CATZero
+import TauCeti.Analysis.Convex.Function.Uniform
 import TauCeti.Topology.Instances.EReal
 
 /-!
@@ -109,18 +111,6 @@ section PseudoMetricSpace
 
 variable {X : Type*} [PseudoMetricSpace X] {m m' : ℝ} {φ ψ : X → EReal} {γ : ℝ → X} {x y : X}
 
-/-- The energy `φ` is *`m`-convex along* the curve `γ`, read on `[0, 1]`: for every `t ∈ [0, 1]`,
-`φ (γ t) ≤ (1 - t) φ (γ 0) + t φ (γ 1) - (m / 2) t (1 - t) d(γ 0, γ 1)²`. -/
-def ConvexAlong (m : ℝ) (φ : X → EReal) (γ : ℝ → X) : Prop :=
-  ∀ t ∈ Icc (0 : ℝ) 1, φ (γ t) ≤ ((1 - t : ℝ) : EReal) * φ (γ 0) + (t : EReal) * φ (γ 1) -
-    ((m / 2 * t * (1 - t) * dist (γ 0) (γ 1) ^ 2 : ℝ) : EReal)
-
-/-- The defining inequality of convexity along a curve. -/
-theorem convexAlong_def :
-    ConvexAlong m φ γ ↔ ∀ t ∈ Icc (0 : ℝ) 1, φ (γ t) ≤ ((1 - t : ℝ) : EReal) * φ (γ 0) +
-      (t : EReal) * φ (γ 1) - ((m / 2 * t * (1 - t) * dist (γ 0) (γ 1) ^ 2 : ℝ) : EReal) :=
-  Iff.rfl
-
 /-- Convexity along a geodesic segment from `x` to `y`, in terms of its endpoints. -/
 theorem IsGeodesicSegment.convexAlong_iff (hγ : IsGeodesicSegment γ x y) :
     ConvexAlong m φ γ ↔ ∀ t ∈ Icc (0 : ℝ) 1, φ (γ t) ≤ ((1 - t : ℝ) : EReal) * φ x +
@@ -203,39 +193,6 @@ theorem ConvexAlong.reverse (h : ConvexAlong m φ γ) : ConvexAlong m φ fun t �
   simp only [sub_zero, sub_self]
   rw [add_comm, dist_comm, mul_right_comm (m / 2) t]
   exact h'
-
-/-- **Quadratic growth away from a minimum along a curve of convexity.** If `φ` is `m`-convex
-along `γ` and its smallest value along `γ` on `[0, 1]` is attained at `γ 0`, then
-`φ (γ 0) + (m / 2) d(γ 0, γ 1)² ≤ φ (γ 1)`. Comparing `φ (γ 0)` with the convexity bound at time
-`t` and letting `t → 0` gives the inequality; `m` may be negative. -/
-theorem ConvexAlong.apply_add_le_of_forall_le (h : ConvexAlong m φ γ)
-    (hmin : ∀ t ∈ Icc (0 : ℝ) 1, φ (γ 0) ≤ φ (γ t)) :
-    φ (γ 0) + ((m / 2 * dist (γ 0) (γ 1) ^ 2 : ℝ) : EReal) ≤ φ (γ 1) := by
-  set D := dist (γ 0) (γ 1) ^ 2
-  have h₁ := hmin 1 (right_mem_Icc.2 zero_le_one)
-  induction hb : φ (γ 1) using EReal.rec with
-  | top => exact le_top
-  | bot =>
-    rw [hb, le_bot_iff] at h₁
-    simp [h₁]
-  | coe b =>
-    induction ha : φ (γ 0) using EReal.rec with
-    | bot => simp
-    | top => simp [ha, hb] at h₁
-    | coe a =>
-      -- For `t ∈ (0, 1)`, dividing the convexity bound at time `t` by `t` gives
-      -- `a + (m / 2) (1 - t) D ≤ b`.
-      have key : ∀ t ∈ Ioo (0 : ℝ) 1, a + m / 2 * (1 - t) * D ≤ b := by
-        intro t ht
-        have h' := (hmin t (Ioo_subset_Icc_self ht)).trans (h t (Ioo_subset_Icc_self ht))
-        rw [ha, hb] at h'
-        have h'' : a ≤ (1 - t) * a + t * b - m / 2 * t * (1 - t) * D := by exact_mod_cast h'
-        exact le_of_mul_le_mul_left (by linarith) ht.1
-      have hlim : Tendsto (fun t : ℝ ↦ a + m / 2 * (1 - t) * D) (𝓝[>] 0)
-          (𝓝 (a + m / 2 * D)) := by
-        have : Continuous fun t : ℝ ↦ a + m / 2 * (1 - t) * D := by fun_prop
-        simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
-      exact_mod_cast le_of_tendsto hlim (eventually_of_mem (Ioo_mem_nhdsGT zero_lt_one) key)
 
 /-- **Sum of convex energies.** If `φ` is `m`-convex and `ψ` is `m'`-convex along the same curve,
 then `φ + ψ` is `(m + m')`-convex along it. -/
@@ -365,18 +322,9 @@ end PseudoMetricSpace
 `m`-convex along the affine segments. -/
 theorem _root_.StrongConvexOn.geodesicallyConvex {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {m : ℝ} {f : E → ℝ} (hf : StrongConvexOn univ m f) :
-    GeodesicallyConvex m fun x ↦ (f x : EReal) := by
-  intro x y _ _
-  refine ⟨AffineMap.lineMap x y, isGeodesicSegment_lineMap x y, ?_⟩
-  rw [(isGeodesicSegment_lineMap x y).convexAlong_iff]
-  intro t ht
-  have h := hf.2 (mem_univ x) (mem_univ y) (sub_nonneg.2 ht.2) ht.1 (sub_add_cancel 1 t)
-  simp only [smul_eq_mul] at h
-  have : f (AffineMap.lineMap x y t) ≤
-      (1 - t) * f x + t * f y - m / 2 * t * (1 - t) * dist x y ^ 2 := by
-    rw [AffineMap.lineMap_apply_module, dist_eq_norm]
-    linarith
-  exact_mod_cast this
+    GeodesicallyConvex m fun x ↦ (f x : EReal) :=
+  fun x y _ _ ↦ ⟨AffineMap.lineMap x y, isGeodesicSegment_lineMap x y,
+    hf.convexAlong_lineMap (mem_univ x) (mem_univ y)⟩
 
 section MetricSpace
 
