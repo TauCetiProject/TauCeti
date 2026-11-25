@@ -12,6 +12,7 @@ public import Mathlib.Topology.ApproximateUnit
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import TauCeti.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.RingTheory.TwoSidedIdeal.Annihilator
+import TauCeti.Topology.Algebra.Ring.MaximalIdeals
 
 /-!
 # Closed two-sided ideals
@@ -36,6 +37,11 @@ The preimage of a closed two-sided ideal under a continuous ring homomorphism is
 ring is closed (`TwoSidedIdeal.isClosed_annihilator`). Hence, in a proper star ring, a
 self-adjoint ideal is essential as soon as it meets every nonzero closed two-sided ideal
 (`TwoSidedIdeal.isEssential_iff_forall_isClosed`).
+
+In a topological ring whose units form an open set, such as a unital Banach algebra, the closure
+of a proper two-sided ideal is proper (`TwoSidedIdeal.topologicalClosure_ne_top_of_isOpen_isUnit`),
+so the ring is simple as soon as its closed two-sided ideals are trivial
+(`TwoSidedIdeal.eq_bot_or_eq_top_of_forall_isClosed`).
 
 The quotient-ring construction generalizes Patrick Massot's
 `QuotientRing.topologicalRing_quotient` in Mathlib from commutative rings, using
@@ -150,6 +156,32 @@ theorem topologicalClosure_le_iff (I J : TwoSidedIdeal A) (hJ : IsClosed (J : Se
       exact closure_minimal h hJ⟩
 
 end TopologicalClosure
+
+section OpenUnits
+
+variable {A : Type*} [Ring A] [TopologicalSpace A] [IsTopologicalRing A]
+
+/-- In a topological ring whose units form an open set (for instance a unital Banach algebra), the
+topological closure of a proper two-sided ideal is proper. This is
+`Ideal.closure_ne_top_of_isOpen_isUnit` applied to the underlying left ideal `I.asIdeal`. -/
+theorem topologicalClosure_ne_top_of_isOpen_isUnit (hU : IsOpen {a : A | IsUnit a})
+    {I : TwoSidedIdeal A} (hI : I ≠ ⊤) : I.topologicalClosure ≠ ⊤ := by
+  rw [Ne, ← one_mem_iff, mem_topologicalClosure, ← coe_asIdeal, ← Ideal.coe_closure,
+    SetLike.mem_coe, ← Ideal.eq_top_iff_one]
+  exact Ideal.closure_ne_top_of_isOpen_isUnit hU <| by
+    rwa [Ne, Ideal.eq_top_iff_one, mem_asIdeal, one_mem_iff]
+
+/-- In a topological ring whose units form an open set (for instance a unital Banach algebra), if
+every closed two-sided ideal is `⊥` or `⊤`, then so is every two-sided ideal. -/
+theorem eq_bot_or_eq_top_of_forall_isClosed (hU : IsOpen {a : A | IsUnit a})
+    (h : ∀ I : TwoSidedIdeal A, IsClosed (I : Set A) → I = ⊥ ∨ I = ⊤) (I : TwoSidedIdeal A) :
+    I = ⊥ ∨ I = ⊤ := by
+  refine or_iff_not_imp_right.mpr fun hI ↦ eq_bot_iff.mpr ?_
+  rw [← (h _ I.isClosed_topologicalClosure).resolve_right
+    (topologicalClosure_ne_top_of_isOpen_isUnit hU hI)]
+  exact I.le_topologicalClosure
+
+end OpenUnits
 
 section ClosedKer
 

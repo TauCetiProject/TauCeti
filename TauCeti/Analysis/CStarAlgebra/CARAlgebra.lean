@@ -11,9 +11,10 @@ public import Mathlib.RingTheory.SimpleRing.Defs
 public import TauCeti.Algebra.Star.StarAlgHom
 public import TauCeti.Analysis.CStarAlgebra.InductiveLimit.Basic
 public import TauCeti.LinearAlgebra.Matrix.TensorProduct
+import Mathlib.Analysis.Normed.Ring.Units
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 import TauCeti.Analysis.CStarAlgebra.InductiveLimit.Ideal
-import TauCeti.Analysis.Normed.Ring.TwoSidedIdeal
+import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
 
 /-!
 # The CAR algebra as a C⋆-inductive limit
@@ -118,7 +119,7 @@ theorem CARAlgebra.forall_isClosed_eq_bot_or_eq_top (J : TwoSidedIdeal CARAlgebr
 /-- The CAR algebra is a simple ring: being unital, its proper two-sided ideals have proper
 closures, so simplicity for closed ideals gives simplicity for all ideals. -/
 instance CARAlgebra.instIsSimpleRing : IsSimpleRing CARAlgebra :=
-  .of_eq_bot_or_eq_top <| TwoSidedIdeal.eq_bot_or_eq_top_of_forall_isClosed
+  .of_eq_bot_or_eq_top <| TwoSidedIdeal.eq_bot_or_eq_top_of_forall_isClosed Units.isOpen
     CARAlgebra.forall_isClosed_eq_bot_or_eq_top
 
 end TauCeti

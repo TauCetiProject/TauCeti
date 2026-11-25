@@ -7,9 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Quotient
 public import TauCeti.RingTheory.TwoSidedIdeal.Quotient
-public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
-public import Mathlib.Analysis.SpecificLimits.Normed
-import Mathlib.Analysis.Normed.Ring.Units
 
 /-!
 # Quotient norms on two-sided ring quotients
@@ -35,9 +32,6 @@ provide the resulting `SeminormedRing`, `NormedRing`, and `NormedAlgebra` instan
 * `TwoSidedIdeal.Quotient.seminormedRing`, `TwoSidedIdeal.Quotient.normedRing`, and
   `TwoSidedIdeal.Quotient.normedAlgebra` (with its `NormedSpace` instance
   `TwoSidedIdeal.Quotient.normedSpace`): unital and algebra counterparts on `R ⧸ I`.
-* `TwoSidedIdeal.topologicalClosure_ne_top` and `TwoSidedIdeal.eq_bot_or_eq_top_of_forall_isClosed`:
-  in a unital Banach algebra the closure of a proper two-sided ideal is proper, so the ring is
-  simple as soon as its closed two-sided ideals are trivial.
 -/
 
 public section
@@ -165,27 +159,3 @@ example {𝕜 A : Type*} [NormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A
 end Unital
 
 end TwoSidedIdeal.Quotient
-
-namespace TwoSidedIdeal
-
-variable {R : Type*} [NormedRing R] [HasSummableGeomSeries R]
-
-/-- In a normed ring with summable geometric series (for instance a unital Banach algebra), the
-topological closure of a proper two-sided ideal is proper. This is Mathlib's `Ideal.closure_ne_top`
-applied to the underlying left ideal `I.asIdeal`. -/
-theorem topologicalClosure_ne_top {I : TwoSidedIdeal R} (hI : I ≠ ⊤) :
-    I.topologicalClosure ≠ ⊤ := by
-  rw [Ne, ← one_mem_iff, mem_topologicalClosure, ← coe_asIdeal, ← Ideal.coe_closure,
-    SetLike.mem_coe, ← Ideal.eq_top_iff_one]
-  exact I.asIdeal.closure_ne_top <| by rwa [Ne, Ideal.eq_top_iff_one, mem_asIdeal, one_mem_iff]
-
-/-- In a normed ring with summable geometric series (for instance a unital Banach algebra), if
-every closed two-sided ideal is `⊥` or `⊤`, then so is every two-sided ideal. -/
-theorem eq_bot_or_eq_top_of_forall_isClosed
-    (h : ∀ I : TwoSidedIdeal R, IsClosed (I : Set R) → I = ⊥ ∨ I = ⊤) (I : TwoSidedIdeal R) :
-    I = ⊥ ∨ I = ⊤ := by
-  refine or_iff_not_imp_right.mpr fun hI ↦ eq_bot_iff.mpr ?_
-  rw [← (h _ I.isClosed_topologicalClosure).resolve_right (topologicalClosure_ne_top hI)]
-  exact I.le_topologicalClosure
-
-end TwoSidedIdeal
