@@ -26,6 +26,9 @@ real and imaginary parts.
 
 ## Main declarations
 
+* `TauCeti.upperHalfPlaneLineCoord`: the real coordinate of the bounding line, which preserves
+  Lebesgue measure (`TauCeti.measurePreserving_upperHalfPlaneLineCoord`); integrals over the line
+  are integrals over `ℝ` (`TauCeti.integral_upperHalfPlaneLine_eq`).
 * `TauCeti.integral_upperHalfPlanePoissonKernel_mul_eq_halfSpacePoissonIntegral`: the Poisson
   integral of the upper half-plane is the two-dimensional half-space Poisson integral.
 * `TauCeti.tendsto_integral_upperHalfPlanePoissonKernel_mul`: boundary values of the Poisson
@@ -43,22 +46,6 @@ open scoped InnerProductSpace
 
 namespace TauCeti
 
-/-- The inward unit normal `i` of the upper half-plane, in the coordinates
-`Complex.orthonormalBasisOneI`. -/
-def upperHalfPlaneNormal : {w : EuclideanSpace ℝ (Fin 2) // ‖w‖ = 1} :=
-  ⟨Complex.orthonormalBasisOneI.repr I, by simp⟩
-
-/-- The defining formula of `TauCeti.upperHalfPlaneNormal`. -/
-theorem coe_upperHalfPlaneNormal :
-    (upperHalfPlaneNormal : EuclideanSpace ℝ (Fin 2)) = Complex.orthonormalBasisOneI.repr I := by
-  rw [upperHalfPlaneNormal]
-
-/-- The coordinate of `z` along the normal `i` is `Im z`. -/
-theorem inner_upperHalfPlaneNormal_repr (z : ℂ) :
-    ⟪(upperHalfPlaneNormal : EuclideanSpace ℝ (Fin 2)), Complex.orthonormalBasisOneI.repr z⟫_ℝ =
-      z.im := by
-  simp [upperHalfPlaneNormal, LinearIsometryEquiv.inner_map_map, Complex.inner]
-
 /-- The point `1` of the real axis, as a unit vector of the bounding line `(ℝ ∙ i)ᗮ`. -/
 def upperHalfPlaneLineUnit : (ℝ ∙ (upperHalfPlaneNormal : EuclideanSpace ℝ (Fin 2)))ᗮ :=
   ⟨Complex.orthonormalBasisOneI.repr 1, Submodule.mem_orthogonal_singleton_iff_inner_right.2 <| by
@@ -75,33 +62,30 @@ theorem coe_smul_upperHalfPlaneLineUnit (t : ℝ) :
       EuclideanSpace ℝ (Fin 2)) = Complex.orthonormalBasisOneI.repr t := by
   rw [Submodule.coe_smul, upperHalfPlaneLineUnit, ← map_smul, Complex.real_smul, mul_one]
 
-private theorem norm_upperHalfPlaneLineUnit :
+/-- The unit vector of the bounding line has norm one. -/
+@[simp]
+theorem norm_upperHalfPlaneLineUnit :
     ‖(upperHalfPlaneLineUnit : EuclideanSpace ℝ (Fin 2))‖ = 1 := by
   simp [upperHalfPlaneLineUnit]
 
-private theorem finrank_line :
-    finrank ℝ (ℝ ∙ (upperHalfPlaneNormal : EuclideanSpace ℝ (Fin 2)))ᗮ = 1 := by
-  have : Fact (finrank ℝ (EuclideanSpace ℝ (Fin 2)) = 1 + 1) := ⟨by simp⟩
-  exact Submodule.finrank_orthogonal_span_singleton
-    (ne_of_apply_ne norm (by rw [upperHalfPlaneNormal.property, norm_zero]; norm_num))
-
 /-- Lebesgue measure on the bounding line is the image of Lebesgue measure on `ℝ`. -/
-private theorem volume_line :
+theorem volume_upperHalfPlaneLine :
     (volume : Measure (ℝ ∙ (upperHalfPlaneNormal : EuclideanSpace ℝ (Fin 2)))ᗮ) =
       (volume : Measure ℝ).map (· • upperHalfPlaneLineUnit) := by
-  rw [volume_eq_of_finrank_eq_one finrank_line (v := upperHalfPlaneLineUnit)
-    (by rw [← norm_ne_zero_iff, ← Submodule.norm_coe, norm_upperHalfPlaneLineUnit]; norm_num),
-    ← ofReal_norm, ← Submodule.norm_coe, norm_upperHalfPlaneLineUnit,
-    ENNReal.ofReal_one, one_smul]
+  rw [volume_eq_of_finrank_eq_one (by rw [finrank_orthogonal_unit]) (v := upperHalfPlaneLineUnit)
+    fun h ↦ by simpa [h] using norm_upperHalfPlaneLineUnit]
+  simp [← ofReal_norm]
 
 private theorem isometry_smul_upperHalfPlaneLineUnit :
     Isometry fun t : ℝ ↦ t • upperHalfPlaneLineUnit :=
   AddMonoidHomClass.isometry_of_norm ((LinearMap.lsmul ℝ _).flip upperHalfPlaneLineUnit) fun t ↦ by
-    simp [norm_smul, norm_upperHalfPlaneLineUnit]
+    simp [norm_smul]
 
-private theorem integral_line (F : (ℝ ∙ (upperHalfPlaneNormal : EuclideanSpace ℝ (Fin 2)))ᗮ → ℝ) :
+/-- An integral over the bounding line is the integral over `ℝ` along its unit vector. -/
+theorem integral_upperHalfPlaneLine_eq {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (F : (ℝ ∙ (upperHalfPlaneNormal : EuclideanSpace ℝ (Fin 2)))ᗮ → G) :
     ∫ y, F y = ∫ t : ℝ, F (t • upperHalfPlaneLineUnit) := by
-  rw [volume_line,
+  rw [volume_upperHalfPlaneLine,
     isometry_smul_upperHalfPlaneLineUnit.isClosedEmbedding.measurableEmbedding.integral_map]
 
 /-- The real coordinate on the bounding line `(ℝ ∙ i)ᗮ`. -/
@@ -122,13 +106,30 @@ theorem upperHalfPlaneLineCoord_smul (t : ℝ) :
   rw [upperHalfPlaneLineCoord_apply, coe_smul_upperHalfPlaneLineUnit,
     LinearIsometryEquiv.symm_apply_apply, ofReal_re]
 
-private theorem continuous_upperHalfPlaneLineCoord : Continuous upperHalfPlaneLineCoord :=
+/-- A point of the bounding line is its real coordinate times the unit vector of the line. -/
+@[simp]
+theorem upperHalfPlaneLineCoord_smul_upperHalfPlaneLineUnit
+    (y : (ℝ ∙ (upperHalfPlaneNormal : EuclideanSpace ℝ (Fin 2)))ᗮ) :
+    upperHalfPlaneLineCoord y • upperHalfPlaneLineUnit = y := by
+  have him : (Complex.orthonormalBasisOneI.repr.symm (y : EuclideanSpace ℝ (Fin 2))).im = 0 := by
+    rw [← inner_upperHalfPlaneNormal_repr, LinearIsometryEquiv.apply_symm_apply]
+    exact Submodule.mem_orthogonal_singleton_iff_inner_right.1 y.property
+  ext1
+  rw [coe_smul_upperHalfPlaneLineUnit, upperHalfPlaneLineCoord_apply,
+    ← LinearIsometryEquiv.eq_symm_apply]
+  exact Complex.ext (ofReal_re _) (by rw [ofReal_im, him])
+
+/-- The real coordinate of the bounding line is continuous. -/
+@[fun_prop]
+theorem continuous_upperHalfPlaneLineCoord : Continuous upperHalfPlaneLineCoord :=
   continuous_re.comp (Complex.orthonormalBasisOneI.repr.symm.continuous.comp continuous_subtypeVal)
 
-private theorem measurePreserving_upperHalfPlaneLineCoord :
+/-- The real coordinate of the bounding line carries Lebesgue measure on the line to Lebesgue
+measure on `ℝ`. -/
+theorem measurePreserving_upperHalfPlaneLineCoord :
     MeasurePreserving upperHalfPlaneLineCoord := by
   refine ⟨continuous_upperHalfPlaneLineCoord.measurable, ?_⟩
-  rw [volume_line, Measure.map_map continuous_upperHalfPlaneLineCoord.measurable
+  rw [volume_upperHalfPlaneLine, Measure.map_map continuous_upperHalfPlaneLineCoord.measurable
     isometry_smul_upperHalfPlaneLineUnit.continuous.measurable]
   simp [Function.comp_def, upperHalfPlaneLineCoord_smul]
 
@@ -140,11 +141,9 @@ theorem integral_upperHalfPlanePoissonKernel_mul_eq_halfSpacePoissonIntegral (f 
     ∫ x, upperHalfPlanePoissonKernel z x * f x =
       halfSpacePoissonIntegral upperHalfPlaneNormal (f ∘ upperHalfPlaneLineCoord)
         (Complex.orthonormalBasisOneI.repr z) := by
-  rw [halfSpacePoissonIntegral_def, integral_line]
-  refine integral_congr_ae (.of_forall fun t ↦ ?_)
+  rw [halfSpacePoissonIntegral_def, integral_upperHalfPlaneLine_eq]
   simp only [Function.comp_apply, upperHalfPlaneLineCoord_smul, coe_smul_upperHalfPlaneLineUnit,
     upperHalfPlanePoissonKernel_def]
-  rfl
 
 /-- **Boundary values at a point of continuity.** For bounded measurable real data `f`
 continuous at `x₀`, the Poisson integral `∫ P(z, x) f(x) dx` tends to `f(x₀)` as `z → x₀` through

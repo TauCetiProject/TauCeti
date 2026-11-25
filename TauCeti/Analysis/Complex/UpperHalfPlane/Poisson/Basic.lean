@@ -97,19 +97,35 @@ namespace TauCeti
 
 /-! ### The Poisson kernel -/
 
+/-- The inward unit normal `i` of the upper half-plane, in the coordinates
+`Complex.orthonormalBasisOneI`. -/
+def upperHalfPlaneNormal : {w : EuclideanSpace ℝ (Fin 2) // ‖w‖ = 1} :=
+  ⟨Complex.orthonormalBasisOneI.repr I, by simp⟩
+
+/-- The defining formula of `TauCeti.upperHalfPlaneNormal`. -/
+theorem coe_upperHalfPlaneNormal :
+    (upperHalfPlaneNormal : EuclideanSpace ℝ (Fin 2)) = Complex.orthonormalBasisOneI.repr I := by
+  rw [upperHalfPlaneNormal]
+
+/-- The coordinate of `z` along the normal `i` is `Im z`. -/
+theorem inner_upperHalfPlaneNormal_repr (z : ℂ) :
+    ⟪(upperHalfPlaneNormal : EuclideanSpace ℝ (Fin 2)), Complex.orthonormalBasisOneI.repr z⟫_ℝ =
+      z.im := by
+  simp [coe_upperHalfPlaneNormal, LinearIsometryEquiv.inner_map_map, Complex.inner]
+
 /-- The **Poisson kernel of the upper half-plane**, `P(z, x) = Im z / (π |x - z| ^ 2)` for a pole
 `z ∈ ℂ₊` and a boundary point `x ∈ ℝ`. It is the half-space Poisson kernel
-`TauCeti.halfSpacePoissonKernel 2` with unit inward normal `i`, pole `z` and boundary point `x`,
-read through `Complex.orthonormalBasisOneI`; `TauCeti.upperHalfPlanePoissonKernel_eq` gives the
-explicit formula. -/
+`TauCeti.halfSpacePoissonKernel 2` with unit inward normal `i` (`TauCeti.upperHalfPlaneNormal`),
+pole `z` and boundary point `x`, read through `Complex.orthonormalBasisOneI`;
+`TauCeti.upperHalfPlanePoissonKernel_eq` gives the explicit formula. -/
 def upperHalfPlanePoissonKernel (z : ℂ) (x : ℝ) : ℝ :=
-  halfSpacePoissonKernel 2 ⟨Complex.orthonormalBasisOneI.repr I, by simp⟩
+  halfSpacePoissonKernel 2 upperHalfPlaneNormal
     (Complex.orthonormalBasisOneI.repr z) (Complex.orthonormalBasisOneI.repr x)
 
 /-- The defining formula of `TauCeti.upperHalfPlanePoissonKernel`. -/
 theorem upperHalfPlanePoissonKernel_def (z : ℂ) (x : ℝ) :
     upperHalfPlanePoissonKernel z x =
-      halfSpacePoissonKernel 2 ⟨Complex.orthonormalBasisOneI.repr I, by simp⟩
+      halfSpacePoissonKernel 2 upperHalfPlaneNormal
         (Complex.orthonormalBasisOneI.repr z) (Complex.orthonormalBasisOneI.repr x) := by
   rw [upperHalfPlanePoissonKernel]
 
@@ -118,7 +134,7 @@ half-plane. -/
 theorem upperHalfPlanePoissonKernel_eq (z : ℂ) (x : ℝ) :
     upperHalfPlanePoissonKernel z x = z.im / (π * normSq ((x : ℂ) - z)) := by
   have hinner : ⟪(I : ℂ), z⟫_ℝ = z.im := by simp [Complex.inner]
-  rw [upperHalfPlanePoissonKernel_def,
+  rw [upperHalfPlanePoissonKernel_def, upperHalfPlaneNormal,
     halfSpacePoissonKernel_orthonormalBasisOneI_repr ⟨I, norm_I⟩, hinner, normSq_eq_norm_sq]
 
 /-- The Poisson kernel is measurable in its boundary point. -/

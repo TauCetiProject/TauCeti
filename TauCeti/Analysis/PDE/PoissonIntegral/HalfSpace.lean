@@ -106,7 +106,7 @@ private theorem unit_ne_zero (v : U) : (v : E) ≠ 0 :=
   ne_of_apply_ne norm (by simp [v.property])
 
 /-- The bounding hyperplane `⟪v, ·⟫ = 0` of the half-space has dimension `n - 1`. -/
-private theorem finrank_orthogonal_unit (v : U) : finrank ℝ (ℝ ∙ (v : E))ᗮ = n - 1 := by
+theorem finrank_orthogonal_unit (v : U) : finrank ℝ (ℝ ∙ (v : E))ᗮ = n - 1 := by
   have : Fact (finrank ℝ E = n - 1 + 1) :=
     ⟨by rw [finrank_euclideanSpace_fin, Nat.sub_add_cancel
       (pos_of_ne_euclideanSpace (unit_ne_zero v))]⟩
