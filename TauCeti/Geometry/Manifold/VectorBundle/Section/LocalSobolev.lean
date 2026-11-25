@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.ChangeOfVariables
+public import TauCeti.Analysis.Sobolev.BesselPotential.Local
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.LocalRegularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
 
@@ -35,6 +36,15 @@ local regularity on bundles from an invariant notion `P` of local regularity on 
 multiples, restriction and smooth changes of variables
 (`Distribution.isInvariantLocalRegularity_isLocallySobolevAt`).
 
+The same holds on the `Lᵖ` scale of the Bessel-potential spaces `H^{s,p}`, `1 < p < ∞`: `T` is
+**`H^{s,p}` near `x`** (`TauCeti.BundleTest.IsLocallyMemSobolevAt`) when, in some chart at `x` and
+frame, all its components are `H^{s,p}` near `c x` (`Distribution.IsLocallyMemSobolevAt`), and
+the chart and the frame do not matter (`TauCeti.BundleTest.isLocallyMemSobolevAt_iff`), since
+being `H^{s,p}` near a point is an invariant notion of local regularity for `1 < p < ∞`
+(`Distribution.isInvariantLocalRegularity_isLocallyMemSobolevAt`). This is the local space
+`H^{s,p}_loc` of distributions on a manifold with values in a bundle; for `p = 2` it is the local
+Sobolev space `H^s_loc` above (`TauCeti.BundleTest.isLocallyMemSobolevAt_two_iff`).
+
 ## Main declarations
 
 * `TauCeti.BundleTest.IsLocallySobolevAt`: the functional `T` is `H^s` near a point of `M`, and
@@ -44,6 +54,13 @@ multiples, restriction and smooth changes of variables
   sums, differences, negatives and scalar multiples.
 * `TauCeti.BundleTest.exists_forall_isLocallySobolevAt`: on a manifold without boundary every
   functional on bundle tests has a finite Sobolev order near every compact set.
+* `TauCeti.BundleTest.IsLocallyMemSobolevAt`: the functional `T` is `H^{s,p}` near a point of `M`,
+  and `TauCeti.BundleTest.isLocallyMemSobolevAt_iff`, its characterization in every chart and
+  frame for `1 < p < ∞`; `TauCeti.BundleTest.isLocallyMemSobolevAt_two_iff` compares it with
+  `TauCeti.BundleTest.IsLocallySobolevAt` for `p = 2`.
+* `TauCeti.BundleTest.exists_forall_isLocallyMemSobolevAt`: on a manifold without boundary every
+  functional on bundle tests has, for `1 < p < ∞`, a finite `H^{s,p}` order near every compact
+  set.
 * `TauCeti.BundleTest.sobolevSingularSupport_delta`,
   `TauCeti.BundleTest.sobolevSingularSupport_delta_eq_empty`: in dimension `d > 0` the point mass
   `δ_x ℓ` with `ℓ ≠ 0` has `H^s` singular support `{x}` for `s ≥ -d / 2`, and it is `H^s`
@@ -62,7 +79,7 @@ public section
 noncomputable section
 
 open Set Filter Function TopologicalSpace Complex Distribution ContinuousLinearMap
-open scoped Manifold ContDiff Distributions Topology CompactConvergenceCLM
+open scoped ENNReal Manifold ContDiff Distributions Topology CompactConvergenceCLM
 
 /-! ### Local Sobolev regularity on the manifold -/
 
@@ -146,6 +163,114 @@ theorem IsLocallySobolevAt.sub {s : ℝ} {T T' : BundleTest I F V →L_c[ℝ] �
     (h : IsLocallySobolevAt s T x) (h' : IsLocallySobolevAt s T' x) :
     IsLocallySobolevAt s (T - T') x :=
   IsLocallyAt.sub (isInvariantLocalRegularity_isLocallySobolevAt s) h h'
+
+/-! ### Local `H^{s,p}` regularity on the manifold -/
+
+section MemSobolev
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- A real functional `T` on bundle tests is **`H^{s,p}` near `x`** if, in some smooth chart `c` at
+`x` with smooth inverse and some frame `t` over its source, the component `φ ↦ T (φ • v)` of the
+local representative of `T` along every `v : F` is `H^{s,p}` near `c x`
+(`TauCeti.BundleTest.IsLocallyAt` for `Distribution.IsLocallyMemSobolevAt`). For `1 < p < ∞` the
+chart and the frame do not matter (`TauCeti.BundleTest.isLocallyMemSobolevAt_iff`), and for `p = 2`
+this is `TauCeti.BundleTest.IsLocallySobolevAt`
+(`TauCeti.BundleTest.isLocallyMemSobolevAt_two_iff`).
+
+The notion is meant for a boundaryless model `I`, where such charts exist at every point. At a
+boundary point of a manifold with boundary there is no chart into `E`, and `T` is never `H^{s,p}`
+there. -/
+def IsLocallyMemSobolevAt (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] (T : BundleTest I F V →L_c[ℝ] ℝ)
+    (x : M) : Prop :=
+  IsLocallyAt (fun _ S y ↦ S.IsLocallyMemSobolevAt s p y) T x
+
+/-- **Local `H^{s,p}` regularity in any chart and frame.** Let `1 < p < ∞`. For a smooth chart `c`
+at `x` with smooth inverse and a frame `t` over its source, `T` is `H^{s,p}` near `x` exactly when
+every component of its local representative in `(t, c)` is `H^{s,p}` near `c x`. -/
+theorem isLocallyMemSobolevAt_iff (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) {s : ℝ}
+    (T : BundleTest I F V →L_c[ℝ] ℝ) {t : Trivialization F (π F V)} [MemTrivializationAtlas t]
+    {c : OpenPartialHomeomorph M E} (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source)
+    (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target) (hct : c.source ⊆ t.baseSet) {x : M}
+    (hx : x ∈ c.source) :
+    IsLocallyMemSobolevAt s p T x ↔
+      ∀ v, (t.chartComponent c hc hct T v).IsLocallyMemSobolevAt s p (c x) :=
+  isLocallyAt_iff (isInvariantLocalRegularity_isLocallyMemSobolevAt s hp hp_top) T hc hcs hct hx
+
+/-- For `p = 2`, being `H^{s,2}` near `x` is being `H^s` near `x` in the sense of
+`TauCeti.BundleTest.IsLocallySobolevAt`. -/
+theorem isLocallyMemSobolevAt_two_iff {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M} :
+    IsLocallyMemSobolevAt s 2 T x ↔ IsLocallySobolevAt s T x := by
+  simp only [IsLocallyMemSobolevAt, IsLocallySobolevAt, Distribution.isLocallyMemSobolevAt_two_iff]
+
+/-- Being `H^{s,p}` near `x` is inherited by lower orders. -/
+theorem IsLocallyMemSobolevAt.of_le {s s' : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
+    (h : IsLocallyMemSobolevAt s p T x) (hs : s' ≤ s) : IsLocallyMemSobolevAt s' p T x :=
+  IsLocallyAt.mono h fun _ _ _ h ↦ h.of_le hs
+
+/-- The points near which `T` is `H^{s,p}` form an open set. -/
+theorem isOpen_setOf_isLocallyMemSobolevAt (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)]
+    (T : BundleTest I F V →L_c[ℝ] ℝ) : IsOpen {x : M | IsLocallyMemSobolevAt s p T x} :=
+  isOpen_setOf_isLocallyAt (isLocalRegularity_isLocallyMemSobolevAt s p) T
+
+/-- For `1 < p < ∞`, a sum of functionals `H^{s,p}` near `x` is `H^{s,p}` near `x`. -/
+theorem IsLocallyMemSobolevAt.add (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) {s : ℝ}
+    {T T' : BundleTest I F V →L_c[ℝ] ℝ} {x : M} (h : IsLocallyMemSobolevAt s p T x)
+    (h' : IsLocallyMemSobolevAt s p T' x) : IsLocallyMemSobolevAt s p (T + T') x :=
+  IsLocallyAt.add (isInvariantLocalRegularity_isLocallyMemSobolevAt s hp hp_top) h h'
+
+/-- A real multiple of a functional `H^{s,p}` near `x` is `H^{s,p}` near `x`. -/
+theorem IsLocallyMemSobolevAt.smul {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
+    (h : IsLocallyMemSobolevAt s p T x) (a : ℝ) : IsLocallyMemSobolevAt s p (a • T) x :=
+  IsLocallyAt.smul (isLocalRegularity_isLocallyMemSobolevAt s p) h a
+
+/-- The negative of a functional `H^{s,p}` near `x` is `H^{s,p}` near `x`. -/
+theorem IsLocallyMemSobolevAt.neg {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
+    (h : IsLocallyMemSobolevAt s p T x) : IsLocallyMemSobolevAt s p (-T) x :=
+  IsLocallyAt.neg (isLocalRegularity_isLocallyMemSobolevAt s p) h
+
+/-- A nonzero real multiple of `T` is `H^{s,p}` near `x` exactly when `T` is. -/
+theorem isLocallyMemSobolevAt_smul_iff {s : ℝ} {a : ℝ} (ha : a ≠ 0)
+    {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M} :
+    IsLocallyMemSobolevAt s p (a • T) x ↔ IsLocallyMemSobolevAt s p T x :=
+  isLocallyAt_smul_iff (isLocalRegularity_isLocallyMemSobolevAt s p) ha
+
+/-- The negative of `T` is `H^{s,p}` near `x` exactly when `T` is. -/
+@[simp]
+theorem isLocallyMemSobolevAt_neg_iff {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M} :
+    IsLocallyMemSobolevAt s p (-T) x ↔ IsLocallyMemSobolevAt s p T x :=
+  isLocallyAt_neg_iff (isLocalRegularity_isLocallyMemSobolevAt s p)
+
+/-- For `1 < p < ∞`, a difference of functionals `H^{s,p}` near `x` is `H^{s,p}` near `x`. -/
+theorem IsLocallyMemSobolevAt.sub (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) {s : ℝ}
+    {T T' : BundleTest I F V →L_c[ℝ] ℝ} {x : M} (h : IsLocallyMemSobolevAt s p T x)
+    (h' : IsLocallyMemSobolevAt s p T' x) : IsLocallyMemSobolevAt s p (T - T') x :=
+  IsLocallyAt.sub (isInvariantLocalRegularity_isLocallyMemSobolevAt s hp hp_top) h h'
+
+section Boundaryless
+
+variable [I.Boundaryless]
+
+/-- On a manifold without boundary, the zero functional is `H^{s,p}` near every point. -/
+theorem isLocallyMemSobolevAt_zero (s : ℝ) (x : M) :
+    IsLocallyMemSobolevAt s p (0 : BundleTest I F V →L_c[ℝ] ℝ) x :=
+  isLocallyAt_zero _ (isLocalRegularity_isLocallyMemSobolevAt s p) x
+
+/-- **Functionals on bundle tests have finite `H^{s,p}` order locally.** Let `1 < p < ∞`. On a
+manifold without boundary, for every compact set `K ⊆ M` there is an order `s` such that `T` is
+`H^{s,p}` near every point of `K`. -/
+theorem exists_forall_isLocallyMemSobolevAt (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞))
+    (T : BundleTest I F V →L_c[ℝ] ℝ) {K : Set M} (hK : IsCompact K) :
+    ∃ s : ℝ, ∀ x ∈ K, IsLocallyMemSobolevAt s p T x :=
+  exists_forall_isLocallyAt (fun s ↦ isLocalRegularity_isLocallyMemSobolevAt s p)
+    (fun hs h ↦ h.of_le hs)
+    (fun S _ hy ↦ (Distribution.exists_forall_isLocallyMemSobolevAt hp hp_top S
+      isCompact_singleton (singleton_subset_iff.2 hy)).imp fun _ h ↦ h _ rfl)
+    T hK
+
+end Boundaryless
+
+end MemSobolev
 
 /-! ### The `H^s` singular support -/
 

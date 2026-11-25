@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.LocalRegularity
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
-import TauCeti.Analysis.Distribution.ChangeOfVariables.Tempered
-import TauCeti.Analysis.Sobolev.BesselPotential.ChangeOfVariables
+import TauCeti.Analysis.Sobolev.BesselPotential.Local
 
 /-!
 # Local Sobolev regularity under smooth changes of variables
@@ -31,16 +30,15 @@ not prove it.
 
 ## The argument
 
-Pullback along a bijection `Φ` of `E` such that `Φ` and `Φ⁻¹` are smooth with bounded
-derivatives of every positive order preserves the Bessel-potential space `H^s`
-(`TemperedDistribution.MemSobolev.compCLM_of_norm_iteratedFDeriv_le_natCeil` at `p = 2`). Near
-`x`, the pullback `e^* T` is the tempered pullback `Φ^* (χ T)` of a cut-off distribution along
-such a bijection, with `χ` supported in any prescribed neighbourhood of `e x`
-(`Distribution.exists_restrictCLM_compCLMOfOpenPartialHomeomorph_eq_toDistribution`). If `T` is
-`H^s` near `e x`, then `χ T ∈ H^s` for such `χ`, so `Φ^* (χ T) ∈ H^s`, and `e^* T` is `H^s` near
-`x`. Being `H^s` near a point is therefore an invariant notion of local regularity
-(`Distribution.isInvariantLocalRegularity_isLocallySobolevAt`), and the converse follows as for
-any such notion, by pulling back along `e⁻¹`.
+This is the case `p = 2` of the invariance of local `H^{s,p}` regularity
+(`Distribution.isLocallyMemSobolevAt_compCLMOfOpenPartialHomeomorph_iff`), since being `H^s` near
+a point is being `H^{s,2}` near it (`Distribution.isLocallyMemSobolevAt_two_iff`). Near `x`, `e`
+agrees with a bijection `Φ` of `E` whose derivatives are bounded, on a neighbourhood of `x` the
+pullback `e^* T` is the tempered pullback `Φ^* (χ T)` of a cut-off `χ T`
+(`Distribution.restrictCLM_compCLMOfOpenPartialHomeomorph_eq_toDistribution`), and `Φ^*`
+preserves `H^s` (`TemperedDistribution.MemSobolev.compCLM_of_norm_iteratedFDeriv_le_natCeil`).
+Being `H^s` near a point is therefore an invariant notion of local regularity
+(`Distribution.isInvariantLocalRegularity_isLocallySobolevAt`).
 
 ## Main results
 
@@ -64,8 +62,8 @@ public section
 
 noncomputable section
 
-open Set TopologicalSpace
-open scoped Distributions ContDiff
+open Set Filter Metric TopologicalSpace TestFunction
+open scoped Distributions Topology ContDiff
 
 namespace Distribution
 
@@ -74,20 +72,23 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   {he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source} {he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target}
   {hU : (U : Set E) ⊆ e.source} {hUΩ : MapsTo e U Ω}
 
+/-- **Local Sobolev regularity is invariant under changes of variables.** The pullback `e^* T` of
+a distribution `T` along `e` is `H^s` near a point `x ∈ U` exactly when `T` is `H^s` near
+`e x`. -/
+theorem isLocallySobolevAt_compCLMOfOpenPartialHomeomorph_iff {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x : E}
+    (hx : x ∈ U) :
+    (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).IsLocallySobolevAt s x ↔
+      T.IsLocallySobolevAt s (e x) := by
+  rw [← isLocallyMemSobolevAt_two_iff, ← isLocallyMemSobolevAt_two_iff,
+    isLocallyMemSobolevAt_compCLMOfOpenPartialHomeomorph_iff ENNReal.one_lt_two
+      ENNReal.ofNat_ne_top hx]
+
 /-- **Pulling back preserves local Sobolev regularity.** If `T` is `H^s` near `e x`, then its
 pullback `e^* T` along `e` is `H^s` near `x`. -/
 theorem IsLocallySobolevAt.compCLMOfOpenPartialHomeomorph {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x : E}
     (hx : x ∈ U) (hT : T.IsLocallySobolevAt s (e x)) :
-    (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).IsLocallySobolevAt s x := by
-  -- `φ T ∈ H^s` for every test function `φ` supported in a neighbourhood `W` of `e x`.
-  obtain ⟨W, hW, hWT⟩ := hT.exists_nhds_forall_memSobolev_cutoffTempered
-  obtain ⟨Φ, hΦ, hΨ, N, hNU, χ, hΦb, hΨb, hxN, hχW, hT⟩ :=
-    exists_restrictCLM_compCLMOfOpenPartialHomeomorph_eq_toDistribution (he := he) (he' := he')
-      (hUΩ := hUΩ) hx hW T
-  rw [← isLocallySobolevAt_restrictCLM_iff hNU hxN, hT]
-  exact ((hWT χ hχW).compCLM_of_norm_iteratedFDeriv_le_natCeil ENNReal.one_lt_two
-    ENNReal.ofNat_ne_top hΦ hΨ (fun n hn _ ↦ hΦb n hn) (fun n hn _ ↦ hΨb n hn))
-    |>.isLocallySobolevAt_toDistribution hxN
+    (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).IsLocallySobolevAt s x :=
+  (isLocallySobolevAt_compCLMOfOpenPartialHomeomorph_iff hx).2 hT
 
 /-- Being `H^s` near a point is an invariant notion of local regularity: it is open, linear,
 preserved by smooth multiples and pullback along smooth changes of variables, and unchanged by
@@ -101,15 +102,6 @@ theorem isInvariantLocalRegularity_isLocallySobolevAt (s : ℝ) :
   smulLeftCLM hg hT := hT.smulLeftCLM hg
   restrictCLM_iff h _ _ hx := isLocallySobolevAt_restrictCLM_iff h hx
   compCLMOfOpenPartialHomeomorph _ _ _ _ _ _ hx hT := hT.compCLMOfOpenPartialHomeomorph hx
-
-/-- **Local Sobolev regularity is invariant under changes of variables.** The pullback `e^* T` of
-a distribution `T` along `e` is `H^s` near a point `x ∈ U` exactly when `T` is `H^s` near
-`e x`. -/
-theorem isLocallySobolevAt_compCLMOfOpenPartialHomeomorph_iff {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x : E}
-    (hx : x ∈ U) :
-    (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).IsLocallySobolevAt s x ↔
-      T.IsLocallySobolevAt s (e x) :=
-  (isInvariantLocalRegularity_isLocallySobolevAt s).compCLMOfOpenPartialHomeomorph_iff hx
 
 /-- **The `H^s` singular support of a pullback.** Pulling back along `e` transforms the `H^s`
 singular support by `e`: `singsupp_s (e^* T) = U ∩ e⁻¹ (singsupp_s T)`. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import TauCeti.RingTheory.Derivation.Matrix
+public import TauCeti.RingTheory.PowerSeries.Matrix.Basic
 import Mathlib.Algebra.Module.Rat
 import Mathlib.RingTheory.PowerSeries.Inverse
 
@@ -38,7 +39,6 @@ existence needs the division by `k + 1`, so a `ℚ`-algebra structure.
 
 ## Main results
 
-* `PowerSeries.map_coeff_matrix_mul`: the coefficients of a product of matrices of power series.
 * `PowerSeries.map_coeff_map_derivative`: the coefficients of the entrywise derivative.
 * `PowerSeries.eq_of_map_derivative_eq_mul_sub_mul`: two solutions of `Y' = Y A - B Y` with the
   same constant term are equal, if `R` has unique division by positive integers.
@@ -60,27 +60,7 @@ namespace PowerSeries
 
 open Finset Matrix
 
-variable {R : Type*} {l m n : Type*}
-
-section Semiring
-
-variable [Semiring R]
-
-/-- Two matrices of power series are equal if all their coefficient matrices are. -/
-theorem matrix_ext {M N : Matrix m n R⟦X⟧} (h : ∀ k, M.map (coeff k) = N.map (coeff k)) :
-    M = N := by
-  ext i j k
-  exact congrFun (congrFun (h k) i) j
-
-/-- The `k`-th coefficient matrix of a product of matrices of power series is the Cauchy product
-`∑_{i + j = k} Mᵢ Nⱼ` of the coefficient matrices. -/
-theorem map_coeff_matrix_mul [Fintype m] (M : Matrix l m R⟦X⟧) (N : Matrix m n R⟦X⟧) (k : ℕ) :
-    (M * N).map (coeff k) = ∑ p ∈ antidiagonal k, M.map (coeff p.1) * N.map (coeff p.2) := by
-  ext i j
-  simp only [Matrix.map_apply, Matrix.mul_apply, map_sum, coeff_mul, Matrix.sum_apply]
-  exact Finset.sum_comm
-
-end Semiring
+variable {R : Type*} {m n : Type*}
 
 section CommSemiring
 
