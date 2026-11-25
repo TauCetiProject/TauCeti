@@ -34,6 +34,8 @@ The proof is by induction on `k`, starting from the order-one bound
   for `B(f, g)` in `L^q` and for the two terms of its weak derivative as hypotheses.
 * `TauCeti.exists_eLpNormWkp_succ_clm_apply_le`: the field form `z ↦ A z (u z)` for a coefficient
   field `A` of linear maps.
+* `TauCeti.exists_eLpNormWkp_clm_apply_le_mul_eLpNormWkp_succ`: the field form at every order `k`
+  with one more derivative on `u`, including `k = 0`.
 * `TauCeti.exists_eLpNormWkp_succ_compL_le`: the composition form `z ↦ A z ∘L T z`, for
   finite-dimensional `H`.
 
@@ -123,7 +125,7 @@ theorem exists_eLpNormWkp_succ_bilin_le [CompleteSpace H] (hp : 2 < p) (hq : 1 <
     have hDgY : eLpNormWkp q Ω (k + 1) Dg ≤ Y := hgΩ ▸ le_add_self
     -- The weak Leibniz rule on `Ω`, with `f` locally bounded.
     have hfloc : MemWkpLoc p Ω 1 f := (memWkpLoc_of_eLpNormWkp_ne_top hf).of_le (by omega)
-    have hLeib := hDf.bilin_of_memLpLoc B hp hq hqp
+    have hLeib := hDf.bilin_of_finrank_lt B (by simpa using hp) hq hqp
       ((hfloc.memLpLoc_of_holderTriple hp le_rfl).mono_exponent le_top)
       (memLp_of_eLpNormWkp_ne_top hDfk).memLpLoc hDg (memLp_of_eLpNormWkp_ne_top hg).memLpLoc
       (memLp_of_eLpNormWkp_ne_top hDgk).memLpLoc
@@ -150,6 +152,31 @@ theorem exists_eLpNormWkp_succ_clm_apply_le (hp : 2 < p) (hq : 1 < q) (hqp : q �
     hU hUΩ
   exact ⟨C, fun A u => le_mul_mul_of_le_mul_eNorm_mul_mul ContinuousLinearMap.norm_id_le
     (hC (ContinuousLinearMap.id ℝ (F →L[ℝ] G)) A u)⟩
+
+/-- **Local bound for coefficient fields with one derivative to spare.** Fix finite-dimensional
+real normed spaces `F` and `G`. For `p > 2`, `1 < q ≤ p`, every `k` and a set `U` whose closure is
+compact and contained in `Ω`, there is a constant `C` such that
+`‖z ↦ A z (u z)‖_{W^{k,q}(U)} ≤ C ‖A‖_{W^{k,p}(Ω)} ‖u‖_{W^{k+1,q}(Ω)}` for every coefficient field
+`A : ℂ → F →L[ℝ] G` and every `u : ℂ → F`. At `k = 0` the extra derivative of `u` makes `u`
+integrable to the exponent conjugate to `p` relative to `q`. -/
+theorem exists_eLpNormWkp_clm_apply_le_mul_eLpNormWkp_succ (hp : 2 < p) (hq : 1 < q)
+    (hqp : q ≤ p) (k : ℕ) {U : Set ℂ} (hU : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω) :
+    ∃ C : ℝ≥0, ∀ (A : ℂ → F →L[ℝ] G) (u : ℂ → F),
+      eLpNormWkp q U k (fun z => A z (u z)) ≤
+        C * eLpNormWkp p Ω k A * eLpNormWkp q Ω (k + 1) u := by
+  cases k with
+  | zero =>
+    obtain ⟨C, hC⟩ := exists_eLpNorm_bilin_le_eLpNormWkp_one (F := F →L[ℝ] G) (G := F) (H := G)
+      hp hq.le hqp hU hUΩ
+    refine ⟨C, fun A u => ?_⟩
+    rw [eLpNormWkp_zero, eLpNormWkp_zero]
+    refine (le_mul_mul_of_le_mul_eNorm_mul_mul ContinuousLinearMap.norm_id_le
+      (hC (ContinuousLinearMap.id ℝ (F →L[ℝ] G)) A u)).trans ?_
+    gcongr
+    exact subset_closure.trans hUΩ
+  | succ k =>
+    obtain ⟨C, hC⟩ := exists_eLpNormWkp_succ_clm_apply_le (F := F) (G := G) hp hq hqp k hU hUΩ
+    exact ⟨C, fun A u => (hC A u).trans (by gcongr; exact eLpNormWkp_mono_order k.succ.le_succ)⟩
 
 /-- **Local bound for compositions of local Sobolev fields of linear maps.** Fix
 finite-dimensional real normed spaces `F`, `G` and `H`. For `p > 2`, `1 < q ≤ p`, every `k` and a

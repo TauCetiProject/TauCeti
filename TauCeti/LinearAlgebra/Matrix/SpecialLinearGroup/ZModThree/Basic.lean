@@ -100,7 +100,7 @@ theorem not_exists_subgroup_sl2_zmod_three_card_twelve :
 /-! ## Explicit generators and the quaternion subgroup -/
 
 /-- The standard rotation matrix `!![0, -1; 1, 0]` of order `4` in `SL(2, ZMod 3)`. -/
-def sl2ZModThreeI : SL(2, ZMod 3) :=
+@[expose] def sl2ZModThreeI : SL(2, ZMod 3) :=
   .mk !![0, -1; 1, 0] (by decide)
 
 /-- The symmetric matrix `!![1, 1; 1, -1]` of order `4` in `SL(2, ZMod 3)`. -/
@@ -108,7 +108,7 @@ def sl2ZModThreeJ : SL(2, ZMod 3) :=
   .mk !![1, 1; 1, -1] (by decide)
 
 /-- The upper unitriangular matrix `!![1, 1; 0, 1]` of order `3` in `SL(2, ZMod 3)`. -/
-def sl2ZModThreeT : SL(2, ZMod 3) :=
+@[expose] def sl2ZModThreeT : SL(2, ZMod 3) :=
   .mk !![1, 1; 0, 1] (by decide)
 
 /-- The underlying matrix of `TauCeti.sl2ZModThreeI` is `!![0, -1; 1, 0]`. -/

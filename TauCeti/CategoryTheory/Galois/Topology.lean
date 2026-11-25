@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Conj
+public import Mathlib.CategoryTheory.Galois.IsFundamentalgroup
 public import Mathlib.CategoryTheory.Galois.Topology
 
 /-!
@@ -29,6 +30,13 @@ component of `e.conjAut σ` at `X` is the conjugate of the component of `σ` at 
 Conjugation is therefore an isomorphism of topological groups `Aut F ≃ₜ* Aut G`
 (`CategoryTheory.Iso.continuousConjAut`).
 
+Finally, Mathlib shows that a fundamental group `G` of a fibre functor `F`
+(`CategoryTheory.PreGaloisCategory.IsFundamentalGroup`) is isomorphic to `Aut F` as a group
+(`CategoryTheory.PreGaloisCategory.toAutMulEquiv`) by a homeomorphism
+(`CategoryTheory.PreGaloisCategory.toAutMulEquiv_isHomeomorph`). This file packages the two as an
+isomorphism of topological groups `G ≃ₜ* Aut F`
+(`CategoryTheory.PreGaloisCategory.toAutContinuousMulEquiv`).
+
 ## Main results
 
 * `CategoryTheory.PreGaloisCategory.continuous_mapAut_whiskeringLeft`: precomposition with a
@@ -36,6 +44,8 @@ Conjugation is therefore an isomorphism of topological groups `Aut F ≃ₜ* Aut
 * `CategoryTheory.Iso.continuous_conjAut`: conjugation along `e : F ≅ G` is continuous.
 * `CategoryTheory.Iso.continuousConjAut`: conjugation along `e : F ≅ G` as an isomorphism of
   topological groups.
+* `CategoryTheory.PreGaloisCategory.toAutContinuousMulEquiv`: a fundamental group `G` of a fibre
+  functor `F` is isomorphic to `Aut F` as a topological group.
 -/
 
 public section
@@ -57,6 +67,29 @@ lemma continuous_mapAut_whiskeringLeft (P : D ⥤ C) (F : C ⥤ FintypeCat.{w}) 
     (autEmbedding_isClosedEmbedding F).continuous).congr fun σ ↦ ?_
   simp only [Function.comp_apply, autEmbedding_apply, Functor.mapAut_apply_asIso]
   exact congrArg Aut.of (Iso.ext (by simp))
+
+section FundamentalGroup
+
+variable [GaloisCategory C] (F : C ⥤ FintypeCat.{w}) [FiberFunctor F] (G : Type*) [Group G]
+  [∀ X, MulAction G (F.obj X)] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  [IsFundamentalGroup F G]
+
+/-- A fundamental group `G` of a fibre functor `F` is isomorphic to `Aut F` as a topological
+group, through its action on the fibres: Mathlib's group isomorphism `toAutMulEquiv F G`, which
+is a homeomorphism by `toAutMulEquiv_isHomeomorph F G`. -/
+noncomputable def toAutContinuousMulEquiv : G ≃ₜ* Aut F :=
+  (toAutMulEquiv F G).toContinuousMulEquiv fun _ ↦
+    (toAutMulEquiv_isHomeomorph F G).homeomorph.isOpen_preimage
+
+variable {G}
+
+/-- The automorphism of `F` attached to `g` by `toAutContinuousMulEquiv F G` is `toAut F G g`,
+which acts on each fibre by `g` (`toAut_hom_app_apply`). -/
+@[simp]
+lemma toAutContinuousMulEquiv_apply (g : G) : toAutContinuousMulEquiv F G g = toAut F G g :=
+  (rfl)
+
+end FundamentalGroup
 
 end PreGaloisCategory
 
