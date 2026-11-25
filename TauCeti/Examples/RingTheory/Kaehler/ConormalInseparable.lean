@@ -51,14 +51,11 @@ theorem not_injective_kerCotangentToTensor (p : ℕ) [Fact p.Prime] [CharP k p] 
   rw [Ideal.toCotangent_eq_zero] at h0
   have h0' : f ∈ Ideal.span {f} ^ 2 := hker ▸ h0
   rw [Ideal.span_singleton_pow, Ideal.mem_span_singleton] at h0'
-  -- `f ^ 2 ∣ f` forces `f` to be a unit, but `f` has degree `p > 0`.
-  obtain ⟨g, hg⟩ := h0'
+  -- `f ^ 2 ∣ f` is impossible, since `f` is nonzero and, of degree `p > 0`, not a unit.
   have hp := (Fact.out : p.Prime)
   have hf0 : f ≠ 0 := X_pow_sub_C_ne_zero hp.pos t
-  have hunit : IsUnit f := IsUnit.of_mul_eq_one g (by
-    have : f * (f * g) = f * 1 := by rw [mul_one, ← mul_assoc, ← sq, ← hg]
-    exact mul_left_cancel₀ hf0 this)
-  have hdeg : f.natDegree = p := by rw [hfdef, natDegree_X_pow_sub_C]
-  exact hp.ne_zero (hdeg ▸ natDegree_eq_zero_of_isUnit hunit)
+  have hnu : ¬ IsUnit f :=
+    not_isUnit_of_natDegree_pos f (by rw [hfdef, natDegree_X_pow_sub_C]; exact hp.pos)
+  exact absurd ((pow_dvd_pow_iff (m := 1) hf0 hnu).mp (by simpa using h0')) (by norm_num)
 
 end TauCeti.ConormalInseparableExample
