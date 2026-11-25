@@ -8,6 +8,7 @@ module
 public import Mathlib.Basic.Sign.Basic
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.Basic.Real.Basic
+import TauCeti.Algebra.Ring.Parity
 import TauCeti.Analysis.Polynomial.RealRoots.Product
 import TauCeti.Data.Multiset.Filter
 import TauCeti.Data.SignType.Basic
@@ -46,6 +47,8 @@ dynamical zeta function; that series identity is
 * `Matrix.sign_det_aeval`: if `det (f(A)) ≠ 0`, its sign is `∏ sgn f(x)` over the real roots.
 * `Matrix.sign_det_one_sub_pow`, `LinearMap.sign_det_one_sub_pow`: the iterate sign formula
   `sgn det (1 - A ^ k) = (-1) ^ i₊ * (-1) ^ ((k + 1) i₋)`.
+* `Matrix.sign_det_one_sub`, `LinearMap.sign_det_one_sub`: the case `k = 1`,
+  `sgn det (1 - A) = (-1) ^ i₊`.
 * `Matrix.sign_det_one_sub_pow_succ`, `LinearMap.sign_det_one_sub_pow_succ`: the signs of the
   iterates form a geometric sequence with ratio `(-1) ^ i₋`.
 * `Matrix.neg_one_pow_card_roots_charpoly`: the number of real characteristic roots has the parity
@@ -57,6 +60,8 @@ dynamical zeta function; that series identity is
   `LinearMap.neg_one_pow_card_filter_lt_neg_one_of_det_pos`: if `0 < det A` and `1 + A` is
   invertible, the numbers of real eigenvalues in `(-∞, -1)` and in `(-1, 0)` have the same parity.
   For a symplectic `A` this lets `i₋` be read off from the eigenvalues in `(-1, 0)`.
+* `LinearMap.det_one_add_ne_zero_of_det_one_sub_pow_ne_zero`: if `k` is even and `1 - f ^ k` has
+  nonzero determinant, so does `1 + f`.
 
 ## References
 
@@ -119,6 +124,12 @@ theorem sign_det_one_sub_pow (A : Matrix n n ℝ) (k : ℕ) (h : (1 - A ^ k).det
       TauCeti.sign_one_sub_pow (by simpa using eval_ne_zero_of_det_aeval_ne_zero A _ h hx)]]
   rw [Multiset.prod_map_mul, Multiset.prod_map_ite_one, Multiset.prod_map_ite_one, pow_mul]
 
+/-- If `1 - A` is invertible for a real square matrix `A`, then `sgn det (1 - A) = (-1) ^ i₊`, where
+`i₊` counts the real characteristic roots of `A` in `(1, ∞)`, with algebraic multiplicity. -/
+theorem sign_det_one_sub (A : Matrix n n ℝ) (h : (1 - A).det ≠ 0) :
+    SignType.sign (1 - A).det = (-1) ^ (A.charpoly.roots.filter (1 < ·)).card := by
+  simpa [pow_mul] using A.sign_det_one_sub_pow 1 (by simpa)
+
 /-- **The signs of the iterates form a geometric sequence.** If `1 - A ^ (k + 1)` is invertible for
 a real square matrix `A`, then `sgn det (1 - A ^ (k + 1)) = sgn det (1 - A) * σ ^ k` with ratio
 `σ = (-1) ^ i₋`, where `i₋` counts the real characteristic roots of `A` in `(-∞, -1)`, with
@@ -128,11 +139,8 @@ theorem sign_det_one_sub_pow_succ (A : Matrix n n ℝ) (k : ℕ) (h : (1 - A ^ (
       SignType.sign (1 - A).det * ((-1) ^ (A.charpoly.roots.filter (· < -1)).card) ^ k := by
   have h₁ : (1 - A).det ≠ 0 :=
     left_ne_zero_of_mul (by rwa [← det_mul, mul_neg_geom_sum])
-  have h₁' := A.sign_det_one_sub_pow 1 (by rwa [pow_one])
-  rw [pow_one] at h₁'
-  rw [A.sign_det_one_sub_pow _ h, h₁']
-  simp only [← pow_mul, ← pow_add]
-  ring_nf
+  rw [A.sign_det_one_sub_pow _ h, A.sign_det_one_sub h₁, add_assoc, one_add_one_eq_two, add_mul,
+    TauCeti.neg_one_pow_add_two_mul, mul_comm k, pow_mul]
 
 /-- The number of real characteristic roots of a real square matrix, counted with algebraic
 multiplicity, has the parity of its size: the nonreal roots come in conjugate pairs. -/
@@ -143,9 +151,6 @@ theorem neg_one_pow_card_roots_charpoly (A : Matrix n n ℝ) :
   have := sign_det_aeval A _ h0
   rw [h, sign_pow] at this
   simpa using this.symm
-
-private theorem neg_one_pow_mul_neg_one_pow (m : ℕ) : (-1 : SignType) ^ m * (-1) ^ m = 1 := by
-  rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
 
 /-- If `1 - A ^ 2` is invertible for a real `n × n` matrix `A`, so that no eigenvalue is `± 1`,
 then `(-1) ^ (i₊ + i₋) = (-1) ^ (n + i₀)`, where `i₊`, `i₋` and `i₀` count the real characteristic
@@ -178,7 +183,7 @@ theorem neg_one_pow_card_filter_one_lt_add_card_filter_lt_neg_one (A : Matrix n 
     · exact absurd rfl h1
     · simp [hx1, (by linarith : ¬ x < -1), abs_lt, hx1.not_gt]
   rw [pow_add, pow_add (-1 : SignType), ← neg_one_pow_card_roots_charpoly A, hroots, mul_assoc,
-    neg_one_pow_mul_neg_one_pow, mul_one]
+    pow_mul_pow_eq_one _ (by simp), mul_one]
 
 /-- If `0 < det A` for a real square matrix `A` and `1 + A` is invertible, the numbers of real
 characteristic roots of `A` in `(-∞, -1)` and in `(-1, 0)`, counted with algebraic multiplicity,
@@ -211,11 +216,23 @@ theorem neg_one_pow_card_filter_lt_neg_one_of_det_pos (A : Matrix n n ℝ) (hA :
             (-1) ^ (A.charpoly.roots.filter (· ∈ Set.Ioo (-1) 0)).card) := by
         rw [← hdet, mul_one]
     _ = (-1) ^ (A.charpoly.roots.filter (· ∈ Set.Ioo (-1) 0)).card := by
-        rw [← mul_assoc, neg_one_pow_mul_neg_one_pow, one_mul]
+        exact TauCeti.neg_one_pow_mul_neg_one_pow_mul _ _
 
 end Matrix
 
 namespace LinearMap
+
+/-- If `k` is even and `1 - f ^ k` has nonzero determinant, then so does `1 + f`: the factor
+`1 + f` divides `1 - f ^ k`. -/
+theorem det_one_add_ne_zero_of_det_one_sub_pow_ne_zero {R M : Type*} [CommRing R]
+    [AddCommGroup M] [Module R M] (f : Module.End R M) {k : ℕ} (hk : Even k)
+    (h : (1 - f ^ k).det ≠ 0) : (1 + f).det ≠ 0 := by
+  obtain ⟨m, rfl⟩ := hk
+  have hfac : (1 + f) * ((1 - f) * ∑ i ∈ Finset.range m, (f ^ 2) ^ i) = 1 - f ^ (m + m) := by
+    rw [← two_mul, pow_mul, ← mul_neg_geom_sum, ← mul_assoc]
+    congr 1
+    noncomm_ring
+  exact left_ne_zero_of_mul (by rwa [← map_mul, hfac])
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
 
@@ -234,6 +251,13 @@ theorem sign_det_one_sub_pow (f : Module.End ℝ V) (k : ℕ) (h : (1 - f ^ k).d
   rw [← charpoly_toMatrix f b]
   exact (toMatrix b b f).sign_det_one_sub_pow k h
 
+/-- If `1 - f` is invertible for an endomorphism `f` of a finite-dimensional real vector space,
+then `sgn det (1 - f) = (-1) ^ i₊`, where `i₊` counts the real roots of the characteristic
+polynomial of `f` in `(1, ∞)`, with multiplicity. -/
+theorem sign_det_one_sub (f : Module.End ℝ V) (h : (1 - f).det ≠ 0) :
+    SignType.sign (1 - f).det = (-1) ^ (f.charpoly.roots.filter (1 < ·)).card := by
+  simpa [pow_mul] using f.sign_det_one_sub_pow 1 (by simpa)
+
 /-- **The signs of the iterates form a geometric sequence**, for an endomorphism `f` of a
 finite-dimensional real vector space: if `1 - f ^ (k + 1)` is invertible, then
 `sgn det (1 - f ^ (k + 1)) = sgn det (1 - f) * σ ^ k` with ratio `σ = (-1) ^ i₋`, where `i₋` counts
@@ -243,11 +267,8 @@ theorem sign_det_one_sub_pow_succ (f : Module.End ℝ V) (k : ℕ) (h : (1 - f ^
       SignType.sign (1 - f).det * ((-1) ^ (f.charpoly.roots.filter (· < -1)).card) ^ k := by
   have h₁ : (1 - f).det ≠ 0 :=
     left_ne_zero_of_mul (by rwa [← map_mul, mul_neg_geom_sum])
-  have h₁' := f.sign_det_one_sub_pow 1 (by rwa [pow_one])
-  rw [pow_one] at h₁'
-  rw [f.sign_det_one_sub_pow _ h, h₁']
-  simp only [← pow_mul, ← pow_add]
-  ring_nf
+  rw [f.sign_det_one_sub_pow _ h, f.sign_det_one_sub h₁, add_assoc, one_add_one_eq_two, add_mul,
+    TauCeti.neg_one_pow_add_two_mul, mul_comm k, pow_mul]
 
 /-- If `1 - f ^ 2` is invertible for an endomorphism `f` of a finite-dimensional real vector space
 `V`, so that no eigenvalue is `± 1`, then `(-1) ^ (i₊ + i₋) = (-1) ^ (dim V + i₀)`, where `i₊`,

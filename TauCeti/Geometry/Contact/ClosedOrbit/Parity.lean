@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Contact.ClosedOrbit.Basic
 import TauCeti.Geometry.Symplectic.Darboux.Basis
-import TauCeti.LinearAlgebra.Eigenspace.Det
 import TauCeti.LinearAlgebra.Matrix.Charpoly.DetSign
 
 /-!
@@ -177,10 +176,7 @@ theorem orbitParity_eq_neg_one_pow {γ : Flow.ClosedOrbit (hα.reebFlow hc)}
     hα.orbitParity hc γ = (-1) ^ ((hα.returnCharpoly hc γ).roots.filter (1 < ·)).card := by
   induction γ using Flow.ClosedOrbit.ind with | h δ => _
   rw [isNondegenerateOrbit_mk_iff_det_one_sub_ne_zero] at hγ
-  have h := LinearMap.sign_det_one_sub_pow (hα.periodicLinearizedReturn hc δ) 1
-    (by rwa [pow_one])
-  rw [pow_one, pow_mul, neg_one_sq, one_pow, mul_one] at h
-  rw [orbitParity_mk, h, returnCharpoly_mk]
+  rw [orbitParity_mk, LinearMap.sign_det_one_sub _ hγ, returnCharpoly_mk]
 
 /-- **The parity of an iterate.** If the `k`-fold iterate `γ^k` of a closed Reeb orbit `γ` is
 nondegenerate, then `parity (γ^k) = parity (γ) * (-1) ^ ((k + 1) N_γ)`, where `N_γ` is the number
@@ -198,17 +194,10 @@ theorem orbitParity_iterate {γ : Flow.ClosedOrbit (hα.reebFlow hc)} {k : ℕ+}
     returnCharpoly_mk]
   congr 1
   rcases Nat.even_or_odd (k : ℕ) with he | ho
-  · -- For even `k`, `-1` is not an eigenvalue of the return map `A`, and `det A = 1` relates its
+  · -- For even `k`, `1 + A` is invertible for the return map `A`, and `det A = 1` relates its
     -- eigenvalues in `(-∞, -1)` to those in `(-1, 0)`.
-    have hneg : (1 + hα.periodicLinearizedReturn hc δ).det ≠ 0 := by
-      intro h0
-      have hA : (hα.periodicLinearizedReturn hc δ).HasEigenvalue (-1) := by
-        rw [Module.End.hasEigenvalue_iff_det_sub_eq_zero, ← h0]
-        congr 1
-        module
-      have hAk := hA.pow (k : ℕ)
-      rw [he.neg_one_pow] at hAk
-      exact (hα.isNondegenerateOrbit_iterate_mk_iff hc δ k).1 hγ hAk
+    have hneg := LinearMap.det_one_add_ne_zero_of_det_one_sub_pow_ne_zero _ he
+      ((hα.isNondegenerateOrbit_iterate_mk_iff_det_one_sub_ne_zero hc δ k).1 hγ)
     rw [pow_mul', pow_mul', LinearMap.neg_one_pow_card_filter_lt_neg_one_of_det_pos _
       (by rw [hα.det_periodicLinearizedReturn hc δ]; exact one_pos) hneg]
   · -- For odd `k`, both sides are even powers of `-1`.
