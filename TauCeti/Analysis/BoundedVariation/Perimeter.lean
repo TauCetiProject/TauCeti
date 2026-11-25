@@ -38,9 +38,9 @@ the semicontinuity half of the direct method for perimeter problems.
 
 * `TauCeti.perimeter μ Ω s`: the perimeter of `s` in `Ω`.
 * `TauCeti.perimeter_eq_iSup`: the perimeter of a null-measurable set as a supremum of `∫_s div φ`.
-* `TauCeti.perimeter_congr_ae`, `TauCeti.perimeter_congr_of_inter_eq`, `TauCeti.perimeter_mono`,
-  `TauCeti.perimeter_iSup` and `TauCeti.perimeter_smul_measure`: invariance under null modification
-  inside `Ω` and locality, monotonicity and inner continuity in `Ω`, and scaling in the measure.
+* `TauCeti.perimeter_congr_ae`, `TauCeti.perimeter_congr_of_inter_eq`, `TauCeti.perimeter_mono`
+  and `TauCeti.perimeter_iSup`: invariance under null modification inside `Ω` and locality, and
+  monotonicity and inner continuity in `Ω`.
 * `TauCeti.perimeter_compl`, `TauCeti.perimeter_empty`, `TauCeti.perimeter_univ` and
   `TauCeti.perimeter_of_subsingleton`.
 * `TauCeti.perimeter_eq_zero_of_disjoint_frontier` and
@@ -63,7 +63,7 @@ noncomputable section
 namespace TauCeti
 
 open MeasureTheory TopologicalSpace Filter TestFunction Set
-open scoped ENNReal NNReal Distributions Topology symmDiff
+open scoped ENNReal Distributions Topology symmDiff
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] {μ : Measure E} {Ω Ω' : Opens E} {s t : Set E}
@@ -129,12 +129,6 @@ theorem perimeter_restrict_of_subset {t : Set E} (h : t ⊆ s) :
   refine iSup_congr fun φ => iSup_congr fun _ => congrArg ENNReal.ofReal ?_
   exact setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
     simp [indicator_of_notMem (fun hxt => hx (h hxt))]
-
-/-- Scaling the measure by a nonnegative real scales the perimeter by the same factor. -/
-@[simp]
-theorem perimeter_smul_measure (c : ℝ≥0) :
-    perimeter (c • μ) Ω s = (c : ℝ≥0∞) * perimeter μ Ω s :=
-  totalVariationOn_smul_measure c
 
 section Haar
 

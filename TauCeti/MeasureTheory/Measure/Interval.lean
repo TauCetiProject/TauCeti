@@ -373,30 +373,22 @@ theorem measure_symmDiff_Iio_or_Ioi_inter_Ioo_eq_zero [LinearOrder α] {a b c : 
     (hleft : μ (s ∩ Ioo a c) = 0 ∨ μ (Ioo a c \ s) = 0)
     (hright : μ (s ∩ Ioo c b) = 0 ∨ μ (Ioo c b \ s) = 0) (hc : μ {c} = 0) :
     μ ((s ∆ Iio c) ∩ Ioo a b) = 0 ∨ μ ((s ∆ Ioi c) ∩ Ioo a b) = 0 := by
-  have hcov {t : α} (htI : t ∈ Ioo a b) :
-      t ∈ Ioo a c ∨ t ∈ Ioo c b ∨ t ∈ ({c} : Set α) := by
-    rcases lt_trichotomy t c with h | rfl | h
-    exacts [.inl ⟨htI.1, h⟩, .inr (.inr rfl), .inr (.inl ⟨h, htI.2⟩)]
+  have hnull {u v w : Set α} (hv : μ v = 0) (hw : μ w = 0)
+      (hsub : ∀ t, t ∈ u → (t < c → t ∈ v) ∧ (c < t → t ∈ w)) : μ u = 0 :=
+    measure_mono_null (fun t htu => by
+      rcases lt_trichotomy t c with h | rfl | h
+      exacts [.inl ((hsub t htu).1 h), .inr (.inr rfl), .inr (.inl ((hsub t htu).2 h))])
+      (measure_union_null hv (measure_union_null hw hc))
   rcases hleft with hneg0 | hneg1 <;> rcases hright with hpos0 | hpos1
-  · refine (hs1 (measure_mono_null (fun t ht => ?_)
-      (measure_union_null hneg0 (measure_union_null hpos0 hc)))).elim
-    have := hcov ht.2
-    simp_all
-    tauto
-  · refine .inr (measure_mono_null (fun t ht => ?_)
-      (measure_union_null hneg0 (measure_union_null hpos1 hc)))
-    have := hcov ht.2
-    simp_all [mem_symmDiff]
-    grind
-  · refine .inl (measure_mono_null (fun t ht => ?_)
-      (measure_union_null hneg1 (measure_union_null hpos0 hc)))
-    have := hcov ht.2
-    simp_all [mem_symmDiff]
-    grind
-  · refine (hs0 (measure_mono_null (fun t ht => ?_)
-      (measure_union_null hneg1 (measure_union_null hpos1 hc)))).elim
-    have := hcov ht.1
-    simp_all
-    tauto
+  · exact (hs1 (hnull hneg0 hpos0 fun t ⟨hts, ha, hb⟩ =>
+      ⟨fun h => ⟨hts, ha, h⟩, fun h => ⟨hts, h, hb⟩⟩)).elim
+  · exact .inr (hnull hneg0 hpos1 fun t ⟨htΔ, ha, hb⟩ =>
+      ⟨fun h => ⟨(htΔ.resolve_right fun h' => h'.1.not_gt h).1, ha, h⟩,
+       fun h => ⟨⟨h, hb⟩, (htΔ.resolve_left fun h' => h'.2 h).2⟩⟩)
+  · exact .inl (hnull hneg1 hpos0 fun t ⟨htΔ, ha, hb⟩ =>
+      ⟨fun h => ⟨⟨ha, h⟩, (htΔ.resolve_left fun h' => h'.2 h).2⟩,
+       fun h => ⟨(htΔ.resolve_right fun h' => h'.1.not_gt h).1, h, hb⟩⟩)
+  · exact (hs0 (hnull hneg1 hpos1 fun t ⟨⟨ha, hb⟩, hts⟩ =>
+      ⟨fun h => ⟨⟨ha, h⟩, hts⟩, fun h => ⟨⟨h, hb⟩, hts⟩⟩)).elim
 
 end MeasureTheory

@@ -296,12 +296,12 @@ theorem tendsto_measure_closedBall_sdiff_singleton_nhds_zero {z : X}
     (hfin : ∃ R > 0, μ (closedBall z R \ {z}) ≠ ⊤) :
     Tendsto (fun r ↦ μ (closedBall z r \ {z})) (𝓝 0) (𝓝 0) := by
   have hgt : Tendsto (fun r ↦ μ (closedBall z r \ {z})) (𝓝[>] 0) (𝓝 0) := by
-    have hiInter : ⋂ r > (0 : ℝ), closedBall z r \ {z} = ∅ :=
-      eq_empty_iff_forall_notMem.2 fun y hy ↦ by
-        obtain ⟨-, hne⟩ := mem_iInter₂.1 hy 1 zero_lt_one
-        have hd : 0 < dist y z := dist_pos.2 hne
-        exact (not_le_of_gt (half_lt_self hd))
-          (mem_closedBall.1 (mem_iInter₂.1 hy (dist y z / 2) (half_pos hd)).1)
+    have hiInter : ⋂ r > (0 : ℝ), closedBall z r \ {z} = ∅ := by
+      calc (⋂ r > (0 : ℝ), closedBall z r \ {z})
+          = ⋂ r ∈ Ioi (0 : ℝ), closedBall z r ∩ {z}ᶜ := by simp only [sdiff_eq, mem_Ioi, gt_iff_lt]
+        _ = (⋂ r > (0 : ℝ), closedBall z r) \ {z} := by
+            rw [biInter_inter nonempty_Ioi, ← sdiff_eq]; rfl
+        _ = ∅ := by rw [biInter_gt_closedBall, closedBall_zero, sdiff_self]
     simpa only [Function.comp_def, hiInter, measure_empty] using
       tendsto_measure_biInter_gt
         (fun r _ ↦ (measurableSet_closedBall.diff (measurableSet_singleton z)).nullMeasurableSet)
