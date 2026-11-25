@@ -25,7 +25,8 @@ coordinates of `f (s + i t)` (`TauCeti.Complex.realChart_mk`). When `f` has comp
 `f'`, the real derivative of its real chart is multiplication by `f'`
 (`TauCeti.Complex.hasFDerivAt_realChart`, `TauCeti.Complex.fderiv_realChart_apply`), whose real
 determinant is `|f'|²`, so the Jacobian determinant of the real chart is nonnegative
-(`TauCeti.Complex.det_fderiv_realChart`, `TauCeti.Complex.det_fderiv_realChart_nonneg`). By the
+(`TauCeti.Complex.det_fderiv_realChart`, `TauCeti.Complex.det_fderiv_realChart_nonneg`), and the
+real derivative is nonzero when `f'` is (`TauCeti.Complex.fderiv_realChart_ne_zero`). By the
 chain rule, the partial derivatives of `ξ ∘ realChart f` are those of `ξ` composed with the
 conformal matrix of `f'` (`TauCeti.Complex.fderiv_comp_realChart_apply_one_zero`,
 `TauCeti.Complex.fderiv_comp_realChart_apply_zero_one`), so the Jacobian times a weighted density
@@ -104,6 +105,16 @@ theorem det_fderiv_realChart_nonneg {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ
     0 ≤ (fderiv ℝ (realChart f) w).det := by
   rw [det_fderiv_realChart hf]
   exact Complex.normSq_nonneg f'
+
+/-- In real coordinates, a map with nonzero complex derivative has nonzero derivative. -/
+theorem fderiv_realChart_ne_zero {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ}
+    (hf : HasDerivAt f f' (Complex.equivRealProdCLM.symm w)) (hf' : f' ≠ 0) :
+    fderiv ℝ (realChart f) w ≠ 0 := by
+  intro h
+  have h₁ := congrArg (fun L ↦ L (Complex.equivRealProdCLM 1)) h
+  simp only [fderiv_realChart_apply hf, ContinuousLinearEquiv.symm_apply_apply, mul_one,
+    zero_apply, map_eq_zero_iff _ Complex.equivRealProdCLM.injective] at h₁
+  exact hf' h₁
 
 /-- **The chain rule along a real chart, along `(1, 0)`.** If `f` has complex derivative
 `f' = a + i b`, the derivative of `ξ ∘ realChart f` along `(1, 0)` is `a ∂₁ξ + b ∂₂ξ`, the partial

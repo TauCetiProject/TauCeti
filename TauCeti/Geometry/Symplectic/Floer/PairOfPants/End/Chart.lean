@@ -138,7 +138,10 @@ apply to all three ends.
 * `TauCeti.Floer.positiveEndChartScale`, `TauCeti.Floer.sq_positiveEndChartScale`,
   `TauCeti.Floer.sq_positiveEndChartScale_eq_sq_add_sq`: the derivative of the positive end chart
   at `ζ` is a rotation followed by multiplication by the conformal scale `2π |φ'_q(ζ) - c_q|`,
-  whose square is the Jacobian.
+  whose square is the Jacobian; in particular it vanishes nowhere
+  (`TauCeti.Floer.fderiv_positiveEndChart_ne_zero`).
+* `TauCeti.Floer.norm_equivRealProdCLM_symm_positiveEndChart_inf`: the output end, read in the
+  positive end chart, lies at the norm `2 exp (2πs)`.
 * `TauCeti.Floer.fderiv_positiveEndChart_add_fst`, `TauCeti.Floer.positiveEndChartScale_add_fst`,
   `TauCeti.Floer.positiveEndChartScale_inv_smul_fderiv_positiveEndChart_eq_of_snd_eq`: translating
   `ζ` by `L` along the end multiplies both `dφ'_q(ζ)` and the conformal scale by `e^{-2π (±L)}`, so
@@ -1012,6 +1015,14 @@ theorem equivRealProdCLM_symm_positiveEndChart_ne_endCenter (q : Puncture) (ζ :
   rw [positiveEndChart_apply]
   exact equivRealProdCLM_symm_endChart_ne_endCenter q _
 
+/-- The output end, read in the positive end chart `φ'_∞`, lies at the norm `2 exp (2πs)`. -/
+theorem norm_equivRealProdCLM_symm_positiveEndChart_inf (s t : ℝ) :
+    ‖Complex.equivRealProdCLM.symm (positiveEndChart inf (s, t))‖ = 2 * exp (2 * π * s) := by
+  have h := norm_cylindricalEndLift_sub_endCenter inf
+    (Complex.equivRealProdCLM.symm (inf.endSign • (s, t)))
+  rw [positiveEndChart_apply, equivRealProdCLM_symm_endChart]
+  simpa using h
+
 /-- The **conformal scale** `2π |φ'_q(ζ) - c_q|` of the positive end chart `φ'_q` at `ζ`, where
 `c_q` is the center of the end: the derivative of `φ'_q` at `ζ` is a rotation followed by
 multiplication by this scale, whose square is the Jacobian (`sq_positiveEndChartScale`). -/
@@ -1057,6 +1068,12 @@ theorem sq_positiveEndChartScale_eq_sq_add_sq (q : Puncture) (ζ : ℝ × ℝ) :
   rw [sq_positiveEndChartScale, ContinuousLinearMap.det,
     (isComplexLinearMap_fderiv_positiveEndChart q ζ).det_eq_sq_add_sq, ContinuousLinearMap.coe_coe,
     stdComplexLineReal_eq]
+
+/-- The derivative of the positive end chart vanishes nowhere. -/
+theorem fderiv_positiveEndChart_ne_zero (q : Puncture) (ζ : ℝ × ℝ) :
+    fderiv ℝ (positiveEndChart q) ζ ≠ 0 := fun h ↦
+  (pow_pos (positiveEndChartScale_pos q ζ) 2).ne' <| by
+    simpa [h] using sq_positiveEndChartScale_eq_sq_add_sq q ζ
 
 /-- The first coordinate of the image of `(1, 0)` under the derivative of the positive end chart
 is at most the conformal scale in absolute value. -/
