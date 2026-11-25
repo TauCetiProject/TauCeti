@@ -44,8 +44,9 @@ its index `8` divides the order `192` of `Q_8` and the order obstruction is sile
   `TauCeti.ModularGroup.isCongruenceSubgroup_iff_exists_map_T_tPrime`: `Γ ≤ SL(2, ℤ)` is a
   congruence subgroup iff its coset action factors through `SL(2, ℤ/M)`, for `M` a nonzero
   multiple of the strict level of `Γ`.
-* `TauCeti.ModularGroup.ker_mk'_comp_map_intCast_zmod`: the kernel of `SL(2, ℤ) → Q_M` is
-  `Γ(M) ⊔ ⟨-1⟩`.
+* `TauCeti.ModularGroup.mk'_comp_map_intCast_zmod_surjective`,
+  `TauCeti.ModularGroup.ker_mk'_comp_map_intCast_zmod`: the reduction `SL(2, ℤ) → Q_M` is
+  surjective, with kernel `Γ(M) ⊔ ⟨-1⟩`.
 * `TauCeti.ModularGroup.ker_permutationRepresentation_comp_mk'`: the kernel of the coset action of
   `PSL(2, ℤ)` on `PSL(2, ℤ) ⧸ Γ'`, read on `SL(2, ℤ)`, is the normal core of `±Γ'`.
 * `TauCeti.ModularGroup.isCongruenceSubgroup_liftSL_iff_forall_mem_Gamma`,
@@ -148,7 +149,7 @@ theorem isCongruenceSubgroup_liftSL_iff_forall_mem_Gamma (hM : generalLevel Γ' 
 
 omit [NeZero M] in
 /-- Reduction `SL(2, ℤ) → Q_M = SL(2, ℤ/M) / ⟨-1⟩` is surjective. -/
-private theorem surjective_mk'_comp_map :
+theorem mk'_comp_map_intCast_zmod_surjective :
     Function.Surjective ((QuotientGroup.mk' (Subgroup.zpowers (-1 : SL(2, ZMod M)))).comp
       (map (Int.castRingHom (ZMod M)))) :=
   (QuotientGroup.mk'_surjective _).comp map_intCast_zmod_surjective
@@ -173,7 +174,7 @@ theorem isCongruenceSubgroup_liftSL_iff_existsUnique_comp_eq (hM : generalLevel 
       ∃! φ : SL(2, ZMod M) ⧸ Subgroup.zpowers (-1) →* Perm (Fin n),
         φ.comp ((QuotientGroup.mk' _).comp (map (Int.castRingHom (ZMod M)))) =
           e.permutationRepresentation.comp (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))) := by
-  rw [MonoidHom.existsUnique_comp_eq_iff_ker_le _ _ surjective_mk'_comp_map,
+  rw [MonoidHom.existsUnique_comp_eq_iff_ker_le _ _ mk'_comp_map_intCast_zmod_surjective,
     isCongruenceSubgroup_liftSL_iff_Gamma_le_of_dvd hM, Gamma_le_liftSL_iff Γ' e,
     ker_mk'_comp_map_intCast_zmod, sup_le_iff, iff_self_and]
   -- `-1` has trivial class in `PSL(2, ℤ)`, so it acts trivially on the cosets of `Γ'`
@@ -190,9 +191,9 @@ theorem isCongruenceSubgroup_liftSL_iff_exists_map_T_tPrime (hM : generalLevel �
           φ (map (Int.castRingHom (ZMod M)) tPrime) =
             (modularTriple Γ' e).σ0 * (modularTriple Γ' e).σ1 := by
   rw [isCongruenceSubgroup_liftSL_iff_existsUnique_comp_eq hM,
-    existsUnique_comp_eq_iff_exists_map_T_tPrime surjective_mk'_comp_map,
+    existsUnique_comp_eq_iff_exists_map_T_tPrime mk'_comp_map_intCast_zmod_surjective,
     ← permutationRepresentation_coe_tPrime, permT, modularTriple_σinf]
-  rfl
+  simp only [MonoidHom.comp_apply, QuotientGroup.mk'_apply]
 
 /-- **Noncongruence witnesses.** For `M ≠ 0` a multiple of the general level of `Γ' ≤ PSL(2, ℤ)`,
 the full preimage `±Γ'` is not a congruence subgroup exactly when some `γ ∈ Γ(M)` moves the base
