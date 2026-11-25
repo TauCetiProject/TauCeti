@@ -119,6 +119,11 @@ omit [PartialOrder B] [StarOrderedRing B] in
 theorem mem_sqIntegrable {x : B} : x ∈ sqIntegrable τ ↔ τ (star x * x) < ∞ :=
   Iff.rfl
 
+/-- `x⋆x ∈ 𝔪_τ⁺` if and only if `x ∈ 𝔫_τ`. -/
+theorem star_mul_self_mem_finitePart_iff {x : B} :
+    star x * x ∈ finitePart τ ↔ x ∈ sqIntegrable τ := by
+  simp [star_mul_self_nonneg x]
+
 namespace IsTrace
 
 omit [StarOrderedRing B] in
@@ -157,11 +162,10 @@ theorem zero_mem_finitePart (hτ : IsTrace τ) : (0 : B) ∈ finitePart τ :=
 
 /-! ### The square-integrable ideal -/
 
-/-- The parallelogram bound `τ((x + y)⋆(x + y)) ≤ 2 (τ(x⋆x) + τ(y⋆y))`, written as
-`(τ(x⋆x) + τ(y⋆y)) + (τ(x⋆x) + τ(y⋆y))`. -/
+/-- The parallelogram bound `τ((x + y)⋆(x + y)) ≤ 2 (τ(x⋆x) + τ(y⋆y))`. -/
 theorem map_star_add_mul_add_le (hτ : IsTrace τ) (x y : B) :
-    τ (star (x + y) * (x + y)) ≤
-      (τ (star x * x) + τ (star y * y)) + (τ (star x * x) + τ (star y * y)) := by
+    τ (star (x + y) * (x + y)) ≤ 2 * (τ (star x * x) + τ (star y * y)) := by
+  rw [two_mul]
   have hz : 0 ≤ star x * x + star y * y := add_nonneg (star_mul_self_nonneg x)
     (star_mul_self_nonneg y)
   have hpar : star (x + y) * (x + y) + star (x - y) * (x - y) =
@@ -187,6 +191,12 @@ theorem map_star_star_mul_star (hτ : IsTrace τ) (x : B) :
     τ (star (star x) * star x) = τ (star x * x) := by
   rw [star_star, hτ.map_star_mul_self]
 
+/-- `xx⋆ ∈ 𝔪_τ⁺` if and only if `x ∈ 𝔫_τ`, by the trace identity. -/
+theorem mul_star_self_mem_finitePart_iff (hτ : IsTrace τ) {x : B} :
+    x * star x ∈ finitePart τ ↔ x ∈ sqIntegrable τ := by
+  rw [mem_finitePart, mem_sqIntegrable, hτ.map_star_mul_self]
+  exact and_iff_right (mul_star_self_nonneg x)
+
 omit [StarOrderedRing B] in
 /-- `𝔫_τ` is self-adjoint. -/
 theorem star_mem_sqIntegrable (hτ : IsTrace τ) {x : B} (hx : x ∈ sqIntegrable τ) :
@@ -210,7 +220,7 @@ theorem add_mem_sqIntegrable (hτ : IsTrace τ) {x y : B} (hx : x ∈ sqIntegrab
     (hy : y ∈ sqIntegrable τ) : x + y ∈ sqIntegrable τ :=
   (hτ.map_star_add_mul_add_le x y).trans_lt <| by
     rw [mem_sqIntegrable] at hx hy
-    simp [ENNReal.add_lt_top, hx, hy]
+    exact ENNReal.mul_lt_top ENNReal.ofNat_lt_top (ENNReal.add_lt_top.mpr ⟨hx, hy⟩)
 
 /-- `𝔫_τ` is a left ideal: `a x ∈ 𝔫_τ` for `x ∈ 𝔫_τ`. -/
 theorem mul_mem_sqIntegrable_left (hτ : IsTrace τ) (a : B) {x : B} (hx : x ∈ sqIntegrable τ) :
