@@ -158,6 +158,14 @@ theorem chainIntegral_sub (c d : SmoothSimplex I M p →₀ R) (φ : RoughForm I
     chainIntegral (c - d) φ = chainIntegral c φ - chainIntegral d φ :=
   map_sub (Finsupp.linearCombination R _) c d
 
+/-- Viewing an integral smooth chain as a real smooth chain via `Int.cast` preserves its
+integral. -/
+@[simp]
+theorem chainIntegral_mapRange_intCast (c : SmoothSimplex I M p →₀ ℤ) (φ : RoughForm I M F p) :
+    chainIntegral (Finsupp.mapRange (Int.cast : ℤ → ℝ) Int.cast_zero c) φ = chainIntegral c φ := by
+  rw [chainIntegral_eq_sum, Finsupp.sum_mapRange_index (by simp), chainIntegral_eq_sum]
+  exact Finset.sum_congr rfl fun σ _ ↦ by dsimp only; rw [Int.cast_smul_eq_zsmul ℝ]
+
 end Ring
 
 section Cochain
@@ -254,6 +262,45 @@ theorem integrationCochain_chainComplexMap_apply {f : M → N} (hf : ContMDiff I
           c) =
       (integrationCochain (mpullback I J f ψ)).hom c := by
   rw [← integrationCochain_naturality hf, ModuleCat.hom_comp, LinearMap.comp_apply]
+
+/-- The canonical `ℤ → ℝ` change-of-coefficients chain map on smooth singular chains. -/
+def intToRealSmoothChains (I : ModelWithCorners ℝ E H) (M : Type)
+    [TopologicalSpace M] [ChartedSpace H M] :
+    (smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ) ⟶
+      (smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℝ) :=
+  ((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
+    (ModuleCat.ofHom (Int.castAddHom ℝ).toIntLinearMap)).app (smoothSingularSubcomplex I M : SSet)
+
+/-- On a single smooth simplex, `intToRealSmoothChains` casts the integer coefficient to `ℝ`. -/
+@[simp]
+theorem intToRealSmoothChains_f_ιChainComplex (σ : SmoothSimplex I M p) (a : ℤ) :
+    ((intToRealSmoothChains I M).f p).hom (((smoothSingularSubcomplex I M : SSet).ιChainComplex
+      (R := ModuleCat.of ℤ ℤ) σ).hom a) =
+      ((smoothSingularSubcomplex I M : SSet).ιChainComplex (R := ModuleCat.of ℤ ℝ) σ).hom
+        (a : ℝ) :=
+  ConcreteCategory.congr_hom (SSet.ιChainComplex_chainComplexFunctor_map_app_f
+    (X := (smoothSingularSubcomplex I M : SSet))
+    (ModuleCat.ofHom (Int.castAddHom ℝ).toIntLinearMap) σ) a
+
+/-- In the finitely supported representation, `intToRealSmoothChains` casts coefficients to `ℝ`. -/
+theorem chainsLinearEquivFinsupp_intToRealSmoothChains_f
+    (c : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).X p) :
+    (smoothSingularSubcomplex I M : SSet).chainsLinearEquivFinsupp ℝ p
+        (((intToRealSmoothChains I M).f p).hom c) =
+      Finsupp.mapRange (Int.cast : ℤ → ℝ) Int.cast_zero
+        ((smoothSingularSubcomplex I M : SSet).chainsLinearEquivFinsupp ℤ p c) := by
+  simpa [intToRealSmoothChains] using SSet.chainsLinearEquivFinsupp_chainComplexFunctor_map
+    (X := (smoothSingularSubcomplex I M : SSet)) (ψ := (Int.castAddHom ℝ).toIntLinearMap) c
+
+/-- Integration on integral smooth chains agrees with `chainIntegral` after
+`intToRealSmoothChains`. -/
+theorem integrationCochain_eq_chainIntegral_intToRealSmoothChains (φ : RoughForm I M F p)
+    (c : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).X p) :
+    (integrationCochain φ).hom c =
+      chainIntegral ((smoothSingularSubcomplex I M : SSet).chainsLinearEquivFinsupp ℝ p
+        (((intToRealSmoothChains I M).f p).hom c)) φ := by
+  rw [integrationCochain_apply (I := I), chainsLinearEquivFinsupp_intToRealSmoothChains_f,
+    chainIntegral_mapRange_intCast]
 
 end Cochain
 

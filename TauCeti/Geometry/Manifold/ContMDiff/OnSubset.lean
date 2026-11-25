@@ -108,7 +108,7 @@ theorem comp_contDiffOn {f : t → M} (hf : ContMDiffOnSubset I n f) {A : E → 
     ContMDiffOnSubset I n (f ∘ hst.restrict A s t) := by
   intro x
   obtain ⟨U, hU, g, hg, hgf⟩ := hf (hst.restrict A s t x)
-  have hVx : V ∈ 𝓝 (x : E) := mem_nhdsSet_iff_forall.1 hV x x.2
+  have hVx : V ∈ 𝓝 (x : E) := mem_nhdsSet_iff_forall.1 hV x x.property
   have hpre : A ⁻¹' U ∈ 𝓝 (x : E) := (hA.continuousOn.continuousAt hVx).preimage_mem_nhds hU
   exact ⟨V ∩ A ⁻¹' U, Filter.inter_mem hVx hpre, g ∘ A,
     hg.comp (hA.contMDiffOn.mono inter_subset_left) inter_subset_right,

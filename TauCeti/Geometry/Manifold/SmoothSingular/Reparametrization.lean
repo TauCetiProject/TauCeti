@@ -56,7 +56,7 @@ def compContDiffOn {q : ℕ} (σ : SmoothSimplex I M p)
   mk (σ.toContinuousMap.comp
       ⟨hmaps.restrict Ψ (fullSimplex q) (fullSimplex p),
         (hΨ.continuousOn.mono (subset_of_mem_nhdsSet hU)).domRestrict.codRestrict
-          fun x ↦ hmaps x.2⟩)
+          fun x ↦ hmaps x.property⟩)
     (σ.contMDiffOnSubset_toContinuousMap.comp_contDiffOn hΨ hU hmaps)
 
 /-- Read on `Δ^q`, `compContDiffOn` evaluates `σ` along `Ψ`. -/
@@ -65,7 +65,8 @@ theorem toContinuousMap_compContDiffOn_apply {q : ℕ} (σ : SmoothSimplex I M p
     {Ψ : EuclideanSpace ℝ (Fin q) → EuclideanSpace ℝ (Fin p)}
     {U : Set (EuclideanSpace ℝ (Fin q))} (hΨ : ContDiffOn ℝ ∞ Ψ U) (hU : U ∈ 𝓝ˢ (fullSimplex q))
     (hmaps : MapsTo Ψ (fullSimplex q) (fullSimplex p)) (x : fullSimplex q) :
-    (σ.compContDiffOn hΨ hU hmaps).toContinuousMap x = σ.toContinuousMap ⟨Ψ x, hmaps x.2⟩ := by
+    (σ.compContDiffOn hΨ hU hmaps).toContinuousMap x =
+      σ.toContinuousMap ⟨Ψ x, hmaps x.property⟩ := by
   rw [compContDiffOn, toContinuousMap_mk]; rfl
 
 /-- Precompose a smooth `p`-simplex with the affine map `Δ^q → Δ^p` determined by a tuple of
@@ -82,8 +83,8 @@ def compAffineMapMk {q : ℕ} (σ : SmoothSimplex I M p)
 theorem toContinuousMap_compAffineMapMk_apply {q : ℕ} (σ : SmoothSimplex I M p)
     (v : Fin (q + 1) → StdSimplex ℝ (Fin (p + 1))) (x : fullSimplex q) :
     (σ.compAffineMapMk v).toContinuousMap x =
-      σ.toContinuousMap ⟨affineMapAmbient v x, mapsTo_affineMapAmbient v x.2⟩ := by
-  have hx : (⟨affineMapAmbient v x, mapsTo_affineMapAmbient v x.2⟩ : fullSimplex p) =
+      σ.toContinuousMap ⟨affineMapAmbient v x, mapsTo_affineMapAmbient v x.property⟩ := by
+  have hx : (⟨affineMapAmbient v x, mapsTo_affineMapAmbient v x.property⟩ : fullSimplex p) =
       (fullSimplexEquivStdSimplex p).symm
         (StdSimplex.affineMapMk v (fullSimplexEquivStdSimplex q x)) :=
     Subtype.ext (affineMapAmbient_coe v x)
@@ -99,7 +100,7 @@ def compPerm (σ : SmoothSimplex I M p) (π : Equiv.Perm (Fin (p + 1))) : Smooth
 theorem toContinuousMap_compPerm_apply (σ : SmoothSimplex I M p) (π : Equiv.Perm (Fin (p + 1)))
     (x : fullSimplex p) :
     (σ.compPerm π).toContinuousMap x =
-      σ.toContinuousMap ⟨simplexMapAmbient π x, mapsTo_simplexMapAmbient π x.2⟩ := by
+      σ.toContinuousMap ⟨simplexMapAmbient π x, mapsTo_simplexMapAmbient π x.property⟩ := by
   rw [compPerm, toContinuousMap_compAffineMapMk_apply]
   exact congrArg σ.toContinuousMap
     (Subtype.ext (congrFun (congrArg DFunLike.coe (affineMapAmbient_single π)) x.val))
@@ -138,7 +139,7 @@ private theorem integral_compContDiffOn_of_det_eq {s : ℝ}
   rw [(σ.compContDiffOn hΨ hU hmaps).integral_eq_setIntegral_mpullbackWithin φ
     (g := σ.extension ∘ Ψ) fun x ↦ by
       rw [Function.comp_apply, toContinuousMap_compContDiffOn_apply,
-        σ.extension_coe ⟨Ψ x, hmaps x.2⟩]]
+        σ.extension_coe ⟨Ψ x, hmaps x.property⟩]]
   have hΨfderiv : ∀ x ∈ fullSimplex p,
       HasFDerivWithinAt Ψ (fderiv ℝ Ψ x) (fullSimplex p) x := fun x hx ↦
     ((hΨ.contDiffAt (mem_nhdsSet_iff_forall.mp hU x hx)).differentiableAt
@@ -211,7 +212,7 @@ theorem sum_sign_integral_compAffineMapMk_vertex [IsManifold I 1 M]
     let τ := σ.compAffineMapMk (BarycentricSubdivision.vertex π)
     rw [τ.integral_eq_setIntegral_mpullbackWithin φ (g := σ.extension ∘ A) fun x ↦ by
       rw [Function.comp_apply, toContinuousMap_compAffineMapMk_apply,
-        σ.extension_coe ⟨A x, mapsTo_affineMapAmbient _ x.2⟩]]
+        σ.extension_coe ⟨A x, mapsTo_affineMapAmbient _ x.property⟩]]
     exact setIntegral_congr_fun (isClosed_fullSimplex p).measurableSet fun x hx ↦
       σ.mpullbackWithin_comp_eval_basis (mapsTo_affineMapAmbient _) hx
         A.hasFDerivAt.hasFDerivWithinAt φ
@@ -250,24 +251,36 @@ theorem chainsLinearEquivFinsupp_subcomplexSubdivisionX_ιChainComplex {R : Type
     _root_.SSet.chainsLinearEquivFinsupp_ιChainComplex (smoothSingularSubcomplex I M : SSet),
     Finsupp.smul_single, Units.smul_def]; rfl
 
-/-- **Barycentric subdivision preserves integration of continuous forms on real smooth chains.** -/
+/-- **Barycentric subdivision preserves integration of continuous forms on smooth chains** with
+coefficients in any ring `R` acting on `F` (including both `ℝ` and `ℤ`). -/
 @[reassoc]
 theorem subcomplexSubdivisionX_comp_integrationCochain [IsManifold I 1 M]
-    {φ : RoughForm I M F p} (hφ : IsSmoothForm I 0 φ) :
-    subcomplexSubdivisionX (ModuleCat.of ℝ ℝ) (smoothSingularSubcomplex I M) p ≫
+    {R : Type} [Ring R] [Module R F] {φ : RoughForm I M F p} (hφ : IsSmoothForm I 0 φ) :
+    subcomplexSubdivisionX (ModuleCat.of R R) (smoothSingularSubcomplex I M) p ≫
       integrationCochain φ = integrationCochain φ := by
   refine SSet.chainComplex_hom_ext fun σ ↦ ModuleCat.hom_ext (LinearMap.ext_ring ?_)
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply, integrationCochain_ιChainComplex (I := I),
     one_smul]
   rw [integrationCochain_apply (I := I),
     chainsLinearEquivFinsupp_subcomplexSubdivisionX_ιChainComplex]
-  let Iφ : (SmoothSimplex I M p →₀ ℝ) →+ F :=
+  let Iφ : (SmoothSimplex I M p →₀ R) →+ F :=
     AddMonoidHom.mk' (fun c ↦ chainIntegral c φ) (fun c d ↦ chainIntegral_add c d φ)
   refine (map_sum Iφ _ _).trans <| (Finset.sum_congr rfl fun π _ ↦ ?_).trans
     (SmoothSimplex.sum_sign_integral_compAffineMapMk_vertex σ hφ)
   have h := chainIntegral_single (SmoothSimplex.compAffineMapMk σ
-    (BarycentricSubdivision.vertex π)) (π.sign • (1 : ℝ)) φ
+    (BarycentricSubdivision.vertex π)) (π.sign • (1 : R)) φ
   rcases Int.units_eq_one_or π.sign with hs | hs <;> simpa [Iφ, hs] using h
+
+/-- Element form of `TauCeti.subcomplexSubdivisionX_comp_integrationCochain`: integrating a
+continuous form over the barycentric subdivision of a smooth chain equals integrating it over the
+chain. -/
+theorem integrationCochain_subcomplexSubdivisionX_apply [IsManifold I 1 M]
+    {R : Type} [Ring R] [Module R F] {φ : RoughForm I M F p} (hφ : IsSmoothForm I 0 φ)
+    (c : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of R R)).X p) :
+    (integrationCochain φ).hom
+        ((subcomplexSubdivisionX (ModuleCat.of R R) (smoothSingularSubcomplex I M) p).hom c) =
+      (integrationCochain φ).hom c :=
+  ConcreteCategory.congr_hom (subcomplexSubdivisionX_comp_integrationCochain hφ) c
 
 end SubdivisionChains
 

@@ -58,6 +58,8 @@ orientation is used, and `M` may have boundary or corners.
   determinant of the differential.
 * `TauCeti.riemannianJacobian_eq_sqrt_pow_of_inner_mfderiv`: for an orthonormal basis, the
   Jacobian of a map whose differential multiplies inner products by `c` is `√c ^ n`.
+* `TauCeti.normDet_mfderivWithin_congr`: local congruence on `s` preserves the `normDet` of
+  `mfderivWithin`.
 * `TauCeti.setLIntegral_riemannianJacobian_changeBasis`: the Jacobian-weighted coordinate integral
   does not depend on the basis.
 * `Module.Basis.setLIntegral_riemannianVolume_image_of_injOn`: nonnegative change of variables
@@ -231,6 +233,26 @@ theorem riemannianJacobian_eq_sqrt_pow_of_inner_mfderiv {V : Type*} [NormedAddCo
     exact h ▸ real_inner_self_nonneg
   rw [← Real.sqrt_sq (pow_nonneg (Real.sqrt_nonneg c) _), ← pow_mul, mul_comm, pow_mul,
     Real.sq_sqrt hc]
+
+open scoped Topology in
+/-- Local congruence on `s` preserves the `normDet` of `mfderivWithin` into a Riemannian
+manifold. -/
+theorem normDet_mfderivWithin_congr {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [FiniteDimensional ℝ V] {s : Set V} {f₁ f₂ : V → M} {x : V} (hL : f₁ =ᶠ[𝓝[s] x] f₂)
+    (hx : x ∈ s) :
+    LinearMap.normDet (U := V) (mfderivWithin 𝓘(ℝ, V) I f₁ s x).toLinearMap =
+      LinearMap.normDet (U := V) (mfderivWithin 𝓘(ℝ, V) I f₂ s x).toLinearMap := by
+  have heq : f₁ x = f₂ x := mem_of_mem_nhdsWithin hx hL
+  have hmf := hL.mfderivWithin_eq_of_mem (I := 𝓘(ℝ, V)) (I' := I) hx
+  let L₁ : V →ₗ[ℝ] _ := (mfderivWithin 𝓘(ℝ, V) I f₁ s x).toLinearMap
+  let L₂ : V →ₗ[ℝ] _ := (mfderivWithin 𝓘(ℝ, V) I f₂ s x).toLinearMap
+  let b := stdOrthonormalBasis ℝ V
+  refine (sq_eq_sq₀ L₁.normDet_nonneg L₂.normDet_nonneg).mp ?_
+  have h1 := L₁.normDet_sq_eq_det_gram b
+  have h2 := L₂.normDet_sq_eq_det_gram b
+  simp only [RCLike.ofReal_real_eq_id, id_eq] at h1 h2
+  rw [h1, h2]; congr 1; ext i j; simp only [Matrix.gram_apply, L₁, L₂, hmf]
+  exact inner_tangentSpace_congr (I := I) heq rfl rfl
 
 end Jacobian
 

@@ -155,6 +155,60 @@ theorem affineMapAmbient_vertex_injective (π : Perm (Fin (p + 1))) :
   rw [vsub_eq_sub, vsub_eq_sub, hxy, sub_self] at hv
   exact sub_eq_zero.mp (hlin (hv.trans (map_zero _).symm))
 
+/-- The inverse barycentric coordinates on the `π`-th order chamber of `Δᵖ`: for a weight vector
+`wy` whose entries are nondecreasing along `π`, `chamberInvWeights π wy` reconstructs `wy` as a
+convex combination of the subdivision vertices `vertex π k`. -/
+def chamberInvWeights (π : Perm (Fin (p + 1))) (wy : StdSimplex ℝ (Fin (p + 1))) :
+    Fin (p + 1) → ℝ :=
+  Fin.cases ((p + 1 : ℝ) * wy.weights (π 0)) fun k ↦
+    (p + 1 - (k.succ : ℕ) : ℝ) * (wy.weights (π k.succ) - wy.weights (π k.castSucc))
+
+/-- The inverse chamber coordinates are nonnegative whenever `wy.weights ∘ π` is monotone. -/
+theorem chamberInvWeights_nonneg {π : Perm (Fin (p + 1))} {wy : StdSimplex ℝ (Fin (p + 1))}
+    (hmono : Monotone fun i ↦ wy.weights (π i)) (k : Fin (p + 1)) :
+    0 ≤ chamberInvWeights π wy k := by
+  cases k using Fin.cases with
+  | zero => exact mul_nonneg (by positivity) (StdSimplex.weights_nonneg _)
+  | succ k =>
+    exact mul_nonneg (sub_cast_pos k.succ).le (sub_nonneg.mpr (hmono k.castSucc_le_succ))
+
+/-- Partial sums of `chamberInvWeights π wy` weighted by `(p + 1 - k)⁻¹` telescope to `wy` along
+`π`. -/
+theorem sum_Iic_chamberInvWeights_mul_inv (π : Perm (Fin (p + 1)))
+    (wy : StdSimplex ℝ (Fin (p + 1))) (j : Fin (p + 1)) :
+    ∑ k ∈ Finset.Iic j, chamberInvWeights π wy k * (p + 1 - (k : ℕ) : ℝ)⁻¹ =
+      wy.weights (π j) := by
+  induction j using Fin.induction with
+  | zero =>
+    rw [show Finset.Iic (0 : Fin (p + 1)) = {0} by ext; simp, Finset.sum_singleton]
+    simp only [chamberInvWeights, Fin.cases_zero, Fin.val_zero, Nat.cast_zero, sub_zero]
+    field_simp
+  | succ k ih =>
+    have hIic : Finset.Iic k.succ = insert k.succ (Finset.Iic k.castSucc) := by
+      ext m; simp [Fin.le_iff_val_le_val, Fin.ext_iff]; omega
+    rw [hIic, Finset.sum_insert (by simp [Fin.le_iff_val_le_val]), ih]
+    simp only [chamberInvWeights, Fin.cases_succ]
+    rw [mul_right_comm, mul_inv_cancel₀ (sub_cast_pos k.succ).ne', one_mul, sub_add_cancel]
+
+/-- The inverse chamber coordinates of any point of `StdSimplex ℝ (Fin (p + 1))` sum to `1`. -/
+theorem sum_chamberInvWeights_eq_one (π : Perm (Fin (p + 1))) (wy : StdSimplex ℝ (Fin (p + 1))) :
+    ∑ k : Fin (p + 1), chamberInvWeights π wy k = 1 := by
+  rw [← show ∑ j : Fin (p + 1), wy.weights (π j) = 1 from by
+    rw [Equiv.sum_comp π (fun i ↦ wy.weights i), StdSimplex.total_of_fintype]]
+  simp_rw [← sum_Iic_chamberInvWeights_mul_inv π wy]
+  have hswap : (∑ j : Fin (p + 1),
+        ∑ k ∈ Finset.Iic j, chamberInvWeights π wy k * (p + 1 - (k : ℕ) : ℝ)⁻¹) =
+      ∑ k : Fin (p + 1),
+        ∑ _ ∈ Finset.Ici k, chamberInvWeights π wy k * (p + 1 - (k : ℕ) : ℝ)⁻¹ := by
+    simp_rw [show ∀ j : Fin (p + 1), Finset.Iic j = Finset.univ.filter (· ≤ j) from
+        fun _ ↦ by ext; simp,
+      show ∀ k : Fin (p + 1), Finset.Ici k = Finset.univ.filter (k ≤ ·) from
+        fun _ ↦ by ext; simp, Finset.sum_filter]
+    exact Finset.sum_comm
+  rw [hswap]; symm; refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [Finset.sum_const, nsmul_eq_mul, Fin.card_Ici, Nat.cast_sub k.isLt.le, Nat.cast_add,
+    Nat.cast_one, mul_left_comm, mul_inv_cancel₀ (sub_cast_pos k).ne', mul_one]
+
 /-- The image of `Δᵖ` under the `π`-th barycentric subdivision map is the order chamber of points
 whose barycentric weights are nondecreasing along `π`. -/
 theorem mem_image_affineMapAmbient_vertex_iff (π : Perm (Fin (p + 1)))
@@ -172,46 +226,14 @@ theorem mem_image_affineMapAmbient_vertex_iff (π : Perm (Fin (p + 1)))
     exact Finset.sum_le_sum_of_subset_of_nonneg (Finset.Iic_subset_Iic.mpr hj) fun k _ _ ↦
       mul_nonneg (StdSimplex.weights_nonneg _) (inv_nonneg.mpr (sub_cast_pos k).le)
   · intro hmono
-    let t : Fin (p + 1) → ℝ := Fin.cases ((p + 1 : ℝ) * wy.weights (π 0)) fun k ↦
-      (p + 1 - (k.succ : ℕ) : ℝ) * (wy.weights (π k.succ) - wy.weights (π k.castSucc))
-    have ht_nonneg (k : Fin (p + 1)) : 0 ≤ t k := by
-      cases k using Fin.cases with
-      | zero => exact mul_nonneg (by positivity) (StdSimplex.weights_nonneg _)
-      | succ k =>
-        exact mul_nonneg (sub_cast_pos k.succ).le (sub_nonneg.mpr (hmono k.castSucc_le_succ))
-    have hpart (j : Fin (p + 1)) :
-        ∑ k ∈ Finset.Iic j, t k * (p + 1 - (k : ℕ) : ℝ)⁻¹ = wy.weights (π j) := by
-      induction j using Fin.induction with
-      | zero =>
-        rw [show Finset.Iic (0 : Fin (p + 1)) = {0} by ext; simp, Finset.sum_singleton]
-        simp only [t, Fin.cases_zero, Fin.val_zero, Nat.cast_zero, sub_zero]; field_simp
-      | succ k ih =>
-        have hIic : Finset.Iic k.succ = insert k.succ (Finset.Iic k.castSucc) := by
-          ext m; simp [Fin.le_iff_val_le_val, Fin.ext_iff]; omega
-        rw [hIic, Finset.sum_insert (by simp [Fin.le_iff_val_le_val]), ih]
-        simp only [t, Fin.cases_succ]
-        rw [mul_right_comm, mul_inv_cancel₀ (sub_cast_pos k.succ).ne', one_mul, sub_add_cancel]
-    have ht_sum : ∑ k : Fin (p + 1), t k = 1 := by
-      rw [← show ∑ j : Fin (p + 1), wy.weights (π j) = 1 from by
-        rw [Equiv.sum_comp π (fun i ↦ wy.weights i), StdSimplex.total_of_fintype]]
-      simp_rw [← hpart]
-      have hswap : (∑ j : Fin (p + 1), ∑ k ∈ Finset.Iic j, t k * (p + 1 - (k : ℕ) : ℝ)⁻¹) =
-          ∑ k : Fin (p + 1), ∑ _ ∈ Finset.Ici k, t k * (p + 1 - (k : ℕ) : ℝ)⁻¹ := by
-        simp_rw [show ∀ j : Fin (p + 1), Finset.Iic j = Finset.univ.filter (· ≤ j) from
-            fun _ ↦ by ext; simp,
-          show ∀ k : Fin (p + 1), Finset.Ici k = Finset.univ.filter (k ≤ ·) from
-            fun _ ↦ by ext; simp, Finset.sum_filter]
-        exact Finset.sum_comm
-      rw [hswap]; symm; refine Finset.sum_congr rfl fun k _ ↦ ?_
-      rw [Finset.sum_const, nsmul_eq_mul, Fin.card_Ici, Nat.cast_sub k.isLt.le, Nat.cast_add,
-        Nat.cast_one, mul_left_comm, mul_inv_cancel₀ (sub_cast_pos k).ne', mul_one]
     let w : StdSimplex ℝ (Fin (p + 1)) :=
-      ⟨Finsupp.equivFunOnFinite.symm t, ht_nonneg,
-        by rw [Finsupp.sum_fintype _ _ (by simp)]; exact ht_sum⟩
+      ⟨Finsupp.equivFunOnFinite.symm (chamberInvWeights π wy), chamberInvWeights_nonneg hmono,
+        by rw [Finsupp.sum_fintype _ _ (by simp)]; exact sum_chamberInvWeights_eq_one π wy⟩
     refine ⟨((fullSimplexEquivStdSimplex p).symm w).val, Subtype.prop _, ?_⟩
     rw [affineMapAmbient_coe, Homeomorph.apply_symm_apply,
       show StdSimplex.affineMapMk (vertex π) w = wy by
-        ext m; obtain ⟨j, rfl⟩ := π.surjective m; rw [weights_affineMapMk_vertex]; exact hpart j]
+        ext m; obtain ⟨j, rfl⟩ := π.surjective m
+        rw [weights_affineMapMk_vertex]; exact sum_Iic_chamberInvWeights_mul_inv π wy j]
     exact congrArg Subtype.val ((fullSimplexEquivStdSimplex p).symm_apply_apply ⟨y, hy⟩)
 
 /-- The images of `Δᵖ` under the `(p + 1)!` barycentric subdivision maps cover `Δᵖ`. -/
@@ -296,26 +318,13 @@ theorem sum_setIntegral_affineMapAmbient_vertex {f : EuclideanSpace ℝ (Fin p) 
       ∫ y in fullSimplex p, f y := by
   simp_rw [setIntegral_comp_affineMapAmbient_vertex]
   let s (π : Perm (Fin (p + 1))) := affineMapAmbient (vertex π) '' fullSimplex p
-  have hmeas (π) : MeasurableSet (s π) :=
-    ((isCompact_fullSimplex p).image
-      (affineMapAmbient (vertex π)).continuous).isClosed.measurableSet
-  have hint (π) : IntegrableOn f (s π) := hf.mono_set (mapsTo_affineMapAmbient _).image_subset
-  have hfin (t : Finset (Perm (Fin (p + 1)))) :
-      ∫ y in ⋃ π ∈ t, s π, f y = ∑ π ∈ t, ∫ y in s π, f y := by
-    classical
-    induction t using Finset.induction_on with
-    | empty => simp
-    | insert π t hπ ih =>
-      rw [Finset.set_biUnion_insert, Finset.sum_insert hπ, ← ih]
-      refine setIntegral_union₀ ?_
-        (Finset.measurableSet_biUnion t fun τ _ ↦ hmeas τ).nullMeasurableSet
-        (hint π) (integrableOn_finset_iUnion.mpr fun τ _ ↦ hint τ)
-      rw [AEDisjoint, Set.inter_iUnion₂]
-      exact (measure_biUnion_null_iff (Finset.countable_toSet t)).mpr fun τ hτ ↦
-        volume_image_affineMapAmbient_vertex_inter_eq_zero (fun h ↦ hπ (h ▸ hτ))
-  rw [← hfin Finset.univ,
-    show (⋃ π ∈ (Finset.univ : Finset (Perm (Fin (p + 1)))), s π) = fullSimplex p by
-      simpa [s] using iUnion_image_affineMapAmbient_vertex p]
+  have hU : (⋃ π, s π) = fullSimplex p := iUnion_image_affineMapAmbient_vertex p
+  conv_rhs => rw [← hU]
+  rw [MeasureTheory.integral_iUnion_ae
+    (fun π ↦ ((isCompact_fullSimplex p).image
+      (affineMapAmbient (vertex π)).continuous).isClosed.measurableSet.nullMeasurableSet)
+    (fun _ _ hne ↦ volume_image_affineMapAmbient_vertex_inter_eq_zero hne)
+    (hU.symm ▸ hf), tsum_fintype]
 
 /-- **Signed subdivision decomposition of Bochner integrals on `Δᵖ`.** Weighting each barycentric
 subdivision chamber by `π.sign` and its signed linear determinant `det` gives the same

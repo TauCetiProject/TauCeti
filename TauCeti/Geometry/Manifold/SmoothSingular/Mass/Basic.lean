@@ -14,7 +14,6 @@ import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.AlgebraicTopology.Singular.Subdivision.FullSimplex
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.NormDet
-import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.NormDet
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Alternating
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
@@ -29,7 +28,8 @@ On a manifold `M` with a Riemannian bundle, the **parametrized mass** of a smoot
 `σ : SmoothSimplex I M p` is `∫ x in Δᵖ, LinearMap.normDet (mfderivWithin σ.extension Δᵖ x)`.
 It counts multiplicity and folding (`t ↦ 4 * t * (1 - t)` has range `[0, 1]`, oriented
 `dt`-integral `0`, and mass `2`). We establish continuity and integrability of the Jacobian
-integrand, degree-`0` / constant / degenerate vanishing, `1`-simplex arc-length and folded-curve
+integrand, mass `1` in degree zero and vanishing for positive-degree constant and degenerate
+simplices, `1`-simplex arc-length and folded-curve
 checks, Lipschitz pushforward bounds and isometry invariance, reparametrization / permutation /
 barycentric subdivision invariance, top-degree comparison with `riemannianVolumeForm`, and
 pointwise/integrated comass bounds without finite-dimensionality assumptions on the model space.
@@ -52,67 +52,6 @@ open scoped BigOperators ContDiff InnerProductSpace Manifold
 universe u
 
 namespace TauCeti
-
-/-! ### Private linear-algebra and derivative helpers -/
-
-section Helpers
-
-section NormDet
-variable {U V W : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
-  [NormedAddCommGroup V] [InnerProductSpace ℝ V] [NormedAddCommGroup W] [InnerProductSpace ℝ W]
-
-private theorem normDet_comp_le_pow_mul (f : U →ₗ[ℝ] V) (g : V →ₗ[ℝ] W) {C : ℝ} (hC : 0 ≤ C)
-    (hg : ∀ v, ‖g v‖ ≤ C * ‖v‖) : (g ∘ₗ f).normDet ≤ C ^ Module.finrank ℝ U * f.normDet := by
-  by_cases hker : f.ker = ⊥
-  · rw [LinearMap.normDet_comp]
-    refine mul_le_mul_of_nonneg_right ?_ f.normDet_nonneg
-    have hrank := (f.normDet_ne_zero_tfae.out 2 3).mp hker
-    let b := stdOrthonormalBasis ℝ f.range
-    refine (sq_le_sq₀ (LinearMap.normDet_nonneg _) (pow_nonneg hC _)).mp ?_
-    have hgram := (g.domRestrict f.range).normDet_sq_eq_det_gram b
-    simp only [RCLike.ofReal_real_eq_id, id_eq] at hgram; rw [hgram]
-    have hbound (i : Fin (Module.finrank ℝ f.range)) :
-        ‖(g.domRestrict f.range) (b i)‖ ^ 2 ≤ C ^ 2 := by
-      have hb : ‖(b i : V)‖ = 1 := b.orthonormal.1 i
-      have h1 : ‖g (b i : V)‖ ≤ C * ‖(b i : V)‖ := hg (b i : V)
-      rw [hb, mul_one] at h1; exact pow_le_pow_left₀ (norm_nonneg _) h1 2
-    have hhad := Matrix.re_det_gram_le_pow (𝕜 := ℝ) hbound
-    simp only [RCLike.re_to_real, Fintype.card_fin, hrank] at hhad
-    simpa only [← pow_mul, mul_comm 2] using hhad
-  · have hgf : (g ∘ₗ f).ker ≠ ⊥ := by
-      contrapose hker with hbot; simpa [hbot] using LinearMap.ker_le_ker_comp f g
-    rw [LinearMap.normDet_eq_zero_iff_ker_ne_bot.mpr hgf,
-      LinearMap.normDet_eq_zero_iff_ker_ne_bot.mpr hker, mul_zero]
-
-private theorem normDet_comp_of_inner_eq (f : U →ₗ[ℝ] V) (g : V →ₗ[ℝ] W)
-    (hg : ∀ v w, inner ℝ (g v) (g w) = inner ℝ v w) : (g ∘ₗ f).normDet = f.normDet := by
-  let b := stdOrthonormalBasis ℝ U
-  refine (sq_eq_sq₀ (LinearMap.normDet_nonneg _) (LinearMap.normDet_nonneg _)).mp ?_
-  have h1 := (g ∘ₗ f).normDet_sq_eq_det_gram b; have h2 := f.normDet_sq_eq_det_gram b
-  simp only [RCLike.ofReal_real_eq_id, id_eq] at h1 h2
-  rw [h1, h2]; congr 1; ext i j; simp [Matrix.gram_apply, hg]
-
-end NormDet
-
-private theorem normDet_mfderivWithin_congr {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
-    [ChartedSpace H M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)] {U : Type*}
-    [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U] {s : Set U}
-    {f₁ f₂ : U → M} {x : U} (hL : f₁ =ᶠ[𝓝[s] x] f₂) (hx : x ∈ s) :
-    LinearMap.normDet (U := U) (mfderivWithin 𝓘(ℝ, U) I f₁ s x).toLinearMap =
-      LinearMap.normDet (U := U) (mfderivWithin 𝓘(ℝ, U) I f₂ s x).toLinearMap := by
-  have heq : f₁ x = f₂ x := mem_of_mem_nhdsWithin hx hL
-  have hmf := hL.mfderivWithin_eq_of_mem (I := 𝓘(ℝ, U)) (I' := I) hx
-  let L₁ : U →ₗ[ℝ] _ := (mfderivWithin 𝓘(ℝ, U) I f₁ s x).toLinearMap
-  let L₂ : U →ₗ[ℝ] _ := (mfderivWithin 𝓘(ℝ, U) I f₂ s x).toLinearMap
-  let b := stdOrthonormalBasis ℝ U
-  refine (sq_eq_sq₀ L₁.normDet_nonneg L₂.normDet_nonneg).mp ?_
-  have h1 := L₁.normDet_sq_eq_det_gram b; have h2 := L₂.normDet_sq_eq_det_gram b
-  simp only [RCLike.ofReal_real_eq_id, id_eq] at h1 h2
-  rw [h1, h2]; congr 1; ext i j; simp only [Matrix.gram_apply, L₁, L₂, hmf]
-  exact inner_tangentSpace_congr (I := I) heq rfl rfl
-
-end Helpers
 
 /-! ### Parametrized mass of smooth singular simplices -/
 
@@ -245,13 +184,13 @@ theorem mass_map_eq_zero_of_lt {q : ℕ} (σ : SmoothSimplex I M p) (hpq : p < q
   let L := simplexMapAmbient f.toOrderHom
   rw [mass_eq_setIntegral_normDet _ (g := σ.extension ∘ L) fun x ↦ by
     rw [Function.comp_apply, σ.toContinuousMap_map_apply,
-      ← σ.extension_coe ⟨L x, mapsTo_simplexMapAmbient _ x.2⟩]]
+      ← σ.extension_coe ⟨L x, mapsTo_simplexMapAmbient _ x.property⟩]]
   refine setIntegral_eq_zero_of_forall_eq_zero fun x hx ↦ ?_
   have hcomp := ((σ.contMDiffOn_extension (L x)
     (mapsTo_simplexMapAmbient _ hx)).mdifferentiableWithinAt (by simp)).hasMFDerivWithinAt.comp x
     L.hasFDerivAt.hasFDerivWithinAt.hasMFDerivWithinAt (mapsTo_simplexMapAmbient _)
   rw [hcomp.mfderivWithin
-    (uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.2 (uniqueDiffOn_fullSimplex q x hx))]
+    (uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.mpr (uniqueDiffOn_fullSimplex q x hx))]
   refine ((LinearMap.normDet_eq_zero_tfae (U := EuclideanSpace ℝ (Fin q)) _).out 1 6).mpr
     fun hinj ↦ hpq.not_ge ?_
   have hle := LinearMap.finrank_le_finrank_of_injective (f := L.contLinear.toLinearMap) fun y z h ↦
@@ -349,11 +288,11 @@ theorem mass_ofCurve_folded (hγ : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) ∞ (
   rw [← intervalIntegral.integral_add_adjacent_intervals (b := (1 / 2 : ℝ))
     (hcont.intervalIntegrable _ _) (hcont.intervalIntegrable _ _)]
   rw [intervalIntegral.integral_congr fun t ht ↦
-      abs_of_nonneg (by rw [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2)] at ht; linarith [ht.2]),
+      abs_of_nonneg (by rw [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2)] at ht; linarith [ht.right]),
     intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ ↦ hd t)
       ((by fun_prop : Continuous fun t : ℝ ↦ 4 - 8 * t).intervalIntegrable _ _),
     intervalIntegral.integral_congr fun t ht ↦
-      abs_of_nonpos (by rw [uIcc_of_le (by norm_num : (1 / 2 : ℝ) ≤ 1)] at ht; linarith [ht.1]),
+      abs_of_nonpos (by rw [uIcc_of_le (by norm_num : (1 / 2 : ℝ) ≤ 1)] at ht; linarith [ht.left]),
     intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ ↦ (hd t).neg)
       ((by fun_prop : Continuous fun t : ℝ ↦ -(4 - 8 * t)).intervalIntegrable _ _)]
   norm_num
@@ -361,8 +300,8 @@ theorem mass_ofCurve_folded (hγ : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) ∞ (
 /-- The oriented integral of `dt` over `t ↦ 4 * t * (1 - t)` vanishes (`mass_ofCurve_folded`). -/
 theorem integral_ofCurve_folded_realLineCoordForm
     (hγ : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) ∞ (fun t : ℝ ↦ 4 * t * (1 - t))) :
-    (ofCurve hγ).integral SmoothForm.realLineCoordForm.1 = 0 := by
-  have hd : SmoothForm.realLineCoordForm.1 = mextDeriv (RoughForm.ofFunction 𝓘(ℝ) id) := by
+    (ofCurve hγ).integral SmoothForm.realLineCoordForm.val = 0 := by
+  have hd : SmoothForm.realLineCoordForm.val = mextDeriv (RoughForm.ofFunction 𝓘(ℝ) id) := by
     simpa only [mpullback_id] using SmoothForm.mpullback_realLineCoordForm (I := 𝓘(ℝ)) id
   rw [integral_ofCurve, hd, pathIntegral_mextDeriv_ofFunction contMDiff_id (hγ.of_le (by simp)) 0 1]
   norm_num
@@ -383,13 +322,13 @@ private theorem mfderivWithin_comp_extension {f : M → N} (hf : ContMDiff I J �
         (mfderivWithin (𝓡 p) I σ.extension (fullSimplex p) x).toLinearMap := by
   rw [mfderiv_comp_mfderivWithin x ((hf.mdifferentiable (by simp)) (σ.extension x))
     ((σ.contMDiffOn_extension x hx).mdifferentiableWithinAt (by simp))
-    (uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.2 (uniqueDiffOn_fullSimplex p x hx))]; rfl
+    (uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.mpr (uniqueDiffOn_fullSimplex p x hx))]; rfl
 
 /-- A smooth map with differential operator norm `≤ C` multiplies `p`-simplex mass by `≤ C ^ p`. -/
 theorem mass_smoothSingularSubcomplexMap_app_le [IsManifold I 1 M]
     [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] [IsManifold J 1 N]
     [IsContinuousRiemannianBundle E' (fun y : N ↦ TangentSpace J y)]
-    {f : M → N} (hf : ContMDiff I J ∞ f) {C : ℝ} (hC : 0 ≤ C)
+    {f : M → N} (hf : ContMDiff I J ∞ f) {C : ℝ}
     (hLip : ∀ x (v : TangentSpace I x), ‖mfderiv I J f x v‖ ≤ C * ‖v‖)
     (σ : SmoothSimplex I M p) :
     mass ((smoothSingularSubcomplexMap f hf).app (op ⦋p⦌) σ) ≤ C ^ p * σ.mass := by
@@ -401,9 +340,9 @@ theorem mass_smoothSingularSubcomplexMap_app_le [IsManifold I 1 M]
     ((σ.integrableOn_normDet_mfderivWithin σ.extension_coe).const_mul (C ^ p))
     (isClosed_fullSimplex p).measurableSet fun x hx ↦ ?_
   rw [mfderivWithin_comp_extension hf σ hx]
-  have hbound := normDet_comp_le_pow_mul (U := EuclideanSpace ℝ (Fin p))
+  have hbound := LinearMap.normDet_comp_le_pow_finrank_mul (E := EuclideanSpace ℝ (Fin p))
     (mfderivWithin (𝓡 p) I σ.extension (fullSimplex p) x).toLinearMap
-    (mfderiv I J f (σ.extension x)).toLinearMap hC (hLip (σ.extension x))
+    (mfderiv I J f (σ.extension x)).toLinearMap (hLip (σ.extension x))
   rw [finrank_euclideanSpace_fin] at hbound; exact hbound
 
 /-- A smooth map whose differential preserves tangent inner products preserves simplex mass. -/
@@ -418,7 +357,8 @@ theorem mass_smoothSingularSubcomplexMap_app_of_inner_mfderiv {f : M → N} (hf 
   rw [τ.mass_eq_setIntegral_normDet hg, mass_def]
   exact setIntegral_congr_fun (isClosed_fullSimplex p).measurableSet fun x hx ↦ by
     rw [mfderivWithin_comp_extension hf σ hx]
-    exact normDet_comp_of_inner_eq (U := EuclideanSpace ℝ (Fin p)) _ _ (hinner (σ.extension x))
+    exact LinearMap.normDet_comp_of_inner_eq (E := EuclideanSpace ℝ (Fin p)) _ _
+      (hinner (σ.extension x))
 
 /-- Smooth Riemannian isometries preserve the mass of every smooth simplex. -/
 theorem mass_smoothSingularSubcomplexMap_riemannianIsometry
@@ -442,7 +382,7 @@ private theorem normDet_mfderivWithin_comp_of_hasFDerivWithinAt (σ : SmoothSimp
   have hcomp := ((σ.contMDiffOn_extension (Ψ x) (hmaps hx)).mdifferentiableWithinAt
     (by simp)).hasMFDerivWithinAt.comp x hΨ.hasMFDerivWithinAt hmaps
   rw [hcomp.mfderivWithin
-    (uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.2 (uniqueDiffOn_fullSimplex p x hx))]
+    (uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.mpr (uniqueDiffOn_fullSimplex p x hx))]
   let L₁ : EuclideanSpace ℝ (Fin p) →ₗ[ℝ] EuclideanSpace ℝ (Fin p) := L.toLinearMap
   let L₂ : EuclideanSpace ℝ (Fin p) →ₗ[ℝ] TangentSpace I (σ.extension (Ψ x)) :=
     (mfderivWithin (𝓡 p) I σ.extension (fullSimplex p) (Ψ x)).toLinearMap
@@ -462,7 +402,7 @@ theorem mass_compContDiffOn (σ : SmoothSimplex I M p)
     (σ.compContDiffOn hΨ hU hmaps).mass = σ.mass := by
   rw [(σ.compContDiffOn hΨ hU hmaps).mass_eq_setIntegral_normDet (g := σ.extension ∘ Ψ) fun x ↦ by
     rw [Function.comp_apply, toContinuousMap_compContDiffOn_apply,
-      σ.extension_coe ⟨Ψ x, hmaps x.2⟩]]
+      σ.extension_coe ⟨Ψ x, hmaps x.property⟩]]
   have hΨfderiv (x : EuclideanSpace ℝ (Fin p)) (hx : x ∈ fullSimplex p) :
       HasFDerivWithinAt Ψ (fderiv ℝ Ψ x) (fullSimplex p) x :=
     ((hΨ.contDiffAt (mem_nhdsSet_iff_forall.mp hU x hx)).differentiableAt
@@ -545,7 +485,7 @@ theorem sum_mass_compAffineMapMk_vertex [IsManifold I 1 M]
     rw [(σ.compAffineMapMk (BarycentricSubdivision.vertex e)).mass_eq_setIntegral_normDet
       (g := σ.extension ∘ A) fun x ↦ by
         rw [Function.comp_apply, toContinuousMap_compAffineMapMk_apply,
-          σ.extension_coe ⟨A x, mapsTo_affineMapAmbient _ x.2⟩]]
+          σ.extension_coe ⟨A x, mapsTo_affineMapAmbient _ x.property⟩]]
     exact setIntegral_congr_fun (isClosed_fullSimplex p).measurableSet fun x hx ↦
       σ.normDet_mfderivWithin_comp_of_hasFDerivWithinAt (mapsTo_affineMapAmbient _) hx
         A.hasFDerivAt.hasFDerivWithinAt
