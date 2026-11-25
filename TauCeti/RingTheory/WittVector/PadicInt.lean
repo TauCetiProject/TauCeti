@@ -69,10 +69,13 @@ theorem padicIntHom_zmod : padicIntHom p (ZMod p) = fromPadicInt p := by
 
 /-- The structure map `ℤ_[p] → 𝕎 R` is injective: `R` is nontrivial, so `ZMod p → R` is injective,
 and so is the map it induces on Witt vectors. -/
-theorem padicIntHom_injective : Function.Injective (padicIntHom p R) :=
+theorem padicIntHom_injective : Function.Injective (padicIntHom p R) := by
   have := CharP.nontrivial_of_char_ne_one (R := R) (Fact.out : p.Prime).one_lt.ne'
-  (map_injective _ (ZMod.castHom (dvd_refl p) R).injective).comp
-    (_root_.WittVector.equiv p).symm.injective
+  have hfrom : Function.Injective (fromPadicInt p) :=
+    Function.LeftInverse.injective (g := toPadicInt p) fun x => by
+      rw [← RingHom.comp_apply, toPadicInt_comp_fromPadicInt, RingHom.id_apply]
+  rw [padicIntHom, RingHom.coe_comp]
+  exact (map_injective _ (ZMod.castHom (dvd_refl p) R).injective).comp hfrom
 
 /-- The Witt vectors of a ring of characteristic `p` have characteristic zero, since `ℤ_[p]`
 injects into them. -/
