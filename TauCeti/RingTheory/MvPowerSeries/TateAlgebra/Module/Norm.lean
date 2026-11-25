@@ -279,23 +279,19 @@ theorem uniformContinuous_coeff (t : σ →₀ ℕ) :
 
 /-- Complete coefficient groups give complete restricted families for the Gauss norm. -/
 instance [CompleteSpace E] : CompleteSpace (Gauss c E) := by
-  refine Metric.complete_of_cauchySeq_tendsto fun A hA ↦ ?_
-  obtain ⟨a, hres, _, hunif⟩ := TauCeti.exists_weighted_coefficient_limit
-    (fun t ↦ (prod_pow_pos t).le) (fun k ↦ (A k : (σ →₀ ℕ) → E))
-    (fun k ↦ isRestrictedFamily_iff.mp (mem_addSubgroup.mp (A k).toAddSubgroup.property)) (by
-      intro ε hε
-      obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hA ε hε
-      refine ⟨N, fun k hk l hl t ↦ ?_⟩
-      have h := norm_coeff_mul_prod_le (A k - A l) t
-      rw [sub_apply, ofAddSubgroup_apply] at h
-      exact h.trans_lt ((dist_eq_norm _ _).symm.trans_lt (hN k hk l hl)))
-  refine ⟨ofAddSubgroup ⟨a, mem_addSubgroup.mpr (isRestrictedFamily_iff.mpr hres)⟩,
-    Metric.tendsto_atTop.mpr fun ε hε ↦ ?_⟩
-  obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
-  refine ⟨N, fun k hk ↦ (?_ : _ ≤ ε / 2).trans_lt (half_lt_self hε)⟩
-  rw [dist_eq_norm, norm_le_iff]
-  intro t
-  simpa only [sub_apply, ofAddSubgroup_apply] using hN k hk t
+  let ev (t : σ →₀ ℕ) : Gauss c E →+ E :=
+    (Pi.evalAddMonoidHom _ t).comp
+      ((IsRestrictedFamily.addSubgroup E c).subtype.comp toAddSubgroupAddEquiv.toAddMonoidHom)
+  have hev (t : σ →₀ ℕ) (f : Gauss c E) : ev t f = f t := by simp [ev]
+  refine TauCeti.completeSpace_of_weighted_coeff ev (fun t ↦ t.prod (c · ^ ·))
+    (fun f _ ↦ by simpa only [hev] using (norm_le_iff (a := f))) ?_
+  intro F a ha
+  simp only [hev] at ha ⊢
+  have hdecay := TauCeti.tendsto_cofinite_zero_of_weighted_uniform_limit
+    (fun t ↦ (prod_pow_pos t).le)
+    (fun k ↦ isRestrictedFamily_iff.mp (mem_addSubgroup.mp (F k).toAddSubgroup.property)) ha
+  exact ⟨ofAddSubgroup ⟨a, mem_addSubgroup.mpr (isRestrictedFamily_iff.mpr hdecay)⟩,
+    fun t ↦ ofAddSubgroup_apply _ t⟩
 
 /-- The Gauss norm is ultrametric whenever the coefficient norm is. -/
 instance [IsUltrametricDist E] : IsUltrametricDist (Gauss c E) :=
@@ -334,7 +330,7 @@ at every positive polyradius. -/
 theorem hasSum_ofFinsupp_single (a : Gauss c E) :
     HasSum (fun t ↦ ofFinsupp R c (Finsupp.single t (a t))) a := by
   classical
-  refine TauCeti.tendsto_finset_of_weighted_coeff
+  refine TauCeti.tendsto_trunc_of_weighted_coeff_decay
     (fun (f : Gauss c E) t ↦ f t) (fun t ↦ t.prod (c · ^ ·))
     (fun _ _ h ↦ norm_le_iff.mpr h)
     (isRestrictedFamily_iff.mp (mem_addSubgroup.mp a.toAddSubgroup.property)) ?_

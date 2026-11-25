@@ -6,11 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Ultra
-public import Mathlib.Analysis.Normed.Ring.Lemmas
 public import TauCeti.Topology.Algebra.InfiniteSum.ConvolutionRing
-import Mathlib.Algebra.Order.Archimedean.Real.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
-import Mathlib.Topology.Instances.Int
 import TauCeti.Algebra.Order.GroupWithZero.Pow
 
 /-!

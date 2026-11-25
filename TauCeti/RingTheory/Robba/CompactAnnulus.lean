@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Order.Interval.Basic
 public import TauCeti.RingTheory.Robba.LaurentGauss
-import Mathlib.Analysis.Normed.Group.Seminorm
 import TauCeti.Analysis.Normed.Group.WeightedLimit
 
 /-!
@@ -17,7 +16,7 @@ import TauCeti.Analysis.Normed.Group.WeightedLimit
 Over a complete ultrametric normed field, the coefficient families converging at both endpoints
 of a positive compact interval form a Banach algebra for the maximum of the endpoint Gauss norms.
 Equal endpoints are allowed, so circles are included. Restriction to a smaller interval preserves
-coefficients. The additive norm only requires a normed coefficient ring.
+coefficients. The additive seminorm is defined over a seminormed coefficient ring.
 
 These are the compact annular factors used in the projective presentation of analytic functions
 on an open annulus.
@@ -99,22 +98,37 @@ theorem tendsto_norm_coeff_mul_max (f : compactAnnularCoeff R A) :
     Tendsto (fun n ↦ ‖(f : ℤ → R) n‖ * max (A.inner ^ n) (A.outer ^ n)) cofinite (𝓝 0) :=
   (laurentConvergesAt_endpoints_iff A.fst.property A.snd.property).mp f.property
 
-/-- The Laurent polynomial retaining precisely the degrees in `s`. -/
-def truncate (s : Finset ℤ) (f : compactAnnularCoeff R A) : compactAnnularCoeff R A :=
-  ∑ n ∈ s, ⟨Pi.single n ((f : ℤ → R) n),
-    laurentConvergesAt_single _ n _, laurentConvergesAt_single _ n _⟩
+/-- The linear truncation retaining precisely the degrees in `s`. -/
+noncomputable def truncate (s : Finset ℤ) :
+    compactAnnularCoeff R A →ₗ[R] compactAnnularCoeff R A where
+  toFun f := by
+    let a := Finsupp.indicator s fun n _ ↦ (f : ℤ → R) n
+    have hzero := tendsto_pure.mp (tendsto_cofinite_pure_iff.mpr a.hasFiniteSupport)
+    have hconverges (ρ : ℝ) : LaurentConvergesAt ρ (a : ℤ → R) := by
+      rw [laurentConvergesAt_iff]
+      exact tendsto_const_nhds.congr' (hzero.mono fun n hn ↦ by simp [hn])
+    exact ⟨a, mem_compactAnnularCoeff.mpr ⟨hconverges A.inner, hconverges A.outer⟩⟩
+  map_add' f g := by
+    ext n
+    simp only [Finsupp.indicator_apply, Submodule.coe_add, Pi.add_apply]
+    split_ifs <;> simp
+  map_smul' c f := by
+    ext n
+    simp only [Finsupp.indicator_apply, Submodule.coe_smul, Pi.smul_apply,
+      RingHom.id_apply]
+    split_ifs <;> simp
 
 /-- Finite Laurent truncation retains its chosen coefficients and kills the others. -/
 @[simp]
 theorem coe_truncate_apply (s : Finset ℤ) (f : compactAnnularCoeff R A) (n : ℤ) :
     (truncate s f : ℤ → R) n = if n ∈ s then (f : ℤ → R) n else 0 := by
-  classical
-  simp [truncate, Finset.sum_apply, Pi.single_apply]
+  simp [truncate]
 
 /-- Truncation to the empty set of degrees is zero. -/
 @[simp]
 theorem truncate_empty (f : compactAnnularCoeff R A) : truncate ∅ f = 0 := by
-  simp [truncate]
+  ext n
+  simp
 
 /-- Coefficient inclusion commutes with truncation to a finite set of degrees. -/
 @[simp]
@@ -124,12 +138,6 @@ theorem inclusion_truncate {B : CompactAnnulus} (h : compactAnnularCoeff R A ≤
   ext n
   simp
 
-end compactAnnularCoeff
-
-namespace compactAnnularCoeff
-
-variable [NormedRing R] {A : CompactAnnulus}
-
 private theorem endpointNorm_le_iff {f : compactAnnularCoeff R A} {C : ℝ} :
     max (laurentGaussNorm A.inner (f : ℤ → R)) (laurentGaussNorm A.outer (f : ℤ → R)) ≤ C ↔
       ∀ n, ‖(f : ℤ → R) n‖ * max (A.inner ^ n) (A.outer ^ n) ≤ C := by
@@ -137,9 +145,10 @@ private theorem endpointNorm_le_iff {f : compactAnnularCoeff R A} {C : ℝ} :
     laurentGaussNorm_le_iff f.property.2.bddAbove,
     mul_max_of_nonneg _ _ (norm_nonneg _), forall_and]
 
-/-- The endpoint maximum norm gives a normed additive group over any normed coefficient ring. -/
-noncomputable instance instNormedAddCommGroup : NormedAddCommGroup (compactAnnularCoeff R A) := by
-  exact AddGroupNorm.toNormedAddCommGroup
+/-- The endpoint maximum defines an additive seminorm over any seminormed coefficient ring. -/
+noncomputable instance instSeminormedAddCommGroup :
+    SeminormedAddCommGroup (compactAnnularCoeff R A) :=
+  AddGroupSeminorm.toSeminormedAddCommGroup
     { toFun f := max (laurentGaussNorm A.inner (f : ℤ → R))
           (laurentGaussNorm A.outer (f : ℤ → R))
       map_zero' := by simp
@@ -155,24 +164,16 @@ noncomputable instance instNormedAddCommGroup : NormedAddCommGroup (compactAnnul
           _ ≤ _ := by
             rw [add_mul]
             exact add_le_add ((endpointNorm_le_iff (f := f)).mp le_rfl n)
-              ((endpointNorm_le_iff (f := g)).mp le_rfl n)
-      eq_zero_of_map_eq_zero' f hf := by
-        apply Subtype.ext
-        funext n
-        have h := (le_laurentGaussNorm f.property.1.bddAbove n).trans
-          ((le_max_left _ _).trans_eq hf)
-        exact norm_eq_zero.mp (le_antisymm
-          ((mul_le_mul_iff_left₀ (zpow_pos A.fst.property n)).mp
-            (by simpa [mul_comm] using h)) (norm_nonneg _)) }
+              ((endpointNorm_le_iff (f := g)).mp le_rfl n) }
 
 -- These projections select the endpoint norm topology on the coefficient subtype.
-/-- The metric on a compact annulus is the metric of its endpoint maximum norm. -/
-noncomputable instance instMetricSpace : MetricSpace (compactAnnularCoeff R A) :=
-  instNormedAddCommGroup.toMetricSpace
+/-- The pseudometric on a compact annulus is induced by the endpoint maximum seminorm. -/
+noncomputable instance instPseudoMetricSpace : PseudoMetricSpace (compactAnnularCoeff R A) :=
+  instSeminormedAddCommGroup.toPseudoMetricSpace
 
 /-- The compact annular uniformity is induced by the endpoint maximum norm. -/
 noncomputable instance instUniformSpace : UniformSpace (compactAnnularCoeff R A) :=
-  instMetricSpace.toUniformSpace
+  instPseudoMetricSpace.toUniformSpace
 
 /-- The compact annular topology is induced by the endpoint maximum norm. -/
 noncomputable instance instTopologicalSpace : TopologicalSpace (compactAnnularCoeff R A) :=
@@ -182,17 +183,15 @@ noncomputable instance instTopologicalSpace : TopologicalSpace (compactAnnularCo
 theorem norm_eq (f : compactAnnularCoeff R A) :
     ‖f‖ = max (laurentGaussNorm A.inner (f : ℤ → R)) (laurentGaussNorm A.outer (f : ℤ → R)) := (rfl)
 
-/-- Every endpoint weighted coefficient is bounded by the annular norm. -/
-theorem norm_coeff_mul_max_le (f : compactAnnularCoeff R A) (n : ℤ) :
-    ‖(f : ℤ → R) n‖ * max (A.inner ^ n) (A.outer ^ n) ≤ ‖f‖ := by
-  rw [norm_eq, mul_max_of_nonneg _ _ (norm_nonneg _)]
-  exact max_le_max (le_laurentGaussNorm f.property.1.bddAbove n)
-    (le_laurentGaussNorm f.property.2.bddAbove n)
-
 /-- Bounds on the annular norm are exactly uniform bounds on the weighted coefficients. -/
 theorem norm_le_iff {f : compactAnnularCoeff R A} {C : ℝ} :
     ‖f‖ ≤ C ↔ ∀ n, ‖(f : ℤ → R) n‖ * max (A.inner ^ n) (A.outer ^ n) ≤ C := by
   rw [norm_eq, endpointNorm_le_iff]
+
+/-- Every endpoint weighted coefficient is bounded by the annular norm. -/
+theorem norm_coeff_mul_max_le (f : compactAnnularCoeff R A) (n : ℤ) :
+    ‖(f : ℤ → R) n‖ * max (A.inner ^ n) (A.outer ^ n) ≤ ‖f‖ :=
+  norm_le_iff.mp le_rfl n
 
 /-- The coefficient ring acts boundedly, also when it is not commutative. -/
 private theorem norm_smul_le (c : R) (f : compactAnnularCoeff R A) : ‖c • f‖ ≤ ‖c‖ * ‖f‖ := by
@@ -204,13 +203,22 @@ private theorem norm_smul_le (c : R) (f : compactAnnularCoeff R A) : ‖c • f�
 instance instIsBoundedSMul : IsBoundedSMul R (compactAnnularCoeff R A) := by
   exact IsBoundedSMul.of_norm_smul_le norm_smul_le
 
+private def coeffAddMonoidHom (n : ℤ) : compactAnnularCoeff R A →+ R :=
+  ((LinearMap.proj n).comp (compactAnnularCoeff R A).subtype).toAddMonoidHom
+
+private theorem coeffAddMonoidHom_apply (n : ℤ) (f : compactAnnularCoeff R A) :
+    coeffAddMonoidHom n f = (f : ℤ → R) n := by
+  simp only [coeffAddMonoidHom, LinearMap.toAddMonoidHom_coe, LinearMap.comp_apply,
+    LinearMap.proj_apply, Submodule.subtype_apply]
+
 /-- Each Laurent coefficient is uniformly continuous for the compact annular norm. -/
 theorem uniformContinuous_coeff (n : ℤ) :
     UniformContinuous fun f : compactAnnularCoeff R A ↦ (f : ℤ → R) n := by
-  let ev := ((LinearMap.proj n).comp (compactAnnularCoeff R A).subtype).toAddMonoidHom
-  refine AddMonoidHomClass.uniformContinuous_of_bound ev
+  simp only [← coeffAddMonoidHom_apply]
+  refine AddMonoidHomClass.uniformContinuous_of_bound (coeffAddMonoidHom n)
     (max (A.inner ^ n) (A.outer ^ n))⁻¹ fun f ↦ ?_
-  rw [inv_mul_eq_div, le_div_iff₀ ((zpow_pos A.fst.property n).trans_le (le_max_left _ _))]
+  rw [coeffAddMonoidHom_apply, inv_mul_eq_div,
+    le_div_iff₀ ((zpow_pos A.fst.property n).trans_le (le_max_left _ _))]
   exact norm_coeff_mul_max_le f n
 
 /-- The endpoint maximum norm is ultrametric whenever the coefficient norm is. -/
@@ -218,53 +226,34 @@ instance instIsUltrametricDist [IsUltrametricDist R] :
     IsUltrametricDist (compactAnnularCoeff R A) :=
   IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm fun f g ↦ by
     simp only [norm_eq, Submodule.coe_add]
-    exact max_le
-      ((laurentGaussNorm_add_le A.fst.property.le
-        f.property.1.bddAbove g.property.1.bddAbove).trans
-        (max_le_max (le_max_left _ _) (le_max_left _ _)))
-      ((laurentGaussNorm_add_le A.snd.property.le
-        f.property.2.bddAbove g.property.2.bddAbove).trans
-        (max_le_max (le_max_right _ _) (le_max_right _ _)))
+    rw [max_max_max_comm]
+    exact max_le_max
+      (laurentGaussNorm_add_le A.fst.property.le f.property.1.bddAbove g.property.1.bddAbove)
+      (laurentGaussNorm_add_le A.snd.property.le f.property.2.bddAbove g.property.2.bddAbove)
 
 section CompleteSpace
 
 variable [CompleteSpace R]
 
-private theorem exists_limit (F : ℕ → compactAnnularCoeff R A) (hF : CauchySeq F) :
-    ∃ a : ℤ → R, a ∈ compactAnnularCoeff R A ∧ ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ n,
-      ‖(F k : ℤ → R) n - a n‖ * max (A.inner ^ n) (A.outer ^ n) ≤ ε := by
-  let w : ℤ → ℝ := fun n ↦ max (A.inner ^ n) (A.outer ^ n)
-  have hw (n : ℤ) : 0 ≤ w n := (zpow_pos A.fst.property n).le.trans (le_max_left _ _)
-  obtain ⟨a, ha, _, hunif⟩ := TauCeti.exists_weighted_coefficient_limit (w := w) hw
-    (fun k ↦ (F k : ℤ → R)) (fun k ↦ tendsto_norm_coeff_mul_max (F k)) (by
-      intro ε hε
-      obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hF ε hε
-      refine ⟨N, fun k hk l hl n ↦ ?_⟩
-      have h := norm_coeff_mul_max_le (F k - F l) n
-      rw [Submodule.coe_sub, Pi.sub_apply] at h
-      have hdist := hN k hk l hl
-      rw [dist_eq_norm] at hdist
-      exact h.trans_lt hdist)
-  exact ⟨a, (laurentConvergesAt_endpoints_iff A.fst.property A.snd.property).mpr ha, hunif⟩
-
 /-- Compact Laurent annuli are complete over a complete coefficient ring. -/
 instance instCompleteSpace : CompleteSpace (compactAnnularCoeff R A) := by
-  refine Metric.complete_of_cauchySeq_tendsto fun F hF ↦ ?_
-  obtain ⟨a, ha, hunif⟩ := exists_limit F hF
-  refine ⟨⟨a, ha⟩, Metric.tendsto_atTop.mpr fun ε hε ↦ ?_⟩
-  obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
-  refine ⟨N, fun k hk ↦ (?_ : _ ≤ ε / 2).trans_lt (half_lt_self hε)⟩
-  rw [dist_eq_norm, norm_le_iff]
-  intro n
-  rw [Submodule.coe_sub, Pi.sub_apply]
-  exact hN k hk n
+  refine completeSpace_of_weighted_coeff (coeffAddMonoidHom (R := R) (A := A))
+    (fun n ↦ max (A.inner ^ n) (A.outer ^ n))
+    (fun f _ ↦ by simpa only [coeffAddMonoidHom_apply] using (norm_le_iff (f := f))) ?_
+  intro F a ha
+  simp only [coeffAddMonoidHom_apply] at ha ⊢
+  have hdecay := tendsto_cofinite_zero_of_weighted_uniform_limit
+    (fun n ↦ (zpow_pos A.fst.property n).le.trans (le_max_left _ _))
+    (fun k ↦ tendsto_norm_coeff_mul_max (F k)) ha
+  exact ⟨⟨a, (laurentConvergesAt_endpoints_iff A.fst.property A.snd.property).mpr hdecay⟩,
+    fun _ ↦ rfl⟩
 
 end CompleteSpace
 
 /-- Finite Laurent truncations converge in the annular norm. -/
 theorem tendsto_truncate (f : compactAnnularCoeff R A) :
     Tendsto (fun s : Finset ℤ ↦ truncate s f) atTop (𝓝 f) := by
-  refine TauCeti.tendsto_finset_of_weighted_coeff
+  refine TauCeti.tendsto_trunc_of_weighted_coeff_decay
     (fun f : compactAnnularCoeff R A ↦ (f : ℤ → R))
     (fun n ↦ max (A.inner ^ n) (A.outer ^ n))
     (fun _ _ h ↦ norm_le_iff.mpr h) (tendsto_norm_coeff_mul_max f) ?_
@@ -278,10 +267,9 @@ theorem dense_finiteSupport :
   apply mem_closure_of_tendsto (tendsto_truncate f)
   apply Eventually.of_forall
   intro s
-  exact s.finite_toSet.subset fun n hn ↦ by
-    by_contra hns
-    have hns' : n ∉ s := hns
-    exact hn (by simp [coe_truncate_apply, hns'])
+  simpa only [Set.mem_ofPred_eq, truncate, LinearMap.coe_mk, AddHom.coe_mk,
+    Function.HasFiniteSupport] using
+    (Finsupp.indicator s fun n _ ↦ (f : ℤ → R) n).hasFiniteSupport
 
 /-- The coefficient inclusion is contractive for the endpoint maximum norms. -/
 theorem norm_inclusion_le {B : CompactAnnulus} (h : B ≤ A) (f : compactAnnularCoeff R A) :
@@ -300,7 +288,26 @@ theorem uniformContinuous_inclusion {B : CompactAnnulus} (h : B ≤ A) :
   AddMonoidHomClass.uniformContinuous_of_bound (Submodule.inclusion (compactAnnularCoeff_anti h))
     1 fun f ↦ by simpa only [one_mul] using norm_inclusion_le h f
 
-section Convolution
+end compactAnnularCoeff
+
+namespace compactAnnularCoeff
+
+variable [NormedRing R] {A : CompactAnnulus}
+
+/-- The endpoint maximum seminorm is separated over a normed coefficient ring. -/
+noncomputable instance instNormedAddCommGroup : NormedAddCommGroup (compactAnnularCoeff R A) :=
+  NormedAddCommGroup.ofSeparation fun f hf ↦ by
+    apply Subtype.ext
+    funext n
+    have h := norm_coeff_mul_max_le f n
+    rw [hf] at h
+    have hw := (zpow_pos A.fst.property n).trans_le (le_max_left _ (A.outer ^ n))
+    simpa only [Submodule.coe_zero, Pi.zero_apply] using
+      norm_eq_zero.mp ((nonpos_of_mul_nonpos_left h hw).antisymm (norm_nonneg _))
+
+/-- The separated metric is the metric of the endpoint maximum norm. -/
+noncomputable instance instMetricSpace : MetricSpace (compactAnnularCoeff R A) :=
+  instNormedAddCommGroup.toMetricSpace
 
 variable [IsUltrametricDist R] [CompleteSpace R]
 
@@ -309,18 +316,15 @@ noncomputable instance instNormedRing : NormedRing (compactAnnularCoeff R A) whe
   __ := IsConvolutionRing.instRing
   __ := instNormedAddCommGroup
   norm_mul_le f g := by
-    have hf := norm_nonneg f
-    rw [norm_eq] at hf
     simp only [norm_eq, IsConvolutionRing.coe_mul]
-    apply max_le
-    · exact (laurentGaussNorm_addRingConvolution_le A.fst.property
-        f.property.1.bddAbove g.property.1.bddAbove).trans
-        (mul_le_mul (le_max_left _ _) (le_max_left _ _)
-          (laurentGaussNorm_nonneg _ _) hf)
-    · exact (laurentGaussNorm_addRingConvolution_le A.snd.property
-        f.property.2.bddAbove g.property.2.bddAbove).trans
-        (mul_le_mul (le_max_right _ _) (le_max_right _ _)
-          (laurentGaussNorm_nonneg _ _) hf)
+    refine (max_le_max
+      (laurentGaussNorm_addRingConvolution_le A.fst.property
+        f.property.1.bddAbove g.property.1.bddAbove)
+      (laurentGaussNorm_addRingConvolution_le A.snd.property
+        f.property.2.bddAbove g.property.2.bddAbove)).trans ?_
+    rw [mul_comm (laurentGaussNorm A.outer (f : ℤ → R)),
+      max_comm (laurentGaussNorm A.inner (g : ℤ → R))]
+    exact max_mul_mul_le_max_mul_max _ _ (laurentGaussNorm_nonneg _ _) (laurentGaussNorm_nonneg _ _)
 
 /-- The norm of a Laurent monomial, including negative exponents. -/
 @[simp]
@@ -336,8 +340,6 @@ instance instNormOneClass [NormOneClass R] : NormOneClass (compactAnnularCoeff R
   norm_one := by
     rw [← IsConvolutionRing.monomial_zero_one, norm_monomial]
     simp
-
-end Convolution
 
 end compactAnnularCoeff
 
@@ -378,11 +380,18 @@ theorem toLinearMap_restrict (h : B ≤ A) :
 /-- Restriction leaves the coefficient family unchanged. -/
 @[simp]
 theorem coe_restrict (h : B ≤ A) (f : compactAnnularCoeff R A) :
-    (restrict h f : ℤ → R) = (f : ℤ → R) := (rfl)
+    (restrict h f : ℤ → R) = (f : ℤ → R) := by
+  rw [← AlgHom.toLinearMap_apply, toLinearMap_restrict, Submodule.coe_inclusion]
 
 /-- Restriction retains every Laurent coefficient, so it is injective. -/
 theorem restrict_injective (h : B ≤ A) : Function.Injective (restrict (R := R) h) :=
-  Submodule.inclusion_injective (compactAnnularCoeff_anti h)
+  fun f g hfg ↦ Subtype.ext (by simpa only [coe_restrict] using congrArg Subtype.val hfg)
+
+/-- Restriction preserves Laurent monomials. -/
+@[simp]
+theorem restrict_monomial (h : B ≤ A) (n : ℤ) (c : R) :
+    restrict h (IsConvolutionRing.monomial n c) = IsConvolutionRing.monomial n c := by
+  exact Subtype.ext (by simp only [coe_restrict, IsConvolutionRing.coe_monomial])
 
 /-- Restriction to the same annulus is the identity. -/
 @[simp]
@@ -412,25 +421,16 @@ theorem restrict_truncate (h : B ≤ A) (s : Finset ℤ) (f : compactAnnularCoef
   ext n
   simp
 
-end compactAnnularCoeff
-
-namespace compactAnnularCoeff
-
-variable [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R] {A B : CompactAnnulus}
-
 /-- Restriction is contractive for the endpoint maximum norms. -/
 theorem norm_restrict_le (h : B ≤ A) (f : compactAnnularCoeff R A) :
     ‖restrict h f‖ ≤ ‖f‖ := by
-  change ‖(restrict h).toLinearMap f‖ ≤ ‖f‖
-  rw [toLinearMap_restrict]
-  exact norm_inclusion_le h f
+  simpa only [← AlgHom.toLinearMap_apply, toLinearMap_restrict] using norm_inclusion_le h f
 
 /-- Restriction is uniformly continuous for the annular norm uniformities. -/
 theorem uniformContinuous_restrict (h : B ≤ A) :
     UniformContinuous (restrict (R := R) h) := by
-  change UniformContinuous (restrict (R := R) h).toLinearMap
-  rw [toLinearMap_restrict]
-  exact uniformContinuous_inclusion h
+  simpa only [← AlgHom.coe_toLinearMap, toLinearMap_restrict] using
+    uniformContinuous_inclusion (R := R) h
 
 end compactAnnularCoeff
 

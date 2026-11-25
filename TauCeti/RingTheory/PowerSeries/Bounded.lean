@@ -27,7 +27,7 @@ evaluation of bounded series are in `TauCeti.RingTheory.PowerSeries.OpenDisc.Bou
 The norm and completeness constructions follow the restricted-series instances in
 `TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic`, using Mathlib's `PowerSeries.gaussNorm` and
 `PowerSeries.HasGaussNorm`; completeness reuses the uniform weighted limit
-`TauCeti.exists_eventually_le_weighted_error`.
+`TauCeti.completeSpace_of_weighted_coeff`.
 
 ## Main definitions
 
@@ -178,18 +178,17 @@ instance [NormOneClass R] : NormOneClass (HasGaussNorm.subring R R₀) where
 
 /-- The Gauss norm on bounded series is complete over a complete coefficient ring. -/
 instance [CompleteSpace R] : CompleteSpace (HasGaussNorm.subring R R₀) := by
-  refine Metric.complete_of_cauchySeq_tendsto fun F hF ↦ ?_
-  obtain ⟨a, _, hunif⟩ := TauCeti.exists_eventually_le_weighted_error (R₀ ^ ·)
-    (fun k n ↦ coeff n (F k : R⟦X⟧)) (by
-      intro ε hε
-      obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hF ε hε
-      refine ⟨N, fun k hk l hl n ↦ ?_⟩
-      have h := norm_coeff_mul_pow_le (F k - F l) n
-      rw [AddSubgroupClass.coe_sub, map_sub] at h
-      exact h.trans_lt ((dist_eq_norm _ _).symm.trans_lt (hN k hk l hl)))
+  let ev (n : ℕ) :=
+    (coeff n).toAddMonoidHom.comp (HasGaussNorm.subring R R₀).subtype.toAddMonoidHom
+  have hev (n : ℕ) (f : HasGaussNorm.subring R R₀) :
+      ev n f = coeff n (f : R⟦X⟧) := by simp [ev]
+  refine TauCeti.completeSpace_of_weighted_coeff ev (R₀ ^ ·)
+    (fun f _ ↦ by simpa only [hev] using (norm_le_iff (f := f))) ?_
+  intro F a ha
+  simp only [hev] at ha ⊢
   -- The limit has bounded weighted coefficient norms.
   have hg : (mk a).HasGaussNorm norm R₀ := by
-    obtain ⟨N, hN⟩ := hunif 1 one_pos
+    obtain ⟨N, hN⟩ := ha 1 one_pos
     refine ⟨‖F N‖ + 1, Set.forall_mem_range.mpr fun n ↦ ?_⟩
     rw [coeff_mk]
     calc ‖a n‖ * R₀ ^ n
@@ -198,13 +197,7 @@ instance [CompleteSpace R] : CompleteSpace (HasGaussNorm.subring R R₀) := by
           exact mul_le_mul_of_nonneg_right (norm_le_norm_add_norm_sub _ _)
             (pow_nonneg hR₀.out.le n)
       _ ≤ ‖F N‖ + 1 := add_le_add (norm_coeff_mul_pow_le (F N) n) (hN N le_rfl n)
-  refine ⟨⟨mk a, HasGaussNorm.mem_subring.mpr hg⟩, Metric.tendsto_atTop.mpr fun ε hε ↦ ?_⟩
-  obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
-  refine ⟨N, fun k hk ↦ ?_⟩
-  rw [dist_eq_norm]
-  refine (norm_le_iff.mpr fun n ↦ ?_).trans_lt (half_lt_self hε)
-  rw [AddSubgroupClass.coe_sub, map_sub, coeff_mk]
-  exact hN k hk n
+  exact ⟨⟨mk a, HasGaussNorm.mem_subring.mpr hg⟩, fun n ↦ coeff_mk n a⟩
 
 end NormedRing
 

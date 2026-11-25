@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Basic
-public import Mathlib.Topology.UniformSpace.Cauchy
 import Mathlib.Analysis.Normed.Group.Uniform
 
 /-!
@@ -22,10 +21,11 @@ in any seminorm bounded by uniform bounds on the weighted coefficients.
 
 ## Main results
 
-* `TauCeti.exists_eventually_le_weighted_error`: coefficientwise limits and a uniform upper bound
+* `TauCeti.exists_weighted_error_eventually_le`: coefficientwise limits and a uniform upper bound
   on the weighted errors.
-* `TauCeti.exists_weighted_coefficient_limit`: preservation of vanishing at infinity.
-* `TauCeti.tendsto_finset_of_weighted_coeff`: convergence of finite truncations.
+* `TauCeti.tendsto_cofinite_zero_of_weighted_uniform_limit`: preservation of vanishing at infinity.
+* `TauCeti.completeSpace_of_weighted_coeff`: completeness when weighted limits lie in the carrier.
+* `TauCeti.tendsto_trunc_of_weighted_coeff_decay`: convergence of finite truncations.
 -/
 
 public section
@@ -39,7 +39,7 @@ open scoped Topology
 `‖A k t‖ * w t` has a family `a` with a uniform upper bound on the weighted errors; at indices
 with positive weight `a t` is the coefficientwise limit. No decay, boundedness or positivity
 hypothesis on the weights is needed. -/
-theorem exists_eventually_le_weighted_error {ι E : Type*}
+theorem exists_weighted_error_eventually_le {ι E : Type*}
     [SeminormedAddCommGroup E] [CompleteSpace E] (w : ι → ℝ) (A : ℕ → ι → E)
     (hC : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ l ≥ N, ∀ t, ‖A k t - A l t‖ * w t < ε) :
     ∃ a : ι → E,
@@ -63,22 +63,12 @@ theorem exists_eventually_le_weighted_error {ι E : Type*}
       (eventually_atTop.mpr ⟨N, fun l hl ↦ (hN k hk l hl t).le⟩)
   · exact (mul_nonpos_of_nonneg_of_nonpos (norm_nonneg _) (not_lt.mp ht)).trans hε.le
 
-/-- A sequence of families whose weighted norms vanish at infinity and whose weighted differences
-are uniformly Cauchy has a limit whose weighted norms vanish at infinity, with uniform weighted
-error estimates and coefficientwise convergence wherever the weight is positive. -/
-theorem exists_weighted_coefficient_limit {ι E : Type*}
-    [SeminormedAddCommGroup E] [CompleteSpace E] {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i)
-    (A : ℕ → ι → E)
+/-- Vanishing at infinity of weighted coefficient norms is preserved by uniform weighted limits. -/
+theorem tendsto_cofinite_zero_of_weighted_uniform_limit {ι E : Type*}
+    [SeminormedAddCommGroup E] {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i) {A : ℕ → ι → E} {a : ι → E}
     (hres : ∀ k, Tendsto (fun t ↦ ‖A k t‖ * w t) cofinite (𝓝 0))
-    (hC : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ l ≥ N, ∀ t,
-      ‖A k t - A l t‖ * w t < ε) :
-    ∃ a : ι → E,
-      Tendsto (fun t ↦ ‖a t‖ * w t) cofinite (𝓝 0) ∧
-      (∀ t, 0 < w t → Tendsto (fun k ↦ A k t) atTop (𝓝 (a t))) ∧
-      ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t, ‖A k t - a t‖ * w t ≤ ε := by
-  obtain ⟨a, ha, hunif⟩ := exists_eventually_le_weighted_error _ A hC
-  refine ⟨a, ?_, ha, hunif⟩
-  -- A uniform weighted limit again vanishes at infinity.
+    (hunif : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t, ‖A k t - a t‖ * w t ≤ ε) :
+    Tendsto (fun t ↦ ‖a t‖ * w t) cofinite (𝓝 0) := by
   refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun t ↦
     hb.trans_le (mul_nonneg (norm_nonneg _) (hw t)), fun ε hε ↦ ?_⟩
   obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
@@ -91,9 +81,34 @@ theorem exists_weighted_coefficient_limit {ι E : Type*}
     _ < ε / 2 + ε / 2 := add_lt_add_of_lt_of_le ht (hN N le_rfl t)
     _ = ε := add_halves ε
 
+/-- A seminormed additive group whose norm bounds are equivalent to uniform weighted coefficient
+bounds is complete if the coefficient group is complete and each uniform weighted limit of
+coefficient families is realized by an element of the group. -/
+theorem completeSpace_of_weighted_coeff {ι D E : Type*}
+    [SeminormedAddCommGroup D] [SeminormedAddCommGroup E] [CompleteSpace E]
+    (coeff : ι → D →+ E) (w : ι → ℝ)
+    (hnorm : ∀ (x : D) {C : ℝ}, ‖x‖ ≤ C ↔ ∀ i, ‖coeff i x‖ * w i ≤ C)
+    (hlimit : ∀ (F : ℕ → D) (a : ι → E),
+      (∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ i, ‖coeff i (F k) - a i‖ * w i ≤ ε) →
+      ∃ x : D, ∀ i, coeff i x = a i) : CompleteSpace D := by
+  refine Metric.complete_of_cauchySeq_tendsto fun F hF ↦ ?_
+  obtain ⟨a, _, ha⟩ := exists_weighted_error_eventually_le w (fun k i ↦ coeff i (F k)) (by
+    intro ε hε
+    obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hF ε hε
+    refine ⟨N, fun k hk l hl i ↦ ?_⟩
+    have hcoeff := (hnorm (F k - F l)).mp le_rfl i
+    rw [map_sub] at hcoeff
+    exact hcoeff.trans_lt ((dist_eq_norm _ _).symm.trans_lt (hN k hk l hl)))
+  obtain ⟨x, hx⟩ := hlimit F a ha
+  refine ⟨x, Metric.tendsto_atTop.mpr fun ε hε ↦ ?_⟩
+  obtain ⟨N, hN⟩ := ha (ε / 2) (half_pos hε)
+  refine ⟨N, fun k hk ↦ (?_ : _ ≤ ε / 2).trans_lt (half_lt_self hε)⟩
+  rw [dist_eq_norm, hnorm]
+  simpa only [map_sub, hx] using hN k hk
+
 /-- Finite truncations converge when the weighted coefficients vanish at infinity and uniform
 bounds on weighted coefficients bound the seminorm. -/
-theorem tendsto_finset_of_weighted_coeff {ι D E : Type*} [DecidableEq ι]
+theorem tendsto_trunc_of_weighted_coeff_decay {ι D E : Type*} [DecidableEq ι]
     [SeminormedAddCommGroup D]
     [SeminormedAddCommGroup E] (coeff : D → ι → E) (w : ι → ℝ) {a : D}
     {trunc : Finset ι → D}

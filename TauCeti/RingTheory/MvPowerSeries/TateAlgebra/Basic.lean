@@ -442,24 +442,17 @@ instance [NormOneClass R] : NormOneClass
 /-- The restricted-series Gauss norm is complete over a complete coefficient ring. -/
 instance [CompleteSpace R] : CompleteSpace
     (IsRestricted.subring (R := R) c) := by
-  refine Metric.complete_of_cauchySeq_tendsto fun F hF ↦ ?_
-  obtain ⟨a, hg, _, hunif⟩ := TauCeti.exists_weighted_coefficient_limit
-    (fun t ↦ (prod_pow_pos t).le) (fun k t ↦ coeff t (F k : MvPowerSeries σ R))
-    (fun k ↦ (F k).property)
-    (by
-      intro ε hε
-      obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hF ε hε
-      refine ⟨N, fun k hk l hl t ↦ ?_⟩
-      have h := norm_coeff_mul_prod_le (F k - F l) t
-      rw [AddSubgroupClass.coe_sub, map_sub] at h
-      exact h.trans_lt ((dist_eq_norm _ _).symm.trans_lt (hN k hk l hl)))
-  refine ⟨⟨a, hg⟩, Metric.tendsto_atTop.mpr fun ε hε ↦ ?_⟩
-  obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
-  refine ⟨N, fun k hk ↦ (?_ : _ ≤ ε / 2).trans_lt (half_lt_self hε)⟩
-  rw [dist_eq_norm, norm_le_iff]
-  intro t
-  rw [AddSubgroupClass.coe_sub, map_sub, coeff_apply (a : MvPowerSeries σ R) t]
-  exact hN k hk t
+  let ev (t : σ →₀ ℕ) :=
+    (coeff t).toAddMonoidHom.comp (IsRestricted.subring (R := R) c).subtype.toAddMonoidHom
+  have hev (t : σ →₀ ℕ) (f : IsRestricted.subring (R := R) c) :
+      ev t f = coeff t (f : MvPowerSeries σ R) := by simp [ev]
+  refine TauCeti.completeSpace_of_weighted_coeff ev (fun t ↦ t.prod (c · ^ ·))
+    (fun f _ ↦ by simpa only [hev] using (norm_le_iff (f := f))) ?_
+  intro F a ha
+  simp only [hev] at ha ⊢
+  have hdecay := TauCeti.tendsto_cofinite_zero_of_weighted_uniform_limit
+    (fun t ↦ (prod_pow_pos t).le) (fun k ↦ (F k).property) ha
+  exact ⟨⟨a, hdecay⟩, fun t ↦ coeff_apply a t⟩
 
 omit [IsUltrametricDist R] in
 /-- A nonzero restricted series has a largest exponent, for a monomial order `m`, achieving its

@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import TauCeti.RingTheory.Robba.LaurentGauss
-import Mathlib.Algebra.Order.Archimedean.Real.Basic
-import Mathlib.Topology.Instances.Int
 import TauCeti.Analysis.Normed.Group.Pi
 
 /-!
