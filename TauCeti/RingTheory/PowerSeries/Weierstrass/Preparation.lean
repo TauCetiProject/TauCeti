@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 public import TauCeti.RingTheory.PowerSeries.GaussNorm.NearOne
 public import TauCeti.RingTheory.PowerSeries.TateAlgebra
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
+import TauCeti.Algebra.Polynomial.Degree.IsMonicOfDegree
 
 /-!
 # Weierstrass preparation for restricted power series
@@ -346,6 +347,19 @@ theorem IsMulDistinguished.eq_and_eq_of_mul_eq_mul {ω ω' : Polynomial R}
   calc e = e' * v * e := by rw [hv, one_mul]
     _ = e' := by rw [mul_assoc, hve, mul_one]
 
+/-- **Dividing `X ^ s` by a unit multiple of a polynomial.** If `g = e * ω` and `e * v = 1` in
+the ring of restricted series, then `X ^ s = g * v + (X ^ s - ω)`. When `ω` is monic of
+degree `s`, the remainder `X ^ s - ω` has degree less than `s`
+(`Polynomial.IsMonicOfDegree.degree_sub_lt`), so this is a Weierstrass division of `X ^ s`
+by `g`. -/
+theorem mul_add_X_pow_sub_eq {e v : PowerSeries.IsRestricted.subring (R := R) c}
+    {ω : Polynomial R} (hv : e * v = 1) (h : (e : PowerSeries R) * (ω : PowerSeries R) = g) :
+    g * (v : PowerSeries R) + ((Polynomial.X ^ s - ω : Polynomial R) : PowerSeries R) =
+      ((Polynomial.X ^ s : Polynomial R) : PowerSeries R) := by
+  have hv' : (e : PowerSeries R) * (v : PowerSeries R) = 1 := by exact_mod_cast hv
+  rw [← h, Polynomial.coe_sub]
+  linear_combination (ω : PowerSeries R) * hv'
+
 /-- **Uniqueness of the factorizations of a multiplicatively distinguished series.** Over an
 ultrametric normed commutative ring, let `g` be multiplicatively distinguished of degree `s` at a
 positive radius `c`. If `g = e * ω = e' * ω'` with `e`, `e'` units of the ring of restricted
@@ -360,24 +374,13 @@ theorem IsMulDistinguished.eq_and_eq_of_mul_eq_of_mul_eq (hg : IsMulDistinguishe
     (h : (e : PowerSeries R) * (ω : PowerSeries R) = g)
     (h' : (e' : PowerSeries R) * (ω' : PowerSeries R) = g) : e = e' ∧ ω = ω' := by
   have : Nontrivial R := hg.nontrivial
-  have key : ∀ (e : PowerSeries.IsRestricted.subring (R := R) c) (ω : Polynomial R), IsUnit e →
-      ω.IsMonicOfDegree s → (e : PowerSeries R) * (ω : PowerSeries R) = g →
-      ∃ v : PowerSeries.IsRestricted.subring (R := R) c, e * v = 1 ∧
-        (∀ m, s ≤ m → (((Polynomial.X ^ s - ω : Polynomial R) : PowerSeries R)).coeff m = 0) ∧
-        g * (v : PowerSeries R) + ((Polynomial.X ^ s - ω : Polynomial R) : PowerSeries R) =
-          ((Polynomial.X ^ s : Polynomial R) : PowerSeries R) := by
-    intro e ω he hω h
-    obtain ⟨v, hv⟩ := he.exists_right_inv
-    have hv' : (e : PowerSeries R) * (v : PowerSeries R) = 1 := by exact_mod_cast hv
-    refine ⟨v, hv, fun m hm ↦ ?_, ?_⟩
-    · rw [Polynomial.coeff_coe, Polynomial.coeff_sub,
-        (Polynomial.isMonicOfDegree_X_pow R s).coeff_eq hω hm, sub_self]
-    · rw [← h, Polynomial.coe_sub]
-      linear_combination (ω : PowerSeries R) * hv'
-  obtain ⟨v, hv, hr, hdiv⟩ := key e ω he hω h
-  obtain ⟨v', hv', hr', hdiv'⟩ := key e' ω' he' hω' h'
-  obtain ⟨hvv, hrr⟩ := hg.eq_and_eq_of_mul_add_eq_mul_add hc v.property v'.property hr hr'
-      (hdiv.trans hdiv'.symm)
+  obtain ⟨v, hv⟩ := he.exists_right_inv
+  obtain ⟨v', hv'⟩ := he'.exists_right_inv
+  have hX := Polynomial.isMonicOfDegree_X_pow R s
+  obtain ⟨hvv, hrr⟩ := hg.eq_and_eq_of_mul_add_eq_mul_add hc v.property v'.property
+    (fun _ ↦ Polynomial.coeff_coe_eq_zero_of_degree_lt (hX.degree_sub_lt hω))
+    (fun _ ↦ Polynomial.coeff_coe_eq_zero_of_degree_lt (hX.degree_sub_lt hω'))
+    ((mul_add_X_pow_sub_eq hv h).trans (mul_add_X_pow_sub_eq hv' h').symm)
   obtain rfl : v = v' := Subtype.ext hvv
   refine ⟨?_, sub_right_injective (Polynomial.coe_inj.mp hrr)⟩
   calc e = e * (e' * v) := by rw [hv', mul_one]

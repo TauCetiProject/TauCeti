@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.DivMod
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
+import TauCeti.Algebra.Polynomial.Degree.IsMonicOfDegree
 import TauCeti.RingTheory.PowerSeries.GaussNorm.Estimates
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Polynomial
 
@@ -75,22 +76,6 @@ section Series
 
 variable {g : PowerSeries R}
 
-omit [IsUltrametricDist R] in
-/-- The polynomial `X ^ s - ω`, for `ω` monic of degree `s`, has degree less than `s`. -/
-private theorem degree_X_pow_sub_lt [Nontrivial R] (hω : ω.IsMonicOfDegree s) :
-    (Polynomial.X ^ s - ω : Polynomial R).degree < s :=
-  (Polynomial.degree_lt_iff_coeff_zero _ _).mpr fun m hm ↦ by
-    rw [Polynomial.coeff_sub, (Polynomial.isMonicOfDegree_X_pow R s).coeff_eq hω hm, sub_self]
-
-/-- If `e * ω = g` and `e * v = 1`, then `X ^ s = g * v + (X ^ s - ω)`. -/
-private theorem mul_add_X_pow_sub_eq {v : PowerSeries.IsRestricted.subring (R := R) c}
-    (hv : e * v = 1) (h : (e : PowerSeries R) * (ω : PowerSeries R) = g) :
-    g * (v : PowerSeries R) + ((Polynomial.X ^ s - ω : Polynomial R) : PowerSeries R) =
-      ((Polynomial.X ^ s : Polynomial R) : PowerSeries R) := by
-  have hv' : (e : PowerSeries R) * (v : PowerSeries R) = 1 := by exact_mod_cast hv
-  rw [← h, Polynomial.coe_sub]
-  linear_combination (ω : PowerSeries R) * hv'
-
 /-- **The polynomial factor of a Weierstrass factorization is a Weierstrass polynomial.** Over an
 ultrametric normed commutative ring, if a series `g` multiplicatively distinguished of degree `s`
 at a radius `c > 0` is `e * ω`, with `e` a unit of the ring of series restricted at `c` and `ω`
@@ -107,9 +92,9 @@ theorem isMulDistinguished_of_mul_eq (hg : IsMulDistinguished c s g) (hc : 0 < c
   have hXs : ((Polynomial.X ^ s : Polynomial R) : PowerSeries R).gaussNorm norm c = c ^ s := by
     simpa using gaussNorm_X_sub_C_pow hc.le (a := (0 : R)) (by simpa using hc.le) s
   -- `X ^ s = g * v + (X ^ s - ω)`, so the norm identity bounds `‖X ^ s - ω‖` by `‖X ^ s‖ = c ^ s`.
-  have hmax := hg.gaussNorm_mul_add_eq_max hc v.property fun m hm ↦ by
-    rw [Polynomial.coeff_coe]
-    exact (Polynomial.degree_lt_iff_coeff_zero _ _).mp (degree_X_pow_sub_lt hω) m hm
+  have hmax := hg.gaussNorm_mul_add_eq_max hc v.property fun _ ↦
+    Polynomial.coeff_coe_eq_zero_of_degree_lt
+      ((Polynomial.isMonicOfDegree_X_pow R s).degree_sub_lt hω)
   rw [mul_add_X_pow_sub_eq hv h, hXs] at hmax
   have hle : ((Polynomial.X ^ s - ω : Polynomial R) : PowerSeries R).gaussNorm norm c ≤ c ^ s := by
     rw [hmax]
@@ -131,45 +116,43 @@ theorem isMulDistinguished_of_mul_eq (hg : IsMulDistinguished c s g) (hc : 0 < c
 polynomial division `p = ω * (p /ₘ ω) + p %ₘ ω` and `p = ω * e + 0` are both Weierstrass
 divisions by `ω`, so they agree. -/
 private theorem coe_divByMonic_eq_and_modByMonic_eq_zero {p : Polynomial R}
-    (hg : IsMulDistinguished c s (p : PowerSeries R)) (hc : 0 < c) (he : IsUnit e)
-    (hω : ω.IsMonicOfDegree s) (h : (e : PowerSeries R) * (ω : PowerSeries R) = p) :
+    (hω' : IsMulDistinguished c s (ω : PowerSeries R)) (hc : 0 < c) (hω : ω.IsMonicOfDegree s)
+    (h : (e : PowerSeries R) * (ω : PowerSeries R) = p) :
     ((p /ₘ ω : Polynomial R) : PowerSeries R) = e ∧ p %ₘ ω = 0 := by
-  have : Nontrivial R := hg.nontrivial
-  have hdeg : (p %ₘ ω).degree < s := by
-    simpa [Polynomial.degree_eq_natDegree hω.ne_zero, hω.natDegree_eq] using
-      Polynomial.degree_modByMonic_lt p hω.monic
-  have hr : ∀ m, s ≤ m → ((p %ₘ ω : Polynomial R) : PowerSeries R).coeff m = 0 := fun m hm ↦ by
-    rw [Polynomial.coeff_coe]
-    exact (Polynomial.degree_lt_iff_coeff_zero _ _).mp hdeg m hm
+  have : Nontrivial R := hω'.nontrivial
   have hdiv : (ω : PowerSeries R) * ((p /ₘ ω : Polynomial R) : PowerSeries R) +
       ((p %ₘ ω : Polynomial R) : PowerSeries R) = (ω : PowerSeries R) * e + 0 := by
     rw [← Polynomial.coe_mul, ← Polynomial.coe_add, add_comm, Polynomial.modByMonic_add_div,
       add_zero, mul_comm, h]
-  obtain ⟨hq, hr0⟩ :=
-    (hg.isMulDistinguished_of_mul_eq hc he hω h).eq_and_eq_of_mul_add_eq_mul_add hc
-      (isRestricted_polynomial (p /ₘ ω)) e.property
-      hr (fun _ _ ↦ by simp) hdiv
+  obtain ⟨hq, hr0⟩ := hω'.eq_and_eq_of_mul_add_eq_mul_add hc
+    (isRestricted_polynomial (p /ₘ ω)) e.property
+    (fun _ ↦ Polynomial.coeff_coe_eq_zero_of_degree_lt (hω.degree_modByMonic_lt p))
+    (fun _ _ ↦ by simp) hdiv
   exact ⟨hq, Polynomial.coe_eq_zero_iff.mp hr0⟩
 
 /-- **The unit factor of a prepared polynomial is a polynomial.** Over an ultrametric normed
-commutative ring, let a polynomial `p` be multiplicatively distinguished of degree `s` at a
-radius `c > 0`, and let `p = e * ω` with `e` a unit of the ring of series restricted at `c` and
-`ω` a monic polynomial of degree `s`. Then `e` is the polynomial `p /ₘ ω`. -/
+commutative ring, let `ω` be a monic polynomial of degree `s` which is multiplicatively
+distinguished of degree `s` at a radius `c > 0`, and let a polynomial `p` be `e * ω` with `e`
+restricted at `c`. Then `e` is the polynomial `p /ₘ ω`. When `p` is multiplicatively distinguished
+of degree `s` and `e` is a unit, the hypothesis on `ω` is
+`TauCeti.PowerSeries.IsMulDistinguished.isMulDistinguished_of_mul_eq`. -/
 theorem coe_divByMonic_eq_of_mul_eq {p : Polynomial R}
-    (hg : IsMulDistinguished c s (p : PowerSeries R)) (hc : 0 < c) (he : IsUnit e)
-    (hω : ω.IsMonicOfDegree s) (h : (e : PowerSeries R) * (ω : PowerSeries R) = p) :
+    (hω' : IsMulDistinguished c s (ω : PowerSeries R)) (hc : 0 < c) (hω : ω.IsMonicOfDegree s)
+    (h : (e : PowerSeries R) * (ω : PowerSeries R) = p) :
     ((p /ₘ ω : Polynomial R) : PowerSeries R) = e :=
-  (coe_divByMonic_eq_and_modByMonic_eq_zero hg hc he hω h).1
+  (coe_divByMonic_eq_and_modByMonic_eq_zero hω' hc hω h).1
 
 /-- **The polynomial factor of a prepared polynomial divides it.** Over an ultrametric normed
-commutative ring, let a polynomial `p` be multiplicatively distinguished of degree `s` at a
-radius `c > 0`, and let `p = e * ω` with `e` a unit of the ring of series restricted at `c` and
-`ω` a monic polynomial of degree `s`. Then `ω` divides `p` in `R[X]`. -/
-theorem dvd_of_mul_eq {p : Polynomial R} (hg : IsMulDistinguished c s (p : PowerSeries R))
-    (hc : 0 < c) (he : IsUnit e) (hω : ω.IsMonicOfDegree s)
+commutative ring, let `ω` be a monic polynomial of degree `s` which is multiplicatively
+distinguished of degree `s` at a radius `c > 0`, and let a polynomial `p` be `e * ω` with `e`
+restricted at `c`. Then `ω` divides `p` in `R[X]`. When `p` is multiplicatively distinguished
+of degree `s` and `e` is a unit, the hypothesis on `ω` is
+`TauCeti.PowerSeries.IsMulDistinguished.isMulDistinguished_of_mul_eq`. -/
+theorem dvd_of_mul_eq {p : Polynomial R} (hω' : IsMulDistinguished c s (ω : PowerSeries R))
+    (hc : 0 < c) (hω : ω.IsMonicOfDegree s)
     (h : (e : PowerSeries R) * (ω : PowerSeries R) = p) : ω ∣ p :=
   (Polynomial.modByMonic_eq_zero_iff_dvd hω.monic).mp
-    (coe_divByMonic_eq_and_modByMonic_eq_zero hg hc he hω h).2
+    (coe_divByMonic_eq_and_modByMonic_eq_zero hω' hc hω h).2
 
 end Series
 
@@ -188,8 +171,8 @@ private theorem weierstrassDiv_X_pow_eq_and_weierstrassMod_X_pow_eq
       hg.weierstrassMod hc (polynomialToRestricted c (Polynomial.X ^ s)) =
         Polynomial.X ^ s - ω := by
   have : Nontrivial R := hg.nontrivial
-  refine (hg.weierstrassDiv_eq_and_weierstrassMod_eq_iff hc (degree_X_pow_sub_lt hω)).mpr
-    (Subtype.ext ?_)
+  refine (hg.weierstrassDiv_eq_and_weierstrassMod_eq_iff hc
+    ((Polynomial.isMonicOfDegree_X_pow R s).degree_sub_lt hω)).mpr (Subtype.ext ?_)
   simpa using mul_add_X_pow_sub_eq hv h
 
 /-- **The Weierstrass polynomial is `X ^ s` minus a remainder.** Over a complete ultrametric
