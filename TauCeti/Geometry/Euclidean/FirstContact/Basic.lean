@@ -235,6 +235,49 @@ theorem inner_mvfderiv_eq_fderiv_of_isLocalExtr {x : M} (hx : I.IsInteriorPoint 
   simp only [sub_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply] at h
   exact sub_eq_zero.mp h.symm
 
+omit [I.Boundaryless] in
+/-- **First contact away from the source boundary.** Suppose the image of `f` is closed,
+the translated graphs avoid the boundary image, and `f` is differentiable in the interior.
+At the largest contact time every contact occurs at an interior point, the image lies
+locally below the translated graph, and the differential takes values in its tangent space. -/
+theorem exists_firstContact_tangent_of_disjoint_boundary (hf : IsClosed (range f)) (he : ‖e‖ = 1)
+    (hΩ : IsClosed Ω) (hg : ContinuousOn g Ω) (hT₀ : 0 ≤ T)
+    (hT : Disjoint (translatedGraph e Ω g T) (range f))
+    (h0 : (translatedGraph e Ω g 0 ∩ range f).Nonempty)
+    (hbdry : ∀ t ∈ Icc 0 T, Disjoint (translatedGraph e (frontier Ω) g t) (range f))
+    (hbdd : Bornology.IsBounded (⋃ t ∈ Icc 0 T, translatedGraph e Ω g t ∩ range f))
+    (hbdryM : ∀ t ∈ Icc 0 T, Disjoint (translatedGraph e Ω g t) (f '' I.boundary M))
+    (hfd : ∀ x, I.IsInteriorPoint x → MDifferentiableAt I 𝓘(ℝ, F) f x)
+    (hgd : DifferentiableOn ℝ g (interior Ω)) :
+    ∃ t₀ ∈ Ico 0 T, (translatedGraph e Ω g t₀ ∩ range f).Nonempty ∧
+      (∀ t ∈ Icc 0 T, (translatedGraph e Ω g t ∩ range f).Nonempty → t ≤ t₀) ∧
+      ∀ x, f x ∈ translatedGraph e Ω g t₀ →
+        I.IsInteriorPoint x ∧ (ℝ ∙ e)ᗮ.orthogonalProjectionOnto (f x) ∈ interior Ω ∧
+        (∀ᶠ y in 𝓝 x, heightAboveGraph e g (f y) ≤ t₀) ∧
+        ∀ v : TangentSpace I x, ⟪e, mvfderiv I f x v⟫_ℝ =
+          fderiv ℝ g ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto (f x))
+            ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto (mvfderiv I f x v)) := by
+  have hR : range (Subtype.val : range f → F) = range f := Subtype.range_coe
+  obtain ⟨t₀, ht₀, hne, hmax, hside⟩ := exists_firstContact hf.isProperMap_subtypeVal he hΩ hg hT₀
+    (by rwa [hR]) (by rwa [hR]) (by simpa only [hR] using hbdry) (by rwa [hR])
+  rw [hR] at hne hmax
+  refine ⟨t₀, ht₀, hne, hmax, fun x hx ↦ ?_⟩
+  have hxI : I.IsInteriorPoint x := by
+    rw [I.isInteriorPoint_iff_not_isBoundaryPoint]
+    exact fun hb ↦ (hbdryM t₀ ⟨ht₀.1, ht₀.2.le⟩).ne_of_mem hx (mem_image_of_mem f hb) rfl
+  let xf : range f := ⟨f x, mem_range_self x⟩
+  obtain ⟨hint, hev⟩ := hside xf hx
+  have hcont : ContinuousAt (fun z ↦ (⟨f z, mem_range_self z⟩ : range f)) x :=
+    (hfd x hxI).continuousAt.codRestrict _
+  have hev' : ∀ᶠ y in 𝓝 x, heightAboveGraph e g (f y) ≤ t₀ :=
+    hcont.eventually (hev.mono fun _ hy ↦ hy.2)
+  have hxt : heightAboveGraph e g (f x) = t₀ := ((mem_translatedGraph_iff he).1 hx).2
+  refine ⟨hxI, hint, hev', fun v ↦ inner_mvfderiv_eq_fderiv_of_isLocalExtr
+    hxI (Or.inr ?_) (hfd x hxI) (hgd.differentiableAt (isOpen_interior.mem_nhds hint)) v⟩
+  exact hev'.mono fun y hy ↦ show heightAboveGraph e g (f y) ≤ heightAboveGraph e g (f x) by
+    rw [hxt]
+    exact hy
+
 /-- **The first-contact lemma with tangency.** Under the hypotheses of `exists_firstContact`, if
 moreover `Σ` is a manifold without boundary, `f` is differentiable and `g` is differentiable on
 the interior of `Ω`, then at every contact point `x` at the largest contact time `t₀`, `f` lies
@@ -253,16 +296,10 @@ theorem exists_firstContact_tangent (hf : IsProperMap f) (he : ‖e‖ = 1) (hΩ
         ∀ v : TangentSpace I x, ⟪e, mvfderiv I f x v⟫_ℝ =
           fderiv ℝ g ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto (f x))
             ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto (mvfderiv I f x v)) := by
-  obtain ⟨t₀, ht₀, hne, hmax, hside⟩ := exists_firstContact hf he hΩ hg hT₀ hT h0 hbdry hbdd
-  refine ⟨t₀, ht₀, hne, hmax, fun x hx ↦ ?_⟩
-  obtain ⟨hint, hev⟩ := hside x hx
-  have hev' : ∀ᶠ y in 𝓝 x, heightAboveGraph e g (f y) ≤ t₀ := hev.mono fun _ hy ↦ hy.2
-  have hxt : heightAboveGraph e g (f x) = t₀ := ((mem_translatedGraph_iff he).1 hx).2
-  refine ⟨hint, hev', fun v ↦ inner_mvfderiv_eq_fderiv_of_isLocalExtr
-    BoundarylessManifold.isInteriorPoint (Or.inr ?_) (hfd x)
-    (hgd.differentiableAt (isOpen_interior.mem_nhds hint)) v⟩
-  rw [← hxt] at hev'
-  exact (hev' : IsLocalMax (fun y ↦ heightAboveGraph e g (f y)) x)
+  obtain ⟨t, ht, hne, hmax, hcontact⟩ := exists_firstContact_tangent_of_disjoint_boundary
+    hf.isClosed_range he hΩ hg hT₀ hT h0 hbdry hbdd (I := I) (fun _ _ ↦ by
+      simp [ModelWithCorners.Boundaryless.boundary_eq_empty]) (fun x _ ↦ hfd x) hgd
+  exact ⟨t, ht, hne, hmax, fun x hx ↦ (hcontact x hx).2⟩
 
 end Tangency
 
