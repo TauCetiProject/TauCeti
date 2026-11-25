@@ -274,8 +274,7 @@ theorem coact_comp_perturbationSeries :
   (MM.barContraction c hh hincl hproj).comp_perturbationSeries_eq_rTensor_comp
     (MM.isUnit_one_add_higherBarDifferential_mul_barContraction_homotopy c hh hincl hproj)
     MM.coact_comp_higherBarDifferential
-    (by rw [barContraction_homotopy]; simp only [Comodule.cofree_coact_eq_cofreeCoact]
-        exact Comodule.cofreeCoact_comp_rTensor _)
+    (by rw [barContraction_homotopy]; exact (Comodule.Hom.cofreeMap _).map_coact_eq.symm)
 
 /-- The perturbation operator is an odd map of left comodules, since `δ` and `τ ⊗ h ⊗ 1` are. -/
 theorem leftCoact_comp_perturbationSeries :
@@ -396,10 +395,8 @@ theorem coact_comp_transferContraction_incl :
   rw [transferContraction]
   exact (MM.barContraction c hh hincl hproj).comp_perturb_incl_eq_rTensor_comp _ _
     MM.coact_comp_higherBarDifferential
-    (by rw [barContraction_homotopy]; simp only [Comodule.cofree_coact_eq_cofreeCoact]
-        exact Comodule.cofreeCoact_comp_rTensor _)
-    (by rw [barContraction_incl]; simp only [Comodule.cofree_coact_eq_cofreeCoact]
-        exact Comodule.cofreeCoact_comp_rTensor _)
+    (by rw [barContraction_homotopy]; exact (Comodule.Hom.cofreeMap _).map_coact_eq.symm)
+    (by rw [barContraction_incl]; exact (Comodule.Hom.cofreeMap _).map_coact_eq.symm)
 
 /-- The perturbed projection commutes with the right coactions. -/
 theorem coact_comp_transferContraction_proj :
@@ -412,10 +409,8 @@ theorem coact_comp_transferContraction_proj :
   rw [transferContraction]
   exact (MM.barContraction c hh hincl hproj).comp_perturb_proj_eq_rTensor_comp _ _
     MM.coact_comp_higherBarDifferential
-    (by rw [barContraction_homotopy]; simp only [Comodule.cofree_coact_eq_cofreeCoact]
-        exact Comodule.cofreeCoact_comp_rTensor _)
-    (by rw [barContraction_proj]; simp only [Comodule.cofree_coact_eq_cofreeCoact]
-        exact Comodule.cofreeCoact_comp_rTensor _)
+    (by rw [barContraction_homotopy]; exact (Comodule.Hom.cofreeMap _).map_coact_eq.symm)
+    (by rw [barContraction_proj]; exact (Comodule.Hom.cofreeMap _).map_coact_eq.symm)
 
 /-- The perturbed inclusion is a map of left comodules. -/
 theorem leftCoact_comp_transferContraction_incl :
@@ -481,16 +476,18 @@ right coaction: it is the unary part for `d_N` plus the comodule morphism
 theorem isGradedCoderivationOver_transferBarDifferential :
     Comodule.IsGradedCoderivationOver (barGrading AA BB GN) 1 BB.coaugmentedBarDifferential
       (MM.transferBarDifferential c hh hincl hproj) := by
-  have hp := LinearMap.congr_fun (Comodule.cofreeCoact_comp_rTensor (C := TensorWords R B)
-    (c.proj.lTensor (TensorWords R A)))
-  have hi := LinearMap.congr_fun (Comodule.cofreeCoact_comp_rTensor (C := TensorWords R B)
-    (c.incl.lTensor (TensorWords R A)))
+  have hp := (Comodule.Hom.cofreeMap (C := TensorWords R B)
+    (c.proj.lTensor (TensorWords R A))).map_coact_apply
+  have hi := (Comodule.Hom.cofreeMap (C := TensorWords R B)
+    (c.incl.lTensor (TensorWords R A))).map_coact_apply
   have hX := LinearMap.congr_fun (MM.coact_comp_perturbationSeries c hh hincl hproj)
-  simp only [LinearMap.comp_apply, ← Comodule.cofree_coact_eq_cofreeCoact] at hp hi hX
+  simp only [Comodule.Hom.cofreeMap_toLinearMap, Comodule.Hom.cofreeMap_apply,
+    ← LinearMap.rTensor_def] at hp hi
+  simp only [LinearMap.comp_apply] at hX
   rw [transferBarDifferential_def]
   refine (isGradedCoderivationOver_unaryBarDifferential AA BB GN dN).add_of_coact_comp
     (LinearMap.ext fun z ↦ ?_)
-  simp only [LinearMap.comp_apply, hp, hi, hX, LinearMap.rTensor_comp_apply]
+  simp only [LinearMap.comp_apply, ← hp, ← hi, hX, LinearMap.rTensor_comp_apply]
 
 /-- The transferred bar differential squares to zero. -/
 @[simp]

@@ -412,15 +412,11 @@ theorem leftCoact_comp_higherBarDifferential :
       TensorProduct.map ((TensorWords.grading (AA.grading.shift 1)).koszulTwist 1)
           MM.higherBarDifferential ∘ₗ
         Comodule.leftCoactRTensor (TensorWords R B)
-          (Comodule.leftCofreeCoact R (TensorWords R A) M) := by
-  refine LinearMap.ext fun z ↦ ?_
-  have e1 := MM.isLeftGradedCoderivation_barDifferential.coact_apply z
-  have e2 := (isLeftGradedCoderivationOver_unaryBarDifferential AA BB MM.grading
-    MM.differential).coact_apply z
-  rw [← MM.unaryBarDifferential_add_higherBarDifferential] at e1
-  simp only [LinearMap.add_apply, map_add, TensorProduct.map_add_right] at e1
-  rw [e2, ← add_assoc] at e1
-  exact add_left_cancel e1
+          (Comodule.leftCofreeCoact R (TensorWords R A) M) :=
+  (isLeftGradedCoderivationOver_unaryBarDifferential AA BB MM.grading
+    MM.differential).comp_eq_map_comp_of_add
+    (by rw [unaryBarDifferential_add_higherBarDifferential]
+        exact MM.isLeftGradedCoderivation_barDifferential)
 
 /-- The higher part commutes with the right coaction: it is the difference of two coderivations
 over the same bar differential of `B`. -/
@@ -429,15 +425,11 @@ theorem coact_comp_higherBarDifferential :
         (M := (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B) ∘ₗ MM.higherBarDifferential =
       MM.higherBarDifferential.rTensor (TensorWords R B) ∘ₗ
         Comodule.coact (R := R) (C := TensorWords R B)
-          (M := (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B) := by
-  refine LinearMap.ext fun z ↦ ?_
-  have e1 := MM.isGradedCoderivation_barDifferential.coact_apply z
-  have e2 := (isGradedCoderivationOver_unaryBarDifferential AA BB MM.grading
-    MM.differential).coact_apply z
-  rw [← MM.unaryBarDifferential_add_higherBarDifferential] at e1
-  simp only [LinearMap.add_apply, map_add, LinearMap.rTensor_add] at e1
-  rw [e2] at e1
-  exact add_left_cancel (e1.trans (add_right_comm _ _ _))
+          (M := (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B) :=
+  (isGradedCoderivationOver_unaryBarDifferential AA BB MM.grading
+    MM.differential).coact_comp_of_add
+    (by rw [unaryBarDifferential_add_higherBarDifferential]
+        exact MM.isGradedCoderivation_barDifferential)
 
 /-- The higher part vanishes on the two empty words. -/
 @[simp]

@@ -189,7 +189,7 @@ theorem cofree_coact :
   rfl
 
 /-- The coaction of the cofree comodule unfolds to its implementation `cofreeCoact`. -/
-theorem cofree_coact_eq_cofreeCoact :
+private theorem cofree_coact_eq_cofreeCoact :
     coact (R := R) (C := C) (M := M ⊗[R] C) = cofreeCoact R C M :=
   rfl
 

@@ -249,13 +249,10 @@ theorem coact_comp_higherBarDifferential :
     Comodule.coact (R := R) (C := TensorWords R A) (M := M ⊗[R] TensorWords R A) ∘ₗ
         MM.higherBarDifferential =
       MM.higherBarDifferential.rTensor (TensorWords R A) ∘ₗ
-        Comodule.coact (R := R) (C := TensorWords R A) (M := M ⊗[R] TensorWords R A) := by
-  refine LinearMap.ext fun z ↦ ?_
-  simp only [higherBarDifferential_def, LinearMap.comp_apply, LinearMap.sub_apply, map_sub,
-    MM.isGradedCoderivation_barDifferential.coact_apply z,
-    (isGradedCoderivationOver_unaryBarDifferential AA MM.grading MM.differential).coact_apply z,
-    LinearMap.rTensor_sub]
-  abel
+        Comodule.coact (R := R) (C := TensorWords R A) (M := M ⊗[R] TensorWords R A) :=
+  (isGradedCoderivationOver_unaryBarDifferential AA MM.grading MM.differential).coact_comp_of_add
+    (by rw [unaryBarDifferential_add_higherBarDifferential]
+        exact MM.isGradedCoderivation_barDifferential)
 
 /-- On a pure word of length `n`, `δ (k ⊗ 1)` produces words of length less than `n`, so by
 strong induction its `(n + 1)`-st power kills the word. -/
@@ -399,8 +396,7 @@ theorem coact_comp_perturbationSeries :
   (MM.barContraction c hh hincl hproj).comp_perturbationSeries_eq_rTensor_comp
     (MM.isUnit_one_add_higherBarDifferential_mul_barContraction_homotopy c hh hincl hproj)
     MM.coact_comp_higherBarDifferential
-    (by rw [barContraction_homotopy]; simp only [Comodule.cofree_coact_eq_cofreeCoact]
-        exact Comodule.cofreeCoact_comp_rTensor c.homotopy)
+    (by rw [barContraction_homotopy]; exact (Comodule.Hom.cofreeMap _).map_coact_eq.symm)
 
 /-- The perturbation operator has degree one. -/
 theorem isHomogeneous_perturbationSeries :
@@ -478,10 +474,8 @@ theorem coact_comp_transferContraction_incl :
   rw [transferContraction]
   exact (MM.barContraction c hh hincl hproj).comp_perturb_incl_eq_rTensor_comp _ _
     MM.coact_comp_higherBarDifferential
-    (by rw [barContraction_homotopy]; simp only [Comodule.cofree_coact_eq_cofreeCoact]
-        exact Comodule.cofreeCoact_comp_rTensor c.homotopy)
-    (by rw [barContraction_incl]; simp only [Comodule.cofree_coact_eq_cofreeCoact]
-        exact Comodule.cofreeCoact_comp_rTensor c.incl)
+    (by rw [barContraction_homotopy]; exact (Comodule.Hom.cofreeMap _).map_coact_eq.symm)
+    (by rw [barContraction_incl]; exact (Comodule.Hom.cofreeMap _).map_coact_eq.symm)
 
 /-- The perturbed projection commutes with the coactions. -/
 theorem coact_comp_transferContraction_proj :
@@ -492,24 +486,24 @@ theorem coact_comp_transferContraction_proj :
   rw [transferContraction]
   exact (MM.barContraction c hh hincl hproj).comp_perturb_proj_eq_rTensor_comp _ _
     MM.coact_comp_higherBarDifferential
-    (by rw [barContraction_homotopy]; simp only [Comodule.cofree_coact_eq_cofreeCoact]
-        exact Comodule.cofreeCoact_comp_rTensor c.homotopy)
-    (by rw [barContraction_proj]; simp only [Comodule.cofree_coact_eq_cofreeCoact]
-        exact Comodule.cofreeCoact_comp_rTensor c.proj)
+    (by rw [barContraction_homotopy]; exact (Comodule.Hom.cofreeMap _).map_coact_eq.symm)
+    (by rw [barContraction_proj]; exact (Comodule.Hom.cofreeMap _).map_coact_eq.symm)
 
 /-- The transferred bar differential is a coderivation over the algebra bar differential: it is
 the unary part for `d_N` plus the comodule morphism `(p ⊗ 1) X (i ⊗ 1)`. -/
 theorem isGradedCoderivationOver_transferBarDifferential :
     Comodule.IsGradedCoderivationOver (barGrading AA GN) 1 AA.coaugmentedBarDifferential
       (MM.transferBarDifferential c hh hincl hproj) := by
-  have hp := LinearMap.congr_fun (Comodule.cofreeCoact_comp_rTensor (C := TensorWords R A) c.proj)
-  have hi := LinearMap.congr_fun (Comodule.cofreeCoact_comp_rTensor (C := TensorWords R A) c.incl)
+  have hp := (Comodule.Hom.cofreeMap (C := TensorWords R A) c.proj).map_coact_apply
+  have hi := (Comodule.Hom.cofreeMap (C := TensorWords R A) c.incl).map_coact_apply
   have hX := LinearMap.congr_fun (MM.coact_comp_perturbationSeries c hh hincl hproj)
-  simp only [LinearMap.comp_apply, ← Comodule.cofree_coact_eq_cofreeCoact] at hp hi hX
+  simp only [Comodule.Hom.cofreeMap_toLinearMap, Comodule.Hom.cofreeMap_apply,
+    ← LinearMap.rTensor_def] at hp hi
+  simp only [LinearMap.comp_apply] at hX
   rw [transferBarDifferential_def]
   refine (isGradedCoderivationOver_unaryBarDifferential AA GN dN).add_of_coact_comp
     (LinearMap.ext fun z ↦ ?_)
-  simp only [LinearMap.comp_apply, hp, hi, hX, LinearMap.rTensor_comp_apply]
+  simp only [LinearMap.comp_apply, ← hp, ← hi, hX, LinearMap.rTensor_comp_apply]
 
 /-- The transferred bar differential squares to zero. -/
 @[simp]

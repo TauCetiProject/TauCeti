@@ -52,7 +52,8 @@ bar constructions.
 * `TauCeti.Comodule.IsLeftGradedCoderivationOver.square_commutes_coact_of_negOnePow_eq_neg_one`: the
   square of an odd coderivation over a square-zero operator commutes with the coaction.
 * `TauCeti.Comodule.IsLeftGradedCoderivationOver.add_of_comp_eq_map_comp`: adding an odd map of
-  left comodules to a coderivation gives a coderivation over the same operator.
+  left comodules to a coderivation gives a coderivation over the same operator;
+  `TauCeti.Comodule.IsLeftGradedCoderivationOver.comp_eq_map_comp_of_add` is the converse.
 * `TauCeti.Comodule.IsLeftGradedCoderivationOver.commutator_coact`: the graded commutator
   with coderivations preserves signed left-comodule maps.
 * `TauCeti.Comodule.IsLeftGradedCoderivationOver.comp_eq_comp_of_counit_comp_eq`: coderivations
@@ -487,6 +488,17 @@ theorem IsLeftGradedCoderivationOver.add_of_comp_eq_map_comp
   rw [IsLeftGradedCoderivationOver] at h ⊢
   rw [LinearMap.comp_add, h, hE, TensorProduct.map_add_right, LinearMap.add_comp]
   abel
+
+/-- Conversely, if `D` and `D + E` are both coderivations along `δ` over the same `b`, then `E`
+intertwines `δ` up to the Koszul twist of `G`: the co-Leibniz terms of `D` cancel. -/
+theorem IsLeftGradedCoderivationOver.comp_eq_map_comp_of_add
+    (h : IsLeftGradedCoderivationOver δ G r b D)
+    (h' : IsLeftGradedCoderivationOver δ G r b (D + E)) :
+    δ ∘ₗ E = TensorProduct.map (G.koszulTwist r) E ∘ₗ δ := by
+  let _ : AddCommGroup (C ⊗[R] X) := Module.addCommMonoidToAddCommGroup R
+  rw [IsLeftGradedCoderivationOver] at h h'
+  rw [LinearMap.comp_add, h, TensorProduct.map_add_right, LinearMap.add_comp, ← add_assoc] at h'
+  exact add_left_cancel h'
 
 /-- If the coalgebra operator `b` is square-zero and homogeneous of degree `q`, and
 `(-1) ^ (r * q) = -1`, then the square of a degree-`r` coderivation along `δ` over `b` commutes
