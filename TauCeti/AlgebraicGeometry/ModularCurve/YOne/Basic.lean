@@ -595,23 +595,9 @@ private theorem naiveLevelEquiv_map_yOneStructure {X : EllObj B} (k : X ⟶ yOne
     naiveLevelEquiv_structureOfPoint]
   exact (EllipticCurveGeom.pointsPullback_comp _ _ _ _ _).symm
 
--- For `N ≥ 4`, the point `P` of a naive `[Γ₁(N)]`-structure is a Tate point: `P`, `2P` and `3P`
--- miss the zero section everywhere.
-private theorem tate_conditions (h4 : 4 ≤ N) {X : EllObj B}
-    {φ : Multiplicative (ZMod N) →* (𝟙_ (Over X.base) ⟶ Over.mk X.curve.structureMap)}
-    (hφ : X.curve.IsFiberwiseInjective φ) : X.curve.IsTatePoint (φ (.ofAdd 1)) := by
-  rw [EllipticCurveGeom.isTatePoint_iff]
-  have h := EllipticCurveGeom.isFiberwiseInjective_zmod_iff.mp hφ
-  have hn (n : ℕ) (hn : 0 < n) (hnN : n < N) (s : X.base) :
-      ((φ (.ofAdd 1)).left ≫ (X.curve.mulBy n).left) s ≠ X.curve.zero s := by
-    rw [← Over.comp_left, EllipticCurveGeom.comp_mulBy, zpow_natCast]
-    exact h n hn hnN s
-  exact ⟨fun s ↦ by simpa using h 1 one_pos (by omega) s, hn 2 two_pos (by omega),
-    hn 3 three_pos (by omega)⟩
-
 -- For `N ≥ 4`, the point `(0, 0)` of the universal elliptic curve over `Y₁(N)` is a Tate point.
 private theorem isTatePoint_yOnePoint (h4 : 4 ≤ N) : (yOne B N).curve.IsTatePoint yOnePoint := by
-  have h := tate_conditions h4 (ModuliProblem.naiveLevelEquiv _ (yOneStructure (B := B))).property
+  have h := (ModuliProblem.naiveLevelEquiv _ (yOneStructure (B := B))).property.isTatePoint h4
   rw [yOneStructure, naiveLevelEquiv_structureOfPoint] at h
   exact h
 
@@ -625,9 +611,8 @@ private theorem bijective_map_yOneStructure (h4 : 4 ≤ N) (X : EllObj B) :
     intro k k' h
     have hp := congrArg (fun α ↦ (ModuliProblem.naiveLevelEquiv X α).val (.ofAdd 1)) h
     simp only [naiveLevelEquiv_map_yOneStructure] at hp
-    have hP := tate_conditions h4
-      (ModuliProblem.naiveLevelEquiv X ((ModuliProblem.gammaOneNaive B N).map k.op
-        yOneStructure)).property
+    have hP := (ModuliProblem.naiveLevelEquiv X ((ModuliProblem.gammaOneNaive B N).map k.op
+      yOneStructure)).property.isTatePoint h4
     rw [naiveLevelEquiv_map_yOneStructure] at hP
     have hk : k ≫ yOneι B N = k' ≫ yOneι B N :=
       (existsUnique_hom_universalTate _ hP).unique rfl hp.symm
@@ -636,7 +621,7 @@ private theorem bijective_map_yOneStructure (h4 : 4 ≤ N) (X : EllObj B) :
   · -- the arrow classifying `(X, P)` lands in `Y₁(N)` because `P` has naive exact order `N`
     intro α
     have hα := (ModuliProblem.naiveLevelEquiv X α).property
-    obtain ⟨k₀, hk₀, -⟩ := existsUnique_hom_universalTate _ (tate_conditions h4 hα)
+    obtain ⟨k₀, hk₀, -⟩ := existsUnique_hom_universalTate _ (hα.isTatePoint h4)
     obtain ⟨l, hl⟩ := (EllipticCurveGeom.exists_lift_naiveExactOrderPreimageι_iff N
       (universalTatePoint B) (Z := Over.mk k₀.base)
       (x := EllipticCurveGeom.pointsBaseChangeEquiv k₀.isPullback k₀.zero_total _) (by

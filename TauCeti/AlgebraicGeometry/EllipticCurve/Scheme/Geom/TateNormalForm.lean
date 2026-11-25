@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Glue
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.TateNormalForm
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Points
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveLevel
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.BaseChange
 
 /-!
@@ -70,6 +71,8 @@ schemes in an arbitrary universe the universal Tate normal form is read over its
   `Spec ℤ`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isTatePoint_iff`: a Tate point is a section `P`
   such that none of `P`, `2P` and `3P` meets the zero section.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsFiberwiseInjective.isTatePoint`: for `N ≥ 4`,
+  the point `P = φ 1` of a naive `[Γ₁(N)]`-structure `φ` is a Tate point.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isTatePoint_iff_of_isPullback` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsTatePoint.pointsPullback`: Tate points of a base
   change, and their stability under base change.
@@ -718,6 +721,22 @@ theorem isTatePoint_iff {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} :
   · rw [mem_tateLocus_iff, hP]
     simp only [Scheme.Hom.comp_apply] at h₂ h₃
     exact ⟨h₁ s, h₂ s, h₃ s⟩
+
+open MonObj in
+/-- For `N ≥ 4`, the point `P = φ 1` of a naive `[Γ₁(N)]`-structure `φ : ℤ/Nℤ →* E(S)` is a Tate
+point: since `φ` is injective on every fibre, none of `P`, `2P` and `3P` meets the zero section. -/
+theorem IsFiberwiseInjective.isTatePoint {N : ℕ} (h4 : 4 ≤ N)
+    {φ : Multiplicative (ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap)}
+    (hφ : E.IsFiberwiseInjective φ) : E.IsTatePoint (φ (.ofAdd 1)) := by
+  have : NeZero N := ⟨by omega⟩
+  rw [isTatePoint_iff]
+  have h := isFiberwiseInjective_zmod_iff.mp hφ
+  have hn (n : ℕ) (hn : 0 < n) (hnN : n < N) (s : S) :
+      ((φ (.ofAdd 1)).left ≫ (E.mulBy n).left) s ≠ E.zero s := by
+    rw [← Over.comp_left, comp_mulBy, zpow_natCast]
+    exact h n hn hnN s
+  exact ⟨fun s ↦ by simpa using h 1 one_pos (by omega) s, hn 2 two_pos (by omega),
+    hn 3 three_pos (by omega)⟩
 
 /-- **The conditions of the Tate normal form are necessary.** An `S`-point `P` of an elliptic curve
 `E` over `S` is the pullback of the point `(0, 0)` of the universal Tate normal form along a
