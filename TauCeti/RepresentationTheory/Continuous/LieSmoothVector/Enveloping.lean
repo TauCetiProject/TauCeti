@@ -280,8 +280,8 @@ instance instLieModuleTensorProductLieSmoothVectors :
     LieModule R (R ⊗[ℝ] LeftInvariantDerivation I G) (lieSmoothVectors I π) :=
   LieModule.compLieHom _ (lieSmoothVectorsBaseChangeDerivedAction I π)
 
-/-- **The `U(𝔤)`-representation of the Lie module of smooth vectors** is the enveloping action
-`lieSmoothVectorsBaseChangeEnvelopingAction`. -/
+/-- **The `U(R ⊗[ℝ] 𝔤)`-representation of the Lie module of smooth vectors** is the enveloping
+action `lieSmoothVectorsBaseChangeEnvelopingAction`. -/
 @[simp]
 theorem representation_lieSmoothVectors :
     TauCeti.UniversalEnvelopingAlgebra.representation R (R ⊗[ℝ] LeftInvariantDerivation I G)

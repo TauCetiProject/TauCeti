@@ -32,7 +32,6 @@ Lie submodules and quotients, duals and the generalized eigenspace come from tha
 
 ## Main results
 
-* `ContRepresentation.centralAction_lieSmoothVectors_apply`: the centre acts through it.
 * `ContRepresentation.hasInfinitesimalCharacter_lieSmoothVectors_iff`,
   `ContRepresentation.isGeneralizedCharacterFinite_lieSmoothVectors_iff`: the two predicates in
   terms of the enveloping action on smooth vectors.
@@ -65,15 +64,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 variable {R : Type*} [CommRing R] [Module R V] (π : ContRepresentation R G V)
   [Algebra ℝ R] [IsScalarTower ℝ R V] [ContinuousConstSMul R V]
 
-/-- The centre of `U(𝔤)` acts on smooth vectors through the enveloping action. -/
-theorem centralAction_lieSmoothVectors_apply
-    (z : Subalgebra.center R
-      (_root_.UniversalEnvelopingAlgebra R (R ⊗[ℝ] LeftInvariantDerivation I G)))
-    (v : lieSmoothVectors I π) :
-    centralAction R (R ⊗[ℝ] LeftInvariantDerivation I G) (lieSmoothVectors I π) z v =
-      lieSmoothVectorsBaseChangeEnvelopingAction I π z v := by
-  rw [centralAction_apply, representation_lieSmoothVectors]
-
 /-- **Infinitesimal character of a representation**: `π` has infinitesimal character `χ` on its
 smooth vectors exactly when every central element `z` of `U(𝔤)` acts on them by `χ z`. -/
 theorem hasInfinitesimalCharacter_lieSmoothVectors_iff
@@ -83,7 +73,7 @@ theorem hasInfinitesimalCharacter_lieSmoothVectors_iff
       ∀ (z : Subalgebra.center R
         (_root_.UniversalEnvelopingAlgebra R (R ⊗[ℝ] LeftInvariantDerivation I G))) v,
         lieSmoothVectorsBaseChangeEnvelopingAction I π z v = χ z • v := by
-  simp only [hasInfinitesimalCharacter_iff, centralAction_lieSmoothVectors_apply]
+  simp only [hasInfinitesimalCharacter_iff, centralAction_apply, representation_lieSmoothVectors]
 
 /-- **Generalized infinitesimal character of a representation**: `π` is generalized `χ`-finite on
 its smooth vectors exactly when every smooth vector is annihilated by some power of `ker χ`. -/
@@ -96,6 +86,6 @@ theorem isGeneralizedCharacterFinite_lieSmoothVectors_iff
         lieSmoothVectorsBaseChangeEnvelopingAction I π z v = 0 := by
   rw [isGeneralizedCharacterFinite_iff_generalizedCharacter_eq_top, eq_top_iff]
   simp only [IsConcreteLE.le_iff, LieSubmodule.mem_top, true_implies, mem_generalizedCharacter,
-    centralAction_lieSmoothVectors_apply]
+    centralAction_apply, representation_lieSmoothVectors]
 
 end ContRepresentation
