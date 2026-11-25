@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Cylinder
 public import TauCeti.MeasureTheory.Function.MemLpLoc
 import Mathlib.MeasureTheory.Function.Floor
-import TauCeti.Analysis.Calculus.SmoothSeries
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Sobolev.Cylinder.Morrey
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 import TauCeti.MeasureTheory.Integral.Bochner.PeriodicStrip
@@ -22,9 +22,8 @@ regularity, on the other hand, is stated on open subsets of the plane, for local
 annihilating an operator on compactly supported test maps. This file passes between the two.
 
 * **Periodization.** For a compactly supported map `ξ`, the sum `∑ₙ ξ (s, t + n)` over `n ∈ ℤ`
-  is locally finite (`TauCeti.CylinderSobolev.exists_finset_eventually_eq_zero_add_intCast`).
-  It is `C^k` when `ξ` is (`TauCeti.CylinderSobolev.contDiff_tsum_add_intCast`), and a test
-  section of the cylinder when `ξ` is `C²`
+  is locally finite (`TauCeti.exists_finset_eventually_eq_zero_add_intCast`) and `C^k` when `ξ`
+  is (`TauCeti.contDiff_tsum_add_intCast`). It is a test section of the cylinder when `ξ` is `C²`
   (`TauCeti.CylinderSobolev.tsum_add_intCast_mem_testSection`); its jet is the sum of the
   translates of the jet of `ξ` (`TauCeti.CylinderSobolev.jet_tsum_add_intCast`).
 * **Periodic extension.** An `Lᵖ` function on the strip agrees there with a strongly measurable
@@ -52,7 +51,7 @@ open MeasureTheory Set Filter Topology
 
 namespace TauCeti.CylinderSobolev
 open StripSobolev (jet jet_apply stripMeasure stripMeasure_eq_restrict_univ_prod_Ico jetLp
-  jetLp_mem_jetClosure coeFn_jetLp)
+  jetLp_mem_jetClosure coeFn_jetLp integrable_inner_apply_jet)
 open scoped ENNReal NNReal InnerProductSpace
 
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
@@ -61,29 +60,6 @@ section Periodization
 
 variable {ξ : ℝ × ℝ → V}
 
-/-- **The integer translates of a compactly supported map are locally finite.** Near any point,
-all but finitely many of the translates `(s, t) ↦ g (s, t + n)`, `n ∈ ℤ`, vanish. -/
-theorem exists_finset_eventually_eq_zero_add_intCast {X : Type*} [Zero X] {g : ℝ × ℝ → X}
-    (hg : HasCompactSupport g) (z : ℝ × ℝ) :
-    ∃ S : Finset ℤ, ∀ᶠ w in 𝓝 z, ∀ n ∉ S, g (w.1, w.2 + n) = 0 := by
-  obtain ⟨N, hN⟩ := (hg.isCompact.image continuous_snd).isBounded.subset_closedBall 0
-  refine ⟨Finset.Icc ⌊-z.2 - N - 1⌋ ⌈-z.2 + N + 1⌉, ?_⟩
-  filter_upwards [continuous_snd.continuousAt.preimage_mem_nhds
-    (Ioo_mem_nhds (sub_one_lt z.2) (lt_add_one z.2))] with w hw n hn
-  refine image_eq_zero_of_notMem_tsupport fun h ↦ hn ?_
-  have hwn := hN ⟨_, h, rfl⟩
-  rw [Metric.mem_closedBall, Real.dist_eq, sub_zero, abs_le] at hwn
-  simp only [mem_preimage, mem_Ioo] at hw
-  refine Finset.mem_Icc.2 ⟨Int.floor_le_iff.2 ?_, Int.le_ceil_iff.2 ?_⟩ <;> linarith [hwn.1, hwn.2]
-
-/-- **The periodization in `t` of a compactly supported `C^k` map is `C^k`.** -/
-theorem contDiff_tsum_add_intCast {k : WithTop ℕ∞} (hξ : ContDiff ℝ k ξ)
-    (hc : HasCompactSupport ξ) : ContDiff ℝ k fun z : ℝ × ℝ ↦ ∑' n : ℤ, ξ (z.1, z.2 + n) :=
-  contDiff_iff_contDiffAt.2 fun z ↦ by
-    obtain ⟨S, hS⟩ := exists_finset_eventually_eq_zero_add_intCast hc z
-    exact S.contDiffAt_tsum_of_eventually_eq_zero
-      (fun n _ ↦ (hξ.comp (contDiff_fst.prodMk (contDiff_snd.add contDiff_const))).contDiffAt) hS
-
 /-- **The periodization in `t` of a compactly supported `C²` map is a test section of the
 cylinder**: it has period one in `t` and vanishes for `|s|` large. -/
 theorem tsum_add_intCast_mem_testSection (hξ : ContDiff ℝ 2 ξ) (hc : HasCompactSupport ξ) :
@@ -91,12 +67,7 @@ theorem tsum_add_intCast_mem_testSection (hξ : ContDiff ℝ 2 ξ) (hc : HasComp
   obtain ⟨R, hR⟩ := (hc.isCompact.image continuous_fst).isBounded.subset_closedBall 0
   refine mem_testSection_iff.2 ⟨contDiff_tsum_add_intCast hξ hc, fun s t ↦ ?_, R + 1,
     fun s t hs ↦ ?_⟩
-  · -- Shifting `t` by one shifts the summation index.
-    dsimp only
-    rw [← (Equiv.addRight (1 : ℤ)).tsum_eq (fun n : ℤ ↦ ξ (s, t + n))]
-    refine tsum_congr fun n ↦ ?_
-    simp only [Equiv.coe_addRight, Int.cast_add, Int.cast_one]
-    ring_nf
+  · exact periodic_tsum_add_intCast ξ s t
   · -- Every translate vanishes off the projection of the support of `ξ` to the `s`-axis.
     refine (tsum_congr fun n : ℤ ↦ image_eq_zero_of_notMem_tsupport fun h ↦ ?_).trans tsum_zero
     have hsR := hR ⟨_, h, rfl⟩
@@ -180,28 +151,6 @@ section Annihilator
 
 variable [InnerProductSpace ℝ W]
 
-/-- For a locally `L²` function `g`, a continuous coefficient field `M` and a compactly supported
-`C¹` map `ξ`, the function `z ↦ ⟪g z, M z (jet ξ z)⟫` is integrable on the plane: it vanishes off
-the support of `ξ`. -/
-private lemma integrable_inner_apply_jet {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hMc : Continuous M)
-    {g : ℝ × ℝ → W} (hgloc : MemLpLoc (2 : ℝ≥0) univ g) (hg : StronglyMeasurable g)
-    {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) (hξc : HasCompactSupport ξ) :
-    Integrable fun z ↦ ⟪g z, M z (jet ξ z)⟫_ℝ := by
-  set K := tsupport ξ
-  have hK : IsCompact K := hξc
-  have : IsFiniteMeasure (volume.restrict K) := isFiniteMeasure_restrict.2 hK.measure_lt_top.ne
-  have hMj : Continuous fun z ↦ M z (jet ξ z) := hMc.clm_apply (StripSobolev.continuous_jet hξ)
-  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hMj.continuousOn
-  have hgK : Integrable g (volume.restrict K) :=
-    (memLpLoc_iff.1 hgloc K (subset_univ K) hK).integrable (by norm_num)
-  refine IntegrableOn.integrable_of_forall_notMem_eq_zero (s := K) ?_ fun z hz ↦ ?_
-  · refine (hgK.norm.const_mul C).mono' (hg.inner hMj.stronglyMeasurable).aestronglyMeasurable ?_
-    filter_upwards [ae_restrict_mem hK.measurableSet] with z hz
-    rw [Real.norm_eq_abs, mul_comm]
-    exact (abs_real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_left (hC z hz) (norm_nonneg _))
-  · have h0 : ξ =ᶠ[𝓝 z] fun _ ↦ 0 := notMem_tsupport_iff_eventuallyEq.1 hz
-    simp [jet_apply, h0.fderiv_eq, h0.eq_of_nhds, Prod.mk_zero_zero]
-
 /-- **`L²` annihilators of a periodic first-order operator are weak annihilators on the plane.**
 Let `M` be a continuous coefficient field of period one in `t`, essentially bounded on the strip,
 and let `η ∈ L²(ℝ × [0, 1], W)` be orthogonal to `M x` for every `x` in the Sobolev space
@@ -223,8 +172,9 @@ theorem integral_inner_jet_eq_zero_of_forall_inner_jetOperator_eq_zero
     simpa using (Function.Periodic.int_mul (f := fun t ↦ g (s, t)) (hgper s) n) t
   have hMZ (n : ℤ) (s t : ℝ) : M (s, t + n) = M (s, t) := by
     simpa using (Function.Periodic.int_mul (f := fun t ↦ M (s, t)) (hMper s) n) t
-  have hFint : Integrable F := integrable_inner_apply_jet hMc
-    (memLpLoc_univ_of_periodic hg hgper one_le_two ((Lp.memLp η).ae_eq hgη.symm)) hg hξ1 hξc
+  have hgloc := memLpLoc_univ_of_periodic hg hgper one_le_two ((Lp.memLp η).ae_eq hgη.symm)
+  have hFint : Integrable F := integrable_inner_apply_jet hMc (locallyIntegrableOn_univ.1
+    (hgloc.locallyIntegrableOn one_le_two isOpen_univ.isLocallyClosed)) hξ1 hξc
   -- The periodization of `ξ` is a test section, so `η` annihilates `M` applied to its jet.
   set P : ℝ × ℝ → V := fun z ↦ ∑' n : ℤ, ξ (z.1, z.2 + n)
   have hP : P ∈ testSection V := tsum_add_intCast_mem_testSection hξ hξc

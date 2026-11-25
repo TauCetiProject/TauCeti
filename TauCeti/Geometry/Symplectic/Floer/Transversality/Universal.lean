@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Symplectic.Floer.Transversality.WeakCokernel
 import TauCeti.Analysis.Sobolev.Cylinder.Periodization
 import TauCeti.LinearAlgebra.Submodule.Quotient
 import TauCeti.Topology.Algebra.Module.FiniteDimension
-import TauCeti.Topology.Compactness.Normed
 import TauCeti.Topology.UniformSpace.UniformConvergence.Periodic
 
 /-!
@@ -64,22 +63,6 @@ open CylinderSobolev
 open StripSobolev (stripMeasure)
 
 variable {V : Type*} [NormedAddCommGroup V]
-
-/-- The variation `z ↦ Y (t, u z) (δ z)` of a continuous field `Y (t, x)` vanishing for `x` outside
-a compact set is square integrable on the strip when `δ` is. -/
-private lemma memLp_apply_of_eventually_eq_zero {W : Type*} [NormedAddCommGroup W]
-    [NormedSpace ℝ W] {Y : ℝ × V → W →L[ℝ] W} (hY : Continuous Y)
-    (hYc : ∀ᶠ p in comap Prod.snd (cocompact V), Y p = 0) {u : ℝ × ℝ → V} (hu : Continuous u)
-    {δ : ℝ × ℝ → W} (hδ : MemLp δ 2 stripMeasure) :
-    MemLp (fun z ↦ Y (z.2, u z) (δ z)) 2 stripMeasure := by
-  obtain ⟨C, hC⟩ :=
-    (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_forall_norm_le_of_eventually_eq_zero
-      hY.continuousOn hYc
-  have hYu : Continuous fun z : ℝ × ℝ ↦ Y (z.2, u z) := hY.comp (continuous_snd.prodMk hu)
-  refine hδ.of_le_mul (c := C) ((continuous_fst.clm_apply continuous_snd).comp_aestronglyMeasurable₂
-    (g := fun (L : W →L[ℝ] W) v ↦ L v) hYu.aestronglyMeasurable hδ.aestronglyMeasurable) ?_
-  filter_upwards [ae_restrict_mem (MeasurableSet.univ.prod measurableSet_Icc)] with z hz
-  exact (Y (z.2, u z)).le_of_opNorm_le (hC z.2 hz.2 (u z)) (δ z)
 
 section Cokernel
 
@@ -264,7 +247,7 @@ theorem exists_surjective_floerSobolevOperator_coprod (ω : SymplecticForm F)
       (fun x ↦ Submodule.inner_left_of_mem_orthogonal
         (le_sup_left (a := D.range) ⟨x, rfl⟩) hη) ?_
     intro Y h₁ h₂ h₃ h₄
-    have hm := memLp_apply_of_eventually_eq_zero h₁.continuous h₃ hu.continuous hE
+    have hm := StripSobolev.memLp_apply_of_eventually_eq_zero h₁.continuous h₃ hu.continuous hE
     have h0 := Submodule.inner_left_of_mem_orthogonal
       (le_sup_right (a := D.range) (Submodule.subset_span
         (⟨Y, h₁, h₂, h₃, h₄, hm.coeFn_toLp⟩ : hm.toLp _ ∈ S))) hη
