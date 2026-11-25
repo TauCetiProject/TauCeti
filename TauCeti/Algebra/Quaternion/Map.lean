@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Quaternion
+public import TauCeti.Algebra.Quaternion.NormForm
 
 /-!
 # Coefficientwise maps of quaternion algebras
@@ -22,6 +23,8 @@ A ring homomorphism `f : R →+* S` acts on quaternions coordinatewise.
 
 * `TauCeti.QuaternionAlgebra.mem_range_map`: a quaternion lies in the range of `map` exactly when
   its four coordinates lie in the range of `f`.
+* `TauCeti.QuaternionAlgebra.normForm_map`: the coefficientwise map carries the reduced norm to
+  the image of the reduced norm.
 -/
 
 public section
@@ -81,6 +84,14 @@ theorem map_star (q : ℍ[R,a,b,c]) :
 @[simp]
 theorem map_coe (r : R) : map a b c f ha hb hc (r : ℍ[R,a,b,c]) = (f r : ℍ[S,a',b',c']) := by
   ext <;> simp
+
+/-- Coefficientwise maps carry the reduced norm to the image of the reduced norm. -/
+@[simp]
+theorem normForm_map (q : ℍ[R,a,b,c]) :
+    _root_.QuaternionAlgebra.normForm a' b' c' (map a b c f ha hb hc q) =
+      f (_root_.QuaternionAlgebra.normForm a b c q) := by
+  subst ha hb hc
+  simp [_root_.QuaternionAlgebra.normForm_apply_coordinates]
 
 @[simp]
 theorem map_id : map a b c (RingHom.id R) rfl rfl rfl = RingHom.id ℍ[R,a,b,c] := (rfl)

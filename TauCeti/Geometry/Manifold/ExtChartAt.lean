@@ -1406,9 +1406,7 @@ theorem extendTrans_symm_apply (v : F) :
 
 /-- The coordinates of `c.extendTrans I Ψ` are those of the extended chart `c.extend I`, moved
 by `Ψ`. -/
-theorem coe_extendTrans : ⇑(c.extendTrans I Ψ) = Ψ ∘ c.extend I := by
-  funext w
-  simp
+theorem coe_extendTrans : ⇑(c.extendTrans I Ψ) = Ψ ∘ c.extend I := funext fun _ ↦ by simp
 
 /-- Moved by the identity, the chart `c.extendTrans I` is the extended chart `c.extend I`. -/
 theorem toPartialEquiv_extendTrans_refl :
@@ -1419,6 +1417,11 @@ theorem toPartialEquiv_extendTrans_refl :
 `c.extend I`. -/
 theorem coe_extendTrans_refl : ⇑(c.extendTrans I (Homeomorph.refl E)) = c.extend I :=
   congrArg (⇑) (c.toPartialEquiv_extendTrans_refl I)
+
+/-- Moved by the identity, the inverse of `c.extendTrans I` is that of `c.extend I`. -/
+theorem coe_symm_extendTrans_refl :
+    ⇑(c.extendTrans I (Homeomorph.refl E)).symm = (c.extend I).symm :=
+  congrArg (fun e : PartialEquiv M E ↦ ⇑e.symm) (c.toPartialEquiv_extendTrans_refl I)
 
 /-- A chart with values in a normed space, read in its own self model and moved by the identity,
 is the chart itself. -/

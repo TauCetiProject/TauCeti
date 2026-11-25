@@ -11,6 +11,8 @@ public import Mathlib.CategoryTheory.Subobject.Lattice
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import TauCeti.Algebra.Category.ModuleCat.Biproducts
 public import TauCeti.Algebra.Category.ModuleCat.Kernels
+public import TauCeti.CategoryTheory.Abelian.SubquotientHull
+import TauCeti.LinearAlgebra.LinearMap.Range
 
 /-!
 # The representing object of a fibre functor on the hull of an object
@@ -59,6 +61,9 @@ of endomorphisms of the restricted fibre functor.
 * `CategoryTheory.Functor.bijective_fiberSpanEval_hullBasisPoint`: representability on
   quotients of subobjects of finite powers of `X`, and
   `CategoryTheory.Functor.exists_epi_biproduct_hullRepresenting`: `P_X` generates them.
+* `CategoryTheory.Functor.subquotientHull_hullRepresenting`,
+  `CategoryTheory.Functor.hullEvalEquiv`: `P_X` lies in the hull `⟨X⟩`, and evaluation at its
+  point is a linear equivalence `(P_X ⟶ Y) ≃ ω Y` for every `Y ∈ ⟨X⟩`.
 
 ## References
 
@@ -257,12 +262,11 @@ theorem exists_epi_biproduct_fiberSpan [Preadditive C] [HasFiniteBiproducts C] [
   choose f hf using h
   let b := Module.finBasis K (ω.obj Y)
   refine ⟨_, biproduct.desc fun k ↦ f (b k), ω.epi_of_epi_map ?_⟩
-  rw [ModuleCat.epi_iff_surjective, ← LinearMap.range_eq_top, eq_top_iff, ← b.span_eq,
-    Submodule.span_le]
-  rintro _ ⟨k, rfl⟩
-  exact ⟨(ω.map (biproduct.ι _ k)).hom (ω.fiberSpanPoint t), by
-    rw [← ModuleCat.comp_apply, ← ω.map_comp, biproduct.ι_desc]
-    exact hf (b k)⟩
+  rw [ModuleCat.epi_iff_surjective]
+  refine LinearMap.surjective_of_span_range_eq_top _ b.span_eq fun k ↦
+    ⟨(ω.map (biproduct.ι _ k)).hom (ω.fiberSpanPoint t), ?_⟩
+  rw [ω.map_biproductDesc_map_ι_apply]
+  exact hf (b k)
 
 /-- `fiberSpan t` is projective relative to the objects onto whose fibre evaluation at
 `fiberSpanPoint t` is surjective: every morphism from it to a quotient of such an object lifts. -/
@@ -335,6 +339,11 @@ noncomputable abbrev hullRepresenting :
     Subobject (⨁ fun _ : Fin (Module.finrank K (ω.obj X)) ↦ X) :=
   ω.fiberSpan (ω.hullBasisPoint X)
 
+/-- The representing object `P_X` lies in the hull `TauCeti.subquotientHull X`. -/
+theorem subquotientHull_hullRepresenting :
+    TauCeti.subquotientHull X (ω.hullRepresenting X : C) :=
+  TauCeti.subquotientHull.of_mono (ω.hullRepresenting X).arrow
+
 end HullBasisPoint
 
 section Hull
@@ -384,6 +393,36 @@ theorem exists_epi_biproduct_hullRepresenting {ι : Type*} [Finite ι] {Z Y : C}
   have : FiniteDimensional K (ω.obj Y) :=
     Module.Finite.of_surjective _ ((ModuleCat.epi_iff_surjective (ω.map e)).1 inferInstance)
   exact ω.exists_epi_biproduct_fiberSpan (ω.bijective_fiberSpanEval_hullBasisPoint X i e).2
+
+variable {X}
+
+/-- Evaluation at the point of `P_X`, as a linear equivalence `(P_X ⟶ Y) ≃ ω Y` for `Y` in the
+hull `TauCeti.subquotientHull X`. It is natural in `Y`
+(`CategoryTheory.Functor.hullEvalEquiv_symm_naturality`). -/
+noncomputable def hullEvalEquiv {Y : C} (hY : TauCeti.subquotientHull X Y) :
+    ((ω.hullRepresenting X : C) ⟶ Y) ≃ₗ[K] ω.obj Y :=
+  LinearEquiv.ofBijective (ω.fiberSpanEval (ω.hullBasisPoint X) Y) (by
+    obtain ⟨ι, _, Z, i, q, _, _⟩ := TauCeti.subquotientHull_iff.1 hY
+    exact ω.bijective_fiberSpanEval_hullBasisPoint X i q)
+
+@[simp]
+theorem hullEvalEquiv_apply {Y : C} (hY : TauCeti.subquotientHull X Y)
+    (f : (ω.hullRepresenting X : C) ⟶ Y) :
+    ω.hullEvalEquiv hY f = (ω.map f).hom (ω.fiberSpanPoint (ω.hullBasisPoint X)) := by
+  simp [hullEvalEquiv]
+
+/-- The morphism `P_X ⟶ Y` attached to `y : ω Y` takes the value `y` at the point of `P_X`. -/
+@[simp]
+theorem map_hullEvalEquiv_symm {Y : C} (hY : TauCeti.subquotientHull X Y) (y : ω.obj Y) :
+    (ω.map ((ω.hullEvalEquiv hY).symm y)).hom (ω.fiberSpanPoint (ω.hullBasisPoint X)) = y := by
+  rw [← hullEvalEquiv_apply ω hY, LinearEquiv.apply_symm_apply]
+
+/-- The inverse of `hullEvalEquiv` is natural in the target. -/
+theorem hullEvalEquiv_symm_naturality {Y Y' : C} (hY : TauCeti.subquotientHull X Y)
+    (hY' : TauCeti.subquotientHull X Y') (g : Y ⟶ Y') (y : ω.obj Y) :
+    (ω.hullEvalEquiv hY').symm ((ω.map g).hom y) = (ω.hullEvalEquiv hY).symm y ≫ g := by
+  rw [LinearEquiv.symm_apply_eq]
+  simp
 
 end Hull
 
