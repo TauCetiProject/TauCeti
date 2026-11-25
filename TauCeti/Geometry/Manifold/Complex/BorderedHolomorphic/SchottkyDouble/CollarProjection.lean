@@ -39,7 +39,8 @@ which lies in the first copy; so `fold ∘ r`, hence `ρ ∘ fold`, is smooth on
 * `TauCeti.SchottkyDouble.exists_retraction_seam`: a smooth retraction of a neighbourhood of the
   seam onto the seam, invariant under the sheet swap.
 * `TauCeti.SchottkyDouble.exists_collarProjection`: a collar projection of `M` which is smooth
-  when read on the double through the fold, and smooth on `M`.
+  when read on the double through the fold, smooth on a neighbourhood `U` of the boundary, and
+  continuous on `M`.
 
 ## References
 
