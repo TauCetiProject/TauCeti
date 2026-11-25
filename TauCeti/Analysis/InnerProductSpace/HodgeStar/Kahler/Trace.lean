@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Power
-public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.PowTrace
+public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow.Trace
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
@@ -57,19 +57,20 @@ theorem pairedWedge_kahlerPowerForm_apply_complexRealFrame {m : ℕ} {u : Fin (m
     (hu : Orthonormal ℝ u) (hJu : ∀ i j, ⟪J (u i), u j⟫ = 0) (α : V [⋀^Fin 2]→L[ℝ] ℝ) :
     pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
         (J.kahlerPowerForm m) α (J.complexRealFrame u) = ∑ i, α ![u i, J (u i)] := by
-  have hω (a b : V) : alternatingFormEquiv V 2 J.kahlerForm ![a, b] = ⟪J a, b⟫ := by
-    rw [alternatingFormEquiv_apply, inner_kahlerForm_ιMulti hJ]
   have h := pairedWedge_wedgePow_apply_finProdFinEquiv (alternatingFormEquiv V 2 J.kahlerForm) α
-    (fun p : Fin (m + 1) × Fin 2 ↦ ![u p.1, J (u p.1)] p.2) (fun i j ↦ by simpa [hω] using hJu i j)
-    (fun i j ↦ by simpa [hω, hJ] using (orthonormal_iff_ite.1 hu) i j)
-    (fun i j ↦ by simpa [hω, hJ, real_inner_comm] using hJu j i)
+    (fun p : Fin (m + 1) × Fin 2 ↦ ![u p.1, J (u p.1)] p.2)
+    (fun i j ↦ by simpa [alternatingFormEquiv_kahlerForm_apply hJ] using hJu i j)
+    (fun i j ↦ by
+      simpa [alternatingFormEquiv_kahlerForm_apply hJ, hJ] using (orthonormal_iff_ite.1 hu) i j)
+    (fun i j ↦ by
+      simpa [alternatingFormEquiv_kahlerForm_apply hJ, hJ, real_inner_comm] using hJu j i)
   rw [kahlerPowerForm_def, pairedWedge_smul_left, ContinuousAlternatingMap.smul_apply,
     smul_eq_mul]
   have hframe : J.complexRealFrame u = fun r : Fin (2 * (m + 1)) ↦
       (fun p : Fin (m + 1) × Fin 2 ↦ ![u p.1, J (u p.1)] p.2)
         (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 (m + 1)) r)) := by
-    rw [complexRealFrame_eq_comp]
-    rfl
+    funext r
+    simp [complexRealFrame_eq_comp, finCongr_apply]
   rw [hframe, h]
   simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one]
   field_simp

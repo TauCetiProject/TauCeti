@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow
+public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow.Basic
 import TauCeti.Logic.Equiv.Fin.Basic
 
 /-!
@@ -87,9 +87,8 @@ private theorem pairedWedge_wedgePow_succ_curry_apply (ω α : E [⋀^Fin 2]→L
       simpa using hw _
   rw [hzero (R ∘ Fin.cast (by omega)) fun i ↦ hpR _, zero_add, pairedWedge_apply_zero_right,
     ContinuousLinearMap.mul_apply', curryLeftTopological_apply_apply,
-    curryLeftTopological_apply_apply, Even.neg_one_pow ⟨m + 1, by ring⟩, one_smul]
-  congr 4
-  exact Subsingleton.elim _ _
+    curryLeftTopological_apply_apply, Even.neg_one_pow ⟨m + 1, by ring⟩, one_smul,
+    Matrix.zero_empty]
 
 /-- **A two-form wedged with a power of a two-form on standard pairs.** If the vectors
 `qᵢ = b (i, 0)` and `pᵢ = b (i, 1)`, `i ≤ m`, satisfy `ω(qᵢ, qⱼ) = 0`, `ω(qᵢ, pⱼ) = δᵢⱼ` and
@@ -112,40 +111,34 @@ theorem pairedWedge_wedgePow_apply_finProdFinEquiv (ω α : E [⋀^Fin 2]→L[�
     funext i
     fin_cases i <;> rfl
   | succ m ih =>
+    rw [comp_finProdFinEquiv_symm_succ]
     set b' := b ∘ Prod.map Fin.succ id with hb'
     set R : Fin (2 * (m + 1)) → E :=
-      fun r ↦ b' (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 (m + 1)) r))
-    have hqR : ∀ r, ω ![b (0, 0), R r] = 0 := by
-      intro r
-      change ω ![b (0, 0), b (Prod.map Fin.succ id
-        (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 (m + 1)) r)))] = 0
-      generalize finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 (m + 1)) r) = jk
+      fun r ↦ b' (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 (m + 1)) r)) with hR
+    -- The one-forms `ω(q₀, ·)` and `ω(p₀, ·)` kill the later pairs.
+    have hq (jk : Fin (m + 1) × Fin 2) : ω ![b (0, 0), b' jk] = 0 := by
       obtain ⟨j, k⟩ := jk
       fin_cases k
       · exact h₀₀ 0 j.succ
-      · simpa [(Fin.succ_ne_zero j).symm] using h₀₁ 0 j.succ
-    have hpR : ∀ r, ω ![b (0, 1), R r] = 0 := by
-      intro r
-      change ω ![b (0, 1), b (Prod.map Fin.succ id
-        (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 (m + 1)) r)))] = 0
-      generalize finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 (m + 1)) r) = jk
+      · simpa [hb', (Fin.succ_ne_zero j).symm] using h₀₁ 0 j.succ
+    have hp (jk : Fin (m + 1) × Fin 2) : ω ![b (0, 1), b' jk] = 0 := by
       obtain ⟨j, k⟩ := jk
       fin_cases k
       · rw [apply_vecCons_swap, neg_eq_zero]
-        simpa [Fin.succ_ne_zero j] using h₀₁ j.succ 0
+        simpa [hb', Fin.succ_ne_zero j] using h₀₁ j.succ 0
       · exact h₁₁ 0 j.succ
     have h₀₀' : ∀ i j, ω ![b' (i, 0), b' (j, 0)] = 0 := fun i j ↦ h₀₀ _ _
     have h₀₁' : ∀ i j, ω ![b' (i, 0), b' (j, 1)] = if i = j then 1 else 0 :=
       fun i j ↦ by simpa [hb'] using h₀₁ i.succ j.succ
     have h₁₁' : ∀ i j, ω ![b' (i, 1), b' (j, 1)] = 0 := fun i j ↦ h₁₁ _ _
-    have e1 := pairedWedge_curry_wedgePow_succ_apply ω α m (b (0, 0)) (b (0, 1)) R
-      (by simpa using h₀₁ 0 0) hqR
-    have e2 := pairedWedge_wedgePow_succ_curry_apply ω α m (b (0, 0)) (b (0, 1)) R hpR
-    rw [comp_finProdFinEquiv_symm_succ, ← curryLeftTopological_apply_apply (n := 2 * (m + 1) + 1),
+    rw [← curryLeftTopological_apply_apply (n := 2 * (m + 1) + 1),
       curryLeftTopological_pairedWedge (k := 2 * m + 1) (l := 1),
-      Even.neg_one_pow ⟨m + 1, by ring⟩, one_smul]
-    erw [e1, e2, ih b' h₀₀' h₀₁' h₁₁', wedgePow_apply_finProdFinEquiv ω b' h₀₀' h₀₁']
-    rw [Fin.sum_univ_succ (f := fun i : Fin (m + 1 + 1) ↦ α ![b (i, 0), b (i, 1)]),
+      Even.neg_one_pow ⟨m + 1, by ring⟩, one_smul,
+      pairedWedge_curry_wedgePow_succ_apply ω α m (b (0, 0)) (b (0, 1)) R
+        (by simpa using h₀₁ 0 0) fun r ↦ hq _,
+      pairedWedge_wedgePow_succ_curry_apply ω α m (b (0, 0)) (b (0, 1)) R fun r ↦ hp _,
+      hR, ih b' h₀₀' h₀₁' h₁₁', wedgePow_apply_finProdFinEquiv ω b' h₀₀' h₀₁',
+      Fin.sum_univ_succ (f := fun i : Fin (m + 1 + 1) ↦ α ![b (i, 0), b (i, 1)]),
       Nat.factorial_succ]
     simp only [hb', Function.comp_apply, Prod.map_apply, id]
     push_cast

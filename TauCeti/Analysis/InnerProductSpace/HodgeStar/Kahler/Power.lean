@@ -180,11 +180,11 @@ include hJ
 is orthonormal for the Hermitian metric of `J`. -/
 theorem kahlerPowerForm_apply_complexRealFrame {r : ℕ} {u : Fin r → V} (hu : Orthonormal ℝ u)
     (hJu : ∀ i j, ⟪J (u i), u j⟫ = 0) : J.kahlerPowerForm r (J.complexRealFrame u) = 1 := by
-  have hω (a b : V) : alternatingFormEquiv V 2 J.kahlerForm ![a, b] = ⟪J a, b⟫ := by
-    rw [alternatingFormEquiv_apply, inner_kahlerForm_ιMulti hJ]
   have h := wedgePow_apply_finProdFinEquiv (alternatingFormEquiv V 2 J.kahlerForm)
-    (fun p : Fin r × Fin 2 ↦ ![u p.1, J (u p.1)] p.2) (fun i j ↦ by simpa [hω] using hJu i j)
-    (fun i j ↦ by simpa [hω, hJ] using (orthonormal_iff_ite.1 hu) i j)
+    (fun p : Fin r × Fin 2 ↦ ![u p.1, J (u p.1)] p.2)
+    (fun i j ↦ by simpa [alternatingFormEquiv_kahlerForm_apply hJ] using hJu i j)
+    (fun i j ↦ by
+      simpa [alternatingFormEquiv_kahlerForm_apply hJ, hJ] using (orthonormal_iff_ite.1 hu) i j)
   -- `h` evaluates the wedge power on the frame `(u₀, J u₀, …)`.
   have h' : (alternatingFormEquiv V 2 J.kahlerForm).wedgePow r (J.complexRealFrame u) =
       r.factorial := by
