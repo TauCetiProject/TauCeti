@@ -195,13 +195,16 @@ private def zeroMoment (χ : ContDiffBump (0 : ℂ)) (L : ℂ →L[ℝ] ℝ) (j 
   (4 * π)⁻¹ * ((∫ z, Δ (fun y ↦ χ y * L (y ^ j)) z * logNormSqCut (1 / 4) (α z)) -
     ∫ z, (χ z * L (z ^ j)) * ((‖α z‖ ^ 2 - 1) / 4))
 
+/-- A real-linear functional of a power, `y ↦ L (yʲ)`, is smooth. -/
+private theorem contDiff_clm_pow (L : ℂ →L[ℝ] ℝ) (j : ℕ) : ContDiff ℝ ∞ fun y : ℂ ↦ L (y ^ j) :=
+  L.contDiff.comp ((contDiff_id.pow j : ContDiff ℂ ∞ fun z : ℂ ↦ z ^ j).restrict_scalars ℝ)
+
 /-- The moment functional is smooth along a smooth family of bounded continuous sections. -/
 private theorem contDiff_zeroMoment {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {F : E → ℂ →ᵇ ℂ} (hF : ContDiff ℝ ∞ F) (χ : ContDiffBump (0 : ℂ)) (L : ℂ →L[ℝ] ℝ) (j : ℕ) :
     ContDiff ℝ ∞ fun u ↦ zeroMoment χ L j (F u) := by
   have hχw : ContDiff ℝ ∞ fun y ↦ χ y * L (y ^ j) :=
-    χ.contDiff.mul (L.contDiff.comp ((contDiff_id.pow j : ContDiff ℂ ∞ fun z : ℂ ↦ z ^ j)
-      |>.restrict_scalars ℝ))
+    χ.contDiff.mul (contDiff_clm_pow L j)
   have hχwc : HasCompactSupport fun y ↦ χ y * L (y ^ j) := χ.hasCompactSupport.mul_right
   have hΔc : HasCompactSupport (Δ fun y ↦ χ y * L (y ^ j)) :=
     hχwc.mono' ((subset_tsupport _).trans (tsupport_laplacian_subset _))
@@ -232,7 +235,7 @@ private theorem sum_map_eq_zeroMoment {x : ℂ → EuclideanSpace ℝ (Fin 4)}
       Multiset.mem_toFinset.2 (Multiset.count_pos.1 (hD.pos_iff.2 hz))
   have hid := integral_laplacian_mul_log_normSq_of_eq_one (hx 0) (hx 1) (hx 2) (hx 3) hsol hfin
     (isZeroMultiplicity_iff.1 hD) χ.contDiff χ.hasCompactSupport hχ1 (h := fun z ↦ L (z ^ j))
-    (L.contDiff.comp ((contDiff_id.pow j : ContDiff ℂ ∞ fun z : ℂ ↦ z ^ j).restrict_scalars ℝ))
+    (contDiff_clm_pow L j)
   simp_rw [← nsmul_eq_mul, Multiset.finsum_count_nsmul_eq_sum_map] at hid
   -- Where `‖z‖ < χ.rIn`, `χ L (zʲ) = L (zʲ)` near `z`, which is harmonic.
   have hΔ0 {z : ℂ} (hz : ‖z‖ < χ.rIn) : Δ (fun y ↦ χ y * L (y ^ j)) z = 0 := by
@@ -240,8 +243,7 @@ private theorem sum_map_eq_zeroMoment {x : ℂ → EuclideanSpace ℝ (Fin 4)}
       filter_upwards [isOpen_ball.mem_nhds (mem_ball_zero_iff.2 hz)] with y hy
       rw [χ.one_of_mem_closedBall (ball_subset_closedBall hy), one_mul]
     rw [(laplacian_congr_nhds hev).self_of_nhds]
-    exact ((((contDiff_id.pow j : ContDiff ℂ ∞ fun z : ℂ ↦ z ^ j)).contDiffAt.of_le
-      (by simp)).harmonicAt.comp_CLM L).2.self_of_nhds
+    exact ((contDiff_id.pow j).contDiffAt.harmonicAt.comp_CLM L).2.self_of_nhds
   have h₁ : ∫ z, Δ (fun y ↦ χ y * L (y ^ j)) z * Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2)) =
       ∫ z, Δ (fun y ↦ χ y * L (y ^ j)) z * logNormSqCut (1 / 4) (sectionValue x z) := by
     refine integral_congr_ae (.of_forall fun z ↦ ?_)
