@@ -310,15 +310,10 @@ private theorem norm_endField_sub_endField_le {ℓx ℓy : ℂ → ℝ} {z : ℂ
       !₂[-((fderiv ℝ ℓx z I - fderiv ℝ ℓy z I) / 2), (fderiv ℝ ℓx z 1 - fderiv ℝ ℓy z 1) / 2,
         (Real.exp (ℓx z / 2) - Real.exp (ℓy z / 2)) / 2, 0] := by
     ext i
-    fin_cases i <;>
-      simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue, PiLp.sub_apply,
-        Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val] <;>
-      ring
+    fin_cases i <;> simp <;> ring
   rw [hvec]
   refine (PiLp.norm_le_sum_norm _).trans ?_
-  simp only [Fin.sum_univ_four, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons,
-    Real.norm_eq_abs, abs_neg, abs_div, abs_two, abs_zero]
+  simp [Fin.sum_univ_four, abs_div]
   linarith [abs_nonneg (ℓx z - ℓy z)]
 
 /-- **The end trivializations of two vortices converge to each other outside a disc.** Under the

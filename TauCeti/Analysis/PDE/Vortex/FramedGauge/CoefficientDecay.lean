@@ -114,21 +114,15 @@ variable {m : ℕ}
 moduli are Lipschitz in the coefficients, uniformly over a closed ball of coefficients. -/
 private theorem exists_abs_log_normSq_sub_le_mul_norm_sub (r : ℝ) {R : ℝ}
     (hpos : ∀ a ∈ closedBall (0 : Fin m → ℂ) r, ∀ z : ℂ, ‖z‖ = R →
-      0 < 4 * (gaugeTransform (polynomialGauge a) (polynomialVortex (monicOfCoeff a)) z 2 ^ 2 +
-        gaugeTransform (polynomialGauge a) (polynomialVortex (monicOfCoeff a)) z 3 ^ 2)) :
+      0 < 4 * (normalizedVortex a z 2 ^ 2 + normalizedVortex a z 3 ^ 2)) :
     ∃ L : ℝ, 0 ≤ L ∧ ∀ a ∈ closedBall (0 : Fin m → ℂ) r, ∀ b ∈ closedBall (0 : Fin m → ℂ) r,
       ∀ z : ℂ, ‖z‖ = R →
-        |Real.log (4 * (gaugeTransform (polynomialGauge b) (polynomialVortex (monicOfCoeff b)) z 2 ^
-          2 + gaugeTransform (polynomialGauge b) (polynomialVortex (monicOfCoeff b)) z 3 ^ 2)) -
-        Real.log (4 * (gaugeTransform (polynomialGauge a) (polynomialVortex (monicOfCoeff a)) z 2 ^
-          2 + gaugeTransform (polynomialGauge a) (polynomialVortex (monicOfCoeff a)) z 3 ^ 2))| ≤
+        |Real.log (4 * (normalizedVortex b z 2 ^ 2 + normalizedVortex b z 3 ^ 2)) -
+          Real.log (4 * (normalizedVortex a z 2 ^ 2 + normalizedVortex a z 3 ^ 2))| ≤
           L * ‖b - a‖ := by
   set F : (Fin m → ℂ) × ℂ → ℝ := fun p ↦ Real.log (4 *
-    (gaugeTransform (polynomialGauge p.1) (polynomialVortex (monicOfCoeff p.1)) p.2 2 ^ 2 +
-      gaugeTransform (polynomialGauge p.1) (polynomialVortex (monicOfCoeff p.1)) p.2 3 ^ 2))
-  have hX : ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦
-      gaugeTransform (polynomialGauge p.1) (polynomialVortex (monicOfCoeff p.1)) p.2 :=
-    by simpa only [normalizedVortex_def] using contDiff_normalizedVortex_uncurry (m := m)
+    (normalizedVortex p.1 p.2 2 ^ 2 + normalizedVortex p.1 p.2 3 ^ 2))
+  have hX := contDiff_normalizedVortex_uncurry (m := m)
   have h₂ := (contDiff_piLp 2).1 hX 2
   have h₃ := (contDiff_piLp 2).1 hX 3
   -- `F` is smooth, so locally Lipschitz, near the compact set of pairs `(a, z)` with `a` in the
@@ -176,9 +170,9 @@ theorem exists_norm_gaugeTransform_inv_sub_gaugeTransform_inv_le_mul_norm_sub_mu
   obtain ⟨R₀, hRR₀, hR₀⟩ : ∃ R₀, R + 1 ≤ R₀ ∧ 0 < R₀ :=
     ⟨max (R + 1) 1, le_max_left _ _, lt_max_of_lt_right one_pos⟩
   have hgt (a : Fin m → ℂ) (ha : a ∈ closedBall 0 r) (z : ℂ) (hz : R₀ ≤ ‖z‖) :
-      4 * c' ^ 2 < 4 * (gaugeTransform (polynomialGauge a) (polynomialVortex (monicOfCoeff a)) z 2 ^
-        2 + gaugeTransform (polynomialGauge a) (polynomialVortex (monicOfCoeff a)) z 3 ^ 2) := by
+      4 * c' ^ 2 < 4 * (normalizedVortex a z 2 ^ 2 + normalizedVortex a z 3 ^ 2) := by
     obtain ⟨hx, hsol, hframe, hD⟩ := gaugeTransform_polynomialGauge_polynomialVortex_spec hm a
+    rw [← normalizedVortex_def] at hx hsol hframe hD
     refine hR _ _ hx hsol hframe hD (fun b hb ↦ ?_) z (by linarith)
     have := norm_lt_of_isRoot_monicOfCoeff a (_root_.Polynomial.isRoot_of_mem_roots hb)
     linarith [mem_closedBall_zero_iff.1 ha]
@@ -192,6 +186,7 @@ theorem exists_norm_gaugeTransform_inv_sub_gaugeTransform_inv_le_mul_norm_sub_mu
   have hphase (d : Fin m → ℂ) (hd : d ∈ S) := hR' d hd z (by linarith [le_of_max_le_right hz])
   obtain ⟨hxb, hsb, hfb, -⟩ := gaugeTransform_polynomialGauge_polynomialVortex_spec hm b
   obtain ⟨hxa, hsa, hfa, -⟩ := gaugeTransform_polynomialGauge_polynomialVortex_spec hm a
+  simp only [← normalizedVortex_def] at hxb hsb hfb hxa hsa hfa hphase ⊢
   have h := norm_gaugeTransform_inv_sub_gaugeTransform_inv_le_mul_exp
     (((contDiff_piLp 2).1 hxb 2).of_le (by simp)) (((contDiff_piLp 2).1 hxb 3).of_le (by simp))
     (((contDiff_piLp 2).1 hxa 2).of_le (by simp)) (((contDiff_piLp 2).1 hxa 3).of_le (by simp))
