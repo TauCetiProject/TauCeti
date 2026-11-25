@@ -358,6 +358,20 @@ theorem isInvertible_toSpanSingleton_iff {c : 𝕜} :
     exact not_subsingleton 𝕜 h.1
   all_goals ext; simp [hc]
 
+/-- On a topological semifield, a continuous linear map `𝕜 → 𝕜` is invertible exactly when it is
+nonzero, since it is `a ↦ a • f 1`. -/
+theorem isInvertible_iff_ne_zero {f : 𝕜 →L[𝕜] 𝕜} : f.IsInvertible ↔ f ≠ 0 := by
+  have hf : f = toSpanSingleton 𝕜 (f 1) := ext_ring (by simp)
+  rw [hf, isInvertible_toSpanSingleton_iff, ← hf]
+  exact not_congr ⟨fun h ↦ ext_ring (by simp [h]), fun h ↦ by simp [h]⟩
+
+/-- On a topological semifield, `c • id` is invertible exactly when `c ≠ 0`. -/
+@[simp]
+theorem isInvertible_smul_id_iff {c : 𝕜} :
+    (c • ContinuousLinearMap.id 𝕜 𝕜).IsInvertible ↔ c ≠ 0 := by
+  rw [show c • ContinuousLinearMap.id 𝕜 𝕜 = toSpanSingleton 𝕜 c from ext_ring (by simp),
+    isInvertible_toSpanSingleton_iff]
+
 end ToSpanSingleton
 
 section ProdMap
