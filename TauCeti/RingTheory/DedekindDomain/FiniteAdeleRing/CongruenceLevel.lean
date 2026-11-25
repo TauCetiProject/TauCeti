@@ -45,6 +45,8 @@ the residue fields of `R` are finite.
 * `IsDedekindDomain.FiniteAdeleRing.principalLevel_le_level1`, `level1_le_level0` and the
   monotonicity lemmas `principalLevel_mono`, `level1_mono`, `level0_mono`.
 * `IsDedekindDomain.FiniteAdeleRing.principalLevel_bot`: `K(0) = {1}`.
+* `IsDedekindDomain.FiniteAdeleRing.map_algebraMap_mem_principalLevel`: the image of a matrix of
+  `GL₂(R)` congruent to `1` modulo `N` lies in `K(N)`.
 * `IsDedekindDomain.FiniteAdeleRing.upperRightHom_mem_level1`,
   `upperRightHom_mem_principalLevel_iff` and `upperRightHom_algebraMap_mem_principalLevel_iff`:
   the unipotent matrices `[[1, b], [0, 1]]` in `K₁(N)` and `K(N)`.
@@ -238,6 +240,21 @@ theorem mem_level0_iff {N : Ideal R} {g : GL (Fin 2) 𝔸ᶠ[R, K]} :
   rw [level0_def, mem_map_integralGL_iff 2 (P := fun M ↦ M 1 0 ∈ completedIdeal K N)
     fun _ ↦ GL2K0.mem_iff]
   simp only [Matrix.of_apply]
+
+/-- The diagonal image in `GL₂(𝔸_f)` of a matrix of `GL₂(R)` congruent to `1` modulo `N` lies in
+the principal level `K(N)`. -/
+theorem map_algebraMap_mem_principalLevel {N : Ideal R} {g : GL (Fin 2) R}
+    (hg : ∀ i j, (g : Matrix (Fin 2) (Fin 2) R) i j - (1 : Matrix (Fin 2) (Fin 2) R) i j ∈ N) :
+    Matrix.GeneralLinearGroup.map (algebraMap R 𝔸ᶠ[R, K]) g ∈ principalLevel K N := by
+  rw [mem_principalLevel_iff]
+  refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩
+  · rw [Matrix.GeneralLinearGroup.map_apply]
+    exact (integralAdeles R K).algebraMap_mem _
+  · rw [← map_inv, Matrix.GeneralLinearGroup.map_apply]
+    exact (integralAdeles R K).algebraMap_mem _
+  · convert algebraMap_mem_completedIdeal (K := K) (hg i j) using 1
+    ext
+    simp [Matrix.one_apply, apply_ite]
 
 variable (K)
 
