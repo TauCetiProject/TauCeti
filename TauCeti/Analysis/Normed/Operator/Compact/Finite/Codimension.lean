@@ -81,7 +81,8 @@ theorem exists_norm_comp_subtypeL_le_two_mul_of_isCover (T : E →L[𝕜] F) {ε
       _ ≤ ‖φ y‖ * ‖y - T x‖ := le_opNorm _ _
       _ ≤ 1 * ε := by gcongr; exact hφ y
       _ = ε := one_mul _
-  calc ‖(T ∘L (LinearMap.ker (A : E →ₗ[𝕜] N → 𝕜)).subtypeL) x‖ = ‖T x‖ := rfl
+  calc ‖(T ∘L (LinearMap.ker (A : E →ₗ[𝕜] N → 𝕜)).subtypeL) x‖ = ‖T x‖ := by
+        rw [comp_apply, Submodule.subtypeL_apply]
     _ ≤ ‖y‖ + ‖T x - y‖ := norm_le_norm_add_norm_sub' _ _
     _ ≤ ε + ε := by rw [norm_sub_rev]; gcongr
     _ = 2 * ε := by ring

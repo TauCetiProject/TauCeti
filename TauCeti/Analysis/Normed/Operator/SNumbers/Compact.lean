@@ -177,14 +177,14 @@ theorem totallyBounded_of_tendsto_kolmogorovNumber_atTop_nhds_zero {T : E →L[�
   -- `T x` lies within `r / 2` of a point `v ∈ V`, which has norm at most `‖T‖ + r / 2`.
   have hdist : infDist (T x) (V : Set F) < r / 2 := by
     rw [← V.norm_mkQL_apply]
-    calc ‖V.mkQL (T x)‖ = ‖(V.mkQL ∘L T) x‖ := rfl
+    calc ‖V.mkQL (T x)‖ = ‖(V.mkQL ∘L T) x‖ := by rw [comp_apply]
       _ ≤ ‖V.mkQL ∘L T‖ * ‖x‖ := le_opNorm _ _
       _ ≤ ‖V.mkQL ∘L T‖ * 1 := by gcongr; exact mem_closedBall_zero_iff.1 hx
       _ < r / 2 := by rw [mul_one]; exact Real.lt_toNNReal_iff_coe_lt.1 hVT
   obtain ⟨v, hv, hxv⟩ := (infDist_lt_iff ⟨0, V.zero_mem⟩).1 hdist
   have hvK : v ∈ ((↑) : V → F) '' closedBall 0 (‖T‖ + r / 2) := by
     refine ⟨⟨v, hv⟩, mem_closedBall_zero_iff.2 ?_, rfl⟩
-    calc ‖(⟨v, hv⟩ : V)‖ = ‖v‖ := rfl
+    calc ‖(⟨v, hv⟩ : V)‖ = ‖v‖ := (Submodule.norm_coe _).symm
       _ ≤ ‖T x‖ + dist (T x) v := by
         rw [dist_eq_norm]; exact norm_le_norm_add_norm_sub (T x) v
       _ ≤ ‖T‖ + r / 2 := by
