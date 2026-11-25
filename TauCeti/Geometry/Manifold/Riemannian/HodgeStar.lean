@@ -70,6 +70,8 @@ model vectors (`TauCeti.contMDiffAt_continuousAlternatingMap_apply`).
 * `TauCeti.RoughForm.hodgeStar_hodgeStar_of_even`,
   `TauCeti.RoughForm.alternatingFormInner_hodgeStar_left`: in an even middle degree the star is
   an involution and is pointwise self-adjoint.
+* `TauCeti.RoughForm.wedge_self_apply_eq_alternatingFormInner_hodgeStar`: `α ∧ α = ⟨α, ⋆α⟩ vol` for
+  a form `α` of even middle degree.
 
 ## References
 
@@ -159,6 +161,20 @@ theorem alternatingFormInner_hodgeStar_left (o : Manifold.Orientation I M (Fin (
   let := o.fact_finrank_tangentSpace x
   rw [hodgeStar_apply, hodgeStar_apply]
   exact (o.orientationAt x).alternatingFormInner_formHodgeStar_left hk _ (α x) (β x)
+
+/-- The wedge square of a middle-degree form of even degree is `α ∧ α = ⟨α, ⋆α⟩ vol`, where `vol`
+is the Riemannian volume form. -/
+theorem wedge_self_apply_eq_alternatingFormInner_hodgeStar
+    (o : Manifold.Orientation I M (Fin (k + k))) (hk : Even k) (α : RoughForm I M ℝ k) (x : M)
+    (v : Fin (k + k) → TangentSpace I x) :
+    α.wedge α x v =
+      alternatingFormInner (TangentSpace I x) k (α x) (hodgeStar o rfl α x) *
+        riemannianVolumeForm o x v := by
+  -- Write the second factor as `⋆(⋆α)` and apply `α ∧ ⋆β = ⟨α, β⟩ vol`.
+  have h := wedge_hodgeStar_apply o rfl α (hodgeStar o rfl α) x v
+  rw [hodgeStar_hodgeStar_of_even o hk] at h
+  rw [wedge_def, wedgeWith_apply', ← ContinuousAlternatingMap.wedge_def, h]
+  simp
 
 /-- Reversing the orientation negates the Hodge star. -/
 @[simp]

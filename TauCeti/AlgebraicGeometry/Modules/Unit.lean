@@ -34,4 +34,11 @@ reducible transparency, where `rw` and `simp` work. -/
 noncomputable abbrev unit (X : Scheme.{u}) : X.Modules :=
   SheafOfModules.unit X.ringCatSheaf
 
+/-- The restriction maps of `𝒪_X`, viewed as a module over itself, are those of the structure
+sheaf. -/
+@[simp]
+lemma presheaf_unit_map_apply {X : Scheme.{u}} {U U' : X.Opens} (i : U ⟶ U') (s : Γ(X, U')) :
+    (unit X).presheaf.map i.op s = X.presheaf.map i.op s :=
+  rfl
+
 end AlgebraicGeometry.Scheme.Modules

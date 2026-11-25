@@ -32,7 +32,9 @@ arbitrary vertices is the restriction of a continuous affine map of the ambient 
 (`TauCeti.exists_continuousAffineMap_eq_affineMapMk`). In coordinates, the face map omitting the
 vertex `e_j` inserts a zero `j`-th coordinate, and the face map omitting the origin puts the
 missing barycentric weight in front; a permutation of the vertices induces an affine symmetry of
-the simplex. Cycling the vertices relates the two readings of the face opposite the origin:
+the simplex. On `Δ²` the two degeneracies onto `Δ¹`, read in the unit interval through Mathlib's
+`StdSimplex.homeomorphI`, are the coordinates `y₀ + y₁` and `y₁`. Cycling the vertices relates the
+two readings of the face opposite the origin:
 through the coordinates other than the `j`-th one, and through the last coordinates as the face
 map does. The simplex is a compact convex set with nonempty interior, so derivatives within it are
 unique at every point (`TauCeti.uniqueDiffOn_fullSimplex`); this is what makes it a domain for
@@ -199,6 +201,28 @@ theorem fullSimplexEquivStdSimplex_simplexFace_self {p : ℕ} (i : Fin (p + 2))
     (fullSimplexEquivStdSimplex (p + 1) (simplexFace p i x)).weights i = 0 := by
   rw [fullSimplexEquivStdSimplex_simplexFace, StdSimplex.weights_map]
   exact Finsupp.mapDomain_of_notMem_range _ _ (by simp)
+
+/-- On `Δ²`, the degeneracy `s₁ : Δ² → Δ¹` is the coordinate `y₀ + y₁` of the unit interval. -/
+theorem homeomorphI_map_predAbove_one_fullSimplexEquivStdSimplex_coe (y : fullSimplex 2) :
+    (StdSimplex.homeomorphI (StdSimplex.map (Fin.predAbove 1) (fullSimplexEquivStdSimplex 2 y)) :
+      ℝ) = y.val 0 + y.val 1 := by
+  have h₁ : (fullSimplexEquivStdSimplex 2 y).weights 1 = y.val 0 :=
+    fullSimplexEquivStdSimplex_weights_succ y 0
+  have h₂ : (fullSimplexEquivStdSimplex 2 y).weights 2 = y.val 1 :=
+    fullSimplexEquivStdSimplex_weights_succ y 1
+  rw [StdSimplex.homeomorphI_apply_coe, StdSimplex.weights_map]
+  simp [Finsupp.mapDomain, Finsupp.sum_fintype, Fin.sum_univ_three, h₁, h₂,
+    show Fin.predAbove (1 : Fin 2) (1 : Fin 3) = 1 from rfl,
+    show Fin.predAbove (1 : Fin 2) (2 : Fin 3) = 1 from rfl]
+
+/-- On `Δ²`, the degeneracy `s₀ : Δ² → Δ¹` is the coordinate `y₁` of the unit interval. -/
+theorem homeomorphI_map_predAbove_zero_fullSimplexEquivStdSimplex_coe (y : fullSimplex 2) :
+    (StdSimplex.homeomorphI (StdSimplex.map (Fin.predAbove 0) (fullSimplexEquivStdSimplex 2 y)) :
+      ℝ) = y.val 1 := by
+  have h₂ : (fullSimplexEquivStdSimplex 2 y).weights 2 = y.val 1 :=
+    fullSimplexEquivStdSimplex_weights_succ y 1
+  rw [StdSimplex.homeomorphI_apply_coe, StdSimplex.weights_map]
+  simp [Finsupp.mapDomain, Finsupp.sum_fintype, Fin.sum_univ_three, h₂]
 
 /-- Every face inclusion is continuous in the full-dimensional topology. -/
 @[fun_prop]
