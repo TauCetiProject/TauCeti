@@ -241,8 +241,9 @@ theorem reebVectorField_standardContactForm (p : ℝ × ℝ × ℝ) :
 /-- For the contact form `eˣ (dz - x dy)`, the correction term `eˣ R_(eˣ α) - R_α` of the
 normalized rescaling law
 (`TauCeti.SmoothForm.IsContactForm.eq_smul_reebVectorField_sub_reebVectorField_iff`) is the
-contact vector `∂_y + x ∂_z`: it lies in `ker α` and `dα(∂_y + x ∂_z, w) = w_x = d(eˣ)(w) / eˣ`.
-Here `β` is the one-form `eˣ (dz - x dy)`, given through its values. -/
+vector `∂_y + x ∂_z` of the contact plane: it lies in `ker α` and
+`dα(∂_y + x ∂_z, w) = w_x = d(eˣ)(w) / eˣ`. Here `β` is the one-form `eˣ (dz - x dy)`, given
+through its values. -/
 theorem exp_smul_reebVectorField_sub_reebVectorField_of_eq_exp_smul_standardContactForm
     {β : SmoothForm 𝓘(ℝ, ℝ × ℝ × ℝ) (ℝ × ℝ × ℝ) ℝ 1}
     (hβ : ∀ q : ℝ × ℝ × ℝ, β.val q = Real.exp q.1 • standardContactForm.val q) (p : ℝ × ℝ × ℝ) :
