@@ -100,23 +100,9 @@ private lemma finrank_quaternion : finrank ℝ ℍ[ℝ] = 3 + 1 :=
 /-- **The homology of `SU(2)` vanishes outside degrees `0` and `3`**, with any coefficients. -/
 theorem isZero_singularHomology_specialUnitaryGroup_two {k : ℕ} (h₀ : k ≠ 0) (h₃ : k ≠ 3) :
     IsZero (((singularHomologyFunctor C k).obj M).obj
-      (_root_.TopCat.of (specialUnitaryGroup (Fin 2) ℂ))) := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero h₀
-  exact ((isZero_reducedSingularHomologyFunctor_sphere_of_ne M finrank_quaternion
-    (by omega)).of_iso
-      (specialUnitaryGroupTwoHomeomorphSphere.toHomotopyEquiv.reducedSingularHomologyIso
-        _ _)).of_iso
-    ((reducedSingularHomologySuccIso M k).app _).symm
-
-/-- `H₃(SU(2); M) ≅ M`: the top homology of the three-sphere, with the generator given by an
-orthonormal basis of `ℍ`. -/
-private def singularHomologySpecialUnitaryGroupTwoThreeIso :
-    ((singularHomologyFunctor C 3).obj M).obj
-        (_root_.TopCat.of (specialUnitaryGroup (Fin 2) ℂ)) ≅ M :=
-  ((reducedSingularHomologySuccIso M 2).app _).symm ≪≫
-    specialUnitaryGroupTwoHomeomorphSphere.toHomotopyEquiv.reducedSingularHomologyIso _ 3 ≪≫
-    reducedSingularHomologySphereIso M
-      ((stdOrthonormalBasis ℝ ℍ[ℝ]).reindex (finCongr finrank_quaternion))
+      (_root_.TopCat.of (specialUnitaryGroup (Fin 2) ℂ))) :=
+  specialUnitaryGroupTwoHomeomorphSphere.toHomotopyEquiv.isZero_singularHomology_of_sphere_of_ne
+    M finrank_quaternion h₀ h₃
 
 /-- **The homology of `SU(2)` in degrees `0` and `3`**: `Hₖ(SU(2); M) ≅ M` for `k ∈ {0, 3}`. In
 degree `0` this is the augmentation, `SU(2)` being path connected; in degree `3` it is the top
@@ -128,7 +114,9 @@ def singularHomologySpecialUnitaryGroupTwoIso {k : ℕ} (hk : k = 0 ∨ k = 3) :
     eqToIso (by rw [h]) ≪≫
       asIso ((_root_.TopCat.of (specialUnitaryGroup (Fin 2) ℂ)).singularHomology₀ε M)
   else
-    eqToIso (by rw [hk.resolve_left h]) ≪≫ singularHomologySpecialUnitaryGroupTwoThreeIso M
+    eqToIso (by rw [hk.resolve_left h]) ≪≫
+      specialUnitaryGroupTwoHomeomorphSphere.toHomotopyEquiv.singularHomologySphereIso M
+        finrank_quaternion (by norm_num)
 
 end SpecialUnitaryTwo
 
