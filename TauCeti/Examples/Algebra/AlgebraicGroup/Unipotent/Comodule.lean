@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Unipotent
 public import TauCeti.Algebra.AlgebraicGroup.RootsOfUnity.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Comodule
 

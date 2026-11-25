@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Unipotent
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Embedding
 public import TauCeti.Algebra.Coalgebra.Comodule.GroupLike
 import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
@@ -37,8 +36,7 @@ definitions agree (`unipotentCommHopfAlgProperty_iff_geometricallyUnipotentPoint
 
 A group-like element `c ≠ 1` of `H`, that is, a nontrivial character of `G`, rules out
 unipotence: the one-dimensional comodule `k_c` has no nonzero fixed vector
-(`not_unipotentCommHopfAlgProperty_of_isGroupLikeElem`). The additive group `𝔾ₐ` is unipotent over
-every field (`AdditiveGroup.unipotentCommHopfAlgProperty_coordinateHopfAlgebra`).
+(`not_unipotentCommHopfAlgProperty_of_isGroupLikeElem`).
 
 ## Main declarations
 
@@ -55,7 +53,6 @@ every field (`AdditiveGroup.unipotentCommHopfAlgProperty_coordinateHopfAlgebra`)
   closed field, for reduced finite-type groups, the two definitions agree.
 * `TauCeti.not_unipotentCommHopfAlgProperty_of_isGroupLikeElem`: a nontrivial character excludes
   unipotence.
-* `TauCeti.AdditiveGroup.unipotentCommHopfAlgProperty_coordinateHopfAlgebra`: `𝔾ₐ` is unipotent.
 
 ## References
 
@@ -224,17 +221,6 @@ theorem not_unipotentCommHopfAlgProperty_of_isGroupLikeElem {c : H} (hc : IsGrou
   have h := congrArg (TensorProduct.lid k H) hvc
   rw [TensorProduct.lid_tmul, TensorProduct.lid_tmul] at h
   exact hc1 (smul_right_injective H hv h)
-
-namespace AdditiveGroup
-
-/-- **The additive group is unipotent** over every field: every nonzero comodule over its
-coordinate algebra `k[x]` has a nonzero fixed vector. -/
-theorem unipotentCommHopfAlgProperty_coordinateHopfAlgebra (k : Type u) [Field k] :
-    unipotentCommHopfAlgProperty k (coordinateHopfAlgebra k) := fun M _ _ _ _ _ ↦ by
-  obtain ⟨m, hm⟩ := exists_ne (0 : M)
-  exact (hasNonzeroFixedVector_iff (k := k)).mpr (exists_ne_zero_coact_eq_tmul_one k hm)
-
-end AdditiveGroup
 
 end
 
