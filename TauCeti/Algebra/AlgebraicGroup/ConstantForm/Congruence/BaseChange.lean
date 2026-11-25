@@ -18,7 +18,8 @@ This coordinate isomorphism is natural in the base ring: along the base-change i
 `TauCeti.ConstantForm.coordinateHopfAlgebraBaseChangeIso`, the scalar extension of the coordinate
 isomorphism for `P` is the coordinate isomorphism for the image of `P` over `K`
 (`TauCeti.ConstantForm.baseChangeMap_coordinateHopfAlgebraCongr_hom_comp`). Naturality of the
-group-scheme isomorphism `TauCeti.ConstantForm.groupSchemeCongr` is not proved here.
+group-scheme isomorphism `TauCeti.ConstantForm.groupSchemeCongr` is
+`TauCeti.ConstantForm.baseChange_map_groupSchemeCongr_hom_comp`.
 
 The proof specializes the naturality of quotient isomorphisms under base change
 (`TauCeti.CommHopfAlgCat.baseChangeMap_quotientIsoOfComapEq_hom_comp`)
