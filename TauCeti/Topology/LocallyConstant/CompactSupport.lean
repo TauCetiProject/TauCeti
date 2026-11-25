@@ -27,8 +27,9 @@ compact-open expansion of a test function.
 The expansions come from the fibres. The support of a locally constant function is clopen, so it
 equals the topological support, and a compactly supported locally constant function takes finitely
 many values. Its nonzero fibres are therefore finitely many pairwise disjoint compact open sets, and
-`f = ∑ m • 1_{f⁻¹(m)}` (`LocallyConstant.exists_pairwiseDisjoint_sum_indicator`). In a Hausdorff
-space compact open sets are clopen, so their indicators `1_K • m` are locally constant, and they
+`f = ∑ m • 1_{f⁻¹(m)}` over the nonzero range
+(`LocallyConstant.eq_sum_indicator_fiberClopens_of_finite_range`). In a Hausdorff space compact
+open sets are clopen, so their indicators `1_K • m` are locally constant, and they
 span `C_c^∞(X, M)` (`LocallyConstant.compactlySupported_eq_span`). Two such expansions have a common
 refinement by `Finpartition.exists_forall_le_or_disjoint`, applied in the generalized Boolean
 algebra `CompactOpens X` of compact open sets of a Hausdorff space `X`.
@@ -179,6 +180,26 @@ theorem compactOpenIndicator_sup_of_disjoint [AddZeroClass M] {K L : CompactOpen
 
 end Indicator
 
+open scoped Classical in
+/-- A locally constant function of finite range is the sum of the indicators of its nonzero
+fibers, weighted by their values. -/
+theorem eq_sum_indicator_fiberClopens_of_finite_range [AddCommMonoid M]
+    (f : LocallyConstant X M) (hr : (range f).Finite) :
+    f = ∑ m ∈ hr.toFinset.erase 0, (const X m).indicator (f.fiberClopens m).isClopen := by
+  ext x
+  conv_rhs => rw [← evalAddMonoidHom_apply x, map_sum]
+  simp only [evalAddMonoidHom_apply]
+  by_cases hx : f x = 0
+  · rw [hx]
+    symm
+    exact Finset.sum_eq_zero fun m hm => indicator_of_notMem _ _ fun h =>
+      Finset.ne_of_mem_erase hm ((mem_fiberClopens.mp h).symm.trans hx)
+  · rw [Finset.sum_eq_single_of_mem (f x) (by simp [hx])]
+    · exact (indicator_of_mem (const X (f x)) (f.fiberClopens (f x)).isClopen
+        (mem_fiberClopens.mpr rfl)).symm
+    · intro m _ hm
+      exact indicator_of_notMem _ _ fun h => hm (mem_fiberClopens.mp h).symm
+
 section Module
 
 variable [Semiring R] [AddCommMonoid M] [Module R M]
@@ -231,22 +252,17 @@ theorem exists_pairwiseDisjoint_sum_indicator {f : LocallyConstant X M}
   -- The fibres over nonzero values are compact open, as `f` vanishes off its compact support.
   have hf0 : ∀ x ∉ tsupport f, f x = 0 := fun _ hx => image_eq_zero_of_notMem_tsupport hx
   let K := f.isLocallyConstant.fiberCompactOpens hf.isCompact hf0
-  have hK (m : M) (x : X) : x ∈ (K m : Set X) ↔ f x = m ∧ m ≠ 0 :=
-    f.isLocallyConstant.mem_fiberCompactOpens hf.isCompact hf0
-  refine ⟨(finite_range_of_hasCompactSupport hf).toFinset.erase 0, K, Finset.notMem_erase 0 _,
-    fun m hm => ?_, f.isLocallyConstant.pairwiseDisjoint_fiberCompactOpens hf.isCompact hf0 _,
-    funext fun x => ?_⟩
-  · -- For `m` in the erased range, the condition `m ≠ 0` holds.
-    ext x
-    simp only [hK, mem_preimage, mem_singleton_iff, and_iff_left_iff_imp]
-    exact fun _ => Finset.ne_of_mem_erase hm
+  have hr := finite_range_of_hasCompactSupport hf
+  have hK (m : M) (hm : m ∈ hr.toFinset.erase 0) : (K m : Set X) = f ⁻¹' {m} :=
+    f.isLocallyConstant.coe_fiberCompactOpens hf.isCompact hf0 (Finset.ne_of_mem_erase hm)
+  refine ⟨hr.toFinset.erase 0, K, Finset.notMem_erase 0 _, hK,
+    f.isLocallyConstant.pairwiseDisjoint_fiberCompactOpens hf.isCompact hf0 _, funext fun x => ?_⟩
   rw [Finset.sum_apply]
-  by_cases hx : f x = 0
-  · exact hx.trans (Finset.sum_eq_zero fun m _ =>
-      Set.indicator_of_notMem (by simp [hK, hx, eq_comm]) _).symm
-  rw [Finset.sum_eq_single_of_mem (f x) (by simp [hx]) fun m _ hm =>
-    Set.indicator_of_notMem (by simp [hK, Ne.symm hm]) _]
-  exact (Set.indicator_of_mem ((hK _ x).2 ⟨rfl, hx⟩) _).symm
+  have hsum := congrArg (evalAddMonoidHom x) (f.eq_sum_indicator_fiberClopens_of_finite_range hr)
+  rw [map_sum] at hsum
+  simp only [evalAddMonoidHom_apply] at hsum
+  refine hsum.trans (Finset.sum_congr rfl fun m hm => ?_)
+  rw [indicator_apply, coe_fiberClopens, hK m hm, coe_const, ← Function.const_def]
 
 /-- In a Hausdorff space, `C_c^∞(X, M)` is spanned by the indicators `1_K • m` of compact open
 sets `K`, which are clopen. -/
