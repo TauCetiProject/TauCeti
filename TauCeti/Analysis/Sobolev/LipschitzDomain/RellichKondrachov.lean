@@ -11,11 +11,10 @@ import TauCeti.Analysis.InnerProductSpace.OfLinearIsometry
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Components
 import TauCeti.Analysis.Sobolev.LipschitzDomain.SobolevEmbedding
+import TauCeti.Analysis.Sobolev.W1p.AddHaar
 import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
 import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.Data.ENNReal.InterpolatedExponent
-import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
-import TauCeti.MeasureTheory.Measure.Haar.Rescale
 
 /-!
 # Rellich–Kondrachov on bounded Lipschitz domains
@@ -47,11 +46,11 @@ strict: at `q = p⋆` the inclusion is bounded but not compact.
 
 Compactness of the value map is invariant under measure-preserving changes of variables with a
 Lipschitz inverse (`TauCeti.W1p.isCompactOperator_valueL_of_measurePreserving`). Transporting
-along the affine isometries of the boundary charts and a dilation normalizing the Haar measure, it
-holds for
-every bounded open subset of a finite-dimensional inner product space satisfying the intrinsic
-Lipschitz-domain predicate `Set.IsLipschitzDomain`, such as a bounded Lipschitz domain of
-`EuclideanSpace ℝ (Fin n)`, on which the energy forms of divergence-form operators live.
+along the affine isometries of the boundary charts, and through the change of Haar measure
+`TauCeti.W1p.addHaarEquivL`, it holds for every bounded open subset of a finite-dimensional inner
+product space satisfying the intrinsic Lipschitz-domain predicate `Set.IsLipschitzDomain`, such
+as a bounded Lipschitz domain of `EuclideanSpace ℝ (Fin n)`, on which the energy forms of
+divergence-form operators live.
 
 ## Main declarations
 
@@ -215,8 +214,6 @@ variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 section Intrinsic
 
-open scoped Pointwise
-
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
   [MeasurableSpace F] [BorelSpace F] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {Ω : Opens F} {L : ℝ≥0}
@@ -260,32 +257,26 @@ bounded open set satisfying the intrinsic Lipschitz-domain condition
 theorem W1p.isCompactOperator_valueL_of_isLipschitzDomain {μ : Measure F} [μ.IsAddHaarMeasure]
     (hΩ : (Ω : Set F).IsLipschitzDomain E) (hb : IsBounded (Ω : Set F)) :
     IsCompactOperator (W1p.valueL (mu := μ) (Omega := Ω) (p := p)) := by
-  rcases (frontier (Ω : Set F)).eq_empty_or_nonempty with hfr | ⟨x₀, hx₀⟩
-  · exact W1p.isCompactOperator_valueL_of_frontier_eq_empty hb hfr
-  -- A set with nonempty frontier lives in a nontrivial space.
-  have : Nontrivial F := by
-    by_contra h
-    rw [not_nontrivial_iff_subsingleton] at h
-    rcases (Ω : Set F).eq_empty_or_nonempty with he | hne
-    · simp [he] at hx₀
-    · rw [Subsingleton.eq_univ_of_nonempty hne, frontier_univ] at hx₀
-      exact hx₀
-  -- A dilation by `t` carries `μ` to `volume`, and `Ω` to the Lipschitz domain `t • Ω`.
-  obtain ⟨t, ht, hmap⟩ := μ.exists_pos_map_smul_eq volume
-  let V : Opens F := ⟨t • (Ω : Set F), Ω.isOpen.smul₀ ht.ne'⟩
-  have hΦ : MeasurePreserving (t • · : F → F) μ volume := ⟨measurable_const_smul t, hmap⟩
-  have hΨ : MeasurePreserving (t⁻¹ • · : F → F) volume μ := by
-    refine ⟨measurable_const_smul _, ?_⟩
-    rw [← hmap, Measure.map_map (measurable_const_smul _) (measurable_const_smul _)]
-    simp [Function.comp_def, smul_smul, inv_mul_cancel₀ ht.ne']
-  exact W1p.isCompactOperator_valueL_of_measurePreserving hΦ hΨ
-    (by simp [V, preimage_smul₀ ht.ne', smul_smul, inv_mul_cancel₀ ht.ne'])
-    (preimage_smul_inv₀ ht.ne' _).symm
-    (lipschitzWith_smul t⁻¹).locallyLipschitz.locallyLipschitzOn
-    (fun _ _ => norm_fderiv_le_of_lipschitz ℝ (lipschitzWith_smul t⁻¹))
-    (fun x _ => inv_smul_smul₀ ht.ne' x)
-    (W1p.isCompactOperator_valueL_volume_of_isLipschitzDomain (Ω := V) (hΩ.smul ht)
-      (hb.smul₀ t))
+  -- `μ` is a finite multiple of `volume`, so `Lᵖ(Ω, volume)` maps into `Lᵖ(Ω, μ)` by the identity.
+  have hle : μ.restrict Ω ≤ (μ.addHaarScalarFactor volume : ℝ≥0∞) • volume.restrict Ω := by
+    conv_lhs => rw [Measure.isAddLeftInvariant_eq_smul μ volume]
+    rw [Measure.restrict_smul]
+    exact le_rfl
+  -- The value map for `μ` factors through the change of Haar measure and the one for `volume`.
+  have h : W1p.valueL (mu := μ) (Omega := Ω) (p := p) =
+      (Lp.LpToLpOfMeasureLeSMul ENNReal.coe_ne_top hle).comp
+        ((W1p.valueL (mu := volume) (Omega := Ω) (p := p)).comp
+          ((W1p.addHaarEquivL μ volume : W1p μ Ω p ≃L[ℝ] W1p volume Ω p) :
+            W1p μ Ω p →L[ℝ] W1p volume Ω p)) := by
+    refine ContinuousLinearMap.ext fun u => Lp.ext ?_
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, W1p.valueL_apply]
+    filter_upwards [Lp.coeFn_LpToLpOfMeasureLeSMul ENNReal.coe_ne_top hle
+      (W1p.value (W1p.addHaarEquivL μ volume u)),
+      (Measure.absolutelyContinuous_of_le_smul hle).ae_le
+        (W1p.value_addHaarEquivL_ae μ volume u)] with x h₁ h₂
+    rw [h₁, h₂]
+  rw [h]
+  exact ((W1p.isCompactOperator_valueL_volume_of_isLipschitzDomain hΩ hb).comp_clm _).clm_comp _
 
 end Intrinsic
 
