@@ -30,6 +30,8 @@ sums and products.
 * `PowerSeries.isBigO_add_sub_eval_trunc_add`, `PowerSeries.isBigO_sum_sub_eval_trunc_sum`,
   `PowerSeries.isBigO_mul_sub_eval_trunc_mul`: expansions add and multiply.
 * `PowerSeries.isBigO_one_of_isBigO_sub_eval_trunc`: a function with an expansion is bounded.
+* `PowerSeries.isBigO_sub_eval_trunc_mk_of_isBigO_sub_sum_inv_pow`: an expansion
+  `F = ∑_{q < K} f_q x^{-q} + O(x^{-K})` in inverse powers of `x` is an expansion along `w = x⁻¹`.
 * `TauCeti.isBigO_one_add_mul_cpow_sub_eval_trunc`: `(1 + j w)^c` has the binomial series
   `∑ C(c, m) jᵐ Xᵐ` as expansion to every order along `w → 0`.
 -/
@@ -94,6 +96,15 @@ theorem isBigO_one_of_isBigO_sub_eval_trunc (hw : Tendsto w l (𝓝 0))
     (((continuous_pow N).tendsto 0).comp hw).isBigO_one 𝕜
   exact ((hF.trans hpow).add ((((trunc N P).continuous.tendsto 0).comp hw).isBigO_one 𝕜))
     |>.congr_left fun i ↦ by simp
+
+/-- An expansion `F = ∑_{q < K} f_q x^{-q} + O(x^{-K})` in inverse powers of `x`, in the component
+form used by `Asymptotics.HasAsymptoticExpansion` with the scale `fun q i ↦ (x i ^ q)⁻¹`, is an
+expansion `F - (trunc K (mk fs)).eval x⁻¹ = O(x⁻¹ ^ K)` to order `K` along `x⁻¹`. -/
+theorem isBigO_sub_eval_trunc_mk_of_isBigO_sub_sum_inv_pow {x : α → 𝕜} {fs : ℕ → 𝕜} {K : ℕ}
+    (hF : (fun i ↦ F i - ∑ q ∈ range K, (x i ^ q)⁻¹ • fs q) =O[l] fun i ↦ (x i ^ K)⁻¹) :
+    (fun i ↦ F i - (trunc K (mk fs)).eval (x i)⁻¹) =O[l] fun i ↦ (x i)⁻¹ ^ K :=
+  (hF.congr_left fun i ↦ by simp [eval_trunc, mul_comm]).congr_right
+    fun i ↦ (inv_pow _ _).symm
 
 /-- If `F` and `G` have the expansions `P` and `Q` to order `N` along `w → 0`, then `F * G` has
 the expansion `P * Q`. -/

@@ -251,17 +251,6 @@ private lemma coeff_sum_kernelSeries (fs gs : ℕ → ℂ) (ρ α : ℂ) (a : �
   · have hk' : ¬k ≤ t := by have := (mem_Ico.1 hk).1; omega
     simp [hk']
 
-/-- An expansion `f n = ∑_{q ≤ N} f_q n^{-q} + O(n^{-N-1})`, written in the form
-`f n - (trunc (N + 1) (mk fs)).eval n⁻¹ = O(n⁻¹ ^ (N + 1))` of a finite-order power-series
-expansion along `n⁻¹`. -/
-private lemma isBigO_sub_eval_trunc_mk_of_isBigO_sum_inv_pow {f fs : ℕ → ℂ} {N : ℕ}
-    (hf : (fun n : ℕ ↦ f n - ∑ q ∈ range (N + 1), ((n : ℂ) ^ q)⁻¹ • fs q) =O[atTop]
-      fun n ↦ ((n : ℂ) ^ (N + 1))⁻¹) :
-    (fun n : ℕ ↦ f n - (PowerSeries.trunc (N + 1) (PowerSeries.mk fs)).eval (n : ℂ)⁻¹)
-      =O[atTop] fun n ↦ (n : ℂ)⁻¹ ^ (N + 1) :=
-  (hf.congr_left fun n ↦ by simp [PowerSeries.eval_trunc, mul_comm]).congr_right
-    fun n ↦ (inv_pow _ _).symm
-
 /-- If `f` and `g` have the expansions `∑ f_q n^{-q}` and `∑ g_q n^{-q}` to order `M + 1`, then
 `ρ² (1 + 2n⁻¹)^c + ρ f n (1 + n⁻¹)^c + g n` has the expansion `kernelSeries fs gs ρ c`. -/
 private lemma isBigO_sub_eval_trunc_kernelSeries {f g fs gs : ℕ → ℂ} (ρ c : ℂ) {M : ℕ}
@@ -314,8 +303,8 @@ theorem isBigO_formalDifferenceSolution_residual_sub {f g fs gs : ℕ → ℂ} (
           ∑ t ∈ range (N + 1), differenceResidualCoeff fs gs ρ α a t * (n : ℂ)⁻¹ ^ t) =O[atTop]
       fun n ↦ ‖ρ‖ ^ n * (n : ℝ) ^ (α.re - (N + 1)) := by
   have hu : Tendsto (fun n : ℕ ↦ (n : ℂ)⁻¹) atTop (𝓝 0) := tendsto_inv_atTop_nhds_zero_nat
-  have hF := isBigO_sub_eval_trunc_mk_of_isBigO_sum_inv_pow hf
-  have hG := isBigO_sub_eval_trunc_mk_of_isBigO_sum_inv_pow hg
+  have hF := PowerSeries.isBigO_sub_eval_trunc_mk_of_isBigO_sub_sum_inv_pow hf
+  have hG := PowerSeries.isBigO_sub_eval_trunc_mk_of_isBigO_sub_sum_inv_pow hg
   -- each term `aₛ n⁻ˢ (ρ² (1 + 2n⁻¹)^{α-s} + ρ f (1 + n⁻¹)^{α-s} + g)` and its series
   have hterm := PowerSeries.isBigO_sum_sub_eval_trunc_sum (range (N + 1)) fun s _ ↦
     PowerSeries.isBigO_mul_sub_eval_trunc_mul hu
