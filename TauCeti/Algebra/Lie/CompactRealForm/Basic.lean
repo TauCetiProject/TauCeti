@@ -222,7 +222,7 @@ theorem eq_coordConj_complexBasis : τ = (hτ.complexBasis b).coordConj.toLinear
 
 /-- `τ` conjugates the coordinates in the complex basis built from a basis of the real form. -/
 @[simp]
-theorem complexBasis_repr_apply (x : L) (i : ι) :
+theorem complexBasis_repr_map (x : L) (i : ι) :
     (hτ.complexBasis b).repr (τ x) i = star ((hτ.complexBasis b).repr x i) := by
   rw [LinearMap.congr_fun (hτ.eq_coordConj_complexBasis b) x, LinearEquiv.coe_coe,
     Module.Basis.repr_coordConj]

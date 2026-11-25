@@ -174,18 +174,6 @@ theorem isLieConjugation_compactConjugation : IsLieConjugation (hx.compactConjug
 
 /-! ### Positivity of the Hermitian Killing form -/
 
-/-- The compact conjugation in the coordinates of the basis of root vectors and simple coroots. -/
-theorem compactConjugation_eq_sum (v : L) :
-    hx.compactConjugation b v =
-      ∑ k, star ((hx.toIsSl2System.rootSimpleCorootFieldBasis b).repr v k) •
-        ω (hx.toIsSl2System.rootSimpleCorootFieldBasis b k) := by
-  conv_lhs => rw [← (hx.toIsSl2System.rootSimpleCorootFieldBasis b).sum_repr v]
-  rw [map_sum]
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [LinearMap.map_smulₛₗ, compactConjugation_apply,
-    hx.coordConj_eq_self_of_mem_chevalleyLieLattice b
-      (hx.apply_rootSimpleCorootFieldBasis_mem_chevalleyLieLattice b k), starRingEnd_apply]
-
 /-- The Hermitian Killing form of the compact conjugation, in the coordinates of the basis of root
 vectors and simple coroots. -/
 theorem killingHermitianForm_compactConjugation_eq_sum (v : L) :
@@ -195,13 +183,15 @@ theorem killingHermitianForm_compactConjugation_eq_sum (v : L) :
           -killingForm ℂ L (hx.toIsSl2System.rootSimpleCorootFieldBasis b k)
             (ω (hx.toIsSl2System.rootSimpleCorootFieldBasis b l)) := by
   set c := hx.toIsSl2System.rootSimpleCorootFieldBasis b
-  rw [killingHermitianForm_def, hx.compactConjugation_eq_sum b]
-  nth_rw 1 [← c.sum_repr v]
-  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul,
-    ← Finset.sum_neg_distrib, Finset.mul_sum]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun l _ ↦ ?_
-  ring
+  rw [← (killingHermitianForm (hx.compactConjugation b)).sum_repr_mul_repr_mulₛₗ c c v v,
+    Finsupp.sum_fintype _ _ fun _ ↦ by simp]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [Finsupp.sum_fintype _ _ fun _ ↦ by simp]
+  refine Finset.sum_congr rfl fun l _ ↦ ?_
+  rw [killingHermitianForm_def, compactConjugation_apply,
+    hx.coordConj_eq_self_of_mem_chevalleyLieLattice b
+      (hx.apply_rootSimpleCorootFieldBasis_mem_chevalleyLieLattice b l),
+    RingHom.id_apply, starRingEnd_apply, smul_eq_mul, smul_eq_mul, mul_assoc]
 
 /-- **The Hermitian Killing form of the compact conjugation.** For `v = ∑ a_α x α + ∑ aᵢ αᵢ∨`,
 `H_τ(v, v) = ∑_α |a_α|² B(x α, x (-α)) + ∑_γ |γ(h)|²` with `h = ∑ aᵢ αᵢ∨`. -/
