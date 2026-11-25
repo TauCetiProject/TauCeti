@@ -45,6 +45,7 @@ noncomputable example :
         (AddAction.orbitRel.Quotient (LinearMap.range (Int.castAddHom ℝ).toIntLinearMap) ℝ) ≃+
       AdicCompletion (Ideal.span {((2 : ℕ) : ℤ)}) ℤ :=
   (Int.castAddHom ℝ).toIntLinearMap.tateModuleOrbitRelQuotientEquiv Int.cast_injective 2
-    ⟨fun a b h ↦ by simpa using h, fun v ↦ ⟨v / 2, by simp; ring⟩⟩
+    ⟨fun a b h ↦ by simpa using h,
+      fun v ↦ ⟨v / 2, by simp only [Nat.cast_ofNat, two_zsmul, add_halves]⟩⟩
 
 end TauCeti.Examples.TateModuleOrbitRelQuotient

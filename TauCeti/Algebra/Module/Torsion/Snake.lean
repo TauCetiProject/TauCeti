@@ -237,9 +237,7 @@ and its torus: the connecting map `TauCeti.torsionByδ` of the exact sequence
 noncomputable def orbitRelQuotientTorsionByδ :
     torsionBy ℤ (AddAction.orbitRel.Quotient (range f) E) r →ₗ[ℤ] QuotSMulTop r Λ :=
   torsionByδ r (g := (range f).orbitRelQuotientMkHom.toIntLinearMap)
-    (exact_orbitRelQuotientMkHom_range f) hf <| by
-      rw [AddMonoidHom.coe_toIntLinearMap, Submodule.coe_orbitRelQuotientMkHom]
-      exact Quotient.mk_surjective
+    (exact_orbitRelQuotientMkHom_range f) hf (range f).surjective_orbitRelQuotientMkHom
 
 /-- **The characterization of the connecting map of an orbit space**: if `x` is the class of `β`
 and `r • β = f l`, then `x` is sent to the class of `l`. -/
