@@ -108,6 +108,11 @@ theorem isWeight_cylindricalWeight :
     exact add_pos (inv_pos.2 (Complex.normSq_pos.2 h₀))
       (inv_pos.2 (Complex.normSq_pos.2 (sub_ne_zero.2 h₁)))
 
+/-- The inverse of the cylindrical weight is continuous on the pair of pants. -/
+theorem continuousOn_inv_cylindricalWeight :
+    ContinuousOn (fun z ↦ (cylindricalWeight z)⁻¹) thricePuncturedSphereReal :=
+  isWeight_cylindricalWeight.continuousOn.inv₀ fun z hz ↦ (isWeight_cylindricalWeight.pos z hz).ne'
+
 /-- The arithmetic of the weight on an end: if a point lies at distance `x > 0` from the center of
 its end and at distance `y ≥ x / 2` from the other finite puncture, then
 `(x⁻² + y⁻²) 4π² x² ∈ [4π², 20π²]`. -/
