@@ -37,9 +37,9 @@ extension of the prime field.
   `GaloisField p n`.
 * `TauCeti.exists_mem_frobeniusFixedSubfield`: an algebraic closure of the prime field is the union
   of these subfields.
-* `TauCeti.FiniteField.fixedField_zpowers_frobeniusAlgEquivOfAlgebraic`: over a finite field `k`,
+* `TauCeti.fixedField_zpowers_frobeniusAlgEquivOfAlgebraic`: over a finite field `k`,
   the fixed field in an algebraic extension of the arithmetic Frobenius is `k`.
-* `TauCeti.FiniteField.restrictNormalHom_frobeniusAlgEquivOfAlgebraic`: the arithmetic Frobenius
+* `TauCeti.restrictNormalHom_frobeniusAlgEquivOfAlgebraic`: the arithmetic Frobenius
   restricts to the arithmetic Frobenius of any normal subextension.
 * `TauCeti.natCard_fixedField_zpowers_frobeniusAlgEquivOfAlgebraic_pow` and
   `TauCeti.finrank_fixedField_zpowers_frobeniusAlgEquivOfAlgebraic_pow`: over a finite field `k`
@@ -169,21 +169,22 @@ open IntermediateField
 variable (k L : Type*) [Field k] [Fintype k] [Field L] [Algebra k L] [Algebra.IsAlgebraic k L]
 
 /-- The fixed field of the arithmetic Frobenius of `L` is `k`. -/
-theorem FiniteField.fixedField_zpowers_frobeniusAlgEquivOfAlgebraic :
-    fixedField (Subgroup.zpowers (_root_.FiniteField.frobeniusAlgEquivOfAlgebraic k L)) = ⊥ := by
+theorem fixedField_zpowers_frobeniusAlgEquivOfAlgebraic :
+    fixedField (Subgroup.zpowers (FiniteField.frobeniusAlgEquivOfAlgebraic k L)) = ⊥ := by
   refine eq_bot_iff.2 fun x hx ↦ ?_
-  rw [mem_fixedField_zpowers_iff, _root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic] at hx
+  rw [mem_fixedField_zpowers_iff, FiniteField.coe_frobeniusAlgEquivOfAlgebraic] at hx
   rw [IntermediateField.mem_bot]
-  exact (pow_natCard_eq_self_iff_mem_range_algebraMap x).1 (by rwa [Nat.card_eq_fintype_card])
+  exact (FiniteField.pow_natCard_eq_self_iff_mem_range_algebraMap x).1
+    (by rwa [Nat.card_eq_fintype_card])
 
 /-- **Restricting Frobenius to a normal subextension gives its Frobenius.** For a tower
 `L / E / k` with `E / k` normal, the restriction to `E` of the arithmetic Frobenius `x ↦ x ^ q` of
 `L` is the arithmetic Frobenius of `E`. -/
 @[simp]
-theorem FiniteField.restrictNormalHom_frobeniusAlgEquivOfAlgebraic (E : Type*) [Field E]
+theorem restrictNormalHom_frobeniusAlgEquivOfAlgebraic (E : Type*) [Field E]
     [Algebra k E] [Algebra E L] [IsScalarTower k E L] [Normal k E] :
-    AlgEquiv.restrictNormalHom E (_root_.FiniteField.frobeniusAlgEquivOfAlgebraic k L) =
-      _root_.FiniteField.frobeniusAlgEquivOfAlgebraic k E := by
+    AlgEquiv.restrictNormalHom E (FiniteField.frobeniusAlgEquivOfAlgebraic k L) =
+      FiniteField.frobeniusAlgEquivOfAlgebraic k E := by
   ext x
   apply (algebraMap E L).injective
   simp [AlgEquiv.restrictNormalHom]

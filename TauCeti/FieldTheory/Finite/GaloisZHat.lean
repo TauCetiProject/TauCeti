@@ -33,7 +33,7 @@ equivalence `TauCeti.zHat.liftContinuousMulEquiv` that both identifications shar
 
 * `TauCeti.FiniteField.topologicalClosure_zpowers_frobeniusAlgEquivOfAlgebraic`: Frobenius
   generates `Gal(L/k)` topologically, since its fixed field is `k`
-  (`TauCeti.FiniteField.fixedField_zpowers_frobeniusAlgEquivOfAlgebraic`).
+  (`TauCeti.fixedField_zpowers_frobeniusAlgEquivOfAlgebraic`).
 * `TauCeti.FiniteField.galoisGroupEquivZHat`: `Gal(L/k) ≃ₜ* ℤ̂`, with
   `galoisGroupEquivZHat_symm_apply` (its inverse is the lift of Frobenius),
   `galoisGroupEquivZHat_apply_frobenius` and `galoisGroupEquivZHat_symm_apply_gen`.
