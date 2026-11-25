@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.GroupAction.Quotient
 public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Basic
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import TauCeti.Analysis.Complex.Circle.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Geometry.Manifold.Submersion.Split
 
@@ -45,6 +46,8 @@ structures on `CPⁿ` agree.
 * `TauCeti.ComplexProjectiveSpace.contMDiff_mk`: the Hopf projection is smooth, of every order.
 * `TauCeti.ComplexProjectiveSpace.surjective_mfderiv_mk`: its derivative is onto at every point.
 * `TauCeti.ComplexProjectiveSpace.isSubmersion_mk`: it is a submersion.
+* `TauCeti.ComplexProjectiveSpace.ker_mfderiv_mk`: its vertical vectors at `x` are those read in
+  `ℂⁿ⁺¹` as real multiples of `i x`, the velocity of the circle orbit `t ↦ e^{it} x`.
 * `TauCeti.ComplexProjectiveSpace.orbitRelQuotientDiffeomorph`: the diffeomorphism from the
   quotient manifold of the circle action onto `CPⁿ`, sending the orbit of `x` to `mk n x`
   (`TauCeti.ComplexProjectiveSpace.orbitRelQuotientDiffeomorph_mk`).
@@ -153,6 +156,84 @@ theorem isSubmersion_mk (r : ℕ∞ω) :
     Manifold.IsSubmersion (𝓡 (2 * n + 1)) 𝓘(ℝ, Fin n → ℂ) r (mk n) :=
   ((contMDiff_mk (n := n) ω).isSubmersionOfComplement_of_surjective_mfderiv le_top
     surjective_mfderiv_mk).isSubmersion.of_le le_top
+
+/-! ### The vertical directions of the Hopf projection -/
+
+/-- The circle orbit `t ↦ e^{it} x` through a point `x` of `S²ⁿ⁺¹` has a velocity at `t = 0`
+which the inclusion carries to `i x`, and which the Hopf projection kills, since it is constant
+on the orbit. -/
+private theorem exists_mfderiv_mk_eq_zero_and_mvfderiv_coe_eq
+    (x : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
+    ∃ a : TangentSpace (𝓡 (2 * n + 1)) x,
+      mfderiv (𝓡 (2 * n + 1)) 𝓘(ℝ, Fin n → ℂ) (mk n) x a = 0 ∧
+        mvfderiv (𝓡 (2 * n + 1))
+          ((↑) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → EuclideanSpace ℂ (Fin (n + 1)))
+          x a = Complex.I • (x : EuclideanSpace ℂ (Fin (n + 1))) := by
+  set γ : ℝ → sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 := fun t ↦ Circle.exp t • x
+  have hγ : ContMDiff 𝓘(ℝ) (𝓡 (2 * n + 1)) ∞ γ :=
+    (contMDiff_smul (I := 𝓡 1)).comp (contMDiff_circleExp.prodMk contMDiff_const)
+  have hγ0 : γ 0 = x := by simp [γ]
+  have hγd : MDifferentiableAt 𝓘(ℝ) (𝓡 (2 * n + 1)) γ 0 := (hγ 0).mdifferentiableAt (by simp)
+  refine ⟨mfderiv 𝓘(ℝ) (𝓡 (2 * n + 1)) γ 0 (1 : ℝ), ?_, ?_⟩
+  · -- `mk ∘ γ` is constant, so its derivative vanishes.
+    have h := mfderiv_comp_of_eq ((contMDiff_mk 1 x).mdifferentiableAt one_ne_zero) hγd hγ0
+    have hconst : mk n ∘ γ = fun _ ↦ mk n x := funext fun t ↦ mk_circle_smul n _ x
+    rw [hconst, mfderiv_const, hγ0] at h
+    exact (congrArg (fun L ↦ L (1 : ℝ)) h).symm
+  · -- Read in `ℂⁿ⁺¹`, the orbit is `t ↦ e^{it} x`, of velocity `i x` at `0`.
+    have hcomp : ((↑) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → _) ∘ γ =
+        fun t : ℝ ↦ ((Circle.exp t : Circle) : ℂ) • (x : EuclideanSpace ℂ (Fin (n + 1))) :=
+      funext fun t ↦ Circle.coe_smul_sphere _ x
+    have h := mvfderiv_comp_apply_of_eq 0
+      ((contMDiff_coe_sphere (m := 1) x).mdifferentiableAt one_ne_zero) hγd hγ0 (1 : ℝ)
+    have hd := ((hasDerivAt_coe_circleExp 0).smul_const
+      (x : EuclideanSpace ℂ (Fin (n + 1)))).hasFDerivAt
+    rw [← h, hcomp]
+    -- The coercion `Circle → ℂ` blocks rewriting, so the derivative is read off by transitivity.
+    refine ((mvfderiv_eq_fderiv_apply _ 0 (1 : ℝ)).trans
+      (congrArg (fun L ↦ L (1 : ℝ)) hd.fderiv)).trans ?_
+    simp
+
+/-- **The vertical vectors of the Hopf projection.** At a point `x` of `S²ⁿ⁺¹`, a tangent vector
+is killed by the derivative of `mk` exactly when the inclusion carries it to a real multiple of
+`i x`, the generator of the circle action: the kernel of the derivative is the tangent line of the
+fibre through `x`. -/
+theorem ker_mfderiv_mk (x : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
+    (mfderiv (𝓡 (2 * n + 1)) 𝓘(ℝ, Fin n → ℂ) (mk n) x).ker =
+      (ℝ ∙ (Complex.I • (x : EuclideanSpace ℂ (Fin (n + 1))))).comap
+        (mvfderiv (𝓡 (2 * n + 1))
+          ((↑) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → EuclideanSpace ℂ (Fin (n + 1)))
+          x).toLinearMap := by
+  obtain ⟨a, ha, hax⟩ := exists_mfderiv_mk_eq_zero_and_mvfderiv_coe_eq x
+  set D := mvfderiv (𝓡 (2 * n + 1))
+    ((↑) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → EuclideanSpace ℂ (Fin (n + 1))) x
+  have hD : Injective D := injective_mvfderiv_subtypeVal_sphere x
+  -- The pulled-back line is the line spanned by `a`.
+  have hline : (ℝ ∙ (Complex.I • (x : EuclideanSpace ℂ (Fin (n + 1))))).comap D.toLinearMap =
+      ℝ ∙ a := by
+    ext u
+    simp only [Submodule.mem_comap, Submodule.mem_span_singleton, ContinuousLinearMap.coe_coe]
+    refine ⟨fun ⟨t, ht⟩ ↦ ⟨t, hD ?_⟩, fun ⟨t, ht⟩ ↦ ⟨t, ?_⟩⟩
+    · rw [map_smul, hax, ht]
+    · rw [← ht, map_smul, hax]
+  rw [hline]
+  -- Both are lines: the kernel has dimension `(2n + 1) - 2n` since `mk` is a submersion.
+  have ha0 : a ≠ 0 := by
+    rintro rfl
+    rw [map_zero, eq_comm, smul_eq_zero] at hax
+    exact (ne_zero_of_mem_unit_sphere x) (hax.resolve_left Complex.I_ne_zero)
+  have hrank := LinearMap.finrank_range_add_finrank_ker
+    (mfderiv (𝓡 (2 * n + 1)) 𝓘(ℝ, Fin n → ℂ) (mk n) x).toLinearMap
+  rw [LinearMap.range_eq_top.2 (surjective_mfderiv_mk x), finrank_top] at hrank
+  have hdim : Module.finrank ℝ (Fin n → ℂ) = 2 * n := by
+    simp [Module.finrank_pi_fintype, mul_comm]
+  have hdom : Module.finrank ℝ (TangentSpace (𝓡 (2 * n + 1)) x) = 2 * n + 1 :=
+    finrank_euclideanSpace_fin
+  refine (Submodule.eq_of_le_of_finrank_eq ((Submodule.span_singleton_le_iff_mem a _).2 ha)
+    ?_).symm
+  rw [finrank_span_singleton ha0]
+  have : Module.finrank ℝ (TangentSpace 𝓘(ℝ, Fin n → ℂ) (mk n x)) = 2 * n := hdim
+  omega
 
 /-! ### Comparison with the quotient manifold of the circle action -/
 
