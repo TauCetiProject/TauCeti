@@ -30,8 +30,10 @@ The reduced complex is described here by a chain map `φ : D ⟶ C` with bases `
 
 * `C` is acyclic exactly when `D` is (`HomologicalComplex.acyclic_iff_of_cancel`);
 * the matrix of `D.d i i'` in the bases `e` is the Schur complement of `a` in the matrix of
-  `C.d i i'` in the bases `c` (`HomologicalComplex.toMatrix_d_eq_of_cancel`, which holds for any
-  complex shape and bases in degrees `i` and `i'`);
+  `C.d i i'` in the bases `c` (proved in greater generality for any complex shape over a
+  commutative ring in `TauCeti.Algebra.Homology.ModuleCat.Cancellation`, as
+  `HomologicalComplex.toMatrix_d_eq_of_cancel_of_invertible` and
+  `HomologicalComplex.toMatrix_d_eq_of_cancel`);
 * the torsions differ by the factor `a`, inverted when the pair is joined by the odd-to-even
   differential, and by the sign `(-1) ^ q`, where `q` is the dimension of the image of the other
   differential `D.d i' i` (`HomologicalComplex.parityTorsion_eq_of_cancel_one_zero` and
@@ -72,8 +74,7 @@ both torsions vanish.
 
 ## Main results
 
-* `HomologicalComplex.acyclic_iff_of_cancel`, `HomologicalComplex.toMatrix_d_eq_of_cancel`:
-  cancellation preserves acyclicity, and the cancelled differential is the Schur complement.
+* `HomologicalComplex.acyclic_iff_of_cancel`: cancellation preserves acyclicity.
 * `HomologicalComplex.parityTorsion_eq_of_cancel_one_zero`,
   `HomologicalComplex.parityTorsion_eq_of_cancel_zero_one`: the torsion after cancelling a pair,
   over a field.
@@ -101,69 +102,6 @@ noncomputable section
 open CategoryTheory Module
 
 namespace HomologicalComplex
-
-section SchurComplement
-
-/-! ### Schur complement of a cancelled differential -/
-
-variable {F : Type*} [Field F] {ι : Type*} {rel : ComplexShape ι}
-  {C D : HomologicalComplex (ModuleCat F) rel} {φ : D ⟶ C} {i i' : ι} {m m' : ℕ}
-  {ci : Basis (Fin (m + 1)) F (C.X i)} {ci' : Basis (Fin (m' + 1)) F (C.X i')}
-  {ei : Basis (Fin m) F (D.X i)} {ei' : Basis (Fin m') F (D.X i')}
-
-/-- In degree `i'`, the coordinates of a vector of `D` in the basis `ei'` are read off the
-coordinates of its image under `φ`, corrected along `d (ci 0)`. -/
-private theorem repr_eq_of_cancel
-    (hφ' : ∀ l, (φ.f i').hom (ei' l) - ci' l.succ ∈ F ∙ (C.d i i').hom (ci 0))
-    (ha : ci'.repr ((C.d i i').hom (ci 0)) 0 ≠ 0) (y : D.X i') (r : Fin m') :
-    ei'.repr y r = ci'.repr ((φ.f i').hom y) r.succ -
-      ci'.repr ((C.d i i').hom (ci 0)) r.succ *
-        (ci'.repr ((C.d i i').hom (ci 0)) 0)⁻¹ * ci'.repr ((φ.f i').hom y) 0 := by
-  set A := ci'.repr ((C.d i i').hom (ci 0)) 0
-  set X := ci'.repr ((C.d i i').hom (ci 0)) r.succ
-  have h := ei'.ext (f₁ := ei'.coord r) (f₂ := ci'.coord r.succ ∘ₗ (φ.f i').hom -
-    (X * A⁻¹) • ci'.coord 0 ∘ₗ (φ.f i').hom) fun l ↦ by
-    obtain ⟨s, hs⟩ := Submodule.mem_span_singleton.1 (hφ' l)
-    have hφe : (φ.f i').hom (ei' l) = ci' l.succ + s • (C.d i i').hom (ci 0) := by
-      rw [hs]; abel
-    have h₀ : ci'.repr (ci' l.succ) 0 = 0 := by simp
-    have h₁ : ci'.repr (ci' l.succ) r.succ = ei'.repr (ei' l) r := by
-      simp [Finsupp.single_apply, Fin.succ_inj]
-    simp only [LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.comp_apply, Basis.coord_apply,
-      hφe, map_add, map_smul, smul_eq_mul, h₀, h₁]
-    field_simp
-    ring
-  simpa [mul_assoc] using LinearMap.congr_fun h y
-
-/-- **The cancelled differential is the Schur complement.** For any chain map `φ : D ⟶ C` of
-homological complexes of vector spaces over `F` and ordered bases `ci, ci'` of `C` and `ei, ei'`
-of `D` in degrees `i` and `i'`, if `φ` sends `ei l` to `ci l.succ` up to a multiple of `ci 0` and
-`ei' l` to `ci' l.succ` up to a multiple of `d (ci 0)` with nonzero `(0, 0)`-entry `a`, then the
-matrix of `D.d i i'` in `ei, ei'` is the Schur complement `N - w a⁻¹ v` of `a` in the matrix of
-`C.d i i'` in `ci, ci'`. -/
-theorem toMatrix_d_eq_of_cancel
-    (hφ : ∀ l, (φ.f i).hom (ei l) - ci l.succ ∈ F ∙ ci 0)
-    (hφ' : ∀ l, (φ.f i').hom (ei' l) - ci' l.succ ∈ F ∙ (C.d i i').hom (ci 0))
-    (ha : ci'.repr ((C.d i i').hom (ci 0)) 0 ≠ 0) :
-    LinearMap.toMatrix ei ei' (D.d i i').hom = Matrix.of fun r k ↦
-      LinearMap.toMatrix ci ci' (C.d i i').hom r.succ k.succ -
-        LinearMap.toMatrix ci ci' (C.d i i').hom r.succ 0 *
-          (LinearMap.toMatrix ci ci' (C.d i i').hom 0 0)⁻¹ *
-            LinearMap.toMatrix ci ci' (C.d i i').hom 0 k.succ := by
-  refine Matrix.ext fun r k ↦ ?_
-  obtain ⟨t, ht⟩ := Submodule.mem_span_singleton.1 (hφ k)
-  have hφe : (φ.f i).hom (ei k) = ci k.succ + t • ci 0 := by rw [ht]; abel
-  have h := repr_eq_of_cancel hφ' ha ((D.d i i').hom (ei k)) r
-  have hcomm : (φ.f i').hom ((D.d i i').hom (ei k)) = (C.d i i').hom ((φ.f i).hom (ei k)) :=
-    (Hom.comm_apply φ i i' _).symm
-  rw [hcomm, hφe] at h
-  simp only [LinearMap.toMatrix_apply, Matrix.of_apply, h, map_add, map_smul, Finsupp.add_apply,
-    Finsupp.smul_apply, smul_eq_mul]
-  set A := ci'.repr ((C.d i i').hom (ci 0)) 0
-  field_simp
-  ring
-
-end SchurComplement
 
 section Field
 
