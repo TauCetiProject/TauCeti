@@ -288,10 +288,11 @@ theorem IsUniform.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le {a : S
   have := φ.rOut_pos
   refine ⟨C * φ.rOut ^ n * (volume : Measure (CoordinateSpace n)).real (ball 0 1),
     by positivity, fun j x => ?_⟩
-  exact integral_norm_le_mul_rpow_add_of_eq_zero_off_closedBall (by positivity) φ.rOut_pos.le
-    (fun ξ _ => hC j x ξ) fun ξ hξ =>
+  refine (integral_norm_le_mul_rpow_add_of_eq_zero_off_closedBall (by positivity) φ.rOut_pos.le
+    (mu := volume) (fun ξ _ => hC j x ξ) fun ξ hξ =>
       a.mixedDeriv_littlewoodPaleyPiece_eq_zero_of_notMem_tsupport φ α β x
-        fun h => hξ (φ.tsupport_inhomogeneousLittlewoodPaley_subset_closedBall j h)
+        fun h => hξ (φ.tsupport_inhomogeneousLittlewoodPaley_subset_closedBall j h)).trans_eq ?_
+  rw [finrank_euclideanSpace_fin]
 
 /-- **Dyadic estimates on compact sets.** For a symbol of order `m` and a compact set `K` of
 positions, the `j`-th piece and its mixed derivatives satisfy
@@ -365,12 +366,14 @@ theorem exists_integral_norm_coefficient_frequencyLaplacianPow_littlewoodPaleyPi
   refine ⟨C * φ.rOut ^ n * (volume : Measure (CoordinateSpace n)).real (ball 0 1),
     by positivity, fun j x hx => ?_⟩
   -- The piece and all its frequency derivatives vanish outside the ball of radius `2^j φ.rOut`.
-  exact integral_norm_le_mul_rpow_add_of_eq_zero_off_closedBall (by positivity) φ.rOut_pos.le
-    (fun ξ _ => by simpa using hC j x hx ξ) fun ξ hξ =>
+  refine (integral_norm_le_mul_rpow_add_of_eq_zero_off_closedBall (by positivity) φ.rOut_pos.le
+    (mu := volume) (s := 2 ^ j) (μ := m - 2 * N) (fun ξ _ => by simpa using hC j x hx ξ)
+    fun ξ hξ =>
       coefficient_frequencyLaplacianPow_eq_zero_of_isOpen
         (U := {η | 2 ^ j * φ.rOut < ‖η‖}) (isOpen_lt continuous_const continuous_norm) x
         (fun ξ' hξ' => a.coefficient_littlewoodPaleyPiece_eq_zero_of_le_norm φ x (le_of_lt hξ'))
-        N (by simpa using hξ)
+        N (by simpa using hξ)).trans_eq ?_
+  rw [finrank_euclideanSpace_fin]
 
 /-- **Integrated size of the pieces.** For a uniform symbol of order `m` on `ℝⁿ`, the pieces
 satisfy `∫ ‖aⱼ(x, ξ)‖ dξ ≤ C (2^j) ^ (m + n)` uniformly in `x` and `j`: the case `α = β = []` of
