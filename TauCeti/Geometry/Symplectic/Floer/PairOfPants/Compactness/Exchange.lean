@@ -64,7 +64,9 @@ the chart source (in the same namespace,
 `J_c(z, x)` on the tangent spaces of `M` are any family tamed by `ω` on `S`, read in the chart by a
 family `J'_c(z, y)` with `dφ_x ∘ J_c(z, x) = J'_c(z, φ x) ∘ dφ_x` that is `C²` in `(c, z, y)`. The
 limit is read in `M`: the coordinate maps converge locally uniformly off the bubbling points, and
-the maps themselves converge pointwise. Covering `M` by several charts is not treated here.
+the maps themselves converge pointwise. Solutions in a closed manifold with arbitrary images,
+covered by several charts, are treated in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Exchange.Closed`.
 
 ## References
 
