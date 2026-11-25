@@ -35,6 +35,8 @@ topology when `B` is a topological semiring.
 * `TauCeti.TensorAlong.inductionOn`: induction over sums of pure tensors.
 * `TauCeti.TensorAlong.ext`: `B`-linear maps out of `B ⊗[A, f] M` agree once they agree on the
   tensors `1 ⊗ m`.
+* `TauCeti.TensorAlong.addHom_ext`: additive maps out of `B ⊗[A, f] M` agree once they agree on
+  pure tensors.
 -/
 
 public section
@@ -211,6 +213,13 @@ theorem liftAddHom_tmul (φ : B →+ M →+ P)
     liftAddHom f φ hφ (tmul b m) = φ b m :=
   letI := f.toAlgebra
   TensorProduct.liftAddHom_tmul _ _ b m
+
+/-- Additive maps out of `B ⊗[A, f] M` agree once they agree on pure tensors: the uniqueness
+half of the universal property `liftAddHom`. -/
+@[ext]
+theorem addHom_ext {φ ψ : TensorAlong f M →+ P}
+    (h : ∀ (b : B) (m : M), φ (tmul b m) = ψ (tmul b m)) : φ = ψ :=
+  AddMonoidHom.ext fun x => inductionOn x h fun x y hx hy => by rw [map_add, map_add, hx, hy]
 
 end Lift
 
