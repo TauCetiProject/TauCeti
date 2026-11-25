@@ -92,6 +92,10 @@ theorem variationMeasure_indicator_eq_sum_dirac (hs : NullMeasurableSet s)
     have := (finite_essentialBoundary_inter_of_perimeter_ne_top (Ω := U ⊓ Ω) hs
       (ne_top_of_le_ne_top hU (perimeter_mono (inf_le_left : U ⊓ Ω ≤ U)))).encard_lt_top
     exact lt_top_iff_ne_top.2 fun h => this.ne (by simpa using h)
+  -- `eq_variationMeasure` needs `ν` outer regular: being locally finite on the second-countable
+  -- metrizable subtype `Ω`, it is weakly regular, hence outer regular.
+  have : ν.WeaklyRegular :=
+    Measure.WeaklyRegular.of_pseudoMetrizableSpace_secondCountable_of_locallyFinite ν
   refine (eq_variationMeasure (indicator_one_locallyIntegrableOn hs)
     (by simpa only [perimeter_def] using hfin) fun U hU => ?_).symm
   rw [sum_dirac_preimage_coe U hU, ← perimeter_def, perimeter_eq_encard_essentialBoundary_inter hs]
