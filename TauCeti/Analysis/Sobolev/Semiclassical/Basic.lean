@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 public import TauCeti.Analysis.Sobolev.Dilation
 public import TauCeti.Analysis.Sobolev.Wkp.Algebra
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.Analysis.Calculus.BumpFunction.Translates
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 
 /-!
@@ -24,10 +25,13 @@ its derivatives in units of `h`, against the volume normalized by `h⁻ⁿ`:
 derivatives through order `k` (`TauCeti.semiclassicalSobolevNorm_one`), and for `f` of class `Cᵏ`
 and every `h > 0` it is that sum for the dilated function `f (h • ·)`
 (`TauCeti.semiclassicalSobolevNorm_eq_comp_smul`): the norm reads `f` in coordinates in which the
-scale `h` has unit size. The weights are those of the natural norms of fields concentrating at
-scale `h`, such as the rescaled Seiberg–Witten fields of Taubes's large-parameter analysis, whose
-profiles vary on the scale `h = (2r)^(-1/2)` and whose deviation from the vacuum lives in tubes of
-volume comparable to `h²`.
+scale `h` has unit size. It is invariant under translations
+(`TauCeti.semiclassicalSobolevNorm_comp_sub`), so a fixed profile `g` placed at scale `h` about
+any centre `x` has the unit-scale norm of `g`, `‖g (h⁻¹ • (· - x))‖_{k,h} = ‖g‖_{k,1}`
+(`TauCeti.semiclassicalSobolevNorm_comp_inv_smul_sub`). The weights are those of the natural
+norms of fields concentrating at scale `h`, such as the rescaled Seiberg–Witten fields of Taubes's
+large-parameter analysis, whose profiles vary on the scale `h = (2r)^(-1/2)` and whose deviation
+from the vacuum lives in tubes of volume comparable to `h²`.
 
 Since the dilation commutes with products and does not change sup norms, the two basic estimates
 of the unscaled norm, the Sobolev embedding and the algebra property for `2k > n`
@@ -58,6 +62,9 @@ the semiclassical and unscaled norms satisfy
 
 * `TauCeti.semiclassicalSobolevNorm_eq_comp_smul`: the semiclassical norm is the unscaled norm of
   the dilated function.
+* `TauCeti.semiclassicalSobolevNorm_comp_inv_smul_sub`: a profile placed at scale `h` has the
+  unit-scale norm of the profile.
+* `TauCeti.semiclassicalSobolevNorm_sum_le`: the triangle inequality for finite sums.
 * `TauCeti.exists_norm_le_mul_semiclassicalSobolevNorm`: the Sobolev embedding, uniformly in `h`.
 * `TauCeti.exists_semiclassicalSobolevNorm_mul_le`: the algebra estimate, uniformly in `h`.
 * `TauCeti.mul_semiclassicalSobolevNorm_fderiv_le`: `h D` is bounded from order `k + 1` to
@@ -157,6 +164,33 @@ theorem semiclassicalSobolevNorm_nonneg (k : ℕ) {h : ℝ} (hh : 0 ≤ h) (f : 
   mul_nonneg (Real.rpow_nonneg hh _)
     (Finset.sum_nonneg fun i _ ↦ mul_nonneg (pow_nonneg hh i) lpNorm_nonneg)
 
+/-- **The triangle inequality for finite sums.** For functions `fⱼ` of class `Cᵏ`, with
+`Dⁱ fⱼ ∈ L²` for `i ≤ k`, and `h ≥ 0`, `‖∑ⱼ fⱼ‖_{k,h} ≤ ∑ⱼ ‖fⱼ‖_{k,h}`. -/
+theorem semiclassicalSobolevNorm_sum_le {ι : Type*} (s : Finset ι) {k : ℕ} {f : ι → E → F}
+    (hf : ∀ j ∈ s, ContDiff ℝ k (f j))
+    (hfm : ∀ j ∈ s, ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i (f j)) 2) {h : ℝ} (hh : 0 ≤ h) :
+    semiclassicalSobolevNorm k h (fun x ↦ ∑ j ∈ s, f j x) ≤
+      ∑ j ∈ s, semiclassicalSobolevNorm k h (f j) := by
+  simp only [semiclassicalSobolevNorm, ← Finset.mul_sum]
+  refine mul_le_mul_of_nonneg_left ?_ (Real.rpow_nonneg hh _)
+  rw [Finset.sum_comm]
+  refine Finset.sum_le_sum fun i hi ↦ ?_
+  have hi : i ≤ k := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
+  rw [← Finset.mul_sum, iteratedFDeriv_sum fun j hj ↦ (hf j hj).of_le (by exact_mod_cast hi)]
+  exact mul_le_mul_of_nonneg_left (lpNorm_sum_le (fun j hj ↦ hfm j hj i hi) one_le_two)
+    (pow_nonneg hh i)
+
+/-- **Translation invariance of the semiclassical norm.** `‖f (· - a)‖_{k,h} = ‖f‖_{k,h}`. -/
+@[simp]
+theorem semiclassicalSobolevNorm_comp_sub (k : ℕ) (h : ℝ) (f : E → F) (a : E) :
+    semiclassicalSobolevNorm k h (fun x ↦ f (x - a)) = semiclassicalSobolevNorm k h f := by
+  simp only [semiclassicalSobolevNorm, iteratedFDeriv_comp_sub', ← toReal_eLpNorm]
+  congr 1
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  conv_rhs => rw [← (measurePreserving_sub_right volume a).map_eq]
+  rw [(measurableEmbedding_subRight a).eLpNorm_map_measure]
+  rfl
+
 /-- Multiplying the semiclassical norm by `h^(n/2)` removes the volume normalization:
 `h^(n/2) ‖f‖_{k,h} = ∑_{i ≤ k} hⁱ ‖Dⁱ f‖₂`. -/
 theorem rpow_mul_semiclassicalSobolevNorm (k : ℕ) {h : ℝ} (hh : 0 < h) (f : E → F) :
@@ -179,6 +213,17 @@ theorem semiclassicalSobolevNorm_eq_comp_smul {k : ℕ} {f : E → F} (hf : Cont
   simp only [ENNReal.toReal_ofNat]
   ring
 
+/-- **A profile placed at scale `h` has the unit-scale norm of the profile.** For `g` of class `Cᵏ`,
+`h > 0` and any centre `x`, `‖g (h⁻¹ • (· - x))‖_{k,h} = ‖g‖_{k,1}`. -/
+theorem semiclassicalSobolevNorm_comp_inv_smul_sub {k : ℕ} {g : E → F} (hg : ContDiff ℝ k g)
+    {h : ℝ} (hh : 0 < h) (x : E) :
+    semiclassicalSobolevNorm k h (fun y ↦ g (h⁻¹ • (y - x))) = semiclassicalSobolevNorm k 1 g := by
+  rw [semiclassicalSobolevNorm_eq_comp_smul (hg.comp_inv_smul_sub h x) hh]
+  have : (fun z ↦ g (h⁻¹ • (h • z - x))) = fun z ↦ g (z - h⁻¹ • x) := by
+    ext z
+    rw [smul_sub, inv_smul_smul₀ hh.ne']
+  rw [this, semiclassicalSobolevNorm_comp_sub]
+
 /-- For `f` of class `Cᵏ` with square-integrable derivatives through order `k`, the dilated
 function `f (h • ·)`, `h ≠ 0`, is of class `Cᵏ` with square-integrable derivatives through
 order `k`. -/
@@ -189,33 +234,35 @@ private theorem contDiff_comp_smul_and_memLp {k : ℕ} {f : E → F} (hf : ContD
   ⟨hf.comp (contDiff_const_smul h), fun i hi ↦
     (hm i hi).iteratedFDeriv_comp_smul (hf.of_le (by exact_mod_cast hi)) hh⟩
 
-/-- **The Sobolev embedding, uniformly in the scale.** If `2k > dim E`, there is a constant `C`
+/-- **The Sobolev embedding, uniformly in the scale.** If `2k > dim E`, there is a constant `C ≥ 0`
 such that for every `h > 0` and every function `f` of class `Cᵏ` with square-integrable
 derivatives through order `k`, `|f(x)| ≤ C ‖f‖_{k,h}` at every point. -/
 theorem exists_norm_le_mul_semiclassicalSobolevNorm {k : ℕ} (hk : finrank ℝ E < 2 * k) :
-    ∃ C, ∀ h : ℝ, 0 < h → ∀ f : E → ℝ, ContDiff ℝ k f →
+    ∃ C, 0 ≤ C ∧ ∀ h : ℝ, 0 < h → ∀ f : E → ℝ, ContDiff ℝ k f →
       (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) 2) →
         ∀ x, ‖f x‖ ≤ C * semiclassicalSobolevNorm k h f := by
   obtain ⟨C, hC⟩ := exists_norm_le_mul_sum_lpNorm_iteratedFDeriv (E := E) hk
-  refine ⟨C, fun h hh f hf hm x ↦ ?_⟩
+  refine ⟨max C 0, le_max_right C 0, fun h hh f hf hm x ↦ ?_⟩
   obtain ⟨hf', hm'⟩ := contDiff_comp_smul_and_memLp hf hm hh.ne'
   have := hC _ hf' hm' (h⁻¹ • x)
-  rwa [smul_inv_smul₀ hh.ne', ← semiclassicalSobolevNorm_one,
+  rw [smul_inv_smul₀ hh.ne', ← semiclassicalSobolevNorm_one,
     ← semiclassicalSobolevNorm_eq_comp_smul hf hh] at this
+  exact this.trans (mul_le_mul_of_nonneg_right (le_max_left C 0)
+    (semiclassicalSobolevNorm_nonneg k hh.le f))
 
-/-- **The algebra estimate, uniformly in the scale.** If `2k > dim E`, there is a constant `C`
+/-- **The algebra estimate, uniformly in the scale.** If `2k > dim E`, there is a constant `C ≥ 0`
 such that for every `h > 0` and all functions `f` and `g` of class `Cᵏ` with square-integrable
 derivatives through order `k`, the derivatives of `f g` through order `k` are square integrable
 and `‖f g‖_{k,h} ≤ C ‖f‖_{k,h} ‖g‖_{k,h}`. -/
 theorem exists_semiclassicalSobolevNorm_mul_le {k : ℕ} (hk : finrank ℝ E < 2 * k) :
-    ∃ C, ∀ h : ℝ, 0 < h → ∀ f g : E → ℝ, ContDiff ℝ k f → ContDiff ℝ k g →
+    ∃ C, 0 ≤ C ∧ ∀ h : ℝ, 0 < h → ∀ f g : E → ℝ, ContDiff ℝ k f → ContDiff ℝ k g →
       (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) 2) → (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i g) 2) →
       (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i (f * g)) 2) ∧
         semiclassicalSobolevNorm k h (f * g) ≤
           C * semiclassicalSobolevNorm k h f * semiclassicalSobolevNorm k h g := by
   obtain ⟨C, hC⟩ := exists_sum_lpNorm_iteratedFDeriv_mul_le (E := E) le_rfl
     (by rw [ENNReal.toReal_ofNat, mul_comm]; exact_mod_cast hk)
-  refine ⟨C, fun h hh f g hf hg hfm hgm ↦ ?_⟩
+  refine ⟨max C 0, le_max_right C 0, fun h hh f g hf hg hfm hgm ↦ ?_⟩
   obtain ⟨hf', hfm'⟩ := contDiff_comp_smul_and_memLp hf hfm hh.ne'
   obtain ⟨hg', hgm'⟩ := contDiff_comp_smul_and_memLp hg hgm hh.ne'
   -- The product of the dilations is the dilation of the product.
@@ -227,6 +274,9 @@ theorem exists_semiclassicalSobolevNorm_mul_le {k : ℕ} (hk : finrank ℝ E < 2
     exact semiclassicalSobolevNorm_eq_comp_smul (hf.mul hg) hh
   refine ⟨(hC f g hf hg hfm hgm).1, ?_⟩
   rw [hEq, semiclassicalSobolevNorm_eq_comp_smul hf hh, semiclassicalSobolevNorm_eq_comp_smul hg hh]
+  refine le_trans ?_ (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right (le_max_left C 0)
+    (semiclassicalSobolevNorm_nonneg k zero_le_one _))
+    (semiclassicalSobolevNorm_nonneg k zero_le_one _))
   simpa only [semiclassicalSobolevNorm_one] using (hC _ _ hf' hg' hfm' hgm').2
 
 /-- **A derivative costs one factor of the scale.** For `h ≥ 0`,
