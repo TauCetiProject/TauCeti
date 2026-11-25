@@ -17,7 +17,8 @@ Let `τ : S × V → M` be a framed tube around `f : S → M` (`TauCeti.IsFramed
 `f(S)`, with `V` a real normed space of dimension `r`, and let `o` generate the local homology
 `H_r(V, V ∖ 0; k)`. The relative cross product with `o` followed by the tube is the Thom
 isomorphism `H_q(S; L) ≃ H_{r+q}(M, M ∖ f(S); k ⊗ L)`, `x ↦ τ_*(o × x)`
-(`TauCeti.IsFramedTube.thomEquiv`, in `TauCeti.Geometry.Manifold.PontryaginThom.FundamentalClass`).
+(`TauCeti.IsFramedTube.homologyThomEquiv`, in
+`TauCeti.Geometry.Manifold.PontryaginThom.FundamentalClass`).
 The **shriek map**
 
 `i_! : H_{r+q}(M; k ⊗ L) → H_q(S; L)`
