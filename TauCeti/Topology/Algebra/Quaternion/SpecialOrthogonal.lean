@@ -176,12 +176,8 @@ private theorem bijective_lift_sphereToSpecialOrthogonalGroup :
   · intro a b h
     obtain ⟨x, rfl⟩ := mk_surjective 3 a
     obtain ⟨y, rfl⟩ := mk_surjective 3 b
-    rw [RealProjectiveSpace.lift_mk, RealProjectiveSpace.lift_mk, sphereToSpecialOrthogonalGroup,
-      sphereToSpecialOrthogonalGroup, unitaryToSpecialOrthogonalGroup_eq_iff,
-      ← unitaryHomeomorphEuclideanSphere_symm_neg,
-      unitaryHomeomorphEuclideanSphere.symm.injective.eq_iff,
-      unitaryHomeomorphEuclideanSphere.symm.injective.eq_iff] at h
-    exact (mk_eq_mk_iff 3 x y).mpr h
+    simpa [sphereToSpecialOrthogonalGroup, unitaryToSpecialOrthogonalGroup_eq_iff,
+      ← unitaryHomeomorphEuclideanSphere_symm_neg, mk_eq_mk_iff] using h
   · intro A
     obtain ⟨q, rfl⟩ := unitaryToSpecialOrthogonalGroup_surjective A
     refine ⟨mk 3 (unitaryHomeomorphEuclideanSphere q), ?_⟩

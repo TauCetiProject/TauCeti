@@ -83,10 +83,7 @@ theorem proj_sphereUnitTangentHomeomorphRealProjectiveSpace_symm_mk
     ((sphereUnitTangentHomeomorphRealProjectiveSpace.symm (RealProjectiveSpace.mk 3 x)).val.proj :
         EuclideanSpace ℝ (Fin 3)) =
       toLp 2 ((rotationMatrix (linearIsometryEquivTuple.symm x)).col 0) := by
-  rw [sphereUnitTangentHomeomorphRealProjectiveSpace, Homeomorph.symm_trans_apply,
-    Homeomorph.symm_symm, RealProjectiveSpace.homeomorphSpecialOrthogonalGroup_mk,
-    proj_sphereUnitTangentHomeomorphSpecialOrthogonalGroup_symm_apply,
-    coe_unitaryToSpecialOrthogonalGroup_apply, coe_unitaryHomeomorphEuclideanSphere_symm_apply]
+  simp [sphereUnitTangentHomeomorphRealProjectiveSpace]
 
 /-- The unit tangent vector attached to the class of a unit vector `x` of `ℝ⁴` is sent by the
 differential of the inclusion to `q * j * star q`, the second column of the rotation by the
