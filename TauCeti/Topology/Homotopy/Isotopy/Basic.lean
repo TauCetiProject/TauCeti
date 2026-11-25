@@ -228,6 +228,11 @@ noncomputable def finalHomeomorph : Y ≃ₜ Y :=
 theorem finalHomeomorph_apply (y : Y) : Φ.finalHomeomorph y = Φ.final y :=
   (rfl)
 
+/-- The continuous map underlying the final homeomorphism is the final map. -/
+@[simp]
+theorem ofClass_finalHomeomorph : (Φ.finalHomeomorph : C(Y, Y)) = Φ.final :=
+  ContinuousMap.ext Φ.finalHomeomorph_apply
+
 /-- The constant ambient isotopy at the identity. -/
 def refl (Y : Type*) [TopologicalSpace Y] : AmbientIsotopy Y where
   toContinuousMap := ⟨fun p => p.2, by fun_prop⟩

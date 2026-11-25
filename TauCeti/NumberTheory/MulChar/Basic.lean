@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.MulChar.Basic
+public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Basic facts about multiplicative characters
@@ -23,7 +25,8 @@ This is how Galois automorphisms of a number field act on characters such as pow
 symbols.
 
 Since `(-1) * (-1) = 1`, every multiplicative character satisfies `χ (-1) * χ (-1) = 1`
-(`MulChar.apply_neg_one_mul_self`), so `χ (-1) = ±1` when the coefficients form a domain.
+(`MulChar.apply_neg_one_mul_self`), so `χ (-1) = ±1` when the coefficients form a domain. The
+same holds for every integer power of `χ (-1)` (`MulChar.apply_neg_one_zpow_mul_self`).
 
 A character of order dividing two is `1` at the square of every unit
 (`MulChar.apply_sq_eq_one_of_sq_eq_one`). An integer-valued character pushed into a ring along
@@ -45,9 +48,20 @@ finite product of quadratic characters is quadratic (`MulChar.isQuadratic_prod`)
 
 A character satisfies `χ ^ d = 1` if and only if it is trivial on the `d`-th powers of units
 (`MulChar.pow_eq_one_iff_forall_mem_range_apply_eq_one`). At a unit `v`, the inverse character
-takes the value `χ⁻¹ v = χ v⁻¹` (`MulChar.inv_apply_coe`). With values in a domain, the sum of a
-character over a finite commutative monoid `M` is the cast of `#Mˣ` for the trivial character and
-zero otherwise (`MulChar.sum_eq_ite`).
+takes the value `χ⁻¹ v = χ v⁻¹` (`MulChar.inv_apply_coe`), and a finite product of characters
+takes the product of their values (`MulChar.prod_apply_coe`). With values in a domain, the sum of
+a character over a finite commutative monoid `M` is the cast of `#Mˣ` for the trivial character
+and zero otherwise (`MulChar.sum_eq_ite`).
+
+With values in a commutative group with zero, an integer power of a character at a unit is the
+integer power of its value (`MulChar.zpow_apply_coe_eq_zpow`), the `ℤ`-exponent form of Mathlib's
+`MulChar.pow_apply_coe`.
+
+On a monoid with finitely many units, every value of a character is an algebraic integer
+(`MulChar.isIntegral_apply`): `0` at nonunits and a root of unity at units.
+
+On a monoid with zero without zero divisors, a product of character values `∏ⱼ χⱼ(yⱼ)` vanishes
+when `∏ⱼ yⱼ = 0` (`MulChar.prod_apply_eq_zero_of_prod_eq_zero`).
 -/
 
 public section
@@ -99,6 +113,11 @@ theorem toUnitHom_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R'] :
 theorem apply_neg_one_mul_self {R R' : Type*} [CommMonoid R] [HasDistribNeg R]
     [CommMonoidWithZero R'] (χ : MulChar R R') : χ (-1) * χ (-1) = 1 := by
   rw [← map_mul, neg_one_mul, neg_neg, map_one]
+
+/-- An integer power of the value of a multiplicative character at `-1` squares to `1`. -/
+theorem apply_neg_one_zpow_mul_self {R R' : Type*} [CommMonoid R] [HasDistribNeg R]
+    [CommGroupWithZero R'] (χ : MulChar R R') (n : ℤ) : χ (-1) ^ n * χ (-1) ^ n = 1 := by
+  rw [← mul_zpow, apply_neg_one_mul_self, one_zpow]
 
 /-- A character of order dividing two is `1` at the square of a unit. -/
 theorem apply_sq_eq_one_of_sq_eq_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R']
@@ -171,6 +190,14 @@ theorem inv_apply_coe {M R : Type*} [CommMonoid M] [CommMonoidWithZero R] (χ : 
     simp only [map_inv, MonoidHom.inv_apply]
   simpa only [mulEquivToUnitHom_apply, coe_equivToUnitHom] using congrArg Units.val h
 
+/-- At a unit `v`, a finite product of characters takes the product of their values. At a
+nonunit this fails for the empty product, the trivial character, which vanishes there. -/
+theorem prod_apply_coe {M R ι : Type*} [CommMonoid M] [CommMonoidWithZero R] (s : Finset ι)
+    (χ : ι → MulChar M R) (v : Mˣ) : (∏ i ∈ s, χ i) v = ∏ i ∈ s, χ i v := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons a s ha ih => simp [mul_apply, ih]
+
 /-- The sum of a character over a finite commutative monoid `M` is the cast of the number of
 units of `M` for the trivial character and zero otherwise. This puts Mathlib's
 `MulChar.sum_eq_zero_of_ne_one` and `MulChar.sum_one_eq_card_units` into one statement. -/
@@ -182,6 +209,31 @@ theorem sum_eq_ite {M R : Type*} [CommMonoid M] [Fintype M] [CommRing R] [IsDoma
   split_ifs with hχ
   · rw [hχ, sum_one_eq_card_units, Nat.card_eq_fintype_card]
   · exact sum_eq_zero_of_ne_one hχ
+
+/-- With values in a commutative group with zero, an integer power of a character takes the
+integer power of its value at a unit: `(χ ^ n) a = χ a ^ n`. Mathlib's `MulChar.zpow_apply_coe`
+instead moves the power onto the unit, `(χ ^ n) a = χ (a ^ n)`. -/
+theorem zpow_apply_coe_eq_zpow {R R' : Type*} [CommMonoid R] [CommGroupWithZero R']
+    (χ : MulChar R R') (n : ℤ) (a : Rˣ) : (χ ^ n) a = χ a ^ n := by
+  obtain ⟨k, rfl | rfl⟩ := Int.eq_nat_or_neg n <;> simp [inv_apply_eq_inv, pow_apply_coe]
+
+/-- The values of a multiplicative character of a monoid with finitely many units are algebraic
+integers: `0` at nonunits and roots of unity at units. -/
+theorem isIntegral_apply {M R : Type*} [CommMonoid M] [Finite Mˣ] [CommRing R]
+    (χ : MulChar M R) (x : M) : IsIntegral ℤ (χ x) := by
+  by_cases hx : IsUnit x
+  · obtain ⟨u, rfl⟩ := hx
+    simpa using χ.toUnitHom.isIntegral_coe_apply u
+  · rw [map_nonunit χ hx]
+    exact isIntegral_zero
+
+/-- A product of character values `∏ⱼ χⱼ(yⱼ)` vanishes when `∏ⱼ yⱼ = 0`: in a monoid with zero
+without zero divisors some `yⱼ` is then `0`, where every character vanishes. -/
+theorem prod_apply_eq_zero_of_prod_eq_zero {M R ι : Type*} [CommMonoidWithZero M] [Nontrivial M]
+    [NoZeroDivisors M] [CommMonoidWithZero R] {s : Finset ι} (χ : ι → MulChar M R) {y : ι → M}
+    (hy : ∏ j ∈ s, y j = 0) : ∏ j ∈ s, χ j (y j) = 0 := by
+  obtain ⟨j, hj, hj0⟩ := Finset.prod_eq_zero_iff.mp hy
+  exact Finset.prod_eq_zero hj (by rw [hj0, MulChar.map_zero])
 
 section Transport
 

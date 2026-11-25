@@ -135,13 +135,15 @@ example {L : Language.{u, v}} {L' : Language.{u', v'}} (g : L →ᴸ L') {ι : T
         BoundedFormulaInf.abstractConst c ((g.addConstants ℕ).onBoundedFormulaInf φ) := by
   simp
 
--- Lifting a language equivalence by `LEquiv.addConstants` commutes with single-constant
--- abstraction followed by existential quantification and preserves `constantSupport`, while
--- finitary `constantsVarsEquiv`, `relabel` and `toFormula` commute with `addConstants`.
+-- Lifting a language equivalence by `LEquiv.addConstants` maps added constant terms to added
+-- constant terms, commutes with single-constant abstraction followed by existential quantification,
+-- and preserves `constantSupport`, while finitary `constantsVarsEquiv`, `relabel` and `toFormula`
+-- commute with `addConstants`.
 example {L : Language.{u, v}} {L' : Language.{u', v'}} (e : L ≃ᴸ L')
     {ι : Type uι} {α β γ : Type*} [DecidableEq γ] {m n : ℕ} (c : γ)
     (φ : L[[γ]].FormulaInf ι α) (ψ : L[[γ]].BoundedFormula α n) (ρ : γ ⊕ α → β ⊕ Fin m) :
-    (e.addConstants γ).onBoundedFormulaInf (BoundedFormulaInf.abstractConst c φ).ex =
+    (e.addConstants γ).toLHom.onTerm ((L.con c).term : L[[γ]].Term α) = (L'.con c).term ∧
+      (e.addConstants γ).onBoundedFormulaInf (BoundedFormulaInf.abstractConst c φ).ex =
         (BoundedFormulaInf.abstractConst c ((e.addConstants γ).onBoundedFormulaInf φ)).ex ∧
       ((e.addConstants γ).onBoundedFormulaInf
         (BoundedFormulaInf.abstractConst c φ)).constantSupport =

@@ -30,6 +30,7 @@ public import Mathlib.Analysis.RCLike.Basic
 * `RCLike.sub_eq_ofReal_re_sub_of_im_eq`: horizontal differences are real casts.
 * `RCLike.sum_mul_inv_le_sum_mul_re_sub_inv`: lower bound for weighted sums of
   `re (((σ : K) - ρ)⁻¹)` over real points `ρ ∈ S` with `0 < σ - re ρ ≤ D`.
+* `RCLike.one_sub_re_le_norm_sub_one`: `1 - re z ≤ ‖z - 1‖`.
 * `RCLike.norm_I_le_one`: `‖I‖ ≤ 1`, uniformly over `ℝ` (where `I = 0`) and `ℂ` (where `‖I‖ = 1`).
 -/
 
@@ -129,6 +130,10 @@ theorem sum_mul_inv_le_sum_mul_re_sub_inv {S : Finset K} {w : K → ℝ} {σ D :
     simpa using sub_eq_ofReal_re_sub_of_im_eq (z := (σ : K)) (w := ρ) (by simp [him])
   rw [hdiff, ← ofReal_inv, ofReal_re]
   exact mul_le_mul_of_nonneg_left (inv_anti₀ hpos hle) (hw ρ hρS)
+
+/-- The real part of a scalar falls short of `1` by at most its distance to `1`. -/
+theorem one_sub_re_le_norm_sub_one (z : K) : 1 - re z ≤ ‖z - 1‖ := by
+  simpa [norm_sub_rev] using re_le_norm (1 - z)
 
 end RCLike
 

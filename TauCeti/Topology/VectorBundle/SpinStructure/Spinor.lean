@@ -312,6 +312,12 @@ variable {n}
 /-- The determinant model as `ℂ`. -/
 def toComplex : DeterminantModel n ≃ₗᵢ[ℂ] ℂ := LinearIsometryEquiv.refl ℂ ℂ
 
+variable (n) in
+omit [NeZero n] in
+/-- The determinant model has complex dimension one. -/
+theorem finrank_eq_one : finrank ℂ (DeterminantModel n) = 1 :=
+  (toComplex (n := n)).finrank_eq.trans (finrank_self ℂ)
+
 /-- `x` acts on the determinant model by multiplication by `det x`. -/
 @[simp]
 theorem toComplex_smul (x : spinCGroup (realCliffordForm n 0) hQn) (w : DeterminantModel n) :
@@ -363,9 +369,7 @@ abbrev determinantLine (s : SpinCStructure F E n) : X → Type _ :=
 /-- The determinant line has complex rank one. -/
 theorem finrank_determinantLine (s : SpinCStructure F E n) (x : X) :
     finrank ℂ (s.determinantLine x) = 1 := by
-  obtain ⟨p⟩ := s.nonempty_P x
-  rw [AssociatedBundle.finrank_eq ℂ SpinCn p, (DeterminantModel.toComplex (n := n)).finrank_eq,
-    Module.finrank_self]
+  rw [AssociatedBundle.finrank_eq ℂ SpinCn, DeterminantModel.finrank_eq_one]
 
 /-- **The central circle acts with weight two on the determinant line**: `[p • [1, z], w]` is
 `[p, z² w]`. -/
@@ -408,8 +412,7 @@ abbrev halfSpinorBundle (s : SpinCStructure F E 4) : X → Type _ :=
 theorem finrank_halfSpinorBundle (s : SpinCStructure F E 4) (x : X) :
     finrank ℂ (s.halfSpinorBundle o hQ b ρ hρ ε x) =
       finrank ℂ (eigenspace (ρ (chirality Q o)) ε) := by
-  obtain ⟨p⟩ := s.nonempty_P x
-  rw [AssociatedBundle.finrank_eq ℂ SpinC p, Orientation.HalfSpinModel.toEigenspace.finrank_eq]
+  rw [AssociatedBundle.finrank_eq ℂ SpinC, Orientation.HalfSpinModel.toEigenspace.finrank_eq]
 
 /-- **The central circle acts with weight one on the half-spinors**: `[p • [1, z], ψ]` is
 `[p, z ψ]`. -/

@@ -31,12 +31,18 @@ The rest of the file gives three consequences of the maximum modulus principle f
 The cofactor bound removes a factor `P` that is no smaller on the boundary than at the centre,
 such as a product of linear factors over zeros near `z₀`.
 
+The file ends with the maximum modulus principle on a closed disc with the bound read as the
+supremum of `‖f‖` over the boundary circle, and the boundedness of `‖f‖` on a sphere that makes
+this supremum usable with `le_ciSup`.
+
 ## Main results
 
 * `Complex.norm_le_re_of_forall_mem_frontier_norm_le_re`
 * `DiffContOnCl.ne_zero_of_forall_mem_sphere_norm_le_mul`
 * `DiffContOnCl.one_le_of_forall_mem_sphere_norm_le_mul`
 * `Complex.norm_le_of_forall_mem_sphere_norm_mul_le`
+* `ContinuousOn.bddAbove_range_norm_sphere`
+* `DiffContOnCl.norm_le_iSup_norm_sphere_of_mem_closedBall`
 -/
 
 public section
@@ -124,3 +130,29 @@ theorem DiffContOnCl.ne_zero_of_forall_mem_sphere_norm_le_mul {F : Type*} [Norme
     exact hfz (norm_eq_zero.mp (le_antisymm hbound (norm_nonneg _)))
   · have hzz : z = z₀ := dist_le_zero.mp ((mem_closedBall.mp hz).trans (le_of_not_gt hR))
     simpa only [hzz] using hfz
+
+/-- The norm of a function that is continuous on a sphere of a proper space is bounded there:
+the family `w ↦ ‖f w‖` indexed by the sphere is bounded above. This is the hypothesis of
+`le_ciSup` for the supremum `⨆ w : sphere x r, ‖f w‖`. -/
+theorem ContinuousOn.bddAbove_range_norm_sphere {α F : Type*} [PseudoMetricSpace α]
+    [ProperSpace α] [SeminormedAddGroup F] {f : α → F} {x : α} {r : ℝ}
+    (hf : ContinuousOn f (sphere x r)) : BddAbove (range fun w : sphere x r => ‖f w‖) := by
+  rw [← image_eq_range (fun w => ‖f w‖) (sphere x r)]
+  exact (isCompact_sphere x r).bddAbove_image hf.norm
+
+/-- The maximum modulus principle on a closed disc, in terms of the supremum over the boundary
+circle: if `f` is differentiable on `ball z₀ R` and continuous on its closure, then `‖f z‖` is at
+most the supremum of `‖f‖` over `sphere z₀ R` for every `z` in `closedBall z₀ R`. For `R ≠ 0` this
+is Mathlib's `Complex.norm_le_of_forall_mem_frontier_norm_le` on the ball, whose frontier is the
+sphere; for `R = 0` the closed disc and the sphere are both `{z₀}`. -/
+theorem DiffContOnCl.norm_le_iSup_norm_sphere_of_mem_closedBall {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℂ F] {f : ℂ → F} (hf : DiffContOnCl ℂ f (ball z₀ R))
+    {z : ℂ} (hz : z ∈ closedBall z₀ R) : ‖f z‖ ≤ ⨆ w : sphere z₀ R, ‖f w‖ := by
+  have hbdd := (hf.continuousOn_ball.mono sphere_subset_closedBall).bddAbove_range_norm_sphere
+  rcases eq_or_ne R 0 with rfl | hR
+  · rw [closedBall_zero, mem_singleton_iff] at hz
+    exact le_ciSup hbdd ⟨z, by rw [hz, sphere_zero]; exact mem_singleton z₀⟩
+  · refine Complex.norm_le_of_forall_mem_frontier_norm_le isBounded_ball hf (fun w hw => ?_)
+      (by rwa [closure_ball z₀ hR])
+    rw [frontier_ball z₀ hR] at hw
+    exact le_ciSup hbdd ⟨w, hw⟩

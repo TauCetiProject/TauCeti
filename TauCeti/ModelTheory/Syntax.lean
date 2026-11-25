@@ -16,9 +16,10 @@ that come from the left summand `α`. This file characterizes it through the ful
 `Term.varFinset`, and computes it after `Term.relabel` and `Term.subst`. It also records that a
 language map commutes with relabelling the variables of a term, and a language map that is
 injective on function symbols acts injectively on terms. Constructor equations for
-`BoundedFormula.constantsVarsEquiv` describe abstraction of constants in finitary formulas, and
+`BoundedFormula.constantsVarsEquiv` describe abstraction of constants in finitary formulas,
 lifting a language map via `LHom.addConstants` commutes with exchanging constants and variables in
-terms and finitary formulas.
+terms and finitary formulas, and defining equations unfold Mathlib's `⊤`, `⊓` and `⊔` on finitary
+formulas.
 
 ## Main results
 
@@ -45,7 +46,7 @@ terms and finitary formulas.
   `FirstOrder.Language.Term.constantsToVars_lhomWithConstants_onTerm`,
   `FirstOrder.Language.Term.constantsToVars_lhomWithConstantsMap_onTerm` and
   `FirstOrder.Language.LHom.constantsVarsEquiv_addConstants_onBoundedFormula` (with matching forms
-  for `Term.constantsVarsEquiv`, `Term.constantsVarsEquivLeft` and inverse equivalences): constant
+  for `Term.constantsVarsEquivLeft` and inverse equivalences): constant
   abstraction on terms and finitary formulas commutes with `LHom.addConstants` and translates
   `lhomWithConstants` and `lhomWithConstantsMap` into variable relabellings.
 * `FirstOrder.Language.LHom.onBoundedFormula_not`, `FirstOrder.Language.LHom.onFormula_not`,
@@ -57,6 +58,9 @@ terms and finitary formulas.
   `FirstOrder.Language.LHom.onTheory_mono`, `FirstOrder.Language.LHom.id_onTheory`,
   `FirstOrder.Language.LHom.comp_onTheory`: set-operation and functoriality laws for
   `LHom.onTheory`.
+* `FirstOrder.Language.BoundedFormula.top_def`, `FirstOrder.Language.BoundedFormula.inf_def`,
+  `FirstOrder.Language.BoundedFormula.sup_def`: `⊤` is `⊥.not`, `φ ⊓ ψ` is `(φ.imp ψ.not).not`
+  and `φ ⊔ ψ` is `φ.not.imp ψ`.
 -/
 
 public section
@@ -387,6 +391,15 @@ namespace BoundedFormula
 
 variable {L : Language} {α γ : Type*} {n : ℕ}
 
+/-- `⊤` is the negation of `⊥`. -/
+theorem top_def : (⊤ : L.BoundedFormula α n) = (⊥ : L.BoundedFormula α n).not := (rfl)
+
+/-- The conjunction `φ ⊓ ψ` is `(φ.imp ψ.not).not`. -/
+theorem inf_def (φ ψ : L.BoundedFormula α n) : φ ⊓ ψ = (φ.imp ψ.not).not := (rfl)
+
+/-- The disjunction `φ ⊔ ψ` is `φ.not.imp ψ`. -/
+theorem sup_def (φ ψ : L.BoundedFormula α n) : φ ⊔ ψ = φ.not.imp ψ := (rfl)
+
 @[simp]
 theorem constantsVarsEquiv_falsum :
     constantsVarsEquiv (.falsum : L[[γ]].BoundedFormula α n) = .falsum := (rfl)
@@ -416,23 +429,6 @@ end BoundedFormula
 namespace LHom
 
 variable {L : Language} {L' : Language} {α γ : Type*} {n : ℕ}
-
-/-- `LHom.addConstants` sends the constant term `(L.con c).term` to `(L'.con c).term`. -/
-theorem addConstants_onTerm_con (g : L →ᴸ L') (c : γ) :
-    (g.addConstants γ).onTerm ((L.con c).term : L[[γ]].Term α) = (L'.con c).term := by
-  simp
-
-/-- Constant abstraction on terms commutes with `LHom.addConstants`. -/
-theorem constantsVarsEquiv_addConstants_onTerm (g : L →ᴸ L') (t : L[[γ]].Term α) :
-    Term.constantsVarsEquiv ((g.addConstants γ).onTerm t) =
-      g.onTerm (Term.constantsVarsEquiv t) := by
-  simp
-
-/-- Inverse constant abstraction on terms commutes with `LHom.addConstants`. -/
-theorem addConstants_onTerm_constantsVarsEquiv_symm (g : L →ᴸ L') (t : L.Term (γ ⊕ α)) :
-    (g.addConstants γ).onTerm (Term.constantsVarsEquiv.symm t) =
-      Term.constantsVarsEquiv.symm (g.onTerm t) := by
-  simp
 
 /-- Abstracting constants in a finitary formula commutes with lifting a language map by
 `LHom.addConstants`. -/

@@ -35,6 +35,8 @@ Lifting a language map `g : L →ᴸ L'` to constant expansions via
 * `FirstOrder.Language.LHom.reduct_eq_of_isExpansionOn` and
   `FirstOrder.Language.LHom.id_isExpansionOn_reduct`: the reduct of an expansion along the map
   it expands along equals the original structure.
+* `FirstOrder.Language.LHom.sumStructure_reduct_sumInr_eq`: an expansion along `sumInl` to a sum
+  language is the sum structure of the original structure and its reduct along `sumInr`.
 * `FirstOrder.Language.LHom.sumMap_isExpansionOn_of_reduct`: a structure on a sum language is
   expanded along `ϕ.sumMap ψ` by a sum structure expanding its two parts along `ϕ` and `ψ`.
 * `FirstOrder.Language.LHom.mem_range_sumInl_onFunction_of_mem_range_sumMap` and
@@ -107,6 +109,19 @@ theorem reduct_eq_of_isExpansionOn (g : L →ᴸ L') (M : Type w) [S : L.Structu
     [L'.Structure M] [g.IsExpansionOn M] : g.reduct M = S :=
   Structure.ext (funext fun _ => funext fun f => funext fun x => g.map_onFunction f x)
     (funext fun _ => funext fun R => funext fun x => g.map_onRelation R x)
+
+/-- An `L.sum L'`-structure on `M` expanding its `L`-structure along `LHom.sumInl` is the sum of
+that `L`-structure and its `L'`-reduct along `LHom.sumInr`. -/
+theorem sumStructure_reduct_sumInr_eq (M : Type w) [L.Structure M] [S : (L.sum L').Structure M]
+    [(LHom.sumInl : L →ᴸ L.sum L').IsExpansionOn M] :
+    @sumStructure L L' M _ ((LHom.sumInr : L' →ᴸ L.sum L').reduct M) = S :=
+  Structure.ext
+    (funext fun _ => funext fun
+      | .inl f => funext fun x => (LHom.sumInl.map_onFunction f x).symm
+      | .inr _ => rfl)
+    (funext fun _ => funext fun
+      | .inl R => funext fun x => (LHom.sumInl.map_onRelation R x).symm
+      | .inr _ => rfl)
 
 /-- If the `L'`-structure on `M` expands its `L`-structure along `g`, then its reduct along `g` is
 the `L`-structure again, in the sense that the identity map expands the reduct to it. -/
@@ -466,12 +481,6 @@ theorem addConstants_comp_lhomWithConstants (γ : Type w) (g : L →ᴸ L') :
 @[simp]
 theorem addConstants_onFunction_inl {n : ℕ} (g : L →ᴸ L') (f : L.Functions n) :
     (g.addConstants γ).onFunction (Sum.inl f : L[[γ]].Functions n) = Sum.inl (g.onFunction f) :=
-  (rfl)
-
-/-- `LHom.addConstants` fixes added constant symbols in the right summand. -/
-@[simp]
-theorem addConstants_onFunction_inr (g : L →ᴸ L') (c : γ) :
-    (g.addConstants γ).onFunction (Sum.inr c : L[[γ]].Functions 0) = Sum.inr c :=
   (rfl)
 
 /-- `LHom.addConstants` sends each added constant `L.con c` to `L'.con c`. -/

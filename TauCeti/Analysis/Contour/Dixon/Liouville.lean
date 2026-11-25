@@ -21,7 +21,7 @@ null-homologous there, Dixon's glued function `dixonFunction f U γ a b` is enti
 (`differentiable_dixonFunction`) and tends to `0` at infinity, so Liouville's theorem forces it to
 vanish identically. The decay comes from the eventual agreement `dixonFunction = dixonH2` far from
 the origin — off `U` by definition, and on `U` because the winding number is eventually `0`, which
-collapses the `h₁`/`h₂` identity — combined with the `L¹` decay of `dixonH2`.
+collapses the `h₁`/`h₂` identity — combined with the decay of `dixonH2` at infinity.
 
 ## Main results
 
@@ -68,19 +68,13 @@ private theorem dixonFunction_eventually_eq_dixonH2 (hf : ContinuousOn f U)
     (cauchy_integrand_intervalIntegrable hf hγ.continuousOn hγU hderiv_int hoff) hoff hwn
 
 /-- **The Dixon function tends to `0` along `cocompact ℂ`.** It eventually agrees with `dixonH2`,
-which tends to `0` by the `L¹` decay bound: the image of the compact interval `uIcc a b` is bounded
-(`IsCompact.exists_bound_of_continuousOn`), and the weight `f (γ ·) * deriv γ` is
-interval-integrable (continuous `f ∘ γ` times the interval-integrable derivative of the absolutely
-continuous curve). -/
+which tends to `0` for every curve continuous on `uIcc a b`
+(`dixonH2_tendsto_zero_of_continuousOn`). -/
 private theorem dixonFunction_tendsto_zero (hf : ContinuousOn f U)
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
     (hclosed : γ a = γ b) :
-    Tendsto (dixonFunction f U γ a b) (cocompact ℂ) (𝓝 0) := by
-  obtain ⟨R, hR⟩ := isCompact_uIcc.exists_bound_of_continuousOn hγ.continuousOn
-  have hg : IntervalIntegrable (fun t ↦ f (γ t) * deriv γ t) volume a b :=
-    hγ.intervalIntegrable_deriv_of_finiteDimensional.continuousOn_mul
-      (hf.comp hγ.continuousOn hγU)
-  exact (dixonH2_tendsto_zero_of_integrable (fun t ht ↦ hR t (uIoc_subset_uIcc ht)) hg).congr'
+    Tendsto (dixonFunction f U γ a b) (cocompact ℂ) (𝓝 0) :=
+  (dixonH2_tendsto_zero_of_continuousOn hγ.continuousOn).congr'
     (dixonFunction_eventually_eq_dixonH2 hf hγ hγU hclosed).symm
 
 /-- **The Dixon function is identically zero (Liouville).** For a closed absolutely continuous

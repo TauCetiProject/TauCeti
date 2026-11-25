@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Analysis.Distribution.TestFunction
+public import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
@@ -24,10 +25,12 @@ Test forms are the Euclidean chart model of the test forms acted on by currents:
 on `Ω` is a continuous linear functional `T` on test `k`-forms, and its boundary is the transpose
 `∂T = T ∘ d` of this exterior derivative. The identity `d ∘ d = 0` gives `∂ ∘ ∂ = 0`.
 
-In degree `k + 1 ≥ dim E`, the interior product `ι_y α` of a constant form `α` times a scalar test
-function `g` has exterior derivative `∂_y g • α`. Consequently, if a continuous linear functional
-`T` on test `(k + 1)`-forms annihilates every exact test form, then the scalar distribution
-`g ↦ T (g • α)` has vanishing distributional derivatives in every direction. This is the step that
+For a constant form `α`, a vector `y` and a scalar test function `g`, Cartan's formula reads
+`d (g • ι_y α) + ι_y d (g • α) = ∂_y g • α`, where `ι_y α` is the interior product. In degree
+`k + 1 ≥ dim E` the second term vanishes, so `g • ι_y α` has exterior derivative `∂_y g • α`.
+Consequently, if a continuous linear functional `T` on test `(k + 1)`-forms, `k + 1 ≥ dim E`,
+annihilates every exact test form, then the scalar distribution `g ↦ T (g • α)` has vanishing
+distributional derivatives in every direction. This is the step that
 reduces the constancy theorem for top-degree currents without boundary to the constancy of scalar
 distributions whose derivatives all vanish.
 
@@ -40,6 +43,8 @@ distributions whose derivatives all vanish.
   from `Ω'` to a larger open set `Ω`.
 * `ContinuousLinearMap.comp_monoCLM_comp_extDerivCLM`: restricting a current to an open subset
   commutes with the boundary.
+* `TestFunction.extDerivCLM_postcompCLM_toSpanSingleton_curryLeft_add`: Cartan's formula
+  `d (g • ι_y α) + ι_y d (g • α) = ∂_y g • α` for a constant form `α`.
 * `TestFunction.extDerivCLM_postcompCLM_toSpanSingleton_curryLeft`: the top-degree formula
   `d (g • ι_y α) = ∂_y g • α`.
 * `TestFunction.map_postcompCLM_toSpanSingleton_lineDerivOp_eq_zero`: a functional on top-degree
@@ -129,6 +134,38 @@ theorem extDerivCLM_postcompCLM_constOfIsEmptyLIE (f : 𝓓(Ω, F)) :
   simp only [extDerivCLM_apply, postcompCLM_apply, fderivCLM_apply]
   exact extDeriv_constOfIsEmpty (f : E → F) x
 
+/-- **Cartan's formula for a constant form times a scalar test.** For a constant `(k + 1)`-form
+`α`, a vector `y` and a scalar test function `g`,
+`d (g • ι_y α) + ι_y d (g • α) = ∂_y g • α`. Here `ι_y α = α.curryLeft y` is the interior product,
+and the left side is the Lie derivative of `g • α` along the constant vector field `y`. -/
+theorem extDerivCLM_postcompCLM_toSpanSingleton_curryLeft_add (α : E [⋀^Fin (k + 1)]→L[ℝ] F)
+    (y : E) (g : 𝓓(Ω, ℝ)) :
+    extDerivCLM (postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (α.curryLeft y)) g) +
+        postcompCLM (curryLeftFlipL y)
+          (extDerivCLM (postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ α) g)) =
+      postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ α) (∂_{y} g) := by
+  ext x : 1
+  have hg : DifferentiableAt ℝ (g : E → ℝ) x := g.contDiff.differentiable (by simp) x
+  -- The derivative of `g • β` at `x`, for a constant form `β`, is `w ↦ Dg(x) w • β`.
+  have hd {m : ℕ} (β : E [⋀^Fin m]→L[ℝ] F) :
+      fderiv ℝ (ContinuousLinearMap.toSpanSingleton ℝ β ∘ (g : E → ℝ)) x =
+        (fderiv ℝ (g : E → ℝ) x).smulRight β := by
+    have hfun : ContinuousLinearMap.toSpanSingleton ℝ β ∘ (g : E → ℝ) = fun z ↦ g z • β :=
+      funext fun z ↦ ContinuousLinearMap.toSpanSingleton_apply ℝ β (g z)
+    rw [hfun]
+    exact (hg.hasFDerivAt.smul_const β).fderiv
+  have hcomp : curryLeftFlipL y ∘L (fderiv ℝ (g : E → ℝ) x).smulRight α =
+      (fderiv ℝ (g : E → ℝ) x).smulRight (α.curryLeft y) := by
+    ext w : 1
+    simp
+  have hcartan := alternatizeUncurryFin_curryLeft_comp_add_curryLeft
+    ((fderiv ℝ (g : E → ℝ) x).smulRight α) y
+  rw [hcomp] at hcartan
+  simp only [_root_.add_apply, postcompCLM_apply, Function.comp_apply, curryLeftFlipL_apply_apply,
+    extDerivCLM_apply, extDeriv]
+  rw [hd, hd, hcartan]
+  simp [lineDerivOp_eq_lineDerivCLM ℝ, hg.lineDeriv_eq_fderiv]
+
 /-- **The exterior derivative in top degree.** If `dim E ≤ k + 1`, then for a constant
 `(k + 1)`-form `α`, a vector `y` and a scalar test function `g`, the test `k`-form `g • ι_y α`
 has exterior derivative `∂_y g • α`. Here `ι_y α = α.curryLeft y` is the interior product. -/
@@ -136,29 +173,12 @@ theorem extDerivCLM_postcompCLM_toSpanSingleton_curryLeft [FiniteDimensional ℝ
     (hk : Module.finrank ℝ E ≤ k + 1) (α : E [⋀^Fin (k + 1)]→L[ℝ] F) (y : E) (g : 𝓓(Ω, ℝ)) :
     extDerivCLM (postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (α.curryLeft y)) g) =
       postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ α) (∂_{y} g) := by
+  rw [← extDerivCLM_postcompCLM_toSpanSingleton_curryLeft_add, left_eq_add]
+  -- The `(k + 2)`-form `d (g • α)` vanishes on a space of dimension at most `k + 1`.
   ext x : 1
-  have hg : DifferentiableAt ℝ (g : E → ℝ) x := g.contDiff.differentiable (by simp) x
-  -- The derivative of `g • α` at `x` is the constant-coefficient family `L w = Dg(x) w • α`.
-  set L : E →L[ℝ] E [⋀^Fin (k + 1)]→L[ℝ] F := (fderiv ℝ (g : E → ℝ) x).smulRight α
-  -- Its alternatization is a `(k + 2)`-form on a space of dimension at most `k + 1`.
-  have hzero : alternatizeUncurryFin L = 0 :=
+  have h0 : extDerivCLM (postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ α) g) x = 0 :=
     eq_zero_of_finrank_lt _ (by simpa using Nat.lt_succ_of_le hk)
-  have hcartan := alternatizeUncurryFin_curryLeft_comp_add_curryLeft L y
-  rw [hzero, curryLeft_zero, zero_apply, add_zero] at hcartan
-  have hcomp : curryLeftFlipL y ∘L L =
-      (fderiv ℝ (g : E → ℝ) x).smulRight (α.curryLeft y) := by
-    ext w : 1
-    simp [L]
-  rw [hcomp] at hcartan
-  have hd : fderiv ℝ (fun z ↦ g z • α.curryLeft y) x =
-      (fderiv ℝ (g : E → ℝ) x).smulRight (α.curryLeft y) :=
-    (hg.hasFDerivAt.smul_const (α.curryLeft y)).fderiv
-  have hfun : (ContinuousLinearMap.toSpanSingleton ℝ (α.curryLeft y)) ∘ (g : E → ℝ) =
-      fun z ↦ g z • α.curryLeft y :=
-    funext fun z ↦ ContinuousLinearMap.toSpanSingleton_apply ℝ (α.curryLeft y) (g z)
-  simp only [extDerivCLM_apply, postcompCLM_apply, extDeriv]
-  rw [hfun, hd, hcartan]
-  simp [L, lineDerivOp_eq_lineDerivCLM ℝ, hg.lineDeriv_eq_fderiv]
+  simp [h0]
 
 /-- A continuous linear functional `T` on test `(k + 1)`-forms, `dim E ≤ k + 1`, that annihilates
 every exact test form (that is, a top-degree current with zero boundary `T ∘ d = 0`) annihilates
