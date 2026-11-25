@@ -30,8 +30,8 @@ preserved, by induction on the order from the first-order formula `Du (A z + b) 
 (`TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add`). The dilation `z ↦ 2 z` scales the
 weak derivative of order `i` by `2 ^ i` (`TauCeti.HasWeakFDerivOn.pow_smul_comp_two_mul`), and the
 reflection `z ↦ -conj z` preserves the half-disc classes. The rotation `z ↦ i z` does not preserve
-the real axis, and does not preserve the half-disc classes
-(`TauCeti.not_memWkpLoc_halfDisc_comp_I_mul`).
+the real axis, and does not preserve the half-disc classes; the counterexample is in
+`TauCeti.Analysis.Sobolev.Local.Examples`.
 
 Higher orders for nonlinear `Φ` need the multiplication of local Sobolev maps by smooth
 coefficients and are not treated here.
