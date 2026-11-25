@@ -297,7 +297,7 @@ variable [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)]
 theorem isSmoothForm_smul_riemannianVolumeForm {f : M → ℝ} (hf : Continuous f) :
     IsSmoothForm I 0 (fun x ↦ f x • riemannianVolumeForm o x) := by
   have : IsManifold I (0 + 1) M := by simpa using (inferInstance : IsManifold I 1 M)
-  exact (isSmoothForm_riemannianVolumeForm o).fun_smul (contMDiff_zero_iff.2 hf)
+  exact (isSmoothForm_riemannianVolumeForm (n := 0) o).fun_smul_of_continuous hf
 
 variable [CompactSpace M]
 
@@ -308,11 +308,9 @@ theorem integralTopForm_add_smul_riemannianVolumeForm {f g : M → ℝ} (hf : Co
     integralTopForm o (fun x ↦ (f x + g x) • riemannianVolumeForm o x) =
       integralTopForm o (fun x ↦ f x • riemannianVolumeForm o x) +
         integralTopForm o (fun x ↦ g x • riemannianVolumeForm o x) := by
-  rw [← integralTopForm_add_of_compactSpace o (isSmoothForm_smul_riemannianVolumeForm o hf)
-    (isSmoothForm_smul_riemannianVolumeForm o hg)]
-  congr 1
-  funext x
-  rw [Pi.add_apply, add_smul]
+  have : IsManifold I (0 + 1) M := by simpa using (inferInstance : IsManifold I 1 M)
+  exact integralTopForm_add_smul_of_compactSpace o (isSmoothForm_riemannianVolumeForm (n := 0) o)
+    hf hg
 
 /-- **Monotonicity of the integral against the Riemannian volume form**: on a compact oriented
 Riemannian manifold of positive dimension, continuous functions with `f ≤ g` satisfy

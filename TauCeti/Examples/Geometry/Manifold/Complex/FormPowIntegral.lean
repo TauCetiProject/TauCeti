@@ -14,7 +14,8 @@ public import TauCeti.Geometry.Manifold.Complex.FormPowIntegral
 * On `ℂ²` with the standard form `ω = dx₁ ∧ dy₁ + dx₂ ∧ dy₂` (`TauCeti.standardKahlerForm 2`),
   `ω²(∂x₁, ∂y₁, ∂x₂, ∂y₂) = 2 = 2!`, as `ω^n = n!·dvol_g` requires.
 * Against the opposite orientation the integral `∫_X ω^n` of a taming form on a nonempty compact
-  complex manifold is negative, so the sign convention of `TauCeti.formPowIntegral` matters.
+  complex manifold of positive dimension is negative, so the sign convention of
+  `TauCeti.formPowIntegral` matters.
 -/
 
 public section
@@ -47,7 +48,7 @@ theorem standardKahlerForm_wedgePow_two_frame :
       · simp [b, EuclideanSpace.inner_single_left, hij])
   have hb : (fun r ↦ b (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 2) r))) = frame := by
     funext r
-    fin_cases r <;> rfl
+    fin_cases r <;> simp [frame, b, finProdFinEquiv, Fin.divNat, Fin.modNat]
   rw [hb] at h
   simpa using h
 
@@ -56,8 +57,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
   [IsManifold 𝓘(ℂ, E) ∞ X] [CompactSpace X] [Nonempty X]
 
 /-- **The opposite orientation gives a negative volume.** For a two-form `κ` taming the complex
-structure of a nonempty compact complex manifold, `∫_X κ^n` against the opposite of the canonical
-orientation is negative. -/
+structure of a nonempty compact complex manifold of positive dimension, `∫_X κ^n` against the
+opposite of the canonical orientation is negative. -/
 theorem integralTopForm_neg_complexManifoldOrientation_wedgePow_neg {κ : SmoothTwoForm 𝓘(ℝ, E) X}
     (hκ : κ.Tames (SmoothAlmostComplexStructure.ofComplexManifold E X)) :
     integralTopForm (-complexManifoldOrientation E X)
