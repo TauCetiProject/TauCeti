@@ -233,6 +233,7 @@ configurations agreeing with `ω` off `F`. -/
 def dimerCompletionSet (F : Finset G.edgeSet) (ω : G.edgeSet → Bool) : Set (G.edgeSet → Bool) :=
   {ω' | G.IsDimerConfiguration ω' ∧ ∀ e ∉ F, ω' e = ω e}
 
+@[simp]
 theorem mem_dimerCompletionSet {F : Finset G.edgeSet} {ω ω' : G.edgeSet → Bool} :
     ω' ∈ G.dimerCompletionSet F ω ↔ G.IsDimerConfiguration ω' ∧ ∀ e ∉ F, ω' e = ω e :=
   (Iff.rfl)
@@ -251,11 +252,10 @@ theorem finite_dimerCompletionSet (F : Finset G.edgeSet) (ω : G.edgeSet → Boo
   · exact congrFun h ⟨e, he⟩
   · rw [h₁.2 e he, h₂.2 e he]
 
-open scoped Classical in
 /-- The members of the completion set of a dimer configuration `ω` at `F` are the gluings of
 configurations `η` on `F` to `ω` that cover every endpoint of an edge of `F` exactly once. -/
-theorem dimerCompletionSet_eq_image {F : Finset G.edgeSet} {ω : G.edgeSet → Bool}
-    (hω : G.IsDimerConfiguration ω) :
+theorem dimerCompletionSet_eq_image [DecidableEq G.edgeSet] {F : Finset G.edgeSet}
+    {ω : G.edgeSet → Bool} (hω : G.IsDimerConfiguration ω) :
     G.dimerCompletionSet F ω = (fun η => updateFinset ω F η) ''
       {η | ∀ v : V, (∃ e ∈ F, v ∈ (e : Sym2 V)) →
         ∃! e : G.edgeSet, updateFinset ω F η e = true ∧ v ∈ (e : Sym2 V)} := by
@@ -276,25 +276,24 @@ theorem dimerCompletionSet_eq_image {F : Finset G.edgeSet} {ω : G.edgeSet → B
       refine (existsUnique_congr_of_eqOn_incident fun e he => ?_).2 (hω v)
       exact updateFinset_apply_of_notMem fun heF => hv e heF he
 
-open scoped Classical in
 /-- The restrictions to `F` of the members of the completion set of a dimer configuration `ω` at
 `F` are the configurations `η` on `F` whose gluing to `ω` off `F` covers every endpoint of an edge
 of `F` exactly once. -/
-theorem mem_image_restrict_dimerCompletionSet {F : Finset G.edgeSet} {ω : G.edgeSet → Bool}
-    (hω : G.IsDimerConfiguration ω) {η : F → Bool} :
+theorem mem_image_restrict_dimerCompletionSet [DecidableEq G.edgeSet] {F : Finset G.edgeSet}
+    {ω : G.edgeSet → Bool} (hω : G.IsDimerConfiguration ω) {η : F → Bool} :
     η ∈ F.restrict '' G.dimerCompletionSet F ω ↔ ∀ v : V, (∃ e ∈ F, v ∈ (e : Sym2 V)) →
       ∃! e : G.edgeSet, updateFinset ω F η e = true ∧ v ∈ (e : Sym2 V) := by
   rw [dimerCompletionSet_eq_image hω, image_image]
   simp only [restrict_updateFinset, image_id']
   exact Iff.rfl
 
-open scoped Classical in
 /-- For two dimer configurations that agree on the edges outside `F` sharing a vertex with an edge
 of `F`, the restrictions to `F` of their completion sets coincide. -/
 theorem image_restrict_dimerCompletionSet_eq {F : Finset G.edgeSet} {ω₁ ω₂ : G.edgeSet → Bool}
     (h₁ : G.IsDimerConfiguration ω₁) (h₂ : G.IsDimerConfiguration ω₂)
     (h : ∀ e ∉ F, (∃ f ∈ F, ∃ v, v ∈ (e : Sym2 V) ∧ v ∈ (f : Sym2 V)) → ω₁ e = ω₂ e) :
     F.restrict '' G.dimerCompletionSet F ω₁ = F.restrict '' G.dimerCompletionSet F ω₂ := by
+  classical
   have key : ∀ η : F → Bool, ∀ v : V, (∃ f ∈ F, v ∈ (f : Sym2 V)) →
       ((∃! e : G.edgeSet, updateFinset ω₁ F η e = true ∧ v ∈ (e : Sym2 V)) ↔
         ∃! e : G.edgeSet, updateFinset ω₂ F η e = true ∧ v ∈ (e : Sym2 V)) := by
