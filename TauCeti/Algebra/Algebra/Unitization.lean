@@ -308,7 +308,7 @@ namespace Unitization
 
 section Unital
 
-variable (R A : Type*) [CommRing R] [StarRing R] [Ring A] [StarRing A] [Algebra R A]
+variable (R A : Type*) [CommSemiring R] [StarRing R] [Ring A] [StarRing A] [Algebra R A]
   [StarModule R A]
 
 /-- For a unital star algebra `A`, the forced unitization splits as a product:
@@ -330,8 +330,11 @@ theorem prodStarAlgEquiv_apply (x : Unitization R A) :
     prodStarAlgEquiv R A x = (algebraMap R A x.fst + x.snd, x.fst) := by
   simp [prodStarAlgEquiv]
 
-/-- The second component of the splitting `Unitization R A ≃⋆ₐ[R] A × R` is the augmentation. -/
-theorem snd_prodStarAlgEquiv (x : Unitization R A) : (prodStarAlgEquiv R A x).2 = x.fst :=
+/-- The inverse of the splitting `Unitization R A ≃⋆ₐ[R] A × R` sends `(b, r)` to
+`(r, b - r • 1)`. -/
+@[simp]
+theorem prodStarAlgEquiv_symm_apply (y : A × R) :
+    (prodStarAlgEquiv R A).symm y = inl y.2 + inr (y.1 - algebraMap R A y.2) :=
   (rfl)
 
 end Unital

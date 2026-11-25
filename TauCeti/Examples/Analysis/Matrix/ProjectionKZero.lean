@@ -18,9 +18,10 @@ matrices. For `A = ℂ` the `1 × 2` matrix `v = (1 0)` has `vᴴ v = diag(1, 0)
 different sizes. The rank identifies `V(ℂ)` with `ℕ` and `K₀(ℂ)` with `ℤ`, with `[1ₙ] ↦ n`.
 Over the zero algebra every matrix projection is zero, so `V(0)` and `K₀(0)` are trivial.
 
-For the unital algebra `ℂ`, the forced unitization is `ℂ⁺ ≅ ℂ × ℂ`, so `K₀(ℂ⁺) ≅ ℤ²`, with the
-class of the unit of `ℂ⁺` sent to `(1, 1)`; the augmentation induces the second projection, and its
-kernel `ℤ × 0` is the unital `K₀(ℂ) ≅ ℤ`.
+For the unital algebra `ℂ`, the forced unitization is `ℂ⁺ ≅ ℂ × ℂ`. Writing `K₀ᵖ(ℂ)` for the
+projection `K₀`-group of `ℂ` itself, `K₀(ℂ⁺) ≅ K₀ᵖ(ℂ) × K₀(ℂ) ≅ ℤ²`, with the class of the unit of
+`ℂ⁺` sent to `(1, 1)`; the augmentation induces the second projection, and its kernel `ℤ × 0`, the
+`K₀`-group of `ℂ` defined through the unitization, is `K₀ᵖ(ℂ) ≅ ℤ`.
 -/
 
 public section
@@ -92,23 +93,29 @@ noncomputable def kZeroUnitizationEquiv : ProjectionKZero (Unitization ℂ ℂ) 
   (UnitizationKZero.unitalProdEquiv ℂ ℂ).trans
     ((ProjectionKZero.rankAddEquiv ℂ).prodCongr (ProjectionKZero.rankAddEquiv ℂ))
 
+/-- `K₀(ℂ⁺) ≅ ℤ²` is the rank on each component of `K₀(ℂ⁺) ≅ K₀ᵖ(ℂ) × K₀(ℂ)`. -/
+theorem kZeroUnitizationEquiv_apply (x : ProjectionKZero (Unitization ℂ ℂ)) :
+    kZeroUnitizationEquiv x =
+      (ProjectionKZero.rankAddEquiv ℂ (UnitizationKZero.unitalProdEquiv ℂ ℂ x).1,
+        ProjectionKZero.rankAddEquiv ℂ (UnitizationKZero.unitalProdEquiv ℂ ℂ x).2) :=
+  (rfl)
+
 /-- Under `K₀(ℂ⁺) ≅ ℤ²` the class of the unit of `ℂ⁺` is `(1, 1)`. -/
 example : kZeroUnitizationEquiv (GrothendieckAddGroup.of
     (ProjectionMonoid.mk (1 : Matrix (Fin 1) (Fin 1) (Unitization ℂ ℂ)) (.one _))) = (1, 1) := by
-  rw [kZeroUnitizationEquiv, AddEquiv.trans_apply, UnitizationKZero.unitalProdEquiv_apply,
-    ProjectionKZero.map_of_mk, ProjectionKZero.prodEquiv_apply, ProjectionKZero.map_of_mk,
-    ProjectionKZero.map_of_mk]
-  change (ProjectionKZero.rankAddEquiv ℂ _, ProjectionKZero.rankAddEquiv ℂ _) = _
-  rw [ProjectionKZero.rankAddEquiv_of_mk, ProjectionKZero.rankAddEquiv_of_mk]
-  simp [Matrix.map_one]
+  rw [kZeroUnitizationEquiv_apply, UnitizationKZero.unitalProdEquiv_apply,
+    ProjectionKZero.map_of_mk, ProjectionKZero.prodEquiv_of_mk,
+    ProjectionKZero.rankAddEquiv_of_mk, ProjectionKZero.rankAddEquiv_of_mk,
+    Matrix.map_one _ (map_zero _) (by simp), Matrix.map_one _ (map_zero _) (by simp),
+    Matrix.map_one _ (map_zero _) (by simp)]
+  simp
 
 /-- Under `K₀(ℂ⁺) ≅ ℤ²` the homomorphism induced by the augmentation `ε : ℂ⁺ → ℂ` is the second
 projection. -/
 example (x : ProjectionKZero (Unitization ℂ ℂ)) :
     ProjectionKZero.rankAddEquiv ℂ (UnitizationKZero.augmentation ℂ ℂ x) =
       (kZeroUnitizationEquiv x).2 := by
-  rw [← UnitizationKZero.unitalProdEquiv_apply_snd]
-  rfl
+  rw [kZeroUnitizationEquiv_apply, UnitizationKZero.unitalProdEquiv_apply_snd]
 
 /-- The kernel of `K₀(ε)`, the `K₀`-group of `ℂ` through its unitization, is `ℤ`. -/
 noncomputable example : UnitizationKZero ℂ ℂ ≃+ ℤ :=
