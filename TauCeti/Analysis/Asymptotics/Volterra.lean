@@ -55,8 +55,7 @@ in addition that `𝕜` be a normed `ℝ`-algebra compatible with `E`, as `ℝ` 
 * `TauCeti.exists_volterra_solution`: existence of a continuous solution with the bound
   `‖h x‖ ≤ P x * Φ x * exp (Ψ x)`.
 * `TauCeti.volterra_solution_unique`: two continuous solutions that are `O(P)` at infinity agree
-  on `(a, ∞)`; consequently every such solution satisfies the bound
-  (`TauCeti.norm_volterra_solution_le`).
+  on `(a, ∞)`, and every such solution satisfies the bound (`TauCeti.norm_volterra_solution_le`).
 * `TauCeti.existsUnique_volterra_solution`: on `(a, ∞)` there is exactly one continuous solution
   that is `O(P)` at infinity.
 * `TauCeti.norm_volterra_solution_le_exp_sub_one`: the bound
@@ -763,14 +762,14 @@ theorem isBigO_of_norm_le_volterra_bound (hP0 : ∀ x ∈ Ioi a, 0 ≤ P x)
   (isBigO_principal_Ici_of_norm_le_volterra_bound hP0 hQ0 hΦ hΨ hh (a + 1)
     (lt_add_one a)).mono (le_principal_iff.2 (Ici_mem_atTop _))
 
-/-- **Volterra integral equations, bound.** Under the hypotheses of `exists_volterra_solution`,
-every solution of `h x = ∫ v in Ioi x, K x v • (J v + ψ v • h v)` that is continuous on `(a, ∞)`
-and `O(P)` at infinity satisfies `‖h x‖ ≤ P x * Φ x * exp (Ψ x)` for every `x > a`, where
-`Φ x = ∫ v in Ioi x, Q v * ‖J v‖` and `Ψ x = ∫ v in Ioi x, P v * Q v * ‖ψ v‖`. -/
-theorem norm_volterra_solution_le [CompleteSpace E]
-    (hK : ContinuousOn (uncurry K) {p | a < p.1 ∧ p.1 ≤ p.2})
-    (hJ : ContinuousOn J (Ioi a)) (hψ : ContinuousOn ψ (Ioi a))
-    (hP : ContinuousOn P (Ioi a)) (hQ : ContinuousOn Q (Ioi a))
+/-- **Volterra integral equations, bound.** Let `J`, `ψ` and `Q` be continuous on `(a, ∞)`,
+with `P, Q ≥ 0` there, `‖K x v‖ ≤ P x * Q v` for `a < x ≤ v`, and let
+`Φ x = ∫ v in Ioi x, Q v * ‖J v‖` and `Ψ x = ∫ v in Ioi x, P v * Q v * ‖ψ v‖` converge for every
+`x > a`. Then every solution of `h x = ∫ v in Ioi x, K x v • (J v + ψ v • h v)` that is
+continuous on `(a, ∞)` and `O(P)` at infinity satisfies `‖h x‖ ≤ P x * Φ x * exp (Ψ x)` for every
+`x > a`. -/
+theorem norm_volterra_solution_le
+    (hJ : ContinuousOn J (Ioi a)) (hψ : ContinuousOn ψ (Ioi a)) (hQ : ContinuousOn Q (Ioi a))
     (hP0 : ∀ x ∈ Ioi a, 0 ≤ P x) (hQ0 : ∀ x ∈ Ioi a, 0 ≤ Q x)
     (hKle : ∀ x v, a < x → x ≤ v → ‖K x v‖ ≤ P x * Q v)
     (hΦ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ Q v * ‖J v‖) (Ioi x))
@@ -779,11 +778,11 @@ theorem norm_volterra_solution_le [CompleteSpace E]
     (h_eq : ∀ x ∈ Ioi a, h x = ∫ v in Ioi x, K x v • (J v + ψ v • h v))
     (h_isBigO : h =O[atTop] P) {x : ℝ} (hx : x ∈ Ioi a) :
     ‖h x‖ ≤ P x * (∫ v in Ioi x, Q v * ‖J v‖) * Real.exp (∫ v in Ioi x, P v * Q v * ‖ψ v‖) := by
-  obtain ⟨h₀, h₀_cont, h₀_eq, h₀_le⟩ :=
-    exists_volterra_solution hK hJ hψ hP hQ hP0 hQ0 hKle hΦ hΨ
-  rw [volterra_solution_unique hK hJ hψ hQ hP0 hQ0 hKle hΦ hΨ h_cont h₀_cont h_eq h₀_eq h_isBigO
-    (isBigO_of_norm_le_volterra_bound hP0 hQ0 hΦ hΨ h₀_le) hx]
-  exact h₀_le x hx
+  have h_eq' : ∀ y ∈ Ici x, h y = ∫ v in Ioi y, K y v • (J v + ψ v • h v) :=
+    fun y (hy : x ≤ y) ↦ h_eq y (lt_of_lt_of_le hx hy)
+  exact norm_volterra_solution_le_of_isBigO_principal_Ici hP0 hKle hx h_eq' (hΦ x hx) (hΨ x hx)
+    (isBigO_principal_Ici_of_volterra_solution hP0 hQ0 hKle hx h_eq'
+      (integrableOn_weight_add_of_isBigO hJ hψ hQ hP0 hQ0 hΦ hΨ h_cont h_isBigO hx))
 
 /-- **Volterra integral equations, existence and uniqueness.** Under the hypotheses of
 `exists_volterra_solution`, the equation `h x = ∫ v in Ioi x, K x v • (J v + ψ v • h v)` has, on
@@ -1137,8 +1136,7 @@ infinity satisfies `‖deriv h x‖ ≤ P₁ x * Φ x * exp (Ψ x)` for every `x
 `Φ x = ∫ v in Ioi x, Q v * ‖J v‖` and `Ψ x = ∫ v in Ioi x, P v * Q v * ‖ψ v‖`. -/
 theorem norm_deriv_volterra_solution_le [CompleteSpace E]
     (hK : ContinuousOn (uncurry K) {p | a < p.1 ∧ p.1 ≤ p.2})
-    (hJ : ContinuousOn J (Ioi a)) (hψ : ContinuousOn ψ (Ioi a))
-    (hP : ContinuousOn P (Ioi a)) (hQ : ContinuousOn Q (Ioi a))
+    (hJ : ContinuousOn J (Ioi a)) (hψ : ContinuousOn ψ (Ioi a)) (hQ : ContinuousOn Q (Ioi a))
     (hP0 : ∀ x ∈ Ioi a, 0 ≤ P x) (hQ0 : ∀ x ∈ Ioi a, 0 ≤ Q x)
     (hKle : ∀ x v, a < x → x ≤ v → ‖K x v‖ ≤ P x * Q v)
     (hΦ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ Q v * ‖J v‖) (Ioi x))
@@ -1177,7 +1175,7 @@ theorem norm_deriv_volterra_solution_le [CompleteSpace E]
     have := hP0 v hva
     calc ‖h v‖
         ≤ P v * (∫ u in Ioi v, Q u * ‖J u‖) * Real.exp (∫ u in Ioi v, P u * Q u * ‖ψ u‖) :=
-          norm_volterra_solution_le hK hJ hψ hP hQ hP0 hQ0 hKle hΦ hΨ h_cont h_eq h_isBigO hva
+          norm_volterra_solution_le hJ hψ hQ hP0 hQ0 hKle hΦ hΨ h_cont h_eq h_isBigO hva
       _ ≤ P v * Φx * Real.exp (∫ u in Ioi v, P u * Q u * ‖ψ u‖) := by grw [hΦle]
       _ = Φx * P v * Real.exp (∫ u in Ioi v, P u * Q u * ‖ψ u‖) := by ring
   calc _ ≤ Φx + Φx * (Real.exp (∫ u in Ioi x, P u * Q u * ‖ψ u‖) - 1) :=
