@@ -86,9 +86,12 @@ theorem norm_add_re_laplace_coeff_le {g : ℝ → ℝ} {F : ℂ → ℂ} {z : �
             abs_add_eq_two_nsmul_posPart (g u)
         simp only [← add_mul, heq', mul_assoc]
 
-/-- Bound a signed Laplace coefficient by the integral of the damped positive part on a window
-and a Gamma-weighted tail. The exponential growth bound is needed only off that window, and
-only for the positive part. The window is `(U, V]`; its left endpoint has measure zero. -/
+/-- Bound the norm of the signed Laplace coefficient at `z` plus the real part of the coefficient
+at `z.re` by `2 (z.re - θ)⁻ⁿ` times the integral of the positive part damped at rate `θ` over the
+window `(U, V]`, plus `2 C` times a Gamma-weighted tail off the window. The real-part term can be
+negative, so this does not bound the coefficient at `z` by itself. The exponential growth bound is
+needed only off the window, and only for the positive part. The left endpoint of the window has
+measure zero. -/
 theorem norm_add_re_laplace_coeff_le_window {g : ℝ → ℝ} {F : ℂ → ℂ} {z : ℂ} {θ A C U V : ℝ}
     (hz : ∀ᶠ w in 𝓝 z, HasLaplace (fun u ↦ (g u : ℂ)) w (F w))
     (hr : ∀ᶠ w in 𝓝 (z.re : ℂ), HasLaplace (fun u ↦ (g u : ℂ)) w (F w))
