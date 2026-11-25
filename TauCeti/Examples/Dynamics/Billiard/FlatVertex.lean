@@ -15,11 +15,12 @@ import TauCeti.Analysis.Complex.PlaneSeparation.Convex
 The polygon with vertices `0, 1, 2, 2 + i, i` in this order is simple
 (`TauCeti.Examples.FlatVertex.isSimple_flatPolygon`), although its vertex `1` lies on the open
 segment between its neighbours `0` and `2`, so that the interior angle there is `π`
-(`TauCeti.Examples.FlatVertex.one_mem_openSegment`). Its boundary is the frontier of the closed
-rectangle `[0, 2] × [0, 1]` (`TauCeti.Examples.FlatVertex.boundary_flatPolygon`), so it bounds a
-polygonal table (`TauCeti.Examples.FlatVertex.flatVertexTable`) with this rectangle as carrier
-(`TauCeti.Examples.FlatVertex.carrier_flatVertexTable`), `h = 0` holes, and `n = 5` vertices,
-the flat vertex `1` among them (`TauCeti.Examples.FlatVertex.one_mem_vertexSet_flatVertexTable`,
+(`TauCeti.Examples.FlatVertex.flatPolygon_one_mem_openSegment`). Its boundary is the frontier of
+the closed rectangle `[0, 2] × [0, 1]` (`TauCeti.Examples.FlatVertex.boundary_flatPolygon`), so
+it bounds a polygonal table (`TauCeti.Examples.FlatVertex.flatVertexTable`) with this rectangle
+as carrier (`TauCeti.Examples.FlatVertex.carrier_flatVertexTable`), `h = 0` holes, and `n = 5`
+vertices, the flat vertex `1` among them
+(`TauCeti.Examples.FlatVertex.one_mem_vertexSet_flatVertexTable`,
 `TauCeti.Examples.FlatVertex.ncard_vertexSet_flatVertexTable`).
 -/
 
@@ -67,19 +68,11 @@ theorem isSimple_flatPolygon : flatPolygon.IsSimple ℝ := by
   · rw [edgeSet_flatPolygon] at hi hj
     rw [finRotate_apply, finRotate_apply]
     fin_cases i <;> fin_cases j <;>
-      simp only [Nat.succ_eq_add_one, Nat.reduceAdd, Fin.zero_eta, Fin.isValue, Fin.mk_one,
-        Fin.reduceFinMk, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, mem_reProdIm,
-        mem_Icc, mem_singleton_iff] at hi hj <;>
-      simp only [Fin.mk_one, Fin.isValue, Fin.reduceAdd, Fin.reduceEq, Fin.reduceFinMk,
-        Fin.zero_eta, zero_add, one_ne_zero, zero_ne_one, flatPolygon_zero, flatPolygon_one,
-        flatPolygon_two, flatPolygon_three, flatPolygon_four, Complex.ext_iff, zero_re, zero_im,
-        one_re, one_im, add_re, add_im, re_ofNat, im_ofNat, I_re, I_im, add_zero, false_and,
-        true_and, false_or, or_false, or_self] <;>
-      first | linarith | (constructor <;> linarith) | exact absurd rfl hij
+      simp [mem_reProdIm, Complex.ext_iff] at hi hj ⊢ <;> grind
 
 /-- The vertex `1` of the flat polygon is flat: it lies on the open segment between its
 neighbours `0` and `2`. -/
-theorem one_mem_openSegment :
+theorem flatPolygon_one_mem_openSegment :
     flatPolygon 1 ∈ openSegment ℝ (flatPolygon 0) (flatPolygon 2) := by
   refine ⟨1 / 2, 1 / 2, by norm_num, by norm_num, by norm_num, ?_⟩
   simp only [flatPolygon]
@@ -101,15 +94,7 @@ theorem boundary_flatPolygon : flatPolygon.boundary ℝ = frontier (Rectangle 0 
   norm_num [uIcc_of_le]
   constructor
   · rintro ⟨i, hi⟩
-    fin_cases i <;>
-      simp only [Nat.succ_eq_add_one, Nat.reduceAdd, Fin.zero_eta, Fin.isValue, Fin.mk_one,
-      Fin.reduceFinMk, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, mem_reProdIm,
-      mem_Icc, mem_singleton_iff] at hi
-    · exact Or.inl ⟨⟨hi.1.1, by linarith [hi.1.2]⟩, Or.inl hi.2⟩
-    · exact Or.inl ⟨⟨by linarith [hi.1.1], hi.1.2⟩, Or.inl hi.2⟩
-    · exact Or.inr ⟨Or.inr hi.1, hi.2⟩
-    · exact Or.inl ⟨hi.1, Or.inr hi.2⟩
-    · exact Or.inr ⟨Or.inl hi.1, hi.2⟩
+    fin_cases i <;> simp [mem_reProdIm] at hi <;> grind
   · rintro (⟨h1, h | h⟩ | ⟨h | h, h2⟩)
     · rcases le_total x.re 1 with hx | hx
       · exact ⟨0, by simpa [mem_reProdIm] using ⟨⟨h1.1, hx⟩, h⟩⟩
