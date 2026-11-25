@@ -141,6 +141,13 @@ def pullbackGradedSymmetricAlgebraIso :
       (gradedSymmetricAlgebra X).obj ((QuasicoherentSheaf.pullback g).obj F) :=
   (asIso (symmetricAlgebraPullbackToPullback g F)).symm
 
+/-- The inverse of `pullbackGradedSymmetricAlgebraIso` is the comparison morphism
+`symmetricAlgebraPullbackToPullback : Sym (g^* F) ⟶ g^* (Sym F)`. -/
+@[simp]
+theorem pullbackGradedSymmetricAlgebraIso_inv :
+    (pullbackGradedSymmetricAlgebraIso g F).inv = symmetricAlgebraPullbackToPullback g F :=
+  (rfl)
+
 /-- In degree one, the inverse of `pullbackGradedSymmetricAlgebraIso` is the pullback of the
 identification `F ≅ Sym¹ F`, through `g^* F ≅ Sym¹ (g^* F)`. -/
 @[reassoc]
@@ -159,8 +166,9 @@ theorem pullbackToQuasicoherentAlgebraIso_hom_app_comp_map_pullbackGradedSymmetr
       (pullbackSymmetricAlgebraIso g F).hom := by
   rw [← cancel_epi (pullbackSymmetricAlgebraIso g F).inv, Iso.inv_hom_id,
     ← toQuasicoherentAlgebra_map_symmetricAlgebraPullbackToPullback, Category.assoc,
-    Iso.inv_hom_id_app_assoc, ← Functor.map_comp]
-  simp [pullbackGradedSymmetricAlgebraIso]
+    Iso.inv_hom_id_app_assoc, ← Functor.map_comp, ← pullbackGradedSymmetricAlgebraIso_inv,
+    Iso.inv_hom_id]
+  exact CategoryTheory.Functor.map_id _ _
 
 end
 

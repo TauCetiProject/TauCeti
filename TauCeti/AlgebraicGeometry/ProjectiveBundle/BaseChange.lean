@@ -30,7 +30,7 @@ the isomorphism of graded algebras `g^* (Sym E) ≅ Sym (g^* E)`
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.ProjectiveBundles.projectiveBundle.pullbackHom g F`: the morphism
-  `P(g^* F) ⟶ P(F)` over `g`.
+  `P(g^* F) ⟶ P(F)` over `g`, characterized by `relativeProjPullbackIso_inv_pullbackHom`.
 * `TauCeti.AlgebraicGeometry.ProjectiveBundles.projectiveBundle.isPullback`: formation of the
   projective bundle commutes with arbitrary base change.
 
@@ -80,6 +80,14 @@ change of relative `Proj`. -/
 def pullbackHom :
     projectiveBundle X ((QuasicoherentSheaf.pullback g).obj F).obj ⟶ projectiveBundle Y F.obj :=
   (relativeProjPullbackIso g F).hom ≫ relativeProjPullbackHom ((gradedSymmetricAlgebra Y).obj F) g
+
+/-- Through the identification `relativeProjPullbackIso`, the morphism `pullbackHom` is the
+projection `Proj_X (g^* Sym F) ⟶ Proj_Y (Sym F)` of the base change of relative `Proj`. -/
+@[reassoc (attr := simp)]
+theorem relativeProjPullbackIso_inv_pullbackHom :
+    (relativeProjPullbackIso g F).inv ≫ pullbackHom g F =
+      relativeProjPullbackHom ((gradedSymmetricAlgebra Y).obj F) g :=
+  Iso.inv_hom_id_assoc _ _
 
 /-- **Formation of the projective bundle commutes with arbitrary base change.** For a morphism of
 schemes `g : X ⟶ Y` and a quasi-coherent module `F` on `Y`, the square formed by
