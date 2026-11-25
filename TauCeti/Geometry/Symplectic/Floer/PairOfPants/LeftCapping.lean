@@ -269,7 +269,7 @@ theorem cappedExchangePerturbation_eq_of_pos_fst_positiveEndCoord_one (hL : 0 �
     cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x =
       pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x := by
   have h0 := fst_positiveEndCoord_nonpos_of_ne (by decide : one ≠ zero) hz
-  rw [fst_positiveEndCoord, endSign_zero, one_mul] at h0
+  rw [fst_positiveEndCoord_zero] at h0
   rw [cappedExchangePerturbation_of_re_endCoord_le (by linarith),
     exchangePerturbation_eq_of_pos_fst_positiveEndCoord hc₀ hc₁ (by decide : one ≠ inf) hz]
 

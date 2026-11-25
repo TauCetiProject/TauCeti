@@ -54,6 +54,8 @@ apply to all three ends.
   `TauCeti.Floer.isOpen_endSign_mul_re_endCoord_lt`: in real coordinates the signed longitudinal
   coordinate of an end is continuous away from its center, and the part of `S` where it is less
   than a bound is open.
+* `TauCeti.Floer.fst_positiveEndCoord_zero`: on the end at `0` the first positive end coordinate
+  is the longitudinal coordinate `s`.
 * `TauCeti.Floer.lt_fst_positiveEndCoord_inf_iff`: away from `0`, the output end lies beyond `r`
   exactly off the disc `‖w‖ ≤ 2 exp (2πr)`; so beyond the height `1` it lies off the disc
   `‖w‖ ≤ 8` (`TauCeti.Floer.eight_lt_norm_of_one_lt_fst_positiveEndCoord_inf`), and off the disc
@@ -252,6 +254,11 @@ theorem positiveEndCoord_apply (q : Puncture) (z : ℝ × ℝ) :
 theorem fst_positiveEndCoord (q : Puncture) (z : ℝ × ℝ) :
     (positiveEndCoord q z).1 = q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re := by
   simp [positiveEndCoord_apply]
+
+/-- On the end at `0` the first positive end coordinate is the longitudinal coordinate `s`. -/
+theorem fst_positiveEndCoord_zero (z : ℝ × ℝ) :
+    (positiveEndCoord zero z).1 = (zero.endCoord (Complex.equivRealProdCLM.symm z)).re := by
+  rw [fst_positiveEndCoord, endSign_zero, one_mul]
 
 /-- Away from `0`, the first positive end coordinate `-s` of the output end exceeds `r` exactly off
 the closed disc `‖w‖ ≤ 2 exp (2πr)` bounded by the circle `s = -r` of that end. -/
@@ -1174,7 +1181,7 @@ theorem half_le_norm_positiveEndChart {q : Puncture} (hq : q ≠ zero) {ζ : ℝ
   have hq₀ : 0 < (positiveEndCoord q (positiveEndChart q ζ)).1 := by
     rwa [fst_positiveEndCoord_positiveEndChart]
   have h0 := fst_positiveEndCoord_nonpos_of_ne hq hq₀
-  rw [fst_positiveEndCoord, endSign_zero, one_mul] at h0
+  rw [fst_positiveEndCoord_zero] at h0
   have hS := mem_thricePuncturedSphereReal_iff.1
     (positiveEndChart_mem_thricePuncturedSphereReal (q := q) hζ)
   have h := (re_endCoord_le_iff (q := zero) (by decide) (r := 0)

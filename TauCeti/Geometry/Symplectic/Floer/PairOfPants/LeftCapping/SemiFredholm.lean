@@ -161,6 +161,34 @@ private theorem setIntegral_sobolevDensity_le_of_setIntegral_fderiv_le {ξ₀ η
   rw [hsplit]
   linarith
 
+omit [FiniteDimensional ℝ V] in
+/-- A factor with values in `[0, 1]` does not increase the `L²` norm on a compact set. -/
+private theorem setIntegral_norm_smul_sq_le {f : ℝ × ℝ → ℝ} (hf : ∀ z, f z ∈ Icc 0 1)
+    (hfc : Continuous f) {ξ : ℝ × ℝ → V} (hξ : Continuous ξ) {s : Set (ℝ × ℝ)}
+    (hs : IsCompact s) : ∫ z in s, ‖f z • ξ z‖ ^ 2 ≤ ∫ z in s, ‖ξ z‖ ^ 2 := by
+  refine setIntegral_mono_on (((hfc.smul hξ).norm.pow 2).continuousOn.integrableOn_compact hs)
+    ((hξ.norm.pow 2).continuousOn.integrableOn_compact hs) hs.measurableSet fun z _ ↦ ?_
+  simp only [norm_smul, mul_pow]
+  exact mul_le_of_le_one_left (sq_nonneg _) (pow_le_one₀ (norm_nonneg _)
+    (by rw [Real.norm_eq_abs, abs_of_nonneg (hf z).1]; exact (hf z).2))
+
+/-- **Summing the pieces of the capped patching.** The estimates of the energies `E₁`, `F₁` of
+`ξ₁ = (1 - χ) ξ` on the ends and on the truncation and `G₀` of `ξ₀ = χ ξ` on the core, together
+with the costs `D₁`, `D₀` of the cutoffs, give the estimate of the energies `E`, `F` of `ξ` on the
+ends and on the core, with `X = ∫ ‖D_u ξ‖²` and `Y` the `L²` term of the right side. -/
+private theorem add_le_mul_add_of_cutoff_pieces
+    {E E₁ F F₁ G₀ D₁ D₀ D₀' N₁ N₀ X Y Y₀ C₀ C₁ C₂ C₃ : ℝ} (hC₀ : 0 ≤ C₀) (hC₁ : 0 ≤ C₁)
+    (hC₂ : 0 ≤ C₂) (hC₃ : 0 ≤ C₃) (hX : 0 ≤ X) (hE₁ : 0 ≤ E₁) (hY₀ : 0 ≤ Y₀)
+    (hends : E ≤ E₁) (hcore : F ≤ 2 * F₁ + 4 * G₀) (e₁ : E₁ + F₁ ≤ C₁ * (D₁ + N₁))
+    (e₀ : G₀ ≤ C₀ * (D₀' + N₀) + N₀) (hX₁ : D₁ ≤ 2 * X + C₂ * Y₀) (hX₀ : D₀ ≤ 2 * X + C₃ * Y₀)
+    (ha₀ : D₀' ≤ D₀) (hb₁ : N₁ ≤ Y) (hb₀ : N₀ ≤ Y) (hY₀Y : Y₀ ≤ Y) :
+    E + F ≤ (2 * C₁ * (3 + C₂) + 4 * (C₀ * (3 + C₃) + 1)) * (X + Y) := by
+  have hA : C₁ * (D₁ + N₁) ≤ C₁ * ((3 + C₂) * (X + Y)) :=
+    mul_le_mul_of_nonneg_left (by nlinarith [mul_le_mul_of_nonneg_left hY₀Y hC₂]) hC₁
+  have hB : C₀ * (D₀' + N₀) ≤ C₀ * ((3 + C₃) * (X + Y)) :=
+    mul_le_mul_of_nonneg_left (by nlinarith [mul_le_mul_of_nonneg_left hY₀Y hC₃]) hC₀
+  linarith
+
 /-- **Patching away from the capped end.** For sections of `S` that stay below the height `1` on the
 end at `0`, the patching of the pair of pants needs end estimates only on the input end at `1` and
 on the output end. -/
@@ -264,10 +292,10 @@ theorem
       equivRealProdCLM.symm.continuous.norm (by norm_num : (1 / 3 : ℝ) < 1 / 2)
   have hχ2 : ContDiff ℝ 2 χ := hχ.of_le (by simp)
   have hχK₀ (z : ℝ × ℝ) (hz : z ∉ K₀) : χ =ᶠ[𝓝 z] 0 := hχ0 z (not_le.1 hz).le
+  have h1χ01 (z : ℝ × ℝ) : 1 - χ z ∈ Icc 0 1 := ⟨sub_nonneg.2 (hχ01 z).2, sub_le_self _ (hχ01 z).1⟩
   obtain ⟨C₂, hC₂, h₂⟩ := ω.exists_integral_norm_floerLinearization_smul_sq_le_of_tsupport_subset
     (J := J') (U := U) hJ hKs hKt hu (β := fun z ↦ 1 - χ z)
-    (contDiff_const.sub (hχ2.of_le one_le_two))
-    (fun z ↦ ⟨sub_nonneg.2 (hχ01 z).2, sub_le_self _ (hχ01 z).1⟩) hK₀ hK₀U fun z hz ↦ by
+    (contDiff_const.sub (hχ2.of_le one_le_two)) h1χ01 hK₀ hK₀U fun z hz ↦ by
       rw [(show (fun w ↦ 1 - χ w) =ᶠ[𝓝 z] fun _ ↦ 1 by
         filter_upwards [hχK₀ z hz] with w hw; simp [hw]).fderiv_eq]
       simp
@@ -302,7 +330,7 @@ theorem
     rw [h0, norm_zero] at h
     norm_num at h
   have hξ₁A : tsupport ξ₁ ⊆ {z | (positiveEndCoord zero z).1 ≤ 1} := fun z hz ↦ by
-    rw [mem_ofPred_eq, fst_positiveEndCoord, endSign_zero, one_mul]
+    rw [mem_ofPred_eq, fst_positiveEndCoord_zero]
     exact re_endCoord_zero_le_one (by linarith [h3 hz, exp_neg_two_pi_div_two_le_one_third])
   have hξ₀K₀ : tsupport ξ₀ ⊆ K₀ := fun z hz ↦
     by_contra fun h ↦ notMem_tsupport_iff_eventuallyEq.2 (hξ₀0 h) hz
@@ -347,46 +375,26 @@ theorem
       setIntegral_nonneg (measurableSet_Ioi.prod measurableSet_Icc) fun ζ _ ↦
         sobolevDensity_nonneg _ ζ
   -- The `L²` norms of `ξ` and of its pieces on the compact sets involved are at most `Y`.
-  have hYint : IntegrableOn (fun z ↦ ‖ξ z‖ ^ 2)
-      (equivRealProdCLM.symm ⁻¹' truncation (T + 1) ∪ K₀) :=
-    (hξ.continuous.norm.pow 2).continuousOn.integrableOn_compact
-      ((isCompact_preimage_truncation _).union hK₀)
   have hY {s : Set (ℝ × ℝ)} (hs : s ⊆ equivRealProdCLM.symm ⁻¹' truncation (T + 1) ∪ K₀) :
       ∫ z in s, ‖ξ z‖ ^ 2 ≤ Y :=
-    setIntegral_mono_set hYint (ae_of_all _ fun _ ↦ sq_nonneg _) (.of_forall fun _ hz ↦ hs hz)
-  have hcut {f : ℝ × ℝ → ℝ} (hf : ∀ z, f z ∈ Icc 0 1) (hfc : Continuous f) {s : Set (ℝ × ℝ)}
-      (hs : IsCompact s) (hsY : s ⊆ equivRealProdCLM.symm ⁻¹' truncation (T + 1) ∪ K₀) :
-      ∫ z in s, ‖f z • ξ z‖ ^ 2 ≤ Y := by
-    refine (setIntegral_mono_on (((hfc.smul hξ.continuous).norm.pow 2).continuousOn
-      |>.integrableOn_compact hs) (hYint.mono_set hsY) hs.measurableSet fun z _ ↦ ?_).trans
-      (hY hsY)
-    simp only [Pi.pow_apply, Pi.smul_apply', norm_smul, mul_pow]
-    exact mul_le_of_le_one_left (sq_nonneg _) (pow_le_one₀ (norm_nonneg _)
-      (by rw [Real.norm_eq_abs, abs_of_nonneg (hf z).1]; exact (hf z).2))
+    setIntegral_mono_set ((hξ.continuous.norm.pow 2).continuousOn.integrableOn_compact
+      ((isCompact_preimage_truncation _).union hK₀)) (ae_of_all _ fun _ ↦ sq_nonneg _)
+      (.of_forall fun _ hz ↦ hs hz)
   have hb₁ : ∫ z in equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖ξ₁ z‖ ^ 2 ≤ Y :=
-    hcut (f := fun z ↦ 1 - χ z) (fun z ↦ ⟨sub_nonneg.2 (hχ01 z).2, sub_le_self _ (hχ01 z).1⟩)
-      (continuous_const.sub hχ.continuous) (isCompact_preimage_truncation (T + 1))
-      subset_union_left
-  have hb₀ : ∫ z in K₀, ‖ξ₀ z‖ ^ 2 ≤ Y := hcut hχ01 hχ.continuous hK₀ subset_union_right
-  have hY₀ : Y₀ ≤ Y := hY subset_union_right
+    (setIntegral_norm_smul_sq_le h1χ01 (continuous_const.sub hχ.continuous) hξ.continuous
+      (isCompact_preimage_truncation (T + 1))).trans (hY subset_union_left)
+  have hb₀ : ∫ z in K₀, ‖ξ₀ z‖ ^ 2 ≤ Y :=
+    (setIntegral_norm_smul_sq_le hχ01 hχ.continuous hξ.continuous hK₀).trans
+      (hY subset_union_right)
   have ha₀ : ∫ z in K₀, ‖ω.floerLinearization J' Ks Kt u ξ₀ z‖ ^ 2 ≤
       ∫ z, ‖ω.floerLinearization J' Ks Kt u ξ₀ z‖ ^ 2 :=
     setIntegral_le_integral (ω.integrable_norm_floerLinearization_sq hD₀ hξc.smul_left)
       (ae_of_all _ fun _ ↦ sq_nonneg _)
-  -- Summing the pieces.
-  have hX : 0 ≤ X := integral_nonneg fun _ ↦ sq_nonneg _
-  have hY0 : 0 ≤ Y := (setIntegral_nonneg hK₀.measurableSet fun _ _ ↦ sq_nonneg _).trans hY₀
-  have hE₁ : 0 ≤ ∑ q, ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ₁ ∘ positiveEndChart q) ζ :=
-    Finset.sum_nonneg fun q _ ↦ setIntegral_nonneg (measurableSet_Ioi.prod measurableSet_Icc)
-      fun ζ _ ↦ sobolevDensity_nonneg _ ζ
-  have hA : C₁ * ((∫ z, ‖ω.floerLinearization J' Ks Kt u ξ₁ z‖ ^ 2) +
-      ∫ z in equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖ξ₁ z‖ ^ 2) ≤
-      C₁ * ((3 + C₂) * (X + Y)) :=
-    mul_le_mul_of_nonneg_left (by nlinarith [mul_le_mul_of_nonneg_left hY₀ hC₂]) hC₁
-  have hB : C₀ * ((∫ z in K₀, ‖ω.floerLinearization J' Ks Kt u ξ₀ z‖ ^ 2) +
-      ∫ z in K₀, ‖ξ₀ z‖ ^ 2) ≤ C₀ * ((3 + C₃) * (X + Y)) :=
-    mul_le_mul_of_nonneg_left (by nlinarith [mul_le_mul_of_nonneg_left hY₀ hC₃]) hC₀
-  linarith
+  exact add_le_mul_add_of_cutoff_pieces hC₀ hC₁ hC₂ hC₃ (integral_nonneg fun _ ↦ sq_nonneg _)
+    (Finset.sum_nonneg fun q _ ↦ setIntegral_nonneg (measurableSet_Ioi.prod measurableSet_Icc)
+      fun ζ _ ↦ sobolevDensity_nonneg _ ζ)
+    (setIntegral_nonneg hK₀.measurableSet fun _ _ ↦ sq_nonneg _) hends hcore e₁ e₀ hX₁ hX₀ ha₀
+    hb₁ hb₀ (hY subset_union_right)
 
 /-! ### The family -/
 
