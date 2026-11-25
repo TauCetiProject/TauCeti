@@ -46,15 +46,11 @@ theorem squarePolygon_apply :
     squarePolygon 0 = 0 ∧ squarePolygon 1 = 1 ∧ squarePolygon 2 = 1 + I ∧ squarePolygon 3 = I :=
   ⟨rfl, rfl, rfl, rfl⟩
 
-/-- The successor of a vertex index of the square polygon. -/
-theorem finRotate_four (i : Fin 4) : finRotate 4 i = i + 1 :=
-  finRotate_apply i
-
 /-- The edges of the square polygon, as horizontal and vertical segments. -/
 theorem edgeSet_squarePolygon (i : Fin 4) :
     squarePolygon.edgeSet ℝ i =
       ![Icc 0 1 ×ℂ {0}, {1} ×ℂ Icc 0 1, Icc 0 1 ×ℂ {1}, {0} ×ℂ Icc 0 1] i := by
-  rw [Polygon.edgeSet, affineSegment_eq_segment, finRotate_four]
+  rw [Polygon.edgeSet, affineSegment_eq_segment, finRotate_apply]
   fin_cases i
   · rw [segment_eq_reProdIm_of_im_eq] <;> simp [squarePolygon]
   · rw [segment_eq_reProdIm_of_re_eq] <;> simp [squarePolygon]
@@ -64,10 +60,10 @@ theorem edgeSet_squarePolygon (i : Fin 4) :
 /-- **The square polygon is simple.** -/
 theorem isSimple_squarePolygon : squarePolygon.IsSimple ℝ := by
   refine ⟨fun i => ?_, fun i j x hij hi hj => ?_⟩
-  · rw [finRotate_four]
+  · rw [finRotate_apply]
     fin_cases i <;> simp [squarePolygon, Complex.ext_iff]
   · rw [edgeSet_squarePolygon] at hi hj
-    rw [finRotate_four, finRotate_four]
+    rw [finRotate_apply, finRotate_apply]
     fin_cases i <;> fin_cases j <;> simp at hij <;>
       simp [mem_reProdIm] at hi hj <;>
       simp only [squarePolygon_apply, Complex.ext_iff, Fin.mk_one, Fin.isValue, Fin.zero_eta,
@@ -85,18 +81,10 @@ def squareSimplePolygon : SimplePolygon ℝ ℂ where
   toPolygon := squarePolygon
   isSimple := isSimple_squarePolygon
 
-/-- The closed unit square `[0, 1] × [0, 1]`. -/
-def unitSquare : Set ℂ := Icc 0 1 ×ℂ Icc 0 1
-
-/-- The closed unit square is the rectangle with corners `0` and `1 + i`. -/
-theorem unitSquare_eq_rectangle : unitSquare = Rectangle 0 (1 + I) := by
-  ext x
-  rw [mem_rectangle_iff (by simp) (by simp)]
-  simp [unitSquare, mem_reProdIm]
-
-/-- The boundary of the square polygon is the frontier of the closed unit square. -/
-theorem boundary_squarePolygon : squarePolygon.boundary ℝ = frontier unitSquare := by
-  rw [unitSquare_eq_rectangle, frontier_rectangle, Polygon.boundary]
+/-- The boundary of the square polygon is the frontier of the closed unit square
+`Rectangle 0 (1 + I) = [0, 1] × [0, 1]`. -/
+theorem boundary_squarePolygon : squarePolygon.boundary ℝ = frontier (Rectangle 0 (1 + I)) := by
+  rw [frontier_rectangle, Polygon.boundary]
   ext x
   simp only [mem_iUnion, edgeSet_squarePolygon, mem_union, mem_reProdIm, mem_singleton_iff,
     mem_insert_iff, zero_re, zero_im, add_re, add_im, one_re, one_im, I_re, I_im, add_zero,
@@ -118,11 +106,11 @@ def unitSquareTable : PolygonalTable :=
 theorem numHoles_unitSquareTable : unitSquareTable.numHoles = 0 :=
   PolygonalTable.ofSimplePolygon_numHoles _
 
-/-- **The carrier of the unit-square table is the closed unit square.** -/
-theorem carrier_unitSquareTable : unitSquareTable.carrier = unitSquare := by
+/-- **The carrier of the unit-square table is the closed unit square** `[0, 1] × [0, 1]`. -/
+theorem carrier_unitSquareTable : unitSquareTable.carrier = Rectangle 0 (1 + I) := by
   rw [unitSquareTable, PolygonalTable.ofSimplePolygon_carrier]
   change filledHull (squarePolygon.boundary ℝ) = _
-  rw [boundary_squarePolygon, unitSquare_eq_rectangle,
+  rw [boundary_squarePolygon,
     (convex_rectangle 0 (1 + I)).filledHull_frontier
       (interior_rectangle_nonempty (by simp) (by simp)) (isCompact_rectangle 0 (1 + I)).isBounded,
     (isClosed_rectangle 0 (1 + I)).closure_eq]
@@ -135,13 +123,7 @@ theorem ncard_vertexSet_unitSquareTable : unitSquareTable.vertexSet.ncard = 4 :=
     intro i j h
     fin_cases i <;> fin_cases j <;>
       simp_all [squarePolygon, Complex.ext_iff]
-  rw [← image_univ, ncard_image_of_injective _ hinj, ncard_univ, Nat.card_eq_fintype_card,
-    Fintype.card_fin]
-
-/-- The area of the unit square is `1`. -/
-theorem volume_unitSquare : volume unitSquare = 1 := by
-  rw [unitSquare, volume_reProdIm]
-  simp
+  rw [ncard_range_of_injective hinj, Nat.card_eq_fintype_card, Fintype.card_fin]
 
 /-- The position of a state of the unit-square table: the identification of states at the sides
 keeps the position. -/
@@ -171,7 +153,8 @@ theorem liouville_position_preimage_quarter :
     rw [carrier_unitSquareTable]
     intro x hx
     simp only [Q, mem_reProdIm, mem_Icc] at hx
-    simp only [unitSquare, mem_reProdIm, mem_Icc]
+    rw [mem_rectangle_iff (by simp) (by simp)]
+    simp only [zero_re, zero_im, add_re, add_im, one_re, one_im, I_re, I_im, add_zero, zero_add]
     exact ⟨⟨hx.1.1, by linarith [hx.1.2]⟩, ⟨hx.2.1, by linarith [hx.2.2]⟩⟩
   have hpre : PolygonalTable.PhaseSpace.mk ⁻¹' (position ⁻¹' Q) =
       ((↑) ⁻¹' Q : Set unitSquareTable.carrier) ×ˢ univ := by
@@ -180,10 +163,13 @@ theorem liouville_position_preimage_quarter :
   have hvolQ : volume Q = ENNReal.ofReal (1 / 4) := by
     rw [volume_reProdIm, Real.volume_Icc, ← ENNReal.ofReal_mul (by norm_num)]
     norm_num
+  have hvol : volume (Rectangle 0 (1 + I)) = 1 := by
+    rw [Rectangle, volume_reProdIm]
+    simp
   rw [unitSquareTable.liouville_apply (measurable_position hQm), hpre, Measure.prod_prod,
     comap_subtypeVal_apply unitSquareTable.isClosed_carrier.measurableSet,
     image_preimage_eq_inter_range, Subtype.range_coe, inter_eq_left.2 hQ, hvolQ,
-    circleArcLength_univ, carrier_unitSquareTable, volume_unitSquare, mul_one,
+    circleArcLength_univ, carrier_unitSquareTable, hvol, mul_one,
     mul_comm, mul_assoc, ENNReal.mul_inv_cancel (by simp [Real.pi_pos]) ENNReal.ofReal_ne_top,
     mul_one]
 
