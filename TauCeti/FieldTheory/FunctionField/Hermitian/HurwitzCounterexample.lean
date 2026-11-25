@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.FunctionField.Hermitian.Translation
 public import TauCeti.FieldTheory.FunctionField.Hermitian.Existence
 public import Mathlib.FieldTheory.Finite.GaloisField
 public import TauCeti.FieldTheory.FunctionField.Automorphism.HurwitzBound
+public import TauCeti.SetTheory.Cardinal.Finite
 
 import TauCeti.Algebra.CharP.Lemmas
 
@@ -49,9 +50,6 @@ theorem eighty_four_mul_genus_sub_one_lt_natCard_hermitianTranslations
     84 * (genus K F - 1) < Nat.card (hermitianTranslations K p n x y) := by
   have hq' : 1 < p ^ n := by omega
   have hchar : ((p ^ n : ℕ) : K) = 0 := natCast_pow_expChar_eq_zero hq'
-  let : Finite K := Nat.finite_of_card_ne_zero (by
-    rw [hK]
-    exact pow_ne_zero 2 (by omega))
   rw [h.natCard_hermitianTranslations hK]
   have hg := h.two_mul_genus_eq hq' hchar
   have hlt : 42 * (p ^ n - 1) < (p ^ n) ^ 2 := by
@@ -67,16 +65,12 @@ theorem exists_not_isTame_hermitianTranslations
     (h : IsHermitianCoordinates K (p ^ n) x y)
     (hK : Nat.card K = (p ^ n) ^ 2) (hq : 41 ≤ p ^ n) :
     letI : Finite (hermitianTranslations K p n x y) := by
-      let : Finite K := Nat.finite_of_card_ne_zero (by
-        rw [hK]
-        exact pow_ne_zero 2 (by omega))
+      have := finite_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
       exact h.finite_hermitianTranslations
     ∃ P : Place K F,
       ¬ Place.IsTame K (IntermediateField.fixedField (hermitianTranslations K p n x y)) P := by
   classical
-  let : Finite K := Nat.finite_of_card_ne_zero (by
-    rw [hK]
-    exact pow_ne_zero 2 (by omega))
+  have := finite_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
   let := h.finite_hermitianTranslations
   have hchar : ((p ^ n : ℕ) : K) = 0 := natCast_pow_expChar_eq_zero (by omega)
   by_contra htame

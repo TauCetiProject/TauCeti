@@ -32,6 +32,8 @@ These are the chart-level facts used to transport the Morse complex along `σ`
 
 ## Main results
 
+* `TauCeti.manifoldMorseIndex_symm_apply_eq_of_comp`: the Morse index of `f` at `σ⁻¹ q` is that of
+  `f'` at a critical point `q`.
 * `TauCeti.MorseChart.manifoldMorseIndex_eq_of_comp`: the Morse index of `f` at `x` is that of
   `f'` at `σ x`.
 * `TauCeti.MorseChart.coord_mfderiv_pullback`: linear fields pull back to linear fields.
@@ -75,6 +77,18 @@ theorem coe_criticalPointsEquivOfComp_symm_apply (p' : criticalPoints 𝓘(ℝ, 
 
 variable [IsManifold 𝓘(ℝ, E) ∞ M] [IsManifold 𝓘(ℝ, E) ∞ M']
 
+include hf in
+/-- **The bijection of critical points preserves Morse indices.** If `f' ∘ σ = f` and `f'` is `C²`
+at a critical point `q` of `f'`, then the Morse index of `f` at `σ⁻¹ q` is the Morse index of `f'`
+at `q`. -/
+theorem manifoldMorseIndex_symm_apply_eq_of_comp {q : M'} (hf' : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f' q)
+    (hq : q ∈ criticalPoints 𝓘(ℝ, E) f') :
+    manifoldMorseIndex 𝓘(ℝ, E) f (σ.symm q) = manifoldMorseIndex 𝓘(ℝ, E) f' q := by
+  rw [← hf]
+  have h := (σ.isLocalDiffeomorph (σ.symm q)).manifoldMorseIndex_comp (by simp)
+    (by rwa [σ.apply_symm_apply]) (by rwa [σ.apply_symm_apply])
+  rwa [σ.apply_symm_apply] at h
+
 namespace MorseChart
 
 variable {x : M}
@@ -98,7 +112,7 @@ weights. -/
 @[expose, reducible]
 noncomputable def pullback (φ : MorseChart E f' (σ x)) : MorseChart E f x where
   toChart := σ.toHomeomorph.transOpenPartialHomeomorph φ.toChart
-  mem_maximalAtlas := σ.transOpenPartialHomeomorph_mem_maximalAtlas φ.mem_maximalAtlas
+  mem_maximalAtlas := σ.transOpenPartialHomeomorph_mem_maximalAtlas le_rfl φ.mem_maximalAtlas
   mem_source := φ.mem_source
   apply_self := φ.apply_self
   coord := φ.coord

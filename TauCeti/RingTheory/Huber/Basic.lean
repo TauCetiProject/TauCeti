@@ -217,6 +217,16 @@ theorem IsPseudoUniformizer.map {A B F : Type*} [MonoidWithZero A] [TopologicalS
     IsPseudoUniformizer (φ a) :=
   isPseudoUniformizer_iff.mpr ⟨ha.isUnit.map φ, ha.isTopologicallyNilpotent.map hφ⟩
 
+/-- **A product of pseudouniformisers is a pseudouniformiser**: a topologically nilpotent element
+is power-bounded, and a power-bounded element times a topologically nilpotent one is
+topologically nilpotent. -/
+theorem IsPseudoUniformizer.mul {A : Type*} [CommMonoidWithZero A] [TopologicalSpace A]
+    [ContinuousMul A] {a b : A} (ha : IsPseudoUniformizer a) (hb : IsPseudoUniformizer b) :
+    IsPseudoUniformizer (a * b) :=
+  isPseudoUniformizer_iff.mpr ⟨ha.isUnit.mul hb.isUnit,
+    (IsPowerBounded.of_isTopologicallyNilpotent
+      ha.isTopologicallyNilpotent).isTopologicallyNilpotent_mul hb.isTopologicallyNilpotent⟩
+
 /-- **Out of a topological monoid with zero admitting a pseudouniformiser, any morphism continuous
 at zero sends bounded sets to bounded sets.** -/
 theorem IsBounded.image_of_isPseudoUniformizer {A B F : Type*} [MonoidWithZero A]
@@ -932,6 +942,15 @@ theorem IsTateRing.exists_hasBasis_nhds_zero (A : Type*) [CommRing A] [Topologic
   obtain ⟨a, ha⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
   obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
   exact ⟨a, P, ha, ha.hasBasis_nhds_zero P⟩
+
+/-- Every ring of definition of a Tate ring contains a pseudouniformiser of the ambient ring: a
+high enough power of any pseudouniformiser lies in it. -/
+theorem PairOfDefinition.exists_isPseudoUniformizer [IsTateRing A] (P : PairOfDefinition A) :
+    ∃ ϖ : P.ringOfDefinition, IsPseudoUniformizer (ϖ : A) := by
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+  obtain ⟨N, hN⟩ := eventually_atTop.mp (hϖ.eventually_pow_mem_ringOfDefinition P)
+  exact ⟨⟨ϖ ^ (N + 1), hN _ N.le_succ⟩, isPseudoUniformizer_iff.mpr
+    ⟨hϖ.isUnit.pow _, hϖ.isTopologicallyNilpotent.pow N.succ_ne_zero⟩⟩
 
 /-- In a Tate ring, finitely many elements are moved into `A°` by a common unit `c ∈ A°`, which
 may be taken to be a power of a pseudouniformiser. -/

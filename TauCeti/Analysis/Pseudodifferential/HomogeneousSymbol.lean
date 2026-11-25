@@ -13,13 +13,13 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.Calculus.BumpFunction.Punctured
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContDiff.Homogeneous
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 import TauCeti.Analysis.Normed.Module.Multilinear.Basic
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 
 /-!
 # Homogeneous symbols
@@ -32,16 +32,21 @@ the frequency: `a (x, t • ξ) = t ^ m • a (x, ξ)` for every `t > 0`. These 
 A homogeneous term of degree `m` need not extend continuously to `ξ = 0` (think of
 `ξ / ‖ξ‖`, of degree `0`), so its value there is a convention: `TauCeti.HomogeneousSymbol` fixes
 it to be zero, which makes the carrier extensional on its coefficient, and `HomogeneousSymbol.mk'`
-builds a homogeneous symbol from a function given only away from `ξ = 0`.
+builds a homogeneous symbol from a function given only away from `ξ = 0`. A nonzero
+homogeneous symbol has only one degree (`HomogeneousSymbol.degree_eq_of_coefficient_eq`).
 
 The file develops:
 
 * the module structure on homogeneous symbols of a fixed degree, over every scalar ring acting
-  on `V →L[ℂ] W` compatibly with `ℝ` (in particular `ℝ` and `ℂ`), and the pointwise
+  on `V →L[ℂ] W` compatibly with `ℝ` (in particular `ℝ` and `ℂ`), with the joint continuity of
+  straight lines `s ↦ (1 - s) a + s b` (`HomogeneousSymbol.continuousOn_coefficient_lineMap`),
+  and the pointwise
   composition `HomogeneousSymbol.comp`, which adds degrees and has the identity symbol
   `HomogeneousSymbol.id` of degree `0` as its unit;
 * the symbol `HomogeneousSymbol.ofLinear` of degree `1` given by a continuous real-linear function
   of the frequency, as for first-order operators with constant coefficients;
+* the degree-zero symbol `HomogeneousSymbol.ofPositiveBranch` on the real frequency line, with a
+  smooth operator-valued coefficient on the positive ray and zero elsewhere;
 * the pullback `HomogeneousSymbol.compPosition` of the position along a smooth map, which keeps
   the degree and in particular restricts a symbol to a set of positions, and the linear change
   of variables `HomogeneousSymbol.compProdMap`, `(x, ξ) ↦ a(P x, Q ξ)` for a linear map `P` and a
@@ -55,11 +60,14 @@ The file develops:
   `‖a (x, ξ)‖ ≤ C ‖ξ‖ ^ m`, for a proper (for instance finite-dimensional) frequency space;
   applied to the iterated derivatives above it bounds the mixed derivatives on `ℝⁿ × ℝⁿ`:
   `‖∂ₓ^α ∂_ξ^β a (x, ξ)‖ ≤ C ‖ξ‖ ^ (m - |β|)` at every nonzero frequency
-  (`HomogeneousSymbol.exists_norm_mixedDeriv_le`), and at a nonzero frequency the mixed
+  (`HomogeneousSymbol.exists_norm_mixedDeriv_le`), and these mixed derivatives are homogeneous of
+  degree `m - |β|` (`HomogeneousSymbol.mixedDeriv_coefficient_smul_frequency`) and additive in `a`
+  (`HomogeneousSymbol.mixedDeriv_coefficient_add`); at a nonzero frequency the mixed
   derivatives of `∂_{xᵢ} ∂_{ξⱼ} a` are those of `a` with one more derivative of each kind
   (`HomogeneousSymbol.mixedDeriv_spatialDeriv_frequencyDeriv`); for positive degree the growth
   bound makes a homogeneous symbol, with its value `0` at the zero frequency, continuous on all
-  of `X × E` (`HomogeneousSymbol.continuous_coefficient`);
+  of `X × E` (`HomogeneousSymbol.continuous_coefficient`), while a nonzero symbol of nonpositive
+  degree is discontinuous at the zero frequency (`HomogeneousSymbol.continuous_coefficient_iff`);
 * the homogeneity of all higher derivatives: the derivative of `a` in `j` position directions
   and `l` frequency directions is homogeneous of degree `m - l`
   (`HomogeneousSymbol.iteratedFDeriv_coefficient_smul_frequency_append`), and on a proper
@@ -67,7 +75,9 @@ The file develops:
   (`HomogeneousSymbol.exists_norm_iteratedFDeriv_le`);
 * smoothness of the cut-off term `χ(ξ) • a(x, ξ)` on the whole space, for a frequency cutoff
   `χ` (`HomogeneousSymbol.contDiff_smul_coefficient`), and of its rescaling `χ(ξ / R) • a(x, ξ)`
-  (`HomogeneousSymbol.contDiff_comp_inv_smul_snd_smul_coefficient`). On a proper frequency space
+  (`HomogeneousSymbol.contDiff_comp_inv_smul_snd_smul_coefficient`); near every nonzero frequency
+  a homogeneous symbol agrees with a smooth function on the whole space
+  (`HomogeneousSymbol.exists_contDiff_eventuallyEq_coefficient`). On a proper frequency space
   the cut-off term satisfies the symbol estimates of order `m`, with the weight
   `⟨ξ⟩ ^ (m - l) = (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2)`
   (`HomogeneousSymbol.exists_norm_iteratedFDeriv_smul_coefficient_le`), and changing the cutoff
@@ -82,6 +92,10 @@ The file develops:
 * between Hilbert spaces, the pointwise adjoint `HomogeneousSymbol.adjoint`,
   `(x, ξ) ↦ a (x, ξ)†`, of the same degree; it reverses composition
   (`HomogeneousSymbol.adjoint_comp`).
+* the image `HomogeneousSymbol.map Φ a`, `(x, ξ) ↦ Φ (a (x, ξ))`, under a continuous real-linear
+  map `Φ` of the coefficient spaces, of the same degree; it commutes with the spatial and
+  frequency derivatives (`HomogeneousSymbol.spatialDeriv_map`,
+  `HomogeneousSymbol.frequencyDeriv_map`).
 
 Higher derivatives are full Fréchet derivatives on `X × E`; a derivative in `j` position
 directions `u` and `l` frequency directions `w` is the iterated derivative evaluated on
@@ -92,6 +106,9 @@ directions `u` and `l` frequency directions `w` is the iterated derivative evalu
 * M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, (1.17).
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1.
 * R. B. Melrose, *Introduction to Microlocal Analysis*, Chapter 2.
+* The positive-branch construction adapts the half-line argument in `PeriodicFourierSymbol.lean`
+  and `CircleFourierPseudodifferential.lean` of Alpha Squared Labs and Codex's
+  [Lean-Atiyah-Singer](https://github.com/alpha-squared-labs/Lean-Atiyah-Singer) formalization.
 -/
 
 public section
@@ -136,6 +153,42 @@ theorem ext_of_ne_zero {a b : HomogeneousSymbol X E V W m}
 theorem norm_homogeneous (a : HomogeneousSymbol X E V W m) (x : X) (ξ : E) {t : ℝ} (ht : 0 < t) :
     ‖a.coefficient (x, t • ξ)‖ = t ^ m * ‖a.coefficient (x, ξ)‖ := by
   rw [a.homogeneous x ξ t ht, norm_smul, Real.norm_of_nonneg (Real.rpow_nonneg ht.le m)]
+
+/-- A homogeneous symbol of degree `m` bounded at a position `x` by `C ⟨ξ⟩ ^ m'` at all
+frequencies of norm at least `R`, for some `m' < m`, vanishes at `x`: homogeneity transports the
+extra decay at large frequencies to every frequency. -/
+theorem coefficient_eq_zero_of_norm_le {m' : ℝ} (hm : m' < m) (a : HomogeneousSymbol X E V W m)
+    {x : X} {C R : ℝ} (h : ∀ ξ : E, R ≤ ‖ξ‖ → ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
+    (ξ : E) : a.coefficient (x, ξ) = 0 := by
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · exact a.zero_covector x
+  rw [← norm_le_zero_iff]
+  have hξ0 : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
+  set D := max C 0 * 2 ^ (|m'| / 2) * ‖ξ‖ ^ m'
+  -- For large `t`, homogeneity at `t • ξ` and the bound there give
+  -- `t ^ m ‖a (x, ξ)‖ ≤ D t ^ m'`.
+  have key : ∀ᶠ t in atTop, ‖a.coefficient (x, ξ)‖ ≤ D * t ^ (m' - m) := by
+    filter_upwards [eventually_ge_atTop (max R 1 / ‖ξ‖), eventually_gt_atTop 0] with t ht ht0
+    have htξ : max R 1 ≤ ‖t • ξ‖ := by
+      rwa [norm_smul, Real.norm_of_nonneg ht0.le, ← div_le_iff₀ hξ0]
+    have h' := (h (t • ξ) (le_of_max_le_left htξ)).trans
+      (mul_le_mul_of_nonneg_right (le_max_left C 0) (by positivity))
+    have hw := Real.one_add_sq_rpow_le_two_rpow_mul_abs_rpow (t := ‖t • ξ‖)
+      (by rw [abs_norm]; exact le_of_max_le_right htξ) m'
+    rw [abs_norm] at hw
+    rw [a.norm_homogeneous x ξ ht0] at h'
+    simp only [norm_smul, Real.norm_of_nonneg ht0.le, Real.mul_rpow ht0.le hξ0.le] at h' hw
+    refine le_of_mul_le_mul_left ?_ (Real.rpow_pos_of_pos ht0 m)
+    calc t ^ m * ‖a.coefficient (x, ξ)‖
+        ≤ max C 0 * (2 ^ (|m'| / 2) * (t ^ m' * ‖ξ‖ ^ m')) :=
+          h'.trans (mul_le_mul_of_nonneg_left hw (le_max_right C 0))
+      _ = t ^ m * (D * t ^ (m' - m)) := by
+          rw [Real.rpow_sub ht0]
+          field_simp
+          ring
+  have hlim : Tendsto (fun t : ℝ => D * t ^ (m' - m)) atTop (𝓝 0) := by
+    simpa [neg_sub] using (tendsto_rpow_neg_atTop (by linarith : 0 < m - m')).const_mul D
+  exact ge_of_tendsto hlim key
 
 section Regularity
 
@@ -214,6 +267,19 @@ instance {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)] [SMulCommClass ℝ 
 theorem coefficient_zero : (0 : HomogeneousSymbol X E V W m).coefficient = 0 :=
   (rfl)
 
+/-- **Uniqueness of the degree.** A nonzero homogeneous symbol has only one degree: if its
+coefficient is also the coefficient of a homogeneous symbol of degree `m'`, then `m' = m`. -/
+theorem degree_eq_of_coefficient_eq {a : HomogeneousSymbol X E V W m}
+    {b : HomogeneousSymbol X E V W m'} (h : b.coefficient = a.coefficient) (ha : a ≠ 0) :
+    m' = m := by
+  obtain ⟨⟨x, ξ⟩, hp⟩ : ∃ p, a.coefficient p ≠ 0 := by
+    by_contra! H
+    exact ha (HomogeneousSymbol.ext (funext H))
+  have h₂ := b.norm_homogeneous x ξ (two_pos (α := ℝ))
+  rw [h, a.norm_homogeneous x ξ two_pos] at h₂
+  exact ((Real.rpow_right_inj two_pos (by norm_num)).1
+    (mul_right_cancel₀ (norm_ne_zero_iff.2 hp) h₂)).symm
+
 @[simp]
 theorem coefficient_add (a b : HomogeneousSymbol X E V W m) :
     (a + b).coefficient = a.coefficient + b.coefficient :=
@@ -252,6 +318,24 @@ instance {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)] [SMulCommClass ℝ 
 theorem coefficient_sum {ι : Type*} (s : Finset ι) (f : ι → HomogeneousSymbol X E V W m) :
     (∑ i ∈ s, f i).coefficient = ∑ i ∈ s, (f i).coefficient :=
   map_sum (AddMonoidHom.mk' coefficient coefficient_add) f s
+
+/-- The coefficient of a real affine combination `(1 - s) a + s b` of homogeneous symbols is the
+same combination of their coefficients. -/
+@[simp]
+theorem coefficient_lineMap (a b : HomogeneousSymbol X E V W m) (s : ℝ) (p : X × E) :
+    (AffineMap.lineMap a b s).coefficient p =
+      AffineMap.lineMap (a.coefficient p) (b.coefficient p) s := by
+  simp [AffineMap.lineMap_apply_module]
+
+/-- The straight line `s ↦ (1 - s) a + s b` between two homogeneous symbols is jointly continuous
+in the time and the point at every nonzero frequency. -/
+theorem continuousOn_coefficient_lineMap (a b : HomogeneousSymbol X E V W m) :
+    ContinuousOn (fun q : ℝ × X × E ↦ (AffineMap.lineMap a b q.1).coefficient q.2)
+      {q | q.2.2 ≠ 0} := by
+  simp only [coefficient_lineMap]
+  exact ContinuousOn.lineMap (a.continuousOn_coefficient.comp continuous_snd.continuousOn
+    fun _ hq ↦ hq) (b.continuousOn_coefficient.comp continuous_snd.continuousOn fun _ hq ↦ hq)
+    continuous_fst.continuousOn
 
 /-! ### Changing the degree -/
 
@@ -335,6 +419,13 @@ theorem coefficient_comp (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymb
     (p : X × E) : (b.comp a).coefficient p = (b.coefficient p).comp (a.coefficient p) :=
   (rfl)
 
+/-- If the composite `b a` of two homogeneous symbols vanishes, so does the composite of their
+values at every point. -/
+theorem coefficient_comp_coefficient_eq_zero {b : HomogeneousSymbol X E W U m'}
+    {a : HomogeneousSymbol X E V W m} (h : b.comp a = 0) (p : X × E) :
+    b.coefficient p ∘L a.coefficient p = 0 := by
+  simpa using congrFun (congrArg coefficient h) p
+
 @[simp]
 theorem comp_add (b : HomogeneousSymbol X E W U m') (a₁ a₂ : HomogeneousSymbol X E V W m) :
     b.comp (a₁ + a₂) = b.comp a₁ + b.comp a₂ := by
@@ -389,22 +480,19 @@ theorem smul_comp (c : ℂ) (b : HomogeneousSymbol X E W U m') (a : HomogeneousS
 @[simp]
 theorem comp_castDegree {m'' : ℝ} (h : m = m'') (b : HomogeneousSymbol X E W U m')
     (a : HomogeneousSymbol X E V W m) :
-    b.comp (a.castDegree h) = (b.comp a).castDegree (by rw [h]) :=
-  (rfl)
+    b.comp (a.castDegree h) = (b.comp a).castDegree (by rw [h]) := (rfl)
 
 /-- Composing a transported symbol transports the composition. -/
 @[simp]
 theorem castDegree_comp {m'' : ℝ} (h : m' = m'') (b : HomogeneousSymbol X E W U m')
     (a : HomogeneousSymbol X E V W m) :
-    (b.castDegree h).comp a = (b.comp a).castDegree (by rw [h]) :=
-  (rfl)
+    (b.castDegree h).comp a = (b.comp a).castDegree (by rw [h]) := (rfl)
 
 /-- Composition of homogeneous symbols is associative, up to transport of the degree. -/
 theorem comp_assoc {U' : Type*} [NormedAddCommGroup U'] [NormedSpace ℂ U'] {m'' : ℝ}
     (c : HomogeneousSymbol X E U U' m'') (b : HomogeneousSymbol X E W U m')
     (a : HomogeneousSymbol X E V W m) :
-    (c.comp b).comp a = (c.comp (b.comp a)).castDegree (add_assoc m'' m' m).symm :=
-  (rfl)
+    (c.comp b).comp a = (c.comp (b.comp a)).castDegree (add_assoc m'' m' m).symm := (rfl)
 
 variable (X E V) in
 /-- The identity homogeneous symbol of degree `0`: the identity of `V` at every nonzero
@@ -444,8 +532,27 @@ def ofLinear (L : E →L[ℝ] (V →L[ℂ] W)) : HomogeneousSymbol X E V W 1 whe
 
 @[simp]
 theorem coefficient_ofLinear (L : E →L[ℝ] (V →L[ℂ] W)) (p : X × E) :
-    (ofLinear X L).coefficient p = L p.2 :=
-  (rfl)
+    (ofLinear X L).coefficient p = L p.2 := (rfl)
+
+/-- The degree-zero homogeneous symbol on the real frequency line that equals `g x` at positive
+frequencies and vanishes at nonpositive frequencies. -/
+noncomputable def ofPositiveBranch (g : X → V →L[ℂ] W) (hg : ContDiff ℝ ∞ g) :
+    HomogeneousSymbol X ℝ V W 0 where
+  coefficient p := if 0 < p.2 then g p.1 else 0
+  zero_covector _ := by simp
+  contDiffOn_coefficient p hp := by
+    refine ContDiffAt.contDiffWithinAt ?_
+    rcases (show p.2 ≠ 0 from hp).lt_or_gt with hneg | hpos
+    · exact contDiffAt_const.congr_of_eventuallyEq <| (show ∀ᶠ q in 𝓝 p, q.2 < 0 from
+        continuous_snd.continuousAt (Iio_mem_nhds hneg)).mono fun q hq ↦ ite_eq_right hq.not_gt
+    · exact (hg.comp contDiff_fst).contDiffAt.congr_of_eventuallyEq <| (show ∀ᶠ q in 𝓝 p,
+        0 < q.2 from continuous_snd.continuousAt (Ioi_mem_nhds hpos)).mono fun q hq ↦ ite_eq_left hq
+  homogeneous _ _ _ ht := by simp [smul_eq_mul, mul_pos_iff_of_pos_left ht]
+
+/-- The coefficient of a positive-branch symbol at an arbitrary position and frequency. -/
+@[simp]
+theorem coefficient_ofPositiveBranch (g : X → V →L[ℂ] W) (hg : ContDiff ℝ ∞ g) (p : X × ℝ) :
+    (ofPositiveBranch g hg).coefficient p = if 0 < p.2 then g p.1 else 0 := (rfl)
 
 /-! ### Pullback in the position -/
 
@@ -791,6 +898,67 @@ theorem frequencyDeriv_castDegree (h : m = m') (w : E) :
 
 end Deriv
 
+/-! ### Images under maps of the coefficient spaces -/
+
+section Map
+
+variable {V' W' : Type*} [NormedAddCommGroup V'] [NormedSpace ℂ V'] [NormedAddCommGroup W']
+  [NormedSpace ℂ W'] (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : HomogeneousSymbol X E V W m)
+
+/-- The image `(x, ξ) ↦ Φ (a (x, ξ))` of a homogeneous symbol under a continuous real-linear map
+`Φ` of the coefficient spaces is a homogeneous symbol of the same degree. For instance, a scalar
+symbol `p` gives the symbol `p · Id` with values in the endomorphisms of any space. -/
+def map : HomogeneousSymbol X E V' W' m where
+  coefficient := Φ ∘ a.coefficient
+  zero_covector x := by simp
+  contDiffOn_coefficient := Φ.contDiff.comp_contDiffOn a.contDiffOn_coefficient
+  homogeneous x ξ t ht := by simp [a.homogeneous x ξ t ht]
+
+@[simp]
+theorem coefficient_map (p : X × E) : (a.map Φ).coefficient p = Φ (a.coefficient p) :=
+  (rfl)
+
+@[simp]
+protected theorem map_zero : (0 : HomogeneousSymbol X E V W m).map Φ = 0 := by
+  ext1; funext p; simp
+
+@[simp]
+protected theorem map_add (b : HomogeneousSymbol X E V W m) :
+    (a + b).map Φ = a.map Φ + b.map Φ := by
+  ext1; funext p; simp
+
+@[simp]
+protected theorem map_neg : (-a).map Φ = -a.map Φ := by
+  ext1; funext p; simp
+
+@[simp]
+protected theorem map_sub (b : HomogeneousSymbol X E V W m) :
+    (a - b).map Φ = a.map Φ - b.map Φ := by
+  ext1; funext p; simp
+
+@[simp]
+theorem map_castDegree (h : m = m') : (a.castDegree h).map Φ = (a.map Φ).castDegree h :=
+  (rfl)
+
+/-- Spatial derivatives commute with the image under a continuous linear map. -/
+@[simp]
+theorem spatialDeriv_map (v : X) : (a.map Φ).spatialDeriv v = (a.spatialDeriv v).map Φ :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    rw [coefficient_spatialDeriv_eq_fderiv, coefficient_map, coefficient_spatialDeriv_eq_fderiv,
+      show (a.map Φ).coefficient = Φ ∘ a.coefficient from funext (coefficient_map Φ a),
+      Φ.fderiv_comp_left (a.differentiableAt_coefficient hξ), ContinuousLinearMap.comp_apply]
+
+/-- Frequency derivatives commute with the image under a continuous linear map. -/
+@[simp]
+theorem frequencyDeriv_map (w : E) : (a.map Φ).frequencyDeriv w = (a.frequencyDeriv w).map Φ :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    rw [coefficient_frequencyDeriv_eq_fderiv _ _ hξ, coefficient_map,
+      coefficient_frequencyDeriv_eq_fderiv _ _ hξ,
+      show (a.map Φ).coefficient = Φ ∘ a.coefficient from funext (coefficient_map Φ a),
+      Φ.fderiv_comp_left (a.differentiableAt_coefficient hξ), ContinuousLinearMap.comp_apply]
+
+end Map
+
 /-! ### The product rule for composition -/
 
 section CompDeriv
@@ -875,6 +1043,40 @@ theorem continuous_coefficient [ProperSpace E] [WeaklyLocallyCompactSpace X] (hm
     exact hC q.1 hq.1 q.2
   · exact (a.contDiffAt_coefficient hξ).continuousAt
 
+/-- **Discontinuity at the zero frequency.** A homogeneous symbol of nonpositive degree that is
+continuous at a point `(x, 0)` vanishes at every frequency over `x`: as `t → 0⁺` the norm
+`‖a (x, t • ξ)‖ = t ^ m ‖a (x, ξ)‖` stays at least `‖a (x, ξ)‖`, while it tends to the value `0`
+at the zero frequency. -/
+theorem coefficient_eq_zero_of_continuousAt (hm : m ≤ 0) {x : X}
+    (h : ContinuousAt a.coefficient (x, 0)) (ξ : E) : a.coefficient (x, ξ) = 0 := by
+  have hray : Tendsto (fun t : ℝ ↦ (x, t • ξ)) (𝓝[>] 0) (𝓝 (x, 0)) := by
+    have hc : Continuous fun t : ℝ ↦ (x, t • ξ) := by fun_prop
+    simpa using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
+  have hlim : Tendsto (fun t : ℝ ↦ ‖a.coefficient (x, t • ξ)‖) (𝓝[>] 0) (𝓝 0) := by
+    simpa using (h.tendsto.comp hray).norm
+  refine norm_le_zero_iff.1 (ge_of_tendsto hlim ?_)
+  filter_upwards [Ioo_mem_nhdsGT (zero_lt_one' ℝ)] with t ht
+  rw [a.norm_homogeneous x ξ ht.1]
+  exact le_mul_of_one_le_left (norm_nonneg _)
+    (Real.one_le_rpow_of_pos_of_le_one_of_nonpos ht.1 ht.2.le hm)
+
+/-- A homogeneous symbol of nonpositive degree is continuous on all of `X × E` only if it is zero.
+Compare `HomogeneousSymbol.continuous_coefficient` for positive degree. -/
+theorem continuous_coefficient_iff_eq_zero (hm : m ≤ 0) : Continuous a.coefficient ↔ a = 0 := by
+  refine ⟨fun h ↦ HomogeneousSymbol.ext (funext fun ⟨x, ξ⟩ ↦ ?_), ?_⟩
+  · simpa using a.coefficient_eq_zero_of_continuousAt hm h.continuousAt ξ
+  · rintro rfl
+    rw [coefficient_zero]
+    exact continuous_zero
+
+/-- A nonzero homogeneous symbol on a proper frequency space is continuous on all of `X × E`
+exactly when its degree is positive. -/
+theorem continuous_coefficient_iff [ProperSpace E] [WeaklyLocallyCompactSpace X] (ha : a ≠ 0) :
+    Continuous a.coefficient ↔ 0 < m := by
+  refine ⟨fun h ↦ ?_, a.continuous_coefficient⟩
+  by_contra! hm
+  exact ha ((a.continuous_coefficient_iff_eq_zero hm).1 h)
+
 /-- For a frequency cutoff `χ` and a scale `R`, the cut-off term `χ(ξ / R) • a(x, ξ)` is smooth on
 the whole space, including the zero frequency. -/
 theorem contDiff_comp_inv_smul_snd_smul_coefficient (χ : FrequencyCutoff E) (R : ℝ) :
@@ -892,6 +1094,18 @@ including the zero frequency. -/
 theorem contDiff_smul_coefficient (χ : FrequencyCutoff E) :
     ContDiff ℝ ∞ fun p : X × E ↦ χ p.2 • a.coefficient p := by
   simpa using a.contDiff_comp_inv_smul_snd_smul_coefficient χ 1
+
+/-- **Smooth local representatives.** Near the points with a fixed nonzero frequency `ξ₀`, a
+homogeneous symbol agrees with a smooth function on the whole space. -/
+theorem exists_contDiff_eventuallyEq_coefficient {ξ₀ : E} (hξ₀ : ξ₀ ≠ 0) :
+    ∃ f : X × E → V →L[ℂ] W, ContDiff ℝ ∞ f ∧ ∀ x, f =ᶠ[𝓝 (x, ξ₀)] a.coefficient := by
+  -- Precompose with a smooth frequency map that misses the zero frequency and is the identity
+  -- near `ξ₀`.
+  obtain ⟨g, hgc, hg0, hg⟩ := exists_contDiff_ne_zero_eventuallyEq_id hξ₀
+  refine ⟨fun p ↦ a.coefficient (p.1, g p.2), a.contDiffOn_coefficient.comp_contDiff
+    (contDiff_fst.prodMk (hgc.comp contDiff_snd)) fun p ↦ hg0 p.2, fun x ↦ ?_⟩
+  filter_upwards [(continuous_snd.tendsto (x, ξ₀)).eventually hg] with q hq
+  simp [hq]
 
 end Growth
 
@@ -938,6 +1152,17 @@ private theorem coefficient_iterSpatialDeriv (a : HomogeneousSymbol (CoordinateS
   | cons j js ih =>
     rw [iterSpatialDeriv, coefficient_spatialDeriv _ _, coordinateDeriv_cons, funext ih]
 
+/-- At a nonzero frequency, the iterated derivatives `∂_x^α ∂_ξ^β a` as homogeneous symbols
+compute the mixed derivative of the coefficient. -/
+private theorem coefficient_iterSpatialDeriv_iterFrequencyDeriv
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) (α β : List (Fin n))
+    (x : CoordinateSpace n) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    (iterSpatialDeriv (iterFrequencyDeriv a β) α).coefficient (x, ξ) =
+      mixedDeriv α β a.coefficient x ξ := by
+  rw [coefficient_iterSpatialDeriv _ _ _, mixedDeriv_def]
+  exact congrArg (coordinateDeriv α · x)
+    (funext fun y => coefficient_iterFrequencyDeriv a β y hξ)
+
 /-- **Growth of the mixed derivatives of a homogeneous symbol.** On a compact set of positions,
 the mixed derivatives of a homogeneous symbol of degree `m` satisfy
 `‖∂_x^α ∂_ξ^β a(x, ξ)‖ ≤ C ‖ξ‖ ^ (m - |β|)` at every nonzero frequency. -/
@@ -948,12 +1173,30 @@ theorem exists_norm_mixedDeriv_le
       ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * ‖ξ‖ ^ (m - β.length) := by
   obtain ⟨C, hC, hCK⟩ := (iterSpatialDeriv (iterFrequencyDeriv a β) α).exists_norm_coefficient_le hK
   refine ⟨C, hC, fun x hx ξ hξ => ?_⟩
-  have h : (iterSpatialDeriv (iterFrequencyDeriv a β) α).coefficient (x, ξ) =
-      mixedDeriv α β a.coefficient x ξ := by
-    rw [coefficient_iterSpatialDeriv _ _ _, mixedDeriv_def]
-    exact congrArg (coordinateDeriv α · x)
-      (funext fun y => coefficient_iterFrequencyDeriv a β y hξ)
-  exact h ▸ hCK x hx ξ
+  exact coefficient_iterSpatialDeriv_iterFrequencyDeriv a α β x hξ ▸ hCK x hx ξ
+
+/-- **Homogeneity of the mixed derivatives.** The mixed derivative `∂_x^α ∂_ξ^β a` of a
+homogeneous symbol of degree `m` is positively homogeneous of degree `m - |β|` in the frequency,
+away from the zero frequency. -/
+theorem mixedDeriv_coefficient_smul_frequency
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) (α β : List (Fin n))
+    (x : CoordinateSpace n) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) {t : ℝ} (ht : 0 < t) :
+    mixedDeriv α β a.coefficient x (t • ξ) =
+      t ^ (m - β.length) • mixedDeriv α β a.coefficient x ξ := by
+  rw [← coefficient_iterSpatialDeriv_iterFrequencyDeriv a α β x (smul_ne_zero ht.ne' hξ),
+    ← coefficient_iterSpatialDeriv_iterFrequencyDeriv a α β x hξ]
+  exact (iterSpatialDeriv (iterFrequencyDeriv a β) α).homogeneous x ξ t ht
+
+/-- At a nonzero frequency, the mixed derivatives of homogeneous symbols are additive. -/
+theorem mixedDeriv_coefficient_add
+    (a b : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) (α β : List (Fin n))
+    (x : CoordinateSpace n) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    mixedDeriv α β (a + b).coefficient x ξ =
+      mixedDeriv α β a.coefficient x ξ + mixedDeriv α β b.coefficient x ξ := by
+  obtain ⟨f, hf, hfa⟩ := a.exists_contDiff_eventuallyEq_coefficient hξ
+  obtain ⟨g, hg, hgb⟩ := b.exists_contDiff_eventuallyEq_coefficient hξ
+  rw [← (hfa x).mixedDeriv_eq, ← (hgb x).mixedDeriv_eq, ← mixedDeriv_add hf hg, coefficient_add]
+  exact ((hfa x).add (hgb x)).mixedDeriv_eq α β |>.symm
 
 /-- At a nonzero frequency, the mixed derivatives of `∂_{xᵢ} ∂_{ξⱼ} a` are the mixed derivatives
 of `a` with one more position derivative along `i` and one more frequency derivative along `j`. -/
@@ -963,29 +1206,28 @@ theorem mixedDeriv_spatialDeriv_frequencyDeriv
     mixedDeriv α β ((a.frequencyDeriv (EuclideanSpace.single j 1)).spatialDeriv
         (EuclideanSpace.single i 1)).coefficient x ξ =
       mixedDeriv (α ++ [i]) (β ++ [j]) a.coefficient x ξ := by
-  -- The smooth cut-off term `G = χ(4 ξ' / ‖ξ‖) • a`, equal to `a` at frequencies `‖ξ'‖ > ‖ξ‖ / 2`.
-  have hξ' : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
-  let χ : FrequencyCutoff (CoordinateSpace n) := default
-  let G : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W :=
-    fun p ↦ χ ((‖ξ‖ / 4)⁻¹ • p.2) • a.coefficient p
-  have hG : ContDiff ℝ ∞ G := a.contDiff_comp_inv_smul_snd_smul_coefficient χ _
-  have hGa (p : CoordinateSpace n × CoordinateSpace n) (hp : ‖ξ‖ / 2 < ‖p.2‖) :
-      G p = a.coefficient p := by
-    rw [show G p = χ ((‖ξ‖ / 4)⁻¹ • p.2) • a.coefficient p from rfl,
-      χ.apply_inv_smul_eq_one (by positivity) (by linarith), one_smul]
-  have hnhds : ∀ᶠ q : CoordinateSpace n × CoordinateSpace n in 𝓝 (x, ξ), ‖ξ‖ / 2 < ‖q.2‖ :=
-    (continuous_norm.comp continuous_snd).continuousAt.eventually_const_lt (half_lt_self hξ')
+  -- The smooth function `G = a ∘ (id × g)`, for a smooth frequency map `g` that misses the zero
+  -- frequency and is the identity on an open neighbourhood `U` of `ξ`, equals `a` over `U`.
+  obtain ⟨g, hgc, hg0, hg⟩ := exists_contDiff_ne_zero_eventuallyEq_id hξ
+  obtain ⟨U, hgU, hU, hξU⟩ := _root_.eventually_nhds_iff.1 hg
+  let G : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W := fun p ↦ a.coefficient (p.1, g p.2)
+  have hG : ContDiff ℝ ∞ G := a.contDiffOn_coefficient.comp_contDiff
+    (contDiff_fst.prodMk (hgc.comp contDiff_snd)) fun p ↦ hg0 p.2
+  have hGa (p : CoordinateSpace n × CoordinateSpace n) (hp : p.2 ∈ U) : G p = a.coefficient p := by
+    simp [G, hgU _ hp]
+  have hnhds : ∀ᶠ q : CoordinateSpace n × CoordinateSpace n in 𝓝 (x, ξ), q.2 ∈ U :=
+    continuous_snd.continuousAt.eventually (hU.mem_nhds hξU)
   -- Near `(x, ξ)`, the derivative `∂_{xᵢ} ∂_{ξⱼ} a` is that of `G`.
   have hgerm : ((a.frequencyDeriv (EuclideanSpace.single j 1)).spatialDeriv
       (EuclideanSpace.single i 1)).coefficient =ᶠ[𝓝 (x, ξ)]
         fun p ↦ coordinateDeriv [i] (fun y ↦ coordinateDeriv [j] (fun η ↦ G (y, η)) p.2) p.1 := by
     filter_upwards [hnhds] with p hp
-    have hp0 : p.2 ≠ 0 := norm_pos_iff.1 (by linarith)
+    have hp0 : p.2 ≠ 0 := by simpa [hgU _ hp] using hg0 p.2
     rw [coefficient_spatialDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
     congr 2
     funext y
     have h : (fun η ↦ G (y, η)) =ᶠ[𝓝 p.2] fun η ↦ a.coefficient (y, η) := by
-      filter_upwards [(continuous_norm.continuousAt (x := p.2)).eventually_const_lt hp] with η hη
+      filter_upwards [hU.mem_nhds hp] with η hη
       exact hGa (y, η) hη
     rw [coefficient_frequencyDeriv _ _ hp0, coordinateDeriv_cons, coordinateDeriv_nil,
       h.fderiv_eq]
@@ -1066,8 +1308,9 @@ theorem exists_norm_iteratedFDeriv_smul_coefficient_le [ProperSpace E] (χ : Fre
     rw [mul_assoc]
     refine mul_le_mul_of_nonneg_right ?_ hprod
     calc C₂ * ‖ξ‖ ^ (m - l) ≤ C₂ * (2 ^ (|m - l| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2)) :=
-          mul_le_mul_of_nonneg_left
-            (norm_rpow_le_one_add_norm_sq_rpow (by linarith) (m - l)) hC₂
+          mul_le_mul_of_nonneg_left (by
+            simpa only [abs_norm] using Real.abs_rpow_le_two_rpow_mul_one_add_sq_rpow (t := ‖ξ‖)
+              (by rw [abs_norm]; linarith) (m - l)) hC₂
       _ = C₂ * 2 ^ (|m - l| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2) := by ring
       _ ≤ max C₁ (C₂ * 2 ^ (|m - l| / 2)) * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2) :=
           mul_le_mul_of_nonneg_right (le_max_right _ _) (by positivity)
@@ -1203,13 +1446,8 @@ variable {X E : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddComm
 /-- The pointwise adjoint `(x, ξ) ↦ a (x, ξ)†` of a homogeneous symbol between Hilbert spaces.
 Since positive homogeneity only involves real scalars, it is a homogeneous symbol of the same
 degree. -/
-noncomputable def adjoint (a : HomogeneousSymbol X E V W m) : HomogeneousSymbol X E W V m where
-  coefficient := ContinuousLinearMap.adjointRealCLM ∘ a.coefficient
-  zero_covector x := by simp
-  contDiffOn_coefficient :=
-    ContinuousLinearMap.adjointRealCLM.contDiff.comp_contDiffOn a.contDiffOn_coefficient
-  homogeneous x ξ t ht := by
-    rw [Function.comp_apply, a.homogeneous x ξ t ht, map_smul, Function.comp_apply]
+noncomputable def adjoint (a : HomogeneousSymbol X E V W m) : HomogeneousSymbol X E W V m :=
+  a.map ContinuousLinearMap.adjointRealCLM
 
 @[simp]
 theorem coefficient_adjoint (a : HomogeneousSymbol X E V W m) (p : X × E) :

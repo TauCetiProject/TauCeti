@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.NonUnitalHom
 public import Mathlib.LinearAlgebra.Multilinear.Basic
 public import Mathlib.Logic.Equiv.Fin.Rotate
+public import TauCeti.LinearAlgebra.Multilinear.ContractNth
 import Mathlib.Algebra.Module.BigOperators
 import Mathlib.Algebra.Ring.GeomSum
 import TauCeti.Algebra.BigOperators.AlternatingSum
@@ -150,53 +151,6 @@ private theorem natContract_natRotate_natRotate {n : ℕ} (b : ℕ → A) {k : �
 
 end Mul
 
-/-- The position of the contracted sequence at which the entry `k` of the original sequence
-appears, for the contraction of the entries `j` and `j + 1`. -/
-private def natContractPos (j k : ℕ) : ℕ := if k ≤ j then k else k - 1
-
-private theorem natContractPos_lt {n j k : ℕ} (hj : j < n + 1) (hk : k < n + 2) :
-    natContractPos j k < n + 1 := by
-  simp only [natContractPos]
-  split_ifs <;> omega
-
-private theorem natContract_update_of_ne [Mul A] {j k m : ℕ}
-    (hm : m ≠ natContractPos j k) (b : ℕ → A) (x : A) :
-    natContract j (update b k x) m = natContract j b m := by
-  simp only [natContract, natContractPos, update_apply] at hm ⊢
-  split_ifs at hm ⊢ <;> first | omega | rfl
-
-/-- Updating one entry of a tuple only changes one entry of a contraction of it. -/
-private theorem contractNth_update_comp_val [Mul A] {n : ℕ} (j : Fin (n + 1)) (b : ℕ → A)
-    (k : Fin (n + 2)) (x : A) :
-    Fin.contractNth j.castSucc (· * ·) (update (fun m : Fin (n + 2) ↦ b m) k x) =
-      update (fun m : Fin (n + 1) ↦ natContract j b m)
-        ⟨natContractPos j k, natContractPos_lt j.isLt k.isLt⟩
-        (natContract j (update b k x) (natContractPos j k)) := by
-  have hupd : update (fun m : Fin (n + 2) ↦ b m) k x = fun m : Fin (n + 2) ↦ update b k x m :=
-    (update_comp_eq_of_injective b Fin.val_injective k x).symm
-  rw [hupd, contractNth_comp_val]
-  funext m
-  by_cases hm : (m : ℕ) = natContractPos j k
-  · obtain rfl : m = ⟨natContractPos j k, natContractPos_lt j.isLt k.isLt⟩ := Fin.ext hm
-    rw [update_self, Fin.val_castSucc]
-  · rw [update_of_ne (fun h ↦ hm (congrArg Fin.val h)), Fin.val_castSucc,
-      natContract_update_of_ne hm]
-
-private theorem natContract_update_add [Distrib A] (j k : ℕ) (b : ℕ → A)
-    (x y : A) :
-    natContract j (update b k (x + y)) (natContractPos j k) =
-      natContract j (update b k x) (natContractPos j k) +
-        natContract j (update b k y) (natContractPos j k) := by
-  simp only [natContract, natContractPos, update_apply]
-  split_ifs <;> first | omega | simp [add_mul, mul_add]
-
-private theorem natContract_update_smul {R : Type*} [Mul A] [SMul R A]
-    [IsScalarTower R A A] [SMulCommClass R A A] (j k : ℕ) (b : ℕ → A) (c : R) (x : A) :
-    natContract j (update b k (c • x)) (natContractPos j k) =
-      c • natContract j (update b k x) (natContractPos j k) := by
-  simp only [natContract, natContractPos, update_apply]
-  split_ifs <;> first | omega | simp [smul_mul_assoc, mul_smul_comm]
-
 end NatFace
 
 /-! ### Hochschild faces of tuples -/
@@ -305,18 +259,15 @@ end Mul
 theorem hochschildFace_castSucc_eq_succ_of_apply_succ_eq_one [MulOneClass A]
     (a : Fin (n + 2) → A) (j : Fin (n + 1))
     (ha : a j.succ = 1) : hochschildFace j.castSucc a = hochschildFace j.succ a := by
-  have hleft : hochschildFace j.castSucc a = Fin.removeNth j.succ a := by
-    simp [hochschildFace_castSucc, Fin.contractNth_castSucc_eq_update_removeNth_succ, ha,
-      Fin.removeNth_apply]
-  rw [hleft]
+  rw [hochschildFace_castSucc, Fin.contractNth_castSucc_eq_removeNth_succ_of_apply_succ_eq_one ha]
   induction j using Fin.lastCases with
   | last =>
     ext k
     cases k using Fin.cases <;> simp_all [Fin.init]
   | cast j =>
     rw [Fin.succ_castSucc] at ha ⊢
-    simp only [hochschildFace_castSucc, Fin.contractNth_castSucc_eq_update_removeNth_succ, ha,
-      one_mul, Fin.update_removeNth_succ_eq_removeNth_castSucc]
+    rw [hochschildFace_castSucc,
+      Fin.contractNth_castSucc_eq_removeNth_castSucc_of_apply_castSucc_eq_one ha]
 
 /-- In a commutative monoid every Hochschild face preserves the product of the entries. -/
 @[simp]
@@ -370,38 +321,12 @@ variable (R A M : Type*) [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
   [SMulCommClass R R M] {n : ℕ}
 
 variable {R A M} in
-/-- Precomposition of a cochain with the contraction of the entries `j` and `j + 1`. -/
-private def contractCoface (j : Fin (n + 1)) (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n +
-    1) ↦ A) M) :
-    MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M where
-  toFun a := φ (Fin.contractNth j.castSucc (· * ·) a)
-  map_update_add' := by
-    intro _ a k x y
-    obtain rfl : ‹DecidableEq (Fin (n + 2))› = instDecidableEqFin _ := Subsingleton.elim _ _
-    obtain ⟨b, hb⟩ := Fin.val_injective.surjective_comp_right' (fun _ : ℕ ↦ a 0) a
-    obtain rfl : a = fun k : Fin _ ↦ b k := hb.symm
-    simp only [contractNth_update_comp_val, natContract_update_add, MultilinearMap.map_update_add]
-  map_update_smul' := by
-    intro _ a k c x
-    obtain rfl : ‹DecidableEq (Fin (n + 2))› = instDecidableEqFin _ := Subsingleton.elim _ _
-    obtain ⟨b, hb⟩ := Fin.val_injective.surjective_comp_right' (fun _ : ℕ ↦ a 0) a
-    obtain rfl : a = fun k : Fin _ ↦ b k := hb.symm
-    simp only [contractNth_update_comp_val, natContract_update_smul,
-      MultilinearMap.map_update_smul]
-
-omit [SMulCommClass R R M] in
-private theorem contractCoface_apply (j : Fin (n + 1))
-    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) (a : Fin (n + 2) → A) :
-    contractCoface j φ a = φ (Fin.contractNth j.castSucc (· * ·) a) :=
-  rfl
-
-variable {R A M} in
 /-- The multilinear map `a ↦ φ (dᵢ a)`, assembled from contractions and a cyclic reindexing. -/
 private def cofaceAux (i : Fin (n + 2)) (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦
     A) M) :
     MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M :=
-  Fin.lastCases ((contractCoface 0 φ).domDomCongr (finRotate (n + 2)).symm)
-    (fun j ↦ contractCoface j φ) i
+  Fin.lastCases ((φ.compContractNth 0).domDomCongr (finRotate (n + 2)).symm)
+    (fun j ↦ φ.compContractNth j) i
 
 omit [SMulCommClass R R M] in
 private theorem cofaceAux_apply (i : Fin (n + 2))
@@ -410,10 +335,11 @@ private theorem cofaceAux_apply (i : Fin (n + 2))
   induction i using Fin.lastCases with
   | last =>
     simp only [cofaceAux, Fin.lastCases_last, MultilinearMap.domDomCongr_apply,
-      contractCoface_apply, hochschildFace_last_eq_contractNth, Function.comp_def,
+      MultilinearMap.compContractNth_apply, hochschildFace_last_eq_contractNth, Function.comp_def,
       Fin.castSucc_zero]
   | cast j =>
-    simp only [cofaceAux, Fin.lastCases_castSucc, contractCoface_apply, hochschildFace_castSucc]
+    simp only [cofaceAux, Fin.lastCases_castSucc, MultilinearMap.compContractNth_apply,
+      hochschildFace_castSucc]
 
 /-- The `i`-th Hochschild coface, sending an `n`-cochain `φ` (a multilinear map in `n + 1`
 arguments) to the `(n + 1)`-cochain `a ↦ φ (dᵢ a)`. -/

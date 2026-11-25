@@ -11,8 +11,11 @@ public import TauCeti.NumberTheory.Padics.PrincipalUnits
 import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 import TauCeti.NumberTheory.LocalField.DeepUnits.Basic
 import TauCeti.NumberTheory.Padics.DyadicUnits
-import TauCeti.NumberTheory.Padics.ExpLog
+import TauCeti.NumberTheory.Padics.Exp.Disc
+import TauCeti.NumberTheory.Padics.UnitFiltration
 import TauCeti.NumberTheory.Padics.UnitsDecomposition.Basic
+import TauCeti.Topology.Algebra.Group.Generation
+import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
 
 /-!
 # The logarithmic decomposition `ℤ_pˣ ≃ (ℤ/qℤ)ˣ × ℤ_p`
@@ -47,7 +50,8 @@ At `p = 2` the modulus `q = 4` cannot be lowered to `2`: `-1` has order two, so
 * `TauCeti.padicUnitsDepth p`: the exponent `k` with `q = p ^ k`.
 * `TauCeti.unitsPrincipalLogEquiv p`: the logarithm `1 + qℤ_p ≃ₜ* ℤ_p`, `u ↦ log u / q`.
 * `TauCeti.padicUnitsGenerator p`: the unit `γ = exp q`, with
-  `TauCeti.topologicalClosure_zpowers_padicUnitsGenerator` and
+  `TauCeti.topologicalClosure_zpowers_padicUnitsGenerator`,
+  `TauCeti.topologicallyGenerates_padicUnitsGenerator` (inside the subgroup `1 + qℤ_p`),
   `TauCeti.coe_padicUnitsGenerator_zpow`, `γ ^ k = exp (q k)`,
   `TauCeti.coe_padicUnitsGenerator_pow_prime_pow`, `γ ^ (p ^ j) = exp (p ^ (k + j))`, and
   `TauCeti.not_isOfFinOrder_padicUnitsGenerator`.
@@ -126,14 +130,24 @@ private theorem norm_coe_sub_one_le (u : unitsPrincipal p (padicUnitsDepth p)) :
 private theorem norm_q : ‖(p : ℚ_[p]) ^ padicUnitsDepth p‖ = (p : ℝ) ^ (-(padicUnitsDepth p : ℤ)) :=
   Padic.norm_p_pow _
 
-private theorem q_ne_zero : (p : ℚ_[p]) ^ padicUnitsDepth p ≠ 0 :=
+/-- The modulus `q = p ^ k` is nonzero in `ℚ_[p]`. -/
+theorem pow_padicUnitsDepth_ne_zero : (p : ℚ_[p]) ^ padicUnitsDepth p ≠ 0 :=
   pow_ne_zero _ (Nat.cast_ne_zero.mpr hp.out.ne_zero)
 
-private theorem norm_q_mul_le (s : ℤ_[p]) :
+/-- Multiples `q s` of the modulus `q = p ^ k` by `s ∈ ℤ_p` lie in the disc `‖y‖ ≤ p ^ (-k)`. -/
+theorem norm_pow_padicUnitsDepth_mul_le (s : ℤ_[p]) :
     ‖(p : ℚ_[p]) ^ padicUnitsDepth p * s‖ ≤ (p : ℝ) ^ (-(padicUnitsDepth p : ℤ)) := by
   rw [norm_mul, norm_q]
   exact mul_le_of_le_one_right (zpow_pos (by exact_mod_cast hp.out.pos) _).le
     (PadicInt.norm_le_one s)
+
+/-- Conversely, an element of the disc `‖y‖ ≤ p ^ (-k)` is `q` times an element of `ℤ_p`. -/
+theorem div_pow_padicUnitsDepth_mem_subring {y : ℚ_[p]}
+    (hy : ‖y‖ ≤ (p : ℝ) ^ (-(padicUnitsDepth p : ℤ))) :
+    y / (p : ℚ_[p]) ^ padicUnitsDepth p ∈ PadicInt.subring p := by
+  rw [PadicInt.mem_subring_iff, norm_div, norm_q,
+    div_le_one (zpow_pos (by exact_mod_cast hp.out.pos) _)]
+  exact hy
 
 /-! ### The logarithm on `1 + qℤ_p` -/
 
@@ -169,10 +183,9 @@ private noncomputable def unitsPrincipalEquivUnitFiltration :
 
 /-- `x / q` for `x ∈ 𝓂 ^ k`, as an element of `ℤ_[p]`. -/
 private noncomputable def divQ (x : (𝓂[ℚ_[p]] ^ padicUnitsDepth p : Ideal 𝒪[ℚ_[p]])) : ℤ_[p] :=
-  ⟨((x : 𝒪[ℚ_[p]]) : ℚ_[p]) / (p : ℚ_[p]) ^ padicUnitsDepth p, by
-    rw [PadicInt.mem_subring_iff, norm_div, norm_q,
-      div_le_one (zpow_pos (by exact_mod_cast hp.out.pos) _)]
-    exact TauCeti.Padic.mem_maximalIdeal_pow_iff_norm_le.mp x.property⟩
+  ⟨((x : 𝒪[ℚ_[p]]) : ℚ_[p]) / (p : ℚ_[p]) ^ padicUnitsDepth p,
+    div_pow_padicUnitsDepth_mem_subring
+      (TauCeti.Padic.mem_maximalIdeal_pow_iff_norm_le.mp x.property)⟩
 
 private theorem coe_divQ (x : (𝓂[ℚ_[p]] ^ padicUnitsDepth p : Ideal 𝒪[ℚ_[p]])) :
     (divQ x : ℚ_[p]) = ((x : 𝒪[ℚ_[p]]) : ℚ_[p]) / (p : ℚ_[p]) ^ padicUnitsDepth p :=
@@ -182,9 +195,9 @@ private theorem coe_divQ (x : (𝓂[ℚ_[p]] ^ padicUnitsDepth p : Ideal 𝒪[�
 private noncomputable def mulQ (s : ℤ_[p]) : (𝓂[ℚ_[p]] ^ padicUnitsDepth p : Ideal 𝒪[ℚ_[p]]) :=
   ⟨⟨(p : ℚ_[p]) ^ padicUnitsDepth p * s, by
     rw [Padic.integerRing_eq_subring, PadicInt.mem_subring_iff]
-    exact (norm_q_mul_le s).trans
+    exact (norm_pow_padicUnitsDepth_mul_le s).trans
       (zpow_le_one_of_nonpos₀ (by exact_mod_cast hp.out.one_lt.le) (by simp))⟩,
-    TauCeti.Padic.mem_maximalIdeal_pow_iff_norm_le.mpr (norm_q_mul_le s)⟩
+    TauCeti.Padic.mem_maximalIdeal_pow_iff_norm_le.mpr (norm_pow_padicUnitsDepth_mul_le s)⟩
 
 private theorem coe_mulQ (s : ℤ_[p]) :
     ((mulQ s : 𝒪[ℚ_[p]]) : ℚ_[p]) = (p : ℚ_[p]) ^ padicUnitsDepth p * s :=
@@ -199,10 +212,12 @@ private noncomputable def maximalIdealPowEquiv :
   invFun s := .ofAdd (mulQ s.toAdd)
   left_inv x := by
     refine Multiplicative.toAdd.injective (Subtype.ext (Subtype.ext ?_))
-    rw [toAdd_ofAdd, coe_mulQ, toAdd_ofAdd, coe_divQ, mul_div_cancel₀ _ q_ne_zero]
+    rw [toAdd_ofAdd, coe_mulQ, toAdd_ofAdd, coe_divQ,
+      mul_div_cancel₀ _ pow_padicUnitsDepth_ne_zero]
   right_inv s := by
     refine Multiplicative.toAdd.injective (PadicInt.ext ?_)
-    rw [toAdd_ofAdd, coe_divQ, toAdd_ofAdd, coe_mulQ, mul_div_cancel_left₀ _ q_ne_zero]
+    rw [toAdd_ofAdd, coe_divQ, toAdd_ofAdd, coe_mulQ,
+      mul_div_cancel_left₀ _ pow_padicUnitsDepth_ne_zero]
   map_mul' x y := by
     refine Multiplicative.toAdd.injective (PadicInt.ext ?_)
     simp only [toAdd_mul, toAdd_ofAdd, PadicInt.coe_add, coe_divQ, Submodule.coe_add,
@@ -263,6 +278,13 @@ theorem unitsPrincipalLogEquiv_padicUnitsGenerator :
       .ofAdd 1 :=
   (unitsPrincipalLogEquiv p).apply_symm_apply _
 
+-- Not a `simp` lemma: it would loop with unfolding `padicUnitsGenerator`.
+/-- The inverse logarithm sends `1 ∈ ℤ_p` to `γ = exp q`, as an element of `1 + qℤ_p`. -/
+theorem unitsPrincipalLogEquiv_symm_ofAdd_one :
+    (unitsPrincipalLogEquiv p).symm (.ofAdd 1) =
+      ⟨padicUnitsGenerator p, padicUnitsGenerator_mem_unitsPrincipal⟩ :=
+  (unitsPrincipalLogEquiv p).symm_apply_eq.mpr unitsPrincipalLogEquiv_padicUnitsGenerator.symm
+
 /-- The powers of `γ = exp q` are `γ ^ k = exp (q k)`, for `k ∈ ℤ`. -/
 theorem coe_padicUnitsGenerator_zpow (k : ℤ) :
     (((padicUnitsGenerator p ^ k : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p]) =
@@ -285,9 +307,10 @@ theorem unitsPrincipalLogEquiv_symm_notMem_unitsPrincipal_succ (u : ℤ_[p]ˣ) :
   have hu := mem_unitsPrincipal_iff_norm.mp hu
   rw [← norm_coe_sub_one, coe_unitsPrincipalLogEquiv_symm_apply] at hu
   simp only [toAdd_ofAdd] at hu
-  have hlog := Padic.norm_log (one_lt_sub_one_mul_padicUnitsDepth_add 1) hu
-  rw [Padic.log_exp one_lt_sub_one_mul_padicUnitsDepth
-      (norm_q_mul_le (p := p) (u : ℤ_[p])), norm_mul,
+  have hlog := norm_log_of_norm_sub_one_lt
+    (hu.trans_lt (zpow_neg_lt_amiceRadius_zero (one_lt_sub_one_mul_padicUnitsDepth_add 1)))
+  rw [log_exp_of_norm_lt ((norm_pow_padicUnitsDepth_mul_le (p := p) (u : ℤ_[p])).trans_lt
+      (zpow_neg_lt_amiceRadius_zero one_lt_sub_one_mul_padicUnitsDepth)), norm_mul,
     norm_q, ← PadicInt.norm_def, PadicInt.norm_units, mul_one] at hlog
   have := hlog.trans_le hu
   rw [zpow_le_zpow_iff_right₀ (by exact_mod_cast hp.out.one_lt)] at this
@@ -320,6 +343,18 @@ theorem topologicalClosure_zpowers_padicUnitsGenerator :
       unitsPrincipal p (padicUnitsDepth p) := by
   simpa [padicUnitsGenerator] using
     topologicalClosure_zpowers_unitsPrincipalLogEquiv_symm (1 : ℤ_[p]ˣ)
+
+/-- **The generator `γ = exp q` topologically generates the principal units `1 + qℤ_p`**, as an
+element of the subgroup `unitsPrincipal p (padicUnitsDepth p)` of `ℤ_pˣ`: it is the image of the
+topological generator `1` of `ℤ_p` under the logarithmic isomorphism `unitsPrincipalLogEquiv`. -/
+theorem topologicallyGenerates_padicUnitsGenerator :
+    (Subgroup.closure ({⟨padicUnitsGenerator p, padicUnitsGenerator_mem_unitsPrincipal⟩} :
+      Set (unitsPrincipal p (padicUnitsDepth p)))).topologicalClosure = ⊤ := by
+  let e := (unitsPrincipalLogEquiv p).symm
+  have h := topologicalClosure_closure_image_eq_top (topologicallyGenerates_ofAdd_one_padicInt p)
+    (f := (e : Multiplicative ℤ_[p] →* unitsPrincipal p (padicUnitsDepth p))) e.continuous
+    e.surjective.denseRange
+  rwa [Set.image_singleton, MonoidHom.coe_ofClass, unitsPrincipalLogEquiv_symm_ofAdd_one] at h
 
 /-! ### The section `ω` of reduction modulo `q` -/
 

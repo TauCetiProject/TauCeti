@@ -12,8 +12,12 @@ public import Mathlib.Algebra.Order.Interval.Set.SuccPred
 public import Mathlib.Algebra.Polynomial.Sequence
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.RingTheory.MvPolynomial.Basic
+public import Mathlib.Algebra.MvPolynomial.Variables
 public import TauCeti.RingTheory.MvPolynomial.Finrank
 public import TauCeti.LinearAlgebra.Basis.Pi
+import TauCeti.Algebra.MvPolynomial.Degrees
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.RingTheory.MvPolynomial.LinearSubst
 
 /-!
 # The submodules of polynomials of bounded total degree
@@ -52,8 +56,17 @@ the monomials may be replaced by products `∏ᵢ Sₖᵢ(Xᵢ)` of the members 
   finite coefficient coordinates by zero.
 * `MvPolynomial.boundedCoefficientEquiv_inclusion_comp_homogeneous`: including homogeneous
   polynomials in a bounded-degree space extends their coordinates by zero.
-* `MvPolynomial.aeval_mem_restrictTotalDegree`: substituting linear forms for the variables does
-  not raise the total degree.
+* `MvPolynomial.mul_mem_restrictTotalDegree`: total degree bounds add under multiplication.
+* `MvPolynomial.aeval_mem_restrictTotalDegree`: substituting polynomials of total degree at most
+  one, such as affine linear forms, for the variables occurring in a polynomial of total degree at
+  most `m` gives a polynomial of total degree at most `m`, also when the substituted polynomials
+  have coefficients in an `R`-algebra.
+* `Submodule.exists_surjective_linearMap_restrictTotalDegree`: over an infinite field,
+  restricting the polynomials of total degree at most `m` to a subspace `W`, in coordinates on
+  `W`, is onto the polynomials of total degree at most `m` in `dim W` variables, with kernel the
+  polynomials vanishing on `W`.
+* `MvPolynomial.aeval_option_elim_one_X_mem_restrictTotalDegree`: setting the variable `none` to
+  `1` does not raise the total degree.
 * `MvPolynomial.span_prod_aeval_X_le`: products of a triangular family of one-variable polynomials
   in the separate variables lie in the span of the products of the original family.
 * `Polynomial.Sequence.span_prod_aeval_X_eq_restrictTotalDegree`: the products `∏ᵢ Sₖᵢ(Xᵢ)` of
@@ -96,10 +109,7 @@ variable (σ R) in
 most `m`. -/
 theorem restrictTotalDegree_eq_restrictSupport (m : ℕ) :
     restrictTotalDegree σ R m = restrictSupport R {s : σ →₀ ℕ | s.degree ≤ m} := by
-  have hs : {s : σ →₀ ℕ | (s.sum fun _ e ↦ e) ≤ m} = {s | s.degree ≤ m} := by
-    ext s
-    simp [Finsupp.sum, Finsupp.degree_apply]
-  rw [restrictTotalDegree, hs]
+  simp only [restrictTotalDegree, Finsupp.sum, Finsupp.degree_apply]
 
 variable (σ R) in
 /-- The polynomials of total degree at most `m` are spanned by the monomials of degree at most
@@ -127,12 +137,10 @@ theorem basisRestrictTotalDegree_repr_apply (m : ℕ) (p : restrictTotalDegree �
 @[simp]
 theorem coe_basisRestrictTotalDegree (m : ℕ) (s : {s : σ →₀ ℕ // s.degree ≤ m}) :
     (basisRestrictTotalDegree σ R m s : MvPolynomial σ R) = monomial s.val 1 := by
-  classical
-  have h : basisRestrictTotalDegree σ R m s =
-      ⟨monomial s.val 1, monomial_mem_restrictTotalDegree s.property 1⟩ := by
-    refine (basisRestrictTotalDegree σ R m).repr.injective (Finsupp.ext fun t ↦ ?_)
-    simp [Finsupp.single_apply, coeff_monomial, Subtype.ext_iff]
-  rw [h]
+  rw [basisRestrictTotalDegree, Module.Basis.map_apply, LinearEquiv.coe_ofEq_apply]
+  -- As in `basisRestrictTotalDegree`, the index `s` is read as an element of the set
+  -- `{t | t.degree ≤ m}` that indexes `basisRestrictSupport`; the two subtypes agree by definition.
+  exact basisRestrictSupport_apply_coe (s := {t : σ →₀ ℕ | t.degree ≤ m}) s
 
 section Coordinates
 
@@ -269,24 +277,33 @@ theorem boundedCoefficientEquiv_inclusion_comp_homogeneous [Finite σ] {d e : �
 
 end Coordinates
 
+/-- A product of polynomials of total degrees at most `d` and `e` has total degree at most
+`d + e`. -/
+theorem mul_mem_restrictTotalDegree {d e : ℕ} {f g : MvPolynomial σ R}
+    (hf : f ∈ restrictTotalDegree σ R d) (hg : g ∈ restrictTotalDegree σ R e) :
+    f * g ∈ restrictTotalDegree σ R (d + e) := by
+  rw [mem_restrictTotalDegree] at hf hg ⊢
+  exact (totalDegree_mul f g).trans (add_le_add hf hg)
+
 /-- Substituting polynomials of total degree at most one, for instance linear forms, for the
-variables does not raise the total degree. -/
-theorem aeval_mem_restrictTotalDegree {τ : Type*} {f : σ → MvPolynomial τ R}
-    (hf : ∀ i, (f i).totalDegree ≤ 1) {m : ℕ} {p : MvPolynomial σ R}
-    (hp : p ∈ restrictTotalDegree σ R m) : aeval f p ∈ restrictTotalDegree τ R m := by
-  rw [restrictTotalDegree_eq_span] at hp
-  induction hp using Submodule.span_induction with
-  | mem _ h =>
-    obtain ⟨s, hs, rfl⟩ := h
-    rw [mem_restrictTotalDegree, aeval_monomial, map_one, one_mul, Finsupp.prod]
-    calc (∏ i ∈ s.support, f i ^ s i).totalDegree
-        ≤ ∑ i ∈ s.support, (f i ^ s i).totalDegree := totalDegree_finsetProd _ _
-      _ ≤ ∑ i ∈ s.support, s i := Finset.sum_le_sum fun i _ ↦
-          (totalDegree_pow _ _).trans (by simpa using Nat.mul_le_mul_left (s i) (hf i))
-      _ ≤ m := hs
-  | zero => simp
-  | add p q _ _ hp hq => simpa using add_mem hp hq
-  | smul a p _ hp => simpa using Submodule.smul_mem _ a hp
+variables of `p` does not raise the total degree, also when the substituted polynomials have
+coefficients in an `R`-algebra `S`. Only the variables that occur in `p` need to be bounded. -/
+theorem aeval_mem_restrictTotalDegree {τ S : Type*} [CommSemiring S] [Algebra R S]
+    (p : MvPolynomial σ R) {f : σ → MvPolynomial τ S} {m : ℕ}
+    (hf : ∀ i ∈ p.vars, (f i).totalDegree ≤ 1) (hp : p ∈ restrictTotalDegree σ R m) :
+    aeval f p ∈ restrictTotalDegree τ S m := by
+  rw [mem_restrictTotalDegree] at hp ⊢
+  exact (totalDegree_aeval_le p hf).trans ((mul_one _).trans_le hp)
+
+/-- Setting the variable `none` to `1` and keeping the variables `some j` does not raise the total
+degree. -/
+theorem aeval_option_elim_one_X_mem_restrictTotalDegree {d : ℕ}
+    {F : MvPolynomial (Option σ) R} (hF : F ∈ restrictTotalDegree (Option σ) R d) :
+    aeval (Option.elim' 1 X) F ∈ restrictTotalDegree σ R d := by
+  refine aeval_mem_restrictTotalDegree F (fun v _ ↦ ?_) hF
+  cases v
+  · simp
+  · exact TauCeti.totalDegree_X_le _
 
 open Polynomial in
 /-- If each `q k` with `k ≤ m` is a combination of the `p j` with `j ≤ k`, then the products
@@ -326,6 +343,44 @@ theorem span_prod_aeval_X_le {σ R : Type*} [Fintype σ] [CommSemiring R] {p q :
     exact (Finset.sum_le_sum fun i _ ↦ Set.mem_Iic.1 (hj i)).trans
       ((Finsupp.degree_eq_sum τ).symm.le.trans hτ)
   · simp [← hgj]
+
+/-- **Restriction of polynomials to a subspace.** Over an infinite field, restricting the
+polynomials of total degree at most `m` in the variables `σ` to a subspace `W` of `σ → K`, in
+coordinates on `W`, is a linear map onto the polynomials of total degree at most `m` in `dim W`
+variables whose kernel consists of the polynomials vanishing on `W`. -/
+theorem _root_.Submodule.exists_surjective_linearMap_restrictTotalDegree [Finite σ] {K : Type*}
+    [Field K] [Infinite K] (W : Submodule K (σ → K)) (m : ℕ) :
+    ∃ R : restrictTotalDegree σ K m →ₗ[K] restrictTotalDegree (Fin (Module.finrank K W)) K m,
+      Function.Surjective R ∧ ∀ p, R p = 0 ↔ ∀ w ∈ W, eval w (p : MvPolynomial σ K) = 0 := by
+  classical
+  have := Fintype.ofFinite σ
+  -- Coordinates `g : Kᵈ ≃ W` on `W`, a linear left inverse `π` of `g`, and the restriction
+  -- `R : p ↦ p ∘ g`, which is onto with right inverse `q ↦ q ∘ π`.
+  let g : (Fin (Module.finrank K W) → K) →ₗ[K] σ → K :=
+    W.subtype ∘ₗ (Module.finBasis K W).equivFun.symm.toLinearMap
+  have hg : LinearMap.ker g = ⊥ := by
+    rw [LinearMap.ker_eq_bot]
+    exact Subtype.val_injective.comp (Module.finBasis K W).equivFun.symm.injective
+  obtain ⟨π, hπ⟩ := LinearMap.exists_leftInverse_of_injective g hg
+  let R : restrictTotalDegree σ K m →ₗ[K] restrictTotalDegree (Fin (Module.finrank K W)) K m :=
+    (aeval (LinearMap.toMatrix' g).toMvPolynomial).toLinearMap.restrict fun p hp ↦
+      aeval_mem_restrictTotalDegree p (fun i _ ↦ Matrix.toMvPolynomial_totalDegree_le _ i) hp
+  have hR (p : restrictTotalDegree σ K m) (x : Fin (Module.finrank K W) → K) :
+      eval x (R p : MvPolynomial _ K) = eval (g x) (p : MvPolynomial σ K) := by
+    have hcoe : (R p : MvPolynomial _ K) =
+        aeval (LinearMap.toMatrix' g).toMvPolynomial (p : MvPolynomial σ K) :=
+      LinearMap.coe_restrict_apply _ p
+    rw [hcoe, Matrix.eval_aeval_toMvPolynomial, LinearMap.toMatrix'_mulVec]
+  refine ⟨R, ?_, fun p ↦ ⟨fun h w hw ↦ ?_, fun h ↦ Subtype.ext (funext fun x ↦ ?_)⟩⟩
+  · rintro ⟨q, hq⟩
+    refine ⟨⟨aeval (LinearMap.toMatrix' π).toMvPolynomial q, aeval_mem_restrictTotalDegree q
+      (fun i _ ↦ Matrix.toMvPolynomial_totalDegree_le _ i) hq⟩, Subtype.ext (funext fun x ↦ ?_)⟩
+    rw [hR, Matrix.eval_aeval_toMvPolynomial, LinearMap.toMatrix'_mulVec,
+      ← LinearMap.comp_apply, hπ, LinearMap.id_apply]
+  · have hw' : g ((Module.finBasis K W).equivFun ⟨w, hw⟩) = w := by simp [g]
+    rw [← hw', ← hR, h, ZeroMemClass.coe_zero, map_zero]
+  · rw [hR, ZeroMemClass.coe_zero, map_zero]
+    exact h _ ((Module.finBasis K W).equivFun.symm x).property
 
 end MvPolynomial
 

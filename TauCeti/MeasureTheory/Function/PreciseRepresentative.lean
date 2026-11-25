@@ -44,6 +44,8 @@ representative.
 
 * `TauCeti.MeasureTheory.preciseRepresentative`: the limit of the averages over shrinking closed
   balls.
+* `TauCeti.MeasureTheory.preciseRepresentative_restrict_of_mem_nhds`: restricting the measure to a
+  neighbourhood of a point does not change the precise representative there.
 * `TauCeti.MeasureTheory.preciseRepresentative_congr_ae`: the precise representative depends only
   on the almost-everywhere class.
 * `TauCeti.MeasureTheory.ae_eq_restrict_preciseRepresentative`: a function locally integrable on
@@ -51,6 +53,8 @@ representative.
 * `TauCeti.MeasureTheory.ae_eq_preciseRepresentative_of_hasBesicovitchCovering`: for any locally
   finite measure on a space with the Besicovitch covering property, a locally integrable function
   agrees almost everywhere with its precise representative.
+* `TauCeti.MeasureTheory.ae_eq_restrict_inter_preciseRepresentative_restrict`: the same on
+  `s ∩ t`, `s` open, for the precise representative with respect to the restriction to `t`.
 * `TauCeti.MeasureTheory.preciseRepresentative_eq_of_continuousAt`: the precise representative at
   `x` of a function equal almost everywhere near `x` to a function `g` continuous at `x` is `g x`.
 * `TauCeti.MeasureTheory.tendsto_setAverage_closedBall_preciseRepresentative`: the averages
@@ -100,17 +104,33 @@ theorem preciseRepresentative_eq_of_tendsto {v : E}
     preciseRepresentative μ f x = v :=
   h.limUnder_eq
 
+/-- Two precise representatives agree at `x` when the averages over `closedBall x r` agree for all
+small `r > 0`. -/
+theorem preciseRepresentative_eq_of_eventuallyEq {ν : Measure X}
+    (h : (fun r => ⨍ y in closedBall x r, f y ∂μ) =ᶠ[𝓝[>] 0]
+      fun r => ⨍ y in closedBall x r, g y ∂ν) :
+    preciseRepresentative μ f x = preciseRepresentative ν g x := by
+  simp only [preciseRepresentative, limUnder, map_congr h]
+
 /-- The precise representative at `x` only depends on the almost-everywhere class of `f` on a
 neighbourhood of `x`. -/
 theorem preciseRepresentative_congr_ae_nhds {V : Set X} (hV : V ∈ 𝓝 x)
     (h : f =ᵐ[μ.restrict V] g) : preciseRepresentative μ f x = preciseRepresentative μ g x := by
   obtain ⟨δ, hδ, hsub⟩ := nhds_basis_closedBall.mem_iff.1 hV
-  have hev : (fun r => ⨍ y in closedBall x r, f y ∂μ) =ᶠ[𝓝[>] 0]
-      fun r => ⨍ y in closedBall x r, g y ∂μ := by
-    filter_upwards [Ioo_mem_nhdsGT hδ] with r hr
-    exact average_congr (ae_restrict_of_ae_restrict_of_subset
-      ((closedBall_subset_closedBall hr.2.le).trans hsub) h)
-  simp only [preciseRepresentative, limUnder, map_congr hev]
+  refine preciseRepresentative_eq_of_eventuallyEq ?_
+  filter_upwards [Ioo_mem_nhdsGT hδ] with r hr
+  exact average_congr (ae_restrict_of_ae_restrict_of_subset
+    ((closedBall_subset_closedBall hr.2.le).trans hsub) h)
+
+/-- At a point `x`, the precise representative of `f` for the restriction of `μ` to a
+neighbourhood of `x` is its precise representative for `μ`: small closed balls about `x` lie in
+the neighbourhood. -/
+theorem preciseRepresentative_restrict_of_mem_nhds {s : Set X} (hs : s ∈ 𝓝 x) :
+    preciseRepresentative (μ.restrict s) f x = preciseRepresentative μ f x := by
+  obtain ⟨δ, hδ, hsub⟩ := nhds_basis_closedBall.mem_iff.1 hs
+  refine preciseRepresentative_eq_of_eventuallyEq ?_
+  filter_upwards [Ioo_mem_nhdsGT hδ] with r hr
+  rw [Measure.restrict_restrict_of_subset ((closedBall_subset_closedBall hr.2.le).trans hsub)]
 
 /-- The precise representative only depends on the almost-everywhere class of `f`. -/
 theorem preciseRepresentative_congr_ae (h : f =ᵐ[μ] g) :
@@ -164,6 +184,21 @@ theorem ae_eq_preciseRepresentative_of_hasBesicovitchCovering {Y : Type*} [Metri
     (hf : LocallyIntegrable f ν) : f =ᵐ[ν] preciseRepresentative ν f := by
   filter_upwards [Besicovitch.ae_tendsto_average_closedBall ν hf] with x hx
   exact (preciseRepresentative_eq_of_tendsto hx).symm
+
+/-- **Lebesgue differentiation for the precise representative of a restricted measure.** On a
+space with the Besicovitch covering property, a function locally integrable for the restriction
+of a locally finite measure `ν` to `s ∩ t`, with `s` open, agrees almost everywhere on `s ∩ t`
+with its precise representative for `ν.restrict t`. -/
+theorem ae_eq_restrict_inter_preciseRepresentative_restrict {Y : Type*} [MetricSpace Y]
+    [MeasurableSpace Y] [BorelSpace Y] [SecondCountableTopology Y] [HasBesicovitchCovering Y]
+    {ν : Measure Y} [IsLocallyFiniteMeasure ν] [CompleteSpace E] {f : Y → E} {s t : Set Y}
+    (hs : IsOpen s) (hf : LocallyIntegrable f (ν.restrict (s ∩ t))) :
+    f =ᵐ[ν.restrict (s ∩ t)] preciseRepresentative (ν.restrict t) f := by
+  filter_upwards [ae_eq_preciseRepresentative_of_hasBesicovitchCovering hf,
+    ae_restrict_of_ae_restrict_of_subset inter_subset_left (ae_restrict_mem hs.measurableSet)]
+    with x hx hxs
+  rw [hx, ← Measure.restrict_restrict hs.measurableSet,
+    preciseRepresentative_restrict_of_mem_nhds (hs.mem_nhds hxs)]
 
 section Oscillation
 

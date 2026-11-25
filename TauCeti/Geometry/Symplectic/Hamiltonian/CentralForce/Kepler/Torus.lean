@@ -38,8 +38,8 @@ with nonzero angular momentum fill out invariant tori.
   (`TauCeti.isCompact_keplerBoundPhaseSpace_preimage_singleton`), so the Hamiltonian vector fields
   of `H` and `L` are complete there
   (`TauCeti.isCompleteVectorField_hamiltonianVectorField_keplerBoundPhaseSpace`). On the whole
-  punctured phase space the Kepler flow is not complete, since motions with `L = 0` fall into the
-  collision set in finite time.
+  punctured phase space the Kepler flow is not complete, since motions with `L = 0` leave it in
+  finite time (`TauCeti.not_isCompleteVectorField_hamiltonianVectorField_kepler`).
 * **Liouville tori.** By the topological Liouville–Arnold theorem
   (`TauCeti.SmoothTwoForm.IsSymplectic.nonempty_homeomorph_unitAddTorus`), every connected
   component of a level of `F` in the bound phase space with energy above the circular energy is
@@ -215,6 +215,17 @@ theorem mem_keplerBoundPhaseSpace {x : V × V} :
     x ∈ keplerBoundPhaseSpace b m κ ↔ x.1 ≠ 0 ∧
       centralForceHamiltonian m (fun r ↦ -κ / r) x < 0 ∧ angularMomentum (b 0) (b 1) x ≠ 0 :=
   Iff.rfl
+
+/-- For `m > 0` the bound phase space is empty unless the potential is attractive, `κ > 0`. -/
+theorem pos_of_mem_keplerBoundPhaseSpace (hm : 0 < m) {x : V × V}
+    (hx : x ∈ keplerBoundPhaseSpace b m κ) : 0 < κ := by
+  obtain ⟨hq, hE, -⟩ := (mem_keplerBoundPhaseSpace b).1 hx
+  rw [← Prod.mk.eta (p := x), centralForceHamiltonian_apply] at hE
+  have hp : 0 ≤ ‖x.2‖ ^ 2 / (2 * m) := by positivity
+  have hr : 0 < ‖x.1‖ := norm_pos_iff.2 hq
+  by_contra! hκ
+  have : 0 ≤ -κ / ‖x.1‖ := div_nonneg (by linarith) hr.le
+  linarith
 
 /-- The energy–momentum map of the Kepler problem is smooth off the collision set. -/
 private theorem contDiffAt_centralForceEnergyMomentum_kepler {n : WithTop ℕ∞} {x : V × V}

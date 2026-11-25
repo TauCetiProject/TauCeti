@@ -121,7 +121,7 @@ private theorem exists_matrix_hasseDerivRow_house_le [NumberField K] (α : K) {b
       _ ≤ 2 ^ R := Nat.pow_le_pow_right two_pos (sum_le_sum fun j _ ↦ hle μ j)
   have he (d : rows) (μ : ∀ i, Fin (r i + 1)) : IsIntegral ℤ (e d μ) := by
     rw [he_eq]
-    exact (isIntegral_natCast _).mul (isIntegral_natCast_pow_mul_pow hbα (hdeg d μ))
+    exact (isIntegral_natCast _).mul (hbα.natCast_pow_mul_pow (hdeg d μ))
   -- The entry `a d μ` coerces to `e d μ` by `RingOfIntegers.map_mk`, which holds by `rfl`.
   refine ⟨fun d μ ↦ (⟨e d μ, he d μ⟩ : 𝓞 K), fun _ _ ↦ rfl, fun d μ ↦ ?_⟩
   change NumberField.house (e d μ) ≤ _

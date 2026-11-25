@@ -31,8 +31,10 @@ copy count, clique and edge formulas use `Fintype` as required by their right-ha
 * `SimpleGraph.card_injective_hom_le` bounds injective homomorphisms by vertex embeddings.
 * `SimpleGraph.card_injective_hom_eq_sum_map_le` counts injective homomorphisms by the vertex
   embeddings whose mapped graph lies below the target.
-* `SimpleGraph.card_hom_eq_card_adjPreservingMaps` counts homomorphisms by the
-  adjacency-preserving vertex maps.
+* `SimpleGraph.card_hom_eq_card_adjPreservingMaps` and
+  `SimpleGraph.card_hom_eq_card_filter_adjPreserving` count homomorphisms by the
+  adjacency-preserving vertex maps (as a subtype, and as a filtered finset when `V → W` is a
+  `Fintype`).
 * `SimpleGraph.card_injective_hom_eq_labelledCopyCount` identifies the number of injective
   homomorphisms with Mathlib's `SimpleGraph.labelledCopyCount`, so injective homomorphism counts
   and labelled copy counts are one counting convention, not two.
@@ -67,6 +69,14 @@ theorem card_hom_eq_card_adjPreservingMaps (F : SimpleGraph V) (G : SimpleGraph 
       invFun := fun ψ => ⟨ψ.val, fun {_ _} h => ψ.property _ _ h⟩
       left_inv := fun _ => rfl
       right_inv := fun _ => rfl }
+
+/-- Homomorphisms between graphs with finitely many vertex maps are counted by the filtered finset
+of adjacency-preserving vertex maps. -/
+theorem card_hom_eq_card_filter_adjPreserving [Fintype (V → W)] (F : SimpleGraph V)
+    (G : SimpleGraph W) [DecidablePred fun ψ : V → W => ∀ a b, F.Adj a b → G.Adj (ψ a) (ψ b)] :
+    Nat.card (F →g G) =
+      #(univ.filter fun ψ : V → W => ∀ a b, F.Adj a b → G.Adj (ψ a) (ψ b)) := by
+  rw [card_hom_eq_card_adjPreservingMaps, Nat.card_eq_fintype_card, Fintype.card_subtype]
 
 /-- Injective homomorphisms and injective adjacency-preserving vertex maps are counted alike. -/
 theorem card_injective_hom_eq_card_injective_adjPreservingMaps (F : SimpleGraph V)

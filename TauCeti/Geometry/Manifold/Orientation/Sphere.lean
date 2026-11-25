@@ -67,8 +67,13 @@ orientations, and the antipodal map has orientation sign `(-1)^(n+1)` for every 
   `Orientation.orientation_eq_neg_orientationAt_sphereOrientation_iff` its negative counterpart.
 * `Complex.orientation_eq_orientationAt_sphereOrientation_iff`: a tangent vector `w` of the unit
   circle of `ℂ` at `z` is positive exactly when it points counterclockwise,
-  `Re z Im w - Im z Re w > 0`.
+  `Re z Im w - Im z Re w > 0`, equivalently `Im (conj z * w) > 0`
+  (`Complex.orientation_eq_orientationAt_sphereOrientation_iff_im_conj_mul`).
 * `TauCeti.circleTangentBasis`: a positively oriented tangent basis of the unit circle of `ℂ`.
+* `TauCeti.isOrientationPreservingAt_sphere_iff_im_conj_mul`,
+  `TauCeti.isOrientationReversingAt_sphere_iff_im_conj_mul`: a self-map of the unit circle of `ℂ`
+  with nonvanishing derivative preserves (reverses) orientation at `z` exactly when it carries a
+  counterclockwise tangent vector at `z` to a counterclockwise (clockwise) one.
 * `TauCeti.isOrientationReversingAt_conjSphere`, `TauCeti.orientationSign_conjSphere`,
   `TauCeti.degreeAtRegularValue_conjSphere`, `TauCeti.degree_conjSphere`: complex conjugation
   reverses the orientation of the unit circle and has orientation sign and mapping degree `-1`.
@@ -351,6 +356,8 @@ theorem orientable_sphere : Orientable (𝓡 n) (sphere (0 : E) 1) := by
 
 section Circle
 
+open scoped ComplexConjugate
+
 attribute [local instance] finrank_real_complex_fact'
 
 /-- A tangent basis `c` of the unit circle of `ℂ` at `z` is positive for the outward-normal
@@ -370,6 +377,16 @@ theorem _root_.Complex.orientation_eq_orientationAt_sphereOrientation_iff
   generalize mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) z (c 0) = w
   simp [Complex.mul_im]
 
+/-- A tangent basis `c` of the unit circle of `ℂ` at `z` is positive for the outward-normal
+orientation exactly when its vector `w`, read in `ℂ`, has positive counterclockwise component
+`Im (conj z * w)`. -/
+theorem _root_.Complex.orientation_eq_orientationAt_sphereOrientation_iff_im_conj_mul
+    {z : sphere (0 : ℂ) 1} (c : Basis (Fin 1) ℝ (TangentSpace (𝓡 1) z)) :
+    c.orientation = Complex.orientation.sphereOrientation.orientationAt z ↔
+      0 < (conj (z : ℂ) * mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) z (c 0)).im := by
+  rw [Complex.orientation_eq_orientationAt_sphereOrientation_iff, Complex.mul_im,
+    Complex.conj_re, Complex.conj_im, neg_mul, ← sub_eq_add_neg]
+
 /-- A positively oriented tangent basis of the unit circle of `ℂ` at `z`
 (`TauCeti.orientation_circleTangentBasis`). -/
 def circleTangentBasis (z : sphere (0 : ℂ) 1) : Basis (Fin 1) ℝ (TangentSpace (𝓡 1) z) :=
@@ -382,6 +399,56 @@ def circleTangentBasis (z : sphere (0 : ℂ) 1) : Basis (Fin 1) ℝ (TangentSpac
 theorem orientation_circleTangentBasis (z : sphere (0 : ℂ) 1) :
     (circleTangentBasis z).orientation = Complex.orientation.sphereOrientation.orientationAt z :=
   Basis.orientation_adjustToOrientation _ _
+
+/-- A self-map `f` of the unit circle of `ℂ` whose derivative at `z` does not vanish carries the
+positive tangent basis `TauCeti.circleTangentBasis z` to a tangent basis at `f z`. -/
+private theorem exists_basis_mfderiv_circleTangentBasis {f : sphere (0 : ℂ) 1 → sphere (0 : ℂ) 1}
+    {z : sphere (0 : ℂ) 1} (hf : mfderiv (𝓡 1) (𝓡 1) f z (circleTangentBasis z 0) ≠ 0) :
+    ∃ b' : Basis (Fin 1) ℝ (TangentSpace (𝓡 1) (f z)),
+      ∀ i, mfderiv (𝓡 1) (𝓡 1) f z (circleTangentBasis z i) = b' i := by
+  refine ⟨basisOfLinearIndependentOfCardEqFinrank
+    ((linearIndependent_unique_iff
+      (v := fun _ : Fin 1 ↦ mfderiv (𝓡 1) (𝓡 1) f z (circleTangentBasis z 0))).2 hf)
+    ((Fintype.card_fin 1).trans
+      (Complex.orientation.sphereOrientation.finrank_tangentSpace_eq (f z)).symm), fun i ↦ ?_⟩
+  fin_cases i
+  simp
+
+/-- **Orientation preservation on the circle.** A self-map `f` of the unit circle of `ℂ` whose
+derivative at `z` does not vanish preserves the counterclockwise orientation at `z` exactly when
+the image of the positive tangent vector, read in `ℂ` as `w`, points counterclockwise at `f z`:
+`Im (conj (f z) * w) > 0`. -/
+theorem isOrientationPreservingAt_sphere_iff_im_conj_mul {f : sphere (0 : ℂ) 1 → sphere (0 : ℂ) 1}
+    {z : sphere (0 : ℂ) 1} (hf : mfderiv (𝓡 1) (𝓡 1) f z (circleTangentBasis z 0) ≠ 0) :
+    Manifold.Orientation.IsOrientationPreservingAt Complex.orientation.sphereOrientation
+        Complex.orientation.sphereOrientation f z ↔
+      0 < (conj (f z : ℂ) * mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) (f z)
+        (mfderiv (𝓡 1) (𝓡 1) f z (circleTangentBasis z 0))).im := by
+  obtain ⟨b', hb'⟩ := exists_basis_mfderiv_circleTangentBasis hf
+  rw [Manifold.Orientation.isOrientationPreservingAt_iff_of_basis _ b' hb',
+    iff_true_left (orientation_circleTangentBasis z),
+    Complex.orientation_eq_orientationAt_sphereOrientation_iff_im_conj_mul, hb']
+
+/-- **Orientation reversal on the circle.** A self-map `f` of the unit circle of `ℂ` whose
+derivative at `z` does not vanish reverses the counterclockwise orientation at `z` exactly when
+the image of the positive tangent vector, read in `ℂ` as `w`, points clockwise at `f z`:
+`Im (conj (f z) * w) < 0`. -/
+theorem isOrientationReversingAt_sphere_iff_im_conj_mul {f : sphere (0 : ℂ) 1 → sphere (0 : ℂ) 1}
+    {z : sphere (0 : ℂ) 1} (hf : mfderiv (𝓡 1) (𝓡 1) f z (circleTangentBasis z 0) ≠ 0) :
+    Manifold.Orientation.IsOrientationReversingAt Complex.orientation.sphereOrientation
+        Complex.orientation.sphereOrientation f z ↔
+      (conj (f z : ℂ) * mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) (f z)
+        (mfderiv (𝓡 1) (𝓡 1) f z (circleTangentBasis z 0))).im < 0 := by
+  obtain ⟨b', hb'⟩ := exists_basis_mfderiv_circleTangentBasis hf
+  -- `b'` is negative exactly when the basis `-b'` is positive.
+  rw [Manifold.Orientation.isOrientationReversingAt_iff_of_basis _ b' hb',
+    iff_true_left (orientation_circleTangentBasis z), ← neg_eq_iff_eq_neg (a := b'.orientation),
+    ← b'.orientation_neg_single 0,
+    Complex.orientation_eq_orientationAt_sphereOrientation_iff_im_conj_mul, hb',
+    Basis.unitsSMul_apply]
+  simp only [Function.update_self, Units.smul_def, Units.val_neg, Units.val_one, neg_one_smul,
+    map_neg]
+  rw [mul_neg, Complex.neg_im, neg_pos]
 
 /-- Complex conjugation, restricted to the unit circle, reverses its orientation: it is the
 restriction of a linear isometry of `ℂ` of determinant `-1`. -/
