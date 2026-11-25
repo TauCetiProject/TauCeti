@@ -48,8 +48,8 @@ when `F` is redefined at the pole so that the raw remainder `R` is discontinuous
 
 ## References
 
-* H. Delange, *Généralisation du théorème de Ikehara*, Ann. Sci. École Norm. Sup. (3) **71**
-  (1954), 213–242 (§3.3.1–3.3.2, pp. 221–224; §4.1, pp. 228–229; §5.2.1, pp. 237–238).
+* H. Delange, *Généralisation du théorème de Ikehara*, Ann. Sci. École Norm. Sup. (3) 71 (1954),
+  213–242 (§3.3.1–3.3.2, pp. 221–224; §4.1, pp. 228–229; §5.2.1, pp. 235–238).
 -/
 
 public section
@@ -70,12 +70,37 @@ private theorem analyticOnNhd_deriv_remainder {F : ℂ → ℂ} {a A : ℝ} {k :
       {s : ℂ | a < s.re} :=
   (h.sub (poleBoundary_const_div_pow a A k)).interior.deriv
 
+/-- Real part of `((a : ℂ) + ε + y * I) + u - (a + y₀ * I)`. -/
+private theorem shift_sub_re (a ε y u y₀ : ℝ) :
+    ((((a : ℂ) + ε + y * I) + u) - ((a : ℂ) + y₀ * I)).re = ε + u := by
+  simp only [sub_re, add_re, ofReal_re, mul_re, I_re, mul_zero, ofReal_im, I_im, mul_one, sub_self,
+    add_zero]
+  ring
+
+/-- Imaginary part of `((a : ℂ) + ε + y * I) + u - (a + y₀ * I)`. -/
+private theorem shift_sub_im (a ε y u y₀ : ℝ) :
+    ((((a : ℂ) + ε + y * I) + u) - ((a : ℂ) + y₀ * I)).im = y - y₀ := by
+  simp only [sub_im, add_im, ofReal_im, mul_im, I_re, mul_zero, ofReal_re, I_im, mul_one, add_zero,
+    zero_add]
+
 /-- Whenever `0 < ε + u`, the shifted boundary point `((a : ℂ) + ε + y * I) + u` lies in the open
 right half-plane `{s : ℂ | a < s.re}`. -/
 private theorem mem_re_gt_of_add_pos {a ε y u : ℝ} (h : 0 < ε + u) :
     (((a : ℂ) + ε + y * I) + u) ∈ {s : ℂ | a < s.re} := by
-  simp
+  have hre := shift_sub_re a ε y u 0
+  simp only [ofReal_zero, zero_mul, add_zero, sub_re, ofReal_re] at hre
+  rw [mem_ofPred_eq]
   linarith
+
+/-- Whenever `0 ≤ ε + u` and `ε + u + |y - y₀| ≤ r`, the shifted point `((a : ℂ) + ε + y * I) + u`
+lies in `closedBall ((a : ℂ) + y₀ * I) r`. -/
+private theorem mem_closedBall_shift {a ε y u y₀ r : ℝ} (h0 : 0 ≤ ε + u)
+    (hr : ε + u + |y - y₀| ≤ r) :
+    (((a : ℂ) + ε + y * I) + u) ∈ closedBall ((a : ℂ) + y₀ * I) r := by
+  rw [mem_closedBall, dist_eq_norm]
+  refine (norm_le_abs_re_add_abs_im _).trans ?_
+  rw [shift_sub_re, shift_sub_im, abs_of_nonneg h0]
+  exact hr
 
 /-- Pointwise bound on `‖z * (u ^ k / k!)‖` for `u ∈ [0, 1]` when `‖z‖ ≤ B` (`0 ≤ B`). -/
 private theorem norm_mul_pow_div_factorial_le {z : ℂ} {B u : ℝ} {k : ℕ} (hz : ‖z‖ ≤ B)
@@ -165,13 +190,8 @@ private theorem exists_away_local_bound {F : ℂ → ℂ} {a A : ℝ} {k : ℕ}
   have hy' : |y - y₀| < ρ := by simpa [Real.dist_eq] using mem_ball.mp hy
   by_cases huρ : u ≤ ρ
   · have hρ_le : ρ ≤ r / 6 := min_le_right _ _
-    have hdist : (((a : ℂ) + ε + y * I) + u) ∈ closedBall z₀ (r / 2) := by
-      rw [mem_closedBall, dist_eq_norm]
-      refine (norm_le_abs_re_add_abs_im _).trans ?_
-      have hre : ((((a : ℂ) + ε + y * I) + u) - z₀).re = ε + u := by simp [z₀]; ring
-      have him : ((((a : ℂ) + ε + y * I) + u) - z₀).im = y - y₀ := by simp [z₀]
-      rw [hre, him, abs_of_nonneg (add_nonneg hε.1 hu0.le)]
-      linarith [hε.2]
+    have hdist : (((a : ℂ) + ε + y * I) + u) ∈ closedBall z₀ (r / 2) :=
+      mem_closedBall_shift (add_nonneg hε.1 hu0.le) (by linarith [hε.2])
     rw [hderiv_eq _ (closedBall_subset_ball (half_lt_self hr) hdist)
       (mem_re_gt_of_add_pos (by linarith [hε.1]))]
     exact (hB₁ _ hdist).trans ((le_max_left _ _).trans (le_max_left _ _))
@@ -341,8 +361,10 @@ private theorem norm_laurent_integrand_le {m k : ℕ} (hm_le : m ≤ k) {c : Fin
       (((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ))‖ ≤
       M₀ + (∑ i : Fin m, ‖c i‖ * ((i.val + 1 : ℕ) : ℝ) * (2 : ℝ) ^ (i.val + 2)) * (u + |y|)⁻¹ := by
   intro z
-  have hre : (z - a).re = ε + u := by simp [z]; ring
-  have him : (z - a).im = y := by simp [z]
+  have hza : z - a = (((a : ℂ) + ε + y * I) + u) - ((a : ℂ) + (0 : ℝ) * I) := by
+    simp only [z, ofReal_zero, zero_mul, add_zero]
+  have hre : (z - a).re = ε + u := by rw [hza, shift_sub_re]
+  have him : (z - a).im = y := by rw [hza, shift_sub_im, sub_zero]
   have hza_ge : (u + |y|) / 2 ≤ ‖z - a‖ := by
     linarith [hre ▸ re_le_norm (z - a), him ▸ abs_im_le_norm (z - a)]
   calc
@@ -393,12 +415,9 @@ private theorem norm_integral_near_pole_head_le {R q : ℂ → ℂ} {m k : ℕ} 
     norm_integral_le_of_norm_le hδ.le (.of_forall fun u ⟨hu0, huδ⟩ ↦ by
       set z : ℂ := ((a : ℂ) + ε + y * I) + u
       have hz_cb : z ∈ closedBall (a : ℂ) (r₁ / 2) := by
-        rw [mem_closedBall, dist_eq_norm]
-        refine (norm_le_abs_re_add_abs_im _).trans ?_
-        have hre : (z - a).re = ε + u := by simp [z]; ring
-        have him : (z - a).im = y := by simp [z]
-        rw [hre, him, abs_of_nonneg (add_nonneg hε.1.le hu0.le)]
-        linarith [hε.2]
+        have hr_le : ε + u + |y - 0| ≤ r₁ / 2 := by rw [sub_zero]; linarith [hε.2]
+        simpa only [ofReal_zero, zero_mul, add_zero] using
+          mem_closedBall_shift (a := a) (add_nonneg hε.1.le hu0.le) hr_le
       rw [hderiv_laur z (closedBall_subset_ball (half_lt_self hr₁) hz_cb)
         (mem_re_gt_of_add_pos (by linarith [hε.1]))]
       exact norm_laurent_integrand_le hm_le (hMq z hz_cb) hM_q hε.1.le hu0 (huδ.trans hδ1))

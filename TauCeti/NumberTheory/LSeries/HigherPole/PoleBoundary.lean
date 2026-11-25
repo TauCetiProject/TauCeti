@@ -53,7 +53,7 @@ function such as an `LSeries`, whose values off its half-plane of convergence ca
 ## References
 
 * H. Delange, *Généralisation du théorème de Ikehara*, Ann. Sci. École Norm. Sup. (3) 71 (1954),
-  213–242, Théorème III (§5.2.1, pp. 235–236) and §5.3 (p. 242).
+  213–242, §5.2.1, pp. 235–238 (Théorème III) and §5.3, p. 242.
 -/
 
 public section
@@ -105,14 +105,14 @@ private lemma ofReal_mul_ofReal_div_add {c : ℝ} (hc : c ≠ 0) (w : ℂ) :
   push_cast
   field_simp
 
-/-- Two germs holomorphic on balls about `z` multiply to a germ holomorphic on a smaller ball
-about `z`, contained in both. -/
-private lemma exists_ball_analyticOnNhd_mul {z : ℂ} {r ρ : ℝ} {g h : ℂ → ℂ} (hr : 0 < r)
+/-- Two germs holomorphic on balls about `z` restrict to a common ball about `z` contained in
+both. -/
+private lemma exists_ball_analyticOnNhd_pair {z : ℂ} {r ρ : ℝ} {g h : ℂ → ℂ} (hr : 0 < r)
     (hρ : 0 < ρ) (hg : AnalyticOnNhd ℂ g (ball z r)) (hh : AnalyticOnNhd ℂ h (ball z ρ)) :
-    ∃ δ : ℝ, 0 < δ ∧ AnalyticOnNhd ℂ (fun s ↦ g s * h s) (ball z δ) ∧
+    ∃ δ : ℝ, 0 < δ ∧ AnalyticOnNhd ℂ g (ball z δ) ∧ AnalyticOnNhd ℂ h (ball z δ) ∧
       ∀ s ∈ ball z δ, s ∈ ball z r ∧ s ∈ ball z ρ :=
-  ⟨min r ρ, lt_min hr hρ, (hg.mono (ball_subset_ball (min_le_left _ _))).mul
-      (hh.mono (ball_subset_ball (min_le_right _ _))),
+  ⟨min r ρ, lt_min hr hρ, hg.mono (ball_subset_ball (min_le_left _ _)),
+    hh.mono (ball_subset_ball (min_le_right _ _)),
     fun _ hs ↦ ⟨ball_subset_ball (min_le_left _ _) hs, ball_subset_ball (min_le_right _ _) hs⟩⟩
 
 /-- If `F` is holomorphic at every point of the closed half-plane `Re s ≥ a` other than `a`, then
@@ -147,23 +147,17 @@ theorem poleBoundary_congr (hFG : ∀ s : ℂ, a < s.re → F s = G s) :
     PoleBoundary F a k A ↔ PoleBoundary G a k A :=
   ⟨fun h ↦ h.congr hFG, fun h ↦ h.congr fun s hs ↦ (hFG s hs).symm⟩
 
-/-- Modifying `F` at a point `z` with `Re z ≤ a` preserves `PoleBoundary`. -/
-theorem PoleBoundary.update_of_re_le (hF : PoleBoundary F a k A) {z : ℂ} (hz : z.re ≤ a) (w : ℂ) :
-    PoleBoundary (Function.update F z w) a k A :=
-  hF.congr fun s hs ↦ by
-    rw [Function.update_of_ne]
-    rintro rfl
-    exact lt_irrefl _ (hs.trans_le hz)
-
 /-- Updating a function at any point `z` with `Re z ≤ a` leaves `PoleBoundary` unchanged. -/
 @[simp]
 theorem poleBoundary_update_iff_of_re_le {z : ℂ} (hz : z.re ≤ a) (w : ℂ) :
     PoleBoundary (Function.update F z w) a k A ↔ PoleBoundary F a k A :=
-  ⟨fun h ↦ h.congr fun s hs ↦ by
-      rw [Function.update_of_ne]
-      rintro rfl
-      exact lt_irrefl _ (hs.trans_le hz),
-    fun h ↦ h.update_of_re_le hz w⟩
+  poleBoundary_congr fun _ hs ↦
+    Function.update_of_ne (by rintro rfl; exact lt_irrefl _ (hs.trans_le hz)) _ _
+
+/-- Modifying `F` at a point `z` with `Re z ≤ a` preserves `PoleBoundary`. -/
+theorem PoleBoundary.update_of_re_le (hF : PoleBoundary F a k A) {z : ℂ} (hz : z.re ≤ a) (w : ℂ) :
+    PoleBoundary (Function.update F z w) a k A :=
+  (poleBoundary_update_iff_of_re_le hz w).2 hF
 
 /-- The leading coefficient as a limit: `(s - a) ^ (k + 1) F s → A` as `s → a` within the open
 half-plane `Re s > a`. -/
@@ -222,14 +216,14 @@ theorem PoleBoundary.mul_analyticOnNhd {C : ℝ} (hF : PoleBoundary F a k A)
   pole := by
     obtain ⟨r, hr, g, hg, hga, hFg⟩ := hF.pole
     obtain ⟨ρ, hρ, hHρ⟩ := (hH a (by simp)).exists_ball_analyticOnNhd
-    obtain ⟨δ, hδ, hgH, hball⟩ := exists_ball_analyticOnNhd_mul hr hρ hg hHρ
-    refine ⟨δ, hδ, _, hgH, by simp [hga, hHa], fun s hs hre ↦ ?_⟩
+    obtain ⟨δ, hδ, hg', hH', hball⟩ := exists_ball_analyticOnNhd_pair hr hρ hg hHρ
+    refine ⟨δ, hδ, _, hg'.mul hH', by simp [hga, hHa], fun s hs hre ↦ ?_⟩
     rw [hFg s (hball s hs).1 hre, div_mul_eq_mul_div]
   away y hy := by
     obtain ⟨r, hr, g, hg, hFg⟩ := hF.away y hy
     obtain ⟨ρ, hρ, hHρ⟩ := (hH ((a : ℂ) + y * I) (by simp)).exists_ball_analyticOnNhd
-    obtain ⟨δ, hδ, hgH, hball⟩ := exists_ball_analyticOnNhd_mul hr hρ hg hHρ
-    exact ⟨δ, hδ, _, hgH, fun s hs hre ↦ by rw [hFg s (hball s hs).1 hre]⟩
+    obtain ⟨δ, hδ, hg', hH', hball⟩ := exists_ball_analyticOnNhd_pair hr hρ hg hHρ
+    exact ⟨δ, hδ, _, hg'.mul hH', fun s hs hre ↦ by rw [hFg s (hball s hs).1 hre]⟩
 
 /-- Multiplying `F` on the left by a function `H` holomorphic at every point of `Re s ≥ a` with
 real value `H a = C` multiplies the leading coefficient by `C`. -/
@@ -256,22 +250,15 @@ theorem PoleBoundary.add (hF : PoleBoundary F a k A) (hG : PoleBoundary G a k B)
   pole := by
     obtain ⟨r₁, hr₁, g₁, hg₁, hga₁, hFg₁⟩ := hF.pole
     obtain ⟨r₂, hr₂, g₂, hg₂, hga₂, hGg₂⟩ := hG.pole
-    let r := min r₁ r₂
-    have hsub₁ : ball (a : ℂ) r ⊆ ball (a : ℂ) r₁ := ball_subset_ball (min_le_left _ _)
-    have hsub₂ : ball (a : ℂ) r ⊆ ball (a : ℂ) r₂ := ball_subset_ball (min_le_right _ _)
-    refine ⟨r, lt_min hr₁ hr₂, fun s ↦ g₁ s + g₂ s, (hg₁.mono hsub₁).add (hg₂.mono hsub₂),
-      by simp [hga₁, hga₂], fun s hs hre ↦ ?_⟩
-    rw [hFg₁ s (hsub₁ hs) hre, hGg₂ s (hsub₂ hs) hre, add_div]
+    obtain ⟨δ, hδ, hg₁', hg₂', hball⟩ := exists_ball_analyticOnNhd_pair hr₁ hr₂ hg₁ hg₂
+    refine ⟨δ, hδ, fun s ↦ g₁ s + g₂ s, hg₁'.add hg₂', by simp [hga₁, hga₂], fun s hs hre ↦ ?_⟩
+    rw [hFg₁ s (hball s hs).1 hre, hGg₂ s (hball s hs).2 hre, add_div]
   away y hy := by
     obtain ⟨r₁, hr₁, g₁, hg₁, hFg₁⟩ := hF.away y hy
     obtain ⟨r₂, hr₂, g₂, hg₂, hGg₂⟩ := hG.away y hy
-    let r := min r₁ r₂
-    have hsub₁ : ball ((a : ℂ) + y * I) r ⊆ ball ((a : ℂ) + y * I) r₁ :=
-      ball_subset_ball (min_le_left _ _)
-    have hsub₂ : ball ((a : ℂ) + y * I) r ⊆ ball ((a : ℂ) + y * I) r₂ :=
-      ball_subset_ball (min_le_right _ _)
-    exact ⟨r, lt_min hr₁ hr₂, fun s ↦ g₁ s + g₂ s, (hg₁.mono hsub₁).add (hg₂.mono hsub₂),
-      fun s hs hre ↦ by rw [hFg₁ s (hsub₁ hs) hre, hGg₂ s (hsub₂ hs) hre]⟩
+    obtain ⟨δ, hδ, hg₁', hg₂', hball⟩ := exists_ball_analyticOnNhd_pair hr₁ hr₂ hg₁ hg₂
+    exact ⟨δ, hδ, fun s ↦ g₁ s + g₂ s, hg₁'.add hg₂',
+      fun s hs hre ↦ by rw [hFg₁ s (hball s hs).1 hre, hGg₂ s (hball s hs).2 hre]⟩
 
 /-- Subtracting two functions satisfying `PoleBoundary` at the same `(a, k)` subtracts their
 leading coefficients. -/
@@ -360,15 +347,16 @@ theorem PoleBoundary.mul (hF : PoleBoundary F a k A) (hG : PoleBoundary G a l B)
   pole := by
     obtain ⟨r, hr, g, hg, hga, hFg⟩ := hF.pole
     obtain ⟨ρ, hρ, h, hh, hha, hGh⟩ := hG.pole
-    obtain ⟨δ, hδ, hgh, hball⟩ := exists_ball_analyticOnNhd_mul hr hρ hg hh
-    refine ⟨δ, hδ, _, hgh, by simp [hga, hha], fun s hs hre ↦ ?_⟩
+    obtain ⟨δ, hδ, hg', hh', hball⟩ := exists_ball_analyticOnNhd_pair hr hρ hg hh
+    refine ⟨δ, hδ, _, hg'.mul hh', by simp [hga, hha], fun s hs hre ↦ ?_⟩
     rw [hFg s (hball s hs).1 hre, hGh s (hball s hs).2 hre, div_mul_div_comm, ← pow_add]
     ring_nf
   away y hy := by
     obtain ⟨r, hr, g, hg, hFg⟩ := hF.away y hy
     obtain ⟨ρ, hρ, h, hh, hGh⟩ := hG.away y hy
-    obtain ⟨δ, hδ, hgh, hball⟩ := exists_ball_analyticOnNhd_mul hr hρ hg hh
-    exact ⟨δ, hδ, _, hgh, fun s hs hre ↦ by rw [hFg s (hball s hs).1 hre, hGh s (hball s hs).2 hre]⟩
+    obtain ⟨δ, hδ, hg', hh', hball⟩ := exists_ball_analyticOnNhd_pair hr hρ hg hh
+    exact ⟨δ, hδ, _, hg'.mul hh',
+      fun s hs hre ↦ by rw [hFg s (hball s hs).1 hre, hGh s (hball s hs).2 hre]⟩
 
 /-- **Powers**: if `F` has a pole of order `k + 1` at `a`, then `F ^ (n + 1)` has a pole of order
 `(k + 1) (n + 1)`, written `k n + k + n + 1`, with leading coefficient `A ^ (n + 1)`. -/
@@ -490,8 +478,10 @@ theorem exists_pole_germ_inv_one_sub_cexp_log_two :
   have hqs : q s = denom s / (s - 1) := by
     have hd1 : denom 1 = 0 := by simp [denom]
     simp only [q, dslope_of_ne denom hs1, slope_def_field, hd1, sub_zero]
-  dsimp only
-  rw [hqs, inv_div, div_right_comm, div_self hsub0, one_div]
+  dsimp only [denom] at hqs ⊢
+  have hd0 : 1 - cexp ((1 - s) * Real.log 2) ≠ 0 := one_sub_cexp_log_two_ne_zero hsre
+  rw [hqs]
+  field_simp
 
 /-- Evaluation of `cexp ((1 - s) * log 2)` along the horizontal approach
 `s = 1 + (2π / log 2) i + ε` to the off-real boundary pole `1 + (2π / log 2) i`. -/
