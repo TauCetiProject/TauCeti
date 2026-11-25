@@ -105,7 +105,7 @@ theorem nonempty_vectorBundleOrientation_iff (hξ : IsContactDistribution I ∞ 
   · -- A continuous nowhere-zero section of `ξ⁰` orients it.
     rintro ⟨σ, hσ, hσD⟩
     exact ⟨VectorBundleOrientation.ofContinuousNonvanishingSection
-      (fun x ↦ (VectorBundle.finrank_eq ℝ (Fin 1 → ℝ) (fun x ↦ annihilatorSpace I ξ x) x).trans
+      (VectorBundle.finrank_eq_one ℝ (Fin 1 → ℝ) (fun x ↦ annihilatorSpace I ξ x)
         (finrank_fin_fun ℝ))
       (s := fun x ↦ ⟨σ x, (hσD x).2⟩)
       ((continuous_totalSpaceMk_annihilatorSpace_iff (P := Fin 1 → ℝ)).2 hσ)

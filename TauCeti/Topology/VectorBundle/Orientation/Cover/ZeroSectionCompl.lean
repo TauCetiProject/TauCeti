@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.VectorBundle.FiniteDimensional
+public import TauCeti.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.Topology.VectorBundle.Orientation.Cover
 public import TauCeti.Topology.VectorBundle.ZeroSection
 import TauCeti.LinearAlgebra.Orientation.Basis
@@ -81,18 +81,14 @@ namespace TauCeti
 namespace VectorBundleOrientationCover
 
 variable (F E) in
-/-- Each fibre of a vector bundle whose model fibre is a line is a line. -/
-private theorem finrank_fiber_eq_one (hF : finrank ℝ F = 1) (b : B) : finrank ℝ (E b) = 1 :=
-  (VectorBundle.finrank_eq ℝ F E b).trans hF
-
-variable (F E) in
 /-- The orientation of a fibre of a real line bundle given by a nonzero vector `v`, as a point of
 the orientation double cover: the base point of `v` together with the orientation of the basis
 `(v)` of its fibre. -/
 def ofZeroSectionCompl (hF : finrank ℝ F = 1) (v : zeroSectionCompl F E) :
     VectorBundleOrientationCover F E (Fin 1) :=
-  ⟨v.val.proj, (FiniteDimensional.basisSingleton (Fin 1) (finrank_fiber_eq_one F E hF v.val.proj)
-    v.val.snd (mem_zeroSectionCompl.1 v.property)).orientation⟩
+  ⟨v.val.proj, (FiniteDimensional.basisSingleton (Fin 1)
+    (VectorBundle.finrank_eq_one ℝ F E hF v.val.proj) v.val.snd
+    (mem_zeroSectionCompl.1 v.property)).orientation⟩
 
 variable (hF : finrank ℝ F = 1)
 
@@ -100,7 +96,7 @@ variable (hF : finrank ℝ F = 1)
 @[simp]
 theorem ofZeroSectionCompl_mk {b : B} {v : E b} (hv : v ≠ 0) :
     ofZeroSectionCompl F E hF ⟨⟨b, v⟩, mem_zeroSectionCompl.2 hv⟩ =
-      ⟨b, (FiniteDimensional.basisSingleton (Fin 1) ((VectorBundle.finrank_eq ℝ F E b).trans hF) v
+      ⟨b, (FiniteDimensional.basisSingleton (Fin 1) (VectorBundle.finrank_eq_one ℝ F E hF b) v
         hv).orientation⟩ :=
   (rfl)
 
@@ -121,7 +117,8 @@ theorem proj_ofZeroSectionCompl (v : zeroSectionCompl F E) :
 theorem continuous_ofZeroSectionCompl : Continuous (ofZeroSectionCompl F E hF) :=
   continuous_mk_basis_orientation ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal)
     (fun v : zeroSectionCompl F E ↦ FiniteDimensional.basisSingleton (Fin 1)
-      (finrank_fiber_eq_one F E hF v.val.proj) v.val.snd (mem_zeroSectionCompl.1 v.property))
+      (VectorBundle.finrank_eq_one ℝ F E hF v.val.proj) v.val.snd
+      (mem_zeroSectionCompl.1 v.property))
     fun _ ↦ by
       simpa only [FiniteDimensional.basisSingleton_apply, Function.comp_apply] using
         continuous_subtypeVal
@@ -132,7 +129,7 @@ theorem ofZeroSectionCompl_mk_eq_iff {b : B} {v w : E b} (hv : v ≠ 0) (hw : w 
     ofZeroSectionCompl F E hF ⟨⟨b, w⟩, mem_zeroSectionCompl.2 hw⟩ =
         ofZeroSectionCompl F E hF ⟨⟨b, v⟩, mem_zeroSectionCompl.2 hv⟩ ↔
       ∃ c : ℝ, 0 < c ∧ w = c • v := by
-  have hb : finrank ℝ (E b) = 1 := finrank_fiber_eq_one F E hF b
+  have hb : finrank ℝ (E b) = 1 := VectorBundle.finrank_eq_one ℝ F E hF b
   rw [ofZeroSectionCompl_mk hF hw, ofZeroSectionCompl_mk hF hv, mk_eq_mk_iff]
   constructor
   · intro h
@@ -156,7 +153,7 @@ theorem ofZeroSectionCompl_mk_eq_iff {b : B} {v w : E b} (hv : v ≠ 0) (hw : w 
 /-- Every orientation of a fibre of a line bundle is given by a nonzero vector. -/
 theorem surjective_ofZeroSectionCompl : Function.Surjective (ofZeroSectionCompl F E hF) := by
   rintro ⟨b, o⟩
-  have hb : finrank ℝ (E b) = 1 := finrank_fiber_eq_one F E hF b
+  have hb : finrank ℝ (E b) = 1 := VectorBundle.finrank_eq_one ℝ F E hF b
   have : Nontrivial (E b) := Module.nontrivial_of_finrank_eq_succ hb
   obtain ⟨v, hv⟩ := exists_ne (0 : E b)
   -- The orientation `o` is that of `(v)` or of `(-v)`.
