@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.Analysis.Complex.ExponentialBounds
+import TauCeti.Analysis.SpecialFunctions.Exp.Half
 
 /-!
 # Decimal bounds on the constants of the standard Gaussian density
@@ -42,20 +43,16 @@ theorem inv_sqrt_two_mul_pi_lt_d8 : (√(2 * π))⁻¹ < 0.39894229 := by
   rw [inv_sqrt_two_mul_pi_sq, inv_lt_comm₀ (by positivity) (by norm_num)]
   nlinarith [pi_gt_d20]
 
-private theorem exp_neg_half_sq : exp (-(1 / 2)) ^ 2 = exp (-1) := by
-  rw [sq, ← exp_add]
-  norm_num
-
 /-- `e^{-1/2}` is greater than `0.60653065`. -/
 theorem exp_neg_half_gt_d8 : 0.60653065 < exp (-(1 / 2)) := by
   refine lt_of_pow_lt_pow_left₀ 2 (exp_pos _).le ?_
-  rw [exp_neg_half_sq]
+  rw [sq (exp _), exp_neg_half_mul_exp_neg_half]
   linarith [exp_neg_one_gt_d9]
 
 /-- `e^{-1/2}` is less than `0.60653067`. -/
 theorem exp_neg_half_lt_d8 : exp (-(1 / 2)) < 0.60653067 := by
   refine lt_of_pow_lt_pow_left₀ 2 (by norm_num) ?_
-  rw [exp_neg_half_sq]
+  rw [sq (exp _), exp_neg_half_mul_exp_neg_half]
   linarith [exp_neg_one_lt_d9]
 
 end Real
