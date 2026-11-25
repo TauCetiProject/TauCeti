@@ -24,11 +24,11 @@ Arakelov degree of a hermitian line computed with a nonzero section. Each model 
 bundles specializes it to its own norms.
 
 If `E` is finitely generated and torsion-free with `K ⊗[𝓞 K] E` a line, and the norms scale like
-norms, `ν_σ(a • x) = |σ(a)| ν_σ(x)`, the expression does not depend on the nonzero section `s`
-(`TauCeti.sectionDegreeOfNorms_eq_of_finrank_eq_one`): replacing `s` by `a • s` multiplies the
-index by `|N(a)|` and each `ν_σ(s)` by `|σ(a)|`, and `∏_σ |σ(a)| = |N(a)|`. For an injective map
-`f : E → F` preserving the norms, the expression for `F` computed with `f s` is the one for `E`
-computed with `s` plus `log #(F / f E)`
+norms, `ν_σ(a • x) = |σ(a)| ν_σ(x)`, and do not vanish on nonzero sections, the expression does
+not depend on the nonzero section `s` (`TauCeti.sectionDegreeOfNorms_eq_of_finrank_eq_one`):
+replacing `s` by `a • s` multiplies the index by `|N(a)|` and each `ν_σ(s)` by `|σ(a)|`, and
+`∏_σ |σ(a)| = |N(a)|`. For an injective map `f : E → F` preserving the norms, the expression for
+`F` computed with `f s` is the one for `E` computed with `s` plus `log #(F / f E)`
 (`TauCeti.sectionDegreeOfNorms_map_eq_add_log_cardQuot_range`). Both hold for an arbitrary family
 of norms, so that they apply to every carrier of hermitian line bundles.
 
