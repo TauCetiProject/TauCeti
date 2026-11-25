@@ -9,13 +9,10 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 import Mathlib.Analysis.Normed.Operator.Compact.Basic
 import Mathlib.Topology.Connected.TotallyDisconnected
-import TauCeti.Analysis.Fredholm.Basic
 import TauCeti.Analysis.Fredholm.ClosedRange
-import TauCeti.Analysis.Fredholm.ContinuousFamily
 import TauCeti.Analysis.Fredholm.SmallPerturbation
 import TauCeti.Analysis.Normed.Operator.ClosedRange
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 
 /-!
 # Stability of operators with closed range and finite-dimensional kernel
@@ -50,9 +47,7 @@ connected family of such operators Fredholmness and the index propagate from a s
   `s`: if one member is Fredholm, every member is
   (`ContinuousOn.isFredholm_of_isPreconnected`), since by the previous point the Fredholm members
   form a relatively clopen subset of `s`. The index, locally constant on Fredholm operators, is
-  then constant on `s` as well (`ContinuousOn.index_eq_of_isPreconnected`). In particular, along
-  such a family of injective operators, if one member is onto then every member is
-  (`ContinuousOn.surjective_of_isPreconnected`): the index is `0` throughout.
+  then constant on `s` as well (`ContinuousOn.index_eq_of_isPreconnected`).
 
 With the connected-family statement, the Fredholm property of an elliptic operator can be
 obtained from semi-Fredholm estimates without proving the regularity of weak cokernel elements:
@@ -234,29 +229,5 @@ theorem ContinuousOn.isFredholm_of_isPreconnected {𝕜 E F X : Type*} [RCLike �
     filter_upwards [(hT y hy).eventually (eventually_nhds_isFredholm_iff (hrange y hy))] with z hz
     simp [hz]
   simpa [h₀] using hs.constant hφ hx hx₀
-
-open ContinuousLinearMap in
-/-- **Surjectivity along a connected family of injective operators with closed range.** Let `T x`
-be injective operators with closed range from a Banach space to a Hilbert space, depending
-continuously on `x` in a preconnected set `s`. If one member `T x₀` is onto, then every member is.
--/
-theorem ContinuousOn.surjective_of_isPreconnected {𝕜 E F X : Type*} [RCLike 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
-    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] [TopologicalSpace X]
-    {s : Set X} {T : X → E →L[𝕜] F} (hT : ContinuousOn T s)
-    (hinj : ∀ x ∈ s, Function.Injective (T x))
-    (hrange : ∀ x ∈ s, IsClosed ((T x).range : Set F)) (hs : IsPreconnected s) {x₀ x : X}
-    (hx₀ : x₀ ∈ s) (h₀ : Function.Surjective (T x₀)) (hx : x ∈ s) :
-    Function.Surjective (T x) := by
-  have hker (y : X) (hy : y ∈ s) : FiniteDimensional 𝕜 (T y).ker := by
-    rw [LinearMap.ker_eq_bot.2 (hinj y hy)]
-    infer_instance
-  have hF (y : X) (hy : y ∈ s) : IsFredholm (T y) :=
-    hT.isFredholm_of_isPreconnected hker hrange hs hx₀
-      (ContinuousLinearEquiv.ofBijective (T x₀) (LinearMap.ker_eq_bot.2 (hinj x₀ hx₀))
-        (LinearMap.range_eq_top.2 h₀)).isFredholm hy
-  refine ((hF x hx).isInvertible_of_injective_of_index_eq_zero (hinj x hx) ?_).surjective
-  rw [← hT.index_eq_of_isPreconnected hF hs hx₀ hx]
-  exact index_eq_zero_of_bijective _ ⟨hinj x₀ hx₀, h₀⟩
 
 end

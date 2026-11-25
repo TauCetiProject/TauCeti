@@ -39,15 +39,13 @@ Fourier mode in `t`, and on the zero mode it is the Morse operator `M ζ = ζ' -
 
 On the nonzero modes `D` is bounded below with a constant depending only on `2π - a`
 (`mul_sq_norm_le_mul_sq_norm_floerSobolevOperator_of_sliceAverageL_eq_zero` in the namespace
-`TauCeti.SymplecticForm`), so it is injective with closed range there. Onto-ness comes from a
-continuity argument. Join `H` to the quadratic Hamiltonian `ε ‖y‖²` by the segment
-`(1 - τ) ε ‖y‖² + τ H`: for small `ε > 0` every member keeps `‖dX‖ ≤ max a (1 / 2) < 2π` along `γ`,
-so the restrictions of the operators to the nonzero modes form a continuous family of injective
-operators with closed range. At `τ = 0` the coefficient `-2ε J` is constant and the constant orbit
-at `0` is nondegenerate, so the operator is invertible
-(`isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_compatible` in the namespace
-`TauCeti.SymplecticForm`) and its restriction is bijective. The family is then Fredholm of constant
-index `0` along the segment, and an injective operator of index `0` is onto
+`TauCeti.SymplecticForm`). Onto-ness comes from the method of continuity. Join `H` to the
+quadratic Hamiltonian `ε ‖y‖²` by the segment `(1 - τ) ε ‖y‖² + τ H`: for small `ε > 0` every member
+keeps `‖dX‖ ≤ max a (1 / 2) < 2π` along `γ`, so the restrictions of the operators to the nonzero
+modes form a continuous family bounded below with one constant along the segment. At `τ = 0` the
+coefficient `-2ε J` is constant and the constant orbit at `0` is nondegenerate, so the operator is
+invertible (`isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_compatible` in the
+namespace `TauCeti.SymplecticForm`) and its restriction is onto. Hence every restriction is onto
 (`TauCeti.CylinderSobolev.exists_eq_of_sliceAverageLp_eq_zero_of_isPreconnected`).
 
 ## References
@@ -286,13 +284,11 @@ theorem exists_floerSobolevOperator_eq_of_sliceAverageLp_eq_zero
   rw [← segmentOperator_one ω J H γ ε]
   refine exists_eq_of_sliceAverageLp_eq_zero_of_isPreconnected hcont.continuousOn
     isPreconnected_Icc (fun τ _ ↦ segmentOperator_sliceAverageL ω J H γ ε τ)
-    (fun τ hτ ↦ ⟨(2 * π - max a (1 / 2)) / (2 * π + 1), div_pos hb (by linarith [pi_pos]),
-      fun x hx ↦ ?_⟩) (left_mem_Icc.2 zero_le_one)
+    (C := (2 * π + 1) / (2 * π - max a (1 / 2))) (fun τ hτ x hx ↦ ?_) (left_mem_Icc.2 zero_le_one)
     (fun _ hz ↦ exists_segmentOperator_zero_eq hg hΦ hΦω hε0.ne' hsmall hz)
     (right_mem_Icc.2 zero_le_one) hy
-  rw [div_mul_eq_mul_div, div_le_iff₀ (by linarith [pi_pos])]
-  exact (mul_norm_le_mul_norm_segmentOperator hg hH hγ ha haγ (hεJ.trans (by linarith)) hτ
-    hx).trans_eq (mul_comm _ _)
+  rw [div_mul_eq_mul_div, le_div_iff₀ hb, mul_comm]
+  exact mul_norm_le_mul_norm_segmentOperator hg hH hγ ha haγ (hεJ.trans (by linarith)) hτ hx
 
 variable {A : Lp (V →L[ℝ] V) ∞ (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ))}
 
