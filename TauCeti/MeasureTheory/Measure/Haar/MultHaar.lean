@@ -36,7 +36,8 @@ radial coordinate is split off a multiplicative Haar measure, as in the decompos
 Integrating against `dt / t` is integrating `t⁻¹ f(t)` over `(0, ∞)`
 (`TauCeti.lintegral_multHaar_eq_setLIntegral`, `TauCeti.setLIntegral_multHaar_eq_setLIntegral`,
 `TauCeti.setLIntegral_eq_setLIntegral_multHaar`, `TauCeti.integral_multHaar_eq_setIntegral`,
-`TauCeti.integrable_multHaar_iff`), `dt / t` and Lebesgue measure on `(0, ∞)` are mutually
+`TauCeti.integrable_multHaar_iff`); in particular `∫_a^b dt / t = log b - log a`
+(`TauCeti.setLIntegral_Icc_ofReal_inv`). `dt / t` and Lebesgue measure on `(0, ∞)` are mutually
 absolutely continuous (`TauCeti.multHaar_absolutelyContinuous_volume_Ioi`,
 `TauCeti.volume_Ioi_absolutelyContinuous_multHaar`) and share the same almost-everywhere filter
 (`TauCeti.ae_multHaar_eq_ae_volume_Ioi`), converting `Lᵖ(0, ∞)` seminorms into weighted
@@ -410,6 +411,14 @@ theorem setLIntegral_eq_setLIntegral_multHaar {s : Set ℝ} (hs : MeasurableSet 
   have ht0 : 0 < t := hs0 ht
   rw [← mul_assoc, ← ENNReal.ofReal_mul (inv_nonneg.2 ht0.le), inv_mul_cancel₀ ht0.ne',
     ENNReal.ofReal_one, one_mul]
+
+/-- `∫_a^b dt / t = log b - log a` for `0 < a ≤ b`, as a Lebesgue lower integral. -/
+theorem setLIntegral_Icc_ofReal_inv {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
+    ∫⁻ t in Icc a b, ENNReal.ofReal t⁻¹ = ENNReal.ofReal (Real.log b - Real.log a) := by
+  rw [← multHaar_Icc ha hab, ← setLIntegral_one,
+    setLIntegral_multHaar_eq_setLIntegral measurableSet_Icc,
+    inter_eq_self_of_subset_left fun _ (ht : _ ∈ Icc a b) ↦ ha.trans_le ht.1]
+  simp only [mul_one]
 
 /-- A function with values in `ℝ≥0∞` that is right continuous on `(0, ∞)` has essential supremum
 with respect to `dt / t` equal to its pointwise supremum on `(0, ∞)`. -/

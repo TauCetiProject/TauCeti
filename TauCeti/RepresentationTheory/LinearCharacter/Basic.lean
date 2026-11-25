@@ -32,12 +32,16 @@ representation, and its irreducibility is what the Mackey criterion decides.
 * `Representation.ofLinearCharacter`: the one-dimensional representation associated to a
   unit-valued multiplicative character.
 * `FDRep.ofLinearCharacter`: the same representation as an object of `FDRep k G`.
+* `Representation.ofLinearCharacterIntCastEquivOfDistribMulAction`: the line of the sign character
+  `ℤˣ →* kˣ` is the action of `ℤˣ` on `k` by signs.
 
 ## Main results
 
 * `Representation.ofLinearCharacter_apply`: the action is multiplication by the character value.
 * `Representation.ofLinearCharacter_comp`: restriction of the representation is precomposition of
   the character.
+* `Representation.ofLinearCharacter_unitsMap_intCastRingHom`: the sign character of `ℤˣ` gives
+  the multiplication action of `ℤˣ` on `k`.
 * `Representation.ofLinearCharacter_injective`: the representation remembers its character.
 * `Representation.ofLinearCharacter_one`: the trivial character carries the trivial
   representation.
@@ -121,6 +125,22 @@ theorem ofLinearCharacter_one [CommSemiring k] [Monoid G] :
     ofLinearCharacter (1 : G →* kˣ) = Representation.trivial k G k :=
   MonoidHom.ext fun _ => LinearMap.ext fun x => by simp
 
+/-- **The sign character of `ℤˣ` acts on `k` by signs.** The line of the character `ℤˣ →* kˣ`
+induced by `ℤ → k` is the action `u • x` of `ℤˣ` on `k` (`Representation.ofDistribMulAction`),
+through the identity of `k`. -/
+def ofLinearCharacterIntCastEquivOfDistribMulAction [CommRing k] :
+    (ofLinearCharacter (Units.map (Int.castRingHom k).toMonoidHom)).Equiv
+      (ofDistribMulAction k ℤˣ k) :=
+  .mk (LinearEquiv.refl k k) fun _ ↦ by
+    ext
+    simp [ofLinearCharacter_apply, Units.smul_def]
+
+/-- The identification `ofLinearCharacterIntCastEquivOfDistribMulAction` is the identity of `k`. -/
+@[simp]
+theorem ofLinearCharacterIntCastEquivOfDistribMulAction_apply [CommRing k] (x : k) :
+    ofLinearCharacterIntCastEquivOfDistribMulAction x = x :=
+  (rfl)
+
 /-- The kernel of the line of a linear character is the kernel of the character. -/
 @[simp]
 theorem ker_ofLinearCharacter [CommSemiring k] [Group G] (χ : G →* kˣ) :
@@ -130,6 +150,15 @@ theorem ker_ofLinearCharacter [CommSemiring k] [Group G] (χ : G →* kˣ) :
   refine ⟨fun h ↦ Units.ext ?_, fun h ↦ LinearMap.ext fun a ↦ ?_⟩
   · simpa using LinearMap.congr_fun h 1
   · simp [h]
+
+/-- **The sign character of `ℤˣ` carries the multiplication action of `ℤˣ`.** Over a commutative
+ring `k`, the character `ℤˣ →* kˣ` induced by `ℤ → k` acts on `k` by `u • a`, so its
+one-dimensional representation is the action of `ℤˣ` on `k`. -/
+@[simp]
+theorem ofLinearCharacter_unitsMap_intCastRingHom [CommRing k] :
+    ofLinearCharacter (Units.map (Int.castRingHom k : ℤ →* k)) = ofDistribMulAction k ℤˣ k := by
+  ext u
+  simp [ofLinearCharacter_apply, Units.smul_def]
 
 /-- **The trace character of a one-dimensional representation is its multiplicative character.** -/
 @[simp]
