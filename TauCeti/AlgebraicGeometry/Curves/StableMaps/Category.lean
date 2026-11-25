@@ -61,7 +61,7 @@ canonically isomorphic to the chosen base change.
   postcomposition.
 * `TauCeti.AlgebraicGeometry.PrestableMap.pullbackFunctorId`,
   `TauCeti.AlgebraicGeometry.PrestableMap.pullbackFunctorComp`,
-  `TauCeti.AlgebraicGeometry.PrestableMap.pullbackFunctorPostcompIso`: the corresponding natural
+  `TauCeti.AlgebraicGeometry.PrestableMap.pullbackFunctorPostcomp`: the corresponding natural
   isomorphisms of functors.
 
 ## Main results
@@ -541,7 +541,7 @@ targets `h : V ⟶ W` over `S` followed by base change along `x : T ⟶ S` is ca
 to base change along `x` followed by postcomposition with the base change `V ×_S T ⟶ W ×_S T` of
 `h`. In particular, base change is compatible with the transport of prestable maps along an
 isomorphism of targets. -/
-def pullbackFunctorPostcompIso {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r = q) (x : T ⟶ S) :
+def pullbackFunctorPostcomp {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r = q) (x : T ⟶ S) :
     postcompFunctor (n := n) h hh ⋙ pullbackFunctor x ≅
       pullbackFunctor x ⋙
         postcompFunctor (Limits.pullback.map q x r x h (𝟙 T) (𝟙 S) (by simp [hh]) (by simp))
@@ -550,9 +550,9 @@ def pullbackFunctorPostcompIso {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r = q) (x
     (pullbackPostcompIso_hom_naturality h hh x)
 
 @[simp]
-theorem pullbackFunctorPostcompIso_app {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r = q) (x : T ⟶ S)
+theorem pullbackFunctorPostcomp_app {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r = q) (x : T ⟶ S)
     (F : PrestableMap q n) :
-    (pullbackFunctorPostcompIso h hh x).app F = F.pullbackPostcompIso h hh x :=
+    (pullbackFunctorPostcomp h hh x).app F = F.pullbackPostcompIso h hh x :=
   (rfl)
 
 end PrestableMap
