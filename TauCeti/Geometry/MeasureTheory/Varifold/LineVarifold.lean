@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.MeasureTheory.Varifold.Euclidean
-public import TauCeti.Geometry.MeasureTheory.Varifold.FirstVariation
+public import TauCeti.Geometry.MeasureTheory.Varifold.FirstVariation.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
