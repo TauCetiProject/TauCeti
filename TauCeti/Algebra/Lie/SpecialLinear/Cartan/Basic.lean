@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Lie.Matrix.NegTranspose
 
 import TauCeti.Algebra.Lie.GeneralLinear.Basic
 import TauCeti.Algebra.Regular.SMul
-import TauCeti.LinearAlgebra.Matrix.Alternating
+import TauCeti.LinearAlgebra.Matrix.Alternating.Basic
 
 /-!
 # Negative transpose on the special linear Lie algebra
