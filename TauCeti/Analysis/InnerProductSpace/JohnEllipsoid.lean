@@ -17,7 +17,7 @@ public import TauCeti.Topology.Algebra.Module.Determinant
 import Mathlib.Analysis.InnerProductSpace.Trace
 import Mathlib.Analysis.LocallyConvex.Separation
 import TauCeti.Analysis.Convex.Caratheodory
-import TauCeti.Analysis.InnerProductSpace.Contraction
+import TauCeti.Analysis.InnerProductSpace.Contraction.Basic
 import TauCeti.Analysis.InnerProductSpace.Frame.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.Basic
 
@@ -82,8 +82,8 @@ is at Banach–Mazur distance at most `√n` from the Euclidean space of the sam
 At a contact point `u` of John's position, the inequalities
 `ContinuousLinearMap.re_inner_le_norm_mul_norm_apply` and
 `ContinuousLinearMap.norm_inner_le_norm_mul_norm_apply` of
-`TauCeti.Analysis.InnerProductSpace.Contraction` show that `re ⟪·, u⟫` is a support functional of
-the unit ball of the norm `x ↦ ‖T x‖`, and that `‖⟪u, x⟫‖ ≤ ‖T x‖`.
+`TauCeti.Analysis.InnerProductSpace.Contraction.Basic` show that `re ⟪·, u⟫` is a support
+functional of the unit ball of the norm `x ↦ ‖T x‖`, and that `‖⟪u, x⟫‖ ≤ ‖T x‖`.
 
 ## References
 
