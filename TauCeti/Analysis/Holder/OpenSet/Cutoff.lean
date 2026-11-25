@@ -196,6 +196,15 @@ theorem cutoffSMulOnL_apply (f : CkHolderSpaceOn k α Ω F) (x : Ω) :
   rw [cutoffSMulOnL, ContinuousLinearMap.comp_apply, CkHolderSpace.restrictOnL_apply,
     cutoffSMulL_apply_coe]
 
+/-- The derivative fields of the product with a cutoff on `C^{k,α}(Ω)` are the iterated
+derivatives of `χ` times the extension by zero. -/
+@[simp]
+theorem iteratedFDeriv_cutoffSMulOnL (f : CkHolderSpaceOn k α Ω F) (i : Fin (k + 1)) (x : Ω) :
+    (cutoffSMulOnL hχ hδ hχΩ hα hχb f).iteratedFDeriv i x =
+      _root_.iteratedFDeriv ℝ i (fun y ↦ χ y • f.extend y) x := by
+  rw [cutoffSMulOnL, ContinuousLinearMap.comp_apply, CkHolderSpace.iteratedFDeriv_restrictOnL,
+    coe_cutoffSMulL]
+
 /-- Multiplication by a cutoff on `C^{k,α}(Ω)` has operator norm at most
 `2^k N (k + 8 + 2 δ^(-α))`. -/
 theorem norm_cutoffSMulOnL_le :
