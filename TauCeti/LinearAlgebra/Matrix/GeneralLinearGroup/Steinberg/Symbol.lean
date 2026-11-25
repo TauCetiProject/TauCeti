@@ -29,7 +29,6 @@ symbols.
 * `TauCeti.diagGL_inv_one_mem_elementarySubgroup`,
   `TauCeti.diagGL_one_inv_mem_elementarySubgroup`: `diag(u, u⁻¹, 1)` and `diag(u, 1, u⁻¹)` are
   elementary.
-* `TauCeti.SteinbergGroup.exists_toStableGL_eq_of`: an elementary matrix lifts to `St(R)`.
 * `TauCeti.coe_steinbergSymbol_eq_commutatorElement`: `{u, v}` is the commutator of any lifts of
   `diag(u, u⁻¹, 1)` and `diag(v, 1, v⁻¹)`.
 * `TauCeti.AlgebraicK2.map_steinbergSymbol`: Steinberg symbols are natural in ring
@@ -99,13 +98,6 @@ private theorem commutatorElement_diagGL_eq_one {u v : Rˣ} (h : Commute u v) :
   congr 1
   ext i : 1
   fin_cases i <;> simp [commutatorElement_def, h.eq]
-
-/-- An elementary matrix, placed in `GL_∞(R)`, lifts to the Steinberg group `St(R)`. -/
-theorem SteinbergGroup.exists_toStableGL_eq_of {n : ℕ} {g : GL (Fin n) R}
-    (hg : g ∈ elementarySubgroup (Fin n) R) :
-    ∃ a, SteinbergGroup.toStableGL R a = StableGeneralLinearGroup.of R n g :=
-  MonoidHom.mem_range.1
-    (SteinbergGroup.range_toStableGL.ge (StableGeneralLinearGroup.of_mem_elementarySubgroup hg))
 
 /-- A chosen lift to `St(R)` of the stable matrix `diag(u, u⁻¹, 1)`. -/
 private def diagInvOneLift (u : Rˣ) : SteinbergGroup R :=
