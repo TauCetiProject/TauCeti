@@ -246,17 +246,17 @@ theorem levelTrace_add (V U : Subgroup G) [V.IsFiniteRelIndex U]
     simp only [levelTrace_mk, Pi.add_apply]
     exact finsum_add_distrib (Set.toFinite _) (Set.toFinite _)
 
-variable {R : Type*} [CommSemiring R] [Module R M]
-
-/-- The level trace is `R`-linear: it commutes with scalar multiplication. -/
-theorem levelTrace_smul (V U : Subgroup G) [V.IsFiniteRelIndex U] (r : R)
-    (h : orbitRel.Quotient V α → M) :
+/-- The level trace commutes with scalar multiplication. -/
+theorem levelTrace_smul {R : Type*} [DistribSMul R M] (V U : Subgroup G) [V.IsFiniteRelIndex U]
+    (r : R) (h : orbitRel.Quotient V α → M) :
     levelTrace V U (r • h) = r • levelTrace V U h := by
   funext p
   induction p using Quotient.inductionOn' with
   | h x =>
     simp only [levelTrace_mk, Pi.smul_apply]
     exact (smul_finsum' r (Set.toFinite _)).symm
+
+variable {R : Type*} [CommSemiring R] [Module R M]
 
 /-- **The level trace with its multiplicities.** For `V ≤ U` of finite index and a `U`-orbit `p`
 whose stabiliser order is a unit, the trace at `p` divided by that order is the sum of
@@ -389,13 +389,13 @@ theorem heckeOperator_add (U : Subgroup G) (g : G)
     heckeOperator U g (f₁ + f₂) = heckeOperator U g f₁ + heckeOperator U g f₂ :=
   levelTrace_add _ _ _ _
 
-variable {R : Type*} [CommSemiring R]
-
-/-- The Hecke operator is `R`-linear: it commutes with scalar multiplication. -/
-theorem heckeOperator_smul [Module R M] (U : Subgroup G) (g : G)
+/-- The Hecke operator commutes with scalar multiplication. -/
+theorem heckeOperator_smul {R : Type*} [DistribSMul R M] (U : Subgroup G) (g : G)
     [(U ⊓ ConjAct.toConjAct g • U).IsFiniteRelIndex U] (r : R) (f : orbitRel.Quotient U α → M) :
     heckeOperator U g (r • f) = r • heckeOperator U g f :=
   levelTrace_smul _ _ r _
+
+variable {R : Type*} [CommSemiring R]
 
 /-- **The Hecke operators of `g` and `g⁻¹` are adjoint** for the stabiliser-weighted pairing:
 `⟨[UgU] f, h⟩_U = ⟨f, [Ug⁻¹U] h⟩_U`, provided there are finitely many `U`-orbits, their
