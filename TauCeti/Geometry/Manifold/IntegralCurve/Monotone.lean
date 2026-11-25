@@ -142,13 +142,13 @@ theorem _root_.IsMIntegralCurveOn.apply_eq_of_eq_zero [IsManifold I 1 M] [T2Spac
     (fun _ _ ↦ hv) rfl) ht).symm
 
 /-- **A global integral curve through a zero of the field is constant.** On a Hausdorff manifold,
-if the `C¹` field `v` vanishes at the point `γ t₀` of a global integral curve `γ`, then `γ` is the
-constant curve at that point. -/
-theorem apply_eq_of_eq_zero [IsManifold I 1 M] [T2Space M]
-    (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)))
-    (hγ : IsMIntegralCurve γ v) {t₀ : ℝ} (h : v (γ t₀) = 0) (t : ℝ) : γ t = γ t₀ :=
+if the field `v` vanishes at the point `γ t₀` of a global integral curve `γ` and is `C¹` at that
+point, then `γ` is the constant curve at that point. -/
+theorem apply_eq_of_eq_zero [IsManifold I 1 M] [T2Space M] {t₀ : ℝ}
+    (hv : CMDiffAt 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) (γ t₀))
+    (hγ : IsMIntegralCurve γ v) (h : v (γ t₀) = 0) (t : ℝ) : γ t = γ t₀ :=
   (hγ.isMIntegralCurveOn univ).apply_eq_of_eq_zero isPreconnected_univ (mem_univ t₀)
-    hv.contMDiffAt h (mem_univ t)
+    hv h (mem_univ t)
 
 end IsMIntegralCurve
 

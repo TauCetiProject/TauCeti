@@ -297,6 +297,6 @@ theorem IsMIntegralCurveOn.forall_eq_or_forall_pos_of_tendsto_neg_mgradient
     have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
       IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1)
     have : LocallyCompactSpace M := Manifold.locallyCompact_of_finiteDimensional I
-    exact Manifold.riemannianEDist_pos_iff_ne.2 fun h ↦ by rw [h, sub_self] at hE; exact hE.false
+    exact Manifold.riemannianEDist_pos.2 fun h ↦ by rw [h, sub_self] at hE; exact hE.false
 
 end Equilibrium
