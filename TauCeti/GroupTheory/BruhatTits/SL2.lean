@@ -143,8 +143,8 @@ private lemma apply_conj_diagonal (ω : AddValuation K (WithTop ℝ)) (hab : a �
   obtain ⟨r, hr⟩ :=
     WithTop.ne_top_iff_exists.mp ((ω.ne_top_iff).mpr (left_ne_zero_of_mul_eq_one hdet))
   have hz1 : ω ((z : Matrix (Fin 2) (Fin 2) K) 1 1) = ((-r : ℝ) : WithTop ℝ) := by
-    rw [eq_inv_of_mul_eq_one_right hdet, AddValuation.map_inv, ← hr]
-    rfl
+    rw [eq_inv_of_mul_eq_one_right hdet, AddValuation.map_inv, ← hr,
+      WithTop.LinearOrderedAddCommGroup.coe_neg]
   -- Since `(z⁻¹)_{b b} = z_{a a}`, the factor `z_{a a} (z⁻¹)_{b b}` by which conjugation
   -- rescales the parameter has value `2 ω (z_{a a})`, that is `±2 r`.
   have hs : ω ((z : Matrix (Fin 2) (Fin 2) K) a a) +
