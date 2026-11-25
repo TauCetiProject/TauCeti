@@ -19,11 +19,10 @@ import TauCeti.AlgebraicGeometry.Scheme.Opens
 Finitely presented schemes over a cofiltered affine-transition limit descend to a finite stage.
 It suffices that one member of the diagram is quasi-compact and quasi-separated.
 
-The proof reduces to the case where all members of the diagram are quasi-compact and
-quasi-separated by restricting to `Over i₀`, descends affine charts lying over affine opens of a
-stage via the affine descent theorem, aligns their quasi-compact overlaps at a later stage using
-morphism and isomorphism descent, and glues the resulting finite-stage models via pushouts along
-open immersions.
+For a scheme of finite presentation over the limit, the theorem gives a finite-stage model
+and a Cartesian square identifying its pullback with the original scheme. For example, a family
+of finite presentation over the spectrum of a filtered colimit of rings can be defined over one
+of the rings in the system.
 
 ## Main results
 
@@ -123,6 +122,8 @@ private noncomputable def ModelWithOpenAt.overlapMap (M : OpenChartModel c u r i
   IsOpenImmersion.lift M.openSubset.ι (r ≫ M.comparison) (by
     rintro _ ⟨x, rfl⟩
     rw [Scheme.Opens.range_ι]
+    -- Express membership of the composite image as preimage membership at `r x`,
+    -- so the model's preimage identity applies.
     change r x ∈ M.comparison ⁻¹ᵁ M.openSubset
     rw [M.preimage]
     exact ⟨x, rfl⟩)
