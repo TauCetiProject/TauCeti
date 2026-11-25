@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Semiclassical.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Calculus.BumpFunction.Translates
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 
 /-!
@@ -428,7 +429,7 @@ scale `h`. For `f` of class `Cᵏ` whose localizations are bounded above, the lo
 
 `‖g • f‖_{k,h,η} ≤ (k + 1) 2ᵏ B ‖f‖_{k,h,η}`.
 
-The constant depends only on `k`. -/
+The constant depends only on `k` and `B`. -/
 theorem uniformlyLocalSemiclassicalSobolevNorm_smul_le {g : E → 𝕜} (hη : ContDiff ℝ k η)
     (hηc : HasCompactSupport η) (hg : ContDiff ℝ k g) (hf : ContDiff ℝ k f) (hh : 0 < h)
     (hB : ∀ i ≤ k, ∀ x, h ^ i * ‖iteratedFDeriv ℝ i g x‖ ≤ B)
@@ -437,8 +438,8 @@ theorem uniformlyLocalSemiclassicalSobolevNorm_smul_le {g : E → 𝕜} (hη : C
         semiclassicalSobolevNorm k h fun y ↦ η (h⁻¹ • (y - x)) • g y • f y) ∧
       uniformlyLocalSemiclassicalSobolevNorm k h η (fun y ↦ g y • f y) ≤
         (k + 1) * 2 ^ k * B * uniformlyLocalSemiclassicalSobolevNorm k h η f := by
-  have hB0 : 0 ≤ (k + 1) * 2 ^ k * B := mul_nonneg (by positivity)
-    ((by positivity : (0 : ℝ) ≤ h ^ 0 * ‖iteratedFDeriv ℝ 0 g 0‖).trans (hB 0 (Nat.zero_le k) 0))
+  have hB0 : 0 ≤ (k + 1) * 2 ^ k * B :=
+    mul_nonneg (by positivity) (nonneg_of_forall_pow_mul_norm_iteratedFDeriv_le hB 0)
   have hle (x : E) : semiclassicalSobolevNorm k h (fun y ↦ η (h⁻¹ • (y - x)) • g y • f y) ≤
       (k + 1) * 2 ^ k * B * uniformlyLocalSemiclassicalSobolevNorm k h η f := by
     -- Multiplication by `g` commutes with the localization.
