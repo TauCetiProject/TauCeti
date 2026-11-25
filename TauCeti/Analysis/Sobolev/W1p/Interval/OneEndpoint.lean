@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Trace
 import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
 import TauCeti.Data.ENNReal.Inv
-import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Interval Sobolev functions vanishing at one endpoint
@@ -25,31 +24,29 @@ particular `t ↦ t - a` lies in `W^{1,p}_{{a}}(a, b)` for finite `p`. At `p = �
 every generator has derivative zero near `a` while `t ↦ t - a` has derivative `1`; so finite `p`
 is assumed.
 
-The restriction of a test function whose support misses `a` vanishes at `a`, and the condition is
-closed. For the converse, the affine function `t ↦ t - a` is the restriction to `(a, b)` of the
-tent `(b - a) - |t - b|`, which lies in `W^{1,p}_0(a, 2b - a)`, and restriction maps `W^{1,p}_0` of
-a larger open set missing `Γ` into `W^{1,p}_Γ`
-(`TauCeti.W1p.restrictL_mem_w1pVanishingOnSubmodule`).
+The restriction of a test function whose support misses `a` vanishes at `a`
+(`TauCeti.W1p.intervalTraceL_restrictL_ofTestFunctionₗ`), and the condition is closed. For the
+converse, the affine function `t ↦ t - a` is the restriction to `(a, b)` of the tent
+`(b - a) - |t - b|`, which lies in `W^{1,p}_0(a, 2b - a)`, and restriction maps `W^{1,p}_0` of a
+larger open set missing `Γ` into `W^{1,p}_Γ` (`TauCeti.W1p.restrictL_mem_w1pVanishingOnSubmodule`).
 
 The continuous representative of `u ∈ W^{1,p}(a, b)` is Hölder continuous of exponent `1 - 1/p`,
 
 `|u(t) - u(s)| ≤ |t - s|^{1 - 1/p} ‖u'‖_{Lᵖ(a,b)}`, `s, t ∈ [a, b]`
 
-(`TauCeti.W1p.abs_intervalRepresentativeL_sub_le`), by the fundamental theorem of calculus and
-Hölder's inequality. If `u` vanishes at `a`, this gives `|u(t)| ≤ (t - a)^{1 - 1/p} ‖u'‖_{Lᵖ}` and
-the **Poincaré–Friedrichs inequality** `‖u‖_{Lᵖ(a,b)} ≤ (b - a) ‖u'‖_{Lᵖ(a,b)}`
+(`TauCeti.W1p.abs_intervalRepresentativeL_sub_le`, in
+`TauCeti.Analysis.Sobolev.W1p.Interval.Representative`). If `u` vanishes at `a`, this gives
+`|u(t)| ≤ (t - a)^{1 - 1/p} ‖u'‖_{Lᵖ}` and the **Poincaré–Friedrichs inequality**
+`‖u‖_{Lᵖ(a,b)} ≤ (b - a) ‖u'‖_{Lᵖ(a,b)}`
 (`TauCeti.W1p.norm_value_le_mul_norm_gradient_of_intervalTraceL_fst_eq_zero`), with the constant
 scaling like the length of the interval. For finite `p` it holds on all of `W^{1,p}_{{a}}(a, b)`.
 Both hold for every `1 ≤ p ≤ ∞`, with `1 / p.toReal = 0` at `p = ∞`.
 
 ## Main declarations
 
-* `TauCeti.W1p.intervalTraceL_restrictL_ofTestFunctionₗ`: the endpoint values of a restricted test
-  function.
 * `TauCeti.W1p.mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_fst_eq_zero` and
   `TauCeti.W1p.mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_snd_eq_zero`: the trace
   characterization of `W^{1,p}_{{a}}(a, b)` and `W^{1,p}_{{b}}(a, b)` for finite `p`.
-* `TauCeti.W1p.abs_intervalRepresentativeL_sub_le`: Hölder continuity of exponent `1 - 1/p`.
 * `TauCeti.W1p.abs_intervalRepresentativeL_le_of_intervalTraceL_fst_eq_zero`,
   `TauCeti.W1p.norm_value_le_mul_norm_gradient_of_intervalTraceL_fst_eq_zero` and their versions
   at `b`: the pointwise bound and the Poincaré–Friedrichs inequality.
@@ -77,25 +74,6 @@ local instance : IsFiniteMeasure (volume.restrict
     ((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ)) := ⟨by simp⟩
 
 /-! ### Membership in `W^{1,p}_{{a}}(a, b)` -/
-
-/-- The endpoint values of the restriction to `(a, b)` of a test function on `ℝ` are its values
-at `a` and `b`. -/
--- Evaluate the restricted test function before the generic endpoint-evaluation rule expands the
--- trace.
-@[simp↓ 1100]
-theorem intervalTraceL_restrictL_ofTestFunctionₗ (hab : a < b) (φ : 𝓓((⊤ : Opens ℝ), ℝ)) :
-    intervalTraceL hab (restrictL (le_top : (⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) ≤ ⊤)
-      (ofTestFunctionₗ volume ⊤ p φ)) = (φ a, φ b) := by
-  have h : intervalRepresentativeL hab (restrictL (le_top : (⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) ≤ ⊤)
-      (ofTestFunctionₗ volume ⊤ p φ)) = ⟨fun t ↦ φ t, φ.contDiff.continuous.comp
-        continuous_subtypeVal⟩ := by
-    refine (intervalRepresentativeL_eq_iff hab _ _).2 ?_
-    filter_upwards [value_restrictL_ofTestFunctionₗ_ae (mu := volume) (p := p)
-        (le_top : (⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) ≤ ⊤) φ,
-      ae_restrict_mem measurableSet_Ioo] with t ht hmem
-    rw [ht, ContinuousMap.coe_mk, projIcc_of_mem hab.le (Ioo_subset_Icc_self hmem)]
-  rw [intervalTraceL_apply, h]
-  rfl
 
 /-- A class whose value on `(a, b)` is a Lipschitz function vanishing at the endpoints of a larger
 interval `(a', b')` that misses `Γ` lies in `W^{1,p}_Γ(a, b)`, for finite `p`: the function
@@ -170,6 +148,8 @@ private theorem intervalLiftL_snd_zero_mem_w1pVanishingOnSubmodule (hp : p ≠ �
 /-- **The trace characterization of `W^{1,p}_{{a}}(a, b)`.** For `1 ≤ p < ∞`, a class lies in the
 space of Sobolev functions vanishing at the endpoint `a` exactly when its continuous representative
 vanishes at `a`. No condition is imposed at `b`. -/
+-- Rewrite before simplification of the open-set coercion in the Sobolev carrier.
+@[simp↓]
 theorem mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_fst_eq_zero (hp : p ≠ ⊤)
     (hab : a < b) {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p} :
     u ∈ w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ p {a} ↔
@@ -194,6 +174,8 @@ theorem mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_fst_eq_zero (hp
 /-- **The trace characterization of `W^{1,p}_{{b}}(a, b)`.** For `1 ≤ p < ∞`, a class lies in the
 space of Sobolev functions vanishing at the endpoint `b` exactly when its continuous representative
 vanishes at `b`. No condition is imposed at `a`. -/
+-- Rewrite before simplification of the open-set coercion in the Sobolev carrier.
+@[simp↓]
 theorem mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_snd_eq_zero (hp : p ≠ ⊤)
     (hab : a < b) {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p} :
     u ∈ w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ p {b} ↔
@@ -215,30 +197,7 @@ theorem mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_snd_eq_zero (hp
         (intervalTraceL hab u).1)
     rwa [sub_add_cancel] at hmem
 
-/-! ### Hölder continuity and the Poincaré–Friedrichs inequality -/
-
-/-- **Hölder continuity of exponent `1 - 1/p`.** The continuous representative of
-`u ∈ W^{1,p}(a, b)` satisfies `|u(t) - u(s)| ≤ |t - s|^{1 - 1/p} ‖u'‖_{Lᵖ(a,b)}` for
-`s, t ∈ [a, b]`. At `p = ∞`, `1 / p.toReal` is zero and this is the Lipschitz bound. -/
-theorem abs_intervalRepresentativeL_sub_le (hab : a < b) (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p)
-    (s t : Icc a b) :
-    |intervalRepresentativeL hab u t - intervalRepresentativeL hab u s| ≤
-      |(t : ℝ) - s| ^ (1 - 1 / p.toReal) * ‖gradient u‖ := by
-  wlog hst : (s : ℝ) ≤ t generalizing s t
-  · rw [abs_sub_comm, abs_sub_comm (t : ℝ)]
-    exact this t s (le_of_not_ge hst)
-  rw [abs_of_nonneg (sub_nonneg.2 hst)]
-  have hsub : volume.restrict (Ioo (s : ℝ) t) ≤ volume.restrict (Ioo a b) :=
-    Measure.restrict_mono (Ioo_subset_Ioo s.property.1 t.property.2) le_rfl
-  have hg : MemLp (gradient u) p (volume.restrict (Ioo (s : ℝ) t)) :=
-    (Lp.memLp (gradient u)).mono_measure hsub
-  rw [← setIntegral_Ioo_gradient_eq_intervalRepresentativeL_sub hab u hst, ← Real.norm_eq_abs]
-  refine (norm_integral_le_integral_norm _).trans
-    ((hg.integral_norm_le_mul_eLpNorm Fact.out).trans ?_)
-  rw [Measure.restrict_apply_univ, Real.volume_Ioo, ← ENNReal.toReal_rpow,
-    ENNReal.toReal_ofReal (sub_nonneg.2 hst), Lp.norm_def]
-  exact mul_le_mul_of_nonneg_left (ENNReal.toReal_mono (Lp.eLpNorm_ne_top _)
-    (eLpNorm_mono_measure (gradient u : ℝ → ℝ) hsub)) (by positivity)
+/-! ### Pointwise bounds and the Poincaré–Friedrichs inequality -/
 
 /-- **The pointwise bound at a vanishing endpoint.** If the continuous representative of
 `u ∈ W^{1,p}(a, b)` vanishes at `a`, then `|u(t)| ≤ (t - a)^{1 - 1/p} ‖u'‖_{Lᵖ(a,b)}`. -/
