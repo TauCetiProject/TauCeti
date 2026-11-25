@@ -55,9 +55,9 @@ perimeter has neither defect (`TauCeti.weightedPerimeter_compl`,
   variation pairs `u` with the divergences of the fields `e^{−W} X`.
 * `TauCeti.integral_divergenceCLM_sub_fderiv_mul_exp_neg_eq_zero`: for a `C¹` weight, the weighted
   divergence of a test vector field has `μ`-integral zero.
-* `TauCeti.weightedDivergence_eq_zero`, `TauCeti.continuous_weightedDivergence`: the weighted
-  divergence of a test vector field vanishes off its support and, for a `C¹` weight, is
-  continuous.
+* `TauCeti.weightedDivergence_eq_zero_of_notMem_tsupport`, `TauCeti.continuous_weightedDivergence`:
+  the weighted divergence of a test vector field vanishes off its support and, for a `C¹` weight,
+  is continuous.
 * `TauCeti.ofReal_integral_le_weightedVariation_of_contDiff`: `C¹` vector fields with compact
   support in `Ω` and norm at most `1` bound the weighted variation from below.
 * `TauCeti.weightedVariation_eq_iSup_norm_le_exp_neg` and
@@ -210,7 +210,7 @@ theorem weightedVariation_eq_iSup_trace_fderiv (hW : Differentiable ℝ W) :
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- The weighted divergence of a test vector field vanishes off its support. -/
-theorem weightedDivergence_eq_zero (X : 𝓓(Ω, E)) {x : E} (hx : x ∉ tsupport X) :
+theorem weightedDivergence_eq_zero_of_notMem_tsupport (X : 𝓓(Ω, E)) {x : E} (hx : x ∉ tsupport X) :
     (divergenceCLM X x - fderiv ℝ W x (X x)) * Real.exp (-W x) = 0 := by
   rw [divergenceCLM_apply, fderiv_of_notMem_tsupport ℝ hx, image_eq_zero_of_notMem_tsupport hx]
   simp
@@ -233,7 +233,7 @@ theorem integrable_weightedDivergence_mul (hW : ContDiff ℝ 1 W)
       (hu.integrableOn_compact_subset X.tsupport_subset hK) hK)
   by_contra hxs
   apply hx
-  rw [weightedDivergence_eq_zero X hxs, zero_mul]
+  rw [weightedDivergence_eq_zero_of_notMem_tsupport X hxs, zero_mul]
 
 /-- **The weighted divergence theorem.** For a `C¹` weight, `∫ div_μ X dμ = 0` for every test
 vector field `X`: the integral of `(div X − DW X) e^{−W}` vanishes. -/
@@ -365,7 +365,8 @@ theorem weightedVariation_congr_ae (h : u =ᵐ[volume.restrict Ω] v) :
       ∫ x in (Ω : Set E), (divergenceCLM X x - fderiv ℝ W x (X x)) * Real.exp (-W x) * w x =
         ∫ x, (divergenceCLM X x - fderiv ℝ W x (X x)) * Real.exp (-W x) * w x :=
     setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
-      rw [weightedDivergence_eq_zero X fun hmem => hx (X.tsupport_subset hmem), zero_mul]
+      rw [weightedDivergence_eq_zero_of_notMem_tsupport X fun hmem => hx (X.tsupport_subset hmem),
+        zero_mul]
   rw [← hΩ, ← hΩ]
   exact integral_congr_ae (h.mono fun x hx => by simp only [hx])
 
