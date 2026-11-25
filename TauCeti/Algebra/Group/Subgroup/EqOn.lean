@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Group.Subgroup.Map
-import TauCeti.GroupTheory.ConjugationTransfer
+import Mathlib.Tactic.Group
 
 /-!
 # Maps agreeing on a subgroup
@@ -51,6 +51,6 @@ theorem Set.EqOn.map_conj {F : Type*} [FunLike F G G] [MonoidHomClass F G G] {f 
     {s : Set G} (h : Set.EqOn f (MulAut.conj c) s) (w : G) :
     Set.EqOn f (MulAut.conj (f w * c * w⁻¹)) (MulAut.conj w '' s) := by
   rintro _ ⟨k, hk, rfl⟩
-  have hw := TauCeti.map_conj_eq_conj_of_map_eq_conj f id (q := w) (c := c⁻¹) rfl
-    (by simpa [MulAut.conj_apply] using h hk)
-  simpa [MulAut.conj_apply, mul_assoc] using hw
+  have hk' : f k = c * k * c⁻¹ := h hk
+  rw [MulAut.conj_apply, MulAut.conj_apply, map_mul, map_mul, map_inv, hk']
+  group
