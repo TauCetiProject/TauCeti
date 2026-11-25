@@ -38,10 +38,11 @@ ring is closed (`TwoSidedIdeal.isClosed_annihilator`). Hence, in a proper star r
 self-adjoint ideal is essential as soon as it meets every nonzero closed two-sided ideal
 (`TwoSidedIdeal.isEssential_iff_forall_isClosed`).
 
-In a topological ring whose units form an open set, such as a unital Banach algebra, the closure
-of a proper two-sided ideal is proper (`TwoSidedIdeal.topologicalClosure_ne_top_of_isOpen_isUnit`),
-so the ring is simple as soon as its closed two-sided ideals are trivial
-(`TwoSidedIdeal.eq_bot_or_eq_top_of_forall_isClosed`).
+Closure commutes with passing to the underlying left ideal
+(`TwoSidedIdeal.asIdeal_topologicalClosure`). Hence, in a topological ring whose units form an open
+set, such as a unital Banach algebra, the closure of a proper two-sided ideal is proper
+(`TwoSidedIdeal.topologicalClosure_ne_top_of_isOpen_isUnit`), so the ring is simple as soon as
+its closed two-sided ideals are trivial (`TwoSidedIdeal.eq_bot_or_eq_top_of_forall_isClosed`).
 
 The quotient-ring construction generalizes Patrick Massot's
 `QuotientRing.topologicalRing_quotient` in Mathlib from commutative rings, using
@@ -161,15 +162,21 @@ section OpenUnits
 
 variable {A : Type*} [Ring A] [TopologicalSpace A] [IsTopologicalRing A]
 
+/-- The underlying left ideal of the topological closure of a two-sided ideal is the closure of its
+underlying left ideal. -/
+@[simp]
+theorem asIdeal_topologicalClosure (I : TwoSidedIdeal A) :
+    I.topologicalClosure.asIdeal = I.asIdeal.closure :=
+  SetLike.ext' (by simp [coe_asIdeal])
+
 /-- In a topological ring whose units form an open set (for instance a unital Banach algebra), the
 topological closure of a proper two-sided ideal is proper. This is
 `Ideal.closure_ne_top_of_isOpen_isUnit` applied to the underlying left ideal `I.asIdeal`. -/
 theorem topologicalClosure_ne_top_of_isOpen_isUnit (hU : IsOpen {a : A | IsUnit a})
     {I : TwoSidedIdeal A} (hI : I ≠ ⊤) : I.topologicalClosure ≠ ⊤ := by
-  have h : I.topologicalClosure.asIdeal = I.asIdeal.closure :=
-    SetLike.ext' (by rw [coe_asIdeal, coe_topologicalClosure, Ideal.coe_closure, coe_asIdeal])
   intro htop
-  refine Ideal.closure_ne_top_of_isOpen_isUnit hU ?_ (by rw [← h, htop, top_asIdeal])
+  refine Ideal.closure_ne_top_of_isOpen_isUnit hU ?_
+    (by rw [← asIdeal_topologicalClosure, htop, top_asIdeal])
   simpa [Ideal.eq_top_iff_one, one_mem_iff] using hI
 
 /-- In a topological ring whose units form an open set (for instance a unital Banach algebra), if
