@@ -47,7 +47,7 @@ theorem GL2K0.diagGL_mem (u : Aˣ) : diagGL ![u, 1] ∈ GL2K0 I :=
 
 /-- **The determinants of `K₁(I)` are all of `Aˣ`.** -/
 theorem GL2K1.map_det : (GL2K1 I).map GeneralLinearGroup.det = ⊤ :=
-  eq_top_iff.mpr fun u _ ↦ ⟨_, GL2K1.diagGL_mem I u, det_diagGL_unit_one u⟩
+  eq_top_iff.mpr fun u _ ↦ ⟨_, GL2K1.diagGL_mem I u, by simp⟩
 
 /-- **The determinants of `K₀(I)` are all of `Aˣ`.** -/
 theorem GL2K0.map_det : (GL2K0 I).map GeneralLinearGroup.det = ⊤ :=
