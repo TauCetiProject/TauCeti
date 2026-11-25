@@ -420,30 +420,49 @@ private theorem norm_extendLeft_le_one {k : ℕ} {B : F →L[𝕜] EuclideanSpac
     pow_le_pow_left₀ (norm_nonneg _) ((φ.le_opNorm y).trans (by nlinarith [norm_nonneg y])) 2
   nlinarith [sq_nonneg a, sq_nonneg b]
 
-private theorem toMatrix_extendLeft_comp_extendRight_blocks {k : ℕ} (T : E →L[𝕜] F)
+private theorem toMatrix_extendLeft_comp_extendRight_castSucc_castSucc {k : ℕ} (T : E →L[𝕜] F)
+    (A : EuclideanSpace 𝕜 (Fin k) →L[𝕜] E) (B : F →L[𝕜] EuclideanSpace 𝕜 (Fin k))
+    (x : E) (φ : StrongDual 𝕜 F) (a b : ℝ) (i j : Fin k) :
+    LinearMap.toMatrix (EuclideanSpace.basisFun (Fin (k + 1)) 𝕜).toBasis
+        (EuclideanSpace.basisFun (Fin (k + 1)) 𝕜).toBasis
+        (extendLeft B φ a b ∘L T ∘L extendRight A x a b).toLinearMap i.castSucc j.castSucc =
+      ((a ^ 2 : ℝ) : 𝕜) * (B (T (A (EuclideanSpace.single j 1))) i) := by
+  simp [LinearMap.toMatrix_apply, extendRight_single_castSucc, extendLeft_apply_castSucc,
+    RCLike.real_smul_eq_coe_mul]
+  ring
+
+private theorem toMatrix_extendLeft_comp_extendRight_castSucc_last {k : ℕ} (T : E →L[𝕜] F)
+    (A : EuclideanSpace 𝕜 (Fin k) →L[𝕜] E) (B : F →L[𝕜] EuclideanSpace 𝕜 (Fin k))
+    (x : E) (φ : StrongDual 𝕜 F) (a b : ℝ) (i : Fin k) :
+    LinearMap.toMatrix (EuclideanSpace.basisFun (Fin (k + 1)) 𝕜).toBasis
+        (EuclideanSpace.basisFun (Fin (k + 1)) 𝕜).toBasis
+        (extendLeft B φ a b ∘L T ∘L extendRight A x a b).toLinearMap i.castSucc (Fin.last k) =
+      ((a * b : ℝ) : 𝕜) * (B (T x) i) := by
+  simp [LinearMap.toMatrix_apply, extendRight_single_last, extendLeft_apply_castSucc,
+    RCLike.real_smul_eq_coe_mul, RCLike.algebraMap_eq_ofReal]
+  ring
+
+private theorem toMatrix_extendLeft_comp_extendRight_last_castSucc {k : ℕ} (T : E →L[𝕜] F)
+    (A : EuclideanSpace 𝕜 (Fin k) →L[𝕜] E) (B : F →L[𝕜] EuclideanSpace 𝕜 (Fin k))
+    (x : E) (φ : StrongDual 𝕜 F) (a b : ℝ) (j : Fin k) :
+    LinearMap.toMatrix (EuclideanSpace.basisFun (Fin (k + 1)) 𝕜).toBasis
+        (EuclideanSpace.basisFun (Fin (k + 1)) 𝕜).toBasis
+        (extendLeft B φ a b ∘L T ∘L extendRight A x a b).toLinearMap (Fin.last k) j.castSucc =
+      ((a * b : ℝ) : 𝕜) * φ (T (A (EuclideanSpace.single j 1))) := by
+  simp [LinearMap.toMatrix_apply, extendRight_single_castSucc, extendLeft_apply_last,
+    RCLike.real_smul_eq_coe_mul, RCLike.algebraMap_eq_ofReal]
+  ring
+
+private theorem toMatrix_extendLeft_comp_extendRight_last_last {k : ℕ} (T : E →L[𝕜] F)
     (A : EuclideanSpace 𝕜 (Fin k) →L[𝕜] E) (B : F →L[𝕜] EuclideanSpace 𝕜 (Fin k))
     (x : E) (φ : StrongDual 𝕜 F) (a b : ℝ) :
-    let e₁ := (EuclideanSpace.basisFun (Fin (k + 1)) 𝕜).toBasis
-    let M := LinearMap.toMatrix e₁ e₁ (extendLeft B φ a b ∘L T ∘L extendRight A x a b).toLinearMap
-    (∀ i j : Fin k, M i.castSucc j.castSucc =
-        ((a ^ 2 : ℝ) : 𝕜) * (B (T (A (EuclideanSpace.single j 1))) i)) ∧
-      (∀ i : Fin k, M i.castSucc (Fin.last k) = ((a * b : ℝ) : 𝕜) * (B (T x) i)) ∧
-      (∀ j : Fin k, M (Fin.last k) j.castSucc =
-        ((a * b : ℝ) : 𝕜) * φ (T (A (EuclideanSpace.single j 1)))) ∧
-      M (Fin.last k) (Fin.last k) = ((b ^ 2 : ℝ) : 𝕜) * φ (T x) := by
-  refine ⟨fun i j ↦ ?_, fun i ↦ ?_, fun j ↦ ?_, ?_⟩
-  · simp [LinearMap.toMatrix_apply, extendRight_single_castSucc, extendLeft_apply_castSucc,
-      RCLike.real_smul_eq_coe_mul]
-    ring
-  · simp [LinearMap.toMatrix_apply, extendRight_single_last, extendLeft_apply_castSucc,
-      RCLike.real_smul_eq_coe_mul, RCLike.algebraMap_eq_ofReal]
-    ring
-  · simp [LinearMap.toMatrix_apply, extendRight_single_castSucc, extendLeft_apply_last,
-      RCLike.real_smul_eq_coe_mul, RCLike.algebraMap_eq_ofReal]
-    ring
-  · simp [LinearMap.toMatrix_apply, extendRight_single_last, extendLeft_apply_last,
-      RCLike.real_smul_eq_coe_mul]
-    ring
+    LinearMap.toMatrix (EuclideanSpace.basisFun (Fin (k + 1)) 𝕜).toBasis
+        (EuclideanSpace.basisFun (Fin (k + 1)) 𝕜).toBasis
+        (extendLeft B φ a b ∘L T ∘L extendRight A x a b).toLinearMap (Fin.last k) (Fin.last k) =
+      ((b ^ 2 : ℝ) : 𝕜) * φ (T x) := by
+  simp [LinearMap.toMatrix_apply, extendRight_single_last, extendLeft_apply_last,
+    RCLike.real_smul_eq_coe_mul]
+  ring
 
 /-- Schur-complement determinant identity for the bordered compression `B' ∘L T ∘L A'`. -/
 private theorem det_extendLeft_comp_extendRight {k : ℕ} (T : E →L[𝕜] F)
@@ -453,11 +472,10 @@ private theorem det_extendLeft_comp_extendRight {k : ℕ} (T : E →L[𝕜] F)
     (extendLeft B φ a b ∘L T ∘L extendRight A x a b).det =
       (((b ^ 2 : ℝ) : 𝕜) * φ (T x - T (A u))) *
         (((a ^ 2 : ℝ) : 𝕜) ^ k * (B ∘L T ∘L A).det) := by
-  obtain ⟨hM_cc, hM_cl, hM_lc, hM_ll⟩ := toMatrix_extendLeft_comp_extendRight_blocks T A B x φ a b
-  dsimp only at hM_cc hM_cl hM_lc hM_ll
   let e₀ := (EuclideanSpace.basisFun (Fin k) 𝕜).toBasis
-  set e₁ := (EuclideanSpace.basisFun (Fin (k + 1)) 𝕜).toBasis
+  set e₁ := (EuclideanSpace.basisFun (Fin (k + 1)) 𝕜).toBasis with he₁
   set M := LinearMap.toMatrix e₁ e₁ (extendLeft B φ a b ∘L T ∘L extendRight A x a b).toLinearMap
+    with hM
   let w : Fin k → 𝕜 := fun j ↦ ((b / a : ℝ) : 𝕜) * u j
   have hTAu : T (A u) = ∑ j : Fin k, u j • T (A (EuclideanSpace.single j 1)) := by
     have hu_sum : ∑ j : Fin k, u j • EuclideanSpace.single j (1 : 𝕜) = u := by
@@ -470,9 +488,11 @@ private theorem det_extendLeft_comp_extendRight {k : ℕ} (T : E →L[𝕜] F)
       simp [map_smul]
     have hab' : ((a ^ 2 : ℝ) : 𝕜) * ((b / a : ℝ) : 𝕜) = ((a * b : ℝ) : 𝕜) := by
       norm_cast; field_simp
-    rw [hM_cl, ← hlin, ← hab', Finset.mul_sum]
+    rw [hM, he₁, toMatrix_extendLeft_comp_extendRight_castSucc_last, ← hlin, ← hab',
+      Finset.mul_sum]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    simp only [hM_cc, w]; ring
+    rw [toMatrix_extendLeft_comp_extendRight_castSucc_castSucc]
+    simp only [w]; ring
   have hschur : M (Fin.last k) (Fin.last k) - ∑ j : Fin k, M (Fin.last k) j.castSucc * w j =
       ((b ^ 2 : ℝ) : 𝕜) * φ (T x - T (A u)) := by
     have hlin : ∑ j : Fin k, u j * φ (T (A (EuclideanSpace.single j 1))) = φ (T (A u)) := by
@@ -483,13 +503,15 @@ private theorem det_extendLeft_comp_extendRight {k : ℕ} (T : E →L[𝕜] F)
     have hsum : ∑ j : Fin k, M (Fin.last k) j.castSucc * w j = ((b ^ 2 : ℝ) : 𝕜) * φ (T (A u)) := by
       rw [← hlin, ← hbb, Finset.mul_sum]
       refine Finset.sum_congr rfl fun j _ ↦ ?_
-      simp only [hM_lc, w]; ring
-    rw [hM_ll, hsum, map_sub, mul_sub]
+      rw [hM, he₁, toMatrix_extendLeft_comp_extendRight_last_castSucc]
+      simp only [w]; ring
+    rw [hM, he₁, toMatrix_extendLeft_comp_extendRight_last_last, hsum, map_sub, mul_sub]
   have hsub : M.submatrix Fin.castSucc Fin.castSucc =
       ((a ^ 2 : ℝ) : 𝕜) • LinearMap.toMatrix e₀ e₀ (B ∘L T ∘L A).toLinearMap := by
     ext i j
-    simp [hM_cc, e₀, LinearMap.toMatrix_apply]
-  rw [ContinuousLinearMap.det, ← LinearMap.det_toMatrix e₁,
+    rw [Matrix.submatrix_apply, hM, he₁, toMatrix_extendLeft_comp_extendRight_castSucc_castSucc]
+    simp [e₀, LinearMap.toMatrix_apply, RCLike.algebraMap_eq_ofReal]
+  rw [ContinuousLinearMap.det, ← LinearMap.det_toMatrix e₁, ← hM,
     M.det_eq_sub_sum_mul_det_submatrix_castSucc_of_col hw, hschur, hsub, Matrix.det_smul,
     Fintype.card_fin, LinearMap.det_toMatrix, ContinuousLinearMap.det]
 
@@ -502,10 +524,11 @@ private theorem nnnorm_ofReal_sq_mul_norm_mul_pow {k : ℕ} {a b : ℝ}
     ‖(((b ^ 2 : ℝ) : 𝕜) * (‖v‖ : 𝕜)) * (((a ^ 2 : ℝ) : 𝕜) ^ k * d)‖₊ =
       ((k : ℝ≥0) ^ k / ((k : ℝ≥0) + 1) ^ (k + 1)) * ‖v‖₊ * ‖d‖₊ := by
   ext
-  simp only [nnNorm_mul, nnNorm_pow, NNReal.coe_mul, NNReal.coe_div, NNReal.coe_pow,
-    NNReal.coe_add, NNReal.coe_natCast, NNReal.coe_one, coe_nnNorm, RCLike.norm_ofReal,
-    abs_of_nonneg (sq_nonneg a), abs_of_nonneg (sq_nonneg b), abs_norm]
-  rw [ha, hb, div_pow, mul_mul_mul_comm, div_mul_div_comm, one_mul, pow_succ', ← mul_assoc]
+  suffices b ^ 2 * ‖v‖ * ((a ^ 2) ^ k * ‖d‖) =
+      (k : ℝ) ^ k / ((k : ℝ) + 1) ^ (k + 1) * ‖v‖ * ‖d‖ by simpa
+  rw [ha, hb, div_pow]
+  field_simp
+  ring
 
 /-- Single-compression step for the lower recursion when `k ≥ 1` and `det (B T A) ≠ 0`. -/
 private theorem le_detNumber_succ_of_det_ne_zero {k : ℕ} (hk : 0 < k) (T : E →L[𝕜] F)
@@ -585,26 +608,18 @@ private theorem toMatrix_projInit_comp_inclInit_eq_diagonal {n : ℕ}
         (projInit n ∘L U.symm.toLinearIsometry.toContinuousLinearMap ∘L S ∘L
           V.symm.toLinearIsometry.toContinuousLinearMap ∘L inclInit n).toLinearMap =
       Matrix.diagonal fun j : Fin n ↦ (S.toLinearMap.singularValues j.castSucc : 𝕜) := by
-  let e₁ := EuclideanSpace.basisFun (Fin (n + 1)) 𝕜
   ext i j
   have hJ_apply :
       inclInit n (EuclideanSpace.single j (1 : 𝕜)) = EuclideanSpace.single j.castSucc (1 : 𝕜) :=
     LinearIsometry.piLpExtendByZero_apply_single (Fin.castLEEmb (Nat.le_succ n)) j (1 : 𝕜)
-  have hS_apply : S (V.symm (e₁ j.castSucc)) =
-      U ((S.toLinearMap.singularValues j.castSucc : 𝕜) • e₁ j.castSucc) := by
-    rw [← ContinuousLinearMap.coe_coe]
-    nth_rw 1 [hUV]
-    simp [e₁, -EuclideanSpace.basisFun_apply, Matrix.toLin_diagonal_apply_self]
-  have he₁ : EuclideanSpace.single j.castSucc (1 : 𝕜) = e₁ j.castSucc :=
-    (EuclideanSpace.basisFun_apply (Fin (n + 1)) 𝕜 j.castSucc).symm
-  rw [LinearMap.toMatrix_apply]
-  simp only [OrthonormalBasis.coe_toBasis, OrthonormalBasis.coe_toBasis_repr_apply,
-    EuclideanSpace.basisFun_repr, EuclideanSpace.basisFun_apply, coe_coe, comp_apply,
-    LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry]
-  rw [hJ_apply, he₁, hS_apply, U.symm_apply_apply, map_smul, PiLp.smul_apply, projInit_apply]
-  simp only [Matrix.diagonal_apply, e₁, EuclideanSpace.basisFun_apply, PiLp.single_apply,
-    Fin.castSucc_inj, smul_eq_mul]
-  split_ifs with h <;> simp [h]
+  have hS_apply : S (V.symm (EuclideanSpace.single j.castSucc 1)) =
+      U ((S.toLinearMap.singularValues j.castSucc : 𝕜) • EuclideanSpace.single j.castSucc 1) := by
+    have hD := Matrix.toLin_diagonal_apply_self (EuclideanSpace.basisFun (Fin (n + 1)) 𝕜)
+      (fun k ↦ (S.toLinearMap.singularValues k : 𝕜)) j.castSucc
+    simp only [EuclideanSpace.basisFun_apply] at hD
+    simpa [hD] using LinearMap.congr_fun hUV (V.symm (EuclideanSpace.single j.castSucc 1))
+  simp +contextual [LinearMap.toMatrix_apply, hJ_apply, hS_apply, projInit_apply,
+    Matrix.diagonal_apply, PiLp.single_apply, RCLike.real_smul_eq_coe_mul]
 
 /-- The product of the first `n` singular values of an `ℓ₂ⁿ⁺¹` contraction compression of `T` is
 at most `Δₙ(T)`. -/

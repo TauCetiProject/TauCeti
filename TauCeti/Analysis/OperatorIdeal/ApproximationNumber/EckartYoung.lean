@@ -107,13 +107,8 @@ theorem norm_det_eq_prod_singularValue (T : E →L[𝕜] E) :
   · simp_rw [T.singularValue_eq_linearMap_singularValues]
     rw [ContinuousLinearMap.det, ← (T : E →ₗ[𝕜] E).normDet_eq_norm_det,
       (T : E →ₗ[𝕜] E).normDet_eq_prod_singularValues]
-  · have hnb : ¬ ∃ s : Finset E, Nonempty (Basis s 𝕜 E) := by
-      rintro ⟨s, ⟨b⟩⟩
-      exact hE (Module.Finite.of_basis b)
-    have hdet1 : T.det = 1 := by
-      classical
-      simp [ContinuousLinearMap.det, LinearMap.coe_det, hnb]
-    rw [hdet1, norm_one, finrank_of_not_finite hE, Finset.range_zero, Finset.prod_empty]
+  · rw [ContinuousLinearMap.det, LinearMap.det_eq_one_of_not_module_finite hE, norm_one,
+      finrank_of_not_finite hE, Finset.range_zero, Finset.prod_empty]
 
 omit [FiniteDimensional 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
     [FiniteDimensional 𝕜 F] in
