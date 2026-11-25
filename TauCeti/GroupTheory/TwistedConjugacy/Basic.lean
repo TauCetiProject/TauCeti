@@ -131,6 +131,10 @@ def congr (e : G ≃* H) (he : Function.Semiconj e σ τ) : Classes σ ≃ Class
 theorem congr_mk (e : G ≃* H) (he : Function.Semiconj e σ τ) (b : G) :
     congr e he (mk σ b) = mk τ (e b) := (rfl)
 
+@[simp]
+theorem congr_symm_mk (e : G ≃* H) (he : Function.Semiconj e σ τ) (c : H) :
+    (congr e he).symm (mk τ c) = mk σ (e.symm c) := (rfl)
+
 end Classes
 end TwistedConj
 end TauCeti

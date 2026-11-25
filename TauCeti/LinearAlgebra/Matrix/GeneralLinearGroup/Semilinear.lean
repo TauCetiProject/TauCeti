@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import TauCeti.LinearAlgebra.Matrix.ToLin
 public import TauCeti.LinearAlgebra.Pi.Semilinear
 
 /-!
@@ -27,68 +27,70 @@ attribute [local instance] RingHomInvPair.of_ringEquiv
 namespace Matrix.GeneralLinearGroup
 
 open Matrix
+open TauCeti (matrixLinearEquiv matrixGeneralLinearEquiv_apply)
 
 variable {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
-
-/-- Apply a matrix as a linear equivalence of the standard coordinate space. -/
-private def coordinateLinearEquiv :
-    GeneralLinearGroup ι R ≃* ((ι → R) ≃ₗ[R] (ι → R)) :=
-  toLin.trans (LinearMap.GeneralLinearGroup.generalLinearEquiv R (ι → R))
 
 variable (ι) in
 /-- The equivalence sending an invertible matrix `b` to the automorphism `x ↦ b σ(x)`.
 Its inverse removes the coefficient automorphism before taking the matrix. -/
-def semilinearEquiv (σ : R ≃+* R) :
+noncomputable def semilinearEquiv (σ : R ≃+* R) :
     GeneralLinearGroup ι R ≃ ((ι → R) ≃ₛₗ[(σ : R →+* R)] (ι → R)) where
-  toFun b := (σ.piSemilinearEquiv ι).trans (coordinateLinearEquiv b)
-  invFun e := coordinateLinearEquiv.symm ((σ.piSemilinearEquiv ι).symm.trans e)
+  toFun b := (σ.piSemilinearEquiv ι).trans (matrixLinearEquiv b)
+  invFun e := matrixLinearEquiv.symm ((σ.piSemilinearEquiv ι).symm.trans e)
   left_inv b := by
-    apply coordinateLinearEquiv.injective
+    apply matrixLinearEquiv.injective
     apply LinearEquiv.ext
     intro x
     rw [MulEquiv.apply_symm_apply]
-    exact congrArg (coordinateLinearEquiv b) ((σ.piSemilinearEquiv ι).apply_symm_apply x)
+    exact congrArg (matrixLinearEquiv b) ((σ.piSemilinearEquiv ι).apply_symm_apply x)
   right_inv e := by
     apply LinearEquiv.ext
     intro x
-    have h := coordinateLinearEquiv.apply_symm_apply ((σ.piSemilinearEquiv ι).symm.trans e)
+    have h := matrixLinearEquiv.apply_symm_apply ((σ.piSemilinearEquiv ι).symm.trans e)
     exact (congrArg (fun f : (ι → R) ≃ₗ[R] (ι → R) => f (σ.piSemilinearEquiv ι x)) h).trans
       (congrArg e ((σ.piSemilinearEquiv ι).symm_apply_apply x))
 
+/-- The semilinear action applies the coefficient automorphism before the linear matrix action. -/
+theorem semilinearEquiv_apply_eq_matrixLinearEquiv
+    (σ : R ≃+* R) (b : GeneralLinearGroup ι R) (x : ι → R) :
+    semilinearEquiv ι σ b x = matrixLinearEquiv b (σ.piSemilinearEquiv ι x) := (rfl)
+
 @[simp]
 theorem semilinearEquiv_apply (σ : R ≃+* R) (b : GeneralLinearGroup ι R) (x : ι → R) :
-    semilinearEquiv ι σ b x = (b : Matrix ι ι R) *ᵥ (σ ∘ x) :=
-  calc
-    _ = (b : Matrix ι ι R) *ᵥ (σ.piSemilinearEquiv ι x) := toLin_apply b _
-    _ = _ := by rw [σ.piSemilinearEquiv_apply]
+    semilinearEquiv ι σ b x = (b : Matrix ι ι R) *ᵥ (σ ∘ x) := by
+  simp only [semilinearEquiv_apply_eq_matrixLinearEquiv, MulEquiv.trans_apply,
+    matrixGeneralLinearEquiv_apply,
+    RingEquiv.piSemilinearEquiv_apply]
+
+@[simp]
+theorem semilinearEquiv_symm_apply
+    (σ : R ≃+* R) (e : (ι → R) ≃ₛₗ[(σ : R →+* R)] (ι → R)) :
+    (semilinearEquiv ι σ).symm e =
+      matrixLinearEquiv.symm ((σ.piSemilinearEquiv ι).symm.trans e) := (rfl)
 
 /-- Applying the coefficient automorphism after a matrix action is the same as applying
 the entrywise-transformed matrix after the coefficient automorphism. -/
-theorem piSemilinearEquiv_toLin_apply (σ : R ≃+* R) (g : GeneralLinearGroup ι R) (x : ι → R) :
-    σ.piSemilinearEquiv ι ((toLin g).toLinearEquiv x) =
-      (toLin (mapEquiv ι σ g)).toLinearEquiv (σ.piSemilinearEquiv ι x) := by
-  simp only [LinearMap.GeneralLinearGroup.coe_toLinearEquiv, toLin_apply, Matrix.mulVecLin_apply,
+theorem piSemilinearEquiv_matrixLinearEquiv_apply
+    (σ : R ≃+* R) (g : GeneralLinearGroup ι R) (x : ι → R) :
+    σ.piSemilinearEquiv ι (matrixLinearEquiv g x) =
+      matrixLinearEquiv (mapEquiv ι σ g) (σ.piSemilinearEquiv ι x) := by
+  simp only [MulEquiv.trans_apply, matrixGeneralLinearEquiv_apply,
     RingEquiv.piSemilinearEquiv_apply, coe_mapEquiv_apply]
   exact funext (RingHom.map_mulVec (σ : R →+* R) (g : Matrix ι ι R) x)
 
 /-- The linear map with matrix `g` intertwines `bσ` and `cσ` exactly when `g`
 twisted-conjugates `b` to `c`. -/
 theorem intertwines_semilinearEquiv_iff (σ : R ≃+* R) (b c g : GeneralLinearGroup ι R) :
-    (∀ x, semilinearEquiv ι σ c ((toLin g).toLinearEquiv x) =
-      (toLin g).toLinearEquiv (semilinearEquiv ι σ b x)) ↔
+    (∀ x, semilinearEquiv ι σ c (matrixLinearEquiv g x) =
+      matrixLinearEquiv g (semilinearEquiv ι σ b x)) ↔
     c = g * b * (mapEquiv ι σ g)⁻¹ := by
-  have h (d : GeneralLinearGroup ι R) (x : ι → R) :
-      semilinearEquiv ι σ d x = coordinateLinearEquiv d (σ.piSemilinearEquiv ι x) := (rfl)
-  have hg (x : ι → R) : σ.piSemilinearEquiv ι (coordinateLinearEquiv g x) =
-      coordinateLinearEquiv (mapEquiv ι σ g) (σ.piSemilinearEquiv ι x) :=
-    piSemilinearEquiv_toLin_apply σ g x
   -- Express the linear actions through a multiplicative equivalence so they can be cancelled.
-  change (∀ x, semilinearEquiv ι σ c (coordinateLinearEquiv g x) =
-    coordinateLinearEquiv g (semilinearEquiv ι σ b x)) ↔ _
-  simp only [h, hg, eq_mul_inv_iff_mul_eq, ← mul_apply_eq_comp, ← map_mul]
+  simp only [semilinearEquiv_apply_eq_matrixLinearEquiv, piSemilinearEquiv_matrixLinearEquiv_apply,
+    eq_mul_inv_iff_mul_eq, ← mul_apply_eq_comp, ← map_mul]
   constructor
   · intro hintertwines
-    apply coordinateLinearEquiv.injective
+    apply matrixLinearEquiv.injective
     apply LinearEquiv.ext
     intro x
     obtain ⟨y, rfl⟩ := (σ.piSemilinearEquiv ι).surjective x

@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.WittVector.Isocrystal
 public import TauCeti.GroupTheory.TwistedConjugacy.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Semilinear
 import Mathlib.LinearAlgebra.Dimension.Constructions
-import Mathlib.LinearAlgebra.Dimension.Free
 
 /-!
 # Witt isocrystals and twisted conjugacy in the general linear group
@@ -42,56 +41,67 @@ noncomputable abbrev wittGLIsocrystal (b : Matrix.GeneralLinearGroup (Fin n) K(p
     Isocrystal p k (Fin n → K(p, k)) where
   frob := semilinearEquiv (Fin n) (FractionRing.frobenius p k) b
 
+/-- The Frobenius of the matrix presentation is the associated semilinear equivalence. -/
+theorem wittGLIsocrystal_frobenius_eq_semilinearEquiv
+    (b : Matrix.GeneralLinearGroup (Fin n) K(p, k)) :
+    letI := wittGLIsocrystal p k b
+    Φ(p, k) = semilinearEquiv (Fin n) (FractionRing.frobenius p k) b := (rfl)
+
 @[simp]
 theorem wittGLIsocrystal_frobenius_apply (b : Matrix.GeneralLinearGroup (Fin n) K(p, k))
     (x : Fin n → K(p, k)) :
-    @Isocrystal.frobenius p _ k _ _ _ _ _ (wittGLIsocrystal p k b) x =
-      Matrix.mulVec (↑b : Matrix (Fin n) (Fin n) K(p, k)) (FractionRing.frobenius p k ∘ x) :=
-  semilinearEquiv_apply _ b x
+    letI := wittGLIsocrystal p k b
+    Φ(p, k) x =
+      Matrix.mulVec (↑b : Matrix (Fin n) (Fin n) K(p, k)) (FractionRing.frobenius p k ∘ x) := by
+  rw [wittGLIsocrystal_frobenius_eq_semilinearEquiv]
+  exact semilinearEquiv_apply _ b x
+
+-- The two isocrystal instances on the same coordinate space must be supplied separately.
+local notation "withWittGLIsocrystals(" op ", " p ", " k ", " b ", " c ")" =>
+  @op p _ k _ _ _ _ _ (wittGLIsocrystal p k b) _ _ (wittGLIsocrystal p k c)
 
 /-- Isomorphisms between the isocrystals of `b` and `c` are precisely the linear equivalences
 whose matrices twisted-conjugate `b` to `c`. -/
 noncomputable def wittGLConjugatorEquiv (b c : Matrix.GeneralLinearGroup (Fin n) K(p, k)) :
     {g : Matrix.GeneralLinearGroup (Fin n) K(p, k) //
       c = g * b * (mapEquiv (Fin n) (FractionRing.frobenius p k) g)⁻¹} ≃
-    @IsocrystalEquiv p _ k _ _ _ _ _ (wittGLIsocrystal p k b) _ _ (wittGLIsocrystal p k c) := by
-  let e := toLin.trans (LinearMap.GeneralLinearGroup.generalLinearEquiv K(p, k) (Fin n → K(p, k)))
-  refine
-    { toFun := fun g => @IsocrystalEquiv.mk p _ k _ _ _ _ _ (wittGLIsocrystal p k b) _ _
-        (wittGLIsocrystal p k c) (e g.val)
-        ((intertwines_semilinearEquiv_iff _ b c _).mpr g.property)
-      invFun := ?_
-      left_inv := ?_
-      right_inv := ?_ }
-  · rintro ⟨f, hf⟩
-    refine ⟨e.symm f, (intertwines_semilinearEquiv_iff _ b c _).mp ?_⟩
-    have he := e.apply_symm_apply f
-    -- The coordinate map of the conjugator is the original linear equivalence.
-    change ∀ x, @Isocrystal.frobenius p _ k _ _ _ _ _ (wittGLIsocrystal p k c) (e (e.symm f) x) =
-      e (e.symm f) (@Isocrystal.frobenius p _ k _ _ _ _ _ (wittGLIsocrystal p k b) x)
-    rw [he]
-    exact hf
-  · intro g
-    exact Subtype.ext (e.symm_apply_apply g.val)
-  · rintro ⟨f, hf⟩
-    exact (@IsocrystalEquiv.mk.injEq p _ k _ _ _ _ _ (wittGLIsocrystal p k b) _ _
-      (wittGLIsocrystal p k c) _ _ _ _).mpr (e.apply_symm_apply f)
+    withWittGLIsocrystals(IsocrystalEquiv, p, k, b, c) where
+  toFun g := withWittGLIsocrystals(IsocrystalEquiv.mk, p, k, b, c) (matrixLinearEquiv g.val) (by
+    simp only [wittGLIsocrystal_frobenius_eq_semilinearEquiv]
+    exact (intertwines_semilinearEquiv_iff _ b c g.val).mpr g.property)
+  invFun f := by
+    let e := withWittGLIsocrystals(IsocrystalEquiv.toLinearEquiv, p, k, b, c) f
+    let g := matrixLinearEquiv.symm e
+    refine ⟨g, (intertwines_semilinearEquiv_iff _ b c g).mp ?_⟩
+    simpa only [wittGLIsocrystal_frobenius_eq_semilinearEquiv, g, MulEquiv.apply_symm_apply] using!
+      (withWittGLIsocrystals(IsocrystalEquiv.frob_equivariant, p, k, b, c) f)
+  left_inv g := Subtype.ext (matrixLinearEquiv.symm_apply_apply g.val)
+  right_inv := by
+    rintro ⟨f, hf⟩
+    exact (withWittGLIsocrystals(IsocrystalEquiv.mk.injEq, p, k, b, c) _ _ _ _).mpr
+      (matrixLinearEquiv.apply_symm_apply f)
 
 @[simp]
 theorem wittGLConjugatorEquiv_apply_toLinearEquiv
     (b c : Matrix.GeneralLinearGroup (Fin n) K(p, k))
     (g : {g : Matrix.GeneralLinearGroup (Fin n) K(p, k) //
       c = g * b * (mapEquiv (Fin n) (FractionRing.frobenius p k) g)⁻¹}) :
-    @IsocrystalEquiv.toLinearEquiv p _ k _ _ _ _ _ (wittGLIsocrystal p k b) _ _
-      (wittGLIsocrystal p k c) (wittGLConjugatorEquiv p k b c g) =
-      (toLin g.val).toLinearEquiv := (rfl)
+    withWittGLIsocrystals(IsocrystalEquiv.toLinearEquiv, p, k, b, c)
+      (wittGLConjugatorEquiv p k b c g) = matrixLinearEquiv g.val := (rfl)
+
+@[simp]
+theorem wittGLConjugatorEquiv_symm_apply_val
+    (b c : Matrix.GeneralLinearGroup (Fin n) K(p, k))
+    (f : withWittGLIsocrystals(IsocrystalEquiv, p, k, b, c)) :
+    ((wittGLConjugatorEquiv p k b c).symm f).val =
+      matrixLinearEquiv.symm (withWittGLIsocrystals(IsocrystalEquiv.toLinearEquiv, p, k, b, c) f) :=
+  (rfl)
 
 /-- Two matrix presentations give isomorphic Witt isocrystals precisely when the matrices
 represent the same twisted conjugacy class. -/
 theorem nonempty_wittGLIsocrystalEquiv_iff
     (b c : Matrix.GeneralLinearGroup (Fin n) K(p, k)) :
-    Nonempty (@IsocrystalEquiv p _ k _ _ _ _ _ (wittGLIsocrystal p k b) _ _
-      (wittGLIsocrystal p k c)) ↔
+    Nonempty (withWittGLIsocrystals(IsocrystalEquiv, p, k, b, c)) ↔
     TwistedConj.Classes.mk (mapEquiv (Fin n) (FractionRing.frobenius p k)).toMonoidHom b =
     TwistedConj.Classes.mk (mapEquiv (Fin n) (FractionRing.frobenius p k)).toMonoidHom c := by
   constructor
@@ -111,10 +121,12 @@ theorem exists_wittGLIsocrystalEquiv_of_linearEquiv {V : Type*} [AddCommGroup V]
   let φ := (e.trans (Isocrystal.frobenius p k (V := V))).trans e.symm
   obtain ⟨b, hb⟩ := (semilinearEquiv (Fin n) (FractionRing.frobenius p k)).surjective φ
   refine ⟨b, ?_⟩
-  refine ⟨@IsocrystalEquiv.mk p _ k _ _ _ _ _ (wittGLIsocrystal p k b) V _ _
-    e (fun x => ?_), rfl⟩
-  have hx := congrArg (fun F : (Fin n → K(p, k)) ≃ᶠˡ[p, k] (Fin n → K(p, k)) => F x) hb
-  exact (e.apply_symm_apply (Isocrystal.frobenius p k (e x))).symm.trans (congrArg e hx.symm)
+  let := wittGLIsocrystal p k b
+  refine ⟨⟨e, ?_⟩, rfl⟩
+  intro x
+  rw [wittGLIsocrystal_frobenius_eq_semilinearEquiv, hb]
+  -- Applying the transported Frobenius `φ` sends `x` to `e.symm (Φ(p, k) (e x))`.
+  exact (e.apply_symm_apply _).symm
 
 /-- Every finite-dimensional Witt isocrystal admits a matrix presentation, whose class
 is characterized by the isocrystals isomorphic to the given one. -/
@@ -122,22 +134,22 @@ theorem wittGL_isocrystal_classes (V : Type*) [AddCommGroup V] [Isocrystal p k V
     [FiniteDimensional K(p, k) V] (hdim : Module.finrank K(p, k) V = n) :
     ∃ b : Matrix.GeneralLinearGroup (Fin n) K(p, k),
       ∀ c : Matrix.GeneralLinearGroup (Fin n) K(p, k),
-        Nonempty (@IsocrystalEquiv p _ k _ _ _ _ _ (wittGLIsocrystal p k c) V _ _) ↔
+        letI := wittGLIsocrystal p k c
+        Nonempty ((Fin n → K(p, k)) ≃ᶠⁱ[p, k] V) ↔
         TwistedConj.Classes.mk (mapEquiv (Fin n) (FractionRing.frobenius p k)).toMonoidHom b =
         TwistedConj.Classes.mk (mapEquiv (Fin n) (FractionRing.frobenius p k)).toMonoidHom c := by
   obtain ⟨e⟩ := FiniteDimensional.nonempty_linearEquiv_of_finrank_eq
     (R := K(p, k)) (M := Fin n → K(p, k)) (M' := V) (by simp [hdim])
   obtain ⟨b, ⟨f, hf⟩, -⟩ := exists_wittGLIsocrystalEquiv_of_linearEquiv p k e
   refine ⟨b, fun c => ?_⟩
+  let := wittGLIsocrystal p k c
   rw [eq_comm, ← nonempty_wittGLIsocrystalEquiv_iff]
   constructor
   · rintro ⟨⟨g, hg⟩⟩
-    refine ⟨@IsocrystalEquiv.mk p _ k _ _ _ _ _ (wittGLIsocrystal p k c) _ _
-      (wittGLIsocrystal p k b) (g.trans f.symm) (fun x => ?_)⟩
+    refine ⟨withWittGLIsocrystals(IsocrystalEquiv.mk, p, k, c, b) (g.trans f.symm) (fun x => ?_)⟩
     apply f.injective
     simp only [LinearEquiv.trans_apply, ← hf, f.apply_symm_apply, hg]
   · rintro ⟨⟨g, hg⟩⟩
-    exact ⟨@IsocrystalEquiv.mk p _ k _ _ _ _ _ (wittGLIsocrystal p k c) V _ _
-      (g.trans f) (fun x => by simp only [LinearEquiv.trans_apply, hf, hg])⟩
+    exact ⟨⟨g.trans f, fun x => by simp only [LinearEquiv.trans_apply, hf, hg]⟩⟩
 
 end TauCeti
