@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.NonUnital
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
-import Mathlib.Analysis.Real.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # Cuntz subequivalence
@@ -145,10 +145,6 @@ private theorem continuous_cutdownRoot {ε : ℝ} (hε : 0 < ε) : Continuous (c
     unfold cutdownRoot
     fun_prop (disch := assumption)
 
-private theorem sqrt_div_mul_mul_sqrt_div {u t : ℝ} (h : 0 ≤ u / t) (ht : t ≠ 0) :
-    √(u / t) * t * √(u / t) = u := by
-  rw [mul_right_comm, Real.mul_self_sqrt h, div_mul_cancel₀ _ ht]
-
 private theorem cutdownRoot_mul_mul_cutdownRoot {ε : ℝ} (hε : 0 ≤ ε) (t : ℝ) :
     cutdownRoot ε t * t * cutdownRoot ε t = max (t - ε) 0 := by
   rcases eq_or_ne t 0 with rfl | ht
@@ -157,7 +153,7 @@ private theorem cutdownRoot_mul_mul_cutdownRoot {ε : ℝ} (hε : 0 ≤ ε) (t :
   · simp [cutdownRoot, max_eq_right (sub_nonpos.mpr htε)]
   · have hpos : 0 ≤ (t - ε) / t := div_nonneg (by linarith) (by linarith)
     simp only [cutdownRoot, max_eq_left (sub_nonneg.mpr htε.le)]
-    exact sqrt_div_mul_mul_sqrt_div hpos ht
+    exact Real.sqrt_div_mul_mul_sqrt_div hpos ht
 
 /-- **Cutdown**: for positive `a` and `ε > 0`, the cutdown
 `(a - ε)₊ = cfcₙ (fun t ↦ max (t - ε) 0) a` is Cuntz subequivalent to `a`. -/
@@ -187,7 +183,7 @@ theorem cuntzLE_complex_iff {a b : {z : ℂ // 0 ≤ z}} : CuntzLE a b ↔ (b : 
   have hs0 : s ≠ 0 := fun h ↦ hb (by simp [← hsb, h])
   convert cuntzLE_star_mul_mul (((√(r / s) : ℝ) : ℂ)) b using 2
   rw [← hra, ← hsb]
-  simpa using congrArg Complex.ofReal (sqrt_div_mul_mul_sqrt_div (div_nonneg hr hs) hs0).symm
+  simpa using congrArg Complex.ofReal (Real.sqrt_div_mul_mul_sqrt_div (div_nonneg hr hs) hs0).symm
 
 /-- In `ℂ`, any two nonzero positive scalars are mutually Cuntz subequivalent. -/
 theorem antisymmRel_cuntzLE_complex {a b : {z : ℂ // 0 ≤ z}} (ha : (a : ℂ) ≠ 0)
