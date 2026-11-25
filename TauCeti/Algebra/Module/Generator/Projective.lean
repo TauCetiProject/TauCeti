@@ -19,7 +19,7 @@ forces `T = R`: otherwise `T` lies in a maximal ideal `m` with `M = m • M`, an
 kills `M`, so `r = 0` and `1 ∈ m`. Hence `M` is a generator
 (`TauCeti.Module.IsGenerator.of_faithfulSMul`).
 
-Being a generator, `∑ φᵢ(mᵢ) = 1`, is preserved by base change to any commutative `R`-algebra `S`
+Being a generator, `∑ φᵢ(mᵢ) = 1`, is preserved by base change to any `R`-algebra `S`
 (`TauCeti.Module.IsGenerator.baseChange`), and a generator is faithful. So faithfulness of finite
 projective modules is stable under base change (`TauCeti.Module.faithfulSMul_baseChange`).
 
@@ -46,7 +46,9 @@ open _root_.Module
 
 universe u v w
 
-variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+section CommSemiring
+
+variable {R : Type u} {M : Type v} [CommSemiring R] [AddCommMonoid M] [Module R M]
 
 /-- For a projective module, every element lies in the trace ideal times the module (the dual basis
 lemma). -/
@@ -61,6 +63,24 @@ theorem top_le_iSup_range_smul_top [Projective R M] :
     (Submodule.mem_iSup_of_mem ((Finsupp.lapply x).comp s) (LinearMap.mem_range_self _ m))
     Submodule.mem_top
 
+/-- **Generators are stable under base change**: if `∑ φᵢ(mᵢ) = 1` in `R`, then the base changes
+of the `φᵢ` and the vectors `1 ⊗ mᵢ` give `∑ = 1` in `S`. -/
+instance IsGenerator.baseChange (S : Type w) [Semiring S] [Algebra R S] [IsGenerator R M] :
+    IsGenerator S (S ⊗[R] M) := by
+  obtain ⟨n, φ, m, h⟩ := isGenerator_iff_exists_sum_eq_one.mp (inferInstance : IsGenerator R M)
+  refine isGenerator_iff_exists_sum_eq_one.mpr
+    ⟨n, fun i ↦ (AlgebraTensorModule.rid R S S).toLinearMap ∘ₗ (φ i).baseChange S,
+      fun i ↦ 1 ⊗ₜ m i, ?_⟩
+  simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
+    LinearMap.baseChange_tmul, AlgebraTensorModule.rid_tmul]
+  rw [← Finset.sum_smul, h, one_smul]
+
+end CommSemiring
+
+section CommRing
+
+variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+
 /-- **A faithful finite projective module is a generator**: the values of linear forms span the
 ring, by the dual basis lemma and Nakayama's lemma. -/
 theorem IsGenerator.of_faithfulSMul [Module.Finite R M] [Projective R M] [FaithfulSMul R M] :
@@ -74,25 +94,13 @@ theorem IsGenerator.of_faithfulSMul [Module.Finite R M] [Projective R M] [Faithf
     rw [hr0 x Submodule.mem_top, zero_smul]
   exact hm.ne_top ((Ideal.eq_top_iff_one _).mpr (by simpa [this] using m.neg_mem hr))
 
-/-- **Generators are stable under base change**: if `∑ φᵢ(mᵢ) = 1` in `R`, then the base changes
-of the `φᵢ` and the vectors `1 ⊗ mᵢ` give `∑ = 1` in `S`. -/
-theorem IsGenerator.baseChange (S : Type w) [CommRing S] [Algebra R S] [IsGenerator R M] :
-    IsGenerator S (S ⊗[R] M) := by
-  obtain ⟨n, φ, m, h⟩ := isGenerator_iff_exists_sum_eq_one.mp (inferInstance : IsGenerator R M)
-  refine isGenerator_iff_exists_sum_eq_one.mpr
-    ⟨n, fun i ↦ (AlgebraTensorModule.rid R S S).toLinearMap ∘ₗ (φ i).baseChange S,
-      fun i ↦ 1 ⊗ₜ m i, ?_⟩
-  simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-    LinearMap.baseChange_tmul, AlgebraTensorModule.rid_tmul]
-  rw [← Finset.sum_smul, h, one_smul]
-
 /-- **Faithfulness of finite projective modules is stable under base change.** For a faithful
-finite projective `R`-module `M` and a commutative `R`-algebra `S`, the `S`-module `S ⊗[R] M` is
-faithful. -/
-theorem faithfulSMul_baseChange (S : Type w) [CommRing S] [Algebra R S] [Module.Finite R M]
+finite projective `R`-module `M` and an `R`-algebra `S`, the `S`-module `S ⊗[R] M` is faithful. -/
+instance faithfulSMul_baseChange (S : Type w) [Semiring S] [Algebra R S] [Module.Finite R M]
     [Projective R M] [FaithfulSMul R M] : FaithfulSMul S (S ⊗[R] M) :=
   have := IsGenerator.of_faithfulSMul (R := R) (M := M)
-  have := IsGenerator.baseChange (R := R) (M := M) S
   inferInstance
+
+end CommRing
 
 end TauCeti.Module
