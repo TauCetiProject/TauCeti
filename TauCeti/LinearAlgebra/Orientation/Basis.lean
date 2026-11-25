@@ -15,7 +15,8 @@ basis. It is unchanged when the orientation and the basis are transported along 
 equivalence (`Orientation.signBasis_map`). Empty index types are included, so both
 zero-dimensional orientations retain their sign. Two orientations are equal exactly when they
 agree on whether they are the orientation of a fixed basis
-(`Module.Basis.eq_iff_eq_orientation_iff`).
+(`Module.Basis.eq_iff_eq_orientation_iff`). In a line, the basis `(-v)` gives the orientation
+opposite to that of `(v)` (`TauCeti.orientation_basisSingleton_neg`).
 -/
 
 public section
@@ -200,3 +201,17 @@ theorem Orientation.signBasis_mul_units_mul_det_pos
   -- Units.map along the integer cast has the same underlying scalar as the integer-unit cast.
   change 0 < (u : R) * (signBasis o b : R) * A.toLinearMap.det at hp
   simpa only [mul_comm] using hp
+
+/-- In a line, the basis `(-v)` gives the orientation opposite to that of the basis `(v)`. -/
+@[simp]
+theorem TauCeti.orientation_basisSingleton_neg {R V ι : Type*} [Field R] [LinearOrder R]
+    [IsStrictOrderedRing R] [AddCommGroup V] [Module R V] [Unique ι] [Fintype ι] [DecidableEq ι]
+    (hV : Module.finrank R V = 1) {v : V} (hv : -v ≠ 0) :
+    (FiniteDimensional.basisSingleton ι hV (-v) hv).orientation =
+      -(FiniteDimensional.basisSingleton ι hV v (neg_ne_zero.1 hv)).orientation := by
+  -- The basis `(-v)` is the basis `(v)` with its vector multiplied by the unit `-1`.
+  convert Module.Basis.orientation_neg_single
+    (FiniteDimensional.basisSingleton ι hV v (neg_ne_zero.1 hv)) default using 2
+  refine Module.Basis.eq_of_apply_eq fun i ↦ ?_
+  rw [Module.Basis.unitsSMul_apply, Unique.eq_default i, Function.update_self]
+  simp [FiniteDimensional.basisSingleton_apply]

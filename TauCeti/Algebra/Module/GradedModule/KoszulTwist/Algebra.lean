@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.GradedModule.Internal
+public import TauCeti.Algebra.Module.GradedModule.Opposite
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 
 /-!
@@ -15,6 +16,10 @@ On an internally integer-graded algebra, multiplication of degree-`p` elements b
 `(-1)^(n * p)` is an involutive algebra automorphism. Restricting a module action along this
 map supplies the signed left action on cohomological shifts of DG bimodules. The construction
 bundles `TauCeti.InternalGrading.koszulTwist` using its existing multiplication and unit laws.
+
+On a graded right module, the Koszul twist of parameter `n` intertwines the action through this
+automorphism with the original action
+(`TauCeti.InternalGrading.koszulTwist_op_koszulTwistAlgEquiv_smul`).
 -/
 
 public section
@@ -66,5 +71,40 @@ theorem koszulTwistAlgEquiv_trans (m n : ℤ) :
   ext a
   simpa only [AlgEquiv.trans_apply, koszulTwistAlgEquiv_apply, LinearMap.comp_apply] using
     LinearMap.congr_fun ((ofDecomposition 𝒜).koszulTwist_comp n m) a
+
+section RightModule
+
+open MulOpposite
+
+variable {M : Type*} [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M]
+  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
+  [SetLike.GradedSMul (ofDecomposition 𝒜).opposite.piece ℳ]
+
+/-- On a graded right module, the Koszul twist of parameter `n` intertwines the action through the
+Koszul automorphism with the original action: an `a ∈ Aᵉ` passing an `x ∈ Mᵖ` costs the sign
+`(-1)^(n e)` recorded by the twist of `a`. -/
+theorem koszulTwist_op_koszulTwistAlgEquiv_smul (n : ℤ) (a : A) (x : M) :
+    (ofDecomposition ℳ).koszulTwist n (op (koszulTwistAlgEquiv 𝒜 n a) • x) =
+      op a • (ofDecomposition ℳ).koszulTwist n x := by
+  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
+  | zero => simp
+  | add a a' ha ha' => simp only [map_add, op_add, add_smul, ha, ha']
+  | @homogeneous e a =>
+    induction x using DirectSum.Decomposition.inductionOn ℳ with
+    | zero => simp
+    | add x x' hx hx' => simp only [smul_add, map_add, hx, hx']
+    | @homogeneous p x =>
+      obtain ⟨a, ha⟩ := a
+      obtain ⟨x, hx⟩ := x
+      -- Passing `a` costs `(-1)^(n e)`, and the twist of `a • x` costs `(-1)^(n (p + e))`.
+      have hsign : (n * e).negOnePow * (n * (p + e)).negOnePow = (n * p).negOnePow := by
+        rw [← Int.negOnePow_add, Int.negOnePow_eq_iff]
+        exact ⟨n * e, by ring⟩
+      rw [koszulTwistAlgEquiv_apply_of_mem 𝒜 n ha, op_smul, smul_assoc, map_zsmul_unit,
+        koszulTwist_ofDecomposition_apply_of_mem ℳ (op_smul_mem_of_mem_graded ha hx),
+        koszulTwist_ofDecomposition_apply_of_mem ℳ hx]
+      simp only [Int.cast_smul_eq_zsmul, ← Units.smul_def, smul_comm (op a), smul_smul, hsign]
+
+end RightModule
 
 end TauCeti.InternalGrading

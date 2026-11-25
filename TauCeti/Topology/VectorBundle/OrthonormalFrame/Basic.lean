@@ -80,6 +80,8 @@ space of `E` (`TauCeti.OrthonormalFrameBundle.associatedHomeomorph`).
 
 * `TauCeti.OrthonormalFrameBundle.continuous_totalSpaceMk_frame_apply`: applying frames to vectors
   is jointly continuous.
+* `TauCeti.OrthonormalFrameBundle.continuous_frame_symm_apply`: a continuous section read in the
+  frames, `p ↦ p.frame.symm (σ p.proj)`, is continuous.
 * `Bundle.Trivialization.continuous_orthonormalFrame`,
   `Bundle.Trivialization.continuous_orthonormalFrame_symm_apply`: the local orthonormal frame is a
   continuous local section, and reading vectors in it is continuous.
@@ -331,6 +333,23 @@ theorem continuous_totalSpaceMk_frame_apply [FiniteDimensional 𝕜 V] :
   refine hc.congr ?_
   filter_upwards [continuous_fst.continuousAt.preimage_mem_nhds hU] with q hq
   exact coord_apply hq q.2
+
+/-- **A continuous section read in orthonormal frames is continuous.** For a bundle with continuous
+fibre norms and a continuous section `σ`, the vector `p.frame.symm (σ p.proj)` of `V` representing
+`σ` in the frame `p` depends continuously on `p`: its coefficient on each vector `b i` of an
+orthonormal basis of `V` is the inner product of the frame applied to `b i` with `σ`. -/
+theorem continuous_frame_symm_apply [ContinuousFiberNorm F E] [FiniteDimensional 𝕜 V]
+    {σ : ∀ b, E b} (hσ : Continuous fun y ↦ (⟨y, σ y⟩ : TotalSpace F E)) :
+    Continuous fun p : OrthonormalFrameBundle 𝕜 F E V ↦ p.frame.symm (σ p.proj) := by
+  let b := stdOrthonormalBasis 𝕜 V
+  have h (i) : Continuous fun p : OrthonormalFrameBundle 𝕜 F E V ↦
+      inner 𝕜 (p.frame (b i)) (σ p.proj) • b i :=
+    ((continuous_totalSpaceMk_frame (b i)).inner_bundle_of_continuousFiberNorm
+      (hσ.comp continuous_proj)).smul continuous_const
+  refine (continuous_finsetSum Finset.univ fun i _ ↦ h i).congr fun p ↦ ?_
+  rw [← b.sum_repr' (p.frame.symm (σ p.proj))]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [← LinearIsometryEquiv.inner_map_map p.frame, LinearIsometryEquiv.apply_symm_apply]
 
 -- Here and below, `CompleteSpace V` follows from `FiniteDimensional 𝕜 V`, but instance search does
 -- not find it for a variable field `𝕜`; it is needed for the star structure on `V →L[𝕜] V`.

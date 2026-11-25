@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Notation
-public import TauCeti.Analysis.AffineBoundTightening.Operator
+public import TauCeti.Analysis.AffineBoundTightening.Limit
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Positivity
@@ -17,7 +17,8 @@ import Mathlib.Tactic.Ring
 
 This file records concrete examples exercising joint interval packing, endpoint containment, total
 width, signed affine image arithmetic, simultaneous step evaluation, empty absorption, graph-point
-survival, fixed-tuple containment, and non-terminating geometric convergence.
+survival, fixed-tuple containment, non-terminating geometric convergence, and the endpoint limit of
+the iteration.
 
 ## Main example
 
@@ -459,6 +460,82 @@ theorem zero_rows_fixed_and_nonfixed (A : Matrix (Fin 0) (Fin 1) ℝ) :
   refine ⟨within_rawRun_of_isFixedPt_step h1, within_rawRun_of_isFixedPt_step h2, fun h3 => ?_⟩
   have hle := ((isFixedPt_step_zero_rows_iff A q₀ q₃).mp h3).le_snd (.inl 0)
   norm_num [q₀, q₃] at hle
+
+/-! ### The endpoint limit -/
+
+/-- In the two-row system with `1 < a`, every public iterate is nonempty, the endpoint limit is the
+all-zero singleton `twoRowBox 0`, which is a fixed tuple, and no finite iterate reaches it. -/
+theorem twoRow_endpointLimit {a : ℝ} (ha : 1 < a) :
+    (∀ k, (publicRun (twoRowMatrix a) (twoRowBox 1) k : Set (Coord 2 2 → ℝ)).Nonempty) ∧
+      endpointLimit (twoRowMatrix a) (twoRowBox 1) = twoRowBox 0 ∧
+      (twoRowBox 0).1 = (twoRowBox 0).2 ∧
+      Function.IsFixedPt (step (twoRowMatrix a) (twoRowBox 1)) (twoRowBox 0) ∧
+      (∀ k, rawRun (twoRowMatrix a) (twoRowBox 1) k ≠ twoRowBox 0) := by
+  have ha0 : 0 < a := zero_lt_one.trans ha
+  have hord (k : ℕ) :
+      (rawRun (twoRowMatrix a) (twoRowBox 1) k).1 ≤ (rawRun (twoRowMatrix a) (twoRowBox 1) k).2 :=
+    fun c => by
+      rw [rawRun_twoRow ha k]
+      cases c with
+      | inl j => simp only [twoRowBox_fst, twoRowBox_snd_inl]; positivity
+      | inr i => simp
+  have hinv : Tendsto (fun k : ℕ => 1 / a ^ k) atTop (𝓝 0) := by
+    simpa [one_div, inv_pow] using
+      tendsto_pow_atTop_nhds_zero_of_lt_one (inv_nonneg.mpr ha0.le) (inv_lt_one_of_one_lt₀ ha)
+  have hlim : endpointLimit (twoRowMatrix a) (twoRowBox 1) = twoRowBox 0 := by
+    refine Prod.ext (funext fun c => ?_) (funext fun c => ?_)
+    · exact tendsto_nhds_unique (tendsto_rawRun_fst hord c) (by simp [rawRun_twoRow ha])
+    · cases c with
+      | inl j =>
+        exact tendsto_nhds_unique (tendsto_rawRun_snd hord _)
+          (by simpa [rawRun_twoRow ha] using hinv)
+      | inr i => exact tendsto_nhds_unique (tendsto_rawRun_snd hord _) (by simp [rawRun_twoRow ha])
+  refine ⟨fun k => (coe_publicRun_nonempty_iff _ _ k).mpr (hord k), hlim,
+    funext fun c => by cases c <;> simp, hlim ▸ isFixedPt_step_endpointLimit hord, fun k h => ?_⟩
+  · rw [rawRun_twoRow ha k] at h
+    have h0 : (1 : ℝ) / a ^ k = 0 := by simpa using congrFun (congrArg Prod.snd h) (.inl 0)
+    exact (one_div_pos.mpr (pow_pos ha0 k)).ne' h0
+
+/-- With no rows, the endpoint limit is the initial tuple; for the initial box `[0, 2]`, the smaller
+fixed boxes `[0, 1]` and `[1, 2]` both lie within it. -/
+theorem zero_rows_endpointLimit {n : ℕ} (A : Matrix (Fin 0) (Fin n) ℝ) (q₀ : Raw n 0)
+    (A₁ : Matrix (Fin 0) (Fin 1) ℝ) :
+    let r₀ : Raw 1 0 := (fun _ => 0, fun _ => 2)
+    let r₁ : Raw 1 0 := (fun _ => 0, fun _ => 1)
+    let r₂ : Raw 1 0 := (fun _ => 1, fun _ => 2)
+    endpointLimit A q₀ = q₀ ∧ Within r₁ (endpointLimit A₁ r₀) ∧
+      Within r₂ (endpointLimit A₁ r₀) := by
+  intro r₀ r₁ r₂
+  have h1 : Function.IsFixedPt (step A₁ r₀) r₁ :=
+    (isFixedPt_step_zero_rows_iff A₁ r₀ r₁).mpr
+      (within_iff.mpr ⟨fun _ => le_rfl, fun _ => by norm_num [r₀, r₁]⟩)
+  have h2 : Function.IsFixedPt (step A₁ r₀) r₂ :=
+    (isFixedPt_step_zero_rows_iff A₁ r₀ r₂).mpr
+      (within_iff.mpr ⟨fun _ => by norm_num [r₀, r₂], fun _ => le_rfl⟩)
+  exact ⟨endpointLimit_eq_self_of_isFixedPt ((isFixedPt_step_zero_rows_iff A q₀ q₀).mpr Within.rfl),
+    within_endpointLimit_of_isFixedPt_step h1, within_endpointLimit_of_isFixedPt_step h2⟩
+
+/-- At `n = m = 0`, the endpoint limit is the unique raw tuple and its public state is
+nonbottom. -/
+theorem empty_dim_endpointLimit (A : Matrix (Fin 0) (Fin 0) ℝ) (q₀ q : Raw 0 0) :
+    endpointLimit A q₀ = q ∧ pack (endpointLimit A q₀) ≠ ⊥ :=
+  ⟨Subsingleton.elim _ _, pack_ne_bot_iff.mpr fun c => c.elim Fin.elim0 Fin.elim0⟩
+
+/-- The zero-coefficient row with `B = [1, 1]` has an empty public iterate, and hence no ordered raw
+fixed tuple. -/
+theorem conflicting_row_no_fixed :
+    let A : Matrix (Fin 1) (Fin 1) ℝ := 0
+    let q₀ : Raw 1 1 := (Sum.elim ![0] ![1], Sum.elim ![1] ![1])
+    ¬ (∀ k, (publicRun A q₀ k : Set (Coord 1 1 → ℝ)).Nonempty) ∧
+      ¬ ∃ q : Raw 1 1, q.1 ≤ q.2 ∧ Function.IsFixedPt (step A q₀) q := by
+  intro A q₀
+  have h1 : publicRun A q₀ 1 = ⊥ := (conflicting_row_absorption 0).1.2.1 1 le_rfl
+  have hne : ¬ ∀ k, (publicRun A q₀ k : Set (Coord 1 1 → ℝ)).Nonempty := fun h => by
+    have h1' := h 1
+    rw [h1, Interval.coe_bot] at h1'
+    exact not_nonempty_empty h1'
+  exact ⟨hne, fun hq => hne
+    ((forall_coe_publicRun_nonempty_iff_exists_isFixedPt_step A q₀).mpr hq)⟩
 
 end
 

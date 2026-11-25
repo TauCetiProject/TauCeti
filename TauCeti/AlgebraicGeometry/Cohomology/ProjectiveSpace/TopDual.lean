@@ -28,6 +28,10 @@ dual of `Symʲ M` (Stacks, Lemma 30.8.1 (01XT)).
 * `Module.Basis.nonempty_linearEquiv_cohomology_top_twistingSheaf_dual`: for `n ≥ 1` and `j : ℕ`
   with `j = -m - n - 1`, the module `Hⁿ(ℙⁿ_R, 𝒪(m))` is isomorphic to `(Symʲ M)^∨`; no
   isomorphism is singled out.
+* `Module.Basis.nonempty_linearEquiv_cohomology_top_twistingSheaf_neg_card`: for `n ≥ 1`,
+  `Hⁿ(ℙⁿ_R, 𝒪(-n-1)) ≅ R`.
+* `Module.Basis.nontrivial_cohomology_top_twistingSheaf_of_le_neg_card`: for `n ≥ 1`, `R ≠ 0`
+  and `m ≤ -n - 1`, `Hⁿ(ℙⁿ_R, 𝒪(m)) ≠ 0`.
 
 ## References
 
@@ -116,5 +120,37 @@ theorem nonempty_linearEquiv_cohomology_top_twistingSheaf_dual {κ : Type*} [Fin
   exact ⟨φ.trans ((Finsupp.domLCongr ((negativeExponentsEquivFinsuppDegree κ hj).trans
     (Sym.equivFinsuppDegree κ j).symm)).trans
       (b.symmetricAlgebraHomogeneous j).dualBasis.repr.symm)⟩
+
+/-- **The top cohomology of `𝒪(-(n + 2))` on projective space of dimension `n + 1` is free of
+rank one.** For a free `R`-module `M` with a basis indexed by `κ` of cardinality `n + 2`, so that
+`Proj (Sym M)` is projective space of dimension `n + 1` over `R`,
+`H^{n+1}(Proj (Sym M), 𝒪(-(n + 2)))` is isomorphic to `R`, over any commutative ring `R`: it is
+the dual of the forms of degree zero. No isomorphism is singled out. -/
+theorem nonempty_linearEquiv_cohomology_top_twistingSheaf_neg_card {κ : Type*} [Fintype κ]
+    (b : Module.Basis κ R M) {n : ℕ} (hn : Fintype.card κ = n + 2) :
+    Nonempty (Cohomology (Proj.twistingSheaf 𝒜 (-((n + 2 : ℕ) : ℤ))) (n + 1) ≃ₗ[R] R) := by
+  obtain ⟨φ⟩ := b.nonempty_linearEquiv_cohomology_top_twistingSheaf_dual
+    (-((n + 2 : ℕ) : ℤ)) (j := 0) hn (by rw [hn]; ring)
+  exact ⟨φ.trans ((TauCeti.SymmetricAlgebra.homogeneousSubmoduleZeroEquiv R M).dualMap.symm.trans
+    (LinearMap.ringLmapEquivSelf R R R))⟩
+
+/-- **The top cohomology of `𝒪(m)` on projective space of dimension `n + 1` is nonzero for
+`m ≤ -(n + 2)`.** For a nonzero ring `R` and a free `R`-module `M` with a basis indexed by `κ` of
+cardinality `n + 2`, so that `Proj (Sym M)` is projective space of dimension `n + 1` over `R`,
+`H^{n+1}(Proj (Sym M), 𝒪(m))` is nontrivial when `m ≤ -(n + 2)`: it is the dual of the free
+module of forms of degree `-m - (n + 2)`, which has a monomial basis. -/
+theorem nontrivial_cohomology_top_twistingSheaf_of_le_neg_card [Nontrivial R] {κ : Type*}
+    [Fintype κ] (b : Module.Basis κ R M) {n : ℕ} (hn : Fintype.card κ = n + 2) {m : ℤ}
+    (hm : m ≤ -((n + 2 : ℕ) : ℤ)) :
+    Nontrivial (Cohomology (Proj.twistingSheaf 𝒜 m) (n + 1)) := by
+  classical
+  obtain ⟨j, hj⟩ : ∃ j : ℕ, (j : ℤ) = -m - Fintype.card κ :=
+    ⟨(-m - Fintype.card κ).toNat, Int.toNat_of_nonneg (by rw [hn]; omega)⟩
+  obtain ⟨φ⟩ := b.nonempty_linearEquiv_cohomology_top_twistingSheaf_dual m hn hj
+  obtain ⟨k⟩ : Nonempty κ := Fintype.card_pos_iff.mp (by omega)
+  let c := (b.symmetricAlgebraHomogeneous j).dualBasis
+  have : Nontrivial (Module.Dual R (𝒜 j)) :=
+    nontrivial_of_ne (c (Sym.replicate j k)) 0 (c.ne_zero _)
+  exact φ.toEquiv.nontrivial
 
 end Module.Basis

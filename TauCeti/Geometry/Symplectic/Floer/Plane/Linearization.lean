@@ -13,6 +13,7 @@ import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
 import TauCeti.Geometry.Symplectic.Floer.Plane.ExponentialDecay
 import TauCeti.Geometry.Symplectic.JHolomorphic.Line
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Topology.MetricSpace.Pseudo.Basic
@@ -190,20 +191,8 @@ theorem norm_floerLinearization_comp_realChart_cylindricalEndLift_sq_le (ω : Sy
     (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
     (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
     u ξ (realChart p.cylindricalEndLift ζ)
-  have hJD : ‖Jx D‖ ≤ B * ‖D‖ :=
-    (ContinuousLinearMap.le_opNorm (Jx.toLinearMap.toContinuousLinearMap) D).trans
-      (by gcongr)
-  -- `‖a D - b J D‖ ≤ (|a| + |b| B) ‖D‖`, and `(|a| + |b| B)² ≤ (a² + b²)(1 + B²)`.
-  have h : ‖a • D - b • Jx D‖ ≤ (|a| + |b| * B) * ‖D‖ := by
-    refine (norm_sub_le _ _).trans ?_
-    rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
-    nlinarith [mul_le_mul_of_nonneg_left hJD (abs_nonneg b)]
-  have hCS : (|a| + |b| * B) ^ 2 ≤ (1 + B ^ 2) * (a ^ 2 + b ^ 2) := by
-    nlinarith [sq_abs a, sq_abs b, sq_nonneg (|a| * B - |b|)]
-  calc _ ≤ ((|a| + |b| * B) * ‖D‖) ^ 2 := by gcongr
-    _ ≤ _ := by
-        rw [mul_pow, ← mul_assoc]
-        exact mul_le_mul_of_nonneg_right hCS (sq_nonneg _)
+  have h := ContinuousLinearMap.norm_smul_add_smul_apply_sq_le _ hB a (-b) D
+  rwa [neg_sq, neg_smul, ← sub_eq_add_neg, mul_assoc] at h
 
 /-- The linearized operator of a PSS plane applied to a `C¹` section `ξ` with compact support in a
 set `Ω`, along a map `u` which is `C¹` on `Ω` with `J` also `C¹` along `u` there, is continuous
@@ -618,7 +607,7 @@ theorem exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearizat
       (hdecay.mono fun s hs t _ ↦ by
         rw [dist_eq_norm]
         exact (le_add_of_nonneg_right (norm_nonneg _)).trans (hs t))
-  obtain ⟨a, -, hsub⟩ := exists_two_le_exp_lt_norm_subset r
+  obtain ⟨a, -, hsub⟩ := exists_le_exp_lt_norm_subset 2 r
   -- The orbit stays in `K`, as a limit of loops in `K`.
   have hxK (t : ℝ) : x t ∈ K := by
     refine hK.isClosed.mem_of_tendsto ((hloop {t}).tendsto_at (mem_singleton t)) ?_

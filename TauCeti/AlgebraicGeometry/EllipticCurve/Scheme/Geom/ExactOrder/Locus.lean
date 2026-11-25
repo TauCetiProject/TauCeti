@@ -7,9 +7,11 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Subgroup
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Basic
+public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 public import TauCeti.AlgebraicGeometry.IdealSheaf.WeilRestriction
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Map
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GroupLaw
+import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.BaseChange
 import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
 import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 
@@ -40,6 +42,15 @@ order `N` exactly when the corresponding morphism `S' ⟶ E` factors through the
 (`EllipticCurveGeom.isOfExactOrder_iff_exactOrderLocus_le_ker_comp`). No hypothesis is placed on
 `S`, which may be nonreduced, and `N` need not be invertible on it.
 
+A scheme-theoretically dominant morphism, for instance a flat surjective one, factors through a
+closed subscheme only if that subscheme is everything. A point therefore has exact order `N`
+exactly when its base change along such a morphism does
+(`EllipticCurveGeom.isOfExactOrder_pointsPullback_iff_of_isSchemeTheoreticallyDominant`), so
+having exact order `N` descends in particular along fpqc and fppf covers. For flat surjective
+morphisms the dominance hypothesis is the instance
+`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_flat_of_surjective`, supplied by importing
+`TauCeti.AlgebraicGeometry.Morphisms.Flat.SchemeTheoreticallyDominant`.
+
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.subgroupLocus E D`: the ideal sheaf on `S` of the
@@ -56,6 +67,8 @@ order `N` exactly when the corresponding morphism `S' ⟶ E` factors through the
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isOfExactOrder_iff_exactOrderLocus_le_ker_comp`:
   the universal property of the exact-order locus; `isOfExactOrder_iff_exactOrderLocus_le_ker` is
   its special case for `S`-points of `E`.
+* `EllipticCurveGeom.isOfExactOrder_pointsPullback_iff_of_isSchemeTheoreticallyDominant`: having
+  exact order `N` descends along scheme-theoretically dominant, e.g. flat surjective, morphisms.
 
 ## References
 
@@ -113,29 +126,18 @@ theorem subgroupLocus_le_ker_iff (hg : IsPullback g E'.structureMap E.structureM
       ∃ _ : GrpObj (Over.mk ((D.comap g).subschemeι ≫ E'.structureMap)),
         IsMonHom (Over.homMk (D.comap g).subschemeι :
           Over.mk ((D.comap g).subschemeι ≫ E'.structureMap) ⟶ Over.mk E'.structureMap) := by
-  let i' : Over.mk ((D.comap g).subschemeι ≫ E'.structureMap) ⟶ Over.mk E'.structureMap :=
-    Over.homMk (D.comap g).subschemeι
-  have : IsClosedImmersion i'.left := inferInstanceAs (IsClosedImmersion (D.comap g).subschemeι)
-  -- `ρ : V(D.comap g) ⟶ V(D)` is the base change of `V(D)` along `f`
-  let ρ := subschemeMap (D.comap g) D g (D.le_map_comap g)
-  have hρ : ρ ≫ D.subschemeι = (D.comap g).subschemeι ≫ g := subschemeMap_subschemeι _ _ _ _
+  refine Iff.trans ?_ (GroupScheme.exists_grpObj_isMonHom_comap_iff_le
+    (G := Over.mk E.structureMap) (G' := Over.mk E'.structureMap) hg.w (by
+      simpa only [mul_left, Over.mk_hom] using addition_comp_of_isPullback hg h0) D).symm
   have hD := D.isPullback_subschemeMap_comap E.structureMap hg
-  have hi' : i'.left.ker = D.comap g := ker_subschemeι _
-  rw [GroupScheme.exists_grpObj_isMonHom_iff_ker_le i', hi']
-  simp only [subgroupLocus, sup_le_iff, and_assoc, i', Over.comp_left, one_left, mul_left,
-    inv_left, Over.homMk_left, Over.tensorHom_left, Over.tensorObj_left,
+  simp only [subgroupLocus, sup_le_iff, and_assoc, one_left, mul_left, inv_left,
     Over.mk_hom]
   refine and_congr ?_ (and_congr ?_ ?_)
-  · -- the zero section lies in `V(D)`
-    rw [← le_map_iff_comap_le, ← le_map_iff_comap_le, map_ker, map_ker, h0]
-  · -- sums of two points of `V(D)` lie in `V(D)`
-    refine weilRestriction_comap_le_ker_iff D _ (hD.flip.pullback_map hD.flip) ?_
-    rw [Category.assoc, addition_comp_of_isPullback hg h0, ← Category.assoc, ← Category.assoc]
-    congr 1
-    apply pullback.hom_ext <;> simp
-  · -- negatives of points of `V(D)` lie in `V(D)`
-    refine weilRestriction_comap_le_ker_iff D _ hD.flip ?_
-    rw [Category.assoc, neg_comp_of_isPullback hg h0, reassoc_of% hρ]
+  · rw [← le_map_iff_comap_le, map_ker]
+  · rw [weilRestriction_le_ker_iff_of_isPullback _ (hD.flip.pullback_map hD.flip),
+      ← le_map_iff_comap_le, map_ker]
+  · rw [weilRestriction_le_ker_iff_of_isPullback _ hD.flip,
+      ← le_map_iff_comap_le, map_ker]
 
 end SubgroupLocus
 
@@ -176,6 +178,20 @@ theorem isOfExactOrder_iff_subgroupLocus_eq_bot (P : 𝟙_ (Over S) ⟶ Over.mk 
     (N : ℕ) : E.IsOfExactOrder P N ↔ E.subgroupLocus (E.multiplesDivisor P N) = ⊥ := by
   rw [← le_bot_iff, ← Scheme.Hom.ker_eq_bot_of_isIso (𝟙 S),
     ← isOfExactOrder_pointsPullback_iff (.id_horiz E.structureMap) (by simp), pointsPullback_id]
+
+/-- **Points of exact order `N` descend along scheme-theoretically dominant morphisms**
+(Katz–Mazur, §1.4). For a pullback square of elliptic curves over a scheme-theoretically dominant
+`f : S' ⟶ S`, for instance a flat surjective one, an `S`-point `P` of `E` has exact order `N` in
+the sense of Drinfeld (`EllipticCurveGeom.IsOfExactOrder`) exactly when its base change to `E'`
+does. -/
+@[simp]
+theorem isOfExactOrder_pointsPullback_iff_of_isSchemeTheoreticallyDominant
+    [IsSchemeTheoreticallyDominant f]
+    (hg : IsPullback g E'.structureMap E.structureMap f) (h0 : E'.zero ≫ g = f ≫ E.zero)
+    (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (N : ℕ) :
+    E'.IsOfExactOrder (pointsPullback hg h0 P) N ↔ E.IsOfExactOrder P N := by
+  rw [isOfExactOrder_pointsPullback_iff, f.ker_eq_bot, le_bot_iff,
+    isOfExactOrder_iff_subgroupLocus_eq_bot]
 
 /-! ### The exact-order locus in `E` -/
 
