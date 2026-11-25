@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Module.StableEquivalent
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 import Mathlib.RingTheory.LocalRing.Module
-import TauCeti.Algebra.Module.Projective.Reduction
+import TauCeti.Algebra.Module.Projective.Reduction.Basic
 import TauCeti.RingTheory.Ideal.Quotient.ChineseRemainder
 
 /-!
