@@ -61,6 +61,7 @@ term `p t` keeps `(1 + t) ^ p - 1` inside `r_0`, while beyond `r_0` the term `t�
   `‖t‖ < r_h`; `TauCeti.le_norm_amiceCharCoeff_pow` is the subsequence detecting the failure.
 * `TauCeti.not_tendsto_amiceCharCoeff_one_and_tendsto_amiceCharCoeff_two`: at `p = 2`, a parameter
   of norm `2 ^ (-1 / 2)` fails the criterion at level one and satisfies it at level two.
+* `TauCeti.mahlerEquiv_eq_pow_of_coe_eq_addChar`: the Mahler coefficients of `χ_t` are `tⁿ`.
 * `TauCeti.AnalyticStage.eval_addCharExpansion`: the expansion evaluates to `χ_t`.
 * `TauCeti.AnalyticStage.norm_addCharExpansion`: the expansion has norm exactly one.
 * `TauCeti.AnalyticStage.isGreatest_norm_addCharExpansion`: for a multiplicative norm, the
@@ -87,6 +88,23 @@ open scoped ZeroAtInfty
 variable {p : ℕ} [hp : Fact p.Prime]
 
 namespace TauCeti
+
+/-! ### The Mahler coefficients of a character -/
+
+section Mahler
+
+variable {R : Type*} [NormedRing R] [Algebra ℤ_[p] R] [IsBoundedSMul ℤ_[p] R]
+  [IsUltrametricDist R] [CompleteSpace R]
+
+/-- **The Mahler coefficients of `χ_t` are the powers `tⁿ`.** If a continuous function `f` on `ℤ_p`
+evaluates to the character `χ_t(x) = (1 + t) ^ x`, its `n`-th Mahler coefficient is `tⁿ`. -/
+theorem mahlerEquiv_eq_pow_of_coe_eq_addChar {t : R} (hr : Tendsto (t ^ ·) atTop (𝓝 0))
+    {f : C(ℤ_[p], R)} (hf : ⇑f = PadicInt.addChar_of_value_at_one t hr) (n : ℕ) :
+    PadicInt.mahlerEquiv R f n = t ^ n := by
+  rw [PadicInt.mahlerEquiv_apply, hf, PadicInt.coe_addChar_of_value_at_one]
+  exact PadicInt.fwdDiff_mahlerSeries hr n
+
+end Mahler
 
 /-! ### The Amice coordinates of a character -/
 
@@ -428,13 +446,9 @@ theorem exists_eval_eq_addChar_iff {h : ℕ} {t : K} (hr : Tendsto (t ^ ·) atTo
     (∃ f : AnalyticStage p h K, ⇑(eval S f) = PadicInt.addChar_of_value_at_one t hr) ↔
       ‖t‖ < amiceRadius p h := by
   refine ⟨fun ⟨f, hf⟩ ↦ ?_, fun ht ↦ ⟨_, eval_addCharExpansion S ht hr⟩⟩
-  -- The Mahler coefficients of `χ_t` are the powers `tⁿ`.
-  have hmahler (n : ℕ) : PadicInt.mahlerEquiv K (eval S f) n = t ^ n := by
-    rw [PadicInt.mahlerEquiv_apply, hf, PadicInt.coe_addChar_of_value_at_one]
-    exact PadicInt.fwdDiff_mahlerSeries hr n
   rw [← tendsto_amiceCharCoeff_iff]
   refine ((mem_range_eval_iff S).mp ⟨f, rfl⟩).congr fun n ↦ ?_
-  rw [hmahler, amiceCharCoeff_def]
+  rw [mahlerEquiv_eq_pow_of_coe_eq_addChar hr hf, amiceCharCoeff_def]
 
 /-- **Every continuous character of `ℤ_p` is analytic at some level**, when its values lie in a
 complete ultrametric normed `ℚ_p`-algebra with multiplicative norm, such as a complete normed field
