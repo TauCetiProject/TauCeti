@@ -1,0 +1,110 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Manifold.Riemannian.ClosedBall.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Hessian.Isometry
+
+/-!
+# The Hessian on the closed unit ball
+
+The inclusion of the closed unit ball of a real inner product space `E` of dimension `n`, with its
+Euclidean metric `TauCeti.closedBallEuclideanMetric`, into `E` with its flat metric is a local
+Riemannian isometry (`TauCeti.isLocalRiemannianIsometry_subtypeVal_closedBall`): it is analytic, its
+differential is invertible at every point, including the points of the boundary sphere, and the
+metric of the ball is induced by it. The naturality of the Levi-Civita connection under local
+Riemannian isometries holds at boundary points as well, so the Hessian of the restriction
+`f ∘ ι` of a function `f : E → ℝ`, `C²` at `x`, is the second Fréchet derivative of `f` at every
+point of the closed ball, boundary included:
+
+`Hess (f ∘ ι)(u, w) = D²f(x)(dι u, dι w)`.
+
+In particular `Hess (1 - |x|²) = -2 g` (`TauCeti.hessian_one_sub_norm_sq_closedBall`).
+
+## Main statements
+
+* `TauCeti.isLocalRiemannianIsometry_subtypeVal_closedBall`: the inclusion of the closed unit
+  ball into `E` is a local Riemannian isometry.
+* `TauCeti.hessian_comp_subtypeVal_closedBall`: the Hessian of `f ∘ ι` on the closed unit ball is
+  the second Fréchet derivative of `f`.
+* `TauCeti.hessian_one_sub_norm_sq_closedBall`: the Hessian of `1 - |x|²` is `-2` times the
+  Euclidean metric.
+
+## References
+
+* J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (2018), Chapter 2
+  (induced metrics on submanifolds).
+-/
+
+public section
+
+open Bundle Metric Module TauCeti.Manifold
+open scoped ContDiff Manifold RealInnerProductSpace Gradient
+
+noncomputable section
+
+namespace TauCeti
+
+variable {n : ℕ} [NeZero n] {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [Fact (finrank ℝ E = n)]
+
+/-- The inclusion of the closed unit ball, with its Euclidean metric, into `E`, with its flat
+metric, is a local Riemannian isometry. -/
+theorem isLocalRiemannianIsometry_subtypeVal_closedBall :
+    IsLocalRiemannianIsometry (𝓡∂ n) 𝓘(ℝ, E) (Subtype.val : closedBall (0 : E) 1 → E) where
+  contMDiff := contMDiff_subtypeVal_closedBall.of_le le_top
+  isInvertible_mfderiv x :=
+    ⟨(subtypeValClosedBallTangentEquiv (n := n) x).trans
+      (NormedSpace.fromTangentSpace (𝕜 := ℝ) (x : E)).symm, by
+      ext v
+      have h := ContinuousLinearMap.ext_iff.1
+        (subtypeValClosedBallTangentEquiv_toContinuousLinearMap (n := n) x) v
+      simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearMap.coe_comp,
+        Function.comp_apply] at h
+      simp [h]⟩
+  inner_mfderiv x v w := by
+    rw [inner_tangentSpace_closedBall, inner_tangentSpace_vectorSpace]
+    rfl
+
+/-- **The Hessian on the closed unit ball.** For a function `f : E → ℝ`, `C²` at a point `x` of
+the closed unit ball, the Hessian of its restriction `f ∘ ι` for the Euclidean metric is the second
+Fréchet derivative of `f` at `x`, evaluated on the images of the tangent vectors under the
+differential of the inclusion. This holds at the points of the boundary sphere as well. -/
+theorem hessian_comp_subtypeVal_closedBall {f : E → ℝ} {x : closedBall (0 : E) 1}
+    (hf : ContDiffAt ℝ 2 f x) (u w : TangentSpace (𝓡∂ n) x) :
+    hessian (𝓡∂ n) (f ∘ Subtype.val) x u w =
+      fderiv ℝ (fderiv ℝ f) x
+        (mvfderiv (𝓡∂ n) (Subtype.val : closedBall (0 : E) 1 → E) x u)
+        (mvfderiv (𝓡∂ n) (Subtype.val : closedBall (0 : E) 1 → E) x w) := by
+  have : FiniteDimensional ℝ E :=
+    Module.finite_of_finrank_pos (by rw [Fact.out (p := finrank ℝ E = n)]; exact NeZero.pos n)
+  have hD : DifferentiableAt ℝ (fderiv ℝ f) x :=
+    (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by simp)
+  have hgrad : DifferentiableAt ℝ (∇ f) x :=
+    (InnerProductSpace.toDual ℝ E).symm.differentiableAt.comp _ hD
+  rw [isLocalRiemannianIsometry_subtypeVal_closedBall.hessian_comp
+    (contMDiffAt_iff_contDiffAt.2 hf), hessian_eq_iteratedFDeriv_model_space hgrad,
+    iteratedFDeriv_two_apply]
+  rfl
+
+/-- On the closed unit ball, the Hessian of `1 - |x|²` is `-2` times the Euclidean metric, at
+every point including the points of the boundary sphere. -/
+theorem hessian_one_sub_norm_sq_closedBall (x : closedBall (0 : E) 1)
+    (u w : TangentSpace (𝓡∂ n) x) :
+    hessian (𝓡∂ n) (fun y : closedBall (0 : E) 1 ↦ 1 - ‖(y : E)‖ ^ 2) x u w = -2 * ⟪u, w⟫ := by
+  have hf : fderiv ℝ (fun y : E ↦ 1 - ‖y‖ ^ 2) = ⇑(-(2 • innerSL ℝ (E := E))) := by
+    funext y
+    rw [fderiv_const_sub, fderiv_norm_sq_apply]
+    rfl
+  rw [show (fun y : closedBall (0 : E) 1 ↦ 1 - ‖(y : E)‖ ^ 2) =
+      (fun y : E ↦ 1 - ‖y‖ ^ 2) ∘ Subtype.val from rfl,
+    hessian_comp_subtypeVal_closedBall ((contDiff_const.sub (contDiff_norm_sq ℝ)).contDiffAt), hf,
+    ContinuousLinearMap.fderiv, inner_tangentSpace_closedBall]
+  simp only [neg_apply, smul_apply, nsmul_eq_mul, Nat.cast_ofNat]
+  change -(2 * ⟪_, _⟫) = _
+  ring
+
+end TauCeti
