@@ -145,11 +145,12 @@ theorem range_restrictFormSpaceIsometry :
   refine ⟨?_, fun hx ↦ ?_⟩
   · rintro ⟨y, rfl⟩
     rw [Set.mem_ofPred_eq, inclusion_restrictFormSpaceIsometry, inclusion_apply]
-    exact ((q.restrict W hW).toFormSpace (hα.restrict hW)).symm y |>.property
+    exact (q.restrict_domain W hW).le
+      (((q.restrict W hW).toFormSpace (hα.restrict hW)).symm y).property
   · refine ⟨(q.restrict W hW).toFormSpace (hα.restrict hW) ⟨_, hx⟩, ?_⟩
     rw [restrictFormSpaceIsometry_toFormSpace]
     convert (q.toFormSpace hα).apply_symm_apply x
-    exact Subtype.ext (q.inclusion_apply hα x)
+    exact Subtype.ext ((q.coe_restrictInclusion W hW _).trans (q.inclusion_apply hα x))
 
 /-- If a restriction of `q` to `W` is closed, then `W` is closed in the form norm of `q`. -/
 theorem isClosed_setOf_inclusion_mem_of_isClosed_restrict (h : (q.restrict W hW).IsClosed) :
