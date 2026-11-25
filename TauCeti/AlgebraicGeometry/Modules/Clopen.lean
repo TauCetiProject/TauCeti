@@ -7,8 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
-import TauCeti.AlgebraicGeometry.Modules.Products
-import TauCeti.AlgebraicGeometry.Modules.Pushforward.Basic
+public import TauCeti.AlgebraicGeometry.Modules.DisjointGlue
 import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 
 /-!
@@ -35,40 +34,34 @@ variable {X : Scheme.{u}} {J : Type u} (U : J → X.Opens)
 
 private def TauCeti.AlgebraicGeometry.Scheme.Modules.unitToClopenCoverProduct
     (M : X.Modules) :
-    M ⟶ ∏ᶜ fun j ↦ (pushforward (U j).ι).obj ((restrictFunctor (U j).ι).obj M) :=
-  Pi.lift fun j ↦ (restrictAdjunction (U j).ι).unit.app M
+    M ⟶ disjointGlue U fun j ↦ (restrictFunctor (U j).ι).obj M :=
+  disjointGlue.lift U _ fun j ↦ (restrictAdjunction (U j).ι).unit.app M
 
 private theorem TauCeti.AlgebraicGeometry.Scheme.Modules.isIso_unitToClopenCoverProduct
     (hcover : ⨆ j, U j = ⊤)
     (hdisj : Pairwise (Disjoint on U)) (M : X.Modules) : IsIso (unitToClopenCoverProduct U M) := by
   apply (isIso_iff_of_isOpenCover (TopologicalSpace.IsOpenCover.mk hcover) _).mpr
   intro j
+  have hπ := isIso_restrictFunctor_map_π_disjointGlue
+    (fun i ↦ (restrictFunctor (U i).ι).obj M) hdisj j
+  have hunit : IsIso ((restrictFunctor (U j).ι).map ((restrictAdjunction (U j).ι).unit.app M)) :=
+    isIso_restrictFunctor_map_of_isIso_app _ (U j) fun V hV ↦
+      isIso_restrictAdjunction_unit_app_app (U j).ι M (by simpa using hV)
   have hiso : IsIso ((restrictFunctor (U j).ι).map (unitToClopenCoverProduct U M)) := by
-    apply isIso_restrictFunctor_map_of_isIso_app _ (U j)
-    intro V hV
-    have hπ : IsIso ((Pi.π
-        (fun i ↦ (pushforward (U i).ι).obj ((restrictFunctor (U i).ι).obj M)) j).app V) := by
-      apply (ConcreteCategory.isIso_iff_bijective _).mpr
-      apply bijective_app_π_of_subsingleton
-      intro i hij
-      exact subsingleton_sections_pushforward_of_disjoint _ ((hdisj hij).symm.mono_left hV)
-    have hcomp : (unitToClopenCoverProduct U M).app V ≫ (Pi.π
-        (fun i ↦ (pushforward (U i).ι).obj ((restrictFunctor (U i).ι).obj M)) j).app V =
-        ((restrictAdjunction (U j).ι).unit.app M).app V := by
-      rw [← Hom.comp_app, unitToClopenCoverProduct, Pi.lift_comp_π]
-    have : IsIso ((unitToClopenCoverProduct U M).app V ≫ (Pi.π
-        (fun i ↦ (pushforward (U i).ι).obj ((restrictFunctor (U i).ι).obj M)) j).app V) := by
-      rw [hcomp]
-      exact isIso_restrictAdjunction_unit_app_app (U j).ι M (by simpa using hV)
-    exact IsIso.of_isIso_comp_right _ ((Pi.π
-      (fun i ↦ (pushforward (U i).ι).obj ((restrictFunctor (U i).ι).obj M)) j).app V)
+    have : IsIso ((restrictFunctor (U j).ι).map (unitToClopenCoverProduct U M) ≫
+        (restrictFunctor (U j).ι).map
+          (disjointGlue.π U (fun i ↦ (restrictFunctor (U i).ι).obj M) j)) := by
+      rw [← Functor.map_comp, unitToClopenCoverProduct, disjointGlue.lift_π]
+      exact hunit
+    exact IsIso.of_isIso_comp_right _ ((restrictFunctor (U j).ι).map
+      (disjointGlue.π U (fun i ↦ (restrictFunctor (U i).ι).obj M) j))
   exact (NatIso.isIso_map_iff (restrictFunctorIsoPullback (U j).ι) _).mp hiso
 
-/-- Restriction to a disjoint open cover identifies a module with the product of the
-pushforwards of its restrictions. The cover may be infinite. -/
+/-- Restriction to a disjoint open cover identifies a module with `disjointGlue` of its
+restrictions, the product of the pushforwards of its restrictions. The cover may be infinite. -/
 def TauCeti.AlgebraicGeometry.Scheme.Modules.clopenCoverProductIso
     (hcover : ⨆ j, U j = ⊤) (hdisj : Pairwise (Disjoint on U)) (M : X.Modules) :
-    M ≅ ∏ᶜ fun j ↦ (pushforward (U j).ι).obj ((restrictFunctor (U j).ι).obj M) := by
+    M ≅ disjointGlue U fun j ↦ (restrictFunctor (U j).ι).obj M := by
   have := isIso_unitToClopenCoverProduct U hcover hdisj M
   exact asIso (unitToClopenCoverProduct U M)
 
@@ -76,10 +69,10 @@ def TauCeti.AlgebraicGeometry.Scheme.Modules.clopenCoverProductIso
 @[reassoc (attr := simp)]
 theorem TauCeti.AlgebraicGeometry.Scheme.Modules.clopenCoverProductIso_hom_π
     (hcover : ⨆ j, U j = ⊤) (hdisj : Pairwise (Disjoint on U)) (M : X.Modules) (j : J) :
-    (clopenCoverProductIso U hcover hdisj M).hom ≫ Pi.π
-      (fun i ↦ (pushforward (U i).ι).obj ((restrictFunctor (U i).ι).obj M)) j =
+    (clopenCoverProductIso U hcover hdisj M).hom ≫
+      disjointGlue.π U (fun i ↦ (restrictFunctor (U i).ι).obj M) j =
         (restrictAdjunction (U j).ι).unit.app M := by
-  simp only [clopenCoverProductIso, asIso_hom, unitToClopenCoverProduct, Pi.lift_comp_π]
+  simp only [clopenCoverProductIso, asIso_hom, unitToClopenCoverProduct, disjointGlue.lift_π]
 
 /-- When the pushforwards of the restrictions to a disjoint open cover admit a biproduct,
 that biproduct is the original module. In particular this applies to finite covers. -/
@@ -88,8 +81,7 @@ def TauCeti.AlgebraicGeometry.Scheme.Modules.clopenCoverCoefficientIso
     [HasBiproduct (fun j ↦ (pushforward (U j).ι).obj ((restrictFunctor (U j).ι).obj M))] :
     M ≅ ⨁ fun j ↦ (pushforward (U j).ι).obj ((restrictFunctor (U j).ι).obj M) :=
   clopenCoverProductIso U hcover hdisj M ≪≫
-    (biproduct.isoProduct
-      (fun j ↦ (pushforward (U j).ι).obj ((restrictFunctor (U j).ι).obj M))).symm
+    (disjointGlue.isLimit U _).conePointUniqueUpToIso (biproduct.isLimit _)
 
 /-- Each projection of the coefficient decomposition is the restriction unit. -/
 @[reassoc (attr := simp)]
@@ -99,6 +91,6 @@ theorem TauCeti.AlgebraicGeometry.Scheme.Modules.clopenCoverCoefficientIso_hom_�
     (clopenCoverCoefficientIso U hcover hdisj M).hom ≫ biproduct.π
       (fun i ↦ (pushforward (U i).ι).obj ((restrictFunctor (U i).ι).obj M)) j =
         (restrictAdjunction (U j).ι).unit.app M := by
-  simp only [clopenCoverCoefficientIso, Iso.trans_hom, Iso.symm_hom,
-    biproduct.isoProduct_inv, Category.assoc, biproduct.lift_π]
-  exact clopenCoverProductIso_hom_π U hcover hdisj M j
+  rw [clopenCoverCoefficientIso, Iso.trans_hom, Category.assoc]
+  exact (congrArg _ ((disjointGlue.isLimit U _).conePointUniqueUpToIso_hom_comp
+    (biproduct.isLimit _) ⟨j⟩)).trans (clopenCoverProductIso_hom_π U hcover hdisj M j)

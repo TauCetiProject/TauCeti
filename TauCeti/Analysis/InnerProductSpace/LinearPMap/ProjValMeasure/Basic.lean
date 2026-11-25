@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.ResolventTransform
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Basic
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley.Basic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
@@ -72,6 +73,8 @@ a resolvent point of the part of `A` in the spectral subspace, with resolvent of
   does not charge the point `1`.
 * `IsSelfAdjoint.inner_resolvent_apply_eq_integral`: the resolvent formula
   `⟪ξ, R(z) ξ⟫ = ∫ (z - s)⁻¹ dμ_ξ(s)`.
+* `IsSelfAdjoint.neg_inner_resolvent_apply_eq_resolventTransform`: the same formula as
+  `-⟪ξ, R(z) ξ⟫ = resolventTransform μ_ξ z`, in the convention `(s - z)⁻¹`.
 * `IsSelfAdjoint.integral_spectralPVM_eq_resolvent`,
   `IsSelfAdjoint.integral_spectralPVM_resolventSymbol`: for nonreal `z`,
   `∫ (z - s)⁻¹ dP_A(s) = R(z)`.
@@ -200,6 +203,14 @@ theorem _root_.IsSelfAdjoint.inner_resolvent_apply_eq_integral (hA : IsSelfAdjoi
   rw [inverseCayleyCoord_def, (hA.ofReal_re_inverseCayley_eq_and_mem_spectrum w.property hw).1]
   field_simp
   ring
+
+/-- In the resolvent convention `(A - z)⁻¹ = -R(z)`, the diagonal matrix element
+`⟪ξ, (A - z)⁻¹ ξ⟫` is the resolvent transform `∫ (s - z)⁻¹ dμ_ξ(s)` of the diagonal measure of
+the spectral measure. -/
+theorem _root_.IsSelfAdjoint.neg_inner_resolvent_apply_eq_resolventTransform
+    (hA : IsSelfAdjoint A) {z : ℂ} (hz : z ∈ A.resolventSet) (ξ : H) :
+    -⟪ξ, A.resolvent z ξ⟫_ℂ = resolventTransform ((A.spectralPVM hA).diag ξ) z := by
+  rw [hA.inner_resolvent_apply_eq_integral hz, resolventTransform_eq_neg_integral_inv_sub]
 
 /-- **The resolvent is a spectral integral.** For nonreal `z`, integrating any bounded Borel
 symbol equal to `s ↦ (z - s)⁻¹` against the spectral measure of `A` gives the resolvent
@@ -536,12 +547,8 @@ theorem _root_.IsSelfAdjoint.eq_spectralPVM_iff (hA : IsSelfAdjoint A)
   · rintro rfl z hz ξ
     exact hA.inner_resolvent_apply_eq_integral (hA.mem_resolventSet_of_im_ne_zero hz.ne') ξ
   -- Mathlib's resolvent transform has the kernel `(s - z)⁻¹ = -(z - s)⁻¹`.
-  have hkernel (μ : Measure ℝ) : resolventTransform μ z = -∫ s : ℝ, (z - s)⁻¹ ∂μ := by
-    rw [resolventTransform_apply, ← integral_neg]
-    congr 1 with s
-    rw [_root_.resolvent, Ring.inverse_eq_inv', ← inv_neg, neg_sub, Complex.coe_algebraMap]
-  rw [hkernel, hkernel, ← h z hz ξ, hA.inner_resolvent_apply_eq_integral
-    (hA.mem_resolventSet_of_im_ne_zero hz.ne') ξ]
+  rw [resolventTransform_eq_neg_integral_inv_sub, ← h z hz ξ,
+    hA.neg_inner_resolvent_apply_eq_resolventTransform (hA.mem_resolventSet_of_im_ne_zero hz.ne')]
 
 /-- **Compatibility with the bounded spectral measure.** For a bounded self-adjoint operator `T`,
 viewed as an everywhere defined partial linear map, the spectral measure is the spectral measure

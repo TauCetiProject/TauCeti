@@ -39,8 +39,9 @@ triangle group, so the universal property `TauCeti.TriangleGroup.lift` sends `x,
   subgroup `H`, read through an enumeration of the cosets. It is connected, its sheet `e 1` has
   point stabiliser `H` (`TauCeti.TriangleGroup.comap_stabilizer_toPerm_cosetTriple`), its
   isomorphism class does not depend on the enumeration
-  (`TauCeti.TriangleGroup.equivalent_cosetTriple`), and every connected triple is isomorphic to the
-  coset triple of any of its point stabilisers
+  (`TauCeti.TriangleGroup.equivalent_cosetTriple`; explicitly, renumbering relabels it by the
+  re-indexing permutation, `TauCeti.TriangleGroup.cosetTriple_eq_smul`), and every connected
+  triple is isomorphic to the coset triple of any of its point stabilisers
   (`TauCeti.TriangleGroup.equivalent_cosetTriple_of_comap_stabilizer_eq`).
 
 ## References
@@ -266,11 +267,16 @@ theorem ker_toPerm_cosetTriple {ha hb hc} :
     (toPerm (cosetTriple H e) ha hb hc).ker = H.normalCore := by
   rw [toPerm_cosetTriple, Equiv.ker_permutationRepresentation, Subgroup.normalCore_eq_ker]
 
+/-- Changing the numbering of the cosets of `H` from `e` to `e'` relabels the coset triple by the
+re-indexing permutation `e.symm.trans e'`. -/
+theorem cosetTriple_eq_smul (e' : TriangleGroup a b c ⧸ H ≃ Fin n) :
+    cosetTriple H e' = (e.symm.trans e') • cosetTriple H e := by
+  ext1 <;> simp [Equiv.permutationRepresentation_eq_conj e e']
+
 /-- The isomorphism class of a coset triple does not depend on the numbering of the cosets. -/
 theorem equivalent_cosetTriple (e' : TriangleGroup a b c ⧸ H ≃ Fin n) :
-    (cosetTriple H e).Equivalent (cosetTriple H e') := by
-  refine (equivalent_permutationTripleEquiv_iff _ _).mpr ⟨e.symm.trans e', MonoidHom.ext fun g ↦ ?_⟩
-  simp [Equiv.permutationRepresentation_eq_conj e e' g]
+    (cosetTriple H e).Equivalent (cosetTriple H e') :=
+  PermutationTriple.equivalent_iff_exists_smul_eq.mpr ⟨_, (cosetTriple_eq_smul H e e').symm⟩
 
 /-- **Every connected triple is a coset triple.** If `H` is the stabiliser of a sheet `i` of a
 connected triple `t` under its representation, then `t` is isomorphic to the coset triple of `H`,
