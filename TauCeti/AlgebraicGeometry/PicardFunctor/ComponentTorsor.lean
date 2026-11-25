@@ -48,11 +48,11 @@ For a smooth proper geometrically connected family of curves `f`:
 * the instance `CommGrpObj (picardComponent f 0)`: the group law of `Pic⁰_{X/S}`;
 * the instance `ModObj (picardComponent f 0) (picardComponent f d)`: the action on `Picᵈ_{X/S}`;
 * `TauCeti.AlgebraicGeometry.isTorsor_picardComponent`: `Picᵈ_{X/S}` is a `Pic⁰_{X/S}`-torsor;
-* `TauCeti.AlgebraicGeometry.picardComponentDiff`: the difference morphism
-  `Picᵈ_{X/S} ×_S Picᵈ_{X/S} ⟶ Pic⁰_{X/S}`, `(L, M) ↦ M ⊗ L⁻¹`, with
-  `TauCeti.AlgebraicGeometry.picardComponentDiff_smul` (`δ(L, M) ⊗ L = M`) and the identification
-  `TauCeti.AlgebraicGeometry.picardComponentTranslateEquiv` of the sections of `Picᵈ_{X/S}` with
-  those of `Pic⁰_{X/S}` given by a choice of origin;
+* the instance `TauCeti.AlgebraicGeometry.isIso_leftSMul_picardComponent`: the action is simply
+  transitive, so the difference morphism of pseudo-torsors
+  `TauCeti.ModObj.diff : Picᵈ_{X/S} ×_S Picᵈ_{X/S} ⟶ Pic⁰_{X/S}` applies; it sends `(L, M)` to
+  `M ⊗ L⁻¹` (`TauCeti.AlgebraicGeometry.picardComponentRepresentableBy_homEquiv_diff_val`), and
+  in degree zero to `M * L⁻¹` (`TauCeti.AlgebraicGeometry.lift_diff_picardComponent_zero`);
 * the instance `IsMonHom (picardComponentι f 0)` and
   `TauCeti.AlgebraicGeometry.smul_comp_picardComponentι`: `Pic⁰_{X/S}` is a subgroup scheme of the
   Picard scheme, acting on `Picᵈ_{X/S}` by the restricted group law.
@@ -305,7 +305,7 @@ theorem picardComponentRepresentableBy_homEquiv_smul_val {T : Over S}
 /-- **`Pic⁰_{X/S}` acts simply transitively on `Picᵈ_{X/S}`**: the morphism
 `(m, x) ↦ (m • x, x)` from `Pic⁰ ×_S Picᵈ` to `Picᵈ ×_S Picᵈ` is an isomorphism, since two
 classes of degree `d` differ by a unique class of degree zero. -/
-theorem isIso_leftSMul_picardComponent :
+instance isIso_leftSMul_picardComponent :
     IsIso (ModObj.leftSMul (picardComponent f 0) (picardComponent f d)) := by
   rw [ModObj.isIso_leftSMul_iff]
   intro T x y
@@ -348,89 +348,30 @@ instance : Surjective (picardComponent f d).hom :=
 
 /-! ### The difference morphism -/
 
-/-- The **difference morphism** `δ : Picᵈ_{X/S} ×_S Picᵈ_{X/S} ⟶ Pic⁰_{X/S}`, sending a pair
-`(L, M)` of line-bundle classes of degree `d` to `M ⊗ L⁻¹`: the morphism representing the second
-projection minus the first, which has degree `d - d = 0`. It is defined intrinsically, without a
-choice of origin in `Picᵈ_{X/S}`, which need not have a section over `S`. -/
-def picardComponentDiff : picardComponent f d ⊗ picardComponent f d ⟶ picardComponent f 0 :=
-  (picardComponentRepresentableBy f 0).homEquiv.symm
-    ⟨((picardComponentRepresentableBy f d).homEquiv (snd _ _)).val -
-        ((picardComponentRepresentableBy f d).homEquiv (fst _ _)).val, by
-      have := sub_mem_relativePicardDegreeFppfSubfunctor_obj f
-        ((picardComponentRepresentableBy f d).homEquiv (snd _ _)).property
-        ((picardComponentRepresentableBy f d).homEquiv (fst _ _)).property
-      rwa [sub_self] at this⟩
-
-/-- The difference of two sections `x`, `y` of `Picᵈ_{X/S}` represents the difference of their
-classes: `δ(x, y)` is the class of `M ⊗ L⁻¹` when `x`, `y` are the classes of `L`, `M`. -/
+/-- The difference `ModObj.diff` of two sections `x`, `y` of `Picᵈ_{X/S}`, a section of
+`Pic⁰_{X/S}`, represents the difference of their classes: `δ(x, y)` is the class of `M ⊗ L⁻¹`
+when `x`, `y` are the classes of `L`, `M`. -/
 theorem picardComponentRepresentableBy_homEquiv_diff_val {T : Over S}
     (x y : T ⟶ picardComponent f d) :
-    ((picardComponentRepresentableBy f 0).homEquiv (lift x y ≫ picardComponentDiff f d)).val =
+    ((picardComponentRepresentableBy f 0).homEquiv
+        (lift x y ≫ ModObj.diff (picardComponent f 0) (picardComponent f d))).val =
       ((picardComponentRepresentableBy f d).homEquiv y).val -
-        ((picardComponentRepresentableBy f d).homEquiv x).val := by
-  have hy := (picardComponentRepresentableBy f d).homEquiv_comp (lift x y) (snd _ _)
-  have hx := (picardComponentRepresentableBy f d).homEquiv_comp (lift x y) (fst _ _)
-  rw [lift_snd] at hy
-  rw [lift_fst] at hx
-  rw [(picardComponentRepresentableBy f 0).homEquiv_comp, picardComponentDiff,
-    Equiv.apply_symm_apply, hy, hx]
-  exact ((relativePicardFppfSheaf f).obj.map (lift x y).op).hom.map_sub _ _
+        ((picardComponentRepresentableBy f d).homEquiv x).val :=
+  eq_sub_of_add_eq (by
+    rw [← picardComponentRepresentableBy_homEquiv_smul_val, ModObj.lift_diff_smul])
 
-/-- **The difference acts as a translation**: `δ(L, M) ⊗ L = M`. -/
-@[simp]
-theorem picardComponentDiff_smul {T : Over S} (x y : T ⟶ picardComponent f d) :
-    (lift x y ≫ picardComponentDiff f d) • x = y := by
-  refine (picardComponentRepresentableBy f d).homEquiv.injective (Subtype.ext ?_)
-  rw [picardComponentRepresentableBy_homEquiv_smul_val,
-    picardComponentRepresentableBy_homEquiv_diff_val, sub_add_cancel]
-
-/-- The difference `δ(x, y)` is the unique section `m` of `Pic⁰_{X/S}` with `m • x = y`. -/
-theorem eq_picardComponentDiff_iff {T : Over S} (x y : T ⟶ picardComponent f d)
-    (m : T ⟶ picardComponent f 0) : m = lift x y ≫ picardComponentDiff f d ↔ m • x = y := by
-  refine ⟨fun h ↦ h ▸ picardComponentDiff_smul f d x y, fun h ↦ ?_⟩
+/-- `Pic⁰_{X/S}` acts on itself by its group law. -/
+theorem picardComponentSMul_zero : picardComponentSMul f 0 = μ[picardComponent f 0] := by
   refine (picardComponentRepresentableBy f 0).homEquiv.injective (Subtype.ext ?_)
-  rw [picardComponentRepresentableBy_homEquiv_diff_val, ← h,
-    picardComponentRepresentableBy_homEquiv_smul_val, add_sub_cancel_right]
-
-/-- The difference of a section of `Picᵈ_{X/S}` with itself is the unit section: `δ(L, L) = 0`. -/
-@[simp]
-theorem picardComponentDiff_self {T : Over S} (x : T ⟶ picardComponent f d) :
-    lift x x ≫ picardComponentDiff f d = 1 :=
-  ((eq_picardComponentDiff_iff f d x x 1).mpr (one_smul _ _)).symm
-
-/-- The difference is antisymmetric: `δ(M, L) = δ(L, M)⁻¹`. -/
-theorem picardComponentDiff_swap {T : Over S} (x y : T ⟶ picardComponent f d) :
-    lift y x ≫ picardComponentDiff f d = (lift x y ≫ picardComponentDiff f d)⁻¹ := by
-  refine (picardComponentRepresentableBy f 0).homEquiv.injective (Subtype.ext ?_)
-  rw [picardComponentRepresentableBy_homEquiv_inv_val,
-    picardComponentRepresentableBy_homEquiv_diff_val,
-    picardComponentRepresentableBy_homEquiv_diff_val, neg_sub]
-
-/-- The difference is natural in the test scheme: `δ(g ≫ x, g ≫ y) = g ≫ δ(x, y)`. -/
-theorem picardComponentDiff_comp {T T' : Over S} (g : T' ⟶ T) (x y : T ⟶ picardComponent f d) :
-    lift (g ≫ x) (g ≫ y) ≫ picardComponentDiff f d = g ≫ lift x y ≫ picardComponentDiff f d := by
-  rw [← comp_lift_assoc]
-
-/-- **A change of origin is a translation.** A section `β` of `Picᵈ_{X/S}` over `T` identifies
-the sections of `Picᵈ_{X/S}` over `T` with those of `Pic⁰_{X/S}`, by `x ↦ δ(β, x)`, the class of
-`L ⊗ β⁻¹`, with inverse `m ↦ m • β`. Applied to the base changes `g ≫ β` along all `g : T' ⟶ T`
-(`picardComponentDiff_comp`), this identifies `Picᵈ_{X/S}` with `Pic⁰_{X/S}` over `T`. -/
-@[expose, simps]
-def picardComponentTranslateEquiv {T : Over S} (β : T ⟶ picardComponent f d) :
-    (T ⟶ picardComponent f d) ≃ (T ⟶ picardComponent f 0) where
-  toFun x := lift β x ≫ picardComponentDiff f d
-  invFun m := m • β
-  left_inv x := picardComponentDiff_smul f d β x
-  right_inv m := ((eq_picardComponentDiff_iff f d β _ m).mpr rfl).symm
+  rw [← Category.id_comp (picardComponentSMul f 0), ← Category.id_comp μ, ← lift_fst_snd,
+    ← Hom.mul_def, picardComponentRepresentableBy_homEquiv_mul_val]
+  exact picardComponentRepresentableBy_homEquiv_smul_val f 0 _ _
 
 /-- In degree zero the difference is computed by the group law: `δ(L, M) = M * L⁻¹`, so
 `Pic⁰_{X/S}` is the trivial torsor under itself, with the unit section as origin. -/
-theorem picardComponentDiff_zero {T : Over S} (x y : T ⟶ picardComponent f 0) :
-    lift x y ≫ picardComponentDiff f 0 = y * x⁻¹ := by
-  refine (picardComponentRepresentableBy f 0).homEquiv.injective (Subtype.ext ?_)
-  rw [picardComponentRepresentableBy_homEquiv_diff_val,
-    picardComponentRepresentableBy_homEquiv_mul_val,
-    picardComponentRepresentableBy_homEquiv_inv_val, sub_eq_add_neg]
+theorem lift_diff_picardComponent_zero {T : Over S} (x y : T ⟶ picardComponent f 0) :
+    lift x y ≫ ModObj.diff (picardComponent f 0) (picardComponent f 0) = y * x⁻¹ :=
+  ModObj.lift_diff_eq_mul_inv (picardComponentSMul_zero f) x y
 
 /-! ### Compatibility with the Picard scheme -/
 
