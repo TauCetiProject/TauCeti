@@ -51,6 +51,10 @@ two and three marked points: `ℂ ⋊ ℂˣ`, `ℂˣ` and the trivial group.
   three distinct points is trivial.
 * `OnePoint.comap_mk_stabilizer`: the projection from `GL(2, K)` to `PGL(2, K)` pulls point
   stabilizers back to point stabilizers.
+* `OnePoint.stabilizer_equivProjectivization`: `OnePoint.equivProjectivization` identifies point
+  stabilizers in `GL(2, K)` on `OnePoint K` and on `ℙ K (Fin 2 → K)`.
+* `Projectivization.comap_toGL_stabilizer`: the inclusion `SL(2, K) → GL(2, K)` pulls point
+  stabilizers on `ℙ K (Fin 2 → K)` back to point stabilizers in `SL(2, K)`.
 
 ## References
 
@@ -323,4 +327,29 @@ theorem pslFixingZeroInftyEquiv_symm_smul_coe (a : Kˣ) (z : K) :
 
 end Roots
 
+/-- `OnePoint.equivProjectivization` identifies point stabilizers in `GL(2, K)` on `OnePoint K`
+and on `ℙ K (Fin 2 → K)`. -/
+@[simp]
+theorem stabilizer_equivProjectivization (x : OnePoint K) :
+    stabilizer (GL (Fin 2) K) (equivProjectivization K x) = stabilizer (GL (Fin 2) K) x := by
+  ext g
+  simp only [mem_stabilizer_iff]
+  rw [← equivProjectivization_smul, (equivProjectivization K).injective.eq_iff]
+
 end OnePoint
+
+namespace Projectivization
+
+open scoped LinearAlgebra.Projectivization
+
+/-- The inclusion `SL(2, K) → GL(2, K)` pulls the stabilizer of a point on `ℙ K (Fin 2 → K)` back
+to its stabilizer in `SL(2, K)`. -/
+@[simp]
+theorem comap_toGL_stabilizer {K : Type*} [Field K] (x : ℙ K (Fin 2 → K)) :
+    (stabilizer (GL (Fin 2) K) x).comap SpecialLinearGroup.toGL = stabilizer SL(2, K) x := by
+  ext g
+  -- Both actions multiply representatives on `ℙ K (Fin 2 → K)` by the underlying matrix.
+  have hsmul : SpecialLinearGroup.toGL g • x = g • x := rfl
+  simp [mem_stabilizer_iff, hsmul]
+
+end Projectivization

@@ -28,6 +28,8 @@ be dropped.
 
 * `TauCeti.Amenable.of_injective`: a group embedding in an amenable discrete group is amenable.
 * `TauCeti.Amenable.subgroup`: every subgroup of an amenable discrete group is amenable.
+* `TauCeti.Amenable.subgroupOf`: the pullback of an amenable subgroup to another subgroup of a
+  discrete group is amenable.
 
 ## References
 
@@ -56,5 +58,11 @@ theorem Amenable.of_injective [Amenable G] (φ : H →* G) (hφ : Function.Injec
 /-- Every subgroup of an amenable discrete group is amenable. -/
 instance Amenable.subgroup [Amenable G] (K : Subgroup G) : Amenable K :=
   .of_injective K.subtype K.subtype_injective
+
+/-- The pullback `S.subgroupOf K` of an amenable subgroup `S` to another subgroup `K` of a discrete
+group is amenable. -/
+instance Amenable.subgroupOf (S K : Subgroup G) [Amenable S] : Amenable (S.subgroupOf K) :=
+  .of_injective (K.subtype.subgroupComap S)
+    (K.subtype.subgroupComap_injective S K.subtype_injective)
 
 end TauCeti

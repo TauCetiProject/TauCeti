@@ -12,10 +12,11 @@ public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 
 import Mathlib.Topology.Algebra.IsUniformGroup.DiscreteSubgroup
 import Mathlib.Topology.MetricSpace.ProperSpace
-import Mathlib.Topology.Separation.GDelta
 import TauCeti.GroupTheory.Amenable.Abelian
 import TauCeti.GroupTheory.Amenable.Extension
 import TauCeti.MeasureTheory.Group.Action
+import TauCeti.MeasureTheory.Measure.Support
+import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 import TauCeti.Topology.Algebra.Matrix.ProjectiveSpecialLinearGroup
 import TauCeti.Topology.Algebra.Projectivization
 import TauCeti.Topology.Compactification.OnePoint.Amenable
@@ -94,39 +95,13 @@ theorem exists_measure_compl_pair_eq_zero_of_tendsto_psl_cocompact
   obtain ⟨c, -, ψ, hψ, hlim_a⟩ := isSeqCompact_univ.subseq_of_frequently_in
     (Frequently.of_forall fun n ↦ mem_univ (g (φ n) • a))
   let h : ℕ → PSL(2, 𝕜) := fun n ↦ g (φ (ψ n))
-  have hh_inv (n : ℕ) : Measure.map (h n • ·) μ = μ := hinv (φ (ψ n))
-  have hh_lim (x : OnePoint 𝕜) : ∃ y ∈ ({b, c} : Set (OnePoint 𝕜)),
-      Tendsto (fun n ↦ h n • x) atTop (𝓝 y) := by
-    by_cases hxa : x = a
-    · exact ⟨c, by simp, hxa ▸ hlim_a⟩
-    · exact ⟨b, by simp, (hlim hxa tendsto_const_nhds).comp hψ.tendsto_atTop⟩
-  -- Every open neighborhood `W` of `{b, c}` eventually absorbs all orbits, so `μ Wᶜ = 0`.
-  have hopen_compl_zero {W : Set (OnePoint 𝕜)} (hW : IsOpen W)
-      (hbc : ({b, c} : Set (OnePoint 𝕜)) ⊆ W) : μ Wᶜ = 0 := by
-    let A : ℕ → Set (OnePoint 𝕜) := fun N ↦ ⋂ n ≥ N, (h n • ·) ⁻¹' W
-    have hmono : Monotone A := fun M N hMN _ hx ↦
-      mem_iInter₂.mpr fun n hn ↦ mem_iInter₂.mp hx n (hMN.trans hn)
-    have huniv : ⋃ N, A N = univ := eq_univ_iff_forall.mpr fun x ↦ by
-      obtain ⟨y, hy, hxy⟩ := hh_lim x
-      obtain ⟨N, hN⟩ := eventually_atTop.mp (hxy.eventually (hW.mem_nhds (hbc hy)))
-      exact mem_iUnion.mpr ⟨N, mem_iInter₂.mpr hN⟩
-    have hle_N (N : ℕ) : μ (A N) ≤ μ W := by
-      calc μ (A N)
-        _ ≤ μ ((h N • ·) ⁻¹' W) := measure_mono fun _ hx ↦ mem_iInter₂.mp hx N le_rfl
-        _ = Measure.map (h N • ·) μ W :=
-          (Measure.map_apply (continuous_const_smul (h N)).measurable hW.measurableSet).symm
-        _ = μ W := by rw [hh_inv N]
-    have huniv_le : μ univ ≤ μ W :=
-      le_of_tendsto' (huniv ▸ tendsto_measure_iUnion_atTop hmono) hle_N
-    have hadd : μ W + μ Wᶜ = μ W + 0 := by
-      rw [add_zero, measure_add_measure_compl hW.measurableSet]
-      exact le_antisymm huniv_le (measure_mono (subset_univ W))
-    exact (ENNReal.add_right_inj (measure_ne_top μ W)).mp hadd
-  obtain ⟨U, hUopen, hUeq⟩ := (Set.toFinite ({b, c} : Set (OnePoint 𝕜))).isGδ.eq_iInter_nat
-  have hcompl : ({b, c} : Set (OnePoint 𝕜))ᶜ = ⋃ n, (U n)ᶜ := by rw [hUeq, compl_iInter]
-  refine ⟨b, c, ?_⟩
-  rw [hcompl, measure_iUnion_null_iff]
-  exact fun n ↦ hopen_compl_zero (hUopen n) (hUeq ▸ iInter_subset U n)
+  refine ⟨b, c, Measure.measure_compl_eq_zero_of_isGδ_of_tendsto
+    (Set.toFinite ({b, c} : Set (OnePoint 𝕜))).isGδ
+    (fun n ↦ (continuous_const_smul (h n)).measurable)
+    (fun n ↦ hinv (φ (ψ n))) fun x ↦ ?_⟩
+  by_cases hxa : x = a
+  · exact ⟨c, by simp, hxa ▸ hlim_a⟩
+  · exact ⟨b, by simp, (hlim hxa tendsto_const_nhds).comp hψ.tendsto_atTop⟩
 
 /-- If a nonzero finite Borel measure on `OnePoint 𝕜` is preserved by an escaping sequence in
 `PSL(2, 𝕜)`, then it has an atom. -/
@@ -136,15 +111,10 @@ theorem exists_measure_singleton_ne_zero_of_tendsto_psl_cocompact
     (hinv : ∀ n, Measure.map (g n • ·) μ = μ) :
     ∃ b : OnePoint 𝕜, μ {b} ≠ 0 := by
   obtain ⟨b, c, hbc⟩ := exists_measure_compl_pair_eq_zero_of_tendsto_psl_cocompact hg hinv
-  by_contra! hzero
-  have hpair : μ {b, c} = 0 :=
-    measure_mono_null (subset_rfl : ({b, c} : Set (OnePoint 𝕜)) ⊆ {b} ∪ {c})
-      (measure_union_null (hzero b) (hzero c))
-  have huniv : μ univ = 0 := by
-    have hm : MeasurableSet ({b, c} : Set (OnePoint 𝕜)) :=
-      (Set.toFinite ({b, c} : Set (OnePoint 𝕜))).isClosed.measurableSet
-    rw [← measure_add_measure_compl hm, hpair, hbc, add_zero]
-  exact hμ (Measure.measure_univ_eq_zero.mp huniv)
+  obtain ⟨x, -, hx⟩ :=
+    (Set.toFinite ({b, c} : Set (OnePoint 𝕜))).countable.exists_mem_measure_singleton_ne_zero
+      hμ hbc
+  exact ⟨x, hx⟩
 
 end OnePoint
 

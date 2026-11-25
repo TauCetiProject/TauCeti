@@ -12,9 +12,10 @@ public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
 This file records closure of `MeasureTheory.NullSingletonClass` under the zero measure, finite
 addition, and scalar multiplication, characterizes when sums and scaled measures have null
-singletons, shows that Dirac measures never have null singletons, and proves that removing
-countably many inputs changes the image of an arbitrary map only on a null set. Dually, a map
-injective on a set meets a countable set at a null set of points of that set.
+singletons, shows that Dirac measures never have null singletons, and proves that a nonzero measure
+vanishing outside a countable set gives positive mass to one of its points. It also proves that
+removing countably many inputs changes the image of an arbitrary map only on a null set. Dually, a
+map injective on a set meets a countable set at a null set of points of that set.
 
 On a metric space any bounded set of diameter zero is a subsingleton and therefore has zero
 restricted measure (`MeasureTheory.Measure.restrict_eq_zero_of_diam_eq_zero`).
@@ -78,6 +79,21 @@ theorem nullSingletonClass_smul_dirac_iff {c : ℝ≥0∞} {a : α} :
   simp [nullSingletonClass_smul_iff]
 
 end MeasureTheory
+
+/-- A nonzero measure whose mass outside a countable set `s` vanishes gives nonzero mass to some
+singleton in `s`. No singleton-measurability assumption is needed. -/
+theorem Set.Countable.exists_mem_measure_singleton_ne_zero {α : Type*} {_ : MeasurableSpace α}
+    {s : Set α} (hs : s.Countable) {μ : Measure α} (hμ : μ ≠ 0) (hsc : μ sᶜ = 0) :
+    ∃ x ∈ s, μ {x} ≠ 0 := by
+  by_contra! h0
+  have hs0 : μ s = 0 := by
+    rw [← biUnion_of_singleton s]
+    exact (measure_biUnion_null_iff hs).mpr h0
+  have huniv : μ univ = 0 := le_bot_iff.mp <|
+    calc μ univ = μ (s ∪ sᶜ) := by rw [union_compl_self]
+      _ ≤ μ s + μ sᶜ := measure_union_le s sᶜ
+      _ = 0 := by rw [hs0, hsc, add_zero]
+  exact hμ (Measure.measure_univ_eq_zero.mp huniv)
 
 /-- Removing countably many inputs preserves an arbitrary image almost everywhere for a
 measure with null singletons. -/

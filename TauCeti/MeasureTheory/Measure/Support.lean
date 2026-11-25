@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.MeasureTheory.Constructions.Pi
+public import Mathlib.Topology.Separation.GDelta
 
 /-!
 # Topological support on discrete spaces and under sums, restriction, products, scalars and maps
@@ -21,7 +22,9 @@ support.
 Finite sums have the union of their summands' supports, and finite products have the product
 of the supports of their factors. A measurable map that is
 continuous at a source support point sends that point into the support of the pushforward;
-global continuity is unnecessary for this inclusion.
+global continuity is unnecessary for this inclusion. Finally, a finite Borel measure preserved by a
+sequence of measurable maps whose pointwise limits lie in an open or `Gδ` set assigns zero measure
+to its complement.
 
 ## Main results
 
@@ -44,6 +47,9 @@ global continuity is unnecessary for this inclusion.
   the original support.
 * `MeasureTheory.Measure.support_map_homeomorph` — the support of a pushforward by a homeomorphism
   is the image of the original support.
+* `MeasureTheory.Measure.measure_compl_eq_zero_of_isOpen_of_tendsto`,
+  `MeasureTheory.Measure.measure_compl_eq_zero_of_isGδ_of_tendsto` — a finite measure preserved by
+  a sequence of measurable maps with pointwise limits in an open or `Gδ` set vanishes outside it.
 -/
 
 public section
@@ -189,5 +195,44 @@ theorem support_map_natCast (μ : Measure ℕ) :
     (μ.map (Nat.cast : ℕ → ℝ)).support = (Nat.cast : ℕ → ℝ) '' μ.support :=
   support_map_of_isInducing_of_isClosed_range μ Nat.isClosedEmbedding_coe_real.isInducing
     Nat.isClosedEmbedding_coe_real.isClosed_range
+
+/-- If a sequence of measurable maps `T n` preserves a finite measure `μ` and sends every point
+pointwise to a limit in an open set `W`, then `μ Wᶜ = 0`. -/
+theorem measure_compl_eq_zero_of_isOpen_of_tendsto [IsFiniteMeasure μ] {W : Set X} (hW : IsOpen W)
+    {T : ℕ → X → X} (hT_meas : ∀ n, Measurable (T n)) (hT_inv : ∀ n, μ.map (T n) = μ)
+    (hlim : ∀ x, ∃ y ∈ W, Filter.Tendsto (fun n ↦ T n x) Filter.atTop (𝓝 y)) :
+    μ Wᶜ = 0 := by
+  let A : ℕ → Set X := fun N ↦ ⋂ n ≥ N, T n ⁻¹' W
+  have hmono : Monotone A := fun M N hMN _ hx ↦
+    mem_iInter₂.mpr fun n hn ↦ mem_iInter₂.mp hx n (hMN.trans hn)
+  have huniv : ⋃ N, A N = univ := eq_univ_iff_forall.mpr fun x ↦ by
+    obtain ⟨y, hy, hxy⟩ := hlim x
+    obtain ⟨N, hN⟩ := Filter.eventually_atTop.mp (hxy.eventually (hW.mem_nhds hy))
+    exact mem_iUnion.mpr ⟨N, mem_iInter₂.mpr hN⟩
+  have hle_N (N : ℕ) : μ (A N) ≤ μ W := by
+    calc μ (A N)
+      _ ≤ μ (T N ⁻¹' W) := measure_mono fun _ hx ↦ mem_iInter₂.mp hx N le_rfl
+      _ = (μ.map (T N)) W := (Measure.map_apply (hT_meas N) hW.measurableSet).symm
+      _ = μ W := by rw [hT_inv N]
+  have huniv_le : μ univ ≤ μ W :=
+    le_of_tendsto' (huniv ▸ tendsto_measure_iUnion_atTop hmono) hle_N
+  have hadd : μ W + μ Wᶜ = μ W + 0 := by
+    rw [add_zero, measure_add_measure_compl hW.measurableSet]
+    exact le_antisymm huniv_le (measure_mono (subset_univ W))
+  exact (ENNReal.add_right_inj (measure_ne_top μ W)).mp hadd
+
+/-- **Measure concentration on a `Gδ` attractor.** If a sequence of measurable maps `T n` preserves
+a finite measure `μ` and sends every point pointwise to a limit in a `Gδ` set `s`, then
+`μ sᶜ = 0`. -/
+theorem measure_compl_eq_zero_of_isGδ_of_tendsto [IsFiniteMeasure μ] {s : Set X} (hs : IsGδ s)
+    {T : ℕ → X → X} (hT_meas : ∀ n, Measurable (T n)) (hT_inv : ∀ n, μ.map (T n) = μ)
+    (hlim : ∀ x, ∃ y ∈ s, Filter.Tendsto (fun n ↦ T n x) Filter.atTop (𝓝 y)) :
+    μ sᶜ = 0 := by
+  obtain ⟨U, hUopen, hUeq⟩ := hs.eq_iInter_nat
+  have hcompl : sᶜ = ⋃ n, (U n)ᶜ := by rw [hUeq, compl_iInter]
+  rw [hcompl, measure_iUnion_null_iff]
+  exact fun n ↦ measure_compl_eq_zero_of_isOpen_of_tendsto (hUopen n) hT_meas hT_inv fun x ↦
+    let ⟨y, hy, hxy⟩ := hlim x
+    ⟨y, (hUeq ▸ iInter_subset U n) hy, hxy⟩
 
 end MeasureTheory.Measure

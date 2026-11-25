@@ -743,11 +743,9 @@ theorem not_relativePropertyT_inl_of_injective_of_hasFoelnerSets.{u, v}
   have hφ_inj : Function.Injective φ := eu.symm.injective.comp e₀.injective
   have : Infinite (Multiplicative (Fin 2 → ℤ)) := infinite_multiplicative_fin_two_int
   let Λ : Subgroup Γ := (SemidirectProduct.inl (G := G) (φ := slTwoAction.comp ι)).range
+  have : Infinite Λ := SemidirectProduct.infinite_range_inl
   have : Infinite (Λ.map φ) :=
-    Infinite.of_injective
-      (fun x : Multiplicative (Fin 2 → ℤ) ↦ ⟨φ (SemidirectProduct.inl x),
-        ⟨SemidirectProduct.inl x, ⟨x, rfl⟩, rfl⟩⟩)
-      fun x y hxy ↦ SemidirectProduct.inl_injective (hφ_inj (Subtype.ext_iff.mp hxy))
+    Infinite.of_injective _ (Λ.equivMapOfInjective φ hφ_inj).injective
   intro hT
   exact Subgroup.not_relativePropertyT_of_hasFoelnerSets hFu (hT.map φ)
 
