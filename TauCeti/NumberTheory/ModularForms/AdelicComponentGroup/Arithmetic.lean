@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.ModularForms.ProperlyDiscontinuous
 public import TauCeti.NumberTheory.ModularForms.AdelicComponentGroup.Integral
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.ResidueField
 import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
@@ -30,7 +31,9 @@ of finite index, and every element of `SL₂(ℤ)` has determinant `1 > 0`.
 
 * `TauCeti.AdelicExamples.GL2.componentGroupReal U g`: the image of `Γ_{g,U}` in `GL₂(ℝ)`, with
   membership lemmas `TauCeti.AdelicExamples.GL2.mem_componentGroupReal_iff` and
-  `TauCeti.AdelicExamples.GL2.map_mem_componentGroupReal_iff`.
+  `TauCeti.AdelicExamples.GL2.map_mem_componentGroupReal_iff`, monotonicity in `U`
+  (`TauCeti.AdelicExamples.GL2.componentGroupReal_mono`) and the conjugation formula
+  `TauCeti.AdelicExamples.GL2.componentGroupReal_mul_mul`.
 
 ## Main results
 
@@ -91,6 +94,23 @@ theorem map_mem_componentGroupReal_iff {γ : GL (Fin 2) ℚ} :
       γ ∈ componentGroup U g :=
   Subgroup.mem_map_iff_mem (GeneralLinearGroup.map_injective (algebraMap ℚ ℝ).injective)
 
+/-- The image of `Γ_{g,U}` in `GL₂(ℝ)` is monotone in `U`. -/
+theorem componentGroupReal_mono {U U' : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))} (h : U' ≤ U)
+    (g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)) : componentGroupReal U' g ≤ componentGroupReal U g :=
+  Subgroup.map_mono (componentGroup_mono h g)
+
+/-- **`Γ_{qgu,U} = qΓ_{g,U}q⁻¹`** in `GL₂(ℝ)`, for `q ∈ GL₂(ℚ)` and `u ∈ U`. -/
+theorem componentGroupReal_mul_mul (g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)) (q : GL (Fin 2) ℚ)
+    {u : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)} (hu : u ∈ U) :
+    componentGroupReal U (GeneralLinearGroup.map (algebraMap ℚ (FiniteAdeleRing ℤ ℚ)) q * g * u) =
+      (componentGroupReal U g).map
+        (MulAut.conj (GeneralLinearGroup.map (algebraMap ℚ ℝ) q)).toMonoidHom := by
+  rw [componentGroupReal, componentGroupReal, componentGroup_mul_mul g q hu, Subgroup.map_map,
+    Subgroup.map_map]
+  congr 1
+  ext γ : 1
+  simp
+
 /-- **`Γ_{g,U} ∩ SL₂(ℤ)` has finite index in `SL₂(ℤ)`** for open `U`. -/
 theorem relIndex_componentGroup_range_mapGL_ne_zero
     (hU : IsOpen (U : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ)))) :
@@ -103,8 +123,6 @@ theorem relIndex_componentGroup_range_mapGL_ne_zero
   have hV : IsOpen (V : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))) :=
     (Subgroup.isOpen_map_conj_iff g).mpr hU
   have h1 : V.relIndex O ≠ 0 := by
-    have (v : HeightOneSpectrum ℤ) : Finite (ℤ ⧸ v.asIdeal) :=
-      Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
     have : CompactSpace O := isCompact_iff_compactSpace.mp (isCompact_principalLevel ℚ top_ne_bot)
     have := Subgroup.quotient_finite_of_isOpen (V.subgroupOf O) (Subgroup.subgroupOf_isOpen O V hV)
     exact Subgroup.index_ne_zero_of_finite

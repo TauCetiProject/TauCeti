@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.AdelicComponentGroup.Arithmetic
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.ResidueField
 
 /-!
 # Checks for the congruence groups of the `GL₂` components
@@ -33,8 +34,6 @@ namespace TauCeti.Examples.AdelicComponentGroup
 theorem componentGroup_principalLevel_one :
     componentGroup (principalLevel ℚ (Ideal.span {((1 : ℕ) : ℤ)})) 1 =
       (SpecialLinearGroup.mapGL (n := Fin 2) (R := ℤ) ℚ).range := by
-  have : (∀ v : HeightOneSpectrum ℤ, Finite (ℤ ⧸ v.asIdeal)) :=
-    fun v ↦ Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
   ext γ
   refine ⟨fun h ↦ ?_, ?_⟩
   · -- Elements of `Γ_{1,K(1)}` have determinant `1` and integral entries.
