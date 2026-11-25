@@ -40,11 +40,11 @@ and defect `1`, where `|C_p| = p`.
 * `TauCeti.card_eq_pow_blockDefect`: every defect group of a primitive idempotent of `R[G]^G` has
   order `p ^ blockDefect p e`.
 * `TauCeti.blockDefect_eq_zero_iff`: the defect is `0` exactly when `1` is a defect group.
-* `TauCeti.blockDefect_le`: the defect is at most the exponent of `p` in `|G|`.
+* `TauCeti.blockDefect_le`: the defect of any `e ∈ R[G]` is at most the exponent of `p` in `|G|`.
 * `TauCeti.blockDefect_eq_iff_forall_sylow`: the defect is that exponent exactly when every Sylow
   `p`-subgroup is a defect group.
 * `TauCeti.IsBlockIdempotent.card_eq_pow_blockDefect`,
-  `TauCeti.IsBlockIdempotent.blockDefect_eq_zero_iff`, `TauCeti.IsBlockIdempotent.blockDefect_le`,
+  `TauCeti.IsBlockIdempotent.blockDefect_eq_zero_iff`,
   `TauCeti.IsBlockIdempotent.blockDefect_eq_iff_forall_sylow`: the same for a block idempotent.
 
 ## References
@@ -99,6 +99,21 @@ theorem blockDefect_eq_of_forall_card {p : ℕ} [hp : Fact p.Prime] {e : MonoidA
   simp only [blockDefect_def, he, ↓reduceDIte]
   rw [h _ he.choose_spec, hp.out.factorization_pow, Finsupp.single_eq_same]
 
+/-- **The defect is at most the Sylow exponent.** Every `e ∈ R[G]`, `G` finite, satisfies
+`blockDefect p e ≤ a` where `|G|_p = p ^ a`: a defect group is a `p`-subgroup, so it lies in a
+Sylow `p`-subgroup. -/
+theorem blockDefect_le [Finite G] {p : ℕ} [hp : Fact p.Prime] (e : MonoidAlgebra R G) :
+    blockDefect p e ≤ (Nat.card G).factorization p := by
+  rw [blockDefect_def]
+  split_ifs with h
+  · obtain ⟨n, hn⟩ := IsPGroup.iff_card.1 h.choose_spec.isPGroup
+    obtain ⟨S, hS⟩ := h.choose_spec.isPGroup.exists_le_sylow
+    have hdvd := Subgroup.card_dvd_of_le hS
+    rw [hn, S.card_eq_multiplicity] at hdvd
+    rw [hn, hp.out.factorization_pow, Finsupp.single_eq_same]
+    exact (Nat.pow_dvd_pow_iff_le_right hp.out.one_lt).1 hdvd
+  · exact Nat.zero_le _
+
 end Def
 
 section Primitive
@@ -128,17 +143,6 @@ theorem blockDefect_eq_zero_iff (he : IsPrimitiveIdempotent e) :
   · have := card_eq_pow_blockDefect he hD
     simp only [Subgroup.mem_bot, Nat.card_unique, eq_comm (a := 1)] at this
     exact (Nat.pow_eq_one.1 this).resolve_left hp.out.ne_one
-
-/-- **The defect is at most the Sylow exponent.** For a primitive idempotent `e` of `R[G]^G`,
-with `R` an Artinian ring of characteristic `p`, `blockDefect p e ≤ a` where `|G|_p = p ^ a`:
-a defect group lies in a Sylow `p`-subgroup. -/
-theorem blockDefect_le (he : IsPrimitiveIdempotent e) :
-    blockDefect p (e : MonoidAlgebra R G) ≤ (Nat.card G).factorization p := by
-  obtain ⟨D, hD⟩ := he.exists_isDefectGroup p
-  obtain ⟨S, hS⟩ := hD.isPGroup.exists_le_sylow
-  have hdvd := Subgroup.card_dvd_of_le hS
-  rw [card_eq_pow_blockDefect he hD, S.card_eq_multiplicity] at hdvd
-  exact (Nat.pow_dvd_pow_iff_le_right hp.out.one_lt).1 hdvd
 
 /-- **Full defect.** For a primitive idempotent `e` of `R[G]^G`, with `R` an Artinian ring of
 characteristic `p`, `blockDefect p e = a`, where `|G|_p = p ^ a`, exactly when every Sylow
@@ -178,12 +182,6 @@ the trivial subgroup is a defect group. -/
 theorem blockDefect_eq_zero_iff (hb : IsBlockIdempotent b) :
     blockDefect p (b : MonoidAlgebra R G) = 0 ↔ IsDefectGroup R p (b : MonoidAlgebra R G) ⊥ :=
   TauCeti.blockDefect_eq_zero_iff hb.isPrimitiveIdempotent_conjInvariants
-
-/-- The defect of a block idempotent of `R[G]`, `R` Artinian of characteristic `p`, is at most
-the exponent `a` of `|G|_p = p ^ a`. -/
-theorem blockDefect_le (hb : IsBlockIdempotent b) :
-    blockDefect p (b : MonoidAlgebra R G) ≤ (Nat.card G).factorization p :=
-  TauCeti.blockDefect_le hb.isPrimitiveIdempotent_conjInvariants
 
 /-- The defect of a block idempotent of `R[G]`, `R` Artinian of characteristic `p`, is the
 exponent `a` of `|G|_p = p ^ a` exactly when the Sylow `p`-subgroups are defect groups. -/
