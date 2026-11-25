@@ -36,7 +36,9 @@ every fibre of the underlying additive map is a coset of the kernel. Applied to 
 this counts the general linear group over `ℤ/pᵏ` from that over `𝔽_p`.
 
 Unit reflection also passes to subalgebras: if `R → S` reflects units then so does `R → T` for
-every subalgebra `T` of `S` (`Subalgebra.isLocalHom_algebraMap`).
+every subalgebra `T` of `S` (`Subalgebra.isLocalHom_algebraMap`). Likewise, in a scalar tower
+`R → A → B`, `IsScalarTower.toAlgHom R A B` reflects units whenever `algebraMap A B` does
+(`TauCeti.IsScalarTower.isLocalHom_toAlgHom`).
 
 For a surjection of local rings `A → A'`, the image of the maximal ideal of `A` has radical the
 maximal ideal of `A'` (`TauCeti.IsLocalRing.radical_map_maximalIdeal_of_surjective`): the closed
@@ -122,6 +124,18 @@ instance isLocalHom_algebraMap [IsLocalHom (algebraMap R S)] (T : Subalgebra R S
   isLocalHom_of_comp _ (T.val : T →+* S)
 
 end Subalgebra
+
+namespace TauCeti.IsScalarTower
+
+/-- In a scalar tower `R → A → B`, `IsScalarTower.toAlgHom R A B` reflects units whenever
+`algebraMap A B` does. -/
+instance isLocalHom_toAlgHom {R A B : Type*} [CommSemiring R] [CommSemiring A] [Semiring B]
+    [Algebra R A] [Algebra R B] [Algebra A B] [IsScalarTower R A B]
+    [IsLocalHom (algebraMap A B)] :
+    IsLocalHom (IsScalarTower.toAlgHom R A B) :=
+  ⟨fun x hx ↦ isUnit_of_map_unit (algebraMap A B) x hx⟩
+
+end TauCeti.IsScalarTower
 
 namespace TauCeti.IsLocalRing
 
