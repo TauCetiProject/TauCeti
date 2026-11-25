@@ -27,6 +27,8 @@ coefficients `map f` acts on the constant coefficient.
   coefficient by `f`, as `MvPowerSeries.constantCoeff_map` does for multivariate power series.
 * `PowerSeries.coeff_mul_of_ne_zero`: for `k ≠ 0`, the `Xᵏ`-coefficient of `f * g` is
   `f₀ * gₖ + fₖ * g₀ + Σ_{0 < i < k} fᵢ * g_{k - i}`.
+* `Polynomial.coeff_coe_eq_zero_of_degree_lt`: a polynomial of degree less than `s`, viewed as a
+  power series, has zero coefficients from `s` on.
 -/
 
 public section
@@ -92,3 +94,16 @@ theorem coeff_mul_of_ne_zero (f g : R⟦X⟧) {k : ℕ} (hk : k ≠ 0) :
 end Coeff
 
 end PowerSeries
+
+namespace Polynomial
+
+variable {R : Type*} [Semiring R]
+
+/-- A polynomial of degree less than `s`, viewed as a power series, has zero coefficients from
+`s` on. -/
+theorem coeff_coe_eq_zero_of_degree_lt {s : ℕ} {p : Polynomial R} {m : ℕ} (hp : p.degree < s)
+    (hm : s ≤ m) : (p : PowerSeries R).coeff m = 0 := by
+  rw [coeff_coe]
+  exact coeff_eq_zero_of_degree_lt (hp.trans_le (by exact_mod_cast hm))
+
+end Polynomial
