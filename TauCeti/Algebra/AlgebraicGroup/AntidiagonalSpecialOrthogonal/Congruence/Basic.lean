@@ -220,6 +220,17 @@ theorem groupSchemeIsoSpecialOrthogonal_def (hi : i * i = -1) :
         eqToIso (SpecialOrthogonal.groupScheme_def R l).symm :=
   (rfl)
 
+/-- Followed by the quotient-spectrum presentation `SpecialOrthogonal.groupScheme_def`, the
+isomorphism of group schemes is the spectrum of the inverse isomorphism of coordinate Hopf
+algebras. -/
+@[reassoc]
+theorem groupSchemeIsoSpecialOrthogonal_hom_comp_eqToHom (hi : i * i = -1) :
+    (groupSchemeIsoSpecialOrthogonal l hi).hom ≫ eqToHom (SpecialOrthogonal.groupScheme_def R l) =
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
+        (coordinateHopfAlgebraIsoSpecialOrthogonal l hi).inv.op := by
+  simp only [groupSchemeIsoSpecialOrthogonal_def, Iso.trans_hom, Functor.mapIso_hom, Iso.symm_hom,
+    Iso.op_inv, eqToIso.hom, Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
+
 /-- **Inside `GL_l`, the isomorphism `SO_l^J ≅ SO_l` is conjugation by the congruence matrix.**
 Followed by the inclusion of `SO_l`, it is the inclusion of `SO_l^J` followed by the automorphism
 of `GL_l` induced by `GeneralLinear.conjCoordinateIso P`. -/
