@@ -67,10 +67,6 @@ symplectic coordinate Hopf algebra and group scheme live in
   `Fin`-indexed form is what the symplectic coordinate Hopf algebra cuts out of `GLₘ₊ₘ`, whose
   coordinate ring is `Fin`-indexed.
 * `TauCeti.nondegenerate_JFin`: the transported alternating form is nondegenerate.
-* `TauCeti.transpose_mul_JFin_mul_eq_smul`: a similitude `M Jₘ Mᵀ = r Jₘ` with unit multiplier
-  is one in the column form `Mᵀ Jₘ M = r Jₘ`.
-* `TauCeti.JFin_one_eq` and `Matrix.mul_JFin_one_mul_transpose_eq_det_smul`: in rank two,
-  `J₁ = [[0, -1], [1, 0]]` and `M J₁ Mᵀ = det(M) J₁`.
 * `TauCeti.GLSymplecticFin.det_eq_one`: a `Fin`-indexed symplectic matrix has determinant one.
 * `TauCeti.GLSymplecticFin.positiveLongRootTransvectionHom` and
   `negativeLongRootTransvectionHom`: the two families of long-root one-parameter subgroups.
@@ -413,50 +409,15 @@ theorem neg_JFin_mul_transpose_mul_JFin_mul_JFin_mul_transpose
   rwa [submatrix_neg_JFin_mul_transpose_mul_JFin]
 
 variable {m R} in
-/-- **The column form of the similitude condition**: if `M Jₘ Mᵀ = r Jₘ` with `r` a unit, then
-`Mᵀ Jₘ M = r Jₘ`. -/
-theorem transpose_mul_JFin_mul_eq_smul {M : Matrix (Fin (m + m)) (Fin (m + m)) R} (r : Rˣ)
-    (h : M * JFin m R * Mᵀ = (r : R) • JFin m R) :
-    Mᵀ * JFin m R * M = (r : R) • JFin m R := by
-  -- `M (J Mᵀ J) = r J J = -r`, so `-r⁻¹ J Mᵀ J` is a right, hence a left, inverse of `M`.
-  have hright : M * (-((r⁻¹ : Rˣ) : R) • (JFin m R * Mᵀ * JFin m R)) = 1 := by
-    rw [Matrix.mul_smul, ← Matrix.mul_assoc, ← Matrix.mul_assoc, h]
-    simp [JFin_mul_self, smul_smul]
-  have hleft := mul_eq_one_comm.mp hright
-  rw [Matrix.smul_mul] at hleft
-  -- Cancelling the unit `-r⁻¹`: `J Mᵀ J M = -r`.
-  have hJ : JFin m R * Mᵀ * JFin m R * M = (-(r : R)) • (1 : Matrix _ _ R) := by
-    rw [← hleft, smul_smul, neg_mul_neg, Units.mul_inv, one_smul]
-  calc Mᵀ * JFin m R * M
-      = -(JFin m R * (JFin m R * Mᵀ * JFin m R * M)) := by
-        simp only [← Matrix.mul_assoc, JFin_mul_self, Matrix.neg_mul, Matrix.one_mul, neg_neg]
-    _ = (r : R) • JFin m R := by
-        rw [hJ, Matrix.mul_smul, Matrix.mul_one, neg_smul, neg_neg]
-
-variable {m R} in
-/-- The column form of the symplectic condition: the case `r = 1` of
-`TauCeti.transpose_mul_JFin_mul_eq_smul`. -/
+/-- The column form of the symplectic condition, which is Mathlib's `SymplecticGroup.mem_iff'`
+read through the reindexing. -/
 theorem transpose_mul_JFin_mul_self {g : Matrix (Fin (m + m)) (Fin (m + m)) R}
     (hg : g * JFin m R * gᵀ = JFin m R) : gᵀ * JFin m R * g = JFin m R := by
-  simpa using transpose_mul_JFin_mul_eq_smul (1 : Rˣ) (by simpa using hg)
-
-variable {R} in
-/-- The standard alternating form in rank two is `[[0, -1], [1, 0]]`. -/
-theorem JFin_one_eq : JFin 1 R = !![0, -1; 1, 0] := by
-  rw [JFin_eq_submatrix]
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [Matrix.J, finSumFinEquiv, Fin.addCases, Matrix.fromBlocks]
-
-variable {R} in
-/-- For a `2 × 2` matrix, `M J₁ Mᵀ = det(M) J₁`. -/
-theorem _root_.Matrix.mul_JFin_one_mul_transpose_eq_det_smul
-    (M : Matrix (Fin (1 + 1)) (Fin (1 + 1)) R) :
-    M * JFin 1 R * Mᵀ = M.det • JFin 1 R := by
-  rw [JFin_one_eq]
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [Matrix.mul_apply, Fin.sum_univ_succ, Matrix.det_succ_row_zero] <;> ring
+  have h := SymplecticGroup.mem_iff'.mp (submatrix_mem_symplecticGroup hg)
+  rw [← JFin_submatrix m (R := R), Matrix.transpose_submatrix, Matrix.submatrix_mul_equiv,
+    Matrix.submatrix_mul_equiv] at h
+  have h' := congrArg (fun M => M.submatrix finSumFinEquiv.symm finSumFinEquiv.symm) h
+  simpa only [Matrix.submatrix_submatrix, Equiv.self_comp_symm, Matrix.submatrix_id_id] using h'
 
 /-- The symplectic subgroup of `GL (Fin (m + m)) R`: the pullback of `TauCeti.GLSymplectic`
 along the reindexing isomorphism. -/

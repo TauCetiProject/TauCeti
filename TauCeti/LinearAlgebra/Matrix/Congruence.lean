@@ -41,6 +41,8 @@ one factor after the other.
   `Matrix.mul_mul_transpose_sub_smul_of_mul_eq_one`: the similitude defect
   `f(X, r) = X D Xᵀ - r D` of a product and of a left inverse, the identities behind closure of
   similitude groups under multiplication and inversion.
+* `Matrix.transpose_mul_mul_eq_smul_of_mul_mul_transpose_eq_smul`: for a form with `J * J = -1`,
+  a similitude `M J Mᵀ = r J` with unit multiplier satisfies `Mᵀ J M = r J`.
 
 ## References
 
@@ -158,6 +160,26 @@ theorem mul_mul_transpose_sub_smul_of_mul_eq_one [DecidableEq n] {W X : Matrix n
     W * D * Wᵀ - s • D = -(s • (W * (X * D * Xᵀ - r • D) * Wᵀ)) := by
   rw [Matrix.mul_sub, Matrix.sub_mul, mul_mul_mul_transpose_mul_transpose_of_mul_eq_one hW,
     Matrix.mul_smul, Matrix.smul_mul, smul_sub, smul_smul, hs, one_smul, neg_sub]
+
+/-- **Row and column similitudes agree for a form squaring to `-1`**: if `J * J = -1` and
+`M J Mᵀ = r J` with `r` a unit, then `Mᵀ J M = r J`. -/
+theorem transpose_mul_mul_eq_smul_of_mul_mul_transpose_eq_smul [DecidableEq n]
+    {J M : Matrix n n R} (hJ : J * J = -1) (r : Rˣ) (h : M * J * Mᵀ = (r : R) • J) :
+    Mᵀ * J * M = (r : R) • J := by
+  -- `M (J Mᵀ J) = r J J = -r`, so `-r⁻¹ J Mᵀ J` is a right, hence a left, inverse of `M`.
+  have hright : M * (-((r⁻¹ : Rˣ) : R) • (J * Mᵀ * J)) = 1 := by
+    rw [Matrix.mul_smul, ← Matrix.mul_assoc, ← Matrix.mul_assoc, h]
+    simp [hJ, smul_smul]
+  have hleft := mul_eq_one_comm.mp hright
+  rw [Matrix.smul_mul] at hleft
+  -- Cancelling the unit `-r⁻¹`: `J Mᵀ J M = -r`.
+  have hJM : J * Mᵀ * J * M = (-(r : R)) • (1 : Matrix n n R) := by
+    rw [← hleft, smul_smul, neg_mul_neg, Units.mul_inv, one_smul]
+  calc Mᵀ * J * M
+      = -(J * (J * Mᵀ * J * M)) := by
+        simp only [← Matrix.mul_assoc, hJ, Matrix.neg_mul, Matrix.one_mul, neg_neg]
+    _ = (r : R) • J := by
+        rw [hJM, Matrix.mul_smul, Matrix.mul_one, neg_smul, neg_neg]
 
 end Similitude
 

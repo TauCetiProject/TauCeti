@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.Similitude
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Similitude
 
 /-!
 # The symplectic similitude group scheme `GSp₂ₘ`
@@ -41,7 +41,8 @@ determinant, so that `GSp₂(A) ≃ GL₂(A)` (`TauCeti.SymplecticSimilitude.poi
   its closed immersion into `GL (m + m) × 𝔾_m`.
 * `TauCeti.SymplecticSimilitude.multiplier`: the multiplier character `ν : GSp₂ₘ → 𝔾_m`.
 * `TauCeti.SymplecticSimilitude.pointsSubgroup` and
-  `TauCeti.SymplecticSimilitude.pointsMulEquiv`: the group of points.
+  `TauCeti.SymplecticSimilitude.pointsMulEquiv`: the group of points, natural in the value
+  algebra (`TauCeti.SymplecticSimilitude.pointsMulEquiv_mapValue`).
 * `TauCeti.SymplecticSimilitude.multiplierPoints` and
   `TauCeti.SymplecticSimilitude.mem_ker_multiplierPoints_iff`: the multiplier on points; a point
   is in its kernel exactly when it is a pair `(h, 1)` with `h` symplectic
@@ -147,6 +148,15 @@ theorem multiplierPoints_pointsMulEquiv
         (LaurentPolynomial.T 1)) :=
   ConstantFormSimilitude.pointsMulEquiv_snd R (m + m) (JFin m R) f
 
+/-- **The points identification is natural in the value algebra**: post-composing a point with
+`phi` maps its similitude `(h, r)` to `(phi h, phi r)`. -/
+theorem pointsMulEquiv_mapValue {B : Type*} [CommRing B] [Algebra R B] (phi : A →ₐ[R] B)
+    (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R m) (CommAlgCat.of R A)) :
+    pointsMulEquiv R m B (AlgHom.mapValue (H := coordinateHopfAlgebra R m) phi f) =
+      ConstantFormSimilitude.pointsSubgroupMap R (m + m) (JFin m R) phi
+        (pointsMulEquiv R m A f) :=
+  ConstantFormSimilitude.pointsMulEquiv_mapValue R (m + m) (JFin m R) phi f
+
 /-- **The kernel of the multiplier**: a similitude lies in the kernel of the multiplier exactly
 when it is a pair `(h, 1)` with `h` symplectic. Such pairs are built with
 `TauCeti.SymplecticSimilitude.mk_one_mem_pointsSubgroup`. -/
@@ -171,15 +181,8 @@ theorem mk_one_mem_pointsSubgroup {h : GL (Fin (m + m)) A} (hh : h ∈ GLSymplec
 `r = det h`. -/
 theorem mem_pointsSubgroup_one_iff (p : GL (Fin (1 + 1)) A × Aˣ) :
     p ∈ pointsSubgroup R 1 A ↔ p.2 = Matrix.GeneralLinearGroup.det p.1 := by
-  rw [mem_pointsSubgroup_iff, Matrix.mul_JFin_one_mul_transpose_eq_det_smul, Units.ext_iff,
-    Matrix.GeneralLinearGroup.val_det_apply]
-  constructor
-  · intro h
-    have h01 := congrFun (congrFun h 0) 1
-    rw [JFin_one_eq] at h01
-    simpa using h01.symm
-  · intro h
-    rw [h]
+  rw [mem_pointsSubgroup_iff, Matrix.mul_JFin_one_mul_transpose_eq_smul_iff, Units.ext_iff,
+    Matrix.GeneralLinearGroup.val_det_apply, eq_comm]
 
 variable (R A)
 

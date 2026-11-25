@@ -77,7 +77,8 @@ None of these identities uses a property of `C`.
 * `TauCeti.ConstantFormSimilitude.pointsSubgroup` and
   `TauCeti.ConstantFormSimilitude.pointsMulEquiv`: the points are the pairs `(h, r)` with
   `h C hᵀ = r C`, with `pointsMulEquiv_fst` and `pointsMulEquiv_snd` computing the two
-  components.
+  components, and `pointsMulEquiv_mapValue`: naturality in the value algebra, through the
+  componentwise map `pointsSubgroupMap`.
 * `TauCeti.ConstantFormSimilitude.ambientPointsMulEquiv`: the points of `GLₙ × 𝔾_m` are
   `GLₙ(A) × Aˣ`, naturally in `A` (`ambientPointsMulEquiv_mapValue`).
 
@@ -192,9 +193,8 @@ private theorem counit_relationMatrix (i j : Fin n) :
   have h := congrFun (congrFun (relationMatrix_map R n C
     (Bialgebra.counitAlgHom R (ambientHopfAlgebra R n))) i) j
   rw [Matrix.map_apply, Bialgebra.counitAlgHom_apply] at h
-  rw [h, map_counit_matrixCoord, counit_multiplierCoord, Algebra.algebraMap_self,
-    RingHom.coe_id, Matrix.map_id, Matrix.transpose_one, Matrix.one_mul, Matrix.mul_one,
-    one_smul, sub_self, Matrix.zero_apply]
+  rw [h, map_counit_matrixCoord, counit_multiplierCoord]
+  simp
 
 /-- The left tensor inclusion of the ambient coordinate algebra into its tensor square. -/
 private noncomputable abbrev leftCopy :
@@ -595,6 +595,39 @@ theorem ambientPointsMulEquiv_mapValue (phi : A →ₐ[R] B)
     (AffineGroup.Product.pointsMulEquiv_mapValue phi g)).trans
       (Prod.ext (GeneralLinear.pointsMulEquiv_mapValue n phi _)
         (MultiplicativeGroup.pointsMulEquiv_mapValue phi _))
+
+/-- **Change of value algebra on similitudes**: an algebra morphism `phi : A → B` sends a
+similitude `(h, r)` of `C` over `A` to the similitude `(phi h, phi r)` over `B`. -/
+def pointsSubgroupMap (phi : A →ₐ[R] B) : pointsSubgroup R n C A →* pointsSubgroup R n C B :=
+  ((MonoidHom.prodMap (Matrix.GeneralLinearGroup.map (phi : A →+* B))
+      (Units.map (phi : A →* B))).comp (pointsSubgroup R n C A).subtype).codRestrict _
+    fun p => by
+      have hC : (C.map (algebraMap R A)).map phi = C.map (algebraMap R B) := by
+        rw [Matrix.map_map]
+        exact congrArg _ (funext fun r => phi.commutes r)
+      have h := congrArg (Matrix.map · phi) ((mem_pointsSubgroup_iff R n C _).mp p.property)
+      rw [Matrix.map_mul, Matrix.map_mul, Matrix.map_smul' _ _ _ (map_mul phi), hC,
+        Matrix.transpose_map] at h
+      exact h
+
+/-- The similitude `pointsSubgroupMap phi p` is `p` with `phi` applied to both components. -/
+@[simp]
+theorem coe_pointsSubgroupMap (phi : A →ₐ[R] B) (p : pointsSubgroup R n C A) :
+    (pointsSubgroupMap R n C phi p : GL (Fin n) B × Bˣ) =
+      Prod.map (Matrix.GeneralLinearGroup.map (phi : A →+* B)) (Units.map (phi : A →* B))
+        (p : GL (Fin n) A × Aˣ) := by
+  unfold pointsSubgroupMap
+  rfl
+
+/-- **The points identification is natural in the value algebra**: post-composing a point with
+`phi` maps its similitude componentwise by `phi`. -/
+theorem pointsMulEquiv_mapValue (phi : A →ₐ[R] B)
+    (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n C) (CommAlgCat.of R A)) :
+    pointsMulEquiv R n C (A := B) (AlgHom.mapValue (H := coordinateHopfAlgebra R n C) phi f) =
+      pointsSubgroupMap R n C phi (pointsMulEquiv R n C (A := A) f) := by
+  apply Subtype.ext
+  rw [coe_pointsSubgroupMap, ← pointsMulEquiv_coe, ← pointsMulEquiv_coe,
+    ← CommHopfAlgCat.mapValue_quotientPointsHom, ambientPointsMulEquiv_mapValue]
 
 end Points
 
