@@ -127,8 +127,7 @@ theorem eta_neg_one_div {τ : ℂ} (hτ : 0 < τ.im) :
 
 private theorem sqrt_denom_mul_eta_ne_zero (γ : SL(2, ℤ)) (τ : ℍ) :
     Complex.sqrt ((γ 1 0 : ℂ) * τ + γ 1 1) * η τ ≠ 0 :=
-  mul_ne_zero (Complex.sqrt_eq_zero_iff.not.2 (UpperHalfPlane.denom_ne_zero γ τ))
-    (_root_.ModularForm.eta_ne_zero τ.coe_im_pos)
+  mul_ne_zero (UpperHalfPlane.sqrt_denom_ne_zero γ τ) (_root_.ModularForm.eta_ne_zero τ.coe_im_pos)
 
 /-- `Δ(γ τ) = (c τ + d)¹² Δ(τ)` for `γ ∈ SL(2, ℤ)`, in terms of `η`. -/
 private theorem eta_smul_pow_twentyFour (γ : SL(2, ℤ)) (τ : ℍ) :

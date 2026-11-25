@@ -25,7 +25,9 @@ The formulas are `HahnSeries.leadingCoeff_pow` and `HahnSeries.orderTop_pow`, bo
 simplification lemmas, companions of Mathlib's `HahnSeries.order_pow`. Mathlib's
 `HahnSeries.order_pow`, `HahnSeries.leadingCoeff_mul` and `HahnSeries.orderTop_mul` assume no zero
 divisors; for powers it suffices that the coefficients are reduced, and, for `orderTop`, that
-they form a nontrivial semiring.
+they form a nontrivial semiring. Over a commutative semiring without zero divisors, the leading
+coefficient of a finite product is the product of the leading coefficients
+(`HahnSeries.leadingCoeff_prod`).
 
 This file also records that coefficientwise scalar multiplication associates and commutes with
 multiplication of Hahn series (`TauCeti.hahnSeries_isScalarTower` and
@@ -121,6 +123,17 @@ theorem orderTop_pow [Nontrivial R] (x : HahnSeries Γ R) (n : ℕ) :
     have h : x.leadingCoeff ^ (n + 1) ≠ 0 := pow_ne_zero _ (leadingCoeff_ne_zero.mpr hx)
     rw [pow_succ, orderTop_mul_of_ne_zero (by rwa [leadingCoeff_pow, ← pow_succ]), ih,
       succ_nsmul]
+
+/-- Over a commutative semiring without zero divisors, the leading coefficient of a finite
+product is the product of the leading coefficients. -/
+@[simp]
+theorem leadingCoeff_prod {R ι : Type*} [CommSemiring R] [NoZeroDivisors R] (s : Finset ι)
+    (f : ι → HahnSeries Γ R) :
+    (∏ i ∈ s, f i).leadingCoeff = ∏ i ∈ s, (f i).leadingCoeff := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => rw [Finset.prod_insert hi, Finset.prod_insert hi, leadingCoeff_mul, ih]
 
 end HahnSeries
 

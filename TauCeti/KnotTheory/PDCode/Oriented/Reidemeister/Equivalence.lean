@@ -203,6 +203,15 @@ theorem reidemeisterEquiv_rotateCrossing (D : OrientedPDCode n) (i : Fin n) :
     ReidemeisterEquiv D (D.rotateCrossing i) :=
   (IsReidemeisterMove.rotateCrossing D i).reidemeisterEquiv
 
+/-- Rotating a crossing `k` times gives a Reidemeister equivalent code. -/
+theorem reidemeisterEquiv_iterate_rotateCrossing (D : OrientedPDCode n) (i : Fin n) (k : ℕ) :
+    ReidemeisterEquiv D ((fun E : OrientedPDCode n ↦ E.rotateCrossing i)^[k] D) := by
+  induction k with
+  | zero => exact ReidemeisterEquiv.refl D
+  | succ k ih =>
+    rw [Function.iterate_succ_apply']
+    exact ih.trans (reidemeisterEquiv_rotateCrossing _ i)
+
 /-- The first Reidemeister move gives a Reidemeister equivalent code. -/
 theorem reidemeisterEquiv_reidemeisterOne (D : OrientedPDCode n) (h : Fin (4 * n)) (b : Bool) :
     ReidemeisterEquiv D (D.reidemeisterOne h b) :=
