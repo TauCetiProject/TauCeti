@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.Topology.Homotopy.GenLoop.Map
 public import TauCeti.Geometry.Convex.ConvexSpace.Defs
+public import TauCeti.Geometry.Convex.ConvexSpace.PathConnectedSpaceStdSimplex
 
 /-!
 # Hurewicz classes of squares as triangulated cycles
@@ -110,19 +111,83 @@ theorem squareUpperTriangle_apply_one (w : StdSimplex ℝ (Fin 3)) :
   StdSimplex.coe_weightsOneAddTwoI_apply w
 
 /-- The diagonal faces of the two triangles of the square agree: both are `z ↦ (z₁, z₁)`. -/
-private theorem squareLowerTriangle_map_succAbove_one (z : StdSimplex ℝ (Fin 2)) :
-    squareLowerTriangle (StdSimplex.map (Fin.succAbove 1) z) =
-      squareUpperTriangle (StdSimplex.map (Fin.succAbove 2) z) := by
+theorem squareLowerTriangle_comp_faceInclusion_one :
+    squareLowerTriangle.comp (StdSimplex.faceInclusion 1) =
+      squareUpperTriangle.comp (StdSimplex.faceInclusion 2) := by
+  ext1 z
   have h₁ : (StdSimplex.map (Fin.succAbove 1) z).weights 2 = z.weights 1 :=
     StdSimplex.weights_map_succAbove_of_eq (by decide) z
   have h₂ : (StdSimplex.map (Fin.succAbove 2) z).weights 1 = z.weights 1 :=
     StdSimplex.weights_map_succAbove_of_eq (by decide) z
+  rw [ContinuousMap.comp_apply, ContinuousMap.comp_apply, StdSimplex.faceInclusion_apply,
+    StdSimplex.faceInclusion_apply]
   funext j
   apply Subtype.ext
   fin_cases j <;>
     simp only [Fin.zero_eta, Fin.mk_one, squareLowerTriangle_apply_zero,
       squareUpperTriangle_apply_zero, squareLowerTriangle_apply_one, squareUpperTriangle_apply_one,
       StdSimplex.weights_map_succAbove_self, h₁, h₂, zero_add, add_zero]
+
+/-- The face of the lower triangle opposite the vertex `(1, 1)` is the bottom edge `t ↦ (t, 0)`
+of the square, parametrized through `StdSimplex.homeomorphI`. -/
+theorem squareLowerTriangle_faceInclusion_two (t : I) :
+    squareLowerTriangle (StdSimplex.faceInclusion 2 (StdSimplex.homeomorphI.symm t)) = ![t, 0] := by
+  have h₁ := StdSimplex.weights_map_succAbove_of_eq (j := 2) (i := 1) (k := 1) (by decide)
+    (StdSimplex.homeomorphI.symm t)
+  rw [StdSimplex.faceInclusion_apply]
+  funext j
+  apply Subtype.ext
+  fin_cases j <;>
+    simp only [Fin.zero_eta, Fin.mk_one, squareLowerTriangle_apply_zero,
+      squareLowerTriangle_apply_one, StdSimplex.weights_map_succAbove_self, h₁,
+      StdSimplex.homeomorphI_symm_weights_one] <;> simp
+
+/-- The face of the lower triangle opposite the vertex `(0, 0)` is the right edge `t ↦ (1, t)` of
+the square, parametrized through `StdSimplex.homeomorphI`. -/
+theorem squareLowerTriangle_faceInclusion_zero (t : I) :
+    squareLowerTriangle (StdSimplex.faceInclusion 0 (StdSimplex.homeomorphI.symm t)) = ![1, t] := by
+  have h₁ := StdSimplex.weights_map_succAbove_of_eq (j := 0) (i := 0) (k := 1) (by decide)
+    (StdSimplex.homeomorphI.symm t)
+  have h₂ := StdSimplex.weights_map_succAbove_of_eq (j := 0) (i := 1) (k := 2) (by decide)
+    (StdSimplex.homeomorphI.symm t)
+  rw [StdSimplex.faceInclusion_apply]
+  funext j
+  apply Subtype.ext
+  fin_cases j <;>
+    simp only [Fin.zero_eta, Fin.mk_one, squareLowerTriangle_apply_zero,
+      squareLowerTriangle_apply_one, h₁, h₂, StdSimplex.homeomorphI_symm_weights_zero,
+      StdSimplex.homeomorphI_symm_weights_one] <;> simp
+
+/-- The face of the upper triangle opposite the vertex `(0, 0)` is the reversed top edge
+`t ↦ (1 - t, 1)` of the square, parametrized through `StdSimplex.homeomorphI`. -/
+theorem squareUpperTriangle_faceInclusion_zero (t : I) :
+    squareUpperTriangle (StdSimplex.faceInclusion 0 (StdSimplex.homeomorphI.symm t)) =
+      ![σ t, 1] := by
+  have h₁ := StdSimplex.weights_map_succAbove_of_eq (j := 0) (i := 0) (k := 1) (by decide)
+    (StdSimplex.homeomorphI.symm t)
+  have h₂ := StdSimplex.weights_map_succAbove_of_eq (j := 0) (i := 1) (k := 2) (by decide)
+    (StdSimplex.homeomorphI.symm t)
+  rw [StdSimplex.faceInclusion_apply]
+  funext j
+  apply Subtype.ext
+  fin_cases j <;>
+    simp only [Fin.zero_eta, Fin.mk_one, squareUpperTriangle_apply_zero,
+      squareUpperTriangle_apply_one, h₁, h₂, StdSimplex.homeomorphI_symm_weights_zero,
+      StdSimplex.homeomorphI_symm_weights_one] <;> simp
+
+/-- The face of the upper triangle opposite the vertex `(1, 1)` is the left edge `t ↦ (0, t)` of
+the square, parametrized through `StdSimplex.homeomorphI`. -/
+theorem squareUpperTriangle_faceInclusion_one (t : I) :
+    squareUpperTriangle (StdSimplex.faceInclusion 1 (StdSimplex.homeomorphI.symm t)) = ![0, t] := by
+  have h₂ := StdSimplex.weights_map_succAbove_of_eq (j := 1) (i := 1) (k := 2) (by decide)
+    (StdSimplex.homeomorphI.symm t)
+  rw [StdSimplex.faceInclusion_apply]
+  funext j
+  apply Subtype.ext
+  fin_cases j <;>
+    simp only [Fin.zero_eta, Fin.mk_one, squareUpperTriangle_apply_zero,
+      squareUpperTriangle_apply_one, StdSimplex.weights_map_succAbove_self, h₂,
+      StdSimplex.homeomorphI_symm_weights_one] <;> simp
 
 /-- A point of the square with a coordinate equal to `0` or `1` lies on its boundary. -/
 private theorem mem_boundary_of_coord {y : I^(Fin 2)} (j : Fin 2)
@@ -178,10 +243,13 @@ theorem d_squareChain (p : Ω^ (Fin 2) X x) :
         ((p : C(I^(Fin 2), X)).comp squareLowerTriangle)) =
       (TopCat.toSSet.obj (TopCat.of X)).δ 2 (((TopCat.of X).toSSetObjEquiv (.op ⦋2⦌)).symm
         ((p : C(I^(Fin 2), X)).comp squareUpperTriangle)) :=
-    (TopCat.δ_toSSetObjEquiv_symm_eq _ 1 _ fun z ↦ congrArg p
-        (squareLowerTriangle_map_succAbove_one z)).trans
-      (TopCat.δ_toSSetObjEquiv_symm_eq _ 2 ((p : C(I^(Fin 2), X)).comp squareUpperTriangle |>.comp
-        ⟨StdSimplex.map (Fin.succAbove 2), StdSimplex.continuous_map ℝ _⟩) fun _ ↦ rfl).symm
+    (TopCat.δ_toSSetObjEquiv_symm_eq _ 1 ((p : C(I^(Fin 2), X)).comp squareUpperTriangle |>.comp
+        (StdSimplex.faceInclusion 2)) fun z ↦ by
+          simpa only [ContinuousMap.comp_apply, StdSimplex.faceInclusion_apply] using
+            congrArg (p : C(I^(Fin 2), X))
+              (DFunLike.congr_fun squareLowerTriangle_comp_faceInclusion_one z)).trans
+      (TopCat.δ_toSSetObjEquiv_symm_eq _ 2 _ fun z ↦ by
+          simp only [ContinuousMap.comp_apply, StdSimplex.faceInclusion_apply]).symm
   have hc (i : Fin 3) : (TopCat.toSSet.obj (TopCat.of X)).δ i
       (((TopCat.of X).toSSetObjEquiv (.op ⦋2⦌)).symm (ContinuousMap.const _ x)) = c :=
     TopCat.δ_toSSetObjEquiv_symm_eq _ i _ fun _ ↦ rfl

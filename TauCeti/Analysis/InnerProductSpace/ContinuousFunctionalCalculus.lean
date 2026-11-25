@@ -13,8 +13,10 @@ public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Subalgebra
 public import TauCeti.Analysis.InnerProductSpace.Complexification
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Analysis.Normed.Operator.Banach
+import TauCeti.Analysis.InnerProductSpace.Positive.Basic
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.RealImaginaryPart
 
 /-!
@@ -311,6 +313,62 @@ theorem inner_sqrt_apply_sqrt_apply_eq_inner {T : X →L[ℝ] X} (hT : 0 ≤ T) 
     ⟪CFC.sqrt T u, CFC.sqrt T v⟫_ℝ = ⟪T u, v⟫_ℝ := by
   rw [← (nonneg_iff_isPositive.mp (CFC.sqrt_nonneg T)).inner_left_eq_inner_right,
     ← mul_apply_eq_comp, CFC.sqrt_mul_sqrt_self T hT]
+
+open scoped ComplexOrder in
+/-- A strictly positive operator on an inner product space is positive definite. -/
+theorem _root_.IsStrictlyPositive.inner_pos_left {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] {T : E →L[𝕜] E} (hT : IsStrictlyPositive T) {x : E} (hx : x ≠ 0) :
+    0 < ⟪T x, x⟫_𝕜 := by
+  have hT' := nonneg_iff_isPositive.mp hT.nonneg
+  refine (hT'.inner_nonneg_left x).lt_of_ne fun h0 ↦ hx ?_
+  -- `T x = 0`, and `T` is invertible.
+  have hTx := LinearMap.IsPositive.apply_eq_zero_of_inner_map_self_eq_zero hT' h0.symm
+  obtain ⟨u, hu⟩ := hT.isUnit
+  rw [coe_coe, ← hu] at hTx
+  have := congr(($(u.inv_mul) : E →L[𝕜] E) x)
+  rwa [mul_apply_eq_comp, hTx, map_zero, one_apply_eq_self, eq_comm] at this
+
+/-- **Uniqueness of square roots with nonnegative quadratic form.** An operator on a real Hilbert
+space whose quadratic form is nonnegative and whose square is the square of a positive operator `B`
+is `B` itself. Unlike `CFC.mul_self_eq_mul_self_iff`, `S` need not be self-adjoint. -/
+theorem eq_of_mul_self_eq_mul_self_of_inner_nonneg {S B : X →L[ℝ] X} (hB : 0 ≤ B)
+    (hS : ∀ x, 0 ≤ ⟪S x, x⟫_ℝ) (h : S * S = B * B) : S = B := by
+  have hB' := nonneg_iff_isPositive.mp hB
+  -- `S` commutes with `B * B = S * S`, hence with `B = √(B * B)`.
+  have hSB : Commute B S := by
+    have hBS : Commute (B * B) S := h ▸ (Commute.refl S).mul_left (Commute.refl S)
+    have := hBS.cfc_nnreal NNReal.sqrt
+    rwa [← CFC.sqrt_eq_cfc, CFC.sqrt_mul_self B hB] at this
+  refine sub_eq_zero.mp (ContinuousLinearMap.ext fun x ↦ ?_)
+  set y := (S - B) x
+  -- `S + B` kills `y`, as `(S + B) (S - B) = S * S - B * B = 0`. Both quadratic forms are
+  -- nonnegative, so `B y = 0` and `S y = 0`.
+  have hy : S y + B y = 0 := by
+    have hzero : (S + B) * (S - B) = 0 := by
+      rw [add_mul, mul_sub, mul_sub, hSB.eq, h]
+      abel
+    rw [← add_apply, ← mul_apply_eq_comp, hzero, zero_apply]
+  have hBy : B y = 0 := by
+    refine LinearMap.IsPositive.apply_eq_zero_of_inner_map_self_eq_zero hB' ?_
+    have := congr(⟪$hy, y⟫_ℝ)
+    rw [inner_add_left, inner_zero_left] at this
+    rw [coe_coe]
+    exact le_antisymm (by linarith [hS y]) (hB'.inner_nonneg_left y)
+  have hSy : S y = 0 := by rwa [hBy, add_zero] at hy
+  -- Along the line `x + t • y`, the quadratic form of `S` is `⟪S x, x⟫ + t * ‖y‖ ^ 2`.
+  have hline (t : ℝ) : 0 ≤ ⟪S x, x⟫_ℝ + t * ‖y‖ ^ 2 := by
+    have hxy : ⟪S x, y⟫_ℝ = ‖y‖ ^ 2 := by
+      rw [show S x = y + B x by simp [y], inner_add_left, hB'.inner_left_eq_inner_right, hBy,
+        inner_zero_right, add_zero, real_inner_self_eq_norm_sq]
+    have := hS (x + t • y)
+    rwa [map_add, map_smul, hSy, smul_zero, add_zero, inner_add_right, inner_smul_right,
+      hxy] at this
+  rw [zero_apply, ← norm_eq_zero]
+  by_contra hne
+  have hpos : 0 < ‖y‖ ^ 2 := by positivity
+  have := hline (-(⟪S x, x⟫_ℝ + 1) / ‖y‖ ^ 2)
+  rw [div_mul_cancel₀ _ hpos.ne'] at this
+  linarith
 
 /-- Negative real powers of a positive real Hilbert space operator above the identity are
 contractions in operator norm. -/

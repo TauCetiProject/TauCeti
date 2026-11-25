@@ -64,9 +64,8 @@ of its summands. The coproduct legs are the maps induced by the actual inclusion
 def isColimitCofanTwistedHomology (k : ℕ) :
     IsColimit (Cofan.mk (L.twistedHomology k)
       (fun i ↦ twistedHomologyMap (sigmaι X i) L k) :
-      Cofan fun i ↦ ((pullback (sigmaι X i).hom).obj L).twistedHomology k) := by
-  have : AB4OfSize.{v} (ModuleCat.{max v w} R) := AB4OfSize_shrink.{v, w} _
-  exact isColimitCofanMkObjOfIsColimit (HomologicalComplex.homologyFunctor _ _ k) _ _
+      Cofan fun i ↦ ((pullback (sigmaι X i).hom).obj L).twistedHomology k) :=
+  isColimitCofanMkObjOfIsColimit (HomologicalComplex.homologyFunctor _ _ k) _ _
     (isColimitCofanTwistedChainComplex X L)
 
 end TauCeti.LocalCoefficientSystem

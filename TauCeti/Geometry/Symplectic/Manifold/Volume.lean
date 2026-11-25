@@ -42,6 +42,7 @@ of a tangent space is positively oriented. Closedness of `σ` is not used.
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.volumeForm_one`: the volume form `σ¹ / 1!` is `σ` itself.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.volumeForm_apply_reindex`: the volume form takes the
   value `1` on Darboux bases.
 * `TauCeti.SmoothTwoForm.volumeForm_smul`: the volume form of `c • σ` is `cⁿ` times that of `σ`.
@@ -90,6 +91,14 @@ def volumeForm (σ : SmoothTwoForm I M) (n : ℕ) : SmoothForm I M ℝ (2 * n) :
 theorem volumeForm_apply (σ : SmoothTwoForm I M) (n : ℕ) (x : M) :
     (σ.volumeForm n).val x = ((n.factorial : ℝ)⁻¹) • (σ.val x).wedgePow n := by
   rw [volumeForm, Submodule.coe_smul, Pi.smul_apply, SmoothForm.wedgePow_apply]
+
+/-- The symplectic volume form `σ¹ / 1!` is the two-form `σ` itself. On a surface it is the
+volume form of `σ`. -/
+@[simp]
+theorem volumeForm_one (σ : SmoothTwoForm I M) : σ.volumeForm 1 = σ := by
+  ext x v
+  simp only [volumeForm_apply, Nat.factorial_one, Nat.cast_one, inv_one, one_smul,
+    ContinuousAlternatingMap.wedgePow_one_apply, Fin.cast_refl, Function.comp_id]
 
 /-- Rescaling the two-form by `c` rescales its symplectic volume form by `cⁿ`. -/
 @[simp]
@@ -172,15 +181,9 @@ theorem mpullback_volumeForm {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSp
     [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
     [IsManifold J ∞ N] {τ : SmoothTwoForm J N} {f : M → N} (hf : mpullback I J f τ.val = σ.val) :
     mpullback I J f (τ.volumeForm n).val = (σ.volumeForm n).val := by
-  ext x v
-  have hx : σ.val x = (τ.val (f x)).compContinuousLinearMap (mfderiv I J f x) := by
-    ext w
-    rw [← hf, mpullback_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
-      Function.comp_def]
-  rw [mpullback_apply, volumeForm_apply, volumeForm_apply, hx,
-    ← ContinuousAlternatingMap.wedgePow_compContinuousLinearMap,
-    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.smul_apply,
-    ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def]
+  funext x
+  rw [volumeForm_apply, ← hf, volumeForm, Submodule.coe_smul, mpullback_smul, Pi.smul_apply,
+    mpullback_wedgePow_apply]
 
 end SmoothTwoForm
 

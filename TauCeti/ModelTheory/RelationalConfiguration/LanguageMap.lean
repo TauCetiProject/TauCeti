@@ -41,6 +41,8 @@ in some countable relational symbol sublanguage (`exists_countable_sublanguage_o
   map.
 * `FirstOrder.Language.LEquiv.onConfiguration`: the homeomorphism of configuration spaces induced
   by a language equivalence.
+* `FirstOrder.Language.LEquiv.onConfigurationMeasurableEquiv`: the same transport, as a measurable
+  equivalence.
 
 ## Main results
 
@@ -244,6 +246,26 @@ transport along `e.symm`, so it is measurable too. -/
 @[fun_prop]
 theorem measurable_onConfiguration : Measurable (e.onConfiguration (V := V)) :=
   e.invLHom.measurable_reductConfiguration
+
+/-- Transport along a language equivalence, as a measurable equivalence of configuration spaces
+on every carrier, with inverse the transport along `e.symm`. -/
+def onConfigurationMeasurableEquiv :
+    RelationalConfiguration L V ≃ᵐ RelationalConfiguration L' V where
+  toEquiv := e.onConfiguration.toEquiv
+  measurable_toFun := e.measurable_onConfiguration
+  measurable_invFun := e.symm.measurable_onConfiguration
+
+/-- The measurable equivalence is transport along `e`. -/
+@[simp]
+theorem coe_onConfigurationMeasurableEquiv :
+    ⇑(e.onConfigurationMeasurableEquiv (V := V)) = e.onConfiguration :=
+  (rfl)
+
+/-- The inverse of the measurable equivalence is transport along `e.symm`. -/
+@[simp]
+theorem coe_onConfigurationMeasurableEquiv_symm :
+    ⇑(e.onConfigurationMeasurableEquiv (V := V)).symm = e.symm.onConfiguration :=
+  (rfl)
 
 variable [L.IsRelational] [L'.IsRelational]
 

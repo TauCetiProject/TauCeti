@@ -17,11 +17,12 @@ Green-kernel boundary derivative formula.
 
 The file also collects elementary pointwise facts about the kernel: continuity away from the pole,
 nonnegativity when the pole is no farther from the center than the evaluation point (so for poles
-in the disk and evaluation points on its boundary circle), and the far-field bound on the circle
-that drives recovery of boundary values by the Poisson integral, together with positivity of the
-real part of the Herglotz–Riesz kernel integral of nonnegative data inside the disk
-(`CircleIntegrable.re_circleAverage_herglotzRieszKernel_smul_nonneg`) and its derivative on a
-circle of arbitrary center `c`
+in the disk and evaluation points on its boundary circle), the far-field bound on the circle
+that drives recovery of boundary values by the Poisson integral, and, on the unit circle, its
+expression `(1 - w * conj z)⁻¹ + (1 - conj w * z)⁻¹ - 1` through Cauchy–Szegő kernels,
+together with positivity of the real part of the Herglotz–Riesz kernel integral of nonnegative
+data inside the disk (`CircleIntegrable.re_circleAverage_herglotzRieszKernel_smul_nonneg`) and its
+derivative on a circle of arbitrary center `c`
 (`CircleIntegrable.hasDerivAt_circleAverage_herglotzRieszKernel_smul`).
 -/
 
@@ -68,6 +69,29 @@ theorem poissonKernel_le_of_le_dist {c w y : ℂ} {R d : ℝ}
   rw [← sq_abs R]
   gcongr
   exact mem_closedBall_iff_norm.1 hw
+
+open scoped ComplexConjugate in
+/-- On the unit circle the Poisson kernel of the unit disk is twice the real part of the
+Cauchy–Szegő kernel `(1 - w * conj z)⁻¹`, minus one. -/
+theorem ofReal_poissonKernel_eq {w z : ℂ} (hz : ‖z‖ = 1) (hw : ‖w‖ < 1) :
+    (poissonKernel 0 w z : ℂ) = (1 - w * conj z)⁻¹ + (1 - conj w * z)⁻¹ - 1 := by
+  have hzz : z * conj z = 1 := by rw [mul_conj, normSq_eq_norm_sq, hz]; simp
+  have hzw : z - w ≠ 0 := sub_ne_zero.2 (ne_of_apply_ne norm (hz.trans_ne hw.ne'))
+  have h1 : 1 - w * conj z = conj z * (z - w) := by linear_combination (-1 : ℂ) * hzz
+  have h2 : 1 - conj w * z = z * conj (z - w) := by rw [map_sub]; linear_combination (-1 : ℂ) * hzz
+  have hz0 : z ≠ 0 := by rintro rfl; simp at hz
+  have hzc : conj z ≠ 0 := by simpa using hz0
+  have hzwc : conj (z - w) ≠ 0 := (map_ne_zero _).2 hzw
+  rw [poissonKernel_def, h1, h2]
+  simp only [sub_zero, hz]
+  have hn : ((‖z - w‖ ^ 2 : ℝ) : ℂ) = (z - w) * conj (z - w) := by
+    rw [mul_conj, normSq_eq_norm_sq]
+  have hww : ((‖w‖ ^ 2 : ℝ) : ℂ) = w * conj w := by rw [mul_conj, normSq_eq_norm_sq]
+  push_cast at hn hww ⊢
+  rw [hn, hww]
+  field_simp
+  rw [map_sub]
+  linear_combination (z * conj z - w * conj z - conj w * z) * hzz
 
 end TauCeti
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.SplitModel
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Topology.PartialHomeomorph.Defs
+import TauCeti.Topology.Algebra.Order.Field
 
 /-!
 # Passage of the split hyperbolic flow past the origin
@@ -68,7 +69,8 @@ the `L²` product norm carried by `WithLp 2` plays no role.
   explicit form, and `TauCeti.fst_splitPassage_symm`, `TauCeti.snd_splitPassage_symm`,
   `TauCeti.norm_snd_splitPassage_symm`: that of its inverse.
 * `TauCeti.tendsto_splitExitTime_atTop`, `TauCeti.tendsto_fst_splitPassage_nhds_zero`: breaking.
-* `TauCeti.tendsto_splitPassage_toLp_smul`: the linear λ-lemma.
+* `TauCeti.tendsto_splitPassage_toLp_smul`: the linear λ-lemma, along gluing parameters
+  `r → 0⁺`.
 * `TauCeti.toLp_smul_mem_splitPassage_source`, `TauCeti.splitPassage_toLp_smul`,
   `TauCeti.splitPassage_symm_toLp_smul`, `TauCeti.setOf_mem_splitPassage_source_eq_image`: gluing.
 
@@ -173,6 +175,16 @@ theorem norm_fst_mul_norm_snd_splitQuadraticFlow (t : ℝ) (z : WithLp 2 (Eₛ �
     ‖(splitQuadraticFlow t z).fst‖ * ‖(splitQuadraticFlow t z).snd‖ = ‖z.fst‖ * ‖z.snd‖ := by
   rw [norm_fst_splitQuadraticFlow, norm_snd_splitQuadraticFlow, Real.exp_neg]
   field_simp
+
+/-- An orbit starting with `‖x‖ ≤ ε` and with `‖y‖ ≤ ε` at the time `T` stays in the box
+`‖x‖ ≤ ε, ‖y‖ ≤ ε` over the time interval `[0, T]`. -/
+theorem norm_fst_le_and_norm_snd_le_splitQuadraticFlow {T s : ℝ} (hz : ‖z.fst‖ ≤ ε)
+    (hT : ‖(splitQuadraticFlow T z).snd‖ ≤ ε) (hs : s ∈ Icc 0 T) :
+    ‖(splitQuadraticFlow s z).fst‖ ≤ ε ∧ ‖(splitQuadraticFlow s z).snd‖ ≤ ε := by
+  rw [norm_snd_splitQuadraticFlow] at hT
+  rw [norm_fst_splitQuadraticFlow, norm_snd_splitQuadraticFlow]
+  exact ⟨(mul_le_of_le_one_left (norm_nonneg _) (Real.exp_le_one_iff.2 (by linarith [hs.1]))).trans
+    hz, (mul_le_mul_of_nonneg_right (Real.exp_le_exp.2 hs.2) (norm_nonneg _)).trans hT⟩
 
 /-! ### Entry and exit along an orbit -/
 
@@ -505,9 +517,7 @@ theorem tendsto_splitPassage_toLp_smul {x : ℝ → Eₛ} {y₀ : Eᵤ}
   refine Tendsto.congr' hpass ((WithLp.prod_continuous_toLp 2 Eₛ Eᵤ).continuousAt.tendsto.comp
     (Tendsto.prodMk_nhds ?_ tendsto_const_nhds))
   refine tendsto_zero_iff_norm_tendsto_zero.2 ?_
-  have h : Tendsto (fun r : ℝ ↦ r * ε) (𝓝[>] 0) (𝓝 0) :=
-    tendsto_nhdsWithin_of_tendsto_nhds (by simpa using (tendsto_id (x := 𝓝 (0 : ℝ))).mul_const ε)
-  refine h.congr' ?_
+  refine (tendsto_mul_const_nhdsGT_zero ε).congr' ?_
   filter_upwards [self_mem_nhdsWithin, hx] with r hr hxr
   rw [norm_smul, Real.norm_of_nonneg (le_of_lt hr), hxr]
 

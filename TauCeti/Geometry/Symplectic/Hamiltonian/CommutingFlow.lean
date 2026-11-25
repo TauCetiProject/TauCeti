@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow.TimeDependent
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Complete
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
+import TauCeti.Geometry.Manifold.ContMDiff.Pi
 import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Topology.Order.Interval
@@ -27,9 +28,15 @@ Hamiltonian flows are symplectic, since `d(ι_{X_f} σ) = d(df) = 0`
 (`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mpullback_globalFlow`). Without completeness,
 the time-`t` map of the maximal flow preserves `σ` at every point through which the flow is
 defined at time `t` (`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mpullback_flowOf_apply`).
-The same holds for the time-dependent flow of a family of Hamiltonian vector fields
+The same holds for the time-dependent flow `φ_{s,t}` of a family of Hamiltonian vector fields:
+`(φ_{s,t}^* σ)ₓ = σₓ` wherever the flow from `(s, x)` is defined up to time `t`
+(`TauCeti.SmoothTwoForm.mpullback_timeDependentFlowOf_apply_of_isHamiltonianVectorField`), that is
+`σ(dφ_{s,t} a, dφ_{s,t} b) = σ(a, b)` for tangent vectors `a` and `b` at `x`
+(`TauCeti.SmoothTwoForm.eval₂_mfderiv_timeDependentFlowOf_of_isHamiltonianVectorField`), and
+`φ_{s,t}^* σ = σ` when the suspension of the family is complete
 (`TauCeti.SmoothTwoForm.mpullback_timeDependentFlowOf_of_isHamiltonianVectorField`). For symplectic
-`σ`, every differential of this flow is therefore a linear symplectomorphism
+`σ` and a complete suspension, every differential of this flow is therefore a linear
+symplectomorphism
 (`TauCeti.SmoothTwoForm.IsSymplectic.isSymplectomorphism_timeDependentFlowMFDerivEquiv`), so an
 almost complex structure carried back along it stays tamed by, or compatible with, `σ`
 (`TauCeti.SmoothTwoForm.IsSymplectic.tames_transport_timeDependentFlowMFDerivEquiv_symm` and
@@ -82,6 +89,10 @@ connected regular fibre with a torus.
   flow of a complete Hamiltonian vector field satisfies `ψₜ^* σ = σ`.
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mpullback_flowOf_apply`: for closed `σ`, the
   maximal flow of a Hamiltonian vector field preserves `σ` wherever it is defined.
+* `TauCeti.SmoothTwoForm.mpullback_timeDependentFlowOf_apply_of_isHamiltonianVectorField` and
+  `TauCeti.SmoothTwoForm.eval₂_mfderiv_timeDependentFlowOf_of_isHamiltonianVectorField`: for closed
+  `σ`, the time-dependent flow of a family of Hamiltonian vector fields preserves `σ` wherever it
+  is defined.
 * `TauCeti.SmoothTwoForm.IsSymplectic.isSymplectomorphism_timeDependentFlowMFDerivEquiv`: for
   symplectic `σ`, the linearized time-dependent Hamiltonian flow is a linear symplectomorphism.
 * `TauCeti.SmoothTwoForm.IsFirstIntegral.apply_globalFlow`: complete Hamiltonian flows preserve
@@ -208,6 +219,47 @@ theorem IsHamiltonianVectorField.mpullback_flowOf_apply (hX : σ.IsHamiltonianVe
     (by rw [isHamiltonianVectorField_iff_interior_eq.1 hX, mextDeriv_mextDeriv_ofFunction hf]) hx
 
 omit [BoundarylessManifold I M] in
+/-- **Time-dependent Hamiltonian flows are symplectic, where they are defined.** Let `σ` be a
+closed two-form and `X` a jointly `C²` time-dependent vector field such that, at every time `u`
+between `s` and `t`, `X u` is a Hamiltonian vector field of a `C²` function `H u`. If the flow from
+`(s, x)` is defined up to time `t`, then `(φ_{s,t}^* σ)ₓ = σₓ`, since every `ι_{X u} σ = d(H u)` is
+closed. Neither completeness nor nondegeneracy is needed. -/
+theorem mpullback_timeDependentFlowOf_apply_of_isHamiltonianVectorField {H : ℝ → M → ℝ}
+    {X : ℝ → (x : M) → TangentSpace I x} {s t : ℝ}
+    (hX : ∀ u ∈ Set.uIcc s t, σ.IsHamiltonianVectorField (H u) (X u)) (hσ : σ.IsClosed)
+    (hH : ∀ u ∈ Set.uIcc s t, ContMDiff I 𝓘(ℝ) 2 (H u))
+    (hv : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M))) {x : M}
+    (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
+    TauCeti.mpullback I I (timeDependentFlowOf X s t) σ.val x = σ.val x :=
+  TauCeti.mpullback_timeDependentFlowOf_apply_of_mextDeriv_interior_eq_zero hv σ.mdifferentiable
+    ((SmoothForm.isClosed_def σ).1 hσ)
+    (fun u hu ↦ by
+      rw [isHamiltonianVectorField_iff_interior_eq.1 (hX u hu),
+        mextDeriv_mextDeriv_ofFunction (hH u hu)])
+    h
+
+omit [BoundarylessManifold I M] in
+/-- **The linearized time-dependent Hamiltonian flow preserves the form, where it is defined.**
+Under the hypotheses of
+`TauCeti.SmoothTwoForm.mpullback_timeDependentFlowOf_apply_of_isHamiltonianVectorField`, the
+differential of `φ_{s,t}` at `x` satisfies `σ(dφ_{s,t} a, dφ_{s,t} b) = σ(a, b)` for all tangent
+vectors `a` and `b` at `x`. -/
+theorem eval₂_mfderiv_timeDependentFlowOf_of_isHamiltonianVectorField {H : ℝ → M → ℝ}
+    {X : ℝ → (x : M) → TangentSpace I x} {s t : ℝ}
+    (hX : ∀ u ∈ Set.uIcc s t, σ.IsHamiltonianVectorField (H u) (X u)) (hσ : σ.IsClosed)
+    (hH : ∀ u ∈ Set.uIcc s t, ContMDiff I 𝓘(ℝ) 2 (H u))
+    (hv : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M))) {x : M}
+    (h : ((s, t), x) ∈ timeDependentFlowDomain X) (a b : TangentSpace I x) :
+    σ.eval₂ (timeDependentFlowOf X s t x) (mfderiv I I (timeDependentFlowOf X s t) x a)
+        (mfderiv I I (timeDependentFlowOf X s t) x b) =
+      σ.eval₂ x a b := by
+  have h' := congrArg (fun α ↦ α ![a, b])
+    (mpullback_timeDependentFlowOf_apply_of_isHamiltonianVectorField hX hσ hH hv h)
+  simpa only [mpullback_apply_pair, SmoothBundleForm.eval₂_apply] using h'
+
+omit [BoundarylessManifold I M] in
 /-- **Time-dependent Hamiltonian flows are symplectic.** For a closed two-form `σ` and a jointly
 `C²` time-dependent vector field `X` with complete suspension, such that each `X t` is a
 Hamiltonian vector field of a `C²` function `H t`, the time-dependent flow satisfies
@@ -220,11 +272,9 @@ theorem mpullback_timeDependentFlowOf_of_isHamiltonianVectorField {H : ℝ → M
     (hv : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M))) (s t : ℝ) :
     TauCeti.mpullback I I (timeDependentFlowOf X s t) σ.val = σ.val :=
-  TauCeti.mpullback_timeDependentFlowOf_of_mextDeriv_interior_eq_zero hc hv σ.mdifferentiable
-    ((SmoothForm.isClosed_def σ).1 hσ)
-    (fun u ↦ by
-      rw [isHamiltonianVectorField_iff_interior_eq.1 (hX u), mextDeriv_mextDeriv_ofFunction (hH u)])
-    s t
+  funext fun _ ↦ mpullback_timeDependentFlowOf_apply_of_isHamiltonianVectorField
+    (fun u _ ↦ hX u) hσ (fun u _ ↦ hH u) hv
+    (mem_timeDependentFlowDomain.2 (hc.mem_flowDomain _ _))
 
 /-! ### The linearized time-dependent Hamiltonian flow is symplectic -/
 
@@ -249,15 +299,11 @@ theorem isSymplectomorphism_timeDependentFlowMFDerivEquiv {H : ℝ → M → ℝ
         (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) s t x))
       (timeDependentFlowMFDerivEquiv hc le_rfl (hX.of_le one_le_two) s t x).toLinearEquiv := by
   refine SymplecticForm.isSymplectomorphism_iff.2 fun a b ↦ ?_
-  have h := congrArg (fun α ↦ α x ![a, b])
-    (mpullback_timeDependentFlowOf_of_isHamiltonianVectorField
-      (fun t ↦ hσ.isNondegenerate.isHamiltonianVectorField_hamiltonianVectorField (H t))
-      hσ.isClosed hH hc hX s t)
-  simp only [mpullback_apply] at h
-  simp only [IsNondegenerate.symplecticFormAt_apply, SmoothBundleForm.eval₂_apply]
-  convert h using 2
-  ext i
-  fin_cases i <;> simp
+  simpa only [IsNondegenerate.symplecticFormAt_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
+    timeDependentFlowMFDerivEquiv_apply] using
+    eval₂_mfderiv_timeDependentFlowOf_of_isHamiltonianVectorField (s := s) (t := t)
+      (fun u _ ↦ hσ.isNondegenerate.isHamiltonianVectorField_hamiltonianVectorField (H u))
+      hσ.isClosed (fun u _ ↦ hH u) hX (mem_timeDependentFlowDomain.2 (hc.mem_flowDomain _ _)) a b
 
 /-- **Twisted structures stay tame.** For a symplectic form `σ`, if `σ` tames a structure `J` at
 `φ_{s, t} x`, it tames the structure `J' = (dφ_{s, t})⁻¹ J dφ_{s, t}` carried back to `x` along the
@@ -689,15 +735,10 @@ theorem isMIntegralCurve_hamiltonianFlowAction_smul (v : ι → ℝ) (x : M) :
   refine Manifold.isMIntegralCurve_iff_curveVelocity_eq.2 fun t ↦
     ⟨(ho _).comp t (hl t).differentiableAt.mdifferentiableAt, ?_⟩
   -- The velocity is `∑ i, vᵢ X_{Fᵢ}` at `(t • v) • x`, which is the Hamiltonian vector of `v ⬝ᵥ F`.
-  have hFi (i : ι) (z : M) : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ v i * F y i) z :=
-    ((contMDiff_pi_module_iff.1 hF i).mdifferentiableAt (by simp)).const_smul (v i)
   have hvel := (ho (t • v)).curveVelocity_comp_mfderiv (hl t)
   rw [hσ.mfderiv_hamiltonianFlowAction_apply hF hcomm hc x (t • v) v] at hvel
-  refine hvel.trans ?_
-  have hdot : (fun y ↦ v ⬝ᵥ F y) = fun y ↦ ∑ i, v i * F y i :=
-    funext fun y ↦ by rw [dotProduct]
-  rw [hdot, hamiltonianVectorField_fun_sum fun i _ ↦ hFi i _]
-  exact Finset.sum_congr rfl fun i _ ↦ (hamiltonianVectorField_const_smul (v i) _).symm
+  exact hvel.trans (hamiltonianVectorField_dotProduct
+    (fun i ↦ (contMDiff_pi_module_iff.1 hF i).mdifferentiableAt (by simp)) v).symm
 
 /-- **The action of `v` is the time-one map of the flow of `v ⬝ᵥ F`.** For `v : ι → ℝ`, the
 maximal flow of the Hamiltonian vector field of `v ⬝ᵥ F = ∑ i, vᵢ Fᵢ` moves `x` in time `t` to
@@ -707,12 +748,9 @@ theorem flowOf_hamiltonianVectorField_dotProduct (v : ι → ℝ) (t : ℝ) (x :
     flowOf (σ.hamiltonianVectorField fun y ↦ v ⬝ᵥ F y) t x =
       (hσ.hamiltonianFlowAction hF hcomm hc (t • v)).toMul x := by
   have hv : ContMDiff I I.tangent 1
-      (fun y ↦ (⟨y, σ.hamiltonianVectorField (fun y ↦ v ⬝ᵥ F y) y⟩ : TangentBundle I M)) := by
-    classical
-    -- `v ⬝ᵥ F` is `F` followed by the linear form `w ↦ v ⬝ᵥ w`.
-    exact hσ.isNondegenerate.contMDiff_hamiltonianVectorField (n := 1) (by simp)
-      ((LinearMap.toContinuousLinearMap (dotProductEquiv ℝ ι v)).contMDiff.comp
-        (hF.of_le (by simp)))
+      (fun y ↦ (⟨y, σ.hamiltonianVectorField (fun y ↦ v ⬝ᵥ F y) y⟩ : TangentBundle I M)) :=
+    hσ.isNondegenerate.contMDiff_hamiltonianVectorField (n := 1) (by simp)
+      (contMDiff_const.dotProduct (hF.of_le (by simp)))
   have h := flowOf_eq_of_isMIntegralCurve hv
     (hσ.isMIntegralCurve_hamiltonianFlowAction_smul hF hcomm hc v x) t
   rwa [zero_smul, hσ.hamiltonianFlowAction_zero_apply] at h
