@@ -88,9 +88,7 @@ nonarchimedean local field `E`. The field `E` itself has open units, as a Hausdo
 division ring. -/
 instance instIsOpenUnitsInteger : IsOpenUnits 𝒪[E] :=
   .of_isEmbedding (f := (Subring.subtype 𝒪[E] : 𝒪[E] →* E))
-    (by
-      rw [MonoidHom.coe_ofClass, Subring.coe_subtype, ← coe_ofId_integer]
-      exact isOpenEmbedding_ofId_integer.isEmbedding)
+    (by rw [MonoidHom.coe_ofClass, Subring.coe_subtype]; exact .subtypeVal)
     isOpen_setOf_isUnit_integer
 
 end Field
