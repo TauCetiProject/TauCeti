@@ -125,7 +125,7 @@ def zeroOrderL (k : ℕ) (i : Fin A.n) :
     (A.isCompact_closure_image i)
     (A.closure_image_subset_target_inter_preimage_baseSet i) k (finBasis ℝ F)
     (finBasis ℝ (ℂ →L[ℝ] F))
-    (by simpa only [inter_univ] using A.contDiffOn_chartZeroOrder hD hDs isOpen_univ i)).comp
+    (A.contDiffOn_chartZeroOrder_univ hD hDs i)).comp
     ((ContinuousLinearMap.piMap fun _ : Fin (finrank ℝ F) ↦ Wkp.lowerOrderL k).comp
       (ContinuousLinearMap.proj (R := ℝ) (φ := fun i : Fin A.sectionChartData.n ↦
         ∀ _ : Fin (finrank ℝ F), Wkp μ (A.sectionChartData.image i) p (k + 1)) i))
@@ -158,7 +158,7 @@ theorem zeroOrderL_apply_ae (k : ℕ) (i : Fin A.n)
     (A.isCompact_closure_image i)
     (A.closure_image_subset_target_inter_preimage_baseSet i) k (finBasis ℝ F)
     (finBasis ℝ (ℂ →L[ℝ] F))
-    (by simpa only [inter_univ] using A.contDiffOn_chartZeroOrder hD hDs isOpen_univ i)
+    (A.contDiffOn_chartZeroOrder_univ hD hDs i)
     (fun j ↦ Wkp.lowerOrderL k (w i j)) c
   -- the chart value of the lowered tuple is that of `w` (`chartValueL_lowerOrderL`)
   filter_upwards [hz, A.sectionChartData.chartValueL_apply_ae μ p k i

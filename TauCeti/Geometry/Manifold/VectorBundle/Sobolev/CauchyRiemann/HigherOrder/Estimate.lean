@@ -104,14 +104,6 @@ variable [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] (A : FiniteBundleAtlas �
 
 namespace IsRealCauchyRiemannOperator
 
-include hD hDs in
-/-- The zeroth-order term of `D` in chart `i` is smooth on the open set of points of the chart
-target whose preimage lies in the base set of the bundle chart. -/
-private theorem contDiffOn_chartZeroOrder_inter (i : Fin A.n) :
-    ContDiffOn ℝ ∞ (A.chartZeroOrder D i)
-      ((A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet) := by
-  simpa only [inter_univ] using A.contDiffOn_chartZeroOrder hD hDs isOpen_univ i
-
 omit [T2Space M] in
 include hD in
 /-- The chart formula for `D` on a smooth section `s`: on the image of chart `i`, the reading of
@@ -139,7 +131,7 @@ private theorem contDiffOn_coord_tangentHom (k : ℕ) (i : Fin A.n) {s : Π x, V
     (complexAntilinearPartL.contDiff.comp_contDiffOn
       (hu.fderiv_of_isOpen ((A.chart i).isOpen_inter_preimage_symm (A.triv i).open_baseSet)
         (by push_cast; exact le_rfl))).add
-      (((contDiffOn_chartZeroOrder_inter A hD hDs i).of_le ENat.LEInfty.out).clm_apply
+      (((A.contDiffOn_chartZeroOrder_univ hD hDs i).of_le ENat.LEInfty.out).clm_apply
         (hu.of_le (by exact_mod_cast Nat.le_succ k)))
   exact (hf.mono (A.image_subset_target_inter_preimage_baseSet i)).congr fun _ hz ↦
     coord_tangentHom_eq A hD i hs hz
@@ -174,7 +166,7 @@ theorem exists_eLpNormWkp_coord_smul_le (hp : 1 < p) (hp_top : p ≠ ⊤) (k : �
   obtain ⟨W, hKW, hWU, C₀, hC₀⟩ := exists_eLpNormWkp_le_of_eqOn_complexAntilinearPartL_add
     (F := F) hp hp_top k hU ((A.chart i).isOpen_inter_preimage_symm (A.triv i).open_baseSet)
     (A.isCompact_closure_image i) hUO hK (fun y hy ↦ A.mem_image.2 (image_mono hχi hy))
-    ((contDiffOn_chartZeroOrder_inter A hD hDs i).of_le ENat.LEInfty.out)
+    ((A.contDiffOn_chartZeroOrder_univ hD hDs i).of_le ENat.LEInfty.out)
   obtain ⟨c, hc0, hc⟩ := (hχ'.of_le ENat.LEInfty.out).exists_nonneg_bound_iteratedFDeriv_of_isOpen
     (n := k + 1) (A.chart i).open_target (A.isCompact_closure_image i) hcl
   set B : ℝ →L[ℝ] F →L[ℝ] F := ContinuousLinearMap.lsmul ℝ ℝ
