@@ -36,13 +36,13 @@ same way to `Ψ`, the composite `Ψ ∘ Φ` is the identity on a neighbourhood o
 closed upper half-plane, where derivatives are unique (`TauCeti.uniqueDiffOn_setOfPred_le_im`). So
 the derivative of `Ψ` is a left inverse of that of `Φ` at the point
 (`TauCeti.det_fderiv_ne_zero_of_eqOn_comp_id`), and the derivative of `Φ` is invertible near the
-point (`TauCeti.exists_contDiffOn_eqOn_det_fderiv_ne_zero`).
+point (`TauCeti.exists_contDiffOn_eqOn_det_fderiv_ne_zero_halfPlane`).
 
 ## Main declarations
 
-* `TauCeti.exists_contDiffOn_eqOn_det_fderiv_ne_zero`: near each point, a partial equivalence of
-  relatively open subsets of the closed upper half-plane, `Cⁿ` in both directions, agrees with a
-  `Cⁿ` map with invertible derivative on an open neighbourhood of the point.
+* `TauCeti.exists_contDiffOn_eqOn_det_fderiv_ne_zero_halfPlane`: near each point, a partial
+  equivalence of relatively open subsets of the closed upper half-plane, `Cⁿ` in both directions,
+  agrees with a `Cⁿ` map with invertible derivative on an open neighbourhood of the point.
 * `TauCeti.MemWkpLoc.comp_partialEquiv_halfPlane`: such maps preserve the half-disc classes.
 
 ## References
@@ -69,7 +69,8 @@ equivalence between the relatively open subsets `Ω ∩ {0 ≤ im}` and `Ω' ∩
 upper half-plane, for open `Ω` and `Ω'`, that is `Cⁿ` in both directions, `n ≥ 1`. Near each point
 of its source, `e` agrees with a map that is `Cⁿ` with invertible derivative on an open
 neighbourhood `U ⊆ Ω` of the point. -/
-theorem exists_contDiffOn_eqOn_det_fderiv_ne_zero (hn : 1 ≤ n) (hΩ : IsOpen Ω) (hΩ' : IsOpen Ω')
+theorem exists_contDiffOn_eqOn_det_fderiv_ne_zero_halfPlane (hn : 1 ≤ n) (hΩ : IsOpen Ω)
+    (hΩ' : IsOpen Ω')
     (hs : e.source = Ω ∩ {z | 0 ≤ z.im}) (ht : e.target = Ω' ∩ {z | 0 ≤ z.im})
     (he : ContDiffOn ℝ n e e.source) (he' : ContDiffOn ℝ n e.symm e.target) {z₀ : ℂ}
     (hz₀ : z₀ ∈ e.source) :
@@ -125,7 +126,7 @@ theorem MemWkpLoc.comp_partialEquiv_halfPlane [Fact (1 ≤ p)] [FiniteDimensiona
     MemWkpLoc p (e.source ∩ e ⁻¹' V) k (fun z ↦ u (e z)) := by
   refine memWkpLoc_iff_locally.2 fun z₀ hz₀ ↦ ?_
   obtain ⟨U, hU, hz₀U, hUΩ, Φ, hΦ, hdet, hΦe⟩ :=
-    exists_contDiffOn_eqOn_det_fderiv_ne_zero hn hΩ hΩ' hs ht he he' hz₀.1
+    exists_contDiffOn_eqOn_det_fderiv_ne_zero_halfPlane hn hΩ hΩ' hs ht he he' hz₀.1
   -- Shrink `U` so that `Φ` maps it into `V`.
   set U₁ : Set ℂ := U ∩ Φ ⁻¹' V
   have hU₁ : IsOpen U₁ := hΦ.continuousOn.isOpen_inter_preimage hU hV
