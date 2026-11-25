@@ -75,7 +75,12 @@ it has compact resolvent and spectrum its mixed eigenvalues, all nonnegative.
   under a Gårding inequality, whose form operator is the mixed realization.
 * `TauCeti.PDE.mixedSolutionOperator`, `TauCeti.PDE.mixedSolutionOperator_apply_eq` and
   `TauCeti.PDE.resolvent_mixedOperator_neg`: the solution operator of the shifted mixed problem,
-  which returns the weak solution, and is the resolvent at `-ω` up to sign.
+  which returns the weak solution, and is the resolvent at `-ω` up to sign; its spectral
+  interface `TauCeti.PDE.hasEigenvalue_mixedSolutionOperator_iff` (eigenvalue `(κ + ω)⁻¹` for each
+  mixed eigenvalue `κ`), `TauCeti.PDE.isCompactOperator_mixedSolutionOperator`,
+  `TauCeti.PDE.isSymmetric_mixedSolutionOperator`,
+  `TauCeti.PDE.inner_mixedSolutionOperator_self_nonneg` and
+  `TauCeti.PDE.mixedSolutionOperator_injective`.
 * `TauCeti.PDE.mixedOperator_frontier`: at `Γ = ∂Ω` it is the Dirichlet realization
   `TauCeti.PDE.dirichletOperator`.
 * `TauCeti.PDE.isSelfAdjoint_mixedOperator`, `TauCeti.PDE.hasCompactResolvent_mixedOperator`,
@@ -443,6 +448,62 @@ theorem exists_mixedSolutionOperator_apply_eq
           W1p.value (v : W1p mu Omega 2)⟫_ℝ = ⟪f, W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
     rw [← mixedForm_apply hcoeff, hB.apply_formSolutionMap, W1pVanishingOn.valueL_apply]
   exact ⟨_, hu, mixedSolutionOperator_apply_eq hcoeff hB hu⟩
+
+/-- **The mixed eigenvalues are read off the mixed solution operator**: for `κ + ω ≠ 0`, the
+mixed solution operator has eigenvalue `(κ + ω)⁻¹` exactly when `a(u, v) = κ ⟪u, v⟫_{L²(Ω)}` for
+some nonzero `u ∈ H¹_Γ(Ω)` and every `v ∈ H¹_Γ(Ω)`. -/
+theorem hasEigenvalue_mixedSolutionOperator_iff
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hB : IsCoercive (mixedForm hcoeff Γ omega)) {kappa : ℝ} (hkappa : kappa + omega ≠ 0) :
+    Module.End.HasEigenvalue (mixedSolutionOperator hcoeff Γ hB :
+        Lp ℝ 2 (mu.restrict Omega) →ₗ[ℝ] Lp ℝ 2 (mu.restrict Omega)) (kappa + omega)⁻¹ ↔
+      ∃ u : W1pVanishingOn mu Omega 2 Γ, u ≠ 0 ∧
+        ∀ v : W1pVanishingOn mu Omega 2 Γ,
+          energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
+            kappa * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
+  rw [mixedSolutionOperator_def, hB.hasEigenvalue_formSolutionOperator_iff _ hkappa]
+  refine exists_congr fun u ↦ and_congr_right fun _ ↦ forall_congr' fun v ↦ ?_
+  rw [mixedForm_apply, W1pVanishingOn.valueL_apply, W1pVanishingOn.valueL_apply, add_mul,
+    add_left_inj]
+
+/-- **The mixed solution operator is compact** when `Ω` has the Rellich property that the value
+map `H¹(Ω) → L²(Ω)` is compact. -/
+theorem isCompactOperator_mixedSolutionOperator
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hB : IsCoercive (mixedForm hcoeff Γ omega))
+    (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2))) :
+    IsCompactOperator (mixedSolutionOperator hcoeff Γ hB) :=
+  hB.isCompactOperator_formSolutionOperator (W1pVanishingOn.isCompactOperator_valueL hK)
+
+/-- **The mixed solution operator of a symmetric form is symmetric.** With no drift and an almost
+everywhere symmetric principal coefficient the symmetry hypothesis is supplied by
+`TauCeti.PDE.energyFormH1_comm_of_isSymm_ae`. -/
+theorem isSymmetric_mixedSolutionOperator
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hB : IsCoercive (mixedForm hcoeff Γ omega))
+    (hsymm : ∀ u v : W1pVanishingOn mu Omega 2 Γ,
+      energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
+        energyFormH1 a b c (v : W1p mu Omega 2) (u : W1p mu Omega 2)) :
+    LinearMap.IsSymmetric (mixedSolutionOperator hcoeff Γ hB :
+      Lp ℝ 2 (mu.restrict Omega) →ₗ[ℝ] Lp ℝ 2 (mu.restrict Omega)) :=
+  hB.isSymmetric_formSolutionOperator _ fun u v ↦ by
+    rw [mixedForm_apply, mixedForm_apply, hsymm, real_inner_comm]
+
+/-- **The mixed solution operator is positive semidefinite**: its quadratic form is the shifted
+energy of the solution it produces. -/
+theorem inner_mixedSolutionOperator_self_nonneg
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hB : IsCoercive (mixedForm hcoeff Γ omega)) (f : Lp ℝ 2 (mu.restrict Omega)) :
+    0 ≤ ⟪f, mixedSolutionOperator hcoeff Γ hB f⟫_ℝ :=
+  hB.inner_formSolutionOperator_self_nonneg _ f
+
+/-- **The mixed solution operator is injective**: a forcing whose solution vanishes is zero,
+because the value map `H¹_Γ(Ω) → L²(Ω)` has dense range when `Γ` misses `Ω`. -/
+theorem mixedSolutionOperator_injective
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hΓ : Disjoint Γ Omega) (hB : IsCoercive (mixedForm hcoeff Γ omega)) :
+    Function.Injective (mixedSolutionOperator hcoeff Γ hB) :=
+  hB.formSolutionOperator_injective (W1pVanishingOn.denseRange_valueL_two hΓ)
 
 /-- **`(A + ω)⁻¹ = S`.** The resolvent of the mixed realization at `-ω` is minus the mixed
 solution operator. -/
