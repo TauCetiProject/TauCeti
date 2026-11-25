@@ -18,10 +18,18 @@ such as the pullback `x ↦ e (f x)` of a family of fibrewise linear equivalence
 total spaces with continuous inverses. The normed instances allow the orthonormal frame bundle of a
 pullback to use exactly the original fibre metrics, with no transport or renorming. A pulled-back
 linear trivialization also induces the original fibre equivalence at the image point
-(`Bundle.Trivialization.linearEquivAt_pullback` and
-`Bundle.Trivialization.continuousLinearEquivAt_pullback`). Hom coordinates between pullbacks by two
-different base maps agree with the original source and target coordinates
+(`Bundle.Trivialization.linearEquivAt_pullback`,
+`Bundle.Trivialization.continuousLinearEquivAt_pullback` and
+`Bundle.Trivialization.continuousLinearMapAt_pullback`), and reads coordinates back into the fibre
+as the original one does (`Bundle.Trivialization.symm_pullback`). Hom coordinates between
+pullbacks by two different base maps agree with the original source and target coordinates
 (`ContinuousLinearMap.inCoordinates_pullback_of_mem`).
+
+Mathlib's `FiberBundle.pullback` and `VectorBundle.pullback` give the fibres of `f *ᵖ E` the
+pulled-back fibre topology, which agrees with the topology of the fibre norm only after unfolding
+instances. Constructions that read the fibres through their norms, such as orthonormal frames,
+use the restatements `Bundle.Pullback.normedFiberBundle` and `Bundle.Pullback.normedVectorBundle`
+for the norm topologies instead, as local instances.
 -/
 
 public section
@@ -74,6 +82,30 @@ instance instInnerProductSpace {𝕜 : Type*} [RCLike 𝕜]
 
 end Bundle.Pullback
 
+namespace Bundle.Pullback
+
+variable {B B' : Type*} [TopologicalSpace B] [TopologicalSpace B'] (F : Type*)
+  (E : B → Type*) [∀ b, NormedAddCommGroup (E b)] [TopologicalSpace (TotalSpace F E)]
+  {K : Type*} [FunLike K B' B] [ContinuousMapClass K B' B]
+
+/-- The pullback of a fibre bundle `E` with normed fibres along `f`, with the fibres `E (f y)`
+carrying the topology of their norms (Mathlib's `FiberBundle.pullback`, restated for these fibre
+topologies). -/
+noncomputable abbrev normedFiberBundle [TopologicalSpace F] [FiberBundle F E] (f : K) :
+    @FiberBundle B' F _ _ ((f : B' → B) *ᵖ E) _ fun _ ↦ UniformSpace.toTopologicalSpace :=
+  FiberBundle.pullback (F := F) (E := E) f
+
+/-- The pullback of a vector bundle `E` with normed fibres along `f`, with the fibres `E (f y)`
+carrying the topology of their norms (Mathlib's `VectorBundle.pullback`, restated for these fibre
+topologies). -/
+abbrev normedVectorBundle [NormedAddCommGroup F] [FiberBundle F E] (𝕜 : Type*)
+    [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 F]
+    [∀ b, NormedSpace 𝕜 (E b)] [VectorBundle 𝕜 F E] (f : K) :
+    @VectorBundle 𝕜 B' F ((f : B' → B) *ᵖ E) _ _ _ _ _ _ _ _ (normedFiberBundle F E f) :=
+  VectorBundle.pullback 𝕜 (F := F) (E := E) f
+
+end Bundle.Pullback
+
 namespace Bundle.Trivialization
 
 variable {𝕜 B B' F : Type*} [NontriviallyNormedField 𝕜]
@@ -91,6 +123,14 @@ theorem linearEquivAt_pullback (e : Trivialization F (π F E)) [e.IsLinear 𝕜]
   apply LinearEquiv.ext
   intro v
   exact congrArg Prod.snd (e.pullback_apply f ⟨b, v⟩)
+
+/-- A pulled-back chart reads coordinates back into the fibre as the original chart does at the
+image point. -/
+theorem symm_pullback (e : Trivialization F (π F E)) (f : K) {b : B'}
+    (hb : f b ∈ e.baseSet) (y : F) :
+    (e.pullback f).symm b y = e.symm (f b) y := by
+  simpa only [pullback_apply, Pullback.lift_mk, apply_mk_symm e hb] using
+    (e.pullback f).symm_apply_apply_mk hb (e.symm (f b) y)
 
 end Bundle.Trivialization
 
@@ -111,6 +151,20 @@ theorem continuousLinearEquivAt_pullback (e : Trivialization F (π F V)) [e.IsLi
         (by simpa only [pullback_baseSet, Set.mem_preimage] using hx) := by
   ext v
   rfl
+
+/-- A pulled-back continuous linear fibre chart, extended by zero off the base set, is the original
+one at the image point. -/
+@[simp]
+theorem continuousLinearMapAt_pullback (e : Trivialization F (π F V)) [e.IsLinear 𝕜]
+    (f : K) (x : B') :
+    (e.pullback f).continuousLinearMapAt 𝕜 x = e.continuousLinearMapAt 𝕜 (f x) := by
+  ext v
+  -- Both sides are the chart at `f x` on the base set and zero off it. Here `v : (f *ᵖ V) x`,
+  -- which is `V (f x)` only after unfolding, so `rw`/`simp` cannot rewrite the right side; its
+  -- `continuousLinearMapAt_apply` unfolding is applied as a term at type `V (f x)` instead.
+  simp only [continuousLinearMapAt_apply, linearMapAt_apply, pullback_baseSet, Set.mem_preimage,
+    pullback_apply]
+  exact ((congrFun (e.continuousLinearMapAt_apply 𝕜 (f x)) v).trans (e.linearMapAt_apply v)).symm
 
 end Bundle.Trivialization
 

@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Galois.Basic
+import Mathlib.FieldTheory.Galois.Infinite
+import TauCeti.FieldTheory.Galois.FixedField
+import TauCeti.FieldTheory.KrullTopology
 import TauCeti.GroupTheory.Index.Basic
 
 /-!
@@ -18,7 +21,9 @@ through a map other than the algebra map (for example an `IntermediateField.incl
 
 In an abstract scalar tower with a normal intermediate field, restriction to the intermediate
 field is the identity precisely when the automorphism fixes it pointwise; its kernel is the image
-of restriction of scalars.
+of restriction of scalars. For any scalar tower `M/L/K`, `TauCeti.embeddingSubgroup K L M` packages
+the subgroup of `Gal(M/K)` fixing the image of `L`, together with its Galois-correspondence,
+restriction, and conjugation transport properties.
 
 ## Main definitions and results
 
@@ -45,6 +50,12 @@ of restriction of scalars.
 * `AlgHom.restrictNormalHomOfLE`: in the other direction, restriction `Gal(M/F) →* Gal(N/F)` to a
   normal intermediate field `N` of `K` lying in the image of `f`, with
   `AlgHom.coe_restrictNormalHomOfLE_apply` and `AlgHom.restrictNormalHomOfLE_surjective`.
+* `TauCeti.embeddingSubgroup`: the subgroup `Gal(M/L) ≤ Gal(M/K)` fixing the image of `L` in `M`,
+  with `TauCeti.range_restrictScalarsHom_eq_embeddingSubgroup`,
+  `TauCeti.embeddingSubgroup_intermediateField`, `TauCeti.fixedField_embeddingSubgroup`,
+  `TauCeti.natCard_embeddingSubgroup`, `TauCeti.index_embeddingSubgroup`,
+  `TauCeti.comap_restrictNormalHom_embeddingSubgroup`, and
+  `TauCeti.map_autCongr_embeddingSubgroup`.
 * `AlgEquiv.restrictNormal_eq_one_iff_algebraMap`: restriction is trivial precisely when the
   automorphism fixes the intermediate field pointwise.
 * `AlgEquiv.mem_range_restrictScalarsHom_iff_restrictNormal_eq_one` and
@@ -59,6 +70,8 @@ of restriction of scalars.
   smaller field.
 * `AlgEquiv.restrictNormalHom_adjoin_simple_eq_one_iff`: restriction to a normal simple
   subextension `F⟮α⟯` is trivial precisely when the automorphism fixes `α`.
+* `IntermediateField.subsingleton_algEquiv_of_eq_bot`: an intermediate field equal to the base
+  field has only the trivial automorphism.
 -/
 
 public section
@@ -218,6 +231,114 @@ theorem _root_.AlgHom.restrictNormalHomOfLE_surjective (f : M →ₐ[F] K) [Norm
 
 end RestrictAlong
 
+/-! ### The fixing subgroup of an intermediate extension -/
+
+section EmbeddingSubgroup
+
+variable (K L M : Type*) [Field K] [Field L] [Field M]
+  [Algebra K L] [Algebra K M] [Algebra L M] [IsScalarTower K L M]
+
+/-- The subgroup `H = Gal(M/L)` of `G = Gal(M/K)` fixing the image of `L` inside `M`. -/
+noncomputable def embeddingSubgroup : Subgroup (M ≃ₐ[K] M) :=
+  (IsScalarTower.toAlgHom K L M).fieldRange.fixingSubgroup
+
+/-- Defining formula for `embeddingSubgroup` as the fixing subgroup of the image of `L` in `M`. -/
+theorem embeddingSubgroup_def :
+    embeddingSubgroup K L M = (IsScalarTower.toAlgHom K L M).fieldRange.fixingSubgroup := (rfl)
+
+variable {K L M} in
+/-- An automorphism `σ : M ≃ₐ[K] M` belongs to `embeddingSubgroup K L M` iff it fixes every
+element in the image of `L`. -/
+@[simp]
+theorem mem_embeddingSubgroup_iff {σ : M ≃ₐ[K] M} :
+    σ ∈ embeddingSubgroup K L M ↔ ∀ x : L, σ (algebraMap L M x) = algebraMap L M x := by
+  rw [embeddingSubgroup_def, IntermediateField.mem_fixingSubgroup_iff]
+  exact ⟨fun h x ↦ h _ ⟨x, rfl⟩, fun h _ ⟨x, hx⟩ ↦ hx ▸ h x⟩
+
+/-- `embeddingSubgroup K L M` is the image of
+`AlgEquiv.restrictScalarsHom K : Gal(M/L) →* Gal(M/K)`. No normality or finiteness is needed. -/
+theorem range_restrictScalarsHom_eq_embeddingSubgroup :
+    (AlgEquiv.restrictScalarsHom (S := L) K : (M ≃ₐ[L] M) →* (M ≃ₐ[K] M)).range =
+      embeddingSubgroup K L M := by
+  ext σ; rw [MonoidHom.mem_range, mem_embeddingSubgroup_iff]
+  exact ⟨fun ⟨τ, h⟩ x ↦ h ▸ τ.commutes x, fun h ↦ ⟨{ σ with commutes' := h }, rfl⟩⟩
+
+/-- For `L = M`, the fixing subgroup of `M` in `Gal(M/K)` is trivial. -/
+@[simp]
+theorem embeddingSubgroup_self : embeddingSubgroup K M M = ⊥ := by ext; simp [AlgEquiv.ext_iff]
+
+/-- For `L = K`, every `K`-automorphism of `M` fixes the image of `K`. -/
+@[simp]
+theorem embeddingSubgroup_base : embeddingSubgroup K K M = ⊤ := by ext; simp
+
+/-- For an intermediate field `E : IntermediateField K M`, `embeddingSubgroup K E M` is
+`E.fixingSubgroup`. -/
+@[simp]
+theorem embeddingSubgroup_intermediateField (E : IntermediateField K M) :
+    embeddingSubgroup K E M = E.fixingSubgroup := by
+  ext σ; rw [mem_embeddingSubgroup_iff, IntermediateField.mem_fixingSubgroup_iff]
+  exact ⟨fun h x hx ↦ h ⟨x, hx⟩, fun h x ↦ h x.val x.property⟩
+
+/-- In a Galois extension `M/K`, the fixed field of `embeddingSubgroup K L M` is the image
+of `L` in `M`. -/
+@[simp]
+theorem fixedField_embeddingSubgroup [IsGalois K M] :
+    IntermediateField.fixedField (embeddingSubgroup K L M) =
+      (IsScalarTower.toAlgHom K L M).fieldRange := by
+  rw [embeddingSubgroup_def, InfiniteGalois.fixedField_fixingSubgroup]
+
+/-- In a tower `M / L / E / K`, the fixing subgroup of `L` is contained in that of `E`. -/
+theorem embeddingSubgroup_antitone (E : Type*) [Field E] [Algebra K E] [Algebra E L]
+    [Algebra E M] [IsScalarTower K E M] [IsScalarTower E L M] :
+    embeddingSubgroup K L M ≤ embeddingSubgroup K E M := fun _ hσ ↦
+  mem_embeddingSubgroup_iff.2 fun x ↦ by
+    rw [IsScalarTower.algebraMap_apply E L M]; exact mem_embeddingSubgroup_iff.1 hσ _
+
+/-- In a Galois extension `M/K` containing `L`, the order of `embeddingSubgroup K L M`
+equals `[M : L]`. When `M/L` is infinite, both sides are `0`. -/
+theorem natCard_embeddingSubgroup [IsGalois K M] :
+    Nat.card (embeddingSubgroup K L M) = Module.finrank L M := by
+  have := IsGalois.tower_top_of_isGalois K L M
+  rw [← range_restrictScalarsHom_eq_embeddingSubgroup K L M, ← Subgroup.map_top,
+    Subgroup.card_map_of_injective (AlgEquiv.restrictScalarsHom_injective K),
+    ← Subgroup.finrank_fixedField_eq_card (⊤ : Subgroup (M ≃ₐ[L] M)),
+    InfiniteGalois.fixedField_bot, IntermediateField.finrank_bot']
+
+/-- In a Galois extension `M/K` containing `L`, the index of `embeddingSubgroup K L M` in
+`Gal(M/K)` equals `[L : K]`. -/
+@[simp]
+theorem index_embeddingSubgroup [IsGalois K M] :
+    (embeddingSubgroup K L M).index = Module.finrank K L := by
+  rw [embeddingSubgroup_def, ← IntermediateField.finrank_eq_fixingSubgroup_index,
+    ← (IsScalarTower.toAlgHom K L M).equivFieldRange.toLinearEquiv.finrank_eq]
+
+/-- In a tower `M' / M / L / K` with `M/K` normal, pulling `embeddingSubgroup K L M` back along
+restriction `Gal(M'/K) →* Gal(M/K)` recovers `embeddingSubgroup K L M'`. -/
+theorem comap_restrictNormalHom_embeddingSubgroup (M' : Type*) [Field M']
+    [Algebra K M'] [Algebra L M'] [Algebra M M']
+    [IsScalarTower K M M'] [IsScalarTower L M M'] [IsScalarTower K L M'] [Normal K M] :
+    (embeddingSubgroup K L M).comap
+        (AlgEquiv.restrictNormalHom M : (M' ≃ₐ[K] M') →* (M ≃ₐ[K] M)) =
+      embeddingSubgroup K L M' := by
+  rw [embeddingSubgroup_def, embeddingSubgroup_def, ← IntermediateField.map_fixingSubgroup M',
+    AlgHom.map_fieldRange]
+  congr 2
+  exact AlgHom.ext fun x ↦ (IsScalarTower.algebraMap_apply L M M' x).symm
+
+/-- Transport of `embeddingSubgroup` along an `L`-algebra equivalence `e : M ≃ₐ[L] M'`. -/
+theorem map_autCongr_embeddingSubgroup {M' : Type*} [Field M'] [Algebra K M'] [Algebra L M']
+    [IsScalarTower K L M'] (e : M ≃ₐ[L] M') :
+    (embeddingSubgroup K L M).map ((e.restrictScalars K).autCongr :
+        (M ≃ₐ[K] M) →* (M' ≃ₐ[K] M')) = embeddingSubgroup K L M' := by
+  have hcomp : ((e.restrictScalars K : M ≃ₐ[K] M').toAlgHom).comp (IsScalarTower.toAlgHom K L M) =
+      IsScalarTower.toAlgHom K L M' := AlgHom.ext fun x ↦ e.commutes x
+  ext σ'
+  rw [← MulEquiv.toMonoidHom_eq_coe, Subgroup.mem_map_equiv, embeddingSubgroup_def,
+    embeddingSubgroup_def, AlgEquiv.autCongr_symm, AlgEquiv.autCongr_mem_fixingSubgroup_iff,
+    AlgEquiv.symm_symm, AlgHom.map_fieldRange, hcomp]
+
+end EmbeddingSubgroup
+
 end TauCeti
 
 /-! ### Restriction along compatible normal subextensions -/
@@ -340,3 +461,20 @@ theorem AlgEquiv.restrictNormalHom_adjoin_simple_eq_one_iff {α : E} [Normal F F
     exact Subtype.ext ((AlgEquiv.restrictNormalHom_apply _ σ _).trans h)
 
 end AdjoinSimple
+
+/-! ### Automorphisms of the trivial subextension -/
+
+section Bot
+
+variable {F E : Type*} [Field F] [Field E] [Algebra F E]
+
+/-- An intermediate field equal to the base field has only the trivial automorphism, so every
+restriction to it is trivial. -/
+theorem IntermediateField.subsingleton_algEquiv_of_eq_bot {L : IntermediateField F E}
+    (hL : L = ⊥) : Subsingleton Gal(L/F) := by
+  refine ⟨fun σ τ ↦ AlgEquiv.ext fun x ↦ ?_⟩
+  obtain ⟨c, hc⟩ := IntermediateField.mem_bot.1 (hL.le x.property)
+  obtain rfl : algebraMap F L c = x := Subtype.ext hc
+  rw [AlgEquiv.commutes, AlgEquiv.commutes]
+
+end Bot

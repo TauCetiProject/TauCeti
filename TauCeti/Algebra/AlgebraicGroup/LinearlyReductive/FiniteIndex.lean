@@ -101,7 +101,7 @@ theorem Comodule.isCompletelyReducible_of_corestrict_finiteIndex
       ((Subcomodule.mem_corestrict f.toCoalgHom W m).mpr hm)
   have hπ_comm (n : N) (x : M) :
       π (ρ (n : WithConv (H₁ →ₐ[k] k)) x) = ρ (n : WithConv (H₁ →ₐ[k] k)) (π x) := by
-    obtain ⟨g, hg⟩ := n.2
+    obtain ⟨g, hg⟩ := n.property
     have hcore := congrArg (fun l : M →ₗ[k] M ↦ l x)
       (Comodule.basePointsRepresentation_corestrict (R := k) (M := M) f g)
     have hcore' := congrArg (fun l : M →ₗ[k] M ↦ l (π x))
@@ -116,12 +116,9 @@ theorem Comodule.isCompletelyReducible_of_corestrict_finiteIndex
   have hP_comm (g : WithConv (H₁ →ₐ[k] k)) (m : M) : P (ρ g m) = ρ g (P m) := by
     simp only [P, LinearMap.smul_apply, Representation.relNorm_linHom_apply_comm ρ ρ hπ_comm,
       map_smul]
-  have hP_mem (m : M) : P m ∈ W.toSubmodule :=
-    Submodule.smul_mem _ _ (Representation.relNorm_linHom_mem ρ (fun g _ ↦ hW_stable g) hπ_mem m)
-  have hP_left {m : M} (hm : m ∈ W.toSubmodule) : P m = m := by
-    simp only [P, LinearMap.smul_apply,
-      Representation.relNorm_linHom_apply_of_mem ρ (fun g _ ↦ hW_stable g) (fun _ ↦ hπ_left) hm,
-      ← Nat.cast_smul_eq_nsmul k, smul_smul, inv_mul_cancel₀ hindex', one_smul]
+  have hP : LinearMap.IsProj W.toSubmodule P :=
+    Representation.isProj_inv_index_smul_relNorm_linHom ρ (fun g _ ↦ hW_stable g)
+      ⟨hπ_mem, fun _ ↦ hπ_left⟩ hindex'
   have hker_stable : ∀ (g : H₁ →ₐ[k] k) {m : M}, m ∈ LinearMap.ker P →
       Comodule.endOfPoint M g ((1 : k) ⊗ₜ[k] m) ∈ (LinearMap.ker P).baseChange k := by
     intro g m hm
@@ -132,7 +129,7 @@ theorem Comodule.isCompletelyReducible_of_corestrict_finiteIndex
     rw [LinearMap.mem_ker, hcomm_g, LinearMap.mem_ker.mp hm, map_zero]
   refine ⟨Subcomodule.ofEndOfPointStable (K := k) (LinearMap.ker P) hker_stable, ?_⟩
   rw [Subcomodule.ofEndOfPointStable_toSubmodule]
-  exact (⟨hP_mem, fun _ hm ↦ hP_left hm⟩ : LinearMap.IsProj W.toSubmodule P).isCompl
+  exact hP.isCompl
 
 /-- **Finite-index lifting of linear reductivity.** Over an algebraically closed field `k`, if a
 bialgebra morphism `f : H₁ →ₐc[k] H₂` from a reduced finite-type commutative Hopf algebra `H₁`
@@ -146,7 +143,7 @@ theorem Coalgebra.IsLinearlyReductive.of_bialgHom_finiteIndex
   refine Coalgebra.IsLinearlyReductive.of_forall_isCompletelyReducible k fun M _ _ _ _ ↦ ?_
   refine Comodule.isCompletelyReducible_of_corestrict_finiteIndex f hindex ?_
   let _ : Comodule k H₂ M := Comodule.Corestrict f.toCoalgHom
-  exact hH₂.isCompletelyReducible_sameUniverse k M
+  exact hH₂.isCompletelyReducible_same_universe k M
 
 end Unbundled
 

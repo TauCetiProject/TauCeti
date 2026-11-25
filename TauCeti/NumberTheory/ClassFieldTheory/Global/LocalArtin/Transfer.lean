@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.Abelianization.Transfer
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Reciprocity
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Extension
+import TauCeti.GroupTheory.GroupAction.Orbit.Card
 import TauCeti.NumberTheory.ClassFieldTheory.Global.LocalArtin.Frobenius
 import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Basic
 import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
@@ -109,11 +110,9 @@ private lemma minimalPeriod_smul_coset_eq_inertiaDeg
     .of_liesOver (𝓞 K) ((c.out⁻¹ • Q₀).under (𝓞 E)) (c.out⁻¹ • Q₀)
   have hzpow : Subgroup.zpowers σ = stabilizer Gal(L/K) Q₀ :=
     Ideal.zpowers_eq_stabilizer_of_isArithFrobAt Q₀ hσ
-  have h1 : Nat.card (orbit (Subgroup.zpowers σ) c) = Function.minimalPeriod (σ • ·) c :=
-    (Nat.card_congr (orbitZPowersEquiv σ c)).trans (Nat.card_zmod _)
   have hc := Ideal.card_orbit_stabilizer_coset v.asIdeal Q₀ H (𝓞 E) c
   have hcoset :
-      (Ideal.primesOverOfCoset v.asIdeal Q₀ H (𝓞 E) c).1 = (c.out⁻¹ • Q₀).under (𝓞 E) := by
+      (Ideal.primesOverOfCoset v.asIdeal Q₀ H (𝓞 E) c).val = (c.out⁻¹ • Q₀).under (𝓞 E) := by
     conv_lhs => rw [← QuotientGroup.out_eq' c]
     exact Ideal.coe_primesOverOfCoset_mk v.asIdeal Q₀ H (𝓞 E) c.out
   rw [hcoset, Ideal.ramificationIdx_eq_one ((c.out⁻¹ • Q₀).under (𝓞 E)) (𝓞 K), one_mul] at hc
@@ -121,8 +120,7 @@ private lemma minimalPeriod_smul_coset_eq_inertiaDeg
       orbit (stabilizer Gal(L/K) Q₀) c := by
     ext y
     simp only [mem_orbit_iff, Subtype.exists, Subgroup.mk_smul, hzpow]
-  rw [horb, hc] at h1
-  exact h1.symm
+  rw [← natCard_orbit_zpowers, horb, hc]
 
 omit [NumberField K] [NumberField E] [IsGalois E L] in
 /-- Given an arithmetic Frobenius `σ ∈ Gal(L/K)` at `Q₀` and a coset `c ∈ Gal(L/K) ⧸ Gal(L/E)`
@@ -213,16 +211,16 @@ private lemma globalArtinMap_ideleClassExtension_ofAdicCompletion_of_isUniformiz
   set Q_q : Ideal (𝓞 L) := g_q⁻¹ • Q₀
   have : Algebra.IsUnramifiedAt (𝓞 K) Q_q :=
     TauCeti.NumberField.isUnramifiedAway_ramifiedSupport v hv_unram Q_q
-  have hw_q_ideal : (e q).1.asIdeal = Q_q.under (𝓞 E) := by
+  have hw_q_ideal : (e q).val.asIdeal = Q_q.under (𝓞 E) := by
     have hq : e₁ q = _root_.Quotient.mk'' (g_q : Gal(L/K) ⧸ H) := by
       conv_lhs => rw [← Quotient.out_eq q, ← QuotientGroup.out_eq' q.out]
       rw [Quotient.congr_mk, Equiv.refl_apply, ← Quotient.mk''_eq_mk]
     rw [Equiv.trans_apply, Equiv.trans_apply,
       HeightOneSpectrum.liesOverEquivPrimesOver_symm_apply, hq,
       Ideal.orbitQuotientEquivPrimesOver_mk, Ideal.coe_primesOverOfCoset_mk]
-  have : Q_q.LiesOver (e q).1.asIdeal := ⟨hw_q_ideal⟩
-  have : Algebra.IsUnramifiedAt (𝓞 K) (e q).1.asIdeal :=
-    .of_liesOver (𝓞 K) (e q).1.asIdeal Q_q
+  have : Q_q.LiesOver (e q).val.asIdeal := ⟨hw_q_ideal⟩
+  have : Algebra.IsUnramifiedAt (𝓞 K) (e q).val.asIdeal :=
+    .of_liesOver (𝓞 K) (e q).val.asIdeal Q_q
   have : Algebra.IsUnramifiedAt (𝓞 E) Q_q := .of_restrictScalars (𝓞 K) Q_q
   set τ_q : Gal(L/E) := (MonoidHom.ofInjective hf).symm
     ⟨g_q⁻¹ * σ ^ Function.minimalPeriod (σ • ·) q.out * g_q,
@@ -231,8 +229,8 @@ private lemma globalArtinMap_ideleClassExtension_ofAdicCompletion_of_isUniformiz
     isArithFrobAt_ofInjective_symm_out_conj_pow Q₀ hσ q.out
       (minimalPeriod_smul_coset_eq_inertiaDeg hv_unram Q₀ hσ q.out)
   simp only [φ, MonoidHom.toAdditive_symm_apply_apply]
-  rw [globalArtinMap_ofAdicCompletion_eq_of_isArithFrobAt L ι' (e q).1 Q_q hτ_q,
-    HeightOneSpectrum.normalizedValuation_adicCompletionExtension_of_isUnramifiedAt v (e q).1,
+  rw [globalArtinMap_ofAdicCompletion_eq_of_isArithFrobAt L ι' (e q).val Q_q hτ_q,
+    HeightOneSpectrum.normalizedValuation_adicCompletionExtension_of_isUnramifiedAt v (e q).val,
     (isUniformizer_def π).1 hπ, toAdd_ofAdd, zpow_one, toMul_ofMul]
 
 /-- **Transfer functoriality of the global Artin map in the ground field.** Let `K ⊆ E ⊆ L` be

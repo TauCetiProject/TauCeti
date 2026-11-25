@@ -11,7 +11,7 @@ public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC.Basic
 
 /-!
 # The half-spin representations of `Spin(4)` and `Spinᶜ(4)`
@@ -309,7 +309,7 @@ theorem inner_halfSpinRep_apply_halfSpinRep_apply
     ⟪halfSpinRep o ρ ε s ψ, halfSpinRep o ρ ε s χ⟫_ℂ = ⟪ψ, χ⟫_ℂ := by
   rw [Submodule.coe_inner, Submodule.coe_inner, coe_halfSpinRep_apply, coe_halfSpinRep_apply,
     ← LinearMap.adjoint_inner_right, adjoint_map_eq_map_star hρ, ← mul_apply_eq_comp,
-    ← map_mul, spinGroup.star_mul_self_of_mem s.2, map_one, one_apply_eq_self]
+    ← map_mul, spinGroup.star_mul_self_of_mem s.property, map_one, one_apply_eq_self]
 
 /-- **The twisted half-spin representations are unitary** on a Hermitian Clifford module. -/
 theorem inner_spinCHalfSpinRep_apply_spinCHalfSpinRep_apply

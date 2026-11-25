@@ -72,6 +72,12 @@ theorem newtonianKernel_def (n : ℕ) (x : EuclideanSpace ℝ (Fin n)) :
       ‖x‖ ^ (2 - (n : ℝ)) := by
   rw [newtonianKernel]
 
+/-- The Newtonian kernel is measurable. -/
+@[fun_prop]
+theorem measurable_newtonianKernel (n : ℕ) : Measurable (newtonianKernel n) := by
+  rw [funext (newtonianKernel_def n)]
+  fun_prop
+
 /-- The totalized Newtonian kernel takes the value zero at its pole. -/
 @[simp]
 theorem newtonianKernel_zero (n : ℕ) :
@@ -331,7 +337,7 @@ theorem contDiffAt_newtonianKernel (n : ℕ)
   rw [hfun]
   have hpow : ContDiffAt ℝ 2 (fun y : EuclideanSpace ℝ (Fin n) ↦
       ‖y‖ ^ (2 - (n : ℝ))) x :=
-    (contDiffAt_norm ℝ hx).rpow_const_of_ne (norm_ne_zero_iff.mpr hx)
+    contDiffAt_norm_rpow_of_ne _ hx
   exact hpow.const_smul (((n : ℝ) * ((n : ℝ) - 2) *
     volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹)
 
@@ -348,7 +354,7 @@ theorem laplacian_newtonianKernel (n : ℕ)
     simp only [newtonianKernel_def, Pi.smul_apply, smul_eq_mul]
   have hpow : ContDiffAt ℝ 2 (fun y : EuclideanSpace ℝ (Fin n) ↦
       ‖y‖ ^ (2 - (n : ℝ))) x :=
-    (contDiffAt_norm ℝ hx).rpow_const_of_ne (norm_ne_zero_iff.mpr hx)
+    contDiffAt_norm_rpow_of_ne _ hx
   rw [hfun, laplacian_smul _ hpow]
   rw [laplacian_norm_rpow_of_ne (2 - (n : ℝ)) hx]
   simp only [finrank_euclideanSpace, Fintype.card_fin, smul_eq_mul]

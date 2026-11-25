@@ -11,6 +11,7 @@ public import Mathlib.Data.ZMod.Units
 import TauCeti.Data.Int.GCD
 import TauCeti.Data.ZMod.Units
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection.FinTwo
 
 /-!
 # The cusps of `Γ₁(N)`
@@ -46,6 +47,8 @@ is `∞`, and every cusp of `Γ₁(2)` is `∞` or `0`. Every cusp of `Γ₁(4)`
 * `TauCeti.card_cuspOrbit_Gamma1_of_prime`: `Γ₁(p)` has `p - 1` cusps for an odd prime `p`.
 * `TauCeti.cuspOrbitOfSL2Z_Gamma1_one`, `TauCeti.cuspOrbitOfSL2Z_Gamma1_two`,
   `TauCeti.cuspOrbitOfSL2Z_Gamma1_four`: cusp representatives at the levels `1`, `2` and `4`.
+* `Matrix.SpecialLinearGroup.exists_cuspOrbitOfSL2Z_Gamma1_four_eq`: every cusp of `Γ₁(4)` is
+  represented by `∞`, `0` or `1/2`.
 * `TauCeti.cuspOrbitOfSL2Z_Gamma1_four_eq_of_intCast_eq_two`,
   `TauCeti.mul_neg_T_mul_inv_mem_Gamma1_four`: the cusps of `Γ₁(4)` with `c ≡ 2` modulo `4` form
   one irregular cusp.
@@ -291,7 +294,7 @@ units. -/
 theorem gamma1CuspLabel_neg (γ : SL(2, ℤ)) :
     gamma1CuspLabel N (-γ) =
       ⟨(gamma1CuspLabel N γ).1, -(gamma1CuspLabel N γ).2.1, -(gamma1CuspLabel N γ).2.2⟩ := by
-  refine gamma1CuspLabel_eq_mk (gamma1CuspLabel N γ).1.2 ?_ ?_ ?_
+  refine gamma1CuspLabel_eq_mk (gamma1CuspLabel N γ).1.property ?_ ?_ ?_
   · simp
   · rw [Units.val_neg, coe_gamma1CuspLabel_snd_fst, coe_neg, Matrix.neg_apply,
       Int.neg_ediv_of_dvd (show ((gamma1CuspLabel N γ).1 : ℤ) ∣ γ 1 0 from Int.gcd_dvd_left ..),
@@ -350,9 +353,9 @@ theorem card_cuspOrbit_Gamma1 (hN : 2 < N) (hN4 : N ≠ 4) :
     2 * Nat.card ((Gamma1 N).map sl2zToPSL2R).CuspOrbit =
       ∑ g ∈ N.divisors, Nat.totient g * Nat.totient (N / g) := by
   have hfin (g : N.divisors) : Finite ((ZMod (N / g))ˣ × (ZMod g)ˣ) := by
-    have : NeZero (g : ℕ) := ⟨Nat.ne_of_gt (Nat.pos_of_mem_divisors g.2)⟩
+    have : NeZero (g : ℕ) := ⟨Nat.ne_of_gt (Nat.pos_of_mem_divisors g.property)⟩
     have : NeZero (N / g) := ⟨(Nat.div_pos (Nat.le_of_dvd (NeZero.pos N)
-      (Nat.dvd_of_mem_divisors g.2)) (NeZero.pos (g : ℕ))).ne'⟩
+      (Nat.dvd_of_mem_divisors g.property)) (NeZero.pos (g : ℕ))).ne'⟩
     infer_instance
   -- Send a label to the cusp of any matrix carrying it; every fibre is `{λ(γ), λ(-γ)}`.
   let f (x : Σ g : N.divisors, (ZMod (N / g))ˣ × (ZMod g)ˣ) :
@@ -379,9 +382,9 @@ theorem card_cuspOrbit_Gamma1 (hN : 2 < N) (hN4 : N ≠ 4) :
     _ = ∑ g ∈ N.divisors, Nat.totient g * Nat.totient (N / g) := by
         rw [Nat.card_sigma, ← Finset.sum_coe_sort N.divisors]
         refine Finset.sum_congr rfl fun g _ ↦ ?_
-        have : NeZero (g : ℕ) := ⟨Nat.ne_of_gt (Nat.pos_of_mem_divisors g.2)⟩
+        have : NeZero (g : ℕ) := ⟨Nat.ne_of_gt (Nat.pos_of_mem_divisors g.property)⟩
         have : NeZero (N / g) := ⟨(Nat.div_pos (Nat.le_of_dvd (NeZero.pos N)
-          (Nat.dvd_of_mem_divisors g.2)) (NeZero.pos (g : ℕ))).ne'⟩
+          (Nat.dvd_of_mem_divisors g.property)) (NeZero.pos (g : ℕ))).ne'⟩
         rw [Nat.card_prod, Nat.card_eq_fintype_card, Nat.card_eq_fintype_card,
           ZMod.card_units_eq_totient, ZMod.card_units_eq_totient, mul_comm]
 
@@ -453,6 +456,17 @@ theorem cuspOrbitOfSL2Z_Gamma1_four_eq_of_intCast_eq_two {γ γ' : SL(2, ℤ)}
   subst hγ hγ'
   revert a b d a' b' d'
   decide
+
+/-- Every cusp of `Γ₁(4)` is `∞ = 1 • ∞`, `0 = S • ∞` or `1/2 = α • ∞`, where `α = !![1, 0; 2, 1]`
+is the lower transvection by `2`. -/
+theorem _root_.Matrix.SpecialLinearGroup.exists_cuspOrbitOfSL2Z_Gamma1_four_eq (γ : SL(2, ℤ)) :
+    ∃ i, (Gamma1 4).cuspOrbitOfSL2Z
+        (![1, S, SpecialLinearGroup.transvection (one_ne_zero : (1 : Fin 2) ≠ 0) 2] i) =
+      (Gamma1 4).cuspOrbitOfSL2Z γ := by
+  obtain h | h | h := cuspOrbitOfSL2Z_Gamma1_four γ
+  · exact ⟨0, h⟩
+  · exact ⟨1, h⟩
+  · exact ⟨2, cuspOrbitOfSL2Z_Gamma1_four_eq_of_intCast_eq_two (by simp) h⟩
 
 /-- **The cusp of `Γ₁(4)` with `c ≡ 2` modulo `4` is irregular**: if the lower-left entry of `γ`
 is `2` modulo `4`, then `Γ₁(4)` contains the conjugate `γ (-T) γ⁻¹` of the negative translation. -/

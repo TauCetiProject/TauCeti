@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Topology.MetricSpace.ContinuousRadius
-public import TauCeti.Analysis.Complex.LeviForm
+public import TauCeti.Analysis.Complex.LeviForm.Basic
 
 /-!
 # Strict plurisubharmonicity, strong `q`-pseudoconvexity and the Morse index
@@ -272,12 +272,12 @@ theorem isOpen_setOf_re_leviForm_posOnSubspace (q : ℕ) :
         (z.1.toBilinForm.leviForm (z.2 : V) z.2).re := by
       simp only [LinearMap.BilinForm.re_leviForm_apply]
       have hv : Continuous fun z : (V →L[ℝ] V →L[ℝ] ℝ) × P ↦ (z.2 : V) :=
-        continuous_subtype_val.comp continuous_snd
+        continuous_subtypeVal.comp continuous_snd
       have hvI : Continuous fun z : (V →L[ℝ] V →L[ℝ] ℝ) × P ↦ I • (z.2 : V) :=
         continuous_const_smul I |>.comp hv
       exact ((continuous_fst.clm_apply hv).clm_apply hv).add
         ((continuous_fst.clm_apply hvI).clm_apply hvI) |>.div_const 4
-    exact (isOpen_lt continuous_const hcont).mem_nhds (hpos v v.2 hv0)
+    exact (isOpen_lt continuous_const hcont).mem_nhds (hpos v v.property hv0)
   filter_upwards [key] with C hC
   refine ⟨P, hP, fun v hv hv0 ↦ ?_⟩
   let u : P := ⟨v, hv⟩

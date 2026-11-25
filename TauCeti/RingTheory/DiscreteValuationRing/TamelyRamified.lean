@@ -12,8 +12,8 @@ public import TauCeti.RingTheory.RamificationInertia.Unramified
 
 import Mathlib.FieldTheory.SeparableDegree
 import Mathlib.RingTheory.DedekindDomain.IntegralClosure
-import Mathlib.RingTheory.Smooth.Fiber
 import TauCeti.RingTheory.DedekindDomain.IntegralClosure
+import TauCeti.RingTheory.Etale.FlatUnramified
 import TauCeti.RingTheory.Ideal.LiesOver
 import TauCeti.RingTheory.Localization.Integral
 import TauCeti.RingTheory.RamificationInertia.Bijective
@@ -259,13 +259,13 @@ theorem IsTamelyRamifiedWRT.exists_isUnit_forall_ramificationIdx_dvd
   have : IsDedekindDomain (integralClosure A L) :=
     TauCeti.integralClosure.isDedekindDomain A K L
   have : Module.IsTorsionFree A L := .trans_faithfulSMul A K L
-  refine ⟨∏ Q : (maximalIdeal A).primesOver (integralClosure A L), Q.1.ramificationIdx A, ?_, ?_⟩
+  refine ⟨∏ Q : (maximalIdeal A).primesOver (integralClosure A L), Q.val.ramificationIdx A, ?_, ?_⟩
   · rw [Nat.cast_prod]
     refine Finset.prod_induction _ IsUnit (fun _ _ ↦ IsUnit.mul) isUnit_one fun Q _ ↦ ?_
-    have := Q.2.1
-    have := Q.2.2
-    have : Q.1.IsMaximal := .of_liesOver_isMaximal Q.1 (maximalIdeal A)
-    exact (isTamelyRamifiedWRT_def.mp h Q.1).2
+    have := Q.property.1
+    have := Q.property.2
+    have : Q.val.IsMaximal := .of_liesOver_isMaximal Q.val (maximalIdeal A)
+    exact (isTamelyRamifiedWRT_def.mp h Q.val).2
   · intro P _
     have hP : P ∈ (maximalIdeal A).primesOver (integralClosure A L) :=
       ⟨inferInstance, ⟨(IsLocalRing.eq_maximalIdeal (Ideal.IsMaximal.under A P)).symm⟩⟩
@@ -311,13 +311,11 @@ theorem isUnramifiedWRT_iff_etale :
   have : Module.Finite A (integralClosure A L) := IsIntegralClosure.finite A K L _
   have : Module.IsTorsionFree A L := .trans_faithfulSMul A K L
   have : Module.Free A (integralClosure A L) := IsIntegralClosure.module_free A K L _
-  have : Algebra.FinitePresentation A (integralClosure A L) :=
-    Algebra.FinitePresentation.of_finiteType.mp inferInstance
   rw [isUnramifiedWRT_iff_forall_isUnramifiedAt A K L]
   refine ⟨fun h ↦ ?_, fun _ P _ ↦ inferInstance⟩
   have : FormallyUnramified A (integralClosure A L) :=
-    formallyUnramified_iff_forall.mpr fun q ↦ h q.1
-  exact .of_formallyUnramified_of_flat
+    formallyUnramified_iff_forall.mpr fun q ↦ h q.asIdeal
+  exact Etale.of_formallyUnramified_of_flat_of_isNoetherianRing
 
 /-- A finite separable extension `L` of the fraction field `K` of a discrete valuation ring `A` is
 totally ramified with respect to `A` iff some maximal ideal of the integral closure of `A` in `L`
@@ -337,21 +335,21 @@ theorem isTotallyRamifiedWRT_iff_exists_ramificationIdx_eq_finrank :
   have hliesOver (P : Ideal (integralClosure A L)) [P.IsMaximal] :
       P ∈ (maximalIdeal A).primesOver (integralClosure A L) :=
     ⟨inferInstance, ⟨(IsLocalRing.eq_maximalIdeal (Ideal.IsMaximal.under A P)).symm⟩⟩
-  have hmax (Q : (maximalIdeal A).primesOver (integralClosure A L)) : Q.1.IsMaximal :=
-    have := Q.2.1
-    have := Q.2.2
-    Ideal.IsMaximal.of_liesOver_isMaximal Q.1 (maximalIdeal A)
-  have he (Q : (maximalIdeal A).primesOver (integralClosure A L)) : 0 < Q.1.ramificationIdx A :=
-    have := Q.2.1
-    Ideal.ramificationIdx_pos A Q.1
-  have hf (Q : (maximalIdeal A).primesOver (integralClosure A L)) : 0 < Q.1.inertiaDeg A :=
-    have := Q.2.1
-    Ideal.inertiaDeg_pos Q.1 A
+  have hmax (Q : (maximalIdeal A).primesOver (integralClosure A L)) : Q.val.IsMaximal :=
+    have := Q.property.1
+    have := Q.property.2
+    Ideal.IsMaximal.of_liesOver_isMaximal Q.val (maximalIdeal A)
+  have he (Q : (maximalIdeal A).primesOver (integralClosure A L)) : 0 < Q.val.ramificationIdx A :=
+    have := Q.property.1
+    Ideal.ramificationIdx_pos A Q.val
+  have hf (Q : (maximalIdeal A).primesOver (integralClosure A L)) : 0 < Q.val.inertiaDeg A :=
+    have := Q.property.1
+    Ideal.inertiaDeg_pos Q.val A
   constructor
   · rintro ⟨⟨P, hP, huniq⟩, hf1⟩
     refine ⟨P, hP, ?_⟩
     rw [Finset.sum_eq_single_of_mem ⟨P, hliesOver P⟩ (Finset.mem_univ _)
-      fun Q _ hQ ↦ (hQ (Subtype.ext (huniq Q.1 (hmax Q)))).elim, hf1 P, mul_one] at hsum
+      fun Q _ hQ ↦ (hQ (Subtype.ext (huniq Q.val (hmax Q)))).elim, hf1 P, mul_one] at hsum
     exact hsum
   · rintro ⟨P, hP, heP⟩
     -- The term of `P` alone already accounts for `[L : K]`, so `f(P) = 1` and no other prime
@@ -359,7 +357,7 @@ theorem isTotallyRamifiedWRT_iff_exists_ramificationIdx_eq_finrank :
     have hPf : P.inertiaDeg A = 1 := by
       have h : P.ramificationIdx A * P.inertiaDeg A ≤ Module.finrank K L :=
         hsum ▸ Finset.single_le_sum (f := fun Q : (maximalIdeal A).primesOver _ ↦
-          Q.1.ramificationIdx A * Q.1.inertiaDeg A) (fun _ _ ↦ Nat.zero_le _)
+          Q.val.ramificationIdx A * Q.val.inertiaDeg A) (fun _ _ ↦ Nat.zero_le _)
           (Finset.mem_univ ⟨P, hliesOver P⟩)
       rw [heP] at h
       have := hf ⟨P, hliesOver P⟩
@@ -370,7 +368,7 @@ theorem isTotallyRamifiedWRT_iff_exists_ramificationIdx_eq_finrank :
           Module.finrank K L := by
         rw [← hsum]
         exact (Finset.sum_pair (f := fun Q : (maximalIdeal A).primesOver _ ↦
-          Q.1.ramificationIdx A * Q.1.inertiaDeg A) (a := ⟨Q, hliesOver Q⟩)
+          Q.val.ramificationIdx A * Q.val.inertiaDeg A) (a := ⟨Q, hliesOver Q⟩)
           (b := ⟨P, hliesOver P⟩) fun h ↦ hQP (congrArg Subtype.val h)).ge.trans
           (Finset.sum_le_sum_of_subset (Finset.subset_univ _))
       rw [heP, hPf] at h

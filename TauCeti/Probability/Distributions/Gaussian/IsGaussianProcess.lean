@@ -7,12 +7,15 @@ module
 
 public import Mathlib.MeasureTheory.Measure.NullMeasurable
 public import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Def
+public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import Mathlib.Probability.Independence.Basic
 
+import Mathlib.Probability.Distributions.Gaussian.Fernique
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Independence
+import TauCeti.Probability.Distributions.Gaussian.Multivariate
 import TauCeti.Probability.HasLaw
 
 /-!
@@ -22,6 +25,9 @@ Complements `Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Indepe
 independent Gaussian processes are jointly Gaussian (on sigma, product, and `Sum` index types),
 `IsGaussianProcess` is preserved by finite continuous linear combinations and measure completion,
 and independence of jointly Gaussian processes is equivalent to vanishing cross-covariances.
+The finite-dimensional laws of a real Gaussian process are the multivariate Gaussian laws with the
+means and covariances of the process
+(`ProbabilityTheory.IsGaussianProcess.map_toLp_eq_multivariateGaussian`).
 
 ## References
 
@@ -59,12 +65,12 @@ theorem iIndepFun.isGaussianProcess {S : T → Type*} {X : (t : T) → S t → �
     classical
     let A : Finset T := I.image Sigma.fst
     let B (t : T) : Finset (S t) := I.preimage (Sigma.mk t) sigma_mk_injective.injOn
-    have hY := ((hindep.precomp Subtype.val_injective).comp (fun a : A ↦ (B a.1).restrict)
-      fun _ ↦ measurable_restrict _).hasGaussianLaw fun a ↦ (hX a.1).hasGaussianLaw (B a.1)
+    have hY := ((hindep.precomp Subtype.val_injective).comp (fun a : A ↦ (B a.val).restrict)
+      fun _ ↦ measurable_restrict _).hasGaussianLaw fun a ↦ (hX a.val).hasGaussianLaw (B a.val)
     exact hY.map ({
-      toFun z p := z ⟨p.1.1, mem_image_of_mem _ p.2⟩ ⟨p.1.2, mem_preimage.mpr p.2⟩
+      toFun z p := z ⟨p.val.1, mem_image_of_mem _ p.property⟩ ⟨p.val.2, mem_preimage.mpr p.property⟩
       map_add' _ _ := rfl, map_smul' _ _ := rfl, cont := by fun_prop } :
-      ((a : A) → B a.1 → E) →L[ℝ] (I → E))
+      ((a : A) → B a.val → E) →L[ℝ] (I → E))
 
 /-- Mutually independent Gaussian processes `X i : T → Ω → E` form a Gaussian process on `ι × T`. -/
 theorem iIndepFun.isGaussianProcess_prod {ι : Type*} {X : ι → T → Ω → E}
@@ -97,6 +103,37 @@ end Independence
 
 namespace IsGaussianProcess
 
+/-- The finite-dimensional laws of a real Gaussian process: the values at finitely many times
+`s i`, collected into a Euclidean vector, have the multivariate Gaussian law whose mean and
+covariance matrix are those of the process. The times need not be distinct. -/
+theorem map_toLp_eq_multivariateGaussian {X : T → Ω → ℝ} (hX : IsGaussianProcess X P)
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (s : ι → T) :
+    P.map (fun ω ↦ WithLp.toLp 2 fun i ↦ X (s i) ω) =
+      multivariateGaussian (WithLp.toLp 2 fun i ↦ P[X (s i)])
+        (Matrix.of fun i j ↦ cov[X (s i), X (s j); P]) := by
+  classical
+  have := hX.isProbabilityMeasure
+  let L : (↥(univ.image s) → ℝ) →L[ℝ] EuclideanSpace ℝ ι :=
+    (EuclideanSpace.equiv ι ℝ).symm.toContinuousLinearMap ∘L
+      { toFun x i := x ⟨s i, mem_image_of_mem s (mem_univ i)⟩
+        map_add' _ _ := rfl
+        map_smul' _ _ := rfl
+        cont := by fun_prop }
+  have hG : HasGaussianLaw (fun ω ↦ WithLp.toLp 2 fun i ↦ X (s i) ω) P :=
+    (hX.hasGaussianLaw _).map L
+  have := hG.isGaussian_map
+  have hV := hG.aemeasurable
+  rw [TauCeti.Probability.eq_multivariateGaussian_covMatrix (P.map _)]
+  congr 1
+  · ext i
+    have h := (EuclideanSpace.proj (𝕜 := ℝ) i).integral_comp_comm
+      (IsGaussian.integrable_id (μ := P.map fun ω ↦ WithLp.toLp 2 fun i ↦ X (s i) ω))
+    simp only [EuclideanSpace.coe_proj, id_eq] at h
+    rw [← h, integral_map hV (by fun_prop)]
+  · ext i j
+    rw [TauCeti.covMatrix_apply, covariance_map (by fun_prop) (by fun_prop) hV]
+    simp [Function.comp_def]
+
 /-- Finite sums of pointwise continuous linear images preserve `IsGaussianProcess`. -/
 theorem sum_comp_left [NormedSpace ℝ E] {ι F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     [MeasurableSpace F] [BorelSpace F] [SecondCountableTopology F] {X : ι → T → Ω → E}
@@ -105,7 +142,8 @@ theorem sum_comp_left [NormedSpace ℝ E] {ι F : Type*} [NormedAddCommGroup F] 
     IsGaussianProcess (fun t ω ↦ ∑ i ∈ s, L i t (X i t ω)) P := by
   classical
   refine hX.of_isGaussianProcess fun t ↦ ⟨s ×ˢ {t},
-    { toFun z := ∑ i ∈ s.attach, L i.1 t (z ⟨(i.1, t), mem_product.mpr ⟨i.2, mem_singleton_self t⟩⟩)
+    { toFun z := ∑ i ∈ s.attach,
+        L i.val t (z ⟨(i.val, t), mem_product.mpr ⟨i.property, mem_singleton_self t⟩⟩)
       map_add' _ _ := by simp [sum_add_distrib], map_smul' _ _ := by simp [smul_sum]
       cont := by fun_prop }, fun ω ↦ by
     simpa [restrict_def] using (sum_attach s fun i ↦ L i t (X i t ω)).symm⟩

@@ -137,7 +137,7 @@ theorem exists_one_tmul_eq_add_localCarrierToDual {z : L.LocalDualCarrier p} {x 
   have h := (L.primaryComponentEquivLocalDiscriminantGroup p).apply_symm_apply
     (Submodule.Quotient.mk z)
   have hmem : (Submodule.Quotient.mk x : L.DiscriminantGroup) ∈
-      primaryComponent L.DiscriminantGroup p := hx ▸ a.2
+      primaryComponent L.DiscriminantGroup p := hx ▸ a.property
   rw [← ha, show a = ⟨_, hmem⟩ from Subtype.ext hx.symm,
     primaryComponentEquivLocalDiscriminantGroup_apply_mk, Submodule.Quotient.eq] at h
   obtain ⟨m, hm⟩ := h
@@ -244,8 +244,8 @@ private theorem exists_one_tmul_eq_add
     (hx' : Submodule.Quotient.mk x' = (primaryComponentEquiv φ a : M.DiscriminantGroup)) :
     ∃ m : M.LocalCarrier p, (1 : ℤ_[p]) ⊗ₜ x' =
       localDualCarrierEquiv φ ((1 : ℤ_[p]) ⊗ₜ x) + M.localCarrierToDual p m := by
-  have ha : a = ⟨_, hx ▸ a.2⟩ := Subtype.ext hx.symm
-  have ha' : primaryComponentEquiv φ a = ⟨_, hx' ▸ (primaryComponentEquiv φ a).2⟩ :=
+  have ha : a = ⟨_, hx ▸ a.property⟩ := Subtype.ext hx.symm
+  have ha' : primaryComponentEquiv φ a = ⟨_, hx' ▸ (primaryComponentEquiv φ a).property⟩ :=
     Subtype.ext hx'.symm
   have h : M.primaryComponentEquivLocalDiscriminantGroup p (primaryComponentEquiv φ a) =
       localDiscriminantGroupEquiv φ (L.primaryComponentEquivLocalDiscriminantGroup p a) :=
@@ -317,9 +317,9 @@ private theorem discriminantPairing_primaryComponentEquiv
     Submodule.Quotient.mk_surjective _ (primaryComponentEquiv φ b : M.DiscriminantGroup)
   obtain ⟨m, hm⟩ := exists_one_tmul_eq_add φ hx hx'
   obtain ⟨n, hn⟩ := exists_one_tmul_eq_add φ hy hy'
-  obtain ⟨k, c, hc⟩ := exists_pow_mul_form_eq_intCast (hx ▸ a.2) y
+  obtain ⟨k, c, hc⟩ := exists_pow_mul_form_eq_intCast (hx ▸ a.property) y
   obtain ⟨k', c', hc'⟩ :=
-    exists_pow_mul_form_eq_intCast (hx' ▸ (primaryComponentEquiv φ a).2) y'
+    exists_pow_mul_form_eq_intCast (hx' ▸ (primaryComponentEquiv φ a).property) y'
   obtain ⟨z, hz⟩ := exists_form_eq_add_algebraMap φ hm hn
   rw [← hx, ← hy, ← hx', ← hy', discriminantPairing_mk, discriminantPairing_mk]
   refine Padic.addCircle_coe_eq_coe_of_eq_add_algebraMap (k := k + k')
@@ -338,9 +338,9 @@ private theorem discriminantQuadraticMap_primaryComponentEquiv (hL : L.IsEven) (
   obtain ⟨x', hx'⟩ :=
     Submodule.Quotient.mk_surjective _ (primaryComponentEquiv φ a : M.DiscriminantGroup)
   obtain ⟨m, hm⟩ := exists_one_tmul_eq_add φ hx hx'
-  obtain ⟨k, c, hc⟩ := exists_pow_mul_form_self_div_two_eq_intCast hL (hx ▸ a.2)
+  obtain ⟨k, c, hc⟩ := exists_pow_mul_form_self_div_two_eq_intCast hL (hx ▸ a.property)
   obtain ⟨k', c', hc'⟩ :=
-    exists_pow_mul_form_self_div_two_eq_intCast hM (hx' ▸ (primaryComponentEquiv φ a).2)
+    exists_pow_mul_form_self_div_two_eq_intCast hM (hx' ▸ (primaryComponentEquiv φ a).property)
   obtain ⟨z, hz⟩ := exists_form_self_div_two_eq_add_algebraMap hM φ hm
   rw [← hx, ← hx', discriminantQuadraticMap_mk, discriminantQuadraticMap_mk]
   refine Padic.addCircle_coe_eq_coe_of_eq_add_algebraMap (k := k + k')
@@ -408,8 +408,8 @@ noncomputable def primaryDiscriminantQuadraticIsometry (hL : L.IsEven) (hM : M.I
 theorem primaryDiscriminantQuadraticIsometry_apply (hL : L.IsEven) (hM : M.IsEven)
     (φ : (L.localIntegralForm p).IsometryEquiv (M.localIntegralForm p))
     (a : primaryComponent (L.discriminantQuadraticModule hL) p) :
-    (primaryDiscriminantQuadraticIsometry hL hM φ a).1 =
-      (primaryDiscriminantBilinearIsometry φ a).1 :=
+    (primaryDiscriminantQuadraticIsometry hL hM φ a).val =
+      (primaryDiscriminantBilinearIsometry φ a).val :=
   (rfl)
 
 /-! ### Discriminant forms are genus invariants -/

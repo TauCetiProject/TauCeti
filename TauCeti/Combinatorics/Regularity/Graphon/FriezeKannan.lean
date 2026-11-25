@@ -137,11 +137,11 @@ theorem frieze_kannan_stepGraphonOfFinpartition (G : SimpleGraph (Fin m)) [Decid
     ∃ P : Finpartition (univ : Finset (Fin m)),
       #P.parts ≤ 4 ^ ⌈1 / ε ^ 2⌉₊ ∧
         cutNorm volume ((finiteGraphGraphon G).toSymmKernel -
-          (stepGraphonOfFinpartition P (fun A B => G.edgeDensityIcc A.1 B.1)
-            (fun A B => G.edgeDensityIcc_comm A.1 B.1)).toSymmKernel) ≤ ε ∧
+          (stepGraphonOfFinpartition P (fun A B => G.edgeDensityIcc A.val B.val)
+            (fun A B => G.edgeDensityIcc_comm A.val B.val)).toSymmKernel) ≤ ε ∧
         cutDist (finiteGraphGraphon G)
-          (stepGraphonOfFinpartition P (fun A B => G.edgeDensityIcc A.1 B.1)
-            (fun A B => G.edgeDensityIcc_comm A.1 B.1)) ≤ ε := by
+          (stepGraphonOfFinpartition P (fun A B => G.edgeDensityIcc A.val B.val)
+            (fun A B => G.edgeDensityIcc_comm A.val B.val)) ≤ ε := by
   obtain ⟨P, hcard, hcut⟩ := G.frieze_kannan_cellPartition hε
   rw [P.card_parts_cellPartition] at hcard
   rw [G.stepGraphonAvg_finiteGraphGraphon_eq_stepGraphonOfFinpartition P] at hcut

@@ -99,7 +99,7 @@ theorem span_range_algebraMap_comp_of_constantCompositum_eq_top [Algebra.IsInteg
   let L : Subalgebra k F' := (IsScalarTower.toAlgHom k k' F').range
   let e : k' ≃ₐ[k] L := AlgEquiv.ofInjective _ (algebraMap k' F').injective
   have hspan := Subalgebra.adjoin_eq_span_basis F L (b.map e.toLinearEquiv)
-  have hfun : (fun i ↦ ((b.map e.toLinearEquiv) i).1) = algebraMap k' F' ∘ b := by
+  have hfun : (fun i ↦ ((b.map e.toLinearEquiv) i).val) = algebraMap k' F' ∘ b := by
     ext i
     exact AlgEquiv.ofInjective_apply _ (algebraMap k' F').injective (b i)
   rw [AlgHom.coe_range, IsScalarTower.coe_toAlgHom',
@@ -222,7 +222,7 @@ theorem isIntegrallyClosedIn_constantCompositum_of_linearDisjoint
   obtain ⟨c, hc⟩ :=
     isIntegrallyClosedIn_iff_forall_isAlgebraic.1 hex' _ hzM.tower_top.isAlgebraic
   have hcM : c ∈ M :=
-    (algebraMap_mem_constantCompositum_iff_of_linearDisjoint H).1 (hc ▸ z.2)
+    (algebraMap_mem_constantCompositum_iff_of_linearDisjoint H).1 (hc ▸ z.property)
   exact ⟨⟨c, hcM⟩, Subtype.ext hc⟩
 
 variable [Algebra.IsSeparable k k']

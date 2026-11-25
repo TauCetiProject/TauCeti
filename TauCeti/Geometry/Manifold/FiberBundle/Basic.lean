@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import TauCeti.Geometry.Manifold.ContMDiff.Groupoid
+public import TauCeti.Topology.FiberBundle.Trivial
 
 /-!
 # Smooth fibre bundles with a manifold as fibre
@@ -232,12 +233,12 @@ variable {E' : B → Type*} [TopologicalSpace (TotalSpace F E')]
 base. No continuity or smoothness of the family is assumed. -/
 def fiberwiseMap (φ : ∀ b, E b → E' b) (x : ManifoldTotalSpace F E) :
     ManifoldTotalSpace F E' :=
-  homeomorph F E' ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).2⟩
+  homeomorph F E' ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).snd⟩
 
 /-- A fibrewise map evaluated on a point transported from the original total space. -/
 @[simp]
 theorem fiberwiseMap_homeomorph (φ : ∀ b, E b → E' b) (p : TotalSpace F E) :
-    fiberwiseMap φ (homeomorph F E p) = homeomorph F E' ⟨p.proj, φ _ p.2⟩ := by
+    fiberwiseMap φ (homeomorph F E p) = homeomorph F E' ⟨p.proj, φ _ p.snd⟩ := by
   unfold fiberwiseMap
   rw [Homeomorph.symm_apply_apply]
 
@@ -245,7 +246,7 @@ theorem fiberwiseMap_homeomorph (φ : ∀ b, E b → E' b) (p : TotalSpace F E) 
 @[simp]
 theorem homeomorph_symm_fiberwiseMap (φ : ∀ b, E b → E' b) (x : ManifoldTotalSpace F E) :
     (homeomorph F E').symm (fiberwiseMap φ x) =
-      ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).2⟩ := by
+      ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).snd⟩ := by
   simp [fiberwiseMap]
 
 /-- The fibrewise map of a family of composites is the composite of the fibrewise maps. -/
@@ -259,7 +260,7 @@ theorem fiberwiseMap_comp {E'' : B → Type*} [TopologicalSpace (TotalSpace F E'
 /-- Expanding `fiberwiseMap` as a function through `homeomorph`. -/
 theorem fiberwiseMap_eq (φ : ∀ b, E b → E' b) :
     fiberwiseMap (F := F) φ = fun x : ManifoldTotalSpace F E ↦
-      homeomorph F E' ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).2⟩ := by
+      homeomorph F E' ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).snd⟩ := by
   unfold fiberwiseMap; rfl
 
 end FiberwiseMap
@@ -277,7 +278,7 @@ instance instSMul {α : Type*} [∀ b, SMul α (E b)] : SMul α (ManifoldTotalSp
 space. -/
 @[simp]
 theorem smul_homeomorph {α : Type*} [∀ b, SMul α (E b)] (a : α) (p : TotalSpace F E) :
-    a • homeomorph F E p = homeomorph F E ⟨p.proj, a • p.2⟩ :=
+    a • homeomorph F E p = homeomorph F E ⟨p.proj, a • p.snd⟩ :=
   fiberwiseMap_homeomorph _ p
 
 /-- Reading fibrewise scalar multiplication back in the original total space acts on the fibre
@@ -286,7 +287,7 @@ coordinate. -/
 theorem homeomorph_symm_smul {α : Type*} [∀ b, SMul α (E b)] (a : α)
     (x : ManifoldTotalSpace F E) :
     (homeomorph F E).symm (a • x) =
-      ⟨((homeomorph F E).symm x).proj, a • ((homeomorph F E).symm x).2⟩ :=
+      ⟨((homeomorph F E).symm x).proj, a • ((homeomorph F E).symm x).snd⟩ :=
   homeomorph_symm_fiberwiseMap _ x
 
 /-- A family of monoid actions on the fibres of a bundle induces a fibrewise monoid action on the
@@ -462,7 +463,7 @@ theorem contMDiffAt_section_comp [∀ b, Nonempty (E b)]
     [FiberBundle F' E'] {φ : ∀ b, E b → E' b} {f : M → B} {x₀ : M} (v : F)
     (hφ : ContMDiffAt (IB.prod IF) (IB.prod IF') n
       (fun x : ManifoldTotalSpace F E ↦ homeomorph F' E'
-        ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).2⟩)
+        ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).snd⟩)
       (homeomorph F E ⟨f x₀, (trivializationAt F E (f x₀)).symm (f x₀) v⟩))
     (hf : ContMDiffAt IM IB n f x₀) :
     ContMDiffAt IM (IB.prod IF') n
@@ -515,26 +516,26 @@ noncomputable def diffeomorphOfCoordEq :
 /-- On each fibre, `diffeomorphOfCoordEq` applies the given fibre equivalence. -/
 @[simp] theorem diffeomorphOfCoordEq_apply (z : TotalSpace F E) :
     diffeomorphOfCoordEq (n := n) (IB := IB) (IF := IF) e hcoord (homeomorph F E z) =
-      homeomorph F E' ⟨z.proj, e z.proj z.2⟩ :=
+      homeomorph F E' ⟨z.proj, e z.proj z.snd⟩ :=
   fiberwiseMap_homeomorph (fun b ↦ e b) z
 
 /-- On each fibre, the inverse of `diffeomorphOfCoordEq` applies the inverse fibre equivalence. -/
 @[simp] theorem diffeomorphOfCoordEq_symm_apply (z : TotalSpace F E') :
     (diffeomorphOfCoordEq (n := n) (IB := IB) (IF := IF) e hcoord).symm (homeomorph F E' z) =
-      homeomorph F E ⟨z.proj, (e z.proj).symm z.2⟩ :=
+      homeomorph F E ⟨z.proj, (e z.proj).symm z.snd⟩ :=
   fiberwiseMap_homeomorph (fun b ↦ (e b).symm) z
 
 /-- Reading `diffeomorphOfCoordEq` back in the original total space evaluates `e` on the fibre. -/
 @[simp] theorem homeomorph_symm_diffeomorphOfCoordEq_apply (x : ManifoldTotalSpace F E) :
     (homeomorph F E').symm (diffeomorphOfCoordEq (n := n) (IB := IB) (IF := IF) e hcoord x) =
-      ⟨((homeomorph F E).symm x).proj, e _ ((homeomorph F E).symm x).2⟩ :=
+      ⟨((homeomorph F E).symm x).proj, e _ ((homeomorph F E).symm x).snd⟩ :=
   homeomorph_symm_fiberwiseMap (fun b ↦ e b) x
 
 /-- Reading the inverse of `diffeomorphOfCoordEq` back in the original total space evaluates
 `e.symm`. -/
 @[simp] theorem homeomorph_symm_diffeomorphOfCoordEq_symm_apply (x : ManifoldTotalSpace F E') :
     (homeomorph F E).symm ((diffeomorphOfCoordEq (n := n) (IB := IB) (IF := IF) e hcoord).symm x) =
-      ⟨((homeomorph F E').symm x).proj, (e _).symm ((homeomorph F E').symm x).2⟩ :=
+      ⟨((homeomorph F E').symm x).proj, (e _).symm ((homeomorph F E').symm x).snd⟩ :=
   homeomorph_symm_fiberwiseMap (fun b ↦ (e b).symm) x
 end
 
@@ -746,13 +747,11 @@ noncomputable def diffeomorphProd (n : ℕ∞ω) (B F : Type*) [TopologicalSpace
   toEquiv := (homeomorph F (Bundle.Trivial B F)).symm.toEquiv.trans
     (Bundle.Trivial.homeomorphProd B F).toEquiv
   contMDiff_toFun := by
-    have : MemTrivializationAtlas (Bundle.Trivial.trivialization B F) := ⟨mem_singleton _⟩
     rw [← contMDiffOn_univ]
     have h := contMDiffOn_trivialization (n := n) (IB := IB) (IF := IF)
       (Bundle.Trivial.trivialization B F)
     simpa [Function.comp_def] using h
   contMDiff_invFun := by
-    have : MemTrivializationAtlas (Bundle.Trivial.trivialization B F) := ⟨mem_singleton _⟩
     rw [← contMDiffOn_univ]
     have h := contMDiffOn_trivialization_symm (n := n) (IB := IB) (IF := IF)
       (Bundle.Trivial.trivialization B F)
@@ -765,7 +764,7 @@ theorem diffeomorphProd_apply (n : ℕ∞ω) {B F : Type*} [TopologicalSpace B] 
     (x : ManifoldTotalSpace F (Bundle.Trivial B F)) :
     diffeomorphProd n B F IB IF x =
       (((homeomorph F (Bundle.Trivial B F)).symm x).proj,
-        ((homeomorph F (Bundle.Trivial B F)).symm x).2) :=
+        ((homeomorph F (Bundle.Trivial B F)).symm x).snd) :=
   (rfl)
 
 /-- Evaluating `diffeomorphProd` at a point transported from `TotalSpace F (Bundle.Trivial B F)`
@@ -774,7 +773,7 @@ theorem diffeomorphProd_homeomorph (n : ℕ∞ω) {B F : Type*} [TopologicalSpac
     [TopologicalSpace F] [ChartedSpace HF F]
     (IB : ModelWithCorners 𝕜 EB HB) (IF : ModelWithCorners 𝕜 EF HF)
     (p : TotalSpace F (Bundle.Trivial B F)) :
-    diffeomorphProd n B F IB IF (homeomorph F (Bundle.Trivial B F) p) = (p.proj, p.2) := by
+    diffeomorphProd n B F IB IF (homeomorph F (Bundle.Trivial B F) p) = (p.proj, p.snd) := by
   rw [diffeomorphProd_apply, Homeomorph.symm_apply_apply]
 
 @[simp]

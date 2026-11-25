@@ -37,7 +37,9 @@ apply to it.
   dense. A map is first contracted towards an interior point `x₀` of `K`, by precomposing it with
   the homothety of ratio `t > 1` about `x₀`, which moves its support to a compact subset of the
   interior of `K`; it is then mollified by bumps smaller than the distance from that support to
-  the complement of `K`.
+  the complement of `K`. Transported along the identity equivalence, this says that for all
+  orders `n₂ ≤ n₁`, finite or not, the inclusion `𝓓^{n₁}_{K}(E, F) → 𝓓^{n₂}_{K}(E, F)` has
+  dense range, with approximants supported in `K` itself and not merely in a neighbourhood of `K`.
 
 These are the properties of a space of compactly supported finite-order perturbations, for
 instance of Hamiltonians, used in genericity arguments by the Sard–Smale theorem: a separable
@@ -61,6 +63,8 @@ Banach space in which the smooth perturbations are dense.
 * `TauCeti.NormedContDiffMapSupportedIn.instSecondCountableTopology`: the space is second
   countable, hence separable.
 * `TauCeti.NormedContDiffMapSupportedIn.dense_setOf_contDiff`: the smooth maps are dense.
+* `ContDiffMapSupportedIn.denseRange_monoCLM`: for convex `K`, a Banach space `F` and `n₂ ≤ n₁`,
+  the inclusion `𝓓^{n₁}_{K}(E, F) → 𝓓^{n₂}_{K}(E, F)` has dense range.
 
 ## References
 
@@ -322,8 +326,8 @@ section Jet
 def jet (f : NormedContDiffMapSupportedIn E F ℓ K) :
     (j : Fin (ℓ + 1)) → C(K, E [×j]→L[ℝ] F) := fun j ↦
   ⟨fun x ↦ iteratedFDeriv ℝ j f x,
-    ((f.contDiff.continuous_iteratedFDeriv (by exact_mod_cast Nat.lt_succ_iff.1 j.2)).comp
-      continuous_subtype_val)⟩
+    ((f.contDiff.continuous_iteratedFDeriv (by exact_mod_cast Nat.lt_succ_iff.1 j.isLt)).comp
+      continuous_subtypeVal)⟩
 
 @[simp]
 theorem jet_apply (f : NormedContDiffMapSupportedIn E F ℓ K) (j : Fin (ℓ + 1)) (x : K) :
@@ -335,7 +339,7 @@ theorem jet_apply (f : NormedContDiffMapSupportedIn E F ℓ K) (j : Fin (ℓ + 1
 theorem jet_add (f g : NormedContDiffMapSupportedIn E F ℓ K) : jet (f + g) = jet f + jet g := by
   funext j
   ext x : 1
-  have hj : (j : WithTop ℕ∞) ≤ ℓ := by exact_mod_cast Nat.lt_succ_iff.1 j.2
+  have hj : (j : WithTop ℕ∞) ≤ ℓ := by exact_mod_cast Nat.lt_succ_iff.1 j.isLt
   simp only [jet_apply, Pi.add_apply, ContinuousMap.add_apply]
   exact iteratedFDeriv_add_apply (f.contDiff.contDiffAt.of_le hj)
     (g.contDiff.contDiffAt.of_le hj)
@@ -353,7 +357,7 @@ theorem jet_smul (c : 𝕜) (f : NormedContDiffMapSupportedIn E F ℓ K) :
     jet (c • f) = c • jet f := by
   funext j
   ext x : 1
-  have hj : (j : WithTop ℕ∞) ≤ ℓ := by exact_mod_cast Nat.lt_succ_iff.1 j.2
+  have hj : (j : WithTop ℕ∞) ≤ ℓ := by exact_mod_cast Nat.lt_succ_iff.1 j.isLt
   simp only [jet_apply, coe_smul, Pi.smul_apply, ContinuousMap.smul_apply]
   exact iteratedFDeriv_const_smul_apply (f.contDiff.contDiffAt.of_le hj)
 
@@ -371,7 +375,7 @@ theorem jet_sub (f g : NormedContDiffMapSupportedIn E F ℓ K) : jet (f - g) = j
 theorem norm_jet (f : NormedContDiffMapSupportedIn E F ℓ K) : ‖jet f‖ = ‖f‖ := by
   refine le_antisymm ((pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun j ↦ ?_) ?_
   · exact (ContinuousMap.norm_le _ (norm_nonneg _)).2 fun x ↦
-      norm_iteratedFDeriv_le_norm f (Nat.lt_succ_iff.1 j.2) x
+      norm_iteratedFDeriv_le_norm f (Nat.lt_succ_iff.1 j.isLt) x
   · refine (norm_le_iff f (norm_nonneg _)).2 fun j hj x hx ↦ ?_
     calc ‖iteratedFDeriv ℝ j f x‖ = ‖jet f ⟨j, Nat.lt_succ_of_le hj⟩ ⟨x, hx⟩‖ := by
           rw [jet_apply]
@@ -516,3 +520,34 @@ end Density
 end NormedContDiffMapSupportedIn
 
 end TauCeti
+
+namespace ContDiffMapSupportedIn
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] {K : Compacts E}
+
+/-- **Smooth functions supported in a convex compact set are dense.** For convex `K`, a Banach
+space `F` (`[CompleteSpace F]`) and `n₂ ≤ n₁`, the inclusion `𝓓^{n₁}_{K}(E, F) → 𝓓^{n₂}_{K}(E, F)`
+has dense range. For `n₁ = ∞` this says that every `C^{n₂}` function supported in `K` is a limit,
+in every derivative of order at most `n₂` uniformly, of smooth functions supported in `K`. -/
+theorem denseRange_monoCLM [CompleteSpace F] (𝕜 : Type*) [NontriviallyNormedField 𝕜]
+    [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] {n₁ n₂ : ℕ∞} (hn : n₂ ≤ n₁)
+    (hK : Convex ℝ (K : Set E)) :
+    DenseRange (monoCLM 𝕜 : 𝓓^{n₁}_{K}(E, F) →L[𝕜] 𝓓^{n₂}_{K}(E, F)) := by
+  -- Every smooth function supported in `K` lies in the range of the inclusion.
+  have hrange {g : 𝓓^{n₂}_{K}(E, F)} (hg : ContDiff ℝ ∞ g) :
+      g ∈ range (monoCLM 𝕜 : 𝓓^{n₁}_{K}(E, F) →L[𝕜] 𝓓^{n₂}_{K}(E, F)) :=
+    ⟨.of_support_subset (hg.of_le (by exact_mod_cast le_top)) g.support_subset,
+      ext fun x ↦ by simp [hn]⟩
+  induction n₂ using ENat.recTopCoe with
+  -- For `n₂ = ∞` every element is already smooth, so it lies in the range.
+  | top => exact fun g ↦ subset_closure (hrange g.contDiff)
+  -- For finite `n₂ = ℓ`, transport the density of smooth maps in the norm synonym along the
+  -- identity `continuousLinearEquiv`.
+  | coe ℓ =>
+    exact ((TauCeti.NormedContDiffMapSupportedIn.continuousLinearEquiv ℝ E F ℓ
+      K).surjective.denseRange.dense_image (ContinuousLinearEquiv.continuous _)
+        (TauCeti.NormedContDiffMapSupportedIn.dense_setOf_contDiff hK)).mono
+      (by rintro _ ⟨g, hg, rfl⟩; exact hrange (by simpa using hg))
+
+end ContDiffMapSupportedIn

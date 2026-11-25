@@ -41,6 +41,8 @@ right generality, is not keyed on `Submodule`.
 * `Submodule.instDiscreteTopologyProd`: the product of two discrete submodules is discrete.
 * `Submodule.prodContEquiv`: a product submodule is continuously linearly equivalent to
   the product of its submodules.
+* `ContinuousLinearEquiv.comap_topologicalClosure`: the preimage of the closure of a submodule
+  under a continuous linear equivalence is the closure of its preimage.
 -/
 
 public section
@@ -62,9 +64,9 @@ to the product of the two submodules. -/
 def prodContEquiv (p : Submodule A M) (q : Submodule A N) : p.prod q ≃L[A] p × q where
   __ := p.prodEquiv q
   continuous_toFun :=
-    (continuous_subtype_val.fst.subtype_mk _).prodMk (continuous_subtype_val.snd.subtype_mk _)
+    (continuous_subtypeVal.fst.subtype_mk _).prodMk (continuous_subtypeVal.snd.subtype_mk _)
   continuous_invFun :=
-    ((continuous_fst.subtype_val).prodMk (continuous_snd.subtype_val)).subtype_mk _
+    ((continuous_fst.subtypeVal).prodMk (continuous_snd.subtypeVal)).subtype_mk _
 
 /-- The first coordinate of the product-submodule comparison is the original first coordinate. -/
 @[simp]
@@ -104,3 +106,20 @@ instance Submodule.instDiscreteTopologyProd {R M M₂ : Type*} [Semiring R] [Add
     DiscreteTopology (p.prod q) :=
   DiscreteTopology.of_continuous_injective (p.prodContEquiv q).continuous
     (p.prodContEquiv q).injective
+
+namespace ContinuousLinearEquiv
+
+variable {R R₂ M N : Type*} [Semiring R] [Semiring R₂] {σ : R →+* R₂} {σ' : R₂ →+* R}
+  [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+  [AddCommMonoid M] [TopologicalSpace M] [Module R M] [ContinuousAdd M] [ContinuousConstSMul R M]
+  [AddCommMonoid N] [TopologicalSpace N] [Module R₂ N] [ContinuousAdd N]
+  [ContinuousConstSMul R₂ N]
+
+/-- The preimage of the closure of a submodule under a continuous (semi)linear equivalence is the
+closure of its preimage: the submodule form of `Homeomorph.preimage_closure`. -/
+theorem comap_topologicalClosure (e : M ≃SL[σ] N) (p : Submodule R₂ N) :
+    p.topologicalClosure.comap (e : M →ₛₗ[σ] N) =
+      (p.comap (e : M →ₛₗ[σ] N)).topologicalClosure :=
+  SetLike.coe_injective (e.toHomeomorph.preimage_closure p)
+
+end ContinuousLinearEquiv

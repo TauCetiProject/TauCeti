@@ -106,18 +106,19 @@ part of `P` to the union of its cells in the unit interval. -/
 noncomputable def partsCellPartitionEquiv (P : Finpartition (univ : Finset (Fin m))) :
     P.parts ≃ P.cellPartition.parts :=
   Equiv.ofBijective
-    (fun A => ⟨cellFin m ⁻¹' (A.1 : Set (Fin m)), P.preimage_cellFin_mem_cellPartition A.2⟩)
+    (fun A => ⟨cellFin m ⁻¹' (A.val : Set (Fin m)), P.preimage_cellFin_mem_cellPartition
+        A.property⟩)
     ⟨fun _ _ h => Subtype.ext <| Finset.coe_injective <|
         cellFin_surjective.preimage_injective (Subtype.ext_iff.1 h),
       fun p => by
-        obtain ⟨A, hA, hp⟩ := P.mem_cellPartition_parts_iff.1 p.2
+        obtain ⟨A, hA, hp⟩ := P.mem_cellPartition_parts_iff.1 p.property
         exact ⟨⟨A, hA⟩, Subtype.ext hp⟩⟩
 
 /-- Each vertex part maps under `partsCellPartitionEquiv` to the union of its cells. -/
 @[simp]
 theorem partsCellPartitionEquiv_apply_coe (P : Finpartition (univ : Finset (Fin m)))
     (A : P.parts) :
-    (P.partsCellPartitionEquiv A : Set I) = cellFin m ⁻¹' (A.1 : Set (Fin m)) := by
+    (P.partsCellPartitionEquiv A : Set I) = cellFin m ⁻¹' (A.val : Set (Fin m)) := by
   rw [partsCellPartitionEquiv]
   rfl
 
@@ -125,7 +126,7 @@ theorem partsCellPartitionEquiv_apply_coe (P : Finpartition (univ : Finset (Fin 
 @[simp]
 theorem mem_partsCellPartitionEquiv_symm_iff (P : Finpartition (univ : Finset (Fin m)))
     (p : P.cellPartition.parts) (x : I) :
-    cellFin m x ∈ (P.partsCellPartitionEquiv.symm p).1 ↔ x ∈ (p : Set I) := by
+    cellFin m x ∈ (P.partsCellPartitionEquiv.symm p).val ↔ x ∈ (p : Set I) := by
   conv_rhs =>
     rw [← P.partsCellPartitionEquiv.apply_symm_apply p, partsCellPartitionEquiv_apply_coe]
   simp
@@ -161,7 +162,7 @@ theorem volume_ne_zero_of_mem_cellPartition (P : Finpartition (univ : Finset (Fi
 /-- The lifted part corresponding to `A : P.parts` has volume `#A.1 / m`. -/
 theorem volume_real_partsCellPartitionEquiv (P : Finpartition (univ : Finset (Fin m)))
     (A : P.parts) :
-    volume.real (P.partsCellPartitionEquiv A : Set I) = #A.1 / m := by
+    volume.real (P.partsCellPartitionEquiv A : Set I) = #A.val / m := by
   rw [partsCellPartitionEquiv_apply_coe, volume_real_preimage_cellFin]
 
 /-- Lifting partitions of `Fin m` to the unit interval preserves and reflects refinement. -/

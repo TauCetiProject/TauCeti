@@ -239,10 +239,10 @@ private theorem forkUp_mul_forkTurn_add_pow_eq_zero (hc : 0 < c) :
 
 /-- **Every product of `c + 2` backtracks into the leaves vanishes.** -/
 private theorem forkSpan_pow_eq_bot {t : ℕ} (ht : c + 2 ≤ t) : forkSpan k G c ^ t = ⊥ := by
-  obtain ⟨e, rfl⟩ := Nat.exists_eq_add_of_le ht
-  rw [pow_add, forkSpan, span_pair_pow_succ_eq_bot (forkTurn_mul_self k hG (by omega))
-    (forkTurn_mul_self k hG (by omega))
-    (forkTurn_add_pow_eq_zero k hn hG), Submodule.bot_mul]
+  rw [← Submodule.zero_eq_bot]
+  refine pow_eq_zero_of_le ht ?_
+  rw [forkSpan, span_pair_pow_succ_eq_bot (forkTurn_mul_self k hG (by omega))
+    (forkTurn_mul_self k hG (by omega)) (forkTurn_add_pow_eq_zero k hn hG), Submodule.zero_eq_bot]
 
 /-! ### Normal forms of paths -/
 
@@ -396,7 +396,7 @@ private theorem forkNormalForm_ofPath {a b : DoubledQuiver G} (p : Path a b) :
   | @cons b b' q e ih =>
     rw [← ofArrow_mul_ofPath, map_mul, signlessPreprojectiveMk_ofArrow_eq_signlessArrow,
       Path.length_cons]
-    exact forkNormalForm_cons k hn hG ((vertexEquiv G).symm b).2 (hG _ _ e.down) ih
+    exact forkNormalForm_cons k hn hG ((vertexEquiv G).symm b).isLt (hG _ _ e.down) ih
 
 /-- **Every path of length at least `4 n` vanishes** in the signless algebra of a graph on
 `Fin (c + 3)` made of a long arm `0, …, c` and two leaves `c + 1`, `c + 2` attached to `c`. -/
@@ -449,7 +449,7 @@ theorem signlessPreprojectiveMk_D_ofPath_eq_zero_of_le
     obtain ⟨a, b, p⟩ := x
     cases p with
     | nil =>
-      have : _ < n := ((vertexEquiv _).symm a).2
+      have : _ < n := ((vertexEquiv _).symm a).isLt
       simp only [Path.length_nil] at hx
       omega
     | cons q e => exact absurd e.down (not_diagramGraph_D_adj (n := n) (by omega) _ _)
@@ -470,7 +470,7 @@ theorem preprojectiveMk_D_ofPath_eq_zero_of_le
   have hc : ∀ ⦃i j : OrientedQuiver (diagramGraph (DynkinType.D n).cartanMatrix) o⦄, (i ⟶ j) →
       dColoring n ((OrientedQuiver.vertexEquiv _ o).symm i) ≠
         dColoring n ((OrientedQuiver.vertexEquiv _ o).symm j) :=
-    fun _ _ a => (dColoring n).valid a.1
+    fun _ _ a => (dColoring n).valid a.val
   apply preprojectiveMk_ofPath_eq_zero_of_signless o k hc x
   exact signlessPreprojectiveMk_D_ofPath_eq_zero_of_le k _
     (by rwa [Prefunctor.length_mapTotalPath])

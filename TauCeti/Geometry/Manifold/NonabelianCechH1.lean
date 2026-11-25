@@ -191,8 +191,8 @@ variable (IB IG n G) in
 /-- The relation of being `C^n`-cohomologous, on the `C^n` cocycles of the cover `U`. -/
 def contMDiffCohomologousSetoid [LieGroup IG n G] (U : ι → Set B) :
     Setoid {c : ι → ι → B → G // IsContMDiffGroupCocycle IB IG n U c} where
-  r c c' := IsContMDiffCohomologous IB IG n U c.1 c'.1
-  iseqv := ⟨fun c ↦ .refl c.1, .symm, .trans⟩
+  r c c' := IsContMDiffCohomologous IB IG n U c.val c'.val
+  iseqv := ⟨fun c ↦ .refl c.val, .symm, .trans⟩
 
 variable (IB IG n G) in
 /-- The **nonabelian Čech `H¹`** of the cover `U` with coefficients in the `C^n` functions to the
@@ -221,14 +221,14 @@ theorem mk_eq_mk_iff {c c' : ι → ι → B → G} {hc : IsContMDiffGroupCocycl
 @[elab_as_elim]
 theorem ind {motive : NonabelianCechH1 IB IG n G U → Prop}
     (mk : ∀ c hc, motive (mk c hc)) (x : NonabelianCechH1 IB IG n G U) : motive x :=
-  Quotient.ind (fun c ↦ mk c.1 c.2) x
+  Quotient.ind (fun c ↦ mk c.val c.property) x
 
 /-- Descend a function of `C^n` cocycles which is invariant under being `C^n`-cohomologous to a
 function on the nonabelian Čech `H¹`. -/
 def lift {α : Sort*} (f : ∀ c : ι → ι → B → G, IsContMDiffGroupCocycle IB IG n U c → α)
     (hf : ∀ c c' hc hc', IsContMDiffCohomologous IB IG n U c c' → f c hc = f c' hc') :
     NonabelianCechH1 IB IG n G U → α :=
-  Quotient.lift (fun c ↦ f c.1 c.2) fun c c' ↦ hf c.1 c'.1 c.2 c'.2
+  Quotient.lift (fun c ↦ f c.val c.property) fun c c' ↦ hf c.val c'.val c.property c'.property
 
 @[simp]
 theorem lift_mk {α : Sort*} (f : ∀ c : ι → ι → B → G, IsContMDiffGroupCocycle IB IG n U c → α)
@@ -271,7 +271,7 @@ a cocycle `c` on `U` to the cocycle `(k, l) ↦ c (τ k) (τ l)` on `V`. By
 `TauCeti.NonabelianCechH1.refine_eq_refine` it does not depend on the choice of `τ`. -/
 def refine (τ : κ → ι) (hτ : ∀ k, V k ⊆ U (τ k)) :
     NonabelianCechH1 IB IG n G U → NonabelianCechH1 IB IG n G V :=
-  Quotient.map (fun c ↦ ⟨fun k l ↦ c.1 (τ k) (τ l), c.2.comp τ hτ⟩) fun _ _ h ↦ h.comp τ hτ
+  Quotient.map (fun c ↦ ⟨fun k l ↦ c.val (τ k) (τ l), c.property.comp τ hτ⟩) fun _ _ h ↦ h.comp τ hτ
 
 @[simp]
 theorem refine_mk (τ : κ → ι) (hτ : ∀ k, V k ⊆ U (τ k)) (c : ι → ι → B → G)
@@ -338,7 +338,7 @@ variable [LieGroup IG n G]
 sending `[c]` to `[ρ ∘ c]`. -/
 def map [LieGroup IH n H] (ρ : G →* H) (hρ : ContMDiff IG IH n ρ) :
     NonabelianCechH1 IB IG n G U → NonabelianCechH1 IB IH n H U :=
-  Quotient.map (fun c ↦ ⟨fun i j b ↦ ρ (c.1 i j b), c.2.map ρ hρ⟩) fun _ _ h ↦ h.map ρ hρ
+  Quotient.map (fun c ↦ ⟨fun i j b ↦ ρ (c.val i j b), c.property.map ρ hρ⟩) fun _ _ h ↦ h.map ρ hρ
 
 /-- Pushforward of the class of a cocycle `c` is the class of `ρ ∘ c`. -/
 @[simp] theorem map_mk [LieGroup IH n H] (ρ : G →* H) (hρ : ContMDiff IG IH n ρ)

@@ -94,7 +94,7 @@ private theorem lastT_mul_lastT_mul {n : ℕ} (y : stage R q (n + 2)) :
 /-- An element of the stage `n` commutes with the generator `T n`. -/
 private theorem commute_lastT {n : ℕ} (c : stage R q n) :
     Commute (lastT q n) (incl q (n + 1) (incl q n c)) :=
-  Subtype.ext (commute_T_of_mem_stage le_rfl c.2).eq
+  Subtype.ext (commute_T_of_mem_stage le_rfl c.property).eq
 
 private theorem lastT_braid (n : ℕ) :
     lastT q (n + 1) * incl q (n + 2) (lastT q n) * lastT q (n + 1) =
@@ -170,7 +170,7 @@ private theorem extend_incl_mul_lastT_mul_incl (hφ : ∀ x y, φ (x * y) = φ (
   refine Finset.sum_congr rfl fun m _ ↦ ?_
   have hm : incl q (n + 1) a * lastT q n * incl q (n + 1) (incl q n (c m) * rep q n m) =
       incl q (n + 1) (a * incl q n (c m)) * rep q (n + 1) m := by
-    rw [← lastT_mul_rep (Nat.lt_succ_iff.1 m.2)]
+    rw [← lastT_mul_rep (Nat.lt_succ_iff.1 m.isLt)]
     simp only [map_mul, mul_assoc, (commute_lastT (c m)).left_comm]
   rw [hm, extend_incl_mul_rep, ← mul_assoc, hφ]
   simp only [mul_assoc]
@@ -413,7 +413,8 @@ private theorem stageTrace_succ (n : ℕ) :
 private theorem stageTrace_mul_comm :
     ∀ (n : ℕ) (x y : stage R q (n + 1)), stageTrace q z n (x * y) = stageTrace q z n (y * x)
   | 0, x, y | 1, x, y => congrArg _ <| Subtype.ext
-      (commute_of_mem_stage_two (stage_mono (by omega) x.2) (stage_mono (by omega) y.2)).eq
+      (commute_of_mem_stage_two (stage_mono (by omega) x.property) (stage_mono
+          (by omega) y.property)).eq
   | n + 2, x, y => by
     rw [stageTrace_succ, stageTrace_succ]
     exact extend_extend_mul_comm z (stageTrace_mul_comm n)

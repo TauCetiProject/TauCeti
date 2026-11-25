@@ -108,12 +108,12 @@ representatives `(a b; 0 d)` of `SL(2, ℤ) \ ℳₙ` in `FixedDetMatrices.reps 
 modular form this is the classical Hecke operator `Tₙ`
 (`TauCeti.heckeTLevelOne`). -/
 noncomputable def heckeSlashLevelOne (f : ℍ → ℂ) : ℍ → ℂ :=
-  ∑ A : reps (n : ℤ), f ∣[k] toGL (natCast_ne_zero n) A.1
+  ∑ A : reps (n : ℤ), f ∣[k] toGL (natCast_ne_zero n) A.val
 
 /-- The defining equation of `heckeSlashLevelOne`. -/
 theorem heckeSlashLevelOne_def (f : ℍ → ℂ) :
     heckeSlashLevelOne k n f =
-      ∑ A : reps (n : ℤ), f ∣[k] toGL (Int.natCast_ne_zero.2 (NeZero.ne n)) A.1 := (rfl)
+      ∑ A : reps (n : ℤ), f ∣[k] toGL (Int.natCast_ne_zero.2 (NeZero.ne n)) A.val := (rfl)
 
 /-- The slash sum is additive in `f`. -/
 @[simp]
@@ -146,8 +146,8 @@ theorem heckeSlashLevelOne_slash_eq {f : ℍ → ℂ} (hf : ∀ γ ∈ 𝒮ℒ, 
   -- slashing the summand of `A` by `σ` gives the summand of the representative of `A σ`, which
   -- is `repsRightMul hn σ⁻¹ A`
   have hperm (A : reps (n : ℤ)) :
-      (f ∣[k] toGL hn A.1) ∣[k] (mapGL ℚ σ : GL (Fin 2) ℚ) =
-        f ∣[k] toGL hn (repsRightMul hn σ⁻¹ A.1) := by
+      (f ∣[k] toGL hn A.val) ∣[k] (mapGL ℚ σ : GL (Fin 2) ℚ) =
+        f ∣[k] toGL hn (repsRightMul hn σ⁻¹ A.val) := by
     rw [toGL_repsRightMul, inv_inv, SlashAction.slash_mul, SlashAction.slash_mul, hfσ,
       ← SlashAction.slash_mul]
   have hmaps : Set.MapsTo (repsRightMul hn σ⁻¹) (reps (n : ℤ)) (reps (n : ℤ)) :=
@@ -225,11 +225,11 @@ theorem heckeTLevelOne_coe_cuspForm (f : CuspForm 𝒮ℒ k) :
 /-- The representative `(a b; 0 d)` of the factor pair `(a, d)` and the residue `b` is
 `(1 b; 0 d) · diag(a, 1)`. -/
 private theorem toGL_repsEquiv_symm
-    (x : Σ p : ↥(n : ℤ).natAbs.divisorsAntidiagonal, Fin p.1.2) :
-    toGL (natCast_ne_zero n) ((repsEquiv (natCast_ne_zero n)).symm x).1 =
-      upperTriRep x.1.1.2 x.2 * natDiagGL 2 ![x.1.1.1, 1] := by
-  have ha : 0 < x.1.1.1 :=
-    Nat.pos_of_ne_zero (Nat.left_ne_zero_of_mem_divisorsAntidiagonal x.1.2)
+    (x : Σ p : ↥(n : ℤ).natAbs.divisorsAntidiagonal, Fin p.val.2) :
+    toGL (natCast_ne_zero n) ((repsEquiv (natCast_ne_zero n)).symm x).val =
+      upperTriRep x.1.val.2 x.2 * natDiagGL 2 ![x.1.val.1, 1] := by
+  have ha : 0 < x.1.val.1 :=
+    Nat.pos_of_ne_zero (Nat.left_ne_zero_of_mem_divisorsAntidiagonal x.1.property)
   apply Units.ext
   rw [Units.val_mul, coe_toGL, coe_repsEquiv_symm_apply, coe_upperTriRep,
     natDiagGL_coe 2 _ fun i ↦ by fin_cases i <;> simp [ha]]
@@ -245,9 +245,9 @@ theorem heckeSlashLevelOne_eq_sum_heckeSlashUpperTri_slash (f : ℍ → ℂ) :
   rw [heckeSlashLevelOne_def, ← (repsEquiv (natCast_ne_zero n)).symm.sum_comp,
     Fintype.sum_sigma]
   have h (i : ↥(n : ℤ).natAbs.divisorsAntidiagonal) :
-      ∑ b : Fin i.1.2, f ∣[k] toGL (natCast_ne_zero n)
-          ((repsEquiv (natCast_ne_zero n)).symm ⟨i, b⟩).1 =
-        heckeSlashUpperTri k i.1.2 f ∣[k] (natDiagGL 2 ![i.1.1, 1] : GL (Fin 2) ℚ) := by
+      ∑ b : Fin i.val.2, f ∣[k] toGL (natCast_ne_zero n)
+          ((repsEquiv (natCast_ne_zero n)).symm ⟨i, b⟩).val =
+        heckeSlashUpperTri k i.val.2 f ∣[k] (natDiagGL 2 ![i.val.1, 1] : GL (Fin 2) ℚ) := by
     simp only [toGL_repsEquiv_symm, SlashAction.slash_mul, heckeSlashUpperTri_def,
       SlashAction.sum_slash]
   rw [Fintype.sum_congr _ _ h, Finset.sum_coe_sort (n : ℤ).natAbs.divisorsAntidiagonal

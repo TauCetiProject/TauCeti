@@ -75,10 +75,13 @@ theorem pow_mem_congruenceSubgroup_pow_succ {I : Ideal R} {p n : ℕ} (hp : (p :
     rcases Nat.eq_zero_or_pos m with rfl | hm
     · rw [Nat.choose_one_right, zero_add, pow_one, nsmul_eq_mul, pow_succ']
       exact Ideal.mul_mem_mul hp (hD h)
-    · have hle : I ^ (n * (m + 1)) ≤ I ^ (n + 1) :=
+    · -- The convolution bound lands in the `(m + 1)`-st power of `I ^ n` as a `k`-submodule.
+      have hDm := LinearMap.convPow_apply_mem_pow (M := (I ^ n).restrictScalars k) hD (m + 1) h
+      rw [← Submodule.restrictScalars_pow m.succ_ne_zero, Submodule.restrictScalars_mem,
+        ← pow_mul] at hDm
+      have hle : I ^ (n * (m + 1)) ≤ I ^ (n + 1) :=
         Ideal.pow_le_pow_right (by have := Nat.pos_of_ne_zero hn; nlinarith)
-      exact Submodule.smul_of_tower_mem _ _
-        (hle (pow_mul I n (m + 1) ▸ LinearMap.convPow_apply_mem_pow hD (m + 1) h))
+      exact Submodule.smul_of_tower_mem _ _ (hle hDm)
   have hpow : toConv (x ^ p).ofConv.toLinearMap - 1 =
       ∑ m ∈ Finset.range p, p.choose (m + 1) • D ^ (m + 1) := by
     rw [AlgHom.toLinearMap_convPow, show toConv x.ofConv.toLinearMap = D + 1 by simp [hD_def],
@@ -117,7 +120,7 @@ theorem isProP_congruenceSubgroup [TopologicalSpace R]
   rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]
   refine hVU (hn ?_)
   exact congruenceSubgroup_mono k H R (Ideal.pow_le_pow_right n.le_succ)
-    (pow_pow_mem_congruenceSubgroup_pow_succ hp x.2 n)
+    (pow_pow_mem_congruenceSubgroup_pow_succ hp x.property n)
 
 variable (k H R) in
 /-- Over a compact Hausdorff noetherian local ring `R` whose residue field has characteristic `p`,

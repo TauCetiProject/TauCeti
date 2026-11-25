@@ -20,8 +20,8 @@ also makes the weight unitary, so its norm coefficients can be used in the Diric
 arithmetic characters.
 
 The trivial character extends to the indicator of ideals prime to the modulus, which is generally
-different from the everywhere-good unitary weight. Pointwise products still commute with the
-extension.
+different from the everywhere-good unitary weight, except at the trivial modulus
+(`toUnitaryIdealWeight_one`). Pointwise products still commute with the extension.
 
 The zero extension here is the usual convention for the Dirichlet series of a ray class
 character. See Neukirch, *Algebraic Number Theory*, Chapter VII, §6.
@@ -105,8 +105,17 @@ noncomputable def toUnitaryIdealWeight (χ : RayClassCharacter 𝔪) :
 /-- The underlying multiplicative weight of the unitary extension. -/
 @[simp]
 theorem val_toUnitaryIdealWeight (χ : RayClassCharacter 𝔪) :
-    χ.toUnitaryIdealWeight.1 = χ.toMultiplicativeIdealWeight := by
+    χ.toUnitaryIdealWeight.val = χ.toMultiplicativeIdealWeight := by
   simp [toUnitaryIdealWeight]
+
+/-- At the trivial modulus, the trivial ray class character gives the everywhere-good trivial
+unitary ideal weight. -/
+@[simp]
+theorem toUnitaryIdealWeight_one :
+    (1 : RayClassCharacter (Modulus.one K)).toUnitaryIdealWeight = 1 := by
+  apply Subtype.ext
+  ext I
+  by_cases hI : I = ⊥ <;> simp [Modulus.support_one, hI, Ideal.isPrimeTo_iff]
 
 /-- The unitary extension respects pointwise multiplication of characters. -/
 @[simp]
@@ -145,5 +154,42 @@ theorem toUnitaryIdealWeight_injective :
   intro χ ψ h
   apply toMultiplicativeIdealWeight_injective
   simpa only [← val_toUnitaryIdealWeight] using congrArg Subtype.val h
+
+/-- The extended weight of `χ` takes the same value on principal ideals `(a)` and `(b)` whenever
+`a ≠ 0`, `b ≠ 0`, `b - a ∈ 𝔪.finitePart`, and `a`, `b` have the same strict sign at every real
+place of `𝔪.infinitePart`. -/
+theorem toMultiplicativeIdealWeight_span_eq_of_sub_mem (χ : RayClassCharacter 𝔪) {a b : 𝓞 K}
+    (ha0 : a ≠ 0) (hb0 : b ≠ 0) (hsub : b - a ∈ 𝔪.finitePart)
+    (hsign : ∀ w ∈ 𝔪.infinitePart,
+      0 < InfinitePlace.embedding_of_isReal w.property (a : K) *
+        InfinitePlace.embedding_of_isReal w.property (b : K)) :
+    χ.toMultiplicativeIdealWeight (Ideal.span {b}) =
+      χ.toMultiplicativeIdealWeight (Ideal.span {a}) := by
+  by_cases ha : (Ideal.span {a}).IsPrimeTo 𝔪.support
+  · have hb : (Ideal.span {b}).IsPrimeTo 𝔪.support :=
+      (isPrimeTo_span_iff_of_sub_mem ha0 hb0 hsub).mpr ha
+    rw [toMultiplicativeIdealWeight_apply_of_isPrimeTo χ hb,
+      toMultiplicativeIdealWeight_apply_of_isPrimeTo χ ha, onIdeals_apply, onIdeals_apply,
+      idealClass_span_eq_of_sub_mem _ _ hsub hsign]
+  · have hb : ¬ (Ideal.span {b}).IsPrimeTo 𝔪.support :=
+      mt (isPrimeTo_span_iff_of_sub_mem ha0 hb0 hsub).mp ha
+    rw [toMultiplicativeIdealWeight_apply_of_not_isPrimeTo χ hb,
+      toMultiplicativeIdealWeight_apply_of_not_isPrimeTo χ ha]
+
+/-- **Periodicity of a ray class weight on positive natural integers.** For `k ≥ 1`, shifting `k`
+by `Ideal.absNorm 𝔪.finitePart` leaves `χ.toMultiplicativeIdealWeight (Ideal.span {(k : 𝓞 K)})`
+unchanged. -/
+theorem toMultiplicativeIdealWeight_span_natCast_add_absNorm (χ : RayClassCharacter 𝔪) {k : ℕ}
+    (hk : 1 ≤ k) :
+    χ.toMultiplicativeIdealWeight (Ideal.span {((k + Ideal.absNorm 𝔪.finitePart : ℕ) : 𝓞 K)}) =
+      χ.toMultiplicativeIdealWeight (Ideal.span {(k : 𝓞 K)}) := by
+  refine χ.toMultiplicativeIdealWeight_span_eq_of_sub_mem (Nat.cast_ne_zero.mpr (by omega))
+    (Nat.cast_ne_zero.mpr (by omega)) ?_ fun w _ ↦ ?_
+  · push_cast
+    rw [add_sub_cancel_left]
+    exact Ideal.absNorm_mem 𝔪.finitePart
+  · have hkpos : (0 : ℝ) < k := by exact_mod_cast hk
+    have hsumpos : (0 : ℝ) < (k + Ideal.absNorm 𝔪.finitePart : ℕ) := by exact_mod_cast (by omega)
+    simpa using mul_pos hkpos hsumpos
 
 end TauCeti.GlobalNumberFields.RayClassCharacter

@@ -51,8 +51,16 @@ At `𝕜 = ℝ`, `IsCoercive.isUnit_continuousLinearMapOfBilin`,
 `IsCoercive.solutionOfFunctional_eq` bridge Mathlib's real `IsCoercive` API with the `RCLike`
 constructions.
 
+The same equation restricted to a subspace `S` has a Galerkin solution `w ∈ S`, characterised by
+`B (u - w) y = 0` for every `y ∈ S`. Céa's lemma bounds its error by the best approximation error
+in `S`, up to the factor `M / C`, where `M` bounds `B` and `C` is its coercivity constant; this is
+how solutions of the equation on an increasing family of subspaces with dense union are shown to
+converge.
+
 ## Main declarations
 
+* `TauCeti.isCoercive_innerSL`: the inner product of a real inner product space is coercive, so
+  that the variational theory applies to `⟪u, v⟫_V = κ ⟪J u, J v⟫`.
 * `IsCoercive.solutionOfInner`, `IsCoercive.solutionOfFunctional`: real Lax--Milgram solution
   maps and uniqueness theorems.
 * `InnerProductSpace.isUnit_continuousLinearMapOfBilin_of_coercive` and
@@ -67,12 +75,16 @@ constructions.
   under compact `j`, Hermitian symmetry, nonnegativity of the real part of its quadratic form,
   kernel characterization `(range j)ᗮ`, nonvanishing and injectivity on normed `H`, and
   self-adjointness, dense range, and invertibility of `1 + S` on a Hilbert space `H`.
+* `LinearMap.norm_sub_le_div_mul_norm_sub`: Céa's lemma, `‖u - w‖ ≤ M / C * ‖u - v‖` for the
+  Galerkin solution `w` and every `v` in the subspace, where `M` bounds `B`.
 
 ## References
 
 * P. D. Lax and A. N. Milgram, *Parabolic equations*, Contributions to the Theory of Partial
   Differential Equations, Annals of Mathematics Studies **33** (1954), 167--190.
 * T. Kato, *Perturbation Theory for Linear Operators*, Springer (1995), Chapter VI, §2.1.
+* J. Céa, *Approximation variationnelle des problèmes aux limites*, Ann. Inst. Fourier 14 (1964),
+  345–444.
 -/
 
 public section
@@ -94,6 +106,53 @@ theorem apply_self_nonneg (hB : IsCoercive B) (v : V) : 0 ≤ B v v :=
   (by positivity : 0 ≤ C * ‖v‖ * ‖v‖).trans (hle v)
 
 end Seminormed
+
+end IsCoercive
+
+namespace TauCeti
+
+/-- The inner product of a real inner product space is a coercive bilinear form, with constant
+`1`. With `B = innerSL ℝ` on `V`, the variational problem `B u v = κ ⟪J u, J v⟫` is the eigenvalue
+problem of the form `⟪u, v⟫_V - ⟪J u, J v⟫_H` with eigenvalue `κ - 1`. -/
+theorem isCoercive_innerSL {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] :
+    IsCoercive (innerSL ℝ : V →L[ℝ] V →L[ℝ] ℝ) :=
+  ⟨1, one_pos, fun u ↦ by rw [one_mul, innerSL_apply_apply, real_inner_self_eq_norm_mul_norm]⟩
+
+end TauCeti
+
+namespace LinearMap
+
+variable {V : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- **Céa's lemma.** Let `B` be a bilinear form with `B x y ≤ M ‖x‖ ‖y‖` and `C ‖x‖² ≤ B x x`
+for some `C > 0`, and let `w` be a Galerkin approximation of `u` in a subspace `S`: `w ∈ S` and
+`B (u - w) y = 0` for every `y ∈ S`. Then `w` is within the factor `M / C` of the best
+approximation of `u` in `S`: `‖u - w‖ ≤ M / C * ‖u - v‖` for every `v ∈ S`. -/
+theorem norm_sub_le_div_mul_norm_sub (B : V →ₗ[ℝ] V →ₗ[ℝ] ℝ) {C M : ℝ} (hC : 0 < C)
+    (hle : ∀ x, C * ‖x‖ * ‖x‖ ≤ B x x) (hM : ∀ x y, B x y ≤ M * ‖x‖ * ‖y‖)
+    {S : Submodule ℝ V} {u w v : V} (hw : w ∈ S) (hv : v ∈ S)
+    (horth : ∀ y ∈ S, B (u - w) y = 0) : ‖u - w‖ ≤ M / C * ‖u - v‖ := by
+  -- Galerkin orthogonality: `B (u - w) (u - w) = B (u - w) (u - v)`, since `v - w ∈ S`.
+  have hsplit : B (u - w) (u - w) = B (u - w) (u - v) := by
+    conv_lhs => rw [← sub_add_sub_cancel u v w, map_add]
+    rw [sub_add_sub_cancel, horth _ (S.sub_mem hv hw), add_zero]
+  have key : C * ‖u - w‖ * ‖u - w‖ ≤ M * ‖u - w‖ * ‖u - v‖ :=
+    (hle _).trans (hsplit ▸ hM _ _)
+  -- Coercivity and the bound at `u - v` give `C ≤ M` unless `‖u - v‖ = 0`.
+  have hd : C * ‖u - v‖ * ‖u - v‖ ≤ M * ‖u - v‖ * ‖u - v‖ := (hle _).trans (hM _ _)
+  rw [div_mul_eq_mul_div, le_div_iff₀ hC]
+  rcases (norm_nonneg (u - w)).eq_or_lt with h | h
+  · rw [← h, zero_mul]
+    rcases (norm_nonneg (u - v)).eq_or_lt with h' | h'
+    · rw [← h', mul_zero]
+    · have hCM : C ≤ M := le_of_mul_le_mul_right (by simpa only [mul_assoc] using hd)
+        (mul_pos h' h')
+      exact mul_nonneg (hC.le.trans hCM) h'.le
+  · nlinarith
+
+end LinearMap
+
+namespace IsCoercive
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
 variable {B : V →L[ℝ] V →L[ℝ] ℝ}

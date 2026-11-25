@@ -104,7 +104,7 @@ theorem exists_mem_sobolevGaugeGroup_gaugeTransform_eq_iff {k : ℕ} (hk : 1 < k
   refine ⟨fun ⟨u, hu, hux⟩ ↦ Multiset.ext.2 fun z ↦ ?_, fun hDD' ↦ ?_⟩
   · -- Continuous gauges do not change the zero multiplicities.
     have h := isZeroMultiplicity_sectionValue_gaugeTransform
-      (continuous_subtype_val.comp ((mem_sobolevGaugeGroup _ u).1 hu).1) hD'
+      (continuous_subtypeVal.comp ((mem_sobolevGaugeGroup _ u).1 hu).1) hD'
     rw [hux] at h
     exact congrFun (hD.unique h) z
   · subst hDD'
@@ -135,14 +135,15 @@ variable {k : ℕ} [Fact (1 < k)]
 private theorem exists_sym_isZeroMultiplicity_of_mem_sobolevVortices
     (x : sobolevVortices f m k) :
     ∃ D : Sym ℂ m, IsZeroMultiplicity (sectionValue x) fun z ↦ (D : Multiset ℂ).count z := by
-  obtain ⟨hxc, hsol⟩ := x.2
+  obtain ⟨hxc, hsol⟩ := x.property
   have hxi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ (x : ℂ → EuclideanSpace ℝ (Fin 4)) w i :=
     (contDiff_piLp 2).1 hxc i
   have hd (i : Fin 4) : Differentiable ℝ fun w ↦ (x : ℂ → EuclideanSpace ℝ (Fin 4)) w i :=
     (hxi i).differentiable two_ne_zero
   exact exists_sym_isZeroMultiplicity_sectionValue (k := 2) (by norm_num) (hxi 0) (hxi 1) (hd 2)
     (hd 3) (fun w ↦ by simp [hsol w])
-    (tendsto_sectionValue_mul_inv_pow (by exact_mod_cast (Fact.out : 1 < k)) x.1.2 hxc.continuous)
+    (tendsto_sectionValue_mul_inv_pow (by exact_mod_cast (Fact.out : 1 < k)) x.val.property
+        hxc.continuous)
 
 /-- **The zero divisor of a `C²` vortex of `A_m^k`**, the point of `Sym ℂ m` listing the zeros of
 its section with multiplicity. It is characterized by `sobolevVortexDivisor_eq_iff`. -/
@@ -170,8 +171,10 @@ theorem sobolevVortexDivisor_eq_sobolevVortexDivisor_iff {hs : 1 < (k : ℝ) + 1
     {x y : sobolevVortices f m k} :
     sobolevVortexDivisor x = sobolevVortexDivisor y ↔
       ∃ u : sobolevGaugeGroup hs, u • (y : framedFieldSpace f m k) = x := by
-  rw [← Sym.coe_inj, ← exists_mem_sobolevGaugeGroup_gaugeTransform_eq_iff Fact.out x.1.2 y.1.2
-    x.2.1 y.2.1 x.2.2 y.2.2 (isZeroMultiplicity_sectionValue_sobolevVortexDivisor x)
+  rw [← Sym.coe_inj, ← exists_mem_sobolevGaugeGroup_gaugeTransform_eq_iff Fact.out x.val.property
+      y.val.property
+    x.property.1 y.property.1 x.property.2 y.property.2
+        (isZeroMultiplicity_sectionValue_sobolevVortexDivisor x)
     (isZeroMultiplicity_sectionValue_sobolevVortexDivisor y)]
   simp only [Subtype.ext_iff, coe_sobolevGaugeGroup_smul, Subtype.exists, exists_prop]
 
@@ -199,7 +202,7 @@ theorem smul_mem_sobolevVortices {hs : 1 < (k : ℝ) + 1} (hk : 3 < k) (u : sobo
     u • x ∈ sobolevVortices f m k := by
   obtain ⟨hxc, hsol⟩ := hx
   have hu : ContDiff ℝ (2 + 1) fun z ↦ ((u : ℂ → Circle) z : ℂ) :=
-    contDiff_of_mem_sobolevGaugeGroup (k := 3) (by norm_cast; omega) u.2
+    contDiff_of_mem_sobolevGaugeGroup (k := 3) (by norm_cast; omega) u.property
   refine ⟨by simpa only [coe_sobolevGaugeGroup_smul] using contDiff_gaugeTransform hu hxc,
     fun z ↦ ?_⟩
   rw [coe_sobolevGaugeGroup_smul, equation_gaugeTransform_eq_zero_iff
@@ -211,7 +214,8 @@ theorem smul_mem_sobolevVortices {hs : 1 < (k : ℝ) + 1} (hk : 3 < k) (u : sobo
 @[simp]
 theorem sobolevVortexDivisor_smul {hs : 1 < (k : ℝ) + 1} (hk : 3 < k) (u : sobolevGaugeGroup hs)
     (x : sobolevVortices f m k) :
-    sobolevVortexDivisor ⟨u • x.1, smul_mem_sobolevVortices hk u x.2⟩ = sobolevVortexDivisor x :=
+    sobolevVortexDivisor ⟨u • x.val, smul_mem_sobolevVortices hk u x.property⟩ =
+        sobolevVortexDivisor x :=
   sobolevVortexDivisor_eq_sobolevVortexDivisor_iff.2 ⟨u, rfl⟩
 
 /-- **The `C²` framed vortices of `A_m^k` as a sub-action of `G_(k+1)`**, for `k ≥ 4`. -/
@@ -231,17 +235,17 @@ to the `G_(k+1)`-orbits of `C²` vortices of `A_m^k`. -/
 def sobolevVortexModuliDivisor {hs : 1 < (k : ℝ) + 1} (hk : 3 < k) :
     MulAction.orbitRel.Quotient (sobolevGaugeGroup hs)
       (sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) → Sym ℂ m :=
-  Quotient.lift (fun x ↦ sobolevVortexDivisor ⟨x.1, mem_sobolevVortexSubMulAction.1 x.2⟩)
+  Quotient.lift (fun x ↦ sobolevVortexDivisor ⟨x.val, mem_sobolevVortexSubMulAction.1 x.property⟩)
     fun x y h ↦ by
       obtain ⟨u, rfl⟩ := MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 h)
-      exact sobolevVortexDivisor_smul hk u ⟨y.1, y.2⟩
+      exact sobolevVortexDivisor_smul hk u ⟨y.val, y.property⟩
 
 /-- The class of a `C²` vortex of `A_m^k` goes to its divisor. -/
 @[simp]
 theorem sobolevVortexModuliDivisor_mk {hs : 1 < (k : ℝ) + 1} {hk : 3 < k}
     (x : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) :
     sobolevVortexModuliDivisor hk (Quotient.mk'' x) =
-      sobolevVortexDivisor ⟨x.1, mem_sobolevVortexSubMulAction.1 x.2⟩ :=
+      sobolevVortexDivisor ⟨x.val, mem_sobolevVortexSubMulAction.1 x.property⟩ :=
   (rfl)
 
 /-- **The Sobolev moduli of framed vortices embed in `Sym ℂ m`** (Taubes's uniqueness theorem on

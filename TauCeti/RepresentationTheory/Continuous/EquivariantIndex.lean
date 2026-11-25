@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.Adjoint
+public import TauCeti.CategoryTheory.GrothendieckGroup.Split.HomFinrank
+public import TauCeti.RepresentationTheory.Continuous.Intertwining
 public import TauCeti.RepresentationTheory.Continuous.KernelCokernel
-public import TauCeti.RepresentationTheory.RepresentationRing.Continuous
+public import TauCeti.RepresentationTheory.Continuous.Multiplicity
+public import TauCeti.RepresentationTheory.Intertwining
+public import TauCeti.RepresentationTheory.RepresentationRing.Compact
 
 /-!
 # The equivariant index of an equivariant Fredholm operator
@@ -32,6 +36,29 @@ on invertible operators and does not change under composition with equivalences 
 representations on either side. For unitary representations on Hilbert spaces, the cokernel is the
 kernel of the adjoint, so `ind_G T = [ker T] - [ker T†]` and `ind_G T† = - ind_G T`.
 
+The Hom rank `TauCeti.SplitK0.homFinrank 𝕜 σ` of a finite-dimensional continuous representation
+`σ` takes `ind_G T` to `dim Hom_G(σ, ker T) - dim Hom_G(σ, coker T)`. When `𝕜` is `ℝ` or `ℂ`,
+`G` is compact and `σ` is irreducible, continuous finite-dimensional representations split into
+irreducibles, and this is the multiplicity of `σ` in `ind_G T` times the dimension of the
+self-intertwiners of `σ`; over `ℂ` it is the multiplicity itself. Over a general complete
+nontrivially normed field this reading can fail, as representations of a compact group need not
+be semisimple there. For strongly continuous unitary
+representations of a group on Hilbert spaces, this difference is the index of the action of `T`
+on the multiplicity spaces of `σ`, so it is constant along a norm-continuous family of equivariant
+Fredholm operators over a preconnected parameter set: every Hom rank of the equivariant index is
+homotopy invariant, with no compactness assumption on the group.
+
+For a compact group acting unitarily on Hilbert spaces, the equivariant index is a homotopy
+invariant: it is constant along a norm-continuous family of equivariant Fredholm operators over a
+preconnected parameter set, and locally constant in operator norm. Along such a family the
+dimension of the intertwiners from a fixed representation into the kernel, minus that into the
+cokernel, is constant, by
+`ContinuousOn.finrank_contIntertwiningMap_kerRepresentation_sub_cokerRepresentation_eq`.
+Applied to the irreducible pieces, this makes `ker T₀ ⊕ coker T₁` and `ker T₁ ⊕ coker T₀`
+equivalent at any two parameters, since both are semisimple; so the two indices have the same
+character, and characters detect the representation ring of a compact group
+(`TauCeti.repRingCharacter_contRepRingToRepRing_injective`).
+
 ## Main definitions
 
 * `ContIntertwiningMap.equivariantIndex`: the virtual representation `[ker T] - [coker T]` of an
@@ -44,6 +71,8 @@ kernel of the adjoint, so `ind_G T = [ker T] - [ker T†]` and `ind_G T† = - i
   is the difference of the characters of the kernel and the cokernel.
 * `ContIntertwiningMap.repRingCharacter_equivariantIndex_one`: evaluated at the identity, the
   character is the Fredholm index.
+* `ContIntertwiningMap.homFinrank_equivariantIndex`: the Hom rank of `σ` on the equivariant
+  index is `dim Hom_G(σ, ker T) - dim Hom_G(σ, coker T)`.
 * `ContIntertwiningMap.equivariantIndex_eq_zero_of_bijective`: bijective intertwining maps have
   equivariant index zero.
 * `ContIntertwiningMap.equivariantIndex_comp_equiv` and
@@ -52,12 +81,21 @@ kernel of the adjoint, so `ind_G T = [ker T] - [ker T†]` and `ind_G T† = - i
 * `ContIntertwiningMap.equivariantIndex_eq_sub_ker_adjoint`: for unitary representations on Hilbert
   spaces, `ind_G T = [ker T] - [ker T†]`.
 * `ContIntertwiningMap.equivariantIndex_adjoint`: taking the adjoint negates the equivariant index.
+* `ContinuousOn.homFinrank_equivariantIndex_eq`: for unitary representations of a
+  group on Hilbert spaces, homotopy invariance of the Hom ranks of the equivariant index (its
+  multiplicities, for irreducible `σ` with scalar self-intertwiners) over a preconnected parameter
+  set.
+* `ContinuousOn.equivariantIndex_eq`: **homotopy invariance**, the equivariant index is constant
+  along a norm-continuous family of equivariant Fredholm operators on a preconnected set.
+* `ContIntertwiningMap.exists_pos_equivariantIndex_eq_of_norm_sub_lt`: **local constancy**, the
+  intertwining maps close enough to an equivariant Fredholm operator in operator norm are Fredholm
+  with the same equivariant index.
 
 ## References
 
 * M. F. Atiyah and I. M. Singer, *The index of elliptic operators: I*, Ann. of Math. 87 (1968),
-  484–530, §6, for the equivariant index `[ker T] - [coker T]` with values in the representation
-  ring `R(G)`.
+  484–530, §§4 and 6, for the equivariant index `[ker T] - [coker T]` with values in the
+  representation ring `R(G)`.
 -/
 
 public section
@@ -126,6 +164,23 @@ theorem repRingCharacter_equivariantIndex_one :
   have := hT.finite_ker
   have := hT.finite_coker
   simp [repRingCharacter_equivariantIndex, ContinuousLinearMap.index_eq_finrank_sub]
+
+/-- The Hom rank of a finite-dimensional continuous representation `σ` on the equivariant index
+is the dimension of the intertwiners from `σ` into the kernel minus that into the cokernel. Over
+`𝕜 = ℂ`, for a compact group `G` and an irreducible `σ`, this is the multiplicity of `σ` in the
+equivariant index. -/
+@[simp]
+theorem homFinrank_equivariantIndex {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V] (σ : ContRepresentation 𝕜 G V)
+    (hσ : Continuous σ) :
+    SplitK0.homFinrank 𝕜 (ContFDRep.ofContRepresentation σ hσ) (T.equivariantIndex hT hπ hρ) =
+      Module.finrank 𝕜 (σ →ⁱL T.kerRepresentation) -
+        Module.finrank 𝕜 (σ →ⁱL T.cokerRepresentation) := by
+  have := hT.finite_ker
+  have := hT.isClosed_range
+  have := hT.finite_coker
+  rw [equivariantIndex_def, map_sub, SplitK0.homFinrank_of, SplitK0.homFinrank_of,
+    ContFDRep.finrank_hom_ofContRepresentation, ContFDRep.finrank_hom_ofContRepresentation]
 
 /-- **A bijective intertwining map has equivariant index zero**: its kernel and cokernel are both
 zero. -/
@@ -311,6 +366,142 @@ theorem equivariantIndex_adjoint :
   congr 1
   exact of_kerRepresentation_eq_of_ker_eq _ _ (by rw [adjoint_adjoint]) _ _
 
+include hπu hρu in
+/-- **Homotopy invariance of the Hom ranks of the equivariant index.** Along a family of
+intertwining maps between strongly continuous unitary representations of a group on Hilbert
+spaces, continuous in operator norm and Fredholm on a preconnected set `s`, the Hom rank of every
+finite-dimensional continuous representation `σ` on the equivariant index is the same at every
+point of `s`. This is the multiplicity of `σ` when `G` is compact and `σ` is irreducible with only
+scalar self-intertwiners (as over `ℂ`). -/
+theorem _root_.ContinuousOn.homFinrank_equivariantIndex_eq {X : Type*}
+    [TopologicalSpace X] (σ : ContFDRep 𝕜 G)
+    {A : X → π →ⁱL ρ} {s : Set X} (hA : ContinuousOn (fun x ↦ (A x).toContinuousLinearMap) s)
+    (hFredholm : ∀ x ∈ s, (A x).toContinuousLinearMap.IsFredholm) (hs : IsPreconnected s)
+    {x y : X} (hx : x ∈ s) (hy : y ∈ s) :
+    SplitK0.homFinrank 𝕜 σ ((A x).equivariantIndex (hFredholm x hx) hπ hρ) =
+      SplitK0.homFinrank 𝕜 σ ((A y).equivariantIndex (hFredholm y hy) hπ hρ) := by
+  obtain ⟨σ₀, hσ₀, ⟨e⟩⟩ := ContFDRep.exists_iso_ofContRepresentation σ
+  rw [SplitK0.homFinrank_congr e, homFinrank_equivariantIndex, homFinrank_equivariantIndex]
+  exact hA.finrank_contIntertwiningMap_kerRepresentation_sub_cokerRepresentation_eq σ₀ hπu hρu
+    hFredholm hs hx hy
+
 end Adjoint
+
+section Homotopy
+
+variable {𝕜 G E F X : Type*} [RCLike 𝕜] [Group G] [NormedAddCommGroup E]
+  [InnerProductSpace 𝕜 E] [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+  [CompleteSpace F] {π : ContRepresentation 𝕜 G E} {ρ : ContRepresentation 𝕜 G F}
+  [TopologicalSpace X] {A : X → π →ⁱL ρ} {s : Set X}
+
+/-- Along a norm-continuous family of equivariant Fredholm operators on a preconnected set, the
+kernel at `x` together with the cokernel at `y`, and the kernel at `y` together with the cokernel
+at `x`, receive intertwining maps of the same dimension from every finite-dimensional
+representation `τ`. -/
+private theorem finrank_intertwiningMap_prod_eq (hπu : π.IsUnitary) (hρu : ρ.IsUnitary)
+    (hA : ContinuousOn (fun x ↦ (A x).toContinuousLinearMap) s)
+    (hF : ∀ x ∈ s, (A x).toContinuousLinearMap.IsFredholm) (hs : IsPreconnected s)
+    {x y : X} (hx : x ∈ s) (hy : y ∈ s)
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+    (τ : Representation 𝕜 G V) :
+    Module.finrank 𝕜 (Representation.IntertwiningMap τ
+        ((A x).kerRepresentation.toRepresentation.prod
+          (A y).cokerRepresentation.toRepresentation)) =
+      Module.finrank 𝕜 (Representation.IntertwiningMap τ
+        ((A y).kerRepresentation.toRepresentation.prod
+          (A x).cokerRepresentation.toRepresentation)) := by
+  have := (hF x hx).finite_ker
+  have := (hF x hx).finite_coker
+  have := (hF y hy).finite_ker
+  have := (hF y hy).finite_coker
+  have h := hA.finrank_contIntertwiningMap_kerRepresentation_sub_cokerRepresentation_eq
+    τ.toContRepresentation hπu hρu hF hs hx hy
+  simp only [← Representation.IntertwiningMap.prodEquiv.finrank_eq, Module.finrank_prod]
+  simp only [ContRepresentation.intertwiningMapEquiv.finrank_eq] at h
+  rw [Representation.toContRepresentation_toRepresentation] at h
+  omega
+
+/-- **Homotopy invariance of the equivariant index.** Along a family of intertwining maps between
+unitary representations of a compact group on Hilbert spaces, continuous in operator norm and
+Fredholm on a preconnected set `s`, the equivariant index `[ker A x] - [coker A x]` in the
+representation ring is the same at every point of `s`. -/
+theorem _root_.ContinuousOn.equivariantIndex_eq [TopologicalSpace G] [IsTopologicalGroup G]
+    [CompactSpace G]
+    (hπ : ∀ v, Continuous fun g ↦ π g v) (hρ : ∀ w, Continuous fun g ↦ ρ g w)
+    (hπu : π.IsUnitary) (hρu : ρ.IsUnitary)
+    (hA : ContinuousOn (fun x ↦ (A x).toContinuousLinearMap) s)
+    (hF : ∀ x ∈ s, (A x).toContinuousLinearMap.IsFredholm) (hs : IsPreconnected s)
+    {x y : X} (hx : x ∈ s) (hy : y ∈ s) :
+    (A x).equivariantIndex (hF x hx) hπ hρ = (A y).equivariantIndex (hF y hy) hπ hρ := by
+  have := (hF x hx).finite_ker
+  have := (hF x hx).finite_coker
+  have := (hF x hx).isClosed_range
+  have := (hF y hy).finite_ker
+  have := (hF y hy).finite_coker
+  have := (hF y hy).isClosed_range
+  -- The kernel and cokernel representations are continuous, hence so are the two direct sums
+  -- `ker (A x) ⊕ coker (A y)` and `ker (A y) ⊕ coker (A x)`, which are therefore semisimple.
+  have := isSemisimpleRepresentation_of_continuous _
+    ((A x).continuous_kerRepresentation_of_isFredholm (hF x hx) hπ)
+  have := isSemisimpleRepresentation_of_continuous _
+    ((A y).continuous_kerRepresentation_of_isFredholm (hF y hy) hπ)
+  have := isSemisimpleRepresentation_of_continuous _
+    ((A x).continuous_cokerRepresentation_of_isFredholm (hF x hx) hρ)
+  have := isSemisimpleRepresentation_of_continuous _
+    ((A y).continuous_cokerRepresentation_of_isFredholm (hF y hy) hρ)
+  -- Their irreducible pieces see the same intertwiner dimensions, so they are equivalent.
+  obtain ⟨e⟩ := Representation.nonempty_equiv_of_finrank_intertwiningMap_eq
+    ((A x).kerRepresentation.toRepresentation.prod (A y).cokerRepresentation.toRepresentation)
+    ((A y).kerRepresentation.toRepresentation.prod (A x).cokerRepresentation.toRepresentation)
+    (fun τ _ ↦ finrank_intertwiningMap_prod_eq hπu hρu hA hF hs hx hy τ.toRepresentation)
+    (fun τ _ ↦ finrank_intertwiningMap_prod_eq hπu hρu hA hF hs hx hy τ.toRepresentation)
+  -- Hence the two indices have the same character, and characters detect `R(G)`.
+  refine repRingCharacter_contRepRingToRepRing_injective (funext fun g ↦ ?_)
+  have hchar := congrFun (Representation.char_iso e) g
+  rw [Representation.char_prod, Representation.char_prod] at hchar
+  simp only [repRingCharacter_equivariantIndex]
+  -- The goal is `χ_ker(x) - χ_coker(x) = χ_ker(y) - χ_coker(y)` at `g`, and `hchar` is
+  -- `χ_ker(x) + χ_coker(y) = χ_ker(y) + χ_coker(x)` at `g`.
+  linear_combination hchar
+
+/-- **Local constancy of the equivariant index.** An equivariant Fredholm operator `T₀` between
+unitary representations of a compact group on Hilbert spaces has a neighbourhood in operator norm
+in which every intertwining map is Fredholm with the same equivariant index. -/
+theorem exists_pos_equivariantIndex_eq_of_norm_sub_lt [TopologicalSpace G]
+    [IsTopologicalGroup G] [CompactSpace G]
+    (hπ : ∀ v, Continuous fun g ↦ π g v) (hρ : ∀ w, Continuous fun g ↦ ρ g w)
+    (hπu : π.IsUnitary) (hρu : ρ.IsUnitary) (T₀ : π →ⁱL ρ)
+    (h₀ : T₀.toContinuousLinearMap.IsFredholm) :
+    ∃ ε > 0, ∀ T : π →ⁱL ρ, ‖T.toContinuousLinearMap - T₀.toContinuousLinearMap‖ < ε →
+      ∃ hT : T.toContinuousLinearMap.IsFredholm,
+        T.equivariantIndex hT hπ hρ = T₀.equivariantIndex h₀ hπ hρ := by
+  obtain ⟨ε, hε, hball⟩ := h₀.exists_pos_isFredholm_and_index_eq_of_norm_sub_lt
+  refine ⟨ε, hε, fun T hT ↦ ⟨(hball _ hT).1, ?_⟩⟩
+  -- The straight segment from `T₀` to `T` stays in the ball, so it is a continuous path of
+  -- equivariant Fredholm operators.
+  let A : ℝ → π →ⁱL ρ := fun t ↦ T₀ + (t : 𝕜) • (T - T₀)
+  have hA (t : ℝ) : (A t).toContinuousLinearMap = T₀.toContinuousLinearMap +
+      (t : 𝕜) • (T.toContinuousLinearMap - T₀.toContinuousLinearMap) := by
+    simp [A]
+  have hF : ∀ t ∈ Set.Icc (0 : ℝ) 1, (A t).toContinuousLinearMap.IsFredholm := by
+    intro t ht
+    refine (hball _ ?_).1
+    rw [hA, add_sub_cancel_left, norm_smul, RCLike.norm_ofReal, abs_of_nonneg ht.1]
+    exact (mul_le_of_le_one_left (norm_nonneg _) ht.2).trans_lt hT
+  have hcont : ContinuousOn (fun t ↦ (A t).toContinuousLinearMap) (Set.Icc (0 : ℝ) 1) := by
+    simp_rw [hA]
+    fun_prop
+  have h := ContinuousOn.equivariantIndex_eq (A := A) hπ hρ hπu hρu hcont hF isPreconnected_Icc
+    (Set.right_mem_Icc.mpr zero_le_one) (Set.left_mem_Icc.mpr zero_le_one)
+  -- The endpoints are `T` and `T₀`, and the index only depends on the operator.
+  have hindex {S S' : π →ⁱL ρ} (hSS' : S = S') (hS : S.toContinuousLinearMap.IsFredholm)
+      (hS' : S'.toContinuousLinearMap.IsFredholm) :
+      S.equivariantIndex hS hπ hρ = S'.equivariantIndex hS' hπ hρ := by
+    subst hSS'
+    rfl
+  rwa [hindex (S := A 1) (by simp [A]) _ (hball _ hT).1,
+    hindex (S := A 0) (by simp [A]) _ h₀] at h
+
+end Homotopy
 
 end ContIntertwiningMap

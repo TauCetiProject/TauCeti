@@ -207,10 +207,10 @@ variable {ι K : Type*} [Fintype ι] [Field K]
 /-- The rank-one projector of a line of `ι → K`: the matrix `x xᵀ / (xᵀ x)` for any nonzero
 vector `x` spanning the line. -/
 def projector (p : ℙ K (ι → K)) : Matrix ι ι K :=
-  p.lift (fun x ↦ rankOneProjector x.1) fun x y c h ↦ by
+  p.lift (fun x ↦ rankOneProjector x.val) fun x y c h ↦ by
     rw [h, rankOneProjector_smul]
     rintro rfl
-    exact x.2 (by simp [h])
+    exact x.property (by simp [h])
 
 @[simp]
 theorem projector_mk (x : ι → K) (hx : x ≠ 0) : projector (mk K x hx) = rankOneProjector x :=

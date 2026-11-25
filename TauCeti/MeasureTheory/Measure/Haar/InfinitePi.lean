@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.Probability.ProductMeasure
+import TauCeti.Probability.ProductMeasure
 
 /-!
 # Haar measure instances for infinite product probability measures
@@ -23,7 +24,8 @@ inherits left, right, and inversion invariance, positivity on nonempty open sets
   `MeasureTheory.Measure.infinitePi.isInvInvariant` (and additive counterparts): invariance of
   `Measure.infinitePi μ`.
 * `MeasureTheory.Measure.infinitePi.isOpenPosMeasure`: positivity on nonempty open subsets of
-  `Π i, G i`.
+  `Π i, G i`, with no measurability assumption on open subsets of the factors (via the
+  unconditional cylinder formula `TauCeti.infinitePi_pi'`).
 * `MeasureTheory.Measure.infinitePi.isHaarMeasure`,
   `MeasureTheory.Measure.infinitePi.isAddHaarMeasure`: Haar measure instances on `Π i, G i`.
 
@@ -77,20 +79,20 @@ instance infinitePi.isInvInvariant [∀ i, Inv (G i)] [∀ i, MeasurableInv (G i
 /-- An infinite product of probability measures that are positive on nonempty open sets is positive
 on nonempty open sets of the product topology. -/
 instance infinitePi.isOpenPosMeasure [∀ i, TopologicalSpace (G i)]
-    [∀ i, OpensMeasurableSpace (G i)] [∀ i, IsOpenPosMeasure (μ i)] :
+    [∀ i, IsOpenPosMeasure (μ i)] :
     IsOpenPosMeasure (infinitePi μ) where
   open_pos := by
     rintro U hU ⟨a, ha⟩
     obtain ⟨s, t, ht, hstU⟩ := isOpen_pi_iff.mp hU a ha
     refine ne_of_gt (lt_of_lt_of_le ?_ (measure_mono hstU))
-    rw [infinitePi_pi _ fun i hi ↦ (ht i hi).1.measurableSet, CanonicallyOrderedAdd.prod_pos]
+    rw [TauCeti.infinitePi_pi', CanonicallyOrderedAdd.prod_pos]
     exact fun i hi ↦ (ht i hi).1.measure_pos (μ i) ⟨a i, (ht i hi).2⟩
 
 /-- An infinite product of probability Haar measures is a Haar measure on the product group. -/
 @[to_additive /-- An infinite product of probability additive Haar measures is an additive Haar
 measure on the product additive group. -/]
 instance infinitePi.isHaarMeasure [∀ i, Group (G i)] [∀ i, TopologicalSpace (G i)]
-    [∀ i, OpensMeasurableSpace (G i)] [∀ i, MeasurableMul (G i)] [∀ i, IsHaarMeasure (μ i)] :
+    [∀ i, MeasurableMul (G i)] [∀ i, IsHaarMeasure (μ i)] :
     IsHaarMeasure (infinitePi μ) where
 
 end MeasureTheory.Measure

@@ -152,11 +152,11 @@ variable (φ s p q) in
 /-- A continuous linear equivalence `e : F ≃L[ℂ] G` on the fiber induces an isomorphism of Besov
 spaces `B^s_{p,q}(E, F) ≃L[ℂ] B^s_{p,q}(E, G)`. -/
 def postcompEquiv (e : F ≃L[ℂ] G) : BesovSpace F φ s p q ≃L[ℂ] BesovSpace G φ s p q :=
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     (postcomp φ s p q (e : F →L[ℂ] G))
     (postcomp φ s p q (e.symm : G →L[ℂ] F))
-    (fun u ↦ by simp [postcomp_postcomp])
-    (fun v ↦ by simp [postcomp_postcomp])
+    (ContinuousLinearMap.ext fun v ↦ by simp [postcomp_postcomp])
+    (ContinuousLinearMap.ext fun u ↦ by simp [postcomp_postcomp])
 
 @[simp]
 theorem coe_postcompEquiv (e : F ≃L[ℂ] G) :

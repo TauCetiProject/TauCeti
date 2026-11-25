@@ -140,7 +140,7 @@ theorem mem_map_restrict_iff [DecidableEq ι] (K : PreAbstractSimplicialComplex 
     refine ⟨(mem_restrict_iff K s τ).mp hτ, ?_⟩
     rintro v hv
     obtain ⟨w, _, rfl⟩ := Finset.mem_image.mp hv
-    exact w.2
+    exact w.property
   · rintro ⟨hσ, hs⟩
     have heq : (σ.subtype (· ∈ s)).image Subtype.val = σ := by
       simpa only [Finset.map_eq_image, Function.Embedding.coe_subtype] using
@@ -161,7 +161,7 @@ theorem map_inclusion_restrict {K : PreAbstractSimplicialComplex ι} {s t : Set 
     (hs : ∀ τ ∈ K, (τ : Set ι) ⊆ s) (hst : s ⊆ t) :
     (K.restrict s).map (Set.inclusion hst) = K.restrict t := by
   let _ := Classical.decEq ι
-  rw [← map_inj_of_injective Subtype.val Subtype.val_injective, map_map, Set.val_comp_inclusion]
+  rw [← map_inj_of_injOn Subtype.val Subtype.val_injective.injOn, map_map, Set.val_comp_inclusion]
   exact (map_val_restrict hs).trans
     (map_val_restrict fun τ hτ => (hs τ hτ).trans hst).symm
 
@@ -181,7 +181,7 @@ def restrict (K : AbstractSimplicialComplex ι) (s : Set ι) : AbstractSimplicia
     (PreAbstractSimplicialComplex.restrict K.toPreAbstractSimplicialComplex s) fun v => by
       rw [PreAbstractSimplicialComplex.mem_faces, PreAbstractSimplicialComplex.mem_restrict_iff,
         Finset.image_singleton, mem_toPreAbstractSimplicialComplex]
-      exact K.singleton_mem v.1
+      exact K.singleton_mem v.val
 
 /-- Forgetting singletons commutes with restricting the vertex set. -/
 @[simp]

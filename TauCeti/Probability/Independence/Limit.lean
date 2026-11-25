@@ -58,7 +58,7 @@ theorem indep_comap_process_of_ae_tendsto {ι S : Type*} {E : S → Type*}
           (fun (z : (s : S) → E s) (s : I) => z s) ∘ fun ω s => X i s ω := rfl
       rw [hcomp, ← MeasurableSpace.comap_comp]
       exact MeasurableSpace.comap_mono
-        (measurable_pi_iff.2 fun s => measurable_pi_apply s.1).comap_le)
+        (measurable_pi_iff.2 fun s => measurable_pi_apply s.val).comap_le)
   have hmeas : ∀ᶠ i in l, AEStronglyMeasurable (fun ω => ∏ s : I, f s (X i s ω)) P :=
     hXpi.mono fun _ hi => (hg.comp_aemeasurable hi).aestronglyMeasurable
   have hbound :

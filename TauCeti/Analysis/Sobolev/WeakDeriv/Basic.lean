@@ -184,6 +184,10 @@ weaken them for no gain.
   the directions of a basis.
 * `TauCeti.contDiffOn_sum_innerSL_and_hasWeakFDerivOn`: `Cᵏ` weak derivatives along an orthonormal
   basis assemble into a `Cᵏ` weak Fréchet derivative.
+* `TauCeti.HasWeakLineDerivOn.hasWeakFDerivOn_toSpanSingleton` and
+  `TauCeti.HasWeakLineDerivOn.hasWeakFDerivOn_toSpanSingletonLIE_compLp`: on `ℝ`, a weak line
+  derivative in direction `1` lifts to a weak Fréchet derivative (and via `compLp` for an `Lᵖ`
+  derivative).
 * `TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt` and
   `TauCeti.hasWeakFDerivOn_of_differentiableOn`: for an additive Haar measure `μ` on a
   finite-dimensional `E` with its Borel σ-algebra and a complete `F`, a function with a classical
@@ -195,8 +199,8 @@ weaken them for no gain.
   as weak derivative.
 * `TauCeti.hasWeakFDerivOn_of_forall_integral_fderiv_smul`: for a complete `F`, any `μ` and
   functions `u` and `U` that are locally integrable on the whole space, integration by parts on
-  the whole space against every `C¹` function with compact support makes `U` a weak derivative of
-  `u` on every open set, which is how a function with an integrable singularity, such as a
+  the whole space against every smooth function with compact support makes `U` a weak derivative
+  of `u` on every open set, which is how a function with an integrable singularity, such as a
   fundamental solution, is shown to be weakly differentiable.
 * `TauCeti.hasWeakLineDerivOn_const`: against an additive Haar measure on a finite-dimensional
   `E` with its Borel σ-algebra and for complete `F`, a constant has weak derivative `0`.
@@ -214,6 +218,8 @@ weaken them for no gain.
   finite-dimensional `E` with its Borel σ-algebra, uniqueness almost everywhere on `Ω`.
 * `TauCeti.HasWeakLineDerivOn.ae_eq_zero_of_isOpen`: under the same assumptions, a weak line
   derivative vanishes almost everywhere on an open set where the function does.
+* `TauCeti.HasWeakFDerivOn.ae_apply_eq_zero_of_notMem_tsupport`: in particular, a weak
+  derivative vanishes almost everywhere on `Ω` off the support of the function.
 * `TauCeti.HasWeakLineDerivOn.ae_eq_lineDeriv` and `TauCeti.HasWeakFDerivOn.ae_eq_fderiv`: for an
   additive Haar measure on a finite-dimensional `E` with its Borel σ-algebra, where the classical
   derivative exists and is locally integrable on `Ω`, the weak one agrees with it almost
@@ -354,33 +360,34 @@ theorem HasWeakFDerivOn.locallyIntegrableOn_deriv [FiniteDimensional ℝ E] {U :
   let b := Module.finBasis ℝ E
   -- The `i`-th term `x ↦ (b.coord i).smulRight (U x (b i))` of the expansion of `U` in `b`.
   let g : Fin (Module.finrank ℝ E) → E → E →L[ℝ] F := fun i x =>
-    ContinuousLinearMap.smulRightL ℝ E F (LinearMap.toContinuousLinearMap (b.coord i)) (U x (b i))
+    ContinuousLinearMap.smulRightL ℝ ℝ ℝ E F (LinearMap.toContinuousLinearMap (b.coord i))
+      (U x (b i))
   have hU : U = fun x => ∑ i, g i x := by
     funext x
     ext v
     calc U x v = U x (∑ i, b.repr v i • b i) := by rw [b.sum_repr]
       _ = _ := by rw [map_sum]; simp [g]
   have hg : ∀ i, LocallyIntegrableOn (g i) Ω μ := fun i =>
-    (ContinuousLinearMap.smulRightL ℝ E F _).locallyIntegrableOn_comp
+    (ContinuousLinearMap.smulRightL ℝ ℝ ℝ E F _).locallyIntegrableOn_comp
       (h.hasWeakLineDerivOn (b i)).locallyIntegrableOn_deriv
   have hsum : LocallyIntegrableOn (fun x => ∑ i, g i x) Ω μ :=
     locallyIntegrableOn_finsetSum Finset.univ fun i _ => hg i
   rwa [hU]
 
-/-- Integration by parts on the whole space against every `C¹` function with compact support
+/-- Integration by parts on the whole space against every smooth function with compact support
 makes `U` a weak derivative of `u` on every open set, provided `F` is complete and `u` and `U`
 are locally integrable on the whole space. This is how a function with an integrable
 singularity, such as a fundamental solution, is shown to be weakly differentiable. -/
 theorem hasWeakFDerivOn_of_forall_integral_fderiv_smul [CompleteSpace F] {U : E → E →L[ℝ] F}
     (hu : LocallyIntegrable u μ) (hU : LocallyIntegrable U μ)
-    (h : ∀ g : E → ℝ, ContDiff ℝ 1 g → HasCompactSupport g → ∀ v,
+    (h : ∀ g : E → ℝ, ContDiff ℝ ∞ g → HasCompactSupport g → ∀ v,
       ∫ x, fderiv ℝ g x v • u x ∂μ = -∫ x, g x • U x v ∂μ) (Ω : Opens E) :
     HasWeakFDerivOn μ Ω u U := by
   refine fun v ↦ ⟨inferInstance, hu.locallyIntegrableOn _, ?_, fun φ ↦ ?_⟩
   · simpa [Function.comp_def] using (ContinuousLinearMap.apply ℝ F v).locallyIntegrableOn_comp
       (hU.locallyIntegrableOn Ω)
-  have hφ : ContDiff ℝ 1 (φ : E → ℝ) := φ.contDiff.of_le (by simp)
-  simp_rw [((hφ.differentiable one_ne_zero) _).lineDeriv_eq_fderiv]
+  have hφ : ContDiff ℝ ∞ (φ : E → ℝ) := φ.contDiff
+  simp_rw [((hφ.differentiable (by simp)) _).lineDeriv_eq_fderiv]
   exact h φ hφ φ.hasCompactSupport v
 
 /-- The zero function has weak derivative `0` in every direction, for every `μ`: no translation
@@ -820,6 +827,32 @@ theorem contDiffOn_sum_innerSL_and_hasWeakFDerivOn
   intro i
   simpa only [OrthonormalBasis.coe_toBasis, hDb] using hdG i
 
+/-- On `ℝ`, a weak line derivative `u' : ℝ → F` in direction `1` lifts via
+`ContinuousLinearMap.toSpanSingleton ℝ` to a weak Fréchet derivative. -/
+theorem HasWeakLineDerivOn.hasWeakFDerivOn_toSpanSingleton
+    {μ : Measure ℝ} {Ω : Opens ℝ} {u u' : ℝ → F}
+    (h : HasWeakLineDerivOn μ Ω u u' 1) :
+    HasWeakFDerivOn μ Ω u fun s => ContinuousLinearMap.toSpanSingleton ℝ (u' s) := by
+  rw [hasWeakFDerivOn_iff]
+  intro r
+  simpa only [ContinuousLinearMap.toSpanSingleton_apply, Pi.smul_def, smul_eq_mul, mul_one] using
+    h.smul_direction r
+
+/-- On `ℝ`, a weak line derivative `g : Lp F p (μ.restrict Ω)` in direction `1` lifts via
+`ContinuousLinearMap.toSpanSingletonLIE ℝ F` to a weak Fréchet derivative. -/
+theorem HasWeakLineDerivOn.hasWeakFDerivOn_toSpanSingletonLIE_compLp
+    {μ : Measure ℝ} {Ω : Opens ℝ} {p : ENNReal}
+    {u : ℝ → F} {g : Lp F p (μ.restrict Ω)}
+    (h : HasWeakLineDerivOn μ Ω u g 1) :
+    HasWeakFDerivOn μ Ω u
+      ((ContinuousLinearMap.toSpanSingletonLIE ℝ F).toLinearIsometry.toContinuousLinearMap.compLp
+        g) := by
+  refine h.hasWeakFDerivOn_toSpanSingleton.congr_ae_deriv ?_
+  filter_upwards [(ContinuousLinearMap.toSpanSingletonLIE ℝ F)
+    |>.toLinearIsometry.toContinuousLinearMap.coeFn_compLp g] with s hs
+  simp only [hs, LinearIsometry.coe_toContinuousLinearMap,
+    LinearIsometryEquiv.coe_toLinearIsometry, ContinuousLinearMap.toSpanSingletonLIE_apply]
+
 /-! ### Classical derivatives are weak derivatives
 
 This is where the measure is taken to be an additive Haar measure on a finite-dimensional `E` with
@@ -981,6 +1014,13 @@ theorem HasWeakLineDerivOn.ae_eq_zero_of_isOpen {u' : E → F}
     (((h.mono inf_le_left).congr_ae huW).ae_eq hasWeakLineDerivOn_zero)
   filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet, ae_restrict_of_ae hW]
     with x hxΩ hx hxt using hx ⟨hxΩ, hxt⟩
+
+/-- **A weak derivative vanishes off the support.** If `Du` is a weak derivative of `u` on `Ω`,
+then for every direction `c`, `Du x c = 0` for almost every `x ∈ Ω` outside the support of `u`. -/
+theorem HasWeakFDerivOn.ae_apply_eq_zero_of_notMem_tsupport {Du : E → E →L[ℝ] F}
+    (h : HasWeakFDerivOn μ Ω u Du) (c : E) : ∀ᵐ x ∂μ.restrict Ω, x ∉ tsupport u → Du x c = 0 :=
+  (h.hasWeakLineDerivOn c).ae_eq_zero_of_isOpen (isClosed_tsupport u).isOpen_compl
+    (.of_forall fun _ hx => image_eq_zero_of_notMem_tsupport hx)
 
 /-- **A weak Fréchet derivative is unique almost everywhere.** Two weak derivatives of `u` on `Ω`
 agree almost everywhere on `Ω`.

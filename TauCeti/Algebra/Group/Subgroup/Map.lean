@@ -36,13 +36,15 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 * `TauCeti.QuotientGroup.congrOfMapEq`: its coset-space companion — an isomorphism carrying `A`
   onto `B` gives a bijection `G ⧸ A ≃ H ⧸ B`. Neither subgroup need be normal, which is what
   distinguishes it from Mathlib's `QuotientGroup.congr`.
+* `TauCeti.QuotientGroup.mapComap`: the coset-space map `G ⧸ ψ⁻¹(B) → H ⧸ B`, `[g] ↦ [ψ g]`,
+  along a homomorphism `ψ : G →* H`; neither subgroup need be normal.
 * `TauCeti.QuotientGroup.congrComapOfSurjectiveMk`: a homomorphism `ψ : G →* H` meeting every
-  coset of `B` gives a bijection `G ⧸ ψ⁻¹(B) ≃ H ⧸ B`.
+  coset of `B` gives a bijection `G ⧸ ψ⁻¹(B) ≃ H ⧸ B`, namely `mapComap`.
+* `TauCeti.QuotientGroup.congrOfSurjectiveOfKerLe`: coset spaces transport along a surjection
+  whose kernel lies in the subgroup.
 
 ## Main results
 
-* `QuotientGroup.congrOfSurjectiveOfKerLe`: coset spaces transport along a surjection whose
-  kernel lies in the subgroup.
 * `MonoidHom.center_le_ker`: the centre lies in the kernel of a surjection onto a
   centreless group.
 * `Subgroup.map_inf_comap`, `AddSubgroup.map_inf_comap`: the image of `H ⊓ f⁻¹(K)` is
@@ -58,10 +60,14 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 * `Subgroup.map_map_conj`: the image of a conjugate subgroup is the conjugate of the image.
 * `Subgroup.comap_map_conj`: the preimage of a conjugate subgroup is the conjugate of the
   preimage.
+* `Subgroup.normal_subgroupOf_map_range`, `AddSubgroup.normal_addSubgroupOf_map_range`: the image
+  of a normal subgroup is normal in the range of the homomorphism.
 * `Subgroup.map_quotientGroupMap_map_mk'`: taking images in quotients commutes with the maps
   induced on quotients.
 * `QuotientGroup.map_mk'_eq_top`, `QuotientAddGroup.map_mk'_eq_top`: the image of `K` in `G ⧸ N`
   is everything exactly when `N ⊔ K = ⊤`.
+* `TauCeti.QuotientGroup.injective_mapComap`, `TauCeti.QuotientGroup.surjective_mapComap_iff`:
+  the coset-space map is injective, and surjective exactly when `ψ` meets every coset of `B`.
 * `MonoidHom.subgroupCongr_injective`: transport along equalities of the domain and codomain
   preserves injectivity.
 * `Subgroup.subtype_comp_subgroupOfEquivOfLe`, `TauCeti.Subgroup.subtype_comp_congrOfMapEq`: the
@@ -199,7 +205,7 @@ homomorphism itself instead. -/
 @[simp]
 theorem _root_.MonoidHom.coe_subgroupCongr_apply {A A' : Subgroup G} {B B' : Subgroup H}
     (hA : A' = A) (hB : B' = B) (f : A →* B) (x : A') :
-    (f.subgroupCongr hA hB x : H) = f ⟨x, hA ▸ x.2⟩ := by
+    (f.subgroupCongr hA hB x : H) = f ⟨x, hA ▸ x.property⟩ := by
   simp only [MonoidHom.subgroupCongr, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     MulEquiv.subgroupCongr_symm_apply]
   exact congrArg (fun y ↦ (f y : H)) (Subtype.ext (MulEquiv.subgroupCongr_apply hA x))
@@ -318,7 +324,7 @@ theorem _root_.MulEquiv.commutatorCongr_symm (e : G ≃* H) :
 /-- The image of `H ⊓ f⁻¹(K)` under `f` is the part of `K` inside `f(H)`. -/
 @[to_additive /-- The image of `H ⊓ f⁻¹(K)` under an additive homomorphism `f` is the part of `K`
 inside `f(H)`. -/]
-theorem _root_.Subgroup.map_inf_comap {G N : Type*} [Group G] [Group N]
+theorem _root_.Subgroup.map_inf_comap {N : Type*} [Group N]
     (H : Subgroup G) (K : Subgroup N) (f : G →* N) :
     (H ⊓ K.comap f).map f = H.map f ⊓ K := by
   apply SetLike.coe_injective
@@ -379,7 +385,7 @@ The map `κ` only witnesses `g⁻¹ v g ∈ U` for each `v ∈ V`; it need not b
 continuous. -/
 theorem _root_.Subgroup.le_map_conj_of_forall_coe_eq (V U : Subgroup G) (g : G) (κ : V → U)
     (hκ : ∀ v : V, (κ v : G) = g⁻¹ * v * g) : V ≤ U.map (MulAut.conj g).toMonoidHom :=
-  fun v hv ↦ Subgroup.mem_map.2 ⟨κ ⟨v, hv⟩, (κ ⟨v, hv⟩).2, by simp [hκ, mul_assoc]⟩
+  fun v hv ↦ Subgroup.mem_map.2 ⟨κ ⟨v, hv⟩, (κ ⟨v, hv⟩).property, by simp [hκ, mul_assoc]⟩
 
 /-- The preimage under a homomorphism `f` of the conjugate of `R` by `f g` is the conjugate by `g`
 of the preimage of `R`. -/
@@ -389,6 +395,16 @@ theorem _root_.Subgroup.comap_map_conj (R : Subgroup H) (f : G →* H) (g : G) :
   ext x
   rw [Subgroup.mem_comap, Subgroup.mem_map_equiv, Subgroup.mem_map_equiv, Subgroup.mem_comap,
     MulAut.conj_symm_apply, MulAut.conj_symm_apply, map_mul, map_mul, map_inv]
+
+/-- The image of a normal subgroup is normal in the range of the homomorphism: the range is the
+image of the whole group, which normalizes the image. -/
+@[to_additive /-- The image of a normal additive subgroup is normal in the range of the additive
+homomorphism: the range is the image of the whole group, which normalizes the image. -/]
+instance _root_.Subgroup.normal_subgroupOf_map_range (N : Subgroup G) [N.Normal] (f : G →* H) :
+    ((N.map f).subgroupOf f.range).Normal :=
+  Subgroup.normal_subgroupOf_of_le_normalizer <| by
+    rw [MonoidHom.range_eq_map, ← Subgroup.normalizer_eq_top (H := N)]
+    exact Subgroup.le_normalizer_map f
 
 /-- The image of a subgroup in `G ⧸ N`, pushed forward along the map `G ⧸ N →* H ⧸ M` induced by
 `f`, is the image in `H ⧸ M` of the image of the subgroup under `f`.
@@ -449,6 +465,45 @@ theorem QuotientGroup.congrOfMapEq_mk (e : G ≃* H) {A : Subgroup G} {B : Subgr
     (h : A.map (e : G →* H) = B) (a : G) :
     QuotientGroup.congrOfMapEq e h (QuotientGroup.mk a) = QuotientGroup.mk (e a) := by rfl
 
+/-- **The coset-space map along a homomorphism.** For `ψ : G →* H` and a subgroup `B ≤ H`, the
+map `G ⧸ ψ⁻¹(B) → H ⧸ B`, `[g] ↦ [ψ g]`. Neither subgroup need be normal, which is what
+distinguishes it from Mathlib's `QuotientGroup.map`. It is injective
+(`TauCeti.QuotientGroup.injective_mapComap`), and when `ψ` meets every coset of `B` it is the
+bijection `TauCeti.QuotientGroup.congrComapOfSurjectiveMk`
+(`TauCeti.QuotientGroup.coe_congrComapOfSurjectiveMk`). -/
+def QuotientGroup.mapComap (ψ : G →* H) (B : Subgroup H) : G ⧸ B.comap ψ → H ⧸ B :=
+  Quotient.map' ψ fun a b h ↦ by
+    rwa [QuotientGroup.leftRel_apply, Subgroup.mem_comap, map_mul, map_inv,
+      ← QuotientGroup.leftRel_apply] at h
+
+/-- `TauCeti.QuotientGroup.mapComap` sends the coset of `g` to the coset of `ψ g`. -/
+@[simp] theorem QuotientGroup.mapComap_mk (ψ : G →* H) (B : Subgroup H) (g : G) :
+    QuotientGroup.mapComap ψ B (g : G ⧸ B.comap ψ) = (ψ g : H ⧸ B) :=
+  (rfl)
+
+/-- `TauCeti.QuotientGroup.mapComap` composed with the projection of `G` is the projection of `H`
+composed with `ψ`. -/
+theorem QuotientGroup.mapComap_comp_mk (ψ : G →* H) (B : Subgroup H) :
+    QuotientGroup.mapComap ψ B ∘ (QuotientGroup.mk : G → G ⧸ B.comap ψ) =
+      (QuotientGroup.mk : H → H ⧸ B) ∘ ψ :=
+  funext (QuotientGroup.mapComap_mk ψ B)
+
+/-- `TauCeti.QuotientGroup.mapComap` is injective, since `ψ⁻¹(B)` is the full preimage of `B`. -/
+theorem QuotientGroup.injective_mapComap (ψ : G →* H) (B : Subgroup H) :
+    Function.Injective (QuotientGroup.mapComap ψ B) := by
+  intro x y hxy
+  induction x using QuotientGroup.induction_on with | H a =>
+  induction y using QuotientGroup.induction_on with | H b =>
+  simpa only [QuotientGroup.mapComap_mk, QuotientGroup.eq, Subgroup.mem_comap, map_mul,
+    map_inv] using hxy
+
+/-- `TauCeti.QuotientGroup.mapComap` is surjective exactly when `ψ` meets every coset of `B`. -/
+theorem QuotientGroup.surjective_mapComap_iff (ψ : G →* H) (B : Subgroup H) :
+    Function.Surjective (QuotientGroup.mapComap ψ B) ↔
+      Function.Surjective ((QuotientGroup.mk : H → H ⧸ B) ∘ ψ) := by
+  rw [← QuotientGroup.mapComap_comp_mk]
+  exact ⟨fun h ↦ h.comp QuotientGroup.mk_surjective, Function.Surjective.of_comp⟩
+
 /-- **Coset spaces transport to a preimage.** If `ψ : G →* H` meets every left coset of `B`, that
 is, `G` acts transitively on `H ⧸ B` through `ψ`, then the map `G ⧸ ψ⁻¹(B) → H ⧸ B` induced by
 `ψ` on representatives is a bijection.
@@ -459,10 +514,8 @@ Unlike `QuotientGroup.congrOfSurjectiveOfKerLe`, `ψ` itself need not be surject
 subgroup need be normal. -/
 noncomputable def QuotientGroup.congrComapOfSurjectiveMk (ψ : G →* H) (B : Subgroup H)
     (hψ : Function.Surjective fun g : G ↦ (ψ g : H ⧸ B)) : G ⧸ B.comap ψ ≃ H ⧸ B :=
-  (Quotient.congrRight fun a b ↦ by
-    simp only [QuotientGroup.leftRel_apply, Setoid.ker_def,
-      QuotientGroup.eq, Subgroup.mem_comap, map_mul, map_inv]).trans
-    (Setoid.quotientKerEquivOfSurjective (fun g : G ↦ (ψ g : H ⧸ B)) hψ)
+  Equiv.ofBijective (QuotientGroup.mapComap ψ B)
+    ⟨QuotientGroup.injective_mapComap ψ B, (QuotientGroup.surjective_mapComap_iff ψ B).2 hψ⟩
 
 /-- `QuotientGroup.congrComapOfSurjectiveMk` sends the coset of `a` to the coset of `ψ a`. -/
 @[simp]
@@ -470,6 +523,13 @@ theorem QuotientGroup.congrComapOfSurjectiveMk_mk (ψ : G →* H) (B : Subgroup 
     (hψ : Function.Surjective fun g : G ↦ (ψ g : H ⧸ B)) (a : G) :
     QuotientGroup.congrComapOfSurjectiveMk ψ B hψ (QuotientGroup.mk a) =
       QuotientGroup.mk (ψ a) :=
+  (rfl)
+
+/-- When `ψ` meets every coset of `B`, the bijection
+`TauCeti.QuotientGroup.congrComapOfSurjectiveMk` is `TauCeti.QuotientGroup.mapComap`. -/
+theorem QuotientGroup.coe_congrComapOfSurjectiveMk (ψ : G →* H) (B : Subgroup H)
+    (hψ : Function.Surjective fun g : G ↦ (ψ g : H ⧸ B)) :
+    ⇑(QuotientGroup.congrComapOfSurjectiveMk ψ B hψ) = QuotientGroup.mapComap ψ B :=
   (rfl)
 
 /-- **Coset spaces transport along a surjection whose kernel lies in the subgroup.** For `ψ`

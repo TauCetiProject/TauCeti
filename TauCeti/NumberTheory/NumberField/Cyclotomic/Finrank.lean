@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
-import TauCeti.NumberTheory.Cyclotomic.Adjoin
 
 /-!
 # The degree of a cyclotomic extension of a number field
@@ -16,7 +15,8 @@ Mathlib computes the degree of an `m`-th cyclotomic extension either over `ℚ`
 (`IsCyclotomicExtension.Rat.finrank`) or over a base for which the `m`-th cyclotomic polynomial
 is already known to be irreducible (`IsCyclotomicExtension.finrank`). Neither is directly usable
 over a general number field `K`, where irreducibility of `Φ_m` over `K` is exactly what has to be
-established.
+established. If two cyclotomic extensions over a common base both have full degree, the
+relative degree is the quotient of their totients.
 
 This file supplies the arithmetic criterion: if `m` is coprime to the discriminant of `K`, then
 
@@ -37,6 +37,8 @@ input below.
   of an `m`-th cyclotomic field divides `m`. This is the divisibility input that turns
   coprimality to `m` into coprimality of discriminants.
 * `IsCyclotomicExtension.finrank_eq_totient`: the degree identity `[M : K] = φ m`.
+* `IsCyclotomicExtension.finrank_eq_totient_div`: the relative degree between two cyclotomic
+  extensions of full degree over a common base.
 * `IsPrimitiveRoot.finrank_adjoin_eq_totient`: the base case `[ℚ(ζ) : ℚ] = φ m` for a primitive
   `m`-th root of unity `ζ` in an arbitrary field of characteristic zero.
 
@@ -60,6 +62,22 @@ public section
 open scoped NumberField
 
 namespace IsCyclotomicExtension
+
+/-- In a tower `F ⊆ K ⊆ L` with cyclotomic conductors `m` for `K / F` and `n` for `L / F`,
+the relative degree is `φ(n) / φ(m)` if both cyclotomic polynomials are irreducible over `F`.
+In particular this applies over `ℚ` for any nonzero conductors, without requiring `m ∣ n`. -/
+theorem finrank_eq_totient_div {F K L : Type*} [Field F] [Field K]
+    [CommRing L] [IsDomain L] [Algebra F K] [Algebra F L] [Algebra K L] [IsScalarTower F K L]
+    {m n : ℕ} [IsCyclotomicExtension {m} F K] [IsCyclotomicExtension {n} F L]
+    (hm : Irreducible (Polynomial.cyclotomic m F)) (hn : Irreducible (Polynomial.cyclotomic n F)) :
+    Module.finrank K L = n.totient / m.totient := by
+  have : NeZero m := ⟨fun h ↦ by simp [h] at hm⟩
+  have : NeZero n := ⟨fun h ↦ by simp [h] at hn⟩
+  have hm0 : Module.finrank F K ≠ 0 := by
+    rw [IsCyclotomicExtension.finrank K hm]
+    exact (Nat.totient_pos.mpr (NeZero.pos m)).ne'
+  rw [← IsCyclotomicExtension.finrank K hm, ← IsCyclotomicExtension.finrank L hn]
+  exact (Module.finrank_div_finrank_cancel_left F K L hm0).symm
 
 namespace Rat
 
@@ -144,10 +162,10 @@ root of unity in a field of characteristic zero, then `[ℚ(ζ) : ℚ] = φ m`.
 
 Mathlib's `IsCyclotomicExtension.Rat.finrank` computes this degree for a field that already carries
 an `IsCyclotomicExtension {m} ℚ` instance; the ambient field here is arbitrary, and the instance for
-`ℚ(ζ)` is supplied by `IsPrimitiveRoot.isCyclotomicExtension_adjoin_singleton`. -/
+`ℚ(ζ)` is supplied by `IsPrimitiveRoot.intermediateField_adjoin_isCyclotomicExtension`. -/
 theorem IsPrimitiveRoot.finrank_adjoin_eq_totient {Ω : Type*} [Field Ω] [CharZero Ω] {m : ℕ}
     [NeZero m] {ζ : Ω} (hζ : IsPrimitiveRoot ζ m) :
     Module.finrank ℚ (IntermediateField.adjoin ℚ {ζ}) = m.totient := by
   have : IsCyclotomicExtension {m} ℚ (IntermediateField.adjoin ℚ {ζ}) :=
-    hζ.isCyclotomicExtension_adjoin_singleton
+    hζ.intermediateField_adjoin_isCyclotomicExtension ℚ
   exact IsCyclotomicExtension.Rat.finrank m _

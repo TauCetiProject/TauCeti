@@ -28,7 +28,7 @@ variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {f g : C(X, Y)}
 def homotopyOfRealProd (hF : Continuous F) (h₀ : ∀ x, F (0, x) = f x) (h₁ : ∀ x, F (1, x) = g x) :
     ContinuousMap.Homotopy f g where
   toFun p := F (p.1, p.2)
-  continuous_toFun := hF.comp (continuous_subtype_val.prodMap continuous_id)
+  continuous_toFun := hF.comp (continuous_subtypeVal.prodMap continuous_id)
   map_zero_left := h₀
   map_one_left := h₁
 

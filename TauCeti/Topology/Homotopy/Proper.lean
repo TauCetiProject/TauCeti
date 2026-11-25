@@ -105,9 +105,10 @@ theorem isProperMap_cast_iff {F : Homotopy f₀ f₁} (h₀ : f₀ = g₀) (h₁
 @[simps!]
 private noncomputable def leftHalfHomeomorph (X : Type*) [TopologicalSpace X] :
     I × X ≃ₜ {p : I × X // (p.1 : ℝ) ≤ 1 / 2} where
-  toFun q := ⟨(⟨(q.1 : ℝ) / 2, by constructor <;> linarith [q.1.2.1, q.1.2.2]⟩, q.2),
-    by dsimp; linarith [q.1.2.2]⟩
-  invFun p := (⟨2 * (p.1.1 : ℝ), by constructor <;> linarith [p.1.1.2.1, p.2]⟩, p.1.2)
+  toFun q := ⟨(⟨(q.1 : ℝ) / 2, by constructor <;> linarith [q.1.property.1, q.1.property.2]⟩, q.2),
+    by dsimp; linarith [q.1.property.2]⟩
+  invFun p :=
+    (⟨2 * (p.val.1 : ℝ), by constructor <;> linarith [p.val.1.property.1, p.property]⟩, p.val.2)
   left_inv q := by
     ext
     · dsimp; ring
@@ -134,7 +135,7 @@ theorem isProperMap_trans_iff {F : Homotopy f₀ f₁} {G : Homotopy f₁ f₂} 
     rw [← (leftHalfHomeomorph X).comp_isProperMap_iff']
     have hcomp : s.domRestrict (F'.trans G') ∘ leftHalfHomeomorph X = F' := by
       ext ⟨u, x⟩
-      have hu : ((u : ℝ) / 2) ≤ 1 / 2 := by linarith [u.2.2]
+      have hu : ((u : ℝ) / 2) ≤ 1 / 2 := by linarith [u.property.2]
       simp only [Function.comp_apply, domRestrict_apply, leftHalfHomeomorph_apply_coe, trans_apply,
         dite_eq_left hu]
       congr 1

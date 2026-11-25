@@ -75,8 +75,8 @@ theorem iIndepFun.indepFun_pi_of_indepFun {X : ι → Ω → α} {Y : ι → Ω 
   refine IndepFun.process_indepFun_process₀ hX hY fun I J ↦ ?_
   have hK := iIndepFun.indepFun_pi_of_indepFun_of_finite (ι := ↥(I ∪ J)) (fun i ↦ hX i)
     (fun i ↦ hY i) (h.precomp Subtype.val_injective) fun i ↦ hXY i
-  exact hK.comp (φ := fun x (i : I) ↦ x ⟨i, Finset.mem_union_left J i.2⟩)
-    (ψ := fun y (j : J) ↦ y ⟨j, Finset.mem_union_right I j.2⟩) (by fun_prop) (by fun_prop)
+  exact hK.comp (φ := fun x (i : I) ↦ x ⟨i, Finset.mem_union_left J i.property⟩)
+    (ψ := fun y (j : J) ↦ y ⟨j, Finset.mem_union_right I j.property⟩) (by fun_prop) (by fun_prop)
 
 end ProbabilityTheory
 

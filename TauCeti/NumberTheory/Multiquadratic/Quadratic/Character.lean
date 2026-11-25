@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Character
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Ramification
 import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.SplitPrime
+import TauCeti.NumberTheory.NumberField.Discriminant.Basic
 import TauCeti.NumberTheory.NumberField.Quadratic.Splitting
 
 /-!
@@ -139,11 +140,8 @@ theorem fundamentalDiscriminantChar_discr_eq_neg_one_iff (hK : finrank ℚ K = 2
 a quadratic field is not `1`. -/
 theorem ringHomComp_fundamentalDiscriminantChar_discr_ne_one (hK : finrank ℚ K = 2) :
     (fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK)).ringHomComp
-      (Int.castRingHom ℂ) ≠ 1 := by
-  refine (MulChar.ringHomComp_ne_one_iff Int.cast_injective).mpr
-    (fundamentalDiscriminantChar_ne_one _ fun h ↦ ?_)
-  have := NumberField.abs_discr_gt_two (K := K) (by omega)
-  rw [h] at this
-  norm_num at this
+      (Int.castRingHom ℂ) ≠ 1 :=
+  (MulChar.ringHomComp_ne_one_iff Int.cast_injective).mpr
+    (fundamentalDiscriminantChar_ne_one _ (NumberField.discr_ne_one (by omega)))
 
 end TauCeti.Multiquadratic

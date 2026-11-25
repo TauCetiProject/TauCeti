@@ -315,8 +315,8 @@ space `AddCircle (2 π R) × Ioo (-1) 1`, it sends `(q, v)` to `(q + ↑(2 R arc
 def circleBilliardQuotient (R : ℝ) :
     AddCircle (2 * Real.pi * R) × Ioo (-1 : ℝ) 1 ≃ₜ
       AddCircle (2 * Real.pi * R) × Ioo (-1 : ℝ) 1 where
-  toFun p := (p.1 + ↑(2 * R * Real.arccos p.2.1), p.2)
-  invFun p := (p.1 - ↑(2 * R * Real.arccos p.2.1), p.2)
+  toFun p := (p.1 + ↑(2 * R * Real.arccos p.2.val), p.2)
+  invFun p := (p.1 - ↑(2 * R * Real.arccos p.2.val), p.2)
   left_inv p := by simp
   right_inv p := by simp
   continuous_toFun := by
@@ -324,24 +324,24 @@ def circleBilliardQuotient (R : ℝ) :
     exact continuous_fst.add
       (QuotientAddGroup.continuous_mk.comp
         (continuous_const.mul (Real.continuous_arccos.comp
-          (continuous_subtype_val.comp continuous_snd))))
+          (continuous_subtypeVal.comp continuous_snd))))
   continuous_invFun := by
     refine Continuous.prodMk ?_ continuous_snd
     exact continuous_fst.sub
       (QuotientAddGroup.continuous_mk.comp
         (continuous_const.mul (Real.continuous_arccos.comp
-          (continuous_subtype_val.comp continuous_snd))))
+          (continuous_subtypeVal.comp continuous_snd))))
 
 @[simp]
 theorem circleBilliardQuotient_apply (R : ℝ)
     (p : AddCircle (2 * Real.pi * R) × Ioo (-1 : ℝ) 1) :
-    circleBilliardQuotient R p = (p.1 + ↑(2 * R * Real.arccos p.2.1), p.2) :=
+    circleBilliardQuotient R p = (p.1 + ↑(2 * R * Real.arccos p.2.val), p.2) :=
   (rfl)
 
 @[simp]
 theorem circleBilliardQuotient_symm_apply (R : ℝ)
     (p : AddCircle (2 * Real.pi * R) × Ioo (-1 : ℝ) 1) :
-    (circleBilliardQuotient R).symm p = (p.1 - ↑(2 * R * Real.arccos p.2.1), p.2) :=
+    (circleBilliardQuotient R).symm p = (p.1 - ↑(2 * R * Real.arccos p.2.val), p.2) :=
   (rfl)
 
 end TauCeti
@@ -359,12 +359,12 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fact (fin
 theorem circleBilliardQuotient_coe (o : Orientation ℝ E (Fin 2)) (c e : E) {R : ℝ} (he : ‖e‖ = 1)
     (hR : 0 < R) (s : ℝ) (v : Ioo (-1 : ℝ) 1) :
     circleBilliardQuotient R (↑s, v) =
-      (↑((o.circleBilliardTable c e R he hR).nextParam s v.1),
-        ⟨(o.circleBilliardTable c e R he hR).nextTangential s v.1,
-          (o.circleBilliardTable c e R he hR).nextTangential_mem_Ioo v.2⟩) := by
+      (↑((o.circleBilliardTable c e R he hR).nextParam s v.val),
+        ⟨(o.circleBilliardTable c e R he hR).nextTangential s v.val,
+          (o.circleBilliardTable c e R he hR).nextTangential_mem_Ioo v.property⟩) := by
   ext
-  · simp [o.circleBilliardTable_nextParam c e he hR v.2, QuotientAddGroup.mk_add]
-  · simp [o.circleBilliardTable_nextTangential c e he hR v.2]
+  · simp [o.circleBilliardTable_nextParam c e he hR v.property, QuotientAddGroup.mk_add]
+  · simp [o.circleBilliardTable_nextTangential c e he hR v.property]
 
 end Orientation
 
@@ -378,17 +378,17 @@ theorem measurePreserving_circleBilliardQuotient (R : ℝ) [Fact (0 < 2 * Real.p
     MeasurePreserving (circleBilliardQuotient R) (volume.prod ν) (volume.prod ν) := by
   by_cases hν : SFinite ν
   · have hgm : Measurable (uncurry fun (v : Ioo (-1 : ℝ) 1) (q : AddCircle (2 * Real.pi * R)) ↦
-        q + (↑(2 * R * Real.arccos v.1) : AddCircle (2 * Real.pi * R))) :=
+        q + (↑(2 * R * Real.arccos v.val) : AddCircle (2 * Real.pi * R))) :=
       (continuous_snd.add (QuotientAddGroup.continuous_mk.comp
         (continuous_const.mul (Real.continuous_arccos.comp
-          (continuous_subtype_val.comp continuous_fst))))).measurable
+          (continuous_subtypeVal.comp continuous_fst))))).measurable
     have hshear := MeasurePreserving.skew_product
       (g := fun (v : Ioo (-1 : ℝ) 1) (q : AddCircle (2 * Real.pi * R)) ↦
-        q + (↑(2 * R * Real.arccos v.1) : AddCircle (2 * Real.pi * R)))
+        q + (↑(2 * R * Real.arccos v.val) : AddCircle (2 * Real.pi * R)))
       (MeasurePreserving.id ν) hgm
       (Eventually.of_forall fun v ↦
         map_add_right_eq_self (volume : Measure (AddCircle (2 * Real.pi * R)))
-          (↑(2 * R * Real.arccos v.1) : AddCircle (2 * Real.pi * R)))
+          (↑(2 * R * Real.arccos v.val) : AddCircle (2 * Real.pi * R)))
     convert Measure.measurePreserving_swap.comp (hshear.comp Measure.measurePreserving_swap)
     ext ⟨q, v⟩ <;> rfl
   · rw [Measure.prod_eq_zero_of_not_sfinite hν]
@@ -419,7 +419,7 @@ theorem measure_univ_circleBilliardPhaseSpace (R : ℝ) [hL : Fact (0 < 2 * Real
 theorem iterate_circleBilliardQuotient (R : ℝ) (n : ℕ)
     (p : AddCircle (2 * Real.pi * R) × Ioo (-1 : ℝ) 1) :
     ((circleBilliardQuotient R)^[n]) p =
-      (p.1 + n • (↑(2 * R * Real.arccos p.2.1) : AddCircle (2 * Real.pi * R)), p.2) := by
+      (p.1 + n • (↑(2 * R * Real.arccos p.2.val) : AddCircle (2 * Real.pi * R)), p.2) := by
   induction n generalizing p with
   | zero => simp
   | succ n ih =>
@@ -432,7 +432,7 @@ the first coordinate and fixes `v`. -/
 theorem iterate_circleBilliardQuotient_symm (R : ℝ) (n : ℕ)
     (p : AddCircle (2 * Real.pi * R) × Ioo (-1 : ℝ) 1) :
     (((circleBilliardQuotient R).symm)^[n]) p =
-      (p.1 - n • (↑(2 * R * Real.arccos p.2.1) : AddCircle (2 * Real.pi * R)), p.2) := by
+      (p.1 - n • (↑(2 * R * Real.arccos p.2.val) : AddCircle (2 * Real.pi * R)), p.2) := by
   induction n generalizing p with
   | zero => simp
   | succ n ih =>
@@ -447,12 +447,12 @@ integer multiple of `π`. -/
 theorem isPeriodicPt_circleBilliardQuotient_iff {R : ℝ} (hR : R ≠ 0) (n : ℕ)
     (p : AddCircle (2 * Real.pi * R) × Ioo (-1 : ℝ) 1) :
     IsPeriodicPt (circleBilliardQuotient R) n p ↔
-      ∃ k : ℤ, (n : ℝ) * Real.arccos p.2.1 = k * Real.pi := by
+      ∃ k : ℤ, (n : ℝ) * Real.arccos p.2.val = k * Real.pi := by
   rw [IsPeriodicPt, IsFixedPt, iterate_circleBilliardQuotient, Prod.ext_iff]
   simp only [and_true, add_eq_left, ← AddCircle.coe_nsmul, nsmul_eq_mul,
     AddCircle.coe_eq_zero_iff, zsmul_eq_mul]
   refine exists_congr fun k ↦ ⟨fun h ↦ ?_, fun h ↦ by linear_combination -2 * R * h⟩
-  have hmul : (2 * R) * ((n : ℝ) * Real.arccos p.2.1 - k * Real.pi) = 0 := by linarith
+  have hmul : (2 * R) * ((n : ℝ) * Real.arccos p.2.val - k * Real.pi) = 0 := by linarith
   linarith [(mul_eq_zero.1 hmul).resolve_left (mul_ne_zero two_ne_zero hR)]
 
 /-- A state `p = (q, v)` lies on a periodic orbit of `circleBilliardQuotient R` (`R ≠ 0`) if and
@@ -460,7 +460,7 @@ only if `arccos v` is a rational multiple of `π`. -/
 theorem exists_pos_isPeriodicPt_circleBilliardQuotient_iff {R : ℝ} (hR : R ≠ 0)
     (p : AddCircle (2 * Real.pi * R) × Ioo (-1 : ℝ) 1) :
     (∃ n > 0, IsPeriodicPt (circleBilliardQuotient R) n p) ↔
-      ∃ r : ℚ, Real.arccos p.2.1 = r * Real.pi := by
+      ∃ r : ℚ, Real.arccos p.2.val = r * Real.pi := by
   constructor
   · rintro ⟨n, hn, hper⟩
     obtain ⟨k, hk⟩ := (isPeriodicPt_circleBilliardQuotient_iff hR n p).1 hper
@@ -482,7 +482,7 @@ and `k` coprime to `n`, then the least period of `(q, v)` under `circleBilliardQ
 is `n`. -/
 theorem minimalPeriod_circleBilliardQuotient {R : ℝ} (hR : R ≠ 0) {n : ℕ} (hn : 0 < n) {k : ℤ}
     {p : AddCircle (2 * Real.pi * R) × Ioo (-1 : ℝ) 1}
-    (hk : (n : ℝ) * Real.arccos p.2.1 = k * Real.pi) (hcop : IsCoprime k (n : ℤ)) :
+    (hk : (n : ℝ) * Real.arccos p.2.val = k * Real.pi) (hcop : IsCoprime k (n : ℤ)) :
     minimalPeriod (circleBilliardQuotient R) p = n := by
   have hper_n : IsPeriodicPt (circleBilliardQuotient R) n p :=
     (isPeriodicPt_circleBilliardQuotient_iff hR n p).2 ⟨k, hk⟩
@@ -493,9 +493,9 @@ theorem minimalPeriod_circleBilliardQuotient {R : ℝ} (hR : R ≠ 0) {n : ℕ} 
   obtain ⟨l, hl⟩ := (isPeriodicPt_circleBilliardQuotient_iff hR m p).1 hper_m
   have hreal : ((m : ℤ) * k : ℝ) * Real.pi = ((n : ℤ) * l : ℝ) * Real.pi := by
     calc
-      ((m : ℤ) * k : ℝ) * Real.pi = (m : ℝ) * ((n : ℝ) * Real.arccos p.2.1) := by
+      ((m : ℤ) * k : ℝ) * Real.pi = (m : ℝ) * ((n : ℝ) * Real.arccos p.2.val) := by
         push_cast; linear_combination (m : ℝ) * hk.symm
-      _ = (n : ℝ) * ((m : ℝ) * Real.arccos p.2.1) := by ring
+      _ = (n : ℝ) * ((m : ℝ) * Real.arccos p.2.val) := by ring
       _ = ((n : ℤ) * l : ℝ) * Real.pi := by
         push_cast; linear_combination (n : ℝ) * hl
   have hint : (m : ℤ) * k = (n : ℤ) * l := by
@@ -544,17 +544,18 @@ irrational. -/
 theorem denseRange_zsmul_circleBilliardQuotient_iff {R : ℝ} (hR : R ≠ 0)
     (p : AddCircle (2 * Real.pi * R) × Ioo (-1 : ℝ) 1) :
     DenseRange
-        (fun z : ℤ ↦ p.1 + z • (↑(2 * R * Real.arccos p.2.1) : AddCircle (2 * Real.pi * R))) ↔
-      Irrational (Real.arccos p.2.1 / Real.pi) := by
+        (fun z : ℤ ↦ p.1 + z • (↑(2 * R * Real.arccos p.2.val) : AddCircle (2 * Real.pi * R))) ↔
+      Irrational (Real.arccos p.2.val / Real.pi) := by
   let e := Homeomorph.addLeft p.1
   have hiff : DenseRange
-      (fun z : ℤ ↦ e (z • (↑(2 * R * Real.arccos p.2.1) : AddCircle (2 * Real.pi * R)))) ↔
-      DenseRange (fun z : ℤ ↦ z • (↑(2 * R * Real.arccos p.2.1) : AddCircle (2 * Real.pi * R))) :=
+      (fun z : ℤ ↦ e (z • (↑(2 * R * Real.arccos p.2.val) : AddCircle (2 * Real.pi * R)))) ↔
+      DenseRange (fun z : ℤ ↦ z • (↑(2 * R * Real.arccos p.2.val) : AddCircle (2 * Real.pi * R))) :=
     ⟨fun h ↦ by
       simpa only [Function.comp_def, Homeomorph.symm_apply_apply] using
         e.symm.surjective.denseRange.comp h e.symm.continuous,
      fun h ↦ e.surjective.denseRange.comp h e.continuous⟩
-  have hdiv : (2 * R * Real.arccos p.2.1) / (2 * Real.pi * R) = Real.arccos p.2.1 / Real.pi := by
+  have hdiv :
+      (2 * R * Real.arccos p.2.val) / (2 * Real.pi * R) = Real.arccos p.2.val / Real.pi := by
     field_simp
   exact hiff.trans (AddCircle.denseRange_zsmul_coe_iff.trans (by rw [hdiv]))
 

@@ -457,8 +457,8 @@ theorem orbit_stabilizerChain_one :
   ext x
   constructor
   · rintro ⟨g, rfl⟩
-    have hg0 : (g : Equiv.Perm (Fin 100)) 0 = 0 := mem_stabilizer_iff.mp g.2.2
-    have h := related_apply g.2.1 0 1
+    have hg0 : (g : Equiv.Perm (Fin 100)) 0 = 0 := mem_stabilizer_iff.mp g.property.2
+    have h := related_apply g.property.1 0 1
     rw [hg0] at h
     exact (related_zero _).mp (h.trans (by decide +kernel))
   · intro hx
@@ -621,7 +621,7 @@ theorem orbit_stabilizerChain_two :
   ext x
   constructor
   · rintro ⟨g, rfl⟩
-    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff HS pointSequence).mp g.2
+    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff HS pointSequence).mp g.property
     have h0 : (g : Equiv.Perm (Fin 100)) 0 = 0 := hfix 0 (by decide)
     have h1 : (g : Equiv.Perm (Fin 100)) 1 = 1 := hfix 1 (by decide)
     apply (mem_twoPointOrbit_iff _).mpr
@@ -845,7 +845,7 @@ theorem orbit_stabilizerChain_three :
   ext x
   constructor
   · rintro ⟨g, rfl⟩
-    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff _ _).mp g.2
+    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff _ _).mp g.property
     have h0 : (g : Equiv.Perm (Fin 100)) 0 = 0 := hfix 0 (by omega)
     have h1 : (g : Equiv.Perm (Fin 100)) 1 = 1 := hfix 1 (by omega)
     have h2 : (g : Equiv.Perm (Fin 100)) 2 = 2 := hfix 2 (by omega)
@@ -855,8 +855,8 @@ theorem orbit_stabilizerChain_three :
     rw [h0] at hr0
     rw [h1] at hr1
     rw [h2] at hr2
-    have h38 := commonNeighbors_apply g.2 (x := 38) (by decide)
-    have h49 := commonNeighbors_apply g.2 (x := 49) (by decide)
+    have h38 := commonNeighbors_apply g.property (x := 38) (by decide)
+    have h49 := commonNeighbors_apply g.property (x := 49) (by decide)
     have hne : related ((g : Equiv.Perm (Fin 100)) 3) ((g : Equiv.Perm (Fin 100)) 38) ≠
         related ((g : Equiv.Perm (Fin 100)) 3) ((g : Equiv.Perm (Fin 100)) 49) := by
       rw [related_apply hg, related_apply hg]
@@ -913,7 +913,7 @@ theorem orbit_stabilizerChain_four :
   ext x
   constructor
   · rintro ⟨g, rfl⟩
-    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff HS pointSequence).mp g.2
+    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff HS pointSequence).mp g.property
     apply profile_four
     apply relationProfile_apply (g : Equiv.Perm (Fin 100)).injective (related_apply hg)
     intro z hz

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.SpectralSequence.Bicomplex
+public import TauCeti.Algebra.Homology.SpectralSequence.Bicomplex.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
 public import TauCeti.AlgebraicTopology.Singular.Cech.OrderedQuasiIso
 
@@ -62,10 +62,10 @@ def cechColumnHomologyIso (p q : ℕ)
     ((cechDoubleComplex U R).X p).homology q ≅
       ∐ (fun s : {s : Finset ι // #s = p + 1} ↦
         (HomologicalComplex.homologyFunctor C (down ℕ) q).obj
-          ((cechSingularChains U R).obj (op s.1)) :
+          ((cechSingularChains U R).obj (op s.val)) :
           {s : Finset ι // #s = p + 1} → C) := by
   let F : {s : Finset ι // #s = p + 1} → ChainComplex C ℕ :=
-    fun s ↦ (cechSingularChains U R).obj (op s.1)
+    fun s ↦ (cechSingularChains U R).obj (op s.val)
   let H := HomologicalComplex.homologyFunctor C (down ℕ) q
   exact (isColimitCofanMkObjOfIsColimit H F _
     (isColimitCechDoubleComplexCofan U R p)).coconePointUniqueUpToIso
@@ -81,11 +81,11 @@ lemma homologyMap_cechDoubleComplexι_cechColumnHomologyIso_hom (p q : ℕ)
         (cechColumnHomologyIso U R p q).hom =
       Sigma.ι (fun s : {s : Finset ι // #s = p + 1} ↦
         (HomologicalComplex.homologyFunctor C (down ℕ) q).obj
-          ((cechSingularChains U R).obj (op s.1))) s := by
+          ((cechSingularChains U R).obj (op s.val))) s := by
   exact IsColimit.comp_coconePointUniqueUpToIso_hom
     (isColimitCofanMkObjOfIsColimit (HomologicalComplex.homologyFunctor C (down ℕ) q)
       (fun s : {s : Finset ι // #s = p + 1} ↦
-        (cechSingularChains U R).obj (op s.1)) _
+        (cechSingularChains U R).obj (op s.val)) _
       (isColimitCechDoubleComplexCofan U R p))
     (coproductIsCoproduct _) ⟨s⟩
 
@@ -97,13 +97,13 @@ lemma ι_cechColumnHomologyIso_inv (p q : ℕ)
     (s : {s : Finset ι // #s = p + 1}) :
     Sigma.ι (fun s : {s : Finset ι // #s = p + 1} ↦
         (HomologicalComplex.homologyFunctor C (down ℕ) q).obj
-          ((cechSingularChains U R).obj (op s.1))) s ≫
+          ((cechSingularChains U R).obj (op s.val))) s ≫
         (cechColumnHomologyIso U R p q).inv =
       HomologicalComplex.homologyMap (cechDoubleComplexι U R (p := p) s) q := by
   exact IsColimit.comp_coconePointUniqueUpToIso_inv
     (isColimitCofanMkObjOfIsColimit (HomologicalComplex.homologyFunctor C (down ℕ) q)
       (fun s : {s : Finset ι // #s = p + 1} ↦
-        (cechSingularChains U R).obj (op s.1)) _
+        (cechSingularChains U R).obj (op s.val)) _
       (isColimitCechDoubleComplexCofan U R p))
     (coproductIsCoproduct _) ⟨s⟩
 
@@ -114,7 +114,7 @@ def cechSpectralSequenceFirstPageXIso (p q : ℕ)
     ((cechSpectralSequence U R).page 2).X (-(q : ℤ) - 2 * p, p) ≅
       ∐ (fun s : {s : Finset ι // #s = p + 1} ↦
         (HomologicalComplex.homologyFunctor C (down ℕ) q).obj
-          ((cechSingularChains U R).obj (op s.1)) :
+          ((cechSingularChains U R).obj (op s.val)) :
           {s : Finset ι // #s = p + 1} → C) :=
   (cechDoubleComplex U R).columnFiltrationSpectralSequenceFirstPageXIso p q ≪≫
     cechColumnHomologyIso U R p q
@@ -134,9 +134,7 @@ lemma isZero_cechSpectralSequence_page_two_X [Fintype ι] {p : ℕ}
 /-- The abutment of the Čech--singular spectral sequence of an open cover is the singular homology
 of the covered space. -/
 def cechSpectralSequenceAbutmentIso (hU : ⋃ i, (U i : Set X) = Set.univ) (n : ℕ) :
-    (CochainComplex.spectralObject
-      (CochainComplex.filtrationFunctor (cechDoubleComplex U R).flip.rowFiltration
-        (cechDoubleComplex U R).flip.monotone_rowFiltration)).abutment (-n) ≅
+    (cechDoubleComplex U R).flip.rowFiltrationSpectralObject.abutment (-n) ≅
       ((singularHomologyFunctor C n).obj R).obj X := by
   haveI : QuasiIso (cechTotalAugmentation U R) := quasiIso_cechTotalAugmentation U R hU
   exact (cechDoubleComplex U R).columnFiltrationAbutmentIso n ≪≫

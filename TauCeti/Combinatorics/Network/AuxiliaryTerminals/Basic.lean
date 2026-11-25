@@ -140,35 +140,56 @@ theorem original_inj {v w : V} {e e' : Q v w} :
 
 /-- An original arrow, including its endpoints, regarded as an arrow of the auxiliary-terminal
 family. -/
-def originalArrow : (Σ x y, Q x y) → (Σ x y, AuxTerminalHom Q A B x y)
-  | ⟨x, y, e⟩ => ⟨inl x, inl y, original e⟩
+def originalArrow : (Σ x y, Q x y) → (Σ x y, AuxTerminalHom Q A B x y) :=
+  Sigma.map inl fun _ ↦ Sigma.map inl fun _ ↦ original
 
-@[simp]
 theorem originalArrow_mk {x y : V} (e : Q x y) :
     originalArrow (A := A) (B := B) ⟨x, y, e⟩ = ⟨inl x, inl y, original e⟩ :=
   (rfl)
 
-theorem originalArrow_injective : (originalArrow (Q := Q) (A := A) (B := B)).Injective := by
-  rintro ⟨x, y, e⟩ ⟨x', y', e'⟩ h
-  simp only [originalArrow_mk, Sigma.mk.injEq, inl.injEq] at h
-  obtain ⟨rfl, h⟩ := h
-  simp only [heq_eq_eq, Sigma.mk.injEq, inl.injEq] at h
-  obtain ⟨rfl, h⟩ := h
-  rw [heq_eq_eq, original_inj] at h
-  rw [h]
+@[simp]
+theorem originalArrow_fst (e : Σ x y, Q x y) :
+    (originalArrow (A := A) (B := B) e).fst = inl e.fst :=
+  (rfl)
+
+@[simp]
+theorem originalArrow_snd_fst (e : Σ x y, Q x y) :
+    (originalArrow (A := A) (B := B) e).snd.fst = inl e.snd.fst :=
+  (rfl)
+
+@[grind inj]
+theorem originalArrow_injective : (originalArrow (Q := Q) (A := A) (B := B)).Injective :=
+  inl_injective.sigma_map fun _ ↦ inl_injective.sigma_map fun _ ↦ original_injective
 
 @[simp]
 theorem originalArrow_inj {e e' : Σ x y, Q x y} :
     originalArrow (A := A) (B := B) e = originalArrow e' ↔ e = e' :=
   originalArrow_injective.eq_iff
 
+@[simp]
+theorem originalArrow_eq_mk_original {e : Σ x y, Q x y} {a b : V} {f : Q a b} :
+    originalArrow (A := A) (B := B) e = ⟨inl a, inl b, original f⟩ ↔ e = ⟨a, b, f⟩ := by
+  rw [← originalArrow_mk, originalArrow_inj]
+
+@[simp]
+theorem originalArrow_ne_mk_inr_left (e : Σ x y, Q x y) (s : Bool) (y : V ⊕ Bool)
+    (f : AuxTerminalHom Q A B (inr s) y) :
+    originalArrow e ≠ ⟨inr s, y, f⟩ :=
+  fun h ↦ Sum.inl_ne_inr (congrArg Sigma.fst h)
+
+@[simp]
+theorem originalArrow_ne_mk_inr_right (e : Σ x y, Q x y) (x : V ⊕ Bool) (t : Bool)
+    (f : AuxTerminalHom Q A B x (inr t)) :
+    originalArrow e ≠ ⟨x, inr t, f⟩ :=
+  fun h ↦ Sum.inl_ne_inr (congrArg (fun z ↦ z.snd.fst) h)
+
 /-- The fresh source has an arrow to `Sum.inl a` only when `a ∈ A`. -/
 theorem mem_of_source {a : V} (e : AuxTerminalHom Q A B (inr false) (inl a)) : a ∈ A :=
-  e.2
+  e.property
 
 /-- The fresh sink has an arrow from `Sum.inl b` only when `b ∈ B`. -/
 theorem mem_of_sink {b : V} (e : AuxTerminalHom Q A B (inl b) (inr true)) : b ∈ B :=
-  e.2
+  e.property
 
 /-- Every arrow from the fresh source to `Sum.inl a` is `source`. -/
 theorem eq_source {a : V} (e : AuxTerminalHom Q A B (inr false) (inl a)) :
@@ -188,7 +209,7 @@ theorem forall_iff {P : ∀ ⦃x y⦄, AuxTerminalHom Q A B x y → Prop} :
         ∀ ⦃b⦄ (hb : b ∈ B), P (sink hb) := by
   refine ⟨fun h ↦ ⟨fun _ _ _ ↦ h _, fun _ _ ↦ h _, fun _ _ ↦ h _⟩, ?_⟩
   rintro ⟨horig, hsrc, hsink⟩ (v | (_ | _)) (w | (_ | _)) e
-  all_goals first | exact e.elim | exact horig e | exact hsrc e.2 | exact hsink e.2
+  all_goals first | exact e.elim | exact horig e | exact hsrc e.property | exact hsink e.property
 
 instance instSubsingletonSource (a : V) :
     Subsingleton (AuxTerminalHom Q A B (inr false) (inl a)) :=

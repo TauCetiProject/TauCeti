@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.Projection.Gap
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Normed.Module.Complexification
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # The Hilbert-space complexification of a real inner product space
@@ -45,6 +46,8 @@ self-adjoint operator, to operators on real Hilbert spaces.
   `WithLp.complexificationOfRealₗᵢ`: the real-linear isometric inclusion
   `X →ₗᵢ[ℝ] WithLp 2 (Complexification X)`, and
   `WithLp.instComplexificationCompleteSpace` as a consequence.
+* `WithLp.finrank_complexification`: the complexification of a finite-dimensional space has
+  complex dimension the real dimension of `X`.
 * `ContinuousLinearMap.complexifyL2`: the complexification of a bounded real operator, with
   `ContinuousLinearMap.eq_complexifyL2_iff` (it is the unique complex-linear extension),
   `ContinuousLinearMap.norm_complexifyL2`, `ContinuousLinearMap.complexifyL2_comp` and
@@ -149,6 +152,23 @@ instance instComplexificationCompleteSpace [CompleteSpace X] :
     CompleteSpace (WithLp 2 (Complexification X)) :=
   (complexificationEquivProd X).toIsometryEquiv.completeSpace
 
+/-- Complex scalars act continuously on the `L²` complexification of a real normed space: in the
+real coordinates `x + i y ↦ (x, y)`, multiplication by `c` is `(x, y) ↦ (c.re x - c.im y,
+c.im x + c.re y)`. For a real inner product space this also follows from the complex normed space
+structure; it is not an instance, to avoid a second instance path in that case. -/
+theorem complexification_continuous_const_smul (c : ℂ) :
+    Continuous fun z : WithLp 2 (Complexification X) ↦ c • z := by
+  have h : Continuous fun z : WithLp 2 (Complexification X) ↦ (z.ofLp.re, z.ofLp.im) := by
+    simpa only [Function.comp_def, complexificationEquivProd_apply, ofLp_toLp] using
+      (prod_continuous_ofLp 2 X X).comp (complexificationEquivProd X).continuous
+  rw [(complexificationEquivProd X).toHomeomorph.isInducing.continuous_iff]
+  simp only [Function.comp_def, LinearIsometryEquiv.coe_toHomeomorph,
+    complexificationEquivProd_apply]
+  refine (prod_continuous_toLp 2 X X).comp' ?_
+  simp only [ofLp_smul, Complexification.smul_re, Complexification.smul_im]
+  exact ((h.fst.const_smul _).sub (h.snd.const_smul _)).prodMk
+    ((h.fst.const_smul _).add (h.snd.const_smul _))
+
 variable (X) in
 /-- The real-linear isometric inclusion `x ↦ x + i 0` of a real normed space `X` into its `L²`
 complexification `WithLp 2 (Complexification X)`. -/
@@ -165,6 +185,16 @@ def complexificationOfRealₗᵢ : X →ₗᵢ[ℝ] WithLp 2 (Complexification X
 @[simp]
 theorem complexificationOfRealₗᵢ_apply (x : X) :
     complexificationOfRealₗᵢ X x = toLp 2 (Complexification.ofReal x) := (rfl)
+
+/-- The complex dimension of the complexification of `X` is the real dimension of `X`. -/
+@[simp]
+theorem finrank_complexification [FiniteDimensional ℝ X] :
+    Module.finrank ℂ (WithLp 2 (Complexification X)) = Module.finrank ℝ X := by
+  have h := Module.finrank_mul_finrank ℝ ℂ (WithLp 2 (Complexification X))
+  rw [(complexificationEquivProd X).toLinearEquiv.finrank_eq,
+    (WithLp.linearEquiv 2 ℝ (X × X)).finrank_eq, Module.finrank_prod,
+    Complex.finrank_real_complex] at h
+  omega
 
 end Norm
 
@@ -299,6 +329,17 @@ def complexifyL2 (T : X →L[ℝ] Y) :
 theorem ofLp_complexifyL2_apply (T : X →L[ℝ] Y) (z : WithLp 2 (Complexification X)) :
     (T.complexifyL2 z).ofLp = T.complexify z.ofLp := (rfl)
 
+/-- As a linear map, the complexification is `ContinuousLinearMap.complexify` transported along
+the identifications `WithLp.linearEquiv` of the `L²` complexifications with their underlying
+spaces. -/
+theorem coe_complexifyL2 (T : X →L[ℝ] Y) :
+    (T.complexifyL2 : WithLp 2 (Complexification X) →ₗ[ℂ] WithLp 2 (Complexification Y)) =
+      (WithLp.linearEquiv 2 ℂ (Complexification X)).symm.arrowCongr
+        (WithLp.linearEquiv 2 ℂ (Complexification Y)).symm
+        (T.complexify : Complexification X →ₗ[ℂ] Complexification Y) := by
+  ext z
+  exact WithLp.ofLp_injective 2 <| by simp [complexify_apply, LinearMap.complexify_apply]
+
 /-- The complexification agrees with `T` on real vectors. -/
 @[simp]
 theorem complexifyL2_toLp_ofReal (T : X →L[ℝ] Y) (x : X) :
@@ -405,6 +446,11 @@ variable {X Y}
 
 @[simp]
 theorem complexifyL2ₗᵢ_apply (T : X →L[ℝ] Y) : complexifyL2ₗᵢ X Y T = T.complexifyL2 := (rfl)
+
+/-- Complexification commutes with negation. -/
+@[simp]
+theorem complexifyL2_neg (T : X →L[ℝ] Y) : (-T).complexifyL2 = -T.complexifyL2 :=
+  map_neg (complexifyL2ₗᵢ X Y).toLinearMap T
 
 @[simp]
 theorem complexifyL2StarAlgHom_apply [CompleteSpace X] (T : X →L[ℝ] X) :

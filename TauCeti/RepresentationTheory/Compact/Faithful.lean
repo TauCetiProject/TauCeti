@@ -105,8 +105,8 @@ theorem exists_isUnitary_ker_subset {U : Set G} (hU : U ∈ 𝓝 (1 : G)) :
   have h1_not_mem : (1 : G) ∉ K := by
     simp [K, mem_interior_iff_mem_nhds.mpr hU]
   have hex : ∀ x : K, ∃ (d : ℕ) (ρ : ContRepresentation 𝕜 G (EuclideanSpace 𝕜 (Fin d))),
-      Continuous ρ ∧ ρ.IsUnitary ∧ ρ x.1 ≠ 1 :=
-    fun x ↦ exists_isUnitary_apply_ne_one (𝕜 := 𝕜) fun hx1 ↦ h1_not_mem (hx1 ▸ x.2)
+      Continuous ρ ∧ ρ.IsUnitary ∧ ρ x.val ≠ 1 :=
+    fun x ↦ exists_isUnitary_apply_ne_one (𝕜 := 𝕜) fun hx1 ↦ h1_not_mem (hx1 ▸ x.property)
   choose d ρ hρc hρu hρne using hex
   let V : K → Set G := fun x ↦ {g : G | ρ x g ≠ 1}
   have hV_open : ∀ x : K, IsOpen (V x) :=
@@ -115,19 +115,19 @@ theorem exists_isUnitary_ker_subset {U : Set G} (hU : U ∈ 𝓝 (1 : G)) :
     fun g hg ↦ mem_iUnion.mpr ⟨⟨g, hg⟩, hρne ⟨g, hg⟩⟩
   obtain ⟨s, hs⟩ := hK_compact.elim_finite_subcover V hV_open hcover
   -- Sum the finitely many witnessing representations and transport to `EuclideanSpace 𝕜 (Fin n)`.
-  let H : s → Type _ := fun i ↦ EuclideanSpace 𝕜 (Fin (d i.1))
+  let H : s → Type _ := fun i ↦ EuclideanSpace 𝕜 (Fin (d i.val))
   let W := lp H 2
   have : FiniteDimensional 𝕜 W :=
     FiniteDimensional.of_injective
       ({ toFun x := ⇑x, map_add' _ _ := rfl, map_smul' _ _ := rfl } : W →ₗ[𝕜] ∀ i : s, H i)
       fun _ _ h ↦ lp.ext h
   let σ : ContRepresentation 𝕜 G W :=
-    ContRepresentation.hilbertSum (fun i : s ↦ ρ i.1) (fun i : s ↦ hρu i.1)
+    ContRepresentation.hilbertSum (fun i : s ↦ ρ i.val) (fun i : s ↦ hρu i.val)
   have hσc : Continuous σ :=
-    ContRepresentation.continuous_hilbertSum (fun i : s ↦ ρ i.1) (fun i : s ↦ hρu i.1)
-      (fun i : s ↦ hρc i.1)
+    ContRepresentation.continuous_hilbertSum (fun i : s ↦ ρ i.val) (fun i : s ↦ hρu i.val)
+      (fun i : s ↦ hρc i.val)
   have hσu : σ.IsUnitary :=
-    ContRepresentation.isUnitary_hilbertSum (fun i : s ↦ ρ i.1) (fun i : s ↦ hρu i.1)
+    ContRepresentation.isUnitary_hilbertSum (fun i : s ↦ ρ i.val) (fun i : s ↦ hρu i.val)
   let b := stdOrthonormalBasis 𝕜 W
   let e : W ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 W)) := b.repr
   let π : ContRepresentation 𝕜 G (EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 W))) :=
@@ -143,7 +143,7 @@ theorem exists_isUnitary_ker_subset {U : Set G} (hU : U ∈ 𝓝 (1 : G)) :
       simpa only [π, ContinuousLinearEquiv.coe_congr] using hπ1
     exact (map_eq_one_iff _ e.toContinuousLinearEquiv.conjContinuousAlgEquiv.injective).mp hconj
   exact hgx ((ContRepresentation.hilbertSum_apply_eq_one_iff
-    (fun i : s ↦ ρ i.1) (fun i : s ↦ hρu i.1) g).mp hσ1 ⟨x, hxs⟩)
+    (fun i : s ↦ ρ i.val) (fun i : s ↦ hρu i.val) g).mp hσ1 ⟨x, hxs⟩)
 
 /-- **Faithful unitary representation of a compact group with no small subgroups.** Every compact
 Hausdorff group satisfying `TauCeti.HasNoSmallSubgroups` admits an injective continuous unitary

@@ -171,18 +171,19 @@ Dynkin diagram with `a_{σ k} ∘ ω = aₖ`
 noncomputable def fundamentalAlcoveStabilizerToPerm :
     P.fundamentalAlcoveStabilizer b →* Equiv.Perm (Option b.support) where
   toFun ω :=
-    { toFun := wallIndex b ω.2
-      invFun := wallIndex b (inv_mem ω.2)
+    { toFun := wallIndex b ω.property
+      invFun := wallIndex b (inv_mem ω.property)
       left_inv k := (wallIndex_eq_iff b _).mpr fun x ↦ by
-        rw [← affineSimpleRoot_wallIndex_apply b ω.2 k (ω.1⁻¹ x)]
+        rw [← affineSimpleRoot_wallIndex_apply b ω.property k (ω.val⁻¹ x)]
         simp only [AffineEquiv.inv_def, AffineEquiv.apply_symm_apply]
       right_inv k := (wallIndex_eq_iff b _).mpr fun x ↦ by
-        rw [← affineSimpleRoot_wallIndex_apply b (inv_mem ω.2) k (ω.1 x)]
+        rw [← affineSimpleRoot_wallIndex_apply b (inv_mem ω.property) k (ω.val x)]
         simp only [AffineEquiv.inv_def, AffineEquiv.symm_apply_apply] }
   map_one' := Equiv.Perm.ext fun k ↦
-    (wallIndex_eq_iff (l := k) b (1 : P.fundamentalAlcoveStabilizer b).2).mpr fun x ↦ by simp
+    (wallIndex_eq_iff (l := k) b (1 : P.fundamentalAlcoveStabilizer b).property).mpr fun x ↦ by simp
   map_mul' ω₁ ω₂ := Equiv.Perm.ext fun k ↦
-    (wallIndex_eq_iff (l := wallIndex b ω₁.2 (wallIndex b ω₂.2 k)) b (ω₁ * ω₂).2).mpr
+    (wallIndex_eq_iff (l := wallIndex b ω₁.property (wallIndex b ω₂.property k)) b
+        (ω₁ * ω₂).property).mpr
       fun x ↦ by simp [affineSimpleRoot_wallIndex_apply]
 
 /-- **`ω` carries the wall `aₖ = 0` onto the wall `a_{σ k} = 0`**: `a_{σ k}(ω x) = aₖ(x)`, where
@@ -190,16 +191,16 @@ noncomputable def fundamentalAlcoveStabilizerToPerm :
 @[simp]
 theorem affineSimpleRoot_fundamentalAlcoveStabilizerToPerm_apply
     (ω : P.fundamentalAlcoveStabilizer b) (k : Option b.support) (x : N) :
-    b.affineSimpleRoot (fundamentalAlcoveStabilizerToPerm b ω k) (ω.1 x) =
+    b.affineSimpleRoot (fundamentalAlcoveStabilizerToPerm b ω k) (ω.val x) =
       b.affineSimpleRoot k x :=
-  affineSimpleRoot_wallIndex_apply b ω.2 k x
+  affineSimpleRoot_wallIndex_apply b ω.property k x
 
 /-- The permutation of the nodes induced by `ω ∈ Ω` is characterized by `a_{σ k} ∘ ω = aₖ`. -/
 theorem fundamentalAlcoveStabilizerToPerm_apply_eq_iff (ω : P.fundamentalAlcoveStabilizer b)
     {k l : Option b.support} :
     fundamentalAlcoveStabilizerToPerm b ω k = l ↔
-      ∀ x, b.affineSimpleRoot l (ω.1 x) = b.affineSimpleRoot k x :=
-  wallIndex_eq_iff b ω.2
+      ∀ x, b.affineSimpleRoot l (ω.val x) = b.affineSimpleRoot k x :=
+  wallIndex_eq_iff b ω.property
 
 /-- **The action of `Ω` on the walls of the fundamental alcove preserves the affine Cartan
 matrix**: the permutation `σ` of the nodes induced by `ω ∈ Ω` satisfies
@@ -209,14 +210,15 @@ theorem fundamentalAlcoveStabilizerToPerm_mem_matrixSymmetryGroup
     fundamentalAlcoveStabilizerToPerm b ω ∈ TauCeti.matrixSymmetryGroup b.affineCartanMatrix := by
   set σ := fundamentalAlcoveStabilizerToPerm b ω
   have hw := (P.mem_extendedAffineWeylGroup_iff.mp
-    (P.fundamentalAlcoveStabilizer_le_extendedAffineWeylGroup b ω.2)).1
+    (P.fundamentalAlcoveStabilizer_le_extendedAffineWeylGroup b ω.property)).1
   -- The linear part of `ω` carries the root functional of `α_{σ k}` to that of `αₖ`.
   have hlin (k : Option b.support) (x : N) :
-      P.root' (b.affineSimpleRootIndex (σ k)) (ω.1.linear x) =
+      P.root' (b.affineSimpleRootIndex (σ k)) (ω.val.linear x) =
         P.root' (b.affineSimpleRootIndex k) x := by
     have h₁ := affineSimpleRoot_fundamentalAlcoveStabilizerToPerm_apply b ω k x
     have h₀ := affineSimpleRoot_fundamentalAlcoveStabilizerToPerm_apply b ω k 0
-    rw [b.affineSimpleRoot_eq_root'_add (σ k), AffineEquiv.apply_eq_linear_add ω.1 x, map_add] at h₁
+    rw [b.affineSimpleRoot_eq_root'_add (σ k), AffineEquiv.apply_eq_linear_add ω.val x,
+        map_add] at h₁
     rw [b.affineSimpleRoot_eq_root'_add (σ k)] at h₀
     rw [b.affineSimpleRoot_eq_root'_add k] at h₁
     linear_combination h₁ - h₀
@@ -252,7 +254,7 @@ theorem fundamentalAlcoveStabilizerToPerm_injective [P.IsRootSystem] :
   rw [Subgroup.mem_bot]
   refine Subtype.ext (AffineEquiv.ext fun x ↦ ?_)
   -- Every simple root takes the same value at `ω x` and at `x`.
-  have hsimple (i : ι) (hi : i ∈ b.support) : P.root' i (ω.1 x - x) = 0 := by
+  have hsimple (i : ι) (hi : i ∈ b.support) : P.root' i (ω.val x - x) = 0 := by
     have := affineSimpleRoot_fundamentalAlcoveStabilizerToPerm_apply b ω (some ⟨i, hi⟩) x
     rw [hω, Equiv.Perm.coe_one, id, Base.affineSimpleRoot_some,
       Base.affineSimpleRoot_some] at this

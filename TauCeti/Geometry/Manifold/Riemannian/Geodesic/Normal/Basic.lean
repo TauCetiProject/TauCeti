@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
@@ -55,6 +55,9 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
   exponential map is injective on a normal domain.
 * `TauCeti.Manifold.IsNormalDomain.contDiffOn_norm_angular_riemannianExp`: the length of the
   differential of the exponential map along a fixed vector is smooth on a normal domain.
+* `TauCeti.Manifold.IsNormalDomain.opens`: a normal domain as an open subset of `T_p M`, on which
+  the exponential map is smooth with invertible differential
+  (`TauCeti.Manifold.IsNormalDomain.isInvertible_mfderiv_riemannianExp_comp_val`).
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_riemannianExp` and
   `TauCeti.Manifold.riemannianExp_riemannianLog`: the two inverse identities.
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_eq_of_subset`: the logarithm does not depend on
@@ -72,13 +75,21 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
   at the base point is the identity.
 * `MDifferentiableAt.hasFDerivAt_riemannianLog_comp_riemannianExp_zero`: the Fréchet derivative at
   `0` of `u ↦ log_{f p} (f (exp_p u))` is `mfderiv I J f p`.
-* `TauCeti.Manifold.IsNormalDomain.mem_geodesicInterval`: the geodesic towards a vector of a
-  normal domain is defined at least up to time one.
+* `TauCeti.Manifold.IsNormalDomain.mvfderiv_comp_riemannianLog_self`: composition with the
+  logarithm preserves the scalar differential at the base point, without a regularity hypothesis.
+* `TauCeti.Manifold.IsNormalDomain.mem_geodesicInterval` and
+  `TauCeti.Manifold.IsNormalDomain.isGeodesicCurveOn_riemannianExp_smul_Icc`: the radial geodesic
+  towards a vector of a normal domain is defined and a geodesic on `[0, 1]`.
+* `TauCeti.Manifold.radialGeodesicHomotopyDomain` and `TauCeti.Manifold.radialGeodesicHomotopy`:
+  the raw radial geodesic contraction `H(s, x) = exp_q (s • log_q x)` on a normal domain, its open
+  natural domain, and its smoothness (`IsNormalDomain.contMDiffOn_radialGeodesicHomotopy`).
 
 ## References
 
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 3, §3.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, Springer, 2018, Ch. 5 and 6.
+* https://github.com/frenzymath/lean-eval-submissions
+* https://github.com/frenzymath/PoincareConjecture
 -/
 
 public section
@@ -134,7 +145,7 @@ theorem mono (h : IsNormalDomain I M p U) (hVU : V ⊆ U) (hV : IsOpen V)
   starConvex := hstar
   subset_expDomain := hVU.trans h.subset_expDomain
   injOn := h.injOn.mono hVU
-  isLocalDiffeomorphOn w := h.isLocalDiffeomorphOn ⟨w, hVU w.2⟩
+  isLocalDiffeomorphOn w := h.isLocalDiffeomorphOn ⟨w, hVU w.property⟩
 
 /-- A tangent ball contained in a normal domain is itself a normal domain. -/
 theorem ball (h : IsNormalDomain I M p U) (hU : Metric.ball 0 r ⊆ U) (hr : 0 < r) :
@@ -166,7 +177,72 @@ theorem mem_geodesicInterval (h : IsNormalDomain I M p U) (hv : v ∈ U)
     (zero_mem_geodesicInterval_of_mem (mem_expDomain_iff.1 (h.subset_expDomain hv)))
     (mem_expDomain_iff.1 (h.subset_expDomain hv)) ⟨ht₀, ht₁⟩
 
+/-- A normal domain, as an open subset of the tangent space. -/
+def opens (h : IsNormalDomain I M p U) : TopologicalSpace.Opens (TangentSpace I p) :=
+  ⟨U, h.isOpen⟩
+
+@[simp]
+theorem coe_opens (h : IsNormalDomain I M p U) : (h.opens : Set (TangentSpace I p)) = U :=
+  (rfl)
+
+@[simp]
+theorem mem_opens (h : IsNormalDomain I M p U) : v ∈ h.opens ↔ v ∈ U :=
+  Iff.rfl
+
+/-- The origin belongs to a normal domain, seen as an open subset of the tangent space. -/
+theorem zero_mem_opens (h : IsNormalDomain I M p U) : (0 : TangentSpace I p) ∈ h.opens :=
+  h.mem_opens.2 h.zero_mem
+
+/-- A normal domain, seen as an open subset of the tangent space, is star-shaped about the
+origin. -/
+theorem starConvex_opens (h : IsNormalDomain I M p U) :
+    StarConvex ℝ (0 : TangentSpace I p) (h.opens : Set (TangentSpace I p)) := by
+  rw [coe_opens]
+  exact h.starConvex
+
+/-- The exponential map is smooth on a normal domain. -/
+theorem contMDiff_riemannianExp_comp_val (h : IsNormalDomain I M p U) {n : ℕ∞ω}
+    (hn : n ≤ ∞ + 1) :
+    ContMDiff 𝓘(ℝ, TangentSpace I p) I n
+      (riemannianExp I M p ∘ (Subtype.val : h.opens → TangentSpace I p)) := by
+  intro v
+  have h' : IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace I p) I ∞ (riemannianExp I M p)
+      (v : TangentSpace I p) :=
+    h.isLocalDiffeomorphOn ⟨v, h.mem_opens.1 v.property⟩
+  exact (h'.contMDiffAt.of_le (by simpa using hn)).comp v contMDiff_subtypeVal.contMDiffAt
+
+/-- On a normal domain, the differential of the exponential map read on the open subset is the
+differential of the exponential map, after identifying the tangent spaces of the open subset and
+of `T_p M`. -/
+theorem mfderiv_riemannianExp_comp_val (h : IsNormalDomain I M p U) (v : h.opens) :
+    mfderiv 𝓘(ℝ, TangentSpace I p) I
+        (riemannianExp I M p ∘ (Subtype.val : h.opens → TangentSpace I p)) v =
+      (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v).comp
+        (tangentSpaceOpenEquiv (I := 𝓘(ℝ, TangentSpace I p)) v).toContinuousLinearMap := by
+  have h' : IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace I p) I ∞ (riemannianExp I M p)
+      (v : TangentSpace I p) :=
+    h.isLocalDiffeomorphOn ⟨v, h.mem_opens.1 v.property⟩
+  rw [mfderiv_comp v (h'.contMDiffAt.mdifferentiableAt (by simp))
+    (contMDiff_subtypeVal.contMDiffAt.mdifferentiableAt one_ne_zero),
+    mfderiv_subtype_val (I := 𝓘(ℝ, TangentSpace I p)) v]
+
+/-- The exponential map has invertible differential on a normal domain. -/
+theorem isInvertible_mfderiv_riemannianExp_comp_val (h : IsNormalDomain I M p U)
+    (v : h.opens) :
+    (mfderiv 𝓘(ℝ, TangentSpace I p) I
+      (riemannianExp I M p ∘ (Subtype.val : h.opens → TangentSpace I p)) v).IsInvertible := by
+  rw [h.mfderiv_riemannianExp_comp_val v]
+  exact ((h.isLocalDiffeomorphOn ⟨v, h.mem_opens.1 v.property⟩).isInvertible_mfderiv (by simp)).comp
+    ContinuousLinearMap.isInvertible_equiv
+
 variable [I.Boundaryless] [T2Space M]
+
+/-- **The radial segment of a normal domain is a geodesic on `[0, 1]`.** -/
+theorem isGeodesicCurveOn_riemannianExp_smul_Icc (h : IsNormalDomain I M p U) (hv : v ∈ U) :
+    IsGeodesicCurveOn I (fun t : ℝ ↦ riemannianExp I M p (t • v)) (Icc 0 1) :=
+  ((isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn.mono
+    (uniqueDiffOn_Icc zero_lt_one) fun _ ht ↦ h.mem_geodesicInterval hv ht.1 ht.2).congr
+      fun t _ ↦ riemannianExp_smul p v t
 
 /-- The base point belongs to every normal neighbourhood. -/
 theorem self_mem_image (h : IsNormalDomain I M p U) : p ∈ riemannianExp I M p '' U :=
@@ -220,7 +296,7 @@ theorem exists_isNormalDomain_ball (p : M) :
   exact ⟨r, hr, Metric.isOpen_ball, Metric.mem_ball_self hr,
     (convex_ball (0 : TangentSpace I p) r).starConvex (Metric.mem_ball_self hr),
     fun v hv => (hball hv).2.2, hinj.mono fun v hv => (hball hv).2.1,
-    fun v => (hball v.2).1⟩
+    fun v => (hball v.property).1⟩
 
 /-- **Radial geodesics in different directions separate.** If the tangent vectors `v` and
 `w` at `p` do not lie on a common ray, the radial geodesics from `p` with these initial
@@ -497,7 +573,153 @@ theorem riemannianLog_eq_neg_mfderiv_riemannianExp_radial
   simp only [mvfderiv_apply_eq_mfderiv_apply, h.mfderiv_riemannianLog_self_apply,
     ContinuousLinearMap.id_apply]
 
+/-- At the center, composition with the logarithm preserves the scalar differential. -/
+theorem mvfderiv_comp_riemannianLog_self (h : IsNormalDomain I M p U)
+    (P : TangentSpace I p → ℝ) :
+    mvfderiv I (P ∘ riemannianLog I M p U) p = fderiv ℝ P 0 := by
+  by_cases hP : DifferentiableAt ℝ P 0
+  · have hdP : DifferentiableAt ℝ P (riemannianLog I M p U p) := by
+      simpa only [h.riemannianLog_self] using hP
+    ext v
+    rw [mvfderiv_comp_apply_of_differentiableAt hdP
+      (h.mdifferentiableAt_riemannianLog h.self_mem_image), h.mvfderiv_riemannianLog_self,
+      ContinuousLinearMap.id_apply, h.riemannianLog_self]
+  · have heq : (P ∘ riemannianLog I M p U) ∘ riemannianExp I M p =ᶠ[𝓝 0] P := by
+      filter_upwards [h.isOpen.mem_nhds h.zero_mem] with v hv
+      simp only [Function.comp_apply, h.riemannianLog_riemannianExp hv]
+    have hnot : ¬MDifferentiableAt I 𝓘(ℝ) (P ∘ riemannianLog I M p U) p := by
+      intro hcomp
+      have hcomp' : MDifferentiableAt I 𝓘(ℝ) (P ∘ riemannianLog I M p U)
+          (riemannianExp I M p 0) := by simpa only [riemannianExp_zero] using hcomp
+      have hd := hcomp'.comp 0
+        ((contMDiffAt_riemannianExp (zero_mem_expDomain p)).mdifferentiableAt (by simp))
+      exact hP (heq.mdifferentiableAt_iff.mp hd).differentiableAt
+    rw [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hnot,
+      fderiv_zero_of_not_differentiableAt hP, ContinuousLinearMap.comp_zero]
+
 end IsNormalDomain
+
+/-! ### Radial geodesic homotopy on a normal domain -/
+
+section RadialHomotopy
+
+variable (I M) in
+/-- The natural domain of the raw radial geodesic homotopy centered at `q` on a tangent set `U`:
+pairs `(s, x) ∈ ℝ × M` with `x ∈ exp_q '' U` and `s • log_q x ∈ expDomain`. -/
+def radialGeodesicHomotopyDomain (q : M) (U : Set (TangentSpace I q)) : Set (ℝ × M) :=
+  {p : ℝ × M | p.2 ∈ riemannianExp I M q '' U ∧
+    p.1 • riemannianLog I M q U p.2 ∈ expDomain I M q}
+
+@[simp]
+theorem mem_radialGeodesicHomotopyDomain_iff {q : M} {U : Set (TangentSpace I q)} {p : ℝ × M} :
+    p ∈ radialGeodesicHomotopyDomain I M q U ↔
+      p.2 ∈ riemannianExp I M q '' U ∧ p.1 • riemannianLog I M q U p.2 ∈ expDomain I M q := by
+  rw [radialGeodesicHomotopyDomain]
+  rfl
+
+variable (I M) in
+/-- The raw radial geodesic contraction `H(s, x) = exp_q (s • log_q x)` centered at `q` using a
+tangent set `U`. -/
+def radialGeodesicHomotopy (q : M) (U : Set (TangentSpace I q)) (p : ℝ × M) : M :=
+  riemannianExp I M q (p.1 • riemannianLog I M q U p.2)
+
+theorem radialGeodesicHomotopy_def (q : M) (U : Set (TangentSpace I q)) (p : ℝ × M) :
+    radialGeodesicHomotopy I M q U p =
+      riemannianExp I M q (p.1 • riemannianLog I M q U p.2) := by
+  rw [radialGeodesicHomotopy]
+
+theorem radialGeodesicHomotopy_one_left {q : M} {U : Set (TangentSpace I q)} {x : M}
+    (hx : x ∈ riemannianExp I M q '' U) :
+    radialGeodesicHomotopy I M q U (1, x) = x := by
+  simp [radialGeodesicHomotopy, riemannianExp_riemannianLog hx]
+
+/-- The raw radial geodesic homotopy does not depend on the normal domain: on the normal
+neighbourhood of a smaller set `V ⊆ U`, the homotopies relative to `V` and `U` agree. -/
+theorem IsNormalDomain.radialGeodesicHomotopy_eq_of_subset {q x : M}
+    {U V : Set (TangentSpace I q)} (hq : IsNormalDomain I M q U) (hVU : V ⊆ U)
+    (hx : x ∈ riemannianExp I M q '' V) (s : ℝ) :
+    radialGeodesicHomotopy I M q V (s, x) = radialGeodesicHomotopy I M q U (s, x) := by
+  rw [radialGeodesicHomotopy_def, radialGeodesicHomotopy_def, hq.riemannianLog_eq_of_subset hVU hx]
+
+/-- The raw radial geodesic homotopy at `(s, x)` does not depend on the normal ball radius once `x`
+lies in both normal balls. -/
+theorem radialGeodesicHomotopy_ball_eq_of_isNormalDomain {q x : M} {r₁ r₂ : ℝ} (s : ℝ)
+    (hq₁ : IsNormalDomain I M q (Metric.ball 0 r₁))
+    (hq₂ : IsNormalDomain I M q (Metric.ball 0 r₂))
+    (hx₁ : x ∈ riemannianExp I M q '' Metric.ball 0 r₁)
+    (hx₂ : x ∈ riemannianExp I M q '' Metric.ball 0 r₂) :
+    radialGeodesicHomotopy I M q (Metric.ball 0 r₁) (s, x) =
+      radialGeodesicHomotopy I M q (Metric.ball 0 r₂) (s, x) := by
+  rcases le_total r₁ r₂ with hle | hle
+  · exact hq₂.radialGeodesicHomotopy_eq_of_subset (Metric.ball_subset_ball hle) hx₁ s
+  · exact (hq₁.radialGeodesicHomotopy_eq_of_subset (Metric.ball_subset_ball hle) hx₂ s).symm
+
+/-- For any subset `W ⊆ exp_q '' U` of a normal neighbourhood, the cylinder `[0, 1] ×ˢ W` lies in
+`radialGeodesicHomotopyDomain I M q U`. -/
+theorem IsNormalDomain.Icc_prod_subset_radialGeodesicHomotopyDomain {q : M}
+    {U : Set (TangentSpace I q)} (hq : IsNormalDomain I M q U) {W : Set M}
+    (hW : W ⊆ riemannianExp I M q '' U) :
+    Icc (0 : ℝ) 1 ×ˢ W ⊆ radialGeodesicHomotopyDomain I M q U := by
+  rintro ⟨s, x⟩ ⟨hs, hx⟩
+  rw [mem_radialGeodesicHomotopyDomain_iff]
+  exact ⟨hW hx, hq.subset_expDomain (hq.smul_mem (riemannianLog_mem (hW hx)) hs.1 hs.2)⟩
+
+/-- On a normal domain `U` at `q`, the raw radial geodesic homotopy maps `[0, 1] ×ˢ (exp_q '' U)`
+into `exp_q '' U`. -/
+theorem IsNormalDomain.mapsTo_radialGeodesicHomotopy {q : M} {U : Set (TangentSpace I q)}
+    (hq : IsNormalDomain I M q U) :
+    MapsTo (radialGeodesicHomotopy I M q U) (Icc (0 : ℝ) 1 ×ˢ (riemannianExp I M q '' U))
+      (riemannianExp I M q '' U) := by
+  rintro ⟨s, x⟩ ⟨hs, hx⟩
+  exact ⟨s • riemannianLog I M q U x, hq.smul_mem (riemannianLog_mem hx) hs.1 hs.2, rfl⟩
+
+variable [I.Boundaryless] [T2Space M]
+
+@[simp]
+theorem radialGeodesicHomotopy_zero_left (q : M) (U : Set (TangentSpace I q)) (x : M) :
+    radialGeodesicHomotopy I M q U (0, x) = q := by
+  simp [radialGeodesicHomotopy]
+
+@[simp]
+theorem IsNormalDomain.radialGeodesicHomotopy_self_right {q : M} {U : Set (TangentSpace I q)}
+    (hq : IsNormalDomain I M q U) (s : ℝ) :
+    radialGeodesicHomotopy I M q U (s, q) = q := by
+  simp [radialGeodesicHomotopy, hq.riemannianLog_self]
+
+/-- When `U` is a normal domain at `q`, the natural domain of `radialGeodesicHomotopy` is open in
+`ℝ × M`. -/
+theorem IsNormalDomain.isOpen_radialGeodesicHomotopyDomain {q : M} {U : Set (TangentSpace I q)}
+    (hq : IsNormalDomain I M q U) :
+    IsOpen (radialGeodesicHomotopyDomain I M q U) := by
+  let V := riemannianExp I M q '' U
+  have hcont : ContinuousOn (fun p : ℝ × M ↦ p.1 • riemannianLog I M q U p.2) (univ ×ˢ V) :=
+    continuousOn_fst.smul (hq.continuousOn_riemannianLog.comp continuousOn_snd fun _ hp ↦ hp.2)
+  have hopen := hcont.isOpen_inter_preimage (isOpen_univ.prod hq.isOpen_image) (isOpen_expDomain q)
+  have heq : (univ ×ˢ V) ∩
+      (fun p : ℝ × M ↦ p.1 • riemannianLog I M q U p.2) ⁻¹' expDomain I M q =
+      radialGeodesicHomotopyDomain I M q U := by
+    ext ⟨s, x⟩
+    simp [radialGeodesicHomotopyDomain, V]
+  rwa [← heq]
+
+/-- On a normal domain `U` at `q`, the raw radial geodesic homotopy is smooth on its open domain
+`radialGeodesicHomotopyDomain I M q U`. -/
+theorem IsNormalDomain.contMDiffOn_radialGeodesicHomotopy {q : M} {U : Set (TangentSpace I q)}
+    (hq : IsNormalDomain I M q U) :
+    ContMDiffOn ((𝓘(ℝ, ℝ)).prod I) I ∞ (radialGeodesicHomotopy I M q U)
+      (radialGeodesicHomotopyDomain I M q U) := by
+  intro p hp
+  rw [mem_radialGeodesicHomotopyDomain_iff] at hp
+  have hlog : ContMDiffAt ((𝓘(ℝ, ℝ)).prod I) 𝓘(ℝ, TangentSpace I q) ∞
+      (fun u : ℝ × M ↦ riemannianLog I M q U u.2) p :=
+    (hq.contMDiffOn_riemannianLog.contMDiffAt
+      (hq.isOpen_image.mem_nhds hp.1)).comp p contMDiffAt_snd
+  have hsmul : ContMDiffAt ((𝓘(ℝ, ℝ)).prod I) 𝓘(ℝ, TangentSpace I q) ∞
+      (fun u : ℝ × M ↦ u.1 • riemannianLog I M q U u.2) p :=
+    contMDiffAt_fst.smul hlog
+  exact ((contMDiffAt_riemannianExp hp.2).comp p hsmul).contMDiffWithinAt
+
+end RadialHomotopy
 
 end TauCeti.Manifold
 

@@ -88,7 +88,7 @@ variable [NeZero d]
 private noncomputable def veroneseAffineOpenCover : (Proj 𝒜).AffineOpenCover where
   I₀ := Σ k : ℕ+, veroneseGrading 𝒜 d k
   X i := .of (Away 𝒜 ((i.2 : veronese 𝒜 d) : A))
-  f i := awayι 𝒜 _ (mem_veroneseGrading.1 i.2.2) (Nat.mul_pos (NeZero.pos d) i.1.pos)
+  f i := awayι 𝒜 _ (mem_veroneseGrading.1 i.2.property) (Nat.mul_pos (NeZero.pos d) i.1.pos)
   idx x := (TopologicalSpace.Opens.mem_iSup.mp
     ((iSup_basicOpen_veronese_eq_top 𝒜 d).ge (Set.mem_univ x))).choose
   covers x := by
@@ -145,26 +145,27 @@ private theorem SpecMap_awayMap_fromProjChart {f g x : veronese 𝒜 d} {k k' : 
 /-- The morphism `Proj A^{(d)} ⟶ Proj A`, glued from the chart morphisms `toProjChart`. -/
 private noncomputable def veroneseToProj : Proj (veroneseGrading 𝒜 d) ⟶ Proj 𝒜 :=
   (affineOpenCover (veroneseGrading 𝒜 d)).openCover.glueMorphisms
-    (fun i : Σ k : ℕ+, veroneseGrading 𝒜 d k ↦ toProjChart 𝒜 d i.2.2 i.1.pos)
+    (fun i : Σ k : ℕ+, veroneseGrading 𝒜 d k ↦ toProjChart 𝒜 d i.2.property i.1.pos)
     fun (i j : Σ k : ℕ+, veroneseGrading 𝒜 d k) ↦
-      pullback_fst_awayι_comp_eq_snd_comp i.2.2 i.1.pos j.2.2 j.1.pos <|
-        (SpecMap_awayMap_toProjChart 𝒜 d i.2.2 i.1.pos j.2.2 rfl).trans <|
+      pullback_fst_awayι_comp_eq_snd_comp i.2.property i.1.pos j.2.property j.1.pos <|
+        (SpecMap_awayMap_toProjChart 𝒜 d i.2.property i.1.pos j.2.property rfl).trans <|
           -- the two charts of `fg` differ only in the order of the degree `k + k'`
           .trans (by congr 1; exact add_comm _ _)
-            (SpecMap_awayMap_toProjChart 𝒜 d j.2.2 j.1.pos i.2.2 (mul_comm _ _)).symm
+            (SpecMap_awayMap_toProjChart 𝒜 d j.2.property j.1.pos i.2.property (mul_comm _ _)).symm
 
 /-- The morphism `Proj A ⟶ Proj A^{(d)}`, glued from the chart morphisms `fromProjChart`. -/
 private noncomputable def projToVeronese : Proj 𝒜 ⟶ Proj (veroneseGrading 𝒜 d) :=
   (veroneseAffineOpenCover 𝒜 d).openCover.glueMorphisms
-    (fun i : Σ k : ℕ+, veroneseGrading 𝒜 d k ↦ fromProjChart 𝒜 d i.2.2 i.1.pos)
+    (fun i : Σ k : ℕ+, veroneseGrading 𝒜 d k ↦ fromProjChart 𝒜 d i.2.property i.1.pos)
     fun (i j : Σ k : ℕ+, veroneseGrading 𝒜 d k) ↦
-      pullback_fst_awayι_comp_eq_snd_comp (mem_veroneseGrading.1 i.2.2)
-        (Nat.mul_pos (NeZero.pos d) i.1.pos) (mem_veroneseGrading.1 j.2.2)
+      pullback_fst_awayι_comp_eq_snd_comp (mem_veroneseGrading.1 i.2.property)
+        (Nat.mul_pos (NeZero.pos d) i.1.pos) (mem_veroneseGrading.1 j.2.property)
         (Nat.mul_pos (NeZero.pos d) j.1.pos) <|
-        (SpecMap_awayMap_fromProjChart 𝒜 d i.2.2 i.1.pos j.2.2 rfl).trans <|
+        (SpecMap_awayMap_fromProjChart 𝒜 d i.2.property i.1.pos j.2.property rfl).trans <|
           -- the two charts of `fg` differ only in the order of the degree `k + k'`
           .trans (by congr 1; exact add_comm _ _)
-            (SpecMap_awayMap_fromProjChart 𝒜 d j.2.2 j.1.pos i.2.2 (mul_comm _ _)).symm
+            (SpecMap_awayMap_fromProjChart 𝒜 d j.2.property j.1.pos i.2.property
+                (mul_comm _ _)).symm
 
 @[reassoc]
 private theorem awayι_veroneseToProj {f : veronese 𝒜 d} {k : ℕ}
@@ -206,9 +207,9 @@ noncomputable def veroneseIso : Proj (veroneseGrading 𝒜 d) ≅ Proj 𝒜 wher
   hom := veroneseToProj 𝒜 d
   inv := projToVeronese 𝒜 d
   hom_inv_id := (affineOpenCover (veroneseGrading 𝒜 d)).openCover.hom_ext _ _ fun i ↦
-    (awayι_veroneseToProj_projToVeronese 𝒜 d i.2.2 i.1.pos).trans (Category.comp_id _).symm
+    (awayι_veroneseToProj_projToVeronese 𝒜 d i.2.property i.1.pos).trans (Category.comp_id _).symm
   inv_hom_id := (veroneseAffineOpenCover 𝒜 d).openCover.hom_ext _ _ fun i ↦
-    (awayι_projToVeronese_veroneseToProj 𝒜 d i.2.2 i.1.pos).trans (Category.comp_id _).symm
+    (awayι_projToVeronese_veroneseToProj 𝒜 d i.2.property i.1.pos).trans (Category.comp_id _).symm
 
 /-- On the standard chart of `f ∈ 𝒜 (d k)`, `k > 0`, the isomorphism
 `Proj A^{(d)} ≅ Proj A` is `Spec` of the inverse chart isomorphism `A_{(f)} ≃ A^{(d)}_{(f)}`. -/
@@ -343,7 +344,7 @@ theorem map_veroneseMap_comp_veroneseIso_hom (f : 𝒜 →+*ᵍ ℬ)
     -- `veroneseMap d f s` is `f s` in `B`, so the chart square of `Proj.map f` applies
     exact congrArg (_ ≫ ·) (awayι_comp_map f hf hpos _ (mem_veroneseGrading.1 hs)).symm
   exact (mapAffineOpenCover _ (irrelevant_le_map_veroneseMap d f hf)).openCover.hom_ext _ _
-    fun i ↦ this _ _ i.2.2 i.1.pos
+    fun i ↦ this _ _ i.2.property i.1.pos
 
 /-- The inverse isomorphism `Proj A ≅ Proj A^{(d)}` is natural with respect to `Proj.map`, for
 graded ring homomorphisms `f : A → B` with `ℬ₊ ≤ 𝒜₊.map f`. -/
@@ -371,7 +372,7 @@ theorem veroneseIso_hom_toSpecZero :
     congr 2
     exact RingHom.ext awayVeroneseEquiv_symm_fromZeroRingHom
   exact (affineOpenCover (veroneseGrading 𝒜 d)).openCover.hom_ext _ _ fun i ↦
-    this _ _ i.2.2 i.1.pos
+    this _ _ i.2.property i.1.pos
 
 /-- The inverse isomorphism `Proj A ≅ Proj A^{(d)}` lies over `Spec` of the identification
 `A^{(d)}_0 ≃ A_0` of the degree-zero parts. -/

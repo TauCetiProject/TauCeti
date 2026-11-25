@@ -386,7 +386,7 @@ theorem mk_smul_eq_inv {g : Perm (Fin 3)} (hg : g ∉ alternatingGroup (Fin 3))
   rw [Subgroup.quotientConjugationAction_mk_smul]
   apply Subtype.ext
   rw [MulAut.conjNormal_apply, Subgroup.coe_inv]
-  exact key g n (by rwa [Perm.mem_alternatingGroup] at hg) (Perm.mem_alternatingGroup.mp n.2)
+  exact key g n (by rwa [Perm.mem_alternatingGroup] at hg) (Perm.mem_alternatingGroup.mp n.property)
 
 /-- **The extension class of `A₃ → S₃ → S₃ ⧸ A₃` vanishes** in `H²(S₃ ⧸ A₃, A₃)`, for every
 normalized section, since `A₃` has a complement. -/

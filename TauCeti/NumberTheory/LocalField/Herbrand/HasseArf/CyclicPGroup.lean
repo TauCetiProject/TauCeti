@@ -11,7 +11,7 @@ import TauCeti.GroupTheory.PGroup
 import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 import TauCeti.NumberTheory.LocalField.Herbrand.UpperQuotient
 import TauCeti.NumberTheory.LocalField.UnitFiltration.GaloisAction
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 import TauCeti.RingTheory.Norm.Equiv
 
 /-!
@@ -58,26 +58,37 @@ namespace TauCeti.LocalFieldsRamification
 
 section Tower
 
+section NormUnits
+
+variable {K F L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field F] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K F] [IsGalois K F] [Algebra F L]
+  [Algebra K L] [ValuativeExtension K L] [Normal K L] [IsScalarTower K F L]
+
+/-- The norms of integer units of `L` form a subgroup of `Fˣ` stable under `Aut(F/K)`. -/
+private theorem smul_mem_map_normUnits (τ : F ≃ₐ[K] F) {y : Fˣ}
+    (hy : y ∈ (unitFiltration L 0).map (Algebra.normUnits F)) :
+    τ • y ∈ (unitFiltration L 0).map (Algebra.normUnits F) := by
+  have : Module.Finite K L := TauCeti.finite_of_valuativeExtension K L
+  obtain ⟨z, hz, rfl⟩ := hy
+  rw [← τ.restrict_liftNormal L, AlgEquiv.restrictNormal_smul_normUnits]
+  exact Subgroup.mem_map_of_mem _ (by
+    simpa only [AlgEquiv.smul_units_def] using
+      (AlgEquiv.unitsMap_mem_unitFiltration_iff (τ.liftNormal L)).2 hz)
+
+end NormUnits
+
 variable {K F L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field F] [ValuativeRel F] [TopologicalSpace F]
   [IsNonarchimedeanLocalField F] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L]
   [Algebra K F] [ValuativeExtension K F] [Module.Finite K F] [IsGalois K F]
   [Algebra F L] [ValuativeExtension F L] [Module.Finite F L] [IsGalois F L]
-  [Algebra K L] [ValuativeExtension K L] [Module.Finite K L] [IsGalois K L]
-  [IsScalarTower K F L]
+  [Algebra K L] [IsScalarTower K F L]
 
-omit [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocalField F] [ValuativeExtension K F]
-  [Module.Finite K F] [ValuativeExtension F L] [Module.Finite F L] [IsGalois F L] in
-/-- The norms of integer units of `L` form a subgroup of `Fˣ` stable under `Aut(F/K)`. -/
-private theorem smul_mem_map_normUnits (τ : F ≃ₐ[K] F) {y : Fˣ}
-    (hy : y ∈ (unitFiltration L 0).map (Algebra.normUnits F)) :
-    τ • y ∈ (unitFiltration L 0).map (Algebra.normUnits F) := by
-  obtain ⟨z, hz, rfl⟩ := hy
-  rw [← τ.restrict_liftNormal L, AlgEquiv.restrictNormal_smul_normUnits]
-  exact Subgroup.mem_map_of_mem _ (by
-    simpa only [AlgEquiv.smul_units_def] using
-      (AlgEquiv.unitsMap_mem_unitFiltration_iff (τ.liftNormal L)).2 hz)
+section NormalTower
+
+variable [Normal K L]
 
 /-- In prime degree `ℓ` with an upper break, an automorphism of `F/K` of `ℓ`-power order moves
 every unit of `𝒪[F]` by a norm of a unit of `𝒪[L]`: it acts on the quotient of `U(F,0)` by these
@@ -88,6 +99,7 @@ private theorem smul_div_mem_map_normUnits_of_mem_unitFiltration_zero
     {σ : F ≃ₐ[K] F} {k : ℕ} (hσ : σ ^ finrank F L ^ k = 1) {y : Fˣ}
     (hy : y ∈ unitFiltration F 0) :
     σ • y / y ∈ (unitFiltration L 0).map (Algebra.normUnits F) := by
+  have : ValuativeExtension K L := .trans K F L
   have : Fact (finrank F L).Prime := ⟨hℓ⟩
   set N := (unitFiltration L 0).map (Algebra.normUnits F)
   set U := unitFiltration F 0
@@ -120,6 +132,8 @@ private theorem smul_div_mem_map_normUnits
     (ht : UpperJump F L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩)
     {σ : F ≃ₐ[K] F} {k : ℕ} (hσ : σ ^ finrank F L ^ k = 1) (y : Fˣ) :
     σ • y / y ∈ (unitFiltration L 0).map (Algebra.normUnits F) := by
+  have : ValuativeExtension K L := .trans K F L
+  have : Module.Finite K L := TauCeti.finite_of_valuativeExtension K L
   set N := (unitFiltration L 0).map (Algebra.normUnits F)
   -- `y ↦ σ y / y` is a homomorphism of the commutative group `Fˣ`.
   let c : Fˣ →* Fˣ := MulDistribMulAction.toMonoidHom Fˣ σ / MonoidHom.id Fˣ
@@ -144,11 +158,11 @@ private theorem smul_div_mem_map_normUnits
   exact mul_mem (smul_div_mem_map_normUnits_of_mem_unitFiltration_zero hℓ ht hσ hu)
     (zpow_mem hπN n)
 
-/-- **The induction step of Hasse--Arf.** Let `L/F/K` be a tower of Galois extensions of
-nonarchimedean local fields in which `L/F` has prime degree `ℓ` with an upper break at the natural
-number `t`, and `Gal(F/K)` is a cyclic `ℓ`-group with trivial lower ramification group
-`Gal(F/K)_{t+1}`. Then `t = ψℕ_{F/K}(n)` for some natural number `n`; equivalently, the Herbrand
-function `φ_{F/K}` takes the break `t` to an integer. -/
+/-- **The induction step of Hasse--Arf.** Let `L/F/K` be a tower of extensions of nonarchimedean
+local fields with `F/K` and `L/F` Galois and `L/K` normal, in which `L/F` has prime degree `ℓ` with
+an upper break at the natural number `t`, and `Gal(F/K)` is a cyclic `ℓ`-group with trivial lower
+ramification group `Gal(F/K)_{t+1}`. Then `t = ψℕ_{F/K}(n)` for some natural number `n`;
+equivalently, the Herbrand function `φ_{F/K}` takes the break `t` to an integer. -/
 theorem UpperJump.exists_psiNat_eq_of_isPGroup [IsCyclic (F ≃ₐ[K] F)]
     {t : ℕ} (ht : UpperJump F L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩)
     (hℓ : (finrank F L).Prime) (hp : IsPGroup (finrank F L) (F ≃ₐ[K] F))
@@ -202,11 +216,14 @@ theorem UpperJump.exists_psiNat_eq_of_isPGroup [IsCyclic (F ≃ₐ[K] F)]
   rw [relIndex_normUnits_unitFiltration_sup_at_break hℓ ht] at hone
   exact hℓ.ne_one hone
 
+end NormalTower
+
 /-- In a tower `L/F/K` with `Gal(L/K)` a cyclic `p`-group and `L/F` of prime degree with upper
 break `t`, the lower ramification group `Gal(F/K)_{t+1}` is trivial. It is the image of
 `G^w` for `w = φ_{F/K}(t + 1)`, whose trace `Gal(L/F)^{t+1}` on `Gal(L/F)` is trivial; the subgroups
 of a cyclic `p`-group form a chain, so `G^w` itself is trivial. -/
-private theorem lowerRamificationGroup_add_one_eq_bot_of_isPGroup [IsCyclic (L ≃ₐ[K] L)] {p : ℕ}
+private theorem lowerRamificationGroup_add_one_eq_bot_of_isPGroup [ValuativeExtension K L]
+    [Module.Finite K L] [IsGalois K L] [IsCyclic (L ≃ₐ[K] L)] {p : ℕ}
     [Fact p.Prime] (hp : IsPGroup p (L ≃ₐ[K] L)) (hℓ : (finrank F L).Prime) {t : ℕ}
     (ht : UpperJump F L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩) :
     lowerRamificationGroup K F (t + 1 : ℕ) = ⊥ := by

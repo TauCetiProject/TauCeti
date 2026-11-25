@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 public import TauCeti.Geometry.Manifold.VectorField.MappingTorus
 import Mathlib.Order.Interval.Set.Nat
 import TauCeti.Geometry.Manifold.Immersion.Differential
@@ -47,6 +48,8 @@ is the least period of `x`.
 
 * `TauCeti.SmoothMappingTorus.closedOrbit φ h`: for `h : Function.IsPeriodicPt φ d x`, the map
   `ℝ / dℤ → Y_φ`, `[t] ↦ [t, x]`.
+* `TauCeti.SmoothMappingTorus.closedOrbitEmbedding h hn hd`: the closed orbit through a point of
+  least period `d`, as a bundled smooth embedding.
 * `TauCeti.SmoothMappingTorus.orbitTorus φ h`: the orbit torus `(s, θ) ↦ (s, γ θ)` of the closed
   orbit through a periodic point.
 
@@ -235,6 +238,11 @@ theorem ncard_mk_preimage_range_closedOrbit (t : ℝ) :
     rw [minimalPeriod_eq_zero_of_notMem_periodicPts hx,
       mk_preimage_range_closedOrbit_eq_range_zpow h, (Set.infinite_range_of_injective hinj).ncard]
 
+/-- The period `1` of a fixed point is positive, so the closed orbit through a fixed point is
+parametrized by the circle `ℝ / ℤ` of period `(1 : ℕ)`. -/
+instance fact_natCast_one_pos : Fact (0 < ((1 : ℕ) : ℝ)) :=
+  ⟨Nat.cast_pos.2 one_pos⟩
+
 section Topology
 
 variable [Fact (0 < (d : ℝ))]
@@ -381,6 +389,18 @@ theorem isSmoothEmbedding_closedOrbit_iff (hn : 1 ≤ n) :
   rw [← injective_closedOrbit_iff h]
   exact ⟨fun he ↦ he.isEmbedding.injective, fun hinj ↦ ⟨isImmersion_closedOrbit h hn,
     ((contMDiff_closedOrbit h).continuous.isClosedEmbedding hinj).isEmbedding⟩⟩
+
+/-- The closed orbit through a point of least period `d`, as a bundled `C^n` smooth embedding of
+the circle `ℝ / dℤ` into the mapping torus. -/
+def closedOrbitEmbedding (hn : 1 ≤ n) (hd : minimalPeriod φ x = d) :
+    TauCeti.SmoothEmbedding 𝓘(ℝ) (𝓘(ℝ).prod I) n (AddCircle (d : ℝ)) (SmoothMappingTorus φ) :=
+  .ofIsSmoothEmbedding (closedOrbit φ h) ((isSmoothEmbedding_closedOrbit_iff h hn).2 hd)
+
+/-- The underlying map of `TauCeti.SmoothMappingTorus.closedOrbitEmbedding` is the closed orbit. -/
+@[simp]
+theorem coe_closedOrbitEmbedding (hn : 1 ≤ n) (hd : minimalPeriod φ x = d) :
+    ⇑(closedOrbitEmbedding h hn hd) = closedOrbit φ h :=
+  TauCeti.SmoothEmbedding.coe_ofIsSmoothEmbedding _ _
 
 end Manifold
 

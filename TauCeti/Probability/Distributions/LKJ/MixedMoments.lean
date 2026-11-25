@@ -8,10 +8,12 @@ module
 public import TauCeti.Probability.Distributions.LKJ.Symmetry
 public import TauCeti.Probability.Distributions.LKJ.CoordinateIntegral
 public import TauCeti.Analysis.Matrix.PartialCorrelation.GramPowers
+public import TauCeti.Analysis.Matrix.PartialCorrelation.Polynomial
 public import Mathlib.Probability.Distributions.Beta
 import TauCeti.Algebra.BigOperators.Pi
 import TauCeti.Analysis.Matrix.PosSemidef.Basic
 import TauCeti.LinearAlgebra.Matrix.Diagonal
+import TauCeti.Probability.Distributions.Beta.Polynomial
 import TauCeti.Probability.Distributions.LKJ.Cholesky.Moments
 import TauCeti.Probability.Distributions.LKJ.Marginal
 import TauCeti.Probability.Distributions.LKJ.PartialCorrelation
@@ -26,8 +28,10 @@ Gram pushforward `partialCorrelationGram` of independent centered symmetric Beta
 correlations (`TauCeti.Probability.map_coe_lkjMeasure`) and expanding `R = L * Lᵀ` through
 `TauCeti.prod_pow_partialCorrelationGram_eq_sum` evaluates every mixed entry moment as a finite
 sum, over the column choices of the Cholesky expansion, of products of Beta quotients.
+Alternatively, the formal Gram polynomial collects terms with the same partial-correlation and
+residual square-root exponents into one coefficient, yielding a sum over its monomial support.
 
-The expansion covers repeated symmetric entries, diagonal powers, and dimensions zero and one.
+The expansions cover repeated symmetric entries, diagonal powers, and dimensions zero and one.
 Diagonal exponents leave mixed moments unchanged, relabelling rows and columns by a permutation
 preserves mixed moments, and any vertex `i` of odd symmetric degree `∑ j, (n (i, j) + n (j, i))`
 forces the mixed moment to vanish by diagonal sign invariance. Specializing to a single entry gives
@@ -41,8 +45,10 @@ closed Beta-quotient moments of all natural orders.
 * `TauCeti.Probability.integral_prod_pow_partialCorrelationGram_pi_betaMeasure`: mixed entry
   moments of `partialCorrelationGram` under independent centered symmetric Beta partial
   correlations with arbitrary positive shapes;
-* `TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure`: closed finite
-  Beta-quotient evaluation of all natural mixed entry moments under `lkjMeasure p η` for `0 < η`;
+* `TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure` and
+  `TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure_eq_sum_coeff`: closed finite
+  Beta-quotient evaluations of all natural mixed entry moments under `lkjMeasure p η` for `0 < η`;
+  the first sums over column choices and the second over the support of the Gram polynomial;
 * `TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure_eq_integral_prod_filter_ne`,
   `TauCeti.Probability.integral_prod_pow_coe_apply_perm_lkjMeasure`, and
   `TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure_eq_zero_of_odd`: diagonal-exponent
@@ -164,7 +170,7 @@ theorem prod_pow_partialCorrelationGram_ae_eq_sum_prod_pi_betaMeasure
     (fun z ↦ ∏ ij, partialCorrelationGram z ij.1 ij.2 ^ n ij) =ᵐ[
       Measure.pi fun ij ↦ (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)]
       fun z ↦ ∑ c : mulTransposeExpansionChoice n,
-        ∏ ij, z ij ^ mulTransposeExpansionPower c ij.1 *
+        ∏ ij, z ij ^ mulTransposeExpansionPower c ij.val *
           (1 - z ij ^ 2) ^
             partialCorrelationCholeskyMonomialResidualPower (mulTransposeExpansionPower c) ij := by
   filter_upwards [ae_abs_lt_one_pi_centered_betaMeasure ha] with z hz
@@ -179,8 +185,8 @@ theorem integral_prod_pow_partialCorrelationGram_pi_betaMeasure
     ∫ z, ∏ ij, partialCorrelationGram z ij.1 ij.2 ^ n ij
       ∂(Measure.pi fun ij ↦ (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)) =
       ∑ c : mulTransposeExpansionChoice n,
-        ∏ ij, if Even (mulTransposeExpansionPower c ij.1) then
-          beta (((mulTransposeExpansionPower c ij.1 : ℝ) + 1) / 2)
+        ∏ ij, if Even (mulTransposeExpansionPower c ij.val) then
+          beta (((mulTransposeExpansionPower c ij.val : ℝ) + 1) / 2)
               (a ij + partialCorrelationCholeskyMonomialResidualPower
                 (mulTransposeExpansionPower c) ij) /
             beta (1 / 2) (a ij)
@@ -242,8 +248,8 @@ theorem integral_prod_pow_coe_apply_lkjMeasure (p : ℕ) {η : ℝ} (hη : 0 < �
     ∫ R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
         ∏ ij, (R : Matrix (Fin p) (Fin p) ℝ) ij.1 ij.2 ^ n ij ∂(lkjMeasure p η) =
       ∑ c : mulTransposeExpansionChoice n,
-        ∏ ij, if Even (mulTransposeExpansionPower c ij.1) then
-          beta (((mulTransposeExpansionPower c ij.1 : ℝ) + 1) / 2)
+        ∏ ij, if Even (mulTransposeExpansionPower c ij.val) then
+          beta (((mulTransposeExpansionPower c ij.val : ℝ) + 1) / 2)
               (lkjPartialCorrelationShape p η ij +
                 partialCorrelationCholeskyMonomialResidualPower
                   (mulTransposeExpansionPower c) ij) /
@@ -257,7 +263,7 @@ theorem integral_prod_pow_coe_apply_lkjMeasure (p : ℕ) {η : ℝ} (hη : 0 < �
     ∫ R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
         ∏ ij, (R : Matrix (Fin p) (Fin p) ℝ) ij.1 ij.2 ^ n ij ∂(lkjMeasure p η) =
         ∫ R, f R ∂((lkjMeasure p η).map Subtype.val) := by
-          rw [integral_map measurable_subtype_coe.aemeasurable hf.aestronglyMeasurable]
+          rw [integral_map measurable_subtypeVal.aemeasurable hf.aestronglyMeasurable]
     _ = ∫ z, f (partialCorrelationGram z) ∂(Measure.pi fun ij : strictLowerTriangle p ↦
           (betaMeasure (lkjPartialCorrelationShape p η ij)
             (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x)) := by
@@ -265,6 +271,39 @@ theorem integral_prod_pow_coe_apply_lkjMeasure (p : ℕ) {η : ℝ} (hη : 0 < �
         continuous_partialCorrelationGram.measurable.aemeasurable hf.aestronglyMeasurable]
     _ = _ := integral_prod_pow_partialCorrelationGram_pi_betaMeasure
       (lkjPartialCorrelationShape_pos hη) n
+
+/-- Every natural mixed entry moment of a valid LKJ law equals a finite sum of Beta products.
+The sum is indexed by the monomial support of the formal Gram expansion. Odd partial-correlation
+exponents give zero, and each residual square-root exponent contributes half that power to the
+Beta shape. -/
+theorem integral_prod_pow_coe_apply_lkjMeasure_eq_sum_coeff {p : ℕ} {η : ℝ} (hη : 0 < η)
+    (n : Fin p × Fin p → ℕ) :
+    ∫ R, (∏ ij, (R.val ij.1 ij.2) ^ n ij) ∂lkjMeasure p η =
+      ∑ d ∈ (partialCorrelationGramMonomialPolynomial p n).support,
+        (partialCorrelationGramMonomialPolynomial p n).coeff d * ∏ ij : strictLowerTriangle p,
+          if Even (d (Sum.inl ij)) then
+            beta (((d (Sum.inl ij) : ℝ) + 1) / 2)
+                (lkjPartialCorrelationShape p η ij + (d (Sum.inr ij) : ℝ) / 2) /
+              beta (1 / 2) (lkjPartialCorrelationShape p η ij) else 0 := by
+  have hcont : Continuous (fun R : Matrix (Fin p) (Fin p) ℝ ↦
+      ∏ ij, R ij.1 ij.2 ^ n ij) := by fun_prop
+  have htransfer :
+      (∫ R, (∏ ij, (R.val ij.1 ij.2) ^ n ij) ∂lkjMeasure p η) =
+        ∫ z : strictLowerTriangle p → ℝ,
+          MvPolynomial.eval (Sum.elim z (fun ij ↦ Real.sqrt (1 - z ij ^ 2)))
+            (partialCorrelationGramMonomialPolynomial p n)
+          ∂(Measure.pi fun ij ↦
+            (betaMeasure (lkjPartialCorrelationShape p η ij)
+              (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x)) := by
+    rw [← integral_map (φ := Subtype.val)
+      (f := fun R : Matrix (Fin p) (Fin p) ℝ ↦ ∏ ij, R ij.1 ij.2 ^ n ij)
+      measurable_subtypeVal.aemeasurable hcont.aestronglyMeasurable, map_coe_lkjMeasure hη,
+      integral_map continuous_partialCorrelationGram.measurable.aemeasurable
+        hcont.aestronglyMeasurable]
+    simp only [eval_partialCorrelationGramMonomialPolynomial]
+  rw [htransfer]
+  exact integral_eval_sumElim_sqrt_one_sub_sq_pi_centered_betaMeasure _
+    (lkjPartialCorrelationShape_pos hη) _
 
 /-- Diagonal exponents do not change mixed entry moments under `lkjMeasure`, since diagonal entries
 are almost surely one (and for nonpositive shapes the measure is zero). -/
@@ -327,7 +366,7 @@ theorem integral_prod_pow_coe_apply_lkjMeasure_eq_zero_of_odd {p : ℕ} (η : �
       (Measure.isProbabilityMeasure_map_iff (by fun_prop)).2 inferInstance
     let g : Matrix (Fin p) (Fin p) ℝ → ℝ := fun M ↦ ∏ q, M q.1 q.2 ^ n q
     have hg : Continuous g := by fun_prop
-    rw [← integral_map (f := g) measurable_subtype_coe.aemeasurable hg.aestronglyMeasurable,
+    rw [← integral_map (f := g) measurable_subtypeVal.aemeasurable hg.aestronglyMeasurable,
       map_coe_lkjMeasure hη]
     exact integral_prod_pow_apply_map_partialCorrelationGram_pi_eq_zero_of_odd _ hi
 
@@ -421,8 +460,8 @@ theorem integral_prod_pow_coe_apply_lkjMeasure (hX : HasLaw X (lkjMeasure p η) 
     (hη : 0 < η) (n : Fin p × Fin p → ℕ) :
     ∫ ω, (∏ ij, (X ω : Matrix (Fin p) (Fin p) ℝ) ij.1 ij.2 ^ n ij) ∂P =
       ∑ c : mulTransposeExpansionChoice n,
-        ∏ ij, if Even (mulTransposeExpansionPower c ij.1) then
-          beta (((mulTransposeExpansionPower c ij.1 : ℝ) + 1) / 2)
+        ∏ ij, if Even (mulTransposeExpansionPower c ij.val) then
+          beta (((mulTransposeExpansionPower c ij.val : ℝ) + 1) / 2)
               (lkjPartialCorrelationShape p η ij +
                 partialCorrelationCholeskyMonomialResidualPower
                   (mulTransposeExpansionPower c) ij) /

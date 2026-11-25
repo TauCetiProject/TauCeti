@@ -62,14 +62,14 @@ variable {K : Type*} [Field K]
 of the closed balls of radii `f w` at the real and complex places. -/
 theorem setOf_forall_normAtPlace_le_eq_prod (f : InfinitePlace K → ℝ) :
     {x : mixedSpace K | ∀ w : InfinitePlace K, normAtPlace w x ≤ f w} =
-      (Set.univ.pi fun w : {w : InfinitePlace K // IsReal w} ↦ closedBall 0 (f w.1)) ×ˢ
-      (Set.univ.pi fun w : {w : InfinitePlace K // IsComplex w} ↦ closedBall 0 (f w.1)) := by
+      (Set.univ.pi fun w : {w : InfinitePlace K // IsReal w} ↦ closedBall 0 (f w.val)) ×ˢ
+      (Set.univ.pi fun w : {w : InfinitePlace K // IsComplex w} ↦ closedBall 0 (f w.val)) := by
   ext x
   simp only [Set.mem_ofPred_eq, Set.mem_prod, Set.mem_pi, Set.mem_univ, forall_true_left,
     mem_closedBall_zero_iff]
   refine ⟨fun hx ↦ ⟨fun w ↦ ?_, fun w ↦ ?_⟩, fun ⟨h₁, h₂⟩ w ↦ ?_⟩
-  · simpa only [normAtPlace_apply_of_isReal w.2, Real.norm_eq_abs] using hx w.1
-  · simpa only [normAtPlace_apply_of_isComplex w.2] using hx w.1
+  · simpa only [normAtPlace_apply_of_isReal w.property, Real.norm_eq_abs] using hx w.val
+  · simpa only [normAtPlace_apply_of_isComplex w.property] using hx w.val
   · by_cases hw : IsReal w
     · simpa only [normAtPlace_apply_of_isReal hw, Real.norm_eq_abs] using h₁ ⟨w, hw⟩
     · have hwc : IsComplex w := not_isReal_iff_isComplex.mp hw

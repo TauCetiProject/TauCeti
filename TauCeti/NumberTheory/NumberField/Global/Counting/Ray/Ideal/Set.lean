@@ -145,7 +145,7 @@ noncomputable def rayIdealSetEquiv (𝔪 : Modulus K) (𝔞 : (Ideal (𝓞 K))�
   Equiv.ofBijective
     (fun x ↦ ⟨⟨(x : mixedSpace K), rayIdealSet_subset_rayIntegerSet 𝔪 𝔞 x.prop⟩,
       preimageOfMemRayIntegerSet_mem_and_sub_one_mem_of_mem_rayIdealSet x.prop⟩)
-    ⟨fun _ _ h ↦ Subtype.ext (congrArg (fun y ↦ ((y.1 : rayIntegerSet 𝔪) : mixedSpace K)) h),
+    ⟨fun _ _ h ↦ Subtype.ext (congrArg (fun y ↦ ((y.val : rayIntegerSet 𝔪) : mixedSpace K)) h),
       fun a ↦ ⟨⟨(a : mixedSpace K), mem_rayIdealSet.mpr
         ⟨(mem_rayIntegerSet.mp (a : rayIntegerSet 𝔪).prop).1,
           preimageOfMemRayIntegerSet (a : rayIntegerSet 𝔪), a.prop,

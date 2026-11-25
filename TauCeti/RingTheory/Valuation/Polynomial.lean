@@ -162,7 +162,7 @@ theorem map_coeff_comp_mul_pow_le {F Q : R[X]}
     have hv : v ((Q ^ n).coeff k * x ^ k) * S ^ n = 0 :=
       le_antisymm (hQn.trans_eq (by rw [hA, zero_mul])) zero_le
     simp [(mul_eq_zero.mp hv).resolve_right (pow_ne_zero n hS)]
-  refine le_of_mul_le_mul_right ?_ (zero_lt_iff.mpr h0)
+  refine le_of_mul_le_mul_right ?_ (pos_iff_ne_zero.mpr h0)
   calc v (F.coeff n) * (v ((Q ^ n).coeff k * x ^ k) * S) * (A ^ n * S ^ n)
       = v (F.coeff n) * A ^ n * S * (v ((Q ^ n).coeff k * x ^ k) * S ^ n) := by
         simp only [mul_comm, mul_left_comm, mul_assoc]
@@ -194,7 +194,7 @@ theorem exists_C_mul_coeff_eq_one (v : Valuation K Γ₀) {P : K[X]} (hP : P ≠
   set S := (Finset.range (P.natDegree + 1)).filter fun n ↦ ∀ k, f k ≤ f n
   have hpos : ∀ n, (∀ k, f k ≤ f n) → f n ≠ 0 := fun n hn h ↦ by
     have := hn P.natDegree
-    rw [h, le_zero_iff] at this
+    rw [h, nonpos_iff_eq_zero] at this
     exact leadingCoeff_ne_zero.mpr hP ((map_eq_zero _).mp this)
   have hmemS : ∀ n, (∀ k, f k ≤ f n) → n ∈ S := fun n hn ↦ by
     refine Finset.mem_filter.mpr ⟨Finset.mem_range.mpr (Nat.lt_succ_of_le ?_), hn⟩

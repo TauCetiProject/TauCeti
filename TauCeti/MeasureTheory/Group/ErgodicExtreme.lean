@@ -113,6 +113,9 @@ variable {X : Type*} {m : MeasurableSpace X} {μ ν : Measure X}
 /-- **An almost invariant function under an ergodic action is almost everywhere constant.** The
 target may be any nonempty countably separated measurable space; the action-level analogue of
 `Ergodic.ae_eq_const_of_ae_eq_comp₀`. -/
+@[to_additive ae_eq_const_of_forall_ae_eq_comp_vadd₀ /-- **An almost invariant function under an
+ergodic additive action is almost everywhere constant.** The target may be any nonempty countably
+separated measurable space. -/]
 theorem ae_eq_const_of_forall_ae_eq_comp_smul₀ (G : Type*) [SMul G X]
     {β : Type*} [Nonempty β] [MeasurableSpace β] [MeasurableSpace.CountablySeparated β]
     [ErgodicSMul G X μ] {g : X → β} (hgm : NullMeasurable g μ)
@@ -203,11 +206,9 @@ theorem of_mem_extremePoints_measure_univ_eq {c : ℝ≥0∞} (hc : c ≠ ∞)
   refine TauCeti.MeasureTheory.ergodicSMul_iff_forall_smul_invariant.2 fun t htm htinv => ?_
   have hmem {u : Set X} (hum : MeasurableSet u) (huinv : ∀ g : G, (fun x => g • x) ⁻¹' u = u)
       (hu0 : μ u ≠ 0) : c • μ[|u] ∈ invariantMeasuresOfMeasureUnivEq G X c := by
-    have := SMulInvariantMeasure.restrict (G := G) (μ := μ) hum huinv
-    refine ⟨?_, ?_⟩
-    · -- `μ[|u]` is `(μ u)⁻¹ • μ.restrict u` by the definition of `ProbabilityTheory.cond`
-      rw [ProbabilityTheory.cond]; infer_instance
-    · rw [_root_.smul_apply, (cond_isProbabilityMeasure hu0).1, smul_eq_mul, mul_one]
+    have := SMulInvariantMeasure.cond (G := G) (μ := μ) hum fun g => by rw [huinv g]
+    refine ⟨inferInstance, ?_⟩
+    · rw [_root_.smul_apply, (cond_isProbabilityMeasure hu0).measure_univ, smul_eq_mul, mul_one]
   by_contra H
   obtain ⟨hs, hs'⟩ : μ t ≠ 0 ∧ μ tᶜ ≠ 0 := by
     simpa [eventuallyEmptyOrUniv_iff, ae_iff, and_comm] using! H
@@ -283,7 +284,7 @@ theorem ae_eq_of_comp_eq [MeasurableSpace.CountablyGenerated X] [IsProbabilityMe
       fun B hB _ => by
         rw [← Measure.bind_apply hs κ.aemeasurable, hmix B hB, setLIntegral_const,
           _root_.smul_apply, smul_eq_mul, mul_comm]
-  have hall : ∀ᵐ z ∂π, ∀ s : ProbabilityMeasureCodeIndex X, κ z s.1 = μ s.1 :=
+  have hall : ∀ᵐ z ∂π, ∀ s : ProbabilityMeasureCodeIndex X, κ z s.val = μ s.val :=
     ae_all_iff.2 fun s => hset _ (measurableSet_probabilityMeasureCodeIndex s)
   filter_upwards [hall] with z hz
   let P : ProbabilityMeasure X := ⟨κ z, inferInstance⟩

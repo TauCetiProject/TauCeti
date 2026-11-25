@@ -53,30 +53,30 @@ theorem tprod_pos_of_summable_abs_sub_one {α : Type*} {f : α → ℝ}
 product over `T \ S` times the tail product outside `T`. -/
 theorem tprod_split_finset {ι : Type*} [DecidableEq ι] {S T : Finset ι} (hST : S ⊆ T)
     (f : ι → ℝ) (hf : ∀ i ∉ S, 0 < f i)
-    (hconv : Summable fun i : {i // i ∉ S} ↦ |f i.1 - 1|) :
-    (∏' i : {i // i ∉ S}, f i.1) =
-      (∏ i ∈ T \ S, f i) * (∏' i : {i // i ∉ T}, f i.1) := by
+    (hconv : Summable fun i : {i // i ∉ S} ↦ |f i.val - 1|) :
+    (∏' i : {i // i ∉ S}, f i.val) =
+      (∏ i ∈ T \ S, f i) * (∏' i : {i // i ∉ T}, f i.val) := by
   have hconvT := summable_notMem_of_subset hST (fun i ↦ |f i - 1|) hconv
-  let s : Set {i // i ∉ S} := {x | x.1 ∈ T}
+  let s : Set {i // i ∉ S} := {x | x.val ∈ T}
   let e₁ : s ≃ ↥(T \ S) :=
-    { toFun x := ⟨x.1.1, Finset.mem_sdiff.mpr ⟨x.2, x.1.2⟩⟩
-      invFun y := ⟨⟨y.1, (Finset.mem_sdiff.mp y.2).2⟩, (Finset.mem_sdiff.mp y.2).1⟩
+    { toFun x := ⟨x.val.val, Finset.mem_sdiff.mpr ⟨x.property, x.val.property⟩⟩
+      invFun y := ⟨⟨y.val, (Finset.mem_sdiff.mp y.property).2⟩, (Finset.mem_sdiff.mp y.property).1⟩
       left_inv _ := rfl
       right_inv _ := rfl }
   let e₂ : ↑sᶜ ≃ {i // i ∉ T} :=
-    { toFun x := ⟨x.1.1, x.2⟩
-      invFun y := ⟨⟨y.1, fun h ↦ y.2 (hST h)⟩, y.2⟩
+    { toFun x := ⟨x.val.val, x.property⟩
+      invFun y := ⟨⟨y.val, fun h ↦ y.property (hST h)⟩, y.property⟩
       left_inv _ := rfl
       right_inv _ := rfl }
   have _ : Fintype s := Fintype.ofEquiv _ e₁.symm
-  have hsc : Multipliable (fun x : ↑sᶜ ↦ f x.1.1) := e₂.multipliable_iff.mpr <|
-    Real.multipliable_of_summable_log (fun y ↦ hf y.1 fun h ↦ y.2 (hST h))
+  have hsc : Multipliable (fun x : ↑sᶜ ↦ f x.val.val) := e₂.multipliable_iff.mpr <|
+    Real.multipliable_of_summable_log (fun y ↦ hf y.val fun h ↦ y.property (hST h))
       (summable_log_of_summable_abs_sub_one hconvT)
-  rw [← Multipliable.tprod_mul_tprod_compl (f := fun x : {i // i ∉ S} ↦ f x.1)
+  rw [← Multipliable.tprod_mul_tprod_compl (f := fun x : {i // i ∉ S} ↦ f x.val)
     (hasProd_fintype _).multipliable hsc]
   exact congrArg₂ (· * ·)
-    ((tprod_fintype _).trans ((e₁.prod_comp fun y : ↥(T \ S) ↦ f y.1).trans
+    ((tprod_fintype _).trans ((e₁.prod_comp fun y : ↥(T \ S) ↦ f y.val).trans
       (Finset.prod_coe_sort (T \ S) f)))
-    (e₂.tprod_eq fun y ↦ f y.1)
+    (e₂.tprod_eq fun y ↦ f y.val)
 
 end TauCeti

@@ -124,6 +124,6 @@ theorem isIso_pushforwardBaseChange_app (H : IsPullback g' f' f g) [QuasiCompact
     IsIso ((pushforwardBaseChange H.toCommSq).app M) :=
   Hom.isIso_of_isBasis _ g.isBasis_range_affineOpens_le_preimage fun i ↦
     (ConcreteCategory.isIso_iff_bijective _).mpr
-      (bijective_pushforwardBaseChange_app_app H M i.1.2.2 i.1.1.2 i.2)
+      (bijective_pushforwardBaseChange_app_app H M i.val.2.property i.val.1.property i.property)
 
 end AlgebraicGeometry.Scheme.Modules

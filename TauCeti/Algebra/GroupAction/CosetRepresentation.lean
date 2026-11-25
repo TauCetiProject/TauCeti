@@ -38,8 +38,10 @@ representations, without assuming `H` normal or of finite index:
   `Equiv.permutationRepresentation_congrOfMapEq`, `Subgroup.rightCosetPerm`,
   `Equiv.permCongr_rightCosetPerm`, and `Subgroup.quotientEquivOp`.
 * **Normal core, centralizer, and conjugate count.** The kernel of the coset representation is
-  `H.normalCore` (`Equiv.ker_permutationRepresentation_quotient`,
-  `Equiv.rangePermutationRepresentationQuotientMulEquiv`), its centralizer in `Equiv.Perm β` is
+  `H.normalCore`, so its image is `G ⧸ H.normalCore`, of order `[G : H.normalCore]`
+  (`Equiv.ker_permutationRepresentation_quotient`,
+  `Equiv.rangePermutationRepresentationQuotientMulEquiv`,
+  `Equiv.natCard_range_permutationRepresentation_quotient`); its centralizer in `Equiv.Perm β` is
   canonically `(H.normalizerQuotient)ᵐᵒᵖ` (`Subgroup.centralizerToPermHomQuotientMulEquiv`,
   `Equiv.centralizerPermutationRepresentationQuotientMulEquiv`) of order `[N_G(H) : H]`, and the
   number of conjugates of `H` times that centralizer order equals `H.index`
@@ -75,14 +77,14 @@ def ofIndex (G : Type*) [Group G] (n : ℕ) : SubMulAction (ConjAct G) (Subgroup
 /-- Since conjugation preserves subgroup index, the `ConjAct G`-orbit of `H` inside
 `Subgroup.ofIndex G n` bijects with its conjugacy orbit in `Subgroup G`. -/
 def orbitOfIndexEquiv {n : ℕ} (H : ofIndex G n) :
-    MulAction.orbit (ConjAct G) H ≃ MulAction.orbit (ConjAct G) H.1 where
-  toFun K := ⟨K.1.1, by
-    obtain ⟨c, hc⟩ := MulAction.mem_orbit_iff.mp K.2
+    MulAction.orbit (ConjAct G) H ≃ MulAction.orbit (ConjAct G) H.val where
+  toFun K := ⟨K.val.val, by
+    obtain ⟨c, hc⟩ := MulAction.mem_orbit_iff.mp K.property
     exact MulAction.mem_orbit_iff.mpr ⟨c, congrArg Subtype.val hc⟩⟩
-  invFun K := ⟨⟨K.1, by
-    obtain ⟨c, hc⟩ := MulAction.mem_orbit_iff.mp K.2
-    exact mem_ofIndex.mpr (hc ▸ (index_smul c H.1).trans (mem_ofIndex.mp H.2))⟩, by
-    obtain ⟨c, hc⟩ := MulAction.mem_orbit_iff.mp K.2
+  invFun K := ⟨⟨K.val, by
+    obtain ⟨c, hc⟩ := MulAction.mem_orbit_iff.mp K.property
+    exact mem_ofIndex.mpr (hc ▸ (index_smul c H.val).trans (mem_ofIndex.mp H.property))⟩, by
+    obtain ⟨c, hc⟩ := MulAction.mem_orbit_iff.mp K.property
     exact MulAction.mem_orbit_iff.mpr ⟨c, Subtype.ext hc⟩⟩
   left_inv _ := rfl
   right_inv _ := rfl
@@ -224,7 +226,7 @@ private noncomputable def normalizerQuotientEquivCentralizerOp (H : Subgroup G) 
   let τ := y.unop
   have hcomm (g : G) (q : G ⧸ H) : (τ : Equiv.Perm (G ⧸ H)) (g • q) =
       g • (τ : Equiv.Perm (G ⧸ H)) q :=
-    (Equiv.congr_fun ((mem_centralizer_iff.mp τ.2) _ ⟨g, rfl⟩) q).symm
+    (Equiv.congr_fun ((mem_centralizer_iff.mp τ.property) _ ⟨g, rfl⟩) q).symm
   obtain ⟨n, hn⟩ := QuotientGroup.mk_surjective ((τ : Equiv.Perm (G ⧸ H)) ((1 : G) : G ⧸ H))
   have hτx (x : G) : (τ : Equiv.Perm (G ⧸ H)) (x : G ⧸ H) = ((x * n : G) : G ⧸ H) := by
     have hx : (x : G ⧸ H) = x • ((1 : G) : G ⧸ H) := by
@@ -281,18 +283,18 @@ def ofIndexEquiv (φ : G ≃* G') (n : ℕ) : Subgroup.ofIndex G n ≃ Subgroup.
 
 /-- `φ.ofIndexEquiv` acts on subgroups as `Subgroup.map φ`. -/
 @[simp] theorem coe_ofIndexEquiv_apply (φ : G ≃* G') (n : ℕ) (H : Subgroup.ofIndex G n) :
-    (φ.ofIndexEquiv n H : Subgroup G') = H.1.map (φ : G →* G') := (rfl)
+    (φ.ofIndexEquiv n H : Subgroup G') = H.val.map (φ : G →* G') := (rfl)
 
 /-- `(φ.ofIndexEquiv n).symm` acts on subgroups as `Subgroup.comap φ`. -/
 @[simp] theorem coe_ofIndexEquiv_symm_apply (φ : G ≃* G') (n : ℕ) (H : Subgroup.ofIndex G' n) :
-    ((φ.ofIndexEquiv n).symm H : Subgroup G) = H.1.comap (φ : G →* G') :=
-  (Subgroup.comap_equiv_eq_map_symm φ H.1).symm
+    ((φ.ofIndexEquiv n).symm H : Subgroup G) = H.val.comap (φ : G →* G') :=
+  (Subgroup.comap_equiv_eq_map_symm φ H.val).symm
 
 /-- `φ.ofIndexEquiv` is equivariant with respect to subgroup conjugation. -/
 @[simp] theorem ofIndexEquiv_conjAct_smul (φ : G ≃* G') (n : ℕ) (g : G)
     (H : Subgroup.ofIndex G n) :
     φ.ofIndexEquiv n (ConjAct.toConjAct g • H) = ConjAct.toConjAct (φ g) • φ.ofIndexEquiv n H :=
-  Subtype.ext (Subgroup.map_map_conj H.1 φ.toMonoidHom g)
+  Subtype.ext (Subgroup.map_map_conj H.val φ.toMonoidHom g)
 
 /-- A group isomorphism identifies the conjugacy classes of subgroups of index `n` of `G` and `G'`.
 -/
@@ -317,7 +319,7 @@ def orbitRelQuotientOfIndexEquiv (φ : G ≃* G') (n : ℕ) :
       Quotient.mk'' (φ.symm.ofIndexEquiv n H) := by
   rw [orbitRelQuotientOfIndexEquiv, TauCeti.MulAction.orbitRelQuotientCongr_symm_mk]
   exact congrArg Quotient.mk'' <| Subtype.ext <|
-    (φ.coe_ofIndexEquiv_symm_apply n H).trans (Subgroup.comap_equiv_eq_map_symm φ H.1)
+    (φ.coe_ofIndexEquiv_symm_apply n H).trans (Subgroup.comap_equiv_eq_map_symm φ H.val)
 
 end MulEquiv
 
@@ -339,6 +341,12 @@ noncomputable def rangePermutationRepresentationQuotientMulEquiv {H : Subgroup G
     (e.permutationRepresentation (G := G)).range ≃* G ⧸ H.normalCore :=
   (QuotientGroup.quotientKerEquivRange (e.permutationRepresentation (G := G))).symm.trans <|
     QuotientGroup.quotientMulEquivOfEq e.ker_permutationRepresentation_quotient
+
+/-- The image of the coset permutation representation of `H` has order `[G : H.normalCore]`. -/
+theorem natCard_range_permutationRepresentation_quotient {H : Subgroup G} (e : G ⧸ H ≃ β) :
+    Nat.card (e.permutationRepresentation (G := G)).range = H.normalCore.index := by
+  rw [Subgroup.index_eq_card]
+  exact Nat.card_congr e.rangePermutationRepresentationQuotientMulEquiv.toEquiv
 
 /-- **Abstract Millington criterion.** For any two subgroups `H₁, H₂` of `G` and bijections
 `e₁ : G ⧸ H₁ ≃ β` and `e₂ : G ⧸ H₂ ≃ β`, the coset permutation representations read through `e₁`

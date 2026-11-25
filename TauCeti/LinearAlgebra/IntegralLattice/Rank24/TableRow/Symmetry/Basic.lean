@@ -319,7 +319,7 @@ private theorem glueSymmetryIsometry_apply {g : Equiv.Perm (Fin r.components.len
 symmetry `g` moves the component in position `k` to position `g k`. -/
 noncomputable def latticeIsometryHom :
     r.glueSymmetries →* IntegralLattice.Isometry r.lattice r.lattice where
-  toFun g := r.glueSymmetryIsometry (inv_mem g.2)
+  toFun g := r.glueSymmetryIsometry (inv_mem g.property)
   map_one' := Isometry.ext fun x ↦ funext fun k ↦ funext fun j ↦ by
     rw [glueSymmetryIsometry_apply, Isometry.one_apply]
     exact (Fin.apply_cast_eq_apply_cast x (by simp) _ rfl j).trans
@@ -337,9 +337,10 @@ theorem latticeIsometryHom_apply (g : r.glueSymmetries)
     (j : Fin (r.componentType k).rank) :
     r.latticeIsometryHom g x k j =
       x ((g : Equiv.Perm _)⁻¹ k)
-        (Fin.cast (congrArg rank (r.componentType_apply_of_mem_glueSymmetries (inv_mem g.2) k)).symm
+        (Fin.cast (congrArg rank (r.componentType_apply_of_mem_glueSymmetries
+            (inv_mem g.property) k)).symm
           j) :=
-  r.glueSymmetryIsometry_apply (inv_mem g.2) x k j
+  r.glueSymmetryIsometry_apply (inv_mem g.property) x k j
 
 /-- **The glue symmetries of a row act faithfully on `N_r`**: every component has positive rank, so
 distinct component permutations disagree on ambient indicator vectors. -/
@@ -398,7 +399,7 @@ noncomputable def patternIsometryHom {r : RootfulNiemeierType} (hr : r ≠ a5Fou
   r.latticeIsometryHom.comp <|
     ((finCongr (length_eq_of_mem_gluePatterns hp)).permCongrHom.toMonoidHom.comp
       p.symmetries.subtype).codRestrict r.glueSymmetries fun g ↦
-        mem_glueSymmetries_of_mem_symmetries hr hp g.2
+        mem_glueSymmetries_of_mem_symmetries hr hp g.property
 
 /-- The action of an indicated pattern symmetry `g` on `N_r` reads the component in position `k`
 from position `g⁻¹ k`, the positions of the pattern being those of the row. -/
@@ -410,7 +411,7 @@ theorem patternIsometryHom_apply {r : RootfulNiemeierType} (hr : r ≠ a5FourthD
     patternIsometryHom hr hp g x k j =
       x (((finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g)⁻¹ k)
         (Fin.cast (congrArg rank (r.componentType_apply_of_mem_glueSymmetries
-          (inv_mem (mem_glueSymmetries_of_mem_symmetries hr hp g.2)) k)).symm j) :=
+          (inv_mem (mem_glueSymmetries_of_mem_symmetries hr hp g.property)) k)).symm j) :=
   r.latticeIsometryHom_apply _ x k j
 
 /-- On any literal pattern of a row `r ≠ a5FourthD4`, `patternIsometryHom` is trivial. -/

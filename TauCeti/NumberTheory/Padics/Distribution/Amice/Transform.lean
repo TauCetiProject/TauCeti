@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.Distribution.Amice.Isometry
+public import TauCeti.NumberTheory.Padics.Distribution.Amice.Mahler
 public import TauCeti.NumberTheory.Padics.Distribution.Amice.Norm
 public import TauCeti.NumberTheory.Padics.Distribution.Amice.Transition
 public import TauCeti.NumberTheory.Padics.Distribution.Dual
@@ -74,6 +75,9 @@ the transform of a measure, distributions strictly enlarge the measures
   level `h` is the dual stage norm `supₙ ‖bₙ‖ ‖⌊n / pʰ⌋!‖` of the Amice transform.
 * `TauCeti.LocallyAnalyticDistribution.amiceTransform_injective`: a distribution is determined
   by its moments.
+* `TauCeti.LocallyAnalyticDistribution.hasSum_coeff_amiceTransform_smul_mahlerEquiv`: on every
+  locally analytic function `f`, `μ` takes the value of the convergent series `∑ₙ bₙ aₙ` of its
+  moments against the Mahler coefficients `aₙ` of `f`.
 * `TauCeti.LocallyAnalyticDistribution.mem_range_amiceTransform_iff`: the Amice transforms of
   distributions are exactly the power series on the open unit disc.
 
@@ -242,6 +246,21 @@ theorem amiceTransform_ofMeasure (μ : AbstractMeasure ℤ_[p] K K) :
   rw [coeff_amiceTransform, coe_ofMeasure_apply, eval_mahlerTerm,
     AbstractMeasure.coeff_amiceTransform, PadicInt.mahlerTerm, ContinuousMap.const_one]
 
+/-- **Integration in Mahler coordinates.** On every locally analytic function `f`, a locally
+analytic distribution `μ` takes the value `∑ₙ bₙ aₙ`, the series of its moments `bₙ` against the
+Mahler coefficients `aₙ` of `f`, and this series converges. -/
+theorem hasSum_coeff_amiceTransform_smul_mahlerEquiv (μ : LocallyAnalyticDistribution p K)
+    (f : LocallyAnalytic p K K) :
+    HasSum
+      (fun n ↦ (amiceTransform μ).coeff n • PadicInt.mahlerEquiv K (LocallyAnalytic.eval K f) n)
+      ((μ : Module.Dual K (LocallyAnalytic p K K)) f) := by
+  obtain ⟨h, c, rfl⟩ := exists_ofStage K f
+  have hsum := (hasSum_amiceMap K ((amiceEquiv p h K).symm c)).mapL (stage h μ)
+  rw [← amiceEquiv_apply, LinearIsometryEquiv.apply_symm_apply] at hsum
+  rw [← stage_apply]
+  convert hsum using 2 with n
+  rw [stage_amiceTerm, eval_ofStage, mahlerEquiv_eval, nsmul_eq_mul, smul_eq_mul, mul_comm]
+
 section NormedAlgebra
 
 variable [NormedAlgebra ℚ_[p] K]
@@ -351,10 +370,10 @@ noncomputable def amiceTransformEquiv :
     LocallyAnalyticDistribution p K ≃ₗ[K] PowerSeries.OnOpenDisc.subring K 1 where
   toFun μ := ⟨amiceTransform μ, PowerSeries.OnOpenDisc.mem_subring.mpr
     (onOpenDisc_amiceTransform μ)⟩
-  invFun F := ofOnOpenDisc p (PowerSeries.OnOpenDisc.mem_subring.mp F.2)
+  invFun F := ofOnOpenDisc p (PowerSeries.OnOpenDisc.mem_subring.mp F.property)
   left_inv := ofOnOpenDisc_amiceTransform
   right_inv F := Subtype.ext (amiceTransform_ofOnOpenDisc p
-    (PowerSeries.OnOpenDisc.mem_subring.mp F.2))
+    (PowerSeries.OnOpenDisc.mem_subring.mp F.property))
   map_add' μ ν := Subtype.ext (map_add amiceTransform μ ν)
   map_smul' a μ := Subtype.ext <| by simp
 
@@ -367,7 +386,7 @@ theorem coe_amiceTransformEquiv (μ : LocallyAnalyticDistribution p K) :
 @[simp]
 theorem amiceTransformEquiv_symm_apply (F : PowerSeries.OnOpenDisc.subring K 1) :
     amiceTransformEquiv.symm F =
-      ofOnOpenDisc p (PowerSeries.OnOpenDisc.mem_subring.mp F.2) := (rfl)
+      ofOnOpenDisc p (PowerSeries.OnOpenDisc.mem_subring.mp F.property) := (rfl)
 
 end NormedAlgebra
 

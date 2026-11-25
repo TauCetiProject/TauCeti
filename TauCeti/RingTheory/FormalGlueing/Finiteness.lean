@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.FormalGlueing.Detection
 public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 public import Mathlib.RingTheory.Localization.BaseChange
 public import Mathlib.Algebra.Module.FinitePresentation
+import TauCeti.Algebra.Module.LocalizedModule.BaseChange
 import TauCeti.LinearAlgebra.TensorProduct.Kernel
 
 /-!
@@ -54,14 +55,14 @@ theorem finite_iff_baseChange_and_localized
   refine ⟨fun _ ↦ ⟨inferInstance, fun _ _ ↦ inferInstance⟩, ?_⟩
   rintro ⟨hS, hloc⟩
   obtain ⟨P, hP, hPS⟩ := Submodule.exists_fg_baseChange_eq_top (R := R) (A := S) (M := M)
-  have hfg (g : G) : ∃ Q : Submodule R M, Q.FG ∧ Q.baseChange (Localization.Away g.1) = ⊤ := by
-    have := hloc g.1 g.2
+  have hfg (g : G) : ∃ Q : Submodule R M, Q.FG ∧ Q.baseChange (Localization.Away g.val) = ⊤ := by
+    have := hloc g.val g.property
     exact Submodule.exists_fg_baseChange_eq_top
   choose Q hQ hQg using hfg
   let N := P ⊔ ⨆ g : G, Q g
   have hN : N.FG := hP.sup (Submodule.fg_iSup _ hQ)
   have hNS : N.baseChange S = ⊤ := top_unique <| hPS ▸ Submodule.baseChange_mono S le_sup_left
-  have hNg (g : G) : N.baseChange (Localization.Away g.1) = ⊤ :=
+  have hNg (g : G) : N.baseChange (Localization.Away g.val) = ⊤ :=
     top_unique <| hQg g ▸ Submodule.baseChange_mono _ ((le_iSup Q g).trans le_sup_right)
   have : Subsingleton (S ⊗[R] (M ⧸ N)) :=
     (Submodule.baseChange_eq_top_iff_subsingleton S N).mp hNS
@@ -149,8 +150,7 @@ theorem finite_of_formalGlueing_localizedModule
     (hM : ∀ r ∈ G, Module.Finite (Localization.Away r) (LocalizedModule (.powers r) M)) :
     Module.Finite R E :=
   hφ.finite_of_formalGlueing G hG
-    (fun r hr ↦ (LocalizedModule.equivTensorProduct (.powers r) E).symm.trans
-      ((e_loc r hr).trans (LocalizedModule.equivTensorProduct (.powers r) M)))
+    (fun r hr ↦ LocalizedModule.tensorProductEquivOfEquiv (e_loc r hr))
     (fun r hr ↦ by
       have := hM r hr
       exact Module.Finite.equiv (LocalizedModule.equivTensorProduct (.powers r) M))
@@ -170,8 +170,7 @@ theorem finitePresentation_of_formalGlueing_localizedModule
       Module.FinitePresentation (Localization.Away r) (LocalizedModule (.powers r) M)) :
     Module.FinitePresentation R E :=
   hφ.finitePresentation_of_formalGlueing G hG
-    (fun r hr ↦ (LocalizedModule.equivTensorProduct (.powers r) E).symm.trans
-      ((e_loc r hr).trans (LocalizedModule.equivTensorProduct (.powers r) M)))
+    (fun r hr ↦ LocalizedModule.tensorProductEquivOfEquiv (e_loc r hr))
     (fun r hr ↦ by
       have := hM r hr
       exact .of_equiv (LocalizedModule.equivTensorProduct (.powers r) M))

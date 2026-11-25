@@ -124,13 +124,13 @@ A sequence interlacing a weakly decreasing sequence is itself weakly decreasing
 read as a dominant weight.  They index the branching rule for the rational representation `V_l` of
 `GL (n + 1)` restricted along `GL n ↪ GL (n + 1)`. -/
 noncomputable def interlacingWeights (l : DominantWeight (n + 1)) : Finset (DominantWeight n) :=
-  (interlacingFinset l.1).preimage Subtype.val Subtype.val_injective.injOn
+  (interlacingFinset l.val).preimage Subtype.val Subtype.val_injective.injOn
 
 /-- The members of `TauCeti.interlacingWeights l` are exactly the dominant weights interlacing
 `l`. -/
 @[simp]
 theorem mem_interlacingWeights {l : DominantWeight (n + 1)} {m : DominantWeight n} :
-    m ∈ interlacingWeights l ↔ Interlaces l.1 m.1 := by
+    m ∈ interlacingWeights l ↔ Interlaces l.val m.val := by
   rw [interlacingWeights, Finset.mem_preimage, mem_interlacingFinset]
 
 namespace GTPattern
@@ -146,8 +146,8 @@ def truncateSigmaEquiv (l : Fin (n + 1) → ℤ) :
     {P : GTPattern (n + 1) // P.topRow = l} ≃
       Σ m : interlacingFinset l, {Q : GTPattern n // Q.topRow = (m : Fin n → ℤ)} :=
   (truncateEquiv l).trans
-    { toFun Q := ⟨⟨Q.1.topRow, mem_interlacingFinset.mpr Q.2⟩, ⟨Q.1, rfl⟩⟩
-      invFun x := ⟨x.2.1, by rw [x.2.2]; exact mem_interlacingFinset.mp x.1.2⟩
+    { toFun Q := ⟨⟨Q.val.topRow, mem_interlacingFinset.mpr Q.property⟩, ⟨Q.val, rfl⟩⟩
+      invFun x := ⟨x.2.val, by rw [x.2.property]; exact mem_interlacingFinset.mp x.1.property⟩
       left_inv _ := rfl
       right_inv := by
         rintro ⟨⟨m, hm⟩, ⟨Q, hQ⟩⟩
@@ -157,17 +157,18 @@ def truncateSigmaEquiv (l : Fin (n + 1) → ℤ) :
 
 @[simp] theorem truncateSigmaEquiv_apply_fst_coe (l : Fin (n + 1) → ℤ)
     (P : {P : GTPattern (n + 1) // P.topRow = l}) :
-    ((truncateSigmaEquiv l P).1 : Fin n → ℤ) = P.1.truncate.topRow := by simp [truncateSigmaEquiv]
+    ((truncateSigmaEquiv l P).1 : Fin n → ℤ) = P.val.truncate.topRow := by simp [truncateSigmaEquiv]
 
 @[simp] theorem truncateSigmaEquiv_apply_snd_coe (l : Fin (n + 1) → ℤ)
     (P : {P : GTPattern (n + 1) // P.topRow = l}) :
-    (truncateSigmaEquiv l P).2.1 = P.1.truncate := by simp [truncateSigmaEquiv]
+    (truncateSigmaEquiv l P).2.val = P.val.truncate := by simp [truncateSigmaEquiv]
 
 @[simp] theorem truncateSigmaEquiv_symm_apply_coe (l : Fin (n + 1) → ℤ)
     (x : Σ m : interlacingFinset l, {Q : GTPattern n // Q.topRow = (m : Fin n → ℤ)}) :
-    ((truncateSigmaEquiv l).symm x).1 =
-      x.2.1.extend l (by rw [x.2.2]; exact mem_interlacingFinset.mp x.1.2) :=
-  truncateEquiv_symm_apply_coe l ⟨x.2.1, by rw [x.2.2]; exact mem_interlacingFinset.mp x.1.2⟩
+    ((truncateSigmaEquiv l).symm x).val =
+      x.2.val.extend l (by rw [x.2.property]; exact mem_interlacingFinset.mp x.1.property) :=
+  truncateEquiv_symm_apply_coe l ⟨x.2.val,
+      by rw [x.2.property]; exact mem_interlacingFinset.mp x.1.property⟩
 
 /-- **The branching recursion for the pattern count.**  The Gelfand-Tsetlin patterns with `n + 1`
 rows and top row `l` are counted by the patterns with `n` rows, summed over the sequences
@@ -210,13 +211,13 @@ interlaces `λ`. This is `TauCeti.GTPattern.truncateSigmaEquiv` indexed by the d
 def truncateTopWeightSigmaEquiv (l : DominantWeight (n + 1)) :
     {P : GTPattern (n + 1) // P.topWeight = l} ≃
       Σ m : interlacingWeights l, {Q : GTPattern n // Q.topWeight = m} where
-  toFun P := ⟨⟨P.1.truncate.topWeight, by
-      have h := P.1.topWeight_truncate_mem_interlacingWeights
-      rwa [P.2] at h⟩,
-    ⟨P.1.truncate, rfl⟩⟩
-  invFun x := ⟨x.2.1.extend l.1 (by
-      rw [← topWeight_coe, x.2.2]
-      exact mem_interlacingWeights.mp x.1.2),
+  toFun P := ⟨⟨P.val.truncate.topWeight, by
+      have h := P.val.topWeight_truncate_mem_interlacingWeights
+      rwa [P.property] at h⟩,
+    ⟨P.val.truncate, rfl⟩⟩
+  invFun x := ⟨x.2.val.extend l.val (by
+      rw [← topWeight_coe, x.2.property]
+      exact mem_interlacingWeights.mp x.1.property),
     Subtype.ext (by rw [topWeight_coe, topRow_extend])⟩
   left_inv P := by
     obtain ⟨P, rfl⟩ := P
@@ -230,26 +231,26 @@ def truncateTopWeightSigmaEquiv (l : DominantWeight (n + 1)) :
 the top weight of the truncation. -/
 theorem truncateTopWeightSigmaEquiv_apply (l : DominantWeight (n + 1))
     (P : {P : GTPattern (n + 1) // P.topWeight = l})
-    (hm : P.1.truncate.topWeight ∈ interlacingWeights l) :
-    truncateTopWeightSigmaEquiv l P = ⟨⟨P.1.truncate.topWeight, hm⟩, ⟨P.1.truncate, rfl⟩⟩ :=
+    (hm : P.val.truncate.topWeight ∈ interlacingWeights l) :
+    truncateTopWeightSigmaEquiv l P = ⟨⟨P.val.truncate.topWeight, hm⟩, ⟨P.val.truncate, rfl⟩⟩ :=
   (rfl)
 
 @[simp]
 theorem truncateTopWeightSigmaEquiv_apply_fst_coe (l : DominantWeight (n + 1))
     (P : {P : GTPattern (n + 1) // P.topWeight = l}) :
-    ((truncateTopWeightSigmaEquiv l P).1 : DominantWeight n) = P.1.truncate.topWeight :=
+    ((truncateTopWeightSigmaEquiv l P).1 : DominantWeight n) = P.val.truncate.topWeight :=
   (rfl)
 
 @[simp]
 theorem truncateTopWeightSigmaEquiv_apply_snd_coe (l : DominantWeight (n + 1))
     (P : {P : GTPattern (n + 1) // P.topWeight = l}) :
-    (truncateTopWeightSigmaEquiv l P).2.1 = P.1.truncate :=
+    (truncateTopWeightSigmaEquiv l P).2.val = P.val.truncate :=
   (rfl)
 
 @[simp]
 theorem truncate_truncateTopWeightSigmaEquiv_symm_apply_coe (l : DominantWeight (n + 1))
     (x : Σ m : interlacingWeights l, {Q : GTPattern n // Q.topWeight = m}) :
-    ((truncateTopWeightSigmaEquiv l).symm x).1.truncate = x.2.1 :=
+    ((truncateTopWeightSigmaEquiv l).symm x).val.truncate = x.2.val :=
   truncate_extend _ _ _
 
 /-! ### Which sequences are top rows -/

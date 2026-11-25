@@ -180,7 +180,7 @@ theorem prefix_extend [Finite E(G)] (hG : G.IsEdgeConnected 2) {H : Graph α β}
       (d.heq_start_extend hG)).symm
     ((Fin.heq_fun_iff hlen.symm).mpr fun j ↦ ?_)).symm
   let j' : Fin i₀.val := Fin.cast hi₀.symm j
-  have hj₁ : Fin.cast (length_copy _ hH) (⟨j, hlen.symm ▸ j.2⟩ : Fin p.length) =
+  have hj₁ : Fin.cast (length_copy _ hH) (⟨j, hlen.symm ▸ j.isLt⟩ : Fin p.length) =
       Fin.cast (length_prefix (d.extend hG) i₀).symm j' :=
     Fin.ext (by simp [j'])
   have hj₂ : Fin.castLE (Nat.le_of_lt_succ i₀.isLt) j' =
@@ -206,7 +206,7 @@ noncomputable def IsEdgeConnected.earDecompositionOfVertex [Finite E(G)] (hG : G
 
 /-- The ear decomposition built from a prescribed actual vertex has that vertex as initial graph. -/
 theorem IsEdgeConnected.initial_earDecompositionOfVertex [Finite E(G)] (hG : G.IsEdgeConnected 2)
-    (v : V(G)) : (hG.earDecompositionOfVertex v).initial = Graph.noEdge {v.1} β := by
+    (v : V(G)) : (hG.earDecompositionOfVertex v).initial = Graph.noEdge {v.val} β := by
   rw [earDecompositionOfVertex, EarDecomposition.initial_extend, EarDecomposition.initial_vertex]
 
 @[simp]
@@ -226,7 +226,7 @@ theorem IsEdgeConnected.not_start_isCycle_earDecompositionOfVertex [Finite E(G)]
 /-- A `2`-edge-connected multigraph with finitely many actual edges has a vertex-starting ear
 decomposition beginning at any chosen actual vertex. -/
 theorem IsEdgeConnected.exists_earDecomposition [Finite E(G)] (hG : G.IsEdgeConnected 2)
-    (v : V(G)) : ∃ d : G.EarDecomposition G, d.initial = Graph.noEdge {v.1} β :=
+    (v : V(G)) : ∃ d : G.EarDecomposition G, d.initial = Graph.noEdge {v.val} β :=
   ⟨hG.earDecompositionOfVertex v, hG.initial_earDecompositionOfVertex v⟩
 
 /-- Build an ear decomposition of a `2`-edge-connected multigraph with finitely many actual edges

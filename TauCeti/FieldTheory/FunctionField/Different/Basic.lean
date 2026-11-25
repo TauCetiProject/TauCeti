@@ -186,7 +186,7 @@ extension of the local model is read at the residue field of `P`. -/
 instance centerIntegralClosure_liesOver_maximalIdeal :
     (centerIntegralClosure k F P').asIdeal.LiesOver
       (IsLocalRing.maximalIdeal ((P'.restrict k F).integers)) := by
-  rw [← (P'.restrict k F).center_integers_asIdeal fun c ↦ c.2, centerIntegralClosure_def]
+  rw [← (P'.restrict k F).center_integers_asIdeal fun c ↦ c.property, centerIntegralClosure_def]
   exact center_liesOver k F P' _
 
 /-- **The different exponent `d(P' ∣ P)`** of a place `P'` of `F' / k'` over the place

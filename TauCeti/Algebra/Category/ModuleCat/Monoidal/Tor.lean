@@ -24,7 +24,7 @@ import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 import TauCeti.Algebra.Category.ModuleCat.Monoidal.ChangeOfRings
 import TauCeti.CategoryTheory.Abelian.LeftDerived
 import TauCeti.CategoryTheory.Abelian.Projective.Dimension
-import TauCeti.CategoryTheory.Monoidal.Tor
+import TauCeti.CategoryTheory.Monoidal.Tor.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.LinearAlgebra.End.TensorProduct
@@ -273,7 +273,7 @@ theorem isZero_Tor_succ_quotient_iSup {X : ModuleCat.{u} A} {ι : Type*} [Nonemp
     rw [LinearMap.lTensor_rTensor_comm, ← ht]
     have h0 : (N i).mkQ ∘ₗ K.subtype ∘ₗ Submodule.inclusion hle = 0 := by
       ext x
-      exact (Submodule.Quotient.mk_eq_zero _).2 (hi x.2)
+      exact (Submodule.Quotient.mk_eq_zero _).2 (hi x.property)
     simp only [← LinearMap.rTensor_comp_apply, h0, LinearMap.rTensor_zero, LinearMap.zero_apply])
   refine ⟨(Submodule.factor (le_iSup N i)).rTensor _ z, ?_⟩
   rw [LinearMap.lTensor_rTensor_comm, hz, ← LinearMap.rTensor_comp_apply, Submodule.factor_comp_mk]

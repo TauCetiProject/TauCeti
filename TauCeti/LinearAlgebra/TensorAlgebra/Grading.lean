@@ -150,7 +150,7 @@ private noncomputable def gradedι (G : InternalGrading R M ι) :
   DirectSum.homogeneousExtend G.piece fun p ↦
     (DirectSum.lof R ι (fun q ↦ ↥(tensorAlgebraPiece G q)) p).comp <|
       LinearMap.codRestrict (tensorAlgebraPiece G p)
-        ((TensorAlgebra.ι R).comp (G.piece p).subtype) fun x ↦ ι_mem_tensorAlgebraPiece G x.2
+        ((TensorAlgebra.ι R).comp (G.piece p).subtype) fun x ↦ ι_mem_tensorAlgebraPiece G x.property
 
 private theorem gradedι_of_mem (G : InternalGrading R M ι) {p : ι} {x : M} (hx : x ∈ G.piece p) :
     gradedι G x =
@@ -211,21 +211,12 @@ noncomputable instance (G : InternalGrading R M ι) : GradedAlgebra (tensorAlgeb
 index monoids agrees with the input-degree grading of the coarsened generator grading. -/
 theorem coarsenGrading_tensorAlgebraPiece {κ F : Type*} [DecidableEq κ] [AddCommMonoid κ]
     [FunLike F ι κ] [AddMonoidHomClass F ι κ] (G : InternalGrading R M ι) (f : F) :
-    coarsenGrading (tensorAlgebraPiece G) f = tensorAlgebraPiece (G.coarsen f) := by
-  have hle : ∀ k, coarsenGrading (tensorAlgebraPiece G) f k ≤
-      tensorAlgebraPiece (G.coarsen f) k := fun k ↦
+    coarsenGrading (tensorAlgebraPiece G) f = tensorAlgebraPiece (G.coarsen f) :=
+  DirectSum.Decomposition.eq_of_subset _ _ fun _ ↦
     coarsenGrading_le_iff.2 fun p hp ↦ tensorAlgebraPiece_le fun n d x hx hd ↦ by
       rw [← hp, ← hd, map_sum]
       exact tprod_mem_tensorAlgebraPiece (G.coarsen f) (f ∘ d) x fun i ↦
         G.mem_coarsen_of_mem f (hx i)
-  funext k
-  refine le_antisymm (hle k) fun z hz ↦ ?_
-  have hdec := DirectSum.map_decompose_shift
-    (coarsenGrading (tensorAlgebraPiece G) f) (tensorAlgebraPiece (G.coarsen f))
-    (AddMonoidHom.id _) id Function.injective_id (fun j _ hy ↦ hle j hy) k z
-  rw [AddMonoidHom.id_apply, AddMonoidHom.id_apply, id_eq,
-    DirectSum.decompose_of_mem_same _ hz] at hdec
-  exact hdec ▸ (DirectSum.decompose (coarsenGrading (tensorAlgebraPiece G) f) z k).property
 
 /-- The parity grading of the input-degree grading of a tensor algebra is the input-degree
 grading of the parity-graded generating module. -/

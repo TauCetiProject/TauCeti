@@ -8,7 +8,6 @@ module
 public import Mathlib.CategoryTheory.Functor.OfSequence
 public import TauCeti.Logic.Equiv.Sigma
 public import TauCeti.Topology.Category.TopCat.ClosedEmbedding
-public import TauCeti.Topology.Category.TopCat.Normal
 public import Mathlib.Topology.CWComplex.Classical.Subcomplex
 
 /-!
@@ -212,7 +211,8 @@ def stageCellEquiv :
   T.stageCellEquiv_symm_birthCell (k + 1) n j
 @[simp] lemma stageCellEquiv_succ_symm_oldCellEquiv (k n : ℕ) (i : cell (univ : Set (W k)) n) :
     (T.stageCellEquiv (k + 1) n).symm (T.oldCellEquiv k n i) =
-      ⟨((T.stageCellEquiv k n).symm i).1, Nat.le_succ_of_le ((T.stageCellEquiv k n).symm i).2⟩ := by
+      ⟨((T.stageCellEquiv k n).symm i).val, Nat.le_succ_of_le
+          ((T.stageCellEquiv k n).symm i).property⟩ := by
   simp [stageCellEquiv]
 
 /-- The sequential diagram `ℕ ⥤ TopCat.{u}` of stages `W 0 → W 1 → W 2 → ⋯`. -/
@@ -267,8 +267,7 @@ theorem isClosedEmbedding_ι {c : Cocone T.diagram} (hc : IsColimit c) (k : ℕ)
 
 /-- Any colimit `c.pt` of `T.diagram` is a `T₁` space. -/
 theorem t1Space_of_isColimit {c : Cocone T.diagram} (hc : IsColimit c) : T1Space c.pt :=
-  TauCeti.TopCat.t1Space_of_isColimit
-    (fun _ _ hij ↦ (T.isClosedEmbedding_diagram_map hij).injective) hc
+  hc.t1Space fun k ↦ (T.isClosedEmbedding_ι hc k).injective
 
 end StageMachinery
 
@@ -310,16 +309,18 @@ lemma ofSubcomplex_cellZeroEquiv (n : ℕ) :
     (ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv hmap).cellZeroEquiv n =
       Equiv.subtypeUnivEquiv (isStageNewCell_zero E) := (rfl)
 @[simp] lemma ofSubcomplex_cellZeroEquiv_apply (n : ℕ) (j : StageNewCell W E 0 n) :
-    (ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv hmap).cellZeroEquiv n j = j.1 :=
+    (ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv hmap).cellZeroEquiv n j = j.val
+        :=
   (rfl)
 @[simp] lemma coe_ofSubcomplex_oldCellEquiv_apply (k n : ℕ) (i : cell (univ : Set (W k)) n) :
     ((ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv hmap).oldCellEquiv
       k n i : cell (univ : Set (W (k + 1))) n) = (oldCellEquiv k n i : cell _ n) := (rfl)
 @[simp] lemma coe_ofSubcomplex_newCellEquiv_apply (k n : ℕ) (j : StageNewCell W E (k + 1) n) :
     ((ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv hmap).newCellEquiv
-      k n j : cell (univ : Set (W (k + 1))) n) = j.1 := (rfl)
+      k n j : cell (univ : Set (W (k + 1))) n) = j.val := (rfl)
 @[simp] lemma ofSubcomplex_birthCell (k n : ℕ) (j : StageNewCell W E k n) :
-    (ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv hmap).birthCell k n j = j.1 := by
+    (ofSubcomplex step isClosedEmbedding_step E coe_E oldCellEquiv hmap).birthCell k n j = j.val
+        := by
   cases k <;> simp
 
 end OfSubcomplex

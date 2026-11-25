@@ -59,7 +59,7 @@ private def pullbackTangentMap
     (p : TotalSpace V (f *ᵖ (TangentSpace J))) :
     TotalSpace V' (g *ᵖ (TangentSpace J')) :=
   ⟨u p.proj, tangentSpaceCast J' (v (f p.proj)) (g (u p.proj))
-    (mfderiv J J' v (f p.proj) p.2)⟩
+    (mfderiv J J' v (f p.proj) p.snd)⟩
 
 omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 V]
   [FiniteDimensional 𝕜 E'] [FiniteDimensional 𝕜 V'] [TopologicalSpace M]

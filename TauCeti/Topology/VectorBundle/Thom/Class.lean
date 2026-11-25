@@ -51,6 +51,10 @@ isomorphism of fibre pairs given by `e` at `b`
 (`Bundle.Trivialization.exists_singularCohomology_thomPairOver_fiber`), and a class over `W` in the
 top degree is determined by those restrictions
 (`Bundle.Trivialization.singularCohomology_thomPairOver_ext`).
+In homology, a class of `(F, F ∖ {0})` read through `e` as a class of the fibre pair over `b`
+has an image in `H_d(E|_W, E₀|_W)`, `d = dim F`, which does not change as `b` moves along a path in
+`W` within the base set of `e` (in `Bundle.Trivialization`,
+`singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq_of_joinedIn`).
 
 The Thom pair of the trivial bundle is that of the product bundle `B × F`
 (`TauCeti.trivialThomPairIso`), whose cohomology is computed up to the rank in
@@ -65,8 +69,11 @@ Two linear trivializations whose base sets contain `b` read a class of `(F, F �
 the fibre pair over `b` differing by the sign of the determinant of their coordinate change at `b`
 (`Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`): an invertible
 linear map acts on `Hⁿ(F, F ∖ {0})` by the sign of its determinant. This is the transition rule
-for the fibre classes of an oriented bundle. In homology, the maps
-`Hₙ(E_b, E_b ∖ {0}) ⟶ Hₙ(F, F ∖ {0})` induced by the two trivializations differ by the same sign
+for the fibre classes of an oriented bundle. When `2 = 0` in the coefficients the sign is invisible,
+and any two linear trivializations read a class of `(F, F ∖ {0})` as the same class of the fibre
+pair (`Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_of_two_eq_zero`). In
+homology, the maps `Hₙ(E_b, E_b ∖ {0}) ⟶ Hₙ(F, F ∖ {0})` induced by the two trivializations differ
+by the same sign
 (`Bundle.Trivialization.singularHomologyMap_complZeroPairIso_hom_eq_sign_det_smul`).
 
 ## Main definitions and results
@@ -98,8 +105,13 @@ for the fibre classes of an oriented bundle. In homology, the maps
   trivializing set with prescribed restrictions to the fibres.
 * `Bundle.Trivialization.singularCohomology_thomPairOver_ext`: over a trivializing set, a class in
   the top degree is determined on the fibres.
+* `singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq_of_joinedIn` (in
+  `Bundle.Trivialization`): in homology, the fibre classes read through a trivialization are
+  constant along paths in `W` within its base set.
 * `Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`: fibre classes
   read in two trivializations differ by the sign of the coordinate change.
+* `Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_of_two_eq_zero`: when
+  `2 = 0` in the coefficients, fibre classes read in two trivializations agree.
 * `Bundle.Trivialization.singularHomologyMap_complZeroPairIso_hom_eq_sign_det_smul`: the maps on
   the homology of the fibre pairs induced by two linear trivializations differ by the same sign.
 
@@ -138,7 +150,7 @@ def trivialThomPairMap :
 
 @[simp]
 theorem trivialThomPairMap_fst_apply (v : TotalSpace F (Bundle.Trivial B F)) :
-    TopPair.Hom.fst (trivialThomPairMap B F) v = v.2 := by
+    TopPair.Hom.fst (trivialThomPairMap B F) v = v.snd := by
   unfold trivialThomPairMap
   exact TopPair.ofSubsetMap_fst_apply _ _ _
 
@@ -175,7 +187,7 @@ omit [NormedSpace ℝ F] in
 @[simp]
 theorem trivialThomPairIso_hom_fst_apply
     (v : TotalSpace F (Bundle.Trivial B F)) :
-    TopPair.Hom.fst (trivialThomPairIso B F).hom v = (v.1, v.2) := by
+    TopPair.Hom.fst (trivialThomPairIso B F).hom v = (v.proj, v.snd) := by
   rw [trivialThomPairIso, TopPair.ofSubsetIso_hom]
   exact TopPair.ofSubsetMap_fst_apply _ _ _
 
@@ -293,9 +305,9 @@ variable (R : Type*) [Semiring R] {B : Type w} [TopologicalSpace B] {F : Type w}
 whose base set contains `W`. -/
 private def thomPairOverHom : thomPairOver F E W ⟶ prodThomPair W F :=
   TopPair.ofHom (TopCat.isoOfHomeo (e.preimageHomeomorph hW)).hom
-    (TopCat.ofHom ⟨fun v ↦ ⟨e.preimageHomeomorph hW ⟨v.1, v.2.1⟩, by
+    (TopCat.ofHom ⟨fun v ↦ ⟨e.preimageHomeomorph hW ⟨v.val, v.property.1⟩, by
       simpa [preimageHomeomorph_apply] using
-        (e.snd_apply_ne_zero_iff R (hW v.2.1)).2 (mem_zeroSectionCompl.1 v.2.2)⟩,
+        (e.snd_apply_ne_zero_iff R (hW v.property.1)).2 (mem_zeroSectionCompl.1 v.property.2)⟩,
       by fun_prop⟩) (by ext; rfl)
 
 /-- Over a subset `W` of the base set of a linear trivialization `e`, the trivialization identifies
@@ -304,22 +316,24 @@ product bundle. -/
 def thomPairOverIso : thomPairOver F E W ≅ prodThomPair W F :=
   have : IsIso (TopPair.Hom.fst (e.thomPairOverHom R hW)) := (TopCat.isoOfHomeo _).isIso_hom
   have := TopPair.isIso_of_isIso_fst_of_surjective_snd (e.thomPairOverHom R hW) fun p ↦ by
-    let v := (e.preimageHomeomorph hW).symm p.1
-    have hv : e.preimageHomeomorph hW v = p.1 := Homeomorph.apply_symm_apply _ _
-    refine ⟨⟨v.1, v.2, mem_zeroSectionCompl.2 ((e.snd_apply_ne_zero_iff R (hW v.2)).1 ?_)⟩,
+    let v := (e.preimageHomeomorph hW).symm p.val
+    have hv : e.preimageHomeomorph hW v = p.val := Homeomorph.apply_symm_apply _ _
+    refine ⟨⟨v.val, v.property, mem_zeroSectionCompl.2 ((e.snd_apply_ne_zero_iff R
+        (hW v.property)).1 ?_)⟩,
       Subtype.ext hv⟩
-    simpa [preimageHomeomorph_apply, ← hv] using p.2
+    simpa [preimageHomeomorph_apply, ← hv] using p.property
   asIso (e.thomPairOverHom R hW)
 
 @[simp]
 theorem thomPairOverIso_hom_fst_apply (v : π F E ⁻¹' W) :
-    TopPair.Hom.fst (e.thomPairOverIso R hW).hom v = (⟨v.1.proj, v.2⟩, (e v).2) :=
+    TopPair.Hom.fst (e.thomPairOverIso R hW).hom v = (⟨v.val.proj, v.property⟩, (e v).2) :=
   e.preimageHomeomorph_apply hW v
 
 @[simp]
 theorem thomPairOverIso_hom_snd_apply (v : (thomPairOver F E W).snd) :
-    (TopPair.Hom.snd (e.thomPairOverIso R hW).hom v).1 = (⟨v.1.proj, v.2.1⟩, (e v.1).2) :=
-  e.preimageHomeomorph_apply hW ⟨v.1, v.2.1⟩
+    (TopPair.Hom.snd (e.thomPairOverIso R hW).hom v).val = (⟨v.val.proj, v.property.1⟩, (e v.val).2)
+        :=
+  e.preimageHomeomorph_apply hW ⟨v.val, v.property.1⟩
 
 @[simp]
 theorem thomPairOverIso_inv_fst_apply (p : W × F) :
@@ -329,9 +343,9 @@ theorem thomPairOverIso_inv_fst_apply (p : W × F) :
 
 @[simp]
 theorem thomPairOverIso_inv_snd_apply (p : (prodThomPair W F).snd) :
-    (TopPair.Hom.snd (e.thomPairOverIso R hW).inv p).1 = (e.preimageHomeomorph hW).symm p.1 :=
+    (TopPair.Hom.snd (e.thomPairOverIso R hW).inv p).val = (e.preimageHomeomorph hW).symm p.val :=
   (congrArg Subtype.val ((TopPair.Hom.w_apply (e.thomPairOverIso R hW).inv p).trans
-    (e.thomPairOverIso_inv_fst_apply R hW p.1)) :)
+    (e.thomPairOverIso_inv_fst_apply R hW p.val)) :)
 
 /-- The trivialization isomorphism `(E|_W, E₀|_W) ≅ (W × F, W × (F ∖ {0}))` commutes with the
 projections `TauCeti.thomPairOverProj` and `TauCeti.prodThomPairProj` onto `W`. -/
@@ -379,10 +393,10 @@ inverse of the isomorphism of fibre pairs given by the trivialization at `b`. -/
 @[reassoc]
 theorem prodThomPairFiberMap_comp_thomPairOverIso_inv (b : W) :
     prodThomPairFiberMap F b ≫ (e.thomPairOverIso 𝕜 hW).inv =
-      (e.continuousLinearEquivAt 𝕜 b (hW b.2)).complZeroPairIso.inv ≫
-        fiberThomPairOverMap F E b.2 := by
+      (e.continuousLinearEquivAt 𝕜 b (hW b.property)).complZeroPairIso.inv ≫
+        fiberThomPairOverMap F E b.property := by
   rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp,
-    e.fiberThomPairOverMap_comp_thomPairOverIso_hom 𝕜 hW b.2]
+    e.fiberThomPairOverMap_comp_thomPairOverIso_hom 𝕜 hW b.property]
 
 include hW in
 /-- **Local classes over a trivializing set.** For `W` contained in the base set of a linear
@@ -405,6 +419,45 @@ theorem exists_singularCohomology_thomPairOver_fiber {C : Type u} [Category.{v} 
     prodThomPairFiberMap_comp_prodThomPairSnd, Category.comp_id]
 
 end ThomPairOverFiber
+
+section ThomPairOverFiberHomology
+
+variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [FiniteDimensional ℝ F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
+  [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  (e : Trivialization F (π F E)) [e.IsLinear ℝ] {C : Type u} [Category.{v} C]
+  [HasCoproducts.{w} C] [Abelian C] (R : C)
+
+/-- **Fibre classes read in a trivialization are constant along paths in its base set**: for
+points `b` and `b'` joined by a path in `W` within the base set of a linear trivialization `e`, a
+class of `H_d(F, F ∖ {0})`, `d = dim F`, read as a class of the fibre pair over `b` or over `b'`
+through `e`, has the same image in `H_d(E|_W, E₀|_W)`. -/
+theorem singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq_of_joinedIn
+    {W : Set B} {b b' : B} (h : JoinedIn (W ∩ e.baseSet) b b') (d : ℕ) (hd : finrank ℝ F = d) :
+    TopPair.singularHomologyMap
+        ((e.continuousLinearEquivAt ℝ b h.source_mem.2).complZeroPairIso.inv ≫
+          fiberThomPairOverMap F E h.source_mem.1) R d =
+      TopPair.singularHomologyMap
+        ((e.continuousLinearEquivAt ℝ b' h.target_mem.2).complZeroPairIso.inv ≫
+          fiberThomPairOverMap F E h.target_mem.1) R d := by
+  have hW : W ∩ e.baseSet ⊆ e.baseSet := Set.inter_subset_right
+  -- Over `W ∩ e.baseSet`, `e` reads both composites as fibre inclusions of the product bundle.
+  have key {x : B} (hx : x ∈ W ∩ e.baseSet) :
+      (e.continuousLinearEquivAt ℝ x hx.2).complZeroPairIso.inv ≫
+          fiberThomPairOverMap F E hx.1 =
+        prodThomPairFiberMap F (⟨x, hx⟩ : ↥(W ∩ e.baseSet)) ≫ (e.thomPairOverIso ℝ hW).inv ≫
+          thomPairOverMap F E Set.inter_subset_left := by
+    have hfib : (e.continuousLinearEquivAt ℝ x (hW hx)).complZeroPairIso.inv ≫
+        fiberThomPairOverMap F E hx =
+          prodThomPairFiberMap F ⟨x, hx⟩ ≫ (e.thomPairOverIso ℝ hW).inv := by
+      rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv,
+        e.fiberThomPairOverMap_comp_thomPairOverIso_hom ℝ hW hx]
+    rw [← fiberThomPairOverMap_comp_thomPairOverMap F E Set.inter_subset_left hx,
+      reassoc_of% hfib]
+  simp only [key h.source_mem, key h.target_mem, TopPair.singularHomologyMap_comp,
+    singularHomologyMap_prodThomPairFiberMap_eq_of_joined R F d hd h.joined_subtype]
+
+end ThomPairOverFiberHomology
 
 section ThomPairOverExt
 
@@ -433,7 +486,7 @@ theorem singularCohomology_thomPairOver_ext
     (hφu v))
   simp only [← TopPair.singularCohomologyMap_comp_apply, φ,
     e.prodThomPairFiberMap_comp_thomPairOverIso_inv ℝ hW b]
-  simp only [TopPair.singularCohomologyMap_comp_apply, h b b.2]
+  simp only [TopPair.singularCohomologyMap_comp_apply, h b b.property]
 
 end ThomPairOverExt
 
@@ -482,7 +535,7 @@ theorem exists_isThomClass_pullback_baseSet (K : Type w) [CommRing K] :
         (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F),
       IsThomClass F ((⇑(ContinuousMap.subtypeVal e.baseSet)) *ᵖ E) u :=
   (e.pullback (ContinuousMap.subtypeVal e.baseSet)).exists_isThomClass
-    (Set.eq_univ_of_forall fun b ↦ b.2) K
+    (Set.eq_univ_of_forall fun b ↦ b.property) K
 
 section ProdThomPair
 
@@ -544,18 +597,34 @@ theorem singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul {b : B} (hb 
       (SignType.sign (e.coordChangeL ℝ e' b : F →L[ℝ] F).det : ℤ) •
         TopPair.singularCohomologyMap
           (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom n g := by
-  have hf : Set.MapsTo (e.coordChangeL ℝ e' b : F →L[ℝ] F) ({0}ᶜ : Set F) {0}ᶜ :=
-    (e.coordChangeL ℝ e' b).mapsTo_compl_zero
   -- The fibre of `e'` at `b` is the fibre of `e` followed by the coordinate change.
-  have hcomp : (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom =
-      (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom ≫
-        TopPair.ofSubsetMap (TopCat.ofHom ((e.coordChangeL ℝ e' b : F →L[ℝ] F) : C(F, F))) hf := by
-    have h := (e.continuousLinearEquivAt_trans_coordChangeL ℝ e' hb hb').symm
-    rw [h, ContinuousLinearEquiv.complZeroPairIso_trans, Iso.trans_hom]
-    exact congrArg _ (ContinuousLinearEquiv.complZeroPairIso_hom _)
-  rw [hcomp, TopPair.singularCohomologyMap_comp,
-    singularCohomologyMap_continuousLinearMap_compl_zero, Preadditive.zsmul_comp, Category.id_comp]
-  exact congr($(ModuleCat.hom_zsmul _ _) g)
+  have h : (e.continuousLinearEquivAt ℝ b hb).symm.trans (e'.continuousLinearEquivAt ℝ b hb') =
+      e.coordChangeL ℝ e' b := by
+    rw [← e.continuousLinearEquivAt_trans_coordChangeL ℝ e' hb hb']
+    ext
+    simp [e.apply_mk_symm hb]
+  rw [ContinuousLinearEquiv.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul
+    (e.continuousLinearEquivAt ℝ b hb), h]
+
+/-- **In characteristic two, fibre classes do not depend on the trivialization**: if `2 = 0` in
+`K`, then for linear trivializations `e` and `e'` whose base sets contain `b`, pulling back a class
+`g ∈ Hⁿ(F, F ∖ {0}; R, M)` to the fibre pair `(E_b, E_b ∖ {0})` along `e'` gives the pull-back
+along `e`. The two differ by the sign of the determinant of the coordinate change, and `-1` acts
+as `1` on a `K`-module. -/
+theorem singularCohomologyMap_complZeroPairIso_hom_eq_of_two_eq_zero (h2 : (2 : K) = 0) {b : B}
+    (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet) {n : ℕ}
+    (g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R' K M' n) :
+    TopPair.singularCohomologyMap (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom n g =
+      TopPair.singularCohomologyMap
+        (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom n g := by
+  rw [e.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb']
+  have hdet : (e.coordChangeL ℝ e' b : F →L[ℝ] F).det ≠ 0 :=
+    -- `ContinuousLinearMap.det` is by definition the determinant of the underlying linear map.
+    (LinearEquiv.isUnit_det' (e.coordChangeL ℝ e' b).toLinearEquiv).ne_zero
+  rcases hdet.lt_or_gt with h | h
+  · rw [sign_neg h, SignType.coe_neg_one, neg_one_zsmul, neg_eq_iff_add_eq_zero, ← two_smul K,
+      h2, zero_smul]
+  · rw [sign_pos h, SignType.coe_one, one_zsmul]
 
 /-- **Fibre classes read in two trivializations differ by the sign of the coordinate change**, in
 homology: for linear trivializations `e` and `e'` whose base sets contain `b`, the map

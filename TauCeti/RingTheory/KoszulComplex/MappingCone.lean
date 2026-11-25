@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomotopyCofiber
-public import TauCeti.LinearAlgebra.ExteriorPower.Prod
+public import TauCeti.LinearAlgebra.ExteriorPower.Prod.Basic
 public import TauCeti.RingTheory.KoszulComplex.Basic
 
 /-!

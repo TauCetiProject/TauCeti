@@ -21,10 +21,8 @@ with the point `1 / N` of exact order `N` has a Tate normal form
 `z ↦ (a(z), b(z))` is a holomorphic map from `ℍ` to the pairs `(a, b)` for which the Tate normal
 form is elliptic and `(0, 0)` has exact order `N`
 (`TauCeti.PointedWeierstrassCurve.tateNormalFormExactOrder`), and that it induces a bijection from
-`Γ₁(N) \ ℍ` onto them (`TauCeti.gamma1QuotientEquivTateNormalForm`). In the coordinates of the
-plane model `Spec ℤ[A, B][Δ⁻¹]` these pairs describe the complex points of the fine moduli scheme
-`Y₁(N)`, so this is the analytic map `Γ₁(N) \ ℍ → Y₁(N)(ℂ)`; the complex structure of `Y₁(N)(ℂ)`
-and the comparison with the scheme are not made here.
+`Γ₁(N) \ ℍ` onto them (`TauCeti.gamma1QuotientEquivTateNormalForm`). The comparison with the
+complex points of the scheme `Y₁(N)` is in `TauCeti.Analysis.SpecialFunctions.Elliptic.Gamma1.YOne`.
 
 * **The coefficients.** For a lattice `Λ` and `w ∈ ℂ`, write `x = ℘(w; Λ)`, `y = ℘'(w; Λ)` and
   `Q = Ψ₃(x) = 3 x⁴ - (3 / 2) g₂ x² - 3 g₃ x - g₂² / 16` for the value of the `3`-division
@@ -49,6 +47,7 @@ and the comparison with the scheme are not made here.
 * `TauCeti.gamma1QuotientEquivTateNormalForm N hN`: for `N ≥ 4`, the bijection from `Γ₁(N) \ ℍ`
   to the pairs `(a, b)` whose Tate normal form is elliptic with `(0, 0)` of exact order `N`, sending
   the orbit of `z` to the Tate normal form coefficients of `(E_z, 1 / N)`.
+
 
 ## Main results
 
@@ -204,7 +203,7 @@ theorem tateNormalFormCoeffs_pointedWeierstrassCurve_smul_of_mem {γ : SL(2, ℤ
 theorem tateNormalFormCoeffs_pointedWeierstrassCurve_smul (γ : Gamma1 N) (z : ℍ) :
     ((γ • z).pointedWeierstrassCurve N).tateNormalFormCoeffs =
       (z.pointedWeierstrassCurve N).tateNormalFormCoeffs :=
-  tateNormalFormCoeffs_pointedWeierstrassCurve_smul_of_mem γ.2 z
+  tateNormalFormCoeffs_pointedWeierstrassCurve_smul_of_mem γ.property z
 
 /-- For `N ≥ 4`, the Tate normal form coefficients of `(E_z, 1 / N)` are those of an elliptic curve
 on which `(0, 0)` has exact order `N`. -/
@@ -249,6 +248,7 @@ theorem coe_gamma1QuotientEquivTateNormalForm_mk (hN : 4 ≤ N) (z : ℍ) :
   rw [gamma1QuotientEquivTateNormalForm_def, Equiv.trans_apply, gamma1QuotientEquivExactOrder_mk,
     PointedWeierstrassCurve.coe_exactOrderQuotientEquivTateNormalForm_mk]
 
+
 end TauCeti
 
 namespace UpperHalfPlane
@@ -266,6 +266,6 @@ theorem tateNormalFormCoeffs_pointedWeierstrassCurve_eq_iff (hN : 4 ≤ N) {z z'
     ← coe_gamma1QuotientEquivTateNormalForm_mk hN, Subtype.coe_inj,
     (gamma1QuotientEquivTateNormalForm N hN).apply_eq_iff_eq, Quotient.eq,
     MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
-  exact ⟨fun ⟨γ, hγ⟩ ↦ ⟨γ, γ.2, hγ⟩, fun ⟨γ, hγ, h⟩ ↦ ⟨⟨γ, hγ⟩, h⟩⟩
+  exact ⟨fun ⟨γ, hγ⟩ ↦ ⟨γ, γ.property, hγ⟩, fun ⟨γ, hγ, h⟩ ↦ ⟨⟨γ, hγ⟩, h⟩⟩
 
 end UpperHalfPlane

@@ -66,6 +66,8 @@ of `G`, equivalently the central extensions of `G` by `kˣ` up to equivalence.
   `TauCeti.FactorSet.natCard_nsmul_cohomologyClass_eq_zero`: `n` kills a factor-set class exactly
   when the pointwise `n`-th power of the factor set is a multiplicative coboundary; in particular
   `Nat.card M` kills every factor-set class.
+* `TauCeti.FactorSet.exponent_nsmul_cohomologyClass_eq_zero`: the exponent of `M` kills every
+  factor-set class; `TauCeti.FactorSet.natCard_nsmul_cohomologyClass_eq_zero` follows from it.
 * `TauCeti.FactorSet.exists_rescale_pow_eq_one`: with a surjective `n`-th power map for
   nonzero `n`, a class killed by `n` admits a normalized rescaling by an action-aware
   coboundary whose values have `n`-th power one. For `n = 0`, no divisibility is needed.
@@ -103,7 +105,7 @@ variable (α β : FactorSet G M)
 induced by the action. -/
 theorem mem_cocycles₂ :
     (fun p : G × G => Additive.ofMul (α p)) ∈ cocycles₂ (Rep.ofMulDistribMulAction G M) :=
-  (cocyclesOfIsMulCocycle₂ α.isMulCocycle₂).2
+  (cocyclesOfIsMulCocycle₂ α.isMulCocycle₂).property
 
 /-- A factor set, read as a `2`-cocycle valued in `Additive M`. -/
 def toCocycles₂ : cocycles₂ (Rep.ofMulDistribMulAction G M) :=
@@ -143,7 +145,7 @@ theorem cohomologyClass_eq_iff :
     α.cohomologyClass = β.cohomologyClass ↔ IsMulCoboundary₂ fun p : G × G => α p / β p := by
   rw [cohomologyClass_def, cohomologyClass_def, H2π_eq_iff, coe_toCocycles₂_sub]
   exact ⟨fun h => isMulCoboundary₂_of_mem_coboundaries₂ _ h, fun h =>
-    (coboundariesOfIsMulCoboundary₂ h).2⟩
+    (coboundariesOfIsMulCoboundary₂ h).property⟩
 
 /-- **The class of a factor set vanishes exactly when it is a multiplicative `2`-coboundary.** -/
 theorem cohomologyClass_eq_zero_iff : α.cohomologyClass = 0 ↔ IsMulCoboundary₂ ⇑α := by
@@ -162,12 +164,18 @@ theorem nsmul_cohomologyClass_eq_zero_iff (n : ℕ) :
     rfl
   rw [hcoe]
   exact ⟨fun h ↦ isMulCoboundary₂_of_mem_coboundaries₂ _ h,
-    fun h ↦ (coboundariesOfIsMulCoboundary₂ h).2⟩
+    fun h ↦ (coboundariesOfIsMulCoboundary₂ h).property⟩
+
+/-- **The exponent of the coefficient group kills the class of a factor set.** When `M` has
+unbounded exponent, `Monoid.exponent M = 0` and the statement is trivial. -/
+theorem exponent_nsmul_cohomologyClass_eq_zero : Monoid.exponent M • α.cohomologyClass = 0 :=
+  (α.nsmul_cohomologyClass_eq_zero_iff _).2 ⟨1, fun _ _ ↦ by simp [Monoid.pow_exponent_eq_one]⟩
 
 /-- The cardinality of the kernel `M` kills the cohomology class of any factor set in `H²(G, M)`
 (when `M` is infinite, `Nat.card M = 0` and the statement is trivial). -/
-theorem natCard_nsmul_cohomologyClass_eq_zero : Nat.card M • α.cohomologyClass = 0 :=
-  (α.nsmul_cohomologyClass_eq_zero_iff (Nat.card M)).2 ⟨1, fun _ _ ↦ by simp [pow_card_eq_one']⟩
+theorem natCard_nsmul_cohomologyClass_eq_zero : Nat.card M • α.cohomologyClass = 0 := by
+  obtain ⟨k, hk⟩ := Group.exponent_dvd_nat_card (G := M)
+  rw [hk, mul_nsmul, exponent_nsmul_cohomologyClass_eq_zero, nsmul_zero]
 
 end Class
 
@@ -265,10 +273,10 @@ theorem exists_cohomologyClass_eq (x : H2 (Rep.ofMulDistribMulAction G M)) :
     ∃ α : FactorSet G M, α.cohomologyClass = x := by
   induction x using H2_induction_on with
   | _ y =>
-    refine ⟨ofIsMulCocycle₂ (isMulCocycle₂_of_mem_cocycles₂ _ y.2), ?_⟩
+    refine ⟨ofIsMulCocycle₂ (isMulCocycle₂_of_mem_cocycles₂ _ y.property), ?_⟩
     rw [cohomologyClass_def, H2π_eq_iff]
     exact (coboundariesOfIsMulCoboundary₂
-      (isMulCoboundary₂_div_ofIsMulCocycle₂ (isMulCocycle₂_of_mem_cocycles₂ _ y.2))).2
+      (isMulCoboundary₂_div_ofIsMulCocycle₂ (isMulCocycle₂_of_mem_cocycles₂ _ y.property))).property
 
 /-- **Cohomologous factor sets**: their pointwise quotient is a multiplicative `2`-coboundary,
 equivalently (`TauCeti.FactorSet.cohomologyClass_eq_iff`) they have the same class in `H²(G, M)`.
@@ -364,7 +372,7 @@ So the class in `H²(G, M)` is an invariant of the extension, and by
 `TauCeti.GroupExtension.factorSetToGroupExtensionEquiv` the extension is recovered from any one of
 these factor sets. -/
 theorem cohomologyClass_factorSet_eq (σ σ' : S.Section) (hσ : σ 1 = 1) (hσ' : σ' 1 = 1)
-    (hact : InducesAction S) :
+    (hact : S.InducesAction) :
     (factorSet σ hσ hact).cohomologyClass = (factorSet σ' hσ' hact).cohomologyClass :=
   (FactorSet.cohomologyClass_eq_iff _ _).2 (isMulCoboundary₂_div σ σ' hσ hσ' hact)
 
@@ -379,7 +387,7 @@ sections it is read from. The backward direction is
 `TauCeti.FactorSet.nonempty_groupExtensionEquiv`, carried across the two identifications
 `TauCeti.GroupExtension.factorSetToGroupExtensionEquiv`. -/
 theorem nonempty_equiv_iff_cohomologyClass_factorSet_eq (σ : S.Section) (σ' : S'.Section)
-    (hσ : σ 1 = 1) (hσ' : σ' 1 = 1) (hact : InducesAction S) (hact' : InducesAction S') :
+    (hσ : σ 1 = 1) (hσ' : σ' 1 = 1) (hact : S.InducesAction) (hact' : S'.InducesAction) :
     Nonempty (S.Equiv S') ↔
       (factorSet σ hσ hact).cohomologyClass = (factorSet σ' hσ' hact').cohomologyClass := by
   constructor

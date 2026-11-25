@@ -42,6 +42,9 @@ of translations, and star-scalar-product lemmas show that replacing a scalar mul
 - `MeasureTheory.aestronglyMeasurable_uncurry_sum_indicator`: a function of two variables that is
   piecewise in the first variable on a finite measurable family, with a.e. strongly measurable
   slices, is a.e. strongly measurable for the product measure.
+- `MeasureTheory.AEStronglyMeasurable.exists_stronglyMeasurable_ae_eq_norm_le`: an a.e. strongly
+  measurable function with `‖f‖ ≤ C` almost everywhere agrees almost everywhere with a strongly
+  measurable function bounded everywhere by `max C 0`.
 - `MeasureTheory.aestronglyMeasurable_star_smul_of_aestronglyMeasurable` and
   `MeasureTheory.aestronglyMeasurable_star_smul_iff`: over a normed field `𝕜` with a
   norm-preserving additive star involution and a normed `𝕜`-space `E`, for an a.e. strongly
@@ -240,6 +243,24 @@ theorem aestronglyMeasurable_uncurry_sum_indicator {ι M : Type*} [Fintype ι]
     ((hL i).comp_quasiMeasurePreserving (Measure.quasiMeasurePreserving_snd (μ := μ))).indicator
       ((hP i).prod .univ)
 
+/-- An a.e. strongly measurable function with `‖f‖ ≤ C` almost everywhere agrees almost
+everywhere with a strongly measurable function bounded everywhere by `max C 0`. -/
+theorem AEStronglyMeasurable.exists_stronglyMeasurable_ae_eq_norm_le {E : Type*}
+    [SeminormedAddCommGroup E] {f : α → E} (hf : AEStronglyMeasurable f μ) {C : ℝ}
+    (hC : ∀ᵐ x ∂μ, ‖f x‖ ≤ C) :
+    ∃ f₀ : α → E, StronglyMeasurable f₀ ∧ f =ᵐ[μ] f₀ ∧ ∀ x, ‖f₀ x‖ ≤ max C 0 := by
+  set g := hf.mk f
+  refine ⟨{x | ‖g x‖ ≤ C}.indicator g, hf.stronglyMeasurable_mk.indicator
+    (measurableSet_le hf.stronglyMeasurable_mk.norm.measurable measurable_const), ?_, fun x ↦ ?_⟩
+  · filter_upwards [hf.ae_eq_mk, hC] with x hx hxC
+    rw [hx]
+    exact (Set.indicator_of_mem (show x ∈ {x | ‖g x‖ ≤ C} by simpa [g, ← hx] using hxC) g).symm
+  · by_cases hx : ‖g x‖ ≤ C
+    · rw [Set.indicator_of_mem hx g]
+      exact hx.trans (le_max_left _ _)
+    · rw [Set.indicator_of_notMem hx g, norm_zero]
+      exact le_max_right _ _
+
 end MeasureTheory
 
 namespace MeasureTheory
@@ -251,7 +272,7 @@ variable {𝕜 E : Type*} [NormedField 𝕜] [StarAddMonoid 𝕜] [NormedStarGro
 
 private def starPairMap (q : {r : E × E // ∃ c : 𝕜, r.2 = c • r.1}) : E :=
   letI := Classical.propDecidable
-  if q.1.1 = 0 then 0 else star q.2.choose • q.1.1
+  if q.val.1 = 0 then 0 else star q.property.choose • q.val.1
 
 omit [NormedStarGroup 𝕜] in
 private theorem starPairMap_apply {x : E} {c : 𝕜}

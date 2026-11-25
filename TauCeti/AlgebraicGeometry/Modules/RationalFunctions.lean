@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
+public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
@@ -27,10 +28,9 @@ condition and the `𝒪_X`-module structure automatic.
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.Scheme.genericPoint_mem`, the elementary fact that every nonempty open
-  subset of an irreducible scheme contains the generic point, and
-  `TauCeti.AlgebraicGeometry.Scheme.germ_smul_functionField`, which says that a function on such
-  a subset acts on the function field through its germ at any of its points;
+* `TauCeti.AlgebraicGeometry.Scheme.germ_smul_functionField`, which says that a function on a
+  nonempty open subset of an irreducible scheme acts on the function field through its germ at
+  any of its points;
 * `TauCeti.AlgebraicGeometry.Scheme.fromSpecFunctionField`, the canonical morphism
   `Spec K(X) ⟶ X` from the spectrum of the function field, and
   `TauCeti.AlgebraicGeometry.Scheme.fromSpecFunctionField_preimage`: it pulls a nonempty open
@@ -114,10 +114,6 @@ def fromSpecFunctionField : Spec X.functionField ⟶ X :=
   X.fromSpecStalk (genericPoint X)
 
 variable {X}
-
-/-- The generic point of an irreducible scheme lies in every nonempty open subset. -/
-theorem genericPoint_mem (U : X.Opens) [Nonempty U] : genericPoint X ∈ U :=
-  ((genericPoint_spec X).mem_open_set_iff U.isOpen).mpr (by simpa using ‹Nonempty U›)
 
 /-- A function on a nonempty open subset `U` acts on the function field through its germ at any
 point of `U`. -/
@@ -316,8 +312,8 @@ def rationalFunctionsHom : M ⟶ rationalFunctions X := by
   intro U V i
   by_cases hV : Nonempty V.unop
   · let := hV
-    have hU : Nonempty U.unop := ⟨⟨(Classical.choice hV).1,
-      i.unop.le (Classical.choice hV).2⟩⟩
+    have hU : Nonempty U.unop := ⟨⟨(Classical.choice hV).val,
+      i.unop.le (Classical.choice hV).property⟩⟩
     let := hU
     simp only [dite_eq_left hU, dite_eq_left hV]
     ext s
@@ -353,7 +349,7 @@ end Hom
 theorem rationalFunctions_map_bijective {U V : X.Opens} [Nonempty U] (i : U ⟶ V) :
     Function.Bijective ((rationalFunctions X).presheaf.map i.op) := by
   have : Nonempty V :=
-    ⟨⟨(Classical.arbitrary U : U).1, leOfHom i (Classical.arbitrary U : U).2⟩⟩
+    ⟨⟨(Classical.arbitrary U : U).val, leOfHom i (Classical.arbitrary U : U).property⟩⟩
   constructor
   · intro a b hab
     refine (rationalFunctionsEquiv V).injective ?_
@@ -675,7 +671,7 @@ one because the germ map to the function field of an integral scheme is injectiv
 empty one because there are no nonzero functions there. -/
 theorem toRationalFunctions_app_injective (U : X.Opens) :
     Function.Injective (Scheme.Modules.Hom.app (toRationalFunctions X) U) := by
-  rcases U.1.eq_empty_or_nonempty with h | h
+  rcases U.carrier.eq_empty_or_nonempty with h | h
   · have hU : U = ⊥ := SetLike.ext' h
     have hsub : Subsingleton Γ(X, U) :=
       CommRingCat.subsingleton_of_isTerminal (X.sheaf.isTerminalOfEqEmpty hU)
@@ -703,9 +699,9 @@ theorem exists_germToFunctionField_eq_of_forall_mem_range {U : X.Opens} [Nonempt
   have key : ∀ y : U, ∃ V : X.Opens, ∃ _ : (y : X) ∈ V, ∃ _ : V ≤ U,
       ∃ s : Γ(X, V), X.presheaf.germ V (genericPoint X) (hgen V ⟨⟨(y : X), ‹_›⟩⟩) s = f := by
     intro y
-    obtain ⟨g, hgf⟩ := hf y y.2
+    obtain ⟨g, hgf⟩ := hf y y.property
     obtain ⟨W, hyW, s, hs⟩ := X.presheaf.exists_germ_eq g
-    have hmem : (y : X) ∈ (W ⊓ U : X.Opens) := ⟨hyW, y.2⟩
+    have hmem : (y : X) ∈ (W ⊓ U : X.Opens) := ⟨hyW, y.property⟩
     have hWU : Nonempty (W ⊓ U : X.Opens) := ⟨⟨(y : X), hmem⟩⟩
     -- Only needed as an instance, so that `algebraMap_germ_eq_germToFunctionField` applies at `W`.
     have : Nonempty W := ⟨⟨(y : X), hyW⟩⟩

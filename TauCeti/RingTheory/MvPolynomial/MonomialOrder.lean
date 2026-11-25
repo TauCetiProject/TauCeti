@@ -43,6 +43,8 @@ the images of the generators of the Lazard ring in a polynomial ring.
 * `MonomialOrder.degree_eq_of_forall_lt`, `MonomialOrder.degree_eq_of_forall_mem_lt`: strict
   comparisons preserving the leading exponent, including comparisons on a set containing the
   support.
+* `MonomialOrder.degree_eq_of_support_subset`: a polynomial whose support lies in that of `f` and
+  contains the leading exponent of `f` has the same leading exponent.
 * `MonomialOrder.leadingCoeff_eq_of_degree_eq`, `MonomialOrder.leadingTerm_eq_of_degree_eq`,
   `MonomialOrder.sPolynomial_eq_of_degree_eq`: orders agreeing on leading exponents also agree
   on the corresponding leading coefficients, leading terms and S-polynomials.
@@ -149,6 +151,14 @@ theorem degree_eq_of_forall_mem_lt [CommSemiring R] (n : MonomialOrder σ)
   exact h a (hf ha) _ (hf (m.degree_mem_support hf0))
     (lt_of_le_of_ne (m.le_degree ha) (m.toSyn.injective.ne hne))
 
+/-- If the support of `g` lies in that of `f` and contains the leading exponent of `f`, then `g`
+has the same leading exponent as `f`. The coefficient rings of `f` and `g` may differ. -/
+theorem degree_eq_of_support_subset {S : Type*} [CommSemiring R] [CommSemiring S]
+    {f : MvPolynomial σ R} {g : MvPolynomial σ S} (h : g.support ⊆ f.support)
+    (hf : m.degree f ∈ g.support) : m.degree g = m.degree f :=
+  m.toSyn.injective
+    (le_antisymm (m.degree_le_iff.2 fun _ he ↦ m.le_degree (h he)) (m.le_degree hf))
+
 /-- Orders agreeing on the leading exponent of a polynomial agree on its leading coefficient. -/
 theorem leadingCoeff_eq_of_degree_eq [CommSemiring R] (n : MonomialOrder σ)
     {f : MvPolynomial σ R} (h : n.degree f = m.degree f) :
@@ -186,7 +196,7 @@ theorem withBotDegree_sub_lt [CommRing R] {f q : MvPolynomial σ R} (hf : f ≠ 
       (m.withBotDegree_add_le f (-q)).trans (max_le le_rfl (by rwa [withBotDegree_neg]))
   rw [EmbeddingLike.apply_eq_iff_eq, withBotDegree_eq_withBotDegree_iff] at heq
   have := m.degree_mem_support fun h0 ↦ hf (heq.2.1 h0)
-  rw [heq.1, mem_support_iff, coeff_sub, hqf, leadingCoeff, sub_self] at this
+  rw [heq.1, mem_support_iff, AddMonoidAlgebra.coeff_sub_apply, hqf, leadingCoeff, sub_self] at this
   exact this rfl
 
 /-- If `q` has degree at most that of `f` and the same coefficient of `X^(deg f)`, then
@@ -197,7 +207,8 @@ theorem degree_sub_lt [CommRing R] {f q : MvPolynomial σ R} (hfq : f - q ≠ 0)
   refine lt_of_le_of_ne (m.degree_sub_le.trans (max_le le_rfl hq)) ?_
   intro heq
   have hmem := m.degree_mem_support hfq
-  rw [m.toSyn.injective heq, mem_support_iff, coeff_sub, hqf, leadingCoeff, sub_self] at hmem
+  rw [m.toSyn.injective heq, mem_support_iff, AddMonoidAlgebra.coeff_sub_apply, hqf, leadingCoeff,
+    sub_self] at hmem
   exact hmem rfl
 
 /-- A monomial multiple `c X^a * b` has degree at most `a + deg b`. -/

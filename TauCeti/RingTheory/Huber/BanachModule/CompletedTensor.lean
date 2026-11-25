@@ -407,7 +407,7 @@ variable (A M)
 `A`-module `M` with continuous action: it sends `a ⊗ m` to `a • m` (`lid_tmul`), and its inverse
 sends `m` to `1 ⊗ m` (`lid_symm_apply`). -/
 noncomputable def lid : CompletedTensor A A M ≃L[A] M :=
-  .equivOfInverse' (lift (LinearMap.lsmul A M) (continuous_smul.congr fun _ ↦ by simp))
+  .ofContinuousLinearMap (lift (LinearMap.lsmul A M) (continuous_smul.congr fun _ ↦ by simp))
     ⟨tmul A A M 1, (continuous_tmul A A M).comp (continuous_const.prodMk continuous_id)⟩
     (by ext m; simp) (ext fun a m ↦ by simp [← LinearMap.map_smul₂])
 
@@ -486,7 +486,7 @@ variable [IsTopologicalRing A]
 noncomputable def prodLeft :
     CompletedTensor A (U × Q) W ≃L[A]
       CompletedTensor A U W × CompletedTensor A Q W :=
-  ContinuousLinearEquiv.equivOfInverse'
+  ContinuousLinearEquiv.ofContinuousLinearMap
     ((map (ContinuousLinearMap.fst A U Q) (.id A W)).prod
       (map (ContinuousLinearMap.snd A U Q) (.id A W)))
     ((map (ContinuousLinearMap.inl A U Q) (.id A W)).coprod

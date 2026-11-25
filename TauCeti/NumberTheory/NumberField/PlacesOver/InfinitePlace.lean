@@ -66,8 +66,8 @@ namespace NumberField
 /-- An absolute value lying over an infinite place is archimedean. -/
 theorem not_isNonarchimedean_of_liesOver_infinitePlace {K F : Type*} [Field K] [Semiring F]
     [Algebra K F] [FaithfulSMul K F] (v : InfinitePlace K) (w : AbsoluteValue F ℝ)
-    [w.LiesOver v.1] : ¬ IsNonarchimedean w :=
-  fun hw ↦ v.not_isNonarchimedean (isNonarchimedean_under_of_liesOver v.1 hw)
+    [w.LiesOver v.val] : ¬ IsNonarchimedean w :=
+  fun hw ↦ v.not_isNonarchimedean (isNonarchimedean_under_of_liesOver v.val hw)
 
 section Field
 
@@ -76,9 +76,9 @@ variable {K F : Type*} [Field K] [Field F] [Algebra K F]
 /-- **Absolute values over an infinite place.** For any field extension `F / K`, an absolute value
 on `F` lying over an infinite place of `K` is an infinite place of `F`. -/
 theorem isInfinitePlace_of_liesOver (v : InfinitePlace K) (w : AbsoluteValue F ℝ)
-    [w.LiesOver v.1] : IsInfinitePlace w := by
+    [w.LiesOver v.val] : IsInfinitePlace w := by
   let ι : ℝ →+* w.Completion :=
-    (AbsoluteValue.Completion.map v.1 w).comp (InfinitePlace.Completion.ofReal v)
+    (AbsoluteValue.Completion.map v.val w).comp (InfinitePlace.Completion.ofReal v)
   have hι (r : ℝ) : ‖ι r‖ = |r| := by
     simp [ι, AbsoluteValue.Completion.norm_map, InfinitePlace.Completion.norm_ofReal]
   obtain ⟨φ, -, hφ⟩ := ι.exists_comp_eq_ofRealHom_and_norm_eq hι
@@ -103,15 +103,15 @@ theorem isInfinitePlace_iff_of_liesOver (v : AbsoluteValue K ℝ) (w : AbsoluteV
 `F` lying over an infinite place `v` of `K` is the underlying absolute value of a unique infinite
 place of `F` lying over `v`. -/
 theorem existsUnique_infinitePlace_of_liesOver (v : InfinitePlace K) (w : AbsoluteValue F ℝ)
-    [w.LiesOver v.1] :
-    ∃! w' : InfinitePlace F, w'.LiesOver v ∧ w'.1 = w := by
+    [w.LiesOver v.val] :
+    ∃! w' : InfinitePlace F, w'.LiesOver v ∧ w'.val = w := by
   obtain ⟨w', rfl⟩ := (isInfinitePlace_iff w).mp (isInfinitePlace_of_liesOver v w)
   exact ⟨w', ⟨inferInstance, rfl⟩, fun u ⟨_, hu⟩ ↦ Subtype.ext hu⟩
 
 /-- An absolute value `w` on `F` lies over an infinite place `v` of `K` if and only if `w` is the
 underlying absolute value of an infinite place of `F` lying over `v`. -/
 theorem liesOver_infinitePlace_iff {v : InfinitePlace K} {w : AbsoluteValue F ℝ} :
-    w.LiesOver v.1 ↔ ∃ w' : InfinitePlace F, w'.LiesOver v ∧ w'.1 = w := by
+    w.LiesOver v.val ↔ ∃ w' : InfinitePlace F, w'.LiesOver v ∧ w'.val = w := by
   refine ⟨fun _ ↦ (existsUnique_infinitePlace_of_liesOver v w).exists, ?_⟩
   rintro ⟨w', hw', rfl⟩
   exact hw'
@@ -121,9 +121,9 @@ extension. This permits comparing products of archimedean local factors without 
 extension place twice. -/
 theorem exists_injective_infinitePlace_eq_of_liesOver
     (S : Set (InfinitePlace K)) (w : S → AbsoluteValue F ℝ)
-    (hw : ∀ v, (w v).LiesOver v.val.1) :
+    (hw : ∀ v, (w v).LiesOver v.val.val) :
     ∃ W : S → InfinitePlace F, Function.Injective W ∧
-      ∀ v, (W v).LiesOver v.val ∧ (W v).1 = w v := by
+      ∀ v, (W v).LiesOver v.val ∧ (W v).val = w v := by
   have hclass (v : S) := by
     let := hw v
     exact (existsUnique_infinitePlace_of_liesOver v.val (w v)).exists
@@ -138,19 +138,19 @@ variable (F) in
 /-- Every infinite place of the base has an absolute value of an algebraic field extension lying
 over it. -/
 theorem nonempty_setOf_liesOver_infinitePlace [Algebra.IsAlgebraic K F] (v : InfinitePlace K) :
-    {w : AbsoluteValue F ℝ | w.LiesOver v.1}.Nonempty := by
+    {w : AbsoluteValue F ℝ | w.LiesOver v.val}.Nonempty := by
   obtain ⟨w', rfl⟩ := InfinitePlace.comap_surjective (K := F) v
-  exact ⟨w'.1, InfinitePlace.liesOver_comap w'⟩
+  exact ⟨w'.val, InfinitePlace.liesOver_comap w'⟩
 
 variable (F) in
 /-- A finite field extension has only finitely many absolute values lying over a given infinite
 place of the base field. -/
 theorem finite_setOf_liesOver_infinitePlace [Module.Finite K F] (v : InfinitePlace K) :
-    {w : AbsoluteValue F ℝ | w.LiesOver v.1}.Finite := by
+    {w : AbsoluteValue F ℝ | w.LiesOver v.val}.Finite := by
   let : Algebra K ℂ := v.embedding.toAlgebra
   have : Fintype (F →ₐ[K] ℂ) := minpoly.AlgHom.fintype K F ℂ
-  refine (Set.finite_range fun φ : F →ₐ[K] ℂ ↦ (InfinitePlace.mk φ.toRingHom).1).subset
-    fun w (hw : w.LiesOver v.1) ↦ ?_
+  refine (Set.finite_range fun φ : F →ₐ[K] ℂ ↦ (InfinitePlace.mk φ.toRingHom).val).subset
+    fun w (hw : w.LiesOver v.val) ↦ ?_
   obtain ⟨u, ⟨_, rfl⟩, -⟩ := existsUnique_infinitePlace_of_liesOver v w
   rcases InfinitePlace.LiesOver.embedding_comp_eq_or_conjugate_embedding_comp_eq u v with h | h
   · exact ⟨⟨u.embedding, fun x ↦ RingHom.congr_fun h x⟩,

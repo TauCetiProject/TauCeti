@@ -26,6 +26,8 @@ homomorphism `TauCeti.holomorphicStructureSheaf.toFilterGerm I X x l hl` and pro
   (`eq_zero_iff_of_toFilterGerm_eq`);
 * `toFilterGerm_ringEquivCast`: transporting a germ along an equality of points with
   `RingEquiv.cast` keeps its representative;
+* `continuousAt_of_toFilterGerm_eq`: a function with the same germ along `𝓝 x` as a holomorphic
+  germ is continuous at `x`;
 * `toFilterGerm_nhdsNE_injective`: when `x` is not isolated, it is even determined by its
   germ along the punctured neighbourhoods `𝓝[≠] x`, by continuity;
 * `exists_toFilterGerm_nhds_eq_iff`: the image of the comparison along `𝓝 x` consists of the
@@ -92,16 +94,16 @@ private def toFilterGermHom (x : X) (l : Filter X) (hl : l ≤ 𝓝 x) :
       (holomorphicStructureSheaf I X).presheaf)
     { pt := CommRingCat.of (Germ l ℂ)
       ι :=
-        { app := fun U ↦ CommRingCat.ofHom (sectionToFilterGerm I X (unop U).2 hl)
+        { app := fun U ↦ CommRingCat.ofHom (sectionToFilterGerm I X (unop U).property hl)
           naturality := by
             intro U V h
             apply CommRingCat.hom_ext
             apply RingHom.ext
             intro f
             -- Both composites send `f` to the germ of its extension by zero.
-            exact coe_extend_eq I X (unop V).2 hl _ _ fun y ↦
+            exact coe_extend_eq I X (unop V).property hl _ _ fun y ↦
               (map_apply (I := I) (X := X)
-                (U := op (α := Opens X) (unop U).1) (V := op (α := Opens X) (unop V).1)
+                (U := op (α := Opens X) (unop U).val) (V := op (α := Opens X) (unop V).val)
                 ((OpenNhds.inclusion (X := TopCat.of X) x).map h.unop).op f y).trans
                 (Subtype.val_injective.extend_apply _ (0 : X → ℂ) _).symm } }
 
@@ -134,7 +136,7 @@ theorem toFilterGerm_germ {x : X} {l : Filter X} (hl : l ≤ 𝓝 x) {U : Opens 
 def germOfContMDiff (f : X → ℂ) (hf : ContMDiff I 𝓘(ℂ) ω f) (x : X) :
     (holomorphicStructureSheaf I X).presheaf.stalk x :=
   ConcreteCategory.hom ((holomorphicStructureSheaf I X).presheaf.germ ⊤ x trivial)
-    (ofContMDiff (fun y : (⊤ : Opens X) ↦ f y) (hf.comp contMDiff_subtype_val))
+    (ofContMDiff (fun y : (⊤ : Opens X) ↦ f y) (hf.comp contMDiff_subtypeVal))
 
 /-- The holomorphic germ of a globally analytic function `f` is the germ of `f`. -/
 @[simp]
@@ -164,7 +166,7 @@ theorem exists_toFilterGerm_eq_of_eventually_contMDiffAt {x : X} {f : X → ℂ}
   obtain ⟨t, ht, hto, hxt⟩ := eventually_nhds_iff.1 hf
   let U : Opens X := ⟨t, hto⟩
   let fU : (holomorphicStructureSheaf I X).obj.obj (op U) :=
-    ofContMDiff (fun y : U ↦ f y) fun y ↦ contMDiffAt_subtype_iff.2 (ht y y.2)
+    ofContMDiff (fun y : U ↦ f y) fun y ↦ contMDiffAt_subtype_iff.2 (ht y y.property)
   exact ⟨ConcreteCategory.hom ((holomorphicStructureSheaf I X).presheaf.germ U x hxt) fU,
     fun l hl ↦ toFilterGerm_germ hl hxt fU f fun y ↦ ofContMDiff_apply _ _ y⟩
 
@@ -197,7 +199,7 @@ theorem toFilterGerm_nhds_injective (x : X) :
   refine TopCat.Presheaf.germ_ext _ W hxt (homOfLE hWU) (homOfLE hWU) (ext fun y ↦ ?_)
   rw [map_apply, map_apply, zero_apply]
   exact (Subtype.val_injective.extend_apply _ (0 : X → ℂ) (Opens.inclusion hWU y)).symm.trans
-    (ht y y.2).1
+    (ht y y.property).1
 
 /-- A holomorphic germ vanishes exactly when a function with the same germ along `𝓝 x` vanishes
 near `x`. -/
@@ -205,6 +207,18 @@ theorem eq_zero_iff_of_toFilterGerm_eq {x : X}
     {s : (holomorphicStructureSheaf I X).presheaf.stalk x} {f : X → ℂ}
     (h : toFilterGerm I X x (𝓝 x) le_rfl s = f) : s = 0 ↔ f =ᶠ[𝓝 x] 0 := by
   rw [← (toFilterGerm_nhds_injective x).eq_iff, h, map_zero, ← Germ.coe_zero, Germ.coe_eq]
+
+/-- If a holomorphic germ `s` divides `t`, then near `x` a function representing `t` vanishes at
+every zero of a function representing `s`. -/
+theorem eventually_eq_zero_of_dvd {x : X}
+    {s t : (holomorphicStructureSheaf I X).presheaf.stalk x} {f g : X → ℂ}
+    (hf : toFilterGerm I X x (𝓝 x) le_rfl s = f) (hg : toFilterGerm I X x (𝓝 x) le_rfl t = g)
+    (h : s ∣ t) : ∀ᶠ y in 𝓝 x, f y = 0 → g y = 0 := by
+  obtain ⟨q, rfl⟩ := h
+  obtain ⟨Q, -, hQ⟩ := exists_toFilterGerm_eq x q
+  rw [map_mul, hf, hQ _ le_rfl, ← Germ.coe_mul, Germ.coe_eq] at hg
+  filter_upwards [hg] with y hy h0
+  rw [← hy, Pi.mul_apply, h0, zero_mul]
 
 /-- Transporting a holomorphic germ along an equality of points `x = y` with `RingEquiv.cast`
 keeps its representative. This lets coordinate changes that fix a point only propositionally
@@ -217,14 +231,22 @@ theorem toFilterGerm_ringEquivCast {x y : X} (h : x = y)
   subst h
   exact hs
 
+/-- Any function with the same germ along `𝓝 x` as a holomorphic germ is continuous at `x`. -/
+theorem continuousAt_of_toFilterGerm_eq {x : X}
+    {s : (holomorphicStructureSheaf I X).presheaf.stalk x} {f : X → ℂ}
+    (h : toFilterGerm I X x (𝓝 x) le_rfl s = f) : ContinuousAt f x := by
+  obtain ⟨g, hg, hgs⟩ := exists_toFilterGerm_eq x s
+  rw [hgs, Germ.coe_eq] at h
+  exact hg.self_of_nhds.continuousAt.congr h
+
 /-- At a point which is not isolated, a holomorphic germ is determined by its germ on the
 punctured neighbourhoods of the point, by continuity. -/
 theorem toFilterGerm_nhdsNE_injective (x : X) [(𝓝[≠] x).NeBot] :
     Injective (toFilterGerm I X x (𝓝[≠] x) nhdsWithin_le_nhds) := by
   rw [injective_iff_map_eq_zero]
   intro s hs
-  obtain ⟨f, hf, hfs⟩ := exists_toFilterGerm_eq x s
-  have hc : ContinuousAt f x := hf.self_of_nhds.continuousAt
+  obtain ⟨f, -, hfs⟩ := exists_toFilterGerm_eq x s
+  have hc : ContinuousAt f x := continuousAt_of_toFilterGerm_eq (hfs _ le_rfl)
   rw [hfs, ← Germ.coe_zero, Germ.coe_eq] at hs
   refine (eq_zero_iff_of_toFilterGerm_eq (hfs _ le_rfl)).2 ?_
   exact (hc.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE (g := fun _ ↦ 0) continuousAt_const).1 hs
@@ -309,7 +331,7 @@ theorem toFilterGerm_stalkPrecomp (f : X → Y) (hf : ContMDiff I J ω f) (x : X
     fun y ↦ (Subtype.val_injective.extend_apply _ (0 : Y → ℂ) y).symm
   rw [stalkPrecomp_germ, toFilterGerm_germ le_rfl hx g _ hg]
   exact (toFilterGerm_germ (U := (Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj U) le_rfl hx _
-    _ fun y ↦ (precomp_apply I X f hf (op U) g y).trans (hg ⟨f y.1, y.2⟩)).trans
+    _ fun y ↦ (precomp_apply I X f hf (op U) g y).trans (hg ⟨f y.val, y.property⟩)).trans
     (Germ.coe_compTendsto _ _).symm
 
 /-- Pulling back the holomorphic germ of a globally analytic function `g` along a complex analytic

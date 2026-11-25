@@ -58,7 +58,7 @@ theorem isAffinoidAlgebra_isRestricted_of_pow_eq_norm [Finite σ] {r : σ → �
   refine (isAffinoidAlgebra_tate.of_algHom_finite φ hφ).of_surjective
     { Subring.inclusion hle with
       commutes' := fun x ↦ Subtype.ext (by simp [coe_algebraMap_isRestrictedSubring]) }
-    fun f ↦ ⟨⟨f.1, (MvPowerSeries.IsRestricted.subring_abs (R := K) r).ge f.2⟩,
+    fun f ↦ ⟨⟨f.val, (MvPowerSeries.IsRestricted.subring_abs (R := K) r).ge f.property⟩,
       Subtype.ext (Subring.coe_inclusion hle _)⟩
 
 /-- Strict affinoidness forces every positive radius into the divisible hull of the value

@@ -15,7 +15,8 @@ that come from the left summand `α`. This file characterizes it through the ful
 `Term.varFinset`, and computes it after `Term.relabel` and `Term.subst`. It also records that a
 language map commutes with relabelling the variables of a term, and a language map that is
 injective on function symbols acts injectively on terms. Constructor equations for
-`BoundedFormula.constantsVarsEquiv` describe abstraction of constants in finitary formulas.
+`BoundedFormula.constantsVarsEquiv` describe abstraction of constants in finitary formulas, and
+defining equations unfold Mathlib's `⊤`, `⊓` and `⊔` on finitary formulas.
 
 ## Main results
 
@@ -27,11 +28,18 @@ injective on function symbols acts injectively on terms. Constructor equations f
   is a variable.
 * `FirstOrder.Language.Term.exists_eq_var_inr_of_isRelational`: in a relational language, a term
   over `α ⊕ β` with `α` empty is a variable `Sum.inr b`.
-* `FirstOrder.Language.LHom.onTerm_relabel`: a language map commutes with relabelling the
-  variables of a term.
+* `FirstOrder.Language.LHom.onTerm_relabel`, `FirstOrder.Language.LHom.varFinset_onTerm` and
+  `FirstOrder.Language.LHom.varFinsetLeft_onTerm`: a language map commutes with relabelling the
+  variables of a term and preserves its occurring variables and left variables.
 * `FirstOrder.Language.LHom.onTerm_injective`: a language map that is injective on function
   symbols acts injectively on terms; `FirstOrder.Language.LHom.Injective.onTerm_injective`
   specializes it to injective language maps.
+* `FirstOrder.Language.LHom.constantsToVars_addConstants_onTerm`,
+  `FirstOrder.Language.LHom.addConstants_onTerm_varsToConstants`,
+  `FirstOrder.Language.Term.constantsToVars_lhomWithConstants_onTerm` and
+  `FirstOrder.Language.Term.constantsToVars_lhomWithConstantsMap_onTerm` (with matching forms for
+  `Term.constantsVarsEquivLeft`): constant abstraction on terms commutes with `LHom.addConstants`
+  and translates `lhomWithConstants` and `lhomWithConstantsMap` into variable relabellings.
 * `FirstOrder.Language.LHom.onBoundedFormula_not`, `FirstOrder.Language.LHom.onFormula_not`,
   `FirstOrder.Language.LHom.onSentence_not`, `FirstOrder.Language.LHom.id_onSentence`,
   `FirstOrder.Language.LHom.comp_onSentence`: language maps commute with negation and act
@@ -41,6 +49,9 @@ injective on function symbols acts injectively on terms. Constructor equations f
   `FirstOrder.Language.LHom.onTheory_mono`, `FirstOrder.Language.LHom.id_onTheory`,
   `FirstOrder.Language.LHom.comp_onTheory`: set-operation and functoriality laws for
   `LHom.onTheory`.
+* `FirstOrder.Language.BoundedFormula.top_def`, `FirstOrder.Language.BoundedFormula.inf_def`,
+  `FirstOrder.Language.BoundedFormula.sup_def`: `⊤` is `⊥.not`, `φ ⊓ ψ` is `(φ.imp ψ.not).not`
+  and `φ ⊔ ψ` is `φ.not.imp ψ`.
 -/
 
 public section
@@ -104,7 +115,7 @@ end Term
 
 namespace LHom
 
-variable {L L' : Language}
+variable {L : Language} {L' : Language}
 
 /-- A language map commutes with relabelling the variables of a term. -/
 @[simp]
@@ -113,6 +124,24 @@ theorem onTerm_relabel {β γ : Type*} (g : L →ᴸ L') (h : β → γ) (t : L.
   induction t with
   | var => rfl
   | func f ts ih => simp [Term.relabel, ih]
+
+/-- A language map preserves the variables occurring in a term; no injectivity on function
+symbols is required. -/
+@[simp]
+theorem varFinset_onTerm {β : Type*} [DecidableEq β] (g : L →ᴸ L') (t : L.Term β) :
+    (g.onTerm t).varFinset = t.varFinset := by
+  induction t with
+  | var => rfl
+  | func f ts ih => simp [Term.varFinset, ih]
+
+/-- A language map preserves the left variables occurring in a term over a sum type; no
+injectivity on function symbols is required. -/
+@[simp]
+theorem varFinsetLeft_onTerm {β γ : Type*} [DecidableEq β] (g : L →ᴸ L') (t : L.Term (β ⊕ γ)) :
+    (g.onTerm t).varFinsetLeft = t.varFinsetLeft := by
+  induction t with
+  | var x => cases x <;> rfl
+  | func f ts ih => simp [Term.varFinsetLeft, ih]
 
 /-- A language map that is injective on function symbols acts injectively on terms; terms
 mention no relation symbols, so nothing is assumed about those. -/
@@ -138,6 +167,50 @@ theorem onTerm_injective {g : L →ᴸ L'}
 theorem Injective.onTerm_injective {g : L →ᴸ L'} (hg : g.Injective) {β : Type*} :
     Function.Injective (g.onTerm : L.Term β → L'.Term β) :=
   LHom.onTerm_injective fun {_} => hg.onFunction
+
+/-- Turning constants into variables commutes with extending a language map by `addConstants`. -/
+@[simp]
+theorem constantsToVars_addConstants_onTerm (g : L →ᴸ L') {γ α : Type*} (t : L[[γ]].Term α) :
+    ((g.addConstants γ).onTerm t).constantsToVars = g.onTerm t.constantsToVars := by
+  induction t with
+  | var => rfl
+  | @func n F ts ih =>
+    cases n <;> rcases F with F | c
+    · simp only [LHom.onTerm, Term.constantsToVars, ih]; simp [LHom.addConstants]
+    · rfl
+    · simp only [LHom.onTerm, Term.constantsToVars, ih]; simp [LHom.addConstants]
+    · exact isEmptyElim c
+
+/-- Restoring constants from variables commutes with extending a language map by `addConstants`. -/
+@[simp]
+theorem addConstants_onTerm_varsToConstants (g : L →ᴸ L') {γ α : Type*}
+    (t : L.Term (γ ⊕ α)) :
+    (g.addConstants γ).onTerm t.varsToConstants = (g.onTerm t).varsToConstants := by
+  induction t with
+  | var x =>
+    rcases x with c | a
+    · simp only [Term.varsToConstants, Constants.term, LHom.onTerm]
+      congr
+      exact funext fun i => i.elim0
+    · rfl
+  | func F ts ih =>
+    simp only [LHom.onTerm, Term.varsToConstants, ih]
+    simp [LHom.addConstants]
+
+/-- Left constant abstraction on terms commutes with `LHom.addConstants`. -/
+theorem constantsVarsEquivLeft_addConstants_onTerm (g : L →ᴸ L') {γ α β : Type*}
+    (t : L[[γ]].Term (α ⊕ β)) :
+    Term.constantsVarsEquivLeft ((g.addConstants γ).onTerm t) =
+      g.onTerm (Term.constantsVarsEquivLeft t) := by
+  simp only [Term.constantsVarsEquivLeft_apply, constantsToVars_addConstants_onTerm, onTerm_relabel]
+
+/-- Inverse left constant abstraction on terms commutes with `LHom.addConstants`. -/
+theorem addConstants_onTerm_constantsVarsEquivLeft_symm (g : L →ᴸ L') {γ α β : Type*}
+    (t : L.Term ((γ ⊕ α) ⊕ β)) :
+    (g.addConstants γ).onTerm (Term.constantsVarsEquivLeft.symm t) =
+      Term.constantsVarsEquivLeft.symm (g.onTerm t) := by
+  simp only [Term.constantsVarsEquivLeft_symm_apply, addConstants_onTerm_varsToConstants,
+    onTerm_relabel]
 
 section FormulasAndTheories
 
@@ -216,9 +289,69 @@ end FormulasAndTheories
 
 end LHom
 
+namespace Term
+
+/-- Turning constants into variables on a term coming from `L` relabels its variables into the
+right summand. -/
+@[simp]
+theorem constantsToVars_lhomWithConstants_onTerm {L : Language} {γ α : Type*} (t : L.Term α) :
+    ((L.lhomWithConstants γ).onTerm t).constantsToVars = t.relabel Sum.inr := by
+  induction t with
+  | var => rfl
+  | @func n F ts ih =>
+    cases n <;> simp [LHom.onTerm, Term.constantsToVars, Term.relabel, ih]
+
+/-- Left constant abstraction on a term coming from `L` relabels its left variables into the right
+part of the left summand. -/
+theorem constantsVarsEquivLeft_lhomWithConstants_onTerm {L : Language} {γ α β : Type*}
+    (t : L.Term (α ⊕ β)) :
+    constantsVarsEquivLeft ((L.lhomWithConstants γ).onTerm t) =
+      t.relabel (Sum.map Sum.inr id) := by
+  rw [constantsVarsEquivLeft_apply, constantsToVars_lhomWithConstants_onTerm, relabel_relabel]
+  refine congrArg (fun h => t.relabel h) (funext fun x => ?_)
+  cases x <;> rfl
+
+/-- Turning constants into variables after mapping constants along `f` relabels the constant
+summand by `f`. -/
+@[simp]
+theorem constantsToVars_lhomWithConstantsMap_onTerm {L : Language} {γ δ α : Type*}
+    (t : L[[γ]].Term α) (f : γ → δ) :
+    ((L.lhomWithConstantsMap f).onTerm t).constantsToVars =
+      t.constantsToVars.relabel (Sum.map f id) := by
+  induction t with
+  | var => rfl
+  | @func n F ts ih =>
+    cases n <;> rcases F with F | c
+    · simp only [LHom.onTerm, Term.constantsToVars, Term.relabel, ih]; simp [lhomWithConstantsMap]
+    · rfl
+    · simp only [LHom.onTerm, Term.constantsToVars, Term.relabel, ih]; simp [lhomWithConstantsMap]
+    · exact isEmptyElim c
+
+/-- Left constant abstraction after mapping constants along `f` relabels the constant summand by
+`f`. -/
+theorem constantsVarsEquivLeft_lhomWithConstantsMap_onTerm {L : Language} {γ δ α β : Type*}
+    (t : L[[γ]].Term (α ⊕ β)) (f : γ → δ) :
+    constantsVarsEquivLeft ((L.lhomWithConstantsMap f).onTerm t) =
+      (constantsVarsEquivLeft t).relabel (Sum.map (Sum.map f id) id) := by
+  rw [constantsVarsEquivLeft_apply, constantsVarsEquivLeft_apply,
+    constantsToVars_lhomWithConstantsMap_onTerm, relabel_relabel, relabel_relabel]
+  refine congrArg (fun h => t.constantsToVars.relabel h) (funext fun x => ?_)
+  rcases x with c | (a | b) <;> rfl
+
+end Term
+
 namespace BoundedFormula
 
 variable {L : Language} {α γ : Type*} {n : ℕ}
+
+/-- `⊤` is the negation of `⊥`. -/
+theorem top_def : (⊤ : L.BoundedFormula α n) = (⊥ : L.BoundedFormula α n).not := (rfl)
+
+/-- The conjunction `φ ⊓ ψ` is `(φ.imp ψ.not).not`. -/
+theorem inf_def (φ ψ : L.BoundedFormula α n) : φ ⊓ ψ = (φ.imp ψ.not).not := (rfl)
+
+/-- The disjunction `φ ⊔ ψ` is `φ.not.imp ψ`. -/
+theorem sup_def (φ ψ : L.BoundedFormula α n) : φ ⊔ ψ = φ.not.imp ψ := (rfl)
 
 @[simp]
 theorem constantsVarsEquiv_falsum :

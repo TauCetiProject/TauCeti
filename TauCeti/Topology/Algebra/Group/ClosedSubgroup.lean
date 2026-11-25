@@ -30,6 +30,10 @@ closed relation from `G` to `A` defined everywhere. When `A` is compact, the fib
 chain) of such subgroups the fibres of the intersection are nonempty, and Zorn's lemma supplies a
 minimal such subgroup below any given one.
 
+A closed subgroup of a compact group is compact; the instance
+`ClosedSubgroup.instCompactSpaceToSubgroup` records this for the underlying subgroup
+`↥H.toSubgroup`, the form on which the topological group instances are found.
+
 ## Main definitions
 
 * `ContinuousMulEquiv.closedSubgroupOrderIso`: transport of closed subgroups along an isomorphism
@@ -131,8 +135,8 @@ directions. -/
 def subgroupMap (e : G ≃ₜ* H) (K : Subgroup G) :
     K ≃ₜ* K.map ((e : G ≃* H) : G →* H) where
   toMulEquiv := (e : G ≃* H).subgroupMap K
-  continuous_toFun := (e.continuous.comp continuous_subtype_val).subtype_mk _
-  continuous_invFun := (e.symm.continuous.comp continuous_subtype_val).subtype_mk _
+  continuous_toFun := (e.continuous.comp continuous_subtypeVal).subtype_mk _
+  continuous_invFun := (e.symm.continuous.comp continuous_subtypeVal).subtype_mk _
 
 /-- `ContinuousMulEquiv.subgroupMap` applies the isomorphism. -/
 @[simp]
@@ -189,6 +193,19 @@ end Transport
 
 end ContinuousMulEquiv
 
+namespace ClosedSubgroup
+
+/-- A closed subgroup of a compact group is compact as a subgroup, `↥H.toSubgroup`. Mathlib's
+instance covers the `SetLike` coercion `↥H`, which carries no topological group instance, so the
+compact-group API (for instance normalized Haar measure) is applied to `↥H.toSubgroup`. -/
+@[to_additive /-- A closed additive subgroup of a compact additive group is compact as an
+additive subgroup, `↥H.toAddSubgroup`. -/]
+instance instCompactSpaceToSubgroup {G : Type*} [Group G] [TopologicalSpace G] [CompactSpace G]
+    (H : ClosedSubgroup G) : CompactSpace H.toSubgroup :=
+  isCompact_iff_compactSpace.mp H.isClosed'.isCompact
+
+end ClosedSubgroup
+
 namespace Subgroup
 
 section CompactFactor
@@ -204,16 +221,16 @@ theorem forall_exists_mem_sInf_of_directedOn {c : Set (Subgroup (A × G))}
     (hsurj : ∀ K ∈ c, ∀ g : G, ∃ a : A, (a, g) ∈ K) (g : G) : ∃ a : A, (a, g) ∈ sInf c := by
   rcases c.eq_empty_or_nonempty with rfl | hne
   · exact ⟨1, by simp⟩
-  let F : c → Set A := fun K ↦ {a | (a, g) ∈ K.1}
+  let F : c → Set A := fun K ↦ {a | (a, g) ∈ K.val}
   have : Nonempty c := hne.to_subtype
   have hFclosed (K : c) : IsClosed (F K) :=
-    (hclosed K K.2).preimage (continuous_id.prodMk continuous_const)
+    (hclosed K K.property).preimage (continuous_id.prodMk continuous_const)
   have hFdir : Directed (· ⊇ ·) F := by
     rintro ⟨K, hK⟩ ⟨L, hL⟩
     obtain ⟨M, hM, hMK, hML⟩ := hdir K hK L hL
     exact ⟨⟨M, hM⟩, fun _ ha ↦ hMK ha, fun _ ha ↦ hML ha⟩
   obtain ⟨a, ha⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed F hFdir
-    (fun K ↦ hsurj K K.2 g) (fun K ↦ (hFclosed K).isCompact) hFclosed
+    (fun K ↦ hsurj K K.property g) (fun K ↦ (hFclosed K).isCompact) hFclosed
   exact ⟨a, Subgroup.mem_sInf.mpr fun K hK ↦ Set.mem_iInter.mp ha ⟨K, hK⟩⟩
 
 /-- A closed subgroup of `A × G` projecting onto `G`, with `A` compact, contains a minimal closed

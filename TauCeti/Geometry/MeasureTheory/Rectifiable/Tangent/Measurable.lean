@@ -64,7 +64,7 @@ theorem LipschitzOnWith.exists_measurable_tangent_projection
     hg.continuous.continuousOn.measurableEmbedding hs (injOn_iff_injective.mpr hi'.injective)
   let A : s → V →L[ℝ] V := fun x ↦ (fderiv ℝ g x).range.starProjection
   obtain ⟨Q, hQm, hQ⟩ := he.exists_measurable_extend (g := A)
-    (((measurable_fderiv ℝ g).starProjection_range).comp measurable_subtype_coe)
+    (((measurable_fderiv ℝ g).starProjection_range).comp measurable_subtypeVal)
     (fun _ ↦ ⟨0⟩)
   refine ⟨Q, hQm, ?_⟩
   filter_upwards [hg.ae_exists_fderiv_range_forall_infDist_le hi'] with y hy hyimage
@@ -123,19 +123,16 @@ theorem CountablyRectifiable.exists_measurable_approximate_tangent_projection
     [IsLocallyFiniteMeasure (μHE[k].restrict E)] :
     ∃ Q : V → V →L[ℝ] V, Measurable Q ∧
       ∀ᵐ x ∂μHE[k], x ∈ E → ∃ P : Submodule ℝ V, Module.finrank ℝ P = k ∧
-        Q x = P.starProjection ∧
-        ∀ ε > (0 : ℝ), Tendsto (fun r ↦
-          μHE[k] {z ∈ E ∩ closedBall x r | ε * dist z x < infDist (z - x) (P : Set V)} /
-            volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) := by
+        Q x = P.starProjection ∧ DensityZeroOutsideCones k E x P := by
   classical
   obtain ⟨T, A, hTm, hAm, hcover, hcone⟩ := hE.exists_measurable_cover_tangent_projection
   let S := ⋃ n, T n
   have hindex (x : S) : ∃ n, (x : V) ∈ T n := mem_iUnion.mp x.property
   let F : S → V →L[ℝ] V := fun x ↦ A (Nat.find (hindex x)) x
   have hFm : Measurable F := Measurable.find
-    (fun n ↦ (hAm n).comp measurable_subtype_coe)
-    (fun n ↦ (hTm n).preimage measurable_subtype_coe) hindex
-  have he := MeasurableEmbedding.subtype_coe (MeasurableSet.iUnion hTm)
+    (fun n ↦ (hAm n).comp measurable_subtypeVal)
+    (fun n ↦ (hTm n).preimage measurable_subtypeVal) hindex
+  have he := MeasurableEmbedding.subtypeVal (MeasurableSet.iUnion hTm)
   obtain ⟨Q, hQm, hQ⟩ := he.exists_measurable_extend hFm (fun _ ↦ ⟨(0 : V →L[ℝ] V)⟩)
   refine ⟨Q, hQm, ?_⟩
   have hzero (n : ℕ) : ∀ᵐ x ∂μHE[k], x ∉ E \ T n → Tendsto (fun r ↦
@@ -151,7 +148,8 @@ theorem CountablyRectifiable.exists_measurable_approximate_tangent_projection
   let n := Nat.find (hindex ⟨x, hxS⟩)
   have hxn : x ∈ T n := Nat.find_spec (hindex ⟨x, hxS⟩)
   obtain ⟨P, hdim, hproj, hP⟩ := hcone n x hxn
-  refine ⟨P, hdim, (congrFun hQ ⟨x, hxS⟩).trans hproj, fun ε hε ↦ ?_⟩
+  refine ⟨P, hdim, (congrFun hQ ⟨x, hxS⟩).trans hproj,
+    densityZeroOutsideCones_iff.2 fun ε hε ↦ ?_⟩
   obtain ⟨δ, hδ, hlocal⟩ := hP ε hε
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds (hzero n (fun h ↦ h.2 hxn))
     (Eventually.of_forall fun _ ↦ zero_le) ?_

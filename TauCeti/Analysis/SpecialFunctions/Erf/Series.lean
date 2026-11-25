@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Tricomi
+import Mathlib.Analysis.SpecificLimits.Normed
 
 /-!
 # Power series of the error function and the half-Gamma series
@@ -30,6 +31,10 @@ Laplace-type integrals without losing integrability near the origin.
   `TauCeti.Real.erf_eq_regularizedGamma_half_sq`.
 * `TauCeti.Real.hasSum_erf`, `TauCeti.Real.erf_eq_tsum`: the alternating Maclaurin series
   `erf x = (2 / √π) ∑_{n ≥ 0} (-1)^n x^{2n + 1} / (n! (2n + 1))` (DLMF 7.6.1).
+* `TauCeti.Real.mul_sum_range_two_mul_le_erf`, `TauCeti.Real.erf_le_mul_sum_range_two_mul_add_one`:
+  for `0 ≤ x` with `x² ≤ 3`, where the terms of the series decrease
+  (`TauCeti.Real.antitone_pow_div_factorial_mul_two_mul_add_one`), its partial sums with an even or
+  odd number of terms bound `erf x` from below or above.
 * `TauCeti.Real.hasSum_pow_two_mul_add_one_div_Gamma_add_three_halves`,
   `TauCeti.Real.hasSum_exp_sq_mul_erf`, `TauCeti.Real.erf_eq_mul_exp_neg_sq_mul_tsum`: the
   positive-term series `exp(x²) erf x = ∑_{n ≥ 0} x^{2n + 1} / Γ(n + 3 / 2)` and its
@@ -46,11 +51,12 @@ Laplace-type integrals without losing integrability near the origin.
   `Real.tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp`,
   `Real.abs_tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp`,
   `Real.abs_tsum_mul_pow_add_div_Gamma_div_two_add_one_le_of_abs_le_one`,
+  `Real.abs_tsum_pow_add_div_Gamma_div_two_add_one_le_mul_exp`,
   `Real.tsum_pow_add_two_mul_div_Gamma_div_two_add_one_le`: for all `x : ℝ`, shifted tails of the
   half-Gamma series are bounded in absolute value by the shifted tail at `|x|`, satisfy the
   uniform polynomial-free bound `|·| < 2 exp(x²)`, the scaled small-argument bound
-  `|·| ≤ 2 exp(x²) |u|^M` for `|u| ≤ 1`, and the `2L`-shifted factorial bound
-  `≤ 2 x^{2L} / L! * exp(x²)`.
+  `|·| ≤ 2 exp(x²) |u|^M` for `|u| ≤ 1`, the global arbitrary-shift bound
+  `|·| ≤ 2 e |x|^M exp(x²)`, and the `2L`-shifted factorial bound `≤ 2 x^{2L} / L! * exp(x²)`.
 * `Real.continuous_tsum_pow_div_Gamma_div_two_add_one`,
   `Real.continuous_tsum_pow_add_div_Gamma_div_two_add_one`: continuity on `ℝ` of the half-Gamma
   series and its `M`-shifted tails.
@@ -143,6 +149,60 @@ theorem hasSum_erf (x : ℝ) :
 theorem erf_eq_tsum (x : ℝ) :
     erf x = 2 / √π * ∑' n : ℕ, (-1) ^ n * x ^ (2 * n + 1) / (n ! * (2 * n + 1)) := by
   rw [← (hasSum_erf x).tsum_eq, tsum_mul_left]
+
+/-- For `0 ≤ y ≤ 3` the magnitudes `yⁿ / (n! (2n + 1))` of the terms of the erf series in
+`y = x²` decrease. -/
+theorem antitone_pow_div_factorial_mul_two_mul_add_one {y : ℝ} (hy0 : 0 ≤ y) (hy : y ≤ 3) :
+    Antitone fun n : ℕ => y ^ n / (n ! * (2 * n + 1)) := by
+  refine antitone_nat_of_succ_le fun n => ?_
+  rw [div_le_div_iff₀ (by positivity) (by positivity), Nat.factorial_succ]
+  push_cast
+  have h : y * (2 * n + 1) ≤ (n + 1) * (2 * (n + 1) + 1) := by
+    have hn0 : (n : ℝ) ≤ n * n := by exact_mod_cast Nat.le_mul_self n
+    nlinarith [mul_le_mul_of_nonneg_right hy (by positivity : (0 : ℝ) ≤ 2 * n + 1)]
+  calc y ^ (n + 1) * (n ! * (2 * n + 1)) = y ^ n * n ! * (y * (2 * n + 1)) := by ring
+    _ ≤ y ^ n * n ! * ((n + 1) * (2 * (n + 1) + 1)) := by gcongr
+    _ = y ^ n * ((n + 1) * n ! * (2 * (n + 1) + 1)) := by ring
+
+/-- For `0 < x`, dividing the Maclaurin series of `erf x` by `2x / √π` leaves an alternating
+series in `x²` with sum `erf x / (2x / √π)`. -/
+private theorem hasSum_erf_div {x : ℝ} (hx : 0 < x) :
+    HasSum (fun n : ℕ => (-1) ^ n * (x ^ 2) ^ n / (n ! * (2 * n + 1)))
+      (erf x / (2 * x / √π)) := by
+  have hc : 2 * x / √π ≠ 0 := by positivity
+  refine (hasSum_mul_left_iff hc).1 ?_
+  rw [mul_div_cancel₀ _ hc]
+  convert hasSum_erf x using 2 with n
+  rw [← pow_mul, pow_succ]
+  ring
+
+/-- For `0 ≤ x` with `x² ≤ 3`, partial sums of the Maclaurin series of `erf` (DLMF 7.6.1) with an
+even number of terms are lower bounds:
+`(2x / √π) ∑_{i < 2k} (-1)^i (x²)^i / (i! (2i + 1)) ≤ erf x`. -/
+theorem mul_sum_range_two_mul_le_erf {x : ℝ} (hx : 0 ≤ x) (hx3 : x ^ 2 ≤ 3) (k : ℕ) :
+    2 * x / √π * ∑ i ∈ Finset.range (2 * k), (-1) ^ i * (x ^ 2) ^ i / (i ! * (2 * i + 1)) ≤
+      erf x := by
+  rcases hx.eq_or_lt with rfl | hx
+  · simp
+  have h := (hasSum_erf_div hx).tendsto_sum_nat
+  simp_rw [mul_div_assoc] at h ⊢
+  have h' := (antitone_pow_div_factorial_mul_two_mul_add_one (by positivity) hx3)
+    |>.alternating_series_le_tendsto h k
+  rwa [← le_div_iff₀' (by positivity)]
+
+/-- For `0 ≤ x` with `x² ≤ 3`, partial sums of the Maclaurin series of `erf` (DLMF 7.6.1) with an
+odd number of terms are upper bounds:
+`erf x ≤ (2x / √π) ∑_{i < 2k + 1} (-1)^i (x²)^i / (i! (2i + 1))`. -/
+theorem erf_le_mul_sum_range_two_mul_add_one {x : ℝ} (hx : 0 ≤ x) (hx3 : x ^ 2 ≤ 3) (k : ℕ) :
+    erf x ≤ 2 * x / √π *
+      ∑ i ∈ Finset.range (2 * k + 1), (-1) ^ i * (x ^ 2) ^ i / (i ! * (2 * i + 1)) := by
+  rcases hx.eq_or_lt with rfl | hx
+  · simp
+  have h := (hasSum_erf_div hx).tendsto_sum_nat
+  simp_rw [mul_div_assoc] at h ⊢
+  have h' := (antitone_pow_div_factorial_mul_two_mul_add_one (by positivity) hx3)
+    |>.tendsto_le_alternating_series h k
+  rwa [← div_le_iff₀' (by positivity)]
 
 /-! ### Positive-term series for `exp(x²) erf(x)` (DLMF 7.6.2) -/
 
@@ -370,6 +430,26 @@ theorem tsum_pow_add_two_mul_div_Gamma_div_two_add_one_le (x : ℝ) (L : ℕ) :
           gcongr
           exact (tsum_pow_div_Gamma_div_two_add_one_lt_two_mul_exp |x|).le
     _ = 2 * x ^ (2 * L) / L ! * rexp (x ^ 2) := by rw [sq_abs]; ring
+
+/-- For every `x : ℝ` and any shift `M : ℕ` (even or odd), the `M`-shifted tail of the half-Gamma
+series satisfies `|∑_{k ≥ 0} x^{k + M} / Γ((k + M) / 2 + 1)| ≤ 2 e |x|^M exp(x²)`. -/
+theorem abs_tsum_pow_add_div_Gamma_div_two_add_one_le_mul_exp (x : ℝ) (M : ℕ) :
+    |∑' k : ℕ, x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)| ≤
+      2 * rexp 1 * |x| ^ M * rexp (x ^ 2) := by
+  rcases le_total |x| 1 with hx | hx
+  · have h := abs_tsum_mul_pow_add_div_Gamma_div_two_add_one_le_of_abs_le_one 1 hx M
+    simp only [one_mul, one_pow] at h
+    exact h.trans (le_mul_of_one_le_right (by positivity) (Real.one_le_exp (sq_nonneg x)))
+  · have h1 : (1 : ℝ) ≤ rexp 1 * |x| ^ M :=
+      calc (1 : ℝ) = 1 * 1 := by ring
+        _ ≤ rexp 1 * |x| ^ M :=
+            mul_le_mul (Real.one_le_exp zero_le_one) (one_le_pow₀ hx) zero_le_one
+              (Real.exp_nonneg 1)
+    calc |∑' k : ℕ, x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)|
+        ≤ 2 * rexp (x ^ 2) := (abs_tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp x M).le
+      _ = 2 * 1 * rexp (x ^ 2) := by ring
+      _ ≤ 2 * (rexp 1 * |x| ^ M) * rexp (x ^ 2) := by gcongr
+      _ = 2 * rexp 1 * |x| ^ M * rexp (x ^ 2) := by ring
 
 /-- Continuity on `ℝ` of the `M`-shifted half-Gamma series
 `z ↦ ∑_{k ≥ 0} z^{k + M} / Γ((k + M) / 2 + 1)`. -/

@@ -193,7 +193,7 @@ theorem exists_linearIndependent_integerPoints_prod_gauge_le_successiveMin
       (fun _ ↦ gauge_nonneg _) (fun l ↦ (hbeq l).le) hc
   have hspan : span K (Set.range (u ∘ s₀)) = W :=
     eq_of_le_of_finrank_eq
-      (span_le.2 (Set.range_subset_iff.2 fun j ↦ mem_integerPoints.1 (z₀ (s₀ j)).2))
+      (span_le.2 (Set.range_subset_iff.2 fun j ↦ mem_integerPoints.1 (z₀ (s₀ j)).property))
       ((finrank_span_eq_card hs_li).trans (Fintype.card_fin _))
   refine ⟨fun j ↦ z₀ (s₀ j), fun j ↦ e.symm (s₀ j), hs_li, hspan, hs_le, fun j ↦ hbeq (s₀ j), ?_⟩
   rwa [e.symm.prod_comp (ZLattice.successiveMin W.integerLattice B)] at hs_prod
@@ -214,7 +214,7 @@ theorem exists_linearIndependent_integerPoints_prod_absHeight_le_successiveMin
   obtain ⟨z, _, hz_li, hz_span, _, _, hz_prod⟩ :=
     W.exists_linearIndependent_integerPoints_prod_gauge_le_successiveMin
       W.zero_mem_interior_supSlice
-  refine ⟨fun j ↦ z j, hz_li, hz_span, fun j ↦ (z j).2,
+  refine ⟨fun j ↦ z j, hz_li, hz_span, fun j ↦ (z j).property,
     (Finset.prod_le_prod₀ (fun _ _ ↦ (absoluteProjectiveTupleHeight_pos _).le)
       fun j _ ↦ W.absoluteProjectiveTupleHeight_le_gauge_supSlice ?_).trans hz_prod⟩
   exact fun h0 ↦ hz_li.ne_zero j (RingOfIntegers.coe_tuple_eq_zero_iff.2 h0)
@@ -236,7 +236,7 @@ theorem exists_linearIndependent_integerPoints_prod_height2_le_successiveMin
   obtain ⟨z, _, hz_li, hz_span, _, _, hz_prod⟩ :=
     W.exists_linearIndependent_integerPoints_prod_gauge_le_successiveMin
       W.zero_mem_interior_euclideanBallSlice
-  exact ⟨fun j ↦ z j, hz_li, hz_span, fun j ↦ (z j).2,
+  exact ⟨fun j ↦ z j, hz_li, hz_span, fun j ↦ (z j).property,
     (Finset.prod_le_prod₀ (fun _ _ ↦ height2_nonneg _)
       fun j _ ↦ W.height2_le_gauge_euclideanBallSlice (z j)).trans hz_prod⟩
 

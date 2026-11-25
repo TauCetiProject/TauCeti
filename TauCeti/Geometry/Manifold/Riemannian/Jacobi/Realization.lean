@@ -85,11 +85,11 @@ private theorem exists_geodesicVariation_maximalGeodesic_initialData
       alongCurveWithin (leviCivitaConnection I M) (maximalGeodesic I M p v)
         (variationField I F₀) (geodesicInterval I M p v) 0 = w := by
   obtain ⟨σ, hσ0, hσ, hpos, hvel⟩ := TangentSpace.exists_smooth_initialData (v := v) u w
-  let F₀ : ℝ → ℝ → M := fun q ↦ maximalGeodesic I M (σ q).proj (σ q).2
+  let F₀ : ℝ → ℝ → M := fun q ↦ maximalGeodesic I M (σ q).proj (σ q).snd
   have hbase : F₀ 0 = maximalGeodesic I M p v :=
-    congrArg (fun z : TangentBundle I M ↦ maximalGeodesic I M z.proj z.2) hσ0
-  have hinterval : geodesicInterval I M (σ 0).proj (σ 0).2 = geodesicInterval I M p v :=
-    congrArg (fun z : TangentBundle I M ↦ geodesicInterval I M z.proj z.2) hσ0
+    congrArg (fun z : TangentBundle I M ↦ maximalGeodesic I M z.proj z.snd) hσ0
+  have hinterval : geodesicInterval I M (σ 0).proj (σ 0).snd = geodesicInterval I M p v :=
+    congrArg (fun z : TangentBundle I M ↦ geodesicInterval I M z.proj z.snd) hσ0
   obtain ⟨U, V₀, hU, hV₀, h0U, hK₀V₀, hF₀, hgeod₀⟩ :=
     exists_contMDiffOn_maximalGeodesic_comp_of_isCompact (n := ⊤) hσ hK₀
       (hinterval.symm ▸ hdom)

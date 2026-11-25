@@ -101,19 +101,19 @@ variable {F : Set (Σ n, L.Functions n)} {R : Set (Σ n, L.Relations n)}
 variable (F R) in
 /-- The inclusion of a symbol sublanguage into `L`. -/
 def symbSublangIncl : symbSublang F R →ᴸ L where
-  onFunction _ f := f.1
-  onRelation _ r := r.1
+  onFunction _ f := f.val
+  onRelation _ r := r.val
 
 /-- The inclusion sends a function symbol of the sublanguage to the underlying symbol of `L`. -/
 @[simp]
 theorem symbSublangIncl_onFunction {n : ℕ} (f : (symbSublang F R).Functions n) :
-    (symbSublangIncl F R).onFunction f = f.1 :=
+    (symbSublangIncl F R).onFunction f = f.val :=
   (rfl)
 
 /-- The inclusion sends a relation symbol of the sublanguage to the underlying symbol of `L`. -/
 @[simp]
 theorem symbSublangIncl_onRelation {n : ℕ} (r : (symbSublang F R).Relations n) :
-    (symbSublangIncl F R).onRelation r = r.1 :=
+    (symbSublangIncl F R).onRelation r = r.val :=
   (rfl)
 
 variable (F R) in
@@ -126,7 +126,7 @@ symbols, counted over all arities. -/
 instance countable_functions_symbSublang [Countable F] :
     Countable (Σ n, (symbSublang F R).Functions n) :=
   Function.Injective.countable (f := fun s : Σ n, (symbSublang F R).Functions n =>
-      (⟨⟨s.1, s.2.1⟩, s.2.2⟩ : F)) <| by
+      (⟨⟨s.1, s.2.val⟩, s.2.property⟩ : F)) <| by
     rintro ⟨n, f, hf⟩ ⟨m, f', hf'⟩ h
     cases congrArg Subtype.val h
     rfl
@@ -136,18 +136,24 @@ symbols, counted over all arities. -/
 instance countable_relations_symbSublang [Countable R] :
     Countable (Σ n, (symbSublang F R).Relations n) :=
   Function.Injective.countable (f := fun s : Σ n, (symbSublang F R).Relations n =>
-      (⟨⟨s.1, s.2.1⟩, s.2.2⟩ : R)) <| by
+      (⟨⟨s.1, s.2.val⟩, s.2.property⟩ : R)) <| by
     rintro ⟨n, r, hr⟩ ⟨m, r', hr'⟩ h
     cases congrArg Subtype.val h
     rfl
 
+/-- A symbol sublanguage with countably many relation symbols has countably many relation
+symbols of each arity. -/
+instance countable_relations_arity_symbSublang [Countable R] (n : ℕ) :
+    Countable ((symbSublang F R).Relations n) :=
+  (sigma_mk_injective (i := n)).countable
+
 /-- Any symbol sublanguage of a relational language is relational. -/
 instance isRelational_symbSublang [L.IsRelational] : (symbSublang F R).IsRelational :=
-  fun _ => ⟨fun f => isEmptyElim f.1⟩
+  fun _ => ⟨fun f => isEmptyElim f.val⟩
 
 /-- A symbol sublanguage with an empty set of function symbols is relational. -/
 instance isRelational_symbSublang_of_isEmpty [IsEmpty F] : (symbSublang F R).IsRelational :=
-  fun n => ⟨fun f => isEmptyElim (⟨⟨n, f.1⟩, f.2⟩ : F)⟩
+  fun n => ⟨fun f => isEmptyElim (⟨⟨n, f.val⟩, f.property⟩ : F)⟩
 
 /-! ### Inclusions between symbol sublanguages -/
 
@@ -158,15 +164,15 @@ variable {F₁ F₂ F₃ : Set (Σ n, L.Functions n)} {R₁ R₂ R₃ : Set (Σ 
 /-- The inclusion of a smaller symbol sublanguage into a larger one. -/
 def symbSublangInclusion (hF : F₁ ⊆ F₂) (hR : R₁ ⊆ R₂) :
     symbSublang F₁ R₁ →ᴸ symbSublang F₂ R₂ where
-  onFunction _ f := ⟨f.1, hF f.2⟩
-  onRelation _ r := ⟨r.1, hR r.2⟩
+  onFunction _ f := ⟨f.val, hF f.property⟩
+  onRelation _ r := ⟨r.val, hR r.property⟩
 
 /-- `symbSublangInclusion` sends a function symbol to the same symbol of `L` with widened
 membership. -/
 @[simp]
 theorem symbSublangInclusion_onFunction (hF : F₁ ⊆ F₂) (hR : R₁ ⊆ R₂) {n : ℕ}
     (f : (symbSublang F₁ R₁).Functions n) :
-    (symbSublangInclusion hF hR).onFunction f = ⟨f.1, hF f.2⟩ :=
+    (symbSublangInclusion hF hR).onFunction f = ⟨f.val, hF f.property⟩ :=
   (rfl)
 
 /-- `symbSublangInclusion` sends a relation symbol to the same symbol of `L` with widened
@@ -174,7 +180,7 @@ membership. -/
 @[simp]
 theorem symbSublangInclusion_onRelation (hF : F₁ ⊆ F₂) (hR : R₁ ⊆ R₂) {n : ℕ}
     (r : (symbSublang F₁ R₁).Relations n) :
-    (symbSublangInclusion hF hR).onRelation r = ⟨r.1, hR r.2⟩ :=
+    (symbSublangInclusion hF hR).onRelation r = ⟨r.val, hR r.property⟩ :=
   (rfl)
 
 /-- The inclusion between nested symbol sublanguages is injective. -/
@@ -267,8 +273,8 @@ instance isExpansionOn_expandSymbStructure :
       (expandSymbStructure F R M) :=
   @LHom.IsExpansionOn.mk (symbSublang F R) L (symbSublangIncl F R) M _
     (expandSymbStructure F R M)
-    (fun f xs => expandSymbStructure_funMap_of_mem f.2 xs)
-    (fun r xs => propext (expandSymbStructure_relMap_of_mem r.2 xs))
+    (fun f xs => expandSymbStructure_funMap_of_mem f.property xs)
+    (fun r xs => propext (expandSymbStructure_relMap_of_mem r.property xs))
 
 /-- Restricting `expandSymbStructure F R M` back along `symbSublangIncl F R` recovers the original
 `(symbSublang F R)`-structure. -/
@@ -348,7 +354,7 @@ occurs in `t`. -/
 theorem mem_functionsIn_restrictSymbols (t : L.Term α) (h : t.functionsIn ⊆ F)
     {s : Σ n, (symbSublang F R).Functions n} :
     s ∈ (t.restrictSymbols h).functionsIn ↔
-      (⟨s.1, s.2.1⟩ : Σ n, L.Functions n) ∈ t.functionsIn := by
+      (⟨s.1, s.2.val⟩ : Σ n, L.Functions n) ∈ t.functionsIn := by
   conv_rhs => rw [← t.onTerm_restrictSymbols (R := R) h, functionsIn_onTerm]
   exact (Function.injective_id.sigma_map fun _ =>
     (symbSublangIncl_injective F R).onFunction).mem_set_image.symm
@@ -407,13 +413,13 @@ theorem exists_comp_eq_symbSublangIncl (g : L →ᴸ L') {F : Set (Σ n, L'.Func
       Set.range fun s : Σ n, L.Relations n => (⟨s.1, g.onRelation s.2⟩ : Σ k, L'.Relations k)) :
     ∃ h : symbSublang F R →ᴸ L, g.comp h = symbSublangIncl F R := by
   have hF' : ∀ n (f : (symbSublang F R).Functions n), ∃ f₀ : L.Functions n,
-      g.onFunction f₀ = f.1 := by
+      g.onFunction f₀ = f.val := by
     rintro n ⟨f, hf⟩
     obtain ⟨⟨k, f₀⟩, hk⟩ := hF hf
     cases hk
     exact ⟨f₀, rfl⟩
   have hR' : ∀ n (r : (symbSublang F R).Relations n), ∃ r₀ : L.Relations n,
-      g.onRelation r₀ = r.1 := by
+      g.onRelation r₀ = r.val := by
     rintro n ⟨r, hr⟩
     obtain ⟨⟨k, r₀⟩, hk⟩ := hR hr
     cases hk

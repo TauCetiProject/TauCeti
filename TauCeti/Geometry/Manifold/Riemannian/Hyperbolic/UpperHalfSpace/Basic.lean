@@ -110,7 +110,7 @@ variable {E}
 /-- The point of `E × ℝ` represented by a point of the upper half-space. -/
 @[coe]
 def coe (x : UpperHalfSpace E) : WithLp 2 (E × ℝ) :=
-  (show upperHalfSpaceOpens E from x).1
+  (show upperHalfSpaceOpens E from x).val
 
 instance : CoeOut (UpperHalfSpace E) (WithLp 2 (E × ℝ)) := ⟨coe⟩
 
@@ -141,7 +141,7 @@ theorem snd_coe (x : UpperHalfSpace E) : (x : WithLp 2 (E × ℝ)).snd = height 
 
 /-- Points of the upper half-space have positive height. -/
 theorem height_pos (x : UpperHalfSpace E) : 0 < height x :=
-  (show upperHalfSpaceOpens E from x).2
+  (show upperHalfSpaceOpens E from x).property
 
 /-- A point of the upper half-space is not a point `(a, 0)` of its boundary hyperplane. -/
 theorem coe_ne_toLp (x : UpperHalfSpace E) (a : E) :
@@ -189,7 +189,7 @@ variable {E}
 theorem contMDiff_coe :
     ContMDiff 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) ω
       (coe : UpperHalfSpace E → WithLp 2 (E × ℝ)) :=
-  contMDiff_subtype_val (U := upperHalfSpaceOpens E)
+  contMDiff_subtypeVal (U := upperHalfSpaceOpens E)
 
 /-- The height function of the upper half-space is analytic. -/
 theorem contMDiff_height :
@@ -244,18 +244,13 @@ theorem tangentSpaceCastModel_mfderiv_apply {f : UpperHalfSpace E → UpperHalfS
         (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) f x v) =
       L (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x v) := by
   -- Read the base point of `hA` as a point of the open subset, as in the general lemma.
-  have hA' : HasFDerivAt A L (show upperHalfSpaceOpens E from x).1 := hA
-  have h := TauCeti.Manifold.tangentSpaceOpenEquiv_mfderiv_apply
+  have hA' : HasFDerivAt A L (show upperHalfSpaceOpens E from x).val := hA
+  have h := TauCeti.Manifold.mfderiv_apply_of_subtype_val_comp_eq
     (I := 𝓘(ℝ, WithLp 2 (E × ℝ))) (I' := 𝓘(ℝ, WithLp 2 (E × ℝ)))
     (U := upperHalfSpaceOpens E) (V := upperHalfSpaceOpens E) (f := f) hcomp v
   rw [hA'.hasMFDerivAt.mfderiv] at h
-  -- Both the open-subset identification and `tangentSpaceCastModel` are the identity of the model.
-  have e₁ := TauCeti.Manifold.tangentSpaceOpenEquiv_apply (I := 𝓘(ℝ, WithLp 2 (E × ℝ)))
-    (show upperHalfSpaceOpens E from f x)
-    (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) f x v)
-  have e₂ := TauCeti.Manifold.tangentSpaceOpenEquiv_apply (I := 𝓘(ℝ, WithLp 2 (E × ℝ)))
-    (show upperHalfSpaceOpens E from x) v
-  exact e₁.symm.trans (h.trans (congrArg L e₂))
+  -- `tangentSpaceCastModel` is the identity of the model.
+  exact h
 
 /-- The underlying map `(x, t) ↦ (c • A x + b, c • t)` of `similarity c hc A b`. -/
 private def similarityMap (c : ℝ) (hc : 0 < c) (A : E ≃ₗᵢ[ℝ] E) (b : E) (x : UpperHalfSpace E) :

@@ -69,13 +69,13 @@ instance isPerfPair_domRestrict₁₂_componentSpace [Finite ι] [P.IsRootSystem
     by_cases hj : P.componentOf j = C
     · simpa [LinearMap.domRestrict₁₂_apply] using
         LinearMap.congr_fun hx ⟨P.coroot j, hj ▸ coroot_mem_corootComponentSpace j⟩
-    · exact coroot'_eq_zero_of_mem_componentSpace hj x.2
+    · exact coroot'_eq_zero_of_mem_componentSpace hj x.property
   · refine injective_iff_map_eq_zero _ |>.mpr fun y hy ↦ Subtype.ext ?_
     refine P.flip.eq_zero_iff_forall_coroot'_eq_zero.mpr fun j ↦ ?_
     by_cases hj : P.componentOf j = C
     · simpa [LinearMap.domRestrict₁₂_apply] using
         LinearMap.congr_fun hy ⟨P.root j, hj ▸ root_mem_componentSpace j⟩
-    · exact root'_eq_zero_of_mem_corootComponentSpace hj y.2
+    · exact root'_eq_zero_of_mem_corootComponentSpace hj y.property
 
 /-- The **root pairing of an irreducible component** of a finite root system over a field: the roots
 and coroots of the component, on the component space and its coroot analogue. The reflection
@@ -83,9 +83,9 @@ permutations are those of the ambient pairing, by `RootPairing.componentOf_refle
 noncomputable def componentPairing [Finite ι] [P.IsRootSystem] (C : P.Component) :
     RootPairing C.supp K (P.componentSpace C) (P.corootComponentSpace C) where
   toLinearMap := P.toLinearMap.domRestrict₁₂ _ _
-  root := ⟨fun i ↦ ⟨P.root i, root_mem_componentSpace_of_mem_supp i.2⟩,
+  root := ⟨fun i ↦ ⟨P.root i, root_mem_componentSpace_of_mem_supp i.property⟩,
     fun _ _ h ↦ Subtype.ext (P.root.injective (congrArg Subtype.val h))⟩
-  coroot := ⟨fun i ↦ ⟨P.coroot i, coroot_mem_corootComponentSpace_of_mem_supp i.2⟩,
+  coroot := ⟨fun i ↦ ⟨P.coroot i, coroot_mem_corootComponentSpace_of_mem_supp i.property⟩,
     fun _ _ h ↦ Subtype.ext (P.coroot.injective (congrArg Subtype.val h))⟩
   root_coroot_two i := P.root_coroot_two i
   reflectionPerm i := (P.reflectionPerm i).subtypeEquiv fun j ↦ by
@@ -147,11 +147,11 @@ theorem nonorthogonalGraph_componentPairing :
 instance isRootSystem_componentPairing : (P.componentPairing C).IsRootSystem where
   span_root_eq_top :=
     (Submodule.span_range_subtype_eq_top_iff _ fun i : C.supp ↦
-      root_mem_componentSpace_of_mem_supp i.2).mpr <| by
+      root_mem_componentSpace_of_mem_supp i.property).mpr <| by
         rw [componentSpace_def, Set.image_eq_range]
   span_coroot_eq_top :=
     (Submodule.span_range_subtype_eq_top_iff _ fun i : C.supp ↦
-      coroot_mem_corootComponentSpace_of_mem_supp i.2).mpr <| by
+      coroot_mem_corootComponentSpace_of_mem_supp i.property).mpr <| by
         rw [corootComponentSpace_def, Set.image_eq_range]
 
 /-- **The root pairing of an irreducible component is irreducible.** -/
@@ -192,18 +192,21 @@ variable {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module K M₂] [AddCommG
 
 /-- The **equivalence of component pairings** induced by an equivalence of root pairings `e`: the
 restrictions of the weight and coweight equivalences of `e` to the component spaces of `C` and of
-the corresponding component of `Q`, along the bijection of the roots of the two components. -/
-noncomputable def componentPairingEquiv (e : P.Equiv Q) (C : P.Component) :
-    (P.componentPairing C).Equiv (Q.componentPairing (e.componentEquiv C)) where
+the corresponding component `D = e.componentEquiv C` of `Q`, along the bijection of the roots of the
+two components. Taking `D` with a proof `hD` of this equality, rather than `e.componentEquiv C`
+itself, lets an automorphism mapping `C` to itself restrict to an automorphism of the pairing
+of `C`. -/
+noncomputable def componentPairingEquiv (e : P.Equiv Q) (C : P.Component) {D : Q.Component}
+    (hD : e.componentEquiv C = D) : (P.componentPairing C).Equiv (Q.componentPairing D) where
   weightMap := (e.weightEquiv.submoduleMap (P.componentSpace C)).trans
-    (LinearEquiv.ofEq _ _ (e.map_componentSpace C))
-  coweightMap := ((e.coweightEquiv.submoduleMap
-    (Q.corootComponentSpace (e.componentEquiv C))).trans
-      (LinearEquiv.ofEq _ _ (e.map_corootComponentSpace C))).toLinearMap
-  indexEquiv := e.indexEquiv.subtypeEquiv fun _ ↦ e.indexEquiv_mem_supp_iff.symm
+    (LinearEquiv.ofEq _ _ ((e.map_componentSpace C).trans (congrArg Q.componentSpace hD)))
+  coweightMap := ((e.coweightEquiv.submoduleMap (Q.corootComponentSpace D)).trans
+    (LinearEquiv.ofEq _ _ ((congrArg (fun D ↦ (Q.corootComponentSpace D).map
+      e.coweightEquiv.toLinearMap) hD.symm).trans (e.map_corootComponentSpace C)))).toLinearMap
+  indexEquiv := e.indexEquiv.subtypeEquiv fun _ ↦ hD ▸ e.indexEquiv_mem_supp_iff.symm
   weight_coweight_transpose := by
     ext y x
-    simpa using e.toLinearMap_weightEquiv x.1 y.1
+    simpa using e.toLinearMap_weightEquiv x.val y.val
   root_weightMap := by
     ext i
     simp [Hom.root_weightMap_apply]
@@ -213,29 +216,30 @@ noncomputable def componentPairingEquiv (e : P.Equiv Q) (C : P.Component) :
   bijective_weightMap := LinearEquiv.bijective _
   bijective_coweightMap := LinearEquiv.bijective _
 
+variable (e : P.Equiv Q) (C : P.Component) {D : Q.Component} (hD : e.componentEquiv C = D)
+
 @[simp]
-theorem coe_componentPairingEquiv_weightMap_apply (e : P.Equiv Q) (C : P.Component)
-    (x : P.componentSpace C) :
-    ((e.componentPairingEquiv C).toHom.weightMap x : M₂) = e.toHom.weightMap x :=
+theorem coe_componentPairingEquiv_weightMap_apply (x : P.componentSpace C) :
+    ((e.componentPairingEquiv C hD).toHom.weightMap x : M₂) = e.toHom.weightMap x :=
   (rfl)
 
 @[simp]
-theorem coe_componentPairingEquiv_coweightMap_apply (e : P.Equiv Q) (C : P.Component)
-    (y : Q.corootComponentSpace (e.componentEquiv C)) :
-    ((e.componentPairingEquiv C).toHom.coweightMap y : N) = e.toHom.coweightMap y :=
+theorem coe_componentPairingEquiv_coweightMap_apply (y : Q.corootComponentSpace D) :
+    ((e.componentPairingEquiv C hD).toHom.coweightMap y : N) = e.toHom.coweightMap y :=
   (rfl)
 
 @[simp]
-theorem coe_componentPairingEquiv_indexEquiv_apply (e : P.Equiv Q) (C : P.Component)
-    (i : C.supp) : ((e.componentPairingEquiv C).indexEquiv i : ι₂) = e.indexEquiv i :=
+theorem coe_componentPairingEquiv_indexEquiv_apply (i : C.supp) :
+    ((e.componentPairingEquiv C hD).indexEquiv i : ι₂) = e.indexEquiv i :=
   (rfl)
 
 /-- **The equivalence of component pairings intertwines the component projections**: projecting
 onto the component space of `C` and then applying the equivalence of component pairings is
 applying `e` and then projecting onto the component space of the corresponding component. -/
-theorem componentPairingEquiv_weightMap_componentProj (e : P.Equiv Q) (C : P.Component) (x : M) :
-    (e.componentPairingEquiv C).toHom.weightMap (P.componentProj C x) =
-      Q.componentProj (e.componentEquiv C) (e.toHom.weightMap x) := by
+theorem componentPairingEquiv_weightMap_componentProj (x : M) :
+    (e.componentPairingEquiv C hD).toHom.weightMap (P.componentProj C x) =
+      Q.componentProj D (e.toHom.weightMap x) := by
+  subst hD
   suffices h : e.toHom.weightMap ∘ₗ (P.componentSpace C).subtype ∘ₗ P.componentProj C =
       (Q.componentSpace (e.componentEquiv C)).subtype ∘ₗ
         Q.componentProj (e.componentEquiv C) ∘ₗ e.toHom.weightMap from

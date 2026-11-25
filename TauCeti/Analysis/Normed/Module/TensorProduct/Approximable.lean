@@ -47,7 +47,7 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
 
 /-- A tensor in `E* ⊗ F` acts on `E` by evaluation in its first factor. -/
 noncomputable def toOperator : StrongDual 𝕜 E ⊗[𝕜] F →ₗ[𝕜] E →L[𝕜] F :=
-  TensorProduct.lift (ContinuousLinearMap.smulRightLₗ 𝕜 E F)
+  TensorProduct.lift (StrongDual.smulRightL 𝕜 E F).toLinearMap₁₂
 
 /-- A pure tensor acts as the corresponding rank-one operator. -/
 @[simp]
@@ -122,6 +122,14 @@ noncomputable def toOperator : InjectiveTensor 𝕜 (StrongDual 𝕜 E) F →ₗ
 theorem toOperator_mk (u : StrongDual 𝕜 E ⊗[𝕜] F) :
     toOperator 𝕜 E F ⟨u⟩ = TensorProduct.toOperator u := by
   simp [toOperator]
+
+/-- The injective norm of the swapped tensor `comm u ∈ F ⊗ E*` is the operator norm of the
+finite-rank operator `E →L[𝕜] F` represented by `u ∈ E* ⊗ F`. -/
+theorem norm_mk_comm (u : StrongDual 𝕜 E ⊗[𝕜] F) :
+    ‖(⟨TensorProduct.comm 𝕜 (StrongDual 𝕜 E) F u⟩ : InjectiveTensor 𝕜 F (StrongDual 𝕜 E))‖ =
+      ‖TensorProduct.toOperator u‖ := by
+  rw [norm_def, TensorProduct.injectiveSeminorm_comm,
+    TensorProduct.injectiveSeminorm_eq_norm_toOperator]
 
 /-- Every tensor induces an operator with finitely generated range. -/
 theorem hasFiniteRange_toOperator (u : InjectiveTensor 𝕜 (StrongDual 𝕜 E) F) :
@@ -281,13 +289,13 @@ variable (𝕜 E F) in
 /-- Canonical contraction from the projective tensor product `StrongDual 𝕜 E ⊗π F` to bounded
 operators `E →L[𝕜] F`, sending `⟨f ⊗ₜ y⟩` to `x ↦ f x • y`. -/
 noncomputable def toOperator : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) F →L[𝕜] E →L[𝕜] F :=
-  liftIsometry 𝕜 (StrongDual 𝕜 E) F (E →L[𝕜] F) (ContinuousLinearMap.smulRightL 𝕜 E F)
+  liftIsometry 𝕜 (StrongDual 𝕜 E) F (E →L[𝕜] F) (StrongDual.smulRightL 𝕜 E F)
 
 /-- On wrapped algebraic tensors, `ProjectiveTensor.toOperator` agrees with
 `TensorProduct.toOperator`. -/
 @[simp] theorem toOperator_mk (u : StrongDual 𝕜 E ⊗[𝕜] F) :
     toOperator 𝕜 E F ⟨u⟩ = TensorProduct.toOperator u := by
-  rw [toOperator, liftIsometry_apply, TensorProduct.toOperator]; rfl
+  rw [toOperator, liftIsometry_apply, TensorProduct.toOperator]
 
 /-- `ProjectiveTensor.toOperator` sends a pure tensor `⟨f ⊗ₜ y⟩` to the rank-one operator
 `f.smulRight y`. -/

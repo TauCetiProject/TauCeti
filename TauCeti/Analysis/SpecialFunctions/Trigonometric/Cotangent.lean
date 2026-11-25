@@ -37,6 +37,9 @@ Away from the real axis, `π cot (π u)` tends to `-π i` as `Im u → ∞`, and
 ## Main results
 
 * `Complex.cot_neg`, `Complex.cot_zero`: the cotangent is odd, with junk value `0` at `0`.
+* `Complex.cot_pi_sub`: reflection about `π/2` negates the cotangent.
+* `Complex.cot_pi_div_two`: the cotangent vanishes at `π/2`.
+* `Complex.cot_periodic`, `Complex.cot_add_pi`: the cotangent is `π`-periodic.
 * `Complex.cot_mul_I`: the cotangent at an imaginary argument is a hyperbolic cotangent.
 * `TauCeti.hasSum_one_div_sub_intCast_add_one_div_intCast`: the expansion over `ℤ`.
 * `TauCeti.hasSum_pi_mul_cot_pi_mul_add_pi_mul_I`: the `q`-expansion in the upper half-plane.
@@ -65,6 +68,11 @@ open scoped Real
 
 namespace Complex
 
+/-- Reflection about `π/2` negates the complex cotangent, including its values at poles. -/
+@[simp]
+theorem cot_pi_sub (z : ℂ) : cot (π - z) = -cot z := by
+  rw [cot_eq_cos_div_sin, cos_pi_sub, sin_pi_sub, neg_div, ← cot_eq_cos_div_sin]
+
 /-- The cotangent is odd. -/
 @[simp]
 theorem cot_neg (z : ℂ) : cot (-z) = -cot z := by
@@ -74,6 +82,20 @@ theorem cot_neg (z : ℂ) : cot (-z) = -cot z := by
 @[simp]
 theorem cot_zero : cot 0 = 0 := by
   simp [cot_eq_cos_div_sin]
+
+/-- The cotangent vanishes at `π / 2`. -/
+@[simp]
+theorem cot_pi_div_two : cot ((π : ℂ) / 2) = 0 := by
+  rw [cot_eq_cos_div_sin, cos_pi_div_two, zero_div]
+
+/-- The cotangent is `π`-periodic, including its values at poles. -/
+theorem cot_periodic : Function.Periodic cot π := fun z ↦ by
+  simpa only [cot_eq_cos_div_sin, Pi.div_apply] using cos_antiperiodic.div sin_antiperiodic z
+
+/-- The cotangent is unchanged by a shift by `π`, including its values at poles. -/
+@[simp]
+theorem cot_add_pi (z : ℂ) : cot (z + π) = cot z :=
+  cot_periodic z
 
 /-- The cotangent at an imaginary argument is a hyperbolic cotangent:
 `cot (z i) = -(cosh z / sinh z) i` for every complex `z` (both sides vanish at `z = 0`). -/
@@ -227,7 +249,7 @@ theorem hasSum_pi_mul_cot_pi_mul_div_add_pi_mul_I (M : ℕ) [NeZero M] (c : ℕ+
   have hpow (k : ℕ) : cexp (2 * π * I * ((c * z + b) / M)) ^ k =
       ZMod.stdAddChar ((k : ZMod M) * (b : ZMod M)) * cexp (2 * π * I * z / M) ^ ((c : ℕ) * k) := by
     rw [← Int.cast_natCast (R := ZMod M) k, ← Int.cast_mul, ZMod.stdAddChar_coe,
-      ← Complex.exp_nat_mul, ← Complex.exp_nat_mul, ← Complex.exp_add]
+      ← Complex.exp_natCast_mul, ← Complex.exp_natCast_mul, ← Complex.exp_add]
     congr 1
     push_cast
     ring
@@ -277,7 +299,7 @@ theorem hasSum_pi_mul_cot_pi_mul_intCast_mul_add_sign {w : ℂ} (hw : 0 < w.im) 
       simpa using le_mul_of_one_le_left hw.le (Nat.one_le_cast.mpr hn)
     have h := norm_pi_mul_cot_pi_mul_add_pi_mul_I_le hw hnw
     have hexp : Real.exp (-2 * π * ((n : ℂ) * w).im) = ρ ^ n := by
-      rw [← Real.exp_nat_mul]
+      rw [← Real.exp_natCast_mul]
       congr 1
       simp
       ring

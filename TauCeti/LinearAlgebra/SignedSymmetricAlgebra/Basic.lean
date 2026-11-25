@@ -98,6 +98,12 @@ theorem induction {P : SignedSym G → Prop}
   | mul a b ha hb => simpa only [map_mul] using mul _ _ ha hb
   | add a b ha hb => simpa only [map_add] using add _ _ ha hb
 
+/-- The image of the generating module generates the signed symmetric algebra as an `R`-algebra. -/
+@[simp]
+theorem adjoin_range_generator : Algebra.adjoin R (Set.range (generator G)) = ⊤ :=
+  top_unique fun a _ => induction G (Subalgebra.algebraMap_mem _)
+    (fun x => Algebra.subset_adjoin ⟨x, rfl⟩) (fun _ _ => mul_mem) (fun _ _ => add_mem) a
+
 /-- Algebra maps out of the signed symmetric algebra are determined by their generators. -/
 @[ext 1200]
 theorem hom_ext {A : Type w} [Semiring A] [Algebra R A] {f g : SignedSym G →ₐ[R] A}
@@ -144,16 +150,16 @@ def liftEquiv :
     {f : V →ₗ[R] A // ∀ (p q : ι) (x y : V), x ∈ G.piece p → y ∈ G.piece q →
       f x * f y = ((-1 : ℤˣ) ^ (p * q)) • (f y * f x)} ≃
       (SignedSym G →ₐ[R] A) where
-  toFun f := lift G f.1 f.2
+  toFun f := lift G f.val f.property
   invFun g := ⟨g.toLinearMap.comp (generator G), by
     intro p q x y hx hy
     simpa only [AlgHom.toLinearMap_apply, LinearMap.comp_apply, ← map_mul, ← map_zsmul_unit] using
       congrArg g (generator_mul_generator G hx hy)⟩
-  left_inv f := Subtype.ext (LinearMap.ext fun x => lift_generator G f.1 f.2 x)
+  left_inv f := Subtype.ext (LinearMap.ext fun x => lift_generator G f.val f.property x)
   right_inv g := (lift_unique G _ _ g fun _ => rfl).symm
 
 @[simp]
-theorem liftEquiv_apply (f) : liftEquiv G (A := A) f = lift G f.1 f.2 := (rfl)
+theorem liftEquiv_apply (f) : liftEquiv G (A := A) f = lift G f.val f.property := (rfl)
 
 @[simp]
 theorem liftEquiv_symm_apply_val (g : SignedSym G →ₐ[R] A) :

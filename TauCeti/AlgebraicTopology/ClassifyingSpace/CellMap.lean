@@ -73,10 +73,10 @@ even if the homomorphism is not injective. -/
 theorem universalGSpaceSimplicialMap_strictMonoOn (φ : G →* H) {n : ℕ}
     (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) :
     StrictMonoOn (universalGSpaceSimplicialMap φ)
-      (c.1.1 : Set (Σ _ : ℕ, G)) := by
+      (c.val.val : Set (Σ _ : ℕ, G)) := by
   intro v hv w hw hvw
   exact universalGSpaceVertexOrder_lt_of_fst_lt
-    ((universalGSpaceVertexOrder_lt_iff c.1.2 hv hw).mp hvw)
+    ((universalGSpaceVertexOrder_lt_iff c.val.property hv hw).mp hvw)
 
 /-- Apply a homomorphism to the labels of a simplex, preserving its indices and dimension. -/
 def universalGSpaceCellMap (φ : G →* H) {n : ℕ}
@@ -96,8 +96,8 @@ theorem universalGSpaceCellMap_def (φ : G →* H) {n : ℕ}
 @[simp]
 theorem universalGSpaceCellMap_val [DecidableEq (Σ _ : ℕ, H)] (φ : G →* H) {n : ℕ}
     (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) :
-    (φ.universalGSpaceCellMap c).1.1 =
-      c.1.1.image (fun v : Σ _ : ℕ, G => (⟨v.1, φ v.2⟩ : Σ _ : ℕ, H)) := by
+    (φ.universalGSpaceCellMap c).val.val =
+      c.val.val.image (fun v : Σ _ : ℕ, G => (⟨v.1, φ v.2⟩ : Σ _ : ℕ, H)) := by
   ext v
   simp [universalGSpaceCellMap, RealizationCell.map_face,
     TauCeti.PreAbstractSimplicialComplex.SimplicialMap.coe_faceOrderHom_apply,
@@ -213,14 +213,14 @@ variable {G H : Type u} [MulOne G] [MulOne H]
 def universalGSpaceCellularMap (φ : G →* H) :
     TopCat.of (univ : Set (universalGSpace G)) ⟶
       TopCat.of (univ : Set (universalGSpace H)) :=
-  TopCat.ofHom ⟨fun x ↦ ⟨φ.universalGSpaceMap x.1, mem_univ _⟩,
-    (φ.universalGSpaceMap.continuous.comp continuous_subtype_val).subtype_mk _⟩
+  TopCat.ofHom ⟨fun x ↦ ⟨φ.universalGSpaceMap x.val, mem_univ _⟩,
+    (φ.universalGSpaceMap.continuous.comp continuous_subtypeVal).subtype_mk _⟩
 
 /-- The universal-subset map agrees with the continuous map on underlying points. -/
 @[simp]
 theorem universalGSpaceCellularMap_apply (φ : G →* H)
     (x : (univ : Set (universalGSpace G))) :
-    (φ.universalGSpaceCellularMap x).1 = φ.universalGSpaceMap x.1 := (rfl)
+    (φ.universalGSpaceCellularMap x).val = φ.universalGSpaceMap x.val := (rfl)
 
 /-- Restricting the realized simplicial map to the universal subset gives the cellular map. -/
 theorem universalGSpaceSimplicialMap_restrictPreimage (φ : G →* H) :
@@ -229,7 +229,7 @@ theorem universalGSpaceSimplicialMap_restrictPreimage (φ : G →* H) :
   apply ConcreteCategory.hom_ext
   intro x
   apply Subtype.ext
-  exact congrArg (fun f : C(universalGSpace G, universalGSpace H) ↦ f x.1)
+  exact congrArg (fun f : C(universalGSpace G, universalGSpace H) ↦ f x.val)
     φ.universalGSpaceSimplicialMap_realizationMap
 
 /-- The continuous map on Milnor joins preserves the simplicial CW filtrations.
@@ -263,7 +263,7 @@ theorem map_universalGSpaceCellularMap_realizationCellEquiv_symm (φ : G →* H)
     (hx : Topology.RelCWComplex.map n ((realizationCellEquiv _ n).symm c) x ∈
       (univ : Set (universalGSpace G))) :
     (φ.universalGSpaceCellularMap
-        ⟨Topology.RelCWComplex.map n ((realizationCellEquiv _ n).symm c) x, hx⟩).1 =
+        ⟨Topology.RelCWComplex.map n ((realizationCellEquiv _ n).symm c) x, hx⟩).val =
       Topology.RelCWComplex.map n
         ((realizationCellEquiv _ n).symm (φ.universalGSpaceCellMap c)) x := by
   rw [universalGSpaceCellularMap_apply, map_realizationCellEquiv_symm,
