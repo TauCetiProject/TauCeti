@@ -91,9 +91,7 @@ theorem exists_contDiff_conjWirtingerDeriv_apply_single_eq {f : ι → (ι → �
   have hloc (k : ℕ) : ∃ h : (ι → ℂ) → F, ContDiffOn ℝ ∞ h (ball 0 (r (k + 1))) ∧
       ∀ z ∈ ball (0 : ι → ℂ) (r (k + 1)), ∀ j,
         conjWirtingerDeriv h z (Pi.single j 1) = f j z := by
-    have hpi : (univ.pi fun i ↦ ball ((0 : ι → ℂ) i) (r (k + 1))) = ball 0 (r (k + 1)) :=
-      (ball_pi 0 (hr_pos (k + 1))).symm
-    rw [← hpi]
+    rw [ball_pi 0 (hr_pos (k + 1))]
     exact exists_contDiffOn_conjWirtingerDeriv_apply_single_eq_of_polydisc
       (fun j ↦ (hf j).contDiffOn) fun z _ ↦ hclosed z
   choose h hh hh_eq using hloc
