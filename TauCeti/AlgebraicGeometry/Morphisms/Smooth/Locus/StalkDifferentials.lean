@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus.OfDim
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Stalk
-public import TauCeti.RingTheory.Kaehler.MapSemilinear
+import TauCeti.RingTheory.Kaehler.MapSemilinear
 import TauCeti.AlgebraicGeometry.VectorBundle.Stalk
 
 /-!
@@ -24,12 +24,6 @@ and the Kähler differentials with them.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Hom.stalkMap_algebraMap`: the stalk maps of a morphism over `Spec k`
-  are `k`-algebra maps;
-* `AlgebraicGeometry.Scheme.Hom.stalkAlgEquivOfIsOpenImmersion`: an open immersion over `Spec k`
-  identifies the local rings as `k`-algebras;
-* `KaehlerDifferential.nonempty_linearEquiv_pi_of_algEquiv`: freeness of the Kähler differentials
-  on a given index type passes along an isomorphism of algebras;
 * `TauCeti.AlgebraicGeometry.nonempty_linearEquiv_kaehlerDifferential_stalk_of_mem_smoothLocusOfDim`
   and `TauCeti.AlgebraicGeometry.finrank_kaehlerDifferential_stalk_of_mem_smoothLocusOfDim`: at a
   point of `X_sm^{(d)}`, `Ω[𝒪_{X,x}⁄k] ≅ 𝒪_{X,x}^d`.
@@ -40,74 +34,6 @@ public section
 open CategoryTheory
 
 universe u
-
-namespace AlgebraicGeometry.Scheme.Hom
-
-noncomputable section
-
-variable (k : Type u) [CommRing k] {X Y : Scheme.{u}} [X.Over (Spec (.of k))]
-  [Y.Over (Spec (.of k))]
-
-/-- The stalk maps of a morphism over `Spec k` are compatible with the `k`-algebra structures of
-the stalks. -/
-theorem stalkMap_algebraMap (f : X ⟶ Y) [f.IsOver (Spec (.of k))] (x : X) (c : k) :
-    f.stalkMap x (algebraMap k (Y.presheaf.stalk (f x)) c) =
-      algebraMap k (X.presheaf.stalk x) c := by
-  have h : Spec.map (CommRingCat.ofHom (algebraMap k (Y.presheaf.stalk (f x))) ≫
-      f.stalkMap x) = Spec.map (CommRingCat.ofHom (algebraMap k (X.presheaf.stalk x))) := by
-    rw [Spec.map_comp, ← Scheme.fromSpecStalk_comp_over, ← Scheme.fromSpecStalk_comp_over,
-      ← Category.assoc, Scheme.SpecMap_stalkMap_fromSpecStalk, Category.assoc, comp_over]
-  exact congr($(Spec.map_injective h) c)
-
-/-- An open immersion `f : X ⟶ Y` over `Spec k` identifies the local ring of `Y` at `f x` with
-the local ring of `X` at `x`, as `k`-algebras. -/
-def stalkAlgEquivOfIsOpenImmersion (f : X ⟶ Y) [IsOpenImmersion f] [f.IsOver (Spec (.of k))]
-    (x : X) : Y.presheaf.stalk (f x) ≃ₐ[k] X.presheaf.stalk x :=
-  AlgEquiv.ofRingEquiv (f := (asIso (f.stalkMap x)).commRingCatIsoToRingEquiv)
-    (stalkMap_algebraMap k f x)
-
-/-- `stalkAlgEquivOfIsOpenImmersion` is the stalk map. -/
-@[simp]
-lemma stalkAlgEquivOfIsOpenImmersion_apply (f : X ⟶ Y) [IsOpenImmersion f]
-    [f.IsOver (Spec (.of k))] (x : X) (a : Y.presheaf.stalk (f x)) :
-    f.stalkAlgEquivOfIsOpenImmersion k x a = f.stalkMap x a :=
-  (rfl)
-
-end
-
-end AlgebraicGeometry.Scheme.Hom
-
-namespace KaehlerDifferential
-
-variable {R A B : Type*} [CommRing R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
-
-/-- If the Kähler differentials of `B` over `R` are free on an index type `ι`, so are those of an
-isomorphic `R`-algebra `A`: the isomorphism of differentials along `e : A ≃ₐ[R] B` is
-`e`-semilinear. -/
-theorem nonempty_linearEquiv_pi_of_algEquiv {ι : Type*} (e : A ≃ₐ[R] B)
-    (h : Nonempty (Ω[B⁄R] ≃ₗ[B] (ι → B))) : Nonempty (Ω[A⁄R] ≃ₗ[A] (ι → A)) := by
-  obtain ⟨g⟩ := h
-  refine ⟨
-    { toFun ω i := e.symm (g (mapSemilinear e.toAlgHom ω) i)
-      invFun v := mapSemilinear e.symm.toAlgHom (g.symm fun i ↦ e (v i))
-      map_add' ω ω' := by
-        ext i
-        rw [map_add, map_add, Pi.add_apply, map_add, Pi.add_apply]
-      map_smul' a ω := by
-        ext i
-        rw [mapSemilinear_smul, map_smul, Pi.smul_apply, smul_eq_mul, map_mul, RingHom.id_apply,
-          Pi.smul_apply, smul_eq_mul]
-        simp
-      left_inv ω := by
-        simp only [AlgEquiv.apply_symm_apply]
-        exact (congrArg _ (g.symm_apply_apply _)).trans (mapSemilinear_symm_apply_apply e ω)
-      right_inv v := by
-        ext i
-        dsimp only
-        rw [mapSemilinear_apply_symm_apply]
-        simp }⟩
-
-end KaehlerDifferential
 
 namespace TauCeti.AlgebraicGeometry
 
