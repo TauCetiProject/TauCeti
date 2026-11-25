@@ -21,9 +21,12 @@ invertible pro-orders, and is not proved here.
 
 ## Main definitions
 
-* `Representation.IsLocallyAdmissible ρ`: every `A[G] · v` is admissible.
+* `Representation.IsLocallyAdmissible ρ`: the `Prop`-valued class asserting that every
+  `A[G] · v` is admissible.
 
 ## Main results
+
+The first three results are instances.
 
 * `Representation.IsLocallyAdmissible.isSmooth`: locally admissible representations are smooth.
 * `Representation.IsAdmissible.isLocallyAdmissible`: over a noetherian ring, admissible
@@ -51,36 +54,38 @@ variable [TopologicalSpace G]
 variable (ρ) in
 /-- A representation is *locally admissible* if every vector generates an admissible
 subrepresentation. -/
-def IsLocallyAdmissible : Prop :=
-  ∀ v : V, IsAdmissible (cyclicSubrepresentation ρ v).toRepresentation
+class IsLocallyAdmissible : Prop where
+  isAdmissible_cyclicSubrepresentation (v : V) :
+    IsAdmissible (cyclicSubrepresentation ρ v).toRepresentation
 
 theorem isLocallyAdmissible_iff :
     IsLocallyAdmissible ρ ↔ ∀ v : V, IsAdmissible (cyclicSubrepresentation ρ v).toRepresentation :=
-  Iff.rfl
+  ⟨fun h ↦ h.isAdmissible_cyclicSubrepresentation, fun h ↦ ⟨h⟩⟩
 
 /-- A locally admissible representation is smooth: each `v` lies in the admissible, hence smooth,
 subrepresentation `A[G] · v`, whose stabilizers are those of `ρ`. -/
-theorem IsLocallyAdmissible.isSmooth (h : IsLocallyAdmissible ρ) : IsSmooth ρ :=
+instance IsLocallyAdmissible.isSmooth [h : IsLocallyAdmissible ρ] : IsSmooth ρ :=
   ⟨fun v ↦ (cyclicSubrepresentation ρ v).stabilizer_toRepresentation
-    ⟨v, mem_cyclicSubrepresentation_self v⟩ ▸ (h v).isOpen_stabilizer _⟩
+    ⟨v, mem_cyclicSubrepresentation_self v⟩ ▸
+      (h.isAdmissible_cyclicSubrepresentation v).isOpen_stabilizer _⟩
 
 /-- **Admissible representations are locally admissible** over a noetherian ring. -/
-theorem IsAdmissible.isLocallyAdmissible [IsNoetherianRing A] [IsAdmissible ρ] :
+instance IsAdmissible.isLocallyAdmissible [IsNoetherianRing A] [IsAdmissible ρ] :
     IsLocallyAdmissible ρ :=
-  fun _ ↦ inferInstance
+  ⟨fun _ ↦ inferInstance⟩
 
 /-- A trivial representation is locally admissible: each `A[G] · v` is the `A`-span of `v`, a
 finitely generated module with trivial action. -/
-theorem isLocallyAdmissible_of_isTrivial [ρ.IsTrivial] : IsLocallyAdmissible ρ := fun v ↦
+instance isLocallyAdmissible_of_isTrivial [ρ.IsTrivial] : IsLocallyAdmissible ρ := ⟨fun v ↦
   have : Module.Finite A (cyclicSubrepresentation ρ v).toSubmodule := by
     have h : (fun g ↦ ρ g v) = fun _ ↦ v := funext (ρ.isTrivial_apply · v)
     rw [toSubmodule_cyclicSubrepresentation, h, Set.range_const]
     infer_instance
-  inferInstance
+  inferInstance⟩
 
 variable (A G) in
 /-- The trivial rank-one representation `A` is locally admissible. -/
 theorem isLocallyAdmissible_trivial_self : IsLocallyAdmissible (trivial A G A) :=
-  isLocallyAdmissible_of_isTrivial
+  inferInstance
 
 end Representation
