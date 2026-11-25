@@ -22,9 +22,11 @@ a noncompact manifold, where the total volumes may be infinite. The manifold `M`
 and corners, and no orientation is used.
 
 Its dependence on a family of metrics is in
-`TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.Family`, and the case of the metrics
+`TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.Family`, the case of the metrics
 induced by a family of immersions in
-`TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.Pullback`.
+`TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.Pullback`, and the case of a variation
+with fixed compact support on a noncompact manifold in
+`TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.CompactSupport`.
 
 ## Main definitions
 

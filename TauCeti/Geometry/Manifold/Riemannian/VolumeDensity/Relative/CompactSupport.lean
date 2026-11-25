@@ -15,9 +15,9 @@ On a manifold `M` that need not be compact, let `g_t` be a family of metrics tha
 fixed metric `g₀` outside one compact set `K`, for all `t` near `t₀`. The relative density
 `J(g₀, g_t)` is then `1` off `K`, so the relative volume `V(t) = ∫ (J(g₀, g_t) - 1) dV_{g₀}` is
 finite without `M` having finite volume, and it is `C^k` in `t` at `t₀` when the inner products of
-`g_t` are `C^k` jointly in `(t, x)` at the points `(t₀, x)` with `x ∈ K`
-(`Bundle.ContMDiffRiemannianMetric.contDiffAt_relativeVolume_of_isCompact`). This is the
-noncompact case of the relative-volume functional, whose compact case is
+`g₀` are `C^k` at the points of `K` and those of `g_t` are `C^k` jointly in `(t, x)` at the points
+`(t₀, x)` with `x ∈ K` (`Bundle.ContMDiffRiemannianMetric.contDiffAt_relativeVolume_of_isCompact`).
+This is the noncompact case of the relative-volume functional, whose compact case is
 `Bundle.ContMDiffRiemannianMetric.contDiffAt_relativeVolume`.
 -/
 
