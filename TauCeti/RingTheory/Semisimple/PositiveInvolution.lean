@@ -36,8 +36,9 @@ finite-dimensional and semisimple.
 * `TauCeti.PositiveInvolution.trd_mul_star_pos`: the defining inequality `Trd(x x*) > 0`.
 * `TauCeti.PositiveInvolution.trd_star_mul_pos`: also `Trd(x* x) > 0` for `x ≠ 0`.
 * `TauCeti.PositiveInvolution.star_smul`: a positive involution is `ℚ`-linear.
-* `TauCeti.PositiveInvolution.ofStarRing_toStarRing`, `TauCeti.PositiveInvolution.star_ofStarRing`:
-  positive involutions are the `StarRing` structures satisfying the inequality.
+* `TauCeti.PositiveInvolution.ofStarRing_toStarRing`, `TauCeti.PositiveInvolution.star_ofStarRing`,
+  `TauCeti.PositiveInvolution.toStarRing_ofStarRing`: positive involutions are the `StarRing`
+  structures satisfying the inequality.
 
 ## References
 
@@ -104,8 +105,9 @@ def toStarRing : StarRing B where
   star_mul := P.star_mul
   star_add := P.star_add
 
+@[simp]
 theorem star_toStarRing (x : B) : (P.toStarRing).star x = P.star x :=
-  rfl
+  (rfl)
 
 /-- The involution as an additive equivalence. -/
 def toAddEquiv : B ≃+ B :=
@@ -205,6 +207,13 @@ theorem star_ofStarRing [StarRing B]
 theorem ofStarRing_toStarRing :
     letI := P.toStarRing
     ofStarRing P.trd_mul_star_pos = P :=
+  (rfl)
+
+/-- A `StarRing` structure is recovered from the positive involution it defines. -/
+@[simp]
+theorem toStarRing_ofStarRing [inst : StarRing B]
+    (h : ∀ x : B, x ≠ 0 → 0 < Algebra.semisimpleReducedTrace ℚ B (x * Star.star x)) :
+    (ofStarRing h).toStarRing = inst :=
   (rfl)
 
 end PositiveInvolution

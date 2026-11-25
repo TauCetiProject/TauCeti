@@ -64,7 +64,7 @@ example {n : Type*} [Fintype n] [DecidableEq n] (x : Matrix n n ℚ) :
 theorem semisimpleReducedTrace_diag_one_neg_one_mul_adjugate :
     semisimpleReducedTrace ℚ (Matrix (Fin 2) (Fin 2) ℚ)
       (!![1, 0; 0, -1] * adjugate !![1, 0; 0, -1]) = -2 := by
-  rw [semisimpleReducedTrace_eq_reducedTrace, reducedTrace_matrix, adjugate_fin_two]
+  rw [semisimpleReducedTrace_matrix, adjugate_fin_two]
   norm_num [Matrix.trace]
 
 /-- The canonical involution `x ↦ adj x` of `M_2(ℚ)` is not positive. -/
