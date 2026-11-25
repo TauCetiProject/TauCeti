@@ -97,11 +97,10 @@ theorem IsNPositive.unitizationLinearMap {n : ℕ} {φ : A →ₗ[ℂ] B} (hφ :
   have hy' := CStarMatrix.nonneg_iff_forall_sum_nonneg.mp
     (CompletelyPositiveMapClass.map_cstarMatrix_nonneg'
       (Unitization.inrNonUnitalStarAlgHom ℂ B) n _ hy) w
-  -- the scalar matrix `[λᵢⱼ]` is the positive image of `M` under `Unitization.fstHom`
-  let fst : A⁺¹ →⋆ₐ[ℂ] ℂ := { Unitization.fstHom ℂ A with map_star' := Unitization.fst_star }
-  have hfst (x : A⁺¹) : fst x = x.fst := rfl
+  -- the scalar matrix `[λᵢⱼ]` is the positive image of `M` under `Unitization.fstStarAlgHom`
   have hz := CStarMatrix.nonneg_iff_forall_sum_nonneg.mp (CStarMatrix.ofMatrix_smul_nonneg
-    (CompletelyPositiveMapClass.map_cstarMatrix_nonneg' fst n M hM) hc) w
+    (CompletelyPositiveMapClass.map_cstarMatrix_nonneg' (Unitization.fstStarAlgHom ℂ A) n M hM)
+    hc) w
   convert add_nonneg hy' hz using 1
   rw [← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ => ?_
@@ -109,7 +108,7 @@ theorem IsNPositive.unitizationLinearMap {n : ℕ} {φ : A →ₗ[ℂ] B} (hφ :
   refine Finset.sum_congr rfl fun j _ => ?_
   rw [← add_mul, ← mul_add]
   congr 2
-  ext <;> simp [hfst, map_add, map_smul, Unitization.inl_mul, mul_comm]
+  ext <;> simp [map_add, map_smul, Unitization.inl_mul, mul_comm]
 
 /-- A `2`-positive map with `‖φ p‖ ≤ t` for every positive contraction `p` satisfies
 `‖φ a‖ ≤ t ‖a‖`. -/
