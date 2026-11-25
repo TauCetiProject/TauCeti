@@ -12,7 +12,8 @@ import TauCeti.LinearAlgebra.Complex.Module
 # Bounds for real-linear maps out of the complex line
 
 The values on `1` and `I` determine a continuous real-linear map on every complex vector
-(`ContinuousLinearMap.apply_eq_re_smul_one_add_im_smul_I`).
+(`ContinuousLinearMap.apply_eq_re_smul_one_add_im_smul_I`), so one vanishing at `1` and nonzero
+somewhere is nonzero at `I` (`ContinuousLinearMap.apply_I_ne_zero_of_apply_one_eq_zero`).
 A real-linear map is the sum of its values at `1` and `I` weighted by the real and imaginary
 parts (`ContinuousLinearMap.eq_reCLM_smulRight_add_imCLM_smulRight`, and for families
 `ContinuousLinearMap.fun_eq_smulRightL_reCLM_add_smulRightL_imCLM`).
@@ -37,6 +38,12 @@ namespace ContinuousLinearMap
 theorem apply_eq_re_smul_one_add_im_smul_I {F : Type*} [TopologicalSpace F] [AddCommMonoid F]
     [Module ℝ F] (L : ℂ →L[ℝ] F) (z : ℂ) : L z = z.re • L 1 + z.im • L Complex.I :=
   L.toLinearMap.apply_eq_re_smul_one_add_im_smul_I z
+
+/-- A continuous real-linear map out of `ℂ` vanishing at `1` and nonzero somewhere is nonzero at
+`I`. -/
+theorem apply_I_ne_zero_of_apply_one_eq_zero {F : Type*} [TopologicalSpace F] [AddCommMonoid F]
+    [Module ℝ F] {L : ℂ →L[ℝ] F} (h1 : L 1 = 0) {v : ℂ} (hv : L v ≠ 0) : L Complex.I ≠ 0 :=
+  fun hI ↦ hv (by rw [L.apply_eq_re_smul_one_add_im_smul_I, h1, hI, smul_zero, smul_zero, add_zero])
 
 /-- A real-linear map out of `ℂ` is determined by its values at `1` and `I`:
 `L = re ⬝ L 1 + im ⬝ L I`. -/

@@ -63,6 +63,8 @@ an irreducibility assumption on the group.
   scheme locally of finite type over a field has finite Krull dimension.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_pullback_Spec_map_of_field`: the Krull dimension
   of a scheme locally of finite type over a field is invariant under extension of the base field.
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_eq_of_isPullback_Spec_map_of_field`: the same
+  invariance for a base change given by a cartesian square.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_inter_eq_of_locallyOfFiniteType`: on a scheme
   locally of finite type over a field, a nonempty open part of an irreducible closed subset has
   the dimension of that subset.
@@ -188,6 +190,17 @@ theorem topologicalKrullDim_pullback_Spec_map_of_field {K L : Type u} [Field K] 
   refine iSup_congr fun (i : X.affineOpenCover.openCover.I₀) ↦ ?_
   have : LocallyOfFiniteType (X.affineOpenCover.openCover.f i ≫ f) := inferInstance
   exact topologicalKrullDim_pullback_Spec_of_field (A := X.affineOpenCover.X i) (hg := this) _
+
+/-- **Dimension under extension of the base field, for a cartesian square.** If `X'` is the base
+change of a scheme `X` locally of finite type over a field `K` along `Spec K' ⟶ Spec K`, then
+`X'` has the Krull dimension of `X`. -/
+theorem topologicalKrullDim_eq_of_isPullback_Spec_map_of_field {K K' : Type u} [Field K]
+    [Field K'] [Algebra K K'] {X X' : Scheme.{u}} {πX : X' ⟶ X} {sX' : X' ⟶ Spec (.of K')}
+    {sX : X ⟶ Spec (.of K)} [LocallyOfFiniteType sX]
+    (h : IsPullback πX sX' sX (Spec.map (CommRingCat.ofHom (algebraMap K K')))) :
+    topologicalKrullDim X' = topologicalKrullDim X := by
+  rw [h.isoPullback.hom.homeomorph.isHomeomorph.topologicalKrullDim_eq,
+    topologicalKrullDim_pullback_Spec_map_of_field]
 
 /-- On a scheme locally of finite type over a field, a nonempty open part `Z ∩ U` of an
 irreducible closed subset `Z` has the Krull dimension of `Z`. -/
