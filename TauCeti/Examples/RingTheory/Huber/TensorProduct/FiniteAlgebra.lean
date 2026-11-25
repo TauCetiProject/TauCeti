@@ -65,9 +65,6 @@ end Unit
 
 section Split
 
-local instance : IsAdicHom (algebraMap ℤ ℤ) := by
-  simpa using (IsAdicHom.id (A := ℤ))
-
 local instance : IsAdicHom (algebraMap ℤ (ℤ × ℤ)) :=
   IsAdicHom.of_discrete_iff.mpr inferInstance
 
