@@ -45,6 +45,8 @@ between Banach spaces, and from the approximation property of a Banach space.
   limit of nuclear contractions is a nuclear contraction.
 * `CompletelyPositiveMap.IsNuclearContraction.smul`: multiples `c • φ` with `c ≤ 1` of nuclear
   contractions are nuclear contractions.
+* `CStarAlgebra.IsNuclear.of_retract`: a retract of a nuclear C⋆-algebra through completely
+  positive contractions is nuclear.
 * `CStarAlgebra.IsNuclear.of_starAlgEquiv`: nuclearity is invariant under star isomorphism, and the
   matrix algebras `M_n(ℂ)` (`CStarAlgebra.isNuclear_cstarMatrix`) and `ℂ`
   (`CStarAlgebra.isNuclear_complex`) are nuclear.
@@ -239,17 +241,22 @@ class IsNuclear : Prop where
 
 variable {A} {B : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
 
-/-- Nuclearity is invariant under star isomorphism. -/
-theorem IsNuclear.of_starAlgEquiv (e : A ≃⋆ₐ[ℂ] B) [IsNuclear B] : IsNuclear A := by
-  have h := ((IsNuclear.isNuclearContraction_id (A := B)).comp_right
-    (CompletelyPositiveMapClass.toCompletelyPositiveLinearMap e)
-    (NonUnitalStarAlgHom.norm_apply_le e)).comp_left
-    (CompletelyPositiveMapClass.toCompletelyPositiveLinearMap e.symm)
-    (NonUnitalStarAlgHom.norm_apply_le e.symm)
+/-- A retract of a nuclear C⋆-algebra through completely positive contractions is nuclear: if
+`ρ ∘ σ = id` for completely positive contractions `σ : A → B` and `ρ : B → A` with `B` nuclear,
+then `A` is nuclear. -/
+theorem IsNuclear.of_retract [IsNuclear B] (σ : A →CP B) (ρ : B →CP A)
+    (hσ : ∀ a, ‖σ a‖ ≤ ‖a‖) (hρ : ∀ b, ‖ρ b‖ ≤ ‖b‖) (h : ∀ a, ρ (σ a) = a) : IsNuclear A := by
   refine ⟨?_⟩
-  convert h using 1
+  convert ((IsNuclear.isNuclearContraction_id (A := B)).comp_right σ hσ).comp_left ρ hρ using 1
   ext a
-  simp
+  simp [h]
+
+/-- Nuclearity is invariant under star isomorphism. -/
+theorem IsNuclear.of_starAlgEquiv (e : A ≃⋆ₐ[ℂ] B) [IsNuclear B] : IsNuclear A :=
+  .of_retract (CompletelyPositiveMapClass.toCompletelyPositiveLinearMap e)
+    (CompletelyPositiveMapClass.toCompletelyPositiveLinearMap e.symm)
+    (NonUnitalStarAlgHom.norm_apply_le e) (NonUnitalStarAlgHom.norm_apply_le e.symm)
+    (by simp)
 
 /-- The full matrix algebra `M_n(ℂ)` is nuclear: the identity factors through itself. -/
 instance isNuclear_cstarMatrix_fin (n : ℕ) : IsNuclear (CStarMatrix (Fin n) (Fin n) ℂ) :=
