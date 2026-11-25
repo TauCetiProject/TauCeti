@@ -699,35 +699,13 @@ variable {κ : Type*} [Fintype κ] {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)]
 `B^s_{p,q}` near every point of `M` (`TauCeti.BundleTest.IsLocallyMemBesovAt`). In particular this
 does not depend on the partition (`TauCeti.SquareChartPartition.memBesov_iff_memBesov`). -/
 theorem memBesov_iff_forall_isLocallyMemBesovAt {T : BundleTest I F V →L_c[ℝ] ℝ} :
-    A.MemBesov φ s p q T ↔ ∀ x, BundleTest.IsLocallyMemBesovAt φ s p q T x := by
-  constructor
-  · intro hT x
-    -- Some cutoff does not vanish at `x`, since their squares sum to one.
-    obtain ⟨i, hi⟩ : ∃ i, A.cutoff i x ≠ 0 := by
-      by_contra! h
-      simpa [h] using A.sum_sq_cutoff x
-    have hx : x ∈ (A.chartData i).chart.source :=
-      A.tsupport_cutoff_subset i (subset_tsupport _ hi)
-    have hcx := (A.chartData i).chart.map_source hx
-    refine (BundleTest.isLocallyMemBesovAt_iff T (A.chartData i).contMDiffOn_chart
-      (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset hx).2
-      (Bundle.Trivialization.chartComponent_of_basis
-        (Distribution.isInvariantLocalRegularity_isLocallyMemBesovAt φ p q s).toIsLocalRegularity
-        (Module.finBasis ℝ F) T hcx fun j ↦ ?_)
-    -- The localization `χᵢ Tᵢⱼ` is `B^s_{p,q}`, and the chart cutoff does not vanish at `cᵢ x`.
-    refine Distribution.isLocallyMemBesovAt_iff_exists_ne_zero_memBesov_cutoffTempered.2
-      ⟨A.chartCutoff i, ?_, by rw [← localization_apply]; exact hT i j⟩
-    rwa [A.chartCutoff_apply_of_mem hcx, (A.chartData i).chart.left_inv hx, ofReal_ne_zero]
-  · intro hT i j
-    rw [localization_apply]
-    refine Distribution.memBesov_cutoffTempered_of_forall_isLocallyMemBesovAt fun y hy ↦ ?_
-    -- A point of the support of the chart cutoff is `cᵢ x` for `x` in the support of `χᵢ`.
-    obtain ⟨x, hx, rfl⟩ : y ∈ (A.chartData i).chart '' tsupport (A.cutoff i) := by
-      rw [← A.coe_chartSupport]
-      exact A.tsupport_chartCutoff_subset i hy
-    exact (BundleTest.isLocallyMemBesovAt_iff T (A.chartData i).contMDiffOn_chart
-      (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset
-      (A.tsupport_cutoff_subset i hx)).1 (hT x) _
+    A.MemBesov φ s p q T ↔ ∀ x, BundleTest.IsLocallyMemBesovAt φ s p q T x :=
+  memBesov_iff.trans <| (A.forall_localization_iff_forall_isLocallyAt
+    (Distribution.isInvariantLocalRegularity_isLocallyMemBesovAt φ p q s)
+    (fun _ _ χ _ hχ hS ↦
+      Distribution.isLocallyMemBesovAt_iff_exists_ne_zero_memBesov_cutoffTempered.2 ⟨χ, hχ, hS⟩)
+    fun _ _ _ ↦ Distribution.memBesov_cutoffTempered_of_forall_isLocallyMemBesovAt).trans <|
+    forall_congr' fun _ ↦ BundleTest.isLocallyMemBesovAt_def.symm
 
 /-- **Independence of the partition.** A real functional on bundle tests is `B^s_{p,q}` with
 respect to one square chart partition of `V` exactly when it is `B^s_{p,q}` with respect to any
