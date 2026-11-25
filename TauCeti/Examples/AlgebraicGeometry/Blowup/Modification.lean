@@ -122,7 +122,7 @@ theorem not_isEffectiveCartier_comap_fromSpec {U : (Spec (.of (MvPolynomial (Fin
   intro h
   obtain ⟨y, hy⟩ : origin k ∈ Set.range hU.fromSpec := hU.range_fromSpec ▸ hoU
   have hdim := Scheme.IdealSheafData.ringKrullDim_stalk_le_one_of_comap hU.fromSpec h y
-    (hy ▸ stalkIdeal_originIdealSheaf_origin k)
+    (Flat.stalkMap _ y) (hy ▸ stalkIdeal_originIdealSheaf_origin k)
   rw [hy] at hdim
   exact absurd ((two_le_ringKrullDim_stalk_origin k).trans hdim) (by decide)
 
