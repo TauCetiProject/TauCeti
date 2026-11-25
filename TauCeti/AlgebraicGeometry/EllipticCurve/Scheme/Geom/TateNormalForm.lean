@@ -415,12 +415,8 @@ private theorem IsTate.unique {f f' : S ⟶ Spec (.of (ULift.{u} UniversalTate.R
     dsimp only [PointedWeierstrassAtlas.openCover_X, PointedWeierstrassAtlas.openCover_f]
     have := IsTate.base_eq ((A.chart i).modelPoint_projModelOver hP)
       ((A.chart i).modelPoint_apply_ne hP h₁)
-      (fun s ↦ by
-        rw [← E.modelPoint_mulBy (A.chart i) hP 2]
-        exact (A.chart i).modelPoint_apply_ne _ h₂ s)
-      (fun s ↦ by
-        rw [← E.modelPoint_mulBy (A.chart i) hP 3]
-        exact (A.chart i).modelPoint_apply_ne _ h₃ s)
+      ((A.chart i).modelPoint_mulBy_apply_ne hP h₂)
+      ((A.chart i).modelPoint_mulBy_apply_ne hP h₃)
       (isTate_chart hP (A.chart i) hg)
       (isTate_chart hP (A.chart i) hg')
     rw [← cancel_epi (A.chart i).baseIso.inv]
@@ -439,8 +435,7 @@ variable (c : PointedWeierstrassChart E.structureMap E.zero)
 private theorem exists_isTate_chart :
     ∃ f g, IsTate c.equation.projModelOver c.equation.projModelZero (c.modelPoint hP) f g :=
   exists_isTate (c.modelPoint_projModelOver hP) (c.modelPoint_apply_ne hP h₁)
-    (fun s ↦ by rw [← E.modelPoint_mulBy c hP 2]; exact c.modelPoint_apply_ne _ h₂ s)
-    (fun s ↦ by rw [← E.modelPoint_mulBy c hP 3]; exact c.modelPoint_apply_ne _ h₃ s)
+    (c.modelPoint_mulBy_apply_ne hP h₂) (c.modelPoint_mulBy_apply_ne hP h₃)
 
 -- The base of a chosen classifying pair of the model of `c`.
 private noncomputable def chartBase : Spec c.ring ⟶ Spec (.of (ULift.{u} UniversalTate.Ring)) :=
@@ -484,8 +479,7 @@ private theorem isTate_projModelMap :
 private theorem chartBase_comp :
     (k.baseIso.inv ≫ h ≫ c.baseIso.hom) ≫ chartBase hP h₁ h₂ h₃ c = chartBase hP h₁ h₂ h₃ k :=
   IsTate.base_eq (k.modelPoint_projModelOver hP) (k.modelPoint_apply_ne hP h₁)
-    (fun s ↦ by rw [← E.modelPoint_mulBy k hP 2]; exact k.modelPoint_apply_ne _ h₂ s)
-    (fun s ↦ by rw [← E.modelPoint_mulBy k hP 3]; exact k.modelPoint_apply_ne _ h₃ s)
+    (k.modelPoint_mulBy_apply_ne hP h₂) (k.modelPoint_mulBy_apply_ne hP h₃)
     (isTate_projModelMap hP h₁ h₂ h₃ hh) (isTate_chartBase hP h₁ h₂ h₃ k)
 
 private theorem chartTotal_comp :

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.AffineSpace
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Basic
 
 /-!
 # Gluing morphisms along the pointed Weierstrass charts of an elliptic curve
@@ -363,6 +365,80 @@ theorem existsUnique_isPullback_of_forall_chart :
     Prod.ext h.1 h.2⟩
 
 end Classifying
+
+/-! ### Gluing global functions from chart sections -/
+
+section ChartSection
+
+variable (E) (φ : ∀ c : PointedWeierstrassChart E.structureMap E.zero, Γ(c.base, ⊤))
+  (hφ : ∀ {k c : PointedWeierstrassChart E.structureMap E.zero} {h : k.base ⟶ c.base},
+    h ≫ c.baseMap = k.baseMap → h.appTop (φ c) = φ k)
+
+private noncomputable def pieceChartSectionMap
+    (c : PointedWeierstrassChart E.structureMap E.zero) :
+    pullback (𝟙 S) c.baseMap ⟶ Spec (.of (MvPolynomial PUnit.{u + 1} (ULift.{u} ℤ))) :=
+  pullback.snd _ _ ≫ (AffineSpace.toSpecMvPolyIntEquiv PUnit).symm fun _ ↦ φ c
+
+include hφ in
+private theorem map_pieceChartSectionMap
+    {k c : PointedWeierstrassChart E.structureMap E.zero} {h : k.base ⟶ c.base}
+    (hh : h ≫ c.baseMap = k.baseMap) :
+    pullback.map (𝟙 S) k.baseMap (𝟙 S) c.baseMap (𝟙 _) h (𝟙 _) (by simp) (by simp [hh]) ≫
+      pieceChartSectionMap E φ c = pieceChartSectionMap E φ k := by
+  rw [pieceChartSectionMap, pieceChartSectionMap, pullback.lift_snd_assoc, Category.assoc]; congr 1
+  refine (AffineSpace.toSpecMvPolyIntEquiv PUnit).injective (funext fun _ ↦ ?_)
+  rw [AffineSpace.toSpecMvPolyIntEquiv_comp, Equiv.apply_symm_apply, Equiv.apply_symm_apply, hφ hh]
+
+/-- **Gluing a morphism to `Spec ℤ[T]` from chart sections.** -/
+noncomputable def glueChartSectionMap :
+    S ⟶ Spec (.of (MvPolynomial PUnit.{u + 1} (ULift.{u} ℤ))) :=
+  glueMorphisms (pieceChartSectionMap E φ) (map_pieceChartSectionMap E φ hφ)
+
+/-- **Gluing a global function on `S` from chart sections.** -/
+noncomputable def glueChartSection : Γ(S, ⊤) :=
+  AffineSpace.toSpecMvPolyIntEquiv PUnit (E.glueChartSectionMap φ hφ) PUnit.unit
+
+/-- `glueChartSectionMap` is the morphism to `Spec ℤ[T]` with coordinate `glueChartSection`. -/
+theorem glueChartSectionMap_eq :
+    E.glueChartSectionMap φ hφ =
+      (AffineSpace.toSpecMvPolyIntEquiv PUnit).symm fun _ ↦ E.glueChartSection φ hφ :=
+  (Equiv.eq_symm_apply _).mpr (funext fun _ ↦ rfl)
+
+/-- On every chart `c` of `E`, `glueChartSection` restricts to `φ c`. -/
+@[simp]
+theorem baseMap_appTop_glueChartSection (c : PointedWeierstrassChart E.structureMap E.zero) :
+    c.baseMap.appTop (E.glueChartSection φ hφ) = φ c := by
+  have hcomp : c.baseMap ≫ E.glueChartSectionMap φ hφ =
+      (AffineSpace.toSpecMvPolyIntEquiv PUnit).symm fun _ ↦ φ c := by
+    rw [← pullback.lift_fst_assoc (f := 𝟙 S) (g := c.baseMap) c.baseMap (𝟙 c.base) (by simp),
+      glueChartSectionMap, fst_glueMorphisms _ (map_pieceChartSectionMap E φ hφ) c,
+      pieceChartSectionMap, pullback.lift_snd_assoc, Category.id_comp]
+  rw [glueChartSection, ← AffineSpace.toSpecMvPolyIntEquiv_comp, hcomp, Equiv.apply_symm_apply]
+
+/-- A global function on `S` agreeing with `φ` on every chart of an atlas equals
+`E.glueChartSection φ hφ`. -/
+theorem eq_glueChartSection_of_atlas (A : PointedWeierstrassAtlas E.structureMap E.zero)
+    {x : Γ(S, ⊤)} (hx : ∀ i, (A.chart i).baseMap.appTop x = φ (A.chart i)) :
+    x = E.glueChartSection φ hφ :=
+  A.openCover.ext_elem (U := ⊤) x _ fun i ↦
+    (hx i).trans (E.baseMap_appTop_glueChartSection φ hφ (A.chart i)).symm
+
+/-- **Base change of a glued chart section.** -/
+theorem appTop_glueChartSection_of_forall_chart {S' : Scheme.{u}} (E' : EllipticCurveGeom S')
+    (φ' : ∀ k : PointedWeierstrassChart E'.structureMap E'.zero, Γ(k.base, ⊤))
+    (hφ' : ∀ {k₁ k₂ : PointedWeierstrassChart E'.structureMap E'.zero} {h : k₁.base ⟶ k₂.base},
+      h ≫ k₂.baseMap = k₁.baseMap → h.appTop (φ' k₂) = φ' k₁) (f : S' ⟶ S)
+    (hf : ∀ {k : PointedWeierstrassChart E'.structureMap E'.zero}
+      {c : PointedWeierstrassChart E.structureMap E.zero} {h : k.base ⟶ c.base},
+      h ≫ c.baseMap = k.baseMap ≫ f → h.appTop (φ c) = φ' k) :
+    f.appTop (E.glueChartSection φ hφ) = E'.glueChartSection φ' hφ' := by
+  choose k c h hh hk using E.exists_chart_comp_baseMap E' f
+  refine E'.eq_glueChartSection_of_atlas φ' hφ' ⟨S', k, fun s ↦ ⟨s, hk s⟩⟩ fun s ↦ ?_
+  rw [← CommRingCat.comp_apply, ← Scheme.Hom.comp_appTop, ← hh s, Scheme.Hom.comp_appTop,
+    CommRingCat.comp_apply, E.baseMap_appTop_glueChartSection]
+  exact hf (hh s)
+
+end ChartSection
 
 end EllipticCurveGeom
 

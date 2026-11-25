@@ -181,6 +181,15 @@ theorem isElliptic_freyCurve_iff :
   simp only [IsUnit.mul_iff, isUnit_pow_iff (by norm_num : (4 : ℕ) ≠ 0),
     isUnit_pow_iff (by norm_num : (2 : ℕ) ≠ 0), and_assoc]
 
+/-- The point `(0, 0)` lies on `freyCurve A B`. -/
+theorem equation_freyCurve_zero : (freyCurve A B).toAffine.Equation 0 0 :=
+  Affine.equation_zero.mpr (freyCurve_a₆ A B)
+
+/-- The point `(1, 0)` lies on `freyCurve 1 B`. -/
+theorem equation_freyCurve_one_zero : (freyCurve 1 B).toAffine.Equation 1 0 := by
+  rw [Affine.equation_iff]
+  simp
+
 /-- The Frey curve's equation at `2`: `y² + x y = x³ + (4 β - α) x² - (4 α - 1) β x`. When
 `A = 4 α - 1` and `B = 16 β`, it is obtained from `freyCurve A B` by `x = 4 x'`,
 `y = 8 y' + 4 x'` (`smul_freyCurve_eq_freyCurveModel`), its `c₄` is `A² + A B + B²` and its

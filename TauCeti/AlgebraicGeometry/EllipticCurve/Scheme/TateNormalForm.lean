@@ -63,25 +63,6 @@ namespace WeierstrassCurve
 
 variable {R : Type u} [CommRing R] {W : WeierstrassCurve R}
 
--- The isomorphism `projModel W' ≅ projModel W` induced by a change of variables `C` with
--- `C • W = W'` is pointed, lies over `Spec R`, and carries `[0 : 0 : 1]` to `[r : t : 1]`.
-private theorem projModelVariableChangeIso_eqToHom_spec {W' : WeierstrassCurve R}
-    (C : VariableChange R) (hC : C • W = W') (h₀ : W'.toAffine.Equation 0 0) :
-    (eqToHom (congrArg projModel hC.symm) ≫ (W.projModelVariableChangeIso C).hom) ≫
-        W.projModelOver = W'.projModelOver ∧
-      W'.projModelZero ≫ eqToHom (congrArg projModel hC.symm) ≫
-        (W.projModelVariableChangeIso C).hom = W.projModelZero ∧
-      ∃ hrt : W.toAffine.Equation C.r C.t, W'.projModelAffinePoint h₀ ≫
-        eqToHom (congrArg projModel hC.symm) ≫ (W.projModelVariableChangeIso C).hom =
-          W.projModelAffinePoint hrt := by
-  subst hC
-  have hrt := (Affine.variableChange_equation W C 0 0).mpr h₀
-  simp only [mul_zero, zero_add] at hrt
-  refine ⟨by simp, by simp, hrt, ?_⟩
-  rw [eqToHom_refl, Category.id_comp, projModelAffinePoint_projModelVariableChangeIso_hom,
-    projModelAffinePoint_inj]
-  simp
-
 -- A pointed isomorphism over `Spec R` from the projective model of `W'` to that of `W` is induced
 -- by a change of variables `C` with `C • W = W'`, and it carries `[0 : 0 : 1]` to `[r : t : 1]`.
 private theorem exists_variableChange_of_iso {W' : WeierstrassCurve R}
@@ -92,8 +73,12 @@ private theorem exists_variableChange_of_iso {W' : WeierstrassCurve R}
       e.hom = eqToHom (congrArg projModel hC.symm) ≫ (W.projModelVariableChangeIso C).hom ∧
         W'.projModelAffinePoint h₀ ≫ e.hom = W.projModelAffinePoint hrt := by
   obtain ⟨C, ⟨hC, hCe⟩, -⟩ := existsUnique_eq_eqToHom_comp_projModelVariableChangeIso_hom e he he₀
-  obtain ⟨-, -, hrt, hP⟩ := projModelVariableChangeIso_eqToHom_spec C hC h₀
-  exact ⟨C, hC, hrt, hCe, hCe ▸ hP⟩
+  obtain ⟨-, -, hpt⟩ := eqToHom_projModelVariableChangeIso_hom_spec C hC
+  have hrt : W.toAffine.Equation C.r C.t := by
+    simpa using (Affine.variableChange_equation W C 0 0).mpr (hC ▸ h₀)
+  refine ⟨C, hC, hrt, hCe, ?_⟩
+  rw [hCe, hpt h₀, projModelAffinePoint_inj]
+  simp
 
 variable [W.IsElliptic]
 
@@ -126,11 +111,10 @@ theorem existsUnique_tateNormalForm {P : Spec (.of R) ⟶ W.projModel}
   -- `2P` and `3P` miss the zero section, so `ψ₂(x, y)` and `Ψ₃(x)` are units
   obtain ⟨hψ₂, hΨ₃⟩ := (isUnit_ψ₂_and_isUnit_Ψ₃_iff h).mpr ⟨h₂, h₃⟩
   have hC := toTateNormalForm_smul hψ₂ hΨ₃ h
-  obtain ⟨he, he₀, hrt, heP⟩ := projModelVariableChangeIso_eqToHom_spec _ hC
-    (equation_tateNormalForm_zero _ _)
+  obtain ⟨he, he₀, hpt⟩ := eqToHom_projModelVariableChangeIso_hom_spec _ hC
   refine ⟨(_, _), ⟨eqToIso (congrArg projModel hC.symm) ≪≫
     W.projModelVariableChangeIso (toTateNormalForm hψ₂ hΨ₃), he, he₀, ?_⟩, ?_⟩
-  · rw [Iso.trans_hom, eqToIso.hom, heP, projModelAffinePoint_inj]
+  · rw [Iso.trans_hom, eqToIso.hom, hpt, projModelAffinePoint_inj]
     simp
   · -- any such isomorphism is induced by `toTateNormalForm`, which determines `a` and `b`
     rintro ⟨a, b⟩ ⟨e, he, he₀, heP⟩

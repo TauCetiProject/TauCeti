@@ -5,64 +5,49 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Conormal
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.VariableChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Divisor.FormalPoint
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.VariableChange.Basic
 import TauCeti.Algebra.Regular.SMul
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ZeroSection
 
 /-!
-# The Weierstrass invariant differential on the conormal sheaf of the zero section
+# The Weierstrass invariant differential and adapted `x`-coordinate
 
-Let `W` be an elliptic Weierstrass curve over a commutative ring `R`, with projective model
-`W.projModel` over `Spec R` and zero section `W.projModelZero : Spec R ⟶ W.projModel`. In the
-coordinate `z = -X / Y` at infinity, the formal point
-`W.projModelFormalPoint : Spec R⟦X⟧ ⟶ W.projModel` pulls the zero-section divisor back to the
-principal effective Cartier divisor `(X)` (`zeroSectionDivisor_comap_projModelFormalPoint`).
-Multiplication by `X` therefore defines a global basis of that pulled-back ideal sheaf over
-`Spec R⟦X⟧`; restricting along `X = 0` (`Spec` of `PowerSeries.constantCoeff : R⟦X⟧ →+* R`) yields
-the canonical **Weierstrass differential**
-`W.weierstrassDifferential : 𝟙_ (Spec (.of R)).Modules ≅ W.projModelZero.conormalSheaf`,
-corresponding in local coordinates to `dz = dx / (2y + a₁x + a₃)` (Katz–Mazur, 2.2.4; Silverman,
-III.1 and IV.1).
+For an elliptic Weierstrass curve `W` over `R`, `W.projModelFormalPoint : Spec R⟦X⟧ ⟶ W.projModel`
+pulls `W.projModelZero` back to `(X)` (`zeroSectionDivisor_comap_projModelFormalPoint`).
+Multiplication by `X` defines `W.formalConormalIso` over `Spec R⟦X⟧`
+(`formalConormalIso_hom_comp_map_sheafι`), whose restriction along `X = 0` (`constantCoeff`) is the
+**Weierstrass differential** `W.weierstrassDifferential : 𝟙_ (Spec (.of R)).Modules ≅
+W.projModelZero.conormalSheaf` (`weierstrassDifferential_def`). It is base-change invariant
+(`conormalBasisPullback_weierstrassDifferential_projModelBaseChange`) and scales by `C.u⁻¹` along
+`W.projModelVariableChangeIso C`
+(`conormalBasisPullbackOfIso_weierstrassDifferential_projModelVariableChangeIso`).
 
-Because the comparison is carried out directly on the formal-point divisor `(X)` over `Spec R⟦X⟧`,
-both functoriality laws hold over arbitrary (possibly nonreduced, arbitrary-characteristic)
-coefficient rings without case distinctions:
-* **Base change** (`conormalBasisPullback_weierstrassDifferential_projModelBaseChange`): along any
-  ring homomorphism `φ : R →+* R'`, `W.weierstrassDifferential` pulls back to
-  `(W.map φ).weierstrassDifferential`.
-* **Change of variables**
-  (`conormalBasisPullback_weierstrassDifferential_projModelVariableChangeIso_hom`): along the
-  isomorphism `(C • W).projModel ≅ W.projModel` induced by `C : VariableChange R`
-  (`(x, y) ↦ (u²x + r, u³y + su²x + t)`), the formal parameter transforms by a series with linear
-  coefficient `u⁻¹` (`VariableChange.coeff_one_formalCoordinate`), so `W.weierstrassDifferential`
-  pulls back to `u⁻¹ • (C • W).weierstrassDifferential`.
-
-## Main declarations
-
-* `WeierstrassCurve.projModelFormalPoint_projModelBaseChange`: the formal point commutes with
-  change of coefficient ring;
-* `WeierstrassCurve.projModelFormalPoint_projModelVariableChangeIso_hom`: a Weierstrass change of
-  variables reparametrises the formal point by `C.formalCoordinate W`;
-* `WeierstrassCurve.weierstrassDifferential`: the canonical basis
-  `𝟙_ (Spec (.of R)).Modules ≅ W.projModelZero.conormalSheaf` of an elliptic Weierstrass curve;
-* `WeierstrassCurve.conormalBasisPullback_weierstrassDifferential_projModelBaseChange` and
-  `WeierstrassCurve.conormalBasisPullback_weierstrassDifferential_projModelVariableChangeIso_hom`:
-  its behaviour under base change and Weierstrass changes of variables;
-* `WeierstrassCurve.weierstrassDifferentialScalar`: the unique unit `u : Rˣ` scaling
-  `W.weierstrassDifferential` to a given conormal basis `ω`.
+For sections `P, Q` missing `W.projModelZero` everywhere and `ω = u • W.weierstrassDifferential`
+(`weierstrassDifferentialScalar`), the **`ω`-adapted `x`-coordinate**
+`W.projModelAdaptedXCoord hP hQ hP₀ hQ₀ ω = (u⁻¹)² · (x(Q) - x(P))` is invariant under pointed
+cartesian squares (`map_projModelAdaptedXCoord_of_isPullback`).
 
 ## References
 
-* N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, Annals of Mathematics Studies
-  108, Princeton University Press, 1985, 2.1.6 and 2.2.4.
+* N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, Princeton Univ. Press, 1985,
+  2.1.6, 2.2.4, and 2.2.9.
 * [J. H. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.1 and IV.1.
 -/
 
 public section
 
 open CategoryTheory Limits MonoidalCategory AlgebraicGeometry PowerSeries
+open AlgebraicGeometry.Scheme (ΓSpecIso ΓSpecUnitsMulEquiv SpecMap_appTop_ΓSpecIso_inv)
+open AlgebraicGeometry.Scheme.Modules (unitSmulIso unitSmulIso_hom unitSmulIso_mul unitSmulIso_inj
+  existsUnique_unitSmulIso_eq globalSectionsSmul pullbackObjUnitIso)
+open AlgebraicGeometry.Scheme.Hom (conormalBasisPullback conormalBasisPullback_congr
+  conormalBasisPullback_comp conormalBasisPullback_unitSmulIso
+  conormalBasisPullback_eq_basisPullback conormalBasisPullbackOfIso conormalBasisPullbackOfIso_def
+  conormalBasisPullbackOfIso_congr conormalBasisPullbackOfIso_unitSmulIso)
 
 universe u
 
@@ -72,71 +57,57 @@ noncomputable section
 
 variable {R R' : Type u} [CommRing R] [CommRing R'] (W : WeierstrassCurve R)
 
-/-! ### Functoriality of the formal point -/
-
-/-- Extending scalars along `φ : R →+* R'` carries the formal point `[X : -1 : w(X)]` of `W.map φ`
-to the formal point of `W` along `PowerSeries.map φ`. -/
+/-- Extending scalars along `φ : R →+* R'` carries the formal point of `W.map φ` to that of `W`. -/
 @[reassoc (attr := simp)]
 theorem projModelFormalPoint_projModelBaseChange (φ : R →+* R') :
     (W.map φ).projModelFormalPoint ≫ W.projModelBaseChange φ =
       Spec.map (CommRingCat.ofHom (PowerSeries.map φ)) ≫ W.projModelFormalPoint := by
   rw [projModelFormalPoint_def, projModelFormalPoint_def, projModelPoint_projModelBaseChange,
     SpecMap_projModelPoint, projModelPoint_eq_projModelPoint_iff]
-  refine ⟨by ext; simp, 1, funext fun k ↦ ?_⟩
-  fin_cases k <;> simp [map_formalW]
+  refine ⟨by ext; simp, 1, funext fun k ↦ ?_⟩; fin_cases k <;> simp [map_formalW]
 
 open Matrix in
-/-- The isomorphism `(C • W).projModel ≅ W.projModel` induced by a Weierstrass change of variables
-`C` reparametrises the formal point by `C.formalCoordinate W`. -/
+/-- `(W.projModelVariableChangeIso C).hom` reparametrises the formal point by
+`C.formalCoordinate W`. -/
 @[reassoc]
 theorem projModelFormalPoint_projModelVariableChangeIso_hom (C : VariableChange R) :
     (C • W).projModelFormalPoint ≫ (W.projModelVariableChangeIso C).hom =
       Spec.map (CommRingCat.ofHom (substAlgHom (C.formalCoordinate W).hasSubst).toRingHom) ≫
         W.projModelFormalPoint := by
   let D := C.formalDenom W
-  let d := invOfUnit D (C.u ^ 3)
-  have hDd : D * d = 1 := mul_invOfUnit D (C.u ^ 3) (C.constantCoeff_formalDenom W)
-  let uD : R⟦X⟧ˣ := Units.mkOfMulEqOne D d hDd
+  have hDd : D * invOfUnit D (C.u ^ 3) = 1 :=
+    mul_invOfUnit D (C.u ^ 3) (C.constantCoeff_formalDenom W)
+  let uD : R⟦X⟧ˣ := Units.mkOfMulEqOne D (invOfUnit D (C.u ^ 3)) hDd
   have hj : IsUnit (((C.map (algebraMap R R⟦X⟧)).toMatrix *ᵥ ![X, -1, formalW (C • W)]) 1) := by
     have h1 : ((C.map (algebraMap R R⟦X⟧)).toMatrix *ᵥ ![X, -1, formalW (C • W)]) 1 = -D := by
-      simp [VariableChange.toMatrix_def, D, VariableChange.formalDenom_def]
-      ring
-    rw [h1]
-    exact (C.isUnit_formalDenom W).neg
+      simp [VariableChange.toMatrix_def, D, VariableChange.formalDenom_def]; ring
+    exact h1 ▸ (C.isUnit_formalDenom W).neg
   rw [projModelFormalPoint_def, projModelPoint_projModelVariableChangeIso_hom _ hj,
     SpecMap_substAlgHom_projModelFormalPoint, projModelPoint_eq_projModelPoint_iff]
   refine ⟨rfl, uD, funext fun k ↦ ?_⟩
-  have huD : (uD : R⟦X⟧) = D := rfl
+  have huD : (uD : R⟦X⟧) = D := Units.val_mkOfMulEqOne hDd
   rw [C.subst_formalCoordinate_formalW W, C.formalCoordinate_toPowerSeries W]
   fin_cases k <;>
     simp [VariableChange.toMatrix_def, Units.smul_def, smul_eq_mul, huD, algebraMap_eq]
   · linear_combination -((PowerSeries.C (C.u : R) ^ 2 * X +
       PowerSeries.C C.r * formalW (C • W)) * hDd)
-  · simp only [D, VariableChange.formalDenom_def, map_mul, map_pow]
-    ring
+  · simp only [D, VariableChange.formalDenom_def, map_mul, map_pow]; ring
   · linear_combination -(formalW (C • W) * hDd)
 
-/-! ### The Weierstrass differential via the formal parameter -/
-
-private def formalParamTop (R : Type u) [CommRing R] : Γ(Spec (.of R⟦X⟧), ⊤) :=
-  (Scheme.ΓSpecIso (.of R⟦X⟧)).inv X
-
 private lemma isSMulRegular_formalParamTop (U : (Spec (.of R⟦X⟧)).affineOpens) :
-    IsSMulRegular Γ(Spec (.of R⟦X⟧), U)
-      ((Spec (.of R⟦X⟧)).presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op (formalParamTop R)) := by
-  have hx : IsSMulRegular Γ(Spec (.of R⟦X⟧), ⊤) (formalParamTop R) :=
-    (TauCeti.isSMulRegular_map_iff (Scheme.ΓSpecIso (.of R⟦X⟧)).symm.commRingCatIsoToRingEquiv
-      X).mpr PowerSeries.X_mul_injective
-  exact (isAffineOpen_top (Spec (.of R⟦X⟧))).isSMulRegular_map le_top hx
+    IsSMulRegular Γ(Spec (.of R⟦X⟧), U) ((Spec (.of R⟦X⟧)).presheaf.map
+      (homOfLE (le_top : U.val ≤ ⊤)).op ((ΓSpecIso (.of R⟦X⟧)).inv X)) :=
+  (isAffineOpen_top (Spec (.of R⟦X⟧))).isSMulRegular_map le_top <|
+    (TauCeti.isSMulRegular_map_iff (ΓSpecIso (.of R⟦X⟧)).symm.commRingCatIsoToRingEquiv X).mpr
+      PowerSeries.X_mul_injective
 
 private lemma ideal_ker_comap_projModelFormalPoint (U : (Spec (.of R⟦X⟧)).affineOpens) :
     (W.projModelZero.ker.comap W.projModelFormalPoint).ideal U =
-      Ideal.span (Set.singleton ((Spec (.of R⟦X⟧)).presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op
-        (formalParamTop R))) := by
+      Ideal.span {((Spec (.of R⟦X⟧)).presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op
+        ((ΓSpecIso (.of R⟦X⟧)).inv X))} := by
   rw [← W.zeroSectionDivisor_def, W.zeroSectionDivisor_comap_projModelFormalPoint, Ideal.map_span,
     Set.image_singleton, Scheme.IdealSheafData.ofIdealTop_ideal, Ideal.map_span,
     Set.image_singleton]
-  rfl
 
 private theorem isEffectiveCartier_ker_comap_projModelFormalPoint :
     (W.projModelZero.ker.comap W.projModelFormalPoint).IsEffectiveCartier := by
@@ -145,396 +116,395 @@ private theorem isEffectiveCartier_ker_comap_projModelFormalPoint :
   exact Scheme.IdealSheafData.isEffectiveCartier_ofIdealTop_span_singleton _
     isSMulRegular_formalParamTop
 
-private theorem isEffectiveCartier_ker_projModelZero [W.IsElliptic] :
-    W.projModelZero.ker.IsEffectiveCartier := by
-  rw [← W.zeroSectionDivisor_def]
-  exact W.isRelativeEffectiveCartier_zeroSectionDivisor.isEffectiveCartier
+/-- The zero-section ideal sheaf of an elliptic Weierstrass curve is an effective Cartier
+divisor. -/
+theorem isEffectiveCartier_ker_projModelZero [W.IsElliptic] :
+    W.projModelZero.ker.IsEffectiveCartier :=
+  W.zeroSectionDivisor_def ▸ W.isRelativeEffectiveCartier_zeroSectionDivisor.isEffectiveCartier
 
-/-- Global basis of `(W.projModelZero.ker.comap W.projModelFormalPoint).sheaf` on `Spec R⟦X⟧`
-given by multiplication by the formal parameter `X`. -/
 private def formalZeroIso :
-    𝟙_ (Spec (.of R⟦X⟧)).Modules ≅
-      (W.projModelZero.ker.comap W.projModelFormalPoint).sheaf :=
+    𝟙_ (Spec (.of R⟦X⟧)).Modules ≅ (W.projModelZero.ker.comap W.projModelFormalPoint).sheaf :=
   (W.projModelZero.ker.comap W.projModelFormalPoint).unitIsoOfForallIdealEqSpan
     isSMulRegular_formalParamTop W.ideal_ker_comap_projModelFormalPoint
 
 private lemma formalZeroIso_hom_sheafι :
     W.formalZeroIso.hom ≫ (W.projModelZero.ker.comap W.projModelFormalPoint).sheafι =
-      Scheme.Modules.globalSectionsSmul (𝟙_ (Spec (.of R⟦X⟧)).Modules) (formalParamTop R) := by
-  refine Scheme.Modules.hom_ext _ _ fun U ↦ ?_
-  ext r
+      globalSectionsSmul (𝟙_ (Spec (.of R⟦X⟧)).Modules) ((ΓSpecIso (.of R⟦X⟧)).inv X) := by
+  refine Scheme.Modules.hom_ext _ _ fun U ↦ ?_; ext r
   simp only [Scheme.Modules.globalSectionsSmul_app, Scheme.Modules.smul_apply, formalZeroIso]
-  exact (W.projModelZero.ker.comap
-    W.projModelFormalPoint).sheafι_app_unitIsoOfForallIdealEqSpan_hom
+  exact (W.projModelZero.ker.comap W.projModelFormalPoint).sheafι_app_unitIsoOfForallIdealEqSpan_hom
     isSMulRegular_formalParamTop W.ideal_ker_comap_projModelFormalPoint U r
 
 /-- Global basis of `(W.projModelFormalPoint)^* W.projModelZero.ker.sheaf` on `Spec R⟦X⟧`
-induced by `formalZeroIso` and `isIso_pullbackSheafHom`. -/
-private def formalConormalIso [W.IsElliptic] :
+generated by `X` (`formalConormalIso_hom_comp_map_sheafι`). -/
+def formalConormalIso [W.IsElliptic] :
     𝟙_ (Spec (.of R⟦X⟧)).Modules ≅
       (Scheme.Modules.pullback W.projModelFormalPoint).obj W.projModelZero.ker.sheaf :=
   have := W.projModelZero.ker.isIso_pullbackSheafHom W.projModelFormalPoint
     W.isEffectiveCartier_ker_projModelZero W.isEffectiveCartier_ker_comap_projModelFormalPoint
   W.formalZeroIso ≪≫ (asIso (W.projModelZero.ker.pullbackSheafHom W.projModelFormalPoint)).symm
 
-private lemma formalConormalIso_hom_comp_map_sheafι [W.IsElliptic] :
+/-- Composing `W.formalConormalIso.hom` with the pulled-back ideal inclusion into `𝒪_{Spec R⟦X⟧}`
+is scalar multiplication by `X`. -/
+lemma formalConormalIso_hom_comp_map_sheafι [W.IsElliptic] :
     W.formalConormalIso.hom ≫
         ((Scheme.Modules.pullback W.projModelFormalPoint).map W.projModelZero.ker.sheafι ≫
-          (Scheme.Modules.pullbackObjUnitIso W.projModelFormalPoint).hom) =
-      Scheme.Modules.globalSectionsSmul (𝟙_ (Spec (.of R⟦X⟧)).Modules) (formalParamTop R) := by
+          (pullbackObjUnitIso W.projModelFormalPoint).hom) =
+      globalSectionsSmul (𝟙_ (Spec (.of R⟦X⟧)).Modules) ((ΓSpecIso (.of R⟦X⟧)).inv X) := by
   have := W.projModelZero.ker.isIso_pullbackSheafHom W.projModelFormalPoint
     W.isEffectiveCartier_ker_projModelZero W.isEffectiveCartier_ker_comap_projModelFormalPoint
-  rw [← W.projModelZero.ker.pullbackSheafHom_sheafι W.projModelFormalPoint]
-  exact (Category.assoc _ _ _).trans <|
-    (congrArg (_ ≫ ·) (IsIso.inv_hom_id_assoc
-      (W.projModelZero.ker.pullbackSheafHom W.projModelFormalPoint)
-      (W.projModelZero.ker.comap W.projModelFormalPoint).sheafι)).trans
-    W.formalZeroIso_hom_sheafι
+  let ι : (W.projModelZero.ker.comap W.projModelFormalPoint).sheaf ⟶ 𝟙_ (Spec (.of R⟦X⟧)).Modules :=
+    (W.projModelZero.ker.comap W.projModelFormalPoint).sheafι
+  have hpull : W.projModelZero.ker.pullbackSheafHom W.projModelFormalPoint ≫ ι = _ :=
+    W.projModelZero.ker.pullbackSheafHom_sheafι W.projModelFormalPoint
+  rw [← hpull, formalConormalIso, Iso.trans_hom, Iso.symm_hom, asIso_inv, Category.assoc,
+    IsIso.inv_hom_id_assoc]
+  exact W.formalZeroIso_hom_sheafι
 
-/-- **The Weierstrass invariant differential** of an elliptic Weierstrass curve `W` over `R`: the
-canonical basis `𝟙_ (Spec (.of R)).Modules ≅ W.projModelZero.conormalSheaf` obtained by restricting
-the formal-parameter generator `X` of `W.projModelZero.ker` along `X = 0`. -/
+/-- **The Weierstrass invariant differential** of `W`: the canonical basis
+`𝟙_ (Spec (.of R)).Modules ≅ W.projModelZero.conormalSheaf` (`weierstrassDifferential_def`). -/
 def weierstrassDifferential [W.IsElliptic] :
     𝟙_ (Spec (.of R)).Modules ≅ W.projModelZero.conormalSheaf :=
   W.projModelZero.ker.basisPullback W.projModelZero.ker
     (p := W.projModelFormalPoint) (p' := W.projModelZero)
     (f := Spec.map (CommRingCat.ofHom (constantCoeff (R := R)))) (g := 𝟙 W.projModel)
     (by rw [W.SpecMap_constantCoeff_projModelFormalPoint, Category.comp_id])
-    W.projModelZero.ker.comap_id.symm
-    W.isEffectiveCartier_ker_projModelZero
-    W.isEffectiveCartier_ker_projModelZero
-    W.formalConormalIso
+    W.projModelZero.ker.comap_id.symm W.isEffectiveCartier_ker_projModelZero
+    W.isEffectiveCartier_ker_projModelZero W.formalConormalIso
 
-/-! ### Unified formal-point comparison for base change and variable change -/
+/-- `weierstrassDifferential` is the pullback along `X = 0` of `W.formalConormalIso`. -/
+theorem weierstrassDifferential_def [W.IsElliptic] :
+    W.weierstrassDifferential =
+      W.projModelZero.ker.basisPullback W.projModelZero.ker
+        (p := W.projModelFormalPoint) (p' := W.projModelZero)
+        (f := Spec.map (CommRingCat.ofHom (constantCoeff (R := R)))) (g := 𝟙 W.projModel)
+        (by rw [W.SpecMap_constantCoeff_projModelFormalPoint, Category.comp_id])
+        W.projModelZero.ker.comap_id.symm W.isEffectiveCartier_ker_projModelZero
+        W.isEffectiveCartier_ker_projModelZero W.formalConormalIso := by rfl
 
 section Comparison
 
 variable {W} {W' : WeierstrassCurve R'} [W.IsElliptic] [W'.IsElliptic]
 
-private lemma SpecMap_appTop_ΓSpecIso_inv {A B : Type u} [CommRing A] [CommRing B]
-    (ψ : A →+* B) (a : A) :
-    (Spec.map (CommRingCat.ofHom ψ)).appTop ((Scheme.ΓSpecIso (.of A)).inv a) =
-      (Scheme.ΓSpecIso (.of B)).inv (ψ a) := by
-  have h := Scheme.ΓSpecIso_inv_naturality (CommRingCat.ofHom ψ)
-  exact (ConcreteCategory.comp_apply _ _ a).symm.trans (by rw [← h])
-
 private lemma basisPullback_formalConormalIso {ψ : R⟦X⟧ →+* R'⟦X⟧} {g : W'.projModel ⟶ W.projModel}
-    (hg : W'.projModelFormalPoint ≫ g =
-      Spec.map (CommRingCat.ofHom ψ) ≫ W.projModelFormalPoint)
+    (hg : W'.projModelFormalPoint ≫ g = Spec.map (CommRingCat.ofHom ψ) ≫ W.projModelFormalPoint)
     (hI : W'.projModelZero.ker = W.projModelZero.ker.comap g)
     (v : R'⟦X⟧ˣ) (hψX : ψ X = X * (v : R'⟦X⟧)) :
     W.projModelZero.ker.basisPullback W'.projModelZero.ker hg hI
-        W.isEffectiveCartier_ker_projModelZero
-        W'.isEffectiveCartier_ker_projModelZero
+        W.isEffectiveCartier_ker_projModelZero W'.isEffectiveCartier_ker_projModelZero
         W.formalConormalIso =
-      Scheme.Modules.unitSmulIso
-        (Units.map (Scheme.ΓSpecIso (.of R'⟦X⟧)).inv.hom.toMonoidHom v)
-        W'.formalConormalIso := by
-  let F := Spec.map (CommRingCat.ofHom ψ)
-  let vTop : Γ(Spec (.of R'⟦X⟧), ⊤)ˣ :=
-    Units.map (Scheme.ΓSpecIso (.of R'⟦X⟧)).inv.hom.toMonoidHom v
+      unitSmulIso (ΓSpecUnitsMulEquiv (.of R'⟦X⟧) v) W'.formalConormalIso := by
+  let F := Spec.map (CommRingCat.ofHom ψ); let vTop := ΓSpecUnitsMulEquiv (.of R'⟦X⟧) v
   let μ' := (Scheme.Modules.pullback W'.projModelFormalPoint).map W'.projModelZero.ker.sheafι ≫
-    (Scheme.Modules.pullbackObjUnitIso W'.projModelFormalPoint).hom
-  have hIso : IsIso (W'.projModelZero.ker.pullbackSheafHom W'.projModelFormalPoint) :=
-    W'.projModelZero.ker.isIso_pullbackSheafHom W'.projModelFormalPoint
-      W'.isEffectiveCartier_ker_projModelZero W'.isEffectiveCartier_ker_comap_projModelFormalPoint
-  have hMono : Mono μ' := by
-    dsimp only [μ']
-    rw [← W'.projModelZero.ker.pullbackSheafHom_sheafι W'.projModelFormalPoint]
-    exact mono_comp _ _
-  ext1
-  refine (cancel_mono μ').mp ?_
+    (pullbackObjUnitIso W'.projModelFormalPoint).hom
+  have := W'.projModelZero.ker.isIso_pullbackSheafHom W'.projModelFormalPoint
+    W'.isEffectiveCartier_ker_projModelZero W'.isEffectiveCartier_ker_comap_projModelFormalPoint
+  have : Mono μ' := by
+    dsimp only [μ']; rw [← W'.projModelZero.ker.pullbackSheafHom_sheafι]; exact mono_comp _ _
+  ext1; refine (cancel_mono μ').mp ?_
   have hlhs : (W.projModelZero.ker.basisPullback W'.projModelZero.ker hg hI
-      W.isEffectiveCartier_ker_projModelZero
-      W'.isEffectiveCartier_ker_projModelZero
+      W.isEffectiveCartier_ker_projModelZero W'.isEffectiveCartier_ker_projModelZero
       W.formalConormalIso).hom ≫ μ' =
-      Scheme.Modules.globalSectionsSmul (𝟙_ (Spec (.of R'⟦X⟧)).Modules)
-        (F.appTop (formalParamTop R)) := by
+      globalSectionsSmul (𝟙_ (Spec (.of R'⟦X⟧)).Modules)
+        (F.appTop ((ΓSpecIso (.of R⟦X⟧)).inv X)) := by
     rw [Scheme.IdealSheafData.basisPullback_hom, Category.assoc, Category.assoc,
       W.projModelZero.ker.pullbackComparison_comp_map_sheafι W'.projModelZero.ker hg hI,
       ← Functor.map_comp_assoc, W.formalConormalIso_hom_comp_map_sheafι,
       Scheme.Modules.pullback_map_globalSectionsSmul,
-      ← Scheme.Modules.globalSectionsSmul_naturality_assoc
-        (Scheme.Modules.pullbackObjUnitIso F).inv,
+      ← Scheme.Modules.globalSectionsSmul_naturality_assoc (pullbackObjUnitIso F).inv,
       Iso.inv_hom_id, Category.comp_id]
-  have hrhs : (Scheme.Modules.unitSmulIso vTop W'.formalConormalIso).hom ≫ μ' =
-      Scheme.Modules.globalSectionsSmul (𝟙_ (Spec (.of R'⟦X⟧)).Modules)
-        (formalParamTop R' * (vTop : Γ(Spec (.of R'⟦X⟧), ⊤))) := by
-    rw [Scheme.Modules.unitSmulIso_hom, Category.assoc, W'.formalConormalIso_hom_comp_map_sheafι,
+  have hrhs : (unitSmulIso vTop W'.formalConormalIso).hom ≫ μ' =
+      globalSectionsSmul (𝟙_ (Spec (.of R'⟦X⟧)).Modules)
+        ((ΓSpecIso (.of R'⟦X⟧)).inv X * (vTop : Γ(Spec (.of R'⟦X⟧), ⊤))) := by
+    rw [unitSmulIso_hom, Category.assoc, W'.formalConormalIso_hom_comp_map_sheafι,
       ← Scheme.Modules.globalSectionsSmul_mul]
-  have hval : F.appTop (formalParamTop R) =
-      formalParamTop R' * (vTop : Γ(Spec (.of R'⟦X⟧), ⊤)) := by
-    have hvTop : (vTop : Γ(Spec (.of R'⟦X⟧), ⊤)) = (Scheme.ΓSpecIso (.of R'⟦X⟧)).inv v := rfl
-    dsimp only [F, formalParamTop]
-    rw [hvTop, SpecMap_appTop_ΓSpecIso_inv, hψX, map_mul]
-  rw [hlhs, hrhs, hval]
-
-private lemma conormalBasisPullback_weierstrassDifferential_eq_basisPullback
-    {f : Spec (.of R') ⟶ Spec (.of R)} {g : W'.projModel ⟶ W.projModel}
-    (hg : IsPullback g W'.projModelOver W.projModelOver f)
-    (h₀ : W'.projModelZero ≫ g = f ≫ W.projModelZero)
-    (hI : W'.projModelZero.ker = W.projModelZero.ker.comap g) :
-    Scheme.Hom.conormalBasisPullback W.projModelZero_projModelOver W'.projModelZero_projModelOver
-        hg h₀ W.weierstrassDifferential =
-      W.projModelZero.ker.basisPullback W'.projModelZero.ker
-        (p := W.projModelFormalPoint) (p' := W'.projModelZero)
-        (f := f ≫ Spec.map (CommRingCat.ofHom (constantCoeff (R := R))))
-        (g := g ≫ 𝟙 W.projModel)
-        (by rw [Category.comp_id, h₀, Category.assoc, W.SpecMap_constantCoeff_projModelFormalPoint])
-        (by rw [Category.comp_id, hI])
-        W.isEffectiveCartier_ker_projModelZero W'.isEffectiveCartier_ker_projModelZero
-        W.formalConormalIso := by
-  rw [Scheme.Hom.conormalBasisPullback_eq_basisPullback W.projModelZero_projModelOver
-    W'.projModelZero_projModelOver hg h₀
-    W.isEffectiveCartier_ker_projModelZero W'.isEffectiveCartier_ker_projModelZero]
-  exact W.projModelZero.ker.basisPullback_comp W.projModelZero.ker W'.projModelZero.ker
-    (by rw [W.SpecMap_constantCoeff_projModelFormalPoint, Category.comp_id])
-    W.projModelZero.ker.comap_id.symm h₀ hI
-    (by rw [Category.comp_id, h₀, Category.assoc, W.SpecMap_constantCoeff_projModelFormalPoint])
-    (by rw [Category.comp_id, hI])
-    W.isEffectiveCartier_ker_projModelZero W.isEffectiveCartier_ker_projModelZero
-    W'.isEffectiveCartier_ker_projModelZero W.formalConormalIso
+  have hvTop : (vTop : Γ(Spec (.of R'⟦X⟧), ⊤)) = (ΓSpecIso (.of R'⟦X⟧)).inv v := by
+    dsimp only [vTop]; rw [Scheme.ΓSpecUnitsMulEquiv_apply]; simp [Units.coe_map]
+  rw [hlhs, hrhs]; congr 1; dsimp only [F]; rw [hvTop, SpecMap_appTop_ΓSpecIso_inv]; simp [hψX]
 
 private theorem conormalBasisPullback_weierstrassDifferential_of_formal
     {φ : R →+* R'} {ψ : R⟦X⟧ →+* R'⟦X⟧} {g : W'.projModel ⟶ W.projModel}
     (hg : IsPullback g W'.projModelOver W.projModelOver (Spec.map (CommRingCat.ofHom φ)))
     (h₀ : W'.projModelZero ≫ g = Spec.map (CommRingCat.ofHom φ) ≫ W.projModelZero)
-    (hF : W'.projModelFormalPoint ≫ g =
-      Spec.map (CommRingCat.ofHom ψ) ≫ W.projModelFormalPoint)
+    (hF : W'.projModelFormalPoint ≫ g = Spec.map (CommRingCat.ofHom ψ) ≫ W.projModelFormalPoint)
     (hε : (constantCoeff (R := R')).comp ψ = φ.comp (constantCoeff (R := R)))
     (v : R'⟦X⟧ˣ) (hψX : ψ X = X * (v : R'⟦X⟧)) :
-    Scheme.Hom.conormalBasisPullback W.projModelZero_projModelOver W'.projModelZero_projModelOver
+    conormalBasisPullback W.projModelZero_projModelOver W'.projModelZero_projModelOver
         hg h₀ W.weierstrassDifferential =
-      Scheme.Modules.unitSmulIso
-        (Units.map (Scheme.ΓSpecIso (.of R')).inv.hom.toMonoidHom
-          (Units.map (constantCoeff (R := R')).toMonoidHom v))
+      unitSmulIso (ΓSpecUnitsMulEquiv (.of R') (Units.map (constantCoeff (R := R')).toMonoidHom v))
         W'.weierstrassDifferential := by
-  let f := Spec.map (CommRingCat.ofHom φ)
-  let F := Spec.map (CommRingCat.ofHom ψ)
+  let f := Spec.map (CommRingCat.ofHom φ); let F := Spec.map (CommRingCat.ofHom ψ)
   let ε := Spec.map (CommRingCat.ofHom (constantCoeff (R := R)))
   let ε' := Spec.map (CommRingCat.ofHom (constantCoeff (R := R')))
-  have hI : W'.projModelZero.ker = W.projModelZero.ker.comap g :=
-    Scheme.Hom.ker_eq_comap_of_isPullback_section W.projModelZero_projModelOver
-      W'.projModelZero_projModelOver hg h₀
+  have hI := Scheme.Hom.ker_eq_comap_of_isPullback_section W.projModelZero_projModelOver
+    W'.projModelZero_projModelOver hg h₀
   have hIC := W.isEffectiveCartier_ker_projModelZero
   have hI'C := W'.isEffectiveCartier_ker_projModelZero
   have hεSpec : f ≫ ε = ε' ≫ F := by
     simp only [f, F, ε, ε', ← Spec.map_comp, ← CommRingCat.ofHom_comp, hε]
-  have hpath2 : W.projModelZero.ker.basisPullback W'.projModelZero.ker
-        (p := W.projModelFormalPoint) (p' := W'.projModelZero)
-        (f := ε' ≫ F) (g := 𝟙 W'.projModel ≫ g)
-        (by rw [Category.id_comp, Category.assoc, ← hF,
-          W'.SpecMap_constantCoeff_projModelFormalPoint_assoc])
-        (by rw [Category.id_comp, hI]) hIC hI'C W.formalConormalIso =
-      W'.projModelZero.ker.basisPullback W'.projModelZero.ker
-        (p := W'.projModelFormalPoint) (p' := W'.projModelZero)
-        (f := ε') (g := 𝟙 W'.projModel)
-        (by rw [W'.SpecMap_constantCoeff_projModelFormalPoint, Category.comp_id])
-        W'.projModelZero.ker.comap_id.symm hI'C hI'C
-        (W.projModelZero.ker.basisPullback W'.projModelZero.ker hF hI hIC hI'C
-          W.formalConormalIso) :=
-    (W.projModelZero.ker.basisPullback_comp W'.projModelZero.ker W'.projModelZero.ker
-      hF hI (by rw [W'.SpecMap_constantCoeff_projModelFormalPoint, Category.comp_id])
-      W'.projModelZero.ker.comap_id.symm
+  rw [conormalBasisPullback_eq_basisPullback W.projModelZero_projModelOver
+      W'.projModelZero_projModelOver hg h₀ hIC hI'C, weierstrassDifferential_def,
+    W.projModelZero.ker.basisPullback_comp W.projModelZero.ker W'.projModelZero.ker _ _ h₀ hI
+      (by rw [Category.comp_id, h₀, Category.assoc, W.SpecMap_constantCoeff_projModelFormalPoint])
+      (by rw [Category.comp_id, hI]) hIC hIC hI'C,
+    W.projModelZero.ker.basisPullback_congr W'.projModelZero.ker hεSpec
+      (by simp : g ≫ 𝟙 W.projModel = 𝟙 W'.projModel ≫ g) _ _
       (by rw [Category.id_comp, Category.assoc, ← hF,
         W'.SpecMap_constantCoeff_projModelFormalPoint_assoc])
-      (by rw [Category.id_comp, hI]) hIC hI'C hI'C W.formalConormalIso).symm
-  have hcongr := W.projModelZero.ker.basisPullback_congr W'.projModelZero.ker
-    hεSpec (by simp : g ≫ 𝟙 W.projModel = 𝟙 W'.projModel ≫ g)
-    (by rw [Category.comp_id, h₀, Category.assoc, W.SpecMap_constantCoeff_projModelFormalPoint])
-    (by rw [Category.comp_id, hI])
-    (by rw [Category.id_comp, Category.assoc, ← hF,
-      W'.SpecMap_constantCoeff_projModelFormalPoint_assoc])
-    (by rw [Category.id_comp, hI]) hIC hI'C W.formalConormalIso
-  rw [conormalBasisPullback_weierstrassDifferential_eq_basisPullback hg h₀ hI, hcongr, hpath2,
+      (by rw [Category.id_comp, hI]) hIC hI'C,
+    ← W.projModelZero.ker.basisPullback_comp W'.projModelZero.ker W'.projModelZero.ker hF hI
+      (by rw [W'.SpecMap_constantCoeff_projModelFormalPoint, Category.comp_id])
+      W'.projModelZero.ker.comap_id.symm _ _ hIC hI'C hI'C,
     basisPullback_formalConormalIso hF hI v hψX,
-    Scheme.IdealSheafData.basisPullback_unitSmulIso]
-  congr 1
-  ext1
-  exact SpecMap_appTop_ΓSpecIso_inv (constantCoeff (R := R')) (v : R'⟦X⟧)
+    Scheme.IdealSheafData.basisPullback_unitSmulIso, ← weierstrassDifferential_def]
+  congr 1; ext1; rw [Scheme.ΓSpecUnitsMulEquiv_apply, Scheme.ΓSpecUnitsMulEquiv_apply]
+  simp only [ε', Units.coe_map, MonoidHom.coe_ofClass, RingHom.toMonoidHom_eq_coe]
+  exact SpecMap_appTop_ΓSpecIso_inv (CommRingCat.ofHom (constantCoeff (R := R'))) (v : R'⟦X⟧)
 
 end Comparison
 
-/-- **Base change of the Weierstrass differential.** Along `φ : R →+* R'`, the Weierstrass
-differential of `W` pulls back to that of `W.map φ`. -/
+/-- **Base change of the Weierstrass differential.** -/
 @[simp]
 theorem conormalBasisPullback_weierstrassDifferential_projModelBaseChange [W.IsElliptic]
     (φ : R →+* R') :
-    have : (W.map φ).IsElliptic := inferInstance
-    Scheme.Hom.conormalBasisPullback W.projModelZero_projModelOver
-        (W.map φ).projModelZero_projModelOver
-        (W.isPullback_projModelBaseChange φ)
-        (W.projModelZero_projModelBaseChange φ)
-        W.weierstrassDifferential =
-      (W.map φ).weierstrassDifferential := by
-  let _ : (W.map φ).IsElliptic := inferInstance
-  have h := conormalBasisPullback_weierstrassDifferential_of_formal
-    (W := W) (W' := W.map φ) (φ := φ) (ψ := PowerSeries.map φ)
+    conormalBasisPullback W.projModelZero_projModelOver (W.map φ).projModelZero_projModelOver
+        (W.isPullback_projModelBaseChange φ) (W.projModelZero_projModelBaseChange φ)
+        W.weierstrassDifferential = (W.map φ).weierstrassDifferential := by
+  simpa using conormalBasisPullback_weierstrassDifferential_of_formal (W := W) (W' := W.map φ)
     (W.isPullback_projModelBaseChange φ) (W.projModelZero_projModelBaseChange φ)
     (W.projModelFormalPoint_projModelBaseChange φ)
     (by ext; simp [← PowerSeries.coeff_zero_eq_constantCoeff]) 1 (by simp)
-  simpa using h
 
-/-- **Transformation of the Weierstrass differential under a change of variables.** Along the
-isomorphism `(C • W).projModel ≅ W.projModel` induced by `C : VariableChange R`, the Weierstrass
-differential `W.weierstrassDifferential` pulls back to `C.u⁻¹ • (C • W).weierstrassDifferential`
-(Silverman, III.1; Katz–Mazur, 2.2.4). -/
-theorem conormalBasisPullback_weierstrassDifferential_projModelVariableChangeIso_hom [W.IsElliptic]
-    (C : VariableChange R) :
-    Scheme.Hom.conormalBasisPullback (f := 𝟙 (Spec (.of R)))
-        (g := (W.projModelVariableChangeIso C).hom)
-        W.projModelZero_projModelOver (C • W).projModelZero_projModelOver
-        (IsPullback.of_horiz_isIso ⟨by simp⟩)
-        (by rw [W.projModelZero_projModelVariableChangeIso_hom C, Category.id_comp])
-        W.weierstrassDifferential =
-      Scheme.Modules.unitSmulIso
-        (Units.map (Scheme.ΓSpecIso (.of R)).inv.hom.toMonoidHom C.u⁻¹)
-        (C • W).weierstrassDifferential := by
+/-- **Transformation of the Weierstrass differential under a change of variables.** -/
+theorem conormalBasisPullbackOfIso_weierstrassDifferential_projModelVariableChangeIso
+    [W.IsElliptic] (C : VariableChange R) :
+    conormalBasisPullbackOfIso W.projModelZero_projModelOver (C • W).projModelZero_projModelOver
+        (W.projModelVariableChangeIso C) (W.projModelVariableChangeIso_hom_projModelOver C)
+        (W.projModelZero_projModelVariableChangeIso_hom C) W.weierstrassDifferential =
+      unitSmulIso (ΓSpecUnitsMulEquiv (.of R) C.u⁻¹) (C • W).weierstrassDifferential := by
   obtain ⟨v₀, hv₀⟩ := PowerSeries.X_dvd_iff.mpr (C.formalCoordinate W).constantCoeff_toPowerSeries
   have hv₀_const : constantCoeff v₀ = (↑C.u⁻¹ : R) := by
     have h1 := C.coeff_one_formalCoordinate W
     rwa [hv₀, coeff_succ_X_mul, coeff_zero_eq_constantCoeff] at h1
-  have hv₀_unit : IsUnit v₀ :=
-    isUnit_iff_constantCoeff.mpr (hv₀_const ▸ C.u⁻¹.isUnit)
-  let v : R⟦X⟧ˣ := hv₀_unit.unit
-  have hv_val : (v : R⟦X⟧) = v₀ := hv₀_unit.unit_spec
+  have hv₀_unit : IsUnit v₀ := isUnit_iff_constantCoeff.mpr (hv₀_const ▸ C.u⁻¹.isUnit)
+  let v : R⟦X⟧ˣ := hv₀_unit.unit; have hv_val : (v : R⟦X⟧) = v₀ := hv₀_unit.unit_spec
   have hε : (constantCoeff (R := R)).comp (substAlgHom (C.formalCoordinate W).hasSubst).toRingHom =
       (RingHom.id R).comp (constantCoeff (R := R)) := by
-    ext p
-    simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    ext p; simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
       coe_substAlgHom, RingHom.id_apply]
     exact constantCoeff_subst_of_constantCoeff_zero
       (C.formalCoordinate W).constantCoeff_toPowerSeries p
   have hId : Spec.map (CommRingCat.ofHom (RingHom.id R)) = 𝟙 (Spec (.of R)) := by
     rw [CommRingCat.ofHom_id, Spec.map_id]
   have hsq : IsPullback (W.projModelVariableChangeIso C).hom (C • W).projModelOver
-      W.projModelOver (Spec.map (CommRingCat.ofHom (RingHom.id R))) := by
-    rw [hId]
-    exact IsPullback.of_horiz_isIso ⟨by simp⟩
+      W.projModelOver (Spec.map (CommRingCat.ofHom (RingHom.id R))) :=
+    hId.symm ▸ .of_horiz_isIso ⟨by simp⟩
   have h₀ : (C • W).projModelZero ≫ (W.projModelVariableChangeIso C).hom =
       Spec.map (CommRingCat.ofHom (RingHom.id R)) ≫ W.projModelZero := by
     rw [hId, W.projModelZero_projModelVariableChangeIso_hom C, Category.id_comp]
-  have key := conormalBasisPullback_weierstrassDifferential_of_formal
-    (W := W) (W' := C • W) (φ := RingHom.id R)
-    (ψ := (substAlgHom (C.formalCoordinate W).hasSubst).toRingHom)
-    hsq h₀ (W.projModelFormalPoint_projModelVariableChangeIso_hom C) hε v
-    (by simp [substAlgHom_X, ← hv₀, hv_val])
-  have hcongr := Scheme.Hom.conormalBasisPullback_congr
-    (f₁ := 𝟙 (Spec (.of R))) (g₁ := (W.projModelVariableChangeIso C).hom)
-    W.projModelZero_projModelOver (C • W).projModelZero_projModelOver hId.symm rfl
-    (IsPullback.of_horiz_isIso ⟨by simp⟩)
-    (by rw [W.projModelZero_projModelVariableChangeIso_hom C, Category.id_comp])
-    hsq h₀ W.weierstrassDifferential
-  rw [hcongr, key]
-  congr 2
-  ext
-  simp [hv_val, hv₀_const]
-
-/-! ### Scalar comparison with the Weierstrass differential -/
+  rw [conormalBasisPullbackOfIso_def, conormalBasisPullback_congr W.projModelZero_projModelOver
+      (C • W).projModelZero_projModelOver hId.symm rfl _ _ hsq h₀,
+    conormalBasisPullback_weierstrassDifferential_of_formal hsq h₀
+      (W.projModelFormalPoint_projModelVariableChangeIso_hom C) hε v
+      (by simp [substAlgHom_X, ← hv₀, hv_val])]
+  congr 2; ext; simp [hv_val, hv₀_const]
 
 section Scalar
 
 variable {W} [W.IsElliptic]
 
-private def specUnitsMulEquiv (A : Type u) [CommRing A] : Aˣ ≃* Γ(Spec (.of A), ⊤)ˣ :=
-  Units.mapEquiv (Scheme.ΓSpecIso (.of A)).symm.commRingCatIsoToRingEquiv.toMulEquiv
-
-private lemma specUnitsMulEquiv_apply (A : Type u) [CommRing A] (u : Aˣ) :
-    specUnitsMulEquiv A u = Units.map ↑(Scheme.ΓSpecIso (.of A)).inv.hom u :=
-  rfl
-
 variable (W) in
-/-- The unique unit `u : Rˣ` such that a conormal basis
-`ω : 𝟙_ (Spec (.of R)).Modules ≅ W.projModelZero.conormalSheaf` equals
-`u • W.weierstrassDifferential`. -/
+/-- The unique unit `u : Rˣ` such that `ω = u • W.weierstrassDifferential`. -/
 def weierstrassDifferentialScalar
     (ω : 𝟙_ (Spec (.of R)).Modules ≅ W.projModelZero.conormalSheaf) : Rˣ :=
-  (specUnitsMulEquiv R).symm
-    (Scheme.Modules.existsUnique_unitSmulIso_eq ω W.weierstrassDifferential).choose
+  (ΓSpecUnitsMulEquiv (.of R)).symm (existsUnique_unitSmulIso_eq ω W.weierstrassDifferential).choose
 
 /-- Rescaling `W.weierstrassDifferential` by `W.weierstrassDifferentialScalar ω` recovers `ω`. -/
 @[simp]
 theorem unitSmulIso_weierstrassDifferentialScalar
     (ω : 𝟙_ (Spec (.of R)).Modules ≅ W.projModelZero.conormalSheaf) :
-    Scheme.Modules.unitSmulIso
-        (Units.map ↑(Scheme.ΓSpecIso (.of R)).inv.hom
-          (W.weierstrassDifferentialScalar ω))
+    unitSmulIso (ΓSpecUnitsMulEquiv (.of R) (W.weierstrassDifferentialScalar ω))
         W.weierstrassDifferential = ω := by
-  rw [← specUnitsMulEquiv_apply, weierstrassDifferentialScalar, MulEquiv.apply_symm_apply]
-  exact (Scheme.Modules.existsUnique_unitSmulIso_eq ω W.weierstrassDifferential).choose_spec.1
+  rw [weierstrassDifferentialScalar, MulEquiv.apply_symm_apply]
+  exact (existsUnique_unitSmulIso_eq ω W.weierstrassDifferential).choose_spec.1
 
-/-- A unit `u : Rˣ` equals `W.weierstrassDifferentialScalar ω` if and only if
-`u • W.weierstrassDifferential = ω`. -/
+/-- `u = W.weierstrassDifferentialScalar ω` if and only if `u • W.weierstrassDifferential = ω`. -/
 theorem eq_weierstrassDifferentialScalar_iff {u : Rˣ}
     {ω : 𝟙_ (Spec (.of R)).Modules ≅ W.projModelZero.conormalSheaf} :
     u = W.weierstrassDifferentialScalar ω ↔
-      Scheme.Modules.unitSmulIso (Units.map ↑(Scheme.ΓSpecIso (.of R)).inv.hom u)
-        W.weierstrassDifferential = ω := by
-  refine ⟨fun h ↦ h ▸ W.unitSmulIso_weierstrassDifferentialScalar ω, fun h ↦ ?_⟩
-  exact (specUnitsMulEquiv R).injective
-    ((Scheme.Modules.unitSmulIso_inj _ _ W.weierstrassDifferential).mp
-      (h.trans (W.unitSmulIso_weierstrassDifferentialScalar ω).symm))
+      unitSmulIso (ΓSpecUnitsMulEquiv (.of R) u) W.weierstrassDifferential = ω :=
+  ⟨fun h ↦ h ▸ W.unitSmulIso_weierstrassDifferentialScalar ω, fun h ↦
+    (ΓSpecUnitsMulEquiv (.of R)).injective ((unitSmulIso_inj _ _ W.weierstrassDifferential).mp
+      (h.trans (W.unitSmulIso_weierstrassDifferentialScalar ω).symm))⟩
 
-/-- The canonical Weierstrass differential has scalar `1` relative to itself. -/
+/-- `W.weierstrassDifferential` has scalar `1` relative to itself. -/
 @[simp]
 theorem weierstrassDifferentialScalar_weierstrassDifferential :
     W.weierstrassDifferentialScalar W.weierstrassDifferential = 1 :=
   (eq_weierstrassDifferentialScalar_iff.mpr (by simp)).symm
 
-/-- Rescaling a conormal basis `ω` by a unit `u : Rˣ` multiplies its Weierstrass differential scalar
-by `u`. -/
+/-- Rescaling `ω` by `u : Rˣ` multiplies `weierstrassDifferentialScalar` by `u`. -/
 @[simp]
 theorem weierstrassDifferentialScalar_unitSmulIso (u : Rˣ)
     (ω : 𝟙_ (Spec (.of R)).Modules ≅ W.projModelZero.conormalSheaf) :
-    W.weierstrassDifferentialScalar
-        (Scheme.Modules.unitSmulIso
-          (Units.map ↑(Scheme.ΓSpecIso (.of R)).inv.hom u) ω) =
+    W.weierstrassDifferentialScalar (unitSmulIso (ΓSpecUnitsMulEquiv (.of R) u) ω) =
       u * W.weierstrassDifferentialScalar ω := by
-  symm
-  rw [eq_weierstrassDifferentialScalar_iff, map_mul, Scheme.Modules.unitSmulIso_mul,
+  symm; rw [eq_weierstrassDifferentialScalar_iff, map_mul, unitSmulIso_mul,
     W.unitSmulIso_weierstrassDifferentialScalar]
 
-/-- Pulling back a conormal basis `ω` along the base change induced by `φ : R →+* R'` maps its
-Weierstrass differential scalar along `φ`. -/
+/-- Pulling `ω` back along `φ : R →+* R'` maps `weierstrassDifferentialScalar` along `φ`. -/
 @[simp]
 theorem weierstrassDifferentialScalar_conormalBasisPullback_projModelBaseChange
     (φ : R →+* R') (ω : 𝟙_ (Spec (.of R)).Modules ≅ W.projModelZero.conormalSheaf) :
     (W.map φ).weierstrassDifferentialScalar
-        (Scheme.Hom.conormalBasisPullback W.projModelZero_projModelOver
-          (W.map φ).projModelZero_projModelOver (W.isPullback_projModelBaseChange φ)
-          (W.projModelZero_projModelBaseChange φ) ω) =
+        (conormalBasisPullback W.projModelZero_projModelOver (W.map φ).projModelZero_projModelOver
+          (W.isPullback_projModelBaseChange φ) (W.projModelZero_projModelBaseChange φ) ω) =
       Units.map φ.toMonoidHom (W.weierstrassDifferentialScalar ω) := by
-  symm
-  rw [eq_weierstrassDifferentialScalar_iff]
+  symm; rw [eq_weierstrassDifferentialScalar_iff]
   conv_rhs => rw [← W.unitSmulIso_weierstrassDifferentialScalar ω]
-  rw [Scheme.Hom.conormalBasisPullback_unitSmulIso,
+  rw [conormalBasisPullback_unitSmulIso,
     W.conormalBasisPullback_weierstrassDifferential_projModelBaseChange φ]
-  congr 1
-  ext1
-  exact (SpecMap_appTop_ΓSpecIso_inv φ (W.weierstrassDifferentialScalar ω : R)).symm
+  congr 1; ext1; rw [Scheme.ΓSpecUnitsMulEquiv_apply, Scheme.ΓSpecUnitsMulEquiv_apply]
+  simp only [Units.coe_map, MonoidHom.coe_ofClass, RingHom.toMonoidHom_eq_coe]
+  exact (SpecMap_appTop_ΓSpecIso_inv (CommRingCat.ofHom φ)
+    (W.weierstrassDifferentialScalar ω : R)).symm
 
-/-- Under a Weierstrass change of variables `C : VariableChange R`, the Weierstrass differential
-scalar of the pulled-back conormal basis is multiplied by `C.u⁻¹`. -/
-theorem weierstrassDifferentialScalar_conormalBasisPullback_projModelVariableChangeIso_hom
+/-- Under `C : VariableChange R`, `weierstrassDifferentialScalar` is multiplied by `C.u⁻¹`. -/
+theorem weierstrassDifferentialScalar_conormalBasisPullbackOfIso_projModelVariableChangeIso
     (C : VariableChange R) (ω : 𝟙_ (Spec (.of R)).Modules ≅ W.projModelZero.conormalSheaf) :
     (C • W).weierstrassDifferentialScalar
-        (Scheme.Hom.conormalBasisPullback (f := 𝟙 (Spec (.of R)))
-          (g := (W.projModelVariableChangeIso C).hom)
-          W.projModelZero_projModelOver (C • W).projModelZero_projModelOver
-          (IsPullback.of_horiz_isIso ⟨by simp⟩)
-          (by rw [W.projModelZero_projModelVariableChangeIso_hom C, Category.id_comp]) ω) =
+        (conormalBasisPullbackOfIso W.projModelZero_projModelOver
+          (C • W).projModelZero_projModelOver (W.projModelVariableChangeIso C)
+          (W.projModelVariableChangeIso_hom_projModelOver C)
+          (W.projModelZero_projModelVariableChangeIso_hom C) ω) =
       W.weierstrassDifferentialScalar ω * C.u⁻¹ := by
-  symm
-  rw [eq_weierstrassDifferentialScalar_iff]
+  symm; rw [eq_weierstrassDifferentialScalar_iff]
   conv_rhs => rw [← W.unitSmulIso_weierstrassDifferentialScalar ω]
-  rw [Scheme.Hom.conormalBasisPullback_unitSmulIso,
-    W.conormalBasisPullback_weierstrassDifferential_projModelVariableChangeIso_hom C,
-    ← Scheme.Modules.unitSmulIso_mul]
-  congr 1
-  ext1
-  simp
+  rw [conormalBasisPullbackOfIso_unitSmulIso,
+    W.conormalBasisPullbackOfIso_weierstrassDifferential_projModelVariableChangeIso C,
+    ← unitSmulIso_mul, ← map_mul]
 
 end Scalar
+
+section AdaptedXCoord
+
+section Def
+
+variable [W.IsElliptic] {P Q : Spec (.of R) ⟶ W.projModel} (hP : P ≫ W.projModelOver = 𝟙 _)
+  (hQ : Q ≫ W.projModelOver = 𝟙 _) (hP₀ : ∀ s, P s ≠ W.projModelZero s)
+  (hQ₀ : ∀ s, Q s ≠ W.projModelZero s)
+  (ω : 𝟙_ (Spec (.of R)).Modules ≅ W.projModelZero.conormalSheaf)
+
+/-- **The `ω`-adapted `x`-coordinate** `(u⁻¹)² · (x₂ - x₁)` of `Q` relative to `P` and `ω`. -/
+def projModelAdaptedXCoord : R :=
+  (↑(W.weierstrassDifferentialScalar ω)⁻¹ : R) ^ 2 *
+    (W.projModelSectionX hQ hQ₀ - W.projModelSectionX hP hP₀)
+
+/-- Explicit formula `(u⁻¹)² · (x₂ - x₁)` for `projModelAdaptedXCoord` on affine points. -/
+theorem projModelAdaptedXCoord_eq_of_eq_projModelAffinePoint {x₁ y₁ x₂ y₂ : R}
+    (h₁ : W.toAffine.Equation x₁ y₁) (h₂ : W.toAffine.Equation x₂ y₂)
+    (hP' : P = W.projModelAffinePoint h₁) (hQ' : Q = W.projModelAffinePoint h₂) :
+    W.projModelAdaptedXCoord hP hQ hP₀ hQ₀ ω =
+      (↑(W.weierstrassDifferentialScalar ω)⁻¹ : R) ^ 2 * (x₂ - x₁) := by
+  rw [projModelAdaptedXCoord, W.projModelSectionX_eq_of_eq_projModelAffinePoint hP hP₀ h₁ hP',
+    W.projModelSectionX_eq_of_eq_projModelAffinePoint hQ hQ₀ h₂ hQ']
+
+/-- On affine points `P = [x₁ : y₁ : 1]` and `Q = [x₂ : y₂ : 1]`, `projModelAdaptedXCoord = 1` iff
+`x₂ - x₁ = (W.weierstrassDifferentialScalar ω)²`. -/
+theorem projModelAdaptedXCoord_eq_one_iff_of_eq_projModelAffinePoint {x₁ y₁ x₂ y₂ : R}
+    (h₁ : W.toAffine.Equation x₁ y₁) (h₂ : W.toAffine.Equation x₂ y₂)
+    (hP' : P = W.projModelAffinePoint h₁) (hQ' : Q = W.projModelAffinePoint h₂) :
+    W.projModelAdaptedXCoord hP hQ hP₀ hQ₀ ω = 1 ↔
+      x₂ - x₁ = (W.weierstrassDifferentialScalar ω : R) ^ 2 := by
+  rw [W.projModelAdaptedXCoord_eq_of_eq_projModelAffinePoint hP hQ hP₀ hQ₀ ω h₁ h₂ hP' hQ']
+  set u := W.weierstrassDifferentialScalar ω; have hu : (u : R) * (↑u⁻¹ : R) = 1 := u.mul_inv
+  exact ⟨fun h ↦ by linear_combination (u : R) ^ 2 * h - (x₂ - x₁) * ((u : R) * ↑u⁻¹ + 1) * hu,
+    fun h ↦ by linear_combination (↑u⁻¹ : R) ^ 2 * h + ((u : R) * ↑u⁻¹ + 1) * hu⟩
+
+end Def
+
+variable {W} {W' : WeierstrassCurve R'} [W.IsElliptic] [W'.IsElliptic]
+
+private theorem projModelAdaptedXCoord_eq_of_iso {W₁ W₂ : WeierstrassCurve R}
+    [W₁.IsElliptic] [W₂.IsElliptic] (e : W₁.projModel ≅ W₂.projModel)
+    (he : e.hom ≫ W₂.projModelOver = W₁.projModelOver)
+    (h0 : W₁.projModelZero ≫ e.hom = W₂.projModelZero)
+    {P₁ Q₁ : Spec (.of R) ⟶ W₁.projModel} {P₂ Q₂ : Spec (.of R) ⟶ W₂.projModel}
+    (hP₁ : P₁ ≫ W₁.projModelOver = 𝟙 _) (hQ₁ : Q₁ ≫ W₁.projModelOver = 𝟙 _)
+    (hP₁₀ : ∀ s, P₁ s ≠ W₁.projModelZero s) (hQ₁₀ : ∀ s, Q₁ s ≠ W₁.projModelZero s)
+    (hP₂ : P₂ ≫ W₂.projModelOver = 𝟙 _) (hQ₂ : Q₂ ≫ W₂.projModelOver = 𝟙 _)
+    (hP₂₀ : ∀ s, P₂ s ≠ W₂.projModelZero s) (hQ₂₀ : ∀ s, Q₂ s ≠ W₂.projModelZero s)
+    (hPe : P₁ ≫ e.hom = P₂) (hQe : Q₁ ≫ e.hom = Q₂)
+    (ω₂ : 𝟙_ (Spec (.of R)).Modules ≅ W₂.projModelZero.conormalSheaf) :
+    W₁.projModelAdaptedXCoord hP₁ hQ₁ hP₁₀ hQ₁₀
+        (conormalBasisPullbackOfIso W₂.projModelZero_projModelOver W₁.projModelZero_projModelOver
+          e he h0 ω₂) = W₂.projModelAdaptedXCoord hP₂ hQ₂ hP₂₀ hQ₂₀ ω₂ := by
+  obtain ⟨C, ⟨rfl, heC⟩, -⟩ := existsUnique_eq_eqToHom_comp_projModelVariableChangeIso_hom e he h0
+  have he' : e.hom = (W₂.projModelVariableChangeIso C).hom := by simpa using heC
+  obtain ⟨x₁, y₁, h₁, rfl⟩ := (C • W₂).exists_eq_projModelAffinePoint hP₁ hP₁₀
+  obtain ⟨x₂, y₂, h₂, rfl⟩ := (C • W₂).exists_eq_projModelAffinePoint hQ₁ hQ₁₀
+  have hP₂' : P₂ = W₂.projModelAffinePoint ((Affine.variableChange_equation W₂ C x₁ y₁).mpr h₁) :=
+    by rw [← hPe, he', projModelAffinePoint_projModelVariableChangeIso_hom]
+  have hQ₂' : Q₂ = W₂.projModelAffinePoint ((Affine.variableChange_equation W₂ C x₂ y₂).mpr h₂) :=
+    by rw [← hQe, he', projModelAffinePoint_projModelVariableChangeIso_hom]
+  rw [(C • W₂).projModelAdaptedXCoord_eq_of_eq_projModelAffinePoint hP₁ hQ₁ hP₁₀ hQ₁₀ _
+      h₁ h₂ rfl rfl,
+    W₂.projModelAdaptedXCoord_eq_of_eq_projModelAffinePoint hP₂ hQ₂ hP₂₀ hQ₂₀ ω₂ _ _ hP₂' hQ₂',
+    conormalBasisPullbackOfIso_congr W₂.projModelZero_projModelOver
+      (C • W₂).projModelZero_projModelOver he' he h0
+      (W₂.projModelVariableChangeIso_hom_projModelOver C)
+      (W₂.projModelZero_projModelVariableChangeIso_hom C) ω₂,
+    W₂.weierstrassDifferentialScalar_conormalBasisPullbackOfIso_projModelVariableChangeIso C ω₂]
+  simp only [mul_inv_rev, inv_inv, Units.val_mul]; ring
+
+/-- **Invariance of `projModelAdaptedXCoord` under pointed base change.** -/
+theorem map_projModelAdaptedXCoord_of_isPullback {φ : R' →+* R} {F : W.projModel ⟶ W'.projModel}
+    (hF : IsPullback F W.projModelOver W'.projModelOver (Spec.map (CommRingCat.ofHom φ)))
+    (h0 : W.projModelZero ≫ F = Spec.map (CommRingCat.ofHom φ) ≫ W'.projModelZero)
+    {P Q : Spec (.of R) ⟶ W.projModel} {P' Q' : Spec (.of R') ⟶ W'.projModel}
+    (hP : P ≫ W.projModelOver = 𝟙 _) (hQ : Q ≫ W.projModelOver = 𝟙 _)
+    (hP₀ : ∀ s, P s ≠ W.projModelZero s) (hQ₀ : ∀ s, Q s ≠ W.projModelZero s)
+    (hP' : P' ≫ W'.projModelOver = 𝟙 _) (hQ' : Q' ≫ W'.projModelOver = 𝟙 _)
+    (hP'₀ : ∀ s, P' s ≠ W'.projModelZero s) (hQ'₀ : ∀ s, Q' s ≠ W'.projModelZero s)
+    (hPF : P ≫ F = Spec.map (CommRingCat.ofHom φ) ≫ P')
+    (hQF : Q ≫ F = Spec.map (CommRingCat.ofHom φ) ≫ Q')
+    (ω' : 𝟙_ (Spec (.of R')).Modules ≅ W'.projModelZero.conormalSheaf) :
+    φ (W'.projModelAdaptedXCoord hP' hQ' hP'₀ hQ'₀ ω') =
+      W.projModelAdaptedXCoord hP hQ hP₀ hQ₀
+        (conormalBasisPullback W'.projModelZero_projModelOver W.projModelZero_projModelOver
+          hF h0 ω') := by
+  have hB := W'.isPullback_projModelBaseChange φ; let e := hF.isoIsPullback _ _ hB
+  have he : e.hom ≫ (W'.map φ).projModelOver = W.projModelOver := hF.isoIsPullback_hom_snd _ _ hB
+  have hF' : e.hom ≫ W'.projModelBaseChange φ = F := hF.isoIsPullback_hom_fst _ _ hB
+  have h0' : W.projModelZero ≫ e.hom = (W'.map φ).projModelZero :=
+    hB.hom_ext (by simp [hF', h0, projModelZero_projModelBaseChange]) (by simp [he])
+  obtain ⟨x₁', y₁', h₁', rfl⟩ := W'.exists_eq_projModelAffinePoint hP' hP'₀
+  obtain ⟨x₂', y₂', h₂', rfl⟩ := W'.exists_eq_projModelAffinePoint hQ' hQ'₀
+  have hPe : P ≫ e.hom = (W'.map φ).projModelAffinePoint (h₁'.map φ) := hB.hom_ext
+    (by rw [Category.assoc, hF', hPF, projModelAffinePoint_projModelBaseChange]) (by simp [he, hP])
+  have hQe : Q ≫ e.hom = (W'.map φ).projModelAffinePoint (h₂'.map φ) := hB.hom_ext
+    (by rw [Category.assoc, hF', hQF, projModelAffinePoint_projModelBaseChange]) (by simp [he, hQ])
+  have hP_φ₀ := (W'.map φ).projModelAffinePoint_apply_ne_projModelZero (h₁'.map φ)
+  have hQ_φ₀ := (W'.map φ).projModelAffinePoint_apply_ne_projModelZero (h₂'.map φ)
+  have hbase : φ (W'.projModelAdaptedXCoord hP' hQ' hP'₀ hQ'₀ ω') =
+      (W'.map φ).projModelAdaptedXCoord (projModelAffinePoint_projModelOver _)
+        (projModelAffinePoint_projModelOver _) hP_φ₀ hQ_φ₀
+        (conormalBasisPullback W'.projModelZero_projModelOver (W'.map φ).projModelZero_projModelOver
+          hB (W'.projModelZero_projModelBaseChange φ) ω') := by
+    rw [W'.projModelAdaptedXCoord_eq_of_eq_projModelAffinePoint hP' hQ' hP'₀ hQ'₀ ω'
+        h₁' h₂' rfl rfl,
+      (W'.map φ).projModelAdaptedXCoord_eq_of_eq_projModelAffinePoint _ _ hP_φ₀ hQ_φ₀ _
+        (h₁'.map φ) (h₂'.map φ) rfl rfl,
+      W'.weierstrassDifferentialScalar_conormalBasisPullback_projModelBaseChange φ ω']
+    simp [Units.coe_map_inv]
+  rw [hbase, ← projModelAdaptedXCoord_eq_of_iso e he h0' hP hQ hP₀ hQ₀
+      (projModelAffinePoint_projModelOver _) (projModelAffinePoint_projModelOver _) hP_φ₀ hQ_φ₀
+      hPe hQe _, conormalBasisPullbackOfIso_def, conormalBasisPullback_comp]
+  exact congrArg (W.projModelAdaptedXCoord hP hQ hP₀ hQ₀)
+    (conormalBasisPullback_congr W'.projModelZero_projModelOver W.projModelZero_projModelOver
+      (Category.id_comp _) hF' _ _ hF h0 ω')
+
+end AdaptedXCoord
 
 end
 

@@ -566,6 +566,21 @@ theorem projModelAffinePoint_projModelVariableChangeIso_hom (C : VariableChange 
     ring
   · simp [VariableChange.toMatrix_def, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
 
+/-- The isomorphism `projModel W' ≅ projModel W` induced by a change of variables `C` with
+`C • W = W'` lies over `Spec R`, carries the zero section to the zero section, and carries
+`[x : y : 1]` to `[u²x + r : u³y + u²sx + t : 1]`. -/
+theorem eqToHom_projModelVariableChangeIso_hom_spec {W' : WeierstrassCurve R}
+    (C : VariableChange R) (hC : C • W = W') :
+    (eqToHom (congrArg projModel hC.symm) ≫ (W.projModelVariableChangeIso C).hom) ≫
+        W.projModelOver = W'.projModelOver ∧
+      W'.projModelZero ≫ eqToHom (congrArg projModel hC.symm) ≫
+        (W.projModelVariableChangeIso C).hom = W.projModelZero ∧
+      ∀ {x y : R} (h : W'.toAffine.Equation x y), W'.projModelAffinePoint h ≫
+        eqToHom (congrArg projModel hC.symm) ≫ (W.projModelVariableChangeIso C).hom =
+          W.projModelAffinePoint ((Affine.variableChange_equation W C x y).mpr (hC ▸ h)) := by
+  subst hC
+  exact ⟨by simp, by simp, fun _ ↦ by simp⟩
+
 end AffinePoint
 
 open Classical in

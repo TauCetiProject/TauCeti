@@ -72,21 +72,6 @@ namespace WeierstrassCurve
 
 variable {R : Type u} [CommRing R] {W : WeierstrassCurve R}
 
--- The isomorphism `projModel W' ≅ projModel W` induced by a change of variables `C` with
--- `C • W = W'` lies over `Spec R`, carries the zero section to the zero section, and carries
--- `[x : y : 1]` to `[u²x + r : u³y + u²sx + t : 1]`.
-private theorem eqToHom_projModelVariableChangeIso_hom_spec {W' : WeierstrassCurve R}
-    (C : VariableChange R) (hC : C • W = W') :
-    (eqToHom (congrArg projModel hC.symm) ≫ (W.projModelVariableChangeIso C).hom) ≫
-        W.projModelOver = W'.projModelOver ∧
-      W'.projModelZero ≫ eqToHom (congrArg projModel hC.symm) ≫
-        (W.projModelVariableChangeIso C).hom = W.projModelZero ∧
-      ∀ {x y : R} (h : W'.toAffine.Equation x y), W'.projModelAffinePoint h ≫
-        eqToHom (congrArg projModel hC.symm) ≫ (W.projModelVariableChangeIso C).hom =
-          W.projModelAffinePoint ((Affine.variableChange_equation W C x y).mpr (hC ▸ h)) := by
-  subst hC
-  exact ⟨by simp, by simp, fun h ↦ by simp⟩
-
 /-- **Bases of the `3`-torsion of a projective Weierstrass model.** For solutions `(x₁, y₁)` and
 `(x₂, y₂)` of the affine equation of an elliptic Weierstrass curve `W`, the coordinates form a basis
 of the `3`-torsion in the equation-level sense exactly when the points `P = [x₁ : y₁ : 1]` and

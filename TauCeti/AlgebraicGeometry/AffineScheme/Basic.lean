@@ -107,6 +107,22 @@ theorem Scheme.isoSpec_inv_appTop (X : Scheme.{u}) [IsAffine X] :
   rw [← Iso.comp_hom_eq_id]
   simpa [Scheme.isoSpec] using h
 
+/-- For a ring morphism `f : R ⟶ S`, `(Spec.map f).appTop` carries `(ΓSpecIso R).inv a` to
+`(ΓSpecIso S).inv (f a)`. -/
+@[simp]
+theorem Scheme.SpecMap_appTop_ΓSpecIso_inv {R S : CommRingCat.{u}} (f : R ⟶ S) (a : R) :
+    (Spec.map f).appTop ((Scheme.ΓSpecIso R).inv a) = (Scheme.ΓSpecIso S).inv (f a) := by
+  rw [← ConcreteCategory.comp_apply, ← Scheme.ΓSpecIso_inv_naturality, ConcreteCategory.comp_apply]
+
+/-- The canonical isomorphism `Rˣ ≃* Γ(Spec R, ⊤)ˣ` of unit groups induced by `ΓSpecIso`. -/
+noncomputable def Scheme.ΓSpecUnitsMulEquiv (R : CommRingCat.{u}) : Rˣ ≃* Γ(Spec R, ⊤)ˣ :=
+  Units.mapEquiv (Scheme.ΓSpecIso R).symm.commRingCatIsoToRingEquiv.toMulEquiv
+
+/-- `Scheme.ΓSpecUnitsMulEquiv R` acts on units via `(ΓSpecIso R).inv`. -/
+theorem Scheme.ΓSpecUnitsMulEquiv_apply (R : CommRingCat.{u}) (u : Rˣ) :
+    Scheme.ΓSpecUnitsMulEquiv R u = Units.map (Scheme.ΓSpecIso R).inv.hom.toMonoidHom u :=
+  Units.ext (by simp [Scheme.ΓSpecUnitsMulEquiv, Units.coe_map, Iso.commRingCatIsoToRingEquiv])
+
 /-- On an affine scheme `Z`, the stalk at `(isAffineOpen_top Z).fromSpec y` is a `Γ(Z, ⊤)`-algebra
 via the germ map on `⊤`. -/
 noncomputable instance Scheme.algebraStalkFromSpecTop (Z : Scheme.{u}) [IsAffine Z]

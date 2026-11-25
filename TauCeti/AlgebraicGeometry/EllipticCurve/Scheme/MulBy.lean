@@ -234,6 +234,17 @@ theorem _root_.TauCeti.AlgebraicGeometry.EllipticCurveGeom.modelPoint_mulBy
     (by rw [c.modelPoint_projModelOver, Category.assoc, projModelMulBy_projModelOver,
       c.modelPoint_projModelOver])
 
+/-- If `n • P` misses the zero section of `E` everywhere, then `n • (c.modelPoint hP)` misses the
+zero section of `c.equation.projModel` everywhere. -/
+theorem _root_.TauCeti.AlgebraicGeometry.PointedWeierstrassChart.modelPoint_mulBy_apply_ne
+    {S : Scheme.{u}} {E : TauCeti.AlgebraicGeometry.EllipticCurveGeom S}
+    (c : TauCeti.AlgebraicGeometry.PointedWeierstrassChart E.structureMap E.zero)
+    {P : S ⟶ E.carrier} (hP : P ≫ E.structureMap = 𝟙 S) {n : ℤ}
+    (hn : ∀ s, (P ≫ (E.mulBy n).left) s ≠ E.zero s) (s : Spec c.ring) :
+    (c.modelPoint hP ≫ c.equation.projModelMulBy n) s ≠ c.equation.projModelZero s := by
+  rw [← E.modelPoint_mulBy c hP n]
+  exact c.modelPoint_apply_ne _ hn s
+
 section Sections
 
 variable {R : Type u} [CommRing R] {W : WeierstrassCurve R} [W.IsElliptic]
