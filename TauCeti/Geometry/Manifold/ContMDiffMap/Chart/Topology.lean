@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Jet
 public import Mathlib.Topology.ContinuousMap.Compact
+import TauCeti.Topology.Compactness.Compact
+import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
 # The weak Whitney topology for manifold-valued maps
@@ -132,20 +134,17 @@ theorem tendsto_manifoldWeakWhitney_of_eventually_eventuallyEq_nhdsSet {P : Type
     (h : ∀ C : Set M, IsCompact C → ∀ᶠ p in l, (g p : M → N) =ᶠ[𝓝ˢ C] f) :
     Tendsto g l (𝓝 f) := by
   refine tendsto_manifoldWeakWhitney_iff.mpr fun x y m _ K hK V _ hf ↦ ?_
-  -- The points of `M` tested by the chart test form a compact set.
-  have hC : IsCompact ((extChartAt I x).symm '' (Subtype.val '' K)) :=
-    (hK.image continuous_subtypeVal).image_of_continuousOn
-      ((continuousOn_extChartAt_symm x).mono (image_subset_iff.2 fun z _ ↦ z.property))
-  filter_upwards [h _ hC] with p hp
+  have hKT : Subtype.val '' K ⊆ (extChartAt I x).target :=
+    image_subset_iff.2 fun z _ ↦ z.property
+  filter_upwards [(hK.image continuous_subtypeVal).eventually_eventuallyEq_nhdsWithin_comp
+    (continuousOn_extChartAt_symm x) hKT h] with p hp
   intro z hz
-  have hgerm : (g p : M → N) =ᶠ[𝓝 ((extChartAt I x).symm z)] f :=
-    eventually_nhdsSet_iff_forall.1 hp _ ⟨z, ⟨z, hz, rfl⟩, rfl⟩
-  -- Near `z` within the chart target, the two coordinate expressions agree.
-  have hchart : extChartAt J y ∘ g p ∘ (extChartAt I x).symm
-      =ᶠ[𝓝[(extChartAt I x).target] (z : E)] extChartAt J y ∘ f ∘ (extChartAt I x).symm :=
-    ((continuousOn_extChartAt_symm x (z : E) z.property).tendsto.eventually hgerm).mono
-      fun w hw ↦ by simp only [Function.comp_apply, hw]
-  rw [hgerm.eq_of_nhds, hchart.iteratedFDerivWithin_eq (hchart.eq_of_nhdsWithin z.property) m]
+  have hgerm := hp z ⟨z, hz, rfl⟩
+  have hchart := hgerm.fun_comp (extChartAt J y)
+  have heq : g p ((extChartAt I x).symm z) = f ((extChartAt I x).symm z) :=
+    hgerm.eq_of_nhdsWithin z.property
+  rw [heq,
+    hchart.iteratedFDerivWithin_eq (hchart.eq_of_nhdsWithin z.property) m]
   exact hf z hz
 
 /-- Evaluation at a fixed source point is continuous for the manifold weak Whitney topology. -/
@@ -390,6 +389,43 @@ end NormedSpaces
 end ContMDiffMap
 
 namespace TauCeti
+
+section ChartDerivatives
+
+open Bornology ContMDiffMap Filter _root_.Manifold
+open scoped ContDiff
+
+variable {𝕜 E H M F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  [TopologicalSpace M] [ChartedSpace H M] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {n : ℕ∞ω} [IsManifold I n M]
+
+attribute [local instance] ContMDiffMap.manifoldWeakWhitneyTopology
+
+/-- For a locally compact model, weak Whitney convergence is equivalent to locally uniform
+convergence of coordinate derivatives of orders zero through `n` on their chart targets
+(all finite orders at infinite regularity). This uses within derivatives
+so the criterion applies to manifolds with corners. -/
+theorem tendsto_manifoldWeakWhitney_iff_tendstoLocallyUniformlyOn_iteratedFDerivWithin
+    [LocallyCompactSpace E] {ι : Type*} {l : Filter ι}
+    {f : ι → C^n⟮I, M; 𝓘(𝕜, F), F⟯} {g : C^n⟮I, M; 𝓘(𝕜, F), F⟯} :
+    Tendsto f l (𝓝 g) ↔ ∀ (x : M) (m : ℕ), m ≤ n →
+      TendstoLocallyUniformlyOn
+        (fun i ↦ iteratedFDerivWithin 𝕜 m (f i ∘ (extChartAt I x).symm) (extChartAt I x).target)
+        (iteratedFDerivWithin 𝕜 m (g ∘ (extChartAt I x).symm) (extChartAt I x).target)
+        l (extChartAt I x).target := by
+  rw [tendsto_manifoldWeakWhitney_iff_chartIteratedFDeriv]
+  refine forall_congr' fun x ↦ forall_congr' fun m ↦ forall_congr' fun hm ↦ ?_
+  rw [ContinuousMap.tendsto_iff_tendstoLocallyUniformly,
+    tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe]
+  have heq (a : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
+      ⇑(chartIteratedFDeriv a x m hm) =
+        iteratedFDerivWithin 𝕜 m (a ∘ (extChartAt I x).symm) (extChartAt I x).target ∘
+          Subtype.val :=
+    funext (chartIteratedFDeriv_self_target_apply a x m hm)
+  simp only [heq, Function.comp_def]
+
+end ChartDerivatives
 
 -- Select the manifold weak Whitney topology.
 scoped[TauCeti.ManifoldWeakWhitney] attribute [instance 1100]
