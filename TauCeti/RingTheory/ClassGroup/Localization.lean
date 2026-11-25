@@ -7,9 +7,8 @@ module
 
 public import TauCeti.RingTheory.DedekindDomain.SInteger.ClassGroup
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Localization
--- Proof-only: `IsLocalization.isDedekindDomain`.
-import Mathlib.RingTheory.DedekindDomain.Dvr
 import TauCeti.RingTheory.ClassGroup.Extension
+import TauCeti.RingTheory.DedekindDomain.Localization
 import TauCeti.RingTheory.Localization.Defs
 
 /-!
@@ -56,7 +55,7 @@ private lemma exists_mulEquiv_comp_extendedHom :
         ({v : HeightOneSpectrum R | ∃ m ∈ M, m ∈ v.asIdeal}.integer (FractionRing R)),
       e.toMonoidHom.comp (extendedHom R B) = extendedHom R _ := by
   have hM := TauCeti.IsLocalization.le_nonZeroDivisors_of_nontrivial M B
-  have := IsLocalization.isDedekindDomain R hM B
+  have := TauCeti.IsLocalization.isDedekindDomain_of_nontrivial M B
   have := integer_setOf_exists_mem_isLocalization (FractionRing R) M hM
   let g := IsLocalization.algEquiv M B
     ({v : HeightOneSpectrum R | ∃ m ∈ M, m ∈ v.asIdeal}.integer (FractionRing R))
