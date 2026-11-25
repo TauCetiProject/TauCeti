@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.GeneralSpin.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.GSpin.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Action
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.CliffordGroup
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Norm
@@ -26,9 +27,9 @@ Clifford norm `gpinNorm` restricts to Tau Ceti's `lipschitzNorm`; when moreover 
 the vector action `gpinToOrthogonal` restricts to Tau Ceti's `lipschitzToOrthogonal`. Over a
 field of characteristic not two, for a nondegenerate form on a finite-dimensional space taking a
 unit value (equivalently, of positive rank), the Clifford group *is* the Lipschitz group,
-`GSpin(Q)` is its even part, and `Spin(Q)` is Mathlib's `spinGroup`. In rank `0` the Lipschitz
-group is trivial while `GPin(Q)` is `Kˣ`, and in characteristic two the Lipschitz group can be
-smaller than `GPin(Q)`, so neither hypothesis can be dropped.
+`GSpin(Q)` is its even part, Tau Ceti's `gSpinGroup`, and `Spin(Q)` is Mathlib's `spinGroup`. In
+rank `0` the Lipschitz group is trivial while `GPin(Q)` is `Kˣ`, and in characteristic two the
+Lipschitz group can be smaller than `GPin(Q)`, so neither hypothesis can be dropped.
 
 ## Main results
 
@@ -39,7 +40,7 @@ smaller than `GPin(Q)`, so neither hypothesis can be dropped.
   `lipschitzToOrthogonal`.
 * `CliffordAlgebra.coe_gpinNorm_of_mem_lipschitzGroup`: `N` restricts to `lipschitzNorm`.
 * `CliffordAlgebra.gpinGroup_eq_lipschitzGroup`,
-  `CliffordAlgebra.gspinGroup_eq_lipschitzGroup_inf_evenUnits`, and
+  `CliffordAlgebra.gspinGroup_eq_gSpinGroup`, and
   `CliffordAlgebra.mem_normOneSpinGroup_iff_mem_spinGroup`: the field points.
 
 ## References
@@ -134,11 +135,13 @@ theorem gpinGroup_eq_lipschitzGroup (hQ : Q.Nondegenerate) (hv : ∃ v, IsUnit (
     (lipschitzGroup_le_gpinGroup Q)
 
 /-- **Over a field of characteristic not two the general spin group is the even part of the
-Lipschitz group**, for a nondegenerate form on a finite-dimensional space taking a unit value. -/
-theorem gspinGroup_eq_lipschitzGroup_inf_evenUnits (hQ : Q.Nondegenerate)
-    (hv : ∃ v, IsUnit (Q v)) :
-    gspinGroup Q = lipschitzGroup Q ⊓ evenUnits Q := by
-  rw [← gpinGroup_eq_lipschitzGroup hQ hv, gpinGroup_def, gspinGroup_def, inf_assoc,
+Lipschitz group** `gSpinGroup`, for a nondegenerate form on a finite-dimensional space taking a
+unit value. -/
+theorem gspinGroup_eq_gSpinGroup (hQ : Q.Nondegenerate) (hv : ∃ v, IsUnit (Q v)) :
+    gspinGroup Q = gSpinGroup Q := by
+  ext x
+  rw [mem_gSpinGroup_iff, ← gpinGroup_eq_lipschitzGroup hQ hv, ← mem_evenUnits_iff,
+    ← Subgroup.mem_inf, gspinGroup_def, gpinGroup_def, inf_assoc,
     inf_eq_right.mpr (evenUnits_le_locallyHomogeneousUnits Q)]
 
 /-- **Over a field of characteristic not two the norm-one spin group is Mathlib's `spinGroup`**,
@@ -164,8 +167,8 @@ theorem mem_normOneSpinGroup_iff_mem_spinGroup (hQ : Q.Nondegenerate) (hv : ∃ 
     have hlip : x ∈ lipschitzGroup Q :=
       (mem_lipschitzGroup_iff_involute_act_ι_mem_range_ι Q hQ hv).mpr fun m => hinv ▸ hconj m
     have hspin : x ∈ gspinGroup Q := by
-      rw [gspinGroup_eq_lipschitzGroup_inf_evenUnits hQ hv]
-      exact ⟨hlip, (mem_evenUnits_iff Q).mpr heven⟩
+      rw [gspinGroup_eq_gSpinGroup hQ hv]
+      exact mem_gSpinGroup_iff.mpr ⟨hlip, heven⟩
     refine ⟨hspin, ?_⟩
     rwa [← star_mul_self_eq_reverse_mul_self_of_mem_even heven]
 
