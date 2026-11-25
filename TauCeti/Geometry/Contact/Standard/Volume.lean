@@ -64,16 +64,21 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {n : ℕ}
 
+/-- The index `1 + 2 i + j` (after the `dz` slot) of the pair slot `(i, j)`, with `j = 0` for `dqᵢ`
+and `j = 1` for `dpᵢ`. -/
+private def innerProductContactIndex (n : ℕ) : Fin n × Fin 2 ≃ Fin (2 * n) :=
+  finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2))
+
 /-- The coordinate covectors `dz, dq₀, dp₀, …` on `V × V × ℝ` of an orthonormal basis `b` of
 `V`: `dz` reads the last coordinate, and `dqᵢ`, `dpᵢ` pair the first and second coordinates with
 `bᵢ`. -/
 private def innerProductContactCoord (b : OrthonormalBasis (Fin n) ℝ V) :
     Fin (1 + 2 * n) → (V × V × ℝ →L[ℝ] ℝ) :=
   Fin.append ![(ContinuousLinearMap.snd ℝ V ℝ).comp (ContinuousLinearMap.snd ℝ V (V × ℝ))]
-    fun s ↦ (innerSL ℝ (b (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 n) s)).1)).comp
+    fun s ↦ (innerSL ℝ (b ((innerProductContactIndex n).symm s).1)).comp
       (![ContinuousLinearMap.fst ℝ V (V × ℝ),
         (ContinuousLinearMap.fst ℝ V ℝ).comp (ContinuousLinearMap.snd ℝ V (V × ℝ))]
-          (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 n) s)).2)
+          ((innerProductContactIndex n).symm s).2)
 
 /-- The coordinate vectors `∂_{qᵢ} = (bᵢ, 0, 0)` and `∂_{pᵢ} = (0, bᵢ, 0)`, indexed by `(i, 0)` and
 `(i, 1)`. -/
@@ -86,32 +91,29 @@ covectors. -/
 private def innerProductContactFrame (b : OrthonormalBasis (Fin n) ℝ V) (x : V × V × ℝ) :
     Fin (1 + 2 * n) → TangentSpace 𝓘(ℝ, V × V × ℝ) x :=
   Fin.append ![((0 : V), (0 : V), (1 : ℝ))]
-    fun s ↦ innerProductContactPair b x (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 n) s))
+    fun s ↦ innerProductContactPair b x ((innerProductContactIndex n).symm s)
 
 /-- The coordinate frame is dual to the coordinate covectors. -/
 private theorem innerProductContactCoord_frame (b : OrthonormalBasis (Fin n) ℝ V)
     (x : V × V × ℝ) (r s : Fin (1 + 2 * n)) :
     innerProductContactCoord b r (innerProductContactFrame b x s) = if r = s then 1 else 0 := by
-  have hpre (p : Fin n × Fin 2) :
-      finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 n)
-        ((finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2))) p)) = p := by
-    simp
   -- Split both indices into the `dz` slot and the slots `(i, j)` of the pairs `(dqᵢ, dpᵢ)`.
   refine Fin.addCases (fun r ↦ ?_) (fun r ↦ ?_) r <;>
     refine Fin.addCases (fun s ↦ ?_) (fun s ↦ ?_) s
   · simp [innerProductContactCoord, innerProductContactFrame, Fin.fin_one_eq_zero]
-  · obtain ⟨⟨i, j⟩, rfl⟩ := (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2))).surjective s
+  · obtain ⟨⟨i, j⟩, rfl⟩ := (innerProductContactIndex n).surjective s
     simp only [innerProductContactCoord, innerProductContactFrame, Fin.append_left,
-      Fin.append_right, hpre]
+      Fin.append_right, Equiv.symm_apply_apply]
     fin_cases j <;> simp [innerProductContactPair, Fin.ext_iff] <;> omega
-  · obtain ⟨⟨i, j⟩, rfl⟩ := (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2))).surjective r
+  · obtain ⟨⟨i, j⟩, rfl⟩ := (innerProductContactIndex n).surjective r
     simp only [innerProductContactCoord, innerProductContactFrame, Fin.append_left,
-      Fin.append_right, hpre]
+      Fin.append_right, Equiv.symm_apply_apply]
     fin_cases j <;> simp [Fin.ext_iff, Fin.fin_one_eq_zero]
-  · obtain ⟨⟨i, j⟩, rfl⟩ := (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2))).surjective r
-    obtain ⟨⟨i', j'⟩, rfl⟩ := (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2))).surjective s
-    simp only [innerProductContactCoord, innerProductContactFrame, Fin.append_right, hpre,
-      (Fin.natAdd_injective _ _).eq_iff, EmbeddingLike.apply_eq_iff_eq, Prod.mk.injEq]
+  · obtain ⟨⟨i, j⟩, rfl⟩ := (innerProductContactIndex n).surjective r
+    obtain ⟨⟨i', j'⟩, rfl⟩ := (innerProductContactIndex n).surjective s
+    simp only [innerProductContactCoord, innerProductContactFrame, Fin.append_right,
+      Equiv.symm_apply_apply, (Fin.natAdd_injective _ _).eq_iff, EmbeddingLike.apply_eq_iff_eq,
+      Prod.mk.injEq]
     fin_cases j <;> fin_cases j' <;> simp [innerProductContactPair,
       orthonormal_iff_ite.1 b.orthonormal]
 
@@ -159,8 +161,9 @@ theorem innerProductContactCoordForm_natAdd_zero_apply (b : OrthonormalBasis (Fi
     (innerProductContactCoordForm b
         (Fin.natAdd 1 (Fin.cast (Nat.mul_comm n 2) (finProdFinEquiv (i, 0))))).val x ![v] =
       ⟪b i, v.1⟫ := by
-  rw [innerProductContactCoordForm_apply, innerProductContactCoord, Fin.append_right,
-    Fin.cast_cast, Fin.cast_eq_self, Equiv.symm_apply_apply]
+  rw [show Fin.cast (Nat.mul_comm n 2) (finProdFinEquiv (i, 0)) = innerProductContactIndex n (i, 0)
+      from rfl, innerProductContactCoordForm_apply, innerProductContactCoord, Fin.append_right,
+    Equiv.symm_apply_apply]
   -- The tangent space of the model space is `V × V × ℝ`, on which the coordinate covectors act
   -- by the projections.
   rfl
@@ -172,8 +175,9 @@ theorem innerProductContactCoordForm_natAdd_one_apply (b : OrthonormalBasis (Fin
     (innerProductContactCoordForm b
         (Fin.natAdd 1 (Fin.cast (Nat.mul_comm n 2) (finProdFinEquiv (i, 1))))).val x ![v] =
       ⟪b i, v.2.1⟫ := by
-  rw [innerProductContactCoordForm_apply, innerProductContactCoord, Fin.append_right,
-    Fin.cast_cast, Fin.cast_eq_self, Equiv.symm_apply_apply]
+  rw [show Fin.cast (Nat.mul_comm n 2) (finProdFinEquiv (i, 1)) = innerProductContactIndex n (i, 1)
+      from rfl, innerProductContactCoordForm_apply, innerProductContactCoord, Fin.append_right,
+    Equiv.symm_apply_apply]
   -- The tangent space of the model space is `V × V × ℝ`, on which the coordinate covectors act
   -- by the projections.
   rfl
@@ -204,6 +208,7 @@ private theorem wedge_innerProductContactForm_apply_frame (b : OrthonormalBasis 
   · rw [mextDeriv_innerProductContactForm_apply]
     simp
   -- `α(∂_z) = 1`, and `(dα)ⁿ` takes the value `n!` on the standard pairs `(∂_{qᵢ}, ∂_{pᵢ})`.
+  simp only [innerProductContactIndex, Equiv.symm_trans_apply, finCongr_symm, finCongr_apply]
   rw [innerProductContactForm_apply, ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv]
   · simp
   · intro i j
