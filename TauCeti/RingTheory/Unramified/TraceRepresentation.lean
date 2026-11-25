@@ -73,6 +73,8 @@ theorem exists_linearEquiv_of_trace_eq [Module.Finite ℚ E] [Algebra.FormallyUn
   have hW (x : k ⊗[ℚ] E) (w : W) : x • w = tensorLift ρ' x w := rfl
   have : IsScalarTower k (k ⊗[ℚ] E) V := ⟨fun c x v ↦ by simp [hV]⟩
   have : IsScalarTower k (k ⊗[ℚ] E) W := ⟨fun c x w ↦ by simp [hW]⟩
+  have hlV (x : k ⊗[ℚ] E) : Algebra.lsmul k k V x = tensorLift ρ x := LinearMap.ext (hV x)
+  have hlW (x : k ⊗[ℚ] E) : Algebra.lsmul k k W x = tensorLift ρ' x := LinearMap.ext (hW x)
   -- the traces of `ρ` determine those of the whole `k ⊗[ℚ] E`-module
   have htr (x : k ⊗[ℚ] E) :
       LinearMap.trace k V (tensorLift ρ x) = LinearMap.trace k W (tensorLift ρ' x) := by
@@ -80,7 +82,7 @@ theorem exists_linearEquiv_of_trace_eq [Module.Finite ℚ E] [Algebra.FormallyUn
     | tmul c a => simp [tensorLift_tmul, h]
     | add x y hx hy => simp [hx, hy]
   obtain ⟨e⟩ := IsSemisimpleModule.nonempty_linearEquiv_of_trace_eq (k := k) (A := k ⊗[ℚ] E) V W
-    fun x ↦ htr x
+    fun x ↦ by rw [hlV, hlW]; exact htr x
   refine ⟨e.restrictScalars k, fun a v ↦ ?_⟩
   have h1 : ρ a v = (1 ⊗ₜ a : k ⊗[ℚ] E) • v := by simp [hV, tensorLift_tmul]
   have h2 : ρ' a (e v) = (1 ⊗ₜ a : k ⊗[ℚ] E) • e v := by simp [hW, tensorLift_tmul]
