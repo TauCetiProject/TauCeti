@@ -29,9 +29,6 @@ the isomorphism of graded algebras `g^* (Sym E) ≅ Sym (g^* E)`
 
 ## Main declarations
 
-* `CategoryTheory.CommMon.relativeProjMapIso e`: an isomorphism `e : B ≅ A` of graded algebras with
-  quasi-coherent homogeneous components induces an isomorphism `Proj_X(A) ≅ Proj_X(B)` of relative
-  `Proj`s over `X`.
 * `TauCeti.AlgebraicGeometry.ProjectiveBundles.projectiveBundle.pullbackHom g F`: the morphism
   `P(g^* F) ⟶ P(F)` over `g`.
 * `TauCeti.AlgebraicGeometry.ProjectiveBundles.projectiveBundle.isPullback`: formation of the
@@ -51,71 +48,6 @@ open CategoryTheory Limits
 noncomputable section
 
 universe u
-
-namespace CategoryTheory.CommMon
-
-open _root_.AlgebraicGeometry
-
-variable {X : Scheme.{u}} {A B : CommMon (GradedObject ℕ X.Modules)}
-
-/-- An isomorphism `φ : B ⟶ A` of graded algebras satisfies the irrelevant-ideal condition of
-`CategoryTheory.CommMon.relativeProjMap`: it is bijective on sections over every open. -/
-theorem irrelevant_le_map_of_isIso (φ : B ⟶ A) [IsIso φ] (U : X.Opens) :
-    HomogeneousIdeal.irrelevant (A.gradedSectionsGrading U) ≤
-      (HomogeneousIdeal.irrelevant (B.gradedSectionsGrading U)).map
-        (CommMon.gradedSectionsGradedHom φ U) :=
-  HomogeneousIdeal.irrelevant_le_map_of_grade_subset_range _ fun _ _ x _ ↦
-    ⟨CommMon.gradedSectionsGradedHom (inv φ) U x, by
-      rw [← GradedRingHom.comp_apply, ← CommMon.gradedSectionsGradedHom_comp, IsIso.inv_hom_id,
-        CommMon.gradedSectionsGradedHom_id]
-      rfl⟩
-
-variable [∀ n, (A.X n).IsQuasicoherent] [∀ n, (B.X n).IsQuasicoherent]
-
-/-- The morphism of relative `Proj`s induced by a morphism of graded algebras depends only on the
-morphism, not on the proof of the irrelevant-ideal condition. -/
-private theorem relativeProjMap_congr {φ ψ : B ⟶ A} (h : φ = ψ) (hφ hψ) :
-    CommMon.relativeProjMap φ hφ = CommMon.relativeProjMap ψ hψ := by
-  subst h
-  rfl
-
-/-- An isomorphism `e : B ≅ A` of graded algebras with quasi-coherent homogeneous components
-induces an isomorphism `Proj_X(A) ≅ Proj_X(B)` of relative `Proj`s, inverse to the morphism
-induced by `e⁻¹`. -/
-def relativeProjMapIso (e : B ≅ A) : A.relativeProj ≅ B.relativeProj where
-  hom := CommMon.relativeProjMap e.hom (fun U _ ↦ irrelevant_le_map_of_isIso e.hom U)
-  inv := CommMon.relativeProjMap e.inv (fun U _ ↦ irrelevant_le_map_of_isIso e.inv U)
-  hom_inv_id := by
-    rw [← CommMon.relativeProjMap_comp _ _ _ _
-      (fun U _ ↦ irrelevant_le_map_of_isIso (e.inv ≫ e.hom) U),
-      relativeProjMap_congr e.inv_hom_id _ (fun U _ ↦ irrelevant_le_map_of_isIso (𝟙 A) U),
-      CommMon.relativeProjMap_id]
-  inv_hom_id := by
-    rw [← CommMon.relativeProjMap_comp _ _ _ _
-      (fun U _ ↦ irrelevant_le_map_of_isIso (e.hom ≫ e.inv) U),
-      relativeProjMap_congr e.hom_inv_id _ (fun U _ ↦ irrelevant_le_map_of_isIso (𝟙 B) U),
-      CommMon.relativeProjMap_id]
-
-@[simp]
-theorem relativeProjMapIso_hom (e : B ≅ A) :
-    (relativeProjMapIso e).hom =
-      CommMon.relativeProjMap e.hom (fun U _ ↦ irrelevant_le_map_of_isIso e.hom U) :=
-  (rfl)
-
-@[simp]
-theorem relativeProjMapIso_inv (e : B ≅ A) :
-    (relativeProjMapIso e).inv =
-      CommMon.relativeProjMap e.inv (fun U _ ↦ irrelevant_le_map_of_isIso e.inv U) :=
-  (rfl)
-
-/-- The isomorphism of relative `Proj`s induced by an isomorphism of graded algebras lies over
-`X`. -/
-@[reassoc]
-theorem relativeProjMapIso_hom_relativeProjToBase (e : B ≅ A) :
-    (relativeProjMapIso e).hom ≫ B.relativeProjToBase = A.relativeProjToBase :=
-  CommMon.relativeProjMap_relativeProjToBase _ _
-
-end CategoryTheory.CommMon
 
 namespace TauCeti.AlgebraicGeometry.ProjectiveBundles.projectiveBundle
 
@@ -164,5 +96,12 @@ theorem isPullback :
   have h' := (h₀.paste_horiz h).flip
   rw [Category.id_comp] at h'
   exact h'
+
+/-- The morphism `P(g^* F) ⟶ P(F)` lies over `g : X ⟶ Y`. -/
+@[reassoc (attr := simp)]
+theorem pullbackHom_projection :
+    pullbackHom g F ≫ projection Y F.obj =
+      projection X ((QuasicoherentSheaf.pullback g).obj F).obj ≫ g :=
+  (isPullback g F).w.symm
 
 end TauCeti.AlgebraicGeometry.ProjectiveBundles.projectiveBundle
