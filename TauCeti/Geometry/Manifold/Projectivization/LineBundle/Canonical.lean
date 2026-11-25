@@ -101,13 +101,6 @@ theorem eulerFormSign_mul_of_ne {i j : Fin 2} (h : i ≠ j) :
     eulerFormSign (𝕜 := 𝕜) i * eulerFormSign j = -1 := by
   fin_cases i <;> fin_cases j <;> simp_all
 
-/-- The change between the two affine charts of the projective line is `z ↦ 1 / z`. -/
-theorem affineChart_symm_trans_eq_inv_of_ne {i j : Fin 2} (h : i ≠ j) :
-    ⇑((affineChart (K := 𝕜) i).symm.trans (affineChart j)) = fun z _ ↦ (z 0)⁻¹ := by
-  funext z k
-  rw [affineChart_symm_trans_apply]
-  fin_cases i <;> fin_cases j <;> fin_cases k <;> simp_all [Fin.insertNth]
-
 /-- **`dz = -w⁻² dw`.** The derivative of the change from the affine chart `i` to the affine chart
 `j` of the projective line, at a point `z` of the chart `i` with homogeneous coordinates
 `v = Fin.insertNth i 1 z`, is multiplication by `εᵢ εⱼ (v j)⁻²`: the identity for `i = j`, and
@@ -125,15 +118,14 @@ theorem hasFDerivAt_affineChart_symm_trans (i j : Fin 2) {z : Fin 1 → 𝕜}
     rw [hid, Fin.insertNth_apply_same, eulerFormSign_mul_self]
     simpa using hasFDerivAt_id (𝕜 := 𝕜) z
   · -- In the chart `i`, the homogeneous coordinate `j ≠ i` is the affine coordinate.
-    have hj : Fin.insertNth (α := fun _ ↦ 𝕜) i 1 z j = z 0 := by
-      fin_cases i <;> fin_cases j <;> simp_all [Fin.insertNth]
-    rw [hj] at hz ⊢
+    rw [Fin.insertNth_apply_of_ne_fin_two h] at hz ⊢
     rw [affineChart_symm_trans_eq_inv_of_ne h, eulerFormSign_mul_of_ne h]
     have h0 := (hasDerivAt_inv hz).hasFDerivAt.comp z (hasFDerivAt_apply (𝕜 := 𝕜) 0 z)
     refine hasFDerivAt_pi'' fun k ↦ h0.congr_fderiv ?_
     ext v
     fin_cases k
-    simpa [zpow_neg] using mul_comm _ _
+    simp [zpow_neg]
+    ring
 
 /-- **The Jacobian determinants of the projective line.** The determinant of the derivative of the
 change from the coordinates of the chart at `x₁` to those of the chart at `x₀`, at a point `x` of
@@ -173,14 +165,20 @@ end Transition
 
 section Equiv
 
-variable [CompleteSpace 𝕜]
-
 /-- The standard basis of the model space `Fin 1 → 𝕜` of the affine charts of the projective line,
 indexed by `Fin (finrank 𝕜 (Fin 1 → 𝕜))` as the canonical bundle requires. Its coordinate form
 in a chart (`TauCeti.CanonicalBundle.coordForm`) is the differential `dw` of the affine
 coordinate `w` of that chart. -/
 def projectiveLineChartBasis : Module.Basis (Fin (Module.finrank 𝕜 (Fin 1 → 𝕜))) 𝕜 (Fin 1 → 𝕜) :=
   (Pi.basisFun 𝕜 (Fin 1)).reindex (finCongr (Module.finrank_fin_fun 𝕜).symm)
+
+/-- The basis `Projectivization.projectiveLineChartBasis` consists of the single vector `1`. -/
+@[simp]
+theorem projectiveLineChartBasis_apply (i : Fin (Module.finrank 𝕜 (Fin 1 → 𝕜))) :
+    projectiveLineChartBasis (𝕜 := 𝕜) i = Pi.single 0 1 := by
+  simp [projectiveLineChartBasis, Subsingleton.elim _ (0 : Fin 1)]
+
+variable [CompleteSpace 𝕜]
 
 /-- **The fibres of `𝒪(-2)` and of the canonical bundle of the projective line.** At `x`, with
 preferred chart `i`, a vector of `𝒪(-2)` with coordinate `c` in the frame of the chart `i` goes to
@@ -200,14 +198,9 @@ def twistEquivCanonicalBundle (x : ℙ 𝕜 (Fin 2 → 𝕜)) :
         (CanonicalBundle 𝓘(𝕜, Fin 1 → 𝕜) (ℙ 𝕜 (Fin 2 → 𝕜))) x ⟨x, α⟩).2
           projectiveLineChartBasis
     left_inv c := by
-      have hlin := ((trivializationAt ((Fin 1 → 𝕜) [⋀^Fin (Module.finrank 𝕜 (Fin 1 → 𝕜))]→L[𝕜] 𝕜)
-        (CanonicalBundle 𝓘(𝕜, Fin 1 → 𝕜) (ℙ 𝕜 (Fin 2 → 𝕜))) x).linear 𝕜
-          (mem_baseSet_trivializationAt _ _ x)).map_smul
-            (c * eulerFormSign ((twistCore (𝕜 := 𝕜) (n := 1) (-2)).indexAt x))
-            (CanonicalBundle.coordForm 𝓘(𝕜, Fin 1 → 𝕜) x projectiveLineChartBasis x)
       simp only [LinearMap.toFun_eq_coe, LinearMap.toSpanSingleton_apply]
-      rw [smul_smul, hlin,
-        CanonicalBundle.trivializationAt_apply_snd_coordForm (mem_chart_source _ x),
+      rw [smul_smul,
+        CanonicalBundle.trivializationAt_apply_snd_smul_coordForm (mem_chart_source _ x),
         ContinuousAlternatingMap.smul_apply, Module.Basis.continuousDet_apply,
         Module.Basis.det_self, smul_eq_mul, mul_one, mul_left_comm, eulerFormSign_mul_self,
         mul_one]
@@ -216,6 +209,7 @@ def twistEquivCanonicalBundle (x : ℙ 𝕜 (Fin 2 → 𝕜)) :
       rw [smul_smul, mul_right_comm, eulerFormSign_mul_self, one_mul]
       exact (CanonicalBundle.eq_smul_coordForm (mem_chart_source _ x) α).symm }
 
+@[simp]
 theorem twistEquivCanonicalBundle_apply (x : ℙ 𝕜 (Fin 2 → 𝕜)) (c : 𝕜) :
     twistEquivCanonicalBundle x c =
       c • eulerFormSign (𝕜 := 𝕜) ((twistCore (𝕜 := 𝕜) (n := 1) (-2)).indexAt x) •
@@ -242,19 +236,13 @@ theorem trivializationAt_twistEquivCanonicalBundle (x₀ : ℙ 𝕜 (Fin 2 → �
       (eulerFormSign (𝕜 := 𝕜) ((twistCore (𝕜 := 𝕜) (n := 1) (-2)).indexAt x₀) *
         (trivializationAt 𝕜 (twistCore (𝕜 := 𝕜) (n := 1) (-2)).Fiber x₀ ⟨x, c⟩).2) •
           projectiveLineChartBasis.continuousDet := by
-  have hb : x ∈ (trivializationAt ((Fin 1 → 𝕜) [⋀^Fin (Module.finrank 𝕜 (Fin 1 → 𝕜))]→L[𝕜] 𝕜)
-      (CanonicalBundle 𝓘(𝕜, Fin 1 → 𝕜) (ℙ 𝕜 (Fin 2 → 𝕜))) x₀).baseSet := by
-    simpa using hx
-  have hlin := ((trivializationAt ((Fin 1 → 𝕜) [⋀^Fin (Module.finrank 𝕜 (Fin 1 → 𝕜))]→L[𝕜] 𝕜)
-    (CanonicalBundle 𝓘(𝕜, Fin 1 → 𝕜) (ℙ 𝕜 (Fin 2 → 𝕜))) x₀).linear 𝕜 hb).map_smul
   -- `dwₓ = det (tangentCoordChange) dwₓ₀`, and the determinant is the transition of `𝒪(-2)` up to
   -- the signs of the Euler form.
   rw [twistEquivCanonicalBundle_apply,
     CanonicalBundle.coordForm_eq_det_smul_coordForm (mem_chart_source _ x) hx,
-    det_tangentCoordChange_fin_two (mem_chart_source _ x) hx, smul_smul, smul_smul, hlin,
-    CanonicalBundle.trivializationAt_apply_snd_coordForm hx, VectorBundleCore.trivializationAt,
-    ← VectorBundleCore.localTrivAt_def, VectorBundleCore.localTriv_apply,
-    twistCore_coordChange_apply]
+    det_tangentCoordChange_fin_two (mem_chart_source _ x) hx, smul_smul, smul_smul,
+    CanonicalBundle.trivializationAt_apply_snd_smul_coordForm hx,
+    twistCore_trivializationAt_apply_snd]
   congr 1
   linear_combination (c * eulerFormSign ((twistCore (𝕜 := 𝕜) (n := 1) (-2)).indexAt x₀) *
     twistTransition (-2) ((twistCore (𝕜 := 𝕜) (n := 1) (-2)).indexAt x)
