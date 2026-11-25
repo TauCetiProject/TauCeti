@@ -312,11 +312,11 @@ theorem ofIdealClassEquiv_symm_ofIdealClass (c : Additive (ClassGroup A)) :
     (ofIdealClassEquiv A K).symm (ofIdealClass A K c) = c := by
   rw [← ofIdealClassEquiv_apply, AddEquiv.symm_apply_apply]
 
-/-- The ideal class corresponding to the reduced class of a nonzero integral ideal is its class.
-The projectivity instance is required to express the class using `classOf`. -/
+/-- The ideal class corresponding to the reduced class of a nonzero integral ideal is its
+class. -/
 @[simp]
 theorem ofIdealClassEquiv_symm_classOf_ideal (I : (Ideal A)⁰)
-    [Module.Projective A (I : Ideal A)] (h : classOf A (I : Ideal A) 1 ∈ classGroup A K A) :
+    (h : classOf A (I : Ideal A) 1 ∈ classGroup A K A) :
     (ofIdealClassEquiv A K).symm ⟨classOf A (I : Ideal A) 1, h⟩ =
       Additive.ofMul (ClassGroup.mk0 I) := by
   rw [AddEquiv.symm_apply_eq]
