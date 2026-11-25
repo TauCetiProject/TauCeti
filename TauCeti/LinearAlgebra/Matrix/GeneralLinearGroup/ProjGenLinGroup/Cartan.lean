@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Cartan.DiscreteVal
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.CongruenceLevel
+import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 import TauCeti.GroupTheory.Coset.Basic
 import TauCeti.GroupTheory.DoubleCoset.Identity
 import TauCeti.GroupTheory.DoubleCoset.Inv
@@ -16,7 +17,7 @@ import TauCeti.GroupTheory.DoubleCoset.Map
 import TauCeti.GroupTheory.DoubleCoset.Orbits
 import TauCeti.GroupTheory.QuotientGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Bruhat
-import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
+import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
 # The Cartan decomposition of `PGL₂` over a discretely valued field
@@ -83,7 +84,7 @@ private theorem mem_range_map_of_mk_mem {M : GL (Fin 2) K}
   simp only [map_mul, GeneralLinearGroup.det_scalar, Fintype.card_fin, Units.val_mul,
     Units.val_pow_eq_pow_val, hw, GeneralLinearGroup.map_det, Units.coe_map,
     MonoidHom.coe_ofClass] at hdet
-  obtain ⟨v, hv⟩ := IsDiscreteValuationRing.exists_algebraMap_eq_of_pow_eq_algebraMap two_ne_zero
+  obtain ⟨v, hv⟩ := IsIntegrallyClosedIn.exists_algebraMap_eq_of_pow_eq_algebraMap two_ne_zero
     (x := (u : K)) (w := w * (GeneralLinearGroup.det y)⁻¹)
     (by
       simp only [Units.val_mul, map_mul, map_units_inv, ← hdet, mul_right_comm _ (_ ^ 2),
