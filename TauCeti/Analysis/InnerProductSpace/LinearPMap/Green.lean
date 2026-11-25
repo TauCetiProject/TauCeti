@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedRange
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Eigenbasis
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.HilbertComplex
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Spectral.Cutoff
 
 /-!
