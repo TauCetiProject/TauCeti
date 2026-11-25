@@ -44,8 +44,9 @@ triality permutation `TauCeti.trialityPermD4` gives an automorphism of order div
 ## Main results
 
 * `TauCeti.TypeDStd.serreRepresentation_injective`: Serre's theorem for the matrix realization.
-* `TauCeti.TypeDStd.lieHom_ext`: a Lie homomorphism out of the matrix algebra is determined by
-  its values on the numbered raising and lowering matrices.
+* `TauCeti.TypeDStd.lieHom_ext` and `TauCeti.TypeDStd.lieEquiv_ext`: a Lie homomorphism or
+  equivalence out of the matrix algebra is determined by its values on the numbered raising and
+  lowering matrices.
 * `TauCeti.TypeDStd.diagramAut_rootGenerator` and `TauCeti.TypeDStd.diagramAut_cartanGenerator`:
   the diagram automorphism permutes the numbered generators.
 * `TauCeti.TypeDStd.map_diagramAut_typeDDiagonalCartan` and
@@ -54,6 +55,8 @@ triality permutation `TauCeti.trialityPermD4` gives an automorphism of order div
   `TauCeti.TypeDStd.diagramAut_trans`: the group law of the permutations.
 * `TauCeti.TypeDStd.diagramAut_graphPermD`: for the fork exchange it is the native graph
   involution.
+* `TauCeti.submatrix_cartanMatrix_D4_trialityPermD4`: the triality permutation preserves
+  `CartanMatrix.D 4`.
 * `TauCeti.TypeDStd.trialityAut_trialityAut_trialityAut`: triality has order dividing three.
 
 ## References
@@ -94,6 +97,14 @@ theorem lieHom_ext {L : Type*} [LieRing L] [LieAlgebra K L]
   ext x
   obtain ⟨y, rfl⟩ := serreRepresentation_surjective n hn x
   exact DFunLike.congr_fun hcomp y
+
+/-- **A Lie equivalence out of the split type-`D` matrix algebra is determined by its values on
+the numbered raising and lowering matrices.** -/
+theorem lieEquiv_ext {L : Type*} [LieRing L] [LieAlgebra K L]
+    {e e' : typeD (Fin n) K ≃ₗ⁅K⁆ L}
+    (h : ∀ k, e (rootGenerator n hn k) = e' (rootGenerator n hn k)) : e = e' :=
+  LieEquiv.ext fun x =>
+    DFunLike.congr_fun (lieHom_ext (f := e.toLieHom) (g := e'.toLieHom) n hn h) x
 
 end NeZero
 
@@ -200,28 +211,22 @@ theorem eq_diagramAut {hσ : (CartanMatrix.D n).submatrix σ σ = CartanMatrix.D
 @[simp]
 theorem diagramAut_refl :
     diagramAut (K := K) n hn (submatrix_perm_refl (CartanMatrix.D n)) = LieEquiv.refl :=
-  LieEquiv.ext fun x => DFunLike.congr_fun (eq_diagramAut (g := LieHom.id) n hn fun k => by
-    rcases k with i | i <;> simp).symm x
+  lieEquiv_ext n hn fun k => by rcases k with i | i <;> simp
 
 /-- The inverse of a diagram automorphism is the diagram automorphism of the inverse
 permutation. -/
 theorem diagramAut_symm (hσ : (CartanMatrix.D n).submatrix σ σ = CartanMatrix.D n) :
     (diagramAut (K := K) n hn hσ).symm = diagramAut n hn (submatrix_perm_symm hσ) :=
-  LieEquiv.ext fun x => by
+  lieEquiv_ext n hn fun k => by
     rw [LieEquiv.symm_apply_eq]
-    have h : (diagramAut (K := K) n hn hσ).toLieHom.comp
-        (diagramAut n hn (submatrix_perm_symm hσ)).toLieHom = LieHom.id :=
-      lieHom_ext n hn fun k => by rcases k with i | i <;> simp
-    exact (DFunLike.congr_fun h x).symm
+    rcases k with i | i <;> simp
 
 /-- Diagram automorphisms compose along the composition of permutations. -/
 theorem diagramAut_trans (hσ : (CartanMatrix.D n).submatrix σ σ = CartanMatrix.D n)
     (hτ : (CartanMatrix.D n).submatrix τ τ = CartanMatrix.D n) :
     (diagramAut (K := K) n hn hσ).trans (diagramAut n hn hτ) =
-      diagramAut n hn (submatrix_perm_trans hσ hτ) := by
-  refine LieEquiv.ext fun x => DFunLike.congr_fun (eq_diagramAut (g := ((diagramAut n hn hσ).trans
-    (diagramAut n hn hτ)).toLieHom) n hn fun k => ?_) x
-  rcases k with i | i <;> simp
+      diagramAut n hn (submatrix_perm_trans hσ hτ) :=
+  lieEquiv_ext n hn fun k => by rcases k with i | i <;> simp
 
 /-- The diagram automorphism maps the diagonal Cartan subalgebra onto itself. -/
 theorem map_diagramAut_typeDDiagonalCartan
@@ -250,22 +255,27 @@ pair. -/
 theorem diagramAut_graphPermD
     (hσ : (CartanMatrix.D n).submatrix (graphPermD n (by omega)) (graphPermD n (by omega)) =
       CartanMatrix.D n) :
-    diagramAut (K := K) n hn hσ = typeDGraphLieEquiv (forkRight n hn) K := by
-  refine (LieEquiv.ext fun x => DFunLike.congr_fun (eq_diagramAut (hσ := hσ)
-    (g := (typeDGraphLieEquiv (forkRight n hn) K).toLieHom) n hn fun k => ?_) x).symm
-  exact typeDGraphLieEquiv_rootGenerator K n hn k
+    diagramAut (K := K) n hn hσ = typeDGraphLieEquiv (forkRight n hn) K :=
+  lieEquiv_ext n hn fun k => by
+    rw [diagramAut_rootGenerator, typeDGraphLieEquiv_rootGenerator]
 
 end Diagram
 
 /-! ### Triality -/
 
+/-- The triality permutation preserves `CartanMatrix.D 4`: the matrix form of
+`TauCeti.cartanMatrix_D4_trialityPermD4`, which is the shape of hypothesis taken by
+`TauCeti.TypeDStd.diagramAut`. -/
+theorem _root_.TauCeti.submatrix_cartanMatrix_D4_trialityPermD4 :
+    (CartanMatrix.D 4).submatrix trialityPermD4 trialityPermD4 = CartanMatrix.D 4 := by
+  ext i j
+  simpa only [Matrix.submatrix_apply, DynkinType.cartanMatrix_D] using
+    cartanMatrix_D4_trialityPermD4 i j
+
 /-- **The triality automorphism of the split orthogonal Lie algebra of type `D₄`**: the diagram
 automorphism cycling the three outer nodes `0 → 2 → 3 → 0` and fixing the central node `1`. -/
 noncomputable def trialityAut : typeD (Fin 4) K ≃ₗ⁅K⁆ typeD (Fin 4) K :=
-  diagramAut 4 le_rfl (by
-    ext i j
-    simpa only [Matrix.submatrix_apply, DynkinType.cartanMatrix_D] using
-      cartanMatrix_D4_trialityPermD4 i j)
+  diagramAut 4 le_rfl submatrix_cartanMatrix_D4_trialityPermD4
 
 /-- Triality is the diagram automorphism of the triality permutation. -/
 theorem trialityAut_eq_diagramAut
@@ -291,9 +301,8 @@ theorem trialityAut_cartanGenerator (i : Fin 4) :
 @[simp]
 theorem trialityAut_trialityAut_trialityAut (x : typeD (Fin 4) K) :
     trialityAut (trialityAut (trialityAut x)) = x := by
-  have h : (trialityAut (K := K)).toLieHom.comp
-      ((trialityAut (K := K)).toLieHom.comp (trialityAut (K := K)).toLieHom) = LieHom.id :=
-    lieHom_ext 4 le_rfl fun k => by rcases k with i | i <;> simp
+  have h : ((trialityAut (K := K)).trans trialityAut).trans trialityAut = LieEquiv.refl :=
+    lieEquiv_ext 4 le_rfl fun k => by rcases k with i | i <;> simp
   exact DFunLike.congr_fun h x
 
 end TauCeti.TypeDStd

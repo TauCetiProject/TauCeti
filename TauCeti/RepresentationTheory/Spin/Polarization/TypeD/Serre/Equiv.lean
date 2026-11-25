@@ -177,6 +177,14 @@ noncomputable def typeDDiagramAut : quadraticLieSubalgebra Q ≃ₗ⁅K⁆ quadr
   ((P.typeDQuadraticEquiv b hline).symm.trans (TypeDStd.diagramAut n hn hσ)).trans
     (P.typeDQuadraticEquiv b hline)
 
+/-- The diagram automorphism is the matrix diagram automorphism read through the quadratic
+equivalence. -/
+theorem typeDDiagramAut_apply (x : quadraticLieSubalgebra Q) :
+    P.typeDDiagramAut b hn hline hσ x =
+      P.typeDQuadraticEquiv b hline
+        (TypeDStd.diagramAut n hn hσ ((P.typeDQuadraticEquiv b hline).symm x)) :=
+  (rfl)
+
 /-- **The diagram automorphism is the Serre diagram automorphism transported along the Serre
 presentation** of the quadratic Clifford Lie algebra. -/
 theorem typeDDiagramAut_eq :
@@ -184,7 +192,7 @@ theorem typeDDiagramAut_eq :
       ((P.typeDSerreQuadraticEquiv b hn hline).symm.trans
         (serreDiagramAut K (CartanMatrix.D n) hσ)).trans (P.typeDSerreQuadraticEquiv b hn hline) :=
   LieEquiv.ext fun _ => by
-    simp [typeDDiagramAut, TypeDStd.diagramAut_apply, typeDSerreQuadraticEquiv]
+    simp [typeDDiagramAut_apply, TypeDStd.diagramAut_apply, typeDSerreQuadraticEquiv]
 
 /-- The diagram automorphism permutes the numbered Clifford coroot representatives along
 `σ`. -/
@@ -277,16 +285,21 @@ rank four**: the diagram automorphism `TauCeti.SpinPolarizationData.typeDDiagram
 triality permutation `TauCeti.trialityPermD4`, cycling the three outer nodes `0 → 2 → 3 → 0` of
 `D₄` and fixing the central node `1`. -/
 noncomputable def typeDTrialityAut : quadraticLieSubalgebra Q ≃ₗ⁅K⁆ quadraticLieSubalgebra Q :=
-  P.typeDDiagramAut b le_rfl hline (by
-    ext i j
-    simpa only [Matrix.submatrix_apply, DynkinType.cartanMatrix_D] using
-      cartanMatrix_D4_trialityPermD4 i j)
+  P.typeDDiagramAut b le_rfl hline submatrix_cartanMatrix_D4_trialityPermD4
 
 /-- Triality is the diagram automorphism of the triality permutation. -/
 theorem typeDTrialityAut_eq_typeDDiagramAut
     (h : (CartanMatrix.D 4).submatrix trialityPermD4 trialityPermD4 = CartanMatrix.D 4) :
     P.typeDTrialityAut b hline = P.typeDDiagramAut b le_rfl hline h :=
   (rfl)
+
+/-- Triality is the matrix triality automorphism read through the quadratic equivalence. -/
+theorem typeDTrialityAut_apply (x : quadraticLieSubalgebra Q) :
+    P.typeDTrialityAut b hline x =
+      P.typeDQuadraticEquiv b hline
+        (TypeDStd.trialityAut ((P.typeDQuadraticEquiv b hline).symm x)) := by
+  rw [P.typeDTrialityAut_eq_typeDDiagramAut b hline submatrix_cartanMatrix_D4_trialityPermD4,
+    typeDDiagramAut_apply, TypeDStd.trialityAut_eq_diagramAut]
 
 /-- Triality permutes the numbered Clifford coroot representatives along `trialityPermD4`. -/
 theorem typeDTrialityAut_simpleCorootBivector (i : Fin 4) :
@@ -326,7 +339,8 @@ theorem typeDTrialityAut_simpleNegativeRootBivector (i : Fin 4) :
 @[simp]
 theorem typeDTrialityAut_typeDTrialityAut_typeDTrialityAut (x : quadraticLieSubalgebra Q) :
     P.typeDTrialityAut b hline (P.typeDTrialityAut b hline (P.typeDTrialityAut b hline x)) = x := by
-  simp [typeDTrialityAut, typeDDiagramAut, ← TypeDStd.trialityAut_eq_diagramAut _]
+  simp only [typeDTrialityAut_apply, LieEquiv.symm_apply_apply,
+    TypeDStd.trialityAut_trialityAut_trialityAut, LieEquiv.apply_symm_apply]
 
 end Triality
 
