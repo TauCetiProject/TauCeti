@@ -101,7 +101,7 @@ theorem exists_laurentQExpansion_eq_mapRingHom (σ : ℂ →+* ℂ)
       HahnSeries.mapRingHom σ (laurentQExpansion (cuspDatumInftyGamma N) F) := by
   obtain ⟨d, hd⟩ := ZMod.exists_map_stdAddChar_one_eq (N := N) σ
   refine mem_coeffConjSubfield.mp ((subfield_eq_top_of_frickeMeromorphicFunction_mem (N := N)
-    (S := coeffConjSubfield σ) (fun c ↦ ?_) ?_ fun a ↦ ?_).symm ▸ Subfield.mem_top F)
+    (S := coeffConjSubfield σ) (fun c ↦ ?_) ?_ fun a _ ↦ ?_).symm ▸ Subfield.mem_top F)
   · refine mem_coeffConjSubfield.mpr ⟨algebraMap ℂ _ (σ c), ?_⟩
     simp [LaurentSeries.algebraMap_apply, HahnSeries.C_apply, HahnSeries.mapRingHom_single]
   · exact mem_coeffConjSubfield.mpr ⟨_, (mapRingHom_laurentQExpansion_eq_of_mem_coeffSubfield _
@@ -267,7 +267,7 @@ theorem modularFunctionCoeffAction_unop_modularFunctionActionZMod {σ : ℂ ≃+
   have hd₁ (b : Fin 2 → ZMod N) : b ᵥ* Matrix.diagonal ![1, (d : ZMod N)] = ![b 0, d * b 1] := by
     rw [Matrix.vecMul_diagonal_vec2, mul_one, mul_comm]
   have h : φ.eqLocusField ψ = ⊤ := by
-    refine subfield_eq_top_of_frickeMeromorphicFunction_mem (fun c ↦ ?_) ?_ fun a ↦ ?_ <;>
+    refine subfield_eq_top_of_frickeMeromorphicFunction_mem (fun c ↦ ?_) ?_ fun a _ ↦ ?_ <;>
       simp only [RingHom.mem_eqLocusField, φ, ψ, RingHom.coe_comp, Function.comp_apply,
         RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv]
     · simp
