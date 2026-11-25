@@ -29,12 +29,6 @@ computes the top power of `ω` on a standard family: if vectors `qᵢ, pᵢ` sat
 `(q₀, p₀, q₁, p₁, …)` (`ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv`). Applied to a
 Darboux basis this is the classical normalization of the symplectic volume form `ωⁿ / n!`.
 
-After a one-form `a`, a wedge power of a two-form `B` does not change when a two-form `b ∧ a`
-divisible by `a` is added to `B`: `a ∧ (B + b ∧ a)ᵐ = a ∧ Bᵐ`, because every additional term
-contains `a` twice (`ContinuousAlternatingMap.pairedWedge_wedgePow_add_pairedWedge`). Since
-`d (f α) = f dα + df ∧ α`, this is the linear algebra behind the scaling law
-`(f α) ∧ (d (f α))ᵐ = f ^ (m + 1) • α ∧ (dα)ᵐ` of the contact volume form.
-
 ## Main definitions
 
 * `ContinuousAlternatingMap.wedgePow φ m`: the `m`-th wedge power of a real alternating form.
@@ -51,10 +45,6 @@ contains `a` twice (`ContinuousAlternatingMap.pairedWedge_wedgePow_add_pairedWed
   of a two-form lies in the kernel of each of its positive powers.
 * `ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv`: the `m`-th power of a two-form takes
   the value `m!` on a family of `m` standard pairs.
-* `ContinuousAlternatingMap.pairedWedge_wedgePow_add_pairedWedge`: `a ∧ (B + b ∧ a)ᵐ = a ∧ Bᵐ`
-  for one-forms `a` and `b` and a two-form `B`.
-* `ContinuousAlternatingMap.pairedWedge_smul_wedgePow_smul_add_pairedWedge`: the linear scaling
-  law `(c a) ∧ (c B + b ∧ a)ᵐ = c ^ (m + 1) • a ∧ Bᵐ` behind the contact volume form.
 
 ## References
 
@@ -173,62 +163,6 @@ theorem curryLeftTopological_wedgePow_succ_eq_zero (ω : E [⋀^Fin 2]→L[ℝ] 
   rw [curryLeftTopological_apply_apply, coe_zero, Pi.zero_apply]
   refine (wedgePow_succ_apply_vecCons ω m v w).trans ?_
   rw [h₀, pairedWedge_zero_left, coe_zero, Pi.zero_apply, mul_zero]
-
-/-! ### Wedge powers after a covector -/
-
-/-- For real one-forms `a` and `b` and any form `Q`, `a ∧ Q ∧ b ∧ a = 0`, because `a` occurs
-twice. -/
-private theorem pairedWedge_pairedWedge_pairedWedge_eq_zero {p : ℕ}
-    (a b : E [⋀^Fin 1]→L[ℝ] ℝ) (Q : E [⋀^Fin p]→L[ℝ] ℝ) :
-    pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ a
-      (pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ Q
-        (pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-          b a)) = 0 := by
-  have haa := pairedWedge_self_eq_zero_of_odd (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-    mul_comm odd_one a
-  -- `(b ∧ a) ∧ a = b ∧ (a ∧ a) = 0`.
-  have hba : pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-      (pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ b a)
-      a = 0 := by
-    ext v
-    rw [pairedWedge_mul_assoc, haa, pairedWedge_zero_right]
-    simp only [coe_zero, Pi.zero_apply]
-  -- `a ∧ (Q ∧ (b ∧ a)) = ±((b ∧ a) ∧ a) ∧ Q`, up to reindexing the arguments.
-  ext v
-  rw [pairedWedge_mul_assoc', pairedWedge_comm _ mul_comm, pairedWedge_mul_assoc', hba]
-  simp
-
-/-- **Wedge powers after a covector ignore two-forms divisible by it.** For real one-forms `a`
-and `b` and a two-form `B`, adding `b ∧ a` to `B` does not change `a ∧ Bᵐ`:
-`a ∧ (B + b ∧ a)ᵐ = a ∧ Bᵐ`. No finite dimensionality is needed. -/
-theorem pairedWedge_wedgePow_add_pairedWedge {m : ℕ} (a b : E [⋀^Fin 1]→L[ℝ] ℝ)
-    (B : E [⋀^Fin 2]→L[ℝ] ℝ) :
-    pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ a
-        (wedgePow (B + pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
-          (ContinuousLinearMap.mul ℝ ℝ).continuous₂ b a) m) =
-      pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ a
-        (wedgePow B m) := by
-  induction m with
-  | zero => rfl
-  | succ m ih =>
-    rw [wedgePow_succ, pairedWedge_add_right, pairedWedge_add_right,
-      pairedWedge_pairedWedge_pairedWedge_eq_zero, add_zero, wedgePow_succ]
-    ext v
-    rw [pairedWedge_mul_assoc', pairedWedge_mul_assoc', ih]
-
-/-- **The linear scaling law of the contact volume form.** For real one-forms `a` and `b`, a
-two-form `B` and a scalar `c`,
-`(c a) ∧ (c B + b ∧ a)ᵐ = c ^ (m + 1) • a ∧ Bᵐ`.
-At a point where `β = f α`, this is `β ∧ (dβ)ᵐ = f ^ (m + 1) • α ∧ (dα)ᵐ`, with `b = df`. -/
-theorem pairedWedge_smul_wedgePow_smul_add_pairedWedge (m : ℕ) (c : ℝ)
-    (a b : E [⋀^Fin 1]→L[ℝ] ℝ) (B : E [⋀^Fin 2]→L[ℝ] ℝ) :
-    pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (c • a)
-        (wedgePow (c • B + pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
-          (ContinuousLinearMap.mul ℝ ℝ).continuous₂ b a) m) =
-      c ^ (m + 1) • pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
-        (ContinuousLinearMap.mul ℝ ℝ).continuous₂ a (wedgePow B m) := by
-  rw [pairedWedge_smul_left, pairedWedge_wedgePow_add_pairedWedge, wedgePow_smul,
-    pairedWedge_smul_right, smul_smul, pow_succ']
 
 /-! ### The value on standard pairs -/
 

@@ -152,18 +152,4 @@ theorem pairedWedge_mul_assoc (phi : E [⋀^Fin k]→L[ℝ] ℝ) (psi : E [⋀^F
     (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
     (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (fun a b c ↦ mul_assoc a b c) phi psi chi v
 
-/-- The real wedge along multiplication is associative, read from right to left, with the
-reindexing on the right-hand side. -/
-theorem pairedWedge_mul_assoc' (phi : E [⋀^Fin k]→L[ℝ] ℝ) (psi : E [⋀^Fin l]→L[ℝ] ℝ)
-    (chi : E [⋀^Fin m]→L[ℝ] ℝ) (v : Fin (k + (l + m)) → E) :
-    pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ phi
-        (pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-          psi chi) v =
-      pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-        (pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-          phi psi) chi (v ∘ Fin.cast (Nat.add_assoc k l m)) := by
-  rw [pairedWedge_mul_assoc]
-  -- The two reindexings `Fin.cast` cancel.
-  congr 1
-
 end ContinuousAlternatingMap

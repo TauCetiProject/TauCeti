@@ -11,6 +11,7 @@ public import Mathlib.Topology.MetricSpace.Contracting
 import Mathlib.Topology.Order.DenselyOrdered
 import TauCeti.Analysis.Calculus.Morse.Gluing.TransverseDisc
 import TauCeti.Analysis.Calculus.RadialRescaleGraph
+import TauCeti.Topology.Algebra.Order.Field
 import TauCeti.Topology.Homeomorph.CompactQuotient
 import TauCeti.Topology.MetricSpace.Contracting
 
@@ -507,8 +508,7 @@ private theorem forall_mem_Icc_norm_splitQuadraticFlow_le (hη : 0 < η) (hε : 
 /-- For every `C` and `c > 0`, the product `l * C` is eventually smaller than `c` as `l → 0⁺`. -/
 private theorem eventually_mul_lt (C : ℝ) {c : ℝ} (hc : 0 < c) :
     ∀ᶠ l in 𝓝[>] (0 : ℝ), l * C < c :=
-  nhdsWithin_le_nhds (((continuous_mul_const C).tendsto 0).eventually
-    (gt_mem_nhds (by rwa [zero_mul])))
+  (tendsto_mul_const_nhdsGT_zero C).eventually_lt_const hc
 
 /-- **The compactified gluing arc at the centre of the split box.** Let `y ↦ (g y, y)` be a
 Lipschitz graph in the entrance face `‖x‖ = ε` over the closed ball of radius `δ` of the expanding

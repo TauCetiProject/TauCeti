@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Group.Fin.Tuple
 public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
 public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.Geometry.Manifold.Morse.Bott.Family
+public import TauCeti.Geometry.Manifold.Morse.Bott.RankDegreeHomology
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 public import TauCeti.Geometry.Manifold.Projectivization.Map
 public import TauCeti.Topology.Order.Sublevel
@@ -46,8 +47,9 @@ general theorems `TauCeti.isNondegenerateCriticalSubmanifold_projectiveMomentFun
 needs `N ≥ 1`, every declaration of the section on the critical components is stated with ambient
 space `ℝℙᴺ⁺¹`, that is, with `N + 1` in place of `N`. The negative normal bundle of the
 hyperplane is its normal line bundle in `ℝℙᴺ`, the tautological line bundle of `ℝℙᴺ⁻¹`; for
-`N = 2` it is the Möbius line over the circle `ℝℙ¹`. This identification is background here and
-is not formalized in this file.
+`N = 2` it is the Möbius line over the circle `ℝℙ¹`. This identification of the bundle is
+background here; what is formalized below is the property of it that the homology across the level
+sees, namely that it is not orientable for `N ≥ 2`.
 
 Below the top level, every sublevel `{f ≤ c}` with `0 ≤ c < 1` lies in the affine chart where
 `v_N ≠ 0`, and in that chart it is the ball `{z | ‖z‖₂² / (1 + ‖z‖₂²) ≤ c}`, so it is contractible
@@ -67,8 +69,18 @@ coefficients are twisted by the orientation system `o(ν⁻)` of the negative no
 (`TauCeti.singularHomologyOneSublevelPairProjectiveHyperplaneMomentFunctionTwoLinearEquiv`), the
 zeroth homology of the circle with coefficients twisted by the Möbius orientation system. It is
 not `ℤ`, the zeroth homology of the circle with constant integer coefficients
-(`TauCeti.not_nonempty_linearEquiv_int_projectiveHyperplaneMomentFunction_two`),
+(`TauCeti.not_nonempty_linearEquiv_int_projectiveHyperplaneMomentFunction`),
 so the integral formula cannot be stated with untwisted coefficients.
+
+Read backwards through the integral identification of the homology across a Morse–Bott level in
+the degree of the index
+(`nonempty_vectorBundleOrientation_iff_nonempty_singularHomology_sublevelPair_linearEquiv`, in the
+namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`),
+this computation decides the orientability of the negative normal bundle: for every smooth fibre
+metric, the negative normal bundle of the hyperplane `ℝℙᴺ` of `ℝℙᴺ⁺¹` is orientable exactly when
+`N = 0`, that is, when the hyperplane is a point
+(`TauCeti.nonempty_vectorBundleOrientation_negativeNormalSpace_projectiveHyperplaneEmbedding_iff`).
+For `N = 1` this is the non-orientable Möbius line over the circle `ℝℙ¹ ⊂ ℝℙ²`.
 
 ## Main results
 
@@ -94,8 +106,12 @@ so the integral formula cannot be stated with untwisted coefficients.
   it is `ℤ/2` in odd degrees below `N` with integer coefficients, and zero in even degrees
   when `2` is right-regular in the coefficients.
 * `TauCeti.singularHomologyOneSublevelPairProjectiveHyperplaneMomentFunctionTwoLinearEquiv` and
-  `TauCeti.not_nonempty_linearEquiv_int_projectiveHyperplaneMomentFunction_two`:
-  on `ℝℙ²` the band crossing the critical circle has `H₁ ≅ ℤ/2`, not `ℤ`.
+  `TauCeti.not_nonempty_linearEquiv_int_projectiveHyperplaneMomentFunction`:
+  on `ℝℙ²` the band crossing the critical circle has `H₁ ≅ ℤ/2`, and for `N ≥ 2` the band
+  crossing the critical hyperplane has `H₁` not isomorphic to `ℤ`.
+* `TauCeti.nonempty_vectorBundleOrientation_negativeNormalSpace_projectiveHyperplaneEmbedding_iff`:
+  the negative normal bundle of the hyperplane `ℝℙᴺ` of `ℝℙᴺ⁺¹` is orientable exactly when
+  `N = 0`.
 
 ## References
 
@@ -524,19 +540,103 @@ def singularHomologyOneSublevelPairProjectiveHyperplaneMomentFunctionTwoLinearEq
   singularHomologySublevelPairProjectiveHyperplaneMomentFunctionIntLinearEquivOfOdd hc₀ hc₁ hd
     odd_one one_lt_two
 
-/-- **The band crossing the critical circle of `ℝℙ²` does not have untwisted homology.** The group
-`H₁({f ≤ d}, {f ≤ c}; ℤ) ≅ ℤ/2` of the band crossing the critical circle is not isomorphic to `ℤ`,
-the zeroth homology of the circle with constant integer coefficients. -/
-theorem not_nonempty_linearEquiv_int_projectiveHyperplaneMomentFunction_two
+/-- **The band crossing the critical hyperplane of `ℝℙᴺ`, `N ≥ 2`, does not have untwisted
+homology.** For `0 ≤ c < 1 ≤ d` the group `H₁({f ≤ d}, {f ≤ c}; ℤ) ≅ ℤ/2` of the band crossing the
+critical hyperplane `ℝℙᴺ⁻¹` is not isomorphic to `ℤ`, the zeroth homology of `ℝℙᴺ⁻¹` with constant
+integer coefficients. For `N = 2` the hyperplane is the critical circle. -/
+theorem not_nonempty_linearEquiv_int_projectiveHyperplaneMomentFunction (hN : 1 < N)
     (hc₀ : 0 ≤ c) (hc₁ : c < 1) (hd : 1 ≤ d) :
-    ¬ Nonempty (((sublevelPair (projectiveHyperplaneMomentFunction 2)
+    ¬ Nonempty (((sublevelPair (projectiveHyperplaneMomentFunction N)
       (hc₁.le.trans hd)).singularHomology (ModuleCat.of ℤ ℤ) 1 : ModuleCat.{0} ℤ) ≃ₗ[ℤ] ℤ) := by
   rintro ⟨e⟩
   have : Finite ℤ :=
-    .of_equiv _ ((singularHomologyOneSublevelPairProjectiveHyperplaneMomentFunctionTwoLinearEquiv
-      hc₀ hc₁ hd).symm.trans e).toEquiv
+    .of_equiv _ ((singularHomologySublevelPairProjectiveHyperplaneMomentFunctionIntLinearEquivOfOdd
+      hc₀ hc₁ hd odd_one hN).symm.trans e).toEquiv
   exact not_finite ℤ
 
 end Homology
+
+/-! ### Orientability of the negative normal bundle of the critical hyperplane
+
+As in the section on the critical components, the ambient space is `ℝℙᴺ⁺¹` and the critical
+hyperplane is a copy of `ℝℙᴺ`.
+-/
+
+section Orientation
+
+open SmoothEmbedding.IsNondegenerateCriticalSubmanifold
+
+/-- **The negative normal bundle of the critical hyperplane is orientable only over a point.** Let
+`g` be a smooth fibre metric on the normal bundle of the critical hyperplane `ℝℙᴺ` of `ℝℙᴺ⁺¹`, and
+suppose that the negative normal spaces relative to `g` have continuous local frames of size `1`,
+so that they form the negative normal bundle `ν⁻`, a real line bundle over `ℝℙᴺ` (such frames
+exist since the Morse index along the hyperplane is `1`,
+`IsNondegenerateCriticalSubmanifold.hasLocalContMDiffSubbundleFrames_negativeNormalSpace`). Then
+`ν⁻` is orientable if and only if `N = 0`. For `N = 1` it is the Möbius line over the circle
+`ℝℙ¹ ⊂ ℝℙ²`. -/
+theorem nonempty_vectorBundleOrientation_negativeNormalSpace_projectiveHyperplaneEmbedding_iff
+    {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] [FiniteDimensional ℝ W]
+    (hn : (∞ : ℕ∞ω) ≠ 0)
+    (hdim : Module.finrank ℝ W = Module.finrank ℝ (Fin (N + 1) → ℝ) - Module.finrank ℝ (Fin N → ℝ))
+    (g : letI := (projectiveHyperplaneEmbedding N).normalSpaceFiberBundle hn hdim
+      letI := (projectiveHyperplaneEmbedding N).normalSpaceVectorBundle hn hdim
+      Bundle.ContMDiffRiemannianMetric 𝓘(ℝ, Fin N → ℝ) ∞ W
+        fun s ↦ (projectiveHyperplaneEmbedding N).NormalSpace s hn)
+    (hV : letI := (projectiveHyperplaneEmbedding N).normalSpaceFiberBundle hn hdim
+      letI := (projectiveHyperplaneEmbedding N).normalSpaceVectorBundle hn hdim
+      HasLocalSubbundleFrames W (Fin 1)
+        (isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding.negativeNormalSpace hn
+          g.toRiemannianMetric)) :
+    letI := (projectiveHyperplaneEmbedding N).normalSpaceFiberBundle hn hdim
+    letI := (projectiveHyperplaneEmbedding N).normalSpaceVectorBundle hn hdim
+    letI := subbundleTopology W (F' := Fin 1 → ℝ)
+      (isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding.negativeNormalSpace hn
+        g.toRiemannianMetric)
+    letI := hV.fiberBundle
+    haveI := hV.vectorBundle
+    Nonempty (VectorBundleOrientation (Fin 1 → ℝ)
+        (fun s ↦
+          isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding.negativeNormalSpace hn
+            g.toRiemannianMetric s) (Fin 1)) ↔ N = 0 := by
+  have hc₀ : (0 : ℝ) ≤ 1 / 2 := by norm_num
+  have hc₁ : (1 / 2 : ℝ) < 1 := by norm_num
+  have hd : (1 : ℝ) ≤ 2 := by norm_num
+  -- The hyperplane lies on the level `f = 1`.
+  have hc (s : ℙ ℝ (Fin (N + 1) → ℝ)) :
+      projectiveHyperplaneMomentFunction (N + 1) (projectiveHyperplaneEmbedding N s) = 1 :=
+    projectiveHyperplaneMomentFunction_eq_one_iff.2 <| by
+      rw [← mem_compl_iff, ← range_projectiveHyperplaneEmbedding]
+      exact mem_range_self s
+  -- The only other critical point, the minimum `[e_{N+1}]`, lies on the level `f = 0`.
+  have hcrit : criticalPoints 𝓘(ℝ, Fin (N + 1) → ℝ) (projectiveHyperplaneMomentFunction (N + 1)) ∩
+      projectiveHyperplaneMomentFunction (N + 1) ⁻¹' Icc (1 / 2) 2 ⊆
+        range (projectiveHyperplaneEmbedding N) := by
+    rintro x ⟨hx, hxI⟩
+    rw [criticalPoints_projectiveHyperplaneMomentFunction] at hx
+    rw [range_projectiveHyperplaneEmbedding]
+    rcases hx with rfl | hx
+    · rw [mem_preimage, projectiveHyperplaneMomentFunction_def,
+        projectiveMomentFunction_mk_single] at hxI
+      norm_num at hxI
+    · exact hx
+  rw [nonempty_vectorBundleOrientation_iff_nonempty_singularHomology_sublevelPair_linearEquiv
+    hn isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding
+    contMDiff_projectiveHyperplaneMomentFunction hc hc₁ (one_lt_two (α := ℝ))
+    ((isClosed_Icc.preimage (contMDiff_projectiveHyperplaneMomentFunction (r := 0)).continuous
+      ).isCompact) hcrit hdim g hV]
+  constructor
+  · -- For `N ≥ 1` the band has `H₁ ≅ ℤ/2`.
+    rintro he
+    by_contra hN
+    exact not_nonempty_linearEquiv_int_projectiveHyperplaneMomentFunction
+      (Nat.succ_lt_succ (Nat.pos_of_ne_zero hN)) hc₀ hc₁ hd he
+  · -- For `N = 0` the band has the homology `H₁(ℝℙ¹; ℤ) ≅ ℤ` of the circle.
+    rintro rfl
+    exact ⟨(singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction
+        (ModuleCat.of ℤ ℤ) hc₀ hc₁ hd 0).symm.toLinearEquiv ≪≫ₗ
+      (RealProjectiveSpace.singularHomologyProjectivizationIso (N := 1) ℤ 1).symm.toLinearEquiv ≪≫ₗ
+      RealProjectiveSpace.singularHomologyTopLinearEquivOfOdd ℤ odd_one⟩
+
+end Orientation
 
 end TauCeti
