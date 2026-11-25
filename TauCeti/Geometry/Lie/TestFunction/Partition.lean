@@ -77,7 +77,7 @@ theorem exists_sum_eq_of_tsupport_subset_iUnion (a : LieTestFunction I G) (U : �
     contDiff_mul.contMDiff.comp ((χ i).contMDiff.prodMk_space a.contMDiff),
     a.hasCompactSupport.mul_left⟩, fun i ↦ (tsupport_mul_subset_left).trans (hχU i), ?_⟩
   ext x
-  simp only [finset_sum_apply, coe_mk, ← Finset.sum_mul]
+  simp only [_root_.sum_apply, coe_mk, ← Finset.sum_mul]
   by_cases hx : x ∈ tsupport a
   · rw [hχ x hx, one_mul]
   · rw [image_eq_zero_of_notMem_tsupport hx, mul_zero]

@@ -131,6 +131,12 @@ theorem equivTestFunction_apply_coe (a : LieTestFunction 𝓘(ℝ, E) Ω) (y : �
     equivTestFunction Ω a y = a y :=
   extendByZero_apply_coe Ω a y
 
+/-- As a function on `E`, the test function `equivTestFunction Ω a` is the extension by zero of
+`a`. -/
+theorem coe_equivTestFunction (a : LieTestFunction 𝓘(ℝ, E) Ω) :
+    ⇑(equivTestFunction Ω a) = ⇑(extendByZero Ω a) :=
+  (rfl)
+
 theorem equivTestFunction_apply_of_notMem (a : LieTestFunction 𝓘(ℝ, E) Ω) {y : E}
     (hy : y ∉ Ω) : equivTestFunction Ω a y = 0 :=
   extendByZero_apply_of_notMem Ω a hy
@@ -162,9 +168,9 @@ def chartEquiv (x : G) :
 @[simp]
 theorem tsupport_chartEquiv (x : G) (a : LieTestFunction I (chartSourceOpens H x)) :
     tsupport (chartEquiv I x a) = extChartAt I x '' ((↑) '' tsupport a) := by
-  change tsupport (extendByZero _ ((compDiffeomorph _).symm a)) = _
-  rw [tsupport_extendByZero, tsupport_compDiffeomorph_symm, ← Diffeomorph.image_eq_preimage_symm,
-    image_image, image_image]
+  rw [chartEquiv, LinearEquiv.trans_apply, coe_equivTestFunction, tsupport_extendByZero,
+    tsupport_compDiffeomorph_symm, ← Diffeomorph.image_eq_preimage_symm, image_image,
+    image_image]
   simp
 
 theorem chartEquiv_apply_of_mem (x : G) (a : LieTestFunction I (chartSourceOpens H x)) {y : E}

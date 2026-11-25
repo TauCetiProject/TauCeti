@@ -178,12 +178,11 @@ theorem HasCompactSupport.comp_of_forall_mem_imp_mem {X Y Z : Type*} [Topologica
 if the function does. -/
 theorem HasCompactSupport.comp_subtypeVal {X M : Type*} [TopologicalSpace X] [Zero M]
     {f : X → M} {U : Set X} (hf : HasCompactSupport f) (h : tsupport f ⊆ U) :
-    HasCompactSupport (fun x : U ↦ f x) := by
-  refine HasCompactSupport.intro' (K := ((↑) : U → X) ⁻¹' tsupport f) ?_
+    HasCompactSupport (fun x : U ↦ f x) :=
+  HasCompactSupport.intro' (K := ((↑) : U → X) ⁻¹' tsupport f)
+    (Topology.IsInducing.subtypeVal.isCompact_preimage' hf (by simpa using h))
     ((isClosed_tsupport f).preimage continuous_subtypeVal) fun x hx ↦
       image_eq_zero_of_notMem_tsupport (x := (x : X)) hx
-  rwa [Subtype.isCompact_iff, Set.image_preimage_eq_inter_range, Subtype.range_coe,
-    Set.inter_eq_left.2 h]
 
 /-- A slice `y ↦ f (x, y)` of a function with compact multiplicative support on a product has
 compact multiplicative support. -/

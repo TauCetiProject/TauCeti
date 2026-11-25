@@ -181,15 +181,6 @@ theorem toFunction_apply (a : LieTestFunction I G) : toFunction I G a = a :=
 theorem toFunction_injective : Injective (toFunction I G) :=
   DFunLike.coe_injective
 
-@[simp]
-theorem coe_finset_sum {ι : Type*} (s : Finset ι) (f : ι → LieTestFunction I G) :
-    ⇑(∑ i ∈ s, f i) = ∑ i ∈ s, ⇑(f i) :=
-  map_sum (toFunction I G) f s
-
-theorem finset_sum_apply {ι : Type*} (s : Finset ι) (f : ι → LieTestFunction I G) (x : G) :
-    (∑ i ∈ s, f i) x = ∑ i ∈ s, f i x := by
-  rw [coe_finset_sum, Finset.sum_apply]
-
 end Module
 
 section Conj
