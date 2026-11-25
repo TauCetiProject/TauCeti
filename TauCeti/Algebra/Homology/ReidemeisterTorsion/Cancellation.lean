@@ -230,7 +230,11 @@ private theorem torsionBracket_image {i i' : ZMod 2}
     (c i).det_append_cons_comp (e i) (hc i) _ _ hn hn']
 
 private theorem acyclic_iff_of_block {i i' : ZMod 2} {a : F} (ha : a ≠ 0)
-    (hd : (C.d i i').hom (c i 0) = a • c i' 0) (hii' : i + 1 = i') : C.Acyclic ↔ D.Acyclic := by
+    (hd : (C.d i i').hom (c i 0) = a • c i' 0) : C.Acyclic ↔ D.Acyclic := by
+  have hii' : i + 1 = i' := by
+    by_contra h
+    rw [C.shape i i' h] at hd
+    exact (smul_ne_zero ha ((c i').ne_zero 0)) hd.symm
   have h₁ : finrank F (LinearMap.range (C.d i i').hom) =
       finrank F (LinearMap.range (D.d i i').hom) + 1 := by
     rw [← span_cons_eq_range hc hd (chosenBoundaryBasis D e i i'),
@@ -306,12 +310,11 @@ private theorem parityTorsion_eq_of_block_one_zero {a : F} (ha : a ≠ 0)
     (hd : (C.d 1 0).hom (c 1 0) = a • c 0 0) :
     C.parityTorsion c =
       (-1) ^ finrank F (LinearMap.range (D.d 0 1).hom) * a⁻¹ * D.parityTorsion e := by
-  have hii' : (1 : ZMod 2) + 1 = 0 := by decide
   by_cases hD : D.Acyclic
   swap
   · rw [parityTorsion_of_not_acyclic D e hD, parityTorsion_of_not_acyclic C c
-      (by rwa [acyclic_iff_of_block hc ha hd hii']), mul_zero]
-  have hC := (acyclic_iff_of_block hc ha hd hii').2 hD
+      (by rwa [acyclic_iff_of_block hc ha hd]), mul_zero]
+  have hC := (acyclic_iff_of_block hc ha hd).2 hD
   obtain ⟨b₀, b₁, s₀, hs₀, s₁, hs₁, h₀, h₁⟩ := exists_torsionBracket_eq hc ha hd hC hD
   rw [parityTorsion_eq hC b₀ b₁ s₀ hs₀ s₁ hs₁, parityTorsion_eq hD _ _ _
     (chosenBoundaryLift_spec D e 0 1) _ (chosenBoundaryLift_spec D e 1 0), h₀, h₁, mul_inv]
@@ -321,12 +324,11 @@ private theorem parityTorsion_eq_of_block_zero_one {a : F} (ha : a ≠ 0)
     (hd : (C.d 0 1).hom (c 0 0) = a • c 1 0) :
     C.parityTorsion c =
       (-1) ^ finrank F (LinearMap.range (D.d 1 0).hom) * a * D.parityTorsion e := by
-  have hii' : (0 : ZMod 2) + 1 = 1 := by decide
   by_cases hD : D.Acyclic
   swap
   · rw [parityTorsion_of_not_acyclic D e hD, parityTorsion_of_not_acyclic C c
-      (by rwa [acyclic_iff_of_block hc ha hd hii']), mul_zero]
-  have hC := (acyclic_iff_of_block hc ha hd hii').2 hD
+      (by rwa [acyclic_iff_of_block hc ha hd]), mul_zero]
+  have hC := (acyclic_iff_of_block hc ha hd).2 hD
   obtain ⟨b₁, b₀, s₁, hs₁, s₀, hs₀, h₁, h₀⟩ := exists_torsionBracket_eq hc ha hd hC hD
   rw [parityTorsion_eq hC b₀ b₁ s₀ hs₀ s₁ hs₁, parityTorsion_eq hD _ _ _
     (chosenBoundaryLift_spec D e 0 1) _ (chosenBoundaryLift_spec D e 1 0), h₀, h₁, mul_inv,
@@ -340,11 +342,14 @@ of the bases `e`. They differ from `c` by unitriangular changes of basis. -/
 private theorem exists_adapted {i i' : ZMod 2}
     (hφ : ∀ l, (φ.f i).hom (e i l) - c i l.succ ∈ F ∙ c i 0)
     (hφ' : ∀ l, (φ.f i').hom (e i' l) - c i' l.succ ∈ F ∙ (C.d i i').hom (c i 0))
-    (ha : (c i').repr ((C.d i i').hom (c i 0)) 0 ≠ 0) (hii' : i + 1 = i') :
+    (ha : (c i').repr ((C.d i i').hom (c i 0)) 0 ≠ 0) :
     ∃ c' : ∀ k, Basis (Fin (n k + 1)) F (C.X k),
       (∀ k l, c' k l.succ = (φ.f k).hom (e k l)) ∧
         (C.d i i').hom (c' i 0) = (c i').repr ((C.d i i').hom (c i 0)) 0 • c' i' 0 ∧
         ∀ k, (c k).det (c' k) = 1 := by
+  have hii' : i + 1 = i' := by
+    by_contra h
+    exact ha (by rw [C.shape i i' h]; simp)
   set a := (c i').repr ((C.d i i').hom (c i 0)) 0
   set x := a⁻¹ • (C.d i i').hom (c i 0)
   choose t ht using fun l ↦ Submodule.mem_span_singleton.1 (hφ l)
@@ -385,11 +390,8 @@ theorem acyclic_iff_of_cancel {i i' : ZMod 2}
     (hφ : ∀ l, (φ.f i).hom (e i l) - c i l.succ ∈ F ∙ c i 0)
     (hφ' : ∀ l, (φ.f i').hom (e i' l) - c i' l.succ ∈ F ∙ (C.d i i').hom (c i 0))
     (ha : (c i').repr ((C.d i i').hom (c i 0)) 0 ≠ 0) : C.Acyclic ↔ D.Acyclic := by
-  have hii' : i + 1 = i' := by
-    by_contra h
-    exact ha (by rw [C.shape i i' h]; simp)
-  obtain ⟨c', hc', hd', -⟩ := exists_adapted hφ hφ' ha hii'
-  exact acyclic_iff_of_block hc' ha hd' hii'
+  obtain ⟨c', hc', hd', -⟩ := exists_adapted hφ hφ' ha
+  exact acyclic_iff_of_block hc' ha hd'
 
 /-- **The torsion after cancelling a pair joined by the odd-to-even differential.** Let `φ : D ⟶ C`
 send each `e 1 l` to `c 1 l.succ` up to a multiple of `c 1 0`, and each `e 0 l` to `c 0 l.succ` up
@@ -402,7 +404,7 @@ theorem parityTorsion_eq_of_cancel_one_zero
     (ha : (c 0).repr ((C.d 1 0).hom (c 1 0)) 0 ≠ 0) :
     C.parityTorsion c = (-1) ^ finrank F (LinearMap.range (D.d 0 1).hom) *
       ((c 0).repr ((C.d 1 0).hom (c 1 0)) 0)⁻¹ * D.parityTorsion e := by
-  obtain ⟨c', hc', hd', hdet⟩ := exists_adapted hφ hφ' ha (by decide : (1 : ZMod 2) + 1 = 0)
+  obtain ⟨c', hc', hd', hdet⟩ := exists_adapted hφ hφ' ha
   rw [← parityTorsion_eq_of_block_one_zero hc' ha hd', parityTorsion_eq_mul_det c c', hdet, hdet]
   simp
 
@@ -417,7 +419,7 @@ theorem parityTorsion_eq_of_cancel_zero_one
     (ha : (c 1).repr ((C.d 0 1).hom (c 0 0)) 0 ≠ 0) :
     C.parityTorsion c = (-1) ^ finrank F (LinearMap.range (D.d 1 0).hom) *
       (c 1).repr ((C.d 0 1).hom (c 0 0)) 0 * D.parityTorsion e := by
-  obtain ⟨c', hc', hd', hdet⟩ := exists_adapted hφ hφ' ha (by decide : (0 : ZMod 2) + 1 = 1)
+  obtain ⟨c', hc', hd', hdet⟩ := exists_adapted hφ hφ' ha
   rw [← parityTorsion_eq_of_block_zero_one hc' ha hd', parityTorsion_eq_mul_det c c', hdet, hdet]
   simp
 
@@ -434,32 +436,33 @@ variable {A : Type*} [CommRing A]
   {c : ∀ k, Basis (Fin (n k + 1)) A (C.X k)} {e : ∀ k, Basis (Fin (n k)) A (D.X k)} {φ : D ⟶ C}
 
 /-- The first cancellation hypothesis passes to the coordinate base changes along `g`. -/
-private theorem matrixBaseChangeMap_sub_mem_span_basis {K : Type*} [Field K] (g : A →+* K)
-    {i : ZMod 2} (hφ : ∀ l, (φ.f i).hom (e i l) - c i l.succ ∈ A ∙ c i 0) (l : Fin (n i)) :
+private theorem matrixBaseChangeMap_sub_mem_span_basis {K : Type*} [CommRing K] (g : A →+* K)
+    {i : ZMod 2} {l : Fin (n i)} (hφ : (φ.f i).hom (e i l) - c i l.succ ∈ A ∙ c i 0) :
     ((matrixBaseChangeMap c g e φ).f i).hom (D.matrixBaseChangeBasis e g i l) -
         C.matrixBaseChangeBasis c g i l.succ ∈ K ∙ C.matrixBaseChangeBasis c g i 0 := by
   rw [← (e i).semilinearMap_apply_self g _ l, matrixBaseChangeMap_f_apply_semilinearMap,
     ← (c i).semilinearMap_apply_self g _ l.succ, ← (c i).semilinearMap_apply_self g _ 0,
     ← map_sub]
-  obtain ⟨t, ht⟩ := Submodule.mem_span_singleton.1 (hφ l)
+  obtain ⟨t, ht⟩ := Submodule.mem_span_singleton.1 hφ
   exact Submodule.mem_span_singleton.2 ⟨g t, by rw [← ht, map_smulₛₗ]⟩
 
 /-- The second cancellation hypothesis passes to the coordinate base changes along `g`. -/
-private theorem matrixBaseChangeMap_sub_mem_span_d {K : Type*} [Field K] (g : A →+* K)
-    {i i' : ZMod 2} (hφ' : ∀ l, (φ.f i').hom (e i' l) - c i' l.succ ∈ A ∙ (C.d i i').hom (c i 0))
-    (l : Fin (n i')) :
+private theorem matrixBaseChangeMap_sub_mem_span_d {K : Type*} [CommRing K] (g : A →+* K)
+    {i i' : ZMod 2} {l : Fin (n i')}
+    (hφ' : (φ.f i').hom (e i' l) - c i' l.succ ∈ A ∙ (C.d i i').hom (c i 0)) :
     ((matrixBaseChangeMap c g e φ).f i').hom (D.matrixBaseChangeBasis e g i' l) -
         C.matrixBaseChangeBasis c g i' l.succ ∈
       K ∙ ((C.matrixBaseChange c g).d i i').hom (C.matrixBaseChangeBasis c g i 0) := by
   rw [← (e i').semilinearMap_apply_self g _ l, matrixBaseChangeMap_f_apply_semilinearMap,
     ← (c i').semilinearMap_apply_self g _ l.succ, ← (c i).semilinearMap_apply_self g _ 0,
     matrixBaseChange_d_apply_semilinearMap, ← map_sub]
-  obtain ⟨t, ht⟩ := Submodule.mem_span_singleton.1 (hφ' l)
+  obtain ⟨t, ht⟩ := Submodule.mem_span_singleton.1 hφ'
   exact Submodule.mem_span_singleton.2 ⟨g t, by rw [← ht, map_smulₛₗ]⟩
 
 /-- The entry of the matrix of the differential of the coordinate base change at the cancelled pair
 is the image under `g` of the corresponding entry for `C`. -/
-private theorem repr_matrixBaseChange_d_basis {K : Type*} [Field K] (g : A →+* K) {i i' : ZMod 2} :
+private theorem repr_matrixBaseChange_d_basis {K : Type*} [CommRing K] (g : A →+* K)
+    {i i' : ZMod 2} :
     (C.matrixBaseChangeBasis c g i').repr
         (((C.matrixBaseChange c g).d i i').hom (C.matrixBaseChangeBasis c g i 0)) 0 =
       g ((c i').repr ((C.d i i').hom (c i 0)) 0) := by
@@ -477,8 +480,8 @@ theorem acyclic_matrixBaseChange_iff_of_cancel {i i' : ZMod 2}
     {K : Type*} [Field K] (g : A →+* K)
     (ha : g ((c i').repr ((C.d i i').hom (c i 0)) 0) ≠ 0) :
     (C.matrixBaseChange c g).Acyclic ↔ (D.matrixBaseChange e g).Acyclic :=
-  acyclic_iff_of_cancel (matrixBaseChangeMap_sub_mem_span_basis g hφ)
-    (matrixBaseChangeMap_sub_mem_span_d g hφ') (by rwa [repr_matrixBaseChange_d_basis])
+  acyclic_iff_of_cancel (fun l ↦ matrixBaseChangeMap_sub_mem_span_basis g (hφ l))
+    (fun l ↦ matrixBaseChangeMap_sub_mem_span_d g (hφ' l)) (by rwa [repr_matrixBaseChange_d_basis])
 
 section OneZero
 
@@ -499,8 +502,9 @@ theorem parityTorsion_matrixBaseChange_eq_of_cancel_one_zero {K : Type*} [Field 
         (g ((c 0).repr ((C.d 1 0).hom (c 1 0)) 0))⁻¹ *
           (D.matrixBaseChange e g).parityTorsion (D.matrixBaseChangeBasis e g) := by
   rw [← repr_matrixBaseChange_d_basis] at ha ⊢
-  exact parityTorsion_eq_of_cancel_one_zero (matrixBaseChangeMap_sub_mem_span_basis g hφ)
-    (matrixBaseChangeMap_sub_mem_span_d g hφ') ha
+  exact parityTorsion_eq_of_cancel_one_zero
+    (fun l ↦ matrixBaseChangeMap_sub_mem_span_basis g (hφ l))
+    (fun l ↦ matrixBaseChangeMap_sub_mem_span_d g (hφ' l)) ha
 
 variable {Q : Type*} [CommRing Q] [IsArtinianRing Q] [IsReduced Q] (f : A →+* Q)
 
@@ -561,8 +565,9 @@ theorem parityTorsion_matrixBaseChange_eq_of_cancel_zero_one {K : Type*} [Field 
         g ((c 1).repr ((C.d 0 1).hom (c 0 0)) 0) *
           (D.matrixBaseChange e g).parityTorsion (D.matrixBaseChangeBasis e g) := by
   rw [← repr_matrixBaseChange_d_basis] at ha ⊢
-  exact parityTorsion_eq_of_cancel_zero_one (matrixBaseChangeMap_sub_mem_span_basis g hφ)
-    (matrixBaseChangeMap_sub_mem_span_d g hφ') ha
+  exact parityTorsion_eq_of_cancel_zero_one
+    (fun l ↦ matrixBaseChangeMap_sub_mem_span_basis g (hφ l))
+    (fun l ↦ matrixBaseChangeMap_sub_mem_span_d g (hφ' l)) ha
 
 variable {Q : Type*} [CommRing Q] [IsArtinianRing Q] [IsReduced Q] (f : A →+* Q)
 
