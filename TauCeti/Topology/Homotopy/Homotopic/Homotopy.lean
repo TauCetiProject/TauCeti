@@ -308,6 +308,12 @@ theorem evalAtEquiv_homotopySymm {y₀ y₁ : Y} (F : Homotopy (const X y₀) (c
   ext x : 1
   simp
 
+/-- The constant family of constant paths corresponds to the constant homotopy. -/
+@[simp]
+theorem evalAtEquiv_symm_const_refl (y : Y) :
+    evalAtEquiv.symm (const X (Path.refl y)) = Homotopy.refl (const X y) := by
+  rw [Equiv.symm_apply_eq, evalAtEquiv_refl]
+
 @[simp]
 theorem evalAtEquiv_symm_pathTrans {y₀ y₁ y₂ : Y} (α : C(X, Path y₀ y₁))
     (β : C(X, Path y₁ y₂)) :

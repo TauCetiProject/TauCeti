@@ -88,15 +88,12 @@ corresponds to the homotopy `(t, x) ↦ l.path x t` from `f ∘ c` to the consta
 def liftEquivHomotopy : Lift f k c ≃ Homotopy (f.comp c) (const X k) where
   toFun l :=
     { toFun p := l.path p.2 p.1
-      continuous_toFun := continuous_eval.comp
-        ((continuous_subtypeVal.snd.comp (l.val.continuous.comp continuous_snd)).prodMk
-          continuous_fst)
+      continuous_toFun := by simp only [Lift.path_apply]; fun_prop
       map_zero_left x := (l.path x).source
       map_one_left x := (l.path x).target }
   invFun F :=
     ⟨{ toFun x := ⟨(c x, (F.toContinuousMap.comp .prodSwap).curry x), by simp, by simp⟩
-       continuous_toFun := (c.continuous.prodMk
-         (F.toContinuousMap.comp .prodSwap).curry.continuous).subtype_mk _ },
+       continuous_toFun := by fun_prop },
       ContinuousMap.ext fun x ↦ by simp⟩
   left_inv l := Lift.ext fun x ↦ Path.ext (rfl)
   right_inv _ := (rfl)
@@ -142,13 +139,23 @@ theorem homotopic_iff {l₀ l₁ : Lift f k c} :
     let L' : Lift f k (c.comp .snd) :=
       ⟨L.toContinuousMap, ContinuousMap.ext fun p ↦ by
         simpa using DFunLike.congr_fun (L.prop p.1) p.2⟩
-    exact ⟨liftEquivHomotopy f k _ L', fun t x ↦ congrArg (fun p ↦ p.val.2 t) (L.apply_zero x),
-      fun t x ↦ congrArg (fun p ↦ p.val.2 t) (L.apply_one x)⟩
+    exact ⟨liftEquivHomotopy f k _ L',
+      fun t x ↦ (liftEquivHomotopy_apply L' t (0, x)).trans (by simp [path_apply, L']),
+      fun t x ↦ (liftEquivHomotopy_apply L' t (1, x)).trans (by simp [path_apply, L'])⟩
   · rintro ⟨H, h₀, h₁⟩
     let L' := (liftEquivHomotopy f k (c.comp .snd)).symm H
+    -- `H` is a homotopy from `(f.comp c).comp snd`, which is only definitionally
+    -- `f.comp (c.comp snd)`, so the lift `c.comp snd` is named explicitly.
+    have hL' (t : I) (p : I × X) : L'.path p t = H (t, p) :=
+      (DFunLike.congr_fun (path_liftEquivHomotopy_symm (c := c.comp .snd) H p) t).trans
+        (Homotopy.evalAt_apply _ _ _)
     exact ⟨{ toContinuousMap := L'.val
-             map_zero_left x := Subtype.ext (Prod.ext (by simp [L']) (ContinuousMap.ext (h₀ · x)))
-             map_one_left x := Subtype.ext (Prod.ext (by simp [L']) (ContinuousMap.ext (h₁ · x)))
+             map_zero_left x := Subtype.ext (Prod.ext (by simp [L']) (ContinuousMap.ext fun t ↦ by
+               rw [ContinuousMap.toFun_eq_coe, ← path_apply, hL']
+               exact h₀ t x))
+             map_one_left x := Subtype.ext (Prod.ext (by simp [L']) (ContinuousMap.ext fun t ↦ by
+               rw [ContinuousMap.toFun_eq_coe, ← path_apply, hL']
+               exact h₁ t x))
              prop' s := ContinuousMap.ext fun x ↦ by simp [L'] }⟩
 
 @[refl]
@@ -236,7 +243,8 @@ theorem Homotopic.appendLoops {l₀ l₁ : Lift f k c} {α β : C(X, Ω K k)} (h
     (hα : α.Homotopic β) : (l₀.appendLoops α).Homotopic (l₁.appendLoops β) :=
   homotopic_iff.2 <| by
     simpa using Homotopy.Homotopic.hcomp (homotopic_iff.1 hl)
-      (Homotopy.homotopic_iff_evalAtEquiv.2 (by simpa using hα))
+      ((Homotopy.homotopic_iff_evalAtEquiv (F := Homotopy.evalAtEquiv.symm α)
+        (G := Homotopy.evalAtEquiv.symm β)).2 (by simpa using hα))
 
 /-- The differences between lifts homotopic over `c` are homotopic. -/
 theorem Homotopic.difference {l₀ l₀' l₁ l₁' : Lift f k c} (h₀ : l₀.Homotopic l₀')
@@ -249,7 +257,7 @@ over `c`. -/
 theorem homotopic_appendLoops_const_refl (l : Lift f k c) :
     (l.appendLoops (const X (Path.refl k))).Homotopic l :=
   homotopic_iff.2 <| by
-    rw [liftEquivHomotopy_appendLoops, ← Homotopy.evalAtEquiv_refl, Equiv.symm_apply_apply]
+    rw [liftEquivHomotopy_appendLoops, Homotopy.evalAtEquiv_symm_const_refl]
     exact Homotopy.Homotopic.trans_refl _
 
 /-- Appending two families of loops in turn is homotopic over `c` to appending their pointwise
