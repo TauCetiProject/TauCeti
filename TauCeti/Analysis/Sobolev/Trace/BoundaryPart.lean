@@ -36,8 +36,9 @@ In terms of the space `W^{1,p}_Γ(H)` of functions vanishing on `Γ`
 (`TauCeti.w1pVanishingOnSubmodule`), whose generators are the restricted test functions with
 support disjoint from `closure Γ ⊆ K`, the characterization reads
 `u ∈ W^{1,p}_Γ(H) ↔ T u = 0` almost everywhere on `{ℓ < c}`
-(`TauCeti.W1p.mem_w1pVanishingOnSubmodule_iff_halfSpaceTrace_ae_eq_zero`). The direction "`u` lies
-in `W^{1,p}_Γ(H)` implies zero trace on `Γ`" holds for every set `Γ`
+(`TauCeti.W1p.mem_w1pVanishingOnSubmodule_iff_halfSpaceTrace_ae_eq_zero`). Unlike the sequence form,
+this holds also for `ℓ = 0`, since `closure Γ` is then empty or the whole boundary hyperplane. The
+direction "`u` lies in `W^{1,p}_Γ(H)` implies zero trace on `Γ`" holds for every set `Γ`
 (`TauCeti.W1p.halfSpaceTrace_ae_eq_zero_of_mem_w1pVanishingOnSubmodule`).
 
 ## The argument
@@ -300,36 +301,38 @@ theorem W1p.exists_seq_tendsto_restrictL_ofTestFunctionₗ_iff_halfSpaceTrace_ae
 /-- **Functions vanishing on `Γ` have zero trace on `Γ`.** For `p < ∞` and any set `Γ`, the
 half-space trace of every `u ∈ W^{1,p}_Γ(H)` vanishes almost everywhere on the set of `y` with
 `(a, y) ∈ Γ`: the generators are continuous up to the boundary and vanish on `closure Γ`, and the
-trace is continuous. -/
+trace is continuous. The argument adapts the proof of
+`TauCeti.W1p.frontierTrace_ae_eq_zero_of_mem_w1pVanishingOnSubmodule` for bounded Lipschitz
+domains, with the closedness argument of the half-hyperplane characterization above. -/
 theorem W1p.halfSpaceTrace_ae_eq_zero_of_mem_w1pVanishingOnSubmodule (hp : p ≠ (∞ : ℝ≥0∞))
     (a : ℝ) {Γ : Set (WithLp 2 (ℝ × E))}
     {u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p}
     (hu : u ∈ w1pVanishingOnSubmodule volume (normalHalfSpace a) p Γ) :
     W1p.halfSpaceTrace hp a u =ᵐ[volume.restrict {y | WithLp.toLp 2 (a, y) ∈ Γ}] 0 := by
-  set S := {y : E | WithLp.toLp 2 (a, y) ∈ Γ}
-  -- Vanishing on `S` is the kernel of a continuous linear map, hence a closed condition.
-  let R := (LpToLpRestrictCLM E ℝ ℝ volume p S).comp (W1p.halfSpaceTrace hp a)
-  have hclosed : IsClosed {v | R v = 0} := isClosed_eq R.continuous continuous_const
+  set C := {y : E | WithLp.toLp 2 (a, y) ∈ closure Γ}
+  have hC : IsClosed C := isClosed_closure.preimage (by fun_prop)
+  -- Vanishing on `C` is a closed condition on the trace.
+  have hclosed := (Lp.isClosed_setOf_ae_notMem_imp_eq_zero (μ := (volume : Measure E)) (F := ℝ)
+    (p := p) Cᶜ).preimage (W1p.halfSpaceTrace hp a).continuous
   have h := w1pVanishingOnSubmodule_subset_of_isClosed hclosed (fun φ hφ => ?_) hu
-  · exact (LpToLpRestrictCLM_eq_zero_iff (𝕜 := ℝ) S _).1 h
+  · simp only [mem_preimage, mem_ofPred_eq, mem_compl_iff, not_not] at h
+    exact ae_restrict_of_ae_restrict_of_subset (t := C) (fun _ hy => subset_closure hy)
+      ((ae_restrict_iff' hC.measurableSet).2 h)
   -- The trace of a generator is its restriction, which vanishes where `(a, y) ∈ closure Γ`.
-  have hS : IsClosed {y : E | WithLp.toLp 2 (a, y) ∈ closure Γ} :=
-    isClosed_closure.preimage (by fun_prop)
-  rw [mem_ofPred, ContinuousLinearMap.comp_apply, LpToLpRestrictCLM_eq_zero_iff (𝕜 := ℝ),
-    W1p.halfSpaceTrace_restrictL]
-  have hSS : S ⊆ {y : E | WithLp.toLp 2 (a, y) ∈ closure Γ} := fun _ hy => subset_closure hy
-  filter_upwards [ae_restrict_of_ae (W1p.hyperplaneTrace_ofTestFunction_apply_ae hp a φ),
-    ae_restrict_of_ae_restrict_of_subset hSS (ae_restrict_mem hS.measurableSet)] with y hy hyΓ
-  rw [hy, Pi.zero_apply]
-  exact image_eq_zero_of_notMem_tsupport (hφ.notMem_of_mem_right hyΓ)
+  simp only [mem_preimage, mem_ofPred_eq, mem_compl_iff, not_not]
+  rw [W1p.halfSpaceTrace_restrictL]
+  filter_upwards [W1p.hyperplaneTrace_ofTestFunction_apply_ae hp a φ] with y hy hyC
+  rw [hy]
+  exact image_eq_zero_of_notMem_tsupport (hφ.notMem_of_mem_right hyC)
 
 /-- **The trace characterization of `W^{1,p}_Γ(H)` on a half-hyperplane.** Let `1 ≤ p < ∞`, let
-`H = {x | a < x.fst}` in `ℝ × E`, let `ℓ : E →L[ℝ] ℝ` be nonzero, and let
-`Γ = {x | x.fst = a ∧ ℓ x.snd < c}` be a half of the boundary hyperplane `{a} × E`. Then
-`u ∈ W^{1,p}(H)` lies in `W^{1,p}_Γ(H)` if and only if its trace vanishes almost everywhere on
-`{y | ℓ y < c}`. -/
+`H = {x | a < x.fst}` in `ℝ × E`, let `ℓ : E →L[ℝ] ℝ`, and let `Γ = {x | x.fst = a ∧ ℓ x.snd < c}`
+be a half of the boundary hyperplane `{a} × E`. Then `u ∈ W^{1,p}(H)` lies in `W^{1,p}_Γ(H)` if
+and only if its trace vanishes almost everywhere on `{y | ℓ y < c}`. For `ℓ = 0`, `Γ` is either
+empty, when every `u` qualifies by density of test functions, or the whole boundary hyperplane,
+when this is the kernel theorem `TauCeti.W1p.mem_w1p0Submodule_iff_halfSpaceTrace_eq_zero`. -/
 theorem W1p.mem_w1pVanishingOnSubmodule_iff_halfSpaceTrace_ae_eq_zero (hp : p ≠ (∞ : ℝ≥0∞))
-    (a c : ℝ) {ℓ : E →L[ℝ] ℝ} (hℓ : ℓ ≠ 0)
+    (a c : ℝ) (ℓ : E →L[ℝ] ℝ)
     (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p) :
     u ∈ w1pVanishingOnSubmodule volume (normalHalfSpace a) p {x | x.fst = a ∧ ℓ x.snd < c} ↔
       ∀ᵐ y ∂(volume : Measure E), ℓ y < c → W1p.halfSpaceTrace hp a u y = 0 := by
@@ -345,6 +348,26 @@ theorem W1p.mem_w1pVanishingOnSubmodule_iff_halfSpaceTrace_ae_eq_zero (hp : p �
     rw [hS] at h
     exact (ae_restrict_iff' hmeas).1 h
   intro hu
+  obtain rfl | hℓ := eq_or_ne ℓ 0
+  · by_cases hc : 0 < c
+    · -- `Γ` is the boundary hyperplane, disjoint from `H`, and the trace of `u` vanishes.
+      refine w1p0Submodule_le_w1pVanishingOnSubmodule
+        (Set.disjoint_left.2 fun x (hx : x.fst = a ∧ _) hxH =>
+          ((mem_normalHalfSpace a x).1 hxH).ne' hx.1)
+        ((W1p.mem_w1p0Submodule_iff_halfSpaceTrace_eq_zero hp a u).2 (Lp.ext ?_))
+      filter_upwards [hu, Lp.coeFn_zero ℝ p (volume : Measure E)] with y hy h0
+      rw [hy (by simpa using hc), h0, Pi.zero_apply]
+    · -- `Γ` is empty, and `u` is the restriction of a limit of test functions.
+      have hΓ : {x : WithLp 2 (ℝ × E) | x.fst = a ∧ (0 : E →L[ℝ] ℝ) x.snd < c} = ∅ :=
+        eq_empty_of_forall_notMem fun x hx => hc (by simpa using hx.2)
+      rw [hΓ]
+      have h : W1p.restrictL le_top (W1p.extendByReflectionL a u) ∈
+          w1pVanishingOnSubmodule volume (normalHalfSpace a) p ∅ :=
+        (W1p.denseRange_ofTestFunctionₗ_top hp).induction_on (W1p.extendByReflectionL a u)
+        ((w1pVanishingOnSubmodule volume (normalHalfSpace (E := E) a) p ∅).isClosed.preimage
+          (W1p.restrictL (le_top : normalHalfSpace (E := E) a ≤ ⊤)).continuous)
+        fun φ => W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule (by simp)
+      rwa [W1p.restrictL_extendByReflectionL] at h
   -- `u` is a limit of restricted test functions supported away from `K ⊇ closure Γ`.
   obtain ⟨φ, hφ, hlim⟩ :=
     (W1p.exists_seq_tendsto_restrictL_ofTestFunctionₗ_iff_halfSpaceTrace_ae_eq_zero hp a c hℓ
@@ -354,8 +377,7 @@ theorem W1p.mem_w1pVanishingOnSubmodule_iff_halfSpaceTrace_ae_eq_zero (hp : p �
     closure_minimal (fun x hx => ⟨hx.1, hx.2.le⟩)
       ((isClosed_eq (WithLp.fstL 2 ℝ ℝ E).continuous continuous_const).inter
         (isClosed_le (ℓ.comp (WithLp.sndL 2 ℝ ℝ E)).continuous continuous_const))
-  exact (w1pVanishingOnSubmodule volume (normalHalfSpace a) p _).isClosed.mem_of_tendsto hlim
-    (Eventually.of_forall fun k =>
-      W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule ((hφ k).mono_right hK))
+  exact mem_w1pVanishingOnSubmodule_iff_exists_seq_tendsto.2
+    ⟨φ, fun k => (hφ k).mono_right hK, hlim⟩
 
 end TauCeti
