@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import Mathlib.RingTheory.Localization.BaseChange
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Factorial
+import TauCeti.RingTheory.Localization.TensorProduct
 
 /-!
 # `K`-Cartier divisors and `ℚ`-Cartier Weil divisors
@@ -38,7 +39,7 @@ integer `r ≥ 1`; these form the range of that extension, a `ℚ`-subspace isom
 ## References
 
 * R. Lazarsfeld, *Positivity in Algebraic Geometry I*, Ergebnisse der Mathematik und ihrer
-  Grenzgebiete 48, Springer, 2004, §1.1.C and §1.3.B: `ℚ`-Cartier and `ℝ`-Cartier divisors and
+  Grenzgebiete 48, Springer, 2004, §1.3.A and §1.3.B: `ℚ`-divisors, `ℝ`-divisors and
   `ℝ`-linear equivalence.
 * [The Stacks Project, Lemma 10.157.6](https://stacks.math.columbia.edu/tag/031T): a Noetherian
   normal domain is the intersection of its localizations at height-one primes, the input to the
@@ -113,19 +114,11 @@ theorem mem_qCartierSubmodule_iff {D : ℚ ⊗[ℤ] SchemeWeilDivisor X} :
   rw [qCartierSubmodule, LinearMap.mem_range]
   refine ⟨?_, fun ⟨r, hr, A, h⟩ ↦
     ⟨_, baseChangeToWeilDivisor_inv_tmul (Nat.cast_ne_zero.mpr hr.ne') h⟩⟩
-  -- `ℚ ⊗[ℤ] Div(X)` is the localization of `Div(X)` at the nonzero integers.
   rintro ⟨E, rfl⟩
-  obtain ⟨⟨A, s, hs⟩, h⟩ :=
-    IsLocalizedModule.surj (nonZeroDivisors ℤ) (TensorProduct.mk ℤ ℚ (CartierDivisor X) 1) E
-  have hs0 : s ≠ 0 := nonZeroDivisors.ne_zero hs
-  have h' : (s : ℚ) • baseChangeToWeilDivisor ℚ X E = 1 ⊗ₜ A.toWeilDivisor := by
-    rw [← map_smul, Int.cast_smul_eq_zsmul, ← baseChangeToWeilDivisor_tmul]
-    simpa only [Submonoid.smul_def, mk_apply] using congrArg (baseChangeToWeilDivisor ℚ X) h
-  obtain ⟨n, rfl | rfl⟩ := s.eq_nat_or_neg
-  · exact ⟨n, by omega, A, by simpa only [Int.cast_natCast] using h'⟩
-  · refine ⟨n, by omega, -A, ?_⟩
-    rw [Int.cast_neg, neg_smul, neg_eq_iff_eq_neg, Int.cast_natCast] at h'
-    simp [h', ← toWeilDivisorHom_apply, tmul_neg]
+  obtain ⟨n, A, hn, rfl⟩ := TensorProduct.exists_eq_inv_natCast_tmul E
+  refine ⟨n, Nat.pos_of_ne_zero hn, A, ?_⟩
+  rw [baseChangeToWeilDivisor_tmul, smul_tmul', smul_eq_mul,
+    mul_inv_cancel₀ (Nat.cast_ne_zero.mpr hn)]
 
 variable (X) in
 /-- Every `K`-combination of principal Weil divisors is the image of a `K`-combination of principal
