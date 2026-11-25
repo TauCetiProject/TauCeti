@@ -36,7 +36,7 @@ namespace TauCeti.GaussianRationalsCMType
 /-- `ℚ(i)`, as the fourth cyclotomic field. -/
 abbrev K : Type := CyclotomicField 4 ℚ
 
-instance instIsCyclotomicExtensionK : IsCyclotomicExtension {4} ℚ K :=
+local instance instIsCyclotomicExtensionK : IsCyclotomicExtension {4} ℚ K :=
   have : NeZero ((4 : ℕ) : ℚ) := ⟨by norm_num⟩
   CyclotomicField.isCyclotomicExtension 4 ℚ
 
@@ -45,12 +45,10 @@ noncomputable abbrev ζ : K := IsCyclotomicExtension.zeta 4 ℚ K
 
 theorem isPrimitiveRoot_ζ : IsPrimitiveRoot ζ 4 := IsCyclotomicExtension.zeta_spec 4 ℚ K
 
-theorem irreducible_cyclotomic_four : Irreducible (cyclotomic 4 ℚ) :=
-  cyclotomic.irreducible_rat (by norm_num)
-
 /-- The embedding `ℚ(i) → ℂ` sending `i` to `I`, as a `ℚ`-algebra map. -/
 noncomputable def φₐ : K →ₐ[ℚ] ℂ :=
-  (isPrimitiveRoot_ζ.embeddingsEquivPrimitiveRoots ℂ irreducible_cyclotomic_four).symm
+  (isPrimitiveRoot_ζ.embeddingsEquivPrimitiveRoots ℂ
+    (cyclotomic.irreducible_rat (by norm_num))).symm
     ⟨Complex.I, (mem_primitiveRoots (by norm_num)).2 Complex.isPrimitiveRoot_I⟩
 
 /-- The embedding `ℚ(i) → ℂ` sending `i` to `I`. -/
@@ -58,7 +56,7 @@ noncomputable def φ : K →+* ℂ := φₐ.toRingHom
 
 theorem φₐ_ζ : φₐ ζ = Complex.I := by
   have h := isPrimitiveRoot_ζ.embeddingsEquivPrimitiveRoots_apply_coe ℂ
-    irreducible_cyclotomic_four φₐ
+    (cyclotomic.irreducible_rat (by norm_num)) φₐ
   rw [φₐ, Equiv.apply_symm_apply] at h
   exact h.symm
 
@@ -99,8 +97,7 @@ theorem coe_Φ : (Φ : Set (K →+* ℂ)) = {φ} :=
 theorem exists_coe_eq_singleton (ψ : K →+* ℂ) : ∃ Ψ : CMType K, (Ψ : Set (K →+* ℂ)) = {ψ} := by
   rcases eq_or_eq_star ψ with rfl | rfl
   · exact ⟨Φ, coe_Φ⟩
-  · exact ⟨CMType.ofPair (star φ) (by simpa using star_φ_ne_self.symm)
-      (fun χ ↦ by simpa [or_comm] using eq_or_eq_star χ), CMType.coe_ofPair _ _ _⟩
+  · exact ⟨star Φ, by simp [Φ]⟩
 
 /-- **Every CM type of `ℚ(i)` has one embedding.** -/
 theorem natCard_eq_one (Ψ : CMType K) : Nat.card Ψ = 1 := by

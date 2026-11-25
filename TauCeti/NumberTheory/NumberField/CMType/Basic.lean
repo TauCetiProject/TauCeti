@@ -191,6 +191,14 @@ theorem coe_star_eq_image (Φ : CMType E) :
   rintro ⟨ψ, hψ, rfl⟩
   simpa using hψ
 
+/-- The complement of the CM type `{φ}` is the CM type `{star φ}`. -/
+@[simp]
+theorem star_ofPair (φ : E →+* ℂ) (hφ : star φ ≠ φ) (h : ∀ ψ : E →+* ℂ, ψ = φ ∨ ψ = star φ) :
+    star (ofPair φ hφ h) =
+      ofPair (star φ) (by simpa using hφ.symm) (fun ψ ↦ by simpa [or_comm] using h ψ) := by
+  ext ψ
+  rcases h ψ with rfl | rfl <;> simp [hφ.symm]
+
 /-- A CM type and its complement are different whenever `E` has a complex embedding. -/
 theorem star_ne_self [Nonempty (E →+* ℂ)] (Φ : CMType E) : star Φ ≠ Φ := fun h ↦ by
   obtain ⟨φ⟩ := ‹Nonempty (E →+* ℂ)›
