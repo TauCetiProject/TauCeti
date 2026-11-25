@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.CongruenceSubgroup
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Topology
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.CongruenceLevel
@@ -39,6 +40,8 @@ the residue fields of `R` are finite.
 * `IsDedekindDomain.FiniteAdeleRing.integralGL`: the inclusion `GL_n(Ô) → GL_n(𝔸_f)`, an open
   embedding (`isOpenEmbedding_integralGL`) with range the matrices whose entries and inverse
   entries are integral (`mem_range_integralGL_iff`).
+* `IsDedekindDomain.FiniteAdeleRing.mem_range_mapGL_of_det_eq_one`: a matrix in `GL_n(K)` of
+  determinant `1` whose diagonal image lies in `GL_n(Ô)` comes from `SL_n(R)`.
 * `IsDedekindDomain.FiniteAdeleRing.principalLevel`, `level1`, `level0`: the levels `K(N)`,
   `K₁(N)` and `K₀(N)`, with entrywise membership criteria `mem_principalLevel_iff`,
   `mem_level1_iff` and `mem_level0_iff`, all instances of `mem_map_integralGL_iff`.
@@ -105,6 +108,26 @@ theorem mem_range_integralGL_iff {g : GL (Fin n) 𝔸ᶠ[R, K]} :
       (∀ i j, (g : Matrix (Fin n) (Fin n) 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K) ∧
         ∀ i j, (↑g⁻¹ : Matrix (Fin n) (Fin n) 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K :=
   Matrix.GeneralLinearGroup.mem_range_map_val_iff (integralAdeles R K) g
+
+/-- A matrix in `GL_n(K)` of determinant `1` whose diagonal image in `GL_n(𝔸_f)` lies in
+`GL_n(Ô)` comes from `SL_n(R)`. -/
+theorem mem_range_mapGL_of_det_eq_one {γ : GL (Fin n) K}
+    (hdet : Matrix.GeneralLinearGroup.det γ = 1)
+    (hint : Matrix.GeneralLinearGroup.map (algebraMap K 𝔸ᶠ[R, K]) γ ∈
+      (integralGL K n (R := R)).range) :
+    γ ∈ (Matrix.SpecialLinearGroup.mapGL (n := Fin n) (R := R) K).range := by
+  have hent (i j : Fin n) : (γ : Matrix (Fin n) (Fin n) K) i j ∈ (algebraMap R K).range := by
+    rw [← algebraMap_mem_integralAdeles_iff (R := R)]
+    simpa using (mem_range_integralGL_iff.mp hint).1 i j
+  choose m hm using hent
+  have hmat : (Matrix.of m).map (algebraMap R K) = (γ : Matrix (Fin n) (Fin n) K) := by
+    ext i j
+    simpa using hm i j
+  have hdet' : (Matrix.of m).det = 1 := by
+    apply IsFractionRing.injective R K
+    simpa [RingHom.map_det, hmat] using congrArg Units.val hdet
+  exact ⟨⟨Matrix.of m, hdet'⟩,
+    Units.ext ((Matrix.SpecialLinearGroup.mapGL_coe_matrix _).trans hmat)⟩
 
 variable (K n) in
 /-- The inclusion `GL_n(Ô) → GL_n(𝔸_f)` is an open embedding: through the homeomorphisms

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import TauCeti.NumberTheory.ModularForms.AdelicComponentGroup
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.CongruenceLevel
 import TauCeti.Topology.Algebra.Group.Subgroup
@@ -21,16 +20,13 @@ For a compact subgroup `U` of `GL₂(𝔸_f)` and `g ∈ GL₂(𝔸_f)`, the con
 The argument is topological. The integral points `GL₂(Ô)` form an open subgroup of `GL₂(𝔸_f)`
 (`IsDedekindDomain.FiniteAdeleRing.isOpenEmbedding_integralGL`), so they meet the compact group
 `gUg⁻¹` in an open subgroup, of finite index in it. Pulling back along the diagonal embedding,
-the elements of `Γ_{g,U}` with integral entries have finite index in `Γ_{g,U}`. Over any Dedekind
-domain `R` with fraction field `K`, a matrix in `GL_n(K)` of determinant `1` whose diagonal image
-is integral comes from `SL_n(R)`, since the integral finite adeles meet `K` in `R`
-(`IsDedekindDomain.FiniteAdeleRing.algebraMap_mem_integralAdeles_iff`). The elements of `Γ_{g,U}`
+the elements of `Γ_{g,U}` with integral entries have finite index in `Γ_{g,U}`. A matrix in
+`GL₂(ℚ)` of determinant `1` whose diagonal image is integral comes from `SL₂(ℤ)`
+(`IsDedekindDomain.FiniteAdeleRing.mem_range_mapGL_of_det_eq_one`). The elements of `Γ_{g,U}`
 have determinant `1`, so those with integral entries are the elements of `SL₂(ℤ)`.
 
 ## Main results
 
-* `IsDedekindDomain.FiniteAdeleRing.mem_range_mapGL_of_det_eq_one`: a matrix in `GL_n(K)` of
-  determinant `1` whose diagonal image lies in `GL_n(Ô)` comes from `SL_n(R)`.
 * `TauCeti.AdelicExamples.GL2.relIndex_range_mapGL_componentGroup_ne_zero`: `Γ_{g,U} ∩ SL₂(ℤ)` has
   finite index in `Γ_{g,U}`.
 
@@ -44,31 +40,6 @@ public section
 
 open IsDedekindDomain IsDedekindDomain.FiniteAdeleRing Matrix
 open scoped Pointwise
-
-namespace IsDedekindDomain.FiniteAdeleRing
-
-variable {R : Type*} [CommRing R] [IsDedekindDomain R]
-  {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] {n : ℕ}
-
-/-- A matrix in `GL_n(K)` of determinant `1` whose diagonal image in `GL_n(𝔸_f)` lies in
-`GL_n(Ô)` comes from `SL_n(R)`. -/
-theorem mem_range_mapGL_of_det_eq_one {γ : GL (Fin n) K} (hdet : GeneralLinearGroup.det γ = 1)
-    (hint : GeneralLinearGroup.map (algebraMap K (FiniteAdeleRing R K)) γ ∈
-      (integralGL K n (R := R)).range) :
-    γ ∈ (SpecialLinearGroup.mapGL (n := Fin n) (R := R) K).range := by
-  have hent (i j : Fin n) : (γ : Matrix (Fin n) (Fin n) K) i j ∈ (algebraMap R K).range := by
-    rw [← algebraMap_mem_integralAdeles_iff (R := R)]
-    simpa using (mem_range_integralGL_iff.mp hint).1 i j
-  choose m hm using hent
-  have hmat : (Matrix.of m).map (algebraMap R K) = (γ : Matrix (Fin n) (Fin n) K) := by
-    ext i j
-    simpa using hm i j
-  have hdet' : (Matrix.of m).det = 1 := by
-    apply IsFractionRing.injective R K
-    simpa [RingHom.map_det, hmat] using congrArg Units.val hdet
-  exact ⟨⟨Matrix.of m, hdet'⟩, Units.ext ((SpecialLinearGroup.mapGL_coe_matrix _).trans hmat)⟩
-
-end IsDedekindDomain.FiniteAdeleRing
 
 namespace TauCeti
 
