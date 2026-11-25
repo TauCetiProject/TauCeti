@@ -15,6 +15,8 @@ public import Mathlib.Topology.Algebra.Nonarchimedean.Completion
 public import TauCeti.Topology.Algebra.Nonarchimedean.Lattice
 public import TauCeti.Topology.Algebra.UniformMulAction
 
+import TauCeti.Topology.Algebra.Module.TensorProduct
+
 /-!
 # The completed tensor product of topological modules
 
@@ -345,11 +347,7 @@ theorem continuous_tmul : Continuous fun p : V × W ↦ tmul A V W p.1 p.2 :=
 theorem dense_span_range_tmul :
     Dense (Submodule.span A (Set.range fun p : V × W ↦ tmul A V W p.1 p.2) :
       Set (CompletedTensor A V W)) := by
-  refine (denseRange_toCompletion A V W).mono ?_
-  rintro _ ⟨x, rfl⟩
-  induction x using TensorProduct.inductionOn with
-  | tmul v w => exact Submodule.subset_span ⟨(v, w), rfl⟩
-  | add x y hx hy => simpa using Submodule.add_mem _ hx hy
+  simpa only [toCompletion_tmul] using (denseRange_toCompletion A V W).dense_span_range_tmul
 
 variable {A V W}
 

@@ -11,6 +11,8 @@ public import TauCeti.Analysis.InnerProductSpace.Completion
 public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Basic
 public import TauCeti.Analysis.Normed.Operator.Completion
 
+import TauCeti.Topology.Algebra.Module.TensorProduct
+
 /-!
 # Completed tensor products of Hilbert spaces and amplified operators
 
@@ -95,17 +97,13 @@ variable (𝕜 E F) in
 theorem dense_span_coe_tmul :
     (Submodule.span 𝕜 (Set.range fun p : E × F ↦
       ((p.1 ⊗ₜ[𝕜] p.2 : E ⊗[𝕜] F) : Completion (E ⊗[𝕜] F)))).topologicalClosure = ⊤ := by
-  have h : Submodule.span 𝕜 (Set.range fun p : E × F ↦
-      ((p.1 ⊗ₜ[𝕜] p.2 : E ⊗[𝕜] F) : Completion (E ⊗[𝕜] F))) =
-      (⊤ : Submodule 𝕜 (E ⊗[𝕜] F)).map
-        ((Completion.toComplL : E ⊗[𝕜] F →L[𝕜] Completion (E ⊗[𝕜] F)) :
-          E ⊗[𝕜] F →ₗ[𝕜] Completion (E ⊗[𝕜] F)) := by
-    rw [← span_tmul_eq_top, Submodule.map_span]
-    congr 1
-    ext u
-    simp
-  exact h ▸ Completion.denseRange_coe.topologicalClosure_map_submodule
-    (top_unique (Submodule.le_topologicalClosure _))
+  let f : E ⊗[𝕜] F →L[𝕜] Completion (E ⊗[𝕜] F) := Completion.toComplL
+  have hf : DenseRange f.toLinearMap := by
+    simpa only [ContinuousLinearMap.coe_coe, Completion.coe_toComplL, f] using
+      (Completion.denseRange_coe : DenseRange ((↑) : E ⊗[𝕜] F → Completion (E ⊗[𝕜] F)))
+  apply Submodule.dense_iff_topologicalClosure_eq_top.mp
+  simpa only [ContinuousLinearMap.coe_coe, Completion.coe_toComplL, f] using
+    hf.dense_span_range_tmul
 
 /-- Two bounded operators from the completed tensor product of `E` and `F` to a Hausdorff space
 agree when they agree on pure tensors. -/

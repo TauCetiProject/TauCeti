@@ -10,6 +10,7 @@ public import TauCeti.Analysis.CStarAlgebra.Module.Completion
 public import TauCeti.Analysis.CStarAlgebra.Module.TensorProduct.Basic
 
 import TauCeti.Topology.Algebra.Module.Span
+import TauCeti.Topology.Algebra.Module.TensorProduct
 
 /-!
 # The Hilbert C⋆-module tensor product of a Hilbert space with a C⋆-algebra
@@ -50,6 +51,22 @@ abbrev HilbertModuleTensorProduct := Completion C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[
 
 namespace HilbertModuleTensorProduct
 
+private theorem subsingleton_completion {E : Type*} [UniformSpace E] [Subsingleton E] :
+    Subsingleton (Completion E) := by
+  have h := (Set.subsingleton_range ((↑) : E → Completion E)).closure
+  rw [Completion.denseRange_coe.closure_eq] at h
+  exact Set.subsingleton_univ_iff.mp h
+
+/-- Tensoring the zero inner product space gives the zero Hilbert module. -/
+instance [Subsingleton H] : Subsingleton (HilbertModuleTensorProduct H A) := by
+  let : Unique (H ⊗[ℂ] A) := TensorProduct.uniqueLeft
+  exact subsingleton_completion
+
+/-- Tensoring with the zero coefficient algebra gives the zero Hilbert module. -/
+instance [Subsingleton A] : Subsingleton (HilbertModuleTensorProduct H A) := by
+  let : Unique (H ⊗[ℂ] A) := TensorProduct.uniqueRight
+  exact subsingleton_completion
+
 /-- The completed coefficient action preserves vector addition and zero. -/
 noncomputable instance : DistribSMul Aᵐᵒᵖ (HilbertModuleTensorProduct H A) :=
   CStarModule.distribSMul Aᵐᵒᵖ (HilbertModuleTensorProduct H A)
@@ -61,6 +78,14 @@ noncomputable instance : SMulWithZero Aᵐᵒᵖ (HilbertModuleTensorProduct H A
 /-- Coefficient multiplication agrees with successive actions on the completed tensor product. -/
 noncomputable instance : SemigroupAction Aᵐᵒᵖ (HilbertModuleTensorProduct H A) :=
   CStarModule.semigroupAction Aᵐᵒᵖ (HilbertModuleTensorProduct H A)
+
+/-- Complex scalars commute with coefficient multiplication on the completed tensor product. -/
+instance : SMulCommClass ℂ Aᵐᵒᵖ (HilbertModuleTensorProduct H A) :=
+  CStarModule.smulCommClass Aᵐᵒᵖ (HilbertModuleTensorProduct H A)
+
+/-- Complex scaling of a coefficient agrees with successive actions on the completion. -/
+instance : IsScalarTower ℂ Aᵐᵒᵖ (HilbertModuleTensorProduct H A) :=
+  CStarModule.isScalarTower Aᵐᵒᵖ (HilbertModuleTensorProduct H A)
 
 /-- The canonical complex bilinear map into the completed Hilbert module tensor product. -/
 noncomputable def mk : H →ₗ[ℂ] A →ₗ[ℂ] HilbertModuleTensorProduct H A :=
@@ -93,29 +118,19 @@ theorem dense_span_range_mk :
     Dense (Submodule.span ℂ (Set.range fun p : H × A ↦ mk H A p.1 p.2) :
       Set (HilbertModuleTensorProduct H A)) := by
   let e := WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ (H ⊗[ℂ] A)
-  let v : H × A → C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A) := fun p ↦ tensorTmul A p.1 p.2
-  let tmul : H × A → H ⊗[ℂ] A := fun p ↦ p.1 ⊗ₜ[ℂ] p.2
-  have hv : v = e.symm.toLinearMap ∘ tmul := by
-    funext p
-    apply e.injective
-    simp [v, e, tmul]
-  have hraw : Submodule.span ℂ (Set.range tmul) = ⊤ := by
-    have hset : Set.range tmul = {t : H ⊗[ℂ] A | ∃ ξ a, ξ ⊗ₜ[ℂ] a = t} := by
-      ext z
-      simp only [tmul, Set.mem_range, Set.mem_ofPred_eq, Prod.exists]
-    rw [hset, TensorProduct.span_tmul_eq_top]
-  have hspan : Dense (Submodule.span ℂ (Set.range v) : Set C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A)) := by
-    -- Expose the composition so that `Set.range_comp` turns the range into a linear image.
-    rw [hv, Set.range_comp, ← Submodule.map_span, hraw, Submodule.map_top, LinearEquiv.range]
-    exact dense_univ
-  let g : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A) →L[ℂ] HilbertModuleTensorProduct H A := Completion.toComplL
-  have hg : DenseRange g.toLinearMap := Completion.denseRange_coe
-  have hmk : g.toLinearMap ∘ v = fun p : H × A ↦ mk H A p.1 p.2 := by
-    funext p
-    simp only [g, v, Function.comp_apply, ContinuousLinearMap.coe_coe, Completion.coe_toComplL,
-      mk_apply]
-  rw [← hmk]
-  exact hg.dense_span_range_comp g.continuous hspan
+  let f : H ⊗[ℂ] A →ₗ[ℂ] HilbertModuleTensorProduct H A :=
+    Completion.toComplL.toLinearMap ∘ₗ e.symm.toLinearMap
+  have hf : DenseRange f := by
+    rw [DenseRange,
+      show ⇑f = ((↑) : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A) → HilbertModuleTensorProduct H A) ∘ e.symm by
+      simp only [f, LinearMap.coe_comp, ContinuousLinearMap.coe_coe, Completion.coe_toComplL,
+        LinearEquiv.coe_coe], e.symm.surjective.range_comp]
+    exact Completion.denseRange_coe
+  have hmk (ξ : H) (a : A) : f (ξ ⊗ₜ[ℂ] a) = mk H A ξ a := by
+    rw [← linearEquiv_tensorTmul A ξ a, mk_apply]
+    simp only [f, e, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply,
+      ContinuousLinearMap.coe_coe, Completion.coe_toComplL]
+  simpa only [hmk] using hf.dense_span_range_tmul
 
 /-- Continuous linear maps into a Hausdorff codomain agree if they agree on pure tensors. -/
 @[ext] theorem ext {F : Type*} [AddCommMonoid F] [Module ℂ F] [TopologicalSpace F] [T2Space F]
@@ -172,19 +187,15 @@ theorem norm_tensorProductLift_apply_le_opNorm_mul {F : Type*}
     (x : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A)) :
     ‖TensorProduct.lift f (WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ _ x)‖ ≤ ‖g‖ * ‖x‖ := by
   let e := WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ (H ⊗[ℂ] A)
-  have hlin : g.toLinearMap ∘ₗ Completion.toComplL.toLinearMap ∘ₗ e.symm.toLinearMap =
-      TensorProduct.lift f := by
-    apply TensorProduct.ext'
+  let G := g.toLinearMap ∘ₗ Completion.toComplL.toLinearMap ∘ₗ e.symm.toLinearMap
+  have hG (z : H ⊗[ℂ] A) : G z = g (e.symm z : HilbertModuleTensorProduct H A) := by
+    simp only [G, LinearMap.comp_apply, LinearEquiv.coe_coe, ContinuousLinearMap.coe_coe,
+      Completion.coe_toComplL]
+  have hlin : G = TensorProduct.lift f := by
+    apply TensorProduct.lift.unique
     intro ξ a
-    rw [TensorProduct.lift.tmul, ← h ξ a]
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, ContinuousLinearMap.coe_coe,
-      Completion.coe_toComplL, mk_apply]
-    rw [← linearEquiv_tensorTmul A ξ a, e.symm_apply_apply]
-  have heval : TensorProduct.lift f (e x) = g (x : HilbertModuleTensorProduct H A) := by
-    rw [← hlin]
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply,
-      ContinuousLinearMap.coe_coe, Completion.coe_toComplL]
-  rw [heval]
+    rw [hG, ← h ξ a, mk_apply, ← linearEquiv_tensorTmul A ξ a, e.symm_apply_apply]
+  rw [← hlin, hG, e.symm_apply_apply]
   simpa only [Completion.norm_coe] using g.le_opNorm (x : HilbertModuleTensorProduct H A)
 
 /-- Linear isometries out of the completed tensor product agree if they agree on pure tensors. -/
@@ -265,27 +276,24 @@ theorem hilbertModuleTensorProductToCompletion_apply
 theorem denseRange_hilbertModuleTensorProductToCompletion (hf : DenseRange f) :
     DenseRange (f.hilbertModuleTensorProductToCompletion (A := A)) := by
   let g := f.hilbertModuleTensorProductToCompletion (A := A)
-  let p := g.range.topologicalClosure
-  have hmk (ξ : K) (a : A) : HilbertModuleTensorProduct.mk K A ξ a ∈ p := by
-    let t : K →L[ℂ] HilbertModuleTensorProduct K A :=
-      ((HilbertModuleTensorProduct.mk K A).flip a).mkContinuous ‖a‖ fun η ↦ by
-        simp only [LinearMap.flip_apply, norm_mk, mul_comm]
-        exact le_rfl
-    have hclosed : IsClosed {η : K | t η ∈ p} :=
-      g.range.isClosed_topologicalClosure.preimage t.continuous
-    apply hclosed.closure_subset_iff.2 ?_ (hf ξ)
-    rintro _ ⟨η, rfl⟩
-    exact g.range.le_topologicalClosure ⟨tensorTmul A η a,
-      f.hilbertModuleTensorProductToCompletion_tensorTmul η a⟩
-  have hspan : Submodule.span ℂ
-      (Set.range fun q : K × A ↦ HilbertModuleTensorProduct.mk K A q.1 q.2) ≤ p := by
-    apply Submodule.span_le.2
-    rintro _ ⟨⟨ξ, a⟩, rfl⟩
-    exact hmk ξ a
-  have hp : p = ⊤ := by
-    apply top_unique
-    rw [← Submodule.dense_iff_topologicalClosure_eq_top.1 dense_span_range_mk]
-    exact Submodule.topologicalClosure_minimal _ hspan g.range.isClosed_topologicalClosure
+  let L : K → A → HilbertModuleTensorProduct K A := fun ξ a ↦
+    HilbertModuleTensorProduct.mk K A ξ a
+  have hL (a : A) : Continuous (fun ξ ↦ L ξ a) :=
+    (((HilbertModuleTensorProduct.mk K A).flip a).mkContinuous ‖a‖ fun ξ ↦ by
+      simp only [LinearMap.flip_apply, norm_mk, mul_comm, le_refl]).continuous
+  have hspan : (⋃ ξ, Set.range (L ξ)) = Set.range (fun p : K × A ↦ L p.1 p.2) := by
+    ext z
+    simp only [Set.mem_iUnion, Set.mem_range, Prod.exists]
+  have hp : g.range.topologicalClosure = ⊤ := eq_top_iff.2 <|
+    calc
+      ⊤ = (Submodule.span ℂ (⋃ ξ : H, Set.range (L (f ξ)))).topologicalClosure := by
+        rw [hf.topologicalClosure_span_iUnion_range_comp_eq hL, hspan]
+        exact (Submodule.dense_iff_topologicalClosure_eq_top.1 dense_span_range_mk).symm
+      _ ≤ g.range.topologicalClosure := Submodule.topologicalClosure_mono <|
+          Submodule.span_le.2 <| by
+            intro z hz
+            obtain ⟨ξ, a, rfl⟩ := Set.mem_iUnion.mp hz
+            exact ⟨tensorTmul A ξ a, f.hilbertModuleTensorProductToCompletion_tensorTmul ξ a⟩
   simpa only [DenseRange, LinearMap.coe_range] using
     (Submodule.dense_iff_topologicalClosure_eq_top.2 hp)
 

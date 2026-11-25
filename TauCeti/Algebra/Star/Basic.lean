@@ -50,7 +50,7 @@ equivalence of complex vector spaces is real-linear.
 * `TauCeti.mul_smul_comm_of_starModule`: in a star module with a multiplicative star and a scalar
   tower, scalars commute with left multiplication, so no `SMulCommClass` assumption is needed
   there.
-* `TauCeti.starMulLinearMap`: the star product `star a * b` as a sesquilinear map.
+* `TauCeti.starLeftMulₛₗ`: the star product `star a * b` as a sesquilinear map.
 * `LinearEquiv.restrictScalarsₛₗ`: a star-linear equivalence over `S` is `R`-linear when `R` acts
   on `S` with trivial star.
 * `Units.star_neg`: in a star ring, `star (-u) = -star u` for a unit `u`; in particular `star`
@@ -187,12 +187,12 @@ variable (R A : Type*) [CommSemiring R] [StarRing R] [NonUnitalNonAssocSemiring 
   [IsScalarTower R A A]
 
 /-- The star product `star a * b`, conjugate-linear in `a` and linear in `b`. -/
-def starMulLinearMap : A →ₗ⋆[R] A →ₗ[R] A :=
+def starLeftMulₛₗ : A →ₗ⋆[R] A →ₗ[R] A :=
   (LinearMap.mul R A).comp (starLinearEquiv R).toLinearMap
 
 /-- The bundled star product evaluates as `star a * b`. -/
-@[simp] theorem starMulLinearMap_apply (a b : A) : starMulLinearMap R A a b = star a * b := by
-  simp [starMulLinearMap]
+@[simp] theorem starLeftMulₛₗ_apply (a b : A) : starLeftMulₛₗ R A a b = star a * b := by
+  simp [starLeftMulₛₗ]
 
 end TauCeti
 

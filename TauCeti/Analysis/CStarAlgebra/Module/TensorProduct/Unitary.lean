@@ -9,18 +9,73 @@ public import TauCeti.Analysis.CStarAlgebra.Module.TensorProduct.Completion
 public import TauCeti.Analysis.CStarAlgebra.Module.Unitary
 
 /-!
-# Transport of Hilbert C⋆-module tensor products by isometric equivalences
+# Transport of Hilbert C⋆-module tensor products by dense isometries
 
-`LinearIsometryEquiv.hilbertModuleTensorProductUnitary` tensors a complex linear
-isometric equivalence with the identity on the coefficient algebra, giving a unitary
-between the completed right Hilbert modules.
+`LinearIsometry.hilbertModuleTensorProductUnitary` tensors a complex linear isometry with
+dense range with the identity on the coefficient algebra, giving a unitary between the completed
+right Hilbert modules. `LinearIsometryEquiv.hilbertModuleTensorProductUnitary` specializes this
+construction to isometric equivalences.
 -/
 
 public section
 
 open TauCeti MulOpposite
 
+namespace LinearIsometry
+
+variable {H K A : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
+  [NormedAddCommGroup K] [InnerProductSpace ℂ K]
+  [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+
+/-- A complex linear isometry with dense range induces a unitary on completed tensor products
+by acting on the Hilbert-space factor. -/
+noncomputable def hilbertModuleTensorProductUnitary (f : H →ₗᵢ[ℂ] K) (hf : DenseRange f) :
+    CStarModuleUnitary Aᵐᵒᵖ (HilbertModuleTensorProduct H A) (HilbertModuleTensorProduct K A) := by
+  let g := f.toLinearMap.hilbertModuleTensorProductToCompletion (A := A)
+  have h := f.inner_hilbertModuleTensorProductToCompletion (A := A)
+  have hd := f.toLinearMap.denseRange_hilbertModuleTensorProductToCompletion (A := A) hf
+  exact ⟨IsPosSemidefCStarModuleAlong.equivOfInner (.id ℂ Aᵐᵒᵖ) g h hd,
+    IsPosSemidefCStarModuleAlong.inner_equivOfInner_id g h hd⟩
+
+/-- The unitary induced by a dense-range isometry has the corresponding induced isometry
+as its underlying map. -/
+@[simp] theorem toLinearIsometry_hilbertModuleTensorProductUnitary (f : H →ₗᵢ[ℂ] K)
+    (hf : DenseRange f) :
+    (f.hilbertModuleTensorProductUnitary (A := A) hf).toLinearIsometryEquiv.toLinearIsometry =
+      f.hilbertModuleTensorProduct := by
+  rw [hilbertModuleTensorProductUnitary,
+    IsPosSemidefCStarModuleAlong.toLinearIsometry_equivOfInner]
+  symm
+  exact (IsPosSemidefCStarModuleAlong.eq_liftOfInner_iff _ _ _ _).mpr
+    f.hilbertModuleTensorProduct_coe
+
+/-- On pure tensors the unitary induced by a dense-range isometry acts on the first factor. -/
+@[simp] theorem hilbertModuleTensorProductUnitary_mk (f : H →ₗᵢ[ℂ] K) (hf : DenseRange f)
+    (ξ : H) (a : A) :
+    f.hilbertModuleTensorProductUnitary hf (HilbertModuleTensorProduct.mk H A ξ a) =
+      HilbertModuleTensorProduct.mk K A (f ξ) a := by
+  have h := congrArg (fun g : HilbertModuleTensorProduct H A →ₗᵢ[ℂ]
+      HilbertModuleTensorProduct K A ↦ g (HilbertModuleTensorProduct.mk H A ξ a))
+    (f.toLinearIsometry_hilbertModuleTensorProductUnitary (A := A) hf)
+  simpa only [LinearIsometryEquiv.coe_toLinearIsometry,
+    CStarModuleUnitary.toLinearIsometryEquiv_apply, hilbertModuleTensorProduct_mk] using h
+
+end LinearIsometry
+
 namespace LinearIsometryEquiv
+
+private theorem toLinearIsometry_refl {E : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℂ E] : (refl ℂ E).toLinearIsometry = LinearIsometry.id := by
+  ext x
+  simp only [coe_toLinearIsometry, coe_refl, id_eq, LinearIsometry.id_apply]
+
+private theorem toLinearIsometry_trans {E F G : Type*} [SeminormedAddCommGroup E]
+    [SeminormedAddCommGroup F] [SeminormedAddCommGroup G]
+    [NormedSpace ℂ E] [NormedSpace ℂ F] [NormedSpace ℂ G]
+    (f : E ≃ₗᵢ[ℂ] F) (g : F ≃ₗᵢ[ℂ] G) :
+    (f.trans g).toLinearIsometry = g.toLinearIsometry.comp f.toLinearIsometry := by
+  ext x
+  simp only [coe_toLinearIsometry, trans_apply, LinearIsometry.coe_comp, Function.comp_apply]
 
 variable {H K A : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
   [NormedAddCommGroup K] [InnerProductSpace ℂ K]
@@ -29,35 +84,21 @@ variable {H K A : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
 /-- A complex linear isometric equivalence induces a unitary on the completed tensor products
 by acting on the Hilbert-space factor. -/
 noncomputable def hilbertModuleTensorProductUnitary (f : H ≃ₗᵢ[ℂ] K) :
-    CStarModuleUnitary Aᵐᵒᵖ (HilbertModuleTensorProduct H A) (HilbertModuleTensorProduct K A) := by
-  let g := f.toLinearIsometry.toLinearMap.hilbertModuleTensorProductToCompletion (A := A)
-  have h := f.toLinearIsometry.inner_hilbertModuleTensorProductToCompletion (A := A)
-  have hd := f.toLinearIsometry.toLinearMap.denseRange_hilbertModuleTensorProductToCompletion
-    (A := A) f.surjective.denseRange
-  exact ⟨IsPosSemidefCStarModuleAlong.equivOfInner (.id ℂ Aᵐᵒᵖ) g h hd,
-    IsPosSemidefCStarModuleAlong.inner_equivOfInner_id g h hd⟩
+    CStarModuleUnitary Aᵐᵒᵖ (HilbertModuleTensorProduct H A) (HilbertModuleTensorProduct K A) :=
+  f.toLinearIsometry.hilbertModuleTensorProductUnitary f.surjective.denseRange
 
 /-- The unitary induced by an isometric equivalence has the corresponding induced isometry
 as its underlying map. -/
 @[simp] theorem toLinearIsometry_hilbertModuleTensorProductUnitary (f : H ≃ₗᵢ[ℂ] K) :
     (f.hilbertModuleTensorProductUnitary (A := A)).toLinearIsometryEquiv.toLinearIsometry =
-      f.toLinearIsometry.hilbertModuleTensorProduct := by
-  rw [hilbertModuleTensorProductUnitary,
-    IsPosSemidefCStarModuleAlong.toLinearIsometry_equivOfInner]
-  symm
-  exact (IsPosSemidefCStarModuleAlong.eq_liftOfInner_iff _ _ _ _).mpr
-    f.toLinearIsometry.hilbertModuleTensorProduct_coe
+      f.toLinearIsometry.hilbertModuleTensorProduct :=
+  f.toLinearIsometry.toLinearIsometry_hilbertModuleTensorProductUnitary f.surjective.denseRange
 
 /-- On pure tensors the induced unitary applies the equivalence to the Hilbert-space factor. -/
 @[simp] theorem hilbertModuleTensorProductUnitary_mk (f : H ≃ₗᵢ[ℂ] K) (ξ : H) (a : A) :
     f.hilbertModuleTensorProductUnitary (HilbertModuleTensorProduct.mk H A ξ a) =
-      HilbertModuleTensorProduct.mk K A (f ξ) a := by
-  have h := congrArg (fun g : HilbertModuleTensorProduct H A →ₗᵢ[ℂ]
-      HilbertModuleTensorProduct K A ↦ g (HilbertModuleTensorProduct.mk H A ξ a))
-    (f.toLinearIsometry_hilbertModuleTensorProductUnitary (A := A))
-  simpa only [LinearIsometryEquiv.coe_toLinearIsometry,
-    CStarModuleUnitary.toLinearIsometryEquiv_apply, LinearIsometry.hilbertModuleTensorProduct_mk]
-    using h
+      HilbertModuleTensorProduct.mk K A (f ξ) a :=
+  f.toLinearIsometry.hilbertModuleTensorProductUnitary_mk f.surjective.denseRange ξ a
 
 /-- On pure tensors the inverse unitary applies the inverse equivalence to the Hilbert-space
 factor. -/
@@ -83,20 +124,11 @@ factor. -/
 @[simp] theorem hilbertModuleTensorProductUnitary_refl :
     (LinearIsometryEquiv.refl ℂ H).hilbertModuleTensorProductUnitary (A := A) =
       CStarModuleUnitary.refl Aᵐᵒᵖ (HilbertModuleTensorProduct H A) := by
-  have h_source : (LinearIsometryEquiv.refl ℂ H).toLinearIsometry = LinearIsometry.id := by
-    ext x
-    simp only [coe_toLinearIsometry, coe_refl, id_eq, LinearIsometry.id_apply]
-  have h_target :
-      ((CStarModuleUnitary.refl Aᵐᵒᵖ
-        (HilbertModuleTensorProduct H A)).toLinearIsometryEquiv).toLinearIsometry =
-        LinearIsometry.id := by
-    ext x
-    simp only [CStarModuleUnitary.toLinearIsometryEquiv_refl, coe_toLinearIsometry,
-      coe_refl, id_eq, LinearIsometry.id_apply]
   apply CStarModuleUnitary.toLinearIsometryEquiv_injective
   apply LinearIsometryEquiv.toLinearIsometry_injective
   rw [toLinearIsometry_hilbertModuleTensorProductUnitary,
-    h_source, h_target]
+    toLinearIsometry_refl, CStarModuleUnitary.toLinearIsometryEquiv_refl,
+    toLinearIsometry_refl]
   exact LinearIsometry.hilbertModuleTensorProduct_id
 
 /-- Tensoring a composition gives the composition of the induced unitaries. -/
@@ -104,21 +136,11 @@ factor. -/
     [InnerProductSpace ℂ L] (f : H ≃ₗᵢ[ℂ] K) (g : K ≃ₗᵢ[ℂ] L) :
     (f.trans g).hilbertModuleTensorProductUnitary (A := A) =
       (f.hilbertModuleTensorProductUnitary (A := A)).trans g.hilbertModuleTensorProductUnitary := by
-  have h_source : (f.trans g).toLinearIsometry = g.toLinearIsometry.comp f.toLinearIsometry := by
-    ext x
-    simp only [coe_toLinearIsometry, trans_apply, LinearIsometry.coe_comp, Function.comp_apply]
-  have h_target :
-      ((f.hilbertModuleTensorProductUnitary (A := A)).trans
-        g.hilbertModuleTensorProductUnitary).toLinearIsometryEquiv.toLinearIsometry =
-      (g.hilbertModuleTensorProductUnitary (A := A)).toLinearIsometryEquiv.toLinearIsometry.comp
-        (f.hilbertModuleTensorProductUnitary (A := A)).toLinearIsometryEquiv.toLinearIsometry := by
-    ext x
-    simp only [CStarModuleUnitary.toLinearIsometryEquiv_trans, coe_toLinearIsometry,
-      trans_apply, LinearIsometry.coe_comp, Function.comp_apply]
   apply CStarModuleUnitary.toLinearIsometryEquiv_injective
   apply LinearIsometryEquiv.toLinearIsometry_injective
   rw [toLinearIsometry_hilbertModuleTensorProductUnitary,
-    h_source, h_target, toLinearIsometry_hilbertModuleTensorProductUnitary,
+    toLinearIsometry_trans, CStarModuleUnitary.toLinearIsometryEquiv_trans,
+    toLinearIsometry_trans, toLinearIsometry_hilbertModuleTensorProductUnitary,
     toLinearIsometry_hilbertModuleTensorProductUnitary]
   exact LinearIsometry.hilbertModuleTensorProduct_comp _ _
 

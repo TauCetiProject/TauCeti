@@ -9,15 +9,33 @@ public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 
 /-!
-# Continuity of change of coefficients on tensor products
+# Linear maps and dense ranges on tensor products
 
 For module topologies, a continuous algebra homomorphism `B → C` induces a continuous
 map `B ⊗[A] M → C ⊗[A] M`. Only the source needs the module topology; the target can
 be any topological `C`-module. This applies in particular to restriction maps on finite
 modules over topological algebras.
+
+The pure tensors also give a densely spanning family under any linear map with dense range.
 -/
 
 public section
+
+open scoped TensorProduct
+
+/-- The images of pure tensors under a linear map with dense range span a dense submodule. -/
+theorem DenseRange.dense_span_range_tmul {R M N P : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    [AddCommMonoid P] [Module R P] [TopologicalSpace P]
+    {f : M ⊗[R] N →ₗ[R] P} (hf : DenseRange f) :
+    Dense (Submodule.span R (Set.range fun p : M × N ↦ f (p.1 ⊗ₜ[R] p.2)) : Set P) := by
+  have hspan : Submodule.span R (Set.range fun p : M × N ↦ p.1 ⊗ₜ[R] p.2) = ⊤ := by
+    convert TensorProduct.span_tmul_eq_top R M N using 2
+    ext x
+    simp only [Set.mem_range, Set.mem_ofPred_eq, Prod.exists]
+  change Dense (Submodule.span R (Set.range (f ∘ fun p : M × N ↦ p.1 ⊗ₜ[R] p.2)) : Set P)
+  rw [Set.range_comp, ← Submodule.map_span, hspan, Submodule.map_top, LinearMap.coe_range]
+  exact hf
 
 namespace AlgHom
 

@@ -13,12 +13,14 @@ public import TauCeti.Algebra.Star.Basic
 import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 
 /-!
-# The algebraic right Hilbert C⋆-module associated to a complex inner product space
+# The coefficient pairing on an algebraic tensor product
 
 The tensor product `H ⊗[ℂ] A` is endowed with the `A`-valued pairing
-`⟨ξ ⊗ a, η ⊗ b⟩ = ⟨ξ, η⟩ • (star a * b)`. Its induced norm lives on
-`WithCStarModule Aᵐᵒᵖ (H ⊗[ℂ] A)`, so it does not compete with tensor norms.
-No completeness of `H` or identity in `A` is required for this algebraic construction.
+`⟨ξ ⊗ a, η ⊗ b⟩ = ⟨ξ, η⟩ • (star a * b)`. The pairing induces a `Norm` function on
+`WithCStarModule Aᵐᵒᵖ (H ⊗[ℂ] A)`. Under the C⋆-algebra and star-order hypotheses, this
+function satisfies the norm laws and gives a normed C⋆-module. No completeness of `H` or identity
+in `A` is required. The complete Hilbert C⋆-module is constructed separately in
+`TauCeti.Analysis.CStarAlgebra.Module.TensorProduct.Completion`.
 
 ## References
 
@@ -145,6 +147,25 @@ noncomputable instance instSemigroupActionTensor :
     simp only [linearEquiv_smul_tensor, unop_mul, LinearMap.mulRight_mul,
       LinearMap.lTensor_comp, LinearMap.comp_apply]
 
+/-- Complex scalars commute with the algebraic coefficient action. -/
+noncomputable instance instSMulCommClassTensor :
+    SMulCommClass ℂ Aᵐᵒᵖ C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A) where
+  smul_comm c a x := by
+    apply (linearEquiv ℂ Aᵐᵒᵖ _).injective
+    simp only [linearEquiv_smul_tensor, map_smul]
+
+/-- The complex and coefficient actions form a scalar tower when complex scalars commute
+with left coefficient multiplication. -/
+noncomputable instance instIsScalarTowerTensor [SMulCommClass ℂ A A] :
+    IsScalarTower ℂ Aᵐᵒᵖ C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A) where
+  smul_assoc c a x := by
+    apply (linearEquiv ℂ Aᵐᵒᵖ _).injective
+    have h : LinearMap.mulRight ℂ (c • unop a) = c • LinearMap.mulRight ℂ (unop a) := by
+      ext b
+      exact mul_smul_comm c b (unop a)
+    simp only [linearEquiv_smul_tensor, unop_smul, h, LinearMap.lTensor_smul,
+      LinearMap.smul_apply, map_smul]
+
 /-- Right multiplication of a pure tensor multiplies its coefficient on the right. -/
 @[simp] theorem _root_.TauCeti.op_smul_tensorTmul (ξ : H) (a b : A) :
     op b • tensorTmul A ξ a = tensorTmul A ξ (a * b) := by
@@ -166,7 +187,7 @@ variable {A H : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A]
 
 /-- The coefficient-valued sesquilinear form on the algebraic tensor product. -/
 noncomputable def tensorPairing : H ⊗[ℂ] A →ₗ⋆[ℂ] H ⊗[ℂ] A →ₗ[ℂ] A :=
-  (TensorProduct.map₂ (innerₛₗ ℂ) (starMulLinearMap ℂ A)).compr₂ₛₗ
+  (TensorProduct.map₂ (innerₛₗ ℂ) (starLeftMulₛₗ ℂ A)).compr₂ₛₗ
     (TensorProduct.lid ℂ A).toLinearMap
 
 /-- The coefficient-valued pairing of pure tensors is the scalar inner product times
@@ -205,7 +226,7 @@ private theorem tensorPairing_eq_sum {ι : Type*} [Fintype ι] (e : OrthonormalB
   exact DFunLike.congr_fun (DFunLike.congr_fun h x) y
 
 /-- Conjugate symmetry of the algebraic coefficient pairing. -/
-private theorem star_tensorPairing (x y : H ⊗[ℂ] A) :
+@[simp] theorem star_tensorPairing (x y : H ⊗[ℂ] A) :
     star (tensorPairing x y) = tensorPairing y x := by
   have h : tensorPairing = (tensorPairing (H := H) (A := A)).flip.compr₂ₛₗ
       (starLinearEquiv ℂ).toLinearMap :=
@@ -215,7 +236,7 @@ private theorem star_tensorPairing (x y : H ⊗[ℂ] A) :
     starLinearEquiv_apply] using (DFunLike.congr_fun (DFunLike.congr_fun h y) x).symm
 
 /-- Right multiplication in the coefficient factor is right linear for the pairing. -/
-private theorem tensorPairing_mulRight (x y : H ⊗[ℂ] A) (a : A) :
+@[simp] theorem tensorPairing_mulRight (x y : H ⊗[ℂ] A) (a : A) :
     tensorPairing x ((LinearMap.mulRight ℂ a).lTensor H y) = tensorPairing x y * a := by
   let g := LinearMap.mulRight ℂ a
   have h : tensorPairing.compl₂ (g.lTensor H) = tensorPairing.compr₂ₛₗ g :=
@@ -251,14 +272,15 @@ variable {A H : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A]
   [NormedAddCommGroup H] [InnerProductSpace ℂ H] [PartialOrder A] [StarOrderedRing A]
 
 /-- The coefficient pairing of an algebraic tensor with itself is nonnegative. -/
-private theorem tensorPairing_self_nonneg (x : H ⊗[ℂ] A) : 0 ≤ tensorPairing x x := by
+theorem tensorPairing_self_nonneg (x : H ⊗[ℂ] A) : 0 ≤ tensorPairing x x := by
   obtain ⟨n, c, hc, _⟩ := tensorPairing_self_eq_dotProduct x
   rw [hc]
   exact dotProduct_star_self_nonneg c
 
-/-- Vanishing of the self-pairing implies that the algebraic tensor is zero. -/
-private theorem eq_zero_of_tensorPairing_self_eq_zero [IsProperStar A]
-    (x : H ⊗[ℂ] A) (hx : tensorPairing x x = 0) : x = 0 := by
+/-- The self-pairing vanishes exactly when the algebraic tensor vanishes. -/
+@[simp] theorem tensorPairing_self_eq_zero [IsProperStar A] (x : H ⊗[ℂ] A) :
+    tensorPairing x x = 0 ↔ x = 0 := by
+  refine ⟨fun hx ↦ ?_, fun hx ↦ by simp [hx]⟩
   obtain ⟨n, c, hc, hzero⟩ := tensorPairing_self_eq_dotProduct x
   exact hzero (dotProduct_star_self_eq_zero.mp (hc.symm.trans hx))
 
@@ -335,7 +357,7 @@ noncomputable instance instCStarModuleTensor [PartialOrder A] [StarOrderedRing A
   inner_self {x} := by
     refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
     · apply (linearEquiv ℂ Aᵐᵒᵖ _).injective
-      apply eq_zero_of_tensorPairing_self_eq_zero
+      apply (tensorPairing_self_eq_zero _).mp
       simpa only [unop_inner_tensor_eq_tensorPairing, unop_zero] using congrArg unop hx
     · subst x
       apply unop_injective

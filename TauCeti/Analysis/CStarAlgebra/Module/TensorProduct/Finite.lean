@@ -55,13 +55,19 @@ noncomputable def hilbertModuleTensorProductUnitary :
   exact ⟨IsPosSemidefCStarModuleAlong.equivOfInner (.id ℂ Aᵐᵒᵖ) f h hd,
     IsPosSemidefCStarModuleAlong.inner_equivOfInner_id f h hd⟩
 
+private theorem hilbertModuleTensorProductUnitary_apply_coe
+    (x : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A)) :
+    e.hilbertModuleTensorProductUnitary (A := A) (x : HilbertModuleTensorProduct H A) =
+      finiteCoordinates e x := by
+  rw [hilbertModuleTensorProductUnitary, CStarModuleUnitary.mk_apply,
+    IsPosSemidefCStarModuleAlong.equivOfInner_coe, LinearEquiv.coe_coe]
+
 /-- The unitary's coordinates on an algebraic tensor are its basis tensor coordinates. -/
 @[simp] theorem hilbertModuleTensorProductUnitary_coe
     (x : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A)) (i : ι) :
     e.hilbertModuleTensorProductUnitary (A := A) (x : HilbertModuleTensorProduct H A) i =
       e.toBasis.tensorCoordinates x i := by
-  rw [hilbertModuleTensorProductUnitary, CStarModuleUnitary.mk_apply,
-    IsPosSemidefCStarModuleAlong.equivOfInner_coe, LinearEquiv.coe_coe]
+  rw [hilbertModuleTensorProductUnitary_apply_coe]
   simp only [finiteCoordinates, LinearEquiv.trans_apply,
     WithCStarModule.linearEquiv_symm_apply, WithCStarModule.equiv_symm_pi_apply]
 
@@ -79,14 +85,8 @@ theorem hilbertModuleTensorProductUnitary_symm_apply (a : C⋆ᵐᵒᵈ(Aᵐᵒ�
       ∑ i, HilbertModuleTensorProduct.mk H A (e i) (a i) := by
   have h : (e.hilbertModuleTensorProductUnitary (A := A)).symm a =
       ((finiteCoordinates e).symm a : HilbertModuleTensorProduct H A) := by
-    let f := (finiteCoordinates (A := A) e).toLinearMap
-    have hf := finiteCoordinates_inner (A := A) e
-    have hd : DenseRange f := (finiteCoordinates (A := A) e).surjective.denseRange
-    have hi := IsPosSemidefCStarModuleAlong.equivOfInner_symm_apply (.id ℂ Aᵐᵒᵖ)
-      f hf hd ((finiteCoordinates e).symm a)
-    rw [← CStarModuleUnitary.toLinearIsometryEquiv_apply,
-      CStarModuleUnitary.toLinearIsometryEquiv_symm, hilbertModuleTensorProductUnitary]
-    simpa only [f, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using hi
+    rw [CStarModuleUnitary.symm_apply_eq, hilbertModuleTensorProductUnitary_apply_coe,
+      LinearEquiv.apply_symm_apply]
   rw [h, finiteCoordinates_symm_apply, Module.Basis.tensorCoordinates_symm_apply]
   simpa only [Completion.coe_toComplL, HilbertModuleTensorProduct.mk_apply,
     OrthonormalBasis.coe_toBasis, WithCStarModule.equiv_pi_apply] using

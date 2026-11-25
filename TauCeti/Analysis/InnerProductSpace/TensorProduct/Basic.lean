@@ -10,6 +10,8 @@ public import TauCeti.Analysis.InnerProductSpace.Dual
 public import TauCeti.Analysis.InnerProductSpace.SesquilinearForm
 public import Mathlib.Analysis.InnerProductSpace.Trace
 
+import TauCeti.Topology.Algebra.Module.Span
+
 /-!
 # Tensor products of inner product spaces
 
@@ -264,15 +266,22 @@ each lies in the closure of the range of `f ⊗ 1`. -/
 theorem denseRange_rTensor {f : X₀ →L[𝕜] X₁} (hf : DenseRange f) :
     DenseRange (f.rTensor Y₀) := by
   let T := LinearMap.range (f.rTensor Y₀).toLinearMap
-  have htmul (c : X₁) (y : Y₀) : c ⊗ₜ[𝕜] y ∈ T.topologicalClosure := by
-    induction c using hf.induction_on with
-    | hp =>
-      exact T.isClosed_topologicalClosure.preimage
-        ((TensorProduct.mkL 𝕜 X₁ Y₀).flip y).continuous
-    | ih x => exact T.le_topologicalClosure ⟨x ⊗ₜ[𝕜] y, by simp⟩
+  have hclosure := hf.topologicalClosure_span_iUnion_range_comp_eq (R := 𝕜)
+    (L := fun (c : X₁) (y : Y₀) ↦ c ⊗ₜ[𝕜] y)
+    (fun y ↦ ((TensorProduct.mkL 𝕜 X₁ Y₀).flip y).continuous)
+  have hspan : Submodule.span 𝕜 (⋃ c : X₁, Set.range fun y : Y₀ ↦ c ⊗ₜ[𝕜] y) = ⊤ := by
+    convert TensorProduct.span_tmul_eq_top 𝕜 X₁ Y₀ using 2
+    ext z
+    simp only [Set.mem_iUnion, Set.mem_range, Set.mem_ofPred_eq]
   have hT : T.topologicalClosure = ⊤ := eq_top_iff.2 <|
-    (TensorProduct.span_tmul_eq_top 𝕜 X₁ Y₀).ge.trans <|
-      Submodule.span_le.2 fun _ ⟨c, y, h⟩ ↦ h ▸ htmul c y
+    calc
+      ⊤ = (Submodule.span 𝕜 (⋃ x : X₀, Set.range fun y : Y₀ ↦ f x ⊗ₜ[𝕜] y)).topologicalClosure := by
+        rw [hclosure, hspan]
+        exact (top_unique (Submodule.le_topologicalClosure _)).symm
+      _ ≤ T.topologicalClosure := Submodule.topologicalClosure_mono <| Submodule.span_le.2 <| by
+        intro z hz
+        obtain ⟨x, y, rfl⟩ := Set.mem_iUnion.mp hz
+        exact ⟨x ⊗ₜ[𝕜] y, by simp⟩
   exact Submodule.dense_iff_topologicalClosure_eq_top.2 hT
 
 section Adjoint
