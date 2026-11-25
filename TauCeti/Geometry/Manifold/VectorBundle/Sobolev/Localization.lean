@@ -31,7 +31,7 @@ coefficients.
 ## Main results
 
 * `TauCeti.SobolevSection.value_eq_zero_ae_of_mem_aeZeroOff`: the chart data of a section vanishing
-  off the points of `Q` vanish off the localized images.
+  off the points of `Q` vanish almost everywhere off the localized images.
 * `TauCeti.SobolevSection.exists_memLp_forall_apply_eq_sum_setIntegral`: the local representation
   of a functional on `Lᵖ` sections.
 
@@ -63,8 +63,8 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   (A : FiniteBundleAtlas E M F V) {μ : Measure E} [μ.IsAddHaarMeasure] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 omit [IsManifold 𝓘(ℝ, E) ∞ M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] in
-/-- The chart data of a section vanishing off the points read in chart `i` inside `Q` vanish, in
-every chart `j`, off the localized image. -/
+/-- The chart data of a section vanishing off the points read in chart `i` inside `Q` vanish almost
+everywhere, in every chart `j`, off the localized image. -/
 theorem value_eq_zero_ae_of_mem_aeZeroOff {i : Fin A.n} {Q : Opens E}
     (hQi : (Q : Set E) ⊆ A.image i) {w : SobolevSection A μ p 0}
     (hw : w ∈ aeZeroOff A μ p 0 ((A.chart i).symm '' Q))
@@ -115,7 +115,7 @@ include hq₁ hpq in
 /-- **Localizing a functional to one chart.** Let `Q` be open with closure in the image of chart
 `i`, and `1 < p < ∞`. For a continuous functional `Λ'` on the chart data of sections, there is a
 continuous functional `ℓ` on chart-`i` data over `Q` with `Λ' w = ℓ (w_i|_Q)` for every `Lᵖ`
-one-form `w` whose chart-`j` data vanish off the localized image, for every chart `j`. -/
+section `w` whose chart-`j` data vanish off the localized image, for every chart `j`. -/
 private theorem exists_localization [T2Space M] (hp : 1 < p) (hp_top : p ≠ ⊤)
     (Λ' : A.sectionChartData.SobolevData μ p 0 →L[ℝ] ℝ)
     (i : Fin A.sectionChartData.n) {Q : Opens E}

@@ -66,15 +66,14 @@ theorem antilinearOfOneL_apply_apply {V : Type*} [SeminormedAddCommGroup V] [Nor
 theorem antilinearOfOneL_apply_apply_one {V : Type*} [SeminormedAddCommGroup V]
     [NormedSpace ℝ V] [NormedSpace ℂ V] [IsScalarTower ℝ ℂ V] (v : V) :
     antilinearOfOneL V v 1 = v := by
-  rw [antilinearOfOneL_apply_apply, map_one, one_smul]
+  simp
 
 /-- `antilinearOfOneL V v` is complex antilinear: `w ↦ conj w • v` anticommutes with `i`, since
 `conj (i w) = -i conj w`. -/
 theorem antilinearOfOneL_apply_I_smul {V : Type*} [SeminormedAddCommGroup V]
     [NormedSpace ℝ V] [NormedSpace ℂ V] [IsScalarTower ℝ ℂ V] (v : V) (w : ℂ) :
     antilinearOfOneL V v (Complex.I • w) = -(Complex.I • antilinearOfOneL V v w) := by
-  rw [antilinearOfOneL_apply_apply, antilinearOfOneL_apply_apply, smul_smul, smul_eq_mul, map_mul,
-    Complex.conj_I, neg_mul, neg_smul]
+  simp [smul_smul]
 
 /-- **Antilinear maps are determined by their value at `1`.** A complex antilinear real-linear map
 out of `ℂ` is the antilinear map with its value at `1`: `L w = conj w • L 1`. -/
@@ -84,11 +83,11 @@ theorem antilinearOfOneL_apply_eq_of_antilinear {V : Type*} [SeminormedAddCommGr
   -- `L w = re w • L 1 + im w • L i` and `L i = -(i • L 1)`.
   have hI : L Complex.I = -(Complex.I • L 1) := by simpa using hL 1
   ext w
-  rw [antilinearOfOneL_apply_apply, L.apply_eq_re_smul_one_add_im_smul_I w, hI,
-    RCLike.real_smul_eq_coe_smul (K := ℂ), RCLike.real_smul_eq_coe_smul (K := ℂ), smul_neg,
-    smul_smul, ← sub_eq_add_neg, ← sub_smul]
-  congr 1
-  apply Complex.ext <;> simp
+  -- `conj w = re w - im w * i`, with real scalars acting through `ℂ`.
+  have hw : starRingEnd ℂ w = (w.re : ℂ) - w.im * Complex.I := by
+    apply Complex.ext <;> simp
+  rw [antilinearOfOneL_apply_apply, L.apply_eq_re_smul_one_add_im_smul_I w, hI, hw]
+  module
 
 /-- A family of real-linear maps out of `ℂ` splits through its values at `1` and `I`, written
 with the continuous linear maps `smulRightL` so that it can be postcomposed in families. -/

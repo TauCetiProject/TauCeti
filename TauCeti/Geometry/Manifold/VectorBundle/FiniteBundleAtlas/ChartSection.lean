@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
-import Mathlib.Geometry.Manifold.PartitionOfUnity
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 
 /-!
 # Smooth sections from compactly supported chart functions
@@ -51,20 +51,16 @@ theorem exists_contMDiff_eqOn_coord {i : Fin A.n} {φ : E → F} (hφ : ContDiff
     ∃ ξ : Π x, V x, ContMDiff 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F)) ∞ (T% ξ) ∧
       EqOn (A.coord i ξ) φ (A.image i) ∧
       closure {x | ξ x ≠ 0} ⊆ (A.chart i).symm '' tsupport φ := by
-  have := A.compactSpace
   set K := (A.chart i).symm '' tsupport φ
   have hK : IsCompact K := hφc.image_of_continuousOn ((A.continuousOn_chart_symm i).mono hφi)
   have hKi : K ⊆ A.dom i := by
     rintro _ ⟨z, hz, rfl⟩
     exact A.symm_mem_dom (hφi hz)
-  obtain ⟨U, hUo, hKU, hUi, -⟩ := exists_open_between_and_isCompact_closure hK (A.isOpen_dom i) hKi
-  obtain ⟨ψ, hψ1, hψ0, -⟩ := exists_contMDiffMap_one_nhds_of_subset_interior 𝓘(ℝ, E)
-    (n := (⊤ : ℕ∞)) hK.isClosed (hKU.trans (interior_maximal subset_closure hUo))
-  have hψi : tsupport ψ ⊆ A.dom i :=
-    (closure_minimal (fun x (hx : x ∈ Function.support ψ) ↦ by_contra fun h ↦ hx (hψ0 x h))
-      isClosed_closure).trans hUi
+  -- A smooth cutoff equal to `1` near `K` and supported in the domain of chart `i`.
+  obtain ⟨ψ, hψs, hψ1, -, hψi, -⟩ :=
+    hK.exists_contMDiff_one_nhds_tsupport_subset 𝓘(ℝ, E) (A.isOpen_dom i) hKi
   have hψK : ∀ x ∈ K, ψ x = 1 := fun x hx ↦ hψ1.self_of_nhdsSet x hx
-  refine ⟨fun x ↦ ψ x • A.chartSection i φ x, contMDiff_smul_chartSection ψ.contMDiff hψi
+  refine ⟨fun x ↦ ψ x • A.chartSection i φ x, contMDiff_smul_chartSection hψs hψi
     hφ.contDiffOn, fun y hy ↦ ?_, closure_minimal (fun x hx ↦ ?_) hK.isClosed⟩
   · rw [A.coord_fun_smul i _ _ hy, coord_chartSection φ hy]
     by_cases hφy : φ y = 0
@@ -72,7 +68,7 @@ theorem exists_contMDiff_eqOn_coord {i : Fin A.n} {φ : E → F} (hφ : ContDiff
     · rw [hψK _ ⟨y, subset_tsupport φ hφy, rfl⟩, one_smul]
   · by_contra hxK
     refine hx ?_
-    simp only
+    beta_reduce
     rw [chartSection_eq_zero fun hxi ↦ ?_, smul_zero]
     by_contra hφx
     refine hxK ⟨A.chart i x, subset_tsupport φ hφx, ?_⟩

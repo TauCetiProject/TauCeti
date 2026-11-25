@@ -344,9 +344,12 @@ theorem symm_notMem_image_of_notMem_localizedImage [T2Space E] {i j : Fin A.n} {
     (hyP : y ∉ A.localizedImage i j Q) : (A.chart j).symm y ∉ (A.chart i).symm '' K := by
   rintro ⟨z, hz, hzy⟩
   have hzi : z ∈ A.image i := hQi (hKQ hz)
-  refine hyP (mem_localizedImage.2 ⟨hy, hzy ▸ A.symm_mem_dom hzi, ?_⟩)
-  rw [← hzy, (A.chart i).right_inv (A.closure_image_subset_target i (subset_closure hzi))]
-  exact hKQ hz
+  -- The point is `(A.chart i).symm z`, which chart `i` reads as `z ∈ Q`.
+  refine hyP (mem_localizedImage.2 ⟨hy, ?_, ?_⟩)
+  · rw [← hzy]
+    exact A.symm_mem_dom hzi
+  · rw [← hzy, (A.chart i).right_inv (A.closure_image_subset_target i (subset_closure hzi))]
+    exact hKQ hz
 
 end FiniteBundleAtlas
 
