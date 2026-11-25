@@ -26,12 +26,11 @@ Postcomposition by a continuous linear map `g : F →L[ℝ] G` of the values als
 is `g` applied to the corresponding derivative of `f`. For instance, the real part of a
 complex-valued bounded `C^{k,α}` map is a real-valued one. The same holds locally: on an open set,
 postcomposition by `T` multiplies the Hölder constant of the top derivative by `‖T‖`
-(`ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left`), and the same holds for finite sums
-`x ↦ ∑ₗ A l (g l x)` (`TauCeti.holderOnWith_iteratedFDeriv_sum_comp_left`). Both also hold on a
-set that need not be open, at each point of which the maps are `Cⁿ`
-(`ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left_of_contDiffAt`,
-`TauCeti.holderOnWith_iteratedFDeriv_sum_comp_left_of_contDiffAt`). Bounds in norm and Hölder bounds
-of the components `g l` combine into such bounds for the sum
+(`ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left`), and this also holds on a set that
+need not be open, at each point of which the map is `Cⁿ`
+(`ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left_of_contDiffAt`), and for finite sums
+`x ↦ ∑ₗ A l (g l x)` on such a set (`TauCeti.holderOnWith_iteratedFDeriv_sum_comp_left`). Bounds
+in norm and Hölder bounds of the components `g l` combine into such bounds for the sum
 (`TauCeti.norm_iteratedFDeriv_le_and_holderOnWith_sum_comp_left`), which assembles a map with
 finite-dimensional values from its coordinates in a basis.
 
@@ -86,7 +85,7 @@ every point of `s` and its `n`-th derivative is `α`-Hölder on `s` with constan
 `n`-th derivative of `x ↦ ∑ₗ A l (g l x)` is `α`-Hölder on `s` with constant `∑ₗ ‖A l‖ C l`. The
 set `s` need not be open, e.g. a closed half-disc inside an open set on which each `g l` is
 `Cⁿ`. -/
-theorem holderOnWith_iteratedFDeriv_sum_comp_left_of_contDiffAt {ι X Y Z : Type*} [Fintype ι]
+theorem holderOnWith_iteratedFDeriv_sum_comp_left {ι X Y Z : Type*} [Fintype ι]
     [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
     [NormedAddCommGroup Z] [NormedSpace ℝ Z] (A : ι → Y →L[ℝ] Z) {g : ι → X → Y} {s : Set X}
     {n : ℕ} {α : NNReal} {C : ι → NNReal} (hg : ∀ l, ∀ z ∈ s, ContDiffAt ℝ n (g l) z)
@@ -96,20 +95,6 @@ theorem holderOnWith_iteratedFDeriv_sum_comp_left_of_contDiffAt {ι X Y Z : Type
     (A l).holderOnWith_iteratedFDeriv_comp_left_of_contDiffAt (hg l) (h l)).congr fun z hz ↦
       (iteratedFDeriv_fun_sum_apply (f := fun l x ↦ A l (g l x)) fun l _ ↦
         (A l).contDiff.contDiffAt.comp z (hg l z hz)).symm
-
-/-- **Hölder bounds for finite sums of postcompositions.** If on an open set `s` each `g l` is
-`Cⁿ` and its `n`-th derivative is `α`-Hölder with constant `C l`, then the `n`-th derivative of
-`x ↦ ∑ₗ A l (g l x)` is `α`-Hölder on `s` with constant `∑ₗ ‖A l‖ C l`. This is the finite-sum
-form of `ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left`; it assembles bounds on
-coordinates `g l` into bounds on `∑ₗ g l • b l` for a basis `b`. -/
-theorem holderOnWith_iteratedFDeriv_sum_comp_left {ι X Y Z : Type*} [Fintype ι]
-    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
-    [NormedAddCommGroup Z] [NormedSpace ℝ Z] (A : ι → Y →L[ℝ] Z) {g : ι → X → Y} {s : Set X}
-    {n : ℕ} {α : NNReal} {C : ι → NNReal} (hs : IsOpen s) (hg : ∀ l, ContDiffOn ℝ n (g l) s)
-    (h : ∀ l, HolderOnWith (C l) α (iteratedFDeriv ℝ n (g l)) s) :
-    HolderOnWith (∑ l, ‖A l‖₊ * C l) α (iteratedFDeriv ℝ n fun x ↦ ∑ l, A l (g l x)) s :=
-  holderOnWith_iteratedFDeriv_sum_comp_left_of_contDiffAt A
-    (fun l _ hz ↦ (hg l).contDiffAt (hs.mem_nhds hz)) h
 
 /-- **Assembling `Cⁿ` and Hölder bounds of finitely many components.** Let each `g l` be `Cⁿ` at
 every point of a set `s`, with `n`-th derivative bounded in norm by `K c l` and `α`-Hölder on `s`
@@ -145,7 +130,7 @@ theorem norm_iteratedFDeriv_le_and_holderOnWith_sum_comp_left {ι X Y Z : Type*}
       rw [← Finset.sum_mul]
       ring
     rw [← hC]
-    exact holderOnWith_iteratedFDeriv_sum_comp_left_of_contDiffAt A hg
+    exact holderOnWith_iteratedFDeriv_sum_comp_left A hg
       fun l ↦ (hb l).2.mono_const (mul_le_mul' le_rfl (hc l))
 
 end TauCeti
