@@ -9,6 +9,9 @@ public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.RingTheory.Finiteness.Bilinear
 public import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 public import TauCeti.RingTheory.Grassmannian.Basic
+public import TauCeti.LinearAlgebra.BilinearForm.Isometry
+import TauCeti.LinearAlgebra.BilinearForm.Isotropic
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
 # The isotropic locus of a point of the Grassmannian
@@ -32,6 +35,13 @@ The key input is right exactness of the tensor product: the base change of `N` i
 by the image of `N` (`Module.Grassmannian.ker_baseChangeMkQ`), and on that image `ω_B` takes the
 values `f (ω_A(x, y))` (`LinearMap.BilinForm.baseChange_rTensor_rTensor`).
 
+Over a field `K`, an isotropic point is a subspace contained in its own orthogonal. For a
+nondegenerate form such a subspace has at most half the ambient dimension, and for a nondegenerate
+alternating form Witt's theorem says that the isometry group acts transitively on the isotropic
+points of a given rank. Over any nontrivial ring, passing to a residue field shows that an isotropic
+point for a form whose Gram matrix in a basis of `M` has unit determinant has rank at most half
+the rank of `M`.
+
 Since their formation commutes with base change, these ideals are compatible with restriction
 between affine opens of the Grassmannian scheme, and they glue into the isotropic Grassmannian, a
 closed subscheme of the Grassmannian scheme (`Module.Grassmannian.schemeIsotropicLocus`).
@@ -53,6 +63,12 @@ closed subscheme of the Grassmannian scheme (`Module.Grassmannian.schemeIsotropi
   exactly when `f` kills `N.isotropicLocus ω`.
 * `Module.Grassmannian.isotropicLocus_fg`: for `M` finite over `R`, the ideal `N.isotropicLocus ω`
   is finitely generated.
+* `Module.Grassmannian.finrank_le_two_mul_of_le_orthogonal`: over a field, an isotropic point of
+  quotient rank `k` for a nondegenerate form on a space of dimension `n` satisfies `n ≤ 2 k`.
+* `Module.Grassmannian.exists_mem_isometryGroup_grassmannianCongr_eq`: the isometry group of a
+  nondegenerate alternating form acts transitively on the isotropic points over a field.
+* `Module.Grassmannian.card_le_two_mul_of_le_orthogonal`: over a nontrivial ring, an isotropic
+  point for a form with unit Gram determinant on a free module of rank `n` satisfies `n ≤ 2 k`.
 
 ## References
 
@@ -60,6 +76,8 @@ closed subscheme of the Grassmannian scheme (`Module.Grassmannian.schemeIsotropi
   functor.
 * A. Grothendieck, J. Dieudonné, *Éléments de géométrie algébrique I* (Springer, 1971), 9.7, for
   closed conditions on the Grassmannian.
+* E. Artin, *Geometric Algebra* (1957), Chapter III, for the dimension bound on isotropic
+  subspaces and Witt's theorem.
 -/
 
 public section
@@ -152,5 +170,65 @@ out by finitely many equations, the values of `ω_A` on pairs of generators of `
 theorem isotropicLocus_fg [Module.Finite R M] (N : G(k, A ⊗[R] M; A))
     (ω : LinearMap.BilinForm R M) : (N.isotropicLocus ω).FG :=
   N.fg_toSubmodule.map₂ _ N.fg_toSubmodule
+
+section Field
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+
+/-- **Isotropic points over a field have dimension at most half.** For a nondegenerate bilinear
+form `ω` on `V`, a point of `G(k, V; K)` contained in its own orthogonal satisfies
+`finrank K V ≤ 2 k`: when `V` is finite-dimensional it is a subspace of dimension `dim V - k` of
+at most half the dimension of `V`, and otherwise `finrank K V = 0`. -/
+theorem finrank_le_two_mul_of_le_orthogonal {ω : LinearMap.BilinForm K V} (hnd : ω.Nondegenerate)
+    {N : G(k, V; K)} (hN : N.toSubmodule ≤ ω.orthogonal N.toSubmodule) :
+    Module.finrank K V ≤ 2 * k := by
+  by_cases hV : FiniteDimensional K V
+  · have := LinearMap.BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal hnd hN
+    rw [N.finrank_toSubmodule] at this
+    omega
+  · simp [Module.finrank_of_not_finite hV]
+
+variable [FiniteDimensional K V]
+
+/-- **The symplectic group is transitive on isotropic points.** For a nondegenerate alternating
+form `ω` on a finite-dimensional vector space `V`, any two points of `G(k, V; K)` that are
+isotropic for `ω` are carried onto each other by an isometry of `ω`: the isometry group acts
+transitively on the field points of the isotropic Grassmannian. -/
+theorem exists_mem_isometryGroup_grassmannianCongr_eq {ω : LinearMap.BilinForm K V}
+    (hω : ω.IsAlt) (hnd : ω.Nondegenerate) {N N' : G(k, V; K)}
+    (hN : N.toSubmodule ≤ ω.orthogonal N.toSubmodule)
+    (hN' : N'.toSubmodule ≤ ω.orthogonal N'.toSubmodule) :
+    ∃ g ∈ LinearMap.BilinForm.isometryGroup ω, g.grassmannianCongr N = N' := by
+  obtain ⟨g, hgN⟩ := hω.exists_isometryEquiv_map_eq hnd hN hN'
+    (by rw [N.finrank_toSubmodule, N'.finrank_toSubmodule])
+  let g' := (LinearMap.BilinForm.isometryGroupEquivIsometryEquiv ω).symm g
+  have hg' : (g' : V ≃ₗ[K] V) = g.toLinearEquiv :=
+    DFunLike.coe_injective <| LinearMap.BilinForm.coe_isometryGroupEquivIsometryEquiv_symm ω g
+  exact ⟨g', g'.property, Module.Grassmannian.ext <| by simpa [hg'] using hgN⟩
+
+end Field
+
+/-- **Isotropic points have rank at most half.** Let `ω` be a bilinear form on a free module `M`
+with basis `b` indexed by `ι`, whose Gram matrix has unit determinant. Over a nontrivial
+`R`-algebra `A`, an isotropic point of `G(k, A ⊗[R] M; A)` for the base change `ω_A` has
+`|ι| ≤ 2 k`: at a residue field of `A` it is a subspace of dimension `|ι| - k` contained in its own
+orthogonal for the nondegenerate form `ω_K`. For a symplectic form on `R^{2m}` and quotient rank
+`k = 2m - r`, this says that isotropic subbundles have rank `r ≤ m`. -/
+theorem card_le_two_mul_of_le_orthogonal [Nontrivial A] {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Basis ι R M) {ω : LinearMap.BilinForm R M}
+    (hω : IsUnit (LinearMap.BilinForm.toMatrix b ω).det) {N : G(k, A ⊗[R] M; A)}
+    (hN : N.toSubmodule ≤ (ω.baseChange A).orthogonal N.toSubmodule) :
+    Fintype.card ι ≤ 2 * k := by
+  obtain ⟨𝔪, h𝔪⟩ := Ideal.exists_maximal A
+  let := Ideal.Quotient.field 𝔪
+  -- the image of `N` at the residue field `A ⧸ 𝔪` is still isotropic
+  have hN' := (isotropicLocus_eq_bot_iff _ ω).mp <|
+    isotropicLocus_map_eq_bot ((isotropicLocus_eq_bot_iff N ω).mpr hN) (Ideal.Quotient.mkₐ R 𝔪)
+  have hnd : (ω.baseChange (A ⧸ 𝔪)).Nondegenerate := by
+    rw [LinearMap.BilinForm.nondegenerate_iff_det_ne_zero (b.baseChange (A ⧸ 𝔪)),
+      LinearMap.BilinForm.det_toMatrix_baseChange]
+    exact (hω.map (algebraMap R (A ⧸ 𝔪))).ne_zero
+  simpa [Module.finrank_eq_card_basis (b.baseChange (A ⧸ 𝔪))] using
+    finrank_le_two_mul_of_le_orthogonal hnd hN'
 
 end Module.Grassmannian
