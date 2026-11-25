@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.HomologicalComplex
 public import Mathlib.LinearAlgebra.Matrix.ToLin
+import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
@@ -55,7 +56,9 @@ map `φ : D ⟶ C` of homological complexes of modules over a commutative ring `
 `ci, ci'` of `C` and `ei, ei'` of `D` in degrees `i` and `i'`, if `φ` sends `ei l` to `ci l.succ`
 up to a multiple of `ci 0` and `ei' l` to `ci' l.succ` up to a multiple of `d (ci 0)`, and the
 `(0, 0)`-entry `a` of the matrix of `C.d i i'` is invertible, then the matrix of `D.d i i'` in
-`ei, ei'` is the Schur complement `N - w · ⅟a · v`. -/
+`ei, ei'` is the Schur complement `N - w · ⅟a · v`. In the matrix of `C.d i i'` in `ci, ci'`,
+`v` is the rest of row zero, `w` is the rest of column zero, and `N` is the block on successor
+rows and columns. -/
 theorem toMatrix_d_eq_of_cancel_of_invertible {R : Type*} [CommRing R]
     {C D : HomologicalComplex (ModuleCat R) rel} {φ : D ⟶ C}
     {ci : Basis (Fin (m + 1)) R (C.X i)} {ci' : Basis (Fin (m' + 1)) R (C.X i')}
@@ -82,9 +85,7 @@ theorem toMatrix_d_eq_of_cancel_of_invertible {R : Type*} [CommRing R]
   have hφe : (φ.f i).hom (ei k) = ci k.succ + t • ci 0 := by rw [ht, add_sub_cancel]
   have h := ei'.repr_eq_sub_mul_invOf_mul ci' (φ.f i').hom (Fin.succ_injective _)
     Fin.succ_ne_zero hφ' ((D.d i i').hom (ei k)) r
-  have hcomm : (φ.f i').hom ((D.d i i').hom (ei k)) = (C.d i i').hom ((φ.f i).hom (ei k)) := by
-    have := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (φ.comm i i').symm) (ei k)
-    simpa only [ModuleCat.hom_comp, LinearMap.comp_apply] using this
+  have hcomm := (Hom.comm_apply φ i i' (ei k)).symm
   rw [hcomm, hφe] at h
   simp only [LinearMap.toMatrix_apply, Matrix.of_apply, h, hinv, map_add, map_smul,
     Finsupp.add_apply, Finsupp.smul_apply, smul_eq_mul]
