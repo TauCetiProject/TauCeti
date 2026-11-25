@@ -18,11 +18,12 @@ and Mathlib's dual-basis criterion yields finite projectivity. Conversely, a fin
 module has an invertible contraction, so the categorical dual-basis criterion constructs its
 dual.
 
-A module identified with the ring has its right dual identified with the ring by evaluation at the
-element corresponding to `1` (`ModuleCat.rightDualIsoOfIsoSelf`).
-
 This is the affine algebraic criterion used in comparing finite locally free sheaves with
 dualizable quasicoherent sheaves.
+
+A module identified with the ring has its internal Hom into the unit, which is its dual when it
+is finite projective, identified with the ring by evaluation at the element corresponding to `1`
+(`ModuleCat.ihomObjUnitIsoOfIsoSelf`).
 
 The dual-basis criterion used here is from Mathlib's `LinearAlgebra.Contraction`.
 -/
@@ -107,25 +108,27 @@ theorem nonempty_hasRightDual_iff_finite_projective :
     let _ : Module.Projective R M := hproj
     exact ⟨inferInstance⟩
 
-/-- A module `A` identified with the ring by `e` has its right dual identified with the ring: a
-linear functional `φ` is sent to its value at the element of `A` corresponding to `1`. -/
-noncomputable def rightDualIsoOfIsoSelf {A : ModuleCat.{u} R} [Module.Finite R A]
-    [Module.Projective R A] (e : A ≅ ModuleCat.of R R) : Aᘁ ≅ ModuleCat.of R R :=
+/-- A module `A` identified with the ring by `e` has its internal Hom into the unit identified
+with the ring: a linear functional `φ` is sent to its value at the element of `A` corresponding to
+`1`. When `A` is finite projective, this internal Hom is the right dual `Aᘁ` by definition
+(`ModuleCat.rightDual_of_finite_projective`), and also the left dual. -/
+noncomputable def ihomObjUnitIsoOfIsoSelf {A : ModuleCat.{u} R} (e : A ≅ ModuleCat.of R R) :
+    (ihom A).obj (𝟙_ (ModuleCat.{u} R)) ≅ ModuleCat.of R R :=
   (ModuleCat.homLinearEquiv (S := R) ≪≫ₗ e.symm.toLinearEquiv.dualMap ≪≫ₗ
     LinearMap.ringLmapEquivSelf R R R).toModuleIso
 
-/-- `ModuleCat.rightDualIsoOfIsoSelf e` evaluates a linear functional at the element
+/-- `ModuleCat.ihomObjUnitIsoOfIsoSelf e` evaluates a linear functional at the element
 corresponding to `1`. -/
-theorem rightDualIsoOfIsoSelf_hom_apply {A : ModuleCat.{u} R} [Module.Finite R A]
-    [Module.Projective R A] (e : A ≅ ModuleCat.of R R) (φ : A ⟶ ModuleCat.of R R) :
-    (rightDualIsoOfIsoSelf e).hom.hom φ = φ.hom (e.inv.hom 1) :=
+theorem ihomObjUnitIsoOfIsoSelf_hom_apply {A : ModuleCat.{u} R} (e : A ≅ ModuleCat.of R R)
+    (φ : A ⟶ ModuleCat.of R R) :
+    (ihomObjUnitIsoOfIsoSelf e).hom.hom φ = φ.hom (e.inv.hom 1) :=
   (rfl)
 
-/-- The inverse of `ModuleCat.rightDualIsoOfIsoSelf e` sends `x` to the linear functional that
+/-- The inverse of `ModuleCat.ihomObjUnitIsoOfIsoSelf e` sends `x` to the linear functional that
 multiplies by `x` the scalar corresponding to its argument. -/
-theorem rightDualIsoOfIsoSelf_inv_apply {A : ModuleCat.{u} R} [Module.Finite R A]
-    [Module.Projective R A] (e : A ≅ ModuleCat.of R R) (x : R) (v : A) :
-    ((rightDualIsoOfIsoSelf e).inv.hom x : A ⟶ ModuleCat.of R R).hom v = e.hom.hom v * x :=
+theorem ihomObjUnitIsoOfIsoSelf_inv_apply {A : ModuleCat.{u} R} (e : A ≅ ModuleCat.of R R)
+    (x : R) (v : A) :
+    ((ihomObjUnitIsoOfIsoSelf e).inv.hom x : A ⟶ ModuleCat.of R R).hom v = e.hom.hom v * x :=
   (rfl)
 
 end ModuleCat

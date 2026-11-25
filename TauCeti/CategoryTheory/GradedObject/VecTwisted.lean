@@ -320,13 +320,15 @@ theorem leftDual_coevaluation_hom (X : VecTwisted k G c) :
 instance rigidCategory : RigidCategory (VecTwisted k G c) where
 
 /-- The component in degree `h` of `VecTwisted.rightDualDeltaIso`: in degree `g⁻¹` it is
-`ModuleCat.rightDualIsoOfIsoSelf` followed by the identification of `δ_{g⁻¹}` with the field
-there, and in the other degrees both objects are zero. The components of the left dual of `δ_g`
-are definitionally the same, so this is also the component of `VecTwisted.leftDualDeltaIso`. -/
+`ModuleCat.ihomObjUnitIsoOfIsoSelf` (the dual of the field is by definition its internal Hom
+into the unit, `ModuleCat.rightDual_of_finite_projective`) followed by the identification of
+`δ_{g⁻¹}` with the field there, and in the other degrees both objects are zero. The components
+of the left dual of `δ_g` are definitionally the same, so this is also the component of
+`VecTwisted.leftDualDeltaIso`. -/
 private def rightDualDeltaIsoApp (g : G) (h : Additive G) :
     (rightDual (delta (c := c) g)).obj h ≅ (delta (c := c) g⁻¹).obj h :=
   if hh : h = Additive.ofMul g⁻¹ then
-    ModuleCat.rightDualIsoOfIsoSelf (deltaObjIso g (-h) (by rw [hh, ofMul_inv, neg_neg])) ≪≫
+    ModuleCat.ihomObjUnitIsoOfIsoSelf (deltaObjIso g (-h) (by rw [hh, ofMul_inv, neg_neg])) ≪≫
       (deltaObjIso g⁻¹ h hh).symm
   else
     (show IsZero ((delta (c := c) g).obj (-h))ᘁ from
@@ -339,7 +341,7 @@ private def rightDualDeltaIsoApp (g : G) (h : Additive G) :
 first branch of its defining `dite`. -/
 private lemma rightDualDeltaIsoApp_neg_ofMul (g : G) :
     rightDualDeltaIsoApp (c := c) g (-Additive.ofMul g) =
-      ModuleCat.rightDualIsoOfIsoSelf (deltaObjIso g (- -Additive.ofMul g) (neg_neg _)) ≪≫
+      ModuleCat.ihomObjUnitIsoOfIsoSelf (deltaObjIso g (- -Additive.ofMul g) (neg_neg _)) ≪≫
         (deltaObjIso g⁻¹ (-Additive.ofMul g) (ofMul_inv g).symm).symm :=
   dite_eq_left (ofMul_inv g).symm
 
@@ -365,7 +367,7 @@ theorem rightDualDeltaIso_hom_hom_apply (g : G)
   -- `change` checks this step up to unfolding.
   change (rightDualDeltaIsoApp g (-Additive.ofMul g)).hom.hom φ = _
   rw [rightDualDeltaIsoApp_neg_ofMul]
-  exact congrArg _ (ModuleCat.rightDualIsoOfIsoSelf_hom_apply _ _)
+  exact congrArg _ (ModuleCat.ihomObjUnitIsoOfIsoSelf_hom_apply _ _)
 
 /-- In degree `g⁻¹`, written `-Additive.ofMul g`, the inverse of `VecTwisted.rightDualDeltaIso`
 sends `x` to the linear functional on `δ_g` that multiplies by the scalar corresponding to `x`. -/
@@ -382,7 +384,7 @@ theorem rightDualDeltaIso_inv_hom_apply (g : G)
   change ((rightDualDeltaIsoApp g (-Additive.ofMul g)).inv.hom x :
     (delta (c := c) g).obj (- -Additive.ofMul g) ⟶ ModuleCat.of k k).hom v = _
   rw [rightDualDeltaIsoApp_neg_ofMul]
-  exact ModuleCat.rightDualIsoOfIsoSelf_inv_apply _ _ v
+  exact ModuleCat.ihomObjUnitIsoOfIsoSelf_inv_apply _ _ v
 
 /-- The left dual of `δ_g` is `δ_{g⁻¹}`. Its components are those of
 `VecTwisted.rightDualDeltaIso`, since the left and right duals of a finite-dimensional vector
