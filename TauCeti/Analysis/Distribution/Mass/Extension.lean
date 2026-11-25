@@ -43,7 +43,7 @@ have locally finite mass.
 * `Distribution.extendContinuous`: the extension of `T` to compactly supported continuous tests,
   `φ ↦ extendL1 T φ`, which extends `T` (`Distribution.extendContinuous_monoCLM`) and has mass
   measure `‖T‖` (`Distribution.massMeasure_extendContinuous`).
-* `Distribution.apply_eq_zero_of_hasLocallyFiniteMass`: a map of locally finite mass that vanishes
+* `Distribution.apply_eq_zero_of_forall_monoCLM_eq_zero`: a map of locally finite mass that vanishes
   on smooth tests vanishes.
 * `Distribution.extendContinuous_unique`: `Distribution.extendContinuous T` is the only extension
   of `T` of locally finite mass.
@@ -261,7 +261,7 @@ theorem exists_isCompact_localMass_ne_top_approx [FiniteDimensional ℝ E]
 /-- **Smooth tests determine a map of locally finite mass.** A real-linear map on tests of class
 `C^n` with locally finite mass that vanishes on smooth tests vanishes: smooth tests approximate a
 test uniformly, with supports in a fixed compact set of finite local mass. -/
-theorem apply_eq_zero_of_hasLocallyFiniteMass [FiniteDimensional ℝ E]
+theorem apply_eq_zero_of_forall_monoCLM_eq_zero [FiniteDimensional ℝ E]
     (hT : HasLocallyFiniteMass T) (h : ∀ ψ : 𝓓(Ω, F), T (monoCLM ℝ ψ) = 0)
     (φ : 𝓓^{n}(Ω, F)) : T φ = 0 := by
   obtain ⟨K, hKT, -, -, happrox⟩ := exists_isCompact_localMass_ne_top_approx hT φ
@@ -283,7 +283,7 @@ theorem extendContinuous_unique [FiniteDimensional ℝ E] {L : 𝓓^{0}(Ω, F) �
   have hsub : HasLocallyFiniteMass (L - (extendContinuous T : 𝓓^{0}(Ω, F) →ₗ[ℝ] ℝ)) :=
     hL.sub hasLocallyFiniteMass_extendContinuous
   refine LinearMap.ext fun φ => sub_eq_zero.1 ?_
-  refine apply_eq_zero_of_hasLocallyFiniteMass hsub (fun ψ => ?_) φ
+  refine apply_eq_zero_of_forall_monoCLM_eq_zero hsub (fun ψ => ?_) φ
   have hψ : (monoCLM ℝ ψ : 𝓓^{0}(Ω, F)) = monoCLM ℝ (monoCLM ℝ ψ : 𝓓^{n}(Ω, F)) :=
     TestFunction.ext fun x => by
       simp [coe_monoCLM_of_le le_top le_rfl, coe_monoCLM_of_le zero_le le_rfl]
