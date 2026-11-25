@@ -34,6 +34,8 @@ constant loop, and the constant loops `X → 𝓛₀X` are again a closed embedd
 * `TauCeti.MooreLoopSpace.toFreeLoop`: a based Moore loop as a free loop.
 * `TauCeti.MooreLoopSpace.codRestrictFreeLoop`: a continuous family of free loops based at `x`,
   as a continuous family of based loops.
+* `TauCeti.MooreFreeLoopSpace.toMooreLoop`: a free Moore loop as a based Moore loop at its base
+  point.
 * `TauCeti.MooreFreeLoopSpace.contractibleLoops X`: the contractible free loops `𝓛₀X`, with
   `basepointContractible` and `TauCeti.MooreFreeLoopSpace.constContractible x`
   (`constContractibleMap`), the constant loop at `x` as a point of `𝓛₀X`.
@@ -281,6 +283,31 @@ end MooreLoopSpace
 namespace MooreFreeLoopSpace
 
 variable {X : Type*} [TopologicalSpace X]
+
+/-! ### Free loops as based loops -/
+
+/-- A free Moore loop, read as a based Moore loop at its own base point. -/
+def toMooreLoop (γ : MooreFreeLoopSpace X) : MooreLoopSpace X γ.basepoint :=
+  ⟨γ.toMoorePath, rfl, γ.target_eq_source⟩
+
+@[simp]
+theorem toMoorePath_toMooreLoop (γ : MooreFreeLoopSpace X) :
+    γ.toMooreLoop.toMoorePath = γ.toMoorePath :=
+  (rfl)
+
+@[simp]
+theorem length_toMooreLoop (γ : MooreFreeLoopSpace X) : γ.toMooreLoop.length = γ.length := by
+  rw [← MooreLoopSpace.length_toMoorePath, toMoorePath_toMooreLoop, length_toMoorePath]
+
+/-- A constant free loop, read as a based loop, is the unit loop. -/
+@[simp]
+theorem toMooreLoop_const (x : X) : (const x).toMooreLoop = 1 :=
+  MooreLoopSpace.eq_one_of_length_eq_zero (by rw [length_toMooreLoop, length_const])
+
+/-- Reading a free loop as a based loop at its base point and back gives the same free loop. -/
+@[simp]
+theorem toFreeLoop_toMooreLoop (γ : MooreFreeLoopSpace X) : γ.toMooreLoop.toFreeLoop = γ :=
+  (rfl)
 
 /-! ### Contractible loops -/
 

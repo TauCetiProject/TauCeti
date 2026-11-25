@@ -5,18 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
+import Mathlib.Analysis.Calculus.DSlope
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 /-!
-# The sinc function: nonnegativity and the scaled function `t ↦ t sinc (ω t)`
+# The sinc function: smoothness, nonnegativity and the scaled function `t ↦ t sinc (ω t)`
 
-`sinc` is nonnegative on `[-π, π]`, complementing Mathlib's `Real.sinc_pos` on `(-π, π)`. Near
+`sinc` is real analytic, hence smooth, since it is the slope `dslope sin 0` of the analytic
+function `sin`. Away from the origin its derivative is `cos x / x - sin x / x²`
+(`Real.hasDerivAt_sinc_of_ne_zero`).
+
+`sinc` is nonnegative on `[-π, π]`, complementing Mathlib's `Real.sinc_pos` on `(-π, π)`, and its
+square has the integrable majorant `2 / (1 + x²)` (`Real.sinc_sq_le_two_div_one_add_sq`). Near
 zero it is quadratically close to one, `|sinc x - 1| ≤ x² / 6`, and it factors the remainder of
-the cosine, `1 - cos x = (x² / 2) sinc (x / 2)²`. Consequently the real-line Fejér kernel
-`T / 2 * sinc (T * y / 2) ^ 2` is at least `T / 4` while `|y| ≤ T⁻¹`
-(`TauCeti.div_four_le_mul_sinc_sq`).
+the cosine, `1 - cos x = (x² / 2) sinc (x / 2)²`. Consequently `sinc x` is at least `23 / 24`
+while `|x| ≤ 1 / 2` (`TauCeti.le_sinc_of_abs_le_half`).
+
+Since `cos (π x / 2)` vanishes at `x = ±1`, `sin (π x / 2)² - 1 = -cos (π x / 2)²` is the product
+of `x² - 1` with the continuous function `(π / 2)² sinc (π (1 - x) / 2) sinc (π (1 + x) / 2)`
+(`Real.mul_self_sin_pi_mul_div_two_sub_one`).
 
 For `ω ≠ 0` the function `t ↦ t sinc (ω t)` is `t ↦ sin (ω t) / ω`, and for `ω = 0` it is the
 identity. Either way its derivative is `t ↦ cos (ω t)`, so it is the solution of
@@ -29,10 +39,37 @@ public section
 
 namespace Real
 
+/-- The function `sinc` is real analytic at every point, including the origin. -/
+@[fun_prop]
+theorem analyticAt_sinc (x : ℝ) : AnalyticAt ℝ sinc x := by
+  simpa only [sinc_eq_dslope] using (analyticAt_sin (x := x)).dslope 0
+
+/-- The function `sinc` is smooth, indeed analytic. -/
+@[fun_prop]
+theorem contDiff_sinc {n : WithTop ℕ∞} : ContDiff ℝ n sinc :=
+  AnalyticOnNhd.contDiff fun x _ => analyticAt_sinc x
+
 /-- `x sinc x = sin x` for every real `x`, including `x = 0`. -/
 @[simp]
 theorem mul_sinc (x : ℝ) : x * sinc x = sin x := by
   simpa [sinc_eq_dslope] using sub_smul_dslope sin 0 x
+
+/-- Away from the origin, the derivative of `sinc` is `cos x / x - sin x / x²`. -/
+theorem hasDerivAt_sinc_of_ne_zero {x : ℝ} (hx : x ≠ 0) :
+    HasDerivAt sinc (cos x / x - sin x / x ^ 2) x := by
+  have hd : HasDerivAt (fun t : ℝ => sin t / t) (cos x / x - sin x / x ^ 2) x := by
+    refine ((hasDerivAt_sin x).fun_div (hasDerivAt_id' x) hx).congr_deriv ?_
+    field_simp
+  refine hd.congr_of_eventuallyEq ?_
+  filter_upwards [isOpen_ne.mem_nhds hx] with t ht
+  exact sinc_of_ne_zero ht
+
+/-- The bound `sinc² x ≤ 2 / (1 + x²)`, from `sinc² ≤ 1` and `x² sinc² x = sin² x ≤ 1`. -/
+theorem sinc_sq_le_two_div_one_add_sq (x : ℝ) : sinc x ^ 2 ≤ 2 / (1 + x ^ 2) := by
+  have h1 : sinc x ^ 2 ≤ 1 := (sq_le_one_iff_abs_le_one _).2 (abs_sinc_le_one x)
+  have h2 : (x * sinc x) ^ 2 ≤ 1 := by rw [mul_sinc]; exact sin_sq_le_one x
+  rw [le_div_iff₀ (by positivity)]
+  nlinarith
 
 /-- For `ω ≠ 0`, `t sinc (ω t) = sin (ω t) / ω`. -/
 theorem mul_sinc_mul_of_ne_zero {ω : ℝ} (hω : ω ≠ 0) (t : ℝ) :
@@ -48,6 +85,19 @@ theorem hasDerivAt_mul_sinc_mul (ω t : ℝ) :
   · simp_rw [mul_sinc_mul_of_ne_zero hω]
     convert ((hasDerivAt_id' t).const_mul ω).sin.div_const ω using 1
     field_simp
+
+/-- `sin (π x / 2)² - 1 = (π / 2)² sinc (π (1 - x) / 2) sinc (π (1 + x) / 2) (x² - 1)`: the defect
+`sin (π x / 2)² - 1` is a continuous function of `x` times `x² - 1`, because `cos (π x / 2)` is
+both `sin (π (1 - x) / 2)` and `sin (π (1 + x) / 2)`. -/
+theorem mul_self_sin_pi_mul_div_two_sub_one (x : ℝ) :
+    sin (π * x / 2) * sin (π * x / 2) - 1 =
+      (π / 2) ^ 2 * sinc (π * (1 - x) / 2) * sinc (π * (1 + x) / 2) * (x * x - 1) := by
+  have h₁ : π * (1 - x) / 2 * sinc (π * (1 - x) / 2) = cos (π * x / 2) := by
+    rw [mul_sinc, ← sin_pi_div_two_sub]; ring_nf
+  have h₂ : π * (1 + x) / 2 * sinc (π * (1 + x) / 2) = cos (π * x / 2) := by
+    rw [mul_sinc, ← sin_add_pi_div_two]; ring_nf
+  linear_combination sin_sq_add_cos_sq (π * x / 2) +
+    π * (1 + x) / 2 * sinc (π * (1 + x) / 2) * h₁ + cos (π * x / 2) * h₂
 
 /-- The subtraction formula for `t ↦ t sinc (t a)`, which is `sin (t a) / a` for `a ≠ 0`:
 `(t - s) sinc ((t - s) a) = t sinc (t a) cos (s a) - cos (t a) s sinc (s a)`. -/
@@ -102,26 +152,9 @@ namespace TauCeti
 
 open Real
 
-/-- The kernel `T / 2 * sinc (T * y / 2) ^ 2` is at least `T / 4` when `|y| ≤ T⁻¹`. -/
-theorem div_four_le_mul_sinc_sq {T y : ℝ} (hy : |y| ≤ T⁻¹) :
-    T / 4 ≤ T / 2 * sinc (T * y / 2) ^ 2 := by
-  rcases le_or_gt T 0 with hT | hT
-  · -- For `T ≤ 0` the hypothesis forces `T⁻¹ = 0`, hence `T = 0`.
-    have hT₀ : T = 0 := inv_eq_zero.1 (le_antisymm (inv_nonpos.2 hT) ((abs_nonneg y).trans hy))
-    simp [hT₀]
-  -- Multiplying `|y| ≤ T⁻¹` by `T > 0` gives `T * |y| ≤ 1`.
-  have hTy₁ : T * |y| ≤ 1 := by
-    simpa [hT.ne'] using mul_le_mul_of_nonneg_left hy hT.le
-  have hTy : |T * y / 2| ≤ 1 / 2 := by
-    rw [abs_div, abs_mul, abs_of_pos hT, abs_two]
-    linarith
-  have hsq : (T * y / 2) ^ 2 ≤ (1 / 2) ^ 2 := sq_le_sq.2 (hTy.trans (le_abs_self _))
-  -- Since `|T * y / 2| ≤ 1 / 2`, `sinc (T * y / 2)` is at least `3 / 4`.
-  have hlow : 3 / 4 ≤ sinc (T * y / 2) := by
-    linarith [(abs_le.1 (abs_sinc_sub_one_le (T * y / 2))).1]
-  have hsinc : 1 / 2 ≤ sinc (T * y / 2) ^ 2 :=
-    le_trans (by norm_num) (pow_le_pow_left₀ (by norm_num) hlow 2)
-  calc T / 4 = T / 2 * (1 / 2) := by ring
-    _ ≤ T / 2 * sinc (T * y / 2) ^ 2 := by gcongr
+/-- On `[-1 / 2, 1 / 2]`, `sinc x` is at least `23 / 24`, since `|sinc x - 1| ≤ x² / 6`. -/
+theorem le_sinc_of_abs_le_half {x : ℝ} (hx : |x| ≤ 1 / 2) : 23 / 24 ≤ sinc x := by
+  have hsq : x ^ 2 ≤ (1 / 2) ^ 2 := sq_le_sq.2 (hx.trans (le_abs_self _))
+  linarith [(abs_le.1 (abs_sinc_sub_one_le x)).1]
 
 end TauCeti

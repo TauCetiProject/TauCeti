@@ -33,8 +33,10 @@ satisfy the relations of the Coxeter matrix `TauCeti.coxeterMatrixOfGeneralizedC
 gives a homomorphism from the Coxeter group onto the Weyl group. Over a field of characteristic
 zero, and when the Cartan products are nonnegative as for a generalized Cartan matrix, the
 product `sᵢ sⱼ` of two simple reflections has order exactly `mᵢⱼ`, including the infinite order
-`mᵢⱼ = ∞` of affine type `A₁⁽¹⁾`. That the homomorphism is injective, so that the Weyl group is a
-Coxeter group on the simple reflections, is Kac's Proposition 3.13 and is not proved here.
+`mᵢⱼ = ∞` of affine type `A₁⁽¹⁾`. That the homomorphism is injective over a field of characteristic
+zero for a generalized Cartan matrix, so that the Weyl group is a Coxeter group on the simple
+reflections, is Kac's Proposition 3.13, proved in
+`TauCeti.LinearAlgebra.Matrix.Cartan.Realization.CoxeterSystem`.
 
 ## Main definitions
 

@@ -245,17 +245,22 @@ representations `ρ` and `σ` over an algebraically closed field. -/
     (ρ : Representation K (GL ι K) V) (σ : Representation K (GL ι K) W) :
     Representation.IsIrreducible ((ρ.externalTensor σ).comp (determinantEqual ι K).subtype) ↔
       ρ.IsIrreducible ∧ σ.IsIrreducible := by
-  refine ⟨fun h => ⟨h.of_comp.of_externalTensor_left, h.of_comp.of_externalTensor_right⟩,
-    fun ⟨hρ, hσ⟩ => ?_⟩
-  have hSL : (Representation.externalTensor (ρ.comp SpecialLinearGroup.toGL)
-      (σ.comp SpecialLinearGroup.toGL)).IsIrreducible :=
-    Representation.isIrreducible_externalTensor _ _
-      ((Representation.isIrreducible_comp_toGL_iff ρ).mpr hρ)
-      ((Representation.isIrreducible_comp_toGL_iff σ).mpr hσ)
-  have heq : ((ρ.externalTensor σ).comp (determinantEqual ι K).subtype).comp
-      slProdToDeterminantEqual = Representation.externalTensor (ρ.comp SpecialLinearGroup.toGL)
-        (σ.comp SpecialLinearGroup.toGL) := by ext p : 1; simp [slProdToDeterminantEqual]
-  exact Representation.IsIrreducible.of_comp (f := slProdToDeterminantEqual) (heq ▸ hSL)
+  refine ⟨fun _ => ?_, fun ⟨hρ, hσ⟩ => ?_⟩
+  · have h := Representation.IsIrreducible.of_comp (determinantEqual ι K).subtype
+      (ρ := ρ.externalTensor σ)
+    exact ⟨h.of_externalTensor_left, h.of_externalTensor_right⟩
+  · have hSL : (Representation.externalTensor (ρ.comp SpecialLinearGroup.toGL)
+        (σ.comp SpecialLinearGroup.toGL)).IsIrreducible :=
+      Representation.isIrreducible_externalTensor _ _
+        ((Representation.isIrreducible_comp_toGL_iff ρ).mpr hρ)
+        ((Representation.isIrreducible_comp_toGL_iff σ).mpr hσ)
+    have heq : ((ρ.externalTensor σ).comp (determinantEqual ι K).subtype).comp
+        slProdToDeterminantEqual = Representation.externalTensor (ρ.comp SpecialLinearGroup.toGL)
+          (σ.comp SpecialLinearGroup.toGL) := by ext p : 1; simp [slProdToDeterminantEqual]
+    have : Representation.IsIrreducible (((ρ.externalTensor σ).comp
+        (determinantEqual ι K).subtype).comp slProdToDeterminantEqual) := heq ▸ hSL
+    exact Representation.IsIrreducible.of_comp slProdToDeterminantEqual
+      (ρ := (ρ.externalTensor σ).comp (determinantEqual ι K).subtype)
 
 instance instIsIrreducibleExternalTensorCompDeterminantEqual [IsAlgClosed K]
     [FiniteDimensional K V] [FiniteDimensional K W]
