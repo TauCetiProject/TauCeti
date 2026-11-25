@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.LocallyConstant.CompactSupport
 public import TauCeti.RepresentationTheory.Smooth.Basic
+public import Mathlib.Data.Set.Pointwise.Support
 public import Mathlib.Topology.Algebra.ConstMulAction
 
 /-!
@@ -48,23 +49,14 @@ namespace TauCeti
 variable (R G X M : Type*) [Semiring R] [AddCommMonoid M] [Module R M] [Group G]
   [TopologicalSpace X] [MulAction G X] [ContinuousConstSMul G X]
 
-/-- The translate `x ↦ f(g⁻¹ • x)` of a test function, as an `R`-linear map of `C_c^∞(X, M)`. -/
-def compactlySupportedTranslate (g : G) :
-    LocallyConstant.compactlySupported R X M →ₗ[R] LocallyConstant.compactlySupported R X M where
-  toFun f := ⟨(f : LocallyConstant X M).comap ⟨(g⁻¹ • ·), continuous_const_smul _⟩,
-    LocallyConstant.mem_compactlySupported.2 <|
-      (LocallyConstant.mem_compactlySupported.1 f.property).comp_homeomorph (Homeomorph.smul g⁻¹)⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-
 /-- **The translation representation** of `G` on `C_c^∞(X, M)`: `(g • f)(x) = f(g⁻¹ • x)`. -/
 def compactlySupportedRep : Representation R G (LocallyConstant.compactlySupported R X M) where
-  toFun := compactlySupportedTranslate R G X M
-  map_one' := LinearMap.ext fun _ ↦ Subtype.ext <| LocallyConstant.ext fun x ↦ by
-    simp [compactlySupportedTranslate]
+  toFun g := (LocallyConstant.comapₗ R ⟨(g⁻¹ • ·), continuous_const_smul _⟩).restrict
+    fun _ hf ↦ LocallyConstant.mem_compactlySupported.2 <|
+      (LocallyConstant.mem_compactlySupported.1 hf).comp_homeomorph (Homeomorph.smul g⁻¹)
+  map_one' := LinearMap.ext fun _ ↦ Subtype.ext <| LocallyConstant.ext fun x ↦ by simp
   map_mul' g h := LinearMap.ext fun f ↦ Subtype.ext <| LocallyConstant.ext fun x ↦ by
-    change f.val ((g * h)⁻¹ • x) = f.val (h⁻¹ • g⁻¹ • x)
-    rw [mul_inv_rev, mul_smul]
+    simp [mul_smul]
 
 variable {R G X M}
 
@@ -81,9 +73,8 @@ theorem compactlySupportedRep_apply_smul (g : G) (f : LocallyConstant.compactlyS
 /-- **Translation by `g` moves the support by `g`.** -/
 theorem support_compactlySupportedRep_apply (g : G)
     (f : LocallyConstant.compactlySupported R X M) :
-    support (compactlySupportedRep R G X M g f : LocallyConstant X M) = g • support f.val := by
-  ext x
-  simp [Set.mem_smul_set_iff_inv_smul_mem]
+    support (compactlySupportedRep R G X M g f : LocallyConstant X M) = g • support f.val :=
+  support_comp_inv_smul g f.val
 
 /-- An element acting trivially on `X` acts trivially on `C_c^∞(X, M)`. -/
 theorem compactlySupportedRep_apply_eq_one {g : G} (hg : ∀ x : X, g • x = x) :
@@ -109,6 +100,7 @@ instance isSmooth_compactlySupportedRep [TopologicalSpace G] [IsTopologicalGroup
           ((φ.isLocallyConstant.comp_continuous continuous_snd).prodMk
             (φ.isLocallyConstant.comp_continuous
               ((continuous_inv.comp continuous_fst).smul continuous_snd))))
+      -- By definition `n` is the preimage of `{t | t.1 = t.2.1 ∧ t.2.2 = t.2.1}` under this map.
       exact h₁ {t | t.1 = t.2.1 ∧ t.2.2 = t.2.1}
     obtain ⟨u, v, hu, -, h1u, hKv, huv⟩ := generalized_tube_lemma
       (isCompact_singleton (x := (1 : G))) hK hn fun ⟨g, y⟩ ⟨hg, _⟩ ↦ by
