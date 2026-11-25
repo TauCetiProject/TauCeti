@@ -247,44 +247,12 @@ theorem eulerIntegral_neg_natCast {b c : ℂ} (hb : 0 < b.re) (hbc : b.re < c.re
 theorem regularizedGaussHGFun_eq_eulerIntegral (a : ℂ) {b c z : ℂ}
     (hb : 0 < b.re) (hbc : b.re < c.re) (hz : ‖z‖ < 1) :
     regularizedGaussHGFun a b c z = eulerIntegral a b c z := by
-  have hcb : 0 < (c - b).re := by simpa using sub_pos.mpr hbc
-  let w : ℝ → ℂ := fun t => (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)
-  have hw_int : IntervalIntegrable w volume 0 1 := betaIntegral_convergent hb hcb
-  have hsum : Summable fun n : ℕ => ‖Ring.multichoose a n‖ * ‖z‖ ^ n :=
-    (TauCeti.hasSum_multichoose_mul_geometric_complex_of_norm_lt_one (r := a) hz).summable.norm
-      |>.congr fun n => by rw [norm_mul, norm_pow]
-  have hpoly_cont (n : ℕ) : Continuous fun t : ℝ => Ring.multichoose a n * (z * (t : ℂ)) ^ n := by
-    fun_prop
-  -- Expand `(1 - z t) ^ (-a)` in powers of `z t` and swap sum and integral by dominated
-  -- convergence against the integrable Beta weight `‖w t‖`.
-  have hdct := intervalIntegral.hasSum_integral_of_dominated_convergence
-    (F := fun n t => w t * (Ring.multichoose a n * (z * (t : ℂ)) ^ n))
-    (f := fun t => w t * (1 - z * (t : ℂ)) ^ (-a))
-    (μ := volume) (a := 0) (b := 1)
-    (fun n t => ‖w t‖ * (‖Ring.multichoose a n‖ * ‖z‖ ^ n))
-    (fun n => by
-      rw [uIoc_of_le zero_le_one]
-      exact ((intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
-        (hw_int.mul_continuousOn (hpoly_cont n).continuousOn)).aestronglyMeasurable)
-    (fun n => ae_of_all _ fun t ht => by
-      rw [uIoc_of_le zero_le_one] at ht
-      have hzt : ‖z * (t : ℂ)‖ ≤ ‖z‖ := by
-        rw [norm_mul, Complex.norm_of_nonneg ht.1.le]
-        exact mul_le_of_le_one_right (norm_nonneg z) ht.2
-      rw [norm_mul (w t), norm_mul (Ring.multichoose a n), norm_pow]
-      gcongr)
-    (ae_of_all _ fun t _ => hsum.mul_left ‖w t‖)
-    (by
-      simp_rw [tsum_mul_left]
-      exact hw_int.norm.mul_const _)
-    (ae_of_all _ fun t ht => by
-      rw [uIoc_of_le zero_le_one] at ht
-      have hzt : ‖z * (t : ℂ)‖ < 1 := by
-        rw [norm_mul, Complex.norm_of_nonneg ht.1.le]
-        exact (mul_le_of_le_one_right (norm_nonneg z) ht.2).trans_lt hz
-      have h := TauCeti.hasSum_multichoose_mul_geometric_complex_of_norm_lt_one (r := a) hzt
-      rw [one_div, ← cpow_neg] at h
-      exact h.mul_left (w t))
+  -- Expand `(1 - z t) ^ (-a)` in powers of `z t` and integrate term by term.
+  have hdct := TauCeti.hasSum_integral_mul_multichoose_mul_pow a
+    (betaIntegral_convergent (v := c - b) hb (by simpa using sub_pos.mpr hbc))
+    (v := fun t : ℝ => z * t) (by fun_prop) hz fun t ht => by
+      rw [norm_mul, Complex.norm_of_nonneg ht.1.le]
+      exact mul_le_of_le_one_right (norm_nonneg z) ht.2
   have heuler := (hdct.mul_left (Gamma b * Gamma (c - b))⁻¹).congr_fun fun n =>
     (inv_Gamma_mul_integral_multichoose_mul_pow a hb hbc z n).symm
   exact (regularizedGaussHGFun_eq_tsum_coeff_mul_pow a b c z).trans heuler.tsum_eq

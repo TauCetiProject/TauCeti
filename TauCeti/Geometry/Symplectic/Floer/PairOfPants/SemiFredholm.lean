@@ -106,20 +106,6 @@ namespace TauCeti.Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- A map with continuous `W^{1,2}` energy density that vanishes near every point beyond some
-`N` in the first coordinate has integrable density over every half-cylinder `(a, ∞) × [0, 1]`. -/
-private theorem integrableOn_sobolevDensity_of_forall_eventuallyEq_zero {W : Type*}
-    [NormedAddCommGroup W] [NormedSpace ℝ W] {g : ℝ × ℝ → W} (hg : Continuous (sobolevDensity g))
-    {N : ℝ} (hzero : ∀ ζ : ℝ × ℝ, N < ζ.1 → g =ᶠ[𝓝 ζ] 0) (a : ℝ) :
-    IntegrableOn (sobolevDensity g) (Ioi a ×ˢ Icc 0 1) := by
-  have hK : IsCompact (Icc a N ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
-  refine (hg.continuousOn.integrableOn_compact hK).of_forall_sdiff_eq_zero
-    (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦ ?_
-  have hζN : N < ζ.1 := by
-    by_contra! h
-    exact hζ.2 ⟨⟨le_of_lt hζ.1.1, h⟩, hζ.1.2⟩
-  rw [sobolevDensity_congr_of_eventuallyEq (hzero ζ hζN), sobolevDensity_zero]
-
 /-- A `C¹` section with compact support in `S` has integrable `W^{1,2}` energy density in each
 positive end chart, over every half-cylinder `(a, ∞) × [0, 1]`: it vanishes far out on the end. -/
 theorem integrableOn_sobolevDensity_comp_positiveEndChart {ξ : ℝ × ℝ → V}
@@ -128,7 +114,7 @@ theorem integrableOn_sobolevDensity_comp_positiveEndChart {ξ : ℝ × ℝ → V
     IntegrableOn (sobolevDensity (ξ ∘ positiveEndChart q)) (Ioi a ×ˢ Icc 0 1) := by
   -- Beyond some `N` in the end chart, `ξ` vanishes identically.
   obtain ⟨N, hzero⟩ := exists_forall_comp_positiveEndChart_eventuallyEq_zero hξc hξS q
-  exact integrableOn_sobolevDensity_of_forall_eventuallyEq_zero
+  exact integrableOn_sobolevDensity_of_eventuallyEq_zero
     (continuous_sobolevDensity (hξ.comp (contDiff_positiveEndChart q 1))) hzero a
 
 /-- **Continuity of the energy density in the end chart.** If `J` is `C¹` along `u` and `u` is
@@ -173,7 +159,7 @@ theorem integrableOn_sobolevDensity_covectorPullback_positiveEndChart
       (Ioi a ×ˢ Icc 0 1) := by
   -- Beyond some `N` in the end chart, `η` vanishes identically.
   obtain ⟨N, hzero⟩ := exists_forall_comp_positiveEndChart_eventuallyEq_zero hηc hηS q
-  refine integrableOn_sobolevDensity_of_forall_eventuallyEq_zero
+  refine integrableOn_sobolevDensity_of_eventuallyEq_zero
     (continuous_sobolevDensity_covectorPullback_positiveEndChart hJ hu hη hηS q)
     (N := N) (fun ζ hζN ↦ ?_) a
   filter_upwards [hzero ζ hζN] with ζ' hζ'
@@ -827,11 +813,6 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
 
 /-! ### The formal adjoint -/
 
-/-- The inverse of the cylindrical weight is continuous on `S`. -/
-private theorem continuousOn_inv_cylindricalWeight :
-    ContinuousOn (fun z ↦ (cylindricalWeight z)⁻¹) thricePuncturedSphereReal :=
-  isWeight_cylindricalWeight.continuousOn.inv₀ fun z hz ↦ (isWeight_cylindricalWeight.pos z hz).ne'
-
 /-- A continuous function vanishing off a compact subset of `S`, times the inverse of the
 cylindrical weight, is integrable. -/
 private theorem integrable_inv_cylindricalWeight_mul {g : ℝ × ℝ → ℝ} (hg : Continuous g)
@@ -846,8 +827,9 @@ private theorem integrable_inv_cylindricalWeight_mul {g : ℝ × ℝ → ℝ} (h
     (HasCompactSupport.intro hs fun z hz ↦ by simp [hgs z hz])
 
 /-- For a `C¹` covector field `θ` supported in the support of a covector field `η` with compact
-support in `S`, the `ρ⁻¹`-weighted square norm of `D^* θ` is integrable. -/
-private theorem integrable_inv_cylindricalWeight_mul_norm_floerLinearizationAdjoint_sq
+support in `S`, the `ρ⁻¹`-weighted square norm of `D^* θ` is integrable. For `θ = η`, the right
+side `∫ ρ⁻¹ ‖D^* η‖²` of the semi-Fredholm estimate of the formal adjoint is finite. -/
+theorem integrable_inv_cylindricalWeight_mul_norm_floerLinearizationAdjoint_sq
     (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
     (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
     (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))

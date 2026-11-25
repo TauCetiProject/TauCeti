@@ -37,13 +37,13 @@ variable {R : Type u} [CommRing R] (I : Ideal R)
   {A : Type w} [AddCommGroup A] [Module R A]
   {B : Type z} [AddCommGroup B] [Module R B]
 
-private theorem stage_surjective_and_ker (n : ℕ)
+private theorem ker_stage (n : ℕ)
     [Module (R ⧸ I ^ (n + 2)) B] [IsScalarTower R (R ⧸ I ^ (n + 2)) B]
     [Module.Projective (R ⧸ I ^ (n + 2)) B]
     (f : B →ₗ[R] A) (g : P →ₗ[R] A) (h : P →ₗ[R] B)
     (hg : Function.Surjective g) (hgk : LinearMap.ker g = I ^ (n + 1) • ⊤)
     (hfk : LinearMap.ker f = I ^ (n + 1) • ⊤) (hfg : f.comp h = g) :
-    Function.Surjective h ∧ LinearMap.ker h = I ^ (n + 2) • ⊤ := by
+    LinearMap.ker h = I ^ (n + 2) • ⊤ := by
   let K : Submodule R P := I ^ (n + 2) • ⊤
   let J := (I ^ (n + 1)).map (Ideal.Quotient.mk (I ^ (n + 2)))
   have hkill : K ≤ LinearMap.ker h := by
@@ -83,40 +83,14 @@ private theorem stage_surjective_and_ker (n : ℕ)
       apply (hmem _).mpr
       simp only [map_sub]
       exact sub_eq_zero.mpr ((LinearMap.congr_fun hfg p).trans hp)
-  constructor
-  · intro y
-    obtain ⟨q, hq⟩ := hbij.surjective y
-    obtain ⟨p, rfl⟩ := Submodule.mkQ_surjective K q
-    exact ⟨p, hq⟩
-  · apply le_antisymm _ hkill
-    intro p hp
-    apply (Submodule.Quotient.mk_eq_zero K).mp
-    apply hbij.injective
-    exact (LinearMap.mem_ker.mp hp).trans (map_zero hb).symm
+  apply le_antisymm _ hkill
+  intro p hp
+  apply (Submodule.Quotient.mk_eq_zero K).mp
+  apply hbij.injective
+  exact (LinearMap.mem_ker.mp hp).trans (map_zero hb).symm
 
 variable {I} {F : ModuleTower.{v} R} (hF : F.IsAdicSystem I)
   [Module.Finite R (F.obj (op 0))]
-
-include hF in
-private theorem surjective_of_bottom_surjective [IsPrecomplete I R]
-    {Q : Type*} [AddCommGroup Q] [Module R Q] [IsPrecomplete I Q]
-    (g : Q →ₗ[R] F.lim) (h0 : Function.Surjective (F.limπ 0 ∘ₗ g)) :
-    Function.Surjective g := by
-  have : IsHausdorff I F.lim := ⟨fun x hx ↦ F.lim_ext fun n ↦ by
-    rw [map_zero]
-    apply hF.pow_smul_top_le_ker (F.limπ n)
-    simpa [SModEq.sub_mem] using hx (n + 1)⟩
-  apply surjective_of_mkQ_comp_surjective (I := I)
-  have hs : Function.Surjective
-      ((I ^ (0 + 1) • ⊤ : Submodule R F.lim).mkQ.comp g) := by
-    intro y
-    obtain ⟨p, hp⟩ := h0 (hF.limQuotientEquiv 0 y)
-    refine ⟨p, (hF.limQuotientEquiv 0).injective ?_⟩
-    simpa only [LinearMap.comp_apply, Submodule.mkQ_apply,
-      hF.limQuotientEquiv_mk] using hp
-  have hpow : I ^ (0 + 1) = I := by simp
-  rw [hpow] at hs
-  exact hs
 
 variable [IsAdicComplete I R]
 
@@ -142,17 +116,18 @@ theorem projective_lim
     (F.limπ_surjective hF.transition_surjective 0)
   let gn (n : ℕ) := (F.limπ n).comp g
   have hg0 : gn 0 = g0 := hg
-  have hgn (n : ℕ) : Function.Surjective (gn n) ∧
-      LinearMap.ker (gn n) = I ^ (n + 1) • ⊤ := by
+  have hgns (n : ℕ) : Function.Surjective (gn n) :=
+    hF.surjective_limπ_comp (hg ▸ hg0s) n
+  have hgnk (n : ℕ) : LinearMap.ker (gn n) = I ^ (n + 1) • ⊤ := by
     induction n with
-    | zero => exact hg0 ▸ ⟨hg0s, hg0k⟩
+    | zero => exact hg0 ▸ hg0k
     | succ n ih =>
-      exact stage_surjective_and_ker I n (F.transition n) (gn n) (gn (n + 1))
-        ih.1 ih.2 (hF.ker_transition n) (by
+      exact ker_stage I n (F.transition n) (gn n) (gn (n + 1))
+        (hgns n) ih (hF.ker_transition n) (by
           dsimp [gn]
           rw [← LinearMap.comp_assoc, F.transition_comp_limπ])
   have hgs : Function.Surjective g :=
-    hF.surjective_of_bottom_surjective g (hg ▸ hg0s)
+    hF.surjective_of_bottom_surjective (hg ▸ hg0s)
   have hgi : Function.Injective g := by
     apply LinearMap.ker_eq_bot.mp
     apply le_antisymm _ bot_le
@@ -163,7 +138,7 @@ theorem projective_lim
     apply SModEq.sub_mem.2
     rw [sub_zero]
     apply Submodule.smul_mono_left (Ideal.pow_le_pow_right (by omega : n ≤ n + 1))
-    rw [← (hgn n).2, LinearMap.mem_ker]
+    rw [← hgnk n, LinearMap.mem_ker]
     simp only [gn, LinearMap.comp_apply, LinearMap.mem_ker.mp hp, map_zero]
   exact Module.Projective.of_equiv (LinearEquiv.ofBijective g ⟨hgi, hgs⟩)
 

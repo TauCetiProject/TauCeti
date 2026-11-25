@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
 public import TauCeti.Geometry.Manifold.Flow.Eulerian
+import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 
 /-!
 # Lie derivatives of differential forms along smooth isotopies
@@ -29,6 +32,12 @@ For a symplectic form `ω` and an isotopy starting at the identity, this says th
 consists of symplectomorphisms exactly when its velocity one-forms `ι_{X_t} ω` are all closed
 (`TauCeti.mextDeriv_interior_eulerianField_eq_zero` is the forward direction). These closed
 one-forms are the integrands of the flux of a symplectic isotopy.
+
+Along a fixed curve `γ`, the line integrals `∫_γ ι_{X_t} σ` of the contractions of a smooth
+two-form `σ` with the velocity field depend smoothly on `t`
+(`TauCeti.contDiff_pathIntegral_interior_eulerianField`). Through the periods of de Rham classes,
+this makes the cohomology classes `[ι_{X_t} ω]` of a smooth symplectic isotopy smooth functions of
+time.
 
 The proof does not use the time-dependent flow of `X`: at the base time `t`, the family
 `u ↦ φ_u ∘ φ_t⁻¹` is the identity and moves with velocity `X_t`, so
@@ -167,5 +176,50 @@ theorem mextDeriv_interior_eulerianField_eq_zero {β : RoughForm I M F (k + 1)}
     mextDeriv (RoughForm.interior (eulerianField I φ t) β) = 0 :=
   (forall_mpullback_eq_iff_forall_mextDeriv_interior_eulerianField_eq_zero hφ hφ' hβ hdβ).1
     (fun s u ↦ by rw [h s, h u]) t
+
+end TauCeti
+
+namespace TauCeti
+
+section PathIntegral
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {φ : ℝ → M ≃ M}
+
+/-- **Line integrals of the velocity one-forms are smooth in time.** If `(t, x) ↦ φ_t x` is `C^n`
+and `(t, y) ↦ φ_t⁻¹ y` is `C^m`, with `m + 1 ≤ n`, then for a smooth two-form `σ` and a `C^n`
+curve `γ`, the line integral `∫_γ ι_{X_t} σ` of the contraction of `σ` with the Eulerian velocity
+field `X_t` of the family is a `C^m` function of `t`. -/
+theorem contDiff_pathIntegral_interior_eulerianField {m : ℕ∞} {n : ℕ∞ω} (hmn : (m : ℕ∞ω) + 1 ≤ n)
+    (hφ : ContMDiff (𝓘(ℝ, ℝ).prod I) I n (fun p : ℝ × M ↦ φ p.1 p.2))
+    (hφ' : ContMDiff (𝓘(ℝ, ℝ).prod I) I m (fun p : ℝ × M ↦ (φ p.1).symm p.2))
+    (σ : SmoothForm I M F 2) {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I n γ) (a b : ℝ) :
+    ContDiff ℝ m fun t ↦
+      pathIntegral (RoughForm.interior (eulerianField I φ t) σ.val) γ a b := by
+  -- The integrand is `σ` evaluated on the Eulerian field and on the velocity of `γ`, a `C^m`
+  -- function of `(t, s)`; integrating it over `s` keeps it `C^m` in `t`.
+  have hX : ContMDiff 𝓘(ℝ, ℝ × ℝ) I.tangent m
+      (fun p : ℝ × ℝ ↦ TotalSpace.mk' E (γ p.2) (eulerianField I φ p.1 (γ p.2))) :=
+    (contMDiff_eulerianField hmn hφ hφ').comp
+      (contDiff_fst.contMDiff.prodMk ((hγ.of_le (le_self_add.trans hmn)).comp
+        (contDiff_snd (E := ℝ)).contMDiff))
+  have hV : ContMDiff 𝓘(ℝ, ℝ × ℝ) I.tangent m
+      (fun p : ℝ × ℝ ↦ TotalSpace.mk' E (γ p.2) (Manifold.curveVelocity I γ p.2)) :=
+    ((hγ.contMDiff_curveVelocityLift hmn).comp (contDiff_snd (E := ℝ)).contMDiff).congr
+      fun p ↦ (Manifold.curveVelocityLift_apply (I := I) γ p.2).symm
+  have hg : ContDiff ℝ m fun p : ℝ × ℝ ↦
+      σ.eval₂ (γ p.2) (eulerianField I φ p.1 (γ p.2)) (Manifold.curveVelocity I γ p.2) := by
+    rw [← contMDiff_iff_contDiff]
+    intro p
+    exact (Bundle.Trivial.contMDiffAt_mk_iff.1 (σ.contMDiffAt_eval₂ (hX p) (hV p))).2
+  convert hg.parametric_intervalIntegral (a := a) (b := b) (μ := MeasureTheory.volume) using 2
+    with t
+  rw [pathIntegral_def]
+  refine intervalIntegral.integral_congr fun s _ ↦ ?_
+  rw [RoughForm.interior_apply, SmoothBundleForm.eval₂_apply]
+  exact congrArg _ (funext fun i ↦ by fin_cases i <;> rfl)
+
+end PathIntegral
 
 end TauCeti

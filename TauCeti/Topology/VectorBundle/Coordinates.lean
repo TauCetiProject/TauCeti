@@ -45,7 +45,9 @@ semilinear fibre maps.
 `VectorBundleCore.localTriv_coordChangeL` and
 `VectorBundleCore.trivializationAt_coordChangeL` identify transitions between actual
 trivializations with their core coordinate-change maps,
-`VectorBundleCore.coordChange_self_eq_id` states the self-transition as an operator identity, and
+`VectorBundleCore.coordChange_self_eq_id` states the self-transition as an operator identity,
+`VectorBundleCore.coordChange_comp_coordChange_eq_id` states that the transitions between two
+charts are mutually inverse, and
 `VectorBundleCore.isInvertible_coordChange` and `VectorBundleCore.coordChange_bijective` record
 invertibility and bijectivity of core transition operators on chart overlaps.
 For a core with model fibre the scalar field, `VectorBundleCore.det_coordChangeL_localTriv`
@@ -92,6 +94,12 @@ variable {𝕜 B F κ : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace 
 theorem coordChange_self_eq_id (Z : VectorBundleCore 𝕜 B F κ) {i : κ} {x : B}
     (hx : x ∈ Z.baseSet i) : Z.coordChange i i x = ContinuousLinearMap.id 𝕜 F :=
   ContinuousLinearMap.ext (Z.coordChange_self i x hx)
+
+/-- The transition from chart `j` back to chart `i` undoes the transition from `i` to `j`. -/
+theorem coordChange_comp_coordChange_eq_id (Z : VectorBundleCore 𝕜 B F κ) {i j : κ} {x : B}
+    (hi : x ∈ Z.baseSet i) (hj : x ∈ Z.baseSet j) :
+    (Z.coordChange j i x).comp (Z.coordChange i j x) = ContinuousLinearMap.id 𝕜 F :=
+  (Z.coordChange_linear_comp i j i x ⟨⟨hi, hj⟩, hi⟩).trans (Z.coordChange_self_eq_id hi)
 
 /-- Every transition operator of a `VectorBundleCore` on the overlap of two charts is invertible
 as a continuous linear map. -/
