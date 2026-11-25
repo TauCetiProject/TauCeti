@@ -14,6 +14,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.CompLeft
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Linear
+import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 
 /-!
 # Spatial differentiation in the parabolic Hölder scale
@@ -36,7 +37,8 @@ top, and the value of `∂_h u` at `(x, t)` is the derivative of `u (·, t)` at 
 `TauCeti.ParabolicCkHolderSpace.spatialFDerivL` applied to `h`
 (`TauCeti.ParabolicCkHolderSpace.spatialLineDerivL_apply_eq_spatialFDerivL`). Spatial
 differentiation commutes with the time derivative
-(`TauCeti.ParabolicCkHolderSpace.timeDerivL_spatialLineDerivL`).
+(`TauCeti.ParabolicCkHolderSpace.timeDerivL_spatialLineDerivL`), and spatial derivatives in two
+directions commute (`TauCeti.ParabolicCkHolderSpace.spatialLineDerivL_comm`).
 
 In the higher-order Schauder theory spatial differentiation is how the order is lowered: the
 derivative `∂_i u` of a solution of a parabolic equation in a coordinate direction solves the
@@ -59,6 +61,7 @@ differentiated equation, whose data are one order lower.
   `TauCeti.ParabolicCkHolderSpace.spatialLineDerivL_slabMk_eq_lineDeriv`: the time slices have
   line derivative `∂_h u`.
 * `TauCeti.ParabolicCkHolderSpace.timeDerivL_spatialLineDerivL`: `∂ₜ (∂_h u) = ∂_h (∂ₜu)`.
+* `TauCeti.ParabolicCkHolderSpace.spatialLineDerivL_comm`: `∂_h (∂_{h'} u) = ∂_{h'} (∂_h u)`.
 * `TauCeti.ParabolicCkHolderSpace.spatialLineDerivL_add` and
   `TauCeti.ParabolicCkHolderSpace.spatialLineDerivL_smul`: linearity in the direction.
 * `TauCeti.ParabolicCkHolderSpace.norm_spatialLineDerivL_le`: the operator norm of `∂_h` is at
@@ -312,6 +315,20 @@ theorem timeDerivL_spatialLineDerivL (h : E) (u : ParabolicCkHolderSpace (k + 3)
     ← mixedDerivL_zero_zero_apply (spatialLineDerivL h (timeDerivL (k + 1) α E F hab u)) p 0,
     mixedDerivL_timeDerivL, mixedDerivL_spatialLineDerivL_apply,
     mixedDerivL_spatialLineDerivL_apply, mixedDerivL_timeDerivL]
+
+/-- **Spatial derivatives commute**: `∂_h (∂_{h'} u) = ∂_{h'} (∂_h u)` for
+`u ∈ C_{par,b}^{(k+2)+α}`, by the symmetry of the second derivative of the time slices. -/
+theorem spatialLineDerivL_comm (h h' : E) (u : ParabolicCkHolderSpace (k + 2) α E F hab) :
+    spatialLineDerivL h (spatialLineDerivL h' u) =
+      spatialLineDerivL h' (spatialLineDerivL h u) := by
+  ext p
+  obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
+  have hs := ((u.contDiff_spatialSlice t).contDiffAt (x := x)).isSymmSndFDerivAt
+    (by rw [minSmoothness_of_isRCLikeNormedField]; exact_mod_cast (by omega : 2 ≤ k + 2))
+  simp only [spatialLineDerivL_apply, mixedDerivL_spatialLineDerivL_apply,
+    mixedDerivL_zero_slabMk u (by omega : 2 ≤ k + 2)]
+  rw [iteratedFDeriv_two_apply, iteratedFDeriv_two_apply]
+  exact hs h h'
 
 /-- Spatial differentiation is additive in the direction. -/
 @[simp]
