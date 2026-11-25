@@ -19,6 +19,8 @@ elementary metric properties.
 ## Main declarations
 
 * `TauCeti.normalHalfSpace`: the region above a constant normal coordinate.
+* `TauCeti.preimage_withLpMap_prodMap_id_normalHalfSpace`: maps keeping the normal coordinate
+  preserve each half-space.
 * `TauCeti.normalEpigraph`: the region above the graph of a continuous function.
 * `TauCeti.normalGraphEmbedding`: the normal graph parametrization `y ↦ (φ y, y)`.
 * `TauCeti.frontier_setOf_lt_fst`: the frontier of a continuous epigraph is its graph.
@@ -55,6 +57,15 @@ theorem mem_normalHalfSpace (a : ℝ) (x : WithLp 2 (ℝ × E)) :
 theorem coe_normalHalfSpace (a : ℝ) :
     (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) = {x | a < x.fst} :=
   Set.ext (mem_normalHalfSpace a)
+
+/-- A map of `ℝ × E` that keeps the normal coordinate preserves each half-space `{a < t}`. -/
+@[simp]
+theorem preimage_withLpMap_prodMap_id_normalHalfSpace (ψ : E → E) (a : ℝ) :
+    WithLp.map 2 (Prod.map (id : ℝ → ℝ) ψ) ⁻¹'
+        (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) =
+      (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) := by
+  ext x
+  simp
 
 /-- The open region `{x | φ x.snd < x.fst}` above the graph of a continuous function
 `φ : E → ℝ` in the ℓ² product `ℝ × E`. -/
