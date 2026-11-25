@@ -65,8 +65,6 @@ In characteristic `0`, the case of the definition, each `d_c` is invertible in `
   `E / F` is the field trace `Algebra.trace F E`.
 * `TauCeti.Algebra.semisimpleReducedTrace_matrix`: in characteristic `0`, the reduced trace of
   `M_n(F)` is the matrix trace.
-* `TauCeti.Algebra.semisimpleReducedTrace_mul_transpose`: in characteristic `0`, the reduced trace
-  of `x xᵀ` in `M_n(F)` is the sum of the squares of the entries of `x`.
 
 ## Implementation notes
 
@@ -405,11 +403,6 @@ theorem semisimpleReducedTrace_matrix (M : Matrix n n K) :
   cases isEmpty_or_nonempty n
   · simp [Subsingleton.elim M 0]
   rw [semisimpleReducedTrace_eq_reducedTrace, reducedTrace_matrix]
-
-/-- The reduced trace of `x xᵀ` in `M_n(K)` is the sum of the squares of the entries of `x`. -/
-theorem semisimpleReducedTrace_mul_transpose (x : Matrix n n K) :
-    semisimpleReducedTrace K (Matrix n n K) (x * x.transpose) = ∑ i, ∑ j, x i j * x i j := by
-  simp [Matrix.trace, Matrix.mul_apply]
 
 end Matrix
 

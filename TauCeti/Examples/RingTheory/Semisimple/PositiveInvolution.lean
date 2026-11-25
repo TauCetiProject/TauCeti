@@ -7,8 +7,10 @@ module
 
 public import TauCeti.RingTheory.Semisimple.PositiveInvolution
 public import Mathlib.Algebra.Central.Matrix
+public import Mathlib.Algebra.Order.Star.Rat
 public import Mathlib.Algebra.QuadraticAlgebra.Basic
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
+public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.RingTheory.SimpleRing.Matrix
 
 /-!
@@ -45,14 +47,9 @@ example (x : ℚ) : rat.star x = x := by
 def transpose (n : Type*) [Fintype n] [DecidableEq n] :
     PositiveInvolution (Matrix n n ℚ) :=
   PositiveInvolution.ofStarRing fun x hx ↦ by
-    rw [star_eq_conjTranspose, conjTranspose_eq_transpose_of_trivial,
-      semisimpleReducedTrace_mul_transpose]
-    obtain ⟨i, j, hij⟩ : ∃ i j, x i j ≠ 0 := by
-      by_contra! h
-      exact hx (Matrix.ext h)
-    exact Finset.sum_pos' (fun i _ ↦ Finset.sum_nonneg fun j _ ↦ mul_self_nonneg _)
-      ⟨i, Finset.mem_univ _, Finset.sum_pos' (fun j _ ↦ mul_self_nonneg _)
-        ⟨j, Finset.mem_univ _, mul_self_pos.2 hij⟩⟩
+    rw [star_eq_conjTranspose, semisimpleReducedTrace_matrix]
+    exact (posSemidef_self_mul_conjTranspose x).trace_nonneg.lt_of_ne'
+      (trace_mul_conjTranspose_self_eq_zero_iff.not.2 hx)
 
 example {n : Type*} [Fintype n] [DecidableEq n] (x : Matrix n n ℚ) :
     (transpose n).star x = xᵀ := by
