@@ -166,13 +166,11 @@ theorem stalkIdeal_ofIdealTop_map_ΓSpecIso_inv {R : CommRingCat.{u}} (J : Ideal
     (x : PrimeSpectrum R) :
     (ofIdealTop (J.map (Scheme.ΓSpecIso R).inv.hom)).stalkIdeal x =
       (J.map (algebraMap R (Localization.AtPrime x.asIdeal))).map (Spec.stalkIso R x).inv.hom := by
-  have h := stalkIdeal_eq_map (ofIdealTop (J.map (Scheme.ΓSpecIso R).inv.hom))
-    ⟨⊤, isAffineOpen_top (Spec R)⟩ x trivial
   -- The germ map of `Γ(Spec R, ⊤)` factors through the localization `R_x`.
-  rw [h, ofIdealTop_ideal, Ideal.map_map, Ideal.map_map, Ideal.map_map,
-    ← CommRingCat.hom_ofHom (algebraMap R _), ← CommRingCat.hom_comp, ← CommRingCat.hom_comp,
-    ← CommRingCat.hom_comp, Spec.algebraMap_stalkIso_inv]
-  simp
+  have hg : ((Spec R).presheaf.germ ⊤ x trivial).hom.comp (Scheme.ΓSpecIso R).inv.hom =
+      (Spec.stalkIso R x).inv.hom.comp (algebraMap R _) :=
+    congr(CommRingCat.Hom.hom $(Spec.algebraMap_stalkIso_inv (R := R) x)).symm
+  simp [stalkIdeal_eq_map _ ⟨⊤, isAffineOpen_top (Spec R)⟩ x trivial, Ideal.map_map, hg]
 
 /-- **Inclusion of ideal sheaves is checked on stalks.** An ideal sheaf is contained in another
 exactly when its stalk ideal is contained in the other's at every point. -/

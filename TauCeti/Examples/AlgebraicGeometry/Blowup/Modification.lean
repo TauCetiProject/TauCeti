@@ -100,7 +100,7 @@ theorem two_le_ringKrullDim_stalk_origin :
       (by simp [MvPolynomial.X_dvd_X])
   have h := Ideal.two_le_height_of_isRelPrime hxy (p := (origin k).asIdeal)
     (Ideal.subset_span (by simp)) (Ideal.subset_span (by simp))
-  exact (WithBot.coe_le_coe.mpr h : ((2 : ℕ∞) : WithBot ℕ∞) ≤ _)
+  rwa [← WithBot.coe_ofNat, WithBot.coe_le_coe]
 
 /-- The stalk of the ideal sheaf of the origin at the origin is the maximal ideal of the local
 ring there. -/
