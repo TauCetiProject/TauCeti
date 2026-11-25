@@ -130,6 +130,13 @@ theorem sigma_eq_gen (i : Fin (n - 1)) :
     sigma i = ArtinGroup.gen (CoxeterMatrix.A (n - 1)) i :=
   (rfl)
 
+/-- Transport along an equality of strand counts sends each generator to the same crossing. -/
+theorem cast_sigma {k : ℕ} (h : n = k) (i : Fin (n - 1)) :
+    MulEquiv.cast (M := BraidGroup) h (sigma i) =
+      sigma (Fin.cast (congrArg (· - 1) h) i) := by
+  subst k
+  simp [MulEquiv.cast_apply]
+
 /-- Disjoint crossings commute. -/
 theorem sigma_mul_sigma_comm {i j : Fin (n - 1)} (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
     sigma i * sigma j = sigma j * sigma i := by

@@ -143,6 +143,11 @@ theorem Submodule.coe_orbitRelQuotientMkHom :
     ⇑p.orbitRelQuotientMkHom = _root_.Quotient.mk (AddAction.orbitRel p M) :=
   (rfl)
 
+/-- The orbit projection for translation by `p` is surjective. -/
+theorem Submodule.orbitRelQuotientMkHom_surjective :
+    Function.Surjective p.orbitRelQuotientMkHom :=
+  _root_.Quotient.mk_surjective
+
 /-- Two points of `M` have the same image in the orbit space of translation by `p` exactly when
 their difference lies in `p`. -/
 theorem Submodule.orbitRelQuotient_mk_eq_mk_iff {x y : M} :
