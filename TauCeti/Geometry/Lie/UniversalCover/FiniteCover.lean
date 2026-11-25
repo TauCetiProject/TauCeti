@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Module.ZLattice.Prod.Quotient
 public import TauCeti.Geometry.Lie.UniversalCover.DerivedFactor
 
-import TauCeti.Algebra.Module.ZLattice.Quotient
 import TauCeti.Geometry.Lie.Subgroup.Center
 
 /-!
@@ -57,7 +56,7 @@ For `G = U(n)` this is the cover `S¹ × SU(n) → U(n)`, `(z, A) ↦ z A`, of d
 
 * `TauCeti.UniversalCover.isZLattice_centerLattice`: `Λ` is a full lattice in `𝔷`.
 * `TauCeti.UniversalCover.isCoveringMap_torusProdDerivedCover`,
-  `TauCeti.UniversalCover.surjective_torusProdDerivedCover`,
+  `TauCeti.UniversalCover.torusProdDerivedCover_surjective`,
   `TauCeti.UniversalCover.finite_torusProdDerivedCover_preimage`: `T × K → G` is a surjective
   covering map with finite fibres.
 * The instances `CompactSpace`, `SimplyConnectedSpace` and `Finite (Subgroup.center _)` for `K`,
@@ -138,7 +137,7 @@ theorem isCoveringMap_centerProdDerivedCover : IsCoveringMap (centerProdDerivedC
       isCompl_center_derivedSeries_one).toHomeomorph
 
 /-- `𝔷 × K → G` is surjective when `G` is connected. -/
-theorem surjective_centerProdDerivedCover [ConnectedSpace G] :
+theorem centerProdDerivedCover_surjective [ConnectedSpace G] :
     Surjective (centerProdDerivedCover I G) := by
   have hsurj := proj_surjective_of_preconnectedSpace (1 : G)
   rw [← coe_projHom] at hsurj
@@ -213,11 +212,8 @@ theorem isZLattice_centerLattice [ConnectedSpace G] :
 
 /-- The torus `T = 𝔷 ⧸ Λ` is compact, as the quotient of `𝔷` by a full lattice. -/
 instance [ConnectedSpace G] :
-    CompactSpace (Multiplicative (centerFactor I G) ⧸ centerLattice I G) := by
-  have := isZLattice_centerLattice (I := I) (G := G)
-  -- The multiplicative quotient of `Multiplicative 𝔷` by `Λ` is the additive quotient of `𝔷` by
-  -- `Λ.toAddSubgroup'`: the same relation on the same space.
-  exact inferInstanceAs (CompactSpace (centerFactor I G ⧸ (centerLattice I G).toAddSubgroup'))
+    CompactSpace (Multiplicative (centerFactor I G) ⧸ centerLattice I G) :=
+  Subgroup.compactSpace_quotient_comap_inl _
 
 variable (I G) in
 /-- **The finite cover `T × K → G`** of a compact connected Lie group by the product of the torus
@@ -255,7 +251,7 @@ private def quotientKerEquiv :
   ContinuousMulEquiv.quotientKerEquivOfSurjective _
     (isCoveringMap_centerProdDerivedCover.isLocalHomeomorph.isOpenMap.isStrictMap
       (centerProdDerivedCover I G).continuous)
-    surjective_centerProdDerivedCover
+    centerProdDerivedCover_surjective
 
 /-- `T × K → G` is `(𝔷 ⧸ Λ) × K → (𝔷 × K) ⧸ Γ` followed by `(𝔷 × K) ⧸ Γ ≃ₜ* G`. -/
 private theorem quotientKerEquiv_comp_prodQuotientMap :
@@ -275,7 +271,7 @@ theorem isCoveringMap_torusProdDerivedCover : IsCoveringMap (torusProdDerivedCov
     (Subgroup.isCoveringMap_prodQuotientMap _).homeomorph_comp quotientKerEquiv.toHomeomorph
 
 /-- `T × K → G` is surjective. -/
-theorem surjective_torusProdDerivedCover : Surjective (torusProdDerivedCover I G) :=
+theorem torusProdDerivedCover_surjective : Surjective (torusProdDerivedCover I G) :=
   quotientKerEquiv_comp_prodQuotientMap (I := I) (G := G) ▸
     quotientKerEquiv.surjective.comp (Subgroup.surjective_prodQuotientMap _)
 
