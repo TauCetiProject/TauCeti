@@ -22,7 +22,9 @@ space. A section continuous into the total space has a continuous coordinate rea
 trivialization containing the image point. For a differentiable base map, differentiability of
 the total-space section at a point is equivalent to differentiability of its coordinate reading
 in any trivialization containing the image point. The corresponding equivalences within a set
-hold both for differentiability and for higher manifold regularity. On the base set, a section
+hold both for differentiability and for higher manifold regularity. A differentiable coordinate
+reading has differentiable coordinates in any basis of the model fibre
+(`TauCeti.Manifold.mdifferentiableAt_repr_sectionCoord`). On the base set, a section
 expands in the local frame of a model-fibre basis with coefficients read from its coordinate
 reading (`TauCeti.Manifold.eq_sum_repr_sectionCoord_smul_localFrame`).
 -/
@@ -286,6 +288,14 @@ theorem mdifferentiableAt_sectionCoord_iff {x : M} {t : N}
   rw [← mdifferentiableWithinAt_univ, ← mdifferentiableWithinAt_univ]
   exact mdifferentiableWithinAt_sectionCoord_iff γ W (s := Set.univ)
     hγ.mdifferentiableWithinAt hx
+
+/-- If the coordinate reading `sectionCoord γ W x` is differentiable at `t`, then each coordinate
+function in a model-fibre basis `b` is differentiable at `t`. -/
+theorem mdifferentiableAt_repr_sectionCoord [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    {ι : Type*} (b : Module.Basis ι 𝕜 F) {x : M} {t : N}
+    (hW : MDifferentiableAt J 𝓘(𝕜, F) (sectionCoord 𝕜 (F := F) γ W x) t) (i : ι) :
+    MDifferentiableAt J 𝓘(𝕜, 𝕜) (fun r ↦ b.repr (sectionCoord 𝕜 (F := F) γ W x r) i) t :=
+  (b.coord i).toContinuousLinearMap.differentiableAt.comp_mdifferentiableAt hW
 
 omit [ContMDiffVectorBundle 1 F V I] in
 /-- For a base map of class `C^n` within a set, the coordinate reading characterizes

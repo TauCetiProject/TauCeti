@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongMap.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
-import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
 
 /-!
@@ -212,18 +211,6 @@ private lemma HasPairingProductRuleAt.congr_of_eventuallyEq
 
 end Linear
 
-omit [∀ x, IsTopologicalAddGroup (B x)] [∀ x, ContinuousSMul ℝ (B x)]
-  [ContMDiffVectorBundle 1 F₀ B I] in
-/-- The basis coordinates of a coordinate reading differentiable at `x` are differentiable
-at `x`. -/
-private lemma mdifferentiableAt_coord_sectionCoord {Q : ∀ y, B (f y)}
-    (hQ : MDifferentiableAt J 𝓘(ℝ, F₀) (sectionCoord ℝ (F := F₀) f Q (f x)) x)
-    (i : Fin (Module.finrank ℝ F₀)) :
-    MDifferentiableAt J 𝓘(ℝ, ℝ)
-      (fun y ↦ (Module.finBasis ℝ F₀).coord i (sectionCoord ℝ (F := F₀) f Q (f x) y)) x :=
-  (LinearMap.toContinuousLinearMap ((Module.finBasis ℝ F₀).coord i)).differentiableAt
-    |>.comp_mdifferentiableAt hQ
-
 variable {b : (z : M) → B z →L[ℝ] B z →L[ℝ] ℝ}
 
 /-- The product rule along `f` for fields pulled back from ambient differentiable vector
@@ -276,14 +263,14 @@ private theorem hasPairingProductRuleAt
         (fun y ↦ β.coord i (sectionCoord ℝ (F := F₀) f Q (f x) y) • e.localFrame β i (f y))
         (f x)) x := by
     rw [sectionCoord_fun_smul]
-    exact (mdifferentiableAt_coord_sectionCoord hQ i).smul (hcX i)
+    exact (mdifferentiableAt_repr_sectionCoord f Q β hQ i).smul (hcX i)
   have hterm (i j : Fin (Module.finrank ℝ F₀)) :
       HasPairingProductRuleAt (J := J) cov f x (fun z ↦ (b z).toLinearMap₁₂)
         (fun y ↦ β.coord i (sectionCoord ℝ (F := F₀) f V (f x) y) • e.localFrame β i (f y))
         (fun y ↦ β.coord j (sectionCoord ℝ (F := F₀) f W (f x) y) • e.localFrame β j (f y)) :=
     ((hasPairingProductRuleAt_pullback hdiff hcompat hf (hframe i) (hframe j)).smul_left
-      (mdifferentiableAt_coord_sectionCoord hV i) (hcX i)).smul_right
-      (mdifferentiableAt_coord_sectionCoord hW j) (hcX j)
+      (mdifferentiableAt_repr_sectionCoord f V β hV i) (hcX i)).smul_right
+      (mdifferentiableAt_repr_sectionCoord f W β hW j) (hcX j)
   have hsum := HasPairingProductRuleAt.finsetSum_left (A := Finset.univ)
     (fun i _ ↦ HasPairingProductRuleAt.finsetSum_right (A := Finset.univ)
       (fun j _ ↦ hterm i j) fun j _ ↦ hcTerm W hW j) fun i _ ↦ hcTerm V hV i
@@ -320,8 +307,8 @@ theorem mdifferentiableAt_apply_alongMap
             ((trivializationAt F₀ B (f x)).localFrame (Module.finBasis ℝ F₀) j (f y)))
       x :=
     MDifferentiableAt.sum fun j _ ↦ MDifferentiableAt.sum fun i _ ↦
-      (mdifferentiableAt_coord_sectionCoord hW j).smul
-        ((mdifferentiableAt_coord_sectionCoord hV i).smul
+      (mdifferentiableAt_repr_sectionCoord f W (Module.finBasis ℝ F₀) hW j).smul
+        ((mdifferentiableAt_repr_sectionCoord f V (Module.finBasis ℝ F₀) hV i).smul
           ((hdiff (hframe i) (hframe j)).comp x hf))
   refine hsum.congr_of_eventuallyEq ?_
   have hbase := FiberBundle.mem_baseSet_trivializationAt F₀ B (f x)
