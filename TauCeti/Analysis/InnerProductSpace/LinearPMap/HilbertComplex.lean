@@ -24,7 +24,7 @@ complex and coclosed for its adjoint. This file proves the **Hodge decomposition
 
 an orthogonal decomposition, and the characterization of closed ranges by a **Poincaré
 inequality**: the range of a closed operator `T` is closed exactly when `‖u‖ ≤ c ‖T u‖` for some
-`c` and every `u` in the domain of `T` orthogonal to its kernel.
+`c > 0` and every `u` in the domain of `T` orthogonal to its kernel.
 
 For bounded operators with closed range, the decomposition of the kernel is
 `ContinuousLinearMap.range_sup_ker_inf_ker_adjoint`. Here the operators are unbounded, as the
@@ -259,11 +259,11 @@ theorem isClosed_range_of_norm_le_mul_norm (hT : T.IsClosed) {c : ℝ}
   simpa only [hTv, SetLike.mem_coe] using T.mem_graph (v n)
 
 /-- **A closed range gives a Poincaré inequality.** If a closed partial linear map `T` between
-Hilbert spaces has closed range, then for some `c`, `‖u‖ ≤ c ‖T u‖` for every `u` in its domain
-orthogonal to its kernel. This is the open mapping theorem for `T` on its graph space. -/
+Hilbert spaces has closed range, then for some `c > 0`, `‖u‖ ≤ c ‖T u‖` for every `u` in its
+domain orthogonal to its kernel. This is the open mapping theorem for `T` on its graph space. -/
 theorem exists_norm_le_mul_norm_of_isClosed_range [CompleteSpace F] (hT : T.IsClosed)
     (hR : _root_.IsClosed (LinearMap.range T.toFun : Set F)) :
-    ∃ c : ℝ, ∀ u : T.domain, (u : E) ∈ T.kerᗮ → ‖(u : E)‖ ≤ c * ‖T u‖ := by
+    ∃ c > 0, ∀ u : T.domain, (u : E) ∈ T.kerᗮ → ‖(u : E)‖ ≤ c * ‖T u‖ := by
   have := hT.completeSpace_graphSpace
   have := hR.completeSpace_coe
   have hmem : ∀ z, T.graphSnd z ∈ LinearMap.range T.toFun := fun z ↦
@@ -273,15 +273,15 @@ theorem exists_norm_le_mul_norm_of_isClosed_range [CompleteSpace F] (hT : T.IsCl
   have hS : Function.Surjective S := by
     rintro ⟨y, hy⟩
     obtain ⟨z, rfl⟩ := LinearMap.mem_range.1 (T.range_graphSnd ▸ hy)
-    exact ⟨z, rfl⟩
-  obtain ⟨C, -, hC⟩ := S.exists_preimage_norm_le hS
-  refine ⟨C, fun u hu ↦ ?_⟩
+    exact ⟨z, Subtype.ext (T.graphSnd.coe_codRestrict_apply _ hmem z)⟩
+  obtain ⟨C, hC0, hC⟩ := S.exists_preimage_norm_le hS
+  refine ⟨C, hC0, fun u hu ↦ ?_⟩
   obtain ⟨z, hz, hzle⟩ := hC ⟨T u, LinearMap.mem_range_self _ u⟩
   -- The vector `w` of the domain with graph `z` has `T w = T u`, so `w - u` lies in the kernel.
   set w := T.toGraphSpace.symm z
   have hTw : T w = T u := by
-    rw [apply_toGraphSpace_symm, ← graphSnd_apply]
-    exact congrArg Subtype.val hz
+    rw [apply_toGraphSpace_symm, ← graphSnd_apply, ← T.graphSnd.coe_codRestrict_apply _ hmem z,
+      hz]
   have hk : (w : E) - u ∈ T.ker := by
     rw [← Submodule.coe_sub, coe_mem_ker_iff, map_sub, hTw, sub_self]
   have hpyth := norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero (u : E) ((w : E) - u)
@@ -293,12 +293,12 @@ theorem exists_norm_le_mul_norm_of_isClosed_range [CompleteSpace F] (hT : T.IsCl
   nlinarith [norm_nonneg (u : E), norm_nonneg (w : E), sq_nonneg ‖(w : E) - u‖]
 
 /-- **Closed range is a Poincaré inequality.** A closed partial linear map `T` between Hilbert
-spaces has closed range if and only if, for some `c`, `‖u‖ ≤ c ‖T u‖` for every `u` in its domain
-orthogonal to its kernel. -/
+spaces has closed range if and only if, for some `c > 0`, `‖u‖ ≤ c ‖T u‖` for every `u` in its
+domain orthogonal to its kernel. -/
 theorem isClosed_range_iff_exists_norm_le_mul_norm [CompleteSpace F] (hT : T.IsClosed) :
     _root_.IsClosed (LinearMap.range T.toFun : Set F) ↔
-      ∃ c : ℝ, ∀ u : T.domain, (u : E) ∈ T.kerᗮ → ‖(u : E)‖ ≤ c * ‖T u‖ :=
-  ⟨exists_norm_le_mul_norm_of_isClosed_range hT, fun ⟨_, hc⟩ ↦
+      ∃ c > 0, ∀ u : T.domain, (u : E) ∈ T.kerᗮ → ‖(u : E)‖ ≤ c * ‖T u‖ :=
+  ⟨exists_norm_le_mul_norm_of_isClosed_range hT, fun ⟨_, _, hc⟩ ↦
     isClosed_range_of_norm_le_mul_norm hT hc⟩
 
 end Poincare
