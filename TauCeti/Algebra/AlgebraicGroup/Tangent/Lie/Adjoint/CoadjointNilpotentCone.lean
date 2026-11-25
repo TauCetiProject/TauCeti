@@ -44,11 +44,13 @@ origin: its ideal is the augmentation ideal. This covers the trivial group.
 
 ## Main declarations
 
-* `TauCeti.coadjointInvariantPolynomials`: the invariant polynomial functions `R[𝔤*]^G`, with
-  the point criterion
+* `TauCeti.coadjointInvariantPolynomials`: the invariant polynomial functions `R[𝔤*]^G`, the
+  coinvariants of `Sym 𝔤` (`TauCeti.coadjointInvariantPolynomials_def`), with the point criterion
   `TauCeti.mem_coadjointInvariantPolynomials_iff_lift_liftBaseChange_endOfPoint`.
 * `TauCeti.coadjointNilpotentConeIdeal`: the ideal of the zero fibre of the coadjoint quotient,
-  with its universal property `TauCeti.coadjointNilpotentConeIdeal_le_iff`.
+  the ideal `Subalgebra.symmetricAlgebraHilbertIdeal` of the invariants
+  (`TauCeti.coadjointNilpotentConeIdeal_def`), with its universal property
+  `TauCeti.coadjointNilpotentConeIdeal_le_iff`.
 * `TauCeti.coadjointNilpotentConeIdeal_le_ker_algebraMapInv`,
   `TauCeti.coadjointNilpotentConeIdeal_isHomogeneous` and
   `TauCeti.symmetricAlgebraCoact_mem_map_includeLeft_coadjointNilpotentConeIdeal`: the cone
@@ -96,6 +98,11 @@ comodule, and the coordinate ring of the coadjoint quotient `𝔤* // G`. -/
 noncomputable def coadjointInvariantPolynomials : Subalgebra R (SymmetricAlgebra R 𝔤) :=
   ComoduleAlgebra.coinvariants R H (SymmetricAlgebra R 𝔤)
 
+/-- The invariant polynomial functions on `𝔤*` are the coinvariants of `Sym 𝔤`. -/
+theorem coadjointInvariantPolynomials_def :
+    coadjointInvariantPolynomials R H = ComoduleAlgebra.coinvariants R H (SymmetricAlgebra R 𝔤) :=
+  (rfl)
+
 variable {R H}
 
 /-- A polynomial function on `𝔤*` is invariant when its coaction, the algebra map extending the
@@ -131,7 +138,7 @@ coadjoint action of every `A`-point of `Spec H`. -/
 theorem mem_coadjointInvariantPolynomials_iff_lift_liftBaseChange_endOfPoint
     {p : SymmetricAlgebra R 𝔤} :
     p ∈ coadjointInvariantPolynomials R H ↔
-      ∀ (A : Type (max u v)) [CommRing A] [Algebra R A] (g : H →ₐ[R] A) (ψ : 𝔤 →ₗ[R] A),
+      ∀ (A : Type (max u v)) [CommSemiring A] [Algebra R A] (g : H →ₐ[R] A) (ψ : 𝔤 →ₗ[R] A),
         SymmetricAlgebra.lift ((LinearMap.liftBaseChange A ψ).restrictScalars R ∘ₗ
           (Comodule.endOfPoint 𝔤 g).restrictScalars R ∘ₗ TensorProduct.mk R A 𝔤 1) p =
           SymmetricAlgebra.lift ψ p :=
@@ -143,6 +150,14 @@ invariant polynomial functions on `𝔤*` vanishing at the origin: the ideal of 
 zero fibre of the coadjoint quotient map `𝔤* → 𝔤* // G`. -/
 noncomputable def coadjointNilpotentConeIdeal : Ideal (SymmetricAlgebra R 𝔤) :=
   (coadjointInvariantPolynomials R H).symmetricAlgebraHilbertIdeal
+
+variable (R H) in
+/-- The ideal of the coadjoint nilpotent cone is the ideal `Subalgebra.symmetricAlgebraHilbertIdeal`
+of the invariant polynomial functions on `𝔤*`. -/
+theorem coadjointNilpotentConeIdeal_def :
+    coadjointNilpotentConeIdeal R H =
+      (coadjointInvariantPolynomials R H).symmetricAlgebraHilbertIdeal :=
+  (rfl)
 
 /-- An invariant polynomial function on `𝔤*` vanishing at the origin lies in the ideal of the
 coadjoint nilpotent cone. -/
@@ -190,44 +205,16 @@ theorem symmetricAlgebraCoact_mem_map_includeLeft_coadjointNilpotentConeIdeal
 `R`-valued point of `𝔤*`. Suppose some point `g` of `Spec H` with values in the Laurent polynomials
 `R[T;T⁻¹]`, such as a cocharacter `𝔾ₘ → Spec H`, scales `ψ` by `Tᵐ` for some `m ≠ 0`. Then `ψ` lies
 on the coadjoint nilpotent cone: a homogeneous invariant of degree `n` takes at `ψ` a value `c`
-with `Tⁿᵐ c = c`, which forces `c = 0` when `n > 0`. -/
+with `Tⁿᵐ c = c`, which forces `c = 0` when `n > 0`. This specializes
+`TauCeti.ComoduleAlgebra.symmetricAlgebraHilbertIdeal_coinvariants_le_ker_lift_of_endOfPoint`. -/
 theorem coadjointNilpotentConeIdeal_le_ker_lift_of_endOfPoint {ψ : Module.Dual R 𝔤}
     (g : H →ₐ[R] R[T;T⁻¹]) {m : ℤ} (hm : m ≠ 0)
     (hg : ∀ x : 𝔤, LinearMap.liftBaseChange R[T;T⁻¹] ((Algebra.linearMap R R[T;T⁻¹]) ∘ₗ ψ)
         (Comodule.endOfPoint 𝔤 g (1 ⊗ₜ[R] x)) =
       LaurentPolynomial.T m * algebraMap R R[T;T⁻¹] (ψ x)) :
     coadjointNilpotentConeIdeal R H ≤ RingHom.ker (SymmetricAlgebra.lift ψ) := by
-  classical
-  refine coadjointNilpotentConeIdeal_le_iff.mpr fun p hp hp₀ ↦ ?_
-  rw [RingHom.mem_ker, ← DirectSum.sum_support_decompose
-    (SymmetricAlgebra.homogeneousSubmodule R 𝔤) p, map_sum]
-  refine Finset.sum_eq_zero fun n _ ↦ ?_
-  have hq := (DirectSum.decompose (SymmetricAlgebra.homogeneousSubmodule R 𝔤) p n).property
-  have hφ : SymmetricAlgebra.lift ((Algebra.linearMap R R[T;T⁻¹]) ∘ₗ ψ) =
-      (Algebra.ofId R R[T;T⁻¹]).comp (SymmetricAlgebra.lift ψ) :=
-    SymmetricAlgebra.algHom_ext (LinearMap.ext fun x ↦ by simp)
-  -- The translate of `ψ` by `g` is `Tᵐ ψ`, so invariance of the component `q` of degree `n` gives
-  -- `Tⁿᵐ q(ψ) = q(ψ)`.
-  have hinv := lift_liftBaseChange_endOfPoint_of_mem_coadjointInvariantPolynomials
-    (decompose_mem_coadjointInvariantPolynomials hp n) g ((Algebra.linearMap R R[T;T⁻¹]) ∘ₗ ψ)
-  rw [AlgHom.apply_eq_pow_mul_of_forall_ι_eq
-    (SymmetricAlgebra.lift ((Algebra.linearMap R R[T;T⁻¹]) ∘ₗ ψ)) _ (LaurentPolynomial.T m)
-    (fun x ↦ by
-      simp only [SymmetricAlgebra.lift_ι_apply, LinearMap.comp_apply,
-        LinearMap.restrictScalars_apply, TensorProduct.mk_apply]
-      exact hg x) hq, hφ, AlgHom.comp_apply, Algebra.ofId_apply,
-    LaurentPolynomial.T_pow, ← LaurentPolynomial.C_eq_algebraMap, mul_comm] at hinv
-  rcases n with _ | n
-  · -- The component of degree zero is the value at the origin.
-    rw [← SymmetricAlgebra.mem_irrelevant_iff_algebraMapInv_eq_zero,
-      HomogeneousIdeal.mem_irrelevant_iff, GradedRing.proj_apply] at hp₀
-    rw [hp₀, map_zero]
-  · -- Compare the coefficients of `Tⁿᵐ`, with `nm ≠ 0`.
-    rw [← LaurentPolynomial.single_eq_C_mul_T] at hinv
-    have h := congrArg (fun f ↦ f.coeff (((n + 1 : ℕ) : ℤ) * m)) hinv
-    simp only [AddMonoidAlgebra.coeff_single, Finsupp.single_eq_same,
-      LaurentPolynomial.C_apply] at h
-    simpa [hm, Nat.cast_add_one_ne_zero] using h
+  rw [coadjointNilpotentConeIdeal_def, coadjointInvariantPolynomials_def]
+  exact ComoduleAlgebra.symmetricAlgebraHilbertIdeal_coinvariants_le_ker_lift_of_endOfPoint g hm hg
 
 end Basic
 
@@ -257,44 +244,35 @@ theorem coadjointInvariantPolynomials_le_lieInvariants :
   rw [ComoduleAlgebra.differential_symmetricAlgebra, hend] at h
   rwa [SymmetricAlgebra.lieModuleDerivation_apply]
 
-/-- **First-order points of the coadjoint nilpotent cone.** Let `ψ` be a covector vanishing on the
-centre of `𝔤` and `e` an element of square zero in an `R`-algebra `A`, such as `ε` in the dual
-numbers. Then the point `e • ψ` of `𝔤*` with values in `A` lies on the coadjoint nilpotent cone.
+/-- **First-order points of the coadjoint nilpotent cone.** Let `ψ` be an `A`-valued point of
+`𝔤*` vanishing on the centre of `𝔤`, and `e` an element of square zero in the `R`-algebra `A`, such
+as `ε` in the dual numbers. Then the point `e • ψ` of `𝔤*` lies on the coadjoint nilpotent cone.
 Indeed an invariant function vanishing at the origin has first-order part an invariant linear
 function on `𝔤*`, that is a central element of `𝔤`, and its higher-order parts are killed by
 `e ^ 2 = 0`. -/
 theorem coadjointNilpotentConeIdeal_le_ker_lift_smulRight {A : Type*} [CommSemiring A]
-    [Algebra R A]
-    {e : A} (he : e * e = 0) {ψ : Module.Dual R 𝔤}
+    [Algebra R A] {e : A} (he : e * e = 0) {ψ : 𝔤 →ₗ[R] A}
     (hψ : ∀ z : 𝔤, (∀ x : 𝔤, ⁅x, z⁆ = 0) → ψ z = 0) :
     coadjointNilpotentConeIdeal R H ≤ RingHom.ker (SymmetricAlgebra.lift (ψ.smulRight e)) := by
-  classical
-  refine coadjointNilpotentConeIdeal_le_iff.mpr fun p hp hp₀ ↦ ?_
-  rw [RingHom.mem_ker, ← DirectSum.sum_support_decompose
-    (SymmetricAlgebra.homogeneousSubmodule R 𝔤) p, map_sum]
-  refine Finset.sum_eq_zero fun n _ ↦ ?_
-  have hq := (DirectSum.decompose (SymmetricAlgebra.homogeneousSubmodule R 𝔤) p n).property
+  rw [coadjointNilpotentConeIdeal_def]
+  refine (Subalgebra.symmetricAlgebraHilbertIdeal_le_iff_of_isHomogeneous fun n _ hp ↦
+    decompose_mem_coadjointInvariantPolynomials hp n).mpr fun n hn p hp hq ↦ ?_
   -- On a homogeneous element of degree `n`, the point `e • ψ` takes `e ^ n` times the value of
   -- `ψ`.
-  rw [AlgHom.apply_eq_pow_mul_of_forall_ι_eq
-    (SymmetricAlgebra.lift ((Algebra.linearMap R A).comp ψ))
-    (SymmetricAlgebra.lift (ψ.smulRight e)) e
-    (fun m ↦ by simp [Algebra.smul_def, mul_comm]) hq]
+  rw [RingHom.mem_ker, AlgHom.apply_eq_pow_mul_of_forall_ι_eq (SymmetricAlgebra.lift ψ)
+    (SymmetricAlgebra.lift (ψ.smulRight e)) e (fun m ↦ by simp [mul_comm]) hq]
   rcases n with _ | _ | n
-  · -- The component of degree zero is the value at the origin.
-    rw [← SymmetricAlgebra.mem_irrelevant_iff_algebraMapInv_eq_zero,
-      HomogeneousIdeal.mem_irrelevant_iff, GradedRing.proj_apply] at hp₀
-    rw [hp₀, map_zero, mul_zero]
-  · -- The component of degree one is an invariant linear function, a central element of `𝔤`.
+  · exact absurd hn (lt_irrefl 0)
+  · -- An invariant of degree one is an invariant linear function, a central element of `𝔤`.
     rw [zero_add] at hq ⊢
-    have hz := SymmetricAlgebra.ι_homogeneousSubmoduleOneEquiv_apply R 𝔤 ⟨_, hq⟩
-    set z := SymmetricAlgebra.homogeneousSubmoduleOneEquiv R 𝔤 ⟨_, hq⟩
-    have hinv := SymmetricAlgebra.decompose_mem_lieInvariants
-      (coadjointInvariantPolynomials_le_lieInvariants hp) 1
+    set z := SymmetricAlgebra.homogeneousSubmoduleOneEquiv R 𝔤 ⟨p, hq⟩
+    have hz : SymmetricAlgebra.ι R 𝔤 z = p :=
+      SymmetricAlgebra.ι_homogeneousSubmoduleOneEquiv_apply R 𝔤 ⟨p, hq⟩
+    have hinv := coadjointInvariantPolynomials_le_lieInvariants hp
     rw [← hz, SymmetricAlgebra.ι_mem_lieInvariants_iff] at hinv
-    rw [← hz, SymmetricAlgebra.lift_ι_apply, LinearMap.comp_apply, hψ z hinv, map_zero,
-      mul_zero]
-  · rw [show e ^ (n + 1 + 1) = 0 by rw [pow_succ, pow_succ, mul_assoc, he, mul_zero], zero_mul]
+    rw [← hz, SymmetricAlgebra.lift_ι_apply, hψ z hinv, mul_zero]
+  · have he₂ : e ^ 2 = 0 := by simpa [pow_two] using he
+    rw [pow_eq_zero_of_le (by omega) he₂, zero_mul]
 
 end Lie
 
@@ -304,44 +282,6 @@ variable {k : Type u} [Field k] {H : Type u} [CommRing H] [HopfAlgebra k H]
   [Module.Finite k (Bialgebra.CotangentSpace k H)]
 
 local notation "𝔤" => Module.Dual k (Bialgebra.CotangentSpace k H)
-
-/-- The invariant polynomial functions on the Lie algebra are the coinvariants of the symmetric
-algebra of the contragredient of the adjoint comodule. -/
-private theorem mem_adjointInvariantPolynomials_iff_mem_coinvariants
-    {p : SymmetricAlgebra k (Module.Dual k 𝔤)} :
-    letI := Comodule.dual k H 𝔤
-    p ∈ adjointInvariantPolynomials k H ↔
-      p ∈ ComoduleAlgebra.coinvariants k H (SymmetricAlgebra k (Module.Dual k 𝔤)) := by
-  let := Comodule.dual k H 𝔤
-  -- Both coactions are algebra maps extending the contragredient coaction on generators.
-  have h : (letI := adjointPolynomialComoduleAlgebra k H
-      ComoduleAlgebra.coactAlgHom k H (SymmetricAlgebra k (Module.Dual k 𝔤))) =
-      Comodule.symmetricAlgebraCoact k H (Module.Dual k 𝔤) := by
-    let := adjointPolynomialComoduleAlgebra k H
-    refine SymmetricAlgebra.algHom_ext (LinearMap.ext fun φ ↦ ?_)
-    simp only [LinearMap.coe_comp, LinearMap.coe_ofClass, Function.comp_apply,
-      ComoduleAlgebra.coactAlgHom_apply, adjointPolynomialComoduleAlgebra_coact_ι,
-      Comodule.symmetricAlgebraCoact_ι, Comodule.dual_coact]
-  have hp : (letI := adjointPolynomialComoduleAlgebra k H
-      Comodule.coact (R := k) (C := H) p) = Comodule.symmetricAlgebraCoact k H _ p := by
-    let := adjointPolynomialComoduleAlgebra k H
-    rw [← ComoduleAlgebra.coactAlgHom_apply, h]
-  rw [mem_adjointInvariantPolynomials, hp, ComoduleAlgebra.mem_coinvariants,
-    ComoduleAlgebra.symmetricAlgebra_coact, AlgHom.toLinearMap_apply]
-
-/-- The ideal of the adjoint nilpotent cone is the ideal generated by the coinvariants of the
-symmetric algebra of the contragredient of the adjoint comodule vanishing at the origin. -/
-private theorem nilpotentConeIdeal_eq_symmetricAlgebraHilbertIdeal :
-    letI := Comodule.dual k H 𝔤
-    nilpotentConeIdeal k H = (ComoduleAlgebra.coinvariants k H
-      (SymmetricAlgebra k (Module.Dual k 𝔤))).symmetricAlgebraHilbertIdeal := by
-  let := Comodule.dual k H 𝔤
-  refine le_antisymm (nilpotentConeIdeal_le_iff.mpr fun p hp hp₀ ↦ ?_)
-    (Subalgebra.symmetricAlgebraHilbertIdeal_le_iff.mpr fun p hp hp₀ ↦ ?_)
-  · exact Subalgebra.mem_symmetricAlgebraHilbertIdeal_of_mem
-      (mem_adjointInvariantPolynomials_iff_mem_coinvariants.mp hp) hp₀
-  · exact mem_nilpotentConeIdeal_of_mem_adjointInvariantPolynomials
-      (mem_adjointInvariantPolynomials_iff_mem_coinvariants.mpr hp) hp₀
 
 attribute [local instance] Comodule.dual
 
