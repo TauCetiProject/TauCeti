@@ -95,7 +95,7 @@ theorem norm_evalLp_le
       gcongr
       · have h1 : measureUnivNNReal ν = 1 := by simp [measureUnivNNReal]
         simpa [h1] using ContinuousMap.toLp_norm_le (E := 𝕜) (p := p) (𝕜 := 𝕜) ν
-      · exact norm_evalClosedBall_le zero_le_one
+      · exact (norm_evalClosedBall_le 1).trans_eq (max_eq_left zero_le_one)
     _ = 1 := one_mul 1
 
 end WeakDual

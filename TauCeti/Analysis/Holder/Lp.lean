@@ -22,7 +22,8 @@ normed space (a Banach space when the target is complete). The pointwise estimat
 value at a point with the values on the ball: Hölder continuity controls the difference, and the
 `Lᵖ` norm on the ball controls the values there. For a function Hölder on a set, the ball lies in
 the set but need not contain the point, which gives the bound at points of the closure of a
-half-space from a ball inside the open half-space.
+half-space from a ball inside the open half-space. The bounds hold for every exponent `p ≠ 0`,
+including `p = ∞`, where the volume factor is `1` and the `Lᵖ` norm is the essential supremum.
 
 ## Main declarations
 
@@ -55,8 +56,8 @@ by its `Lᵖ` norm on any ball `B(y, ρ) ⊆ s`: the bound is `C (dist x y + ρ)
 times the reciprocal `p`-th root of the volume of the radius-`ρ` ball. The point `x` need not lie
 in the ball, so this applies at points of the boundary of a half-space, with a ball inside the
 half-space. -/
-theorem enorm_le_add_eLpNorm (hg : HolderOnWith C α g s) (hp : p ≠ 0) (hp' : p ≠ ∞) {x y : E}
-    {ρ : ℝ} (hρ : 0 < ρ) (hx : x ∈ s) (hys : ball y ρ ⊆ s) :
+theorem enorm_le_add_eLpNorm (hg : HolderOnWith C α g s) (hp : p ≠ 0) {x y : E} {ρ : ℝ}
+    (hρ : 0 < ρ) (hx : x ∈ s) (hys : ball y ρ ⊆ s) :
     ‖g x‖ₑ ≤ C * ENNReal.ofReal (dist x y + ρ) ^ (α : ℝ) +
       mu (ball (0 : E) ρ) ^ (-(p.toReal)⁻¹) * eLpNorm g p (mu.restrict (ball y ρ)) := by
   set N := eLpNorm g p (mu.restrict (ball y ρ))
@@ -82,8 +83,8 @@ theorem enorm_le_add_eLpNorm (hg : HolderOnWith C α g s) (hp : p ≠ 0) (hp' : 
     eLpNorm_mono_eNorm_ae aestronglyMeasurable_const
       ((ae_restrict_iff' measurableSet_ball).2 (.of_forall fun z hz => by
         simpa only [eNorm_eq_self] using hpt z hz))
-  rw [eLpNorm_const' _ hp hp', Measure.restrict_apply_univ, Measure.addHaar_ball_center,
-    eNorm_eq_self] at hconst
+  rw [eLpNorm_const _ hp (Measure.restrict_eq_zero.not.2 (measure_ball_pos mu y hρ).ne'),
+    Measure.restrict_apply_univ, Measure.addHaar_ball_center, eNorm_eq_self] at hconst
   have hm0 : mu (ball (0 : E) ρ) ^ (1 / p.toReal) ≠ 0 :=
     (ENNReal.rpow_pos (measure_ball_pos mu 0 hρ) measure_ball_lt_top.ne).ne'
   have hmt : mu (ball (0 : E) ρ) ^ (1 / p.toReal) ≠ ∞ :=
@@ -96,8 +97,8 @@ theorem enorm_le_add_eLpNorm (hg : HolderOnWith C α g s) (hp : p ≠ 0) (hp' : 
 
 /-- Real-valued form of `HolderOnWith.enorm_le_add_eLpNorm`, for a function with finite `Lᵖ` norm
 on the ball. -/
-theorem norm_le_add_eLpNorm_toReal (hg : HolderOnWith C α g s) (hp : p ≠ 0) (hp' : p ≠ ∞)
-    {x y : E} {ρ : ℝ} (hρ : 0 < ρ) (hx : x ∈ s) (hys : ball y ρ ⊆ s)
+theorem norm_le_add_eLpNorm_toReal (hg : HolderOnWith C α g s) (hp : p ≠ 0) {x y : E} {ρ : ℝ}
+    (hρ : 0 < ρ) (hx : x ∈ s) (hys : ball y ρ ⊆ s)
     (hfin : eLpNorm g p (mu.restrict (ball y ρ)) ≠ ∞) :
     ‖g x‖ ≤ C * (dist x y + ρ) ^ (α : ℝ) +
       (mu (ball (0 : E) ρ) ^ (-(p.toReal)⁻¹)).toReal *
@@ -105,7 +106,7 @@ theorem norm_le_add_eLpNorm_toReal (hg : HolderOnWith C α g s) (hp : p ≠ 0) (
   have hvol : mu (ball (0 : E) ρ) ^ (-(p.toReal)⁻¹) ≠ ∞ :=
     ENNReal.rpow_ne_top_of_ne_zero (measure_ball_pos mu 0 hρ).ne' measure_ball_lt_top.ne
   have hx' := (ENNReal.toReal_le_toReal eNorm_ne_top (by finiteness)).2
-    (hg.enorm_le_add_eLpNorm (mu := mu) hp hp' hρ hx hys)
+    (hg.enorm_le_add_eLpNorm (mu := mu) hp hρ hx hys)
   rw [ENNReal.toReal_add (by finiteness) (ENNReal.mul_ne_top hvol hfin),
     ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.coe_toReal, ← ENNReal.toReal_rpow,
     ENNReal.toReal_ofReal (by positivity)] at hx'
@@ -118,8 +119,7 @@ radius-`r / 2` ball: compare `g x` with the values of `g` on the ball of radius 
 half-space whose centre is `x + (r / (2 ‖ν‖)) ν`. -/
 theorem norm_le_add_eLpNorm_toReal_of_halfSpace [InnerProductSpace ℝ E] {ν : E} {c r : ℝ}
     (hν : ν ≠ 0) (hr : 0 < r) (hg : HolderOnWith C α g {z | c ≤ ⟪z, ν⟫_ℝ}) (hp : p ≠ 0)
-    (hp' : p ≠ ∞) (hgLp : MemLp g p (mu.restrict {z | c < ⟪z, ν⟫_ℝ})) {x : E}
-    (hx : c ≤ ⟪x, ν⟫_ℝ) :
+    (hgLp : MemLp g p (mu.restrict {z | c < ⟪z, ν⟫_ℝ})) {x : E} (hx : c ≤ ⟪x, ν⟫_ℝ) :
     ‖g x‖ ≤ C * r ^ (α : ℝ) + (mu (ball (0 : E) (r / 2)) ^ (-(p.toReal)⁻¹)).toReal *
       (eLpNorm g p (mu.restrict {z | c < ⟪z, ν⟫_ℝ})).toReal := by
   have hball : ball (x + (r / 2 / ‖ν‖) • ν) (r / 2) ⊆ {z | c < ⟪z, ν⟫_ℝ} :=
@@ -130,7 +130,7 @@ theorem norm_le_add_eLpNorm_toReal_of_halfSpace [InnerProductSpace ℝ E] {ν : 
   have hle : eLpNorm g p (mu.restrict (ball (x + (r / 2 / ‖ν‖) • ν) (r / 2))) ≤
       eLpNorm g p (mu.restrict {z | c < ⟪z, ν⟫_ℝ}) :=
     eLpNorm_mono_measure _ (Measure.restrict_mono hball le_rfl)
-  have h := hg.norm_le_add_eLpNorm_toReal (mu := mu) hp hp' (half_pos hr)
+  have h := hg.norm_le_add_eLpNorm_toReal (mu := mu) hp (half_pos hr)
     (by simpa only [mem_ofPred_eq] using hx)
     (hball.trans fun _ hz => mem_ofPred.2 (mem_ofPred.1 hz).le)
     (hle.trans_lt hgLp.eLpNorm_lt_top).ne
@@ -153,12 +153,11 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [BorelSpace E]
 /-- A globally Hölder function is pointwise bounded by its `Lᵖ` norm. At any positive scale `r`,
 the bound is its Hölder constant times `r^α`, plus the `Lᵖ` norm multiplied by the reciprocal
 `p`-th root of the volume of the radius-`r` ball. -/
-theorem enorm_le_add_eLpNorm (hg : HolderWith C α g) (hp : p ≠ 0) (hp' : p ≠ ∞) {r : ℝ}
-    (hr : 0 < r) (x : E) :
+theorem enorm_le_add_eLpNorm (hg : HolderWith C α g) (hp : p ≠ 0) {r : ℝ} (hr : 0 < r) (x : E) :
     ‖g x‖ₑ ≤ C * ENNReal.ofReal r ^ (α : ℝ) +
       mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) * eLpNorm g p mu := by
   -- Compare `g x` with the values of `g` on the ball of radius `r` about `x`.
-  have h := (hg.holderOnWith univ).enorm_le_add_eLpNorm (mu := mu) hp hp' hr (mem_univ x)
+  have h := (hg.holderOnWith univ).enorm_le_add_eLpNorm (mu := mu) hp hr (mem_univ x)
     (subset_univ (ball x r))
   rw [dist_self, zero_add] at h
   refine h.trans ?_
@@ -168,13 +167,13 @@ theorem enorm_le_add_eLpNorm (hg : HolderWith C α g) (hp : p ≠ 0) (hp' : p �
 /-- Real-valued form of `HolderWith.enorm_le_add_eLpNorm`: a globally Hölder function with finite
 `Lᵖ` norm is pointwise bounded by its Hölder constant times `r ^ α` plus its `Lᵖ` norm times the
 reciprocal `p`-th root of the volume of the radius-`r` ball. -/
-theorem norm_le_add_eLpNorm_toReal (hg : HolderWith C α g) (hp : p ≠ 0) (hp' : p ≠ ∞)
-    (hgLp : MemLp g p mu) {r : ℝ} (hr : 0 < r) (x : E) :
+theorem norm_le_add_eLpNorm_toReal (hg : HolderWith C α g) (hp : p ≠ 0) (hgLp : MemLp g p mu)
+    {r : ℝ} (hr : 0 < r) (x : E) :
     ‖g x‖ ≤ C * r ^ (α : ℝ) +
       (mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹)).toReal * (eLpNorm g p mu).toReal := by
   have hvol : mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) ≠ ∞ :=
     ENNReal.rpow_ne_top_of_ne_zero (measure_ball_pos mu 0 hr).ne' measure_ball_lt_top.ne
-  have hx := hg.enorm_le_add_eLpNorm (mu := mu) hp hp' hr x
+  have hx := hg.enorm_le_add_eLpNorm (mu := mu) hp hr x
   have hfin : (C : ℝ≥0∞) * ENNReal.ofReal r ^ (α : ℝ) +
       mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) * eLpNorm g p mu ≠ ∞ := by
     finiteness
@@ -187,8 +186,8 @@ theorem norm_le_add_eLpNorm_toReal (hg : HolderWith C α g) (hp : p ≠ 0) (hp' 
 variable [NormedSpace ℝ F]
 
 /-- A global Hölder function in `Lᵖ`, bundled as an element of the Hölder normed space. -/
-def toHolderSpace (hg : HolderWith C α g) (hα : 0 < α) (hp : 1 ≤ p) (hp' : p ≠ ∞)
-    (hgLp : MemLp g p mu) : TauCeti.HolderSpace α E F := by
+def toHolderSpace (hg : HolderWith C α g) (hα : 0 < α) (hp : p ≠ 0) (hgLp : MemLp g p mu) :
+    TauCeti.HolderSpace α E F := by
   let R : ℝ≥0∞ := C + mu (ball (0 : E) 1) ^ (-(p.toReal)⁻¹) * eLpNorm g p mu
   have hR : R ≠ ∞ := by
     rw [← lt_top_iff_ne_top]
@@ -199,7 +198,7 @@ def toHolderSpace (hg : HolderWith C α g) (hα : 0 < α) (hp : 1 ≤ p) (hp' : 
           (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne)) hgLp.eLpNorm_lt_top⟩
   have hpoint (x : E) : ‖g x‖ ≤ R.toReal := by
     have hx : ‖g x‖ₑ ≤ R := by
-      simpa [R] using hg.enorm_le_add_eLpNorm (mu := mu) (zero_lt_one.trans_le hp).ne' hp' one_pos x
+      simpa [R] using hg.enorm_le_add_eLpNorm (mu := mu) hp one_pos x
     simpa only [toReal_eNorm] using (ENNReal.toReal_le_toReal eNorm_ne_top hR).2 hx
   let G : E →ᵇ F := BoundedContinuousFunction.mkOfBound ⟨g, hg.continuous hα⟩
     (2 * R.toReal) (BoundedContinuousFunction.dist_le_two_norm' hpoint)
@@ -210,18 +209,17 @@ def toHolderSpace (hg : HolderWith C α g) (hα : 0 < α) (hp : 1 ≤ p) (hp' : 
 
 /-- The Hölder-space bundling does not change the underlying function. -/
 @[simp]
-theorem toHolderSpace_apply (hg : HolderWith C α g) (hα : 0 < α) (hp : 1 ≤ p)
-    (hp' : p ≠ ∞) (hgLp : MemLp g p mu) (x : E) :
-    hg.toHolderSpace hα hp hp' hgLp x = g x := by
+theorem toHolderSpace_apply (hg : HolderWith C α g) (hα : 0 < α) (hp : p ≠ 0)
+    (hgLp : MemLp g p mu) (x : E) : hg.toHolderSpace hα hp hgLp x = g x := by
   rw [← TauCeti.HolderSpace.toBoundedContinuousFunction_apply]
   rw [toHolderSpace, TauCeti.HolderSpace.toBoundedContinuousFunction_ofBoundedContinuousFunction]
   rfl
 
 /-- The Hölder-space norm is controlled by the pointwise bound and the given Hölder
 constant. -/
-theorem norm_toHolderSpace_le (hg : HolderWith C α g) (hα : 0 < α) (hp : 1 ≤ p)
-    (hp' : p ≠ ∞) (hgLp : MemLp g p mu) :
-    ‖hg.toHolderSpace hα hp hp' hgLp‖ ≤
+theorem norm_toHolderSpace_le (hg : HolderWith C α g) (hα : 0 < α) (hp : p ≠ 0)
+    (hgLp : MemLp g p mu) :
+    ‖hg.toHolderSpace hα hp hgLp‖ ≤
       (C + mu (ball (0 : E) 1) ^ (-(p.toReal)⁻¹) * eLpNorm g p mu).toReal + C := by
   rw [TauCeti.HolderSpace.norm_def]
   apply add_le_add
@@ -230,7 +228,7 @@ theorem norm_toHolderSpace_le (hg : HolderWith C α g) (hα : 0 < α) (hp : 1 �
     rw [TauCeti.HolderSpace.toBoundedContinuousFunction_apply, toHolderSpace_apply]
     have hunit : ‖g x‖ₑ ≤ C + mu (ball (0 : E) 1) ^ (-(p.toReal)⁻¹) *
         eLpNorm g p mu := by
-      simpa using hg.enorm_le_add_eLpNorm (mu := mu) (zero_lt_one.trans_le hp).ne' hp' one_pos x
+      simpa using hg.enorm_le_add_eLpNorm (mu := mu) hp one_pos x
     have hfin : (C : ℝ≥0∞) + mu (ball (0 : E) 1) ^ (-(p.toReal)⁻¹) *
         eLpNorm g p mu ≠ ∞ := by
       rw [← lt_top_iff_ne_top, ENNReal.add_lt_top]
@@ -238,11 +236,11 @@ theorem norm_toHolderSpace_le (hg : HolderWith C α g) (hα : 0 < α) (hp : 1 �
         (lt_top_iff_ne_top.2 (ENNReal.rpow_ne_top_of_ne_zero
           (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne)) hgLp.eLpNorm_lt_top⟩
     simpa only [toReal_eNorm] using (ENNReal.toReal_le_toReal eNorm_ne_top hfin).2 hunit
-  · have hb : HolderWith C α (fun x => hg.toHolderSpace hα hp hp' hgLp x) := by
+  · have hb : HolderWith C α (fun x => hg.toHolderSpace hα hp hgLp x) := by
       intro x y
       simpa only [toHolderSpace_apply] using hg x y
-    have heq : ((hg.toHolderSpace hα hp hp' hgLp).toBoundedContinuousFunction : E → F) =
-        fun x => hg.toHolderSpace hα hp hp' hgLp x := by
+    have heq : ((hg.toHolderSpace hα hp hgLp).toBoundedContinuousFunction : E → F) =
+        fun x => hg.toHolderSpace hα hp hgLp x := by
       funext x
       rw [TauCeti.HolderSpace.toBoundedContinuousFunction_apply]
     rw [heq]

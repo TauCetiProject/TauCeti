@@ -47,6 +47,8 @@ be stable under the quotients and localizations used to cut a valuation ring int
 * `TauCeti.isAbsolutelyIntegrallyClosed_iff_isIntegrallyClosed_and_isAlgClosed`: a domain is
   absolutely integrally closed if and only if it is integrally closed and its fraction field is
   algebraically closed.
+* `Subfield.isAbsolutelyIntegrallyClosed_comap`: the trace of an integrally closed domain on an
+  algebraically closed subfield of its fraction field is absolutely integrally closed.
 * `TauCeti.not_isAbsolutelyIntegrallyClosed_rat`: `ℚ` is not absolutely integrally closed, as
   `X ^ 2 - 2` has no rational root.
 
@@ -235,3 +237,36 @@ theorem not_isAbsolutelyIntegrallyClosed_rat : ¬ IsAbsolutelyIntegrallyClosed �
   rw [Rat.cast_abs, ← Real.sqrt_sq_eq_abs, hx2']
 
 end TauCeti
+
+namespace Subfield
+
+variable {V K : Type*} [CommRing V] [Field K] [Algebra V K] (L : Subfield K)
+
+/-- The trace `V ∩ L` of an integrally closed domain `V`, for instance a valuation ring, on an
+algebraically closed subfield `L` of its fraction field is absolutely integrally closed. -/
+instance isAbsolutelyIntegrallyClosed_comap [IsIntegrallyClosed V] [IsFractionRing V K]
+    [IsAlgClosed L] :
+    TauCeti.IsAbsolutelyIntegrallyClosed (L.toSubring.comap (algebraMap V K)) where
+  exists_root p hp hdeg := by
+    -- A root of `p` in `L` is integral over `V`, hence lies in `V`, hence in `V ∩ L`.
+    let φ : L.toSubring.comap (algebraMap V K) →+* K :=
+      (algebraMap V K).comp (L.toSubring.comap (algebraMap V K)).subtype
+    have hφL (x) : φ x ∈ L := (L.mem_toSubring _).mp (Subring.mem_comap.mp x.property)
+    let g : L.toSubring.comap (algebraMap V K) →+* L := φ.codRestrict L hφL
+    have hg : L.subtype.comp g = φ := RingHom.ext (φ.codRestrict_apply L hφL)
+    obtain ⟨y, hy⟩ := IsAlgClosed.exists_root (p.map g)
+      (natDegree_pos_iff_degree_pos.mp ((hp.natDegree_map g).symm ▸ hdeg)).ne'
+    have hy' : p.eval₂ φ (y : K) = 0 := by
+      simpa [eval_map, hom_eval₂, hg] using congrArg L.subtype hy
+    obtain ⟨v, hv⟩ := IsIntegrallyClosed.isIntegral_iff.mp
+      (⟨p.map (L.toSubring.comap (algebraMap V K)).subtype, hp.map _, by
+        rwa [eval₂_map]⟩ : IsIntegral V (y : K))
+    have hφinj : Function.Injective φ :=
+      (IsFractionRing.injective V K).comp Subtype.val_injective
+    have hmem : v ∈ L.toSubring.comap (algebraMap V K) := by simp [Subring.mem_comap, hv]
+    have hφv : φ ⟨v, hmem⟩ = y := by
+      rw [RingHom.comp_apply, Subring.coe_subtype, hv]
+    refine ⟨⟨v, hmem⟩, hφinj ?_⟩
+    rwa [map_zero, ← eval₂_at_apply, hφv]
+
+end Subfield

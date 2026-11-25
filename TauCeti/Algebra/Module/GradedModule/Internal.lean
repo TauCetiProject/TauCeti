@@ -61,9 +61,10 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
 * `TauCeti.InternalGrading.finite_piece_ne_bot`: a finitely generated internally graded module has
   only finitely many nonzero homogeneous pieces.
 * `TauCeti.InternalGrading.koszulTwist_apply_of_mem`,
-  `TauCeti.InternalGrading.koszulTwist_eq_negOnePow_smul`, and
-  `TauCeti.InternalGrading.koszulTwist_one_eq_negOnePow_smul`: the twist acts by the Koszul scalar
-  (or unit sign on an additive group) on each homogeneous piece.
+  `TauCeti.InternalGrading.koszulTwist_eq_negOnePow_smul`,
+  `TauCeti.InternalGrading.koszulTwist_one_eq_negOnePow_smul`, and
+  `TauCeti.InternalGrading.koszulTwist_one_smul_eq_negOnePow_smul`: the twist acts by the Koszul
+  scalar (or unit sign on an additive group or module action) on each homogeneous piece.
 * `TauCeti.InternalGrading.koszulTwist_comp`: twists compose by adding the twist parameters.
 * `TauCeti.InternalGrading.koszulTwist_ofDecomposition_mul` and
   `TauCeti.InternalGrading.koszulTwist_ofDecomposition_one`: the Koszul twist of a graded algebra
@@ -480,6 +481,18 @@ theorem _root_.LinearMap.IsHomogeneous.map_decompose
     f (DirectSum.decompose ℳ x p : M) = (DirectSum.decompose 𝓝 (f x) (p + r) : N) :=
   DirectSum.map_decompose_shift ℳ 𝓝 f.toAddMonoidHom (· + r)
     (add_left_injective r) (fun _ _ hx ↦ hf.map_mem hx) p x
+
+/-- An injective homogeneous linear map of degree `r` reflects degrees: an element whose image has
+degree `p + r` has degree `p`. -/
+theorem _root_.LinearMap.IsHomogeneous.mem_of_injective
+    {ℳ : ι → Submodule R M} [DirectSum.Decomposition ℳ]
+    {𝓝 : ι → Submodule R N} [DirectSum.Decomposition 𝓝] (hf : LinearMap.IsHomogeneous f ℳ 𝓝 r)
+    (hinj : Function.Injective f) {p : ι} {x : M} (hx : f x ∈ 𝓝 (p + r)) : x ∈ ℳ p := by
+  -- `x` and its degree-`p` component have the same image, the degree-`(p + r)` component of
+  -- `f x`, which is `f x` itself.
+  have hxp : (DirectSum.decompose ℳ x p : M) = x :=
+    hinj (by rw [hf.map_decompose, DirectSum.decompose_of_mem_same 𝓝 hx])
+  exact hxp ▸ SetLike.coe_mem _
 
 variable {G : InternalGrading R M ι} {H : InternalGrading R N ι}
 
@@ -929,6 +942,15 @@ theorem InternalGrading.koszulTwist_one_eq_negOnePow_smul (G : InternalGrading R
     {e : ℤ} (hx : x ∈ G.piece e) :
     koszulTwist G 1 x = e.negOnePow • x := by
   rw [InternalGrading.koszulTwist_eq_negOnePow_smul G hx 1, one_mul]
+
+/-- Acting by the Koszul twist of parameter one of a homogeneous element of degree `e` multiplies
+by the unit sign `(-1)^e`, even when the graded acting module `A` is only an `AddCommMonoid`. -/
+theorem InternalGrading.koszulTwist_one_smul_eq_negOnePow_smul {A : Type*} [AddCommMonoid A]
+    [Module R A] [SMul A M] [IsScalarTower R A M] (G : InternalGrading R A ℤ) {a : A} {e : ℤ}
+    (ha : a ∈ G.piece e) (y : M) :
+    koszulTwist G 1 a • y = e.negOnePow • (a • y) := by
+  rw [InternalGrading.koszulTwist_one_apply_of_mem G ha, smul_assoc,
+    Int.cast_smul_eq_zsmul R, ← Units.smul_def]
 
 end KoszulTwistNegOnePow
 

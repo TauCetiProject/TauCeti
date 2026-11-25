@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Calculus.LineDeriv.Measurable
 import TauCeti.Analysis.Calculus.Rademacher
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.Mollification.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
@@ -99,6 +100,9 @@ explicit, non-asymptotic formula is the point.
 * `TauCeti.eLpNorm_smul_add_fderiv_smulRight_le`: for `1 ≤ p`, the `Lᵖ` bound
   `‖ψ Du + Dψ ⊗ u‖_{Lᵖ} ≤ A ‖Du‖_{Lᵖ} + B ‖u‖_{Lᵖ}` when `|ψ| ≤ A` and `‖Dψ‖ ≤ B` almost
   everywhere.
+* `TauCeti.eLpNorm_fderiv_le_of_eqOn_smul`: the same bound for the derivative of a function equal
+  to `ψ u` on an open set, for a cutoff `ψ` vanishing off a subset `K`, with the derivative of `u`
+  measured on `K` only.
 * `TauCeti.HasWeakFDerivOn.contDiffOn_smul_gradient`,
   `TauCeti.HasWeakFDerivOn.contDiff_smul_gradient`: the form consumed by `TauCeti.W1p`, where a
   weak derivative of a scalar function is recorded by its Riesz representative and the rule reads
@@ -527,6 +531,35 @@ theorem eLpNorm_smul_add_fderiv_smulRight_le (hp : 1 ≤ p) {ψ : E → ℝ}
     exact mul_le_mul_of_nonneg_right hAz (norm_nonneg _)
   · rw [ContinuousLinearMap.norm_smulRight_apply]
     exact mul_le_mul_of_nonneg_right hBz (norm_nonneg _)
+
+/-- **`Lᵖ` bound for the derivative of a product with a cutoff.** Let `v = ψ u` on an open set
+`U`, with `ψ` and `u` differentiable on `U`, `‖ψ‖ ≤ A` and `‖Dψ‖ ≤ B` on `U`, and `ψ = 0` on `U` off
+a measurable subset `K ⊆ U`. Then `‖Dv‖_{Lᵖ(U)} ≤ A ‖Du‖_{Lᵖ(K)} + B ‖u‖_{Lᵖ(U)}` for `1 ≤ p`:
+the derivative of `u` only enters where the cutoff can be nonzero. -/
+theorem eLpNorm_fderiv_le_of_eqOn_smul [CompleteSpace F] [SecondCountableTopology F]
+    (hp : 1 ≤ p) {U K : Set E} (hU : IsOpen U) (hK : MeasurableSet K) (hKU : K ⊆ U) {ψ : E → ℝ}
+    {u v : E → F} (hψ : DifferentiableOn ℝ ψ U) (hu : DifferentiableOn ℝ u U)
+    (hv : Set.EqOn v (fun y => ψ y • u y) U) {A B : NNReal} (hA : ∀ z ∈ U, ‖ψ z‖ ≤ A)
+    (hB : ∀ z ∈ U, ‖fderiv ℝ ψ z‖ ≤ B) (hψK : ∀ z ∈ U, z ∉ K → ψ z = 0) :
+    eLpNorm (fderiv ℝ v) p (μ.restrict U) ≤
+      A * eLpNorm (fderiv ℝ u) p (μ.restrict K) + B * eLpNorm u p (μ.restrict U) := by
+  have hUm := hU.measurableSet
+  -- On `U`, the derivative of `v` is `ψ Du + Dψ ⊗ u`, and `ψ Du` only sees `Du` on `K`.
+  have hdv : fderiv ℝ v =ᵐ[μ.restrict U]
+      fun z => ψ z • K.indicator (fderiv ℝ u) z + (fderiv ℝ ψ z).smulRight (u z) := by
+    filter_upwards [ae_restrict_mem hUm] with z hz
+    rw [Filter.EventuallyEq.fderiv_eq (hv.eventuallyEq_of_mem (hU.mem_nhds hz)),
+      fderiv_fun_smul ((hψ z hz).differentiableAt (hU.mem_nhds hz))
+        ((hu z hz).differentiableAt (hU.mem_nhds hz))]
+    by_cases hzK : z ∈ K
+    · rw [Set.indicator_of_mem hzK]
+    · rw [hψK z hz hzK, zero_smul, zero_smul]
+  rw [eLpNorm_congr_ae hdv, ← Measure.restrict_restrict_of_subset hKU,
+    ← eLpNorm_indicator_eq_eLpNorm_restrict hK.nullMeasurableSet]
+  exact eLpNorm_smul_add_fderiv_smulRight_le hp (hψ.continuousOn.aestronglyMeasurable hUm)
+    ((ae_restrict_mem hUm).mono hA) ((ae_restrict_mem hUm).mono hB)
+    ((measurable_fderiv ℝ u).indicator hK).aestronglyMeasurable
+    (hu.continuousOn.aestronglyMeasurable hUm)
 
 end LpBound
 
