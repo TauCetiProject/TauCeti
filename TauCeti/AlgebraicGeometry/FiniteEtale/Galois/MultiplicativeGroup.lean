@@ -29,7 +29,8 @@ groups (`TauCeti.FiniteEtaleScheme.multiplicativeGroupAutFiberContinuousMulEquiv
 
 Building on the general affine-base Kummer monodromy construction in
 `TauCeti/AlgebraicGeometry/FiniteEtale/Galois/Kummer.lean` (`kummerMonodromyLevel`,
-`kummerMonodromy`, `kummerCoverFiberEquivRootsOfUnity_smul`, `card_kummerCoverFiber`), the
+`kummerMonodromy`, `kummerCoverFiberEquivRootsOfUnity_smul`) and on the fibre count
+`card_kummerCoverFiber` of `TauCeti/AlgebraicGeometry/FiniteEtale/Kummer.lean`, the
 identification proceeds in two stages so that each hypothesis enters only where needed:
 
 * **The multiplicative group in arbitrary characteristic.** For `R = K[T, T⁻¹]` and `t = T` over a

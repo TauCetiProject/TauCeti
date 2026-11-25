@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.RootsOfUnity.Basic
 public import TauCeti.AlgebraicGeometry.FiniteEtale.AffineFiber
 public import TauCeti.RingTheory.AdjoinRoot.StandardTameCover.Basic
 
+import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.RootsOfUnity.PowFiber
@@ -38,7 +39,8 @@ transformations, and computes them on geometric fibres:
   (`kummerCoverDeck`), compatibly with the maps `kummerCoverMap`;
 * at a geometric point `Spec Ω ⟶ Spec R`, given by an `R`-algebra structure on a separably closed
   field `Ω`, the fibre of the cover of degree `n` is the set of `n`-th roots of the image of `t`
-  in `Ω` (`kummerCoverFiberEquiv`). The map `kummerCoverMap` acts on fibres by `ω ↦ ω ^ (m / n)`
+  in `Ω` (`kummerCoverFiberEquiv`), a set with `n` elements (`card_kummerCoverFiber`). The map
+  `kummerCoverMap` acts on fibres by `ω ↦ ω ^ (m / n)`
   and the deck transformation of `ζ` by multiplication by the image of `ζ`. When `t` maps to `1`
   the fibre is the group `μ_n(Ω)` of `n`-th roots of unity of `Ω`
   (`kummerCoverFiberEquivRootsOfUnity`).
@@ -72,6 +74,8 @@ transformations, and computes them on geometric fibres:
   covers intertwine the deck transformations of `ζ` and of `ζ ^ (m / n)`.
 * `TauCeti.FiniteEtaleScheme.kummerCoverFiberEquiv_map_kummerCoverDeck`: on fibres, the deck
   transformation of `ζ` is multiplication by the image of `ζ`.
+* `TauCeti.FiniteEtaleScheme.card_kummerCoverFiber`: the geometric fibre of the Kummer cover of
+  degree `n` has cardinality `n`.
 * `TauCeti.FiniteEtaleScheme.exists_fiber_map_kummerCoverDeck_eq`: when every `n`-th root of unity
   of `Ω` comes from `R`, the deck transformations act transitively on the geometric fibre.
 * `TauCeti.FiniteEtaleScheme.kummerCoverFiberEquivRootsOfUnity_map_kummerCoverMap`,
@@ -400,6 +404,22 @@ theorem exists_fiber_map_kummerCoverDeck_eq
     restrictRootsOfUnity_coe_apply]
 
 variable (Ω n)
+
+/-- Over a separably closed field `Ω`, the geometric fibre of the degree-`n` Kummer cover has
+cardinality `n`: the nonzero element `algebraMap R Ω t` has exactly `n` distinct `n`-th roots. -/
+theorem card_kummerCoverFiber :
+    Nat.card ((fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj
+      (kummerCover t n hn)) = n := by
+  classical
+  have := neZero_natCast_of_isUnit Ω hn
+  have := neZero_of_isUnit_natCast Ω hn
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot Ω n
+  obtain ⟨y⟩ := nonempty_fiber_kummerCover t (Ω := Ω) hn
+  rw [Nat.card_congr ((kummerCoverFiberEquiv t Ω n hn).trans (Equiv.subtypeEquivRight
+      fun ω ↦ (Polynomial.mem_nthRootsFinset (NeZero.pos n) _).symm)), Nat.card_eq_finsetCard,
+    Polynomial.nthRootsFinset_def, Multiset.toFinset_card_of_nodup
+      (hζ.nthRoots_nodup (t.isUnit.map (algebraMap R Ω)).ne_zero), hζ.card_nthRoots,
+    ite_eq_left ⟨_, (kummerCoverFiberEquiv t Ω n hn y).property⟩]
 
 /-- **The fibre over `1` of a Kummer cover is `μ_n`.** When `t` maps to `1` in the separably
 closed field `Ω`, for instance for the power map `z ↦ z ^ n` of `𝔾_m` at a geometric point over

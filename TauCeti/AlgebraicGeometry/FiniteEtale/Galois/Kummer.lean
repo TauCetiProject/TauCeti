@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Category
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Kummer
 public import TauCeti.RingTheory.RootsOfUnity.TateModule
 
-import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Connected
 
@@ -65,8 +64,6 @@ these covers.
   `TauCeti.FiniteEtaleScheme.kummerCoverFiberEquivRootsOfUnity_smul`: when `x` sends `t` to `1`,
   the Kummer character is the image of the point `1` of the fibre `μ_n(Ω)`, and `Aut (fiber x)`
   acts on `μ_n(Ω)` by multiplication by it.
-* `TauCeti.FiniteEtaleScheme.card_kummerCoverFiber`: the geometric fibre of a degree-`n` Kummer
-  cover has cardinality `n`.
 * `TauCeti.FiniteEtaleScheme.isLocallyConstant_kummerMonodromyLevel`: the Kummer character is
   locally constant, so continuous for the discrete topology on `μ_n(Ω)`.
 * `TauCeti.FiniteEtaleScheme.kummerMonodromyLevel_pow_div`: compatibility with the power maps.
@@ -182,22 +179,6 @@ theorem kummerMonodromyLevel_apply (n : ℕ) (hn : IsUnit (n : R)) (ht : algebra
         (σ • (kummerCoverFiberEquivRootsOfUnity t Ω n hn ht).symm 1) := by
   rw [kummerCoverFiberEquivRootsOfUnity_smul t Ω n hn ht hdeck, Equiv.apply_symm_apply, mul_one]
 
-/-- Over a separably closed field `Ω`, the geometric fibre of the degree-`n` Kummer cover has
-cardinality `n`: the nonzero element `algebraMap R Ω t` has exactly `n` distinct `n`-th roots. -/
-theorem card_kummerCoverFiber (n : ℕ) (hn : IsUnit (n : R)) :
-    Nat.card ((fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj
-      (kummerCover t n hn)) = n := by
-  classical
-  have := neZero_natCast_of_isUnit Ω hn
-  have := neZero_of_isUnit_natCast Ω hn
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot Ω n
-  obtain ⟨y⟩ := nonempty_fiber_kummerCover t (Ω := Ω) hn
-  rw [Nat.card_congr ((kummerCoverFiberEquiv t Ω n hn).trans (Equiv.subtypeEquivRight
-      fun ω ↦ (Polynomial.mem_nthRootsFinset (NeZero.pos n) _).symm)), Nat.card_eq_finsetCard,
-    Polynomial.nthRootsFinset_def, Multiset.toFinset_card_of_nodup
-      (hζ.nthRoots_nodup (t.isUnit.map (algebraMap R Ω)).ne_zero), hζ.card_nthRoots,
-    ite_eq_left ⟨_, (kummerCoverFiberEquiv t Ω n hn y).property⟩]
-
 /-- **Continuity of the Kummer character.** The Kummer character is locally constant on the
 profinite group `π₁(Spec R, x)`: it only depends on the action on one point of the geometric
 fibre of the Kummer cover, which is locally constant. -/
@@ -252,8 +233,10 @@ theorem kummerMonodromyLevel_surjective (n : ℕ) (hn : IsUnit (n : R))
     (CommRingCat.ofHom (algebraMap R Ω))))) y (e.symm ⟨_, hζ⟩)
   exact ⟨σ, (kummerMonodromyLevel_eq_iff t Ω y).mpr (by rw [hσ, e.apply_symm_apply])⟩
 
-/-- **Assembled Kummer monodromy.** The Kummer characters of the unit `t` of all nonzero orders
-prime to `p` are compatible along the power maps, so they define a continuous homomorphism from
+/-- **Assembled Kummer monodromy.** Suppose that every nonzero `m` prime to `p` is invertible in
+`R` (`hunit`) and that every `m`-th root of unity of `Ω` comes from an `m`-th root of unity of `R`
+(`hdeck`), so that the Kummer character of the unit `t` of every such order `m` is defined. These
+characters are compatible along the power maps, so they define a continuous homomorphism from
 `π₁(Spec R, x)` to the Tate module `lim_{(m, p) = 1} μ_m(Ω)`. -/
 noncomputable def kummerMonodromy (p : ℕ)
     (hunit : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, IsUnit ((m : ℕ) : R))
