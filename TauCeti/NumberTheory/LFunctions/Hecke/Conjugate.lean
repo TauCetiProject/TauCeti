@@ -10,9 +10,9 @@ public import TauCeti.Analysis.Meromorphic.ZeroFree
 import TauCeti.Analysis.Calculus.LogDeriv.Symmetry
 import TauCeti.Analysis.Meromorphic.Conj
 import TauCeti.Analysis.Meromorphic.Continuation.Conjugate
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.Conjugate
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.VonMangoldt
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Regroup
-import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Conjugate
+import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight
 
 /-!
 # Conjugation of presented Hecke L-functions

@@ -124,6 +124,26 @@ theorem toUnitaryIdealWeight_mul (χ ψ : RayClassCharacter 𝔪) :
   apply Subtype.ext
   simp
 
+/-- The ideal weight of the inverse character is the conjugate ideal weight. -/
+@[simp]
+theorem toUnitaryIdealWeight_inv (χ : RayClassCharacter 𝔪) :
+    χ⁻¹.toUnitaryIdealWeight = χ.toUnitaryIdealWeight.conj := by
+  apply Subtype.ext
+  ext I
+  rw [UnitaryIdealWeight.val_conj, val_toUnitaryIdealWeight, val_toUnitaryIdealWeight,
+    MultiplicativeIdealWeight.conj_apply]
+  by_cases hI : I.IsPrimeTo 𝔪.support
+  · have hg : χ.toUnitaryIdealWeight.val.IsGood I := by
+      simpa only [val_toUnitaryIdealWeight, MultiplicativeIdealWeight.IsGood,
+        badPrimes_toMultiplicativeIdealWeight] using hI
+    have hn := χ.toUnitaryIdealWeight.norm_eq_one hg
+    rw [val_toUnitaryIdealWeight, toMultiplicativeIdealWeight_apply_of_isPrimeTo χ hI,
+      onIdeals_apply] at hn
+    simp only [toMultiplicativeIdealWeight_apply_of_isPrimeTo _ hI, onIdeals_apply,
+      MonoidHom.inv_apply, Units.val_inv_eq_inv_val]
+    exact Complex.inv_eq_conj hn
+  · simp [toMultiplicativeIdealWeight_apply_of_not_isPrimeTo _ hI]
+
 /-- Increasing the modulus restricts the induced character's ideal weight away from the finite
 primes of the larger modulus. -/
 theorem toUnitaryIdealWeight_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪) :
