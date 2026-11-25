@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.Basic
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
+import TauCeti.Geometry.Manifold.Diffeomorph.MaximalAtlas
 
 /-!
 # The almost complex structure of a Riemann surface with boundary
@@ -40,6 +41,8 @@ induced structure is the standard one.
   structure of a Riemann surface with boundary.
 * `TauCeti.SmoothAlmostComplexStructure.ofBorderedHolomorphic_apply`: it is multiplication by `i`
   on every tangent space.
+* `Structomorph.contMDiff_borderedHolomorphic`: a biholomorphism of Riemann surfaces with
+  boundary is smooth up to the boundary.
 * `Structomorph.mfderiv_ofBorderedHolomorphic_apply`: the differential of a biholomorphism of
   Riemann surfaces with boundary, a structomorphism for `TauCeti.borderedHolomorphicGroupoid`, is
   complex linear.
@@ -96,6 +99,15 @@ theorem inTangentCoordinates_ofBorderedHolomorphic {x₀ x : M}
       I • ContinuousLinearMap.id ℝ ℂ :=
   inTangentCoordinates_ofTangentCoordChangeISMul _ hx
 
+omit [HasGroupoid M borderedHolomorphicGroupoid] in
+/-- A biholomorphism of Riemann surfaces with boundary, a structomorphism for
+`TauCeti.borderedHolomorphicGroupoid`, is `C^n` up to the boundary for every `n ≤ ∞`. -/
+theorem _root_.Structomorph.contMDiff_borderedHolomorphic {M' : Type*} [TopologicalSpace M']
+    [ChartedSpace ClosedUpperHalfPlane M'] (e : Structomorph borderedHolomorphicGroupoid M M')
+    {n : WithTop ℕ∞} (hn : n ≤ ∞) :
+    ContMDiff closedUpperHalfPlaneModel closedUpperHalfPlaneModel n e.toHomeomorph :=
+  (e.contMDiff borderedHolomorphicGroupoid_le_contDiffGroupoid).of_le hn
+
 /-- **Biholomorphisms are complex linear.** The differential of a bordered holomorphic
 structomorphism `e : M → M'` intertwines the induced almost complex structures, at boundary points
 as well as interior points: read in the preferred charts, `e` is a member of
@@ -118,7 +130,7 @@ theorem _root_.Structomorph.mfderiv_ofBorderedHolomorphic_apply {M' : Type*} [To
             chartAt ClosedUpperHalfPlane (e.toHomeomorph x)).source ∩
         range closedUpperHalfPlaneModel :=
       ⟨by simp [mem_chart_source], mem_range_self _⟩
-    rw [hd.mfderiv]
+    rw [hd.mfderiv, e.writtenInExtChartAt_eq]
     exact ClosedUpperHalfPlane.fderivWithin_apply_smul_of_mem_borderedHolomorphicGroupoid
       (e.mem_groupoid _ _ (chart_mem_atlas _ x) (chart_mem_atlas _ _)) hz I v
   · rw [mfderiv_zero_of_not_mdifferentiableAt hd]

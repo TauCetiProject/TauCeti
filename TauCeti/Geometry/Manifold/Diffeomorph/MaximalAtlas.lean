@@ -31,6 +31,8 @@ maximal atlas is invariant under structomorphisms and diffeomorphisms.
 * `Structomorph.symm_trans_trans_mem_of_mem_maximalAtlas`: read in a chart of `M` and a chart of
   the maximal atlas of `M'`, a structomorphism is in `G`.
 * `Structomorph.trans_mem_maximalAtlas`: the pullback `e ≫ φ` of a chart of the maximal atlas.
+* `Structomorph.writtenInExtChartAt_eq`: read in the preferred extended charts, a structomorphism
+  is a member of `G` read in the model.
 * `Structomorph.contMDiff`, `Structomorph.toDiffeomorph`: a structomorphism of a groupoid of `C^n`
   maps is a `C^n` diffeomorphism.
 * `Structomorph.exists_mem_maximalAtlas_symm_eq_comp`,
@@ -51,7 +53,7 @@ variable {H : Type*} [TopologicalSpace H] {G : StructureGroupoid H}
 
 /-- A homeomorphism of the model space whose open partial homeomorphism is in `G` is a
 `G`-structomorphism of the model space, with its single chart. -/
-@[expose] def ofMemGroupoid (h : H ≃ₜ H) (hh : h.toOpenPartialHomeomorph ∈ G) :
+def ofMemGroupoid (h : H ≃ₜ H) (hh : h.toOpenPartialHomeomorph ∈ G) :
     Structomorph G H H where
   toHomeomorph := h
   mem_groupoid c c' hc hc' := by
@@ -63,7 +65,7 @@ variable {H : Type*} [TopologicalSpace H] {G : StructureGroupoid H}
 @[simp]
 theorem ofMemGroupoid_toHomeomorph (h : H ≃ₜ H) (hh : h.toOpenPartialHomeomorph ∈ G) :
     (ofMemGroupoid h hh).toHomeomorph = h :=
-  rfl
+  (rfl)
 
 /-- The homeomorphism underlying the inverse of a structomorphism is the inverse homeomorphism. -/
 @[simp]
@@ -139,12 +141,22 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCom
   {M M' : Type*} [TopologicalSpace M] [TopologicalSpace M'] [ChartedSpace H M] [ChartedSpace H M']
   {n : WithTop ℕ∞}
 
+/-- Read in the extended preferred charts at `x` and `e x`, a `G`-structomorphism `e` is the member
+`(chartAt H x)⁻¹ ≫ e ≫ chartAt H (e x)` of `G` read in the model. -/
+theorem writtenInExtChartAt_eq (e : Structomorph G M M') (x : M) :
+    writtenInExtChartAt I I x e.toHomeomorph =
+      I ∘ ((chartAt H x).symm ≫ₕ e.toHomeomorph.toOpenPartialHomeomorph ≫ₕ
+        chartAt H (e.toHomeomorph x)) ∘ I.symm := by
+  funext y
+  simp [writtenInExtChartAt, extChartAt]
+
 /-- A `G`-structomorphism is `C^n` when `G` consists of `C^n` maps: read in the preferred charts it
 is a member of `G`. -/
 theorem contMDiff (hG : G ≤ contDiffGroupoid n I) (e : Structomorph G M M') :
     ContMDiff I I n e.toHomeomorph := by
   intro x
-  rw [contMDiffAt_iff]
+  rw [contMDiffAt_iff, ← writtenInExtChartAt, e.writtenInExtChartAt_eq, extChartAt_coe,
+    Function.comp_apply]
   refine ⟨e.continuous.continuousAt, ?_⟩
   set c := chartAt H x
   set c' := chartAt H (e.toHomeomorph x)
@@ -154,14 +166,11 @@ theorem contMDiff (hG : G ≤ contDiffGroupoid n I) (e : Structomorph G M M') :
     simp [f, c, c', mem_chart_source]
   have hmem : I.symm ⁻¹' f.source ∈ 𝓝 (I (c x)) :=
     (f.open_source.preimage I.continuous_symm).mem_nhds (by rwa [mem_preimage, I.left_inv])
-  have h := hf _ ⟨by rwa [mem_preimage, I.left_inv], mem_range_self _⟩
-  -- Read in the extended preferred charts, `e` is `f` read in the model, by definition of the
-  -- extended charts.
-  exact (h.mono_of_mem_nhdsWithin (Filter.inter_mem (mem_nhdsWithin_of_mem_nhds hmem)
-    self_mem_nhdsWithin)).congr_of_eventuallyEq (Filter.Eventually.of_forall fun _ ↦ rfl) rfl
+  exact (hf _ ⟨by rwa [mem_preimage, I.left_inv], mem_range_self _⟩).mono_of_mem_nhdsWithin
+    (Filter.inter_mem (mem_nhdsWithin_of_mem_nhds hmem) self_mem_nhdsWithin)
 
 /-- A `G`-structomorphism as a `C^n` diffeomorphism, when `G` consists of `C^n` maps. -/
-@[expose] def toDiffeomorph (hG : G ≤ contDiffGroupoid n I) (e : Structomorph G M M') :
+def toDiffeomorph (hG : G ≤ contDiffGroupoid n I) (e : Structomorph G M M') :
     M ≃ₘ^n⟮I, I⟯ M' where
   toEquiv := e.toHomeomorph.toEquiv
   contMDiff_toFun := e.contMDiff hG
@@ -171,7 +180,7 @@ theorem contMDiff (hG : G ≤ contDiffGroupoid n I) (e : Structomorph G M M') :
 @[simp]
 theorem coe_toDiffeomorph (hG : G ≤ contDiffGroupoid n I) (e : Structomorph G M M') :
     ⇑(e.toDiffeomorph hG) = e.toHomeomorph :=
-  rfl
+  (rfl)
 
 end Structomorph
 

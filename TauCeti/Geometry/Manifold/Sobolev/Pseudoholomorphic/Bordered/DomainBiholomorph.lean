@@ -15,9 +15,9 @@ import TauCeti.Geometry.Manifold.Sobolev.LocalMap.SourceDiffeomorph
 
 Let `f : X' → X` be a biholomorphism of Riemann surfaces with boundary, that is a structomorphism
 for `TauCeti.borderedHolomorphicGroupoid`. It is smooth up to the boundary
-(`Structomorph.contMDiff`) and its differential is complex linear, also at boundary points
-(`Structomorph.mfderiv_ofBorderedHolomorphic_apply`). A domain-dependent almost complex structure
-`J` on `M` parametrized by `X` reparametrizes to `J ∘ f`
+(`Structomorph.contMDiff_borderedHolomorphic`) and its differential is complex linear, also at
+boundary points (`Structomorph.mfderiv_ofBorderedHolomorphic_apply`). A domain-dependent almost
+complex structure `J` on `M` parametrized by `X` reparametrizes to `J ∘ f`
 (`TauCeti.ContMDiffAlmostComplexStructureFamily.compStructomorph`), and an inhomogeneous term `ν`
 to `f^* ν`, `(x, y) ↦ ν(f x, y) ∘ df_x` (`TauCeti.InhomogeneousTerm.compStructomorph`). The weak
 pseudoholomorphic equation up to the boundary is invariant: `u` is weakly pseudoholomorphic up to
@@ -73,12 +73,6 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ClosedUpperHalfPlane X]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] {ℓ : ℕ∞}
-
-/-- A biholomorphism of Riemann surfaces with boundary is `C^n` up to the boundary. -/
-theorem _root_.Structomorph.contMDiff_borderedHolomorphic
-    (f : Structomorph borderedHolomorphicGroupoid X' X) {n : WithTop ℕ∞} (hn : n ≤ ∞) :
-    ContMDiff closedUpperHalfPlaneModel closedUpperHalfPlaneModel n f.toHomeomorph :=
-  (f.contMDiff borderedHolomorphicGroupoid_le_contDiffGroupoid).of_le hn
 
 namespace ContMDiffAlmostComplexStructureFamily
 
@@ -347,6 +341,7 @@ theorem isWeakPseudoholomorphicOnBordered_and_mapsBoundaryInto_comp_twoMul_iff
     (J := ContMDiffAlmostComplexStructureFamily.const K) (ν := 0) (p := p) (u := u) (s := s) ι
   rwa [← isWeakPseudoholomorphicOnBordered_ofEq rfl
       (ContMDiffAlmostComplexStructureFamily.const_compStructomorph K _),
-    InhomogeneousTerm.compStructomorph_zero, InhomogeneousTerm.ofEq_zero] at h
+    InhomogeneousTerm.compStructomorph_zero, InhomogeneousTerm.ofEq_zero,
+    Structomorph.ofMemGroupoid_toHomeomorph] at h
 
 end TauCeti
