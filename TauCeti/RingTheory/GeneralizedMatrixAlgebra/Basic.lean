@@ -19,10 +19,11 @@ and the requirement that the resulting trace `T(x) = ∑ᵢ tr ψᵢ(eᵢ x eᵢ
 `T(xy) = T(yx)`. An `A`-algebra with GMA data is a *generalized matrix algebra* (GMA).
 
 Generalized matrix algebras are the integral substitute for matrix algebras in the theory of
-pseudocharacters: the Cayley–Hamilton quotient of a group algebra by a residually multiplicity-free
-determinant is a GMA, although in general not a matrix algebra over `A`. The off-diagonal entries
-of a GMA live in `A`-modules `A_{ij}`, which need not be free, and the products `A_{ij} A_{ji} ⊆ A`
-measure how far the representation is from being reducible.
+pseudocharacters: over a henselian local ring `A`, the Cayley–Hamilton quotient of a group algebra
+by a residually multiplicity-free determinant is a GMA (Bellaïche–Chenevier, Theorem 1.4.4),
+although in general not a matrix algebra over `A`. The off-diagonal entries of a GMA live in
+`A`-modules `A_{ij}`, which need not be free, and the products `A_{ij} A_{ji} ⊆ A` measure how far
+the representation is from being reducible.
 
 The matrix units `E_i^{kl} = ψᵢ⁻¹(E_{kl})` of the diagonal blocks are `E.matrixUnit i k l`. When
 every block is nonempty, the primitive idempotent of block `i` is `Eᵢ = E_i^{00}` and the *entry
@@ -65,7 +66,7 @@ identification multiplication of blocks is matrix multiplication.
 ## References
 
 * J. Bellaïche, G. Chenevier, *Families of Galois representations and Selmer groups*,
-  Astérisque 324 (2009), §1.3: Definition 1.3.1, §1.3.2 and Lemma 1.3.5.
+  Astérisque 324 (2009), §1.3: Definition 1.3.1, §1.3.2 and Lemma 1.3.5; §1.4: Theorem 1.4.4.
 -/
 
 public section

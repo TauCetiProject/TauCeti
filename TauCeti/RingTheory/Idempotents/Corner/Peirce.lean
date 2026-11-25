@@ -45,7 +45,7 @@ namespace OrthogonalIdempotents
 variable {k A ι : Type*} [Semiring k] [Semiring A] [Module k A] [SMulCommClass k A A]
   [IsScalarTower k A A] {e : ι → A}
 
-/-- An element of the corner `eᵢ A eⱼ` is killed on the left by every `eₖ` with `k ≠ i`. -/
+/-- An element of the corner `eᵢ A eⱼ` is killed on the left by every `eₗ` with `l ≠ i`. -/
 theorem mul_eq_zero_of_mem_cornerSubmodule (he : OrthogonalIdempotents e) {i j l : ι}
     (hli : l ≠ i) {x : A} (hx : x ∈ TauCeti.cornerSubmodule k (e i) (e j)) : e l * x = 0 := by
   rw [← TauCeti.mul_eq_self_of_mem_cornerSubmodule (he.idem i) hx, ← mul_assoc, he.ortho hli,
