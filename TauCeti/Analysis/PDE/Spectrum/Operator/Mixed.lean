@@ -544,20 +544,6 @@ section Laplacian
 
 variable [DecidableEq ι]
 
-/-- The Gårding inequality of `-Δ`: `min 1 ω ‖v‖²_{H¹} ≤ ∫ |∇v|² + ω ‖v‖²_{L²}` for every `ω`. -/
-private theorem min_mul_norm_sq_le_energyFormH1_laplacian (omega : ℝ) (v : W1p mu Omega 2) :
-    min 1 omega * ‖v‖ ^ 2 ≤
-      energyFormH1 (fun _ ↦ 1) 0 0 v v + omega * ‖W1p.value v‖ ^ 2 := by
-  rw [energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq,
-    W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
-  nlinarith [min_le_left 1 omega, min_le_right 1 omega, sq_nonneg ‖W1p.value v‖,
-    sq_nonneg ‖W1p.gradient v‖]
-
-/-- The energy form of `-Δ` is symmetric. -/
-private theorem energyFormH1_laplacian_comm (u v : W1p mu Omega 2) :
-    energyFormH1 (fun _ ↦ 1) 0 0 u v = energyFormH1 (fun _ ↦ 1) 0 0 v u := by
-  rw [energyFormH1_one_zero_zero_eq_inner, energyFormH1_one_zero_zero_eq_inner, real_inner_comm]
-
 /-- The value of a weak solution `u ∈ H¹_Γ(Ω)` of `-Δ u = g`, `∫_Ω ∇u · ∇v = ∫_Ω g v` for every
 `v ∈ H¹_Γ(Ω)`, lies in the domain of the mixed Laplacian `-Δ_Γ`. -/
 theorem value_mem_domain_mixedOperator_laplacian (hΓ : Disjoint Γ Omega)
@@ -575,8 +561,8 @@ theorem isSelfAdjoint_mixedOperator_laplacian (hΓ : Disjoint Γ Omega) :
     IsSelfAdjoint (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
       (1 : Matrix ι ι ℝ)) Γ) :=
   isSelfAdjoint_mixedOperator _ hΓ (lt_min one_pos one_pos)
-    (fun v ↦ min_mul_norm_sq_le_energyFormH1_laplacian 1 (v : W1p mu Omega 2))
-    fun u v ↦ energyFormH1_laplacian_comm (u : W1p mu Omega 2) v
+    (fun v ↦ min_mul_norm_sq_le_energyFormH1_one_zero_zero_add 1 (v : W1p mu Omega 2))
+    fun u v ↦ energyFormH1_one_zero_zero_comm (u : W1p mu Omega 2) v
 
 /-- **The mixed Laplacian `-Δ_Γ` is nonnegative**: `⟪-Δ_Γ f, f⟫_{L²(Ω)} = ∫_Ω |∇u|² ≥ 0` on its
 domain. -/
@@ -597,7 +583,7 @@ theorem mem_resolventSet_mixedOperator_laplacian_of_neg (hΓ : Disjoint Γ Omega
   have h := neg_mem_resolventSet_mixedOperator
     (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega) (1 : Matrix ι ι ℝ)) hΓ
     (lt_min one_pos (neg_pos.2 hkappa))
-    fun v ↦ min_mul_norm_sq_le_energyFormH1_laplacian (-kappa) (v : W1p mu Omega 2)
+    fun v ↦ min_mul_norm_sq_le_energyFormH1_one_zero_zero_add (-kappa) (v : W1p mu Omega 2)
   rwa [neg_neg] at h
 
 /-- **The mixed Laplacian `-Δ_Γ` has compact resolvent** on a domain with the Rellich property
@@ -607,7 +593,7 @@ theorem hasCompactResolvent_mixedOperator_laplacian (hΓ : Disjoint Γ Omega)
     (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
       (1 : Matrix ι ι ℝ)) Γ).HasCompactResolvent :=
   hasCompactResolvent_mixedOperator _ hΓ (lt_min one_pos one_pos)
-    (fun v ↦ min_mul_norm_sq_le_energyFormH1_laplacian 1 (v : W1p mu Omega 2)) hK
+    (fun v ↦ min_mul_norm_sq_le_energyFormH1_one_zero_zero_add 1 (v : W1p mu Omega 2)) hK
 
 /-- **The spectrum of the mixed Laplacian `-Δ_Γ`.** On a domain with the Rellich property, `κ`
 lies in the spectrum of `-Δ_Γ` exactly when `∫_Ω ∇u · ∇v = κ ∫_Ω u v` for some nonzero
@@ -624,7 +610,7 @@ theorem mem_spectrum_mixedOperator_laplacian_iff (hΓ : Disjoint Γ Omega)
   rw [mem_spectrum_mixedOperator_iff
     (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega) (1 : Matrix ι ι ℝ)) hΓ
     (lt_min one_pos one_pos)
-    (fun v ↦ min_mul_norm_sq_le_energyFormH1_laplacian 1 (v : W1p mu Omega 2)) hK]
+    (fun v ↦ min_mul_norm_sq_le_energyFormH1_one_zero_zero_add 1 (v : W1p mu Omega 2)) hK]
   simp only [energyFormH1_one_zero_zero_eq_inner]
 
 /-- The spectrum of the mixed Laplacian `-Δ_Γ`, as a set: on a domain with the Rellich property, the

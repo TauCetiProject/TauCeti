@@ -441,14 +441,6 @@ theorem nonempty_intervalDomain_iff :
     LinearIsometryEquiv.symm_apply_apply]
   constructor <;> linarith
 
-/-- The energy form of `-Δ` is symmetric. -/
-private theorem energyFormH1_laplacian_comm (u v : W1p0 volume (intervalDomain a b) 2) :
-    energyFormH1 (fun _ => 1) 0 0 (u : W1p volume (intervalDomain a b) 2)
-        (v : W1p volume (intervalDomain a b) 2) =
-      energyFormH1 (fun _ => 1) 0 0 (v : W1p volume (intervalDomain a b) 2)
-        (u : W1p volume (intervalDomain a b) 2) :=
-  energyFormH1_comm_of_isSymm_ae (ae_of_all _ fun _ => Matrix.isSymm_one) _ _
-
 /-- **The first Dirichlet eigenvalue of `-Δ` on an interval** `(a, b)` is `(π / (b - a))²`, for
 any choice of the boundedness and coercivity data defining it. -/
 theorem firstDirichletEigenvalue_laplacian_intervalDomain (hab : a < b)
@@ -463,7 +455,7 @@ theorem firstDirichletEigenvalue_laplacian_intervalDomain (hab : a < b)
       (isLeast_isDirichletEigenvalue_laplacian_intervalDomain hab).1)
     ((isLeast_isDirichletEigenvalue_laplacian_intervalDomain hab).2
       (isDirichletEigenvalue_first hcoeff hcoercive isBounded_intervalDomain
-        energyFormH1_laplacian_comm (nonempty_intervalDomain_iff.2 hab)))
+        (fun _ _ => energyFormH1_one_zero_zero_comm _ _) (nonempty_intervalDomain_iff.2 hab)))
 
 /-- **The sharp Poincaré inequality on an interval.** For every `u ∈ H¹₀(a, b)`,
 
@@ -480,7 +472,8 @@ theorem isGreatest_mul_norm_value_sq_le_energyFormH1_intervalDomain (hab : a < b
   obtain ⟨hcoeff, hcoercive⟩ := exists_isCoercive_laplacian_of_isBounded (n := 0)
     isBounded_intervalDomain
   rw [← firstDirichletEigenvalue_laplacian_intervalDomain hab hcoeff hcoercive]
-  exact isGreatest_firstDirichletEigenvalue hcoeff hcoercive energyFormH1_laplacian_comm
+  exact isGreatest_firstDirichletEigenvalue hcoeff hcoercive
+    (fun _ _ => energyFormH1_one_zero_zero_comm _ _)
     (nonempty_intervalDomain_iff.2 hab)
 
 end PDE
