@@ -48,11 +48,13 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
 
 ## Main declarations
 
+* `contDiffAt_norm_rpow_of_ne`: an arbitrary real power is smooth away from zero.
 * `hasFDerivAt_norm_rpow_of_ne`: the derivative of an arbitrary real power away from zero.
 * `norm_fderiv_norm_rpow_of_ne`: that derivative has norm `|p| ‖x‖ ^ (p - 1)`.
 * `isBigO_fderiv_norm_rpow_cobounded`: that derivative is `O(‖x‖ ^ (p - 1))` at infinity.
 * `gradient_norm_rpow_of_ne`: the corresponding gradient `p ‖x‖ ^ (p - 2) x`.
 * `tendsto_norm_sub_rpow_nhdsNE_atTop`: for `p < 0`, `‖x - c‖ ^ p` tends to infinity at `c`.
+* `isLittleO_one_norm_sub_rpow_nhdsNE`: for `p < 0`, constants are `o(‖x - c‖ ^ p)` at `c`.
 * `hasFDerivAt_norm_rpow_smul_self`: for `r ≥ 0` the map `y ↦ ‖y‖ ^ r • y` is differentiable
   everywhere, including at the origin.
 * `hasFDerivAt_norm_of_ne`: the derivative of the norm itself away from zero.
@@ -123,14 +125,18 @@ private theorem norm_iteratedFDeriv_eq_of_norm_eq
   rw [hcomp, Submodule.reflection_sub hxy] at h
   exact h
 
+/-- Every real power of the norm is smooth away from the origin. -/
+theorem contDiffAt_norm_rpow_of_ne {n : WithTop ℕ∞} (p : ℝ) {x : E} (hx : x ≠ 0) :
+    ContDiffAt ℝ n (fun y : E ↦ ‖y‖ ^ p) x :=
+  (contDiffAt_norm ℝ hx).rpow_const_of_ne (norm_ne_zero_iff.2 hx)
+
 /-- Every real power of the norm whose exponent exceeds `k` is `Cᵏ`, including at zero,
 on an arbitrary real inner-product space. -/
 theorem contDiff_norm_rpow_of_lt {k : ℕ} {p : ℝ}
     (hp : (k : ℝ) < p) : ContDiff ℝ k (fun x : E ↦ ‖x‖ ^ p) := by
   have hf : ContDiffOn ℝ k (fun x : E ↦ ‖x‖ ^ p) {0}ᶜ := by
     intro x hx
-    exact ((contDiffAt_norm ℝ hx).rpow_const_of_ne
-      (norm_ne_zero_iff.mpr hx)).contDiffWithinAt
+    exact (contDiffAt_norm_rpow_of_ne p hx).contDiffWithinAt
   apply contDiff_of_iteratedFDeriv_norm_rpow_bound hf
     (by simp [Real.zero_rpow (lt_of_le_of_lt (Nat.cast_nonneg k) hp).ne']) hp
   intro j _
@@ -173,6 +179,13 @@ omit [InnerProductSpace ℝ E] in
 theorem tendsto_norm_sub_rpow_nhdsNE_atTop {p : ℝ} (hp : p < 0) (c : E) :
     Tendsto (fun y : E ↦ ‖y - c‖ ^ p) (𝓝[≠] c) atTop :=
   (tendsto_rpow_neg_nhdsGT_zero hp).comp (tendsto_norm_sub_self_nhdsNE c)
+
+omit [InnerProductSpace ℝ E] in
+/-- For a negative exponent `p`, constants are `o(‖x - c‖ ^ p)` as `x` tends to `c`. -/
+theorem isLittleO_one_norm_sub_rpow_nhdsNE {p : ℝ} (hp : p < 0) (c : E) :
+    (fun _ ↦ (1 : ℝ)) =o[𝓝[≠] c] fun y : E ↦ ‖y - c‖ ^ p :=
+  (Asymptotics.isLittleO_one_left_iff ℝ).2
+    (tendsto_norm_atTop_atTop.comp (tendsto_norm_sub_rpow_nhdsNE_atTop hp c))
 
 /-- Away from the origin, the gradient of `x ↦ ‖x‖ ^ p` is `p ‖x‖ ^ (p - 2) x`. -/
 theorem gradient_norm_rpow_of_ne [CompleteSpace E] (p : ℝ) {x : E} (hx : x ≠ 0) :

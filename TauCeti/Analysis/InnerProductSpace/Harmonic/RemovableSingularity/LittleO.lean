@@ -67,13 +67,6 @@ private theorem two_sub_finrank_neg (hn : 3 ≤ finrank ℝ E) : (2 - finrank �
   have : (3 : ℝ) ≤ finrank ℝ E := by exact_mod_cast hn
   linarith
 
-omit [FiniteDimensional ℝ E] in
-/-- In dimension at least three, constants are `o(‖x - c‖ ^ (2 - n))` at `c`. -/
-private theorem isLittleO_one_norm_sub_rpow (hn : 3 ≤ finrank ℝ E) (c : E) :
-    (fun _ ↦ (1 : ℝ)) =o[𝓝[≠] c] fun y : E ↦ ‖y - c‖ ^ (2 - finrank ℝ E : ℝ) :=
-  (isLittleO_one_left_iff ℝ).2 (tendsto_norm_atTop_atTop.comp
-    (tendsto_norm_sub_rpow_nhdsNE_atTop (two_sub_finrank_neg hn) c))
-
 /-- The comparison step of the removable singularity theorem. Let `v` be harmonic on `ball c ρ`,
 continuous on `closedBall c ρ`, with the boundary values of `u` on `sphere c ρ`, and let
 `u - v = o(‖x - c‖ ^ (2 - n))` at `c`. Then for every `ε > 0` the difference `|u - v|` is bounded
@@ -153,7 +146,7 @@ private theorem exists_harmonicOnNhd_ball_eqOn_of_isLittleO (hn : 3 ≤ finrank 
     ((hvc.continuousAt (closedBall_mem_nhds c hρ)).tendsto.mono_left
       nhdsWithin_le_nhds).isBigO_one ℝ
   have huv : (fun y ↦ u y - v y) =o[𝓝[≠] c] fun y ↦ ‖y - c‖ ^ p :=
-    ho.sub (hvO.trans_isLittleO (isLittleO_one_norm_sub_rpow hn c))
+    ho.sub (hvO.trans_isLittleO (isLittleO_one_norm_sub_rpow_nhdsNE (two_sub_finrank_neg hn) c))
   -- `|u x - v x| ≤ ε Φ x` for every `ε > 0`, with `Φ x = ‖x - c‖ ^ p - ρ ^ p ≥ 0`.
   set Φx := ‖x - c‖ ^ p - ρ ^ p
   have hΦx : 0 ≤ Φx :=

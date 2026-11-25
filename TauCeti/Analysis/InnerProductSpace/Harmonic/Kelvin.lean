@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Geometry.Euclidean.Inversion.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Geometry.Euclidean.Inversion.Calculus
-import TauCeti.Analysis.InnerProductSpace.Harmonic.RemovableSingularity
+import TauCeti.Analysis.InnerProductSpace.Harmonic.RemovableSingularity.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Comp
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Geometry.Euclidean.Inversion
@@ -47,10 +47,11 @@ In dimension `n ≥ 3`, a harmonic function `f` on an exterior region `‖x‖ >
 `K[f]`, with the value `a` at the origin, is harmonic on the whole ball `‖x‖ < R⁻¹`
 (`TauCeti.harmonicOnNhd_update_kelvinTransform`). Away from the origin `K[f]` is positive wherever
 `f` is positive at the inverted point (`TauCeti.kelvinTransform_pos`), so for `f > 0` and `a > 0`
-the extension is positive on the ball. This is the analytic step in closing off a harmonically
-flat end of a Riemannian manifold, where the metric is `u ^ (4 / (n - 2)) δ` with `u` harmonic and
-`u = a ‖x‖ ^ (2 - n) + o(‖x‖ ^ (2 - n))` at infinity: inversion turns the end into a punctured ball,
-and the conformal factor becomes the Kelvin transform of `u`, which extends across the puncture.
+the extension is positive on the ball (`TauCeti.update_kelvinTransform_pos`). This is the
+analytic step in closing off a harmonically flat end of a Riemannian manifold, where the metric is
+`u ^ (4 / (n - 2)) δ` with `u` harmonic and `u = a ‖x‖ ^ (2 - n) + o(‖x‖ ^ (2 - n))` at infinity:
+inversion turns the end into a punctured ball, and the conformal factor becomes the Kelvin
+transform of `u`, which extends across the puncture.
 
 ## Main declarations
 
@@ -64,6 +65,7 @@ and the conformal factor becomes the Kelvin transform of `u`, which extends acro
   `‖x‖ ^ (n - 2) f(x)` at infinity.
 * `TauCeti.harmonicOnNhd_update_kelvinTransform`: the Kelvin transform of a harmonic function on
   an exterior region with this limit extends harmonically across the origin.
+* `TauCeti.update_kelvinTransform_pos`: for `f > 0` and `a > 0` this extension is positive.
 
 ## References
 
@@ -107,9 +109,8 @@ theorem kelvinTransform_smul (c : ℝ) (f : E → F) :
 theorem kelvinTransform_kelvinTransform (f : E → F) {x : E} (hx : x ≠ 0) :
     kelvinTransform (kelvinTransform f) x = f x := by
   have hx' : 0 < ‖x‖ := norm_pos_iff.2 hx
-  rw [kelvinTransform_apply, kelvinTransform_apply, inversion_inversion _ one_ne_zero,
-    norm_inversion_zero_one, smul_smul, Real.inv_rpow hx'.le,
-    mul_inv_cancel₀ (Real.rpow_pos_of_pos hx' _).ne', one_smul]
+  simp [kelvinTransform_apply, inversion_inversion _ one_ne_zero, smul_smul, Real.inv_rpow hx'.le,
+    (Real.rpow_pos_of_pos hx' _).ne']
 
 /-- A positive function has a positive Kelvin transform away from the origin. -/
 theorem kelvinTransform_pos {f : E → ℝ} {x : E} (hx : x ≠ 0) (hf : 0 < f (inversion 0 1 x)) :
@@ -132,23 +133,18 @@ variable [FiniteDimensional ℝ E]
 `Δ (x ↦ x / ‖x‖²) = 2 (2 - n) ‖x‖⁻⁴ x`, where `n` is the dimension. -/
 theorem laplacian_inversion_zero_one {x : E} (hx : x ≠ 0) :
     Δ (inversion (0 : E) 1) x = (2 * (2 - finrank ℝ E) * ‖x‖ ^ (-4 : ℝ)) • x := by
-  have ha : ContDiffAt ℝ 2 (fun y : E ↦ ‖y‖ ^ (-2 : ℝ)) x :=
-    ContDiffAt.rpow_const_of_ne (contDiffAt_norm ℝ hx) (norm_ne_zero_iff.2 hx)
-  have hD : fderiv ℝ (fun y : E ↦ y) = fun _ ↦ ContinuousLinearMap.id ℝ E :=
-    funext fun _ ↦ fderiv_fun_id
-  have hid : Δ (fun y : E ↦ y) x = 0 := by
-    rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis _ (stdOrthonormalBasis ℝ E)) x]
-    refine Finset.sum_eq_zero fun i _ ↦ ?_
-    simp [iteratedFDeriv_two_apply, hD]
+  have hid : Δ (fun y : E ↦ y) x = 0 :=
+    congrFun (laplacian_continuousLinearMap (ContinuousLinearMap.id ℝ E)) x
   -- The inversion is `y ↦ ‖y‖ ^ (-2) y`, including at the origin, where both sides vanish.
   have hinv : inversion (0 : E) 1 = fun y ↦ ‖y‖ ^ (-2 : ℝ) • y := by
     funext y
     simp [inversion_def, Real.rpow_neg (norm_nonneg y)]
-  rw [hinv, ha.laplacian_fun_smul (g := fun y : E ↦ y) contDiffAt_id, hid,
-    laplacian_norm_rpow_of_ne _ hx, gradient_norm_rpow_of_ne _ hx, fderiv_fun_id, smul_zero,
-    zero_add, ContinuousLinearMap.id_apply, smul_smul, ← add_smul,
-    show (-2 : ℝ) - 2 = -4 by norm_num]
-  ring_nf
+  rw [hinv, (contDiffAt_norm_rpow_of_ne _ hx).laplacian_fun_smul (g := fun y : E ↦ y)
+    contDiffAt_id, hid, laplacian_norm_rpow_of_ne _ hx, gradient_norm_rpow_of_ne _ hx,
+    fderiv_fun_id, ContinuousLinearMap.id_apply]
+  match_scalars
+  norm_num
+  ring
 
 /-- **The Laplacian of a Kelvin transform.** If `f` is twice differentiable at `x* = x / ‖x‖²`,
 `x ≠ 0`, then `Δ K[f](x) = ‖x‖ ^ (-n - 2) Δf(x*)`, where `n` is the dimension. -/
@@ -157,8 +153,7 @@ theorem laplacian_kelvinTransform {f : E → F} {x : E} (hx : x ≠ 0)
     Δ (kelvinTransform f) x = ‖x‖ ^ (-(finrank ℝ E : ℝ) - 2) • Δ f (inversion 0 1 x) := by
   set n : ℝ := (finrank ℝ E : ℝ)
   have hr : 0 < ‖x‖ := norm_pos_iff.2 hx
-  have ha : ContDiffAt ℝ 2 (fun y : E ↦ ‖y‖ ^ (2 - n)) x :=
-    ContDiffAt.rpow_const_of_ne (contDiffAt_norm ℝ hx) (norm_ne_zero_iff.2 hx)
+  have ha : ContDiffAt ℝ 2 (fun y : E ↦ ‖y‖ ^ (2 - n)) x := contDiffAt_norm_rpow_of_ne _ hx
   have hι : ContDiffAt ℝ 2 (inversion (0 : E) 1) x := contDiffAt_inversion hx
   -- The derivative of the inversion is `‖x‖⁻²` times the reflection orthogonal to `x`.
   have hι' : fderiv ℝ (inversion (0 : E) 1) x =
@@ -193,8 +188,7 @@ theorem laplacian_kelvinTransform {f : E → F} {x : E} (hx : x ≠ 0)
 theorem _root_.InnerProductSpace.HarmonicAt.kelvinTransform {f : E → F} {x : E}
     (hf : HarmonicAt f (inversion 0 1 x)) (hx : x ≠ 0) : HarmonicAt (kelvinTransform f) x := by
   have hι : ContDiffAt ℝ 2 (inversion (0 : E) 1) x := contDiffAt_inversion hx
-  refine ⟨(ContDiffAt.rpow_const_of_ne (contDiffAt_norm ℝ hx) (norm_ne_zero_iff.2 hx)).smul
-    (hf.1.comp x hι), ?_⟩
+  refine ⟨(contDiffAt_norm_rpow_of_ne _ hx).smul (hf.1.comp x hι), ?_⟩
   filter_upwards [eventually_ne_nhds hx, hι.continuousAt.tendsto.eventually hf.eventually]
     with y hy hfy
   rw [laplacian_kelvinTransform hy hfy.1, hfy.2.self_of_nhds, Pi.zero_apply, smul_zero,
@@ -233,5 +227,20 @@ theorem harmonicOnNhd_update_kelvinTransform [DecidableEq E] (hn : 3 ≤ finrank
   refine (hf _ ?_).kelvinTransform hy0
   rw [mem_ofPred_eq, norm_inversion_zero_one]
   exact (lt_inv_comm₀ (norm_pos_iff.2 hy0) hR).1 (mem_ball_zero_iff.1 hy.1)
+
+omit [FiniteDimensional ℝ E] in
+/-- **Positivity of the closed-off end.** If `f` is positive on the exterior region `‖x‖ > R` and
+`a > 0`, then the Kelvin transform of `f`, with the value `a` at the origin, is positive on the
+ball `‖x‖ < R⁻¹`. -/
+theorem update_kelvinTransform_pos [DecidableEq E] {f : E → ℝ} {R a : ℝ}
+    (hf : ∀ x, R < ‖x‖ → 0 < f x) (ha : 0 < a) {y : E} (hy : y ∈ ball (0 : E) R⁻¹) :
+    0 < Function.update (kelvinTransform f) 0 a y := by
+  rcases eq_or_ne y 0 with rfl | hy0
+  · simpa
+  have hR : 0 < R := inv_pos.1 (pos_of_mem_ball hy)
+  rw [Function.update_of_ne hy0]
+  refine kelvinTransform_pos hy0 (hf _ ?_)
+  rw [norm_inversion_zero_one]
+  exact (lt_inv_comm₀ (norm_pos_iff.2 hy0) hR).1 (mem_ball_zero_iff.1 hy)
 
 end TauCeti
