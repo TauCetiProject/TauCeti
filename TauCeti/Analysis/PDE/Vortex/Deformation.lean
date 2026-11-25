@@ -976,6 +976,15 @@ theorem gaugeDirection_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) : gaugeDire
 theorem vacuumField_apply (z : ℂ) : vacuumField z = !₂[0, 0, 1 / 2, 0] := by
   rfl
 
+/-- The vacuum field is constant. -/
+theorem vacuumField_eq_const : vacuumField = fun _ ↦ vacuumField 0 :=
+  funext fun z ↦ by rw [vacuumField_apply, vacuumField_apply]
+
+/-- The vacuum field is smooth. -/
+theorem contDiff_vacuumField {n : WithTop ℕ∞} : ContDiff ℝ n vacuumField := by
+  rw [vacuumField_eq_const]
+  exact contDiff_const
+
 /-- The zero phase acts as the identity. -/
 @[simp]
 theorem phaseGauge_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) : phaseGauge x 0 = x := by

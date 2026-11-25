@@ -11,6 +11,8 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 # Basic facts about the real logarithm
 
 * `Real.log_div_pos`: for `0 < r < c` the logarithm `log (c / r)` is positive.
+* `Real.coe_toNNReal_log_one_add`: for `0 ≤ r` the logarithm `log (1 + r)` is nonnegative, so
+  `((log (1 + r)).toNNReal : ℝ) = log (1 + r)`.
 * `Real.abs_log_sub_log_le_log`: two positive reals within a factor `c` of each other have
   logarithms within `log c`.
 * `Real.mul_log_div`: `x log (x / y) = x log x - x log y` for `y ≠ 0`, including `x = 0`.
@@ -41,6 +43,12 @@ theorem mul_log_div (x : ℝ) {y : ℝ} (hy : y ≠ 0) : x * log (x / y) = x * l
   rcases eq_or_ne x 0 with rfl | hx
   · simp
   · rw [log_div hx hy, mul_sub]
+
+/-- The logarithmic time `log (1 + r)` of a nonnegative `r` is nonnegative, so it survives the
+round trip through `ℝ≥0`. -/
+theorem coe_toNNReal_log_one_add {r : ℝ} (hr : 0 ≤ r) :
+    ((log (1 + r)).toNNReal : ℝ) = log (1 + r) :=
+  coe_toNNReal _ (log_nonneg (by linarith))
 
 end Real
 

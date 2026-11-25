@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Density
 public import TauCeti.Analysis.Sobolev.BesselPotential.AnalyticFamily
 public import TauCeti.Analysis.Sobolev.BesselPotential.ExponentInterpolation
+import TauCeti.Algebra.Order.Floor.Abs
 import TauCeti.Analysis.Complex.VerticalStrip.Basic
 import TauCeti.Analysis.Complex.VerticalStrip.Gaussian
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
@@ -65,6 +66,9 @@ equivalent, not equal.
 * `TemperedDistribution.MemSobolev.map_of_memSobolev_of_memSobolev`: a continuous linear map of
   tempered distributions that maps `H^{s₀,p₀}` into `H^{t₀,p₀}` and `H^{s₁,p₁}` into `H^{t₁,p₁}`
   maps `H^{s_θ,p_θ}` into `H^{t_θ,p_θ}`.
+* `TemperedDistribution.MemSobolev.map_of_forall_intCast`: a continuous linear map of tempered
+  distributions that preserves `H^{k,p}` for every integer `k` with `|k| ≤ ⌈|s|⌉` preserves
+  `H^{s,p}`.
 
 ## References
 
@@ -682,5 +686,32 @@ theorem MemSobolev.map_of_memSobolev_of_memSobolev (hp₀ : 1 < p₀) (hp₀_top
     C.sumLift_sndToSum (D.fstToSum.comp T₀) (D.sndToSum.comp T₁) hT] at h
   rw [← hx] at hu'
   simpa [← hu', T₀, T₁, C, D] using h
+
+/-- **Real orders from integer orders.** Let `1 < p < ∞`. A continuous linear map `A` of tempered
+distributions that preserves `H^{k,p}` for every integer `k` with `|k| ≤ ⌈|s|⌉` also preserves
+`H^{s,p}`. For non-integer `s`, interpolate between the integer orders `⌊s⌋` and `⌊s⌋ + 1`. -/
+theorem MemSobolev.map_of_forall_intCast (hp : 1 < p) (hp_top : p ≠ ∞) {s : ℝ}
+    (A : 𝓢'(E, F) →L[ℂ] 𝓢'(E, G))
+    (hA : ∀ k : ℤ, k.natAbs ≤ ⌈|s|⌉₊ → ∀ u, MemSobolev k p u → MemSobolev k p (A u))
+    {u : 𝓢'(E, F)} (hu : MemSobolev s p u) : MemSobolev s p (A u) := by
+  have h₀ := Int.natAbs_floor_le_natCeil_abs s
+  rcases eq_or_ne (Int.fract s) 0 with hs | hs
+  · -- An integer order `s = ⌊s⌋`.
+    have hk : (⌊s⌋ : ℝ) = s := (sub_eq_zero.1 ((Int.self_sub_floor s).trans hs)).symm
+    rw [← hk] at hu ⊢
+    exact hA _ h₀ _ hu
+  have hθ : s = (1 - Int.fract s) * ((⌊s⌋ : ℤ) : ℝ) + Int.fract s * ((⌊s⌋ + 1 : ℤ) : ℝ) := by
+    rw [← Int.self_sub_floor]
+    push_cast
+    ring
+  have hθ' : Int.fract s ∈ Ioo (0 : ℝ) 1 :=
+    ⟨(Int.fract_nonneg s).lt_of_ne' hs, Int.fract_lt_one s⟩
+  have hp' :
+      p⁻¹ = ENNReal.ofReal (1 - Int.fract s) * p⁻¹ + ENNReal.ofReal (Int.fract s) * p⁻¹ := by
+    rw [← add_mul, ← ENNReal.ofReal_add (by linarith [hθ'.2]) hθ'.1.le, sub_add_cancel,
+      ENNReal.ofReal_one, one_mul]
+  rw [hθ] at hu ⊢
+  exact map_of_memSobolev_of_memSobolev hp hp_top hp hp_top hθ' hp' A (hA _ h₀)
+    (hA _ (Int.natAbs_floor_add_one_le_natCeil_abs hs)) hu
 
 end TemperedDistribution
