@@ -10,7 +10,7 @@ public import TauCeti.RepresentationTheory.Continuous.LieSmoothVector.Enveloping
 public import TauCeti.RepresentationTheory.Continuous.LieSmoothVector.Topology
 
 /-!
-# The group acts continuously on the smooth vectors
+# Each group element acts continuously on the smooth vectors
 
 Let `π` be a continuous representation of a real Lie group `G` on a normed space `V`, and let `X`
 be a finite family of left-invariant derivations. By adjoint covariance
@@ -31,7 +31,7 @@ continuous representation of `G` in the sense of `ContRepresentation` (each oper
 
 ## Main results
 
-* `ContRepresentation.wordAction_lieSmoothVectorsAction`:
+* `ContRepresentation.wordAction_mul_lieSmoothVectorsAction`:
   `dπ(X_w) π(g) = π(g) dπ((Ad(g⁻¹) X)_w)` on smooth vectors.
 * `ContRepresentation.wordSeminorm_lieSmoothVectorsAction_le`:
   `P^X_k(π(g) v) ≤ C P^{Ad(g⁻¹) X}_k(v)` when `‖π(g) u‖ ≤ C ‖u‖` for all `u`.
@@ -65,7 +65,7 @@ attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 /-- **Words move past the group action.** On smooth vectors,
 `dπ(X_w) π(g) = π(g) dπ((Ad(g⁻¹) X)_w)`. -/
-theorem wordAction_lieSmoothVectorsAction {R : Type*} [Ring R] [Module R V]
+theorem wordAction_mul_lieSmoothVectorsAction {R : Type*} [Ring R] [Module R V]
     [SMulCommClass ℝ R V] [ContinuousConstSMul R V] {π : ContRepresentation R G V} (g : G)
     (X : ι → LeftInvariantDerivation I G) (w : List ι) :
     wordAction I π X w * lieSmoothVectorsAction I π g =
@@ -89,7 +89,7 @@ theorem wordSeminorm_lieSmoothVectorsAction_le (X : ι → LeftInvariantDerivati
       C * wordSeminorm I π (fun i ↦ Ad (I := I) g⁻¹ (X i)) k v := by
   rw [wordSeminorm_apply, wordSeminorm_apply, Finset.mul_sum]
   refine Finset.sum_le_sum fun w _ ↦ ?_
-  rw [← mul_apply_eq_comp, wordAction_lieSmoothVectorsAction, mul_apply_eq_comp,
+  rw [← mul_apply_eq_comp, wordAction_mul_lieSmoothVectorsAction, mul_apply_eq_comp,
     coe_lieSmoothVectorsAction_apply]
   exact hC _
 
@@ -97,7 +97,7 @@ namespace LieSmoothSpace
 
 variable [NormedAlgebra ℝ 𝕜] [IsScalarTower ℝ 𝕜 V]
 
-/-- **The group acts continuously on the smooth vectors.** For a family `X` spanning the Lie
+/-- **Each `π(g)` is continuous on the smooth vectors.** For a family `X` spanning the Lie
 algebra, each `π(g)` is continuous for the topology of the word seminorms along `X`: if
 `Ad(g⁻¹) X_j = ∑ i, c j i • X i` and `‖π(g) u‖ ≤ C ‖u‖`, then
 `P^X_k(π(g) v) ≤ C (1 + ∑ j, ∑ i, |c j i|)^k P^X_k(v)`. -/
@@ -135,9 +135,7 @@ def contRepresentation (X : ι → LeftInvariantDerivation I G)
 theorem toSmooth_contRepresentation_apply (X : ι → LeftInvariantDerivation I G)
     (hX : Submodule.span ℝ (Set.range X) = ⊤) (g : G) (v : LieSmoothSpace I π X) :
     (contRepresentation I π X hX g v).toSmooth = lieSmoothVectorsAction I π g v.toSmooth := by
-  change ((linearEquiv I π X).symm
-    (lieSmoothVectorsAction I π g (linearEquiv I π X v))).toSmooth = _
-  rw [linearEquiv_symm_apply, linearEquiv_apply]
+  simp [contRepresentation, ← toMonoidHom_apply, linearEquiv_symm_apply, linearEquiv_apply]
 
 end LieSmoothSpace
 
