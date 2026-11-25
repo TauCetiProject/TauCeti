@@ -120,12 +120,7 @@ private lemma norm_iterate_sub_le {f : E → E} {U : Set E} {p : E} {k : ℕ} (h
     (hf : (fun y => f (p + y) - (p + y) - q fun _ => y) =O[𝓝 0] fun y => ‖y‖ ^ (k + 1))
     {r R : ℝ} (hrU : ball p r ⊆ U) (hR : U ⊆ closedBall p R) (j : ℕ) {z : E}
     (hz : z ∈ ball p r) : ‖f^[j] z - z‖ ≤ (R + r) * (‖z - p‖ / r) ^ k := by
-  have hjd : DifferentiableOn ℂ f^[j] U := by
-    induction j with
-    | zero => exact differentiableOn_id
-    | succ j ih =>
-      rw [Function.iterate_succ']
-      exact hfd.comp ih (hmaps.iterate j)
+  have hjd : DifferentiableOn ℂ f^[j] U := hfd.iterate hmaps j
   have hmaps' : MapsTo (fun z => f^[j] z - z) (ball p r) (closedBall (f^[j] p - p) (R + r)) := by
     intro z hz
     rw [Function.iterate_fixed hfp, sub_self, mem_closedBall, dist_zero_right]
@@ -233,8 +228,7 @@ theorem AnalyticOnNhd.eqOn_id_of_fderiv_eq_id {f : E → E} {U : Set E} {p : E}
     exact apply_eq_zero_of_isBigO (by omega) (q (k + 2)) hf.differentiableOn hU hUb hmaps hfp hO
 
 /-- A holomorphic map near `0` fixing `0` and commuting with the rotations `z ↦ a • z`, `‖a‖ = 1`,
-agrees near `0` with its derivative at `0`: each homogeneous term `P` of degree `n` satisfies
-`a ^ n • P y = a • P y`, which forces `P = 0` for `n ≠ 1`. -/
+agrees near `0` with its derivative at `0`. -/
 theorem AnalyticAt.eventuallyEq_fderiv_of_map_smul {f : E → F} (hf : AnalyticAt ℂ f 0)
     (hf0 : f 0 = 0)
     (h : ∀ a : ℂ, ‖a‖ = 1 → ∀ᶠ z in 𝓝 0, f (a • z) = a • f z) :
@@ -244,15 +238,16 @@ theorem AnalyticAt.eventuallyEq_fderiv_of_map_smul {f : E → F} (hf : AnalyticA
       a ^ n • (q n fun _ => y) = a • q n fun _ => y := by
     set u := a • ContinuousLinearMap.id ℂ E
     have hq' : HasFPowerSeriesAt f q (u 0) := by simpa [u] using hq
-    -- `z ↦ f (a • z) - a • f z` vanishes near `0`, and its series has terms `(a ^ n - a) • P`.
+    -- `z ↦ f (a • z) - a • f z` vanishes near `0`, and its series has terms `(a ^ n - a) • P`:
+    -- each homogeneous term `P` of degree `n` satisfies `a ^ n • P y = a • P y`.
     have h0 := ((hq'.compContinuousLinearMap.sub (hq.const_smul (c := a))).congr
       (g := 0) (by filter_upwards [h a ha] with z hz; simp [u, hz])).apply_eq_zero n y
     have hsmul := (q n).map_smul_univ (fun _ => a) fun _ => y
     simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin] at hsmul
-    have hcomp : (a • id) ∘ (fun _ : Fin n => y) = fun _ => a • y := by
-      ext
-      simp
-    simpa [u, hcomp, hsmul, sub_eq_zero] using h0
+    simp only [FormalMultilinearSeries.sub_apply, FormalMultilinearSeries.smul_apply,
+      FormalMultilinearSeries.compContinuousLinearMap_apply, sub_apply, smul_apply,
+      Function.comp_def, u, ContinuousLinearMap.id_apply, hsmul, sub_eq_zero] at h0
+    exact h0
   have hzero (n : ℕ) (hn : n ≠ 1) (y : E) : (q n fun _ => y) = 0 := by
     match n, hn with
     | 0, _ => simpa [hf0] using hq.coeff_zero fun _ => y

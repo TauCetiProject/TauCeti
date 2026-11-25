@@ -605,9 +605,10 @@ variable {𝕜 E F : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpac
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- A continuous linear map sending `ball 0 r`, `r > 0`, into `ball 0 r` has operator norm at most
-one: rescale `x` to a point of norm just below `r`. -/
+one. -/
 theorem opNorm_le_one_of_mapsTo_ball {L : E →L[𝕜] F} {r : ℝ} (hr : 0 < r)
     (hL : Set.MapsTo L (Metric.ball 0 r) (Metric.ball 0 r)) : ‖L‖ ≤ 1 := by
+  -- Rescale `x` to a point of norm just below `r`.
   refine L.opNorm_le_bound zero_le_one fun x => le_of_forall_pos_lt_add fun ε hε => ?_
   set c : ℝ := r / (‖x‖ + ε)
   have hc : 0 < c := by positivity
@@ -616,9 +617,8 @@ theorem opNorm_le_one_of_mapsTo_ball {L : E →L[𝕜] F} {r : ℝ} (hr : 0 < r)
     rw [mem_ball_zero_iff, ← hcr]
     simpa [norm_smul, abs_of_pos hc] using
       mul_lt_mul_of_pos_left (lt_add_of_pos_right ‖x‖ hε) hc
-  have hLx := hL hx
-  rw [mem_ball_zero_iff, map_smul, ← hcr] at hLx
-  simp [norm_smul, abs_of_pos hc] at hLx
+  have hLx : c * ‖L x‖ < c * (‖x‖ + ε) := by
+    simpa [norm_smul, abs_of_pos hc, hcr] using mem_ball_zero_iff.1 (hL hx)
   simpa using lt_of_mul_lt_mul_left hLx hc.le
 
 end MapsToBall
