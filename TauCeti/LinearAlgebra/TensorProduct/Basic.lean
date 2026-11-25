@@ -21,7 +21,8 @@ functional, and records its behavior on pure tensors and under tensor-product ma
 Such contractions extract coordinates and test tensor identities, supporting componentwise
 arguments about coactions and weight spaces. The file also proves the tensor identity that makes
 the Casimir element of a trace commute with multiplication, and writes every tensor as a sum of
-pure tensors over a finite spanning family of the right factor.
+pure tensors over a finite spanning family of the right factor. It also expands pure tensors
+with a multiset sum in one factor.
 
 ## Main declarations
 
@@ -46,9 +47,15 @@ pure tensors over a finite spanning family of the right factor.
 * `LinearMap.rid_rTensor_apply`: naturality of the right tensor unitor.
 * `LinearMap.sum_mul_tmul_eq_sum_tmul_mul`: the Casimir element of a trace commutes with
   multiplication.
+* `TensorProduct.tmul_multiset_sum`, `TensorProduct.multiset_sum_tmul`: a pure tensor with a
+  multiset sum in one factor is the sum of the pure tensors.
 * `TensorProduct.exists_eq_sum_tmul_of_span_eq_top`: over a finite spanning family of the right
   factor, every tensor is a sum of pure tensors with those right factors.
 * `TensorProduct.nontrivial_right`: the right factor is nontrivial when the tensor product is.
+* `TensorProduct.mk_one_eq_rTensor_comp_lid_symm`: the map `M → A ⊗[R] M`, `m ↦ 1 ⊗ m`, is the
+  structure map `R → A` tensored with `M`.
+* `TensorProduct.injective_mk_one_iff`: `m ↦ 1 ⊗ m` is injective iff the structure map `R → A`
+  stays injective after tensoring with `M`.
 * `TensorProduct.tensorTensorTensorComm_comm_tmul_comm`: exchanging the factors of both arguments
   of `tensorTensorTensorComm` exchanges the factors of its value.
 * `TensorProduct.assoc_rTensor_tensorTensorTensorComm_tmul`: reassociating both arguments of
@@ -364,6 +371,18 @@ namespace TensorProduct
 variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
   [AddCommMonoid N] [Module R N]
 
+/-- A pure tensor with a multiset sum in its right factor is the sum of the pure tensors. This is
+the multiset version of `TensorProduct.tmul_sum`. -/
+theorem tmul_multiset_sum (m : M) (s : Multiset N) :
+    m ⊗ₜ[R] s.sum = (s.map (m ⊗ₜ[R] ·)).sum :=
+  map_multiset_sum (mk R M N m) s
+
+/-- A pure tensor with a multiset sum in its left factor is the sum of the pure tensors. This is
+the multiset version of `TensorProduct.sum_tmul`. -/
+theorem multiset_sum_tmul (s : Multiset M) (n : N) :
+    s.sum ⊗ₜ[R] n = (s.map (· ⊗ₜ[R] n)).sum :=
+  map_multiset_sum ((mk R M N).flip n) s
+
 /-- If a finite family `n` spans `N`, then every element of `M ⊗[R] N` is `∑ j, mⱼ ⊗ nⱼ` for some
 family `m` of elements of `M`. -/
 theorem exists_eq_sum_tmul_of_span_eq_top {κ : Type*} [Fintype κ] {n : κ → N}
@@ -485,5 +504,21 @@ trivial too (`TensorProduct.uniqueRight`). -/
 theorem nontrivial_right [Nontrivial (M ⊗[R] N)] : Nontrivial N :=
   not_subsingleton_iff_nontrivial.1 fun _ =>
     not_subsingleton (M ⊗[R] N) uniqueRight.instSubsingleton
+
+variable (M) in
+/-- The map `M → A ⊗[R] M`, `m ↦ 1 ⊗ m`, is `(Algebra.linearMap R A).rTensor M` composed with the
+identification `M ≃ R ⊗[R] M`. -/
+theorem mk_one_eq_rTensor_comp_lid_symm (A : Type*) [Semiring A] [Algebra R A] :
+    mk R A M 1 = (Algebra.linearMap R A).rTensor M ∘ₗ (TensorProduct.lid R M).symm.toLinearMap := by
+  ext
+  simp
+
+variable (M) in
+/-- The map `M → A ⊗[R] M`, `m ↦ 1 ⊗ m`, is injective iff `(Algebra.linearMap R A).rTensor M`
+is. -/
+theorem injective_mk_one_iff (A : Type*) [Semiring A] [Algebra R A] :
+    Function.Injective (mk R A M 1) ↔ Function.Injective ((Algebra.linearMap R A).rTensor M) := by
+  rw [mk_one_eq_rTensor_comp_lid_symm, LinearMap.coe_comp, LinearEquiv.coe_coe,
+    EquivLike.injective_comp]
 
 end TensorProduct

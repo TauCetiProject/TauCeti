@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
+import TauCeti.Algebra.Algebra.Pi
 
 /-!
 # The rational root system of a Dynkin type
@@ -158,6 +159,12 @@ theorem posRoots_rationalRootSystem :
       posRoots (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) := by
   ext i
   simp only [mem_posRoots, RootPairing.Base.isPos_iff, height_rationalBase]
+
+/-- The rational and integral pinned bases define the same set of negative root indices. -/
+theorem negRoots_rationalRootSystem :
+    negRoots (t.rationalRootSystem ht) (t.rationalBase ht) =
+      negRoots (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) := by
+  rw [← compl_posRoots, posRoots_rationalRootSystem, compl_posRoots]
 
 instance instIsCrystallographicRationalRootSystem : (t.rationalRootSystem ht).IsCrystallographic :=
   isCrystallographic_rootPairingBaseChange ..

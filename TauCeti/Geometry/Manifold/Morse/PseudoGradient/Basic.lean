@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
+public import TauCeti.Geometry.Manifold.Morse.Bott.PseudoGradient
 public import TauCeti.Geometry.Manifold.Morse.Lemma
-import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
-import TauCeti.Geometry.Manifold.MFDeriv.Curve
-import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -34,10 +31,17 @@ This is the class of vector fields with which Audin and Damian build Morse homol
 critical point the flow of an adapted pseudo-gradient is linear in the Morse chart, so its local
 stable and unstable sets are exactly the coordinate planes, and the remaining analysis is global.
 
+A Morse chart is a Morse–Bott chart all of whose weights are nonzero, so an adapted
+pseudo-gradient is adapted in the Morse–Bott sense
+(`TauCeti.IsAdaptedPseudoGradient.isBottAdaptedPseudoGradient`), and its basic properties are those
+of `TauCeti.IsBottAdaptedPseudoGradient`.
+
 ## Main declarations
 
 * `TauCeti.IsAdaptedPseudoGradient`: the definition. The condition `df(X) < 0` is stated with
   Mathlib's `mvfderiv`, the differential of a real function read in `ℝ`.
+* `TauCeti.IsAdaptedPseudoGradient.isBottAdaptedPseudoGradient`: an adapted pseudo-gradient is
+  adapted in the Morse–Bott sense.
 * `TauCeti.IsAdaptedPseudoGradient.mvfderiv_apply_nonpos`: `df(X) ≤ 0` everywhere.
 * `TauCeti.IsAdaptedPseudoGradient.eq_zero_iff`: the zeros of an adapted pseudo-gradient are
   exactly the critical points of `f`.
@@ -50,6 +54,8 @@ stable and unstable sets are exactly the coordinate planes, and the remaining an
 
 * M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
   Definition 2.2.1 (pseudo-gradient fields) and Section 2.2.
+* M. Hutchings, *Lecture notes on Morse homology (with an eye towards Floer theory and
+  pseudoholomorphic curves)*, 2002, Section 6.2 (Morse–Bott functions and their gradient flows).
 -/
 
 public section
@@ -86,57 +92,49 @@ theorem MorseChart.coord_mfderiv_neg {x : M} (φ : MorseChart E f x)
     ∀ y ∈ (φ.neg h).toChart.source,
       (φ.neg h).coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.neg h).toChart y ((-X) y)) =
         fun i ↦ -((φ.neg h).weight i * (φ.neg h).coord ((φ.neg h).toChart y) i) := by
-  intro y hy
-  rw [MorseChart.neg_toChart] at hy
-  rw [MorseChart.neg_coord, MorseChart.neg_toChart, MorseChart.neg_weight, Pi.neg_apply, map_neg]
-  refine (φ.coord.map_neg _).trans ((congrArg Neg.neg (hφ y hy)).trans ?_)
-  ext i
-  simp
+  rw [MorseChart.toMorseBottChart_neg]
+  exact φ.toMorseBottChart.coord_mfderiv_neg hφ
 
 namespace IsAdaptedPseudoGradient
 
+/-- **Morse pseudo-gradients are Morse–Bott pseudo-gradients.** A pseudo-gradient adapted to `f`,
+linear in a Morse chart at each critical point, is adapted to `f` in the Morse–Bott sense: a Morse
+chart is a Morse–Bott chart all of whose weights are nonzero. -/
+theorem isBottAdaptedPseudoGradient (hX : IsAdaptedPseudoGradient f X) :
+    IsBottAdaptedPseudoGradient f X where
+  contMDiff := hX.contMDiff
+  mvfderiv_apply_lt_zero := hX.mvfderiv_apply_lt_zero
+  exists_morseBottChart y hy :=
+    let ⟨φ, hφ⟩ := hX.exists_morseChart y hy
+    ⟨φ.toMorseBottChart, hφ⟩
+
 /-- `f` does not increase along an adapted pseudo-gradient: `d f_x (X x) ≤ 0` everywhere. -/
 theorem mvfderiv_apply_nonpos (hX : IsAdaptedPseudoGradient f X) (x : M) :
-    mvfderiv 𝓘(ℝ, E) f x (X x) ≤ 0 := by
-  by_cases hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0
-  · simp [mvfderiv, hx]
-  · exact (hX.mvfderiv_apply_lt_zero x hx).le
+    mvfderiv 𝓘(ℝ, E) f x (X x) ≤ 0 :=
+  hX.isBottAdaptedPseudoGradient.mvfderiv_apply_nonpos x
 
 /-- An adapted pseudo-gradient does not vanish at a regular point of `f`. -/
 theorem ne_zero_of_mfderiv_ne_zero (hX : IsAdaptedPseudoGradient f X) {x : M}
-    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x ≠ 0) : X x ≠ 0 := by
-  intro h0
-  have := hX.mvfderiv_apply_lt_zero x hx
-  rw [h0, map_zero] at this
-  exact lt_irrefl _ this
+    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x ≠ 0) : X x ≠ 0 :=
+  hX.isBottAdaptedPseudoGradient.ne_zero_of_mfderiv_ne_zero hx
 
 /-- An adapted pseudo-gradient vanishes at every critical point of `f`: in the Morse chart it is
 the linear field `z ↦ (-wᵢ zᵢ)ᵢ`, which vanishes at the centre. -/
 theorem eq_zero_of_mfderiv_eq_zero (hX : IsAdaptedPseudoGradient f X) {x : M}
-    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) : X x = 0 := by
-  obtain ⟨φ, hφ⟩ := hX.exists_morseChart x hx
-  have h := hφ x φ.mem_source
-  rw [φ.apply_self, map_zero] at h
-  simp only [Pi.zero_apply, mul_zero, neg_zero] at h
-  have h0 : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart x (X x) = 0 := φ.coord.map_eq_zero_iff.1 h
-  have hinv := isInvertible_mfderiv_chart
-    (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.mem_source
-  rw [← hinv.inverse_apply_self (X x), h0, map_zero]
+    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) : X x = 0 :=
+  hX.isBottAdaptedPseudoGradient.eq_zero_of_mfderiv_eq_zero hx
 
 /-- **The zeros of an adapted pseudo-gradient are the critical points of `f`.** -/
 theorem eq_zero_iff (hX : IsAdaptedPseudoGradient f X) {x : M} :
     X x = 0 ↔ mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 :=
-  ⟨fun h ↦ by_contra fun hx ↦ hX.ne_zero_of_mfderiv_ne_zero hx h, hX.eq_zero_of_mfderiv_eq_zero⟩
+  hX.isBottAdaptedPseudoGradient.eq_zero_iff
 
 /-- **`f` is strictly antitone along an integral curve of an adapted pseudo-gradient** that never
 meets a critical point. Differentiability of `f` along the curve is automatic, since `mfderiv`
 vanishes where `f` is not differentiable. -/
 theorem strictAnti_comp (hX : IsAdaptedPseudoGradient f X) (hγ : IsMIntegralCurve γ X)
     (hcrit : ∀ t, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (γ t) ≠ 0) : StrictAnti (f ∘ γ) :=
-  strictAnti_of_hasDerivAt_neg
-    (fun t ↦ Manifold.hasDerivAt_comp_curve
-      (by_contra fun h ↦ hcrit t (mfderiv_zero_of_not_mdifferentiableAt h)) (hγ t))
-    fun t ↦ hX.mvfderiv_apply_lt_zero _ (hcrit t)
+  hX.isBottAdaptedPseudoGradient.strictAnti_comp hγ hcrit
 
 /-- **Reversing a pseudo-gradient.** If `X` is a pseudo-gradient adapted to a Morse function `f`,
 then `-X` is a pseudo-gradient adapted to `-f`. -/

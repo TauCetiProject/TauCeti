@@ -13,9 +13,11 @@ public import Mathlib.Basic.Real.ConjExponents
 
 Elementary facts about Hölder exponents: the missing exponent `r` of a triple with
 `1/p + 1/r = 1/q` exists once `q ≤ p`; the Hölder condition `1/p + 1/q ≤ 1` bounds both
-exponents below by `1` and the conjugate exponent of `p` above by `q`; and the exponent
+exponents below by `1` and the conjugate exponent of `p` above by `q`; the conjugate exponent
+is antitone, finite for `p > 1` and greater than `1` for finite `p`; and the exponent
 conjugate to `p > 2` is less than `2`, as for the supercritical exponents of planar Sobolev and
-Cauchy-transform estimates.
+Cauchy-transform estimates, while the exponent conjugate to `p ≥ 2` is at most `2`. An exponent
+`p > 2` satisfies `1/p + 1/p < 1`. In `ℝ≥0`, the only exponent conjugate to `2` is `2`.
 
 ## Main declarations
 
@@ -24,7 +26,13 @@ Cauchy-transform estimates.
   `1/p + 1/q ≤ 1` forces `1 ≤ p` and `1 ≤ q`.
 * `ENNReal.conjExponent_le_of_inv_add_inv_le_one`: `1/p + 1/q ≤ 1` forces `p' ≤ q` for the
   conjugate exponent `p'` of `p`.
+* `ENNReal.inv_add_inv_lt_one_of_two_lt`: an exponent `p > 2` satisfies `1/p + 1/p < 1`.
+* `ENNReal.one_lt_conjExponent`, `ENNReal.conjExponent_ne_top`, `ENNReal.inv_toReal_conjExponent`,
+  `ENNReal.conjExponent_le_conjExponent`: the conjugate exponent `p'` of a finite `p` exceeds `1`,
+  is finite with `1/p' = 1 - 1/p` when `p > 1`, and decreases as `p` increases.
 * `ENNReal.HolderConjugate.lt_two`: the conjugate of an exponent `p > 2` is less than `2`.
+* `ENNReal.HolderConjugate.le_two`: the conjugate of an exponent `p ≥ 2` is at most `2`.
+* `NNReal.HolderConjugate.eq_two`: an exponent in `ℝ≥0` conjugate to `2` is `2`.
 -/
 
 public section
@@ -60,6 +68,34 @@ theorem conjExponent_le_of_inv_add_inv_le_one (hpq : p⁻¹ + q⁻¹ ≤ 1) : p.
   exact ENNReal.inv_le_inv.1 (ENNReal.le_of_add_le_add_left
     (ENNReal.inv_ne_top.2 (zero_lt_one.trans_le hp1).ne') (h1 ▸ hpq))
 
+/-- The exponent conjugate to a finite exponent is greater than `1`. -/
+theorem one_lt_conjExponent (hp : p ≠ ⊤) : 1 < p.conjExponent :=
+  ENNReal.lt_add_right ENNReal.one_ne_top (ENNReal.inv_ne_zero.2 (ENNReal.sub_ne_top hp))
+
+/-- The exponent conjugate to an exponent greater than `1` is finite. -/
+theorem conjExponent_ne_top (hp : 1 < p) : p.conjExponent ≠ ⊤ := by
+  rw [ENNReal.conjExponent, Ne, ENNReal.add_eq_top, not_or, ENNReal.inv_eq_top,
+    tsub_eq_zero_iff_le]
+  exact ⟨ENNReal.one_ne_top, not_le.2 hp⟩
+
+/-- For a finite exponent `p > 1`, the reciprocal of its conjugate exponent is `1 - 1/p`. -/
+theorem inv_toReal_conjExponent (hp1 : 1 < p) (hp : p ≠ ⊤) :
+    p.conjExponent.toReal⁻¹ = 1 - p.toReal⁻¹ := by
+  have : p.HolderConjugate p.conjExponent := .conjExponent hp1.le
+  have h := (HolderConjugate.toReal_of_ne_top hp (conjExponent_ne_top hp1)
+    (p := p) (q := p.conjExponent)).inv_add_inv_eq_one
+  linarith
+
+/-- Taking the conjugate exponent reverses the order. -/
+theorem conjExponent_le_conjExponent (hpq : p ≤ q) : q.conjExponent ≤ p.conjExponent := by
+  rw [ENNReal.conjExponent, ENNReal.conjExponent]
+  gcongr
+
+/-- An exponent `p > 2` satisfies the strict Hölder condition `1/p + 1/p < 1` with itself. -/
+theorem inv_add_inv_lt_one_of_two_lt (hp : 2 < p) : p⁻¹ + p⁻¹ < 1 := by
+  rw [← ENNReal.inv_two_add_inv_two]
+  exact ENNReal.add_lt_add (ENNReal.inv_lt_inv.2 hp) (ENNReal.inv_lt_inv.2 hp)
+
 end ENNReal
 
 namespace ENNReal.HolderConjugate
@@ -72,4 +108,23 @@ theorem lt_two {p q : ℝ≥0∞} [p.HolderConjugate q] (hp : 2 < p) : q < 2 := 
   rw [inv_add_inv_eq_one p q, ENNReal.inv_two_add_inv_two] at h
   exact lt_irrefl _ h
 
+/-- The exponent conjugate to `p ≥ 2` is at most `2`. -/
+theorem le_two {p q : ℝ≥0∞} [p.HolderConjugate q] (hp : 2 ≤ p) : q ≤ 2 := by
+  by_contra hq
+  have h := ENNReal.add_lt_add_of_le_of_lt (ENNReal.inv_ne_top.2 (ne_zero p q))
+    (ENNReal.inv_le_inv.2 hp) (ENNReal.inv_lt_inv.2 (not_le.1 hq))
+  rw [inv_add_inv_eq_one p q, ENNReal.inv_two_add_inv_two] at h
+  exact lt_irrefl _ h
+
 end ENNReal.HolderConjugate
+
+namespace NNReal.HolderConjugate
+
+open scoped NNReal
+
+/-- The only exponent in `ℝ≥0` conjugate to `2` is `2`. -/
+theorem eq_two {p : ℝ≥0} (h : p.HolderConjugate 2) : p = 2 := by
+  have : (2 : ℝ≥0∞).HolderConjugate p := by simpa using h.symm.coe_ennreal
+  exact_mod_cast ENNReal.HolderConjugate.unique (p := 2) (q := p) 2
+
+end NNReal.HolderConjugate

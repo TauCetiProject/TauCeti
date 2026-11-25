@@ -26,6 +26,8 @@ spaces of affine groups, with the pointwise quotients.
 
 * `AlgebraicGeometry.Scheme.eq_top_of_mem_fppfTopology_of_isAlgClosed`: the only fppf covering
   sieve of `Spec K` is the maximal sieve.
+* `AlgebraicGeometry.Scheme.eq_top_of_mem_fppfTopology_over_of_isAlgClosed`: the same for a
+  geometric point `Spec K ⟶ S` in the fppf topology on schemes over `S`.
 * `TauCeti.CommAlgCat.eq_top_of_mem_fppfTopology_of_isAlgClosed`: the same statement on the
   affine fppf site.
 
@@ -61,6 +63,15 @@ theorem eq_top_of_mem_fppfTopology_of_isAlgClosed (S : Sieve (Spec (.of K)))
   obtain ⟨p, hp, -⟩ := isClosed_univ.isLocallyClosed.exists_rationalPoint_mem g ⟨y, trivial⟩
   rw [← Sieve.id_mem_iff_eq_top, ← hp]
   exact S.downward_closed (hRS Y g hg) p
+
+/-- **Fppf covers of a geometric point split over any base.** For a morphism
+`g : Spec K ⟶ S` from the spectrum of an algebraically closed field, the only covering sieve of
+`g` in the fppf topology on schemes over `S` is the maximal sieve. -/
+theorem eq_top_of_mem_fppfTopology_over_of_isAlgClosed {S : Scheme.{u}} (g : Spec (.of K) ⟶ S)
+    (R : Sieve (Over.mk g)) (hR : R ∈ (fppfTopology.over S) (Over.mk g)) : R = ⊤ := by
+  rw [GrothendieckTopology.mem_over_iff] at hR
+  rw [← (Sieve.overEquiv _).symm_apply_apply R,
+    eq_top_of_mem_fppfTopology_of_isAlgClosed K _ hR, OrderIso.map_top]
 
 end AlgebraicGeometry.Scheme
 

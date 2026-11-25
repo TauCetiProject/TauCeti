@@ -39,7 +39,9 @@ jointly smooth in time and point
 point where the hyperplane does not move with time
 (`TauCeti.IsContactDistributionFamily.distributionGrayVectorField_eq_zero`). For the kernels of a
 smooth family of contact forms on `M` it is the Gray vector field of the forms
-(`TauCeti.SmoothForm.distributionGrayVectorField_kerDistribution`).
+(`TauCeti.SmoothForm.distributionGrayVectorField_kerDistribution`). Its flow carries `ξ_s` to `ξ_t`
+(`TauCeti.IsContactDistributionFamily.map_mfderiv_timeDependentFlowOf`, in
+`TauCeti.Geometry.Contact.Gray.Relative`).
 
 ## Main definitions
 
@@ -231,6 +233,12 @@ theorem distributionGrayVectorField_eq_zero {t : ℝ} {x : M} (hx : ∀ᶠ u in 
   rw [hα.distributionGrayVectorField_eq hxU, grayVectorField_eq_zero hα.self_of_nhds.1, map_zero]
   filter_upwards [hα, hx] with u hu hux
   rw [hu.2, hα.self_of_nhds.2, hux]
+
+/-- At a point at which the contact hyperplane `ξ_u` is the same for all times, the Gray vector
+field of a smooth family of contact structures vanishes at all times. -/
+theorem distributionGrayVectorField_eq_zero_of_forall_eq {x : M} {t₀ : ℝ}
+    (hx : ∀ u, ξ u x = ξ t₀ x) (u : ℝ) : distributionGrayVectorField ξ u x = 0 :=
+  hξ.distributionGrayVectorField_eq_zero (.of_forall fun v ↦ (hx v).trans (hx u).symm)
 
 /-- **The Gray vector field of a smooth family of contact structures is smooth**: the map
 `(t, x) ↦ (x, Y_t(x))` into the tangent bundle is smooth. -/

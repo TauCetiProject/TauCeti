@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Exact.Resolving
 public import TauCeti.CategoryTheory.GrothendieckGroup.Resolution
+public import TauCeti.CategoryTheory.ObjectProperty.Small
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 

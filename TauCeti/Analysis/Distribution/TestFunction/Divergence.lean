@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.InnerProductSpace.Trace
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+public import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
@@ -36,6 +36,8 @@ total variation of a function and the perimeter of a set are suprema of the pair
   `φ v` is the directional derivative `∂_v φ`.
 * `TestFunction.divergenceCLM_apply_eq_deriv`: on the real line, the divergence of a test
   function is its derivative.
+* `TestFunction.divergenceCLM_lineTestFunction`: the divergence of the restriction of a scalar
+  test function to a line is its directional derivative along the line.
 * `TestFunction.divergenceCLM_apply_eq_sum`: in a basis `b`, it is the sum of the derivatives of
   the coordinate functions `b.repr (φ ·) i` in the directions `b i`.
 * `TauCeti.divergenceCLM_translateTestFunction`: the divergence of a translated test vector field
@@ -109,6 +111,14 @@ theorem divergenceCLM_apply_eq_deriv {Ω : Opens ℝ} (φ : 𝓓(Ω, ℝ)) (x : 
     ext; simp
   conv_lhs => rw [← hφ]
   rw [divergenceCLM_postcompCLM_toSpanSingleton, lineDerivOp_one_apply_eq_deriv]
+
+/-- The divergence of the restriction of a scalar test function `ψ` to a line is the derivative
+`∂_e ψ` along it. -/
+@[simp high]
+theorem divergenceCLM_lineTestFunction {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {Ω : Opens E} (ψ : 𝓓(Ω, ℝ)) (y e : E) (he : e ≠ 0) (t : ℝ) :
+    divergenceCLM (ψ.lineTestFunction y e he) t = ∂_{e} ψ (y + t • e) := by
+  rw [divergenceCLM_apply_eq_deriv, lineDerivOp_apply, deriv_lineTestFunction]
 
 /-- **The divergence in a basis**: `div φ = ∑ i, ∂_{b i} (b.repr (φ ·) i)`. -/
 theorem divergenceCLM_apply_eq_sum {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ E)

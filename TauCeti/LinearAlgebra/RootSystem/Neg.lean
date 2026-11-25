@@ -32,7 +32,8 @@ element of every base. Composing it with the longest element is how the oppositi
   weights and negates roots on indices.
 * `RootPairing.Hom.comp_neg`, `RootPairing.Equiv.comp_neg`, `RootPairing.Equiv.autCongr_neg`:
   `-1` is natural with respect to morphisms and equivalences of root pairings.
-* `RootPairing.Equiv.commute_neg`: `-1` is central in the automorphism group.
+* `RootPairing.Equiv.commute_neg` and `RootPairing.Equiv.neg_mem_center`: `-1` is central in the
+  automorphism group.
 * `RootPairing.Equiv.neg_mul_neg`: `-1` is an involution.
 -/
 
@@ -132,6 +133,10 @@ variable {P} in
 linearly on weights, so commutes with negation. -/
 theorem commute_neg (g : P.Aut) : Commute (neg P) g := by
   rw [commute_iff_eq, mul_eq_comp, mul_eq_comp, comp_neg]
+
+/-- **`-1` lies in the center** of the automorphism group of a root pairing. -/
+theorem neg_mem_center : neg P ∈ Subgroup.center P.Aut :=
+  Subgroup.mem_center_iff.mpr fun g ↦ (commute_neg g).symm.eq
 
 /-- **`-1` is an involution.**
 

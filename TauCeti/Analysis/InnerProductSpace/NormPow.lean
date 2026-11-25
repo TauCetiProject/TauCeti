@@ -49,6 +49,9 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
 
 * `hasFDerivAt_norm_rpow_of_ne`: the derivative of an arbitrary real power away from zero.
 * `norm_fderiv_norm_rpow_of_ne`: that derivative has norm `|p| ‖x‖ ^ (p - 1)`.
+* `isBigO_fderiv_norm_rpow_cobounded`: that derivative is `O(‖x‖ ^ (p - 1))` at infinity.
+* `hasFDerivAt_norm_rpow_smul_self`: for `r ≥ 0` the map `y ↦ ‖y‖ ^ r • y` is differentiable
+  everywhere, including at the origin.
 * `hasFDerivAt_norm_of_ne`: the derivative of the norm itself away from zero.
 * `hasFDerivAt_norm_rpow_smul_self_of_ne`, `norm_rpow_smul_id_add_smulRight_le`,
   `trace_rpow_smul_id_add_smulRight`: the derivative of the radial field `x ↦ ‖x‖ ^ p • x` away
@@ -170,6 +173,15 @@ theorem norm_fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
   rw [fderiv_norm_rpow_of_ne p hx, norm_smul, innerSL_apply_norm, Real.norm_eq_abs, abs_mul,
     abs_of_nonneg (Real.rpow_nonneg hx'.le _), mul_assoc, ← Real.rpow_add_one hx'.ne', hp]
 
+/-- The derivative of `x ↦ ‖x‖ ^ p` is `O(‖x‖ ^ (p - 1))` as `‖x‖ → ∞`. -/
+theorem isBigO_fderiv_norm_rpow_cobounded (p : ℝ) :
+    (fun x : E ↦ fderiv ℝ (fun y : E ↦ ‖y‖ ^ p) x) =O[Bornology.cobounded E]
+      fun x ↦ ‖x‖ ^ (p - 1) := by
+  refine Asymptotics.IsBigO.of_bound |p| ?_
+  filter_upwards [eventually_cobounded_le_norm 1] with x hx
+  rw [norm_fderiv_norm_rpow_of_ne _ (norm_pos_iff.1 (zero_lt_one.trans_le hx)),
+    Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _)]
+
 /-- The norm of the classical derivative `p ‖x‖ ^ (p - 2) ⟨x, ·⟩` of `x ↦ ‖x‖ ^ p` is at most
 `|p| ‖x‖ ^ (p - 1)`, with equality away from the origin (`norm_fderiv_norm_rpow_of_ne`). -/
 theorem norm_rpow_smul_innerSL_le (p : ℝ) (x : E) :
@@ -227,6 +239,30 @@ theorem norm_rpow_smul_id_add_smulRight_le (p : ℝ) (x : E) :
     _ = (1 + |p|) * ‖x‖ ^ p := by
         rw [mul_assoc, ← Real.rpow_add_one hx'.ne', sub_add_cancel]
         ring
+
+/-- For `r ≥ 0` the map `y ↦ ‖y‖ ^ r • y` is differentiable everywhere, including at the origin,
+with derivative `‖y‖ ^ r • id + (r ‖y‖ ^ (r - 2) ⟨y, ·⟩) y`. At the origin the formula gives `0`
+for `r > 0` and the identity for `r = 0`. For `r = q - 2` this is the map `y ↦ ‖y‖ ^ (q - 2) • y`
+with `⟨y, ‖y‖ ^ (q - 2) • y⟩ = ‖y‖ ^ q`, used to test the derivative of a function against itself
+in `L^q` estimates. -/
+theorem hasFDerivAt_norm_rpow_smul_self {r : ℝ} (hr : 0 ≤ r) (y : E) :
+    HasFDerivAt (fun z : E ↦ ‖z‖ ^ r • z)
+      (‖y‖ ^ r • ContinuousLinearMap.id ℝ E + ((r * ‖y‖ ^ (r - 2)) • innerSL ℝ y).smulRight y)
+      y := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · rcases hr.eq_or_lt with rfl | hr
+    · simp only [Real.rpow_zero, one_smul, norm_zero, zero_mul, zero_smul,
+        ContinuousLinearMap.smulRight_zero, add_zero]
+      exact hasFDerivAt_id (0 : E)
+    · simp only [norm_zero, Real.zero_rpow hr.ne', zero_smul, map_zero, smul_zero,
+        ContinuousLinearMap.smulRight_zero, add_zero]
+      refine HasFDerivAt.of_isLittleO ?_
+      have h1 : (fun z : E ↦ ‖z‖ ^ r) =o[𝓝 0] (fun _ ↦ (1 : ℝ)) := by
+        refine (Asymptotics.isLittleO_one_iff ℝ).2 ?_
+        simpa [Real.zero_rpow hr.ne'] using
+          ((continuous_norm (E := E)).rpow_const (fun _ ↦ Or.inr hr.le)).tendsto 0
+      simpa using h1.smul_isBigO (Asymptotics.isBigO_refl (fun z : E ↦ z) (𝓝 0))
+  · exact hasFDerivAt_norm_rpow_smul_self_of_ne r hy
 
 /-- Away from the origin, the derivative of `x ↦ log ‖x‖` is `‖x‖⁻² ⟨x, ·⟩`. -/
 theorem hasFDerivAt_log_norm_of_ne {x : E} (hx : x ≠ 0) :

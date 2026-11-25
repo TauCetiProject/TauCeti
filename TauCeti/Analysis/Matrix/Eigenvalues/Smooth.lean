@@ -23,8 +23,11 @@ given by **Hadamard's first variation formula** (`Matrix.hasFDerivAt_eigenvalues
 
 `Dλᵢ (x₀) v = Re ⟪u, (DM (x₀) v) u⟫`
 
-for every unit eigenvector `u` of `M x₀` with eigenvalue `λᵢ`. For the straight line `A + t • B`
-of Hermitian matrices this reads `d/dt λᵢ (A + t • B) |_{t = 0} = Re ⟪u, B u⟫`
+for every unit eigenvector `u` of `M x₀` with eigenvalue `λᵢ`. For any nonzero eigenvector `w`, not
+necessarily normalized, this is the Rayleigh quotient `Dλᵢ (x₀) v = Re ⟪w, (DM (x₀) v) w⟫ / ⟪w, w⟫`
+(`Matrix.fderiv_eigenvalues₀_apply_eq_div`), which for a real curve `M` reads
+`λᵢ' (t₀) = Re ⟪w, M' (t₀) w⟫ / ⟪w, w⟫` (`Matrix.deriv_eigenvalues₀_eq_div`). For the straight
+line `A + t • B` of Hermitian matrices this reads `d/dt λᵢ (A + t • B) |_{t = 0} = Re ⟪u, B u⟫`
 (`Matrix.IsHermitian.hasDerivAt_eigenvalues₀_add_smul`). These are the first-order inputs to the
 Itô computation for the eigenvalues of matrix-valued diffusions: there the parameter is the vector
 of real noise coordinates, and simplicity holds off the collision set.
@@ -42,6 +45,9 @@ formula gives
 
 `DG (x₀, λᵢ) (v, s) = ∏_{j ≠ i} (λᵢ - d j) * (s - Re (Uᴴ (DM (x₀) v) U)ᵢᵢ)`.
 
+That each ordered eigenvalue is a zero of `G (x, ·)` is
+`Matrix.IsHermitian.det_scalar_eigenvalues₀_sub_eq_zero`, and at a simple eigenvalue the gap
+product is nonzero (`Matrix.IsHermitian.prod_erase_sub_eigenvalues_ne_zero`).
 Simplicity makes the partial derivative in `μ` invertible, so over a complete parameter space the
 implicit function theorem produces a `C^k` function `ψ` whose graph is the zero set of `G` near
 `(x₀, λᵢ)`. Since `x ↦ λᵢ (M x)` is continuous and takes values in that zero set, it agrees with
@@ -176,23 +182,12 @@ private theorem fderiv_reDetScalarSub_apply {M : E → Matrix n n 𝕜} {x₀ : 
       zero_mul]
   · simp
 
-/-! ### Simple eigenvalues -/
-
-/-- At a simple ordered eigenvalue `λᵢ`, the product `∏_{j ≠ i} (λᵢ - λⱼ)` over the remaining
-matrix-indexed eigenvalues does not vanish. -/
-private theorem prod_erase_sub_eigenvalues_ne_zero {A : Matrix n n 𝕜} (hA : A.IsHermitian)
-    {i : Fin (Fintype.card n)} (hi : ∀ j ≠ i, hA.eigenvalues₀ j ≠ hA.eigenvalues₀ i) :
-    ∏ j ∈ Finset.univ.erase (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n)) i),
-      (hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n)) i) -
-        hA.eigenvalues j) ≠ 0 :=
-  Finset.prod_ne_zero_iff.2 fun j hj ↦ sub_ne_zero.2
-    (hA.eigenvalues_ne_eigenvalues_equivOfCardEq hi j (Finset.ne_of_mem_erase hj)).symm
-
 /-! ### Smoothness and first variation -/
 
 omit [DecidableEq n] in
-/-- The coordinate form `∑ a b, conj (u a) * u b * L_{ab} v` of `⟪u, (L v) u⟫`. -/
-private theorem sum_sum_smul_apply (u : n → 𝕜) (L : n → n → E →L[ℝ] 𝕜) (v : E) :
+/-- The coordinate form `∑ a b, conj (u a) * u b * L_{ab} v` of `⟪u, (L v) u⟫`, for a matrix `L` of
+continuous linear maps such as the entrywise derivative of a matrix family. -/
+theorem sum_sum_smul_apply (u : n → 𝕜) (L : n → n → E →L[ℝ] 𝕜) (v : E) :
     (∑ a, ∑ b, (star (u a) * u b) • L a b) v = star u ⬝ᵥ (of (fun a b ↦ L a b v) *ᵥ u) := by
   simp only [sum_apply, smul_apply, smul_eq_mul,
     dotProduct, mulVec, of_apply, Pi.star_apply, Finset.mul_sum]
@@ -208,11 +203,7 @@ omit [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] in
 /-- Every ordered eigenvalue of `M x` is a zero of `μ ↦ Re det (μ - M x)`. -/
 private theorem reDetScalarSub_eigenvalues₀ (hM : ∀ x, (M x).IsHermitian) (x : E)
     (i : Fin (Fintype.card n)) : reDetScalarSub M (x, (hM x).eigenvalues₀ i) = 0 := by
-  have hroot : ((hM x).eigenvalues₀ i : 𝕜) ∈ (M x).charpoly.roots := by
-    rw [(hM x).roots_charpoly_eq_eigenvalues₀]
-    exact Multiset.mem_map_of_mem _ (Finset.mem_univ_val i)
-  rw [reDetScalarSub, ← eval_charpoly, ((Polynomial.mem_roots (charpoly_monic _).ne_zero).1
-    hroot).eq_zero, map_zero]
+  rw [reDetScalarSub, (hM x).det_scalar_eigenvalues₀_sub_eq_zero, map_zero]
 
 /-- The implicit function theorem for a simple ordered eigenvalue of a `C^k` family over a complete
 parameter space. -/
@@ -223,7 +214,7 @@ private theorem contDiffAt_eigenvalues₀_of_completeSpace (hM : ∀ x, (M x).Is
   set e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n))
   have he : (hM x₀).eigenvalues (e i) = (hM x₀).eigenvalues₀ i :=
     (hM x₀).eigenvalues_apply_equivOfCardEq i
-  have hc := prod_erase_sub_eigenvalues_ne_zero (hM x₀) hi
+  have hc := (hM x₀).prod_erase_sub_eigenvalues_ne_zero hi
   have hG := contDiffAt_reDetScalarSub hMk ((hM x₀).eigenvalues₀ i)
   -- The partial derivative in `μ` is multiplication by `∏_{j ≠ i} (λᵢ - λⱼ) ≠ 0`.
   have hpartial : fderiv ℝ (reDetScalarSub M) (x₀, (hM x₀).eigenvalues₀ i) ∘L
@@ -258,7 +249,7 @@ private theorem hasFDerivAt_eigenvalues₀_of_completeSpace (hM : ∀ x, (M x).I
   set e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n))
   have he : (hM x₀).eigenvalues (e i) = (hM x₀).eigenvalues₀ i :=
     (hM x₀).eigenvalues_apply_equivOfCardEq i
-  have hc := prod_erase_sub_eigenvalues_ne_zero (hM x₀) hi
+  have hc := (hM x₀).prod_erase_sub_eigenvalues_ne_zero hi
   have hG := (contDiffAt_reDetScalarSub hM1 ((hM x₀).eigenvalues₀ i)).differentiableAt one_ne_zero
   have hlam :=
     (contDiffAt_eigenvalues₀_of_completeSpace hM one_ne_zero hM1 hi).differentiableAt one_ne_zero
@@ -374,6 +365,45 @@ theorem fderiv_eigenvalues₀_apply (hM : ∀ x, (M x).IsHermitian)
       RCLike.re (star u ⬝ᵥ (of (fun a b ↦ fderiv ℝ (fun x ↦ M x a b) x₀ v) *ᵥ u)) := by
   rw [(hasFDerivAt_eigenvalues₀ hM hMd hi hu hu1).fderiv, ContinuousLinearMap.comp_apply,
     RCLike.reCLM_apply, sum_sum_smul_apply]
+
+open scoped ComplexOrder in
+/-- The first variation formula with an eigenvector that need not be normalized: at a simple
+eigenvalue, the derivative of `x ↦ λᵢ (M x)` in the direction `v` is the Rayleigh quotient
+`Re ⟪w, (DM (x₀) v) w⟫ / ⟪w, w⟫` at any nonzero eigenvector `w`. -/
+theorem fderiv_eigenvalues₀_apply_eq_div (hM : ∀ x, (M x).IsHermitian)
+    (hMd : ∀ a b, DifferentiableAt ℝ (fun x ↦ M x a b) x₀) {i : Fin (Fintype.card n)}
+    (hi : ∀ j ≠ i, (hM x₀).eigenvalues₀ j ≠ (hM x₀).eigenvalues₀ i) {w : n → 𝕜}
+    (hw : M x₀ *ᵥ w = ((hM x₀).eigenvalues₀ i : 𝕜) • w) (hw0 : w ≠ 0) (v : E) :
+    fderiv ℝ (fun x ↦ (hM x).eigenvalues₀ i) x₀ v =
+      RCLike.re (star w ⬝ᵥ (of (fun a b ↦ fderiv ℝ (fun x ↦ M x a b) x₀ v) *ᵥ w)) /
+        RCLike.re (star w ⬝ᵥ w) := by
+  obtain ⟨r, hr, hrw⟩ := RCLike.pos_iff_exists_ofReal.1 (dotProduct_star_self_pos_iff.2 hw0)
+  set c : 𝕜 := (((Real.sqrt r)⁻¹ : ℝ) : 𝕜)
+  have hcc : star c * c = ((r⁻¹ : ℝ) : 𝕜) := by
+    rw [RCLike.star_def, RCLike.conj_ofReal, ← RCLike.ofReal_mul, ← mul_inv,
+      Real.mul_self_sqrt hr.le]
+  have hu : M x₀ *ᵥ (c • w) = ((hM x₀).eigenvalues₀ i : 𝕜) • (c • w) := by
+    rw [mulVec_smul, hw, smul_comm]
+  have hu1 : star (c • w) ⬝ᵥ (c • w) = 1 := by
+    rw [star_smul, smul_dotProduct, dotProduct_smul, smul_smul, smul_eq_mul, hcc, ← hrw]
+    norm_cast
+    exact inv_mul_cancel₀ hr.ne'
+  rw [fderiv_eigenvalues₀_apply hM hMd hi hu hu1, ← hrw, RCLike.ofReal_re]
+  simp only [star_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul]
+  rw [← mul_assoc, mul_comm c, hcc, RCLike.re_ofReal_mul, inv_mul_eq_div]
+
+/-- The first variation formula along a real curve with an eigenvector that need not be
+normalized: at a simple eigenvalue, the derivative of `t ↦ λᵢ (M t)` is the Rayleigh quotient
+`Re ⟪w, M' w⟫ / ⟪w, w⟫` of the derivative of the family at any nonzero eigenvector `w`. -/
+theorem deriv_eigenvalues₀_eq_div {M : ℝ → Matrix n n 𝕜} (hM : ∀ t, (M t).IsHermitian) {t : ℝ}
+    (hMd : ∀ a b, DifferentiableAt ℝ (fun s ↦ M s a b) t) {i : Fin (Fintype.card n)}
+    (hi : ∀ j ≠ i, (hM t).eigenvalues₀ j ≠ (hM t).eigenvalues₀ i) {w : n → 𝕜}
+    (hw : M t *ᵥ w = ((hM t).eigenvalues₀ i : 𝕜) • w) (hw0 : w ≠ 0) :
+    deriv (fun s ↦ (hM s).eigenvalues₀ i) t =
+      RCLike.re (star w ⬝ᵥ (of (fun a b ↦ deriv (fun s ↦ M s a b) t) *ᵥ w)) /
+        RCLike.re (star w ⬝ᵥ w) := by
+  simpa only [fderiv_apply_one_eq_deriv] using
+    fderiv_eigenvalues₀_apply_eq_div hM hMd hi hw hw0 1
 
 /-- **Hadamard's first variation formula along a line.** If `u` is a unit eigenvector of a
 Hermitian matrix `A` for a simple ordered eigenvalue `A.eigenvalues₀ i`, and `B` is Hermitian, then

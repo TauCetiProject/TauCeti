@@ -72,7 +72,7 @@ noncomputable section
 
 namespace TauCeti
 
-open CategoryTheory Matrix LinearMap _root_.Algebra
+open CategoryTheory Matrix _root_.LinearMap _root_.Algebra
 
 universe u
 
@@ -500,8 +500,7 @@ theorem kZeroEquiv_of_mk_one (m : ℕ) :
     .piCongrRight fun _ ↦ (MulOpposite.opLinearEquiv Rᵐᵒᵖ).symm
   have htop : range (mulVecBilin R Rᵐᵒᵖ (1 : Matrix (Fin m) (Fin m) R)) = ⊤ :=
     range_eq_top.2 fun v ↦ ⟨v, one_mulVec v⟩
-  rw [kZeroEquiv_of_mk _ ⟨ModuleCat.of Rᵐᵒᵖ (Fin m → Rᵐᵒᵖ),
-    finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
+  rw [kZeroEquiv_of_mk _ (FiniteProjectiveModules.of Rᵐᵒᵖ (Fin m → Rᵐᵒᵖ))
     (L.trans (LinearEquiv.ofTop _ htop).symm)]
   exact SplitK0.of_eq_nsmul_of_linearEquiv_fin (.refl _ _) (.refl _ _)
 

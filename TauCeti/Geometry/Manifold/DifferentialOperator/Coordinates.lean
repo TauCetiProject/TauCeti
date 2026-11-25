@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.BigOperators.Fin
 public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Support
-public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol
+public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Basic
 public import TauCeti.Geometry.Manifold.VectorField.Derivation
 public import TauCeti.RingTheory.Derivation.Coordinates
 import TauCeti.Algebra.BigOperators.Pi

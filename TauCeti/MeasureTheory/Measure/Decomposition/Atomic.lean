@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 public import Mathlib.MeasureTheory.Measure.MutuallySingular
 public import Mathlib.MeasureTheory.Measure.Typeclasses.SFinite
+public import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 
 /-!
 # Atomic/diffuse decomposition of an s-finite measure
@@ -33,6 +34,7 @@ restricting it to the complement gives a measure with zero mass on every singlet
   `MeasureTheory.Measure.diffusePart_apply_singleton`: singleton evaluations of the two parts.
 * `MeasureTheory.Measure.atomicPart_eq_sum_dirac`: the atomic part as a sum of weighted Dirac
   measures.
+* `MeasureTheory.Measure.lintegral_measure_singleton`: `∫⁻ x, ν {x} ∂μ = ∑' x, ν {x} * μ {x}`.
 * `MeasureTheory.Measure.atomicPart_add_diffusePart`: `atomicPart μ + diffusePart μ = μ`.
 * `MeasureTheory.Measure.eq_atomicPart_and_eq_diffusePart_of_eq_add`: the split is unique among
   sums of a countably carried measure and a measure with zero singleton masses.
@@ -188,6 +190,17 @@ theorem atomicPart_eq_sum_dirac (μ : Measure X) :
       (Summable.countable_support_ennreal htop).mono fun x _ ↦
         (mem_positiveSingletons_iff μ x).1 x.property.2
     rw [measure_iUnion hdisj fun x ↦ measurableSet_singleton _]
+
+/-- Integrating the singleton masses of an s-finite measure `ν` against a measure `μ` sums the
+products of their singleton masses: `∫⁻ x, ν {x} ∂μ = ∑' x, ν {x} * μ {x}`. Only the countably
+many positive-mass singletons of `ν` contribute. When the diagonal of `X × X` is measurable and
+`μ = ν` is s-finite, this is the mass `∑' x, μ {x} ^ 2` of the diagonal under `μ.prod μ`. -/
+theorem lintegral_measure_singleton (μ ν : Measure X) [SFinite ν] :
+    ∫⁻ x, ν {x} ∂μ = ∑' x, ν {x} * μ {x} := by
+  rw [← setLIntegral_eq_of_support_subset (s := positiveSingletons ν) fun _ hx ↦ hx,
+    lintegral_countable _ (countable_positiveSingletons ν),
+    tsum_subtype_eq_of_support_subset (f := fun x ↦ ν {x} * μ {x})
+      fun _ hx ↦ left_ne_zero_of_mul hx]
 
 /-- The diffuse part gives zero mass to every singleton. -/
 theorem diffusePart_apply_singleton (μ : Measure X) (x : X) :
