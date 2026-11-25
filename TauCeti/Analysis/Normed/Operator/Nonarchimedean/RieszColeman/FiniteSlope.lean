@@ -117,16 +117,6 @@ theorem IsPrCompact.exists_isRieszColemanProjection_of_isMulDistinguished {u : M
 
 end Ring
 
-/-- If `u` is upper triangular for a splitting `i r + j s = id`, that is `s u i = 0`, then `i`
-intertwines the diagonal block `r u i` with `u`. -/
-private theorem semiconj_of_split {K M F N : Type*} [Semiring K] [AddCommMonoid M]
-    [TopologicalSpace M] [ContinuousAdd M] [Module K M] [AddCommMonoid F] [TopologicalSpace F]
-    [Module K F] [AddCommMonoid N] [TopologicalSpace N] [Module K N] {u : M →L[K] M}
-    (i : F →L[K] M) (r : M →L[K] F) (j : N →L[K] M) (s : M →L[K] N)
-    (hsplit : i.comp r + j.comp s = .id K M) (htri : s.comp (u.comp i) = 0) :
-    Function.Semiconj (i : F →ₗ[K] M) (r.comp (u.comp i)) u := fun x ↦ by
-  simpa [show s (u (i x)) = 0 from congr($htri x)] using congr($hsplit (u (i x)))
-
 section Field
 
 variable {K M : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
@@ -297,7 +287,7 @@ theorem IsPrCompact.range_eq_range_of_split (hu : u.IsPrCompact) (hF : TauCeti.H
   obtain ⟨rfl, rfl⟩ := hu.eq_of_split v hb hv hF hN i r j s hsplit htri hQ hS hQS
   have hdeg := LinearMap.natDegree_projectiveCharpolyRev_eq_finrank_of_isUnit hunit
   -- `i` intertwines `r u i` with `u`, and Cayley–Hamilton kills `Q*(r u i)`.
-  have hsemi := semiconj_of_split i r j s hsplit htri
+  have hsemi := TauCeti.semiconj_of_split i r j s hsplit htri
   have hCH : Polynomial.aeval (r.comp (u.comp i))
       (r.comp (u.comp i) : F →ₗ[K] F).projectiveCharpolyRev.reverse = 0 := by
     refine ContinuousLinearMap.coe_injective ?_
@@ -347,7 +337,7 @@ theorem IsPrCompact.eq_comp_of_split [ContinuousConstSMul K N] (hu : u.IsPrCompa
   -- `E` kills the image of `N`: there `j` intertwines `s u j` with `u`, and `Q*(s u j)` is
   -- invertible because `Q` is coprime to `det (1 - T (s u j))`.
   have hEj (y : N) : E (j y) = 0 := by
-    have hsemi := semiconj_of_split j s i r ((add_comm _ _).trans hsplit) hrj
+    have hsemi := TauCeti.semiconj_of_split j s i r ((add_comm _ _).trans hsplit) hrj
     obtain ⟨w, hw⟩ := ((((hu.comp_clm j hN).clm_comp s hN).isUnit_aeval_reverse_iff
       hQS.isUnit_leadingCoeff).mpr (hQS.isCoprime hdist hc)).exists_right_inv
     have hy : j y ∈ LinearMap.ker (E : M →ₗ[K] M) := by

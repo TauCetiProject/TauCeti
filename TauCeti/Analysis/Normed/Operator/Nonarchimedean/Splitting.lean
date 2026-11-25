@@ -14,8 +14,9 @@ public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Basic
 The Fredholm series of row-compact operators on modules with property (Pr) is
 multiplicative along a bounded upper triangular splitting. The factors are the Fredholm
 series of the operators on the actual summands, independently of their retract
-presentations. A finite summand contributes its finite projective characteristic
-determinant; neither freeness nor constant rank is required.
+presentations. Along such a splitting, the inclusion of the first summand intertwines its
+diagonal block with the operator (`semiconj_of_split`). A finite summand contributes its
+finite projective characteristic determinant; neither freeness nor constant rank is required.
 
 The basic identity is `H_(u + v) = H_u H_v` for row-compact operators with
 `u ∘ v = 0`. It descends from the model-space identity by extending both operators
@@ -36,6 +37,16 @@ open ContinuousLinearMap
 universe u
 
 namespace TauCeti
+
+/-- If `u` is upper triangular for a splitting `i r + j s = id`, that is `s u i = 0`, then `i`
+intertwines the diagonal block `r u i` with `u`. -/
+theorem semiconj_of_split {K M F N : Type*} [Semiring K] [AddCommMonoid M]
+    [TopologicalSpace M] [ContinuousAdd M] [Module K M] [AddCommMonoid F] [TopologicalSpace F]
+    [Module K F] [AddCommMonoid N] [TopologicalSpace N] [Module K N] {u : M →L[K] M}
+    (i : F →L[K] M) (r : M →L[K] F) (j : N →L[K] M) (s : M →L[K] N)
+    (hsplit : i.comp r + j.comp s = .id K M) (htri : s.comp (u.comp i) = 0) :
+    Function.Semiconj (i : F →ₗ[K] M) (r.comp (u.comp i)) u := fun x ↦ by
+  simpa [show s (u (i x)) = 0 from congr($htri x)] using congr($hsplit (u (i x)))
 
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
   [CompleteSpace R] [NormedRing.IsTate R]
