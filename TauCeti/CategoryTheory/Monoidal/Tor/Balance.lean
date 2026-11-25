@@ -99,7 +99,7 @@ def tensorSnakeInput [Mono (S.f ▷ T.X₂)] : SnakeInput C where
 def kernelWhiskerLeftIsoKernelWhiskerRight [Mono (S.X₂ ◁ T.f)] [Mono (S.f ▷ T.X₂)] :
     kernel (S.X₃ ◁ T.f) ≅ kernel (S.f ▷ T.X₃) :=
   have : Mono (hS.tensorSnakeInput hT).L₂'.f :=
-    (hS.tensorSnakeInput hT).L₁'_exact.mono_g ((isZero_kernel_of_mono (S.X₂ ◁ T.f)).eq_of_src _ _)
+    (hS.tensorSnakeInput hT).mono_δ (isZero_kernel_of_mono (S.X₂ ◁ T.f))
   (hS.tensorSnakeInput hT).L₂'_exact.fIsKernel.conePointUniqueUpToIso (limit.isLimit _)
 
 /-- The identification of the kernels of `S.X₃ ◁ T.f` and of `S.f ▷ T.X₃` is the connecting map
@@ -149,7 +149,7 @@ def torOneIsoTor'OneOfHasProjectiveDimensionLEOne [EnoughProjectives C] (X Y : C
 
 /-- The balance isomorphism in projective dimension at most one is `torOneIsoTor'One` for the
 projective presentations `0 ⟶ ker π ⟶ P ⟶ X ⟶ 0` of `X` and `Y`. -/
-lemma torOneIsoTor'OneOfHasProjectiveDimensionLEOne_eq [EnoughProjectives C] (X Y : C)
+lemma torOneIsoTor'OneOfHasProjectiveDimensionLEOne_def [EnoughProjectives C] (X Y : C)
     [HasProjectiveDimensionLE X 1] [HasProjectiveDimensionLE Y 1]
     [((tensoringLeft C).obj (Projective.over X)).PreservesMonomorphisms]
     [((tensoringRight C).obj (Projective.over Y)).PreservesMonomorphisms] :
