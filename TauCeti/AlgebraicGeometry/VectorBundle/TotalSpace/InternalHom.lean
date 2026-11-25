@@ -23,7 +23,10 @@ precomposition with `a : E ⟶ E'` acts as `q^* a` (`totalSpaceIhomHomEquiv_comp
 
 Taking `F = 𝒪_X` gives the dual bundle: points `T ⟶ 𝕍(E^∨)` over `X` are linear functionals
 `q^* E ⟶ 𝒪_T` (`totalSpaceDualHomEquiv`), and sections of `𝕍(E^∨) → X` are linear functionals
-`E ⟶ 𝒪_X`.
+`E ⟶ 𝒪_X`. This description of the points of `𝕍(E^∨)` agrees with the section-valued one of
+`totalSpaceHomEquiv (dual E)`: evaluating the section of a point `e'` of `𝕍(E^∨)` by the linear
+functional on `q^* E^∨` of a point `e` of `𝕍(E)` is applying the linear functional of `e'` to the
+section of `e` (`totalSpaceHomEquiv_dual_comp_functional`).
 
 The bijections combine the section-valued universal property `totalSpaceHomEquiv` of the total
 space with the base change `q^* 𝓗om(E, F) ≅ 𝓗om(q^* E, q^* F)` for finite locally free `E`
@@ -192,6 +195,29 @@ theorem totalSpaceDualHomEquiv_comp_map {E E' : FiniteLocallyFreeSheaf X} (a : E
   rw [totalSpaceDualHomEquiv_apply, totalSpaceDualHomEquiv_apply, h]
   exact (congrArg (· ≫ _) (totalSpaceIhomHomEquiv_comp_map_pre_app a (𝟙_ _) T t)).trans
     (Category.assoc _ _ _)
+
+/-- Let `e` be a point of `𝕍(E) = Spec_X (Sym E^∨)`, with section `s` of `q^* E` and linear
+functional `ψ` on `q^* E^∨`, and let `e'` be a point of `𝕍(E^∨) = Spec_X (Sym E^∨∨)`, with
+section `s'` of `q^* E^∨` and linear functional `φ` on `q^* E`. Then `ψ ∘ s' = φ ∘ s`. This
+compares the two descriptions of the points of `𝕍(E^∨)`, through `totalSpaceHomEquiv (dual E)`
+(giving `s'`) and through `totalSpaceDualHomEquiv E` (giving `φ`). -/
+@[reassoc]
+theorem totalSpaceHomEquiv_dual_comp_functional (E : FiniteLocallyFreeSheaf X) {T : Over X}
+    (e : T ⟶ (MorphismProperty.Over.forget _ _ X).obj ((totalSpaceScheme X).obj E))
+    (e' : T ⟶ (MorphismProperty.Over.forget _ _ X).obj ((totalSpaceScheme X).obj (dual E))) :
+    totalSpaceHomEquiv (dual E) T e' ≫
+        relativeSpecSymmetricAlgebraPullbackHomEquiv ((toQuasicoherent X).obj (dual E)) T e =
+      totalSpaceHomEquiv E T e ≫ totalSpaceDualHomEquiv E T e' := by
+  have hφ : totalSpaceDualHomEquiv E T e' =
+      uncurry' (totalSpaceHomEquiv (dual E) T e' ≫
+          (pullbackIhomComparison E.obj T.hom).app (𝟙_ X.Modules)) ≫
+        (Scheme.Modules.pullbackObjUnitIso T.hom).hom :=
+    (totalSpaceDualHomEquiv_apply E T e').trans
+      (congrArg (· ≫ _) (totalSpaceIhomHomEquiv_apply E (𝟙_ _) T e'))
+  rw [hφ, totalSpaceHomEquiv_apply E T e]
+  rw [← uncurry'_natural_right, Scheme.Modules.comp_uncurry'_eq_comp_dualHomUnitEquiv_symm,
+    Equiv.symm_apply_apply]
+  simp only [Category.assoc, IsIso.hom_inv_id_assoc]
 
 end
 

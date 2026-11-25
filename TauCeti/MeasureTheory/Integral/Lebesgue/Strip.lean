@@ -35,11 +35,12 @@ the strip, and then `L` is the integral of `g` over the strip
 Likewise the half-strip `[b, ∞) × T` is exhausted by the rectangles `[b, b + n] × T`: if the
 integral over `[b, b + n] × T` is `ENNReal.ofReal (F(b + n) - F(b))` and `F` tends to `L` at `∞`,
 then the integral over the half-strip is `ENNReal.ofReal (L - F(b))`
-(`TauCeti.setLIntegral_Ici_prod_eq_ofReal_of_tendsto`).
+(`TauCeti.setLIntegral_Ici_prod_eq_ofReal_of_tendsto`), and symmetrically for the half-strip
+`(-∞, b] × T` and a limit of `F` at `-∞` (`TauCeti.setLIntegral_Iic_prod_eq_ofReal_of_tendsto`).
 
 This is the passage from the energy identity on finite rectangles to the energy of a
 holomorphic strip or a Floer cylinder, whose energy is the difference of the limiting actions at
-its two ends, and of a Floer half-cylinder.
+its two ends, and of a Floer half-cylinder at either end.
 
 The strip is also the union of the disjoint translates of a period rectangle
 `(a, a + c] × T`. A function on the strip that is periodic in the first variable has the same
@@ -54,7 +55,9 @@ far out along the strip: its integrals over sets that eventually lie in `E` and 
 `|z.1| < R` tend to zero (`TauCeti.tendsto_setLIntegral_of_eventually_subset`). Applied to
 windows `[a + s_k, b + s_k] × T` with `|s_k| → ∞`, this says that a half-cylinder of finite energy
 carries less and less energy over its translated windows, since such windows eventually lie
-outside every band (`TauCeti.eventually_Icc_add_prod_subset_inter`).
+outside every band (`TauCeti.eventually_Icc_add_prod_subset_inter`). The translates
+`z + (s_k, 0)` of each point `z` of the strip then also eventually lie in `E`
+(`TauCeti.eventually_add_mem_of_eventually_Icc_prod_subset`).
 
 For a function on `α × ℝ` of period `c` in the second variable, as the energy density of a Floer
 cylinder is, the integrals over all horizontal strips `α × [τ, τ + c]` of width `c` agree
@@ -161,6 +164,31 @@ theorem setLIntegral_Ici_prod_eq_ofReal_of_tendsto {β : Type*} [MeasurableSpace
   exact (ENNReal.continuous_ofReal.tendsto _).comp
     ((htop.comp (tendsto_atTop_add_const_left _ b tendsto_natCast_atTop_atTop)).sub_const _)
 
+/-- **Integrals over a negative half-strip by exhaustion.** If the integral of `f` over each
+rectangle `[b - n, b] × T` is `ENNReal.ofReal (F(b) - F(b - n))`, where `F` tends to `L` at `-∞`,
+then the integral of `f` over the half-strip `(-∞, b] × T` is `ENNReal.ofReal (F(b) - L)`, that
+is `F(b) - L` truncated at zero. -/
+theorem setLIntegral_Iic_prod_eq_ofReal_of_tendsto {β : Type*} [MeasurableSpace β]
+    {μ : Measure (ℝ × β)} {T : Set β} {f : ℝ × β → ℝ≥0∞} {F : ℝ → ℝ} {b L : ℝ}
+    (hE : ∀ n : ℕ, ∫⁻ z in Icc (b - n) b ×ˢ T, f z ∂μ = ENNReal.ofReal (F b - F (b - n)))
+    (hbot : Tendsto F atBot (𝓝 L)) :
+    ∫⁻ z in Iic b ×ˢ T, f z ∂μ = ENNReal.ofReal (F b - L) := by
+  set R : ℕ → Set (ℝ × β) := fun n ↦ Icc (b - n) b ×ˢ T
+  have hmono : Monotone R := fun m n hmn ↦
+    prod_mono (Icc_subset_Icc (sub_le_sub_left (Nat.cast_le.2 hmn) b) le_rfl) le_rfl
+  have hunion : ⋃ n, R n = Iic b ×ˢ T := by
+    refine (iUnion_subset fun n ↦ Set.prod_mono Icc_subset_Iic_self le_rfl).antisymm fun z hz ↦ ?_
+    obtain ⟨n, hn⟩ := exists_nat_ge (b - z.1)
+    exact mem_iUnion.2 ⟨n, ⟨by linarith, hz.1⟩, hz.2⟩
+  -- The integrals over the rectangles increase to the integral over the half-strip.
+  have hlim := tendsto_setLIntegral_of_monotone (μ := μ) (f := f) hmono
+  rw [hunion] at hlim
+  refine tendsto_nhds_unique hlim ?_
+  simp only [R, hE]
+  exact (ENNReal.continuous_ofReal.tendsto _).comp
+    ((hbot.comp (tendsto_atBot_add_const_left _ b
+      (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop))).const_sub _)
+
 /-- A function on the strip `ℝ × T`, periodic in the first variable with period `c` and with
 finite integral over the strip, has zero integral over each period rectangle `(a, a + c] × T`:
 the disjoint translates of the rectangle inside the strip all have the same integral. -/
@@ -263,6 +291,14 @@ theorem eventually_Icc_add_prod_subset_inter {ι β : Type*} {l : Filter ι} {s 
   have h₂ : |s i| ≤ |z.1| + |z.1 - s i| := by
     simpa using abs_sub z.1 (z.1 - s i)
   exact (by linarith : R ≤ |z.1|)
+
+/-- If every translated window `[a + s_i, b + s_i] × T` eventually lies in `E`, then so does the
+translate `z + (s_i, 0)` of every point `z` of the strip `ℝ × T`. -/
+theorem eventually_add_mem_of_eventually_Icc_prod_subset {ι β : Type*} [AddZeroClass β]
+    {l : Filter ι} {s : ι → ℝ} {T : Set β} {E : Set (ℝ × β)}
+    (hW : ∀ a b : ℝ, ∀ᶠ i in l, Icc (a + s i) (b + s i) ×ˢ T ⊆ E) :
+    ∀ z ∈ (univ : Set ℝ) ×ˢ T, ∀ᶠ i in l, z + (s i, 0) ∈ E :=
+  fun z hz ↦ (hW z.1 z.1).mono fun _ hi ↦ hi ⟨⟨by simp, by simp⟩, by simpa using hz.2⟩
 
 /-- **Integrals over sets escaping along the strip.** If `f` has finite integral over `E`, then its
 integrals over sets `A i` that eventually lie in `E` and outside every band `|z.1| < R` tend to

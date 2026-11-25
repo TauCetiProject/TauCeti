@@ -25,7 +25,7 @@ public section
 noncomputable section
 
 open Filter Matrix MeasureTheory ProbabilityTheory
-open scoped BoundedContinuousFunction Topology
+open scoped BoundedContinuousFunction ENNReal Topology
 
 namespace TauCeti.Probability
 
@@ -114,6 +114,40 @@ theorem integral_expectedCovarianceSpectralMeasure {E : Type*} [NormedAddCommGro
         (Matrix.isHermitian_sampleCovariance (X ω)) : Measure ℝ) ∂P := by
   rw [toMeasure_expectedCovarianceSpectralMeasure] at hf ⊢
   exact Measure.integral_bind (aemeasurable_covarianceMeasure hX) hf
+
+variable {k : ℕ} in
+/-- If the trace of the `k`th sample covariance matrix power is integrable, then `x ↦ x ^ k`
+is integrable against the expected spectral measure. -/
+theorem integrable_pow_expectedCovarianceSpectralMeasure (hXm : AEMeasurable X P)
+    (htrace : Integrable (fun ω ↦ ((X ω).sampleCovariance ^ k).trace) P) :
+    Integrable (fun x : ℝ ↦ x ^ k) (expectedCovarianceSpectralMeasure hXm : Measure ℝ) := by
+  let L (ω : Ω) : Measure ℝ := ((X ω).sampleCovariance.spectralMeasure
+    (isHermitian_sampleCovariance (X ω)) : Measure ℝ)
+  have hL : AEMeasurable L P := aemeasurable_covarianceMeasure hXm
+  rw [toMeasure_expectedCovarianceSpectralMeasure]
+  refine (Measure.integrable_bind_iff hL (continuous_pow k).aestronglyMeasurable).mpr ⟨?_, ?_⟩
+  · filter_upwards with ω
+    exact ⟨(continuous_pow k).aestronglyMeasurable, (hasFiniteIntegral_iff_norm _).mpr
+      ((lintegral_ofReal_norm_pow_spectralMeasure_le _ _ k).trans_lt ENNReal.ofReal_lt_top)⟩
+  · refine ((RCLike.reCLM.integrable_comp htrace).const_mul (Fintype.card p : ℝ)⁻¹).congr ?_
+    filter_upwards with ω
+    rw [RCLike.reCLM_apply, ← integral_pow_spectralMeasure (X ω).sampleCovariance
+      (isHermitian_sampleCovariance (X ω)) k]
+    apply integral_congr_ae
+    exact ((Matrix.posSemidef_sampleCovariance (X ω)).ae_mem_Ici_spectralMeasure).mono
+      fun x hx ↦ (Real.norm_of_nonneg (pow_nonneg hx k)).symm
+
+variable {k : ℕ} in
+/-- If the trace of the `k`th sample covariance matrix power is integrable, its expectation
+divided by the row count is the expected spectral moment cast into the matrix scalar field. -/
+theorem ofReal_integral_pow_expectedCovarianceSpectralMeasure (hXm : AEMeasurable X P)
+    (htrace : Integrable (fun ω ↦ ((X ω).sampleCovariance ^ k).trace) P) :
+    ((∫ x, x ^ k ∂(expectedCovarianceSpectralMeasure hXm : Measure ℝ) : ℝ) : 𝕜) =
+      (Fintype.card p : 𝕜)⁻¹ * ∫ ω, ((X ω).sampleCovariance ^ k).trace ∂P := by
+  rw [integral_expectedCovarianceSpectralMeasure hXm
+    (integrable_pow_expectedCovarianceSpectralMeasure hXm htrace), ← integral_ofReal]
+  simp_rw [ofReal_integral_pow_spectralMeasure]
+  exact integral_const_mul _ _
 
 omit [Fintype p] [DecidableEq p] [Nonempty p] [Fintype n] in
 /-- Almost sure weak convergence implies convergence of the expected covariance measures to

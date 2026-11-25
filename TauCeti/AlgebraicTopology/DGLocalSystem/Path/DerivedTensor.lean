@@ -22,23 +22,24 @@ over `C_*(Ω_b B; R)`, the cohomology of the derived tensor product `𝓕 ⊗^L 
 
 Brown's twisted tensor products are semi-free left modules `K_m` over `C_*(Ω_b B; R)`, one free
 generator for each cell of a CW structure on `B`, compared with the chains `C_*(P_b B; R)` on the
-Moore paths from `b` by a map that is linear over the loop chains. This file shows that every such
-model computes the derived tensor product with `R`
-(`TauCeti.nonempty_localizedFunctor_iso_derivedTensor_loopChainAugmentation`): if `K_m` is
-semi-free and its comparison with `C_*(P_b B; R)` is a quasi-isomorphism, then tensoring DG right
+Moore paths from `b` by a quasi-isomorphism that is linear over the loop chains: Brown models
+(`TauCeti.BrownModel`). This file shows that every Brown model computes the derived tensor product
+with `R` (`TauCeti.BrownModel.nonempty_localizedFunctor_iso_derivedTensor`): tensoring DG right
 modules with `K_m` induces, on any localizations at the quasi-isomorphisms, a functor isomorphic to
-`- ⊗^L R`. So the twisted complex `𝓕 ⊗ K_m` has cohomology `Tor^{C_*(Ω_b B; R)}(𝓕, R)`.
+`- ⊗^L R`. So the twisted complex `𝓕 ⊗ K_m` has cohomology `Tor^{C_*(Ω_b B; R)}(𝓕, R)`. This
+applies to the model of every CW complex, `TauCeti.brownModel`.
 
 The reason is that the based path space is contractible: its augmentation
 (`TauCeti.pathFromChainAugmentationHom`), read as a map of left modules to `{}_ε R`, is a
 quasi-isomorphism (`TauCeti.exists_differential_eq_and_pathFromChainAugmentationHom_add_eq`), so
 the composite of the comparison with it is a quasi-isomorphism from `K_m` onto `R`
-(`TauCeti.exists_differential_eq_and_comp_add_eq`). A semi-free resolution of `R` computes the
-derived tensor product with `R` (`TauCeti.nonempty_localizedFunctor_iso_derivedTensor`).
+(`TauCeti.BrownModel.exists_differential_eq_and_augmentation_add_eq`): a Brown model is a
+semi-free resolution of `R`. A semi-free resolution of `R` computes the derived tensor product
+with `R` (`TauCeti.nonempty_localizedFunctor_iso_derivedTensor`).
 
 For the circle, Brown's resolution `TauCeti.loopCellCocycle` with its comparison
-`TauCeti.loopCellPathComparison` is such a model
-(`TauCeti.nonempty_loopCellCocycle_localizedFunctor_iso_derivedTensor_loopChainAugmentation`): the
+`TauCeti.cycleCellPathComparison` is a Brown model (`TauCeti.loopCellBrownModel`), so
+(`TauCeti.nonempty_loopCellCocycle_localizedFunctor_iso_derivedTensor_loopChainAugmentation`) the
 two-generator twisted complex `𝓕 e₀ ⊕ 𝓕 e₁` with `D e₁ = ([γ] - [1]) e₀` computes
 `𝓕 ⊗^L_{C_*(Ω S¹; R)} R`.
 
@@ -48,7 +49,7 @@ The derived tensor product is built from the canonical semi-free resolution, who
 in the universe of the loop chains, and a model is compared with it through generators in that
 same universe. The generators `Unit ⊕ Unit` of `TauCeti.loopCellCocycle` lie in `Type`, so the
 circle is treated with coefficients `R : Type`, as in
-`TauCeti.exists_loopCellCocycle_expLoop_differential_eq_and_loopCellPathComparison_add_eq`.
+`TauCeti.exists_loopCellCocycle_expLoop_differential_eq_and_cycleCellPathComparison_add_eq`.
 
 ## Main definitions
 
@@ -59,9 +60,10 @@ circle is treated with coefficients `R : Type`, as in
 
 * `TauCeti.exists_differential_eq_and_pathFromChainAugmentationHom_add_eq`: the augmentation of the
   chains on the based path space is a quasi-isomorphism onto `R`.
-* `TauCeti.nonempty_localizedFunctor_iso_derivedTensor_loopChainAugmentation`: a semi-free model
-  quasi-isomorphic to the chains on the based path space computes the derived tensor product with
-  the ground ring.
+* `TauCeti.BrownModel.exists_differential_eq_and_augmentation_add_eq`: a Brown model is a
+  semi-free resolution of the ground ring.
+* `TauCeti.BrownModel.nonempty_localizedFunctor_iso_derivedTensor`: a Brown model computes the
+  derived tensor product with the ground ring.
 * `TauCeti.nonempty_loopCellCocycle_localizedFunctor_iso_derivedTensor_loopChainAugmentation`:
   Brown's resolution of the circle computes the derived tensor product with the ground ring.
 
@@ -155,68 +157,69 @@ end Augmentation
 section DerivedTensor
 
 variable {B : Type uB} [TopologicalSpace B] {b : B} {H : Type*} {R : Type uR} [CommRing R]
-  {D₁ D₂ : Type*} [Category* D₁] [Category* D₂]
+
+namespace BrownModel
+
+/-- **A Brown model resolves the ground ring.** For a Brown model `M`, the composite of its
+comparison with the augmentation `TauCeti.pathFromChainAugmentationHom` of the based path chains is
+a quasi-isomorphism from the free module `K_m` onto `R`, on which the loop chains act through their
+augmentation: every relative cycle `(u, w)` is a relative boundary `(D u', ε(g(u')))`. Both maps
+are quasi-isomorphisms, the second because the based path space is contractible. -/
+theorem exists_differential_eq_and_augmentation_add_eq {P : Type*} {ind : P → ℤ}
+    (M : BrownModel B b H R P ind) (u : P →₀ loopChainAlgebra B b R)
+    (w : Bimodule (loopChainAugmentation B b R).toGradedAlgHom.toAlgHom)
+    (hu : rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+      (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+      (d := cubicalChainDifferential (MooreLoopSpace B b) R) M.cocycle.m u = 0)
+    (hw : Finsupp.linearCombination (loopChainAlgebra B b R)
+        (pathFromChainAugmentationHom B b H R ∘ M.comparison) u =
+      (loopChainAugmentation B b R).bimoduleDifferential w) :
+    ∃ u' w', rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+        (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+        (d := cubicalChainDifferential (MooreLoopSpace B b) R) M.cocycle.m u' = u ∧
+      Finsupp.linearCombination (loopChainAlgebra B b R)
+          (pathFromChainAugmentationHom B b H R ∘ M.comparison) u' +
+        (loopChainAugmentation B b R).bimoduleDifferential w' = w := by
+  -- The images of the generators in `R` are the augmentations of their images in the path chains.
+  have hlc := Finsupp.apply_linearCombination _ (pathFromChainAugmentationHom B b H R) M.comparison
+  obtain ⟨u', w', hu', hw'⟩ := exists_differential_eq_and_comp_add_eq
+    (g := (Finsupp.linearCombination (loopChainAlgebra B b R) M.comparison).restrictScalars R)
+    (f := (pathFromChainAugmentationHom B b H R).restrictScalars R) M.linearCombination_differential
+    pathFromChainAugmentationHom_differential M.exists_differential_eq_and_linearCombination_add_eq
+    exists_differential_eq_and_pathFromChainAugmentationHom_add_eq u w hu ((hlc u).trans hw)
+  exact ⟨u', w', hu', (congrArg (· + _) (hlc u')).symm.trans hw'⟩
+
+variable {D₁ D₂ : Type*} [Category* D₁] [Category* D₂]
   (L₁ : DGRightModuleCat.{uR, max uB uR, uM} (loopChain_isDGAlgebra B b R) ⥤ D₁)
   [L₁.IsLocalization (DGRightModuleCat.quasiIsos (loopChain_isDGAlgebra B b R))]
   (L₂ : CochainComplex (ModuleCat.{max uB uR uM} R) ℤ ⥤ D₂)
   [L₂.IsLocalization (HomologicalComplex.quasiIso _ (ComplexShape.up ℤ))]
 
-/-- **Brown's models compute the derived tensor product with the ground ring.** Let `m` be a
-semi-free twisting cocycle over the loop chains `C_*(Ω_b B; R)`, with a comparison `g` of its free
-module `K_m` with the chains `C_*(P_b B; R)` on the based path space: `g` sends each generator `x`
-to a chain of degree `-ind x` whose boundary is the image of the row of `x`, and every relative
-cycle of `g` is a relative boundary, so that `g` is a quasi-isomorphism. Then tensoring DG right
-modules with `K_m` induces, on any localizations at the quasi-isomorphisms, a functor isomorphic to
-the derived tensor product `- ⊗^L R` with the ground ring, on which the loop chains act through
-their augmentation. -/
-theorem nonempty_localizedFunctor_iso_derivedTensor_loopChainAugmentation
-    {P : Type (max uB uR)} {ind : P → ℤ}
-    {m : RowFiniteTwistingCocycle (R := R) (A := loopChainAlgebra B b R)
-      (cubicalChainGrading (MooreLoopSpace B b) R) (cubicalChainDifferential (MooreLoopSpace B b) R)
-      P ind}
-    (hm : WellFounded fun y x ↦ y ∈ (m.m x).support)
-    {g : P → cubicalChainModule (MoorePathFrom B b) H R}
-    (hg : ∀ x, g x ∈ cubicalChainModuleGrading (MoorePathFrom B b) H R (-ind x))
-    (hgd : ∀ x, Finsupp.linearCombination (loopChainAlgebra B b R) g (m.m x) =
-      cubicalChainModuleDifferential (MoorePathFrom B b) H R (g x))
-    (hgrel : ∀ u w, rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
-        (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
-        (d := cubicalChainDifferential (MooreLoopSpace B b) R) m.m u = 0 →
-      Finsupp.linearCombination (loopChainAlgebra B b R) g u =
-        cubicalChainModuleDifferential (MoorePathFrom B b) H R w →
-      ∃ u' w', rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
-          (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
-          (d := cubicalChainDifferential (MooreLoopSpace B b) R) m.m u' = u ∧
-        Finsupp.linearCombination (loopChainAlgebra B b R) g u' +
-          cubicalChainModuleDifferential (MoorePathFrom B b) H R w' = w) :
-    Nonempty ((m.coefficientLocalizerMorphism (loopChain_isDGAlgebra B b R) hm).localizedFunctor
-        L₁ L₂ ≅
+/-- **Brown models compute the derived tensor product with the ground ring.** For a Brown model
+`M` of the chains on the based path space, with generators in the universe of the loop chains,
+tensoring DG right modules with the free module `K_m` of its cocycle induces, on any localizations
+at the quasi-isomorphisms, a functor isomorphic to the derived tensor product `- ⊗^L R` with the
+ground ring, on which the loop chains act through their augmentation. So the twisted complex
+`𝓕 ⊗ K_m` has cohomology `Tor^{C_*(Ω_b B; R)}(𝓕, R)`. -/
+theorem nonempty_localizedFunctor_iso_derivedTensor {P : Type (max uB uR)} {ind : P → ℤ}
+    (M : BrownModel B b H R P ind) :
+    Nonempty ((M.cocycle.coefficientLocalizerMorphism (loopChain_isDGAlgebra B b R)
+        M.wellFounded).localizedFunctor L₁ L₂ ≅
       (derivedTensorLocalizerMorphism (loopChain_isDGAlgebra B b R)
         (loopChainAugmentation B b R).bimoduleGrading
         (loopChainAugmentation B b R).bimoduleDifferential).localizedFunctor L₁ L₂) := by
   -- The left action of the loop chains on `{}_ε R` respects degrees; the instance has to be
   -- supplied, since the grading of the loop chains is stated with the direct-sum module structure.
   have := DGAlgHom.bimoduleGradedSMulLeft (loopChainAugmentation B b R)
-  have hcomm := linearCombination_rowFiniteTwistedDifferential
-    (pathFromChain_isDGLeftModule B b H R) m.m hgd
-  -- The images of the generators in `R` are the augmentations of their images in the path chains.
-  have hlc (f : P →₀ loopChainAlgebra B b R) :
-      Finsupp.linearCombination _ (fun x ↦ pathFromChainAugmentationHom B b H R (g x)) f =
-        pathFromChainAugmentationHom B b H R (Finsupp.linearCombination _ g f) :=
-    (Finsupp.apply_linearCombination _ _ g f).symm
-  refine nonempty_localizedFunctor_iso_derivedTensor L₁ L₂
-    (loopChainAugmentation B b R).isDGBimodule.toIsDGLeftModule hm
-    (ε := fun x ↦ pathFromChainAugmentationHom B b H R (g x))
-    (fun x ↦ pathFromChainAugmentationHom_mem (hg x)) (fun x ↦ ?_) fun u w hu hw ↦ ?_
-  · rw [hlc, hgd, pathFromChainAugmentationHom_differential]
-  · -- The composite of the comparison with the augmentation of the path chains.
-    obtain ⟨u', w', hu', hw'⟩ := exists_differential_eq_and_comp_add_eq
-      (g := (Finsupp.linearCombination (loopChainAlgebra B b R) g).restrictScalars R)
-      (f := (pathFromChainAugmentationHom B b H R).restrictScalars R) hcomm
-      pathFromChainAugmentationHom_differential hgrel
-      exists_differential_eq_and_pathFromChainAugmentationHom_add_eq u w hu
-      ((hlc u).symm.trans hw)
-    exact ⟨u', w', hu', (congrArg (· + _) (hlc u')).trans hw'⟩
+  refine TauCeti.nonempty_localizedFunctor_iso_derivedTensor L₁ L₂
+    (loopChainAugmentation B b R).isDGBimodule.toIsDGLeftModule M.wellFounded
+    (ε := pathFromChainAugmentationHom B b H R ∘ M.comparison)
+    (fun x ↦ pathFromChainAugmentationHom_mem (M.comparison_mem x)) (fun x ↦ ?_)
+    M.exists_differential_eq_and_augmentation_add_eq
+  rw [← Finsupp.apply_linearCombination, M.linearCombination_comparison_m,
+    pathFromChainAugmentationHom_differential, Function.comp_apply]
+
+end BrownModel
 
 /-- **Brown's resolution of the circle computes the derived tensor product with the ground ring.**
 For the complex unit circle, based at `1`, with its `1`-cell attached along the counterclockwise
@@ -225,7 +228,7 @@ loop, tensoring DG right modules `𝓕` over `C_*(Ω S¹; R)` with the free modu
 `D e₁ = ([γ] - [1]) e₀`, induces on any localizations at the quasi-isomorphisms a functor
 isomorphic to the derived tensor product `- ⊗^L R` with the ground ring. -/
 theorem nonempty_loopCellCocycle_localizedFunctor_iso_derivedTensor_loopChainAugmentation
-    {H : Type*} {R : Type} [CommRing R] {D₁ D₂ : Type*} [Category* D₁] [Category* D₂]
+    {R : Type} [CommRing R] {D₁ D₂ : Type*} [Category* D₁] [Category* D₂]
     (L₁ : DGRightModuleCat.{0, 0, uM} (loopChain_isDGAlgebra Circle 1 R) ⥤ D₁)
     [L₁.IsLocalization (DGRightModuleCat.quasiIsos (loopChain_isDGAlgebra Circle 1 R))]
     (L₂ : CochainComplex (ModuleCat.{uM} R) ℤ ⥤ D₂)
@@ -236,33 +239,12 @@ theorem nonempty_loopCellCocycle_localizedFunctor_iso_derivedTensor_loopChainAug
       (derivedTensorLocalizerMorphism (loopChain_isDGAlgebra Circle 1 R)
         (loopChainAugmentation Circle 1 R).bimoduleGrading
         (loopChainAugmentation Circle 1 R).bimoduleDifferential).localizedFunctor L₁ L₂) := by
-  set γ := Circle.expLoop.toMooreLoop
-  set g : Unit ⊕ Unit → cubicalChainModule (MoorePathFrom Circle 1) H R :=
-    Sum.elim (fun _ ↦ cubicalChainModulePoint _ H R (MoorePathFrom.refl Circle 1))
-      (fun _ ↦ loopCellPathChain H R γ)
-  -- The linear combination of the images of the generators is Brown's comparison map.
-  have hg : Finsupp.linearCombination (loopChainAlgebra Circle 1 R) g =
-      loopCellPathComparison H R γ := by
-    refine Finsupp.lhom_ext fun x a ↦ ?_
-    rcases x with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> simp [g]
-  have hgmem : ∀ x, g x ∈ cubicalChainModuleGrading (MoorePathFrom Circle 1) H R
-      (-Sum.elim (fun _ ↦ (0 : ℤ)) (fun _ ↦ 1) x) := by
-    rintro (⟨⟨⟩⟩ | ⟨⟨⟩⟩)
-    · simpa [g] using cubicalChainModulePoint_mem (G := H) (R := R) (MoorePathFrom.refl Circle 1)
-    · simpa [g] using loopCellPathChain_mem (H := H) (R := R) γ
-  have hgd : ∀ f, Finsupp.linearCombination (loopChainAlgebra Circle 1 R) g
-      (rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra Circle 1 R)
-        (𝒜 := cubicalChainGrading (MooreLoopSpace Circle 1) R)
-        (d := cubicalChainDifferential (MooreLoopSpace Circle 1) R) (loopCellCocycle R γ).m f) =
-      cubicalChainModuleDifferential _ H R (Finsupp.linearCombination _ g f) := by
-    intro f
-    rw [hg]
-    exact loopCellPathComparison_differential γ f
-  refine nonempty_localizedFunctor_iso_derivedTensor_loopChainAugmentation L₁ L₂ _ hgmem
-    ((forall_linearCombination_rowFiniteTwistedDifferential_iff
-      (pathFromChain_isDGLeftModule Circle 1 H R) _ g).1 hgd) fun u w hu hw ↦ ?_
-  rw [hg] at hw ⊢
-  exact exists_loopCellCocycle_expLoop_differential_eq_and_loopCellPathComparison_add_eq hu hw
+  -- The chains on the based paths may be taken over any monoid, since the localized functors do
+  -- not involve them.
+  have h := (loopCellBrownModel PUnit.{1} Circle.expLoop.toMooreLoop
+    exists_loopCellCocycle_expLoop_differential_eq_of_loopCellAugmentation_eq_zero
+    ).nonempty_localizedFunctor_iso_derivedTensor L₁ L₂
+  simpa only [loopCellBrownModel_cocycle] using h
 
 end DerivedTensor
 

@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.PresentedGroup
 public import TauCeti.NumberTheory.Modular.Generators
 import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
-import TauCeti.Analysis.Complex.Fuchsian.LevelOne.TriangleGroup
+import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Triangle.Group
 import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.FinTwo
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 

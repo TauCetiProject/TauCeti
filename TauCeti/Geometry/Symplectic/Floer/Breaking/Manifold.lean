@@ -11,8 +11,13 @@ import TauCeti.Analysis.Calculus.StripTranslate
 import TauCeti.Geometry.Manifold.Immersion.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Geometry.Symplectic.Floer.Manifold.Limit
+import TauCeti.Geometry.Symplectic.Floer.Rotation
+import TauCeti.Geometry.Symplectic.Floer.Stationary
+import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
+import TauCeti.MeasureTheory.Integral.Rectangle
+import TauCeti.MeasureTheory.Measure.Haar.Prod
 import TauCeti.Topology.Compactness.Compact
-
 /-!
 # Limits of translated Floer cylinders in a manifold
 
@@ -25,7 +30,8 @@ for the cylindrical perturbation `K = H_t dt`, with almost complex structures `J
 spaces `T_{u_k z} M`. Along a long neck of a sequence of Floer cylinders or pairs of pants that
 breaks, the energy over translated windows `[a + s_k, b + s_k] × [0, 1]` tends to zero. This file
 proves, for a manifold target, that every limit of the translates `(s, t) ↦ u_k(s + s_k, t)` along
-such windows is a stationary cylinder `(s, t) ↦ x(t)` over a Hamiltonian orbit `x`
+such windows is a stationary strip `(s, t) ↦ x(t)` over a Hamiltonian orbit segment
+`x` on `[0, 1]`
 (`IsNondegenerate.exists_hasMFDerivWithinAt_of_tendstoLocallyUniformlyOn_comp_add`, in the
 namespace `TauCeti.SmoothTwoForm`).
 For a single solution of finite energy and `s_k → ∞` this is the breaking off of an orbit at an
@@ -62,17 +68,60 @@ loops satisfy `u_k(s, 0) = u_k(s, 1)`, the relation passes to `v`
 (`TauCeti.apply_eq_apply_of_tendstoLocallyUniformlyOn_comp_add`), and injectivity of `e` on `K`
 then gives `x(0) = x(1)`.
 
+## Limits of the translates of a single solution, with derivatives converging in the tangent bundle
+
+The second part of the file works without the map `e`, for the translates of a single solution.
+Let `H` be jointly `C¹`, and let `u` be `C¹` on an open set `U` containing a part `D` of the strip
+`ℝ × [0, 1]`. Let `u` solve the Floer equation `∂_s u + J_t(u) (∂_t u - X_{H_t}(u)) = 0` for
+`K = H_t dt` on `D`, with almost complex structures `J_t(x)` on `T_x M` independent of `s`, as on a
+cylindrical end, and let `u` have finite energy over `D`. Let `s_k` be translation parameters with
+`|s_k| → ∞` such that every window `[a + s_k, b + s_k] × [0, 1]` eventually lies in `D`. Suppose
+that at every point of the strip the derivatives of the translates `z ↦ u(z + (s_k, 0))` converge
+in the tangent bundle to the derivative of a map `v`. This is pointwise convergence of tangent
+vectors, not `C¹` convergence in a norm. Then:
+
+* the integral over the strip of the positive part of the energy density of `v`, taken through
+  `ENNReal.ofReal`, vanishes
+  (`SmoothTwoForm.lintegral_floerEnergyDensity_eq_zero_of_tendsto_mfderiv_comp_add`); this uses
+  neither the Floer equation nor taming, so it does not by itself say that the signed density
+  vanishes;
+* for `J` continuous in tangent coordinates, the perturbed derivative `dv - X_K(v)` is complex
+  linear for `J_t` at every point of the strip, so `v` solves the Floer equation at the points
+  where it is differentiable
+  (`SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_of_tendsto_mfderiv_comp_add`);
+* if moreover `v` is `C¹` and the structures `J_t` are tamed by `ω` along `v`, then `v` does not
+  depend on `s` (`SmoothTwoForm.IsNondegenerate.eq_of_tendsto_mfderiv_comp_add`), by the
+  characterization of stationary Floer cylinders by their zero energy
+  (`SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_eq_zero_iff`);
+* in that case `x(t) = v(0, t)` is an orbit segment of the Hamiltonian vector field,
+  `x'(t) = X_{H_t}(x(t))` for `t ∈ [0, 1]`
+  (`SmoothTwoForm.IsNondegenerate.hasMFDerivAt_of_tendsto_mfderiv_comp_add`), and the perturbed
+  derivative `dv - X_K(v)` vanishes on the strip, so `v` is the stationary strip `(s, t) ↦ x(t)`
+  over this orbit segment
+  (`SmoothTwoForm.IsNondegenerate.perturbedMFDeriv_eq_zero_of_tendsto_mfderiv_comp_add`). No
+  periodicity `x(0) = x(1)` is asserted.
+
+On a manifold the energy density `ω(∂_s u - X_{K_s}, ∂_t u - X_{K_t})` is intrinsic, but there is
+no norm of the derivative without a choice of metric; the derivatives are therefore compared in the
+tangent bundle, and the structures `J_t` enter through their continuity in tangent coordinates
+(`ContinuousLinearMap.inCoordinates`). Unlike the first part, this needs no compact set of values
+and no map `e`, and it describes the limit `v` itself rather than its image under `e`.
+
 ## References
 
 * A. Floer, *The unregularized gradient flow of the symplectic action*, Comm. Pure Appl. Math. 41
   (1988), 775–813.
+* A. Floer, *Symplectic fixed points and holomorphic spheres*, Comm. Math. Phys. **120** (1989),
+  575–611.
 * D. Salamon, *Lectures on Floer homology*, in *Symplectic geometry and topology*, IAS/Park City
   Math. Ser. 7 (1999), Lecture 1, on finite-energy Floer cylinders and their limits at the ends.
+* D. McDuff and D. Salamon, *J-holomorphic curves and symplectic topology*, Section 4.5 and the
+  chapter on Floer homology, on the removal of the ends of finite-energy solutions.
 -/
 
 public section
 
-open Set Filter Topology MeasureTheory Function
+open Bundle Set Filter Topology MeasureTheory Function
 open scoped Manifold ENNReal
 
 namespace TauCeti.SmoothTwoForm
@@ -192,10 +241,7 @@ private theorem exists_continuous_apply_eq_mvfderiv_hamiltonianVectorField
       ∀ t, ∀ p ∈ K, Φ (t, e p) = mvfderiv I e p (ω.hamiltonianVectorField (H t) p) := by
   have hemb : IsClosedEmbedding fun p : K ↦ e p :=
     hK.isClosedEmbedding_domRestrict he.continuous.continuousOn he_inj
-  have hXe : Continuous fun q : ℝ × M ↦ mvfderiv I e q.2 (ω.hamiltonianVectorField (H q.1) q.2) :=
-    (he.contMDiff_mvfderiv_apply (m := 0) (by simp)).continuous.comp
-      (hω.contMDiff_hamiltonianVectorField_uncurry (n := 0) (by simp)
-        (by simpa using hH)).continuous
+  have hXe := hω.continuous_mvfderiv_hamiltonianVectorField hH he
   -- The Tietze extension theorem along the closed embedding `ℝ × K → ℝ × F`.
   obtain ⟨Φ, hΦ⟩ := ContinuousMap.exists_extension' (IsClosedEmbedding.id.prodMap hemb)
     ⟨fun q : ℝ × K ↦ mvfderiv I e q.2 (ω.hamiltonianVectorField (H q.1) q.2),
@@ -279,8 +325,9 @@ theorem IsNondegenerate.exists_hasMFDerivWithinAt_of_tendstoLocallyUniformlyOn_c
     hdΦ hv
   -- Read the limit back in `M`: it is `e ∘ x` for a path `x` in `K`.
   obtain ⟨x, hxK, hvx, hconv, hxc⟩ := exists_eq_comp_tendsto_of_tendstoLocallyUniformlyOn
-    he.continuous hK he_inj (fun z hz ↦ (hW z.1 z.1).mono fun k hk ↦
-      huK k _ (hk ⟨⟨by simp, by simp⟩, by simpa using hz.2⟩)) hv hstat
+    he.continuous hK he_inj (fun z hz ↦
+      (eventually_add_mem_of_eventually_Icc_prod_subset hW z hz).mono fun k hk ↦ huK k _ hk) hv
+    hstat
     fun t ht ↦ (hy t ht).continuousWithinAt
   refine ⟨x, hxK, hvx, hconv, fun t ht ↦ ?_⟩
   -- Since `d e` is injective, `x` has velocity `X_{H_t}(x)`.
@@ -288,5 +335,296 @@ theorem IsNondegenerate.exists_hasMFDerivWithinAt_of_tendstoLocallyUniformlyOn_c
     (.of_injective_of_finiteDimensional (hde _ (hxK t))) ?_
   rw [← hΦe t _ (hxK t), ← hvx (0, t) ⟨mem_univ _, ht⟩]
   exact (hy t ht).congr_of_mem (fun τ hτ ↦ (hvx (0, τ) ⟨mem_univ _, hτ⟩).symm) ht
+
+section TangentBundleLimit
+
+variable {J : ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+  {u v : ℝ × ℝ → M} {s : ℕ → ℝ} {U D : Set (ℝ × ℝ)}
+
+/-- For `K = H_t dt` with `H` jointly `C¹`, the Hamiltonian vector field of the `dt` component of
+`K` is continuous on the domain times `M`, as a map into the tangent bundle. -/
+private theorem IsNondegenerate.continuous_hamiltonianVectorField_cylindrical
+    (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) :
+    Continuous fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField ((fun w : ℝ × ℝ ↦ H w.2) p.1) p.2⟩ : TangentBundle I M) := by
+  have hK : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) (0 + 1) (uncurry fun (w : ℝ × ℝ) ↦ H w.2) := by
+    rw [zero_add]
+    exact hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
+  exact (hω.contMDiff_hamiltonianVectorField_uncurry (n := 0) (by simp) hK).continuous
+
+/-- The Hamiltonian vector field of the zero `ds` component of `K = H_t dt` is continuous on the
+domain times `M`, as a map into the tangent bundle. -/
+private theorem IsNondegenerate.continuous_hamiltonianVectorField_zero (hω : ω.IsNondegenerate) :
+    Continuous fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField ((fun (_ : ℝ × ℝ) (_ : M) ↦ (0 : ℝ)) p.1) p.2⟩ :
+        TangentBundle I M) := by
+  have hK : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) (0 + 1)
+      (uncurry fun (_ : ℝ × ℝ) (_ : M) ↦ (0 : ℝ)) := contMDiff_const
+  exact (hω.contMDiff_hamiltonianVectorField_uncurry (n := 0) (by simp) hK).continuous
+
+/-- The integral of the positive part of the energy density of the limit `v` of the translates
+over a rectangle `[a, b] × [0, 1]` vanishes. -/
+private theorem setLIntegral_Icc_prod_floerEnergyDensity_eq_zero (hω : ω.IsNondegenerate)
+    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hU : IsOpen U)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) (hDU : D ⊆ U)
+    (hfin : ∫⁻ z in D,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
+    (hs : Tendsto s atTop (cocompact ℝ))
+    (hW : ∀ a b : ℝ, ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc 0 1 ⊆ D)
+    (hdu : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ∀ e, Tendsto (fun k ↦ (⟨u (z + (s k, 0)),
+      mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun w ↦ u (w + (s k, 0))) z e⟩ : TangentBundle I M)) atTop
+      (𝓝 ⟨v z, mfderiv 𝓘(ℝ, ℝ × ℝ) I v z e⟩)) (a b : ℝ) :
+    ∫⁻ z in Icc a b ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) v z) = 0 := by
+  set e : (ℝ × ℝ → M) → ℝ × ℝ → ENNReal := fun w z ↦
+    ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) w z) with he
+  have hXt := hω.continuous_hamiltonianVectorField_cylindrical hH
+  have hXs := hω.continuous_hamiltonianVectorField_zero (I := I)
+  have hcont : ContinuousOn (e u) U := ENNReal.continuous_ofReal.comp_continuousOn
+    (ω.continuousOn_floerEnergyDensity hU hu hXs.continuousOn hXt.continuousOn)
+  set W : Set (ℝ × ℝ) := Icc a b ×ˢ Icc 0 1
+  have hWm : MeasurableSet W := measurableSet_Icc.prod measurableSet_Icc
+  -- The translation `z ↦ z + (c, 0)` maps `W` onto the window `[a + c, b + c] × [0, 1]`.
+  have hpre (c : ℝ) :
+      W = (fun z ↦ z + ((c, 0) : ℝ × ℝ)) ⁻¹' (Icc (a + c) (b + c) ×ˢ Icc 0 1) :=
+    (preimage_add_fst_Icc_prod a b c _).symm
+  obtain ⟨N, hN⟩ := eventually_atTop.1 (hW a b)
+  have hmem {n : ℕ} {z : ℝ × ℝ} (hz : z ∈ W) : z + (s (n + N), 0) ∈ D := by
+    rw [hpre (s (n + N))] at hz
+    exact hN (n + N) (Nat.le_add_left N n) hz
+  -- Along the tail `k = n + N`, the translated energy densities converge pointwise on `W` to the
+  -- energy density of `v`.
+  have hlim (z : ℝ × ℝ) (hz : z ∈ W) :
+      Tendsto (fun n : ℕ ↦ e u (z + (s (n + N), 0))) atTop (𝓝 (e v z)) := by
+    have h := (ENNReal.continuous_ofReal.tendsto _).comp
+      (ω.tendsto_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2)
+        (u := fun k w ↦ u (w + (s k, 0))) tendsto_const_nhds
+        (hdu z ⟨mem_univ _, hz.2⟩) hXs.continuousAt hXt.continuousAt)
+    refine ((tendsto_add_atTop_iff_nat N).2 h).congr fun n ↦ ?_
+    simp only [comp_apply, he]
+    rw [floerEnergyDensity_cylindrical_comp_add_right]
+  -- The energies of `u` over the translated windows tend to zero.
+  have hE : Tendsto (fun n : ℕ ↦ ∫⁻ z in W, e u (z + (s (n + N), 0))) atTop (𝓝 0) := by
+    have h := tendsto_setLIntegral_of_eventually_subset hfin
+      (A := fun k ↦ Icc (a + s k) (b + s k) ×ˢ Icc 0 1)
+      (eventually_Icc_add_prod_subset_inter hs (hW a b))
+    refine ((tendsto_add_atTop_iff_nat N).2 h).congr fun n ↦ ?_
+    rw [hpre (s (n + N))]
+    exact ((measurePreserving_add_right volume ((s (n + N), 0) : ℝ × ℝ))
+      |>.setLIntegral_comp_preimage_emb (measurableEmbedding_addRight _) (e u) _).symm
+  -- Fatou's lemma.
+  have hmeas (n : ℕ) : AEMeasurable (fun z ↦ e u (z + (s (n + N), 0))) (volume.restrict W) :=
+    (hcont.comp (continuous_id.add continuous_const).continuousOn
+      fun z hz ↦ hDU (hmem hz)).aemeasurable hWm
+  refine le_antisymm ?_ zero_le
+  calc ∫⁻ z in W, e v z
+      = ∫⁻ z in W, liminf (fun n : ℕ ↦ e u (z + (s (n + N), 0))) atTop :=
+        setLIntegral_congr_fun hWm fun z hz ↦ (hlim z hz).liminf_eq.symm
+    _ ≤ liminf (fun n : ℕ ↦ ∫⁻ z in W, e u (z + (s (n + N), 0))) atTop :=
+        lintegral_liminf_le' hmeas
+    _ = 0 := hE.liminf_eq
+
+/-- **The limit of translated Floer cylinders has zero energy.** Let `u` be `C¹` on an open set `U`
+containing `D`, with finite energy over `D` for the cylindrical perturbation `K = H_t dt`, where `H`
+is jointly `C¹`. Let `|s_k| → ∞`, with every window `[a + s_k, b + s_k] × [0, 1]` eventually in
+`D`, and suppose that at every point of the strip `ℝ × [0, 1]` the derivatives of the translates
+`w ↦ u (w + (s_k, 0))` converge in the tangent bundle to the derivative of a map `v`. Then the
+integral over the strip of the positive part of the energy density of `v`, taken through
+`ENNReal.ofReal`, vanishes. Neither the Floer equation nor taming is assumed, so this does not by
+itself say that the signed density vanishes. -/
+theorem lintegral_floerEnergyDensity_eq_zero_of_tendsto_mfderiv_comp_add (hω : ω.IsNondegenerate)
+    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hU : IsOpen U)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) (hDU : D ⊆ U)
+    (hfin : ∫⁻ z in D,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
+    (hs : Tendsto s atTop (cocompact ℝ))
+    (hW : ∀ a b : ℝ, ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc 0 1 ⊆ D)
+    (hdu : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ∀ e, Tendsto (fun k ↦ (⟨u (z + (s k, 0)),
+      mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun w ↦ u (w + (s k, 0))) z e⟩ : TangentBundle I M)) atTop
+      (𝓝 ⟨v z, mfderiv 𝓘(ℝ, ℝ × ℝ) I v z e⟩)) :
+    ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) v z) = 0 := by
+  -- The rectangles `[-n, n] × [0, 1]` exhaust the strip.
+  rw [← iUnion_Icc_neg_prod]
+  exact le_antisymm ((lintegral_iUnion_le _ _).trans (tsum_eq_zero_iff.2 fun n ↦
+    setLIntegral_Icc_prod_floerEnergyDensity_eq_zero hω hH hU hu hDU hfin hs hW hdu _ _).le)
+    zero_le
+
+/-- **The limit of translated Floer cylinders satisfies the Floer equation.** Let `u` solve the
+Floer equation `∂_s u + J_t(u) (∂_t u - X_{H_t}(u)) = 0` on `D`, for the cylindrical perturbation
+`K = H_t dt` with `H` jointly `C¹` and structures `J_t` independent of `s`. Suppose that at every
+point `z` of the strip `ℝ × [0, 1]` the translates `z + (s_k, 0)` eventually lie in `D`, the
+derivatives of the translates `w ↦ u (w + (s_k, 0))` converge in the tangent bundle to the
+derivative of a map `v`, and that `J` is continuous at `(z.2, v z)` in the tangent coordinates at
+`v z`. Then the perturbed derivative `dv - X_K(v)` is complex linear for `J_t` at every point of
+the strip, so `v` solves the Floer equation at the points of the strip where it is
+differentiable. -/
+theorem isComplexLinearMap_perturbedMFDeriv_of_tendsto_mfderiv_comp_add (hω : ω.IsNondegenerate)
+    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
+    (hfloer : ∀ z ∈ D, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z.2 (u z))
+      (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z).toLinearMap)
+    (hD : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ∀ᶠ k in atTop, z + (s k, 0) ∈ D)
+    (hdu : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ∀ e, Tendsto (fun k ↦ (⟨u (z + (s k, 0)),
+      mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun w ↦ u (w + (s k, 0))) z e⟩ : TangentBundle I M)) atTop
+      (𝓝 ⟨v z, mfderiv 𝓘(ℝ, ℝ × ℝ) I v z e⟩))
+    (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ContinuousAt (fun p : ℝ × M ↦
+      ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) (v z) p.2 (v z) p.2
+        (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z.2, v z)) :
+    ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z.2 (v z)) (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) v z).toLinearMap := by
+  intro z hz
+  -- The translates solve the Floer equation at `z` as soon as `z + (s_k, 0)` lies in `D`.
+  have hsol : ∀ᶠ k in atTop, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z.2 (u (z + (s k, 0)))) (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2)
+        (fun w ↦ u (w + (s k, 0))) z).toLinearMap := by
+    filter_upwards [hD z hz] with k hzk
+    have hF := hfloer _ hzk
+    have h2 : (z + (s k, 0)).2 = z.2 := by simp
+    rw [h2] at hF
+    exact ω.isComplexLinearMap_perturbedMFDeriv_comp_add_right rfl (by simp) hF
+  have hJ' := (hJ z hz).comp (x := (z, v z)) (f := fun p : (ℝ × ℝ) × M ↦ (p.1.2, p.2))
+    (by fun_prop)
+  exact ω.isComplexLinearMap_perturbedMFDeriv_of_tendsto (Ks := fun _ _ ↦ 0)
+    (Kt := fun w ↦ H w.2) (J := fun w x ↦ J w.2 x) (u := fun k w ↦ u (w + (s k, 0)))
+    tendsto_const_nhds (hdu z hz) hJ' hω.continuous_hamiltonianVectorField_zero.continuousAt
+    (hω.continuous_hamiltonianVectorField_cylindrical hH).continuousAt hsol
+
+/-- **The limit of translated Floer cylinders is independent of `s`.** Under the hypotheses of
+`TauCeti.SmoothTwoForm.lintegral_floerEnergyDensity_eq_zero_of_tendsto_mfderiv_comp_add` and
+`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_of_tendsto_mfderiv_comp_add`, if the
+limit `v` is `C¹` and the structures `J_t` are tamed by `ω` at the points of `v` on the strip
+`ℝ × [0, 1]`, then `v (r, t) = v (0, t)` on the strip. -/
+theorem IsNondegenerate.eq_of_tendsto_mfderiv_comp_add (hω : ω.IsNondegenerate)
+    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hU : IsOpen U)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) (hDU : D ⊆ U)
+    (hfloer : ∀ z ∈ D, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z.2 (u z))
+      (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z).toLinearMap)
+    (hfin : ∫⁻ z in D,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
+    (hs : Tendsto s atTop (cocompact ℝ))
+    (hW : ∀ a b : ℝ, ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc 0 1 ⊆ D)
+    (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v)
+    (hdu : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ∀ e, Tendsto (fun k ↦ (⟨u (z + (s k, 0)),
+      mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun w ↦ u (w + (s k, 0))) z e⟩ : TangentBundle I M)) atTop
+      (𝓝 ⟨v z, mfderiv 𝓘(ℝ, ℝ × ℝ) I v z e⟩))
+    (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ContinuousAt (fun p : ℝ × M ↦
+      ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) (v z) p.2 (v z) p.2
+        (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z.2, v z))
+    (hJt : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, (hω.symplecticFormAt (v z)).Tames (J z.2 (v z))) :
+    ∀ r, ∀ t ∈ Icc (0 : ℝ) 1, v (r, t) = v (0, t) := by
+  have hsol := isComplexLinearMap_perturbedMFDeriv_of_tendsto_mfderiv_comp_add hω hH hfloer
+    (eventually_add_mem_of_eventually_Icc_prod_subset hW) hdu hJ
+  refine (hω.lintegral_floerEnergyDensity_eq_zero_iff (J := fun z ↦ J z.2 (v z)) hH hv hJt
+    (fun z hz ↦ ?_)).1 (lintegral_floerEnergyDensity_eq_zero_of_tendsto_mfderiv_comp_add hω hH hU
+      hu hDU hfin hs hW hdu)
+  have h := (ω.isComplexLinearMap_perturbedMFDeriv_iff _ _ v z _).1 (hsol z hz)
+  -- The `ds` component of `K` vanishes, and so does its Hamiltonian vector field.
+  rwa [hamiltonianVectorField_const, Pi.zero_apply, sub_zero] at h
+
+/-- Both components of the perturbed derivative of the limit vanish on the strip: `∂_s v = 0` and
+`∂_t v = X_{H_t}(v)`. -/
+private theorem IsNondegenerate.mfderiv_eq_of_tendsto_mfderiv_comp_add (hω : ω.IsNondegenerate)
+    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hU : IsOpen U)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) (hDU : D ⊆ U)
+    (hfloer : ∀ z ∈ D, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z.2 (u z))
+      (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z).toLinearMap)
+    (hfin : ∫⁻ z in D,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
+    (hs : Tendsto s atTop (cocompact ℝ))
+    (hW : ∀ a b : ℝ, ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc 0 1 ⊆ D)
+    (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v)
+    (hdu : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ∀ e, Tendsto (fun k ↦ (⟨u (z + (s k, 0)),
+      mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun w ↦ u (w + (s k, 0))) z e⟩ : TangentBundle I M)) atTop
+      (𝓝 ⟨v z, mfderiv 𝓘(ℝ, ℝ × ℝ) I v z e⟩))
+    (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ContinuousAt (fun p : ℝ × M ↦
+      ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) (v z) p.2 (v z) p.2
+        (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z.2, v z))
+    (hJt : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, (hω.symplecticFormAt (v z)).Tames (J z.2 (v z)))
+    {z : ℝ × ℝ} (hz : z ∈ (univ : Set ℝ) ×ˢ Icc 0 1) :
+    mfderiv 𝓘(ℝ, ℝ × ℝ) I v z stdComplexLineReal = 0 ∧
+      mfderiv 𝓘(ℝ, ℝ × ℝ) I v z stdComplexLineImag = ω.hamiltonianVectorField (H z.2) (v z) := by
+  have hstat := hω.eq_of_tendsto_mfderiv_comp_add hH hU hu hDU hfloer hfin hs hW hv hdu hJ hJt
+  have hs0 : mfderiv 𝓘(ℝ, ℝ × ℝ) I v z stdComplexLineReal = 0 := by
+    rw [stdComplexLineReal_eq]
+    exact Manifold.mfderiv_apply_one_zero_eq_zero_of_apply_eq
+      ((hv z).mdifferentiableAt one_ne_zero) fun q ↦ hstat q z.2 hz.2
+  refine ⟨hs0, ?_⟩
+  -- The Floer equation `∂_s v + J (∂_t v - X) = 0` with `∂_s v = 0` gives `J (∂_t v - X) = 0`, and
+  -- an almost complex structure is injective, since `J (J w) = -w`.
+  have hF := (ω.isComplexLinearMap_perturbedMFDeriv_iff _ _ v z _).1
+    (isComplexLinearMap_perturbedMFDeriv_of_tendsto_mfderiv_comp_add hω hH hfloer
+      (eventually_add_mem_of_eventually_Icc_prod_subset hW)
+      hdu hJ z hz)
+  rw [hs0, hamiltonianVectorField_const, Pi.zero_apply, sub_zero, zero_add] at hF
+  have h' := congrArg (J z.2 (v z)) hF
+  rw [AlmostComplexStructure.apply_apply, map_zero, neg_eq_zero] at h'
+  exact sub_eq_zero.1 h'
+
+/-- **The limit of translated Floer cylinders is a Hamiltonian orbit segment.** Under the
+hypotheses of `TauCeti.SmoothTwoForm.IsNondegenerate.eq_of_tendsto_mfderiv_comp_add`, the curve
+`x(t) = v (0, t)` solves `x'(t) = X_{H_t}(x(t))` for every `t ∈ [0, 1]`. -/
+theorem IsNondegenerate.hasMFDerivAt_of_tendsto_mfderiv_comp_add (hω : ω.IsNondegenerate)
+    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hU : IsOpen U)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) (hDU : D ⊆ U)
+    (hfloer : ∀ z ∈ D, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z.2 (u z))
+      (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z).toLinearMap)
+    (hfin : ∫⁻ z in D,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
+    (hs : Tendsto s atTop (cocompact ℝ))
+    (hW : ∀ a b : ℝ, ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc 0 1 ⊆ D)
+    (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v)
+    (hdu : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ∀ e, Tendsto (fun k ↦ (⟨u (z + (s k, 0)),
+      mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun w ↦ u (w + (s k, 0))) z e⟩ : TangentBundle I M)) atTop
+      (𝓝 ⟨v z, mfderiv 𝓘(ℝ, ℝ × ℝ) I v z e⟩))
+    (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ContinuousAt (fun p : ℝ × M ↦
+      ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) (v z) p.2 (v z) p.2
+        (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z.2, v z))
+    (hJt : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, (hω.symplecticFormAt (v z)).Tames (J z.2 (v z))) :
+    ∀ t ∈ Icc (0 : ℝ) 1, HasMFDerivAt 𝓘(ℝ, ℝ) I (fun t ↦ v (0, t)) t
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (ω.hamiltonianVectorField (H t) (v (0, t)))) := by
+  intro t ht
+  have hvt : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I v (0, t) := (hv _).mdifferentiableAt one_ne_zero
+  have hc : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun t ↦ v (0, t)) t :=
+    hvt.comp t ((differentiableAt_const 0).prodMk differentiableAt_id).mdifferentiableAt
+  have h := Manifold.hasMFDerivAt_curveVelocity hc
+  rwa [Manifold.curveVelocity_eq_mfderiv_snd (f := fun a b ↦ v (a, b)) hvt, ← stdComplexLineImag_eq,
+    (hω.mfderiv_eq_of_tendsto_mfderiv_comp_add hH hU hu hDU hfloer hfin hs hW hv hdu hJ hJt
+      (z := (0, t)) ⟨mem_univ _, ht⟩).2] at h
+
+/-- **The limit of translated Floer cylinders is a stationary strip.** Under the hypotheses of
+`TauCeti.SmoothTwoForm.IsNondegenerate.eq_of_tendsto_mfderiv_comp_add`, the perturbed derivative
+`dv - X_K(v)` of the limit vanishes on the strip `ℝ × [0, 1]`, so `v` is the stationary strip over
+the Hamiltonian orbit segment `t ↦ v (0, t)`. No periodicity `v (0, 0) = v (0, 1)` is asserted. -/
+theorem IsNondegenerate.perturbedMFDeriv_eq_zero_of_tendsto_mfderiv_comp_add
+    (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hU : IsOpen U)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) (hDU : D ⊆ U)
+    (hfloer : ∀ z ∈ D, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z.2 (u z))
+      (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z).toLinearMap)
+    (hfin : ∫⁻ z in D,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
+    (hs : Tendsto s atTop (cocompact ℝ))
+    (hW : ∀ a b : ℝ, ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc 0 1 ⊆ D)
+    (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v)
+    (hdu : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ∀ e, Tendsto (fun k ↦ (⟨u (z + (s k, 0)),
+      mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun w ↦ u (w + (s k, 0))) z e⟩ : TangentBundle I M)) atTop
+      (𝓝 ⟨v z, mfderiv 𝓘(ℝ, ℝ × ℝ) I v z e⟩))
+    (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ContinuousAt (fun p : ℝ × M ↦
+      ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) (v z) p.2 (v z) p.2
+        (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z.2, v z))
+    (hJt : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, (hω.symplecticFormAt (v z)).Tames (J z.2 (v z))) :
+    ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1,
+      ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) v z = 0 := by
+  intro z hz
+  obtain ⟨hs0, ht0⟩ :=
+    hω.mfderiv_eq_of_tendsto_mfderiv_comp_add hH hU hu hDU hfloer hfin hs hW hv hdu hJ hJt hz
+  -- A linear map on `ℝ × ℝ` vanishes when it vanishes on `(1, 0)` and `(0, 1)`.
+  refine ContinuousLinearMap.ext fun e ↦ ?_
+  have he : e = e.1 • stdComplexLineReal + e.2 • stdComplexLineImag := by
+    simp [stdComplexLineReal_eq, stdComplexLineImag_eq]
+  rw [he, map_add, map_smul, map_smul, perturbedMFDeriv_apply_stdComplexLineReal,
+    perturbedMFDeriv_apply_stdComplexLineImag, hs0, ht0, hamiltonianVectorField_const]
+  simp
+
+end TangentBundleLimit
 
 end TauCeti.SmoothTwoForm

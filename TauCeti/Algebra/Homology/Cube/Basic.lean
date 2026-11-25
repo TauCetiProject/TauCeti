@@ -53,7 +53,8 @@ degree is the height `#S` itself, and the terms are finite biproducts.
 * `Functor.isZero_cubeComplex_X_of_neg`, `Functor.isZero_cubeComplex_X_of_card_lt`: the terms
   vanish outside the degrees `0, …, #ι`.
 * `Functor.cubeComplex_total`: each term is the direct sum of its vertices.
-* `Functor.cubeComplexXZeroIso`: the degree `0` term is the initial vertex `F(∅)`.
+* `Functor.cubeComplexXZeroIso`, `Functor.cubeComplexXTopIso`: the degree `0` term is the initial
+  vertex `F(∅)`, and the degree `#ι` term is the terminal vertex `F(univ)`.
 
 ## References
 
@@ -403,6 +404,28 @@ lemma cubeComplexXZeroIso_hom : F.cubeComplexXZeroIso.hom = F.cubeComplexπ ⟨�
 /-- The identification of `F(∅)` with the degree `0` term is the inclusion of that vertex. -/
 @[simp]
 lemma cubeComplexXZeroIso_inv : F.cubeComplexXZeroIso.inv = F.cubeComplexι ⟨∅, by simp⟩ :=
+  (rfl)
+
+/-- The top degree term of the cube complex is the terminal vertex `F(univ)`, the only vertex of
+height `#ι`. -/
+def cubeComplexXTopIso : F.cubeComplex.X (Fintype.card ι) ≅ F.obj univ where
+  hom := F.cubeComplexπ ⟨univ, by simp⟩
+  inv := F.cubeComplexι ⟨univ, by simp⟩
+  hom_inv_id := by
+    ext ⟨S, hS⟩
+    obtain rfl : S = univ := eq_univ_of_card S (by exact_mod_cast hS)
+    simp
+  inv_hom_id := F.cubeComplexι_π_self _
+
+/-- The identification of the top degree term with `F(univ)` is the projection onto that
+vertex. -/
+@[simp]
+lemma cubeComplexXTopIso_hom : F.cubeComplexXTopIso.hom = F.cubeComplexπ ⟨univ, by simp⟩ :=
+  (rfl)
+
+/-- The identification of `F(univ)` with the top degree term is the inclusion of that vertex. -/
+@[simp]
+lemma cubeComplexXTopIso_inv : F.cubeComplexXTopIso.inv = F.cubeComplexι ⟨univ, by simp⟩ :=
   (rfl)
 
 end Functor

@@ -40,7 +40,9 @@ is inherited from the ambient matrix topology whenever `𝕜` is Hausdorff.
 Closedness is also recorded one level up, for `TauCeti.GLSpecialUnitary`, the same group seen as
 a subgroup of the general linear group of units: its carrier is the preimage of the matrix special
 unitary group under the continuous coercion `Units.val`.  That is the form in which the
-closed-subgroup theorem consumes it.  Over `ℝ` or `ℂ`, compactness of the matrix unitary group
+closed-subgroup theorem consumes it.  As a topological group it is the matrix special unitary
+group (`TauCeti.GLSpecialUnitary.continuousMulEquiv`), so over `ℝ` or `ℂ` it is compact.  Over
+`ℝ` or `ℂ`, compactness of the matrix unitary group
 likewise passes to the unitary subgroup `unitarySubgroup (GL n 𝕜)`. For the same reason the
 block-diagonal product `{diag(g₁, g₂)}` of two closed subgroups of `U(n)` and `U(m)` is a closed
 subgroup of `U(n ⊕ m)`.
@@ -50,6 +52,8 @@ This is the setup the compact-group representation theory of `SU(2)` runs on; se
 
 ## Main definitions
 
+* `TauCeti.GLSpecialUnitary.continuousMulEquiv`: the special unitary subgroup of the general linear
+  group is the matrix special unitary group, as a topological group.
 * `ClosedSubgroup.fromBlocksProd`: the block-diagonal product `{diag(g₁, g₂)} ≤ U(n ⊕ m)` of
   closed subgroups `G₁ ≤ U(n)` and `G₂ ≤ U(m)`, closed by compactness.
 
@@ -155,6 +159,60 @@ theorem isClosed_GLSpecialUnitary :
   exact (Matrix.isClosed_specialUnitaryGroup (n := n) (𝕜 := 𝕜)).preimage Units.continuous_val
 
 end GeneralLinear
+
+section GeneralLinearEquiv
+
+variable (n : Type*) [Fintype n] [DecidableEq n] (𝕜 : Type*) [CommRing 𝕜] [StarRing 𝕜]
+  [TopologicalSpace 𝕜] [ContinuousStar 𝕜]
+
+/-- **The special unitary subgroup of the general linear group is the matrix special unitary
+group**, as a topological group: a unit goes to its underlying matrix, and a special unitary
+matrix to the unit it defines, whose inverse is its conjugate transpose. -/
+noncomputable def GLSpecialUnitary.continuousMulEquiv :
+    GLSpecialUnitary n 𝕜 ≃ₜ* Matrix.specialUnitaryGroup n 𝕜 where
+  toFun g := ⟨(g : GL n 𝕜), GLSpecialUnitary.mem_iff_mem_specialUnitaryGroup.mp g.property⟩
+  invFun A := ⟨Unitary.toUnits (Submonoid.inclusion Matrix.specialUnitaryGroup_le_unitaryGroup A),
+    GLSpecialUnitary.mem_iff_mem_specialUnitaryGroup.mpr A.property⟩
+  left_inv _ := Subtype.ext (Units.ext rfl)
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+  continuous_toFun := continuous_induced_rng.mpr (Units.continuous_val.comp continuous_subtypeVal)
+  continuous_invFun := continuous_induced_rng.mpr
+    (Unitary.continuous_toUnits.comp
+      (continuous_inclusion Matrix.specialUnitaryGroup_le_unitaryGroup))
+
+variable {n 𝕜}
+
+/-- `TauCeti.GLSpecialUnitary.continuousMulEquiv` sends a unit to its underlying matrix. -/
+@[simp]
+theorem GLSpecialUnitary.coe_continuousMulEquiv_apply (g : GLSpecialUnitary n 𝕜) :
+    (GLSpecialUnitary.continuousMulEquiv n 𝕜 g : Matrix n n 𝕜) = ((g : GL n 𝕜) : Matrix n n 𝕜) := by
+  rw [GLSpecialUnitary.continuousMulEquiv]
+  rfl
+
+/-- The inverse of `TauCeti.GLSpecialUnitary.continuousMulEquiv` sends a special unitary matrix to
+the unit with that underlying matrix. -/
+@[simp]
+theorem GLSpecialUnitary.coe_continuousMulEquiv_symm_apply (A : Matrix.specialUnitaryGroup n 𝕜) :
+    (((GLSpecialUnitary.continuousMulEquiv n 𝕜).symm A : GL n 𝕜) : Matrix n n 𝕜) = A := by
+  rw [GLSpecialUnitary.continuousMulEquiv]
+  rfl
+
+/-- The special unitary subgroup of the general linear group over a second-countable ring is second
+countable. -/
+instance GLSpecialUnitary.instSecondCountableTopology [SecondCountableTopology 𝕜] :
+    SecondCountableTopology (GLSpecialUnitary n 𝕜) :=
+  have : SecondCountableTopology (Matrix n n 𝕜) :=
+    inferInstanceAs (SecondCountableTopology (n → n → 𝕜))
+  (Topology.IsEmbedding.subtypeVal.comp
+    (GLSpecialUnitary.continuousMulEquiv n 𝕜).toHomeomorph.isEmbedding).secondCountableTopology
+
+/-- The special unitary subgroup of the general linear group over `ℝ` or `ℂ` is compact. -/
+instance GLSpecialUnitary.instCompactSpace {𝕜 : Type*} [RCLike 𝕜] :
+    CompactSpace (GLSpecialUnitary n 𝕜) :=
+  (GLSpecialUnitary.continuousMulEquiv n 𝕜).toHomeomorph.symm.compactSpace
+
+end GeneralLinearEquiv
 
 end TauCeti
 

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.Defs
 public import Mathlib.GroupTheory.Abelianization.Defs
-public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.TriangleGroup
+public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Triangle.Group
 public import TauCeti.NumberTheory.Modular.Amalgam
 import Mathlib.Data.ZMod.Basic
 import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices

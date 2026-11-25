@@ -59,6 +59,8 @@ hypothesis in the intended applications.
 
 * `TauCeti.smulTopMap S e f`: the restriction of an `R`-linear map `f : M →ₗ[R] N` to
   `e • M →ₗ[S] e • N`.
+* `IsIdempotentElem.smulTopSubmoduleEquiv`: for an idempotent `e` of a ring `A`, the
+  corner of an `A`-submodule containing `eM` is `eM`.
 
 ## Main results
 
@@ -417,5 +419,36 @@ theorem coe_algebraMap_corner_smul {R : Type*} [CommSemiring R] [Algebra R A] (r
       algebraMap R A r • (x : M) := by
   rw [Corner.coe_smul, Corner.val_algebraMap, Algebra.smul_def, mul_smul,
     he.smul_eq_self_of_mem_smul_top x.property]
+
+section Submodule
+
+variable {A M : Type*} [Ring A] [AddCommGroup M] [Module A M] {e : A} (he : IsIdempotentElem e)
+
+/-- **The corner of a submodule containing `eM` is `eM`.** If an `A`-submodule `X` of `M`
+contains every `e • m`, then the corner `eX` is identified with `eM` by the inclusion `X ⊆ M`. -/
+def smulTopSubmoduleEquiv (X : Submodule A M) (hX : ∀ m : M, e • m ∈ X) :
+    ↥(e • (⊤ : Submodule ℤ X)) ≃ₗ[he.Corner] ↥(e • (⊤ : Submodule ℤ M)) where
+  toFun y := ⟨y.val.val, he.mem_smul_top_iff_smul_eq_self.2
+    (congrArg Subtype.val (he.smul_eq_self_of_mem_smul_top y.property))⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  invFun z := ⟨⟨z.val, he.smul_eq_self_of_mem_smul_top z.property ▸ hX z.val⟩,
+    he.mem_smul_top_iff_smul_eq_self.2 (Subtype.ext (he.smul_eq_self_of_mem_smul_top z.property))⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem coe_smulTopSubmoduleEquiv_apply (X : Submodule A M) (hX : ∀ m : M, e • m ∈ X)
+    (y : ↥(e • (⊤ : Submodule ℤ X))) :
+    (he.smulTopSubmoduleEquiv X hX y : M) = y.val.val :=
+  (rfl)
+
+@[simp]
+theorem coe_coe_smulTopSubmoduleEquiv_symm_apply (X : Submodule A M) (hX : ∀ m : M, e • m ∈ X)
+    (z : ↥(e • (⊤ : Submodule ℤ M))) :
+    (((he.smulTopSubmoduleEquiv X hX).symm z : X) : M) = z.val :=
+  (rfl)
+
+end Submodule
 
 end IsIdempotentElem
