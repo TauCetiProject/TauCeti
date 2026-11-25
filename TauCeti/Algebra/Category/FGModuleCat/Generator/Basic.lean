@@ -170,7 +170,7 @@ theorem _root_.CategoryTheory.IsCoseparator.additiveClosure_of_injective {M : FG
     rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, hπ] at h
     exact h
   exact (additiveClosure M).prop_of_retract ⟨ι, Injective.factorThru (𝟙 I) ι, by simp⟩
-    ((additiveClosure M).prop_of_isLimit (biproduct.isLimit _) fun _ ↦ additiveClosure_self M)
+    (additiveClosure_biproduct (M := M) n)
 
 /-- **The regular module lies in the additive closure of a generator**: if `M` is a generator of
 the module category, then the regular module lies in `add M`. -/

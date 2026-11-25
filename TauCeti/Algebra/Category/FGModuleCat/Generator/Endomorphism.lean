@@ -86,7 +86,6 @@ theorem _root_.CategoryTheory.IsCoseparator.injective_end {A : Type v} [Ring A] 
   have : Module.Finite A (MatlisDual C E A) := hf.finite_matlisDual_of_finite_op
   have : Small.{w} (MatlisDual C E A) := Module.Finite.small A _
   let e := Shrink.linearEquiv.{w} A (MatlisDual C E A)
-  have : Module.Finite A (Shrink.{w} (MatlisDual C E A)) := .equiv e.symm
   have : Module.Injective A (Shrink.{w} (MatlisDual C E A)) :=
     ((Module.Baer.of_injective inferInstance).of_equiv e.symm).injective
   let X := FGModuleCat.of A (Shrink.{w} (MatlisDual C E A))
