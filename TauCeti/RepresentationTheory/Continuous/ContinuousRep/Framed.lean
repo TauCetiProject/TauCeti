@@ -177,6 +177,13 @@ theorem ofFramedFrameIso_apply (b : Module.Basis n A M) (ρ : ContinuousRep Γ A
     ofFramedFrameIso b ρ v = b.equivFun.symm v :=
   Iso.ofEquiv_apply _ _
 
+/-- The inverse of `ofFramedFrameIso b ρ` takes `x : M` to its coordinates in `b`. -/
+@[simp]
+theorem ofFramedFrameIso_symm_apply (b : Module.Basis n A M) (ρ : ContinuousRep Γ A M) (x : M) :
+    (ofFramedFrameIso b ρ).symm x = b.equivFun x := by
+  rw [← b.equivFun.apply_symm_apply ((ofFramedFrameIso b ρ).symm x), ← ofFramedFrameIso_apply b ρ,
+    Iso.apply_symm_apply]
+
 end Frame
 
 section Map
