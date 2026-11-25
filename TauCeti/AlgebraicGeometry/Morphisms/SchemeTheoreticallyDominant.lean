@@ -37,7 +37,8 @@ image of a scheme-theoretically dominant morphism is its whole target
 scheme-theoretically dense in the other, have the same scheme-theoretic closure
 (`AlgebraicGeometry.Scheme.Opens.ker_ι_eq_of_isSchemeTheoreticallyDominant`). For a reduced
 scheme, restricting a morphism out of an open to a smaller dense open does not change its kernel
-(`AlgebraicGeometry.Scheme.Hom.ker_homOfLE_comp`).
+(`AlgebraicGeometry.Scheme.Hom.ker_homOfLE_comp`), so kernels of morphisms out of opens can be
+compared on a dense open (`AlgebraicGeometry.Scheme.Hom.ker_le_ker_of_homOfLE_comp_eq`).
 -/
 
 public section
@@ -79,6 +80,15 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_homOfLE_comp [IsReduced X] {U V 
   have := Opens.isDominant_homOfLE hV hVU
   have := IsSchemeTheoreticallyDominant.of_isDominant (X.homOfLE hVU)
   exact Scheme.Hom.ker_comp_of_isSchemeTheoreticallyDominant _ _
+
+/-- For `X` reduced, if `a : U ⟶ T` restricted to a dense open `V ⊆ U` factors as `m ≫ b`, then
+`ker b ≤ ker a`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_le_ker_of_homOfLE_comp_eq {T A : Scheme.{u}}
+    [IsReduced X] {U V : X.Opens} (hV : Dense (V : Set X)) (hVU : V ≤ U)
+    (a : U.toScheme ⟶ T) (m : V.toScheme ⟶ A) (b : A ⟶ T) (h : X.homOfLE hVU ≫ a = m ≫ b) :
+    b.ker ≤ a.ker := by
+  rw [← Scheme.Hom.ker_homOfLE_comp hV hVU a, h]
+  exact Scheme.Hom.le_ker_comp m b
 
 /-- The scheme-theoretic image of a scheme-theoretically dominant morphism is the whole target. -/
 instance _root_.AlgebraicGeometry.IsSchemeTheoreticallyDominant.isIso_imageι (f : X ⟶ Y)
