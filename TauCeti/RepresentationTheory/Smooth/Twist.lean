@@ -11,7 +11,7 @@ public import TauCeti.RepresentationTheory.Smooth.Character
 /-!
 # Twisting smooth representations by a smooth character
 
-Let `G` be a topological group, `A` a commutative ring and `χ : G →* Aˣ` a smooth character. The
+Let `G` be a topological group, `A` a commutative semiring and `χ : G →* Aˣ` a smooth character. The
 twist `V ↦ V ⊗ χ`, the same module with `g` acting by `χ(g) ρ(g)` (`Representation.charTwist`),
 preserves smoothness and keeps every intertwining map intertwining. So it is a functor
 `SmoothRep.twist χ : SmoothRep A G ⥤ SmoothRep A G`, acting as the identity on underlying modules
@@ -23,6 +23,7 @@ autoequivalence of `SmoothRep A G` (`SmoothRep.twistEquiv`).
 
 * `TauCeti.SmoothRep.twist χ hχ`: the twist functor `V ↦ V ⊗ χ`.
 * `TauCeti.SmoothRep.twistOneIso`: `twist 1 ≅ 𝟭`.
+* `TauCeti.SmoothRep.twistCongr`: `twist χ ≅ twist ψ` when `χ = ψ`.
 * `TauCeti.SmoothRep.twistCompTwistIso`: `twist ψ ⋙ twist χ ≅ twist (χψ)`.
 * `TauCeti.SmoothRep.twistCompTwistInvIso`, `TauCeti.SmoothRep.twistInvCompTwistIso`:
   `twist χ ⋙ twist χ⁻¹ ≅ 𝟭` and `twist χ⁻¹ ⋙ twist χ ≅ 𝟭`.
@@ -44,7 +45,7 @@ universe w u v
 
 namespace TauCeti.SmoothRep
 
-variable {A : Type u} {G : Type v} [CommRing A] [Group G] [TopologicalSpace G]
+variable {A : Type u} {G : Type v} [CommSemiring A] [Group G] [TopologicalSpace G]
   [SeparatelyContinuousMul G]
 
 /-- **The twist by a smooth character** `χ`, as an endofunctor of `SmoothRep A G`: it sends `V`
@@ -57,51 +58,59 @@ abbrev twist (χ : G →* Aˣ) (hχ : IsSmoothCharacter χ) : SmoothRep.{w} A G 
   map_id _ := by ext; simp
   map_comp _ _ := by ext; simp
 
-/-- **Twisting by the trivial character is the identity**: `twist 1 ≅ 𝟭`. -/
+/-- **Twisting by the trivial character is the identity**: `twist 1 ≅ 𝟭`, with components the
+identity of the underlying module. -/
+@[expose, simps! hom_app inv_app]
 def twistOneIso : twist.{w} (1 : G →* Aˣ) isSmoothCharacter_one ≅ 𝟭 (SmoothRep.{w} A G) :=
-  NatIso.ofComponents (fun V ↦ ObjectProperty.isoMk _ <| Rep.mkIso <|
-      .mk (LinearEquiv.refl A V.obj) fun g ↦ by
-        ext v
-        simp)
+  NatIso.ofComponents (fun V ↦ ObjectProperty.isoMk _
+      { hom := Rep.ofHom ⟨.id, fun g ↦ by ext; simp⟩
+        inv := Rep.ofHom ⟨.id, fun g ↦ by ext; simp⟩ })
     fun _ ↦ by ext; simp
 
-/-- **Successive twists multiply the characters**: `twist ψ ⋙ twist χ ≅ twist (χψ)`. -/
+/-- **Twists by equal characters are isomorphic**: `twist χ ≅ twist ψ` when `χ = ψ`, with
+components the identity of the underlying module. -/
+@[expose, simps! hom_app inv_app]
+def twistCongr {χ ψ : G →* Aˣ} {hχ : IsSmoothCharacter χ} {hψ : IsSmoothCharacter ψ}
+    (h : χ = ψ) : twist.{w} χ hχ ≅ twist ψ hψ :=
+  NatIso.ofComponents (fun V ↦ ObjectProperty.isoMk _
+      { hom := Rep.ofHom ⟨.id, fun g ↦ by subst h; rfl⟩
+        inv := Rep.ofHom ⟨.id, fun g ↦ by subst h; rfl⟩ })
+    fun _ ↦ by ext; simp
+
+/-- **Successive twists multiply the characters**: `twist ψ ⋙ twist χ ≅ twist (χψ)`, with
+components the identity of the underlying module. -/
+@[expose, simps! hom_app inv_app]
 def twistCompTwistIso {χ ψ : G →* Aˣ} (hχ : IsSmoothCharacter χ) (hψ : IsSmoothCharacter ψ) :
     twist.{w} ψ hψ ⋙ twist χ hχ ≅ twist (χ * ψ) (hχ.mul hψ) :=
-  NatIso.ofComponents (fun V ↦ ObjectProperty.isoMk _ <| Rep.mkIso <|
-      .mk (LinearEquiv.refl A V.obj) fun g ↦ by
-        ext v
-        simp [mul_smul])
+  NatIso.ofComponents (fun V ↦ ObjectProperty.isoMk _
+      { hom := Rep.ofHom ⟨.id, fun g ↦ by ext; simp [mul_smul]⟩
+        inv := Rep.ofHom ⟨.id, fun g ↦ by ext; simp [mul_smul]⟩ })
     fun _ ↦ by ext; simp
 
 /-- **Twisting by `χ⁻¹` undoes twisting by `χ`**: `twist χ ⋙ twist χ⁻¹ ≅ 𝟭`. -/
+-- The unsimplified right-hand sides keep the components as compositions `simp` can evaluate.
+@[expose, simps! -simpRhs hom_app inv_app]
 def twistCompTwistInvIso {χ : G →* Aˣ} (hχ : IsSmoothCharacter χ) :
     twist.{w} χ hχ ⋙ twist χ⁻¹ hχ.inv ≅ 𝟭 (SmoothRep.{w} A G) :=
-  NatIso.ofComponents (fun V ↦ ObjectProperty.isoMk _ <| Rep.mkIso <|
-      .mk (LinearEquiv.refl A V.obj) fun g ↦ by
-        ext v
-        simp [smul_smul])
-    fun _ ↦ by ext; simp
+  twistCompTwistIso hχ.inv hχ ≪≫ twistCongr (inv_mul_cancel χ) ≪≫ twistOneIso
 
 /-- **Twisting by `χ` undoes twisting by `χ⁻¹`**: `twist χ⁻¹ ⋙ twist χ ≅ 𝟭`. -/
+-- The unsimplified right-hand sides keep the components as compositions `simp` can evaluate.
+@[expose, simps! -simpRhs hom_app inv_app]
 def twistInvCompTwistIso {χ : G →* Aˣ} (hχ : IsSmoothCharacter χ) :
     twist.{w} χ⁻¹ hχ.inv ⋙ twist χ hχ ≅ 𝟭 (SmoothRep.{w} A G) :=
-  NatIso.ofComponents (fun V ↦ ObjectProperty.isoMk _ <| Rep.mkIso <|
-      .mk (LinearEquiv.refl A V.obj) fun g ↦ by
-        ext v
-        simp [smul_smul])
-    fun _ ↦ by ext; simp
+  twistCompTwistIso hχ hχ.inv ≪≫ twistCongr (mul_inv_cancel χ) ≪≫ twistOneIso
 
 /-- **The twist by a smooth character is an autoequivalence** of `SmoothRep A G`, with inverse the
 twist by `χ⁻¹`. -/
+@[expose, simps functor inverse unitIso counitIso]
 def twistEquiv (χ : G →* Aˣ) (hχ : IsSmoothCharacter χ) :
-    SmoothRep.{w} A G ≌ SmoothRep.{w} A G :=
-  .mk (twist χ hχ) (twist χ⁻¹ hχ.inv) (twistCompTwistInvIso hχ).symm (twistInvCompTwistIso hχ)
-
-@[simp]
-theorem twistEquiv_functor (χ : G →* Aˣ) (hχ : IsSmoothCharacter χ) :
-    (twistEquiv.{w} χ hχ).functor = twist χ hχ :=
-  (rfl)
+    SmoothRep.{w} A G ≌ SmoothRep.{w} A G where
+  functor := twist χ hχ
+  inverse := twist χ⁻¹ hχ.inv
+  unitIso := (twistCompTwistInvIso hχ).symm
+  counitIso := twistInvCompTwistIso hχ
+  functor_unitIso_comp _ := by ext; simp
 
 instance isEquivalence_twist (χ : G →* Aˣ) (hχ : IsSmoothCharacter χ) :
     (twist.{w} χ hχ).IsEquivalence :=
