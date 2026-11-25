@@ -73,6 +73,8 @@ public section
 noncomputable section
 
 open Bundle MulOpposite CliffordAlgebra TauCeti.PrincipalBundle
+open TauCeti.CliffordAlgebra (norm_toLp_spinCGroup_toSpecialOrthogonal_apply
+  continuous_spinCGroup_toSpecialOrthogonal_apply)
 
 namespace TauCeti
 
@@ -94,17 +96,11 @@ local notation "χ" => MonoidHom.ofClass (spinCGroup.chargeConj (realCliffordFor
 /-- Charge conjugation is continuous (`CliffordAlgebra.spinCGroup.continuous_chargeConj`). -/
 local notation "hχ" => spinCGroup.continuous_chargeConj (realCliffordForm n 0) hQ
 
-/-- The rotations of `Spinᶜ(n)` preserve the Euclidean norm: the norm hypothesis of
-`TauCeti.OrthonormalFrameLift.extend` for `πᶜ`. -/
-private theorem norm_toLp_rotation_apply (g : SpinC) (v : Fin n → ℝ) :
-    ‖WithLp.toLp 2 (πᶜ g v)‖ = ‖WithLp.toLp 2 v‖ :=
-  TauCeti.CliffordAlgebra.norm_toLp_specialOrthogonalGroup_realCliffordForm_apply n _ v
-
-/-- Rotating a fixed vector is continuous in the element of `Spinᶜ(n)`: the continuity hypothesis
-of `TauCeti.OrthonormalFrameLift.extend` for `πᶜ`. -/
-private theorem continuous_rotation_apply (v : Fin n → ℝ) : Continuous fun g : SpinC ↦ πᶜ g v :=
-  (TauCeti.CliffordAlgebra.continuous_specialOrthogonalGroup_realCliffordForm_apply n v).comp
-    (spinCGroup.continuous_toSpecialOrthogonal_pi _ _)
+/-- Charge conjugation covers the identity rotation, `πᶜ ∘ χ = πᶜ`
+(`CliffordAlgebra.spinCGroup.comp_toSpecialOrthogonal_comp_chargeConj`): the compatibility
+hypothesis of `TauCeti.OrthonormalFrameLift.extendSpinC` for `χ`. -/
+local notation "hπχ" => spinCGroup.comp_toSpecialOrthogonal_comp_chargeConj _ hQ
+  (Subgroup.subtype (QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)))
 
 section Structure
 
@@ -113,20 +109,6 @@ variable {X : Type*} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [No
   [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
 
 namespace SpinCStructure
-
-/-- **Charge conjugation covers the identity rotation**: the rotation of `χ g` is that of `g`.
-This is the compatibility hypothesis of `TauCeti.SpinCStructure.extendSpinC` for `χ`. -/
-theorem rotation_comp_chargeConj : (πᶜ).comp χ = πᶜ :=
-  MonoidHom.ext fun g ↦ by simp
-
-/-- Charge conjugation is an involution: `χ ∘ χ = id`, as homomorphisms. -/
-private theorem chargeConj_comp_chargeConj : MonoidHom.comp χ χ = MonoidHom.id _ :=
-  MonoidHom.ext fun g ↦ by simp
-
-/-- `χ ∘ χ` is continuous, being the identity. -/
-private theorem continuous_chargeConj_comp_chargeConj : Continuous (MonoidHom.comp χ χ) := by
-  rw [chargeConj_comp_chargeConj]
-  exact continuous_id
 
 /-- The **charge conjugate** of a `Spinᶜ` structure `s` with principal bundle `P`: the extension of
 `s` along charge conjugation `χ : [g, z] ↦ [g, z⁻¹]` of `Spinᶜ(n)`
@@ -137,13 +119,13 @@ line is the conjugate of that of `s`, so `c₁(s.chargeConj) = -c₁(s)`
 `s.chargeConj.P x` unfolds to `P ×_χ Spinᶜ(n)` downstream. -/
 @[expose]
 def chargeConj (s : SpinCStructure F V n) : SpinCStructure F V n :=
-  s.extendSpinC χ hχ rotation_comp_chargeConj
+  s.extendSpinC χ hχ hπχ
 
 /-- **The frame of `[p, 1]`** in the charge conjugate of a `Spinᶜ` structure is the frame of `p`. -/
 @[simp]
 theorem toFrame_chargeConj_inl (s : SpinCStructure F V n) (x : X) (p : s.P x) :
     s.chargeConj.toFrame ⟨x, Extend.inl χ hχ p⟩ = s.toFrame ⟨x, p⟩ :=
-  s.toFrame_extendSpinC_inl χ hχ rotation_comp_chargeConj x p
+  s.toFrame_extendSpinC_inl χ hχ hπχ x p
 
 /-- **The frame of `[p, h]`** in the charge conjugate of a `Spinᶜ` structure is the frame of `p`
 composed with the rotation of `h`. -/
@@ -153,8 +135,8 @@ theorem toFrame_chargeConj_mk (s : SpinCStructure F V n) (x : X) (p : s.P x)
         ((s.chargeConj.toFrame ⟨x, Extend.mk χ hχ p h⟩).frame (WithLp.toLp 2 v)) =
       TotalSpace.mk' F (s.toFrame ⟨x, p⟩).proj
         ((s.toFrame ⟨x, p⟩).frame (WithLp.toLp 2 (πᶜ h v))) :=
-  s.toFrame_extend_mk χ hχ rotation_comp_chargeConj norm_toLp_rotation_apply
-    continuous_rotation_apply x p h v
+  s.toFrame_extend_mk χ hχ hπχ norm_toLp_spinCGroup_toSpecialOrthogonal_apply
+    continuous_spinCGroup_toSpecialOrthogonal_apply x p h v
 
 end SpinCStructure
 
@@ -166,15 +148,15 @@ namespace OrthonormalFrameLift
 equivalence of their charge conjugates, by `[p, h] ↦ [φ p, h]`. -/
 def Equiv.chargeConj {s t : SpinCStructure F V n} (φ : s.Equiv t) :
     s.chargeConj.Equiv t.chargeConj :=
-  φ.extend χ hχ SpinCStructure.rotation_comp_chargeConj norm_toLp_rotation_apply
-    continuous_rotation_apply
+  φ.extend χ hχ hπχ norm_toLp_spinCGroup_toSpecialOrthogonal_apply
+    continuous_spinCGroup_toSpecialOrthogonal_apply
 
 @[simp]
 theorem Equiv.chargeConj_toEquiv_mk {s t : SpinCStructure F V n} (φ : s.Equiv t) (x : X)
     (p : s.P x) (h : spinCGroup (realCliffordForm n 0) hQ) :
     φ.chargeConj.toEquiv x (Extend.mk χ hχ p h) = Extend.mk χ hχ (φ.toEquiv x p) h :=
-  φ.extend_toEquiv_mk χ hχ SpinCStructure.rotation_comp_chargeConj norm_toLp_rotation_apply
-    continuous_rotation_apply x p h
+  φ.extend_toEquiv_mk χ hχ hπχ norm_toLp_spinCGroup_toSpecialOrthogonal_apply
+    continuous_spinCGroup_toSpecialOrthogonal_apply x p h
 
 end OrthonormalFrameLift
 
@@ -184,14 +166,16 @@ namespace SpinCStructure
 `[[p, h], k] ↦ p • χ(h) k`. Extending along `χ` twice is extending along `χ ∘ χ`
 (`TauCeti.OrthonormalFrameLift.extendCompEquiv`), and `χ ∘ χ = id`. -/
 def chargeConjChargeConjEquiv (s : SpinCStructure F V n) : s.chargeConj.chargeConj.Equiv s :=
-  (s.extendCompEquiv χ hχ rotation_comp_chargeConj norm_toLp_rotation_apply
-      continuous_rotation_apply χ hχ rotation_comp_chargeConj norm_toLp_rotation_apply
-      continuous_rotation_apply).symm.trans
+  (s.extendCompEquiv χ hχ hπχ norm_toLp_spinCGroup_toSpecialOrthogonal_apply
+      continuous_spinCGroup_toSpecialOrthogonal_apply χ hχ hπχ
+      norm_toLp_spinCGroup_toSpecialOrthogonal_apply
+      continuous_spinCGroup_toSpecialOrthogonal_apply).symm.trans
     (s.extendEquivOfEquivariant (ρ' := πᶜ) (MonoidHom.comp χ χ)
-      continuous_chargeConj_comp_chargeConj
-      (by rw [chargeConj_comp_chargeConj, MonoidHom.comp_id]) norm_toLp_rotation_apply
-      continuous_rotation_apply s (fun _ p ↦ p)
-      (fun _ p g ↦ by rw [chargeConj_comp_chargeConj, MonoidHom.id_apply]) continuous_id
+      (by rw [spinCGroup.chargeConj_comp_chargeConj]; exact continuous_id)
+      (by rw [spinCGroup.chargeConj_comp_chargeConj, MonoidHom.comp_id])
+      norm_toLp_spinCGroup_toSpecialOrthogonal_apply
+      continuous_spinCGroup_toSpecialOrthogonal_apply s (fun _ p ↦ p)
+      (fun _ p g ↦ by rw [spinCGroup.chargeConj_comp_chargeConj, MonoidHom.id_apply]) continuous_id
       fun _ _ ↦ rfl)
 
 @[simp]
@@ -202,9 +186,10 @@ theorem chargeConjChargeConjEquiv_toEquiv_mk (s : SpinCStructure F V n) (x : X) 
   simp only [chargeConjChargeConjEquiv, OrthonormalFrameLift.Equiv.trans_toEquiv,
     OrthonormalFrameLift.Equiv.symm_toEquiv]
   -- `[[p, h], k] = [[p, 1], χ(h) k]` is the image of `[p, χ(h) k]` under `extendCompEquiv`.
-  have hcomp := (Equiv.symm_apply_eq _).2 ((s.extendCompEquiv_toEquiv_mk χ hχ
-    rotation_comp_chargeConj norm_toLp_rotation_apply continuous_rotation_apply χ hχ
-    rotation_comp_chargeConj norm_toLp_rotation_apply continuous_rotation_apply x p (χ h * k)).trans
+  have hcomp := (Equiv.symm_apply_eq _).2 ((s.extendCompEquiv_toEquiv_mk χ hχ hπχ
+    norm_toLp_spinCGroup_toSpecialOrthogonal_apply continuous_spinCGroup_toSpecialOrthogonal_apply
+    χ hχ hπχ norm_toLp_spinCGroup_toSpecialOrthogonal_apply
+    continuous_spinCGroup_toSpecialOrthogonal_apply x p (χ h * k)).trans
       (Extend.mk_mk χ hχ χ hχ p h k).symm).symm
   exact (Equiv.trans_apply _ _ _).trans <| (congrArg _ hcomp).trans <|
     OrthonormalFrameLift.extendEquivOfEquivariant_toEquiv_mk (x := x) (p := p) ..
