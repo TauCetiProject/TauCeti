@@ -25,11 +25,14 @@ with the operator norm and Mathlib's `LinearMap.det`. The condition uses `det Du
 
 ## Main statements
 
-* `TauCeti.IsQuasiregularOn.of_hasWeakFDerivOn` and `TauCeti.isQuasiregularOn_iff`: the condition
-  does not depend on the choice of the weak derivative, since two weak derivatives agree almost
-  everywhere (`TauCeti.HasWeakFDerivOn.ae_eq`).
-* `TauCeti.IsQuasiregularOn.mono` and `TauCeti.IsQuasiregularOn.mono_set`: it is monotone in
-  `K` and passes to open subsets.
+* `TauCeti.IsQuasiregularOn.one_le`, `TauCeti.IsQuasiregularOn.continuousOn` and
+  `TauCeti.IsQuasiregularOn.exists_hasWeakFDerivOn`: the parts of the definition.
+* `TauCeti.IsQuasiregularOn.locallyIntegrableOn_norm_pow`,
+  `TauCeti.IsQuasiregularOn.ae_norm_pow_le_mul_det` and `TauCeti.isQuasiregularOn_iff`: the
+  condition does not depend on the choice of the weak derivative, since two weak derivatives agree
+  almost everywhere (`TauCeti.HasWeakFDerivOn.ae_eq`).
+* `TauCeti.IsQuasiregularOn.weaken` and `TauCeti.IsQuasiregularOn.mono`: it is monotone in `K`
+  and passes to open subsets.
 * `TauCeti.isQuasiregularOn_iff_of_differentiableAt`: for `f` differentiable on `Ω` with locally
   integrable derivative, the weak derivative may be taken to be `fderiv ℝ f`.
 * `TauCeti.not_isQuasiregularOn_of_eqOn_of_det_neg`: a map that agrees, on a nonempty open
@@ -45,7 +48,11 @@ with the operator norm and Mathlib's `LinearMap.det`. The condition uses `det Du
 
 ## References
 
-The definition is that of the QuasiregularMaps roadmap of Tau Ceti (§2.9, *Euclidean domains*).
+* O. Martio, S. Rickman, J. Väisälä, *Definitions for quasiregular mappings*, Ann. Acad. Sci.
+  Fenn. Ser. A I 448 (1969). Their analytic definition asks `f` to be ACLⁿ; here the Sobolev
+  condition (a weak derivative with `‖Du‖ⁿ` locally integrable) takes its place.
+* S. Rickman, *Quasiregular Mappings*, Ergebnisse der Mathematik und ihrer Grenzgebiete 26,
+  Springer, 1993, Chapter I.
 -/
 
 public section
@@ -64,7 +71,8 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 space `E` of dimension `n` with Lebesgue measure and `Ω ⊆ E` open, `f` is `K`-quasiregular on `Ω`
 when `1 ≤ K`, `f` is continuous on `Ω`, and `f` has a weak derivative `Du` on `Ω` with `‖Du‖ⁿ`
 locally integrable on `Ω` and `‖Du(x)‖ⁿ ≤ K · det Du(x)` for almost every `x ∈ Ω`, with the
-operator norm. -/
+operator norm. The weak derivative condition replaces the ACLⁿ condition of Martio, Rickman and
+Väisälä. -/
 def IsQuasiregularOn (K : ℝ) (Ω : Opens E) (f : E → E) : Prop :=
   1 ≤ K ∧ ContinuousOn f Ω ∧
     ∃ Du : E → E →L[ℝ] E, HasWeakFDerivOn volume Ω f Du ∧
@@ -74,17 +82,36 @@ def IsQuasiregularOn (K : ℝ) (Ω : Opens E) (f : E → E) : Prop :=
 
 variable {K K' : ℝ} {Ω Ω' : Opens E} {f : E → E}
 
-/-- The quasiregularity condition holds for every weak derivative: two weak derivatives agree
-almost everywhere on `Ω`. -/
-theorem IsQuasiregularOn.of_hasWeakFDerivOn (hf : IsQuasiregularOn K Ω f)
+/-- The constant of a `K`-quasiregular map satisfies `1 ≤ K`. -/
+theorem IsQuasiregularOn.one_le (hf : IsQuasiregularOn K Ω f) : 1 ≤ K :=
+  hf.1
+
+/-- A quasiregular map is continuous on its domain. -/
+theorem IsQuasiregularOn.continuousOn (hf : IsQuasiregularOn K Ω f) : ContinuousOn f Ω :=
+  hf.2.1
+
+/-- A quasiregular map has a weak derivative on its domain. -/
+theorem IsQuasiregularOn.exists_hasWeakFDerivOn (hf : IsQuasiregularOn K Ω f) :
+    ∃ Du : E → E →L[ℝ] E, HasWeakFDerivOn volume Ω f Du :=
+  let ⟨Du, hDu, _⟩ := hf.2.2
+  ⟨Du, hDu⟩
+
+/-- For a quasiregular map, `‖Du‖ⁿ` is locally integrable for every weak derivative `Du`: two
+weak derivatives agree almost everywhere on `Ω`. -/
+theorem IsQuasiregularOn.locallyIntegrableOn_norm_pow (hf : IsQuasiregularOn K Ω f)
     {Du : E → E →L[ℝ] E} (hDu : HasWeakFDerivOn volume Ω f Du) :
-    LocallyIntegrableOn (fun x ↦ ‖Du x‖ ^ finrank ℝ E) Ω volume ∧
-      ∀ᵐ x ∂volume.restrict (Ω : Set E),
-        ‖Du x‖ ^ finrank ℝ E ≤ K * LinearMap.det (Du x : E →ₗ[ℝ] E) := by
-  obtain ⟨-, -, Du', hDu', hint, hle⟩ := hf
-  have h := hDu'.ae_eq hDu
-  refine ⟨hint.congr (h.mono fun x hx ↦ by simp only [hx]), ?_⟩
-  filter_upwards [h, hle] with x hx hxle
+    LocallyIntegrableOn (fun x ↦ ‖Du x‖ ^ finrank ℝ E) Ω volume := by
+  obtain ⟨-, -, Du', hDu', hint, -⟩ := hf
+  exact hint.congr ((hDu'.ae_eq hDu).mono fun x hx ↦ by simp only [hx])
+
+/-- For a `K`-quasiregular map, `‖Du‖ⁿ ≤ K det Du` holds almost everywhere for every weak
+derivative `Du`: two weak derivatives agree almost everywhere on `Ω`. -/
+theorem IsQuasiregularOn.ae_norm_pow_le_mul_det (hf : IsQuasiregularOn K Ω f)
+    {Du : E → E →L[ℝ] E} (hDu : HasWeakFDerivOn volume Ω f Du) :
+    ∀ᵐ x ∂volume.restrict (Ω : Set E),
+      ‖Du x‖ ^ finrank ℝ E ≤ K * LinearMap.det (Du x : E →ₗ[ℝ] E) := by
+  obtain ⟨-, -, Du', hDu', -, hle⟩ := hf
+  filter_upwards [hDu'.ae_eq hDu, hle] with x hx hxle
   rwa [← hx]
 
 /-- **Quasiregularity through a given weak derivative.** If `Du` is a weak derivative of `f` on
@@ -95,12 +122,13 @@ theorem isQuasiregularOn_iff {Du : E → E →L[ℝ] E} (hDu : HasWeakFDerivOn v
       LocallyIntegrableOn (fun x ↦ ‖Du x‖ ^ finrank ℝ E) Ω volume ∧
       ∀ᵐ x ∂volume.restrict (Ω : Set E),
         ‖Du x‖ ^ finrank ℝ E ≤ K * LinearMap.det (Du x : E →ₗ[ℝ] E) :=
-  ⟨fun hf ↦ ⟨hf.1, hf.2.1, hf.of_hasWeakFDerivOn hDu⟩,
+  ⟨fun hf ↦ ⟨hf.one_le, hf.continuousOn, hf.locallyIntegrableOn_norm_pow hDu,
+      hf.ae_norm_pow_le_mul_det hDu⟩,
     fun ⟨hK, hc, hint, hle⟩ ↦ ⟨hK, hc, Du, hDu, hint, hle⟩⟩
 
 /-- A `K`-quasiregular map is `K'`-quasiregular for every `K' ≥ K`: the determinant of the weak
 derivative is almost everywhere nonnegative. -/
-theorem IsQuasiregularOn.mono (hf : IsQuasiregularOn K Ω f) (hKK' : K ≤ K') :
+theorem IsQuasiregularOn.weaken (hf : IsQuasiregularOn K Ω f) (hKK' : K ≤ K') :
     IsQuasiregularOn K' Ω f := by
   obtain ⟨hK, hc, Du, hDu, hint, hle⟩ := hf
   refine ⟨hK.trans hKK', hc, Du, hDu, hint, ?_⟩
@@ -111,7 +139,7 @@ theorem IsQuasiregularOn.mono (hf : IsQuasiregularOn K Ω f) (hKK' : K ≤ K') :
   exact hx.trans (mul_le_mul_of_nonneg_right hKK' hdet)
 
 /-- A map that is `K`-quasiregular on `Ω` is `K`-quasiregular on every open subset of `Ω`. -/
-theorem IsQuasiregularOn.mono_set (hf : IsQuasiregularOn K Ω f) (hΩ : Ω' ≤ Ω) :
+theorem IsQuasiregularOn.mono (hf : IsQuasiregularOn K Ω f) (hΩ : Ω' ≤ Ω) :
     IsQuasiregularOn K Ω' f := by
   obtain ⟨hK, hc, Du, hDu, hint, hle⟩ := hf
   exact ⟨hK, hc.mono hΩ, Du, hDu.mono hΩ, hint.mono_set hΩ,
@@ -176,20 +204,19 @@ theorem not_isQuasiregularOn_fold {u : E} (hu : ‖u‖ = 1)
     (hΩ : ((Ω : Set E) ∩ {x | ⟪u, x⟫ < 0}).Nonempty) :
     ¬ IsQuasiregularOn K Ω (fun x ↦ x + (|⟪u, x⟫| - ⟪u, x⟫) • u) := by
   have hu0 : u ≠ 0 := norm_ne_zero_iff.1 (hu ▸ one_ne_zero)
-  let R : E ≃ₗᵢ[ℝ] E := (ℝ ∙ u)ᗮ.reflection
-  let U : Opens E := Ω ⊓ ⟨{x | ⟪u, x⟫ < 0}, isOpen_lt (by fun_prop) continuous_const⟩
-  refine not_isQuasiregularOn_of_eqOn_of_det_neg (U := U) inf_le_left hΩ
-    (A := R.toContinuousLinearEquiv.toContinuousLinearMap) ?_ fun x hx ↦ ?_
+  refine not_isQuasiregularOn_of_eqOn_of_det_neg
+    (U := Ω ⊓ ⟨{x | ⟪u, x⟫ < 0}, isOpen_lt (by fun_prop) continuous_const⟩) inf_le_left hΩ
+    (A := ((ℝ ∙ u)ᗮ.reflection.toContinuousLinearEquiv : E →L[ℝ] E)) ?_ fun x hx ↦ ?_
   · have hdet := (ℝ ∙ u)ᗮ.det_reflection
     rw [Submodule.orthogonal_orthogonal, finrank_span_singleton hu0, pow_one] at hdet
-    change LinearMap.det R.toLinearEquiv.toLinearMap < 0
-    rw [show R.toLinearEquiv.toLinearMap = (ℝ ∙ u)ᗮ.reflection.toLinearMap from rfl, hdet]
+    have hR : (((ℝ ∙ u)ᗮ.reflection.toContinuousLinearEquiv : E →L[ℝ] E) : E →ₗ[ℝ] E) =
+        (ℝ ∙ u)ᗮ.reflection.toLinearMap := LinearMap.ext fun x ↦ by simp
+    rw [hR, hdet]
     norm_num
   · have hx0 : ⟪u, x⟫ < 0 := hx.2
-    change x + (|⟪u, x⟫| - ⟪u, x⟫) • u = (ℝ ∙ u)ᗮ.reflection x
-    rw [Submodule.reflection_orthogonal, LinearIsometryEquiv.trans_apply,
-      Submodule.reflection_singleton_apply, hu, abs_of_neg hx0, LinearIsometryEquiv.coe_neg]
-    simp only [RCLike.ofReal_one, one_pow, div_one]
+    rw [ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+      Submodule.reflection_orthogonal_apply, Submodule.reflection_singleton_apply]
+    simp [hu, abs_of_neg hx0]
     module
 
 end TauCeti
