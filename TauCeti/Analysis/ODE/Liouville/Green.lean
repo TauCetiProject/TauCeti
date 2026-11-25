@@ -39,8 +39,11 @@ whose relative error satisfies, with `V(x) = ∫ₓ^∞ |Φ|`,
 
   `|ε(x)| ≤ exp(V(x) / 2) - 1` and `f^{-1/2}(x) |ε'(x)| / 2 ≤ exp(V(x) / 2) - 1`
 
-(`TauCeti.exists_liouvilleGreen_recessive`; DLMF 2.7.20–2.7.25, Olver, Chapter 6, Theorem 2.1).
+(`TauCeti.exists_liouvilleGreen_atTop`; DLMF 2.7.20–2.7.25, Olver, Chapter 6, Theorem 2.1).
 Since `V(x) → 0` as `x → ∞`, both bounds tend to `0`. The coefficient `g` may be complex.
+The theorem does not assume `ξ(x) → ∞`: it describes the solution characterized by its error
+bound at `+∞`. Only when `ξ(x) → ∞` is this the solution recessive at `+∞`; recessivity itself
+is not proved here.
 
 ## Proof
 
@@ -449,14 +452,15 @@ private lemma continuousOn_liouvilleGreen_control {f : ℝ → ℝ} {g Φ : ℝ 
     (hg.div (Complex.continuous_ofReal.comp_continuousOn hf.continuousOn.sqrt) fun x hx ↦
       Complex.ofReal_ne_zero.2 (Real.sqrt_pos.2 (hf0 x hx)).ne')
 
-/-- **The Liouville–Green theorem, recessive solution.** Let `f` be positive and `C²` and `g`
-continuous on `(a, ∞)`, let `ξ` be a primitive of `f^{1/2}` there, and let
+/-- **The Liouville–Green theorem, solution controlled at `+∞`.** Let `f` be positive and `C²`
+and `g` continuous on `(a, ∞)`, let `ξ` be a primitive of `f^{1/2}` there, and let
 `Φ = f^{-1/4} (f^{-1/4})'' - g f^{-1/2}` be integrable on `(x, ∞)` for every `x > a`. Then
 `w'' = (f + g) w` has a solution `w`, `C²` on `(a, ∞)`, of the form
 `w = f^{-1/4} e^{-ξ} (1 + ε)` with `ε` differentiable and, for `V(x) = ∫ₓ^∞ |Φ|`,
 `|ε(x)| ≤ exp(V(x) / 2) - 1` and `|ε'(x)| / (2 f(x)^{1/2}) ≤ exp(V(x) / 2) - 1`
-(DLMF 2.7.20–2.7.25; Olver, Chapter 6, Theorem 2.1). -/
-theorem exists_liouvilleGreen_recessive {f ξ : ℝ → ℝ} {g Φ : ℝ → ℂ} {a : ℝ}
+(DLMF 2.7.20–2.7.25; Olver, Chapter 6, Theorem 2.1). No limit of `ξ` at `+∞` is assumed, so
+`w` need not be recessive there; it is when `ξ(x) → ∞`. -/
+theorem exists_liouvilleGreen_atTop {f ξ : ℝ → ℝ} {g Φ : ℝ → ℂ} {a : ℝ}
     (hf : ContDiffOn ℝ 2 f (Ioi a)) (hf0 : ∀ x ∈ Ioi a, 0 < f x) (hg : ContinuousOn g (Ioi a))
     (hξ : ∀ x ∈ Ioi a, HasDerivAt ξ (√(f x)) x)
     (hΦ : ∀ x ∈ Ioi a, Φ x = ↑(f x ^ (-(1 / 4) : ℝ) *
