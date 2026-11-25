@@ -7,13 +7,15 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Notation
 public import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
+import TauCeti.NumberTheory.DirichletCharacter.Dyadic.Basic
 
 /-!
 # Orthogonality of the Dirichlet characters modulo eight on the odd residues
 
 Every unit modulo eight squares to one, so every Dirichlet character of level eight is its own
-inverse. Writing the four odd residues modulo eight as `2 * a + 1` for `a : Fin 4`, the
-orthogonality relations of the characters take an especially simple form:
+inverse (`DirichletCharacter.inv_eq_self_of_level_eight`). Writing the four odd residues modulo
+eight as `2 * a + 1` for `a : Fin 4`, the orthogonality relations of the characters take an
+especially simple form:
 
 * for each pair of characters, `∑ a, ψ (2 * a + 1) * ρ (2 * a + 1)` is `4` when `ψ = ρ` and `0`
   otherwise (valid with values in any integral domain);
@@ -21,10 +23,11 @@ orthogonality relations of the characters take an especially simple form:
   otherwise (valid with values in an integral domain with enough roots of unity, such as `ℂ`).
 
 Equivalently, the `4 × 4` matrix `H` with entries `χ (2 * a + 1)`, rows indexed by the characters
-and columns by `Fin 4`, satisfies `H * Hᵀ = 4` and `Hᵀ * H = 4`. Thus `Hᵀ / 4` is the inverse
-of `H`: it converts between functions of the odd residue class modulo eight and their expansions
-in the characters of level eight. This is the change of coordinates used to split sums over odd
-integers by their residue classes modulo eight, as in the quadratic reciprocity matrix of
+and columns by `Fin 4`, satisfies `H * Hᵀ = 4` and `Hᵀ * H = 4`. Over a ring in which `4` is
+invertible, such as `ℂ`, `Hᵀ / 4` is therefore the inverse of `H`: it converts between functions
+of the odd residue class modulo eight and their expansions in the characters of level eight. This
+is the change of coordinates used to split sums over odd integers by their residue classes modulo
+eight, as in the quadratic reciprocity matrix of
 `TauCeti.NumberTheory.DirichletCharacter.Dyadic.Reciprocity`.
 
 When the coefficient ring has enough roots of unity there are four characters of level eight;
@@ -33,8 +36,6 @@ principal character and the lifts of `ZMod.χ₄`, `ZMod.χ₈` and `ZMod.χ₈'
 
 ## Main results
 
-* `DirichletCharacter.sq_eq_one_of_level_eight`: every character of level eight has order
-  dividing two.
 * `DirichletCharacter.sum_fin_four_apply_eq_sum`: a character of level eight summed over the
   four odd residues is its sum over all of `ZMod 8`.
 * `DirichletCharacter.sum_fin_four_apply_mul_apply`: orthogonality of two characters over the
@@ -52,25 +53,6 @@ open Finset
 
 namespace DirichletCharacter
 
-/-- Every Dirichlet character of level eight has order dividing two, because every unit
-modulo eight squares to one. -/
-theorem sq_eq_one_of_level_eight {R : Type*} [CommMonoidWithZero R]
-    (χ : DirichletCharacter R 8) : χ ^ 2 = 1 := by
-  refine MulChar.ext fun u ↦ ?_
-  rw [MulChar.pow_apply_coe, ← map_pow, MulChar.one_apply_coe, ← Units.val_pow_eq_pow_val,
-    (by decide : ∀ u : (ZMod 8)ˣ, u ^ 2 = 1) u, Units.val_one, map_one]
-
-/-- Every Dirichlet character of level eight is its own inverse. -/
-theorem inv_eq_self_of_level_eight {R : Type*} [CommMonoidWithZero R]
-    (χ : DirichletCharacter R 8) : χ⁻¹ = χ :=
-  inv_eq_of_mul_eq_one_right (by rw [← sq, sq_eq_one_of_level_eight])
-
-/-- Two characters of level eight multiply to the principal character exactly when they are
-equal. -/
-theorem mul_eq_one_iff_eq_of_level_eight {R : Type*} [CommMonoidWithZero R]
-    {ψ ρ : DirichletCharacter R 8} : ψ * ρ = 1 ↔ ψ = ρ := by
-  rw [mul_eq_one_iff_eq_inv, inv_eq_self_of_level_eight]
-
 /-- The odd residues `2 * a + 1`, for `a : Fin 4`, are units modulo eight. -/
 theorem isUnit_two_mul_add_one_fin_four (a : Fin 4) : IsUnit (2 * (a : ℕ) + 1 : ZMod 8) := by
   fin_cases a <;> decide
@@ -85,7 +67,8 @@ odd residues `2 * a + 1` is its sum over all of `ZMod 8`. -/
 theorem sum_fin_four_apply_eq_sum {R : Type*} [CommSemiring R] (χ : DirichletCharacter R 8) :
     ∑ a : Fin 4, χ (2 * (a : ℕ) + 1) = ∑ x : ZMod 8, χ x := by
   have h0 (x : ZMod 8) (hx : ¬IsUnit x) : χ x = 0 := MulChar.map_nonunit χ hx
-  rw [Fin.sum_univ_four, show (univ : Finset (ZMod 8)) = {0, 1, 2, 3, 4, 5, 6, 7} by decide,
+  have huniv : (univ : Finset (ZMod 8)) = {0, 1, 2, 3, 4, 5, 6, 7} := by decide
+  rw [Fin.sum_univ_four, huniv,
     sum_insert (by decide), sum_insert (by decide), sum_insert (by decide),
     sum_insert (by decide), sum_insert (by decide), sum_insert (by decide),
     sum_insert (by decide), sum_singleton, h0 0 (by decide), h0 2 (by decide),
@@ -120,7 +103,8 @@ theorem sum_apply_mul_apply_of_level_eight {a : ZMod 8} (ha : IsUnit a) (b : ZMo
   have hinv : (u : ZMod 8)⁻¹ = u := by
     rw [ZMod.inv_coe_unit, (by decide : ∀ u : (ZMod 8)ˣ, u⁻¹ = u) u]
   have h := sum_char_inv_mul_char_eq R u.isUnit b
-  rw [hinv, show Nat.totient 8 = 4 by decide, Nat.cast_ofNat] at h
+  have htot : Nat.totient 8 = 4 := by decide
+  rw [hinv, htot, Nat.cast_ofNat] at h
   exact h
 
 /-- **Orthogonality of the odd residues modulo eight over the characters.** With values in an

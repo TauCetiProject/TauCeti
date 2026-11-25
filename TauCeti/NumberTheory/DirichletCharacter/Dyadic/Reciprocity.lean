@@ -223,7 +223,7 @@ theorem quadraticReciprocityMatrix_mul_self [DecidableEq (DirichletCharacter ℂ
 /-- The lift of `ZMod.χ₄` to level eight takes the value `(-1) ^ a` at the odd residue
 `2 * a + 1`. -/
 private theorem changeLevel_χ₄_apply_fin_four (a : Fin 4) :
-    changeLevel (show 4 ∣ 8 by norm_num) (ZMod.χ₄.ringHomComp (Int.castRingHom ℂ))
+    changeLevel (by norm_num : 4 ∣ 8) (ZMod.χ₄.ringHomComp (Int.castRingHom ℂ))
       (2 * (a : ℕ) + 1) = (-1) ^ (a : ℕ) := by
   have hcast : (2 * (a : ℕ) + 1 : ZMod 8) = (((2 * a + 1 : ℕ) : ℤ) : ZMod 8) := by
     push_cast
@@ -249,8 +249,8 @@ theorem quadraticReciprocityMatrix_apply_one_one :
 and the column of the pair of lifts of `ZMod.χ₄` is `-1/2`. -/
 theorem quadraticReciprocityMatrix_apply_one_χ₄ :
     quadraticReciprocityMatrix (1, 1)
-      (changeLevel (show 4 ∣ 8 by norm_num) (ZMod.χ₄.ringHomComp (Int.castRingHom ℂ)),
-        changeLevel (show 4 ∣ 8 by norm_num) (ZMod.χ₄.ringHomComp (Int.castRingHom ℂ))) =
+      (changeLevel (by norm_num : 4 ∣ 8) (ZMod.χ₄.ringHomComp (Int.castRingHom ℂ)),
+        changeLevel (by norm_num : 4 ∣ 8) (ZMod.χ₄.ringHomComp (Int.castRingHom ℂ))) =
       -1 / 2 := by
   rw [quadraticReciprocityMatrix_apply]
   simp only [MulChar.one_apply (isUnit_two_mul_add_one_fin_four _), one_mul,
