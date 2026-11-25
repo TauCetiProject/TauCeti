@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Complex.Basic
+public import TauCeti.Analysis.Complex.Runge.CompactPair
 public import TauCeti.Analysis.Complex.Runge.Operator
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Complex.CauchyIntegral
@@ -16,11 +17,12 @@ import TauCeti.Analysis.Complex.MixedDeriv
 /-!
 # Finite-rank Runge operators with parameters
 
-The finite-rank Runge operator `TauCeti.exists_finite_rank_runge_operator`
+The finite-rank Runge operator `TauCeti.IsFilledIn.exists_differentiableOn_norm_sub_sum_smul_le`
 (`TauCeti.Analysis.Complex.Runge.Operator`) approximates every function `f` holomorphic on an
 open set `U`, at the points of a compact set `K`, by `A f = ∑ j, w j * f (ζ j) * g j` within `ε`
 times any nonnegative bound for `f` on a compact set `L`. Here the nodes `ζ j ∈ U`, the weights
-`w j` and the functions `g j`, holomorphic on an open set `Ω` (the Runge domain), do not depend
+`w j` (taken to be `1` for `exists_differentiableOn_norm_sub_sum_smul_le`) and the functions `g j`,
+holomorphic on an open set `Ω` (the Runge domain), do not depend
 on `f`. This file applies such an operator, fibrewise, to families of functions depending on
 parameters.
 
@@ -169,11 +171,15 @@ theorem exists_finite_rank_runge_operator_with_param {X : Type*} [NormedAddCommG
               (∀ y ∈ L, ‖iteratedFDeriv ℝ k (fun x' ↦ h (x', y)) x m‖ ≤ B) →
               ∀ z ∈ K, ‖iteratedFDeriv ℝ k
                 (fun x' ↦ h (x', z) - ∑ j, (w j * g j z) • h (x', ζ j)) x m‖ ≤ ε * B := by
-  obtain ⟨L, hL, hKL, hLUΩ, hA⟩ := exists_finite_rank_runge_operator hRunge hU hKU
+  obtain ⟨L, hL, hKL, hLUΩ, hA⟩ :=
+    hRunge.isFilledIn.exists_differentiableOn_norm_sub_sum_smul_le.{0}
+      hRunge.isCompact hRunge.subset hU hKU hRunge.isOpen hRunge.subset
   refine ⟨L, hL, hKL, hLUΩ, fun ε hε ↦ ?_⟩
-  obtain ⟨N, ζ, w, g, hζ, hg, hA⟩ := hA ε hε
-  refine ⟨N, ζ, w, g, hζ, hg, fun n S h hS hh hhol k hk x hx m B hB hhB z hz ↦ ?_⟩
-  exact norm_iteratedFDeriv_sub_sum_smul_apply_le hA hS hU
-    (fun j ↦ (hLUΩ (interior_subset (hζ j))).1) hKU hh hhol hk hx m hB hhB hz
+  obtain ⟨N, ζ, g, hζ, hg, hA⟩ := hA hε
+  refine ⟨N, ζ, fun _ ↦ 1, g, fun j ↦ (hζ j).1, hg,
+    fun n S h hS hh hhol k hk x hx m B hB hhB z hz ↦ ?_⟩
+  refine norm_iteratedFDeriv_sub_sum_smul_apply_le (fun f hf B' _ hfB' z' hz' ↦ ?_) hS hU
+    (fun j ↦ (hLUΩ (interior_subset (hζ j).1)).1) hKU hh hhol hk hx m hB hhB hz
+  simpa only [one_mul, smul_eq_mul, mul_comm (g _ z')] using hA f B' hf hfB' z' hz'
 
 end TauCeti
