@@ -101,7 +101,7 @@ theorem param_root (hn : Odd n) : param c hn (AdjoinRoot.root _) = X ^ n := by
   simp [param]
 
 /-- Every element of `K[x, y]/(y² + (x + c)ⁿ)` is `r₀(x) + r₁(x) y`. -/
-theorem exists_eq_of_add_of_mul_root (a : AdjoinRoot (poly c n)) :
+theorem exists_eq_add_mul_root (a : AdjoinRoot (poly c n)) :
     ∃ r₀ r₁ : K[X], a = AdjoinRoot.of _ r₀ + AdjoinRoot.of _ r₁ * AdjoinRoot.root _ := by
   obtain ⟨g, rfl⟩ := AdjoinRoot.mk_surjective a
   cases subsingleton_or_nontrivial K
@@ -121,7 +121,7 @@ ring `K`. -/
 theorem param_injective (hn : Odd n) : Function.Injective (param c hn) := by
   rw [injective_iff_map_eq_zero]
   intro a ha
-  obtain ⟨r₀, r₁, rfl⟩ := exists_eq_of_add_of_mul_root c a
+  obtain ⟨r₀, r₁, rfl⟩ := exists_eq_add_mul_root c a
   simp only [map_add, map_mul, param_of, param_root] at ha
   have h₀ : r₀.comp (paramX c) = 0 := by
     ext k
@@ -141,7 +141,7 @@ theorem isDomain [IsDomain K] (hn : Odd n) : IsDomain (AdjoinRoot (poly c n)) :=
 /-- The image of the parametrization has no `s¹` term once `n ≥ 3`. -/
 theorem coeff_param_one (hn : Odd n) (h3 : 3 ≤ n) (a : AdjoinRoot (poly c n)) :
     (param c hn a).coeff 1 = 0 := by
-  obtain ⟨r₀, r₁, rfl⟩ := exists_eq_of_add_of_mul_root c a
+  obtain ⟨r₀, r₁, rfl⟩ := exists_eq_add_mul_root c a
   simp only [map_add, map_mul, param_of, param_root, coeff_add, coeff_mul_X_pow',
     coeff_comp_paramX_of_odd r₀ c odd_one]
   simp [show ¬ n ≤ 1 by omega]
