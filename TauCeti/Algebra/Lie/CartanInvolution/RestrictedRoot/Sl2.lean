@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.Vector
 public import TauCeti.Algebra.Lie.Sl2.Spectrum
 public import Mathlib.Analysis.Real.Sqrt
+import Mathlib.LinearAlgebra.Reflection
 
 /-!
 # The `𝔰𝔩₂` triple of a restricted root and integrality
@@ -86,6 +87,15 @@ theorem apply_restrictedCoroot {μ : Dual K 𝔞} (hμ : μ ≠ 0) :
     μ (hθ.restrictedCoroot h𝔞 μ) = 2 := by
   rw [restrictedCoroot_def, map_smul, smul_eq_mul,
     div_mul_cancel₀ _ (hθ.apply_killingEquivDual_symm_pos h𝔞 hμ).ne']
+
+/-- The reflection `s_λ ν = ν - ν(H'_λ) λ` is an involution of `𝔞*`: `s_λ (s_λ ν) = ν`. This is
+Mathlib's `Module.involutive_reflection` for the reflection in `λ` along evaluation at `H'_λ`. -/
+theorem sub_smul_sub_smul_restrictedCoroot {μ : Dual K 𝔞} (hμ : μ ≠ 0) (ν : Dual K 𝔞) :
+    (ν - ν (hθ.restrictedCoroot h𝔞 μ) • μ) -
+        (ν - ν (hθ.restrictedCoroot h𝔞 μ) • μ) (hθ.restrictedCoroot h𝔞 μ) • μ = ν := by
+  have h2 : Dual.eval K 𝔞 (hθ.restrictedCoroot h𝔞 μ) μ = 2 := by
+    simpa only [Dual.eval_apply] using hθ.apply_restrictedCoroot h𝔞 hμ
+  simpa only [reflection_apply, Dual.eval_apply] using involutive_reflection h2 ν
 
 /-- The restricted coroot of a nonzero functional is nonzero. -/
 theorem restrictedCoroot_ne_zero {μ : Dual K 𝔞} (hμ : μ ≠ 0) :
