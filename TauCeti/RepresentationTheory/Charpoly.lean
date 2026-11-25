@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.RepresentationTheory.Intertwining
+public import TauCeti.RepresentationTheory.AsModule
 import TauCeti.LinearAlgebra.Charpoly.Dual
 import TauCeti.LinearAlgebra.Charpoly.Inverse
 
@@ -30,6 +31,8 @@ eigenvalues of arithmetic and geometric Frobenius.
 * `Representation.charpoly_trivial_apply`: the characteristic polynomial of the trivial
   representation.
 * `Representation.eq_one_of_mem_roots_map_charpoly_trivial`: its roots in any domain are `1`.
+* `Representation.charpoly_lsmul_asModule_of`: `g` acts on the `R[G]`-module `ρ.asModule` with the
+  characteristic polynomial of `ρ g`.
 * `Representation.charpoly_apply_inv`, `Representation.aroots_charpoly_apply_inv`: the
   characteristic polynomial and the characteristic roots of `g⁻¹`.
 * `Representation.charpoly_dual_apply`, `Representation.aroots_charpoly_dual_apply`: the
@@ -78,6 +81,17 @@ theorem eq_one_of_mem_roots_map_charpoly_trivial {S : Type*} [CommRing S] [IsDom
   simp only [charpoly_trivial_apply, IsRoot.def, eval_map, eval₂_pow, eval₂_sub, eval₂_X,
     eval₂_one] at h
   exact sub_eq_zero.mp (eq_zero_of_pow_eq_zero h)
+
+variable (ρ) in
+/-- The action of `g` on the `R[G]`-module `ρ.asModule` has the characteristic polynomial of
+`ρ g`. -/
+theorem charpoly_lsmul_asModule_of (g : G) :
+    (Algebra.lsmul R R ρ.asModule (MonoidAlgebra.of R G g)).charpoly = (ρ g).charpoly := by
+  rw [← ρ.asModuleEquiv.charpoly_conj]
+  congr 1
+  ext x
+  simp only [LinearEquiv.conj_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, Algebra.lsmul_coe,
+    ← asModuleEquiv_symm_map_rho, LinearEquiv.apply_symm_apply]
 
 end Monoid
 
