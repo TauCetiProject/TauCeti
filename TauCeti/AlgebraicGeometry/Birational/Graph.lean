@@ -7,8 +7,10 @@ module
 
 public import Mathlib.AlgebraicGeometry.Birational.Dominant
 public import Mathlib.AlgebraicGeometry.Noetherian
+public import TauCeti.AlgebraicGeometry.Birational.RationalMap.ValuationRing
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.Composition
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.GraphClosure
+public import TauCeti.AlgebraicGeometry.Morphisms.Separated
 
 /-!
 # The graph of a rational map
@@ -168,26 +170,6 @@ section Base
 
 variable (sX : X ⟶ S) (sY : Y ⟶ S)
 
-/-- The morphism `X ×_S Y → X × Y`, a closed immersion when `S` is separated. -/
-private def pullbackToProd :
-    pullback sX sY ⟶ pullback (terminal.from X) (terminal.from Y) :=
-  pullback.mapDesc sX sY (terminal.from S) ≫
-    (pullback.congrHom (terminal.hom_ext _ _) (terminal.hom_ext _ _)).hom
-
-private instance [S.IsSeparated] : IsClosedImmersion (pullbackToProd sX sY) := by
-  unfold pullbackToProd
-  infer_instance
-
-@[reassoc (attr := simp)]
-private theorem pullbackToProd_fst :
-    pullbackToProd sX sY ≫ pullback.fst _ _ = pullback.fst sX sY := by
-  simp [pullbackToProd]
-
-@[reassoc (attr := simp)]
-private theorem pullbackToProd_snd :
-    pullbackToProd sX sY ≫ pullback.snd _ _ = pullback.snd sX sY := by
-  simp [pullbackToProd]
-
 /-- **The second projection of the graph of a dominant rational map is surjective** when `X` is
 proper over a base `S` over which `f` is defined. -/
 theorem surjective_graphSnd [f.IsOver sX sY] [IsProper sX] [f.IsDominant] :
@@ -200,36 +182,40 @@ theorem surjective_graphSnd [f.IsOver sX sY] [IsProper sX] [f.IsDominant] :
   set h := opensGraph sX sY g.domain g.hom (g.over sX sY)
   have hgV : g.domain ≤ f.representative.domain := hUV
   -- the graph closure of `g` over `S` maps to `Γ_f` over `Y`
-  have e : h ≫ pullbackToProd sX sY = X.homOfLE hgV ≫ graphLift f := by
+  have e : h ≫ pullback.map sX sY _ _ (𝟙 X) (𝟙 Y) (terminal.from S) (terminal.hom_ext _ _)
+      (terminal.hom_ext _ _) = X.homOfLE hgV ≫ graphLift f := by
     apply pullback.hom_ext
-    · rw [Category.assoc, pullbackToProd_fst, opensGraph_fst, Category.assoc, opensGraph_fst,
-        Scheme.homOfLE_ι]
-    · rw [Category.assoc, pullbackToProd_snd, opensGraph_snd, Category.assoc, opensGraph_snd]
-      rfl
-  have H : (graphι f).ker ≤ (h.imageι ≫ pullbackToProd sX sY).ker := by
+    · simp [h, Scheme.homOfLE_ι]
+    · rw [Category.assoc, pullback.lift_snd, Category.comp_id, opensGraph_snd, Category.assoc,
+        opensGraph_snd]
+      exact PartialMap.restrict_hom ..
+  have H : (graphι f).ker ≤ (h.imageι ≫ pullback.map sX sY _ _ (𝟙 X) (𝟙 Y) (terminal.from S)
+      (terminal.hom_ext _ _) (terminal.hom_ext _ _)).ker := by
     rw [Scheme.Hom.ker_comp, IdealSheafData.ker_subschemeι, IdealSheafData.ker_subschemeι,
       ← Scheme.Hom.ker_comp, e]
     exact Scheme.Hom.le_ker_comp _ _
   have e' : IsClosedImmersion.lift _ _ H ≫ graphSnd f =
       graphClosureSnd sX sY g.domain g.hom (g.over sX sY) := by
     rw [graphSnd, graphClosureSnd_def, graphClosureSnd_def, ← Category.assoc,
-      IsClosedImmersion.lift_fac, Category.assoc, pullbackToProd_snd]
+      IsClosedImmersion.lift_fac, Category.assoc, pullback.lift_snd, Category.comp_id]
   suffices Surjective (graphClosureSnd sX sY g.domain g.hom (g.over sX sY)) by
     rw [← e'] at this
     exact Surjective.of_comp (IsClosedImmersion.lift _ _ H) _
-  -- the range of the second projection is closed and contains the dense range of `g`
-  refine ⟨Set.range_eq_univ.mp ?_⟩
-  rw [← (Scheme.Hom.isClosedMap _).isClosed_range.closure_eq, ← Set.univ_subset_iff,
-    ← g.hom.denseRange.closure_range]
-  refine closure_mono ?_
-  rintro _ ⟨x, rfl⟩
-  exact ⟨_, congr($(toGraphClosure_graphClosureSnd sX sY _ _ (g.over sX sY)) x)⟩
+  -- the second projection is dominant, since `g` is, and has closed range
+  have : IsDominant (toGraphClosure sX sY g.domain g.hom (g.over sX sY) ≫
+      graphClosureSnd sX sY g.domain g.hom (g.over sX sY)) := by
+    rw [toGraphClosure_graphClosureSnd]
+    infer_instance
+  have := IsDominant.of_comp (toGraphClosure sX sY g.domain g.hom (g.over sX sY))
+    (graphClosureSnd sX sY g.domain g.hom (g.over sX sY))
+  exact surjective_of_isDominant_of_isClosed_range _ (Scheme.Hom.isClosedMap _).isClosed_range
 
 variable [IsReduced X] [Y.IsSeparated] [S.IsSeparated] [f.IsOver sX sY]
 
-private theorem ker_imageι_comp_pullbackToProd :
+private theorem ker_imageι_comp_pullbackMap :
     ((opensGraph sX sY f.toPartialMap.domain f.toPartialMap.hom
-      (f.toPartialMap.over sX sY)).imageι ≫ pullbackToProd sX sY).ker = (graphι f).ker := by
+      (f.toPartialMap.over sX sY)).imageι ≫ pullback.map sX sY _ _ (𝟙 X) (𝟙 Y) (terminal.from S)
+        (terminal.hom_ext _ _) (terminal.hom_ext _ _)).ker = (graphι f).ker := by
   rw [Scheme.Hom.ker_comp, IdealSheafData.ker_subschemeι, ← Scheme.Hom.ker_comp,
     IdealSheafData.ker_subschemeι, ← ker_opensGraph_eq_ker_graphLift f f.toPartialMap
       f.toRationalMap_toPartialMap]
@@ -242,16 +228,27 @@ representative of `f` on its domain of definition, compatibly with the projectio
 def graphIsoGraphClosure :
     graph f ≅ graphClosure sX sY f.toPartialMap.domain f.toPartialMap.hom
       (f.toPartialMap.over sX sY) :=
-  have := IsClosedImmersion.isIso_lift _ _ (ker_imageι_comp_pullbackToProd f sX sY)
-  asIso (IsClosedImmersion.lift _ (graphι f) (ker_imageι_comp_pullbackToProd f sX sY).le)
+  have := IsClosedImmersion.isIso_lift _ _ (ker_imageι_comp_pullbackMap f sX sY)
+  asIso (IsClosedImmersion.lift _ (graphι f) (ker_imageι_comp_pullbackMap f sX sY).le)
+
+/-- The isomorphism `graphIsoGraphClosure` is compatible with the closed immersions into `X × Y`:
+the graph closure embeds in `X × Y` through the closed immersion `X ×_S Y → X × Y`. -/
+@[reassoc (attr := simp)]
+theorem graphIsoGraphClosure_hom_imageι_pullbackMap :
+    (graphIsoGraphClosure f sX sY).hom ≫ (opensGraph sX sY f.toPartialMap.domain
+      f.toPartialMap.hom (f.toPartialMap.over sX sY)).imageι ≫
+        pullback.map sX sY _ _ (𝟙 X) (𝟙 Y) (terminal.from S) (terminal.hom_ext _ _)
+          (terminal.hom_ext _ _) = graphι f :=
+  IsClosedImmersion.lift_fac _ _ _
 
 /-- The isomorphism `graphIsoGraphClosure` is compatible with the first projections. -/
 @[reassoc (attr := simp)]
 theorem graphIsoGraphClosure_hom_graphClosureFst :
     (graphIsoGraphClosure f sX sY).hom ≫ graphClosureFst sX sY f.toPartialMap.domain
       f.toPartialMap.hom (f.toPartialMap.over sX sY) = graphFst f := by
-  rw [graphClosureFst_def, ← pullbackToProd_fst, ← Category.assoc _ (pullbackToProd sX sY),
-    graphIsoGraphClosure, asIso_hom, IsClosedImmersion.lift_fac_assoc]
+  have := graphIsoGraphClosure_hom_imageι_pullbackMap f sX sY =≫ pullback.fst _ _
+  simp only [Category.assoc, pullback.lift_fst, Category.comp_id] at this
+  rw [graphClosureFst_def, this]
   exact (graphClosureFst_def _ _ _ _ _).symm
 
 /-- The isomorphism `graphIsoGraphClosure` is compatible with the second projections. -/
@@ -259,8 +256,9 @@ theorem graphIsoGraphClosure_hom_graphClosureFst :
 theorem graphIsoGraphClosure_hom_graphClosureSnd :
     (graphIsoGraphClosure f sX sY).hom ≫ graphClosureSnd sX sY f.toPartialMap.domain
       f.toPartialMap.hom (f.toPartialMap.over sX sY) = graphSnd f := by
-  rw [graphClosureSnd_def, ← pullbackToProd_snd, ← Category.assoc _ (pullbackToProd sX sY),
-    graphIsoGraphClosure, asIso_hom, IsClosedImmersion.lift_fac_assoc]
+  have := graphIsoGraphClosure_hom_imageι_pullbackMap f sX sY =≫ pullback.snd _ _
+  simp only [Category.assoc, pullback.lift_snd, Category.comp_id] at this
+  rw [graphClosureSnd_def, this]
   exact (graphClosureSnd_def _ _ _ _ _).symm
 
 end Base
@@ -273,7 +271,7 @@ variable [IsReduced X]
 over which `f` is defined. -/
 theorem isProper_graphFst (sX : X ⟶ S) (sY : Y ⟶ S) [S.IsSeparated] [f.IsOver sX sY]
     [IsProper sY] : IsProper (graphFst f) := by
-  have : Y.IsSeparated := ⟨by rw [← terminal.comp_from sY]; infer_instance⟩
+  have := Scheme.IsSeparated.of_isSeparated sY
   rw [← graphIsoGraphClosure_hom_graphClosureFst f sX sY]
   infer_instance
 
@@ -282,15 +280,15 @@ theorem isProper_graphFst (sX : X ⟶ S) (sY : Y ⟶ S) [S.IsSeparated] [f.IsOve
 when `X` is locally Noetherian). -/
 instance isIso_graphFst_restrict [Y.IsSeparated] [QuasiCompact f.domain.ι] :
     IsIso (graphFst f ∣_ f.domain) := by
-  -- the domain of `f.toPartialMap` is `f.domain` by definition
-  have : QuasiCompact f.toPartialMap.domain.ι := ‹QuasiCompact f.domain.ι›
+  have : QuasiCompact f.toPartialMap.domain.ι := by rwa [f.toPartialMap_domain]
   have : f.IsOver (terminal.from X) (terminal.from Y) :=
     ⟨⟨f.representative, inferInstance, f.toRationalMap_representative⟩⟩
   rw [← graphIsoGraphClosure_hom_graphClosureFst f (terminal.from X) (terminal.from Y),
     morphismRestrict_comp]
   have h : IsIso (graphClosureFst (terminal.from X) (terminal.from Y) f.toPartialMap.domain
-      f.toPartialMap.hom (f.toPartialMap.over _ _) ∣_ f.toPartialMap.domain) := inferInstance
-  -- `h` is about the restriction over `f.toPartialMap.domain`, which is `f.domain` by definition
+      f.toPartialMap.hom (f.toPartialMap.over _ _) ∣_ f.domain) := by
+    rw [← f.toPartialMap_domain]
+    infer_instance
   exact IsIso.comp_isIso' (isPullback_morphismRestrict _ _).isIso_fst_of_isIso h
 
 /-- **The first projection of the graph is a modification** when `Y` is proper over a separated
@@ -298,9 +296,8 @@ base `S` over which `f` is defined and the inclusion of the domain of definition
 quasi-compact: it is proper, and an isomorphism over that dense open. -/
 theorem isModification_graphFst (sX : X ⟶ S) (sY : Y ⟶ S) [S.IsSeparated] [f.IsOver sX sY]
     [IsProper sY] [QuasiCompact f.domain.ι] : IsModification (graphFst f) := by
-  have : Y.IsSeparated := ⟨by rw [← terminal.comp_from sY]; infer_instance⟩
-  -- the domain of `f.toPartialMap` is `f.domain` by definition
-  have : QuasiCompact f.toPartialMap.domain.ι := ‹QuasiCompact f.domain.ι›
+  have := Scheme.IsSeparated.of_isSeparated sY
+  have : QuasiCompact f.toPartialMap.domain.ι := by rwa [f.toPartialMap_domain]
   have := isModification_graphClosureFst (hg := f.toPartialMap.over sX sY) f.dense_domain
   rw [← graphIsoGraphClosure_hom_graphClosureFst f sX sY]
   infer_instance
