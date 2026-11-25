@@ -25,14 +25,18 @@ a closed subgroup of `G` and cut out by `(unipotentRadicalDefiningIdeal G).reduc
 This file shows that `N` has the properties used to start the induction in the structure theory
 of connected solvable groups:
 
-* `N` is nontrivial as soon as `U` is: a nontrivial smooth connected unipotent group has
-  nilpotent rational points, hence a nontrivial smooth connected central subgroup, which lies in
-  `N` (`reducedConnectedCenter_unipotentRadicalDefiningIdeal_eq_augmentation_iff`);
+* `N` is nontrivial as soon as `U` is: a nontrivial reduced connected unipotent group has
+  nilpotent rational points, hence a nontrivial smooth connected central subgroup, which lies
+  in its reduced connected centre
+  (`TauCeti.HopfIdeal.reducedConnectedCenter_eq_augmentation_iff_of_geometricallyUnipotent`,
+  specialised to `U` in
+  `reducedConnectedCenter_unipotentRadicalDefiningIdeal_eq_augmentation_iff`);
 * `N` is smooth and unipotent (`TauCeti.HopfIdeal.smoothUnipotent_reducedConnectedCenter`) and
   commutative (`TauCeti.HopfIdeal.isCocomm_reducedConnectedCenter`), and it is central in `U` by
   construction (`TauCeti.FiniteTypeCommHopfAlgCat.isCentral_reducedConnectedCenterDefiningIdeal`);
 * when `G` is reduced, for instance in characteristic zero, `N` is normal in `G`, being
-  characteristic in the normal subgroup `U` (`TauCeti.HopfIdeal.IsNormal.reducedConnectedCenter`);
+  characteristic in the normal subgroup `U`
+  (`isNormal_reducedConnectedCenter_unipotentRadicalDefiningIdeal`);
 * in characteristic zero, `N` is a vector group, the spectrum of the symmetric algebra on the
   primitive elements of its coordinate ring
   (`TauCeti.HopfIdeal.liftBialgHom_primitive_bijective_reducedConnectedCenter`), and `G` acts on
@@ -48,9 +52,14 @@ homomorphisms `N → 𝔾ₐ`, and a point `n` of `N` is read as the linear form
   unipotent closed subgroup is smooth and unipotent.
 * `TauCeti.HopfIdeal.liftBialgHom_primitive_bijective_reducedConnectedCenter`: in characteristic
   zero, it is a vector group.
+* `TauCeti.HopfIdeal.reducedConnectedCenter_eq_augmentation_iff_of_geometricallyUnipotent`: the
+  reduced connected centre of a reduced connected unipotent closed subgroup is trivial exactly
+  when the subgroup is.
 * `reducedConnectedCenter_unipotentRadicalDefiningIdeal_eq_augmentation_iff`:
   the reduced connected centre of the unipotent radical is trivial exactly when the unipotent
   radical is.
+* `TauCeti.FiniteTypeCommHopfAlgCat.isNormal_reducedConnectedCenter_unipotentRadicalDefiningIdeal`:
+  for reduced `G`, it is normal in `G`.
 * `TauCeti.FiniteTypeCommHopfAlgCat.unipotentRadicalCenterConjLinearAut`: in characteristic
   zero, the action of `G` on the reduced connected centre of its unipotent radical by
   conjugation, as linear automorphisms.
@@ -115,49 +124,61 @@ theorem liftBialgHom_primitive_bijective_reducedConnectedCenter [CharZero k]
   HopfAlgebra.liftBialgHom_primitive_bijective_of_forall_isUnipotentPoint
     (geometricallyUnipotent_reducedConnectedCenter hI).forall_isUnipotentPoint
 
+/-- **The centre of a nontrivial connected unipotent group is nontrivial.** Over an
+algebraically closed field, if the closed subgroup cut out by `I` is reduced and geometrically
+connected and all its geometric points are unipotent, its reduced connected centre is trivial
+exactly when the subgroup is trivial. -/
+theorem reducedConnectedCenter_eq_augmentation_iff_of_geometricallyUnipotent
+    [IsReduced (FiniteTypeCommHopfAlgCat.quotient H I)]
+    (hconn : geometricallyConnectedCommHopfAlgProperty k
+      (FiniteTypeCommHopfAlgCat.quotient H I).obj)
+    (hI : geometricallyUnipotentPointsCommHopfAlgProperty k
+      (FiniteTypeCommHopfAlgCat.quotient H I).obj) :
+    I.reducedConnectedCenter = augmentation k H ↔ I = augmentation k H := by
+  refine ⟨fun h ↦ ?_, fun h ↦ le_antisymm (le_augmentation k H _)
+    (h ▸ le_reducedConnectedCenter _)⟩
+  by_contra hne
+  -- The subgroup `U` cut out by `I` is a nontrivial reduced connected unipotent group.
+  let U := FiniteTypeCommHopfAlgCat.quotient H I
+  have : ConnectedSpace (PrimeSpectrum U) := hconn.connectedSpace
+  have : Nontrivial (WithConv (U →ₐ[k] k)) := by
+    rw [← not_subsingleton_iff_nontrivial, ← augmentation_eq_bot_iff_subsingleton,
+      augmentation_quotient_eq_bot_iff]
+    exact hne
+  -- So `U` has a nontrivial smooth connected central subgroup, which lies in its reduced
+  -- connected centre.
+  obtain ⟨J, hJc, hJne, hJp⟩ :=
+    exists_isCentral_isPrime_ne_augmentation_of_forall_isUnipotentPoint hI.forall_isUnipotentPoint
+  have : IsDomain (U ⧸ J.toIdeal) := Ideal.Quotient.isDomain _
+  have hle := FiniteTypeCommHopfAlgCat.reducedConnectedCenterDefiningIdeal_le_of_isCentral U hJc
+    ((geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace k _).mpr inferInstance)
+  rw [reducedConnectedCenter_eq_augmentation_iff] at h
+  exact hJne (le_antisymm (le_augmentation k U J) (h ▸ hle))
+
 end HopfIdeal
 
 namespace FiniteTypeCommHopfAlgCat
 
 variable (G : FiniteTypeCommHopfAlgCat.{u, u} k)
 
-omit [IsAlgClosed k] in
-/-- The unipotent radical is unipotent. -/
-private theorem geometricallyUnipotent_unipotentRadical :
-    geometricallyUnipotentPointsCommHopfAlgProperty k (unipotentRadical G).obj :=
-  (geometricallyUnipotentPointsCommHopfAlgProperty_iff k _).mpr
-    ((smoothUnipotentCommHopfAlgProperty_iff k _).mp (smoothUnipotent_unipotentRadical G)).2
-
 /-- **The centre of a nontrivial unipotent radical is nontrivial.** Over an algebraically closed
 field, the reduced connected centre of the unipotent radical `R_u(G)` of a finite-type affine
 group `G`, as a closed subgroup of `G`, is trivial exactly when `R_u(G)` is trivial. -/
 theorem reducedConnectedCenter_unipotentRadicalDefiningIdeal_eq_augmentation_iff :
     (unipotentRadicalDefiningIdeal G).reducedConnectedCenter = HopfIdeal.augmentation k G ↔
-      unipotentRadicalDefiningIdeal G = HopfIdeal.augmentation k G := by
-  refine ⟨fun h ↦ ?_, fun h ↦ le_antisymm (HopfIdeal.le_augmentation k G _)
-    (h ▸ HopfIdeal.le_reducedConnectedCenter _)⟩
-  by_contra hne
-  -- The unipotent radical `U` is a nontrivial smooth connected unipotent group.
-  let U := unipotentRadical G
-  have hsmooth : Algebra.Smooth k U :=
-    ((smoothUnipotentCommHopfAlgProperty_iff k U).mp (smoothUnipotent_unipotentRadical G)).1
-  have : IsReduced U := isReduced_of_smooth k U
-  have : ConnectedSpace (PrimeSpectrum U) :=
-    (geometricallyConnected_unipotentRadical G).connectedSpace
-  have : Nontrivial (WithConv (U →ₐ[k] k)) := by
-    rw [← not_subsingleton_iff_nontrivial, ← HopfIdeal.augmentation_eq_bot_iff_subsingleton,
-      HopfIdeal.augmentation_quotient_eq_bot_iff]
-    exact hne
-  -- So `U` has a nontrivial smooth connected central subgroup, which lies in its reduced
-  -- connected centre.
-  obtain ⟨J, hJc, hJne, hJp⟩ :=
-    HopfIdeal.exists_isCentral_isPrime_ne_augmentation_of_forall_isUnipotentPoint
-      (geometricallyUnipotent_unipotentRadical G).forall_isUnipotentPoint
-  have : IsDomain (U ⧸ J.toIdeal) := Ideal.Quotient.isDomain _
-  have hle := reducedConnectedCenterDefiningIdeal_le_of_isCentral U hJc
-    ((geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace k _).mpr inferInstance)
-  rw [HopfIdeal.reducedConnectedCenter_eq_augmentation_iff] at h
-  exact hJne (le_antisymm (HopfIdeal.le_augmentation k U J) (h ▸ hle))
+      unipotentRadicalDefiningIdeal G = HopfIdeal.augmentation k G :=
+  let _ : Algebra.Smooth k (unipotentRadical G) :=
+    ((smoothUnipotentCommHopfAlgProperty_iff k _).mp (smoothUnipotent_unipotentRadical G)).1
+  let _ : IsReduced (unipotentRadical G) := isReduced_of_smooth k _
+  HopfIdeal.reducedConnectedCenter_eq_augmentation_iff_of_geometricallyUnipotent
+    (geometricallyConnected_unipotentRadical G) (geometricallyUnipotent_unipotentRadical G)
+
+/-- The reduced connected centre of the unipotent radical is normal in a reduced `G`, for
+instance in characteristic zero (`TauCeti.HopfAlgebra.isReduced_of_charZero`), being
+characteristic in the normal subgroup `R_u(G)`. -/
+theorem isNormal_reducedConnectedCenter_unipotentRadicalDefiningIdeal [IsReduced G] :
+    (unipotentRadicalDefiningIdeal G).reducedConnectedCenter.IsNormal :=
+  (isNormal_unipotentRadicalDefiningIdeal G).reducedConnectedCenter
 
 variable [CharZero k]
 
@@ -169,13 +190,6 @@ private noncomputable def centerVectorGroupEquiv :
       G ⧸ (unipotentRadicalDefiningIdeal G).reducedConnectedCenter.toIdeal :=
   BialgEquiv.ofBijective _ (HopfIdeal.liftBialgHom_primitive_bijective_reducedConnectedCenter
     (geometricallyUnipotent_unipotentRadical G))
-
-/-- In characteristic zero `G` is reduced, so the reduced connected centre of its unipotent
-radical is normal in `G`. -/
-private theorem isNormal_center_of_charZero :
-    (unipotentRadicalDefiningIdeal G).reducedConnectedCenter.IsNormal :=
-  let _ := HopfAlgebra.isReduced_of_charZero k G
-  (isNormal_unipotentRadicalDefiningIdeal G).reducedConnectedCenter
 
 /-- **A group acts linearly on the centre of its unipotent radical.** Over an algebraically
 closed field of characteristic zero, let `N` be the reduced connected centre of the unipotent
@@ -190,7 +204,9 @@ noncomputable def unipotentRadicalCenterConjLinearAut (A : Type x) [CommRing A] 
           (1 : G ⧸ (unipotentRadicalDefiningIdeal G).reducedConnectedCenter.toIdeal) 1 →ₗ[k] A)
         ≃ₗ[A] (Coalgebra.skewPrimitive k
           (1 : G ⧸ (unipotentRadicalDefiningIdeal G).reducedConnectedCenter.toIdeal) 1 →ₗ[k] A)) :=
-  (isNormal_center_of_charZero G).conjLinearAut (centerVectorGroupEquiv G) A
+  let _ := HopfAlgebra.isReduced_of_charZero k G
+  (isNormal_reducedConnectedCenter_unipotentRadicalDefiningIdeal G).conjLinearAut
+    (centerVectorGroupEquiv G) A
 
 /-- The linear automorphism through which a point `g` of `G` acts sends the linear form
 `p ↦ n(p)` of a point `n` of the centre `N` of the unipotent radical to the linear form of the

@@ -60,23 +60,6 @@ variable {R : Type u} [CommRing R] {H : Type v} [CommRing H] [HopfAlgebra R H]
 
 section Conjugation
 
-/-- The conjugate `g * n * g⁻¹` of a point `n` of a normal closed subgroup, computed in the
-ambient group, vanishes on the normal Hopf ideal `I` cutting out the subgroup. -/
-theorem IsNormal.conj_mapDomain_apply_eq_zero (hI : I.IsNormal) {A : Type w} [CommRing A]
-    [Algebra R A] (g : WithConv (H →ₐ[R] A)) (n : WithConv ((H ⧸ I.toIdeal) →ₐ[R] A)) {x : H}
-    (hx : x ∈ I) :
-    (g * BialgHom.mapDomain (Bialgebra.Quotient.mkBialgHom I.toIdeal) n * g⁻¹).ofConv x = 0 := by
-  rw [← HopfAlgebra.productMap_comp_conjugationAlgHom, AlgHom.comp_apply]
-  -- The product of `g` with a point killing `I` kills the right tensor ideal `H ⊗ I`.
-  have hker : Ideal.rightTensorIdeal (R := R) (A := H) I.toIdeal ≤
-      RingHom.ker (Algebra.TensorProduct.productMap g.ofConv
-        (BialgHom.mapDomain (Bialgebra.Quotient.mkBialgHom I.toIdeal) n).ofConv).toRingHom := by
-    rw [Ideal.rightTensorIdeal_le_iff]
-    intro y hy
-    rw [Ideal.mem_comap, RingHom.mem_ker]
-    simp [Ideal.Quotient.eq_zero_iff_mem.mpr hy]
-  exact RingHom.mem_ker.mp (hker (hI.conjugation_mem hx))
-
 /-- Restriction of points along the quotient map `H → H ⧸ I` is injective. -/
 private theorem mapDomain_mkBialgHom_injective {A : Type w} [CommRing A] [Algebra R A] :
     Function.Injective
@@ -90,7 +73,8 @@ private noncomputable def conjPointsFun (hI : I.IsNormal) {A : Type w} [CommRing
     WithConv ((H ⧸ I.toIdeal) →ₐ[R] A) :=
   toConv (Ideal.Quotient.liftₐ I.toIdeal
     (g * BialgHom.mapDomain (Bialgebra.Quotient.mkBialgHom I.toIdeal) n * g⁻¹).ofConv
-    fun _ hx ↦ hI.conj_mapDomain_apply_eq_zero g n (mem_toIdeal.mp hx))
+    fun _ hx ↦ hI.conj_apply_eq_zero g _ (fun y hy ↦ by
+      simp [Ideal.Quotient.eq_zero_iff_mem.mpr (mem_toIdeal.mpr hy)]) (mem_toIdeal.mp hx))
 
 private theorem mapDomain_conjPointsFun (hI : I.IsNormal) {A : Type w} [CommRing A]
     [Algebra R A] (g : WithConv (H →ₐ[R] A)) (n : WithConv ((H ⧸ I.toIdeal) →ₐ[R] A)) :
@@ -101,32 +85,42 @@ private theorem mapDomain_conjPointsFun (hI : I.IsNormal) {A : Type w} [CommRing
   simp only [conjPointsFun, BialgHom.mapDomain_apply_apply]
   exact Ideal.Quotient.lift_mk _ _ _
 
+/-- Conjugation by a point `g`, as an automorphism of the points of the normal closed
+subgroup. -/
+private noncomputable def conjPointsAut (hI : I.IsNormal) {A : Type w} [CommRing A]
+    [Algebra R A] (g : WithConv (H →ₐ[R] A)) : MulAut (WithConv ((H ⧸ I.toIdeal) →ₐ[R] A)) where
+  toFun := conjPointsFun hI g
+  invFun := conjPointsFun hI g⁻¹
+  left_inv n := mapDomain_mkBialgHom_injective <| by
+    rw [mapDomain_conjPointsFun, mapDomain_conjPointsFun]
+    group
+  right_inv n := mapDomain_mkBialgHom_injective <| by
+    rw [mapDomain_conjPointsFun, mapDomain_conjPointsFun]
+    group
+  map_mul' n n' := mapDomain_mkBialgHom_injective <| by
+    rw [map_mul, mapDomain_conjPointsFun, mapDomain_conjPointsFun, mapDomain_conjPointsFun,
+      map_mul]
+    group
+
+private theorem mapDomain_conjPointsAut (hI : I.IsNormal) {A : Type w} [CommRing A]
+    [Algebra R A] (g : WithConv (H →ₐ[R] A)) (n : WithConv ((H ⧸ I.toIdeal) →ₐ[R] A)) :
+    BialgHom.mapDomain (Bialgebra.Quotient.mkBialgHom I.toIdeal) (conjPointsAut hI g n) =
+      g * BialgHom.mapDomain (Bialgebra.Quotient.mkBialgHom I.toIdeal) n * g⁻¹ :=
+  mapDomain_conjPointsFun hI g n
+
 /-- **Conjugation on a normal closed subgroup.** For a normal Hopf ideal `I`, the points
 `g ∈ G(A)` of the ambient group act on the points of the normal closed subgroup `N` cut out by
 `I`, the algebra maps `H ⧸ I →ₐ[R] A`, by conjugation `n ↦ g * n * g⁻¹`
 (`TauCeti.HopfIdeal.IsNormal.mapDomain_conjPoints`). -/
 noncomputable def IsNormal.conjPoints (hI : I.IsNormal) (A : Type w) [CommRing A] [Algebra R A] :
     WithConv (H →ₐ[R] A) →* MulAut (WithConv ((H ⧸ I.toIdeal) →ₐ[R] A)) where
-  toFun g :=
-    { toFun := conjPointsFun hI g
-      invFun := conjPointsFun hI g⁻¹
-      left_inv n := mapDomain_mkBialgHom_injective <| by
-        rw [mapDomain_conjPointsFun, mapDomain_conjPointsFun]
-        group
-      right_inv n := mapDomain_mkBialgHom_injective <| by
-        rw [mapDomain_conjPointsFun, mapDomain_conjPointsFun]
-        group
-      map_mul' n n' := mapDomain_mkBialgHom_injective <| by
-        rw [map_mul, mapDomain_conjPointsFun, mapDomain_conjPointsFun, mapDomain_conjPointsFun,
-          map_mul]
-        group }
+  toFun := conjPointsAut hI
   map_one' := MulEquiv.ext fun n ↦ mapDomain_mkBialgHom_injective <| by
-    rw [MulEquiv.coe_mk, Equiv.coe_fn_mk, mapDomain_conjPointsFun, MulAut.one_apply]
+    rw [mapDomain_conjPointsAut, MulAut.one_apply]
     group
   map_mul' g g' := MulEquiv.ext fun n ↦ mapDomain_mkBialgHom_injective <| by
-    rw [MulEquiv.coe_mk, Equiv.coe_fn_mk, mapDomain_conjPointsFun, MulAut.mul_apply,
-      MulEquiv.coe_mk, Equiv.coe_fn_mk, MulEquiv.coe_mk, Equiv.coe_fn_mk, mapDomain_conjPointsFun,
-      mapDomain_conjPointsFun]
+    rw [MulAut.mul_apply, mapDomain_conjPointsAut, mapDomain_conjPointsAut,
+      mapDomain_conjPointsAut]
     group
 
 /-- The conjugation action on a normal closed subgroup is conjugation `n ↦ g * n * g⁻¹` in the
@@ -137,7 +131,7 @@ theorem IsNormal.mapDomain_conjPoints (hI : I.IsNormal) {A : Type w} [CommRing A
     [Algebra R A] (g : WithConv (H →ₐ[R] A)) (n : WithConv ((H ⧸ I.toIdeal) →ₐ[R] A)) :
     BialgHom.mapDomain (Bialgebra.Quotient.mkBialgHom I.toIdeal) (hI.conjPoints A g n) =
       g * BialgHom.mapDomain (Bialgebra.Quotient.mkBialgHom I.toIdeal) n * g⁻¹ :=
-  mapDomain_conjPointsFun hI g n
+  mapDomain_conjPointsAut hI g n
 
 /-- Pointwise form of `TauCeti.HopfIdeal.IsNormal.mapDomain_conjPoints`: the conjugate point
 takes at the class of `x` the value of `g * n * g⁻¹` at `x`. -/
@@ -155,12 +149,9 @@ theorem IsNormal.mapValue_conjPoints (hI : I.IsNormal) {A : Type w} [CommRing A]
     (n : WithConv ((H ⧸ I.toIdeal) →ₐ[R] A)) :
     AlgHom.mapValue φ (hI.conjPoints A g n) =
       hI.conjPoints B (AlgHom.mapValue φ g) (AlgHom.mapValue φ n) := by
-  have key (m : WithConv ((H ⧸ I.toIdeal) →ₐ[R] A)) :
-      BialgHom.mapDomain (Bialgebra.Quotient.mkBialgHom I.toIdeal) (AlgHom.mapValue φ m) =
-        AlgHom.mapValue φ (BialgHom.mapDomain (Bialgebra.Quotient.mkBialgHom I.toIdeal) m) :=
-    DFunLike.congr_fun (BialgHom.mapValue_mapDomain _ φ) m
   apply mapDomain_mkBialgHom_injective
-  rw [key, hI.mapDomain_conjPoints, hI.mapDomain_conjPoints, key, map_mul, map_mul, map_inv]
+  rw [BialgHom.mapDomain_mapValue_apply, hI.mapDomain_conjPoints, hI.mapDomain_conjPoints,
+    BialgHom.mapDomain_mapValue_apply, map_mul, map_mul, map_inv]
 
 end Conjugation
 
@@ -188,18 +179,10 @@ private theorem vectorConjPoints_mapValue (hI : I.IsNormal)
     (P : WithConv (SymmetricAlgebra R M →ₐ[R] A)) :
     AlgHom.mapValue φ (vectorConjPoints hI e A g P) =
       vectorConjPoints hI e B (AlgHom.mapValue φ g) (AlgHom.mapValue φ P) := by
-  have key₁ (m : WithConv ((H ⧸ I.toIdeal) →ₐ[R] A)) :
-      BialgHom.mapDomain (e : SymmetricAlgebra R M →ₐc[R] H ⧸ I.toIdeal) (AlgHom.mapValue φ m) =
-        AlgHom.mapValue φ (BialgHom.mapDomain (e : SymmetricAlgebra R M →ₐc[R] _) m) :=
-    DFunLike.congr_fun (BialgHom.mapValue_mapDomain _ φ) m
-  have key₂ (m : WithConv (SymmetricAlgebra R M →ₐ[R] A)) :
-      BialgHom.mapDomain (e.symm : H ⧸ I.toIdeal →ₐc[R] SymmetricAlgebra R M)
-          (AlgHom.mapValue φ m) =
-        AlgHom.mapValue φ (BialgHom.mapDomain (e.symm : H ⧸ I.toIdeal →ₐc[R] _) m) :=
-    DFunLike.congr_fun (BialgHom.mapValue_mapDomain _ φ) m
   rw [vectorConjPoints_apply, vectorConjPoints_apply, BialgEquiv.mapDomainMulEquiv_apply,
     BialgEquiv.mapDomainMulEquiv_apply, BialgEquiv.mapDomainMulEquiv_symm_apply,
-    BialgEquiv.mapDomainMulEquiv_symm_apply, ← key₁, hI.mapValue_conjPoints, key₂]
+    BialgEquiv.mapDomainMulEquiv_symm_apply, ← BialgHom.mapDomain_mapValue_apply,
+    hI.mapValue_conjPoints, BialgHom.mapDomain_mapValue_apply]
 
 variable [Algebra ℚ R]
 

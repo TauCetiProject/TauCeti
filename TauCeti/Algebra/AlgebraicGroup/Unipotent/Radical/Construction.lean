@@ -165,6 +165,13 @@ theorem smoothUnipotent_unipotentRadical (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     smoothUnipotentCommHopfAlgProperty k (unipotentRadical H) :=
   (isUnipotentRadicalCandidate_unipotentRadicalDefiningIdeal H).smoothUnipotent
 
+/-- The rational points of the unipotent radical over every algebraically closed field extension
+are unipotent. -/
+theorem geometricallyUnipotent_unipotentRadical (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
+    geometricallyUnipotentPointsCommHopfAlgProperty k (unipotentRadical H).obj :=
+  (geometricallyUnipotentPointsCommHopfAlgProperty_iff k _).mpr
+    ((smoothUnipotentCommHopfAlgProperty_iff k _).mp (smoothUnipotent_unipotentRadical H)).2
+
 /-- The defining ideal of the unipotent radical is normal. -/
 theorem isNormal_unipotentRadicalDefiningIdeal (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
     (unipotentRadicalDefiningIdeal H).IsNormal :=
