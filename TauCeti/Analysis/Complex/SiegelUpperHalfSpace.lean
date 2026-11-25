@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.SymplecticGroup
 public import TauCeti.Data.Matrix.Block
 public import TauCeti.LinearAlgebra.Matrix.OfReal
+import Mathlib.LinearAlgebra.Matrix.Integer
+import TauCeti.LinearAlgebra.Matrix.ConjTranspose
 import TauCeti.LinearAlgebra.SymplecticGroup
 
 /-!
@@ -366,20 +368,16 @@ private theorem siegelNumerator_siegelFactor_mul_of_isUnit (hN : IsUnit (siegelF
 whenever `j(N, Ω)` is invertible. -/
 theorem siegelNumerator_mul_of_isUnit (hN : IsUnit (siegelFactor N Ω).det) :
     siegelNumerator (M * N) Ω = siegelNumerator M (siegelAction N Ω) * siegelFactor N Ω := by
-  have h := Matrix.map_mul (L := M) (M := N) (f := Int.castRingHom ℂ)
-  rw [Int.coe_castRingHom] at h
   rw [(siegelNumerator_siegelFactor_mul_of_isUnit hN).1, siegelNumerator_def, siegelNumerator_def,
-    siegelFactor_def, h, toBlocks₁₁_mul, toBlocks₁₂_mul]
+    siegelFactor_def, map_mul_intCast, toBlocks₁₁_mul, toBlocks₁₂_mul]
   noncomm_ring
 
 /-- **The cocycle relation** `j(M N, Ω) = j(M, N · Ω) j(N, Ω)` for the automorphy factor, whenever
 `j(N, Ω)` is invertible. -/
 theorem siegelFactor_mul_of_isUnit (hN : IsUnit (siegelFactor N Ω).det) :
     siegelFactor (M * N) Ω = siegelFactor M (siegelAction N Ω) * siegelFactor N Ω := by
-  have h := Matrix.map_mul (L := M) (M := N) (f := Int.castRingHom ℂ)
-  rw [Int.coe_castRingHom] at h
   rw [(siegelNumerator_siegelFactor_mul_of_isUnit hN).2, siegelNumerator_def, siegelFactor_def,
-    siegelFactor_def, h, toBlocks₂₁_mul, toBlocks₂₂_mul]
+    siegelFactor_def, map_mul_intCast, toBlocks₂₁_mul, toBlocks₂₂_mul]
   noncomm_ring
 
 /-- **Compatibility with products**, whenever `j(N, Ω)` is invertible. -/

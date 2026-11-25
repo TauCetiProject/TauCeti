@@ -30,8 +30,6 @@ transforms by the same congruence. For a symmetric complex matrix `Ω`, the imag
   `O Oᵀ = 1` as a complex matrix.
 * `Matrix.map_ofReal_mem_unitaryGroup`: an orthogonal real matrix is unitary.
 * `Matrix.IsHermitian.map_ofReal`: a real symmetric matrix is Hermitian.
-* `Matrix.conjTranspose_map_intCast`: an integral matrix, viewed as a matrix over a star ring
-  such as `ℂ`, has `Xᴴ = Xᵀ`.
 * `Matrix.map_im_map_ofReal_of_transpose_eq`: for a symmetric complex matrix `Ω`, the complex
   matrix of `Im Ω` is `(Ω - Ωᴴ) / 2i`.
 * `Matrix.map_ofReal_mul`, `Matrix.map_ofReal_one`, `Matrix.trace_map_ofReal`: the entrywise
@@ -79,13 +77,6 @@ theorem map_ofReal_mem_unitaryGroup [Fintype n] [DecidableEq n] {O : Matrix n n 
 theorem IsHermitian.map_ofReal {A : Matrix n n ℝ} (hA : A.IsHermitian) :
     (A.map ((↑) : ℝ → ℂ)).IsHermitian :=
   hA.map _ fun _ ↦ by simp
-
-/-- An integral matrix, viewed as a matrix over a star ring, has `Xᴴ = Xᵀ`. -/
-@[simp]
-theorem conjTranspose_map_intCast {R : Type*} [Ring R] [StarRing R] (X : Matrix m n ℤ) :
-    (X.map ((↑) : ℤ → R))ᴴ = (X.map ((↑) : ℤ → R))ᵀ := by
-  ext i j
-  simp
 
 /-- For a symmetric complex matrix `Ω`, the complex matrix of `Im Ω` is `(Ω - Ωᴴ) / 2i`. -/
 theorem map_im_map_ofReal_of_transpose_eq {Ω : Matrix n n ℂ} (h : Ωᵀ = Ω) :
