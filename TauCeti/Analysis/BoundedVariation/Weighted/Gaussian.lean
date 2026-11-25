@@ -43,10 +43,7 @@ theorem withDensity_exp_neg_gaussianWeight :
 /-- On the line, the Gaussian density `e^{−W}` is the standard normal density `φ`. -/
 theorem Real.exp_neg_gaussianWeight (x : ℝ) :
     Real.exp (-gaussianWeight ℝ x) = ProbabilityTheory.gaussianPDFReal 0 1 x := by
-  rw [Probability.gaussianPDFReal_zero_one, gaussianWeight_def, Module.finrank_self,
-    Real.sqrt_eq_rpow, Real.rpow_def_of_pos (by positivity), ← Real.exp_neg, ← Real.exp_add]
-  congr 1
-  rw [Real.norm_eq_abs, sq_abs]
-  ring
+  rw [exp_neg_gaussianWeight_of_norm_eq (Real.norm_eq_abs x), Probability.gaussianPDFReal_zero_one]
+  simp [Real.sqrt_eq_rpow, Real.rpow_neg (by positivity : (0 : ℝ) ≤ 2 * Real.pi), neg_div]
 
 end TauCeti
