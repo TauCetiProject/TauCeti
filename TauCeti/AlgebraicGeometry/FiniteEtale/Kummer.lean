@@ -373,7 +373,7 @@ theorem kummerCoverFiberEquiv_map_kummerCoverDeck (ζ : rootsOfUnity n R)
 `n`-th root of the image of `t`, since `n` is invertible in `Ω`. -/
 theorem nonempty_fiber_kummerCover :
     Nonempty ((fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj (kummerCover t n hn)) :=
-  haveI := neZero_natCast_of_isUnit Ω hn
+  haveI : NeZero (n : Ω) := ⟨hn.natCast_ne_zero_of_algebra⟩
   have ⟨ω, hω⟩ := IsSepClosed.exists_pow_nat_eq (algebraMap R Ω t) n
   ⟨(kummerCoverFiberEquiv t Ω n hn).symm ⟨ω, hω⟩⟩
 
@@ -382,7 +382,7 @@ theorem nonempty_fiber_kummerCover :
 theorem kummerCoverFiberEquiv_ne_zero
     (y : (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj (kummerCover t n hn)) :
     (kummerCoverFiberEquiv t Ω n hn y : Ω) ≠ 0 := by
-  have := neZero_of_isUnit_natCast Ω hn
+  have : NeZero n := .of_neZero_natCast Ω (h := ⟨hn.natCast_ne_zero_of_algebra⟩)
   refine ne_zero_pow (NeZero.ne n) ?_
   rw [(kummerCoverFiberEquiv t Ω n hn y).property]
   exact (t.isUnit.map (algebraMap R Ω)).ne_zero
@@ -395,7 +395,7 @@ theorem exists_fiber_map_kummerCoverDeck_eq
     (y y' : (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj (kummerCover t n hn)) :
     ∃ ζ : rootsOfUnity n R, (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).map
       (kummerCoverDeck t hn ζ).hom y = y' := by
-  have := neZero_of_isUnit_natCast Ω hn
+  have : NeZero n := .of_neZero_natCast Ω (h := ⟨hn.natCast_ne_zero_of_algebra⟩)
   set e := kummerCoverFiberEquiv t Ω n hn
   obtain ⟨ω, hω⟩ := (pow_eq_pow_iff_exists_rootsOfUnity_smul (NeZero.ne n)).mp
     ((e y).property.trans (e y').property.symm)
@@ -411,8 +411,8 @@ cardinality `n`: the nonzero element `algebraMap R Ω t` has exactly `n` distinc
 theorem card_kummerCoverFiber :
     Nat.card ((fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj
       (kummerCover t n hn)) = n := by
-  have := neZero_natCast_of_isUnit Ω hn
-  have := neZero_of_isUnit_natCast Ω hn
+  have : NeZero (n : Ω) := ⟨hn.natCast_ne_zero_of_algebra⟩
+  have : NeZero n := .of_neZero_natCast Ω
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot Ω n
   obtain ⟨y⟩ := nonempty_fiber_kummerCover t (Ω := Ω) hn
   rw [Nat.card_congr ((kummerCoverFiberEquiv t Ω n hn).trans (Equiv.subtypeEquivRight
@@ -427,7 +427,7 @@ of `Ω`. -/
 noncomputable def kummerCoverFiberEquivRootsOfUnity (h : algebraMap R Ω t = 1) :
     (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj (kummerCover t n hn) ≃
       rootsOfUnity n Ω :=
-  haveI := neZero_of_isUnit_natCast Ω hn
+  haveI : NeZero n := .of_neZero_natCast Ω (h := ⟨hn.natCast_ne_zero_of_algebra⟩)
   (kummerCoverFiberEquiv t Ω n hn).trans <|
     (Equiv.subtypeEquivRight fun ω ↦ by rw [mem_nthRoots (NeZero.pos n), h]).trans
       (rootsOfUnityEquivNthRoots Ω n).symm

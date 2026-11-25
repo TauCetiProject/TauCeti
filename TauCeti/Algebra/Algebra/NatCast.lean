@@ -30,8 +30,6 @@ explicit base argument `K`, follow Mathlib's `IsUnit.natCast_factorial_of_algebr
 
 * `IsUnit.ofNat_of_algebra`: if a numeral is a unit in `K` then it is a unit in `L`.
 * `IsUnit.natCast_ne_zero_of_algebra`: if `(m : K)` is a unit then `(m : L) ≠ 0`.
-* `TauCeti.neZero_natCast_of_isUnit`, `TauCeti.neZero_of_isUnit_natCast`: if `(m : K)` is a unit,
-  then `NeZero (m : L)` and `NeZero m` for every nontrivial `K`-algebra `L`.
 * `TauCeti.isUnit_natCast_of_ne_zero`, `TauCeti.isUnit_natCast_add_of_ne_zero`,
   `TauCeti.isUnit_natCast_add_one`: every nonzero natural number (in particular `(m : A) + k` for
   `k ≠ 0` and `(m : A) + 1`) is a unit in an algebra `A` over a characteristic-zero semifield `K`.
@@ -69,18 +67,6 @@ theorem IsUnit.natCast_ne_zero_of_algebra {K L : Type*} [CommSemiring K] [Semiri
   simpa using (hm.map (algebraMap K L)).ne_zero
 
 namespace TauCeti
-
-/-- A natural number `n` invertible in `R` stays nonzero in any nontrivial `R`-algebra `A`; this is
-the `NeZero` form of `IsUnit.natCast_ne_zero_of_algebra`. -/
-theorem neZero_natCast_of_isUnit {R : Type*} [CommSemiring R] (A : Type*) [Semiring A]
-    [Nontrivial A] [Algebra R A] {n : ℕ} (hn : IsUnit (n : R)) : NeZero (n : A) :=
-  ⟨hn.natCast_ne_zero_of_algebra⟩
-
-/-- A natural number `n` invertible in `R` is nonzero when `R` has a nontrivial algebra `A`. Unlike
-`IsUnit.neZero_natCast`, this does not require `R` itself to be known to be nontrivial. -/
-theorem neZero_of_isUnit_natCast {R : Type*} [CommSemiring R] (A : Type*) [Semiring A]
-    [Nontrivial A] [Algebra R A] {n : ℕ} (hn : IsUnit (n : R)) : NeZero n :=
-  ⟨fun h ↦ hn.natCast_ne_zero_of_algebra (L := A) (by rw [h, Nat.cast_zero])⟩
 
 /-- Every nonzero natural number is a unit in an algebra over a characteristic-zero semifield `K`,
 for instance in every `ℚ`-algebra. -/
