@@ -22,13 +22,15 @@ connected components.
 * On a nonempty, preconnected, Hausdorff, σ-compact manifold, `ξ⁰ ∖ 0` is connected exactly when
   `ξ` is not coorientable, that is, when no global contact form has kernel `ξ`
   (`TauCeti.IsContactDistribution.connectedSpace_annihilatorPunctured_iff`).
-* If `ξ = ker α` for a contact form `α` on a manifold without boundary, then `ξ⁰ ∖ 0` has exactly
-  two connected components: the images of the trivializations `κ_α : (t, x) ↦ eᵗ α_x` and
+* If `ξ = ker α` for a contact form `α`, then `ξ⁰ ∖ 0` is disconnected, with no hypothesis on `M`
+  (`TauCeti.IsContactDistribution.not_connectedSpace_annihilatorPunctured`): the section `x ↦ α_x`
+  orients the annihilator line. On a connected manifold, `ξ⁰ ∖ 0` has exactly two connected
+  components: the images of the trivializations `κ_α : (t, x) ↦ eᵗ α_x` and
   `κ_(-α)` (`TauCeti.SmoothForm.symplectizationToAnnihilator`), that is, the positive multiples of
   `α` and the negative ones
   (`TauCeti.IsContactDistribution.connectedComponentIn_annihilatorPunctured_eq_range`,
-  `TauCeti.IsContactDistribution.connectedComponentIn_annihilatorPunctured_eq_or`). Each of them
-  is a diffeomorphic copy of the cooriented symplectization `ℝ × M`
+  `TauCeti.IsContactDistribution.connectedComponentIn_annihilatorPunctured_eq_or`). On a manifold
+  without boundary each of them is a diffeomorphic copy of the cooriented symplectization `ℝ × M`
   (`TauCeti.SmoothForm.isLocalDiffeomorph_symplectizationToAnnihilator`), and the fibre negation
   `ℓ ↦ -ℓ` exchanges them
   (`TauCeti.SmoothForm.vectorBundleScalarDiffeomorph_symplectizationToAnnihilator_of_neg`).
@@ -121,17 +123,29 @@ theorem connectedSpace_annihilatorPunctured_iff [PreconnectedSpace M] [T2Space M
     ← isConnected_iff_connectedSpace, ← hξ.coe_annihilatorPunctured]
   exact isConnected_iff_connectedSpace.symm
 
-variable [BoundarylessManifold I M] {α : SmoothForm I M ℝ 1} (hα : α.kerDistribution = ξ)
-
-include hξ in
-/-- The image of the trivialization `κ_α` of the annihilator line by a one-form `α` with kernel
-the contact structure `ξ` is open. -/
-private theorem isOpen_range_symplectizationToAnnihilator :
-    IsOpen (range (α.symplectizationToAnnihilator hα)) :=
+/-- **The symplectization of a coorientable contact structure is disconnected.** If `ξ = ker α`
+for a contact form `α`, the symplectization `ξ⁰ ∖ 0` is not connected. No hypothesis on `M` is
+needed. -/
+theorem not_connectedSpace_annihilatorPunctured {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm)
+    (hαξ : α.kerDistribution = ξ) :
+    letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
+    ¬ ConnectedSpace hξ.annihilatorPunctured :=
   letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
   haveI := hξ.isContMDiffDistribution.annihilatorVectorBundle hξ.finrank_sub_one_add_one
-  haveI := hξ.isContMDiffDistribution.annihilatorContMDiffVectorBundle hξ.finrank_sub_one_add_one
-  (SmoothForm.isLocalDiffeomorph_symplectizationToAnnihilator hα hξ).isOpen_range
+  fun h ↦ by
+  -- `ξ⁰ ∖ 0` maps onto `M`, through the covectors `α_x`, so `M` is connected too.
+  have : ConnectedSpace M := Function.Surjective.connectedSpace
+    (f := fun z : hξ.annihilatorPunctured ↦ z.val.proj)
+    (fun x ↦ ⟨⟨α.symplectizationToAnnihilator hαξ (0, x), hξ.mem_annihilatorPunctured.2
+      (SmoothForm.symplectizationToAnnihilator_snd_ne_zero hαξ hα.apply_ne_zero _)⟩,
+      SmoothForm.proj_symplectizationToAnnihilator hαξ _⟩)
+    ((FiberBundle.continuous_proj _ _).comp continuous_subtypeVal)
+  obtain ⟨o⟩ := hξ.isContMDiffDistribution.nonempty_vectorBundleOrientation_of_smoothForm_ker_eq
+    hξ.finrank_sub_one_add_one (hξ.isContactForm_and_kerDistribution_eq_iff.1 ⟨hα, hαξ⟩)
+  exact (nonempty_vectorBundleOrientation_iff_not_connectedSpace_zeroSectionCompl (by simp)).1 ⟨o⟩
+    (hξ.connectedSpace_annihilatorPunctured_iff_connectedSpace_zeroSectionCompl.1 h)
+
+variable {α : SmoothForm I M ℝ 1} (hα : α.kerDistribution = ξ)
 
 /-- **The components of the symplectization of a cooriented contact structure.** Let `α` be a
 one-form with kernel the contact structure `ξ` on a preconnected manifold. The connected
@@ -142,24 +156,35 @@ theorem connectedComponentIn_annihilatorPunctured_eq_range [PreconnectedSpace M]
     connectedComponentIn (hξ.annihilatorPunctured : Set _) (α.symplectizationToAnnihilator hα p) =
       range (α.symplectizationToAnnihilator hα) := by
   let := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
-  have hα₀ : ∀ x, α.val x ≠ 0 :=
-    (SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution.2 (hα ▸ hξ)).apply_ne_zero
-  have hsub : range (α.symplectizationToAnnihilator hα) ⊆ hξ.annihilatorPunctured := by
-    rintro _ ⟨q, rfl⟩
-    exact hξ.mem_annihilatorPunctured.2
-      (SmoothForm.symplectizationToAnnihilator_snd_ne_zero hα hα₀ q)
-  refine subset_antisymm ?_ <| (isPreconnected_range
-    (SmoothForm.contMDiff_symplectizationToAnnihilator hα hξ.isContMDiffDistribution
-      hξ.finrank_sub_one_add_one).continuous).subset_connectedComponentIn (mem_range_self p) hsub
-  -- The symplectization is the disjoint union of the open images of `κ_α` and `κ_(-α)`.
-  have hneg := SmoothForm.kerDistribution_neg.trans hα
-  refine isPreconnected_connectedComponentIn.subset_left_of_subset_union
-    (hξ.isOpen_range_symplectizationToAnnihilator hα)
-    (hξ.isOpen_range_symplectizationToAnnihilator hneg)
-    (SmoothForm.disjoint_range_symplectizationToAnnihilator_neg hα hα₀)
-    (fun z hz ↦ (SmoothForm.mem_range_symplectizationToAnnihilator_or_neg_iff hα hα₀).2
-      (hξ.mem_annihilatorPunctured.1 (connectedComponentIn_subset _ _ hz)))
-    ⟨_, mem_connectedComponentIn (hsub (mem_range_self p)), mem_range_self p⟩
+  have hαc : α.IsContactForm :=
+    SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution.2 (hα ▸ hξ)
+  have hα₀ := hαc.apply_ne_zero
+  -- The image of `κ_β` is a preconnected subset of `ξ⁰ ∖ 0`, so it lies in one component.
+  have hκ {β : SmoothForm I M ℝ 1} (hβ₀ : ∀ x, β.val x ≠ 0) (hβ : β.kerDistribution = ξ)
+      (q : ℝ × M) : range (β.symplectizationToAnnihilator hβ) ⊆ connectedComponentIn
+        (hξ.annihilatorPunctured : Set _) (β.symplectizationToAnnihilator hβ q) :=
+    (isPreconnected_range (SmoothForm.contMDiff_symplectizationToAnnihilator hβ
+      hξ.isContMDiffDistribution hξ.finrank_sub_one_add_one).continuous).subset_connectedComponentIn
+      (mem_range_self q) <| by
+        rintro _ ⟨q, rfl⟩
+        exact hξ.mem_annihilatorPunctured.2
+          (SmoothForm.symplectizationToAnnihilator_snd_ne_zero hβ hβ₀ q)
+  refine subset_antisymm (fun w hw ↦ ?_) (hκ hα₀ hα p)
+  have hwS := connectedComponentIn_subset _ _ hw
+  refine ((SmoothForm.mem_range_symplectizationToAnnihilator_or_neg_iff hα hα₀).2
+    (hξ.mem_annihilatorPunctured.1 hwS)).resolve_right fun ⟨q, hq⟩ ↦ ?_
+  -- If the component met the negative half, it would contain both halves, which cover `ξ⁰ ∖ 0`,
+  -- so `ξ⁰ ∖ 0` would be connected.
+  have hS : (hξ.annihilatorPunctured : Set _) ⊆ connectedComponentIn
+      (hξ.annihilatorPunctured : Set _) (α.symplectizationToAnnihilator hα p) := fun u hu ↦
+    ((SmoothForm.mem_range_symplectizationToAnnihilator_or_neg_iff hα hα₀).2
+      (hξ.mem_annihilatorPunctured.1 hu)).elim (fun h ↦ hκ hα₀ hα p h) fun h ↦ by
+        rw [connectedComponentIn_eq hw, ← hq]
+        exact hκ (fun x ↦ neg_ne_zero.2 (hα₀ x)) (SmoothForm.kerDistribution_neg.trans hα) q h
+  refine hξ.not_connectedSpace_annihilatorPunctured hαc hα <|
+    isConnected_iff_connectedSpace.1 ⟨⟨w, hwS⟩, ?_⟩
+  rw [subset_antisymm hS (connectedComponentIn_subset _ _)]
+  exact isPreconnected_connectedComponentIn
 
 /-- **A cooriented contact structure has a symplectization with two components.** If the contact
 structure `ξ` on a preconnected manifold is the kernel of a one-form `α`, every connected

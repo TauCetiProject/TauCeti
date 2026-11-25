@@ -91,6 +91,10 @@ coorientable; see `TauCeti.Geometry.Contact.Coorientation`.
 * `TauCeti.IsCoorientation.exists_coorientation_eq`,
   `TauCeti.IsContMDiffDistribution.exists_isCoorientation_iff`: every coorientation is that of a
   global defining form, and a hyperplane field is coorientable exactly when it has one.
+* `TauCeti.IsContMDiffDistribution.nonempty_vectorBundleOrientation_of_smoothForm_ker_eq`,
+  `TauCeti.IsContMDiffDistribution.exists_smoothForm_ker_eq_iff_nonempty_vectorBundleOrientation`:
+  a hyperplane field is the kernel of a global nowhere-zero one-form exactly when its annihilator
+  line bundle is orientable; one direction needs no hypothesis on `M`.
 
 ## References
 
@@ -485,6 +489,44 @@ theorem IsContMDiffDistribution.exists_isCoorientation_iff [T2Space M] [SigmaCom
   refine ⟨fun ⟨o, ho⟩ ↦ ?_, fun ⟨α, hα⟩ ↦ ⟨_, SmoothForm.isCoorientation_coorientation hα⟩⟩
   obtain ⟨α, hα, -⟩ := ho.exists_coorientation_eq hD hk
   exact ⟨α, hα⟩
+
+/-- **A global defining form orients the annihilator line.** If a smooth hyperplane field `D` is
+the kernel of a smooth one-form `α` vanishing nowhere, its annihilator line bundle `D⁰`
+(`TauCeti.IsContMDiffDistribution.annihilatorFiberBundle`) is orientable, by the coorientation of
+`α`. -/
+theorem IsContMDiffDistribution.nonempty_vectorBundleOrientation_of_smoothForm_ker_eq
+    [FiniteDimensional ℝ E] (hD : IsContMDiffDistribution I ∞ k D) (hk : k + 1 = finrank ℝ E)
+    {α : SmoothForm I M ℝ 1} (hα : ∀ x, α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x) :
+    haveI : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+    letI := hD.annihilatorFiberBundle hk
+    haveI := hD.annihilatorVectorBundle hk
+    Nonempty (VectorBundleOrientation (Fin 1 → ℝ) (fun x ↦ annihilatorSpace I D x) (Fin 1)) :=
+  haveI : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+  letI := hD.annihilatorFiberBundle hk
+  haveI := hD.annihilatorVectorBundle hk
+  let ⟨o, _⟩ := IsCoorientation.iff_exists_vectorBundleOrientation.1
+    (SmoothForm.isCoorientation_coorientation hα)
+  ⟨o⟩
+
+/-- **A hyperplane field is the kernel of a global one-form exactly when its annihilator line is
+orientable.** A smooth hyperplane field `D` on a Hausdorff σ-compact manifold is the kernel of a
+smooth one-form vanishing nowhere exactly when its annihilator line bundle `D⁰`
+(`TauCeti.IsContMDiffDistribution.annihilatorFiberBundle`), the dual of the normal line
+`TM ⧸ D`, is orientable. -/
+theorem IsContMDiffDistribution.exists_smoothForm_ker_eq_iff_nonempty_vectorBundleOrientation
+    [T2Space M] [SigmaCompactSpace M] [FiniteDimensional ℝ E]
+    (hD : IsContMDiffDistribution I ∞ k D) (hk : k + 1 = finrank ℝ E) :
+    haveI : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+    letI := hD.annihilatorFiberBundle hk
+    haveI := hD.annihilatorVectorBundle hk
+    (∃ α : SmoothForm I M ℝ 1, ∀ x, α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x) ↔
+      Nonempty (VectorBundleOrientation (Fin 1 → ℝ) (fun x ↦ annihilatorSpace I D x) (Fin 1)) :=
+  haveI : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+  letI := hD.annihilatorFiberBundle hk
+  haveI := hD.annihilatorVectorBundle hk
+  (hD.exists_isCoorientation_iff hk).symm.trans
+    ⟨fun ⟨_, ho⟩ ↦ let ⟨o, _⟩ := IsCoorientation.iff_exists_vectorBundleOrientation.1 ho; ⟨o⟩,
+      fun ⟨o⟩ ↦ ⟨o, IsCoorientation.iff_exists_vectorBundleOrientation.2 ⟨o, rfl⟩⟩⟩
 
 
 end TauCeti
