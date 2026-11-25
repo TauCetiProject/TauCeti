@@ -16,7 +16,8 @@ equivalence (`Orientation.signBasis_map`). Empty index types are included, so bo
 zero-dimensional orientations retain their sign. Two orientations are equal exactly when they
 agree on whether they are the orientation of a fixed basis
 (`Module.Basis.eq_iff_eq_orientation_iff`). In a line, the basis `(-v)` gives the orientation
-opposite to that of `(v)` (`TauCeti.orientation_basisSingleton_neg`).
+opposite to that of `(v)` (`TauCeti.orientation_basisSingleton_neg`), while for `c > 0` the basis
+`(c • v)` gives the same orientation as `(v)` (`TauCeti.orientation_basisSingleton_smul`).
 -/
 
 public section
@@ -215,3 +216,16 @@ theorem TauCeti.orientation_basisSingleton_neg {R V ι : Type*} [Field R] [Linea
   refine Module.Basis.eq_of_apply_eq fun i ↦ ?_
   rw [Module.Basis.unitsSMul_apply, Unique.eq_default i, Function.update_self]
   simp [FiniteDimensional.basisSingleton_apply]
+
+/-- In a line, the basis `(c • v)` gives the same orientation as the basis `(v)` when `c > 0`. -/
+theorem TauCeti.orientation_basisSingleton_smul {R V ι : Type*} [Field R] [LinearOrder R]
+    [IsStrictOrderedRing R] [AddCommGroup V] [Module R V] [Unique ι] [Fintype ι] [DecidableEq ι]
+    (hV : Module.finrank R V = 1) {c : R} (hc : 0 < c) {v : V} (hv : v ≠ 0) :
+    (FiniteDimensional.basisSingleton ι hV (c • v) (smul_ne_zero hc.ne' hv)).orientation =
+      (FiniteDimensional.basisSingleton ι hV v hv).orientation := by
+  -- The determinant of the basis `(c • v)` with respect to the basis `(v)` is `c`.
+  have h := (FiniteDimensional.basisSingleton ι hV v hv).repr_self default
+  rw [FiniteDimensional.basisSingleton_apply] at h
+  rw [eq_comm, Module.Basis.orientation_eq_iff_det_pos, Module.Basis.det_apply, Matrix.det_unique,
+    Module.Basis.toMatrix_apply, FiniteDimensional.basisSingleton_apply, map_smul, h]
+  simpa using hc
