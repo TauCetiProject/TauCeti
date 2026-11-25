@@ -12,17 +12,17 @@ public import TauCeti.Topology.Algebra.Module.LinearPMap.Basic
 /-!
 # Closed range and the Poincaré inequality
 
-The range of a closed partial linear map `T : E →ₗ.[𝕜] F` between Hilbert spaces is closed exactly
-when `T` satisfies a **Poincaré inequality** `‖u‖ ≤ c ‖T u‖`, for some `c > 0` and every `u` in
-the domain of `T` orthogonal to its kernel. For the exterior derivative of a Hilbert complex, this
-is the closed range condition of Arnold, Falk and Winther.
+The range of a closed partial linear map `T : E →ₗ.[𝕜] F` from a Hilbert space to a Banach space
+is closed exactly when `T` satisfies a **Poincaré inequality** `‖u‖ ≤ c ‖T u‖`, for some `c > 0`
+and every `u` in the domain of `T` orthogonal to its kernel. For the exterior derivative of a
+Hilbert complex, this is the closed range condition of Arnold, Falk and Winther.
 
 ## Main results
 
 * `LinearPMap.isClosed_range_of_norm_le_mul_norm`: a Poincaré inequality closes the range; the
   target need not be complete.
 * `LinearPMap.exists_norm_le_mul_norm_of_isClosed_range`: a closed range gives a Poincaré
-  inequality, by the open mapping theorem on the graph space.
+  inequality when `F` is complete, by the open mapping theorem on the graph space.
 * `LinearPMap.isClosed_range_iff_exists_norm_le_mul_norm`: the two together.
 
 ## References
@@ -42,7 +42,7 @@ namespace LinearPMap
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [CompleteSpace E] {T : E →ₗ.[𝕜] F}
 
 /-- **A Poincaré inequality closes the range.** If a closed partial linear map `T` from a Hilbert
@@ -83,9 +83,10 @@ theorem isClosed_range_of_norm_le_mul_norm (hT : T.IsClosed) {c : ℝ}
     (Eventually.of_forall fun n ↦ ?_)⟩
   simpa only [hTv, SetLike.mem_coe] using T.mem_graph (v n)
 
-/-- **A closed range gives a Poincaré inequality.** If a closed partial linear map `T` between
-Hilbert spaces has closed range, then for some `c > 0`, `‖u‖ ≤ c ‖T u‖` for every `u` in its
-domain orthogonal to its kernel. This is the open mapping theorem for `T` on its graph space. -/
+/-- **A closed range gives a Poincaré inequality.** If a closed partial linear map `T` from a
+Hilbert space to a Banach space has closed range, then for some `c > 0`, `‖u‖ ≤ c ‖T u‖` for
+every `u` in its domain orthogonal to its kernel. This is the open mapping theorem for `T` on its
+graph space. -/
 theorem exists_norm_le_mul_norm_of_isClosed_range [CompleteSpace F] (hT : T.IsClosed)
     (hR : _root_.IsClosed (LinearMap.range T.toFun : Set F)) :
     ∃ c > 0, ∀ u : T.domain, (u : E) ∈ T.kerᗮ → ‖(u : E)‖ ≤ c * ‖T u‖ := by
@@ -117,9 +118,9 @@ theorem exists_norm_le_mul_norm_of_isClosed_range [CompleteSpace F] (hT : T.IsCl
     exact (T.norm_graphFst_apply_le z).trans hzle
   nlinarith [norm_nonneg (u : E), norm_nonneg (w : E), sq_nonneg ‖(w : E) - u‖]
 
-/-- **Closed range is a Poincaré inequality.** A closed partial linear map `T` between Hilbert
-spaces has closed range if and only if, for some `c > 0`, `‖u‖ ≤ c ‖T u‖` for every `u` in its
-domain orthogonal to its kernel. -/
+/-- **Closed range is a Poincaré inequality.** A closed partial linear map `T` from a Hilbert
+space to a Banach space has closed range if and only if, for some `c > 0`, `‖u‖ ≤ c ‖T u‖` for
+every `u` in its domain orthogonal to its kernel. -/
 theorem isClosed_range_iff_exists_norm_le_mul_norm [CompleteSpace F] (hT : T.IsClosed) :
     _root_.IsClosed (LinearMap.range T.toFun : Set F) ↔
       ∃ c > 0, ∀ u : T.domain, (u : E) ∈ T.kerᗮ → ‖(u : E)‖ ≤ c * ‖T u‖ :=
