@@ -9,9 +9,10 @@ module
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 -- `ZMod.unitsMap` occurs in the statements below.
 public import Mathlib.Data.ZMod.Units
--- `TauCeti.GL2Borel`, `TauCeti.GL2Gamma1` and `TauCeti.GL2Gamma1Mu` occur in the statements
--- below.
+-- `TauCeti.GL2Borel` and `TauCeti.GL2Gamma1` occur in the statements below.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel
+-- `TauCeti.GL2Mirabolic`, the level `Γ₁^μ`, occurs in the statements below.
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Mirabolic
 -- The split and nonsplit Cartan subgroups and their normalizers occur in the statements below.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.SplitCartan
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitCartan
@@ -35,8 +36,8 @@ following subgroups, whose preimages in `SL(2, ℤ)` are the congruence subgroup
 * the trivial subgroup, for `Γ(N)` (full level);
 * `TauCeti.GL2Gamma1 (ZMod N) = {a = 1, c = 0}`, the stabiliser of `P`, for `Γ₁(N)`;
 * `TauCeti.GL2Borel (ZMod N) = {c = 0}`, the stabiliser of the line through `P`, for `Γ₀(N)`;
-* `TauCeti.GL2Gamma1Mu (ZMod N) = {c = 0, d = 1}`, whose structures are the embeddings
-  `μ_N ↪ E[N]` (the convention of Calegari and Geraghty), for `Γ₁(N)` again.
+* `TauCeti.GL2Mirabolic (ZMod N) = {c = 0, d = 1}`, the level `Γ₁^μ` whose structures are the
+  embeddings `μ_N ↪ E[N]` (the convention of Calegari and Geraghty), for `Γ₁(N)` again.
 
 This file checks these against Mathlib's congruence subgroups: the preimage of each under the
 reduction `SL(2, ℤ) → GL₂(ℤ / N)` is `Γ(N)`, `Γ₁(N)`, `Γ₀(N)` and `Γ₁(N)` respectively. The
@@ -74,11 +75,11 @@ equal in general.
   its preimage in `SL(2, ℤ)`.
 * `TauCeti.comap_mapGL_GL2Borel`, `TauCeti.comap_mapGL_GL2Gamma1`, `TauCeti.ker_mapGL_zmod`: the
   preimages of the standard levels are `Γ₀(N)`, `Γ₁(N)` and `Γ(N)`.
-* `TauCeti.comap_mapGL_GL2Gamma1Mu`: the preimage of `Γ₁^μ` is also `Γ₁(N)`.
-* `TauCeti.index_GL2Borel_zmod`, `TauCeti.index_GL2Gamma1_zmod`, `TauCeti.index_GL2Gamma1Mu_zmod`:
+* `TauCeti.comap_mapGL_GL2Mirabolic`: the preimage of `Γ₁^μ` is also `Γ₁(N)`.
+* `TauCeti.index_GL2Borel_zmod`, `TauCeti.index_GL2Gamma1_zmod`, `TauCeti.index_GL2Mirabolic_zmod`:
   their indices.
 * `TauCeti.projectiveIndex_GL2Borel_zmod_prime`, `TauCeti.two_mul_projectiveIndex_GL2Gamma1_zmod`,
-  `TauCeti.two_mul_projectiveIndex_GL2Gamma1Mu_zmod`: their projective indices.
+  `TauCeti.two_mul_projectiveIndex_GL2Mirabolic_zmod`: their projective indices.
 * `TauCeti.projectiveIndex_diagonalTorus_two`,
   `TauCeti.two_mul_projectiveIndex_GL2SplitCartanNormalizer`,
   `TauCeti.projectiveIndex_GL2NonSplitCartan`,
@@ -204,31 +205,31 @@ theorem two_mul_projectiveIndex_GL2Gamma1_zmod_prime {p : ℕ} (hp : p.Prime) (h
     Gamma0_prime_index p hp, Nat.card_eq_fintype_card, ZMod.card_units_eq_totient,
     Nat.totient_prime hp]
 
-/-- The preimage in `SL(2, ℤ)` of `TauCeti.GL2Gamma1Mu (ZMod N)` is `Γ₁(N)`. In `SL(2, ℤ)` the two
-conditions `c ≡ 0` and `d ≡ 1` force the third condition `a ≡ 1` of `Γ₁(N)` through the
-determinant. -/
+/-- The preimage in `SL(2, ℤ)` of `TauCeti.GL2Mirabolic (ZMod N)`, the level `Γ₁^μ`, is
+`Γ₁(N)`. In `SL(2, ℤ)` the two conditions `c ≡ 0` and `d ≡ 1` force the third condition `a ≡ 1`
+of `Γ₁(N)` through the determinant. -/
 @[simp]
-theorem comap_mapGL_GL2Gamma1Mu : (GL2Gamma1Mu (ZMod N)).comap (mapGL (ZMod N)) = Gamma1 N := by
+theorem comap_mapGL_GL2Mirabolic : (GL2Mirabolic (ZMod N)).comap (mapGL (ZMod N)) = Gamma1 N := by
   ext γ
-  simp only [Subgroup.mem_comap, GL2Gamma1Mu.mem_iff, mapGL_coe_matrix, algebraMap_int_eq,
+  simp only [Subgroup.mem_comap, GL2Mirabolic.mem_iff, mapGL_coe_matrix, algebraMap_int_eq,
     map_apply_coe, Matrix.map_apply, Int.coe_castRingHom, Gamma1_mem]
-  refine ⟨fun ⟨h₁, h₀⟩ ↦ ⟨?_, h₁, h₀⟩, fun ⟨_, h₁, h₀⟩ ↦ ⟨h₁, h₀⟩⟩
+  refine ⟨fun ⟨h₀, h₁⟩ ↦ ⟨?_, h₁, h₀⟩, fun ⟨_, h₁, h₀⟩ ↦ ⟨h₀, h₁⟩⟩
   have hdet : ((γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 : ℤ) : ZMod N) = 1 := by
     rw [← det_fin_two, γ.det_coe, Int.cast_one]
   push_cast at hdet
   simpa [h₀, h₁] using hdet
 
 /-- **`[GL₂(ℤ / N) : Γ₁^μ] = [SL(2, ℤ) : Γ₁(N)]`**. -/
-theorem index_GL2Gamma1Mu_zmod : (GL2Gamma1Mu (ZMod N)).index = (Gamma1 N).index := by
-  rw [← comap_mapGL_GL2Gamma1Mu, index_comap_mapGL_zmod GL2Gamma1Mu.map_det]
+theorem index_GL2Mirabolic_zmod : (GL2Mirabolic (ZMod N)).index = (Gamma1 N).index := by
+  rw [← comap_mapGL_GL2Mirabolic, index_comap_mapGL_zmod (GL2Mirabolic.map_det _)]
 
 /-- **The degree of the `Γ₁^μ(N)` curve over the `j`-line, for `N ≥ 3`**: as for `Γ₁`, there
 `-1 ∉ Γ₁^μ`, so the index `[SL(2, ℤ) : Γ₁(N)]` is twice the projective index. -/
-theorem two_mul_projectiveIndex_GL2Gamma1Mu_zmod (hN : 3 ≤ N) :
-    2 * (GL2Gamma1Mu (ZMod N)).projectiveIndex = (Gamma1 N).index := by
+theorem two_mul_projectiveIndex_GL2Mirabolic_zmod (hN : 3 ≤ N) :
+    2 * (GL2Mirabolic (ZMod N)).projectiveIndex = (Gamma1 N).index := by
   have : Fact (2 < N) := ⟨hN⟩
-  rw [Subgroup.two_mul_projectiveIndex (GL2Gamma1Mu.neg_one_mem_iff.not.mpr ZMod.neg_one_ne_one),
-    index_GL2Gamma1Mu_zmod]
+  rw [Subgroup.two_mul_projectiveIndex (GL2Mirabolic.neg_one_mem_iff.not.mpr ZMod.neg_one_ne_one),
+    index_GL2Mirabolic_zmod]
 
 end Reduction
 

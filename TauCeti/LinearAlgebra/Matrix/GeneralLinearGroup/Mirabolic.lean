@@ -33,6 +33,12 @@ element of `B` is a scalar matrix times an element of `P`, which gives `B = Z �
 Bruhat-cell generation `TauCeti.GL2Borel.closure_insert_gl2WeylElement_eq_top` this gives the
 generation of `GL₂` over a field.
 
+Inside `B`, the subgroup `P` is the kernel of the lower-right diagonal coordinate, so
+`[B : P] = #Rˣ`, and the determinant maps `P` onto the units. Over `ℤ / N` it is the level
+`Γ₁^μ(N)` of the curve classifying embeddings `μ_N ↪ E[N]`, following Calegari and Geraghty:
+under the right action `(P, Q) • !![a, b; c, d] = (a P + c Q, b P + d Q)` on ordered bases of
+`E[N]` it fixes the line through the first vector and the class of the second modulo that line.
+
 ## Main definitions
 
 * `TauCeti.GL2Mirabolic R`: the subgroup of `GL (Fin 2) R` of matrices with lower row `(0, 1)`.
@@ -48,6 +54,8 @@ generation of `GL₂` over a field.
 * `TauCeti.GL2Mirabolic.le_gl2Borel`: `P` lies in the Borel subgroup.
 * `TauCeti.GL2Mirabolic.inf_center_eq_bot`: `P ∩ Z = 1`.
 * `TauCeti.GL2Mirabolic.center_sup_eq_gl2Borel`: `Z ⊔ P = B`.
+* `TauCeti.GL2Mirabolic.relIndex_gl2Borel`: `[B : P] = #Rˣ`.
+* `TauCeti.GL2Mirabolic.map_det`: the determinant maps `P` onto `Rˣ`.
 * `TauCeti.GL2Mirabolic.closure_insert_gl2WeylElement_eq_top`: over a field, `GL₂` is generated
   by `P`, `Z` and `w`.
 
@@ -55,6 +63,8 @@ generation of `GL₂` over a field.
 
 * P. Colmez, *Représentations de `GL₂(ℚ_p)` et `(φ, Γ)`-modules*, Astérisque 330 (2010),
   Introduction §4 and §III.1.1.
+* F. Calegari and D. Geraghty, *Modularity lifting beyond the Taylor–Wiles method*, Invent. Math.
+  211 (2018), arXiv:1207.4224, for the `Γ₁^μ` level structures `μ_N ↪ E[N]`.
 -/
 
 public section
@@ -228,6 +238,35 @@ theorem center_sup_eq_gl2Borel :
       fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two, ← mul_assoc]
     rw [hmk]
     exact Subgroup.mul_mem_sup hd ((mk_mem_iff _ 1 _).mpr rfl)
+
+variable (R) in
+/-- Inside the Borel subgroup, the mirabolic subgroup is the kernel of the lower-right diagonal
+coordinate. -/
+theorem subgroupOf_gl2Borel :
+    (GL2Mirabolic R).subgroupOf (GL2Borel R) =
+      ((MonoidHom.snd Rˣ Rˣ).comp (GL2Borel.diag (R := R))).ker := by
+  ext g
+  rw [Subgroup.mem_subgroupOf, mem_iff, MonoidHom.mem_ker, MonoidHom.comp_apply,
+    MonoidHom.coe_snd, ← Units.val_eq_one, GL2Borel.diag_snd_val]
+  exact and_iff_right (GL2Borel.apply_one_zero g)
+
+variable (R) in
+/-- **`[B : P] = #Rˣ`**: the lower-right diagonal coordinate maps the Borel subgroup onto the
+units, with kernel the mirabolic subgroup. -/
+theorem relIndex_gl2Borel : (GL2Mirabolic R).relIndex (GL2Borel R) = Nat.card Rˣ := by
+  rw [Subgroup.relIndex, subgroupOf_gl2Borel, Subgroup.index_ker,
+    MonoidHom.range_eq_top_of_surjective _ (Prod.snd_surjective.comp GL2Borel.diag_surjective),
+    Subgroup.card_top]
+
+variable (R) in
+/-- The determinant maps the mirabolic subgroup onto the units: `!![u, 0; 0, 1]` has
+determinant `u`. -/
+theorem map_det : (GL2Mirabolic R).map Matrix.GeneralLinearGroup.det = ⊤ :=
+  eq_top_iff.mpr fun u _ ↦ ⟨GL2Borel.mk u 1 0, (mk_mem_iff u 1 0).mpr rfl, by simp⟩
+
+/-- `-1` is mirabolic exactly when `-1 = 1` in `R`. -/
+theorem neg_one_mem_iff : (-1 : GL (Fin 2) R) ∈ GL2Mirabolic R ↔ (-1 : R) = 1 := by
+  simp [mem_iff]
 
 end GL2Mirabolic
 

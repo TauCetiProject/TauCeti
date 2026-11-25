@@ -51,13 +51,10 @@ Over a finite field with `q` elements these give `|B| = q (q - 1)²` and hence `
 q + 1`, the number of points of the projective line.
 
 The kernel of the upper-left diagonal coordinate is the subgroup `TauCeti.GL2Gamma1` of matrices
-`!![1, b; 0, d]`, of relative index `#Rˣ` in `B`, and the kernel of the lower-right one is the
-subgroup `TauCeti.GL2Gamma1Mu` of matrices `!![a, b; 0, 1]`, of the same relative index. Over
-`ℤ / N`, the congruence subgroups `Γ₀(N)` and `Γ₁(N)` are the preimages of `B` and
-`TauCeti.GL2Gamma1` under the reduction `SL(2, ℤ) → GL₂(ℤ / N)`, and these are the levels of the
-modular curves `X₀(N)` and `X₁(N)`; `TauCeti.GL2Gamma1Mu` is the level of the curve classifying
-embeddings `μ_N ↪ E[N]`, following Calegari and Geraghty. All three map onto the units under the
-determinant.
+`!![1, b; 0, d]`, of relative index `#Rˣ` in `B`. Over `ℤ / N`, the congruence subgroups `Γ₀(N)`
+and `Γ₁(N)` are the preimages of `B` and `TauCeti.GL2Gamma1` under the reduction
+`SL(2, ℤ) → GL₂(ℤ / N)`, and these are the levels of the modular curves `X₀(N)` and `X₁(N)`; both
+map onto the units under the determinant.
 
 ## Main definitions
 
@@ -71,7 +68,6 @@ determinant.
   seen as an additive character valued in the Borel subgroup.
 * `TauCeti.GL2Borel.equivProd`: the bijection `B ≃ (Rˣ × Rˣ) × R`.
 * `TauCeti.GL2Gamma1 R`: the subgroup of `GL (Fin 2) R` of matrices `!![1, b; 0, d]`.
-* `TauCeti.GL2Gamma1Mu R`: the subgroup of `GL (Fin 2) R` of matrices `!![a, b; 0, 1]`.
 
 ## Main results
 
@@ -86,10 +82,9 @@ determinant.
   has an eigenvalue in the base ring.
 * `TauCeti.GL2Borel.card_eq`: `|B| = q (q - 1)²` over a finite field with `q` elements.
 * `TauCeti.GL2Borel.index_eq`: `[GL₂(𝔽_q) : B] = q + 1`.
-* `TauCeti.GL2Gamma1.relIndex_GL2Borel`, `TauCeti.GL2Gamma1Mu.relIndex_GL2Borel`:
-  `[B : Γ₁] = [B : Γ₁^μ] = #Rˣ`.
-* `TauCeti.GL2Borel.map_det`, `TauCeti.GL2Gamma1.map_det`, `TauCeti.GL2Gamma1Mu.map_det`: the
-  determinant maps `B`, `Γ₁` and `Γ₁^μ` onto `Rˣ`.
+* `TauCeti.GL2Gamma1.relIndex_GL2Borel`: `[B : Γ₁] = #Rˣ`.
+* `TauCeti.GL2Borel.map_det`, `TauCeti.GL2Gamma1.map_det`: the determinant maps `B` and `Γ₁` onto
+  `Rˣ`.
 
 ## Implementation notes
 
@@ -105,8 +100,6 @@ general upper-triangular predicate.
 ## References
 
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, GTM 129, §5.2.
-* F. Calegari and D. Geraghty, *Modularity lifting beyond the Taylor–Wiles method*, Invent. Math.
-  211 (2018), arXiv:1207.4224, for the `Γ₁^μ` level structures `μ_N ↪ E[N]`.
 -/
 
 public section
@@ -476,57 +469,6 @@ theorem neg_one_mem_iff : (-1 : GL (Fin 2) R) ∈ GL2Gamma1 R ↔ (-1 : R) = 1 :
   simp
 
 end GL2Gamma1
-
-/-- **`Γ₁^μ` in `GL₂`**: the invertible matrices `!![a, b; 0, 1]`, the kernel of the lower-right
-diagonal coordinate of the Borel subgroup. Under the right action
-`(P, Q) • !![a, b; c, d] = (a P + c Q, b P + d Q)` on ordered pairs it fixes the line through `P`
-and the class of `Q` modulo that line. Over `ℤ / N` its level structures are the embeddings
-`μ_N ↪ E[N]` (the convention of Calegari and Geraghty), and its preimage in `SL(2, ℤ)` is again
-the congruence subgroup `Γ₁(N)`. -/
-def GL2Gamma1Mu : Subgroup (GL (Fin 2) R) :=
-  ((MonoidHom.snd Rˣ Rˣ).comp (GL2Borel.diag (R := R))).ker.map (GL2Borel R).subtype
-
-namespace GL2Gamma1Mu
-
-variable {R}
-
-@[simp]
-theorem mem_iff {g : GL (Fin 2) R} :
-    g ∈ GL2Gamma1Mu R ↔
-      (g : Matrix (Fin 2) (Fin 2) R) 1 1 = 1 ∧ (g : Matrix (Fin 2) (Fin 2) R) 1 0 = 0 := by
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    refine ⟨?_, GL2Borel.apply_one_zero x⟩
-    simpa using congrArg Units.val (MonoidHom.mem_ker.mp hx)
-  · rintro ⟨h₀, h₁⟩
-    exact ⟨⟨g, GL2Borel.mem_iff.mpr h₁⟩, MonoidHom.mem_ker.mpr (Units.ext (by simpa using h₀)),
-      rfl⟩
-
-theorem le_GL2Borel : GL2Gamma1Mu R ≤ GL2Borel R :=
-  fun _ hg ↦ GL2Borel.mem_iff.mpr (mem_iff.mp hg).2
-
-/-- Inside the Borel subgroup, `Γ₁^μ` is the kernel of the lower-right diagonal coordinate. -/
-theorem subgroupOf_GL2Borel :
-    (GL2Gamma1Mu R).subgroupOf (GL2Borel R) =
-      ((MonoidHom.snd Rˣ Rˣ).comp (GL2Borel.diag (R := R))).ker :=
-  Subgroup.comap_map_eq_self_of_injective (GL2Borel R).subtype_injective _
-
-/-- **`[B : Γ₁^μ] = #Rˣ`**: the lower-right diagonal coordinate maps the Borel subgroup onto the
-units, with kernel `Γ₁^μ`. -/
-theorem relIndex_GL2Borel : (GL2Gamma1Mu R).relIndex (GL2Borel R) = Nat.card Rˣ := by
-  rw [Subgroup.relIndex, subgroupOf_GL2Borel, Subgroup.index_ker,
-    MonoidHom.range_eq_top_of_surjective _ (Prod.snd_surjective.comp GL2Borel.diag_surjective),
-    Subgroup.card_top]
-
-/-- The determinant maps `Γ₁^μ` onto the units: `!![u, 0; 0, 1]` has determinant `u`. -/
-theorem map_det : (GL2Gamma1Mu R).map Matrix.GeneralLinearGroup.det = ⊤ :=
-  eq_top_iff.mpr fun u _ ↦ ⟨GL2Borel.mk u 1 0, mem_iff.mpr (by simp), by simp⟩
-
-/-- `-1` lies in `Γ₁^μ` exactly when `-1 = 1` in `R`. -/
-theorem neg_one_mem_iff : (-1 : GL (Fin 2) R) ∈ GL2Gamma1Mu R ↔ (-1 : R) = 1 := by
-  simp
-
-end GL2Gamma1Mu
 
 variable {R} in
 /-- The determinant maps the Borel subgroup onto the units. -/
