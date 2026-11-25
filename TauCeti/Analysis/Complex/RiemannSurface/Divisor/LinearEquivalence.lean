@@ -337,12 +337,12 @@ by `g₁ + g₂`. -/
 theorem divisorSheafMul_add {D E : WeilDivisor X} (g₁ g₂ : MeromorphicFunction X)
     (hg₁ : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g₁)
     (hg₂ : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g₂) :
-    divisorSheafMul g₁ hg₁ + divisorSheafMul g₂ hg₂ =
-      divisorSheafMul (g₁ + g₂)
-        (fun x ↦ (le_min (hg₁ x) (hg₂ x)).trans ((MeromorphicFunction.order x).map_add _ _)) := by
-  rw [divisorSheafMul_def, divisorSheafMul_def, divisorSheafGlobalMul_add, divisorSheafMul_def]
+    divisorSheafMul (g₁ + g₂)
+        (fun x ↦ (le_min (hg₁ x) (hg₂ x)).trans ((MeromorphicFunction.order x).map_add _ _)) =
+      divisorSheafMul g₁ hg₁ + divisorSheafMul g₂ hg₂ := by
+  rw [divisorSheafMul_def, divisorSheafMul_def, divisorSheafMul_def, ← divisorSheafGlobalMul_add]
   exact divisorSheafGlobalMul_congr _ _ _ _ fun x ↦
-    (MeromorphicFunction.finitePart_add_eventuallyEq g₁ g₂ x).symm
+    MeromorphicFunction.finitePart_add_eventuallyEq g₁ g₂ x
 
 /-- Multiplication by `g₁ - g₂` is the difference of the multiplications by `g₁` and by `g₂`. -/
 theorem divisorSheafMul_sub {D E : WeilDivisor X} (g₁ g₂ : MeromorphicFunction X)
@@ -351,7 +351,7 @@ theorem divisorSheafMul_sub {D E : WeilDivisor X} (g₁ g₂ : MeromorphicFuncti
     divisorSheafMul (g₁ - g₂)
         (fun x ↦ (le_min (hg₁ x) (hg₂ x)).trans ((MeromorphicFunction.order x).map_sub _ _)) =
       divisorSheafMul g₁ hg₁ - divisorSheafMul g₂ hg₂ := by
-  rw [eq_sub_iff_add_eq, divisorSheafMul_add]
+  rw [eq_sub_iff_add_eq, ← divisorSheafMul_add]
   congr 1
   exact sub_add_cancel g₁ g₂
 
@@ -370,16 +370,17 @@ theorem divisorSheafMul_algebraMap_hom {D E : WeilDivisor X} (hDE : D ≤ E) (c 
     rw [MeromorphicFunction.finitePart_algebraMap]
 
 /-- For `D ≤ E`, multiplication by `1` is the inclusion `𝒪_D ⟶ 𝒪_E`. -/
+@[simp]
 theorem divisorSheafMul_one {D E : WeilDivisor X} (hDE : D ≤ E) :
     divisorSheafMul 1 (fun x ↦ by
       rw [(MeromorphicFunction.order x).map_one]
       exact_mod_cast sub_nonpos.2 (hDE x)) = divisorSheafMapOfLE hDE := by
   apply Sheaf.hom_ext
   rw [← one_smul ℂ (divisorSheafMapOfLE hDE).hom, ← divisorSheafMul_algebraMap_hom hDE 1]
-  congr 2
+  simp only [map_one]
 
 /-- Multiplication by `g` commutes with the inclusions of divisor sheaves in the source. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem divisorSheafMapOfLE_comp_divisorSheafMul {D D' E : WeilDivisor X} (hDD' : D ≤ D')
     (g : MeromorphicFunction X)
     (hg : ∀ x, ((D' x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g) :
@@ -389,7 +390,7 @@ theorem divisorSheafMapOfLE_comp_divisorSheafMul {D D' E : WeilDivisor X} (hDD' 
   divisorSheafMapOfLE_comp_divisorSheafGlobalMul hDD' _ _ _
 
 /-- Multiplication by `g` commutes with the inclusions of divisor sheaves in the target. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem divisorSheafMul_comp_divisorSheafMapOfLE {D E E' : WeilDivisor X}
     (g : MeromorphicFunction X)
     (hg : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g) (hEE' : E ≤ E') :
