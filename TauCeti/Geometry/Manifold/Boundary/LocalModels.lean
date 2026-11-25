@@ -260,6 +260,105 @@ theorem ncard_eq_ncard_of_forall_exists_homeomorph_Ico [T2Space X]
     obtain ⟨t, ht0, hγt, hcomp⟩ := hγe s hs
     exact hcomp c (he t ht0 c hc (hγt ▸ hsc))
 
+/-- A half-open arc stays in any neighbourhood of its endpoint on a shorter interval `[0, ε)`. -/
+private theorem exists_pos_forall_lt_mem {Y : Type*} [TopologicalSpace Y] {N U : Set Y} {δ : ℝ}
+    (hδ : 0 < δ) (e : Ico (0 : ℝ) δ ≃ₜ N) (hU : U ∈ 𝓝 (e ⟨0, left_mem_Ico.2 hδ⟩ : Y)) :
+    ∃ ε > 0, ∀ s : Ico (0 : ℝ) δ, (s : ℝ) < ε → (e s : Y) ∈ U := by
+  obtain ⟨V, hV, hVU⟩ := (mem_nhds_subtype _ _ _).1
+    ((continuous_subtypeVal.comp e.continuous).continuousAt.preimage_mem_nhds hU)
+  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 hV
+  refine ⟨ε, hε, fun s hs ↦ @hVU s (hball ?_)⟩
+  rw [Metric.mem_ball, Real.dist_eq, sub_zero, abs_of_nonneg s.property.1]
+  exact hs
+
+/-- If a continuous map on `[0, δ)` sends every positive point into `P`, it sends `0` into the
+closure of `P`. -/
+private theorem mem_closure_of_forall_ne_zero {Z : Type*} [TopologicalSpace Z] {P : Set Z}
+    {δ : ℝ} (hδ : 0 < δ) {g : Ico (0 : ℝ) δ → Z} (hg : Continuous g)
+    (hP : ∀ s : Ico (0 : ℝ) δ, (s : ℝ) ≠ 0 → g s ∈ P) : g ⟨0, left_mem_Ico.2 hδ⟩ ∈ closure P := by
+  -- `g 0` is the limit of the points `g (δ / (n + 2))`.
+  let u : ℕ → Ico (0 : ℝ) δ := fun n ↦ ⟨δ / ((n + 2 : ℕ) : ℝ), by positivity, by
+    rw [div_lt_iff₀ (by positivity)]
+    push_cast
+    nlinarith⟩
+  have hu : Filter.Tendsto u Filter.atTop (𝓝 ⟨0, left_mem_Ico.2 hδ⟩) :=
+    tendsto_subtype_rng.2 ((tendsto_const_div_atTop_nhds_zero_nat δ).comp
+      (Filter.tendsto_add_atTop_nat 2))
+  exact mem_closure_of_tendsto ((hg.tendsto _).comp hu) (.of_forall fun n ↦ hP _ (by positivity))
+
+/-- **Transporting a half-open local model into a closure.** Let `P` be a set in a space `Z`, and
+`a` a point of a set `R` in a space `Y` with a neighbourhood `N` in `R` homeomorphic to `[0, δ)`,
+by a homeomorphism sending `0` to `a`. Suppose that maps `ι : Y → Z` and `π : Z → Y`, with `ι`
+continuous on `R` and `π` continuous, identify `R` near `a` with the closure of `P` near
+`b = ι a`:
+
+* `π ∘ ι` is the identity on `R`;
+* `ι` sends the points of `R` near `a`, other than `a`, into `P`;
+* near `b`, every point `q` of the closure of `P` is `ι (π q)` with `π q ∈ R`.
+
+Then `b` lies in the closure of `P`, and has a neighbourhood there homeomorphic to `[0, δ')`, by a
+homeomorphism sending `0` to `b`. This transports the half-open charts of compactified moduli
+spaces between two ways of recording their points. -/
+theorem exists_homeomorph_Ico_closure_of_homeomorph_Ico {Y Z : Type*} [TopologicalSpace Y]
+    [TopologicalSpace Z] {P : Set Z} {R N : Set Y} {a : Y} {b : Z} (π : Z → Y) (ι : Y → Z)
+    (hπ : Continuous π) (hι : ContinuousOn ι R) (hπι : ∀ v ∈ R, π (ι v) = v) (hιa : ι a = b)
+    (hP : ∀ᶠ v in 𝓝[R \ {a}] a, ι v ∈ P)
+    (hcov : ∀ᶠ q in 𝓝[closure P] b, π q ∈ R ∧ ι (π q) = q)
+    {δ : ℝ} (hδ : 0 < δ) (e : Ico (0 : ℝ) δ ≃ₜ N) (he : (e ⟨0, left_mem_Ico.2 hδ⟩ : Y) = a)
+    (hNR : N ⊆ R) (hN : N ∈ 𝓝[R] a) :
+    ∃ hb : b ∈ closure P, ∃ N' ∈ 𝓝 (⟨b, hb⟩ : closure P), ∃ (δ' : ℝ) (hδ' : 0 < δ')
+      (e' : Ico (0 : ℝ) δ' ≃ₜ N'), (e' ⟨0, left_mem_Ico.2 hδ'⟩ : closure P) = ⟨b, hb⟩ := by
+  obtain ⟨U, hU, hUP⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 hP
+  set g : Ico (0 : ℝ) δ → Y := fun s ↦ e s
+  have hg : Continuous g := continuous_subtypeVal.comp e.continuous
+  have haR : a ∈ R := he ▸ hNR (e _).property
+  have hgR (s : Ico (0 : ℝ) δ) : g s ∈ R := hNR (e s).property
+  -- On a shorter interval `[0, δ')`, the arc stays in `U`, so `ι` sends it into `P` but at `0`.
+  obtain ⟨ε, hε, hεU⟩ := exists_pos_forall_lt_mem hδ e (he.symm ▸ hU)
+  set δ' := min ε δ
+  have hδ' : 0 < δ' := lt_min hε hδ
+  let incl : Ico (0 : ℝ) δ' → Ico (0 : ℝ) δ := inclusion (Ico_subset_Ico_right (min_le_right _ _))
+  have hP' (s : Ico (0 : ℝ) δ') (hs : (s : ℝ) ≠ 0) : ι (g (incl s)) ∈ P :=
+    hUP ⟨hεU _ (s.property.2.trans_le (min_le_left _ _)), hgR _, fun h ↦
+      hs (congrArg Subtype.val (e.injective (Subtype.ext (h.trans he.symm))))⟩
+  have hG₀ : Continuous fun s ↦ ι (g (incl s)) :=
+    hι.comp_continuous (hg.comp (continuous_inclusion _)) fun _ ↦ hgR _
+  have h0 : ι (g (incl ⟨0, left_mem_Ico.2 hδ'⟩)) = b := (congrArg ι he).trans hιa
+  have hb : b ∈ closure P := h0 ▸ mem_closure_of_forall_ne_zero hδ' hG₀ hP'
+  have hmem (s : Ico (0 : ℝ) δ') : ι (g (incl s)) ∈ closure P := by
+    by_cases hs : (s : ℝ) = 0
+    · rw [show s = ⟨0, left_mem_Ico.2 hδ'⟩ from Subtype.ext hs, h0]
+      exact hb
+    · exact subset_closure (hP' s hs)
+  let G : Ico (0 : ℝ) δ' → closure P := fun s ↦ ⟨ι (g (incl s)), hmem s⟩
+  have hG : IsEmbedding G := by
+    refine IsEmbedding.of_comp (hG₀.subtype_mk _) (hπ.comp continuous_subtypeVal) ?_
+    have : (π ∘ Subtype.val) ∘ G = g ∘ incl := funext fun s ↦ hπι _ (hgR _)
+    rw [this]
+    exact (IsEmbedding.subtypeVal.comp e.isEmbedding).comp (IsEmbedding.inclusion _)
+  -- The image of `[0, δ')` is open in `N`, so it is a neighbourhood of `a` in `R`, and near `b`
+  -- the closure of `P` is its image under `ι`.
+  obtain ⟨O, hO, hOe⟩ := isOpen_induced_iff.1
+    (e.isOpenMap {s | (s : ℝ) < δ'} (isOpen_lt continuous_subtypeVal continuous_const))
+  have haO : a ∈ O := by
+    have : e ⟨0, left_mem_Ico.2 hδ⟩ ∈ e '' {s | (s : ℝ) < δ'} := mem_image_of_mem _ hδ'
+    rw [← hOe, mem_preimage, he] at this
+    exact this
+  have hπt : Filter.Tendsto π (𝓝[closure P] b) (𝓝[R] a) := tendsto_nhdsWithin_iff.2
+    ⟨(hιa ▸ hπι a haR) ▸ (hπ.tendsto b).mono_left nhdsWithin_le_nhds, hcov.mono fun _ hq ↦ hq.1⟩
+  have hrange : range G ∈ 𝓝 (⟨b, hb⟩ : closure P) := by
+    rw [mem_nhds_subtype_iff_nhdsWithin]
+    filter_upwards [hπt (Filter.inter_mem hN (mem_nhdsWithin_of_mem_nhds (hO.mem_nhds haO))), hcov]
+      with q hq hq'
+    have hqO : (⟨π q, hq.1⟩ : N) ∈ Subtype.val ⁻¹' O := hq.2
+    rw [hOe] at hqO
+    obtain ⟨s, hs, hsq⟩ := hqO
+    refine ⟨G ⟨s, s.property.1, hs⟩, mem_range_self _, ?_⟩
+    change ι (e s : Y) = q
+    rw [hsq, hq'.2]
+  -- The homeomorphism onto the range is `G` itself, which sends `0` to `ι a = b`.
+  exact ⟨hb, range G, hrange, δ', hδ', hG.toHomeomorph, Subtype.ext h0⟩
+
 end LocalModels
 
 end TauCeti
