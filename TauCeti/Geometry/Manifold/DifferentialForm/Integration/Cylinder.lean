@@ -16,7 +16,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
-import TauCeti.Topology.Algebra.Order.Floor
+import TauCeti.Geometry.Manifold.ContMDiff.Fract
 
 /-!
 # Gluing and reparametrization of integrals over rectangles
@@ -524,10 +524,9 @@ theorem contMDiff_loopwiseTrans {n : ℕ∞} {u₁ u₂ : ℝ × ℝ → M}
       simp only [Function.comp_apply, Prod.map_apply', id]
       congr 3
       ring
-  intro z
-  refine ((hG.comp (contDiff_fst.prodMk (contDiff_snd.sub contDiff_const)).contMDiff)
-    z).congr_of_eventuallyEq
-    (apply_fract_snd_eventuallyEq (G := G) (ε := 1 / 6) (by norm_num) (fun s t ht₀ ht₁ ↦ ?_) z)
+  refine contMDiff_prod_modelWithCornersSelf_iff.1 <|
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hG).comp_fract_snd (ε := 1 / 6) (by norm_num)
+      fun s t ht₀ ht₁ ↦ ?_
   -- Just below `t = 0` the concatenation rests where `u₂` ends and `u₁` starts.
   simp only [G]
   rw [curveConcat_of_lt (by linarith), curveConcat_of_le (by linarith),

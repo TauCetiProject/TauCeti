@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.IsFormallyReal
+public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Algebra.CayleyDickson.Quaternion
 
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Data.Fin.Basic
+import TauCeti.LinearAlgebra.Trace.Pi
+import TauCeti.LinearAlgebra.Trace.Prod
 
 /-!
 # The compact Albert algebra
@@ -39,8 +42,9 @@ is the octonion trace `TauCeti.CayleyDickson.trace`, and the entries
   + star (x (i + 1) * y (i + 2) + y (i + 1) * x (i + 2)))`. That expression *is* the definition
 below. The product is commutative, `R`-bilinear and unital, and the three diagonal idempotents form
 a complete orthogonal frame with the Peirce relations of a Jordan frame. The trace form
-`T(A ∘ B)` is associative. The Jordan identity `(A ∘ B) ∘ A² = A ∘ (B ∘ A²)` itself is not proved in
-this file.
+`T(A ∘ B)` is associative. The **Jordan identity** `(A ∘ B) ∘ A² = A ∘ (B ∘ A²)` is proved in
+`TauCeti/Algebra/AlbertAlgebra/Compact/Jordan.lean` from the cubic equation of
+`TauCeti/Algebra/AlbertAlgebra/Compact/Determinant.lean`.
 
 Over a linearly ordered ring the trace form is positive definite, since
 `T(A ∘ A) = ∑ dᵢ² + 2 ∑ N(xᵢ)` with `N` the positive definite octonion norm. Consequently a sum of
@@ -83,6 +87,10 @@ in which the norm of an octonion can vanish.
   of the frame with the off-diagonal slots, and the products of the slots.
 * `TauCeti.CompactAlbertAlgebra.eq_sum_smul_diagIdempotent_add_sum_offDiagSingle`: the frame and
   the slots span the algebra.
+* `TauCeti.CompactAlbertAlgebra.trace_mulLeft`: the multiplication operator `L_A : B ↦ A ∘ B` has
+  trace `9 T(A)`, the ratio of the dimension `27` to the degree `3`.
+* `TauCeti.CompactAlbertAlgebra.trace_map_of_map_mul`: consequently **an automorphism preserves the
+  trace**, once `3` is invertible.
 
 ## Implementation notes
 
@@ -603,6 +611,59 @@ theorem eq_sum_smul_diagIdempotent_add_sum_offDiagSingle (A : CompactAlbertAlgeb
       diagIdempotent_diag, diagIdempotent_offDiag, offDiagSingle_diag, offDiagSingle_offDiag,
       Pi.add_apply, Pi.smul_apply, Pi.zero_apply, smul_zero, add_zero, zero_add] <;>
     fin_cases m <;> simp
+
+/-! ### The trace of a multiplication operator -/
+
+section MulLeft
+
+variable [Invertible (2 : R)]
+
+/-- **The multiplication operator `L_A : B ↦ A ∘ B` has trace `9 T(A)`**: on the diagonal entry
+`i` it acts by `aᵢ`, and on the octonion entry `j` by `½ (aⱼ₊₁ + aⱼ₊₂)`, eight times; the remaining
+parts of the product land in other entries. -/
+theorem trace_mulLeft (A : CompactAlbertAlgebra R) :
+    LinearMap.trace R (CompactAlbertAlgebra R) (LinearMap.mulLeft R A) = 9 * trace A := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact Subsingleton.elim _ _
+  -- In the coordinates `(Fin 3 → R) × (Fin 3 → 𝕆)` every diagonal block is a scalar.
+  have hdiag (i : Fin 3) :
+      LinearMap.proj i ∘ₗ (LinearMap.fst R _ _ ∘ₗ (linearEquivProd R R).conj
+        (LinearMap.mulLeft R A) ∘ₗ LinearMap.inl R _ _) ∘ₗ LinearMap.single R (fun _ => R) i
+        = A.diag i • LinearMap.id := by
+    ext
+    simp [LinearEquiv.conj_apply]
+  have hoff (j : Fin 3) :
+      LinearMap.proj j ∘ₗ (LinearMap.snd R _ _ ∘ₗ (linearEquivProd R R).conj
+        (LinearMap.mulLeft R A) ∘ₗ LinearMap.inr R _ _) ∘ₗ
+          LinearMap.single R (fun _ => CayleyDickson ℍ[R]) j
+        = (⅟(2 : R) * (A.diag (j + 1) + A.diag (j + 2))) • LinearMap.id := by
+    ext y : 1
+    fin_cases j <;> simp [LinearEquiv.conj_apply, smul_smul]
+  rw [← LinearMap.trace_conj' _ (linearEquivProd R R), LinearMap.trace_prod, LinearMap.trace_pi,
+    LinearMap.trace_pi]
+  simp only [hdiag, hoff, map_smul, LinearMap.trace_id, Module.finrank_self,
+    CayleyDickson.finrank_eq, Quaternion.finrank_eq_four, smul_eq_mul, trace_apply,
+    Fin.sum_univ_three, Fin.reduceAdd]
+  push_cast
+  linear_combination (8 * (A.diag 0 + A.diag 1 + A.diag 2)) * (invOf_mul_self (2 : R))
+
+/-- **An automorphism of the compact Albert algebra preserves the trace**, once `3` is invertible:
+it conjugates `L_A` to `L_(e A)`, so `9 T(e A) = 9 T(A)` by
+`TauCeti.CompactAlbertAlgebra.trace_mulLeft`. -/
+theorem trace_map_of_map_mul [Invertible (3 : R)]
+    (e : CompactAlbertAlgebra R ≃ₗ[R] CompactAlbertAlgebra R) (he : ∀ A B, e (A * B) = e A * e B)
+    (A : CompactAlbertAlgebra R) : trace (e A) = trace A := by
+  have hconj : LinearMap.mulLeft R (e A) = e.conj (LinearMap.mulLeft R A) := by
+    ext B : 1
+    simp [LinearEquiv.conj_apply, he]
+  have h := trace_mulLeft (e A)
+  rw [hconj, LinearMap.trace_conj', trace_mulLeft] at h
+  have h9 : IsUnit (9 : R) := by
+    rw [show (9 : R) = 3 * 3 by norm_num]
+    exact (isUnit_of_invertible 3).mul (isUnit_of_invertible 3)
+  exact (h9.mul_left_cancel h).symm
+
+end MulLeft
 
 end CompactAlbertAlgebra
 

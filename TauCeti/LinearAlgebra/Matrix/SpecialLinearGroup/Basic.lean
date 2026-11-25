@@ -20,11 +20,11 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
 
 The natural reduction map `SL₂(ℤ) → SL₂(ℤ/dℤ)` is surjective (strong approximation for
 `SL₂`; Shimura §1.6, Serre Ch. VII) — jointly so at two coprime moduli, by the Chinese
-remainder theorem — and the base-change map `SL(n, R) → GL(n, S)` sends
-`-I` to `-I`. Basic coordinate descriptions for `SL₂` and its image under `mapGL` are also
-recorded here for downstream matrix computations, together with what the determinant says about
-a matrix with a prescribed bottom row `(c, d)`: it is the Bézout relation `a d - b c = 1` for
-the top row `(a, b)`.
+remainder theorem — and the base-change map `SL(n, R) → GL(n, S)` commutes with
+negation, sending `-I` to `-I`. Basic coordinate descriptions for `SL₂` and its image under
+`mapGL` are also recorded here for downstream matrix computations, together with what the
+determinant says about a matrix with a prescribed bottom row `(c, d)`: it is the Bézout relation
+`a d - b c = 1` for the top row `(a, b)`.
 
 `mem_center_iff_eq_one_or_eq_neg_one` pins down `±I` itself, which is what the base-change
 statement moves around:
@@ -58,7 +58,8 @@ proof is independent of the source's.
   the kernel of reduction modulo `N` iff it is congruent to the identity modulo `N` entrywise.
 * `Matrix.SpecialLinearGroup.map_injective` and `Matrix.SpecialLinearGroup.mem_range_map_iff`:
   along an injective ring hom, base change is injective and its range is described entrywise.
-* `Matrix.SpecialLinearGroup.mapGL_neg_one`: `mapGL S (-1) = -1`.
+* `Matrix.SpecialLinearGroup.mapGL_neg` and `Matrix.SpecialLinearGroup.mapGL_neg_one`:
+  `mapGL S (-g) = -mapGL S g`, in particular `mapGL S (-1) = -1`.
 * `Matrix.SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv`: right multiplication of row vectors
   by `g` is inverted by `g⁻¹`.
 * `Matrix.SpecialLinearGroup.sum_comp_vecMul`: over a finite ring, this right multiplication
@@ -89,6 +90,8 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.mul_sub_mul_eq_one_of_lowerRow`: a bottom row `(c, d)` of an
   `SL₂(R)` matrix over a commutative ring gives the Bézout relation `a d - b c = 1` for its top
   row `(a, b)`.
+* `Matrix.SpecialLinearGroup.apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero`: an
+  upper triangular `(a b; 0 d)` in `SL₂(R)` has `a d = 1`.
 * `Matrix.SpecialLinearGroup.centerMulEquivRootsOfUnityFin`: the center of `SL(Fin n, A)` is
   `rootsOfUnity n A` when `0 < n`.
 * `Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one` and
@@ -295,6 +298,11 @@ lemma mul_sub_mul_eq_one_of_lowerRow {R : Type*} [CommRing R] {c d : R} {σ : SL
     (hσ10 : σ 1 0 = c) (hσ11 : σ 1 1 = d) : σ 0 0 * d - σ 0 1 * c = 1 := by
   simpa only [hσ10, hσ11] using fin_two_mul_sub_mul_eq_one σ
 
+/-- For an upper triangular `σ = (a b; 0 d)` of `SL₂(R)`, the determinant is `a d = 1`. -/
+lemma apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero {R : Type*} [CommRing R]
+    {σ : SL(2, R)} (hσ : σ 1 0 = 0) : σ 0 0 * σ 1 1 = 1 := by
+  simpa [hσ] using fin_two_mul_sub_mul_eq_one σ
+
 /-- For `0 < n`, the center of `SL(Fin n, A)` is the group of `n`th roots of unity. -/
 noncomputable def centerMulEquivRootsOfUnityFin (n : ℕ) (hn : 0 < n)
     (A : Type*) [CommRing A] :
@@ -326,13 +334,19 @@ theorem coe_centerMulEquivRootsOfUnityFin_symm_apply (n : ℕ) (hn : 0 < n)
   rw [coe_centerMulEquivRootsOfUnityFin_apply] at h
   exact h
 
-/-- `-I` maps to `-I` under `SL(n, R) → GL(n, S)`. -/
+/-- The base-change map `SL(n, R) → GL(n, S)` commutes with negation. -/
 @[simp]
+lemma mapGL_neg {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]
+    [Algebra R S] [Fact (Even (Fintype.card n))] (g : SpecialLinearGroup n R) :
+    mapGL S (-g) = -mapGL S g := by
+  ext i j
+  simp [mapGL]
+
+/-- `-I` maps to `-I` under `SL(n, R) → GL(n, S)`. -/
 lemma mapGL_neg_one {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]
     [Algebra R S] [Fact (Even (Fintype.card n))] :
     mapGL S (-1 : SpecialLinearGroup n R) = -1 := by
-  ext i j
-  rcases eq_or_ne i j with h | h <;> simp [mapGL, h]
+  rw [mapGL_neg, map_one]
 
 variable {R : Type*} [CommRing R]
 
