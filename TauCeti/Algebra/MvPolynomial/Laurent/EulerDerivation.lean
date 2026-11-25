@@ -220,6 +220,17 @@ private theorem smul_single_add_single_mem_xImage (n : ℤ) :
   rwa [twistedEuler_X_single, Finsupp.single_eq_same, ← Finsupp.single_add, add_comm (1 : ℤ),
     ← smul_single'] at h
 
+/-- The recurrence step `x^{n+1} - c(n+1) = (n x^n + x^{n+1}) - n (x^n - c(n))`, which follows
+from `n c(n) + c(n + 1) = 0`. -/
+private theorem single_add_one_sub_residueCoeff_eq [CharZero k] (n : ℤ) :
+    (single (Finsupp.single default (n + 1)) 1 : LaurentRing k K) -
+        residueCoeff (k := k) (n + 1) • 1 =
+      ((n : k) • single (Finsupp.single default n) 1 +
+          single (Finsupp.single default (n + 1)) 1) -
+        (n : k) • (single (Finsupp.single default n) 1 - residueCoeff (k := k) n • 1) := by
+  rw [eq_neg_of_add_eq_zero_right (intCast_mul_residueCoeff_add (k := k) n)]
+  module
+
 /-- Every monomial `x^n` is congruent to `c(n) · 1` modulo the image of `θ + x`. -/
 private theorem single_sub_residueCoeff_mem_xImage [CharZero k] (n : ℤ) :
     (single (Finsupp.single default n) 1 : LaurentRing k K) - residueCoeff (k := k) n • 1 ∈
@@ -227,35 +238,14 @@ private theorem single_sub_residueCoeff_mem_xImage [CharZero k] (n : ℤ) :
   induction n using Int.induction_on with
   | zero => simp [residueCoeff_zero, one_def]
   | succ i ih =>
-    have hc := intCast_mul_residueCoeff_add (k := k) (i : ℤ)
-    have h : (single (Finsupp.single default ((i : ℤ) + 1)) 1 : LaurentRing k K) -
-        residueCoeff (k := k) ((i : ℤ) + 1) • 1 =
-        (((i : ℤ) : k) • single (Finsupp.single default (i : ℤ)) 1 +
-          single (Finsupp.single default ((i : ℤ) + 1)) 1) -
-        ((i : ℤ) : k) • (single (Finsupp.single default (i : ℤ)) 1 -
-          residueCoeff (k := k) (i : ℤ) • 1) := by
-      rw [eq_neg_of_add_eq_zero_right hc]
-      module
-    rw [h]
+    rw [single_add_one_sub_residueCoeff_eq]
     exact sub_mem (smul_single_add_single_mem_xImage _) (Submodule.smul_mem _ _ ih)
   | pred i ih =>
-    have hn : ((-(i : ℤ) - 1 : ℤ) : k) ≠ 0 := by
-      have : (-(i : ℤ) - 1) ≠ 0 := by omega
-      exact_mod_cast this
-    have hc := intCast_mul_residueCoeff_add (k := k) (-(i : ℤ) - 1)
-    have hT := smul_single_add_single_mem_xImage (k := k) (K := K) (-(i : ℤ) - 1)
-    rw [sub_add_cancel] at hc hT
-    rw [← Submodule.smul_mem_iff _ hn]
-    have h : ((-(i : ℤ) - 1 : ℤ) : k) •
-        ((single (Finsupp.single default (-(i : ℤ) - 1)) 1 : LaurentRing k K) -
-          residueCoeff (k := k) (-(i : ℤ) - 1) • 1) =
-        (((-(i : ℤ) - 1 : ℤ) : k) • single (Finsupp.single default (-(i : ℤ) - 1)) 1 +
-          single (Finsupp.single default (-(i : ℤ))) 1) -
-        (single (Finsupp.single default (-(i : ℤ))) 1 - residueCoeff (k := k) (-(i : ℤ)) • 1) := by
-      rw [eq_neg_of_add_eq_zero_right hc]
-      module
-    rw [h]
-    exact sub_mem hT ih
+    have hn : ((-(i : ℤ) - 1 : ℤ) : k) ≠ 0 := by exact_mod_cast (show -(i : ℤ) - 1 ≠ 0 by omega)
+    have h := single_add_one_sub_residueCoeff_eq (k := k) (K := K) (-(i : ℤ) - 1)
+    rw [← Submodule.smul_mem_iff _ hn, eq_sub_of_add_eq' (eq_sub_iff_add_eq.mp h)]
+    simpa only [sub_add_cancel] using
+      sub_mem (smul_single_add_single_mem_xImage (k := k) (K := K) (-(i : ℤ) - 1)) ih
 
 /-- Every Laurent polynomial `f` is congruent to `residue f · 1` modulo the image of `θ + x`. -/
 private theorem sub_residue_smul_one_mem_xImage [CharZero k] (f : LaurentRing k K) :
