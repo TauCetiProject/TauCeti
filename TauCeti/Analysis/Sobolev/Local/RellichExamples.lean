@@ -13,6 +13,8 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Sobolev.Local.Compactness
+import TauCeti.Analysis.Sobolev.Local.Compactness.ContDiff.HalfDisc
+import TauCeti.Analysis.Calculus.Equicontinuity
 import TauCeti.Analysis.Complex.IteratedDeriv
 import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric.Oscillation
 import TauCeti.Data.ENNReal.Inv
@@ -46,7 +48,10 @@ records three examples showing what the hypothesis and the conclusion do and do 
   of finite measure `halfSine m` is represented by an element of `TauCeti.Wkp` of order one with a
   norm bound independent of `m` (`exists_wkp_halfSine_norm_le`), so local Rellich compactness up to
   the real axis applies to it at `k = 0`
-  (`exists_subseq_memWkpLoc_halfDisc_tendsto_wkp_halfSine`).
+  (`exists_subseq_memWkpLoc_halfDisc_tendsto_wkp_halfSine`), and for `p > 2` so does its
+  classical form, which gives a subsequence converging uniformly on compact subsets of the
+  half-disc, including those reaching the real axis
+  (`exists_subseq_tendstoLocallyUniformlyOn_halfDisc_halfSine`).
 
 The non-convergence statements quantify over every strictly increasing reindexing and every
 candidate limit, for every exponent `1 ≤ p ≤ ∞`. They reduce to `L¹` separation
@@ -440,6 +445,14 @@ theorem exists_wkp_halfSine_norm_le {p : ℝ≥0∞} [Fact (1 ≤ p)] {W : Opens
   rw [two_mul, Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae hv, eLpNorm_congr_ae hvg]
   exact add_le_add (ENNReal.toReal_mono hc hu) (ENNReal.toReal_mono hc hg)
 
+/-- The upper half of an open set with compact closure has finite measure: the hypothesis of
+`exists_wkp_halfSine_norm_le` in the two Rellich examples below. -/
+private theorem volume_upperHalf_ne_top {W : Opens ℂ} (hWc : IsCompact (closure (W : Set ℂ))) :
+    volume (W.upperHalf : Set ℂ) ≠ ⊤ := by
+  refine ((measure_mono ?_).trans_lt hWc.measure_lt_top).ne
+  rw [Opens.coe_upperHalf]
+  exact inter_subset_left.trans subset_closure
+
 /-- **Local Rellich compactness for the oscillating sequence on the half-disc.** For
 `1 ≤ p ≤ ∞`, the sequence `halfSine m z = m⁻¹ sin (m * z.im)` has a subsequence converging in `Lᵖ`
 on the upper half of every relatively compact open subset of the unit disc, to a limit that is
@@ -454,10 +467,27 @@ theorem exists_subseq_memWkpLoc_halfDisc_tendsto_wkp_halfSine {p : ℝ≥0∞} [
           Wkp.value 0 w =ᵐ[volume.restrict (W.upperHalf : Set ℂ)] v →
           Tendsto y atTop (𝓝 w) := by
   rw [halfDisc_def]
-  refine exists_subseq_memWkpLoc_inter_setOf_im_nonneg_tendsto_wkp (Ω := ⟨ball 0 1, isOpen_ball⟩)
-    fun W hWc _ => ⟨_, exists_wkp_halfSine_norm_le ?_⟩
-  refine ((measure_mono ?_).trans_lt hWc.measure_lt_top).ne
-  rw [Opens.coe_upperHalf]
-  exact inter_subset_left.trans subset_closure
+  exact exists_subseq_memWkpLoc_inter_setOf_im_nonneg_tendsto_wkp (Ω := ⟨ball 0 1, isOpen_ball⟩)
+    fun W hWc _ => ⟨_, exists_wkp_halfSine_norm_le (volume_upperHalf_ne_top hWc)⟩
+
+
+/-- **Classical convergence of the oscillating sequence up to the real axis.** For `2 < p ≤ ∞`, the
+order-zero case of
+`TauCeti.exists_subseq_memWkpLoc_inter_setOf_im_nonneg_tendstoLocallyUniformlyOn_iteratedFDeriv`
+applies to `halfSine`: a subsequence converges uniformly on compact subsets of `halfDisc`, which
+may meet the real axis. -/
+theorem exists_subseq_tendstoLocallyUniformlyOn_halfDisc_halfSine {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hp : 2 < p) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ v : ℂ → ℝ,
+      TendstoLocallyUniformlyOn (fun m => halfSine (φ m)) v atTop halfDisc := by
+  obtain ⟨φ, hφ, v, -, -, hconv⟩ :=
+    exists_subseq_memWkpLoc_inter_setOf_im_nonneg_tendstoLocallyUniformlyOn_iteratedFDeriv
+      (Ω := ⟨ball 0 1, isOpen_ball⟩) (k := 0) hp fun W hWc _ =>
+        ⟨_, exists_wkp_halfSine_norm_le (volume_upperHalf_ne_top hWc)⟩
+  refine ⟨φ, hφ, v, ?_⟩
+  have h := hconv halfSine (fun m => ⟨univ, isOpen_univ, subset_univ _,
+    (contDiff_halfSine m).contDiffOn⟩) (fun _ => .rfl) 0 le_rfl
+  rw [halfDisc_def]
+  exact tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff.1 h
 
 end TauCeti.RellichExamples

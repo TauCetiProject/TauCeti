@@ -34,6 +34,8 @@ For symbol sublanguages `symbSublang F R`, the reduct map along `symbSublangIncl
 surjective on configurations (`reductConfiguration_symbSublang_surjective`), and every measurable
 set in the product σ-algebra on `RelationalConfiguration L V` is the preimage of a measurable set
 in some countable relational symbol sublanguage (`exists_countable_sublanguage_of_measurableSet`).
+Disjoint analytic classes also have disjoint reducts in a countable sublanguage. On a countable
+carrier the reduction can preserve disjointness of orbits.
 
 ## Main definitions
 
@@ -41,6 +43,8 @@ in some countable relational symbol sublanguage (`exists_countable_sublanguage_o
   map.
 * `FirstOrder.Language.LEquiv.onConfiguration`: the homeomorphism of configuration spaces induced
   by a language equivalence.
+* `FirstOrder.Language.LEquiv.onConfigurationMeasurableEquiv`: the same transport, as a measurable
+  equivalence.
 
 ## Main results
 
@@ -51,6 +55,8 @@ in some countable relational symbol sublanguage (`exists_countable_sublanguage_o
 * `FirstOrder.Language.LHom.realize_reductConfiguration` and
   `FirstOrder.Language.LHom.realize_sentenceInf_reductConfiguration`: the reduct realizes a
   formula exactly when the configuration realizes its translation.
+* `FirstOrder.Language.LHom.modelsOf_onBoundedFormulaInf`: model classes of translated sentences
+  are preimages along reduct maps.
 * `FirstOrder.Language.LHom.reductConfiguration_encodeVia`: reducts commute with encoding a
   structure along a bijection of carriers.
 * `FirstOrder.Language.LEquiv.isoSetoid_onConfiguration_iff`: transport along a language
@@ -67,6 +73,9 @@ in some countable relational symbol sublanguage (`exists_countable_sublanguage_o
 * `TauCeti.RelationalConfiguration.exists_countable_sublanguage_of_measurableSet`: every measurable
   set of configurations is the preimage of a measurable set in a countable relational symbol
   sublanguage.
+* `TauCeti.RelationalConfiguration.exists_countable_sublanguage_separating` and
+  `TauCeti.RelationalConfiguration.exists_countable_sublanguage_separating_orbits`: a countable
+  symbol sublanguage can preserve disjointness or disjointness of orbits of analytic classes.
 -/
 
 public section
@@ -182,6 +191,13 @@ theorem realize_sentenceInf_reductConfiguration {ι : Type uι} (c : RelationalC
   simp only [SentenceInf.realize_def, FormulaInf.realize_def]
   exact g.realize_reductConfiguration c φ _ _
 
+/-- The models of the translation of a sentence along `g` are the configurations whose reduct
+along `g` models the sentence. -/
+theorem modelsOf_onBoundedFormulaInf {ι : Type uι} (φ : L.SentenceInf ι) :
+    modelsOf (V := V) (g.onBoundedFormulaInf φ) = g.reductConfiguration ⁻¹' modelsOf φ :=
+  Set.ext fun c => by
+    rw [Set.mem_preimage, mem_modelsOf, mem_modelsOf, g.realize_sentenceInf_reductConfiguration]
+
 end LHom
 
 namespace LEquiv
@@ -245,6 +261,26 @@ transport along `e.symm`, so it is measurable too. -/
 theorem measurable_onConfiguration : Measurable (e.onConfiguration (V := V)) :=
   e.invLHom.measurable_reductConfiguration
 
+/-- Transport along a language equivalence, as a measurable equivalence of configuration spaces
+on every carrier, with inverse the transport along `e.symm`. -/
+def onConfigurationMeasurableEquiv :
+    RelationalConfiguration L V ≃ᵐ RelationalConfiguration L' V where
+  toEquiv := e.onConfiguration.toEquiv
+  measurable_toFun := e.measurable_onConfiguration
+  measurable_invFun := e.symm.measurable_onConfiguration
+
+/-- The measurable equivalence is transport along `e`. -/
+@[simp]
+theorem coe_onConfigurationMeasurableEquiv :
+    ⇑(e.onConfigurationMeasurableEquiv (V := V)) = e.onConfiguration :=
+  (rfl)
+
+/-- The inverse of the measurable equivalence is transport along `e.symm`. -/
+@[simp]
+theorem coe_onConfigurationMeasurableEquiv_symm :
+    ⇑(e.onConfigurationMeasurableEquiv (V := V)).symm = e.symm.onConfiguration :=
+  (rfl)
+
 variable [L.IsRelational] [L'.IsRelational]
 
 /-- Transport preserves and reflects isomorphism of decoded structures. -/
@@ -296,7 +332,8 @@ end FirstOrder.Language
 
 namespace TauCeti.RelationalConfiguration
 
-open FirstOrder FirstOrder.Language MeasureTheory Set
+open FirstOrder FirstOrder.Language MeasureTheory Set TopologicalSpace
+open scoped Pointwise
 
 variable {L : Language.{u, v}} {V : Type w}
 
@@ -366,5 +403,69 @@ theorem exists_countable_sublanguage_of_measurableSet
       ext c
       simp [a₀]
   exact hmeas hD
+
+-- The open-cover argument adapts the proof of `exists_countable_relations_separating_continuous`
+-- in `LopezEscobar.lean` at commit `cc7970dd9e9100260478e2a2d469da59fef0e750`.
+/-- Disjoint analytic classes of configurations have disjoint images in some countable relational
+symbol sublanguage. The language and the carrier can both be uncountable. -/
+theorem exists_countable_sublanguage_separating
+    {A B : Set (RelationalConfiguration L V)} (hA : AnalyticSet A) (hB : AnalyticSet B)
+    (hAB : Disjoint A B) :
+    ∃ R : Set (Σ n, L.Relations n), R.Countable ∧
+      Disjoint ((symbSublangIncl ∅ R).reductConfiguration '' A)
+        ((symbSublangIncl ∅ R).reductConfiguration '' B) := by
+  obtain ⟨X, _, _, f, hf, rfl⟩ := analyticSet_iff_exists_polishSpace_range.1 hA
+  obtain ⟨Y, _, _, g, hg, rfl⟩ := analyticSet_iff_exists_polishSpace_range.1 hB
+  let U : Atom L V → Set (X × Y) := fun p =>
+    {z | (f z.1).eval p ≠ (g z.2).eval p}
+  have hU_open (p : Atom L V) : IsOpen (U p) :=
+    isOpen_ne_fun ((continuous_eval _).comp (hf.comp continuous_fst))
+      ((continuous_eval _).comp (hg.comp continuous_snd))
+  have hU_cover : (⋃ p, U p) = univ := by
+    refine eq_univ_iff_forall.2 fun ⟨x, y⟩ => ?_
+    have hne : f x ≠ g y := fun h =>
+      disjoint_left.1 hAB (h ▸ mem_range_self x) (mem_range_self y)
+    obtain ⟨a, ha⟩ : ∃ a : Atom L V, (f x).eval a ≠ (g y).eval a := by
+      by_contra! hall
+      exact hne (RelationalConfiguration.ext hall)
+    exact mem_iUnion.2 ⟨a, ha⟩
+  obtain ⟨S, hS, hS_eq⟩ := isOpen_iUnion_countable U hU_open
+  rw [hU_cover] at hS_eq
+  refine ⟨Atom.symbol '' S, hS.image _, disjoint_left.2 ?_⟩
+  rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩ ⟨_, ⟨y, rfl⟩, hxy⟩
+  have hz : (x, y) ∈ ⋃ p ∈ S, U p := hS_eq.symm ▸ mem_univ (x, y)
+  obtain ⟨p, hpS, hzp⟩ := mem_iUnion₂.1 hz
+  induction p using Atom.induction_atom with
+  | h R t =>
+    let r : (symbSublang ∅ (Atom.symbol '' S)).Relations _ :=
+      ⟨R, ⟨atom R t, hpS, Atom.symbol_atom R t⟩⟩
+    have heval := congrArg (fun c => c.eval (atom r t)) hxy
+    simp only [LHom.eval_reductConfiguration, LHom.onAtom_atom, symbSublangIncl_onRelation, r]
+      at heval
+    exact hzp heval.symm
+
+/-- On a countable carrier, analytic classes sharing no orbit have reducts to a countable
+relational symbol sublanguage that still share no orbit. Neither class need be invariant. -/
+theorem exists_countable_sublanguage_separating_orbits [Countable V]
+    {A B : Set (RelationalConfiguration L V)} (hA : AnalyticSet A) (hB : AnalyticSet B)
+    (hAB : ∀ a ∈ A, ∀ b ∈ B,
+      ¬ MulAction.orbitRel (Equiv.Perm V) (RelationalConfiguration L V) a b) :
+    ∃ R : Set (Σ n, L.Relations n), R.Countable ∧
+      ∀ a ∈ A, ∀ b ∈ B,
+        ¬ MulAction.orbitRel (Equiv.Perm V) (RelationalConfiguration (symbSublang ∅ R) V)
+          ((symbSublangIncl ∅ R).reductConfiguration a)
+          ((symbSublangIncl ∅ R).reductConfiguration b) := by
+  have hdisj : Disjoint A (⋃ σ : Equiv.Perm V, σ • B) := by
+    refine disjoint_left.2 fun a ha hb => ?_
+    obtain ⟨σ, hσ⟩ := mem_iUnion.1 hb
+    obtain ⟨b, hbB, rfl⟩ := mem_smul_set.1 hσ
+    exact hAB _ ha b hbB (MulAction.orbitRel_apply.2 (MulAction.mem_orbit_iff.2 ⟨σ, rfl⟩))
+  obtain ⟨R, hR, hsep⟩ :=
+    exists_countable_sublanguage_separating hA (analyticSet_iUnion_smul hB) hdisj
+  refine ⟨R, hR, fun a ha b hb hab => ?_⟩
+  obtain ⟨σ, hσ⟩ := MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 hab)
+  exact disjoint_left.1 hsep ⟨a, ha, rfl⟩
+    ⟨σ • b, mem_iUnion.2 ⟨σ, smul_mem_smul_set hb⟩,
+      ((symbSublangIncl ∅ R).reductConfiguration_perm_smul σ b).trans hσ⟩
 
 end TauCeti.RelationalConfiguration

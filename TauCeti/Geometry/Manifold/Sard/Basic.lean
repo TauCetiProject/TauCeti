@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Measure
 public import TauCeti.Geometry.Manifold.RegularValue
+public import Mathlib.Topology.MetricSpace.HausdorffDimension
 import TauCeti.Analysis.Calculus.Sard.LowDimension
 import TauCeti.Analysis.Calculus.Sard.OutermostStratum
 import TauCeti.Geometry.Manifold.RegularValue.ManifoldLevel
@@ -49,6 +50,8 @@ case, which needs only first derivatives and allows boundary in the source, is
   manifold onto a nonempty manifold forces `dim N ≤ dim M`.
 * `ContMDiff.finrank_sub_le_finrank_of_isRegularValue_of_surjOn_fiber`: a `C¹` map from a
   Lindelöf manifold onto a nonempty regular fibre forces `dim P - dim B ≤ dim M`.
+* `MDifferentiableOn.isNullSet_image_of_dimH_lt_finrank`: the image of a subset of a normed space
+  of Hausdorff dimension below `dim N`, under a map to `N` differentiable within it, is null.
 * `TauCeti.isNullSet_image_of_not_isRegularPoint_of_isInteriorPoint`: Sard's theorem on a set
   of interior critical points, for an arbitrary model with corners.
 * `TauCeti.isNullSet_image_of_not_isRegularPoint_of_contMDiffAt`: Sard's theorem at the sharp
@@ -120,6 +123,25 @@ theorem _root_.MDifferentiable.finrank_le_finrank_of_surjective [Nonempty N]
   have hnull := hf.isNullSet_range_of_finrank_lt_finrank (not_le.1 hlt)
   have hdense : Dense (∅ : Set N) := by simpa [hsurj.range_eq] using hnull.dense_compl
   exact Set.not_nonempty_empty hdense.nonempty
+
+omit [FiniteDimensional ℝ E'] in
+/-- A map from a real normed space to a manifold modelled on `E'` that is differentiable within a
+set of Hausdorff dimension below `dim E'` sends that set to a null set. -/
+theorem _root_.MDifferentiableOn.isNullSet_image_of_dimH_lt_finrank {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {g : F → N} {t : Set F}
+    (hg : MDifferentiableOn 𝓘(ℝ, F) J g t) (ht : dimH t < finrank ℝ E') :
+    IsNullSet J (g '' t) := by
+  rw [isNullSet_iff]
+  intro y μ _
+  have hdiff : DifferentiableOn ℝ (extChartAt J y ∘ g) (t ∩ g ⁻¹' (extChartAt J y).source) := by
+    rintro x ⟨hx, hxy⟩
+    rw [extChartAt_source] at hxy
+    exact ((mdifferentiableWithinAt_iff_target_of_mem_source hxy).mp
+      (hg x hx)).2.differentiableWithinAt.mono inter_subset_left
+  refine measure_mono_null ?_ (hdiff.addHaar_image_eq_zero_of_dimH_lt_finrank μ
+    ((dimH_mono inter_subset_left).trans_lt ht))
+  rintro _ ⟨_, ⟨⟨x, hx, rfl⟩, hxy⟩, rfl⟩
+  exact ⟨x, ⟨hx, hxy⟩, rfl⟩
 
 end LowDimension
 

@@ -11,8 +11,9 @@ public import TauCeti.Topology.ContinuousMap.Clopen
 /-!
 # Restriction of measures to clopen subsets
 
-For a compact space `X`, a clopen subset `s` and a normed commutative ring `R`, a measure on `X`
-restricts to a measure on `s` by integrating extensions by zero of test functions on `s`:
+For a topological space `X`, a clopen subset `s` and a topological commutative ring `R`,
+a measure on `X` restricts to a measure on `s` by integrating extensions by zero of test functions
+on `s`:
 `restrictClopen s μ f = μ (zeroExtendClopen R s f)`. In the other direction, pushforward along the
 inclusion `s ↪ X` (Mathlib's `AbstractMeasure.map (ContinuousMap.subtypeVal s)`) extends a measure
 on `s` to `X`. Restriction is a left inverse of this extension, and extending the restriction of
@@ -54,9 +55,9 @@ open TopologicalSpace ContinuousMap
 
 namespace AbstractMeasure
 
-variable {X Y R E : Type*} [TopologicalSpace X] [CompactSpace X] [TopologicalSpace Y]
-  [CompactSpace Y] [NormedCommRing R] [AddCommGroup E] [TopologicalSpace E]
-  [IsTopologicalAddGroup E] [Module R E] [ContinuousSMul R E]
+variable {X Y R E : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+  [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
+  [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E] [Module R E] [ContinuousSMul R E]
 
 /-- The restriction of a measure on `X` to a clopen subset `s`: it integrates a test function on
 `s` against the original measure after extending it by zero. -/
