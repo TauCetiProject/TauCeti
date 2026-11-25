@@ -659,11 +659,12 @@ every `v ∈ H^t(ℝⁿ; V)`, the wave front set of `Op(a) v` is contained in th
 theorem vectorWaveFrontSet_toDistribution_quantizeSobolev_subset [CompleteSpace W]
     {a : Symbol n V W m}
     (ha : a.HasCompactSpatialSupport) (t : ℝ) :
-    let _ := FiniteDimensional.completeSpace ℂ V
+    haveI : CompleteSpace V := FiniteDimensional.completeSpace ℂ V
     ∀ v : H^{t}(CoordinateSpace n, V),
       (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).vectorWaveFrontSet ⊆
         (toDistribution ⊤ v.toDistr).vectorWaveFrontSet := by
-  intro _ v
+  intro v
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℂ V
   let b := Module.finBasis ℂ V
   intro p hp
   obtain ⟨ℓ, hp⟩ := mem_vectorWaveFrontSet_iff.1 hp
@@ -691,12 +692,14 @@ values in `V →L[ℂ] W` between finite-dimensional spaces and compact spatial 
 `v`. -/
 theorem singularSupport_toDistribution_quantizeSobolev_subset [FiniteDimensional ℂ W]
     {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport) (t : ℝ) :
-    let _ := FiniteDimensional.completeSpace ℂ V
-    let _ := FiniteDimensional.completeSpace ℂ W
+    haveI : CompleteSpace V := FiniteDimensional.completeSpace ℂ V
+    haveI : CompleteSpace W := FiniteDimensional.completeSpace ℂ W
     ∀ v : H^{t}(CoordinateSpace n, V),
       (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).singularSupport ⊆
         (toDistribution ⊤ v.toDistr).singularSupport := by
-  intro _ _ v
+  intro v
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℂ V
+  have : CompleteSpace W := FiniteDimensional.completeSpace ℂ W
   rw [← fst_image_vectorWaveFrontSet, ← fst_image_vectorWaveFrontSet]
   exact image_mono (vectorWaveFrontSet_toDistribution_quantizeSobolev_subset ha t v)
 
