@@ -100,10 +100,10 @@ divides `13 - 1`, and `2⌊√24⌋ = 8 < 13`. -/
 theorem isGoodDixonPrime_specialLinearGroup_two_three_thirteen :
     IsGoodDixonPrime (SpecialLinearGroup (Fin 2) (ZMod 3)) 13 := by
   refine ⟨by decide, ?_, ?_, ?_⟩
-  · rw [natCard_specialLinearGroup_two_three]
+  · rw [natCard_sl2_zmod_three]
     decide
   · rw [exponent_specialLinearGroup_two_three]
-  · rw [natCard_specialLinearGroup_two_three, sqrt_twentyFour]
+  · rw [natCard_sl2_zmod_three, sqrt_twentyFour]
     norm_num
 
 /-- Dixon prime data for `SL(2, 3)`: the prime `13`, with `2` as a primitive twelfth root of
@@ -252,7 +252,7 @@ private theorem specialLinearTwoThreeClassData_index_one :
 
 private theorem fintypeCard_specialLinearGroup_two_three :
     Fintype.card (SpecialLinearGroup (Fin 2) (ZMod 3)) = 24 := by
-  rw [← Nat.card_eq_fintype_card, natCard_specialLinearGroup_two_three]
+  rw [← Nat.card_eq_fintype_card, natCard_sl2_zmod_three]
 
 /-- Every displayed central-character row is normalized at the identity class. -/
 theorem specialLinearTwoThreeExactCentralCharacterTable_index_one
@@ -374,7 +374,7 @@ theorem specialLinearTwoThreeExactCharacterTable_natAbs_coeff_le_sqrt
     (i j : SpecialLinearTwoThreeClassIndex) (k : Fin (12 : ℕ).totient) :
     ((specialLinearTwoThreeExactCharacterTable i j).coeff k).natAbs ≤
       Nat.sqrt (Nat.card (SpecialLinearGroup (Fin 2) (ZMod 3))) := by
-  rw [natCard_specialLinearGroup_two_three, sqrt_twentyFour]
+  rw [natCard_sl2_zmod_three, sqrt_twentyFour]
   revert i j k
   decide +kernel
 
