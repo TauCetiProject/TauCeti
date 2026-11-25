@@ -65,9 +65,8 @@ theorem mulLeftRightBaseChangeEquiv_tmul (s : S) (a : A) (b : Aᵐᵒᵖ) :
 theorem mulLeftRightBaseChangeEquiv_symm_tmul (s s' : S) (a b : A) :
     (mulLeftRightBaseChangeEquiv R A S).symm ((s ⊗ₜ a) ⊗ₜ MulOpposite.op (s' ⊗ₜ b)) =
       (s * s') ⊗ₜ (a ⊗ₜ MulOpposite.op b) := by
-  rw [LinearEquiv.symm_apply_eq, mulLeftRightBaseChangeEquiv_tmul, MulOpposite.unop_op, mul_comm,
-    ← smul_eq_mul, ← TensorProduct.smul_tmul', TensorProduct.smul_tmul,
-    ← MulOpposite.op_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+  rw [LinearEquiv.symm_apply_eq, tmul_eq_smul_one_tmul s', MulOpposite.op_smul, ← smul_tmul]
+  simp [smul_tmul', mul_comm]
 
 variable [Module.Finite R A] [Module.Projective R A]
 
@@ -89,18 +88,13 @@ over `R` with `A ⊗[R] Aᵐᵒᵖ → End_R(A)` bijective, the defining map
 theorem mulLeftRight_baseChange_bijective (h : Function.Bijective (AlgHom.mulLeftRight R A)) :
     Function.Bijective (AlgHom.mulLeftRight S (S ⊗[R] A)) := by
   let e := LinearEquiv.ofBijective (AlgHom.mulLeftRight R A).toLinearMap h
-  have key : (AlgHom.mulLeftRight S (S ⊗[R] A) : _ → _) =
-      (LinearMap.isBaseChange_baseChangeHom R S A A).equiv ∘ e.baseChange R S _ _ ∘
-        (mulLeftRightBaseChangeEquiv R A S).symm := by
-    funext x
-    obtain ⟨y, rfl⟩ := (mulLeftRightBaseChangeEquiv R A S).surjective x
-    have := congr($(mulLeftRight_comp_mulLeftRightBaseChangeEquiv R A S) y)
-    simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-      AlgHom.toLinearMap_apply] at this
-    simp only [Function.comp_apply, LinearEquiv.symm_apply_apply]
-    exact this
-  rw [key]
-  exact (LinearEquiv.bijective _).comp ((LinearEquiv.bijective _).comp (LinearEquiv.bijective _))
+  have he : (AlgHom.mulLeftRight R A).toLinearMap = e.toLinearMap :=
+    LinearMap.ext fun _ ↦ (LinearEquiv.ofBijective_apply _ _).symm
+  have key := (LinearEquiv.eq_comp_toLinearMap_symm _ _).2
+    (mulLeftRight_comp_mulLeftRightBaseChangeEquiv R A S)
+  rw [he, ← LinearEquiv.coe_baseChange, LinearEquiv.comp_coe, LinearEquiv.comp_coe] at key
+  rw [← AlgHom.coe_toLinearMap, key]
+  exact LinearEquiv.bijective _
 
 /-- **Base change of an Azumaya algebra, given faithfulness.** If `A` is finite projective over
 `R` with bijective defining map, for instance Azumaya, and `S ⊗[R] A` is faithful over `S`, then
