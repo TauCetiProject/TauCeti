@@ -86,6 +86,8 @@ embeddings into block-diagonal matrices.
 * `CStarMatrix.blockDiagonalSingle`: the corner embedding of `M_{n i}(B)` as the `i`-th diagonal
   block of `M_{Σ i, n i}(B)`, with `CStarMatrix.sum_blockDiagonalSingle`: a block-diagonal matrix
   is the sum of its corner embeddings.
+* `CStarMatrix.blockDiagonalNonUnitalStarAlgHom`: the block-diagonal embedding
+  `Π i, M_{n i}(B) → M_{Σ i, n i}(B)`, `x ↦ diag(x_i)`, an injective star homomorphism.
 * `CStarMatrix.map_zero_linearMap`, `CStarMatrix.map_add_linearMap`,
   `CStarMatrix.map_smul_linearMap`: applying `0`, `f + g` or `c • f` to every entry.
 * `CStarMatrix.isSelfAdjoint_of_forall_isSelfAdjoint_sum`: a matrix all of whose quadratic forms
@@ -116,7 +118,8 @@ embeddings into block-diagonal matrices.
   `b = z* z`; no unit is needed.
 * `CStarMatrix.norm_ofMatrix_diagonal`: a diagonal matrix `diag(d₁, …, dₙ)` over a C⋆-algebra has
   norm `maxᵢ ‖dᵢ‖`, the sup norm of `d`; `CStarMatrix.norm_ofMatrix_diagonal_fin_two` is the
-  `2 × 2` case `‖diag(a, b)‖ = max ‖a‖ ‖b‖`.
+  `2 × 2` case `‖diag(a, b)‖ = max ‖a‖ ‖b‖`, and `CStarMatrix.norm_ofMatrix_blockDiagonal'` the
+  block-diagonal case `‖diag(x_i)‖ = maxᵢ ‖x_i‖`.
 
 ## References
 
@@ -534,6 +537,39 @@ theorem sum_blockDiagonalSingle [Fintype ι] (x : ∀ i, CStarMatrix (n i) (n i)
   rw [← Finset.univ_sum_single fun i => ofMatrix.symm (x i)]
   -- `ofMatrix` is the identity equivalence, so this is additivity of `Matrix.blockDiagonal'`.
   exact (map_sum (Matrix.blockDiagonal'AddMonoidHom n n B) _ _).symm
+
+variable (R B) in
+/-- The **block-diagonal embedding** `x ↦ diag(x_i)` of `Π i, CStarMatrix (n i) (n i) B` into
+`CStarMatrix (Σ i, n i) (Σ i, n i) B`, as a non-unital star algebra homomorphism: the
+C⋆-matrix form of `Matrix.blockDiagonal'RingHom`. -/
+def blockDiagonalNonUnitalStarAlgHom [Fintype ι] :
+    (Π i, CStarMatrix (n i) (n i) B) →⋆ₙₐ[R] CStarMatrix (Σ i, n i) (Σ i, n i) B where
+  toFun x := ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i))
+  -- each law is the corresponding law of `Matrix.blockDiagonal'`; the closing `rfl` identifies
+  -- the pointwise operations on `Π i, CStarMatrix (n i) (n i) B` with those on the blocks
+  map_smul' c x := ofMatrix.symm.injective <| by
+    simp [← Matrix.blockDiagonal'_smul]
+    rfl
+  map_zero' := ofMatrix.symm.injective <| by simp [← Matrix.blockDiagonal'_zero]; rfl
+  map_add' x y := ofMatrix.symm.injective <| by simp [← Matrix.blockDiagonal'_add]; rfl
+  map_mul' x y := ofMatrix.symm.injective <| by
+    simp only [Equiv.symm_apply_apply, ofMatrix_symm_mul, ← Matrix.blockDiagonal'_mul]
+    rfl
+  map_star' x := ofMatrix.symm.injective <| by
+    simp only [Equiv.symm_apply_apply, ofMatrix_symm_star, Matrix.blockDiagonal'_conjTranspose]
+    rfl
+
+/-- The block-diagonal embedding sends `x` to the block-diagonal matrix with blocks `x i`. -/
+theorem blockDiagonalNonUnitalStarAlgHom_apply [Fintype ι] (x : Π i, CStarMatrix (n i) (n i) B) :
+    blockDiagonalNonUnitalStarAlgHom R B x =
+      ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i)) :=
+  (rfl)
+
+/-- The block-diagonal embedding is injective. -/
+theorem blockDiagonalNonUnitalStarAlgHom_injective [Fintype ι] :
+    Function.Injective (blockDiagonalNonUnitalStarAlgHom R B (n := n)) := fun _ _ h =>
+  funext fun i => ofMatrix.symm.injective <|
+    congrFun (Matrix.blockDiagonal'_injective (ofMatrix.injective h)) i
 
 end NonUnital
 
@@ -1018,6 +1054,14 @@ theorem norm_ofMatrix_diagonal_fin_two (a b : A) :
   refine le_antisymm ((pi_norm_le_iff_of_nonneg (by positivity)).2 fun i => ?_)
     (max_le (norm_le_pi_norm ![a, b] 0) (norm_le_pi_norm ![a, b] 1))
   fin_cases i <;> simp
+
+/-- A block-diagonal matrix over a C⋆-algebra has norm the largest norm of its diagonal blocks:
+`‖diag(x_i)‖ = maxᵢ ‖x_i‖`, the sup norm of `x`, since the block-diagonal embedding is an injective
+star homomorphism of C⋆-algebras. -/
+theorem norm_ofMatrix_blockDiagonal' {ι : Type*} [Fintype ι] [DecidableEq ι] {n : ι → Type*}
+    [∀ i, Fintype (n i)] (x : Π i, CStarMatrix (n i) (n i) A) :
+    ‖ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i))‖ = ‖x‖ :=
+  NonUnitalStarAlgHom.norm_map _ (blockDiagonalNonUnitalStarAlgHom_injective (R := ℂ) (B := A)) x
 
 end DiagonalNorm
 
