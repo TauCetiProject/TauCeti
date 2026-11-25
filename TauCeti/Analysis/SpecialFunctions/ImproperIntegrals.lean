@@ -20,7 +20,8 @@ This file extends Mathlib's improper-integral estimates with an asymptotic estim
 integrals, an Abelian limit for the averages `ε ∫_1^∞ t ^ (-ε - 1) g t`, integrability of
 `(x ^ 2 + c ^ 2)⁻¹` for `c ≠ 0`, integrability at infinity of `(t (1 + log t) ^ 2)⁻¹`, and the
 closed forms `∫_A^∞ dy / y² = 1 / A` and `∫_{-∞}^0 e^{a s} ds = ∫_0^∞ e^{-a s} ds = 1 / a` as
-Lebesgue integrals, and `∫_0^∞ e^{-a s} ds = 1 / a` as a Bochner integral.
+Lebesgue integrals, and `∫_0^∞ e^{-a s} ds = 1 / a` and `∫_c^∞ dx / x^(k+1) = 1 / (k c^k)` as
+Bochner integrals.
 
 It also evaluates the power-weighted sine integral on the positive half-line for exponents between
 zero and one.
@@ -37,6 +38,8 @@ zero and one.
 
 * `TauCeti.lintegral_Ioi_inv_sq`: `∫⁻ y in Ioi A, (1 / ‖y‖₊) ^ 2 = ofReal A⁻¹` for `0 < A`, the
   integrand being the density of the hyperbolic area measure.
+* `TauCeti.integral_Ioi_inv_pow_succ` and `TauCeti.integrableOn_Ioi_inv_pow_succ`:
+  `∫_c^∞ dx / x^(k+1) = 1 / (k c^k)`, and integrability, for `k ≥ 1` and `0 < c`.
 * `TauCeti.lintegral_Iic_ofReal_exp_mul`, `TauCeti.lintegral_Ioi_ofReal_exp_neg_mul`:
   `∫⁻ s in Iic 0, ofReal (exp (a s)) = ∫⁻ s in Ioi 0, ofReal (exp (-a s)) = ofReal a⁻¹`
   for `0 < a`.
@@ -374,6 +377,31 @@ theorem lintegral_Ioi_inv_sq {A : ℝ} (hA : 0 < A) :
   rw [← ENNReal.ofReal_coe_nnreal]
   congr 1
   simp [Real.rpow_neg hy.le, Real.nnNorm_of_nonneg hy.le]
+
+private theorem eqOn_rpow_neg_inv_pow (k : ℕ) {c : ℝ} (hc : 0 < c) :
+    EqOn (fun x : ℝ => x ^ (-(k + 1 : ℝ))) (fun x => (x ^ (k + 1))⁻¹) (Ioi c) :=
+  fun x (hx : c < x) => by
+    simp only
+    rw [Real.rpow_neg (hc.trans hx).le, ← Nat.cast_one, ← Nat.cast_add, Real.rpow_natCast]
+
+/-- **The improper integral of a natural inverse power**: `∫_c^∞ dx / x^(k+1) = 1 / (k c^k)` for
+`k ≥ 1` and `0 < c`, from Mathlib's `integral_Ioi_rpow_of_lt`. -/
+theorem integral_Ioi_inv_pow_succ {k : ℕ} (hk : 1 ≤ k) {c : ℝ} (hc : 0 < c) :
+    ∫ x in Ioi c, (x ^ (k + 1))⁻¹ = (k * c ^ k)⁻¹ := by
+  have hk' : (1 : ℝ) ≤ k := by exact_mod_cast hk
+  have h := integral_Ioi_rpow_of_lt (a := -(k + 1 : ℝ)) (by linarith) hc
+  rw [show -(k + 1 : ℝ) + 1 = -(k : ℝ) by ring, Real.rpow_neg hc.le, Real.rpow_natCast,
+    setIntegral_congr_fun measurableSet_Ioi (eqOn_rpow_neg_inv_pow k hc)] at h
+  rw [h]
+  field_simp
+
+/-- For `k ≥ 1` and `0 < c`, the function `x ↦ 1 / x^(k+1)` is integrable on `(c, ∞)`, from
+Mathlib's `integrableOn_Ioi_rpow_of_lt`. -/
+theorem integrableOn_Ioi_inv_pow_succ {k : ℕ} (hk : 1 ≤ k) {c : ℝ} (hc : 0 < c) :
+    IntegrableOn (fun x : ℝ => (x ^ (k + 1))⁻¹) (Ioi c) := by
+  have hk' : (1 : ℝ) ≤ k := by exact_mod_cast hk
+  exact (integrableOn_Ioi_rpow_of_lt (by linarith) hc).congr_fun (eqOn_rpow_neg_inv_pow k hc)
+    measurableSet_Ioi
 
 /-- `∫_{-∞}^0 e^{a s} ds = 1 / a` for `0 < a`, as a Lebesgue integral. -/
 theorem lintegral_Iic_ofReal_exp_mul {a : ℝ} (ha : 0 < a) :
