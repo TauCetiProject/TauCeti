@@ -180,8 +180,9 @@ noncomputable def scalar : SmoothCenter.{max u v} A G →ₐ[A] A where
     simp
   map_zero' := by simp
   map_add' _ _ := by
-    dsimp only
-    exact DFunLike.congr_fun (MonoidAlgebra.coeff_add _ _) _
+    -- The full subcategory `SmoothRep A G` has no lemma for the `hom` of a sum, so the sum is
+    -- moved through the additive inclusion functor `ι`.
+    simp [← ObjectProperty.ι_map, Functor.map_add, Rep.add_hom]
   commutes' a := by
     dsimp only
     rw [algebraMap_app_hom_hom_apply]
