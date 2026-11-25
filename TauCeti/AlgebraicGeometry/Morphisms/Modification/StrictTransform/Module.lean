@@ -164,6 +164,7 @@ strict transform of `M` is zero: the open `V` over `U` maps into `f⁻¹(U)`, so
 on `V`. -/
 theorem isZero_strictTransformModule_of_isZero_restrict (h : IsZero (M.restrict (f ⁻¹ᵁ U).ι)) :
     IsZero (strictTransformModule f φ U M) := by
+  rw [strictTransformModule_def]
   refine Modules.isZero_supportedQuotient_of_isZero_restrict _ _ ?_
   refine (Modules.isZero_pullback_of_isZero_restrict M h _ ?_).of_iso
     (((Modules.restrictFunctorIsoPullback _).app _) ≪≫

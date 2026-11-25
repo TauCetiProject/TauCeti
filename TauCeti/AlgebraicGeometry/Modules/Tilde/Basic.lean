@@ -46,9 +46,8 @@ out of `M~` is determined by where it sends the global sections coming from `M`.
 * `TauCeti.AlgebraicGeometry.preservesFiniteLimits_tildeFunctor`: the functor `M ↦ M~` preserves
   finite limits, hence (with its preservation of colimits) short exact sequences;
 * `TauCeti.AlgebraicGeometry.subsingleton_tilde_of_le_basicOpen_of_smul_eq_zero`: the sections of
-  `M~` over an open inside `D(f)` vanish when `f` annihilates `M`
-  (`TauCeti.AlgebraicGeometry.subsingleton_tilde_basicOpen_of_smul_eq_zero` for `D(f)` itself),
-  and by `TauCeti.AlgebraicGeometry.isZero_tilde_restrict_of_le_basicOpen_of_smul_eq_zero` the
+  `M~` over an open inside `D(f)` vanish when `f` annihilates `M`, and by
+  `TauCeti.AlgebraicGeometry.isZero_tilde_restrict_of_le_basicOpen_of_smul_eq_zero` the
   restriction of `M~` to such an open is zero;
 * `Scheme.Modules.tildeKernelIso`: the affine computation of ambient kernels of morphisms
   between quasicoherent sheaves, with `tildeKernelIso_hom_comp_ι` identifying the kernel inclusion;
@@ -186,13 +185,6 @@ theorem subsingleton_tilde_of_le_basicOpen_of_smul_eq_zero {M : ModuleCat.{u} R}
       (LocalizedModule.mkLinearMap _ _)).2
       fun m ↦ ⟨f, (PrimeSpectrum.mem_basicOpen _ _).1 (hW p.property), hf m⟩
   exact Subsingleton.elim _ _
-
-/-- If `f` annihilates the `R`-module `M`, the sections of `M~` over the basic open `D(f)`
-vanish: they form the localization `M_f`, which is zero. -/
-theorem subsingleton_tilde_basicOpen_of_smul_eq_zero {M : ModuleCat.{u} R} (f : R)
-    (hf : ∀ m : M, f • m = 0) :
-    Subsingleton Γ(tilde M, (PrimeSpectrum.basicOpen f : (Spec R).Opens)) :=
-  subsingleton_tilde_of_le_basicOpen_of_smul_eq_zero f hf le_rfl
 
 /-- If `f` annihilates the `R`-module `M`, then `M~` restricts to zero on any open `W ⊆ D(f)`:
 the restriction has the sections of `M~` over opens inside `W`, which vanish. -/
