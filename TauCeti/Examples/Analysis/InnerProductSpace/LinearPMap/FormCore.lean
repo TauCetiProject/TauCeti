@@ -129,9 +129,8 @@ def kernelDomain : Submodule 𝕜 ℓ²(ℕ, 𝕜) :=
   (LinearMap.ker ((innerₛₗ 𝕜 (weightVector : ℓ²(ℕ, 𝕜))) ∘ₗ (diagonalOperator 𝕜).toFun)).map
     (diagonalOperator 𝕜).domain.subtype
 
-theorem kernelDomain_le_domain : kernelDomain (𝕜 := 𝕜) ≤ (diagonalOperator 𝕜).domain := by
-  rintro _ ⟨x, -, rfl⟩
-  exact x.property
+theorem kernelDomain_le_domain : kernelDomain (𝕜 := 𝕜) ≤ (diagonalOperator 𝕜).domain :=
+  Submodule.map_subtype_le _ _
 
 /-- A vector of the domain of `S` lies in `D` exactly when `⟪w, S x⟫ = 0`. -/
 theorem mem_kernelDomain_iff (x : (diagonalOperator 𝕜).domain) :
