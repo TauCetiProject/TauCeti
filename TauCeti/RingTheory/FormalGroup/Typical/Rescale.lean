@@ -71,16 +71,18 @@ private theorem isPTypical_rescale_of_isLeftRegular {F : FormalGroup R} [F.IsCom
   rw [(F.rescaleHom s).mapCurve_frobeniusCurve, mapCurve_rescaleHom_tautologicalCurve,
     map_zero, h0]
 
+private theorem map_evalRingHom_rescale_X (F : FormalGroup R) (s : R) :
+    ((F.map Polynomial.C).rescale Polynomial.X).map (Polynomial.evalRingHom s) = F.rescale s := by
+  simp [Polynomial.evalRingHom, map_comp]
+
 /-- Rescaling a `p`-typical commutative formal group law by any element `s : R` (zero divisor or
 not) preserves `p`-typicality. -/
 theorem IsPTypical.rescale {F : FormalGroup R} [F.IsComm] {p : ℕ} (hF : F.IsPTypical p) (s : R) :
     (F.rescale s).IsPTypical p := by
   have hgen : ((F.map Polynomial.C).rescale Polynomial.X).IsPTypical p :=
     isPTypical_rescale_of_isLeftRegular (hF.map Polynomial.C) Polynomial.isRegular_X.left
-  have hlaw : ((F.map Polynomial.C).rescale Polynomial.X).map (Polynomial.evalRingHom s) =
-      F.rescale s := by
-    simp [Polynomial.evalRingHom, map_comp]
-  exact (isPTypical_congr hlaw p).mp (hgen.map (Polynomial.evalRingHom s))
+  exact (isPTypical_congr (map_evalRingHom_rescale_X F s) p).mp
+    (hgen.map (Polynomial.evalRingHom s))
 
 section CanonicalTypicalization
 
@@ -126,9 +128,6 @@ theorem inv_pTypicalCoordinate_rescale_toPowerSeries (p : ℕ)
   have hgen := inv_pTypicalCoordinate_rescale_toPowerSeries_of_isLeftRegular (F.map Polynomial.C) p
     hPoly Polynomial.isRegular_X.left
   have heval := congrArg (PowerSeries.map (Polynomial.evalRingHom s)) hgen
-  have hlaw : ((F.map Polynomial.C).rescale Polynomial.X).map (Polynomial.evalRingHom s) =
-      F.rescale s := by
-    simp [Polynomial.evalRingHom, map_comp]
   have hLHS : PowerSeries.map (Polynomial.evalRingHom s)
       (((F.map Polynomial.C).rescale Polynomial.X).pTypicalCoordinate p hPoly)⁻¹.toPowerSeries =
       ((F.rescale s).pTypicalCoordinate p hunit)⁻¹.toPowerSeries := by
@@ -136,16 +135,15 @@ theorem inv_pTypicalCoordinate_rescale_toPowerSeries (p : ℕ)
       map_pTypicalCoordinate ((F.map Polynomial.C).rescale Polynomial.X)
         (Polynomial.evalRingHom s) p hPoly]
     exact congrArg (fun c : FormalCoordinate R ↦ c⁻¹.toPowerSeries)
-      (pTypicalCoordinate_congr hlaw p hunit)
+      (pTypicalCoordinate_congr (map_evalRingHom_rescale_X F s) p hunit)
   have hRHS : PowerSeries.map (Polynomial.evalRingHom s)
       (((F.map Polynomial.C).pTypicalIso p hPoly).invHom.rescale Polynomial.X).toPowerSeries =
       ((F.pTypicalIso p hunit).invHom.rescale s).toPowerSeries := by
     ext n
-    rw [PowerSeries.coeff_map, FormalGroupHom.coeff_rescale, FormalGroupHom.coeff_rescale,
-      pTypicalIso_invHom_toPowerSeries, pTypicalIso_invHom_toPowerSeries,
-      ← F.map_tautologicalCurve Polynomial.C, ← F.map_pTypicalProjectorCurve Polynomial.C p hunit,
-      Curve.toPowerSeries_map, map_mul, map_pow, PowerSeries.coeff_map,
-      Polynomial.coe_evalRingHom, Polynomial.eval_X, Polynomial.eval_C]
+    simp only [FormalGroupHom.map_rescale_toPowerSeries, FormalGroupHom.coeff_rescale,
+      FormalGroupHom.map_toPowerSeries, pTypicalIso_invHom_toPowerSeries]
+    rw [← F.map_tautologicalCurve Polynomial.C, ← F.map_pTypicalProjectorCurve Polynomial.C p hunit]
+    simp
   exact hLHS.symm.trans (heval.trans hRHS)
 
 /-- Cartier's `p`-typicalization of the tautological curve of `F.rescale s` has underlying power
@@ -162,33 +160,16 @@ theorem pTypicalCoordinate_rescale_toPowerSeries (p : ℕ)
     (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) (s : R) :
     ((F.rescale s).pTypicalCoordinate p hunit).toPowerSeries =
       ((F.pTypicalIso p hunit).toHom.rescale s).toPowerSeries := by
-  let φ_s : FormalCoordinate R :=
-    { toPowerSeries := ((F.pTypicalIso p hunit).toHom.rescale s).toPowerSeries
-      constantCoeff_toPowerSeries := ((F.pTypicalIso p hunit).toHom.rescale s).zero_constantCoeff
-      isUnit_coeff_one := by
-        rw [FormalGroupHom.coeff_rescale, Nat.sub_self, pow_zero, one_mul,
-          pTypicalIso_toHom_toPowerSeries, coeff_one_pTypicalCoordinate]
-        exact isUnit_one }
-  let ψ_s : FormalCoordinate R :=
-    { toPowerSeries := ((F.pTypicalIso p hunit).invHom.rescale s).toPowerSeries
-      constantCoeff_toPowerSeries := ((F.pTypicalIso p hunit).invHom.rescale s).zero_constantCoeff
-      isUnit_coeff_one := by
-        rw [FormalGroupHom.coeff_rescale, Nat.sub_self, pow_zero, one_mul,
-          pTypicalIso_invHom_toPowerSeries, coeff_one_pTypicalProjectorCurve,
-          toPowerSeries_tautologicalCurve, PowerSeries.coeff_one_X]
-        exact isUnit_one }
-  have hmul : φ_s * ψ_s = 1 := by
-    apply FormalCoordinate.ext
-    have hcomp := congrArg FormalGroupHom.toPowerSeries
-      (FormalGroupHom.rescale_comp (F.pTypicalIso p hunit).toHom
-        (F.pTypicalIso p hunit).invHom s).symm
-    rw [FormalGroupIso.toHom_comp_invHom, FormalGroupHom.rescale_id,
-      FormalGroupHom.id_toPowerSeries, FormalGroupHom.comp_toPowerSeries] at hcomp
-    exact hcomp.trans FormalCoordinate.toPowerSeries_one.symm
-  have hinv_eq : ((F.rescale s).pTypicalCoordinate p hunit)⁻¹ = ψ_s :=
-    FormalCoordinate.ext (F.inv_pTypicalCoordinate_rescale_toPowerSeries p hunit s)
-  exact congrArg FormalCoordinate.toPowerSeries
-    (inv_injective (hinv_eq.trans (inv_eq_of_mul_eq_one_right hmul).symm))
+  let e := (F.pTypicalIso p hunit).rescale s
+  have he_inv : e.toFormalCoordinate⁻¹ = e.symm.toFormalCoordinate :=
+    inv_eq_of_mul_eq_one_right (FormalCoordinate.ext (by simp))
+  have hinv : ((F.rescale s).pTypicalCoordinate p hunit)⁻¹ = e.symm.toFormalCoordinate := by
+    ext1
+    rw [F.inv_pTypicalCoordinate_rescale_toPowerSeries,
+      FormalGroupIso.toFormalCoordinate_toPowerSeries, FormalGroupIso.symm_toHom,
+      FormalGroupIso.rescale_invHom]
+  rw [congrArg FormalCoordinate.toPowerSeries (inv_injective (hinv.trans he_inv.symm)),
+    FormalGroupIso.toFormalCoordinate_toPowerSeries, FormalGroupIso.rescale_toHom]
 
 /-- Degree-`n` coefficients of `F.pTypicalCoordinate` scale by `s ^ (n - 1)` under
 `F.rescale s`. -/
