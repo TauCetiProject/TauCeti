@@ -222,10 +222,9 @@ theorem faceOrderIso_apply (F : σ.Face) :
   ext ρ
   rw [mem_faceOrderIso_iff, Set.mem_ofPred_eq]
   refine ⟨fun h ↦ ?_, fun h ↦ h (primitiveGenerator_mem hi hσ.toIsToricCone ρ)⟩
-  rw [ρ.eq_hull_singleton (hσ.salient.anti ρ.val.isFaceOf.le)
+  exact ρ.toPointedCone_le_of_mem (hσ.salient.anti ρ.val.isFaceOf.le)
     (primitiveGenerator_mem hi hσ.toIsToricCone ρ)
-    (by simpa using hi.injective.ne (primitiveGenerator_ne_zero hi hσ.toIsToricCone ρ))]
-  exact Submodule.span_le.2 (Set.singleton_subset_iff.2 h)
+    (by simpa using hi.injective.ne (primitiveGenerator_ne_zero hi hσ.toIsToricCone ρ)) h
 
 /-- A ray of a regular cone, viewed as a face, contains no other ray. This is not a `simp` lemma:
 `faceOrderIso_apply` rewrites its left-hand side. -/

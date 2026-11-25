@@ -23,7 +23,8 @@ leading Laurent coefficient `(-1)^n / n!` (`Complex.tendsto_add_natCast_mul_Gamm
 wherever the Gamma argument avoids the nonpositive integers (`Complex.analyticAt_Gamma`,
 `Complex.analyticAt_Gamma_sub_mul_cpow`). Deligne's
 factors inherit exactly the pole lattices `-2n` and `-n`. Their meromorphic orders are
-nonpositive: none has a zero as a meromorphic germ.
+nonpositive: none has a zero as a meromorphic germ. At `1 - n`, `Γ_ℝ` is regular for even `n`
+and has a simple pole for odd `n` (`Complex.meromorphicOrderAt_Gammaℝ_one_sub_nat`).
 
 The total values at poles are zero by Mathlib's convention. The zero-order characterizations
 therefore use nonzero total values, while the negative-order characterizations identify the
@@ -279,5 +280,18 @@ theorem meromorphicOrderAt_Gammaℝ_eq_zero_iff (s : ℂ) :
 theorem meromorphicOrderAt_Gammaℂ_eq_zero_iff (s : ℂ) :
     meromorphicOrderAt Gammaℂ s = 0 ↔ Gammaℂ s ≠ 0 :=
   (TauCeti.meromorphicNFOn_Gammaℂ (Set.mem_univ s)).meromorphicOrderAt_eq_zero_iff
+
+/-- The real archimedean factor at `1 - n` is regular for even `n` and has a simple pole for odd
+`n`. -/
+theorem meromorphicOrderAt_Gammaℝ_one_sub_nat (n : ℕ) :
+    meromorphicOrderAt Gammaℝ (1 - n) = if Even n then 0 else -1 := by
+  split_ifs with he
+  · rw [meromorphicOrderAt_Gammaℝ_eq_zero_iff, Ne, Gammaℝ_eq_zero_iff]
+    rintro ⟨m, hm⟩
+    obtain ⟨k, rfl⟩ := he
+    have : (1 : ℤ) - (k + k : ℕ) = -(2 * m) := by exact_mod_cast hm
+    omega
+  · obtain ⟨k, rfl⟩ := Nat.not_even_iff_odd.mp he
+    exact (meromorphicOrderAt_Gammaℝ_eq_neg_one_iff _).mpr ⟨k, by push_cast; ring⟩
 
 end Complex

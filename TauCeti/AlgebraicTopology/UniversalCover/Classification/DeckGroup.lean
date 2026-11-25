@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Existence
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.UniversalCover
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Quotient.Normalizer
 
 /-!
@@ -29,6 +30,14 @@ in the monodromy identification `UniversalCover.deckFundamentalGroupEquiv`.
 Taking `H = ⊥` recovers the deck group of the universal cover itself; taking `H` normal and
 `H = ⊥` gives `π₁(X, x₀)` again.
 
+In the geometric fundamental group `TauCeti.GeometricFundamentalGroup X x₀ = π₁(X, x₀)ᵐᵒᵖ`, whose
+product is first-traverse concatenation, the quotient by a normal subgroup `N` is the deck group of
+the cover attached to the image of `N` under inversion
+(`TauCeti.UniversalCover.geometricDeckQuotientEquiv`), and the deck transformation of the class
+of `a` is the one induced by the deck transformation `(deckFundamentalGroupEquiv x₀).symm a` of
+the universal cover
+(`TauCeti.UniversalCover.geometricDeckQuotientEquiv_mk_apply_subgroupQuotientMap`).
+
 ## Main declarations
 
 * `TauCeti.UniversalCover.deckSubgroupQuotientProjEquiv`: **the deck group of the cover
@@ -39,6 +48,9 @@ Taking `H = ⊥` recovers the deck group of the universal cover itself; taking `
   homomorphism `φ` out of `π₁(X, x₀)` this reads `φ.range`.
 * `TauCeti.UniversalCover.deckSubgroupQuotientProjKerEquivOfSurjective`: for the kernel of a
   surjective homomorphism `φ : π₁(X, x₀) →* G` this reads `G`.
+* `TauCeti.UniversalCover.geometricDeckQuotientEquiv`: for a normal subgroup `N` of the geometric
+  fundamental group, the quotient by `N` is the deck group of the cover attached to the image of
+  `N` under inversion.
 
 ## References
 
@@ -183,5 +195,58 @@ theorem deckSubgroupQuotientProjKerEquivOfSurjective_symm_apply_mk
     MulEquiv.symm_apply_apply, deckSubgroupQuotientProjEquivOfNormal_mk_apply]
 
 end Ker
+
+section Geometric
+
+open _root_.MulOpposite
+
+variable (N : Subgroup (GeometricFundamentalGroup X x₀)) [N.Normal]
+
+/-- For a normal subgroup `N` of the geometric fundamental group, the quotient by `N` is the deck
+group of the cover attached to the image of `N` under inversion `op g ↦ g⁻¹`, written as the
+preimage of `N` under the inverse isomorphism `MulEquiv.inv'`, `g ↦ op g⁻¹`. -/
+def geometricDeckQuotientEquiv :
+    GeometricFundamentalGroup X x₀ ⧸ N ≃*
+      deck (subgroupQuotientProj x₀
+        (N.comap (MulEquiv.inv' (FundamentalGroup X x₀) : FundamentalGroup X x₀ →* _))) :=
+  (QuotientGroup.congr N _ (MulEquiv.inv' _).symm
+    (by rw [N.map_equiv_eq_comap_symm, MulEquiv.symm_symm])).trans
+    (deckSubgroupQuotientProjEquivOfNormal x₀ _)
+
+/-- The deck transformation of the class of `op g` sends the class of `e` to the class of
+`g⁻¹ • e`, as `(deckFundamentalGroupEquiv x₀).symm (op g)` does on the universal cover. -/
+@[simp]
+theorem geometricDeckQuotientEquiv_mk_op_apply (g : FundamentalGroup X x₀)
+    (e : UniversalCover x₀) :
+    (geometricDeckQuotientEquiv x₀ N (QuotientGroup.mk (op g))).val (Quotient.mk'' e) =
+      Quotient.mk'' (g⁻¹ • e) := by
+  rw [geometricDeckQuotientEquiv, MulEquiv.trans_apply, QuotientGroup.congr_mk]
+  simp
+
+/-- The inverse of the deck transformation of the class of `op g` sends the class of `e` to the
+class of `g • e`. -/
+@[simp]
+theorem geometricDeckQuotientEquiv_mk_op_symm_apply (g : FundamentalGroup X x₀)
+    (e : UniversalCover x₀) :
+    (geometricDeckQuotientEquiv x₀ N (QuotientGroup.mk (op g))).val.symm (Quotient.mk'' e) =
+      Quotient.mk'' (g • e) := by
+  rw [geometricDeckQuotientEquiv, MulEquiv.trans_apply, QuotientGroup.congr_mk]
+  -- Plain `simp` moves the inversion out through `deckSubgroupQuotientProjEquivOfNormal` and
+  -- gets stuck at `(φ g)⁻¹.symm`, so `inv'` is unfolded first and `inv_inv` cancels it.
+  simp only [MulEquiv.inv'_symm_apply, Function.comp_apply, unop_op,
+    deckSubgroupQuotientProjEquivOfNormal_mk_symm_apply, inv_inv]
+
+/-- **Descent of deck transformations.** The deck transformation of the class of `a` on the cover
+attached to `N` is induced by the deck transformation `(deckFundamentalGroupEquiv x₀).symm a` of
+the universal cover: it commutes with the quotient map `subgroupQuotientMap`. -/
+theorem geometricDeckQuotientEquiv_mk_apply_subgroupQuotientMap
+    (a : GeometricFundamentalGroup X x₀) (e : UniversalCover x₀) :
+    (geometricDeckQuotientEquiv x₀ N (QuotientGroup.mk a)).val
+        (subgroupQuotientMap x₀ _ e) =
+      subgroupQuotientMap x₀ _ (((deckFundamentalGroupEquiv x₀).symm a).val e) := by
+  induction a using MulOpposite.rec' with
+  | _ g => simp
+
+end Geometric
 
 end TauCeti.UniversalCover

@@ -943,6 +943,15 @@ theorem IsTateRing.exists_hasBasis_nhds_zero (A : Type*) [CommRing A] [Topologic
   obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
   exact ⟨a, P, ha, ha.hasBasis_nhds_zero P⟩
 
+/-- Every ring of definition of a Tate ring contains a pseudouniformiser of the ambient ring: a
+high enough power of any pseudouniformiser lies in it. -/
+theorem PairOfDefinition.exists_isPseudoUniformizer [IsTateRing A] (P : PairOfDefinition A) :
+    ∃ ϖ : P.ringOfDefinition, IsPseudoUniformizer (ϖ : A) := by
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+  obtain ⟨N, hN⟩ := eventually_atTop.mp (hϖ.eventually_pow_mem_ringOfDefinition P)
+  exact ⟨⟨ϖ ^ (N + 1), hN _ N.le_succ⟩, isPseudoUniformizer_iff.mpr
+    ⟨hϖ.isUnit.pow _, hϖ.isTopologicallyNilpotent.pow N.succ_ne_zero⟩⟩
+
 /-- In a Tate ring, finitely many elements are moved into `A°` by a common unit `c ∈ A°`, which
 may be taken to be a power of a pseudouniformiser. -/
 theorem IsTateRing.exists_isUnit_mul_mem_powerBoundedSubring [IsTateRing A] {s : Set A}

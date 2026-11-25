@@ -246,7 +246,7 @@ theorem niemeierA24_form_eq_dotProduct
     (x y : ∀ i, Fin (RootfulNiemeierType.a24.componentType i).rank → ℚ) :
     niemeierA24.form x y =
       (a24ZeroSumEquiv x : Fin 25 → ℚ) ⬝ᵥ (a24ZeroSumEquiv y : Fin 25 → ℚ) := by
-  rw [RootfulNiemeierType.lattice_form, pi_form, piForm_apply, Fintype.sum_unique,
+  rw [RootfulNiemeierType.lattice_form, pi_form, LinearMap.BilinForm.pi_apply, Fintype.sum_unique,
     ← a24ComponentIsometry.map_app, ← (typeAIsometryZeroSumLattice 24).map_app,
     zeroSumLattice_form, zeroSumForm_apply]
   -- Both sides evaluate the same composite coordinate map.
