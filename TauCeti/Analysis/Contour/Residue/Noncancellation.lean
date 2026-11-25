@@ -37,19 +37,15 @@ theorem meromorphicOrderAt_sum_lt_zero_iff_of_pairwise_sameRay {ι : Type*} {s :
     (hord : ∀ i ∈ s, -1 ≤ meromorphicOrderAt (f i) z)
     (hr : (s : Set ι).Pairwise (SameRay ℝ on fun i ↦ residue (f i) z)) :
     meromorphicOrderAt (∑ i ∈ s, f i) z < 0 ↔ ∃ i ∈ s, meromorphicOrderAt (f i) z < 0 := by
-  have hcrit (g : ℂ → ℂ) (hg : MeromorphicAt g z) (hb : -1 ≤ meromorphicOrderAt g z) :
-      meromorphicOrderAt g z < 0 ↔ residue g z ≠ 0 := by
-    have hb' : meromorphicGerms.mk g hg ∈ meromorphicGerms.orderGE z (-1) := by
-      simpa [meromorphicGerms.mem_orderGE, meromorphicGerms.order_mk] using hb
-    simpa [meromorphicGerms.mem_orderGE, meromorphicGerms.order_mk, not_le] using
-      (not_congr (meromorphicGerms.residue_eq_zero_iff_of_mem_orderGE_neg_one _ hb')).symm
-  rw [hcrit _ (MeromorphicAt.sum hf) (le_meromorphicOrderAt_sum hf hord), residue_sum s hf]
+  have hpole i (hi : i ∈ s) := meromorphicOrderAt_lt_zero_iff_residue_ne_zero (hf i hi) (hord i hi)
+  rw [meromorphicOrderAt_lt_zero_iff_residue_ne_zero (MeromorphicAt.sum hf)
+    (le_meromorphicOrderAt_sum hf hord), residue_sum s hf]
   constructor
   · intro hsum
     obtain ⟨i, hi, hres⟩ := Finset.exists_ne_zero_of_sum_ne_zero hsum
-    exact ⟨i, hi, (hcrit _ (hf i hi) (hord i hi)).2 hres⟩
+    exact ⟨i, hi, (hpole i hi).2 hres⟩
   · rintro ⟨i, hi, hp⟩
-    exact sum_ne_zero_of_pairwise_sameRay hr hi ((hcrit _ (hf i hi) (hord i hi)).1 hp)
+    exact sum_ne_zero_of_pairwise_sameRay hr hi ((hpole i hi).1 hp)
 
 /-- For nonnegative weights and residues on a common closed ray, the poles of a weighted sum
 of functions with at most simple poles come exactly from the summands of positive weight. -/
