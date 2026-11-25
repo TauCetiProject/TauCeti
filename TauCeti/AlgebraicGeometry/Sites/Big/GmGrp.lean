@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Sites.Big.StructureSheaf
-public import TauCeti.CategoryTheory.Sites.ComparableTopologies
+public import TauCeti.CategoryTheory.Sites.Over.Basic
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Abelian.Basic
 
 /-!

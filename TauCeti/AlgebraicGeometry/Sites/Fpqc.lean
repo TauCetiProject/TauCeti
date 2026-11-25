@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Sites.Proetale
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
 public import Mathlib.CategoryTheory.Sites.Over
 public import TauCeti.CategoryTheory.Sites.ComparableTopologies
+public import TauCeti.CategoryTheory.Sites.Over.Basic
 
 /-!
 # Covering sieves of the fppf topology, and fppf and fpqc sheaves are étale sheaves

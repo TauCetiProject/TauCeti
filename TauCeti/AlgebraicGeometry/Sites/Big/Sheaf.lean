@@ -9,7 +9,6 @@ public import Mathlib.AlgebraicGeometry.Sites.SheafQuasiCompact
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
 public import TauCeti.AlgebraicGeometry.Sites.Big.FaithfullyFlat
 public import TauCeti.AlgebraicGeometry.Sites.Big.Zariski
-public import TauCeti.CategoryTheory.Sites.ComparableTopologies
 public import TauCeti.CategoryTheory.Sites.Over.Basic
 
 /-!
