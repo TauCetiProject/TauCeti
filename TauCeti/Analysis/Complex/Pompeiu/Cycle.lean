@@ -286,16 +286,16 @@ section JordanRegion
 variable {ι : Type*}
 
 /-- **Cauchy–Pompeiu formula on a finitely connected Jordan region (Banach-valued).** Given an
-outer simple closed piecewise-`C¹` curve `γ₀` and simple closed piecewise-`C¹` hole curves
-`(γ i)_{i ∈ s}` whose filled hulls are pairwise disjoint and contained in the inside of `γ₀`, let
-`Δ := (filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \`
+outer simple closed absolutely continuous curve `γ₀` and simple closed absolutely continuous hole
+curves `(γ i)_{i ∈ s}` whose filled hulls are pairwise disjoint and contained in the inside of `γ₀`,
+let `Δ := (filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \`
 `⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b)` be the resulting finitely connected Jordan
 region. For any real `C¹` map `f : ℂ → E` on an open neighborhood `Ω` of `closure Δ` into a
 complex Banach space `E` and any `ξ ∈ Δ`, `f ξ` is represented by integrating over
 `Contour.jordanBoundaryCycle γ₀ s γ` and over `Δ`. -/
 theorem cauchyPompeiu_jordanBoundaryCycle_smul {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] [CompleteSpace E] {γ₀ : Contour.PiecewiseC1ClosedCurve} {s : Finset ι}
-    {γ : ι → Contour.PiecewiseC1ClosedCurve} {Ω : Set ℂ}
+    [NormedSpace ℂ E] [CompleteSpace E] {γ₀ : Contour.AbsolutelyContinuousClosedCurve}
+    {s : Finset ι} {γ : ι → Contour.AbsolutelyContinuousClosedCurve} {Ω : Set ℂ}
     (hab₀ : γ₀.a ≠ γ₀.b) (hinj₀ : InjOn γ₀ (Ico (min γ₀.a γ₀.b) (max γ₀.a γ₀.b)))
     (hab : ∀ i ∈ s, (γ i).a ≠ (γ i).b)
     (hinj : ∀ i ∈ s, InjOn (γ i) (Ico (min (γ i).a (γ i).b) (max (γ i).a (γ i).b)))

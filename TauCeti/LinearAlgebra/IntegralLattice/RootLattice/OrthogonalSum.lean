@@ -158,7 +158,7 @@ theorem form_piSimpleRootVector_self (ht : ∀ i, (t i).IsSimplyLaced)
     (p : Σ i, Fin (t i).rank) :
     (pi fun i ↦ (t i).rootLattice (ht i)).form
         (piSimpleRootVector t p) (piSimpleRootVector t p) = 2 := by
-  rw [piSimpleRootVector_def, pi_form, piForm_single_left, Pi.single_eq_same,
+  rw [piSimpleRootVector_def, pi_form, LinearMap.BilinForm.pi_apply_single_left, Pi.single_eq_same,
     rootLattice_form_single_single, cartanMatrix_apply_same]
   norm_num
 

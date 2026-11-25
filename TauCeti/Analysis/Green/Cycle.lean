@@ -9,10 +9,8 @@ public import TauCeti.Analysis.Green.FiniteSum
 public import TauCeti.Analysis.Contour.Cycle.Winding
 public import TauCeti.Analysis.Contour.Cycle.Trace
 import TauCeti.Analysis.Green.AbsolutelyContinuous
-import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Reparam
 import TauCeti.Analysis.Convex.Segment
-import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Reparam
 import Mathlib.MeasureTheory.Function.L1Space.Integrable
 
 /-!
@@ -54,7 +52,7 @@ private theorem sum_windingWeight_comp_lineMap_ae (C : Contour.Cycle) :
   have hzγ : z ∉ γ '' uIcc γ.a γ.b := by
     exact fun hm ↦ hz (Contour.Cycle.mem_trace_iff.mpr ⟨γ, hγ, hm⟩)
   rw [windingWeight_eq_of_notMem (by rwa [Set.image_comp_lineMap_uIcc_zero_one]),
-    (γ.isPiecewiseC1On.absolutelyContinuousOnInterval).windingNumber_comp_lineMap hzγ]
+    γ.absolutelyContinuousOnInterval.windingNumber_comp_lineMap hzγ]
   simp
 
 /-- Green's theorem for an existing contour cycle, with its actual total winding number.
@@ -75,18 +73,16 @@ theorem _root_.TauCeti.Contour.Cycle.green_winding (C : Contour.Cycle) {U : Set 
           C.windingWeight z *
             curl P Q z := by
   classical
-  let η : Contour.PiecewiseC1ClosedCurve → ℝ → ℂ := fun γ ↦
+  let η : Contour.AbsolutelyContinuousClosedCurve → ℝ → ℂ := fun γ ↦
     γ ∘ AffineMap.lineMap γ.a γ.b
-  have hac (γ : Contour.PiecewiseC1ClosedCurve) :=
-    γ.isPiecewiseC1On.absolutelyContinuousOnInterval
-  have himage (γ : Contour.PiecewiseC1ClosedCurve) :
+  have hac (γ : Contour.AbsolutelyContinuousClosedCurve) :=
+    γ.absolutelyContinuousOnInterval
+  have himage (γ : Contour.AbsolutelyContinuousClosedCurve) :
       η γ '' uIcc (0 : ℝ) 1 = γ '' uIcc γ.a γ.b :=
     Set.image_comp_lineMap_uIcc_zero_one γ γ.a γ.b
-  have htr (γ : Contour.PiecewiseC1ClosedCurve) (hγ : γ ∈ FreeAddCommGroup.support C) :
-      γ '' uIcc γ.a γ.b ⊆ U := by
-    intro z hz
-    exact (Contour.Cycle.isIn_iff.mp htrace)
-      (Contour.Cycle.mem_trace_iff.mpr ⟨γ, hγ, hz⟩)
+  have htr (γ : Contour.AbsolutelyContinuousClosedCurve) (hγ : γ ∈ FreeAddCommGroup.support C) :
+      γ '' uIcc γ.a γ.b ⊆ U :=
+    Set.mapsTo_iff_image_subset.mp (htrace.mapsTo_of_mem_support hγ)
   have hidx : ∀ z ∉ U, ∑ γ ∈ FreeAddCommGroup.support C,
       (FreeAddCommGroup.coeff γ C : ℂ) * Contour.windingNumber (η γ) 0 1 z = 0 := by
     intro z hz
@@ -96,7 +92,7 @@ theorem _root_.TauCeti.Contour.Cycle.green_winding (C : Contour.Cycle) {U : Set 
     apply Finset.sum_congr rfl
     intro γ hγ
     rw [(hac γ).windingNumber_comp_lineMap (fun hm ↦ hz (htr γ hγ hm))]
-  have hcl (γ : Contour.PiecewiseC1ClosedCurve) : η γ 0 = η γ 1 := by
+  have hcl (γ : Contour.AbsolutelyContinuousClosedCurve) : η γ 0 = η γ 1 := by
     simpa only [η, Function.comp_apply, AffineMap.lineMap_apply_zero,
       AffineMap.lineMap_apply_one] using
       γ.source_eq_target
@@ -123,7 +119,7 @@ theorem _root_.TauCeti.Contour.Cycle.integrable_windingWeight (C : Contour.Cycle
     (γ := fun γ ↦ γ ∘ AffineMap.lineMap γ.a γ.b) (a := fun _ ↦ 0) (b := fun _ ↦ 1)
     (w := fun γ ↦ FreeAddCommGroup.coeff γ C)
     (fun γ _ ↦ absolutelyContinuousOnInterval_comp_lineMap_iff.2
-      γ.isPiecewiseC1On.absolutelyContinuousOnInterval)
+      γ.absolutelyContinuousOnInterval)
     (fun γ _ ↦ by simp [γ.source_eq_target])).congr (sum_windingWeight_comp_lineMap_ae C)
 
 /-- For any contour cycle `C` and any map `g : ℂ → E` continuous on `tsupport C.windingWeight`,

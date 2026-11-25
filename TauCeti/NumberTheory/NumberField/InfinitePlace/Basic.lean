@@ -62,6 +62,8 @@ equivalent to a nonarchimedean absolute value.
   `nrComplexPlaces_eq_one_of_discr_lt_zero` (degree less than `6`) and
   `NumberField.IsTotallyReal.of_zero_lt_discr` read the signature off the sign of the
   discriminant in low degree.
+* `NumberField.IsTotallyReal.nontrivial_ringHom_real`: a totally real field of degree greater
+  than one has two distinct real embeddings.
 * `NumberField.InfinitePlace.finrank_sub_nrRealPlaces_div_two_eq_nrComplexPlaces`: halving the
   degree less the real places counts the complex places, for any number field.
 * `NumberField.InfinitePlace.nrRealPlaces_add_nrComplexPlaces_pos`: a number field has at least
@@ -248,6 +250,17 @@ theorem InfinitePlace.nrComplexPlaces_eq_one_of_discr_lt_zero (hd : discr K < 0)
 theorem IsTotallyReal.of_zero_lt_discr (hd : 0 < discr K) (hK : Module.finrank ℚ K < 4) :
     IsTotallyReal K :=
   nrComplexPlaces_eq_zero_iff.mp (InfinitePlace.nrComplexPlaces_eq_zero_of_zero_lt_discr hd hK)
+
+/-- A totally real number field of degree greater than one has two distinct real embeddings:
+each of its complex embeddings, of which there are as many as the degree, is real. -/
+theorem IsTotallyReal.nontrivial_ringHom_real [IsTotallyReal K]
+    (hK : 1 < Module.finrank ℚ K) : Nontrivial (K →+* ℝ) := by
+  rw [← Embeddings.card K ℂ, Fintype.one_lt_card_iff] at hK
+  obtain ⟨φ, ψ, hφψ⟩ := hK
+  have hφ := IsTotallyReal.complexEmbedding_isReal φ
+  have hψ := IsTotallyReal.complexEmbedding_isReal ψ
+  refine ⟨⟨hφ.embedding, hψ.embedding, fun h ↦ hφψ (RingHom.ext fun x ↦ ?_)⟩⟩
+  rw [← hφ.coe_embedding_apply, ← hψ.coe_embedding_apply, h]
 
 end NumberField
 
