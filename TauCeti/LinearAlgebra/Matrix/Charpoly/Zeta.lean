@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Newton
 public import TauCeti.RingTheory.PowerSeries.Log
+import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
+import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
 # The trace–determinant formula and Lefschetz zeta functions
@@ -38,6 +40,16 @@ signed count of the fixed points of `φ ^ k`, and the left side becomes the dyna
 function. For instance, Arnold's cat map acts on `H₀`, `H₁` and `H₂` of the torus by `1`, `P` and
 `det P = 1`, so its homological zeta function is `det (1 - X P) / (1 - X) ^ 2`.
 
+For a `2 × 2` matrix `A`, the alternating sum of traces is a determinant,
+`1 - tr (A ^ n) + det (A ^ n) = det (1 - A ^ n)`, so the zeta function of a map of a closed oriented
+surface of genus one acting on `H₁` by `A` is
+
+`exp (∑ₙ det (1 - A ^ n) Xⁿ / n) = det (1 - X A) / ((1 - X) (1 - det A X))`
+
+(`Matrix.subst_exp_det_one_sub_pow_mul_fin_two`). When `det A = 1` this is
+`det (1 - X A) / (1 - X) ^ 2`, whose coefficient of `Xⁿ` is `n det (1 - A)` for `n ≠ 0`
+(`Matrix.coeff_subst_exp_det_one_sub_pow_fin_two_of_det_eq_one`).
+
 ## Main results
 
 * `Matrix.mk_trace_pow_succ_mul_charpolyRev`: Newton's identities as the power series identity
@@ -51,6 +63,11 @@ function. For instance, Arnold's cat map acts on `H₀`, `H₁` and `H₂` of th
 * `LinearMap.subst_exp_mul_prod_even_eq_prod_odd`, `LinearMap.subst_exp_eq_prod_odd_mul_inv`: the
   homological zeta function of a graded endomorphism is the alternating product of the
   `det (1 - X fᵢ)`.
+* `Matrix.subst_exp_det_one_sub_pow_mul_fin_two`: for a `2 × 2` matrix,
+  `exp (∑ₙ det (1 - A ^ n) Xⁿ / n) = det (1 - X A) / ((1 - X) (1 - det A X))`.
+* `Matrix.subst_exp_det_one_sub_pow_fin_two_of_det_eq_one`,
+  `Matrix.coeff_subst_exp_det_one_sub_pow_fin_two_of_det_eq_one`: for `det A = 1`, the same series
+  is `det (1 - X A) / (1 - X) ^ 2`, with coefficients `n det (1 - A)` for `n ≠ 0`.
 
 ## References
 
@@ -116,6 +133,69 @@ theorem subst_exp_eq_inv_charpolyRev {K : Type*} [Field K] [Algebra ℚ K] (A : 
     (exp K).subst (mk fun k ↦ (k : ℚ)⁻¹ • (A ^ k).trace) = (A.charpolyRev : K⟦X⟧)⁻¹ :=
   (PowerSeries.eq_inv_iff_mul_eq_one (by rw [constantCoeff_coe_charpolyRev]; exact one_ne_zero)).2
     A.subst_exp_mul_charpolyRev
+
+/-! ### Matrices of size two -/
+
+section FinTwo
+
+variable {A : Matrix (Fin 2) (Fin 2) R}
+
+/-- **The Lefschetz zeta function of a `2 × 2` matrix.** For a `2 × 2` matrix `A`,
+`exp (∑ₙ det (1 - A ^ n) Xⁿ / n) = det (1 - X A) / ((1 - X) (1 - det A X))`, stated without
+inverses. If `A` is the action of a map of a closed oriented surface on its first homology, so
+that the map acts by `1` on `H₀` and by `det A` on `H₂`, then `det (1 - A ^ n)` is the Lefschetz
+number of the `n`-th iterate. -/
+theorem subst_exp_det_one_sub_pow_mul_fin_two (A : Matrix (Fin 2) (Fin 2) R) :
+    (exp R).subst (mk fun n ↦ (n : ℚ)⁻¹ • (1 - A ^ n).det) * ((1 - X) * (1 - C A.det * X)) =
+      (A.charpolyRev : R⟦X⟧) := by
+  -- `det (1 - A ^ n) = 1 + (det A) ^ n - tr (A ^ n)`, and the traces satisfy the Cayley–Hamilton
+  -- recurrence, so this is the rationality of an exponential of power sums.
+  have hdet (n : ℕ) : (1 - A ^ n).det = 1 + A.det ^ n - (A ^ n).trace := by
+    rw [det_one_sub_fin_two, det_pow]
+    ring
+  simp_rw [hdet]
+  rw [PowerSeries.subst_exp_mul_one_sub_X_mul_one_sub_C_mul_X A.trace A.det
+    (by simp [trace_one]) (by simp) (trace_pow_add_two_fin_two A), charpolyRev_fin_two]
+  simp
+
+/-- **The Lefschetz zeta function of a `2 × 2` matrix of determinant one** is
+`exp (∑ₙ det (1 - A ^ n) Xⁿ / n) = det (1 - X A) / (1 - X) ^ 2`. -/
+theorem subst_exp_det_one_sub_pow_fin_two_of_det_eq_one (hA : A.det = 1) :
+    (exp R).subst (mk fun n ↦ (n : ℚ)⁻¹ • (1 - A ^ n).det) =
+      (A.charpolyRev : R⟦X⟧) * mk 1 ^ 2 := by
+  have h := subst_exp_det_one_sub_pow_mul_fin_two A
+  rw [hA, map_one, one_mul] at h
+  rw [← h, mul_assoc, ← sq, ← mul_pow, mul_comm (1 - X), mk_one_mul_one_sub_eq_one, one_pow,
+    mul_one]
+
+/-- **The coefficients of the Lefschetz zeta function of a `2 × 2` matrix of determinant one.**
+For `n ≠ 0`, the coefficient of `Xⁿ` in `exp (∑ₙ det (1 - A ^ n) Xⁿ / n)` is `n det (1 - A)`. -/
+theorem coeff_subst_exp_det_one_sub_pow_fin_two_of_det_eq_one (hA : A.det = 1) {n : ℕ}
+    (hn : n ≠ 0) :
+    coeff n ((exp R).subst (mk fun n ↦ (n : ℚ)⁻¹ • (1 - A ^ n).det)) = (n : R) * (1 - A).det := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  have hsq : (mk 1 : R⟦X⟧) ^ 2 = mk fun k ↦ (k : R) + 1 := by
+    rw [show 2 = 1 + 1 by rfl, mk_one_pow_eq_mk_choose_add]
+    ext k
+    simp [add_comm]
+  -- The coefficient of `Xᵐ⁺¹` in `(1 - tr A X + X²) ∑ₖ (k + 1) Xᵏ` is
+  -- `(m + 2) - tr A (m + 1) + m = (m + 1) (2 - tr A)`.
+  have hX2 : coeff (m + 1) ((X : R⟦X⟧) ^ 2 * mk fun k ↦ (k : R) + 1) = (m : R) := by
+    rw [coeff_X_pow_mul', coeff_mk]
+    split_ifs with h
+    · rw [Nat.cast_sub h]
+      push_cast
+      ring
+    · simp [show m = 0 by omega]
+  rw [subst_exp_det_one_sub_pow_fin_two_of_det_eq_one hA, charpolyRev_fin_two, hA, hsq,
+    det_one_sub_fin_two, hA]
+  simp only [Polynomial.coe_add, Polynomial.coe_sub, Polynomial.coe_one, Polynomial.coe_mul,
+    Polynomial.coe_C, Polynomial.coe_X, Polynomial.coe_pow, map_one, one_mul, add_mul, sub_mul,
+    map_add, map_sub, mul_assoc, coeff_C_mul, coeff_succ_X_mul, coeff_mk, hX2]
+  push_cast
+  ring
+
+end FinTwo
 
 end Matrix
 

@@ -134,45 +134,35 @@ theorem coe_charpolyRev_catMap_mul_mk_one_sq :
 /-- **The homological zeta function of the cat map.** The cat map `φ` acts on `H₀`, `H₁` and `H₂`
 of the torus by `1`, `P` and `det P = 1`, so the Lefschetz number of `φ ^ n` is
 `L (φ ^ n) = 2 - tr (P ^ n)`. Its homological zeta function `exp (∑ₙ L (φ ^ n) tⁿ / n)` is
-`det (1 - t P) / (1 - t) ^ 2 = 1 - t - 2 t ^ 2 - 3 t ^ 3 - ⋯`, by the trace–determinant formula
-`Matrix.logOf_charpolyRev`. -/
+`det (1 - t P) / (1 - t) ^ 2 = 1 - t - 2 t ^ 2 - 3 t ^ 3 - ⋯`: the coefficient of `tⁿ` is
+`n det (1 - P) = -n` for `n ≠ 0`, by
+`Matrix.coeff_subst_exp_det_one_sub_pow_fin_two_of_det_eq_one`. -/
 theorem subst_exp_two_sub_trace_catMap_pow :
     (PowerSeries.exp ℚ).subst
         (PowerSeries.mk fun n ↦ (n : ℚ)⁻¹ • (2 - ((catMap ^ n).trace : ℚ))) =
       PowerSeries.mk fun n ↦ if n = 0 then 1 else -(n : ℚ) := by
-  set P := catMap.map (Int.castRingHom ℚ) with hP
-  set L : PowerSeries ℚ := PowerSeries.mk fun n ↦ (n : ℚ)⁻¹ • (2 - ((catMap ^ n).trace : ℚ))
-  have htr (n : ℕ) : (((catMap ^ n).trace : ℤ) : ℚ) = (P ^ n).trace := by
-    rw [hP, ← RingHom.mapMatrix_apply, ← map_pow]
-    exact AddMonoidHom.map_trace (Int.castRingHom ℚ).toAddMonoidHom _
-  have hL : PowerSeries.constantCoeff L = 0 := by simp [L]
-  have hX : (1 - PowerSeries.X : PowerSeries ℚ) = 1 - PowerSeries.C 1 * PowerSeries.X := by
-    rw [map_one, one_mul]
-  have hc : PowerSeries.constantCoeff (1 - PowerSeries.X : PowerSeries ℚ) = 1 := by simp
-  -- `exp L (1 - t) ^ 2 = det (1 - t P)`, comparing logarithms.
-  have hkey : (PowerSeries.exp ℚ).subst L * (1 - PowerSeries.X) ^ 2 =
-      (P.charpolyRev : PowerSeries ℚ) := by
-    rw [← PowerSeries.logOf_inj (by simp [hL]) (Matrix.constantCoeff_coe_charpolyRev P), pow_two,
-      PowerSeries.logOf_mul (PowerSeries.constantCoeff_subst_exp hL) (by simp),
-      PowerSeries.logOf_mul hc hc, PowerSeries.logOf_subst_exp hL, Matrix.logOf_charpolyRev, hX,
-      PowerSeries.logOf_one_sub_C_mul_X]
-    ext n
-    simp only [L, map_add, PowerSeries.coeff_mk, htr, one_pow]
-    rw [← smul_add, ← smul_add]
-    congr 1
+  set P := catMap.map (Int.castRingHom ℚ)
+  have hmap (M : Matrix (Fin 2) (Fin 2) ℤ) : (M.det : ℚ) = (M.map (Int.castRingHom ℚ)).det := by
+    rw [← eq_intCast (Int.castRingHom ℚ), RingHom.map_det, RingHom.mapMatrix_apply]
+  have hpow (n : ℕ) : (1 - catMap ^ n).map (Int.castRingHom ℚ) = 1 - P ^ n := by
+    rw [← RingHom.mapMatrix_apply, map_sub, map_one, map_pow, RingHom.mapMatrix_apply]
+  -- The Lefschetz numbers are `2 - tr (P ^ n) = det (1 - P ^ n)`.
+  have hL (n : ℕ) : (2 - ((catMap ^ n).trace : ℚ)) = (1 - P ^ n).det := by
+    rw [← hpow, ← hmap,
+      det_one_sub_eq_two_sub_trace_of_det_eq_one (by rw [det_pow, det_catMap, one_pow])]
+    push_cast
     ring
-  have hone : (1 - PowerSeries.X : PowerSeries ℚ) ^ 2 * PowerSeries.mk 1 ^ 2 = 1 := by
-    rw [← mul_pow, mul_comm, PowerSeries.mk_one_mul_one_sub_eq_one, one_pow]
-  have hmk : PowerSeries.map (Int.castRingHom ℚ) (PowerSeries.mk 1) = PowerSeries.mk 1 := by
-    ext n
-    simp
-  -- Map the integral expansion of `det (1 - t P) / (1 - t) ^ 2` to `ℚ`.
-  have hmap := congrArg (PowerSeries.map (Int.castRingHom ℚ)) coe_charpolyRev_catMap_mul_mk_one_sq
-  rw [map_mul, map_pow, ← Polynomial.polynomial_map_coe, ← charpolyRev_map, ← hP, hmk] at hmap
-  rw [← mul_one ((PowerSeries.exp ℚ).subst L), ← hone, ← mul_assoc, hkey, hmap]
+  have hP : P.det = 1 := by rw [← hmap, det_catMap, Int.cast_one]
+  have hP₁ : (1 - P).det = -1 := by
+    rw [← pow_one P, ← hpow, ← hmap, pow_one, det_one_sub_catMap, Int.cast_neg, Int.cast_one]
+  simp_rw [hL]
   ext n
-  rw [PowerSeries.coeff_map, PowerSeries.coeff_mk, PowerSeries.coeff_mk]
-  split_ifs <;> simp
+  rw [PowerSeries.coeff_mk]
+  split_ifs with hn
+  · subst hn
+    rw [PowerSeries.coeff_zero_eq_constantCoeff_apply,
+      PowerSeries.constantCoeff_subst_exp (by simp)]
+  · rw [Matrix.coeff_subst_exp_det_one_sub_pow_fin_two_of_det_eq_one hP hn, hP₁, mul_neg_one]
 
 /-! ### The cat map of the torus -/
 
