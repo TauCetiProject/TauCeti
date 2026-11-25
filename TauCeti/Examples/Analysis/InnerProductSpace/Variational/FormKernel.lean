@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Variational.FormKernel
+import Mathlib.Analysis.CStarAlgebra.Matrix
 import Mathlib.Analysis.Normed.Operator.Compact.FiniteDimension
 
 /-!
@@ -66,21 +67,15 @@ end idPair
 
 /-! ### `diag(1, -1)` -/
 
-/-- The weight `diag(1, -1) = id - 2 e₂* ⊗ e₂` on `𝕜²`. -/
-def diagOneNegOne : EuclideanSpace 𝕜 (Fin 2) →L[𝕜] EuclideanSpace 𝕜 (Fin 2) :=
-  ContinuousLinearMap.id 𝕜 _ -
-    (2 : 𝕜) • (EuclideanSpace.proj 1).smulRight (EuclideanSpace.single 1 1)
-
 /-- The form `a(u, v) = ⟪u, diag(1, -1) v⟫ = conj(u₁) v₁ - conj(u₂) v₂` on `𝕜²`. -/
 def diagOneNegOneForm : EuclideanSpace 𝕜 (Fin 2) →L⋆[𝕜] EuclideanSpace 𝕜 (Fin 2) →L[𝕜] 𝕜 :=
-  ((ContinuousLinearMap.compL 𝕜 _ _ 𝕜).flip diagOneNegOne).comp (innerSL 𝕜)
+  ContinuousLinearMap.toSesqForm (Matrix.toEuclideanCLM (𝕜 := 𝕜) (Matrix.diagonal ![1, -1]))
 
 /-- The values of the form `diag(1, -1)`. -/
+@[simp]
 theorem diagOneNegOneForm_apply (u v : EuclideanSpace 𝕜 (Fin 2)) :
     diagOneNegOneForm u v = conj (u 0) * v 0 - conj (u 1) * v 1 := by
-  change inner 𝕜 u (diagOneNegOne v) = _
-  simp [diagOneNegOne, inner_sub_right, inner_smul_right,
-    PiLp.inner_apply, Fin.sum_univ_two, mul_comm]
+  simp [diagOneNegOneForm, PiLp.inner_apply, Fin.sum_univ_two, Matrix.mulVec_diagonal, mul_comm]
   ring
 
 /-- The compact form pair `(id, diag(1, -1))` on `𝕜²`, with shift `ω = 2`. -/
@@ -113,7 +108,7 @@ example : (!₂[1, 1] : EuclideanSpace 𝕜 (Fin 2)) ∉ diagOneNegOnePair.formK
   rw [CompactFormPair.mem_formKernel]
   intro h
   have h1 := h (EuclideanSpace.single 0 1)
-  simp [diagOneNegOnePair, diagOneNegOneForm_apply] at h1
+  simp [diagOneNegOnePair] at h1
 
 /-! ### The zero form -/
 
