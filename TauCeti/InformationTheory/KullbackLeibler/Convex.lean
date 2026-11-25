@@ -82,9 +82,9 @@ theorem integral_log_sum_le {α : Type*} [MeasurableSpace α] (μ : Measure α)
     have hright : (∫ x, f x * Real.log (f x) -
         f x * Real.log (h x) ∂μ) = 0 := by
       calc
-        _ = ∫ x, (0 : ℝ) ∂μ := by
+        _ = ∫ _ : α, (0 : ℝ) ∂μ := by
           apply integral_congr_ae
-          filter_upwards [hfzero] with x hx
+          filter_upwards [hfzero] with _ hx
           simp [hx]
         _ = 0 := by simp
     rw [hA, hright]
@@ -96,7 +96,7 @@ theorem integral_log_sum_le {α : Type*} [MeasurableSpace α] (μ : Measure α)
       have hhzero : h =ᵐ[μ] fun _ ↦ 0 :=
         (integral_eq_zero_iff_of_nonneg_ae hh hhi).mp hB_zero
       have hfzero : f =ᵐ[μ] fun _ ↦ 0 := by
-        filter_upwards [hzero, hhzero] with x hx hhx
+        filter_upwards [hzero, hhzero] with _ hx hhx
         exact hx hhx
       have hA_zero : A = 0 := by
         dsimp [A]
@@ -107,10 +107,10 @@ theorem integral_log_sum_le {α : Type*} [MeasurableSpace α] (μ : Measure α)
   let p : α → ℝ := fun x ↦ A⁻¹ * f x
   let q : α → ℝ := fun x ↦ B⁻¹ * h x
   have hp : 0 ≤ᵐ[μ] p := by
-    filter_upwards [hf] with x hfx
+    filter_upwards [hf] with _ hfx
     exact mul_nonneg (inv_nonneg.mpr hA_pos.le) hfx
   have hq : 0 ≤ᵐ[μ] q := by
-    filter_upwards [hh] with x hhx
+    filter_upwards [hh] with _ hhx
     exact mul_nonneg (inv_nonneg.mpr hB_pos.le) hhx
   have hzero_pq : ∀ᵐ x ∂μ, q x = 0 → p x = 0 := by
     filter_upwards [hzero] with x hx
@@ -147,7 +147,7 @@ theorem integral_log_sum_le {α : Type*} [MeasurableSpace α] (μ : Measure α)
       hratio.symm
   have hklein : ∀ᵐ x ∂μ, p x - q x ≤
       p x * Real.log (p x) - p x * Real.log (q x) := by
-    filter_upwards [hp, hq, hzero_pq] with x hpx hqx hx
+    filter_upwards [hp, hq, hzero_pq] with _ hpx hqx hx
     exact Real.sub_le_mul_log_sub_mul_log hpx hqx hx
   have hmono := integral_mono_ae (hpi.sub hqi) hratio_integrable hklein
   have hmono0 : 0 ≤

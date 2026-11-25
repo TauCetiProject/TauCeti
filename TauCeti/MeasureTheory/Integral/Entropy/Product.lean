@@ -12,14 +12,13 @@ import TauCeti.MeasureTheory.Integral.Prod
 /-!
 # Functional entropy and product measures
 
-For a nonnegative integrable function whose `x log x` transform is integrable, the functional
-entropy under a probability measure is nonnegative. This is Jensen's inequality for `x log x`,
-including at zero. The product chain rule applies to signed functions when `g`, `g log g`, and the
-first marginal's `x log x` transform are integrable. An integral log-sum inequality yields entropy
+The product chain rule applies to signed functions when `g`, `g log g`, and the first marginal's
+`x log x` transform are integrable. An integral log-sum inequality yields entropy
 convexity under unnormalized mixtures and product subadditivity for a.e. nonnegative functions.
 The mixture inequality integrates both sides against the mixing measure without dividing by its
-mass. For finite factors, integrability of `g` and `g log g` on the product suffices; the s-finite
-versions also require integrability of both marginal `x log x` terms.
+mass. For finite factors, integrability of `g` and `g log g` on the product suffices. The s-finite
+mixture and subadditivity results require both marginal transforms to be integrable; the chain
+rule and averaging inequality require only the first.
 -/
 
 public section
@@ -281,11 +280,7 @@ private theorem entropy_integral_le_integral_entropy_aux {α β : Type*}
     · filter_upwards with x
       intro h
       exact (hm h).elim
-  have hb : 0 ≤ᵐ[ν] b := by
-    have hswap : ∀ᵐ p ∂ν.prod μ, 0 ≤ g (p.2, p.1) :=
-      measurePreserving_swap.quasiMeasurePreserving.ae hnonneg
-    filter_upwards [ae_ae_of_ae_prod hswap] with y hy
-    exact integral_nonneg_of_ae hy
+  have hb : 0 ≤ᵐ[ν] b := μ.ae_nonneg_integral_prod_right ν hnonneg
   have hpoint : ∀ᵐ x ∂μ, a x * Real.log (a x) - a x * Real.log m ≤
       ∫ y, g (x, y) * Real.log (g (x, y)) - g (x, y) * Real.log (b y) ∂ν := by
     filter_upwards [ae_ae_of_ae_prod hnonneg, hg.prod_right_ae,

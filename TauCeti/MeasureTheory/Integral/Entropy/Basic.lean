@@ -85,7 +85,7 @@ theorem entropy_smul_measure {α : Type*} [MeasurableSpace α] (μ : Measure α)
   simp only [entropy_def, integral_smul_measure, smul_eq_mul]
   have h := Real.negMulLog_mul c.toReal (∫ x, g x ∂μ)
   simp only [Real.negMulLog_eq_neg] at h
-  nlinarith
+  linear_combination h
 
 /-- Scaling a function scales its entropy by the same factor, when the function and its
 `x log x` transform are integrable. -/

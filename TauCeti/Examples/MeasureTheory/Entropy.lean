@@ -49,6 +49,15 @@ example {α : Type*} [MeasurableSpace α] (μ : Measure α) {f : α → ℝ}
   simpa only [sub_self] using (integrable_fun_zero α ℝ μ)
 
 example {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    (μ : Measure α) (ν : Measure β) [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    (g : α × β → ℝ) (hg : Integrable g (μ.prod ν))
+    (hlog : Integrable (fun p ↦ g p * Real.log (g p)) (μ.prod ν)) :
+    entropy (μ.prod ν) g =
+      (∫ x, entropy ν (fun y ↦ g (x, y)) ∂μ) +
+        entropy μ (fun x ↦ ∫ y, g (x, y) ∂ν) :=
+  entropy_prod_eq μ ν g hg hlog (integrable_marginal_mul_log_left μ ν hg hlog)
+
+example {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
     (μ : Measure α) (ν : Measure β) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     entropy (μ.prod ν) (fun _ ↦ 0) ≤
       (∫ _ : α, entropy ν (fun _ ↦ 0) ∂μ) + ∫ _ : β, entropy μ (fun _ ↦ 0) ∂ν := by

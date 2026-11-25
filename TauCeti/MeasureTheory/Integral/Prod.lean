@@ -45,6 +45,8 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
 * `MeasureTheory.Measure.ae_eq_zero_of_marginal_right_eq_zero` transfers zeros of an
   a.e. nonnegative, a.e.-strongly measurable function's marginal to the function itself,
   assuming a.e. integrable sections.
+* `MeasureTheory.Measure.ae_nonneg_integral_prod_right` preserves a.e. nonnegativity in the
+  second marginal.
 * `MeasureTheory.Measure.integrable_mul_comp_snd_of_integrable_marginal_mul` derives integrability
   of an a.e. nonnegative, a.e.-strongly measurable function times an a.e.-measurable second-factor
   weight from integrability of its weighted marginal, assuming a.e. integrable sections.
@@ -295,6 +297,15 @@ theorem _root_.MeasureTheory.Measure.ae_eq_zero_of_marginal_right_eq_zero
   by_contra hn
   exact hp ⟨hz, hn⟩
 
+/-- The second marginal of an a.e. nonnegative product function is a.e. nonnegative. -/
+theorem _root_.MeasureTheory.Measure.ae_nonneg_integral_prod_right
+    (μ : Measure α) (ν : Measure β) [SFinite μ] [SFinite ν] {g : α × β → ℝ}
+    (hnonneg : 0 ≤ᵐ[μ.prod ν] g) :
+    0 ≤ᵐ[ν] fun y ↦ ∫ x, g (x, y) ∂μ := by
+  filter_upwards [ae_ae_of_ae_prod
+    (measurePreserving_swap.quasiMeasurePreserving.ae hnonneg)] with _ hy
+  exact integral_nonneg_of_ae hy
+
 /-- An a.e. nonnegative, a.e. strongly measurable product function with a.e. integrable sections
 becomes integrable when multiplied by an a.e.-measurable second-factor weight if its weighted
 second marginal is integrable. -/
@@ -314,11 +325,9 @@ theorem _root_.MeasureTheory.Measure.integrable_mul_comp_snd_of_integrable_margi
   constructor
   · filter_upwards [hsections] with y hy
     exact hy.mul_const _
-  · have hswap : ∀ᵐ p ∂ν.prod μ, 0 ≤ g (p.2, p.1) :=
-      measurePreserving_swap.quasiMeasurePreserving.ae hnonneg
-    apply hmarg.norm.congr
-    filter_upwards [ae_ae_of_ae_prod hswap] with y hy
-    have hb : 0 ≤ b y := integral_nonneg_of_ae hy
+  · apply hmarg.norm.congr
+    filter_upwards [μ.ae_nonneg_integral_prod_right ν hnonneg,
+      ae_ae_of_ae_prod (measurePreserving_swap.quasiMeasurePreserving.ae hnonneg)] with y hb hy
     calc
       ‖b y * w y‖ = b y * ‖w y‖ := by
         rw [norm_mul, Real.norm_eq_abs, abs_of_nonneg hb]
@@ -326,6 +335,7 @@ theorem _root_.MeasureTheory.Measure.integrable_mul_comp_snd_of_integrable_margi
       _ = ∫ x, ‖g (x, y) * w y‖ ∂μ := by
         apply integral_congr_ae
         filter_upwards [hy] with x hx
+        change 0 ≤ g (x, y) at hx
         simp only [norm_mul, Real.norm_eq_abs, abs_of_nonneg hx]
 
 /-- If two integrals over the second factor of a product measure with a probability first factor
