@@ -55,8 +55,8 @@ endomorphisms (`ContinuousLinearMap.IsRowCompact.aeval`).
 * `ContinuousLinearMap.isRowCompact_of_norm_matrixCoeff_le`: a null row majorant of the entries
   gives row compactness.
 * `ContinuousLinearMap.isRowCompact_of_norm_matrixCoeff_le_pow_snd`: entries of norm at most
-  `s ^ k` in the rows `(j, k)` of a matrix on `J × ℕ`, with `J` finite and `s < 1`, give row
-  compactness.
+  `s ^ k` in the rows `(i, k)` of a matrix with rows indexed by `I × ℕ`, with `I` finite and
+  `s < 1`, give row compactness.
 * `ContinuousLinearMap.isRowCompact_of_apply_single_eq_sum`: columns that are uniformly bounded
   combinations of finitely many vectors give a row-compact map.
 * `ContinuousLinearMap.ringOpNorm_eq_iSup_rowNorm`: `‖u‖ = ⨆ i, rᵢ(u)` over ultrametric Tate
@@ -170,16 +170,16 @@ theorem isRowCompact_of_norm_matrixCoeff_le {u : C₀(J, R) →L[R] C₀(I, R)} 
       (le_max_left _ _)) (by simpa using hr.max (tendsto_const_nhds (x := (0 : ℝ))))⟩
 
 /-- **Block row decay gives row compactness.** If `s < 1` and every entry in a row indexed by
-`(j, k)` of an endomorphism of `C₀(J × ℕ, R)`, for a finite `J`, has norm at most `s ^ k`, then
-the map is row compact, since each block `J × {k}` is finite. -/
-theorem isRowCompact_of_norm_matrixCoeff_le_pow_snd [Finite J] {s : ℝ}
-    {u : C₀(J × ℕ, R) →L[R] C₀(J × ℕ, R)} (hs₀ : 0 ≤ s) (hs₁ : s < 1)
+`(i, k)` of a map `C₀(J, R) →L[R] C₀(I × ℕ, R)`, for a finite `I`, has norm at most `s ^ k`, then
+the map is row compact, since each block `I × {k}` of rows is finite. -/
+theorem isRowCompact_of_norm_matrixCoeff_le_pow_snd [Finite I] {s : ℝ}
+    {u : C₀(J, R) →L[R] C₀(I × ℕ, R)} (hs₀ : 0 ≤ s) (hs₁ : s < 1)
     (hA : ∀ i j, ‖u.matrixCoeff i j‖ ≤ s ^ i.2) : u.IsRowCompact := by
   refine isRowCompact_of_norm_matrixCoeff_le ((tendsto_pow_atTop_nhds_zero_of_lt_one hs₀ hs₁).comp
     ?_) hA
   rw [← Nat.cofinite_eq_atTop]
   exact Tendsto.cofinite_of_finite_preimage_singleton fun k ↦
-    (Set.finite_range fun j : J ↦ (j, k)).subset fun i hi ↦ ⟨i.1, Prod.ext rfl hi.symm⟩
+    (Set.finite_range fun i : I ↦ (i, k)).subset fun i hi ↦ ⟨i.1, Prod.ext rfl hi.symm⟩
 
 /-- **Bounded finite expansions of the columns give row decay.** If every column
 `u (single j 1)` of `u` is a combination `∑ k, a k • w k` of a fixed finite family `w` with
