@@ -85,12 +85,8 @@ multiplication by `i`. -/
 theorem compatible_standardHermitianMetric :
     (standardHermitianMetric V).Compatible
       (SmoothAlmostComplexStructure.ofComplexManifold V V) := by
-  have hJ : SmoothAlmostComplexStructure.ofComplexManifold V V =
-      (AlmostComplexStructure.ofComplexModule V).constSmooth := by
-    refine SmoothAlmostComplexStructure.ext fun x (v : V) ↦ ?_
-    rw [AlmostComplexStructure.constSmooth_apply, AlmostComplexStructure.ofComplexModule_apply]
-    exact SmoothAlmostComplexStructure.ofComplexManifold_apply x v
-  rw [hJ, standardHermitianMetric_eq_constSmooth]
+  rw [SmoothAlmostComplexStructure.ofComplexManifold_self_eq_constSmooth,
+    standardHermitianMetric_eq_constSmooth]
   exact SymplecticForm.compatible_constSmooth_iff.2 imInnerSymplecticForm_compatible
 
 variable {φ : V → ℝ} {x : V}
