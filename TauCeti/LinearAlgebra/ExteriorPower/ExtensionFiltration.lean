@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Isomorphisms
 public import TauCeti.LinearAlgebra.ExteriorPower.Prod
 
 /-!
@@ -24,8 +23,8 @@ It starts at `F⁰ = ⋀ⁿ M`, ends at `Fⁿ⁺¹ = 0`, and is natural in `(M, 
 
 For the split sequence `0 → M → M × N → N → 0`, the filtration defined by the first factor
 corresponds, under the exterior sum comparison `⋀ⁿ (M × N) ≃ ⨁ᵢ ⋀ⁱ M ⊗ ⋀ⁿ⁻ⁱ N`, to the
-summands of index at least `i`. Consequently each graded piece `Fⁱ / Fⁱ⁺¹` is identified with
-`⋀ⁱ M ⊗ ⋀ⁿ⁻ⁱ N`.
+summands of index at least `i`. Consequently the `i`th component of this comparison maps `Fⁱ`
+onto `⋀ⁱ M ⊗ ⋀ⁿ⁻ⁱ N` with kernel `Fⁱ⁺¹`.
 
 ## Main declarations
 
@@ -34,16 +33,17 @@ summands of index at least `i`. Consequently each graded piece `Fⁱ / Fⁱ⁺¹
 * `Submodule.exteriorPowerFiltration_zero`, `Submodule.exteriorPowerFiltration_antitone` and
   `Submodule.exteriorPowerFiltration_eq_bot_of_lt`: `F⁰ = ⋀ⁿ M`, the filtration decreases, and
   `Fⁱ = 0` for `i > n`.
-* `Submodule.exteriorPowerFiltration_range_eq_range`: `Fⁱ ⋀ⁱ⁺ʲ M` for `N = range f` is the image
-  of the wedge product `⋀ⁱ M' ⊗ ⋀ʲ M → ⋀ⁱ⁺ʲ M`.
+* `LinearMap.exteriorPowerWedge f i j`: the wedge product `⋀ⁱ M' ⊗ ⋀ʲ M → ⋀ⁱ⁺ʲ M`,
+  `a ⊗ b ↦ f a ∧ b`, along a linear map `f : M' → M`.
+* `Submodule.exteriorPowerFiltration_range_eq_range`: `Fⁱ ⋀ⁱ⁺ʲ M` for `N = range f` is the range
+  of `f.exteriorPowerWedge i j`.
 * `Submodule.map_exteriorPowerFiltration_le`: naturality in `(M, N)`.
 * `TauCeti.exteriorPower.mem_exteriorPowerFiltration_range_inl_iff`: the ordered split comparison:
   for the first factor of `M × N`, `x ∈ Fⁱ` exactly when the components of
   `prodEquivTensor x` of index below `i` vanish.
 * `TauCeti.exteriorPower.prodFiltrationComponent`, with `prodFiltrationComponent_surjective` and
   `ker_prodFiltrationComponent`: the `i`th component of the exterior sum comparison maps `Fⁱ`
-  onto `⋀ⁱ M ⊗ ⋀ⁿ⁻ⁱ N` with kernel `Fⁱ⁺¹`, identifying the graded piece `Fⁱ / Fⁱ⁺¹` of the
-  split filtration.
+  onto `⋀ⁱ M ⊗ ⋀ⁿ⁻ⁱ N` with kernel `Fⁱ⁺¹`.
 
 ## References
 
@@ -59,6 +59,26 @@ noncomputable section
 
 open scoped TensorProduct DirectSum
 
+namespace LinearMap
+
+variable {R M M' : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup M']
+  [Module R M']
+
+/-- The wedge product `⋀ⁱ M' ⊗ ⋀ʲ M → ⋀ⁱ⁺ʲ M`, `a ⊗ b ↦ f a ∧ b`, along a linear map
+`f : M' → M`. Its range is the `i`th step of the extension filtration of `range f`
+(`Submodule.exteriorPowerFiltration_range_eq_range`). -/
+def exteriorPowerWedge (f : M' →ₗ[R] M) (i j : ℕ) :
+    ⋀[R]^i M' ⊗[R] ⋀[R]^j M →ₗ[R] ⋀[R]^(i + j) M :=
+  TensorProduct.lift ((exteriorPower.wedge R M i j).compl₁₂ (exteriorPower.map i f) LinearMap.id)
+
+/-- `f.exteriorPowerWedge i j` sends `a ⊗ b` to the product of `f a` and `b` in `⋀ M`. -/
+@[simp]
+theorem coe_exteriorPowerWedge_tmul (f : M' →ₗ[R] M) (i j : ℕ) (a : ⋀[R]^i M') (b : ⋀[R]^j M) :
+    (f.exteriorPowerWedge i j (a ⊗ₜ b) : ExteriorAlgebra R M) = ExteriorAlgebra.map f a * b := by
+  simp [exteriorPowerWedge]
+
+end LinearMap
+
 namespace Submodule
 
 variable {R M M' : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup M']
@@ -69,7 +89,7 @@ variable (N : Submodule R M)
 /-- The exterior-power extension filtration `Fⁱ ⋀ⁿ M` of a submodule `N`: the submodule of `⋀ⁿ M`
 spanned by the wedges `v₁ ∧ ⋯ ∧ vₙ` with at least `i` factors in `N`. It is decreasing in `i`
 (`exteriorPowerFiltration_antitone`), starts at `F⁰ = ⋀ⁿ M` and vanishes for `i > n`. For
-`N = range f` it is the image of the wedge product `⋀ⁱ M' ⊗ ⋀ⁿ⁻ⁱ M → ⋀ⁿ M`
+`N = range f`, `Fⁱ ⋀ⁱ⁺ʲ M` is the image of the wedge product `⋀ⁱ M' ⊗ ⋀ʲ M → ⋀ⁱ⁺ʲ M`
 (`exteriorPowerFiltration_range_eq_range`). -/
 def exteriorPowerFiltration (n i : ℕ) : Submodule R (⋀[R]^n M) :=
   span R (exteriorPower.ιMulti R n '' {v | ∃ s : Finset (Fin n), i ≤ s.card ∧ ∀ k ∈ s, v k ∈ N})
@@ -173,9 +193,12 @@ private theorem ιMulti_mem_of_forall_ι_mul_mem (S : ℕ → Submodule R (Exter
     rw [ιMulti_succ_apply]
     set t : Finset (Fin n) := s.preimage Fin.succ (Fin.succ_injective _).injOn
     have ht : ∀ k ∈ t, Matrix.vecTail v k ∈ N := fun k hk ↦ hv _ (Finset.mem_preimage.mp hk)
+    have ht' : t = ({k | k.succ ∈ s} : Finset (Fin n)) := by
+      ext k
+      rw [Finset.mem_preimage, Finset.mem_filter, and_iff_right (Finset.mem_univ k)]
     have hcard : s.card = (if (0 : Fin (n + 1)) ∈ s then 1 else 0) + t.card := by
-      have := Fin.card_filter_univ_succ' (· ∈ s)
-      simpa [Finset.filter_mem_eq_inter, t, Finset.preimage] using this
+      rw [ht', ← Fin.card_filter_univ_succ' (· ∈ s), Finset.filter_mem_eq_inter,
+        Finset.univ_inter]
     by_cases h0s : (0 : Fin (n + 1)) ∈ s
     · rw [show s.card = t.card + 1 by simp only [h0s, ite_true] at hcard; omega]
       exact hN _ (hv 0 h0s) _ _ (ih _ t ht)
@@ -214,8 +237,8 @@ private theorem ι_mul_mem_mulTop_succ (y : M') (i : ℕ) (x : ExteriorAlgebra R
     exact mul_mem_mul ⟨_, TauCeti.ExteriorAlgebra.ι_mul_mem_exteriorPower y ha', rfl⟩ mem_top
   | add x _ y _ hx hy => rw [mul_add]; exact add_mem hx hy
 
-/-- Every wedge of `n` vectors at least `i` of which lie in the range of `f` belongs to
-`f(⋀ⁱ M') · ⋀ M`. -/
+/-- Every wedge of `n` vectors whose factors indexed by `s` lie in the range of `f` belongs to
+`f(⋀ᵏ M') · ⋀ M` for `k = s.card`. -/
 private theorem ιMulti_mem_mulTop {n : ℕ} (v : Fin n → M) (s : Finset (Fin n))
     (hv : ∀ k ∈ s, v k ∈ LinearMap.range f) : ιMulti R n v ∈ mulTop f s.card :=
   ιMulti_mem_of_forall_ι_mul_mem (N := LinearMap.range f) (mulTop f) (one_mem_mulTop f)
@@ -223,34 +246,35 @@ private theorem ιMulti_mem_mulTop {n : ℕ} (v : Fin n → M) (s : Finset (Fin 
       obtain ⟨y, rfl⟩ := hz
       exact ι_mul_mem_mulTop_succ f y i x hx) v s hv
 
-private theorem coe_lift_wedge_tmul (i j : ℕ) (a : ⋀[R]^i M') (b : ⋀[R]^j M) :
-    ((TensorProduct.lift ((exteriorPower.wedge R M i j).compl₁₂ (exteriorPower.map i f)
-      LinearMap.id) (a ⊗ₜ b) : ⋀[R]^(i + j) M) : ExteriorAlgebra R M) =
-      ExteriorAlgebra.map f a * b := by
-  simp
+/-- Every wedge of `n` vectors at least `i` of which lie in the range of `f` belongs to
+`f(⋀ⁱ M') · ⋀ M`. -/
+private theorem ιMulti_mem_mulTop_of_le {n i : ℕ} {v : Fin n → M} {s : Finset (Fin n)}
+    (hs : i ≤ s.card) (hv : ∀ k ∈ s, v k ∈ LinearMap.range f) : ιMulti R n v ∈ mulTop f i := by
+  obtain ⟨t, hts, rfl⟩ := Finset.exists_subset_card_eq hs
+  exact ιMulti_mem_mulTop f v t fun k hk ↦ hv k (hts hk)
 
 /-- The degree-`(i + j)` part of an element of `f(⋀ⁱ M') · ⋀ M` is a wedge product `f a ∧ b` with
 `a ∈ ⋀ⁱ M'` and `b ∈ ⋀ʲ M`. -/
 private theorem proj_mem_range_of_mem_mulTop (i j : ℕ) (x : ExteriorAlgebra R M)
     (hx : x ∈ mulTop f i) :
-    TauCeti.exteriorPower.proj R M (i + j) x ∈ LinearMap.range (TensorProduct.lift
-      ((exteriorPower.wedge R M i j).compl₁₂ (exteriorPower.map i f) LinearMap.id)) := by
+    TauCeti.exteriorPower.proj R M (i + j) x ∈ LinearMap.range (f.exteriorPowerWedge i j) := by
   induction hx using Submodule.mul_induction_on' with
   | mem_mul_mem a ha b _ =>
     obtain ⟨a', ha', rfl⟩ := ha
     refine ⟨⟨a', ha'⟩ ⊗ₜ TauCeti.exteriorPower.proj R M j b, Subtype.ext ?_⟩
-    rw [coe_lift_wedge_tmul, TauCeti.exteriorPower.proj_apply, TauCeti.exteriorPower.proj_apply,
-      AlgHom.toLinearMap_apply, DirectSum.coe_decompose_mul_of_left_mem_of_le (fun i ↦ ⋀[R]^i M)
+    rw [LinearMap.coe_exteriorPowerWedge_tmul, TauCeti.exteriorPower.proj_apply,
+      TauCeti.exteriorPower.proj_apply, AlgHom.toLinearMap_apply,
+      DirectSum.coe_decompose_mul_of_left_mem_of_le (fun i ↦ ⋀[R]^i M)
         (f.exteriorAlgebra_map_mem_exteriorPower ha') (Nat.le_add_right _ _),
       Nat.add_sub_cancel_left]
   | add x _ y _ hx hy => rw [map_add]; exact add_mem hx hy
 
 /-- Every wedge product `f a ∧ b` with `a ∈ ⋀ⁱ M'` and `b ∈ ⋀ʲ M` lies in `Fⁱ ⋀ⁱ⁺ʲ M` for
 `N = range f`. -/
-private theorem lift_wedge_mem_exteriorPowerFiltration (i j : ℕ) (a : ⋀[R]^i M')
+private theorem exteriorPowerWedge_tmul_mem_exteriorPowerFiltration (i j : ℕ) (a : ⋀[R]^i M')
     (b : ⋀[R]^j M) :
-    TensorProduct.lift ((exteriorPower.wedge R M i j).compl₁₂ (exteriorPower.map i f)
-      LinearMap.id) (a ⊗ₜ b) ∈ (LinearMap.range f).exteriorPowerFiltration (i + j) i := by
+    f.exteriorPowerWedge i j (a ⊗ₜ b) ∈
+      (LinearMap.range f).exteriorPowerFiltration (i + j) i := by
   have ha : a ∈ span R (Set.range (exteriorPower.ιMulti R i)) := by
     rw [exteriorPower.ιMulti_span]; trivial
   have hb : b ∈ span R (Set.range (exteriorPower.ιMulti R j)) := by
@@ -259,12 +283,9 @@ private theorem lift_wedge_mem_exteriorPowerFiltration (i j : ℕ) (a : ⋀[R]^i
   | mem_mem a b ha hb =>
     obtain ⟨u, rfl⟩ := ha
     obtain ⟨w, rfl⟩ := hb
-    have : TensorProduct.lift ((exteriorPower.wedge R M i j).compl₁₂ (exteriorPower.map i f)
-        LinearMap.id) (exteriorPower.ιMulti R i u ⊗ₜ exteriorPower.ιMulti R j w) =
-        exteriorPower.ιMulti R (i + j) (Fin.append (f ∘ u) w) := by
-      apply Subtype.ext
-      rw [coe_lift_wedge_tmul]
-      simp [ExteriorAlgebra.ιMulti_mul_ιMulti]
+    have : f.exteriorPowerWedge i j (exteriorPower.ιMulti R i u ⊗ₜ exteriorPower.ιMulti R j w) =
+        exteriorPower.ιMulti R (i + j) (Fin.append (f ∘ u) w) :=
+      Subtype.ext (by simp [ExteriorAlgebra.ιMulti_mul_ιMulti])
     rw [this]
     refine ιMulti_mem_exteriorPowerFiltration
       (s := Finset.univ.map (Fin.castAddEmb j)) (by simp) fun k hk ↦ ?_
@@ -281,18 +302,15 @@ private theorem lift_wedge_mem_exteriorPowerFiltration (i j : ℕ) (a : ⋀[R]^i
 `Fⁱ ⋀ⁱ⁺ʲ M` is the image of `⋀ⁱ M' ⊗ ⋀ʲ M → ⋀ⁱ⁺ʲ M`, `a ⊗ b ↦ f a ∧ b`. -/
 theorem exteriorPowerFiltration_range_eq_range (i j : ℕ) :
     (LinearMap.range f).exteriorPowerFiltration (i + j) i =
-      LinearMap.range (TensorProduct.lift
-        ((exteriorPower.wedge R M i j).compl₁₂ (exteriorPower.map i f) LinearMap.id)) := by
+      LinearMap.range (f.exteriorPowerWedge i j) := by
   apply le_antisymm
   · rw [exteriorPowerFiltration_le_iff]
     intro v s hs hv
-    obtain ⟨t, hts, hti⟩ := Finset.exists_subset_card_eq hs
-    have := proj_mem_range_of_mem_mulTop f i j _
-      (hti ▸ ιMulti_mem_mulTop f v t fun k hk ↦ hv k (hts hk))
+    have := proj_mem_range_of_mem_mulTop f i j _ (ιMulti_mem_mulTop_of_le f hs hv)
     rwa [← exteriorPower.ιMulti_apply_coe, TauCeti.exteriorPower.proj_coe] at this
   · rw [LinearMap.range_eq_map, ← TensorProduct.span_tmul_eq_top, map_span_le]
     rintro - ⟨a, b, rfl⟩
-    exact lift_wedge_mem_exteriorPowerFiltration f i j a b
+    exact exteriorPowerWedge_tmul_mem_exteriorPowerFiltration f i j a b
 
 end range
 
@@ -316,8 +334,7 @@ theorem wedgeTensor_mem_exteriorPowerFiltration (p q n : ℕ) (h : p + q = n)
       (LinearMap.range (LinearMap.inl R M N)).exteriorPowerFiltration n p := by
   subst h
   rw [exteriorPowerFiltration_range_eq_range]
-  have hcomp : TensorProduct.lift ((_root_.exteriorPower.wedge R (M × N) p q).compl₁₂
-      (_root_.exteriorPower.map p (LinearMap.inl R M N)) LinearMap.id) ∘ₗ
+  have hcomp : (LinearMap.inl R M N).exteriorPowerWedge p q ∘ₗ
         TensorProduct.map LinearMap.id (_root_.exteriorPower.map q (LinearMap.inr R M N)) =
       wedgeTensor R M N p q (p + q) rfl :=
     TensorProduct.ext' fun a b ↦ Subtype.ext (by simp)
@@ -367,9 +384,7 @@ theorem mem_exteriorPowerFiltration_range_inl_iff {n i : ℕ} {x : ⋀[R]^n (M �
       this hx
     rw [exteriorPowerFiltration_le_iff]
     intro v s hs hv
-    obtain ⟨t, hts, hti⟩ := Finset.exists_subset_card_eq hs
-    have hmem := Submodule.ιMulti_mem_mulTop (LinearMap.inl R M N) v t fun l hl ↦ hv l (hts hl)
-    rw [hti] at hmem
+    have hmem := Submodule.ιMulti_mem_mulTop_of_le (LinearMap.inl R M N) hs hv
     rw [LinearMap.mem_ker, LinearMap.comp_apply, LinearEquiv.coe_coe,
       ← DirectSum.apply_eq_component, prodEquivTensor_apply, _root_.exteriorPower.ιMulti_apply_coe]
     have key : ∀ y ∈ Submodule.mulTop (LinearMap.inl R M N) i,
@@ -404,8 +419,7 @@ theorem prodEquivTensor_symm_lof_mem_exteriorPowerFiltration (n : ℕ) (i : Fin 
 
 /-- The `i`th component of the exterior sum comparison, restricted to the `i`th step `Fⁱ` of the
 extension filtration of the first factor of `M × N`. It is surjective
-(`prodFiltrationComponent_surjective`) with kernel `Fⁱ⁺¹` (`ker_prodFiltrationComponent`), so it
-identifies the graded piece `Fⁱ / Fⁱ⁺¹` with `⋀ⁱ M ⊗ ⋀ⁿ⁻ⁱ N`. -/
+(`prodFiltrationComponent_surjective`) with kernel `Fⁱ⁺¹` (`ker_prodFiltrationComponent`). -/
 def prodFiltrationComponent (n : ℕ) (i : Fin (n + 1)) :
     (LinearMap.range (LinearMap.inl R M N)).exteriorPowerFiltration n i →ₗ[R]
       ⋀[R]^(i : ℕ) M ⊗[R] ⋀[R]^(n - i) N :=
