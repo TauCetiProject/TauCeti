@@ -132,12 +132,6 @@ example : Nat.card (RelationalConfiguration nullaryLanguage (Fin 0)) = 2 ∧
 
 /-! ### Countably many unary predicates -/
 
-/-- The language of countably many unary predicates has countably many relation symbols of each
-arity. -/
-instance countable_relations_natPredicateLanguage (n : ℕ) :
-    Countable (natPredicateLanguage.Relations n) :=
-  Function.Injective.countable (f := Sigma.mk n) sigma_mk_injective
-
 /-- The atom `P_i(v)` of `natPredicateLanguage`. -/
 def unaryAtom (i v : ℕ) : Atom natPredicateLanguage ℕ :=
   atom (NatPredicateRel.pred i) ![v]
