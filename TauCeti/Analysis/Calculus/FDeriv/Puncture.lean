@@ -139,7 +139,7 @@ within `s` at the points of `s` in the punctured ball `B_ε(a) \ {a}`. If the de
 there satisfies `‖du(z)‖ ≤ C ‖z - a‖ ^ (β - 1)` with `β > 0`, then the speed of `u` along the
 radius is integrable on `(0, ε)`. For `s = univ` this is the interior case. -/
 theorem integrableOn_deriv_radial_of_norm_fderivWithin_le_rpow
-    {s : Set ℂ} {u : ℂ → V} {a v : ℂ} {ε C β : ℝ} (hβ : 0 < β) (hv : ‖v‖ = 1)
+    {s : Set E} {u : E → V} {a v : E} {ε C β : ℝ} (hβ : 0 < β) (hv : ‖v‖ = 1)
     (hs : MapsTo (fun t : ℝ ↦ a + t • v) (Ioo 0 ε) s)
     (hu : ∀ z ∈ s ∩ (ball a ε \ {a}), DifferentiableWithinAt ℝ u s z)
     (hC : ∀ z ∈ s ∩ (ball a ε \ {a}), ‖fderivWithin ℝ u s z‖ ≤ C * ‖z - a‖ ^ (β - 1)) :
@@ -147,7 +147,7 @@ theorem integrableOn_deriv_radial_of_norm_fderivWithin_le_rpow
   rcases le_or_gt ε 0 with hε | hε
   · simp [Ioo_eq_empty_of_le hε]
   have hnorm (t : ℝ) (ht : 0 < t) : ‖a + t • v - a‖ = t := by
-    simp [hv, Real.norm_of_nonneg ht.le]
+    simp [norm_smul, hv, Real.norm_of_nonneg ht.le]
   have hmem (t : ℝ) (ht : t ∈ Ioo 0 ε) : a + t • v ∈ s ∩ (ball a ε \ {a}) := by
     refine ⟨hs ht, ?_, ?_⟩
     · simpa only [mem_ball, dist_eq_norm, hnorm t ht.1] using ht.2
