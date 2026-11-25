@@ -55,6 +55,8 @@ functions bounded near it (`TauCeti.exists_differentiableOn_eqOn_sdiff_of_bddAbo
 * `TauCeti.bddAbove_slice_of_local`, `TauCeti.extension_ne_zero_of_local`: the transverse slices
   of a function locally equal off the hyperplane to a function continuous on it are bounded, and
   an extension across the hyperplane keeps a local nonvanishing witness nonvanishing there.
+* `TauCeti.analyticAt_of_differentiableOn_sdiff_of_eventuallyEq`: a function continuous at `ρ`
+  and equal off `ρ` to a function holomorphic on a punctured open neighbourhood is analytic at `ρ`.
 * `TauCeti.exists_differentiableOn_eqOn_of_analyticAt_nhdsNE`: removable-singularity patching across
   a relatively closed discrete subset.
 * `TauCeti.exists_differentiableOn_eqOn_sdiff_of_bddAbove`: in one variable, a function
@@ -282,6 +284,21 @@ theorem _root_.HasCompactSupport.contDiff_update_comp_inv {G : Type*} [NormedAdd
 end Infinity
 
 /-! ### Patching removable singularities across a relatively closed discrete subset -/
+
+/-- **Removable singularity for a continuous witness.** If `h` is holomorphic on `U \ {ρ}` for
+an open `U ∋ ρ` and agrees with `g` off `ρ` near `ρ`, then continuity of `g` at `ρ` makes `g`
+analytic there. This supplies the analytic witnesses required by
+`TauCeti.exists_differentiableOn_eqOn_of_analyticAt_nhdsNE`. -/
+theorem analyticAt_of_differentiableOn_sdiff_of_eventuallyEq {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℂ F] [CompleteSpace F] {h g : ℂ → F} {U : Set ℂ} {ρ : ℂ} (hU : IsOpen U)
+    (hρ : ρ ∈ U) (hh : DifferentiableOn ℂ h (U \ {ρ}))
+    (hg : ContinuousAt g ρ) (hhg : h =ᶠ[𝓝[≠] ρ] g) : AnalyticAt ℂ g ρ := by
+  refine _root_.Complex.analyticAt_of_differentiable_on_punctured_nhds_of_continuousAt ?_ hg
+  filter_upwards [eventually_eventually_nhdsWithin.mpr hhg,
+    mem_nhdsWithin_of_mem_nhds (hU.mem_nhds hρ), self_mem_nhdsWithin] with s hs hsU hsρ
+  rw [isOpen_compl_singleton.nhdsWithin_eq hsρ] at hs
+  exact (hh s ⟨hsU, hsρ⟩).differentiableAt ((hU.sdiff isClosed_singleton).mem_nhds ⟨hsU, hsρ⟩)
+    |>.congr_of_eventuallyEq (hs.mono fun _ h ↦ h.symm)
 
 /-- **Removable-singularity patching across a relatively closed discrete subset.** If `f : ℂ → F` is
 complex-differentiable on `Ω \ E` with `Eᶜ ∈ codiscreteWithin Ω` and agrees on `𝓝[≠] a` with a

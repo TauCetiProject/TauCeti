@@ -55,19 +55,6 @@ private theorem one_le_cast_choose_add (k m : ℕ) : (1 : ℝ) ≤ ((k + m).choo
 private theorem cast_choose_add_ne_zero (k m : ℕ) : (((k + m).choose m : ℕ) : ℂ) ≠ 0 :=
   Nat.cast_ne_zero.mpr (Nat.choose_pos (m.le_add_left k)).ne'
 
-/-- **Removable singularity for a continuous remainder.** If `h` is holomorphic on `U \ {ρ}` for
-an open `U ∋ ρ` and agrees with `g` off `ρ` near `ρ`, then continuity of `g` at `ρ` makes `g`
-analytic there. -/
-private theorem analyticAt_of_differentiableOn_sdiff_of_eventuallyEq {h g : ℂ → ℂ} {U : Set ℂ}
-    {ρ : ℂ} (hU : IsOpen U) (hρ : ρ ∈ U) (hh : DifferentiableOn ℂ h (U \ {ρ}))
-    (hg : ContinuousAt g ρ) (hhg : h =ᶠ[𝓝[≠] ρ] g) : AnalyticAt ℂ g ρ := by
-  refine _root_.Complex.analyticAt_of_differentiable_on_punctured_nhds_of_continuousAt ?_ hg
-  filter_upwards [eventually_eventually_nhdsWithin.mpr hhg,
-    mem_nhdsWithin_of_mem_nhds (hU.mem_nhds hρ), self_mem_nhdsWithin] with s hs hsU hsρ
-  rw [isOpen_compl_singleton.nhdsWithin_eq hsρ] at hs
-  exact (hh s ⟨hsU, hsρ⟩).differentiableAt ((hU.sdiff isClosed_singleton).mem_nhds ⟨hsU, hsρ⟩)
-    |>.congr_of_eventuallyEq (hs.mono fun _ h ↦ h.symm)
-
 /-- Subtracting the contribution of a finite principal part leaves Taylor coefficients bounded
 by `M / r' ^ k` on any smaller circle of radius `r'`. The coefficient `c i` multiplies the
 pole term of order `i + 1`. Continuity of the remainder `g` at `ρ` suffices: off `ρ` it agrees
