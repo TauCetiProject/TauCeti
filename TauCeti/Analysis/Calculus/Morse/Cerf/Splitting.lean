@@ -77,14 +77,6 @@ section Reduced
 
 variable {f : ℝ → E → ℝ} {t : ℝ} {x v : E} {ℓ : StrongDual ℝ E}
 
-/-- The differential of `w ↦ f s (x + a v + w)` on the kernel of `ℓ` is the restriction of the
-differential of `f s`. -/
-private theorem fderiv_comp_add_coe_ker {s a : ℝ} {w : ℓ.ker}
-    (hd : DifferentiableAt ℝ (f s) (x + a • v + w)) :
-    fderiv ℝ (fun w : ℓ.ker ↦ f s (x + a • v + w)) w =
-      (fderiv ℝ (f s) (x + a • v + w)).comp ℓ.ker.subtypeL :=
-  (hd.hasFDerivAt.comp w ((ℓ.ker.subtypeL.hasFDerivAt).const_add (x + a • v))).fderiv
-
 variable {h : ℝ × ℝ → ℓ.ker} {U : Set (ℝ × ℝ)}
 
 /-- The curve `b ↦ x + b v + h (s, b)` through the section `h` has velocity
@@ -375,7 +367,7 @@ private theorem exists_section_of_ker_eq_span_singleton [FiniteDimensional ℝ E
   have hslice : (fun w : ℓ.ker ↦ φ ((t, 0), w)) = fun w : ℓ.ker ↦ f t (x + w) :=
     slice_mk_zero_eq f t x v ℓ
   have hcrit0 : fderiv ℝ (fun w ↦ φ ((t, 0), w)) 0 = 0 := by
-    rw [fderiv_comp_add_coe_ker (by simpa using hft.differentiableAt two_ne_zero)]
+    rw [hslice, fderiv_comp_add_coe (by simpa using hft.differentiableAt two_ne_zero)]
     simp [hc]
   obtain ⟨h, U, hU, htU, hht, hh, hgraph, hcrit, -⟩ :=
     exists_vertical_critical_section_of_contDiffOn hW' hφ hcrit0
@@ -435,7 +427,7 @@ theorem exists_normalized_splitting_chart_of_ker_eq_span_singleton [FiniteDimens
   -- The critical points of `f` along the kernel of `ℓ`, and the reduced family.
   have hcritU (p : ℝ × ℝ) (hp : p ∈ U) :
       (fderiv ℝ (f p.1) (x + p.2 • v + h p)).comp ℓ.ker.subtypeL = 0 := by
-    rw [← fderiv_comp_add_coe_ker ((hfU p hp).uncurry_left.differentiableAt (by simp))]
+    rw [← fderiv_comp_add_coe ((hfU p hp).uncurry_left.differentiableAt (by simp))]
     exact hcrit p hp
   obtain ⟨hd1, hd2, hd3, hdt⟩ := fderiv_reduced hU htU (hh.of_le h3) hht
     (fun p hp ↦ (hfU p hp).of_le h3) hcritU hc hker hℓ

@@ -523,6 +523,13 @@ theorem fderiv_fderiv_comp_add_right (φ : E → F) (y w : E) :
     funext fun _ ↦ fderiv_comp_add_right y
   rw [hD, fderiv_comp_add_right]
 
+/-- The derivative of the restriction `w ↦ f (x + w)` of `f` to a subspace `K`, translated to `x`,
+is the derivative of `f` restricted to `K`. -/
+theorem fderiv_comp_add_coe {K : Submodule 𝕜 E} {f : E → F} {x : E} {y : K}
+    (hf : DifferentiableAt 𝕜 f (x + y)) :
+    fderiv 𝕜 (fun w : K ↦ f (x + w)) y = (fderiv 𝕜 f (x + y)).comp K.subtypeL :=
+  (hf.hasFDerivAt.comp y ((K.subtypeL.hasFDerivAt).const_add x)).fderiv
+
 /-- The second derivative of the restriction `w ↦ f (x + w)` of `f` to a subspace `K`, translated
 to `x`, is the second derivative of `f` evaluated on vectors of `K`. -/
 theorem fderiv_fderiv_comp_add_coe_apply {K : Submodule 𝕜 E} {f : E → F} {x : E} {y : K}
