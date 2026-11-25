@@ -187,7 +187,7 @@ theorem IsMetricCompatible.weylTensor_cyclic_eq_zero
     (x : M) (u v w z : TangentSpace I x) :
     cov.weylTensor x u v w z + cov.weylTensor x v w u z + cov.weylTensor x w u v z = 0 := by
   have hP := isSymm_iff.mpr (IsMetricCompatible.schoutenTensor_isSymm (cov := cov) hcov ht x)
-  have hg := isSymm_iff.mpr (isSymm_inner (E := TangentSpace I x))
+  have hg := TauCeti.isSymm_innerₗ (E := TangentSpace I x)
   have hR := cov.riemannCurvatureTensor_cyclic_eq_zero ht x u v w z
   have hK := hP.kulkarniNomizu_cyclic_eq_zero hg u v w z
   simp only [weylTensor_apply]
@@ -203,7 +203,7 @@ theorem IsMetricCompatible.weylTensor_swap_pairs
   have hP := isSymm_iff.mpr (IsMetricCompatible.schoutenTensor_isSymm (cov := cov) hcov ht x)
   rw [weylTensor_apply, weylTensor_apply,
     IsMetricCompatible.riemannCurvatureTensor_swap_pairs (cov := cov) hcov ht x u v w z,
-    hP.kulkarniNomizu_swap_pairs (isSymm_iff.mpr isSymm_inner)]
+    hP.kulkarniNomizu_swap_pairs TauCeti.isSymm_innerₗ]
 
 /-- In dimension `3`, the Weyl tensor of a metric-compatible connection vanishes. -/
 theorem IsMetricCompatible.weylTensor_eq_zero_of_finrank_eq_three

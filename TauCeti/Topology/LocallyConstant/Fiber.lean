@@ -16,7 +16,8 @@ The fibers `f⁻¹{a}` of a locally constant function `f : X → α` are clopen
 (`IsLocallyConstant.isClopen_fiber`). Because these open fibers cover `X`, a map out of `X` is
 continuous if and only if its restriction to each fiber is continuous
 (`IsLocallyConstant.continuous_iff`), and likewise for joint fibers of two locally constant
-functions (`IsLocallyConstant.continuous_iff₂`).
+functions (`IsLocallyConstant.continuous_iff₂`) and for maps into a sigma space landing in each
+corresponding summand (`IsLocallyConstant.continuous_iff_of_eq_sigmaMk`).
 
 This file also packages the fibers of `f : LocallyConstant X α` as elements of `Clopens X`
 (`LocallyConstant.fiberClopens`). Their underlying open sets `(f.fiberClopens a).toOpens` can
@@ -45,6 +46,20 @@ theorem continuous_iff {X α T : Type*} [TopologicalSpace X] [TopologicalSpace T
   exact continuous_of_cover_nhds (s := fun a => {x : X | f x = a})
     (fun x => ⟨f x, (hf.isOpen_fiber (f x)).mem_nhds rfl⟩)
     (fun a => continuousOn_iff_continuous_domRestrict.2 (hg a))
+
+/-- A map `g : X → Σ a, Z a` into a disjoint union that lands in summand `Z a` via `h a` on each
+fiber `{x // f x = a}` of a locally constant function `f` is continuous if and only if each `h a`
+is continuous. -/
+theorem continuous_iff_of_eq_sigmaMk {X α : Type*} {Z : α → Type*}
+    [TopologicalSpace X] [∀ a, TopologicalSpace (Z a)]
+    {f : X → α} (hf : IsLocallyConstant f) {g : X → Σ a, Z a}
+    (h : ∀ a, {x : X // f x = a} → Z a)
+    (hg : ∀ a (x : {x : X // f x = a}), g x.val = ⟨a, h a x⟩) :
+    Continuous g ↔ ∀ a : α, Continuous (h a) := by
+  rw [hf.continuous_iff]
+  refine forall_congr' fun a ↦ ?_
+  rw [(Topology.IsEmbedding.sigmaMk (σ := Z) (i := a)).continuous_iff]
+  exact ⟨fun h' ↦ h'.congr (hg a), fun h' ↦ h'.congr fun x ↦ (hg a x).symm⟩
 
 /-- A map out of `X` is continuous if and only if its restriction to each joint fiber of two
 locally constant functions `f₁ : X → α` and `f₂ : X → β` is continuous. -/
@@ -78,6 +93,12 @@ def fiberCompactOpens (b : β) : CompactOpens X where
 theorem mem_fiberCompactOpens {b : β} {x : X} :
     x ∈ hf.fiberCompactOpens hc hfc b ↔ f x = b ∧ b ≠ b₀ :=
   Iff.rfl
+
+@[simp]
+theorem coe_fiberCompactOpens {b : β} (hb : b ≠ b₀) :
+    (hf.fiberCompactOpens hc hfc b : Set X) = f ⁻¹' {b} := by
+  ext x
+  simp [hb]
 
 theorem pairwiseDisjoint_fiberCompactOpens (s : Set β) :
     s.PairwiseDisjoint fun b ↦ (hf.fiberCompactOpens hc hfc b : Set X) :=
@@ -121,6 +142,15 @@ theorem mem_fiberClopens {f : LocallyConstant X α} {a : α} {x : X} :
 theorem coe_fiberClopens (f : LocallyConstant X α) (a : α) :
     (f.fiberClopens a : Set X) = f ⁻¹' {a} :=
   (rfl)
+
+/-- Away from the value taken off the compact set, the compact-open and clopen fibers
+have the same underlying set. -/
+@[simp]
+theorem toClopens_fiberCompactOpens [T2Space X] (f : LocallyConstant X α) {s : Set X}
+    (hs : IsCompact s) {a₀ a : α} (hf : ∀ x ∉ s, f x = a₀) (ha : a ≠ a₀) :
+    (f.isLocallyConstant.fiberCompactOpens hs hf a).toClopens = f.fiberClopens a :=
+  Clopens.ext (by rw [CompactOpens.coe_toClopens, IsLocallyConstant.coe_fiberCompactOpens _ _ _ ha,
+    toFun_eq_coe, coe_fiberClopens])
 
 /-- The fibers of a locally constant function, as open sets, cover its domain. -/
 theorem iSup_toOpens_fiberClopens (f : LocallyConstant X α) :

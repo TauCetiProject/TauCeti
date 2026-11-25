@@ -39,7 +39,10 @@ equivalences, for an arbitrary source bicategory. Specializing `StrongTrans.equi
 the chosen component quasi-inverses, units, and counits gives
 `StrongTrans.equivalenceOfIsEquivalence`. Its inverse naturality satisfies compatibility with
 those counits; the component equations allow callers to use the equivalence without unfolding
-its construction.
+its construction. Conversely, the components of an equivalence in the bicategory of
+pseudofunctors into `Cat` form equivalences of categories (`Bicategory.Equivalence.appEquivalence`),
+so its component functors and those of its inverse are equivalences of categories
+(`Bicategory.Equivalence.isEquivalence_hom_app`, `Bicategory.Equivalence.isEquivalence_inv_app`).
 -/
 
 public section
@@ -285,3 +288,34 @@ lemma map_equivalenceOfIsEquivalence_inv_naturality_hom_app_comp
   exact hc.trans (Category.comp_id _)
 
 end CategoryTheory.Pseudofunctor.StrongTrans
+
+namespace CategoryTheory.Bicategory.Equivalence
+
+open Pseudofunctor.StrongTrans
+
+variable {B : Type u₁} [Bicategory.{w₁, v₁} B] {F G : B ⥤ᵖ Cat.{v, w}}
+
+/-- The component at `a` of an equivalence of pseudofunctors into `Cat`, as an equivalence of
+categories. Its counit is the component of `e.counit`; its unit is the adjointification of the
+component of `e.unit` against that counit (`CategoryTheory.Equivalence.mk`). -/
+-- Exposed so that its functor, inverse and counit are definitionally the components of `e.hom`,
+-- `e.inv` and `e.counit`, as its projection lemmas state.
+@[expose, simps! functor inverse counitIso]
+noncomputable def appEquivalence (e : Bicategory.Equivalence F G) (a : B) :
+    (F.obj a : Type w) ≌ G.obj a :=
+  CategoryTheory.Equivalence.mk (e.hom.app a).toFunctor (e.inv.app a).toFunctor
+    (Cat.Hom.toNatIso (isoApp e.unit a)) (Cat.Hom.toNatIso (isoApp e.counit a))
+
+/-- The component functors of an equivalence of pseudofunctors into `Cat` are equivalences of
+categories, with quasi-inverses the components of the inverse transformation. -/
+lemma isEquivalence_hom_app (e : Bicategory.Equivalence F G) (a : B) :
+    (e.hom.app a).toFunctor.IsEquivalence :=
+  (e.appEquivalence a).isEquivalence_functor
+
+/-- The component functors of the inverse of an equivalence of pseudofunctors into `Cat` are
+equivalences of categories. -/
+lemma isEquivalence_inv_app (e : Bicategory.Equivalence F G) (a : B) :
+    (e.inv.app a).toFunctor.IsEquivalence :=
+  (e.appEquivalence a).isEquivalence_inverse
+
+end CategoryTheory.Bicategory.Equivalence

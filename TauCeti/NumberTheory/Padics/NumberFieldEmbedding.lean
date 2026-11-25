@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.RamificationInertia.Inertia
+import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.DedekindDomain.PrimesAbove
@@ -47,7 +48,8 @@ theorem RingHom.exists_inertiaDeg_eq_one_of_padic {K : Type*} [Field K] [NumberF
   -- `φ` maps `𝓞 K` into `ℤ_[p]`; reducing modulo `p` gives a surjection `ψ : 𝓞 K → 𝔽_p`.
   let ι : 𝓞 K →+* ℤ_[p] :=
     (φ.comp (algebraMap (𝓞 K) K)).codRestrict (PadicInt.subring p) fun x ↦
-      Padic.norm_le_one_of_isIntegral (x.isIntegral_coe.map φ.toIntAlgHom)
+      IsUltrametricDist.norm_le_one_of_isIntegral (fun _ _ _ ↦ norm_pow _ _)
+        (x.isIntegral_coe.map φ.toIntAlgHom)
   let ψ : 𝓞 K →+* ZMod p := PadicInt.toZMod.comp ι
   have hψ : Function.Surjective ψ := ZMod.ringHom_surjective ψ
   have hpker : (p : 𝓞 K) ∈ RingHom.ker ψ := by simp [RingHom.mem_ker]
