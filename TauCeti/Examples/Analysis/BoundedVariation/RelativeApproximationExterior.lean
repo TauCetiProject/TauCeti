@@ -19,7 +19,7 @@ relative smooth approximation handles a set of infinite volume and finite perime
 
 * `s` has infinite volume (`MeasureTheory.Measure.addHaar_compl_eq_top_of_isBounded`) and, like
   the ball (`TauCeti.perimeter_compl`, `TauCeti.perimeter_closedBall`), perimeter
-  `n r^{n-1} μ(B(0, 1))`, which is `n ω_n` for the unit ball;
+  `n r^{n-1} μ(B(0, 1))`, which is `n ω_n` for the unit ball when `μ` is Lebesgue measure;
 * its indicator is not in `BV(E)` (`not_memBV_indicator_compl_closedBall`), so a definition of
   finite perimeter as membership of the indicator in `BV` would exclude it;
 * the relative smooth approximation
