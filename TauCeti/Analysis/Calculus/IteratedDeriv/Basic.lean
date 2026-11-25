@@ -20,6 +20,8 @@ This file collects general results about `iteratedDeriv`:
 * `TauCeti.iteratedDeriv_eq_of_derivative_tower`, `TauCeti.contDiff_of_derivative_tower`: in a
   sequence of functions linked by ordinary derivatives, the iterated derivatives of the initial
   function are the later functions, and the initial function is smooth.
+* `TauCeti.iteratedDeriv_eqOn_of_derivative_tower`: the same for a finite tower linked by
+  derivatives on an open set.
 * `TauCeti.iteratedDeriv_const_pi`: the `k`-th iterated derivative of a constant-across-coordinates
   family `ζ ↦ fun _ : α ↦ g ζ` is the constant family of `k`-th iterated derivatives.
 * `TauCeti.iteratedDerivInr`: the `k`-th iterated derivative of `f : (σ ⊕ τ → 𝕜) → F` in the
@@ -31,7 +33,7 @@ This file collects general results about `iteratedDeriv`:
 
 public section
 
-open scoped ContDiff
+open scoped ContDiff Topology
 
 namespace TauCeti
 
@@ -59,6 +61,21 @@ theorem contDiff_of_derivative_tower (F : ℕ → 𝕜 → E)
   intro k _
   rw [iteratedDeriv_eq_of_derivative_tower hF k]
   exact fun x ↦ (hF k x).differentiableAt
+
+/-- In a tower of functions whose first `n` members have the stated successive ordinary
+derivatives on an open set `U`, the `n`-th iterated derivative of the zeroth function agrees with
+the `n`-th function on `U`. -/
+theorem iteratedDeriv_eqOn_of_derivative_tower {F : ℕ → 𝕜 → E} {U : Set 𝕜} (hU : IsOpen U)
+    {n : ℕ} (hF : ∀ k < n, ∀ x ∈ U, HasDerivAt (F k) (F (k + 1) x) x) :
+    Set.EqOn (iteratedDeriv n (F 0)) (F n) U := by
+  induction n with
+  | zero => exact fun x _ ↦ by rw [iteratedDeriv_zero]
+  | succ n ih =>
+    intro x hx
+    have h : iteratedDeriv n (F 0) =ᶠ[𝓝 x] F n :=
+      Filter.eventually_of_mem (hU.mem_nhds hx) (ih fun k hk ↦ hF k (Nat.lt_succ_of_lt hk))
+    rw [iteratedDeriv_succ]
+    exact ((hF n n.lt_succ_self x hx).congr_of_eventuallyEq h).deriv
 
 variable {σ τ F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
