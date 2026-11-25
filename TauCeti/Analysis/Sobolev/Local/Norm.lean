@@ -30,8 +30,9 @@ almost-everywhere change, the triangle inequality (also over finite sums) and th
 bound under a continuous linear map of the codomain. An upper bound of the form
 `a + c ‖f‖_{W^{k+1,p}(U)}` (for finite `c`, with `‖f‖_{W^{k+1,p}(U)}` finite when `c = 0`) may be
 checked through each weak derivative of `f` separately. A chain bound
-`TauCeti.WeakDerivChainLe p S T C m f g` between the iterated weak derivatives of `f` and `g`
-gives the norm bound `‖f‖_{W^{m,p}(S)} ≤ C ‖g‖_{W^{m,p}(T)}`
+`TauCeti.WeakDerivChainLe p S T C m f g` between the iterated weak derivatives of `f` and `g`,
+with a finite nonzero constant `C`, gives the norm bound `‖f‖_{W^{m,p}(S)} ≤ C ‖g‖_{W^{m,p}(T)}`
+when `f` has the iterated weak derivatives, for instance when `MemWkpLoc q S m f`
 (`TauCeti.WeakDerivChainLe.eLpNormWkp_le`).
 
 ## References
@@ -265,9 +266,10 @@ theorem eLpNormWkp_clm_comp_le [CompleteSpace G] (A : F →L[ℝ] G) :
       exact eNorm_le_iff_norm_le.2 hle
 
 
-/-- **A chain bound bounds the `W^{m,p}` norm.** If the iterated weak derivatives of `f` on the
-interior of `S` are bounded in `Lᵖ(S)` by `C` times those of `g` on the interior of `T` in `Lᵖ(T)`,
-in the sense of `TauCeti.WeakDerivChainLe`, then `‖f‖_{W^{m,p}(S)} ≤ C ‖g‖_{W^{m,p}(T)}`. The
+/-- **A chain bound bounds the `W^{m,p}` norm.** Let `C` be finite and nonzero. If the iterated
+weak derivatives of `f` on the interior of `S` are bounded in `Lᵖ(S)` by `C` times those of `g` on
+the interior of `T` in `Lᵖ(T)`, in the sense of `TauCeti.WeakDerivChainLe`, then
+`‖f‖_{W^{m,p}(S)} ≤ C ‖g‖_{W^{m,p}(T)}`. The
 derivatives of `f` must exist, which `MemWkpLoc q S m f` provides for any exponent `q`; those of
 `g` need not, the right side being `∞` otherwise. -/
 theorem WeakDerivChainLe.eLpNormWkp_le {S T : Set ℂ} {C : ℝ≥0∞} (hC : C ≠ ∞) (hC0 : C ≠ 0)

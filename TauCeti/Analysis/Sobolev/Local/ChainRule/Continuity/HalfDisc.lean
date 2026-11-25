@@ -34,7 +34,7 @@ set between `V ∩ {0 ≤ im}` and `V`:
   reflection only samples the closed upper half of `V`, whose closure is a compact subset of `U`;
 * `‖R uₙ - R u₀‖_{W^{k+1,p}} = ‖R (uₙ - u₀)‖_{W^{k+1,p}}` is at most a constant times
   `‖uₙ - u₀‖_{W^{k+1,p}}` on that compact set
-  (`TauCeti.MemWkpLoc.eLpNormWkp_planarReflection_higherReflectionCoeff_reflectionCore_le`).
+  (`TauCeti.eLpNormWkp_planarReflection_higherReflectionCoeff_reflectionCore_le`).
 
 The reflection `R u₀` need not take values in `W` away from the real axis: for `k ≥ 1` it is a
 combination of values of `u₀` with weights of both signs. It does take values in `W` on an open
@@ -101,21 +101,17 @@ private theorem tendsto_eLpNormWkp_planarReflection_sub (hp1 : (1 : ℝ≥0∞) 
     Tendsto (fun n => eLpNormWkp p K (k + 1)
       (planarReflection (higherReflectionCoeff (k + 1)) (u n) -
         planarReflection (higherReflectionCoeff (k + 1)) u₀)) l (𝓝 0) := by
-  have hbd : ∀ᶠ n in l, eLpNormWkp p K (k + 1) (planarReflection (higherReflectionCoeff (k + 1))
+  have hbd : ∀ n, eLpNormWkp p K (k + 1) (planarReflection (higherReflectionCoeff (k + 1))
       (u n) - planarReflection (higherReflectionCoeff (k + 1)) u₀) ≤
-        higherReflectionBound (k + 1) p * eLpNormWkp p L (k + 1) (u n - u₀) := by
-    filter_upwards [hlim.eventually (gt_mem_nhds ENNReal.zero_lt_top)] with n hn
+        higherReflectionBound (k + 1) p * eLpNormWkp p L (k + 1) (u n - u₀) := fun n => by
     rw [← planarReflection_sub]
-    have hmem : MemWkpLoc p ((V : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) (u n - u₀) :=
-      (memWkpLoc_of_eLpNormWkp_ne_top hn.ne).mono hVL
     refine (eLpNormWkp_mono_set hK).trans
-      ((hmem.eLpNormWkp_planarReflection_higherReflectionCoeff_reflectionCore_le hp1).trans ?_)
+      ((eLpNormWkp_planarReflection_higherReflectionCoeff_reflectionCore_le hp1 _).trans ?_)
     gcongr
     exact eLpNormWkp_mono_set hVL
   have h0 := ENNReal.Tendsto.const_mul hlim (Or.inr (higherReflectionBound_ne_top (k + 1) p))
   rw [mul_zero] at h0
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h0
-    (.of_forall fun _ => zero_le) hbd
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h0 (fun _ => zero_le) hbd
 
 /-- **Continuity of composition in `W^{k+1,p}_loc` up to the real axis.** Let `p > 2`, let `F`
 and `G` be finite-dimensional, let `g : F → G` be `C^{k+1}` on an open set `W`, and let
