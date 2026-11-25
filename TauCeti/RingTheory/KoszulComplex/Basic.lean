@@ -426,7 +426,8 @@ theorem range_le_annihilator_homology (n : ℕ) :
 @[simp]
 theorem primaryComponent_homology_eq_top (n : ℕ) :
     Ideal.primaryComponent ((koszulComplex φ).homology n) (LinearMap.range φ) = ⊤ :=
-  Ideal.primaryComponent_eq_top_of_le_annihilator _ (range_le_annihilator_homology φ n)
+  Ideal.primaryComponent_eq_top_of_le_annihilator _ (n := 1)
+    ((pow_one _).trans_le (range_le_annihilator_homology φ n))
 
 end Homotopy
 

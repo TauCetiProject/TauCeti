@@ -318,7 +318,7 @@ theorem exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_of_mul_le
     ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
       ‖Q‖ ≤ (√c)⁻¹ ∧ ∀ f, IsMinimalGaugeFixedWeakSolution μ x f (Q f) := by
   set S := gaugeFixedAdjointToLp μ hx
-  set ι := (TestFunction.ambientToLp 2 μ : TestField →L[ℝ] _).toLinearMap
+  set ι := (TestFunction.ambientToLp ℝ 2 μ : TestField →L[ℝ] _).toLinearMap
   have hS := inner_gaugeFixedAdjointToLp (μ := μ) hx
   have hι (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : TestField) :
       ⟪u, ι η⟫ = ∫ z, ⟪u z, η z⟫ ∂μ :=
