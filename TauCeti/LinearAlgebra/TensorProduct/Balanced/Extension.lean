@@ -59,6 +59,8 @@ The extension of the zero module is zero by the `Subsingleton` instances of
 ## Main results
 
 * `TauCeti.BalancedExtension.map_surjective`: extension of scalars preserves surjections.
+* `TauCeti.BalancedExtension.includeRight_surjective`: along a surjective ring homomorphism,
+  every element of `S ⊗_R P` is a tensor `1 ⊗ p`.
 * Extension of scalars along any `f` sends finitely generated `R`-modules to finitely generated
   `S`-modules and projective `R`-modules to projective `S`-modules (instances), hence finitely
   generated projective modules to finitely generated projective modules. No flatness or
@@ -208,6 +210,20 @@ def includeRight : P →ₛₗ[f] BalancedExtension f P where
 
 @[simp]
 theorem includeRight_apply (p : P) : includeRight f P p = tmul f 1 p := (rfl)
+
+/-- Along a surjective ring homomorphism every element of `S ⊗_R P` is a tensor `1 ⊗ p`: writing
+`s = f r`, the tensor `s ⊗ p` is `1 ⊗ (r • p)`. -/
+theorem includeRight_surjective (hf : Function.Surjective f) :
+    Function.Surjective (includeRight f P) := by
+  intro x
+  induction x using induction_on with
+  | tmul s p =>
+    obtain ⟨r, rfl⟩ := hf s
+    exact ⟨r • p, by rw [includeRight_apply, tmul_smul, one_mul]⟩
+  | add x y hx hy =>
+    obtain ⟨x, rfl⟩ := hx
+    obtain ⟨y, rfl⟩ := hy
+    exact ⟨x + y, _root_.map_add _ x y⟩
 
 /-- The balanced biadditive map `(s, p) ↦ s • g p` attached to an `f`-semilinear map `g`. -/
 private def liftAux (g : P →ₛₗ[f] Q) : Scalars f →ₗ[ℤ] P →ₗ[ℤ] Q :=

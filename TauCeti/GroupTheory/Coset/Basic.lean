@@ -53,10 +53,12 @@ element `m` of an additive commutative monoid on which `G` acts, fixed by `H`, t
 `G ⧸ L` when congruence modulo `K` on the set implies congruence modulo `L`.
 `Subgroup.card_fiber_quotientMapOfLE` counts every fibre of `G / H → G / K` as `[K : H]`.
 `Subgroup.index_eq_of_equiv`, `Subgroup.ne_zero_of_equiv`, and `Subgroup.finiteIndex_of_equiv`
-read the index, nonemptiness of `Fin n`, and `FiniteIndex` off a coset bijection, and
-`Subgroup.quotientEquivFin` constructs a coset bijection `G ⧸ H ≃ Fin n` from `H.index = n` when
-`n ≠ 0`, and `Subgroup.sum_twisted_eq_card_nsmul` reindexes a sum of `g ↦ f ((σ g)⁻¹ * g)` over
-the right cosets of a subgroup fixed pointwise by `σ`.
+read the index, nonemptiness of `Fin n`, and `FiniteIndex` off a coset bijection;
+`Subgroup.finiteIndex_of_surjective` and `Subgroup.index_le_of_surjective` deduce `FiniteIndex`
+and an index bound from a surjection from a finite type; `Subgroup.quotientEquivFin` constructs
+a coset bijection `G ⧸ H ≃ Fin n` from `H.index = n` when `n ≠ 0`; and
+`Subgroup.sum_twisted_eq_card_nsmul` reindexes a sum of `g ↦ f ((σ g)⁻¹ * g)` over the right
+cosets of a subgroup fixed pointwise by `σ`.
 -/
 
 public section
@@ -289,6 +291,22 @@ theorem finiteIndex_of_equiv {G β : Type*} [Group G] [Finite β] (H : Subgroup 
     (e : G ⧸ H ≃ β) : H.FiniteIndex :=
   have : Finite (G ⧸ H) := Finite.of_equiv β e.symm
   H.finiteIndex_of_finite_quotient
+
+/-- A subgroup whose coset space admits a surjection from a finite type has finite index. -/
+@[to_additive /-- An additive subgroup whose coset space admits a surjection from a finite type
+has finite index. -/]
+theorem finiteIndex_of_surjective {G β : Type*} [Group G] [Finite β] (H : Subgroup G)
+    {f : β → G ⧸ H} (hf : Function.Surjective f) : H.FiniteIndex :=
+  have : Finite (G ⧸ H) := Finite.of_surjective f hf
+  H.finiteIndex_of_finite_quotient
+
+/-- A surjection from a finite type onto `G ⧸ H` bounds `H.index` by `Nat.card β`. -/
+@[to_additive /-- A surjection from a finite type onto `G ⧸ H` bounds `H.index` by
+`Nat.card β`. -/]
+theorem index_le_of_surjective {G β : Type*} [Group G] [Finite β] (H : Subgroup G)
+    {f : β → G ⧸ H} (hf : Function.Surjective f) : H.index ≤ Nat.card β := by
+  rw [index_eq_card]
+  exact Nat.card_le_card_of_surjective f hf
 
 /-- An enumeration of the left cosets of a subgroup `H` of finite index `n ≠ 0`. -/
 @[to_additive /-- An enumeration of the left cosets of an additive subgroup `H` of finite index

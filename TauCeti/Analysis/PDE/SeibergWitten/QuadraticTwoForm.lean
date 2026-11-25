@@ -224,17 +224,14 @@ theorem inner_quadraticTwoForm_eq_re_inner (ω : ⋀[ℝ]^2 V) (ψ : positiveHal
     ⟪(quadraticTwoForm o ρ hkl ψ : ⋀[ℝ]^2 V), ω⟫ =
       (⟪ψ, cliffordRestriction o ρ ω ψ⟫_ℂ).re / 4 := by
   have hstar := o.hodgeStar_hodgeStar_of_even even_two hkl ω
-  -- The self-dual part of `ω`, and the vanishing of `C` on the anti-self-dual part.
+  -- The self-dual part of `ω`, on which `C` acts as on `ω`.
   have hplus : o.hodgeStar hkl ((2 : ℝ)⁻¹ • (ω + o.hodgeStar hkl ω)) =
       (2 : ℝ)⁻¹ • (ω + o.hodgeStar hkl ω) := by
     rw [map_smul, map_add, hstar, add_comm]
-  have hminus : cliffordRestriction o ρ (ω - o.hodgeStar hkl ω) = 0 :=
-    cliffordRestriction_eq_zero_of_hodgeStar_eq_neg o ρ hQ hkl (by rw [map_sub, hstar, neg_sub])
   have hC : cliffordRestriction o ρ ((2 : ℝ)⁻¹ • (ω + o.hodgeStar hkl ω)) =
       cliffordRestriction o ρ ω := by
-    rw [map_sub, sub_eq_zero] at hminus
-    rw [map_smul, map_add, ← hminus, ← two_smul ℝ, smul_smul, inv_mul_cancel₀ two_ne_zero,
-      one_smul]
+    rw [map_smul, map_add, cliffordRestriction_hodgeStar o ρ hQ hkl, ← two_smul ℝ, smul_smul,
+      inv_mul_cancel₀ two_ne_zero, one_smul]
   have hq := o.inner_hodgeStar_right_of_hodgeStar_eq_self even_two hkl
     (o.hodgeStar_coe_of_mem_eigenspace_one hkl (quadraticTwoForm o ρ hkl ψ)) ω
   have h := inner_quadraticTwoForm_eq_re_inner_of_hodgeStar_eq_self o ρ hQ hkl hplus ψ

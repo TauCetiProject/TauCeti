@@ -63,6 +63,16 @@ theorem toSymmetricAlgebra_tprod (n : ℕ) (m : Fin n → M) :
     toSymmetricAlgebra R M n (⨂ₛ[R] i, m i) = ∏ i, SymmetricAlgebra.ι R M (m i) := by
   simp [toSymmetricAlgebra, algebraMultilinear]
 
+variable {R M} in
+/-- Multiplication of generators is natural in the module. -/
+@[simp]
+theorem toSymmetricAlgebra_map {N : Type w} [AddCommMonoid N] [Module R N] (n : ℕ)
+    (f : M →ₗ[R] N) (x : Sym[R]^n M) :
+    toSymmetricAlgebra R N n (map f x) = SymmetricAlgebra.map R f (toSymmetricAlgebra R M n x) :=
+  LinearMap.congr_fun (SymmetricPower.ext (g := toSymmetricAlgebra R N n ∘ₗ map f)
+    (h := (SymmetricAlgebra.map R f).toLinearMap ∘ₗ toSymmetricAlgebra R M n)
+    fun m ↦ by simp) x
+
 /-- Multiplication preserves the degree of a symmetric tensor. -/
 theorem toSymmetricAlgebra_mem_homogeneousSubmodule (n : ℕ) (x : Sym[R]^n M) :
     toSymmetricAlgebra R M n x ∈

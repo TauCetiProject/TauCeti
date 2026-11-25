@@ -25,6 +25,7 @@ residue-field valuations is `PreAdicSpace.Hom.valuation_eq_comap`.
 * `TauCeti.PreAdicSpace.Hom`: morphisms of pre-adic spaces, making `PreAdicSpace` a category.
 * `TauCeti.PreAdicSpace.Hom.stalkMap`: the ring homomorphism induced on stalks.
 * `TauCeti.PreAdicSpace.Hom.residueFieldMap`: the homomorphism induced on residue fields.
+* `TauCeti.PreAdicSpace.Hom.appTop`: the ring homomorphism induced on global sections.
 * `TauCeti.PreAdicSpace.Hom.ofFac`: a morphism of presheafed spaces factoring a morphism of
   pre-adic spaces through one whose stalk maps over its image are isomorphisms is a morphism of
   pre-adic spaces.
@@ -270,6 +271,43 @@ instance isIso_stalkMap [IsIso (X := X.toPresheafedSpace) (Y := Y.toPresheafedSp
   Hom.stalkMap_def f x ▸ PresheafedSpace.stalkMap.isIso (toRingPresheafedSpaceHom f.toHom) x
 
 end Stalks
+
+section AppTop
+
+variable {V W : PreAdicSpace.{u}}
+
+/-- The map `𝒪_X(X) → 𝒪_W(W)` on global sections of a morphism `h : W ⟶ X` of pre-adic
+spaces. -/
+noncomputable def Hom.appTop (h : W ⟶ X) :
+    (X.toPresheafedSpace.presheaf.obj (Opposite.op ⊤)).obj →+*
+      (W.toPresheafedSpace.presheaf.obj (Opposite.op ⊤)).obj :=
+  (TopCommRingCat.isCompleteSeparated.ι.map
+    (PresheafedSpace.Γ.map (forgetToPresheafedSpace.map h).op)).val
+
+/-- The global-sections map is the component of `h` on the whole space. -/
+theorem Hom.appTop_def (h : W ⟶ X) :
+    h.appTop = (TopCommRingCat.isCompleteSeparated.ι.map
+      (PresheafedSpace.Γ.map (forgetToPresheafedSpace.map h).op)).val :=
+  (rfl)
+
+/-- The global-sections map of a morphism is continuous. -/
+theorem Hom.continuous_appTop (h : W ⟶ X) : Continuous h.appTop :=
+  (TopCommRingCat.isCompleteSeparated.ι.map
+    (PresheafedSpace.Γ.map (forgetToPresheafedSpace.map h).op)).property
+
+/-- The global-sections map of the identity is the identity. -/
+@[simp]
+theorem Hom.appTop_id (X : PreAdicSpace.{u}) : Hom.appTop (𝟙 X) = RingHom.id _ :=
+  congrArg Subtype.val ((forgetToPresheafedSpace.op ⋙ PresheafedSpace.Γ ⋙
+    TopCommRingCat.isCompleteSeparated.ι).map_id (Opposite.op X))
+
+/-- Global-sections maps are contravariant in the morphism. -/
+@[simp]
+theorem Hom.appTop_comp (h : V ⟶ W) (g : W ⟶ X) : (h ≫ g).appTop = h.appTop.comp g.appTop :=
+  congrArg Subtype.val ((forgetToPresheafedSpace.op ⋙ PresheafedSpace.Γ ⋙
+    TopCommRingCat.isCompleteSeparated.ι).map_comp g.op h.op)
+
+end AppTop
 
 section OfFac
 

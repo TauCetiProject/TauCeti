@@ -9,8 +9,8 @@ public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Geometry.Manifold.Flow.Complete
-public import TauCeti.Geometry.Manifold.VectorBundle.CurveInTotalSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.TotalSpaceMFDeriv
 import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
