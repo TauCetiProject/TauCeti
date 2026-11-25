@@ -59,7 +59,8 @@ determinant-one counterparts over an arbitrary commutative ring.
   `2 × 2` matrices with the same first column differ by right multiplication by an upper
   transvection.
 * `Matrix.SpecialLinearGroup.antidiagonal_mul_transvection` and `diagonal_mul_transvection`:
-  conjugating a transvection of `SL₂` by an antidiagonal or a diagonal element, and
+  conjugating a transvection of `SL₂` by an antidiagonal element, and one of `SL_n` by a diagonal
+  element, and
   `conjAct_smul_range_transvectionHom_of_antidiagonal`: an antidiagonal element exchanges the
   upper and lower one-parameter subgroups.
 * `Matrix.SpecialLinearGroup.transvection_mem_range_mul_antidiagonal_mul_range`: the rank-one
@@ -918,10 +919,11 @@ theorem exists_eq_mul_transvection_of_col_zero_eq {M N : SpecialLinearGroup (Fin
 
 end Column
 
-/-! ### Conjugating transvections in `SL₂`
+/-! ### Conjugating transvections
 
 An antidiagonal element of `SL₂(A)` conjugates the transvections at `(a, b)` to those at
-`(b, a)`, and a diagonal one rescales them by the square of its `a`-th diagonal entry. -/
+`(b, a)`, and a diagonal element of `SL_n(A)` rescales the transvections at `(i, j)` by its
+`i`-th diagonal entry and the `j`-th diagonal entry of its inverse. -/
 
 section Conjugation
 
@@ -944,30 +946,33 @@ theorem antidiagonal_mul_transvection (hab : a ≠ b) {m : SpecialLinearGroup (F
       Matrix.mul_apply, Matrix.add_apply, Fin.sum_univ_two, one_apply_eq, one_apply_ne,
       single_apply_same, single_apply_of_ne, ne_eq, one_ne_zero, zero_ne_one, not_false_eq_true,
       and_true, and_false, false_and, h0, h1, mul_one, mul_zero, one_mul, zero_mul, add_zero,
-      zero_add, neg_mul] <;>
-    first
-    | linear_combination (-(c * (m : Matrix (Fin 2) (Fin 2) A) 1 0)) * hdet
-    | linear_combination (-(c * (m : Matrix (Fin 2) (Fin 2) A) 0 1)) * hdet
+      zero_add, neg_mul]
+  -- Only the `(b, b)` entry uses the determinant: `(1, 1)` for `(a, b) = (0, 1)`, then `(0, 0)`
+  -- for `(a, b) = (1, 0)`.
+  · linear_combination (-(c * (m : Matrix (Fin 2) (Fin 2) A) 1 0)) * hdet
+  · linear_combination (-(c * (m : Matrix (Fin 2) (Fin 2) A) 0 1)) * hdet
 
-/-- Conjugation by a diagonal element of `SL₂(A)` rescales the root subgroup at `(a, b)` by the
-square of the `a`-th diagonal entry: `z (1 + c E_{a b}) z⁻¹ = 1 + z_{a a}² c E_{a b}`. -/
-theorem diagonal_mul_transvection (hab : a ≠ b) {z : SpecialLinearGroup (Fin 2) A}
-    (h0 : (z : Matrix (Fin 2) (Fin 2) A) 0 1 = 0) (h1 : (z : Matrix (Fin 2) (Fin 2) A) 1 0 = 0)
-    (c : A) :
-    z * transvection hab c =
-      transvection hab ((z : Matrix (Fin 2) (Fin 2) A) a a ^ 2 * c) * z := by
-  have hdet := z.det_coe
-  rw [Matrix.det_fin_two, h0, h1] at hdet
-  fin_cases a <;> fin_cases b <;> simp only [ne_eq, not_true_eq_false] at hab <;>
-    ext i j <;> fin_cases i <;> fin_cases j <;>
-    simp only [Fin.isValue, Fin.mk_one, Fin.zero_eta, coe_mul, transvection_coe,
-      Matrix.mul_apply, Matrix.add_apply, Fin.sum_univ_two, one_apply_eq, one_apply_ne,
-      single_apply_same, single_apply_of_ne, ne_eq, one_ne_zero, zero_ne_one, not_false_eq_true,
-      and_true, and_false, false_and, h0, h1, mul_one, mul_zero, one_mul, zero_mul, add_zero,
-      zero_add] <;>
-    first
-    | linear_combination (-(c * (z : Matrix (Fin 2) (Fin 2) A) 0 0)) * hdet
-    | linear_combination (-(c * (z : Matrix (Fin 2) (Fin 2) A) 1 1)) * hdet
+/-- Conjugation by a diagonal element `z` of `SL_n(A)` rescales the transvection at `(i, j)` by
+`z_{i i}` and the `(j, j)` entry of `z⁻¹`:
+`z (1 + c E_{i j}) z⁻¹ = 1 + z_{i i} c (z⁻¹)_{j j} E_{i j}`. -/
+theorem diagonal_mul_transvection {n : Type*} [Fintype n] [DecidableEq n] {i j : n}
+    (hij : i ≠ j) {z : SpecialLinearGroup n A} (hz : (z : Matrix n n A).IsDiag) (c : A) :
+    z * transvection hij c =
+      transvection hij ((z : Matrix n n A) i i * c * ((z⁻¹ : SpecialLinearGroup n A) :
+        Matrix n n A) j j) * z := by
+  have hj := congr_arg (fun M : SpecialLinearGroup n A ↦ (M : Matrix n n A) j j) (inv_mul_cancel z)
+  obtain ⟨d, hd⟩ : ∃ d, (z : Matrix n n A) = diagonal d := ⟨_, hz.diagonal_diag.symm⟩
+  simp only [coe_mul, coe_one, one_apply_eq, hd, mul_diagonal] at hj
+  ext k l
+  simp only [coe_mul, transvection_coe, hd, diagonal_mul, mul_diagonal, diagonal_apply_eq,
+    Matrix.add_apply, Matrix.one_apply, Matrix.single_apply]
+  split_ifs with hkl hij' hij'
+  · exact absurd (hij'.1.trans (hkl.trans hij'.2.symm)) hij
+  · rw [hkl]
+    ring
+  · obtain ⟨rfl, rfl⟩ := hij'
+    linear_combination -(d i * c) * hj
+  · ring
 
 /-- The `(b, b)` entry of `(1 + d E_{b a}) (1 + c E_{a b}) (1 + e E_{b a})` in `SL₂(A)` is
 `1 + d c`. -/

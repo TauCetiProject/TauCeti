@@ -25,6 +25,8 @@ sign `+` for `a = 0`.
 
 ## Main results
 
+* `TauCeti.DynkinType.typeAIndex_one_eq_or_eq`: the two roots are indexed by `(0, 1)` and
+  `(1, 0)`.
 * `TauCeti.DynkinType.sl2RootPairing_root`, `sl2RootPairing_coroot` and
   `sl2RootPairing_pairing`: the roots `±2`, coroots `±1` and Cartan integers `±2`.
 * The pairing is crystallographic, reduced over a domain, and a root system when `2` is
@@ -36,6 +38,11 @@ sign `+` for `a = 0`.
 public section
 
 namespace TauCeti.DynkinType
+
+/-- The two roots of type `A₁` are indexed by the ordered pairs `(0, 1)` and `(1, 0)`. -/
+theorem typeAIndex_one_eq_or_eq (p : TypeAIndex 1) :
+    p = ⟨(0, 1), by decide⟩ ∨ p = ⟨(1, 0), by decide⟩ := by
+  revert p; decide
 
 variable (R : Type*) [CommRing R] [CharZero R]
 
@@ -80,9 +87,8 @@ theorem sl2RootPairing_root (k : Fin (1 * (1 + 1))) :
     (sl2RootPairing R).root k =
       fun _ ↦ if ((typeAIndexEquiv 1).symm k).val.1 = 0 then 2 else -2 := by
   obtain ⟨p, rfl⟩ := (typeAIndexEquiv 1).surjective k
-  have : p = ⟨(0, 1), by decide⟩ ∨ p = ⟨(1, 0), by decide⟩ := by revert p; decide
   ext j
-  rcases this with rfl | rfl <;>
+  rcases typeAIndex_one_eq_or_eq p with rfl | rfl <;>
     simp only [sl2RootPairing_def, root_rootPairingBaseChange, piAlgebraMap_apply,
       root_typeAIndexEquiv, Equiv.symm_apply_apply, Fin.fin_one_eq_zero j] <;> norm_num
 
@@ -92,9 +98,8 @@ theorem sl2RootPairing_coroot (k : Fin (1 * (1 + 1))) :
     (sl2RootPairing R).coroot k =
       fun _ ↦ if ((typeAIndexEquiv 1).symm k).val.1 = 0 then 1 else -1 := by
   obtain ⟨p, rfl⟩ := (typeAIndexEquiv 1).surjective k
-  have : p = ⟨(0, 1), by decide⟩ ∨ p = ⟨(1, 0), by decide⟩ := by revert p; decide
   ext j
-  rcases this with rfl | rfl <;>
+  rcases typeAIndex_one_eq_or_eq p with rfl | rfl <;>
     simp only [sl2RootPairing_def, coroot_rootPairingBaseChange, piAlgebraMap_apply,
       coroot_typeAIndexEquiv, Equiv.symm_apply_apply, Fin.fin_one_eq_zero j] <;> norm_num
 
@@ -106,9 +111,8 @@ theorem sl2RootPairing_pairing (k l : Fin (1 * (1 + 1))) :
   rw [sl2RootPairing_def, pairing_rootPairingBaseChange]
   obtain ⟨p, rfl⟩ := (typeAIndexEquiv 1).surjective k
   obtain ⟨q, rfl⟩ := (typeAIndexEquiv 1).surjective l
-  have hp : p = ⟨(0, 1), by decide⟩ ∨ p = ⟨(1, 0), by decide⟩ := by revert p; decide
-  have hq : q = ⟨(0, 1), by decide⟩ ∨ q = ⟨(1, 0), by decide⟩ := by revert q; decide
-  rcases hp with rfl | rfl <;> rcases hq with rfl | rfl <;>
+  rcases typeAIndex_one_eq_or_eq p with rfl | rfl <;>
+    rcases typeAIndex_one_eq_or_eq q with rfl | rfl <;>
     rw [pairing_typeAIndexEquiv] <;> simp [(typeAIndexEquiv 1).injective.eq_iff]
 
 /-- Over a ring in which `2` is invertible, the roots `±2` of `SL₂` span `Fin 1 → R`, so the root
@@ -136,9 +140,8 @@ theorem sl2RootPairing_root'_apply (k : Fin (1 * (1 + 1))) (v : Fin 1 → R) :
     (sl2RootPairing R).root' k v =
       (if ((typeAIndexEquiv 1).symm k).val.1 = 0 then 2 else -2) * v 0 := by
   obtain ⟨p, rfl⟩ := (typeAIndexEquiv 1).surjective k
-  have : p = ⟨(0, 1), by decide⟩ ∨ p = ⟨(1, 0), by decide⟩ := by revert p; decide
-  rcases this with rfl | rfl <;>
-    simp only [sl2RootPairing, RootPairing.root', toLinearMap_rootPairingBaseChange,
+  rcases typeAIndex_one_eq_or_eq p with rfl | rfl <;>
+    simp only [sl2RootPairing_def, RootPairing.root', toLinearMap_rootPairingBaseChange,
       root_rootPairingBaseChange, dotProduct, Fin.sum_univ_one, piAlgebraMap_apply,
       root_typeAIndexEquiv, Equiv.symm_apply_apply] <;> norm_num
 
@@ -148,7 +151,7 @@ theorem typeAIndexEquiv_symm_sl2RootPairing_reflectionPerm (k l : Fin (1 * (1 + 
       (((typeAIndexEquiv 1).symm l).val.2, ((typeAIndexEquiv 1).symm l).val.1) := by
   obtain ⟨p, rfl⟩ := (typeAIndexEquiv 1).surjective k
   obtain ⟨q, rfl⟩ := (typeAIndexEquiv 1).surjective l
-  rw [sl2RootPairing, reflectionPerm_rootPairingBaseChange, typeAIndexEquiv_symm_reflectionPerm,
+  rw [sl2RootPairing_def, reflectionPerm_rootPairingBaseChange, typeAIndexEquiv_symm_reflectionPerm,
     Equiv.symm_apply_apply]
   revert p q; decide
 

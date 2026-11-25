@@ -134,34 +134,34 @@ private lemma apply_eq_neg_of_mul_mul_mem (ω : AddValuation K (WithTop ℝ)) (h
 /-- The computation behind the compatibility with the torus: conjugation by `diag(t, t⁻¹)`
 changes `ω` of the `(a, b)` entry by `2 ω t` if `a = 0` and by `-2 ω t` if `a = 1`. -/
 private lemma apply_conj_diagonal (ω : AddValuation K (WithTop ℝ)) (hab : a ≠ b) {z : SL(2, K)}
-    (h01 : (z : Matrix (Fin 2) (Fin 2) K) 0 1 = 0) (h10 : (z : Matrix (Fin 2) (Fin 2) K) 1 0 = 0)
-    (c : K) :
+    (hz : (z : Matrix (Fin 2) (Fin 2) K).IsDiag) (c : K) :
     ω (((z * transvection hab c * z⁻¹ : SL(2, K)) : Matrix (Fin 2) (Fin 2) K) a b) =
       ω c - (((if a = 0 then 2 else -2) *
         -(ω ((z : Matrix (Fin 2) (Fin 2) K) 0 0)).untop₀ : ℝ) : WithTop ℝ) := by
   have hdet := fin_two_mul_sub_mul_eq_one z
-  rw [h01, h10, mul_zero, sub_zero] at hdet
-  have hz0 : (z : Matrix (Fin 2) (Fin 2) K) 0 0 ≠ 0 := left_ne_zero_of_mul_eq_one hdet
-  have hz1 : ω ((z : Matrix (Fin 2) (Fin 2) K) 1 1) = -ω ((z : Matrix (Fin 2) (Fin 2) K) 0 0) := by
-    rw [eq_inv_of_mul_eq_one_right hdet, AddValuation.map_inv]
-  obtain ⟨r, hr⟩ := WithTop.ne_top_iff_exists.mp ((ω.ne_top_iff).mpr hz0)
-  rw [diagonal_mul_transvection hab h01 h10, mul_inv_cancel_right, transvection_apply_same,
-    AddValuation.map_mul, AddValuation.map_pow, ← hr, WithTop.untop₀_coe]
-  rcases fin_two_cases hab with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-  · rw [← hr]
-    induction ω c using WithTop.recTopCoe with
-    | top => simp
-    | coe s =>
-      norm_cast
-      simp
-      ring
-  · rw [hz1, ← hr]
-    induction ω c using WithTop.recTopCoe with
-    | top => simp
-    | coe s =>
-      norm_cast
-      simp
-      ring
+  rw [hz (by decide : (0 : Fin 2) ≠ 1), zero_mul, sub_zero] at hdet
+  obtain ⟨r, hr⟩ :=
+    WithTop.ne_top_iff_exists.mp ((ω.ne_top_iff).mpr (left_ne_zero_of_mul_eq_one hdet))
+  have hz1 : ω ((z : Matrix (Fin 2) (Fin 2) K) 1 1) = ((-r : ℝ) : WithTop ℝ) := by
+    rw [eq_inv_of_mul_eq_one_right hdet, AddValuation.map_inv, ← hr]
+    rfl
+  -- Since `(z⁻¹)_{b b} = z_{a a}`, the factor `z_{a a} (z⁻¹)_{b b}` by which conjugation
+  -- rescales the parameter has value `2 ω (z_{a a})`, that is `±2 r`.
+  have hs : ω ((z : Matrix (Fin 2) (Fin 2) K) a a) +
+      ω (((z⁻¹ : SL(2, K)) : Matrix (Fin 2) (Fin 2) K) b b) =
+        (((if a = 0 then 2 else -2) * r : ℝ) : WithTop ℝ) := by
+    rw [_root_.Matrix.SpecialLinearGroup.coe_inv, adjugate_fin_two]
+    rcases fin_two_cases hab with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
+      simp only [of_apply, cons_val', cons_val_zero, cons_val_one, empty_val', cons_val_fin_one,
+        hz1, ← hr, Fin.isValue, ↓reduceIte, one_ne_zero] <;> rw [← WithTop.coe_add] <;>
+      congr 1 <;> ring
+  rw [diagonal_mul_transvection hab hz, mul_inv_cancel_right, transvection_apply_same,
+    AddValuation.map_mul, AddValuation.map_mul, add_right_comm, hs, ← hr, WithTop.untop₀_coe]
+  induction ω c using WithTop.recTopCoe with
+  | top => simp
+  | coe s =>
+    norm_cast
+    ring
 
 end SL2
 
@@ -200,13 +200,13 @@ private lemma range_transvectionHom_eq {k : Fin (1 * (1 + 1))} (hab : a ≠ b)
   obtain ⟨rfl, rfl⟩ := Prod.ext_iff.mp hk
   rfl
 
-private lemma typeAIndex_one_eq_of_fst_eq_zero (p : TypeAIndex 1) (h : p.val.1 = 0) :
-    p.val = (0, 1) := by
-  revert p; decide
-
-private lemma typeAIndex_one_eq_of_fst_ne_zero (p : TypeAIndex 1) (h : p.val.1 ≠ 0) :
-    p.val = (1, 0) := by
-  revert p; decide
+/-- The root subgroup of a reflected root `s_i j` of `SL₂` consists of the transvections in the
+position transposed to that of `j`. -/
+private lemma range_transvectionHom_reflectionPerm (i j : Fin (1 * (1 + 1))) :
+    (transvectionHom (A := K)
+        ((typeAIndexEquiv 1).symm ((sl2RootPairing R).reflectionPerm i j)).property).range =
+      (transvectionHom ((typeAIndexEquiv 1).symm j).property.symm).range :=
+  range_transvectionHom_eq _ (typeAIndexEquiv_symm_sl2RootPairing_reflectionPerm i j)
 
 /-- The root subgroups of the positive roots of `SL₂` lie in the upper unipotent subgroup. -/
 private lemma iSup_pos_le_range_transvectionHom :
@@ -215,9 +215,10 @@ private lemma iSup_pos_le_range_transvectionHom :
         (transvectionHom (A := K) (zero_ne_one : (0 : Fin 2) ≠ 1)).range := by
   refine iSup₂_le fun i hi ↦ (range_transvectionHom_eq _ ?_).le
   rw [sl2RootPairing_root'_apply] at hi
-  split_ifs at hi with h
-  · exact typeAIndex_one_eq_of_fst_eq_zero _ h
-  · norm_num at hi
+  rcases typeAIndex_one_eq_or_eq ((typeAIndexEquiv 1).symm i) with h | h
+  · rw [h]
+  · rw [h] at hi
+    norm_num at hi
 
 /-- The root subgroups of the negative roots of `SL₂` lie in the lower unipotent subgroup. -/
 private lemma iSup_neg_le_range_transvectionHom :
@@ -226,9 +227,10 @@ private lemma iSup_neg_le_range_transvectionHom :
         (transvectionHom (A := K) (one_ne_zero : (1 : Fin 2) ≠ 0)).range := by
   refine iSup₂_le fun i hi ↦ (range_transvectionHom_eq _ ?_).le
   rw [sl2RootPairing_root'_apply] at hi
-  split_ifs at hi with h
-  · norm_num at hi
-  · exact typeAIndex_one_eq_of_fst_ne_zero _ h
+  rcases typeAIndex_one_eq_or_eq ((typeAIndexEquiv 1).symm i) with h | h
+  · rw [h] at hi
+    norm_num at hi
+  · rw [h]
 
 /-- The axiom (DR6) for `SL₂`: `U⁺` is the upper and `U⁻` the lower unipotent subgroup, and an
 upper triangular element of the lower unipotent subgroup is trivial. -/
@@ -277,23 +279,15 @@ noncomputable def RootDatum.sl2 (R : Type*) [Field R] [LinearOrder R] [IsStrictO
     ⟨_, Set.ext fun _ ↦
       TauCeti.Matrix.SpecialLinearGroup.mem_op_modularGroup_S_smul_diagonalTorus_iff.symm⟩
   bruhat i := by
-    obtain ⟨⟨⟨a, b⟩, hab⟩, hp⟩ : ∃ p, (typeAIndexEquiv 1).symm i = p := ⟨_, rfl⟩
-    have hi : ((typeAIndexEquiv 1).symm i).val = (a, b) := by rw [hp]
-    have hi' : ((typeAIndexEquiv 1).symm ((sl2RootPairing R).reflectionPerm i i)).val = (b, a) := by
-      rw [typeAIndexEquiv_symm_sl2RootPairing_reflectionPerm, hi]
-    rw [range_transvectionHom_eq hab hi, range_transvectionHom_eq hab.symm hi']
+    rw [range_transvectionHom_reflectionPerm]
     rintro _ ⟨⟨c, rfl⟩, hc⟩
     rw [transvectionHom_apply] at hc ⊢
-    refine transvection_mem_range_mul_antidiagonal_mul_range hab fun h ↦ hc ?_
+    refine transvection_mem_range_mul_antidiagonal_mul_range _ fun h ↦ hc ?_
     rw [h, transvection_coeff_zero]
     exact Set.mem_singleton 1
   reflection_conjugates i m hm j := by
-    obtain ⟨⟨⟨a, b⟩, hab⟩, hp⟩ : ∃ p, (typeAIndexEquiv 1).symm j = p := ⟨_, rfl⟩
-    have hj : ((typeAIndexEquiv 1).symm j).val = (a, b) := by rw [hp]
-    have hj' : ((typeAIndexEquiv 1).symm ((sl2RootPairing R).reflectionPerm i j)).val = (b, a) := by
-      rw [typeAIndexEquiv_symm_sl2RootPairing_reflectionPerm, hj]
-    rw [range_transvectionHom_eq hab hj, range_transvectionHom_eq hab.symm hj']
-    exact conjAct_smul_range_transvectionHom_of_antidiagonal hab hm.1 hm.2
+    rw [range_transvectionHom_reflectionPerm]
+    exact conjAct_smul_range_transvectionHom_of_antidiagonal _ hm.1 hm.2
   positiveVector_regular i := by
     rw [sl2RootPairing_root'_apply]
     split_ifs <;> norm_num
@@ -431,14 +425,8 @@ private lemma transvection_eq_of_mem_U_reflectionPerm_self {i : Fin (1 * (1 + 1)
     transvection ((typeAIndexEquiv 1).symm i).property.symm
       ((g : Matrix (Fin 2) (Fin 2) K) ((typeAIndexEquiv 1).symm i).val.2
         ((typeAIndexEquiv 1).symm i).val.1) = g := by
-  have key (a b a' b' : Fin 2) (h : a' ≠ b') (h' : a ≠ b) (ha : a' = b) (hb : b' = a)
-      (hg : transvection h ((g : Matrix (Fin 2) (Fin 2) K) a' b') = g) :
-      transvection h'.symm ((g : Matrix (Fin 2) (Fin 2) K) b a) = g := by
-    subst ha hb
-    exact hg
-  have hr := typeAIndexEquiv_symm_sl2RootPairing_reflectionPerm (R := R) i i
-  exact key _ _ _ _ _ ((typeAIndexEquiv 1).symm i).property (congrArg Prod.fst hr)
-    (congrArg Prod.snd hr) (RootDatum.mem_sl2_U_iff.mp hg)
+  rw [RootDatum.sl2_U, range_transvectionHom_reflectionPerm] at hg
+  exact (mem_range_transvectionHom_iff _).mp hg
 
 /-- The coordinate of the root `-a` is the transposed coordinate of `a`. -/
 private lemma apply_reflectionPerm_self (i : Fin (1 * (1 + 1))) (g : SL(2, K)) :
@@ -651,7 +639,7 @@ theorem Valuation.isCompatible_sl2 (ω : AddValuation K (WithTop ℝ))
     sl2TorusValuationMap_apply]
   dsimp only
   rw [← RootDatum.mem_sl2_U_iff.mp hg,
-    SL2.apply_conj_diagonal ω _ (hz (by decide)) (hz (by decide)), transvection_apply_same]
+    SL2.apply_conj_diagonal ω _ hz, transvection_apply_same]
 
 end Valuation
 
