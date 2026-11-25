@@ -62,8 +62,8 @@ theorem isProperEtaleGroupoid_fullSubcategory :
   let := IsLieGroupoid.isTopologicalGroupoid I J C
   let := IsLieGroupoid.secondCountableTopology_arrows (I := I) (J := J) (C := C)
   let := IsProperEtaleGroupoid.t2Space_arrows (I := I) (J := J) (C := C)
-  have hObj' := P.isLocalDiffeomorph_obj_ι hP I ∞
-  have hArr' := P.isLocalDiffeomorph_mapTotal_ι hP J ∞
+  have hObj' := P.isLocalDiffeomorph_ι_obj hP I ∞
+  have hArr' := P.isLocalDiffeomorph_ι_mapTotal hP J ∞
     IsTopologicalGroupoid.continuous_source IsTopologicalGroupoid.continuous_target
   have hs := IsProperEtaleGroupoid.isLocalDiffeomorph_source (I := I) (J := J) (C := C)
   have ht := IsProperEtaleGroupoid.isLocalDiffeomorph_target (I := I) (J := J) (C := C)

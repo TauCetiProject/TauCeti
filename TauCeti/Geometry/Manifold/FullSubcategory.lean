@@ -51,14 +51,14 @@ variable {𝕜 E H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E
 
 /-- The object inclusion of an open full subcategory is a local diffeomorphism for the
 restricted object atlas. -/
-theorem isLocalDiffeomorph_obj_ι [ChartedSpace H C] :
+theorem isLocalDiffeomorph_ι_obj [ChartedSpace H C] :
     letI := P.fullSubcategoryChartedSpace (H := H) hP
     IsLocalDiffeomorph I I n P.ι.obj :=
   (isOpenEmbedding_obj_fullSubcategory hP).isLocalHomeomorph.isLocalDiffeomorph_chartedSpaceComap
 
 /-- The total-arrow inclusion of an open full subcategory is a local diffeomorphism for the
 restricted arrow atlas when the ambient endpoints are continuous. -/
-theorem isLocalDiffeomorph_mapTotal_ι [TopologicalSpace (Quiver.Total C)]
+theorem isLocalDiffeomorph_ι_mapTotal [TopologicalSpace (Quiver.Total C)]
     [ChartedSpace H (Quiver.Total C)]
     (hs : Continuous (Quiver.Total.left : Quiver.Total C → C))
     (ht : Continuous (Quiver.Total.right : Quiver.Total C → C)) :
