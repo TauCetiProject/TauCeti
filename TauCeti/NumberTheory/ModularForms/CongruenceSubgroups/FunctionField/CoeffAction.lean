@@ -7,7 +7,7 @@ module
 
 public import TauCeti.FieldTheory.IsAlgClosed.Automorphism
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.QExpansion
-import TauCeti.Analysis.SpecialFunctions.Complex.CircleAddChar
+import TauCeti.Analysis.Complex.RootsOfUnity.Circle
 import TauCeti.LinearAlgebra.Matrix.Diagonal
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Degree
 
@@ -99,15 +99,16 @@ theorem exists_laurentQExpansion_eq_mapRingHom (σ : ℂ →+* ℂ)
     (F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) :
     ∃ G, laurentQExpansion (cuspDatumInftyGamma N) G =
       HahnSeries.mapRingHom σ (laurentQExpansion (cuspDatumInftyGamma N) F) := by
-  obtain ⟨d, hd⟩ := ZMod.exists_map_stdAddChar_one_eq (N := N) σ
+  obtain ⟨d, hd⟩ := σ.toMonoidHom.exists_map_stdAddChar_one_eq (N := N) σ.injective
   refine mem_coeffConjSubfield.mp ((subfield_eq_top_of_frickeMeromorphicFunction_mem (N := N)
     (S := coeffConjSubfield σ) (fun c ↦ ?_) ?_ fun a _ ↦ ?_).symm ▸ Subfield.mem_top F)
   · refine mem_coeffConjSubfield.mpr ⟨algebraMap ℂ _ (σ c), ?_⟩
     simp [LaurentSeries.algebraMap_apply, HahnSeries.C_apply, HahnSeries.mapRingHom_single]
-  · exact mem_coeffConjSubfield.mpr ⟨_, (mapRingHom_laurentQExpansion_eq_of_mem_coeffSubfield _
-      (fun _ hx ↦ hx) (mem_coeffIntermediateField.mp
+  · exact mem_coeffConjSubfield.mpr ⟨_, ((mapRingHom_laurentQExpansion_eq_of_mem_coeffSubfield _
+      (mem_coeffIntermediateField.mp
         (compactifiedQuotientComap_jMeromorphicFunction_mem_coeffIntermediateField N
-          (σ.eqLocusField (RingHom.id ℂ))))).symm⟩
+          (σ.eqLocusField (RingHom.id ℂ)))) le_rfl).trans
+      (by rw [HahnSeries.mapRingHom_id, RingHom.id_apply])).symm⟩
   · exact mem_coeffConjSubfield.mpr
       ⟨_, (map_laurentQExpansion_frickeMeromorphicFunction hd a).symm⟩
 
@@ -206,8 +207,9 @@ theorem modularFunctionCoeffAction_eq_self_of_mem_coeffSubfield {K : Subfield �
     {F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient}
     (hF : F ∈ coeffSubfield (cuspDatumInftyGamma N) K) :
     modularFunctionCoeffAction N σ F = F :=
-  modularFunctionCoeffAction_apply_eq_iff.mpr
-    (mapRingHom_laurentQExpansion_eq_of_mem_coeffSubfield _ hσ hF).symm
+  modularFunctionCoeffAction_apply_eq_iff.mpr <| by
+    simpa using (mapRingHom_laurentQExpansion_eq_of_mem_coeffSubfield _ hF
+      (σ' := RingHom.id ℂ) fun x hx ↦ RingHom.mem_eqLocusField.mpr (hσ x hx)).symm
 
 /-- The modular invariant `j`, which has rational Fourier coefficients, is fixed by every
 automorphism of `ℂ`. -/
