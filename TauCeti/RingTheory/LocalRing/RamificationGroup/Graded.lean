@@ -24,16 +24,20 @@ Let a group `G` act by ring automorphisms on a local ring `S` with residue field
 `σ ^ m x - x ≡ m (σ x - x)` modulo `𝔪 ^ (i + 2)`, because `σ - 1` raises the `𝔪`-adic order of
 `𝔪 ^ (i + 1)` by `i + 1 ≥ 2`. Hence `σ ^ p ∈ G_{i+1}` when `k` has characteristic `p`, and
 `σ ∈ G_{i+1}` as soon as some power `σ ^ m` with `m` invertible in `k` is. So every `G_i / G_{i+1}`
-with `i ≥ 1` is a `p`-group, and when the action is faithful, `S` is Noetherian and `G_0` is
-finite, every `G_i` with `i ≥ 1` is a `p`-group, and is trivial in residue characteristic zero.
+with `i ≥ 1` is a `p`-group; every `G_i` with `i ≥ 1` is a `p`-group once the filtration vanishes
+at some index, as it does when the action is faithful, `S` is Noetherian and `G_0` is finite; and
+in residue characteristic zero a finite `G_i` with `i ≥ 1` is trivial once the filtration meets
+in the trivial group.
 
 **A uniformizer decides the filtration.** Suppose that `G` fixes a local subring `R`, through an
 algebra `R → S` with local structure map, and that the residue extension of `S` over `R` is
-separable. If `π` generates the maximal ideal of `S`, then an element `σ ∈ G_0` lies in `G_n`
-exactly when `σ π ≡ π` modulo `𝔪 ^ (n + 1)`, and over a discrete valuation ring its lower index is
-`v (σ π - π)`. Every residue class is a simple root of a polynomial over `R`, and a Taylor expansion
-of that polynomial transfers the congruence from `π` to the class. Without separability this
-fails: an element of `G_0` can fix `π` and still act nontrivially on `S ⧸ 𝔪 ^ 2`.
+separable; the invariant subalgebra of `S` is such a local subring
+(`TauCeti.FixedPoints.isLocalRing_subalgebra`). If `π` generates the
+maximal ideal of `S`, then an element `σ ∈ G_0` lies in `G_n` exactly when `σ π ≡ π` modulo
+`𝔪 ^ (n + 1)`, and over a discrete valuation ring its lower index is `v (σ π - π)`. Every residue
+class is a simple root of a polynomial over `R`, and a Taylor expansion of that polynomial
+transfers the congruence from `π` to the class. Without separability this fails: an element of
+`G_0` can fix `π` and still act nontrivially on `S ⧸ 𝔪 ^ 2`.
 
 **The graded embeddings over a discrete valuation ring.** Writing `σ π = π c_σ`, the residue of
 `c_σ` is the **tame character** `G_0 →* kˣ`, which does not depend on the uniformizer. Writing
@@ -60,15 +64,19 @@ group `G_1` is the unique Sylow `p`-subgroup of `G_0`.
   `TauCeti.IsLocalRing.isPGroup_ramificationGroupGraded`: in residue characteristic `p`, the
   `p`-th power of an element of `G_i` lies in `G_{i+1}` for `i ≥ 1`, so `G_i / G_{i+1}` is a
   `p`-group.
-* `TauCeti.IsLocalRing.isPGroup_ramificationGroup` and
-  `TauCeti.IsLocalRing.ramificationGroup_eq_bot_of_charZero`: for a faithful action on a
-  Noetherian local ring with finite `G_0`, the groups `G_i` with `i ≥ 1` are `p`-groups, and they
-  are trivial in residue characteristic zero.
+* `TauCeti.IsLocalRing.isPGroup_ramificationGroup_of_eq_bot` and
+  `TauCeti.IsLocalRing.isPGroup_ramificationGroup`: the groups `G_i` with `i ≥ 1` are `p`-groups
+  once the filtration vanishes at some index, in particular for a faithful action on a Noetherian
+  local ring with finite `G_0`.
+* `TauCeti.IsLocalRing.ramificationGroup_eq_bot_of_charZero`: in residue characteristic zero, a
+  finite `G_i` with `i ≥ 1` is trivial when the filtration meets in the trivial group.
 * `TauCeti.IsLocalRing.mem_ramificationGroup_natCast_iff_smul_sub_mem`: for a separable residue
   extension, membership of `σ ∈ G_0` in `G_n` is decided at a generator of the maximal ideal, and
   `TauCeti.IsLocalRing.lowerIndex_eq_addVal_smul_sub` computes the lower index there.
 * `TauCeti.IsLocalRing.coe_tameCharacter_of_smul_eq_mul`: the tame character computed at any
   uniformizer.
+* `TauCeti.IsLocalRing.toAdd_ramificationGroupToResidueField_of_mul_eq`: changing the uniformizer
+  from `π` to `π a` multiplies the positive-depth coordinate by the `(n + 1)`-st power of `a`.
 * `TauCeti.IsLocalRing.ker_tameCharacter` and `TauCeti.IsLocalRing.tameCharacterGraded_injective`,
   `TauCeti.IsLocalRing.ker_ramificationGroupToResidueField` and
   `TauCeti.IsLocalRing.ramificationGroupGradedToResidueField_injective`: for a separable residue
@@ -192,14 +200,11 @@ theorem isPGroup_ramificationGroupGraded (p : ℕ) [CharP (ResidueField S) p] {i
       Subgroup.coe_pow]
     exact pow_mem_ramificationGroup_of_charP p hi σ.property
 
-variable (G S) [IsNoetherianRing S] [FaithfulSMul G S] [Finite (ramificationGroup G S 0)]
-
-/-- **The positive-depth ramification groups are `p`-groups**, for `p` the residue characteristic,
-when the action on the Noetherian local ring `S` is faithful and `G_0` is finite. In particular the
-first ramification group `G_1` is a `p`-group. -/
-theorem isPGroup_ramificationGroup (p : ℕ) [CharP (ResidueField S) p] {i : ℤ} (hi : 0 < i) :
-    IsPGroup p (ramificationGroup G S i) := by
-  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot G S
+/-- **The positive-depth ramification groups are `p`-groups** once the filtration vanishes at some
+index `N`, for `p` the residue characteristic: the `p ^ k`-th power of an element of `G_i` lies in
+`G_{i+k}`. -/
+theorem isPGroup_ramificationGroup_of_eq_bot (p : ℕ) [CharP (ResidueField S) p] {i N : ℤ}
+    (hi : 0 < i) (hN : ramificationGroup G S N = ⊥) : IsPGroup p (ramificationGroup G S i) := by
   intro σ
   have hpow : ∀ k : ℕ, (σ : G) ^ p ^ k ∈ ramificationGroup G S (i + k) := by
     intro k
@@ -208,25 +213,24 @@ theorem isPGroup_ramificationGroup (p : ℕ) [CharP (ResidueField S) p] {i : ℤ
     | succ k ih =>
       rw [pow_succ, pow_mul, Nat.cast_succ, ← add_assoc]
       exact pow_mem_ramificationGroup_of_charP p (by omega) ih
-  refine ⟨N.toNat, Subtype.ext ?_⟩
-  have h := hpow N.toNat
-  rw [hN _ (by omega), Subgroup.mem_bot] at h
+  refine ⟨(N - i).toNat, Subtype.ext ?_⟩
+  have h := ramificationGroup_antitone G S (by omega : N ≤ i + (N - i).toNat) (hpow (N - i).toNat)
+  rw [hN, Subgroup.mem_bot] at h
   simpa using h
 
-/-- **In residue characteristic zero the positive-depth ramification groups are trivial**, when
-the action on the Noetherian local ring `S` is faithful and `G_0` is finite: each positive-depth
-step `G_i / G_{i+1}` is a finite group without torsion. -/
-theorem ramificationGroup_eq_bot_of_charZero [CharZero (ResidueField S)] {i : ℤ} (hi : 0 < i) :
+/-- **In residue characteristic zero the positive-depth ramification groups are trivial** when
+they are finite and the filtration meets in the trivial group: each positive-depth step
+`G_j / G_{j+1}` is a finite group without torsion, so `G_i` lies in every `G_j`. -/
+theorem ramificationGroup_eq_bot_of_charZero [CharZero (ResidueField S)] {i : ℤ} (hi : 0 < i)
+    [Finite (ramificationGroup G S i)] (hbot : ⨅ j, ramificationGroup G S j = ⊥) :
     ramificationGroup G S i = ⊥ := by
-  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot G S
-  have hstep : ∀ j : ℤ, 0 < j → ramificationGroup G S j ≤ ramificationGroup G S (j + 1) := by
-    intro j hj σ hσ
-    -- `σ` has finite order `m`, since it lies in the finite group `G_0`.
-    have hσ0 : σ ∈ ramificationGroup G S 0 := ramificationGroup_antitone G S hj.le hσ
+  have hstep : ∀ j : ℤ, i ≤ j → ramificationGroup G S j ≤ ramificationGroup G S (j + 1) := by
+    intro j hij σ hσ
+    -- `σ` has finite order, since it lies in the finite group `G_i`.
     have hm : 0 < orderOf σ := by
-      rw [← Subgroup.orderOf_mk σ hσ0]
+      rw [← Subgroup.orderOf_mk σ (ramificationGroup_antitone G S hij hσ)]
       exact orderOf_pos _
-    refine mem_ramificationGroup_add_one_of_pow_mem hj hσ (Nat.cast_ne_zero.mpr hm.ne') ?_
+    refine mem_ramificationGroup_add_one_of_pow_mem (by omega) hσ (Nat.cast_ne_zero.mpr hm.ne') ?_
     rw [pow_orderOf_eq_one]
     exact one_mem _
   have hle : ∀ k : ℕ, ramificationGroup G S i ≤ ramificationGroup G S (i + k) := by
@@ -236,7 +240,18 @@ theorem ramificationGroup_eq_bot_of_charZero [CharZero (ResidueField S)] {i : �
     | succ k ih =>
       rw [Nat.cast_succ, ← add_assoc]
       exact ih.trans (hstep _ (by omega))
-  exact eq_bot_iff.mpr ((hle N.toNat).trans (hN _ (by omega)).le)
+  refine eq_bot_iff.mpr (hbot ▸ le_iInf fun j ↦ ?_)
+  exact (hle (j - i).toNat).trans (ramificationGroup_antitone G S (by omega))
+
+variable (G S) [IsNoetherianRing S] [FaithfulSMul G S] [Finite (ramificationGroup G S 0)]
+
+/-- **The positive-depth ramification groups are `p`-groups**, for `p` the residue characteristic,
+when the action on the Noetherian local ring `S` is faithful and `G_0` is finite. In particular the
+first ramification group `G_1` is a `p`-group. -/
+theorem isPGroup_ramificationGroup (p : ℕ) [CharP (ResidueField S) p] {i : ℤ} (hi : 0 < i) :
+    IsPGroup p (ramificationGroup G S i) := by
+  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot G S
+  exact isPGroup_ramificationGroup_of_eq_bot p hi (hN N le_rfl)
 
 end Positive
 
@@ -555,6 +570,35 @@ theorem ramificationGroupToResidueField_eq_one_iff {π : S} (hπ : Irreducible �
     TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_of_mul_pow_mem_maximalIdeal_pow_succ hπ h⟩
   rw [pow_succ']
   exact Ideal.mul_mem_mul h (Ideal.pow_mem_pow ((mem_maximalIdeal π).mpr hπ.not_isUnit) _)
+
+/-- **Changing the uniformizer** in the positive-depth homomorphism: if `π' = π a`, then the
+coordinate of `σ` at `π` is `a ^ (n + 1)` times its coordinate at `π'`, modulo `𝔪`. -/
+theorem toAdd_ramificationGroupToResidueField_of_mul_eq {π π' a : S} (hπ : Irreducible π)
+    (hπ' : Irreducible π') (ha : π * a = π') {n : ℕ} (σ : ramificationGroup G S ((n : ℤ) + 1)) :
+    (ramificationGroupToResidueField hπ n σ).toAdd =
+      residue S a ^ (n + 1) * (ramificationGroupToResidueField hπ' n σ).toAdd := by
+  obtain ⟨c, hc⟩ := pow_dvd_smul_sub hπ σ
+  obtain ⟨a', ha'⟩ := ((hπ'.isUnit_or_isUnit ha.symm).resolve_left hπ.not_isUnit).exists_right_inv
+  obtain ⟨b, hb⟩ : π ^ (n + 2) ∣ (σ : G) • a - a := by
+    have h := mem_ramificationGroup_iff.mp σ.property a
+    rwa [(by omega : ((n : ℤ) + 1 + 1).toNat = n + 2), hπ.maximalIdeal_eq,
+      Ideal.span_singleton_pow, Ideal.mem_span_singleton] at h
+  -- `σ π' - π' = π' ^ (n + 2) a' ^ (n + 2) (π b + c a + c π ^ (n + 2) b)`, with `a a' = 1`.
+  have hpow : (a * a') ^ (n + 2) = 1 := by rw [ha', one_pow]
+  have hc' : (σ : G) • π' - π' =
+      π' ^ (n + 2) * (a' ^ (n + 2) * (π * b + c * a + c * π ^ (n + 2) * b)) := by
+    rw [← ha, smul_mul']
+    linear_combination (σ : G) • a * hc + (π + π ^ (n + 2) * c) * hb -
+      π ^ (n + 2) * (π * b + c * a + c * π ^ (n + 2) * b) * hpow
+  have hπ0 : residue S π = 0 :=
+    (residue_eq_zero_iff π).mpr ((mem_maximalIdeal π).mpr hπ.not_isUnit)
+  have hres : (residue S a * residue S a') ^ (n + 2) = 1 := by
+    rw [← map_mul, ha', map_one, one_pow]
+  rw [ramificationGroupToResidueField_apply_of_smul_sub_eq hπ hc,
+    ramificationGroupToResidueField_apply_of_smul_sub_eq hπ' hc', toAdd_ofAdd, toAdd_ofAdd]
+  simp only [map_mul, map_add, map_pow, hπ0, zero_mul, zero_add, ne_eq, add_eq_zero,
+    OfNat.ofNat_ne_zero, and_false, not_false_eq_true, zero_pow, mul_zero, add_zero]
+  linear_combination (-residue S c) * hres
 
 /-- The positive-depth homomorphism is trivial on `G_{n+2}`. -/
 theorem ramificationGroup_add_one_subgroupOf_le_ker_ramificationGroupToResidueField {π : S}
