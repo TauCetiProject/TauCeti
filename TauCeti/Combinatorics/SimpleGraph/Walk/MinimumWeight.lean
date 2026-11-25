@@ -41,27 +41,31 @@ universe u v u'
 variable {V : Type u} {V' : Type u'} {K : Type v} {G H : SimpleGraph V}
   {G' : SimpleGraph V'} {u v w : V}
 
+/-- Mapping a weight function over the edges of a nonempty walk gives a nonempty list. -/
+theorem map_edges_ne_nil (p : G.Walk u v) (wt : Sym2 V → K) (hp : ¬p.Nil) :
+    p.edges.map wt ≠ [] := by
+  simpa using (p.edges_eq_nil.not.mpr hp)
+
 /-- The minimum weight of an edge traversed by a nonempty walk.
 
 Repeated edge identities and distinct edges of equal weight are harmless: the definition takes the
 minimum of the list of edge weights. -/
 def minEdgeWeight [LinearOrder K] (p : G.Walk u v) (wt : Sym2 V → K)
     (hp : ¬p.Nil) : K :=
-  (p.edges.map wt).min (by simpa using (p.edges_eq_nil.not.mpr hp))
+  (p.edges.map wt).min (p.map_edges_ne_nil wt hp)
 
 /-- The minimum edge weight is the minimum of the list of weights of the traversed edges. -/
 theorem minEdgeWeight_def [LinearOrder K] (p : G.Walk u v) (wt : Sym2 V → K)
     (hp : ¬p.Nil) :
     p.minEdgeWeight wt hp =
-      (p.edges.map wt).min (by simpa using (p.edges_eq_nil.not.mpr hp)) :=
+      (p.edges.map wt).min (p.map_edges_ne_nil wt hp) :=
   (rfl)
 
 /-- Some edge of a nonempty walk attains its minimum edge weight. -/
 theorem exists_weight_eq_minEdgeWeight [LinearOrder K] (p : G.Walk u v) (wt : Sym2 V → K)
     (hp : ¬p.Nil) : ∃ e ∈ p.edges, wt e = p.minEdgeWeight wt hp := by
   unfold minEdgeWeight
-  have hne : p.edges.map wt ≠ [] := by simpa using (p.edges_eq_nil.not.mpr hp)
-  obtain ⟨e, he, hwt⟩ := List.mem_map.mp (List.min_mem hne)
+  obtain ⟨e, he, hwt⟩ := List.mem_map.mp (List.min_mem (p.map_edges_ne_nil wt hp))
   exact ⟨e, he, hwt⟩
 
 /-- The minimum edge weight of a walk is at most the weight of every traversed edge. -/

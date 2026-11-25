@@ -446,17 +446,22 @@ theorem map_edge_arrows_walkToPath {u v : V} (p : G.Walk u v) :
   rcases a with ⟨i, j, e⟩
   rw [edge_def, Function.comp_apply, totalArrowEquivDart_apply, SimpleGraph.Dart.edge_mk]
 
+/-- The directed walk corresponding to a nonempty simple-graph walk has a nonempty arrow list. -/
+theorem arrows_walkToPath_ne_nil {u v : V} (p : G.Walk u v) (hp : ¬p.Nil) :
+    ArrowWalk.arrows (Q := Hom G) (walkToPath G p) ≠ [] := by
+  intro h
+  apply hp
+  apply p.edges_eq_nil.mp
+  rw [← map_edge_arrows_walkToPath G p, h]
+  simp
+
 /-- The bottleneck of the directed walk corresponding to a nonempty simple-graph walk is its
 minimum edge weight. -/
 @[simp]
 theorem bottleneck_walkToPath {K : Type w} [LinearOrder K] {u v : V} (p : G.Walk u v)
     (wt : Sym2 V → K) (hp : ¬p.Nil) :
-    ArrowWalk.bottleneck (Q := Hom G) (capacity G wt) (walkToPath G p) (by
-      intro h
-      apply hp
-      apply p.edges_eq_nil.mp
-      rw [← map_edge_arrows_walkToPath G p, h]
-      simp) = p.minEdgeWeight wt hp := by
+    ArrowWalk.bottleneck (Q := Hom G) (capacity G wt) (walkToPath G p)
+      (arrows_walkToPath_ne_nil G p hp) = p.minEdgeWeight wt hp := by
   apply eq_of_forall_le_iff
   intro k
   rw [ArrowWalk.le_bottleneck_iff, p.le_minEdgeWeight_iff]
