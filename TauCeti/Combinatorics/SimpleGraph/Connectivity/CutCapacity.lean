@@ -52,6 +52,17 @@ theorem unitCutCapacity_eq_card_filter (G : SimpleGraph V) [Fintype G.edgeSet]
   ext e
   simp
 
+private theorem edgeSet_inter_crosses_singleton (G : SimpleGraph V) (v : V) :
+    G.edgeSet ∩ {e | e.Crosses (({v} : Finset V) : Set V)} = G.incidenceSet v := by
+  ext e
+  induction e using Sym2.inductionOn with
+  | _ x y =>
+    simp only [Set.mem_inter_iff, mem_edgeSet, Set.mem_ofPred_eq, Finset.coe_singleton,
+      Sym2.crosses_mk_iff, Set.mem_singleton_iff, mk'_mem_incidenceSet_iff]
+    exact ⟨fun ⟨hxy, hv⟩ ↦ ⟨hxy, hv.elim (fun h ↦ .inl h.1.symm) (fun h ↦ .inr h.1.symm)⟩,
+      fun ⟨hxy, hv⟩ ↦ ⟨hxy, hv.elim (fun h ↦ .inl ⟨h.symm, h ▸ hxy.ne.symm⟩)
+        (fun h ↦ .inr ⟨h.symm, h ▸ hxy.ne⟩)⟩⟩
+
 /-- The weighted cut capacity of a singleton `{v}` is the sum of weights of edges incident to
 `v`. -/
 theorem pairCutCapacity_indicator_edgeSet_singleton [Fintype V] [AddCommMonoid K]
@@ -59,59 +70,41 @@ theorem pairCutCapacity_indicator_edgeSet_singleton [Fintype V] [AddCommMonoid K
     TauCeti.pairCutCapacity (G.edgeSet.indicator c) {v} =
       ∑ w ∈ G.neighborFinset v, c s(v, w) := by
   classical
+  have hmem (p : Sym2 V) :
+      p ∈ G.edgeSet ∧ p.Crosses (({v} : Finset V) : Set V) ↔ p ∈ G.incidenceFinset v := by
+    rw [mem_incidenceFinset, ← G.edgeSet_inter_crosses_singleton v, Set.mem_inter_iff]
+    rfl
   rw [TauCeti.pairCutCapacity_def]
   have hsum :
-      (∑ p : Sym2 V, if p.Crosses ({v} : Set V) then G.edgeSet.indicator c p else 0) =
-        ∑ p ∈ univ.filter
-          (fun p : Sym2 V ↦ p ∈ G.edgeSet ∧ p.Crosses ({v} : Set V)), c p := by
-    rw [Finset.sum_filter]
+      (∑ p : Sym2 V, if p.Crosses (({v} : Finset V) : Set V) then G.edgeSet.indicator c p else 0) =
+        ∑ p ∈ G.incidenceFinset v, c p := by
+    have hfilt : G.incidenceFinset v = univ.filter (· ∈ G.incidenceFinset v) := by ext; simp
+    rw [hfilt, Finset.sum_filter]
     refine Finset.sum_congr rfl fun p _ ↦ ?_
-    by_cases hp : p ∈ G.edgeSet <;> by_cases hcross : p.Crosses ({v} : Set V) <;>
-      simp [hp, hcross, Set.indicator_of_mem, Set.indicator_of_notMem]
-  rw [Finset.coe_singleton, hsum]
-  symm
-  refine Finset.sum_nbij (fun w ↦ s(v, w)) ?_ ?_ ?_ (fun _ _ ↦ rfl)
-  · intro w hw
-    have hadj : G.Adj v w := (G.mem_neighborFinset v w).mp hw
-    simp only [mem_filter, mem_univ, true_and, mem_edgeSet, Sym2.crosses_mk_iff,
-      Set.mem_singleton_iff]
-    exact ⟨hadj, .inl hadj.ne.symm⟩
-  · intro w₁ _ w₂ _ h
-    rcases Sym2.eq_iff.mp h with ⟨-, rfl⟩ | ⟨hvw, rfl⟩
-    · rfl
-    · exact hvw
-  · intro p hp
-    simp only [mem_coe, mem_filter, mem_univ, true_and] at hp
-    induction p using Sym2.inductionOn with
-    | _ x y =>
-      simp only [mem_edgeSet, Sym2.crosses_mk_iff, Set.mem_singleton_iff] at hp
-      rcases hp.2 with ⟨rfl, -⟩ | ⟨rfl, -⟩
-      · exact ⟨y, mem_coe.mpr ((G.mem_neighborFinset x y).mpr hp.1), rfl⟩
-      · exact ⟨x, mem_coe.mpr ((G.mem_neighborFinset y x).mpr hp.1.symm), Sym2.eq_swap⟩
+    by_cases hp : p ∈ G.edgeSet <;> by_cases hcross : p.Crosses (({v} : Finset V) : Set V)
+    · have hinc : p ∈ G.incidenceFinset v := (hmem p).mp ⟨hp, hcross⟩
+      simp only [hcross, hinc, ↓reduceIte, Set.indicator_of_mem hp]
+    · have hinc : p ∉ G.incidenceFinset v := fun h ↦ hcross ((hmem p).mpr h).2
+      simp only [hcross, hinc, ↓reduceIte]
+    · have hinc : p ∉ G.incidenceFinset v := fun h ↦ hp ((hmem p).mpr h).1
+      simp only [hcross, hinc, ↓reduceIte, Set.indicator_of_notMem hp]
+    · have hinc : p ∉ G.incidenceFinset v := fun h ↦ hp ((hmem p).mpr h).1
+      simp only [hcross, hinc, ↓reduceIte]
+  have hinc_sub : ∑ p ∈ G.incidenceFinset v, c p = ∑ e : G.incidenceSet v, c e.val :=
+    Finset.sum_subtype (G.incidenceFinset v) (fun _ ↦ mem_incidenceFinset) c
+  have hnb_sub :
+      ∑ w ∈ G.neighborFinset v, c s(v, w) = ∑ w : G.neighborSet v, c s(v, w.val) :=
+    Finset.sum_subtype (G.neighborFinset v) (fun _ ↦ G.mem_neighborFinset v _) (fun w ↦ c s(v, w))
+  rw [hsum, hinc_sub, hnb_sub]
+  exact (Fintype.sum_equiv (G.incidenceSetEquivNeighborSet v).symm
+    (fun w ↦ c s(v, w.val)) (fun e ↦ c e.val) fun _ ↦ rfl).symm
 
 /-- The unit cut capacity of a singleton `{v}` is the degree of `v`. -/
 @[simp]
 theorem unitCutCapacity_singleton (G : SimpleGraph V) [Finite G.edgeSet]
     (v : V) [Fintype (G.neighborSet v)] :
     G.unitCutCapacity {v} = G.degree v := by
-  rw [unitCutCapacity_eq_ncard, ← card_neighborFinset_eq_degree, ← Set.ncard_coe_finset,
-    coe_neighborFinset]
-  symm
-  refine Set.ncard_congr (fun w _ ↦ s(v, w)) ?_ ?_ ?_
-  · intro w hw
-    exact ⟨G.mem_edgeSet.mpr hw, by simp [Sym2.crosses_mk_iff, hw.ne.symm]⟩
-  · intro w₁ w₂ _ _ h
-    rcases Sym2.eq_iff.mp h with ⟨-, rfl⟩ | ⟨hvw, rfl⟩
-    · rfl
-    · exact hvw
-  · rintro e ⟨heG, hev⟩
-    induction e using Sym2.inductionOn with
-    | _ x y =>
-      simp only [Set.mem_ofPred_eq, Sym2.crosses_mk_iff, Finset.coe_singleton,
-        Set.mem_singleton_iff] at hev
-      rcases hev with ⟨rfl, -⟩ | ⟨rfl, -⟩
-      · exact ⟨y, G.mem_edgeSet.mp heG, rfl⟩
-      · exact ⟨x, (G.mem_edgeSet.mp heG).symm, Sym2.eq_swap⟩
+  rw [unitCutCapacity_eq_ncard, G.edgeSet_inter_crosses_singleton v, G.ncard_incidenceSet]
 
 /-- On the complete graph `⊤`, restricting `c` to `edgeSet` does not change `pairCutCapacity`. -/
 theorem pairCutCapacity_indicator_edgeSet_top [Fintype V] [AddCommMonoid K]
