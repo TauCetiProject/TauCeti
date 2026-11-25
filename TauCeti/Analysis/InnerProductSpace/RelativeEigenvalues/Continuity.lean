@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues.Sorted
 import TauCeti.Analysis.Matrix.PosDef
 import TauCeti.LinearAlgebra.Dimension.CardEqFinrank
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Continuity of the sorted eigenvalue vector relative to a varying form
@@ -49,44 +50,6 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [AddCommGroup E] [Module 𝕜 E]
 section Coordinates
 
 variable {m : ℕ}
-
-/-- Positivity of the real part of a form on nonzero vectors, read on its Gram matrix. -/
-private theorem forall_re_pos_iff_toMatrix₂ (b : Basis (Fin m) 𝕜 E) (s : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜) :
-    (∀ v, v ≠ 0 → 0 < RCLike.re (s v v)) ↔
-      ∀ p, p ≠ 0 → 0 < RCLike.re (star p ⬝ᵥ LinearMap.toMatrix₂ b b s *ᵥ p) := by
-  refine ⟨fun hs p hp ↦ ?_, fun hs v hv ↦ ?_⟩
-  · rw [star_dotProduct_toMatrix₂_mulVec]
-    exact hs _ (b.equivFun.symm.map_ne_zero_iff.2 hp)
-  · rw [apply_eq_star_dotProduct_toMatrix₂_mulVec b]
-    exact hs _ (by simpa using hv)
-
-/-- Pointwise convergence of forms gives convergence of their Gram matrices. -/
-private theorem tendsto_toMatrix₂ {ι : Type*} {l : Filter ι} (b : Basis (Fin m) 𝕜 E)
-    {s : ι → E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜} {s₀ : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜}
-    (hs : ∀ u v, Tendsto (fun i ↦ s i u v) l (𝓝 (s₀ u v))) :
-    Tendsto (fun i ↦ LinearMap.toMatrix₂ b b (s i)) l (𝓝 (LinearMap.toMatrix₂ b b s₀)) :=
-  tendsto_pi_nhds.2 fun k ↦ tendsto_pi_nhds.2 fun k' ↦ by
-    simpa only [LinearMap.toMatrix₂_apply] using hs (b k) (b k')
-
-/-- If the form of `G₀` has positive real part on nonzero vectors, and `G i → G₀`, `D i → D₀`,
-then so has the form of `G i + t • D i`, eventually, for one `t > 0`. -/
-private theorem exists_pos_eventually_re_add_smul_pos {ι : Type*} {l : Filter ι}
-    {G D : ι → Matrix (Fin m) (Fin m) 𝕜} {G₀ D₀ : Matrix (Fin m) (Fin m) 𝕜}
-    (hG : Tendsto G l (𝓝 G₀)) (hD : Tendsto D l (𝓝 D₀))
-    (hG₀ : ∀ p, p ≠ 0 → 0 < RCLike.re (star p ⬝ᵥ G₀ *ᵥ p)) :
-    ∃ t > (0 : ℝ), ∀ᶠ i in l, ∀ p, p ≠ 0 →
-      0 < RCLike.re (star p ⬝ᵥ G i *ᵥ p) + t * RCLike.re (star p ⬝ᵥ D i *ᵥ p) := by
-  have hφ : Tendsto (fun x : ℝ × ι ↦ G x.2 + x.1 • D x.2) (𝓝 0 ×ˢ l) (𝓝 G₀) := by
-    simpa using (hG.comp tendsto_snd).add
-      ((tendsto_fst : Tendsto (fun x : ℝ × ι ↦ x.1) _ (𝓝 0)).smul (hD.comp tendsto_snd))
-  obtain ⟨T, hT, L, hL, hTL⟩ := eventually_prod_iff.1
-    (hφ.eventually (isOpen_setOfPred_re_dotProduct_pos.mem_nhds hG₀))
-  obtain ⟨t, hTt, ht⟩ :=
-    ((hT.filter_mono nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := Set.Ioi (0 : ℝ)))).exists
-  refine ⟨t, ht, hL.mono fun i hi p hp ↦ ?_⟩
-  have := hTL hTt hi p hp
-  simpa only [add_mulVec, smul_mulVec, dotProduct_add, dotProduct_smul, map_add,
-    RCLike.smul_re] using this
 
 /-- The real part of `star p ⬝ᵥ p` bounds the square of each coordinate of `p`. -/
 private theorem norm_sq_le_re_star_dotProduct_self (p : Fin m → 𝕜) (k : Fin m) :
@@ -163,8 +126,8 @@ private theorem isRelEigenvalueVector_of_tendsto {F : Filter ι} [F.NeBot]
     rw [apply_eq_star_dotProduct_toMatrix₂_mulVec b (B := s₀)]
     refine (((by fun_prop : Continuous fun z : Matrix (Fin (finrank 𝕜 E)) (Fin (finrank 𝕜 E)) 𝕜 ×
       (Fin (finrank 𝕜 E) → 𝕜) × (Fin (finrank 𝕜 E) → 𝕜) ↦ star z.2.1 ⬝ᵥ z.1 *ᵥ z.2.2).tendsto
-        _).comp ((tendsto_toMatrix₂ b hs).prodMk_nhds ((hcoord k).prodMk_nhds (hcoord k')))).congr
-      fun i ↦ ?_
+        _).comp ((LinearMap.tendsto_toMatrix₂ b b hs).prodMk_nhds
+          ((hcoord k).prodMk_nhds (hcoord k')))).congr fun i ↦ ?_
     exact (apply_eq_star_dotProduct_toMatrix₂_mulVec b (B := s i) _ _).symm
   refine (isRelEigenvalueVector_def _ _ _).2 ⟨B₀, fun k k' ↦ ⟨?_, ?_⟩⟩
   · refine tendsto_nhds_unique (hlim h h₀ hhl k k') (tendsto_const_nhds.congr' ?_)
@@ -221,9 +184,9 @@ theorem tendsto_relEigenvalueVector {l : Filter ι}
   set b := Module.finBasis 𝕜 E
   set M := fun i ↦ relEigenvalueVector (h i · ·) (a i · ·)
   -- Gram matrices of the forms in the basis `b`
-  have hG := tendsto_toMatrix₂ b hhl
-  have hA := tendsto_toMatrix₂ b hal
-  have hG₀ := (forall_re_pos_iff_toMatrix₂ b h₀).1 hpos₀
+  have hG := LinearMap.tendsto_toMatrix₂ b b hhl
+  have hA := LinearMap.tendsto_toMatrix₂ b b hal
+  have hG₀ := (LinearMap.forall_re_pos_iff_toMatrix₂ b).1 hpos₀
   -- eventually `h i` dominates `c` times the coordinate form and `t`, `t'` times `± a i`
   obtain ⟨c, hc, hlow⟩ := exists_pos_eventually_re_add_smul_pos hG
     (tendsto_const_nhds (x := -1)) hG₀
@@ -231,7 +194,7 @@ theorem tendsto_relEigenvalueVector {l : Filter ι}
   obtain ⟨t', ht', hdown⟩ := exists_pos_eventually_re_add_smul_pos hG hA.neg hG₀
   have hpos : ∀ᶠ i in l, ∀ v, v ≠ 0 → 0 < RCLike.re (h i v v) :=
     (hG.eventually (isOpen_setOfPred_re_dotProduct_pos.mem_nhds hG₀)).mono fun i hi ↦
-      (forall_re_pos_iff_toMatrix₂ b (h i)).2 hi
+      (LinearMap.forall_re_pos_iff_toMatrix₂ b).2 hi
   -- eigenvector families `B i` of `a i` relative to `h i`, with coordinates `Q i`
   set P : ι → (Fin n → E) → Prop := fun i B ↦ ∀ k k',
     h i (B k) (B k') = (if k = k' then 1 else 0) ∧
