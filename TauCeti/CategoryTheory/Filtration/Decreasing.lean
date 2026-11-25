@@ -83,12 +83,19 @@ section Finite
 variable [HasZeroObject C] (F : FilteredObject C ℤᵒᵖ)
 
 /-- A decreasing filtration is *finite* when some step `F^a` is the whole object and some step
-`F^b` is zero. No order between `a` and `b` is imposed: if `b < a`, the object is zero, and every
-pair `a ≤ b` also witnesses finiteness. -/
+`F^b` is zero. No order between `a` and `b` is imposed: if `b < a`, the object is zero, and then
+any pair, in particular one with `a ≤ b`, witnesses finiteness. -/
 def IsFinite : Prop :=
   ∃ a b : ℤ, F.step (op a) = ⊤ ∧ F.step (op b) = ⊥
 
+/-- A filtration is finite exactly when some step is the whole object and some step is zero. -/
+lemma isFinite_iff : F.IsFinite ↔ ∃ a b : ℤ, F.step (op a) = ⊤ ∧ F.step (op b) = ⊥ := Iff.rfl
+
 variable {F}
+
+/-- A filtration with a step equal to the whole object and a zero step is finite. -/
+lemma IsFinite.mk {a b : ℤ} (ha : F.step (op a) = ⊤) (hb : F.step (op b) = ⊥) : F.IsFinite :=
+  ⟨a, b, ha, hb⟩
 
 /-- A finite filtration is exhaustive. -/
 lemma IsFinite.isExhaustive (hF : F.IsFinite) : F.IsExhaustive :=
@@ -138,19 +145,15 @@ lemma isIso_natTrans_app_of_isIso_gr {b : ℤ} (hF : F.step (op b) = ⊥) (hG : 
   · exact isIso_natTrans_app_of_step_eq_bot φ (le_bot_iff.1 (hF ▸ F.step_antitone hbp))
       (le_bot_iff.1 (hG ▸ G.step_antitone hbp))
   -- descending induction on `p`, from `p = b` where both steps are zero
-  suffices ∀ n : ℕ, ∀ q, q + n = b → (∀ r, q ≤ r → r < b → IsIso ((gr r).map φ)) →
-      IsIso (φ.natTrans.app (op q)) from this (b - p).toNat p (by lia) h
-  intro n
-  induction n with
-  | zero =>
-    intro q hq _
-    exact isIso_natTrans_app_of_step_eq_bot φ (by simp_all) (by simp_all)
-  | succ n ih =>
-    intro q hq hgr
-    have : IsIso (φ.natTrans.app (op (q + 1))) :=
-      ih (q + 1) (by lia) fun r hr hrb ↦ hgr r (by lia) hrb
-    have : IsIso ((gr q).map φ) := hgr q le_rfl (by lia)
-    exact isIso_natTrans_app_of_isIso_succ φ q
+  replace hpb := hpb.le
+  induction p, hpb using Int.leInductionDown with
+  | base => exact isIso_natTrans_app_of_step_eq_bot φ hF hG
+  | pred q hqb ih =>
+    have : IsIso (φ.natTrans.app (op (q - 1 + 1))) := by
+      rw [sub_add_cancel]
+      exact ih fun r hr hrb ↦ h r (by lia) hrb
+    have : IsIso ((gr (q - 1)).map φ) := h _ le_rfl (by lia)
+    exact isIso_natTrans_app_of_isIso_succ φ (q - 1)
 
 /-- **Graded pieces detect isomorphisms of finite filtrations.** A morphism of finitely filtered
 objects that is an isomorphism on every graded piece is an isomorphism of filtered objects: on the
