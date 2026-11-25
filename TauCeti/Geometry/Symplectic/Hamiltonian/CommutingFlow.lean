@@ -220,7 +220,7 @@ theorem IsHamiltonianVectorField.mpullback_flowOf_apply (hX : σ.IsHamiltonianVe
 
 omit [BoundarylessManifold I M] in
 /-- **Time-dependent Hamiltonian flows are symplectic, where they are defined.** Let `σ` be a
-closed two-form and `X` a jointly `C²` time-dependent vector field such that, at every time `u`
+closed two-form and `X` a jointly `C¹` time-dependent vector field such that, at every time `u`
 between `s` and `t`, `X u` is a Hamiltonian vector field of a `C²` function `H u`. If the flow from
 `(s, x)` is defined up to time `t`, then `(φ_{s,t}^* σ)ₓ = σₓ`, since every `ι_{X u} σ = d(H u)` is
 closed. Neither completeness nor nondegeneracy is needed. -/
@@ -228,7 +228,7 @@ theorem mpullback_timeDependentFlowOf_apply_of_isHamiltonianVectorField {H : ℝ
     {X : ℝ → (x : M) → TangentSpace I x} {s t : ℝ}
     (hX : ∀ u ∈ Set.uIcc s t, σ.IsHamiltonianVectorField (H u) (X u)) (hσ : σ.IsClosed)
     (hH : ∀ u ∈ Set.uIcc s t, ContMDiff I 𝓘(ℝ) 2 (H u))
-    (hv : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+    (hv : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M))) {x : M}
     (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
     TauCeti.mpullback I I (timeDependentFlowOf X s t) σ.val x = σ.val x :=
@@ -249,7 +249,7 @@ theorem eval₂_mfderiv_timeDependentFlowOf_of_isHamiltonianVectorField {H : ℝ
     {X : ℝ → (x : M) → TangentSpace I x} {s t : ℝ}
     (hX : ∀ u ∈ Set.uIcc s t, σ.IsHamiltonianVectorField (H u) (X u)) (hσ : σ.IsClosed)
     (hH : ∀ u ∈ Set.uIcc s t, ContMDiff I 𝓘(ℝ) 2 (H u))
-    (hv : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+    (hv : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M))) {x : M}
     (h : ((s, t), x) ∈ timeDependentFlowDomain X) (a b : TangentSpace I x) :
     σ.eval₂ (timeDependentFlowOf X s t x) (mfderiv I I (timeDependentFlowOf X s t) x a)
@@ -261,7 +261,7 @@ theorem eval₂_mfderiv_timeDependentFlowOf_of_isHamiltonianVectorField {H : ℝ
 
 omit [BoundarylessManifold I M] in
 /-- **Time-dependent Hamiltonian flows are symplectic.** For a closed two-form `σ` and a jointly
-`C²` time-dependent vector field `X` with complete suspension, such that each `X t` is a
+`C¹` time-dependent vector field `X` with complete suspension, such that each `X t` is a
 Hamiltonian vector field of a `C²` function `H t`, the time-dependent flow satisfies
 `φ_{s,t}^* σ = σ` for all times `s` and `t`, since every `ι_{X t} σ = d(H t)` is closed. No
 nondegeneracy is needed. -/
@@ -269,7 +269,7 @@ theorem mpullback_timeDependentFlowOf_of_isHamiltonianVectorField {H : ℝ → M
     {X : ℝ → (x : M) → TangentSpace I x} (hX : ∀ t, σ.IsHamiltonianVectorField (H t) (X t))
     (hσ : σ.IsClosed) (hH : ∀ t, ContMDiff I 𝓘(ℝ) 2 (H t))
     (hc : IsCompleteVectorField (timeDependentSuspensionField X))
-    (hv : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+    (hv : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M))) (s t : ℝ) :
     TauCeti.mpullback I I (timeDependentFlowOf X s t) σ.val = σ.val :=
   funext fun _ ↦ mpullback_timeDependentFlowOf_apply_of_isHamiltonianVectorField
@@ -284,20 +284,20 @@ variable (hσ : σ.IsSymplectic)
 include hσ
 
 /-- **The linearized Hamiltonian flow is symplectic.** For a symplectic form `σ` and a jointly
-`C²` field of Hamiltonian vector fields with complete suspension, every differential
+`C¹` field of Hamiltonian vector fields with complete suspension, every differential
 `dφ_{s, t}(x) : T_x M → T_{φ_{s, t} x} M` of the time-dependent flow is a linear
 symplectomorphism. -/
 theorem isSymplectomorphism_timeDependentFlowMFDerivEquiv {H : ℝ → M → ℝ}
     (hH : ∀ t, ContMDiff I 𝓘(ℝ) 2 (H t))
     (hc : IsCompleteVectorField
       (timeDependentSuspensionField fun t ↦ σ.hamiltonianVectorField (H t)))
-    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, σ.hamiltonianVectorField (H p.1) p.2⟩ : TangentBundle I M)))
     (s t : ℝ) (x : M) :
     SymplecticForm.IsSymplectomorphism (hσ.isNondegenerate.symplecticFormAt x)
       (hσ.isNondegenerate.symplecticFormAt
         (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) s t x))
-      (timeDependentFlowMFDerivEquiv hc le_rfl (hX.of_le one_le_two) s t x).toLinearEquiv := by
+      (timeDependentFlowMFDerivEquiv hc le_rfl hX s t x).toLinearEquiv := by
   refine SymplecticForm.isSymplectomorphism_iff.2 fun a b ↦ ?_
   simpa only [IsNondegenerate.symplecticFormAt_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
     timeDependentFlowMFDerivEquiv_apply] using
@@ -312,14 +312,14 @@ theorem tames_transport_timeDependentFlowMFDerivEquiv_symm {H : ℝ → M → �
     (hH : ∀ t, ContMDiff I 𝓘(ℝ) 2 (H t))
     (hc : IsCompleteVectorField
       (timeDependentSuspensionField fun t ↦ σ.hamiltonianVectorField (H t)))
-    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, σ.hamiltonianVectorField (H p.1) p.2⟩ : TangentBundle I M)))
     (s t : ℝ) (x : M)
     {J : AlmostComplexStructure (TangentSpace I
       (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) s t x))}
     (hJ : (hσ.isNondegenerate.symplecticFormAt _).Tames J) :
     (hσ.isNondegenerate.symplecticFormAt x).Tames (J.transport
-      (timeDependentFlowMFDerivEquiv hc le_rfl (hX.of_le one_le_two) s t x).toLinearEquiv.symm) :=
+      (timeDependentFlowMFDerivEquiv hc le_rfl hX s t x).toLinearEquiv.symm) :=
   SymplecticForm.isSymplectomorphism_iff_transport_eq.1
     (hσ.isSymplectomorphism_timeDependentFlowMFDerivEquiv hH hc hX s t x).symm ▸ hJ.transport _
 
@@ -330,14 +330,14 @@ theorem compatible_transport_timeDependentFlowMFDerivEquiv_symm {H : ℝ → M �
     (hH : ∀ t, ContMDiff I 𝓘(ℝ) 2 (H t))
     (hc : IsCompleteVectorField
       (timeDependentSuspensionField fun t ↦ σ.hamiltonianVectorField (H t)))
-    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, σ.hamiltonianVectorField (H p.1) p.2⟩ : TangentBundle I M)))
     (s t : ℝ) (x : M)
     {J : AlmostComplexStructure (TangentSpace I
       (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) s t x))}
     (hJ : (hσ.isNondegenerate.symplecticFormAt _).Compatible J) :
     (hσ.isNondegenerate.symplecticFormAt x).Compatible (J.transport
-      (timeDependentFlowMFDerivEquiv hc le_rfl (hX.of_le one_le_two) s t x).toLinearEquiv.symm) :=
+      (timeDependentFlowMFDerivEquiv hc le_rfl hX s t x).toLinearEquiv.symm) :=
   SymplecticForm.isSymplectomorphism_iff_transport_eq.1
     (hσ.isSymplectomorphism_timeDependentFlowMFDerivEquiv hH hc hX s t x).symm ▸ hJ.transport _
 

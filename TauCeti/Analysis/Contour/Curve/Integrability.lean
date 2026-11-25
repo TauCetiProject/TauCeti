@@ -5,27 +5,31 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
 /-!
 # Integrability of contour integrands
 
-A piecewise-`C¹` curve has interval-integrable derivative. Multiplying that derivative by a
-continuous function along the compact curve image therefore gives an interval-integrable contour
-integrand. This file packages that conclusion for vector-valued integrands over `ℂ`.
+An absolutely continuous curve in `ℂ` has interval-integrable derivative. Multiplying that
+derivative by a continuous function along the compact curve image therefore gives an
+interval-integrable contour integrand. This file packages that conclusion for vector-valued
+integrands over `ℂ`; a piecewise-`C¹` curve is absolutely continuous
+(`TauCeti.IsPiecewiseC1On.absolutelyContinuousOnInterval`).
 
 The main theorem assumes continuity on the exact image `γ '' [[a, b]]`; a companion form accepts
 continuity on any set containing that image.
 
 ## Main results
 
-* `IsPiecewiseC1On.intervalIntegrable_deriv_smul_comp` — `t ↦ deriv γ t • f (γ t)` is
-  interval-integrable when `f` is continuous on the curve image.
-* `IsPiecewiseC1On.intervalIntegrable_deriv_smul_comp_of_mapsTo` — the same conclusion from
-  continuity on an ambient set containing the curve.
+* `AbsolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_comp` — `t ↦ deriv γ t • f (γ t)`
+  is interval-integrable when `f` is continuous on the curve image.
+* `AbsolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_comp_of_mapsTo` — the same
+  conclusion from continuity on an ambient set containing the curve.
 
 The proof uses Mathlib's `IntervalIntegrable.smul_continuousOn`, after
-`IsPiecewiseC1On.intervalIntegrable_deriv` supplies integrability of the velocity.
+`AbsolutelyContinuousOnInterval.intervalIntegrable_deriv_of_finiteDimensional` supplies
+integrability of the velocity.
 -/
 
 public section
@@ -39,19 +43,20 @@ open MeasureTheory Set
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 variable {γ : ℝ → ℂ} {f : ℂ → E} {a b : ℝ}
 
-/-- Along a piecewise-`C¹` curve, the product of the curve velocity with a function continuous on
-the curve image is interval-integrable. This is the vector-valued contour integrand
+/-- Along an absolutely continuous curve, the product of the curve velocity with a function
+continuous on the curve image is interval-integrable. This is the vector-valued contour integrand
 `t ↦ deriv γ t • f (γ t)`. -/
-theorem _root_.TauCeti.IsPiecewiseC1On.intervalIntegrable_deriv_smul_comp
-    (hγ : IsPiecewiseC1On γ a b) (hf : ContinuousOn f (γ '' uIcc a b)) :
+theorem _root_.AbsolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_comp
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hf : ContinuousOn f (γ '' uIcc a b)) :
     IntervalIntegrable (fun t ↦ deriv γ t • f (γ t)) volume a b :=
-  hγ.intervalIntegrable_deriv.smul_continuousOn
+  hγ.intervalIntegrable_deriv_of_finiteDimensional.smul_continuousOn
     (hf.comp hγ.continuousOn (mapsTo_image γ (uIcc a b)))
 
-/-- Ambient-set form of `IsPiecewiseC1On.intervalIntegrable_deriv_smul_comp`: it suffices for `f`
-to be continuous on a set `s` containing the curve image. -/
-theorem _root_.TauCeti.IsPiecewiseC1On.intervalIntegrable_deriv_smul_comp_of_mapsTo {s : Set ℂ}
-    (hγ : IsPiecewiseC1On γ a b) (hf : ContinuousOn f s) (hγs : MapsTo γ (uIcc a b) s) :
+/-- Ambient-set form of `AbsolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_comp`: it
+suffices for `f` to be continuous on a set `s` containing the curve image. -/
+theorem _root_.AbsolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_comp_of_mapsTo
+    {s : Set ℂ} (hγ : AbsolutelyContinuousOnInterval γ a b) (hf : ContinuousOn f s)
+    (hγs : MapsTo γ (uIcc a b) s) :
     IntervalIntegrable (fun t ↦ deriv γ t • f (γ t)) volume a b :=
   hγ.intervalIntegrable_deriv_smul_comp (hf.mono (image_subset_iff.mpr hγs))
 
