@@ -40,7 +40,7 @@ variable {Γ : Subgroup PSL(2, ℝ)} (D : Γ.CuspDatum)
 abbrev horodiscSubMulAction (A : ℝ) : SubMulAction (stabilizer Γ D.cusp) ℍ where
   carrier := horodisc D A
   smul_mem' g z hz := by
-    rw [← smul_horodisc_of_mem_stabilizer D g.2 A]
+    rw [← smul_horodisc_of_mem_stabilizer D g.property A]
     exact Set.smul_mem_smul_set hz
 
 @[simp]

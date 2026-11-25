@@ -83,12 +83,9 @@ theorem strongPairColorStepBound_mono (F : ℕ → ℝ) : Monotone (strongPairCo
 
 /-- For a positive schedule `F`, `strongPairColorStepBound F` does not decrease the part count. -/
 theorem le_strongPairColorStepBound {F : ℕ → ℝ} (hF : ∀ n, 0 < F n) (m : ℕ) :
-    m ≤ strongPairColorStepBound F m := by
-  have hm : m ≤ equitablePairColorRegularityBound (F m) m := by
-    rw [equitablePairColorRegularityBound_def]
-    exact (le_max_left m 1).trans
-      (id_le_iterate_of_id_le (le_ceil_mul_mul_four_pow_sq (hF m)) _ _)
-  exact hm.trans (equitablePairColorRegularityBound_le_strongPairColorStepBound le_rfl)
+    m ≤ strongPairColorStepBound F m :=
+  (le_equitablePairColorRegularityBound (hF m) m).trans
+    (equitablePairColorRegularityBound_le_strongPairColorStepBound le_rfl)
 
 /-- Upper bound on the number of cells of the coarse equipartition in seeded strong pair-color
 regularity, starting from `l₀` cells: `⌊1 / ε⌋₊` iterations of `strongPairColorStepBound F`. -/

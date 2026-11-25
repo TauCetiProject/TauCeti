@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.BaseChange
+public import Mathlib.AlgebraicGeometry.Morphisms.Affine
+public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.AlgebraicGeometry.Pullbacks
 
 /-!
@@ -37,6 +39,10 @@ compared over a localization of the base.
   `Proj A` along `Spec S ⟶ Spec R`.
 * `AlgebraicGeometry.Proj.isPullback_map_of_isBaseChange`: the same for a graded ring homomorphism
   exhibiting `B` as the base change of `A`.
+* `AlgebraicGeometry.Proj.isAffineHom_baseChangeProjection`: the projection
+  `Proj (S ⊗[R] A) ⟶ Proj A` is affine.
+* `AlgebraicGeometry.Proj.isClosedImmersion_baseChangeProjection`: for a surjective `R → S`, the
+  projection `Proj (S ⊗[R] A) ⟶ Proj A` is a closed immersion.
 
 ## References
 
@@ -69,7 +75,7 @@ theorem toSpecCoeff_def :
 /-- **Coefficients are the fractions `r / 1`.** The global function on `Proj A` pulled back from
 `r ∈ R` along `Proj A ⟶ Spec R` takes the value `r / 1` in the localization at every point. -/
 theorem val_toSpecCoeff_appTop_apply (r : R) (x : (⊤ : (Proj 𝒜).Opens)) :
-    (((toSpecCoeff 𝒜).appTop ((Scheme.ΓSpecIso (.of R)).inv r)).1 x).val =
+    (((toSpecCoeff 𝒜).appTop ((Scheme.ΓSpecIso (.of R)).inv r)).val x).val =
       Localization.mk (algebraMap R A r) 1 := by
   rw [toSpecCoeff_def, Scheme.Hom.comp_appTop, ← ConcreteCategory.comp_apply, ← Category.assoc,
     ← Scheme.ΓSpecIso_inv_naturality]
@@ -83,7 +89,7 @@ theorem val_appLE_apply {X : Scheme.{u}} {U : X.Opens} (hU : IsAffineOpen U) {B 
     [CommRing B] [Algebra Γ(X, U) B] (ℬ : ℕ → Submodule Γ(X, U) B) [GradedAlgebra ℬ]
     (g : Proj ℬ ⟶ X) (hg : g = toSpecCoeff ℬ ≫ hU.fromSpec) {V : (Proj ℬ).Opens}
     (e : V ≤ g ⁻¹ᵁ U) (r : Γ(X, U)) (x : V) :
-    ((g.appLE U V e r).1 x).val = Localization.mk (algebraMap Γ(X, U) B r) 1 := by
+    ((g.appLE U V e r).val x).val = Localization.mk (algebraMap Γ(X, U) B r) 1 := by
   subst hg
   rw [Scheme.Hom.comp_appLE, hU.fromSpec_app_self, Category.assoc]
   -- `toSpecCoeff ℬ` lands in `Spec (.of Γ(X, U))`, which is `Spec Γ(X, U)` only up to
@@ -91,7 +97,7 @@ theorem val_appLE_apply {X : Scheme.{u}} {U : X.Opens} (hU : IsAffineOpen U) {B 
   erw [Scheme.Hom.map_appLE]
   rw [Scheme.Hom.appLE, ← Category.assoc, ConcreteCategory.comp_apply]
   -- restriction of functions on `Proj ℬ` keeps their values
-  exact val_toSpecCoeff_appTop_apply ℬ r ⟨x.1, trivial⟩
+  exact val_toSpecCoeff_appTop_apply ℬ r ⟨x.val, trivial⟩
 
 /-- The coefficient morphism on a standard affine chart is the chart's coefficient map. -/
 @[reassoc (attr := simp)]
@@ -264,6 +270,19 @@ theorem baseChangeIso_hom_snd :
     (baseChangeIso 𝒜 S).hom ≫ pullback.snd _ _ =
       toSpecCoeff (fun n ↦ (𝒜 n).baseChange S) :=
   (isPullback_baseChange 𝒜 S).isoPullback_hom_snd
+
+/-- The coefficient projection `Proj (S ⊗[R] A) ⟶ Proj A` is affine, as the base change of
+`Spec S ⟶ Spec R`. -/
+instance isAffineHom_baseChangeProjection : IsAffineHom (baseChangeProjection 𝒜 S) :=
+  MorphismProperty.IsStableUnderBaseChange.of_isPullback (isPullback_baseChange 𝒜 S).flip
+    (inferInstanceAs (IsAffineHom (Spec.map (CommRingCat.ofHom (algebraMap R S)))))
+
+/-- If `R → S` is surjective, the coefficient projection `Proj (S ⊗[R] A) ⟶ Proj A`, the base
+change of the closed immersion `Spec S ⟶ Spec R`, is a closed immersion. -/
+theorem isClosedImmersion_baseChangeProjection (h : Function.Surjective (algebraMap R S)) :
+    IsClosedImmersion (baseChangeProjection 𝒜 S) :=
+  MorphismProperty.IsStableUnderBaseChange.of_isPullback (isPullback_baseChange 𝒜 S).flip
+    (IsClosedImmersion.spec_of_surjective (CommRingCat.ofHom (algebraMap R S)) h)
 
 section IsBaseChange
 

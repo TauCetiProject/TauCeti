@@ -19,7 +19,8 @@ For a real Lie algebra `L` and `ν ∈ L*`, the Kirillov–Kostant–Souriau for
 `TauCeti.SymplecticForm` (`Module.Dual.kksSymplecticForm ν`). When `L` is the Lie algebra of a Lie
 group whose coadjoint orbit through `ν` is a smooth homogeneous space, this is the pointwise value
 at `ν` of the symplectic form of the orbit. When `L ⧸ L_ν` is finite-dimensional, its dimension is
-even (`Module.Dual.even_finrank_quotient_lieAnnihilator`).
+even (`Module.Dual.even_finrank_quotient_lieAnnihilator`). On a complement `𝔮` of `L_ν` in `L`,
+the Kirillov form `ν ⁅ξ, η⁆` itself is symplectic (`Module.Dual.kirillovSymplecticForm`).
 
 The algebraic naturality of the KKS form becomes a statement about symplectomorphisms: along a
 surjective Lie algebra map `f : L → L'` with `ν = ν' ∘ f`, the equivalence `[ξ] ↦ [f ξ]` is a
@@ -60,6 +61,18 @@ theorem even_finrank_quotient_lieAnnihilator
     [FiniteDimensional ℝ (L ⧸ (lieAnnihilator ℝ L ν).toSubmodule)] :
     Even (finrank ℝ (L ⧸ (lieAnnihilator ℝ L ν).toSubmodule)) :=
   ν.kksSymplecticForm.even_finrank
+
+/-- The Kirillov form `ν ⁅ξ, η⁆` restricted to a complement `𝔮` of the stabilizer `L_ν`, as a
+linear symplectic form on `𝔮`: the transport of `ω_ν` along the identification `L ⧸ L_ν ≃ 𝔮`. -/
+noncomputable def kirillovSymplecticForm {𝔮 : Submodule ℝ L}
+    (h𝔮 : IsCompl (lieAnnihilator ℝ L ν).toSubmodule 𝔮) : SymplecticForm 𝔮 :=
+  ν.kksSymplecticForm.transport (Submodule.quotientEquivOfIsCompl _ 𝔮 h𝔮)
+
+@[simp]
+theorem kirillovSymplecticForm_apply {𝔮 : Submodule ℝ L}
+    (h𝔮 : IsCompl (lieAnnihilator ℝ L ν).toSubmodule 𝔮) (ξ η : 𝔮) :
+    ν.kirillovSymplecticForm h𝔮 ξ η = ν ⁅(ξ : L), η⁆ := by
+  simp [kirillovSymplecticForm]
 
 /-! ### Naturality and products -/
 

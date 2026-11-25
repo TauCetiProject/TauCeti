@@ -30,13 +30,13 @@ public section
 namespace TauCeti.OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommSemiring R]
-  (C : GridDiagram.ColumnCommutationData G.1) (i : Fin n)
+  (C : GridDiagram.ColumnCommutationData G.val) (i : Fin n)
 
 /-- Commutation preserves the bidegree of a specialized chain, transporting the blocked
 column along the transposition of columns. -/
 theorem simplyBlockedCommutationMap_mem_bigradedChainHatPiece
     {g : ℤ × ℤ} {c : GridChainHat R n i} (hc : c ∈ G.bigradedChainHatPiece R i g) :
-    G.1.simplyBlockedCommutationMap R C i c ∈
+    G.val.simplyBlockedCommutationMap R C i c ∈
       (G.swapColumns C).bigradedChainHatPiece R
         (Equiv.swap C.column (finRotate n C.column) i) g := by
   obtain ⟨b, hb, rfl⟩ := G.mem_bigradedChainHatPiece_iff_exists.mp hc

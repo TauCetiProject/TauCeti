@@ -35,6 +35,8 @@ matrices can be decided on the linear maps, for instance through Jordan-chain ba
   induce the same conjugation of `GL n R` exactly when they differ by a unit scalar.
 * `Matrix.GeneralLinearGroup.inv_mulVec_mulVec_of_eq_mul_mul_inv`: if `A = g * B * g⁻¹` then
   `g⁻¹ *ᵥ (A *ᵥ v) = B *ᵥ (g⁻¹ *ᵥ v)`.
+* `Matrix.GeneralLinearGroup.vecMul_eq_iff_eq_vecMul_inv`: `a ᵥ* g = y` exactly when
+  `a = y ᵥ* g⁻¹`.
 * `Matrix.GeneralLinearGroup.scalar_injective`: for nonempty `n`, the scalar embedding
   `Rˣ → GL n R` is injective.
 * `Matrix.mem_orbit_conjAct_iff_exists_linearEquiv_conj`: matrices are conjugate under `GL n R`
@@ -61,6 +63,16 @@ theorem inv_mulVec_mulVec_of_eq_mul_mul_inv [Semiring R] (g : GL n R)
     (g⁻¹ : GL n R) *ᵥ (A *ᵥ v) = B *ᵥ ((g⁻¹ : GL n R) *ᵥ v) := by
   rw [mulVec_mulVec, mulVec_mulVec, h, ← Matrix.mul_assoc, ← Matrix.mul_assoc,
     Units.inv_mul, Matrix.one_mul]
+
+/-- Right multiplication of row vectors by `g ∈ GL n R` is inverted by `g⁻¹`: solving
+`a ᵥ* g = y` for the row vector `a` gives `y ᵥ* g⁻¹`. -/
+theorem vecMul_eq_iff_eq_vecMul_inv [Semiring R] (g : GL n R) (a y : n → R) :
+    a ᵥ* (g : Matrix n n R) = y ↔ a = y ᵥ* ((g⁻¹ : GL n R) : Matrix n n R) := by
+  constructor
+  · rintro rfl
+    rw [vecMul_vecMul, ← Units.val_mul, mul_inv_cancel, Units.val_one, vecMul_one]
+  · rintro rfl
+    rw [vecMul_vecMul, ← Units.val_mul, inv_mul_cancel, Units.val_one, vecMul_one]
 
 variable [CommRing R]
 

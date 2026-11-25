@@ -160,21 +160,22 @@ section Converse
 
 variable [IsAlgClosed K]
 
-/-- If `-1` is not a square in `R` and `R` has an algebraically closed quadratic extension,
-then every `a + b √-1` has a square root `c + d √-1` with `c, d ∈ R`. -/
+omit [IsAlgClosed K] in
+/-- If `-1` is not a square in `R` and `R` has a quadratic extension in which every element is a
+square, then every `a + b √-1` has a square root `c + d √-1` with `c, d ∈ R`. -/
 private theorem exists_coords_sqrt (hR : ¬IsSquare (-1 : R)) [Algebra.IsQuadraticExtension R K]
-    (a b : R) :
+    (hsq : ∀ z : K, IsSquare z) (a b : R) :
     ∃ c d : R, c * c - d * d = a ∧ 2 * (c * d) = b := by
   have : Fact (¬IsSquare (-1 : R)) := ⟨hR⟩
   -- Identify `R(√-1)` with `K` by sending `√-1` to a square root of `-1` in `K`.
-  obtain ⟨i, hi⟩ := IsAlgClosed.exists_pow_nat_eq (-1 : K) two_pos
-  let f := QuadraticAlgebra.lift (R := R) (a := -1) (b := 0) ⟨i, by simp [← sq, hi]⟩
+  obtain ⟨i, hi⟩ := hsq (-1 : K)
+  let f := QuadraticAlgebra.lift (R := R) (a := -1) (b := 0) ⟨i, by simp [hi]⟩
   have hf : Function.Surjective f :=
     (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (f := f.toLinearMap)
       (by simp [Algebra.IsQuadraticExtension.finrank_eq_two])).mp f.injective
-  obtain ⟨z, hz⟩ := IsAlgClosed.exists_pow_nat_eq (f ⟨a, b⟩) two_pos
+  obtain ⟨z, hz⟩ := hsq (f ⟨a, b⟩)
   obtain ⟨y, rfl⟩ := hf z
-  have hy : y * y = ⟨a, b⟩ := f.injective (by simp [← hz, sq])
+  have hy : y * y = ⟨a, b⟩ := f.injective (by simp [hz])
   have hre := congrArg QuadraticAlgebra.re hy
   have him := congrArg QuadraticAlgebra.im hy
   simp only [QuadraticAlgebra.re_mul, QuadraticAlgebra.im_mul] at hre him
@@ -194,7 +195,7 @@ theorem isRealClosed_of_isAlgClosed_of_isQuadraticExtension [Algebra.IsQuadratic
     | sq_add hx _ ih =>
       obtain ⟨a, rfl⟩ := hx
       obtain ⟨b, rfl⟩ := ih
-      obtain ⟨c, d, rfl, rfl⟩ := exists_coords_sqrt (K := K) hR a b
+      obtain ⟨c, d, rfl, rfl⟩ := exists_coords_sqrt hR (K := K) IsAlgClosed.isSquare a b
       exact ⟨c * c + d * d, by ring⟩
   have : IsSemireal R := .of_not_isSumSq_neg_one fun h => hR (hsumsq h)
   refine
@@ -203,7 +204,7 @@ theorem isRealClosed_of_isAlgClosed_of_isQuadraticExtension [Algebra.IsQuadratic
         exists_isRoot_of_odd_natDegree_of_finrank_eq_two_pow _ hf (k := 1)
           (Algebra.IsQuadraticExtension.finrank_eq_two R K) }
   -- A square root `c + d √-1` of `x` has `c = 0` or `d = 0`.
-  obtain ⟨c, d, rfl, hcd⟩ := exists_coords_sqrt (K := K) hR x 0
+  obtain ⟨c, d, rfl, hcd⟩ := exists_coords_sqrt hR (K := K) IsAlgClosed.isSquare x 0
   rcases mul_eq_zero.mp ((mul_eq_zero.mp hcd).resolve_left h2) with rfl | rfl
   · exact Or.inr ⟨d, by ring⟩
   · exact Or.inl ⟨c, by ring⟩

@@ -70,8 +70,8 @@ theorem relativePicardFiberDegree_abelMap_app {T : (Over S)ᵒᵖ} {Ω : Type u}
     (ξ : Spec (.of Ω) ⟶ T.unop.left) (D : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T)
     (x : Spec (.of Ω)) :
     relativePicardFiberDegree f ξ ((abelMap f).app T (ULift.up D)) =
-      (D.1.subschemeι ≫ pullback.fst T.unop.hom f).finrank (ξ x) := by
-  have hD := (mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp D.2
+      (D.val.subschemeι ≫ pullback.fst T.unop.hom f).finrank (ξ x) := by
+  have hD := (mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp D.property
   -- The fibre over `ξ` is the base change of `X_T ⟶ T` along `ξ`.
   let g : pullback (ξ ≫ T.unop.hom) f ⟶ pullback T.unop.hom f :=
     pullback.map _ _ _ _ ξ (𝟙 X) (𝟙 S) (by simp) (by simp)
@@ -102,7 +102,7 @@ theorem relativePicardFiberDegree_abelMap_app {T : (Over S)ᵒᵖ} {Ω : Type u}
   refine (congrArg (LineBundleClass.eulerDegree Ω) hres).trans ?_
   rw [Scheme.IdealSheafData.IsEffectiveCartier.eulerDegree_inv_mk_toInvertibleSheaf_of_smooth Ω
     _ hD'.isEffectiveCartier x]
-  exact congrArg _ (D.1.finrank_comap_of_isPullback _ g _ ξ hpb x)
+  exact congrArg _ (D.val.finrank_comap_of_isPullback _ g _ ξ hpb x)
 
 /-- A relative effective Cartier divisor of degree `d` has fibre degree `d` under the Abel map:
 `𝒪(D)` has degree `d` on every fibre. -/
@@ -133,7 +133,7 @@ theorem abelJacobiMapOfDegree_app_mem_relativePicardDegreeZeroSubfunctor_obj (d 
   rw [abelJacobiMapOfDegree_app_apply, hpow, div_eq_mul_inv,
     relativePicardFiberDegree_mul_of_smooth, relativePicardFiberDegree_inv_of_smooth]
   -- Both divisors have degree `d`.
-  have hD := relativePicardFiberDegree_abelMap_app_of_mem f ξ D.2
+  have hD := relativePicardFiberDegree_abelMap_app_of_mem f ξ D.property
   have hx := relativePicardFiberDegree_abelMap_app_of_mem f ξ
     (graphDivisor_basePoint_pow_mem_relativeEffectiveCartierDegreeSubfunctor_obj f hx₀ d T)
   omega
@@ -175,7 +175,7 @@ lemma abelJacobiMapOfDegreeToPicZero_app_apply_val (d : ℕ) {T : (Over S)ᵒᵖ
       (X := ULift.{u + 1} ((relativeEffectiveCartierDegreeSubfunctor f d).obj T))
       (Y := {z : ToType ((relativePicardPresheaf f).obj T) //
         z ∈ (relativePicardDegreeZeroSubfunctor f).obj T})
-      ((abelJacobiMapOfDegreeToPicZero f hx₀ d).app T) D).1 =
+      ((abelJacobiMapOfDegreeToPicZero f hx₀ d).app T) D).val =
         (abelJacobiMapOfDegree f hx₀ d).app T D := by
   have h := ConcreteCategory.congr_hom
     (NatTrans.congr_app (abelJacobiMapOfDegreeToPicZero_ι f hx₀ d) T) D
@@ -220,7 +220,7 @@ lemma abelJacobiMapToPicZero_app_apply_val {T : (Over S)ᵒᵖ}
       (X := ULift.{u + 1} (T.unop ⟶ Over.mk f))
       (Y := {z : ToType ((relativePicardPresheaf f).obj T) //
         z ∈ (relativePicardDegreeZeroSubfunctor f).obj T})
-      ((abelJacobiMapToPicZero f hx₀).app T) x).1 =
+      ((abelJacobiMapToPicZero f hx₀).app T) x).val =
         (abelJacobiMap f hx₀).app T x := by
   have h := ConcreteCategory.congr_hom
     (NatTrans.congr_app (abelJacobiMapToPicZero_ι f hx₀) T) x
@@ -238,10 +238,10 @@ theorem abelJacobiMapToPicZero_app_basePoint_val (T : (Over S)ᵒᵖ) :
       (Y := {z : ToType ((relativePicardPresheaf f).obj T) //
         z ∈ (relativePicardDegreeZeroSubfunctor f).obj T})
       ((abelJacobiMapToPicZero f hx₀).app T)
-      (ULift.up (basePoint hx₀ T.unop))).1 = 1 := by
+      (ULift.up (basePoint hx₀ T.unop))).val = 1 := by
   calc
     ((abelJacobiMapToPicZero f hx₀).app T
-        (ULift.up (basePoint hx₀ T.unop))).1 =
+        (ULift.up (basePoint hx₀ T.unop))).val =
         (abelJacobiMap f hx₀).app T (ULift.up (basePoint hx₀ T.unop)) :=
       abelJacobiMapToPicZero_app_apply_val f hx₀
         (ULift.up (basePoint hx₀ T.unop) :

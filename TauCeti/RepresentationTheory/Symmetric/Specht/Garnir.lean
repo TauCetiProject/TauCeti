@@ -148,7 +148,7 @@ theorem asAlgebraHom_antisymmetrizerOn_polytabloid_eq_zero (t : YoungTableau μ)
         (polytabloid (R := ℚ) t) = 0 := by
   rw [polytabloid_eq_sum, map_sum]
   refine Finset.sum_eq_zero fun q _ => ?_
-  rw [map_smul, asAlgebraHom_antisymmetrizerOn_single_smul_tabloid_eq_zero t hX hcard q.2,
+  rw [map_smul, asAlgebraHom_antisymmetrizerOn_single_smul_tabloid_eq_zero t hX hcard q.property,
     smul_zero]
 
 /-- **The Garnir relation, as a signed sum of polytabloids.**  Under the hypotheses of

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
+public import Mathlib.Dynamics.FixedPoints.Basic
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 
 /-!
@@ -111,8 +112,12 @@ theorem isoMk_inv_hom {V W : RealStructureModuleCat.{u}} (e : V ≃ₗ[ℂ] W)
 noncomputable abbrev realPoints : RealStructureModuleCat.{u} ⥤ ModuleCat.{u} ℝ where
   obj V := ModuleCat.of ℝ (TauCeti.realPoints V.conj)
   map f := ModuleCat.ofHom ((f.hom.restrictScalars ℝ).restrict
-    (p := TauCeti.realPoints _) (q := TauCeti.realPoints _) fun x hx => mem_realPoints.mpr (by
-      rw [LinearMap.coe_restrictScalars, ← f.commutes, mem_realPoints.mp hx]))
+    (p := TauCeti.realPoints _) (q := TauCeti.realPoints _) fun x hx =>
+      -- `f.commutes` says `f` semiconjugates the two conjugations, so it maps fixed points to
+      -- fixed points; restricting scalars to `ℝ` leaves the underlying function unchanged.
+      mem_realPoints.mpr <| Function.mem_fixedPoints_iff.mp <|
+        Function.Semiconj.mapsTo_fixedPoints f.commutes <|
+          Function.mem_fixedPoints_iff.mpr (mem_realPoints.mp hx))
 
 /-- Complexification with tensor conjugation, lifting scalar extension on real modules. -/
 noncomputable abbrev complexification : ModuleCat.{u} ℝ ⥤ RealStructureModuleCat.{u} where

@@ -56,7 +56,8 @@ circles along which the saddle cobordism of a merge acts, and in reverse that of
   (`TauCeti.PDCode.card_circlesAt_eq_one_of_card_circlesAt_eq_two`).
 * `TauCeti.PDCode.stateLoopCount_add_card_circlesAt`: the change in the number of circles is the
   change in the number of circles through `c`; in particular it is at most one
-  (`TauCeti.PDCode.stateLoopCount_le_stateLoopCount_add_one`).
+  (`TauCeti.PDCode.stateLoopCount_le_stateLoopCount_add_one`), and it drops by one exactly when two
+  circles pass through `c` (`TauCeti.PDCode.card_circlesAt_eq_two_iff_stateLoopCount_add_one`).
 * `TauCeti.PDCode.eqvGen_circleStep_of_forall_card_circlesAt_eq_one`: if only one circle of `t`
   passes through each crossing at which `s` and `t` differ, every circle of `s` lies on a circle
   of `t`.
@@ -183,7 +184,7 @@ theorem mk_notMem_circlesAt_of_notMem {x : Fin (4 * n)}
 private noncomputable def unchangedCircleMap
     (C : {C : D.CrossingCircle s // C ∉ D.circlesAt s c}) :
     {C : D.CrossingCircle t // C ∉ D.circlesAt t c} :=
-  ⟨⟦C.1.out⟧, D.mk_notMem_circlesAt_of_notMem hst (by rw [Quotient.out_eq]; exact C.2)⟩
+  ⟨⟦C.val.out⟧, D.mk_notMem_circlesAt_of_notMem hst (by rw [Quotient.out_eq]; exact C.property)⟩
 
 private theorem unchangedCircleMap_mk {x : Fin (4 * n)}
     (hx : (⟦x⟧ : D.CrossingCircle s) ∉ D.circlesAt s c) :
@@ -371,6 +372,19 @@ theorem card_circlesAt_eq_one_of_card_circlesAt_eq_two (hst : ∀ j, j ≠ c →
     (hc : s c ≠ t c) (hs : #(D.circlesAt s c) = 2) : #(D.circlesAt t c) = 1 := by
   have h := D.card_circlesAt_add_card_circlesAt_le_three hst hc
   have ht := (D.circlesAt_nonempty t c).card_pos
+  omega
+
+/-- **Two circles pass through `c` exactly when changing the smoothing at `c` merges them**: for
+states differing exactly at `c`, two circles of `s` pass through `c` if and only if `t` has one
+circle fewer than `s`. -/
+theorem card_circlesAt_eq_two_iff_stateLoopCount_add_one (hst : ∀ j, j ≠ c → s j = t j)
+    (hc : s c ≠ t c) :
+    #(D.circlesAt s c) = 2 ↔ D.stateLoopCount t + 1 = D.stateLoopCount s := by
+  have h := D.stateLoopCount_add_card_circlesAt hst
+  have hs := D.card_circlesAt_le_two s c
+  have ht := (D.circlesAt_nonempty t c).card_pos
+  refine ⟨fun hs₂ ↦ ?_, fun _ ↦ by omega⟩
+  have := D.card_circlesAt_eq_one_of_card_circlesAt_eq_two hst hc hs₂
   omega
 
 end Changed

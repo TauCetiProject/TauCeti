@@ -10,8 +10,10 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.PosPart.Basic
+import TauCeti.Analysis.CStarAlgebra.Unitary.Polar
 import TauCeti.Analysis.InnerProductSpace.InvariantSubspace
 import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -129,32 +131,17 @@ theorem ContinuousLinearMap.IsInvertible.exists_path_to_id {T : E →L[ℂ] E}
     rw [← ContinuousLinearEquiv.unitsEquiv_apply, MulEquiv.apply_symm_apply]
     simp only [ContinuousLinearEquiv.coe_coe]
   let u := a.polarUnitary
-  let P := CFC.sqrt (star (a : E →L[ℂ] E) * a)
-  have hP : IsStrictlyPositive P := a.isStrictlyPositive_sqrt_star_mul
-  let γ : Path T (u : E →L[ℂ] E) :=
-    ((Path.segment P 1).map (f := fun Q ↦ (u : E →L[ℂ] E) * Q)
-      (continuous_const.mul continuous_id)).cast
-      (by simpa only [u, P] using ((a.polarUnitary_mul_sqrt_star_mul.trans ha).trans he).symm)
-      (by simp)
-  have hγ : ∀ t, (γ t).IsInvertible := by
-    intro t
-    have hpos : IsUnit ((1 - (t : ℝ)) • P + (t : ℝ) • (1 : E →L[ℂ] E)) := by
-      by_cases ht : (t : ℝ) = 1
-      · simp [ht]
-      · have htpos : 0 < 1 - (t : ℝ) := sub_pos.mpr (lt_of_le_of_ne t.property.2 ht)
-        exact ((hP.smul htpos).add_nonneg (smul_nonneg t.property.1 zero_le_one)).isUnit
-    obtain ⟨v, hv⟩ := (Unitary.isUnit_coe (U := u)).mul hpos
-    refine ⟨ContinuousLinearEquiv.unitsEquiv ℂ E v, ?_⟩
-    ext x
-    simpa only [γ, Path.cast_coe, Path.map_coe, Function.comp_apply,
-      Path.segment_apply, AffineMap.lineMap_apply_module,
-      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.unitsEquiv_apply] using
-      DFunLike.congr_fun hv x
-  -- Concatenate the polar deformation with a unitary path to the identity.
-  have h₁ : JoinedIn {S : E →L[ℂ] E | S.IsInvertible} T (u : E →L[ℂ] E) := ⟨γ, hγ⟩
+  -- The straight-line path `u((1 - t)|a| + t)` joins `a` to its polar unitary through invertible
+  -- operators.
+  obtain ⟨γ⟩ := a.joined_polarUnitary
+  have h₁ : JoinedIn {S : E →L[ℂ] E | S.IsInvertible} T (u : E →L[ℂ] E) := by
+    rw [← he, ← ha]
+    exact ⟨γ.map Units.continuous_val, fun t ↦
+      ContinuousLinearMap.isInvertible_iff_isUnit.2 (γ t).isUnit⟩
+  -- Concatenate this path with a unitary path to the identity.
   obtain ⟨δ⟩ := (Unitary.joined_one u).symm
   have h₂ : JoinedIn {S : E →L[ℂ] E | S.IsInvertible} (u : E →L[ℂ] E) 1 := by
-    refine ⟨δ.map continuous_subtype_val, fun t ↦ ?_⟩
+    refine ⟨δ.map continuous_subtypeVal, fun t ↦ ?_⟩
     obtain ⟨v, hv⟩ := Unitary.isUnit_coe (U := δ t)
     refine ⟨ContinuousLinearEquiv.unitsEquiv ℂ E v, ?_⟩
     ext x

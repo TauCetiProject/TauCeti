@@ -8,11 +8,9 @@ module
 public import TauCeti.RepresentationTheory.Spin.Exceptional.Three.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.Restriction
 public import TauCeti.RepresentationTheory.Spin.Representation
-public import Mathlib.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Spin.OddStructure
 import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Representation
 import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Action
-import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 
 /-!
 # The three-dimensional Spin group
@@ -94,7 +92,7 @@ private noncomputable def spinThreeHom
     (CliffordAlgebra.star_mul_self_eq_one_iff_det_eq_one_of_finrank_eq_three
       Q hV e (spinGroupToEven Q g)).mp (by
         rw [coe_spinGroupToEven_apply]
-        exact spinGroup.star_mul_self_of_mem g.2)⟩
+        exact spinGroup.star_mul_self_of_mem g.property)⟩
   map_one' := by
     apply Subtype.ext
     simp only [map_one]
@@ -178,8 +176,7 @@ private theorem spinThreeExteriorBasis_occupied
 
 private theorem vacuumIndex_ne_occupiedIndex : vacuumIndex ≠ occupiedIndex := by
   intro h
-  have := spinThreeIndexEquiv.injective h
-  simp at this
+  exact (Finset.singleton_nonempty 0).ne_empty (spinThreeIndexEquiv.injective h).symm
 
 private theorem finTwo_eq_vacuum_or_occupied (i : Fin 2) :
     i = vacuumIndex ∨ i = occupiedIndex := by

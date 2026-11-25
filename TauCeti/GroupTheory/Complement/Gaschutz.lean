@@ -28,9 +28,12 @@ the complements obtained from two transversals are conjugate by an element of `N
 (`Subgroup.IsLocalComplement.gaschutzComplement_changeTransversal`). Every complement `D` of `N`
 containing `K` arises in this way: along a transversal of `H` with values in `D`, the crossed
 transfer of the projection along `K` is the `[G : H]`-th power of the crossed projection along `D`
-(`Subgroup.IsLocalComplement.crossedTransfer_leftProjection_apply`), so the Gaschütz complement is
-`D` (`Subgroup.IsLocalComplement.gaschutzComplement_eq_of_forall_mem`). For `H = N` and the local
-complement `⊥`, the projection is the identity of `N`
+(`Subgroup.IsLocalComplement.crossedTransfer_leftProjection_apply`), normalizing by the modular
+inverse of `[G : H]` recovers that crossed projection
+(`Subgroup.IsLocalComplement.crossedTransfer_leftProjection_pow_inv_index_eq_crossedProjection`),
+and the Gaschütz complement is `D`
+(`Subgroup.IsLocalComplement.gaschutzComplement_eq_of_forall_mem`).
+For `H = N` and the local complement `⊥`, the projection is the identity of `N`
 (`Subgroup.IsComplement'.crossedTransfer_id_apply`), and when `[G : N]` is prime to `|N|` every
 complement of `N` is a Gaschütz complement.
 
@@ -72,10 +75,8 @@ the `[G : H]`-th power of the crossed projection along `D`. -/
 theorem crossedTransfer_leftProjection_apply {D : Subgroup G} (hD : N.IsComplement' D)
     (hKD : K ≤ D) (htD : ∀ u, t u ∈ D) (g : G) :
     crossedTransfer H t ht h.leftProjection g = hD.crossedProjection g ^ H.index := by
-  -- the projection along `K` is the restriction to `H` of the crossed projection along `D`
-  have hc : h.leftProjection = fun x : H => hD.crossedProjection x := funext fun x =>
-    (hD.crossedProjection_mul _ ⟨_, hKD (h.rightProjection x).property⟩).symm.trans
-      (congrArg hD.crossedProjection (h.leftProjection_mul_rightProjection x))
+  have hc : h.leftProjection = fun x : H => hD.crossedProjection x :=
+    funext (h.leftProjection_eq_crossedProjection hD hKD)
   rw [hc, crossedTransfer_restrict H t ht hD.isMulCocycle₁_crossedProjection]
   simp [fun u => hD.crossedProjection_coe_right ⟨t u, htD u⟩]
 
@@ -153,6 +154,17 @@ theorem gaschutzComplement_changeTransversal (hcop : Nat.Coprime H.index (Nat.ca
     crossedTransfer_changeTransversal H t ht t' ht' h.isMulCocycle₁_leftProjection, mul_pow,
     div_pow, smul_pow']
 
+/-- When `[G : H]` is coprime to `|N|`, `K ≤ D` for a global complement `D` of `N`, and `t` takes
+values in `D`, normalizing the crossed transfer of `h.leftProjection` by the modular inverse of
+`[G : H]` recovers `hD.crossedProjection`. -/
+theorem crossedTransfer_leftProjection_pow_inv_index_eq_crossedProjection
+    (hcop : Nat.Coprime H.index (Nat.card N)) {D : Subgroup G}
+    (hD : N.IsComplement' D) (hKD : K ≤ D) (htD : ∀ u : G ⧸ H, t u ∈ D) (g : G) :
+    crossedTransfer H t ht h.leftProjection g ^ ((H.index : ZMod (Nat.card N))⁻¹).val =
+      hD.crossedProjection g := by
+  rw [h.crossedTransfer_leftProjection_apply t ht hD hKD htD,
+    pow_pow_zmod_val_inv hcop.symm]
+
 /-- **Every complement containing `K` is a Gaschütz complement.** Let `D` be a complement of `N`
 containing `K`, and `t` a transversal of `H` with values in `D`. When `[G : H]` is prime to `|N|`,
 the Gaschütz complement along `t` is `D`. -/
@@ -160,10 +172,9 @@ theorem gaschutzComplement_eq_of_forall_mem (hcop : Nat.Coprime H.index (Nat.car
     {D : Subgroup G} (hD : N.IsComplement' D) (hKD : K ≤ D) (htD : ∀ u, t u ∈ D) :
     h.gaschutzComplement t ht = D := by
   ext g
-  rw [h.mem_gaschutzComplement t ht hcop, h.crossedTransfer_leftProjection_apply t ht hD hKD htD,
-    ← hD.crossedProjection_eq_one_iff]
-  refine ⟨fun hg => ?_, fun hg => by rw [hg, one_pow]⟩
-  rw [← pow_pow_zmod_val_inv hcop.symm (hD.crossedProjection g), hg, one_pow]
+  rw [h.mem_gaschutzComplement_iff_pow_eq_one,
+    h.crossedTransfer_leftProjection_pow_inv_index_eq_crossedProjection t ht hcop hD hKD htD,
+    hD.crossedProjection_eq_one_iff]
 
 end IsLocalComplement
 
@@ -176,7 +187,7 @@ theorem IsComplement'.crossedTransfer_id_apply {D : Subgroup G} (hD : N.IsComple
     [N.FiniteIndex] (t : G ⧸ N → G) (ht : ∀ u : G ⧸ N, (QuotientGroup.mk (t u) : G ⧸ N) = u)
     (htD : ∀ u, t u ∈ D) (g : G) :
     crossedTransfer N t ht id g = hD.crossedProjection g ^ N.index := by
-  have h : N.IsLocalComplement ⊥ N := isLocalComplement_self_left.mpr rfl
+  have h : N.IsLocalComplement ⊥ N := N.isLocalComplement_bot_self
   -- for `H = N`, the inclusion of `N` into `H` in `leftProjection_left` is the identity
   have hc : h.leftProjection = id := funext h.leftProjection_left
   rw [← hc, h.crossedTransfer_leftProjection_apply t ht hD bot_le htD]

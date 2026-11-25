@@ -135,7 +135,7 @@ private theorem exists_polynomial_approx {v : Spv 𝒯} (hv : v.IsContinuous) (f
         p.coeff n‖ < ε := by
   have hnhds : {h : 𝒯 | v.valuation h < v.valuation b} ∈ nhds (0 : 𝒯) :=
     (Valuation.isContinuous_def.mp ((isContinuous_def v).mp hv) b).mem_nhds
-      (by rw [Set.mem_ofPred_eq, map_zero]; exact zero_lt_iff.mpr hb)
+      (by rw [Set.mem_ofPred_eq, map_zero]; exact pos_iff_ne_zero.mpr hb)
   obtain ⟨U, -, hU⟩ :=
     (hasBasis_nhds_zero_weightedTopology isWeightFamily_one_weight).mem_iff.mp hnhds
   obtain ⟨V, hV⟩ := NonarchimedeanAddGroup.is_nonarchimedean _ (Metric.ball_mem_nhds (0 : K) hε)
@@ -214,7 +214,7 @@ private theorem valuation_weightedC_mul_pow_lt {v : Spv 𝒯}
   have hlt := Valuation.IsContinuous.lt_one_of_isTopologicallyNilpotent
     ((isContinuous_def v).mp ((mem_spa_iff _ v).mp hv).1) hnil
   rw [← mul_inv_cancel_left₀ hb a, map_mul, map_mul, mul_assoc, ← map_pow, ← map_mul]
-  exact mul_lt_of_lt_one_right (zero_lt_iff.mpr (valuation_weightedC_ne_zero hv hb)) hlt
+  exact mul_lt_of_lt_one_right (pos_iff_ne_zero.mpr (valuation_weightedC_ne_zero hv hb)) hlt
 
 /-- At a point of `Spa(K⟨T⟩, K⟨T⟩⁺)` with `v(T) > 1`, the dominant monomial of a polynomial
 determines its value: if `aₛ` is the last coefficient of `p` of maximal norm, then
@@ -223,7 +223,8 @@ private theorem valuation_eval₂_eq {v : Spv 𝒯} (hv : v ∈ spa (closedDiscM
     (hT : 1 < v.valuation T) {p : Polynomial K} {s : ℕ} (hs : p.coeff s ≠ 0)
     (hle : ∀ n, ‖p.coeff n‖ ≤ ‖p.coeff s‖) (hlt : ∀ n, s < n → ‖p.coeff n‖ < ‖p.coeff s‖) :
     v.valuation (Polynomial.eval₂ C T p) = v.valuation (C (p.coeff s)) * v.valuation T ^ s := by
-  have hpos : 0 < v.valuation (C (p.coeff s)) := zero_lt_iff.mpr (valuation_weightedC_ne_zero hv hs)
+  have hpos : 0 < v.valuation (C (p.coeff s)) :=
+    pos_iff_ne_zero.mpr (valuation_weightedC_ne_zero hv hs)
   have hTpos : 0 < v.valuation T := zero_lt_one.trans hT
   have hmem : s ∈ Finset.range (p.natDegree + 1) :=
     Finset.mem_range.mpr (Nat.lt_succ_of_le (Polynomial.le_natDegree_of_ne_zero hs))
@@ -311,7 +312,7 @@ private theorem valuation_mul_pow_le_iff {v : Spv 𝒯} (hv : v ∈ spa (closedD
     refine ⟨fun h ↦ not_le.mp fun hba ↦ h.not_gt ?_,
       fun h ↦ (valuation_weightedC_mul_pow_lt hv hb h _).le⟩
     exact ((valuation_weightedC_le_iff hv b a).mpr hba).trans_lt
-      (lt_mul_of_one_lt_right (zero_lt_iff.mpr (valuation_weightedC_ne_zero hv ha))
+      (lt_mul_of_one_lt_right (pos_iff_ne_zero.mpr (valuation_weightedC_ne_zero hv ha))
         (one_lt_pow₀ hT (by omega)))
 
 /-- **Two points of `Spa(K⟨T⟩, K⟨T⟩⁺)` at which `T` has value larger than `1` are equal.** -/
@@ -320,7 +321,8 @@ private theorem eq_of_one_lt_valuation_weightedX {v w : Spv 𝒯}
     (hvT : 1 < v.valuation T) (hwT : 1 < w.valuation T) : v = w := by
   have hdist {f : 𝒯} (hf : f ≠ 0) : ∃ s, TauCeti.PowerSeries.IsDistinguished 1 s
       (weightedRestrictedSubringOneEquiv f : PowerSeries K) :=
-    TauCeti.PowerSeries.exists_isDistinguished one_pos (weightedRestrictedSubringOneEquiv f).2
+    TauCeti.PowerSeries.exists_isDistinguished one_pos (weightedRestrictedSubringOneEquiv
+        f).property
       (by simpa using hf)
   have hne {u : Spv 𝒯} (hu : u ∈ spa (closedDiscMinimalPlus K)) (huT : 1 < u.valuation T)
       {f : 𝒯} (hf : f ≠ 0) : u.valuation f ≠ 0 := by
@@ -452,7 +454,7 @@ theorem spa_closedDiscMinimalPlus :
 /-- **`x_{>1}` is a specialization of the Gauss point `η_1`**: it lies in the closure of `η_1` in
 `Spv K⟨T⟩`, since its valuation refines the Gauss norm. -/
 theorem gaussPoint_specializes_gaussPointAboveOne :
-    (gaussPoint (K := K) one_pos le_rfl).1 ⤳ gaussPointAboveOne K :=
+    (gaussPoint (K := K) one_pos le_rfl).val ⤳ gaussPointAboveOne K :=
   gaussPoint_specializes_of_lt
     (fun _ _ h ↦ by
       rw [gaussPointAboveOne_vle_iff, not_le]
@@ -464,9 +466,9 @@ theorem isOpen_closedPolydisc_spa_closedDiscMinimalPlus :
   have h : ((↑) : spa (closedDiscMinimalPlus K) → Spv 𝒯) ⁻¹' closedPolydisc 1 K =
       ((↑) : spa (closedDiscMinimalPlus K) → Spv 𝒯) ⁻¹' basicOpen T 1 := by
     ext v
-    simp [basicOpen_one_right, mem_closedPolydisc_iff_weightedX_vle_one v.2]
+    simp [basicOpen_one_right, mem_closedPolydisc_iff_weightedX_vle_one v.property]
   rw [h]
-  exact (isOpen_basicOpen T 1).preimage continuous_subtype_val
+  exact (isOpen_basicOpen T 1).preimage continuous_subtypeVal
 
 /-- **Wedhorn's Example 7.58 for the closed unit disc**: `Spa(K⟨T⟩, K⟨T⟩°)` is an open subspace of
 `Spa(K⟨T⟩, K⟨T⟩⁺)`. -/
@@ -481,7 +483,7 @@ theorem denseRange_inclusion_closedPolydisc_spa_closedDiscMinimalPlus :
     DenseRange (Set.inclusion (closedPolydisc_subset_spa_closedDiscMinimalPlus (K := K))) := by
   rw [denseRange_inclusion_iff, spa_closedDiscMinimalPlus]
   refine Set.insert_subset ?_ subset_closure
-  exact closure_mono (Set.singleton_subset_iff.mpr (gaussPoint one_pos le_rfl).2)
+  exact closure_mono (Set.singleton_subset_iff.mpr (gaussPoint one_pos le_rfl).property)
     (specializes_iff_mem_closure.mp gaussPoint_specializes_gaussPointAboveOne)
 
 /-- **`x_{>1}` is a closed point of `Spa(K⟨T⟩, K⟨T⟩⁺)`**: its complement is the closed unit
@@ -493,7 +495,7 @@ theorem isClosed_singleton_gaussPointAboveOne :
   convert isOpen_closedPolydisc_spa_closedDiscMinimalPlus (K := K) using 1
   ext v
   have hv : (v : Spv 𝒯) ∈ insert (gaussPointAboveOne K) (closedPolydisc 1 K) :=
-    spa_closedDiscMinimalPlus (K := K) ▸ v.2
+    spa_closedDiscMinimalPlus (K := K) ▸ v.property
   simp only [Set.mem_compl_iff, Set.mem_singleton_iff, Set.mem_preimage, Subtype.ext_iff]
   exact ⟨hv.resolve_left, fun h h' ↦ gaussPointAboveOne_notMem_closedPolydisc (h' ▸ h)⟩
 

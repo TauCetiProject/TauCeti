@@ -82,7 +82,7 @@ germs of `m` and `n`. -/
 theorem tensorStalkComparison_germ_unit_tmul (U : Opens X) (hx : x ∈ U)
     (m : M.val.obj (op U)) (n : N.val.obj (op U)) :
     dsimp% only [PresheafOfModules.presheaf_obj_coe, CategoryTheory.Functor.id_obj,
-      CategoryTheory.Functor.comp_obj]
+      sheafCompose_obj_obj, CategoryTheory.Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
     (tensorStalkComparison R M N x
         (TopCat.Presheaf.germ (tensorProduct R M N).val.presheaf U x hx
           ((tensorProductIso R M N).inv.val.app (op U)
@@ -111,16 +111,8 @@ theorem tensorStalkComparison_bijective :
     R x).symm.bijective.comp
   -- The linear stalk map is the underlying additive stalk map of the defining tensor
   -- isomorphism, so it is bijective because the stalk functor preserves isomorphisms.
-  have h : (PresheafOfModules.stalkMapCommRing (S := R.obj) x
-      (tensorProductIso R M N).hom.val : _ → _) =
-      (TopCat.Presheaf.stalkFunctor AddCommGrpCat x).map
-        ((PresheafOfModules.toPresheaf _).map (tensorProductIso R M N).hom.val) := by
-    funext t
-    obtain ⟨U, hx, t, rfl⟩ :=
-      TopCat.Presheaf.exists_germ_eq (tensorProduct R M N).val.presheaf t
-    erw [PresheafOfModules.stalkMapCommRing_germ,
-      TopCat.Presheaf.stalkFunctor_map_germ_apply]
-    rfl
+  have h := PresheafOfModules.coe_stalkMapCommRing (S := R.obj) x
+    (tensorProductIso R M N).hom.val
   have : IsIso (tensorProductIso R M N).hom.val :=
     inferInstanceAs (IsIso ((_root_.SheafOfModules.forget _).map
       (tensorProductIso R M N).hom))
@@ -258,7 +250,6 @@ theorem tensorStalkEquiv_naturality
   conv_rhs =>
     erw [PresheafOfModules.stalkMapCommRing_germ (S := R.obj) x f.val,
       PresheafOfModules.stalkMapCommRing_germ (S := R.obj) x g.val]
-  rfl
 
 end SheafOfModules
 
