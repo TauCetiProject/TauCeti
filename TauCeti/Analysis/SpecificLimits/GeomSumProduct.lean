@@ -34,7 +34,7 @@ series of `σ_α(n) σ_β(n)` (Ramanujan's identity).
 
 ## Main results
 
-* `TauCeti.summable_norm_geom_sum_mul_geom_sum_mul_pow`: the series converges absolutely.
+* `TauCeti.summable_norm_geom_sum_mul_geom_sum_mul_geometric`: the series converges absolutely.
 * `TauCeti.hasSum_geom_sum_mul_geom_sum_mul_geometric`: the identity above.
 
 ## References
@@ -77,7 +77,7 @@ private theorem norm_pow_mul_pow_mul_pow_le {i j k : ℕ} (hi : i ≤ k) (hj : j
 `∑_k S_a(k) S_b(k) xᵏ`, where `S_a(k) = ∑_{i ≤ k} aⁱ`, converges absolutely: its `k`-th term has
 norm at most `(k + 1)² Rᵏ`, where `R < 1` is the largest of `‖x‖`, `‖a x‖`, `‖b x‖` and
 `‖a b x‖`. -/
-theorem summable_norm_geom_sum_mul_geom_sum_mul_pow (hx : ‖x‖ < 1) (ha : ‖a * x‖ < 1)
+theorem summable_norm_geom_sum_mul_geom_sum_mul_geometric (hx : ‖x‖ < 1) (ha : ‖a * x‖ < 1)
     (hb : ‖b * x‖ < 1) (hab : ‖a * b * x‖ < 1) :
     Summable fun k : ℕ ↦
       ‖(∑ i ∈ range (k + 1), a ^ i) * (∑ i ∈ range (k + 1), b ^ i) * x ^ k‖ := by
@@ -109,15 +109,16 @@ private theorem hasSum_geom_sum_mul_geom_sum_mul_geometric_of_complete [Complete
   -- the one-factor series `∑ S_c(k) xᵏ`, the case `b = 0` of the summability above
   have hone (c : K) (hc : ‖c * x‖ < 1) :
       HasSum (fun k : ℕ ↦ (∑ i ∈ range (k + 1), c ^ i) * x ^ k) ((1 - x)⁻¹ * (1 - c * x)⁻¹) := by
-    have hs := (summable_norm_geom_sum_mul_geom_sum_mul_pow (b := 0) hx hc (by simp) (by simp))
-      |>.of_norm.hasSum
+    have hs :=
+      (summable_norm_geom_sum_mul_geom_sum_mul_geometric (b := 0) hx hc (by simp) (by simp))
+        |>.of_norm.hasSum
     simp only [zero_pow_eq, sum_ite_eq', mem_range, Nat.zero_lt_succ, ↓reduceIte, mul_one] at hs
     have H := hs.eq_smul_add_of_linearRec₁ (D := c * x) (hasSum_geometric_of_norm_lt_one hx)
       (by simp) fun r ↦ by simp only [smul_eq_mul, geom_sum_succ, pow_succ]; ring
     rw [smul_eq_mul, ← sub_eq_iff_eq_add', ← one_sub_mul] at H
     rw [← H, mul_comm, inv_mul_cancel_left₀ (one_sub_ne_zero_of_norm_lt_one hc)]
     exact hs
-  have h := (summable_norm_geom_sum_mul_geom_sum_mul_pow hx ha hb hab).of_norm.hasSum
+  have h := (summable_norm_geom_sum_mul_geom_sum_mul_geometric hx ha hb hab).of_norm.hasSum
   have H := h.eq_smul_add_of_linearRec₁ (D := a * b * x)
     (((hone a ha).add (hone b hb)).sub (hasSum_geometric_of_norm_lt_one hx)) (by simp)
     fun r ↦ by simp only [smul_eq_mul, geom_sum_succ, pow_succ]; ring
