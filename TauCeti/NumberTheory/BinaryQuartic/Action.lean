@@ -142,7 +142,7 @@ theorem toMvPolynomial_subst (M : Matrix (Fin 2) (Fin 2) R) (f : BinaryQuartic R
   ring
 
 /-- Pointwise substitution by a matrix uses its columns as the new linear coordinates. -/
-theorem eval_subst (M : Matrix (Fin 2) (Fin 2) R) (f : BinaryQuartic R) (x y : R) :
+@[simp] theorem eval_subst (M : Matrix (Fin 2) (Fin 2) R) (f : BinaryQuartic R) (x y : R) :
     eval (subst M f) x y = eval f (M 0 0 * x + M 1 0 * y) (M 0 1 * x + M 1 1 * y) := by
   simp [eval, subst]
   ring
@@ -176,7 +176,7 @@ theorem subst_mul (M N : Matrix (Fin 2) (Fin 2) R) (f : BinaryQuartic R) :
   fin_cases i <;> simp [subst, eval, Pi.smul_apply, smul_eq_mul] <;> ring
 
 /-- Base change of coefficients commutes with matrix substitution. -/
-theorem subst_comp (φ : R →+* S) (M : Matrix (Fin 2) (Fin 2) R) (f : BinaryQuartic R) :
+@[simp] theorem subst_comp (φ : R →+* S) (M : Matrix (Fin 2) (Fin 2) R) (f : BinaryQuartic R) :
     subst (M.map φ) (φ ∘ f) = φ ∘ subst M f := by
   funext i
   fin_cases i <;> simp [subst, eval, Matrix.map_apply, map_ofNat]
@@ -200,10 +200,17 @@ instance : DistribMulAction (GL (Fin 2) R) (BinaryQuartic R) where
 theorem smul_eq_subst (g : GL (Fin 2) R) (f : BinaryQuartic R) :
     g • f = subst (g : Matrix (Fin 2) (Fin 2) R) f := (rfl)
 
+/-- Base change of coefficients commutes with the ordinary `GL₂` action. -/
+@[simp] theorem map_smul (f : BinaryQuartic R) (φ : R →+* S) (g : GL (Fin 2) R) :
+    Units.map (φ.mapMatrix (m := Fin 2) : Matrix (Fin 2) (Fin 2) R →*
+      Matrix (Fin 2) (Fin 2) S) g • (φ ∘ f) = φ ∘ (g • f) := by
+  rw [smul_eq_subst, smul_eq_subst, Units.coe_map]
+  simp only [MonoidHom.coe_ofClass, RingHom.mapMatrix_apply, subst_comp]
+
 /-- Scalar matrices have weight four under the ordinary action. -/
 @[simp] theorem scalar_smul (u : Rˣ) (f : BinaryQuartic R) :
-    GeneralLinearGroup.scalar (Fin 2) u • f = (u : R) ^ 4 • f :=
-  subst_scalar _ _
+    GeneralLinearGroup.scalar (Fin 2) u • f = (u : R) ^ 4 • f := by
+  rw [smul_eq_subst, GeneralLinearGroup.coe_scalar, Matrix.scalar_apply, subst_scalar]
 
 end Substitution
 
@@ -212,20 +219,20 @@ section Invariants
 variable {R : Type*} [CommRing R]
 
 /-- `I` has determinant weight four under every matrix substitution. -/
-theorem invI_subst (M : Matrix (Fin 2) (Fin 2) R) (f : BinaryQuartic R) :
+@[simp] theorem invI_subst (M : Matrix (Fin 2) (Fin 2) R) (f : BinaryQuartic R) :
     invI (subst M f) = M.det ^ 4 * invI f := by
   simp [invI_def, subst, eval, Matrix.det_fin_two]
   ring
 
 /-- `J` has determinant weight six under every matrix substitution. -/
-theorem invJ_subst (M : Matrix (Fin 2) (Fin 2) R) (f : BinaryQuartic R) :
+@[simp] theorem invJ_subst (M : Matrix (Fin 2) (Fin 2) R) (f : BinaryQuartic R) :
     invJ (subst M f) = M.det ^ 6 * invJ f := by
   simp [invJ_def, subst, eval, Matrix.det_fin_two]
   ring
 
 /-- The integral discriminant has determinant weight twelve, including in characteristics
 two and three and for singular substitution matrices. -/
-theorem disc_subst (M : Matrix (Fin 2) (Fin 2) R) (f : BinaryQuartic R) :
+@[simp] theorem disc_subst (M : Matrix (Fin 2) (Fin 2) R) (f : BinaryQuartic R) :
     disc (subst M f) = M.det ^ 12 * disc f := by
   -- Cancel 27 only over the universal integer coefficient ring, then specialize.
   let A := MvPolynomial (Fin 5 ⊕ (Fin 2 × Fin 2)) ℤ
@@ -253,18 +260,18 @@ theorem disc_subst (M : Matrix (Fin 2) (Fin 2) R) (f : BinaryQuartic R) :
 
 /-- Relative invariance of `I` for the ordinary `GL₂` action. -/
 @[simp] theorem invI_smul_generalLinearGroup (g : GL (Fin 2) R) (f : BinaryQuartic R) :
-    invI (g • f) = (GeneralLinearGroup.det g : R) ^ 4 * invI f :=
-  invI_subst _ _
+    invI (g • f) = (GeneralLinearGroup.det g : R) ^ 4 * invI f := by
+  rw [smul_eq_subst, invI_subst, GeneralLinearGroup.val_det_apply]
 
 /-- Relative invariance of `J` for the ordinary `GL₂` action. -/
 @[simp] theorem invJ_smul_generalLinearGroup (g : GL (Fin 2) R) (f : BinaryQuartic R) :
-    invJ (g • f) = (GeneralLinearGroup.det g : R) ^ 6 * invJ f :=
-  invJ_subst _ _
+    invJ (g • f) = (GeneralLinearGroup.det g : R) ^ 6 * invJ f := by
+  rw [smul_eq_subst, invJ_subst, GeneralLinearGroup.val_det_apply]
 
 /-- Relative invariance of the discriminant for the ordinary `GL₂` action. -/
 @[simp] theorem disc_smul_generalLinearGroup (g : GL (Fin 2) R) (f : BinaryQuartic R) :
-    disc (g • f) = (GeneralLinearGroup.det g : R) ^ 12 * disc f :=
-  disc_subst _ _
+    disc (g • f) = (GeneralLinearGroup.det g : R) ^ 12 * disc f := by
+  rw [smul_eq_subst, disc_subst, GeneralLinearGroup.val_det_apply]
 
 /-- The determinant-to-the-minus-two action used in two-descent. It is kept separate from the
 ordinary action, which is used for integral orbit enumeration. -/
@@ -319,7 +326,8 @@ theorem twistedSMul_eq_smul {g : GL (Fin 2) R}
   rw [twistedSMul_def, hv, one_smul]
 
 /-- The minus-identity fixes every quartic under the ordinary action. -/
-@[simp] theorem neg_one_smul (f : BinaryQuartic R) : (-1 : GL (Fin 2) R) • f = f := by
+@[simp] theorem neg_one_generalLinearGroup_smul (f : BinaryQuartic R) :
+    (-1 : GL (Fin 2) R) • f = f := by
   have h : GeneralLinearGroup.scalar (Fin 2) (-1 : Rˣ) = -1 := by
     ext i j
     fin_cases i <;> fin_cases j <;>
