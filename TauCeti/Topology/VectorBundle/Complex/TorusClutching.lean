@@ -40,7 +40,7 @@ boundary circle.
   `A t` of `F`, and `Φ (s, 1)` from `Φ (s, 0)` by `B s`. Composing `Φ` on the left and bottom edges
   with paths of automorphisms from `1` to `B 0` and to `A 0`, which exist because the group of
   automorphisms of `F` is path connected
-  (`TauCeti.instPathConnectedSpaceUnitsContinuousLinearMap`), and on the right and top edges with
+  (`ContinuousLinearEquiv.exists_continuous_path_refl_family`), and on the right and top edges with
   the same paths followed by `A t` and `B s`, gives a torus frame. At the corner `(1, 1)` the two
   prescriptions agree because `A` and `B` both compare frames at the four corners.
 * **Homotopy invariance.** Homotopic maps of the torus, through maps of the torus, have the same
@@ -49,7 +49,8 @@ boundary circle.
   torus, and its torus clutching number is its clutching number
   (`TauCeti.torusClutchingNumber_eq_clutchingNumber`). This is the value of `c₁` on the torus
   mapped to the sphere by collapsing `S¹ ∨ S¹`, a map of degree one.
-* **Bundle maps.** Complex-linear bundle maps preserve torus clutching numbers
+* **Bundle maps.** Semilinear bundle maps carry torus frames to torus frames
+  (`TauCeti.IsTorusFrame.map`). Complex-linear bundle maps preserve torus clutching numbers
   (`TauCeti.torusClutchingNumber_map_of_continuousLinearEquiv`) and conjugate-linear ones reverse
   them (`TauCeti.torusClutchingNumber_map_of_conjugateLinear`). In particular a complex vector
   bundle with a real structure, a conjugate-linear automorphism of the bundle covering the identity,
@@ -75,6 +76,7 @@ homotopy classes of loops.
   clutching number relative to any torus frame.
 * `TauCeti.torusClutchingNumber_eq_of_homotopy`: homotopy invariance.
 * `TauCeti.torusClutchingNumber_eq_clutchingNumber`: comparison with spheres.
+* `TauCeti.IsTorusFrame.map`: bundle maps carry torus frames to torus frames.
 * `TauCeti.torusClutchingNumber_map_of_continuousLinearEquiv`,
   `TauCeti.torusClutchingNumber_map_of_conjugateLinear`,
   `TauCeti.torusClutchingNumber_eq_zero_of_conjugateLinear`: bundle maps and real structures.
@@ -99,48 +101,6 @@ namespace TauCeti
 
 variable {X : Type*} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
   {E : X → Type*} [∀ x, AddCommGroup (E x)] [∀ x, Module ℂ (E x)] [∀ x, TopologicalSpace (E x)]
-
-/-! ### Frames in the total space -/
-
-/-- Two pairs of frames at the points `b` and `b'` that agree in the total space have the same
-transitions. -/
-private theorem trans_symm_eq_of_mk'_eq {b b' : X} {σ₁ σ₂ : F ≃L[ℂ] E b}
-    {ρ₁ ρ₂ : F ≃L[ℂ] E b'}
-    (h₁ : ∀ v, TotalSpace.mk' F b (σ₁ v) = TotalSpace.mk' F b' (ρ₁ v))
-    (h₂ : ∀ v, TotalSpace.mk' F b (σ₂ v) = TotalSpace.mk' F b' (ρ₂ v)) :
-    σ₁.trans σ₂.symm = ρ₁.trans ρ₂.symm := by
-  obtain rfl : b = b' := congrArg TotalSpace.proj (h₁ 0)
-  obtain rfl : σ₁ = ρ₁ := ContinuousLinearEquiv.ext (funext fun v ↦ TotalSpace.mk_inj.1 (h₁ v))
-  obtain rfl : σ₂ = ρ₂ := ContinuousLinearEquiv.ext (funext fun v ↦ TotalSpace.mk_inj.1 (h₂ v))
-  rfl
-
-/-- A frame at `b`, read at a point `b'` equal to `b`. -/
-private def frameCast {b b' : X} (h : b = b') (φ : F ≃L[ℂ] E b) : F ≃L[ℂ] E b' :=
-  h ▸ φ
-
-private theorem mk'_frameCast {b b' : X} (h : b = b') (φ : F ≃L[ℂ] E b) (v : F) :
-    TotalSpace.mk' F b' (frameCast h φ v) = TotalSpace.mk' F b (φ v) := by
-  subst h
-  rfl
-
-/-- An automorphism of `F` is determined by what a frame at `b` makes of it in the total space. -/
-private theorem eq_of_mk'_eq {b b' : X} {φ : F ≃L[ℂ] E b} {φ' : F ≃L[ℂ] E b'}
-    {S T : F ≃L[ℂ] F} (hS : ∀ v, TotalSpace.mk' F b (φ (S v)) = TotalSpace.mk' F b' (φ' v))
-    (hT : ∀ v, TotalSpace.mk' F b (φ (T v)) = TotalSpace.mk' F b' (φ' v)) : S = T :=
-  ContinuousLinearEquiv.ext <| funext fun v ↦
-    φ.injective (TotalSpace.mk_inj.1 ((hS v).trans (hT v).symm))
-
-/-- A path of automorphisms of `F` from the identity to `g`, as a family continuous in the operator
-norm. -/
-private theorem exists_path_continuousLinearEquiv [FiniteDimensional ℂ F] (g : F ≃L[ℂ] F) :
-    ∃ P : I → F ≃L[ℂ] F, Continuous (fun t ↦ (P t : F →L[ℂ] F)) ∧
-      P 0 = ContinuousLinearEquiv.refl ℂ F ∧ P 1 = g := by
-  let U := ContinuousLinearEquiv.unitsEquiv ℂ F
-  let γ := PathConnectedSpace.somePath (1 : (F →L[ℂ] F)ˣ) (U.symm g)
-  refine ⟨fun t ↦ U (γ t), Units.continuous_val.comp γ.continuous, ?_, ?_⟩
-  · simp only [γ.source, map_one]
-    rfl
-  · simp only [γ.target, MulEquiv.apply_symm_apply]
 
 variable [TopologicalSpace X] [FiniteDimensional ℂ F]
   [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℂ F E]
@@ -193,39 +153,6 @@ theorem IsTorusFrame.relativeClutchingNumber_eq {u : C(Fin 2 → I, X)}
 
 /-! ### Existence of torus frames -/
 
-/-- Paths of automorphisms of `F` from the identity to `K r`, continuous in `r` and in the time of
-the path: a fixed path from the identity to `K 0`, followed by the change of `K` between `0` and
-`r`. -/
-private theorem exists_path_family {K : I → F ≃L[ℂ] F}
-    (hK : Continuous fun r ↦ (K r : F →L[ℂ] F)) :
-    ∃ Q : I → I → F ≃L[ℂ] F, Continuous (fun q : I × I ↦ (Q q.1 q.2 : F →L[ℂ] F)) ∧
-      (∀ r, Q r 0 = ContinuousLinearEquiv.refl ℂ F) ∧ ∀ r, Q r 1 = K r := by
-  obtain ⟨P, hPc, hP0, hP1⟩ := exists_path_continuousLinearEquiv (K 0)
-  refine ⟨fun r t ↦ (P t).trans ((K 0).symm.trans (K (r * t))), ?_, fun r ↦ ?_, fun r ↦ ?_⟩
-  · refine (((hK.comp (by fun_prop : Continuous fun q : I × I ↦ q.1 * q.2)).clm_comp
-      (continuous_const (y := ((K 0).symm : F →L[ℂ] F)))).clm_comp
-        (hPc.comp continuous_snd)).congr
-        fun q ↦ ContinuousLinearMap.ext fun v ↦ rfl
-  · ext v
-    simp [hP0]
-  · ext v
-    simp [hP1]
-
-/-- A map on `I × I²` continuous on each of the four closed edges `y₁ = 0`, `y₀ = 0`, `y₀ = 1`
-and `y₁ = 1` of the square is continuous on `I × ∂I²`. -/
-private theorem continuousOn_boundary_of_edges {Z : Type*} [TopologicalSpace Z]
-    {g : I × (Fin 2 → I) → Z} (hB : ContinuousOn g {q | q.2 1 = 0})
-    (hL : ContinuousOn g {q | q.2 0 = 0}) (hR : ContinuousOn g {q | q.2 0 = 1})
-    (hT : ContinuousOn g {q | q.2 1 = 1}) : ContinuousOn g (univ ×ˢ Cube.boundary (Fin 2)) := by
-  have hclosed (i : Fin 2) (c : I) : IsClosed {q : I × (Fin 2 → I) | q.2 i = c} :=
-    isClosed_eq (by fun_prop) continuous_const
-  have hBL := hB.union_of_isClosed hL (hclosed 1 0) (hclosed 0 0)
-  have hBLR := hBL.union_of_isClosed hR ((hclosed 1 0).union (hclosed 0 0)) (hclosed 0 1)
-  refine ContinuousOn.mono (hBLR.union_of_isClosed hT
-    (((hclosed 1 0).union (hclosed 0 0)).union (hclosed 0 1)) (hclosed 1 1)) ?_
-  rintro q ⟨-, i, hi⟩
-  fin_cases i <;> rcases hi with hi | hi <;> simp_all
-
 /-- **Automorphisms along the boundary of the square twisted by `A` and `B`.** Given automorphisms
 `A (r, t)` and `B (r, s)` of `F`, continuous in both variables, such that the two ways of going
 around the corner `(1, 1)` agree, there are automorphisms `ψ (r, y)` along the boundary of the
@@ -239,8 +166,10 @@ private theorem exists_twisted_boundary {A B : I × I → F ≃L[ℂ] F}
       ContinuousOn (fun q ↦ (ψ q : F →L[ℂ] F)) (univ ×ˢ Cube.boundary (Fin 2)) ∧
       (∀ r t, ψ (r, ![1, t]) = (ψ (r, ![0, t])).trans (A (r, t))) ∧
       ∀ r s, ψ (r, ![s, 1]) = (ψ (r, ![s, 0])).trans (B (r, s)) := by
-  obtain ⟨L, hLc, hL0, hL1⟩ := exists_path_family (K := fun r ↦ B (r, 0)) (hB.comp (by fun_prop))
-  obtain ⟨D, hDc, hD0, hD1⟩ := exists_path_family (K := fun r ↦ A (r, 0)) (hA.comp (by fun_prop))
+  obtain ⟨L, hLc, hL0, hL1⟩ := ContinuousLinearEquiv.exists_continuous_path_refl_family
+    (K := fun r ↦ B (r, 0)) (hB.comp (by fun_prop))
+  obtain ⟨D, hDc, hD0, hD1⟩ := ContinuousLinearEquiv.exists_continuous_path_refl_family
+    (K := fun r ↦ A (r, 0)) (hA.comp (by fun_prop))
   classical
   -- `D` on the bottom edge, `L` on the left edge, `L` followed by `A` on the right edge and `D`
   -- followed by `B` on the top edge.
@@ -270,16 +199,14 @@ private theorem exists_twisted_boundary {A B : I × I → F ≃L[ℂ] F}
   have h0 : Continuous fun q : I × (Fin 2 → I) ↦ (q.1, q.2 0) := by fun_prop
   have h1 : Continuous fun q : I × (Fin 2 → I) ↦ (q.1, q.2 1) := by fun_prop
   refine ⟨ψ, continuousOn_boundary_of_edges ?_ ?_ ?_ ?_, fun r t ↦ ?_, fun r s ↦ ?_⟩
-  · exact (hDc.comp h0).continuousOn.congr fun q hq ↦ by rw [hψB hq]; rfl
-  · exact (hLc.comp h1).continuousOn.congr fun q hq ↦ by rw [hψL hq]; rfl
+  · exact (hDc.comp h0).continuousOn.congr fun q hq ↦ by simp [hψB hq]
+  · exact (hLc.comp h1).continuousOn.congr fun q hq ↦ by simp [hψL hq]
   · exact ((hA.comp h1).clm_comp (hLc.comp h1)).continuousOn.congr
-      fun q hq ↦ by rw [hψR hq]; rfl
+      fun q hq ↦ by simp [hψR hq]
   · exact ((hB.comp h0).clm_comp (hDc.comp h0)).continuousOn.congr
-      fun q hq ↦ by rw [hψT hq]; rfl
-  · rw [hψR (show (r, ![1, t]).2 0 = 1 from rfl), hψL (show (r, ![0, t]).2 0 = 0 from rfl)]
-    rfl
-  · rw [hψT (show (r, ![s, 1]).2 1 = 1 from rfl), hψB (show (r, ![s, 0]).2 1 = 0 from rfl)]
-    rfl
+      fun q hq ↦ by simp [hψT hq]
+  · simp [hψR (by simp : (r, ![1, t]).2 0 = 1), hψL (by simp : (r, ![0, t]).2 0 = 0)]
+  · simp [hψT (by simp : (r, ![s, 1]).2 1 = 1), hψB (by simp : (r, ![s, 0]).2 1 = 0)]
 
 omit [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)] in
 /-- **Seam transitions.** Let `φ` and `ψ` be continuous frames along maps `f` and `g` that agree
@@ -428,6 +355,31 @@ variable {Y : Type*} [TopologicalSpace Y]
   [∀ y, TopologicalSpace (E' y)] [TopologicalSpace (TotalSpace F' E')] [FiberBundle F' E']
   [VectorBundle ℂ F' E'] [∀ y, IsTopologicalAddGroup (E' y)] [∀ y, ContinuousSMul ℂ (E' y)]
 
+omit [FiniteDimensional ℂ F] [FiberBundle F E] [VectorBundle ℂ F E]
+  [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)] [FiniteDimensional ℂ F']
+  [FiberBundle F' E'] [VectorBundle ℂ F' E'] [∀ y, IsTopologicalAddGroup (E' y)]
+  [∀ y, ContinuousSMul ℂ (E' y)] in
+/-- **Bundle maps carry torus frames to torus frames.** Let `Φ x : E x ≃ E' (f x)` be
+`σ₁₂`-semilinear isomorphisms covering a continuous map `f : X → Y`, continuous as a map of total
+spaces, for instance complex-linear or conjugate-linear ones, and let `K : F ≃ F'` be a
+`σ₁₂`-semilinear isomorphism of the model fibres. If `τ` is a torus
+frame along `u`, then `Φ ∘ τ ∘ K⁻¹` is a torus frame along `f ∘ u`. -/
+theorem IsTorusFrame.map {σ₁₂ σ₂₁ : ℂ →+* ℂ} [RingHomInvPair σ₁₂ σ₂₁] [RingHomInvPair σ₂₁ σ₁₂]
+    {f : C(X, Y)} {Φ : ∀ x, E x ≃SL[σ₁₂] E' (f x)}
+    (hΦ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' (f v.proj) (Φ v.proj v.snd))
+    (K : F ≃SL[σ₁₂] F') {u : C(Fin 2 → I, X)} {τ : ∀ y, F ≃L[ℂ] E (u y)}
+    (hτ : IsTorusFrame u τ) :
+    IsTorusFrame (f.comp u) fun y ↦ (K.symm.trans (τ y)).trans (Φ (u y)) where
+  continuousOn := hΦ.comp_continuousOn (hτ.continuousOn.comp
+    (continuousOn_fst.prodMk (K.symm.continuous.comp continuous_snd).continuousOn)
+      fun q (hq : q ∈ Cube.boundary (Fin 2) ×ˢ univ) ↦ ⟨hq.1, mem_univ _⟩)
+  right_eq_left t v := congrArg
+    (fun w : TotalSpace F E ↦ TotalSpace.mk' F' (f w.proj) (Φ w.proj w.snd))
+      (hτ.right_eq_left t (K.symm v))
+  top_eq_bottom s v := congrArg
+    (fun w : TotalSpace F E ↦ TotalSpace.mk' F' (f w.proj) (Φ w.proj w.snd))
+      (hτ.top_eq_bottom s (K.symm v))
+
 /-- **Complex-linear bundle maps preserve torus clutching numbers.** Let `Φ x : E x ≃ E' (f x)` be
 complex-linear isomorphisms covering a continuous map `f : X → Y`, continuous as a map of total
 spaces. For a map `u` of the torus, the torus clutching number of `E'` on `f ∘ u` is that of `E` on
@@ -438,25 +390,11 @@ theorem torusClutchingNumber_map_of_continuousLinearEquiv (f : C(X, Y))
     (u : C(Fin 2 → I, X)) (hR : ∀ t, u ![1, t] = u ![0, t]) (hT : ∀ s, u ![s, 1] = u ![s, 0]) :
     torusClutchingNumber F' E' (f.comp u) = torusClutchingNumber F E u := by
   obtain ⟨τ, hτ⟩ := exists_isTorusFrame (F := F) (E := E) u hR hT
-  set x := u ![0, 0]
-  set e := trivializationAt F E x
-  set e' := trivializationAt F' E' (f x)
-  -- The model fibres are identified through the fibres over `x` and `f x`.
-  let L : F ≃L[ℂ] F' :=
-    ((e.continuousLinearEquivAt ℂ x (mem_baseSet_trivializationAt F E x)).symm.trans (Φ x)).trans
-      (e'.continuousLinearEquivAt ℂ (f x) (mem_baseSet_trivializationAt F' E' (f x)))
-  -- `Φ` carries the torus frame `τ` along `u` to a torus frame along `f ∘ u`.
-  have hτ' : IsTorusFrame (f.comp u) fun y ↦ (L.symm.trans (τ y)).trans (Φ (u y)) :=
-    { continuousOn := hΦ.comp_continuousOn (hτ.continuousOn.comp
-        (continuousOn_fst.prodMk (L.symm.continuous.comp continuous_snd).continuousOn)
-          fun q (hq : q ∈ Cube.boundary (Fin 2) ×ˢ univ) ↦ ⟨hq.1, mem_univ _⟩)
-      right_eq_left := fun t v ↦ congrArg
-        (fun w : TotalSpace F E ↦ TotalSpace.mk' F' (f w.proj) (Φ w.proj w.snd))
-          (hτ.right_eq_left t (L.symm v))
-      top_eq_bottom := fun s v ↦ congrArg
-        (fun w : TotalSpace F E ↦ TotalSpace.mk' F' (f w.proj) (Φ w.proj w.snd))
-          (hτ.top_eq_bottom s (L.symm v)) }
-  rw [hτ'.torusClutchingNumber_eq, hτ.torusClutchingNumber_eq]
+  -- The model fibres are identified through `τ` and `Φ` at a point and a trivialization of `E'`.
+  let L : F ≃L[ℂ] F' := ((τ 0).trans (Φ (u 0))).trans
+    ((trivializationAt F' E' (f (u 0))).continuousLinearEquivAt ℂ (f (u 0))
+      (mem_baseSet_trivializationAt F' E' (f (u 0))))
+  rw [(hτ.map hΦ L).torusClutchingNumber_eq, hτ.torusClutchingNumber_eq]
   exact relativeClutchingNumber_map_of_continuousLinearEquiv f Φ hΦ L u τ
 
 /-- **Conjugate-linear bundle maps reverse torus clutching numbers.** Let `Φ x : E x ≃ E' (f x)` be
@@ -469,25 +407,11 @@ theorem torusClutchingNumber_map_of_conjugateLinear (f : C(X, Y))
     (u : C(Fin 2 → I, X)) (hR : ∀ t, u ![1, t] = u ![0, t]) (hT : ∀ s, u ![s, 1] = u ![s, 0]) :
     torusClutchingNumber F' E' (f.comp u) = -torusClutchingNumber F E u := by
   obtain ⟨τ, hτ⟩ := exists_isTorusFrame (F := F) (E := E) u hR hT
-  set x := u ![0, 0]
-  set e := trivializationAt F E x
-  set e' := trivializationAt F' E' (f x)
-  -- The conjugate-linear isomorphism of the model fibres induced by `Φ` over `x`.
-  let K : F ≃L⋆[ℂ] F' :=
-    ((e.continuousLinearEquivAt ℂ x (mem_baseSet_trivializationAt F E x)).symm.trans (Φ x)).trans
-      (e'.continuousLinearEquivAt ℂ (f x) (mem_baseSet_trivializationAt F' E' (f x)))
-  -- `Φ` carries the torus frame `τ` along `u` to a torus frame along `f ∘ u`.
-  have hτ' : IsTorusFrame (f.comp u) fun y ↦ (K.symm.trans (τ y)).trans (Φ (u y)) :=
-    { continuousOn := hΦ.comp_continuousOn (hτ.continuousOn.comp
-        (continuousOn_fst.prodMk (K.symm.continuous.comp continuous_snd).continuousOn)
-          fun q (hq : q ∈ Cube.boundary (Fin 2) ×ˢ univ) ↦ ⟨hq.1, mem_univ _⟩)
-      right_eq_left := fun t v ↦ congrArg
-        (fun w : TotalSpace F E ↦ TotalSpace.mk' F' (f w.proj) (Φ w.proj w.snd))
-          (hτ.right_eq_left t (K.symm v))
-      top_eq_bottom := fun s v ↦ congrArg
-        (fun w : TotalSpace F E ↦ TotalSpace.mk' F' (f w.proj) (Φ w.proj w.snd))
-          (hτ.top_eq_bottom s (K.symm v)) }
-  rw [hτ'.torusClutchingNumber_eq, hτ.torusClutchingNumber_eq]
+  -- The conjugate-linear isomorphism of the model fibres induced by `τ` and `Φ` at a point.
+  let K : F ≃L⋆[ℂ] F' := ((τ 0).trans (Φ (u 0))).trans
+    ((trivializationAt F' E' (f (u 0))).continuousLinearEquivAt ℂ (f (u 0))
+      (mem_baseSet_trivializationAt F' E' (f (u 0))))
+  rw [(hτ.map hΦ K).torusClutchingNumber_eq, hτ.torusClutchingNumber_eq]
   exact relativeClutchingNumber_map_of_conjugateLinear f Φ hΦ K u τ
 
 end Map

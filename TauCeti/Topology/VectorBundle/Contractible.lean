@@ -63,6 +63,9 @@ needed.
 * `TauCeti.continuous_trans_symm_of_continuous_frame`: two continuous frames of a finite-rank
   bundle along the same map differ by a continuous family of automorphisms of their common
   source, for instance the model fibre.
+* `TauCeti.trans_symm_eq_of_mk'_eq`, `TauCeti.eq_of_mk'_eq`: frames that agree as maps to the
+  total space have the same transitions, and determine the automorphisms they are composed with.
+  `TauCeti.frameCast` reads a frame at an equal base point (`TauCeti.mk'_frameCast`).
 * `TauCeti.exists_orthonormal_trivialization_baseSet_eq_univ_of_contractibleSpace`: for a
   finite-rank real bundle with continuous fibre metric, the trivialization can be chosen
   isometric on every fibre.
@@ -151,6 +154,43 @@ theorem exists_trivialization_baseSet_eq_univ_of_contractibleSpace :
     proj_toFun _ _ := rfl }, ⟨fun b _ ↦ (Ψ b).toLinearEquiv.toLinearMap.isLinear⟩, rfl⟩
 
 end Linear
+
+section FrameValues
+
+variable {𝕜 : Type*} [Semiring 𝕜] {X : Type*}
+  {F : Type*} [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
+  {E : X → Type*} [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)] [∀ x, TopologicalSpace (E x)]
+
+/-- Two pairs of frames at the points `b` and `b'` that agree in the total space have the same
+transitions. -/
+theorem trans_symm_eq_of_mk'_eq {b b' : X} {σ₁ σ₂ : F ≃L[𝕜] E b} {ρ₁ ρ₂ : F ≃L[𝕜] E b'}
+    (h₁ : ∀ v, TotalSpace.mk' F b (σ₁ v) = TotalSpace.mk' F b' (ρ₁ v))
+    (h₂ : ∀ v, TotalSpace.mk' F b (σ₂ v) = TotalSpace.mk' F b' (ρ₂ v)) :
+    σ₁.trans σ₂.symm = ρ₁.trans ρ₂.symm := by
+  obtain rfl : b = b' := congrArg TotalSpace.proj (h₁ 0)
+  obtain rfl : σ₁ = ρ₁ := ContinuousLinearEquiv.ext (funext fun v ↦ TotalSpace.mk_inj.1 (h₁ v))
+  obtain rfl : σ₂ = ρ₂ := ContinuousLinearEquiv.ext (funext fun v ↦ TotalSpace.mk_inj.1 (h₂ v))
+  rfl
+
+/-- A frame at `b`, read at a point `b'` equal to `b`. -/
+def frameCast {b b' : X} (h : b = b') (φ : F ≃L[𝕜] E b) : F ≃L[𝕜] E b' :=
+  h ▸ φ
+
+/-- A frame read at an equal point by `TauCeti.frameCast` has the same values in the total
+space. -/
+theorem mk'_frameCast {b b' : X} (h : b = b') (φ : F ≃L[𝕜] E b) (v : F) :
+    TotalSpace.mk' F b' (frameCast h φ v) = TotalSpace.mk' F b (φ v) := by
+  subst h
+  rfl
+
+/-- An automorphism of `F` is determined by what a frame at `b` makes of it in the total space. -/
+theorem eq_of_mk'_eq {b b' : X} {φ : F ≃L[𝕜] E b} {φ' : F ≃L[𝕜] E b'}
+    {S T : F ≃L[𝕜] F} (hS : ∀ v, TotalSpace.mk' F b (φ (S v)) = TotalSpace.mk' F b' (φ' v))
+    (hT : ∀ v, TotalSpace.mk' F b (φ (T v)) = TotalSpace.mk' F b' (φ' v)) : S = T :=
+  ContinuousLinearEquiv.ext <| funext fun v ↦
+    φ.injective (TotalSpace.mk_inj.1 ((hS v).trans (hT v).symm))
+
+end FrameValues
 
 section Frame
 

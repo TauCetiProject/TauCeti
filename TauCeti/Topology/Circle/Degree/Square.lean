@@ -59,6 +59,8 @@ quarter turn, as the arguments of the corners `(±1 ± i) / 2` show.
 
 ## Main results
 
+* `TauCeti.continuousOn_boundary_of_edges`: a map on `P × I²` continuous on each closed edge of
+  the square is continuous on `P × ∂I²`.
 * `TauCeti.squareBoundaryDegree_eq_degree`: the degree is that of the loop `Γ ∘ ∂I²`.
 * `TauCeti.squareBoundaryDegree_congr`, `TauCeti.squareBoundaryDegree_mul`,
   `TauCeti.squareBoundaryDegree_pow`, `TauCeti.squareBoundaryDegree_inv`,
@@ -146,6 +148,22 @@ def squareBoundaryLoop : Path (![0, 0] : Fin 2 → I) ![0, 0] :=
 theorem range_squareBoundaryLoop_subset : range squareBoundaryLoop ⊆ Cube.boundary (Fin 2) := by
   simp only [squareBoundaryLoop, Path.trans_range, Path.symm_range, union_subset_iff]
   exact ⟨range_squareBottom, range_squareRight, range_squareTop, range_squareLeft⟩
+
+/-- **Continuity along the boundary, edge by edge.** A map on `P × I²`, for a parameter space `P`,
+that is continuous on each of the four closed edges `y₁ = 0`, `y₀ = 0`, `y₀ = 1` and `y₁ = 1` of
+the square is continuous on `P × ∂I²`. -/
+theorem continuousOn_boundary_of_edges {P Z : Type*} [TopologicalSpace P] [TopologicalSpace Z]
+    {g : P × (Fin 2 → I) → Z} (hB : ContinuousOn g {q | q.2 1 = 0})
+    (hL : ContinuousOn g {q | q.2 0 = 0}) (hR : ContinuousOn g {q | q.2 0 = 1})
+    (hT : ContinuousOn g {q | q.2 1 = 1}) : ContinuousOn g (univ ×ˢ Cube.boundary (Fin 2)) := by
+  have hclosed (i : Fin 2) (c : I) : IsClosed {q : P × (Fin 2 → I) | q.2 i = c} :=
+    isClosed_eq (by fun_prop) continuous_const
+  have hBL := hB.union_of_isClosed hL (hclosed 1 0) (hclosed 0 0)
+  have hBLR := hBL.union_of_isClosed hR ((hclosed 1 0).union (hclosed 0 0)) (hclosed 0 1)
+  refine ContinuousOn.mono (hBLR.union_of_isClosed hT
+    (((hclosed 1 0).union (hclosed 0 0)).union (hclosed 0 1)) (hclosed 1 1)) ?_
+  rintro q ⟨-, i, hi⟩
+  fin_cases i <;> rcases hi with hi | hi <;> simp_all
 
 /-! ### The degree around the boundary -/
 

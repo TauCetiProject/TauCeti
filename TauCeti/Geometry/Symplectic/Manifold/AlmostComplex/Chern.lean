@@ -32,8 +32,9 @@ on `J`, and so defines the first Chern number of `σ` on spheres.
   every tangent space (`TauCeti.SmoothTwoForm.Tames.isUnit_one_sub_toEndomorphism_mul`, from the
   linear `TauCeti.SymplecticForm.Tames.isUnit_one_sub_mul`): a vector with
   `K (J v) = v` has `K v = -J v`, and `σ(v, K v) = -σ(v, J v)` cannot be positive together with
-  `σ(v, J v)` unless `v = 0`. So the complex-linear part `v ↦ (v - K (J v)) / 2` of the identity is
-  an isomorphism of complex vector bundles `(TM, J) ≃ (TM, K)`
+  `σ(v, J v)` unless `v = 0` (`TauCeti.SmoothTwoForm.Tames.eq_zero_of_apply_apply_eq`). So the
+  complex-linear part `v ↦ (v - K (J v)) / 2` of the identity is an isomorphism of complex vector
+  bundles `(TM, J) ≃ (TM, K)`
   (`TauCeti.Bundle.ContinuousComplexStructure.complexLinearPartEquiv`), and the clutching numbers of
   `(TM, J)` and `(TM, K)` agree (`TauCeti.SmoothTwoForm.Tames.clutchingNumberHom_eq`), for any
   complex model fibres and any smoothness levels at which `J` and `K` are regarded.
@@ -148,18 +149,25 @@ variable [FiniteDimensional ℝ E]
   [Fact (finrank ℝ E = 2 * finrank ℂ G)] [NormedAddCommGroup G'] [NormedSpace ℂ G']
   [FiniteDimensional ℂ G'] [Fact (finrank ℝ E = 2 * finrank ℂ G')]
 
+/-- **Tame structures are nowhere inverse to each other.** If `J` and `K` are both tamed by `σ`,
+regarded at any smoothness levels `n` and `m`, then no nonzero tangent vector `v` has
+`K (J v) = v`: the endomorphism `1 - K J` of every tangent space is invertible. -/
+theorem Tames.eq_zero_of_apply_apply_eq (hJ : σ.Tames J) (hK : σ.Tames K) (n m : ℕ∞) {y : M}
+    {v : TangentSpace I y} (hv : (K.toContMDiff m).toContinuousComplexStructure y
+      ((J.toContMDiff n).toContinuousComplexStructure y v) = v) : v = 0 := by
+  have hunit := hJ.isUnit_one_sub_toEndomorphism_mul hK y
+  apply (ContinuousLinearEquiv.unitsEquiv ℝ _ hunit.unit).injective
+  simpa [sub_eq_zero] using hv.symm
+
 /-- **Independence of the tame almost complex structure.** If `J` and `K` are both tamed by `σ`,
 the tangent bundles `(TM, J)` and `(TM, K)` have the same clutching number homomorphism
 `π₂(M, x) → ℤ`, for any complex model fibres `G` and `G'` and any smoothness levels `n` and `m` at
 which `J` and `K` are regarded. -/
 theorem Tames.clutchingNumberHom_eq (hJ : σ.Tames J) (hK : σ.Tames K) (n m : ℕ∞) (x : M) :
     clutchingNumberHom G' (K.toContMDiff m).toContinuousComplexStructure.Fiber x =
-      clutchingNumberHom G (J.toContMDiff n).toContinuousComplexStructure.Fiber x := by
-  refine Bundle.ContinuousComplexStructure.clutchingNumberHom_fiber_eq (fun y v hv ↦ ?_) G G' x
-  -- On each tangent space, `1 - K J` is invertible because `J` and `K` are tamed by `σ`.
-  have hunit := hJ.isUnit_one_sub_toEndomorphism_mul hK y
-  apply (ContinuousLinearEquiv.unitsEquiv ℝ _ hunit.unit).injective
-  simpa [sub_eq_zero] using hv.symm
+      clutchingNumberHom G (J.toContMDiff n).toContinuousComplexStructure.Fiber x :=
+  Bundle.ContinuousComplexStructure.clutchingNumberHom_fiber_eq
+    (fun _ _ ↦ hJ.eq_zero_of_apply_apply_eq hK n m) G G' x
 
 namespace IsNondegenerate
 
@@ -508,13 +516,10 @@ theorem Tames.torusClutchingNumber_eq (hJ : σ.Tames J) (hK : σ.Tames K) (n m :
     (hT : ∀ s, u ![s, 1] = u ![s, 0]) :
     torusClutchingNumber G' (K.toContMDiff m).toContinuousComplexStructure.Fiber u =
       torusClutchingNumber G (J.toContMDiff n).toContinuousComplexStructure.Fiber u := by
-  -- On each tangent space, `1 - K J` is invertible because `J` and `K` are tamed by `σ`, so the
-  -- complex-linear part of the identity is an isomorphism `(TM, J) ≃ (TM, K)`.
+  -- The complex-linear part of the identity is an isomorphism `(TM, J) ≃ (TM, K)`.
   have hKJ : ∀ y (v : TangentSpace I y), (K.toContMDiff m).toContinuousComplexStructure y
-      ((J.toContMDiff n).toContinuousComplexStructure y v) = v → v = 0 := fun y v hv ↦ by
-    have hunit := hJ.isUnit_one_sub_toEndomorphism_mul hK y
-    apply (ContinuousLinearEquiv.unitsEquiv ℝ _ hunit.unit).injective
-    simpa [sub_eq_zero] using hv.symm
+      ((J.toContMDiff n).toContinuousComplexStructure y v) = v → v = 0 :=
+    fun _ _ ↦ hJ.eq_zero_of_apply_apply_eq hK n m
   simpa using torusClutchingNumber_map_of_continuousLinearEquiv (ContinuousMap.id M)
     (Bundle.ContinuousComplexStructure.complexLinearPartEquiv hKJ)
     (Bundle.ContinuousComplexStructure.continuous_complexLinearPartEquiv hKJ G G') u hR hT
