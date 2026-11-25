@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Equiv.IntLinear
+public import TauCeti.GroupTheory.Automorphism.IntLattice
 public import TauCeti.GroupTheory.Automorphism.Outer
 public import TauCeti.GroupTheory.Perm.Centralizer
 public import TauCeti.GroupTheory.Perm.Fin
 public import Mathlib.Data.ZMod.Aut
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
-public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 
 /-!
 # Outer automorphism groups of small groups
@@ -23,7 +21,8 @@ Checks for `TauCeti.OuterAut`, the automorphisms of a group modulo the inner aut
   by the images of a 3-cycle and a transposition, which leaves at most `2 · 3 = 6` automorphisms);
 * `OuterAut ℤ` has exactly two elements, `±id`;
 * `OuterAut ℤ² ≅ GL₂(ℤ)`: for the abelian `ℤ²` there are no nontrivial inner automorphisms, and
-  the automorphisms of `ℤ²` are the invertible integer matrices.
+  the automorphisms of `ℤ²` are the invertible integer matrices (the case `ι = Fin 2` of the
+  library's `TauCeti.outerAutIntPiEquiv`).
 
 The groups `ℤ` and `ℤ²` are written multiplicatively, as `Multiplicative ℤ` and
 `Multiplicative (Fin 2 → ℤ)`.
@@ -37,7 +36,7 @@ open TauCeti Multiplicative
 
 /-- The outer automorphism group of the trivial group is trivial. -/
 instance subsingleton_outerAut_unit : Subsingleton (OuterAut Unit) :=
-  Quotient.instSubsingletonQuotient _
+  QuotientGroup.mk_surjective.subsingleton
 
 /-- **Every automorphism of `S₃` is inner**, so `OuterAut S₃` is trivial. -/
 instance subsingleton_outerAut_perm_fin_three : Subsingleton (OuterAut (Equiv.Perm (Fin 3))) := by
@@ -69,30 +68,15 @@ instance subsingleton_outerAut_perm_fin_three : Subsingleton (OuterAut (Equiv.Pe
 
 /-- **`OuterAut ℤ² ≅ GL₂(ℤ)`**: the outer automorphisms of the abelian group `ℤ²` are its
 automorphisms, the invertible `2 × 2` integer matrices. -/
-noncomputable def outerAutIntPairEquiv :
+noncomputable example :
     OuterAut (Multiplicative (Fin 2 → ℤ)) ≃* Matrix.GeneralLinearGroup (Fin 2) ℤ :=
-  OuterAut.mulEquivOfIsMulCommutative.trans <|
-    (mulAutMultiplicativeEquiv _).trans <|
-      (LinearMap.GeneralLinearGroup.generalLinearEquiv ℤ (Fin 2 → ℤ)).symm.trans
-        Matrix.GeneralLinearGroup.toLin.symm
+  outerAutIntPiEquiv (Fin 2)
 
-/-- The matrix of the outer class of `φ` has as its `j`-th column the image under `φ` of the
-`j`-th standard basis vector. -/
-@[simp]
-theorem outerAutIntPairEquiv_mk_apply (φ : MulAut (Multiplicative (Fin 2 → ℤ))) (i j : Fin 2) :
-    (outerAutIntPairEquiv (φ : OuterAut _) : Matrix (Fin 2) (Fin 2) ℤ) i j =
+/-- The matrix in `GL₂(ℤ)` of the outer class of `φ` has as its `j`-th column the image under `φ`
+of the `j`-th standard basis vector. -/
+example (φ : MulAut (Multiplicative (Fin 2 → ℤ))) (i j : Fin 2) :
+    (outerAutIntPiEquiv (Fin 2) (φ : OuterAut _) : Matrix (Fin 2) (Fin 2) ℤ) i j =
       (φ (ofAdd (Pi.single j 1))).toAdd i := by
-  simp [outerAutIntPairEquiv, Matrix.GeneralLinearGroup.toLin,
-    ← LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv]
-
-/-- The outer class attached to an invertible integer matrix `A` is the class of the automorphism
-`v ↦ A *ᵥ v` of `ℤ²`. -/
-theorem outerAutIntPairEquiv_symm_apply (A : Matrix.GeneralLinearGroup (Fin 2) ℤ) :
-    outerAutIntPairEquiv.symm A =
-      ((mulAutMultiplicativeEquiv _).symm (Matrix.GeneralLinearGroup.toLin A).toLinearEquiv :
-        OuterAut _) := by
-  rw [MulEquiv.symm_apply_eq]
-  ext i j
   simp
 
 /-- **`OuterAut ℤ` has exactly two elements**, the classes of `id` and of `-id`. -/
