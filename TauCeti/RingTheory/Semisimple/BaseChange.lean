@@ -21,6 +21,7 @@ import TauCeti.Algebra.CentralSimple.TensorProduct
 import TauCeti.Algebra.Subalgebra.Center
 import TauCeti.Algebra.TensorProduct.Module
 import TauCeti.RingTheory.SimpleModule.Basic
+import TauCeti.RingTheory.SimpleModule.Subalgebra
 import TauCeti.RingTheory.Unramified.Field
 
 /-!
@@ -40,8 +41,8 @@ simple, as the tensor product of a central simple algebra with a simple one, and
 `L ⊗[k] D` is a finite product of simple Artinian rings.
 
 For modules, the action of `A` on `M` factors through its image `B` in `End_k(M)`, a
-finite-dimensional semisimple algebra (`TauCeti.isSemisimpleRing_range_lsmul`, in
-`TauCeti.RingTheory.SimpleModule.Basic`), and the action of
+finite-dimensional semisimple algebra (`Subalgebra.isSemisimpleRing_of_isSemisimpleModule`, in
+`TauCeti.RingTheory.SimpleModule.Subalgebra`), and the action of
 `L ⊗[k] A` on `L ⊗[k] M` factors through the semisimple ring `L ⊗[k] B`.
 
 Perfectness is essential. For `k = 𝔽_p(s)` and `B = k(s^{1/p})`, the field `B` is semisimple, but
@@ -158,7 +159,11 @@ theorem isSemisimpleModule_tensorProduct_of_perfectField [FiniteDimensional k M]
     [IsSemisimpleModule A M] [Module (L ⊗[k] A) (L ⊗[k] M)]
     (h : ∀ (l l' : L) (a : A) (m : M), (l ⊗ₜ[k] a) • (l' ⊗ₜ[k] m) = (l * l') ⊗ₜ[k] (a • m)) :
     IsSemisimpleModule (L ⊗[k] A) (L ⊗[k] M) := by
-  have := isSemisimpleRing_range_lsmul (k := k) (A := A) (M := M)
+  have : IsSemisimpleModule (Algebra.lsmul k (A := A) k M).range M :=
+    (RingHom.isSemisimpleModule_iff_of_surjective (M := M)
+      (Algebra.lsmul k (A := A) k M).rangeRestrict.toRingHom
+      (AlgHom.rangeRestrict_surjective _) fun _ _ ↦ rfl).mp ‹_›
+  have := (Algebra.lsmul k (A := A) k M).range.isSemisimpleRing_of_isSemisimpleModule
   let : Module (L ⊗[k] (Algebra.lsmul k (A := A) k M).range) (L ⊗[k] M) :=
     Module.compHom _ (BialgebraModule.tensorPairAction k L M).toRingHom
   let φ := (Algebra.TensorProduct.map (AlgHom.id k L)

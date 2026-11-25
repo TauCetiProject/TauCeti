@@ -7,9 +7,6 @@ module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.SimpleModule.Basic
-public import Mathlib.Algebra.Algebra.Bilinear
-public import Mathlib.Algebra.Algebra.Subalgebra.Basic
-public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.RingTheory.SimpleRing.Defs
 public import TauCeti.Algebra.Module.Generator
 -- Private: `isSimpleRing_iff_isTwoSided_imp` is used only inside the proof of
@@ -54,8 +51,6 @@ finite-generation hypothesis.
   to the regular module detects the zero module over a semisimple ring.
 * `RingHom.isSemisimpleModule_iff_of_surjective`: semisimplicity is unchanged by pulling the
   action back along a surjective ring map.
-* `TauCeti.isSemisimpleRing_range_lsmul`: the image of an algebra in the endomorphisms of a finite
-  semisimple module is a semisimple ring.
 * `TauCeti.Module.IsGenerator.of_isSimpleRing`: every nontrivial module over a simple semisimple
   ring is a generator of the module category.
 -/
@@ -198,30 +193,5 @@ theorem _root_.RingHom.isSemisimpleModule_iff_of_surjective {R S M : Type*} [Rin
   have : RingHomSurjective σ := ⟨hσ⟩
   exact LinearMap.isSemisimpleModule_iff_of_bijective (M' := M) (N' := M) (σ := σ)
     ⟨⟨id, fun _ _ ↦ rfl⟩, fun r m ↦ (h r m).symm⟩ Function.bijective_id
-
-/-! ### The image of an algebra acting on a semisimple module -/
-
-section Range
-
-variable {k A M : Type*} [CommRing k] [Ring A] [Algebra k A] [AddCommGroup M] [Module k M]
-  [Module A M] [IsScalarTower k A M]
-
-/-- **The image of an algebra acting on a finite semisimple module is semisimple.** If `M` is a
-semisimple `A`-module, finitely generated over `k`, then the image of `A` in `End_k(M)` is a
-semisimple ring: `M` is semisimple over the image, which embeds into a finite power of `M` by
-evaluation at generators. -/
-theorem isSemisimpleRing_range_lsmul [Module.Finite k M] [IsSemisimpleModule A M] :
-    IsSemisimpleRing (Algebra.lsmul k (A := A) k M).range := by
-  have : IsSemisimpleModule (Algebra.lsmul k (A := A) k M).range M :=
-    (RingHom.isSemisimpleModule_iff_of_surjective (M := M)
-      (Algebra.lsmul k (A := A) k M).rangeRestrict.toRingHom
-      (AlgHom.rangeRestrict_surjective _) fun _ _ ↦ rfl).mp ‹_›
-  obtain ⟨n, s, hs⟩ := Module.Finite.exists_fin (R := k) (M := M)
-  let f : (Algebra.lsmul k (A := A) k M).range →ₗ[(Algebra.lsmul k (A := A) k M).range]
-      (Fin n → M) := LinearMap.pi fun i ↦ LinearMap.toSpanSingleton _ M (s i)
-  refine IsSemisimpleModule.of_injective f fun b c hbc ↦ Subtype.ext <|
-    LinearMap.ext_on_range hs fun i ↦ congr_fun hbc i
-
-end Range
 
 end TauCeti
