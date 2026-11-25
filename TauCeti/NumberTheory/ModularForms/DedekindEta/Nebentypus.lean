@@ -42,11 +42,13 @@ For `c ≥ 0` each `ε(γ_δ)` is evaluated by its Kronecker form
 which holds for all `c ≥ 0` when `d` is odd; for even `d`, when `c`, `N` and every `δ` are odd, by
 the odd-`c` form. The two congruences make the exponents of `e(x / 24)` sum to a multiple of `24`,
 up to `6 k (d - 1)` for odd `d`, and multiplicativity and quadratic reciprocity collect the
-symbols into `χ(d)`. For `c < 0` we pass to `-γ`.
+symbols into `χ(d)`. For `c < 0` we pass to `-γ = (-1) γ`, using that the multiplier
+`TauCeti.ModularForm.etaQuotientMultiplier` is a character of `Γ₀(N)`.
 
-The character `etaQuotientChar` is built from the transformation law itself: since `f ≠ 0`,
-comparing the actions of `(x, -y; N, d)` and `(x, -y; N, d) Tʲ`, and of a product of two such
-matrices, shows that `χ(d)` is periodic modulo `N` and multiplicative on integers prime to `N`.
+The character `etaQuotientChar` is built from the multiplier itself: evaluating
+`TauCeti.ModularForm.etaQuotientMultiplier_mul` at matrices with bottom row `(N, d)`, and using
+that the multiplier of `Tʲ` is `1` (`TauCeti.ModularForm.etaQuotientMultiplier_T_zpow`), shows
+that `χ(d)` is periodic modulo `N` and multiplicative on integers prime to `N`.
 
 ## Main definitions
 
@@ -307,29 +309,24 @@ private theorem symb_neg (N : ℕ) (r : ℕ → ℤ) (k : ℤ) {d : ℤ} (hd : d
   rw [neg_eq_neg_one_mul (kroneckerSym (-1) d : ℂ), mul_zpow]
   ring
 
-/-- **The transformation law of an eta quotient on `Γ₀(N)`** (Ono, Theorem 1.64). Let
-`f = ∏_{δ ∣ N} η(δ τ) ^ r δ` with `∑_δ r δ = 2 k`, `∑_δ δ r δ ≡ 0` and `∑_δ (N / δ) r δ ≡ 0`
-modulo `24`. Then for `γ = (a b; c d) ∈ Γ₀(N)`, `f ∣[k] γ = χ(d) f`, where
-`χ(d) = ((-1) ^ k ∏_δ δ ^ r δ / d) = (-1 / d) ^ k ∏_δ (δ / d) ^ r δ` is the Kronecker symbol. -/
-theorem etaQuotient_slash_eq_smul {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
+/-- **The multiplier of an eta quotient on `Γ₀(N)`**:
+`∏_δ ε(γ_δ) ^ r δ = (-1 / d) ^ k ∏_δ (δ / d) ^ r δ`. For `c < 0` we pass to `-γ = (-1) γ`, whose
+multiplier is `(-i) ^ (2 k) = (-1) ^ k` times that of `γ`. -/
+private theorem etaQuotientMultiplier_eq_symb {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
     (hk : ∑ δ ∈ N.divisors, r δ = 2 * k) (h24 : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, (δ : ℤ) * r δ)
     (h24' : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) {γ : SL(2, ℤ)}
     (hγ : γ ∈ Gamma0 N) :
-    (fun τ : ℍ ↦ etaQuotient N r τ) ∣[k] γ =
-      ((kroneckerSym (-1) (γ 1 1) : ℂ) ^ k * ∏ δ ∈ N.divisors, (kroneckerSym δ (γ 1 1) : ℂ) ^ r δ)
-        • fun τ : ℍ ↦ etaQuotient N r τ := by
+    etaQuotientMultiplier N r ⟨γ, hγ⟩ = symb N r k (γ 1 1) := by
   obtain ⟨t, ht⟩ := mem_Gamma0_iff_dvd.mp hγ
-  -- The scalar is `symb N r k (γ 1 1)` by definition.
-  change _ = symb N r k (γ 1 1) • _
   rcases le_or_gt 0 t with ht0 | ht0
-  · rw [← etaQuotientMultiplier_eq_symb_of_nonneg hk h24 h24' hγ ht ht0]
-    exact etaQuotient_slash N r hk ⟨γ, hγ⟩
-  -- For `c < 0`, pass to `-γ`, which multiplies the slash by `(-1) ^ k`.
+  · exact etaQuotientMultiplier_eq_symb_of_nonneg hk h24 h24' hγ ht ht0
   have hneg : (-γ) 1 0 = N * (-t) := by simp [ht]
   have hγ' : -γ ∈ Gamma0 N := mem_Gamma0_iff_dvd.mpr ⟨-t, hneg⟩
-  have h := etaQuotient_slash N r hk ⟨-γ, hγ'⟩
-  rw [etaQuotientMultiplier_eq_symb_of_nonneg hk h24 h24' hγ' hneg (by omega), Subgroup.coe_mk,
-    SL_slash_neg,
+  have h := etaQuotientMultiplier_eq_symb_of_nonneg hk h24 h24' hγ' hneg (by omega)
+  rw [show (⟨-γ, hγ'⟩ : Gamma0 N) = Gamma0.negOne N * ⟨γ, hγ⟩ from
+      Subtype.ext (by simp [Gamma0.coe_negOne]),
+    etaQuotientMultiplier_mul N r (by rw [hk]; exact even_two_mul k), etaQuotientMultiplier_negOne,
+    hk, zpow_mul, show (-I) ^ (2 : ℤ) = (-1 : ℂ) by simp,
     show (-γ) 1 1 = -γ 1 1 by simp] at h
   have hsymb : (-1 : ℂ) ^ k * symb N r k (-γ 1 1) = symb N r k (γ 1 1) := by
     by_cases hd : γ 1 1 = 0
@@ -345,21 +342,28 @@ theorem etaQuotient_slash_eq_smul {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
       obtain ⟨j, hj⟩ := h24
       rw [hd, neg_zero, Even.neg_one_zpow ⟨6 * j, by omega⟩, one_mul]
     · rw [symb_neg N r k hd, ← mul_assoc, ← mul_zpow, neg_one_mul, neg_neg, one_zpow, one_mul]
-  calc (fun τ : ℍ ↦ etaQuotient N r τ) ∣[k] γ =
-        ((-1 : ℂ) ^ k * (-1) ^ k) • (fun τ : ℍ ↦ etaQuotient N r τ) ∣[k] γ := by
-        rw [← mul_zpow, neg_one_mul, neg_neg, one_zpow, one_smul]
-    _ = symb N r k (γ 1 1) • fun τ : ℍ ↦ etaQuotient N r τ := by
-        rw [mul_smul, h, smul_smul, hsymb]
+  rw [← hsymb, ← h, ← mul_assoc, ← mul_zpow, neg_one_mul, neg_neg, one_zpow, one_mul]
+
+/-- **The transformation law of an eta quotient on `Γ₀(N)`** (Ono, Theorem 1.64). Let
+`f = ∏_{δ ∣ N} η(δ τ) ^ r δ` with `∑_δ r δ = 2 k`, `∑_δ δ r δ ≡ 0` and `∑_δ (N / δ) r δ ≡ 0`
+modulo `24`. Then for `γ = (a b; c d) ∈ Γ₀(N)`, `f ∣[k] γ = χ(d) f`, where
+`χ(d) = ((-1) ^ k ∏_δ δ ^ r δ / d) = (-1 / d) ^ k ∏_δ (δ / d) ^ r δ` is the Kronecker symbol. -/
+theorem etaQuotient_slash_eq_smul {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
+    (hk : ∑ δ ∈ N.divisors, r δ = 2 * k) (h24 : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, (δ : ℤ) * r δ)
+    (h24' : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) {γ : SL(2, ℤ)}
+    (hγ : γ ∈ Gamma0 N) :
+    (fun τ : ℍ ↦ etaQuotient N r τ) ∣[k] γ =
+      ((kroneckerSym (-1) (γ 1 1) : ℂ) ^ k * ∏ δ ∈ N.divisors, (kroneckerSym δ (γ 1 1) : ℂ) ^ r δ)
+        • fun τ : ℍ ↦ etaQuotient N r τ := by
+  -- The scalar is `symb N r k (γ 1 1)` by definition.
+  change _ = symb N r k (γ 1 1) • _
+  rw [← etaQuotientMultiplier_eq_symb hk h24 h24' hγ]
+  exact etaQuotient_slash N r hk ⟨γ, hγ⟩
 
 /-! ### The character of an eta quotient -/
 
-/-- `f = c f` determines `c`, since `f` does not vanish. -/
-private theorem eq_of_smul_etaQuotient_eq (N : ℕ) (r : ℕ → ℤ) {c c' : ℂ}
-    (h : (c • fun τ : ℍ ↦ etaQuotient N r τ) = c' • fun τ : ℍ ↦ etaQuotient N r τ) : c = c' :=
-  mul_right_cancel₀ (etaQuotient_ne_zero N r UpperHalfPlane.I.im_pos) (congrFun h UpperHalfPlane.I)
-
-/-- The Kronecker-symbol value is periodic modulo `N` on integers prime to `N`: two matrices
-`(a b; N d)` and `(a b; N d) Tʲ` of `Γ₀(N)` act on the eta quotient by `χ(d)` and `χ(d + N j)`. -/
+/-- The Kronecker-symbol value is periodic modulo `N` on integers prime to `N`: the multipliers
+of `(a b; N d)` and `(a b; N d) Tʲ` are `χ(d)` and `χ(d + N j)`, and that of `Tʲ` is `1`. -/
 private theorem symb_eq_of_intCast_eq {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
     (hk : ∑ δ ∈ N.divisors, r δ = 2 * k) (h24 : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, (δ : ℤ) * r δ)
     (h24' : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) {d d' : ℤ}
@@ -368,22 +372,28 @@ private theorem symb_eq_of_intCast_eq {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
   have hγ : γ ∈ Gamma0 N := mem_Gamma0_iff_dvd.mpr (by rw [hc])
   obtain ⟨j, hj⟩ := Int.modEq_iff_dvd.mp ((ZMod.intCast_eq_intCast_iff _ _ _).mp h)
   have hT : T ^ j ∈ Gamma0 N := mem_Gamma0_iff_dvd.mpr (by simp [coe_T_zpow])
-  have hγT : γ * T ^ j ∈ Gamma0 N := Subgroup.mul_mem _ hγ hT
-  have hlaw := etaQuotient_slash_eq_smul hk h24 h24' hγT
-  rw [SlashAction.slash_mul, etaQuotient_slash_eq_smul hk h24 h24' hγ, ModularForm.SL_smul_slash,
-    etaQuotient_slash_eq_smul hk h24 h24' hT, smul_smul] at hlaw
   have h11 : (γ * T ^ j) 1 1 = d' := by
     rw [Matrix.SpecialLinearGroup.coe_mul_T_zpow, hc, hdγ]
     simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_one, Matrix.empty_val',
       Matrix.cons_val_fin_one]
     linear_combination -hj
-  have h1 := eq_of_smul_etaQuotient_eq N r hlaw
-  simp only [coe_T_zpow, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_one,
-    Matrix.empty_val', Matrix.cons_val_fin_one, kroneckerSym_one_right,
-    Int.cast_one, one_zpow, Finset.prod_const_one, mul_one, h11, hdγ] at h1
-  exact h1
+  have hTj : etaQuotientMultiplier N r ⟨T ^ j, hT⟩ = 1 := by
+    obtain ⟨m, hm⟩ := h24
+    have hm' : (∑ δ ∈ N.divisors, ((δ * r δ : ℤ) : ℂ)) = 24 * m := by exact_mod_cast hm
+    rw [etaQuotientMultiplier_T_zpow, ← Complex.exp_int_mul_two_pi_mul_I (j * m)]
+    push_cast at hm' ⊢
+    rw [hm']
+    ring_nf
+  calc symb N r k d = etaQuotientMultiplier N r ⟨γ, hγ⟩ := by
+        rw [etaQuotientMultiplier_eq_symb hk h24 h24' hγ, hdγ]
+    _ = etaQuotientMultiplier N r (⟨γ, hγ⟩ * ⟨T ^ j, hT⟩) := by
+        rw [etaQuotientMultiplier_mul N r (by rw [hk]; exact even_two_mul k), hTj, mul_one]
+    _ = symb N r k ((γ * T ^ j) 1 1) :=
+        etaQuotientMultiplier_eq_symb hk h24 h24' (Subgroup.mul_mem _ hγ hT)
+    _ = symb N r k d' := by rw [h11]
 
-/-- The Kronecker-symbol value is multiplicative on integers prime to `N`. -/
+/-- The Kronecker-symbol value is multiplicative on integers prime to `N`, since the multiplier
+is. -/
 private theorem symb_mul {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
     (hk : ∑ δ ∈ N.divisors, r δ = 2 * k) (h24 : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, (δ : ℤ) * r δ)
     (h24' : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) {d₁ d₂ : ℤ}
@@ -393,17 +403,16 @@ private theorem symb_mul {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
   obtain ⟨γ₂, hc₂, hd₂⟩ := h₂.symm.exists_SL2_row 1
   have hγ₁ : γ₁ ∈ Gamma0 N := mem_Gamma0_iff_dvd.mpr (by rw [hc₁])
   have hγ₂ : γ₂ ∈ Gamma0 N := mem_Gamma0_iff_dvd.mpr (by rw [hc₂])
-  have hlaw := etaQuotient_slash_eq_smul hk h24 h24' (Subgroup.mul_mem _ hγ₁ hγ₂)
-  rw [SlashAction.slash_mul, etaQuotient_slash_eq_smul hk h24 h24' hγ₁,
-    ModularForm.SL_smul_slash, etaQuotient_slash_eq_smul hk h24 h24' hγ₂, smul_smul] at hlaw
-  -- The scalars of the transformation law are `symb N r k (γ 1 1)` by definition.
-  have h1 : symb N r k (γ₁ 1 1) * symb N r k (γ₂ 1 1) = symb N r k ((γ₁ * γ₂) 1 1) :=
-    eq_of_smul_etaQuotient_eq N r hlaw
   have h11 : (γ₁ * γ₂) 1 1 = N * γ₂ 0 1 + d₁ * d₂ := by
     simp [Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_two, hc₁, hd₁, hd₂]
-  rw [hd₁, hd₂, h11] at h1
-  rw [h1]
-  exact symb_eq_of_intCast_eq hk h24 h24' (h₁.mul_left h₂) (by simp)
+  calc symb N r k (d₁ * d₂) = symb N r k ((γ₁ * γ₂) 1 1) :=
+        symb_eq_of_intCast_eq hk h24 h24' (h₁.mul_left h₂) (by simp [h11])
+    _ = etaQuotientMultiplier N r (⟨γ₁, hγ₁⟩ * ⟨γ₂, hγ₂⟩) :=
+        (etaQuotientMultiplier_eq_symb hk h24 h24' (Subgroup.mul_mem _ hγ₁ hγ₂)).symm
+    _ = symb N r k d₁ * symb N r k d₂ := by
+        rw [etaQuotientMultiplier_mul N r (by rw [hk]; exact even_two_mul k),
+          etaQuotientMultiplier_eq_symb hk h24 h24' hγ₁,
+          etaQuotientMultiplier_eq_symb hk h24 h24' hγ₂, hd₁, hd₂]
 
 private theorem symb_ne_zero {N : ℕ} (r : ℕ → ℤ) (k : ℤ) {d : ℤ} (hd : IsCoprime d N) :
     symb N r k d ≠ 0 := by
