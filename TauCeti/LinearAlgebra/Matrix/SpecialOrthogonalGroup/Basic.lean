@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Action
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
@@ -18,6 +19,8 @@ supports their base-change constructions. The construction is modelled on Mathli
 ## Main declarations
 
 * `Matrix.SpecialOrthogonalGroup.map`: entrywise mapping of special orthogonal matrices.
+* `Matrix.SpecialOrthogonalGroup.mem_stabilizer_iff_mulVec_eq_self`: membership in the stabilizer
+  of a vector under the natural action of `SO(n)`.
 -/
 
 public section
@@ -28,6 +31,11 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 variable {R S : Type*} [CommRing R] [CommRing S]
 
 attribute [local instance] starRingOfComm
+
+/-- An element of `SO(n)` fixes a vector exactly when its matrix does. -/
+theorem mem_stabilizer_iff_mulVec_eq_self {v : n → R} {g : specialOrthogonalGroup n R} :
+    g ∈ MulAction.stabilizer (specialOrthogonalGroup n R) v ↔ (g : Matrix n n R) *ᵥ v = v := by
+  rw [MulAction.mem_stabilizer_iff, Submonoid.smul_def, smul_eq_mulVec]
 
 /-- A ring homomorphism maps special orthogonal matrices to special orthogonal matrices. -/
 theorem map_mem (f : R →+* S) {M : Matrix n n R} (hM : M ∈ specialOrthogonalGroup n R) :
@@ -47,6 +55,11 @@ def map (f : R →+* S) : specialOrthogonalGroup n R →* specialOrthogonalGroup
 theorem coe_map (f : R →+* S) (M : specialOrthogonalGroup n R) :
     (map f M : Matrix n n S) = M.val.map f :=
   (rfl)
+
+/-- Mapping coefficients along an injective ring homomorphism is injective. -/
+theorem map_injective {f : R →+* S} (hf : Function.Injective f) :
+    Function.Injective (map (n := n) f) := fun _ _ h ↦
+  Subtype.ext (Matrix.map_injective hf (congrArg Subtype.val h))
 
 /-- A coefficient-ring map acts entrywise on special orthogonal matrices. -/
 theorem map_apply (f : R →+* S) (M : specialOrthogonalGroup n R) (i j : n) :

@@ -28,6 +28,8 @@ factor `1 / C`, this is the first variation of energy `TauCeti.Manifold.hasDeriv
 
 * `TauCeti.Manifold.hasDerivAt_norm_curveVelocity`: the transverse derivative of the speed at a
   regular parameter.
+* `TauCeti.Manifold.exists_isOpen_contDiffOn_norm_curveVelocity`: near a regular segment the speed
+  of a `C^n` family is jointly `C^(n-1)`, and the length is the integral of the speed.
 * `TauCeti.Manifold.hasDerivAt_toReal_pathELength_of_curveVelocity_ne_zero`: the derivative of the
   length of a regular curve is the integral of the transverse derivative of its speed.
 * `TauCeti.Manifold.hasDerivAt_toReal_pathELength`: **the first variation formula** for the
@@ -126,6 +128,46 @@ theorem continuousAt_inner_alongCurve_variationField_curveVelocity {t : ℝ}
   simp only [he]
   ring
 
+omit [FiniteDimensional ℝ E]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
+/-- **The speed is jointly smooth near a regular segment.** If the family is `C^n` at every point
+of `{0} × [a, b]`, for a finite `n` with `m + 1 ≤ n`, the metric is `C^m` and the central curve
+`γ = F 0` has nonzero velocity on `[a, b]`, then the speed `(s, t) ↦ ‖∂_t F (s, t)‖` is `C^m` on an
+open neighbourhood of `{0} × [a, b]`, and for `s` near `0` the length of `F s` between `a` and `b`
+is the integral of its speed. -/
+theorem exists_isOpen_contDiffOn_norm_curveVelocity {m n : ℕ∞ω} [IsManifold I n M]
+    [IsContMDiffRiemannianBundle I m E (fun x : M ↦ TangentSpace I x)]
+    (hmn : m + 1 ≤ n) (hn : n ≠ ∞) {a b : ℝ} (hab : a ≤ b)
+    (hF : ∀ t ∈ Icc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t))
+    (hγ : ∀ t ∈ Icc a b, curveVelocity I (F 0) t ≠ 0) :
+    ∃ W, IsOpen W ∧ {0} ×ˢ uIcc a b ⊆ W ∧
+      ContDiffOn ℝ m (fun z : ℝ × ℝ ↦ ‖curveVelocity I (F z.1) z.2‖) W ∧
+      (fun s ↦ (Manifold.pathELength I (F s) a b).toReal) =ᶠ[𝓝 0]
+        fun s ↦ ∫ t in a..b, ‖curveVelocity I (F s) t‖ := by
+  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := m)
+  rw [← uIcc_of_le hab] at hF hγ
+  obtain ⟨U, V, hUo, hVo, h0U, hV, hfUV, hG⟩ :=
+    exists_isOpen_prod_contDiffOn_norm_sq_curveVelocity hmn hn hF
+  -- the speed is the square root of the squared speed, `C^m` on the open set where the squared
+  -- speed is positive, which contains `{0} × [a, b]` because `γ` is regular there
+  refine ⟨(U ×ˢ V) ∩ (fun z : ℝ × ℝ ↦ ‖curveVelocity I (F z.1) z.2‖ ^ 2) ⁻¹' Ioi 0,
+    hG.continuousOn.isOpen_inter_preimage (hUo.prod hVo) isOpen_Ioi, ?_, ?_, ?_⟩
+  · rintro ⟨s, t⟩ ⟨rfl, ht⟩
+    exact ⟨⟨h0U, hV ht⟩, pow_pos (norm_pos_iff.2 (hγ t ht)) 2⟩
+  · exact ((hG.mono inter_subset_left).sqrt fun _ hz ↦ ne_of_gt hz.2).congr fun _ _ ↦
+      (Real.sqrt_sq (norm_nonneg _)).symm
+  -- near `0`, the length is the integral of the speed
+  filter_upwards [hUo.mem_nhds h0U] with s hs
+  have hγs : ContMDiffOn 𝓘(ℝ, ℝ) I 1 (F s) V :=
+    (hfUV.of_le (le_add_self.trans hmn)).comp
+      (contDiff_prodMk_right s).contMDiff.contMDiffOn (fun t ht ↦ ⟨hs, ht⟩)
+  have hVs : Icc a b ⊆ V := by simpa only [uIcc_of_le hab] using hV
+  rw [hγs.pathELength_eq_ofReal_integral_norm_curveVelocityWithin hVs,
+    ENNReal.toReal_ofReal (intervalIntegral.integral_nonneg hab (fun _ _ ↦ norm_nonneg _))]
+  refine intervalIntegral.integral_congr fun t ht ↦ ?_
+  rw [curveVelocityWithin_of_mem_nhds (hVo.mem_nhds (hV ht))]
+
 /-- **The first variation of length of a regular curve.** Let `F` be a two-parameter family which
 is `C²` at every point of `{0} × [a, b]`, whose central curve `γ = F 0` has nonzero velocity on
 `[a, b]`. Then the length of `F s` between `a` and `b` is differentiable at `s = 0`, with
@@ -139,62 +181,19 @@ theorem hasDerivAt_toReal_pathELength_of_curveVelocity_ne_zero {a b : ℝ} (hab 
     HasDerivAt (fun s ↦ (Manifold.pathELength I (F s) a b).toReal)
       (∫ t in a..b, ⟪alongCurve (leviCivitaConnection I M) (F 0) (variationField I F) t,
         curveVelocity I (F 0) t⟫_ℝ / ‖curveVelocity I (F 0) t‖) 0 := by
-  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
-    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1)
-  rw [← uIcc_of_le hab] at hF hγ
-  obtain ⟨U, V, hUo, hVo, h0U, hV, hfUV⟩ :=
-    TauCeti.exists_isOpen_prod_contMDiffOn isCompact_uIcc (by simp) hF
-  have hUVo : IsOpen (U ×ˢ V) := hUo.prod hVo
-  -- the squared speed `G (s, t) = ‖∂_t F (s, t)‖ ^ 2`, jointly `C¹` on `U ×ˢ V`
-  let G : ℝ × ℝ → ℝ := fun z ↦
-    ⟪mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z ↦ F z.1 z.2) z (0, 1),
-      mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z ↦ F z.1 z.2) z (0, 1)⟫_ℝ
-  have hG : ContDiffOn ℝ 1 G (U ×ˢ V) :=
-    hfUV.contDiffOn_inner_mfderiv (by norm_num) hUVo (0, 1) (0, 1)
-  have hGeq : ∀ {s t : ℝ}, s ∈ U → t ∈ V → G (s, t) = ‖curveVelocity I (F s) t‖ ^ 2 :=
-    fun hs ht ↦ by
-      dsimp only [G]
-      rw [← curveVelocity_eq_mfderiv_snd
-        ((hfUV.contMDiffAt (hUVo.mem_nhds ⟨hs, ht⟩)).mdifferentiableAt two_ne_zero),
-        real_inner_self_eq_norm_sq]
-  -- the speed `L = √G` is `C¹` on the open set `W` where `G` is positive, which contains
-  -- `{0} × [a, b]` because `γ` is regular there
-  let W := (U ×ˢ V) ∩ G ⁻¹' Ioi 0
-  have hWo : IsOpen W := hG.continuousOn.isOpen_inter_preimage hUVo isOpen_Ioi
-  let L : ℝ × ℝ → ℝ := fun z ↦ Real.sqrt (G z)
-  have hL : ContDiffOn ℝ 1 L W :=
-    (hG.mono inter_subset_left).sqrt fun _ hz ↦ ne_of_gt hz.2
-  have hsub : {0} ×ˢ uIcc a b ⊆ W := by
-    rintro ⟨s, t⟩ ⟨rfl, ht⟩
-    refine ⟨⟨h0U, hV ht⟩, ?_⟩
-    rw [mem_preimage, mem_Ioi, hGeq h0U (hV ht)]
-    exact pow_pos (norm_pos_iff.2 (hγ t ht)) 2
-  have hLeq : ∀ {s t : ℝ}, s ∈ U → t ∈ V → L (s, t) = ‖curveVelocity I (F s) t‖ :=
-    fun hs ht ↦ by dsimp only [L]; rw [hGeq hs ht, Real.sqrt_sq (norm_nonneg _)]
+  obtain ⟨W, hWo, hsub, hL, hlength⟩ :=
+    exists_isOpen_contDiffOn_norm_curveVelocity (m := 1) (by norm_num) (by simp) hab hF hγ
   -- differentiation under the integral sign
   obtain ⟨_, hDLI⟩ := TauCeti.hasDerivAt_intervalIntegral_of_contDiffOn hWo hL hsub
-  have hlength : (fun s ↦ (Manifold.pathELength I (F s) a b).toReal) =ᶠ[𝓝 0]
-      fun s ↦ ∫ t in a..b, L (s, t) := by
-    filter_upwards [hUo.mem_nhds h0U] with s hs
-    have hγs : ContMDiffOn 𝓘(ℝ, ℝ) I 1 (F s) V :=
-      (hfUV.of_le (by norm_num : (1 : ℕ∞ω) ≤ 2)).comp
-        (contDiff_prodMk_right s).contMDiff.contMDiffOn (fun t ht ↦ ⟨hs, ht⟩)
-    have hVs : Icc a b ⊆ V := by simpa only [uIcc_of_le hab] using hV
-    rw [hγs.pathELength_eq_ofReal_integral_norm_curveVelocityWithin hVs,
-      ENNReal.toReal_ofReal (intervalIntegral.integral_nonneg hab (fun _ _ ↦ norm_nonneg _))]
-    refine intervalIntegral.integral_congr fun t ht ↦ ?_
-    rw [curveVelocityWithin_of_mem_nhds (hVo.mem_nhds (hV ht)), hLeq hs (hV ht)]
   refine (hDLI.congr_of_eventuallyEq hlength).congr_deriv
     (intervalIntegral.integral_congr fun t ht ↦ ?_)
-  -- pointwise, `∂_s L (0, t)` is the transverse derivative of the speed
+  -- pointwise, the partial derivative of the speed in `s` is its transverse derivative
   have hpath : HasDerivAt (fun s : ℝ ↦ (s, t)) ((1 : ℝ), (0 : ℝ)) 0 :=
     (hasDerivAt_id' (x := (0 : ℝ))).prodMk (hasDerivAt_const (0 : ℝ) t)
   have hLd := ((hL.differentiableOn one_ne_zero (0, t) (hsub ⟨rfl, ht⟩)).differentiableAt
     (hWo.mem_nhds (hsub ⟨rfl, ht⟩))).hasFDerivAt.comp_hasDerivAt (0 : ℝ) hpath
-  have heq : (fun s ↦ ‖curveVelocity I (F s) t‖) =ᶠ[𝓝 0] fun s ↦ L (s, t) := by
-    filter_upwards [hUo.mem_nhds h0U] with s hs
-    exact (hLeq hs (hV ht)).symm
-  exact (hLd.congr_of_eventuallyEq heq).unique (hasDerivAt_norm_curveVelocity (hF t ht) (hγ t ht))
+  rw [uIcc_of_le hab] at ht
+  exact hLd.unique (hasDerivAt_norm_curveVelocity (hF t ht) (hγ t ht))
 
 /-- **The first variation of length.** Let `F` be a two-parameter family which is `C²` at every
 point of `{0} × [a, b]`, whose central curve `γ = F 0` has constant speed `C > 0` on `[a, b]`.

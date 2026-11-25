@@ -511,7 +511,7 @@ theorem localIndex_eq_analyticOrderNatAt_of_apply_eq_sub_of_eventually_fst_eq
   have hS : HasStrictFDerivAt S (S.restrictScalars ℝ) (u₁ z₀) :=
     (S.restrictScalars ℝ).hasStrictFDerivAt
   obtain ⟨hu₁, hu₂⟩ := continuous_and_continuous_of_continuous_sub (F.continuous.congr hF)
-  rw [← o.localIndex_eq_of_apply_eq_sub_of_hasStrictFDerivAt hn o hn hF hF'
+  rw [← o.localIndex_eq_of_apply_eq_sub_of_hasStrictFDerivAt hn o hF hF'
     (hu₁.comp continuous_fst).continuousAt (hu₂.comp continuous_snd).continuousAt h hS
     (ContinuousLinearEquiv.prodComm ℂ ℂ ℂ).injective]
   exact o.localIndex_eq_analyticOrderNatAt_of_apply_eq_sub_of_eventually_snd_eq hn
