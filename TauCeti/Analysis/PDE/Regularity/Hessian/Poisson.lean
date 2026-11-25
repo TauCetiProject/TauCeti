@@ -102,7 +102,7 @@ theorem exists_wkp_two_value_ae_eq_of_integral_laplacian_mul_eq (hp : 1 < p) (hp
   -- Schwartz functions.
   have hΔ : Δ T = Lp.toTemperedDistribution (Complex.ofRealCLM.compLp F) := by
     refine ext_real fun φ hφ ↦ ?_
-    rw [laplacian_apply_apply, laplacian_postcompCLM,
+    rw [laplacian_apply_apply, SchwartzMap.laplacian_postcompCLM,
       Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
       Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM]
     congr 1

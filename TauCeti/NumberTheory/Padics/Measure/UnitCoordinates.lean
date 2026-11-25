@@ -10,9 +10,9 @@ public import TauCeti.NumberTheory.Padics.CongruenceQuotients
 public import TauCeti.NumberTheory.Padics.PadicIntegers
 public import Mathlib.Topology.ContinuousMap.LocallyConstant
 public import Mathlib.Topology.ContinuousMap.Compact
-public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Extend
 import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
 import Mathlib.Analysis.Normed.Group.Ultra
+import TauCeti.Analysis.Normed.Operator.Extend
 import TauCeti.Topology.ContinuousMap.LocallyConstant
 
 /-!
@@ -224,63 +224,26 @@ theorem unitCoordinateIntegral_norm_le (f : LocallyConstant ℤ_[p]ˣ ℤ_[p]) :
       rw [hgu]
       exact f.toContinuousMap.norm_coe_le_norm u
 
-private abbrev unitTests := (LocallyConstant.toContinuousMapLinearMap ℤ_[p]
-  (X := ℤ_[p]ˣ) (Y := ℤ_[p])).range
-
-private theorem dense_unitTests :
-    DenseRange ((unitTests (p := p)).subtype : unitTests →ₗ[ℤ_[p]] C(ℤ_[p]ˣ, ℤ_[p])) := by
-  apply denseRange_subtypeVal.mpr
-  rw [SetLike.setOfPred_mem_eq, LinearMap.coe_range]
-  exact LocallyConstant.denseRange_toContinuousMap
-
-private def integralOnUnitTests : unitTests (p := p) →L[ℤ_[p]] ℤ_[p] :=
-  let e := LinearEquiv.ofInjective (LocallyConstant.toContinuousMapLinearMap ℤ_[p]
-    (X := ℤ_[p]ˣ) (Y := ℤ_[p])) LocallyConstant.toContinuousMap_injective
-  ((unitCoordinateIntegral c hc).comp e.symm.toLinearMap).mkContinuous 1 (by
-    intro f
-    -- Use the inverse equivalence's public evaluation lemma at the range-subtype boundary.
-    have he : (e.symm f).toContinuousMap = f.val := by
-      simpa only [LocallyConstant.toContinuousMapLinearMap_apply] using
-        LinearEquiv.ofInjective_symm_apply (LocallyConstant.toContinuousMapLinearMap ℤ_[p]) f
-    simpa only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, one_mul, he,
-      Submodule.norm_coe] using unitCoordinateIntegral_norm_le c hc (e.symm f))
-
-private theorem integralOnUnitTests_apply (f : LocallyConstant ℤ_[p]ˣ ℤ_[p]) :
-    integralOnUnitTests c hc ⟨f.toContinuousMap, ⟨f, rfl⟩⟩ = unitCoordinateIntegral c hc f := by
-  let e := LinearEquiv.ofInjective (LocallyConstant.toContinuousMapLinearMap ℤ_[p]
-    (X := ℤ_[p]ˣ) (Y := ℤ_[p])) LocallyConstant.toContinuousMap_injective
-  -- Compare the underlying continuous maps using the public evaluation lemma;
-  -- subtype extensionality discards the choice of range-membership witness.
-  have he : (⟨f.toContinuousMap, ⟨f, rfl⟩⟩ : unitTests (p := p)) = e f := by
-    apply Subtype.ext
-    exact (LinearEquiv.ofInjective_apply (LocallyConstant.toContinuousMapLinearMap ℤ_[p]) f).symm
-  simp only [integralOnUnitTests, LinearMap.mkContinuous_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_toLinearMap]
-  exact congrArg (unitCoordinateIntegral c hc) (he ▸ e.symm_apply_apply f)
-
 /-- The unique measure with a given compatible family of integral unit coordinates.
 It is the continuous extension of finite summation on locally constant tests. -/
 def ofUnitCoordinates : D(ℤ_[p]ˣ, ℤ_[p]) :=
-  toCLMEquiv.symm ((integralOnUnitTests c hc).extend (unitTests (p := p)).subtypeL)
+  toCLMEquiv.symm <| (unitCoordinateIntegral c hc).extendOfBound
+    (LocallyConstant.toContinuousMapLinearMap ℤ_[p]) 1
+    (fun f ↦ by simpa only [one_mul, LocallyConstant.toContinuousMapLinearMap_apply] using
+      unitCoordinateIntegral_norm_le c hc f)
 
 /-- Reconstruction extends integration of locally constant tests. -/
 @[simp]
 theorem ofUnitCoordinates_apply_locallyConstant (f : LocallyConstant ℤ_[p]ˣ ℤ_[p]) :
     ofUnitCoordinates c hc f.toContinuousMap = unitCoordinateIntegral c hc f := by
-  have he := (integralOnUnitTests c hc).extend_eq
-    (e := (unitTests (p := p)).subtypeL) dense_unitTests
-    isUniformEmbedding_subtypeVal.isUniformInducing
-    ⟨f.toContinuousMap, ⟨f, rfl⟩⟩
   rw [ofUnitCoordinates, coe_symm_toCLMEquiv]
-  exact he.trans (integralOnUnitTests_apply c hc f)
+  exact LinearMap.extendOfBound_apply _ _ _ _ LocallyConstant.denseRange_toContinuousMap f
 
 /-- The reconstructed measure contracts the supremum norm of every continuous test. -/
 theorem ofUnitCoordinates_norm_le (f : C(ℤ_[p]ˣ, ℤ_[p])) :
     ‖ofUnitCoordinates c hc f‖ ≤ ‖f‖ := by
-  refine dense_unitTests.induction_on (p := fun f ↦ ‖ofUnitCoordinates c hc f‖ ≤ ‖f‖) f ?_ ?_
-  · exact isClosed_le ((ofUnitCoordinates c hc).continuous.norm) continuous_norm
-  · rintro ⟨f, g, rfl⟩
-    simpa using unitCoordinateIntegral_norm_le c hc g
+  rw [← one_mul ‖f‖, ofUnitCoordinates, coe_symm_toCLMEquiv]
+  exact LinearMap.norm_extendOfBound_apply_le _ _ _ _ LocallyConstant.denseRange_toContinuousMap f
 
 /-- Reconstruction recovers every prescribed finite coordinate. -/
 @[simp]

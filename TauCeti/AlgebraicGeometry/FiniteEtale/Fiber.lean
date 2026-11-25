@@ -25,23 +25,51 @@ isomorphism is an equivalence of categories (`pullbackIsoEquiv`).
 For a geometric point `x : Spec Ω ⟶ S`, with `Ω` a separably closed field, the
 *geometric fibre functor* `FiniteEtaleScheme.fiber x` sends a finite étale `S`-scheme `X` to the
 finite set attached to `X ×_S Spec Ω` by the classification of finite étale schemes over a
-separably closed field. This is the functor on finite étale covers whose automorphisms define
-the étale fundamental group based at `x`.
+separably closed field. Its automorphism group is the étale fundamental group `π₁(S, x)`
+(`FiniteEtaleScheme.EtaleFundamentalGroup x`), and an étale path from `x` to a geometric point
+`y : Spec Ω' ⟶ S` (`FiniteEtaleScheme.EtalePath x y`) is a natural isomorphism
+`fiber x ≅ fiber y`. Paths are not required to stay in a connected component and no base points
+are chosen, so the paths between all geometric points of `S` form a groupoid whose identity,
+inverse and composition are `Iso.refl`, `Iso.symm` and `Iso.trans`.
+
+Further structure on these is developed elsewhere. `TauCeti.CategoryTheory.Aut.Torsor` makes
+`π₁(S, y)` act simply transitively on the paths from `x` to `y` by postcomposition, and
+`π₁(S, x)ᵐᵒᵖ` by precomposition; a path `γ` from `x` to `y` identifies `π₁(S, x)` with
+`π₁(S, y)` by conjugation, `Iso.conjAut γ`, which is a homeomorphism for the profinite topologies
+(`CategoryTheory.Iso.continuousConjAut`, in `TauCeti.CategoryTheory.Galois.Topology`). Over a
+connected base any two geometric points are joined by a path
+(`TauCeti.FiniteEtaleScheme.nonempty_fiber_iso`, in
+`TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Category`), so the paths from `x` to `y` form a
+torsor under `π₁(S, y)`; over a disconnected base,
+`TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Component` describes which geometric points are
+joined by paths.
 
 The fibre functor is corepresented by the geometric point itself:
 `FiniteEtaleScheme.fiberCompInclIso` identifies `fiber x` with the set of lifts of `x` to
 `X`, that is, with morphisms `Over.mk x ⟶ X` in `Over S`. Its proof combines the adjunction
 `Over.map x ⊣ Over.pullback x` with `equivOfIsSepClosedFunctorCompInclIso`, which identifies
-the finite set attached to a finite étale `Spec Ω`-scheme with its set of sections.
+the finite set attached to a finite étale `Spec Ω`-scheme with its set of sections; the lift
+attached to a point is that section composed with the projection `X ×_S Spec Ω ⟶ X`
+(`fiberCompInclIso_hom_app_left`).
 Changing the geometric point along a morphism of bases is `pullbackCompFiberIso`, compatibly with
 identities and composites (`pullbackCompFiberIso_id_hom_app`, `pullbackCompFiberIso_comp_hom_app`).
+On lifts, `pullbackCompFiberIso` composes a lift to `X ×_S T` with the projection to `X`
+(`fiberCompInclIso_hom_app_pullbackCompFiberIso_hom_app_left`).
 These compatibilities make the étale fundamental group functorial in the scheme.
+
+## Main definitions
+
+* `TauCeti.FiniteEtaleScheme.pullback`: base change of finite étale schemes.
+* `TauCeti.FiniteEtaleScheme.fiber`: the geometric fibre functor at a geometric point.
+* `TauCeti.FiniteEtaleScheme.EtaleFundamentalGroup x`: the étale fundamental group `π₁(S, x)`.
+* `TauCeti.FiniteEtaleScheme.EtalePath x y`: étale paths from `x` to `y`.
 
 ## References
 
 * A. Grothendieck, *SGA 1*, Exposé V, §§4–7.
-* H. W. Lenstra, *Galois theory for schemes*.
-* The Stacks Project, Section 58.5 (*Finite étale covers of schemes*).
+* H. W. Lenstra, *Galois theory for schemes*, Section 5.
+* The Stacks Project, Section 58.5 (*Finite étale covers of schemes*) and Section 58.6
+  (tag 0BND, *Fundamental groups of schemes*).
 -/
 
 public section
@@ -138,8 +166,16 @@ theorem pullbackComp_comp_inv_app_comp_eqToHom (x : V ⟶ T) (f : T ⟶ S) (g : 
         eqToHom (congrArg (fun x ↦ (pullback x).obj X) (Category.assoc x f g).symm) =
       (pullback x).map ((pullbackComp f g).hom.app X) ≫
         (pullbackComp x f).inv.app ((pullback g).obj X) ≫ (pullbackComp (x ≫ f) g).inv.app X :=
-  -- As above, the identity is checked in `Over V`.
-  ObjectProperty.hom_ext _ (Over.pullbackComp_comp_inv_app_comp_eqToHom x f g X.obj)
+  -- As above, the identity is checked in `Over V`. The component lemmas reduce it to the coherence
+  -- of `Over.pullbackCompIsoOfEq`, whose objects agree with these by `pullback_obj_obj`.
+  ObjectProperty.hom_ext _ (by
+    have h := Over.pullbackCompIsoOfEq_hom_app_eq (a := f) (b := g) (x := x)
+      rfl rfl rfl (Category.assoc x f g).symm X.obj
+    simp only [Over.pullbackCompIsoOfEq_hom_app, Over.pullbackCompIsoOfEq_rfl, Iso.symm_hom,
+      Iso.symm_inv] at h
+    simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.eqToHom_hom,
+      pullbackComp_inv_app_hom, pullbackComp_hom_app_hom, pullback_map_hom]
+    exact h)
 
 private lemma eqToIso_congrArg_pullback_hom_app_hom {f g : T ⟶ S} (h : f = g)
     (X : FiniteEtaleScheme S) :
@@ -229,6 +265,19 @@ theorem fiber_def (x : Spec (.of Ω) ⟶ S) :
     fiber x = pullback x ⋙ (equivOfIsSepClosed Ω).functor :=
   (rfl)
 
+/-- The **étale fundamental group** `π₁(S, x)` of a scheme `S` at a geometric point
+`x : Spec Ω ⟶ S`: the group of automorphisms of the geometric fibre functor at `x` on finite
+étale `S`-schemes. Its profinite topology is Mathlib's topology on automorphism groups of
+functors to finite sets, available by importing `Mathlib.CategoryTheory.Galois.Topology`. -/
+abbrev EtaleFundamentalGroup (x : Spec (.of Ω) ⟶ S) :=
+  Aut (fiber x)
+
+/-- The **étale paths** from a geometric point `x` to a geometric point `y` of a scheme `S`: the
+natural isomorphisms between their geometric fibre functors on finite étale `S`-schemes. -/
+abbrev EtalePath (x : Spec (.of Ω) ⟶ S) {Ω' : Type u} [Field Ω'] [IsSepClosed Ω']
+    (y : Spec (.of Ω') ⟶ S) :=
+  fiber x ≅ fiber y
+
 /-- The geometric fibre functor at `x` is corepresented by `x`: the fibre of `X` is naturally
 the set of lifts of `x` to `X`, that is, of morphisms `Over.mk x ⟶ X` over `S`. -/
 noncomputable def fiberCompInclIso (x : Spec (.of Ω) ⟶ S) :
@@ -259,6 +308,20 @@ theorem fiberCompInclIso_hom_app_apply (x : Spec (.of Ω) ⟶ S) (X : FiniteEtal
       Over.homMk (𝟙 _) ≫ ((Over.mapPullbackAdj x).homEquiv _ _).symm
         ((equivOfIsSepClosedFunctorCompInclIso Ω).hom.app ((pullback x).obj X) y) :=
   (rfl)
+
+/-- The lift of `x` given by a point `y` of the fibre is the section of `X ×_S Spec Ω`
+corresponding to `y` under `equivOfIsSepClosedFunctorCompInclIso`, composed with the projection
+`X ×_S Spec Ω ⟶ X`. -/
+theorem fiberCompInclIso_hom_app_left (x : Spec (.of Ω) ⟶ S) (X : FiniteEtaleScheme S)
+    (y : (fiber x).obj X) :
+    ((fiberCompInclIso x).hom.app X y).left =
+      ((equivOfIsSepClosedFunctorCompInclIso Ω).hom.app ((pullback x).obj X) y).left ≫
+        Limits.pullback.fst _ _ := by
+  rw [fiberCompInclIso_hom_app_apply]
+  simp only [Over.comp_left, Over.homMk_left, Category.id_comp]
+  -- `Over.mapPullbackAdj` has no projection lemma for its hom-equivalence; this is the
+  -- computation rule in its definition.
+  rfl
 
 variable (Ω) in
 /-- The geometric fibre functor of `Spec Ω` at its identity point is the classification of
@@ -332,5 +395,27 @@ theorem pullbackCompFiberIso_comp_hom_app (f : T ⟶ S) (g : S ⟶ U) (x : Spec 
     (pullbackComp_comp_inv_app_comp_eqToHom x f g X)
   rw [Functor.map_comp, eqToHom_map, Functor.map_comp, Functor.map_comp] at this
   exact this
+
+/-- A point of the geometric fibre at `x` of the base change `X ×_S T` is a lift of `x` to
+`X ×_S T`. Its image under `pullbackCompFiberIso`, a point of the geometric fibre of `X` at
+`x ≫ f`, is the lift of `x ≫ f` obtained by composing with the projection `X ×_S T ⟶ X`. -/
+theorem fiberCompInclIso_hom_app_pullbackCompFiberIso_hom_app_left (f : T ⟶ S)
+    (x : Spec (.of Ω) ⟶ T) (X : FiniteEtaleScheme S) (z : (fiber x).obj ((pullback f).obj X)) :
+    ((fiberCompInclIso (x ≫ f)).hom.app X ((pullbackCompFiberIso f x).hom.app X z)).left =
+      ((fiberCompInclIso x).hom.app ((pullback f).obj X) z).left ≫
+        Limits.pullback.fst _ _ := by
+  have h := NatTrans.naturality_apply (equivOfIsSepClosedFunctorCompInclIso Ω).hom
+    ((pullbackComp x f).inv.app X) z
+  have key
+      (s : Over.mk (𝟙 (Spec (.of Ω))) ⟶ (Over.pullback x).obj ((Over.pullback f).obj X.obj)) :
+      (s ≫ (Over.pullbackComp x f).inv.app X.obj).left ≫ Limits.pullback.fst X.obj.hom (x ≫ f) =
+        (s.left ≫ Limits.pullback.fst _ x) ≫ Limits.pullback.fst X.obj.hom f := by
+    simp [Over.pullbackComp]
+  rw [fiberCompInclIso_hom_app_left, fiberCompInclIso_hom_app_left, pullbackCompFiberIso_hom_app]
+  -- `erw`: the naturality square is stated for the composite `equivOfIsSepClosed Ω ⋙ incl`.
+  erw [h]
+  -- The coyoneda functor acts on a section by postcomposition, and the components of
+  -- `pullbackComp` are those of `Over.pullbackComp` (`pullbackComp_inv_app_hom`).
+  exact key _
 
 end TauCeti.FiniteEtaleScheme

@@ -148,7 +148,7 @@ private theorem koszulTwist_twistingSum (g : ReducedTensorWords R A →ₗ[R] D)
         map_neg, neg_mul]
     | add x y hx hy => simp only [map_add, hx, hy, neg_add]
   rw [taylor_coalgHom_apply hD, map_add, map_add, hq, LinearMap.comp_apply, LinearMap.comp_apply,
-    InternalGrading.koszulTwist_koszulTwist, hD.koszulTwist_map,
+    InternalGrading.koszulTwist_koszulTwist, hD.koszulTwist_one_map,
     InternalGrading.koszulTwist_koszulTwist]
   abel
 
@@ -384,6 +384,15 @@ theorem bijective_comp_toCobarBar :
   convert (cobarBarHomEquiv 𝒜 hD).symm.bijective using 1
   funext φ
   exact (cobarBarHomEquiv_symm_apply 𝒜 hD φ).symm
+
+/-- Every `A∞` morphism `f : A ⟶ D` into a DG algebra factors through `toCobarBar` via
+`cobarBarHomEquiv 𝒜 hD f`. -/
+@[simp]
+theorem toAInfinityHom_cobarBarHomEquiv_comp_toCobarBar
+    (f : AInfinityHom 𝒜 hD.toIsNonUnitalDGAlgebra.toAInfinityAlgebra) :
+    (cobarBarHomEquiv 𝒜 hD f).toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp
+        𝒜.toCobarBar = f := by
+  rw [← cobarBarHomEquiv_symm_apply 𝒜 hD, Equiv.symm_apply_apply]
 
 /-- Universal factorization characterization: `φ : Ω Tᶜ(sA) ⟶ D` is the DG algebra lift of
 `g : A ⟶ D` if and only if `φ ∘ 𝒜.toCobarBar = g`. -/

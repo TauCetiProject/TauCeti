@@ -135,10 +135,10 @@ theorem hasSum_integral_prod_hermiteFunction_comp_mul_mul_mul_integral {c : ι �
       ∫ x, (∏ i, hermiteFunction (a i) (c i * x i)) * h x =
         |∏ i, c i|⁻¹ * ∫ y, (∏ i, hermiteFunction (a i) (y i)) * (h ∘ d) y := by
     intro h a
-    rw [← smul_eq_mul, ← integral_comp_mul_pi hc]
+    rw [← smul_eq_mul, ← integral_comp_mul_pi c]
     simp only [Function.comp_apply, hd]
   have hint : ∫ x, f x * g x = |∏ i, c i|⁻¹ * ∫ y, (f ∘ d) y * (g ∘ d) y := by
-    rw [← smul_eq_mul, ← integral_comp_mul_pi hc]
+    rw [← smul_eq_mul, ← integral_comp_mul_pi c]
     simp only [Function.comp_apply, hd]
   convert key.mul_left (|∏ i, c i|⁻¹ * |∏ i, c i|⁻¹) using 1
   · funext a
@@ -184,13 +184,13 @@ multi-index Hermite coordinates of `f` sum to `‖f‖²`. -/
 theorem tsum_norm_sq_inner_L2piMul_hermiteFunctionLp
     (f : Lp 𝕜 2 (Measure.pi fun _ : ι => (volume : Measure ℝ))) :
     ∑' a : ι → ℕ, ‖inner 𝕜 (L2piMul fun i => hermiteFunctionLp 𝕜 (a i)) f‖ ^ 2 = ‖f‖ ^ 2 := by
-  simpa using (hermiteFunctionPiBasis 𝕜 ι).tsum_norm_sq_inner f
+  simpa using (hermiteFunctionPiBasis 𝕜 ι).tsum_norm_inner_sq f
 
 /-- The squared multi-index Hermite coordinate family of an `L²(ℝ^ι)` function is summable. -/
 theorem summable_norm_sq_inner_L2piMul_hermiteFunctionLp
     (f : Lp 𝕜 2 (Measure.pi fun _ : ι => (volume : Measure ℝ))) :
     Summable fun a : ι → ℕ => ‖inner 𝕜 (L2piMul fun i => hermiteFunctionLp 𝕜 (a i)) f‖ ^ 2 := by
-  simpa using (hermiteFunctionPiBasis 𝕜 ι).summable_norm_sq_inner f
+  simpa using (hermiteFunctionPiBasis 𝕜 ι).summable_norm_inner_sq f
 
 /-- **The multi-index Hermite expansion.** Every `f ∈ L²(ℝ^ι)` is the sum of its multi-index
 Hermite series, summed over multi-indices `a : ι → ℕ` in the unordered sense. -/

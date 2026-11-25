@@ -192,8 +192,7 @@ theorem exists_homotopyRel_comp_fiberwiseCellComparison_id_morseFamily [CompactS
     (hballφ i).trans' (closedBall_subset_closedBall (Real.sqrt_le_sqrt_two_mul ε))
   have hsφ (i : ι) : ContinuousOn (fun q : P × EuclideanSpace ℝ (Fin n) ↦ (φ' q.1 i).symm q.2)
       (univ ×ˢ closedBall 0 √ε) :=
-    (φ i).toOpenPartialHomeomorph.continuousOn_symm.comp continuous_snd.continuousOn
-      fun q hq ↦ hballφ' i hq.2
+    continuousOn_symm_const (fun i ↦ (φ i).toOpenPartialHomeomorph) hballφ' i
   -- No critical point lies below the level `c` in the band, since the critical points of the band
   -- lie in the reference charts, where they have value `c`.
   have hreg (x : M) (h₁ : c - ε ≤ f x) (h₂ : f x < c) : mfderiv Iₘ 𝓘(ℝ) f x ≠ 0 := fun h0 ↦ by

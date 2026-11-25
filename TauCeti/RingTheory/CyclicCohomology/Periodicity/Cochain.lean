@@ -637,7 +637,7 @@ def periodicity (n : ℕ) :
     desc n (mk R A M (n + 2) ∘ₗ cyclicCocyclesPeriodicity R A M n) fun φ hφ ↦
       (mk_eq_zero_iff R A M (n + 2) _).2 <|
         cyclicCocyclesPeriodicity_mem_cyclicCoboundaries
-          ((eq_or_ne n 0).imp_right isUnit_natCast_of_ne_zero) φ hφ
+          ((eq_or_ne n 0).imp_right (isUnit_natCast_of_ne_zero ℚ)) φ hφ
 
 variable {R A M} {n : ℕ}
 

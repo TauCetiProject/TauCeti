@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator.Estimate
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Sobolev.Circle.LinearODE.DeterminantLine
-import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 
 /-!
 # The stationary cylinder operator on `W^{1,2}` and its invertibility
@@ -63,13 +62,10 @@ proves that `D` is bounded below, and that in a unitary frame (`J_t = i`) it is 
   the realization `D_u` of the linearized Floer operator is bounded below on `W^{1,2}`
   (`exists_forall_norm_le_mul_norm_floerSobolevOperator_of_isNondegenerateFixedPt`) and
   injective (`TauCeti.SymplecticForm.ker_floerSobolevOperator_eq_bot_of_isNondegenerateFixedPt`).
-  In a unitary trivialization, where `ω = Im ⟪·, ·⟫` and `J = i`, it is also onto
-  (`TauCeti.SymplecticForm.range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt`), hence an
-  isomorphism `W^{1,2} ≃ L²`
-  (`TauCeti.SymplecticForm.isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt`).
 
-Surjectivity for a general loop `J_t` of compatible structures, which reduces to the unitary case by
-conjugating with a loop of unitary frames, is not treated here.
+Surjectivity of `D_u`, which reduces to the unitary case by conjugating with a loop of unitary
+frames, is in `TauCeti/Geometry/Symplectic/Floer/Sobolev/UnitaryFrame.lean`, together with its
+case of a unitary trivialization, where `ω = Im ⟪·, ·⟫` and `J = i`.
 
 ## References
 
@@ -89,7 +85,7 @@ open scoped NNReal ENNReal Manifold
 namespace TauCeti.Floer
 
 open CylinderSobolev
-open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure)
+open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure jetOperator_jetLp_ae_eq)
 
 section General
 
@@ -119,25 +115,31 @@ theorem stationaryJetCoeff_jet (J : ℝ → AlmostComplexStructure V) (S : ℝ �
 
 variable {J : ℝ → AlmostComplexStructure V} {S : ℝ → V →L[ℝ] V}
 
+/-- The coefficient field of the stationary cylinder operator at `(s, t)` depends only on `t`. -/
+theorem stationaryJetCoeff_eq_of_snd_eq {z z' : ℝ × ℝ} (h : z.2 = z'.2) :
+    stationaryJetCoeff J S z = stationaryJetCoeff J S z' :=
+  ContinuousLinearMap.ext fun v ↦ by simp only [stationaryJetCoeff_apply, h]
+
+/-- For continuous loops `J_t` and `S_t`, the coefficient field of the stationary cylinder operator
+is continuous. -/
+theorem continuous_stationaryJetCoeff
+    (hJc : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap) (hSc : Continuous S) :
+    Continuous (stationaryJetCoeff J S) := by
+  unfold stationaryJetCoeff
+  exact continuous_const.add ((hJc.comp continuous_snd).clm_comp (continuous_const.sub
+    ((hSc.comp continuous_snd).clm_comp continuous_const)))
+
 /-- For continuous loops `J_t` and `S_t`, the coefficients of the stationary cylinder operator are
 essentially bounded on the cylinder. -/
 theorem memLp_stationaryJetCoeff
     (hJc : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap) (hSc : Continuous S) :
     MemLp (stationaryJetCoeff J S) ∞ stripMeasure := by
   -- The coefficient field depends only on `t`, through the loops `J_t` and `S_t`.
-  set g : ℝ → V × V × V →L[ℝ] V := fun t ↦ stationaryJetCoeff J S (0, t)
-  have hg : Continuous g := by
-    simp only [g, stationaryJetCoeff]
-    exact continuous_const.add (hJc.clm_comp (continuous_const.sub
-      (hSc.clm_comp continuous_const)))
-  have hM : stationaryJetCoeff J S = g ∘ Prod.snd := by
-    funext z
-    exact ContinuousLinearMap.ext fun v ↦ by simp [g, stationaryJetCoeff_apply]
-  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn (hg.continuousOn (s := Icc 0 1))
+  have hM : stationaryJetCoeff J S = (fun t ↦ stationaryJetCoeff J S (0, t)) ∘ Prod.snd :=
+    funext fun z ↦ stationaryJetCoeff_eq_of_snd_eq rfl
   rw [hM]
-  refine memLp_top_of_bound (hg.comp continuous_snd).aestronglyMeasurable C ?_
-  rw [StripSobolev.stripMeasure, ae_restrict_iff' (MeasurableSet.univ.prod measurableSet_Icc)]
-  exact Eventually.of_forall fun z hz ↦ hC z.2 hz.2
+  exact memLp_top_comp_snd
+    ((continuous_stationaryJetCoeff hJc hSc).comp (continuous_const.prodMk continuous_id))
 
 variable (J S) in
 /-- The stationary cylinder operator `D ξ = ∂s ξ + J_t (∂t ξ - S_t ξ)` as an operator from the
@@ -513,67 +515,5 @@ theorem ker_floerSobolevOperator_eq_bot_of_isNondegenerateFixedPt
   exact LinearMap.ker_eq_bot.2 (ContinuousLinearMap.antilipschitz_of_bound _ hC).injective
 
 end Stationary
-
-section Unitary
-
-/-! ### Invertibility at a nondegenerate orbit in a unitary trivialization -/
-
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
-  (ω : SymplecticForm F) {H : ℝ → F → ℝ} {K : ℝ≥0}
-  (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
-  (hH : ContDiff ℝ 3 (Function.uncurry H)) (hHp : Function.Periodic H 1) {x : ℝ → F}
-  (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Function.Periodic x 1)
-
-include hH hHp hx hxp in
-/-- **The linearized Floer operator at a nondegenerate orbit is onto in a unitary trivialization.**
-Let `F` be a finite-dimensional complex inner product space whose symplectic form `ω` is
-`Im ⟪·, ·⟫`, and let `x` be a one-periodic orbit of a one-periodic, jointly `C³` time-dependent
-Hamiltonian `H` whose suspended vector field is globally Lipschitz, with `x(0)` a nondegenerate
-fixed point of the time-one map. At the stationary cylinder `u(s, t) = x(t)`, with the complex
-structure `i`, the realization `D_u : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` of the linearized Floer
-operator is onto. -/
-theorem range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt
-    (hω : ∀ v w, ω v w = (inner ℂ v w).im)
-    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    (ω.floerSobolevOperator
-      (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).range = ⊤ := by
-  have hH₂ : ContDiff ℝ 2 (Function.uncurry H) := hH.of_le (by norm_num)
-  obtain ⟨S, hS, hS₁⟩ := ω.exists_loop_eq_fderiv_hamiltonianVectorField hH hHp hx hxp
-  have hS' : (fun t : ℝ ↦ S t) = fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) :=
-    funext hS
-  -- `S` is infinitesimally symplectic for `Im ⟪·, ·⟫`.
-  have hSω (θ : AddCircle (1 : ℝ)) (v w : F) :
-      (inner ℂ (S θ v) w).im + (inner ℂ v (S θ w)).im = 0 := by
-    obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
-    simpa only [← hω, hS] using ω.apply_fderiv_hamiltonianVectorField_add (H := H t) (x := x t)
-      (hH₂.comp (contDiff_prodMk_right t)).contDiffAt v w
-  -- `D_u` is the stationary cylinder operator with `J_t = i` and `S_t = dX_{H_t}(x(t))`.
-  rw [floerSobolevOperator_def,
-    floerJetCoeff_eq_stationaryJetCoeff ω (fun _ _ ↦ AlmostComplexStructure.ofComplexModule F) H hx,
-    ← Floer.stationarySobolevOperator_def, ← hS', LinearMap.range_eq_top]
-  refine (Floer.bijective_stationarySobolevOperator_ofComplexModule hS₁ hSω ?_).2
-  rw [hS']
-  exact ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH₂ hx hnd
-
-include hH hHp hx hxp in
-/-- **The linearized Floer operator at a nondegenerate orbit is invertible in a unitary
-trivialization.** Under the hypotheses of
-`TauCeti.SymplecticForm.range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt`, the
-realization `D_u : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` of the linearized Floer operator at the
-stationary cylinder `u(s, t) = x(t)` is an isomorphism of Banach spaces. -/
-theorem isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt
-    (hω : ∀ v w, ω v w = (inner ℂ v w).im)
-    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    (ω.floerSobolevOperator
-      (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).IsInvertible :=
-  ⟨.ofBijective _ (ker_floerSobolevOperator_eq_bot_of_isNondegenerateFixedPt ω hX
-      (hH.of_le (by norm_num)) hx (J := fun _ _ ↦ AlmostComplexStructure.ofComplexModule F)
-      continuous_const (fun _ ↦ ω.compatible_ofComplexModule_of_forall_eq_im_inner hω) hnd)
-    (range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt ω hX hH hHp hx hxp hω hnd),
-    ContinuousLinearEquiv.coe_ofBijective ..⟩
-
-end Unitary
 
 end TauCeti.SymplecticForm

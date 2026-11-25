@@ -48,9 +48,13 @@ closed-loop analogue of the fixed-endpoint discrete energy `TauCeti.discreteEner
   (`TauCeti.isClosedEmbedding_cyclicDiscreteEnergyRepeatFirst`). Forgetting vertices, with the
   steps of the coarse edges the sums of the fine steps they span, does not increase the energy
   (`TauCeti.cyclicDiscreteEnergy_cyclicDiscreteEnergyForget_le`), the induced maps of carriers
-  compose (`TauCeti.cyclicDiscreteEnergyForgetMap_trans`), and in a geodesic space every
+  compose (`TauCeti.cyclicDiscreteEnergyForgetMap_trans`). Conversely, sampling constant-speed
+  minimizing segments along the edges inserts vertices without changing the energy
+  (`TauCeti.cyclicDiscreteEnergy_cyclicDiscreteEnergyInsert`), so in a geodesic space every
   coarse closed chain is the image of a fine one of the same energy
-  (`TauCeti.exists_cyclicDiscreteEnergyForget_eq_and_cyclicDiscreteEnergy_eq`).
+  (`TauCeti.exists_cyclicDiscreteEnergyForget_eq_and_cyclicDiscreteEnergy_eq`), and a continuous
+  choice of segments gives a continuous insertion map of carriers with forgetting as a left
+  inverse (`TauCeti.cyclicDiscreteEnergyForgetMap_comp_cyclicDiscreteEnergyInsertMap`).
 
 ## References
 
@@ -484,11 +488,119 @@ theorem cyclicDiscreteEnergyForgetMap_trans {l : ℕ} {τ'' : Fin (l + 1) → �
   ext q : 2
   exact cyclicDiscreteEnergyForget_trans r s q.val
 
+omit [PseudoMetricSpace X] in
+/-- **Inserting vertices into a closed chain.** For a selection `r` retaining the first and last
+slots, sample the curves `γ i` along the coarse edges at the fine times `t`, as in
+`TauCeti.discreteEnergyInsert`, and drop the last slot of the sampled tuple. When the times are
+strictly increasing and the last curve ends where the first one starts, that slot repeats the base
+vertex (`TauCeti.snoc_cyclicDiscreteEnergyInsert`). -/
+noncomputable def cyclicDiscreteEnergyInsert (t : Fin (n + 2) → ℝ)
+    (r : Fin (m + 2) ↪o Fin (n + 2)) (h0 : r 0 = 0)
+    (hlast : r (Fin.last (m + 1)) = Fin.last (n + 1)) (γ : Fin (m + 1) → ℝ → X) :
+    Fin (n + 1) → X :=
+  fun j ↦ discreteEnergyInsert t r h0 hlast γ j.castSucc
+
+omit [PseudoMetricSpace X] in
+@[simp]
+theorem cyclicDiscreteEnergyInsert_apply (t : Fin (n + 2) → ℝ)
+    (r : Fin (m + 2) ↪o Fin (n + 2)) (h0 : r 0 = 0)
+    (hlast : r (Fin.last (m + 1)) = Fin.last (n + 1)) (γ : Fin (m + 1) → ℝ → X)
+    (j : Fin (n + 1)) :
+    cyclicDiscreteEnergyInsert t r h0 hlast γ j = discreteEnergyInsert t r h0 hlast γ j.castSucc :=
+  (rfl)
+
+omit [PseudoMetricSpace X] in
+/-- Closed-chain insertion varies continuously with a parameter whenever each chosen segment does,
+at each fixed time in `[0, 1]`. -/
+@[fun_prop]
+theorem continuous_cyclicDiscreteEnergyInsert {A : Type*} [TopologicalSpace A]
+    [TopologicalSpace X] (ht : Monotone t) (r : Fin (m + 2) ↪o Fin (n + 2)) (h0 : r 0 = 0)
+    (hlast : r (Fin.last (m + 1)) = Fin.last (n + 1)) (γ : A → Fin (m + 1) → ℝ → X)
+    (hγ : ∀ i u, u ∈ Icc (0 : ℝ) 1 → Continuous (fun a ↦ γ a i u)) :
+    Continuous (fun a ↦ cyclicDiscreteEnergyInsert t r h0 hlast (γ a)) :=
+  continuous_pi fun j ↦ (continuous_apply j.castSucc).comp
+    (continuous_discreteEnergyInsert ht r h0 hlast γ hγ)
+
+omit [PseudoMetricSpace X] in
+/-- Closed-chain insertion depends only on the curves restricted to their parameter interval
+`[0, 1]`. -/
+theorem cyclicDiscreteEnergyInsert_congr (ht : Monotone t) (r : Fin (m + 2) ↪o Fin (n + 2))
+    (h0 : r 0 = 0) (hlast : r (Fin.last (m + 1)) = Fin.last (n + 1))
+    {γ₁ γ₂ : Fin (m + 1) → ℝ → X} (hγ : ∀ i, EqOn (γ₁ i) (γ₂ i) (Icc 0 1)) :
+    cyclicDiscreteEnergyInsert t r h0 hlast γ₁ = cyclicDiscreteEnergyInsert t r h0 hlast γ₂ :=
+  funext fun j ↦ congrFun (discreteEnergyInsert_congr ht r h0 hlast hγ) j.castSucc
+
+omit [PseudoMetricSpace X] in
+/-- For the identity selection, insertion of glued curves reads each curve at its start. -/
+@[simp]
+theorem cyclicDiscreteEnergyInsert_refl (ht : StrictMono t) (γ : Fin (n + 1) → ℝ → X)
+    (hγ : ∀ k : Fin n, γ k.castSucc 1 = γ k.succ 0) :
+    cyclicDiscreteEnergyInsert t (RelEmbedding.refl (· ≤ ·)) rfl rfl γ = fun j ↦ γ j 0 := by
+  funext j
+  exact (discreteEnergyInsert_apply ht _ _ _ γ hγ j j.castSucc
+    ⟨le_rfl, j.castSucc_le_succ⟩).trans (by simp)
+
+omit [PseudoMetricSpace X] in
+/-- When the times are strictly increasing and the last curve ends where the first one starts,
+cutting open the inserted closed chain at its base vertex recovers the whole sampled chain. -/
+theorem snoc_cyclicDiscreteEnergyInsert (ht : StrictMono t)
+    (r : Fin (m + 2) ↪o Fin (n + 2)) (h0 : r 0 = 0)
+    (hlast : r (Fin.last (m + 1)) = Fin.last (n + 1)) {γ : Fin (m + 1) → ℝ → X}
+    (hγ : γ (Fin.last m) 1 = γ 0 0) :
+    (Fin.snoc (cyclicDiscreteEnergyInsert t r h0 hlast γ)
+      (cyclicDiscreteEnergyInsert t r h0 hlast γ 0) : Fin (n + 2) → X) =
+        discreteEnergyInsert t r h0 hlast γ := by
+  funext j
+  induction j using Fin.lastCases with
+  | last =>
+    rw [Fin.snoc_last, cyclicDiscreteEnergyInsert_apply, Fin.castSucc_zero,
+      discreteEnergyInsert_zero, discreteEnergyInsert_last ht, hγ]
+  | cast j => rw [Fin.snoc_castSucc, cyclicDiscreteEnergyInsert_apply]
+
+omit [PseudoMetricSpace X] in
+/-- Inserting samples of curves joining consecutive vertices, read cyclically, retains every vertex
+of the coarse closed chain: forgetting the inserted vertices recovers it. -/
+theorem cyclicDiscreteEnergyForget_cyclicDiscreteEnergyInsert (ht : StrictMono t)
+    (r : Fin (m + 2) ↪o Fin (n + 2)) (h0 : r 0 = 0)
+    (hlast : r (Fin.last (m + 1)) = Fin.last (n + 1)) (p : Fin (m + 1) → X)
+    (γ : Fin (m + 1) → ℝ → X) (hsource : ∀ i, γ i 0 = p i)
+    (htarget : ∀ i : Fin m, γ i.castSucc 1 = p i.succ) :
+    cyclicDiscreteEnergyForget r (cyclicDiscreteEnergyInsert t r h0 hlast γ) = p := by
+  funext j
+  -- An increasing selection retaining the last slot never sends a non-final slot there.
+  obtain ⟨k, hk⟩ := (r j.castSucc).eq_castSucc_of_ne_last
+    ((r.strictMono j.castSucc_lt_last).trans_eq hlast).ne
+  rw [cyclicDiscreteEnergyForget_apply, ← hk, Fin.snoc_castSucc, cyclicDiscreteEnergyInsert_apply,
+    hk, discreteEnergyInsert_comp_apply ht r h0 hlast (Fin.snoc p (γ (Fin.last m) 1)) γ
+      (fun i ↦ by rw [hsource, Fin.snoc_castSucc]) (fun i ↦ ?_), Fin.snoc_castSucc]
+  induction i using Fin.lastCases with
+  | last => rw [Fin.succ_last, Fin.snoc_last]
+  | cast i => rw [Fin.succ_castSucc, Fin.snoc_castSucc, htarget]
+
+/-- **Geodesic insertion preserves the cyclic energy.** Sampling constant-speed minimizing segments
+along the edges of a closed chain, the closing edge included, at the fine times `t`, gives a fine
+closed chain of the same energy, for the steps of `t` and of the selected times `t ∘ r`. -/
+theorem cyclicDiscreteEnergy_cyclicDiscreteEnergyInsert (ht : StrictMono t)
+    (hτ : ∀ k : Fin (n + 1), t k.succ - t k.castSucc = τ (k + 1))
+    {r : Fin (m + 2) ↪o Fin (n + 2)} (h0 : r 0 = 0)
+    (hlast : r (Fin.last (m + 1)) = Fin.last (n + 1))
+    (hτ' : ∀ k : Fin (m + 1), t (r k.succ) - t (r k.castSucc) = τ' (k + 1))
+    (p : Fin (m + 1) → X) (γ : Fin (m + 1) → ℝ → X)
+    (hγ : ∀ i, IsGeodesicSegment (γ i) (p i) (p (i + 1))) :
+    cyclicDiscreteEnergy τ (cyclicDiscreteEnergyInsert t r h0 hlast γ) =
+      cyclicDiscreteEnergy τ' p := by
+  rw [cyclicDiscreteEnergy_eq_discreteEnergy_snoc hτ,
+    snoc_cyclicDiscreteEnergyInsert ht r h0 hlast
+      (by rw [(hγ _).target, (hγ 0).source, Fin.last_add_one]),
+    discreteEnergy_discreteEnergyInsert ht r h0 hlast (Fin.snoc p (p 0)) γ
+      (fun i ↦ by simpa only [Fin.snoc_castSucc, Fin.snoc_self_zero_succ] using hγ i),
+    cyclicDiscreteEnergy_eq_discreteEnergy_snoc (t := t ∘ r) hτ']
+
 /-- **Geodesic insertion for closed chains.** In a geodesic space, for times `t` and a selection
 `r` retaining the first and last slots, every coarse closed chain is obtained by forgetting
 vertices of a fine closed chain with the same energy, for the steps of `t ∘ r` and of `t`: insert,
 along each coarse edge, the points of a constant-speed minimizing segment at the intermediate
-times. -/
+times. No continuous choice of segments is asserted. -/
 theorem exists_cyclicDiscreteEnergyForget_eq_and_cyclicDiscreteEnergy_eq [IsGeodesicSpace X]
     (ht : StrictMono t) (hτ : ∀ k : Fin (n + 1), t k.succ - t k.castSucc = τ (k + 1))
     {r : Fin (m + 2) ↪o Fin (n + 2)} (h0 : r 0 = 0)
@@ -497,25 +609,91 @@ theorem exists_cyclicDiscreteEnergyForget_eq_and_cyclicDiscreteEnergy_eq [IsGeod
     (p : Fin (m + 1) → X) :
     ∃ q : Fin (n + 1) → X, cyclicDiscreteEnergyForget r q = p ∧
       cyclicDiscreteEnergy τ q = cyclicDiscreteEnergy τ' p := by
-  obtain ⟨y, hyr, hy⟩ := exists_comp_eq_and_discreteEnergy_eq ht r h0 hlast
-    (Fin.snoc p (p 0) : Fin (m + 2) → X)
-  -- The fine chain closes up: its last vertex is the base vertex of `p`, which is its first.
-  have hy0 : y 0 = p 0 := by
-    have h := congrFun hyr 0
-    rw [Function.comp_apply, h0] at h
-    rwa [Fin.snoc_apply_zero] at h
-  have hylast : y (Fin.last (n + 1)) = p 0 := by
-    have := congrFun hyr (Fin.last (m + 1))
-    rwa [Function.comp_apply, hlast, Fin.snoc_last] at this
-  have hsnoc : (Fin.snoc (Fin.init y) (Fin.init y 0) : Fin (n + 2) → X) = y := by
-    rw [show Fin.init y 0 = y (Fin.last (n + 1)) by simp [Fin.init, hy0, hylast],
-      Fin.snoc_init_self]
-  refine ⟨Fin.init y, ?_, ?_⟩
-  · funext j
-    rw [cyclicDiscreteEnergyForget_apply, hsnoc, ← Function.comp_apply (f := y), hyr,
-      Fin.snoc_castSucc]
-  · rw [cyclicDiscreteEnergy_eq_discreteEnergy_snoc hτ, hsnoc, hy,
-      cyclicDiscreteEnergy_eq_discreteEnergy_snoc (t := t ∘ r) hτ']
+  choose γ hγ using fun i : Fin (m + 1) ↦
+    IsGeodesicSpace.exists_isGeodesicSegment (p i) (p (i + 1))
+  exact ⟨cyclicDiscreteEnergyInsert t r h0 hlast γ,
+    cyclicDiscreteEnergyForget_cyclicDiscreteEnergyInsert ht r h0 hlast p γ
+      (fun i ↦ (hγ i).source) (fun i ↦ by rw [(hγ _).target, Fin.coeSucc_eq_succ]),
+    cyclicDiscreteEnergy_cyclicDiscreteEnergyInsert ht hτ h0 hlast hτ' p γ hγ⟩
+
+section InsertMap
+
+variable (ht : StrictMono t) (hτ : ∀ k : Fin (n + 1), t k.succ - t k.castSucc = τ (k + 1))
+  {r : Fin (m + 2) ↪o Fin (n + 2)} (h0 : r 0 = 0)
+  (hlast : r (Fin.last (m + 1)) = Fin.last (n + 1))
+  (hτ' : ∀ k : Fin (m + 1), t (r k.succ) - t (r k.castSucc) = τ' (k + 1)) (c : ℝ)
+  (γ : cyclicDiscreteEnergyStrictSublevel (X := X) τ' c → Fin (m + 1) → ℝ → X)
+  (hγ : ∀ p i, IsGeodesicSegment (γ p i) (p.val i) (p.val (i + 1)))
+  (hcont : ∀ i u, u ∈ Icc (0 : ℝ) 1 → Continuous (fun p ↦ γ p i u))
+
+/-- **Geodesic insertion maps energy carriers into each other.** Choose constant-speed minimizing
+segments `γ p i` along the edges of each closed chain `p` in the strict sublevel below `c` for the
+steps `τ'` of the selected times `t ∘ r`, such that for each edge `i` and each parameter `u` in
+`[0, 1]` the point `γ p i u` depends continuously on `p`. Insertion is then a continuous map into
+the strict sublevel below the same `c` for the steps `τ` of `t`. The choice is needed only on the
+coarse sublevel. -/
+noncomputable def cyclicDiscreteEnergyInsertMap :
+    C(cyclicDiscreteEnergyStrictSublevel (X := X) τ' c,
+      cyclicDiscreteEnergyStrictSublevel (X := X) τ c) where
+  toFun p := ⟨cyclicDiscreteEnergyInsert t r h0 hlast (γ p),
+    (cyclicDiscreteEnergy_cyclicDiscreteEnergyInsert ht hτ h0 hlast hτ' p.val (γ p)
+      (hγ p)).trans_lt p.property⟩
+  continuous_toFun :=
+    (continuous_cyclicDiscreteEnergyInsert ht.monotone r h0 hlast γ hcont).subtype_mk _
+
+@[simp]
+theorem coe_cyclicDiscreteEnergyInsertMap_apply
+    (p : cyclicDiscreteEnergyStrictSublevel (X := X) τ' c) :
+    (cyclicDiscreteEnergyInsertMap ht hτ h0 hlast hτ' c γ hγ hcont p : Fin (n + 1) → X) =
+      cyclicDiscreteEnergyInsert t r h0 hlast (γ p) :=
+  (rfl)
+
+/-- Insertion of closed chains depends only on the chosen segments on `[0, 1]`. -/
+theorem cyclicDiscreteEnergyInsertMap_congr
+    (γ₂ : cyclicDiscreteEnergyStrictSublevel (X := X) τ' c → Fin (m + 1) → ℝ → X)
+    (hγ₂ : ∀ p i, IsGeodesicSegment (γ₂ p i) (p.val i) (p.val (i + 1)))
+    (hcont₂ : ∀ i u, u ∈ Icc (0 : ℝ) 1 → Continuous (fun p ↦ γ₂ p i u))
+    (heq : ∀ p i, EqOn (γ p i) (γ₂ p i) (Icc 0 1)) :
+    cyclicDiscreteEnergyInsertMap ht hτ h0 hlast hτ' c γ hγ hcont =
+      cyclicDiscreteEnergyInsertMap ht hτ h0 hlast hτ' c γ₂ hγ₂ hcont₂ := by
+  ext p : 2
+  exact cyclicDiscreteEnergyInsert_congr ht.monotone r h0 hlast (heq p)
+
+/-- Forgetting the newly inserted vertices recovers the original point of the coarse carrier. -/
+@[simp]
+theorem cyclicDiscreteEnergyForgetMap_cyclicDiscreteEnergyInsertMap
+    (p : cyclicDiscreteEnergyStrictSublevel (X := X) τ' c) :
+    cyclicDiscreteEnergyForgetMap ht hτ h0 hlast hτ' c
+      (cyclicDiscreteEnergyInsertMap ht hτ h0 hlast hτ' c γ hγ hcont p) = p :=
+  Subtype.ext <| cyclicDiscreteEnergyForget_cyclicDiscreteEnergyInsert ht r h0 hlast p.val (γ p)
+    (fun i ↦ (hγ p i).source) (fun i ↦ by rw [(hγ p _).target, Fin.coeSucc_eq_succ])
+
+/-- Forgetting the newly inserted vertices is a left inverse to continuous geodesic insertion of
+closed chains. -/
+@[simp]
+theorem cyclicDiscreteEnergyForgetMap_comp_cyclicDiscreteEnergyInsertMap :
+    (cyclicDiscreteEnergyForgetMap ht hτ h0 hlast hτ' c).comp
+        (cyclicDiscreteEnergyInsertMap ht hτ h0 hlast hτ' c γ hγ hcont) =
+      ContinuousMap.id (cyclicDiscreteEnergyStrictSublevel (X := X) τ' c) := by
+  ext p : 1
+  exact cyclicDiscreteEnergyForgetMap_cyclicDiscreteEnergyInsertMap ht hτ h0 hlast hτ' c γ hγ
+    hcont p
+
+end InsertMap
+
+/-- Insertion for the identity selection is the identity on the energy carrier. -/
+@[simp]
+theorem cyclicDiscreteEnergyInsertMap_refl (ht : StrictMono t)
+    (hτ : ∀ k : Fin (n + 1), t k.succ - t k.castSucc = τ (k + 1)) (c : ℝ)
+    (γ : cyclicDiscreteEnergyStrictSublevel (X := X) τ c → Fin (n + 1) → ℝ → X)
+    (hγ : ∀ p i, IsGeodesicSegment (γ p i) (p.val i) (p.val (i + 1)))
+    (hcont : ∀ i u, u ∈ Icc (0 : ℝ) 1 → Continuous (fun p ↦ γ p i u)) :
+    cyclicDiscreteEnergyInsertMap ht hτ (r := RelEmbedding.refl (· ≤ ·)) rfl rfl hτ c γ hγ hcont =
+      ContinuousMap.id (cyclicDiscreteEnergyStrictSublevel (X := X) τ c) := by
+  ext p : 1
+  have h := cyclicDiscreteEnergyForgetMap_cyclicDiscreteEnergyInsertMap ht hτ
+    (r := RelEmbedding.refl (· ≤ ·)) rfl rfl hτ c γ hγ hcont p
+  rwa [cyclicDiscreteEnergyForgetMap_refl] at h
 
 end Forget
 
