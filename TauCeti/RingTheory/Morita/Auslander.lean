@@ -13,7 +13,7 @@ public import TauCeti.RingTheory.GlobalDimension
 import Mathlib.RingTheory.HopkinsLevitzki
 import TauCeti.CategoryTheory.Generator.GeneratorCogenerator
 import TauCeti.RingTheory.GlobalDimension.AdditiveGenerator
-import TauCeti.RingTheory.Morita.Tachikawa
+import TauCeti.RingTheory.Morita.Tachikawa.Basic
 
 /-!
 # Auslander algebras
