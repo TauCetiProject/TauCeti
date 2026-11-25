@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Depth.Basic
 public import Mathlib.RingTheory.Regular.RegularSequence
 import TauCeti.RingTheory.Ideal.AssociatedPrime.Basic
 import TauCeti.RingTheory.Ideal.Operations
+import TauCeti.RingTheory.Localization.Away.Basic
 import TauCeti.RingTheory.QuotSMulTop
 import TauCeti.RingTheory.Regular.Pair
 
@@ -185,7 +186,8 @@ variable {R : Type u} [CommRing R] {Ra Rb Rab : Type*} [CommRing Ra] [CommRing R
 element of `R_a` and an element of `R_b` with the same image in `R_{ab}` come from a unique element
 of `R`. Here `R_a`, `R_b` and `R_{ab}` are any localizations of `R` away from `a`, `b` and `ab`.
 This is the elementwise form of the algebraic Hartogs principle for the open subset
-`D(a) ∪ D(b)` of `Spec R`. -/
+`D(a) ∪ D(b)` of `Spec R`, and its proof adapts the argument of
+`TauCeti.AlgebraicGeometry.StructureSheaf.toOpenₗ_bijective_of_isWeaklyRegular`. -/
 theorem RingTheory.Sequence.IsWeaklyRegular.existsUnique_algebraMap_eq {a b : R}
     [IsLocalization.Away a Ra] [IsLocalization.Away b Rb] [IsLocalization.Away (a * b) Rab]
     (h : IsWeaklyRegular R [a, b]) (x : Ra) (y : Rb)
@@ -230,10 +232,9 @@ theorem RingTheory.Sequence.IsWeaklyRegular.existsUnique_algebraMap_eq {a b : R}
       dsimp only
       rw [mul_assoc _ y, hy, ← this]
       ring
-  · -- Two elements with the same image in `R_a` differ by an `a`-power torsion element.
-    obtain ⟨⟨_, k, rfl⟩, hk⟩ :=
-      IsLocalization.exists_of_eq (M := .powers a) (S := Ra) (hr.1.trans hs.1.symm)
-    exact (ha.pow k) hk
+  · -- `R → R_a` is injective, as `a` is regular.
+    exact (IsLocalization.Away.injective_iff_isRegular (S := Ra) a).2
+      (isLeftRegular_iff_isRegular.1 ha) (hr.1.trans hs.1.symm)
 
 end Localization
 

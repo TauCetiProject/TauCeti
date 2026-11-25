@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.Regular.RegularSequence
 import TauCeti.Algebra.Algebra.Hom
 import TauCeti.RingTheory.Ideal.Quotient.Operations
+import TauCeti.RingTheory.Localization.Away.Basic
 import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
@@ -18,10 +19,12 @@ import TauCeti.RingTheory.Regular.RegularSequence
 
 Let `C` be an `A`-algebra and `a, b ∈ A` such that the localizations `C_a` and `C_b` are formally
 étale over `A`. For instance, `C` may be the ring of sections of a finite étale cover of the
-punctured spectrum of a local ring `A`, with `a, b` in the maximal ideal. Then `C` itself need not
-be étale over `A`, but `A`-algebra maps from `C` still lift uniquely along nilpotent thickenings
-`R → R ⧸ I` of any `A`-algebra `R` on which `a, b` is a weakly regular sequence, provided `a` is
-also regular on `R ⧸ I`:
+punctured spectrum of a Noetherian local ring `A`, with `a, b` in the maximal ideal: as the
+punctured spectrum is quasi-compact, `C_a` and `C_b` are the rings of sections over `D(a)` and
+`D(b)`, so they are finite étale over `A_a` and `A_b`. Then `C` itself need not be étale over `A`,
+but `A`-algebra maps from `C` still lift uniquely along nilpotent thickenings `R → R ⧸ I` of any
+`A`-algebra `R` on which `a, b` is a weakly regular sequence, provided `a` is also regular on
+`R ⧸ I`:
 
 * over `D(a)` and over `D(b)` the map lifts uniquely, because `C_a` and `C_b` are formally étale;
 * the two lifts agree over `D(ab)` by uniqueness;
@@ -196,9 +199,9 @@ theorem existsUnique_lift {a b : A}
   -- takes values in `R`, so it factors through a map `f : C → R`.
   obtain ⟨fa, hfa, hfa_uniq⟩ := existsUnique_lift_quotientMapₐ (C := C) ιa
     (IsLocalization.Away.algebraMap_isUnit (algebraMap A R a)) hI g
-  have hιa : Function.Injective ιa := fun r s hrs ↦ by
-    obtain ⟨⟨_, k, rfl⟩, hk⟩ := IsLocalization.exists_of_eq (M := .powers (algebraMap A R a)) hrs
-    exact (ha.pow k) hk
+  have hιa : Function.Injective ιa :=
+    (IsLocalization.Away.injective_iff_isRegular (S := Ra) (algebraMap A R a)).2
+      (isLeftRegular_iff_isRegular.1 ha)
   obtain ⟨f, hf⟩ : fa ∈ Set.range fun f : C →ₐ[A] R ↦ ιa.comp f := by
     rw [AlgHom.range_comp_left_of_injective ιa hιa]
     exact mem_range_of_lift_away hR' hI g fa hfa
