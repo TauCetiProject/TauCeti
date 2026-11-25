@@ -132,11 +132,8 @@ private theorem exists_compact_estimate_sobolevL (hp : 1 < p) (hp_top : p ≠ (�
   have hK : IsCompactOperator (A.sectionChartData.lowerOrderL volume p 0) :=
     SobolevSection.isCompactOperator_lowerOrderL (E := ℂ) (M := M) (F := F) (V := V) A volume p 0
   refine ⟨|C|, |C| • A.sectionChartData.lowerOrderL volume p 0, hK.smul |C|, fun w ↦ ?_⟩
-  have hKw : ‖(|C| • A.sectionChartData.lowerOrderL volume p 0) w‖ =
-      |C| * ‖A.sectionChartData.lowerOrderL volume p 0 w‖ := by
-    rw [smul_apply, norm_smul, Real.norm_eq_abs, abs_abs]
-  rw [hKw, ← mul_add]
-  exact (hC w).trans (mul_le_mul_of_nonneg_right (le_abs_self C) (by positivity))
+  simp only [smul_apply, norm_smul, Real.norm_eq_abs, abs_abs, ← mul_add]
+  exact (hC w).trans (by gcongr; exact le_abs_self C)
 
 include hD hDs in
 /-- **Finite-dimensional kernel.** On a closed surface, a smooth real Cauchy–Riemann operator

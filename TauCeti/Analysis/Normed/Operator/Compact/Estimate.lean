@@ -123,9 +123,8 @@ theorem exists_compact_estimate_of_isCompactOperator_sub [NormedAddCommGroup F] 
     rw [smul_apply, norm_smul]
     calc ‖x‖ ≤ C * ‖T x‖ + ‖K x‖ := hbound x
       _ ≤ |C| * (‖S x‖ + N) + N := by
-          refine add_le_add ((mul_le_mul_of_nonneg_right (le_abs_self C) (norm_nonneg _)).trans
-            (mul_le_mul_of_nonneg_left (hT.trans ?_) hC)) h₂
           gcongr
+          exacts [le_abs_self C, hT.trans (by gcongr)]
       _ ≤ |C| * ‖S x‖ + ‖a‖ * N := by nlinarith
 
 section CompleteDomain
@@ -237,9 +236,7 @@ theorem exists_norm_le_mul_norm_add_norm_of_compact_estimate {Z : Type*}
   have hTj (x : E) : ‖T x‖ ≤ ‖(T.prod j) x‖ := by
     simpa only [prod_apply] using norm_fst_le (T x, j x)
   have hbound' (x : E) : ‖x‖ ≤ |C| * ‖(T.prod j) x‖ + ‖K x‖ :=
-    (hbound x).trans (add_le_add_left
-      ((mul_le_mul_of_nonneg_right (le_abs_self C) (norm_nonneg _)).trans
-        (mul_le_mul_of_nonneg_left (hTj x) (abs_nonneg C))) _)
+    (hbound x).trans (by gcongr; exacts [le_abs_self C, hTj x])
   have hker : Disjoint (T.prod j).ker (⊤ : Submodule 𝕜 E) := by
     rw [ker_prod, disjoint_top]
     exact hj.eq_bot
