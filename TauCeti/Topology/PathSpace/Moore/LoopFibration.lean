@@ -51,10 +51,10 @@ over the constant loop of length `L > 0` it is a copy of the loop space of `X`; 
 of lengths `s L` join the two. A lift of this path of lengths, followed by the second projection,
 would lift the lengths of the Moore loops of `X`, which forces the fundamental group of `X` to be
 trivial (`TauCeti.MooreLoopSpace.not_isHurewiczFibration_map_fst`). The inclusion of a point `x`
-is not a fibration once a path leaves `x`, and neither is its Moore loop map, the inclusion
-`[0, ∞) → Ω_x X` of the constant loops at `x`: running a path from `x` up to time `s` and back
-joins the unit to a loop that is not constant, and this path of loops does not lift
-(`TauCeti.MooreLoopSpace.not_isHurewiczFibration_map_const_unit`).
+is not a fibration once a path leaves `x` (`TauCeti.not_isHurewiczFibration_const_unit`), and
+neither is its Moore loop map, the inclusion `[0, ∞) → Ω_x X` of the constant loops at `x`:
+running a path from `x` up to time `s` and back joins the unit to a loop that is not constant, and
+this path of loops does not lift (`TauCeti.MooreLoopSpace.not_isHurewiczFibration_map_const_unit`).
 
 ## Main results
 
@@ -72,8 +72,8 @@ joins the unit to a loop that is not constant, and this path of loops does not l
   nontrivial, for instance for `X = S¹`.
 * `TauCeti.MooreLoopSpace.not_isHurewiczFibration_map_const_unit`: the Moore loop map of the
   inclusion of a point is not a Hurewicz fibration when a path leaves the point.
-* `TauCeti.MooreLoopSpace.not_isHurewiczFibration_const_unit_and_map_addCircle`: neither the
-  inclusion of a point of `S¹` nor its Moore loop map is a Hurewicz fibration.
+* `TauCeti.MooreLoopSpace.not_isHurewiczFibration_map_const_unit_addCircle`: the Moore loop map of
+  the inclusion of a point of `S¹` is not a Hurewicz fibration.
 * `TauCeti.MooreLoopSpace.fiberConstOfLengthHomeomorph`: the fibre of the Moore loop map over a
   constant loop of positive length is the loop space of the fibre.
 * `TauCeti.IsHurewiczFibration.posLengthMap`: on the Moore loops of positive length, the Moore
@@ -180,31 +180,24 @@ theorem hasHomotopyLiftingProperty_length_of_map_fst {A : Type w} [TopologicalSp
   let pr₁ := map (x := (b, x)) (y := b) (.fst : C(B × X, B)) rfl
   let pr₂ := map (x := (b, x)) (y := x) (.snd : C(B × X, X)) rfl
   let incl := map (y := (b, x)) ι rfl
-  -- The loop `(b, γ)` runs through the points `(b, γ t)`, so it projects to the constant loop at
-  -- `b` of the length of `γ`, and to `γ`. These are proved by `exact`: the base point equations
-  -- `rfl` do not typecheck at the transparency at which `rw` and `simp` instantiate `length_map`
-  -- and `toMoorePath_map`.
-  have hincl (γ : MooreLoopSpace X x) (t : ℝ≥0) : (incl γ).toMoorePath t = (b, γ.toMoorePath t) :=
-    (congrArg (fun c : MoorePath (B × X) ↦ c t) (toMoorePath_map _ _ _)).trans
-      (MoorePath.map_apply _ _ _)
+  -- The loop `(b, γ)` projects to the constant loop at `b` of the length of `γ`, and to `γ`:
+  -- `fst.comp ι` and `snd.comp ι` are `const X b` and `id X` by definition.
   have hpr₁ (γ : MooreLoopSpace X x) : pr₁ (incl γ) = constOfLength b γ.length :=
-    ext <| MoorePath.ext ((length_toMoorePath _).trans <| (length_map _ _ _).trans <|
-      (length_map _ _ _).trans <| (length_constOfLength b _).symm.trans (length_toMoorePath _).symm)
-      fun t ↦ (congrArg (fun c : MoorePath B ↦ c t) (toMoorePath_map _ _ _)).trans <|
-        (MoorePath.map_apply _ _ _).trans <| (congrArg _ (hincl γ t)).trans (by simp)
+    (DFunLike.congr_fun (map_comp ContinuousMap.fst ι rfl rfl) γ).symm.trans
+      (map_const_apply rfl γ)
   have hpr₂ (γ : MooreLoopSpace X x) : pr₂ (incl γ) = γ :=
-    ext <| MoorePath.ext ((length_toMoorePath _).trans <| (length_map _ _ _).trans <|
-      (length_map _ _ _).trans (length_toMoorePath _).symm)
-      fun t ↦ (congrArg (fun c : MoorePath X ↦ c t) (toMoorePath_map _ _ _)).trans <|
-        (MoorePath.map_apply _ _ _).trans <| (congrArg _ (hincl γ t)).trans (by simp)
+    (DFunLike.congr_fun (map_comp ContinuousMap.snd ι rfl rfl) γ).symm.trans
+      (DFunLike.congr_fun map_id γ)
   obtain ⟨G, hG, hG₀⟩ := h ⟨fun a ↦ incl (f a), (map_continuous _).comp f.continuous⟩
     ⟨fun ta ↦ constOfLength b (H ta), (continuous_constOfLength b).comp H.continuous⟩
     fun a ↦ (congrArg (constOfLength b) (hH a)).trans (hpr₁ (f a)).symm
   refine ⟨⟨fun ta ↦ pr₂ (G ta), (map_continuous _).comp G.continuous⟩, funext fun ta ↦ ?_,
     fun a ↦ (congrArg pr₂ (hG₀ a)).trans (hpr₂ (f a))⟩
-  -- the lift has the lengths of the constant loops it lifts
-  exact (length_map _ _ _).trans <| (length_map _ _ _).symm.trans <|
-    (congrArg length (congrFun hG ta)).trans (length_constOfLength b _)
+  -- The lift has the lengths of the constant loops it lifts. Both projections preserve lengths;
+  -- `simp` does not use `length_map` here, as the base point equations `rfl` do not typecheck
+  -- at the transparency at which it instantiates the lemma.
+  exact (length_map _ _ _).trans <| (length_map _ _ _).symm.trans <| by
+    simpa using congrArg length (congrFun hG ta)
 
 /-- **The Moore loop map of the projection `B × X → B` is not a Hurewicz fibration** when the
 fundamental group of `X` at `x` is nontrivial, although the projection is one
@@ -267,24 +260,19 @@ theorem not_isHurewiczFibration_map_const_unit (hxy : Joined x y) (hy : y ≠ x)
   -- but the image consists of constant loops at `x`, while `δ 1` passes through `y ≠ x` at time `1`
   have hval := congrArg (fun δ : MooreLoopSpace X x ↦ δ.toMoorePath 1)
     ((map_const_apply _ u).symm.trans hu)
-  simp only [toMoorePath_constOfLength, MoorePath.constOfLength_apply, δ] at hval
-  rw [MoorePath.trans_apply_of_le _ _ _ (by simp [γ]), MoorePath.truncate_apply, min_self,
-    Path.toMoorePath_apply] at hval
-  exact hy (by simpa using hval.symm)
+  exact hy <| by
+    simpa [δ, MoorePath.truncate_trans_symm_apply_self _ (show 1 ≤ γ.length by simp [γ]), γ] using
+      hval.symm
 
-/-- **For the inclusion of a point `z` of the circle, neither the inclusion nor its Moore loop map
-`[0, ∞) → Ω_z S¹` is a Hurewicz fibration.** A path from `z` to another point of the circle does
-not lift to the point. -/
-theorem not_isHurewiczFibration_const_unit_and_map_addCircle (z : AddCircle (1 : ℝ)) :
-    ¬ IsHurewiczFibration.{w} (fun _ : Unit ↦ z) ∧
-      ¬ IsHurewiczFibration.{w} (map (y := z) (.const Unit z) rfl :
-        MooreLoopSpace Unit () → MooreLoopSpace (AddCircle (1 : ℝ)) z) := by
+/-- **For the inclusion of a point `z` of the circle, the Moore loop map `[0, ∞) → Ω_z S¹` is not
+a Hurewicz fibration**, and neither is the inclusion itself
+(`TauCeti.not_isHurewiczFibration_const_unit`). -/
+theorem not_isHurewiczFibration_map_const_unit_addCircle (z : AddCircle (1 : ℝ)) :
+    ¬ IsHurewiczFibration.{w} (map (y := z) (.const Unit z) rfl :
+      MooreLoopSpace Unit () → MooreLoopSpace (AddCircle (1 : ℝ)) z) := by
   have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
   obtain ⟨y, hy⟩ := exists_ne z
-  refine ⟨fun h ↦ ?_, not_isHurewiczFibration_map_const_unit (PathConnectedSpace.joined z y) hy⟩
-  obtain ⟨⟨u, hu⟩, -⟩ := (h.hasHomotopyLiftingProperty PUnit).exists_joined_of_joined (y := ())
-    (PathConnectedSpace.joined z y)
-  exact hy hu.symm
+  exact not_isHurewiczFibration_map_const_unit (PathConnectedSpace.joined z y) hy
 
 end Point
 
