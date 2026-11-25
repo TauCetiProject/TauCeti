@@ -35,6 +35,9 @@ squared-length-two vectors and proved involutive.
 ## Main definitions and results
 
 * `TauCeti.DynkinType.TypeDRoot` is the set of integral vectors of squared length two.
+* `TauCeti.DynkinType.typeDRootSub` and `TauCeti.DynkinType.typeDRootAdd` are the classical roots
+  `eᵢ - eⱼ` and `eᵢ + eⱼ`; by `TauCeti.DynkinType.TypeDRoot.exists_eq_single_sub_or_add_or_neg_add`
+  every root is one of these or the negative of a sum root.
 * `TauCeti.DynkinType.typeDRootEquiv` enumerates these roots by `Fin (2 * n * (n - 1))`.
 * `TauCeti.DynkinType.typeDSimpleRoot` gives the Bourbaki-numbered simple roots, computed by
   `TauCeti.DynkinType.typeDSimpleRoot_of_add_one_lt` on the chain and by
@@ -249,6 +252,26 @@ theorem TypeDRoot.exists_eq_single_sub_or_add_or_neg_add (x : TypeDRoot n) :
       simpa [typeDRawVector, hs, typeDPairVector, hp, i, j] using hxv
     · refine ⟨j, i, hij.symm, Or.inr (Or.inr ?_)⟩
       simpa [typeDRawVector, hs, typeDPairVector, hp, i, j] using hxv
+
+/-- The classical root `eᵢ - eⱼ`. -/
+def typeDRootSub {i j : Fin n} (hij : i ≠ j) : TypeDRoot n :=
+  ⟨Pi.single i 1 - Pi.single j 1, by simp [dotProduct_sub, hij, hij.symm]⟩
+
+/-- The coordinates of the classical root `eᵢ - eⱼ`. -/
+@[simp]
+theorem coe_typeDRootSub {i j : Fin n} (hij : i ≠ j) :
+    (typeDRootSub hij : Fin n → ℤ) = Pi.single i 1 - Pi.single j 1 :=
+  (rfl)
+
+/-- The classical root `eᵢ + eⱼ`. -/
+def typeDRootAdd {i j : Fin n} (hij : i ≠ j) : TypeDRoot n :=
+  ⟨Pi.single i 1 + Pi.single j 1, by simp [dotProduct_add, hij, hij.symm]⟩
+
+/-- The coordinates of the classical root `eᵢ + eⱼ`. -/
+@[simp]
+theorem coe_typeDRootAdd {i j : Fin n} (hij : i ≠ j) :
+    (typeDRootAdd hij : Fin n → ℤ) = Pi.single i 1 + Pi.single j 1 :=
+  (rfl)
 
 /-! ### The Bourbaki order -/
 
