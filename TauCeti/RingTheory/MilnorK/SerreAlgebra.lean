@@ -331,9 +331,9 @@ private theorem shiftHom_apply (c : kˣ) (x : SerreAlgebra k) :
     shiftHom c x = ⟨x.fst - x.snd * ofUnit c, x.snd⟩ := by
   ext <;> simp [shiftHom, lift_apply, sub_eq_add_neg]
 
-/-- For `c ∈ kˣ`, the ring automorphism `σ_c` of `L(k)` fixing `K_*ᴹ(k)` and sending `Π` to
+/-- For `c ∈ kˣ`, the ring automorphism `shift c` of `L(k)` fixing `K_*ᴹ(k)` and sending `Π` to
 `Π - {c}`, so `a + b Π ↦ (a - b {c}) + b Π`. Two such automorphisms compose as
-`σ_c ∘ σ_{c'} = σ_{c c'}` (`TauCeti.SerreAlgebra.shift_shift`). -/
+`shift c ∘ shift c' = shift (c c')` (`TauCeti.SerreAlgebra.shift_shift`). -/
 def shift (c : kˣ) : SerreAlgebra k ≃+* SerreAlgebra k :=
   .ofRingHom (shiftHom c) (shiftHom c⁻¹)
     (RingHom.ext fun x ↦ by ext <;> simp [shiftHom_apply])
@@ -355,6 +355,7 @@ theorem shift_C (c : kˣ) (a : MilnorK k) : shift c (C a) = C a := by
 theorem shift_X (c : kˣ) : shift c X = X - C (ofUnit c) := by
   ext <;> simp
 
+/-- Shifts compose multiplicatively: `shift c (shift c' x) = shift (c c') x`. -/
 @[simp]
 theorem shift_shift (c c' : kˣ) (x : SerreAlgebra k) : shift c (shift c' x) = shift (c * c') x := by
   ext <;> simp [mul_add]; abel
@@ -546,7 +547,7 @@ theorem rho_mem_degree {n : ℕ} {x : SerreAlgebra k} (hx : x ∈ degree k n) :
     rw [rho_apply]
     exact add_mem ha (SetLike.mul_mem_graded hb (ofUnit_mem_degree_one _))
 
-/-- The automorphism `σ_c` preserves the grading. -/
+/-- The automorphism `shift c` preserves the grading. -/
 theorem shift_mem_degree (c : kˣ) {n : ℕ} {x : SerreAlgebra k} (hx : x ∈ degree k n) :
     shift c x ∈ degree k n := by
   cases n with
@@ -579,10 +580,6 @@ private theorem neg_one_pow_mul_mul_ofUnit_neg_one (N : ℕ) (z w : MilnorK k) :
   rcases neg_one_pow_eq_or (MilnorK k) N with h | h
   · rw [h, one_mul]
   · rw [h, neg_one_mul, ← mul_neg, ← mul_neg, neg_ofUnit_neg_one]
-
-private theorem mul_neg_one_pow_mul (z : MilnorK k) (N : ℕ) (w : MilnorK k) :
-    z * ((-1) ^ N * w) = (-1) ^ N * (z * w) :=
-  (((Commute.neg_one_left z).pow_left N).symm.left_comm w)
 
 private theorem neg_one_pow_mul_neg_one_pow_mul (p q : ℕ) (z : MilnorK k) :
     (-1) ^ p * ((-1) ^ q * z) = (-1) ^ (p + q) * z := by
@@ -621,11 +618,9 @@ theorem mul_comm_of_mem_degree {m n : ℕ} {x y : SerreAlgebra k} (hx : x ∈ de
       rw [involute_of_mem_degree ha, involute_of_mem_degree hb, involute_of_mem_degree hc,
         involute_of_mem_degree hd, MilnorK.mul_comm_of_mem_degree ha hd,
         MilnorK.mul_comm_of_mem_degree hc hb]
-      simp only [mul_assoc]
-      rw [mul_add ((-1 : MilnorK k) ^ ((i + 1) * (j + 1))),
-        mul_add ((-1 : MilnorK k) ^ ((i + 1) * (j + 1))), mul_neg_one_pow_mul x.snd,
-        mul_neg_one_pow_mul x.snd, mul_neg_one_pow_mul y.snd, mul_neg_one_pow_mul y.snd,
-        ← mul_assoc y.snd x.snd, hdb]
+      simp only [mul_assoc, mul_add (R := MilnorK k), mul_neg_one_pow_mul x.snd,
+        mul_neg_one_pow_mul y.snd]
+      rw [← mul_assoc y.snd x.snd, hdb]
       simp only [mul_assoc, neg_one_pow_mul_neg_one_pow_mul, neg_one_pow_mul_mul_ofUnit_neg_one]
       rw [show (i + 1) * (j + 1) + (i + 1) = (i + 1) * j + 2 * (i + 1) by ring,
         show (i + 1) * (j + 1) + (j + 1) * i = (j + 1) + 2 * (i * (j + 1)) by ring,

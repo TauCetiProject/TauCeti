@@ -454,6 +454,12 @@ theorem map_mem_degree {S : Type*} [CommRing S] (f : R →+* S) {n : ℕ} {x : M
 
 section Involute
 
+/-- A sign `(-1) ^ N` moves to the front past any element; this is the sign bookkeeping used by
+the grade involution and by graded commutativity. -/
+theorem mul_neg_one_pow_mul (z : MilnorK R) (N : ℕ) (w : MilnorK R) :
+    z * ((-1) ^ N * w) = (-1) ^ N * (z * w) :=
+  ((Commute.neg_one_left z).pow_left N).symm.left_comm w
+
 /-- The **grade involution** of the Milnor K-ring: the ring endomorphism sending each degree-one
 class `{a}` to `-{a}`. It acts on `K_nᴹ(R)` as multiplication by `(-1) ^ n`
 (`TauCeti.MilnorK.involute_of_mem_degree`) and is its own inverse. -/
@@ -477,9 +483,8 @@ theorem involute_symbol (l : List Rˣ) : involute (symbol l) = (-1) ^ l.length *
   induction l with
   | nil => simp
   | cons a l ih =>
-    rw [symbol_cons, map_mul, ih, involute_ofUnit, List.length_cons, pow_succ', neg_mul,
-      ← mul_assoc, ← ((Commute.neg_one_left (ofUnit a)).pow_left l.length).eq, mul_assoc,
-      mul_assoc, neg_one_mul]
+    simp only [symbol_cons, map_mul, ih, involute_ofUnit, List.length_cons, pow_succ', neg_mul,
+      one_mul, mul_neg_one_pow_mul]
 
 /-- The grade involution is multiplication by `(-1) ^ n` on `K_nᴹ(R)`. -/
 theorem involute_of_mem_degree {n : ℕ} {x : MilnorK R} (hx : x ∈ degree R n) :
@@ -686,7 +691,7 @@ with each element of even degree. -/
 theorem ofUnit_mul_of_mem_degree (a : Fˣ) {n : ℕ} {x : MilnorK F} (hx : x ∈ degree F n) :
     ofUnit a * x = (-1) ^ n * (x * ofUnit a) := by
   have h := ofUnit_mul_involute a x
-  rw [involute_of_mem_degree hx, ← ((Commute.neg_one_left (ofUnit a)).pow_left n).left_comm] at h
+  rw [involute_of_mem_degree hx, mul_neg_one_pow_mul] at h
   rw [← h, ← mul_assoc, ← pow_add, ← two_mul, pow_mul]
   simp
 
@@ -698,7 +703,7 @@ theorem mul_comm_of_mem_degree {m n : ℕ} {x y : MilnorK F} (hx : x ∈ degree 
     induction l with
     | nil => simp
     | cons a l ih =>
-      rw [symbol_cons, mul_assoc, ih, ← ((Commute.neg_one_left (ofUnit a)).pow_left _).left_comm,
+      rw [symbol_cons, mul_assoc, ih, mul_neg_one_pow_mul,
         ← mul_assoc (ofUnit a), ofUnit_mul_of_mem_degree a hy, List.length_cons, add_one_mul,
         pow_add]
       simp only [mul_assoc]
