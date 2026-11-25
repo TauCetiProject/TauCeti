@@ -530,6 +530,10 @@ theorem pullbackPostcompIso_hom_naturality {r : W ⟶ S} (h : V ⟶ W) (hh : h �
           (by simp)).map (pullbackMap x f) := by
   refine hom_ext (((comp_curve _ _).trans ?_).trans (comp_curve _ _).symm)
   rw [pullbackPostcompIso_hom_curve, pullbackPostcompIso_hom_curve]
+  -- By `pullbackMap_curve` and `postcompFunctor_map_curve`, both remaining curves are
+  -- definitionally `PointedPrestableFamily.pullbackMap x f.curve`. These lemmas cannot be used
+  -- with `rw` or `simp` here: the goal is type-correct only after unfolding
+  -- `(postcompFunctor h hh).obj F` to `F.postcomp h hh`, so the curves are matched up to defeq.
   exact (Category.comp_id _).trans (Category.id_comp _).symm
 
 /-- **Base change commutes with postcomposition, as functors.** Postcomposition with a morphism of
