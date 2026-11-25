@@ -18,9 +18,9 @@ punctured plane. It is quasi-compact and quasi-separated (its source is a quasi-
 `𝔸²_R`, `TauCeti.PuncturedAffineSpace.instCompactSpace`), so over the affine base `Spec R` the
 global sections of `R¹ f_* 𝒪` are `H¹(𝔸²_R ∖ {0}, 𝒪)`
 (`AlgebraicGeometry.Scheme.Hom.higherDirectImageSectionsAddEquiv`), which is nonzero
-(`TauCeti.PuncturedAffineSpace.nontrivial_cohomology_one_puncturedPlane`). Hence `R¹ f_* 𝒪 ≠ 0`.
-This is the first half of the SchemeAndStackFoundations §2.2 Check on `𝔸² ∖ {0} → Spec k`; the
-nonzero term `E₂^{0,1}` of the Leray spectral sequence needs the spectral sequence itself.
+(`TauCeti.PuncturedAffineSpace.nontrivial_cohomology_one_puncturedPlane`). Hence `R¹ f_* 𝒪 ≠ 0`,
+so a quasi-compact quasi-separated morphism to an affine base can have a nonzero first higher
+direct image of the structure sheaf.
 
 * `TauCeti.PuncturedAffineSpace.nontrivial_higherDirectImage_one_puncturedPlane`: the global
   sections of `R¹ f_* 𝒪` are nonzero.
