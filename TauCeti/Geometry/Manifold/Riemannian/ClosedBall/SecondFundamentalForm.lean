@@ -77,6 +77,6 @@ theorem boundarySecondFundamentalForm_closedBall
   -- `Y` is the identity function of `E`, so its Fréchet derivative is the identity.
   rw [show fderiv ℝ Y ((q : closedBall (0 : E) 1) : E) = ContinuousLinearMap.id ℝ E by
     simp only [Y]; exact fderiv_fun_id] at hΓ
-  exact congrArg (fun v ↦ ⟪v, _⟫) hΓ
+  exact congrArg (fun v ↦ ⟪v, _⟫) (hΓ.trans (ContinuousLinearMap.id_apply _))
 
 end TauCeti

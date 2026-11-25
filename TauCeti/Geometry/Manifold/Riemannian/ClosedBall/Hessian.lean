@@ -79,9 +79,10 @@ theorem hessian_one_sub_norm_sq_closedBall (x : closedBall (0 : E) 1)
   have hf : fderiv ℝ (fun y : E ↦ 1 - ‖y‖ ^ 2) = ⇑(-(2 • innerSL ℝ (E := E))) := by
     funext y
     rw [fderiv_const_sub, fderiv_norm_sq_apply, neg_apply, smul_apply]
-  rw [show (fun y : closedBall (0 : E) 1 ↦ 1 - ‖(y : E)‖ ^ 2) =
-      (fun y : E ↦ 1 - ‖y‖ ^ 2) ∘ Subtype.val from rfl,
-    hessian_comp_subtypeVal_closedBall ((contDiff_const.sub (contDiff_norm_sq ℝ)).contDiffAt), hf,
+  have h := hessian_comp_subtypeVal_closedBall (f := fun y : E ↦ 1 - ‖y‖ ^ 2)
+    ((contDiff_const.sub (contDiff_norm_sq ℝ)).contDiffAt (x := (x : E))) u w
+  rw [Function.comp_def] at h
+  rw [h, hf,
     ContinuousLinearMap.fderiv, inner_tangentSpace_closedBall]
   simp only [neg_apply, smul_apply, nsmul_eq_mul, Nat.cast_ofNat]
   rw [innerSL_apply_apply]
