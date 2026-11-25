@@ -64,16 +64,12 @@ abbrev gl2CoefficientRep : Representation k (GL (Fin 2) k) (GL2CoefficientSpace 
 
 variable {k a b}
 
-/-- The exponent `(a - b).toNat` of the symmetric power in `V_(a,b)` is `a - b` when `b ≤ a`. -/
-private lemma toNat_sub_of_le (hab : b ≤ a) : ((a - b).toNat : ℤ) = a - b :=
-  Int.toNat_of_nonneg (sub_nonneg.mpr hab)
-
 /-- **A scalar matrix `z` acts on `V_(a,b)` by `z ^ (a + b)`.** -/
 theorem gl2CoefficientRep_scalar (hab : b ≤ a) (z : kˣ) (x : GL2CoefficientSpace k a b) :
     gl2CoefficientRep k a b (GeneralLinearGroup.scalar (Fin 2) z) x =
       ((z ^ (a + b) : kˣ) : k) • x := by
   have hz : (z ^ 2) ^ b * z ^ (a - b).toNat = z ^ (a + b) := by
-    rw [← zpow_natCast z (a - b).toNat, toNat_sub_of_le hab]
+    rw [← zpow_natCast z (a - b).toNat, Int.toNat_sub_of_le hab]
     group
   induction x using TensorProduct.inductionOn with
   | add x y hx hy => rw [map_add, hx, hy, smul_add]
@@ -93,7 +89,7 @@ variable {k : Type} [Field k] {a b : ℤ}
 theorem finrank_gl2CoefficientRep (hab : b ≤ a) :
     (finrank k (GL2CoefficientSpace k a b) : ℤ) = a - b + 1 := by
   simp [finrank_tensorProduct, SymmetricPower.finrank_eq, Nat.multichoose_two,
-    toNat_sub_of_le hab]
+    Int.toNat_sub_of_le hab]
 
 /-- **The weights of `V_(a,b)`**, when the weight characters of `k` separate weights (for
 instance over an infinite field, `TauCeti.weightChar_injective`), are the `l` with `b ≤ l 0`,
@@ -104,7 +100,7 @@ theorem weightSpace_gl2CoefficientRep_ne_bot_iff
       b ≤ l 0 ∧ b ≤ l 1 ∧ l 0 + l 1 = a + b := by
   rw [weightSpace_tprod_detPowerRep, Submodule.comap_equiv_eq_map_symm, Ne,
     Submodule.map_eq_bot_iff, ← Ne, weightSpace_symPowerRep_ne_bot_iff_nonneg_sum_eq hchar]
-  simp only [Fin.forall_fin_two, Fin.sum_univ_two, Pi.sub_apply, toNat_sub_of_le hab]
+  simp only [Fin.forall_fin_two, Fin.sum_univ_two, Pi.sub_apply, Int.toNat_sub_of_le hab]
   omega
 
 /-- **The highest weight `(a, b)` is a weight** of `V_(a,b)`, when the weight characters of `k`
@@ -122,7 +118,7 @@ theorem finrank_weightSpace_gl2CoefficientRep
     finrank k (weightSpace (W := GL2CoefficientSpace k a b) (gl2CoefficientRep k a b) l) = 1 := by
   obtain ⟨s, hs⟩ := (exists_sym_weightOfMultiset_eq_iff (d := (a - b).toNat)
     (l - fun _ ↦ b)).2 ⟨by simp only [Fin.forall_fin_two, Pi.sub_apply]; omega, by
-      simp only [Fin.sum_univ_two, Pi.sub_apply, toNat_sub_of_le hab]
+      simp only [Fin.sum_univ_two, Pi.sub_apply, Int.toNat_sub_of_le hab]
       omega⟩
   rw [weightSpace_tprod_detPowerRep, Submodule.comap_equiv_eq_map_symm,
     LinearEquiv.finrank_map_eq, ← hs, finrank_weightSpace_symPowerRep hchar s]
