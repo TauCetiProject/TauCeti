@@ -19,9 +19,10 @@ its coordinate description:
 
 * a scalar matrix `z` acts by `z ^ (a + b)`, over any commutative ring `k`;
 * over a field `k`, it has dimension `a - b + 1`;
-* when the weight characters of a field `k` separate weights (for instance over an infinite field,
-  `TauCeti.weightChar_injective`), its weights are the `(a - i, b + i)` for `0 ≤ i ≤ a - b`, each
-  of multiplicity one, and in particular `(a, b)` is a weight.
+* over a nontrivial commutative ring `k` without zero divisors whose weight characters separate
+  weights (for instance an infinite field, `TauCeti.weightChar_injective`), its weights are the
+  `(a - i, b + i)` for `0 ≤ i ≤ a - b`, and in particular `(a, b)` is a weight;
+* over such a field, each weight has multiplicity one.
 
 The weights are read off from those of the symmetric power
 (`TauCeti.RepresentationTheory.ClassicalGroups.Weight.SymmetricPower`) and the translation of
@@ -81,15 +82,9 @@ theorem gl2CoefficientRep_scalar (hab : b ≤ a) (z : kˣ) (x : GL2CoefficientSp
 
 end CommRing
 
-section Field
+section IsCancelMulZero
 
-variable {k : Type} [Field k] {a b : ℤ}
-
-/-- **`dim V_(a,b) = a - b + 1`.** -/
-theorem finrank_gl2CoefficientRep (hab : b ≤ a) :
-    (finrank k (GL2CoefficientSpace k a b) : ℤ) = a - b + 1 := by
-  simp [finrank_tensorProduct, SymmetricPower.finrank_eq, Nat.multichoose_two,
-    Int.toNat_sub_of_le hab]
+variable {k : Type} [CommRing k] [IsCancelMulZero k] [Nontrivial k] {a b : ℤ}
 
 /-- **The weights of `V_(a,b)`**, when the weight characters of `k` separate weights (for
 instance over an infinite field, `TauCeti.weightChar_injective`), are the `l` with `b ≤ l 0`,
@@ -110,12 +105,25 @@ theorem weightSpace_gl2CoefficientRep_highest_ne_bot
     weightSpace (W := GL2CoefficientSpace k a b) (gl2CoefficientRep k a b) ![a, b] ≠ ⊥ :=
   (weightSpace_gl2CoefficientRep_ne_bot_iff hchar hab _).2 ⟨by simpa using hab, by simp, by simp⟩
 
+end IsCancelMulZero
+
+section Field
+
+variable {k : Type} [Field k] {a b : ℤ}
+
+/-- **`dim V_(a,b) = a - b + 1`.** -/
+theorem finrank_gl2CoefficientRep (hab : b ≤ a) :
+    (finrank k (GL2CoefficientSpace k a b) : ℤ) = a - b + 1 := by
+  simp [finrank_tensorProduct, SymmetricPower.finrank_eq, Nat.multichoose_two,
+    Int.toNat_sub_of_le hab]
+
 /-- **Every weight of `V_(a,b)` has multiplicity one**, when the weight characters of `k`
 separate weights (for instance over an infinite field, `TauCeti.weightChar_injective`). -/
 theorem finrank_weightSpace_gl2CoefficientRep
-    (hchar : Function.Injective (weightChar k (κ := Fin 2))) (hab : b ≤ a) {l : Fin 2 → ℤ}
+    (hchar : Function.Injective (weightChar k (κ := Fin 2))) {l : Fin 2 → ℤ}
     (hl : b ≤ l 0 ∧ b ≤ l 1 ∧ l 0 + l 1 = a + b) :
     finrank k (weightSpace (W := GL2CoefficientSpace k a b) (gl2CoefficientRep k a b) l) = 1 := by
+  have hab : b ≤ a := by omega
   obtain ⟨s, hs⟩ := (exists_sym_weightOfMultiset_eq_iff (d := (a - b).toNat)
     (l - fun _ ↦ b)).2 ⟨by simp only [Fin.forall_fin_two, Pi.sub_apply]; omega, by
       simp only [Fin.sum_univ_two, Pi.sub_apply, Int.toNat_sub_of_le hab]
