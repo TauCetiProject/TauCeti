@@ -245,9 +245,7 @@ def liftOfBimultiplicative {M : Type*} [CommGroup M] (c : Fˣ → Fˣ → M)
       (fun x : Additive Fˣ ↦ AddMonoidHom.mk'
         (fun y : Additive Fˣ ↦ Additive.ofMul (c x.toMul y.toMul)) fun y₁ y₂ ↦ by simp [hr])
       fun x₁ x₂ ↦ by ext y; simp [hl])
-    fun x y h ↦ by
-      change Additive.ofMul (c x y) = 0
-      rw [hc x y h, ofMul_one]
+    fun x y h ↦ by simp [hc x y h]
 
 /-- The homomorphism induced by a bimultiplicative Steinberg pairing `c` sends `{x, y}` to
 `c x y`. -/
