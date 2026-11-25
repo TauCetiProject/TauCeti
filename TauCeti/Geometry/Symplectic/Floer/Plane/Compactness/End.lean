@@ -441,7 +441,7 @@ private theorem contMDiff_and_exists_isOpen_and_contDiffOn_comp_symm (p : PSSPla
         ContDiffOn ℝ 3 (fun q : (ℝ × ℝ) × V ↦ p.endSign * H (p.endSign * q.1.2) (φ.symm q.2)) W' ∧
         ContDiffOn ℝ 2
           (fun q : (ℝ × ℝ) × V ↦ (J' q.1 q.2).toLinearMap.toContinuousLinearMap) W' := by
-  have hHs' := p.contMDiff_uncurry_endSign_mul hHs
+  have hHs' := contMDiff_uncurry_const_mul_comp_const_mul p.endSign hHs
   -- The datum is `C³` on `ℝ² × φ(U)`, which contains `D × φ(C)`.
   refine ⟨hHs', W ∩ univ ×ˢ φ.target, hW.inter (isOpen_univ.prod φ.open_target), ?_,
     (φ.contDiffOn_comp_symm_of_contMDiffOn

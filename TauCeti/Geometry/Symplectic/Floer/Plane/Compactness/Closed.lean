@@ -241,7 +241,7 @@ theorem
     ((hJend α).comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd).contDiffOn
       (s := univ ×ˢ (extChartAt I α).target) fun _ hq ↦ ⟨mem_univ _, hq.2⟩).congr fun q _ ↦
         almostComplexInChartAt_comp _ q
-  have hHs' := p.contMDiff_uncurry_endSign_mul hHs
+  have hHs' := contMDiff_uncurry_const_mul_comp_const_mul p.endSign hHs
   have hH' : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) ((2 : ℕ∞) + 1)
       (uncurry fun (w : ℝ × ℝ) x ↦ p.endSign * H (p.endSign * w.2) x) :=
     hHs'.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
