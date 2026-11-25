@@ -14,7 +14,7 @@ import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Topology.Instances.Sign
-import TauCeti.Analysis.Calculus.ApproximatesLinearOn
+import TauCeti.Analysis.Calculus.ApproximatesLinearOn.Basic
 import TauCeti.Analysis.Normed.Operator.CompactFamily
 import TauCeti.Topology.MetricSpace.SeparatedBalls
 

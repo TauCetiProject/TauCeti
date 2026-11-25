@@ -41,6 +41,8 @@ projective points given by the matrix `C.toMatrix` on homogeneous coordinates.
   nonsingular point representative and its negation is equivalent to `![0, 1, 0]`.
 * `WeierstrassCurve.Projective.Point.toAffine_eq_toAffine_iff`: over a field, two nonsingular point
   representatives have the same affine point exactly when they are equivalent.
+* `WeierstrassCurve.Projective.Point.toAffineAddEquiv_toProjective`: over a field, the
+  projective-affine comparison inverts `WeierstrassCurve.Affine.Point.toProjective`.
 * `WeierstrassCurve.Projective.Point.toAffine_toMatrix_mulVec`: over a field, the affine point of
   `C.toMatrix *ᵥ P` is the image of the affine point of `P` under the change of variables `C`.
 * `WeierstrassCurve.Projective.toMatrix_mulVec_add_equiv`: over a field, for nonsingular point
@@ -49,6 +51,8 @@ projective points given by the matrix `C.toMatrix` on homogeneous coordinates.
 * `WeierstrassCurve.Projective.Point.addEquivVariableChange`: over a field, the change of
   variables `C` as a group isomorphism from the projective points of `C • W` to those of `W`,
   given on homogeneous coordinates by `C.toMatrix` (`Point.addEquivVariableChange_mk`).
+* `WeierstrassCurve.Projective.Point.toAffineAddEquiv_addEquivVariableChange`: it corresponds to
+  the change of variables on affine points.
 -/
 
 public section
@@ -138,6 +142,14 @@ theorem Point.exists_mk_eq_mk_add_mk {P Q R : Fin 3 → F} (hP : W.Nonsingular P
   rw [Point.ext_iff, Point.add_point, addMap_eq]
   exact Quotient.sound hR
 
+/-- Over a field, the projective-affine comparison `Point.toAffineAddEquiv` sends the projective
+point `P.toProjective` of an affine point `P` back to `P`. -/
+-- Cancel before the general toAffineAddEquiv_apply simp rule unfolds the equivalence.
+@[simp 1100]
+theorem Point.toAffineAddEquiv_toProjective [DecidableEq F] (P : W.toAffine.Point) :
+    Point.toAffineAddEquiv W P.toProjective = P :=
+  (Point.toAffineAddEquiv W).apply_symm_apply P
+
 end Field
 
 section VariableChange
@@ -219,6 +231,19 @@ theorem Point.addEquivVariableChange_symm_mk (hP : W.toProjective.NonsingularLif
           ← nonsingularLift_iff]))) := by
   rw [AddEquiv.symm_apply_eq, Point.addEquivVariableChange_mk, Point.ext_iff]
   simp only [mulVec_mulVec, VariableChange.toMatrix_mul_toMatrix_inv, one_mulVec]
+
+/-- The change of variables `C` on projective points corresponds to the change of variables on
+affine points under the projective-affine comparison `Point.toAffineAddEquiv`. -/
+theorem Point.toAffineAddEquiv_addEquivVariableChange [DecidableEq F]
+    (P : (C • W).toProjective.Point) :
+    Point.toAffineAddEquiv _ (Point.addEquivVariableChange W C P) =
+      Affine.Point.addEquivVariableChange W C (Point.toAffineAddEquiv _ P) := by
+  -- The affine group law, and so `Affine.Point.addEquivVariableChange`, depends on the
+  -- decidability instance; `Point.addEquivVariableChange` is built from the classical one.
+  obtain rfl : ‹DecidableEq F› = fun a b ↦ Classical.propDecidable (a = b) := Subsingleton.elim _ _
+  classical
+  rw [Point.addEquivVariableChange, AddEquiv.trans_apply, AddEquiv.trans_apply,
+    AddEquiv.apply_symm_apply]
 
 end VariableChange
 

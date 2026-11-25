@@ -14,6 +14,8 @@ public import TauCeti.RepresentationTheory.Invariants
 # Basic facts about characters
 
 The trace character vanishes when the representation space is not finite-dimensional.
+The character of the restriction of a representation along a monoid homomorphism `f` is the
+composite of its character with `f` (`Representation.character_comp`).
 
 The trace of the action is a class function for a representation over a commutative semiring on
 any additive commutative monoid (`Representation.trace_conj`). `Representation.character` and
@@ -21,6 +23,13 @@ any additive commutative monoid (`Representation.trace_conj`). `Representation.c
 applies to representations such as `Representation.symmetricPower`, which is built on the
 additive monoid instance of the symmetric power rather than on the one underlying its additive
 group.
+
+An element `g` acting by a scalar `c` has character `dim V · c`
+(`Representation.character_eq_finrank_mul_of_apply_eq_smul`).
+
+A commutator `g x g⁻¹ x⁻¹` acting by a scalar `a ≠ 1` forces the character to vanish at `g`
+(`Representation.character_eq_zero_of_commutator_apply_eq_smul`): conjugating `g` by `x`
+multiplies `ρ g` by that scalar while preserving the trace.
 
 The `n`-th power map is a bijection of a group `G` whenever `n` is coprime to `|G|`
 (`Nat.Coprime.pow_left_bijective`), so the average `|G|⁻¹ ∑_g χ(gⁿ)` of an irreducible character
@@ -43,12 +52,47 @@ theorem character_eq_zero_of_not_finite {k G V : Type*} [Field k] [Monoid G]
   funext g
   simp [character, TauCeti.LinearMap.trace_eq_zero_of_not_finite h]
 
+/-- The character of the restriction of `ρ` along `f : H →* G` is `ρ.character ∘ f`. -/
+@[simp]
+theorem character_comp {k G H V : Type*} [Field k] [Monoid G] [Monoid H] [AddCommGroup V]
+    [Module k V] (ρ : Representation k G V) (f : H →* G) :
+    character (ρ.comp f) = ρ.character ∘ f :=
+  rfl
+
 /-- The trace of the action is constant on conjugacy classes. This is `Representation.char_conj`
 for a representation on an additive commutative monoid. -/
 theorem trace_conj {R G M : Type*} [CommSemiring R] [Group G] [AddCommMonoid M] [Module R M]
     (ρ : Representation R G M) (g h : G) :
     LinearMap.trace R M (ρ (h * g * h⁻¹)) = LinearMap.trace R M (ρ g) := by
   rw [map_mul, LinearMap.trace_mul_comm, ← map_mul, inv_mul_cancel_left]
+
+/-- **The character at an element acting by a scalar.** If `g` acts on `V` as multiplication by
+`c`, the character of `ρ` at `g` is `dim V · c`. When `V` is not finite-dimensional both sides are
+`0`. -/
+theorem character_eq_finrank_mul_of_apply_eq_smul {k G V : Type*} [Field k] [Monoid G]
+    [AddCommGroup V] [Module k V] (ρ : Representation k G V) {g : G} {c : k}
+    (h : ∀ v, ρ g v = c • v) : ρ.character g = Module.finrank k V * c := by
+  by_cases hV : FiniteDimensional k V
+  · have hg : ρ g = c • (1 : Module.End k V) := LinearMap.ext fun v => (h v).trans (by simp)
+    simp [character, hg, mul_comm]
+  · simp [character_eq_zero_of_not_finite ρ hV, Module.finrank_of_not_finite hV]
+
+/-- **A commutator acting by a nontrivial scalar kills the character.** If the commutator
+`g x g⁻¹ x⁻¹` acts on `V` as multiplication by a scalar `a ≠ 1`, then the character of `ρ`
+vanishes at `g`. No finiteness of `G` or of `V` is needed. -/
+theorem character_eq_zero_of_commutator_apply_eq_smul {k G V : Type*} [Field k] [Group G]
+    [AddCommGroup V] [Module k V] (ρ : Representation k G V) {g x : G} {a : k} (ha : a ≠ 1)
+    (h : ∀ v, ρ (g * x * g⁻¹ * x⁻¹) v = a • v) : ρ.character g = 0 := by
+  have hc : ρ (g * x * g⁻¹ * x⁻¹) = a • (1 : Module.End k V) :=
+    LinearMap.ext fun v => (h v).trans (by simp)
+  have key : ρ.character g = a * ρ.character g :=
+    calc ρ.character g = ρ.character (g * x * g⁻¹ * x⁻¹ * (x * g * x⁻¹)) := by
+          congr 1
+          group
+      _ = a * ρ.character g := by
+          simp [character, map_mul ρ _ (x * g * x⁻¹), hc, ← trace_conj ρ g x]
+  have h1 : (1 - a) * ρ.character g = 0 := by linear_combination key
+  exact (mul_eq_zero.1 h1).resolve_left (sub_ne_zero.2 (Ne.symm ha))
 
 section Average
 

@@ -9,26 +9,61 @@ public import Mathlib.Algebra.BigOperators.Associated
 import TauCeti.Algebra.Regular.Basic
 
 /-!
-# Divisors of products of prime powers
+# Products of primes and divisors of prime powers
 
-In a commutative monoid with zero, for a left-regular prime `p`, the divisors of a prime power
-`p ^ n` are associated to `p ^ i` for `i ≤ n`. This file extends that characterization first to
-multiples `p ^ n * a` and then, by induction on a finite index set, to finite products
-`∏ i ∈ s, p i ^ m i` of powers of left-regular primes. No unique factorization hypothesis or
-global cancellation is required, and the prime factors `p i` need not be distinct.
+In a commutative monoid with zero:
+1. If each member of a finite family of primes divides `n`, and no member of the family divides
+   another, then the product of the family divides `n`. Mathlib's `Finset.prod_primes_dvd` states
+   this for a finset of primes in a cancellative monoid with trivial units, and
+   `Multiset.prod_primes_dvd` for a multiset counted up to association; this is the form for an
+   indexed family. For instance, in a polynomial ring over a domain the differences `X j - X i`
+   of pairs of variables with `i < j` are such a family, and their product is the Vandermonde
+   product.
+2. For a left-regular prime `p`, the divisors of a prime power `p ^ n` are associated to `p ^ i`
+   for `i ≤ n`. This file extends that characterization first to multiples `p ^ n * a` and then,
+   by induction on a finite index set, to finite products `∏ i ∈ s, p i ^ m i` of powers of
+   left-regular primes. No unique factorization hypothesis or global cancellation is required, and
+   the prime factors `p i` need not be distinct.
 
 ## Main results
 
+* `Finset.prod_primes_dvd_of_pairwise_not_dvd`: the product of a finite family of primes, each
+  dividing `n` and none dividing another, divides `n`.
 * `TauCeti.dvd_prime_pow_mul_iff`: `q ∣ p ^ n * a` if and only if `q` is associated to `p ^ i * b`
   for some `i ≤ n` and `b ∣ a`.
 * `TauCeti.dvd_finsetProd_pow_iff_of_prime`: `q ∣ ∏ i ∈ s, p i ^ m i` for left-regular primes
   `p i` if and only if `q` is associated to `∏ i ∈ s, p i ^ k i` for some `k` with `k i ≤ m i` on
   `s`.
 * `TauCeti.exists_associated_finsetProd_pow_of_dvd_pow`: if `f` is left-regular and associated to
-  `∏ i ∈ s, p i`, any divisor of `f ^ n` is associated to `∏ i ∈ s, p i ^ k i` with `k i ≤ n`.
+  `∏ i ∈ s, p i`, any divisor `a` of `f ^ n` is associated to `∏ i ∈ s, p i ^ k i` with `k i ≤ n`.
 -/
 
 public section
+
+namespace Finset
+
+variable {ι M : Type*} [CommMonoidWithZero M]
+
+/-- The product of a finite family of primes, each of which divides `n` and none of which divides
+another, divides `n`. -/
+theorem prod_primes_dvd_of_pairwise_not_dvd {s : Finset ι} {f : ι → M} {n : M}
+    (hprime : ∀ i ∈ s, Prime (f i)) (hndvd : (s : Set ι).Pairwise fun i j ↦ ¬ f i ∣ f j)
+    (hdvd : ∀ i ∈ s, f i ∣ n) : ∏ i ∈ s, f i ∣ n := by
+  classical
+  induction s using Finset.induction_on generalizing n with
+  | empty => simp
+  | insert a s ha ih =>
+    rw [Finset.prod_insert ha]
+    obtain ⟨w, rfl⟩ := ih (fun i hi ↦ hprime i (mem_insert_of_mem hi))
+      (hndvd.mono (by simp)) fun i hi ↦ hdvd i (mem_insert_of_mem hi)
+    -- `f a` divides `(∏ i ∈ s, f i) * w` but none of the `f i`, so it divides `w`.
+    have hpa := hprime a (mem_insert_self a s)
+    have hnot : ¬ f a ∣ ∏ i ∈ s, f i := hpa.not_dvd_finsetProd fun i hi ↦
+      hndvd (mem_insert_self a s) (mem_insert_of_mem hi) fun hai ↦ ha (hai ▸ hi)
+    obtain ⟨v, rfl⟩ := (hpa.dvd_or_dvd (hdvd a (mem_insert_self a s))).resolve_left hnot
+    exact ⟨v, by ac_rfl⟩
+
+end Finset
 
 namespace TauCeti
 

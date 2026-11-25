@@ -61,6 +61,8 @@ The specialization to discrete subgroups, whose point stabilizers are finite, is
 * `Matrix.SpecialLinearGroup.isElliptic_of_smul_eq_self_of_ne_one`: a matrix fixing a point of
   `ℍ` and nontrivial in `PSL(2, ℝ)` is elliptic, which by
   `Matrix.isElliptic_iff_abs_trace_lt_two` means that its trace has absolute value less than `2`.
+* `Matrix.SpecialLinearGroup.smul_eq_self_iff_of_isElliptic`: an elliptic matrix fixing `w ∈ ℍ`
+  fixes no other point of `ℍ`.
 * `Matrix.ProjectiveSpecialLinearGroup.eq_one_of_smul_eq_self_of_smul_eq_self`: a nontrivial
   element of `PSL(2, ℝ)` fixes at most one point of `ℍ`.
 * `Matrix.ProjectiveSpecialLinearGroup.exists_rotation_eq_of_smul_I_eq_I`: the stabilizer of `I`
@@ -436,5 +438,14 @@ theorem isElliptic_of_smul_eq_self_of_ne_one {g : SL(2, ℝ)} {z : ℍ} (hz : g 
   refine isElliptic_of_exists_smul_eq_self (by simp) (fun hc ↦ hg ?_) ⟨z, hz⟩
   have h := forall_smul_eq_self_iff_mem_center.mpr hc
   exact eq_of_smul_eq_smul fun w : ℍ ↦ by rw [one_smul, pslMk_smul]; exact h w
+
+/-- **An elliptic element fixes exactly one point of `ℍ`.** If `mapGL ℝ g` is elliptic and `g`
+fixes `w`, then `w` is the only point of `ℍ` fixed by `g`. -/
+theorem smul_eq_self_iff_of_isElliptic {g : SL(2, ℝ)} {w : ℍ}
+    (hell : Matrix.GeneralLinearGroup.IsElliptic (mapGL ℝ g)) (hw : g • w = w) (z : ℍ) :
+    g • z = z ↔ z = w := by
+  have hpos : 0 < (mapGL ℝ g).val.det := by simp
+  rw [← mapGL_smul, gl_smul_eq_self_iff_eq_fixedPt hpos hell] at hw ⊢
+  rw [hw]
 
 end Matrix.SpecialLinearGroup

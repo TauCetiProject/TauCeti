@@ -9,6 +9,8 @@ public import TauCeti.Analysis.InnerProductSpace.Gram.Distance
 public import TauCeti.Analysis.InnerProductSpace.SingularValues
 public import TauCeti.Analysis.Matrix.Resolvent.Basic
 
+import TauCeti.Analysis.Matrix.Spectrum
+
 /-!
 # The negative second-moment identity
 
@@ -58,8 +60,7 @@ theorem re_trace_mul_conjTranspose_self_inv_eq_sum_inv_sq_singularValues
   rw [htrace, map_sum]
   simp only [← RCLike.ofReal_inv, RCLike.ofReal_re]
   simp_rw [heig]
-  exact Equiv.sum_comp (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card m))).symm
-    (fun i ↦ (hH.eigenvalues₀ i)⁻¹)
+  exact hH.sum_comp_eigenvalues fun x ↦ x⁻¹
 
 omit [DecidableEq m] in
 /-- **The negative second-moment identity.** For a matrix with linearly independent rows,
