@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCu
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.TangentCone.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
 
 /-!
 # Metric compatibility along a curve
@@ -26,9 +25,9 @@ differentiable functions and satisfies the ambient product rule
 differentiable vector fields satisfy it by the chain rule. A differentiable field along the curve
 is locally a finite linear combination of pullbacks of smooth local-frame fields; the additive and
 scalar Leibniz laws of `CovariantDerivative.alongCurveWithin` finish the argument. The
-Riemannian product rule is the specialization to the inner product, using the ambient directional
-product rule `CovariantDerivative.IsMetricCompatible.mvfderiv_inner_apply`; metrics of other
-signatures specialize the same theorem.
+Riemannian product rule is the specialization to the inner product, using Mathlib's ambient
+`CovariantDerivative.IsMetricCompatible.mvfderiv_inner_eq`; metrics of other signatures specialize
+the same theorem.
 
 ## Main results
 
@@ -362,7 +361,7 @@ theorem IsMetricCompatible.hasDerivWithinAt_inner_alongCurveWithin
           innerSL ℝ (cov Y (γ t) v) (Z (γ t)) + innerSL ℝ (Y (γ t)) (cov Z (γ t) v) := by
     intro Y Z hY hZ v
     simp only [innerSL_apply_apply]
-    exact hcov.mvfderiv_inner_apply hY hZ v
+    exact hcov.mvfderiv_inner_eq (fun _ ↦ v) hY hZ
   -- `innerSL ℝ v w` unfolds to `inner ℝ v w` (`innerSL_apply_apply` is proved by `rfl`), but
   -- `simp` does not rewrite it under the instances found for `TangentSpace I (γ r)`.
   exact hasDerivWithinAt_apply_alongCurveWithin hdiff hcompat hγ hV hW

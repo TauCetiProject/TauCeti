@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongMap.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
 
 /-!
 # Metric compatibility along a map
@@ -26,10 +25,10 @@ sections satisfy it by the chain rule and `CovariantDerivative.alongMap_pullback
 along `f` with differentiable coordinate reading is near `x` a finite combination of pullbacks of
 smooth local-frame sections, with differentiable coefficients, and the additive and scalar Leibniz
 laws of `CovariantDerivative.alongMap` finish the argument. The Riemannian product rule is the
-specialization to the inner product, using the ambient directional product rule
-`CovariantDerivative.IsMetricCompatible.mvfderiv_inner_apply`. Differentiability of the pairing
-needs no covariant derivative: it uses only the same local-frame expansion. The tangent bundle
-case is `B := TangentSpace I`.
+specialization to the inner product, using Mathlib's ambient product rule
+`CovariantDerivative.IsMetricCompatible.mvfderiv_inner_eq` at a constant direction field.
+Differentiability of the pairing needs no covariant derivative: it uses only the same local-frame
+expansion. The tangent bundle case is `B := TangentSpace I`.
 
 ## Main results
 
@@ -388,7 +387,7 @@ theorem IsMetricCompatible.mvfderiv_inner_alongMap
           innerSL ℝ (cov Y (f x) w) (Z (f x)) + innerSL ℝ (Y (f x)) (cov Z (f x) w) := by
     intro Y Z hY hZ w
     simp only [innerSL_apply_apply]
-    exact hcov.mvfderiv_inner_apply hY hZ w
+    exact hcov.mvfderiv_inner_eq (fun _ ↦ w) hY hZ
   -- `innerSL ℝ v w` unfolds to `inner ℝ v w` (`innerSL_apply_apply` is proved by `rfl`).
   exact mvfderiv_apply_alongMap hdiff hcompat hf hV hW v
 
