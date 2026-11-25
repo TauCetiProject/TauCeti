@@ -21,7 +21,9 @@ The file also records that cumulative variation only depends on the function on 
 (`variationOnFromTo.eq_of_eqOn`), and the antitone counterpart
 `variationOnFromTo.comp_eq_of_antitoneOn` of Mathlib's `variationOnFromTo.comp_eq_of_monotoneOn`.
 Any two lower (resp. upper) bounds of `s` give the same cumulative variation
-(`variationOnFromTo.eq_of_mem_lowerBounds`, `variationOnFromTo.eq_of_mem_upperBounds`).
+(`variationOnFromTo.eq_of_mem_lowerBounds`, `variationOnFromTo.eq_of_mem_upperBounds`), and on
+`Icc a b` the cumulative variation from `a` to `b` is the total variation
+(`variationOnFromTo.eq_toReal_eVariationOn_Icc`).
 -/
 
 public section
@@ -138,6 +140,15 @@ protected theorem eq_of_mem_upperBounds {f : α → E} {s : Set α} {b c : α}
     rcases le_total c x with hcx | hxc
     · rw [variationOnFromTo.eq_of_le _ _ hcx, hz _ _ h]
     · rw [variationOnFromTo.eq_of_ge _ _ hxc, hz _ _ hx.le, ENNReal.toReal_zero, neg_zero]
+
+/-- On `Icc a b`, the cumulative variation from `a` to `b` is the total variation on `Icc a b`;
+both sides vanish when `b < a`. -/
+protected theorem eq_toReal_eVariationOn_Icc (f : α → E) (a b : α) :
+    variationOnFromTo f (Icc a b) a b = (eVariationOn f (Icc a b)).toReal := by
+  rcases le_or_gt a b with hab | hba
+  · rw [variationOnFromTo.eq_of_le _ _ hab, inter_self]
+  · rw [Icc_eq_empty_of_lt hba, variationOnFromTo.eq_of_ge _ _ hba.le, empty_inter,
+      eVariationOn.subsingleton f subsingleton_empty, ENNReal.toReal_zero, neg_zero]
 
 end variationOnFromTo
 
