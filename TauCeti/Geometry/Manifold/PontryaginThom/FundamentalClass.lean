@@ -57,11 +57,11 @@ the image of a fundamental class of the submanifold.
 The order of the factors is a convention. Barraud, Damian, Humilière and Oancea orient the
 submanifold so that its orientation followed by that of the fibre is the orientation of `M`
 (Remark 9.2.4): at each point `s`, the local class of `[M]` at `f s` is the image under the tube
-of `[S]_s × o`, the core first (`TauCeti.IsFramedTube.localPairMap`). Exchanging the factors of
-the cross product of pairs costs the Koszul sign
-(`TopCat.homologyCross_comp_homologyMap_shufflePair_comp_braiding`), so at every point the class
-`x` induced in the order "fibre followed by core" satisfies the convention "core followed by fibre"
-up to the sign `(-1)^(r * q)`
+of `[S]_s × o`, the core first (`TauCeti.IsFramedTube.localCross`, through the tube at `s`,
+`TauCeti.IsFramedTube.localPairMap`). Exchanging the factors of the cross product of pairs costs
+the Koszul sign (`TopCat.homologyCross_comp_homologyMap_shufflePair_comp_braiding`), so at every
+point the class `x` induced in the order "fibre followed by core" satisfies the convention "core
+followed by fibre" up to the sign `(-1)^(r * q)`
 (`TauCeti.IsFramedTube.singularHomologyToLocalHomology_eq_neg_one_pow_smul`). In this
 convention the cap formula reads `[M] ⌢ c^* u = (-1)^(r * q) ⟨u, o⟩ • f_*[S]` for a core of
 dimension `q` and a fibre of dimension `r`: for every class satisfying the convention when `S` is
@@ -117,19 +117,25 @@ section Tube
 variable {V : Type w} [NormedAddCommGroup V] {S M : Type w} [TopologicalSpace S]
   [TopologicalSpace M] {f : S → M} {τ : S × V → M}
 
+/-- The tube with its factors exchanged carries the complement of `(0, s)` in `V × S`, written as
+`(V ∖ 0) × S ∪ V × (S ∖ s)`, into the complement of `f s`. -/
+theorem mapsTo_tubeMap_preimage_union (h : IsFramedTube f τ) (s : S) :
+    MapsTo h.tubeMap (fst (TopCat.of V) (TopCat.of S) ⁻¹' {(0 : V)}ᶜ ∪
+      snd (TopCat.of V) (TopCat.of S) ⁻¹' ({s}ᶜ : Set (TopCat.of S))) {f s}ᶜ := by
+  rintro p hp (hps : h.tubeMap p = f s)
+  rw [tubeMap_apply, ← h.apply_zero] at hps
+  have := h.isOpenEmbedding.injective hps
+  rcases hp with hp | hp
+  · exact hp (congrArg Prod.snd this)
+  · exact hp (congrArg Prod.fst this)
+
 /-- The tube as a map from the pair `(V × S, V × S ∖ {(0, s)})`, written as in the cross product of
 the pairs `(V, V ∖ 0)` and `(S, S ∖ s)`, to the local pair `(M, M ∖ {f s})`. -/
 private def tubeLocalPairMap (h : IsFramedTube f τ) (s : S) :
     TopPair.ofSubset (fst (TopCat.of V) (TopCat.of S) ⁻¹' {(0 : V)}ᶜ ∪
       snd (TopCat.of V) (TopCat.of S) ⁻¹' ({s}ᶜ : Set (TopCat.of S))) ⟶
       TopPair.ofSubset ({f s}ᶜ : Set (TopCat.of M)) :=
-  TopPair.ofSubsetMap (TopCat.ofHom h.tubeMap) (by
-    rintro p hp (hps : h.tubeMap p = f s)
-    rw [tubeMap_apply, ← h.apply_zero] at hps
-    have := h.isOpenEmbedding.injective hps
-    rcases hp with hp | hp
-    · exact hp (congrArg Prod.snd this)
-    · exact hp (congrArg Prod.fst this))
+  TopPair.ofSubsetMap (TopCat.ofHom h.tubeMap) (h.mapsTo_tubeMap_preimage_union s)
 
 /-- **Excision at a point of the core**: the tube induces isomorphisms from the local homology of
 `V × S` at `(0, s)` to that of `M` at `f s`. -/
@@ -158,42 +164,41 @@ private lemma isIso_singularHomologyMap_tubeLocalPairMap [T1Space M] (h : IsFram
 
 /-- **The tube at a point of the core, as a map of pairs.** At `s : S`, the tube `τ : S × V → M`
 maps the pair `(S × V, S × V ∖ {(s, 0)})`, written as in the cross product of the pairs
-`(S, S ∖ s)` and `(V, V ∖ 0)`, with the core first, to the local pair `(M, M ∖ {f s})`. -/
+`(S, S ∖ s)` and `(V, V ∖ 0)`, with the core first, to the local pair `(M, M ∖ {f s})`. It is the
+swap `S × V ⟶ V × S` followed by the tube with its factors exchanged. -/
 def localPairMap (h : IsFramedTube f τ) (s : S) :
     TopPair.ofSubset (fst (TopCat.of S) (TopCat.of V) ⁻¹' ({s}ᶜ : Set (TopCat.of S)) ∪
       snd (TopCat.of S) (TopCat.of V) ⁻¹' {(0 : V)}ᶜ) ⟶
       TopPair.ofSubset ({f s}ᶜ : Set (TopCat.of M)) :=
-  TopPair.ofSubsetMap
-    (TopCat.ofHom ⟨fun p ↦ τ (fst (TopCat.of S) (TopCat.of V) p, snd (TopCat.of S) (TopCat.of V) p),
-      h.isOpenEmbedding.continuous.comp
-        ((fst (TopCat.of S) (TopCat.of V)).hom.continuous.prodMk
-          (snd (TopCat.of S) (TopCat.of V)).hom.continuous)⟩)
-    (by
-      rintro p hp (hps : τ _ = f s)
-      rw [← h.apply_zero] at hps
-      have := h.isOpenEmbedding.injective hps
-      rcases hp with hp | hp
-      · exact hp (congrArg Prod.fst this)
-      · exact hp (congrArg Prod.snd this))
+  TopPair.ofSubsetMap (β_ (TopCat.of S) (TopCat.of V)).hom
+    (TopCat.mapsTo_braiding_hom_preimage_union _ _ _ _) ≫ tubeLocalPairMap h s
 
-/-- The map of ambient spaces of `TauCeti.IsFramedTube.localPairMap` is the tube. It is not a `simp`
-lemma: `simp` rewrites the complements in the pairs of its left side (`Set.preimage_compl`). -/
+/-- The tube at a point of the core, as a map of pairs, is induced by the swap `S × V ⟶ V × S`
+followed by the tube with its factors exchanged. -/
+theorem localPairMap_def (h : IsFramedTube f τ) (s : S) :
+    h.localPairMap s = TopPair.ofSubsetMap
+      ((β_ (TopCat.of S) (TopCat.of V)).hom ≫ TopCat.ofHom h.tubeMap)
+      ((h.mapsTo_tubeMap_preimage_union s).comp
+        (TopCat.mapsTo_braiding_hom_preimage_union _ _ _ _)) :=
+  (TopPair.ofSubsetMap_comp _ _ _ _ _).symm
+
+/-- The map of ambient spaces of `TauCeti.IsFramedTube.localPairMap` is the swap followed by the
+tube with its factors exchanged. -/
+@[simp]
+theorem localPairMap_fst (h : IsFramedTube f τ) (s : S) :
+    TopPair.Hom.fst (h.localPairMap s) =
+      (β_ (TopCat.of S) (TopCat.of V)).hom ≫ TopCat.ofHom h.tubeMap := by
+  rw [localPairMap_def, TopPair.ofSubsetMap_fst]
+
+/-- The map of ambient spaces of `TauCeti.IsFramedTube.localPairMap` is the tube. -/
 theorem localPairMap_fst_apply (h : IsFramedTube f τ) (s : S)
     (p : (TopCat.of S ⊗ TopCat.of V : TopCat)) :
     TopPair.Hom.fst (h.localPairMap s) p =
-      τ (fst (TopCat.of S) (TopCat.of V) p, snd (TopCat.of S) (TopCat.of V) p) :=
-  TopPair.ofSubsetMap_fst_apply _ _ p
-
-/-- The tube with the core first is the swap followed by the tube with the fibre first. -/
-private lemma ofSubsetMap_braiding_hom_comp_tubeLocalPairMap (h : IsFramedTube f τ) (s : S) :
-    TopPair.ofSubsetMap (β_ (TopCat.of S) (TopCat.of V)).hom
-        (TopCat.mapsTo_braiding_hom_preimage_union _ _ _ _) ≫ tubeLocalPairMap h s =
-      h.localPairMap s :=
-  TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (by
-    ext p
-    rw [TopCat.comp_app, TopCat.ofHom_apply, TopCat.ofHom_apply, h.tubeMap_apply]
-    -- the swap of `S × V` exchanges the projections
-    rfl)
+      τ (fst (TopCat.of S) (TopCat.of V) p, snd (TopCat.of S) (TopCat.of V) p) := by
+  rw [localPairMap_def]
+  refine (TopPair.ofSubsetMap_fst_apply _ _ p).trans ?_
+  rw [TopCat.comp_app, TopCat.ofHom_apply, tubeMap_apply, ← ConcreteCategory.comp_apply,
+    braiding_hom_snd, ← ConcreteCategory.comp_apply, braiding_hom_fst]
 
 variable {k : Type w} [CommRing k] (L : ModuleCat.{w} k) [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
@@ -325,20 +330,40 @@ theorem isFundamentalClass_of_singularHomologyπ_eq [T1Space M] (h : IsFramedTub
 /-! ### The orientation convention "core followed by fibre" -/
 
 omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- **Exchanging the factors of the local cross product.** At a point `s` of the core, the cross
-product `w × o` of a local class `w ∈ H_q(S, S ∖ s; L)` with `o ∈ H_r(V, V ∖ 0; k)`, core first and
-carried by the tube with the coefficients `L ⊗ k ≅ k ⊗ L` exchanged, is `(-1)^(q * r)` times the
-cross product `o × w`, fibre first. -/
-private lemma localPairMap_cross_eq_neg_one_pow_smul (h : IsFramedTube f τ) (s : S) {r q n : ℕ}
-    (hn : r + q = n)
-    (o : (TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ).singularHomology
-      (C := ModuleCat.{w} k) (𝟙_ _) r)
-    (x : (TopPair.ofSubset ({s}ᶜ : Set (TopCat.of S))).singularHomology
-      (C := ModuleCat.{w} k) L q) :
-    (HomologicalComplex.homologyCross
+/-- **The local cross product, core first.** At a point `s` of the core, the map
+`H_q(S, S ∖ s; L) ⊗ H_r(V, V ∖ 0; k) ⟶ H_n(M, M ∖ f s; k ⊗ L)`, `w ⊗ o ↦ τ_*(w × o)`: the relative
+cross product of `(S, S ∖ s)` and `(V, V ∖ 0)`, core first, followed by the coefficient braiding
+`L ⊗ k ≅ k ⊗ L` and the tube (`TauCeti.IsFramedTube.localPairMap`). A class of `S` is related to a
+class of `M` in the orientation convention "core followed by fibre" when at every point the local
+class of the latter is the image of the local class of the former times `o` under this map. -/
+def localCross (h : IsFramedTube f τ) (s : S) (q r n : ℕ) (hn : q + r = n) :
+    ((TopPair.ofSubset ({s}ᶜ : Set (TopCat.of S))).singularChainComplex L).homology q ⊗
+        ((TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ).singularChainComplex
+          (𝟙_ (ModuleCat.{w} k))).homology r ⟶
+      (TopPair.ofSubset ({f s}ᶜ : Set (TopCat.of M))).singularHomology
+        (𝟙_ (ModuleCat.{w} k) ⊗ L) n :=
+  HomologicalComplex.homologyCross
+      ((TopPair.ofSubset ({s}ᶜ : Set (TopCat.of S))).singularChainComplex L)
+      ((TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ).singularChainComplex
+        (𝟙_ (ModuleCat.{w} k))) q r n hn ≫
+    HomologicalComplex.homologyMap (TopCat.shufflePair (TopCat.of S) (TopCat.of V) {s}ᶜ
+      {(0 : V)}ᶜ L (𝟙_ (ModuleCat.{w} k))) n ≫
+    HomologicalComplex.homologyMap
+      (((SSetPair.chainComplexFunctor (ModuleCat.{w} k)).map
+        (β_ L (𝟙_ (ModuleCat.{w} k))).hom).app (TopPair.toSSetPair.obj
+          (TopPair.ofSubset (fst (TopCat.of S) (TopCat.of V) ⁻¹' ({s}ᶜ : Set (TopCat.of S)) ∪
+            snd (TopCat.of S) (TopCat.of V) ⁻¹' {(0 : V)}ᶜ)))) n ≫
+    TopPair.singularHomologyMap (h.localPairMap s) (𝟙_ (ModuleCat.{w} k) ⊗ L) n
+
+omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
+/-- The local cross product, core first, is the relative cross product followed by the shuffle map
+of `(S, S ∖ s) × (V, V ∖ 0)`, the coefficient braiding and the tube. -/
+theorem localCross_def (h : IsFramedTube f τ) (s : S) (q r n : ℕ) (hn : q + r = n) :
+    h.localCross L s q r n hn =
+      HomologicalComplex.homologyCross
           ((TopPair.ofSubset ({s}ᶜ : Set (TopCat.of S))).singularChainComplex L)
           ((TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ).singularChainComplex
-            (𝟙_ (ModuleCat.{w} k))) q r n (by omega) ≫
+            (𝟙_ (ModuleCat.{w} k))) q r n hn ≫
         HomologicalComplex.homologyMap (TopCat.shufflePair (TopCat.of S) (TopCat.of V) {s}ᶜ
           {(0 : V)}ᶜ L (𝟙_ (ModuleCat.{w} k))) n ≫
         HomologicalComplex.homologyMap
@@ -346,8 +371,27 @@ private lemma localPairMap_cross_eq_neg_one_pow_smul (h : IsFramedTube f τ) (s 
             (β_ L (𝟙_ (ModuleCat.{w} k))).hom).app (TopPair.toSSetPair.obj
               (TopPair.ofSubset (fst (TopCat.of S) (TopCat.of V) ⁻¹' ({s}ᶜ : Set (TopCat.of S)) ∪
                 snd (TopCat.of S) (TopCat.of V) ⁻¹' {(0 : V)}ᶜ)))) n ≫
-        TopPair.singularHomologyMap (h.localPairMap s) (𝟙_ (ModuleCat.{w} k) ⊗ L) n).hom
-        (x ⊗ₜ o) =
+        TopPair.singularHomologyMap (h.localPairMap s) (𝟙_ (ModuleCat.{w} k) ⊗ L) n :=
+  (rfl)
+
+variable (k) in
+/-- The sign `(-1)^a` acts on a `k`-module through `ℤ` as it does through `k`. -/
+private lemma neg_one_pow_zsmul_eq_smul {N : Type*} [AddCommGroup N] [Module k N] (a : ℕ)
+    (x : N) : ((-1 : ℤ) ^ a) • x = ((-1 : k) ^ a) • x := by
+  simp [← Int.cast_smul_eq_zsmul k]
+
+omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
+/-- **Exchanging the factors of the local cross product.** At a point `s` of the core, the cross
+product `w × o` of a local class `w ∈ H_q(S, S ∖ s; L)` with `o ∈ H_r(V, V ∖ 0; k)`, core first and
+carried by the tube with the coefficients `L ⊗ k ≅ k ⊗ L` exchanged, is `(-1)^(q * r)` times the
+cross product `o × w`, fibre first. -/
+private lemma localCross_tmul_eq_neg_one_pow_smul (h : IsFramedTube f τ) (s : S) {r q n : ℕ}
+    (hn : r + q = n)
+    (o : (TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ).singularHomology
+      (C := ModuleCat.{w} k) (𝟙_ _) r)
+    (x : (TopPair.ofSubset ({s}ᶜ : Set (TopCat.of S))).singularHomology
+      (C := ModuleCat.{w} k) L q) :
+    (h.localCross L s q r n (by omega)).hom (x ⊗ₜ o) =
       ((-1 : ℤ) ^ (q * r)) •
         (HomologicalComplex.homologyCross
             ((TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ).singularChainComplex
@@ -357,7 +401,7 @@ private lemma localPairMap_cross_eq_neg_one_pow_smul (h : IsFramedTube f τ) (s 
             {(0 : V)}ᶜ {s}ᶜ (𝟙_ (ModuleCat.{w} k)) L) n ≫
           TopPair.singularHomologyMap (tubeLocalPairMap h s) (𝟙_ (ModuleCat.{w} k) ⊗ L) n).hom
           (o ⊗ₜ x) := by
-  rw [← ofSubsetMap_braiding_hom_comp_tubeLocalPairMap, TopPair.singularHomologyMap_comp,
+  rw [localCross_def, localPairMap, TopPair.singularHomologyMap_comp,
     TopCat.homologyCross_comp_homologyMap_shufflePair_comp_braiding_assoc]
   simp
 
@@ -381,22 +425,11 @@ theorem singularHomologyToLocalHomology_eq_neg_one_pow_smul (h : IsFramedTube f 
           (𝟙_ (ModuleCat.{w} k)) L r q n hn (o ⊗ₜ x))) (s : S) :
     singularHomologyToLocalHomology (𝟙_ (ModuleCat.{w} k) ⊗ L) (f s) n z =
       ((-1 : ℤ) ^ (r * q)) •
-        (HomologicalComplex.homologyCross
-            ((TopPair.ofSubset ({s}ᶜ : Set (TopCat.of S))).singularChainComplex L)
-            ((TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ).singularChainComplex
-              (𝟙_ (ModuleCat.{w} k))) q r n (by omega) ≫
-          HomologicalComplex.homologyMap (TopCat.shufflePair (TopCat.of S) (TopCat.of V) {s}ᶜ
-            {(0 : V)}ᶜ L (𝟙_ (ModuleCat.{w} k))) n ≫
-          HomologicalComplex.homologyMap
-            (((SSetPair.chainComplexFunctor (ModuleCat.{w} k)).map
-              (β_ L (𝟙_ (ModuleCat.{w} k))).hom).app (TopPair.toSSetPair.obj
-                (TopPair.ofSubset (fst (TopCat.of S) (TopCat.of V) ⁻¹' ({s}ᶜ : Set (TopCat.of S)) ∪
-                  snd (TopCat.of S) (TopCat.of V) ⁻¹' {(0 : V)}ᶜ)))) n ≫
-          TopPair.singularHomologyMap (h.localPairMap s) (𝟙_ (ModuleCat.{w} k) ⊗ L) n).hom
+        (h.localCross L s q r n (by omega)).hom
           (singularHomologyToLocalHomology L s q x ⊗ₜ o) := by
   rw [singularHomologyToLocalHomology_eq_tubeLocalPairMap L h hn hz s,
-    localPairMap_cross_eq_neg_one_pow_smul L h s hn, smul_smul, mul_comm q r, ← mul_pow,
-    neg_one_mul, neg_neg, one_pow, one_smul]
+    localCross_tmul_eq_neg_one_pow_smul L h s hn, smul_smul, mul_comm q r, ← mul_pow]
+  simp
 
 /-! ### The Thom isomorphism of a framed submanifold -/
 
@@ -507,18 +540,7 @@ theorem singularCap_pontryaginThomCollapse_of_singularHomologyToLocalHomology_eq
       (𝟙_ (ModuleCat.{w} k) ⊗ L)).obj (TopCat.of M)}
     {y : ((singularHomologyFunctor (ModuleCat.{w} k) q).obj L).obj (TopCat.of S)}
     (hy : ∀ s : S, singularHomologyToLocalHomology (𝟙_ (ModuleCat.{w} k) ⊗ L) (f s) (p + q + 1) z =
-      (HomologicalComplex.homologyCross
-            ((TopPair.ofSubset ({s}ᶜ : Set (TopCat.of S))).singularChainComplex L)
-            ((TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ).singularChainComplex
-              (𝟙_ (ModuleCat.{w} k))) q (p + 1) (p + q + 1) (by omega) ≫
-          HomologicalComplex.homologyMap (TopCat.shufflePair (TopCat.of S) (TopCat.of V) {s}ᶜ
-            {(0 : V)}ᶜ L (𝟙_ (ModuleCat.{w} k))) (p + q + 1) ≫
-          HomologicalComplex.homologyMap
-            (((SSetPair.chainComplexFunctor (ModuleCat.{w} k)).map
-              (β_ L (𝟙_ (ModuleCat.{w} k))).hom).app (TopPair.toSSetPair.obj
-                (TopPair.ofSubset (fst (TopCat.of S) (TopCat.of V) ⁻¹' ({s}ᶜ : Set (TopCat.of S)) ∪
-                  snd (TopCat.of S) (TopCat.of V) ⁻¹' {(0 : V)}ᶜ)))) (p + q + 1) ≫
-          TopPair.singularHomologyMap (h.localPairMap s) (𝟙_ (ModuleCat.{w} k) ⊗ L) (p + q + 1)).hom
+      (h.localCross L s q (p + 1) (p + q + 1) (by omega)).hom
           (singularHomologyToLocalHomology L s q y ⊗ₜ o)) :
     (TopCat.of M).singularCap k (𝟙 (𝟙_ (ModuleCat.{w} k) ⊗ L)) (λ_ L).hom (p + 1) q
             (p + q + 1) (by omega)
@@ -543,9 +565,9 @@ theorem singularCap_pontryaginThomCollapse_of_singularHomologyToLocalHomology_eq
     have hy' : singularHomologyToLocalHomology L s q (((-1 : k) ^ ((p + 1) * q)) • y) =
         ((-1 : k) ^ ((p + 1) * q)) • singularHomologyToLocalHomology L s q y := map_smul _ _ _
     refine (singularHomologyToLocalHomology_eq_tubeLocalPairMap L h _ hx s).symm.trans
-      ((hy s).trans ((localPairMap_cross_eq_neg_one_pow_smul L h s (by omega) o _).trans ?_))
+      ((hy s).trans ((localCross_tmul_eq_neg_one_pow_smul L h s (by omega) o _).trans ?_))
     rw [LinearMap.comp_apply, TensorProduct.mk_apply, hy', TensorProduct.tmul_smul, map_smul,
-      ← Int.cast_smul_eq_zsmul k, Int.cast_pow, Int.cast_neg, Int.cast_one, mul_comm]
+      neg_one_pow_zsmul_eq_smul k, mul_comm]
   rw [h.singularCap_pontryaginThomCollapse u o x z hx, hxy, map_smul, smul_smul, mul_comm]
 
 /-- **A fundamental class of the core in the convention "core followed by fibre".** Let
@@ -567,18 +589,7 @@ theorem exists_isFundamentalClass_singularHomologyToLocalHomology_eq_and_singula
     ∃ y : ((singularHomologyFunctor (ModuleCat.{w} k) q).obj L).obj (TopCat.of S),
       IsFundamentalClass y ∧
       (∀ s : S, singularHomologyToLocalHomology (𝟙_ (ModuleCat.{w} k) ⊗ L) (f s) (p + q + 1) z =
-        (HomologicalComplex.homologyCross
-            ((TopPair.ofSubset ({s}ᶜ : Set (TopCat.of S))).singularChainComplex L)
-            ((TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ).singularChainComplex
-              (𝟙_ (ModuleCat.{w} k))) q (p + 1) (p + q + 1) (by omega) ≫
-          HomologicalComplex.homologyMap (TopCat.shufflePair (TopCat.of S) (TopCat.of V) {s}ᶜ
-            {(0 : V)}ᶜ L (𝟙_ (ModuleCat.{w} k))) (p + q + 1) ≫
-          HomologicalComplex.homologyMap
-            (((SSetPair.chainComplexFunctor (ModuleCat.{w} k)).map
-              (β_ L (𝟙_ (ModuleCat.{w} k))).hom).app (TopPair.toSSetPair.obj
-                (TopPair.ofSubset (fst (TopCat.of S) (TopCat.of V) ⁻¹' ({s}ᶜ : Set (TopCat.of S)) ∪
-                  snd (TopCat.of S) (TopCat.of V) ⁻¹' {(0 : V)}ᶜ)))) (p + q + 1) ≫
-          TopPair.singularHomologyMap (h.localPairMap s) (𝟙_ (ModuleCat.{w} k) ⊗ L) (p + q + 1)).hom
+        (h.localCross L s q (p + 1) (p + q + 1) (by omega)).hom
           (singularHomologyToLocalHomology L s q y ⊗ₜ o)) ∧
       (TopCat.of M).singularCap k (𝟙 (𝟙_ (ModuleCat.{w} k) ⊗ L)) (λ_ L).hom (p + 1) q
             (p + q + 1) (by omega)
@@ -595,15 +606,14 @@ theorem exists_isFundamentalClass_singularHomologyToLocalHomology_eq_and_singula
     h.isClosed_range hr ho (by omega : p + 1 + q = p + q + 1) z
   -- The class of the convention "core followed by fibre" is `(-1)^((p + 1) * q) • x`.
   have hsq : (-1 : k) ^ ((p + 1) * q) * (-1) ^ ((p + 1) * q) = 1 := by
-    rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
+    simp [← mul_pow]
   refine ⟨((-1 : k) ^ ((p + 1) * q)) • x,
     (isFundamentalClass_smul_iff_of_isUnit (isUnit_one.neg.pow _)).2
       (h.isFundamentalClass_of_singularHomologyπ_eq L hr ho _ hx hz), fun s ↦ ?_, ?_⟩
   · have hx' : singularHomologyToLocalHomology L s q (((-1 : k) ^ ((p + 1) * q)) • x) =
         ((-1 : k) ^ ((p + 1) * q)) • singularHomologyToLocalHomology L s q x := map_smul _ _ _
     rw [singularHomologyToLocalHomology_eq_neg_one_pow_smul L h _ hx s, hx',
-      ← TensorProduct.smul_tmul', map_smul, ← Int.cast_smul_eq_zsmul k, Int.cast_pow, Int.cast_neg,
-      Int.cast_one]
+      ← TensorProduct.smul_tmul', map_smul, neg_one_pow_zsmul_eq_smul k]
   · rw [h.singularCap_pontryaginThomCollapse u o x z hx, map_smul, smul_smul, mul_right_comm, hsq,
       one_mul]
 
