@@ -33,9 +33,6 @@ are simple roots of the radicand
   motion reaches the lower turning point.
 * `TauCeti.exists_mem_Ioo_apply_two_eq_sphericalPendulumUpperTurningPoint_of_isMIntegralCurve`:
   one oscillation of the height takes the period `T(h, j)`.
-* `TauCeti.strictMonoOn_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum`,
-  `TauCeti.strictAntiOn_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum`: the height is
-  monotone while the vertical momentum keeps its sign.
 
 ## References
 
@@ -113,36 +110,6 @@ private theorem hasDerivAt_momentum (t : ℝ) :
     hasDerivWithinAt_snd_apply_two_of_isMIntegralCurveOn_sphericalPendulum
       (hγ.isMIntegralCurveOn univ) (mem_univ t)).congr_deriv ?_
   linear_combination (-2 * (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2) * hH
-
-/-- While the vertical momentum is positive, the height of a motion increases strictly. -/
-theorem strictMonoOn_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum {s t : ℝ}
-    (hγ : IsMIntegralCurveOn γ (sphericalPendulumSymplecticForm.hamiltonianVectorField
-      fun y ↦ sphericalPendulumHamiltonian y) (Icc s t))
-    (hp : ∀ u ∈ Ioo s t, 0 < (γ u : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2) :
-    StrictMonoOn (fun t ↦ (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2)
-      (Icc s t) := by
-  have hd {u} (hu : u ∈ Icc s t) :=
-    hasDerivWithinAt_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum hγ hu
-  apply strictMonoOn_of_deriv_pos (convex_Icc s t)
-    (fun u hu ↦ (hd hu).continuousWithinAt)
-  intro u hu
-  rw [((hd (interior_subset hu)).hasDerivAt (mem_interior_iff_mem_nhds.1 hu)).deriv]
-  exact hp u (by simpa only [interior_Icc] using hu)
-
-/-- While the vertical momentum is negative, the height of a motion decreases strictly. -/
-theorem strictAntiOn_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum {s t : ℝ}
-    (hγ : IsMIntegralCurveOn γ (sphericalPendulumSymplecticForm.hamiltonianVectorField
-      fun y ↦ sphericalPendulumHamiltonian y) (Icc s t))
-    (hp : ∀ u ∈ Ioo s t, (γ u : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2 < 0) :
-    StrictAntiOn (fun t ↦ (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2)
-      (Icc s t) := by
-  have hd {u} (hu : u ∈ Icc s t) :=
-    hasDerivWithinAt_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum hγ hu
-  apply strictAntiOn_of_deriv_neg (convex_Icc s t)
-    (fun u hu ↦ (hd hu).continuousWithinAt)
-  intro u hu
-  rw [((hd (interior_subset hu)).hasDerivAt (mem_interior_iff_mem_nhds.1 hu)).deriv]
-  exact hp u (by simpa only [interior_Icc] using hu)
 
 include hj hz₀ hV in
 /-- The half period `∫_{z₋}^{z₊} dz / √(2 (h - z) (1 - z²) - j²)` is nonnegative. -/
