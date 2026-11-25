@@ -62,6 +62,8 @@ none of the further theory built on it.
   scalar multiple `r • single g 1` of the basis element there.
 * `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by the monomial `single u 1` at a
   unit `u` of `M` conjugates the indices of the coefficients.
+* `MonoidAlgebra.lift_apply_eq_sum`: over a finite monoid, `lift F x` is the finite sum
+  `∑ m, x_m • F m`.
 * `MonoidAlgebra.coeff_mul_eq_sum`: the coefficients of a product in the group algebra of a finite
   group, as a convolution.
 
@@ -388,6 +390,13 @@ theorem coeff_single_mul_mul_single_inv {R M : Type*} [Semiring R] [Monoid M]
   rw [coeff_mul_single_eq_coeff_mul (h * u) fun _ _ ↦ Units.mul_inv_eq_iff_eq_mul u,
     coeff_single_mul_eq_mul_coeff (↑u⁻¹ * (h * u)) fun _ _ ↦ (Units.eq_inv_mul_iff_mul_eq u).symm,
     one_mul, mul_one, mul_assoc]
+
+/-- Over a finite monoid, the algebra map `lift F` out of `R[M]` sends `x` to the finite sum
+`∑ m, x_m • F m`. -/
+theorem lift_apply_eq_sum {R A M : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [Monoid M]
+    [Fintype M] (F : M →* A) (x : MonoidAlgebra R M) :
+    lift R A M F x = ∑ m, x.coeff m • F m := by
+  rw [lift_apply, Finsupp.sum_fintype _ _ (by simp)]
 
 /-- The coefficients of a product in the group algebra of a finite group, as a convolution. -/
 theorem coeff_mul_eq_sum {k G : Type*} [Semiring k] [Group G] [Fintype G]
