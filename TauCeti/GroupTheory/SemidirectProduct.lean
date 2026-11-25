@@ -135,6 +135,17 @@ theorem coe_mulEquivKerRightHom_apply {N Q : Type*} [Group N] [Group Q] {φ : Q 
     (n : N) : (mulEquivKerRightHom (φ := φ) n : N ⋊[φ] Q) = inl n := by
   simp [mulEquivKerRightHom, MonoidHom.ofInjective_apply]
 
+/-- The inverse of `SemidirectProduct.mulEquivKerRightHom` sends an element of the kernel of
+`SemidirectProduct.rightHom` to its normal component. -/
+@[simp]
+theorem mulEquivKerRightHom_symm_apply {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N}
+    (x : (rightHom : N ⋊[φ] Q →* Q).ker) :
+    (mulEquivKerRightHom (φ := φ)).symm x = (x : N ⋊[φ] Q).left := by
+  rw [MulEquiv.symm_apply_eq]
+  ext
+  · simp
+  · simpa using MonoidHom.mem_ker.mp x.property
+
 section mulEquivSubgroup
 
 variable {N : Subgroup G} [N.Normal] {D : Subgroup G} (h : N.IsComplement' D)
