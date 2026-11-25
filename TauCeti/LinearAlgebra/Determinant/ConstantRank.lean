@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.LocalProperties.Submodule
 public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.Localization.BaseChange
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
-public import TauCeti.LinearAlgebra.Determinant.Projective
+public import TauCeti.LinearAlgebra.Determinant.Projective.Basic
 
 /-!
 # Determinants on finite projective modules of constant rank
