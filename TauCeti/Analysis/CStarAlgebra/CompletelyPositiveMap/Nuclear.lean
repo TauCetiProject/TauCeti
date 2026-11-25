@@ -95,8 +95,7 @@ theorem IsNuclearContraction.norm_apply_le {φ : A →CP B} (h : φ.IsNuclearCon
     ‖φ a‖ ≤ ‖a‖ := by
   refine le_of_forall_pos_lt_add fun ε hε ↦ ?_
   obtain ⟨n, α, β, hα, hβ, hF⟩ := h {a} ε hε
-  calc ‖φ a‖ ≤ ‖β (α a)‖ + ‖β (α a) - φ a‖ := by
-        simpa [norm_sub_rev] using norm_le_insert' (φ a) (β (α a))
+  calc ‖φ a‖ ≤ ‖β (α a)‖ + ‖β (α a) - φ a‖ := norm_le_norm_add_norm_sub (β (α a)) (φ a)
     _ < ‖a‖ + ε := add_lt_add_of_le_of_lt ((hβ _).trans (hα a)) (hF a (Finset.mem_singleton_self a))
 
 /-- The zero map is a nuclear contraction, through the zero matrix algebra `M_0`. -/
@@ -183,7 +182,7 @@ theorem IsNuclearContraction.smul {φ : A →CP B} (h : φ.IsNuclearContraction)
   intro F ε hε
   obtain ⟨n, α, β, hα, hβ, hF⟩ := h F ε hε
   have hcn (b : B) : ‖c • b‖ ≤ ‖b‖ := by
-    rw [NNReal.smul_def, norm_smul, Real.norm_of_nonneg c.coe_nonneg]
+    rw [NNReal.smul_def, norm_smul_of_nonneg c.coe_nonneg]
     exact mul_le_of_le_one_left (norm_nonneg b) hc
   refine ⟨n, α, c • β, hα, fun x ↦ (hcn _).trans (hβ x), fun a ha ↦ ?_⟩
   rw [smul_apply, smul_apply, ← smul_sub]
@@ -259,7 +258,7 @@ theorem IsNuclear.of_starAlgEquiv (e : A ≃⋆ₐ[ℂ] B) [IsNuclear B] : IsNuc
     (by simp)
 
 /-- The full matrix algebra `M_n(ℂ)` is nuclear: the identity factors through itself. -/
-instance isNuclear_cstarMatrix_fin (n : ℕ) : IsNuclear (CStarMatrix (Fin n) (Fin n) ℂ) :=
+private theorem isNuclear_cstarMatrix_fin (n : ℕ) : IsNuclear (CStarMatrix (Fin n) (Fin n) ℂ) :=
   ⟨fun _ _ hε ↦ ⟨n, .id _, .id _, fun x ↦ (congrArg norm (id_apply x)).le,
     fun x ↦ (congrArg norm (id_apply x)).le,
     fun _ _ ↦ by simpa using hε⟩⟩
@@ -267,6 +266,7 @@ instance isNuclear_cstarMatrix_fin (n : ℕ) : IsNuclear (CStarMatrix (Fin n) (F
 /-- The full matrix algebra `M_m(ℂ)` over a finite index type is nuclear. -/
 instance isNuclear_cstarMatrix (m : Type*) [Fintype m] :
     IsNuclear (CStarMatrix m m ℂ) :=
+  have := isNuclear_cstarMatrix_fin (Fintype.card m)
   .of_starAlgEquiv (CStarMatrix.reindexₐ ℂ ℂ (Fintype.equivFin m))
 
 /-- The complex numbers form a nuclear C⋆-algebra, through `ℂ ≃ M_1(ℂ)`. -/

@@ -142,8 +142,8 @@ theorem exists_norm_apply_le_and_eq_smul (ψ : A₁ →CP A₂) :
   obtain ⟨K, hK⟩ := PositiveLinearMap.exists_norm_apply_le (.ofClass ψ)
   have hK₁ : (0 : ℝ) < (K + 1 : ℝ≥0) := by positivity
   refine ⟨K + 1, (K + 1)⁻¹ • ψ, fun a ↦ ?_, ?_⟩
-  · rw [smul_apply, NNReal.smul_def, norm_smul, Real.norm_of_nonneg (by positivity),
-      NNReal.coe_inv, inv_mul_le_iff₀ hK₁]
+  · rw [smul_apply, NNReal.smul_def, norm_smul_of_nonneg (by positivity), NNReal.coe_inv,
+      inv_mul_le_iff₀ hK₁]
     calc ‖ψ a‖ ≤ K * ‖a‖ := hK a
       _ ≤ ((K + 1 : ℝ≥0) : ℝ) * ‖a‖ := by gcongr; simp
   · rw [smul_smul, mul_inv_cancel₀ (by positivity), one_smul]
