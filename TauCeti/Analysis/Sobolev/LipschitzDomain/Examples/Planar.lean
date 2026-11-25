@@ -100,7 +100,7 @@ theorem isLipschitzChartWith_openUnitSquare_of_forall_mem_iff (c : WithLp 2 (ℝ
 
 /-- The arithmetic of a corner chart: with `k = (√2)⁻¹`, the rotated quarter-plane
 `k (u - v) > 0, k (u + v) > 0` near the origin is the region `|v| < u`. -/
-private theorem corner_iff {u v : ℝ} (hu : |u| < 1 / 2) (hv : |v| < 1 / 2) :
+theorem openUnitSquare_corner_iff {u v : ℝ} (hu : |u| < 1 / 2) (hv : |v| < 1 / 2) :
     ((√2)⁻¹ * (u - v) ∈ Ioo (0 : ℝ) 1 ∧ (√2)⁻¹ * (u + v) ∈ Ioo (0 : ℝ) 1) ↔ |v| < u := by
   have hk1 : 1 / 2 < (√2)⁻¹ := by
     rw [one_div]
@@ -123,7 +123,7 @@ theorem isLipschitzChartWith_openUnitSquare_zero :
       (fun s => |s|) (1 / 2) (1 / 2) := by
   refine isLipschitzChartWith_openUnitSquare_of_forall_mem_iff 0 _ (by norm_num) (by norm_num)
     abs_zero (lipschitzWith_one_norm (E := ℝ)) fun u v hu hv => ?_
-  refine Iff.trans ?_ (corner_iff hu hv)
+  refine Iff.trans ?_ (openUnitSquare_corner_iff hu hv)
   simp only [WithLp.zero_fst, WithLp.zero_snd, zero_add, mul_sub, mul_add]
 
 /-- The edge charts of the open unit square: at a point `c` of an open edge, the translated
@@ -165,7 +165,7 @@ private theorem exists_isLipschitzChartWith_openUnitSquare_corner {c : WithLp 2 
       refine ⟨_, _, hk'', ?_⟩] <;>
   · refine isLipschitzChartWith_openUnitSquare_of_forall_mem_iff c _ (by norm_num) (by norm_num)
       abs_zero (lipschitzWith_one_norm (E := ℝ)) fun u v hu hv => ?_
-    refine Iff.trans ?_ (corner_iff hu hv)
+    refine Iff.trans ?_ (openUnitSquare_corner_iff hu hv)
     simp only [hs, ht, mem_Ioo]
     constructor <;> rintro ⟨⟨h1, h2⟩, h3, h4⟩ <;> refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> linarith
 
