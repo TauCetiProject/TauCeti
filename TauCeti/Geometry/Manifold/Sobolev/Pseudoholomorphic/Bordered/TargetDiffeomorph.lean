@@ -8,8 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic.Bordered
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Inhomogeneous.Pullback
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
--- Reuse the dilation `z ↦ 2 z` of the Check there, privately.
-import all TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic.TargetDiffeomorph
+import TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic.TargetDiffeomorph
 
 /-!
 # Weak pseudoholomorphic maps up to the boundary under diffeomorphisms of the target
@@ -174,7 +173,8 @@ into `ℂ` is weakly pseudoholomorphic up to the boundary and maps the boundary 
 along `x ↦ 2 x`. It is `g ∘ (↑)` for the diffeomorphism `g = (2 ·)` of `ℂ`, along which `i` pulls
 back to itself, and the inclusion `(↑)` solves the problem with the boundary condition along
 `ℝ ⊆ ℂ`, so this is the transport of `TauCeti.isWeakPseudoholomorphicBordered_coe` and
-`TauCeti.mapsBoundaryInto_coe_ofReal` along `g`, with `ι` transported to `g ∘ ι`. -/
+`TauCeti.mapsBoundaryInto_coe_ofReal` along `g = TauCeti.twoSMulDiffeomorph`, with `ι` transported
+to `g ∘ ι`. -/
 theorem isWeakPseudoholomorphicBordered_two_mul_coe_and_mapsBoundaryInto {ℓ : ℕ∞}
     {p : ENNReal} :
     IsWeakPseudoholomorphicBordered (ContMDiffAlmostComplexStructureFamily.const
@@ -182,20 +182,15 @@ theorem isWeakPseudoholomorphicBordered_two_mul_coe_and_mapsBoundaryInto {ℓ : 
         (fun z : ClosedUpperHalfPlane ↦ 2 * (z : ℂ)) ∧
       MapsBoundaryInto closedUpperHalfPlaneModel (fun z : ClosedUpperHalfPlane ↦ 2 * (z : ℂ))
         (fun x : ℝ ↦ ((2 * x : ℝ) : ℂ)) := by
-  have hJ : ContMDiffAlmostComplexStructureFamily.const (IP := closedUpperHalfPlaneModel)
-      (P := ClosedUpperHalfPlane)
-      ((SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ).toContMDiff ℓ) =
-      (ContMDiffAlmostComplexStructureFamily.const
-        ((SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ).toContMDiff ℓ)).pullback
-        twoSMulDiffeomorph le_top := by
-    rw [ContMDiffAlmostComplexStructureFamily.pullback_const,
-      pullback_twoSMulDiffeomorph_ofComplexManifold]
+  have hJ :=
+    ContMDiffAlmostComplexStructureFamily.const_ofComplexManifold_eq_pullback_twoSMulDiffeomorph
+      (IP := closedUpperHalfPlaneModel) (P := ClosedUpperHalfPlane) (ℓ := ℓ)
   have hcoe := (isWeakPseudoholomorphicBordered_ofEq (ν := 0) rfl hJ).2
     (isWeakPseudoholomorphicBordered_coe (ℓ := ℓ) (p := p))
   rw [InhomogeneousTerm.ofEq_zero,
     ← InhomogeneousTerm.pullback_zero twoSMulDiffeomorph le_top] at hcoe
   have h := (isWeakPseudoholomorphicBordered_and_mapsBoundaryInto_diffeomorph_comp_iff
     ((↑) : ℝ → ℂ) twoSMulDiffeomorph).2 ⟨hcoe, mapsBoundaryInto_coe_ofReal⟩
-  convert h using 2 <;> funext z <;> simp [twoSMulDiffeomorph, two_mul, two_smul]
+  convert h using 2 <;> funext z <;> simp
 
 end TauCeti
