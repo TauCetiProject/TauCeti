@@ -30,7 +30,7 @@ theorem nondivergenceOperator_const_mul_angleBranch (c : ℝ) (p : PolarPoint) (
       x = 0 := by
   have hsmul : (fun y : Plane ↦ c * angleBranch p y) = c • angleBranch p :=
     funext fun _ ↦ (smul_eq_mul ..).symm
-  rw [hsmul, MinimalGraph.nondivergenceOperator_const_smul c (contDiffAt_angleBranch p x hx),
+  rw [hsmul, MinimalGraph.nondivergenceOperator_const_smul (angleBranch p) c x,
     laplacian_angleBranch p x hx,
     fderiv_fderiv_angleBranch_gradient_gradient_eq_zero p x hx]
   ring

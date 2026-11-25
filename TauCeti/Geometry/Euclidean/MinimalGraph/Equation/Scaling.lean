@@ -24,8 +24,7 @@ at the corresponding point and multiplies the nondivergence minimal graph operat
 scale. Centering at a point and dividing the height by the radius gives the inverse normalization:
 the gradient is unchanged and the nondivergence operator is multiplied by the radius.
 
-The vertical-only scaling identity `nondivergenceOperator_const_smul` assumes a `C²` height.
-The simultaneous dilation and normalization identities hold without regularity assumptions,
+All finite derivative and nondivergence operator identities hold without regularity assumptions,
 including at scale zero. Gradient identities require nonzero scales. Height centering disappears
 only at positive derivative orders. Nonnegative scales give exact derivative norm identities.
 Positive scales transport differentiability between the corresponding balls. A gradient bound
@@ -185,17 +184,21 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- Multiplying the height by a real scalar rescales its Laplacian linearly and its
 Hessian evaluated on two copies of its gradient cubically. -/
-theorem nondivergenceOperator_const_smul {u : E → ℝ} {x : E} (c : ℝ)
-    (hu : ContDiffAt ℝ 2 u x) :
+theorem nondivergenceOperator_const_smul (u : E → ℝ) (c : ℝ) (x : E) :
     nondivergenceOperator (c • u) x =
       c * (1 + c ^ 2 * ‖∇ u x‖ ^ 2) * Δ u x -
         c ^ 3 * fderiv ℝ (fderiv ℝ u) x (∇ u x) (∇ u x) := by
-  have hdu : DifferentiableAt ℝ (fderiv ℝ u) x :=
-    (hu.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  rw [nondivergenceOperator_eq, InnerProductSpace.laplacian_smul c hu,
-    TauCeti.gradient_const_smul, fderiv_const_smul_field, fderiv_const_smul hdu c]
-  simp only [conj_trivial, smul_apply, map_smul, smul_eq_mul, norm_smul, Real.norm_eq_abs,
-    mul_pow, sq_abs]
+  have hlap : Δ (c • u) x = c * Δ u x := by
+    rw [laplacian_eq_iteratedFDeriv_orthonormalBasis (c • u) (stdOrthonormalBasis ℝ E),
+      laplacian_eq_iteratedFDeriv_orthonormalBasis u (stdOrthonormalBasis ℝ E)]
+    simp only [Pi.smul_def]
+    rw [iteratedFDeriv_fun_const_smul_apply]
+    simp only [smul_apply, smul_eq_mul, Finset.mul_sum]
+  rw [nondivergenceOperator_eq, hlap,
+    TauCeti.gradient_const_smul, fderiv_const_smul_field,
+    fderiv_const_smul_field (𝕜 := ℝ) (f := fderiv ℝ u)]
+  simp only [conj_trivial, Pi.smul_apply, smul_apply, map_smul, smul_eq_mul, norm_smul,
+    Real.norm_eq_abs, mul_pow, sq_abs]
   ring
 
 /-- The nondivergence minimal graph operator scales inversely under simultaneous graph dilation. -/
