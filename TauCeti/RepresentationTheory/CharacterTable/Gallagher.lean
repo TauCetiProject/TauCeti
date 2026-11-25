@@ -41,6 +41,10 @@ injectivity; the column orthogonality of `G ⧸ N` gives surjectivity.
   `β ↦ χ · (β ∘ π)`.
 * `TauCeti.gallagher_bijOn_bot`: the case `N = 1` for a linear character `χ`, a permutation of
   the irreducible characters of `G` read through `G ⧸ ⊥`.
+* `TauCeti.irreducibleCharactersOver_eq_setOf_restrict_eq_of_isMulCommutative` and
+  `TauCeti.card_irreducibleCharacter_extensions_of_isMulCommutative`: for an abelian quotient, the
+  characters over `θ` are exactly the irreducible extensions of `θ`, and there are `|G : N|` of
+  them.
 
 ## References
 
@@ -277,6 +281,34 @@ theorem gallagher_bijOn_bot (hχ : χ ∈ irreducibleCharacters k G) (h1 : χ 1 
   have h := gallagher_bijOn hχ hθ fun n => by
     rw [Subgroup.mem_bot.mp n.property, h1]
   rwa [irreducibleCharactersOver_bot one_ne_zero] at h
+
+/-- If an irreducible character extends across an abelian quotient, an irreducible character lies
+above it if and only if it restricts to it: the inflated characters of the quotient are linear. -/
+theorem irreducibleCharactersOver_eq_setOf_restrict_eq_of_isMulCommutative
+    [IsMulCommutative (G ⧸ N)] {θ : N → k} (hχ : χ ∈ irreducibleCharacters k G)
+    (hθ : θ ∈ irreducibleCharacters k N) (hres : ∀ n : N, χ n = θ n) :
+    irreducibleCharactersOver k N θ =
+      {ψ | ψ ∈ irreducibleCharacters k G ∧ ∀ n : N, ψ n = θ n} := by
+  ext ψ
+  refine ⟨fun hψ => ⟨irreducibleCharactersOver_subset θ hψ, fun n => ?_⟩,
+    fun ⟨hψ, hψres⟩ => mem_irreducibleCharactersOver_of_restrict_eq hψ hθ hψres⟩
+  obtain ⟨β, hβ, rfl⟩ := (gallagher_bijOn hχ hθ hres).surjOn hψ
+  simp [(QuotientGroup.eq_one_iff (n : G)).mpr n.property, hres,
+    apply_one_eq_one_of_isMulCommutative hβ]
+
+open scoped IsMulCommutative in
+/-- The number of irreducible extensions of an extendible irreducible character across an abelian
+quotient is the index of the subgroup. -/
+theorem card_irreducibleCharacter_extensions_of_isMulCommutative [IsMulCommutative (G ⧸ N)]
+    {θ : N → k} (hχ : χ ∈ irreducibleCharacters k G) (hθ : θ ∈ irreducibleCharacters k N)
+    (hres : ∀ n : N, χ n = θ n) :
+    Nat.card {ψ : G → k | ψ ∈ irreducibleCharacters k G ∧ ∀ n : N, ψ n = θ n} = N.index := by
+  let : Invertible (Nat.card (G ⧸ N) : k) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
+  rw [← irreducibleCharactersOver_eq_setOf_restrict_eq_of_isMulCommutative hχ hθ hres,
+    ← Nat.card_congr ((gallagher_bijOn hχ hθ hres).equiv _),
+    card_irreducibleCharacters, N.index_eq_card]
+  exact Nat.card_congr ConjClasses.mkEquiv.symm
 
 end Gallagher
 

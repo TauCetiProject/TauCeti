@@ -79,7 +79,10 @@ take their familiar Hermitian form, because inversion conjugates character value
 * `TauCeti.characterTable_one`: the identity-class column of the table lists the degrees, which are
   positive (`TauCeti.characterDegree_pos`) and have squares summing to `|G|`
   (`TauCeti.sum_characterDegree_sq_eq_card`); in characteristic zero they moreover divide `|G|`
-  (`TauCeti.characterDegree_dvd_card`).
+  (`TauCeti.characterDegree_dvd_card`). For a commutative group every degree is one
+  (`TauCeti.apply_one_eq_one_of_isMulCommutative`).
+* `TauCeti.mem_irreducibleCharactersOver_of_restrict_eq`: an irreducible character restricting to
+  an irreducible character `θ` of a finite subgroup lies over `θ`.
 
 ## Implementation notes
 
@@ -182,6 +185,14 @@ theorem apply_one_ne_zero_of_mem_irreducibleCharacters [CharZero k] {f : G → k
   obtain ⟨n, ρ, hρ, rfl⟩ := mem_irreducibleCharacters_iff.mp hf
   rw [Representation.char_one]
   exact hρ.natCast_finrank_ne_zero
+
+/-- **An irreducible character of a commutative group is linear**: its value at the identity, its
+degree, is one. -/
+theorem apply_one_eq_one_of_isMulCommutative [IsAlgClosed k] [IsMulCommutative G] {f : G → k}
+    (hf : f ∈ irreducibleCharacters k G) : f 1 = 1 := by
+  obtain ⟨n, ρ, hρ, rfl⟩ := mem_irreducibleCharacters_iff.mp hf
+  rw [Representation.char_one, Representation.IsIrreducible.finrank_eq_one_of_isMulCommutative ρ,
+    Nat.cast_one]
 
 variable [IsAlgClosed k] [Invertible (Nat.card G : k)]
 
@@ -552,6 +563,22 @@ theorem sum_mul_inv_eq_zero_of_mem_irreducibleCharacters {β β' : G → k}
   simpa [h] using sum_mul_inv_of_mem_irreducibleCharacters hβ hβ'
 
 end Orthonormal
+
+section Restriction
+
+variable {k : Type u} {G : Type v} [Field k] [Group G] [IsAlgClosed k] [CharZero k]
+
+/-- An irreducible character of `G` whose restriction to a finite subgroup `N` is an irreducible
+character `θ` of `N` lies over `θ`. -/
+theorem mem_irreducibleCharactersOver_of_restrict_eq {N : Subgroup G} [Finite N] {θ : N → k}
+    {ψ : G → k} (hψ : ψ ∈ irreducibleCharacters k G) (hθ : θ ∈ irreducibleCharacters k N)
+    (h : ∀ n : N, ψ n = θ n) : ψ ∈ irreducibleCharactersOver k N θ := by
+  have := Fintype.ofFinite N
+  refine mem_irreducibleCharactersOver_iff_sum.mpr ⟨hψ, ?_⟩
+  simp only [h, sum_mul_inv_self_of_mem_irreducibleCharacters hθ, Nat.cast_ne_zero]
+  exact Nat.card_pos.ne'
+
+end Restriction
 
 section Nonconstant
 

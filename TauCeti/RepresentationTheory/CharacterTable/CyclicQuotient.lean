@@ -14,8 +14,9 @@ import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 # Character twists across a cyclic quotient
 
 Once an irreducible character of a normal subgroup has an irreducible extension, Gallagher's
-correspondence describes the characters over it. For a cyclic quotient, these are exactly the
-extensions, and powers of a single linear character enumerate them without repetition. Choosing
+correspondence describes the characters over it. For an abelian quotient, these are exactly the
+extensions (`TauCeti.irreducibleCharactersOver_eq_setOf_restrict_eq_of_isMulCommutative`). For a
+cyclic quotient, powers of a single linear character enumerate them without repetition. Choosing
 its value at a generator makes the enumeration explicit on each coset, as needed when collecting
 terms of a virtual character by their common restriction.
 
@@ -88,41 +89,5 @@ theorem exists_gallagher_bijOn_pow
   · rw [monoidHomOfForallMemZpowers_apply_gen, hu.unit_spec]
   · refine gallagher_bijOn_pow hχ hθ hres _ (x := x) ?_
     rwa [monoidHomOfForallMemZpowers_apply_gen, hu.unit_spec]
-
-/-- If an irreducible character extends across a cyclic quotient, an irreducible character lies
-above it if and only if it restricts to it. -/
-theorem irreducibleCharactersOver_eq_setOf_restrict_eq_of_isCyclic
-    [IsCyclic (G ⧸ N)] (hχ : χ ∈ irreducibleCharacters k G)
-    (hθ : θ ∈ irreducibleCharacters k N) (hres : ∀ n : N, χ n = θ n) :
-    irreducibleCharactersOver k N θ =
-      {ψ | ψ ∈ irreducibleCharacters k G ∧ ∀ n : N, ψ n = θ n} := by
-  obtain ⟨x, hx⟩ := IsCyclic.exists_generator (α := G ⧸ N)
-  have : NeZero N.index := ⟨N.index_ne_zero_of_finite⟩
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot k N.index
-  obtain ⟨ε, -, hb⟩ := exists_gallagher_bijOn_pow hχ hθ hres
-    ((Subgroup.zpowers x).eq_top_iff'.mpr hx) hζ
-  ext ψ
-  constructor
-  · intro hψ
-    obtain ⟨i, -, rfl⟩ := hb.surjOn hψ
-    refine ⟨irreducibleCharactersOver_subset θ hψ, fun n => ?_⟩
-    simp [(QuotientGroup.eq_one_iff (n : G)).mpr n.property, hres]
-  · rintro ⟨hψ, hψres⟩
-    have := Fintype.ofFinite N
-    refine mem_irreducibleCharactersOver_iff_sum.mpr ⟨hψ, ?_⟩
-    simp only [hψres, sum_mul_inv_self_of_mem_irreducibleCharacters hθ, Nat.cast_ne_zero]
-    exact Nat.card_pos.ne'
-
-/-- The number of irreducible extensions of an extendible irreducible character across a cyclic
-quotient is the index of the subgroup. -/
-theorem card_irreducibleCharacter_extensions_of_isCyclic [IsCyclic (G ⧸ N)]
-    (hχ : χ ∈ irreducibleCharacters k G) (hθ : θ ∈ irreducibleCharacters k N)
-    (hres : ∀ n : N, χ n = θ n) :
-    Nat.card {ψ : G → k | ψ ∈ irreducibleCharacters k G ∧ ∀ n : N, ψ n = θ n} = N.index := by
-  rw [← irreducibleCharactersOver_eq_setOf_restrict_eq_of_isCyclic hχ hθ hres,
-    ← Nat.card_congr ((gallagher_bijOn hχ hθ hres).equiv _),
-    card_irreducibleCharacters, N.index_eq_card]
-  let : CommGroup (G ⧸ N) := IsCyclic.commGroup
-  exact Nat.card_congr ConjClasses.mkEquiv.symm
 
 end TauCeti
