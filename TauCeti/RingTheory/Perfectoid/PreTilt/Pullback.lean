@@ -76,12 +76,9 @@ variable (p : ℕ) [Fact p.Prime] (f : A →+* T) (g : B →+* T) [Fact ¬IsUnit
 /-- The comparison map `(A ×_T B)♭ →+* A♭ ×_{T♭} B♭` from the tilt of a pullback to the pullback of
 the tilts, by the tilts of the two projections. -/
 noncomputable def toPullback : PreTilt (f.pullback g) p →+* (map p f).pullback (map p g) :=
-  ((map p (f.pullbackFst g)).prod (map p (f.pullbackSnd g))).codRestrict _ fun x ↦ by
-    rw [RingHom.mem_eqLocus]
-    simp only [RingHom.coe_comp, Function.comp_apply, RingHom.prod_apply, RingHom.coe_fst,
-      RingHom.coe_snd]
-    rw [← RingHom.comp_apply, ← RingHom.comp_apply, ← map_comp, ← map_comp,
-      RingHom.pullback_comm_sq]
+  ((map p (f.pullbackFst g)).prod (map p (f.pullbackSnd g))).codRestrict _ fun x ↦
+    RingHom.mem_pullback.mpr <| by
+      simp [← RingHom.comp_apply, ← map_comp, RingHom.pullback_comm_sq]
 
 variable {p f g}
 
