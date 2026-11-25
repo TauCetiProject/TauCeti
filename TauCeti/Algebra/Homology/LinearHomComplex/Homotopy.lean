@@ -182,8 +182,7 @@ def linearHomComplexHomotopyFunctor :
         apply Quiver.Hom.unop_inj
         apply CategoryTheory.Quotient.natTrans_ext
         ext G
-        simp
-        rfl }
+        simp }
     (fun _ _ _ _ ⟨h⟩ ↦ by
       apply Quiver.Hom.unop_inj
       apply CategoryTheory.Quotient.natTrans_ext

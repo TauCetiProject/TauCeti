@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.LinearHomComplex.KInjective
-public import TauCeti.Algebra.Homology.ModelCategory.Grothendieck
+public import TauCeti.Algebra.Homology.ModelCategory.KInjective.ModelStructure
 public import TauCeti.AlgebraicTopology.DGNerve.FullSubcategory
 public import TauCeti.CategoryTheory.DG.CochainComplex.KInjective
+
+import TauCeti.Algebra.Homology.ModelCategory.Grothendieck
 
 /-!
 # The fibrant injective DG model and replacement DG comparison

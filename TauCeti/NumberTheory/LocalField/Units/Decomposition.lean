@@ -1,0 +1,453 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import Mathlib.Topology.Algebra.Group.Units
+public import TauCeti.NumberTheory.LocalField.NormalizedValuation
+public import TauCeti.NumberTheory.LocalField.Teichmuller
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
+public import TauCeti.RingTheory.Valuation.Discrete.UnitPart
+public import TauCeti.Topology.Algebra.Group.Shear
+
+/-!
+# The structure of the multiplicative group of a local field
+
+For a nonarchimedean local field `K` with residue field of cardinality `q`, this file proves the
+two splittings of the multiplicative group `Kˣ`:
+
+* a choice of uniformizer `ϖ` gives an isomorphism of topological groups
+  `Kˣ ≃ₜ* ℤ × U(K,0)`, `x ↦ (v_K(x), x ϖ^{-v_K(x)})`, where `U(K,0) = 𝒪[K]ˣ` is the depth-zero
+  step of the unit filtration and the first factor is the normalized valuation;
+* with no choice at all, the Teichmüller lift gives an isomorphism of topological groups
+  `U(K,0) ≃ₜ* μ_{q-1}(K) × U(K,1)`, whose first component is the Teichmüller representative of
+  the residue class.
+
+Together they describe `Kˣ` as `ℤ × μ_{q-1}(K) × U(K,1)`, which reduces questions about `Kˣ`,
+such as the count of its power classes, to the group of principal units `U(K,1)`.
+
+## Main definitions
+
+* `TauCeti.unitsEquivIntProd`: the splitting `Kˣ ≃ₜ* ℤ × U(K,0)` attached to a uniformizer.
+* `TauCeti.unitFiltrationZeroEquivProd`: the splitting `U(K,0) ≃ₜ* μ_{q-1}(K) × U(K,1)`.
+
+## Main results
+
+* `TauCeti.ker_normalizedValuation` and `TauCeti.continuous_normalizedValuation`: the normalized
+  valuation is a continuous homomorphism with kernel `U(K,0)`.
+* `TauCeti.normalizedValuation_comp_zpowersHom`: a uniformizer splits the normalized valuation.
+* `TauCeti.instSigmaCompactSpaceUnits`: `Kˣ` is σ-compact.
+* `TauCeti.existsUnique_eq_zpow_mul`: every `x : Kˣ` is uniquely `ϖ ^ n * u` with `u ∈ U(K,0)`.
+* `TauCeti.coe_unitsEquivIntProd_apply_snd_eq_mul` and `TauCeti.unitsEquivIntProd_trans_prodShear`:
+  how the splitting changes with the uniformizer; the splittings attached to `ϖ` and `ϖ'` differ
+  by the shear `(n, u) ↦ (n, (ϖ ϖ'⁻¹) ^ n u)` of `ℤ × U(K,0)`.
+* `TauCeti.unitFiltration_zero_sup_zpowers_eq_top`: `U(K,0)` and a uniformizer generate `Kˣ`.
+* `TauCeti.unitFiltration_sup_zpowers_inf_unitFiltration_zero` and
+  `TauCeti.index_unitFiltration_sup_zpowers`: the subgroup `U(K,i) · ϖ ^ ℤ` meets `U(K,0)` in
+  `U(K,i)`, and its index in `Kˣ` is `[U(K,0) : U(K,i)]`.
+* `TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField_unitFiltrationZeroEquivProd_apply_fst`:
+  the root-of-unity component of `u ∈ U(K,0)` has the same residue class as `u`.
+* `Valuation.coe_unitPart_eq_unitsEquivIntProd_snd`: the uniformizer splitting's unit component
+  agrees with the unit part of any integer-valued valuation with the same normalized order.
+
+## Implementation notes
+
+A uniformizer is taken to be any `ϖ : Kˣ` with `normalizedValuation K ϖ = ofAdd 1`; an
+irreducible element of `𝒪[K]` provides one by `TauCeti.normalizedValuation_irreducible`. All the
+groups involved are subgroups of `Kˣ` with the subspace topology, and `ℤ` is written
+multiplicatively as `Multiplicative ℤ`, with its discrete topology.
+
+## References
+
+* [J.-P. Serre, *Corps Locaux*][serre1968], Chapter II, §§4–5.
+* J. Neukirch, *Algebraic Number Theory*, Chapter II, §5, Proposition 5.3.
+-/
+
+public section
+
+noncomputable section
+
+open IsLocalRing ValuativeRel Filter Topology
+
+namespace TauCeti
+
+variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K]
+
+section NormalizedValuation
+
+/-- The kernel of the normalized valuation is the depth-zero step `U(K,0) = 𝒪[K]ˣ` of the unit
+filtration. -/
+theorem ker_normalizedValuation : (normalizedValuation K).ker = unitFiltration K 0 :=
+  Subgroup.ext fun x ↦ by
+    rw [MonoidHom.mem_ker, normalizedValuation_eq_one_iff, mem_unitFiltration_zero]
+
+/-- The normalized valuation is continuous for the discrete topology on `ℤ`: it is constant on the
+cosets of the open subgroup `U(K,0)`. -/
+theorem continuous_normalizedValuation : Continuous (normalizedValuation K) :=
+  continuous_of_continuousAt_one _ <| continuousAt_const.congr <|
+    mem_of_superset (unitFiltration_mem_nhds_one 0) fun x hx ↦
+      (((ker_normalizedValuation K).ge hx : x ∈ (normalizedValuation K).ker).trans
+        (normalizedValuation K).map_one.symm).symm
+
+/-- The normalized valuation vanishes on `U(K,0)`. -/
+@[simp]
+theorem normalizedValuation_coe_unitFiltration_zero (u : unitFiltration K 0) :
+    normalizedValuation K u = 1 :=
+  ((ker_normalizedValuation K).ge u.property : _)
+
+end NormalizedValuation
+
+section Uniformizer
+
+variable {K} {ϖ : Kˣ}
+
+/-- A uniformizer splits the normalized valuation: `v_K(ϖ ^ n) = n`. -/
+theorem normalizedValuation_comp_zpowersHom (hϖ : normalizedValuation K ϖ = .ofAdd 1) :
+    (normalizedValuation K).comp (zpowersHom Kˣ ϖ) = .id _ := by
+  ext
+  simp [hϖ]
+
+/-- The unit part `x ϖ^{-v_K(x)}` of `x : Kˣ` lies in `U(K,0)`. -/
+theorem mul_zpow_neg_mem_unitFiltration_zero (hϖ : normalizedValuation K ϖ = .ofAdd 1)
+    (x : Kˣ) :
+    x * ϖ ^ (-(normalizedValuation K x).toAdd) ∈ unitFiltration K 0 := by
+  rw [← ker_normalizedValuation, MonoidHom.mem_ker, map_mul,
+    normalizedValuation_zpow_of_eq_ofAdd_one hϖ, ofAdd_neg, ofAdd_toAdd, mul_inv_cancel]
+
+variable (K) in
+/-- **The structure of `Kˣ` attached to a uniformizer.** For `ϖ : Kˣ` of normalized valuation
+`1`, the map `x ↦ (v_K(x), x ϖ^{-v_K(x)})` is an isomorphism of topological groups
+`Kˣ ≃ₜ* ℤ × U(K,0)`, with inverse `(n, u) ↦ ϖ ^ n * u`. -/
+def unitsEquivIntProd (ϖ : Kˣ) (hϖ : normalizedValuation K ϖ = .ofAdd 1) :
+    Kˣ ≃ₜ* Multiplicative ℤ × unitFiltration K 0 where
+  toFun x := (normalizedValuation K x,
+    ⟨x * ϖ ^ (-(normalizedValuation K x).toAdd), mul_zpow_neg_mem_unitFiltration_zero hϖ x⟩)
+  invFun p := ϖ ^ p.1.toAdd * p.2
+  left_inv x := by simp
+  right_inv p := by
+    refine Prod.ext (by simp [normalizedValuation_zpow_of_eq_ofAdd_one hϖ]) (Subtype.ext ?_)
+    simp only [map_mul, normalizedValuation_zpow_of_eq_ofAdd_one hϖ,
+      normalizedValuation_coe_unitFiltration_zero, mul_one, toAdd_ofAdd]
+    rw [mul_right_comm, ← zpow_add, add_neg_cancel, zpow_zero, one_mul]
+  map_mul' x y := by
+    refine Prod.ext (map_mul _ x y) (Subtype.ext ?_)
+    simp only [Prod.snd_mul, Subgroup.coe_mul, map_mul, toAdd_mul]
+    rw [neg_add, zpow_add, mul_mul_mul_comm]
+  continuous_toFun :=
+    (continuous_normalizedValuation K).prodMk <| Continuous.subtype_mk
+      (continuous_id.mul ((continuous_of_discreteTopology (f := fun n : Multiplicative ℤ ↦
+        ϖ ^ (-n.toAdd))).comp (continuous_normalizedValuation K))) _
+  continuous_invFun :=
+    (continuous_of_discreteTopology.comp continuous_fst).mul
+      (continuous_subtypeVal.comp continuous_snd)
+
+/-- The `ℤ`-component of the uniformizer splitting is the normalized valuation. -/
+@[simp]
+theorem unitsEquivIntProd_apply_fst (hϖ : normalizedValuation K ϖ = .ofAdd 1) (x : Kˣ) :
+    (unitsEquivIntProd K ϖ hϖ x).1 = normalizedValuation K x :=
+  (rfl)
+
+/-- The `U(K,0)`-component of the uniformizer splitting is `x ϖ^{-v_K(x)}`. -/
+@[simp]
+theorem coe_unitsEquivIntProd_apply_snd (hϖ : normalizedValuation K ϖ = .ofAdd 1) (x : Kˣ) :
+    ((unitsEquivIntProd K ϖ hϖ x).2 : Kˣ) = x * ϖ ^ (-(normalizedValuation K x).toAdd) :=
+  (rfl)
+
+/-- The inverse of the uniformizer splitting is `(n, u) ↦ ϖ ^ n * u`. -/
+@[simp]
+theorem unitsEquivIntProd_symm_apply (hϖ : normalizedValuation K ϖ = .ofAdd 1)
+    (p : Multiplicative ℤ × unitFiltration K 0) :
+    (unitsEquivIntProd K ϖ hϖ).symm p = ϖ ^ p.1.toAdd * p.2 :=
+  (rfl)
+
+variable (K) in
+/-- The multiplicative group of a nonarchimedean local field is σ-compact: a uniformizer splitting
+identifies it with `ℤ × U(K,0)`, a countable discrete group times a compact one. -/
+instance instSigmaCompactSpaceUnits : SigmaCompactSpace Kˣ := by
+  obtain ⟨ϖ, hϖ⟩ := normalizedValuation_surjective (K := K) (.ofAdd 1)
+  have : CompactSpace (unitFiltration K 0) :=
+    isCompact_iff_compactSpace.1 (isCompact_unitFiltration 0)
+  exact isSigmaCompact_univ_iff.1 <| by
+    simpa using isSigmaCompact_range (unitsEquivIntProd K ϖ hϖ).symm.continuous
+
+/-- **Uniqueness of the decomposition.** Every `x : Kˣ` is uniquely `ϖ ^ n * u` with `n : ℤ` and
+`u ∈ U(K,0)`. -/
+theorem existsUnique_eq_zpow_mul (hϖ : normalizedValuation K ϖ = .ofAdd 1) (x : Kˣ) :
+    ∃! p : ℤ × unitFiltration K 0, x = ϖ ^ p.1 * p.2 := by
+  refine ⟨((unitsEquivIntProd K ϖ hϖ x).1.toAdd, (unitsEquivIntProd K ϖ hϖ x).2), ?_, ?_⟩
+  · simp
+  · rintro ⟨n, u⟩ rfl
+    have h := (unitsEquivIntProd K ϖ hϖ).apply_symm_apply (.ofAdd n, u)
+    simp only [unitsEquivIntProd_symm_apply, toAdd_ofAdd] at h
+    simp [h]
+
+/-- **Changing the uniformizer.** For two uniformizers `ϖ` and `ϖ'`, the unit components of the
+two splittings differ by the power `(ϖ ϖ'⁻¹) ^ v_K(x)` of the unit `ϖ ϖ'⁻¹ ∈ U(K,0)`. -/
+theorem coe_unitsEquivIntProd_apply_snd_eq_mul {ϖ' : Kˣ}
+    (hϖ : normalizedValuation K ϖ = .ofAdd 1) (hϖ' : normalizedValuation K ϖ' = .ofAdd 1)
+    (x : Kˣ) :
+    ((unitsEquivIntProd K ϖ' hϖ' x).2 : Kˣ) =
+      (unitsEquivIntProd K ϖ hϖ x).2 * (ϖ * ϖ'⁻¹) ^ (normalizedValuation K x).toAdd := by
+  simp only [coe_unitsEquivIntProd_apply_snd, mul_zpow, inv_zpow, zpow_neg]
+  group
+
+/-- The ratio of two uniformizers lies in `U(K,0)`. -/
+theorem mul_inv_mem_unitFiltration_zero {ϖ' : Kˣ} (hϖ : normalizedValuation K ϖ = .ofAdd 1)
+    (hϖ' : normalizedValuation K ϖ' = .ofAdd 1) : ϖ * ϖ'⁻¹ ∈ unitFiltration K 0 := by
+  rw [← ker_normalizedValuation, MonoidHom.mem_ker, map_mul, map_inv, hϖ, hϖ', mul_inv_cancel]
+
+/-- **The splittings attached to two uniformizers differ by a shear.** For uniformizers `ϖ` and
+`ϖ'`, the splitting `Kˣ ≃ₜ* ℤ × U(K,0)` attached to `ϖ'` is the one attached to `ϖ` followed by
+the shear `(n, u) ↦ (n, c ^ n * u)` by the unit `c = ϖ ϖ'⁻¹ ∈ U(K,0)`. -/
+theorem unitsEquivIntProd_trans_prodShear {ϖ' : Kˣ} (hϖ : normalizedValuation K ϖ = .ofAdd 1)
+    (hϖ' : normalizedValuation K ϖ' = .ofAdd 1) :
+    (unitsEquivIntProd K ϖ hϖ).trans (MonoidHom.prodShear
+      (zpowersHom _ ⟨ϖ * ϖ'⁻¹, mul_inv_mem_unitFiltration_zero hϖ hϖ'⟩)
+        continuous_of_discreteTopology) =
+      unitsEquivIntProd K ϖ' hϖ' :=
+  ContinuousMulEquiv.ext fun x ↦ Prod.ext (by simp) <| Subtype.ext <| by
+    simp [coe_unitsEquivIntProd_apply_snd_eq_mul hϖ hϖ' x, mul_comm]
+
+/-! ### The subgroups `U(K,i) · ϖ ^ ℤ` -/
+
+/-- Membership in `U(K,i) · ϖ ^ ℤ` for a uniformizer `ϖ`: `x` lies in it exactly when its unit
+part `x ϖ^{-v_K(x)}` lies in `U(K,i)`. -/
+theorem mem_unitFiltration_sup_zpowers_iff (hϖ : normalizedValuation K ϖ = .ofAdd 1) {i : ℕ}
+    {x : Kˣ} :
+    x ∈ unitFiltration K i ⊔ Subgroup.zpowers ϖ ↔
+      x * ϖ ^ (-(normalizedValuation K x).toAdd) ∈ unitFiltration K i := by
+  refine ⟨fun hx ↦ ?_, fun hx ↦ Subgroup.mem_sup.mpr
+    ⟨_, hx, _, Subgroup.zpow_mem_zpowers ϖ (normalizedValuation K x).toAdd, by group⟩⟩
+  obtain ⟨u, hu, _, ⟨k, rfl⟩, rfl⟩ := Subgroup.mem_sup.mp hx
+  have hu0 : normalizedValuation K u = 1 := by
+    rw [← MonoidHom.mem_ker, ker_normalizedValuation]
+    exact unitFiltration_antitone (Nat.zero_le i) hu
+  simpa [hu0, normalizedValuation_zpow_of_eq_ofAdd_one hϖ, mul_assoc, ← zpow_add] using hu
+
+/-- `Kˣ` is generated by the units of `𝒪[K]` and a uniformizer: `U(K,0) · ϖ ^ ℤ = Kˣ`. -/
+theorem unitFiltration_zero_sup_zpowers_eq_top (hϖ : normalizedValuation K ϖ = .ofAdd 1) :
+    unitFiltration K 0 ⊔ Subgroup.zpowers ϖ = ⊤ :=
+  eq_top_iff.mpr fun x _ ↦
+    (mem_unitFiltration_sup_zpowers_iff hϖ).mpr (mul_zpow_neg_mem_unitFiltration_zero hϖ x)
+
+/-- For `ϖ` of nonzero valuation (for instance a uniformizer), the units of `𝒪[K]` lying in
+`U(K,i) · ϖ ^ ℤ` are those of `U(K,i)`. -/
+theorem unitFiltration_sup_zpowers_inf_unitFiltration_zero
+    (hϖ : normalizedValuation K ϖ ≠ 1) (i : ℕ) :
+    (unitFiltration K i ⊔ Subgroup.zpowers ϖ) ⊓ unitFiltration K 0 = unitFiltration K i := by
+  refine le_antisymm (fun x ⟨hx, hx0⟩ ↦ ?_)
+    (le_inf le_sup_left (unitFiltration_antitone (Nat.zero_le i)))
+  obtain ⟨u, hu, _, ⟨k, rfl⟩, rfl⟩ := Subgroup.mem_sup.mp hx
+  have hu0 : normalizedValuation K u = 1 := by
+    rw [← MonoidHom.mem_ker, ker_normalizedValuation]
+    exact unitFiltration_antitone (Nat.zero_le i) hu
+  have hx0' : normalizedValuation K (u * ϖ ^ k) = 1 := by
+    rw [← MonoidHom.mem_ker, ker_normalizedValuation]
+    exact hx0
+  rw [map_mul, hu0, one_mul, map_zpow] at hx0'
+  have hk : k = 0 := (IsMulTorsionFree.zpow_eq_one_iff_right hϖ).mp hx0'
+  simpa [hk] using hu
+
+/-- For `ϖ` of nonzero valuation (for instance a uniformizer), a step `U(K,j)` lies in
+`U(K,i) · ϖ ^ ℤ` exactly when it lies in `U(K,i)`. -/
+theorem unitFiltration_le_unitFiltration_sup_zpowers_iff
+    (hϖ : normalizedValuation K ϖ ≠ 1) {i j : ℕ} :
+    unitFiltration K j ≤ unitFiltration K i ⊔ Subgroup.zpowers ϖ ↔
+      unitFiltration K j ≤ unitFiltration K i := by
+  conv_rhs => rw [← unitFiltration_sup_zpowers_inf_unitFiltration_zero hϖ i]
+  rw [le_inf_iff, and_iff_left (unitFiltration_antitone (Nat.zero_le j))]
+
+/-- For a uniformizer `ϖ`, the index of `U(K,i) · ϖ ^ ℤ` in `Kˣ` is that of `U(K,i)` in
+`U(K,0)`: the valuation coordinate is absorbed by `ϖ ^ ℤ`. -/
+theorem index_unitFiltration_sup_zpowers (hϖ : normalizedValuation K ϖ = .ofAdd 1) (i : ℕ) :
+    (unitFiltration K i ⊔ Subgroup.zpowers ϖ).index =
+      (unitFiltration K i).relIndex (unitFiltration K 0) := by
+  have htop : unitFiltration K i ⊔ Subgroup.zpowers ϖ ⊔ unitFiltration K 0 = ⊤ := by
+    refine eq_top_iff.mpr fun x _ ↦ Subgroup.mem_sup.mpr
+      ⟨ϖ ^ (normalizedValuation K x).toAdd,
+        Subgroup.mem_sup_right (Subgroup.zpow_mem_zpowers ϖ _),
+        _, mul_zpow_neg_mem_unitFiltration_zero hϖ x, by
+          rw [← mul_assoc, mul_right_comm, ← zpow_add, add_neg_cancel, zpow_zero, one_mul]⟩
+  rw [← Subgroup.relIndex_top_right, ← htop, Subgroup.relIndex_sup_left,
+    ← Subgroup.inf_relIndex_right,
+    unitFiltration_sup_zpowers_inf_unitFiltration_zero (by simp [hϖ])]
+
+end Uniformizer
+
+section Teichmuller
+
+/-- Reduction `U(K,0) →* 𝓀[K]ˣ`, read through the depth-zero graded piece. -/
+private def unitFiltrationZeroReduction : unitFiltration K 0 →* 𝓀[K]ˣ :=
+  unitFiltrationGradedZeroEquivResidueFieldUnits.toMonoidHom.comp (QuotientGroup.mk' _)
+
+private theorem ker_unitFiltrationZeroReduction :
+    (unitFiltrationZeroReduction K).ker =
+      (unitFiltration K 1).subgroupOf (unitFiltration K 0) := by
+  rw [unitFiltrationZeroReduction, MulEquiv.toMonoidHom_eq_coe,
+    MonoidHom.ker_mulEquiv_comp, QuotientGroup.ker_mk']
+
+/-- The reduction of an element of `U(K,0)` is the residue class of the corresponding element
+of the valuation ring. -/
+private theorem coe_unitFiltrationZeroReduction (x : unitFiltration K 0) (y : 𝒪[K])
+    (hy : (y : K) = ((x : Kˣ) : K)) :
+    (unitFiltrationZeroReduction K x : 𝓀[K]) = residue 𝒪[K] y := by
+  simp only [unitFiltrationZeroReduction, MonoidHom.coe_comp, Function.comp_apply,
+    QuotientGroup.mk'_apply, MulEquiv.coe_toMonoidHom,
+    unitFiltrationGradedZeroEquivResidueFieldUnits_mk,
+    ValuationSubring.coe_unitGroupToResidueFieldUnits_apply]
+  exact congrArg (Ideal.Quotient.mk _) (Subtype.ext hy.symm)
+
+/-- Roots of unity have valuation one: `μ_n(K) ≤ U(K,0)` for `n ≠ 0`. -/
+theorem rootsOfUnity_le_unitFiltration_zero {n : ℕ} (hn : n ≠ 0) :
+    rootsOfUnity n K ≤ unitFiltration K 0 := fun ζ hζ ↦ by
+  rw [← ker_normalizedValuation]
+  exact normalizedValuation_eq_one_of_isOfFinOrder
+    (isOfFinOrder_iff_pow_eq_one.mpr ⟨n, Nat.pos_of_ne_zero hn, hζ⟩)
+
+/-- The case `n = q - 1` of `rootsOfUnity_le_unitFiltration_zero`. -/
+private theorem rootsOfUnity_residue_le :
+    rootsOfUnity (Nat.card 𝓀[K] - 1) K ≤ unitFiltration K 0 :=
+  rootsOfUnity_le_unitFiltration_zero K (Nat.sub_ne_zero_of_lt Finite.one_lt_card)
+
+private theorem unitFiltrationZeroReduction_inclusion_symm (α : 𝓀[K]ˣ) :
+    unitFiltrationZeroReduction K (Subgroup.inclusion
+      (rootsOfUnity_residue_le K)
+      ((rootsOfUnityAlgebraMulEquivUnitsResidueField
+        𝒪[K] K).symm α)) = α :=
+  Units.ext <| (coe_unitFiltrationZeroReduction K _ _
+    (rootsOfUnityAlgebraMulEquivUnitsResidueField_symm_apply
+      𝒪[K] K α).symm).trans
+      (residue_teichmuller 𝒪[K] α)
+
+private theorem unitFiltrationZeroReduction_comp_inclusion :
+    (unitFiltrationZeroReduction K).comp
+        (Subgroup.inclusion (rootsOfUnity_residue_le K)) =
+      (rootsOfUnityAlgebraMulEquivUnitsResidueField
+        𝒪[K] K).toMonoidHom := by
+  ext1 ζ
+  obtain ⟨α, rfl⟩ :=
+    (rootsOfUnityAlgebraMulEquivUnitsResidueField
+      𝒪[K] K).symm.surjective ζ
+  simp [unitFiltrationZeroReduction_inclusion_symm]
+
+/-- The projection `U(K,0) →* μ_{q-1}(K)`: the Teichmüller representative of the residue class. -/
+private def teichmullerProjection :
+    unitFiltration K 0 →* rootsOfUnity (Nat.card 𝓀[K] - 1) K :=
+  (rootsOfUnityAlgebraMulEquivUnitsResidueField
+    𝒪[K] K).symm.toMonoidHom.comp (unitFiltrationZeroReduction K)
+
+private theorem teichmullerProjection_inclusion (ζ : rootsOfUnity (Nat.card 𝓀[K] - 1) K) :
+    teichmullerProjection K (Subgroup.inclusion (rootsOfUnity_residue_le K) ζ) =
+      ζ := by
+  have h := DFunLike.congr_fun (unitFiltrationZeroReduction_comp_inclusion K) ζ
+  simp only [MonoidHom.coe_comp, Function.comp_apply, MulEquiv.coe_toMonoidHom] at h
+  simp [teichmullerProjection, h]
+
+private theorem mul_inv_teichmullerProjection_mem (u : unitFiltration K 0) :
+    (u : Kˣ) * ((teichmullerProjection K u : rootsOfUnity _ K) : Kˣ)⁻¹ ∈ unitFiltration K 1 := by
+  have hmem : u * (Subgroup.inclusion (rootsOfUnity_residue_le K)
+      (teichmullerProjection K u))⁻¹ ∈ (unitFiltrationZeroReduction K).ker := by
+    rw [MonoidHom.mem_ker, map_mul, map_inv, teichmullerProjection,
+      MonoidHom.coe_comp, Function.comp_apply, MulEquiv.coe_toMonoidHom,
+      unitFiltrationZeroReduction_inclusion_symm, mul_inv_cancel]
+  rw [ker_unitFiltrationZeroReduction, Subgroup.mem_subgroupOf] at hmem
+  simpa using hmem
+
+private theorem teichmullerProjection_eq_one (u : unitFiltration K 0)
+    (hu : (u : Kˣ) ∈ unitFiltration K 1) : teichmullerProjection K u = 1 := by
+  have : u ∈ (unitFiltrationZeroReduction K).ker := by
+    rw [ker_unitFiltrationZeroReduction, Subgroup.mem_subgroupOf]
+    exact hu
+  simp [teichmullerProjection, MonoidHom.mem_ker.mp this]
+
+private theorem continuous_teichmullerProjection : Continuous (teichmullerProjection K) :=
+  continuous_of_continuousAt_one _ <| continuousAt_const.congr <|
+    mem_of_superset (continuous_subtypeVal.continuousAt.preimage_mem_nhds
+      (unitFiltration_mem_nhds_one (K := K) 1)) fun u hu ↦
+        ((teichmullerProjection_eq_one K u hu).trans
+          (map_one (teichmullerProjection K)).symm).symm
+
+/-- **The Teichmüller splitting of `U(K,0) = 𝒪[K]ˣ`.** The map sending `u` to its Teichmüller
+representative `ζ ∈ μ_{q-1}(K)` together with the principal unit `u ζ⁻¹ ∈ U(K,1)` is an
+isomorphism of topological groups `U(K,0) ≃ₜ* μ_{q-1}(K) × U(K,1)`, with inverse
+`(ζ, v) ↦ ζ v`. -/
+def unitFiltrationZeroEquivProd :
+    unitFiltration K 0 ≃ₜ* rootsOfUnity (Nat.card 𝓀[K] - 1) K × unitFiltration K 1 where
+  toFun u := (teichmullerProjection K u,
+    ⟨u * (teichmullerProjection K u : Kˣ)⁻¹, mul_inv_teichmullerProjection_mem K u⟩)
+  invFun p := ⟨p.1 * p.2, mul_mem (rootsOfUnity_residue_le K p.1.property)
+    (unitFiltration_antitone (Nat.zero_le 1) p.2.property)⟩
+  left_inv u := by ext; simp
+  right_inv p := by
+    have h : teichmullerProjection K ⟨p.1 * p.2, mul_mem
+        (rootsOfUnity_residue_le K p.1.property)
+        (unitFiltration_antitone (Nat.zero_le 1) p.2.property)⟩ = p.1 := by
+      have := map_mul (teichmullerProjection K)
+        (Subgroup.inclusion (rootsOfUnity_residue_le K) p.1)
+        (Subgroup.inclusion (unitFiltration_antitone (Nat.zero_le 1)) p.2)
+      rw [teichmullerProjection_inclusion,
+        teichmullerProjection_eq_one K (Subgroup.inclusion _ p.2) p.2.property, mul_one] at this
+      exact this
+    refine Prod.ext h (Subtype.ext ?_)
+    simp only [h]
+    rw [mul_inv_cancel_comm]
+  map_mul' u v := by
+    refine Prod.ext (map_mul _ u v) (Subtype.ext ?_)
+    simp only [Prod.snd_mul, Subgroup.coe_mul, map_mul, mul_inv]
+    rw [mul_mul_mul_comm]
+  continuous_toFun := by
+    refine (continuous_teichmullerProjection K).prodMk (Continuous.subtype_mk ?_ _)
+    exact continuous_subtypeVal.mul
+      (continuous_subtypeVal.comp (continuous_teichmullerProjection K)).inv
+  continuous_invFun := Continuous.subtype_mk
+    ((continuous_subtypeVal.comp continuous_fst).mul
+      (continuous_subtypeVal.comp continuous_snd)) _
+
+/-- The root-of-unity component of `u ∈ U(K,0)` has the same residue class as `u`. -/
+@[simp]
+theorem rootsOfUnityAlgebraMulEquivUnitsResidueField_unitFiltrationZeroEquivProd_apply_fst
+    (u : unitFiltration K 0) :
+    rootsOfUnityAlgebraMulEquivUnitsResidueField 𝒪[K] K
+        (unitFiltrationZeroEquivProd K u).1 =
+      unitFiltrationGradedZeroEquivResidueFieldUnits (QuotientGroup.mk u) := by
+  simp [unitFiltrationZeroEquivProd, teichmullerProjection, unitFiltrationZeroReduction]
+
+/-- The principal-unit component of `u ∈ U(K,0)` is `u ζ⁻¹`, for `ζ` the root-of-unity
+component. -/
+@[simp]
+theorem coe_unitFiltrationZeroEquivProd_apply_snd (u : unitFiltration K 0) :
+    ((unitFiltrationZeroEquivProd K u).2 : Kˣ) =
+      u * ((unitFiltrationZeroEquivProd K u).1 : Kˣ)⁻¹ :=
+  (rfl)
+
+/-- The inverse of the Teichmüller splitting is multiplication, `(ζ, v) ↦ ζ v`. -/
+@[simp]
+theorem coe_unitFiltrationZeroEquivProd_symm_apply
+    (p : rootsOfUnity (Nat.card 𝓀[K] - 1) K × unitFiltration K 1) :
+    ((unitFiltrationZeroEquivProd K).symm p : Kˣ) = p.1 * p.2 :=
+  (rfl)
+
+end Teichmuller
+
+end TauCeti
+
+namespace Valuation
+
+open scoped WithZero
+
+/-- When a discrete valuation's order agrees with the normalized local-field valuation,
+its unit part agrees with the second component of the topological uniformizer splitting.
+The equality compares underlying field units, without identifying the two unit subgroups. -/
+theorem coe_unitPart_eq_unitsEquivIntProd_snd {K : Type*} [Field K] [ValuativeRel K]
+    [TopologicalSpace K] [IsNonarchimedeanLocalField K] (v : Valuation K ℤᵐ⁰)
+    (hord : ∀ x : Kˣ, v.ord (x : K) = (TauCeti.normalizedValuation K x).toAdd)
+    (t : Kˣ) (ht : TauCeti.normalizedValuation K t = .ofAdd 1) (x : Kˣ) :
+    (v.unitPart t (by simp [hord, ht]) x : Kˣ) =
+      ((TauCeti.unitsEquivIntProd K t ht x).2 : Kˣ) := by
+  simp only [coe_unitPart, TauCeti.coe_unitsEquivIntProd_apply_snd, hord]
+
+end Valuation

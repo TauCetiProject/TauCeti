@@ -5,75 +5,45 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.ModelCategory.DerivabilityStructureFibrant
-public import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.EnoughInjectives
-public import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.Subobject
-public import Mathlib.CategoryTheory.SmallObject.Basic
-public import TauCeti.Algebra.Homology.ModelCategory.KInjective.Resolution
+public import TauCeti.Algebra.Homology.ModelCategory.KInjective.ModelStructure
 
 import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
+import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.EnoughInjectives
+import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.Subobject
 import Mathlib.CategoryTheory.Adjunction.Limits
 import Mathlib.CategoryTheory.LiftingProperties.Adjunction
 import TauCeti.Algebra.Homology.Adjunction
 import TauCeti.CategoryTheory.Abelian.GrothendieckCategory.SmallObjectArgument
 
 /-!
-# The injective model structure on unbounded cochain complexes
+# Cardinal-controlled fibrant replacement and Quillen functoriality on unbounded complexes
 
-Let `C` be a Grothendieck abelian category. This file equips the category `CochainComplex C ℤ` of
-unbounded cochain complexes in `C` with its injective model structure, scoped in the namespace
-`CochainComplex.modelCategoryInjective`:
+Building on the injective model structure `CochainComplex.modelCategoryInjective` on
+`CochainComplex C ℤ` established in
+`TauCeti.Algebra.Homology.ModelCategory.KInjective.ModelStructure`, this file provides:
 
-* weak equivalences are quasi-isomorphisms (`HomologicalComplex.quasiIso C (.up ℤ)`);
-* cofibrations are monomorphisms (`MorphismProperty.monomorphisms _`), so every complex is
-  cofibrant;
-* fibrations are morphisms with the right lifting property with respect to monomorphic
-  quasi-isomorphisms, characterized explicitly in `TauCeti.Algebra.Homology.ModelCategory.Injective`
-  as the degreewise epimorphisms with K-injective kernel of degreewise injective objects.
-
-Consequently, the fibrant objects are precisely the K-injective complexes whose terms are injective
-objects (`CochainComplex.modelCategoryInjective.isFibrant_iff`), and the trivial fibrations are the
-morphisms with the right lifting property with respect to all monomorphisms, or equivalently the
-degreewise epimorphisms whose kernel is acyclic, K-injective, and degreewise injective
-(`CochainComplex.modelCategoryInjective.trivialFibration_iff`).
-
-The classes, characterizations, lifting axioms (`cm4a`, `cm4b`), and Quillen functoriality along
-adjunctions whose left adjoint is exact are established over an arbitrary abelian category `C`.
-When `C` is Grothendieck abelian (`IsGrothendieckAbelian.{w} C`), we record `w`-small generating
-sets `generatingCofibrations C` and `generatingTrivialCofibrations C`, a single regular cardinal
-`injectiveModelCardinal C` controlling the subobject lattices of sources and targets in both
-generating sets and suitable for the small object argument on both, the `ModelCategory` instance,
-and the resulting cardinal-controlled functorial fibrant replacement `fibrantReplacement C` whose
-unit components are relative cell complexes for `generatingTrivialCofibrations C`.
-
-## Main definitions and results
-
-* `CochainComplex.modelCategoryInjective`: scoped instances `CategoryWithWeakEquivalences`,
-  `CategoryWithCofibrations`, and `CategoryWithFibrations` on `CochainComplex C ℤ` for any abelian
-  category `C`, and `ModelCategory (CochainComplex C ℤ)` when `IsGrothendieckAbelian.{w} C`.
-* `CochainComplex.modelCategoryInjective.fibration_iff`, `trivialFibration_iff`, `isFibrant_iff`:
-  explicit characterizations of fibrations, trivial fibrations, and fibrant complexes.
-* `CategoryTheory.Adjunction.fibration_mapHomologicalComplex_map`,
-  `CategoryTheory.Adjunction.isFibrant_mapHomologicalComplex_obj`: the right adjoint of an exact
-  functor between abelian categories preserves fibrations, trivial fibrations, and fibrant
-  complexes.
-* `CochainComplex.modelCategoryInjective.generatingCofibrations`,
-  `CochainComplex.modelCategoryInjective.generatingTrivialCofibrations`,
-  `CochainComplex.modelCategoryInjective.injectiveModelCardinal`: combinatorial generating data and
-  uniform regular cardinal bound for the small object argument.
-* `CochainComplex.modelCategoryInjective.fibrantReplacement`,
-  `CochainComplex.modelCategoryInjective.ιFibrantReplacement`,
-  `CochainComplex.modelCategoryInjective.relativeCellComplexιFibrantReplacementApp`: functorial
-  fibrant replacement built by transfinite cell attachment of length
-  `(injectiveModelCardinal C).ord.ToType`.
-
-## Implementation notes
-
-The scoped model-category API parallels Joël Riou's bounded-below injective model structure
-`CochainComplex.Plus.modelCategoryQuillen` in `Mathlib.Algebra.Homology.ModelCategory.BoundedBelow`,
-while the cardinal-controlled small object argument builds on
-`Mathlib.CategoryTheory.Abelian.GrothendieckCategory.EnoughInjectives` and
-`Mathlib.CategoryTheory.SmallObject.Basic` by Joël Riou.
+1. **Additional characterizations in any abelian category `C`**: explicit description of trivial
+   fibrations as degreewise epimorphisms whose kernel is degreewise injective, K-injective, and
+   acyclic (`CochainComplex.modelCategoryInjective.trivialFibration_iff`), and identification of
+   weak equivalences between K-injective complexes with chain homotopy equivalences
+   (`CochainComplex.modelCategoryInjective.weakEquivalence_iff_homotopyEquivalences`).
+2. **Cardinal-controlled combinatorial generation and relative-cell fibrant replacement** when `C`
+   is Grothendieck abelian (`IsGrothendieckAbelian.{w} C`): functorial factorizations on both
+   `(trivialCofibrations, fibrations)` and `(cofibrations, trivialFibrations)`, explicit `w`-small
+   generating families `generatingCofibrations C` and `generatingTrivialCofibrations C`, a single
+   regular cardinal `injectiveModelCardinal C` bounding the subobject lattices of all sources and
+   targets in both generating sets and suitable for Quillen's small object argument on both, and
+   the resulting cardinal-controlled functorial fibrant replacement `fibrantReplacement C` whose
+   unit components `(ιFibrantReplacement C).app K` carry the explicit transfinite
+   `RelativeCellComplex` witness `relativeCellComplexιFibrantReplacementApp K` of length
+   `(injectiveModelCardinal C).ord.ToType` (complementing `TauCeti.injectiveReplacement`, which
+   uses the existential `HasFunctorialFactorization` without cardinal or cell-complex data).
+3. **Quillen functoriality along exact functors and adjunctions**: exact additive functors preserve
+   cofibrations and weak equivalences, arbitrary additive functors preserve weak equivalences
+   between K-injective complexes, and the right adjoint of a finite-limit-preserving functor
+   between abelian categories preserves fibrations, trivial fibrations, and fibrant complexes
+   (`CategoryTheory.Adjunction.fibration_mapHomologicalComplex_map`,
+   `CategoryTheory.Adjunction.isFibrant_mapHomologicalComplex_obj`).
 
 ## References
 
@@ -94,102 +64,16 @@ section Abelian
 
 variable {C : Type u} [Category.{v} C] [Abelian C]
 
-/-- Weak equivalences in the injective model structure on `CochainComplex C ℤ` are the
-quasi-isomorphisms. -/
-scoped instance categoryWithWeakEquivalences :
-    CategoryWithWeakEquivalences (CochainComplex C ℤ) where
-  weakEquivalences := HomologicalComplex.quasiIso C (.up ℤ)
-
-/-- Cofibrations in the injective model structure on `CochainComplex C ℤ` are the
-monomorphisms. -/
-scoped instance categoryWithCofibrations : CategoryWithCofibrations (CochainComplex C ℤ) where
-  cofibrations := monomorphisms (CochainComplex C ℤ)
-
-/-- Fibrations in the injective model structure on `CochainComplex C ℤ` are the morphisms with
-the right lifting property against monomorphic quasi-isomorphisms. -/
-scoped instance categoryWithFibrations : CategoryWithFibrations (CochainComplex C ℤ) where
-  fibrations := (monomorphisms (CochainComplex C ℤ) ⊓ HomologicalComplex.quasiIso C (.up ℤ)).rlp
-
-lemma weakEquivalences_eq :
-    weakEquivalences (CochainComplex C ℤ) = HomologicalComplex.quasiIso C (.up ℤ) :=
-  rfl
-
-lemma cofibrations_eq :
-    cofibrations (CochainComplex C ℤ) = monomorphisms (CochainComplex C ℤ) :=
-  rfl
-
-lemma fibrations_eq :
-    fibrations (CochainComplex C ℤ) =
-      (monomorphisms (CochainComplex C ℤ) ⊓ HomologicalComplex.quasiIso C (.up ℤ)).rlp :=
-  rfl
-
-lemma trivialCofibrations_eq :
-    trivialCofibrations (CochainComplex C ℤ) =
-      monomorphisms (CochainComplex C ℤ) ⊓ HomologicalComplex.quasiIso C (.up ℤ) :=
-  rfl
-
-instance : (weakEquivalences (CochainComplex C ℤ)).HasTwoOutOfThreeProperty :=
-  inferInstanceAs (HomologicalComplex.quasiIso C (.up ℤ)).HasTwoOutOfThreeProperty
-
-instance : (weakEquivalences (CochainComplex C ℤ)).IsStableUnderRetracts :=
-  inferInstanceAs (HomologicalComplex.quasiIso C (.up ℤ)).IsStableUnderRetracts
-
-instance : (cofibrations (CochainComplex C ℤ)).IsStableUnderRetracts :=
-  inferInstanceAs (monomorphisms (CochainComplex C ℤ)).IsStableUnderRetracts
-
-instance : (fibrations (CochainComplex C ℤ)).IsStableUnderRetracts :=
-  inferInstanceAs
-    (monomorphisms (CochainComplex C ℤ) ⊓
-      HomologicalComplex.quasiIso C (.up ℤ)).rlp.IsStableUnderRetracts
-
-instance : (fibrations (CochainComplex C ℤ)).RespectsIso :=
-  inferInstanceAs
-    (monomorphisms (CochainComplex C ℤ) ⊓ HomologicalComplex.quasiIso C (.up ℤ)).rlp.RespectsIso
-
-lemma weakEquivalence_iff {K L : CochainComplex C ℤ} (f : K ⟶ L) :
-    WeakEquivalence f ↔ QuasiIso f := by
-  rw [HomotopicalAlgebra.weakEquivalence_iff, weakEquivalences_eq,
-    HomologicalComplex.mem_quasiIso_iff]
-
-lemma cofibration_iff {K L : CochainComplex C ℤ} (f : K ⟶ L) :
-    Cofibration f ↔ Mono f :=
-  HomotopicalAlgebra.cofibration_iff f
-
-instance {K L : CochainComplex C ℤ} (f : K ⟶ L) [Cofibration f] : Mono f := by
-  rwa [← cofibration_iff]
-
-instance {K L : CochainComplex C ℤ} (f : K ⟶ L) [WeakEquivalence f] : QuasiIso f := by
-  rwa [← weakEquivalence_iff]
-
-/-- Every cochain complex in an abelian category is cofibrant for the injective model structure,
-because `⊥_ (CochainComplex C ℤ)` is a zero object and its morphism to any complex is monic. -/
-instance isCofibrant (K : CochainComplex C ℤ) : IsCofibrant K := by
-  rw [isCofibrant_iff, cofibration_iff]
-  infer_instance
-
 lemma mem_trivialCofibrations_iff' {K L : CochainComplex C ℤ} (f : K ⟶ L) :
     trivialCofibrations (CochainComplex C ℤ) f ↔ Mono f ∧ QuasiIso f := by
   rw [mem_trivialCofibrations_iff, cofibration_iff, weakEquivalence_iff]
-
-/-- A morphism of unbounded cochain complexes is a fibration in the injective model structure if
-and only if it is degreewise epimorphic with degreewise injective and K-injective kernel. -/
-theorem fibration_iff {K L : CochainComplex C ℤ} (p : K ⟶ L) :
-    Fibration p ↔ degreewiseEpiWithInjectiveKernel p ∧ (kernel p).IsKInjective := by
-  rw [HomotopicalAlgebra.fibration_iff, fibrations_eq, rlp_monomorphisms_inf_quasiIso_iff]
-
-/-- The trivial fibrations in the injective model structure are precisely the morphisms with the
-right lifting property against all monomorphisms. -/
-theorem trivialFibrations_eq_rlp_monomorphisms :
-    trivialFibrations (CochainComplex C ℤ) = (monomorphisms (CochainComplex C ℤ)).rlp := by
-  ext K L p
-  exact (rlp_monomorphisms_iff_rlp_monomorphisms_inf_quasiIso_and_quasiIso p).symm
 
 /-- A morphism of unbounded cochain complexes is both a fibration and a weak equivalence if and
 only if it has the right lifting property against all monomorphisms. -/
 theorem fibration_and_weakEquivalence_iff_rlp_monomorphisms {K L : CochainComplex C ℤ}
     (p : K ⟶ L) :
     Fibration p ∧ WeakEquivalence p ↔ (monomorphisms (CochainComplex C ℤ)).rlp p := by
-  rw [← mem_trivialFibrations_iff, trivialFibrations_eq_rlp_monomorphisms]
+  rw [← mem_trivialFibrations_iff, trivialFibrations_eq]
 
 /-- A morphism of unbounded cochain complexes is a trivial fibration if and only if it is
 degreewise epimorphic and its kernel is degreewise injective, K-injective, and acyclic. -/
@@ -198,32 +82,12 @@ theorem trivialFibration_iff {K L : CochainComplex C ℤ} (p : K ⟶ L) :
       degreewiseEpiWithInjectiveKernel p ∧ (kernel p).IsKInjective ∧ (kernel p).Acyclic := by
   rw [fibration_and_weakEquivalence_iff_rlp_monomorphisms, rlp_monomorphisms_iff]
 
-/-- A cochain complex is fibrant in the injective model structure if and only if it is K-injective
-and every term `K.X n` is an injective object of `C`. -/
-theorem isFibrant_iff (K : CochainComplex C ℤ) :
-    IsFibrant K ↔ (∀ n : ℤ, Injective (K.X n)) ∧ K.IsKInjective := by
-  rw [isFibrant_iff_of_isTerminal (0 : K ⟶ 0) (isZero_zero _).isTerminal,
-    HomotopicalAlgebra.fibration_iff, fibrations_eq,
-    rlp_monomorphisms_inf_quasiIso_iff_of_isZero _ (isZero_zero _)]
-
 lemma injective_X_of_isFibrant {K : CochainComplex C ℤ} [IsFibrant K] (n : ℤ) :
     Injective (K.X n) :=
   ((isFibrant_iff K).1 ‹_›).1 n
 
 lemma isKInjective_of_isFibrant {K : CochainComplex C ℤ} [IsFibrant K] : K.IsKInjective :=
   ((isFibrant_iff K).1 ‹_›).2
-
-instance {A B X Y : CochainComplex C ℤ} (i : A ⟶ B) (p : X ⟶ Y)
-    [Cofibration i] [WeakEquivalence i] [Fibration p] :
-    HasLiftingProperty i p :=
-  (HomotopicalAlgebra.fibration_iff p).1 ‹_› i
-    ⟨(cofibration_iff i).1 ‹_›, (HomotopicalAlgebra.weakEquivalence_iff i).1 ‹_›⟩
-
-instance {A B X Y : CochainComplex C ℤ} (i : A ⟶ B) (p : X ⟶ Y)
-    [Cofibration i] [Fibration p] [WeakEquivalence p] :
-    HasLiftingProperty i p :=
-  ((fibration_and_weakEquivalence_iff_rlp_monomorphisms p).1 ⟨‹_›, ‹_›⟩) i
-    ((cofibration_iff i).1 ‹_›)
 
 /-- Weak equivalences between K-injective (in particular, fibrant) cochain complexes are precisely
 chain homotopy equivalences. -/
@@ -238,20 +102,15 @@ section Grothendieck
 
 variable (C : Type u) [Category.{v} C] [Abelian C] [IsGrothendieckAbelian.{w} C]
 
-instance : HasFunctorialFactorization
+scoped instance : HasFunctorialFactorization
     (trivialCofibrations (CochainComplex C ℤ)) (fibrations (CochainComplex C ℤ)) := by
   rw [trivialCofibrations_eq, fibrations_eq]
   infer_instance
 
-instance : HasFunctorialFactorization
+scoped instance : HasFunctorialFactorization
     (cofibrations (CochainComplex C ℤ)) (trivialFibrations (CochainComplex C ℤ)) := by
-  rw [cofibrations_eq, trivialFibrations_eq_rlp_monomorphisms]
+  rw [cofibrations_eq, trivialFibrations_eq]
   infer_instance
-
-/-- The injective model category structure on unbounded cochain complexes in a Grothendieck
-abelian category. -/
-@[stacks 079P]
-scoped instance modelCategory : ModelCategory (CochainComplex C ℤ) where
 
 /-- A `w`-small set of generating cofibrations for `CochainComplex C ℤ`, given by the inclusions
 of subcomplexes of the chosen separator of `CochainComplex C ℤ`. -/
@@ -273,7 +132,7 @@ theorem generatingCofibrations_rlp :
     (generatingCofibrations C).rlp = trivialFibrations (CochainComplex C ℤ) := by
   rw [generatingCofibrations,
     IsGrothendieckAbelian.generatingMonomorphisms_rlp (isSeparator_separator (CochainComplex C ℤ)),
-    trivialFibrations_eq_rlp_monomorphisms]
+    trivialFibrations_eq]
 
 /-- The morphisms with the left lifting property against `(generatingCofibrations C).rlp` are the
 cofibrations. -/
@@ -321,8 +180,8 @@ private abbrev GeneratingEndpointSubobjects :
     (ULift.{w} Bool × (generatingCofibrations C).toSet) ⊕
       (ULift.{w} Bool × (generatingTrivialCofibrations.{w} C).toSet) → Type _ :=
   Sum.elim
-    (fun ⟨b, f⟩ ↦ b.down.casesOn (Subobject f.1.right) (Subobject f.1.left))
-    (fun ⟨b, f⟩ ↦ b.down.casesOn (Subobject f.1.right) (Subobject f.1.left))
+    (fun ⟨b, f⟩ ↦ b.down.casesOn (Subobject f.val.right) (Subobject f.val.left))
+    (fun ⟨b, f⟩ ↦ b.down.casesOn (Subobject f.val.right) (Subobject f.val.left))
 
 private lemma exists_injectiveModelCardinal :
     ∃ κ : Cardinal.{w}, κ.IsRegular ∧

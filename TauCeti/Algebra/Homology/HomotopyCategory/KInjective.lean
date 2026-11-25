@@ -20,7 +20,9 @@ import TauCeti.Algebra.Homology.Homotopy
 
 A cochain complex `L` in an abelian category is K-injective (Mathlib's
 `CochainComplex.IsKInjective`) if every morphism from an acyclic complex to `L` is null-homotopic.
-This file proves closure and characterization properties of this class:
+This file proves that contractible complexes are K-injective
+(`CochainComplex.isKInjective_of_homotopy_id_zero`), along with closure and characterization
+properties of this class:
 
 * a product of K-injective complexes is K-injective (`CochainComplex.isKInjective_of_isLimit_fan`);
 * in a degreewise split short exact sequence `0 → X₁ → X₂ → X₃ → 0` of cochain complexes with
@@ -64,6 +66,12 @@ open CategoryTheory Limits
 
 variable {C : Type*} [Category* C] [Abelian C]
 
+/-- A contractible cochain complex, one whose identity is null-homotopic, is K-injective. -/
+theorem isKInjective_of_homotopy_id_zero {L : CochainComplex C ℤ} (h : Homotopy (𝟙 L) 0) :
+    L.IsKInjective where
+  nonempty_homotopy_zero f _ :=
+    ⟨(Homotopy.ofEq (Category.comp_id f).symm).trans ((h.compLeft f).trans (.ofEq (by simp)))⟩
+
 /-- **Products of K-injective complexes are K-injective.** If `c` is a product of a family of
 K-injective cochain complexes, then its cone point is K-injective. -/
 theorem isKInjective_of_isLimit_fan {J : Type*}
@@ -106,13 +114,6 @@ theorem isKInjective_X₁_of_degreewiseSplit (S : ShortComplex (CochainComplex C
   exact ObjectProperty.ext_of_isTriangulatedClosed₁ _ _
     (trianglehOfDegreewiseSplit_distinguished S σ) (IsKInjective.rightOrthogonal S.X₂)
     (IsKInjective.rightOrthogonal S.X₃)
-
-/-- A contractible cochain complex is K-injective. -/
-theorem isKInjective_of_homotopy_id_zero {L : CochainComplex C ℤ} (h : Homotopy (𝟙 L) 0) :
-    L.IsKInjective where
-  nonempty_homotopy_zero f _ :=
-    ⟨(Homotopy.ofEq (Category.comp_id f).symm).trans
-      ((h.compLeft f).trans (Homotopy.ofEq comp_zero))⟩
 
 /-- A cochain complex is both K-injective and acyclic if and only if its identity map is
 null-homotopic. -/

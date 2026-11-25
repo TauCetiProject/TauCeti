@@ -30,6 +30,8 @@ the GNS spaces of positive-definite functions on it.
 
 * `TauCeti.HasHaagerupProperty.finite_of_relativePropertyT`: in a group with the Haagerup property,
   a subgroup with relative property (T) is finite.
+* `TauCeti.not_hasHaagerupProperty_of_relativePropertyT`: a group containing an infinite subgroup
+  with relative property (T) does not have the Haagerup property.
 * `TauCeti.not_hasHaagerupProperty_of_relativePropertyT_top`: an infinite group with property (T)
   does not have the Haagerup property.
 
@@ -47,7 +49,7 @@ open Filter Topology InnerProductSpace
 
 namespace TauCeti
 
-universe v
+universe u v
 
 variable {Γ : Type v} [Group Γ]
 
@@ -59,23 +61,10 @@ theorem HasHaagerupProperty.finite_of_relativePropertyT (hΓ : HasHaagerupProper
   set π := hφ.gnsRepresentation
   set ξ := hφ.gnsVector 1
   -- The GNS vector at the identity is an `(F, δ)`-invariant unit vector.
-  have hξ : ‖ξ‖ = 1 := by
-    have h : ‖ξ‖ ^ 2 = 1 := by
-      rw [@norm_sq_eq_re_inner ℂ, hφ.inner_gnsVector, inv_mul_cancel, hφ1, RCLike.one_re]
-    exact (pow_eq_one_iff_of_nonneg (norm_nonneg ξ) two_ne_zero).mp h
-  have hξF : ∀ g ∈ F, ‖π g ξ - ξ‖ < δ := by
-    intro g hg
-    have hsq := hφ.norm_gnsVector_sub_sq 1 g
-    rw [inv_one, one_mul, hφ1, RCLike.one_re] at hsq
-    have hre : 1 - RCLike.re (φ g) < δ ^ 2 / 2 := by
-      have := hφF g hg
-      rw [← norm_neg, neg_sub] at this
-      linarith [RCLike.re_le_norm (1 - φ g), show RCLike.re (1 - φ g) = 1 - RCLike.re (φ g) by
-        simp]
-    rw [hφ.gnsRepresentation_gnsVector_one, norm_sub_rev]
-    exact (sq_lt_sq₀ (norm_nonneg _) hδ.le).mp (by linarith)
+  have hξF : ∀ g ∈ F, ‖π g ξ - ξ‖ < δ := fun g hg ↦ (sq_lt_sq₀ (norm_nonneg _) hδ.le).mp <|
+    (hφ.norm_gnsRepresentation_gnsVector_one_sub_sq_le hφ1 g).trans_lt (by linarith [hφF g hg])
   obtain ⟨v, hv, hvΛ⟩ := (Λ.isKazhdanPair_def F δ).mp hK hφ.gnsSpace π
-    hφ.isUnitary_gnsRepresentation ⟨ξ, hξ, hξF⟩
+    hφ.isUnitary_gnsRepresentation ⟨ξ, hφ.norm_gnsVector_one hφ1, hξF⟩
   have hvΛ' (g : Γ) (hg : g ∈ Λ) : π g v = v := by
     simpa using (ContRepresentation.mem_invariants v).mp hvΛ ⟨g, hg⟩
   -- The coefficient of `v` vanishes at infinity but has norm `‖v‖ ^ 2` on `Λ`.
@@ -85,11 +74,23 @@ theorem HasHaagerupProperty.finite_of_relativePropertyT (hΓ : HasHaagerupProper
   refine Set.finite_coe_iff.mpr ((eventually_cofinite.mp hev).subset fun g hg ↦ ?_)
   simp [hvΛ' g hg]
 
+/-- A group containing an infinite subgroup with relative property (T) does not have the Haagerup
+property. -/
+theorem not_hasHaagerupProperty_of_relativePropertyT {Λ : Subgroup Γ} [Infinite Λ]
+    (hΛ : Λ.RelativePropertyT.{max u v}) : ¬ HasHaagerupProperty Γ := fun hΓ ↦ by
+  let e : Γ ≃* ULift.{u, v} Γ := MulEquiv.ulift.symm
+  have hU : HasHaagerupProperty (ULift.{u, v} Γ) :=
+    hΓ.of_injective e.symm.toMonoidHom e.symm.injective
+  have hfin : Finite (Λ.map (e : Γ →* ULift.{u, v} Γ)) :=
+    hU.finite_of_relativePropertyT (hΛ.map (e : Γ →* ULift.{u, v} Γ))
+  have : Finite Λ := @Finite.of_equiv _ _ hfin (e.subgroupMap Λ).symm.toEquiv
+  exact not_finite Λ
+
 /-- An infinite group with property (T) does not have the Haagerup property. -/
 theorem not_hasHaagerupProperty_of_relativePropertyT_top [Infinite Γ]
-    (hT : (⊤ : Subgroup Γ).RelativePropertyT.{v}) : ¬ HasHaagerupProperty Γ := fun hΓ ↦
-  have := hΓ.finite_of_relativePropertyT hT
-  have := Finite.of_equiv _ (Subgroup.topEquiv (G := Γ)).toEquiv
-  not_finite Γ
+    (hT : (⊤ : Subgroup Γ).RelativePropertyT.{v}) : ¬ HasHaagerupProperty Γ :=
+  have : Infinite (⊤ : Subgroup Γ) :=
+    Infinite.of_injective _ (Subgroup.topEquiv (G := Γ)).symm.injective
+  not_hasHaagerupProperty_of_relativePropertyT.{v, v} hT
 
 end TauCeti

@@ -66,8 +66,8 @@ theorem continuousSMul_integerIdealPadicInt (I : Ideal 𝒪[K]) :
   have hc : Continuous fun z : ℤ_[p] × I =>
       algebraMap ℚ_[p] K (z.1 : ℚ_[p]) * (z.2 : K) :=
     ((continuous_algebraMap_of_valuativeExtension ℚ_[p] K).comp
-      (continuous_subtype_val.comp continuous_fst)).mul
-        (continuous_subtype_val.comp (continuous_subtype_val.comp continuous_snd))
+      (continuous_subtypeVal.comp continuous_fst)).mul
+        (continuous_subtypeVal.comp (continuous_subtypeVal.comp continuous_snd))
   have hs : Continuous fun z : ℤ_[p] × I => (((z.1 • z.2 : I) : 𝒪[K]) : K) :=
     hc.congr fun z => (coe_padicInt_smul_integerIdeal I z.1 z.2).symm
   exact ⟨(hs.subtype_mk _).subtype_mk _⟩

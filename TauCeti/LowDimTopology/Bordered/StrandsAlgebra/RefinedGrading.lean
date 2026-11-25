@@ -160,6 +160,14 @@ theorem pushBoundary_indicator [DecidableEq α] {M : α → β} {S : Finset α} 
   · rw [card_eq_zero.2 (filter_eq_empty_iff.2 fun x _ h ↦ hb (mem_image.2 ⟨x, h.2, h.1⟩)),
       Nat.cast_zero]
 
+/-- `M_*` does not see a reindexing of the points: reading both the matching and the boundary
+through a bijection `e` gives the same sums over the fibres. -/
+theorem pushBoundary_comp_equiv {γ : Type*} [Fintype γ] (e : γ ≃ α) (M : α → β) (δ : α → ℤ) :
+    pushBoundary (M ∘ e) (δ ∘ e) = pushBoundary M δ := by
+  ext b
+  simp only [pushBoundary_apply, Function.comp_apply]
+  exact sum_equiv e (by simp) fun _ _ ↦ rfl
+
 /-- A boundary carried to `0` by `M_*` has total sum zero. -/
 theorem sum_eq_zero_of_pushBoundary_eq_zero {M : α → β} {δ : α → ℤ}
     (hδ : pushBoundary M δ = 0) : ∑ x, δ x = 0 := by
@@ -484,7 +492,7 @@ theorem nonempty (hM : Function.Surjective M) (s₀ : Finset β) :
   refine ⟨⟨fun s ↦ StrandGradingGroup.mk ((∑ x, (δ s x : ℚ) ^ 2) / 4) (δ s),
     fun s ↦ mem_gPrime_iff_sum_sq.2 ⟨⟨0, by simp⟩, ?_⟩, fun s ↦ ?_⟩⟩
   · simp only [δ, mk_boundary, Pi.sub_apply, sum_sub_distrib, sum_boole, filter_mem_eq_inter,
-      univ_inter, card_image_of_injective _ hσ, s.2, sub_self]
+      univ_inter, card_image_of_injective _ hσ, s.property, sub_self]
   · rw [mk_boundary, map_sub, pushBoundary_indicator (hinj _), pushBoundary_indicator (hinj _),
       himage, himage]
 

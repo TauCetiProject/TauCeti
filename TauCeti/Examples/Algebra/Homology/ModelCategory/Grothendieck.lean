@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.SheafOfModules
 public import Mathlib.CategoryTheory.Sites.Sheafification
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.ExtensionByZero
 public import TauCeti.Algebra.Homology.HomotopyCategory.KInjective
+public import TauCeti.Algebra.Homology.ModelCategory.Grothendieck
 public import TauCeti.Algebra.Module.ZMod.Injective
 public import TauCeti.CategoryTheory.DG.CochainComplex.Fibrant
 public import TauCeti.CategoryTheory.Linear.ULift

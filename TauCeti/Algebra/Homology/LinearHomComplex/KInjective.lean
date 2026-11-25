@@ -5,69 +5,77 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.DerivedCategory.KInjective
+public import Mathlib.Algebra.Homology.DerivedCategory.HomologySequence
+public import Mathlib.Algebra.Homology.DerivedCategory.KInjective
 public import TauCeti.Algebra.Homology.LinearHomComplex.Cohomology
-public import TauCeti.Algebra.Homology.LinearHomComplex.Homotopy
+import TauCeti.Algebra.Homology.LinearHomComplex.Homotopy
 
 /-!
-# Quasi-isomorphism invariance of linear Hom complexes into K-injective complexes
+# The linear Hom complex into a K-injective complex
 
-Let `C` be an `R`-linear abelian category over an arbitrary ring `R`. Precomposition by a
-quasi-isomorphism `K' ⟶ K` induces a quasi-isomorphism on `R`-linear Hom complexes into any
-K-injective complex `L`, and postcomposition by a quasi-isomorphism between K-injective complexes
-induces a homotopy equivalence (hence a quasi-isomorphism) out of any complex `K`. Together with
-`CochainComplex.IsKInjective.exists_homotopyEquiv`, this shows that `linearHomComplex R K I`
-depends on a K-injective replacement `K ⟶ I` only up to homotopy equivalence.
+If `I` is a K-injective cochain complex, then the linear Hom complex `Hom^•(-, I)` sends
+quasi-isomorphisms to quasi-isomorphisms (`TauCeti.quasiIso_linearHomComplexPrecomp`): in degree
+`n` its cohomology is the group of morphisms `K ⟶ I⟦n⟧` in the homotopy category, which are the
+morphisms `K ⟶ I⟦n⟧` in the derived category since `I⟦n⟧` is K-injective. Dually, postcomposition
+with a quasi-isomorphism between K-injective complexes induces a homotopy equivalence (hence a
+quasi-isomorphism) `Hom^•(K, I) ⟶ Hom^•(K, I')` out of any complex `K`
+(`TauCeti.quasiIso_linearHomComplexPostcomp`).
 -/
 
 public section
 
-open CategoryTheory CochainComplex DerivedCategory
+open CategoryTheory DerivedCategory
+
+universe w v u
 
 namespace TauCeti
 
-universe v u w
-
 variable (R : Type w) [Ring R] {C : Type u} [Category.{v} C] [Abelian C] [Linear R C]
 
-/-- Precomposition by a quasi-isomorphism induces a quasi-isomorphism on `R`-linear Hom complexes
-into any K-injective complex. -/
-theorem quasiIso_linearHomComplexPrecomp_of_isKInjective {K' K L : CochainComplex C ℤ}
-    (f : K' ⟶ K) [QuasiIso f] [L.IsKInjective] :
-    QuasiIso (linearHomComplexPrecomp R f L) := by
+/-- Precomposition with a quasi-isomorphism `s : K' ⟶ K` induces a quasi-isomorphism
+`Hom^•(K, I) ⟶ Hom^•(K', I)` of linear Hom complexes into a K-injective complex `I`. -/
+theorem quasiIso_linearHomComplexPrecomp {K' K : CochainComplex C ℤ} (s : K' ⟶ K) [QuasiIso s]
+    (I : CochainComplex C ℤ) [I.IsKInjective] :
+    QuasiIso (linearHomComplexPrecomp R s I) := by
   let := HasDerivedCategory.standard C
-  have hf : IsIso (Qh.map ((HomotopyCategory.quotient C _).map f)) := by
-    rw [isIso_Qh_map_iff, HomotopyCategory.quotient_map_mem_quasiIso_iff]
-    exact (HomologicalComplex.mem_quasiIso_iff f).2 inferInstance
   rw [quasiIso_iff]
   intro n
-  rw [quasiIsoAt_iff_isIso_homologyMap]
-  refine (ConcreteCategory.isIso_iff_bijective _).2 ?_
-  rw [← (linearHomComplexHomologyLinearEquiv R K' L n).bijective.of_comp_iff']
-  have hcomm : (linearHomComplexHomologyLinearEquiv R K' L n) ∘
-      (HomologicalComplex.homologyMap (linearHomComplexPrecomp R f L) n).hom =
-      (fun g ↦ (HomotopyCategory.quotient C _).map f ≫ g) ∘
-        (linearHomComplexHomologyLinearEquiv R K L n) := by
+  have : (I⟦n⟧).IsKInjective := (CochainComplex.isKInjective_shift_iff I n).2 inferInstance
+  have hs : IsIso (Qh.map ((HomotopyCategory.quotient C _).map s)) := by
+    rw [isIso_Qh_map_iff, HomotopyCategory.quotient_map_mem_quasiIso_iff,
+      HomologicalComplex.mem_quasiIso_iff]
+    infer_instance
+  -- Precomposition with the class of `s` in the homotopy category is bijective, as it becomes
+  -- precomposition with an isomorphism in the derived category.
+  have hpre : Function.Bijective fun f : (HomotopyCategory.quotient C _).obj K ⟶
+      (HomotopyCategory.quotient C _).obj (I⟦n⟧) ↦ (HomotopyCategory.quotient C _).map s ≫ f := by
+    rw [← (CochainComplex.IsKInjective.Qh_map_bijective _ _).of_comp_iff']
+    have h : (Qh.map ∘ fun f : (HomotopyCategory.quotient C _).obj K ⟶
+        (HomotopyCategory.quotient C _).obj (I⟦n⟧) ↦ (HomotopyCategory.quotient C _).map s ≫ f) =
+        (fun g ↦ Qh.map ((HomotopyCategory.quotient C _).map s) ≫ g) ∘ Qh.map := by
+      ext f
+      simp
+    rw [h]
+    refine Function.Bijective.comp ⟨fun g g' hg ↦ (cancel_epi _).1 hg, fun g ↦
+      ⟨inv (Qh.map ((HomotopyCategory.quotient C _).map s)) ≫ g, by simp⟩⟩
+      (CochainComplex.IsKInjective.Qh_map_bijective _ _)
+  rw [quasiIsoAt_iff_isIso_homologyMap, ConcreteCategory.isIso_iff_bijective]
+  have h : ⇑(HomologicalComplex.homologyMap (linearHomComplexPrecomp R s I) n).hom =
+      (linearHomComplexHomologyLinearEquiv R K' I n).symm ∘
+        (fun f ↦ (HomotopyCategory.quotient C _).map s ≫ f) ∘
+          linearHomComplexHomologyLinearEquiv R K I n := by
     ext z
-    exact linearHomComplexHomologyLinearEquiv_homologyMap_precomp R f z
-  rw [hcomm]
-  refine Function.Bijective.comp ?_ (linearHomComplexHomologyLinearEquiv R K L n).bijective
-  rw [← (IsKInjective.Qh_map_bijective _ (L⟦n⟧)).of_comp_iff']
-  have hQ : Qh.map ∘ (fun g : (HomotopyCategory.quotient C _).obj K ⟶
-        (HomotopyCategory.quotient C _).obj (L⟦n⟧) ↦ (HomotopyCategory.quotient C _).map f ≫ g) =
-      (Iso.homCongr (asIso (Qh.map ((HomotopyCategory.quotient C _).map f))).symm
-        (Iso.refl _)) ∘ Qh.map := by
-    ext g
-    simp [Iso.homCongr_apply]
-  rw [hQ]
-  exact (Iso.homCongr _ _).bijective.comp (IsKInjective.Qh_map_bijective _ (L⟦n⟧))
+    simp [← linearHomComplexHomologyLinearEquiv_homologyMap_precomp]
+  rw [h]
+  exact (linearHomComplexHomologyLinearEquiv R K' I n).symm.bijective.comp
+    (hpre.comp (linearHomComplexHomologyLinearEquiv R K I n).bijective)
 
-/-- Postcomposition by a quasi-isomorphism between K-injective complexes induces a
-quasi-isomorphism on `R`-linear Hom complexes from any complex `K`. -/
-theorem quasiIso_linearHomComplexPostcomp_of_isKInjective (K : CochainComplex C ℤ)
-    {L L' : CochainComplex C ℤ} (g : L ⟶ L') [QuasiIso g] [L.IsKInjective] [L'.IsKInjective] :
+/-- Postcomposition with a quasi-isomorphism `g : I ⟶ I'` between K-injective complexes induces a
+quasi-isomorphism `Hom^•(K, I) ⟶ Hom^•(K, I')` of linear Hom complexes from any complex `K`. -/
+theorem quasiIso_linearHomComplexPostcomp (K : CochainComplex C ℤ)
+    {I I' : CochainComplex C ℤ} (g : I ⟶ I') [QuasiIso g] [I.IsKInjective] [I'.IsKInjective] :
     QuasiIso (linearHomComplexPostcomp R K g) := by
-  obtain ⟨e, rfl⟩ := (IsKInjective.quasiIso_iff g).1 inferInstance
+  obtain ⟨e, rfl⟩ := (CochainComplex.IsKInjective.quasiIso_iff g).mp inferInstance
   rw [← linearHomComplexPostcompHomotopyEquiv_hom]
   exact (linearHomComplexPostcompHomotopyEquiv R K e).quasiIso_hom
 
