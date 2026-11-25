@@ -51,8 +51,7 @@ joined in `Hom^R_X(x, y)`. That the comparison is a homotopy equivalence of Kan 
 * `SSet.range_le_mappingSpace_iff`, `SSet.mem_mappingSpace_iff`: the universal property of
   `Hom_X(x, y)` and the description of its simplices.
 * `SSet.mappingSpace.quasicategory`: the mapping spaces of a quasicategory are quasicategories.
-* `SSet.mappingSpace.hornFilling_zero`, `SSet.mappingSpace.kanComplex`: the horns `Λ[n + 2, 0]` in
-  the mapping spaces of a quasicategory can be filled, and these mapping spaces are Kan complexes.
+* `SSet.mappingSpace.kanComplex`: the mapping spaces of a quasicategory are Kan complexes.
 * `SSet.rightMappingSpace.mono_toMappingSpace`,
   `SSet.rightMappingSpace.toMappingSpace_comp_map`: the comparison is a natural monomorphism.
 * `SSet.rightMappingSpace.bijective_toMappingSpace_app_zero`: it is a bijection on vertices.
@@ -64,6 +63,8 @@ joined in `Hom^R_X(x, y)`. That the comparison is a homotopy equivalence of Kan 
 * J. Lurie, *Higher Topos Theory*, §1.2.2 (the mapping spaces `Hom_S(x, y)` and `Hom^R_S(x, y)`)
   and §4.2.1 (their comparison).
 * J. Lurie, *Kerodon*, Section 4.6 (morphism spaces of `∞`-categories).
+* A. Joyal, *Quasi-categories and Kan complexes*, J. Pure Appl. Algebra 175 (2002) (the special
+  outer horn theorem and the Kan criterion for quasicategories).
 -/
 
 public section
@@ -273,7 +274,7 @@ variable [X.Quasicategory]
 constant at `y` over the vertex `1`. Every horn of the family has a degenerate initial edge, so the
 parametrized form of Joyal's theorem (`SSet.Quasicategory.exists_lift_pre_horn_zero`) fills the
 family compatibly with the constant fillings over the two vertices. -/
-theorem hornFilling_zero {n : ℕ}
+private theorem hornFilling_zero {n : ℕ}
     (σ₀ : (Λ[n + 2, 0] : SSet.{u}) ⟶ (X.mappingSpace x y : SSet.{u})) :
     ∃ σ : Δ[n + 2] ⟶ (X.mappingSpace x y : SSet.{u}), σ₀ = Λ[n + 2, 0].ι ≫ σ := by
   -- The family of horns parametrized by `Δ[1]`, and the constant fillings over `∂Δ[1]`.
@@ -320,12 +321,11 @@ theorem hornFilling_zero {n : ℕ}
     ← curry_natural_left, eq_curry_iff, BraidedCategory.braiding_naturality_right_assoc,
     ← uncurry_pre_app, hl₂, uncurry_curry, SymmetricCategory.symmetry_assoc]
 
-/-- **The mapping spaces of a quasicategory are Kan complexes** (HTT, §1.2.2; Kerodon, Section 4.6).
-By Joyal's criterion (`SSet.Quasicategory.kanComplex_of_forall_isEquivalence`), it suffices that
-every edge of the quasicategory `Hom_X(x, y)` is an equivalence, and an edge all of whose special
-outer horns `Λ[n + 2, 0]` can be filled (`SSet.mappingSpace.hornFilling_zero`) is an equivalence
-(`SSet.Edge.isEquivalence_iff_hornFilling_zero`). Thus the dual horns `Λ[n + 2, n + 2]` need no
-separate treatment. -/
+/-- **The mapping spaces of a quasicategory are Kan complexes** (HTT, §1.2.2; Kerodon, Section 4.6):
+if `X` is a quasicategory, then for all vertices `x` and `y` of `X`, the mapping space
+`Hom_X(x, y)` is a Kan complex. -/
+-- By Joyal's criterion, it suffices that every edge of the quasicategory `Hom_X(x, y)` is an
+-- equivalence, and an edge all of whose special outer horns `Λ[n + 2, 0]` can be filled is one.
 instance kanComplex : (X.mappingSpace x y : SSet.{u}).KanComplex :=
   Quasicategory.kanComplex_of_forall_isEquivalence fun _ ↦
     (Edge.isEquivalence_iff_hornFilling_zero _).2 fun _ σ₀ _ ↦ hornFilling_zero σ₀
