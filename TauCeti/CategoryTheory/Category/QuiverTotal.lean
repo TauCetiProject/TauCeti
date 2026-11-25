@@ -34,9 +34,13 @@ function of the source over the arrows `Quiver.Costar x` with target `x`
 
 ## Main declarations
 
-* `Quiver.Total.comp`: the composite of two composable total arrows of a category.
-* `Quiver.Total.comp_inv_comp`, `Quiver.Total.inv_comp_comp`: in a groupoid, composing with an
-  arrow and with its inverse cancel.
+* `Quiver.Total.comp`: the composite of two composable total arrows of a category, with its unit
+  and associativity laws (`Quiver.Total.unit_comp`, `Quiver.Total.comp_unit`,
+  `Quiver.Total.comp_assoc`).
+* `Quiver.Total.comp_inv_self`, `Quiver.Total.inv_comp_self`, `Quiver.Total.comp_inv_comp`,
+  `Quiver.Total.inv_comp_comp`, `Quiver.Total.comp_comp_inv`, `Quiver.Total.comp_inv_comp_right`,
+  `Quiver.Total.inv_comp`: in a groupoid, unit-inverse, cancellation, and anti-homomorphism laws
+  for total arrows.
 -/
 
 public section
@@ -142,9 +146,48 @@ theorem mk_homOfEq_comp_homOfEq (a b : Quiver.Total C) {y z w : C} (hy : a.left 
   subst hy hz hz' hw
   simp
 
+/-- Composing a total arrow on the left with the identity at its source leaves it unchanged. -/
+@[simp]
+theorem unit_comp (a : Quiver.Total C) :
+    (⟨a.left, a.left, 𝟙 a.left⟩ : Quiver.Total C).comp a rfl = a := by
+  obtain ⟨x, y, f⟩ := a
+  simp [comp_def]
+
+/-- Composing a total arrow on the right with the identity at its target leaves it unchanged. -/
+@[simp]
+theorem comp_unit (a : Quiver.Total C) :
+    a.comp ⟨a.right, a.right, 𝟙 a.right⟩ rfl = a := by
+  obtain ⟨x, y, f⟩ := a
+  simp [comp_def]
+
+/-- Composition of total arrows is associative. -/
+theorem comp_assoc (a b c : Quiver.Total C) (hab : a.right = b.left) (hbc : b.right = c.left)
+    (h₁ : (a.comp b hab).right = c.left) (h₂ : a.right = (b.comp c hbc).left) :
+    (a.comp b hab).comp c h₁ = a.comp (b.comp c hbc) h₂ := by
+  obtain ⟨x, y, f⟩ := a
+  obtain ⟨y', z, g⟩ := b
+  obtain ⟨z', w, k⟩ := c
+  dsimp only at hab hbc
+  subst hab hbc
+  simp [comp_def]
+
 section IsGroupoid
 
 variable [IsGroupoid C]
+
+/-- Composing an arrow with its inverse gives the identity at its source. -/
+@[simp]
+theorem comp_inv_self (a : Quiver.Total C) :
+    a.comp ⟨a.right, a.left, inv a.hom⟩ rfl = ⟨a.left, a.left, 𝟙 a.left⟩ := by
+  obtain ⟨x, y, f⟩ := a
+  simp [comp_def]
+
+/-- Composing the inverse of an arrow with the arrow gives the identity at its target. -/
+@[simp]
+theorem inv_comp_self (a : Quiver.Total C) :
+    (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).comp a rfl = ⟨a.right, a.right, 𝟙 a.right⟩ := by
+  obtain ⟨x, y, f⟩ := a
+  simp [comp_def]
 
 /-- Following `a` by the composite of its inverse with `c` gives back `c`. -/
 theorem comp_inv_comp (a c : Quiver.Total C) (h : a.left = c.left)
@@ -164,6 +207,37 @@ theorem inv_comp_comp (a b : Quiver.Total C) (h : a.right = b.left)
   obtain ⟨y', z, g⟩ := b
   dsimp only at h
   subst h
+  simp [comp_def]
+
+/-- Following the composite of `a` and `b` by the inverse of `b` gives back `a`. -/
+theorem comp_comp_inv (a b : Quiver.Total C) (h : a.right = b.left)
+    (h' : (a.comp b h).right = (⟨b.right, b.left, inv b.hom⟩ : Quiver.Total C).left) :
+    (a.comp b h).comp ⟨b.right, b.left, inv b.hom⟩ h' = a := by
+  obtain ⟨x, y, f⟩ := a
+  obtain ⟨y', z, g⟩ := b
+  dsimp only at h
+  subst h
+  simp [comp_def]
+
+/-- Following the composite of `a` with the inverse of `b` by `b` gives back `a`. -/
+theorem comp_inv_comp_right (a b : Quiver.Total C) (h : a.right = b.right)
+    (h' : (a.comp ⟨b.right, b.left, inv b.hom⟩ h).right = b.left) :
+    (a.comp ⟨b.right, b.left, inv b.hom⟩ h).comp b h' = a := by
+  obtain ⟨x, z, f⟩ := a
+  obtain ⟨y, z', g⟩ := b
+  dsimp only at h
+  subst h
+  simp [comp_def]
+
+/-- The inverse of a composite of total arrows reverses the order of the two inverses. -/
+theorem inv_comp (a b : Quiver.Total C) (h : a.right = b.left) :
+    (⟨(a.comp b h).right, (a.comp b h).left, inv (a.comp b h).hom⟩ : Quiver.Total C) =
+      (⟨b.right, b.left, inv b.hom⟩ : Quiver.Total C).comp ⟨a.right, a.left, inv a.hom⟩ h.symm := by
+  obtain ⟨x, y, f⟩ := a
+  obtain ⟨y', z, g⟩ := b
+  dsimp only at h
+  subst h
+  rw [mk_comp_mk]
   simp [comp_def]
 
 end IsGroupoid

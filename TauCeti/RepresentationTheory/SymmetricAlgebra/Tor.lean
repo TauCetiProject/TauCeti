@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tor
-public import TauCeti.CategoryTheory.Monoidal.Tor
+public import TauCeti.CategoryTheory.Monoidal.Tor.Basic
 public import TauCeti.RepresentationTheory.Invariants
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.DividedDifference
 
@@ -84,8 +84,8 @@ private noncomputable def invariantsSymmetricAlgebraOverInvariantsIso :
     ModuleCat.of ρ.symmetricAlgebraInvariants ρ.symmetricAlgebraOverInvariants.invariants ≅
       ModuleCat.of ρ.symmetricAlgebraInvariants ρ.symmetricAlgebraInvariants :=
   LinearEquiv.toModuleIso
-    { toFun p := ⟨p, (ρ.mem_invariants_symmetricAlgebraOverInvariants_iff p).1 p.2⟩
-      invFun a := ⟨a, (ρ.mem_invariants_symmetricAlgebraOverInvariants_iff a).2 a.2⟩
+    { toFun p := ⟨p, (ρ.mem_invariants_symmetricAlgebraOverInvariants_iff p).1 p.property⟩
+      invFun a := ⟨a, (ρ.mem_invariants_symmetricAlgebraOverInvariants_iff a).2 a.property⟩
       map_add' _ _ := rfl
       map_smul' _ _ := rfl }
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Gluing
-import TauCeti.Geometry.Manifold.Boundary.OneDimensional
+import TauCeti.Geometry.Manifold.Boundary.LocalModels
 
 /-!
 # The mod-two Morse boundary squares to zero
@@ -39,6 +39,7 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
 * `even_ncard_morseBrokenTrajectorySet`: between any two critical points the broken index-two
   trajectories are even in number.
 * `morseBoundary_comp_morseBoundary`: the mod-two Morse boundary squares to zero.
+* `sum_morseBoundaryCoeff_mul_morseBoundaryCoeff`: the same, in terms of the coefficients.
 
 ## References
 
@@ -83,9 +84,9 @@ theorem even_ncard_morseBrokenTrajectoryPairs {p r : M}
     (by rw [Subtype.range_coe]; exact h.morseBrokenTrajectoryPairs_subset_closure hf p r c₁ c₂)]
   refine even_ncard_of_forall_exists_homeomorph_Ico (F := ℝ) (Module.finrank_self ℝ)
     (fun w hw ↦ h.exists_homeomorph_Ico_of_mem_morseBrokenTrajectoryPairs hf hind hr₂ h₂₁ h₁p
-      hgap w.2 hw) fun w hw ↦ ?_
-  exact h.exists_nhds_homeomorph_of_mem_morseTrajectoryPairs hf hind hr₂ h₂₁ h₁p hgap w.2
-    ((h.closure_morseTrajectoryPairs_subset hf hind hr₂ h₂₁ h₁p hgap w.2).resolve_right hw)
+      hgap w.property hw) fun w hw ↦ ?_
+  exact h.exists_nhds_homeomorph_of_mem_morseTrajectoryPairs hf hind hr₂ h₂₁ h₁p hgap w.property
+    ((h.closure_morseTrajectoryPairs_subset hf hind hr₂ h₂₁ h₁p hgap w.property).resolve_right hw)
 
 include h hf in
 /-- **Broken index-two trajectories come in pairs.** Between any two critical points `p` and `r`,
@@ -116,6 +117,16 @@ theorem morseBoundary_comp_morseBoundary : h.morseBoundary hf ∘ₗ h.morseBoun
 theorem morseBoundary_morseBoundary (c : criticalPoints 𝓘(ℝ, E) f →₀ ZMod 2) :
     h.morseBoundary hf (h.morseBoundary hf c) = 0 :=
   LinearMap.congr_fun (h.morseBoundary_comp_morseBoundary hf) c
+
+/-- **The mod-two Morse boundary squares to zero**, in terms of the coefficients: summed over the
+intermediate critical points `q`, the trajectories from `p` to `q` times those from `q` to `r`
+vanish modulo two. -/
+theorem sum_morseBoundaryCoeff_mul_morseBoundaryCoeff
+    [Fintype (criticalPoints 𝓘(ℝ, E) f)] (p r : criticalPoints 𝓘(ℝ, E) f) :
+    ∑ q, h.morseBoundaryCoeff hf p q * h.morseBoundaryCoeff hf q r = 0 := by
+  have := DFunLike.congr_fun (h.morseBoundary_morseBoundary hf (Finsupp.single p 1)) r
+  rw [morseBoundary_apply, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _] at this
+  simpa using this
 
 end IsMorseSmale
 

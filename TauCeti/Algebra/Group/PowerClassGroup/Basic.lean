@@ -99,6 +99,20 @@ theorem powerSubgroup_le_comap (f : G →* H) :
   rintro _ ⟨g, rfl⟩
   exact ⟨f g, (map_pow f g n).symm⟩
 
+/-- When `Gⁿ` (as the range of `powMonoidHom n`) has finite index in `G`, `powerSubgroup G n` has
+finite index in `G`, so the quotient `powerClassQuotient G n` is finite. -/
+instance instFiniteIndexPowerSubgroup {G : Type*} [CommGroup G] {n : ℕ}
+    [(powMonoidHom n : G →* G).range.FiniteIndex] :
+    (powerSubgroup G n).FiniteIndex :=
+  powerSubgroup_eq_range_powMonoidHom G n ▸ inferInstance
+
+/-- When `Gⁿ` has finite index in `G`, it has finite relative index in every subgroup `Δ` of `G`
+(equivalently, `Δ` has finite index over `Δ ∩ Gⁿ`). -/
+instance instIsFiniteRelIndexRangePowMonoidHom {G : Type*} [CommGroup G] {n : ℕ}
+    [(powMonoidHom n : G →* G).range.FiniteIndex] (Δ : Subgroup G) :
+    (powMonoidHom n : G →* G).range.IsFiniteRelIndex Δ :=
+  Subgroup.isFiniteRelIndex_of_finiteIndex
+
 /-- A subgroup `Δ` of `G` meeting `Gⁿ` in a subgroup of finite index also meets the preimage of
 `Hⁿ` under a homomorphism `f : G →* H` in a subgroup of finite index. -/
 instance _root_.MonoidHom.isFiniteRelIndex_comap_range_powMonoidHom {G H : Type*} [CommGroup G]

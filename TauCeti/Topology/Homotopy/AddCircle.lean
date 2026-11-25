@@ -38,7 +38,10 @@ simple connectivity at infinity.
 
 After rotating the circle, a continuous `p`-periodic curve `γ : ℝ → X` is contractible, as a map
 `ℝ ⧸ pℤ → X`, exactly when the loop it traces over a period `[s, s + p]` (`Function.Periodic.loop`)
-is null-homotopic (`Function.Periodic.exists_nullhomotopic_iff_loop_homotopic_refl`).
+is null-homotopic (`Function.Periodic.exists_nullhomotopic_iff_loop_homotopic_refl`). Since that
+loop only changes by a reparametrization, contractibility of a periodic curve survives a monotone
+change of time that carries one period onto another
+(`Function.Periodic.exists_nullhomotopic_comp_iff`).
 
 Null-homotopy of a loop does not depend on its constant speed: a null-homotopic loop
 `g : AddCircle T → X`, run at speed `a ≠ 0` (backwards when `a < 0`), is the null-homotopic loop
@@ -61,6 +64,8 @@ coordinate avoids a point of its circle has nullhomotopic inclusion.
 * `Function.Periodic.loop`: the loop traced by a continuous periodic curve over one period.
 * `Function.Periodic.exists_nullhomotopic_iff_loop_homotopic_refl`: a continuous periodic curve is
   contractible exactly when its loop over a period is null-homotopic.
+* `Function.Periodic.exists_nullhomotopic_comp_iff`: contractibility of a periodic curve is
+  unchanged by a monotone change of time.
 * `ContinuousMap.Nullhomotopic.exists_addCircle_comp_mul`: a null-homotopic loop run at constant
   nonzero speed is null-homotopic.
 * `IsPathConnected.exists_nullhomotopic_addCircle_of_periodic`: in a continuous family of
@@ -214,6 +219,44 @@ theorem exists_nullhomotopic_iff_loop_homotopic_refl [Fact (0 < p)] (hp : Period
     have hgγ (t : ℝ) : g t = γ t := hp.lift_coe t
     exact ⟨g, hrot g ((key g hgγ).2 h), hgγ⟩
 
+/-- **Contractibility does not depend on a monotone change of time.** Let `γ` be a continuous
+`p`-periodic curve, `0 < p`, and let `ψ` be continuous, monotone on `[0, T]`, with `ψ 0 = 0` and
+`ψ T = p`, such that `γ ∘ ψ` is `T`-periodic, `0 < T`. Then `γ ∘ ψ` is contractible as a map
+`ℝ ⧸ Tℤ → X` exactly when `γ` is contractible as a map `ℝ ⧸ pℤ → X`: over one period, the loop
+of `γ ∘ ψ` is a reparametrization of the loop of `γ`. -/
+theorem exists_nullhomotopic_comp_iff [Fact (0 < p)] (hp : Periodic γ p) (hγ : Continuous γ)
+    {ψ : ℝ → ℝ} (hψ : Continuous ψ) {T : ℝ} [Fact (0 < T)] (hψm : MonotoneOn ψ (Icc 0 T))
+    (hψ0 : ψ 0 = 0) (hψT : ψ T = p) (hT : Periodic (γ ∘ ψ) T) :
+    (∃ g : C(AddCircle T, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ (ψ t)) ↔
+      ∃ g : C(AddCircle p, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ t := by
+  have hp₀ : 0 < p := Fact.out
+  have hT₀ : 0 < T := Fact.out
+  -- The reparametrization `t ↦ ψ (t T) / p` of the unit interval.
+  have hmem (t : I) : ψ (t * T) / p ∈ I := by
+    have ht : (t : ℝ) * T ∈ Icc 0 T :=
+      ⟨mul_nonneg t.property.1 hT₀.le, mul_le_of_le_one_left hT₀.le t.property.2⟩
+    refine ⟨div_nonneg ?_ hp₀.le, (div_le_one hp₀).2 ?_⟩
+    · exact hψ0 ▸ hψm ⟨le_rfl, hT₀.le⟩ ht ht.1
+    · exact hψT ▸ hψm ht ⟨hT₀.le, le_rfl⟩ ht.2
+  let f : I → I := fun t ↦ ⟨ψ (t * T) / p, hmem t⟩
+  have hf : Continuous f := by fun_prop
+  have hf₀ : f 0 = 0 := Subtype.ext (by simp [f, hψ0])
+  have hf₁ : f 1 = 1 := Subtype.ext (by simp [f, hψT, hp₀.ne'])
+  set ℓ := hp.loop hγ 0
+  have hℓ : ℓ.Homotopic (ℓ.reparam f hf hf₀ hf₁) := ⟨Path.Homotopy.reparam ℓ f hf hf₀ hf₁⟩
+  -- The reparametrized loop traces `γ ∘ ψ` over `[0, T]`.
+  have hrep (g : C(AddCircle T, X)) (hg : ∀ t : ℝ, g t = γ (ψ t)) (t : I) :
+      ℓ.reparam f hf hf₀ hf₁ t = g (AddCircle.ofUnitInterval T t) := by
+    simp [ℓ, f, AddCircle.ofUnitInterval_apply, hg, div_mul_cancel₀ _ hp₀.ne']
+  rw [hp.exists_nullhomotopic_iff_loop_homotopic_refl hγ 0]
+  constructor
+  · rintro ⟨g, hg, hgγ⟩
+    exact hℓ.trans ((g.nullhomotopic_iff_homotopic_refl _ (hrep g hgγ)).1 hg)
+  · intro h
+    let g : C(AddCircle T, X) := ⟨hT.lift, (hγ.comp hψ).quotient_liftOn' _⟩
+    have hgγ (t : ℝ) : g t = γ (ψ t) := hT.lift_coe t
+    exact ⟨g, (g.nullhomotopic_iff_homotopic_refl _ (hrep g hgγ)).2 (hℓ.symm.trans h), hgγ⟩
+
 end Function.Periodic
 
 /-- **Null-homotopy of periodic curves propagates along a path-connected parameter set.** Let `U`
@@ -272,17 +315,17 @@ theorem exists_nullhomotopic_addCircle_of_tendstoUniformly {T : ℝ} {X ι F : T
   have : Fact (0 < T) := ⟨hT⟩
   -- On the space `L` of closed curves on `[0, 1]` in `X`, null-homotopy is clopen, hence closed.
   let L := {f : C(I, X) // f 0 = f 1}
-  let loopOf (f : L) : Path (f.1 0) (f.1 0) := ⟨f.1, rfl, f.2.symm⟩
-  have hclosed : IsClosed {f : L | (loopOf f).Homotopic (Path.refl (f.1 0))} :=
+  let loopOf (f : L) : Path (f.val 0) (f.val 0) := ⟨f.val, rfl, f.property.symm⟩
+  have hclosed : IsClosed {f : L | (loopOf f).Homotopic (Path.refl (f.val 0))} :=
     (TauCeti.isClopen_setOf_homotopic_refl loopOf <|
-      continuous_eval.comp ((continuous_subtype_val.comp continuous_fst).prodMk
+      continuous_eval.comp ((continuous_subtypeVal.comp continuous_fst).prodMk
         continuous_snd)).isClosed
   -- Lift the curves on `[0, T]` to `C(I, K)` so `he` transports uniform convergence from `F`.
   let kγ : C(I, K) := ⟨fun τ ↦ ⟨γ ((τ : ℝ) * T), hγK _⟩,
-    Continuous.subtype_mk (hγc.comp (continuous_subtype_val.mul continuous_const)) _⟩
+    Continuous.subtype_mk (hγc.comp (continuous_subtypeVal.mul continuous_const)) _⟩
   let mkKu (i : ι) (hi : Continuous (u i) ∧ Periodic (u i) T ∧ ∀ t, u i t ∈ K) : C(I, K) :=
     ⟨fun τ ↦ ⟨u i ((τ : ℝ) * T), hi.2.2 _⟩,
-      Continuous.subtype_mk (hi.1.comp (continuous_subtype_val.mul continuous_const)) _⟩
+      Continuous.subtype_mk (hi.1.comp (continuous_subtypeVal.mul continuous_const)) _⟩
   let ku (i : ι) : C(I, K) := if hi : _ then mkKu i hi else kγ
   have hku_pos {i : ι} (hi) : ku i = mkKu i hi := dite_eq_left hi
   let eK : C(K, F) := ⟨K.domRestrict e, he.continuous⟩
@@ -292,7 +335,7 @@ theorem exists_nullhomotopic_addCircle_of_tendstoUniformly {T : ℝ} {X ι F : T
     filter_upwards [huc, huper, huK] with i hi₁ hi₂ hi₃
     funext τ
     simp [hku_pos ⟨hi₁, hi₂, hi₃⟩, mkKu, eK]
-  let inclK : C(K, X) := ⟨Subtype.val, continuous_subtype_val⟩
+  let inclK : C(K, X) := ⟨Subtype.val, continuous_subtypeVal⟩
   have hfγ01 : (inclK.comp kγ) 0 = (inclK.comp kγ) 1 := by simpa [inclK, kγ] using (hγper 0).symm
   have hfu01 (i : ι) : (inclK.comp (ku i)) 0 = (inclK.comp (ku i)) 1 := by
     by_cases hi : Continuous (u i) ∧ Periodic (u i) T ∧ ∀ t, u i t ∈ K
@@ -300,12 +343,12 @@ theorem exists_nullhomotopic_addCircle_of_tendstoUniformly {T : ℝ} {X ι F : T
     · simpa only [ku, dite_eq_right hi] using hfγ01
   let fγ : L := ⟨inclK.comp kγ, hfγ01⟩
   let fu (i : ι) : L := ⟨inclK.comp (ku i), hfu01 i⟩
-  have hfreq : ∃ᶠ i in l, fu i ∈ {f : L | (loopOf f).Homotopic (Path.refl (f.1 0))} :=
+  have hfreq : ∃ᶠ i in l, fu i ∈ {f : L | (loopOf f).Homotopic (Path.refl (f.val 0))} :=
     (hnull.and_eventually (huc.and (huper.and huK))).mono fun i ⟨⟨g, hg, hgu⟩, hi₁, hi₂, hi₃⟩ ↦
       (g.nullhomotopic_iff_homotopic_refl (loopOf (fu i)) fun τ ↦ by
         simp [loopOf, fu, hku_pos ⟨hi₁, hi₂, hi₃⟩, mkKu, inclK,
           AddCircle.ofUnitInterval_apply, hgu]).1 hg
-  have hfγ_mem : fγ ∈ {f : L | (loopOf f).Homotopic (Path.refl (f.1 0))} :=
+  have hfγ_mem : fγ ∈ {f : L | (loopOf f).Homotopic (Path.refl (f.val 0))} :=
     hclosed.mem_of_frequently_of_tendsto hfreq
       (tendsto_subtype_rng.2 ((inclK.continuous_postcomp.tendsto kγ).comp hku))
   let gγ : C(AddCircle T, X) := ⟨hγper.lift, hγc.quotient_liftOn' _⟩
@@ -332,7 +375,7 @@ theorem exists_nullhomotopic_addCircle_of_tendstoUniformly_Ioi {T : ℝ} {X ι F
     ∃ g : C(AddCircle T, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ t := by
   obtain ⟨s₀, hs₀, h₀⟩ := hnull
   have := isCompact_iff_compactSpace.1 hK
-  have hemb := (he.comp continuous_subtype_val).isClosedEmbedding he_inj.injective
+  have hemb := (he.comp continuous_subtypeVal).isClosedEmbedding he_inj.injective
   exact hγper.exists_nullhomotopic_addCircle_of_tendstoUniformly hγc hT hemb.isInducing
     (hφ.mono fun _ hi ↦ hu.comp_continuous (continuous_const.prodMk continuous_id)
       fun t ↦ ⟨hi, mem_univ t⟩)
@@ -354,14 +397,14 @@ theorem nullhomotopic_subtypeVal_compl_singleton (c : AddCircle p) :
   obtain ⟨a, rfl⟩ := QuotientAddGroup.mk_surjective c
   have hL : Continuous fun x : ({(a : AddCircle p)}ᶜ : Set (AddCircle p)) ↦
       (equivIco p a x : ℝ) :=
-    continuous_iff_continuousAt.2 fun x ↦ continuous_subtype_val.continuousAt.comp
-      ((continuousAt_equivIco p a x.2).comp continuous_subtype_val.continuousAt)
+    continuous_iff_continuousAt.2 fun x ↦ continuous_subtypeVal.continuousAt.comp
+      ((continuousAt_equivIco p a x.property).comp continuous_subtypeVal.continuousAt)
   refine ⟨((a + p / 2 : ℝ) : AddCircle p), ⟨{
     toFun := fun q ↦ ((((1 : ℝ) - q.1) * equivIco p a q.2 + q.1 * (a + p / 2) : ℝ) : AddCircle p)
     continuous_toFun := continuous_quotient_mk'.comp
-      (((continuous_const.sub (continuous_subtype_val.comp continuous_fst)).mul
+      (((continuous_const.sub (continuous_subtypeVal.comp continuous_fst)).mul
         (hL.comp continuous_snd)).add
-        ((continuous_subtype_val.comp continuous_fst).mul continuous_const))
+        ((continuous_subtypeVal.comp continuous_fst).mul continuous_const))
     map_zero_left := fun x ↦ by simp
     map_one_left := fun x ↦ by simp }⟩⟩
 

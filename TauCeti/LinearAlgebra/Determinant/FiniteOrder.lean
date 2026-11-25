@@ -39,7 +39,7 @@ theorem eq_one_of_det_eq_one_of_pow_eq_one (f : V →ₗ[K] V) (W : Submodule K 
     simpa only [Submodule.mem_comap, hfix x hx] using hx
   have hrestrict : f.restrict hstable = 1 := by
     ext x
-    exact hfix x x.2
+    exact hfix x x.property
   obtain ⟨c, hc, -⟩ :=
     (W.mapQ W f hstable).existsUnique_eq_smul_id_of_finrank_eq_one hW
   have hc1 : c = 1 := by
