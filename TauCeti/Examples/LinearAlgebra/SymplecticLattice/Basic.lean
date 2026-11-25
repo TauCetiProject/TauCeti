@@ -25,6 +25,23 @@ open Matrix
 
 namespace TauCeti.Examples
 
+/-- The bilinear form on `ℤ^ι` with integral Gram matrix `M` is nondegenerate over `ℚ` exactly when
+`det M ≠ 0`. -/
+theorem nondegenerate_baseChange_toBilin'_iff {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (M : Matrix ι ι ℤ) : ((Matrix.toBilin' M).baseChange ℚ).Nondegenerate ↔ M.det ≠ 0 := by
+  rw [LinearMap.BilinForm.nondegenerate_baseChange_iff (A := ℚ) _ (Pi.basisFun ℤ ι),
+    LinearMap.BilinForm.nondegenerate_iff_det_ne_zero (Pi.basisFun ℤ ι),
+    LinearMap.BilinForm.toMatrix_basisFun, LinearMap.BilinForm.toMatrix'_toBilin']
+
+/-- The symplectic lattice `ℤ^ι` with alternating integral Gram matrix `M` has dual index
+`|det M|`. -/
+theorem dualIndex_ofIsAlt_toBilin' {ι : Type*} [Fintype ι] [DecidableEq ι] (M : Matrix ι ι ℤ)
+    (hM : (Matrix.toBilin' M).IsAlt) (hnd : ((Matrix.toBilin' M).baseChange ℚ).Nondegenerate) :
+    (SymplecticOLattice.ofIsAlt (Matrix.toBilin' M) hM hnd).dualIndex = M.det.natAbs := by
+  rw [SymplecticOLattice.dualIndex_eq_natAbs_det _ (Pi.basisFun ℤ ι),
+    SymplecticOLattice.ofIsAlt_form, LinearMap.BilinForm.toMatrix_basisFun,
+    LinearMap.BilinForm.toMatrix'_toBilin']
+
 /-- The Gram matrix of the standard symplectic plane. -/
 abbrev symplecticPlaneGram : Matrix (Fin 2) (Fin 2) ℤ := !![0, 1; -1, 0]
 
@@ -36,17 +53,11 @@ theorem isAlt_toBilin'_symplecticPlaneGram : (Matrix.toBilin' symplecticPlaneGra
 /-- The standard symplectic plane `ℤ²` with `⟨e, f⟩ = 1`. -/
 noncomputable def symplecticPlane : SymplecticOLattice ℤ (Fin 2 → ℤ) :=
   .ofIsAlt (Matrix.toBilin' symplecticPlaneGram) isAlt_toBilin'_symplecticPlaneGram
-    (by
-      rw [LinearMap.BilinForm.nondegenerate_baseChange_iff (A := ℚ) _ (Pi.basisFun ℤ (Fin 2)),
-        LinearMap.BilinForm.nondegenerate_iff_det_ne_zero (Pi.basisFun ℤ (Fin 2)),
-        LinearMap.BilinForm.toMatrix_basisFun, LinearMap.BilinForm.toMatrix'_toBilin']
-      simp [det_fin_two])
+    ((nondegenerate_baseChange_toBilin'_iff _).2 (by simp [det_fin_two]))
 
 /-- The standard symplectic plane is self-dual: its dual index is one. -/
 theorem symplecticPlane_dualIndex : symplecticPlane.dualIndex = 1 := by
-  rw [symplecticPlane.dualIndex_eq_natAbs_det (Pi.basisFun ℤ (Fin 2)), symplecticPlane,
-    SymplecticOLattice.ofIsAlt_form, LinearMap.BilinForm.toMatrix_basisFun,
-    LinearMap.BilinForm.toMatrix'_toBilin']
+  rw [symplecticPlane, dualIndex_ofIsAlt_toBilin']
   simp [det_fin_two]
 
 /-- The standard symplectic plane is self-dual at every prime. -/
@@ -70,19 +81,12 @@ theorem isAlt_toBilin'_weightedGram (d : ℤ) : (Matrix.toBilin' (weightedGram d
 noncomputable def weightedLattice (d : ℤ) (hd : d ≠ 0) : SymplecticOLattice ℤ (Fin 4 → ℤ) :=
   .ofIsAlt (Matrix.toBilin' (weightedGram d))
     (isAlt_toBilin'_weightedGram d)
-    (by
-      rw [LinearMap.BilinForm.nondegenerate_baseChange_iff (A := ℚ) _ (Pi.basisFun ℤ (Fin 4)),
-        LinearMap.BilinForm.nondegenerate_iff_det_ne_zero (Pi.basisFun ℤ (Fin 4)),
-        LinearMap.BilinForm.toMatrix_basisFun, LinearMap.BilinForm.toMatrix'_toBilin',
-        det_weightedGram]
-      exact pow_ne_zero 2 hd)
+    ((nondegenerate_baseChange_toBilin'_iff _).2 (det_weightedGram d ▸ pow_ne_zero 2 hd))
 
 /-- The lattice with blocks of weights `1` and `d` has dual index `d²`. -/
 theorem weightedLattice_dualIndex (d : ℤ) (hd : d ≠ 0) :
     (weightedLattice d hd).dualIndex = d.natAbs ^ 2 := by
-  rw [(weightedLattice d hd).dualIndex_eq_natAbs_det (Pi.basisFun ℤ (Fin 4)), weightedLattice,
-    SymplecticOLattice.ofIsAlt_form, LinearMap.BilinForm.toMatrix_basisFun,
-    LinearMap.BilinForm.toMatrix'_toBilin', det_weightedGram, Int.natAbs_pow]
+  rw [weightedLattice, dualIndex_ofIsAlt_toBilin', det_weightedGram, Int.natAbs_pow]
 
 /-- The lattice with blocks of weights `1` and `d` is self-dual exactly at the primes not
 dividing `d`. -/

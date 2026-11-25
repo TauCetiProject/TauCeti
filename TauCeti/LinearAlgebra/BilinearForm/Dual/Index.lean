@@ -126,10 +126,9 @@ theorem dualIndex_eq_natAbs_det (hB : (B.baseChange ℚ).Nondegenerate) {ι : Ty
     simp [c, Module.Basis.toMatrix_apply, LinearMap.BilinForm.toMatrix_apply]
   have h := AddSubgroup.relIndex_eq_abs_det _ _ B.le_dualLattice (b.baseChange ℚ) c hL hdual
   rw [Module.Basis.det_apply, hc, Matrix.det_transpose,
-    LinearMap.BilinForm.det_toMatrix_baseChange] at h
-  have : (B.dualIndex : ℚ) = ((LinearMap.BilinForm.toMatrix b B).det.natAbs : ℚ) := by
-    rw [dualIndex, h, Nat.cast_natAbs, Int.cast_abs, algebraMap_int_eq, eq_intCast]
-  exact_mod_cast this
+    LinearMap.BilinForm.det_toMatrix_baseChange, ← dualIndex_def] at h
+  rw [← Nat.cast_inj (R := ℚ), h]
+  simp
 
 /-- The zero lattice is self-dual: a form on a subsingleton group has dual index one. -/
 theorem dualIndex_eq_one_of_subsingleton [Subsingleton L] : B.dualIndex = 1 :=
@@ -172,9 +171,12 @@ theorem isSelfDualAt_iff_not_dvd_dualIndex (h : B.dualIndex ≠ 0) {p : ℕ} (hp
     B.IsSelfDualAt p ↔ ¬p ∣ B.dualIndex := by
   refine ⟨fun hs hdvd ↦ ?_, B.isSelfDualAt_of_not_dvd_dualIndex⟩
   have := Fact.mk hp
+  -- the dual index is the cardinality of the quotient `L^# / L`
+  rw [dualIndex_def, AddSubgroup.relIndex] at h hdvd
   set H := (TensorProduct.mk ℤ ℚ L 1 : L →+ ℚ ⊗[ℤ] L).range.addSubgroupOf
     B.dualLattice.toAddSubgroup
   have : H.FiniteIndex := ⟨h⟩
+  rw [AddSubgroup.index_eq_card] at hdvd
   -- by Cauchy, `L^# / L` has an element `x + L` of order `p`
   obtain ⟨g, hg⟩ := exists_prime_addOrderOf_dvd_card' (G := B.dualLattice.toAddSubgroup ⧸ H) p hdvd
   induction g using QuotientAddGroup.induction_on with | H x

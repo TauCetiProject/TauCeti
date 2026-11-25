@@ -162,8 +162,8 @@ def dual : Submodule O (L ⊗[ℤ] ℚ) where
       induction z using TensorProduct.inductionOn with
       | tmul y q => simp [TensorProduct.smul_tmul']
       | add x₁ x₂ h₁ h₂ => simp only [smul_add, map_add, h₁, h₂]
-    change TensorProduct.comm ℤ L ℚ (b • x) ∈ Λ.form.dualLattice
-    exact hb x ▸ Λ.baseChange_smul_mem_dualLattice b hx
+    rw [Set.mem_ofPred_eq, hb]
+    exact Λ.baseChange_smul_mem_dualLattice b hx
 
 /-- A vector of `L ⊗ ℚ` lies in `L^#` exactly when its swap into `ℚ ⊗ L` lies in the dual lattice
 of the pairing. -/
@@ -198,7 +198,9 @@ theorem dualIndex_eq_relIndex :
     · rintro ⟨y, hy⟩
       refine ⟨y, (TensorProduct.comm ℤ L ℚ).injective ?_⟩
       simpa [e] using hy
-  have hdual : Λ.dual.toAddSubgroup = Λ.form.dualLattice.toAddSubgroup.comap e := rfl
+  have hdual : Λ.dual.toAddSubgroup = Λ.form.dualLattice.toAddSubgroup.comap e := by
+    ext x
+    simp [e]
   rw [hL, hdual, AddSubgroup.relIndex_comap,
     AddSubgroup.map_comap_eq_self_of_surjective (f := e) (TensorProduct.comm ℤ L ℚ).surjective]
   exact Λ.form.dualIndex_def
