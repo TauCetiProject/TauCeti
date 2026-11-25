@@ -27,7 +27,10 @@ is `g` applied to the corresponding derivative of `f`. For instance, the real pa
 complex-valued bounded `C^{k,α}` map is a real-valued one. The same holds locally: on an open set,
 postcomposition by `T` multiplies the Hölder constant of the top derivative by `‖T‖`
 (`ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left`), and the same holds for finite sums
-`x ↦ ∑ₗ A l (g l x)` (`TauCeti.holderOnWith_iteratedFDeriv_sum_comp_left`).
+`x ↦ ∑ₗ A l (g l x)` (`TauCeti.holderOnWith_iteratedFDeriv_sum_comp_left`). Both also hold on a
+set that need not be open, at each point of which the maps are `Cⁿ`
+(`ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left_of_contDiffAt`,
+`TauCeti.holderOnWith_iteratedFDeriv_sum_comp_left_of_contDiffAt`).
 
 The constructions use Mathlib's `ContinuousLinearMap.iteratedFDeriv_comp_right`,
 `ContinuousMultilinearMap.compContinuousLinearMapL`,
@@ -39,12 +42,14 @@ public section
 noncomputable section
 
 /-- Composing on the left with a continuous linear map `T` keeps a Hölder bound on the top
-derivative field over an open set, multiplying its constant by `‖T‖`: on the set, the top
-derivative of `T ∘ f` is that of `f` followed by `A ↦ T ∘ A`, an operator of norm at most `‖T‖`. -/
-theorem ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left {X Y Z : Type*}
+derivative field over a set `s` at each point of which `f` is `Cⁿ`, multiplying its constant by
+`‖T‖`: on `s`, the top derivative of `T ∘ f` is that of `f` followed by `A ↦ T ∘ A`, an operator
+of norm at most `‖T‖`. The set `s` need not be open, e.g. a closed half-disc inside an open set
+on which `f` is `Cⁿ`. -/
+theorem ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left_of_contDiffAt {X Y Z : Type*}
     [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
     [NormedAddCommGroup Z] [NormedSpace ℝ Z] (T : Y →L[ℝ] Z) {f : X → Y} {s : Set X} {n : ℕ}
-    {C α : NNReal} (hs : IsOpen s) (hf : ContDiffOn ℝ n f s)
+    {C α : NNReal} (hf : ∀ z ∈ s, ContDiffAt ℝ n f z)
     (h : HolderOnWith C α (iteratedFDeriv ℝ n f) s) :
     HolderOnWith (‖T‖₊ * C) α (iteratedFDeriv ℝ n fun x ↦ T (f x)) s := by
   set L := compContinuousMultilinearMapL ℝ (fun _ : Fin n ↦ X) Y Z T
@@ -54,12 +59,40 @@ theorem ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left {X Y Z : Type*
   have hd (z : X) (hz : z ∈ s) : iteratedFDeriv ℝ n (fun x ↦ T (f x)) z =
       L (iteratedFDeriv ℝ n f z) := by
     rw [compContinuousMultilinearMapL_apply]
-    exact T.iteratedFDeriv_comp_left (hf.contDiffAt (hs.mem_nhds hz)) le_rfl
+    exact T.iteratedFDeriv_comp_left (hf z hz) le_rfl
   intro x hx y hy
   rw [hd x hx, hd y hy]
   exact hLf.mono_const (mul_le_mul_of_nonneg_right hL zero_le) x hx y hy
 
+/-- Composing on the left with a continuous linear map `T` keeps a Hölder bound on the top
+derivative field over an open set, multiplying its constant by `‖T‖`: on the set, the top
+derivative of `T ∘ f` is that of `f` followed by `A ↦ T ∘ A`, an operator of norm at most `‖T‖`. -/
+theorem ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left {X Y Z : Type*}
+    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    [NormedAddCommGroup Z] [NormedSpace ℝ Z] (T : Y →L[ℝ] Z) {f : X → Y} {s : Set X} {n : ℕ}
+    {C α : NNReal} (hs : IsOpen s) (hf : ContDiffOn ℝ n f s)
+    (h : HolderOnWith C α (iteratedFDeriv ℝ n f) s) :
+    HolderOnWith (‖T‖₊ * C) α (iteratedFDeriv ℝ n fun x ↦ T (f x)) s :=
+  T.holderOnWith_iteratedFDeriv_comp_left_of_contDiffAt
+    (fun _ hz ↦ hf.contDiffAt (hs.mem_nhds hz)) h
+
 namespace TauCeti
+
+/-- **Hölder bounds for finite sums of postcompositions, on any set.** If each `g l` is `Cⁿ` at
+every point of `s` and its `n`-th derivative is `α`-Hölder on `s` with constant `C l`, then the
+`n`-th derivative of `x ↦ ∑ₗ A l (g l x)` is `α`-Hölder on `s` with constant `∑ₗ ‖A l‖ C l`. The
+set `s` need not be open, e.g. a closed half-disc inside an open set on which each `g l` is
+`Cⁿ`. -/
+theorem holderOnWith_iteratedFDeriv_sum_comp_left_of_contDiffAt {ι X Y Z : Type*} [Fintype ι]
+    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    [NormedAddCommGroup Z] [NormedSpace ℝ Z] (A : ι → Y →L[ℝ] Z) {g : ι → X → Y} {s : Set X}
+    {n : ℕ} {α : NNReal} {C : ι → NNReal} (hg : ∀ l, ∀ z ∈ s, ContDiffAt ℝ n (g l) z)
+    (h : ∀ l, HolderOnWith (C l) α (iteratedFDeriv ℝ n (g l)) s) :
+    HolderOnWith (∑ l, ‖A l‖₊ * C l) α (iteratedFDeriv ℝ n fun x ↦ ∑ l, A l (g l x)) s :=
+  (HolderOnWith.sum (s := Finset.univ) fun l _ ↦
+    (A l).holderOnWith_iteratedFDeriv_comp_left_of_contDiffAt (hg l) (h l)).congr fun z hz ↦
+      (iteratedFDeriv_fun_sum_apply (f := fun l x ↦ A l (g l x)) fun l _ ↦
+        (A l).contDiff.contDiffAt.comp z (hg l z hz)).symm
 
 /-- **Hölder bounds for finite sums of postcompositions.** If on an open set `s` each `g l` is
 `Cⁿ` and its `n`-th derivative is `α`-Hölder with constant `C l`, then the `n`-th derivative of
@@ -72,10 +105,8 @@ theorem holderOnWith_iteratedFDeriv_sum_comp_left {ι X Y Z : Type*} [Fintype ι
     {n : ℕ} {α : NNReal} {C : ι → NNReal} (hs : IsOpen s) (hg : ∀ l, ContDiffOn ℝ n (g l) s)
     (h : ∀ l, HolderOnWith (C l) α (iteratedFDeriv ℝ n (g l)) s) :
     HolderOnWith (∑ l, ‖A l‖₊ * C l) α (iteratedFDeriv ℝ n fun x ↦ ∑ l, A l (g l x)) s :=
-  (HolderOnWith.sum (s := Finset.univ) fun l _ ↦
-    (A l).holderOnWith_iteratedFDeriv_comp_left hs (hg l) (h l)).congr fun z hz ↦
-      (iteratedFDeriv_fun_sum_apply (f := fun l x ↦ A l (g l x)) fun l _ ↦
-        (A l).contDiff.contDiffAt.comp z ((hg l).contDiffAt (hs.mem_nhds hz))).symm
+  holderOnWith_iteratedFDeriv_sum_comp_left_of_contDiffAt A
+    (fun l _ hz ↦ (hg l).contDiffAt (hs.mem_nhds hz)) h
 
 end TauCeti
 
