@@ -10,15 +10,14 @@ public import Mathlib.LinearAlgebra.Finsupp.VectorSpace
 public import TauCeti.Algebra.Algebra.Units.Basic
 public import TauCeti.Algebra.Cluster.BasedChart.Basic
 public import TauCeti.LinearAlgebra.Matrix.FinsuppBilinForm
-import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.SetTheory.Cardinal.Order
 import Mathlib.Tactic.Ring
 
 /-!
 # Ordered-product reconstruction of based quantum-torus charts
 
-For a linearly ordered index type `I`, an unit `u : Rˣ`, a matrix `Λ : Matrix I I ℤ`, and a family
-of ambient units `U : I → Bˣ`, `TauCeti.orderedMonomial u Λ U a` normalizes the increasing
+For a linearly ordered index type `I`, a scalar unit `u : Rˣ`, a matrix `Λ : Matrix I I ℤ`, and a
+family of ambient units `U : I → Bˣ`, `TauCeti.orderedMonomial u Λ U a` normalizes the increasing
 coordinate product `TauCeti.orderedCoordProd U a = ∏_{i ∈ a.support} U_i^{a_i}` by the strict
 upper-triangular twist `u ^ (-Λ.strictUpper.finsuppBilinForm a a)`.
 
@@ -38,46 +37,13 @@ public section
 
 namespace TauCeti
 
-section ZsmulSelfZero
-
-variable {R L I B : Type*} [CommSemiring R] [AddCommGroup L] [Semiring B] [Algebra R B]
-  {u : Rˣ}
-
-/-- When `Λ a a = 0`, scalar multiples of `a` correspond to integer powers of `monomialUnit u Λ a`
-without requiring `Λ` to be globally alternating. -/
-theorem QuantumTorus.monomialUnit_zsmul_of_self_eq_zero {Λ : LinearMap.BilinForm ℤ L} {a : L}
-    (ha : Λ a a = 0) (n : ℤ) :
-    QuantumTorus.monomialUnit u Λ (n • a) = QuantumTorus.monomialUnit u Λ a ^ n := by
-  let f : Multiplicative ℤ →* (QuantumTorus R L u Λ)ˣ :=
-    { toFun := fun m ↦ QuantumTorus.monomialUnit u Λ (m.toAdd • a)
-      map_one' := by simp
-      map_mul' := fun m k ↦ by simp [add_zsmul, ha] }
-  simpa [f] using f.map_zpow (Multiplicative.ofAdd (1 : ℤ)) n
-
-/-- When `Λ a a = 0`, scalar multiples of `a` correspond to integer powers of `M.monomial a`. -/
-theorem BasedChart.monomial_zsmul_of_self_eq_zero {Λ : LinearMap.BilinForm ℤ L}
-    (M : BasedChart u Λ B) {a : L} (ha : Λ a a = 0) (n : ℤ) :
-    M.monomial (n • a) = M.monomial a ^ n := by
-  rw [← M.map_eval_monomialUnit, QuantumTorus.monomialUnit_zsmul_of_self_eq_zero ha, map_zpow,
-    M.map_eval_monomialUnit]
-
-/-- When `Λ (single i 1) (single i 1) = 0`, `M.monomial (single i n)` is the `n`-th integer power of
-the `i`-th standard coordinate monomial. -/
-theorem BasedChart.monomial_single_of_self_eq_zero {Λ : LinearMap.BilinForm ℤ (I →₀ ℤ)}
-    (M : BasedChart u Λ B) {i : I} (hi : Λ (Finsupp.single i 1) (Finsupp.single i 1) = 0)
-    (n : ℤ) :
-    M.monomial (Finsupp.single i n) = M.monomial (Finsupp.single i 1) ^ n := by
-  simpa using M.monomial_zsmul_of_self_eq_zero hi n
-
-end ZsmulSelfZero
-
 section OrderedProduct
 
 variable {R I B : Type*} [CommSemiring R] [Semiring B] [Algebra R B]
 
 /-- The ordered coordinate product `∏_{i ∈ a.support} U_i^{a_i}` taken in increasing order of
 `I`. -/
-noncomputable def orderedCoordProd [LinearOrder I] (U : I → Bˣ) (a : I →₀ ℤ) : Bˣ :=
+noncomputable def orderedCoordProd [_ord : LinearOrder I] (U : I → Bˣ) (a : I →₀ ℤ) : Bˣ :=
   ((a.support.sort (· ≤ ·)).map fun i ↦ U i ^ a i).prod
 
 theorem orderedCoordProd_def [LinearOrder I] (U : I → Bˣ) (a : I →₀ ℤ) :
@@ -115,7 +81,7 @@ theorem orderedCoordProd_eq_univ_sort [LinearOrder I] [Fintype I] (U : I → Bˣ
   orderedCoordProd_eq_sort_prod U a (Finset.subset_univ _)
 
 /-- The normalized ordered-product monomial `u ^ (-∑_{i < j} a_i Λ_{ij} a_j) * ∏_i U_i^{a_i}`. -/
-noncomputable def orderedMonomial [LinearOrder I] (u : Rˣ) (Λ : Matrix I I ℤ) (U : I → Bˣ)
+noncomputable def orderedMonomial [_ord : LinearOrder I] (u : Rˣ) (Λ : Matrix I I ℤ) (U : I → Bˣ)
     (a : I →₀ ℤ) : Bˣ :=
   Units.map (algebraMap R B) (u ^ (-Λ.strictUpper.finsuppBilinForm a a)) * orderedCoordProd U a
 
@@ -132,7 +98,7 @@ theorem orderedMonomial_zero [LinearOrder I] (u : Rˣ) (Λ : Matrix I I ℤ) (U 
   simp [orderedMonomial]
 
 @[simp]
-theorem orderedMonomial_single_one [LinearOrder I] (u : Rˣ) (Λ : Matrix I I ℤ) (U : I → Bˣ)
+theorem orderedMonomial_single_one [_ord : LinearOrder I] (u : Rˣ) (Λ : Matrix I I ℤ) (U : I → Bˣ)
     (i : I) : orderedMonomial u Λ U (Finsupp.single i 1) = U i := by
   rw [orderedMonomial, orderedCoordProd_eq_sort_prod U _ Finsupp.support_single_subset,
     Matrix.finsuppBilinForm_single_single]
@@ -355,7 +321,7 @@ theorem orderedMonomial_mul [LinearOrder I] (a b : I →₀ ℤ) :
 
 end QuasiComm
 
-private noncomputable def liftOrderedMonomial [LinearOrder I] {u : Rˣ} {Λ : Matrix I I ℤ}
+private noncomputable def liftOrderedMonomial [_ord : LinearOrder I] {u : Rˣ} {Λ : Matrix I I ℤ}
     (hΛ : Λ.finsuppBilinForm.IsAlt) (U : I → Bˣ)
     (hU : ∀ i j, U i * U j = Units.map (algebraMap R B) (u ^ (2 * Λ i j)) * (U j * U i)) :
     QuantumTorus R (I →₀ ℤ) u Λ.finsuppBilinForm →ₐ[R] B :=
@@ -364,7 +330,7 @@ private noncomputable def liftOrderedMonomial [LinearOrder I] {u : Rˣ} {Λ : Ma
       rw [← Units.val_mul, orderedMonomial_mul hΛ hU]
       simp [Algebra.smul_def, -map_zpow]
 
-private theorem liftOrderedMonomial_monomial [LinearOrder I] {u : Rˣ} {Λ : Matrix I I ℤ}
+private theorem liftOrderedMonomial_monomial [_ord : LinearOrder I] {u : Rˣ} {Λ : Matrix I I ℤ}
     (hΛ : Λ.finsuppBilinForm.IsAlt) (U : I → Bˣ)
     (hU : ∀ i j, U i * U j = Units.map (algebraMap R B) (u ^ (2 * Λ i j)) * (U j * U i))
     (a : I →₀ ℤ) :
@@ -378,19 +344,19 @@ theorem orderedMonomial_eq_of_linearOrder (l₁ l₂ : LinearOrder I) {u : Rˣ} 
     (hΛ : Λ.finsuppBilinForm.IsAlt) {U : I → Bˣ}
     (hU : ∀ i j, U i * U j = Units.map (algebraMap R B) (u ^ (2 * Λ i j)) * (U j * U i))
     (a : I →₀ ℤ) :
-    @orderedMonomial R I B _ _ _ l₁ u Λ U a = @orderedMonomial R I B _ _ _ l₂ u Λ U a := by
-  have hhom : @liftOrderedMonomial R I B _ _ _ l₁ u Λ hΛ U hU =
-      @liftOrderedMonomial R I B _ _ _ l₂ u Λ hΛ U hU :=
+    orderedMonomial (_ord := l₁) u Λ U a = orderedMonomial (_ord := l₂) u Λ U a := by
+  have hhom : liftOrderedMonomial (_ord := l₁) hΛ U hU =
+      liftOrderedMonomial (_ord := l₂) hΛ U hU :=
     QuantumTorus.algHom_ext_of_basis Finsupp.basisSingleOne fun i ↦ by
       rw [Finsupp.coe_basisSingleOne,
-        @liftOrderedMonomial_monomial R I B _ _ _ l₁,
-        @liftOrderedMonomial_monomial R I B _ _ _ l₂,
-        @orderedMonomial_single_one R I B _ _ _ l₁,
-        @orderedMonomial_single_one R I B _ _ _ l₂]
+        liftOrderedMonomial_monomial (_ord := l₁),
+        liftOrderedMonomial_monomial (_ord := l₂),
+        orderedMonomial_single_one (_ord := l₁),
+        orderedMonomial_single_one (_ord := l₂)]
   exact Units.ext <| by
     have ha := congrArg (· (QuantumTorus.monomial u Λ.finsuppBilinForm a)) hhom
-    rwa [@liftOrderedMonomial_monomial R I B _ _ _ l₁,
-      @liftOrderedMonomial_monomial R I B _ _ _ l₂] at ha
+    rwa [liftOrderedMonomial_monomial (_ord := l₁),
+      liftOrderedMonomial_monomial (_ord := l₂)] at ha
 
 section LiftCoordinates
 
@@ -409,9 +375,9 @@ theorem QuantumTorus.liftCoordinates_single_one (i : I) :
     QuantumTorus.liftCoordinates hΛ U hU
         (QuantumTorus.monomial u Λ.finsuppBilinForm (Finsupp.single i 1)) =
       U i := by
-  let l₀ := (exists_wellFoundedLT I).choose
-  exact (@liftOrderedMonomial_monomial R I B _ _ _ l₀ u Λ hΛ U hU (Finsupp.single i 1)).trans
-    (congrArg Units.val (@orderedMonomial_single_one R I B _ _ _ l₀ u Λ U i))
+  dsimp only [QuantumTorus.liftCoordinates]
+  rw [liftOrderedMonomial_monomial (_ord := (exists_wellFoundedLT I).choose),
+    orderedMonomial_single_one (_ord := (exists_wellFoundedLT I).choose)]
 
 /-- For any `LinearOrder` on `I`, `QuantumTorus.liftCoordinates` evaluates `monomial a` to the
 normalized ordered product `orderedMonomial u Λ U a`. -/
@@ -456,24 +422,6 @@ theorem BasedChart.coordinate_ofCoordinates [LinearOrder I]
   simp [BasedChart.coordinate_def]
 
 end LiftCoordinates
-
-/-- Rank-2 ordered-product formula for exponent `(-1, 2)` and skew matrix `!![0, 1; -1, 0]`:
-`M(-e_0 + 2 e_1) = u^2 • (X_0⁻¹ * X_1^2)`. -/
-theorem BasedChart.monomial_rankTwo_neg_one_two {u : Rˣ}
-    (M : BasedChart u (!![(0 : ℤ), 1; -1, 0] : Matrix (Fin 2) (Fin 2) ℤ).finsuppBilinForm B) :
-    M.monomial (-Finsupp.single 0 1 + 2 • Finsupp.single 1 1) =
-      Units.map (algebraMap R B) (u ^ 2) *
-        ((M.coordinate Finsupp.basisSingleOne 0)⁻¹ *
-          M.coordinate Finsupp.basisSingleOne 1 ^ 2) := by
-  set a : Fin 2 →₀ ℤ := -Finsupp.single 0 1 + 2 • Finsupp.single 1 1
-  have hsort : (Finset.univ : Finset (Fin 2)).sort (· ≤ ·) = [0, 1] := by
-    have huniv : ([0, 1] : List (Fin 2)).toFinset = Finset.univ := by decide
-    rw [← huniv]
-    exact (List.toFinset_sort (r := (· ≤ ·)) (by decide)).mpr (by decide)
-  rw [M.monomial_eq_orderedMonomial (fun i ↦ by fin_cases i <;> rfl) a, orderedMonomial,
-    orderedCoordProd_eq_univ_sort, hsort, Matrix.finsuppBilinForm_apply_eq_dotProduct]
-  have ha : a 0 = -1 ∧ a 1 = 2 := by simp [a]
-  simp [dotProduct, Matrix.mulVec, Fin.sum_univ_two, ha.1, ha.2]
 
 end OrderedProduct
 

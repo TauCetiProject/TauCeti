@@ -294,26 +294,44 @@ theorem natCard_transpose_eq_neg [Fintype n] [AddCommGroup S] (I : AddSubgroup S
 /-- The strictly upper-triangular part of a square matrix with respect to `<` on `n`. -/
 def strictUpper [LT n] [DecidableLT n] [Zero S] (M : Matrix n n S) : Matrix n n S :=
   of fun i j ↦ if i < j then M i j else 0
+
 /-- Entries of `M.strictUpper`: `M i j` above the diagonal and `0` elsewhere. -/
-@[simp] theorem strictUpper_apply [LT n] [DecidableLT n] [Zero S] (M : Matrix n n S) (i j : n) :
-    M.strictUpper i j = if i < j then M i j else 0 := by simp [strictUpper]
+@[simp]
+theorem strictUpper_apply [LT n] [DecidableLT n] [Zero S] (M : Matrix n n S) (i j : n) :
+    M.strictUpper i j = if i < j then M i j else 0 := by
+  simp [strictUpper]
+
 section UpdateSkew
+
 variable [DecidableEq n] [Zero S] [Neg S] (M : Matrix n n S) (k : n) (ℓ : n → S)
+
 /-- Replace row and column `k` skew-symmetrically with `(k, k)`-entry `0`, off-diagonal row
 entries `ℓ j`, and off-diagonal column entries `-ℓ i`. -/
 def updateSkew : Matrix n n S :=
   of fun i j ↦ if i = k then (if j = k then 0 else ℓ j) else if j = k then -ℓ i else M i j
+
 /-- The `(k, k)` diagonal entry of `M.updateSkew k ℓ` vanishes. -/
-@[simp] theorem updateSkew_apply_same : M.updateSkew k ℓ k k = 0 := by simp [updateSkew]
+@[simp]
+theorem updateSkew_apply_same : M.updateSkew k ℓ k k = 0 := by
+  simp [updateSkew]
+
 /-- Off-diagonal entries in row `k` of `M.updateSkew k ℓ` equal `ℓ j`. -/
-@[simp] theorem updateSkew_apply_left_of_ne {j : n} (hj : j ≠ k) : M.updateSkew k ℓ k j = ℓ j := by
+@[simp]
+theorem updateSkew_apply_left_of_ne {j : n} (hj : j ≠ k) : M.updateSkew k ℓ k j = ℓ j := by
   simp [updateSkew, hj]
+
 /-- Off-diagonal entries in column `k` of `M.updateSkew k ℓ` equal `-ℓ i`. -/
-@[simp] theorem updateSkew_apply_right_of_ne {i : n} (hi : i ≠ k) :
+@[simp]
+theorem updateSkew_apply_right_of_ne {i : n} (hi : i ≠ k) :
     M.updateSkew k ℓ i k = -ℓ i := by
   simp [updateSkew, hi]
+
 /-- Entries away from row and column `k` are unchanged by `M.updateSkew k ℓ`. -/
-@[simp] theorem updateSkew_apply_of_ne {i j : n} (hi : i ≠ k) (hj : j ≠ k) :
-    M.updateSkew k ℓ i j = M i j := by simp [updateSkew, hi, hj]
+@[simp]
+theorem updateSkew_apply_of_ne {i j : n} (hi : i ≠ k) (hj : j ≠ k) :
+    M.updateSkew k ℓ i j = M i j := by
+  simp [updateSkew, hi, hj]
+
 end UpdateSkew
+
 end Matrix

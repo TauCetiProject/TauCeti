@@ -29,15 +29,10 @@ theorem commute_map_algebraMap (w : Rˣ) (x : Bˣ) :
     Commute (Units.map (algebraMap R B) w) x :=
   Units.ext <| Algebra.commutes _ _
 
-/-- Scalar units pushed forward along `algebraMap R B` commute with every unit of `B`. -/
-theorem map_algebraMap_mul_comm (w : Rˣ) (x : Bˣ) :
-    Units.map (algebraMap R B) w * x = x * Units.map (algebraMap R B) w :=
-  commute_map_algebraMap w x
-
 /-- Pull a central scalar unit across a left factor in `Bˣ`. -/
 theorem mul_map_algebraMap_mul (w : Rˣ) (x y : Bˣ) :
     x * (Units.map (algebraMap R B) w * y) = Units.map (algebraMap R B) w * (x * y) := by
-  rw [← mul_assoc, ← map_algebraMap_mul_comm, mul_assoc]
+  rw [← mul_assoc, ← (commute_map_algebraMap w x).eq, mul_assoc]
 
 /-- Combine two adjacent central scalar-unit factors in `Bˣ`. -/
 theorem map_algebraMap_mul_map_algebraMap (w₁ w₂ : Rˣ) (x : Bˣ) :
@@ -51,33 +46,43 @@ theorem map_algebraMap_mul_mul_map_algebraMap_mul (w₁ w₂ : Rˣ) (x y : Bˣ) 
       Units.map (algebraMap R B) (w₁ * w₂) * (x * y) := by
   rw [mul_assoc, mul_map_algebraMap_mul, map_algebraMap_mul_map_algebraMap]
 
+/-- Moving a central scalar unit `Units.map (algebraMap R B) w` across `=` inverts `w`. -/
+theorem eq_map_algebraMap_inv_mul_iff (w : Rˣ) (x y : Bˣ) :
+    x = Units.map (algebraMap R B) w⁻¹ * y ↔ Units.map (algebraMap R B) w * x = y :=
+  ⟨fun h ↦ by rw [h, map_algebraMap_mul_map_algebraMap, mul_inv_cancel, map_one, one_mul],
+   fun h ↦ by rw [← h, map_algebraMap_mul_map_algebraMap, inv_mul_cancel, map_one, one_mul]⟩
+
+/-- Moving a central scalar unit power `u ^ n` across `=` negates the exponent. -/
+theorem eq_map_algebraMap_zpow_neg_mul_iff (u : Rˣ) (n : ℤ) (x y : Bˣ) :
+    x = Units.map (algebraMap R B) (u ^ (-n)) * y ↔
+      Units.map (algebraMap R B) (u ^ n) * x = y := by
+  rw [zpow_neg, eq_map_algebraMap_inv_mul_iff]
+
 /-- Integer powers on the left inherit central-unit quasi-commutation `x * y = w • (y * x)`. -/
 theorem zpow_mul_of_map_algebraMap_mul {w : Rˣ} {x y : Bˣ}
     (h : x * y = Units.map (algebraMap R B) w * (y * x)) (m : ℤ) :
     x ^ m * y = Units.map (algebraMap R B) (w ^ m) * (y * x ^ m) := by
   let cw : Bˣ := Units.map (algebraMap R B) w
-  have hyx : SemiconjBy y x (cw⁻¹ * x) := mul_left_cancel (a := cw) <| by
-    rw [← h, ← mul_assoc, ← mul_assoc, mul_inv_cancel, one_mul]
+  have hyx : SemiconjBy y x (cw⁻¹ * x) :=
+    ((eq_map_algebraMap_inv_mul_iff w (y * x) (x * y)).mpr h.symm).trans (mul_assoc _ _ _).symm
   have hcomm : Commute cw⁻¹ x := by
     rw [← map_inv]
     exact commute_map_algebraMap w⁻¹ x
   have hpow := (hyx.zpow_right m).eq
-  rw [hcomm.mul_zpow m, mul_assoc] at hpow
-  rw [hpow, ← mul_assoc, ← map_inv, ← map_zpow, inv_zpow', ← map_mul, ← zpow_add,
-    add_neg_cancel, zpow_zero, map_one, one_mul]
+  rw [hcomm.mul_zpow m, mul_assoc, ← map_inv, ← map_zpow, inv_zpow] at hpow
+  exact ((eq_map_algebraMap_inv_mul_iff (w ^ m) (y * x ^ m) (x ^ m * y)).mp hpow).symm
 
 /-- Integer powers on both sides inherit central-unit quasi-commutation: if
 `x * y = w • (y * x)`, then `x ^ m * y ^ n = w ^ (m * n) • (y ^ n * x ^ m)`. -/
 theorem zpow_mul_zpow_of_map_algebraMap_mul {w : Rˣ} {x y : Bˣ}
     (h : x * y = Units.map (algebraMap R B) w * (y * x)) (m n : ℤ) :
     x ^ m * y ^ n = Units.map (algebraMap R B) (w ^ (m * n)) * (y ^ n * x ^ m) := by
-  have hyx : y * x = Units.map (algebraMap R B) (w ^ (-1 : ℤ)) * (x * y) :=
-    mul_left_cancel (a := Units.map (algebraMap R B) w) <| by
-      rw [← h, map_algebraMap_mul_map_algebraMap, zpow_neg_one, mul_inv_cancel, map_one, one_mul]
+  have hyx : y * x = Units.map (algebraMap R B) w⁻¹ * (x * y) :=
+    (eq_map_algebraMap_inv_mul_iff w _ _).mpr h.symm
+  have hyn' := zpow_mul_of_map_algebraMap_mul hyx n
+  rw [inv_zpow] at hyn'
   have hyn : x * y ^ n = Units.map (algebraMap R B) (w ^ n) * (y ^ n * x) :=
-    mul_left_cancel (a := Units.map (algebraMap R B) ((w ^ (-1 : ℤ)) ^ n)) <| by
-      rw [← zpow_mul_of_map_algebraMap_mul hyx n, map_algebraMap_mul_map_algebraMap, ← zpow_mul,
-        ← zpow_add, (by ring : -1 * n + n = 0), zpow_zero, map_one, one_mul]
+    ((eq_map_algebraMap_inv_mul_iff (w ^ n) (y ^ n * x) (x * y ^ n)).mp hyn').symm
   rw [zpow_mul_of_map_algebraMap_mul hyn m, ← zpow_mul, mul_comm n m]
 
 end Units

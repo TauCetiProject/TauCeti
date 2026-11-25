@@ -164,6 +164,13 @@ theorem val_monomial_mul_monomial_eq_smul_mul (M : BasedChart u Λ B) (hΛ : Λ.
   simpa only [eval_monomial, map_mul, map_smul] using
     congrArg M.eval (QuantumTorus.monomial_mul_monomial_eq_smul_mul hΛ a b)
 
+/-- General quasi-commutation of normalized chart monomials for any integral bilinear form `Λ`. -/
+theorem monomial_mul_comm (M : BasedChart u Λ B) (a b : L) :
+    M.monomial a * M.monomial b =
+      Units.map (algebraMap R B) (u ^ (Λ a b - Λ b a)) * (M.monomial b * M.monomial a) := by
+  rw [M.monomial_mul, M.monomial_mul, ← mul_assoc, ← map_mul, ← zpow_add, sub_add_cancel,
+    add_comm b a]
+
 /-- Alternation gives the usual quasi-commutation factor in the group of units. -/
 theorem monomial_mul_monomial_eq_map_mul (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (a b : L) :
     M.monomial a * M.monomial b =
@@ -290,12 +297,26 @@ theorem monomial_inv (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (a : L) :
   rw [M.monomial_inv_eq_map_mul, hΛ.self_eq_zero]
   simp
 
+/-- When `Λ a a = 0`, integer multiples of `a` correspond to integer powers of `M.monomial a`
+without requiring `Λ` to be globally alternating. -/
+theorem monomial_zsmul_of_self_eq_zero (M : BasedChart u Λ B) {a : L} (ha : Λ a a = 0) (n : ℤ) :
+    M.monomial (n • a) = M.monomial a ^ n := by
+  rw [← M.map_eval_monomialUnit, QuantumTorus.monomialUnit_zsmul_of_self_eq_zero ha, map_zpow,
+    M.map_eval_monomialUnit]
+
+/-- When `Λ (single i 1) (single i 1) = 0`, `M.monomial (single i n)` is the `n`-th integer power of
+the `i`-th standard coordinate monomial. -/
+theorem monomial_single_of_self_eq_zero {I : Type*} {Λ : LinearMap.BilinForm ℤ (I →₀ ℤ)}
+    (M : BasedChart u Λ B) {i : I} (hi : Λ (Finsupp.single i 1) (Finsupp.single i 1) = 0)
+    (n : ℤ) :
+    M.monomial (Finsupp.single i n) = M.monomial (Finsupp.single i 1) ^ n := by
+  simpa using M.monomial_zsmul_of_self_eq_zero hi n
+
 /-- For alternating forms, integer powers of a chart monomial simplify to monomials. -/
 @[simp]
 theorem monomial_zpow (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (a : L) (n : ℤ) :
-    M.monomial a ^ n = M.monomial (n • a) := by
-  rw [← map_eval_monomialUnit, ← map_zpow, QuantumTorus.monomialUnit_zpow hΛ,
-    map_eval_monomialUnit]
+    M.monomial a ^ n = M.monomial (n • a) :=
+  (M.monomial_zsmul_of_self_eq_zero (hΛ.self_eq_zero a) n).symm
 
 /-- For alternating forms, powers of a chart monomial simplify to monomials. -/
 @[simp]

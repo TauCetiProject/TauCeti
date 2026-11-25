@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Reflection
-public import TauCeti.LinearAlgebra.Matrix.Alternating
+public import TauCeti.LinearAlgebra.Matrix.Alternating.Basic
 import Mathlib.Tactic.Ring
 
 /-!
@@ -270,7 +270,6 @@ theorem apply_self_eq_zero_of_isAlt_finsuppBilinForm {A : Matrix I I R}
   simpa [finsuppBilinForm_single_single] using hA.self_eq_zero (Finsupp.single i 1)
 
 /-- For finite `I`, `A.finsuppBilinForm` is alternating if and only if `A.toBilin'` is. -/
-@[simp]
 theorem isAlt_finsuppBilinForm_iff_isAlt_toBilin' [Fintype I] [DecidableEq I] :
     A.finsuppBilinForm.IsAlt ↔ A.toBilin'.IsAlt :=
   ⟨fun h x ↦ by
@@ -337,9 +336,7 @@ theorem isAlt_finsuppBilinForm_iff (A : Matrix I I R) :
   refine ⟨fun h ↦ ⟨Matrix.ext fun i j ↦ (neg_apply_eq_of_isAlt_finsuppBilinForm h i j).symm,
     apply_self_eq_zero_of_isAlt_finsuppBilinForm h⟩, fun ⟨ht, hd⟩ x ↦ ?_⟩
   classical
-  rw [finsuppBilinForm_apply, Finsupp.sum]
-  simp only [Finsupp.sum]
-  rw [← Finset.sum_coe_sort x.support]
+  simp only [finsuppBilinForm_apply, Finsupp.sum]
   simp_rw [← Finset.sum_coe_sort x.support, ← Fintype.sum_prod_type']
   refine Finset.sum_ninvolution Prod.swap
     (fun p ↦ by
