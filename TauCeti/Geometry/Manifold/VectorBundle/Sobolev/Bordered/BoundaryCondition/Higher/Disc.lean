@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.BoundaryCondition.Disc
+public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.ClosedDisc
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.BoundaryCondition.Higher
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Trivial
 
 /-!
 # Higher-order boundary conditions on the closed unit disc
@@ -55,12 +56,17 @@ theorem exists_mem_higherWithBoundaryIn_toSection_eq_iff_of_unitClosedDisc (hp :
     (∃ w ∈ higherWithBoundaryIn A hp L k,
       toSection hp (A.halfSectionChartData.lowerOrdersL volume p 1 k w) = f) ↔
       ∀ ζ : 𝕔𝔻, ‖(ζ : ℂ)‖ = 1 → f ζ ∈ L ζ := by
+  -- `f` as a `C^{1+k}` section of the trivial bundle.
   have h := exists_mem_higherWithBoundaryIn_toSection_eq_iff (A := A) (hp := hp) (L := L)
-    (s := trivialSection hf)
-  rw [coe_trivialSection] at h
-  refine h.trans (forall_congr' fun ζ ↦ ?_)
-  rw [← SetLike.mem_coe, ← Set.mem_compl_iff, UnitClosedDisc.compl_borderedInterior]
-  rfl
+    (s := ContMDiffSection.trivialEquiv.symm ⟨f, hf⟩)
+  have hs : ⇑(ContMDiffSection.trivialEquiv.symm
+      (⟨f, hf⟩ : C^(1 + k : ℕ)⟮closedUpperHalfPlaneModel, 𝕔𝔻; 𝓘(ℝ, Fin n → ℂ), Fin n → ℂ⟯) :
+        Cₛ^(1 + k : ℕ)⟮closedUpperHalfPlaneModel; Fin n → ℂ, Bundle.Trivial 𝕔𝔻 (Fin n → ℂ)⟯) =
+      f :=
+    -- The coercion of `⟨f, hf⟩` is `f`.
+    ContMDiffSection.coe_trivialEquiv_symm _
+  rw [hs] at h
+  exact h.trans (forall_congr' fun ζ ↦ imp_congr_left UnitClosedDisc.notMem_borderedInterior_iff)
 
 /-- The constant section `e₁` is the continuous representative of an element of
 `W^{1+k,p}_{ℝⁿ}`, for every `k`. -/
