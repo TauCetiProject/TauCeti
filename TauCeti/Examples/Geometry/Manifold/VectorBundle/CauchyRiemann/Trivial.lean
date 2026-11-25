@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Fourier.Torus.CauchyRiemannOperator
 public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.ClosedDisc
-public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Trivial
+public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Trivial.Basic
 
 /-!
 # Conjugate coefficients on the plane, bordered disc, and torus

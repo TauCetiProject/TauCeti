@@ -19,10 +19,12 @@ subgroup is encoded contravariantly by a Hopf ideal, so `I ≤ J` says that the 
 file proves that it detects equality among smooth connected closed subgroups: an inclusion which
 does not drop the Lie dimension is an equality.
 
-The proof is the conormal-sequence argument. The quotient-to-quotient coordinate map is
-surjective, and equality of tangent-space dimensions makes it bijective on tangent Lie algebras,
-hence its conormal space vanishes; smoothness and connectedness then upgrade the infinitesimal
-statement to equality of Hopf ideals.
+The proof is the conormal-sequence argument, stated first for any surjective coordinate map
+between smooth connected affine groups and then applied to the quotient-to-quotient coordinate
+map. A surjective coordinate map embeds tangent spaces, and equality of tangent-space dimensions
+makes it bijective on tangent Lie algebras, hence its conormal space vanishes; smoothness and
+connectedness then upgrade the infinitesimal statement to injectivity, that is, to equality of
+Hopf ideals.
 
 Two consequences follow formally. A member of maximal Lie dimension in a family of smooth
 connected closed subgroups is a maximal member of that family, and every nonempty such family has
@@ -31,6 +33,9 @@ for the unipotent and solvable radicals, this gives maximality rather than a gre
 
 ## Main declarations
 
+* `TauCeti.CommHopfAlgCat.injective_of_surjective_of_finrank_le`,
+  `TauCeti.CommHopfAlgCat.isIso_of_surjective_of_finrank_le`: a closed immersion of smooth
+  connected affine groups which does not drop the Lie dimension is an isomorphism.
 * `TauCeti.HopfIdeal.eq_of_le_of_finrank_quotientLie_le`: an inclusion of smooth connected closed
   subgroups which does not drop the Lie dimension is an equality.
 * `TauCeti.HopfIdeal.minimal_of_finrank_quotientLie_maximal`: a maximal-dimensional member of a
@@ -51,6 +56,56 @@ namespace TauCeti
 universe u
 
 noncomputable section
+
+namespace CommHopfAlgCat
+
+variable {k : Type u} [Field k] {H K : _root_.CommHopfAlgCat.{u} k}
+
+/-- **A closed immersion of smooth connected affine groups which does not drop the Lie dimension
+is an isomorphism.** If the coordinate map `f : H ⟶ K` is surjective, so that `Spec K` is a
+closed subgroup of `Spec H`, both are smooth and connected, and the Lie algebra of `Spec H` has
+dimension at most that of `Spec K`, then the coordinate map `f` is also injective. The
+isomorphism form is `isIso_of_surjective_of_finrank_le`. -/
+theorem injective_of_surjective_of_finrank_le (f : H ⟶ K) (hf : Function.Surjective f.hom)
+    (hH_smooth : smoothCommHopfAlgProperty k H) (hH_connected : ConnectedSpace (PrimeSpectrum H))
+    (hK_smooth : smoothCommHopfAlgProperty k K) (hK_connected : ConnectedSpace (PrimeSpectrum K))
+    (hfinrank :
+      Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) ≤
+        Module.finrank k (Derivation k K (Bialgebra.CounitAlgebra k K k))) :
+    Function.Injective f.hom := by
+  let _ : Algebra.Smooth k H := (smoothCommHopfAlgProperty_iff _).mp hH_smooth
+  let q : H →ₐc[k] K := f.hom
+  have hq : Function.Surjective q := hf
+  -- A surjection embeds the tangent space of `K` into that of `H`, so the dimensions agree.
+  have hfinrank_eq :
+      Module.finrank k (Derivation k K (Bialgebra.CounitAlgebra k K k)) =
+        Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) :=
+    le_antisymm
+      (LinearMap.finrank_le_finrank_of_injective
+        (f := (derivationCompLieHom (B := k) q : _ →ₗ[k] _))
+        (derivationCompLieHom_injective_of_surjective (B := k) q hq))
+      hfinrank
+  have hbij := derivationCompLieHom_bijective_of_surjective_of_finrank_eq q hq hfinrank_eq
+  exact (HopfIdeal.ker_eq_bot_iff q).mp
+    (HopfIdeal.ker_eq_bot_of_smooth_of_connected_of_conormalSubspace_eq_bot q hq
+      hH_smooth hH_connected hK_smooth hK_connected
+      (HopfIdeal.conormalSubspace_ker_eq_bot_of_derivationCompLieHom_surjective q hbij.2))
+
+/-- **A closed immersion of smooth connected affine groups which does not drop the Lie dimension
+is an isomorphism**, in categorical form: a surjective coordinate map `f : H ⟶ K` between smooth
+connected affine groups with `dim Lie(Spec H) ≤ dim Lie(Spec K)` is an isomorphism. -/
+theorem isIso_of_surjective_of_finrank_le (f : H ⟶ K) (hf : Function.Surjective f.hom)
+    (hH_smooth : smoothCommHopfAlgProperty k H) (hH_connected : ConnectedSpace (PrimeSpectrum H))
+    (hK_smooth : smoothCommHopfAlgProperty k K) (hK_connected : ConnectedSpace (PrimeSpectrum K))
+    (hfinrank :
+      Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) ≤
+        Module.finrank k (Derivation k K (Bialgebra.CounitAlgebra k K k))) :
+    CategoryTheory.IsIso f :=
+  (CategoryTheory.ConcreteCategory.isIso_iff_bijective f).mpr
+    ⟨injective_of_surjective_of_finrank_le f hf hH_smooth hH_connected hK_smooth hK_connected
+      hfinrank, hf⟩
+
+end CommHopfAlgCat
 
 namespace HopfIdeal
 
@@ -76,32 +131,11 @@ theorem eq_of_le_of_finrank_quotientLie_le (hIJ : I ≤ J)
         Module.finrank k
           (Derivation k (H ⧸ J.toIdeal)
             (Bialgebra.CounitAlgebra k (H ⧸ J.toIdeal) k))) :
-    I = J := by
-  have hfinrank_eq :
-      Module.finrank k
-          (Derivation k (H ⧸ J.toIdeal)
-            (Bialgebra.CounitAlgebra k (H ⧸ J.toIdeal) k)) =
-        Module.finrank k
-          (Derivation k (H ⧸ I.toIdeal)
-            (Bialgebra.CounitAlgebra k (H ⧸ I.toIdeal) k)) :=
-    le_antisymm (finrank_quotientLie_antitone hIJ) hfinrank
-  let q := FiniteTypeCommHopfAlgCat.toBialgHom
-    (FiniteTypeCommHopfAlgCat.quotientMapOfLe H hIJ)
-  have hq_surjective : Function.Surjective q :=
-    FiniteTypeCommHopfAlgCat.quotientMapOfLe_surjective H hIJ
-  have hq_bijective : Function.Bijective (derivationCompLieHom (B := k) q) :=
-    derivationCompLieHom_bijective_of_surjective_of_finrank_eq q hq_surjective hfinrank_eq
-  have hconormal : conormalSubspace (HopfIdeal.ker q) = ⊥ :=
-    conormalSubspace_ker_eq_bot_of_derivationCompLieHom_surjective q hq_bijective.2
-  have hq_kernel : HopfIdeal.ker q = ⊥ :=
-    ker_eq_bot_of_smooth_of_connected_of_conormalSubspace_eq_bot q hq_surjective
-      hI_smooth hI_connected hJ_smooth hJ_connected hconormal
-  have hmap : J.map (Bialgebra.Quotient.mkBialgHom I.toIdeal) = ⊥ := by
-    rw [← CommHopfAlgCat.ker_quotientMapOfLe H.obj hIJ]
-    exact hq_kernel
-  have hJI : J ≤ I := by
-    simpa using (HopfIdeal.map_eq_bot_iff_le_ker J _ Ideal.Quotient.mk_surjective).mp hmap
-  exact le_antisymm hIJ hJI
+    I = J :=
+  (CommHopfAlgCat.quotientMapOfLe_injective_iff H.obj hIJ).mp
+    (CommHopfAlgCat.injective_of_surjective_of_finrank_le _
+      (CommHopfAlgCat.quotientMapOfLe_surjective H.obj hIJ) hI_smooth hI_connected hJ_smooth
+      hJ_connected hfinrank)
 
 /-- A member of maximal Lie dimension in a family of smooth connected closed subgroups is a
 maximal member of that family.

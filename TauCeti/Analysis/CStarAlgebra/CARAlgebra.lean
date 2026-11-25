@@ -7,9 +7,14 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 public import Mathlib.LinearAlgebra.Matrix.Reindex
+public import Mathlib.RingTheory.SimpleRing.Defs
 public import TauCeti.Algebra.Star.StarAlgHom
 public import TauCeti.Analysis.CStarAlgebra.InductiveLimit.Basic
 public import TauCeti.LinearAlgebra.Matrix.TensorProduct
+import Mathlib.Analysis.Normed.Ring.Units
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.InductiveLimit.Ideal
+import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
 
 /-!
 # The CAR algebra as a C⋆-inductive limit
@@ -28,10 +33,13 @@ embeddings `a ↦ a ⊗ 1₂`. It is the UHF algebra of type `2^∞`.
 ## Main statements
 
 * `TauCeti.CARAlgebra.isometry_of`: the canonical maps `M_{2^n} → CARAlgebra` are isometric.
+* `TauCeti.CARAlgebra.forall_isClosed_eq_bot_or_eq_top`, `TauCeti.CARAlgebra.instIsSimpleRing`:
+  the CAR algebra is simple, since every stage `M_{2^n}` is.
 
 ## References
 
 * K. R. Davidson, *C*-Algebras by Example*, §III.5.
+* B. Blackadar, *Operator Algebras: Theory of C*-Algebras and von Neumann Algebras*, II.8.2.5.
 -/
 
 public section
@@ -100,5 +108,18 @@ abbrev CARAlgebra : Type := CStarInductiveLimit Stage (StarAlgHom.natLERec step)
 theorem CARAlgebra.isometry_of (n : ℕ) :
     Isometry (CStarInductiveLimit.of Stage (StarAlgHom.natLERec step) n) :=
   CStarInductiveLimit.isometry_of (StarAlgHom.natLERec_injective step_injective n)
+
+/-- **The CAR algebra is simple**: its only closed two-sided ideals are `⊥` and `⊤`, because every
+stage `M_{2^n}` is a simple ring (Blackadar, II.8.2.5). -/
+theorem CARAlgebra.forall_isClosed_eq_bot_or_eq_top (J : TwoSidedIdeal CARAlgebra)
+    (hJ : IsClosed (J : Set CARAlgebra)) : J = ⊥ ∨ J = ⊤ :=
+  CStarInductiveLimit.forall_isClosed_eq_bot_or_eq_top
+    (fun _ I _ ↦ IsSimpleOrder.eq_bot_or_eq_top I) J hJ
+
+/-- The CAR algebra is a simple ring: being unital, its proper two-sided ideals have proper
+closures, so simplicity for closed ideals gives simplicity for all ideals. -/
+instance CARAlgebra.instIsSimpleRing : IsSimpleRing CARAlgebra :=
+  .of_eq_bot_or_eq_top <| TwoSidedIdeal.eq_bot_or_eq_top_of_forall_isClosed Units.isOpen
+    CARAlgebra.forall_isClosed_eq_bot_or_eq_top
 
 end TauCeti
