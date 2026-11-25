@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.FullyNonlinear.AdmissiblePair
 public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralGradient
 public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralFunction.ContDiff
 public import TauCeti.Analysis.Convex.SpectralFunction
+import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
 import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
 
 /-!
@@ -32,18 +33,18 @@ operator:
 
 ## Main results
 
+* `TauCeti.IsAdmissibleCone.isOpen_setOf_eigenvalues₀_mem`: the domain `{A | λ(A) ∈ Γ}` is open.
 * `TauCeti.IsAdmissiblePair.contDiffOn_spectralFunction`: `F_f` is `C¹` on `{A | λ(A) ∈ Γ}`.
 * `TauCeti.IsAdmissiblePair.posDef_spectralGradient`: `∇F_f(A)` is positive definite.
 * `TauCeti.IsAdmissiblePair.re_trace_spectralGradient_mul_self`: Euler's identity.
 * `TauCeti.IsAdmissiblePair.concaveOn_spectralFunction`: concavity for a concave pair.
-* `TauCeti.IsAdmissiblePair.fderiv_comp_perm_apply_single`: the partial derivatives of `f`
-  permute with the point.
 * `TauCeti.IsAdmissiblePair.hasStructuralConstant_iff_le_re_det_spectralGradient`: the structural
   condition through `det ∇F_f`.
 
 ## References
 
-* `TauCetiRoadmap/ComplexHessianEquations/README.md`, §2.4, the structural condition and the API.
+* B. Guo, D. H. Phong and F. Tong, *On L∞ estimates for complex Monge–Ampère equations*,
+  Ann. of Math. 198 (2023), (1.4) for the structural condition.
 -/
 
 public section
@@ -53,16 +54,17 @@ noncomputable section
 open Finset
 open scoped Matrix.Norms.Frobenius ComplexOrder
 
-namespace TauCeti.IsAdmissiblePair
-
 variable {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
   {Γ : Set (Fin (Fintype.card ι) → ℝ)} {f : (Fin (Fintype.card ι) → ℝ) → ℝ}
 
-/-- The domain `{A | λ(A) ∈ Γ}` of the operator of an admissible pair is open. -/
-theorem isOpen_setOf_eigenvalues₀_mem (h : IsAdmissiblePair Γ f) :
+/-- The domain `{A | λ(A) ∈ Γ}` of the operator of an admissible pair, or of any admissible cone
+`Γ`, is open. -/
+theorem TauCeti.IsAdmissibleCone.isOpen_setOf_eigenvalues₀_mem (hΓ : IsAdmissibleCone Γ) :
     IsOpen {B : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) |
       B.property.isHermitian.eigenvalues₀ ∈ Γ} :=
-  h.isAdmissibleCone.isOpen.preimage Matrix.continuous_eigenvalues₀_selfAdjoint
+  hΓ.isOpen.preimage Matrix.continuous_eigenvalues₀_selfAdjoint
+
+namespace TauCeti.IsAdmissiblePair
 
 /-- **The operator of an admissible pair is `C¹`** on the Hermitian matrices `A` with
 `λ(A) ∈ Γ`. -/
@@ -109,35 +111,6 @@ theorem concaveOn_spectralFunction (h : IsAdmissiblePair Γ f) (hf : ConcaveOn �
   Matrix.concaveOn_spectralFunction (fun σ _ hμ ↦ h.isAdmissibleCone.comp_perm_mem σ hμ)
     (fun σ _ hμ ↦ h.apply_comp_perm σ hμ) hf
 
-omit [DecidableEq ι] in
-/-- **The partial derivatives of a symmetric function permute with the point**: for an admissible
-pair, `∂ⱼ f(μ ∘ τ) = ∂_{τ j} f(μ)` at every `μ ∈ Γ`. -/
-theorem fderiv_comp_perm_apply_single (h : IsAdmissiblePair Γ f) {μ : Fin (Fintype.card ι) → ℝ}
-    (hμ : μ ∈ Γ) (τ : Equiv.Perm (Fin (Fintype.card ι))) (j : Fin (Fintype.card ι)) :
-    fderiv ℝ f (μ ∘ τ) (Pi.single j 1) = fderiv ℝ f μ (Pi.single (τ j) 1) := by
-  set L : (Fin (Fintype.card ι) → ℝ) →L[ℝ] Fin (Fintype.card ι) → ℝ :=
-    ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.proj (τ i)
-  have hL (ν : Fin (Fintype.card ι) → ℝ) : L ν = ν ∘ τ := rfl
-  have hcomp : HasFDerivAt (fun ν ↦ f (L ν)) ((fderiv ℝ f (μ ∘ τ)).comp L) μ :=
-    (h.differentiableAt (h.isAdmissibleCone.comp_perm_mem τ hμ)).hasFDerivAt.comp μ
-      L.hasFDerivAt
-  have heq : (fun ν ↦ f (L ν)) =ᶠ[nhds μ] f := by
-    filter_upwards [h.isAdmissibleCone.isOpen.mem_nhds hμ] with ν hν
-    exact h.apply_comp_perm τ hν
-  have hsingle : L (Pi.single (τ j) 1) = Pi.single j 1 := by
-    rw [hL]
-    funext i
-    simp [Pi.single_apply, τ.injective.eq_iff]
-  rw [(hcomp.congr_of_eventuallyEq heq.symm).fderiv, ContinuousLinearMap.comp_apply, hsingle]
-
-omit [DecidableEq ι] in
-/-- The product of the partial derivatives of `f` is invariant under permutations of the point. -/
-theorem prod_fderiv_comp_perm_apply_single (h : IsAdmissiblePair Γ f)
-    {μ : Fin (Fintype.card ι) → ℝ} (hμ : μ ∈ Γ) (τ : Equiv.Perm (Fin (Fintype.card ι))) :
-    ∏ j, fderiv ℝ f (μ ∘ τ) (Pi.single j 1) = ∏ j, fderiv ℝ f μ (Pi.single j 1) := by
-  simp_rw [h.fderiv_comp_perm_apply_single hμ τ]
-  exact Equiv.prod_comp τ fun j ↦ fderiv ℝ f μ (Pi.single j 1)
-
 /-- **The structural condition through the gradient of the operator** (Guo–Phong–Tong (1.4)):
 an admissible pair has structural constant `γ` if and only if `det ∇F_f(A) ≥ γ` for every
 Hermitian `A` with `λ(A) ∈ Γ`. -/
@@ -152,6 +125,10 @@ theorem hasStructuralConstant_iff_le_re_det_spectralGradient (h : IsAdmissiblePa
   have hB : B.property.isHermitian.eigenvalues₀ = μ ∘ Tuple.sortDesc μ :=
     Matrix.eigenvalues₀_conjDiagonalSelfAdjoint (one_mem _) μ
   have := H B B.property.isHermitian (by rw [hB]; exact h.isAdmissibleCone.comp_perm_mem _ hμ)
-  rwa [hB, h.prod_fderiv_comp_perm_apply_single hμ] at this
+  -- `f` is symmetric near `μ ∈ Γ`, so the product of its partials is the same at `μ ∘ σ`.
+  have hsymm : (fun ν ↦ f (ν ∘ Tuple.sortDesc μ)) =ᶠ[nhds μ] f := by
+    filter_upwards [h.isAdmissibleCone.isOpen.mem_nhds hμ] with ν hν
+    exact h.apply_comp_perm _ hν
+  rwa [hB, prod_fderiv_comp_perm_apply_single hsymm] at this
 
 end TauCeti.IsAdmissiblePair

@@ -42,6 +42,9 @@ the `i`-th variable the separated product with the `i`-th factor replaced by its
 * `TauCeti.fderiv_prod_apply_single`: the partial derivatives of the coordinate product.
 * `TauCeti.fderiv_apply_single_eq_of_comp_swap`: a function invariant under swapping two
   coordinates has equal partial derivatives in them at points where these coordinates agree.
+* `TauCeti.fderiv_comp_perm_apply_single`, `TauCeti.prod_fderiv_comp_perm_apply_single`: the
+  partial derivatives of a function locally invariant under a permutation of coordinates permute
+  with the point, so their product is invariant.
 
 The derivative of coordinate replacement is the identity derivative with one row replaced
 (`HasFDerivAt.update_self`). Its scalar instance is adapted from
@@ -195,6 +198,37 @@ theorem fderiv_apply_single_eq_of_comp_swap {f : (ι → E) → F} {i j : ι}
   congr 1
   funext k
   simp only [Function.comp_apply, Pi.single_apply, Equiv.swap_apply_eq_iff, Equiv.swap_apply_left]
+
+/-- **Partial derivatives of a function locally invariant under a permutation of coordinates.**
+If `f (ν ∘ σ) = f ν` for all `ν` near `μ`, then the partial derivative of `f` at `μ ∘ σ` in the
+`j`-th coordinate is its partial derivative at `μ` in the `σ j`-th coordinate. Precomposition with
+`σ` is a continuous linear automorphism, so no differentiability is assumed. -/
+theorem fderiv_comp_perm_apply_single {f : (ι → E) → F} {σ : Equiv.Perm ι} {μ : ι → E}
+    (hf : (fun ν ↦ f (ν ∘ σ)) =ᶠ[𝓝 μ] f) (j : ι) (c : E) :
+    fderiv 𝕜 f (μ ∘ σ) (Pi.single j c) = fderiv 𝕜 f μ (Pi.single (σ j) c) := by
+  let := Fintype.ofFinite ι
+  -- Precomposition with `σ` as a continuous linear automorphism.
+  set L : (ι → E) ≃L[𝕜] (ι → E) := ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ ↦ E) σ.symm
+  have hL (v : ι → E) : L v = v ∘ σ := by
+    funext k
+    simp [L, ContinuousLinearEquiv.piCongrLeft, Equiv.piCongrLeft_apply_eq_cast]
+  have h := L.comp_right_fderiv (f := f) (x := μ)
+  rw [show f ∘ L = fun ν ↦ f (ν ∘ σ) from funext fun v ↦ by rw [Function.comp_apply, hL],
+    hf.fderiv_eq, hL] at h
+  rw [h, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, hL]
+  congr 1
+  funext k
+  simp [Pi.single_apply, σ.injective.eq_iff]
+
+omit [Finite ι] in
+/-- The product of the partial derivatives of a function locally invariant under a permutation `σ`
+of coordinates near `μ` is the same at `μ ∘ σ` as at `μ`. -/
+theorem prod_fderiv_comp_perm_apply_single [Fintype ι] {R : Type*} [NormedCommRing R]
+    [NormedAlgebra 𝕜 R] {f : (ι → E) → R} {σ : Equiv.Perm ι} {μ : ι → E}
+    (hf : (fun ν ↦ f (ν ∘ σ)) =ᶠ[𝓝 μ] f) (c : E) :
+    ∏ j, fderiv 𝕜 f (μ ∘ σ) (Pi.single j c) = ∏ j, fderiv 𝕜 f μ (Pi.single j c) := by
+  simp_rw [fderiv_comp_perm_apply_single hf]
+  exact Equiv.prod_comp σ fun j ↦ fderiv 𝕜 f μ (Pi.single j c)
 
 end Swap
 
