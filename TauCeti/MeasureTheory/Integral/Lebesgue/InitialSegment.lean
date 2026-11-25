@@ -5,20 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
+import Mathlib.Order.UpperLower.Relative
 
 /-!
-# Weighted integral comparison on initial segments
+# Integral comparison on initial segments
 
-Let `μ` be a measure on the real line and let `φ ≤ 1` on `(a, ∞)`. If the weighted integral
-of `φ` over `(a, ∞)` is at most the weight of `(a, ρ]`, the same comparison holds after
-intersecting both domains with any initial segment of `(a, ∞)`.
+Let `μ` be a measure on a linear order, `S` a null-measurable set and `f ≤ w` almost everywhere on
+`S`. Let `R` and `T` be initial segments of `S`, relative to `S`: `R ∩ S` and `T ∩ S` are lower
+sets relative to `S` (`IsRelLowerSet`). If the integral of `f` over `S` is at most the integral
+over `S` of `T.indicator w`, then the integral over `S` of `R.indicator f` is at most the integral
+over `S` of `(R ∩ T).indicator w`.
 
-`TauCeti.setLIntegral_indicator_mul_le_setLIntegral_indicator_inter_Iic`
-supplies this comparison without measurability assumptions on the weight, density, or initial
-segment. Applied along each ray, it compares a radial density with the indicator of a ball on sets
-star-shaped about the origin.
+`TauCeti.setLIntegral_indicator_le_setLIntegral_indicator_inter` supplies this comparison
+without measurability assumptions on `f`, `w`, `R` or `T`. Applied along each ray, with `S` the
+positive radii and `T` the radii inside a ball, it compares a radial density with the indicator
+of the ball on sets star-shaped about the origin.
 
 ## References
 
@@ -35,38 +37,36 @@ namespace TauCeti
 open MeasureTheory Set
 open scoped ENNReal
 
-/-- Let `R` be an initial segment of `(a, ∞)` and let `φ ≤ 1` there. If the integral of `φ`
-against a weight `w` is at most the weight of `(a, ρ]`, then its integral over `R` is at most
-the weight of `R ∩ (a, ρ]`. The measure is arbitrary, and no measurability assumptions on
-`w`, `φ`, or `R` are needed. -/
-theorem setLIntegral_indicator_mul_le_setLIntegral_indicator_inter_Iic
-    {μ : Measure ℝ} {a ρ : ℝ} {w φ : ℝ → ℝ≥0∞}
-    {R : Set ℝ} (hφ : ∀ r ∈ Ioi a, φ r ≤ 1)
-    (hmass : ∫⁻ r in Ioi a, w r * φ r ∂μ ≤ ∫⁻ r in Ioi a, (Iic ρ).indicator w r ∂μ)
-    (hR : ∀ ⦃r s⦄, a < s → s ≤ r → r ∈ R → s ∈ R) :
-    ∫⁻ r in Ioi a, R.indicator (fun r ↦ w r * φ r) r ∂μ ≤
-      ∫⁻ r in Ioi a, (R ∩ Iic ρ).indicator w r ∂μ := by
-  by_cases hρR : ∀ r, a < r → r ≤ ρ → r ∈ R
-  · -- `R` contains `(a, ρ]`: compare with the total mass of `φ`.
-    calc ∫⁻ r in Ioi a, R.indicator (fun r ↦ w r * φ r) r ∂μ
-        ≤ ∫⁻ r in Ioi a, w r * φ r ∂μ := lintegral_mono fun r ↦ indicator_le_self _ _ _
-      _ ≤ ∫⁻ r in Ioi a, (Iic ρ).indicator w r ∂μ := hmass
-      _ = ∫⁻ r in Ioi a, (R ∩ Iic ρ).indicator w r ∂μ := by
-        refine setLIntegral_congr_fun measurableSet_Ioi fun r hr ↦ ?_
-        by_cases hrρ : r ≤ ρ
-        · rw [indicator_of_mem (mem_Iic.2 hrρ),
-            indicator_of_mem (mem_inter (hρR r hr hrρ) (mem_Iic.2 hrρ))]
-        · rw [indicator_of_notMem (mt mem_Iic.1 hrρ),
-            indicator_of_notMem fun h ↦ hrρ (mem_Iic.1 (mem_of_mem_inter_right h))]
-  · -- `R` misses a point `s ≤ ρ`, so it lies below `s`: use `φ ≤ 1` pointwise.
-    simp only [not_forall] at hρR
-    obtain ⟨s, hs, hsρ, hsR⟩ := hρR
-    refine setLIntegral_mono' measurableSet_Ioi fun r hr ↦ ?_
-    by_cases hrR : r ∈ R
-    · have hrρ : r ≤ ρ := (not_le.mp fun hsr ↦ hsR (hR hs hsr hrR)).le.trans hsρ
-      rw [indicator_of_mem hrR, indicator_of_mem (mem_inter hrR (mem_Iic.2 hrρ))]
-      exact mul_le_of_le_one_right' (hφ r hr)
-    · rw [indicator_of_notMem hrR]
-      exact zero_le
+/-- Let `R` and `T` be initial segments of a null-measurable set `S` in a linear order, relative
+to `S`: `R ∩ S` and `T ∩ S` are lower sets relative to `S`, so whenever `y ≤ x` are points of `S`
+and `x` lies in the segment, so does `y`. Let `f ≤ w` almost everywhere on `S`. If the integral
+of `f` over `S` is at most the integral over `S` of `T.indicator w`, then the integral over `S` of
+`R.indicator f` is at most the integral over `S` of `(R ∩ T).indicator w`. The measure is
+arbitrary, and no measurability assumptions on `f`, `w`, `R` or `T` are needed. -/
+theorem setLIntegral_indicator_le_setLIntegral_indicator_inter
+    {α : Type*} [LinearOrder α] [MeasurableSpace α] {μ : Measure α} {S R T : Set α}
+    {f w : α → ℝ≥0∞} (hS : NullMeasurableSet S μ) (hf : ∀ᵐ x ∂μ.restrict S, f x ≤ w x)
+    (hmass : ∫⁻ x in S, f x ∂μ ≤ ∫⁻ x in S, T.indicator w x ∂μ)
+    (hR : IsRelLowerSet (R ∩ S) (· ∈ S)) (hT : IsRelLowerSet (T ∩ S) (· ∈ S)) :
+    ∫⁻ x in S, R.indicator f x ∂μ ≤ ∫⁻ x in S, (R ∩ T).indicator w x ∂μ := by
+  -- Seen inside `S`, the segments `R` and `T` are lower sets, so one contains the other.
+  have hlower {U : Set α} (hU : IsRelLowerSet (U ∩ S) (· ∈ S)) :
+      IsLowerSet ((↑) ⁻¹' U : Set S) :=
+    isLowerSet_subtype_iff_isRelLowerSet.mpr <| by
+      simpa only [Subtype.image_preimage_val, inter_comm] using hU
+  rcases (hlower hT).total (hlower hR) with hTR | hRT
+  · -- `R` contains the part of `S` in `T`: compare with the total mass of `f`.
+    calc ∫⁻ x in S, R.indicator f x ∂μ
+        ≤ ∫⁻ x in S, f x ∂μ := lintegral_mono fun x ↦ indicator_le_self _ _ _
+      _ ≤ ∫⁻ x in S, T.indicator w x ∂μ := hmass
+      _ = ∫⁻ x in S, (R ∩ T).indicator w x ∂μ := setLIntegral_congr_fun₀ hS fun x hx ↦
+        indicator_eq_indicator
+          ⟨fun hxT ↦ ⟨mem_preimage.1 (hTR (a := ⟨x, hx⟩) (mem_preimage.2 hxT)), hxT⟩, And.right⟩ rfl
+  · -- The part of `S` in `R` lies in `T`: use `f ≤ w` almost everywhere on `S`.
+    refine lintegral_mono_ae ?_
+    filter_upwards [ae_restrict_mem₀ hS, hf] with x hx hfx
+    rw [← indicator_indicator]
+    exact indicator_le_indicator' fun hxR ↦ by
+      rwa [indicator_of_mem (mem_preimage.1 (hRT (a := ⟨x, hx⟩) (mem_preimage.2 hxR)))]
 
 end TauCeti

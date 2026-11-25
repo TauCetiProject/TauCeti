@@ -39,7 +39,8 @@ incompatible, bump `mathlib-ltar-v1` in both copies of `restore-mathlib-ltars/ac
 
 Downloads go to the cache tool's default read endpoint. The escape hatch is a repository
 variable. Every workflow that runs `lake exe cache get` (`ci.yml`, `pr-build.yml`,
-`pr-profile.yml`, `nightly-verify.yml`, `pages.yml`) exports
+`pr-profile.yml`, `pages.yml`, and TauCetiTools' `nightly-verify.yml`, which
+`nightly-verify-schedule.yml` calls) exports
 `MATHLIB_CACHE_DEBUG_USE_LEGACY` from `vars.MATHLIB_CACHE_DEBUG_USE_LEGACY`. An operator
 sets the variable to `1` to send reads back to the legacy storage endpoint, and clears it
 to return to the default endpoint. Both changes apply on the next run, with no code

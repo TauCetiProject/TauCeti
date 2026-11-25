@@ -64,7 +64,9 @@ If the `β` inequality keeps the term `(r / 4)|β|⁴`, that is if it reads
 `|β|² ≤ (4 c² / r) (w₊ + (4 + 8 K₁ + K₃) / r)`
 
 (`TauCeti.SeibergWitten.norm_sq_le_div_mul_max_one_sub_add_div`). In particular `β = 0` when
-`c = 0`.
+`c = 0`. The `α` inequality alone supplies this coarse bound with `K₃ = 4 K₁`
+(`TauCeti.SeibergWitten.norm_sq_le_one_add_mul_div` in
+`TauCeti.Analysis.PDE.SeibergWitten.PointwiseBounds`).
 
 The sections and their covariant derivatives are arbitrary dependent functions with values in
 seminormed groups, such as the fibres of vector bundles. Only `|α|²` and `|β|²` need to be `C²`.

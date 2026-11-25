@@ -115,22 +115,31 @@ theorem stationaryJetCoeff_jet (J : ℝ → AlmostComplexStructure V) (S : ℝ �
 
 variable {J : ℝ → AlmostComplexStructure V} {S : ℝ → V →L[ℝ] V}
 
+/-- The coefficient field of the stationary cylinder operator at `(s, t)` depends only on `t`. -/
+theorem stationaryJetCoeff_eq_of_snd_eq {z z' : ℝ × ℝ} (h : z.2 = z'.2) :
+    stationaryJetCoeff J S z = stationaryJetCoeff J S z' :=
+  ContinuousLinearMap.ext fun v ↦ by simp only [stationaryJetCoeff_apply, h]
+
+/-- For continuous loops `J_t` and `S_t`, the coefficient field of the stationary cylinder operator
+is continuous. -/
+theorem continuous_stationaryJetCoeff
+    (hJc : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap) (hSc : Continuous S) :
+    Continuous (stationaryJetCoeff J S) := by
+  unfold stationaryJetCoeff
+  exact continuous_const.add ((hJc.comp continuous_snd).clm_comp (continuous_const.sub
+    ((hSc.comp continuous_snd).clm_comp continuous_const)))
+
 /-- For continuous loops `J_t` and `S_t`, the coefficients of the stationary cylinder operator are
 essentially bounded on the cylinder. -/
 theorem memLp_stationaryJetCoeff
     (hJc : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap) (hSc : Continuous S) :
     MemLp (stationaryJetCoeff J S) ∞ stripMeasure := by
   -- The coefficient field depends only on `t`, through the loops `J_t` and `S_t`.
-  set g : ℝ → V × V × V →L[ℝ] V := fun t ↦ stationaryJetCoeff J S (0, t)
-  have hg : Continuous g := by
-    simp only [g, stationaryJetCoeff]
-    exact continuous_const.add (hJc.clm_comp (continuous_const.sub
-      (hSc.clm_comp continuous_const)))
-  have hM : stationaryJetCoeff J S = g ∘ Prod.snd := by
-    funext z
-    exact ContinuousLinearMap.ext fun v ↦ by simp [g, stationaryJetCoeff_apply]
+  have hM : stationaryJetCoeff J S = (fun t ↦ stationaryJetCoeff J S (0, t)) ∘ Prod.snd :=
+    funext fun z ↦ stationaryJetCoeff_eq_of_snd_eq rfl
   rw [hM]
-  exact memLp_top_comp_snd hg
+  exact memLp_top_comp_snd
+    ((continuous_stationaryJetCoeff hJc hSc).comp (continuous_const.prodMk continuous_id))
 
 variable (J S) in
 /-- The stationary cylinder operator `D ξ = ∂s ξ + J_t (∂t ξ - S_t ξ)` as an operator from the

@@ -51,6 +51,11 @@ is a bijection from the lifts for `E` to the lifts for `E'`
 those of their transports (`TauCeti.OrthonormalFrameLift.equivMapEquiv`). A change of metric is the
 main instance.
 
+Precomposing every frame of a lift along `ρ` with a fixed linear isometry `r` of the model gives
+a lift along any `ρ'` with `ρ g ∘ r = r ∘ ρ' g`, on the same principal bundle
+(`TauCeti.OrthonormalFrameLift.precomp`). Equivalences of lifts are equivalences of the lifts with
+precomposed frames (`TauCeti.OrthonormalFrameLift.Equiv.precomp`).
+
 ## Main definitions
 
 * `TauCeti.OrthonormalFrameLift`: a lift of the orthonormal frame bundle of a real vector bundle
@@ -61,6 +66,10 @@ main instance.
 * `TauCeti.OrthonormalFrameLift.Equiv.pullback`: the pullback of an equivalence.
 * `TauCeti.OrthonormalFrameLift.map`, `TauCeti.OrthonormalFrameLift.Equiv.map`: the transport of a
   lift and of an equivalence along fibrewise isometries.
+* `TauCeti.OrthonormalFrameLift.precomp`: the lift whose frames are those of a lift precomposed
+  with a fixed isometry of the model.
+* `TauCeti.OrthonormalFrameLift.Equiv.precomp`: the equivalence of lifts with precomposed frames
+  induced by an equivalence of lifts.
 
 ## Main results
 
@@ -819,6 +828,64 @@ theorem Equiv.pullback_map_heq {s t : OrthonormalFrameLift F E n G ρ} (φ : s.E
   Equiv.heq_of_toEquiv_heq (s.pullback_map f) (t.pullback_map f) fun _ ↦ HEq.rfl
 
 end Map
+
+/-! ### Changing the model frame -/
+
+/-- The **lift with precomposed frames**: for a lift `s` along `ρ`, a linear isometry `r` of the
+model `ℝⁿ` and a homomorphism `ρ'` with `ρ g ∘ r = r ∘ ρ' g`, the lift along `ρ'` with the same
+principal bundle, whose frame at `p` is the frame of `p` in `s` precomposed with `r`. Its body is
+exposed so that the fibre `(s.precomp r ρ' hr).P x` unfolds to `s.P x` downstream. -/
+@[expose]
+noncomputable def precomp (s : OrthonormalFrameLift F E n G ρ)
+    (r : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+    (ρ' : G →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ))
+    (hr : ∀ g v, ρ g (r (WithLp.toLp 2 v)).ofLp = (r (WithLp.toLp 2 (ρ' g v))).ofLp) :
+    OrthonormalFrameLift F E n G ρ' where
+  P := s.P
+  toFrame p := ⟨(s.toFrame p).proj, r.trans (s.toFrame p).frame⟩
+  continuous_toFrame := OrthonormalFrameBundle.continuous_iff.2 fun v ↦
+    (OrthonormalFrameBundle.continuous_totalSpaceMk_frame (r v)).comp s.continuous_toFrame
+  proj_toFrame p := s.proj_toFrame p
+  toFrame_smul x p g v := by
+    have h := s.toFrame_smul x p g (r (WithLp.toLp 2 v)).ofLp
+    simp only [WithLp.toLp_ofLp, hr] at h
+    simpa only [LinearIsometryEquiv.trans_apply] using h
+
+/-- The frame of a point in the lift with precomposed frames is its frame in the original lift
+precomposed with `r`. -/
+@[simp]
+theorem toFrame_precomp (s : OrthonormalFrameLift F E n G ρ)
+    (r : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+    (ρ' : G →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ))
+    (hr : ∀ g v, ρ g (r (WithLp.toLp 2 v)).ofLp = (r (WithLp.toLp 2 (ρ' g v))).ofLp)
+    (p : TotalSpace G s.P) :
+    (s.precomp r ρ' hr).toFrame p = ⟨(s.toFrame p).proj, r.trans (s.toFrame p).frame⟩ :=
+  (rfl)
+
+/-- **Precomposing frames is functorial**: an equivalence `s ≃ t` of lifts is an equivalence of
+the lifts with frames precomposed with `r`. -/
+noncomputable def Equiv.precomp {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
+    (r : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+    (ρ' : G →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ))
+    (hr : ∀ g v, ρ g (r (WithLp.toLp 2 v)).ofLp = (r (WithLp.toLp 2 (ρ' g v))).ofLp) :
+    (s.precomp r ρ' hr).Equiv (t.precomp r ρ' hr) where
+  toEquiv := φ.toEquiv
+  continuous_toFun := φ.continuous_toFun
+  continuous_invFun := φ.continuous_invFun
+  map_smul := φ.map_smul
+  -- `rw` and `simp` cannot see through the fibre `(s.precomp …).P x = s.P x`, so the frame
+  -- equation of `φ` is pushed through the precomposition `q ↦ ⟨q.proj, r.trans q.frame⟩` of the
+  -- frame map (`toFrame_precomp`) by `congrArg`.
+  toFrame_map x p := congrArg (fun q ↦ (⟨q.proj, r.trans q.frame⟩ :
+    OrthonormalFrameBundle ℝ F E (EuclideanSpace ℝ (Fin n)))) (φ.toFrame_map x p)
+
+@[simp]
+theorem Equiv.precomp_toEquiv {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
+    (r : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+    (ρ' : G →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ))
+    (hr : ∀ g v, ρ g (r (WithLp.toLp 2 v)).ofLp = (r (WithLp.toLp 2 (ρ' g v))).ofLp) (x : X) :
+    (φ.precomp r ρ' hr).toEquiv x = φ.toEquiv x :=
+  (rfl)
 
 end OrthonormalFrameLift
 

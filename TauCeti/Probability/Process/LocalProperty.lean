@@ -47,6 +47,9 @@ On a finite measure space, any pre-localizing sequence has tail probabilities
 `P {ω | τ k ω ≤ t} → 0` (`ProbabilityTheory.IsPreLocalizingSequence.tendsto_measure_le`),
 which transfers vanishing-measure bounds across events agreeing on `{t < τ k}`
 (`ProbabilityTheory.IsPreLocalizingSequence.tendsto_measure_of_ae_imp_of_lt`).
+An absolutely continuous change of measure also preserves localizing sequences, since their
+stopping-time conditions do not involve the measure and their path conditions hold almost surely.
+This does not assert preservation of the martingale property of stopped processes.
 
 ## References
 
@@ -100,6 +103,24 @@ theorem IsPreLocalizingSequence.tendsto_measure_of_ae_imp_of_lt {ι Ω : Type*}
       · exact Or.inr hgood
   exact (measure_mono hinc).trans ((measure_union_le _ _).trans
     (by rw [hnull, add_zero]; exact measure_union_le _ _))
+
+/-- An absolutely continuous change of measure preserves a pre-localizing sequence. No
+finiteness of either measure is needed. -/
+theorem IsPreLocalizingSequence.mono_ac {ι Ω : Type*} [Preorder ι]
+    [TopologicalSpace ι] [OrderTopology ι] {mΩ : MeasurableSpace Ω}
+    {ℱ : Filtration ι mΩ} {P Q : Measure Ω} {τ : ℕ → Ω → WithTop ι}
+    (hτ : IsPreLocalizingSequence ℱ τ P) (hQP : Q ≪ P) :
+    IsPreLocalizingSequence ℱ τ Q :=
+  ⟨hτ.isStoppingTime, hQP.ae_le hτ.tendsto_top⟩
+
+/-- An absolutely continuous change of measure preserves a native localizing sequence,
+including its almost-sure monotonicity. It need not preserve any localized martingale identities. -/
+theorem IsLocalizingSequence.mono_ac {ι Ω : Type*} [Preorder ι]
+    [TopologicalSpace ι] [OrderTopology ι] {mΩ : MeasurableSpace Ω}
+    {ℱ : Filtration ι mΩ} {P Q : Measure Ω} {τ : ℕ → Ω → WithTop ι}
+    (hτ : IsLocalizingSequence ℱ τ P) (hQP : Q ≪ P) :
+    IsLocalizingSequence ℱ τ Q :=
+  ⟨hτ.toIsPreLocalizingSequence.mono_ac hQP, hQP.ae_le hτ.mono⟩
 
 /-- Cutting a localizing sequence off at the initial time outside increasing initial-measurable
 events which eventually contain almost every sample point preserves localization. -/

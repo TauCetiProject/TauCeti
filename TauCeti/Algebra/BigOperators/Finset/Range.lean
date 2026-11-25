@@ -75,6 +75,8 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   consecutive factors or terms, `∏_{i<k} f(a+k-i) = ∏_{i<k} f(a+i+1)`.
 * `Finset.prod_range_ite_lt`, `Finset.sum_range_ite_lt`: a product or sum over `range n` whose
   factors past `x ≤ n` are replaced by `1` or `0` is the product or sum over `range x`.
+* `Finset.prod_range_ite_add_eq`, `Finset.sum_range_ite_add_eq`: a product or sum over `r ≤ n`
+  supported on `r + d = k` is the factor or term at `r = k - d`, if those beyond `n` are trivial.
 * `Finset.prod_range_eq_mul_prod_range_succ`, `Finset.sum_range_eq_add_sum_range_succ`: shift
   the index of a product or sum over `range n` whose factor or term at the top index `n` is
   trivial.
@@ -162,6 +164,20 @@ theorem prod_range_ite_lt {M : Type*} [CommMonoid M] (f : ℕ → M) {x n : ℕ}
   ext r
   simp only [mem_filter, mem_range]
   omega
+
+/-- A product over `r ≤ n` of factors supported on `r + d = k` picks out the factor at `r = k - d`,
+provided the factors are `1` beyond `n`. -/
+@[to_additive /-- A sum over `r ≤ n` of terms supported on `r + d = k` picks out the term at
+`r = k - d`, provided the terms vanish beyond `n`. -/]
+theorem prod_range_ite_add_eq {M : Type*} [CommMonoid M] (n d k : ℕ) (f : ℕ → M)
+    (hf : ∀ t, n < t → f t = 1) :
+    ∏ r ∈ range (n + 1), (if k = r + d then f r else 1) = if d ≤ k then f (k - d) else 1 := by
+  split_ifs with hdk
+  · simp_rw [show ∀ r, (k = r + d) ↔ (k - d = r) by omega, prod_ite_eq, mem_range]
+    split_ifs with h
+    · rfl
+    · exact (hf _ (by omega)).symm
+  · exact prod_eq_one fun r _ => ite_eq_right_iff.mpr fun h => absurd h (by omega)
 
 /-- Shifting the index of a product over `range n` whose factor at the top index `n` is `1`. -/
 @[to_additive /-- Shifting the index of a sum over `range n` whose term at the top index `n`
