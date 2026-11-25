@@ -10,6 +10,8 @@ public import TauCeti.Combinatorics.Young.Interlacing
 public import TauCeti.RepresentationTheory.ClassicalGroups.DualWeylModule.LeadingTerm
 import TauCeti.Combinatorics.Young.Diagram
 import TauCeti.Combinatorics.Young.OfRowLens
+import TauCeti.RingTheory.MvPolynomial.DeterminantalIdeal
+import TauCeti.RingTheory.MvPolynomial.MonomialOrder
 
 /-!
 # The standard bideterminant basis of the dual Weyl module
@@ -50,7 +52,8 @@ span. Every subtraction keeps the coefficients in `R`, which is the saturation o
   dual Weyl module.
 * `TauCeti.DualWeylModule.finrank_dualWeylModule`: its rank is the number of semistandard
   tableaux.
-* `TauCeti.DualWeylModule.span_map_dualWeylModule`: base change, `∇_S = ∇_R ⊗ S` as spans.
+* `TauCeti.DualWeylModule.span_map_dualWeylModule`: base change, `∇_S` is the `S`-span of the
+  image of `∇_R`.
 * `TauCeti.DualWeylModule.mem_span_bideterminant_of_map`: saturation, for an injective change of
   coefficients (for instance a domain in its field of fractions).
 
@@ -122,7 +125,7 @@ other than the last, bordered by the last row, on the first `k + 1` columns, has
 variable `y_k` of the last row times the minor on the `k` rows and the first `k` columns. -/
 theorem hasLeadingTerm_lastRowEquiv_mvPolynomialMinor_snoc {k : ℕ} (hk : k + 1 ≤ n)
     (r : Fin k → Fin N) :
-    HasLeadingTerm (lastRowEquiv R N n (Matrix.mvPolynomialMinor R
+    colex.HasLeadingTerm (lastRowEquiv R N n (Matrix.mvPolynomialMinor R
         (Fin.snoc (fun a => (r a).castSucc) (Fin.last N)) (Fin.castLE hk)))
       (Finsupp.single ⟨k, hk⟩ 1)
       (Matrix.mvPolynomialMinor R r (Fin.castLE (k.le_succ.trans hk))) := by
@@ -130,10 +133,11 @@ theorem hasLeadingTerm_lastRowEquiv_mvPolynomialMinor_snoc {k : ℕ} (hk : k + 1
   have h_last : Fin.castLE hk ∘ (Fin.last k).succAbove = Fin.castLE (k.le_succ.trans hk) := by
     ext a
     simp [Fin.succAbove_last]
-  have := HasLeadingTerm.sum (s := univ)
+  have := MonomialOrder.HasLeadingTerm.sum (m := colex) (s := univ)
     (F := fun b : Fin (k + 1) => monomial (Finsupp.single (Fin.castLE hk b) 1)
       ((-1) ^ (k + (b : ℕ)) * Matrix.mvPolynomialMinor R r (Fin.castLE hk ∘ b.succAbove)))
-    (fun b => hasLeadingTerm_monomial _ _) (Fin.last k) (fun b _ hb => ?_) (absurd (mem_univ _))
+    (fun b => colex.hasLeadingTerm_monomial _ _) (Fin.last k) (fun b _ hb => ?_)
+    (absurd (mem_univ _))
   · have h_k : Fin.castLE hk (Fin.last k) = ⟨k, hk⟩ := rfl
     simpa [h_last, ← two_mul, pow_mul, h_k] using this
   · rw [MonomialOrder.colex_single_lt_iff, Fin.lt_def]
@@ -155,13 +159,6 @@ theorem val_ssytFilling (T : BoundedSSYT N μ) (i j : ℕ) (h : (i, j) ∈ μ) :
     (ssytFilling T i j h : ℕ) = T.val i j :=
   (rfl)
 
-/-- A shape interlacing `μ` is at most one cell shorter in every column. -/
-theorem _root_.YoungDiagram.InterlacedBy.colLen_le_colLen_add_one (h : μ.InterlacedBy ν)
-    (j : ℕ) : μ.colLen j ≤ ν.colLen j + 1 := by
-  by_contra! hlt
-  have := h.mem_of_lt (Nat.lt_succ_self _) (YoungDiagram.mem_iff_lt_colLen.mpr hlt)
-  exact lt_irrefl _ (YoungDiagram.mem_iff_lt_colLen.mp this)
-
 /-- The exponent of the last row contributed by the column `j` of a tableau of shape `μ` whose
 top letter fills `μ / ν`: the variable `y_k`, `k = ν.colLen j`, if the column `j` of `μ / ν` holds
 a cell, and nothing otherwise. -/
@@ -177,7 +174,7 @@ letter `N` in the cells of `μ / ν`. The expansion in the last row of the minor
 the column `j` has leading term `y ^ borderExponent j` times the minor of `T` at the column `j`. -/
 theorem hasLeadingTerm_columnMinor_extend (h : μ.InterlacedBy ν) (hμ : μ.colLen 0 ≤ n)
     (T : BoundedSSYT N ν) (j : ℕ) :
-    HasLeadingTerm
+    colex.HasLeadingTerm
       (lastRowEquiv R N n (columnMinor R μ hμ (ssytFilling (BoundedSSYT.extend h T)) j))
       (borderExponent μ ν hμ j)
       (columnMinor R ν ((YoungDiagram.colLen_le_of_le h.le 0).trans hμ) (ssytFilling T) j) := by
@@ -187,7 +184,7 @@ theorem hasLeadingTerm_columnMinor_extend (h : μ.InterlacedBy ν) (hμ : μ.col
   by_cases hlt : ν.colLen j < μ.colLen j
   · have heq : μ.colLen j = ν.colLen j + 1 := by omega
     rw [dite_eq_left_of_eq_true (eq_true hlt),
-      ← mvPolynomialMinor_comp_equiv R (finCongr heq.symm)]
+      ← Matrix.mvPolynomialMinor_comp_equiv R (finCongr heq.symm)]
     have h_rows : (fun a : Fin (μ.colLen j) => ssytFilling (BoundedSSYT.extend h T) a j
         (YoungDiagram.mem_iff_lt_colLen.mpr a.isLt)) ∘ finCongr heq.symm =
         Fin.snoc (fun a : Fin (ν.colLen j) => (ssytFilling T a j
@@ -210,7 +207,7 @@ theorem hasLeadingTerm_columnMinor_extend (h : μ.InterlacedBy ν) (hμ : μ.col
     exact hasLeadingTerm_lastRowEquiv_mvPolynomialMinor_snoc _ _
   · have heq : μ.colLen j = ν.colLen j := by omega
     rw [dite_eq_right_of_eq_false (eq_false hlt),
-      ← mvPolynomialMinor_comp_equiv R (finCongr heq.symm)]
+      ← Matrix.mvPolynomialMinor_comp_equiv R (finCongr heq.symm)]
     have h_rows : (fun a : Fin (μ.colLen j) => ssytFilling (BoundedSSYT.extend h T) a j
         (YoungDiagram.mem_iff_lt_colLen.mpr a.isLt)) ∘ finCongr heq.symm =
         fun a : Fin (ν.colLen j) => (ssytFilling T a j
@@ -224,7 +221,7 @@ theorem hasLeadingTerm_columnMinor_extend (h : μ.InterlacedBy ν) (hμ : μ.col
       ext
       simp
     rw [h_rows, h_cols, lastRowEquiv_mvPolynomialMinor_castSucc, C_apply]
-    exact hasLeadingTerm_monomial _ _
+    exact colex.hasLeadingTerm_monomial _ _
 
 /-- The differences `μ.rowLen s - ν.rowLen s` of the row lengths of two Young diagrams, for the
 `n` rows `s < n`. -/
@@ -276,14 +273,14 @@ the top letter `N` in the cells of `μ / ν`. The expansion in the last row of t
 μ.rowLen s - ν.rowLen s`. -/
 theorem hasLeadingTerm_bideterminant_extend (h : μ.InterlacedBy ν) (hμ : μ.colLen 0 ≤ n)
     (T : BoundedSSYT N ν) :
-    HasLeadingTerm
+    colex.HasLeadingTerm
       (lastRowEquiv R N n (bideterminant R μ hμ (ssytFilling (BoundedSSYT.extend h T))))
       (rowLenDiff μ ν)
       (bideterminant R ν ((YoungDiagram.colLen_le_of_le h.le 0).trans hμ) (ssytFilling T)) := by
   rw [bideterminant_eq_prod_range R μ _ _ le_rfl, map_prod,
     bideterminant_eq_prod_range R ν _ _ (h.rowLen_le 0),
     ← sum_borderExponent h hμ]
-  exact HasLeadingTerm.prod fun j _ => hasLeadingTerm_columnMinor_extend h hμ T j
+  exact MonomialOrder.HasLeadingTerm.prod fun j _ => hasLeadingTerm_columnMinor_extend h hμ T j
 
 /-- Counted column by column, the cells of a tableau carrying the letter `a` are its content. -/
 private theorem sum_card_column_eq_content (T : BoundedSSYT N μ) (a : Fin N) :
@@ -384,7 +381,7 @@ theorem linearIndependent_bideterminant (N : ℕ) (μ : YoungDiagram) (hμ : μ.
     have hν (ν : YoungDiagram.interlacingShapes N μ) : ν.val.colLen 0 ≤ n :=
       (YoungDiagram.colLen_le_of_le
         (YoungDiagram.mem_interlacingShapes.mp ν.property).1.le 0).trans hμ
-    refine linearIndependent_of_hasLeadingTerm (rowLenDiff_injective hμ)
+    refine MonomialOrder.linearIndependent_of_hasLeadingTerm (m := colex) (rowLenDiff_injective hμ)
       (q := fun ν T => bideterminant R ν.val (hν ν) (ssytFilling T)) (fun i => ?_)
       fun ν => ih ν.val (hν ν)
     rw [Function.comp_apply, Function.comp_apply, branchingEquiv_apply]
@@ -470,7 +467,7 @@ private theorem exists_sub_degree_lt
   -- The same combination of the bordered bideterminants has the same leading term as `f`.
   refine ⟨∑ T, c T • bideterminant R μ hμ (ssytFilling (BoundedSSYT.extend hint T)),
     Submodule.sum_mem _ fun T _ => Submodule.smul_mem _ _ (Submodule.subset_span ⟨_, rfl⟩), ?_⟩
-  have h_lead := HasLeadingTerm.sum_smul univ
+  have h_lead := MonomialOrder.HasLeadingTerm.sum_smul univ
     (fun T _ => hasLeadingTerm_bideterminant_extend (R := R) hint hμ T) c
   have h_map : lastRowEquiv R N n (∑ T, c T • bideterminant R μ hμ
       (ssytFilling (BoundedSSYT.extend hint T))) = ∑ T, c T • lastRowEquiv R N n
@@ -479,17 +476,8 @@ private theorem exists_sub_degree_lt
   rw [hc, hdiff, ← h_map] at h_lead
   rw [or_iff_not_imp_left, map_sub]
   intro h_ne
-  refine lt_of_le_of_ne (colex.degree_sub_le.trans (sup_le le_rfl h_lead.degree_le)) fun h_eq => ?_
-  have h_coeff : (E - lastRowEquiv R N n (∑ T, c T • bideterminant R μ hμ
-      (ssytFilling (BoundedSSYT.extend hint T)))).coeff (colex.degree E) = 0 := by
-    have h₁ : E.coeff (colex.degree E) = colex.leadingCoeff E := rfl
-    simp only [AddMonoidAlgebra.coeff_sub, Finsupp.coe_sub, Pi.sub_apply, h₁]
-    rw [sub_eq_zero]
-    exact h_lead.coeff_eq.symm
-  rw [← colex.toSyn.injective h_eq] at h_coeff
-  exact h_ne ((lastRowEquiv R N n).injective (by
-    rw [map_sub, map_zero]
-    exact colex.coeff_degree_eq_zero_iff.mp h_coeff))
+  exact colex.degree_sub_lt (by rwa [← map_sub, Ne, EmbeddingLike.map_eq_zero_iff])
+    h_lead.degree_le h_lead.coeff_eq
 
 variable (R) in
 /-- **The standard bideterminants span the dual Weyl module** over every commutative ring. -/
@@ -587,8 +575,7 @@ theorem finrank_dualWeylModule [StrongRankCondition R] :
 include hμ in
 /-- **Base change.** For a homomorphism of commutative rings `φ : R → S`, the image of the dual
 Weyl module over `R` spans the dual Weyl module over `S`; the standard basis is sent to the
-standard basis (`TauCeti.DualWeylModule.map_bideterminant`). For `R = ℤ` this is
-`∇_S = ∇_ℤ ⊗ S` inside `S[x]`. -/
+standard basis (`TauCeti.DualWeylModule.map_bideterminant`). -/
 theorem span_map_dualWeylModule {S : Type*} [CommRing S] (φ : R →+* S) :
     Submodule.span S (map φ '' (dualWeylModule R N fun s : Fin n => μ.rowLen s)) =
       dualWeylModule S N fun s : Fin n => μ.rowLen s := by

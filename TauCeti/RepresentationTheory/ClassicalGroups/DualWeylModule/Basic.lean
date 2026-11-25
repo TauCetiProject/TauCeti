@@ -20,8 +20,10 @@ row and `s` the column. For a vector `d : Fin n → ℕ` of column degrees, the 
 `TauCeti.dualWeylModule R N d` is the submodule of `R[x]` of the polynomials that are homogeneous of
 degree `d s` in the column `s` for every `s`, and invariant under every column operation
 `x ↦ x·(1 + T·e_{st})` with `s < t` (the column `t` replaced by itself plus `T` times the column
-`s`), as an identity in `R[x][T]`. For a partition `ν` it is the integral form `∇_R(ν)` of the
-irreducible polynomial representation of highest weight `ν`, the group `GL_N` acting on the rows.
+`s`), as an identity in `R[x][T]`. For the row lengths of a partition `ν` it is the polynomial
+model of the dual Weyl module `∇_R(ν)` of `GL_N` of highest weight `ν`, the group acting on the
+rows. Over a field of characteristic zero `∇(ν)` is the irreducible polynomial representation of
+highest weight `ν`; in positive characteristic it need not be irreducible.
 
 The operations are evaluated through `TauCeti.DualWeylModule.aeval_columnScale` and
 `TauCeti.DualWeylModule.aeval_columnAdd`: in every commutative `R`-algebra `S` and at every matrix
@@ -56,11 +58,10 @@ lengths of `μ` (`TauCeti.DualWeylModule.bideterminant_mem_dualWeylModule`).
 
 ## References
 
-This is the polynomial model of the roadmap IntegralWeylModulesOfGeneralLinearGroups
-(Conventions and §0.1), whose definition `dualWeylLattice` is `TauCeti.dualWeylModule` for an
-`N × N` matrix and the column degrees of a normalised dominant weight
-(`TauCeti.dualWeylLattice`). The membership of minors and bideterminants is adapted from grh-lean
-(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic PBC),
+For an `N × N` matrix and the column degrees of a normalised dominant weight this is the dual Weyl
+lattice `TauCeti.dualWeylLattice` of the weight. The membership of minors and bideterminants is
+adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic
+PBC),
 `src/Lib/GLn/SchurModule/Basic.lean` (`New.minor_mem_nabla`, `New.tableauPoly`), where the module
 is defined as the semi-invariants of a Borel subgroup instead. The conventions follow
 * C. De Concini, D. Eisenbud, C. Procesi, *Young diagrams and determinantal varieties*,
@@ -250,21 +251,12 @@ section Minor
 
 variable (R : Type*) [CommRing R] {N n : ℕ}
 
-/-- A minor does not change when its rows and columns are both reindexed by the same
-equivalence. -/
-theorem mvPolynomialMinor_comp_equiv {k k' : Type*} [Fintype k] [DecidableEq k] [Fintype k']
-    [DecidableEq k'] {m l : Type*} (e : k' ≃ k) (row : k → m) (col : k → l) :
-    Matrix.mvPolynomialMinor R (row ∘ e) (col ∘ e) = Matrix.mvPolynomialMinor R row col := by
-  rw [Matrix.mvPolynomialMinor_eq_det_submatrix, Matrix.mvPolynomialMinor_eq_det_submatrix,
-    ← Matrix.det_submatrix_equiv_self e]
-  rfl
-
 /-- The column degrees `(1, …, 1, 0, …, 0)`, with `k` ones, of a minor on the first `k`
 columns. -/
 def initialColumns (n k : ℕ) (s : Fin n) : ℕ := if (s : ℕ) < k then 1 else 0
 
 /-- Every monomial of a minor on the first `k` columns uses each of these columns once. -/
-private theorem mvPolynomialMinor_mem_restrictSupport {k : ℕ} (hk : k ≤ n) (r : Fin k → Fin N) :
+theorem mvPolynomialMinor_mem_restrictSupport {k : ℕ} (hk : k ≤ n) (r : Fin k → Fin N) :
     Matrix.mvPolynomialMinor R r (Fin.castLE hk) ∈
       restrictSupport R {m | ∀ s, ∑ a, m (a, s) = initialColumns n k s} := by
   classical

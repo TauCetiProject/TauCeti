@@ -115,6 +115,13 @@ theorem InterlacedBy.mem_of_lt (h : InterlacedBy μ ν) {i₁ i₂ j : ℕ} (hi 
     ((_root_.YoungDiagram.mem_iff_lt_rowLen.mp hc).trans_le
       ((μ.rowLen_anti (i₁ + 1) i₂ hi).trans (h.rowLen_succ_le i₁)))
 
+/-- An interlacing shape is at most one cell shorter in every column. -/
+theorem InterlacedBy.colLen_le_colLen_add_one (h : InterlacedBy μ ν) (j : ℕ) :
+    μ.colLen j ≤ ν.colLen j + 1 := by
+  by_contra! hlt
+  have := h.mem_of_lt (Nat.lt_succ_self _) (_root_.YoungDiagram.mem_iff_lt_colLen.mpr hlt)
+  exact lt_irrefl _ (_root_.YoungDiagram.mem_iff_lt_colLen.mp this)
+
 /-- **The shapes interlacing `μ` with at most `n` rows.**  These index the summands of the
 `GLₙ₊₁ ↓ GLₙ` branching rule; the row bound is genuine, since a shape may interlace `μ` and still
 be too tall to be written in `n` letters. -/

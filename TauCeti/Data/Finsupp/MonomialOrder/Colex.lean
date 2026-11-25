@@ -58,25 +58,12 @@ theorem colex_lt_of_eq_of_lt {a b : σ →₀ ℕ} (i : σ) (h_eq : ∀ j, i < j
   colex_lt_iff.mpr ⟨i, h_eq, h_lt⟩
 
 @[simp]
-theorem colex_single_lt_iff {a b : σ} : single a 1 ≺[colex] single b 1 ↔ a < b := by
-  rw [colex_lt_iff]
-  constructor
-  · rintro ⟨i, h_eq, h_lt⟩
-    by_contra h_ba
-    rcases (not_lt.mp h_ba).lt_or_eq with h_ba | rfl
-    · rcases lt_trichotomy i a with hia | rfl | hai
-      · have := h_eq a hia
-        simp [h_ba.ne] at this
-      · simp [h_ba.ne'] at h_lt
-      · simp [(h_ba.trans hai).ne', hai.ne'] at h_lt
-    · simp at h_lt
-  · intro hab
-    refine ⟨b, fun j hj => ?_, by simp [hab.ne]⟩
-    simp [(hab.trans hj).ne', hj.ne']
+theorem colex_single_lt_iff {a b : σ} : single a 1 ≺[colex] single b 1 ↔ a < b :=
+  Finsupp.Colex.single_lt_iff
 
 @[simp]
-theorem colex_single_le_iff {a b : σ} : single a 1 ≼[colex] single b 1 ↔ a ≤ b := by
-  rw [← not_lt, ← not_lt, colex_single_lt_iff]
+theorem colex_single_le_iff {a b : σ} : single a 1 ≼[colex] single b 1 ↔ a ≤ b :=
+  Finsupp.Colex.single_le_iff
 
 end MonomialOrder
 

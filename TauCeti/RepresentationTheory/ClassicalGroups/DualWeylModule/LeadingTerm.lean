@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.MvPolynomial.MonomialOrder
 public import TauCeti.Data.Finsupp.MonomialOrder.Colex
 public import TauCeti.RepresentationTheory.ClassicalGroups.DualWeylModule.Basic
+public import TauCeti.RingTheory.MvPolynomial.HasLeadingTerm
 
 /-!
 # Leading terms of dual Weyl vectors in the last row
@@ -33,17 +34,14 @@ dual Weyl module `∇(d)` of column degrees `d`, with leading exponent `γ` and 
   where `f` has degree `d i`. Comparing the coefficient of `y ^ δ * T ^ γ i` with `δ` obtained
   from `γ` by moving `γ i` from `y_i` to `y_{i+1}` then shows `G = 0` if `γ i + d (i + 1) > d i`.
 
-The file also develops the leading terms `TauCeti.DualWeylModule.HasLeadingTerm` used to compare
-these expansions, and the criterion for linear independence by leading terms
-`TauCeti.DualWeylModule.linearIndependent_of_hasLeadingTerm`.
+Leading terms are tracked with `MonomialOrder.HasLeadingTerm` for the colexicographic order.
 
 ## References
 
 The argument by leading terms in one row is adapted from grh-lean
 (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic PBC), file
-`src/Lib/GLn/SchurModule/MinorBasis.lean`: `New.GL.HasLeadingTerm` and its lemmas,
-`New.GL.rowExpansion`, `New.GL.HasLeadingTerm.leadingCoeff_mem_nabla` and
-`New.GL.degree_rowExpansion_mem_interlacing`, `New.GL.linearIndependent_of_hasLeadingTerm`.
+`src/Lib/GLn/SchurModule/MinorBasis.lean`: `New.GL.rowExpansion`,
+`New.GL.HasLeadingTerm.leadingCoeff_mem_nabla` and `New.GL.degree_rowExpansion_mem_interlacing`.
 grh-lean states these for semi-invariants of a Borel subgroup; here they are proved from the column
 operations and the column degrees directly, and the interlacing bound goes through the lowering
 bound above. The standard basis theorem is due to De Concini, Eisenbud and Procesi, *Young
@@ -59,7 +57,11 @@ open MvPolynomial Finset
 
 namespace DualWeylModule
 
-variable {R : Type*} [CommRing R] {N n : ℕ}
+variable {R : Type*} {N n : ℕ}
+
+section CommSemiring
+
+variable [CommSemiring R]
 
 /-! ### Expanding in the last row -/
 
@@ -141,11 +143,11 @@ theorem coeff_coeff_lastRowEquiv (f : MvPolynomial (Fin (N + 1) × Fin n) R) (γ
   | add p q hp hq => simp [hp, hq]
 
 
-/-! ### The lowering bound -/
+/-! ### Degrees in `T` -/
 
 section Lowering
 
-variable {S : Type*} [CommRing S] [Algebra R S]
+variable {S : Type*} [CommSemiring S] [Algebra R S]
 
 /-- If every monomial of `f` has degree `d i` in the column `i`, and the entries of the matrix `M`
 over `S[T]` have degree at most `1` in the column `i` and `0` elsewhere, then `f(M)` has degree
@@ -167,173 +169,7 @@ theorem natDegree_aeval_le {f : MvPolynomial (Fin N × Fin n) R} {d : Fin n → 
         rw [Fintype.sum_prod_type]
         simp
 
-/-- **The lowering bound.** Let `f` be a dual Weyl vector of column degrees `d`, and `i < j`.
-The operation `x ↦ x·(1 + T·e_{ji})`, adding `T` times the column `j` to the column `i`, sends
-`f` to a polynomial in `T` of degree at most `d i - d j`, and to `0` if `d i < d j`: its
-coefficient of `T ^ k` vanishes as soon as `d i < k + d j`. -/
-theorem coeff_columnOperation_eq_zero {f : MvPolynomial (Fin N × Fin n) R} {d : Fin n → ℕ}
-    (hf : f ∈ dualWeylModule R N d) {i j : Fin n} (hij : i < j) {k : ℕ} (hk : d i < k + d j) :
-    (columnOperation R j i f).coeff k = 0 := by
-  -- With `M` the matrix of the operation, scale the column `j` by `T` and subtract the column
-  -- `i`: the column `j` becomes `-x_i`, so `T` only occurs in the column `i`, and
-  -- `T ^ d j • (columnOperation R j i f)` has degree at most `d i`.
-  let M : Fin N × Fin n → Polynomial (MvPolynomial (Fin N × Fin n) R) := fun p =>
-    Polynomial.C (X p) + if p.2 = i then Polynomial.X * Polynomial.C (X (p.1, j)) else 0
-  let M₁ := fun p : Fin N × Fin n => (if p.2 = j then Polynomial.X else 1) * M p
-  have h_scale : aeval M₁ f = Polynomial.X ^ d j * columnOperation R j i f := by
-    rw [columnOperation_def]
-    exact aeval_columnScale (fun m hm => sum_apply_eq_of_mem_support hf hm j) M _
-  have h_add := aeval_columnAdd (columnOperation_eq_C hf hij) M₁ (-1)
-  have h_deg := natDegree_aeval_le (i := i) (fun m hm => sum_apply_eq_of_mem_support hf hm i)
-    (fun p => M₁ p + if p.2 = j then -1 * M₁ (p.1, i) else 0) fun p => by
-      by_cases hpi : p.2 = i
-      · have h_eq : M₁ p + (if p.2 = j then -1 * M₁ (p.1, i) else 0) =
-            Polynomial.C (X (p.1, j)) * Polynomial.X + Polynomial.C (X p) := by
-          simp only [M₁, M, hpi, hij.ne, ite_true, ite_false, one_mul, add_zero]
-          ring
-        rw [h_eq, ite_eq_left_of_eq_true _ _ (eq_true hpi)]
-        exact Polynomial.natDegree_linear_le
-      · by_cases hpj : p.2 = j
-        · have h_eq : M₁ p + (if p.2 = j then -1 * M₁ (p.1, i) else 0) =
-              -Polynomial.C (X (p.1, i) : MvPolynomial (Fin N × Fin n) R) := by
-            obtain ⟨a, b⟩ := p
-            simp only at hpj
-            subst hpj
-            simp [M₁, M, hij.ne, hij.ne']
-            ring
-          rw [h_eq]
-          simp
-        · simp [M₁, M, hpi, hpj]
-  rw [h_add, h_scale] at h_deg
-  rw [← Polynomial.coeff_X_pow_mul _ (d j)]
-  exact Polynomial.coeff_eq_zero_of_natDegree_lt (h_deg.trans_lt (by omega))
-
 end Lowering
-
-/-! ### Leading terms in the colexicographic order -/
-
-section LeadingTerm
-
-open scoped _root_.MonomialOrder
-
-open TauCeti.MonomialOrder (colex)
-
-variable {A : Type*} [CommRing A] {F G : MvPolynomial (Fin n) A} {γ δ : Fin n →₀ ℕ} {a b : A}
-
-/-- `F` has leading term `a * y ^ γ` for the colexicographic order `TauCeti.MonomialOrder.colex`
-(which compares exponents at the highest variable first): no exponent of `F` exceeds `γ`, and the
-coefficient of `y ^ γ` in `F` is `a` (which may be `0`). -/
-def HasLeadingTerm (F : MvPolynomial (Fin n) A) (γ : Fin n →₀ ℕ) (a : A) : Prop :=
-  colex.degree F ≼[colex] γ ∧ F.coeff γ = a
-
-theorem HasLeadingTerm.degree_le (hF : HasLeadingTerm F γ a) : colex.degree F ≼[colex] γ := hF.1
-
-theorem HasLeadingTerm.coeff_eq (hF : HasLeadingTerm F γ a) : F.coeff γ = a := hF.2
-
-theorem HasLeadingTerm.coeff_eq_zero_of_lt (hF : HasLeadingTerm F γ a) (h : γ ≺[colex] δ) :
-    F.coeff δ = 0 :=
-  colex.coeff_eq_zero_of_lt (hF.degree_le.trans_lt h)
-
-theorem hasLeadingTerm_monomial (γ : Fin n →₀ ℕ) (a : A) : HasLeadingTerm (monomial γ a) γ a :=
-  ⟨colex.degree_monomial_le a, by simp⟩
-
-theorem HasLeadingTerm.mul (hF : HasLeadingTerm F γ a) (hG : HasLeadingTerm G δ b) :
-    HasLeadingTerm (F * G) (γ + δ) (a * b) := by
-  refine ⟨colex.degree_mul_le.trans ?_, ?_⟩
-  · rw [map_add, map_add]
-    exact add_le_add hF.degree_le hG.degree_le
-  · rw [colex.coeff_mul_of_add_of_degree_le hF.degree_le hG.degree_le, hF.coeff_eq, hG.coeff_eq]
-
-theorem HasLeadingTerm.prod {ι : Type*} {s : Finset ι} {F : ι → MvPolynomial (Fin n) A}
-    {γ : ι → Fin n →₀ ℕ} {a : ι → A} (h : ∀ i ∈ s, HasLeadingTerm (F i) (γ i) (a i)) :
-    HasLeadingTerm (∏ i ∈ s, F i) (∑ i ∈ s, γ i) (∏ i ∈ s, a i) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using hasLeadingTerm_monomial (0 : Fin n →₀ ℕ) (1 : A)
-  | insert i s hi ih =>
-    rw [Finset.prod_insert hi, Finset.sum_insert hi, Finset.prod_insert hi]
-    exact (h i (mem_insert_self i s)).mul (ih fun j hj => h j (mem_insert_of_mem hj))
-
-/-- Adding terms below the leading exponent keeps the leading term. -/
-theorem HasLeadingTerm.add_of_lt (hF : HasLeadingTerm F γ a) (hG : colex.degree G ≺[colex] γ) :
-    HasLeadingTerm (F + G) γ a :=
-  ⟨colex.degree_add_le.trans (sup_le hF.degree_le hG.le), by
-    simp [hF.coeff_eq, colex.coeff_eq_zero_of_lt hG]⟩
-
-/-- Let each `F i` have leading term `a i * y ^ γ i`. If `γ j` exceeds every other `γ i` with
-`i ∈ s`, then the sum of the `F i` over `s` has leading term `a j * y ^ γ j`; the index `j` may lie
-outside `s` when `a j = 0`. -/
-theorem HasLeadingTerm.sum {ι : Type*} {s : Finset ι} {F : ι → MvPolynomial (Fin n) A}
-    {γ : ι → Fin n →₀ ℕ} {a : ι → A} (h : ∀ i, HasLeadingTerm (F i) (γ i) (a i)) (j : ι)
-    (h_lt : ∀ i ∈ s, i ≠ j → γ i ≺[colex] γ j) (h_notMem : j ∉ s → a j = 0) :
-    HasLeadingTerm (∑ i ∈ s, F i) (γ j) (a j) := by
-  classical
-  refine ⟨colex.degree_sum_le.trans (Finset.sup_le fun i hi => ?_), ?_⟩
-  · rcases eq_or_ne i j with rfl | hij
-    · exact (h i).degree_le
-    · exact ((h i).degree_le.trans_lt (h_lt i hi hij)).le
-  · rw [coeff_sum, Finset.sum_eq_single j (fun i hi hij => (h i).coeff_eq_zero_of_lt
-      (h_lt i hi hij)) fun hj => (h j).coeff_eq.trans (h_notMem hj), (h j).coeff_eq]
-
-/-- A product of powers of polynomials `u j`, each with leading term the variable `y j`, has as
-leading term the monomial of the exponents, with coefficient `1`. -/
-theorem hasLeadingTerm_prod_pow {u : Fin n → MvPolynomial (Fin n) A}
-    (hu : ∀ j, HasLeadingTerm (u j) (Finsupp.single j 1) 1) (η : Fin n →₀ ℕ) :
-    HasLeadingTerm (∏ j, u j ^ η j) η 1 := by
-  have h_pow (j : Fin n) : HasLeadingTerm (u j ^ η j) (Finsupp.single j (η j)) 1 := by
-    simpa [Finset.prod_const, Finset.sum_const] using
-      HasLeadingTerm.prod (s := range (η j)) fun _ _ => hu j
-  simpa [Finsupp.univ_sum_single] using HasLeadingTerm.prod (s := univ) fun j _ => h_pow j
-
-variable {S : Type*} [CommRing S] [Algebra S A]
-
-/-- A linear combination of polynomials with the same leading exponent `γ` has leading term the
-same combination of the leading coefficients times `y ^ γ`. -/
-theorem HasLeadingTerm.sum_smul {ι : Type*} (s : Finset ι) {F : ι → MvPolynomial (Fin n) A}
-    {a : ι → A} (h : ∀ i ∈ s, HasLeadingTerm (F i) γ (a i)) (c : ι → S) :
-    HasLeadingTerm (∑ i ∈ s, c i • F i) γ (∑ i ∈ s, c i • a i) := by
-  refine ⟨colex.degree_sum_le.trans (Finset.sup_le fun i hi => ?_), ?_⟩
-  · rw [← algebraMap_smul A]
-    exact colex.degree_smul_le.trans (h i hi).degree_le
-  · rw [coeff_sum]
-    exact Finset.sum_congr rfl fun i hi => by simp [(h i hi).coeff_eq]
-
-/-- **Linear independence by leading terms.** Let `p ⟨k, a⟩` have leading term `q k a * y ^ e k`,
-with distinct exponents `e k` for distinct `k`. If for each `k` the leading coefficients `q k` are
-linearly independent over `S`, so are the `p`. -/
-theorem linearIndependent_of_hasLeadingTerm {K : Type*} {ι : K → Type*} [Finite K]
-    [∀ k, Finite (ι k)] {p : (Σ k, ι k) → MvPolynomial (Fin n) A} {e : K → Fin n →₀ ℕ}
-    (he : Function.Injective e) {q : ∀ k, ι k → A}
-    (h : ∀ i, HasLeadingTerm (p i) (e i.1) (q i.1 i.2)) (hq : ∀ k, LinearIndependent S (q k)) :
-    LinearIndependent S p := by
-  classical
-  have := Fintype.ofFinite K
-  have : ∀ k, Fintype (ι k) := fun k => Fintype.ofFinite (ι k)
-  rw [Fintype.linearIndependent_iff]
-  intro g hg
-  by_contra! h_ne
-  obtain ⟨i₀, hi₀⟩ := h_ne
-  -- Among the indices with a nonzero coefficient take one, `i`, of largest exponent; the
-  -- coefficient of `y ^ e i.1` in the relation is a relation among the `q i.1`.
-  obtain ⟨i, hi, hmax⟩ := (univ.filter fun i => g i ≠ 0).exists_max_image
-    (fun i => colex.toSyn (e i.1)) ⟨i₀, by simpa using hi₀⟩
-  have h_coeff : ∑ a : ι i.1, g ⟨i.1, a⟩ • q i.1 a = 0 := by
-    have h₀ := congrArg (fun P => P.coeff (e i.1)) hg
-    simp only [coeff_sum, Fintype.sum_sigma] at h₀
-    simp only [AddMonoidAlgebra.coeff_smul, AddMonoidAlgebra.coeff_zero, Finsupp.smul_apply,
-      Finsupp.coe_zero, Pi.zero_apply] at h₀
-    rw [← h₀, Finset.sum_eq_single i.1 (fun k _ hk => Finset.sum_eq_zero fun a _ => ?_)
-      (by simp)]
-    · exact Finset.sum_congr rfl fun a _ => by rw [(h ⟨i.1, a⟩).coeff_eq]
-    · by_cases hga : g ⟨k, a⟩ = 0
-      · simp [hga]
-      have h_lt : e k ≺[colex] e i.1 := lt_of_le_of_ne (hmax ⟨k, a⟩ (by simpa using hga))
-        fun h' => hk (he (colex.toSyn.injective h'))
-      rw [(h ⟨k, a⟩).coeff_eq_zero_of_lt h_lt, smul_zero]
-  exact (by simpa using hi : g i ≠ 0)
-    (Fintype.linearIndependent_iff.mp (hq i.1) (fun a => g ⟨i.1, a⟩) h_coeff i.2)
-
-end LeadingTerm
 
 /-! ### Column operations on the last-row expansion -/
 
@@ -398,12 +234,12 @@ theorem columnOperation_leadingCoeff_lastRowEquiv {s t : Fin n} (hst : s < t)
       RingHom.coe_coe, AlgHom.id_apply] at h
     exact h
   -- The variable `y_j` is sent to `u j`, whose leading term is `y_j`.
-  have hX (j : Fin n) : HasLeadingTerm (X j : MvPolynomial (Fin n)
+  have hX (j : Fin n) : colex.HasLeadingTerm (X j : MvPolynomial (Fin n)
       (Polynomial (MvPolynomial (Fin N × Fin n) R))) (Finsupp.single j 1) 1 := by
-    have := hasLeadingTerm_monomial (A := Polynomial (MvPolynomial (Fin N × Fin n) R))
+    have := colex.hasLeadingTerm_monomial (A := Polynomial (MvPolynomial (Fin N × Fin n) R))
       (Finsupp.single j 1) 1
     rwa [← X_pow_eq_monomial, pow_one] at this
-  have hu (j : Fin n) : HasLeadingTerm (X j + if j = t then C Polynomial.X * X s else 0)
+  have hu (j : Fin n) : colex.HasLeadingTerm (X j + if j = t then C Polynomial.X * X s else 0)
       (Finsupp.single j 1) (1 : Polynomial (MvPolynomial (Fin N × Fin n) R)) := by
     by_cases hj : j = t
     · subst hj
@@ -411,13 +247,13 @@ theorem columnOperation_leadingCoeff_lastRowEquiv {s t : Fin n} (hst : s < t)
       refine (hX j).add_of_lt ((colex.degree_monomial_le _).trans_lt ?_)
       exact MonomialOrder.colex_single_lt_iff.mpr hst
     · simpa [hj] using hX j
-  have h_lead := HasLeadingTerm.sum (s := E.support)
+  have h_lead := MonomialOrder.HasLeadingTerm.sum (m := colex) (s := E.support)
     (F := fun d => C (columnOperation R s t (E.coeff d)) *
       ∏ j, (X j + if j = t then C Polynomial.X * X s else 0) ^ d j)
     (γ := fun d => d) (a := fun d => columnOperation R s t (E.coeff d))
     (fun d => by
-      have := (hasLeadingTerm_monomial 0 (columnOperation R s t (E.coeff d))).mul
-        (hasLeadingTerm_prod_pow hu d)
+      have := (colex.hasLeadingTerm_monomial 0 (columnOperation R s t (E.coeff d))).mul
+        (colex.hasLeadingTerm_prod_pow hu d)
       rwa [← C_apply, zero_add, mul_one] at this)
     (colex.degree E) (fun d hd hne => lt_of_le_of_ne (colex.le_degree hd)
       (colex.toSyn.injective.ne hne)) fun hγ => by simp [notMem_support_iff.mp hγ]
@@ -462,24 +298,6 @@ theorem leadingCoeff_lastRowEquiv_mem (hf : f ∈ dualWeylModule R (N + 1) d) :
   rw [sum_joinRows] at this
   omega
 
-/-- Substituting `c * y_j` for `y_i` turns `y ^ η` into a monomial: the exponent of `y_i` is moved
-to `y_j`, and the coefficient is `c ^ η i`. -/
-private theorem prod_pow_shift {A : Type*} [CommRing A] {i : Fin n} (j : Fin n) (c : A)
-    (η : Fin n →₀ ℕ) :
-    ∏ l, (if l = i then C c * X j else X l : MvPolynomial (Fin n) A) ^ η l =
-      monomial (η.erase i + Finsupp.single j (η i)) (c ^ η i) := by
-  classical
-  rw [monomial_eq, Finsupp.prod_add_index' (fun _ => pow_zero _) (fun _ _ _ => pow_add _ _ _)]
-  simp only [Finsupp.prod_single_index, pow_zero]
-  rw [Finsupp.prod_fintype _ _ (fun _ => pow_zero _), Fintype.prod_eq_mul_prod_compl i,
-    Fintype.prod_eq_mul_prod_compl i]
-  have h_ne {l : Fin n} (hl : l ∈ ({i}ᶜ : Finset (Fin n))) : l ≠ i := by simpa using hl
-  rw [Finset.prod_congr rfl (g := fun l => X l ^ η l) fun l hl => by simp [h_ne hl],
-    Finset.prod_congr rfl (f := fun l => X l ^ (η.erase i) l) (g := fun l => X l ^ η l)
-      fun l hl => by rw [Finsupp.erase_ne (h_ne hl)]]
-  simp only [ite_true, Finsupp.erase_same, pow_zero, one_mul, mul_pow, map_pow]
-  ring
-
 /-- Moving the exponent of `y_i` to `y_{i+1}`: if two exponents become equal after this move and
 the first has at most as much at `i`, then it is the same or colexicographically larger. -/
 private theorem colex_lt_of_shift_eq {γ η : Fin n →₀ ℕ} {i j : Fin n} (hij : (j : ℕ) = i + 1)
@@ -503,6 +321,63 @@ private theorem colex_lt_of_shift_eq {γ η : Fin n →₀ ℕ} {i j : Fin n} (h
     by_cases hlj : l = j
     · subst hlj; omega
     exact h_off l hli hlj
+
+end Expansion
+
+end CommSemiring
+
+/-! ### The lowering bound and interlacing -/
+
+section CommRing
+
+open scoped _root_.MonomialOrder
+
+open TauCeti.MonomialOrder (colex)
+
+variable [CommRing R]
+
+/-- **The lowering bound.** Let `f` be a dual Weyl vector of column degrees `d`, and `i < j`.
+The operation `x ↦ x·(1 + T·e_{ji})`, adding `T` times the column `j` to the column `i`, sends
+`f` to a polynomial in `T` of degree at most `d i - d j`, and to `0` if `d i < d j`: its
+coefficient of `T ^ k` vanishes as soon as `d i < k + d j`. -/
+theorem coeff_columnOperation_eq_zero {f : MvPolynomial (Fin N × Fin n) R} {d : Fin n → ℕ}
+    (hf : f ∈ dualWeylModule R N d) {i j : Fin n} (hij : i < j) {k : ℕ} (hk : d i < k + d j) :
+    (columnOperation R j i f).coeff k = 0 := by
+  -- With `M` the matrix of the operation, scale the column `j` by `T` and subtract the column
+  -- `i`: the column `j` becomes `-x_i`, so `T` only occurs in the column `i`, and
+  -- `T ^ d j • (columnOperation R j i f)` has degree at most `d i`.
+  let M : Fin N × Fin n → Polynomial (MvPolynomial (Fin N × Fin n) R) := fun p =>
+    Polynomial.C (X p) + if p.2 = i then Polynomial.X * Polynomial.C (X (p.1, j)) else 0
+  let M₁ := fun p : Fin N × Fin n => (if p.2 = j then Polynomial.X else 1) * M p
+  have h_scale : aeval M₁ f = Polynomial.X ^ d j * columnOperation R j i f := by
+    rw [columnOperation_def]
+    exact aeval_columnScale (fun m hm => sum_apply_eq_of_mem_support hf hm j) M _
+  have h_add := aeval_columnAdd (columnOperation_eq_C hf hij) M₁ (-1)
+  have h_deg := natDegree_aeval_le (i := i) (fun m hm => sum_apply_eq_of_mem_support hf hm i)
+    (fun p => M₁ p + if p.2 = j then -1 * M₁ (p.1, i) else 0) fun p => by
+      by_cases hpi : p.2 = i
+      · have h_eq : M₁ p + (if p.2 = j then -1 * M₁ (p.1, i) else 0) =
+            Polynomial.C (X (p.1, j)) * Polynomial.X + Polynomial.C (X p) := by
+          simp only [M₁, M, hpi, hij.ne, ite_true, ite_false, one_mul, add_zero]
+          ring
+        rw [h_eq, ite_eq_left_of_eq_true _ _ (eq_true hpi)]
+        exact Polynomial.natDegree_linear_le
+      · by_cases hpj : p.2 = j
+        · have h_eq : M₁ p + (if p.2 = j then -1 * M₁ (p.1, i) else 0) =
+              -Polynomial.C (X (p.1, i) : MvPolynomial (Fin N × Fin n) R) := by
+            obtain ⟨a, b⟩ := p
+            simp only at hpj
+            subst hpj
+            simp [M₁, M, hij.ne, hij.ne']
+            ring
+          rw [h_eq]
+          simp
+        · simp [M₁, M, hpi, hpj]
+  rw [h_add, h_scale] at h_deg
+  rw [← Polynomial.coeff_X_pow_mul _ (d j)]
+  exact Polynomial.coeff_eq_zero_of_natDegree_lt (h_deg.trans_lt (by omega))
+
+variable {f : MvPolynomial (Fin (N + 1) × Fin n) R} {d : Fin n → ℕ}
 
 /-- **Interlacing.** Let `f ≠ 0` be a dual Weyl vector of column degrees `d` for `N + 1` rows,
 and `γ` the leading exponent of its expansion in the last row, for the colexicographic order.
@@ -534,7 +409,7 @@ theorem degree_lastRowEquiv_add_le (hf : f ∈ dualWeylModule R (N + 1) d) (hf0 
     funext l
     by_cases hl : l = i <;> simp [z, hl, hij'.ne']
   rw [hv, eval₂_eq'] at h
-  simp only [prod_pow_shift j] at h
+  simp only [prod_pow_ite_C_mul_X j] at h
   -- Compare the coefficients of `y ^ δ * T ^ γ i`, where `δ` moves `γ i` from `y_i` to `y_j`.
   set δ : Fin n →₀ ℕ := γ.erase i + Finsupp.single j (γ i)
   have h_coeff := congrArg (fun p => (p.coeff δ).coeff (γ i)) h
@@ -560,7 +435,7 @@ theorem degree_lastRowEquiv_add_le (hf : f ∈ dualWeylModule R (N + 1) d) (hf0 
       simp [hP]
     · rfl
 
-end Expansion
+end CommRing
 
 end DualWeylModule
 

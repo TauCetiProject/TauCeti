@@ -26,14 +26,19 @@ twisted by `det ^ λ_{N-1}`.
 
 ## Main results
 
-* `TauCeti.mem_dualWeylLattice`: membership, in the form of the roadmap's definition: homogeneity
-  of degree `λ_s - λ_{N-1}` in the column `s` and invariance under the column operations.
+* `TauCeti.mem_dualWeylLattice`: membership unfolded, homogeneity of degree `λ_s - λ_{N-1}` in the
+  column `s` and invariance under the column operations.
 * `TauCeti.dualWeylLattice.finrank_eq_weylDimension`: over a nontrivial commutative ring (more
   generally one with the strong rank condition) the rank of `∇_R(λ)` is the Weyl dimension of `λ`.
 
 ## References
 
-The roadmap IntegralWeylModulesOfGeneralLinearGroups, Conventions and §0.1.
+* C. De Concini, D. Eisenbud, C. Procesi, *Young diagrams and determinantal varieties*,
+  Invent. Math. **56** (1980), 129-165.
+* K. Akin, D. A. Buchsbaum, J. Weyman, *Schur functors and Schur complexes*, Adv. Math. **44**
+  (1982), 207-278.
+* J. C. Jantzen, *Representations of algebraic groups*, 2nd ed., Math. Surveys Monogr. **107**,
+  Amer. Math. Soc. (2003), II.2 (the induced modules `H⁰(λ) = ∇(λ)`).
 -/
 
 public section
@@ -57,9 +62,9 @@ theorem dualWeylLattice_def (l : DominantWeight N) :
 
 variable {R}
 
-/-- Membership in the dual Weyl lattice of a dominant weight `λ` of `GL_{N+1}`, as in the
-roadmap's definition: every monomial has degree `λ_s - λ_N` in the column `s`, and every column
-operation `x ↦ x·(1 + T·e_{st})` with `s < t` fixes the polynomial. -/
+/-- Membership in the dual Weyl lattice of a dominant weight `λ` of `GL_{N+1}`: every monomial
+has degree `λ_s - λ_N` in the column `s`, and every column operation `x ↦ x·(1 + T·e_{st})` with
+`s < t` fixes the polynomial. -/
 theorem mem_dualWeylLattice {l : DominantWeight (N + 1)}
     {f : MvPolynomial (Fin (N + 1) × Fin (N + 1)) R} :
     f ∈ dualWeylLattice R l ↔
