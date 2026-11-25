@@ -34,8 +34,6 @@ type. It is dominant because it sends the generic point of `X` into the image of
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.RationalMap.isDominant_of_fromFunctionField_eq`: a rational map whose
-  restriction to `Spec K(X)` factors through `Spec K(Y)` is dominant.
 * `AlgebraicGeometry.Scheme.RationalMap.eq_of_functionFieldAlgHom_eq`: a dominant `k`-rational
   map is determined by its `k`-algebra pullback.
 * `AlgebraicGeometry.Scheme.RationalMap.functionFieldAlgHom_ofFunctionFieldAlgHom` and
@@ -57,16 +55,6 @@ universe u
 namespace AlgebraicGeometry.Scheme
 
 variable {X Y : Scheme.{u}}
-
-/-- **A rational map whose restriction to `Spec K(X)` factors through `Spec K(Y)` is dominant.**
-If `f.fromFunctionField = Spec φ ≫ (Spec K(Y) ⟶ Y)` for a ring map `φ : K(Y) ⟶ K(X)`, then `f`
-sends the closed point of `Spec K(X)` into the image of `Spec K(Y)`, whose only point is the
-generic point of `Y`. -/
-theorem RationalMap.isDominant_of_fromFunctionField_eq [IrreducibleSpace X] [IrreducibleSpace Y]
-    (f : X ⤏ Y) (φ : Y.functionField ⟶ X.functionField)
-    (h : f.fromFunctionField = Spec.map φ ≫ Y.fromSpecStalk (genericPoint Y)) : f.IsDominant := by
-  rw [isDominant_iff_fromFunctionField_closedPoint, h]
-  exact eq_genericPoint_of_mem_range_fromSpecStalk ⟨_, (Scheme.Hom.comp_apply _ _ _).symm⟩
 
 variable (k : Type u) [CommRing k] [X.Over (Spec (.of k))] [Y.Over (Spec (.of k))] [IsIntegral X]
   [IsIntegral Y]

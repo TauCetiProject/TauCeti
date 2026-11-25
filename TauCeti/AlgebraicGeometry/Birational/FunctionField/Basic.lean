@@ -38,7 +38,9 @@ dominant morphism in `TauCeti.AlgebraicGeometry.Morphisms.Dominant`:
 
 * `AlgebraicGeometry.Scheme.RationalMap.isDominant_iff_fromFunctionField_closedPoint`: a rational
   map of irreducible schemes is dominant exactly when it sends the closed point of `Spec K(X)` to
-  the generic point of `Y`.
+  the generic point of `Y`, and
+  `AlgebraicGeometry.Scheme.RationalMap.isDominant_of_fromFunctionField_eq`: a rational map whose
+  restriction to `Spec K(X)` factors through `Spec K(Y)` is dominant.
 * `AlgebraicGeometry.Scheme.RationalMap.SpecMap_functionFieldMap_fromSpecStalk` and
   `AlgebraicGeometry.Scheme.RationalMap.eq_functionFieldMap_iff`: the characterization of `f^*`,
   and `AlgebraicGeometry.Scheme.RationalMap.eq_of_functionFieldMap_eq`: a dominant rational map
@@ -114,6 +116,16 @@ theorem RationalMap.isDominant_iff_fromFunctionField_closedPoint (f : X ⤏ Y) :
   obtain ⟨g, rfl⟩ := f.exists_rep
   rw [fromFunctionField_toRationalMap, g.fromFunctionField_closedPoint_eq_hom] at h
   exact g.isDominant_toRationalMap_iff.mpr (g.isDominant_hom_iff_genericPoint_eq.mpr h)
+
+/-- **A rational map whose restriction to `Spec K(X)` factors through `Spec K(Y)` is dominant.**
+If `f.fromFunctionField = Spec φ ≫ (Spec K(Y) ⟶ Y)` for a ring map `φ : K(Y) ⟶ K(X)`, then `f`
+sends the closed point of `Spec K(X)` into the image of `Spec K(Y)`, whose only point is the
+generic point of `Y`. -/
+theorem RationalMap.isDominant_of_fromFunctionField_eq (f : X ⤏ Y)
+    (φ : Y.functionField ⟶ X.functionField)
+    (h : f.fromFunctionField = Spec.map φ ≫ Y.fromSpecStalk (genericPoint Y)) : f.IsDominant := by
+  rw [isDominant_iff_fromFunctionField_closedPoint, h]
+  exact eq_genericPoint_of_mem_range_fromSpecStalk ⟨_, (Scheme.Hom.comp_apply _ _ _).symm⟩
 
 /-- The **pullback of rational functions** `f^* : K(Y) ⟶ K(X)` along a dominant rational map
 `f : X ⤏ Y` of irreducible schemes: the map of stalks of `f.fromFunctionField : Spec K(X) ⟶ Y`
