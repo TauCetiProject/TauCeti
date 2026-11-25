@@ -74,12 +74,19 @@ variable {X₀ X₁ V : Type*}
 
 section Coefficient
 
-/-- On a boundary line, the multiplier turns a bound `c` with `c = N b` into `N b ^ r` for the
-exponent `r = a + 1`. -/
-private theorem rpow_mul_le_mul_rpow {b N c : ℝ} (hb : 0 < b) (hc : c = N * b) {a r : ℝ}
-    (har : a + 1 = r) {x : ℝ} (hx : x ≤ c) : b ^ a * x ≤ N * b ^ r := by
-  calc b ^ a * x ≤ b ^ a * c := by gcongr
-    _ = N * b ^ r := by rw [← har, Real.rpow_add_one hb.ne', hc]; ring
+/-- On a boundary line `re w = j`, the multiplier `b ^ ((w - θ) s)` turns a bound `‖x‖ ≤ c` with
+`c = N b` into `‖b ^ ((w - θ) s) • x‖ ≤ N b ^ r` for the exponent `r = (j - θ) s + 1`. -/
+private theorem norm_cpow_smul_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {b N c : ℝ} (hb : 0 < b) (hc : c = N * b) {w : ℂ} {j s r : ℝ} (hw : w.re = j)
+    (hr : (j - θ) * s + 1 = r) {x : E} (hx : ‖x‖ ≤ c) :
+    ‖(b : ℂ) ^ ((w - θ) * (s : ℂ)) • x‖ ≤ ‖N * b ^ r‖ := by
+  have hre : ((w - θ) * (s : ℂ)).re = (j - θ) * s := by
+    simp only [mul_re, sub_re, ofReal_re, ofReal_im, mul_zero, sub_zero, hw]
+  calc ‖(b : ℂ) ^ ((w - θ) * (s : ℂ)) • x‖ = b ^ ((j - θ) * s) * ‖x‖ := by
+        rw [norm_smul, norm_cpow_eq_rpow_re_of_pos hb, hre]
+    _ ≤ b ^ ((j - θ) * s) * c := by gcongr
+    _ = N * b ^ r := by rw [← hr, Real.rpow_add_one hb.ne', hc]; ring
+    _ ≤ ‖N * b ^ r‖ := Real.le_norm_self _
 
 end Coefficient
 
@@ -141,16 +148,12 @@ private theorem exists_sumSpaceEmbed_toSum_eq_and_norm_le_of_lt (hθ : θ ∈ Ic
   have hm (k : ι) : Differentiable ℂ (m k) :=
     ((differentiable_id.sub_const _).mul_const _).const_cpow (.inl (by exact_mod_cast (hb k).ne'))
   -- on the line `re z = j`, the `k`-th coordinate has norm at most `N (c k / N) ^ r_j`
-  have hb₀ (k : ι) (t : ℝ) : ‖m k (t * I) • (g k).1 t‖ ≤ ‖N * (c k / N) ^ r₀‖ := by
-    rw [norm_smul, norm_cpow_eq_rpow_re_of_pos (hb k),
-      Real.norm_of_nonneg (by have := hb k; positivity)]
-    refine rpow_mul_le_mul_rpow (hb k) (hcN k) (by simp; linear_combination -hr) ?_
-    exact ((g k).1.norm_coe_le_norm t).trans ((norm_fst_le _).trans (hg k).le)
-  have hb₁ (k : ι) (t : ℝ) : ‖m k (1 + t * I) • (g k).2 t‖ ≤ ‖N * (c k / N) ^ r₁‖ := by
-    rw [norm_smul, norm_cpow_eq_rpow_re_of_pos (hb k),
-      Real.norm_of_nonneg (by have := hb k; positivity)]
-    refine rpow_mul_le_mul_rpow (hb k) (hcN k) (by simp; linear_combination -hr) ?_
-    exact ((g k).2.norm_coe_le_norm t).trans ((norm_snd_le _).trans (hg k).le)
+  have hb₀ (k : ι) (t : ℝ) : ‖m k (t * I) • (g k).1 t‖ ≤ ‖N * (c k / N) ^ r₀‖ :=
+    norm_cpow_smul_le (j := 0) (hb k) (hcN k) (by simp) (by linear_combination -hr)
+      (((g k).1.norm_coe_le_norm t).trans ((norm_fst_le _).trans (hg k).le))
+  have hb₁ (k : ι) (t : ℝ) : ‖m k (1 + t * I) • (g k).2 t‖ ≤ ‖N * (c k / N) ^ r₁‖ :=
+    norm_cpow_smul_le (j := 1) (hb k) (hcN k) (by simp) (by linear_combination -hr)
+      (((g k).2.norm_coe_le_norm t).trans ((norm_snd_le _).trans (hg k).le))
   -- the boundary traces of the family, of norm at most `N`
   have hG₀ (t : ℝ) : ‖WithLp.toLp q₀ fun k => m k (t * I) • (g k).1 t‖ ≤ N :=
     (PiLp.norm_mono fun k => hb₀ k t).trans h₀
