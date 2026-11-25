@@ -102,12 +102,9 @@ theorem comap_kernelPoint_of_apply_eq {k' : Type*} [CommRing k'] [IsDomain k'] {
     [CommRing S] [Algebra k' S] (g : S →ₐ[k'] k') (φ : H →+* S) (ι : k →+* k')
     (hι : Function.Injective ι) (h : ∀ y, g (φ y) = ι (f y)) :
     PrimeSpectrum.comap φ (kernelPoint g) = kernelPoint f := by
-  ext y
-  -- `kernelPoint g` is a point of `Spec`, whose underlying type is `PrimeSpectrum`, so the lemmas
-  -- about `PrimeSpectrum.comap` do not match it syntactically; unfold membership.
-  change φ y ∈ (kernelPoint g).asIdeal ↔ _
-  rw [kernelPoint_asIdeal, kernelPoint_asIdeal, RingHom.mem_ker, RingHom.mem_ker,
-    AlgHom.coe_toRingHom, AlgHom.coe_toRingHom, h]
-  exact map_eq_zero_iff ι hι
+  have hφ : (g : S →+* k').comp φ = ι.comp f := RingHom.ext h
+  refine PrimeSpectrum.ext ((PrimeSpectrum.comap_asIdeal φ (kernelPoint g)).trans ?_)
+  rw [kernelPoint_asIdeal, kernelPoint_asIdeal, RingHom.comap_ker, hφ,
+    RingHom.ker_comp_of_injective _ hι]
 
 end AlgHom

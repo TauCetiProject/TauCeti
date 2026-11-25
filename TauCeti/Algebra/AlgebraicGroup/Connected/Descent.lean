@@ -14,7 +14,6 @@ import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Descent
 import TauCeti.Algebra.Coalgebra.GroupLike.ScalarAut
 import TauCeti.Algebra.TensorProduct.CommonOverfield
-import TauCeti.AlgebraicGeometry.AugmentationPoint.ConnectedComponent
 
 /-!
 # The geometric identity component under automorphisms and connected groups
@@ -80,10 +79,8 @@ theorem map_mem_identityComponentHopfIdeal_baseChange_iff (σ : L ≃ₐ[k] L) {
   let τ : (L ⊗[k] A) ≃+* (L ⊗[k] A) := (ScalarAut.toAlgAut (A := (A : Type v)) σ).toRingEquiv
   -- `ScalarAut.toAlgAut σ` is defined as the congruence that `ScalarAut.smul_def` names.
   have hτ (y : L ⊗[k] A) : τ y = σ • y := (ScalarAut.smul_def σ y).symm
-  have hτmap : τ x = TensorProduct.map σ.toLinearMap LinearMap.id x := by
-    induction x using TensorProduct.inductionOn with
-    | tmul a y => simp [τ]
-    | add a b ha hb => simp only [map_add, ha, hb]
+  have hτmap : τ x = TensorProduct.map σ.toLinearMap LinearMap.id x :=
+    ScalarAut.toAlgAut_apply σ x
   have hz : PrimeSpectrum.comap (τ : (L ⊗[k] A) →+* (L ⊗[k] A))
       (Bialgebra.augmentationPoint L (baseChange (K := L) A)) =
         Bialgebra.augmentationPoint L (baseChange (K := L) A) :=
@@ -110,18 +107,20 @@ theorem apply_one_tmul_eq_zero_of_mem_identityComponentHopfIdeal
     g.hom ((1 : K) ⊗ₜ[k] x) = 0 := by
   let _ : IsNoetherianRing (baseChange (K := L) A) := Algebra.FiniteType.isNoetherianRing L _
   let d := Algebra.TensorProduct.commonOverfield k K L
+  let _ : Algebra L d.Ω := d.right.toRingHom.toAlgebra
+  have : IsScalarTower k L d.Ω := IsScalarTower.of_algHom d.right
+  -- The base change to `d.Ω` of `g`, read through the tower comparisons `L → d.Ω` and `K → d.Ω`.
+  let e : d.Ω ⊗[L] (L ⊗[k] A) →ₐc[d.Ω] d.Ω ⊗[K] T :=
+    (Bialgebra.TensorProduct.map (BialgHom.id d.Ω d.Ω) g.hom).comp
+      ((Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k L A d.Ω).trans
+        (Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k K A d.Ω).symm).toBialgHom
   let φ : L ⊗[k] A →+* d.Ω ⊗[K] T :=
-    (Algebra.TensorProduct.map (AlgHom.id d.Ω d.Ω) g.hom.toAlgHom).toRingHom.comp
-      ((Algebra.TensorProduct.cancelBaseChange k K d.Ω d.Ω A).symm.toRingEquiv.toRingHom.comp
-        (Algebra.TensorProduct.map d.right (AlgHom.id k A)).toRingHom)
-  let ψ := Bialgebra.counitAlgHom d.Ω (d.Ω ⊗[K] T)
+    (e : d.Ω ⊗[L] (L ⊗[k] A) →ₐ[d.Ω] d.Ω ⊗[K] T).toRingHom.comp
+      Algebra.TensorProduct.includeRight.toRingHom
   have hψφ (y : baseChange (K := L) A) :
-      ψ (φ y) = d.right (Bialgebra.counitAlgHom L (baseChange (K := L) A) y) := by
-    induction y using TensorProduct.inductionOn with
-    | tmul l a =>
-      simp [φ, ψ, Bialgebra.counitAlgHom_apply, Algebra.smul_def, mul_comm,
-        ← IsScalarTower.algebraMap_apply]
-    | add a b ha hb => simp only [map_add, ha, hb]
+      Bialgebra.counitAlgHom d.Ω (d.Ω ⊗[K] T) (φ y) =
+        d.right (Bialgebra.counitAlgHom L (baseChange (K := L) A) y) := by
+    simp [φ, Bialgebra.counitAlgHom_apply, Algebra.smul_def, RingHom.algebraMap_toAlgebra]
   have hconn : ConnectedSpace (PrimeSpectrum (d.Ω ⊗[K] T)) :=
     (hT.baseChange K d.Ω T).connectedSpace
   -- `φ` pulls the augmentation point back to the augmentation point, since it commutes with the
@@ -131,7 +130,7 @@ theorem apply_one_tmul_eq_zero_of_mem_identityComponentHopfIdeal
     AlgHom.comap_kernelPoint_of_apply_eq _ _ φ (d.right : L →+* d.Ω) d.right.injective hψφ
   rw [HopfAlgebra.mem_identityComponentHopfIdeal, ← hz] at hx
   have h₁ : φ (1 ⊗ₜ x) = (1 : d.Ω) ⊗ₜ[K] g.hom (1 ⊗ₜ x) := by
-    simp [φ]
+    simp [φ, e]
   have h₂ : φ (1 ⊗ₜ x) = 0 := PrimeSpectrum.connectedComponentIdeal_comap_le_ker φ _ hx
   exact (Module.FaithfullyFlat.one_tmul_eq_zero_iff K T _).mp (h₁.symm.trans h₂)
 
