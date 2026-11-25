@@ -9,7 +9,7 @@ public import Mathlib.Basic.NNReal.Defs
 public import TauCeti.Algebra.Order.Ring.Cast
 public import TauCeti.Combinatorics.Network.Coefficients
 public import TauCeti.Combinatorics.Network.ShortestAugmentation
-public import TauCeti.Data.Rat.Cast.Order
+import TauCeti.Data.Rat.Cast.Order
 
 /-!
 # Nonnegative coefficients for finite flows
@@ -248,14 +248,6 @@ end NatFlow
 end Natural
 
 /-! ### Natural capacities over ordered coefficient groups -/
-
-/-- Reading natural values in `K` and then applying an additive map `φ` with `φ 1 = 1` reads them
-in `L`. -/
-theorem Assignment.map_map_natCast {L F : Type*} [AddMonoidWithOne K] [AddMonoidWithOne L]
-    [FunLike F K L] [AddMonoidHomClass F K L] (φ : F) (hφ : φ 1 = 1) (a : Assignment Q ℕ) :
-    (a.map (Nat.cast : ℕ → K)).map φ = a.map Nat.cast := by
-  funext x y e
-  exact map_natCast' φ hφ (a e)
 
 section NaturalCoefficients
 
