@@ -197,17 +197,18 @@ noncomputable def equivQuotSpanSingleton (x : R) : QuotSMulTop x R ≃ₗ[R] R �
   ((quotSpanSingletonSMulTopEquiv x R).symm.trans
     (Ideal.span {x}).quotSMulTopSelfEquiv).restrictScalars R
 
-/-- `equivQuotSpanSingleton` sends the class of `r` to the class of `r` (not `@[simp]` because
-`Ideal.Quotient.mk_eq_mk` rewrites the left-hand side, which fails `simpNF`). -/
+/-- `equivQuotSpanSingleton` sends the class of `r` to the class of `r`. -/
+@[simp]
 theorem equivQuotSpanSingleton_mk (x r : R) :
-    equivQuotSpanSingleton x (Submodule.Quotient.mk r) = Ideal.Quotient.mk (Ideal.span {x}) r :=
+    equivQuotSpanSingleton x (Ideal.Quotient.mk (x • ⊤) r) =
+      Ideal.Quotient.mk (Ideal.span {x}) r :=
   (rfl)
 
 /-- `equivQuotSpanSingleton.symm` sends the class of `r` to the class of `r`. -/
 @[simp]
 theorem equivQuotSpanSingleton_symm_mk (x r : R) :
     (equivQuotSpanSingleton x).symm (Ideal.Quotient.mk (Ideal.span {x}) r) =
-      (Submodule.Quotient.mk r : QuotSMulTop x R) :=
+      Ideal.Quotient.mk (x • ⊤) r :=
   (rfl)
 
 /-- Negation is the identity on a module modulo twice itself. -/
