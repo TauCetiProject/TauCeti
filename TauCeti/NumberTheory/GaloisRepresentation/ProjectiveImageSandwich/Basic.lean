@@ -35,7 +35,7 @@ conjugation, the projective image of the residual representation lies between `P
 * `TauCeti.IsProjectiveImageSandwich.one_le_exponent`: the exponent `a` is positive.
 * `TauCeti.IsProjectiveImageSandwich.charP`, `TauCeti.IsProjectiveImageSandwich.charP_target`:
   `k`, and a nontrivial `K`, have characteristic `p`.
-* `TauCeti.IsProjectiveImageSandwich.mono`: the condition for `n` implies it for `1 ≤ m ≤ n`.
+* `TauCeti.IsProjectiveImageSandwich.of_le`: the condition for `n` implies it for `1 ≤ m ≤ n`.
 * `TauCeti.isProjectiveImageSandwich_conj_iff`: the condition is invariant under conjugating `ρ`
   by any element of `GL(2, K)`.
 * `TauCeti.isProjectiveImageSandwich_map`: a representation `ρ₀` over `k` whose projective image
@@ -118,7 +118,7 @@ theorem charP_target [Nontrivial K] (h : IsProjectiveImageSandwich p a n ι ρ) 
   charP_of_injective_ringHom ι.injective p
 
 /-- The condition for rank `n` implies the condition for every rank `1 ≤ m ≤ n`. -/
-theorem mono (h : IsProjectiveImageSandwich p a n ι ρ) {m : ℕ} (hm : 1 ≤ m) (hmn : m ≤ n) :
+theorem of_le (h : IsProjectiveImageSandwich p a n ι ρ) {m : ℕ} (hmn : m ≤ n) (hm : 1 ≤ m) :
     IsProjectiveImageSandwich p a m ι ρ where
   prime := h.prime
   one_le_rank := hm

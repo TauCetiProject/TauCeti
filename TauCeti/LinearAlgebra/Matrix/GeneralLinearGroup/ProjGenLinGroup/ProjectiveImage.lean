@@ -24,6 +24,7 @@ a ring homomorphism (it is mapped along the induced map of projective general li
 ## Main declarations
 
 * `MonoidHom.projectiveImage`: the image of `ρ` in `PGL(n, R)`.
+* `MonoidHom.projectiveImage_def`: the projective image as the range of the composite.
 * `MonoidHom.mem_projectiveImage`: membership in the projective image.
 * `MonoidHom.projectiveImage_conj`: conjugating `ρ` conjugates its projective image.
 * `MonoidHom.projectiveImage_map`: extending scalars maps the projective image.
@@ -45,6 +46,10 @@ variable {G : Type*} [Group G] {n : Type*} [Fintype n] [DecidableEq n] {R : Type
 composite of `ρ` with the quotient map `GL(n, R) → PGL(n, R)`. -/
 def projectiveImage : Subgroup PGL(n, R) :=
   (ProjGenLinGroup.mk.comp ρ).range
+
+/-- Unfolds the projective image as the range of the composite `G → GL(n, R) → PGL(n, R)`. -/
+theorem projectiveImage_def : ρ.projectiveImage = (ProjGenLinGroup.mk.comp ρ).range :=
+  (rfl)
 
 @[simp]
 theorem mem_projectiveImage {x : PGL(n, R)} :
