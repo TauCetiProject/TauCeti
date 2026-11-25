@@ -7,8 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Sublevel
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
-import TauCeti.Algebra.BigOperators.AlternatingSum
 import TauCeti.Algebra.BigOperators.Ring.Finset
+import TauCeti.Algebra.Homology.EulerCharacteristic.MorseInequalities
 import TauCeti.Algebra.Polynomial.AlternatingSum
 import TauCeti.Geometry.Manifold.Morse.Cell.Homology
 import TauCeti.Geometry.Manifold.Morse.Deformation.Homology
@@ -272,24 +272,11 @@ private def MorseInequalities (a b : ℝ) (hab : a ≤ b) : Prop :=
 private theorem MorseInequalities.finrank_le {a b : ℝ} {hab : a ≤ b}
     (h : MorseInequalities I f V a b hab) (n : ℕ) :
     finrank k ((sublevelPair f hab).singularHomology V n : ModuleCat k) ≤
-      bandCount I f a b n * finrank k V := by
-  cases n with
-  | zero =>
-    have h₀ := (h 0).2
-    simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, Nat.sub_self, pow_zero,
-      one_mul] at h₀
-    exact_mod_cast (by linarith :
-      (finrank k ((sublevelPair f hab).singularHomology V 0 : ModuleCat k) : ℤ) ≤
-        (bandCount I f a b 0 : ℤ) * finrank k V)
-  | succ n =>
-    have h₁ := (h n).2
-    have h₂ := (h (n + 1)).2
-    rw [sum_range_succ_neg_one_pow_sub_mul (fun i ↦
-          (finrank k ((sublevelPair f hab).singularHomology V i : ModuleCat k) : ℤ)) n,
-        sum_range_succ_neg_one_pow_sub_mul (fun i ↦ (bandCount I f a b i : ℤ)) n] at h₂
-    exact_mod_cast (by linarith :
-      (finrank k ((sublevelPair f hab).singularHomology V (n + 1) : ModuleCat k) : ℤ) ≤
-        (bandCount I f a b (n + 1) : ℤ) * finrank k V)
+      bandCount I f a b n * finrank k V :=
+  le_of_forall_sum_range_neg_one_pow_mul_le
+    (b := fun i ↦ finrank k ((sublevelPair f hab).singularHomology V i : ModuleCat k))
+    (c := fun i ↦ bandCount I f a b i * finrank k V)
+    (fun m ↦ (h m).2.trans_eq (natCast_mul_sum_mul_natCast _ _ _ _)) n
 
 /-- Euler's equality at any degree `n` with no critical point of index `n + 1` follows from the
 strong Morse inequalities in degrees `n` and `n + 1`. -/
@@ -298,23 +285,11 @@ private theorem MorseInequalities.sum_range_neg_one_pow_mul_eq {a b : ℝ} {hab 
     ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i *
         finrank k ((sublevelPair f hab).singularHomology V i : ModuleCat k) =
       finrank k V * ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * bandCount I f a b i := by
-  have h₁ := (h n).2
-  have h₂ := (h (n + 1)).2
-  rw [sum_range_succ_neg_one_pow_sub_mul (fun i ↦
-        (finrank k ((sublevelPair f hab).singularHomology V i : ModuleCat k) : ℤ)) n,
-      sum_range_succ_neg_one_pow_sub_mul (fun i ↦ (bandCount I f a b i : ℤ)) n, hno] at h₂
-  have : (0 : ℤ) ≤ finrank k ((sublevelPair f hab).singularHomology V (n + 1) : ModuleCat k) :=
-    Nat.cast_nonneg _
-  have heq : ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) *
-        finrank k ((sublevelPair f hab).singularHomology V i : ModuleCat k) =
-      finrank k V * ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) * bandCount I f a b i := by
-    push_cast at h₂
-    linarith
-  rw [sum_range_neg_one_pow_sub_mul (fun i ↦
-        (finrank k ((sublevelPair f hab).singularHomology V i : ModuleCat k) : ℤ)) n,
-      sum_range_neg_one_pow_sub_mul (fun i ↦ (bandCount I f a b i : ℤ)) n,
-      mul_left_comm] at heq
-  exact mul_left_cancel₀ (pow_ne_zero n (neg_ne_zero.2 one_ne_zero)) heq
+  rw [natCast_mul_sum_mul_natCast]
+  exact sum_range_neg_one_pow_mul_eq_of_le_succ
+    (b := fun i ↦ finrank k ((sublevelPair f hab).singularHomology V i : ModuleCat k))
+    (c := fun i ↦ bandCount I f a b i * finrank k V)
+    (fun m _ ↦ (h m).2.trans_eq (natCast_mul_sum_mul_natCast _ _ _ _)) (by simp [hno])
 
 /-- The Morse inequalities in the form of the Morse polynomial identity. -/
 private theorem MorseInequalities.exists_sum_range_monomial_eq_add_mul {a b : ℝ} {hab : a ≤ b}
