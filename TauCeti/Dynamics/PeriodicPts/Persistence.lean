@@ -368,29 +368,29 @@ theorem eventually_forall_isNearId_isNondegenerateFixedPt_iterate_comp {g : E �
 /-! ### Small balls around points of least period `k` -/
 
 /-- Around a point `x ∈ W` whose first `k - 1` iterates under a continuous self-map `φ` of a
-metric space differ from it, the closed balls of small enough radius `2 r` lie in `W` and are left
+metric space differ from it, the closed balls of small enough radius `r` lie in `W` and are left
 by every orbit starting in them until time `k`. -/
 theorem exists_pos_closedBall_subset_and_iterate_notMem {X : Type*} [MetricSpace X] {φ : X → X}
     (hφ : Continuous φ) {W : Set X} (hW : IsOpen W) {x : X} (hx : x ∈ W) {k : ℕ}
     (hmin : ∀ j, 0 < j → j < k → φ^[j] x ≠ x) :
-    ∃ r > 0, closedBall x (2 * r) ⊆ W ∧
-      ∀ y ∈ closedBall x (2 * r), ∀ j, 0 < j → j < k → φ^[j] y ∉ closedBall x (2 * r) := by
-  suffices h : ∀ᶠ r in 𝓝[>] (0 : ℝ), closedBall x (2 * r) ⊆ W ∧
-      ∀ j ∈ Finset.range k, 0 < j → ∀ y ∈ closedBall x (2 * r), φ^[j] y ∉ closedBall x (2 * r) by
+    ∃ r > 0, closedBall x r ⊆ W ∧
+      ∀ y ∈ closedBall x r, ∀ j, 0 < j → j < k → φ^[j] y ∉ closedBall x r := by
+  suffices h : ∀ᶠ r in 𝓝[>] (0 : ℝ), closedBall x r ⊆ W ∧
+      ∀ j ∈ Finset.range k, 0 < j → ∀ y ∈ closedBall x r, φ^[j] y ∉ closedBall x r by
     obtain ⟨r, ⟨hrW, hr⟩, hr0⟩ := (h.and self_mem_nhdsWithin).exists
     exact ⟨r, hr0, hrW, fun y hy j hj hjk ↦ hr j (Finset.mem_range.2 hjk) hj y hy⟩
   obtain ⟨ρ, hρ, hρW⟩ := Metric.isOpen_iff.1 hW x hx
   refine Filter.Eventually.and ?_ ((Finset.eventually_all _).2 fun j hj ↦ ?_)
-  · filter_upwards [Ioo_mem_nhdsGT (half_pos hρ)] with r hr
-    exact (closedBall_subset_ball (by linarith [hr.2])).trans hρW
-  · -- With `d = dist (φ^[j] x) x > 0`, take `2 r < d / 2` and `2 r` below a radius on which
+  · filter_upwards [Ioo_mem_nhdsGT hρ] with r hr
+    exact (closedBall_subset_ball hr.2).trans hρW
+  · -- With `d = dist (φ^[j] x) x > 0`, take `r < d / 2` and `r` below a radius on which
     -- `φ^[j]` moves points by less than `d / 2`.
     by_cases hj0 : 0 < j
     · have hd : 0 < dist (φ^[j] x) x :=
         dist_pos.2 (hmin j hj0 (Finset.mem_range.1 hj))
       obtain ⟨ρ', hρ', hcont⟩ := Metric.continuousAt_iff.1 (hφ.iterate j).continuousAt
         (dist (φ^[j] x) x / 2) (half_pos hd)
-      filter_upwards [Ioo_mem_nhdsGT (lt_min (half_pos hρ') (div_pos hd four_pos))] with r hr _ y hy
+      filter_upwards [Ioo_mem_nhdsGT (lt_min hρ' (half_pos hd))] with r hr _ y hy
       rw [mem_closedBall] at hy ⊢
       have hr₁ := hr.2.trans_le (min_le_left _ _)
       have hr₂ := hr.2.trans_le (min_le_right _ _)

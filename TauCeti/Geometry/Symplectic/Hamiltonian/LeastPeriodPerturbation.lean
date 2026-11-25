@@ -188,11 +188,12 @@ theorem exists_isNondegenerateFixedPt_iterate_comp (ω : SymplecticForm V) {φ :
   set P := K ∩ {x | IsFixedPt φ^[k] x}
   have hP : IsCompact P := hK.inter_right (isClosed_eq (hφ.continuous.iterate k) continuous_id)
   have hball (x : V) (hx : x ∈ P) : ∃ r > 0, closedBall x (2 * r) ⊆ W ∧
-      ∀ y ∈ closedBall x (2 * r), ∀ j, 0 < j → j < k → φ^[j] y ∉ closedBall x (2 * r) :=
-    exists_pos_closedBall_subset_and_iterate_notMem hφ.continuous hW (hKW hx.1)
-      fun j hj hjk h ↦ by
+      ∀ y ∈ closedBall x (2 * r), ∀ j, 0 < j → j < k → φ^[j] y ∉ closedBall x (2 * r) := by
+    obtain ⟨r, hr, h⟩ := exists_pos_closedBall_subset_and_iterate_notMem (k := k) hφ.continuous hW
+      (hKW hx.1) fun j hj hjk h ↦ by
         have := (hmin x hx.1 hx.2).symm ▸ IsPeriodicPt.minimalPeriod_le hj h
         omega
+    exact ⟨r / 2, half_pos hr, by rwa [mul_div_cancel₀ r two_ne_zero]⟩
   choose! r hr hrW hret using hball
   -- Finitely many of the balls `ball x (r x)` cover `P`; outside them `K` has no point of
   -- period `k`.
