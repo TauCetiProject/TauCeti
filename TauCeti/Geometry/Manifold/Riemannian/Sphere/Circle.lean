@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Gradient
 public import TauCeti.Geometry.Manifold.VectorField.Derivation
 import TauCeti.Analysis.Complex.Inner
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Laplacian
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Parallelizable
 
@@ -129,7 +130,8 @@ theorem mvfderiv_re_circleRotationField (z : sphere (0 : ℂ) 1) :
 `v = ⟪∂ₓ, v⟫ ∂ₓ`. -/
 theorem eq_inner_circleRotationField_smul (z : sphere (0 : ℂ) 1) (v : TangentSpace (𝓡 1) z) :
     v = ⟪circleRotationField z, v⟫ • circleRotationField z := by
-  have h : finrank ℝ (TangentSpace (𝓡 1) z) = 1 := finrank_euclideanSpace_fin
+  have h : finrank ℝ (TangentSpace (𝓡 1) z) = 1 :=
+    (finrank_tangentSpace z).trans finrank_euclideanSpace_fin
   simpa using ((FiniteDimensional.orthonormalBasisSingleton Unit ℝ h (circleRotationField z)
     (norm_circleRotationField z)).sum_repr' v).symm
 
