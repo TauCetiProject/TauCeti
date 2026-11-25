@@ -238,9 +238,10 @@ theorem regradeProductFunctional_kernelReadout {ε : ℤ} {t : S₁ × S₂ → 
   simp only [← mul_assoc, ← negOnePowCast_add]
   congr 1
   apply negOnePowCast_eq_of_even_sub
+  -- The two exponents differ by `n * n - n` modulo `2`, which is even since `n * n ≡ n`.
   rw [ht q p₀ h]
-  obtain ⟨r, hr⟩ := Int.even_mul_succ_self n
-  exact ⟨-r + (n * μ₂ q.2 - n * ε + μ₁ q.1 + μ₂ q.2 - n - ε), by linear_combination -hr⟩
+  simp only [Int.even_sub, Int.even_add, Int.even_mul]
+  tauto
 
 /-- **The exchange signs of the two gradings.** For a functional `ψ'` on `C₂ ⊗ C₁ ⊗ C₀^∨`, the
 regrading of the exchanged functional `(-1)^(n + μ₁ p₁ μ₂ p₂) ψ'((p₂, p₁), p₀)` is the regrading of
@@ -256,8 +257,35 @@ theorem regradeProductFunctional_swap (ψ' : S₂ × S₁ → S₀ → R) :
   simp only [regradeProductFunctional_apply, Prod.snd_swap, ← mul_assoc, ← negOnePowCast_add]
   congr 1
   apply negOnePowCast_eq_of_even_sub
-  obtain ⟨r, hr⟩ := Int.even_mul_succ_self n
-  exact ⟨r + (n * μ₂ q.2 - n * n), by linear_combination hr⟩
+  -- The two exponents differ by `n * n - n` modulo `2`, which is even since `n * n ≡ n`.
+  simp only [Int.even_sub, Int.even_add, Int.even_mul]
+  tauto
+
+/-- **The regraded functional of the readout of a product kernel.** Let `t` be an operator kernel
+of raw degree `-n`, and `m(p₁, p₂, p₀) = (-1)^(n μ₁ p₁) t((p₁, p₂), p₀)`. The regrading of the
+readout of `t` with the raw output degrees is the readout of `m` with the cochain output degrees.
+This is `TauCeti.NovikovModule.regradeProductFunctional_kernelReadout` at `ε = 0`. -/
+theorem regradeProductFunctional_kernelReadout_of_eq_negOnePowCast_mul {t : S₁ × S₂ → S₀ → R}
+    {m : S₁ → S₂ → S₀ → R}
+    (hmt : ∀ p₁ p₂ p₀, m p₁ p₂ p₀ = negOnePowCast R (n * μ₁ p₁) * t (p₁, p₂) p₀)
+    (ht : ∀ q p₀, t q p₀ ≠ 0 → μ₀ p₀ = μ₁ q.1 + μ₂ q.2 - n) :
+    regradeProductFunctional n μ₂ μ₀ (kernelReadout μ₀ t) =
+      kernelReadout (fun p => n - μ₀ p) fun q => m q.1 q.2 := by
+  rw [regradeProductFunctional_kernelReadout (ε := 0) fun q p₀ hq => by rw [sub_zero, ht q p₀ hq]]
+  simp only [add_zero]
+  exact congrArg _ (funext fun q => funext fun p₀ => (hmt q.1 q.2 p₀).symm)
+
+/-- **Cochain degrees of a product kernel.** If `t` is an operator kernel of raw degree `-n` and
+`m(p₁, p₂, p₀) = (-1)^(n μ₁ p₁) t((p₁, p₂), p₀)`, then `m` has cochain degree `0`:
+`m(p₁, p₂, p₀) ≠ 0` only if `n - μ₀ p₀ = (n - μ₁ p₁) + (n - μ₂ p₂)`. -/
+theorem sub_eq_sub_add_sub_of_eq_negOnePowCast_mul {t : S₁ × S₂ → S₀ → R}
+    {m : S₁ → S₂ → S₀ → R}
+    (hmt : ∀ p₁ p₂ p₀, m p₁ p₂ p₀ = negOnePowCast R (n * μ₁ p₁) * t (p₁, p₂) p₀)
+    (ht : ∀ q p₀, t q p₀ ≠ 0 → μ₀ p₀ = μ₁ q.1 + μ₂ q.2 - n) {p₁ : S₁} {p₂ : S₂} {p₀ : S₀}
+    (h : m p₁ p₂ p₀ ≠ 0) : n - μ₀ p₀ = n - μ₁ p₁ + (n - μ₂ p₂) := by
+  rw [hmt] at h
+  rw [ht (p₁, p₂) p₀ (right_ne_zero_of_mul h)]
+  ring
 
 variable [DecidableEq S₁] [DecidableEq S₂] {δ₁ : S₁ → S₁ → R} {δ₂ : S₂ → S₂ → R}
   {δ₀ : S₀ → S₀ → R}
@@ -355,24 +383,13 @@ theorem kernelMap_kernelProduct_eq_add_of_functionalBoundary_kernelReadout_eq_ze
     kernelMap hδ₀ hδ₀fin (kernelProduct hn hfin a b) =
       kernelProduct hn hfin (kernelMap hδ₁ hδ₁fin a) b +
         negOnePowCast R i • kernelProduct hn hfin a (kernelMap hδ₂ hδ₂fin b) := by
-  have ht' : ∀ q p₀, t q p₀ ≠ 0 → μ₀ p₀ = μ₁ q.1 + μ₂ q.2 - n - 0 := fun q p₀ h => by
-    rw [sub_zero, ht q p₀ h]
-  -- The cochain readout of `m` is the regrading of the raw readout of `t`.
-  have hm : kernelReadout (fun p => n - μ₀ p) (fun q => m q.1 q.2) =
-      regradeProductFunctional n μ₂ μ₀ (kernelReadout μ₀ t) := by
-    rw [regradeProductFunctional_kernelReadout ht']
-    simp only [add_zero]
-    exact congrArg _ (funext fun q => funext fun p₀ => hmt q.1 q.2 p₀)
   refine kernelMap_kernelProduct_eq_add_of_functionalBoundary_eq_zero hn hfin hδ₁ hδ₁fin hδ₂
     hδ₂fin hδ₀ hδ₀fin (d₁ := fun p => n - μ₁ p) (d₂ := fun p => n - μ₂ p) (d₀ := fun p => n - μ₀ p)
-    (fun p₁ p₂ p₀ h => ?_) (fun q p₀ => ?_) ha b
-  · rw [hmt] at h
-    have e := ht (p₁, p₂) p₀ (right_ne_zero_of_mul h)
-    dsimp only at e
-    rw [e]
-    ring
-  · rw [hm, functionalBoundary_regradeProductFunctional hδ₂deg hδ₀deg,
-      regradeProductFunctional_apply, hφ, mul_zero]
+    (fun _ _ _ => sub_eq_sub_add_sub_of_eq_negOnePowCast_mul hmt ht) (fun q p₀ => ?_) ha b
+  -- The cochain readout of `m` is the regrading of the raw readout of `t`.
+  rw [← regradeProductFunctional_kernelReadout_of_eq_negOnePowCast_mul hmt ht,
+    functionalBoundary_regradeProductFunctional hδ₂deg hδ₀deg, regradeProductFunctional_apply, hφ,
+    mul_zero]
 
 /-- **The commutativity kernel identity from an exchange functional in the raw grading.** Let `t`
 and `t'` be operator kernels of raw degree `-n` out of `C₁ ⊗ C₂` and `C₂ ⊗ C₁`, and `h` one of raw
@@ -403,17 +420,8 @@ theorem sub_negOnePow_mul_eq_kernelComp_add_kernelComp_of_functionalBoundary_ker
       kernelComp k δ₀ q p₀ +
         kernelComp (tensorDifferential (fun p => n - μ₁ p) δ₁ δ₂) k q p₀ := by
   -- Each raw readout, regraded, is the cochain readout of the corresponding cochain kernel.
-  have hm : regradeProductFunctional n μ₂ μ₀ (kernelReadout μ₀ t) =
-      kernelReadout (fun p => n - μ₀ p) fun q => m q.1 q.2 := by
-    rw [regradeProductFunctional_kernelReadout (ε := 0) fun q p₀ hq => by rw [sub_zero, ht q p₀ hq]]
-    simp only [add_zero]
-    exact congrArg _ (funext fun q => funext fun p₀ => (hmt q.1 q.2 p₀).symm)
-  have hm' : regradeProductFunctional n μ₁ μ₀ (kernelReadout μ₀ t') =
-      kernelReadout (fun p => n - μ₀ p) fun q => m' q.1 q.2 := by
-    rw [regradeProductFunctional_kernelReadout (ε := 0) (μ₁ := μ₂)
-      fun q p₀ hq => by rw [sub_zero, ht' q p₀ hq]]
-    simp only [add_zero]
-    exact congrArg _ (funext fun q => funext fun p₀ => (hmt' q.1 q.2 p₀).symm)
+  have hm := regradeProductFunctional_kernelReadout_of_eq_negOnePowCast_mul hmt ht
+  have hm' := regradeProductFunctional_kernelReadout_of_eq_negOnePowCast_mul hmt' ht'
   have hk : regradeProductFunctional n μ₂ μ₀ (kernelReadout μ₀ h) =
       kernelReadout (fun p => n - μ₀ p) k := by
     rw [regradeProductFunctional_kernelReadout (ε := -1) fun q p₀ hq => by
