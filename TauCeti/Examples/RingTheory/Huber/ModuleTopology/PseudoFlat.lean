@@ -81,25 +81,27 @@ example (m : ℚ_[p]) :
       ((weightedX (fun _ : Fin 1 ↦ ({1} : Set ℚ_[p])) isWeightFamily_one_weight 0 :
           weightedRestrictedSubring _ _) : restrictedMvPowerSeriesCompletion 1 ℚ_[p])
     restrictedCoeff (A := ℚ_[p]) 1 X = 1 ∧ restrictedCoeff (A := ℚ_[p]) 0 X = 0 ∧
-      (restrictedPowerSeriesTensorToNull (X ⊗ₜ[ℚ_[p]] m)).1 1 = m ∧
+      (restrictedPowerSeriesTensorToNullEquiv (.of_projective : IsNaturallyComplete ℚ_[p] ℚ_[p])
+        (X ⊗ₜ[ℚ_[p]] m)).1 1 = m ∧
       (restrictedPowerSeriesTensorToNull (X ⊗ₜ[ℚ_[p]] m)).1 0 = 0 ∧
       Function.Bijective (restrictedPowerSeriesTensorToNull (A := ℚ_[p]) (M := ℚ_[p])) := by
   intro X
   have h1 : restrictedCoeff (A := ℚ_[p]) 1 X = 1 := by simp [X]
   have h0 : restrictedCoeff (A := ℚ_[p]) 0 X = 0 := by simp [X]
-  exact ⟨h1, h0, by rw [coe_restrictedPowerSeriesTensorToNull_tmul, h1, one_smul],
+  exact ⟨h1, h0, by simp [h1],
     by rw [coe_restrictedPowerSeriesTensorToNull_tmul, h0, zero_smul],
     restrictedPowerSeriesTensorToNull_bijective .of_projective⟩
 
 -- Pure-tensor evaluation on negative-degree Laurent monomials `a T⁻¹ ⊗ m` in `ℚ_p⟨T, T⁻¹⟩ ⊗ M`.
 example (a m : ℚ_[p]) :
     let Tinv : twoSidedRestrictedSubmodule ℚ_[p] ℚ_[p] := twoSidedMonomial (-1) a
-    (restrictedLaurentSeriesTensorToNull (Tinv ⊗ₜ[ℚ_[p]] m)).1 (-1) = a • m ∧
+    (restrictedLaurentSeriesTensorToNullEquiv (.of_projective : IsNaturallyComplete ℚ_[p] ℚ_[p])
+        (Tinv ⊗ₜ[ℚ_[p]] m)).1 (-1) = a • m ∧
       (restrictedLaurentSeriesTensorToNull (Tinv ⊗ₜ[ℚ_[p]] m)).1 1 = 0 ∧
       Function.Bijective (restrictedLaurentSeriesTensorToNull (A := ℚ_[p]) (M := ℚ_[p])) := by
   intro Tinv
-  refine ⟨?_, ?_, restrictedLaurentSeriesTensorToNull_bijective .of_projective⟩ <;>
-    (rw [restrictedLaurentSeriesTensorToNull_tmul]; simp [Tinv, coe_twoSidedMonomial])
+  exact ⟨by simp [Tinv, coe_twoSidedMonomial], by simp [Tinv, coe_twoSidedMonomial],
+    restrictedLaurentSeriesTensorToNull_bijective .of_projective⟩
 
 end PadicRestrictedSeries
 
@@ -430,12 +432,6 @@ private def constVar (i : Fin 2) : WeightedC0 p :=
         exact (tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg (p : ℚ_[p]))
           Padic.norm_p_lt_one).comp (tendsto_add_atTop_nat 1))⟩
 
-private theorem mul_X_eq_zero_imp {i : Fin 2} {f : MvPowerSeries (Fin 2) ℚ_[p]}
-    (h : f * MvPowerSeries.X i = 0) : f = 0 := by
-  ext t
-  have := congrArg (MvPowerSeries.coeff (t + Finsupp.single i 1)) h
-  rwa [MvPowerSeries.X_def, MvPowerSeries.coeff_add_mul_monomial, mul_one, map_zero] at this
-
 private theorem koszul_relation (u v : Tate2 p) (h : u * tateVar 0 + v * tateVar 1 = 0) :
     ∃ a : Tate2 p, u = a * tateVar 1 ∧ v = -(a * tateVar 0) := by
   have hps : (u : MvPowerSeries (Fin 2) ℚ_[p]) * MvPowerSeries.X 0 +
@@ -470,12 +466,13 @@ private theorem koszul_relation (u v : Tate2 p) (h : u * tateVar 0 + v * tateVar
           · simpa using hle 1
       simpa [hnot] using h0
   have hv : (v : MvPowerSeries (Fin 2) ℚ_[p]) = -(aps * MvPowerSeries.X 0) :=
-    eq_neg_of_add_eq_zero_right <| mul_X_eq_zero_imp (i := 1) <| by
-      calc
-        (aps * MvPowerSeries.X 0 + (v : MvPowerSeries (Fin 2) ℚ_[p])) * MvPowerSeries.X 1 =
-            (aps * MvPowerSeries.X 1) * MvPowerSeries.X 0 +
-              (v : MvPowerSeries (Fin 2) ℚ_[p]) * MvPowerSeries.X 1 := by ring
-        _ = 0 := by rw [← hu, hps]
+    eq_neg_of_add_eq_zero_right <|
+      (mul_right_mem_nonZeroDivisors_eq_zero_iff MvPowerSeries.X_mem_nonZeroDivisors).mp <| by
+        calc
+          (aps * MvPowerSeries.X 0 + (v : MvPowerSeries (Fin 2) ℚ_[p])) * MvPowerSeries.X 1 =
+              (aps * MvPowerSeries.X 1) * MvPowerSeries.X 0 +
+                (v : MvPowerSeries (Fin 2) ℚ_[p]) * MvPowerSeries.X 1 := by ring
+          _ = 0 := by rw [← hu, hps]
   exact ⟨⟨aps, ha_res⟩, Subtype.ext hu, Subtype.ext hv⟩
 
 private theorem not_isPseudoFlat (m : ℕ∞) : ¬ IsPseudoFlat (Tate2 p) (WeightedC0 p) m := by
@@ -565,12 +562,14 @@ private theorem not_isPseudoFlat (m : ℕ∞) : ¬ IsPseudoFlat (Tate2 p) (Weigh
     have hk : X * b.toFun k = X := congrArg (fun f : B ↦ f.toFun k) hxb
     have hk' := congrArg Subtype.val hk
     simp only [Subring.coe_mul, X, tateVar] at hk'
-    exact Subtype.ext <| sub_eq_zero.mp <| mul_X_eq_zero_imp (i := 0) <| by
-      calc
-        ((b.toFun k : MvPowerSeries (Fin 2) ℚ_[p]) - 1) * MvPowerSeries.X 0 =
-            MvPowerSeries.X 0 * (b.toFun k : MvPowerSeries (Fin 2) ℚ_[p]) - MvPowerSeries.X 0 := by
-          ring
-        _ = 0 := sub_eq_zero.mpr hk'
+    exact Subtype.ext <| sub_eq_zero.mp <|
+      (mul_right_mem_nonZeroDivisors_eq_zero_iff MvPowerSeries.X_mem_nonZeroDivisors).mp <| by
+        calc
+          ((b.toFun k : MvPowerSeries (Fin 2) ℚ_[p]) - 1) * MvPowerSeries.X 0 =
+              MvPowerSeries.X 0 * (b.toFun k : MvPowerSeries (Fin 2) ℚ_[p]) -
+                MvPowerSeries.X 0 := by
+            ring
+          _ = 0 := sub_eq_zero.mpr hk'
   have h1le : (1 : ℝ) ≤ 0 :=
     ge_of_tendsto b.tendsto_zero (Eventually.of_forall fun k ↦ by
       rw [hb_one k]; exact le_trans (by simp : (1 : ℝ) = ‖evalAt p k 1‖).le (le_max_left _ _))

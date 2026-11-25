@@ -5,25 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.FinitePresentation
 public import TauCeti.RingTheory.Huber.ModuleTopology.PseudoFlat
 public import TauCeti.RingTheory.Huber.Restricted.BaseChange
 public import TauCeti.RingTheory.Huber.Restricted.TwoSidedSeries.Ring
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 import Mathlib.Logic.Equiv.Nat
-import TauCeti.Topology.Algebra.Nonarchimedean.Pi
+import TauCeti.LinearAlgebra.TensorProduct.ZeroAtFilter
 
 /-!
-# Non-noetherian restricted-series base change and `2`-pseudoflatness
+# Null-sequence comparisons and `2`-pseudoflatness for restricted series
 
 Over any complete Hausdorff Tate ring `A` (with no noetherian hypothesis), the comparison map
 `M ⊗[A] A⟨X₁, …, Xₖ⟩ → M⟨X₁, …, Xₖ⟩` of `TauCeti.RingTheory.Huber.Restricted.BaseChange` is
 surjective for every finite `A`-module `M` with its module topology
-(`TauCeti.Huber.restrictedMvPowerSeriesBaseChange_surjective_of_finite`), and bijective whenever
+(`TauCeti.Huber.restrictedMvPowerSeriesBaseChange_surjective_of_finite`) and bijective whenever
 `M` is finitely presented and naturally complete over `A`
-(`TauCeti.Huber.restrictedMvPowerSeriesBaseChange_bijective_of_isNaturallyComplete`). Indeed,
-natural completeness makes the kernel of any finite free presentation `Aⁿ →[u] Aᵐ →[p] M → 0`
-closed, so Henkel's open mapping theorem makes `u` strict onto its image.
+(`TauCeti.Huber.restrictedMvPowerSeriesBaseChange_bijective_of_isNaturallyComplete`).
 
 Specialising to one-variable restricted power series and two-sided restricted Laurent series yields
 Kedlaya–Liu II, Corollary 2.4.9(c), and shows that for every index type `ι` the null-family module
@@ -36,7 +33,8 @@ Kedlaya–Liu II, Corollary 2.4.9(c), and shows that for every index type `ι` t
 Corollary 2.4.9(a)–(b)), and every `A`-linear retract of `c₀(ι, A)` is `2`-pseudoflat by
 `TauCeti.Huber.IsPseudoFlat.of_retract`. The general `Filter.zeroAtFilterSubmodule` reindexing,
 pullback, extension-by-zero, countable-support, and countable-retract API lives in
-`TauCeti.Order.Filter.ZeroAndBoundedAtFilter`.
+`TauCeti.Order.Filter.ZeroAndBoundedAtFilter` and
+`TauCeti.LinearAlgebra.TensorProduct.ZeroAtFilter`.
 
 We intentionally do not define a general pro-projectivity predicate (Kedlaya–Liu II,
 Definition 2.4.6) here: continuous finite-projective projectors converging pointwise to the identity
@@ -51,15 +49,17 @@ on a complete metrizable (indeed, ultrametric Banach) `A`-module do not by thems
   and two-sided Laurent-series submodules with `Filter.zeroAtFilterSubmodule`.
 * `TauCeti.Huber.restrictedCoeff`: the `n`-th coefficient `A⟨T⟩ →ₗ[A] A` on
   `restrictedMvPowerSeriesCompletion 1 A`.
-* `TauCeti.Huber.restrictedPowerSeriesTensorToNull`: the comparison map
-  `A⟨T⟩ ⊗[A] M →ₗ[A] c₀(ℕ, M)` sending `f ⊗ₜ v` to `n ↦ restrictedCoeff n f • v`.
-* `TauCeti.Huber.restrictedLaurentSeriesTensorToNull`: the Laurent comparison map
-  `A⟨T, T⁻¹⟩ ⊗[A] M →ₗ[A] M⟨T, T⁻¹⟩` sending `f ⊗ₜ v` to `n ↦ f n • v` for `n : ℤ`.
+* `TauCeti.Huber.restrictedPowerSeriesTensorToNull` and
+  `TauCeti.Huber.restrictedPowerSeriesTensorToNullEquiv`: the comparison map
+  `A⟨T⟩ ⊗[A] M →ₗ[A] c₀(ℕ, M)` sending `f ⊗ₜ v` to `n ↦ restrictedCoeff n f • v`, and its linear
+  equivalence for finitely presented naturally complete modules.
+* `TauCeti.Huber.restrictedLaurentSeriesTensorToNull` and
+  `TauCeti.Huber.restrictedLaurentSeriesTensorToNullEquiv`: the Laurent comparison map
+  `A⟨T, T⁻¹⟩ ⊗[A] M →ₗ[A] M⟨T, T⁻¹⟩` sending `f ⊗ₜ v` to `n ↦ f n • v` for `n : ℤ`, and its
+  linear equivalence for finitely presented naturally complete modules.
 
 ## Main results
 
-* `TauCeti.Huber.restrictedMvPowerSeriesBaseChange_bijective_of_isNaturallyComplete`: bijectivity of
-  the restricted power-series comparison map for finitely presented naturally complete modules.
 * `TauCeti.Huber.restrictedPowerSeriesTensorToNull_surjective`,
   `TauCeti.Huber.restrictedPowerSeriesTensorToNull_bijective`,
   `TauCeti.Huber.restrictedLaurentSeriesTensorToNull_surjective`, and
@@ -145,59 +145,6 @@ theorem coe_twoSidedRestrictedSubmoduleEquivZeroAtFilter_symm {A M : Type*} [Sem
         twoSidedRestrictedSubmodule A M) : ℤ → M) = (g : ℤ → M) := (rfl)
 
 end NullFamilies
-
-/-! ### Non-noetherian restricted power-series base change over a complete Tate ring -/
-
-section BaseChangeNonNoetherian
-
-section Tate
-
-variable {k : ℕ} {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
-  [IsTopologicalRing A] [CompleteSpace A] [T0Space A] [IsTateRing A]
-  {M : Type*} [AddCommGroup M] [Module A M] [TopologicalSpace M] [ContinuousAdd M]
-  [IsModuleTopology A M]
-
-/-- **Bijectivity of `M ⊗[A] A⟨T₁, …, Tₖ⟩ → M⟨T₁, …, Tₖ⟩` for finitely presented naturally
-complete modules** (Kedlaya–Liu II, Corollary 2.4.9(c), bijectivity half). Over a complete
-Hausdorff Tate ring `A`, natural completeness of `M` makes the relation map of any finite free
-presentation strict onto its image by the open mapping theorem, supplying both halves of Remark 8.29
-with no noetherian hypothesis on `A`. -/
-theorem restrictedMvPowerSeriesBaseChange_bijective_of_isNaturallyComplete
-    [Module.FinitePresentation A M] (hM : IsNaturallyComplete A M) :
-    Function.Bijective (restrictedMvPowerSeriesBaseChange :
-      M ⊗[A] restrictedMvPowerSeriesSubring k A → restrictedMvPowerSeriesSubmodule k A M) := by
-  have : (𝓤 A).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
-  have : FirstCountableTopology A := UniformSpace.firstCountableTopology A
-  obtain ⟨m, n, p, u, hsurj, hexact⟩ := Module.FinitePresentation.exists_fin' A M
-  have hu := IsModuleTopology.continuous_of_linearMap u
-  have hp := IsModuleTopology.continuous_of_linearMap p
-  have hstrict : Topology.IsStrictMap u := u.isStrictMap_of_isClosed_range_of_isTateRing
-    hu.continuousAt ((LinearMap.exact_iff.mp hexact).symm ▸
-      (isNaturallyComplete_iff_isClosed_ker hsurj).mp hM)
-  exact ⟨restrictedMvPowerSeriesBaseChange_injective_of_presentation u hu.continuousAt p
-      hp.continuousAt hsurj (LinearMap.exact_iff.mp hexact).symm (map_zero u.rangeRestrict ▸
-        (LinearMap.isStrictMap_iff_isOpenQuotientMap_rangeRestrict.mp hstrict).isOpenMap.nhds_le 0),
-    restrictedMvPowerSeriesBaseChange_surjective_of_presentation p hp.continuousAt hsurj
-      (map_zero p ▸ (IsModuleTopology.isOpenMap_of_surjective hsurj).nhds_le 0)⟩
-
-/-- `restrictedMvPowerSeriesBaseChange_bijective_of_isNaturallyComplete` packaged as an `A`-linear
-equivalence. -/
-noncomputable def restrictedMvPowerSeriesBaseChangeEquivOfNaturallyComplete
-    [Module.FinitePresentation A M] (hM : IsNaturallyComplete A M) :
-    M ⊗[A] restrictedMvPowerSeriesSubring k A ≃ₗ[A] restrictedMvPowerSeriesSubmodule k A M :=
-  LinearEquiv.ofBijective restrictedMvPowerSeriesBaseChange
-    (restrictedMvPowerSeriesBaseChange_bijective_of_isNaturallyComplete hM)
-
-@[simp]
-theorem restrictedMvPowerSeriesBaseChangeEquivOfNaturallyComplete_apply
-    [Module.FinitePresentation A M] (hM : IsNaturallyComplete A M)
-    (x : M ⊗[A] restrictedMvPowerSeriesSubring k A) :
-    restrictedMvPowerSeriesBaseChangeEquivOfNaturallyComplete hM x =
-      restrictedMvPowerSeriesBaseChange x := (rfl)
-
-end Tate
-
-end BaseChangeNonNoetherian
 
 /-! ### Coefficients and null-sequence comparison for `A⟨T⟩` -/
 
@@ -335,6 +282,16 @@ noncomputable def restrictedPowerSeriesTensorToNullEquiv {A : Type*} [CommRing A
   LinearEquiv.ofBijective restrictedPowerSeriesTensorToNull
     (restrictedPowerSeriesTensorToNull_bijective hM)
 
+/-- `restrictedPowerSeriesTensorToNullEquiv` agrees with the comparison map
+`restrictedPowerSeriesTensorToNull`. -/
+@[simp]
+theorem restrictedPowerSeriesTensorToNullEquiv_apply {A : Type*} [CommRing A] [UniformSpace A]
+    [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A] [T0Space A] [IsTateRing A]
+    {M : Type*} [AddCommGroup M] [Module A M] [Module.FinitePresentation A M] [TopologicalSpace M]
+    [ContinuousAdd M] [IsModuleTopology A M] (hM : IsNaturallyComplete A M)
+    (x : restrictedMvPowerSeriesCompletion 1 A ⊗[A] M) :
+    restrictedPowerSeriesTensorToNullEquiv hM x = restrictedPowerSeriesTensorToNull x := (rfl)
+
 end OneVariablePowerSeries
 
 /-! ### Null-sequence comparison for `A⟨T, T⁻¹⟩` -/
@@ -427,6 +384,16 @@ noncomputable def restrictedLaurentSeriesTensorToNullEquiv {A : Type*} [CommRing
   LinearEquiv.ofBijective restrictedLaurentSeriesTensorToNull
     (restrictedLaurentSeriesTensorToNull_bijective hM)
 
+/-- `restrictedLaurentSeriesTensorToNullEquiv` agrees with the comparison map
+`restrictedLaurentSeriesTensorToNull`. -/
+@[simp]
+theorem restrictedLaurentSeriesTensorToNullEquiv_apply {A : Type*} [CommRing A] [UniformSpace A]
+    [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A] [T0Space A] [IsTateRing A]
+    {M : Type*} [AddCommGroup M] [Module A M] [Module.FinitePresentation A M] [TopologicalSpace M]
+    [ContinuousAdd M] [IsModuleTopology A M] (hM : IsNaturallyComplete A M)
+    (x : twoSidedRestrictedSubmodule A A ⊗[A] M) :
+    restrictedLaurentSeriesTensorToNullEquiv hM x = restrictedLaurentSeriesTensorToNull x := (rfl)
+
 end LaurentSeries
 
 /-! ### `Tor₁` vanishing and `2`-pseudoflatness for null families and restricted series -/
@@ -513,36 +480,8 @@ theorem rTensor_injective_zeroAtFilterSubmodule {A : Type*} [CommRing A] [Unifor
       (i.rTensor (Filter.zeroAtFilterSubmodule (β := A) A (Filter.cofinite : Filter ι))) := by
   have : (𝓤 A).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
   have : FirstCountableTopology A := UniformSpace.firstCountableTopology A
-  have hsupp : ∀ z : M ⊗[A] Filter.zeroAtFilterSubmodule (β := A) A (Filter.cofinite : Filter ι),
-      ∃ (S : Set ι), S.Countable ∧
-        ∃ w : M ⊗[A] Filter.zeroAtFilterSubmodule (β := A) A (Filter.cofinite : Filter S),
-          LinearMap.lTensor M (zeroAtFilterExtend A A (Subtype.val : S → ι)) w = z := by
-    intro z
-    induction z using TensorProduct.inductionOn with
-    | tmul m f =>
-      refine ⟨Function.support (f : ι → A), f.2.countable_support,
-        m ⊗ₜ[A] zeroAtFilterComap A A Subtype.val_injective.tendsto_cofinite f, ?_⟩
-      simp only [LinearMap.lTensor_tmul]
-      congr 1
-      refine Subtype.ext <| funext fun x ↦ ?_
-      rw [congrFun (coe_zeroAtFilterExtend _ _) x, coe_zeroAtFilterComap]
-      by_cases hx : (f : ι → A) x = 0
-      · rw [Function.extend_apply' _ _ _ fun ⟨s, hs⟩ ↦ s.2 (hs.symm ▸ hx), Pi.zero_apply, hx]
-      · exact Subtype.val_injective.extend_apply ((f : ι → A) ∘ Subtype.val) 0 ⟨x, hx⟩
-    | add z₁ z₂ ih₁ ih₂ =>
-      obtain ⟨S₁, hS₁, w₁, rfl⟩ := ih₁
-      obtain ⟨S₂, hS₂, w₂, rfl⟩ := ih₂
-      refine ⟨S₁ ∪ S₂, hS₁.union hS₂,
-        LinearMap.lTensor M (zeroAtFilterExtend A A (Set.inclusion Set.subset_union_left)) w₁ +
-          LinearMap.lTensor M (zeroAtFilterExtend A A (Set.inclusion Set.subset_union_right)) w₂,
-        ?_⟩
-      rw [map_add, ← LinearMap.comp_apply, ← LinearMap.comp_apply, ← LinearMap.lTensor_comp,
-        ← LinearMap.lTensor_comp,
-        zeroAtFilterExtend_comp A A (Set.inclusion_injective _) Subtype.val_injective,
-        zeroAtFilterExtend_comp A A (Set.inclusion_injective _) Subtype.val_injective]
-      rfl
   refine (injective_iff_map_eq_zero _).mpr fun z hz ↦ ?_
-  obtain ⟨S, hS, w, rfl⟩ := hsupp z
+  obtain ⟨S, hS, w, rfl⟩ := z.exists_countable_lTensor_zeroAtFilterExtend_eq
   have : Countable S := hS.to_subtype
   have hret := zeroAtFilterComap_comp_extend A A (Subtype.val_injective (p := (· ∈ S)))
   have hw : i.rTensor _ w = 0 := by
