@@ -43,6 +43,8 @@ then Mathlib's algebraic flip `LinearMap.flip` applies to it.
   determined by its values on the coordinate vectors.
 * `ContinuousLinearMap.apply_eq_sum_smul_single`: the expansion
   `f x = ∑ k, x k • f (Pi.single k 1)` of such a map in the coordinate vectors.
+* `ContinuousLinearMap.mul_self_eq_neg_one_iff_comp_eq_neg_id`: `A * A = -1` in the ring of
+  continuous linear endomorphisms is `A ∘ A = -id`.
 * `LinearMap.flip_coeLMₛₗ_comp_apply`: evaluation of the algebraic flip of such a family `μ`,
   `((ContinuousLinearMap.coeLMₛₗ σ₂₃).comp μ).flip y x = μ x y`.
 -/
@@ -105,6 +107,12 @@ theorem apply_eq_sum_smul_single {R M κ : Type*} [Semiring R] [TopologicalSpace
     (f : (κ → R) →L[R] M) (x : κ → R) : f x = ∑ k, x k • f (Pi.single k 1) := by
   conv_lhs => rw [pi_eq_sum_univ' x]
   simp [map_sum]
+
+/-- `A * A = -1` in the ring of continuous linear endomorphisms is `A ∘ A = -id`. -/
+theorem mul_self_eq_neg_one_iff_comp_eq_neg_id {R M : Type*} [Ring R] [TopologicalSpace M]
+    [AddCommGroup M] [Module R M] [IsTopologicalAddGroup M] {A : M →L[R] M} :
+    A * A = -1 ↔ A.comp A = -ContinuousLinearMap.id R M := by
+  rw [mul_def, one_def]
 
 end ContinuousLinearMap
 
