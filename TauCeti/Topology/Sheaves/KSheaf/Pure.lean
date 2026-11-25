@@ -180,12 +180,18 @@ private theorem isZero_obj_of_forall_isZero_singleton_aux (G : KPresheaf (Module
       intro q
       rw [(Compacts.mem_singleton _ _).1 q.property]
       exact hL ⟨p, hp⟩
-    obtain ⟨k, f, _, hfg⟩ := Concrete.isColimit_exists_of_rep_eq _ hcp
+    obtain ⟨⟨M, hMp⟩, f, _, hfg⟩ := Concrete.isColimit_exists_of_rep_eq _ hcp
       (i := op ⟨L, hLp⟩) (j := op ⟨L, hLp⟩) y 0
       ((ModuleCat.subsingleton_of_isZero (hstalk p (hKW hp))).elim _ _)
-    refine ⟨k.unop, k.unop.property ⟨p, (Compacts.mem_singleton _ _).2 rfl⟩, leOfHom f.unop, ?_⟩
-    rw [Subsingleton.elim (opHomOfLE _) ((Set.mono_coe _).functor.map f.unop).op]
-    simpa using hfg
+    -- The diagram of `coconeOfCompacts {p}` is `G` precomposed with the inclusion of compact
+    -- neighbourhoods, so by definition it sends `f` to `G.map` of the opposite of the inclusion
+    -- `M ⊆ L`, which is `opHomOfLE` up to proof irrelevance. Hence `hfg` says that `y`
+    -- restricts to zero on `M`.
+    have hML : M ≤ L := leOfHom f.unop
+    have hy : (G.map (opHomOfLE hML)).hom y = 0 := by
+      rw [Subsingleton.elim (opHomOfLE _) ((Set.mono_coe _).functor.map f.unop).op]
+      simpa using hfg
+    exact ⟨M, hMp ⟨p, (Compacts.mem_singleton _ _).2 rfl⟩, hML, hy⟩
   choose! M hM hML hMy using hloc
   obtain ⟨t, ht, hKt⟩ := K.isCompact.elim_nhds_subcover (fun p ↦ M p) hM
   refine eq_zero_of_forall_map_inf_eq_zero G hbot hpb M t K hKW hKt
