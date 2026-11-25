@@ -10,6 +10,7 @@ public import Mathlib.Probability.Independence.Basic
 import Mathlib.Analysis.Convex.Jensen
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
+import TauCeti.MeasureTheory.Measure.Real
 
 /-!
 # Entropy of a finite label
@@ -26,7 +27,7 @@ measurable structure of `Ω` (standard Borel, countably generated) is needed.
 
 * `TauCeti.labelEntropy_pair_eq_add`: the chain rule `H((X, Y)) = H(Y) + H(X | Y)` for the joint
   label `ω ↦ (X ω, Y ω)`, for a finite measure and a measurable `X`.
-* `TauCeti.labelEntropy_nonneg_le_log_card`: for a probability measure and a nonempty alphabet,
+* `TauCeti.labelEntropy_nonneg_le_log_card`: for a probability measure and a measurable `X`,
   `0 ≤ H(X) ≤ log |A|`.
 * `TauCeti.labelEntropy_pair_of_indepFun`: independent labels have additive entropy.
 * `TauCeti.labelEntropy_comp_of_injective`: relabeling by an injection, in particular enlarging
@@ -35,9 +36,8 @@ measurable structure of `Ω` (standard Borel, countably generated) is needed.
 
 ## References
 
-* The definitions follow the roadmap ProbabilisticAndMetricNumberTheory, §5.1a, which cites
-  T. Tao, The logarithmically averaged Chowla and Elliott conjectures for two-point
-  correlations, §3, (3.1)–(3.5).
+* T. Tao, The logarithmically averaged Chowla and Elliott conjectures for two-point
+  correlations, Forum Math. Pi 4 (2016), arXiv:1509.05422, §3, (3.1)–(3.5).
 -/
 
 public section
@@ -47,13 +47,6 @@ open MeasureTheory ProbabilityTheory Real
 namespace TauCeti
 
 variable {Ω A B C : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
-
-/-- The fibre of the joint label `ω ↦ (X ω, Y ω)` over `(a, b)` is the cell
-`X ⁻¹' {a} ∩ Y ⁻¹' {b}`. -/
-theorem preimage_pair_singleton (X : Ω → A) (Y : Ω → B) (a : A) (b : B) :
-    (fun ω ↦ (X ω, Y ω)) ⁻¹' {(a, b)} = X ⁻¹' {a} ∩ Y ⁻¹' {b} := by
-  ext ω
-  simp
 
 section Definitions
 
@@ -101,7 +94,7 @@ theorem labelEntropy_const [IsZeroOrProbabilityMeasure μ] (a₀ : A) :
 theorem labelEntropy_zero_measure (X : Ω → A) : labelEntropy (0 : Measure Ω) X = 0 := by
   simp [labelEntropy]
 
-/-- Each summand of the label entropy is nonnegative when the total mass is at most one. -/
+/-- Under a probability measure or the zero measure, the label entropy is nonnegative. -/
 theorem labelEntropy_nonneg [IsZeroOrProbabilityMeasure μ] (X : Ω → A) :
     0 ≤ labelEntropy μ X :=
   Finset.sum_nonneg fun _ _ ↦ negMulLog_nonneg measureReal_nonneg measureReal_le_one
@@ -125,7 +118,17 @@ theorem labelEntropy_comp_of_injective [Fintype C] (X : Ω → A) {e : A → C}
 theorem labelEntropy_pair (μ : Measure Ω) (X : Ω → A) (Y : Ω → B) :
     labelEntropy μ (fun ω ↦ (X ω, Y ω)) =
       ∑ a, ∑ b, negMulLog (μ.real (X ⁻¹' {a} ∩ Y ⁻¹' {b})) := by
-  simp only [labelEntropy, preimage_pair_singleton, Fintype.sum_prod_type]
+  simp only [labelEntropy, ← Set.singleton_prod_singleton, Set.mk_preimage_prod,
+    Fintype.sum_prod_type]
+
+/-- A label joined with itself has the same entropy: `H((X, X)) = H(X)`. -/
+theorem labelEntropy_pair_self (μ : Measure Ω) (X : Ω → A) :
+    labelEntropy μ (fun ω ↦ (X ω, X ω)) = labelEntropy μ X := by
+  rw [labelEntropy_pair, labelEntropy_def]
+  refine Finset.sum_congr rfl fun a _ ↦ ?_
+  rw [Finset.sum_eq_single a (fun b _ hb ↦ ?_) (by simp), Set.inter_self]
+  rw [← Set.preimage_inter, Set.singleton_inter_eq_empty.mpr hb.symm, Set.preimage_empty]
+  simp
 
 /-- A label conditioned on itself has conditional entropy zero. -/
 @[simp]
@@ -148,23 +151,6 @@ section Additivity
 
 variable [Fintype A] [Fintype B] [MeasurableSpace A] [MeasurableSingletonClass A]
 
-/-- The cells of a measurable finite label partition every set additively: for finite `μ`, the
-masses of `X ⁻¹' {a} ∩ S` sum to the mass of `S`, for an arbitrary set `S`. -/
-theorem sum_measureReal_preimage_singleton_inter [IsFiniteMeasure μ] {X : Ω → A}
-    (hX : Measurable X) (S : Set Ω) :
-    ∑ a, μ.real (X ⁻¹' {a} ∩ S) = μ.real S := by
-  have h : ∀ a, μ.real (X ⁻¹' {a} ∩ S) = (μ.restrict S).real (X ⁻¹' {a}) := fun a ↦ by
-    rw [measureReal_def, measureReal_def,
-      Measure.restrict_apply (hX (measurableSet_singleton a))]
-  simp only [h]
-  rw [sum_measureReal_preimage_singleton _ fun a _ ↦ hX (measurableSet_singleton a)]
-  simp [measureReal_def]
-
-/-- Under a probability measure the fibres of a measurable finite label have total mass one. -/
-theorem sum_measureReal_preimage_singleton_eq_one [IsProbabilityMeasure μ] {X : Ω → A}
-    (hX : Measurable X) : ∑ a, μ.real (X ⁻¹' {a}) = 1 := by
-  simpa using sum_measureReal_preimage_singleton_inter (μ := μ) hX Set.univ
-
 /-- **Chain rule.** For a finite measure and a measurable label `X`, the entropy of the joint
 label is `H((X, Y)) = H(Y) + H(X | Y)`. -/
 theorem labelEntropy_pair_eq_add [IsFiniteMeasure μ] {X : Ω → A} (hX : Measurable X)
@@ -183,20 +169,17 @@ theorem labelEntropy_pair_eq_add [IsFiniteMeasure μ] {X : Ω → A} (hX : Measu
       exact measureReal_mono Set.inter_subset_right
     rw [log_div hq hp, negMulLog]
     ring
-  rw [labelEntropy_pair, condLabelEntropy, Finset.sum_comm (γ := A), labelEntropy,
-    Finset.sum_comm (γ := A) (f := fun a b ↦ μ.real (X ⁻¹' {a} ∩ Y ⁻¹' {b}) * _),
-    ← Finset.sum_add_distrib]
+  rw [labelEntropy_pair]
+  simp only [hcell, Finset.sum_add_distrib]
+  rw [labelEntropy_def, condLabelEntropy_def]
+  congr 1
+  -- Summing the cells over `a` recovers the mass of `Y ⁻¹' {b}`.
+  rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun b _ ↦ ?_
-  rw [Finset.sum_congr rfl fun a _ ↦ hcell a b, Finset.sum_add_distrib, ← Finset.sum_mul,
-    sum_measureReal_preimage_singleton_inter hX, negMulLog]
+  rw [← Finset.sum_mul, sum_measureReal_preimage_singleton_inter hX, negMulLog]
   ring
 
-/-- The chain rule for a label joined with itself: `H((X, X)) = H(X)`. -/
-theorem labelEntropy_pair_self [IsFiniteMeasure μ] {X : Ω → A} (hX : Measurable X) :
-    labelEntropy μ (fun ω ↦ (X ω, X ω)) = labelEntropy μ X := by
-  simp [labelEntropy_pair_eq_add hX]
-
-/-- **Alphabet bound.** For a probability measure, a measurable label and a nonempty alphabet,
+/-- **Alphabet bound.** For a probability measure and a measurable label,
 `0 ≤ H(X) ≤ log |A|`. -/
 theorem labelEntropy_nonneg_le_log_card [IsProbabilityMeasure μ] {X : Ω → A}
     (hX : Measurable X) :
@@ -224,10 +207,10 @@ theorem labelEntropy_pair_of_indepFun [IsProbabilityMeasure μ] [MeasurableSpace
       μ.real (X ⁻¹' {a}) * μ.real (Y ⁻¹' {b}) := fun a b ↦ by
     simp only [measureReal_def, hXY.measure_inter_preimage_eq_mul _ _
       (measurableSet_singleton a) (measurableSet_singleton b), ENNReal.toReal_mul]
-  simp only [labelEntropy_pair, hcell, negMulLog_mul, Finset.sum_add_distrib, ← Finset.mul_sum,
-    ← Finset.sum_mul, sum_measureReal_preimage_singleton_eq_one hX,
-    sum_measureReal_preimage_singleton_eq_one hY, one_mul]
-  rfl
+  rw [labelEntropy_pair, labelEntropy_def, labelEntropy_def]
+  simp only [hcell, negMulLog_mul, Finset.sum_add_distrib, ← Finset.mul_sum, ← Finset.sum_mul,
+    sum_measureReal_preimage_singleton_eq_one hX, sum_measureReal_preimage_singleton_eq_one hY,
+    one_mul]
 
 end Additivity
 

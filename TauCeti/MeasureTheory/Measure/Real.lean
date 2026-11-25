@@ -27,6 +27,8 @@ determines the measure outright.
 
 * `MeasureTheory.Measure.measureReal_le_sum_div_of_le` — a bound by a finite sum divided by a
   nonzero constant passes to real-valued measures when each summand is finite;
+* `MeasureTheory.sum_measureReal_preimage_singleton_inter` — under a finite measure, the fibres of
+  a measurable map into a finite type split the mass of every set;
 * `TauCeti.volume_Ioc_inter_Ioo_of_le_of_le` — the portion of an interval inside a larger open
   interval keeps its full length;
 * `MeasureTheory.Measure.map_abs_eq_restrict_add_restrict` — decomposition of the image under
@@ -189,6 +191,31 @@ theorem map_sq_map_sqrt (μ : Measure ℝ) (hμ : ∀ᵐ t ∂μ, 0 ≤ t) :
   exact Real.sq_sqrt ht
 
 end MeasureTheory.Measure
+
+namespace MeasureTheory
+
+variable {Ω A : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [Fintype A] [MeasurableSpace A]
+  [MeasurableSingletonClass A]
+
+/-- The fibres of a measurable map `X` into a finite type partition every set additively: for
+finite `μ`, the masses of `X ⁻¹' {a} ∩ S` sum to the mass of `S`, for an arbitrary set `S`. -/
+theorem sum_measureReal_preimage_singleton_inter [IsFiniteMeasure μ] {X : Ω → A}
+    (hX : Measurable X) (S : Set Ω) :
+    ∑ a, μ.real (X ⁻¹' {a} ∩ S) = μ.real S := by
+  have h : ∀ a, μ.real (X ⁻¹' {a} ∩ S) = (μ.restrict S).real (X ⁻¹' {a}) := fun a ↦ by
+    rw [measureReal_def, measureReal_def,
+      Measure.restrict_apply (hX (measurableSet_singleton a))]
+  simp only [h]
+  rw [sum_measureReal_preimage_singleton _ fun a _ ↦ hX (measurableSet_singleton a)]
+  simp [measureReal_def]
+
+/-- Under a probability measure the fibres of a measurable map into a finite type have total
+mass one. -/
+theorem sum_measureReal_preimage_singleton_eq_one [IsProbabilityMeasure μ] {X : Ω → A}
+    (hX : Measurable X) : ∑ a, μ.real (X ⁻¹' {a}) = 1 := by
+  simpa using sum_measureReal_preimage_singleton_inter (μ := μ) hX univ
+
+end MeasureTheory
 
 namespace TauCeti
 
