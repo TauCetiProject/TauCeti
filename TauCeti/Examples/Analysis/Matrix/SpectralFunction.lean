@@ -52,6 +52,11 @@ noncomputable def geomMean (μ : Fin 2 → ℝ) : ℝ := (μ 0 * μ 1) ^ (2⁻¹
 theorem geomMean_def (μ : Fin 2 → ℝ) : geomMean μ = (μ 0 * μ 1) ^ (2⁻¹ : ℝ) :=
   (rfl)
 
+/-- The geometric mean is symmetric. -/
+theorem geomMean_comp_perm (σ : Equiv.Perm (Fin 2)) (μ : Fin 2 → ℝ) :
+    geomMean (μ ∘ σ) = geomMean μ :=
+  σ.apply_comp_fin_two (fun a b ↦ by simp [geomMean_def, mul_comm]) μ
+
 /-- The spectral function of the geometric mean is `det^{1/2}`. -/
 theorem geomMean_eigenvalues₀ {A : Matrix (Fin 2) (Fin 2) 𝕜} (hA : A.IsHermitian) :
     geomMean hA.eigenvalues₀ = RCLike.re A.det ^ (2⁻¹ : ℝ) := by

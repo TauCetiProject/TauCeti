@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralGradient
-public import TauCeti.Analysis.Matrix.PosSemidef.Determinant
 public import TauCeti.Examples.Analysis.Matrix.SpectralFunction
 import Mathlib.Analysis.Calculus.Deriv.Abs
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
@@ -69,15 +68,11 @@ theorem spectralGradient_prod_two_one
   have hdet : (!![2, 1; 1, 2] : Matrix (Fin 2) (Fin 2) 𝕜).det = 3 := by
     rw [det_fin_two_of]
     norm_num
-  have hu : IsUnit (!![2, 1; 1, 2] : Matrix (Fin 2) (Fin 2) 𝕜).det := by
-    rw [hdet]
-    exact isUnit_iff_ne_zero.2 three_ne_zero
-  have h := hT.spectralGradient_prod_mul_self
-  have hC : (!![2, -1; -1, 2] : Matrix (Fin 2) (Fin 2) 𝕜) * !![2, 1; 1, 2] = (3 : 𝕜) • 1 := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> norm_num
-  rw [hdet, ← hC] at h
-  exact ((isUnit_iff_isUnit_det _).2 hu).mul_left_inj.1 h
+  refine hT.spectralGradient_prod_eq_of_mul_eq
+    (by rw [hdet]; exact isUnit_iff_ne_zero.2 three_ne_zero) ?_
+  rw [hdet]
+  ext i j
+  fin_cases i <;> fin_cases j <;> norm_num
 
 /-- **Forgetting the eigenbasis gives the wrong matrix.** At `T = [[2, 1], [1, 2]]` the partial
 derivatives of `f = σ₂` at `λ(T) = (3, 1)` are `1` and `3`; the diagonal matrix `diag(1, 3)` of
@@ -169,13 +164,6 @@ theorem not_differentiableAt_eigenvalues₀_zero_one_add_smul
 
 /-! ### `tr(T²)` -/
 
-/-- The spectral function of `μ ↦ ∑ μₖ²` is `tr(A²)`. -/
-theorem sum_eigenvalues₀_sq {ι : Type*} [Fintype ι] [DecidableEq ι] {A : Matrix ι ι 𝕜}
-    (hA : A.IsHermitian) : ∑ k, hA.eigenvalues₀ k ^ 2 = RCLike.re (A ^ 2).trace := by
-  rw [hA.trace_pow_eq_sum_eigenvalues_pow, map_sum]
-  simp_rw [← RCLike.ofReal_pow, RCLike.ofReal_re]
-  exact (hA.sum_comp_eigenvalues (· ^ 2)).symm
-
 /-- At `T = [[0, 1], [1, 0]]`, with eigenvalues `1, -1`, the spectral function of `μ ↦ ∑ μₖ²` is
 `tr(T²) = 2` and its gradient is `2T = [[0, 2], [2, 0]]`. -/
 theorem spectralGradient_sum_sq_swap
@@ -190,20 +178,15 @@ theorem spectralGradient_sum_sq_swap
       map_one]
     ring
   refine ⟨he, ?_, ?_⟩
-  · rw [he]
-    change ∑ k : Fin 2, _ = _
-    simp [Fin.sum_univ_two]
+  · -- The spectral function of `μ ↦ ∑ μₖ²` is `tr(T²)`.
+    rw [hT.sum_eigenvalues₀_pow_eq_re_trace_pow, sq, trace_fin_two]
+    simp [Matrix.mul_apply, Fin.sum_univ_two]
     norm_num
   · rw [hT.spectralGradient_sum_sq]
     ext i j
     fin_cases i <;> fin_cases j <;> norm_num
 
 /-! ### `det^{1/2}` and `det` at `diag(1, 4)` -/
-
-/-- The geometric mean is symmetric. -/
-theorem geomMean_comp_perm (σ : Equiv.Perm (Fin 2)) (μ : Fin 2 → ℝ) :
-    geomMean (μ ∘ σ) = geomMean μ :=
-  σ.apply_comp_fin_two (fun a b ↦ by simp [geomMean_def, mul_comm]) μ
 
 /-- The derivative of the geometric mean at `(4, 1)`: `∂₁ σ₂^{1/2}(4, 1) = 1/4` and
 `∂₂ σ₂^{1/2}(4, 1) = 1`. -/
@@ -224,9 +207,9 @@ theorem fderiv_geomMean_four_one :
   simp [hpow]
   norm_num
 
-/-- **The `§1.5` Check for `det^{1/2}`.** For `f = σ₂^{1/2}` and `T = diag(1, 4)`, whose sorted
-eigenvalue vector is `(4, 1)`, the gradient is `∇F(T) = diag(1, 1/4)` in the standard basis, its
-determinant is `1/4`, and `tr(∇F(T) T) = 2 = F(T)`. -/
+/-- **The gradient of `det^{1/2}` at `diag(1, 4)`.** For `f = σ₂^{1/2}` and `T = diag(1, 4)`,
+whose sorted eigenvalue vector is `(4, 1)`, the gradient is `∇F(T) = diag(1, 1/4)` in the standard
+basis, its determinant is `1/4`, and `tr(∇F(T) T) = 2 = F(T)`. -/
 theorem spectralGradient_geomMean_one_four
     (hT : (diagonal ![((1 : ℝ) : 𝕜), (4 : ℝ)]).IsHermitian) :
     hT.spectralGradient geomMean = diagonal ![1, 1 / 4] ∧
@@ -264,22 +247,19 @@ theorem spectralGradient_prod_one_four
   have hdet : (diagonal ![((1 : ℝ) : 𝕜), (4 : ℝ)]).det = 4 := by
     rw [det_diagonal, Fin.prod_univ_two]
     simp [RCLike.ofReal_ofNat]
-  have hu : IsUnit (diagonal ![((1 : ℝ) : 𝕜), (4 : ℝ)]).det := by
-    rw [hdet]
-    exact isUnit_iff_ne_zero.2 four_ne_zero
   have hG : hT.spectralGradient (fun μ ↦ ∏ k, μ k) = diagonal ![4, 1] := by
-    have h := hT.spectralGradient_prod_mul_self
-    have hC : diagonal ![(4 : 𝕜), 1] * diagonal ![((1 : ℝ) : 𝕜), (4 : ℝ)] = (4 : 𝕜) • 1 := by
-      ext i j
-      fin_cases i <;> fin_cases j <;> norm_num [RCLike.ofReal_ofNat]
-    rw [hdet, ← hC] at h
-    exact ((isUnit_iff_isUnit_det _).2 hu).mul_left_inj.1 h
+    refine hT.spectralGradient_prod_eq_of_mul_eq
+      (by rw [hdet]; exact isUnit_iff_ne_zero.2 four_ne_zero) ?_
+    rw [hdet]
+    ext i j
+    fin_cases i <;> fin_cases j <;> norm_num [RCLike.ofReal_ofNat]
   refine ⟨hG, ?_, ?_⟩
   · rw [hG, diagonal_mul_diagonal, trace_diagonal, Fin.sum_univ_two]
     norm_num [RCLike.ofReal_ofNat]
-  · rw [hT.eigenvalues₀_diagonal_two_swap (by norm_num)]
-    change ∏ k : Fin 2, _ = _
-    norm_num [Fin.prod_univ_two]
+  · -- The product of the sorted eigenvalues is the determinant.
+    have h := hT.det_eq_prod_eigenvalues₀
+    rw [hdet] at h
+    exact_mod_cast h.symm
 
 /-! ### The trace inequality at `diag(1, 4)` -/
 

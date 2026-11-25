@@ -58,7 +58,9 @@ of the trace is the identity, that of `tr(A²)` is `2A`, and that of the determi
   `∇F_f(U A U*) = U ∇F_f(A) U*`.
 * `Matrix.IsHermitian.commute_spectralGradient`: `∇F_f(A)` commutes with `A`.
 * `Matrix.IsHermitian.spectralGradient_sum`, `Matrix.IsHermitian.spectralGradient_sum_sq`,
-  `Matrix.IsHermitian.spectralGradient_prod`: the gradients of `tr`, `tr(A²)` and `det`.
+  `Matrix.IsHermitian.spectralGradient_prod`: the gradients of `tr`, `tr(A²)` and `det`;
+  `Matrix.IsHermitian.spectralGradient_prod_eq_of_mul_eq` identifies the gradient of `det` with
+  any `B` satisfying `B A = det A • 1`.
 
 ## References
 
@@ -241,14 +243,14 @@ theorem spectralGradient_mul_eq_mul_diagonal (hA : A.IsHermitian)
     hA.spectralGradient f * V =
       V * diagonal (fun i ↦ (fderiv ℝ f hA.eigenvalues₀ (Pi.single (σ i) 1) : 𝕜)) := by
   ext a i
-  have hcol : A *ᵥ (fun b ↦ V b i) = (hA.eigenvalues₀ (σ i) : 𝕜) • fun b ↦ V b i := by
-    funext b
-    have h := congrFun₂ hV b i
-    rw [Matrix.mul_diagonal] at h
-    simpa [Matrix.mul_apply, mulVec, dotProduct, mul_comm] using h
-  rw [Matrix.mul_diagonal]
-  simpa [Matrix.mul_apply, mulVec, dotProduct, mul_comm] using
-    congrFun (hA.spectralGradient_mulVec_of_mulVec_eq hf hcol) a
+  -- The column `i` of `V` is an eigenvector for `λ_{σ i}(A)`.
+  have hcol : A *ᵥ V.col i = (hA.eigenvalues₀ (σ i) : 𝕜) • V.col i := by
+    rw [← col_mul_eq_mulVec_col, hV]
+    ext b
+    simp [Matrix.mul_diagonal, mul_comm]
+  rw [Matrix.mul_diagonal, ← col_apply (hA.spectralGradient f * V), col_mul_eq_mulVec_col,
+    hA.spectralGradient_mulVec_of_mulVec_eq hf hcol, Pi.smul_apply, col_apply, smul_eq_mul,
+    mul_comm]
 
 /-- **The gradient does not depend on the eigenbasis.** For a symmetric `f` and any unitary `V`
 with `A = V diag(λ_{σ i}(A)) V*`, the gradient is `∇F_f(A) = V diag(∂_{σ i} f(λ(A))) V*`. -/
@@ -276,39 +278,31 @@ theorem spectralGradient_mul_mul_star (hA : A.IsHermitian) {f : (Fin (Fintype.ca
   set W : Matrix ι ι 𝕜 := ↑hA.eigenvectorUnitary
   have hW : U * W ∈ unitaryGroup ι 𝕜 := mul_mem hU hA.eigenvectorUnitary.property
   have hAW : A = W * diagonal (fun i ↦ (hA.eigenvalues₀ (e.symm i) : 𝕜)) * star W := by
-    conv_lhs => rw [hA.spectral_theorem]
-    rfl
+    have hev : (RCLike.ofReal ∘ hA.eigenvalues : ι → 𝕜) =
+        fun i ↦ (hA.eigenvalues₀ (e.symm i) : 𝕜) := by
+      funext i
+      rw [Function.comp_apply, ← hA.eigenvalues_apply_equivOfCardEq, Equiv.apply_symm_apply]
+    conv_lhs => rw [hA.spectral_theorem, Unitary.conjStarAlgAut_apply, hev]
   have hUAW : U * A * star U =
       (U * W) * diagonal (fun i ↦ (hUA.eigenvalues₀ (e.symm i) : 𝕜)) * star (U * W) := by
     rw [he]
     conv_lhs => rw [hAW]
     simp only [star_mul, Matrix.mul_assoc]
   rw [hUA.spectralGradient_eq_mul_diagonal_mul_star hf hW e.symm hUAW, spectralGradient_def, he]
-  simp only [star_mul, Matrix.mul_assoc]
-  rfl
+  simp only [spectralGradientWeights_def, star_mul, Matrix.mul_assoc, e, W]
 
 /-- The gradient of a spectral function commutes with the matrix. -/
 theorem commute_spectralGradient (hA : A.IsHermitian) (f : (Fin (Fintype.card ι) → ℝ) → ℝ) :
     Commute (hA.spectralGradient f) A := by
-  have hA' : A = (hA.eigenvectorUnitary : Matrix ι ι 𝕜) *
-      diagonal (RCLike.ofReal ∘ hA.eigenvalues) * star (hA.eigenvectorUnitary : Matrix ι ι 𝕜) := by
-    conv_lhs => rw [hA.spectral_theorem]
-    rfl
-  have hU : ∀ X : Matrix ι ι 𝕜, star (hA.eigenvectorUnitary : Matrix ι ι 𝕜) *
-      ((hA.eigenvectorUnitary : Matrix ι ι 𝕜) * X) = X := fun X ↦ by
-    rw [← Matrix.mul_assoc, Unitary.star_mul_self_of_mem hA.eigenvectorUnitary.property,
-      Matrix.one_mul]
-  have hDD : ∀ a b : ι → 𝕜, ∀ X : Matrix ι ι 𝕜,
-      diagonal a * (diagonal b * X) = diagonal (fun i ↦ a i * b i) * X := fun a b X ↦ by
-    rw [← Matrix.mul_assoc, diagonal_mul_diagonal]
-  rw [Commute, SemiconjBy, spectralGradient_def]
-  conv_lhs => arg 2; rw [hA']
-  conv_rhs => arg 1; rw [hA']
-  simp only [Matrix.mul_assoc, hU, hDD, mul_comm]
+  -- Both are conjugates of diagonal matrices by the same unitary.
+  have h := (commute_diagonal (fun i ↦ (hA.spectralGradientWeights f i : 𝕜))
+    (RCLike.ofReal ∘ hA.eigenvalues)).map (Unitary.conjStarAlgAut 𝕜 _ hA.eigenvectorUnitary)
+  rwa [← hA.spectral_theorem, Unitary.conjStarAlgAut_apply, ← spectralGradient_def] at h
 
 /-! ### The trace, the sum of squares and the determinant -/
 
 /-- **The gradient of the trace** is the identity: for `f = σ₁`, `∇F_f(A) = 1`. -/
+@[simp]
 theorem spectralGradient_sum (hA : A.IsHermitian) :
     hA.spectralGradient (fun μ ↦ ∑ k, μ k) = 1 := by
   have hd : ∀ μ : Fin (Fintype.card ι) → ℝ, HasFDerivAt (fun μ ↦ ∑ k, μ k)
@@ -322,6 +316,7 @@ theorem spectralGradient_sum (hA : A.IsHermitian) :
     Unitary.mul_star_self_of_mem hA.eigenvectorUnitary.property]
 
 /-- **The gradient of `tr(A²)`**: for `f(μ) = ∑ₖ μₖ²`, `∇F_f(A) = 2 A`. -/
+@[simp]
 theorem spectralGradient_sum_sq (hA : A.IsHermitian) :
     hA.spectralGradient (fun μ ↦ ∑ k, μ k ^ 2) = (2 : 𝕜) • A := by
   have hd : ∀ μ : Fin (Fintype.card ι) → ℝ, HasFDerivAt (fun μ ↦ ∑ k, μ k ^ 2)
@@ -339,17 +334,13 @@ theorem spectralGradient_sum_sq (hA : A.IsHermitian) :
   have h2 : (diagonal fun i ↦ 2 * (hA.eigenvalues i : 𝕜)) =
       (2 : 𝕜) • diagonal (RCLike.ofReal ∘ hA.eigenvalues) := by
     rw [← diagonal_smul]
-    rfl
+    exact congrArg diagonal (funext fun i ↦ by simp)
   rw [h2, Matrix.mul_smul, Matrix.smul_mul]
 
 /-- The gradient of the determinant times the matrix is `det A • 1`: for `f = σₙ`,
 `∇F_f(A) A = det A • 1`. -/
 theorem spectralGradient_prod_mul_self (hA : A.IsHermitian) :
     hA.spectralGradient (fun μ ↦ ∏ k, μ k) * A = A.det • 1 := by
-  have hU : ∀ X : Matrix ι ι 𝕜, star (hA.eigenvectorUnitary : Matrix ι ι 𝕜) *
-      ((hA.eigenvectorUnitary : Matrix ι ι 𝕜) * X) = X := fun X ↦ by
-    rw [← Matrix.mul_assoc, Unitary.star_mul_self_of_mem hA.eigenvectorUnitary.property,
-      Matrix.one_mul]
   have hd : ∀ μ : Fin (Fintype.card ι) → ℝ, HasFDerivAt (fun μ ↦ ∏ k, μ k)
       (∑ k, (∏ j ∈ univ.erase k, μ j) •
         ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (Fintype.card ι) ↦ ℝ) k) μ :=
@@ -362,20 +353,24 @@ theorem spectralGradient_prod_mul_self (hA : A.IsHermitian) :
     simpa [IsHermitian.eigenvalues, Pi.single_apply] using
       prod_erase_mul univ hA.eigenvalues₀
         (mem_univ ((Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))).symm i))
-  rw [spectralGradient_def]
-  conv_lhs => arg 2; rw [hA.spectral_theorem, Unitary.conjStarAlgAut_apply]
-  have hDD : ∀ a b : ι → 𝕜, ∀ X : Matrix ι ι 𝕜,
-      diagonal a * (diagonal b * X) = diagonal (fun i ↦ a i * b i) * X := fun a b X ↦ by
-    rw [← Matrix.mul_assoc, diagonal_mul_diagonal]
-  simp only [Matrix.mul_assoc, hU, hDD, Function.comp_apply, hw]
-  rw [← smul_one_eq_diagonal, Matrix.smul_mul, Matrix.one_mul, Matrix.mul_smul,
-    Unitary.mul_star_self_of_mem hA.eigenvectorUnitary.property]
+  -- Both factors are conjugates of diagonal matrices by the same unitary.
+  rw [spectralGradient_def, ← Unitary.conjStarAlgAut_apply (S := 𝕜)]
+  conv_lhs => arg 2; rw [hA.spectral_theorem]
+  rw [← map_mul, diagonal_mul_diagonal]
+  simp only [Function.comp_apply, hw]
+  rw [← smul_one_eq_diagonal, map_smul, map_one]
+
+/-- At an invertible Hermitian `A`, the gradient of the determinant (`f = σₙ`) is the unique
+matrix `B` with `B A = det A • 1`. -/
+theorem spectralGradient_prod_eq_of_mul_eq (hA : A.IsHermitian) (h : IsUnit A.det)
+    {B : Matrix ι ι 𝕜} (hB : B * A = A.det • 1) :
+    hA.spectralGradient (fun μ ↦ ∏ k, μ k) = B :=
+  ((isUnit_iff_isUnit_det A).2 h).mul_left_inj.1 (hA.spectralGradient_prod_mul_self.trans hB.symm)
 
 /-- **The gradient of the determinant** at an invertible Hermitian `A` is `det A • A⁻¹`. -/
 theorem spectralGradient_prod (hA : A.IsHermitian) (h : IsUnit A.det) :
-    hA.spectralGradient (fun μ ↦ ∏ k, μ k) = A.det • A⁻¹ := by
-  rw [← Matrix.mul_one (hA.spectralGradient _), ← mul_nonsing_inv A h, ← Matrix.mul_assoc,
-    spectralGradient_prod_mul_self, Matrix.smul_mul, Matrix.one_mul]
+    hA.spectralGradient (fun μ ↦ ∏ k, μ k) = A.det • A⁻¹ :=
+  hA.spectralGradient_prod_eq_of_mul_eq h (by rw [Matrix.smul_mul, nonsing_inv_mul A h])
 
 end IsHermitian
 
