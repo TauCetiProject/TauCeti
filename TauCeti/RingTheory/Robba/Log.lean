@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.Robba.OpenDisc
 import Mathlib.Analysis.Normed.Algebra.Ultra
 import Mathlib.Analysis.Normed.Ring.Ultra
 import Mathlib.Analysis.SpecificLimits.Normed
+import TauCeti.NumberTheory.Padics.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
@@ -75,15 +76,10 @@ section Binomial
 
 variable {K : Type*} [NormedField K]
 
-/-- In a normed `ℚ_p`-algebra the norm of a natural number is its `p`-adic norm. -/
-private theorem norm_natCast_eq_padic (p : ℕ) [Fact p.Prime] [NormedAlgebra ℚ_[p] K] (n : ℕ) :
-    ‖(n : K)‖ = ‖(n : ℚ_[p])‖ := by
-  rw [← map_natCast (algebraMap ℚ_[p] K), norm_algebraMap']
-
 /-- In a normed `ℚ_p`-algebra a nonzero natural number is nonzero. -/
 private theorem natCast_ne_zero_of_padic (p : ℕ) [Fact p.Prime] [NormedAlgebra ℚ_[p] K] {n : ℕ}
     (hn : n ≠ 0) : (n : K) ≠ 0 := by
-  rw [← norm_ne_zero_iff, norm_natCast_eq_padic p, norm_ne_zero_iff]
+  rw [← norm_ne_zero_iff, norm_natCast_eq_norm_padic (p := p), norm_ne_zero_iff]
   exact_mod_cast hn
 
 /-- In a normed `ℚ_p`-algebra, `‖1 / n‖ ≤ n`. -/
@@ -91,7 +87,7 @@ private theorem norm_inv_natCast_le (p : ℕ) [Fact p.Prime] [NormedAlgebra ℚ_
     ‖(n : K)⁻¹‖ ≤ n := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp
-  rw [norm_inv, norm_natCast_eq_padic p]
+  rw [norm_inv, norm_natCast_eq_norm_padic (p := p)]
   exact inv_le_of_inv_le₀ (by positivity) (Padic.inv_natCast_le_norm_natCast n)
 
 /-- **`C(N - 1, j)` is `p`-adically close to `(-1)ʲ`.** In a normed `ℚ_p`-algebra the binomial
