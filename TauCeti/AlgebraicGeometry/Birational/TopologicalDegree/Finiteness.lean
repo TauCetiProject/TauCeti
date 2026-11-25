@@ -33,6 +33,9 @@ For a finite flat dominant morphism `g : X ⟶ Y` of integral schemes, `e(g)` is
   `dim X = dim Y`.
 * `AlgebraicGeometry.Scheme.RationalMap.topologicalDegree_eq_zero_iff`: `e(f) = 0` if and only if
   `dim X ≠ dim Y`.
+* `AlgebraicGeometry.Scheme.Hom.finite_functionFieldMap_of_topologicalKrullDim_eq`: a dominant
+  `k`-morphism `g` of integral schemes of the same dimension makes `K(X)` a finite extension of
+  `K(Y)` along `g^*`.
 
 ## References
 
@@ -128,5 +131,19 @@ theorem RationalMap.topologicalDegree_eq_zero_iff (f : X ⤏ Y) [f.IsDominant]
     [f.IsOver (X ↘ Spec (.of k)) (Y ↘ Spec (.of k))] :
     f.topologicalDegree = 0 ↔ topologicalKrullDim X ≠ topologicalKrullDim Y := by
   rw [Ne, ← topologicalDegree_pos_iff k f, Nat.pos_iff_ne_zero, not_not]
+
+/-- **Dominant morphisms of equal dimension are generically finite.** For a dominant morphism
+`g : X ⟶ Y` of integral schemes locally of finite type over a field `k` with `dim X = dim Y`, the
+function field `K(X)` is finite over `K(Y)` along the pullback of rational functions `g^*`. -/
+theorem Hom.finite_functionFieldMap_of_topologicalKrullDim_eq (g : X ⟶ Y) [IsDominant g]
+    [g.IsOver (Spec (.of k))] (h : topologicalKrullDim X = topologicalKrullDim Y) :
+    g.functionFieldMap.hom.Finite := by
+  have hpos := (RationalMap.topologicalDegree_pos_iff k g.toRationalMap).2 h
+  rw [g.topologicalDegree_toRationalMap] at hpos
+  have : Module.Finite g.functionFieldMap.hom.fieldRange X.functionField :=
+    Module.finite_of_finrank_pos hpos
+  -- `g^*` is the isomorphism onto its image followed by the inclusion of the image.
+  exact (RingHom.finite_algebraMap.2 this).comp
+    (.of_surjective _ g.functionFieldMap.hom.rangeRestrictField_bijective.2)
 
 end AlgebraicGeometry.Scheme
