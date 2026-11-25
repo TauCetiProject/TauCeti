@@ -8,9 +8,8 @@ module
 public import Mathlib.Dynamics.Transitive
 public import Mathlib.GroupTheory.GroupAction.IterateAct
 public import Mathlib.Order.Filter.AtTopBot.Basic
-import Mathlib.Order.Filter.AtTopBot.Finite
 import Mathlib.Algebra.Order.Group.Nat
-import Mathlib.Tactic.Ring
+import Mathlib.Algebra.Ring.Parity
 
 /-!
 # Topologically mixing maps
@@ -47,22 +46,23 @@ def IsTopologicallyMixing (T : X → X) : Prop :=
   ∀ ⦃U V : Set X⦄, IsOpen U → U.Nonempty → IsOpen V → V.Nonempty →
     ∀ᶠ n in atTop, (T^[n] '' U ∩ V).Nonempty
 
+/-- The characterization of topological mixing: for all nonempty open sets `U` and `V`,
+`T^[n] '' U ∩ V` is nonempty for all large `n`. -/
+theorem isTopologicallyMixing_iff {T : X → X} :
+    IsTopologicallyMixing T ↔ ∀ ⦃U V : Set X⦄, IsOpen U → U.Nonempty → IsOpen V → V.Nonempty →
+      ∀ᶠ n in atTop, (T^[n] '' U ∩ V).Nonempty :=
+  Iff.rfl
+
 /-- A topologically mixing map is topologically transitive: the action of its iterates is
 topologically transitive. -/
 theorem IsTopologicallyMixing.isTopologicallyTransitive {T : X → X}
     (hT : IsTopologicallyMixing T) : IsTopologicallyTransitive (IterateMulAct T) X := by
   refine ⟨fun hU hU₀ hV hV₀ ↦ ?_⟩
   obtain ⟨n, hn⟩ := (hT hU hU₀ hV hV₀).exists
-  exact ⟨IterateMulAct.mk n, hn⟩
+  refine ⟨IterateMulAct.mk n, ?_⟩
+  simpa only [← image_smul, IterateMulAct.mk_smul] using hn
 
 section Swap
-
-private lemma iterate_not_odd (k : ℕ) (b : Bool) : Bool.not^[2 * k + 1] b = !b := by
-  induction k generalizing b with
-  | zero => rfl
-  | succ k ih =>
-    rw [show 2 * (k + 1) + 1 = 2 * k + 1 + 2 by ring, Function.iterate_add_apply, ih]
-    simp
 
 /-- The swap of two points is topologically transitive. -/
 theorem isTopologicallyTransitive_not :
@@ -80,7 +80,7 @@ theorem not_isTopologicallyMixing_not : ¬ IsTopologicallyMixing Bool.not := by
   obtain ⟨n, hn⟩ := (h (isOpen_discrete {false}) (singleton_nonempty _)
     (isOpen_discrete {false}) (singleton_nonempty _)).exists_forall_of_atTop
   have := hn (2 * n + 1) (by omega)
-  rw [image_singleton, iterate_not_odd] at this
+  rw [image_singleton, Bool.involutive_not.iterate_two_mul_add_one] at this
   simp at this
 
 end Swap
