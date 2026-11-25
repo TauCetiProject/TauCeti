@@ -9,7 +9,6 @@ public import Mathlib.AlgebraicGeometry.Birational.Composition
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.Birational.Composition
 public import TauCeti.AlgebraicGeometry.Birational.Graph
-public import TauCeti.AlgebraicGeometry.Birational.RationalMap.ValuationRing
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.GraphClosure
 
 /-!
