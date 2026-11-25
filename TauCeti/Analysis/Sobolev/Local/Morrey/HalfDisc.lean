@@ -195,8 +195,7 @@ theorem MemWkpLoc.exists_dist_halfPlanePreciseRepresentative_le (hp : 2 < p) :
   set S : Set ℂ := ball x ρ ∪ ball (conj x) ρ
   set H : Set ℂ := {z | 0 ≤ z.im}
   set Dr := planarReflectionFDeriv (higherReflectionCoeff 1) D with hDr_def
-  have hconj : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin 1, imDilation (higherReflectionNode j) z ∈ Ω :=
-    fun z hz _ j => by rw [imDilation_higherReflectionNode_fin_one]; exact hΩ z hz
+  have hconj := imDilation_higherReflectionNode_fin_one_mem hΩ
   have hDp := hu.memLpLoc_of_hasWeakFDerivOn_inter_setOf_im_nonneg hD
   have hext := hu.planarReflection_higherReflectionCoeff hp1 hconj
   have hDr : HasWeakFDerivOn volume Ω (TauCeti.planarReflection (higherReflectionCoeff 1) u)

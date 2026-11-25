@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Complex.ImDilation
 public import TauCeti.Analysis.Complex.ReImTopology
 public import TauCeti.Analysis.Sobolev.Trace.Reflection.Higher
+public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Sobolev.Trace.Reflection.Basic
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
@@ -50,6 +51,9 @@ statement.
 * `TauCeti.planarReflection`, `TauCeti.planarReflectionFDeriv`: the reflection with weights and
   its candidate weak derivative.
 * `TauCeti.map_planarReflection`: linear maps commute with the reflection.
+* `TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_tendsto`: integration by parts up
+  to the real axis whenever the boundary layer against the cutoffs `TauCeti.imCutoff` vanishes in
+  the limit; `TauCeti.tendsto_setIntegral_imCutoff_smul` is the matching limit of the bulk terms.
 * `TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg` and its complex form
   `TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_complex`: integration by parts on
   the upper half-plane, up to the real axis, in a tangential direction or against a function
@@ -239,28 +243,33 @@ private theorem imReCLM_fst (z : ℂ) : (imReCLM z).fst = z.im := rfl
 
 /-- The boundary-layer cutoff `TauCeti.normalCutoff` of slope `n + 1`, pulled back to `ℂ`: zero
 where `(n + 1) z.im ≤ 1`, one where `(n + 1) z.im ≥ 2`. -/
-private def imCutoff (n : ℕ) (z : ℂ) : ℝ := normalCutoff 0 ((n : ℝ) + 1) (imReCLM z)
+def imCutoff (n : ℕ) (z : ℂ) : ℝ := normalCutoff 0 ((n : ℝ) + 1) (imReCLM z)
 
-private theorem contDiff_imCutoff (n : ℕ) : ContDiff ℝ ∞ (imCutoff n) :=
+/-- The boundary-layer cutoff is smooth. -/
+theorem contDiff_imCutoff (n : ℕ) : ContDiff ℝ ∞ (imCutoff n) :=
   (contDiff_normalCutoff 0 _).comp imReCLM.contDiff
 
-private theorem hasFDerivAt_imCutoff (n : ℕ) (z : ℂ) :
+/-- The derivative of the boundary-layer cutoff is normal to the real axis. -/
+theorem hasFDerivAt_imCutoff (n : ℕ) (z : ℂ) :
     HasFDerivAt (imCutoff n)
       ((deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1) * ((n : ℝ) + 1)) • imCLM) z := by
   refine ((hasFDerivAt_normalCutoff 0 _ (imReCLM z)).comp z imReCLM.hasFDerivAt).congr_fderiv ?_
   ext v
   simp [imReCLM_fst]
 
-private theorem imCutoff_eq_zero {n : ℕ} {z : ℂ} (hz : ((n : ℝ) + 1) * z.im ≤ 1) :
+/-- The boundary-layer cutoff vanishes where `(n + 1) z.im ≤ 1`. -/
+theorem imCutoff_eq_zero {n : ℕ} {z : ℂ} (hz : ((n : ℝ) + 1) * z.im ≤ 1) :
     imCutoff n z = 0 :=
   normalCutoff_eq_zero (by simpa [imReCLM_fst] using hz)
 
-private theorem norm_imCutoff_le (n : ℕ) (z : ℂ) : ‖imCutoff n z‖ ≤ 1 := by
+/-- The boundary-layer cutoff takes values in `[0, 1]`. -/
+theorem norm_imCutoff_le (n : ℕ) (z : ℂ) : ‖imCutoff n z‖ ≤ 1 := by
   unfold imCutoff
   rw [Real.norm_of_nonneg (normalCutoff_nonneg _ _ _)]
   exact normalCutoff_le_one _ _ _
 
-private theorem tsupport_imCutoff_subset (n : ℕ) : tsupport (imCutoff n) ⊆ {z : ℂ | 0 < z.im} :=
+/-- The boundary-layer cutoff is supported in the open upper half-plane. -/
+theorem tsupport_imCutoff_subset (n : ℕ) : tsupport (imCutoff n) ⊆ {z : ℂ | 0 < z.im} :=
   fun z hz => by
     have h := tsupport_normalCutoff_subset (E := ℝ) 0 (c := (n : ℝ) + 1) (by positivity)
       (tsupport_comp_subset_preimage _ imReCLM.continuous hz)
@@ -282,7 +291,7 @@ private theorem eventually_imCutoff_arg {z : ℂ} (hz : 0 < z.im) :
 
 /-- A continuous factor supported in the support of a compactly supported `χ` makes a function
 that is locally integrable up to the real axis integrable on the open upper half-plane. -/
-private theorem MemLpLoc.integrableOn_smul_setOf_im_pos {Ω : Opens ℂ} {h : ℂ → F}
+theorem MemLpLoc.integrableOn_smul_setOf_im_pos {Ω : Opens ℂ} {h : ℂ → F}
     (hh : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) h) {β : Type*} [Zero β] {χ : ℂ → β}
     (hχc : HasCompactSupport χ) (hχΩ : tsupport χ ∩ {z : ℂ | 0 ≤ z.im} ⊆ Ω) {f : ℂ → ℝ}
     (hf : Continuous f) (hfχ : tsupport f ⊆ tsupport χ) :
@@ -291,26 +300,44 @@ private theorem MemLpLoc.integrableOn_smul_setOf_im_pos {Ω : Opens ℂ} {h : �
     (Complex.isClosed_setOfPred_le_im 0) fun _ hz ↦ ⟨hχΩ ⟨hfχ hz.1, hz.2⟩, hz.2⟩).mono_set
     (ofPred_subset_ofPred.2 fun _ ↦ le_of_lt)
 
-/-- **Integration by parts up to the real axis.** Let `g'` be a weak derivative of `g` in the
-direction `v` on the upper part of `Ω`, with `g` and `g'` integrable on compact subsets of
-`Ω ∩ {0 ≤ im}`. Then the integration-by-parts identity on the upper half-plane holds against every
-smooth compactly supported `χ` whose support meets `{0 ≤ im}` inside `Ω`, provided `v` is tangent to
-the real axis or `χ` vanishes on it. -/
-theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → F} {v : ℂ}
+/-- Multiplying an integrable function on the upper half-plane by the boundary-layer cutoffs does
+not change its integral in the limit. -/
+theorem tendsto_setIntegral_imCutoff_smul {f : ℂ → F} (hf : IntegrableOn f {z : ℂ | 0 < z.im}) :
+    Tendsto (fun n : ℕ => ∫ z in {z : ℂ | 0 < z.im}, imCutoff n z • f z) atTop
+      (𝓝 (∫ z in {z : ℂ | 0 < z.im}, f z)) := by
+  refine tendsto_integral_of_dominated_convergence (fun z => ‖f z‖)
+    (fun n => ((contDiff_imCutoff n).continuous.aestronglyMeasurable).smul
+      hf.aestronglyMeasurable) hf.norm (fun n => Eventually.of_forall fun z => ?_)
+    ((ae_restrict_iff' (measurableSet_lt measurable_const measurable_im)).2
+      (Eventually.of_forall fun z hz => ?_))
+  · rw [norm_smul]
+    exact mul_le_of_le_one_left (norm_nonneg _) (norm_imCutoff_le n z)
+  · exact tendsto_const_nhds.congr' <| (eventually_imCutoff_arg hz).mono fun n hn => by
+      have h2 : 2 ≤ ((n : ℝ) + 1) * ((imReCLM z).fst - 0) := by
+        rw [imReCLM_fst]
+        linarith
+      simp only [imCutoff, normalCutoff_eq_one h2, one_smul]
+
+/-- **Integration by parts up to the real axis, given a vanishing boundary layer.** Let `g'` be a
+weak derivative of `g` in the direction `v` on the upper part of `Ω`, with `g` and `g'` integrable
+on compact subsets of `Ω ∩ {0 ≤ im}`, and let `χ` be smooth with compact support meeting
+`{0 ≤ im}` inside `Ω`. Testing the weak derivative against `imCutoff n * χ` leaves, besides the
+two terms of the identity, the boundary-layer integral of `χ ∂_v (imCutoff n) • g`. If that
+integral tends to `0`, the integration-by-parts identity holds on the upper half-plane. -/
+theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_tendsto {Ω : Opens ℂ}
+    {g g' : ℂ → F} {v : ℂ}
     (hgW : HasWeakLineDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) g g' v)
     (hg : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g)
     (hg' : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g')
     {χ : ℂ → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
-    (hχΩ : tsupport χ ∩ {z : ℂ | 0 ≤ z.im} ⊆ Ω) (hv : v.im = 0 ∨ ∀ x : ℝ, χ x = 0) :
+    (hχΩ : tsupport χ ∩ {z : ℂ | 0 ≤ z.im} ⊆ Ω)
+    (hlayer : Tendsto (fun n : ℕ => ∫ z in {z : ℂ | 0 < z.im}, (χ z *
+      (deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1) * (((n : ℝ) + 1) * v.im))) • g z)
+      atTop (𝓝 0)) :
     ∫ z in {z : ℂ | 0 < z.im}, fderiv ℝ χ z v • g z =
       -∫ z in {z : ℂ | 0 < z.im}, χ z • g' z := by
   have := hgW.completeSpace
   set H := {z : ℂ | 0 < z.im}
-  have hHm : MeasurableSet H := measurableSet_lt measurable_const measurable_im
-  set K := tsupport χ ∩ {z : ℂ | 0 ≤ z.im}
-  have hK : IsCompact K := hχc.isCompact.inter_right (isClosed_le continuous_const continuous_im)
-  have hKU : K ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} := fun z hz => ⟨hχΩ hz, hz.2⟩
-  have hgK : IntegrableOn g K := memLp_one_iff_integrable.1 (memLpLoc_iff.1 hg K hKU hK)
   have hdχ : Continuous fun z => fderiv ℝ χ z v :=
     (hχ.continuous_fderiv (by simp)).clm_apply continuous_const
   have hdst : Continuous (deriv Real.smoothTransition) :=
@@ -365,71 +392,84 @@ theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g'
         (f := fun z => (imCutoff n z * χ z) • g' z) fun z hz => by simp [hzero z hz]] at hθ
     rw [← integral_add (I1' n) (I2 n)]
     simpa only [add_smul] using hθ
-  -- Pass to the limit `n → ∞` in each of the three integrals.
-  have hlimH {f : ℂ → F} (hf : IntegrableOn f H) :
-      Tendsto (fun n : ℕ => ∫ z in H, imCutoff n z • f z) atTop (𝓝 (∫ z in H, f z)) := by
-    refine tendsto_integral_of_dominated_convergence (fun z => ‖f z‖)
-      (fun n => ((contDiff_imCutoff n).continuous.aestronglyMeasurable).smul
-        hf.aestronglyMeasurable) hf.norm (fun n => Eventually.of_forall fun z => ?_)
-      ((ae_restrict_iff' hHm).2 (Eventually.of_forall fun z hz => ?_))
-    · rw [norm_smul]
-      exact mul_le_of_le_one_left (norm_nonneg _) (norm_imCutoff_le n z)
-    · exact tendsto_const_nhds.congr' <| (eventually_imCutoff_arg hz).mono fun n hn => by
-        have h2 : 2 ≤ ((n : ℝ) + 1) * ((imReCLM z).fst - 0) := by
-          rw [imReCLM_fst]
-          linarith
-        simp only [imCutoff, normalCutoff_eq_one h2, one_smul]
-  have h1 := hlimH I1
-  have h3 := hlimH I3
+  have h1 := tendsto_setIntegral_imCutoff_smul I1
+  have h3 := tendsto_setIntegral_imCutoff_smul I3
   simp only [smul_smul] at h1 h3
-  have h2 : Tendsto (fun n : ℕ => ∫ z in H, D n z • g z) atTop (𝓝 0) := by
-    rcases hv with hv | hχ0
-    · simp [hD, hv]
-    obtain ⟨B, hB⟩ := (Real.smoothTransition.contDiff.continuous_deriv le_rfl).norm
-      |>.bddAbove_range_of_hasCompactSupport Real.smoothTransition.hasCompactSupport_deriv.norm
-    obtain ⟨M, hM⟩ :=
-      (hχ.continuous_fderiv (by simp)).bounded_above_of_compact_support (hχc.fderiv (𝕜 := ℝ))
-    have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB ⟨0, rfl⟩)
-    have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0)
-    have hbound : Integrable (fun z => (2 * (B * M * |v.im|)) * K.indicator (fun z => ‖g z‖) z)
-        (volume.restrict H) :=
-      ((IntegrableOn.integrable_indicator (f := fun z => ‖g z‖) hgK.norm
-        hK.measurableSet).const_mul _).integrableOn
-    have hlim := tendsto_integral_of_dominated_convergence (f := fun _ => (0 : F)) _
-      (fun n => (I2 n).aestronglyMeasurable) hbound (fun n => ?_)
-      ((ae_restrict_iff' hHm).2 (Eventually.of_forall fun z hz => ?_))
-    · simpa using hlim
-    · refine (ae_restrict_iff' hHm).2 (Eventually.of_forall fun z hz => ?_)
-      have hz : 0 < z.im := hz
-      have hb0 : 0 ≤ 2 * (B * M * |v.im|) * K.indicator (fun z => ‖g z‖) z :=
-        mul_nonneg (by positivity) (indicator_nonneg (fun _ _ => norm_nonneg _) _)
-      by_cases hzK : z ∈ tsupport χ
-      swap
-      · simpa [hD, image_eq_zero_of_notMem_tsupport hzK] using hb0
-      by_cases h2 : 2 < ((n : ℝ) + 1) * z.im
-      · simpa [hD, Real.smoothTransition.deriv_of_one_le
-          (by linarith : 1 ≤ ((n : ℝ) + 1) * z.im - 1)]
-          using hb0
-      push Not at h2
-      rw [indicator_of_mem (show z ∈ K from ⟨hzK, le_of_lt hz⟩), norm_smul]
-      have hχz := abs_le_mul_im_of_eq_zero_on_real (hχ.differentiable (by simp)) hM hχ0 hz.le
-      have hBz : ‖deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1)‖ ≤ B := hB ⟨_, rfl⟩
-      simp only [hD, norm_mul, Real.norm_eq_abs] at hBz ⊢
-      have hn : |(n : ℝ) + 1| = (n : ℝ) + 1 := abs_of_pos (by positivity)
-      rw [hn]
-      calc |χ z| * (|deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1)| *
-            (((n : ℝ) + 1) * |v.im|)) * ‖g z‖
-          ≤ (M * z.im) * (B * (((n : ℝ) + 1) * |v.im|)) * ‖g z‖ := by gcongr
-        _ = B * M * |v.im| * ‖g z‖ * (((n : ℝ) + 1) * z.im) := by ring
-        _ ≤ B * M * |v.im| * ‖g z‖ * 2 := by gcongr
-        _ = 2 * (B * M * |v.im|) * ‖g z‖ := by ring
-    · have hz : 0 < z.im := hz
-      exact tendsto_const_nhds.congr' <| (eventually_imCutoff_arg hz).mono fun n hn => by
-        simp [hD, Real.smoothTransition.deriv_of_one_le hn.le]
-  have hlim := h1.add h2
+  have hlim := h1.add hlayer
   rw [add_zero] at hlim
   exact tendsto_nhds_unique (hlim.congr key) h3.neg
 
+/-- **Integration by parts up to the real axis.** Let `g'` be a weak derivative of `g` in the
+direction `v` on the upper part of `Ω`, with `g` and `g'` integrable on compact subsets of
+`Ω ∩ {0 ≤ im}`. Then the integration-by-parts identity on the upper half-plane holds against every
+smooth compactly supported `χ` whose support meets `{0 ≤ im}` inside `Ω`, provided `v` is tangent to
+the real axis or `χ` vanishes on it. -/
+theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → F} {v : ℂ}
+    (hgW : HasWeakLineDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) g g' v)
+    (hg : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g)
+    (hg' : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g')
+    {χ : ℂ → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
+    (hχΩ : tsupport χ ∩ {z : ℂ | 0 ≤ z.im} ⊆ Ω) (hv : v.im = 0 ∨ ∀ x : ℝ, χ x = 0) :
+    ∫ z in {z : ℂ | 0 < z.im}, fderiv ℝ χ z v • g z =
+      -∫ z in {z : ℂ | 0 < z.im}, χ z • g' z := by
+  refine hgW.setIntegral_fderiv_smul_eq_neg_of_tendsto hg hg' hχ hχc hχΩ ?_
+  set H := {z : ℂ | 0 < z.im}
+  have hHm : MeasurableSet H := measurableSet_lt measurable_const measurable_im
+  set K := tsupport χ ∩ {z : ℂ | 0 ≤ z.im}
+  have hK : IsCompact K := hχc.isCompact.inter_right (isClosed_le continuous_const continuous_im)
+  have hKU : K ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} := fun z hz => ⟨hχΩ hz, hz.2⟩
+  have hgK : IntegrableOn g K := memLp_one_iff_integrable.1 (memLpLoc_iff.1 hg K hKU hK)
+  have hdst : Continuous (deriv Real.smoothTransition) :=
+    (Real.smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl
+  set D : ℕ → ℂ → ℝ := fun n z => χ z *
+    (deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1) * (((n : ℝ) + 1) * v.im)) with hD
+  have I2 (n : ℕ) : IntegrableOn (fun z => D n z • g z) H :=
+    hg.integrableOn_smul_setOf_im_pos hχc hχΩ (hχ.continuous.mul ((hdst.comp
+      ((continuous_const.mul continuous_im).sub continuous_const)).mul continuous_const))
+      tsupport_mul_subset_left
+  rcases hv with hv | hχ0
+  · simp [hv]
+  obtain ⟨B, hB⟩ := (Real.smoothTransition.contDiff.continuous_deriv le_rfl).norm
+    |>.bddAbove_range_of_hasCompactSupport Real.smoothTransition.hasCompactSupport_deriv.norm
+  obtain ⟨M, hM⟩ :=
+    (hχ.continuous_fderiv (by simp)).bounded_above_of_compact_support (hχc.fderiv (𝕜 := ℝ))
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB ⟨0, rfl⟩)
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0)
+  have hbound : Integrable (fun z => (2 * (B * M * |v.im|)) * K.indicator (fun z => ‖g z‖) z)
+      (volume.restrict H) :=
+    ((IntegrableOn.integrable_indicator (f := fun z => ‖g z‖) hgK.norm
+      hK.measurableSet).const_mul _).integrableOn
+  have hlim := tendsto_integral_of_dominated_convergence (f := fun _ => (0 : F)) _
+    (fun n => (I2 n).aestronglyMeasurable) hbound (fun n => ?_)
+    ((ae_restrict_iff' hHm).2 (Eventually.of_forall fun z hz => ?_))
+  · simpa using hlim
+  · refine (ae_restrict_iff' hHm).2 (Eventually.of_forall fun z hz => ?_)
+    have hz : 0 < z.im := hz
+    have hb0 : 0 ≤ 2 * (B * M * |v.im|) * K.indicator (fun z => ‖g z‖) z :=
+      mul_nonneg (by positivity) (indicator_nonneg (fun _ _ => norm_nonneg _) _)
+    by_cases hzK : z ∈ tsupport χ
+    swap
+    · simpa [hD, image_eq_zero_of_notMem_tsupport hzK] using hb0
+    by_cases h2 : 2 < ((n : ℝ) + 1) * z.im
+    · simpa [hD, Real.smoothTransition.deriv_of_one_le
+        (by linarith : 1 ≤ ((n : ℝ) + 1) * z.im - 1)]
+        using hb0
+    push Not at h2
+    rw [indicator_of_mem (show z ∈ K from ⟨hzK, le_of_lt hz⟩), norm_smul]
+    have hχz := abs_le_mul_im_of_eq_zero_on_real (hχ.differentiable (by simp)) hM hχ0 hz.le
+    have hBz : ‖deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1)‖ ≤ B := hB ⟨_, rfl⟩
+    simp only [hD, norm_mul, Real.norm_eq_abs] at hBz ⊢
+    have hn : |(n : ℝ) + 1| = (n : ℝ) + 1 := abs_of_pos (by positivity)
+    rw [hn]
+    calc |χ z| * (|deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1)| *
+          (((n : ℝ) + 1) * |v.im|)) * ‖g z‖
+        ≤ (M * z.im) * (B * (((n : ℝ) + 1) * |v.im|)) * ‖g z‖ := by gcongr
+      _ = B * M * |v.im| * ‖g z‖ * (((n : ℝ) + 1) * z.im) := by ring
+      _ ≤ B * M * |v.im| * ‖g z‖ * 2 := by gcongr
+      _ = 2 * (B * M * |v.im|) * ‖g z‖ := by ring
+  · have hz : 0 < z.im := hz
+    exact tendsto_const_nhds.congr' <| (eventually_imCutoff_arg hz).mono fun n hn => by
+      simp [hD, Real.smoothTransition.deriv_of_one_le hn.le]
 /-- **Integration by parts up to the real axis, complex form.** The identity of
 `TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg` for a complex-valued `χ` and values
 in a complex space: it follows by splitting `χ` into its real and imaginary parts, the imaginary
@@ -870,6 +910,15 @@ theorem imDilation_higherReflectionNode_fin_one (j : Fin 1) (z : ℂ) :
     imDilation (higherReflectionNode j) z = conj z := by
   rw [Fin.fin_one_eq_zero j, imDilation_apply, higherReflectionNode_eq]
   apply Complex.ext <;> simp
+
+/-- On a conjugation-invariant set the node dilation of the order-one reflection, which is
+conjugation, maps the lower part into the set: the stability hypothesis of the
+`TauCeti.planarReflection` lemmas with a single weight. -/
+theorem imDilation_higherReflectionNode_fin_one_mem {Ω : Set ℂ} (hΩ : ∀ z ∈ Ω, conj z ∈ Ω) :
+    ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin 1, imDilation (higherReflectionNode j) z ∈ Ω :=
+  fun z hz _ j => by
+    rw [imDilation_higherReflectionNode_fin_one]
+    exact hΩ z hz
 
 /-- Every weak derivative of a half-disc Sobolev map is locally `Lᵖ` up to the real axis: it
 agrees with the one supplied by the definition off the axis, which is a null set. -/

@@ -23,18 +23,21 @@ test function `χ`, including those that do not vanish on the axis
 
 `TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg` proves this when `v` is tangent to the
 axis or `χ` vanishes on it; here the vanishing is moved onto `g`. The proof tests the weak
-derivative against `ψₙ χ`, where `ψₙ(z) = smoothTransition ((n + 1) im z - 1)` vanishes near the
-axis, and lets `n → ∞`. The boundary layer `χ ∂_v ψₙ • g` lives in the strip
+derivative against `ψₙ χ`, where `ψₙ = TauCeti.imCutoff n` vanishes where `(n + 1) im z ≤ 1`,
+near the axis, and lets `n → ∞`. The boundary layer `χ ∂_v ψₙ • g` lives in the strip
 `{0 < im ≤ 2 / (n + 1)}`, where `∂_v ψₙ = O(n)` and the area is `O(1/n)`, while `g = o(1)` there
-by uniform continuity, since `g` vanishes on the axis.
+by uniform continuity, since `g` vanishes on the axis. The rest of the argument is shared with
+`TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg` through
+`TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_tendsto`.
 
 As consequences:
 
 * `TauCeti.HasWeakLineDerivOn.indicator_setOf_im_nonneg`: the extension of `g` by zero below the
   axis is weakly differentiable on all of `Ω`, with derivative the extension of `∂_v g` by zero.
 * `TauCeti.HasWeakFDerivOn.planarReflection_neg_one`: on a conjugation-invariant `Ω`, the odd
-  reflection `g(conj z) ↦ -g(z)`, which is `TauCeti.planarReflection` with the single weight
-  `-1`, is weakly differentiable on `Ω`, with derivative `TauCeti.planarReflectionFDeriv`. The
+  reflection, equal to `g z` for `0 ≤ im z` and to `-g (conj z)` for `im z < 0`, which is
+  `TauCeti.planarReflection` with the single weight `-1`, is weakly differentiable on `Ω`, with
+  derivative `TauCeti.planarReflectionFDeriv`. The
   weights of the even reflection sum to one, which is how
   `TauCeti.HasWeakFDerivOn.planarReflection` matches the two one-sided values on the axis; here
   they sum to `-1`, and the boundary condition takes over. The odd reflection is twice the
@@ -62,56 +65,14 @@ namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-! ### The boundary-layer cutoff -/
-
-/-- The cutoff `smoothTransition ((n + 1) im z - 1)`: zero where `(n + 1) im z ≤ 1`, one where
-`(n + 1) im z ≥ 2`. -/
-private def axisCutoff (n : ℕ) (z : ℂ) : ℝ := Real.smoothTransition (((n : ℝ) + 1) * z.im - 1)
-
-private theorem contDiff_axisCutoff (n : ℕ) : ContDiff ℝ ∞ (axisCutoff n) :=
-  Real.smoothTransition.contDiff.comp ((contDiff_const.mul imCLM.contDiff).sub contDiff_const)
-
-private theorem hasFDerivAt_axisCutoff (n : ℕ) (z : ℂ) :
-    HasFDerivAt (axisCutoff n)
-      ((deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1) * ((n : ℝ) + 1)) • imCLM) z := by
-  have h1 : HasFDerivAt (fun z : ℂ => ((n : ℝ) + 1) * z.im - 1) (((n : ℝ) + 1) • imCLM) z :=
-    (imCLM.hasFDerivAt.const_mul ((n : ℝ) + 1)).sub_const 1
-  have h2 := ((Real.smoothTransition.contDiff (n := 1)).differentiable one_ne_zero
-    (((n : ℝ) + 1) * z.im - 1)).hasDerivAt.comp_hasFDerivAt z h1
-  rw [smul_smul] at h2
-  exact h2
-
-/-- Multiplying an integrable function on the upper half-plane by the cutoffs `axisCutoff n`
-does not change its integral in the limit. -/
-private theorem tendsto_setIntegral_axisCutoff_smul {f : ℂ → F}
-    (hf : IntegrableOn f {z : ℂ | 0 < z.im}) :
-    Tendsto (fun n : ℕ => ∫ z in {z : ℂ | 0 < z.im}, axisCutoff n z • f z) atTop
-      (𝓝 (∫ z in {z : ℂ | 0 < z.im}, f z)) := by
-  refine tendsto_integral_of_dominated_convergence (fun z => ‖f z‖)
-    (fun n => (contDiff_axisCutoff n).continuous.aestronglyMeasurable.smul
-      hf.aestronglyMeasurable) hf.norm (fun n => Eventually.of_forall fun z => ?_)
-    ((ae_restrict_iff' (measurableSet_lt measurable_const measurable_im)).2
-      (Eventually.of_forall fun z hz => ?_))
-  · rw [norm_smul]
-    refine mul_le_of_le_one_left (norm_nonneg _) ?_
-    rw [axisCutoff, Real.norm_of_nonneg (Real.smoothTransition.nonneg _)]
-    exact Real.smoothTransition.le_one _
-  · have h : Tendsto (fun n : ℕ => ((n : ℝ) + 1) * z.im - 1) atTop atTop :=
-      tendsto_atTop_add_const_right _ _
-        ((tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds).atTop_mul_const hz)
-    exact tendsto_const_nhds.congr' <| (h.eventually_ge_atTop 1).mono fun n hn => by
-      simp [axisCutoff, Real.smoothTransition.one_of_one_le hn]
+/-! ### The boundary layer -/
 
 /-- The volume of a rectangle `[-ρ, ρ] × [0, δ]` is `2ρδ`. -/
 private theorem volume_real_reProdIm_Icc {ρ δ : ℝ} (hρ : 0 ≤ ρ) (hδ : 0 ≤ δ) :
     volume.real (Icc (-ρ) ρ ×ℂ Icc 0 δ) = 2 * ρ * δ := by
-  have h : volume (Icc (-ρ) ρ ×ℂ Icc 0 δ) = volume (Icc (-ρ) ρ) * volume (Icc (0 : ℝ) δ) := by
-    change volume (measurableEquivRealProd ⁻¹' (Icc (-ρ) ρ ×ˢ Icc 0 δ)) = _
-    rw [volume_preserving_equiv_real_prod.measure_preimage
-      (measurableSet_Icc.prod measurableSet_Icc).nullMeasurableSet, Measure.volume_eq_prod,
-      Measure.prod_prod]
-  rw [measureReal_def, h, Real.volume_Icc, Real.volume_Icc, ENNReal.toReal_mul,
-    ENNReal.toReal_ofReal (by linarith), ENNReal.toReal_ofReal (by linarith)]
+  rw [measureReal_def, Complex.volume_reProdIm measurableSet_Icc measurableSet_Icc,
+    Real.volume_Icc, Real.volume_Icc, ENNReal.toReal_mul, ENNReal.toReal_ofReal (by linarith),
+    ENNReal.toReal_ofReal (by linarith)]
   ring
 
 omit [NormedSpace ℝ F] in
@@ -243,48 +204,9 @@ theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_continuousOn {Ω : 
     {χ : ℂ → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
     (hχΩ : tsupport χ ∩ {z : ℂ | 0 ≤ z.im} ⊆ Ω) :
     ∫ z in {z : ℂ | 0 < z.im}, fderiv ℝ χ z v • g z =
-      -∫ z in {z : ℂ | 0 < z.im}, χ z • g' z := by
-  set H := {z : ℂ | 0 < z.im}
-  have hg : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g := hgc.memLpLoc
-  have hint {h : ℂ → F} (hh : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) h) {f : ℂ → ℝ}
-      (hf : Continuous f) (hfχ : tsupport f ⊆ tsupport χ) : IntegrableOn (fun z => f z • h z) H :=
-    (hh.integrableOn_smul hf (hχc.mono' ((subset_tsupport f).trans hfχ))
-      (Complex.isClosed_setOfPred_le_im 0) fun _ hz => ⟨hχΩ ⟨hfχ hz.1, hz.2⟩, hz.2⟩).mono_set
-      (ofPred_subset_ofPred.2 fun _ => le_of_lt)
-  have hdχ : Continuous fun z => fderiv ℝ χ z v :=
-    (hχ.continuous_fderiv (by simp)).clm_apply continuous_const
-  have hdst : Continuous (deriv Real.smoothTransition) :=
-    (Real.smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl
-  set D : ℕ → ℂ → ℝ := fun n z => χ z *
-    (deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1) * (((n : ℝ) + 1) * v.im)) with hD
-  -- The weak derivative identity, tested against `ψₙ χ`, which vanishes on the axis.
-  have key (n : ℕ) : (∫ z in H, (axisCutoff n z * fderiv ℝ χ z v) • g z) +
-      ∫ z in H, D n z • g z = -∫ z in H, (axisCutoff n z * χ z) • g' z := by
-    have h0 (x : ℝ) : axisCutoff n x * χ x = 0 := by
-      simp [axisCutoff, Real.smoothTransition.zero_of_nonpos (by norm_num : (-1 : ℝ) ≤ 0)]
-    have h := hgW.setIntegral_fderiv_smul_eq_neg hg hg' ((contDiff_axisCutoff n).mul hχ)
-      hχc.mul_left (fun z hz => hχΩ ⟨tsupport_mul_subset_right hz.1, hz.2⟩) (Or.inr h0)
-    have hd (z : ℂ) : fderiv ℝ (fun z => axisCutoff n z * χ z) z v =
-        axisCutoff n z * fderiv ℝ χ z v + D n z := by
-      have h' :=
-        ((hasFDerivAt_axisCutoff n z).mul (hχ.differentiable (by simp) z).hasFDerivAt).fderiv
-      rw [show (fun z => axisCutoff n z * χ z) = axisCutoff n * χ from rfl, h']
-      simp only [hD, add_apply, smul_apply, smul_eq_mul, imCLM_apply]
-      ring
-    simp only [hd, add_smul] at h
-    rwa [integral_add (hint (f := fun z => axisCutoff n z * fderiv ℝ χ z v) hg
-      ((contDiff_axisCutoff n).continuous.mul hdχ)
-      (tsupport_mul_subset_right.trans (tsupport_fderiv_apply_subset ℝ v)))
-      (hint (f := D n) hg (hχ.continuous.mul ((hdst.comp ((continuous_const.mul continuous_im).sub
-        continuous_const)).mul continuous_const)) tsupport_mul_subset_left)] at h
-  -- Pass to the limit `n → ∞`.
-  have h1 := tendsto_setIntegral_axisCutoff_smul (hint hg hdχ (tsupport_fderiv_apply_subset ℝ v))
-  have h3 := tendsto_setIntegral_axisCutoff_smul (hint hg' hχ.continuous subset_rfl)
-  simp only [smul_smul] at h1 h3
-  have h2 := tendsto_setIntegral_boundaryLayer hgc hg0 hχ.continuous hχc hχΩ v.im
-  have h := h1.add h2
-  rw [add_zero] at h
-  exact tendsto_nhds_unique (h.congr key) h3.neg
+      -∫ z in {z : ℂ | 0 < z.im}, χ z • g' z :=
+  hgW.setIntegral_fderiv_smul_eq_neg_of_tendsto hgc.memLpLoc hg' hχ hχc hχΩ
+    (tendsto_setIntegral_boundaryLayer hgc hg0 hχ.continuous hχc hχΩ v.im)
 
 /-! ### Extension by zero and odd reflection -/
 
@@ -325,14 +247,6 @@ theorem HasWeakLineDerivOn.indicator_setOf_im_nonneg {Ω : Opens ℂ} {g g' : �
   exact hgW.setIntegral_fderiv_smul_eq_neg_of_continuousOn hgc hg0 hg' hφ hφc
     fun z hz => hφΩ hz.1
 
-/-- On a conjugation-invariant set the node dilation of the order-one reflection stays in it. -/
-private theorem imDilation_mem_of_mapsTo_conj {Ω : Opens ℂ}
-    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) :
-    ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin 1, imDilation (higherReflectionNode j) z ∈ Ω :=
-  fun z hz _ j => by
-    rw [imDilation_higherReflectionNode_fin_one]
-    exact hΩ hz
-
 /-- **Weak derivative of the odd reflection.** On a conjugation-invariant open set `Ω`, let `Dg`
 be the weak derivative of `g` on the upper part of `Ω`, with `g` continuous on `Ω ∩ {0 ≤ im}` and
 zero on `Ω ∩ ℝ` and `Dg` integrable on compact subsets of `Ω ∩ {0 ≤ im}`. Then the odd reflection
@@ -346,7 +260,7 @@ theorem HasWeakFDerivOn.planarReflection_neg_one {Ω : Opens ℂ}
     HasWeakFDerivOn volume Ω (TauCeti.planarReflection (fun _ : Fin 1 => (-1 : ℝ)) g)
       (planarReflectionFDeriv (fun _ : Fin 1 => (-1 : ℝ)) Dg) := by
   have := hgW.completeSpace
-  have hΩ' := imDilation_mem_of_mapsTo_conj hΩ
+  have hΩ' := imDilation_higherReflectionNode_fin_one_mem fun _ hz => hΩ hz
   have hg := hgc.memLpLoc (p := 1) (μ := volume)
   have hDgI := hDg.clm_comp (ContinuousLinearMap.apply ℝ F I)
   refine basisOneI.hasWeakFDerivOn_of_forall
@@ -375,7 +289,7 @@ theorem MemWkpLoc.planarReflection_neg_one {p : ℝ≥0∞} (hp : 1 ≤ p) {Ω :
     (hg : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 g)
     (hgc : ContinuousOn g ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) (hg0 : ∀ x : ℝ, (x : ℂ) ∈ Ω → g x = 0) :
     MemWkpLoc p Ω 1 (TauCeti.planarReflection (fun _ : Fin 1 => (-1 : ℝ)) g) := by
-  have hΩ' := imDilation_mem_of_mapsTo_conj hΩ
+  have hΩ' := imDilation_higherReflectionNode_fin_one_mem fun _ hz => hΩ hz
   obtain ⟨hgp, Dg, hDg, hDgp⟩ := memWkpLoc_succ_iff.1 hg
   have hDgp' : MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) Dg := memWkpLoc_zero_iff.1 hDgp
   refine memWkpLoc_succ_iff_of_isOpen.2 ⟨hgp.planarReflection hΩ' _, _,
