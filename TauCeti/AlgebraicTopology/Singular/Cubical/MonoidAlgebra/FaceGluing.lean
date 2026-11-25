@@ -246,6 +246,18 @@ private theorem isCubicalRepresentative_zsmul_map_crossProduct {X₁ X₂ : TopC
   refine (TopPair.isCubicalRepresentative_iff _ _).2 ⟨r, hr, hcl.trans ?_⟩
   rw [hv, ← Units.smul_def, smul_smul, Int.units_mul_self, one_smul]
 
+/-- The pairing along `f` of the homogeneous chains `a` and `b` is the push-forward of `a × b`
+through any subspace `B` containing the image of `f`. -/
+private theorem cubicalChainSumPairing_lof_lof_eq_subtypeVal {X₁ X₂ Z : Type*}
+    [TopologicalSpace X₁] [TopologicalSpace X₂] [TopologicalSpace Z] (f : C(X₁ × X₂, Z))
+    (B : Set Z) (hf : ∀ p, f p ∈ B) {p q n : ℕ} (hpq : p + q = n)
+    (a : NormalizedCubicalChain X₁ k p) (b : NormalizedCubicalChain X₂ k q) :
+    cubicalChainSumPairing k f (cubicalChainLof _ k _ a) (cubicalChainLof _ k _ b) =
+      cubicalChainLof Z k n (map k (ContinuousMap.subtypeVal B) n
+        (map k (f.codRestrict B hf) n (cast k hpq (crossProduct _ _ k _ _ a b)))) := by
+  rw [cubicalChainSumPairing_lof_lof, ← LinearMap.comp_apply (map k (ContinuousMap.subtypeVal B) n),
+    ← map_comp, ContinuousMap.subtypeVal_comp_codRestrict, map_cast, cubicalChainLof_cast]
+
 /-- The twisting sum of `(x, y)` of chains `s` with representatives `a z` of `s x z` and `b z` of
 `s z y` is the push-forward from the boundary `A x y` of the sum over the faces of the signed cross
 products `a z × b z`, carried to `A x y` by the composition maps. -/
@@ -266,9 +278,8 @@ private theorem twistingChainSum_eq_sum_face {s : ∀ x y, normalizedCubicalChai
           (cast k (hpq z) (crossProduct _ _ k _ _ (a z) (b z))))) := by
   rw [twistingChainSum_eq_sum_subtype hs, map_sum, map_sum]
   refine Finset.sum_congr rfl fun z _ ↦ ?_
-  rw [← ha z, ← hb z, cubicalChainSumPairing_lof_lof, map_zsmul_unit, map_zsmul_unit,
-    ← LinearMap.comp_apply (map k (ContinuousMap.subtypeVal (A x y)) n), ← map_comp,
-    ContinuousMap.subtypeVal_comp_codRestrict, map_cast, cubicalChainLof_cast]
+  rw [← ha z, ← hb z, cubicalChainSumPairing_lof_lof_eq_subtypeVal _ _ (hιA z) (hpq z),
+    map_zsmul_unit, map_zsmul_unit]
 
 /-- **Representing chain systems from a face-by-face condition.** Let `μ x y` be classes of the
 relative homology `H_{ind x - ind y - 1}(M x y, A x y)`. Suppose that:
@@ -418,12 +429,9 @@ private theorem continuationChainSum_eq_sum_face
   rw [continuationChainSum_eq_sum_subtype S.mem_graded S'.mem_graded ht, map_add, map_add,
     map_sum, map_sum, map_sum, map_sum]
   refine congrArg₂ (· + ·) (Finset.sum_congr rfl fun z _ ↦ ?_) (Finset.sum_congr rfl fun w _ ↦ ?_)
-  · rw [← ha z, ← hb z, cubicalChainSumPairing_lof_lof,
-      ← LinearMap.comp_apply (map k (ContinuousMap.subtypeVal (B x y)) n), ← map_comp,
-      ContinuousMap.subtypeVal_comp_codRestrict, map_cast, cubicalChainLof_cast]
-  · rw [← ha' w, ← hb' w, cubicalChainSumPairing_lof_lof, map_zsmul_unit, map_zsmul_unit,
-      ← LinearMap.comp_apply (map k (ContinuousMap.subtypeVal (B x y)) n), ← map_comp,
-      ContinuousMap.subtypeVal_comp_codRestrict, map_cast, cubicalChainLof_cast]
+  · rw [← ha z, ← hb z, cubicalChainSumPairing_lof_lof_eq_subtypeVal _ _ (hκB z) (hpq z)]
+  · rw [← ha' w, ← hb' w, cubicalChainSumPairing_lof_lof_eq_subtypeVal _ _ (hκ'B w) (hpq' w),
+      map_zsmul_unit, map_zsmul_unit]
 
 /-- **Representing continuation chain systems from a face-by-face condition.** Let `S` and `S'` be
 twisting chain systems representing classes `μ x y` of `H_{ind x - ind y - 1}(M x y, A x y)` and
