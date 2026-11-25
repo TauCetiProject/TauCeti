@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.FiberBundle.Trivial
 public import TauCeti.Topology.VectorBundle.Determinant
+public import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # The determinant line of a trivial bundle
@@ -16,9 +17,9 @@ dimension `r`. The determinant line `det (B × F) = ⋀ʳ (B × F)` of the trivi
 (`TauCeti.DetBundle 𝕜 F (Bundle.Trivial B F)`) is the trivial line `B × 𝕜`: each fibre `⋀ʳ F` is
 identified with `𝕜` by the fixed coordinate `TauCeti.DetBundle.modelCoord F` of the basis
 `Module.finBasis 𝕜 F` (`TauCeti.DetBundle.trivialEquiv`), and these identifications form a
-homeomorphism of total spaces `det (B × F) ≃ B × 𝕜` (`TauCeti.DetBundle.trivialHomeomorph`). It is
-continuous because it is the trivialization of `det (B × F)` induced from the global
-trivialization `Bundle.Trivial.trivialization B F` of `B × F`, whose base set is all of `B`.
+homeomorphism of total spaces `det (B × F) ≃ B × 𝕜` (`TauCeti.DetBundle.trivialHomeomorph`),
+namely the trivialization of `det (B × F)` induced from the global trivialization
+`Bundle.Trivial.trivialization B F` of `B × F`, whose base set is all of `B`.
 
 For `𝕜 = ℂ` and `F = ℂʳ` this is the isomorphism `det(ℂʳ) ≃ ℂ` of the determinant line of a trivial
 complex vector bundle determined by the fixed basis `Module.finBasis ℂ F`. It need not be the
@@ -104,30 +105,25 @@ variable [CompleteSpace 𝕜]
 variable (𝕜 B F) in
 /-- **The determinant line of a trivial bundle is trivial.** The fibrewise identifications
 `TauCeti.DetBundle.trivialEquiv` of `⋀ʳ F` with `𝕜` form a homeomorphism of total spaces
-`det (B × F) ≃ B × 𝕜`. It is continuous because it is the trivialization of the determinant line
-induced by the global trivialization `Bundle.Trivial.trivialization B F`. -/
+`det (B × F) ≃ B × 𝕜` (`TauCeti.DetBundle.trivialHomeomorph_apply`). It is the trivialization of
+the determinant line induced by the global trivialization `Bundle.Trivial.trivialization B F`. -/
 def trivialHomeomorph :
     TotalSpace 𝕜 (DetBundle 𝕜 F (Trivial B F)) ≃ₜ TotalSpace 𝕜 (Trivial B 𝕜) :=
-  bundleHomeomorph (trivialEquiv 𝕜 B F) <| by
-    have hx (x : B) : x ∈ (Trivial.trivialization B F).baseSet := by
-      simp only [Trivial.trivialization_baseSet, Set.mem_univ]
-    have he : Continuous (trivialization (𝕜 := 𝕜) (Trivial.trivialization B F)) := by
-      simpa only [Trivialization.source_eq, trivialization_baseSet, Trivial.trivialization_baseSet,
-        Set.preimage_univ, continuousOn_univ] using
-        (trivialization (𝕜 := 𝕜) (Trivial.trivialization B F)).continuousOn
-    refine ((Trivial.homeomorphProd B 𝕜).symm.continuous.comp he).congr fun p ↦ ?_
-    rw [Function.comp_apply, trivialization_apply_mk _ (hx p.proj), chartCoord_trivialization,
-      Homeomorph.symm_apply_eq, Trivial.homeomorphProd_apply]
+  (trivialization (𝕜 := 𝕜) (Trivial.trivialization B F)).homeomorphTrivial <| by
+    rw [trivialization_baseSet, Trivial.trivialization_baseSet]
 
 @[simp]
 theorem trivialHomeomorph_apply (p : TotalSpace 𝕜 (DetBundle 𝕜 F (Trivial B F))) :
-    trivialHomeomorph 𝕜 B F p = ⟨p.proj, trivialEquiv 𝕜 B F p.proj p.snd⟩ :=
-  bundleHomeomorph_apply _ _ p
+    trivialHomeomorph 𝕜 B F p = ⟨p.proj, trivialEquiv 𝕜 B F p.proj p.snd⟩ := by
+  have hx : p.proj ∈ (Trivial.trivialization B F).baseSet := by
+    simp only [Trivial.trivialization_baseSet, Set.mem_univ]
+  rw [trivialHomeomorph, Trivialization.homeomorphTrivial_apply, trivialization_apply_mk _ hx,
+    chartCoord_trivialization]
 
 @[simp]
 theorem trivialHomeomorph_symm_apply (p : TotalSpace 𝕜 (Trivial B 𝕜)) :
-    (trivialHomeomorph 𝕜 B F).symm p = ⟨p.proj, (trivialEquiv 𝕜 B F p.proj).symm p.snd⟩ :=
-  bundleHomeomorph_symm_apply _ _ p
+    (trivialHomeomorph 𝕜 B F).symm p = ⟨p.proj, (trivialEquiv 𝕜 B F p.proj).symm p.snd⟩ := by
+  rw [Homeomorph.symm_apply_eq, trivialHomeomorph_apply, ContinuousLinearEquiv.apply_symm_apply]
 
 end DetBundle
 
