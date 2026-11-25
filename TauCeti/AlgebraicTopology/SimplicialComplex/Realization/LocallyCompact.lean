@@ -25,9 +25,8 @@ other than `v` have carrier `σ`, and they come arbitrarily close to `v`. A comp
 (`AbstractSimplicialComplex.exists_finset_support_subset_of_isCompact`), so every face
 containing `v` is a subset of one finite vertex set.
 
-These are the local-finiteness statements of §6.1 ("Smooth triangulations of boundaryless
-manifolds") of the QuasiregularMaps roadmap. Local compactness is needed: the infinite star, a
-vertex joined to infinitely many others, is not locally finite.
+Local compactness is needed: the infinite star, a vertex joined to infinitely many others, is not
+locally finite.
 
 ## Main results
 
@@ -57,17 +56,8 @@ variable {ι : Type*} {K : AbstractSimplicialComplex ι}
 
 attribute [local instance] Classical.decEq
 
-/-- The segment between two points of a closed coordinate simplex is continuous in its
-parameter. -/
-theorem StandardSimplex.continuous_lineMap {σ : Finset ι} (b x : StandardSimplex σ) :
-    Continuous (StandardSimplex.lineMap b x) := by
-  refine continuous_induced_rng.2 (continuous_pi fun w ↦ ?_)
-  simp only [Function.comp_apply, StandardSimplex.coe_lineMap, AffineMap.lineMap_apply_module,
-    Finsupp.coe_add, Finsupp.coe_smul, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-  fun_prop
-
-/-- Every face containing a vertex `v` is contained in the vertex set of any compact
-neighbourhood of the realization vertex `v`. -/
+/-- If every point of a neighbourhood `C` of the realization vertex `v` has support in `V`, then
+every face containing `v` is contained in `V`. -/
 theorem subset_of_mem_nhds_vertex {v : ι} {C : Set (Realization K)} (hC : C ∈ 𝓝 (vertex K v))
     {V : Finset ι} (hV : ∀ x ∈ C, x.val.support ⊆ V) {σ : Finset ι} (hσ : σ ∈ K) (hv : v ∈ σ) :
     σ ⊆ V := by
@@ -84,20 +74,15 @@ theorem subset_of_mem_nhds_vertex {v : ι} {C : Set (Realization K)} (hC : C ∈
   let t : unitInterval := ⟨min (ε / 2) 1, le_min (by positivity) zero_le_one,
     min_le_right _ _⟩
   have ht0 : 0 < (t : ℝ) := lt_min (by positivity) one_pos
-  have htC : p t ∈ C := hball (by
-    rw [Metric.mem_ball, Subtype.dist_eq, Set.Icc.coe_zero, Real.dist_eq, sub_zero,
-      abs_of_pos ht0]
-    exact (min_le_left _ _).trans_lt (half_lt_self hε))
+  have htε : (t : ℝ) < ε := (min_le_left _ _).trans_lt (half_lt_self hε)
+  have htC : p t ∈ C := hball (by simpa [Subtype.dist_eq, Real.dist_eq, abs_of_pos ht0] using htε)
   intro w hw
   refine hV _ htC (Finsupp.mem_support_iff.mpr (ne_of_gt ?_))
   have hcard : (0 : ℝ) < σ.card := Nat.cast_pos.mpr (Finset.card_pos.mpr ⟨w, hw⟩)
   have h1 : 0 ≤ 1 - (t : ℝ) := sub_nonneg.mpr t.property.2
-  simp only [p, faceInclusion_val, StandardSimplex.coe_lineMap, AffineMap.lineMap_apply_module,
-    Finsupp.coe_add, Finsupp.coe_smul, Pi.add_apply, Pi.smul_apply, smul_eq_mul, e, b,
-    faceBarycenter_apply, hw, ite_true]
-  have : 0 ≤ (Finsupp.single v (1 : ℝ)) w := by
-    rw [Finsupp.single_apply]
-    split_ifs <;> norm_num
+  simp only [p, faceInclusion_val, StandardSimplex.lineMap_apply, e, b, faceBarycenter_apply, hw,
+    ite_true]
+  have : 0 ≤ (Finsupp.single v (1 : ℝ)) w := Finsupp.single_nonneg.mpr zero_le_one w
   positivity
 
 /-- In a weakly locally compact realization, a vertex lies in only finitely many faces. -/
@@ -117,7 +102,7 @@ theorem finite_setOf_subset_of_weaklyLocallyCompactSpace
   exact (finite_setOf_mem_of_weaklyLocallyCompactSpace v).subset fun σ hσ ↦ ⟨hσ.1, hσ.2 hv⟩
 
 /-- In a weakly locally compact realization, every closed vertex star is finite. -/
-theorem finite_closedStar_of_weaklyLocallyCompactSpace [DecidableEq ι]
+theorem finite_faces_closedStar_of_weaklyLocallyCompactSpace [DecidableEq ι]
     [WeaklyLocallyCompactSpace (Realization K)] (v : ι) :
     (PreAbstractSimplicialComplex.closedStar
       K.toPreAbstractSimplicialComplex {v}).faces.Finite := by
@@ -131,7 +116,7 @@ theorem finite_closedStar_of_weaklyLocallyCompactSpace [DecidableEq ι]
 theorem locallyCompactSpace_realization_iff [DecidableEq ι] :
     LocallyCompactSpace (Realization K) ↔ ∀ v : ι,
       (PreAbstractSimplicialComplex.closedStar K.toPreAbstractSimplicialComplex {v}).faces.Finite :=
-  ⟨fun _ ↦ finite_closedStar_of_weaklyLocallyCompactSpace,
+  ⟨fun _ ↦ finite_faces_closedStar_of_weaklyLocallyCompactSpace,
     K.locallyCompactSpace_realization_of_finite_vertex_stars⟩
 
 /-- In a weakly locally compact realization, a compact set meets only finitely many closed
