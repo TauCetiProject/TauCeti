@@ -61,6 +61,9 @@ nonzero vector of `U` is orthogonal to `V`. In that case the rank of `U` is at m
 Compressing the square of the difference `P_U - P_V` to `U`, from either side, gives
 `P_U - P_U P_V P_U`.
 
+The complementary projection `1 - P_U` has range `Uᗮ`, and more generally `1 - P` has range
+`(range P)ᗮ` for every star projection `P` of a complete space.
+
 A linear map agrees with its composition with the orthogonal projection onto the orthogonal
 complement of its kernel whenever the kernel admits an orthogonal projection.
 
@@ -90,6 +93,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `Submodule.finrank_inf_orthogonal_comm`: `dim (U ⊓ Vᗮ) = dim (V ⊓ Uᗮ)` when `dim U = dim V`.
 * `Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one`: `dim (𝕜 ∙ v)ᗮ = dim E - 1`
   for a nonzero vector `v`.
+* `Submodule.range_one_sub_starProjection`, `IsStarProjection.range_one_sub`: the range of
+  `1 - P_U` is `Uᗮ`, and the range of `1 - P` is `(range P)ᗮ` for every star projection `P`.
 * `Submodule.isCompl_orthogonal_span_of_finite`: the span of finitely many vectors is
   complemented by its orthogonal complement.
 * `TauCeti.exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank`,
@@ -143,6 +148,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `(P_U - P_V)² P_U = P_U (P_U - P_V)² = P_U - P_U P_V P_U`.
 * `Submodule.span_range_starProjection_orthogonal_basis_succ`: if the zeroth coordinate of `v` in
   a basis is nonzero, the projections onto `(𝕜 ∙ v)ᗮ` of the other basis vectors span it.
+* `Submodule.starProjection_comp_eq_self_iff`: `P_U T = T` if and only if the range of `T` lies
+  in `U`.
 * `Submodule.apply_starProjection_eq_of_forall_mem_orthogonal`,
   `Submodule.mul_starProjection_eq_self`, `Submodule.commute_starProjection_orthogonal_iff`,
   `Submodule.apply_mem_of_commute_starProjection`: additive maps vanishing on `Uᗮ` factor through
@@ -398,6 +405,13 @@ theorem starProjection_mul_starProjection_sub_starProjection_sq :
   simp only [sq, sub_mul, mul_sub, mul_assoc, hP.eq, hQ.eq, hP.mul_self_mul]
   abel
 
+/-- The range of the complementary projection `1 - P_U` is the orthogonal complement `Uᗮ`. -/
+@[simp]
+theorem range_one_sub_starProjection :
+    LinearMap.range (1 - (U.starProjection : E →ₗ[𝕜] E)) = Uᗮ := by
+  rw [← ContinuousLinearMap.toLinearMap_one, ← ContinuousLinearMap.toLinearMap_sub,
+    ← starProjection_orthogonal', range_starProjection]
+
 /-- Restricting the orthogonal projection onto `U` to `U` itself gives the identity map. -/
 @[simp]
 theorem orthogonalProjectionOnto_comp_subtypeL :
@@ -538,6 +552,17 @@ theorem mul_starProjection_eq_self {U : Submodule 𝕜 E} [U.HasOrthogonalProjec
   simpa only [_root_.mul_apply_eq_comp] using
     U.apply_starProjection_eq_of_forall_mem_orthogonal hker x
 
+/-- An operator into `E` is fixed by left composition with `U.starProjection` exactly when its
+range lies in `U`. -/
+theorem starProjection_comp_eq_self_iff {F : Type*} [AddCommMonoid F] [Module 𝕜 F]
+    [TopologicalSpace F] {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] {T : F →L[𝕜] E} :
+    U.starProjection ∘L T = T ↔ T.range ≤ U := by
+  refine ⟨?_, fun hT ↦ ContinuousLinearMap.ext fun x ↦
+    U.starProjection_eq_self_iff.mpr (hT ⟨x, rfl⟩)⟩
+  rintro hT _ ⟨x, rfl⟩
+  rw [← hT]
+  exact U.starProjection_apply_mem _
+
 /-- A bounded operator commutes with `Uᗮ.starProjection` if and only if it commutes with
 `U.starProjection`. -/
 @[simp]
@@ -649,6 +674,13 @@ theorem exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (s : Finset E
   obtain ⟨e, he₀, he⟩ := exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank s hs
   exact ⟨(‖e‖⁻¹ : 𝕜) • e, norm_smul_inv_norm he₀, fun u hu ↦ by
     rw [inner_smul_right, he u hu, mul_zero]⟩
+
+/-- In dimension at least two, the orthogonal complement of any vector contains a unit vector. -/
+theorem exists_norm_eq_one_mem_orthogonal_singleton (e : E) (hE : 2 ≤ Module.finrank 𝕜 E) :
+    ∃ w : (𝕜 ∙ e)ᗮ, ‖(w : E)‖ = 1 := by
+  obtain ⟨w, hw, horth⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank
+    (𝕜 := 𝕜) ({e} : Finset E) (by simp; omega)
+  exact ⟨⟨w, Submodule.mem_orthogonal_singleton_iff_inner_right.2 (horth e (by simp))⟩, hw⟩
 
 /-- A vector orthogonal to a nonzero vector `b` is not `-b`. -/
 theorem ne_neg_of_inner_eq_zero {a b : E} (hb : b ≠ 0) (hab : ⟪a, b⟫_𝕜 = 0) : a ≠ -b := by
@@ -820,6 +852,14 @@ theorem comp_starProjection_orthogonal_ker (u : E →L[𝕜] F) [u.ker.HasOrthog
     u.toLinearMap.apply_sub_starProjection_ker x
 
 end ContinuousLinearMap
+
+/-- The range of the complementary projection `1 - P` of a star projection `P` is the orthogonal
+complement of the range of `P`. -/
+theorem IsStarProjection.range_one_sub {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [CompleteSpace E] {P : E →L[𝕜] E} (hP : IsStarProjection P) :
+    LinearMap.range (1 - (P : E →ₗ[𝕜] E)) = P.rangeᗮ := by
+  obtain ⟨_, h⟩ := isStarProjection_iff_eq_starProjection_range.mp hP
+  rw [h, Submodule.range_one_sub_starProjection, Submodule.range_starProjection]
 
 namespace LinearIsometryEquiv
 

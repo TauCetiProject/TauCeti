@@ -9,9 +9,9 @@ public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import Mathlib.Order.Hom.Basic
 public import Mathlib.Topology.Homeomorph.Defs
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
-import Mathlib.Topology.Instances.Sign
 import TauCeti.Analysis.Calculus.IntervalIntegral.Periodic
 import TauCeti.Analysis.Calculus.IntervalIntegral.Inverse
+import TauCeti.Topology.Order.IntermediateValue
 import TauCeti.Topology.VectorBundle.Smul
 
 /-!
@@ -124,14 +124,13 @@ theorem exists_homeomorph_isMIntegralCurve_comp_of_periodic
     (hh0 : ∀ t, h t ≠ 0) (hhT : Periodic h T) (hY : ∀ t, Y (γ t) = h t • X (γ t)) :
     ∃ ψ : ℝ ≃ₜ ℝ, ψ 0 = 0 ∧ ∃ T', T' ≠ 0 ∧ Periodic (γ ∘ ψ) T' ∧
       IsMIntegralCurve (γ ∘ ψ) Y := by
-  -- A continuous nonvanishing function on `ℝ` has the constant sign of its value at `0`.
-  have hsign : ∀ t, SignType.sign (h t) = SignType.sign (h 0) := fun t ↦
-    isPreconnected_univ.sign_eq_of_continuousOn hh.continuousOn (fun t _ ↦ hh0 t) trivial trivial
-  rcases (hh0 0).lt_or_gt with hneg0 | hpos0
+  -- A continuous nonvanishing function on `ℝ` is everywhere negative or everywhere positive.
+  rcases isPreconnected_univ.forall_lt_or_forall_lt (g := fun _ ↦ (0 : ℝ)) hh.continuousOn
+    continuousOn_const fun t _ ↦ hh0 t with hneg | hpos
   swap
-  · exact exists_homeomorph_isMIntegralCurve_comp_of_pos hγ hT hper hh
-      (fun t ↦ sign_eq_one_iff.1 ((hsign t).trans (sign_pos hpos0))) hhT hY
-  have hneg : ∀ t, h t < 0 := fun t ↦ sign_eq_neg_one_iff.1 ((hsign t).trans (sign_neg hneg0))
+  · exact exists_homeomorph_isMIntegralCurve_comp_of_pos hγ hT hper hh (fun t ↦ hpos t trivial)
+      hhT hY
+  replace hneg (t : ℝ) : h t < 0 := hneg t trivial
   -- For a negative factor, reparametrize along `-Y` with the factor `-h`, then reverse time.
   obtain ⟨ψ, hψ0, T', hT', hper', hψ⟩ :=
     exists_homeomorph_isMIntegralCurve_comp_of_pos (Y := fun x ↦ -Y x) hγ hT hper hh.neg

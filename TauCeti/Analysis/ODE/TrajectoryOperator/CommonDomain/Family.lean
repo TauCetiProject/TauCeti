@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -24,7 +25,7 @@ autonomous operator `TauCeti.WeakDerivStep.domainTrajectoryOperator ι A₀`.
 
 On the whole line in `L²`, the autonomous operator of an invertible `ι`-symmetric `A₀`
 (`⟪A₀ x, ι y⟫ = ⟪ι x, A₀ y⟫`) is invertible with inverse of norm at most
-`M = √(1 + ‖A₀⁻¹‖²)`. Comparing with it gives the estimates for a coefficient that is close to
+`M = max ‖A₀⁻¹‖ 1`. Comparing with it gives the estimates for a coefficient that is close to
 `A₀`, without any symmetry of `A(s)` itself:
 
 * if `‖A(s) - A₀‖ ≤ δ` for almost every `s` in a set `S` and the path `u` vanishes off `S`, then
@@ -104,7 +105,7 @@ private theorem norm_familyDomainTrajectoryOperator_sub_domainTrajectoryOperator
   · rw [hus hs]; simp
 
 /-- **Estimate near an invertible symmetric constant.** Let `A₀` be invertible and `ι`-symmetric,
-and put `M = √(1 + ‖A₀⁻¹‖²)`. If `‖A(s) - A₀‖ ≤ δ` for almost every `s` in `S` and the path `u`
+and put `M = max ‖A₀⁻¹‖ 1`. If `‖A(s) - A₀‖ ≤ δ` for almost every `s` in `S` and the path `u`
 vanishes almost everywhere off `S`, then `(1 - M δ) ‖u‖ ≤ M ‖(ι ∘ u)' + A u‖` on `L²(ℝ)`. -/
 theorem mul_norm_le_mul_norm_familyDomainTrajectoryOperator
     (hSymm : ∀ x y : D, ⟪A₀ x, ι y⟫_ℝ = ⟪ι x, A₀ y⟫_ℝ) (hA₀ : A₀.IsInvertible)
@@ -112,10 +113,11 @@ theorem mul_norm_le_mul_norm_familyDomainTrajectoryOperator
     (hA : ∀ᵐ s ∂volume, s ∈ S → ‖A s - A₀‖ ≤ δ)
     {u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)}
     (hu : ∀ᵐ s ∂volume, s ∉ S → prev (ι.compLpL 2 μ₀) u s = 0) :
-    (1 - √(1 + ‖A₀.inverse‖ ^ 2) * δ) * ‖u‖ ≤
-      √(1 + ‖A₀.inverse‖ ^ 2) * ‖familyDomainTrajectoryOperator ι A u‖ := by
-  set M := √(1 + ‖A₀.inverse‖ ^ 2)
-  have h₀ := norm_le_sqrt_one_add_sq_mul_norm_domainTrajectoryOperator hSymm hA₀ u
+    (1 - max ‖A₀.inverse‖ 1 * δ) * ‖u‖ ≤
+      max ‖A₀.inverse‖ 1 * ‖familyDomainTrajectoryOperator ι A u‖ := by
+  set M := max ‖A₀.inverse‖ 1
+  have h₀ :=
+    norm_le_max_mul_norm_domainTrajectoryOperator hSymm hA₀.norm_le_norm_inverse_mul_norm u
   have hdiff :=
     norm_familyDomainTrajectoryOperator_sub_domainTrajectoryOperator_le (ι := ι) hδ hA hu
   have htri : ‖domainTrajectoryOperator ι A₀ u‖ ≤
@@ -124,41 +126,41 @@ theorem mul_norm_le_mul_norm_familyDomainTrajectoryOperator
       (familyDomainTrajectoryOperator ι A u - domainTrajectoryOperator ι A₀ u)
     rw [sub_sub_cancel] at this
     linarith
-  nlinarith [mul_le_mul_of_nonneg_left htri (Real.sqrt_nonneg (1 + ‖A₀.inverse‖ ^ 2))]
+  nlinarith [mul_le_mul_of_nonneg_left htri (zero_le_one.trans (le_max_right ‖A₀.inverse‖ 1))]
 
 /-- **Invertibility near an invertible symmetric constant.** If `A₀` is invertible and
-`ι`-symmetric and `√(1 + ‖A₀⁻¹‖²) ‖A - A₀‖_{L∞} < 1`, then `u ↦ (ι ∘ u)' + A u` is invertible from
+`ι`-symmetric and `max ‖A₀⁻¹‖ 1 ‖A - A₀‖_{L∞} < 1`, then `u ↦ (ι ∘ u)' + A u` is invertible from
 `L²(ℝ, D) ∩ W^{1,2}(ℝ, H)` onto `L²(ℝ, H)`. -/
 theorem isInvertible_familyDomainTrajectoryOperator_of_mul_norm_sub_lt
     (hSymm : ∀ x y : D, ⟪A₀ x, ι y⟫_ℝ = ⟪ι x, A₀ y⟫_ℝ) (hA₀ : A₀.IsInvertible)
     {A : Lp (D →L[ℝ] H) ∞ μ₀}
-    (h : √(1 + ‖A₀.inverse‖ ^ 2) * ‖A - (memLp_top_const (μ := μ₀) A₀).toLp _‖ < 1) :
+    (h : max ‖A₀.inverse‖ 1 * ‖A - (memLp_top_const (μ := μ₀) A₀).toLp _‖ < 1) :
     (familyDomainTrajectoryOperator (p := 2) ι A).IsInvertible := by
   have hle := norm_familyDomainTrajectoryOperator_sub_le (p := 2) ι A
     ((memLp_top_const (μ := μ₀) A₀).toLp _)
   rw [familyDomainTrajectoryOperator_toLp_const] at hle
   exact (isInvertible_domainTrajectoryOperator hSymm hA₀).of_mul_norm_sub_lt
     (norm_inverse_domainTrajectoryOperator_le hSymm hA₀)
-    ((mul_le_mul_of_nonneg_left hle (Real.sqrt_nonneg _)).trans_lt h)
+    ((mul_le_mul_of_nonneg_left hle (zero_le_one.trans (le_max_right _ _))).trans_lt h)
 
 /-- Under the hypotheses of
 `isInvertible_familyDomainTrajectoryOperator_of_mul_norm_sub_lt`, with
-`M = √(1 + ‖A₀⁻¹‖²)`, the inverse of `u ↦ (ι ∘ u)' + A u` has norm at most
+`M = max ‖A₀⁻¹‖ 1`, the inverse of `u ↦ (ι ∘ u)' + A u` has norm at most
 `M / (1 - M ‖A - A₀‖_{L∞})`. -/
 theorem norm_inverse_familyDomainTrajectoryOperator_le
     (hSymm : ∀ x y : D, ⟪A₀ x, ι y⟫_ℝ = ⟪ι x, A₀ y⟫_ℝ) (hA₀ : A₀.IsInvertible)
     {A : Lp (D →L[ℝ] H) ∞ μ₀}
-    (h : √(1 + ‖A₀.inverse‖ ^ 2) * ‖A - (memLp_top_const (μ := μ₀) A₀).toLp _‖ < 1) :
+    (h : max ‖A₀.inverse‖ 1 * ‖A - (memLp_top_const (μ := μ₀) A₀).toLp _‖ < 1) :
     ‖(familyDomainTrajectoryOperator (p := 2) ι A).inverse‖ ≤
-      √(1 + ‖A₀.inverse‖ ^ 2) /
-        (1 - √(1 + ‖A₀.inverse‖ ^ 2) * ‖A - (memLp_top_const (μ := μ₀) A₀).toLp _‖) := by
+      max ‖A₀.inverse‖ 1 /
+        (1 - max ‖A₀.inverse‖ 1 * ‖A - (memLp_top_const (μ := μ₀) A₀).toLp _‖) := by
   have hle := norm_familyDomainTrajectoryOperator_sub_le (p := 2) ι A
     ((memLp_top_const (μ := μ₀) A₀).toLp _)
   rw [familyDomainTrajectoryOperator_toLp_const] at hle
-  replace hle := mul_le_mul_of_nonneg_left hle (Real.sqrt_nonneg (1 + ‖A₀.inverse‖ ^ 2))
+  replace hle := mul_le_mul_of_nonneg_left hle (zero_le_one.trans (le_max_right ‖A₀.inverse‖ 1))
   refine ((isInvertible_domainTrajectoryOperator hSymm hA₀).norm_inverse_le_of_mul_norm_sub_lt
     (norm_inverse_domainTrajectoryOperator_le hSymm hA₀) (lt_of_le_of_lt hle h)).trans ?_
-  exact div_le_div_of_nonneg_left (Real.sqrt_nonneg _) (sub_pos.2 h) (by linarith)
+  exact div_le_div_of_nonneg_left (by positivity) (sub_pos.2 h) (by linarith)
 
 /-- **The estimate along a filter.** If `A(s)` converges along a filter `l` on `ℝ` to an invertible
 `ι`-symmetric operator `A₀`, there are a set `S ∈ l` and a constant `C` with
@@ -170,8 +172,8 @@ theorem exists_mem_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_of_ten
     ∃ C : ℝ, ∃ S ∈ l, ∀ u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀),
       (∀ᵐ s ∂volume, s ∉ S → prev (ι.compLpL 2 μ₀) u s = 0) →
         ‖u‖ ≤ C * ‖familyDomainTrajectoryOperator ι AL u‖ := by
-  set M := √(1 + ‖A₀.inverse‖ ^ 2)
-  have hM : 0 < M := Real.sqrt_pos.2 (by positivity)
+  set M := max ‖A₀.inverse‖ 1
+  have hM : 0 < M := by positivity
   have hδ : 0 < (2 * M)⁻¹ := by positivity
   refine ⟨2 * M, {s | ‖A s - A₀‖ ≤ (2 * M)⁻¹},
     (hA.eventually (Metric.closedBall_mem_nhds A₀ hδ)).mono fun s hs ↦ by

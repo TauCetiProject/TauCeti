@@ -55,8 +55,8 @@ theorem isCompact_setOf_support_mem {L : PreAbstractSimplicialComplex ι}
     constructor
     · intro hx
       exact mem_iUnion.mpr ⟨⟨x.val.support, hx⟩,
-        ⟨⟨x.val, by simpa only [carrier_val] using mem_convexHull_carrier K x⟩,
-          Subtype.ext (faceInclusion_val _ _ _)⟩⟩
+        ⟨⟨x.val, Realization.mem_convexHull_of_support_subset K x subset_rfl⟩,
+          faceInclusion_mk_val _ _ _ _⟩⟩
     · intro hx
       obtain ⟨σ, y, rfl⟩ := mem_iUnion.mp hx
       exact support_faceInclusion_mem hL σ.property y

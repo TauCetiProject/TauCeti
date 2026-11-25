@@ -20,6 +20,8 @@ public import Mathlib.Data.Set.Function
   carries preimages under `q` into preimages under `q'`.
 * `Set.MapsTo.compl_image` and `Set.MapsTo.of_compl_image`: compatibility of `MapsTo` between
   complements and complements of images along a commutative square.
+* `Set.bijOn_preimage_iff`: a map restricts to a bijection from the preimage of `t` onto `t` if
+  and only if it is injective on that preimage and `t` is contained in its range.
 * `Function.Injective.mapsTo_of_eq_self`: an injective self-map fixing every point outside a
   set `K` maps `K` into itself.
 * `Function.Injective.apply_mem_iff_of_eq_self`: such a map preserves membership in every set
@@ -77,6 +79,13 @@ theorem MapsTo.of_compl_image {γ δ : Type*} {i : β → δ} {i' : α → γ} {
     {s : Set β} {s' : Set α} (hf : MapsTo f (i' '' s')ᶜ (i '' s)ᶜ) (hi' : Function.Injective i')
     (hw : i ∘ f' = f ∘ i') : MapsTo f' s'ᶜ sᶜ :=
   fun v' hv' hfv' ↦ hf (fun ⟨_, hw', h⟩ ↦ hv' (hi' h ▸ hw')) ⟨f' v', hfv', congrFun hw v'⟩
+
+/-- A map restricts to a bijection from the preimage of `t` onto `t` if and only if it is
+injective on that preimage and `t` is contained in its range. -/
+theorem bijOn_preimage_iff {t : Set β} :
+    BijOn f (f ⁻¹' t) t ↔ InjOn f (f ⁻¹' t) ∧ t ⊆ range f :=
+  ⟨fun h ↦ ⟨h.injOn, h.surjOn.trans (image_subset_range _ _)⟩, fun ⟨hinj, hsub⟩ ↦ by
+    simpa only [image_preimage_eq_of_subset hsub] using hinj.bijOn_image⟩
 
 end Set
 
