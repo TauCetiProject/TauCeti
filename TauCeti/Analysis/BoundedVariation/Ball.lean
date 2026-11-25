@@ -204,9 +204,10 @@ theorem perimeter_ball_eq_ofReal_div_mul :
   rw [perimeter_ball_eq_ofReal hr, ← μ.finrank_div_mul_addHaar_real_ball c hr,
     ENNReal.ofReal_mul (by positivity), ofReal_measureReal measure_ball_lt_top.ne]
 
-/-- The indicator of a ball is locally integrable. -/
-theorem locallyIntegrableOn_indicator_ball :
-    LocallyIntegrableOn ((ball c r).indicator (1 : E → ℝ)) (⊤ : Opens E) μ :=
+/-- The indicator of a ball is locally integrable for any locally finite measure. -/
+theorem locallyIntegrableOn_indicator_ball {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] {μ : Measure X} [IsLocallyFiniteMeasure μ] {c : X} {r : ℝ} :
+    LocallyIntegrableOn ((ball c r).indicator (1 : X → ℝ)) (⊤ : Opens X) μ :=
   locallyIntegrableOn_indicator_const measurableSet_ball.nullMeasurableSet 1
 
 /-- A ball has locally finite perimeter in the whole space: every compact set lies in an open set
