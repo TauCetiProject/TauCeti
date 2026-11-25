@@ -9,9 +9,8 @@ import TauCeti.NumberTheory.ModularForms.LevelOne.FundamentalDomainBoundary.Cont
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import TauCeti.NumberTheory.ModularForms.LevelOne.FundamentalDomainBoundary.Basic
 
-import Mathlib.Analysis.Complex.Convex
-import TauCeti.Analysis.Contour.Winding.Integer
-import TauCeti.Analysis.Contour.Winding.LocallyConstant
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.LocallyConstant
 import TauCeti.NumberTheory.ModularForms.LevelOne.FundamentalDomainBoundary.Decomposition
 import TauCeti.NumberTheory.ModularForms.LevelOne.FundamentalDomainBoundary.PieceLog
 
@@ -120,10 +119,10 @@ private theorem windingNumber_fdBoundary_eq_neg_one_of_one_lt_im (hx : |w.re| < 
   obtain ⟨hx₁, hx₂⟩ := abs_lt.mp hx
   have h32 : Real.sqrt 3 / 2 ≤ 1 := sqrt_three_div_two_lt_one.le
   have hnorm : 1 < ‖w‖ := hy1.trans_le (Complex.im_le_norm w)
-  obtain ⟨n, hn⟩ := (isPiecewiseC1On_fdBoundary H).exists_int_windingNumber
-    (fdBoundary_closed H).symm
-    (by rw [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 5)]
-        exact fun t _ ↦ fdBoundary_ne_of_abs_re_lt_half_of_one_lt_norm_of_im_lt hx hnorm hyH t)
+  obtain ⟨n, hn⟩ :=
+    (isPiecewiseC1On_fdBoundary H).absolutelyContinuousOnInterval.exists_int_windingNumber
+      (fdBoundary_closed H).symm fun ⟨t, _, h⟩ ↦
+        fdBoundary_ne_of_abs_re_lt_half_of_one_lt_norm_of_im_lt hx hnorm hyH t h
   have hIm := two_pi_mul_int_eq_sum_arg_of_windingNumber_fdBoundary_eq hx hy1 hyH hn
   -- the four endpoint differences turn clockwise, so each argument lies in `(-π, 0)`; the
   -- sum is then in `(-4π, 0)`, which pins the integer to `-1`
@@ -222,7 +221,8 @@ theorem windingNumber_fdBoundary_eq_neg_one_of_interior (hH : 1 < H) {w : ℂ}
     rintro z hz ⟨t, -, h_eq⟩
     obtain ⟨hz_re, hz_norm, hz_im⟩ := interior_avoiding_facts hH hnorm hre him hpos hz
     exact fdBoundary_ne_of_abs_re_lt_half_of_one_lt_norm_of_im_lt hz_re hz_norm hz_im t h_eq
-  rw [(isPiecewiseC1On_fdBoundary H).windingNumber_eq_of_mem_connectedComponentIn
+  rw [AbsolutelyContinuousOnInterval.windingNumber_eq_of_mem_connectedComponentIn
+      (isPiecewiseC1On_fdBoundary H).absolutelyContinuousOnInterval
       (fdBoundary_closed H).symm
       (hconn.subset_connectedComponentIn (Or.inr htop_mem_box) hdisj
         (Or.inl (left_mem_segment ℝ w _))),
