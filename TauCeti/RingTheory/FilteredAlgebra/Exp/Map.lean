@@ -58,8 +58,9 @@ theorem map_completedLog_of_projection (l : ℕ → ℕ) (g : F.completion → G
     g (F.completedLog u) = G.completedLog ⟨g u, hu⟩ :=
   G.completion_ext fun k => by
     rw [hproj k, projection_completedLog, projection_completedLog, hproj k]
-    exact (show IsNilpotent (F.projection (l k) u - 1) by
-      simpa only [map_sub, map_one] using F.isNilpotent_projection u.property (l k)).map_log (φ k)
+    have hnil : IsNilpotent (F.projection (l k) u - 1) := by
+      simpa only [map_sub, map_one] using F.isNilpotent_projection u.property (l k)
+    exact hnil.map_log (φ k)
 
 end Projection
 
