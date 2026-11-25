@@ -5,15 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Dynamics.Ergodic.Action.WeakMixing
 public import TauCeti.Dynamics.Ergodic.Action.Eigenfunction
+public import TauCeti.Dynamics.Ergodic.Action.WeakMixing.Basic
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.SpecificLimits.Cesaro.Integral
 
 /-!
 # Weak mixing in `L²` and eigenfunctions
 
-Let `ℝ` act jointly measurably on `X`, preserving a probability measure `μ`, and let `U_t` be the
+Let `ℝ` act jointly measurably on `X`, preserving a finite measure `μ`, and let `U_t` be the
 Koopman group on complex `L²(μ)`, `U_t f = f ∘ (t +ᵥ ·)` (`TauCeti.koopmanGroup`).
 
 The action is weakly mixing exactly when, for all `f g ∈ L²(μ)`, the centered correlations
@@ -56,49 +56,58 @@ open scoped Topology ENNReal ComplexConjugate InnerProductSpace
 
 namespace MeasureTheory.Measure
 
-/-! ### Cesàro means of continuous functions -/
+/-! ### Vanishing Cesàro means of additive families -/
 
-section Cesaro
+section AverageVanishes
 
-/-- If a continuous nonnegative function `φ` is bounded, up to an arbitrarily small additive
-constant, by continuous functions whose Cesàro means tend to `0`, its Cesàro means tend to `0`. -/
-private theorem tendsto_average_of_forall_le {φ : ℝ → ℝ} (hφ : Continuous φ) (h0 : ∀ t, 0 ≤ φ t)
-    (h : ∀ ε > 0, ∃ ψ : ℝ → ℝ, Continuous ψ ∧
-      Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, ψ t) atTop (𝓝 0) ∧ ∀ t, φ t ≤ ψ t + ε) :
-    Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, φ t) atTop (𝓝 0) := by
-  rw [Metric.tendsto_atTop]
-  intro ε hε
-  obtain ⟨ψ, hψc, hψ, hφψ⟩ := h (ε / 2) (half_pos hε)
-  obtain ⟨T₀, hT₀⟩ := Metric.tendsto_atTop.1 hψ (ε / 2) (half_pos hε)
-  refine ⟨max T₀ 1, fun T hTmax => ?_⟩
-  have hT : 0 < T := lt_of_lt_of_le one_pos (le_of_max_le_right hTmax)
-  have hψT := hT₀ T (le_of_max_le_left hTmax)
-  rw [Real.dist_eq, sub_zero] at hψT ⊢
-  have hint : ∫ t in (0 : ℝ)..T, φ t ≤ ∫ t in (0 : ℝ)..T, (ψ t + ε / 2) :=
-    intervalIntegral.integral_mono_on hT.le (hφ.intervalIntegrable _ _)
-      ((hψc.add continuous_const).intervalIntegrable _ _) fun t _ => hφψ t
-  rw [intervalIntegral.integral_add (hψc.intervalIntegrable _ _) intervalIntegrable_const,
-    intervalIntegral.integral_const, sub_zero, smul_eq_mul] at hint
-  have hnonneg : 0 ≤ T⁻¹ * ∫ t in (0 : ℝ)..T, φ t :=
-    mul_nonneg (inv_nonneg.2 hT.le) (intervalIntegral.integral_nonneg hT.le fun t _ => h0 t)
-  rw [abs_of_nonneg hnonneg]
-  have hle : T⁻¹ * ∫ t in (0 : ℝ)..T, φ t ≤ (T⁻¹ * ∫ t in (0 : ℝ)..T, ψ t) + ε / 2 := by
-    calc T⁻¹ * ∫ t in (0 : ℝ)..T, φ t
-        ≤ T⁻¹ * ((∫ t in (0 : ℝ)..T, ψ t) + T * (ε / 2)) :=
-          mul_le_mul_of_nonneg_left hint (inv_nonneg.2 hT.le)
-      _ = (T⁻¹ * ∫ t in (0 : ℝ)..T, ψ t) + ε / 2 := by
-          rw [mul_add, ← mul_assoc, inv_mul_cancel₀ hT.ne', one_mul]
-  linarith [le_abs_self (T⁻¹ * ∫ t in (0 : ℝ)..T, ψ t)]
+variable {H : Type*} [NormedAddCommGroup H] {φ : H → ℝ → ℂ}
 
-/-- The Cesàro means of a sum of two continuous functions are the sums of their Cesàro means. -/
-private theorem tendsto_average_add {ψ₁ ψ₂ : ℝ → ℝ} (h₁c : Continuous ψ₁) (h₂c : Continuous ψ₂)
-    (h₁ : Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, ψ₁ t) atTop (𝓝 0))
-    (h₂ : Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, ψ₂ t) atTop (𝓝 0)) :
-    Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, (ψ₁ t + ψ₂ t)) atTop (𝓝 0) := by
-  simpa [intervalIntegral.integral_add (h₁c.intervalIntegrable _ _) (h₂c.intervalIntegrable _ _),
-    mul_add] using h₁.add h₂
+/-- The Cesàro means of `‖φ x t‖` tend to `0`. -/
+private def AverageVanishes (φ : H → ℝ → ℂ) (x : H) : Prop :=
+  Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, ‖φ x t‖) atTop (𝓝 0)
 
-end Cesaro
+/-- For a continuous family `φ` additive in `x`, the `x` with vanishing Cesàro means of `‖φ x t‖`
+are closed under addition. -/
+private theorem averageVanishes_add (hc : ∀ x, Continuous (φ x))
+    (hadd : ∀ x y t, φ (x + y) t = φ x t + φ y t) {x y : H} (hx : AverageVanishes φ x)
+    (hy : AverageVanishes φ y) : AverageVanishes φ (x + y) := by
+  have hxy := tendsto_average_add (fun T => (hc x).norm.intervalIntegrable 0 T)
+    (fun T => (hc y).norm.intervalIntegrable 0 T) hx hy
+  rw [add_zero] at hxy
+  refine tendsto_average_of_forall_le (fun T => (hc _).norm.intervalIntegrable 0 T)
+    (fun _ => norm_nonneg _) fun ε hε => ⟨fun t => ‖φ x t‖ + ‖φ y t‖,
+      fun T => ((hc x).norm.add (hc y).norm).intervalIntegrable 0 T, hxy, fun t => ?_⟩
+  dsimp only
+  rw [hadd]
+  linarith [norm_add_le (φ x t) (φ y t)]
+
+/-- For a continuous family `φ` additive in `x` with `‖φ x t‖ ≤ C ‖x‖`, the `x` with vanishing
+Cesàro means of `‖φ x t‖` form a closed set. -/
+private theorem isClosed_averageVanishes (hc : ∀ x, Continuous (φ x))
+    (hadd : ∀ x y t, φ (x + y) t = φ x t + φ y t) {C : ℝ} (hC : ∀ x t, ‖φ x t‖ ≤ C * ‖x‖) :
+    IsClosed {x | AverageVanishes φ x} := by
+  refine isClosed_of_closure_subset fun x hx => ?_
+  refine tendsto_average_of_forall_le (fun T => (hc x).norm.intervalIntegrable 0 T)
+    (fun _ => norm_nonneg _) fun ε hε => ?_
+  have hC' : 0 < |C| + 1 := by positivity
+  obtain ⟨y, hy, hxy⟩ := Metric.mem_closure_iff.1 hx (ε / (|C| + 1)) (div_pos hε hC')
+  refine ⟨fun t => ‖φ y t‖, fun T => (hc y).norm.intervalIntegrable 0 T, hy, fun t => ?_⟩
+  have hsplit : φ x t = φ y t + φ (x - y) t := by
+    rw [← hadd, add_sub_cancel]
+  have hbound : ‖φ (x - y) t‖ ≤ ε :=
+    calc ‖φ (x - y) t‖ ≤ C * dist x y := by
+          rw [dist_eq_norm]
+          exact hC _ _
+      _ ≤ (|C| + 1) * dist x y :=
+          mul_le_mul_of_nonneg_right (by linarith [le_abs_self C]) dist_nonneg
+      _ ≤ ε := by
+          rw [lt_div_iff₀ hC'] at hxy
+          linarith
+  dsimp only
+  rw [hsplit]
+  linarith [norm_add_le (φ y t) (φ (x - y) t)]
+
+end AverageVanishes
 
 /-! ### Centered correlations of a unitary group -/
 
@@ -111,10 +120,6 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
 `e`. For the Koopman group and `e = 1`, it is `⟪g, U_t f⟫ - (∫ f) conj (∫ g)`. -/
 private def corr (f g : H) (t : ℝ) : ℂ :=
   ⟪g, U t f⟫_ℂ - ⟪e, f⟫_ℂ * ⟪g, e⟫_ℂ
-
-/-- The Cesàro means of the absolute value of the centered correlation tend to `0`. -/
-private def CorrVanishes (f g : H) : Prop :=
-  Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, ‖corr U e f g t‖) atTop (𝓝 0)
 
 private theorem continuous_corr (f g : H) : Continuous (corr U e f g) :=
   (continuous_const.inner (U.continuous_orbit f)).sub continuous_const
@@ -145,79 +150,11 @@ private theorem norm_corr_le (hU : U.IsUnitary) (f g : H) (t : ℝ) :
         rw [hU.norm_map]
         ring
 
-private theorem corrVanishes_add_left {f₁ f₂ g : H} (h₁ : CorrVanishes U e f₁ g)
-    (h₂ : CorrVanishes U e f₂ g) : CorrVanishes U e (f₁ + f₂) g := by
-  refine tendsto_average_of_forall_le (continuous_corr U e _ _).norm (fun _ => norm_nonneg _)
-    fun ε hε => ⟨fun t => ‖corr U e f₁ g t‖ + ‖corr U e f₂ g t‖,
-      ((continuous_corr U e _ _).norm.add (continuous_corr U e _ _).norm),
-      tendsto_average_add (continuous_corr U e _ _).norm (continuous_corr U e _ _).norm h₁ h₂,
-      fun t => ?_⟩
-  rw [corr_add_left]
-  beta_reduce
-  linarith [norm_add_le (corr U e f₁ g t) (corr U e f₂ g t)]
-
-private theorem corrVanishes_add_right {f g₁ g₂ : H} (h₁ : CorrVanishes U e f g₁)
-    (h₂ : CorrVanishes U e f g₂) : CorrVanishes U e f (g₁ + g₂) := by
-  refine tendsto_average_of_forall_le (continuous_corr U e _ _).norm (fun _ => norm_nonneg _)
-    fun ε hε => ⟨fun t => ‖corr U e f g₁ t‖ + ‖corr U e f g₂ t‖,
-      ((continuous_corr U e _ _).norm.add (continuous_corr U e _ _).norm),
-      tendsto_average_add (continuous_corr U e _ _).norm (continuous_corr U e _ _).norm h₁ h₂,
-      fun t => ?_⟩
-  rw [corr_add_right]
-  beta_reduce
-  linarith [norm_add_le (corr U e f g₁ t) (corr U e f g₂ t)]
-
-private theorem isClosed_corrVanishes_left (hU : U.IsUnitary) (g : H) :
-    IsClosed {f | CorrVanishes U e f g} := by
-  refine isClosed_of_closure_subset fun f hf => ?_
-  refine tendsto_average_of_forall_le (continuous_corr U e _ _).norm (fun _ => norm_nonneg _)
-    fun ε hε => ?_
-  have hC : 0 < (1 + ‖e‖ ^ 2) * (‖g‖ + 1) := by positivity
-  obtain ⟨f', hf', hff'⟩ := Metric.mem_closure_iff.1 hf (ε / ((1 + ‖e‖ ^ 2) * (‖g‖ + 1)))
-    (div_pos hε hC)
-  refine ⟨fun t => ‖corr U e f' g t‖, (continuous_corr U e f' g).norm, hf', fun t => ?_⟩
-  have hsplit : corr U e f g t = corr U e f' g t + corr U e (f - f') g t := by
-    rw [← corr_add_left, add_sub_cancel]
-  have hbound := norm_corr_le e hU (f - f') g t
-  rw [← dist_eq_norm, dist_comm] at hbound
-  have hlt : (1 + ‖e‖ ^ 2) * (dist f' f * ‖g‖) ≤ ε := by
-    rw [lt_div_iff₀ hC] at hff'
-    calc (1 + ‖e‖ ^ 2) * (dist f' f * ‖g‖) = dist f f' * ((1 + ‖e‖ ^ 2) * ‖g‖) := by
-          rw [dist_comm]; ring
-      _ ≤ dist f f' * ((1 + ‖e‖ ^ 2) * (‖g‖ + 1)) := by gcongr; linarith
-      _ ≤ ε := hff'.le
-  rw [hsplit]
-  beta_reduce
-  linarith [norm_add_le (corr U e f' g t) (corr U e (f - f') g t)]
-
-private theorem isClosed_corrVanishes_right (hU : U.IsUnitary) (f : H) :
-    IsClosed {g | CorrVanishes U e f g} := by
-  refine isClosed_of_closure_subset fun g hg => ?_
-  refine tendsto_average_of_forall_le (continuous_corr U e _ _).norm (fun _ => norm_nonneg _)
-    fun ε hε => ?_
-  have hC : 0 < (1 + ‖e‖ ^ 2) * (‖f‖ + 1) := by positivity
-  obtain ⟨g', hg', hgg'⟩ := Metric.mem_closure_iff.1 hg (ε / ((1 + ‖e‖ ^ 2) * (‖f‖ + 1)))
-    (div_pos hε hC)
-  refine ⟨fun t => ‖corr U e f g' t‖, (continuous_corr U e f g').norm, hg', fun t => ?_⟩
-  have hsplit : corr U e f g t = corr U e f g' t + corr U e f (g - g') t := by
-    rw [← corr_add_right, add_sub_cancel]
-  have hbound := norm_corr_le e hU f (g - g') t
-  rw [← dist_eq_norm, dist_comm] at hbound
-  have hlt : (1 + ‖e‖ ^ 2) * (‖f‖ * dist g' g) ≤ ε := by
-    rw [lt_div_iff₀ hC] at hgg'
-    calc (1 + ‖e‖ ^ 2) * (‖f‖ * dist g' g) = dist g g' * ((1 + ‖e‖ ^ 2) * ‖f‖) := by
-          rw [dist_comm]; ring
-      _ ≤ dist g g' * ((1 + ‖e‖ ^ 2) * (‖f‖ + 1)) := by gcongr; linarith
-      _ ≤ ε := hgg'.le
-  rw [hsplit]
-  beta_reduce
-  linarith [norm_add_le (corr U e f g' t) (corr U e f (g - g') t)]
-
 end Correlation
 
 /-! ### The `L²` form of weak mixing -/
 
-variable {X : Type*} [MeasurableSpace X] {μ : Measure X} [IsProbabilityMeasure μ]
+variable {X : Type*} [MeasurableSpace X] {μ : Measure X} [IsFiniteMeasure μ]
 
 /-- The constant function `1` in complex `L²(μ)`. -/
 private def one : Lp ℂ 2 μ :=
@@ -238,15 +175,11 @@ private theorem corr_koopmanGroup (f g : Lp ℂ 2 μ) (t : ℝ) :
         (∫ x, f x ∂μ) * conj (∫ x, g x ∂μ) := by
   unfold corr
   rw [inner_one_left, inner_one_right]
+  -- `corr` reaches `Lp ℂ 2 μ` through its `InnerProductSpace ℂ` structure, so the inner product
+  -- is `InnerProductSpace.toInner` of `L2.innerProductSpace` and the real scalars of the group
+  -- come from `InnerProductSpace.toNormedSpace`; the right side uses the `L2` inner product and
+  -- `Lp.instNormedSpace` directly. These agree definitionally but not reducibly.
   rfl
-
-/-- The Koopman operator at time `t` sends the indicator of `A` to the indicator of
-`(t +ᵥ ·)⁻¹' A`. -/
-private theorem koopmanGroup_indicatorConstLp {A : Set X} (hA : MeasurableSet A) (c : ℂ) (t : ℝ) :
-    koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top t (indicatorConstLp 2 hA (measure_ne_top μ A) c) =
-      indicatorConstLp 2 (hA.preimage (measurable_const_vadd t)) (measure_ne_top μ _) c :=
-  (Eq.congr_left (koopmanGroup_apply μ ℂ 2 ENNReal.ofNat_ne_top t _)).2
-    (Lp.indicatorConstLp_compMeasurePreserving hA _ c (measurePreserving_vadd t μ))
 
 /-- The centered correlation of two indicator functions. -/
 private theorem corr_indicatorConstLp {A B : Set X} (hA : MeasurableSet A) (hB : MeasurableSet B)
@@ -255,7 +188,7 @@ private theorem corr_indicatorConstLp {A B : Set X} (hA : MeasurableSet A) (hB :
         (indicatorConstLp 2 hA (measure_ne_top μ A) c)
         (indicatorConstLp 2 hB (measure_ne_top μ B) d) t =
       (conj d * c) * ((μ.real ((fun x => t +ᵥ x) ⁻¹' A ∩ B) - μ.real A * μ.real B : ℝ) : ℂ) := by
-  rw [corr_koopmanGroup, koopmanGroup_indicatorConstLp, ← inner_one_left, ← inner_one_right,
+  rw [corr_koopmanGroup, koopmanGroup_indicatorConstLp μ ℂ 2, ← inner_one_left, ← inner_one_right,
     one, L2.inner_indicatorConstLp_indicatorConstLp, L2.inner_indicatorConstLp_indicatorConstLp,
     L2.inner_indicatorConstLp_indicatorConstLp, univ_inter, inter_univ, inter_comm B]
   simp only [RCLike.inner_apply, map_one, one_mul, mul_one, Complex.real_smul]
@@ -272,7 +205,7 @@ private theorem norm_corr_indicatorConstLp {A B : Set X} (hA : MeasurableSet A)
     Real.norm_eq_abs]
 
 /-- **The `L²` form of weak mixing.** For a weakly mixing jointly measurable action of `ℝ`
-preserving a probability measure `μ`, and all `f g` in complex `L²(μ)`, the centered correlations
+preserving a finite measure `μ`, and all `f g` in complex `L²(μ)`, the centered correlations
 `⟪g, U_t f⟫ - (∫ f) conj (∫ g)` of the Koopman group tend to `0` in Cesàro mean in absolute
 value. -/
 theorem IsWeaklyMixing.tendsto_average_norm_inner_koopmanGroup (h : IsWeaklyMixing μ)
@@ -280,35 +213,42 @@ theorem IsWeaklyMixing.tendsto_average_norm_inner_koopmanGroup (h : IsWeaklyMixi
     Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T,
         ‖⟪g, koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top t f⟫_ℂ -
           (∫ x, f x ∂μ) * conj (∫ x, g x ∂μ)‖) atTop (𝓝 0) := by
-  have hU := koopmanGroup_isUnitary μ ℂ
-  suffices hfg : CorrVanishes (koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top) one f g by
-    simp only [CorrVanishes, corr_koopmanGroup] at hfg
-    exact hfg
+  set U := koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top
+  have hU : U.IsUnitary := koopmanGroup_isUnitary μ ℂ
+  suffices hfg : AverageVanishes (corr U one f) g by
+    simpa only [AverageVanishes, U, corr_koopmanGroup] using hfg
   -- Indicator functions.
   have hind : ∀ {A B : Set X} (hA : MeasurableSet A) (hB : MeasurableSet B) (c d : ℂ),
-      CorrVanishes (koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top) one
-        (indicatorConstLp 2 hA (measure_ne_top μ A) c)
-        (indicatorConstLp 2 hB (measure_ne_top μ B) d) := by
+      AverageVanishes (corr U one · (indicatorConstLp 2 hB (measure_ne_top μ B) d))
+        (indicatorConstLp 2 hA (measure_ne_top μ A) c) := by
     intro A B hA hB c d
-    simp only [CorrVanishes, norm_corr_indicatorConstLp, intervalIntegral.integral_const_mul]
+    simp only [AverageVanishes, U, norm_corr_indicatorConstLp,
+      intervalIntegral.integral_const_mul]
     simpa [mul_left_comm _ (‖d‖ * ‖c‖)] using
       (isWeaklyMixing_def.1 h A B hA hB).const_mul (‖d‖ * ‖c‖)
   -- The first variable.
   have hleft : ∀ {B : Set X} (hB : MeasurableSet B) (d : ℂ) (f : Lp ℂ 2 μ),
-      CorrVanishes (koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top) one f
-        (indicatorConstLp 2 hB (measure_ne_top μ B) d) := by
+      AverageVanishes (corr U one · (indicatorConstLp 2 hB (measure_ne_top μ B) d)) f := by
     intro B hB d f
     induction f using Lp.induction (ENNReal.ofNat_ne_top : (2 : ℝ≥0∞) ≠ ∞) with
     | indicatorConst c hA _ => exact hind hA hB c d
-    | add _ _ _ h₁ h₂ => exact corrVanishes_add_left one h₁ h₂
-    | isClosed => exact isClosed_corrVanishes_left one hU _
+    | add _ _ _ h₁ h₂ =>
+      exact averageVanishes_add (continuous_corr U one · _) (corr_add_left U one · · _) h₁ h₂
+    | isClosed =>
+      exact isClosed_averageVanishes (continuous_corr U one · _) (corr_add_left U one · · _)
+        (C := (1 + ‖one‖ ^ 2) * ‖indicatorConstLp 2 hB (measure_ne_top μ B) d‖)
+        fun f t => (norm_corr_le one hU f _ t).trans_eq (by ring)
+  -- The second variable.
   induction g using Lp.induction (ENNReal.ofNat_ne_top : (2 : ℝ≥0∞) ≠ ∞) with
   | indicatorConst d hB _ => exact hleft hB d f
-  | add _ _ _ h₁ h₂ => exact corrVanishes_add_right one h₁ h₂
-  | isClosed => exact isClosed_corrVanishes_right one hU f
+  | add _ _ _ h₁ h₂ =>
+    exact averageVanishes_add (continuous_corr U one f) (corr_add_right U one f) h₁ h₂
+  | isClosed =>
+    exact isClosed_averageVanishes (continuous_corr U one f) (corr_add_right U one f)
+      (C := (1 + ‖one‖ ^ 2) * ‖f‖) fun g t => (norm_corr_le one hU f g t).trans_eq (by ring)
 
 /-- **Weak mixing is equivalent to its `L²` form.** A jointly measurable action of `ℝ` preserving
-a probability measure `μ` is weakly mixing exactly when, for all `f g` in complex `L²(μ)`, the
+a finite measure `μ` is weakly mixing exactly when, for all `f g` in complex `L²(μ)`, the
 centered correlations `⟪g, U_t f⟫ - (∫ f) conj (∫ g)` of the Koopman group tend to `0` in Cesàro
 mean in absolute value. -/
 theorem isWeaklyMixing_iff_tendsto_average_norm_inner_koopmanGroup :
@@ -326,7 +266,7 @@ theorem isWeaklyMixing_iff_tendsto_average_norm_inner_koopmanGroup :
 /-! ### Eigenfunctions of a weakly mixing action -/
 
 /-- **Eigenfunctions of a weakly mixing action are constant.** For a weakly mixing jointly
-measurable action of `ℝ` preserving a probability measure `μ`, every a.e. strongly measurable
+measurable action of `ℝ` preserving a finite measure `μ`, every a.e. strongly measurable
 `f : X → ℂ` with, for some `a` and every `t`, `f(t +ᵥ x) = exp(2πiat) f(x)` for almost every `x`,
 is almost everywhere constant. This is one half of the eigenfunction criterion for weak mixing. -/
 theorem IsWeaklyMixing.exists_ae_eq_const_of_eigenfunction (h : IsWeaklyMixing μ) {f : X → ℂ}
@@ -377,7 +317,6 @@ theorem IsWeaklyMixing.exists_ae_eq_const_of_eigenfunction (h : IsWeaklyMixing �
     have := tendsto_nhds_unique hconst hlim
     simpa using this
   filter_upwards [hF.coeFn_toLp, (Lp.ext_iff.1 hF0).trans (Lp.coeFn_zero ℂ 2 μ)] with x h₁ h₂
-  rw [← h₁, h₂]
-  rfl
+  rw [← h₁, h₂, Pi.zero_apply, Function.const_apply]
 
 end MeasureTheory.Measure
