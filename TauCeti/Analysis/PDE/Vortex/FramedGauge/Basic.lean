@@ -502,12 +502,22 @@ instance : IsCancelSMul framedGaugeGroup (ℂ → EuclideanSpace ℝ (Fin 4)) :=
   have hup := (mem_framedGaugeGroup _).mp u.property
   exact Subtype.ext (eq_one_of_gaugeTransform_eq_self (hup.1.differentiable (by simp)) hup.2 hu)
 
+/-- The logarithmic derivatives of gauges depending on a parameter, `C^(n+1)` jointly in the
+parameter and the point, are `C^n` jointly in the parameter and the point. -/
+theorem contDiff_parametric_gaugeForm {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    {n : WithTop ℕ∞} {u : P → ℂ → Circle}
+    (hu : ContDiff ℝ (n + 1) fun p : P × ℂ ↦ (u p.1 p.2 : ℂ)) :
+    ContDiff ℝ n fun p : P × ℂ ↦ gaugeForm (u p.1) p.2 :=
+  contDiff_const.clm_comp
+    ((ContinuousLinearMap.mul ℝ ℂ).contDiff.comp (conjCLE.contDiff.comp (hu.of_le le_self_add))
+      |>.clm_comp ((hu.comp (contDiff_fst.fst.prodMk contDiff_snd)).fderiv
+        (f := fun p z ↦ (u p.1 z : ℂ)) contDiff_snd le_rfl))
+
 /-- The logarithmic derivative of a `C^(n+1)` gauge is a `C^n` one-form. -/
 theorem contDiff_gaugeForm {n : WithTop ℕ∞} {u : ℂ → Circle}
     (hu : ContDiff ℝ (n + 1) (fun w ↦ (u w : ℂ))) : ContDiff ℝ n (gaugeForm u) :=
-  contDiff_const.clm_comp
-    ((ContinuousLinearMap.mul ℝ ℂ).contDiff.comp (conjCLE.contDiff.comp (hu.of_le le_self_add))
-      |>.clm_comp (hu.fderiv_right le_rfl))
+  (contDiff_parametric_gaugeForm (P := Unit) (u := fun _ ↦ u) (hu.comp contDiff_snd)).comp
+    ((contDiff_const (c := ())).prodMk contDiff_id)
 
 /-- **A gauge is one order smoother than its logarithmic derivative.** If `u` is differentiable
 and `Im (u⁻¹ du)` is `C^n`, `n ≤ ∞`, then `u` is `C^(n+1)`, because `du = i u Im (u⁻¹ du)`. -/
@@ -546,16 +556,17 @@ theorem differentiableAt_gaugeForm {u : ℂ → Circle} {z : ℂ}
         (hu.fderiv_right (by norm_num)))
   exact h.differentiableAt one_ne_zero
 
-/-- A `C^(n+1)` gauge preserves `C^n` fields: the connection loses one derivative of the gauge
-through `u⁻¹ du`, the section none. -/
-theorem contDiff_gaugeTransform {n : WithTop ℕ∞} {u : ℂ → Circle}
-    (hu : ContDiff ℝ (n + 1) (fun w ↦ (u w : ℂ)))
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ n x) :
-    ContDiff ℝ n (gaugeTransform u x) := by
-  have hg := contDiff_gaugeForm hu
+/-- Gauges and fields depending on a parameter, `C^(n+1)` and `C^n` jointly in the parameter and
+the point, give gauge-transformed fields that are `C^n` jointly in the parameter and the point. -/
+theorem contDiff_parametric_gaugeTransform {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    {n : WithTop ℕ∞} {u : P → ℂ → Circle}
+    (hu : ContDiff ℝ (n + 1) fun p : P × ℂ ↦ (u p.1 p.2 : ℂ))
+    {x : P → ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ n fun p : P × ℂ ↦ x p.1 p.2) :
+    ContDiff ℝ n fun p : P × ℂ ↦ gaugeTransform (u p.1) (x p.1) p.2 := by
+  have hg := contDiff_parametric_gaugeForm hu
   have hr := reCLM.contDiff.comp (hu.of_le le_self_add)
   have hi := imCLM.contDiff.comp (hu.of_le le_self_add)
-  have hc (i : Fin 4) : ContDiff ℝ n (fun z ↦ x z i) :=
+  have hc (i : Fin 4) : ContDiff ℝ n fun p : P × ℂ ↦ x p.1 p.2 i :=
     (contDiff_piLp _).mp hx i
   apply (contDiff_piLp _).mpr
   intro i
@@ -564,6 +575,16 @@ theorem contDiff_gaugeTransform {n : WithTop ℕ∞} {u : ℂ → Circle}
   · exact (hc 1).sub (hg.clm_apply contDiff_const)
   · exact (hr.mul (hc 2)).sub (hi.mul (hc 3))
   · exact (hi.mul (hc 2)).add (hr.mul (hc 3))
+
+/-- A `C^(n+1)` gauge preserves `C^n` fields: the connection loses one derivative of the gauge
+through `u⁻¹ du`, the section none. -/
+theorem contDiff_gaugeTransform {n : WithTop ℕ∞} {u : ℂ → Circle}
+    (hu : ContDiff ℝ (n + 1) (fun w ↦ (u w : ℂ)))
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ n x) :
+    ContDiff ℝ n (gaugeTransform u x) :=
+  (contDiff_parametric_gaugeTransform (P := Unit) (u := fun _ ↦ u) (x := fun _ ↦ x)
+    (hu.comp contDiff_snd) (hx.comp contDiff_snd)).comp
+    ((contDiff_const (c := ())).prodMk contDiff_id)
 
 /-- A `C¹` gauge transformation of a continuous field is continuous. -/
 theorem continuous_gaugeTransform {u : ℂ → Circle} (hu : ContDiff ℝ 1 (fun w ↦ (u w : ℂ)))

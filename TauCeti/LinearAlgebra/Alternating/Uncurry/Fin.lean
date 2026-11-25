@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Alternating.Uncurry.Fin
 public import Mathlib.LinearAlgebra.Basis.Defs
 import TauCeti.LinearAlgebra.Alternating.Basic
+public import TauCeti.LinearAlgebra.Alternating.Derivation
 
 /-!
 # Replacing one basis vector by an arbitrary vector
@@ -16,6 +17,10 @@ Let `f` be an alternating map of `n + 1` arguments and `b` a basis indexed by `F
 Evaluating `f` on a vector `w` followed by the basis with its `i`-th vector removed gives
 `(-1) ^ i` times the `i`-th coordinate of `w`, times `f b`. This is the coordinate formula for
 the contraction of a top-degree form with a vector, the alternating-map form of Cramer's rule.
+
+In any degree, `AlternatingMap.alternatizeUncurryFin_curryLeft_comp` identifies the alternation
+of contractions `v ↦ ι_{A v} ω` with the derivation `A.alternatingDerivation ω`. This identity
+holds over any commutative ring.
 -/
 
 public section
@@ -37,5 +42,15 @@ theorem map_vecCons_removeNth_basis (f : M [⋀^Fin (n + 1)]→ₗ[R] N)
   conv_lhs => rw [← b.sum_repr w]
   rw [f.map_update_sum_smul b (Finset.mem_univ i)]
   simp [mul_smul, ← Int.cast_smul_eq_zsmul R]
+
+/-- Alternating the contractions `v ↦ ι_{A v} ω` is the derivation of `A` on `ω`,
+over any commutative ring. -/
+theorem alternatizeUncurryFin_curryLeft_comp (ω : M [⋀^Fin (n + 1)]→ₗ[R] N) (A : M →ₗ[R] M) :
+    alternatizeUncurryFin (ω.curryLeft.comp A) = A.alternatingDerivation ω := by
+  ext v
+  rw [alternatizeUncurryFin_apply, LinearMap.alternatingDerivation_apply]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [LinearMap.comp_apply, curryLeft_apply_apply, ← Fin.insertNth_removeNth,
+    map_insertNth]
 
 end AlternatingMap

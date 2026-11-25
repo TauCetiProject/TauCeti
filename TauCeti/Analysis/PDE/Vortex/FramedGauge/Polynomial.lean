@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Polynomial.Basic
-public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Moduli.Basic
+public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Moduli
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 public import TauCeti.RingTheory.Polynomial.SymmetricPower
 import Mathlib.Algebra.Order.Chebyshev
@@ -400,10 +400,7 @@ theorem exists_forall_polynomialGauge_coeffEquiv_mul_eval {K : Set (Sym ℂ m)}
       hK.image (Sym.coeffHomeomorph ℂ m).continuous
   obtain ⟨R, hR⟩ := exists_forall_polynomialGauge_mul_eval hK'.isBounded
   refine ⟨R, fun D hD z hz ↦ ?_⟩
-  have hP : (Sym.toMonic D : ℂ[X]) = monicOfCoeff (Sym.coeffEquiv ℂ m D) := by
-    conv_lhs => rw [← (Sym.coeffEquiv ℂ m).symm_apply_apply D]
-    exact Sym.toMonic_coeffEquiv_symm _
-  rw [hP]
+  rw [Sym.toMonic_eq_monicOfCoeff_coeffEquiv]
   exact hR _ ⟨D, hD, rfl⟩ z hz
 
 /-! ### Rotations -/

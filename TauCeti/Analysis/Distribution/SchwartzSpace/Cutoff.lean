@@ -248,7 +248,7 @@ theorem hasSum_smulLeftCLM_latticeBump_sub (f : 𝓢(EuclideanSpace ℝ (Fin n),
   have hK : 0 ≤ K := Finset.sum_nonneg fun i _ ↦ by have := hB0 i; positivity
   set R := √n + K / ε + 1
   have hRn : 0 < R - √n := by have := div_nonneg hK hε.le; simp only [R]; linarith
-  filter_upwards [Filter.eventually_ge_atTop (finite_setOf_norm_latticePoint_lt R).toFinset]
+  filter_upwards [Filter.eventually_ge_atTop (finite_setOf_norm_latticePoint_le R).toFinset]
     with s hs
   rw [schwartzSeminormFamily_apply]
   -- The partial sum is `f` times `∑_{j ∈ s} χ(· - j) - 1`, which vanishes on `‖y‖ < R - √n`.
@@ -258,7 +258,7 @@ theorem hasSum_smulLeftCLM_latticeBump_sub (f : 𝓢(EuclideanSpace ℝ (Fin n),
     (B := fun i ↦ B i * (1 + (n : ℝ)) ^ n * S + 1) (fun i y ↦ ?_) hRn (fun y hy ↦ ?_)
     (f := f) (fun y ↦ ?_) k j).trans_lt ?_
   · exact norm_iteratedFDeriv_sum_latticeBump_sub_sub_one_le (hB i) s y
-  · simp [sum_latticeBump_sub_eq_one (fun j hj ↦ hs ((Set.Finite.mem_toFinset _).2 hj))
+  · simp [sum_latticeBump_sub_eq_one (fun j hj ↦ hs ((Set.Finite.mem_toFinset _).2 hj.le))
       (by linarith : ‖y‖ + √n < R)]
   · simp [SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_latticeBump_sub _),
       Finset.sum_smul, sub_smul]
