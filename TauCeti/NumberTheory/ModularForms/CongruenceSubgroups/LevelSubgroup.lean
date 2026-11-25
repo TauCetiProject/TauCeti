@@ -51,7 +51,8 @@ The degree of the modular curve `X_H` over the `j`-line is the projective index
 contains `-1`, while for `Γ₁` and `N ≥ 3` the index is twice the projective index. For a prime
 `p` this gives the degrees `p + 1` of `X₀(p)` and `(p² - 1) / 2` of `X₁(p)` for `p ≥ 3`. For a
 prime `ℓ`, the Cartan levels `TauCeti.diagonalTorus`, `TauCeti.GL2SplitCartanNormalizer`,
-`TauCeti.GL2NonSplitCartan` and `TauCeti.GL2NonSplitCartanNormalizer` all contain `-1`, and give
+`QuadraticAlgebra.periodMatrixGroup` and `TauCeti.GL2NonSplitCartanNormalizer` all contain `-1`,
+and give
 the degrees `ℓ (ℓ + 1)`, `ℓ (ℓ + 1) / 2`, `ℓ (ℓ - 1)` and `ℓ (ℓ - 1) / 2`: `91` and `78` for the
 two normalizers at `ℓ = 13`.
 
@@ -82,7 +83,7 @@ equal in general.
   `TauCeti.two_mul_projectiveIndex_GL2Mirabolic_zmod`: their projective indices.
 * `TauCeti.projectiveIndex_diagonalTorus_two`,
   `TauCeti.two_mul_projectiveIndex_GL2SplitCartanNormalizer`,
-  `TauCeti.projectiveIndex_GL2NonSplitCartan`,
+  `TauCeti.projectiveIndex_periodMatrixGroup`,
   `TauCeti.two_mul_projectiveIndex_GL2NonSplitCartanNormalizer`: the projective indices of the
   Cartan levels over a finite field, and
   `TauCeti.projectiveIndex_GL2SplitCartanNormalizer_zmod_thirteen`,
@@ -250,21 +251,21 @@ theorem two_mul_projectiveIndex_GL2SplitCartanNormalizer :
   rw [Subgroup.projectiveIndex_eq_index GL2SplitCartanNormalizer.neg_one_mem,
     GL2SplitCartanNormalizer.two_mul_index]
 
-variable {t n : F}
+variable {a b : F}
 
 /-- **The degree of `X_ns(ℓ)` over the `j`-line**: the nonsplit Cartan level over a field with `q`
 elements has projective index `q (q - 1)`. -/
-theorem projectiveIndex_GL2NonSplitCartan (hirr : ∀ x : F, x ^ 2 ≠ t * x + n) :
-    (GL2NonSplitCartan t n).projectiveIndex = Nat.card F * (Nat.card F - 1) := by
-  rw [Subgroup.projectiveIndex_eq_index GL2NonSplitCartan.neg_one_mem,
-    GL2NonSplitCartan.index_eq hirr]
+theorem projectiveIndex_periodMatrixGroup (hirr : ∀ r : F, r ^ 2 ≠ a + b * r) :
+    (QuadraticAlgebra.periodMatrixGroup a b).projectiveIndex = Nat.card F * (Nat.card F - 1) := by
+  rw [Subgroup.projectiveIndex_eq_index (by simp),
+    QuadraticAlgebra.index_periodMatrixGroup_of_forall_sq_ne hirr]
 
 /-- **The degree of `X_ns⁺(ℓ)` over the `j`-line is `ℓ (ℓ - 1) / 2`**: twice the projective
 index of the nonsplit Cartan normalizer over a field with `q` elements is `q (q - 1)`. -/
-theorem two_mul_projectiveIndex_GL2NonSplitCartanNormalizer (hirr : ∀ x : F, x ^ 2 ≠ t * x + n) :
-    2 * (GL2NonSplitCartanNormalizer t n).projectiveIndex = Nat.card F * (Nat.card F - 1) := by
-  rw [Subgroup.projectiveIndex_eq_index
-      (GL2NonSplitCartan.le_normalizer (t := t) (n := n) GL2NonSplitCartan.neg_one_mem),
+theorem two_mul_projectiveIndex_GL2NonSplitCartanNormalizer (hirr : ∀ r : F, r ^ 2 ≠ a + b * r) :
+    2 * (GL2NonSplitCartanNormalizer a b).projectiveIndex = Nat.card F * (Nat.card F - 1) := by
+  rw [Subgroup.projectiveIndex_eq_index (GL2NonSplitCartanNormalizer.periodMatrixGroup_le
+      (a := a) (b := b) (by simp)),
     GL2NonSplitCartanNormalizer.two_mul_index hirr]
 
 /-- **The degree of `X_s⁺(13)` over the `j`-line is `91`.** -/
@@ -276,10 +277,10 @@ theorem projectiveIndex_GL2SplitCartanNormalizer_zmod_thirteen :
   omega
 
 /-- **The degree of `X_ns⁺(13)` over the `j`-line is `78`**, for the nonsplit Cartan subgroup
-`{!![a, 2 b; b, a]}`: `2` is not a square modulo `13`. -/
+`{!![x, 2 y; y, x]}`: `2` is not a square modulo `13`. -/
 theorem projectiveIndex_GL2NonSplitCartanNormalizer_zmod_thirteen :
-    (GL2NonSplitCartanNormalizer (0 : ZMod 13) 2).projectiveIndex = 78 := by
-  have hirr : ∀ x : ZMod 13, x ^ 2 ≠ 0 * x + 2 := by decide
+    (GL2NonSplitCartanNormalizer (2 : ZMod 13) 0).projectiveIndex = 78 := by
+  have hirr : ∀ r : ZMod 13, r ^ 2 ≠ 2 + 0 * r := by decide
   have : Fact (Nat.Prime 13) := ⟨by decide⟩
   have h := two_mul_projectiveIndex_GL2NonSplitCartanNormalizer (F := ZMod 13) hirr
   rw [Nat.card_zmod] at h

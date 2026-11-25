@@ -15,8 +15,8 @@ For the quadratic algebra `R[√r]` over any commutative semiring, powers of the
 alternate between scalars at even exponents and scalar multiples of the generator at odd
 exponents. These formulas include exponent zero and do not require finite-field hypotheses.
 
-If `X² - t X - n` has no root in a field, the binary quadratic form `a² + t a b - n b²`, the norm
-form of `F[X] / (X² - t X - n)`, has no nontrivial zero
+If `X² - b X - a` has no root in a field, the binary quadratic form `x² + b x y - a y²`, the norm
+form of `QuadraticAlgebra F a b`, has no nontrivial zero
 (`TauCeti.sq_add_mul_mul_sub_mul_sq_eq_zero_iff`).
 -/
 
@@ -41,14 +41,14 @@ end QuadraticAlgebra
 
 namespace TauCeti
 
-/-- **A quadratic without roots has an anisotropic norm form.** If `X² - t X - n` has no root in
-the field `F`, then `a² + t a b - n b²` vanishes only at `a = b = 0`: for `b ≠ 0` a zero would make
-`-a / b` a root. This is `QuadraticAlgebra.norm_eq_zero_iff_eq_zero` in coordinates. -/
-theorem sq_add_mul_mul_sub_mul_sq_eq_zero_iff {F : Type*} [Field F] {t n : F}
-    (hirr : ∀ x : F, x ^ 2 ≠ t * x + n) {a b : F} :
-    a ^ 2 + t * a * b - n * b ^ 2 = 0 ↔ a = 0 ∧ b = 0 := by
-  have : Fact (∀ x : F, x ^ 2 ≠ n + t * x) := ⟨fun x ↦ add_comm n (t * x) ▸ hirr x⟩
+/-- **A quadratic without roots has an anisotropic norm form.** If `X² - b X - a` has no root in
+the field `F`, then `x² + b x y - a y²` vanishes only at `x = y = 0`: for `y ≠ 0` a zero would make
+`-x / y` a root. This is `QuadraticAlgebra.norm_eq_zero_iff_eq_zero` in coordinates. -/
+theorem sq_add_mul_mul_sub_mul_sq_eq_zero_iff {F : Type*} [Field F] {a b : F}
+    (hirr : ∀ r : F, r ^ 2 ≠ a + b * r) {x y : F} :
+    x ^ 2 + b * x * y - a * y ^ 2 = 0 ↔ x = 0 ∧ y = 0 := by
+  have : Fact (∀ r : F, r ^ 2 ≠ a + b * r) := ⟨hirr⟩
   simpa [QuadraticAlgebra.norm_def, QuadraticAlgebra.ext_iff, sq, mul_assoc] using
-    QuadraticAlgebra.norm_eq_zero_iff_eq_zero (z := (⟨a, b⟩ : QuadraticAlgebra F n t))
+    QuadraticAlgebra.norm_eq_zero_iff_eq_zero (z := (⟨x, y⟩ : QuadraticAlgebra F a b))
 
 end TauCeti

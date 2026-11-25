@@ -24,7 +24,7 @@ characteristic: multiplication by `q` is injective on such torsion.
 * `TauCeti.FiniteField.ringChar_ne_two_of_odd_card`: a finite field of odd order does not have
   characteristic two.
 * `TauCeti.FiniteField.ne_zero_or_two_ne_zero_of_forall_sq_ne`: over a finite field, a quadratic
-  `X² - t X - n` without roots is separable, that is `t ≠ 0` or `2 ≠ 0`.
+  `X² - b X - a` without roots is separable, that is `b ≠ 0` or `2 ≠ 0`.
 * `TauCeti.FiniteField.card_sub_one_dvd_card_sub_one`: in a finite extension `F'/F` of finite
   fields, `#F - 1 ∣ #F' - 1`.
 * `TauCeti.FiniteField.card_div_two_eq_mul_card_div_two`: in a finite extension `F'/F` of finite
@@ -60,16 +60,16 @@ theorem ringChar_ne_two_of_odd_card (hodd : Odd (Nat.card F)) : ringChar F ≠ 2
   intro h
   simp [FiniteField.even_card_of_char_two h] at hodd
 
-/-- **An irreducible quadratic over a finite field is separable.** If `X² - t X - n` has no root
-in the finite field `F`, then `t ≠ 0` or `2 ≠ 0`: in characteristic `2` every element is a square,
-so `X² - n` has a root. -/
-theorem ne_zero_or_two_ne_zero_of_forall_sq_ne {t n : F} (hirr : ∀ x : F, x ^ 2 ≠ t * x + n) :
-    t ≠ 0 ∨ (2 : F) ≠ 0 := by
+/-- **An irreducible quadratic over a finite field is separable.** If `X² - b X - a` has no root
+in the finite field `F`, then `b ≠ 0` or `2 ≠ 0`: in characteristic `2` every element is a square,
+so `X² - a` has a root. -/
+theorem ne_zero_or_two_ne_zero_of_forall_sq_ne {a b : F} (hirr : ∀ r : F, r ^ 2 ≠ a + b * r) :
+    b ≠ 0 ∨ (2 : F) ≠ 0 := by
   by_contra! h
   let := Fintype.ofFinite F
   have : CharP F 2 := CharTwo.of_one_ne_zero_of_two_eq_zero one_ne_zero h.2
   have hchar : ringChar F = 2 := ringChar.eq F 2
-  obtain ⟨x, hx⟩ := FiniteField.isSquare_of_char_two hchar n
+  obtain ⟨x, hx⟩ := FiniteField.isSquare_of_char_two hchar a
   exact hirr x (by rw [h.1, hx, sq]; ring)
 
 /-! ### The order of a finite field extension -/

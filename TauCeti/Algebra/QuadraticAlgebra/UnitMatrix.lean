@@ -84,6 +84,21 @@ theorem mem_periodMatrixGroup_iff {M : GL (Fin 2) R} :
     have hu : IsUnit z := isUnit_periodMulMatrix_iff z |>.mp (hz ▸ M.isUnit)
     exact ⟨hu.unit, Units.ext (by simpa using hz)⟩
 
+/-- **The group of quadratic multiplication matrices is the centralizer of `ω`**: an invertible
+matrix lies in it exactly when it commutes with `!![b, a; 1, 0]`, the multiplication matrix of
+`ω`, whose characteristic polynomial is `X² - b X - a`. -/
+theorem mem_periodMatrixGroup_iff_commute {M : GL (Fin 2) R} :
+    M ∈ periodMatrixGroup a b ↔
+      (M : Matrix (Fin 2) (Fin 2) R) * !![b, a; 1, 0] =
+        !![b, a; 1, 0] * (M : Matrix (Fin 2) (Fin 2) R) := by
+  rw [mem_periodMatrixGroup_iff]
+  refine ⟨fun ⟨h₁, h₂⟩ ↦ ?_, fun h ↦ ⟨?_, ?_⟩⟩
+  · ext i j
+    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two, h₁, h₂] <;> ring
+  · simpa [Matrix.mul_apply, Fin.sum_univ_two, mul_comm, add_comm] using
+      (congrFun (congrFun h 1) 0).symm
+  · simpa [Matrix.mul_apply, Fin.sum_univ_two, mul_comm] using (congrFun (congrFun h 1) 1).symm
+
 /-- The units of the quadratic algebra are exactly the invertible period matrices. -/
 def periodUnitMatrixEquiv : (QuadraticAlgebra R a b)ˣ ≃* periodMatrixGroup a b :=
   MonoidHom.ofInjective periodUnitMatrix_injective
