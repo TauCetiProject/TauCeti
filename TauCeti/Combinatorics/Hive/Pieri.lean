@@ -42,8 +42,6 @@ weight exactly when the vector decreases weakly along each block of equal coordi
   `TauCeti.Hive.eq_verticalPieriHive_of_productBoundary_of_zero_le_le_one`,
   `TauCeti.Hive.nonempty_fixedIntegerHive_productBoundary_iff_of_zero_le_le_one`,
   `TauCeti.Hive.hiveCount_productBoundary_of_zero_le_le_one`: the direct vertical Pieri rule.
-* `TauCeti.DominantWeight.antitone_add_iff_of_zero_le_le_one`: the dominance criterion for the
-  candidate outputs.
 * `TauCeti.Hive.hiveCount_productBoundary_zero_right`,
   `TauCeti.Hive.hiveCount_productBoundary_zero_shift_one_right`: the cases `k = 0` and `k = n`.
 
@@ -58,31 +56,6 @@ weight exactly when the vector decreases weakly along each block of equal coordi
 public section
 
 namespace TauCeti
-
-namespace DominantWeight
-
-variable {n : ℕ}
-
-/-- **Dominance criterion for vertical strips**: adding a `0`/`1` vector `ε` to a dominant weight
-`λ` gives a dominant weight exactly when `ε` decreases weakly along each block of equal
-coordinates of `λ`. -/
-theorem antitone_add_iff_of_zero_le_le_one (lam : DominantWeight n) {ε : Fin n → ℤ}
-    (hε : ∀ i, 0 ≤ ε i ∧ ε i ≤ 1) :
-    Antitone (lam.val + ε) ↔ ∀ ⦃i j : Fin n⦄, i ≤ j → lam.val i = lam.val j → ε j ≤ ε i := by
-  refine ⟨fun h i j hij heq => ?_, fun h i j hij => ?_⟩
-  · have := h hij
-    simp only [Pi.add_apply] at this
-    omega
-  · have := lam.antitone hij
-    have := hε i
-    have := hε j
-    simp only [Pi.add_apply]
-    by_cases heq : lam.val j = lam.val i
-    · have := h hij heq.symm
-      omega
-    · omega
-
-end DominantWeight
 
 namespace Hive
 
