@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.WittVector.Complete
 public import Mathlib.RingTheory.WittVector.Frobenius
 public import Mathlib.RingTheory.WittVector.Teichmuller
+public import TauCeti.RingTheory.DeltaRing.Basic
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
@@ -18,7 +20,8 @@ The Witt-vector Frobenius `φ` of `𝕎 R` commutes with `WittVector.map f` for 
 Let `R` be a ring of characteristic `p`. The Witt-vector Frobenius `φ` of `𝕎 R` raises every
 Witt coordinate to its `p`-th power, so its fixed points are the Witt vectors whose coordinates are
 all fixed by the `p`-power map. It sends the Teichmüller representative `[r]` to
-`[r ^ p] = [r] ^ p`, and when `R` is perfect its inverse sends `[r]` to `[r ^ (1 / p)]`.
+`[r ^ p] = [r] ^ p`, and when `R` is perfect its inverse sends `[r]` to `[r ^ (1 / p)]` and `φ` is
+a Frobenius lift: `φ x ≡ x ^ p` modulo `p`.
 Consequently `φ` carries the ideal `(p, [ϖ])` into itself, and `φ⁻¹`
 carries it into its radical, so both are continuous for the `(p, [ϖ])`-adic topology. For a perfect
 ring of integers `𝒪_F` this is the continuity of Frobenius on `A_inf = W(𝒪_F)`, which lets
@@ -32,6 +35,7 @@ Frobenius act on its adic spectrum.
 * `WittVector.frobenius_eq_self_iff_forall_coeff` : `φ x = x` iff every coordinate of `x` is fixed
   by the `p`-power map, in characteristic `p`.
 * `WittVector.frobeniusEquiv_symm_teichmuller` : `φ⁻¹ [r] = [r ^ (1 / p)]` for perfect `R`.
+* `WittVector.isFrobeniusLift_frobenius` : `φ x ≡ x ^ p` modulo `p` for perfect `R`.
 * `WittVector.frobeniusEquiv_symm_frobenius`, `WittVector.frobenius_frobeniusEquiv_symm` :
   `φ⁻¹ (φ x) = x` and `φ (φ⁻¹ x) = x` for perfect `R`, with `φ` written as `WittVector.frobenius`.
 * `TauCeti.WittVector.continuous_frobenius` : `φ` is continuous for the `(p, [ϖ])`-adic topology.
@@ -100,6 +104,16 @@ Witt-vector Frobenius. -/
 theorem frobenius_frobeniusEquiv_symm [PerfectRing R p] (x : WittVector p R) :
     frobenius ((frobeniusEquiv p R).symm x) = x :=
   (frobeniusEquiv p R).apply_symm_apply x
+
+variable (p R) in
+/-- For a perfect ring of characteristic `p`, the Witt-vector Frobenius lifts the `p`-power map:
+`p` divides `φ x - x ^ p`, as the zeroth Witt coordinate of `φ x - x ^ p` vanishes. -/
+theorem isFrobeniusLift_frobenius [PerfectRing R p] :
+    TauCeti.DeltaRing.IsFrobeniusLift p (frobenius : WittVector p R →+* WittVector p R) :=
+  -- `(p)` is the kernel of the ring hom `constantCoeff`, which commutes with `-` and `^`.
+  ⟨fun x => Ideal.mem_span_singleton.1 <| by
+    rw [← ker_constantCoeff, RingHom.mem_ker, map_sub, map_pow, constantCoeff_apply,
+      constantCoeff_apply, coeff_frobenius_charP, sub_self]⟩
 
 end WittVector
 
