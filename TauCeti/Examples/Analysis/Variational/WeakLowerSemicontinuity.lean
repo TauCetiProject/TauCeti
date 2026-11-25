@@ -15,12 +15,13 @@ import Mathlib.Analysis.Convex.Mul
 /-!
 # Checks: bounded sublevels and weak lower semicontinuity
 
-The Checks of `TauCetiRoadmap/VariationalMethods/README.md` §1.1 and the first Check of §1.2.
+Examples and counterexamples for bounded sublevels and (sequential) weak lower semicontinuity.
 
 On `ℝ`:
 
 * `u²` has bounded sublevels (`hasBoundedSublevelsOn_sq`), while `u² − u⁴` does not: its
-  sublevel `{u² − u⁴ ≤ 0}` contains every `u` with `|u| ≥ 1` (`not_hasBoundedSublevelsOn_sq_sub`);
+  sublevel `{u² − u⁴ ≤ 0}` contains every `u` with `|u| ≥ 1`
+  (`not_hasBoundedSublevelsOn_sq_sub_pow_four`);
 * the sum of `u²` and `−u²` is `0`, whose sublevels are unbounded
   (`not_hasBoundedSublevelsOn_sq_add_neg_sq`), and `−u²` is not bounded below
   (`not_bddBelow_neg_sq`): the bounded-below hypothesis of
@@ -29,10 +30,12 @@ On `ℝ`:
 On `ℓ²`, with the unit vectors `eₙ ⇀ 0` (`tendsto_toWeakSpace_e`):
 
 * `−‖u‖` is norm continuous (`continuous_neg_norm`) but not sequentially weakly lower
-  semicontinuous (`not_seqLowerSemicontinuous_neg_norm`), since `−‖eₙ‖ = −1 < 0`; the norm itself
-  is weakly lower semicontinuous (`lowerSemicontinuous_norm`);
-* `‖u‖²` is weakly lower semicontinuous (`lowerSemicontinuous_norm_sq`), while the concave
-  `−‖u‖²` is not, even sequentially (`not_seqLowerSemicontinuous_neg_norm_sq`).
+  semicontinuous (`not_seqLowerSemicontinuous_neg_norm_comp_toWeakSpace_symm`), since
+  `−‖eₙ‖ = −1 < 0`; the norm itself is weakly lower semicontinuous
+  (`lowerSemicontinuous_norm_comp_toWeakSpace_symm`);
+* `‖u‖²` is weakly lower semicontinuous (`lowerSemicontinuous_norm_sq_comp_toWeakSpace_symm`),
+  while the concave `−‖u‖²` is not, even sequentially
+  (`not_seqLowerSemicontinuous_neg_norm_sq_comp_toWeakSpace_symm`).
 -/
 
 public section
@@ -53,7 +56,7 @@ theorem hasBoundedSublevelsOn_sq : HasBoundedSublevelsOn (fun u : ℝ ↦ u ^ 2)
   exact (Real.abs_le_sqrt hu).trans (Real.sqrt_le_sqrt (le_abs_self b))
 
 /-- `u² − u⁴` does not have bounded sublevels on `ℝ`: `{u² − u⁴ ≤ 0}` contains `|u| ≥ 1`. -/
-theorem not_hasBoundedSublevelsOn_sq_sub :
+theorem not_hasBoundedSublevelsOn_sq_sub_pow_four :
     ¬ HasBoundedSublevelsOn (fun u : ℝ ↦ u ^ 2 - u ^ 4) univ := by
   intro h
   obtain ⟨R, hR⟩ := (hasBoundedSublevelsOn_iff.1 h 0).subset_closedBall (0 : ℝ)
@@ -89,18 +92,18 @@ noncomputable def e : HilbertBasis ℕ ℝ (lp (fun _ : ℕ ↦ ℝ) 2) :=
 /-- The `n`-th vector of `e` is the `n`-th unit vector of `ℓ²`. -/
 theorem e_apply (n : ℕ) : e n = lp.single 2 n (1 : ℝ) := by
   classical
-  exact ((HilbertBasis.ofRepr (LinearIsometryEquiv.refl ℝ
-    (lp (fun _ : ℕ ↦ ℝ) 2))).repr_symm_single n).symm
+  rw [← e.repr_symm_single n]
+  simp [e, LinearIsometryEquiv.symm_apply_eq]
 
 /-- The unit vectors of `ℓ²` converge weakly to `0`. -/
 theorem tendsto_toWeakSpace_e :
     Tendsto (fun n ↦ toWeakSpace ℝ _ (e n)) atTop (𝓝 (toWeakSpace ℝ _ 0)) :=
   e.orthonormal.tendsto_toWeakSpace_atTop
 
-/-- A function on the weak topology of `ℓ²` that is negative on every `eₙ` and vanishes at `0`
-is not sequentially lower semicontinuous. -/
-theorem not_seqLowerSemicontinuous_of_lt {f : lp (fun _ : ℕ ↦ ℝ) 2 → ℝ} {c : ℝ} (hc : c < 0)
-    (hf0 : f 0 = 0) (hfe : ∀ n, f (e n) ≤ c) :
+/-- A function on `ℓ²` that vanishes at `0` and is at most some `c < 0` on every `eₙ` is not
+sequentially weakly lower semicontinuous. -/
+theorem not_seqLowerSemicontinuous_comp_toWeakSpace_symm_of_lt {f : lp (fun _ : ℕ ↦ ℝ) 2 → ℝ}
+    {c : ℝ} (hc : c < 0) (hf0 : f 0 = 0) (hfe : ∀ n, f (e n) ≤ c) :
     ¬ SeqLowerSemicontinuous fun w : WeakSpace ℝ (lp (fun _ : ℕ ↦ ℝ) 2) ↦
       f ((toWeakSpace ℝ _).symm w) := by
   intro h
@@ -116,21 +119,21 @@ theorem continuous_neg_norm : Continuous fun u : lp (fun _ : ℕ ↦ ℝ) 2 ↦ 
 
 /-- `−‖u‖` is not sequentially weakly lower semicontinuous on `ℓ²`: `eₙ ⇀ 0` while
 `−‖eₙ‖ = −1 < 0`. -/
-theorem not_seqLowerSemicontinuous_neg_norm :
+theorem not_seqLowerSemicontinuous_neg_norm_comp_toWeakSpace_symm :
     ¬ SeqLowerSemicontinuous fun w : WeakSpace ℝ (lp (fun _ : ℕ ↦ ℝ) 2) ↦
       -‖(toWeakSpace ℝ _).symm w‖ :=
-  not_seqLowerSemicontinuous_of_lt (f := fun u ↦ -‖u‖) (c := -1) (by norm_num) (by simp)
-    fun n ↦ by simp [e.orthonormal.1 n]
+  not_seqLowerSemicontinuous_comp_toWeakSpace_symm_of_lt (f := fun u ↦ -‖u‖) (c := -1)
+    (by norm_num) (by simp) fun n ↦ by simp [e.orthonormal.1 n]
 
 /-- The norm of `ℓ²` is weakly lower semicontinuous. -/
-theorem lowerSemicontinuous_norm :
+theorem lowerSemicontinuous_norm_comp_toWeakSpace_symm :
     LowerSemicontinuous fun w : WeakSpace ℝ (lp (fun _ : ℕ ↦ ℝ) 2) ↦
       ‖(toWeakSpace ℝ _).symm w‖ :=
   QuasiconvexOn.lowerSemicontinuous_comp_toWeakSpace_symm (convexOn_univ_norm.quasiconvexOn)
     continuous_norm.lowerSemicontinuous
 
 /-- `‖u‖²` is weakly lower semicontinuous on `ℓ²`. -/
-theorem lowerSemicontinuous_norm_sq :
+theorem lowerSemicontinuous_norm_sq_comp_toWeakSpace_symm :
     LowerSemicontinuous fun w : WeakSpace ℝ (lp (fun _ : ℕ ↦ ℝ) 2) ↦
       ‖(toWeakSpace ℝ _).symm w‖ ^ 2 :=
   QuasiconvexOn.lowerSemicontinuous_comp_toWeakSpace_symm
@@ -138,10 +141,10 @@ theorem lowerSemicontinuous_norm_sq :
     (continuous_norm.pow 2).lowerSemicontinuous
 
 /-- The concave `−‖u‖²` is not sequentially weakly lower semicontinuous on `ℓ²`. -/
-theorem not_seqLowerSemicontinuous_neg_norm_sq :
+theorem not_seqLowerSemicontinuous_neg_norm_sq_comp_toWeakSpace_symm :
     ¬ SeqLowerSemicontinuous fun w : WeakSpace ℝ (lp (fun _ : ℕ ↦ ℝ) 2) ↦
       -‖(toWeakSpace ℝ _).symm w‖ ^ 2 :=
-  not_seqLowerSemicontinuous_of_lt (f := fun u ↦ -‖u‖ ^ 2) (c := -1) (by norm_num) (by simp)
-    fun n ↦ by simp [e.orthonormal.1 n]
+  not_seqLowerSemicontinuous_comp_toWeakSpace_symm_of_lt (f := fun u ↦ -‖u‖ ^ 2) (c := -1)
+    (by norm_num) (by simp) fun n ↦ by simp [e.orthonormal.1 n]
 
 end TauCeti.VariationalChecks

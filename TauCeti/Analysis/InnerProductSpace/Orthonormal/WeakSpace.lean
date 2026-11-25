@@ -50,9 +50,8 @@ theorem tendsto_inner_cofinite (hv : Orthonormal 𝕜 v) (x : E) :
     simpa using Real.continuous_sqrt.tendsto 0
   exact (h2.comp h).congr fun i ↦ by simp [Real.sqrt_sq (norm_nonneg _)]
 
-/-- **An orthonormal family tends weakly to zero.** In an inner product space, `v i ⇀ 0` along the
-cofinite filter. A continuous linear functional extends to the completion of `E`, where it is
-`⟪y, ·⟫` for some `y` by the Riesz representation theorem. -/
+/-- **An orthonormal family tends weakly to zero.** An orthonormal family in an inner product space
+(not necessarily complete) satisfies `v i ⇀ 0` along the cofinite filter. -/
 theorem tendsto_toWeakSpace_cofinite (hv : Orthonormal 𝕜 v) :
     Tendsto (fun i ↦ toWeakSpace 𝕜 E (v i)) cofinite (𝓝 (toWeakSpace 𝕜 E 0)) := by
   open UniformSpace in
@@ -61,9 +60,7 @@ theorem tendsto_toWeakSpace_cofinite (hv : Orthonormal 𝕜 v) :
   let F : StrongDual 𝕜 (Completion E) := f.extend ι
   have hF (x : E) : F x = f x :=
     f.extend_eq (e := ι) Completion.denseRange_coe (Completion.isUniformInducing_coe E) x
-  have hw : Orthonormal 𝕜 fun i ↦ (v i : Completion E) :=
-    ⟨fun i ↦ by simp [Completion.norm_coe, hv.1 i],
-      fun i j hij ↦ by simp [Completion.inner_coe, hv.2 hij]⟩
+  have hw := hv.comp_linearIsometry (Completion.toComplₗᵢ (𝕜 := 𝕜))
   have h := (hw.tendsto_inner_cofinite ((InnerProductSpace.toDual 𝕜 (Completion E)).symm F)).star
   rw [star_zero] at h
   rw [map_zero]
