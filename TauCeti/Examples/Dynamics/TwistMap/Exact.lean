@@ -13,6 +13,8 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+public import TauCeti.Examples.Dynamics.TwistMap.OpenStrip
 
 /-!
 # Checks for exact maps of the strip
@@ -24,6 +26,10 @@ For the primitive `λ = y dx` of the area form on the plane, with period `1`:
   Lebesgue measure, and it is not exact: `F*(y dx) − y dx = (y + c)(dx + dy) − y dx` has
   `dx`-coefficient `c` along `y = 0`, the flux of `F`. Area preservation alone does not imply
   exactness on the open strip.
+* the standard map `(x, y) ↦ (x + y + ε sin 2πx, y + ε sin 2πx)` is exact for every `ε`: with
+  `Y = y + ε sin 2πx`, `F*(y dx) − y dx = ε sin(2πx) dx + d(Y²/2)`, and since
+  `∫₀¹ ε sin 2πx dx = 0` this is `dS` for the periodic `S = −ε cos(2πx)/(2π) + Y²/2`
+  (`isExactForPrimitive_standardMap`).
 -/
 
 open Set MeasureTheory
@@ -153,5 +159,28 @@ example {c : ℝ} (hc : c ≠ 0) :
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst'] at h1
   rw [h1, shiftedShear_apply]
   simp
+
+/-- The standard map is exact for `λ = y dx` for every `ε`, with
+`S = −ε cos(2πx)/(2π) + (y + ε sin 2πx)²/2`. -/
+theorem isExactForPrimitive_standardMap (ε : ℝ) :
+    IsExactForPrimitive 1 univ (standardMap ε) fun p => p.2 := by
+  refine isExactForPrimitive_iff.2 ⟨fun p => -ε * Real.cos (2 * Real.pi * p.1) * (2 * Real.pi)⁻¹ +
+    (p.2 + ε * Real.sin (2 * Real.pi * p.1)) ^ 2 * 2⁻¹, by fun_prop, fun x _ _ => ?_,
+    fun p _ => ?_⟩
+  · simp only [mul_add, mul_one, Real.cos_add_two_pi, Real.sin_add_two_pi]
+  have hfst : HasFDerivAt (Prod.fst : ℝ × ℝ → ℝ) (ContinuousLinearMap.fst ℝ ℝ ℝ) p :=
+    hasFDerivAt_fst
+  have hsnd : HasFDerivAt (Prod.snd : ℝ × ℝ → ℝ) (ContinuousLinearMap.snd ℝ ℝ ℝ) p :=
+    hasFDerivAt_snd
+  have hsin := (hfst.const_mul (2 * Real.pi)).sin
+  have hcos := (hfst.const_mul (2 * Real.pi)).cos
+  have hY := hsnd.add (hsin.const_mul ε)
+  have hS := ((hcos.const_mul (-ε)).mul_const (2 * Real.pi)⁻¹).add ((hY.pow 2).mul_const 2⁻¹)
+  refine hS.congr_fderiv (ContinuousLinearMap.ext fun v => ?_)
+  rw [fst_comp_fderiv_standardMap]
+  have hpi : Real.pi ≠ 0 := Real.pi_ne_zero
+  simp [standardMap_apply, Pi.add_apply]
+  field_simp
+  ring
 
 end TauCeti.Examples.ExactTwistMap
