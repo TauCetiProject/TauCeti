@@ -103,7 +103,7 @@ theorem eq_teichmullerCharacter_iff {ψ : Γ →* (ResidueField R)ˣ} {χ : Γ �
     exact ⟨teichmullerCharacter_apply_pow_card_sub_one ψ,
       unitsMap_residue_comp_teichmullerCharacter ψ⟩
   · refine ((teichmuller_eq_iff R).2 ⟨hpow g, ?_⟩).symm
-    rw [← hres, MonoidHom.comp_apply, Units.coe_map, MonoidHom.coe_ofClass]
+    simp [← hres]
 
 variable (R) in
 /-- The Teichmüller lift of the trivial character is trivial. -/
