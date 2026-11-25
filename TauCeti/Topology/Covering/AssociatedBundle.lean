@@ -60,7 +60,12 @@ is trivial (`IsQuotientCoveringMap.deckChange_eq_one_of_mem_target`). So it is a
 homeomorphism (`IsQuotientCoveringMap.isLocalHomeomorph_associatedMk`) and an open quotient map
 (`IsQuotientCoveringMap.isOpenQuotientMap_associatedMk`): the total space of the bundle built from
 transition functions is homeomorphic to the quotient of `E × F` by the orbit relation
-(`IsQuotientCoveringMap.associatedQuotientHomeomorph`).
+(`IsQuotientCoveringMap.associatedQuotientHomeomorph`). This quotient API follows the one for the
+bundle `P ×_G F` associated with a principal bundle `P` in
+`TauCeti.Topology.FiberBundle.Associated.Basic`: its orbit relation
+`TauCeti.AssociatedBundle.orbitRel`, the open quotient map
+`TauCeti.AssociatedBundle.isOpenQuotientMap_totalSpaceMk_mk`, and the homeomorphism
+`TauCeti.AssociatedBundle.quotientHomeomorph` built from `Topology.IsQuotientMap.homeomorph`.
 
 ## Main definitions
 
