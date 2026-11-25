@@ -35,13 +35,14 @@ variable {ι : Type*}
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : WithTop ℕ∞}
 
-/-- The directions of the simplex on a nonempty vertex set `σ`, the vectors of `σ → ℝ` with
-coordinate sum zero, form a subspace of dimension `|σ| - 1`. -/
-theorem finrank_ker_sum_proj {σ : Finset ι} (hσ : σ.Nonempty) :
+/-- The directions of the simplex on a vertex set `σ`, the vectors of `σ → ℝ` with coordinate sum
+zero, form a subspace of dimension `|σ| - 1` (truncated subtraction: `0` for `σ = ∅`). -/
+theorem finrank_ker_sum_proj {σ : Finset ι} :
     finrank ℝ (LinearMap.ker (∑ a : σ, LinearMap.proj a : (σ → ℝ) →ₗ[ℝ] ℝ)) = σ.card - 1 := by
   classical
   set s : (σ → ℝ) →ₗ[ℝ] ℝ := ∑ a : σ, LinearMap.proj a
-  obtain ⟨a₀, ha₀⟩ := hσ
+  rcases σ.eq_empty_or_nonempty with rfl | ⟨a₀, ha₀⟩
+  · simp [finrank_zero_of_subsingleton]
   have hs : LinearMap.range s = ⊤ := by
     refine LinearMap.range_eq_top.mpr fun r ↦ ⟨Pi.single ⟨a₀, ha₀⟩ r, ?_⟩
     simp [s, LinearMap.sum_apply]
@@ -64,7 +65,7 @@ theorem IsSimplexImmersion.card_le {σ : Finset ι} {g : StandardSimplex σ → 
       simpa [S, LinearMap.sum_apply] using this
     · simpa using hv
   have := LinearMap.finrank_le_finrank_of_injective hS
-  rw [finrank_ker_sum_proj ⟨a₀, ha₀⟩] at this
+  rw [finrank_ker_sum_proj] at this
   omega
 
 /-- Every face of a smooth triangulation of a manifold modelled on a finite-dimensional space `E`
