@@ -21,19 +21,22 @@ radius `R > 1`, and its Taylor series at `0`, which is the series of `F`, would 
 convergence at least `R`, while the ratio test gives the radius `1`. Hence `O(D)` is not closed in
 `C(D, ℂ)` (`not_isClosed_holomorphicRestrictions_closedBall`). The function `F` is continuous on
 `D` and holomorphic on its interior, so it also separates `O(D)` from the functions that are merely
-holomorphic on the interior of `D`.
+holomorphic on the interior of `D`
+(`exists_mem_holomorphicFunctions_interior_notMem_holomorphicRestrictions_closedBall`).
 
 Together with `TauCeti.not_isOpen_holomorphicRestrictions` this shows that `O(K)` need be neither
 open nor closed in `C(K, ℂ)` for compact `K`.
 
-## References
+## Main results
 
-* A. Rainer, *Advanced Complex Analysis*, §11.
+* `TauCeti.not_isClosed_holomorphicRestrictions_closedBall`: `O(D)` is not closed in `C(D, ℂ)`.
+* `TauCeti.exists_mem_holomorphicFunctions_interior_notMem_holomorphicRestrictions_closedBall`:
+  a continuous function on `D`, holomorphic on the interior of `D`, need not lie in `O(D)`.
 -/
 
 public noncomputable section
 
-open Filter Set Topology Metric FormalMultilinearSeries
+open Filter Set Topology TopologicalSpace Metric FormalMultilinearSeries
 
 namespace TauCeti
 
@@ -69,6 +72,17 @@ private theorem tendstoUniformlyOn_invSqCoeff :
   exact mul_le_of_le_one_right (norm_nonneg _)
     (pow_le_one₀ (norm_nonneg _) (by simpa using hz))
 
+/-- The sum of `∑ zⁿ / (n + 1)²` is holomorphic on the open unit disc. -/
+private theorem differentiableOn_ofScalarsSum_invSqCoeff :
+    DifferentiableOn ℂ (ofScalarsSum invSqCoeff) (ball (0 : ℂ) 1) := by
+  have h := (ofScalars ℂ invSqCoeff).hasFPowerSeriesOnBall
+    (by simp [radius_ofScalars_invSqCoeff])
+  rw [radius_ofScalars_invSqCoeff] at h
+  intro z hz
+  refine (h.analyticAt_of_mem ?_).differentiableAt.differentiableWithinAt
+  rw [mem_eball, edist_dist, ENNReal.ofReal_lt_one]
+  exact hz
+
 /-- The sum of `∑ zⁿ / (n + 1)²` is not the restriction to the closed unit disc of a function
 holomorphic on an open set containing it. -/
 private theorem not_exists_differentiableOn_eq_ofScalarsSum_invSqCoeff :
@@ -94,33 +108,51 @@ private theorem not_exists_differentiableOn_eq_ofScalarsSum_invSqCoeff :
     ENNReal.coe_le_one_iff, ← NNReal.coe_le_one, hR] at hr
   linarith
 
+/-- The polynomial partial sums of `∑ zⁿ / (n + 1)²` are entire. -/
+private theorem differentiable_partialSum_invSqCoeff (N : ℕ) :
+    Differentiable ℂ fun z : ℂ ↦ ∑ n ∈ Finset.range N, invSqCoeff n • z ^ n := by
+  fun_prop
+
+/-- The restriction of `∑ zⁿ / (n + 1)²` to the closed unit disc. -/
+private def invSqRestrict : C(closedBall (0 : ℂ) 1, ℂ) :=
+  ⟨(closedBall (0 : ℂ) 1).domRestrict (ofScalarsSum invSqCoeff),
+    (tendstoUniformlyOn_invSqCoeff.continuousOn (Frequently.of_forall fun N ↦
+      (differentiable_partialSum_invSqCoeff N).continuous.continuousOn)).domRestrict⟩
+
+private theorem invSqRestrict_notMem :
+    invSqRestrict ∉ holomorphicRestrictions (closedBall (0 : ℂ) 1) := fun h ↦ by
+  obtain ⟨U, g, hU, hDU, hg, hgΦ⟩ := mem_holomorphicRestrictions_iff_exists_open.mp h
+  exact not_exists_differentiableOn_eq_ofScalarsSum_invSqCoeff
+    ⟨U, g, hU, hDU, hg, fun z hz ↦ hgΦ ⟨z, hz⟩⟩
+
 /-- The algebra `O(D)` of restrictions to the closed unit disc `D` of functions holomorphic near
-`D` is not closed in `C(D, ℂ)`: the restriction of `∑ zⁿ / (n + 1)²` is a uniform limit on `D`
-of polynomials but does not lie in `O(D)`. -/
+`D` is not closed in `C(D, ℂ)`. -/
 theorem not_isClosed_holomorphicRestrictions_closedBall :
     ¬IsClosed (holomorphicRestrictions (closedBall (0 : ℂ) 1) :
       Set C(closedBall (0 : ℂ) 1, ℂ)) := by
   set D := closedBall (0 : ℂ) 1
   have : CompactSpace D := isCompact_iff_compactSpace.mp (isCompact_closedBall 0 1)
-  have hU := tendstoUniformlyOn_invSqCoeff
-  have hdiff (N : ℕ) :
-      Differentiable ℂ fun z : ℂ ↦ ∑ n ∈ Finset.range N, invSqCoeff n • z ^ n := by
-    fun_prop
-  have hcont (N : ℕ) := (hdiff N).continuous
-  let Φ : C(D, ℂ) := ⟨D.domRestrict (ofScalarsSum invSqCoeff),
-    (hU.continuousOn (Frequently.of_forall fun N ↦ (hcont N).continuousOn)).domRestrict⟩
   let S (N : ℕ) : C(D, ℂ) :=
     ⟨D.domRestrict fun z ↦ ∑ n ∈ Finset.range N, invSqCoeff n • z ^ n,
-      (hcont N).continuousOn.domRestrict⟩
-  intro hclosed
-  have hΦ : Φ ∈ holomorphicRestrictions D := by
-    refine hclosed.mem_of_tendsto (f := S) (b := atTop) ?_ (Eventually.of_forall fun N ↦ ?_)
-    · rw [ContinuousMap.tendsto_iff_tendstoUniformly]
-      exact tendstoUniformlyOn_iff_tendstoUniformly_comp_coe.mp hU
-    · exact mem_holomorphicRestrictions_iff_exists_open.mpr ⟨univ, _, isOpen_univ, subset_univ _,
-        (hdiff N).differentiableOn, fun _ ↦ rfl⟩
-  obtain ⟨U, g, hU, hDU, hg, hgΦ⟩ := mem_holomorphicRestrictions_iff_exists_open.mp hΦ
-  exact not_exists_differentiableOn_eq_ofScalarsSum_invSqCoeff
-    ⟨U, g, hU, hDU, hg, fun z hz ↦ hgΦ ⟨z, hz⟩⟩
+      (differentiable_partialSum_invSqCoeff N).continuous.continuousOn.domRestrict⟩
+  refine fun hclosed ↦ invSqRestrict_notMem <|
+    hclosed.mem_of_tendsto (f := S) (b := atTop) ?_ (Eventually.of_forall fun N ↦ ?_)
+  · rw [ContinuousMap.tendsto_iff_tendstoUniformly]
+    exact tendstoUniformlyOn_iff_tendstoUniformly_comp_coe.mp tendstoUniformlyOn_invSqCoeff
+  · exact mem_holomorphicRestrictions_iff_exists_open.mpr ⟨univ, _, isOpen_univ, subset_univ _,
+      (differentiable_partialSum_invSqCoeff N).differentiableOn, fun _ ↦ rfl⟩
+
+/-- A continuous function on the closed unit disc `D` that is holomorphic on the interior of `D`
+need not lie in `O(D)`. -/
+theorem exists_mem_holomorphicFunctions_interior_notMem_holomorphicRestrictions_closedBall :
+    ∃ φ : C(closedBall (0 : ℂ) 1, ℂ),
+      φ.comp (ContinuousMap.inclusion interior_subset) ∈
+          holomorphicFunctions (Opens.interior (closedBall (0 : ℂ) 1)) ∧
+        φ ∉ holomorphicRestrictions (closedBall (0 : ℂ) 1) := by
+  refine ⟨invSqRestrict,
+    (mem_holomorphicFunctions_iff_of_eqOn (g := ofScalarsSum invSqCoeff) fun _ ↦ rfl).mpr ?_,
+    invSqRestrict_notMem⟩
+  rw [Opens.coe_interior, interior_closedBall _ one_ne_zero]
+  exact differentiableOn_ofScalarsSum_invSqCoeff
 
 end TauCeti

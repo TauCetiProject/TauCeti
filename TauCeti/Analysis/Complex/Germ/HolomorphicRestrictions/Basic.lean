@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Germ
 public import TauCeti.Analysis.Complex.RealDeriv
+public import TauCeti.Topology.ContinuousMap.Polynomial
 public import Mathlib.Analysis.Calculus.Deriv.Polynomial
-public import Mathlib.LinearAlgebra.Lagrange
-public import Mathlib.Topology.ContinuousMap.Polynomial
 public import Mathlib.Topology.Perfect
 
 /-!
@@ -28,7 +27,8 @@ holomorphic on its interior.
 The value map forgets the germ away from `s`. It is injective exactly when `s` has no isolated
 point (`holomorphicGerms.toContinuousMap_injective_iff`), so for instance on every connected set
 with two points, such as a closed disc, while on `{c}` the germs of `z ↦ z - c` and of `0` have
-the same value. For finite `s`, Lagrange interpolation shows `O(s) = C(s, ℂ)`.
+the same value. For finite `s`, Lagrange interpolation (`polynomialFunctions.eq_top_of_finite`)
+shows `O(s) = C(s, ℂ)`.
 
 The algebra `O(s)` is neither open nor closed in general. As soon as `s` has interior, the
 small multiples `ε • conj z` of the conjugate coordinate tend to `0` without ever lying in
@@ -48,6 +48,9 @@ example is in `TauCeti.Analysis.Complex.Germ.HolomorphicRestrictions.NotClosed`.
 * `TauCeti.comp_inclusion_mem_holomorphicRestrictions`: restriction to a smaller set preserves
   `O(·)`, and `TauCeti.HolomorphicFunctions.comp_inclusion_mem_holomorphicRestrictions`: the
   restriction to `s` of a holomorphic function on an open `U ⊇ s` lies in `O(s)`.
+* `TauCeti.holomorphicRestrictions_coe_opens`: on an open set `U`, `O(U)` is
+  `holomorphicFunctions U`, so restricting an element of `O(s)` to an open `U ⊆ s` gives a
+  holomorphic function (`TauCeti.comp_inclusion_mem_holomorphicFunctions`).
 * `TauCeti.holomorphicGerms.toContinuousMap_injective_iff`: injectivity of the value map.
 * `TauCeti.holomorphicRestrictions_eq_top_of_finite`: `O(s) = C(s, ℂ)` for finite `s`.
 * `TauCeti.not_isOpen_holomorphicRestrictions`: `O(s)` is not open when `s` has interior.
@@ -70,7 +73,7 @@ variable {s t : Set ℂ}
 
 /-- The value map: a germ near `s` is sent to the continuous function `x ↦ g(x)` on `s`. -/
 def toContinuousMap (s : Set ℂ) : holomorphicGerms s →ₐ[ℂ] C(s, ℂ) where
-  toFun g := ⟨fun x ↦ eval x x.2 g, by
+  toFun g := ⟨fun x ↦ eval (x : ℂ) x.property g, by
     obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq g
     simp only [eval_ofFun]
     exact hf.continuousOn.domRestrict⟩
@@ -82,7 +85,7 @@ def toContinuousMap (s : Set ℂ) : holomorphicGerms s →ₐ[ℂ] C(s, ℂ) whe
 
 @[simp]
 theorem toContinuousMap_apply (g : holomorphicGerms s) (x : s) :
-    toContinuousMap s g x = eval x x.2 g := (rfl)
+    toContinuousMap s g x = eval (x : ℂ) x.property g := (rfl)
 
 theorem toContinuousMap_ofFun (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s) (x : s) :
     toContinuousMap s (ofFun f hf) x = f x := by
@@ -101,20 +104,11 @@ restriction of that function. -/
 theorem toContinuousMap_toGerm {U : Opens ℂ} (hs : s ⊆ U) (f : holomorphicFunctions U) :
     toContinuousMap s (HolomorphicFunctions.toGerm hs f) =
       (f : C(U, ℂ)).comp (ContinuousMap.inclusion hs) := by
-  ext
-  simp only [toContinuousMap_apply, HolomorphicFunctions.eval_toGerm]
-  rfl
+  ext x
+  simp only [toContinuousMap_apply, HolomorphicFunctions.eval_toGerm, ContinuousMap.comp_apply]
+  exact congrArg f.val (Subtype.ext (ContinuousMap.inclusion_apply_coe hs x).symm)
 
-/-- A function holomorphic near a non-isolated point of `s` and vanishing on `s` vanishes near
-that point. -/
-private theorem eventually_eq_zero_of_accPt {f : ℂ → ℂ} {x : ℂ} (hf : AnalyticAt ℂ f x)
-    (hx : AccPt x (𝓟 s)) (h0 : ∀ y ∈ s, f y = 0) : ∀ᶠ z in 𝓝 x, f z = 0 := by
-  refine hf.eventually_eq_zero_or_eventually_ne_zero.resolve_right fun hne ↦ ?_
-  obtain ⟨y, hy, hys⟩ := (hne.and_frequently (accPt_iff_frequently_nhdsNE.mp hx)).exists
-  exact hy (h0 y hys)
-
-/-- The value map is injective when every point of `s` is an accumulation point of `s`, by the
-identity theorem at each point of `s`. -/
+/-- The value map is injective when every point of `s` is an accumulation point of `s`. -/
 theorem toContinuousMap_injective (hs : Preperfect s) : Function.Injective (toContinuousMap s) := by
   refine (injective_iff_map_eq_zero _).mpr fun g hg ↦ ?_
   obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq g
@@ -123,7 +117,8 @@ theorem toContinuousMap_injective (hs : Preperfect s) : Function.Injective (toCo
   rw [← map_zero (algebraMap ℂ (holomorphicGerms s)), ← ofFun_const,
     ofFun_eq_iff hf analyticOnNhd_const]
   exact eventually_nhdsSet_iff_forall.mpr fun x hx ↦
-    eventually_eq_zero_of_accPt (hf x hx) (hs x hx) h0
+    (hf x hx).frequently_zero_iff_eventually_zero.mp
+      ((accPt_iff_frequently_nhdsNE.mp (hs x hx)).mono h0)
 
 /-- At an isolated point `x` of `s`, the function equal to `z - x` near `x` and to `0` elsewhere
 is holomorphic near `s`, vanishes on `s`, and has nonzero germ. -/
@@ -178,7 +173,7 @@ theorem toContinuousMap_injective_iff : Function.Injective (toContinuousMap s) �
   obtain ⟨f, hf, h0, hne⟩ := exists_ne_zero_of_not_accPt hx hacc
   refine hne (hinj ?_)
   ext y
-  simpa using h0 y y.2
+  simpa using h0 y y.property
 
 /-- On a preconnected set with at least two points, such as a closed disc of positive radius, a
 germ is determined by its values. -/
@@ -186,8 +181,7 @@ theorem toContinuousMap_injective_of_isPreconnected (hs : IsPreconnected s) (hnt
     Function.Injective (toContinuousMap s) :=
   toContinuousMap_injective (hs.preperfect_of_nontrivial hnt)
 
-/-- On a single point the value map is not injective: the germs of `z ↦ z - c` and of `0` have
-the same value. -/
+/-- On a single point the value map is not injective. -/
 theorem not_injective_toContinuousMap_singleton (c : ℂ) :
     ¬Function.Injective (toContinuousMap {c}) := by
   rw [toContinuousMap_injective_iff]
@@ -204,8 +198,23 @@ the value map on `holomorphicGerms s`. -/
 def holomorphicRestrictions (s : Set ℂ) : Subalgebra ℂ C(s, ℂ) :=
   (holomorphicGerms.toContinuousMap s).range
 
+/-- The range of the value map on `holomorphicGerms s` is `O(s)`. -/
+@[simp]
+theorem holomorphicGerms.range_toContinuousMap (s : Set ℂ) :
+    (holomorphicGerms.toContinuousMap s).range = holomorphicRestrictions s := (rfl)
+
+/-- The values on `s` of a germ near `s` lie in `O(s)`. -/
+@[simp]
+theorem holomorphicGerms.toContinuousMap_mem_holomorphicRestrictions (g : holomorphicGerms s) :
+    holomorphicGerms.toContinuousMap s g ∈ holomorphicRestrictions s := by
+  rw [← holomorphicGerms.range_toContinuousMap]
+  exact AlgHom.mem_range_self _ g
+
+/-- A continuous function on `s` lies in `O(s)` exactly when it agrees on `s` with a function
+analytic on a neighbourhood of `s`. -/
 theorem mem_holomorphicRestrictions_iff {φ : C(s, ℂ)} :
     φ ∈ holomorphicRestrictions s ↔ ∃ f : ℂ → ℂ, AnalyticOnNhd ℂ f s ∧ ∀ x : s, f x = φ x := by
+  rw [← holomorphicGerms.range_toContinuousMap]
   refine (AlgHom.mem_range _).trans ⟨?_, ?_⟩
   · rintro ⟨g, rfl⟩
     obtain ⟨f, hf, rfl⟩ := holomorphicGerms.exists_ofFun_eq g
@@ -231,36 +240,49 @@ theorem mem_holomorphicRestrictions_iff_exists_open {φ : C(s, ℂ)} :
 theorem comp_inclusion_mem_holomorphicRestrictions {φ : C(s, ℂ)}
     (hφ : φ ∈ holomorphicRestrictions s) (h : t ⊆ s) :
     φ.comp (ContinuousMap.inclusion h) ∈ holomorphicRestrictions t := by
+  rw [← holomorphicGerms.range_toContinuousMap] at hφ
   obtain ⟨g, rfl⟩ := (AlgHom.mem_range _).mp hφ
-  exact ⟨holomorphicGerms.restrict h g, holomorphicGerms.toContinuousMap_restrict h g⟩
+  rw [← holomorphicGerms.toContinuousMap_restrict h g]
+  exact holomorphicGerms.toContinuousMap_mem_holomorphicRestrictions _
 
 /-- The restriction to `s` of a holomorphic function on an open set `U ⊇ s` lies in `O(s)`. -/
 theorem HolomorphicFunctions.comp_inclusion_mem_holomorphicRestrictions {U : Opens ℂ}
     (hs : s ⊆ U) (f : holomorphicFunctions U) :
-    (f : C(U, ℂ)).comp (ContinuousMap.inclusion hs) ∈ holomorphicRestrictions s :=
-  ⟨HolomorphicFunctions.toGerm hs f, holomorphicGerms.toContinuousMap_toGerm hs f⟩
+    (f : C(U, ℂ)).comp (ContinuousMap.inclusion hs) ∈ holomorphicRestrictions s := by
+  rw [← holomorphicGerms.toContinuousMap_toGerm hs f]
+  exact holomorphicGerms.toContinuousMap_mem_holomorphicRestrictions _
+
+/-- On an open set `U`, `O(U)` is the algebra of holomorphic functions on `U`. -/
+theorem holomorphicRestrictions_coe_opens (U : Opens ℂ) :
+    holomorphicRestrictions (U : Set ℂ) = holomorphicFunctions U := by
+  ext φ
+  rw [mem_holomorphicRestrictions_iff, mem_holomorphicFunctions_iff]
+  exact ⟨fun ⟨f, hf, hfφ⟩ ↦ ⟨f, hf.differentiableOn, hfφ⟩,
+    fun ⟨f, hf, hfφ⟩ ↦ ⟨f, hf.analyticOnNhd U.isOpen, hfφ⟩⟩
+
+/-- The restriction of an element of `O(s)` to an open subset `U ⊆ s` is holomorphic on `U`. -/
+theorem comp_inclusion_mem_holomorphicFunctions {φ : C(s, ℂ)}
+    (hφ : φ ∈ holomorphicRestrictions s) {U : Opens ℂ} (hU : (U : Set ℂ) ⊆ s) :
+    φ.comp (ContinuousMap.inclusion hU) ∈ holomorphicFunctions U :=
+  holomorphicRestrictions_coe_opens U ▸ comp_inclusion_mem_holomorphicRestrictions hφ hU
 
 /-- Polynomial functions on `s` lie in `O(s)`. -/
 theorem polynomialFunctions_le_holomorphicRestrictions (s : Set ℂ) :
     polynomialFunctions s ≤ holomorphicRestrictions s := by
   intro φ hφ
-  obtain ⟨p, -, rfl⟩ := Subalgebra.mem_map.mp hφ
+  rw [← SetLike.mem_coe, polynomialFunctions_coe] at hφ
+  obtain ⟨p, rfl⟩ := hφ
   exact mem_holomorphicRestrictions_iff.mpr
-    ⟨fun z ↦ p.eval z, fun z _ ↦ (Polynomial.differentiable p).analyticAt z, fun _ ↦ rfl⟩
+    ⟨fun z ↦ p.eval z, fun z _ ↦ (Polynomial.differentiable p).analyticAt z, fun _ ↦ by simp⟩
 
-/-- On a finite set every function is the restriction of a polynomial, by Lagrange
-interpolation, so `O(s) = C(s, ℂ)`. This includes the empty set. -/
+/-- On a finite set `s`, including the empty set, `O(s) = C(s, ℂ)`. -/
 theorem holomorphicRestrictions_eq_top_of_finite (hs : s.Finite) :
-    holomorphicRestrictions s = ⊤ := by
-  have := hs.fintype
-  refine eq_top_iff.mpr fun φ _ ↦ polynomialFunctions_le_holomorphicRestrictions s
-    ⟨Lagrange.interpolate Finset.univ Subtype.val φ, Algebra.mem_top, ?_⟩
-  ext x
-  exact Lagrange.eval_interpolate_at_node φ Subtype.val_injective.injOn (Finset.mem_univ x)
+    holomorphicRestrictions s = ⊤ :=
+  eq_top_mono (polynomialFunctions_le_holomorphicRestrictions s)
+    (polynomialFunctions.eq_top_of_finite hs)
 
-/-- The conjugate coordinate `z ↦ conj z` on a set with nonempty interior does not lie in `O(s)`:
-a holomorphic function agreeing with it near an interior point would make conjugation complex
-differentiable there. -/
+/-- The conjugate coordinate `z ↦ conj z` on a set with nonempty interior does not lie in
+`O(s)`. -/
 theorem star_restrict_id_notMem_holomorphicRestrictions (hs : (interior s).Nonempty) :
     star (ContinuousMap.restrict s (ContinuousMap.id ℂ)) ∉ holomorphicRestrictions s := by
   rw [mem_holomorphicRestrictions_iff_exists_open]
@@ -272,23 +294,13 @@ theorem star_restrict_id_notMem_holomorphicRestrictions (hs : (interior s).Nonem
   exact Complex.not_differentiableAt_conj z
     ((hf.differentiableAt (hU.mem_nhds (hsU (interior_subset hz)))).congr_of_eventuallyEq heq)
 
-/-- On a set with nonempty interior, `O(s)` is not open in `C(s, ℂ)`: the multiples
-`ε • conj z` tend to `0 ∈ O(s)` as `ε → 0`, but none with `ε ≠ 0` lies in `O(s)`. -/
+/-- On a set with nonempty interior, `O(s)` is not open in `C(s, ℂ)`. -/
 theorem not_isOpen_holomorphicRestrictions (hs : (interior s).Nonempty) :
     ¬IsOpen (holomorphicRestrictions s : Set C(s, ℂ)) := by
   intro hopen
-  set ψ := star (ContinuousMap.restrict s (ContinuousMap.id ℂ))
-  have ht : Tendsto (fun ε : ℂ ↦ ε • ψ) (𝓝[≠] 0) (𝓝 0) := by
-    have h0 : (0 : ℂ) • ψ = 0 := by
-      ext
-      simp
-    have := (tendsto_id (x := 𝓝 (0 : ℂ))).smul_const ψ
-    rw [h0] at this
-    exact this.mono_left nhdsWithin_le_nhds
-  obtain ⟨ε, hεψ, hε⟩ := ((ht.eventually (hopen.mem_nhds (zero_mem _))).and
-    (self_mem_nhdsWithin : {(0 : ℂ)}ᶜ ∈ 𝓝[≠] 0)).exists
-  apply star_restrict_id_notMem_holomorphicRestrictions hs
-  have := Subalgebra.smul_mem (holomorphicRestrictions s) hεψ ε⁻¹
-  rwa [smul_smul, inv_mul_cancel₀ hε, one_smul] at this
+  have huniv := (absorbent_nhds_zero (𝕜 := ℂ)
+    (hopen.mem_nhds (zero_mem (holomorphicRestrictions s)))).eq_univ_of_smulMemClass
+  exact star_restrict_id_notMem_holomorphicRestrictions hs
+    (SetLike.mem_coe.mp (eq_univ_iff_forall.mp huniv _))
 
 end TauCeti
