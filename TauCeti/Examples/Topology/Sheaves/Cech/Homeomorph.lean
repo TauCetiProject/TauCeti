@@ -8,7 +8,7 @@ module
 public import TauCeti.Topology.Sheaves.Cech.Homeomorph
 public import TauCeti.Topology.Sheaves.Cech.Skyscraper
 public import TauCeti.Topology.Sheaves.Cech.LongExactSequence
-public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
+public import Mathlib.Topology.Compactification.OnePoint.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Sheaves.Points

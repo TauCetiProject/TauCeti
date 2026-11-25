@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.CommSq
 public import Mathlib.CategoryTheory.Limits.Final
 public import TauCeti.CategoryTheory.EqToHom
+public import TauCeti.CategoryTheory.Sites.Preadditive
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.LongExactSequence
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Reindex
 public import TauCeti.Topology.Sheaves.Cech.Colimit
@@ -296,26 +297,12 @@ theorem cechComplexMap_comp_cechComplexIso_hom_app {V : PointOpenCover X}
 
 section Cohomology
 
--- The cover order equivalence is opaque outside CoverSystems.
--- Mathlib's changeFunctor retains that equivalence and gives its functor the literal
--- native cover-map object function, so diagram components need no dependent casts.
-private def coverHomeomorphEquivalence : PointOpenCover X ≌ PointOpenCover Y :=
-  let G : PointOpenCover X ⥤ PointOpenCover Y :=
-    { obj := fun U ↦ U.mapHomeomorph h
-      map := fun f ↦ homOfLE
-        ((PointOpenCover.mapHomeomorph_le_mapHomeomorph_iff _ _ h).mpr (leOfHom f)) }
-  (h.pointOpenCoverOrderIso).equivalence.changeFunctor
-    (NatIso.ofComponents (fun U ↦ eqToIso (by
-      simp only [OrderIso.equivalence_functor, Monotone.functor_obj,
-        Homeomorph.pointOpenCoverOrderIso_apply, G])) (fun _ ↦ Subsingleton.elim _ _)
-      : (h.pointOpenCoverOrderIso).equivalence.functor ≅ G)
-
 variable [CategoryWithHomology A] (n : ℕ)
 
 private def cechHomeomorphDiagramIso :
     (cechCohomologyDiagram A (PointOpenCover.toFormalCoproduct (X := X))
       (fun _ _ hf ↦ hf) n).flip.obj P ≅
-      (coverHomeomorphEquivalence h).functor ⋙
+      h.pointOpenCoverEquivalence.functor ⋙
         (cechCohomologyDiagram A (PointOpenCover.toFormalCoproduct (X := Y))
           (fun _ _ hf ↦ hf) n).flip.obj
           (h.opensCongr.equivalence.inverse.op ⋙ P) := by
@@ -329,7 +316,7 @@ private def cechHomeomorphDiagramIso :
   rw [cechCohomologyDiagram_map A (PointOpenCover.toFormalCoproduct (X := X))
     (fun _ _ hf ↦ hf) n f φ,
     cechCohomologyDiagram_map A (PointOpenCover.toFormalCoproduct (X := Y)) (fun _ _ hf ↦ hf) n
-      ((coverHomeomorphEquivalence h).functor.map f) ψ]
+      (h.pointOpenCoverEquivalence.functor.map f) ψ]
   have hc := congrArg ((HomologicalComplex.homologyFunctor A (ComplexShape.up ℕ) n).map)
     (cechComplexMap_comp_cechComplexIso_hom_app h V P φ)
   simp only [Functor.map_comp] at hc
@@ -346,7 +333,7 @@ private def cechHomeomorphDiagramsIso :
       h.opensCongr.equivalence.inverse.op ⋙
       (cechCohomologyDiagram A (PointOpenCover.toFormalCoproduct (X := Y))
         (fun _ _ hf ↦ hf) n).flip ⋙
-      (Functor.whiskeringLeft _ _ A).obj (coverHomeomorphEquivalence h).functor := by
+      (Functor.whiskeringLeft _ _ A).obj h.pointOpenCoverEquivalence.functor := by
   refine NatIso.ofComponents (fun P ↦ cechHomeomorphDiagramIso h P n) ?_
   intro P Q φ
   ext U
@@ -362,13 +349,13 @@ def cechCohomologyIso :
     Functor.associator _ _ _ ≪≫
     isoWhiskerLeft _ (Functor.associator _ _ _) ≪≫
     isoWhiskerLeft _ (isoWhiskerLeft _
-      (Functor.Final.colimIso (coverHomeomorphEquivalence h).functor))
+      (Functor.Final.colimIso h.pointOpenCoverEquivalence.functor))
 
 /-- Read the native colimit map underlying the transport comparison. -/
 private lemma cechCohomologyIso_hom_app_eq :
     (h.cechCohomologyIso (A := A) n).hom.app P =
       colimMap (cechHomeomorphDiagramIso h P n).hom ≫
-        (Functor.Final.colimitIso (coverHomeomorphEquivalence h).functor
+        (Functor.Final.colimitIso h.pointOpenCoverEquivalence.functor
           ((cechCohomologyDiagram A (PointOpenCover.toFormalCoproduct (X := Y))
             (fun _ _ hf ↦ hf) n).flip.obj
               (h.opensCongr.equivalence.inverse.op ⋙ P))).hom := by
@@ -376,19 +363,19 @@ private lemma cechCohomologyIso_hom_app_eq :
     h.opensCongr.equivalence.inverse.op
   let D := (cechCohomologyDiagram A (PointOpenCover.toFormalCoproduct (X := Y))
     (fun _ _ hf ↦ hf) n).flip
-  let E := (Functor.whiskeringLeft _ _ A).obj (coverHomeomorphEquivalence h).functor
+  let E := (Functor.whiskeringLeft _ _ A).obj h.pointOpenCoverEquivalence.functor
   -- Spell out the native colimit functors before reading identity associator components.
   change ((isoWhiskerRight (cechHomeomorphDiagramsIso h n) colim ≪≫
     Functor.associator W (D ⋙ E) colim ≪≫
     isoWhiskerLeft W (Functor.associator D E colim) ≪≫
     isoWhiskerLeft W (isoWhiskerLeft D
-      (Functor.Final.colimIso (coverHomeomorphEquivalence h).functor))) :
+      (Functor.Final.colimIso h.pointOpenCoverEquivalence.functor))) :
       (cechCohomologyDiagram A (PointOpenCover.toFormalCoproduct (X := X))
         (fun _ _ hf ↦ hf) n).flip ⋙ colim ≅ W ⋙ D ⋙ colim).hom.app P = _
   dsimp only [Iso.trans_hom, NatTrans.comp_app, isoWhiskerRight_hom,
     isoWhiskerLeft_hom, whiskerLeft_app, Functor.associator_hom_app]
   let α := (whiskerRight (cechHomeomorphDiagramsIso h n).hom colim).app P
-  let β := (Functor.Final.colimIso (coverHomeomorphEquivalence h).functor).hom.app
+  let β := (Functor.Final.colimIso h.pointOpenCoverEquivalence.functor).hom.app
     (D.obj (W.obj P))
   exact (α ≫= ((Category.id_comp _).trans (Category.id_comp β))).trans (by rfl)
 
@@ -401,10 +388,10 @@ theorem cechCohomologyIso_hom_app_ι (V : PointOpenCover X) :
         (cechCohomologyι PointOpenCover.toFormalCoproduct (fun _ _ hf ↦ hf) n
           (V.mapHomeomorph h)).app (h.opensCongr.equivalence.inverse.op ⋙ P) := by
   have hi := ι_colimMap_assoc (cechHomeomorphDiagramIso h P n).hom V
-    (Functor.Final.colimitIso (coverHomeomorphEquivalence h).functor
+    (Functor.Final.colimitIso h.pointOpenCoverEquivalence.functor
       ((cechCohomologyDiagram A PointOpenCover.toFormalCoproduct
         (fun _ _ hf ↦ hf) n).flip.obj (h.opensCongr.equivalence.inverse.op ⋙ P))).hom
-  have hf := Functor.Final.ι_colimitIso_hom (coverHomeomorphEquivalence h).functor
+  have hf := Functor.Final.ι_colimitIso_hom h.pointOpenCoverEquivalence.functor
     ((cechCohomologyDiagram A PointOpenCover.toFormalCoproduct
       (fun _ _ hf ↦ hf) n).flip.obj (h.opensCongr.equivalence.inverse.op ⋙ P)) V
   have hd : (cechHomeomorphDiagramIso h P n).hom.app V =
@@ -691,22 +678,6 @@ open TauCeti.CategoryTheory
 
 variable {A : Type a} [Category.{b} A] [Preadditive A] [HasProducts.{u} A]
   {X Y : TopCat.{u}} (h : X ≃ₜ Y) (U : PointOpenCover X) (P : (Opens X)ᵒᵖ ⥤ A)
-
-/-- The original cover refines the inverse image of its transported cover. -/
-def cechPullbackRefinement :
-    FormalCoproduct.mk Y (fun y ↦ (Opens.map (TopCat.isoOfHomeo h).hom).obj
-      ((U.mapHomeomorph h).opens y)) ⟶ U.toFormalCoproduct :=
-  ⟨h.symm, fun y ↦ homOfLE (by
-    -- FormalCoproduct.mk/toFormalCoproduct reduce the component goal to an Opens inclusion.
-    change (Opens.map (TopCat.isoOfHomeo h).hom).obj ((U.mapHomeomorph h).opens y) ≤
-      U.opens (h.symm y)
-    rw [PointOpenCover.mapHomeomorph_opens]
-    exact le_of_eq (h.opensCongr.symm_apply_apply _))⟩
-
-/-- The actual refinement reads a transported point at its inverse image. -/
-@[simp]
-theorem cechPullbackRefinement_f (y : Y) : (h.cechPullbackRefinement U).f y = h.symm y := by
-  rfl
 
 /-- Native transport followed by continuous-map pullback is the actual refinement map
 from the preimage of the transported cover to the original cover. -/

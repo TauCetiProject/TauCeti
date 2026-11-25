@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Filtered.Connected
 public import Mathlib.CategoryTheory.Limits.FormalCoproducts.Basic
 public import Mathlib.Data.Fintype.EquivFin
+public import Mathlib.Topology.Category.TopCat.Opens
 public import Mathlib.Topology.Sets.OpenCover
 public import Mathlib.Topology.ShrinkingLemma
 
@@ -35,7 +36,9 @@ Finite covers retain repeated members and include the empty cover of the empty s
 
 Homeomorphisms transport point-neighborhood covers and actual refinements
 (`PointOpenCover.mapHomeomorph`, `PointOpenCover.mapHomeomorphHom`) and identify the refinement
-preorders (`Homeomorph.pointOpenCoverOrderIso`).
+preorders (`Homeomorph.pointOpenCoverOrderIso`) and categories
+(`Homeomorph.pointOpenCoverEquivalence`). For a homeomorphism `h` in `TopCat`, the original cover
+refines the preimage along `h` of its transported cover (`Homeomorph.cechPullbackRefinement`).
 
 The cover-refinement description follows the Stacks Project, Cohomology of Sheaves, §20.15
 (tag 09UY). Finite cofinality is the compactness argument of J. Pardon, arXiv:1309.2370v6,
@@ -234,7 +237,48 @@ theorem mapHomeomorphHom_f (U : PointOpenCover X) (h : X ≃ₜ Y) {V : PointOpe
     (φ : U.toFormalCoproduct ⟶ V.toFormalCoproduct) (y : Y) :
     (U.mapHomeomorphHom h φ).f y = h (φ.f (h.symm y)) := by rfl
 
+-- Mathlib's changeFunctor retains the order equivalence and gives its functor the literal
+-- cover-transport object function, so diagrams reindexed along it need no dependent casts.
+/-- A homeomorphism identifies the refinement categories of point-neighborhood covers, with no
+universe restriction. Its functor transports each cover by `PointOpenCover.mapHomeomorph`. -/
+@[expose]
+def _root_.Homeomorph.pointOpenCoverEquivalence (h : X ≃ₜ Y) :
+    PointOpenCover X ≌ PointOpenCover Y :=
+  let G : PointOpenCover X ⥤ PointOpenCover Y :=
+    { obj := fun U ↦ U.mapHomeomorph h
+      map := fun f ↦ homOfLE ((mapHomeomorph_le_mapHomeomorph_iff _ _ h).mpr (leOfHom f)) }
+  (h.pointOpenCoverOrderIso).equivalence.changeFunctor
+    (NatIso.ofComponents (fun U ↦ eqToIso (by
+      simp only [OrderIso.equivalence_functor, Monotone.functor_obj,
+        Homeomorph.pointOpenCoverOrderIso_apply, G])) (fun _ ↦ Subsingleton.elim _ _)
+      : (h.pointOpenCoverOrderIso).equivalence.functor ≅ G)
+
+/-- The cover equivalence transports each cover by the actual neighborhood transport. -/
+@[simp]
+theorem _root_.Homeomorph.pointOpenCoverEquivalence_functor_obj (h : X ≃ₜ Y)
+    (U : PointOpenCover X) : h.pointOpenCoverEquivalence.functor.obj U = U.mapHomeomorph h := by
+  rfl
+
 end PointOpenCover
+
+/-- The original cover refines the inverse image of its transported cover. -/
+@[expose]
+def _root_.Homeomorph.cechPullbackRefinement {X Y : TopCat.{u}} (h : X ≃ₜ Y)
+    (U : PointOpenCover X) :
+    FormalCoproduct.mk Y (fun y ↦ (Opens.map (TopCat.isoOfHomeo h).hom).obj
+      ((U.mapHomeomorph h).opens y)) ⟶ U.toFormalCoproduct :=
+  ⟨h.symm, fun y ↦ homOfLE (by
+    -- FormalCoproduct.mk/toFormalCoproduct reduce the component goal to an Opens inclusion.
+    change (Opens.map (TopCat.isoOfHomeo h).hom).obj ((U.mapHomeomorph h).opens y) ≤
+      U.opens (h.symm y)
+    rw [PointOpenCover.mapHomeomorph_opens]
+    exact le_of_eq (h.opensCongr.symm_apply_apply _))⟩
+
+/-- The actual refinement reads a transported point at its inverse image. -/
+@[simp]
+theorem _root_.Homeomorph.cechPullbackRefinement_f {X Y : TopCat.{u}} (h : X ≃ₜ Y)
+    (U : PointOpenCover X) (y : Y) : (h.cechPullbackRefinement U).f y = h.symm y := by
+  rfl
 
 /-- A finite indexed open cover. The lifted index type lives in the universe of `X`, so the
 collection of all these covers is small in that same universe. Repetitions are allowed. -/

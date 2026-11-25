@@ -5,18 +5,17 @@ Authors: Kim Morrison
 -/
 module
 
+public import Mathlib.CategoryTheory.Sites.Equivalence
 public import Mathlib.CategoryTheory.Sites.GlobalSections
 public import Mathlib.Topology.Sheaves.SheafCondition.Sites
-public import TauCeti.CategoryTheory.Sites.Preadditive
+public import TauCeti.Topology.Category.TopCat.Opens
 
 /-!
 # Sheaves under a homeomorphism across universes
 
 The order equivalence on opens supplied by a homeomorphism identifies their covering sieves.
 The resulting equivalence of sheaf categories keeps the coefficient objects unchanged.
-The inverse-opens functors satisfy refl/trans laws (`opensCongr_inverse_refl`,
-`opensCongr_inverse_trans`), and `Homeomorph.globalSectionsIso` compares global sections before
-and after `sheafCongr`.
+`Homeomorph.globalSectionsIso` compares global sections before and after `sheafCongr`.
 -/
 
 public noncomputable section
@@ -47,23 +46,6 @@ instance opensCongr_isDenseSubsite :
       obtain ⟨V, f, hf, hv⟩ := hS (h y) hy
       exact ⟨h.symm.opensCongr V, h.symm.opensCongr.equivalence.functor.map f,
         ⟨V, f, 𝟙 _, hf, (Category.id_comp _).symm⟩, hv⟩
-
-/-- The inverse-opens functor of the identity homeomorphism is the native identity functor. -/
-theorem opensCongr_inverse_refl :
-    (Homeomorph.refl X).opensCongr.equivalence.inverse = 𝟭 (Opens X) := by
-  rfl
-
-/-- Inverse-opens transport follows the actual composite in the contravariant order. -/
-theorem opensCongr_inverse_trans {Z : Type*} [TopologicalSpace Z] (k : Y ≃ₜ Z) :
-    (h.trans k).opensCongr.equivalence.inverse =
-      k.opensCongr.equivalence.inverse ⋙ h.opensCongr.equivalence.inverse := by
-  rfl
-
-/-- The actual inverse-opens precomposition functors compose in the same order after `op`. -/
-theorem opensCongr_inverse_op_trans {Z : Type*} [TopologicalSpace Z] (k : Y ≃ₜ Z) :
-    (h.trans k).opensCongr.equivalence.inverse.op =
-      k.opensCongr.equivalence.inverse.op ⋙ h.opensCongr.equivalence.inverse.op := by
-  rfl
 
 variable (A : Type a) [Category.{b} A]
 
