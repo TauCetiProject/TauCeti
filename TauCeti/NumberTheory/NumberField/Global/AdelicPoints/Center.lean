@@ -64,8 +64,9 @@ variable (R K : Type*) [CommRing R] [IsDedekindDomain R] [Field K] [Algebra R K]
 
 /-- The adelic points `Z(𝔸_K)` of the centre `Z` of `G = Spec H`: the subgroup of `G(𝔸_K)` of
 points vanishing on the Hopf ideal `TauCeti.CommHopfAlgCat.centerDefiningIdeal H` cutting out
-`Z`. -/
-noncomputable def centerPoints : Subgroup (AdelicPoints R K H) :=
+`Z`. This is `TauCeti.CommHopfAlgCat.centerPointsSubgroup H` with coefficients in `𝔸_K`, which
+that declaration cannot express unless `𝔸_K` lies in the universe of `H`. -/
+noncomputable abbrev centerPoints : Subgroup (AdelicPoints R K H) :=
   quotientPointsSubgroup H (centerDefiningIdeal H) (CommAlgCat.of K (AdeleRing R K))
 
 /-- `Z(𝔸_K)` is a closed subgroup of `G(𝔸_K)`. -/
@@ -94,9 +95,12 @@ ideal `I` exactly when it lies in its rational points. -/
 theorem diagonal_mem_quotientPointsSubgroup_iff (I : HopfIdeal K H) (g : WithConv (H →ₐ[K] K)) :
     diagonal R K H g ∈ quotientPointsSubgroup H I (CommAlgCat.of K (AdeleRing R K)) ↔
       g ∈ quotientPointsSubgroup H I (CommAlgCat.of K K) := by
-  rw [mem_quotientPointsSubgroup_iff, mem_quotientPointsSubgroup_iff]
-  refine forall₂_congr fun h _ ↦ ?_
-  rw [diagonal_apply_apply, map_eq_zero_iff _ (algebraMap K (AdeleRing R K)).injective]
+  have hg : diagonal R K H g = AlgHom.mapValue (Algebra.ofId K (AdeleRing R K)) g := by
+    ext h
+    rw [diagonal_apply_apply, AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
+      Algebra.ofId_apply]
+  rw [hg]
+  exact mapValue_mem_quotientPointsSubgroup_iff H I (algebraMap K (AdeleRing R K)).injective g
 
 variable (R K H)
 
