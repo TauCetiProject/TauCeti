@@ -12,10 +12,11 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Conformal
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
 
 /-!
-# Curvature, the gradient and the Laplacian under rescaling of a metric
+# Curvature and the Laplacian under constant rescaling of a metric
 
 Let `g` be a Riemannian metric on `M` and `c` a positive constant, and let `c g` be the rescaled
 metric `Bundle.ContMDiffRiemannianMetric.rescale` by the constant function `c`. The Koszul formula
@@ -31,12 +32,11 @@ scales by `c` and whose denominator scales by `c²`, so `K(c g) = c⁻¹ K(g)`. 
 constant sectional curvature `k` exactly when `g` has constant sectional curvature `c k`; for
 example the round sphere of radius `r` has sectional curvature `1 / r²`.
 
-The gradient of a function is the dual of its differential through the metric. This needs no
-constancy: for a metric `f g` rescaled by an arbitrary positive function `f`,
-`grad_{f g} u = f⁻¹ grad_g u` and `|grad_{f g} u|_{f g} = f^{-1/2} |grad_g u|_g` pointwise, and
-`grad_{c g} u = c⁻¹ grad_g u` is the special case of a constant `c`. Since the Levi-Civita
-connections of `g` and `c g` agree, the Laplace–Beltrami operator `Δ = div ∘ grad` scales in the
-same way, `Δ_{c g} = c⁻¹ Δ_g`.
+The gradient of a function is the dual of its differential through the metric, so
+`grad_{c g} f = c⁻¹ grad_g f`, the constant case of
+`Bundle.ContMDiffRiemannianMetric.mgradient_rescale` in `Riemannian/Conformal.lean`; since the
+Levi-Civita connections agree, the Laplace–Beltrami operator `Δ = div ∘ grad` scales in the same
+way, `Δ_{c g} = c⁻¹ Δ_g`.
 
 Both metrics are installed in turn as the `RiemannianBundle` instance of the tangent bundle of
 `M`. Connections and curvature tensors do not depend on the metric, so they are compared directly
@@ -76,13 +76,9 @@ differentiable fields; this determines the curvature tensor.
   sectional-curvature form
   `hasConstantSectionalCurvature_leviCivitaConnection_rescale_const_iff`: `c g` has constant
   curvature `k` exactly when `g` has constant curvature `c k`.
-* `Bundle.ContMDiffRiemannianMetric.mgradient_rescale`: `grad_{f g} u = f⁻¹ grad_g u` for a
-  positive function `f`.
-* `Bundle.ContMDiffRiemannianMetric.norm_mgradient_rescale`:
-  `|grad_{f g} u|_{f g} = f^{-1/2} |grad_g u|_g` for a positive function `f`.
-* `Bundle.ContMDiffRiemannianMetric.mgradient_rescale_const`, the constant case of
-  `mgradient_rescale`, and `Bundle.ContMDiffRiemannianMetric.laplaceBeltrami_rescale_const`:
-  `grad_{c g} = c⁻¹ grad_g` and `Δ_{c g} = c⁻¹ Δ_g`.
+* `Bundle.ContMDiffRiemannianMetric.mgradient_rescale_const` and
+  `Bundle.ContMDiffRiemannianMetric.laplaceBeltrami_rescale_const`: `grad_{c g} = c⁻¹ grad_g`
+  and `Δ_{c g} = c⁻¹ Δ_g`.
 
 ## References
 
@@ -245,43 +241,6 @@ end LeviCivita
 section Laplacian
 
 variable {n : ℕ∞ω}
-
-/-- Multiplying a metric by a positive function `f` divides the gradient of every function at `x`
-by `f x`. -/
-theorem mgradient_rescale [IsManifold I 1 M] {k : ℕ∞ω}
-    (g : ContMDiffRiemannianMetric I k E (fun x : M ↦ TangentSpace I x))
-    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) k f) (hf_pos : ∀ x, 0 < f x) (u : M → ℝ) (x : M) :
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
-      TauCeti.Manifold.mgradient I u x) =
-    (f x)⁻¹ • (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      TauCeti.Manifold.mgradient I u x) := by
-  have hg (v : TangentSpace I x) :
-      g.inner x (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨g.toRiemannianMetric⟩; TauCeti.Manifold.mgradient I u x) v = mvfderiv I u x v := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    exact TauCeti.Manifold.inner_mgradient v
-  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-    ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
-  refine (TauCeti.Manifold.eq_mgradient_iff.2 fun v ↦ ?_).symm
-  rw [inner_riemannianBundle, rescale_inner, map_smul, smul_apply, hg, smul_eq_mul,
-    ← mul_assoc, mul_inv_cancel₀ (hf_pos x).ne', one_mul]
-
-/-- Multiplying a metric by a positive function `f` divides the length of the gradient of every
-function at `x` by `√(f x)`. -/
-theorem norm_mgradient_rescale [IsManifold I 1 M] {k : ℕ∞ω}
-    (g : ContMDiffRiemannianMetric I k E (fun x : M ↦ TangentSpace I x))
-    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) k f) (hf_pos : ∀ x, 0 < f x) (u : M → ℝ) (x : M) :
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
-      ‖TauCeti.Manifold.mgradient I u x‖) =
-    (√(f x))⁻¹ * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨g.toRiemannianMetric⟩;
-      ‖TauCeti.Manifold.mgradient I u x‖) := by
-  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-    ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
-  rw [g.mgradient_rescale hf hf_pos, norm_smul, g.norm_rescale f hf hf_pos, Real.norm_eq_abs,
-    abs_of_pos (inv_pos.2 (hf_pos x)), ← mul_assoc, inv_mul_eq_div, Real.sqrt_div_self]
 
 /-- Multiplying a metric by a positive constant `c` multiplies the gradient of every function by
 `c⁻¹`. -/

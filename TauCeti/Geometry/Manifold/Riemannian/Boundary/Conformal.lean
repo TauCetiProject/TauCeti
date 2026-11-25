@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.SecondFundamentalForm.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Hessian.Conformal
-public import TauCeti.Geometry.Manifold.Riemannian.Scaling
 import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Conformal
 
 /-!
 # The boundary under a conformal change of metric
@@ -20,7 +20,7 @@ Riemannian metric on `M` and `ĝ = f g` its rescaling by a positive `C¹` functi
 boundary:
 
 * the gradient of every function is divided by `f`
-  (`Bundle.ContMDiffRiemannianMetric.mgradient_rescale`, in `Riemannian/Scaling.lean`);
+  (`Bundle.ContMDiffRiemannianMetric.mgradient_rescale`, in `Riemannian/Conformal.lean`);
 * the unit normals are divided by `√f`: `ν_out^ĝ = f(q)^(-1/2) ν_out` and
   `ν_in^ĝ = f(q)^(-1/2) ν_in` (`outwardUnitNormal_rescale`, `inwardUnitNormal_rescale`), while the
   induced metric is multiplied by `f(q)`;
