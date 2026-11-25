@@ -35,8 +35,8 @@ which is short exact when `f` is a nonzerodivisor.
 * `Submodule.shortExact_quotientShortComplex`: `0 → S → M → M ⧸ S → 0` is short exact.
 * `Submodule.shortExact_quotientInfSupShortComplex`: for submodules `S` and `T`, the Mayer–Vietoris
   sequence `0 → M ⧸ (S ⊓ T) → M ⧸ S × M ⧸ T → M ⧸ (S ⊔ T) → 0` is short exact.
-* `TauCeti.mulQuotientSpanSingletonShortComplex_shortExact`: for a nonzerodivisor `f`, the sequence
-  `0 ⟶ A --f--> A ⟶ A ⧸ (f) ⟶ 0` is short exact.
+* `IsLeftRegular.mulQuotientSpanSingletonShortComplex_shortExact`: for a nonzerodivisor `f`, the
+  sequence `0 ⟶ A --f--> A ⟶ A ⧸ (f) ⟶ 0` is short exact.
 -/
 
 public section
@@ -159,11 +159,16 @@ abbrev mulQuotientSpanSingletonShortComplex : ShortComplex (ModuleCat.{u} A) :=
     (Ideal.Quotient.mkₐ A (Ideal.span {f})).toLinearMap
     (Ideal.exact_mulLeft_mkₐ_span_singleton f).linearMap_comp_eq_zero
 
-variable {f} in
+end TauCeti
+
+namespace IsLeftRegular
+
+variable {A : Type u} [CommRing A] {f : A}
+
 /-- For a nonzerodivisor `f`, the sequence `0 ⟶ A --f--> A ⟶ A ⧸ (f) ⟶ 0` is short exact. -/
 theorem mulQuotientSpanSingletonShortComplex_shortExact (hf : IsLeftRegular f) :
-    (mulQuotientSpanSingletonShortComplex f).ShortExact :=
+    (TauCeti.mulQuotientSpanSingletonShortComplex f).ShortExact :=
   ModuleCat.shortComplex_shortExact _ (Ideal.exact_mulLeft_mkₐ_span_singleton f) hf
     (Ideal.Quotient.mkₐ_surjective A _)
 
-end TauCeti
+end IsLeftRegular

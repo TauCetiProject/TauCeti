@@ -60,8 +60,8 @@ theorem not_isZero_homology_derivedReduction_quotient (hf : f ∈ nonZeroDivisor
       ((derivedReduction (Ideal.span {f})).obj
         ((singleFunctor (ModuleCat.{u} A) 0).obj (ModuleCat.of A (A ⧸ Ideal.span {f}))))) := by
   intro hz
-  set R := (mulQuotientSpanSingletonShortComplex_shortExact
-    (isRegular_iff_mem_nonZeroDivisors.2 hf).left).projectiveResolution
+  set R := (isRegular_iff_mem_nonZeroDivisors.2 hf).left
+    |>.mulQuotientSpanSingletonShortComplex_shortExact.projectiveResolution
   let P := R.cochainComplex
   have : P.IsKFlat :=
     CochainComplex.isKFlat_of_boundedAbove_flat_moduleCat P 0 fun _ ↦ inferInstance

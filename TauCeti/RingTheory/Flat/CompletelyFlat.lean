@@ -133,7 +133,7 @@ theorem not_isCompletelyFlatModule_quotient_self {a : A} (ha : IsRegular a) (hu 
   intro h
   let J := Ideal.span {a}
   let S := mulQuotientSpanSingletonShortComplex a
-  have hS : S.ShortExact := mulQuotientSpanSingletonShortComplex_shortExact ha.left
+  have hS : S.ShortExact := ha.left.mulQuotientSpanSingletonShortComplex_shortExact
   have hinj := hS.rTensor_injective_of_isZero_Tor_one (ModuleCat.of A (A ⧸ J)) (h.1 1 one_pos)
   have ha0 : ∀ z : A ⧸ J, a • z = 0 := fun z => by
     obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective z
