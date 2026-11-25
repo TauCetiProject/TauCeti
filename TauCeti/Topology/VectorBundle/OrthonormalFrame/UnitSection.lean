@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.SpecialOrthogonal
-public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Reduction
+public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Reduction.Basic
 
 /-!
 # Orthonormal frames adapted to a unit section

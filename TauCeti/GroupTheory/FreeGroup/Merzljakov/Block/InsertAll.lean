@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.FreeGroup.Cancellation
 public import TauCeti.GroupTheory.FreeGroup.Merzljakov.Block.Insertion
 import Mathlib.Algebra.Order.BigOperators.Group.List
 import Mathlib.Tactic.Group
+import TauCeti.GroupTheory.FreeGroup.Basic
 
 /-!
 # Inserting several variables into the blocks of a word
@@ -201,7 +202,7 @@ theorem blockInsertAll_filter_map (p : X → Bool) {l : List X} {w : List (A × 
           at this
       · refine fun hinf ↦ hx.2 ?_
         have := isInfix_of_isInfix_blockInsertAll hinf fun c hc x' _ ↦
-          fst_ne_inl_of_mem_merzljakovBlock (mem_invRev_iff.1 hc) x'
+          fst_ne_inl_of_mem_merzljakovBlock (TauCeti.FreeGroup.mem_invRev_iff.1 hc) x'
         rwa [← map_prodMap_merzljakovBlock, ← map_prodMap_invRev,
           infix_map_iff_of_injective injective_prodMap_inr] at this
     · rw [filter_cons_of_pos hp, blockInsertAll_cons, blockInsertAll_cons, ih']
@@ -233,7 +234,8 @@ theorem blockInsertAll_flatten (l : List X) {L : List (List ((X ⊕ A) × Bool))
         (isUnsplit_map_blockInsertAll l hx.1 fun c hc x' _ ↦
           fst_ne_inl_of_mem_merzljakovBlock hc x')
         (isUnsplit_map_blockInsertAll l hx.2 fun c hc x' _ ↦
-          fst_ne_inl_of_mem_merzljakovBlock (mem_invRev_iff.1 hc) x'), map_blockInsertAll_cons]
+          fst_ne_inl_of_mem_merzljakovBlock (TauCeti.FreeGroup.mem_invRev_iff.1 hc) x'),
+      map_blockInsertAll_cons]
 
 end BlockInsertAll
 

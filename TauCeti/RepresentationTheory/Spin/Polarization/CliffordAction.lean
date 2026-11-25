@@ -353,17 +353,12 @@ theorem spinAction_map_comp_exteriorAlgebraMap
       rw [LinearMap.comp_apply, P₂.pairingEquiv_apply, P₁.pairingEquiv_apply, ← hW,
         QuadraticMap.Isometry.polar_apply]
   have hy : f y = ((⟨f y, hW' y⟩ : P₂.W') : V₂) := (rfl)
-  -- The exterior-algebra map is the zero-quadratic-form case of the Clifford-algebra map, so it
-  -- commutes with the grade involution.
-  have hinv (s : ExteriorAlgebra K P₁.W) :
-      ExteriorAlgebra.map g (involute s) = involute (ExteriorAlgebra.map g s) :=
-    CliffordAlgebra.map_involute { g with map_app' := fun _ => rfl } s
   refine LinearMap.ext fun s => ?_
   simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply,
     P₁.decompositionEquiv_apply, map_add, LinearMap.add_apply, hW, hl']
   rw [hy, spinAction_ι_wedge, spinAction_ι_contract, spinAction_ι_lineOperator, spinAction_ι_wedge,
     spinAction_ι_contract, spinAction_ι_lineOperator, map_mul, ExteriorAlgebra.map_apply_ι,
-    ExteriorAlgebra.contractLeft_map, hpair, map_smul, hinv, hcoord]
+    ExteriorAlgebra.contractLeft_map, hpair, map_smul, ExteriorAlgebra.map_involute, hcoord]
 
 /-- **The Fock action is natural along transport of polarizations.** For an isometric
 equivalence `e`, the exterior-algebra map `⋀·W → ⋀·(e W)` induced by `e` intertwines the Fock

@@ -13,6 +13,8 @@ import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.LinearAlgebra.RootSystem.Inversions.Exchange
 import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
+import TauCeti.LinearAlgebra.RootSystem.LongestElement
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 
 /-!
 # Steinberg's sharp Bruhat normal form for a Chevalley datum
@@ -47,6 +49,9 @@ the rank-one parabolic factorization `U(K) = X_{αᵢ}(K) * U^{αᵢ}(K)` and th
   any one of their points.
 * `TauCeti.DynkinType.ChevalleyDatum.positivePoints_inf_map_negativePoints_conj_eq_inversionPoints`:
   `D.positivePoints K ⊓ (D.negativePoints K).map (MulAut.conj n) = D.inversionPoints K w`.
+* `TauCeti.DynkinType.ChevalleyDatum.map_negativePoints_conj_eq_positivePoints` and
+  `TauCeti.DynkinType.ChevalleyDatum.map_positivePoints_conj_eq_negativePoints`: a Weyl lift whose
+  projection inverts every positive root exchanges `U⁻(K)` and `U(K)` by conjugation.
 * `TauCeti.DynkinType.ChevalleyDatum.existsUnique_mul_mul_eq_of_mem_bruhatCell` and
   `TauCeti.DynkinType.ChevalleyDatum.existsUnique_bruhatNormalForm`: Steinberg's sharp Bruhat
   normal form on each cell and on `D.extendedElementarySubgroup K`.
@@ -318,6 +323,30 @@ private theorem exists_inversionPoints_mul_borelSubgroup_of_ncard_eq (k : ℕ) :
     exact D.exists_inversionPoints_mul_borelSubgroup_step K i n hαinv
       (ih ((D.simpleWeylLift K i)⁻¹ * n) hm_ncard) hu₁
 
+/-- **A lift of the longest Weyl element conjugates `U⁻` onto `U`.** If the Weyl projection of
+`n ∈ N(K)` inverts every positive root, then `n U⁻(K) n⁻¹ = U(K)`. -/
+theorem map_negativePoints_conj_eq_positivePoints (n : D.weylSubgroup K)
+    (hn : inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
+        (D.weylProjection K n) =
+      posRoots (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)) :
+    (D.negativePoints K).map (MulAut.conj (n : D.points K)).toMonoidHom = D.positivePoints K := by
+  have := isReduced_simplyConnectedRootDatum t ht
+  rw [D.negativePoints_eq_iSup, D.map_iSup_rootSubgroupPoints_conj, D.positivePoints_eq_iSup,
+    posRoots_rationalRootSystem, negRoots_rationalRootSystem,
+    eq_longestElement_of_inversions_eq_posRoots hn, image_weylGroupToPerm_longestElement_negRoots]
+
+/-- **A lift of the longest Weyl element conjugates `U` onto `U⁻`.** If the Weyl projection of
+`n ∈ N(K)` inverts every positive root, then `n U(K) n⁻¹ = U⁻(K)`. -/
+theorem map_positivePoints_conj_eq_negativePoints (n : D.weylSubgroup K)
+    (hn : inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
+        (D.weylProjection K n) =
+      posRoots (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)) :
+    (D.positivePoints K).map (MulAut.conj (n : D.points K)).toMonoidHom = D.negativePoints K := by
+  have := isReduced_simplyConnectedRootDatum t ht
+  rw [D.positivePoints_eq_iSup, D.map_iSup_rootSubgroupPoints_conj, D.negativePoints_eq_iSup,
+    posRoots_rationalRootSystem, negRoots_rationalRootSystem,
+    eq_longestElement_of_inversions_eq_posRoots hn, image_weylGroupToPerm_longestElement_posRoots]
+
 /-- **The positive subgroup meets the conjugate opposite unipotent subgroup in the inversion
 subgroup:** `U(K) ∩ n U⁻(K) n⁻¹ = U_w(K)` for every Weyl lift `n ∈ D.weylSubgroup K` projecting to
 `w`. -/
@@ -349,10 +378,8 @@ theorem existsUnique_mul_mul_eq_of_mem_bruhatCell (n : D.weylSubgroup K) {g : D.
   rw [D.bruhatCell_weylProjection K n] at hg
   obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
   obtain ⟨u₁, hu₁, s, rfl⟩ := (D.mem_borelSubgroup_iff K).mp hb₁
-  have ht' : (n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K) ∈ D.borelSubgroup K := by
-    have hnorm := D.weylSubgroup_le_normalizer_range_torusPoints K n⁻¹.property
-    exact D.range_torusPoints_le_borelSubgroup K
-      ((Subgroup.mem_normalizer_iff.mp hnorm (D.torusPoints K s)).mp ⟨s, rfl⟩)
+  have ht' : (n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K) ∈ D.borelSubgroup K :=
+    D.weylSubgroup_inv_conj_torusPoints_mem_borelSubgroup K n s
   obtain ⟨u, hu, b₀, hb₀, heq⟩ :=
     D.exists_inversionPoints_mul_borelSubgroup_of_ncard_eq K _ n rfl hu₁
   let bFinal := b₀ * ((n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K)) * b₂

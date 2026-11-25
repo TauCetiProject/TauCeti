@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.TitsSystem
 public import TauCeti.GroupTheory.TitsSystem.Bruhat.Length
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Multiplication
 import TauCeti.GroupTheory.DoubleCoset.Map
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
@@ -123,12 +124,11 @@ theorem bruhatCell_weylProjection_eq_doubleCoset_positivePoints_left
   · intro g hg
     obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
     obtain ⟨u, hu, s, rfl⟩ := (D.mem_borelSubgroup_iff K).mp hb₁
-    have hnorm := D.weylSubgroup_le_normalizer_range_torusPoints K (inv_mem n.property)
-    obtain ⟨s', hs'⟩ := (Subgroup.mem_normalizer_iff.mp hnorm (D.torusPoints K s)).mp ⟨s, rfl⟩
-    have hb' : D.torusPoints K s' * b₂ ∈ D.borelSubgroup K :=
-      mul_mem (D.range_torusPoints_le_borelSubgroup K ⟨s', rfl⟩) hb₂
-    refine DoubleCoset.mem_doubleCoset.mpr ⟨u, hu, D.torusPoints K s' * b₂, hb', ?_⟩
-    rw [hs']
+    have hb' :
+        (n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K) * b₂ ∈ D.borelSubgroup K :=
+      mul_mem (D.weylSubgroup_inv_conj_torusPoints_mem_borelSubgroup K n s) hb₂
+    refine DoubleCoset.mem_doubleCoset.mpr
+      ⟨u, hu, (n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K) * b₂, hb', ?_⟩
     group
   · intro g hg
     obtain ⟨u, hu, b, hb, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
@@ -149,14 +149,13 @@ theorem bruhatCell_weylProjection_eq_doubleCoset_positivePoints_right
     have hu' : D.torusPoints K s⁻¹ * u * (D.torusPoints K s⁻¹)⁻¹ ∈ D.positivePoints K :=
       (Subgroup.mem_normalizer_iff.mp
         (D.range_torusPoints_le_normalizer_positivePoints K ⟨s⁻¹, rfl⟩) u).mp hu
-    have hnorm := D.weylSubgroup_le_normalizer_range_torusPoints K n.property
-    obtain ⟨s', hs'⟩ := (Subgroup.mem_normalizer_iff.mp hnorm (D.torusPoints K s)).mp ⟨s, rfl⟩
-    have hb' : b₁ * D.torusPoints K s' ∈ D.borelSubgroup K :=
-      mul_mem hb₁ (D.range_torusPoints_le_borelSubgroup K ⟨s', rfl⟩)
+    have hb' :
+        b₁ * ((n : D.points K) * D.torusPoints K s * (n : D.points K)⁻¹) ∈ D.borelSubgroup K :=
+      mul_mem hb₁ (D.weylSubgroup_conj_torusPoints_mem_borelSubgroup K n s)
     refine DoubleCoset.mem_doubleCoset.mpr
-      ⟨b₁ * D.torusPoints K s', hb',
+      ⟨b₁ * ((n : D.points K) * D.torusPoints K s * (n : D.points K)⁻¹), hb',
         D.torusPoints K s⁻¹ * u * (D.torusPoints K s⁻¹)⁻¹, hu', ?_⟩
-    rw [(D.torusPoints K).map_inv, hs']
+    rw [(D.torusPoints K).map_inv]
     group
   · intro g hg
     obtain ⟨b, hb, u, hu, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg

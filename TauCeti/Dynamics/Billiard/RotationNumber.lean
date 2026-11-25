@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Billiard.Smooth
-public import TauCeti.Dynamics.Circle.RotationNumber.Displacement
+public import TauCeti.Dynamics.Circle.RotationNumber.Comparison
 
 /-!
 # Rotation numbers of invariant graphs of the billiard map
@@ -37,8 +37,19 @@ Since `s < g(s) < s + L`, the rotation number lies strictly between `0` and `1`
 number `1 - ρ` (`TauCeti.StrictConvexBilliardTable.IsInvariantGraph.rotationNumber_neg`): its lift
 composed with `g` is the deck translation `s ↦ s + L`. Since `t(s, v)` is decreasing in `v`, a
 higher invariant graph has a rotation number that is no larger
-(`TauCeti.StrictConvexBilliardTable.IsInvariantGraph.rotationNumber_anti`). The rotation numbers
-of the circular table are computed in `TauCeti.Dynamics.Billiard.Circle`.
+(`TauCeti.StrictConvexBilliardTable.IsInvariantGraph.rotationNumber_anti`); for two graphs
+`ψ₁ < ψ₂` it is strictly smaller when one of the two rotation numbers is irrational
+(`TauCeti.StrictConvexBilliardTable.IsInvariantGraph.rotationNumber_lt_of_irrational`), by the
+strict comparison of circle lifts
+(`CircleDeg1Lift.translationNumber_lt_of_forall_lt_of_irrational_left`).
+The rotation numbers of the circular table are computed in `TauCeti.Dynamics.Billiard.Circle`.
+
+The rotation number is a rational `p / q` (`q ≥ 1`) exactly when some state on the graph returns
+after `q` collisions to itself, displaced by `p` periods: `B^q(s, ψ(s)) = (s + p L, ψ(s))`
+(`TauCeti.StrictConvexBilliardTable.IsInvariantGraph.rotationNumber_eq_div_iff`), which is a
+periodic orbit of type `(p, q)` of the billiard map on the graph. In particular a graph with
+irrational rotation number carries no periodic orbit
+(`TauCeti.StrictConvexBilliardTable.IsInvariantGraph.iterate_nextCollision_ne_of_irrational`).
 
 In the angle coordinate `δ` with `v = cos δ`, the graph `{v = ψ}` is the graph
 `{δ = arccos ψ}`, the time reversal is `δ ↦ π - δ`, and rotation numbers are nondecreasing in `δ`.
@@ -270,6 +281,38 @@ theorem rotationNumber_neg (hχ : ContDiff ℝ 2 χ) :
   rw [rotationNumber_def, rotationNumber_def]
   linarith
 
+/-! ### Periodic orbits -/
+
+/-- **Rational rotation numbers and periodic orbits.** The rotation number of an invariant graph
+of a `C²` table is `p / q`, for `q ≥ 1`, exactly when some state on the graph is sent by `q`
+collisions to the same state displaced by `p` periods. -/
+theorem rotationNumber_eq_div_iff (hχ : ContDiff ℝ 2 χ) {p : ℤ} {q : ℕ} (hq : 0 < q) :
+    h.rotationNumber hχ = p / q ↔
+      ∃ s, χ.nextCollision^[q] (s, ψ s) = (s + p * χ.period, ψ s) := by
+  have hL := χ.period_pos.ne'
+  rw [rotationNumber_def, (h.circleLift hχ).translationNumber_eq_rat_iff
+    (h.continuous_circleLift hχ) hq]
+  simp only [CircleDeg1Lift.coe_pow, h.iterate_circleLift, h.iterate_nextCollision, Prod.ext_iff]
+  constructor
+  · rintro ⟨x, hx⟩
+    have hx' : (χ.graphLift ψ)^[q] (χ.period * x) = χ.period * x + p * χ.period := by
+      rw [div_eq_iff hL] at hx
+      rw [hx]
+      ring
+    exact ⟨χ.period * x, hx', by rw [hx', h.periodic.int_mul p]⟩
+  · rintro ⟨s, hs, -⟩
+    refine ⟨s / χ.period, ?_⟩
+    rw [mul_div_cancel₀ _ hL, hs]
+    field_simp
+
+/-- **No periodic orbit at an irrational rotation number.** If an invariant graph of a `C²` table
+has irrational rotation number, no state on it returns after `q ≥ 1` collisions to itself
+displaced by a whole number of periods. -/
+theorem iterate_nextCollision_ne_of_irrational (hχ : ContDiff ℝ 2 χ)
+    (hirr : Irrational (h.rotationNumber hχ)) {q : ℕ} (hq : 0 < q) (p : ℤ) (s : ℝ) :
+    χ.nextCollision^[q] (s, ψ s) ≠ (s + p * χ.period, ψ s) := fun hs ↦
+  hirr ⟨(p : ℚ) / q, by push_cast; exact ((h.rotationNumber_eq_div_iff hχ hq).2 ⟨s, hs⟩).symm⟩
+
 end IsInvariantGraph
 
 /-- **Monotonicity of rotation numbers.** Of two invariant graphs `ψ₁ ≤ ψ₂` of a `C²` table, the
@@ -282,6 +325,23 @@ theorem IsInvariantGraph.rotationNumber_anti (hχ : ContDiff ℝ 2 χ) {ψ₁ ψ
   rw [circleLift_apply, circleLift_apply]
   exact div_le_div_of_nonneg_right ((χ.strictAntiOn_nextParam _).antitoneOn (h₁.mem_Ioo _)
     (h₂.mem_Ioo _) (hle _)) χ.period_pos.le
+
+/-- **Strict monotonicity at irrational rotation numbers.** Of two invariant graphs `ψ₁ < ψ₂` of a
+`C²` table, if one of the two rotation numbers is irrational, the higher graph has a strictly
+smaller rotation number. -/
+theorem IsInvariantGraph.rotationNumber_lt_of_irrational (hχ : ContDiff ℝ 2 χ) {ψ₁ ψ₂ : ℝ → ℝ}
+    (h₁ : χ.IsInvariantGraph ψ₁) (h₂ : χ.IsInvariantGraph ψ₂) (hlt : ∀ s, ψ₁ s < ψ₂ s)
+    (hirr : Irrational (h₁.rotationNumber hχ) ∨ Irrational (h₂.rotationNumber hχ)) :
+    h₂.rotationNumber hχ < h₁.rotationNumber hχ := by
+  have hle : ∀ x, h₂.circleLift hχ x < h₁.circleLift hχ x := fun x ↦ by
+    rw [circleLift_apply, circleLift_apply]
+    exact div_lt_div_of_pos_right (χ.strictAntiOn_nextParam _ (h₁.mem_Ioo _) (h₂.mem_Ioo _)
+      (hlt _)) χ.period_pos
+  rcases hirr with hirr | hirr
+  · exact CircleDeg1Lift.translationNumber_lt_of_forall_lt_of_irrational_right
+      (h₂.continuous_circleLift hχ) (h₁.continuous_circleLift hχ) hle hirr
+  · exact CircleDeg1Lift.translationNumber_lt_of_forall_lt_of_irrational_left
+      (h₂.continuous_circleLift hχ) (h₁.continuous_circleLift hχ) hle hirr
 
 end StrictConvexBilliardTable
 

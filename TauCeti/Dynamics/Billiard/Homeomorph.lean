@@ -8,6 +8,8 @@ module
 public import TauCeti.Dynamics.Billiard.Inverse
 public import Mathlib.Topology.Algebra.Group.Quotient
 import TauCeti.Dynamics.Billiard.Continuous
+import TauCeti.Topology.Constructions.SumProd
+import TauCeti.Topology.Instances.AddCircle.Coe
 import TauCeti.Topology.Order.Interval
 
 /-!
@@ -57,12 +59,8 @@ variable {o : Orientation ℝ E (Fin 2)} (χ : StrictConvexBilliardTable o)
 
 /-- The next-collision map is continuous as a bijection of the strip. -/
 theorem continuous_nextCollisionEquiv : Continuous χ.nextCollisionEquiv := by
-  have hc : Continuous fun x : ℝ × Ioo (-1 : ℝ) 1 ↦ χ.nextCollision (x.1, x.2) :=
-    χ.continuousOn_nextCollision.comp_continuous
-      (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
-      fun x ↦ ⟨trivial, x.2.property⟩
-  convert (continuous_fst.comp hc).prodMk ((continuous_snd.comp hc).subtype_mk
-    fun x ↦ χ.nextCollision_snd_mem_Ioo x.2.property) using 1
+  convert χ.continuousOn_nextCollision.continuous_restrict_univ_prod
+    fun x ↦ χ.nextCollision_snd_mem_Ioo x.2.property using 1
   funext x
   ext <;> simp
 
@@ -96,13 +94,8 @@ theorem coe_nextCollisionHomeomorph_symm :
   rfl
 
 /-- The billiard map of `AddCircle L × (-1, 1)` is continuous. -/
-theorem continuous_billiardMap : Continuous χ.billiardMap := by
-  have hq : IsOpenQuotientMap
-      (Prod.map ((↑) : ℝ → AddCircle χ.period) (id : Ioo (-1 : ℝ) 1 → _)) :=
-    QuotientAddGroup.isOpenQuotientMap_mk.prodMap IsOpenQuotientMap.id
-  rw [← hq.continuous_comp_iff]
-  convert hq.continuous.comp χ.continuous_nextCollisionEquiv using 1
-  ext ⟨s, v⟩ <;> simp
+theorem continuous_billiardMap : Continuous χ.billiardMap :=
+  AddCircle.continuous_prod_of_lift χ.continuous_nextCollisionEquiv fun s v ↦ by simp
 
 /-- The inverse `ι ∘ β ∘ ι` of the billiard map is continuous. -/
 theorem continuous_billiardMap_symm : Continuous χ.billiardMap.symm := by
