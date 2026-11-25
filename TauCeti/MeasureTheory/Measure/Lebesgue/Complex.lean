@@ -125,6 +125,7 @@ theorem measurePreserving_measurableEquivRealProd_reProdIm {s t : Set ℝ} (hs :
   exact h
 
 /-- The planar measure of a rectangle `s ×ℂ t` is the product of the lengths of its sides. -/
+@[simp]
 theorem volume_reProdIm (s t : Set ℝ) : volume (s ×ℂ t) = volume s * volume t := by
   have h := volume_preserving_equiv_real_prod.measure_preimage_equiv (s ×ˢ t)
   rw [Measure.volume_eq_prod, Measure.prod_prod] at h

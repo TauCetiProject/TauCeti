@@ -120,16 +120,14 @@ private theorem tendsto_setIntegral_boundaryLayer {Ω : Opens ℂ} {g : ℂ → 
     (hχΩ : tsupport χ ∩ {z : ℂ | 0 ≤ z.im} ⊆ Ω) (a : ℝ) :
     Tendsto (fun n : ℕ => ∫ z in {z : ℂ | 0 < z.im}, (χ z * imCutoffLayer n a z) • g z) atTop
       (𝓝 0) := by
-  simp only [imCutoffLayer_def]
   have hclosed : IsClosed {z : ℂ | 0 ≤ z.im} := Complex.isClosed_setOfPred_le_im 0
   set T := tsupport χ ∩ {z : ℂ | 0 ≤ z.im}
   have hT : IsCompact T := hχc.isCompact.inter_right hclosed
   obtain ⟨ρ, hρ⟩ := hT.isBounded.subset_closedBall 0
-  obtain ⟨B, hB⟩ := (Real.smoothTransition.contDiff.continuous_deriv le_rfl).norm
-    |>.bddAbove_range_of_hasCompactSupport Real.smoothTransition.hasCompactSupport_deriv.norm
+  obtain ⟨B, hB0, hB⟩ := exists_abs_imCutoffLayer_le
   obtain ⟨M, hM⟩ := hχ.bounded_above_of_compact_support hχc
   set ρ' := max ρ 0
-  set K := 4 * ρ' * (max M 0 * max B 0 * |a|)
+  set K := 4 * ρ' * (max M 0 * B * |a|)
   refine Metric.tendsto_nhds.2 fun ε hε => ?_
   have hε₀ : 0 < ε / (K + 1) := div_pos hε (by positivity)
   obtain ⟨δ, hδ, hgδ⟩ := exists_forall_norm_lt_of_im_lt hgc hg0 hT hχΩ inter_subset_right hε₀
@@ -142,8 +140,7 @@ private theorem tendsto_setIntegral_boundaryLayer {Ω : Opens ℂ} {g : ℂ → 
     rw [div_lt_iff₀ hn1]
     rw [div_lt_iff₀ hδ] at hN
     nlinarith [(Nat.cast_le (α := ℝ)).2 hn]
-  set f := fun z : ℂ =>
-    (χ z * (deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1) * (((n : ℝ) + 1) * a))) • g z
+  set f := fun z : ℂ => (χ z * imCutoffLayer n a z) • g z
   set S := {z : ℂ | 0 < z.im} ∩ (T ∩ {z : ℂ | z.im ≤ w})
   have hK0 : 0 ≤ K := by positivity
   -- Off the strip `S` the integrand vanishes; on it, it is bounded.
@@ -152,26 +149,18 @@ private theorem tendsto_setIntegral_boundaryLayer {Ω : Opens ℂ} {g : ℂ → 
     have hz0 : 0 < z.im := hz
     by_cases hzT : z ∈ tsupport χ
     · have hzw : w < z.im := not_le.1 fun h => hzS ⟨hz, ⟨hzT, hz0.le⟩, h⟩
-      have h1 : 1 ≤ ((n : ℝ) + 1) * z.im - 1 := by
-        rw [div_lt_iff₀ hn1] at hzw
-        linarith
-      simp [f, Real.smoothTransition.deriv_of_one_le h1]
+      rw [div_lt_iff₀ hn1] at hzw
+      simp [f, imCutoffLayer_of_two_le (by linarith : 2 ≤ ((n : ℝ) + 1) * z.im)]
     · simp [f, image_eq_zero_of_notMem_tsupport hzT]
-  have hon : ∀ z ∈ S, ‖f z‖ ≤ max M 0 * (max B 0 * (((n : ℝ) + 1) * |a|)) * (ε / (K + 1)) := by
+  have hon : ∀ z ∈ S, ‖f z‖ ≤ max M 0 * (B * (((n : ℝ) + 1) * |a|)) * (ε / (K + 1)) := by
     rintro z ⟨hz, ⟨hzT, -⟩, hzw⟩
-    have hz0 : 0 < z.im := hz
-    have hzw' : z.im ≤ w := hzw
-    have hgz := hgδ z ⟨hzT, hz0.le⟩ (by linarith)
-    have hBz := hB ⟨((n : ℝ) + 1) * z.im - 1, rfl⟩
-    simp only [f, norm_smul, norm_mul, Real.norm_eq_abs, abs_of_pos hn1] at hBz ⊢
-    have hMz := hM z
-    rw [Real.norm_eq_abs] at hMz
+    have hgz := hgδ z ⟨hzT, (le_of_lt hz : (0 : ℝ) ≤ z.im)⟩ (lt_of_le_of_lt hzw hw)
+    rw [norm_smul, norm_mul, Real.norm_eq_abs]
     gcongr
-    all_goals first
-      | exact hMz.trans (le_max_left _ _)
-      | exact hBz.trans (le_max_left _ _)
+    · exact (hM z).trans (le_max_left _ _)
+    · exact hB n a z
   calc ‖∫ z in {z : ℂ | 0 < z.im}, f z‖
-        ≤ (max M 0 * (max B 0 * (((n : ℝ) + 1) * |a|)) * (ε / (K + 1))) * (2 * ρ' * w) :=
+        ≤ (max M 0 * (B * (((n : ℝ) + 1) * |a|)) * (ε / (K + 1))) * (2 * ρ' * w) :=
         norm_setIntegral_le_of_strip (le_max_right _ _) (by positivity) (by positivity)
           (hρ.trans (closedBall_subset_closedBall (le_max_left _ _))) hoff hon
     _ = K * (ε / (K + 1)) := by
