@@ -372,9 +372,7 @@ theorem chartValueL_sobolevL_ofContMDiffSection_ae (s : Cₛ^1⟮𝓘(ℝ, ℂ);
       =ᵐ[μ.restrict (A.image i)] A.tangentHom.coord i (D s) := by
   have : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
   have hcoord := SobolevSection.chartValueL_ofContMDiffSection_ae A μ p 1 s i
-  have hc : ContDiffOn ℝ 1 (A.coord i s) (A.image i) :=
-    (A.contDiffOn_coord s.contMDiff i).mono
-      ((A.image_subset_chart_image_closure_dom i).trans (A.chart_image_closure_dom_subset i))
+  have hc : ContDiffOn ℝ 1 (A.coord i s) (A.image i) := A.contDiffOn_coord_image s.contMDiff i
   filter_upwards [chartValueL_sobolevL_ae A hD hDs μ p _
       ((hc.hasWeakFDerivOn_fderiv (μ := μ) (Ω := A.image i)).congr_ae hcoord.symm),
     hcoord, ae_restrict_mem (A.image i).isOpen.measurableSet] with y h hc' hy

@@ -84,7 +84,8 @@ closed upper half-plane are read in `ℂ` in
   domain times a section that is `Cⁿ` in that chart is a `Cⁿ` section.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_coord`: the chart coordinates of a `Cᵏ` section of a `Cᵏ`
   vector bundle are `Cᵏ`, on an open set containing the compact image of the closure of the chart
-  domain (`TauCeti.FiniteBundleAtlas.chart_image_closure_dom_subset`). More generally, the
+  domain (`TauCeti.FiniteBundleAtlas.chart_image_closure_dom_subset`), in particular on the chart
+  image (`TauCeti.FiniteBundleAtlas.contDiffOn_coord_image`). More generally, the
   expression of such a section in any chart of the maximal atlas and any trivialization of the
   trivialization atlas is `Cᵏ` (`TauCeti.contDiffOn_trivialization_comp_chart_symm_of_contMDiff`).
 -/
@@ -366,6 +367,12 @@ theorem chart_image_closure_dom_subset (i : Fin A.n) :
   refine ⟨(A.chart i).map_source hs, ?_⟩
   rw [mem_preimage, (A.chart i).left_inv hs]
   exact A.closure_dom_subset_baseSet i hx
+
+/-- The points of the domain of chart `i` read in chart `i` inside an open set form an open set. -/
+theorem isOpen_dom_inter_preimage (i : Fin A.n) {W : Set E} (hW : IsOpen W) :
+    IsOpen (A.dom i ∩ A.chart i ⁻¹' W) :=
+  ((A.chart i).continuousOn.mono (A.dom_subset_chart_source i)).isOpen_inter_preimage
+    (A.isOpen_dom i) hW
 
 /-- The closure of the image of chart `i` lies in the image of the closure of the chart domain. -/
 theorem closure_image_subset_chart_image_closure_dom [T2Space E] (i : Fin A.n) :
@@ -740,6 +747,13 @@ theorem contDiffOn_coord {s : ∀ x, V x}
       ((A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet) :=
   (contDiffOn_trivialization_comp_chart_symm_of_contMDiff hs
     (IsManifold.chart_mem_maximalAtlas _) (A.triv i)).congr fun y _ ↦ A.coord_def i s y
+
+/-- **The chart coordinates of a `Cᵏ` section are `Cᵏ` on the chart image.** -/
+theorem contDiffOn_coord_image {s : ∀ x, V x}
+    (hs : ContMDiff 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F)) k fun x ↦ TotalSpace.mk' F x (s x))
+    (i : Fin A.n) : ContDiffOn ℝ k (A.coord i s) (A.image i) :=
+  (A.contDiffOn_coord hs i).mono
+    ((A.image_subset_chart_image_closure_dom i).trans (A.chart_image_closure_dom_subset i))
 
 end FiniteBundleAtlas
 
