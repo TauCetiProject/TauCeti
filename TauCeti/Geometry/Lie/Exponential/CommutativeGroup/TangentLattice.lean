@@ -54,49 +54,41 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
-/-- The left-invariant derivations are finite-dimensional; a local instance for this file. -/
-local instance : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
-  finiteDimensional_leftInvariantDerivation
-    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
-
-variable (I G) in
-/-- The identification of left-invariant derivations with the tangent space `E` at the identity,
-as a continuous linear equivalence. -/
-def leftInvariantDerivationContinuousEquiv : LeftInvariantDerivation I G ≃L[ℝ] E :=
-  (leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G)
-    BoundarylessManifold.isInteriorPoint).toContinuousLinearEquiv
-
 variable (I G) in
 /-- The tangent-space exponential `mulInvariantExp : E → G` of a commutative Lie group, as a
 homomorphism to `G` written additively: the exponential `lieExpAddMonoidHom` of left-invariant
-derivations, read through `leftInvariantDerivationContinuousEquiv`. -/
+derivations, read through `leftInvariantDerivationLinearIsometryEquivModelVectorSpace`. -/
 def mulInvariantExpAddMonoidHom : E →+ Additive G :=
   (lieExpAddMonoidHom (I := I) (G := G)).comp
-    (leftInvariantDerivationContinuousEquiv I G).symm.toLinearEquiv.toAddMonoidHom
+    (leftInvariantDerivationLinearIsometryEquivModelVectorSpace
+      (I := I) (G := G)).symm.toLinearEquiv.toAddMonoidHom
 
 @[simp]
 theorem mulInvariantExpAddMonoidHom_apply (v : E) :
     mulInvariantExpAddMonoidHom I G v =
       Additive.ofMul (mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G)) := by
-  change lieExpAddMonoidHom ((leftInvariantDerivationContinuousEquiv I G).symm v) = _
+  change lieExpAddMonoidHom
+    ((leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I) (G := G)).symm v) = _
   rw [lieExpAddMonoidHom_apply, lieExp_eq_mulInvariantExp]
   congr 2
-  exact (leftInvariantDerivationContinuousEquiv I G).apply_symm_apply v
+  exact (leftInvariantDerivationLinearIsometryEquivModelVectorSpace_apply (I := I) (G := G)
+    _).symm.trans (LinearIsometryEquiv.apply_symm_apply _ v)
 
 /-- The kernel of `mulInvariantExp` is the image of the kernel of `lieExp`. -/
 theorem coe_ker_mulInvariantExpAddMonoidHom :
     ((mulInvariantExpAddMonoidHom I G).ker : Set E) =
-      (leftInvariantDerivationContinuousEquiv I G) ''
+      (leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I) (G := G)) ''
         ((lieExpAddMonoidHom (I := I) (G := G)).ker : Set _) := by
   ext v
-  rw [(leftInvariantDerivationContinuousEquiv I G).image_eq_preimage_symm]
+  rw [(leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I)
+    (G := G)).image_eq_preimage_symm]
   rfl
 
 /-- `mulInvariantExp` is continuous. -/
 theorem continuous_mulInvariantExpAddMonoidHom :
     Continuous (mulInvariantExpAddMonoidHom I G) :=
   continuous_lieExpAddMonoidHom.comp
-    (leftInvariantDerivationContinuousEquiv I G).symm.continuous
+    (leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I) (G := G)).symm.continuous
 
 /-- **The kernel of `mulInvariantExp` is discrete.** -/
 instance discreteTopology_ker_mulInvariantExpAddMonoidHom :
@@ -104,14 +96,16 @@ instance discreteTopology_ker_mulInvariantExpAddMonoidHom :
   refine SetLike.isDiscrete_iff_discreteTopology.mp ?_
   rw [coe_ker_mulInvariantExpAddMonoidHom]
   exact (SetLike.isDiscrete_iff_discreteTopology.mpr inferInstance).image
-    (leftInvariantDerivationContinuousEquiv I G).toHomeomorph.isInducing
+    (leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I)
+      (G := G)).toHomeomorph.isInducing
 
 variable [IsTopologicalGroup G]
 
 /-- `mulInvariantExp` is an open map. -/
 theorem isOpenMap_mulInvariantExpAddMonoidHom : IsOpenMap (mulInvariantExpAddMonoidHom I G) := by
   exact isOpenMap_lieExpAddMonoidHom.comp
-    (leftInvariantDerivationContinuousEquiv I G).symm.isOpenMap
+    (leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I)
+      (G := G)).symm.toHomeomorph.isOpenMap
 
 section Compact
 
@@ -124,11 +118,12 @@ instance isZLattice_ker_mulInvariantExpAddMonoidHom :
   span_top := by
     rw [AddSubgroup.coe_toIntSubmodule, coe_ker_mulInvariantExpAddMonoidHom]
     have := Submodule.span_image (R := ℝ)
-      ((leftInvariantDerivationContinuousEquiv I G).toLinearEquiv.toLinearMap)
+      ((leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I)
+        (G := G)).toLinearEquiv.toLinearMap)
       (s := ((lieExpAddMonoidHom (I := I) (G := G)).ker : Set _))
-    rw [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv] at this
+    rw [LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv] at this
     rw [this, span_ker_lieExpAddMonoidHom_eq_top, Submodule.map_top, LinearMap.range_eq_top]
-    exact (leftInvariantDerivationContinuousEquiv I G).surjective
+    exact (leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I) (G := G)).surjective
 
 end Compact
 
@@ -141,7 +136,7 @@ omit [IsTopologicalGroup G] in
 theorem mulInvariantExpAddMonoidHom_surjective :
     Function.Surjective (mulInvariantExpAddMonoidHom I G) := by
   exact (lieExpAddMonoidHom_surjective_of_preconnectedSpace (I := I) (G := G)).comp
-    (leftInvariantDerivationContinuousEquiv I G).symm.surjective
+    (leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I) (G := G)).symm.surjective
 
 /-- **A preconnected commutative Lie group is the quotient of its tangent space at the identity by
 the kernel of the exponential**, as topological groups. -/
