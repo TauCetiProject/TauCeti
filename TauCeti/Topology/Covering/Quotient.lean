@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.ULift
 public import Mathlib.Algebra.Ring.Int.Units
 public import Mathlib.SetTheory.Cardinal.Finite
 public import Mathlib.Topology.Covering.Quotient
@@ -74,7 +75,8 @@ Neither normality nor a separation axiom is needed.
 * `IsQuotientCoveringMap.mapsTo_smul_preimage`: the preimage of a set under the quotient covering
   map is invariant under the action.
 * `IsQuotientCoveringMap.of_smul_eq`: a quotient covering map for `G` is one for any group
-  isomorphic to `G` acting compatibly.
+  isomorphic to `G` acting compatibly, and `IsQuotientCoveringMap.ulift`: in particular for the
+  copy `ULift G` of `G` in any universe.
 * `TauCeti.involutive_of_forall_eq_neg_one_smul`: for any action of `ℤˣ`, the action of `-1` is an
   involution.
 * `IsQuotientCoveringMap.comp_eq_of_forall_eq_neg_one_smul`,
@@ -110,6 +112,8 @@ is Junyan Xu's, in `Mathlib/Topology/Covering/Quotient.lean`.
 -/
 
 public section
+
+universe v
 
 /-- The native coset projection by a discrete subgroup of a topological group is a local
 homeomorphism. Neither normality nor a separation axiom is needed. -/
@@ -344,6 +348,13 @@ theorem _root_.IsQuotientCoveringMap.of_smul_eq {G' : Type*} [Group G'] [MulActi
     refine ⟨U, hU, fun g' hg' ↦ ?_⟩
     simp only [he'] at hg'
     simpa using hdisj (e.symm g') hg'
+
+/-- **A quotient covering map stays one when the acting group is lifted to another universe.** The
+copy `ULift G` of `G` acts on `E` through `ULift.down`. This places the acting group in the
+universe of the spaces, as constructions with representations of the acting group require. -/
+theorem _root_.IsQuotientCoveringMap.ulift (hq : IsQuotientCoveringMap q G) :
+    IsQuotientCoveringMap q (ULift.{v} G) :=
+  hq.of_smul_eq MulEquiv.ulift.symm fun {_ _} ↦ rfl
 
 /-! ### Quotient covers by `ℤˣ` -/
 

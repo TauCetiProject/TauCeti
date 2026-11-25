@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Independence.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+import Mathlib.Probability.Moments.Variance
 import TauCeti.Analysis.SpecialFunctions.Exp.QuadraticBound
 import TauCeti.MeasureTheory.Measure.Tail
 import TauCeti.Probability.Moments.Basic
@@ -32,7 +33,10 @@ for large `ε` it decays exponentially at rate `3 / (2 b)`.
 * `ProbabilityTheory.iIndepFun.measureReal_sum_ge_le_of_ae_le`: **Bernstein's inequality** for the
   upper tail;
 * `ProbabilityTheory.iIndepFun.measureReal_abs_sum_ge_le_of_abs_le`: the two-sided form
-  `P(|S| ≥ ε) ≤ 2 * exp (-ε ^ 2 / (2 * (v + b * ε / 3)))` when `|Xᵢ| ≤ b`.
+  `P(|S| ≥ ε) ≤ 2 * exp (-ε ^ 2 / (2 * (v + b * ε / 3)))` when `|Xᵢ| ≤ b`;
+* `ProbabilityTheory.iIndepFun.measureReal_abs_sum_sub_sum_integral_ge_le_of_nonneg_of_le`:
+  the two-sided bound about the mean for variables in `[0, b]`, using
+  `v ≤ b * ∑ᵢ E Xᵢ`.
 
 ## References
 
@@ -44,6 +48,7 @@ for large `ε` it decays exponentially at rate `3 / (2 b)`.
 public section
 
 open MeasureTheory ProbabilityTheory Real
+open scoped NNReal
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
 
@@ -185,5 +190,52 @@ theorem measureReal_abs_sum_ge_le_of_abs_le {ι : Type*} {X : ι → Ω → ℝ}
       ≤ μ.real {ω | ε ≤ ∑ i ∈ s, X i ω} + μ.real {ω | ε ≤ -∑ i ∈ s, X i ω} :=
         TauCeti.measureReal_le_abs_le_add
     _ ≤ _ := (add_le_add hupper hlow).trans (le_of_eq (by ring))
+
+/-- The two-sided Bernstein bound for an independent sum of variables in `[0, b]`, centered by
+its mean. The sum of variances is bounded by `b` times the sum of the means. -/
+theorem measureReal_abs_sum_sub_sum_integral_ge_le_of_nonneg_of_le {ι : Type*} {X : ι → Ω → ℝ}
+    (hind : iIndepFun X μ) {s : Finset ι} {b : ℝ≥0} {t : ℝ} (hX : ∀ i ∈ s, AEMeasurable (X i) μ)
+    (h0 : ∀ i ∈ s, ∀ᵐ ω ∂μ, 0 ≤ X i ω) (hb : ∀ i ∈ s, ∀ᵐ ω ∂μ, X i ω ≤ b) (ht : 0 ≤ t) :
+    μ.real {ω | t ≤ |(∑ i ∈ s, X i ω) - ∑ i ∈ s, ∫ ω, X i ω ∂μ|} ≤
+      2 * exp (-t ^ 2 / (2 * (b * (∑ i ∈ s, ∫ ω, X i ω ∂μ) + b * t / 3))) := by
+  have : IsProbabilityMeasure μ := hind.isProbabilityMeasure
+  have hLp (i) (hi : i ∈ s) : MemLp (X i) 2 μ :=
+    MemLp.of_bound (hX i hi).aestronglyMeasurable b (by
+      filter_upwards [h0 i hi, hb i hi] with ω h₁ h₂
+      simpa [Real.norm_eq_abs, abs_of_nonneg h₁] using h₂)
+  let m (i : ι) := ∫ ω, X i ω ∂μ
+  have hm0 i (hi : i ∈ s) : 0 ≤ m i := integral_nonneg_of_ae (h0 i hi)
+  have hmb i (hi : i ∈ s) : m i ≤ b := by
+    simpa using
+      integral_mono_ae ((hLp i hi).integrable one_le_two) (integrable_const (b : ℝ)) (hb i hi)
+  have hvar i (hi : i ∈ s) : ∫ ω, (X i ω - m i) ^ 2 ∂μ ≤ b * m i := by
+    have hIcc : ∀ᵐ ω ∂μ, X i ω ∈ Set.Icc 0 (b : ℝ) := (h0 i hi).and (hb i hi)
+    have h := variance_le_sub_mul_sub hIcc (hX i hi)
+    rw [variance_eq_integral (hX i hi), sub_zero] at h
+    exact h.trans (mul_le_mul_of_nonneg_right (sub_le_self _ (hm0 i hi)) (hm0 i hi))
+  have hcent : iIndepFun (fun i ω ↦ X i ω - m i) μ :=
+    hind.comp (fun i z ↦ z - m i) (fun _ ↦ by fun_prop)
+  have h := hcent.measureReal_abs_sum_ge_le_of_abs_le (s := s) (b := b)
+    (fun i hi ↦ (hX i hi).sub_const _) (fun i hi ↦ by
+      rw [integral_sub ((hLp i hi).integrable one_le_two) (integrable_const _)]
+      simp [m]) (fun i hi ↦ by
+      filter_upwards [h0 i hi, hb i hi] with ω h₀ h₂
+      exact abs_le.2 ⟨by linarith [hmb i hi], by linarith [hm0 i hi]⟩) ht
+  simp only [Finset.sum_sub_distrib] at h
+  by_cases hpos : 0 < (b : ℝ) * t
+  · refine h.trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) (by norm_num))
+    have hsum := Finset.sum_le_sum hvar
+    rw [← Finset.mul_sum] at hsum
+    have hv : 0 ≤ ∑ i ∈ s, ∫ ω, (X i ω - m i) ^ 2 ∂μ :=
+      Finset.sum_nonneg fun _ _ ↦ integral_nonneg fun _ ↦ sq_nonneg _
+    rw [neg_div, neg_div, neg_le_neg_iff]
+    exact div_le_div_of_nonneg_left (sq_nonneg _)
+      (by nlinarith) (by gcongr)
+  · have hz : (b : ℝ) * t = 0 := le_antisymm (not_lt.mp hpos) (mul_nonneg b.coe_nonneg ht)
+    rcases mul_eq_zero.mp hz with hbz | htz
+    · simp only [hbz, zero_mul, zero_div, add_zero, mul_zero, div_zero, exp_zero, mul_one]
+      exact measureReal_le_one.trans one_le_two
+    · simp only [htz, zero_pow two_ne_zero, neg_zero, zero_div, exp_zero, mul_one]
+      exact measureReal_le_one.trans one_le_two
 
 end ProbabilityTheory.iIndepFun

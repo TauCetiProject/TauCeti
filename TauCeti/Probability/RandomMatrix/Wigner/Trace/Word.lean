@@ -40,18 +40,21 @@ case and proves integrability first.
   `TauCeti.integral_prod_mul_prod_wignerMatrix_apply_of_disjoint`: for independent corner entries,
   entry products reading disjoint sets of unordered positions are independent and factor in
   expectation.
-* `TauCeti.integral_prod_wignerMatrix_apply_eq_zero`: for independent centred corner entries, a
-  product of entries reading some edge exactly once has expectation zero.
+* `TauCeti.integral_prod_wignerMatrix_apply_eq_zero_of_ne` and
+  `TauCeti.integral_prod_wignerMatrix_apply_eq_zero`: for independent corner entries with centred
+  upper entries, a product of entries reading some off-diagonal unordered position (or any
+  unordered position when the diagonal is also centred) exactly once has expectation zero.
 * `TauCeti.integral_prod_wignerMatrix_apply_eq_prod`: for independent corner entries, the
   expected product of entries factors over the unordered positions read.
 * `TauCeti.norm_integral_prod_wignerMatrix_apply_le_of_no_singleton_edge`: for independent
   corner entries, an entry product reading each of its `e` unordered positions at least twice has
   expectation of norm at most `c ^ e * b ^ (k - 2 * e)`, where `k` is the number of factors,
   provided `∫ ‖Hₙ i j‖ ^ d ≤ b ^ (d - 2) * c` for each position `s(i, j)` read `d` times.
-* `TauCeti.integral_trace_pow_wignerMatrix`: for `k > 0`, when the corner entries are
-  independent, centred and in `Lᵏ`, the expectation of `(Hₙ ^ k).trace` is the sum, over the
-  closed walks of length `k` traversing each of their edges at least twice, of the expected
-  products of entries along the walk. The integrability of `(Hₙ ^ k).trace` for corner entries
+* `TauCeti.integral_trace_pow_wignerMatrix_eq_sum_no_singleton_nonloop_edge` and
+  `TauCeti.integral_trace_pow_wignerMatrix`: for `k > 0`, when the corner entries are independent
+  and in `Lᵏ` with centred upper entries, the expectation of `(Hₙ ^ k).trace` restricts to closed
+  walks traversing each nonloop edge at least twice (and each edge at least twice when the diagonal
+  is also centred). The integrability of `(Hₙ ^ k).trace` for corner entries
   in `Lᵏ`, which needs neither independence nor centering, is
   `TauCeti.integrable_trace_pow_wignerMatrix` in
   `TauCeti.Probability.RandomMatrix.Wigner.Trace.Integrability`; that theorem covers every `k`
@@ -199,6 +202,41 @@ theorem integral_prod_mul_prod_wignerMatrix_apply_of_disjoint {ι₁ ι₂ : Typ
     (Finset.aestronglyMeasurable_fun_prod Finset.univ fun t _ ↦
       ((Matrix.measurable_apply (i := u₂ t) (j := v₂ t)).comp_aemeasurable hW).aestronglyMeasurable)
 
+private theorem integral_prod_wignerMatrix_apply_eq_zero_of_integral_eq_zero
+    {ι : Type*} [Fintype ι] {n : ℕ}
+    (hξm : ∀ ij : StrictUpper, ij.val.2 < n → AEMeasurable (ξ ij) P)
+    (hηm : ∀ i < n, AEMeasurable (η i) P)
+    (hindep : iIndepFun
+      (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
+        Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P)
+    (u v : ι → Fin n) {t : ι} (ht : ∀ s, s(u s, v s) = s(u t, v t) → s = t)
+    (hzero : ∫ ω, wignerMatrix ξ η n ω (u t) (v t) ∂P = 0) :
+    ∫ ω, ∏ s, wignerMatrix ξ η n ω (u s) (v s) ∂P = 0 := by
+  have h := hindep.integral_fun_prod_comp_eq_zero (aemeasurable_cornerEntry hξm hηm)
+    (e := fun s ↦ entryIndex (u s) (v s))
+    (g := fun s z ↦ (Real.sqrt n : ℂ)⁻¹ * orientEntry (u s) (v s) z)
+    (fun _ ↦ measurable_const.mul (measurable_orientEntry _ _)) (t := t)
+    (fun s hs ↦ ht s (entryIndex_eq_entryIndex_iff.mp hs))
+    (by simpa only [wignerMatrix_apply_eq_orientEntry] using hzero)
+  simpa only [wignerMatrix_apply_eq_orientEntry] using h
+
+/-- **Singleton off-diagonal edges vanish.** Let the entries in the `n × n` corner be independent
+with centred strictly upper coordinates. For a finite family of positions `(u s, v s)`, if an
+off-diagonal unordered position `s(u t, v t)` (`u t ≠ v t`) is read by no other member of the
+family, then the product of the corresponding entries of the `n × n` Wigner matrix has expectation
+zero. Diagonal coordinates need not be centred. -/
+theorem integral_prod_wignerMatrix_apply_eq_zero_of_ne {ι : Type*} [Fintype ι] {n : ℕ}
+    (hξm : ∀ ij : StrictUpper, ij.val.2 < n → AEMeasurable (ξ ij) P)
+    (hηm : ∀ i < n, AEMeasurable (η i) P)
+    (hindep : iIndepFun
+      (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
+        Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ξ ij ω ∂P = 0) (u v : ι → Fin n)
+    {t : ι} (hne : u t ≠ v t) (ht : ∀ s, s(u s, v s) = s(u t, v t) → s = t) :
+    ∫ ω, ∏ s, wignerMatrix ξ η n ω (u s) (v s) ∂P = 0 :=
+  integral_prod_wignerMatrix_apply_eq_zero_of_integral_eq_zero hξm hηm hindep u v ht
+    (integral_wignerMatrix_apply_eq_zero_of_ne hξ hne)
+
 /-- **Singleton edges vanish.** Let the entries in the `n × n` corner be independent and centred.
 For a finite family of positions `(u s, v s)`, if the unordered position `s(u t, v t)` is read by
 no other member of the family, then the product of the corresponding entries of the `n × n` Wigner
@@ -212,15 +250,36 @@ theorem integral_prod_wignerMatrix_apply_eq_zero {ι : Type*} [Fintype ι] {n : 
     (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ξ ij ω ∂P = 0)
     (hη : ∀ i < n, ∫ ω, η i ω ∂P = 0) (u v : ι → Fin n)
     {t : ι} (ht : ∀ s, s(u s, v s) = s(u t, v t) → s = t) :
-    ∫ ω, ∏ s, wignerMatrix ξ η n ω (u s) (v s) ∂P = 0 := by
-  have h := hindep.integral_fun_prod_comp_eq_zero (aemeasurable_cornerEntry hξm hηm)
-    (e := fun s ↦ entryIndex (u s) (v s))
-    (g := fun s z ↦ (Real.sqrt n : ℂ)⁻¹ * orientEntry (u s) (v s) z)
-    (fun _ ↦ measurable_const.mul (measurable_orientEntry _ _)) (t := t)
-    (fun s hs ↦ ht s (entryIndex_eq_entryIndex_iff.mp hs)) (by
-      simpa only [wignerMatrix_apply_eq_orientEntry] using
-        integral_wignerMatrix_apply_eq_zero (P := P) hξ hη (u t) (v t))
-  simpa only [wignerMatrix_apply_eq_orientEntry] using h
+    ∫ ω, ∏ s, wignerMatrix ξ η n ω (u s) (v s) ∂P = 0 :=
+  integral_prod_wignerMatrix_apply_eq_zero_of_integral_eq_zero hξm hηm hindep u v ht
+    (integral_wignerMatrix_apply_eq_zero hξ hη (u t) (v t))
+
+/-- **Trace-word expansion of Wigner moments without diagonal centering.** Let the entries in the
+`n × n` corner be independent and in `Lᵏ` (`k ≠ 0`), with centred strictly upper coordinates. Then
+the expected trace of `Hₙᵏ` is the sum, over closed walks `w : Fin k → Fin n` with no singleton
+nonloop edge, of the expected product of the entries of `Hₙ` along the walk. -/
+theorem integral_trace_pow_wignerMatrix_eq_sum_no_singleton_nonloop_edge {k n : ℕ} (hk : k ≠ 0)
+    (hindep : iIndepFun
+      (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
+        Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ξ ij ω ∂P = 0)
+    (hξk : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) k P)
+    (hηk : ∀ i < n, MemLp (η i) k P) :
+    ∫ ω, (wignerMatrix ξ η n ω ^ k).trace ∂P =
+      ∑ w : Fin k → Fin n with
+        ∀ t, w t ≠ w (finRotate k t) →
+          ∃ s ≠ t, s(w s, w (finRotate k s)) = s(w t, w (finRotate k t)),
+        ∫ ω, ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate k t)) ∂P := by
+  have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
+  simp_rw [trace_pow_eq_sum_prod _ hk]
+  rw [integral_finsetSum _ fun w _ ↦ integrable_prod_wignerMatrix_apply
+    (fun ij hij ↦ by simpa using hξk ij hij) (fun i hi ↦ by simpa using hηk i hi) _ _]
+  refine (Finset.sum_filter_of_ne fun w _ hw t hne ↦ ?_).symm
+  by_contra! h
+  exact hw (integral_prod_wignerMatrix_apply_eq_zero_of_ne
+    (fun ij hij ↦ (hξk ij hij).aestronglyMeasurable.aemeasurable)
+    (fun i hi ↦ (hηk i hi).aestronglyMeasurable.aemeasurable) hindep hξ _ _ hne
+    fun s hs ↦ by_contra fun hst ↦ h s hst hs)
 
 /-- **Trace-word expansion of Wigner moments.** Let the entries in the `n × n` corner be
 independent, centred and in `Lᵏ`, `k ≠ 0`. Then the expected trace of `Hₙᵏ` is the sum, over the
@@ -239,16 +298,17 @@ theorem integral_trace_pow_wignerMatrix {k n : ℕ} (hk : k ≠ 0)
       ∑ w : Fin k → Fin n with
         ∀ t, ∃ s ≠ t, s(w s, w (finRotate k s)) = s(w t, w (finRotate k t)),
         ∫ ω, ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate k t)) ∂P := by
-  have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
-  simp_rw [trace_pow_eq_sum_prod _ hk]
-  rw [integral_finsetSum _ fun w _ ↦ integrable_prod_wignerMatrix_apply
-    (fun ij hij ↦ by simpa using hξk ij hij) (fun i hi ↦ by simpa using hηk i hi) _ _]
-  refine (Finset.sum_filter_of_ne fun w _ hw t ↦ ?_).symm
-  by_contra! h
-  exact hw (integral_prod_wignerMatrix_apply_eq_zero
+  rw [integral_trace_pow_wignerMatrix_eq_sum_no_singleton_nonloop_edge hk hindep hξ hξk hηk]
+  symm
+  refine Finset.sum_subset
+    (fun w hw ↦ Finset.mem_filter.mpr ⟨Finset.mem_univ w, fun t _ ↦ (Finset.mem_filter.mp hw).2 t⟩)
+    fun w _ hnot ↦ ?_
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_forall, not_exists, not_and] at hnot
+  obtain ⟨t, ht⟩ := hnot
+  exact integral_prod_wignerMatrix_apply_eq_zero
     (fun ij hij ↦ (hξk ij hij).aestronglyMeasurable.aemeasurable)
     (fun i hi ↦ (hηk i hi).aestronglyMeasurable.aemeasurable) hindep hξ hη _ _
-    fun s hs ↦ by_contra fun hst ↦ h s hst hs)
+    fun s hs ↦ by_contra fun hst ↦ ht s hst hs
 
 /-- The coordinate of the `n × n` corner entry array read at an unordered position. -/
 private def sym2Index {n : ℕ} :

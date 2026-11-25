@@ -13,7 +13,8 @@ public import Mathlib.Topology.Homotopy.Basic
 A homotopy relative to a set `S` fixes every point of `S` at all times, so it is also a homotopy
 relative to every subset of `S`. This lets relative homotopies obtained relative to different sets
 be composed relative to a common subset. Precomposed with a map `e`, it is a homotopy relative to
-the preimage `e ⁻¹' S`, and composites of relative homotopies are again relative homotopies.
+the preimage `e ⁻¹' S`, with a converse when `e` is a homeomorphism, and composites of relative
+homotopies are again relative homotopies.
 
 Homotopy relative to a single point is pointed homotopy: it is an equivalence relation on the
 pointed maps `(Y, y₀) → (X, x)`, whose classes are the pointed homotopy classes of maps.
@@ -25,6 +26,8 @@ pointed maps `(Y, y₀) → (X, x)`, whose classes are the pointed homotopy clas
   every `T ⊆ S`.
 * `ContinuousMap.HomotopyRel.precomp`, `ContinuousMap.HomotopicRel.precomp`: precomposing a
   homotopy relative to `S` with `e` gives a homotopy relative to `e ⁻¹' S`.
+* `ContinuousMap.homotopicRel_comp_homeomorph_iff`: precomposing with a homeomorphism `e`
+  identifies homotopy relative to `e ⁻¹' S` with homotopy relative to `S`.
 * `ContinuousMap.HomotopicRel.comp`: relative homotopies compose.
 * `ContinuousMap.HomotopicRel.comp_id`: self-maps homotopic to the identity relative to `S` are
   closed under composition.
@@ -79,6 +82,14 @@ relative to `e ⁻¹' S`. -/
 theorem HomotopicRel.precomp (h : HomotopicRel f₀ f₁ S) (e : C(W, X)) :
     HomotopicRel (f₀.comp e) (f₁.comp e) (e ⁻¹' S) :=
   h.map (·.precomp e)
+
+/-- Precomposition with a homeomorphism `e : W ≃ₜ X` identifies homotopy relative to `e ⁻¹' S`
+with homotopy relative to `S`. -/
+theorem homotopicRel_comp_homeomorph_iff (e : W ≃ₜ X) :
+    HomotopicRel (f₀.comp (e : C(W, X))) (f₁.comp (e : C(W, X))) (e ⁻¹' S) ↔
+      HomotopicRel f₀ f₁ S := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.precomp (e : C(W, X))⟩
+  simpa [comp_assoc, Set.preimage_preimage] using h.precomp (e.symm : C(X, W))
 
 /-- A self-map homotopic to the identity relative to `S` fixes `S` pointwise, so it maps `S` into
 itself. -/

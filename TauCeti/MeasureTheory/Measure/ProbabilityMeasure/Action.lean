@@ -22,7 +22,9 @@ topological space with its Borel σ-algebra on which each `x ↦ g • x` is con
 `μ ↦ g • μ` is continuous for the weak topology. For a group this makes each `μ ↦ g • μ` an affine
 homeomorphism of `ProbabilityMeasure X` (Mathlib's `Homeomorph.smul`). For example, a group
 acting on a subshift by shifts acts on its probability measures; invariant measures are the fixed
-points of this action.
+points of this action (`MeasureTheory.ProbabilityMeasure.smulInvariantMeasure_iff_forall_smul_eq`),
+so they form a weakly closed set
+(`MeasureTheory.ProbabilityMeasure.isClosed_setOf_smulInvariantMeasure`).
 
 ## Main declarations
 
@@ -32,6 +34,8 @@ points of this action.
   topology.
 * `MeasureTheory.ProbabilityMeasure.smul_convexComb`: the action is affine.
 * `MeasureTheory.ProbabilityMeasure.smul_diracProba`: the action moves point masses.
+* `MeasureTheory.ProbabilityMeasure.isClosed_setOf_smulInvariantMeasure`: the invariant
+  probability measures are weakly closed.
 -/
 
 public section
@@ -89,6 +93,23 @@ theorem smul_convexComb (g : M) {a b : ℝ≥0∞} (hab : a + b = 1) (P Q : Prob
 @[simp]
 theorem smul_diracProba (g : M) (x : X) : g • diracProba x = diracProba (g • x) :=
   map_diracProba (measurable_const_smul g) x
+
+/-- A probability measure is invariant under the action on `X` iff it is a fixed point of the
+push-forward action. -/
+theorem smulInvariantMeasure_iff_forall_smul_eq (μ : ProbabilityMeasure X) :
+    SMulInvariantMeasure M X μ ↔ ∀ g : M, g • μ = μ := by
+  refine ⟨fun _ g => toMeasure_injective (measurePreserving_smul g (μ : Measure X)).map_eq,
+    fun h => ⟨fun g s hs => ?_⟩⟩
+  rw [← Measure.map_apply (measurable_const_smul g) hs, ← toMeasure_smul, h g]
+
+/-- **The invariant probability measures are weakly closed**, for an action by continuous maps on
+a Borel space whose closed sets have continuous outer approximations, such as a pseudo-metrisable
+space. -/
+theorem isClosed_setOf_smulInvariantMeasure [TopologicalSpace X] [BorelSpace X]
+    [HasOuterApproxClosed X] [ContinuousConstSMul M X] :
+    IsClosed {μ : ProbabilityMeasure X | SMulInvariantMeasure M X μ} := by
+  simp_rw [smulInvariantMeasure_iff_forall_smul_eq, Set.ofPred_forall]
+  exact isClosed_iInter fun g => isClosed_eq (continuous_const_smul g) continuous_id
 
 end SMul
 
