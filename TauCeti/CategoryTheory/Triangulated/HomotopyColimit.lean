@@ -18,58 +18,37 @@ import Mathlib.Algebra.Category.Grp.EpiMono
 import Mathlib.Algebra.Homology.ShortComplex.Ab
 import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Products
 import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Products
+import TauCeti.Algebra.DirectSum.Telescope
 import TauCeti.CategoryTheory.Preadditive.Compact
 import TauCeti.CategoryTheory.Triangulated.LiftingObstruction
 
 /-!
 # Homotopy colimits of sequences and the Milnor short exact sequence
 
-Let `X : ℕ ⥤ C` be a sequence `X₀ ⟶ X₁ ⟶ X₂ ⟶ ⋯` in a preadditive category whose terms have a
-countable coproduct `∐ₙ Xₙ`. The **coproduct–difference map** `X.sequenceDifference` is the
-endomorphism `1 - s` of `∐ₙ Xₙ` whose `n`-th component is `ιₙ - X(n → n + 1) ≫ ιₙ₊₁`; it is dual
-to `CategoryTheory.Functor.towerDifference` in `TauCeti.CategoryTheory.Preadditive.TowerDifference`.
+Let `X : ℕ ⥤ C` be a sequence `X₀ ⟶ X₁ ⟶ ⋯` in a preadditive category whose terms have a countable
+coproduct `∐ₙ Xₙ`. The **coproduct–difference map** `X.sequenceDifference` is the endomorphism
+`1 - s` of `∐ₙ Xₙ` with `n`-th component `ιₙ - X(n → n + 1) ≫ ιₙ₊₁`, dual to
+`CategoryTheory.Functor.towerDifference`. When `C` is pretriangulated, a **homotopy colimit** (or
+Milnor telescope, `TauCeti.HomotopyColimit X`) is a distinguished triangle
+`∐ₙ Xₙ ⟶ ∐ₙ Xₙ ⟶ pt ⟶ (∐ₙ Xₙ)⟦1⟧` completing `X.sequenceDifference`; it always exists, carries a
+cocone `h.cocone` with legs `h.ι n`, and is weakly functorial (`HomotopyColimit.exists_hom`).
 
-When `C` is pretriangulated, a **homotopy colimit** (or Milnor telescope) of `X`
-(`TauCeti.HomotopyColimit X`) is a choice of distinguished triangle
-`∐ₙ Xₙ ⟶ ∐ₙ Xₙ ⟶ pt ⟶ (∐ₙ Xₙ)⟦1⟧` completing `X.sequenceDifference`. Such a homotopy colimit
-always exists (`TauCeti.HomotopyColimit.nonempty`), carries a canonical cocone `h.cocone` with
-legs `h.ι n = Sigma.ι _ n ≫ h.π`, and is weakly functorial in `X`
-(`TauCeti.HomotopyColimit.exists_hom`).
+For `G : C` whose additive represented functor preserves countable coproducts, every morphism
+`G ⟶ h.pt` factors through some `h.ι N` (`exists_eq_comp_ι`) and `g : G ⟶ X.obj n` vanishes in
+`h.pt` iff it vanishes at some stage `m ≥ n` (`comp_ι_eq_zero_iff`). For any contravariant
+homological functor `E : Cᵒᵖ ⥤ A` into an abelian category `A` sending countable coproducts to
+countable products, applying `E` yields the **Milnor short exact sequence**
+`0 ⟶ cokernel d₁ ⟶ E(h.pt) ⟶ kernel d₀ ⟶ 0` (`milnorShortComplex_shortExact`), natural in sequence
+morphisms; for `A = AddCommGrpCat`, compatible families lift to `E(h.pt)` (`exists_map_ι_eq`).
 
-For an object `G : C` whose additive represented functor `preadditiveCoyoneda.obj (op G)` preserves
-countable coproducts (in particular, any compact object in the sense of
-`TauCeti.IsCompactForCoproducts`), postcomposition with `X.sequenceDifference` and its shift is
-injective on maps out of `G`. Consequently, every morphism `G ⟶ h.pt` factors through some stage
-`h.ι N` (`TauCeti.HomotopyColimit.exists_eq_comp_ι`), and a morphism `G ⟶ X.obj n` vanishes after
-composing with `h.ι n` if and only if it vanishes at some later stage `m ≥ n`
-(`TauCeti.HomotopyColimit.comp_ι_eq_zero_iff`).
+## Main declarations
 
-For any contravariant homological functor `E : Cᵒᵖ ⥤ A` into an abelian category `A` that sends
-countable coproducts in `C` to countable products in `A`, applying `E` to the defining triangle of
-`h` yields the **Milnor short exact sequence**
-`0 ⟶ cokernel d₁ ⟶ E(h.pt) ⟶ kernel d₀ ⟶ 0`, where `d₀ = (X.op ⋙ E).towerDifference` and
-`d₁ = ((X ⋙ shiftFunctor C 1).op ⋙ E).towerDifference`
-(`TauCeti.HomotopyColimit.milnorShortComplex_shortExact`), natural with respect to triangle
-morphisms over `α : X ⟶ Y`. Specializing to `A = AddCommGrpCat`, every compatible sequence of
-classes in `E(Xₙ)` lifts to a class in `E(h.pt)` (`TauCeti.HomotopyColimit.exists_map_ι_eq`).
-
-## Main definitions
-
-* `CategoryTheory.Functor.sequenceDifference`: the coproduct–difference endomorphism `1 - s` of
-  `∐ₙ Xₙ`.
-* `TauCeti.HomotopyColimit`: a distinguished triangle completing `X.sequenceDifference`.
+* `CategoryTheory.Functor.sequenceDifference`, `TauCeti.HomotopyColimit`.
+* `TauCeti.HomotopyColimit.exists_eq_comp_ι`, `TauCeti.HomotopyColimit.comp_ι_eq_zero_iff`.
 * `TauCeti.HomotopyColimit.milnorLimOneTo`, `TauCeti.HomotopyColimit.milnorToLim`,
-  `TauCeti.HomotopyColimit.milnorShortComplex`: the Milnor short complex attached to a
-  contravariant homological functor preserving countable products.
-
-## Main results
-
-* `TauCeti.HomotopyColimit.exists_eq_comp_ι`, `TauCeti.HomotopyColimit.comp_ι_eq_zero_iff`:
-  factorization and vanishing of maps from a countably compact object into a homotopy colimit.
-* `TauCeti.HomotopyColimit.milnorShortComplex_shortExact`: exactness of the Milnor short exact
-  sequence in any abelian category `A`.
-* `TauCeti.HomotopyColimit.exists_map_ι_eq`: lifting compatible families in `E(Xₙ)` to `E(h.pt)`
-  for `E : Cᵒᵖ ⥤ AddCommGrpCat`.
+  `TauCeti.HomotopyColimit.milnorShortComplex`,
+  `TauCeti.HomotopyColimit.milnorShortComplex_shortExact`.
+* `TauCeti.HomotopyColimit.exists_map_ι_eq`.
 
 ## References
 
@@ -154,90 +133,27 @@ end CategoryTheory.Functor
 
 namespace TauCeti
 
-section DirectSumShift
-
-variable {A : ℕ → Type*} [∀ n, AddCommGroup (A n)] (t : ∀ n, A n →+ A (n + 1))
-
-/-- The algebraic shift-difference endomorphism on a countable direct sum `⨁ₙ A n`, sending a
-basis element at `n` to `of n a - of (n + 1) (t n a)`. -/
-private def seqDiff : (⨁ n, A n) →+ (⨁ n, A n) :=
-  DirectSum.toAddMonoid fun n ↦ DirectSum.of A n - (DirectSum.of A (n + 1)).comp (t n)
-
-private lemma seqDiff_of (n : ℕ) (a : A n) :
-    seqDiff t (DirectSum.of A n a) = DirectSum.of A n a - DirectSum.of A (n + 1) (t n a) := by
-  simp [seqDiff]
-
-private lemma seqDiff_apply_zero (x : ⨁ n, A n) : seqDiff t x 0 = x 0 :=
-  DirectSum.induction_on x (by simp)
-    (fun k _ ↦ by rw [seqDiff_of, DirectSum.sub_apply,
-      DirectSum.of_eq_of_ne (β := A) (k + 1) 0 _ (Nat.succ_ne_zero k).symm, sub_zero])
-    fun _ _ hu hv ↦ by simp [map_add, hu, hv]
-
-private lemma seqDiff_apply_succ (x : ⨁ n, A n) (n : ℕ) :
-    seqDiff t x (n + 1) = x (n + 1) - t n (x n) := by
-  refine DirectSum.induction_on x (by simp) (fun k _ ↦ ?_) fun _ _ hu hv ↦ by
-    simp [map_add, hu, hv]; abel
-  rw [seqDiff_of, DirectSum.sub_apply]
-  by_cases hkn : k = n
-  · subst hkn; simp [DirectSum.of_eq_same]
-  · rw [DirectSum.of_eq_of_ne (β := A) (k + 1) (n + 1) _ fun h ↦ hkn (Nat.succ.inj h).symm,
-      DirectSum.of_eq_of_ne (β := A) k n _ (Ne.symm hkn), map_zero]
-
-private lemma seqDiff_injective : Function.Injective (seqDiff t) :=
-  (injective_iff_map_eq_zero _).2 fun x hx ↦ DFinsupp.ext fun n ↦ by
-    induction n with
-    | zero => rw [← seqDiff_apply_zero t x, hx]
-    | succ n ih =>
-      simpa [seqDiff_apply_succ, ih] using congrArg (fun y : ⨁ k, A k ↦ y (n + 1)) hx
-
-private lemma seqDiff_eq_of_lt {x : ⨁ n, A n} {n : ℕ} {a : A n}
-    (hx : seqDiff t x = DirectSum.of A n a) : ∀ k < n, x k = 0 := fun k hk ↦ by
-  induction k with
-  | zero =>
-    rw [← seqDiff_apply_zero t x, hx]
-    exact DirectSum.of_eq_of_ne (β := A) n 0 a (Nat.ne_of_lt hk)
-  | succ k ih =>
-    have h1 := congrArg (fun y : ⨁ m, A m ↦ y (k + 1)) hx
-    rw [seqDiff_apply_succ, ih (Nat.lt_of_succ_lt hk), map_zero, sub_zero,
-      DirectSum.of_eq_of_ne (β := A) n (k + 1) a (Nat.ne_of_lt hk)] at h1
-    exact h1
-
-private lemma seqDiff_eq_of_self {x : ⨁ n, A n} {n : ℕ} {a : A n}
-    (hx : seqDiff t x = DirectSum.of A n a) : x n = a := by
-  cases n with
-  | zero => rw [← seqDiff_apply_zero t x, hx, DirectSum.of_eq_same]
-  | succ k =>
-    have h1 := congrArg (fun y : ⨁ m, A m ↦ y (k + 1)) hx
-    rw [seqDiff_apply_succ, seqDiff_eq_of_lt t hx k (Nat.lt_succ_self k), map_zero, sub_zero,
-      DirectSum.of_eq_same] at h1
-    exact h1
-
-end DirectSumShift
-
 section PreadditiveCofan
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] (G : C) (X : ℕ ⥤ C)
 
-/-- Postcomposition along the transitions of a sequence `X : ℕ ⥤ C`, viewed on `G ⟶ X.obj n`. -/
-private def postcompHom (n : ℕ) : (G ⟶ X.obj n) →+ (G ⟶ X.obj (n + 1)) where
-  toFun g := g ≫ X.map (homOfLE (Nat.le_add_right n 1))
-  map_zero' := zero_comp
-  map_add' _ _ := Preadditive.add_comp _ _ _ _ _ _
-
-/-- Under `directSumEquivOfPreserves`, `seqDiff` corresponds to postcomposition with any
+/-- Under `directSumEquivOfPreserves`, `telescopeDiff` corresponds to postcomposition with any
 endomorphism `d` of a colimit cofan satisfying the coproduct–difference formula. -/
-private lemma directSumEquivOfPreserves_seqDiff {c : Cofan fun n : ℕ ↦ X.obj n} (hc : IsColimit c)
+private lemma directSumEquivOfPreserves_telescopeDiff {c : Cofan fun n : ℕ ↦ X.obj n}
+    (hc : IsColimit c)
     [PreservesColimitsOfShape (Discrete ℕ) (preadditiveCoyoneda.obj (op G))]
     (d : c.pt ⟶ c.pt)
     (hd : ∀ n, c.inj n ≫ d = c.inj n - X.map (homOfLE (Nat.le_add_right n 1)) ≫ c.inj (n + 1))
     (x : ⨁ n : ℕ, (G ⟶ X.obj n)) :
-    directSumEquivOfPreserves G hc (seqDiff (postcompHom G X) x) =
+    directSumEquivOfPreserves G hc
+        (telescopeDiff
+          (fun n ↦ Preadditive.rightComp G (X.map (homOfLE (Nat.le_add_right n 1)))) x) =
       directSumEquivOfPreserves G hc x ≫ d := by
   refine DirectSum.induction_on x (by simp) (fun n g ↦ ?_)
     fun _ _ hu hv ↦ by simp [map_add, hu, hv, Preadditive.add_comp]
-  rw [seqDiff_of, map_sub, directSumEquivOfPreserves_of, directSumEquivOfPreserves_of,
+  rw [telescopeDiff_of, map_sub, directSumEquivOfPreserves_of, directSumEquivOfPreserves_of,
     Category.assoc, hd n, Preadditive.comp_sub]
-  simp [postcompHom, Category.assoc]
+  simp [Preadditive.rightComp, Category.assoc]
 
 private lemma postcomp_injective_of_cofan {c : Cofan fun n : ℕ ↦ X.obj n} (hc : IsColimit c)
     [PreservesColimitsOfShape (Discrete ℕ) (preadditiveCoyoneda.obj (op G))]
@@ -245,20 +161,23 @@ private lemma postcomp_injective_of_cofan {c : Cofan fun n : ℕ ↦ X.obj n} (h
     (hd : ∀ n, c.inj n ≫ d = c.inj n - X.map (homOfLE (Nat.le_add_right n 1)) ≫ c.inj (n + 1)) :
     Function.Injective (fun f : G ⟶ c.pt ↦ f ≫ d) := fun f₁ f₂ hf ↦ by
   let e := directSumEquivOfPreserves G hc
-  refine e.symm.injective <| seqDiff_injective (postcompHom G X) <| e.injective ?_
-  simpa [directSumEquivOfPreserves_seqDiff G X hc d hd, e] using hf
+  refine e.symm.injective <|
+    telescopeDiff_injective
+      (fun n ↦ Preadditive.rightComp G (X.map (homOfLE (Nat.le_add_right n 1)))) <|
+      e.injective ?_
+  simpa [directSumEquivOfPreserves_telescopeDiff G X hc d hd, e] using hf
 
-private lemma seqDiff_postcomp_eq_of_le
+private lemma telescopeDiff_rightComp_eq_of_le
     {x : ⨁ m : ℕ, (G ⟶ X.obj m)} {n : ℕ} {g : G ⟶ X.obj n}
-    (hseq : seqDiff (postcompHom G X) x = DirectSum.of (fun m ↦ G ⟶ X.obj m) n g)
+    (hseq : telescopeDiff
+      (fun m ↦ Preadditive.rightComp G (X.map (homOfLE (Nat.le_add_right m 1)))) x =
+        DirectSum.of (fun m ↦ G ⟶ X.obj m) n g)
     {m : ℕ} (hnm : n ≤ m) : x m = g ≫ X.map (homOfLE hnm) := by
   induction hnm with
-  | refl => simpa [Category.comp_id] using seqDiff_eq_of_self (postcompHom G X) hseq
+  | refl => simpa [Category.comp_id] using apply_eq_of_telescopeDiff_eq_of hseq
   | @step k hnk ih =>
-    have h1 := congrArg (fun y : ⨁ m, (G ⟶ X.obj m) ↦ y (k + 1)) hseq
-    rw [seqDiff_apply_succ,
-      DirectSum.of_eq_of_ne (β := fun m ↦ G ⟶ X.obj m) n (k + 1) g (by lia)] at h1
-    rw [sub_eq_zero.1 h1, ih]; dsimp [postcompHom]; rw [Category.assoc, ← X.map_comp]; rfl
+    rw [apply_succ_eq_of_telescopeDiff_eq_of_ne hseq (by lia), ih]
+    simp [Preadditive.rightComp, ← X.map_comp]
 
 end PreadditiveCofan
 
@@ -443,6 +362,9 @@ lemma δ_comp_shift_sequenceDifference : h.δ ≫ X.sequenceDifference⟦(1 : �
 /-- The canonical morphism `X.obj n ⟶ h.pt` from the `n`-th term into the homotopy colimit. -/
 def ι (n : ℕ) : X.obj n ⟶ h.pt := Sigma.ι (fun n : ℕ ↦ X.obj n) n ≫ h.π
 
+lemma ι_def (n : ℕ) : h.ι n = Sigma.ι (fun n : ℕ ↦ X.obj n) n ≫ h.π :=
+  (rfl)
+
 /-- The canonical cocone on `X` with apex `h.pt` and legs `h.ι n`. -/
 abbrev cocone : Cocone X :=
   Functor.coconeOfSequenceDifference h.π h.sequenceDifference_comp_π
@@ -491,10 +413,8 @@ theorem comp_δ_eq_zero (f : G ⟶ h.pt) : f ≫ h.δ = 0 := by
     (fun n : ℕ ↦ X.obj n)
   refine postcomp_injective_of_cofan G (X ⋙ shiftFunctor C (1 : ℤ)) hc
     (X.sequenceDifference⟦(1 : ℤ)⟧') (fun n ↦ ?_) (by simp [Category.assoc])
-  change (Sigma.ι (fun n : ℕ ↦ X.obj n) n)⟦(1 : ℤ)⟧' ≫ X.sequenceDifference⟦(1 : ℤ)⟧' =
-    (Sigma.ι _ n)⟦(1 : ℤ)⟧' - (X.map (homOfLE (Nat.le_add_right n 1)))⟦(1 : ℤ)⟧' ≫
-      (Sigma.ι _ (n + 1))⟦(1 : ℤ)⟧'
-  rw [← Functor.map_comp, Functor.ι_sequenceDifference, Functor.map_sub, Functor.map_comp]
+  simp only [cofan_mk_inj, Functor.comp_map, ← Functor.map_comp, Functor.ι_sequenceDifference,
+    Functor.map_sub]
 
 /-- Every morphism from an object whose additive represented functor preserves countable coproducts
 into a homotopy colimit lifts along `h.π : ∐ₙ Xₙ ⟶ h.pt`. -/
@@ -516,7 +436,7 @@ theorem exists_eq_comp_ι (f : G ⟶ h.pt) : ∃ (N : ℕ) (g : G ⟶ X.obj N), 
   rw [hk, Preadditive.sum_comp, Preadditive.sum_comp]
   refine Finset.sum_congr rfl fun n hn ↦ ?_
   have hle : n ≤ N := Finset.le_sup (f := id) hn
-  rw [dite_eq_left hle, Category.assoc, Category.assoc, h.map_homOfLE_comp_ι hle, ι]
+  rw [dite_eq_left hle, Category.assoc, Category.assoc, h.map_homOfLE_comp_ι hle, h.ι_def]
 
 /-- For an object `G` whose additive represented functor preserves countable coproducts, a morphism
 `g : G ⟶ X.obj n` vanishes in `h.pt` if and only if it already vanishes at some later stage
@@ -527,20 +447,24 @@ theorem comp_ι_eq_zero_iff {n : ℕ} (g : G ⟶ X.obj n) :
   refine ⟨fun hg ↦ ?_, fun ⟨_, hnm, hm⟩ ↦ by
     rw [← h.map_homOfLE_comp_ι hnm, ← Category.assoc, hm, zero_comp]⟩
   obtain ⟨k, hk⟩ := h.triangle.coyoneda_exact₂ h.distinguished
-    (g ≫ Sigma.ι (fun n : ℕ ↦ X.obj n) n) (by simpa [ι] using hg)
+    (g ≫ Sigma.ι (fun n : ℕ ↦ X.obj n) n) (by simpa [h.ι_def] using hg)
   let e := directSumEquivOfPreserves G (coproductIsCoproduct fun n : ℕ ↦ X.obj n)
   let x := e.symm k
-  have hseq : seqDiff (postcompHom G X) x = DirectSum.of (fun n ↦ G ⟶ X.obj n) n g := e.injective <|
-    by rw [directSumEquivOfPreserves_seqDiff G X (coproductIsCoproduct _)
-        X.sequenceDifference X.ι_sequenceDifference, e.apply_symm_apply,
-        directSumEquivOfPreserves_of]; exact hk.symm
+  have hseq :
+      telescopeDiff
+          (fun m ↦ Preadditive.rightComp G (X.map (homOfLE (Nat.le_add_right m 1)))) x =
+        DirectSum.of (fun n ↦ G ⟶ X.obj n) n g := e.injective <| by
+    rw [directSumEquivOfPreserves_telescopeDiff G X (coproductIsCoproduct _)
+      X.sequenceDifference X.ι_sequenceDifference, e.apply_symm_apply,
+      directSumEquivOfPreserves_of]
+    exact hk.symm
   let m := max n (x.support.sup id + 1)
   have hm_not : m ∉ x.support := fun hm ↦ by
     have : m ≤ x.support.sup id := Finset.le_sup (f := id) hm
     have : x.support.sup id + 1 ≤ m := le_max_right _ _
     lia
   exact ⟨m, le_max_left _ _,
-    (seqDiff_postcomp_eq_of_le G X hseq (le_max_left _ _)).symm.trans
+    (telescopeDiff_rightComp_eq_of_le G X hseq (le_max_left _ _)).symm.trans
       (DFinsupp.notMem_support_iff.1 hm_not)⟩
 
 end Compact
@@ -596,6 +520,22 @@ private lemma cokernel_π_comp_milnorLimOneTo
       (shiftCoprodIsoPi E X).inv ≫ E.map h.δ.op :=
   cokernel.π_desc _ _ _
 
+/-- Precomposing `h.milnorLimOneTo E` with `cokernel.π` and the canonical product comparison out of
+`E((∐ₙ Xₙ)⟦1⟧)` recovers `E.map h.δ.op`. -/
+@[reassoc]
+lemma lift_cokernel_π_comp_milnorLimOneTo
+    [HasProduct fun n : ℕ ↦ ((X ⋙ shiftFunctor C (1 : ℤ)).op ⋙ E).obj (op n)]
+    [HasCokernel ((X ⋙ shiftFunctor C (1 : ℤ)).op ⋙ E).towerDifference] :
+    Pi.lift (f := fun n ↦ ((X ⋙ shiftFunctor C (1 : ℤ)).op ⋙ E).obj (op n))
+        (fun n ↦ E.map ((Sigma.ι (fun n : ℕ ↦ X.obj n) n)⟦(1 : ℤ)⟧').op) ≫
+      cokernel.π ((X ⋙ shiftFunctor C (1 : ℤ)).op ⋙ E).towerDifference ≫ h.milnorLimOneTo E =
+      E.map h.δ.op := by
+  have hhom : Pi.lift (f := fun n ↦ ((X ⋙ shiftFunctor C (1 : ℤ)).op ⋙ E).obj (op n))
+      (fun n ↦ E.map ((Sigma.ι (fun n : ℕ ↦ X.obj n) n)⟦(1 : ℤ)⟧').op) =
+      (shiftCoprodIsoPi E X).hom :=
+    Pi.hom_ext _ _ fun n ↦ by rw [limit.lift_π, Fan.mk_π_app, shiftCoprodIsoPi_hom_comp_π]
+  rw [hhom, cokernel_π_comp_milnorLimOneTo, Iso.hom_inv_id_assoc]
+
 @[reassoc (attr := simp)]
 lemma milnorLimOneTo_comp_milnorToLim
     [HasProduct fun n : ℕ ↦ (X.op ⋙ E).obj (op n)] [HasKernel (X.op ⋙ E).towerDifference]
@@ -644,7 +584,7 @@ lemma milnorToLim_naturality {X Y : ℕ ⥤ C}
   simp only [Category.assoc, milnorToLim_comp_kernel_ι_comp_π, kernel.lift_ι_assoc,
     Pi.map_π, hYcomp]
   rw [← E.map_comp, ← E.map_comp, ← op_comp, ← op_comp]
-  congr 2; simpa [ι, Category.assoc] using Sigma.ι (fun n : ℕ ↦ X.obj n) n ≫= hf
+  congr 2; simpa [hX.ι_def, hY.ι_def, Category.assoc] using Sigma.ι (fun n : ℕ ↦ X.obj n) n ≫= hf
 
 /-- Naturality of `milnorLimOneTo` with respect to a morphism `f : hX.pt ⟶ hY.pt` compatible with
 the connecting morphisms over `α : X ⟶ Y`. -/
@@ -692,8 +632,7 @@ private lemma milnor_exact₀ [HasProduct fun n : ℕ ↦ (X.op ⋙ E).obj (op n
         ← op_comp, h.sequenceDifference_comp_π, op_zero, E.map_zero, zero_comp]).Exact := by
   refine ShortComplex.exact_of_iso ?_ (E.map_distinguished_op_exact h.triangle h.distinguished)
   exact ShortComplex.isoMk (Iso.refl _) (coprodIsoPi E X) (coprodIsoPi E X)
-    (by change 𝟙 _ ≫ E.map h.π.op ≫ (coprodIsoPi E X).hom =
-      E.map h.π.op ≫ (coprodIsoPi E X).hom; rw [Category.id_comp])
+    (by dsimp [ShortComplex.op, shortComplexOfDistTriangle]; rw [Category.id_comp])
     (map_sequenceDifference_comp_coprodIsoPi E X).symm
 
 private lemma milnor_exact₁
@@ -707,12 +646,13 @@ private lemma milnor_exact₁
   let e₁ := shiftCoprodIsoPi E X
   let negE₁ : E.obj (op ((∐ fun n : ℕ ↦ X.obj n)⟦(1 : ℤ)⟧)) ≅ _ :=
     ⟨-e₁.hom, -e₁.inv, by simp, by simp⟩
-  refine ShortComplex.isoMk negE₁ e₁ (Iso.refl _) ?_ ?_
-  · change (-e₁.hom) ≫ _ = E.map (-(X.sequenceDifference⟦(1 : ℤ)⟧')).op ≫ e₁.hom
-    rw [op_neg, E.map_neg, Preadditive.neg_comp, Preadditive.neg_comp,
-      map_shift_sequenceDifference_comp_shiftCoprodIsoPi]
-  · change e₁.hom ≫ e₁.inv ≫ E.map h.δ.op = E.map h.δ.op ≫ 𝟙 _
-    rw [Iso.hom_inv_id_assoc, Category.comp_id]
+  refine ShortComplex.isoMk negE₁ e₁ (Iso.refl _) ?_
+    (by
+      dsimp [ShortComplex.op, shortComplexOfDistTriangle, Triangle.rotate, e₁]
+      rw [Iso.hom_inv_id_assoc, Category.comp_id])
+  dsimp [ShortComplex.op, shortComplexOfDistTriangle, Triangle.rotate, negE₁, e₁]
+  rw [E.map_neg, Preadditive.neg_comp, Preadditive.neg_comp,
+    map_shift_sequenceDifference_comp_shiftCoprodIsoPi]
 
 private lemma milnor_exact₂
     [HasProduct fun n : ℕ ↦ (X.op ⋙ E).obj (op n)]
@@ -724,10 +664,12 @@ private lemma milnor_exact₂
   refine ShortComplex.exact_of_iso ?_
     (E.map_distinguished_op_exact _ (rot_of_distTriang _ h.distinguished))
   exact ShortComplex.isoMk (shiftCoprodIsoPi E X) (Iso.refl _) (coprodIsoPi E X)
-    (by change (shiftCoprodIsoPi E X).hom ≫ (shiftCoprodIsoPi E X).inv ≫ E.map h.δ.op =
-      E.map h.δ.op ≫ 𝟙 _; rw [Iso.hom_inv_id_assoc, Category.comp_id])
-    (by change 𝟙 _ ≫ E.map h.π.op ≫ (coprodIsoPi E X).hom =
-      E.map h.π.op ≫ (coprodIsoPi E X).hom; rw [Category.id_comp])
+    (by
+      dsimp [ShortComplex.op, shortComplexOfDistTriangle, Triangle.rotate]
+      rw [Iso.hom_inv_id_assoc, Category.comp_id])
+    (by
+      dsimp [ShortComplex.op, shortComplexOfDistTriangle, Triangle.rotate]
+      rw [Category.id_comp])
 
 /-- **The Milnor short exact sequence** of a homotopy colimit `h` for any contravariant homological
 functor `E : Cᵒᵖ ⥤ A` into an abelian category `A` that sends countable coproducts to countable
@@ -780,15 +722,11 @@ theorem exists_map_ι_eq {X : ℕ ⥤ C} [HasCoproduct fun n : ℕ ↦ X.obj n] 
   have hpIso_inv (n : ℕ) (y : ∀ k, F k) : Pi.π F n (pIso.inv y) = y n := by
     rw [← hpIso n (pIso.inv y), ← ConcreteCategory.comp_apply, pIso.inv_hom_id]; rfl
   have hy : (X.op ⋙ E).towerDifference (pIso.inv x) = 0 := by
-    apply pIso.addCommGroupIsoToAddEquiv.injective
+    apply (AddCommGrpCat.mono_iff_injective pIso.hom).1 inferInstance
     rw [map_zero]; ext n
-    change pIso.hom ((X.op ⋙ E).towerDifference (pIso.inv x)) n = 0
     rw [hpIso n, ← ConcreteCategory.comp_apply, Functor.towerDifference_π]
-    change Pi.π F n (pIso.inv x) -
-      (X.op ⋙ E).map (homOfLE (Nat.le_add_right n 1)).op (Pi.π F (n + 1) (pIso.inv x)) = 0
-    rw [hpIso_inv n x, hpIso_inv (n + 1) x]
-    change x n - E.map (X.map (homOfLE (Nat.le_add_right n 1))).op (x (n + 1)) = 0
-    rw [hx n, sub_self]
+    dsimp [F] at hpIso_inv hx ⊢
+    rw [hpIso_inv, hpIso_inv, hx n, sub_self]; rfl
   let Sk := ShortComplex.mk (kernel.ι (X.op ⋙ E).towerDifference) (X.op ⋙ E).towerDifference
     (kernel.condition _)
   obtain ⟨k, hk⟩ := (ShortComplex.ab_exact_iff Sk).1

@@ -444,7 +444,7 @@ theorem cellularApproximation {I : Type w} [Small.{v} I] (G : I → T)
     rw [Functor.ofSequence_map_homOfLE_succ]; exact (approxStep G E (approxStage G E n)).map_elem
   refine ⟨h.pt, h.prop_cellClosure fun n ↦ (approxStage G E n).cell, u, fun i ↦ ⟨?_, fun a ↦ ?_⟩⟩
   · let evalHom : (G i ⟶ h.pt) →+ E.obj (op (G i)) :=
-      { toFun := fun f ↦ E.map f.op u, map_zero' := by simp, map_add' := fun _ _ ↦ by simp }
+      AddMonoidHom.mk' (fun f ↦ E.map f.op u) fun _ _ ↦ by simp
     refine (injective_iff_map_eq_zero evalHom).2 fun f hf ↦ ?_
     obtain ⟨N, g, rfl⟩ := h.exists_eq_comp_ι f
     have hg : E.map g.op (approxStage G E N).elem = 0 := by

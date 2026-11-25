@@ -21,46 +21,27 @@ import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Zero
 # Compact objects for coproducts in a preadditive category
 
 An object `G` of a preadditive category `C` (with morphisms in `Type v`) is **compact for
-coproducts** (`TauCeti.IsCompactForCoproducts G`) if the additive represented functor
-`preadditiveCoyoneda.obj (op G) : C ⥤ AddCommGrpCat.{v}` preserves all `Type v`-indexed
-coproducts. For every colimit cofan `c` on `f : J → C`, the canonical comparison homomorphism
+coproducts** (`TauCeti.IsCompactForCoproducts G`) if `preadditiveCoyoneda.obj (op G)` preserves all
+`Type v`-indexed coproducts. For every colimit cofan `c` on `f : J → C`, the comparison homomorphism
 `directSumHom G c : (⨁ j, (G ⟶ f j)) →+ (G ⟶ c.pt)` sending `g : G ⟶ f j` to `g ≫ c.inj j` is
-always injective (`TauCeti.directSumHom_injective`), and `G` is compact if and only if
-`directSumHom G c` is bijective (equivalently, surjective) for all `Type v`-indexed colimit cofans
-(`TauCeti.isCompactForCoproducts_iff_bijective_directSumHom`,
-`TauCeti.isCompactForCoproducts_iff_surjective_directSumHom`).
+always injective (`TauCeti.directSumHom_injective`), and `G` is compact iff `directSumHom G c` is
+bijective (equivalently, surjective) for all `Type v`-indexed colimit cofans. Compactness holds for
+zero objects, is closed under isomorphisms, retracts, finite coproducts, arbitrary shifts,
+equivalences, and left adjoints whose right adjoint preserves coproducts, and in `AddCommGrpCat.{v}`
+holds for `ULift ℤ` while failing for `∐ₙ ULift ℤ`.
 
-Compactness for coproducts is invariant under isomorphism, holds for zero objects, and is closed
-under retracts, finite coproducts, arbitrary shifts, equivalences, and left adjoints whose right
-adjoint preserves small coproducts (without assuming additivity of the adjoint or shift functor).
-In `AddCommGrpCat.{v}`, the generator `ULift ℤ` is compact whereas the countable coproduct
-`∐ₙ ULift ℤ` is not.
+## Main declarations
 
-## Main definitions
-
-* `TauCeti.IsCompactForCoproducts`: the compactness predicate on objects of a preadditive category.
-* `TauCeti.directSumHom`: the canonical comparison map `(⨁ j, (G ⟶ f j)) →+ (G ⟶ c.pt)` for a
-  cofan `c`.
-* `TauCeti.IsCompactForCoproducts.directSumEquiv`,
-  `TauCeti.IsCompactForCoproducts.coprodDirectSumEquiv`: the resulting additive equivalences
-  retaining the canonical coproduct inclusions.
-
-## Main results
-
-* `TauCeti.directSumHom_injective`: `directSumHom G c` is always injective for a colimit cofan `c`.
-* `TauCeti.isCompactForCoproducts_iff_bijective_directSumHom`,
-  `TauCeti.isCompactForCoproducts_iff_surjective_directSumHom`: direct-sum characterizations of
-  compactness.
-* `TauCeti.IsCompactForCoproducts.of_iso`, `TauCeti.IsCompactForCoproducts.of_isZero`,
-  `TauCeti.IsCompactForCoproducts.of_isColimit_cofan_finite`,
-  `TauCeti.IsCompactForCoproducts.biprod`, `TauCeti.IsCompactForCoproducts.shift`: stability under
-  isomorphisms, zero objects, finite coproducts, and shifts.
-* `CategoryTheory.Retract.isCompactForCoproducts`,
-  `CategoryTheory.Adjunction.isCompactForCoproducts_left`: stability under retracts and left
-  adjoints whose right adjoint preserves coproducts.
+* `TauCeti.IsCompactForCoproducts`, `TauCeti.directSumHom`,
+  `TauCeti.IsCompactForCoproducts.directSumEquiv`,
+  `TauCeti.IsCompactForCoproducts.coprodDirectSumEquiv`.
+* `TauCeti.directSumHom_injective`, `TauCeti.isCompactForCoproducts_iff_bijective_directSumHom`,
+  `TauCeti.isCompactForCoproducts_iff_surjective_directSumHom`.
+* `TauCeti.IsCompactForCoproducts.of_isColimit_cofan_finite`,
+  `TauCeti.IsCompactForCoproducts.shift`, `CategoryTheory.Retract.isCompactForCoproducts`,
+  `CategoryTheory.Adjunction.isCompactForCoproducts_left`.
 * `AddCommGrpCat.isCompactForCoproducts_ulift_int`,
-  `AddCommGrpCat.not_isCompactForCoproducts_coproduct_nat`: `ULift ℤ` is compact in
-  `AddCommGrpCat`, while its countable coproduct is not.
+  `AddCommGrpCat.not_isCompactForCoproducts_coproduct_nat`.
 
 ## References
 
@@ -96,8 +77,7 @@ lemma isCompactForCoproducts_def (G : C) :
 
 /-- A compact object preserves coproducts indexed by any `J : Type v`. -/
 lemma IsCompactForCoproducts.preservesColimitsOfShape {G : C} (hG : IsCompactForCoproducts G)
-    (J : Type v) : PreservesColimitsOfShape (Discrete J) (preadditiveCoyoneda.obj (op G)) :=
-  hG J
+    (J : Type v) : PreservesColimitsOfShape (Discrete J) (preadditiveCoyoneda.obj (op G)) := hG J
 
 /-- A compact object preserves coproducts indexed by any `v`-small type `J`. -/
 lemma IsCompactForCoproducts.preservesColimitsOfShape_of_small {G : C}
@@ -120,16 +100,15 @@ lemma isCompactForCoproducts_iff_of_iso {G H : C} (e : G ≅ H) :
 `c` on `f : J → C`, sending the `j`-th summand `g : G ⟶ f j` to `g ≫ c.inj j`. -/
 def directSumHom (G : C) {J : Type w} [DecidableEq J] {f : J → C} (c : Cofan f) :
     (⨁ j : J, (G ⟶ f j)) →+ (G ⟶ c.pt) :=
-  DirectSum.toAddMonoid fun j ↦
-    { toFun := fun g ↦ g ≫ c.inj j
-      map_zero' := Limits.zero_comp
-      map_add' := fun _ _ ↦ Preadditive.add_comp _ _ _ _ _ _ }
+  DirectSum.toAddMonoid fun j ↦ Preadditive.rightComp G (c.inj j)
+
+lemma directSumHom_def (G : C) {J : Type w} [DecidableEq J] {f : J → C} (c : Cofan f) :
+    directSumHom G c = DirectSum.toAddMonoid fun j ↦ Preadditive.rightComp G (c.inj j) := (rfl)
 
 @[simp]
 lemma directSumHom_of (G : C) {J : Type w} [DecidableEq J] {f : J → C} (c : Cofan f) (j : J)
-    (g : G ⟶ f j) :
-    directSumHom G c (DirectSum.of (fun j ↦ G ⟶ f j) j g) = g ≫ c.inj j := by
-  simp [directSumHom]
+    (g : G ⟶ f j) : directSumHom G c (DirectSum.of (fun j ↦ G ⟶ f j) j g) = g ≫ c.inj j := by
+  simp [directSumHom, Preadditive.rightComp]
 
 /-- The canonical projection `c.pt ⟶ f k` onto the `k`-th summand of a colimit cofan `c` in a
 preadditive category. -/
@@ -236,16 +215,6 @@ theorem isCompactForCoproducts_iff_surjective_directSumHom (G : C) :
   exact forall₅_congr fun _ _ _ _ hc ↦
     ⟨Function.Bijective.surjective, fun hs ↦ ⟨directSumHom_injective G hc, hs⟩⟩
 
-/-- Reindex a colimit cofan along an equivalence of indexing types. -/
-private def isColimitCofanReindex {J : Type w} {J' : Type*} (e : J ≃ J') {f : J → C}
-    {c : Cofan f} (hc : IsColimit c) :
-    IsColimit (Cofan.mk c.pt fun k ↦ c.inj (e.symm k) : Cofan (f ∘ e.symm)) :=
-  let eDiag : (Discrete.equivalence e.symm).functor ⋙ Discrete.functor f ≅
-      Discrete.functor (f ∘ e.symm) := Discrete.natIso fun _ ↦ Iso.refl _
-  ((IsColimit.precomposeInvEquiv eDiag _).symm
-    (hc.whiskerEquivalence (Discrete.equivalence e.symm))).ofIsoColimit <|
-      Cocone.ext (Iso.refl _) fun ⟨_⟩ ↦ by simp [eDiag, Cofan.inj]
-
 /-- If `preadditiveCoyoneda.obj (op G)` preserves `Discrete J`-colimits for a `v`-small type `J`,
 then `directSumHom G c` is bijective for every colimit cofan `c` indexed by `J`. -/
 theorem bijective_directSumHom_of_preserves (G : C) {J : Type w} [Small.{v} J] [DecidableEq J]
@@ -258,7 +227,7 @@ theorem bijective_directSumHom_of_preserves (G : C) {J : Type w} [Small.{v} J] [
   have : PreservesColimitsOfShape (Discrete (Shrink.{v} J)) (preadditiveCoyoneda.obj (op G)) :=
     preservesColimitsOfShape_of_equiv (Discrete.equivalence e) _
   have hbij := (preservesColimit_discrete_iff_bijective_directSumHom G
-    (isColimitCofanReindex e hc)).1 inferInstance
+    ((c.isColimitEquivOfEquiv e.symm) hc)).1 inferInstance
   have hcomp :
       (directSumHom G c).comp (DirectSum.equivCongrLeft e).symm.toAddMonoidHom =
         directSumHom G c' := DirectSum.addHom_ext fun k g ↦ by
@@ -285,6 +254,10 @@ by a `v`-small type `J`, whenever `preadditiveCoyoneda.obj (op G)` preserves
 def directSumEquivOfPreserves : (⨁ j : J, (G ⟶ f j)) ≃+ (G ⟶ c.pt) :=
   AddEquiv.ofBijective (directSumHom G c) (bijective_directSumHom_of_preserves G hc)
 
+lemma coe_directSumEquivOfPreserves :
+    ⇑(directSumEquivOfPreserves G hc) = directSumHom G c :=
+  (rfl)
+
 @[simp]
 lemma directSumEquivOfPreserves_of (j : J) (g : G ⟶ f j) :
     directSumEquivOfPreserves G hc (DirectSum.of (fun j ↦ G ⟶ f j) j g) = g ≫ c.inj j := by
@@ -308,6 +281,10 @@ def IsCompactForCoproducts.directSumEquiv {f : J → C} {c : Cofan f} (hc : IsCo
   have := hG.preservesColimitsOfShape_of_small J
   directSumEquivOfPreserves G hc
 
+lemma IsCompactForCoproducts.coe_directSumEquiv {f : J → C} {c : Cofan f} (hc : IsColimit c) :
+    ⇑(hG.directSumEquiv hc) = directSumHom G c :=
+  (rfl)
+
 @[simp]
 lemma IsCompactForCoproducts.directSumEquiv_of {f : J → C} {c : Cofan f} (hc : IsColimit c)
     (j : J) (g : G ⟶ f j) :
@@ -325,6 +302,10 @@ identify with `⨁ j, (G ⟶ f j)`, retaining the canonical inclusions `Sigma.ι
 def IsCompactForCoproducts.coprodDirectSumEquiv (f : J → C) [HasCoproduct f] :
     (⨁ j : J, (G ⟶ f j)) ≃+ (G ⟶ ∐ f) :=
   hG.directSumEquiv (coproductIsCoproduct f)
+
+lemma IsCompactForCoproducts.coprodDirectSumEquiv_def (f : J → C) [HasCoproduct f] :
+    hG.coprodDirectSumEquiv f = hG.directSumEquiv (coproductIsCoproduct f) :=
+  (rfl)
 
 @[simp]
 lemma IsCompactForCoproducts.coprodDirectSumEquiv_of (f : J → C) [HasCoproduct f]
@@ -414,10 +395,11 @@ theorem Retract.isCompactForCoproducts {C : Type u} [Category.{v} C] [Preadditiv
   obtain ⟨y, hy⟩ :=
     (TauCeti.isCompactForCoproducts_iff_surjective_directSumHom H).1 hH J f c hc (r.r ≫ g)
   let preI : (⨁ j : J, (H ⟶ f j)) →+ (⨁ j : J, (G ⟶ f j)) :=
-    DirectSum.toAddMonoid fun j ↦ (DirectSum.of (fun j ↦ G ⟶ f j) j).comp
-      ⟨⟨(r.i ≫ ·), Limits.comp_zero⟩, fun _ _ ↦ Preadditive.comp_add _ _ _ _ _ _⟩
+    DirectSum.toAddMonoid fun j ↦
+      (DirectSum.of (fun j ↦ G ⟶ f j) j).comp (Preadditive.leftComp (f j) r.i)
   have hcommI : ∀ z, TauCeti.directSumHom G c (preI z) = r.i ≫ TauCeti.directSumHom H c z :=
-    fun z ↦ DirectSum.induction_on z (by simp) (fun _ _ ↦ by simp [preI, Category.assoc])
+    fun z ↦ DirectSum.induction_on z (by simp)
+      (fun _ _ ↦ by simp [preI, Preadditive.leftComp, Category.assoc])
       fun _ _ ha hb ↦ by simp [map_add, ha, hb, Preadditive.comp_add]
   exact ⟨preI y, by rw [hcommI, hy, ← Category.assoc, r.retract, Category.id_comp]⟩
 
@@ -442,14 +424,14 @@ theorem Adjunction.isCompactForCoproducts_left {L : C ⥤ D} {R : D ⥤ C} (adj 
   obtain ⟨y, hy⟩ := (TauCeti.isCompactForCoproducts_iff_surjective_directSumHom G).1 hG J _ _ hcR
     (adj.homEquiv G c.pt u)
   let s := y.support
+  have h0 : adj.homEquiv G c.pt 0 = 0 := by simp [Adjunction.homEquiv_unit]
   have hu_tail : u ≫ TauCeti.cofanTail hc s = 0 := by
     apply (adj.homEquiv G c.pt).injective
-    rw [adj.homEquiv_naturality_right, ← hy, show adj.homEquiv G c.pt 0 = 0 by
-      simp [Adjunction.homEquiv_unit], ← DirectSum.sum_support_of y, map_sum, Preadditive.sum_comp]
+    rw [adj.homEquiv_naturality_right, ← hy, h0, ← DirectSum.sum_support_of y, map_sum,
+      Preadditive.sum_comp]
     refine Finset.sum_eq_zero fun j hj ↦ ?_
-    rw [TauCeti.directSumHom_of, Category.assoc]
-    change y j ≫ R.map (c.inj j) ≫ R.map (TauCeti.cofanTail hc s) = 0
-    rw [← R.map_comp, TauCeti.inj_comp_cofanTail_of_mem hc hj, Functor.map_zero, Limits.comp_zero]
+    rw [TauCeti.directSumHom_of, Category.assoc, cofan_mk_inj, ← R.map_comp,
+      TauCeti.inj_comp_cofanTail_of_mem hc hj, Functor.map_zero, Limits.comp_zero]
   refine ⟨∑ j ∈ s, DirectSum.of (fun j ↦ L.obj G ⟶ f j) j (u ≫ TauCeti.cofanProj hc j), ?_⟩
   rw [map_sum]
   simp only [TauCeti.directSumHom_of, Category.assoc]
@@ -514,7 +496,7 @@ theorem not_isCompactForCoproducts_coproduct_nat :
   obtain ⟨N, hN⟩ := Infinite.exists_notMem_finset x.support
   have hproj : TauCeti.cofanProj (coproductIsCoproduct Z) N = 0 := by
     have h := TauCeti.directSumHom_comp_cofanProj (∐ Z) (coproductIsCoproduct Z) x N
-    change (hK.coprodDirectSumEquiv Z x) ≫ _ = _ at h
+    rw [← hK.coe_directSumEquiv (coproductIsCoproduct Z), ← hK.coprodDirectSumEquiv_def Z] at h
     rw [hx, Category.id_comp, DFinsupp.notMem_support_iff.1 hN] at h
     exact h
   have h1 : (𝟙 (Z N) : Z N ⟶ Z N) = 0 := by
