@@ -26,7 +26,8 @@ and its infimum over nonzero `w ∈ H¹(M)` is the variational form of the first
 properties of `λ₁(L_g)` that need no compactness:
 
 * **The Rayleigh inequality** `λ₁ ‖w‖²_{L²} ≤ E_g(w, w)` for every `w ∈ H¹(M)`
-  (`firstEigenvalue_mul_le_energyForm`).
+  (`firstEigenvalue_mul_le_energyForm`), and `λ₁` is the largest such constant on a nonempty `M`
+  (`le_firstEigenvalue_iff`).
 * **Minimizers are weak eigenfunctions.** If `E_g(w, w) = λ₁ ‖w‖²_{L²}`, then
   `E_g(w, v) = λ₁ ⟪w, v⟫_{L²}` for every `v ∈ H¹(M)`
   (`energyForm_eq_firstEigenvalue_mul_inner`): the quadratic
@@ -115,6 +116,22 @@ theorem firstEigenvalue_mul_le_energyForm (hn : 2 < finrank ℝ E) (w : SobolevH
     ← le_div_iff₀ (pow_pos (SobolevH1.norm_toLp_pos_iff.2 hw) 2), ← subcriticalYamabeQuotient_two]
   exact csInf_le (bddBelow_image_subcriticalYamabeQuotient le_rfl (two_lt_criticalExponent hn).le)
     ⟨w, hw, rfl⟩
+
+/-- **The variational characterization of the first eigenvalue.** On a nonempty closed manifold of
+dimension `n > 2`, a real number `c` is at most the first eigenvalue `λ₁` of the conformal Laplacian
+if and only if `c ‖w‖²_{L²} ≤ E_g(w, w)` for every `w ∈ H¹(M)`. -/
+theorem le_firstEigenvalue_iff [Nonempty M] (hn : 2 < finrank ℝ E) {c : ℝ} :
+    c ≤ firstEigenvalue I M ↔
+      ∀ w : SobolevH1 I M, c * ‖SobolevH1.toLp w‖ ^ 2 ≤ energyForm I w w := by
+  refine ⟨fun h w ↦ (mul_le_mul_of_nonneg_right h (sq_nonneg _)).trans
+    (firstEigenvalue_mul_le_energyForm hn w), fun h ↦ ?_⟩
+  have h1 : SobolevH1.ofSmooth (1 : C^∞⟮I, M; ℝ⟯) ≠ 0 := fun h ↦ by
+    have h2 := SobolevH1.norm_toLp_ofSmooth_one_sq (I := I) (M := M)
+    rw [h, map_zero, norm_zero, zero_pow two_ne_zero] at h2
+    exact riemannianTotalVolume_pos.ne' h2.symm
+  rw [firstEigenvalue_def]
+  exact le_csInf ⟨_, _, h1, rfl⟩ fun _ ⟨w, hw, hw'⟩ ↦ hw' ▸
+    (le_div_iff₀ (pow_pos (SobolevH1.norm_toLp_pos_iff.2 hw) 2)).2 (h w)
 
 /-- **Rayleigh minimizers are weak eigenfunctions.** On a closed manifold of dimension `n > 2`, if
 `w ∈ H¹(M)` attains the first eigenvalue `λ₁` of the conformal Laplacian, in the sense that
@@ -215,15 +232,10 @@ theorem firstEigenvalue_eq_of_conformalLaplacian_eq_mul [Nonempty M]
   have hU0 : SobolevH1.ofSmooth U ≠ 0 := (map_ne_zero_iff _ SobolevH1.ofSmooth_injective).2
     fun h ↦ (hu_pos (Classical.arbitrary M)).ne' <| by
       simpa [U] using congrArg (· (Classical.arbitrary M)) h
-  rw [firstEigenvalue_eq_sInf_subcriticalYamabeQuotient_two]
-  refine le_antisymm ((csInf_le (bddBelow_image_subcriticalYamabeQuotient le_rfl
-    (two_lt_criticalExponent hn).le) ⟨_, hU0, rfl⟩).trans_eq ?_)
-    (le_csInf ⟨_, _, hU0, rfl⟩ fun _ ⟨w, hw, h⟩ ↦ h ▸ ?_)
-  · rw [subcriticalYamabeQuotient_two, energyForm_ofSmooth_eq_mul_inner (u := U) hc,
-      real_inner_self_eq_norm_sq,
-      mul_div_cancel_right₀ _ (pow_pos (SobolevH1.norm_toLp_pos_iff.2 hU0) 2).ne']
-  · rw [subcriticalYamabeQuotient_two, le_div_iff₀ (pow_pos (SobolevH1.norm_toLp_pos_iff.2 hw) 2)]
-    exact hle w
+  refine le_antisymm ?_ ((le_firstEigenvalue_iff hn).2 hle)
+  have h := firstEigenvalue_mul_le_energyForm hn (SobolevH1.ofSmooth U)
+  rw [energyForm_ofSmooth_eq_mul_inner (u := U) hc, real_inner_self_eq_norm_sq] at h
+  exact le_of_mul_le_mul_right h (pow_pos (SobolevH1.norm_toLp_pos_iff.2 hU0) 2)
 
 /-! ### The mean scalar curvature -/
 
