@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import Mathlib.NumberTheory.Real.GoldenRatio
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.OfSquarefree
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Realization
-import Mathlib.Analysis.Complex.ExponentialBounds
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Log.Pow
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
@@ -17,6 +17,7 @@ import TauCeti.NumberTheory.DirichletCharacter.LFunction.DerivBound
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic.FundamentalDiscriminant
 import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.LFunction
+import TauCeti.NumberTheory.Real.GoldenRatio
 
 /-!
 # Effective distance of a quadratic real zero from one
@@ -102,25 +103,17 @@ theorem div_sqrt_conductor_mul_log_sq_le_one_sub_of_LFunction_eq_zero
     (hq : χ.IsQuadratic) (hχ : χ ≠ 1) {β : ℝ} (hβ : χ.LFunction β = 0) :
     Real.log Real.goldenRatio / (32 * √(χ.conductor : ℝ) * Real.log χ.conductor ^ 2) ≤ 1 - β := by
   have hc3 : 3 ≤ χ.conductor := χ.three_le_conductor_of_ne_one hχ
-  have : NeZero χ.conductor := ⟨by omega⟩
-  have hlog_gt1 : 1 < Real.log χ.conductor :=
-    calc (1 : ℝ) < Real.log 3 := by linarith [Real.log_three_gt_d9]
-      _ ≤ Real.log χ.conductor := Real.log_le_log (by norm_num) (by exact_mod_cast hc3)
+  have hlog_gt1 : 1 < Real.log χ.conductor := Real.one_lt_log_of_three_le (mod_cast hc3)
   rcases le_or_gt β 0 with hβ0 | hβ0
-  · have hphi_lt1 : Real.log Real.goldenRatio < 1 := by
-      rw [← Real.log_exp 1]
-      exact Real.log_lt_log Real.goldenRatio_pos
-        (Real.goldenRatio_lt_two.trans (by linarith [Real.exp_one_gt_d9]))
-    have hsqrt_ge1 : 1 ≤ √(χ.conductor : ℝ) :=
+  · have hsqrt_ge1 : 1 ≤ √(χ.conductor : ℝ) :=
       Real.one_le_sqrt.mpr (by exact_mod_cast (by omega : 1 ≤ χ.conductor))
     have hden_ge1 : 1 ≤ 32 * √(χ.conductor : ℝ) * Real.log χ.conductor ^ 2 := by nlinarith
     have hdiv_le1 :
         Real.log Real.goldenRatio / (32 * √(χ.conductor : ℝ) * Real.log χ.conductor ^ 2) ≤ 1 := by
       rw [div_le_iff₀ (by positivity)]
-      linarith
+      linarith [TauCeti.log_goldenRatio_lt_one_half]
     linarith
-  · have hprim_ne : χ.primitiveCharacter ≠ 1 := fun h1 ↦
-      hχ (by rw [← χ.changeLevel_primitiveCharacter, h1, map_one])
+  · have hprim_ne : χ.primitiveCharacter ≠ 1 := (primitiveCharacter_eq_one_iff χ).not.mpr hχ
     have hprim_zero : χ.primitiveCharacter.LFunction β = 0 :=
       (LFunction_changeLevel_eq_zero_iff χ.primitiveCharacter χ.conductor_dvd_level
         (by simpa using hβ0) (.inl hprim_ne)).mp (by rwa [χ.changeLevel_primitiveCharacter])

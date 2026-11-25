@@ -10,6 +10,7 @@ import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.NumberTheory.AbelSummation
 import TauCeti.NumberTheory.DirichletCharacter.Basic
@@ -291,10 +292,10 @@ theorem norm_deriv_LFunction_le_mul_log_sq (hχ : χ ≠ 1) {σ : ℝ}
     (hσ : 1 - 1 / Real.log N ≤ σ) :
     ‖deriv χ.LFunction σ‖ ≤ 64 * Real.log N ^ 2 := by
   have hN3 : 3 ≤ N := χ.three_le_level_of_ne_one hχ
-  have hlog : (23 : ℝ) / 21 < Real.log N :=
-    calc (23 : ℝ) / 21 < Real.log 3 := by linarith [Real.log_three_gt_d9]
-      _ ≤ Real.log N := Real.log_le_log (by norm_num) (by exact_mod_cast hN3)
-  have hlog_pos : 0 < Real.log N := by linarith
+  have hN3' : (3 : ℝ) ≤ N := mod_cast hN3
+  have hlog_pos : 0 < Real.log N := zero_lt_one.trans (Real.one_lt_log_of_three_le hN3')
+  have hlog : (23 : ℝ) / 21 < Real.log N := by
+    linarith [Real.log_three_gt_d9, Real.log_le_log (by norm_num) hN3']
   have hinv : 1 / Real.log N < 21 / 23 := by
     rw [div_lt_div_iff₀ hlog_pos (by norm_num)]
     linarith
@@ -343,10 +344,8 @@ theorem norm_LFunction_one_div_log_sq_le_one_sub_of_LFunction_eq_zero (hχ : χ 
   -- Nonvanishing on `Re(s) ≥ 1` forces `β < 1`; for `β < 1 - 1 / log N` use
   -- `‖L(1, χ)‖ ≤ 1 + log N`.
   have hlog : 1 < Real.log N :=
-    calc (1 : ℝ) < Real.log 3 := by linarith [Real.log_three_gt_d9]
-      _ ≤ Real.log N := Real.log_le_log (by norm_num)
-          (by exact_mod_cast χ.three_le_level_of_ne_one hχ)
-  have hlog_pos : 0 < Real.log N := by linarith
+    Real.one_lt_log_of_three_le (mod_cast χ.three_le_level_of_ne_one hχ)
+  have hlog_pos : 0 < Real.log N := zero_lt_one.trans hlog
   have hβ1 : β < 1 := by
     by_contra! h1
     exact LFunction_ne_zero_of_one_le_re χ (.inl hχ) (by simpa using h1) hβ

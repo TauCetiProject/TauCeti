@@ -32,9 +32,8 @@ rational `a`.
   quadratic field has a presentation with negative squarefree radicand.
 * `NumberField.isTotallyReal_of_finrank_eq_two_of_isReal`: a quadratic field admitting a real
   infinite place is totally real.
-* `NumberField.isTotallyComplex_of_finrank_eq_two_of_discr_neg` and
-  `NumberField.isTotallyReal_of_finrank_eq_two_of_discr_nonneg`: the signature of an arbitrary
-  quadratic field from the sign of its discriminant.
+* `NumberField.isTotallyComplex_of_finrank_eq_two_of_discr_neg`: a quadratic field with negative
+  discriminant is totally complex.
 * `QuadraticAlgebra.isTotallyComplex_iff`: `QuadraticAlgebra ℚ a 0` is totally complex exactly
   when `a < 0`.
 
@@ -100,11 +99,6 @@ theorem isTotallyComplex_of_finrank_eq_two_of_discr_neg (hK : Module.finrank ℚ
   have hc : nrComplexPlaces K = 1 :=
     InfinitePlace.nrComplexPlaces_eq_one_of_discr_lt_zero hd (by omega)
   exact nrRealPlaces_eq_zero_iff.mp (by omega)
-
-/-- A quadratic number field with nonnegative discriminant is totally real. -/
-theorem isTotallyReal_of_finrank_eq_two_of_discr_nonneg (hK : Module.finrank ℚ K = 2)
-    (hd : 0 ≤ discr K) : IsTotallyReal K :=
-  IsTotallyReal.of_zero_lt_discr (lt_of_le_of_ne hd (discr_ne_zero K).symm) (by omega)
 
 end NumberField
 

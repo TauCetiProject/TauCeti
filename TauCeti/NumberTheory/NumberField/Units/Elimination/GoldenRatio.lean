@@ -85,11 +85,11 @@ imaginary) has regulator at least `log φ`, where `φ = (1 + √5) / 2` is the g
 at `ℚ(√5)`). -/
 theorem log_goldenRatio_le_regulator (hdeg : Module.finrank ℚ K = 2) :
     Real.log Real.goldenRatio ≤ NumberField.Units.regulator K := by
-  rcases lt_or_ge (discr K) 0 with hneg | hnonneg
+  rcases lt_or_gt_of_ne (discr_ne_zero K) with hneg | hpos
   · have : IsTotallyComplex K := isTotallyComplex_of_finrank_eq_two_of_discr_neg hdeg hneg
     rw [NumberField.Units.regulator_eq_one_of_isTotallyComplex_of_finrank_eq_two K hdeg]
     linarith [TauCeti.log_goldenRatio_lt_one_half]
-  · have : IsTotallyReal K := isTotallyReal_of_finrank_eq_two_of_discr_nonneg hdeg hnonneg
+  · have : IsTotallyReal K := IsTotallyReal.of_zero_lt_discr hpos (by omega)
     obtain ⟨w⟩ := (inferInstance : Nonempty (InfinitePlace K))
     have hw : w.IsReal := IsTotallyReal.isReal w
     exact (unitCandidateEliminationCertificate_goldenRatio hdeg).log_le_regulator

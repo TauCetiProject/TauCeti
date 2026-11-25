@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
 import TauCeti.Data.ZMod.Units
+import TauCeti.NumberTheory.DirichletCharacter.Conductor
 import TauCeti.NumberTheory.MulChar.Basic
 
 /-!
@@ -162,10 +163,8 @@ theorem three_le_level_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [N
 
 /-- Any nonprincipal Dirichlet character at a nonzero level has conductor at least `3`. -/
 theorem three_le_conductor_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
-    {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 3 ≤ χ.conductor := by
-  have : NeZero χ.conductor := ⟨χ.conductor_ne_zero⟩
-  refine three_le_level_of_ne_one (χ := χ.primitiveCharacter) fun h ↦ hχ ?_
-  rw [← χ.changeLevel_primitiveCharacter, h, changeLevel_one]
+    {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 3 ≤ χ.conductor :=
+  three_le_level_of_ne_one ((primitiveCharacter_eq_one_iff χ).not.mpr hχ)
 
 /-- A character which factors through `d` takes the same value on level-units congruent modulo
 `d`. -/

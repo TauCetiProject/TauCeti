@@ -83,54 +83,35 @@ private theorem discr_le_embedding_of_isReal_sub_norm_div_sq_of_one_lt {w : Infi
     (discr K : ℝ) ≤
       (embedding_of_isReal hw (u : K) -
         (Algebra.norm ℚ (u : K) : ℝ) / embedding_of_isReal hw (u : K)) ^ 2 := by
-  have : IsTotallyReal K := isTotallyReal_of_finrank_eq_two_of_isReal hK hw
-  have hD5 : 5 ≤ discr K := five_le_discr_of_isTotallyReal hK
-  set x : ℝ := embedding_of_isReal hw (u : K)
-  have hx0 : 0 < x := zero_lt_one.trans hu
-  have hut : u ∉ torsion K := fun h ↦ by
-    have hw1 := (NumberField.Units.mem_torsion K).mp h w
-    rw [← norm_embedding_of_isReal hw, Real.norm_eq_abs, abs_of_pos hx0] at hw1
-    exact hu.ne' hw1
+  -- `u` is non-torsion, so in degree `2` it is an integral primitive element of `K`.
   let θ : IntegralPrimitiveElement K :=
-    ⟨u, adjoin_eq_top_of_finrank_prime (hK ▸ Nat.prime_two) hut⟩
+    ⟨u, adjoin_eq_top_of_finrank_prime (hK ▸ Nat.prime_two)
+      (notMem_torsion_of_one_lt_embedding_of_isReal hw hu)⟩
+  set x : ℝ := embedding_of_isReal hw (u : K)
   set f : ℤ[X] := minpoly ℤ (u : 𝓞 K)
   have hmonic : f.Monic := minpoly.monic (u : 𝓞 K).isIntegral
-  have hdegf : f.natDegree = 2 := by
-    have h := θ.powerBasis.natDegree_minpoly
-    rw [IntegralPrimitiveElement.powerBasis_gen, ← θ.powerBasis.finrank, hK,
-      RingOfIntegers.minpoly_rat_coe,
-      natDegree_map_eq_of_injective (algebraMap ℤ ℚ).injective_int] at h
-    exact h
-  have hc2 : f.coeff 2 = 1 := hdegf ▸ hmonic.coeff_natDegree
+  have hdegf : f.natDegree = 2 := θ.natDegree_minpoly.trans hK
   have hc0 : (f.coeff 0 : ℝ) = Algebra.norm ℚ (u : K) := by
-    have hpb := Algebra.PowerBasis.norm_gen_eq_coeff_zero_minpoly θ.powerBasis
-    have hdim : θ.powerBasis.dim = 2 := by rw [← θ.powerBasis.finrank, hK]
-    rw [IntegralPrimitiveElement.powerBasis_gen, hdim, RingOfIntegers.minpoly_rat_coe,
-      coeff_map, eq_intCast] at hpb
-    exact_mod_cast (by simpa using hpb.symm : (f.coeff 0 : ℚ) = Algebra.norm ℚ (u : K))
-  have hroot : x ^ 2 + (f.coeff 1 : ℝ) * x + (f.coeff 0 : ℝ) = 0 := by
-    set φ : 𝓞 K →ₐ[ℤ] ℝ := ((embedding_of_isReal hw).comp (algebraMap (𝓞 K) K)).toIntAlgHom
-    have hφu : φ (u : 𝓞 K) = x := by
-      rw [RingHom.toIntAlgHom_apply, RingHom.comp_apply]
-    have ha : aeval x f = 0 := by
-      rw [← hφu, Polynomial.aeval_algHom_apply, minpoly.aeval, map_zero]
-    rw [aeval_eq_sum_range, hdegf] at ha
-    simp only [Finset.sum_range_succ, Finset.sum_range_zero, zsmul_eq_mul, hc2, Int.cast_one,
-      pow_zero, pow_one, zero_add] at ha
-    linarith
-  have hfdiscr : (f.discr : ℝ) = (x - (f.coeff 0 : ℝ) / x) ^ 2 := by
-    have hdeg2 : f.degree = 2 := by rw [degree_eq_natDegree hmonic.ne_zero, hdegf]; rfl
-    rw [Polynomial.discr_eq_discrim_of_degree_eq_two hdeg2, discrim, hc2]
+    rw [θ.norm_eq_coeff_zero_minpoly, hK]
     push_cast
-    have hm : (f.coeff 1 : ℝ) = -(x + (f.coeff 0 : ℝ) / x) := by field_simp [hx0.ne']; linarith
-    rw [hm]; field_simp [hx0.ne']; ring
+    ring
+  -- Map `f` to `ℝ[X]`, where `x > 1` is a nonzero root, so `discr f = (x - N(u) / x) ^ 2`.
+  have hroot : (f.map (algebraMap ℤ ℝ)).IsRoot x := by
+    rw [IsRoot.def, eval_map_algebraMap]
+    exact minpoly.aeval_algHom ℤ
+      ((embedding_of_isReal hw).comp (algebraMap (𝓞 K) K)).toIntAlgHom (u : 𝓞 K)
+  have hfdiscr : (f.discr : ℝ) = (x - (Algebra.norm ℚ (u : K) : ℝ) / x) ^ 2 := by
+    rw [← eq_intCast (algebraMap ℤ ℝ), ← hmonic.discr_map (algebraMap ℤ ℝ),
+      (hmonic.map _).discr_eq_sub_coeff_zero_div_sq_of_isRoot ((hmonic.natDegree_map _).trans hdegf)
+        (zero_lt_one.trans hu).ne' hroot,
+      coeff_map, eq_intCast, hc0]
+  -- The index formula `f.discr = [𝓞 K : ℤ[u]]² · discr K` bounds `f.discr` below by `discr K > 0`.
+  have : IsTotallyReal K := isTotallyReal_of_finrank_eq_two_of_isReal hK hw
+  have hD5 : 5 ≤ discr K := five_le_discr_of_isTotallyReal hK
   have hidx : discr K ≤ f.discr := by
     rw [θ.discr_minpoly_eq_index_sq_mul_discr]
-    have h1 : (1 : ℤ) ≤ (θ.index : ℤ) ^ 2 := by
-      have : (1 : ℤ) ≤ θ.index := mod_cast θ.index_pos
-      nlinarith
-    nlinarith
-  rw [← hc0, ← hfdiscr]
+    exact le_mul_of_one_le_left (by linarith) (one_le_pow₀ (mod_cast θ.index_pos))
+  rw [← hfdiscr]
   exact_mod_cast hidx
 
 /-- **Norm-one unit lower bound in a real quadratic field.** If `u` is a unit of norm `1` whose
@@ -143,12 +124,11 @@ theorem sqrt_discr_add_four_add_sqrt_div_two_le_embedding_of_isReal_of_norm_eq_o
   rw [hnorm, Rat.cast_one] at hsq
   set x := embedding_of_isReal hw (u : K)
   have hx0 : 0 < x := zero_lt_one.trans hu
-  have hsub_pos : 0 ≤ x - 1 / x := by
-    rw [le_sub_iff_add_le, zero_add, div_le_iff₀ hx0]
-    nlinarith
-  have h1 : √(discr K : ℝ) ≤ x - 1 / x := Real.sqrt_le_iff.mpr ⟨hsub_pos, hsq⟩
+  have h1 : √(discr K : ℝ) ≤ x - 1 / x :=
+    Real.sqrt_le_iff.mpr ⟨by linarith [div_le_self zero_le_one hu.le], hsq⟩
   have hadd_sq : (discr K : ℝ) + 4 ≤ (x + 1 / x) ^ 2 := by
-    have hid : (x + 1 / x) ^ 2 = (x - 1 / x) ^ 2 + 4 := by field_simp [hx0.ne']; ring
+    have hid : (x + 1 / x) ^ 2 = (x - 1 / x) ^ 2 + 4 := by
+      linear_combination 4 * mul_one_div_cancel hx0.ne'
     linarith
   have h2 : √((discr K : ℝ) + 4) ≤ x + 1 / x :=
     Real.sqrt_le_iff.mpr ⟨by positivity, hadd_sq⟩
@@ -176,13 +156,12 @@ theorem sqrt_discr_add_sqrt_sub_four_div_two_le_embedding_of_isReal {w : Infinit
       ring
     have h1 : √(discr K : ℝ) ≤ x + 1 / x :=
       Real.sqrt_le_iff.mpr ⟨by positivity, hsq'⟩
-    have hsub_pos : 0 ≤ x - 1 / x := by
-      rw [le_sub_iff_add_le, zero_add, div_le_iff₀ hx0]
-      nlinarith
     have hsub_sq : (discr K : ℝ) - 4 ≤ (x - 1 / x) ^ 2 := by
-      have hid : (x - 1 / x) ^ 2 = (x + 1 / x) ^ 2 - 4 := by field_simp [hx0.ne']; ring
+      have hid : (x - 1 / x) ^ 2 = (x + 1 / x) ^ 2 - 4 := by
+        linear_combination -4 * mul_one_div_cancel hx0.ne'
       linarith
-    have h2 : √((discr K : ℝ) - 4) ≤ x - 1 / x := Real.sqrt_le_iff.mpr ⟨hsub_pos, hsub_sq⟩
+    have h2 : √((discr K : ℝ) - 4) ≤ x - 1 / x :=
+      Real.sqrt_le_iff.mpr ⟨by linarith [div_le_self zero_le_one hu.le], hsub_sq⟩
     linarith
 
 /-- **Normalized fundamental unit of a real quadratic field.** At any real infinite place `w` of a
@@ -212,26 +191,33 @@ theorem exists_one_lt_embedding_of_isReal_and_regulator_eq_log {w : InfinitePlac
   obtain ⟨ε, hε⟩ := w.exists_torsion_mul_embedding_eq_abs hw u₀
   exact ⟨ε.val * u₀, hε.symm ▸ hu₀_gt, hu₀_reg.trans (congrArg Real.log hε.symm)⟩
 
+/-- In a real quadratic field (`0 < discr K`), a positive lower bound `B` valid at every real place
+on units `u` with `1 < w(u)` gives `log B ≤ regulator K`. -/
+private theorem log_le_regulator_of_zero_lt_discr (hK : finrank ℚ K = 2) (hd : 0 < discr K)
+    {B : ℝ} (hB : 0 < B)
+    (hle : ∀ (w : InfinitePlace K) (hw : w.IsReal) (u : (𝓞 K)ˣ),
+      1 < embedding_of_isReal hw (u : K) → B ≤ embedding_of_isReal hw (u : K)) :
+    Real.log B ≤ regulator K := by
+  have : IsTotallyReal K := IsTotallyReal.of_zero_lt_discr hd (by omega)
+  obtain ⟨w⟩ := (inferInstance : Nonempty (InfinitePlace K))
+  obtain ⟨u, hu, hreg⟩ :=
+    exists_one_lt_embedding_of_isReal_and_regulator_eq_log (IsTotallyReal.isReal w) hK
+  rw [hreg]
+  exact Real.log_le_log hB (hle w (IsTotallyReal.isReal w) u hu)
+
 /-- **Discriminant-dependent lower bound on the regulator of a quadratic field.** For any quadratic
 field `K` of discriminant `D`, `log ((√D + √(D - 4)) / 2) ≤ regulator K`. For real quadratic fields
 (`D > 0`) this bound is sharp (attained by `ℚ(√5)`); for imaginary quadratic fields (`D < 0`, where
 `regulator K = 1`) it holds trivially because `Real.sqrt` evaluates to `0` on negative reals. -/
 theorem log_sqrt_discr_add_sqrt_sub_four_div_two_le_regulator (hK : finrank ℚ K = 2) :
     Real.log ((√(discr K : ℝ) + √((discr K : ℝ) - 4)) / 2) ≤ regulator K := by
-  rcases lt_or_ge (discr K) 0 with hneg | hnonneg
+  rcases lt_or_gt_of_ne (discr_ne_zero K) with hneg | hpos
   · have hD0 : (discr K : ℝ) ≤ 0 := mod_cast hneg.le
     rw [Real.sqrt_eq_zero_of_nonpos hD0, Real.sqrt_eq_zero_of_nonpos (by linarith)]
     simpa using (regulator_pos K).le
-  · have : IsTotallyReal K := isTotallyReal_of_finrank_eq_two_of_discr_nonneg hK hnonneg
-    obtain ⟨w⟩ := (inferInstance : Nonempty (InfinitePlace K))
-    obtain ⟨u, hu, hreg⟩ :=
-      exists_one_lt_embedding_of_isReal_and_regulator_eq_log (IsTotallyReal.isReal w) hK
-    have hD5 : (5 : ℝ) ≤ discr K := mod_cast five_le_discr_of_isTotallyReal hK
-    have hpos : 0 < (√(discr K : ℝ) + √((discr K : ℝ) - 4)) / 2 := by
-      have : 0 < √(discr K : ℝ) := Real.sqrt_pos.mpr (by linarith)
-      positivity
-    rw [hreg]
-    exact Real.log_le_log hpos (sqrt_discr_add_sqrt_sub_four_div_two_le_embedding_of_isReal _ hK hu)
+  · have : 0 < √(discr K : ℝ) := Real.sqrt_pos.mpr (Int.cast_pos.mpr hpos)
+    exact log_le_regulator_of_zero_lt_discr hK hpos (by positivity) fun _ hw _ hu ↦
+      sqrt_discr_add_sqrt_sub_four_div_two_le_embedding_of_isReal hw hK hu
 
 /-- **Regulator lower bound when no unit has norm `-1`.** If `K` is a quadratic field of
 discriminant `D` in which every unit has norm `1`, then `log ((√(D + 4) + √D) / 2) ≤ regulator K`.
@@ -241,22 +227,14 @@ vanishes on nonpositive reals. -/
 theorem log_sqrt_discr_add_four_add_sqrt_div_two_le_regulator (hK : finrank ℚ K = 2)
     (hnorm : ∀ u : (𝓞 K)ˣ, Algebra.norm ℚ (u : K) = 1) :
     Real.log ((√((discr K : ℝ) + 4) + √(discr K : ℝ)) / 2) ≤ regulator K := by
-  rcases lt_or_ge (discr K) 0 with hneg | hnonneg
+  rcases lt_or_gt_of_ne (discr_ne_zero K) with hneg | hpos
   · have hD1 : (discr K : ℝ) ≤ -1 := mod_cast Int.le_sub_one_of_lt hneg
     have hsqrt3 : √((discr K : ℝ) + 4) ≤ 2 :=
       Real.sqrt_le_iff.mpr ⟨by norm_num, by linarith⟩
     rw [Real.sqrt_eq_zero_of_nonpos (x := (discr K : ℝ)) (by linarith), add_zero]
     exact (Real.log_nonpos (by positivity) (by linarith)).trans (regulator_pos K).le
-  · have : IsTotallyReal K := isTotallyReal_of_finrank_eq_two_of_discr_nonneg hK hnonneg
-    obtain ⟨w⟩ := (inferInstance : Nonempty (InfinitePlace K))
-    obtain ⟨u, hu, hreg⟩ :=
-      exists_one_lt_embedding_of_isReal_and_regulator_eq_log (IsTotallyReal.isReal w) hK
-    have hD5 : (5 : ℝ) ≤ discr K := mod_cast five_le_discr_of_isTotallyReal hK
-    have hpos : 0 < (√((discr K : ℝ) + 4) + √(discr K : ℝ)) / 2 := by
-      have : 0 < √(discr K : ℝ) := Real.sqrt_pos.mpr (by linarith)
-      positivity
-    rw [hreg]
-    exact Real.log_le_log hpos
-      (sqrt_discr_add_four_add_sqrt_div_two_le_embedding_of_isReal_of_norm_eq_one _ hK hu (hnorm u))
+  · have : 0 < √(discr K : ℝ) := Real.sqrt_pos.mpr (Int.cast_pos.mpr hpos)
+    exact log_le_regulator_of_zero_lt_discr hK hpos (by positivity) fun _ hw u hu ↦
+      sqrt_discr_add_four_add_sqrt_div_two_le_embedding_of_isReal_of_norm_eq_one hw hK hu (hnorm u)
 
 end TauCeti.NumberField.Units

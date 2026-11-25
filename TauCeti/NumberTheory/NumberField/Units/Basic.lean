@@ -31,7 +31,9 @@ to see that a non-torsion unit of a field of prime degree generates the field.
 * `TauCeti.NumberField.Units.coeff_zero_minpoly_eq_one_or_neg_one`: the constant coefficient
   of the minimal polynomial of a unit is `±1`.
 * `TauCeti.NumberField.Units.mem_torsion_of_mem_bot`: a unit whose image in `K` lies in the
-  base field `ℚ` is torsion.
+  base field `ℚ` is torsion, and
+  `TauCeti.NumberField.Units.notMem_torsion_of_one_lt_embedding_of_isReal`: a unit whose real
+  embedding at a real infinite place exceeds `1` is not torsion.
 * `Units.prod_norm_embedding_eq_one`: the absolute values of the conjugates of a unit have
   product `|N(u)| = 1`.
 * `NumberField.InfinitePlace.exists_torsion_mul_embedding_eq_abs`: a torsion sign makes a
@@ -138,5 +140,12 @@ theorem mem_torsion_of_mem_bot {v : (𝓞 K)ˣ} (hv : (v : K) ∈ (⊥ : Interme
     Real.eq_one_of_pos_of_log_eq_zero (norm_pos_iff.mpr hq0)
       ((mul_eq_zero.mp hlog).resolve_left (by exact_mod_cast Module.finrank_pos.ne'))
   exact (mem_torsion K).mpr fun w => by rw [hval, h1]
+
+/-- A unit whose real embedding at a real infinite place exceeds `1` is not a torsion unit. -/
+theorem notMem_torsion_of_one_lt_embedding_of_isReal {w : InfinitePlace K} (hw : w.IsReal)
+    {u : (𝓞 K)ˣ} (hu : 1 < embedding_of_isReal hw (u : K)) : u ∉ torsion K := fun h ↦ by
+  have hw1 := (mem_torsion K).mp h w
+  rw [← norm_embedding_of_isReal hw, Real.norm_eq_abs, abs_of_pos (zero_lt_one.trans hu)] at hw1
+  exact hu.ne' hw1
 
 end TauCeti.NumberField.Units

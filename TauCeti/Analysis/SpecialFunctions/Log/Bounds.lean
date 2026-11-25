@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.PosLog
 public import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Analysis.Complex.ExponentialBounds
 
 /-!
 # Elementary bounds for the real logarithm
@@ -15,7 +16,8 @@ From `log x ≤ x - 1` for `x > 0` (`Real.log_le_sub_one_of_pos`) applied at `x 
 one obtains `log 4 = 2 log 2 ≤ 2` and `log x / x ≤ 1 / 2` for every real `x ≥ 0` (holding at
 `x = 0` via `0 / 0 = 0`). The first compares explicit prime-counting constants involving `log 4`
 with rational constants, and the second bounds the contribution `log p / p` of a single prime at a
-real cutoff `x` when passing between inclusive and strict prime sums.
+real cutoff `x` when passing between inclusive and strict prime sums. Conversely, `e < 3` yields
+`1 < log x` for every `x ≥ 3` (`Real.one_lt_log_of_three_le`).
 
 Near `1` from below, `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`
 (`Real.abs_log_le_two_mul_one_sub`), which turns exponential decay of `1 - x` into exponential
@@ -35,6 +37,7 @@ in explicit prime-counting estimates.
 
 ## Main results
 
+* `Real.one_lt_log_of_three_le`: `1 < log x` for `3 ≤ x`.
 * `Real.log_four_le_two`: `log 4 ≤ 2`.
 * `Real.log_div_self_le_half`: `log x / x ≤ 1 / 2` for every nonnegative real `x`.
 * `Real.abs_log_le_two_mul_one_sub`: `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`.
@@ -48,6 +51,10 @@ in explicit prime-counting estimates.
 public section
 
 namespace Real
+
+/-- For `x ≥ 3`, `1 < log x`. -/
+theorem one_lt_log_of_three_le {x : ℝ} (hx : 3 ≤ x) : 1 < log x :=
+  (lt_log_iff_exp_lt (by linarith)).mpr (exp_one_lt_three.trans_le hx)
 
 /-- The natural logarithm of `4` is at most `2`. -/
 theorem log_four_le_two : log 4 ≤ 2 := by
