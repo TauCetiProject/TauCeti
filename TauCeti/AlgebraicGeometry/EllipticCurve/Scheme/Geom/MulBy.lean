@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GroupLaw
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.GroupLaw
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.Grp
-import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation
+import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
 
 /-!
 # Multiplication by an integer on an elliptic curve over a scheme

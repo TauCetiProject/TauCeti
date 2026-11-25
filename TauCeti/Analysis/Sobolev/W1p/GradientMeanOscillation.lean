@@ -8,7 +8,8 @@ module
 public import Mathlib.MeasureTheory.Integral.Average
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Campanato
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
@@ -91,28 +92,6 @@ theorem W1p.integrableOn_closedBall_gradient {Omega : Opens (EuclideanSpace ℝ 
   · exact ((Lp.memLp (W1p.gradient u)).integrableOn_of_subset one_le_two hball
       measure_ball_lt_top.ne).congr_set_ae (volume.addHaar_closedBall_ae_eq_ball z t)
 
-/-- **Jensen's inequality for the mean oscillation.** The squared mean oscillation of `∇u` on
-`closedBall z t`, times the volume of the ball, is at most the square mean oscillation
-`∫_{B_t} ‖∇u - (∇u)_{B_t}‖²`. -/
-private theorem W1p.sq_setAverage_closedBall_norm_gradient_sub_mul_le
-    {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (u : W1p volume Omega 2)
-    {z : EuclideanSpace ℝ (Fin (n + 1))} {t : ℝ} (hball : ball z t ⊆ Omega) (ht : 0 < t) :
-    (⨍ y in closedBall z t, ‖W1p.gradient u y - ⨍ w in closedBall z t, W1p.gradient u w‖) ^ 2 *
-        volume.real (ball z t) ≤
-      ∫ x in ball z t, ‖W1p.gradient u x - ⨍ y in ball z t, W1p.gradient u y‖ ^ 2 := by
-  rw [volume.restrict_closedBall_eq_restrict_ball z t]
-  have hpos := measureReal_ball_pos volume z ht
-  have hJ := sq_setAverage_norm_le_setAverage_norm_sq
-    ((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset hball measure_ball_lt_top.ne
-      (⨍ y in ball z t, W1p.gradient u y))
-  have hav : ⨍ x in ball z t, ‖W1p.gradient u x - ⨍ y in ball z t, W1p.gradient u y‖ ^ 2 =
-      (volume.real (ball z t))⁻¹ *
-        ∫ x in ball z t, ‖W1p.gradient u x - ⨍ y in ball z t, W1p.gradient u y‖ ^ 2 := by
-    rw [setAverage_eq, smul_eq_mul]
-  rw [hav] at hJ
-  calc _ ≤ _ := mul_le_mul_of_nonneg_right hJ hpos.le
-    _ = _ := by field_simp
-
 /-- The squared norm of the average of `∇u` over `closedBall z t`, times the volume of the ball,
 is at most `∫_{B_t} ‖∇u‖²`. -/
 theorem W1p.sq_norm_setAverage_closedBall_gradient_mul_le
@@ -120,15 +99,9 @@ theorem W1p.sq_norm_setAverage_closedBall_gradient_mul_le
     {z : EuclideanSpace ℝ (Fin (n + 1))} {t : ℝ} (hball : ball z t ⊆ Omega) :
     ‖⨍ y in closedBall z t, W1p.gradient u y‖ ^ 2 * volume.real (ball z t) ≤
       ∫ x in ball z t, ‖W1p.gradient u x‖ ^ 2 := by
-  rw [volume.restrict_closedBall_eq_restrict_ball z t]
-  have h := setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add
-    measure_ball_lt_top.ne
-    ((Lp.memLp (W1p.gradient u)).integrableOn_of_subset one_le_two hball measure_ball_lt_top.ne)
-    ((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset hball
-      measure_ball_lt_top.ne 0)
-  simp only [sub_zero] at h
-  rw [h, mul_comm]
-  exact le_add_of_nonneg_left (setIntegral_nonneg measurableSet_ball fun _ _ => by positivity)
+  rw [volume.restrict_closedBall_eq_restrict_ball z t, mul_comm]
+  exact measureReal_mul_sq_norm_setAverage_le measure_ball_lt_top.ne
+    ((Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono hball le_rfl))
 
 /-- **Mean oscillation from square mean oscillation.** If
 `∫_{B_r} ‖∇u - (∇u)_{B_r}‖² ≤ C V (r / R)^{n+1} (r / R)^{2κ}`, then the mean oscillation of `∇u`
@@ -143,30 +116,12 @@ theorem W1p.setAverage_closedBall_norm_gradient_sub_le
     ⨍ y in closedBall z r, ‖W1p.gradient u y - ⨍ w in closedBall z r, W1p.gradient u w‖ ≤
       √(C * (V / (volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * R ^ (n + 1)))) *
         R ^ (-κ) * r ^ κ := by
-  have hω := measureReal_ball_pos volume (0 : EuclideanSpace ℝ (Fin (n + 1))) one_pos
-  have h1 := (W1p.sq_setAverage_closedBall_norm_gradient_sub_mul_le u hball hr).trans hψ
-  rw [Measure.addHaar_real_ball_of_pos _ z hr, finrank_euclideanSpace_fin,
-    mul_comm _ (volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1))] at h1
-  have hsq : ((r / R) ^ κ) ^ 2 = (r / R) ^ (2 * κ) := by
-    rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
-    ring_nf
-  have h2 : C * V * ((r / R) ^ (n + 1) * (r / R) ^ (2 * κ)) =
-      C * (V / (volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * R ^ (n + 1))) *
-        ((r / R) ^ κ) ^ 2 *
-        (volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * r ^ (n + 1)) := by
-    rw [hsq, div_pow]
-    field_simp
-  have h3 := le_of_mul_le_mul_right (h1.trans_eq h2) (by positivity)
-  have h4 : (⨍ y in closedBall z r,
-      ‖W1p.gradient u y - ⨍ w in closedBall z r, W1p.gradient u w‖) ≤
-        √(C * (V / (volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * R ^ (n + 1)))) *
-          (r / R) ^ κ := by
-    rw [← Real.sqrt_sq (average_nonneg fun _ => norm_nonneg _),
-      ← Real.sqrt_sq (by positivity : (0 : ℝ) ≤ (r / R) ^ κ), ← Real.sqrt_mul' _ (by positivity)]
-    exact Real.sqrt_le_sqrt h3
-  refine h4.trans_eq ?_
-  rw [Real.div_rpow_eq_rpow_neg_mul_rpow hr.le hR]
-  ring
+  have h := MeasureTheory.setAverage_closedBall_restrict_norm_sub_le (μ := volume) (Ω := univ)
+    (c := 1) one_pos hR hr (by simp)
+    ((Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono (by simpa using hball) le_rfl))
+    (by simpa only [inter_univ, finrank_euclideanSpace_fin] using hψ)
+  rwa [Measure.restrict_univ, Measure.addHaar_real_ball_of_pos _ z hR, finrank_euclideanSpace_fin,
+    NNReal.coe_one, div_one, mul_comm (R ^ (n + 1))] at h
 
 /-- If `∫_{B_t} ‖∇u - (∇u)_{B_t}‖² ≤ C (R^{(n+1)/2+a} Q)² (t / R)^{n+1+2a}`, then the mean
 oscillation of `∇u` on `closedBall z t` is at most `√(C / ω) Q t^a`, where `ω` is the volume of

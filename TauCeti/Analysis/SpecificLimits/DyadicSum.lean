@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Topology.Algebra.InfiniteSum.Real
 
 /-!
 # Sums over dyadic scales
@@ -45,6 +46,24 @@ exponents `s + δ` and `N (1 - δ)`, so the series sums to at most
 `E D^δ C^(1 - δ) d^δ r^(-(s + δ))` when `0 < s + δ < N (1 - δ)`. This is how increments of a
 kernel at distance `d`, cut into dyadic pieces, are bounded by `d^δ`.
 
+For `Q ≥ 1`, at most `2Q + 1` dyadic scales `2^k` are comparable to a given `2^j` up to the factor
+`Q`, that is, satisfy `2^j ≤ Q 2^k` and `2^k ≤ Q 2^j`, and for these `2^{σ (j - k)} ≤ Q ^ |σ|`.
+These count and weigh the Littlewood–Paley pieces met by a translated piece.
+
+For `u > 0` and an integer `k`, the weights `2^{u(j-k)}` of the integers `j < k` sum to at most
+`1 / (2^u - 1)`: they form a geometric series of ratio `2^{-u}` starting at `2^{-u}`. This sums
+lower-frequency contributions with a gain over the Littlewood–Paley decomposition.
+
+For `ε > 0`, the two-sided series `∑_{m ∈ ℤ} 2^{-ε |m|}` in `ℝ≥0∞` is finite, being the
+bilateral geometric series of ratio `2^{-ε}`. For `σ ≥ 1` the shifted sums
+`∑_{j ∈ ℤ} 2^{-ε |x - σ j|}` are at most `2^ε ∑_{m ∈ ℤ} 2^{-ε |m|}`, uniformly in `x`, since the
+points `σ j` are `1`-separated. These sum per-scale bounds over the dyadic time shells
+`|s - t| ≈ 2^j` in the endpoint Strichartz estimate.
+
+In a sum over `l ∈ ℤ` of terms `Yₗ ∈ ℝ≥0∞` with dyadic weights `2^{lσ}`, shifting the index of
+the weight by each `d` in a finite set `S` multiplies the sum by `∑_{d ∈ S} 2^{dσ}`. This sums
+estimates of a block by its neighbouring blocks over the Littlewood–Paley decomposition.
+
 Finally, for a base `b > 1`, a function `R` antitone on `(0, ∞)` is bounded by step functions
 built from its values at the left endpoints of the scales `b ^ n s`: on `(0, s]` by the values
 `R (b⁻¹ ^ (n + 1) s)` on `(b⁻¹ ^ (n + 1) s, b⁻¹ ^ n s]`, and on `[s, ∞)` by the values `R (b ^ n s)`
@@ -63,6 +82,17 @@ dyadic series.
 * `TauCeti.exists_norm_le_of_hasSum_of_le_of_le`: a series whose terms are bounded by
   `D (2^j)^(s + 1) d` and by `C (2^j)^s (1 + 2^j r)^(-N)` sums to at most
   `E D^δ C^(1 - δ) d^δ r^(-(s + δ))`.
+* `TauCeti.card_filter_two_pow_le_mul_two_pow_le`: for `Q ≥ 1`, at most `2Q + 1` indices `k` have
+  `2^j ≤ Q 2^k` and `2^k ≤ Q 2^j`, and for these `2^{σ (j - k)} ≤ Q ^ |σ|`
+  (`TauCeti.two_rpow_mul_sub_le_rpow_abs`).
+* `TauCeti.sum_ite_two_rpow_le`: `∑_{j ∈ F, j < k} 2^{u(j-k)} ≤ 1 / (2^u - 1)` for `u > 0`.
+* `TauCeti.summable_two_rpow_neg_mul_abs`: `m ↦ 2^{-r|m|}` is summable over `ℤ` for `r > 0`.
+* `TauCeti.tsum_two_rpow_neg_mul_abs_ne_top`, `TauCeti.tsum_two_rpow_neg_mul_abs_sub_le`: the
+  two-sided series `∑_{m ∈ ℤ} 2^{-ε |m|}` is finite and bounds its shifts by `σ`-separated points.
+* `TauCeti.tsum_sum_ofReal_two_zpow_add_rpow_mul`: shifting the dyadic weights `2^{lσ}` of a
+  sum by the elements of a finite set `S` multiplies it by `∑_{d ∈ S} 2^{dσ}`.
+* `TauCeti.sum_range_sub_le_tsum`: a sum over the truncation `-N ≤ k < N` of `ℤ` is at most the
+  sum over all of `ℤ`.
 * `AntitoneOn.le_tsum_indicator_Ioc`, `AntitoneOn.le_tsum_indicator_Ico`: a function antitone on
   `(0, ∞)` is bounded on `(0, s]` and on `[s, ∞)` by its values at the left endpoints of the
   intervals between consecutive scales `b ^ n s`.
@@ -339,6 +369,152 @@ theorem exists_norm_le_of_hasSum_of_le_of_le {s δ : ℝ} {N : ℕ} (hsδ : 0 < 
           |>.trans_eq (tsum_mul_left)
     _ ≤ c * (E * r ^ (-(s + δ))) := mul_le_mul_of_nonneg_left hle (by positivity)
     _ = E * D ^ δ * C ^ (1 - δ) * d ^ δ * r ^ (-(s + δ)) := by ring
+
+/-- **Counting comparable dyadic scales.** If `Q ≥ 1`, at most `2Q + 1` indices `k` satisfy both
+`2^j ≤ Q 2^k` and `2^k ≤ Q 2^j`. -/
+theorem card_filter_two_pow_le_mul_two_pow_le (s : Finset ℕ) (j : ℕ) {Q : ℝ} (hQ : 1 ≤ Q) :
+    ((s.filter fun k ↦ (2 : ℝ) ^ j ≤ Q * 2 ^ k ∧ (2 : ℝ) ^ k ≤ Q * 2 ^ j).card : ℝ) ≤
+      2 * Q + 1 := by
+  set d := ⌊Q⌋₊
+  -- A power `2^i ≤ Q` has `i < 2^i ≤ Q`, so `i ≤ d`.
+  have hd {i l : ℕ} (h : (2 : ℝ) ^ i ≤ Q * 2 ^ l) : i - l ≤ d := by
+    refine Nat.le_floor ((Nat.cast_le.2 (Nat.lt_two_pow_self).le).trans ?_)
+    rcases le_total l i with hli | hil
+    · rw [Nat.cast_pow, Nat.cast_ofNat]
+      have h2 : (2 : ℝ) ^ (i - l) * 2 ^ l ≤ Q * 2 ^ l := by rwa [← pow_add, Nat.sub_add_cancel hli]
+      exact le_of_mul_le_mul_right h2 (by positivity)
+    · simpa [Nat.sub_eq_zero_of_le hil] using hQ
+  have hsub : (s.filter fun k ↦ (2 : ℝ) ^ j ≤ Q * 2 ^ k ∧ (2 : ℝ) ^ k ≤ Q * 2 ^ j) ⊆
+      Finset.Icc (j - d) (j + d) := fun k hk ↦ by
+    obtain ⟨h₁, h₂⟩ := (Finset.mem_filter.1 hk).2
+    have := hd h₁
+    have := hd h₂
+    exact Finset.mem_Icc.2 ⟨by omega, by omega⟩
+  calc ((s.filter fun k ↦ (2 : ℝ) ^ j ≤ Q * 2 ^ k ∧ (2 : ℝ) ^ k ≤ Q * 2 ^ j).card : ℝ)
+      ≤ (Finset.Icc (j - d) (j + d)).card := by exact_mod_cast Finset.card_le_card hsub
+    _ ≤ 2 * d + 1 := by
+        rw [Nat.card_Icc]
+        exact_mod_cast (by omega : j + d + 1 - (j - d) ≤ 2 * d + 1)
+    _ ≤ 2 * Q + 1 := by gcongr; exact Nat.floor_le (by linarith)
+
+/-- If `2^j ≤ Q 2^k` and `2^k ≤ Q 2^j`, then `2^{σ (j - k)} ≤ Q ^ |σ|` for every real `σ`. -/
+theorem two_rpow_mul_sub_le_rpow_abs {j k : ℕ} {Q : ℝ} (h₁ : (2 : ℝ) ^ j ≤ Q * 2 ^ k)
+    (h₂ : (2 : ℝ) ^ k ≤ Q * 2 ^ j) (σ : ℝ) :
+    (2 : ℝ) ^ (σ * ((j : ℝ) - k)) ≤ Q ^ |σ| := by
+  have hle {i l : ℕ} (h : (2 : ℝ) ^ i ≤ Q * 2 ^ l) : (2 : ℝ) ^ ((i : ℝ) - l) ≤ Q := by
+    rw [Real.rpow_sub two_pos, Real.rpow_natCast, Real.rpow_natCast, div_le_iff₀ (by positivity)]
+    exact h
+  rcases le_total 0 σ with hσ | hσ
+  · rw [abs_of_nonneg hσ, mul_comm, Real.rpow_mul zero_le_two]
+    exact Real.rpow_le_rpow (by positivity) (hle h₁) hσ
+  · rw [abs_of_nonpos hσ, show σ * ((j : ℝ) - k) = ((k : ℝ) - j) * -σ by ring,
+      Real.rpow_mul zero_le_two]
+    exact Real.rpow_le_rpow (by positivity) (hle h₂) (by linarith)
+
+/-- For `u > 0`, the weights `2^{u(j-k)}` of the indices `j < k` in any finite set of integers sum
+to at most `1 / (2^u - 1)`, the sum of the geometric series of ratio `2^{-u}` without its first
+term. -/
+theorem sum_ite_two_rpow_le {u : ℝ} (hu : 0 < u) (F : Finset ℤ) (k : ℤ) :
+    ∑ j ∈ F, (if j < k then (2 : ℝ) ^ (u * (j - k : ℝ)) else 0) ≤ 1 / (2 ^ u - 1) := by
+  set q : ℝ := (2 : ℝ) ^ (-u)
+  have hq0 : 0 ≤ q := by positivity
+  have hq1 : q < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith)
+  have key : ∀ j ∈ F.filter (· < k), (2 : ℝ) ^ (u * (j - k : ℝ)) = q * q ^ (k - j - 1).toNat := by
+    intro j hj
+    have hjk : j < k := (Finset.mem_filter.1 hj).2
+    have hcast : (((k - j - 1).toNat : ℕ) : ℝ) = k - j - 1 := by
+      have : ((k - j - 1).toNat : ℤ) = k - j - 1 := Int.toNat_of_nonneg (by omega)
+      exact_mod_cast this
+    rw [← Real.rpow_natCast, hcast, ← Real.rpow_mul zero_le_two, ← Real.rpow_add two_pos]
+    congr 1
+    ring
+  rw [← Finset.sum_filter, Finset.sum_congr rfl key, ← Finset.mul_sum,
+    ← Finset.sum_image (g := fun j : ℤ ↦ (k - j - 1).toNat) (f := fun n : ℕ ↦ q ^ n)]
+  · calc q * ∑ n ∈ (F.filter (· < k)).image fun j : ℤ ↦ (k - j - 1).toNat, q ^ n
+        ≤ q * ∑' n : ℕ, q ^ n :=
+          mul_le_mul_of_nonneg_left (Summable.sum_le_tsum _ (fun _ _ ↦ by positivity)
+            (summable_geometric_of_lt_one hq0 hq1)) hq0
+      _ = 1 / (2 ^ u - 1) := by
+          have h2 : (1 : ℝ) < 2 ^ u := Real.one_lt_rpow one_lt_two hu
+          rw [tsum_geometric_of_lt_one hq0 hq1, show q = (2 ^ u)⁻¹ from Real.rpow_neg zero_le_two u]
+          field_simp
+  · intro x hx y hy hxy
+    have := (Finset.mem_filter.1 hx).2
+    have := (Finset.mem_filter.1 hy).2
+    simp only at hxy
+    omega
+
+open scoped ENNReal NNReal
+
+/-- `m ↦ 2^{-r|m|}` is summable over `ℤ` for `r > 0`: it is the bilateral geometric series of ratio
+`2^{-r} < 1`. -/
+theorem summable_two_rpow_neg_mul_abs {r : ℝ} (hr : 0 < r) :
+    Summable fun m : ℤ ↦ (2 : ℝ) ^ (-r * |(m : ℝ)|) := by
+  refine (summable_pow_natAbs (r := (2 : ℝ) ^ (-r)) (by positivity)
+    (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith))).congr fun m ↦ ?_
+  rw [← Real.rpow_natCast, ← Real.rpow_mul zero_le_two, Nat.cast_natAbs, Int.cast_abs]
+
+/-- `∑_{m ∈ ℤ} 2^{-ε |m|}` is finite for `ε > 0`: it is the bilateral geometric series of ratio
+`2^{-ε} < 1`. -/
+theorem tsum_two_rpow_neg_mul_abs_ne_top {ε : ℝ} (hε : 0 < ε) :
+    ∑' m : ℤ, (2 : ℝ≥0∞) ^ (-(ε * |(m : ℝ)|)) ≠ ∞ := by
+  have hterm (m : ℤ) :
+      (2 : ℝ≥0∞) ^ (-(ε * |(m : ℝ)|)) = ENNReal.ofReal ((2 : ℝ) ^ (-ε * |(m : ℝ)|)) := by
+    rw [← ENNReal.ofReal_rpow_of_pos two_pos, ENNReal.ofReal_ofNat, neg_mul]
+  rw [tsum_congr hterm, ← ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity)
+    (summable_two_rpow_neg_mul_abs hε)]
+  exact ENNReal.ofReal_ne_top
+
+/-- For `σ ≥ 1` and `ε > 0`, `∑_{j ∈ ℤ} 2^{-ε |x - σ j|}` is bounded uniformly in `x`: the points
+`σ j` are `1`-separated, so the sum is at most `2^ε ∑_{m ∈ ℤ} 2^{-ε |m|}`. -/
+theorem tsum_two_rpow_neg_mul_abs_sub_le {σ ε : ℝ} (hσ : 1 ≤ σ) (hε : 0 < ε) (x : ℝ) :
+    ∑' j : ℤ, (2 : ℝ≥0∞) ^ (-(ε * |x - σ * j|)) ≤
+      2 ^ ε * ∑' m : ℤ, (2 : ℝ≥0∞) ^ (-(ε * |(m : ℝ)|)) := by
+  have hσ0 : 0 < σ := one_pos.trans_le hσ
+  have hfl := Int.floor_le (x / σ)
+  have hlt := Int.lt_floor_add_one (x / σ)
+  set n : ℤ := ⌊x / σ⌋
+  have hj (j : ℤ) : (2 : ℝ≥0∞) ^ (-(ε * |x - σ * j|)) ≤
+      2 ^ ε * (2 : ℝ≥0∞) ^ (-(ε * |((j - n : ℤ) : ℝ)|)) := by
+    rw [← ENNReal.rpow_add _ _ two_ne_zero ENNReal.ofNat_ne_top]
+    refine ENNReal.rpow_le_rpow_of_exponent_le (by norm_num) ?_
+    -- `|x - σ j| ≥ |x / σ - j| ≥ |j - n| - 1`.
+    have h1 : |x / σ - j| ≤ |x - σ * j| := by
+      rw [show x - σ * j = σ * (x / σ - j) by field_simp, abs_mul, abs_of_pos hσ0]
+      exact le_mul_of_one_le_left (abs_nonneg _) hσ
+    have h2 : |((j - n : ℤ) : ℝ)| - 1 ≤ |x / σ - j| := by
+      have h := abs_sub_le (j : ℝ) (x / σ) (n : ℝ)
+      rw [abs_sub_comm (j : ℝ) (x / σ), abs_of_nonneg (by linarith : 0 ≤ x / σ - n)] at h
+      push_cast
+      linarith
+    nlinarith
+  calc _ ≤ ∑' j : ℤ, 2 ^ ε * (2 : ℝ≥0∞) ^ (-(ε * |((j - n : ℤ) : ℝ)|)) := tsum_le_tsum hj
+    _ = 2 ^ ε * ∑' j : ℤ, (2 : ℝ≥0∞) ^ (-(ε * |((j - n : ℤ) : ℝ)|)) := ENNReal.tsum_mul_left
+    _ = _ := by
+        congr 1
+        exact (Equiv.subRight n).tsum_eq fun m : ℤ ↦ (2 : ℝ≥0∞) ^ (-(ε * |(m : ℝ)|))
+
+/-- **Shifting a dyadic weight.** In a sum over `l ∈ ℤ` of weighted terms `Yₗ`, shifting the index
+of the weight `2^{lσ}` by `d` costs the factor `2^{dσ}`:
+`∑ₗ ∑_{d ∈ S} 2^{(d + l)σ} Yₗ = (∑_{d ∈ S} 2^{dσ}) ∑ₗ 2^{lσ} Yₗ`. -/
+theorem tsum_sum_ofReal_two_zpow_add_rpow_mul (σ : ℝ) (S : Finset ℤ) (Y : ℤ → ℝ≥0∞) :
+    ∑' l, ∑ d ∈ S, ENNReal.ofReal (((2 : ℝ) ^ (d + l)) ^ σ) * Y l =
+      ((∑ d ∈ S, (((2 : ℝ) ^ d) ^ σ).toNNReal : ℝ≥0) : ℝ≥0∞) *
+        ∑' l, ENNReal.ofReal (((2 : ℝ) ^ l) ^ σ) * Y l := by
+  rw [← ENNReal.tsum_mul_left]
+  refine tsum_congr fun l ↦ ?_
+  rw [ENNReal.ofNNReal_finsetSum, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun d _ ↦ ?_
+  rw [ENNReal.ofNNReal_toNNReal, zpow_add₀ two_ne_zero,
+    Real.mul_rpow (by positivity) (by positivity), ENNReal.ofReal_mul (by positivity)]
+  ring
+
+/-- A sum over the truncation `-N ≤ k < N` is at most the sum over all of `ℤ`. -/
+theorem sum_range_sub_le_tsum (f : ℤ → ℝ≥0∞) (N : ℕ) :
+    ∑ i ∈ Finset.range (2 * N), f ((i : ℤ) - N) ≤ ∑' k, f k := by
+  rw [← Finset.sum_image (g := fun i : ℕ ↦ (i : ℤ) - N) (f := f)
+    fun i _ i' _ h ↦ by simpa using h]
+  exact sum_le_tsum _
 
 end TauCeti
 

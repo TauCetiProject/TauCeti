@@ -39,9 +39,11 @@ both lines, and its polar form pairs them perfectly: `polar (a (1 ⊗ v)) (c (1 
 The example is the intersection form of the symplectic product `X = (ℝ / ℤ) × Y_φ` of the circle
 with the mapping torus `Y_φ` of a surface diffeomorphism with `b₁(Y_φ) = 1`, in the setting of
 `TauCeti.SmoothMappingTorus.apply_self_sub_apply_canonical_eq`: `H = H²(X; ℤ)`, `v` is the pullback
-of a class of `H²(Y_φ; ℤ)` pairing to one with the fibre, and `t = [ds ∧ dt]`. That `v, t` is a
-hyperbolic pair spanning `H²(X; ℤ)` modulo torsion is a geometric input, not proved here. Given it,
-and `ℝ ⊗[ℤ] H²(X; ℤ) = H²(X; ℝ)`, the results say `b₂(X) = 2` and `b₂⁺(X) = b₂⁻(X) = 1`. Together
+of a class of `H²(Y_φ; ℤ)` pairing to one with the fibre, and `t = [ds ∧ dt]`. Writing `t` as
+`[ds] ⌣ pr₂^* a` for a generator `a` of `H¹(Y_φ; ℤ)`, the classes `v, t` span `H²(X; ℤ)` modulo
+torsion (`TauCeti.MappingTorus.exists_isOfFinAddOrder_sub_smul_add_smul_addCircleProd`); that they
+form a hyperbolic pair is a geometric input, not proved here. Given it, and
+`ℝ ⊗[ℤ] H²(X; ℤ) = H²(X; ℝ)`, the results say `b₂(X) = 2` and `b₂⁺(X) = b₂⁻(X) = 1`. Together
 with the evenness of the intersection form, which excludes classes of square `-1`, this places `X`
 among the minimal four-manifolds with `b₂⁺ = 1`, where Seiberg–Witten invariants depend on a
 chamber.

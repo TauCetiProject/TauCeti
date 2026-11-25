@@ -10,8 +10,9 @@ public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 import TauCeti.Analysis.Calculus.Equicontinuity
 import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Topology.ContinuousMap.Ascoli
-import TauCeti.Topology.Separation.InvFunOn
+import TauCeti.Topology.Compactness.Compact
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Floer solutions in a manifold with bounded energy density
@@ -210,9 +211,8 @@ theorem IsNondegenerate.exists_strictMono_tendstoLocallyUniformlyOn_comp (hω : 
     TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn hΩ hequi
       fun z hz ↦ ⟨e '' K, hK.image_of_continuousOn hec, fun n ↦ mem_image_of_mem e (huK n hz)⟩
   -- The limit is read back in `K` through `e`.
-  have : Nonempty M := ⟨u 0 0⟩
   obtain ⟨v, hv, hvK, hev, hpt⟩ := hK.exists_tendsto_of_tendsto_comp hec he_inj
-    (fun n ↦ huK (φ n)) hGc fun z hz ↦ hconvG.tendsto_at hz
+    (fun z hz ↦ .of_forall fun n ↦ huK (φ n) hz) hGc fun z hz ↦ hconvG.tendsto_at hz
   exact ⟨φ, hφ, v, hv, hvK, hconvG.congr_right hev.symm, hpt⟩
 
 /-- **Floer solutions in a manifold with bounded energy density on exhausting discs converge.**
@@ -259,29 +259,16 @@ theorem IsNondegenerate.exists_strictMono_tendstoLocallyUniformly_comp (hω : ω
   obtain ⟨φ, hφ, g, hg⟩ :=
     TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith_closedBall hKe hR hL
       fun n z hz ↦ mem_image_of_mem e (huK n hz)
-  -- Every point eventually lies in the discs. Off the discs, replace the maps by a point `p₀` of
-  -- `K`, so as to read the limit back in `K` through `e`.
+  -- Every point eventually lies in the discs, so the values there eventually lie in `K`, and the
+  -- limit is read back in `K` through `e`.
   have hin (z : ℝ × ℝ) : ∀ᶠ n in atTop, z ∈ Metric.closedBall 0 (R (φ n)) :=
     ((hR.comp hφ.tendsto_atTop).eventually_ge_atTop ‖z‖).mono fun n hn ↦
       mem_closedBall_zero_iff.2 hn
-  obtain ⟨n₀, hn₀⟩ := (hR.eventually_ge_atTop 0).exists
-  set p₀ := u n₀ 0
-  have hp₀ : p₀ ∈ K := huK n₀ (Metric.mem_closedBall_self hn₀)
-  classical
-  set x : ℕ → ℝ × ℝ → M := fun n z ↦ if z ∈ Metric.closedBall 0 (R (φ n)) then u (φ n) z else p₀
-  have hxK (n : ℕ) : MapsTo (x n) univ K := fun z _ ↦ by
-    by_cases hz : z ∈ Metric.closedBall 0 (R (φ n))
-    · simpa only [x, ite_eq_left hz] using huK _ hz
-    · simpa only [x, ite_eq_right hz] using hp₀
-  have hxu (z : ℝ × ℝ) : (fun n ↦ u (φ n) z) =ᶠ[atTop] fun n ↦ x n z :=
-    (hin z).mono fun n hn ↦ (ite_eq_left hn).symm
-  have : Nonempty M := ⟨p₀⟩
-  obtain ⟨v, hv, hvK, hev, hpt⟩ := hK.exists_tendsto_of_tendsto_comp (Ω := univ) hec he_inj hxK
-    g.continuous.continuousOn fun z _ ↦
-      ((tendstoLocallyUniformlyOn_univ.2 hg).tendsto_at (mem_univ z)).congr'
-        ((hxu z).mono fun n hn ↦ by simp only [comp_apply, hn])
+  obtain ⟨v, hv, hvK, hev, hpt⟩ := hK.exists_tendsto_of_tendsto_comp (Ω := univ)
+    (x := fun n ↦ u (φ n)) hec he_inj (fun z _ ↦ (hin z).mono fun n hn ↦ huK (φ n) hn)
+    g.continuous.continuousOn fun z _ ↦ hg.tendsto_at z
   refine ⟨φ, hφ, v, continuousOn_univ.1 hv, fun z ↦ hvK (mem_univ z), ?_,
-    fun z ↦ (hpt z (mem_univ z)).congr' (hxu z).symm⟩
+    fun z ↦ hpt z (mem_univ z)⟩
   convert hg using 1
   exact funext fun z ↦ hev (mem_univ z)
 

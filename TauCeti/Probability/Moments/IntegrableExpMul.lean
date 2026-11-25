@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
 import Mathlib.Probability.Moments.Basic
 
 /-!
-# Exponential moments of a statistic that is bounded below
+# Exponential moments of a statistic that is bounded below, and from even moments
 
 Mathlib's `ProbabilityTheory.integrable_exp_mul_of_le` makes `exp (t * X)` integrable against a
 finite measure when `X` is bounded above and the rate `t` is nonnegative. A law carried by a
@@ -24,6 +26,10 @@ either, because an exponential moment on both sides of the origin forces every m
 finite. Combining the two statements gives the exponential-moment domain of a heavy-tailed
 half-line law, which is `Set.Iic 0`.
 
+Exponential moments of a measure on `ℝ` are also controlled by its even moments: integrating
+`cosh (a x) = ∑ₙ (a x)²ⁿ / (2n)!` termwise shows that `∫ e^{a|x|}` is finite as soon as the even
+moments are dominated by those of a measure for which it is finite.
+
 ## Main results
 
 * `TauCeti.integrable_exp_mul_of_ge` — every nonpositive rate is integrable when `X` is bounded
@@ -35,6 +41,12 @@ half-line law, which is `Set.Iic 0`.
   real, respectively natural, moment of `X` fails to exist;
 * `TauCeti.integrableExpSet_eq_Iic_of_not_integrable_pow` — a statistic bounded below with an
   infinite natural moment has exponential-integrability domain `Set.Iic 0`.
+* `TauCeti.lintegral_ofReal_cosh_mul_eq_tsum` — the `cosh` series integrated termwise against any
+  measure on `ℝ`.
+* `TauCeti.integrable_exp_mul_abs_of_integral_pow_le` — a measure on `ℝ` whose even moments are
+  finite and dominated by those of a measure with a finite exponential moment `∫ e^{a|x|}` has
+  that exponential moment too. This is how the method of moments transfers exponential moments
+  between measures with the same moments.
 -/
 
 public section
@@ -97,5 +109,76 @@ theorem integrableExpSet_eq_Iic_of_not_integrable_pow [IsFiniteMeasure μ] {b : 
   refine ⟨fun h ↦ ?_, fun ht ↦ integrable_exp_mul_of_ge t b ht hX hb⟩
   by_contra ht
   exact not_integrable_exp_mul_of_not_integrable_pow n hb hn (lt_of_not_ge ht) h
+
+/-! ### Exponential moments from even moments -/
+
+/-- **The `cosh` series integrated termwise.** For every measure `ρ` on `ℝ` and every `a`,
+`∫⁻ cosh (a x) dρ = ∑ₙ a²ⁿ / (2n)! · ∫⁻ x²ⁿ dρ`, expanding `cosh y = ∑ₙ y²ⁿ / (2n)!`. No
+finiteness is needed: both sides may be `∞`. -/
+theorem lintegral_ofReal_cosh_mul_eq_tsum (ρ : Measure ℝ) (a : ℝ) :
+    ∫⁻ x, ENNReal.ofReal (Real.cosh (a * x)) ∂ρ =
+      ∑' n : ℕ, ENNReal.ofReal (a ^ (2 * n) / (Nat.factorial (2 * n) : ℝ)) *
+        ∫⁻ x, ENNReal.ofReal (x ^ (2 * n)) ∂ρ := by
+  have hcoef (n : ℕ) : 0 ≤ a ^ (2 * n) / (Nat.factorial (2 * n) : ℝ) :=
+    div_nonneg ((even_two_mul n).pow_nonneg a) (Nat.cast_nonneg _)
+  calc ∫⁻ x, ENNReal.ofReal (Real.cosh (a * x)) ∂ρ
+      = ∫⁻ x, ∑' n : ℕ, ENNReal.ofReal (a ^ (2 * n) / (Nat.factorial (2 * n) : ℝ)) *
+          ENNReal.ofReal (x ^ (2 * n)) ∂ρ := by
+        refine lintegral_congr fun x ↦ ?_
+        rw [Real.cosh_eq_tsum, ENNReal.ofReal_tsum_of_nonneg
+          (fun n ↦ div_nonneg ((even_two_mul n).pow_nonneg _) (Nat.cast_nonneg _))
+          (Real.hasSum_cosh _).summable]
+        refine tsum_congr fun n ↦ ?_
+        rw [← ENNReal.ofReal_mul (hcoef n), mul_pow, div_mul_eq_mul_div, mul_comm (a ^ (2 * n))]
+    _ = ∑' n : ℕ, ∫⁻ x, ENNReal.ofReal (a ^ (2 * n) / (Nat.factorial (2 * n) : ℝ)) *
+          ENNReal.ofReal (x ^ (2 * n)) ∂ρ :=
+        lintegral_tsum fun n ↦ by fun_prop
+    _ = _ := tsum_congr fun n ↦ lintegral_const_mul _ (by fun_prop)
+
+/-- **Exponential moments from dominated even moments.** If `e^{a|x|}` is integrable against `μ`,
+it is integrable against every measure `ν` whose even moments are finite and at most those of
+`μ`. -/
+theorem integrable_exp_mul_abs_of_integral_pow_le {μ ν : Measure ℝ} {a : ℝ}
+    (hμ : Integrable (fun x ↦ Real.exp (a * |x|)) μ)
+    (hν : ∀ n : ℕ, Integrable (fun x : ℝ ↦ x ^ (2 * n)) ν)
+    (hle : ∀ n : ℕ, ∫ x, x ^ (2 * n) ∂ν ≤ ∫ x, x ^ (2 * n) ∂μ) :
+    Integrable (fun x ↦ Real.exp (a * |x|)) ν := by
+  have : IsFiniteMeasure ν := by simpa [integrable_const_iff] using hν 0
+  rcases lt_or_ge a 0 with ha | ha
+  · -- For `a < 0` the integrand is at most `1`.
+    refine (integrable_const (1 : ℝ)).mono' (by fun_prop) (ae_of_all _ fun x ↦ ?_)
+    rw [Real.norm_of_nonneg (Real.exp_pos _).le, Real.exp_le_one_iff]
+    exact mul_nonpos_of_nonpos_of_nonneg ha.le (abs_nonneg x)
+  have hpow (ρ : Measure ℝ) (n : ℕ) : 0 ≤ᵐ[ρ] fun x : ℝ ↦ x ^ (2 * n) :=
+    ae_of_all _ fun x ↦ (even_two_mul n).pow_nonneg x
+  -- Termwise comparison of the `cosh` series.
+  have hcosh : ∫⁻ x, ENNReal.ofReal (Real.cosh (a * x)) ∂ν ≤
+      ∫⁻ x, ENNReal.ofReal (Real.cosh (a * x)) ∂μ := by
+    rw [lintegral_ofReal_cosh_mul_eq_tsum, lintegral_ofReal_cosh_mul_eq_tsum]
+    refine tsum_le_tsum fun n ↦ mul_le_mul_right ?_ _
+    rw [← ofReal_integral_eq_lintegral_ofReal (hν n) (hpow ν n)]
+    refine (ENNReal.ofReal_le_ofReal (hle n)).trans ?_
+    rw [integral_eq_lintegral_of_nonneg_ae (hpow μ n) (by fun_prop)]
+    exact ENNReal.ofReal_toReal_le
+  -- `e^{a|x|} ≤ 2 cosh (a x)` and `cosh (a x) ≤ e^{a|x|}`, since `a |x| = |a x|`.
+  have habs (x : ℝ) : a * |x| = |a * x| := by rw [abs_mul, abs_of_nonneg ha]
+  have hexp (x : ℝ) : Real.exp (a * |x|) ≤ 2 * Real.cosh (a * x) := by
+    rw [Real.cosh_eq, mul_div_cancel₀ _ two_ne_zero, habs]
+    exact Real.exp_abs_le _
+  have hcosh_le (x : ℝ) : Real.cosh (a * x) ≤ Real.exp (a * |x|) := by
+    rw [← Real.cosh_abs, ← habs, Real.cosh_eq]
+    linarith [Real.exp_le_exp.2 (neg_le_self (mul_nonneg ha (abs_nonneg x)))]
+  refine ⟨by fun_prop, ?_⟩
+  rw [hasFiniteIntegral_iff_ofReal (ae_of_all _ fun x ↦ (Real.exp_pos _).le)]
+  calc ∫⁻ x, ENNReal.ofReal (Real.exp (a * |x|)) ∂ν
+      ≤ ∫⁻ x, 2 * ENNReal.ofReal (Real.cosh (a * x)) ∂ν := by
+        refine lintegral_mono fun x ↦ ?_
+        rw [← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul zero_le_two]
+        exact ENNReal.ofReal_le_ofReal (hexp x)
+    _ = 2 * ∫⁻ x, ENNReal.ofReal (Real.cosh (a * x)) ∂ν := lintegral_const_mul _ (by fun_prop)
+    _ ≤ 2 * ∫⁻ x, ENNReal.ofReal (Real.exp (a * |x|)) ∂μ := by
+        gcongr 2 * ?_
+        exact hcosh.trans (lintegral_mono fun x ↦ ENNReal.ofReal_le_ofReal (hcosh_le x))
+    _ < ⊤ := ENNReal.mul_lt_top ENNReal.ofNat_lt_top hμ.lintegral_lt_top
 
 end TauCeti

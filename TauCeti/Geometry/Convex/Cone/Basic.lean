@@ -30,6 +30,10 @@ lattice, so they belong to the generic convex-cone API rather than to any consum
 * `PointedCone.finrank_span_coe_prod_bot` and `PointedCone.finrank_span_coe_bot_prod`:
   multiplying a pointed cone by the zero cone leaves the dimension of the span of the cone
   unchanged.
+* `PointedCone.mapsTo_nsmul_linearMap_id`: multiplication by a natural number carries a pointed
+  cone into itself.
+* `PointedCone.map_linearEquiv_mul`: mapping a pointed cone by a product of linear automorphisms
+  maps it by each factor in turn.
 -/
 
 public section
@@ -118,6 +122,18 @@ theorem finrank_span_coe_bot_prod (q : PointedCone R V') :
 
 end Prod
 
+section Map
+
+variable {R V : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
+  [AddCommMonoid V] [Module R V]
+
+/-- Mapping a pointed cone by a product of linear automorphisms maps it by each factor in turn. -/
+theorem map_linearEquiv_mul (σ : PointedCone R V) (g h : V ≃ₗ[R] V) :
+    σ.map ((g * h : V ≃ₗ[R] V) : V →ₗ[R] V) = (σ.map (h : V →ₗ[R] V)).map (g : V →ₗ[R] V) := by
+  rw [LinearEquiv.coe_toLinearMap_mul, Module.End.mul_eq_comp, map_map]
+
+end Map
+
 end PointedCone
 
 namespace LinearMap
@@ -131,3 +147,15 @@ theorem mapsTo_bot_pointedCone (g : V →ₗ[R] V') :
   simp [Set.MapsTo]
 
 end LinearMap
+
+namespace PointedCone
+
+variable {R V : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R] [AddCommMonoid V]
+  [Module R V]
+
+/-- Multiplication by a natural number carries a pointed cone into itself. -/
+theorem mapsTo_nsmul_linearMap_id (q : ℕ) (σ : PointedCone R V) :
+    Set.MapsTo (q • LinearMap.id : V →ₗ[R] V) σ σ := fun x hx ↦ by
+  simpa using σ.nsmul_mem hx q
+
+end PointedCone
