@@ -148,7 +148,7 @@ theorem centralAction_eq_zero_of_mem_ker_liftCharacter_sq
     intro w hw
     have hw' : _root_.UniversalEnvelopingAlgebra.lift R f (w : U) = 0 := by
       rw [← liftCharacter_apply]
-      exact hw
+      exact RingHom.mem_ker.mp hw
     have hc : centralAction R L M w = representation R L M (w : U) :=
       LinearMap.ext fun m => centralAction_apply w m
     simpa only [hc, hw', map_zero, sub_zero] using representation_sub_mem_deviation h (w : U)
