@@ -133,13 +133,7 @@ theorem exists_interval_tangent_bases {a b : ℝ} [Fact (a < b)] (x : Icc a b) :
   · by_cases hx : (x : ℝ) < b <;>
       simp [C, Module.Basis.unitsSMul_apply, B, e, Module.Basis.map_apply, hx]
 
-/-- The interval charted structure, with its model dimension written as a successor so that
-zero-dimensional boundary constructions infer the canonical interval charts. -/
-@[reducible] local instance intervalSuccessorChartedSpace :
-    ChartedSpace (EuclideanHalfSpace (0 + 1)) (Icc a b) :=
-  instIccChartedSpace a b
-
-local instance : IsManifold (𝓡∂ (0 + 1)) 1 (Icc a b) := instIsManifoldIcc a b
+open scoped IccZeroAddOne
 
 /-- The canonical zero-dimensional charted structure on the two interval endpoints. -/
 @[reducible] local instance intervalBoundaryChartedSpace :
