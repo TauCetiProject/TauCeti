@@ -107,6 +107,6 @@ loop relative to `1`. -/
 theorem evalGL_homotopicRel_one_of_mem_elementarySubgroup {g : GL n (CircleRing ℝ)}
     (hg : g ∈ elementarySubgroup n (CircleRing ℝ)) (h₁ : evalGL g 1 = 1) :
     (evalGL g).HomotopicRel 1 {1} :=
-  (evalGL_homotopic_one_of_mem_elementarySubgroup hg).homotopicRel_singleton h₁
+  (evalGL_homotopic_one_of_mem_elementarySubgroup hg).homotopicRel_singleton_of_group h₁
 
 end TauCeti.CircleRing

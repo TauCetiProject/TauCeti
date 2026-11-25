@@ -28,8 +28,9 @@ homotopic; this is how a free nullhomotopy of a loop in a group becomes a based 
   maps are homotopic.
 * `ContinuousMap.Homotopic.inv`, `ContinuousMap.Homotopic.neg`: pointwise inverses of homotopic
   maps are homotopic.
-* `ContinuousMap.Homotopic.homotopicRel_singleton`: maps into a topological group which are
-  homotopic and agree at a point are homotopic relative to that point.
+* `ContinuousMap.Homotopic.homotopicRel_singleton_of_group`,
+  `ContinuousMap.Homotopic.homotopicRel_singleton_of_addGroup`: maps into a topological group
+  which are homotopic and agree at a point are homotopic relative to that point.
 -/
 
 public section
@@ -62,7 +63,11 @@ theorem inv [Inv G] [ContinuousInv G] {f₀ f₁ : C(X, G)} (hf : f₀.Homotopic
 /-- **Homotopic maps into a topological group are homotopic relative to a point where they
 agree.** In particular a loop at `1` which is freely homotopic to the constant loop is
 nullhomotopic as a based loop. -/
-theorem homotopicRel_singleton [Group G] [IsTopologicalGroup G] {f g : C(X, G)}
+@[to_additive
+  /-- **Homotopic maps into a topological additive group are homotopic relative to a point where
+  they agree.** In particular a loop at `0` which is freely homotopic to the constant loop is
+  nullhomotopic as a based loop. -/]
+theorem homotopicRel_singleton_of_group [Group G] [IsTopologicalGroup G] {f g : C(X, G)}
     (h : f.Homotopic g) {x₀ : X} (hx₀ : f x₀ = g x₀) : f.HomotopicRel g {x₀} := by
   obtain ⟨F⟩ := h
   exact ⟨{ toFun := fun p ↦ F p * (F (p.1, x₀))⁻¹ * f x₀

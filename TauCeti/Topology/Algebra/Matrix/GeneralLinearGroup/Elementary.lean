@@ -146,6 +146,6 @@ real vector space and the evaluation of a matrix in the elementary subgroup of `
 theorem evalGL_homotopicRel_one_of_mem_elementarySubgroup [Module ℝ R] [ContinuousSMul ℝ R]
     {g : GL n C(X, R)} (hg : g ∈ elementarySubgroup n C(X, R)) {x₀ : X}
     (hx₀ : evalGL g x₀ = 1) : (evalGL g).HomotopicRel 1 {x₀} :=
-  (evalGL_homotopic_one_of_mem_elementarySubgroup hg).homotopicRel_singleton hx₀
+  (evalGL_homotopic_one_of_mem_elementarySubgroup hg).homotopicRel_singleton_of_group hx₀
 
 end ContinuousMap
