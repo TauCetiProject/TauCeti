@@ -20,8 +20,8 @@ We iterate `rank_matrixMutation` and `linearIndependent_col_matrixMutation_iff`;
 references for these one-step results are in `ExchangeMatrix.Factorization`.
 
 For polynomial exchange columns, exact division by column degrees is nonzero scalar rescaling.
-Column divisibility persists along the word, so the divided columns retain independence over
-any field where the degrees remain nonzero. Positivity and characteristic zero are unnecessary.
+The theorem `dvd_matrixMutationWord_iff` propagates divisibility along the word, so the divided
+columns retain independence over any field where the degrees remain nonzero.
 -/
 
 public noncomputable section
@@ -55,9 +55,9 @@ theorem linearIndependent_col_mutationWord_iff {R : Type*} [CommRing R] (w : Lis
     exact linearIndependent_col_matrixMutation_iff row B.matrix k (B.matrix_row_self k)
 
 /-- Exact division of polynomial exchange columns preserves independence along every mutation
-word, provided each degree remains nonzero in the scalar field. Negative degrees and positive
-characteristic are allowed. The lemma `dvd_matrixMutationWord_iff` propagates divisibility
-from the initial integral columns. -/
+word, provided each degree remains nonzero in the scalar field. Each degree `r j` is assumed
+to divide every entry of column `j` of the initial matrix. Negative degrees and positive
+characteristic are allowed. -/
 theorem linearIndependent_col_ediv_mutationWord_iff {F : Type*} [Field F]
     (r : K → ℤ) (hr : ∀ j, (r j : F) ≠ 0) (hdiv : ∀ i j, r j ∣ B.matrix i j) (w : List K) :
     LinearIndependent F
