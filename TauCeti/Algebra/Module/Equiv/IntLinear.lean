@@ -5,20 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Module.Equiv.Basic
 
 /-!
-# Automorphisms of an additive group written multiplicatively
+# Additive automorphisms are `ℤ`-linear automorphisms
 
 An additive automorphism of a commutative additive group `M` is automatically `ℤ`-linear
-(`AddEquiv.toIntLinearEquiv`). Composing this with Mathlib's identification of the automorphisms
-of `Multiplicative M` with the additive automorphisms of `M` gives an isomorphism of groups
+(`AddEquiv.toIntLinearEquiv`), and this identifies the additive automorphism group of `M` with
+its group of `ℤ`-linear automorphisms. Mathlib writes `AddAut M` additively, so this is an
+isomorphism `AddAut M ≃+ Additive (M ≃ₗ[ℤ] M)`, of the same shape as Mathlib's
+`ZMod.AddAutEquivUnits`.
+
+Composing with Mathlib's `MulAutMultiplicative` gives the multiplicative form
 `MulAut (Multiplicative M) ≃* (M ≃ₗ[ℤ] M)`. This identifies the automorphism group of a free
 abelian group written multiplicatively, such as `Multiplicative (Fin n → ℤ)`, with its group of
 `ℤ`-linear automorphisms, and from there with the invertible integer matrices.
 
 ## Main definitions
 
+* `TauCeti.addAutEquivIntLinearEquiv`: `AddAut M ≃+ Additive (M ≃ₗ[ℤ] M)`.
 * `TauCeti.mulAutMultiplicativeEquiv`: `MulAut (Multiplicative M) ≃* (M ≃ₗ[ℤ] M)`.
 -/
 
@@ -28,14 +34,31 @@ namespace TauCeti
 
 open Multiplicative
 
-/-- The automorphisms of `M` written multiplicatively are its `ℤ`-linear automorphisms. -/
-def mulAutMultiplicativeEquiv (M : Type*) [AddCommGroup M] :
-    MulAut (Multiplicative M) ≃* (M ≃ₗ[ℤ] M) where
-  toFun φ := (AddEquiv.toMultiplicative.symm φ).toIntLinearEquiv
-  invFun f := AddEquiv.toMultiplicative f.toAddEquiv
+/-- The additive automorphisms of `M` are its `ℤ`-linear automorphisms. -/
+def addAutEquivIntLinearEquiv (M : Type*) [AddCommGroup M] :
+    AddAut M ≃+ Additive (M ≃ₗ[ℤ] M) where
+  toFun φ := .ofMul φ.toIntLinearEquiv
+  invFun f := f.toMul.toAddEquiv
   left_inv _ := rfl
   right_inv _ := rfl
-  map_mul' _ _ := rfl
+  map_add' _ _ := rfl
+
+/-- The linear automorphism attached to `φ` acts as `φ` does. -/
+@[simp]
+theorem addAutEquivIntLinearEquiv_apply_apply {M : Type*} [AddCommGroup M] (φ : AddAut M)
+    (x : M) : (addAutEquivIntLinearEquiv M φ).toMul x = φ x :=
+  (rfl)
+
+/-- The additive automorphism attached to `f` acts as `f` does. -/
+@[simp]
+theorem addAutEquivIntLinearEquiv_symm_apply_apply {M : Type*} [AddCommGroup M]
+    (f : Additive (M ≃ₗ[ℤ] M)) (x : M) : (addAutEquivIntLinearEquiv M).symm f x = f.toMul x :=
+  (rfl)
+
+/-- The automorphisms of `M` written multiplicatively are its `ℤ`-linear automorphisms. -/
+def mulAutMultiplicativeEquiv (M : Type*) [AddCommGroup M] :
+    MulAut (Multiplicative M) ≃* (M ≃ₗ[ℤ] M) :=
+  (MulAutMultiplicative M).trans (AddEquiv.toMultiplicativeLeft (addAutEquivIntLinearEquiv M))
 
 /-- The linear automorphism attached to `φ` acts as `φ` does, read additively. -/
 @[simp]

@@ -7,11 +7,11 @@ module
 
 public import TauCeti.Algebra.Module.Equiv.IntLinear
 public import TauCeti.GroupTheory.Automorphism.Outer
+public import TauCeti.GroupTheory.Perm.Centralizer
+public import TauCeti.GroupTheory.Perm.Fin
 public import Mathlib.Data.ZMod.Aut
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
-public import Mathlib.GroupTheory.Perm.Closure
-public import Mathlib.GroupTheory.Perm.Fin
 
 /-!
 # Outer automorphism groups of small groups
@@ -39,35 +39,11 @@ open TauCeti Multiplicative
 instance subsingleton_outerAut_unit : Subsingleton (OuterAut Unit) :=
   Quotient.instSubsingletonQuotient _
 
-/-- In `S₃`, the 3-cycle `finRotate 3` and the transposition `swap 0 1` generate. -/
-theorem closure_finRotate_swap :
-    Subgroup.closure ({finRotate 3, Equiv.swap 0 1} : Set (Equiv.Perm (Fin 3))) = ⊤ := by
-  -- Mathlib's statement is about `finRotate (1 + 2)` and `swap 0 (finRotate (1 + 2) 0)`.
-  have h : finRotate 3 0 = 1 := by decide
-  have := Equiv.Perm.closure_cycle_adjacent_swap (isCycle_finRotate (n := 1))
-    (support_finRotate (n := 1)) 0
-  simpa [h] using this
-
-/-- An automorphism of `S₃` is determined by the images of `finRotate 3` and `swap 0 1`. -/
-theorem mulAut_perm_fin_three_ext {φ ψ : MulAut (Equiv.Perm (Fin 3))}
-    (h₁ : φ (finRotate 3) = ψ (finRotate 3)) (h₂ : φ (Equiv.swap 0 1) = ψ (Equiv.swap 0 1)) :
-    φ = ψ := by
-  have := MonoidHom.eq_of_eqOn_dense closure_finRotate_swap
-    (f := φ.toMonoidHom) (g := ψ.toMonoidHom) (by
-      rintro x (rfl | rfl)
-      · exact h₁
-      · exact h₂)
-  exact MulEquiv.ext fun x ↦ DFunLike.congr_fun this x
-
 /-- **Every automorphism of `S₃` is inner**, so `OuterAut S₃` is trivial. -/
 instance subsingleton_outerAut_perm_fin_three : Subsingleton (OuterAut (Equiv.Perm (Fin 3))) := by
   -- `S₃` has trivial centre, the kernel of `MulAut.conj`.
   have hconj : Function.Injective (MulAut.conj : Equiv.Perm (Fin 3) →* MulAut _) := by
-    rw [← MonoidHom.ker_eq_bot_iff, MulAut.ker_conj, Subgroup.eq_bot_iff_forall]
-    intro g hg
-    rw [Subgroup.mem_center_iff] at hg
-    revert g
-    decide
+    rw [← MonoidHom.ker_eq_bot_iff, MulAut.ker_conj, Equiv.Perm.center_eq_bot (by simp)]
   -- An automorphism preserves the elements of each order, and is determined by the images of a
   -- 3-cycle and a transposition: there are at most `2 · 3 = 6` automorphisms.
   have hord (φ : MulAut (Equiv.Perm (Fin 3))) (n : ℕ) {x : Equiv.Perm (Fin 3)}
@@ -76,8 +52,8 @@ instance subsingleton_outerAut_perm_fin_three : Subsingleton (OuterAut (Equiv.Pe
   let f (φ : MulAut (Equiv.Perm (Fin 3))) : {x : Equiv.Perm (Fin 3) // x ^ 3 = 1 ∧ x ≠ 1} ×
       {x : Equiv.Perm (Fin 3) // x ^ 2 = 1 ∧ x ≠ 1} :=
     (⟨φ (finRotate 3), hord φ 3 (by decide)⟩, ⟨φ (Equiv.swap 0 1), hord φ 2 (by decide)⟩)
-  have hf : Function.Injective f := fun φ ψ h ↦
-    mulAut_perm_fin_three_ext (congrArg Subtype.val (Prod.ext_iff.1 h).1)
+  have hf : Function.Injective f := fun φ ψ h ↦ MulEquiv.toMonoidHom_injective <|
+    monoidHom_perm_fin_ext (congrArg Subtype.val (Prod.ext_iff.1 h).1)
       (congrArg Subtype.val (Prod.ext_iff.1 h).2)
   have hcard : Nat.card (MulAut (Equiv.Perm (Fin 3))) ≤ Nat.card (Equiv.Perm (Fin 3)) := by
     refine (Nat.card_le_card_of_injective f hf).trans ?_
@@ -106,12 +82,8 @@ noncomputable def outerAutIntPairEquiv :
 theorem outerAutIntPairEquiv_mk_apply (φ : MulAut (Multiplicative (Fin 2 → ℤ))) (i j : Fin 2) :
     (outerAutIntPairEquiv (φ : OuterAut _) : Matrix (Fin 2) (Fin 2) ℤ) i j =
       (φ (ofAdd (Pi.single j 1))).toAdd i := by
-  simp only [outerAutIntPairEquiv, Matrix.GeneralLinearGroup.toLin, Units.mapEquiv_symm,
-    MulEquiv.symm_mk, AlgEquiv.toEquiv_eq_coe, AlgEquiv.symm_toEquiv_eq_symm,
-    Matrix.toLinAlgEquiv'_symm, MulEquiv.trans_apply, OuterAut.mulEquivOfIsMulCommutative_mk,
-    Units.coe_mapEquiv, MulEquiv.coe_mk, EquivLike.coe_coe, LinearMap.toMatrixAlgEquiv'_apply]
-  rw [← LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv, MulEquiv.apply_symm_apply,
-    mulAutMultiplicativeEquiv_apply_apply]
+  simp [outerAutIntPairEquiv, Matrix.GeneralLinearGroup.toLin,
+    ← LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv]
 
 /-- The outer class attached to an invertible integer matrix `A` is the class of the automorphism
 `v ↦ A *ᵥ v` of `ℤ²`. -/

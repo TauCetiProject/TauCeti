@@ -37,6 +37,8 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
 * `TauCeti.isCycleOn_finRotate`: the rotation `finRotate n` is a single cycle on all of `Fin n`.
 * `TauCeti.closure_finRotate_swap_eq_top`: the rotation `finRotate n` and the transposition `(0 1)`
   generate the permutations of `Fin n`.
+* `TauCeti.monoidHom_perm_fin_ext`: a monoid homomorphism out of the permutations of `Fin n` is
+  determined by its values at `finRotate n` and `(0 1)`.
 * `Equiv.Perm.eq_one_of_rows`: a permutation of `Fin (m * n)` that fixes every point of each
   row `finProdFinEquiv (i, ·)` is the identity. Checking one row at a time keeps each
   `decide +kernel` certificate small.
@@ -125,6 +127,15 @@ theorem closure_finRotate_swap_eq_top : ∀ {n : ℕ} [NeZero n],
   | n + 2, _ => by
     simpa using Equiv.Perm.closure_cycle_adjacent_swap (σ := finRotate (n + 2)) isCycle_finRotate
       support_finRotate 0
+
+/-- A monoid homomorphism out of the permutations of `Fin n` is determined by its values at the
+generators `finRotate n` and `(0 1)`. -/
+theorem monoidHom_perm_fin_ext {n : ℕ} [NeZero n] {M : Type*} [Monoid M]
+    {f g : Equiv.Perm (Fin n) →* M} (h₁ : f (finRotate n) = g (finRotate n))
+    (h₂ : f (Equiv.swap 0 1) = g (Equiv.swap 0 1)) : f = g :=
+  MonoidHom.eq_of_eqOn_dense closure_finRotate_swap_eq_top <| by
+    rintro x (rfl | rfl)
+    exacts [h₁, h₂]
 
 end TauCeti
 
