@@ -75,7 +75,10 @@ theorem pow_three_ι_mem_center [CharP K 3] : E ^ 3 ∈ Subalgebra.center K (U K
 /-- The representation of `U(sl₂)` on `K[x]` with `e = x`, `h = 2x d/dx`, `f = -x d²/dx²`. -/
 noncomputable def weylRep [NeZero (2 : K)] : U K sl₂ →ₐ[K] Module.End K K[X] :=
   _root_.UniversalEnvelopingAlgebra.lift K
-    ((Sl2.isSl2Triple_of_weyl K (derivative_mul_mulLeft_X (R := K))).toLieHom K)
+    ((Sl2.isSl2Triple_of_weyl
+      (by simpa only [map_ofNat] using ((isUnit_iff_ne_zero.mpr (two_ne_zero : (2 : K) ≠ 0)).map
+        (algebraMap K (Module.End K K[X]))).isRegular.left)
+      (derivative_mul_mulLeft_X (R := K))).toLieHom K)
 
 /-- The values of `weylRep` on the standard basis `e, f, h`. -/
 theorem weylRep_ι [NeZero (2 : K)] (i : Fin 3) :

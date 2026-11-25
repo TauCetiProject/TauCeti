@@ -59,7 +59,7 @@ algebra; a genuine `IsSl2Triple` supplies them through its bracket fields.
   reversed-product forms, with the Cartan factor on the left.
 * `TauCeti.Sl2.weyl_sl2_relations` and `TauCeti.Sl2.isSl2Triple_of_weyl`: if `d m = m d + 1`, then
   `h = 2 m d`, `e = m`, `f = -m d²` satisfy the `sl₂` relations, and form an `sl₂` triple in a
-  nontrivial algebra over a field with `2 ≠ 0`. They also satisfy `h² + 2 h + 4 f e = 0`
+  nontrivial ring in which `2` is left regular. They also satisfy `h² + 2 h + 4 f e = 0`
   (`TauCeti.Sl2.weyl_sq_add_two_mul_add_four_mul_eq_zero`).
 * `TauCeti.Sl2.ι_e_mul_ι_f_sub_mul`, `TauCeti.Sl2.ι_h_mul_ι_e_sub_mul` and
   `TauCeti.Sl2.ι_h_mul_ι_f_sub_mul`: the bracket relations transported to the universal enveloping
@@ -178,15 +178,13 @@ theorem weyl_sq_add_two_mul_add_four_mul_eq_zero (hdm : d * m = m * d + 1) :
     two_mul, show (4 : A) = 2 + 2 by norm_num]
   abel
 
-/-- Over a field in which `2 ≠ 0`, the elements `h = 2 m d`, `e = m`, `f = -m d²` of a nontrivial
-algebra with `d m = m d + 1` form an `sl₂` triple. -/
-theorem isSl2Triple_of_weyl (K : Type*) [Field K] [NeZero (2 : K)] [Algebra K A] [Nontrivial A]
+/-- In a nontrivial ring in which `2` is left regular, the elements `h = 2 m d`, `e = m`,
+`f = -m d²` with `d m = m d + 1` form an `sl₂` triple. -/
+theorem isSl2Triple_of_weyl [Nontrivial A] (h2 : IsLeftRegular (2 : A))
     (hdm : d * m = m * d + 1) : IsSl2Triple (2 * (m * d)) m (-(m * d * d)) := by
-  obtain ⟨h1, h2, h3⟩ := weyl_sl2_relations hdm
-  refine ⟨fun h ↦ ?_, h1, h2, h3⟩
-  have hmd : m * d = 0 := by
-    rwa [← map_ofNat (algebraMap K A), ← Algebra.smul_def, smul_eq_zero,
-      or_iff_right (NeZero.ne _)] at h
+  obtain ⟨h1, h2', h3⟩ := weyl_sl2_relations hdm
+  refine ⟨fun h ↦ ?_, h1, h2', h3⟩
+  have hmd : m * d = 0 := h2 (h.trans (mul_zero 2).symm)
   have hm : m = 0 :=
     calc m = m * d * m - m * (m * d) := by rw [mul_assoc, hdm]; noncomm_ring
       _ = 0 := by rw [hmd, zero_mul, mul_zero, sub_zero]
