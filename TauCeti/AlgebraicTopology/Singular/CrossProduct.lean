@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Homology.Monoidal.Homology.Associativity
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Braiding
 public import TauCeti.AlgebraicTopology.Singular.EilenbergZilber
 public import TauCeti.AlgebraicTopology.Singular.KoszulBraiding
+public import TauCeti.AlgebraicTopology.Singular.Reduced
 
 /-!
 # The cross product in singular homology
@@ -36,6 +37,11 @@ cross products `Hₚ(X; k) ⊗ H_q(Y; k) ⟶ Hₙ(X × Y; k)` is an isomorphism,
 corresponding statement for the direct sum of the algebraic cross products of the singular chain
 complexes.
 
+The class of a point is a unit for the cross product: for a point `y` of `Y`, the cross product
+`a × [y]` is the image of `a` under the inclusion `X → X × Y`, `x ↦ (x, y)`, with the coefficients
+`R ≅ R ⊗ 𝟙_ C` (`TopCat.singularHomology₀Section_singularHomologyCross`). On chains, the shuffle
+product of a singular simplex with a vertex projects back onto the simplex.
+
 The cross product is associative: the map induced by the associators of the spaces and of the
 coefficients sends `(a × b) × c` to `a × (b × c)`, with no sign
 (`TopCat.singularHomologyCross_assoc`).  Under the Eilenberg–Zilber isomorphisms this is the
@@ -49,9 +55,9 @@ In a braided coefficient category the cross product is graded commutative: the s
 `X × Y ⟶ Y × X`, together with the coefficient braiding `R ⊗ S ⟶ S ⊗ R`, sends `a × b` to
 `(-1)^(p * q) b × a` for `a ∈ Hₚ(X; R)` and `b ∈ H_q(Y; S)`
 (`TopCat.singularHomologyCross_comp_map_braiding`).  At chain level, the shuffle map commutes
-with the interchange of factors up to homotopy, with the Koszul sign
-(`TopCat.koszulBraidingShuffleHomotopy`); on homology this sign is that of the algebraic cross
-product (`TauCeti.NatChainComplex.homologyCross_comp_homologyMap_koszulBraidingHom`).  With
+with the interchange of factors, with the Koszul sign (`TopCat.tensorBraiding_hom_comp_shuffle`); on
+homology this sign is that of the algebraic cross product
+(`ChainComplex.homologyCross_comp_homologyMap_tensorBraiding_hom`).  With
 coefficients in the monoidal unit, such as `k` in `ModuleCat k`, and `𝟙_ C ⊗ 𝟙_ C` identified
 with `𝟙_ C` through the left unitor, the statement needs no coefficient braiding
 (`TopCat.singularHomologyCross_comp_map_leftUnitor_comp_map_braiding`).
@@ -63,6 +69,8 @@ with `𝟙_ C` through the left unitor, the statement needs no coefficient braid
 * `TopCat.singularHomologyCross_naturality` and
   `TopCat.singularHomologyCross_coefficient_naturality`: naturality in the spaces and in the
   coefficients.
+* `TopCat.singularHomology₀Section_singularHomologyCross`: the cross product with the class of a
+  point is the inclusion of the first factor at that point.
 * `TopCat.singularHomologyCross_comp_homologyMap_alexanderWhitney`: under the Eilenberg–Zilber
   isomorphism, the homology cross product is the cross product of the singular chain complexes.
 * `TopCat.singularHomologyCross_assoc`: associativity of the homology cross product.
@@ -205,6 +213,112 @@ lemma singularHomologyCross_coefficient_naturality (X Y : TopCat.{w}) {R S R' S'
     (homologyMap (shuffle X Y R' S') n)
   rw [← homologyMap_comp, hsh, homologyMap_comp] at this
   exact this.trans (Category.assoc _ _ _).symm
+
+omit [CategoryWithHomology C] in
+/-- On chains, the shuffle product with a vertex `y`, weighted by `t : 𝟙_ C ⟶ S`, followed by the
+projection to the first factor is the coefficient map `r ↦ r ⊗ t`. -/
+private lemma rightUnitor_inv_whiskerLeft_shuffle_f_fst (X Y : TopCat.{w}) (R S : C) (p : ℕ)
+    (y : Y) (t : 𝟙_ C ⟶ S) :
+    (ρ_ (((toSSet.obj X).chainComplex R).X p)).inv ≫
+        (((toSSet.obj X).chainComplex R).X p ◁
+          (t ≫ (toSSet.obj Y).ιChainComplex (toSSetObj₀Equiv.symm y))) ≫
+        ιTensorObj ((toSSet.obj X).chainComplex R) ((toSSet.obj Y).chainComplex S) p 0 p
+          (add_zero p) ≫ (shuffle X Y R S).f p ≫
+          (SSet.chainComplexMap (toSSet.map (CartesianMonoidalCategory.fst X Y)) (R ⊗ S)).f p =
+      (((SSet.chainComplexFunctor C).map ((ρ_ R).inv ≫ R ◁ t)).app (toSSet.obj X)).f p := by
+  ext x
+  rw [← rightUnitor_inv_comp_tensorHom_assoc, ← whiskerLeft_comp_tensorHom_assoc,
+    ιChainComplex_tensorHom_ιChainComplex_shuffle_f_fst,
+    SSet.ιChainComplex_chainComplexFunctor_map_app_f, Category.assoc]
+
+/-- The cross product with the class of a point, followed by the projection to the first factor,
+is the coefficient map `r ↦ r ⊗ t`. -/
+private lemma singularHomology₀Section_singularHomologyCross_map_fst (X Y : TopCat.{w})
+    (R S : C) (p : ℕ)
+    [PreservesColimitsOfShape WalkingParallelPair
+      (tensorLeft (((toSSet.obj X).chainComplex R).homology p))]
+    [PreservesColimitsOfShape WalkingParallelPair
+      (tensorRight (((toSSet.obj Y).chainComplex S).cycles 0))]
+    [PreservesColimitsOfShape WalkingParallelPair
+      (tensorRight (((toSSet.obj Y).chainComplex S).X ((ComplexShape.down ℕ).prev 0)))]
+    (y : Y) (t : 𝟙_ C ⟶ S) :
+    (ρ_ _).inv ≫ (_ ◁ (t ≫ TauCeti.singularHomology₀Section S y)) ≫
+        singularHomologyCross X Y R S p 0 p (add_zero p) ≫
+          ((singularHomologyFunctor C p).obj (R ⊗ S)).map (CartesianMonoidalCategory.fst X Y) =
+      ((singularHomologyFunctor C p).map ((ρ_ R).inv ≫ R ◁ t)).app X := by
+  -- The statement is proved for the homology objects of the singular chain complexes, which are
+  -- the singular homology objects by definition, and read back through
+  -- `singularHomologyCross_def`.
+  have key : (ρ_ (((toSSet.obj X).chainComplex R).homology p)).inv ≫
+      (((toSSet.obj X).chainComplex R).homology p ◁
+        (t ≫ SSet.ιHomology₀ S (toSSetObj₀Equiv.symm y))) ≫
+      (homologyCross ((toSSet.obj X).chainComplex R) ((toSSet.obj Y).chainComplex S) p 0 p
+        (add_zero p) ≫ homologyMap (shuffle X Y R S) p) ≫
+        homologyMap (SSet.chainComplexMap (toSSet.map (CartesianMonoidalCategory.fst X Y))
+          (R ⊗ S)) p =
+      homologyMap (((SSet.chainComplexFunctor C).map ((ρ_ R).inv ≫ R ◁ t)).app (toSSet.obj X))
+        p := by
+    have hi : cyclesCross ((toSSet.obj X).chainComplex R) ((toSSet.obj Y).chainComplex S) p 0 p
+        (add_zero p) ≫ ((toSSet.obj X).chainComplex R ⊗ (toSSet.obj Y).chainComplex S).iCycles p =
+        (((toSSet.obj X).chainComplex R).iCycles p ⊗ₘ ((toSSet.obj Y).chainComplex S).iCycles 0) ≫
+          ιTensorObj _ _ p 0 p (add_zero p) :=
+      cyclesCross_iCycles _ _ p 0 p (add_zero p)
+    -- The same identity on cycles, checked after the inclusion into chains.
+    have hcycles : (ρ_ (((toSSet.obj X).chainComplex R).cycles p)).inv ≫
+        (((toSSet.obj X).chainComplex R).cycles p ◁
+          (t ≫ ((toSSet.obj Y).chainComplex S).liftCycles
+            ((toSSet.obj Y).ιChainComplex (toSSetObj₀Equiv.symm y)) 0 (by simp) (by simp))) ≫
+        cyclesCross ((toSSet.obj X).chainComplex R) ((toSSet.obj Y).chainComplex S) p 0 p
+          (add_zero p) ≫
+        cyclesMap (shuffle X Y R S ≫ SSet.chainComplexMap
+          (toSSet.map (CartesianMonoidalCategory.fst X Y)) (R ⊗ S)) p =
+        cyclesMap (((SSet.chainComplexFunctor C).map ((ρ_ R).inv ≫ R ◁ t)).app
+          (toSSet.obj X)) p := by
+      apply (cancel_mono (iCycles _ p)).1
+      simp only [Category.assoc, cyclesMap_i]
+      rw [reassoc_of% hi, whiskerLeft_comp_tensorHom_assoc, Category.assoc, liftCycles_i,
+        rightUnitor_inv_comp_tensorHom_assoc, comp_f,
+        rightUnitor_inv_whiskerLeft_shuffle_f_fst]
+    apply (cancel_epi (((toSSet.obj X).chainComplex R).homologyπ p)).1
+    rw [Category.assoc, SSet.ιHomology₀_def, ← Category.assoc t,
+      ← rightUnitor_inv_comp_tensorHom_assoc, ← whiskerLeft_comp_tensorHom_assoc,
+      homologyπ_tensorHom_homologyCross_assoc]
+    simp only [homologyπ_naturality_assoc, homologyπ_naturality]
+    rw [← cyclesMap_comp_assoc, reassoc_of% hcycles]
+  rw [singularHomologyCross_def, TauCeti.singularHomology₀Section_def]
+  exact key
+
+/-- **The cross product with the class of a point.** For a point `y` of `Y` and a morphism
+`t : 𝟙_ C ⟶ S`, which selects a coefficient of `S`, the cross product `a × t[y]` of a class
+`a ∈ Hₚ(X; R)` with the class of `y` weighted by `t` is the image of `a` under the coefficient map
+`R ≅ R ⊗ 𝟙_ C ⟶ R ⊗ S`, `r ↦ r ⊗ t`, followed by the inclusion `X → X × Y`, `x ↦ (x, y)`. -/
+@[reassoc]
+lemma singularHomology₀Section_singularHomologyCross (X Y : TopCat.{w}) (R S : C) (p : ℕ)
+    [PreservesColimitsOfShape WalkingParallelPair
+      (tensorLeft (((toSSet.obj X).chainComplex R).homology p))]
+    [PreservesColimitsOfShape WalkingParallelPair
+      (tensorRight (((toSSet.obj Y).chainComplex S).cycles 0))]
+    [PreservesColimitsOfShape WalkingParallelPair
+      (tensorRight (((toSSet.obj Y).chainComplex S).X ((ComplexShape.down ℕ).prev 0)))]
+    (y : Y) (t : 𝟙_ C ⟶ S) :
+    (ρ_ _).inv ≫ (_ ◁ (t ≫ TauCeti.singularHomology₀Section S y)) ≫
+        singularHomologyCross X Y R S p 0 p (add_zero p) =
+      ((singularHomologyFunctor C p).map ((ρ_ R).inv ≫ R ◁ t)).app X ≫
+        ((singularHomologyFunctor C p).obj (R ⊗ S)).map
+          (CartesianMonoidalCategory.lift (𝟙 X) (ofHom (ContinuousMap.const X y))) := by
+  -- The constant self-map `c` of `Y` at `y` fixes the class of `y`, and `𝟙 × c` factors through
+  -- the projection to `X`.
+  let c : Y ⟶ Y := ofHom (ContinuousMap.const Y y)
+  have hc : TauCeti.singularHomology₀Section S y =
+      TauCeti.singularHomology₀Section S y ≫ ((singularHomologyFunctor C 0).obj S).map c :=
+    (TauCeti.singularHomology₀Section_naturality S c y).symm
+  have hfac : 𝟙 X ⊗ₘ c = CartesianMonoidalCategory.fst X Y ≫
+      CartesianMonoidalCategory.lift (𝟙 X) (ofHom (ContinuousMap.const X y)) :=
+    CartesianMonoidalCategory.hom_ext _ _ (by simp) (by ext; simp [c])
+  have hnat := singularHomologyCross_naturality (𝟙 X) c R S p 0 p (add_zero p)
+  rw [CategoryTheory.Functor.map_id, id_tensorHom, hfac, CategoryTheory.Functor.map_comp] at hnat
+  rw [hc, ← Category.assoc t, whiskerLeft_comp_assoc, hnat,
+    reassoc_of% (singularHomology₀Section_singularHomologyCross_map_fst X Y R S p y t)]
 
 /-- **The homology cross product under Eilenberg–Zilber**: following the homology cross product
 by the map induced by the Alexander–Whitney map gives the cross product of the singular chain
@@ -353,9 +467,10 @@ lemma singularHomologyCross_comp_map_braiding :
   -- the singular homology maps are by definition those of the induced chain maps
   have key := (homologyCross _ _ p q n h ≫= (homologyMap_comp _ _ n).symm).trans <|
     (homologyCross _ _ p q n h ≫=
-      (koszulBraidingShuffleHomotopy X Y R S).homologyMap_eq n).symm.trans <|
+      congrArg (homologyMap · n) (tensorBraiding_hom_comp_shuffle X Y R S)).symm.trans <|
       (homologyCross _ _ p q n h ≫= homologyMap_comp _ _ n).trans <|
-        TauCeti.NatChainComplex.homologyCross_comp_homologyMap_koszulBraidingHom_assoc _ _ p q n h _
+        ChainComplex.homologyCross_comp_homologyMap_tensorBraiding_hom_assoc
+          _ _ p q n h _
   simp only [homologyMap_comp, Preadditive.zsmul_comp, Category.assoc] at key
   exact (Category.assoc _ _ _).trans key
 

@@ -17,21 +17,36 @@ submonoid `T`, then so is the induced map `M' → N'`: localizations at `S` and 
 the module of sections of a quasi-coherent sheaf this says that restricting from `D(s)` to
 `D(s t)` is a localization away from `t`.
 
+Injectivity and surjectivity of a map `g : M → N` can partly be read off from its localization
+`M' → N'`: when `S` acts regularly on `M`, `g` is injective if its localization is, and the
+cokernel of `g` is `S`-torsion when the localization is surjective.
+
 ## Main statements
 
 * `IsLocalizedModule.isUnit_algebraMap_of_isUnit`: invertible scalars stay invertible on a
   localization.
 * `IsLocalizedModule.isLocalizedModule_map`: the map induced on localizations at `S` by a
   localization at `T` is a localization at `T`.
-* `IsLocalizedModule.of_bijective_semilinearMap`: a linear map identified, along a ring
-  homomorphism `σ : R →+* A`, with a localization at the image of `S` is a localization at `S`.
+* `IsLocalizedModule.injective_of_map_injective`: a map out of a module on which `S` acts
+  regularly is injective if its localization is.
+* `IsLocalizedModule.exists_smul_mem_range_of_map_surjective`: a map whose localization is
+  surjective has `S`-torsion cokernel.
+* `IsLocalizedModule.iff_of_bijective_semilinearMap`: a linear map identified, along a ring
+  homomorphism `σ : R →+* A`, with an `A`-linear map is a localization at `S` exactly when the
+  `A`-linear map is a localization at the image of `S`.
+* `IsLocalizedModule.liftOfLE_comp_map`, `IsLocalizedModule.liftOfLE_map_apply`: naturality of
+  `IsLocalizedModule.liftOfLE` with respect to `IsLocalizedModule.map`.
 -/
 
 public section
 
 namespace IsLocalizedModule
 
-variable {R : Type*} [CommSemiring R] (S : Submonoid R) {T : Submonoid R}
+variable {R : Type*} [CommSemiring R] (S : Submonoid R)
+
+section Map
+
+variable {T : Submonoid R}
   {M M' N N' : Type*} [AddCommMonoid M] [AddCommMonoid M'] [AddCommMonoid N] [AddCommMonoid N']
   [Module R M] [Module R M'] [Module R N] [Module R N']
   (f : M →ₗ[R] M') [IsLocalizedModule S f]
@@ -59,37 +74,87 @@ theorem isLocalizedModule_map (f₂ : N →ₗ[R] N') [IsLocalizedModule S f₂]
   exists_of_eq {x₁ x₂} e := by
     obtain ⟨⟨m₁, s₁⟩, rfl⟩ := mk'_surjective S f x₁
     obtain ⟨⟨m₂, s₂⟩, rfl⟩ := mk'_surjective S f x₂
-    simp only [Function.uncurry_apply_pair, map_mk', mk'_eq_mk'_iff, Submonoid.smul_def] at e
+    simp only [Function.uncurry_apply_pair, map_mk', mk'_eq_mk'_iff, Submonoid.smul_def,
+      ← map_smul] at e
     obtain ⟨c, hc⟩ := e
-    simp only [← map_smul] at hc
     obtain ⟨t, ht⟩ := IsLocalizedModule.exists_of_eq (S := T) (f := g) hc
-    refine ⟨t, ?_⟩
     simp only [Function.uncurry_apply_pair, Submonoid.smul_def, ← mk'_smul, mk'_eq_mk'_iff]
-    exact ⟨c, by simpa only [Submonoid.smul_def, smul_comm (t : R)] using ht⟩
+    exact ⟨t, c, by simpa only [Submonoid.smul_def, smul_comm (t : R)] using ht⟩
+
+variable (f₂ : N →ₗ[R] N') [IsLocalizedModule S f₂] {g : M →ₗ[R] N}
+
+/-- If every element of `S` is regular on `M` and the localization of `g : M → N` at `S` is
+injective, then `g` is injective. -/
+theorem injective_of_map_injective (hS : ∀ s : S, IsSMulRegular M (s : R))
+    (h : Function.Injective (map S f f₂ g)) : Function.Injective g := by
+  refine Function.Injective.of_comp (f := f₂) ?_
+  rw [← LinearMap.coe_comp, ← map_comp S f f₂ g, LinearMap.coe_comp]
+  exact h.comp ((injective_iff_isRegular S f).mpr hS)
+
+/-- If the localization of `g : M → N` at `S` is surjective, then the cokernel of `g` is
+`S`-torsion: some element of `S` carries each `y : N` into the range of `g`. -/
+theorem exists_smul_mem_range_of_map_surjective (h : Function.Surjective (map S f f₂ g))
+    (y : N) : ∃ s : S, s • y ∈ LinearMap.range g := by
+  obtain ⟨p, hp⟩ := h (f₂ y)
+  obtain ⟨⟨x, s⟩, rfl⟩ := mk'_surjective S f p
+  rw [Function.uncurry_apply_pair, map_mk', mk'_eq_iff, ← LinearMap.map_smul_of_tower] at hp
+  obtain ⟨c, hc⟩ := exists_of_eq (S := S) hp
+  exact ⟨c * s, c • x, by rw [LinearMap.map_smul_of_tower, hc, mul_smul]⟩
+
+end Map
 
 /-- **Localizations transported along semilinear bijections.** Let `σ : R →+* A` be a ring
-homomorphism, `f : M →ₗ[R] N` an `R`-linear map and `f' : M' →ₗ[A] N'` an `A`-linear map which is
-a localization at the image `S.map σ`. If `f` corresponds to `f'` under `σ`-semilinear bijections
-`M → M'` and `N → N'`, then `f` is a localization at `S`. -/
-theorem of_bijective_semilinearMap {A : Type*} [CommSemiring A] {σ : R →+* A}
+homomorphism, `f : M →ₗ[R] N` an `R`-linear map and `f' : M' →ₗ[A] N'` an `A`-linear map. If `f`
+corresponds to `f'` under `σ`-semilinear bijections `M → M'` and `N → N'`, then `f` is a
+localization at `S` if and only if `f'` is a localization at the image `S.map σ`. -/
+theorem iff_of_bijective_semilinearMap {A : Type*} [CommSemiring A] {σ : R →+* A}
     {M N M' N' : Type*} [AddCommMonoid M] [AddCommMonoid N] [AddCommMonoid M'] [AddCommMonoid N']
     [Module R M] [Module R N] [Module A M'] [Module A N'] (f : M →ₗ[R] N) (f' : M' →ₗ[A] N')
-    [IsLocalizedModule (S.map σ) f'] (eM : M →ₛₗ[σ] M') (eN : N →ₛₗ[σ] N')
-    (heM : Function.Bijective eM) (heN : Function.Bijective eN) (h : ∀ x, eN (f x) = f' (eM x)) :
-    IsLocalizedModule S f := by
+    (eM : M →ₛₗ[σ] M') (eN : N →ₛₗ[σ] N') (heM : Function.Bijective eM)
+    (heN : Function.Bijective eN) (h : ∀ x, eN (f x) = f' (eM x)) :
+    IsLocalizedModule S f ↔ IsLocalizedModule (S.map σ) f' := by
   -- View `M'` and `N'` as `R`-modules through `σ`; then `eM`, `eN` are `R`-linear bijections.
   let := σ.toAlgebra
   let := Module.compHom M' σ
   let := Module.compHom N' σ
   have : IsScalarTower R A M' := SMul.comp.isScalarTower σ
   have : IsScalarTower R A N' := SMul.comp.isScalarTower σ
-  have : IsLocalizedModule (Algebra.algebraMapSubmonoid A S) f' := by
-    rwa [Algebra.algebraMapSubmonoid, RingHom.algebraMap_toAlgebra]
   let eM' : M →ₗ[R] M' := ⟨eM.toAddHom, eM.map_smulₛₗ⟩
   let eN' : N →ₗ[R] N' := ⟨eN.toAddHom, eN.map_smulₛₗ⟩
   rw [← comp_iff_of_bijective_left S eN' heN,
     show eN' ∘ₗ f = f'.restrictScalars R ∘ₗ eM' from LinearMap.ext h,
-    comp_iff_of_bijective_right S eM' heM]
-  exact restrictScalars S f'
+    comp_iff_of_bijective_right S eM' heM, ← restrictScalars_iff]
+  -- For the algebra structure `σ.toAlgebra`, the image `algebraMapSubmonoid A S` is `S.map σ`.
+  rw [Algebra.algebraMapSubmonoid, RingHom.algebraMap_toAlgebra]
+
+end IsLocalizedModule
+
+namespace IsLocalizedModule
+
+variable {R : Type*} [CommSemiring R] (S₁ S₂ : Submonoid R) (h : S₁ ≤ S₂)
+  {M M₁ M₂ N N₁ N₂ : Type*}
+  [AddCommMonoid M] [AddCommMonoid M₁] [AddCommMonoid M₂]
+  [AddCommMonoid N] [AddCommMonoid N₁] [AddCommMonoid N₂]
+  [Module R M] [Module R M₁] [Module R M₂]
+  [Module R N] [Module R N₁] [Module R N₂]
+  (f₁ : M →ₗ[R] M₁) (f₂ : M →ₗ[R] M₂) (g₁ : N →ₗ[R] N₁) (g₂ : N →ₗ[R] N₂)
+  [IsLocalizedModule S₁ f₁] [IsLocalizedModule S₂ f₂]
+  [IsLocalizedModule S₁ g₁] [IsLocalizedModule S₂ g₂]
+
+/-- `IsLocalizedModule.liftOfLE` is natural with respect to `IsLocalizedModule.map`:
+passing along an inclusion of submonoids `S₁ ≤ S₂` commutes with the localized map of `u`. -/
+theorem liftOfLE_comp_map (u : M →ₗ[R] N) :
+    liftOfLE S₁ S₂ h g₁ g₂ ∘ₗ map S₁ f₁ g₁ u =
+      map S₂ f₂ g₂ u ∘ₗ liftOfLE S₁ S₂ h f₁ f₂ := by
+  refine IsLocalizedModule.ext S₁ f₁ (fun s ↦ map_units g₂ ⟨s.val, h s.property⟩) ?_
+  ext m
+  simp
+
+/-- Pointwise naturality of `IsLocalizedModule.liftOfLE` with respect to
+`IsLocalizedModule.map`. -/
+theorem liftOfLE_map_apply (u : M →ₗ[R] N) (x : M₁) :
+    liftOfLE S₁ S₂ h g₁ g₂ (map S₁ f₁ g₁ u x) =
+      map S₂ f₂ g₂ u (liftOfLE S₁ S₂ h f₁ f₂ x) :=
+  LinearMap.congr_fun (liftOfLE_comp_map S₁ S₂ h f₁ f₂ g₁ g₂ u) x
 
 end IsLocalizedModule

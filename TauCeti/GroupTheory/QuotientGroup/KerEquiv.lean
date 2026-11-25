@@ -18,10 +18,11 @@ implementation. Likewise, `QuotientGroup.quotientKerEquivRange φ : G ⧸ φ.ker
 built with `MulEquiv.ofBijective` from `QuotientGroup.rangeKerLift`, and Mathlib states no
 evaluation rule for it.
 
-This file records these computation rules on classes, so that users never have to unfold the
+This file records these computation rules on classes, together with the evaluation rule of the
+underlying kernel lift `QuotientGroup.rangeKerLift`, so that users never have to unfold the
 definitions. The first two are the group-theoretic counterparts of Mathlib's
 `RingHom.quotientKerEquivOfSurjective_apply_mk` and
-`RingHom.quotientKerEquivOfSurjective_symm_apply`; all three belong beside their definitions in
+`RingHom.quotientKerEquivOfSurjective_symm_apply`; all of them belong beside their definitions in
 Mathlib.
 
 ## Main statements
@@ -32,9 +33,15 @@ Mathlib.
 * `TauCeti.QuotientGroup.quotientKerEquivOfSurjective_symm_apply`: the inverse sends
   `φ g` back to the class of `g`; its additive counterpart is
   `TauCeti.QuotientAddGroup.quotientKerEquivOfSurjective_symm_apply`.
+* `TauCeti.QuotientGroup.rangeKerLift_mk`: the kernel lift `G ⧸ φ.ker →* φ.range` sends the
+  class of `g` to `φ.rangeRestrict g`; its additive counterpart is
+  `TauCeti.QuotientAddGroup.rangeKerLift_mk`.
 * `TauCeti.QuotientGroup.quotientKerEquivRange_apply_mk`: the isomorphism
   `G ⧸ φ.ker ≃* φ.range` sends the class of `g` to `φ g`; its additive counterpart is
   `TauCeti.QuotientAddGroup.quotientKerEquivRange_apply_mk`.
+* `TauCeti.QuotientGroup.quotientKerEquivRange_symm_apply`: the inverse sends `φ g` back to the
+  class of `g`; its additive counterpart is
+  `TauCeti.QuotientAddGroup.quotientKerEquivRange_symm_apply`.
 
 The first isomorphism theorem for the composite `H → G → G ⧸ N` of the inclusion of a subgroup
 and a quotient map identifies `H ⧸ N.subgroupOf H` with the image of `H` in `G ⧸ N`; this is
@@ -67,6 +74,13 @@ theorem quotientKerEquivOfSurjective_symm_apply (g : G) :
     (QuotientGroup.quotientKerEquivOfSurjective φ hφ).symm (φ g) = (g : G ⧸ φ.ker) :=
   (MulEquiv.symm_apply_eq _).2 (quotientKerEquivOfSurjective_apply_mk φ hφ g).symm
 
+/-- The kernel lift onto the range sends the class of `g` to `φ.rangeRestrict g`. -/
+@[to_additive (attr := simp) TauCeti.QuotientAddGroup.rangeKerLift_mk
+  /-- The kernel lift onto the range of an additive homomorphism sends the class of `g` to
+  `φ.rangeRestrict g`. -/]
+theorem rangeKerLift_mk (g : G) : QuotientGroup.rangeKerLift φ g = φ.rangeRestrict g :=
+  rfl
+
 /-- The first isomorphism theorem onto the range sends the class of `g` to `φ g`. -/
 @[to_additive (attr := simp) TauCeti.QuotientAddGroup.quotientKerEquivRange_apply_mk
   /-- The first isomorphism theorem onto the range of an additive homomorphism sends the class
@@ -74,6 +88,15 @@ theorem quotientKerEquivOfSurjective_symm_apply (g : G) :
 theorem quotientKerEquivRange_apply_mk (g : G) :
     QuotientGroup.quotientKerEquivRange φ g = ⟨φ g, g, rfl⟩ :=
   rfl
+
+/-- The inverse of the first isomorphism theorem onto the range sends `φ g` to the class of
+`g`. -/
+@[to_additive (attr := simp) TauCeti.QuotientAddGroup.quotientKerEquivRange_symm_apply
+  /-- The inverse of the first isomorphism theorem onto the range of an additive homomorphism
+  sends `φ g` to the class of `g`. -/]
+theorem quotientKerEquivRange_symm_apply (g : G) :
+    (QuotientGroup.quotientKerEquivRange φ).symm (φ.rangeRestrict g) = (g : G ⧸ φ.ker) :=
+  (MulEquiv.symm_apply_eq _).2 (quotientKerEquivRange_apply_mk φ g).symm
 
 end QuotientGroup
 

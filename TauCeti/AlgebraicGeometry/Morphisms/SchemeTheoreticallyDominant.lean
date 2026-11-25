@@ -28,9 +28,17 @@ scheme-theoretically dominant exactly when it is injective on global sections
 a ring homomorphism is scheme-theoretically dominant exactly when the homomorphism is injective
 (`AlgebraicGeometry.isSchemeTheoreticallyDominant_SpecMap_iff`). A morphism is scheme-theoretically
 dominant if its base change to each member of an open cover of the target is
-(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_openCover`). The scheme-theoretic image of a
-scheme-theoretically dominant morphism is its whole target
-(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.isIso_imageι`).
+(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_openCover`), and a quasi-compact
+scheme-theoretically dominant morphism stays so after corestriction along an open immersion
+containing its image
+(`AlgebraicGeometry.IsOpenImmersion.isSchemeTheoreticallyDominant_lift`). The scheme-theoretic
+image of a scheme-theoretically dominant morphism is its whole target
+(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.isIso_imageι`). Two opens, one
+scheme-theoretically dense in the other, have the same scheme-theoretic closure
+(`AlgebraicGeometry.Scheme.Opens.ker_ι_eq_of_isSchemeTheoreticallyDominant`). For a reduced
+scheme, restricting a morphism out of an open to a smaller dense open does not change its kernel
+(`AlgebraicGeometry.Scheme.Hom.ker_homOfLE_comp`), so kernels of morphisms out of opens can be
+compared on a dense open (`AlgebraicGeometry.Scheme.Hom.ker_le_ker_of_homOfLE_comp_eq`).
 -/
 
 public section
@@ -56,6 +64,31 @@ theorem _root_.AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_comp
 theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_comp_of_isSchemeTheoreticallyDominant
     (f : W ⟶ X) [IsSchemeTheoreticallyDominant f] (g : X ⟶ Y) : (f ≫ g).ker = g.ker := by
   rw [Scheme.Hom.ker_comp, f.ker_eq_bot, Scheme.IdealSheafData.map_bot]
+
+/-- Opens `V ≤ V'` of a scheme with `V` scheme-theoretically dense in `V'` have the same
+scheme-theoretic closure. -/
+theorem _root_.AlgebraicGeometry.Scheme.Opens.ker_ι_eq_of_isSchemeTheoreticallyDominant
+    {V V' : X.Opens} (h : V ≤ V') [IsSchemeTheoreticallyDominant (X.homOfLE h)] :
+    V.ι.ker = V'.ι.ker := by
+  rw [← Scheme.Hom.ker_comp_of_isSchemeTheoreticallyDominant (X.homOfLE h) V'.ι, Scheme.homOfLE_ι]
+
+/-- For `X` reduced and `V ⊆ U` a dense open, precomposition with the inclusion of `V` into `U` does
+not change the kernel of a morphism out of `U`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_homOfLE_comp [IsReduced X] {U V : X.Opens}
+    (hV : Dense (V : Set X)) (hVU : V ≤ U) (φ : U.toScheme ⟶ Y) :
+    (X.homOfLE hVU ≫ φ).ker = φ.ker := by
+  have := Opens.isDominant_homOfLE hV hVU
+  have := IsSchemeTheoreticallyDominant.of_isDominant (X.homOfLE hVU)
+  exact Scheme.Hom.ker_comp_of_isSchemeTheoreticallyDominant _ _
+
+/-- For `X` reduced, if `a : U ⟶ T` restricted to a dense open `V ⊆ U` factors as `m ≫ b`, then
+`ker b ≤ ker a`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_le_ker_of_homOfLE_comp_eq {T A : Scheme.{u}}
+    [IsReduced X] {U V : X.Opens} (hV : Dense (V : Set X)) (hVU : V ≤ U)
+    (a : U.toScheme ⟶ T) (m : V.toScheme ⟶ A) (b : A ⟶ T) (h : X.homOfLE hVU ≫ a = m ≫ b) :
+    b.ker ≤ a.ker := by
+  rw [← Scheme.Hom.ker_homOfLE_comp hV hVU a, h]
+  exact Scheme.Hom.le_ker_comp m b
 
 /-- The scheme-theoretic image of a scheme-theoretically dominant morphism is the whole target. -/
 instance _root_.AlgebraicGeometry.IsSchemeTheoreticallyDominant.isIso_imageι (f : X ⟶ Y)
@@ -135,5 +168,13 @@ theorem IsSchemeTheoreticallyDominant.of_openCover {f : X ⟶ Y} (𝒰 : Y.OpenC
   rw [Category.comp_id, ← Scheme.IdealSheafData.map_bot (𝒰.f i), ← (h i).ker_eq_bot,
     Scheme.IdealSheafData.map_ker, 𝒰.pullbackHom_map]
   exact Scheme.Hom.le_ker_comp _ _
+
+/-- A quasi-compact scheme-theoretically dominant morphism stays scheme-theoretically dominant
+after corestriction along an open immersion containing its image. -/
+instance IsOpenImmersion.isSchemeTheoreticallyDominant_lift {W V Z : Scheme.{u}} (v : V ⟶ Z)
+    [IsOpenImmersion v] (u : W ⟶ Z) [IsSchemeTheoreticallyDominant u] [QuasiCompact u]
+    (H : Set.range u ⊆ Set.range v) :
+    IsSchemeTheoreticallyDominant (IsOpenImmersion.lift v u H) :=
+  IsSchemeTheoreticallyDominant.of_isPullback (IsOpenImmersion.isPullback_lift_id u v H).flip
 
 end AlgebraicGeometry

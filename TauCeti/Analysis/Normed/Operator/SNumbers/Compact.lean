@@ -5,74 +5,75 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Operator.Compact.Basic
-public import Mathlib.Analysis.RCLike.Lemmas
-public import Mathlib.Topology.MetricSpace.Cover
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Gelfand
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Kolmogorov
+public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+public import Mathlib.Topology.MetricSpace.Cover
 import Mathlib.Topology.Algebra.SeparationQuotient.FiniteDimensional
+import TauCeti.Analysis.Normed.Module.Compactoid
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
-import TauCeti.Analysis.Normed.Operator.Cover
+import TauCeti.Analysis.Normed.Operator.Compact.Finite.Codimension
+import TauCeti.Topology.MetricSpace.CoveringNumbers
 
 /-!
-# Covering estimates, total boundedness, and compactness for Gelfand and Kolmogorov numbers
+# Covering estimates and compactness criteria for Gelfand and Kolmogorov numbers
 
-For approximation numbers `aₙ(T)`, decay `aₙ(T) → 0` implies compactness on Banach targets without
-the approximation property, while the approximation property of the target guarantees `aₙ(T) → 0`
-for every compact operator into it (a converse that fails on general Banach targets). By contrast,
-both the Kolmogorov numbers `dₙ(T)` and the Gelfand numbers `cₙ(T)` detect total boundedness of
-`T(B_E)` and, when the target is complete, compactness of `T` without any geometric assumption on
-the spaces.
+If the image `T(B_E)` of the closed unit ball under `T : E →L[𝕜] F` is covered by `k` closed
+`ε`-balls with centres `y₁, …, y_k`, then the Kolmogorov number satisfies `d_k(T) ≤ ε`: the
+quotient by `span {yᵢ}` moves every point of `T(B_E)` to within `ε` of the origin. Over `ℝ` or
+`ℂ` the Gelfand number satisfies `c_k(T) ≤ 2ε`: if `φᵢ` are norming functionals of the
+centres, then on the subspace `⋂ ker (φᵢ ∘ T)`, of codimension at most `k`, every `T x` with
+`‖x‖ ≤ 1` lies within `ε` of a centre `yᵢ` of norm `φᵢ (yᵢ - T x) ≤ ε`. The comparisons
+`d_{2^n}(T) ≤ eₙ(T)` and `c_{2^n}(T) ≤ 2 eₙ(T)` with entropy numbers, which follow from these
+estimates, are in `TauCeti.Analysis.Normed.Operator.SNumbers.Entropy.Comparison`.
 
-* **Covering upper bounds.** An `ε`-cover of `T(B_E)` of cardinality at most `n` bounds `dₙ(T)` by
-  `ε * ‖c‖₊` for every scalar `c` with `1 < ‖c‖` (quotienting by the span of the centres via
-  `ContinuousLinearMap.nnnorm_mkQL_span_comp_le_mul_of_isCover`), hence by `ε` over a densely
-  normed field. Over `ℝ` or `ℂ`, intersecting the kernels of `φᵢ ∘ T` for norming functionals `φᵢ`
-  of the centres (`ContinuousLinearMap.exists_rank_quotient_le_nnnorm_comp_subtypeL_le_of_isCover`)
-  gives a closed subspace of codimension at most `n` on which `‖T x‖ ≤ 2 ε ‖x‖`, refining
-  `IsCompactOperator.exists_finiteDimensional_quotient_norm_comp_subtype_le` to the quantitative
-  bound `cₙ(T) ≤ 2 ε`.
-* **Total boundedness from decay.** Over a locally compact scalar field, `dₙ(T) → 0` implies that
-  `T(B_E)` is totally bounded: when `dₙ(T) < δ`, each point of `T(B_E)` lies within `δ` of a
-  bounded ball in an at-most-`n`-dimensional subspace `V`, whose separation quotient is proper.
-  Likewise, `cₙ(T) → 0` implies that `T(B_E)` is totally bounded without choosing any projection
-  onto a finite-codimension subspace `M`: lifting a finite `δ`-net of the image of `B_E` in the
-  proper quotient `E ⧸ M` back to `B_E` decomposes differences as `r + m` with `‖r‖ < δ`,
-  `m ∈ M`, and `‖m‖ < 2 + δ` independent of codimension.
-* **Compactness criteria.** Combining the covering bounds with total boundedness yields
-  `TotallyBounded (T '' closedBall 0 1) ↔ dₙ(T) → 0` (over locally compact fields) and
-  `TotallyBounded (T '' closedBall 0 1) ↔ cₙ(T) → 0` (over `RCLike`), and, when the target is
-  complete, `IsCompactOperator T ↔ cₙ(T) → 0 ↔ dₙ(T) → 0`.
+As a consequence the Gelfand and the Kolmogorov numbers both detect compactness: `cₙ(T) → 0`
+and `dₙ(T) → 0` each hold exactly when `T(B_E)` is totally bounded. For the converse
+implications, a subspace `V` of finite dimension with `‖π_V ∘ T‖ < ε` puts `T(B_E)` within `ε` of
+a bounded piece of `V`, and a closed subspace `M` of finite codimension with `‖T|_M‖ < ε` lets a
+finite net of the image of `B_E` in `E ⧸ M` lift to a net of `T(B_E)`. No projection onto `M` is
+used, so the codimension of `M` does not enter the estimate. Both arguments use that bounded sets
+of finite-dimensional spaces are totally bounded, which requires a locally compact scalar field.
+When `F` is complete, `T` is a compact operator exactly when `cₙ(T) → 0`, and exactly when
+`dₙ(T) → 0`.
+
+## Hypotheses
+
+* The quantitative Kolmogorov estimate `d_k(T) ≤ ‖c‖ ε` for a scalar `c` with `1 < ‖c‖`, and
+  therefore `dₙ(T) → 0` for every compact `T`, hold over any `NontriviallyNormedField 𝕜`. The
+  sharp estimate `d_k(T) ≤ ε` needs a `DenselyNormedField 𝕜`.
+* The Gelfand covering estimate uses the Hahn–Banach theorem and is stated over `RCLike 𝕜`.
+* The implications from `cₙ(T) → 0` or `dₙ(T) → 0` to total boundedness hold over any locally
+  compact nontrivially normed field. Over a complete field `𝕜` that is not locally compact, such
+  as `𝔽₂(u)((t))`, they fail: the identity of `𝕜` has `dₙ = cₙ = 0` for `n ≥ 1`, but its closed
+  unit ball is closed and not compact, hence not totally bounded.
+* Both converse implications hold for seminormed domains and codomains: for Kolmogorov numbers,
+  the separation quotient `SeparationQuotient V` of a finite-dimensional subspace `V` is normed
+  and proper, pulling total boundedness of closed balls back to `V`; for Gelfand numbers, the
+  quotient of a seminormed space by a closed subspace is already normed. In particular, for a
+  complete codomain over any locally compact nontrivially normed field, `cₙ(T) → 0` already
+  implies compactness (`ContinuousLinearMap.isCompactOperator_of_tendsto_gelfandNumber`) without
+  `RCLike 𝕜`.
 
 ## Main declarations
 
-* `ContinuousLinearMap.kolmogorovNumber_le_mul_of_isCover`,
-  `ContinuousLinearMap.kolmogorovNumber_le_of_isCover`: covering bounds `dₙ(T) ≤ ε * ‖c‖₊` (over any
-  nontrivially normed field) and `dₙ(T) ≤ ε` (over a densely normed field).
-* `ContinuousLinearMap.gelfandNumber_le_two_mul_of_isCover`: covering bound `cₙ(T) ≤ 2 * ε` over an
-  `RCLike` scalar field.
-* `IsCompactOperator.tendsto_kolmogorovNumber`, `IsCompactOperator.tendsto_gelfandNumber`: compact
-  operators have `dₙ(T) → 0` and `cₙ(T) → 0` without completeness of either space.
-* `ContinuousLinearMap.totallyBounded_image_closedBall_iff_tendsto_kolmogorovNumber`: over a
-  locally compact field, `T(B_E)` is totally bounded iff `dₙ(T) → 0`.
-* `ContinuousLinearMap.totallyBounded_image_closedBall_iff_tendsto_gelfandNumber`: over an `RCLike`
-  field, `T(B_E)` is totally bounded iff `cₙ(T) → 0`.
-* `ContinuousLinearMap.tendsto_gelfandNumber_iff_tendsto_kolmogorovNumber`: over an `RCLike` field,
-  `cₙ(T) → 0 ↔ dₙ(T) → 0`.
-* `ContinuousLinearMap.isCompactOperator_iff_tendsto_kolmogorovNumber`,
-  `ContinuousLinearMap.isCompactOperator_iff_tendsto_gelfandNumber`: compactness characterizations
-  when the target space is complete.
+* `ContinuousLinearMap.kolmogorovNumber_le_of_isCover`,
+  `ContinuousLinearMap.gelfandNumber_le_two_mul_of_isCover`: the covering estimates
+  `d_k(T) ≤ ε` and `c_k(T) ≤ 2ε`.
+* `ContinuousLinearMap.tendsto_kolmogorovNumber_atTop_nhds_zero_iff_totallyBounded`,
+  `ContinuousLinearMap.tendsto_gelfandNumber_atTop_nhds_zero_iff_totallyBounded`: total
+  boundedness of `T(B_E)` via `dₙ(T) → 0` and via `cₙ(T) → 0`.
+* `ContinuousLinearMap.isCompactOperator_of_tendsto_gelfandNumber`,
+  `ContinuousLinearMap.isCompactOperator_iff_tendsto_kolmogorovNumber`,
+  `ContinuousLinearMap.isCompactOperator_iff_tendsto_gelfandNumber`: compactness for a complete
+  codomain.
 
 ## References
 
-* A. Pietsch, *s-Numbers of operators in Banach spaces*, Studia Math. 51 (1974), Theorem 9.3.
-* A. Pietsch, *Eigenvalues and s-Numbers*, Cambridge Studies in Advanced Mathematics 13,
-  Cambridge University Press (1987), §§2.4–2.5.
-* B. Carl, I. Stephani, *Entropy, Compactness and the Approximation of Operators*, Cambridge Tracts
-  in Mathematics 98, Cambridge University Press (1990), Chapters 1–2.
+* A. Pietsch, *s-Numbers of operators in Banach spaces*, Studia Math. 51 (1974), Theorem 9.3,
+  for the compactness criteria.
 * M. Ullrich, Lean-SNumbers (Apache-2.0), <https://github.com/mario-ullrich/Lean-SNumbers>,
-  `AddOns/Compact.lean`: an earlier Lean formalization of compactness via Gelfand and Kolmogorov
-  numbers.
+  `AddOns/Compact.lean`: an earlier Lean formalization of the compactness criteria.
 -/
 
 public section
@@ -80,314 +81,263 @@ public section
 open Filter Metric Set
 open scoped NNReal Topology
 
-section KolmogorovCover
+namespace ContinuousLinearMap
 
-variable {𝕜 E F : Type*}
+/-! ### Kolmogorov numbers -/
+
+section Kolmogorov
 
 section NontriviallyNormedField
 
-variable [NontriviallyNormedField 𝕜]
-  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- **Covering bound for Kolmogorov numbers.** If `T(B_E)` admits an `ε`-cover `C` of cardinality
-at most `n`, then for every scalar `c` with `1 < ‖c‖` we have `dₙ(T) ≤ ε * ‖c‖₊`: quotienting the
-target by `span 𝕜 C` kills the centres and bounds the quotient norm on the shell
-`‖c‖⁻¹ ≤ ‖x‖ < 1`. -/
-theorem ContinuousLinearMap.kolmogorovNumber_le_mul_of_isCover {T : E →L[𝕜] F} {n : ℕ} {ε : ℝ≥0}
-    {C : Set F} (hC : C.encard ≤ n) (hcover : Metric.IsCover ε (T '' Metric.closedBall 0 1) C)
-    {c : 𝕜} (hc : 1 < ‖c‖) :
-    T.kolmogorovNumber n ≤ ε * ‖c‖₊ := by
-  have hV : Module.rank 𝕜 (Submodule.span 𝕜 C) ≤ n :=
-    (rank_span_le C).trans (by simpa [Set.encard, ← Cardinal.toENat_mk] using hC)
-  exact (T.kolmogorovNumber_le hV).trans (T.nnnorm_mkQL_span_comp_le_mul_of_isCover hcover hc)
+/-- **Covering estimate over a nontrivially normed field.** If `T(B_E)` is covered by at most
+`k` closed `ε`-balls, then `d_k(T) ≤ ‖c‖ ε` for every scalar `c` with `1 < ‖c‖`. -/
+theorem kolmogorovNumber_le_nnnorm_mul_of_isCover (T : E →L[𝕜] F) {k : ℕ} {ε : ℝ≥0}
+    {N : Finset F} (hcard : N.card ≤ k) (hN : IsCover ε ((T : E → F) '' closedBall 0 1) N)
+    {c : 𝕜} (hc : 1 < ‖c‖) : T.kolmogorovNumber k ≤ ‖c‖₊ * ε := by
+  -- Quotient by the span of the centres.
+  have hV : Module.rank 𝕜 (Submodule.span 𝕜 (N : Set F)) ≤ k :=
+    (rank_span_finset_le N).trans (by exact_mod_cast hcard)
+  refine (T.kolmogorovNumber_le hV).trans ?_
+  exact_mod_cast T.norm_mkQL_span_comp_le_of_isCover hN hc
 
-/-- **Total boundedness implies Kolmogorov decay.** Over any nontrivially normed field, if `T` maps
-the closed unit ball to a totally bounded set, then `dₙ(T) → 0`. Neither space needs to be
-complete. -/
-theorem ContinuousLinearMap.tendsto_kolmogorovNumber_of_totallyBounded_image_closedBall
-    {T : E →L[𝕜] F} (hT : TotallyBounded (T '' Metric.closedBall 0 1)) :
+/-- If `T(B_E)` is totally bounded, the Kolmogorov numbers of `T` tend to zero. -/
+theorem tendsto_kolmogorovNumber_atTop_nhds_zero_of_totallyBounded {T : E →L[𝕜] F}
+    (hT : TotallyBounded ((T : E → F) '' closedBall 0 1)) :
     Tendsto T.kolmogorovNumber atTop (𝓝 0) := by
   obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
-  have hc₀ : (0 : ℝ≥0) < ‖c‖₊ := zero_lt_one.trans (by exact_mod_cast hc)
-  refine tendsto_order.mpr ⟨fun _ ha ↦ (not_lt_zero ha).elim, fun b hb ↦ ?_⟩
-  have hδ : b / (2 * ‖c‖₊) ≠ 0 := by positivity
-  obtain ⟨C, -, hfin, hcover⟩ := Metric.exists_finite_isCover_of_totallyBounded hδ hT
-  refine eventually_atTop.mpr ⟨hfin.toFinset.card, fun n hn ↦ ?_⟩
-  have hC : C.encard ≤ n := by
-    rw [hfin.encard_eq_coe_toFinset_card]
-    exact_mod_cast hn
-  calc T.kolmogorovNumber n ≤ b / (2 * ‖c‖₊) * ‖c‖₊ :=
-        T.kolmogorovNumber_le_mul_of_isCover hC hcover hc
-    _ = b / 2 := by
-        rw [div_eq_mul_inv, mul_inv, mul_assoc, inv_mul_cancel_right₀ hc₀.ne', ← div_eq_mul_inv]
-    _ < b := NNReal.half_lt_self hb.ne'
+  exact T.antitone_kolmogorovNumber.tendsto_atTop_nhds_zero_of_isCover hT
+    fun _ _ hN ↦ T.kolmogorovNumber_le_nnnorm_mul_of_isCover le_rfl hN hc
 
-/-- **Compactness implies Kolmogorov decay.** A compact operator between seminormed spaces over any
-nontrivially normed field has `dₙ(T) → 0`. -/
-theorem IsCompactOperator.tendsto_kolmogorovNumber {T : E →L[𝕜] F} (hT : IsCompactOperator T) :
-    Tendsto T.kolmogorovNumber atTop (𝓝 0) :=
-  T.tendsto_kolmogorovNumber_of_totallyBounded_image_closedBall
+/-- Every compact operator has Kolmogorov numbers tending to zero. -/
+theorem _root_.IsCompactOperator.tendsto_kolmogorovNumber {T : E →L[𝕜] F}
+    (hT : IsCompactOperator T) : Tendsto T.kolmogorovNumber atTop (𝓝 0) :=
+  tendsto_kolmogorovNumber_atTop_nhds_zero_of_totallyBounded
     (hT.totallyBounded_image_closedBall 1)
 
 end NontriviallyNormedField
 
 section DenselyNormedField
 
-variable [DenselyNormedField 𝕜]
-  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+variable {𝕜 E F : Type*} [DenselyNormedField 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- **Sharp covering bound for Kolmogorov numbers.** Over a densely normed field, an `ε`-cover of
-`T(B_E)` of cardinality at most `n` forces `dₙ(T) ≤ ε`. -/
-theorem ContinuousLinearMap.kolmogorovNumber_le_of_isCover {T : E →L[𝕜] F} {n : ℕ} {ε : ℝ≥0}
-    {C : Set F} (hC : C.encard ≤ n) (hcover : Metric.IsCover ε (T '' Metric.closedBall 0 1) C) :
-    T.kolmogorovNumber n ≤ ε := by
-  rcases eq_or_ne ε 0 with rfl | hε
+/-- **Covering estimate.** Over a densely normed field, if `T(B_E)` is covered by at most `k`
+closed `ε`-balls, then `d_k(T) ≤ ε`. -/
+theorem kolmogorovNumber_le_of_isCover (T : E →L[𝕜] F) {k : ℕ} {ε : ℝ≥0} {N : Finset F}
+    (hcard : N.card ≤ k) (hN : IsCover ε ((T : E → F) '' closedBall 0 1) N) :
+    T.kolmogorovNumber k ≤ ε := by
+  obtain rfl | hε := eq_zero_or_pos ε
   · obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
-    simpa using T.kolmogorovNumber_le_mul_of_isCover hC hcover hc
-  · refine le_of_forall_gt fun δ hδ ↦ ?_
-    have hε_pos : (0 : ℝ) < ε := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hε)
-    have h1 : (1 : ℝ) < (δ : ℝ) / (ε : ℝ) := (one_lt_div hε_pos).mpr (NNReal.coe_lt_coe.mpr hδ)
-    obtain ⟨c, hc₁, hc₂⟩ := NormedField.exists_lt_norm_lt 𝕜 zero_le_one h1
-    refine (T.kolmogorovNumber_le_mul_of_isCover hC hcover hc₁).trans_lt ?_
-    rw [← NNReal.coe_lt_coe]
-    push_cast
-    exact mul_comm (ε : ℝ) ‖c‖ ▸ (lt_div_iff₀ hε_pos).mp hc₂
-
-/-- **Finite-ball covering bound for Kolmogorov numbers.** Over a densely normed field, if `T(B_E)`
-is covered by `s.card ≤ n` closed balls of radius `ε`, then `dₙ(T) ≤ ε`. -/
-theorem ContinuousLinearMap.kolmogorovNumber_le_of_subset_biUnion_closedBall {T : E →L[𝕜] F}
-    {n : ℕ} {ε : ℝ≥0} {s : Finset F} (hs : s.card ≤ n)
-    (hcover : T '' Metric.closedBall 0 1 ⊆ ⋃ y ∈ s, Metric.closedBall y ε) :
-    T.kolmogorovNumber n ≤ ε := by
-  refine T.kolmogorovNumber_le_of_isCover (C := (s : Set F)) ?_
-    (Metric.IsCover.of_subset_iUnion_closedBall (by simpa using hcover))
-  rw [encard_coe_eq_coe_finsetCard]
-  exact_mod_cast hs
+    simpa using T.kolmogorovNumber_le_nnnorm_mul_of_isCover hcard hN hc
+  refine le_of_forall_gt_imp_ge_of_dense fun a ha ↦ ?_
+  -- Use a scalar `c` with `1 < ‖c‖ < a / ε`.
+  obtain ⟨c, hc₁, hca⟩ := NormedField.exists_lt_nnNorm_lt 𝕜 ((one_lt_div hε).2 ha)
+  refine (T.kolmogorovNumber_le_nnnorm_mul_of_isCover hcard hN
+    (c := c) (by exact_mod_cast hc₁)).trans ?_
+  exact ((lt_div_iff₀ hε).1 hca).le
 
 end DenselyNormedField
-
-end KolmogorovCover
 
 section LocallyCompactField
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [LocallyCompactSpace 𝕜]
-  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- **Kolmogorov decay implies total boundedness.** Over a locally compact scalar field, `dₙ(T) → 0`
-implies that `T` maps the closed unit ball to a totally bounded set. -/
-theorem ContinuousLinearMap.totallyBounded_image_closedBall_of_tendsto_kolmogorovNumber
-    {T : E →L[𝕜] F} (h : Tendsto T.kolmogorovNumber atTop (𝓝 0)) :
-    TotallyBounded (T '' Metric.closedBall 0 1) := by
-  refine Metric.totallyBounded_iff.mpr fun ε hε ↦ ?_
-  obtain ⟨n, hn⟩ :=
-    ((tendsto_order.mp h).2 ⟨ε / 3, by positivity⟩
-      (by exact_mod_cast div_pos hε (by norm_num))).exists
-  obtain ⟨V, hV, hTV⟩ := T.exists_nnnorm_mkQL_comp_lt_of_kolmogorovNumber_lt hn
+/-- Over a locally compact field, if the Kolmogorov numbers of `T` tend to zero, then `T(B_E)`
+is totally bounded. -/
+theorem totallyBounded_of_tendsto_kolmogorovNumber_atTop_nhds_zero {T : E →L[𝕜] F}
+    (hT : Tendsto T.kolmogorovNumber atTop (𝓝 0)) :
+    TotallyBounded ((T : E → F) '' closedBall 0 1) := by
+  have : ProperSpace 𝕜 := FiniteDimensional.proper 𝕜 𝕜
+  refine (TauCeti.isCompactoidSet_iff_totallyBounded (K := 𝕜)).1 <|
+    TauCeti.isCompactoidSet_of_forall_exists_norm_sub_lt fun r hr ↦ ?_
+  -- A subspace `V` of finite dimension with `‖π_V ∘ T‖ < r`.
+  have hη : (0 : ℝ≥0) < r.toNNReal := Real.toNNReal_pos.2 hr
+  obtain ⟨n, hn⟩ := (hT.eventually (gt_mem_nhds hη)).exists
+  obtain ⟨V, hV, hVT⟩ := exists_nnnorm_mkQL_comp_lt_of_kolmogorovNumber_lt hn
   have : FiniteDimensional 𝕜 V :=
     Module.rank_lt_aleph0_iff.mp (hV.trans_lt Cardinal.natCast_lt_aleph0)
   have : FiniteDimensional 𝕜 (SeparationQuotient V) := SeparationQuotient.instModuleFinite
   have : ProperSpace (SeparationQuotient V) := FiniteDimensional.proper 𝕜 (SeparationQuotient V)
-  -- Pull total boundedness of the closed ball in `SeparationQuotient V` back to `V`.
-  set R : ℝ := ‖T‖ + ε / 3
-  have hball : TotallyBounded (Metric.closedBall (0 : V) R) := by
-    have hpre : Metric.closedBall (0 : V) R =
-        SeparationQuotient.mk ⁻¹' Metric.closedBall (0 : SeparationQuotient V) R := by
+  -- Pull total boundedness of the closed ball of radius `‖T‖ + r` from `SeparationQuotient V`
+  -- back to `V`, and map it into `F`.
+  have hball : TotallyBounded (closedBall (0 : V) (‖T‖ + r)) := by
+    have hpre : closedBall (0 : V) (‖T‖ + r) =
+        SeparationQuotient.mk ⁻¹' closedBall (0 : SeparationQuotient V) (‖T‖ + r) := by
       ext v
-      simp [Metric.mem_closedBall, dist_zero_right]
+      simp [mem_closedBall, dist_zero_right]
     rw [hpre]
     exact totallyBounded_preimage SeparationQuotient.isUniformInducing_mk
-      (isCompact_closedBall (0 : SeparationQuotient V) R).totallyBounded
-  obtain ⟨t, -, ht, hcov⟩ := Metric.finite_approx_of_totallyBounded hball (ε / 3) (by positivity)
-  refine ⟨Subtype.val '' t, ht.image Subtype.val, ?_⟩
+      (isCompact_closedBall (0 : SeparationQuotient V) (‖T‖ + r)).totallyBounded
+  refine ⟨((↑) : V → F) '' closedBall 0 (‖T‖ + r),
+    (hball.image uniformContinuous_subtypeVal).isCompactoidSet, ?_⟩
   rintro _ ⟨x, hx, rfl⟩
-  have hx1 : ‖x‖ ≤ 1 := mem_closedBall_zero_iff.mp hx
-  have hquot : ‖V.mkQL (T x)‖ < ε / 3 :=
-    (((V.mkQL ∘L T).le_opNorm x).trans
-      (mul_le_of_le_one_right (norm_nonneg _) hx1)).trans_lt (by exact_mod_cast hTV)
-  obtain ⟨u, hu_mk, hu_norm⟩ :=
-    Submodule.Quotient.norm_mk_lt (V.mkQL (T x)) (sub_pos.mpr hquot)
-  have hvV : T x - u ∈ V := (Submodule.Quotient.mk_eq_zero V).mp <| by
-    rw [← Submodule.mkQ_apply, map_sub, Submodule.mkQ_apply, Submodule.mkQ_apply, hu_mk]
-    simp
-  have hv_ball : (⟨T x - u, hvV⟩ : V) ∈ Metric.closedBall (0 : V) R := by
-    simp only [mem_closedBall_zero_iff, ← Submodule.norm_coe, R]
-    have hTx : ‖T x‖ ≤ ‖T‖ :=
-      (T.le_opNorm x).trans (mul_le_of_le_one_right (norm_nonneg T) hx1)
-    linarith [norm_sub_le (T x) u]
-  obtain ⟨w, hwt, hvw⟩ := mem_iUnion₂.mp (hcov hv_ball)
-  rw [biUnion_image]
-  refine mem_iUnion₂.mpr ⟨w, hwt, Metric.mem_ball.mpr ?_⟩
-  have hw_dist : ‖(T x - u) - (w : F)‖ < ε / 3 := by
-    simpa [Metric.mem_ball, dist_eq_norm] using hvw
-  rw [dist_eq_norm]
-  calc ‖T x - (w : F)‖ = ‖((T x - u) - (w : F)) + u‖ := by abel_nf
-    _ ≤ ‖(T x - u) - (w : F)‖ + ‖u‖ := norm_add_le _ _
-    _ < ε := by linarith
+  -- `T x` lies within `r` of a point `v ∈ V`, which has norm at most `‖T‖ + r`.
+  have hdist : infDist (T x) (V : Set F) < r := by
+    rw [← V.norm_mkQL_apply]
+    calc ‖V.mkQL (T x)‖ = ‖(V.mkQL ∘L T) x‖ := by rw [comp_apply]
+      _ ≤ ‖V.mkQL ∘L T‖ * ‖x‖ := le_opNorm _ _
+      _ ≤ ‖V.mkQL ∘L T‖ * 1 := by gcongr; exact mem_closedBall_zero_iff.1 hx
+      _ < r := by rw [mul_one]; exact Real.lt_toNNReal_iff_coe_lt.1 hVT
+  obtain ⟨v, hv, hxv⟩ := (infDist_lt_iff ⟨0, V.zero_mem⟩).1 hdist
+  refine ⟨v, ⟨⟨v, hv⟩, mem_closedBall_zero_iff.2 ?_, rfl⟩, by rwa [← dist_eq_norm]⟩
+  calc ‖(⟨v, hv⟩ : V)‖ = ‖v‖ := (Submodule.norm_coe _).symm
+    _ ≤ ‖T x‖ + dist (T x) v := by
+      rw [dist_eq_norm]; exact norm_le_norm_add_norm_sub (T x) v
+    _ ≤ ‖T‖ + r := by
+      gcongr
+      · exact T.unit_le_opNorm x (mem_closedBall_zero_iff.1 hx)
 
-/-- **Kolmogorov characterization of total boundedness.** Over a locally compact scalar field,
-`T(B_E)` is totally bounded if and only if `dₙ(T) → 0`. -/
-theorem ContinuousLinearMap.totallyBounded_image_closedBall_iff_tendsto_kolmogorovNumber
-    {T : E →L[𝕜] F} :
-    TotallyBounded (T '' Metric.closedBall 0 1) ↔ Tendsto T.kolmogorovNumber atTop (𝓝 0) :=
-  ⟨tendsto_kolmogorovNumber_of_totallyBounded_image_closedBall,
-    totallyBounded_image_closedBall_of_tendsto_kolmogorovNumber⟩
+/-- Over a locally compact field, the Kolmogorov numbers of `T` tend to zero if and only if
+`T(B_E)` is totally bounded. -/
+theorem tendsto_kolmogorovNumber_atTop_nhds_zero_iff_totallyBounded (T : E →L[𝕜] F) :
+    Tendsto T.kolmogorovNumber atTop (𝓝 0) ↔ TotallyBounded ((T : E → F) '' closedBall 0 1) :=
+  ⟨totallyBounded_of_tendsto_kolmogorovNumber_atTop_nhds_zero,
+    tendsto_kolmogorovNumber_atTop_nhds_zero_of_totallyBounded⟩
 
-/-- **Kolmogorov decay implies compactness.** Over a locally compact scalar field, a bounded
-operator into a complete space with `dₙ(T) → 0` is compact. -/
-theorem ContinuousLinearMap.isCompactOperator_of_tendsto_kolmogorovNumber [CompleteSpace F]
-    {T : E →L[𝕜] F} (h : Tendsto T.kolmogorovNumber atTop (𝓝 0)) : IsCompactOperator T :=
-  (isCompactOperator_iff_totallyBounded_image_closedBall T.toLinearMap one_pos).mpr
-    (totallyBounded_image_closedBall_of_tendsto_kolmogorovNumber h)
-
-/-- **Kolmogorov characterization of compact operators.** Over a locally compact scalar field, a
-bounded operator into a complete space is compact if and only if `dₙ(T) → 0`. -/
-theorem ContinuousLinearMap.isCompactOperator_iff_tendsto_kolmogorovNumber [CompleteSpace F]
-    {T : E →L[𝕜] F} :
+/-- Over a locally compact field and for a complete codomain, `T` is compact if and only if its
+Kolmogorov numbers tend to zero. -/
+theorem isCompactOperator_iff_tendsto_kolmogorovNumber [CompleteSpace F] (T : E →L[𝕜] F) :
     IsCompactOperator T ↔ Tendsto T.kolmogorovNumber atTop (𝓝 0) :=
-  ⟨IsCompactOperator.tendsto_kolmogorovNumber, isCompactOperator_of_tendsto_kolmogorovNumber⟩
+  (isCompactOperator_iff_totallyBounded_image_closedBall T.toLinearMap one_pos).trans
+    T.tendsto_kolmogorovNumber_atTop_nhds_zero_iff_totallyBounded.symm
 
-/-- **Gelfand decay implies total boundedness.** Over a locally compact scalar field, `cₙ(T) → 0`
-implies that `T` maps the closed unit ball to a totally bounded set. The proof lifts a finite net
-from the finite-dimensional quotient `E ⧸ M` directly to `B_E`, avoiding any linear projection. -/
-theorem ContinuousLinearMap.totallyBounded_image_closedBall_of_tendsto_gelfandNumber
-    {T : E →L[𝕜] F} (h : Tendsto T.gelfandNumber atTop (𝓝 0)) :
-    TotallyBounded (T '' Metric.closedBall 0 1) := by
-  refine Metric.totallyBounded_iff.mpr fun r hr ↦ ?_
-  set ε : ℝ := r / 6
+end LocallyCompactField
+
+end Kolmogorov
+
+/-! ### Gelfand numbers -/
+
+section Gelfand
+
+section RCLike
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- **Covering estimate.** If `T(B_E)` is covered by at most `k` closed `ε`-balls, then
+`c_k(T) ≤ 2ε`. -/
+theorem gelfandNumber_le_two_mul_of_isCover (T : E →L[𝕜] F) {k : ℕ} {ε : ℝ≥0} {N : Finset F}
+    (hcard : N.card ≤ k) (hN : IsCover ε ((T : E → F) '' closedBall 0 1) N) :
+    T.gelfandNumber k ≤ 2 * ε := by
+  obtain ⟨M, -, hM, hTM⟩ := T.exists_norm_comp_subtypeL_le_two_mul_of_isCover hN
+  refine (T.gelfandNumber_le (hM.trans (by exact_mod_cast hcard))).trans ?_
+  exact_mod_cast hTM
+
+/-- If `T(B_E)` is totally bounded, the Gelfand numbers of `T` tend to zero. -/
+theorem tendsto_gelfandNumber_atTop_nhds_zero_of_totallyBounded {T : E →L[𝕜] F}
+    (hT : TotallyBounded ((T : E → F) '' closedBall 0 1)) :
+    Tendsto T.gelfandNumber atTop (𝓝 0) :=
+  T.antitone_gelfandNumber.tendsto_atTop_nhds_zero_of_isCover hT
+    fun _ _ hN ↦ T.gelfandNumber_le_two_mul_of_isCover le_rfl hN
+
+/-- Every compact operator has Gelfand numbers tending to zero. -/
+theorem _root_.IsCompactOperator.tendsto_gelfandNumber {T : E →L[𝕜] F}
+    (hT : IsCompactOperator T) : Tendsto T.gelfandNumber atTop (𝓝 0) :=
+  tendsto_gelfandNumber_atTop_nhds_zero_of_totallyBounded (hT.totallyBounded_image_closedBall 1)
+
+end RCLike
+
+section NontriviallyNormedField
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- If `‖x‖, ‖v‖ ≤ 1` and the class of `x - v` modulo `M` has norm below `δ ≤ 1`, then `T x` and
+`T v` are within `3 ‖T|_M‖ + ‖T‖ δ` of each other. -/
+private theorem dist_le_of_norm_mk_sub_lt (T : E →L[𝕜] F) (M : Submodule 𝕜 E) {x v : E}
+    (hx : ‖x‖ ≤ 1) (hv : ‖v‖ ≤ 1) {δ : ℝ} (hδ : δ ≤ 1)
+    (h : ‖(Submodule.Quotient.mk (x - v) : E ⧸ M)‖ < δ) :
+    dist (T x) (T v) ≤ 3 * ‖T ∘L M.subtypeL‖ + ‖T‖ * δ := by
+  -- Write `x - v = m + w` with `m ∈ M` and `‖w‖ < δ`, so that `‖m‖ ≤ 3`.
+  obtain ⟨w, hw, hwδ⟩ :=
+    Submodule.Quotient.norm_mk_lt (Submodule.Quotient.mk (x - v) : E ⧸ M) (sub_pos.2 h)
+  have hm : x - v - w ∈ M := (Submodule.Quotient.eq M).1 hw.symm
+  have hm3 : ‖x - v - w‖ ≤ 3 := by linarith [norm_sub_le (x - v) w, norm_sub_le x v]
+  calc dist (T x) (T v) = ‖T (x - v - w) + T w‖ := by
+        rw [dist_eq_norm, ← map_sub, ← map_add, sub_add_cancel]
+    _ ≤ ‖T ∘L M.subtypeL‖ * ‖x - v - w‖ + ‖T‖ * ‖w‖ := (norm_add_le _ _).trans
+      (add_le_add ((T ∘L M.subtypeL).le_opNorm ⟨x - v - w, hm⟩) (T.le_opNorm w))
+    _ ≤ ‖T ∘L M.subtypeL‖ * 3 + ‖T‖ * δ := by gcongr; linarith
+    _ = 3 * ‖T ∘L M.subtypeL‖ + ‖T‖ * δ := by ring
+
+end NontriviallyNormedField
+
+section LocallyCompactField
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [LocallyCompactSpace 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Over a locally compact field, if the Gelfand numbers of `T` tend to zero, then `T(B_E)` is
+totally bounded. -/
+theorem totallyBounded_of_tendsto_gelfandNumber_atTop_nhds_zero {T : E →L[𝕜] F}
+    (hT : Tendsto T.gelfandNumber atTop (𝓝 0)) :
+    TotallyBounded ((T : E → F) '' closedBall 0 1) := by
+  rw [Metric.totallyBounded_iff]
+  intro r hr
   set δ : ℝ := min 1 (r / (4 * (‖T‖ + 1)))
-  have hε : 0 < ε := by positivity
-  have hδ : 0 < δ := lt_min one_pos (div_pos hr (by positivity))
-  obtain ⟨n, hn⟩ := ((tendsto_order.mp h).2 ⟨ε, hε.le⟩ (by exact_mod_cast hε)).exists
-  obtain ⟨M, hM_closed, hM_rank, hTM⟩ := T.exists_nnnorm_comp_subtypeL_lt hn
-  have : IsClosed (M : Set E) := hM_closed
+  have hδ : 0 < δ := lt_min one_pos (by positivity)
+  have hTδ : ‖T‖ * δ ≤ r / 4 :=
+    calc ‖T‖ * δ ≤ ‖T‖ * (r / (4 * (‖T‖ + 1))) := by gcongr; exact min_le_right _ _
+      _ ≤ r / 4 := by
+        rw [← mul_div_assoc, div_le_div_iff₀ (by positivity) four_pos]
+        nlinarith [norm_nonneg T]
+  -- A closed subspace `M` of finite codimension with `‖T|_M‖ < r / 4`.
+  have hη : (0 : ℝ≥0) < (r / 4).toNNReal := Real.toNNReal_pos.2 (div_pos hr four_pos)
+  obtain ⟨n, hn⟩ := (hT.eventually (gt_mem_nhds hη)).exists
+  obtain ⟨M, hMc, hM, hTM⟩ := exists_nnnorm_comp_subtypeL_lt hn
+  have hTM' : ‖T ∘L M.subtypeL‖ < r / 4 := Real.lt_toNNReal_iff_coe_lt.1 hTM
+  have : IsClosed (M : Set E) := hMc
   have : FiniteDimensional 𝕜 (E ⧸ M) :=
-    Module.rank_lt_aleph0_iff.mp (hM_rank.trans_lt Cardinal.natCast_lt_aleph0)
+    Module.rank_lt_aleph0_iff.mp (hM.trans_lt Cardinal.natCast_lt_aleph0)
   have : ProperSpace (E ⧸ M) := FiniteDimensional.proper 𝕜 (E ⧸ M)
-  have hQ_tb : TotallyBounded (M.mkQL '' Metric.closedBall (0 : E) 1) :=
-    (isCompact_closedBall (0 : E ⧸ M) 1).totallyBounded.subset <| by
-      rintro _ ⟨x, hx, rfl⟩
-      rw [mem_closedBall_zero_iff] at hx ⊢
-      exact (Submodule.Quotient.norm_mk_le M x).trans hx
-  obtain ⟨t, ht_sub, ht_fin, ht_cov⟩ := Metric.finite_approx_of_totallyBounded hQ_tb δ hδ
-  let : Fintype t := ht_fin.fintype
-  choose u hu_ball hu_mk using fun z : t ↦ ht_sub z.2
-  refine ⟨range (fun z : t ↦ T (u z)), finite_range _, ?_⟩
+  -- The image of `B_E` in `E ⧸ M` lies in the compact unit ball, and has a finite `δ`-net
+  -- consisting of images of points `u ∈ B_E`; their images under `T` form an `r`-net.
+  have hK : TotallyBounded (M.mkQ '' closedBall (0 : E) 1) := by
+    refine (isCompact_closedBall (0 : E ⧸ M) 1).totallyBounded.subset ?_
+    rintro _ ⟨x, hx, rfl⟩
+    exact mem_closedBall_zero_iff.2 ((Submodule.Quotient.norm_mk_le M x).trans
+      (mem_closedBall_zero_iff.1 hx))
+  obtain ⟨u, hu, hufin, hucov⟩ := exists_subset_image_finite_and.1
+    (finite_approx_of_totallyBounded hK δ hδ)
+  refine ⟨T '' u, hufin.image _, ?_⟩
   rintro _ ⟨x, hx, rfl⟩
-  have hx1 : ‖x‖ ≤ 1 := mem_closedBall_zero_iff.mp hx
-  obtain ⟨z, hzt, hxz⟩ := mem_iUnion₂.mp (ht_cov ⟨x, hx, rfl⟩)
-  let j : t := ⟨z, hzt⟩
-  have hquot : ‖M.mkQL (x - u j)‖ < δ := by
-    simpa [Metric.mem_ball, dist_eq_norm, map_sub, hu_mk j] using hxz
-  obtain ⟨v, hv_mk, hv_norm⟩ :=
-    Submodule.Quotient.norm_mk_lt (M.mkQL (x - u j)) (sub_pos.mpr hquot)
-  have hmM : (x - u j) - v ∈ M := (Submodule.Quotient.mk_eq_zero M).mp <| by
-    rw [← Submodule.mkQ_apply, map_sub, Submodule.mkQ_apply, Submodule.mkQ_apply, hv_mk]
-    simp
-  have hv_lt : ‖v‖ < δ := by linarith
-  have hm_le : ‖(x - u j) - v‖ ≤ 2 + δ := by
-    have hu1 : ‖u j‖ ≤ 1 := mem_closedBall_zero_iff.mp (hu_ball j)
-    linarith [norm_sub_le (x - u j) v, norm_sub_le x (u j)]
-  have hTm : ‖T ((x - u j) - v)‖ ≤ ε * (2 + δ) :=
-    ((T ∘L M.subtypeL).le_opNorm ⟨(x - u j) - v, hmM⟩).trans
-      (mul_le_mul (le_of_lt (by exact_mod_cast hTM)) hm_le (norm_nonneg _) hε.le)
-  refine mem_iUnion₂.mpr ⟨T (u j), ⟨j, rfl⟩, Metric.mem_ball.mpr ?_⟩
-  have hδ1 : δ ≤ 1 := min_le_left _ _
-  have hTδ : ‖T‖ * δ ≤ r / 4 := by
-    have hδ2 : δ ≤ r / (4 * (‖T‖ + 1)) := min_le_right _ _
-    have hle : 4 * (‖T‖ + 1) * δ ≤ r := (le_div_iff₀' (by positivity)).mp hδ2
-    nlinarith [norm_nonneg T, hδ.le]
-  have hε_eq : ε = r / 6 := rfl
-  rw [dist_eq_norm, ← map_sub]
-  calc ‖T (x - u j)‖ = ‖T (((x - u j) - v) + v)‖ := by rw [sub_add_cancel]
-    _ ≤ ‖T ((x - u j) - v)‖ + ‖T v‖ := by rw [map_add]; exact norm_add_le _ _
-    _ ≤ ε * (2 + δ) + ‖T‖ * δ := by
-        gcongr
-        exact (T.le_opNorm v).trans (mul_le_mul_of_nonneg_left hv_lt.le (norm_nonneg T))
-    _ < r := by nlinarith
+  obtain ⟨_, ⟨v, hv, rfl⟩, hxv⟩ := mem_iUnion₂.1 (hucov (mem_image_of_mem _ hx))
+  refine mem_iUnion₂.2 ⟨T v, mem_image_of_mem _ hv, mem_ball.2 ?_⟩
+  refine (dist_le_of_norm_mk_sub_lt T M (mem_closedBall_zero_iff.1 hx)
+    (mem_closedBall_zero_iff.1 (hu hv)) (min_le_left _ _) ?_).trans_lt (by linarith)
+  simpa only [mem_ball, dist_eq_norm, Submodule.mkQ_apply, Submodule.Quotient.mk_sub] using hxv
 
-/-- **Gelfand decay implies compactness.** Over a locally compact scalar field, a bounded operator
-into a complete space with `cₙ(T) → 0` is compact. -/
-theorem ContinuousLinearMap.isCompactOperator_of_tendsto_gelfandNumber [CompleteSpace F]
-    {T : E →L[𝕜] F} (h : Tendsto T.gelfandNumber atTop (𝓝 0)) : IsCompactOperator T :=
-  (isCompactOperator_iff_totallyBounded_image_closedBall T.toLinearMap one_pos).mpr
-    (totallyBounded_image_closedBall_of_tendsto_gelfandNumber h)
+/-- Over a locally compact field and for a complete codomain, if the Gelfand numbers of `T` tend
+to zero, then `T` is compact. -/
+theorem isCompactOperator_of_tendsto_gelfandNumber [CompleteSpace F] {T : E →L[𝕜] F}
+    (hT : Tendsto T.gelfandNumber atTop (𝓝 0)) : IsCompactOperator T :=
+  (isCompactOperator_iff_totallyBounded_image_closedBall T.toLinearMap one_pos).2
+    (totallyBounded_of_tendsto_gelfandNumber_atTop_nhds_zero hT)
 
 end LocallyCompactField
 
 section RCLike
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
-  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- **Covering bound for Gelfand numbers.** Over an `RCLike` scalar field, an `ε`-cover of `T(B_E)`
-of cardinality at most `n` forces `cₙ(T) ≤ 2 * ε`: intersecting `ker (φ_y ∘ T)` over Hahn–Banach
-norming functionals `φ_y` of the centres gives a subspace `M` of codimension at most `n` on which
-`‖T x‖ ≤ 2 * ε * ‖x‖`. -/
-theorem ContinuousLinearMap.gelfandNumber_le_two_mul_of_isCover {T : E →L[𝕜] F} {n : ℕ} {ε : ℝ≥0}
-    {C : Set F} (hC : C.encard ≤ n) (hcover : Metric.IsCover ε (T '' Metric.closedBall 0 1) C) :
-    T.gelfandNumber n ≤ 2 * ε := by
-  obtain ⟨hfin, hncard⟩ := encard_le_coe_iff_finite_ncard_le.mp hC
-  obtain ⟨K, -, hK_rank, hTK⟩ :=
-    T.exists_rank_quotient_le_nnnorm_comp_subtypeL_le_of_isCover hfin hcover
-  exact (T.gelfandNumber_le (hK_rank.trans (Nat.cast_le.mpr hncard))).trans hTK
+/-- The Gelfand numbers of `T` tend to zero if and only if `T(B_E)` is totally bounded. -/
+theorem tendsto_gelfandNumber_atTop_nhds_zero_iff_totallyBounded (T : E →L[𝕜] F) :
+    Tendsto T.gelfandNumber atTop (𝓝 0) ↔ TotallyBounded ((T : E → F) '' closedBall 0 1) :=
+  ⟨totallyBounded_of_tendsto_gelfandNumber_atTop_nhds_zero,
+    tendsto_gelfandNumber_atTop_nhds_zero_of_totallyBounded⟩
 
-/-- **Finite-ball covering bound for Gelfand numbers.** Over an `RCLike` scalar field, if `T(B_E)`
-is covered by `s.card ≤ n` closed balls of radius `ε`, then `cₙ(T) ≤ 2 * ε`. -/
-theorem ContinuousLinearMap.gelfandNumber_le_two_mul_of_subset_biUnion_closedBall {T : E →L[𝕜] F}
-    {n : ℕ} {ε : ℝ≥0} {s : Finset F} (hs : s.card ≤ n)
-    (hcover : T '' Metric.closedBall 0 1 ⊆ ⋃ y ∈ s, Metric.closedBall y ε) :
-    T.gelfandNumber n ≤ 2 * ε := by
-  refine T.gelfandNumber_le_two_mul_of_isCover (C := (s : Set F)) ?_
-    (Metric.IsCover.of_subset_iUnion_closedBall (by simpa using hcover))
-  rw [encard_coe_eq_coe_finsetCard]
-  exact_mod_cast hs
-
-/-- **Total boundedness implies Gelfand decay.** Over an `RCLike` scalar field, if `T` maps the
-closed unit ball to a totally bounded set, then `cₙ(T) → 0`. Neither space needs to be complete. -/
-theorem ContinuousLinearMap.tendsto_gelfandNumber_of_totallyBounded_image_closedBall
-    {T : E →L[𝕜] F} (hT : TotallyBounded (T '' Metric.closedBall 0 1)) :
-    Tendsto T.gelfandNumber atTop (𝓝 0) := by
-  refine tendsto_order.mpr ⟨fun _ ha ↦ (not_lt_zero ha).elim, fun b hb ↦ ?_⟩
-  have hδ : b / 4 ≠ 0 := by positivity
-  obtain ⟨C, -, hfin, hcover⟩ := Metric.exists_finite_isCover_of_totallyBounded hδ hT
-  refine eventually_atTop.mpr ⟨hfin.toFinset.card, fun n hn ↦ ?_⟩
-  have hC : C.encard ≤ n := by
-    rw [hfin.encard_eq_coe_toFinset_card]
-    exact_mod_cast hn
-  calc T.gelfandNumber n ≤ 2 * (b / 4) := T.gelfandNumber_le_two_mul_of_isCover hC hcover
-    _ = b / 2 := by rw [← NNReal.coe_inj]; push_cast; ring
-    _ < b := NNReal.half_lt_self hb.ne'
-
-/-- **Compactness implies Gelfand decay.** Over an `RCLike` scalar field, a compact operator
-between seminormed spaces has `cₙ(T) → 0`. -/
-theorem IsCompactOperator.tendsto_gelfandNumber {T : E →L[𝕜] F} (hT : IsCompactOperator T) :
-    Tendsto T.gelfandNumber atTop (𝓝 0) :=
-  T.tendsto_gelfandNumber_of_totallyBounded_image_closedBall (hT.totallyBounded_image_closedBall 1)
-
-/-- **Gelfand characterization of total boundedness.** Over an `RCLike` scalar field, `T(B_E)` is
-totally bounded if and only if `cₙ(T) → 0`. -/
-theorem ContinuousLinearMap.totallyBounded_image_closedBall_iff_tendsto_gelfandNumber
-    {T : E →L[𝕜] F} :
-    TotallyBounded (T '' Metric.closedBall 0 1) ↔ Tendsto T.gelfandNumber atTop (𝓝 0) :=
-  ⟨tendsto_gelfandNumber_of_totallyBounded_image_closedBall,
-    totallyBounded_image_closedBall_of_tendsto_gelfandNumber⟩
-
-/-- **Equivalence of Gelfand and Kolmogorov decay.** Over an `RCLike` scalar field, `cₙ(T) → 0` if
-and only if `dₙ(T) → 0`, with no completeness assumption on either space. -/
-theorem ContinuousLinearMap.tendsto_gelfandNumber_iff_tendsto_kolmogorovNumber {T : E →L[𝕜] F} :
-    Tendsto T.gelfandNumber atTop (𝓝 0) ↔ Tendsto T.kolmogorovNumber atTop (𝓝 0) :=
-  T.totallyBounded_image_closedBall_iff_tendsto_gelfandNumber.symm.trans
-    T.totallyBounded_image_closedBall_iff_tendsto_kolmogorovNumber
-
-/-- **Gelfand characterization of compact operators.** Over an `RCLike` scalar field, a bounded
-operator into a complete space is compact if and only if `cₙ(T) → 0`. -/
-theorem ContinuousLinearMap.isCompactOperator_iff_tendsto_gelfandNumber [CompleteSpace F]
-    {T : E →L[𝕜] F} :
+/-- For a complete codomain, `T` is compact if and only if its Gelfand numbers tend to zero. -/
+theorem isCompactOperator_iff_tendsto_gelfandNumber [CompleteSpace F] (T : E →L[𝕜] F) :
     IsCompactOperator T ↔ Tendsto T.gelfandNumber atTop (𝓝 0) :=
   ⟨IsCompactOperator.tendsto_gelfandNumber, isCompactOperator_of_tendsto_gelfandNumber⟩
 
 end RCLike
+
+end Gelfand
+
+end ContinuousLinearMap

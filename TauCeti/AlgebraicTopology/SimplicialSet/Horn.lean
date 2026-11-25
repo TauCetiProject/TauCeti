@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.Quasicategory.InnerFibration
 public import Mathlib.AlgebraicTopology.SimplicialSet.KanComplex
+public import TauCeti.AlgebraicTopology.SimplicialSet.Op
 
 /-!
 # Lifting against horn inclusions
@@ -17,31 +18,35 @@ A map of simplicial sets `Λ[n + 1, i] ⟶ X` out of a horn is the same as a com
 `Λ[n + 1, i] ⟶ Δ[n + 1]` exactly when every compatible family of faces lying over the faces of
 an `(n + 1)`-simplex of `Y` extends to an `(n + 1)`-simplex of `X` over it
 (`SSet.hasLiftingProperty_horn_ι_iff`). This is the relative form of Mathlib's criterion
-`SSet.KanComplex.iff` for Kan complexes. It reduces horn-lifting conditions to statements about
+`SSet.KanComplex.iff` for Kan complexes, which also gives the horn-extension criterion
+`SSet.kanComplex_of_hornFilling`. It reduces horn-lifting conditions to statements about
 simplices and their faces, which is how such conditions are transported along constructions
 that act on simplices, such as universe lifts.
 
 Kan fibrations and inner fibrations are the maps with the right lifting property with respect
 to all horn inclusions, respectively all inner horn inclusions
-(`SSet.modelCategoryQuillen.rlp_J_iff`, `SSet.mem_innerFibrations_iff`).
+(`SSet.modelCategoryQuillen.rlp_J_iff`, `SSet.mem_innerFibrations_iff`). Through the horn-reversal
+isomorphism `SSet.horn.opIso`, the opposite functor `SSet.opFunctor` exchanges lifting against
+`Λ[n, i]` and `Λ[n, i.rev]` (`SSet.hasLiftingProperty_horn_ι_opFunctor_map_iff`), and therefore
+preserves and reflects Kan fibrations, inner fibrations, Kan complexes and quasicategories.
 
 The map `SSet.horn.IsCompatible.desc` induced by a compatible family `f` sends a simplex of the
 face `j` to its image under `f j` (`SSet.horn.IsCompatible.desc_app_ι_app`), and when it extends
 to a simplex `σ`, the faces of `σ` are the members of `f`
-(`SSet.horn.IsCompatible.δ_yonedaEquiv_of_desc_eq`). An edge of a face of a horn is an edge of
-the horn (`SSet.horn.ι_app_edge`).
+(`SSet.horn.IsCompatible.δ_yonedaEquiv_of_desc_eq`). A family of simplices whose faces other than
+the `0`th are constant at a vertex is compatible on the horn `Λ[n + 2, 0]`
+(`SSet.horn.IsCompatible.of_δ_succ`). An edge of a face of a horn is an edge of the horn
+(`SSet.horn.ι_app_edge`).
 -/
 
 public section
 
-open CategoryTheory Simplicial
+open CategoryTheory Limits HomotopicalAlgebra Simplicial
 open SSet.modelCategoryQuillen
 
 universe u
 
 namespace SSet
-
-variable {X Y : SSet.{u}}
 
 variable {X Y : SSet.{u}}
 
@@ -78,6 +83,23 @@ lemma δ_yonedaEquiv_of_desc_eq (hf : horn.IsCompatible f) {σ : Δ[n + 1] ⟶ X
   rw [← stdSimplex.yonedaEquiv_δ_comp, ← horn.ι_ι_assoc i j hj, ← hσ, hf.ι_desc]
 
 end horn.IsCompatible
+
+/-- A family of `(n + 1)`-simplices indexed by the nonzero `j : Fin (n + 3)` whose faces other than
+the `0`th are constant is compatible on the horn `Λ[n + 2, 0]`. -/
+lemma horn.IsCompatible.of_δ_succ {n : ℕ} {x : X _⦋0⦌}
+    {f : ∀ j : Fin (n + 3), j ≠ 0 → (Δ[n + 1] ⟶ X)}
+    (hf : ∀ j hj (l : Fin (n + 1)), stdSimplex.δ l.succ ≫ f j hj = SSet.const x) :
+    horn.IsCompatible f := by
+  have hf' (j hj) (m : Fin (n + 2)) (hm : m ≠ 0) : stdSimplex.δ m ≫ f j hj = SSet.const x := by
+    obtain ⟨l, rfl⟩ := Fin.eq_succ_of_ne_zero hm
+    exact hf j hj l
+  rw [horn.isCompatible_iff]
+  intro j k hj hk hjk
+  rw [hf' j hj _ (fun h ↦ ?_), hf' k hk _ (fun h ↦ ?_)]
+  · exact hj (by simpa using congrArg Fin.castSucc h)
+  · rw [Fin.pred_eq_iff_eq_succ] at h
+    subst h
+    exact hj (Fin.ext (by simpa [Fin.lt_def] using hjk))
 
 /-- A map `p` has the right lifting property with respect to the horn inclusion
 `Λ[n + 1, i] ⟶ Δ[n + 1]` exactly when every compatible family of faces in the source of `p`,
@@ -119,5 +141,105 @@ theorem mem_innerFibrations_iff (p : X ⟶ Y) :
   refine ⟨fun h n i h0 hn ↦ h _ ⟨i, h0, hn⟩, ?_⟩
   rintro h _ _ _ ⟨i, h0, hn⟩
   exact h _ i h0 hn
+
+/-- A simplicial set in which every horn `Λ[n + 1, i] ⟶ Z` extends to `Δ[n + 1] ⟶ Z` is a Kan
+complex. -/
+theorem kanComplex_of_hornFilling (Z : SSet.{u})
+    (h : ∀ ⦃n : ℕ⦄ ⦃i : Fin (n + 2)⦄ (σ₀ : (Λ[n + 1, i] : SSet.{u}) ⟶ Z),
+      ∃ σ : Δ[n + 1] ⟶ Z, σ₀ = Λ[n + 1, i].ι ≫ σ) : KanComplex Z := by
+  rw [KanComplex.iff]
+  intro n i f hf
+  obtain ⟨σ, hσ⟩ := h hf.desc
+  exact ⟨σ, fun j hj ↦ by rw [← horn.ι_ι_assoc i j hj, ← hσ, hf.ι_desc]⟩
+
+/-- A simplicial set is a Kan complex if and only if every horn `Λ[n + 1, i] ⟶ Z` extends to
+`Δ[n + 1] ⟶ Z`. -/
+theorem kanComplex_iff_hornFilling (Z : SSet.{u}) :
+    KanComplex Z ↔ ∀ ⦃n : ℕ⦄ ⦃i : Fin (n + 2)⦄ (σ₀ : (Λ[n + 1, i] : SSet.{u}) ⟶ Z),
+      ∃ σ : Δ[n + 1] ⟶ Z, σ₀ = Λ[n + 1, i].ι ≫ σ :=
+  ⟨fun _ _ _ σ₀ ↦ KanComplex.hornFilling σ₀, kanComplex_of_hornFilling Z⟩
+
+/-- The monoidal unit `𝟙_ SSet` is terminal, hence a Kan complex. -/
+instance : KanComplex (MonoidalCategory.tensorUnit SSet.{u}) :=
+  (isFibrant_iff_of_isTerminal (𝟙 _) CartesianMonoidalCategory.isTerminalTensorUnit).2 inferInstance
+
+/-- Every map out of a `1`-horn `Λ[1, i]` extends to a degenerate `1`-simplex. -/
+lemma horn.exists_extension_one (i : Fin 2) (σ₀ : (Λ[1, i] : SSet.{u}) ⟶ X) :
+    ∃ σ : Δ[1] ⟶ X, σ₀ = Λ[1, i].ι ≫ σ := by
+  have hi : i.rev ≠ i := by fin_cases i <;> decide
+  refine ⟨SSet.const (σ₀.app _ (horn.face i i.rev hi)), horn.hom_ext _ _ fun j hj ↦ ?_⟩
+  have hji : j = i.rev := by fin_cases i <;> fin_cases j <;> simp_all
+  subst hji
+  simp [SSet.const, Subsingleton.elim (SimplexCategory.const ⦋0⦌ ⦋0⦌ 0) (𝟙 ⦋0⦌)]
+
+/-- A quasicategory in which all outer horns `Λ[n + 2, 0]` and `Λ[n + 2, Fin.last (n + 2)]` extend
+to `Δ[n + 2]` is a Kan complex. -/
+theorem kanComplex_of_outerHornFilling (Z : SSet.{u}) [Quasicategory Z]
+    (h₀ : ∀ ⦃n : ℕ⦄ (σ₀ : (Λ[n + 2, 0] : SSet.{u}) ⟶ Z),
+      ∃ σ : Δ[n + 2] ⟶ Z, σ₀ = Λ[n + 2, 0].ι ≫ σ)
+    (hₙ : ∀ ⦃n : ℕ⦄ (σ₀ : (Λ[n + 2, Fin.last (n + 2)] : SSet.{u}) ⟶ Z),
+      ∃ σ : Δ[n + 2] ⟶ Z, σ₀ = Λ[n + 2, Fin.last (n + 2)].ι ≫ σ) :
+    KanComplex Z := by
+  refine kanComplex_of_hornFilling Z fun {n} {i} σ₀ ↦ ?_
+  obtain _ | m := n
+  · exact horn.exists_extension_one i σ₀
+  · by_cases hi₀ : i = 0
+    · subst hi₀
+      exact h₀ σ₀
+    · by_cases hiₙ : i = Fin.last (m + 2)
+      · subst hiₙ
+        exact hₙ σ₀
+      · exact Quasicategory.hornFilling (Fin.pos_iff_ne_zero.2 hi₀)
+          (lt_of_le_of_ne (Fin.le_last i) hiₙ) σ₀
+
+/-- The opposite of a map `p` has the right lifting property with respect to `Λ[n, i] ⟶ Δ[n]`
+exactly when `p` has the right lifting property with respect to the reversed horn inclusion
+`Λ[n, i.rev] ⟶ Δ[n]`. -/
+theorem hasLiftingProperty_horn_ι_opFunctor_map_iff (p : X ⟶ Y) {n : ℕ} (i : Fin (n + 1)) :
+    HasLiftingProperty Λ[n, i].ι (opFunctor.map p) ↔
+      HasLiftingProperty Λ[n, i.rev].ι p :=
+  (opEquivalence.toAdjunction.hasLiftingProperty_iff Λ[n, i].ι p).symm.trans
+    (HasLiftingProperty.iff_of_arrow_iso_left
+      (Arrow.isoMk (horn.opIso n i) (stdSimplex.opIso ⦋n⦌) (horn.opIso_hom_ι n i)) p)
+
+/-- The opposite functor preserves and reflects Kan fibrations. -/
+theorem fibration_opFunctor_map_iff (p : X ⟶ Y) :
+    Fibration (opFunctor.map p) ↔ Fibration p := by
+  simp only [fibration_iff, rlp_J_iff, hasLiftingProperty_horn_ι_opFunctor_map_iff]
+  exact ⟨fun h n i ↦ Fin.rev_rev i ▸ h n i.rev, fun h n i ↦ h n i.rev⟩
+
+instance (p : X ⟶ Y) [Fibration p] : Fibration (opFunctor.map p) :=
+  (fibration_opFunctor_map_iff p).2 inferInstance
+
+/-- The opposite functor preserves and reflects inner fibrations. -/
+theorem innerFibration_opFunctor_map_iff (p : X ⟶ Y) :
+    InnerFibration (opFunctor.map p) ↔ InnerFibration p := by
+  simp only [innerFibration_iff, mem_innerFibrations_iff,
+    hasLiftingProperty_horn_ι_opFunctor_map_iff]
+  refine ⟨fun h n i h0 hn ↦ ?_, fun h n i h0 hn ↦ h n i.rev
+    (by simpa using Fin.rev_lt_rev.2 hn) (by simpa using Fin.rev_lt_rev.2 h0)⟩
+  exact Fin.rev_rev i ▸ h n i.rev
+    (by simpa using Fin.rev_lt_rev.2 hn) (by simpa using Fin.rev_lt_rev.2 h0)
+
+instance (p : X ⟶ Y) [InnerFibration p] : InnerFibration (opFunctor.map p) :=
+  (innerFibration_opFunctor_map_iff p).2 inferInstance
+
+/-- The opposite functor preserves and reflects Kan complexes. -/
+theorem kanComplex_op_iff (X : SSet.{u}) :
+    KanComplex X.op ↔ KanComplex X :=
+  ⟨fun _ ↦
+    have : IsFibrant ((opFunctor ⋙ opFunctor).obj X) := inferInstanceAs (KanComplex X.op.op)
+    isFibrant_of_fibration (X := X) (opFunctorCompOpFunctorIso.inv.app X),
+    fun _ ↦ inferInstance⟩
+
+/-- The opposite functor preserves and reflects quasicategories. -/
+theorem quasicategory_op_iff (X : SSet.{u}) :
+    Quasicategory X.op ↔ Quasicategory X := by
+  rw [quasicategory_iff_of_isTerminal (opFunctor.map (stdSimplex.isTerminalObj₀.from X))
+      stdSimplex.isTerminalOpObj₀, innerFibration_opFunctor_map_iff,
+    ← quasicategory_iff_of_isTerminal _ stdSimplex.isTerminalObj₀]
+
+instance (X : SSet.{u}) [Quasicategory X] : Quasicategory X.op :=
+  (quasicategory_op_iff X).2 inferInstance
 
 end SSet

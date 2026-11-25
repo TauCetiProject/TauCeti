@@ -12,7 +12,12 @@ public import Mathlib.Topology.MetricSpace.ProperSpace
 # Closed annuli in proper metric spaces
 
 The closed annulus `{z | a ≤ dist z c ∧ dist z c ≤ b}` about `c` is compact in a proper space
-(`Metric.isCompact_annulus`), and likewise when it is written with the norm.
+(`Metric.isCompact_annulus`), and likewise when it is written with the norm. Shrinking the radii
+gives a smaller annulus (`TauCeti.setOf_le_norm_sub_le_subset`), an annulus of inner radius `a > 0`
+and outer radius `b < R` about `c` lies in the punctured ball of radius `R`
+(`TauCeti.setOf_le_norm_sub_le_subset_ball_sdiff_singleton`), and a closed ball about `z` of
+radius `ρ` lies in the annulus about `c` with radii `‖z - c‖ ∓ ρ`
+(`TauCeti.closedBall_subset_setOf_le_norm_sub_le`).
 -/
 
 public section
@@ -37,5 +42,34 @@ namespace TauCeti
 theorem isCompact_setOf_le_norm_sub_le {E : Type*} [SeminormedAddCommGroup E] [ProperSpace E]
     (c : E) (a b : ℝ) : IsCompact {z : E | a ≤ ‖z - c‖ ∧ ‖z - c‖ ≤ b} := by
   simpa only [dist_eq_norm] using Metric.isCompact_annulus c a b
+
+/-- The closed annulus `r₁ ≤ ‖z - c‖ ≤ r₂` lies in `a ≤ ‖z - c‖ ≤ b` when `a ≤ r₁` and
+`r₂ ≤ b`. -/
+theorem setOf_le_norm_sub_le_subset {E : Type*} [SeminormedAddCommGroup E] {c : E}
+    {a b r₁ r₂ : ℝ} (h₁ : a ≤ r₁) (h₂ : r₂ ≤ b) :
+    {z : E | r₁ ≤ ‖z - c‖ ∧ ‖z - c‖ ≤ r₂} ⊆ {z : E | a ≤ ‖z - c‖ ∧ ‖z - c‖ ≤ b} :=
+  fun _ hz ↦ ⟨h₁.trans hz.1, hz.2.trans h₂⟩
+
+/-- The closed annulus `a ≤ ‖z - c‖ ≤ b` with `0 < a` and `b < R` lies in the punctured ball
+`ball c R \ {c}`. -/
+theorem setOf_le_norm_sub_le_subset_ball_sdiff_singleton {E : Type*} [SeminormedAddCommGroup E]
+    {c : E} {a b R : ℝ} (ha : 0 < a) (hbR : b < R) :
+    {z : E | a ≤ ‖z - c‖ ∧ ‖z - c‖ ≤ b} ⊆ ball c R \ {c} := by
+  rintro z ⟨haz, hzb⟩
+  refine ⟨by rw [mem_ball, dist_eq_norm]; linarith, ?_⟩
+  rintro rfl
+  rw [sub_self, norm_zero] at haz
+  linarith
+
+/-- The closed ball of radius `ρ` about `z` lies in the closed annulus about `c` with radii
+`‖z - c‖ - ρ` and `‖z - c‖ + ρ`. -/
+theorem closedBall_subset_setOf_le_norm_sub_le {E : Type*} [SeminormedAddCommGroup E] (c z : E)
+    (ρ : ℝ) : closedBall z ρ ⊆ {w : E | ‖z - c‖ - ρ ≤ ‖w - c‖ ∧ ‖w - c‖ ≤ ‖z - c‖ + ρ} := by
+  intro w hw
+  rw [mem_closedBall, dist_eq_norm] at hw
+  have h₁ := norm_sub_le_norm_sub_add_norm_sub z w c
+  have h₂ := norm_sub_le_norm_sub_add_norm_sub w z c
+  rw [norm_sub_rev z w] at h₁
+  exact ⟨by linarith, by linarith⟩
 
 end TauCeti

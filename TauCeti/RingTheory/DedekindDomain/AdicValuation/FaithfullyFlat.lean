@@ -246,7 +246,7 @@ theorem eq_iff_forall_surjective_lTensor_inclusion_adicCompletionIntegers (hR : 
     p = q ↔ ∀ v : HeightOneSpectrum R,
       Function.Surjective ((Submodule.inclusion h).lTensor (v.adicCompletionIntegers K)) := by
   rw [← surjective_iff_forall_surjective_lTensor_adicCompletionIntegers K hR]
-  refine ⟨fun hpq x ↦ ⟨⟨x, hpq ▸ x.2⟩, rfl⟩, fun hs ↦ le_antisymm h fun x hx ↦ ?_⟩
+  refine ⟨fun hpq x ↦ ⟨⟨x, hpq ▸ x.property⟩, rfl⟩, fun hs ↦ le_antisymm h fun x hx ↦ ?_⟩
   obtain ⟨⟨y, hy⟩, hyx⟩ := hs ⟨x, hx⟩
   simp only [Subtype.ext_iff, Submodule.coe_inclusion] at hyx
   exact hyx ▸ hy

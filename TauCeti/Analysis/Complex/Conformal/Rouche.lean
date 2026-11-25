@@ -55,20 +55,19 @@ circle, and `closedBall c R` is convex hence preconnected, so
 point to the whole disc — neither `f` nor `g` vanishes identically near any point of it.
 
 The circle is not essential to the argument, only convenient: the second half of the file replays
-it along an arbitrary closed piecewise-`C¹` curve that is null-homologous in an open set carrying
-both functions, weighting each zero by the winding number of the curve about it — and there the
+it along a closed absolutely continuous curve that is null-homologous in an open set carrying both
+functions, weighting each zero by the winding number of the curve about it — and there the
 functions may be meromorphic, the preserved quantity becoming zeros minus poles. The homological
 argument principle `TauCeti.Contour.argumentPrinciple_nullHomologous` replaces the circle one, and
-the slit-plane primitive is pushed across the corners of the curve by
-`TauCeti.Contour.integral_deriv_smul_logDeriv_eq_zero_of_mem_slitPlane`, the curve form of the
-countable-exception logarithmic-derivative FTC.
+the vanishing of the slit-plane integral along such a curve is
+`AbsolutelyContinuousOnInterval.integral_deriv_smul_logDeriv_eq_zero_of_mem_slitPlane`.
 
 That equality of logarithmic-derivative integrals also has a purely geometric reading, obtained by
-running it through `TauCeti.Contour.windingNumber_comp_eq_integral_logDeriv`: the two *image* curves
-`f ∘ γ` and `g ∘ γ` wind equally often about the origin. That is the classical "dog on a leash"
-form, and it is stronger than the counting statement, needing only analyticity at each point of the
-curve — no single ambient open set, no finite `S`, no null-homology — because the vanishing of the
-slit-plane integral already holds there.
+running it through `AbsolutelyContinuousOnInterval.windingNumber_comp_eq_integral_logDeriv`: the
+two *image* curves `f ∘ γ` and `g ∘ γ` wind equally often about the origin. That is the classical
+"dog on a leash" form, and it is stronger than the counting statement, needing only analyticity at
+each point of the curve — no single ambient open set, no finite `S`, no null-homology — because the
+vanishing of the slit-plane integral already holds there.
 
 That same observation is what makes the count *detect* zeros rather than merely count them:
 `AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_zero_iff`, from
@@ -90,17 +89,18 @@ other. That transfer, not the numerical equality, is how Rouché is normally use
 * `TauCeti.rouche_symm_exists_eq_zero_iff`, `TauCeti.rouche_exists_eq_zero_iff`,
   `TauCeti.rouche_add_exists_eq_zero_iff` — under the respective hypotheses, `f` has a zero in
   `ball c R` if and only if the function compared to it does.
-* `TauCeti.rouche_symm_nullHomologous` — the homology form, for meromorphic `f` and `g`: across an
-  arbitrary closed piecewise-`C¹` curve, null-homologous in an open set carrying both functions,
-  the enclosed zeros minus poles agree, counted by multiplicity *and* by the winding number of the
-  curve about them.
+* `TauCeti.rouche_symm_nullHomologous` — the homology form, for meromorphic `f` and `g`: if
+  `‖f - g‖ < ‖f‖ + ‖g‖` along a closed absolutely continuous curve that is null-homologous in an
+  open set carrying both functions and avoids their exceptional points, the enclosed zeros minus
+  poles agree, counted by multiplicity *and* by the winding number of the curve about them.
 * `TauCeti.rouche_symm_nullHomologous_of_analyticOnNhd`, `TauCeti.rouche_nullHomologous`,
   `TauCeti.rouche_add_nullHomologous` — its holomorphic specialization in the same three
   phrasings as the disc statements.
-* `TauCeti.rouche_symm_windingNumber_comp`, `TauCeti.rouche_windingNumber_comp`,
-  `TauCeti.rouche_add_windingNumber_comp` — the "dog on a leash" form, in the same three phrasings:
-  under the symmetric, the classical, respectively the additive hypothesis along the curve, the
-  image curves wind equally often about the origin.
+* `AbsolutelyContinuousOnInterval.rouche_symm_windingNumber_comp`,
+  `AbsolutelyContinuousOnInterval.rouche_windingNumber_comp`,
+  `AbsolutelyContinuousOnInterval.rouche_add_windingNumber_comp` — the "dog on a leash" form, in
+  the same three phrasings: under the symmetric, the classical, respectively the additive
+  hypothesis along the curve, the image curves wind equally often about the origin.
 
 ## References
 
@@ -245,9 +245,9 @@ theorem rouche_symm
       circleIntegral.integral_sub (circleIntegrable_logDeriv hR.le hg hneg)
         (circleIntegrable_logDeriv hR.le hf hnef)] at h0
     linear_combination h0
-  rw [TauCeti.Contour.argumentPrinciple_divisor hR hg.meromorphicOn
+  rw [TauCeti.Contour.argumentPrinciple_divisor hR.le hg.meromorphicOn
         (fun z hz => order_eq_zero hg (sphere_subset_closedBall hz) (hneg z hz)),
-    TauCeti.Contour.argumentPrinciple_divisor hR hf.meromorphicOn
+    TauCeti.Contour.argumentPrinciple_divisor hR.le hf.meromorphicOn
         (fun z hz => order_eq_zero hf (sphere_subset_closedBall hz) (hnef z hz))] at hsplit
   have hpi : (2 * (Real.pi : ℂ) * Complex.I) ≠ 0 := by
     simp [Real.pi_ne_zero, Complex.I_ne_zero]
@@ -349,7 +349,7 @@ theorem rouche_add_exists_eq_zero_iff
 ## Rouché's theorem for a null-homologous cycle
 
 The disc statements above compare the zeros enclosed by a *circle*. The homology forms below
-replace the circle by an arbitrary closed piecewise-`C¹` curve `γ`, null-homologous in an open set
+replace the circle by a closed absolutely continuous curve `γ`, null-homologous in an open set
 `U` carrying both functions: they compare the winding-weighted counts `∑_{z ∈ S} n_z(γ) · ord z`
 over a finite set `S` carrying the exceptional points. That is the form Rouché takes on a domain
 that is not a disc, and the form in which the multiplicity of enclosure is visible.
@@ -362,14 +362,14 @@ holomorphic specialization, whose orders are read off by `analyticOrderNatAt`.
 
 The proof is the disc one, run through `TauCeti.Contour.argumentPrinciple_nullHomologous` instead
 of the circle argument principle. What changes is the vanishing step. On a circle the integral of
-`logDeriv (g / f)` was killed by `circleIntegral.integral_eq_zero_of_hasDerivWithinAt`; along a
-piecewise-`C¹` curve the primitive has to be pushed through the finitely many corners, which is
-exactly what the countable exceptional set of `TauCeti.Contour.integral_deriv_div_eq_log_sub_log`
-allows; that step is contour theory rather than Rouché, and lives with the FTC it specializes, as
-`TauCeti.Contour.integral_deriv_smul_logDeriv_eq_zero_of_mem_slitPlane`. The geometry is unchanged:
-the symmetric hypothesis confines `g / f` to `Complex.slitPlane`, where the principal `Complex.log`
-is a single-valued primitive of the logarithmic derivative, so the integral is an endpoint
-difference and the curve is closed.
+`logDeriv (g / f)` was killed by `circleIntegral.integral_eq_zero_of_hasDerivWithinAt`; an
+absolutely continuous curve is differentiable only almost everywhere, and there the step is the
+fundamental theorem of calculus along an absolutely continuous contour. That step is contour
+theory rather than Rouché, and lives in `TauCeti.Analysis.Contour.LogDerivFTC` as
+`AbsolutelyContinuousOnInterval.integral_deriv_smul_logDeriv_eq_zero_of_mem_slitPlane`. The
+geometry is unchanged: the symmetric hypothesis confines `g / f` to `Complex.slitPlane`, where the
+principal `Complex.log` is a single-valued primitive of the logarithmic derivative, so the integral
+is an endpoint difference and the curve is closed.
 
 The two are stated and proved separately because their interfaces differ, not because the disc case
 is out of reach from here. It *is* reachable: analyticity on a neighbourhood of `closedBall c R`
@@ -402,21 +402,21 @@ open scoped Interval
 variable {U : Set ℂ} {S : Finset ℂ} {γ : ℝ → ℂ} {a b : ℝ}
 
 /-- **The two argument-principle integrals of a Rouché pair agree.** This is the analytic heart of
-every homology form of Rouché's theorem: along a closed piecewise-`C¹` curve on which `f` and `g`
-are analytic and never point in opposite directions, the contour integrals of `logDeriv f` and
-`logDeriv g` coincide, because their difference is the integral of `logDeriv (g / f)` and the
-symmetric hypothesis puts `g / f` in the slit plane. Nothing is assumed off the curve, so the
-statement is available to the meromorphic and the holomorphic form alike. -/
-private lemma integral_deriv_smul_logDeriv_eq_of_norm_sub_lt
-    (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b)
+every homology form of Rouché's theorem: along a closed absolutely continuous curve on which `f`
+and `g` are analytic and never point in opposite directions, the contour integrals of
+`logDeriv f` and `logDeriv g` coincide, because their difference is the integral of
+`logDeriv (g / f)` and the symmetric hypothesis puts `g / f` in the slit plane. Nothing is assumed
+off the curve, so the statement is available to the meromorphic and the holomorphic form alike. -/
+private lemma _root_.AbsolutelyContinuousOnInterval.integral_deriv_smul_logDeriv_eq_of_norm_sub_lt
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
     (hfa : ∀ t ∈ [[a, b]], AnalyticAt ℂ f (γ t)) (hga : ∀ t ∈ [[a, b]], AnalyticAt ℂ g (γ t))
     (hs : ∀ t ∈ [[a, b]], ‖f (γ t) - g (γ t)‖ < ‖f (γ t)‖ + ‖g (γ t)‖) :
     (∫ t in a..b, deriv γ t • logDeriv f (γ t))
       = ∫ t in a..b, deriv γ t • logDeriv g (γ t) := by
   have hfne : ∀ t ∈ [[a, b]], f (γ t) ≠ 0 := fun t ht => ne_zero_left (hs t ht)
   have hgne : ∀ t ∈ [[a, b]], g (γ t) ≠ 0 := fun t ht => ne_zero_right (hs t ht)
-  have hzero := Contour.integral_deriv_smul_logDeriv_eq_zero_of_mem_slitPlane
-    (h := fun w => g w / f w) hγ hclosed
+  have hzero := hγ.integral_deriv_smul_logDeriv_eq_zero_of_mem_slitPlane
+    (h := fun w => g w / f w) hclosed
     (fun t ht => (hga t ht).div (hfa t ht) (hfne t ht))
     (fun t ht => div_mem_slitPlane_of_norm_sub_lt_add (hs t ht))
   have hcong : (∫ t in a..b, deriv γ t • logDeriv (fun w => g w / f w) (γ t))
@@ -424,15 +424,15 @@ private lemma integral_deriv_smul_logDeriv_eq_of_norm_sub_lt
     refine intervalIntegral.integral_congr fun t ht => ?_
     rw [logDeriv_fun_div _ (hgne t ht) (hfne t ht) (hga t ht).differentiableAt
       (hfa t ht).differentiableAt, smul_sub]
-  rw [hcong, intervalIntegral.integral_sub
-    (Contour.intervalIntegrable_deriv_smul_logDeriv hγ hga hgne)
-    (Contour.intervalIntegrable_deriv_smul_logDeriv hγ hfa hfne)] at hzero
+  rw [hcong, intervalIntegral.integral_sub (hγ.intervalIntegrable_deriv_smul_logDeriv hga hgne)
+    (hγ.intervalIntegrable_deriv_smul_logDeriv hfa hfne)] at hzero
   exact (sub_eq_zero.mp hzero).symm
 
 /-- **Rouché's theorem for a null-homologous cycle, symmetric form** (Estermann). Let `f` and `g`
 be meromorphic on an open set `U`, analytic and non-vanishing off a finite set `S`, of orders
-`ordf` and `ordg` on `S`, and let `γ` be a closed piecewise-`C¹` curve in `U`, null-homologous in
-`U`, missing `S`, and satisfying `‖f (γ t) - g (γ t)‖ < ‖f (γ t)‖ + ‖g (γ t)‖` along its length.
+`ordf` and `ordg` on `S`, and let `γ` be a closed absolutely continuous curve in `U`,
+null-homologous in `U`, missing `S`, and satisfying
+`‖f (γ t) - g (γ t)‖ < ‖f (γ t)‖ + ‖g (γ t)‖` along its length.
 Then `f` and `g` enclose the same number of zeros minus poles, each counted with its multiplicity
 *and* with the winding number of `γ` about it.
 
@@ -454,12 +454,13 @@ theorem rouche_symm_nullHomologous {ordf ordg : ℂ → ℤ} (hU : IsOpen U)
     (hgmero : ∀ s ∈ S, s ∈ U → MeromorphicAt g s)
     (hford : ∀ s ∈ S, s ∈ U → meromorphicOrderAt f s = (ordf s : WithTop ℤ))
     (hgord : ∀ s ∈ S, s ∈ U → meromorphicOrderAt g s = (ordg s : WithTop ℤ))
-    (hγ : IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U) (hclosed : γ a = γ b)
-    (hγoff : ∀ t ∈ [[a, b]], γ t ∉ (↑S : Set ℂ)) (hnull : Contour.IsNullHomologous γ a b U)
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U)
+    (hclosed : γ a = γ b) (hγoff : ∀ t ∈ [[a, b]], γ t ∉ (↑S : Set ℂ))
+    (hnull : Contour.IsNullHomologous γ a b U)
     (hs : ∀ t ∈ [[a, b]], ‖f (γ t) - g (γ t)‖ < ‖f (γ t)‖ + ‖g (γ t)‖) :
     (∑ z ∈ S, Contour.windingNumber γ a b z * (ordf z : ℂ))
       = ∑ z ∈ S, Contour.windingNumber γ a b z * (ordg z : ℂ) := by
-  have key := integral_deriv_smul_logDeriv_eq_of_norm_sub_lt hγ hclosed
+  have key := hγ.integral_deriv_smul_logDeriv_eq_of_norm_sub_lt hclosed
     (fun t ht => (hfoff _ (hγU t ht) (hγoff t ht)).1)
     (fun t ht => (hgoff _ (hγU t ht) (hγoff t ht)).1) hs
   rw [Contour.argumentPrinciple_nullHomologous hU hfoff hfmero hford hγ hγU hclosed hγoff hnull,
@@ -468,8 +469,9 @@ theorem rouche_symm_nullHomologous {ordf ordg : ℂ → ℤ} (hU : IsOpen U)
   exact mul_left_cancel₀ two_pi_I_ne_zero key
 
 /-- **Rouché's theorem for a null-homologous cycle**, holomorphic form. Let `f` and `g` be analytic
-on an open set `U` with all their zeros in a finite set `S`, and let `γ` be a closed piecewise-`C¹`
-curve in `U`, null-homologous in `U`, along which `‖f (γ t) - g (γ t)‖ < ‖f (γ t)‖ + ‖g (γ t)‖`.
+on an open set `U` with all their zeros in a finite set `S`, and let `γ` be a closed absolutely
+continuous curve in `U`, null-homologous in `U`, along which
+`‖f (γ t) - g (γ t)‖ < ‖f (γ t)‖ + ‖g (γ t)‖`.
 Then `f` and `g` have the same zero count enclosed by `γ`, each zero counted with its multiplicity
 and with the winding number of `γ` about it.
 
@@ -480,12 +482,12 @@ specialization of `TauCeti.rouche_symm_nullHomologous`, with the orders read off
 theorem rouche_symm_nullHomologous_of_analyticOnNhd (hU : IsOpen U)
     (hf : AnalyticOnNhd ℂ f U) (hg : AnalyticOnNhd ℂ g U)
     (hfS : ∀ z ∈ U, f z = 0 → z ∈ S) (hgS : ∀ z ∈ U, g z = 0 → z ∈ S)
-    (hγ : IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U) (hclosed : γ a = γ b)
-    (hnull : Contour.IsNullHomologous γ a b U)
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U)
+    (hclosed : γ a = γ b) (hnull : Contour.IsNullHomologous γ a b U)
     (hs : ∀ t ∈ [[a, b]], ‖f (γ t) - g (γ t)‖ < ‖f (γ t)‖ + ‖g (γ t)‖) :
     (∑ z ∈ S, Contour.windingNumber γ a b z * (analyticOrderNatAt f z : ℂ))
       = ∑ z ∈ S, Contour.windingNumber γ a b z * (analyticOrderNatAt g z : ℂ) := by
-  have key := integral_deriv_smul_logDeriv_eq_of_norm_sub_lt hγ hclosed
+  have key := hγ.integral_deriv_smul_logDeriv_eq_of_norm_sub_lt hclosed
     (fun t ht => hf _ (hγU t ht)) (fun t ht => hg _ (hγU t ht)) hs
   rw [Contour.argumentPrinciple_nullHomologous_of_analyticOnNhd hU hf hfS hγ hγU hclosed
       (fun t ht => ne_zero_left (hs t ht)) hnull,
@@ -501,8 +503,8 @@ summand `‖g (γ t)‖`. -/
 theorem rouche_nullHomologous (hU : IsOpen U)
     (hf : AnalyticOnNhd ℂ f U) (hg : AnalyticOnNhd ℂ g U)
     (hfS : ∀ z ∈ U, f z = 0 → z ∈ S) (hgS : ∀ z ∈ U, g z = 0 → z ∈ S)
-    (hγ : IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U) (hclosed : γ a = γ b)
-    (hnull : Contour.IsNullHomologous γ a b U)
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U)
+    (hclosed : γ a = γ b) (hnull : Contour.IsNullHomologous γ a b U)
     (hs : ∀ t ∈ [[a, b]], ‖f (γ t) - g (γ t)‖ < ‖f (γ t)‖) :
     (∑ z ∈ S, Contour.windingNumber γ a b z * (analyticOrderNatAt f z : ℂ))
       = ∑ z ∈ S, Contour.windingNumber γ a b z * (analyticOrderNatAt g z : ℂ) :=
@@ -516,8 +518,8 @@ off the unperturbed one. -/
 theorem rouche_add_nullHomologous (hU : IsOpen U)
     (hf : AnalyticOnNhd ℂ f U) (hg : AnalyticOnNhd ℂ g U)
     (hfS : ∀ z ∈ U, f z = 0 → z ∈ S) (hsumS : ∀ z ∈ U, f z + g z = 0 → z ∈ S)
-    (hγ : IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U) (hclosed : γ a = γ b)
-    (hnull : Contour.IsNullHomologous γ a b U)
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U)
+    (hclosed : γ a = γ b) (hnull : Contour.IsNullHomologous γ a b U)
     (hs : ∀ t ∈ [[a, b]], ‖g (γ t)‖ < ‖f (γ t)‖) :
     (∑ z ∈ S, Contour.windingNumber γ a b z * (analyticOrderNatAt f z : ℂ))
       = ∑ z ∈ S, Contour.windingNumber γ a b z *
@@ -526,9 +528,9 @@ theorem rouche_add_nullHomologous (hU : IsOpen U)
     simpa using hs t ht
 
 /-- **Rouché's theorem as an equality of image winding numbers, symmetric form** — the "dog on a
-leash" statement. If `f` and `g` are analytic along a closed piecewise-`C¹` curve `γ` and never
-point in opposite directions there, the image curves `f ∘ γ` and `g ∘ γ` wind equally often about
-the origin.
+leash" statement. If `f` and `g` are analytic along a closed absolutely continuous curve `γ` and
+never point in opposite directions there, the image curves `f ∘ γ` and `g ∘ γ` wind equally often
+about the origin.
 
 Read through `TauCeti.argumentPrinciple_windingNumber_of_analyticOnNhd`, this is the geometric face
 of `TauCeti.rouche_symm_nullHomologous_of_analyticOnNhd`; on its own it is *stronger*, since apart
@@ -536,42 +538,46 @@ from analyticity at each point of the curve — `AnalyticAt`, hence on some neig
 point — only the behaviour of the two functions **along the curve** enters: no single ambient open
 set carrying both, no confinement of the zeros to a finite set, and no null-homology. That is
 because the equality of the two logarithmic-derivative integrals is already forced by the
-hypothesis: it
-puts `g / f` in `Complex.slitPlane`, where `Complex.log` is a single-valued primitive. It is only
-in *counting* the winding that those extra hypotheses are needed. -/
-theorem rouche_symm_windingNumber_comp (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b)
+hypothesis: it puts `g / f` in `Complex.slitPlane`, where `Complex.log` is a single-valued
+primitive. It is only in *counting* the winding that those extra hypotheses are needed. -/
+theorem _root_.AbsolutelyContinuousOnInterval.rouche_symm_windingNumber_comp
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
     (hfa : ∀ t ∈ [[a, b]], AnalyticAt ℂ f (γ t)) (hga : ∀ t ∈ [[a, b]], AnalyticAt ℂ g (γ t))
     (hs : ∀ t ∈ [[a, b]], ‖f (γ t) - g (γ t)‖ < ‖f (γ t)‖ + ‖g (γ t)‖) :
     Contour.windingNumber (f ∘ γ) a b 0 = Contour.windingNumber (g ∘ γ) a b 0 := by
-  rw [Contour.windingNumber_comp_eq_integral_logDeriv hγ hfa fun t ht => ne_zero_left (hs t ht),
-    Contour.windingNumber_comp_eq_integral_logDeriv hγ hga fun t ht => ne_zero_right (hs t ht),
-    integral_deriv_smul_logDeriv_eq_of_norm_sub_lt hγ hclosed hfa hga hs]
+  rw [hγ.windingNumber_comp_eq_integral_logDeriv hfa fun t ht => ne_zero_left (hs t ht),
+    hγ.windingNumber_comp_eq_integral_logDeriv hga fun t ht => ne_zero_right (hs t ht),
+    hγ.integral_deriv_smul_logDeriv_eq_of_norm_sub_lt hclosed hfa hga hs]
 
 /-- **Rouché's theorem as an equality of image winding numbers**, classical form. Under
-`‖f (γ t) - g (γ t)‖ < ‖f (γ t)‖` along a closed piecewise-`C¹` curve, the image curves `f ∘ γ`
-and `g ∘ γ` wind equally often about the origin. This is the special case of
-`TauCeti.rouche_symm_windingNumber_comp` obtained by discarding the nonnegative summand
-`‖g (γ t)‖`. -/
-theorem rouche_windingNumber_comp (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b)
+`‖f (γ t) - g (γ t)‖ < ‖f (γ t)‖` along a closed absolutely continuous curve on which `f` and `g`
+are analytic, the image curves `f ∘ γ` and `g ∘ γ` wind equally often about the origin. This is
+the special case of `AbsolutelyContinuousOnInterval.rouche_symm_windingNumber_comp` obtained by
+discarding the nonnegative summand `‖g (γ t)‖`. -/
+theorem _root_.AbsolutelyContinuousOnInterval.rouche_windingNumber_comp
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
     (hfa : ∀ t ∈ [[a, b]], AnalyticAt ℂ f (γ t)) (hga : ∀ t ∈ [[a, b]], AnalyticAt ℂ g (γ t))
     (hs : ∀ t ∈ [[a, b]], ‖f (γ t) - g (γ t)‖ < ‖f (γ t)‖) :
     Contour.windingNumber (f ∘ γ) a b 0 = Contour.windingNumber (g ∘ γ) a b 0 :=
-  rouche_symm_windingNumber_comp hγ hclosed hfa hga fun t ht =>
+  hγ.rouche_symm_windingNumber_comp hclosed hfa hga fun t ht =>
     (hs t ht).trans_le (le_add_of_nonneg_right (norm_nonneg _))
 
 /-- **Rouché's theorem as an equality of image winding numbers, additive form.** A holomorphic
-perturbation `g` dominated by `f` along a closed piecewise-`C¹` curve does not change how often the
-image winds about the origin. This is the phrasing that names the "dog on a leash" picture: the
-walker `f ∘ γ` and the dog `(f + g) ∘ γ`, on a leash shorter than the walker's distance from the
-lamppost at the origin, circle it the same number of times.
+perturbation `g` dominated by `f` along a closed absolutely continuous curve, on which both are
+analytic, does not change how often the image winds about the origin. This is the phrasing that
+names the "dog on a leash" picture: the walker `f ∘ γ` and the dog `(f + g) ∘ γ`, on a leash
+shorter than the walker's distance from the lamppost at the origin, circle it the same number of
+times.
 
-It is the special case of `TauCeti.rouche_windingNumber_comp` for the pair `f`, `f + g`. -/
-theorem rouche_add_windingNumber_comp (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b)
+It is the special case of `AbsolutelyContinuousOnInterval.rouche_windingNumber_comp` for the pair
+`f`, `f + g`. -/
+theorem _root_.AbsolutelyContinuousOnInterval.rouche_add_windingNumber_comp
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
     (hfa : ∀ t ∈ [[a, b]], AnalyticAt ℂ f (γ t)) (hga : ∀ t ∈ [[a, b]], AnalyticAt ℂ g (γ t))
     (hs : ∀ t ∈ [[a, b]], ‖g (γ t)‖ < ‖f (γ t)‖) :
     Contour.windingNumber (f ∘ γ) a b 0
       = Contour.windingNumber ((fun w => f w + g w) ∘ γ) a b 0 :=
-  rouche_windingNumber_comp hγ hclosed hfa (fun t ht => (hfa t ht).add (hga t ht)) fun t ht => by
+  hγ.rouche_windingNumber_comp hclosed hfa (fun t ht => (hfa t ht).add (hga t ht)) fun t ht => by
     simpa using hs t ht
 
 end Cycle

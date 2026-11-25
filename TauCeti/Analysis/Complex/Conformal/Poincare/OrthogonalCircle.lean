@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.Poincare.Betweenness
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # Poincaré geodesics are Euclidean circles orthogonal to the unit circle
@@ -289,8 +290,7 @@ theorem setOf_im_eq_ball_inter_sphere {u a : ℂ} (hu : ‖u‖ = 1) (ha : ‖a�
     have hsq : ‖z - orthogonalCircleCenter u a‖ ^ 2 = orthogonalCircleRadius u a ^ 2 := by
       rw [← Complex.normSq_eq_norm_sq]
       linarith
-    have := congrArg Real.sqrt hsq
-    rwa [Real.sqrt_sq (norm_nonneg _), Real.sqrt_sq hRpos.le] at this
+    exact (pow_left_inj₀ (norm_nonneg _) hRpos.le two_ne_zero).mp hsq
   · intro hdist
     have hsq : normSq (z - orthogonalCircleCenter u a) = orthogonalCircleRadius u a ^ 2 := by
       rw [Complex.normSq_eq_norm_sq, hdist]
@@ -482,9 +482,7 @@ the radial geodesic in direction `u` exactly when `conj u * z` is real, that is,
 the Euclidean diameter in direction `u`. -/
 theorem mem_range_radialGeodesic_iff (u : Circle) (z : PoincareDisc) :
     z ∈ Set.range (radialGeodesic u) ↔ (conj (u : ℂ) * (toUnitDisc z : ℂ)).im = 0 := by
-  have huu : (u : ℂ) * conj (u : ℂ) = 1 := by
-    rw [Complex.mul_conj, Complex.normSq_eq_norm_sq, Circle.norm_coe]
-    norm_num
+  have huu := Circle.coe_mul_conj u
   constructor
   · rintro ⟨t, rfl⟩
     rw [coe_radialGeodesic]

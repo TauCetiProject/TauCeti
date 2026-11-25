@@ -240,7 +240,7 @@ private noncomputable def gluedMulticofork : Multicofork 𝖣.diagram :=
 /-- The underlying multicofork of presheafed spaces is the glued presheafed space. -/
 private noncomputable def isColimitMapCocone :
     IsColimit (forgetToPresheafedSpace.mapCocone D.gluedMulticofork) :=
-  (IsColimit.precomposeInvEquiv (𝖣.diagramIso forgetToPresheafedSpace) _).1
+  (IsColimit.precomposeInvEquiv (𝖣.diagramIso forgetToPresheafedSpace) _).toFun
     ((colimit.isColimit 𝖣'.diagram.multispan).ofIsoColimit
       -- the legs of both multicoforks are the charts `𝖣'.ι i` of the glued presheafed space, up to
       -- identities; the multicoforks live over diagrams which agree only up to unfolding

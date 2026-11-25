@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.RingTheory.DedekindDomain.Basic
 public import Mathlib.RingTheory.LocalRing.Quotient
+public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.RingHom.Unramified
 public import Mathlib.RingTheory.Unramified.LocalRing
 public import TauCeti.RingTheory.LocalRing.Localization
@@ -46,9 +48,14 @@ formally unramified over `A` then so is `B`. Flatness makes `C` faithfully flat 
 the separable extension `κ_C / κ_A`. Stalk maps of a flat morphism of schemes are such
 homomorphisms, so this is how unramifiedness descends along flat surjections of schemes.
 
+The residue field `κ(p)` of a prime `p` of `S` is formally unramified over `S`, being a quotient of
+the localization `S_p`.
+
 For an `R`-algebra `S` and primes `q` of `S` and `p = q ∩ R` of `R`, the local homomorphism
 `R_p → S_q` is formally unramified iff `S` is unramified over `R` at `q`. Stalk maps of morphisms of
 affine schemes are such local homomorphisms, so this is how unramifiedness is read off from a stalk.
+When `S` is moreover essentially of finite type over `R` and `κ(p)` is separably closed, the
+separable residue-field extension `κ(p) → κ(q)` at an unramified prime `q` over `p` is bijective.
 
 ## Main results
 
@@ -64,8 +71,17 @@ affine schemes are such local homomorphisms, so this is how unramifiedness is re
   domain but not a field, over a local ring of dimension at most one, is a faithful algebra.
 * `Algebra.FormallyUnramified.of_flat_of_formallyUnramified`: formal unramifiedness of local
   algebras essentially of finite type descends along a flat local homomorphism.
+* `Algebra.FormallyUnramified.residueField`: the residue field `κ(p)` of a prime `p` of `S` is
+  formally unramified over `S`.
 * `Localization.formallyUnramified_localRingHom_iff`: the local homomorphism `R_p → S_q` is formally
   unramified iff `S` is unramified over `R` at `q`.
+* `TauCeti.residueFieldMap_bijective_of_isSepClosed_of_isUnramifiedAt`: at an unramified prime `𝔮`
+  of an essentially-finite-type `R`-algebra lying over a prime `𝔭` with `κ(𝔭)` separably closed,
+  the induced map `κ(𝔭) → κ(𝔮)` is bijective.
+
+## References
+
+* [Stacks Project, Tag 00UW](https://stacks.math.columbia.edu/tag/00UW)
 -/
 
 public section
@@ -180,6 +196,13 @@ theorem of_flat_of_formallyUnramified [Module.Flat B C] [EssFiniteType A B] [Ess
 
 end FlatDescent
 
+/-- The residue field `κ(p)` of a prime `p` of `S` is formally unramified over `S`: it is a quotient
+of the localization `S_p`, which is formally unramified over `S`. -/
+instance residueField {S : Type*} [CommRing S] (p : Ideal S) [p.IsPrime] :
+    FormallyUnramified S p.ResidueField :=
+  have : FormallyUnramified S (Localization.AtPrime p) := .of_isLocalization p.primeCompl
+  .comp S (Localization.AtPrime p) _
+
 end Algebra.FormallyUnramified
 
 namespace Localization
@@ -198,3 +221,27 @@ theorem formallyUnramified_localRingHom_iff (p : Ideal R) [p.IsPrime] (q : Ideal
       fun _ ↦ .of_restrictScalars R _ _⟩
 
 end Localization
+
+namespace TauCeti
+
+/-- If `T` is essentially of finite type over `R` and unramified at a prime `𝔮` lying over a prime
+`𝔭` of `R` whose residue field `κ(𝔭)` is separably closed, then the induced map `κ(𝔭) → κ(𝔮)` on
+residue fields is bijective. -/
+@[stacks 00UW "(2), for separably closed base residue field"]
+theorem residueFieldMap_bijective_of_isSepClosed_of_isUnramifiedAt {R T : Type*} [CommRing R]
+    [CommRing T] [Algebra R T] [Algebra.EssFiniteType R T] {𝔭 : Ideal R} [𝔭.IsPrime]
+    [IsSepClosed 𝔭.ResidueField] {𝔮 : Ideal T} [𝔮.IsPrime] [Algebra.IsUnramifiedAt R 𝔮]
+    (h𝔮 : 𝔭 = 𝔮.comap (algebraMap R T)) :
+    Function.Bijective (Ideal.ResidueField.map 𝔭 𝔮 (algebraMap R T) h𝔮) := by
+  have : 𝔮.LiesOver 𝔭 := ⟨h𝔮⟩
+  let := Localization.AtPrime.algebraOfLiesOver 𝔭 𝔮
+  have heq : Ideal.ResidueField.map 𝔭 𝔮 (algebraMap R T) h𝔮 =
+      algebraMap 𝔭.ResidueField 𝔮.ResidueField :=
+    Ideal.ResidueField.ringHom_ext <| RingHom.ext fun r ↦ by
+      rw [RingHom.comp_apply, RingHom.comp_apply, Ideal.ResidueField.map_algebraMap,
+        ← IsScalarTower.algebraMap_apply R 𝔭.ResidueField 𝔮.ResidueField,
+        IsScalarTower.algebraMap_apply R T 𝔮.ResidueField]
+  rw [heq]
+  exact IsSepClosed.algebraMap_bijective 𝔭.ResidueField 𝔮.ResidueField
+
+end TauCeti

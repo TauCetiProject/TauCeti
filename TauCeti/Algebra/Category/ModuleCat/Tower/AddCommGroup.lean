@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Exact
 public import TauCeti.Algebra.Category.ModuleCat.Tower.MittagLeffler
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Padic
+public import Mathlib.NumberTheory.Padics.RingHoms
+public import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # Towers of abelian groups
@@ -35,6 +37,10 @@ multiplication by `p` has `lim = 0` and `lim¹ ≃ ℤ_[p] ⧸ ℤ`, so it is no
 
 * `TauCeti.CompactCoefficients.Tower`: a tower of abelian groups, with its shift map
   `Tower.shift`, its limit `Tower.lim` and its first derived limit `Tower.limOne`.
+* `TauCeti.CompactCoefficients.Tower.limLift`: the homomorphism into `lim A` induced by a family
+  of homomorphisms compatible with the transitions.
+* `TauCeti.CompactCoefficients.Tower.limPadicModule`: the `ℤ_[p]`-module structure on `lim A` when
+  `pⁿ` kills `Aₙ` for every `n`.
 * `TauCeti.CompactCoefficients.Tower.toModuleFunctor`: the tower as a tower of `ℤ`-modules.
 * `TauCeti.CompactCoefficients.Tower.limComparison`,
   `TauCeti.CompactCoefficients.Tower.limOneComparison`: the identifications of `lim` and `lim¹`
@@ -112,6 +118,25 @@ theorem mem_lim {a : ∀ n, A.obj n} : a ∈ A.lim ↔ ∀ n, A.map n (a (n + 1)
   simp only [shift_apply, Pi.zero_apply, sub_eq_zero]
   exact forall_congr' fun n ↦ eq_comm
 
+/-- Two elements of `lim A` are equal when all their coordinates agree. -/
+@[ext]
+theorem lim_ext {a b : A.lim} (h : ∀ n, (a : ∀ n, A.obj n) n = (b : ∀ n, A.obj n) n) : a = b :=
+  Subtype.ext (funext h)
+
+/-- **The universal property of `lim A`.** A family of homomorphisms `P → Aₙ` compatible with the
+transitions `φₙ` induces a homomorphism `P → lim A`. -/
+def limLift {P : Type*} [AddZeroClass P] (f : ∀ n, P →+ A.obj n)
+    (hf : ∀ n x, A.map n (f (n + 1) x) = f n x) : P →+ A.lim :=
+  AddMonoidHom.codRestrict (AddMonoidHom.pi f) _ fun x ↦ A.mem_lim.2 fun n ↦ hf n x
+
+/-- The homomorphism `P → lim A` induced by a compatible family is computed by the given
+homomorphism `P → Aₙ` in the `n`-th coordinate. -/
+@[simp]
+theorem coe_limLift_apply {P : Type*} [AddZeroClass P] (f : ∀ n, P →+ A.obj n)
+    (hf : ∀ n x, A.map n (f (n + 1) x) = f n x) (x : P) (n : ℕ) :
+    (A.limLift f hf x : ∀ n, A.obj n) n = f n x :=
+  (rfl)
+
 /-- The tower of abelian groups as a tower of `ℤ`-modules. Its terms are the groups `Aₙ` with their
 `ℤ`-module structures, so that the product of its terms is `∏ₙ Aₙ`; the body is exposed for this
 identification of carriers. -/
@@ -182,20 +207,20 @@ theorem productEquiv_mem_range_shift {a : ∀ n, A.obj n} :
 
 /-- The limit of a tower of abelian groups is the limit of the tower of `ℤ`-modules. -/
 def limComparison : A.lim ≃+ A.toModuleFunctor.lim where
-  toFun a := ⟨A.productEquiv a.1, A.productEquiv_mem_lim.2 a.2⟩
-  invFun a := ⟨A.productEquiv.symm a.1, A.productEquiv_mem_lim.1 <| by simp⟩
-  left_inv a := Subtype.ext <| A.productEquiv.symm_apply_apply a.1
-  right_inv a := Subtype.ext <| A.productEquiv.apply_symm_apply a.1
-  map_add' a b := Subtype.ext <| map_add A.productEquiv a.1 b.1
+  toFun a := ⟨A.productEquiv a.val, A.productEquiv_mem_lim.2 a.property⟩
+  invFun a := ⟨A.productEquiv.symm a.val, A.productEquiv_mem_lim.1 <| by simp⟩
+  left_inv a := Subtype.ext <| A.productEquiv.symm_apply_apply a.val
+  right_inv a := Subtype.ext <| A.productEquiv.apply_symm_apply a.val
+  map_add' a b := Subtype.ext <| map_add A.productEquiv a.val b.val
 
 @[simp]
 theorem coe_limComparison_apply (a : A.lim) :
-    (A.limComparison a : A.toModuleFunctor.Product) = A.productEquiv a.1 :=
+    (A.limComparison a : A.toModuleFunctor.Product) = A.productEquiv a.val :=
   (rfl)
 
 @[simp]
 theorem coe_limComparison_symm_apply (a : A.toModuleFunctor.lim) :
-    (A.limComparison.symm a : ∀ n, A.obj n) = A.productEquiv.symm a.1 :=
+    (A.limComparison.symm a : ∀ n, A.obj n) = A.productEquiv.symm a.val :=
   (rfl)
 
 /-- The comparison of limits is compatible with the projections `lim A → Aₙ`. -/
@@ -238,6 +263,49 @@ theorem subsingleton_limOne_of_surjective (h : ∀ n, Function.Surjective (A.map
       A.transition_toModuleFunctor_surjective_iff.2 (h n)
 
 end Basic
+
+section PadicModule
+
+variable (A : Tower.{u}) (p : ℕ) [Fact p.Prime]
+
+/-- **The `ℤ_[p]`-module structure on `lim A`** of a tower in which `pⁿ` kills `Aₙ` for every `n`:
+a `p`-adic integer acts on the `n`-th coordinate through its residue modulo `pⁿ`
+(`coe_limPadicModule_smul_apply`). It is not an instance because it depends on the torsion
+hypothesis. -/
+abbrev limPadicModule (hA : ∀ n (x : A.obj n), p ^ n • x = 0) : Module ℤ_[p] A.lim :=
+  letI : SMul ℤ_[p] A.lim := ⟨fun a y ↦ ⟨fun n ↦ a.appr n • (y : ∀ n, A.obj n) n,
+    A.mem_lim.2 fun n ↦ by
+      rw [map_nsmul, A.mem_lim.1 y.property n]
+      exact nsmul_eq_nsmul_of_modEq (a.appr_modEq n.le_succ) (hA n _)⟩⟩
+  -- each axiom holds coordinatewise because `pⁿ` kills `Aₙ` and `appr` respects `+`, `*`, `0`
+  -- and `1` modulo `pⁿ`
+  { one_smul y := A.lim_ext fun n ↦ by
+      -- the local scalar action is defined coordinatewise by `appr`, so this holds by definition
+      change (1 : ℤ_[p]).appr n • _ = _
+      simpa using nsmul_eq_nsmul_of_modEq (PadicInt.appr_natCast_modEq 1 n) (hA n _)
+    mul_smul a b y := A.lim_ext fun n ↦ by
+      -- the local scalar action is defined coordinatewise by `appr`, so this holds by definition
+      change (a * b).appr n • _ = a.appr n • b.appr n • _
+      rw [smul_smul]
+      exact nsmul_eq_nsmul_of_modEq (PadicInt.appr_mul_modEq a b n) (hA n _)
+    smul_zero a := A.lim_ext fun n ↦ nsmul_zero _
+    smul_add a y z := A.lim_ext fun n ↦ nsmul_add _ _ _
+    add_smul a b y := A.lim_ext fun n ↦ (nsmul_eq_nsmul_of_modEq
+      (PadicInt.appr_add_modEq a b n) (hA n _)).trans (add_nsmul _ _ _)
+    zero_smul y := A.lim_ext fun n ↦ by
+      -- the local scalar action is defined coordinatewise by `appr`, so this holds by definition
+      change (0 : ℤ_[p]).appr n • _ = _
+      simpa using nsmul_eq_nsmul_of_modEq (PadicInt.appr_natCast_modEq 0 n) (hA n _) }
+
+/-- Under `limPadicModule`, a `p`-adic integer acts on the `n`-th coordinate of `lim A` by its
+residue modulo `pⁿ`. -/
+theorem coe_limPadicModule_smul_apply (hA : ∀ n (x : A.obj n), p ^ n • x = 0) (a : ℤ_[p])
+    (y : A.lim) (n : ℕ) :
+    letI := A.limPadicModule p hA
+    ((a • y : A.lim) : ∀ n, A.obj n) n = a.appr n • (y : ∀ n, A.obj n) n :=
+  (rfl)
+
+end PadicModule
 
 section MittagLeffler
 
@@ -451,7 +519,7 @@ theorem Hom.shift_onProduct (f : Hom A B) (a : ∀ n, A.obj n) :
 /-- The homomorphism `lim A → lim B` induced by a morphism of towers. -/
 def Hom.limMap (f : Hom A B) : A.lim →+ B.lim :=
   (f.onProduct.comp A.lim.subtype).codRestrict B.lim fun a ↦ by
-    have ha : A.shift a = 0 := a.2
+    have ha : A.shift a = 0 := a.property
     rw [lim_eq_ker, AddMonoidHom.mem_ker, AddMonoidHom.comp_apply, Hom.shift_onProduct,
       AddSubgroup.subtype_apply, ha, map_zero]
 

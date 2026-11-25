@@ -120,7 +120,7 @@ instance : HasCoproduct M :=
   HasColimit.mk ⟨_, coproductCofanIsColimit M⟩
 
 instance : HasCoproducts.{w} (GradedModuleCat.{max w v} 𝒜) :=
-  fun _ ↦ ⟨fun F ↦ hasColimit_of_iso (Discrete.natIsoFunctor (F := F))⟩
+  ⟨fun _ ↦ ⟨fun F ↦ hasColimit_of_iso (Discrete.natIsoFunctor (F := F))⟩⟩
 
 instance : PreservesColimit (Discrete.functor M) toModuleCat := by
   classical

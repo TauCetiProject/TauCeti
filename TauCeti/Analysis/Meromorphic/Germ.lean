@@ -99,7 +99,7 @@ theorem mk_eq_mk_iff {f g : 𝕜 → 𝕜} {hf : MeromorphicAt f a} {hg : Meromo
 /-- Every meromorphic germ has a meromorphic function representative. -/
 theorem exists_mk (φ : meromorphicGerms 𝕜 a) :
     ∃ (f : 𝕜 → 𝕜) (hf : MeromorphicAt f a), mk f hf = φ := by
-  obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
+  obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.mp φ.property
   exact ⟨f, hf, Subtype.ext hφ⟩
 
 @[simp]
@@ -153,7 +153,7 @@ theorem mk_const (c : 𝕜) : mk (fun _ ↦ c) (.const c a) = algebraMap 𝕜 _ 
 theorem coe_smul (c : 𝕜) (φ : meromorphicGerms 𝕜 a) :
     ((c • φ : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) =
       c • (φ : Germ (𝓝[≠] a) 𝕜) := by
-  obtain ⟨f, _, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
+  obtain ⟨f, _, hφ⟩ := mem_meromorphicGerms_iff.mp φ.property
   rw [Algebra.smul_def, Subring.coe_mul, coe_algebraMap, ← hφ, ← Germ.coe_smul]
   -- Germ.const c is definitionally the germ of the function fun _ ↦ c.
   exact (Germ.coe_mul (fun _ ↦ c) f).symm.trans
@@ -168,7 +168,7 @@ theorem mk_smul (c : 𝕜) {f : 𝕜 → 𝕜} (hf : MeromorphicAt f a) :
 /-- The inverse of a meromorphic germ is its pointwise inverse. -/
 instance : Inv (meromorphicGerms 𝕜 a) where
   inv φ := ⟨(φ : Germ (𝓝[≠] a) 𝕜)⁻¹, by
-    obtain ⟨f, hf, hφ⟩ := φ.2
+    obtain ⟨f, hf, hφ⟩ := φ.property
     rw [← hφ, ← Germ.coe_inv, coe_mem_meromorphicGerms]
     exact hf.inv⟩
 
@@ -186,15 +186,12 @@ theorem mk_inv {f : 𝕜 → 𝕜} (hf : MeromorphicAt f a) :
 /-- The germs of functions meromorphic at `a`, on punctured neighbourhoods of `a`, form a
 field. -/
 instance instField : Field (meromorphicGerms 𝕜 a) where
-  exists_pair_ne := ⟨0, 1, fun h ↦ zero_ne_one (congrArg Subtype.val h)⟩
   mul_inv_cancel φ hφ := by
-    obtain ⟨f, hf, hφf⟩ := φ.2
-    have hne : ∀ᶠ z in 𝓝[≠] a, f z ≠ 0 := by
-      rw [← hf.germ_ne_zero_iff, hφf]
-      exact fun h ↦ hφ (Subtype.ext h)
-    apply Subtype.ext
-    rw [Subring.coe_mul, coe_inv, ← hφf, ← Germ.coe_inv, ← Germ.coe_mul, Subring.coe_one,
-      ← Germ.coe_one, Germ.coe_eq]
+    obtain ⟨f, hf, rfl⟩ := exists_mk φ
+    -- A nonzero germ has a representative vanishing nowhere on a punctured neighbourhood.
+    have hne : ∀ᶠ z in 𝓝[≠] a, f z ≠ 0 := hf.germ_ne_zero_iff.mp <| by
+      simpa only [coe_mk] using (Subring.coe_eq_zero_iff (meromorphicGerms 𝕜 a)).not.mpr hφ
+    rw [← mk_inv, ← mk_mul, ← mk_one, mk_eq_mk_iff]
     filter_upwards [hne] with z hz
     exact mul_inv_cancel₀ hz
   inv_zero := Subtype.ext <| by

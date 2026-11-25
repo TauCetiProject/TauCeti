@@ -43,6 +43,15 @@ symbols (`ofContinuousMap`). This embedding of `C(X, ℂ)` is a unital star alge
 isometric for the two supremum norms, and is compatible with pullback along continuous measurable
 maps. It is how a Borel functional calculus is compared with a continuous one, for instance with
 a star representation of `C(X, ℂ)` or with Mathlib's continuous functional calculus `cfcHom`.
+
+An arbitrary measurable complex function `f : X → ℂ` restricts on each norm sublevel
+`{x | ‖f x‖ ≤ M}` to a bounded Borel symbol (`BoundedBorelFunction.truncate`). As `M` increases,
+these level-set truncations have monotone extended norms and converge pointwise to `f`, providing
+the bounded approximations through which an unbounded Borel functional calculus is constructed from
+a bounded one.
+
+For nonreal `z`, the resolvent function `s ↦ (z - s)⁻¹` on `ℝ` is a bounded Borel symbol
+(`resolventSymbol`), bounded by `|Im z|⁻¹`.
 -/
 
 public section
@@ -105,32 +114,35 @@ instance : FunLike (BoundedBorelFunction X) X ℂ where
 theorem coe_injective : Function.Injective
     (DFunLike.coe : BoundedBorelFunction X → X → ℂ) := DFunLike.coe_injective
 
-/-- The zero symbol coerces to the zero function. -/
-@[simp] theorem coe_zero : ⇑(0 : BoundedBorelFunction X) = 0 := (rfl)
+/-! Evaluation is pointwise for the algebraic operations, so Mathlib's generic `FunLike`
+lemmas (`FunLike.coe_add`, `add_apply`, `FunLike.coe_sum`, `sum_apply`, ...) apply. -/
 
-/-- The unit symbol coerces to the constant unit function. -/
-@[simp] theorem coe_one : ⇑(1 : BoundedBorelFunction X) = 1 := (rfl)
+/-- Evaluating the zero symbol gives zero. -/
+instance : IsZeroApply (BoundedBorelFunction X) where
 
-/-- Function coercion preserves addition. -/
-@[simp] theorem coe_add (f g : BoundedBorelFunction X) : ⇑(f + g) = ⇑f + ⇑g := (rfl)
+/-- Evaluating the unit symbol gives one. -/
+instance : IsOneApply (BoundedBorelFunction X) where
 
-/-- Function coercion preserves negation. -/
-@[simp] theorem coe_neg (f : BoundedBorelFunction X) : ⇑(-f) = -⇑f := (rfl)
+/-- Evaluation is additive. -/
+instance : IsAddApply (BoundedBorelFunction X) where
 
-/-- Function coercion preserves subtraction. -/
-@[simp] theorem coe_sub (f g : BoundedBorelFunction X) : ⇑(f - g) = ⇑f - ⇑g := (rfl)
+/-- Evaluation commutes with negation. -/
+instance : IsNegApply (BoundedBorelFunction X) where
 
-/-- Function coercion preserves multiplication. -/
-@[simp] theorem coe_mul (f g : BoundedBorelFunction X) : ⇑(f * g) = ⇑f * ⇑g := (rfl)
+/-- Evaluation commutes with subtraction. -/
+instance : IsSubApply (BoundedBorelFunction X) where
 
-/-- Function coercion preserves scalar multiplication. -/
-@[simp] theorem coe_smul (c : ℂ) (f : BoundedBorelFunction X) : ⇑(c • f) = c • ⇑f := (rfl)
+/-- Evaluation is multiplicative. -/
+instance : IsMulApply (BoundedBorelFunction X) where
+
+/-- Evaluation commutes with complex scalar multiplication. -/
+instance : IsSMulApply ℂ (BoundedBorelFunction X) where
+
+/-- Evaluation commutes with natural powers. -/
+instance : IsPowApply ℕ (BoundedBorelFunction X) where
 
 /-- Function coercion preserves the star operation. -/
 @[simp] theorem coe_star (f : BoundedBorelFunction X) : ⇑(star f) = star ⇑f := (rfl)
-
-/-- Function coercion preserves natural powers. -/
-@[simp] theorem coe_pow (f : BoundedBorelFunction X) (n : ℕ) : ⇑(f ^ n) = ⇑f ^ n := (rfl)
 
 /-- Algebra scalars coerce to constant functions. -/
 @[simp] theorem coe_algebraMap (c : ℂ) :
@@ -184,6 +196,12 @@ theorem integrable (f : BoundedBorelFunction X) (μ : MeasureTheory.Measure X)
     [MeasureTheory.IsFiniteMeasure μ] : MeasureTheory.Integrable f μ :=
   .of_bound f.measurable.aestronglyMeasurable ‖f‖ (.of_forall (norm_coe_le_norm f))
 
+/-- Any natural power of the norm of a symbol is integrable against every finite measure. -/
+theorem integrable_norm_pow (f : BoundedBorelFunction X) (μ : MeasureTheory.Measure X)
+    [MeasureTheory.IsFiniteMeasure μ] (k : ℕ) :
+    MeasureTheory.Integrable (fun x => ‖f x‖ ^ k) μ := by
+  simpa only [FunLike.coe_pow, Pi.pow_apply, norm_pow] using ((f ^ k).integrable μ).norm
+
 /-- Bundle a measurable function with its everywhere bound. -/
 def ofFunction (f : X → ℂ) (hf : Measurable f)
     (hbound : ∃ M : ℝ, 0 ≤ M ∧ ∀ x, ‖f x‖ ≤ M) : BoundedBorelFunction X :=
@@ -196,31 +214,6 @@ def ofFunction (f : X → ℂ) (hf : Measurable f)
 /-- Evaluation of an algebra scalar is the constant scalar. -/
 @[simp] theorem algebraMap_apply (c : ℂ) (x : X) :
     algebraMap ℂ (BoundedBorelFunction X) c x = c := (rfl)
-
-/-- Evaluation of zero. -/
-@[simp] theorem zero_apply (x : X) : (0 : BoundedBorelFunction X) x = 0 := (rfl)
-
-/-- Evaluation of one. -/
-@[simp] theorem one_apply (x : X) : (1 : BoundedBorelFunction X) x = 1 := (rfl)
-
-/-- Evaluation of addition. -/
-@[simp] theorem add_apply (f g : BoundedBorelFunction X) (x : X) :
-    (f + g) x = f x + g x := (rfl)
-
-/-- Evaluation of negation. -/
-@[simp] theorem neg_apply (f : BoundedBorelFunction X) (x : X) : (-f) x = -f x := (rfl)
-
-/-- Evaluation of subtraction. -/
-@[simp] theorem sub_apply (f g : BoundedBorelFunction X) (x : X) :
-    (f - g) x = f x - g x := (rfl)
-
-/-- Evaluation of multiplication. -/
-@[simp] theorem mul_apply (f g : BoundedBorelFunction X) (x : X) :
-    (f * g) x = f x * g x := (rfl)
-
-/-- Evaluation of scalar multiplication. -/
-@[simp] theorem smul_apply (c : ℂ) (f : BoundedBorelFunction X) (x : X) :
-    (c • f) x = c * f x := (rfl)
 
 /-- Evaluation of the star operation is complex conjugation. -/
 @[simp] theorem star_apply (f : BoundedBorelFunction X) (x : X) :
@@ -291,8 +284,19 @@ theorem indicator_mul_indicator (s t : Set X) (hs : MeasurableSet s) (ht : Measu
     (f g : BoundedBorelFunction X) :
     indicator s hs f * indicator t ht g = indicator (s ∩ t) (hs.inter ht) (f * g) := by
   ext x
-  simp only [TauCeti.BoundedBorelFunction.mul_apply, indicator_apply]
+  simp only [_root_.mul_apply, indicator_apply]
   exact (Set.inter_indicator_mul _ _ x).symm
+
+/-- Multiplying a symbol on the left by `indicator s hs 1` restricts it to `s`. -/
+@[simp] theorem indicator_one_mul (s : Set X) (hs : MeasurableSet s)
+    (f : BoundedBorelFunction X) : indicator s hs 1 * f = indicator s hs f := by
+  ext x
+  by_cases hx : x ∈ s <;> simp [hx]
+
+/-- Multiplying a symbol on the right by `indicator s hs 1` restricts it to `s`. -/
+@[simp] theorem mul_indicator_one (s : Set X) (hs : MeasurableSet s)
+    (f : BoundedBorelFunction X) : f * indicator s hs 1 = indicator s hs f := by
+  rw [mul_comm, indicator_one_mul]
 
 /-- Pullback commutes with restriction and extension by zero. -/
 theorem compStarAlgHom'_indicator (g : X → Y) (hg : Measurable g) (s : Set Y)
@@ -302,6 +306,105 @@ theorem compStarAlgHom'_indicator (g : X → Y) (hg : Measurable g) (s : Set Y)
   ext x
   simp only [compStarAlgHom'_apply, indicator_apply]
   exact (Set.indicator_comp_right g (g := (f : Y → ℂ)) (s := s) (x := x)).symm
+
+/-- The level-set truncation `{x | ‖f x‖ ≤ M}.indicator f` of a measurable function `f : X → ℂ`
+at threshold `M : ℝ`, bundled as a bounded Borel symbol. -/
+noncomputable def truncate (f : X → ℂ) (hf : Measurable f) (M : ℝ) : BoundedBorelFunction X :=
+  ofFunction ({x | ‖f x‖ ≤ M}.indicator f)
+    (hf.indicator (measurableSet_le hf.norm measurable_const))
+    ⟨max M 0, le_max_right _ _, fun x => by
+      by_cases hx : x ∈ {y | ‖f y‖ ≤ M}
+      · rw [Set.indicator_of_mem hx]
+        exact (Set.mem_ofPred.1 hx).trans (le_max_left _ _)
+      · simp [Set.indicator_of_notMem hx]⟩
+
+/-- Level-set truncation coerces to the indicator of `{x | ‖f x‖ ≤ M}`. -/
+@[simp] theorem coe_truncate (f : X → ℂ) (hf : Measurable f) (M : ℝ) :
+    ⇑(truncate f hf M) = {x | ‖f x‖ ≤ M}.indicator f := (rfl)
+
+/-- Evaluating a level-set truncation evaluates `{y | ‖f y‖ ≤ M}.indicator f`. -/
+@[simp] theorem truncate_apply (f : X → ℂ) (hf : Measurable f) (M : ℝ) (x : X) :
+    truncate f hf M x = {y | ‖f y‖ ≤ M}.indicator f x := (rfl)
+
+/-- At a negative threshold `M < 0`, the level-set truncation vanishes identically. -/
+theorem truncate_of_neg {f : X → ℂ} (hf : Measurable f) {M : ℝ} (hM : M < 0) :
+    truncate f hf M = 0 := by
+  ext x
+  have hx : ¬ ‖f x‖ ≤ M := not_le.2 (hM.trans_le (norm_nonneg _))
+  simp [hx]
+
+/-- Level-set truncation does not increase the pointwise norm. -/
+theorem norm_truncate_apply_le (f : X → ℂ) (hf : Measurable f) (M : ℝ) (x : X) :
+    ‖truncate f hf M x‖ ≤ ‖f x‖ :=
+  norm_indicator_le_norm_self f x
+
+/-- For `0 ≤ M`, the supremum norm of `truncate f hf M` is at most `M`. -/
+theorem norm_truncate_le {f : X → ℂ} (hf : Measurable f) {M : ℝ} (hM : 0 ≤ M) :
+    ‖truncate f hf M‖ ≤ M :=
+  (norm_le hM).2 fun x => by
+    by_cases hx : ‖f x‖ ≤ M <;> simp [hx, hM]
+
+/-- The pointwise extended norm of `truncate f hf M` is monotone in the threshold `M`. -/
+theorem enorm_truncate_apply_mono {f : X → ℂ} (hf : Measurable f) :
+    Monotone fun (M : ℝ) (x : X) => ‖truncate f hf M x‖ₑ := by
+  intro M₁ M₂ hM x
+  by_cases h₁ : ‖f x‖ ≤ M₁
+  · simp [h₁, h₁.trans hM]
+  · simp [h₁]
+
+/-- The supremum over natural thresholds of any natural power of the extended norm of
+`truncate f hf n x` is `‖f x‖ₑ ^ k`. -/
+theorem iSup_enorm_pow_truncate_apply {f : X → ℂ} (hf : Measurable f) (k : ℕ) (x : X) :
+    (⨆ n : ℕ, ‖truncate f hf n x‖ₑ ^ k) = ‖f x‖ₑ ^ k := by
+  refine le_antisymm (iSup_le fun n =>
+    pow_le_pow_left' (eNorm_le_iff_norm_le.2 (norm_truncate_apply_le f hf n x)) k) ?_
+  obtain ⟨N, hN⟩ := exists_nat_ge ‖f x‖
+  exact le_iSup_of_le N (by simp [hN])
+
+/-- The supremum over natural thresholds of `‖truncate f hf n x‖ₑ` is `‖f x‖ₑ`. -/
+theorem iSup_enorm_truncate_apply {f : X → ℂ} (hf : Measurable f) (x : X) :
+    (⨆ n : ℕ, ‖truncate f hf n x‖ₑ) = ‖f x‖ₑ := by
+  simpa using iSup_enorm_pow_truncate_apply hf 1 x
+
+/-- By monotone convergence, the supremum over natural thresholds of
+`∫⁻ x, ‖truncate f hf n x‖ₑ ^ k` equals `∫⁻ x, ‖f x‖ₑ ^ k`. -/
+theorem iSup_lintegral_enorm_pow_truncate {f : X → ℂ} (hf : Measurable f) (k : ℕ)
+    (μ : MeasureTheory.Measure X) :
+    (⨆ n : ℕ, ∫⁻ x, ‖truncate f hf n x‖ₑ ^ k ∂μ) = ∫⁻ x, ‖f x‖ₑ ^ k ∂μ := by
+  rw [← MeasureTheory.lintegral_iSup
+    (fun n => (truncate f hf n).measurable.eNorm.pow_const k)
+    (fun _ _ hmn x => pow_le_pow_left'
+      (enorm_truncate_apply_mono hf (Nat.cast_le.2 hmn) x) k)]
+  exact MeasureTheory.lintegral_congr fun x => iSup_enorm_pow_truncate_apply hf k x
+
+/-- As `M → ∞`, `truncate f hf M x` is eventually constant and converges to `f x`. -/
+theorem tendsto_truncate_apply {f : X → ℂ} (hf : Measurable f) (x : X) :
+    Tendsto (fun M : ℝ => truncate f hf M x) atTop (𝓝 (f x)) := by
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [eventually_ge_atTop ‖f x‖] with M hM
+  simp [hM]
+
+/-- Complex conjugation commutes with level-set truncation. -/
+@[simp] theorem star_truncate (f : X → ℂ) (hf : Measurable f) (M : ℝ) :
+    star (truncate f hf M) =
+      truncate (star f) (continuous_star.measurable.comp hf) M := by
+  ext x
+  simp only [star_apply, truncate_apply, Pi.star_apply, norm_star]
+  exact map_indicator (starAddEquiv : ℂ ≃+ ℂ) {y | ‖f y‖ ≤ M} f x
+
+/-- Restricting `truncate f hf M` to `{x | ‖f x‖ ≤ M}` leaves it unchanged. -/
+@[simp] theorem indicator_norm_le_truncate (f : X → ℂ) (hf : Measurable f) (M : ℝ)
+    {hs : MeasurableSet {x | ‖f x‖ ≤ M}} :
+    indicator {x | ‖f x‖ ≤ M} hs (truncate f hf M) = truncate f hf M := by
+  ext x
+  by_cases hx : ‖f x‖ ≤ M <;> simp [hx]
+
+/-- Pullback along a measurable map commutes with level-set truncation. -/
+@[simp] theorem compStarAlgHom'_truncate (g : X → Y) (hg : Measurable g) {f : Y → ℂ}
+    (hf : Measurable f) (M : ℝ) :
+    compStarAlgHom' g hg (truncate f hf M) = truncate (f ∘ g) (hf.comp hg) M := by
+  ext x
+  simp [Set.indicator_apply, Function.comp_apply]
 
 /-- Every measurable complex simple function is an everywhere bounded symbol. This embedding is a
 star algebra homomorphism for the pointwise operations on simple functions. -/
@@ -388,6 +491,20 @@ gives the symbol of the composite continuous function. -/
     compStarAlgHom' φ hφ (ofContinuousMap g) = ofContinuousMap (g.comp φ) := (rfl)
 
 end ContinuousMap
+
+/-- For nonreal `z`, the resolvent function `s ↦ (z - s)⁻¹` on `ℝ` as a bounded Borel symbol: it
+is bounded by `|Im z|⁻¹`. Its spectral integral against a self-adjoint operator is the
+resolvent of that operator. -/
+def resolventSymbol (z : ℂ) (hz : z.im ≠ 0) : BoundedBorelFunction ℝ :=
+  ofFunction (fun s : ℝ ↦ (z - s)⁻¹) (by fun_prop) <| by
+    refine ⟨|z.im|⁻¹, by positivity, fun s ↦ ?_⟩
+    rw [norm_inv]
+    refine inv_anti₀ (abs_pos.2 hz) ?_
+    simpa using Complex.abs_im_le_norm (z - s)
+
+/-- The resolvent symbol takes the value `(z - s)⁻¹` at `s`. -/
+@[simp] theorem resolventSymbol_apply (z : ℂ) (hz : z.im ≠ 0) (s : ℝ) :
+    resolventSymbol z hz s = (z - s)⁻¹ := (rfl)
 
 end BoundedBorelFunction
 end TauCeti

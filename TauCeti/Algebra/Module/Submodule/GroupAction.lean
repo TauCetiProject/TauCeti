@@ -12,7 +12,7 @@ public import Mathlib.RepresentationTheory.Basic
 
 Let `Γ` act on an `R`-module `M` by `R`-linear maps, that is by a `DistribSMul Γ M` commuting with
 the scalars, typically a `DistribMulAction` of a monoid. A submodule `V` is **`Γ`-invariant** when
-`γ • x ∈ V` for every `γ : Γ` and `x ∈ V`. This file provides two constructions around that
+`γ • x ∈ V` for every `γ : Γ` and `x ∈ V`. This file provides three constructions around that
 condition.
 
 * The **invariant core** `V.invariantCore Γ = ⨅ γ, V.comap (γ • ·)` of a submodule `V`: the set
@@ -26,6 +26,9 @@ condition.
   quotient representation `Representation.quotient` of `DistribMulAction.toModuleEnd`, taking the
   invariance of `V` elementwise. Its kernel consists of the `γ` with `γ • x - x ∈ V` for all `x`,
   it grows with `V`, and the action is compatible with the factor maps `M ⧸ V → M ⧸ V'`.
+* The **restriction of a group action by linear equivalences** `ρ : G →* (V ≃ₗ[K] V)` to a
+  `G`-invariant `S`-submodule `P : Submodule S V` (with compatible scalar actions of `S` and `K`),
+  yielding `P.restrictLinearEquivHom ρ hP : G →* (P ≃ₗ[S] P)`.
 
 For a compact monoid acting continuously on a topological module the invariant cores of the open
 submodules are open. If the module is linearly topologized, the invariant open submodules therefore
@@ -35,6 +38,8 @@ form a basis of neighbourhoods of zero; that is where the invariant core is used
 
 * `Submodule.invariantCore`: the largest submodule that every element of `Γ` maps into a given one.
 * `Submodule.quotientToModuleEnd`: the action of `Γ` on the quotient by an invariant submodule.
+* `Submodule.restrictLinearEquivHom`: restriction of a group homomorphism `G →* (V ≃ₗ[K] V)` to
+  an invariant `S`-submodule `P`.
 
 ## Main results
 
@@ -44,6 +49,8 @@ form a basis of neighbourhoods of zero; that is where the invariant core is used
 * `Submodule.quotientToModuleEnd_mk`, `Submodule.mem_mker_quotientToModuleEnd`,
   `Submodule.mker_quotientToModuleEnd_mono`, `Submodule.factor_quotientToModuleEnd`: the
   induced action on classes, its kernel, and its compatibility with the factor maps.
+* `Submodule.coe_restrictLinearEquivHom_apply`, `Submodule.coe_restrictLinearEquivHom_symm_apply`:
+  evaluation of the restricted linear-equivalence action and its inverse on ambient elements.
 -/
 
 public section
@@ -145,5 +152,44 @@ theorem factor_quotientToModuleEnd (hV : ∀ γ : Γ, ∀ x ∈ V, γ • x ∈ 
   induction y using Quotient.induction_on with | _ x => simp
 
 end Quotient
+
+section RestrictLinearEquiv
+
+variable {G S K V : Type*} [Group G] [Semiring S] [Semiring K] [AddCommMonoid V]
+  [Module S V] [Module K V] [LinearMap.CompatibleSMul V V S K]
+
+/-- Restrict a group homomorphism `ρ : G →* (V ≃ₗ[K] V)` to an invariant `S`-submodule `P`,
+yielding a group homomorphism `G →* (P ≃ₗ[S] P)`. -/
+def restrictLinearEquivHom (P : Submodule S V) (ρ : G →* (V ≃ₗ[K] V))
+    (hP : ∀ g, ∀ x ∈ P, ρ g x ∈ P) : G →* (P ≃ₗ[S] P) where
+  toFun g := LinearEquiv.ofLinearMap
+    (((ρ g).toLinearMap.restrictScalars S).restrict fun x hx ↦ by simpa using hP g x hx)
+    (((ρ g⁻¹).toLinearMap.restrictScalars S).restrict fun x hx ↦ by simpa using hP g⁻¹ x hx)
+    (LinearMap.ext fun x ↦ Subtype.ext <| by
+      simp only [LinearMap.comp_apply, LinearMap.id_apply, LinearMap.restrict_apply,
+        LinearMap.restrictScalars_apply, LinearEquiv.coe_coe]
+      rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one, one_apply_eq_self])
+    (LinearMap.ext fun x ↦ Subtype.ext <| by
+      simp only [LinearMap.comp_apply, LinearMap.id_apply, LinearMap.restrict_apply,
+        LinearMap.restrictScalars_apply, LinearEquiv.coe_coe]
+      rw [← mul_apply_eq_comp, ← map_mul, inv_mul_cancel, map_one, one_apply_eq_self])
+  map_one' := LinearEquiv.ext fun x ↦ Subtype.ext <| by
+    simp [LinearEquiv.coe_ofLinearMap]
+  map_mul' u v := LinearEquiv.ext fun x ↦ Subtype.ext <| by
+    simp [LinearEquiv.coe_ofLinearMap, mul_apply_eq_comp]
+
+/-- The restricted automorphism acts on elements of `P` by the ambient automorphism `ρ g`. -/
+@[simp]
+theorem coe_restrictLinearEquivHom_apply (P : Submodule S V) (ρ : G →* (V ≃ₗ[K] V))
+    (hP : ∀ g, ∀ x ∈ P, ρ g x ∈ P) (g : G) (x : P) :
+    (P.restrictLinearEquivHom ρ hP g x : V) = ρ g x := (rfl)
+
+/-- The inverse of the restricted automorphism acts on elements of `P` by `ρ g⁻¹`. -/
+@[simp]
+theorem coe_restrictLinearEquivHom_symm_apply (P : Submodule S V) (ρ : G →* (V ≃ₗ[K] V))
+    (hP : ∀ g, ∀ x ∈ P, ρ g x ∈ P) (g : G) (x : P) :
+    ((P.restrictLinearEquivHom ρ hP g).symm x : V) = ρ g⁻¹ x := (rfl)
+
+end RestrictLinearEquiv
 
 end Submodule

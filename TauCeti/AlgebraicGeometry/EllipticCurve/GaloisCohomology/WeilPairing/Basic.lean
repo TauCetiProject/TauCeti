@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Algebra.NatCast
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Restriction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.WeilPairing.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.WeilPairing.RootsOfUnity
+public import TauCeti.Data.Nat.Cast.IsUnit
 public import TauCeti.FieldTheory.GaloisCohomology.Kummer
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Basic
 
@@ -210,7 +211,7 @@ private theorem smul_kummerCoeff_eq_self_of_forall_smul_eq_self
     W.algEquiv_apply_eq_self_of_torsionGaloisAction_eq_one
       hm.natCast_ne_zero_of_algebra hσ
       (ζ := ((x.toMul : (SeparableClosure K)ˣ) : SeparableClosure K))
-      (by rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity _ _).1 x.toMul.2, Units.val_one])
+      (by rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity _ _).1 x.toMul.property, Units.val_one])
 
 /-! ### Change of field -/
 

@@ -110,9 +110,9 @@ theorem sw1_eq_add_galoisCor_of_equivalent_scharlauTransfer (s : L →ₗ[K] K) 
   obtain ⟨et⟩ := ht
   obtain ⟨eb⟩ := hb
   have h1 := et.nondegenerate_iff.2 <|
-    QuadraticMap.nondegenerate_weightedSumSquares fun i => (t i).isUnit.isRegular
+    QuadraticMap.nondegenerate_weightedSumSquares_iff.mpr fun i => (t i).isUnit.isRegular
   have ha := eb.nondegenerate_iff.2 <|
-    QuadraticMap.nondegenerate_weightedSumSquares fun i => (b i).isUnit.isRegular
+    QuadraticMap.nondegenerate_weightedSumSquares_iff.mpr fun i => (b i).isUnit.isRegular
   rw [← sw1Class_formClass _ h1 t ⟨et⟩, ← sw1Class_formClass _ ha b ⟨eb⟩,
     sw1Class_formClass_scharlauTransfer_smul_sq σ s a ha h1]
 

@@ -56,16 +56,16 @@ variable {K : Type*} [Field K] [NumberField K]
 discriminant of `minpoly ℤ θ` is the square of the index `[𝓞 K : ℤ[θ]]` times the discriminant
 of `K`. -/
 theorem discr_minpoly_eq_index_sq_mul_discr (θ : IntegralPrimitiveElement K) :
-    (minpoly ℤ θ.1).discr = (θ.index : ℤ) ^ 2 * NumberField.discr K := by
+    (minpoly ℤ θ.val).discr = (θ.index : ℤ) ^ 2 * NumberField.discr K := by
   classical
   -- The power basis of `ℤ[θ]` over `ℤ`, as a basis of the sublattice `ℤ[θ]` of `𝓞 K`.
-  set pb := Algebra.adjoin.powerBasis' θ.1.isIntegral with hpb
-  have hfin : finrank ℤ (Algebra.adjoin ℤ ({θ.1} : Set (𝓞 K))) = finrank ℤ (𝓞 K) := by
+  set pb := Algebra.adjoin.powerBasis' θ.val.isIntegral with hpb
+  have hfin : finrank ℤ (Algebra.adjoin ℤ ({θ.val} : Set (𝓞 K))) = finrank ℤ (𝓞 K) := by
     have h := θ.finrank_adjoin
     rwa [adjoin_def] at h
   have hcard : Fintype.card (Fin pb.dim) = finrank ℤ (𝓞 K) := by
     rw [Fintype.card_fin, ← pb.finrank, hfin]
-  have h := (Subalgebra.toSubmodule (Algebra.adjoin ℤ ({θ.1} : Set (𝓞 K))))
+  have h := (Subalgebra.toSubmodule (Algebra.adjoin ℤ ({θ.val} : Set (𝓞 K))))
     |>.discr_eq_cardQuot_sq_mul_discr (pb.basis.map (Subalgebra.toSubmoduleEquiv _).symm) hcard
   -- The powers of `θ` are the power basis of `θ`, up to the identification of the index sets.
   have hdim : θ.powerBasis.dim = pb.dim := by
@@ -89,7 +89,7 @@ theorem discr_minpoly_eq_index_sq_mul_discr (θ : IntegralPrimitiveElement K) :
 /-- A natural number not dividing the discriminant of `minpoly ℤ θ` does not divide the index
 `[𝓞 K : ℤ[θ]]`. -/
 theorem not_dvd_index_of_not_dvd_discr_minpoly (θ : IntegralPrimitiveElement K) {p : ℕ}
-    (hp : ¬ (p : ℤ) ∣ (minpoly ℤ θ.1).discr) : ¬ p ∣ θ.index := by
+    (hp : ¬ (p : ℤ) ∣ (minpoly ℤ θ.val).discr) : ¬ p ∣ θ.index := by
   intro h
   apply hp
   rw [θ.discr_minpoly_eq_index_sq_mul_discr]
@@ -100,17 +100,17 @@ theorem not_dvd_index_of_not_dvd_discr_minpoly (θ : IntegralPrimitiveElement K)
 If `minpoly ℤ θ` is squarefree modulo the prime `p`, then its discriminant is nonzero modulo `p`,
 so `p` does not divide `[𝓞 K : ℤ[θ]]` by the index formula. -/
 theorem not_dvd_index_of_squarefree_map (θ : IntegralPrimitiveElement K) {p : ℕ} [Fact p.Prime]
-    (hsq : Squarefree ((minpoly ℤ θ.1).map (Int.castRingHom (ZMod p)))) : ¬ p ∣ θ.index := by
+    (hsq : Squarefree ((minpoly ℤ θ.val).map (Int.castRingHom (ZMod p)))) : ¬ p ∣ θ.index := by
   apply θ.not_dvd_index_of_not_dvd_discr_minpoly
   rw [← ZMod.intCast_zmod_eq_zero_iff_dvd, ← eq_intCast (Int.castRingHom (ZMod p)),
-    ← (minpoly.monic θ.1.isIntegral).discr_map]
-  exact ((minpoly.monic θ.1.isIntegral).map _).discr_ne_zero_iff.mpr
+    ← (minpoly.monic θ.val.isIntegral).discr_map]
+  exact ((minpoly.monic θ.val.isIntegral).map _).discr_ne_zero_iff.mpr
     (PerfectField.separable_iff_squarefree.mpr hsq)
 
 /-- **A squarefree polynomial discriminant forces index `1`.** If the discriminant of
 `minpoly ℤ θ` is squarefree, then `ℤ[θ] = 𝓞 K`. -/
 theorem index_eq_one_of_squarefree_discr (θ : IntegralPrimitiveElement K)
-    (hsq : Squarefree (minpoly ℤ θ.1).discr) : θ.index = 1 := by
+    (hsq : Squarefree (minpoly ℤ θ.val).discr) : θ.index = 1 := by
   have hu : IsUnit (θ.index : ℤ) :=
     hsq _ (by rw [← sq]; exact ⟨_, θ.discr_minpoly_eq_index_sq_mul_discr⟩)
   exact_mod_cast Int.isUnit_iff_natAbs_eq.mp hu

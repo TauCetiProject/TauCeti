@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Projective
+public import Mathlib.Topology.Algebra.Module.Complement
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import TauCeti.Analysis.Normed.Module.Bases.Orthonormal
 public import TauCeti.Analysis.Normed.Operator.RingOpNorm.OpenMapping
@@ -28,7 +29,8 @@ conditions which only see the topology of `M`:
 
 Then `IsONable R M → IsPotentiallyONable R M → HasPr R M`. Both new conditions are invariant
 under continuous linear equivalence, stable under finite products (using
-`C₀(I ⊕ J, R) ≃ C₀(I, R) × C₀(J, R)`), and (Pr) passes to continuous linear retracts.
+`C₀(I ⊕ J, R) ≃ C₀(I, R) × C₀(J, R)`), and (Pr) passes to continuous linear retracts and
+topologically complemented submodules (`TauCeti.HasPr.of_isTopCompl`).
 
 Over a ring with a multiplicative pseudo-uniformiser (`TauCeti.NormedRing.IsTate R`), property
 (Pr) is the analytic analogue of projectivity:
@@ -130,6 +132,12 @@ theorem HasPr.of_retract (h : HasPr R N) (i : M →L[R] N) (r : N →L[R] M)
   refine ⟨I, _, hI, j.comp i, r.comp s, ?_⟩
   rw [ContinuousLinearMap.comp_assoc, ← s.comp_assoc, hsj, ContinuousLinearMap.id_comp, hri]
 
+/-- A topologically complemented submodule of a module with property `(Pr)` has property `(Pr)`. -/
+theorem HasPr.of_isTopCompl (hM : HasPr R M) {p q : Submodule R M} (h : p.IsTopCompl q) :
+    HasPr R p :=
+  hM.of_retract p.subtypeL (p.projectionOntoL q h)
+    (ContinuousLinearMap.ext fun x ↦ Submodule.projectionOntoL_apply_left h x)
+
 /-- Property (Pr) is invariant under continuous linear equivalence. -/
 theorem HasPr.of_equiv (h : HasPr R N) (e : M ≃L[R] N) : HasPr R M :=
   h.of_retract e e.symm (by ext; simp)
@@ -165,6 +173,27 @@ theorem HasPr.completeSpace [CompleteSpace R] (h : HasPr R M) : CompleteSpace M 
   simpa [Filter.Tendsto, hri'] using (r.continuous.tendsto y).comp hy
 
 end Seminormed
+
+section Normed
+
+variable [NormedRing R] {M : Type u} [SeminormedAddCommGroup M] [Module R M]
+
+/-- Over a normed ring, a seminormed module with property `(Pr)` is separated (`T0Space`), since
+any retract `r ∘ i = id` makes `i` a continuous injection into the separated model space
+`C₀(I, R)`. -/
+theorem HasPr.t0Space (h : HasPr R M) : T0Space M := by
+  obtain ⟨I, _, _, i, r, hri⟩ := h
+  refine t0Space_of_injective_of_continuous (fun x y hxy ↦ ?_) i.continuous
+  simpa using (DFunLike.congr_fun hri x).symm.trans
+    ((congrArg r hxy).trans (DFunLike.congr_fun hri y))
+
+/-- Over a normed ring, a seminormed module with property `(Pr)` has definite seminorm:
+`‖x‖ = 0 → x = 0`. -/
+theorem HasPr.eq_zero_of_norm_eq_zero (h : HasPr R M) {x : M} (hx : ‖x‖ = 0) : x = 0 := by
+  have := h.t0Space
+  exact (Metric.inseparable_iff.2 (dist_zero_right x ▸ hx)).eq
+
+end Normed
 
 section Lifting
 
@@ -220,7 +249,7 @@ theorem hasPr_iff_forall_exists_comp_eq_id [CompleteSpace M] [IsUltrametricDist 
   let B := {x : M // ‖x‖ ≤ 1}
   let : TopologicalSpace B := ⊥
   have : DiscreteTopology B := ⟨rfl⟩
-  have hb : Memℓp (fun b : B ↦ (b : M)) ⊤ := memℓp_infty ⟨1, by rintro _ ⟨b, rfl⟩; exact b.2⟩
+  have hb : Memℓp (fun b : B ↦ (b : M)) ⊤ := memℓp_infty ⟨1, by rintro _ ⟨b, rfl⟩; exact b.property⟩
   set q : C₀(B, R) →L[R] M := linearCombination R ⟨_, hb⟩
   have hq : Surjective q := fun y ↦ by
     obtain rfl | hy := eq_or_ne y 0
@@ -232,11 +261,19 @@ theorem hasPr_iff_forall_exists_comp_eq_id [CompleteSpace M] [IsUltrametricDist 
   obtain ⟨s, hs⟩ := h C₀(B, R) q hq
   exact ⟨B, ⊥, ⟨rfl⟩, s, q, hs⟩
 
+end Splitting
+
+section Finite
+
+variable [NormedRing R] [NormedRing.IsTate R] [IsUltrametricDist R] [CompleteSpace R]
+  {M : Type u} [SeminormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
+
 /-- **Finite (Pr) modules are retracts of finite free modules**: over a complete ultrametric ring
 with a multiplicative pseudo-uniformiser, a finitely generated module `M` with property (Pr) is a
 continuous linear retract `r ∘ i = id` of `R ^ n` for some `n`. -/
 theorem HasPr.exists_comp_eq_id_of_finite [Module.Finite R M] (h : HasPr R M) :
     ∃ (n : ℕ) (i : M →L[R] (Fin n → R)) (r : (Fin n → R) →L[R] M), r.comp i = .id R M := by
+  let : NormedAddCommGroup M := NormedAddCommGroup.ofSeparation fun _ ↦ h.eq_zero_of_norm_eq_zero
   have := h.completeSpace
   obtain ⟨n, v, hv⟩ := Module.Finite.exists_fin (R := R) (M := M)
   -- The generators `v` give a continuous linear surjection `R ^ n → M`; it splits by (Pr).
@@ -254,6 +291,6 @@ theorem HasPr.projective [Module.Finite R M] (h : HasPr R M) : Module.Projective
   exact Module.Projective.of_split s.toLinearMap q.toLinearMap
     (by rw [← ContinuousLinearMap.toLinearMap_comp, hs, ContinuousLinearMap.coe_id])
 
-end Splitting
+end Finite
 
 end TauCeti

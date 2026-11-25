@@ -181,9 +181,8 @@ theorem W1p.halfSpaceTrace_apply_ae_of_continuousOn (hp : p ≠ ∞) (a : ℝ)
     rcases lt_trichotomy a x.fst with hlt | heq | hgt
     · have hxH : x ∈ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) :=
         (mem_normalHalfSpace a x).2 hlt
-      have hρ : normalReflection E a x ∉ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) :=
-        fun h => (lt_asymm hlt) ((normalReflection_mem_normalHalfSpace_iff a x).1 h)
-      rw [indicator_of_mem hxH, indicator_of_notMem hρ, add_zero, h1 hxH, Function.comp_apply]
+      rw [indicator_of_mem hxH, indicator_of_notMem (normalReflection_notMem_normalHalfSpace hxH),
+        add_zero, h1 hxH, Function.comp_apply]
       simp only [fold, abs_of_pos (sub_pos.2 hlt), add_sub_cancel]
       rfl
     · exact absurd heq.symm h3
@@ -227,9 +226,7 @@ theorem W1p.normalEpigraphTrace_apply_ae_of_continuousOn {φ : C(E, ℝ)} {K : N
     refine h2 ?_
     simpa [Φ] using hx
   filter_upwards [W1p.halfSpaceTrace_apply_ae_of_continuousOn hp 0 hg hv] with y hy
-  have hγ : normalGraphEmbedding φ y = WithLp.toLp 2 (φ y, y) :=
-    (WithLp.ext_iff 2).2 (Prod.ext (normalGraphEmbedding_fst φ y) (normalGraphEmbedding_snd φ y))
-  rw [W1p.normalEpigraphTrace_apply, hy, hγ]
+  rw [W1p.normalEpigraphTrace_apply, hy, normalGraphEmbedding_apply]
   simp [Φ]
 
 end TauCeti

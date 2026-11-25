@@ -124,19 +124,19 @@ def tangentBundleDiffeomorphTwist (n : ℕ∞ω) :
       contDiff_id).contMDiff.contMDiffAt.comp q hid.2).congr_of_eventuallyEq ?_
     filter_upwards [hid.1.continuousAt.preimage_mem_nhds
       ((chartAt ℂ q.proj).open_source.mem_nhds (mem_chart_source ℂ q.proj))] with r hr
-    exact trivializationAt_twistCore_tangentSpaceEquivTwistFiber _ r.proj r.2 hr
+    exact trivializationAt_twistCore_tangentSpaceEquivTwistFiber _ r.proj r.snd hr
 
 @[simp]
 theorem tangentBundleDiffeomorphTwist_apply (n : ℕ∞ω)
     (q : TangentBundle 𝓘(ℂ) (OnePoint ℂ)) :
-    tangentBundleDiffeomorphTwist n q = ⟨q.proj, tangentSpaceEquivTwistFiber q.proj q.2⟩ :=
+    tangentBundleDiffeomorphTwist n q = ⟨q.proj, tangentSpaceEquivTwistFiber q.proj q.snd⟩ :=
   TauCeti.bundleDiffeomorph_apply _ _ q
 
 @[simp]
 theorem tangentBundleDiffeomorphTwist_symm_apply (n : ℕ∞ω)
     (q : TotalSpace ℂ (twistCore (𝕜 := ℂ) 2).Fiber) :
     (tangentBundleDiffeomorphTwist n).symm q =
-      ⟨q.proj, (tangentSpaceEquivTwistFiber q.proj).symm q.2⟩ :=
+      ⟨q.proj, (tangentSpaceEquivTwistFiber q.proj).symm q.snd⟩ :=
   TauCeti.bundleDiffeomorph_symm_apply _ _ q
 
 /-- The isomorphism `TS² ≅ 𝒪(2)` lies over the identity of the Riemann sphere. -/

@@ -116,13 +116,14 @@ theorem kernel_const (k : ℕ) (x : Δ) : kernel k (fun _ : ℕ ↦ x) = {fun _ 
 initial state is `a`, its output is the value at `0`, and on the digit `d` it moves from `b` to
 `n ↦ b (k * n + d)`. -/
 def kernelDFAO (k : ℕ) (a : ℕ → Δ) : DFAO (Fin k) (kernel k a) Δ where
-  step b d := ⟨fun n ↦ b.1 (k * n + d), kernel_subset b.2 (apply_mul_add_mem_kernel d.2)⟩
+  step b d := ⟨fun n ↦ b.val (k * n + d), kernel_subset b.property
+      (apply_mul_add_mem_kernel d.isLt)⟩
   start := ⟨a, self_mem_kernel k a⟩
-  output b := b.1 0
+  output b := b.val 0
 
 @[simp]
 theorem coe_kernelDFAO_step (b : kernel k a) (d : Fin k) :
-    ((kernelDFAO k a).step b d : ℕ → Δ) = fun n ↦ b.1 (k * n + d) :=
+    ((kernelDFAO k a).step b d : ℕ → Δ) = fun n ↦ b.val (k * n + d) :=
   (rfl)
 
 @[simp]
@@ -130,7 +131,7 @@ theorem coe_kernelDFAO_start : ((kernelDFAO k a).start : ℕ → Δ) = a :=
   (rfl)
 
 @[simp]
-theorem kernelDFAO_output (b : kernel k a) : (kernelDFAO k a).output b = b.1 0 :=
+theorem kernelDFAO_output (b : kernel k a) : (kernelDFAO k a).output b = b.val 0 :=
   (rfl)
 
 /-- From the state `b`, after reading the word `w` the kernel automaton is in the state
@@ -138,14 +139,14 @@ theorem kernelDFAO_output (b : kernel k a) : (kernelDFAO k a).output b = b.1 0 :
 @[simp]
 theorem coe_kernelDFAO_evalFrom (b : kernel k a) (w : List (Fin k)) :
     ((kernelDFAO k a).evalFrom b w : ℕ → Δ) =
-      fun n ↦ b.1 (k ^ w.length * n + Nat.ofDigits k (w.map Fin.val)) := by
+      fun n ↦ b.val (k ^ w.length * n + Nat.ofDigits k (w.map Fin.val)) := by
   induction w generalizing b with
   | nil => simp
   | cons d w ih =>
     rw [DFAO.evalFrom_cons, ih]
     funext n
     simp only [coe_kernelDFAO_step, List.length_cons, List.map_cons, Nat.ofDigits_cons]
-    exact congrArg b.1 (by ring)
+    exact congrArg b.val (by ring)
 
 /-- After reading the word `w` the kernel automaton of `a` is in the state
 `n ↦ a (k ^ |w| * n + v)`, where `v` is the value of `w` read least significant digit first. -/

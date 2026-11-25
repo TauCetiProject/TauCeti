@@ -276,9 +276,9 @@ theorem sw2_eq_add_galoisEvens_add_cup_of_equivalent_traceTransfer [Invertible (
   obtain ⟨et⟩ := ht
   obtain ⟨eb⟩ := hb
   have h1 := et.nondegenerate_iff.2 <|
-    nondegenerate_weightedSumSquares fun i => (t i).isUnit.isRegular
+    nondegenerate_weightedSumSquares_iff.mpr fun i => (t i).isUnit.isRegular
   have ha := eb.nondegenerate_iff.2 <|
-    nondegenerate_weightedSumSquares fun i => (b i).isUnit.isRegular
+    nondegenerate_weightedSumSquares_iff.mpr fun i => (b i).isUnit.isRegular
   rw [← sw1Class_formClass _ h1 t ⟨et⟩, ← sw2Class_formClass _ h1 t ⟨et⟩,
     ← sw2Class_formClass _ ha b ⟨eb⟩, sw2Class_formClass_traceTransfer_smul_sq σ hfin a ha h1]
 
