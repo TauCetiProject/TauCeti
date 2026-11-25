@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Complex.Chart
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Manifold.Complex.Analytic
 public import TauCeti.Topology.OpenPartialHomeomorph.Composition
+import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Complex.Beltrami.Isothermal
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
@@ -40,7 +41,10 @@ it is `i` (`TauCeti.Beltrami.exists_isothermal_chart_of_contDiffAt_of_sq_eq_neg_
 integrability of almost complex structures in real dimension two: every almost complex surface is,
 through `IsothermalSurface`, a complex curve. Smooth planar coordinates and holomorphic
 transitions show that every isothermal chart is smooth in the original real atlas
-(`IsIsothermalChart.mem_maximalAtlas_infty`).
+(`IsIsothermalChart.mem_maximalAtlas_infty`). An almost complex structure of finite class `C^(k+1)`
+has isothermal charts of class `C^(k+1)`
+(`ContMDiffAlmostComplexStructure.exists_isothermal_chart`), from the finite-order planar charts
+(`TauCeti.Beltrami.exists_isothermal_chart_finite_order`).
 
 ## Main declarations
 
@@ -55,6 +59,8 @@ transitions show that every isothermal chart is smooth in the original real atla
   complex analytic curve, `IsManifold 𝓘(ℂ) ω (IsothermalSurface j)`.
 * `TauCeti.IsIsothermalChart.mem_maximalAtlas_infty`: every isothermal chart is smooth in the
   original real atlas.
+* `TauCeti.ContMDiffAlmostComplexStructure.exists_isothermal_chart`: an almost complex structure of
+  finite class `C^(k+1)` has charts of the `C^(k+1)` maximal atlas in which it is `i`.
 * `TauCeti.IsothermalSurface.mem_atlas_iff`: its charts are exactly the isothermal charts of `j`,
   read through `IsothermalSurface.homeomorph`.
 * `TauCeti.IsothermalSurface.diffeomorph`: the identity, a smooth diffeomorphism of real surfaces;
@@ -271,6 +277,52 @@ theorem IsIsothermalChart.mem_maximalAtlas_infty
     refine ((hEc.comp z hTc).congr_of_eventuallyEq ?_).contMDiffWithinAt
     filter_upwards [(e.symm.trans e').open_source.mem_nhds hzT] with w hw
     exact (e'.left_inv hw.2).symm
+
+/-- **Isothermal charts of finite order.** Let `J` be an almost complex structure of class
+`C^(k+1)` on a real surface. Every point `x` lies in the source of a chart `e` of the `C^(k+1)`
+maximal atlas in which `J = i`: at every point of its source, the differential of `e` carries `J`
+to multiplication by `i`, the structure `ofComplexManifold ℂ ℂ` of the plane. Read in a chart of
+`M`, `J` is a `C^(k+1)` field of complex structures on
+the plane, which the Beltrami equation straightens
+(`TauCeti.Beltrami.exists_isothermal_chart_finite_order`). -/
+theorem ContMDiffAlmostComplexStructure.exists_isothermal_chart {k : ℕ}
+    (J : ContMDiffAlmostComplexStructure 𝓘(ℝ, ℂ) (k + 1 : ℕ) M) (x : M) :
+    ∃ e : OpenPartialHomeomorph M ℂ, e ∈ maximalAtlas 𝓘(ℝ, ℂ) (k + 1 : ℕ) M ∧ x ∈ e.source ∧
+      ∀ y ∈ e.source, ∀ v : TangentSpace 𝓘(ℝ, ℂ) y,
+        mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) e y (J y v) =
+          ofComplexManifold ℂ ℂ (e y) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) e y v) := by
+  set q := chartAt ℂ x
+  have hxq : x ∈ q.source := mem_chart_source ℂ x
+  have hqx : q.target ∈ 𝓝 (q x) := q.open_target.mem_nhds (q.map_source hxq)
+  have hJ : ContDiffOn ℝ (k + 1 : ℕ) (J.chartPushforward q) q.target :=
+    J.contDiffOn_chartPushforward (r := ⊤) contMDiffOn_chart contMDiffOn_chart_symm le_top
+  -- Straighten `J` read in the chart `q`.
+  obtain ⟨e, hxe, -, he, hinv, hlin⟩ := Beltrami.exists_isothermal_chart_finite_order k
+    (hJ.contDiffAt hqx) (eventually_of_mem hqx fun z hz v ↦
+      J.chartPushforward_apply_chartPushforward_apply q hz
+        (mdifferentiableAt_atlas (chart_mem_atlas ℂ x) (q.map_target hz))
+        (mdifferentiableAt_atlas_symm (chart_mem_atlas ℂ x) hz) v)
+  have hes := e.contDiffOn_symm_of_isInvertible_fderiv he hinv
+  refine ⟨q.trans e, trans_mem_maximalAtlas_of_contDiffAt (chart_mem_maximalAtlas x)
+    (fun z hz ↦ he.contDiffAt (e.open_source.mem_nhds hz))
+    (fun z hz ↦ hes.contDiffAt (e.open_target.mem_nhds hz)), ⟨hxq, hxe⟩, fun y hy v ↦ ?_⟩
+  rw [OpenPartialHomeomorph.trans_source] at hy
+  have hqd : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) q y :=
+    mdifferentiableAt_atlas (chart_mem_atlas ℂ x) hy.1
+  have hed : HasFDerivAt e (fderiv ℝ e (q y)) (q y) :=
+    ((he.contDiffAt (e.open_source.mem_nhds hy.2)).differentiableAt (by simp)).hasFDerivAt
+  -- The derivative of `q` carries `J` to `J` read in `q`, which `e` carries to `i`.
+  have hcomm := J.mfderiv_comp_toEndomorphism q hy.1 hqd
+    (mdifferentiableAt_atlas_symm (chart_mem_atlas ℂ x) (q.map_source hy.1))
+  have hd : mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (q.trans e) y =
+      (fderiv ℝ e (q y)).comp (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) q y) :=
+    (hed.hasMFDerivAt.comp y hqd.hasMFDerivAt).mfderiv
+  rw [hd]
+  calc _ = fderiv ℝ e (q y) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) q y (J y v)) := rfl
+    _ = fderiv ℝ e (q y) (J.chartPushforward q (q y) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) q y v)) :=
+        congrArg _ (DFunLike.congr_fun hcomm v)
+    _ = Complex.I * fderiv ℝ e (q y) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) q y v) := hlin _ hy.2 _
+    _ = _ := by exact (ofComplexManifold_apply (E := ℂ) (M := ℂ) _ _).symm
 
 /-- The surface `M` with the complex charted space structure given by the isothermal charts of
 `j`, a copy of `M` through `IsothermalSurface.homeomorph`. It is a complex analytic curve. -/
