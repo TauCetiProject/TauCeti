@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.LinearAlgebra.Matrix.Notation
-public import TauCeti.Analysis.ODE.Propagator.Holomorphic
+public import TauCeti.Analysis.ODE.Propagator.Holomorphic.Basic
 
 /-!
 # The Dirac coefficient
