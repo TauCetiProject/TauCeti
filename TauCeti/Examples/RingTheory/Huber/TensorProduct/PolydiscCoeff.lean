@@ -40,7 +40,7 @@ example : CompletedTensor.diagonalSeries (isTopologicallyNilpotent_p p) ∉
 -- The coefficients of `Σₙ pⁿTⁿSⁿ` are `pⁿ` on the diagonal and `0` off it.
 example (i j : ℕ) :
     MvPowerSeries.coeff (Finsupp.single 0 i + Finsupp.single 1 j)
-        (CompletedTensor.toMvPowerSeries ℚ_[p] (1 + 1)
+        (toMvPowerSeries (1 + 1) ℚ_[p]
           (CompletedTensor.diagonalSeries (isTopologicallyNilpotent_p p))) =
       if i = j then (p : ℚ_[p]) ^ i else 0 :=
   CompletedTensor.coeff_diagonalSeries _ i j
