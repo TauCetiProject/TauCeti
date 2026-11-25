@@ -148,12 +148,10 @@ Rodrigues formula. It follows from DLMF 18.9.13, 18.9.14 and 18.9.23. -/
 theorem X_mul_derivative_laguerre_add_one (α : R) (n : ℕ) :
     X * derivative (laguerre (α + 1) n) =
       (n + 1) • laguerre α (n + 1) - (C (α + 1) - X) * laguerre (α + 1) n := by
-  have h₁ := X_mul_laguerre_add_one α n
   rcases n with _ | m
-  · simp only [nsmul_eq_mul, Nat.cast_add, Nat.cast_one, Nat.cast_zero, map_add, map_one,
-      map_zero, laguerre_zero, derivative_one] at h₁ ⊢
-    linear_combination -h₁
-  · have h₂ := X_mul_laguerre_add_one (α + 1) m
+  · simp [laguerre_zero, laguerre_one]
+  · have h₁ := X_mul_laguerre_add_one α (m + 1)
+    have h₂ := X_mul_laguerre_add_one (α + 1) m
     have h₃ := laguerre_add_one_sub α m
     rw [derivative_laguerre]
     simp only [nsmul_eq_mul, Nat.cast_add, Nat.cast_one, map_add, map_natCast, map_one] at h₁ h₂ ⊢
