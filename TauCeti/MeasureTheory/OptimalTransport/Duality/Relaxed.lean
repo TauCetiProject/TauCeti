@@ -171,8 +171,9 @@ value is `∞`. -/
 theorem DualFeasible.kantorovichDualValue_le_relaxedTransportCost [IsFiniteMeasure μ]
     (hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ) (hmass : μ univ = ν univ)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν) :
-    (kantorovichDualValue μ ν φ ψ : EReal) ≤ (relaxedTransportCost c μ ν : ℝ≥0∞) :=
-  EReal.coe_le_coe_ennreal_of_ofReal_le <|
+    (kantorovichDualValue μ ν φ ψ : EReal) ≤ (relaxedTransportCost c μ ν : ℝ≥0∞) := by
+  apply EReal.toENNReal_le_iff.1
+  simpa only [EReal.real_coe_toENNReal] using
     hfeas.ofReal_kantorovichDualValue_le_relaxedTransportCost hmass hφ hψ
 
 section Polish

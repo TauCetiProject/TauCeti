@@ -16,40 +16,36 @@ same bound on the norm of the orthogonal projection onto that subspace.
 
 public section
 
-open scoped RealInnerProductSpace
+open scoped InnerProductSpace
 
 namespace Submodule
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
 /-- The norm of the projection of `x` onto `K` is at most `c` exactly when the inner product
-with `x` has absolute value at most `c ‖u‖` for every `u ∈ K`. -/
-theorem norm_starProjection_le_iff_forall_abs_inner_le (K : Submodule ℝ E)
+with `x` has norm at most `c ‖u‖` for every `u ∈ K`. -/
+theorem norm_starProjection_le_iff_forall_norm_inner_le (K : Submodule 𝕜 E)
     [K.HasOrthogonalProjection] (x : E) {c : ℝ} (hc : 0 ≤ c) :
-    ‖K.starProjection x‖ ≤ c ↔ ∀ u ∈ K, |⟪u, x⟫| ≤ c * ‖u‖ := by
-  have he (u : E) (hu : u ∈ K) : ⟪u, K.starProjection x⟫ = ⟪u, x⟫ := by
-    rw [← K.inner_starProjection_left_eq_right u x, K.starProjection_eq_self_iff.mpr hu]
-  constructor
-  · intro h u hu
-    rw [← he u hu, mul_comm c]
-    exact (abs_real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_left h (norm_nonneg _))
-  · intro h
-    by_cases hz : K.starProjection x = 0
-    · simpa [hz] using hc
-    have hbound := h (K.starProjection x) (K.starProjection_apply_mem x)
-    rw [← he _ (K.starProjection_apply_mem x), real_inner_self_eq_norm_sq,
-      abs_of_nonneg (sq_nonneg _), pow_two] at hbound
-    exact le_of_mul_le_mul_right hbound (norm_pos_iff.mpr hz)
+    ‖K.starProjection x‖ ≤ c ↔ ∀ u ∈ K, ‖⟪u, x⟫_𝕜‖ ≤ c * ‖u‖ := by
+  -- The projection is the Riesz representative of the inner-product functional on `K`, so the
+  -- bound is the operator-norm bound `‖⟪P_K x, u⟫‖ ≤ c ‖u‖` on `K`, and `⟪P_K x, u⟫ = ⟪x, u⟫`.
+  rw [starProjection_apply, norm_coe, ← innerSL_apply_norm 𝕜,
+    ContinuousLinearMap.opNorm_le_iff hc, Subtype.forall]
+  simp only [innerSL_apply_apply, inner_orthogonalProjectionOnto_eq_of_mem_right, ← norm_coe,
+    norm_inner_symm x]
 
-/-- For a contrast subspace inside the fitted subspace, projecting the fit's error onto the
-contrasts gives the same norm bound as projecting the original error. -/
-theorem forall_abs_inner_starProjection_sub_le_iff (S : Submodule ℝ E) {L : Submodule ℝ E}
+/-- For nested subspaces `S ≤ L` and any vector `m`, the pairings of `P_L x - m` with `S` are
+uniformly bounded, `‖⟪u, P_L x - m⟫‖ ≤ c ‖u‖` for all `u ∈ S`, exactly when
+`‖P_S (x - m)‖ ≤ c`. In statistical terms, with `L` the fitted subspace, `S ≤ L` a contrast
+subspace and `m` a hypothesised mean, the error of the fit `P_L x` has the same contrast bound as
+the original error `x - m`. -/
+theorem forall_norm_inner_starProjection_sub_le_iff (S : Submodule 𝕜 E) {L : Submodule 𝕜 E}
     [S.HasOrthogonalProjection] [L.HasOrthogonalProjection] (hSL : S ≤ L) (x m : E)
     {c : ℝ} (hc : 0 ≤ c) :
-    (∀ u ∈ S, |⟪u, L.starProjection x - m⟫| ≤ c * ‖u‖) ↔
+    (∀ u ∈ S, ‖⟪u, L.starProjection x - m⟫_𝕜‖ ≤ c * ‖u‖) ↔
       ‖S.starProjection (x - m)‖ ≤ c := by
-  rw [← S.norm_starProjection_le_iff_forall_abs_inner_le _ hc, map_sub, map_sub]
-  have h := congrArg (fun f : E →L[ℝ] E ↦ f x)
+  rw [← S.norm_starProjection_le_iff_forall_norm_inner_le _ hc, map_sub, map_sub]
+  have h := congrArg (fun f : E →L[𝕜] E ↦ f x)
     (Submodule.starProjection_comp_starProjection_of_le hSL)
   simp only [ContinuousLinearMap.comp_apply] at h
   rw [h]

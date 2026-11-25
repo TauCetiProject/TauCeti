@@ -20,6 +20,7 @@ import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 import Mathlib.RingTheory.KrullDimension.Zero
 import Mathlib.RingTheory.Noetherian.Nilpotent
 import Mathlib.RingTheory.Spectrum.Prime.Noetherian
+import TauCeti.GroupTheory.FiniteAbelian.IntegralDual
 import TauCeti.RingTheory.Ideal.MinimalPrime.Finite
 import TauCeti.RingTheory.Ideal.MinimalPrime.Localization
 import TauCeti.RingTheory.Localization.FiniteFree
@@ -100,16 +101,8 @@ private def splitPeriod (N : H →+ ℝ) (e : H ≃+ F × T) : F →+ ℝ :=
   N.comp (e.symm.toAddMonoidHom.comp (AddMonoidHom.inl F T))
 
 /-- The period map vanishes on the finite factor, so it factors through the free factor. -/
-private theorem period_eq_splitPeriod (h : H) : N h = splitPeriod N e (e h).1 := by
-  -- The image of `t : T` has finite order in `ℝ`, so it vanishes.
-  have hT (t : T) : N (e.symm (0, t)) = 0 :=
-    ((N.comp (e.symm.toAddMonoidHom.comp (AddMonoidHom.inr F T))).isOfFinAddOrder
-      (isOfFinAddOrder_of_finite t)).eq_zero'
-  have hh : h = e.symm ((e h).1, 0) + e.symm (0, (e h).2) := by
-    rw [← map_add, Prod.mk_add_mk, add_zero, zero_add, e.symm_apply_apply]
-  conv_lhs => rw [hh]
-  rw [map_add, hT, add_zero]
-  rfl
+private theorem period_eq_splitPeriod (h : H) : N h = splitPeriod N e (e h).1 :=
+  N.apply_eq_apply_symm_fst e h
 
 /-- The character `h ↦ e^t` of `H` with values in `R[T]`, for the `T`-component `t` of `e h`. -/
 private def splitCharacter (R : Type*) [CommRing R] (e : H ≃+ F × T) :

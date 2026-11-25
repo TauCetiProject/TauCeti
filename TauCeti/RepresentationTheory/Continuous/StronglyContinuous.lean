@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import TauCeti.RepresentationTheory.Continuous.Subrepresentation
 import Mathlib.Analysis.Normed.Operator.BanachSteinhaus
+import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # Strong continuity of continuous representations
@@ -27,6 +28,8 @@ continuous representations.
   to the quotient by it preserve strong continuity.
 * `ContRepresentation.exists_norm_le_of_isCompact`: the operators of a strongly continuous
   representation on a Banach space are uniformly bounded on compact sets.
+* `ContRepresentation.continuous_subrepresentation_of_finiteDimensional`: the restriction of a
+  strongly continuous representation to a finite-dimensional invariant subspace is continuous.
 -/
 
 public section
@@ -71,5 +74,20 @@ theorem exists_norm_le_of_isCompact (hπ : ∀ v, Continuous fun g ↦ π g v) {
   exact ⟨C, fun y hy ↦ hC ⟨y, hy⟩⟩
 
 end LocalBound
+
+section FiniteDimensional
+
+variable {𝕜 G V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [Monoid G]
+  [TopologicalSpace G] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+  {π : ContRepresentation 𝕜 G V} {W : Submodule 𝕜 V} {hW : ∀ g, ∀ v ∈ W, π g v ∈ W}
+
+/-- Restricting a strongly continuous representation to a finite-dimensional invariant subspace
+gives a representation that is continuous in the operator norm: on a finite-dimensional space,
+strong and operator-norm continuity agree. -/
+theorem continuous_subrepresentation_of_finiteDimensional (hπ : ∀ v, Continuous fun g ↦ π g v)
+    [FiniteDimensional 𝕜 W] : Continuous (subrepresentation π W hW) :=
+  continuous_clm_apply.2 (continuous_subrepresentation_apply hπ)
+
+end FiniteDimensional
 
 end ContRepresentation

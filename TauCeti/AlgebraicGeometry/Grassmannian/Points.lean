@@ -7,8 +7,10 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cover.Open
 public import TauCeti.AlgebraicGeometry.Grassmannian.Basic
+public import TauCeti.AlgebraicGeometry.Scheme.AffinePoints
 public import TauCeti.RingTheory.Grassmannian.Chart.Locus
 public import TauCeti.RingTheory.Grassmannian.Localization
+import Mathlib.AlgebraicGeometry.ResidueField
 
 /-!
 # The points of the Grassmannian scheme
@@ -29,11 +31,17 @@ morphism over `Spec R` lands in a chart over each basic open of a cover of `Spec
 it classifies there glue along the Zariski cover
 (`Module.Grassmannian.exists_map_eq_of_isLocalized_span`).
 
+Consequently, a map on points natural in the algebra is induced by a morphism of schemes out of
+`G(k, M)` (`Module.Grassmannian.homOfPoints`), glued over the affine points
+(`AlgebraicGeometry.Scheme.homOfAffinePoints`).
+
 ## Main definitions
 
 * `Module.Grassmannian.toSchemeHom N`: the morphism `Spec A ⟶ G(k, M)` classifying a point `N`.
 * `Module.Grassmannian.schemeHomEquiv R M k A`: the points of `G(k, A ⊗[R] M; A)` are the
   morphisms `Spec A ⟶ G(k, M)` over `Spec R`.
+* `Module.Grassmannian.homOfPoints F hF`: the morphism out of `G(k, M)` given on points by a
+  family of maps `F` natural in the algebra.
 
 ## Main results
 
@@ -47,8 +55,16 @@ it classifies there glue along the Zariski cover
 * `Module.Grassmannian.toSchemeHom_map`: naturality of `toSchemeHom` in the algebra.
 * `Module.Grassmannian.toSchemeHom_injective` and `Module.Grassmannian.exists_toSchemeHom_eq`:
   every morphism over `Spec R` classifies a unique point.
+* `Module.Grassmannian.toSchemeHom_apply_mem_opensRange_chartι_iff`: a field-valued point lies in
+  the image of the chart at `x` exactly when it lies in the chart at `x`.
+* `Module.Grassmannian.exists_toSchemeHom_apply_eq`: every point of `G(k, M)` is the image of a
+  field-valued point, over its residue field.
 * `Module.Grassmannian.affinePoint_induction`: a property of all morphisms `Spec B ⟶ G(k, M)` holds
   once it holds for the morphisms `toSchemeHom N`.
+* `Module.Grassmannian.scheme_hom_ext` and `Module.Grassmannian.toSchemeHom_comp_homOfPoints`:
+  morphisms out of `G(k, M)` are determined by, and can be built from, their points.
+* `Module.Grassmannian.eq_homOfPoints`: `homOfPoints F hF` is the unique morphism inducing `F`
+  on points.
 * `Module.Grassmannian.isEmpty_scheme_of_rankAtStalk_lt`, `Module.Grassmannian.isIso_toSpec_zero`,
   and `Module.Grassmannian.isIso_toSpec_of_rankAtStalk_eq`: extreme-dimension Grassmannian schemes.
 
@@ -342,6 +358,27 @@ theorem toSchemeHom_injective :
   exact ((specMap_comp_toSchemeHom_eq_iff N' _ _ _).1
     (h ▸ specMap_comp_toSchemeHom_chartSet a)).symm
 
+/-- A morphism `Spec A ⟶ G(k, M)` over `Spec R` whose image lies in the chart at `x` is `Spec` of
+an `R`-algebra map out of the chart algebra, followed by the chart. -/
+private lemma exists_algHom_comp_chartι_eq (h : Spec (.of A) ⟶ scheme R M k)
+    (hh : h ≫ toSpec R M k = Spec.map (CommRingCat.ofHom (algebraMap R A))) (x : Fin k → M)
+    (hrange : Set.range h ⊆ Set.range (chartι R x)) :
+    ∃ g : ChartAlgebra R x →ₐ[R] A,
+      Spec.map (CommRingCat.ofHom (g : ChartAlgebra R x →+* A)) ≫ chartι R x = h := by
+  have hl := IsOpenImmersion.lift_fac (chartι R x) h hrange
+  obtain ⟨φ, hφ⟩ := Spec.map_surjective (IsOpenImmersion.lift (chartι R x) h hrange)
+  rw [← hφ] at hl
+  -- the lift is a map of `R`-algebras
+  have hφR : CommRingCat.ofHom (algebraMap R (ChartAlgebra R x)) ≫ φ =
+      CommRingCat.ofHom (algebraMap R A) := by
+    apply Spec.map_injective
+    rw [Spec.map_comp, ← chartι_toSpec, reassoc_of% hl, hh]
+  let g : ChartAlgebra R x →ₐ[R] A :=
+    { φ.hom with commutes' := fun r ↦ DFunLike.congr_fun (congrArg CommRingCat.Hom.hom hφR) r }
+  -- `g` is `φ` repackaged as an `R`-algebra map
+  have hgφ : CommRingCat.ofHom (g : ChartAlgebra R x →+* A) = φ := CommRingCat.ofHom_hom φ
+  exact ⟨g, hgφ ▸ hl⟩
+
 /-- The elements `a : A` such that a morphism `Spec A ⟶ G(k, M)` over `Spec R` restricts on the
 basic open `D(a)` to a morphism into a chart generate the unit ideal. -/
 private lemma span_factorsThroughChart_eq_top (h : Spec (.of A) ⟶ scheme R M k)
@@ -364,24 +401,11 @@ private lemma span_factorsThroughChart_eq_top (h : Spec (.of A) ⟶ scheme R M k
     rintro _ ⟨q, rfl⟩
     exact hsub
       ((PrimeSpectrum.localization_away_comap_range (Localization.Away a) a).le ⟨q, rfl⟩)
-  -- the lift of `h` to the chart is `Spec` of an `R`-algebra map
-  obtain ⟨φ, hφ⟩ := Spec.map_surjective (IsOpenImmersion.lift (chartι R x) _ hrange)
-  have hφR : CommRingCat.ofHom (algebraMap R (ChartAlgebra R x)) ≫ φ =
-      CommRingCat.ofHom (algebraMap R (Localization.Away a)) := by
-    refine Spec.map_injective ?_
-    have h₁ : Spec.map φ ≫ chartι R x = _ :=
-      (congrArg (· ≫ chartι R x) hφ).trans
-        (IsOpenImmersion.lift_fac (chartι R x) _ hrange)
-    calc _ = Spec.map φ ≫ chartι R x ≫ toSpec R M k := by
-          rw [Spec.map_comp, chartι_toSpec]
-      _ = _ := by
-        rw [reassoc_of% h₁, hh, ← Spec.map_comp]
-        congr 1
-  let g : ChartAlgebra R x →ₐ[R] Localization.Away a :=
-    { φ.hom with commutes' := fun r ↦ DFunLike.congr_fun (congrArg CommRingCat.Hom.hom hφR) r }
-  exact (PrimeSpectrum.mem_basicOpen _ _).1 hpa (hsm (Ideal.subset_span
-    ⟨x, g, (IsOpenImmersion.lift_fac (chartι R x) _ hrange).symm.trans
-      (congrArg (· ≫ chartι R x) hφ.symm)⟩))
+  -- the restriction of `h` to `D(a)` is `Spec` of an `R`-algebra map into the chart
+  obtain ⟨g, hg⟩ := exists_algHom_comp_chartι_eq _ (by
+    rw [Category.assoc, hh, ← Spec.map_comp]
+    congr 1) x hrange
+  exact (PrimeSpectrum.mem_basicOpen _ _).1 hpa (hsm (Ideal.subset_span ⟨x, g, hg.symm⟩))
 
 /-- Every morphism `Spec A ⟶ G(k, M)` over `Spec R` classifies a point. -/
 theorem exists_toSchemeHom_eq (h : Spec (.of A) ⟶ scheme R M k)
@@ -462,6 +486,165 @@ theorem toSchemeHom_schemeHomEquiv_symm_apply
       h ≫ toSpec R M k = Spec.map (CommRingCat.ofHom (algebraMap R A))}) :
     toSchemeHom ((schemeHomEquiv R M k A).symm h) = h.val :=
   congrArg Subtype.val ((schemeHomEquiv R M k A).apply_symm_apply h)
+
+section FieldPoints
+
+/-- A field-valued point lies in the chart at `x` exactly when the morphism classifying it lands in
+the chart: for a field `K` and `N ∈ G(k, K ⊗[R] M; K)`, the image of the point of `Spec K` under
+`toSchemeHom N` lies in the open of `G(k, M)` that is the image of `chartι R x` exactly when `N`
+lies in the chart at `1 ⊗ₜ x`. -/
+theorem toSchemeHom_apply_mem_opensRange_chartι_iff {K : Type u} [Field K] [Algebra R K]
+    (N : G(k, K ⊗[R] M; K)) (x : Fin k → M) (p : Spec (.of K)) :
+    toSchemeHom N p ∈ (chartι R x).opensRange ↔ N ∈ chart K (fun i ↦ (1 : K) ⊗ₜ[R] x i) := by
+  refine ⟨fun hp ↦ ?_, fun hN ↦ ?_⟩
+  · -- `Spec K` is a point, so `toSchemeHom N` factors through the chart
+    have hrange : Set.range (toSchemeHom N) ⊆ Set.range (chartι R x) := by
+      rintro _ ⟨q, rfl⟩
+      rw [Subsingleton.elim q p]
+      exact hp
+    obtain ⟨g, hg⟩ := exists_algHom_comp_chartι_eq _ (toSchemeHom_toSpec N) x hrange
+    rw [← toSchemeHom_injective ((toSchemeHom_chartHomEquiv x g).trans hg)]
+    exact (chartHomEquiv R x K g).property
+  · refine ⟨Spec.map (CommRingCat.ofHom
+      ((chartHomEquiv R x K).symm ⟨N, hN⟩ : ChartAlgebra R x →+* K)) p, ?_⟩
+    rw [← Scheme.Hom.comp_apply, ← toSchemeHom_chartHomEquiv, Equiv.apply_symm_apply]
+
+variable (R M k) in
+/-- Every point of `G(k, M)` is the image of the point of `Spec K` under the morphism classifying a
+point of `G(k, K ⊗[R] M; K)`, for a field `K` (its residue field). -/
+theorem exists_toSchemeHom_apply_eq (z : scheme R M k) :
+    ∃ (K : Type u) (_ : Field K) (_ : Algebra R K) (N : G(k, K ⊗[R] M; K)) (p : Spec (.of K)),
+      toSchemeHom N p = z := by
+  let K : Type u := IsLocalRing.ResidueField ((scheme R M k).presheaf.stalk z)
+  obtain ⟨φ, hφ⟩ := Spec.map_surjective ((scheme R M k).fromSpecResidueField z ≫ toSpec R M k)
+  let _ : Algebra R K := φ.hom.toAlgebra
+  -- `hφ.symm` is the required equation by definition: `algebraMap R K` is `φ.hom` for the algebra
+  -- structure `φ.hom.toAlgebra`, and `CommRingCat.ofHom φ.hom` is `φ` by structure eta
+  obtain ⟨N, hN⟩ := exists_toSchemeHom_eq (A := K) ((scheme R M k).fromSpecResidueField z)
+    hφ.symm
+  exact ⟨K, inferInstance, inferInstance, N, default,
+    by rw [hN]; exact (scheme R M k).fromSpecResidueField_apply z _⟩
+
+end FieldPoints
+
+section HomOfPoints
+
+variable {X : Scheme.{u}}
+
+/-- **Morphisms out of the Grassmannian are determined by its points.** Two morphisms out of
+`G(k, M)` which agree after composition with the morphism classifying every point over every
+`R`-algebra are equal. -/
+theorem scheme_hom_ext {f g : scheme R M k ⟶ X}
+    (h : ∀ (A : Type u) [CommRing A] [Algebra R A] (N : G(k, A ⊗[R] M; A)),
+      toSchemeHom N ≫ f = toSchemeHom N ≫ g) : f = g := by
+  refine Scheme.hom_ext_of_forall_spec fun B a ↦ ?_
+  -- make `B` an `R`-algebra through `a`, so that `a` classifies a point over `B`
+  obtain ⟨φ, hφ⟩ := Spec.map_surjective (a ≫ toSpec R M k)
+  let _ : Algebra R B := φ.hom.toAlgebra
+  have ha : a ≫ toSpec R M k = Spec.map (CommRingCat.ofHom (algebraMap R B)) := by
+    rw [← hφ, RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom]
+  obtain ⟨N, rfl⟩ := exists_toSchemeHom_eq (A := B) a ha
+  exact h B N
+
+/-- The morphism `Spec A ⟶ X` assigned by `F` to the point classified by `a : Spec A ⟶ G(k, M)`
+over `Spec R`. The algebra structure on `A` is an explicit argument, so that
+`homOfPointsAux_congr` can compare different choices. -/
+private noncomputable def homOfPointsAux
+    (F : ∀ (A : Type u) [CommRing A] [Algebra R A], G(k, A ⊗[R] M; A) → (Spec (.of A) ⟶ X))
+    (A : Type u) [CommRing A] (_ : Algebra R A) (a : Spec (.of A) ⟶ scheme R M k)
+    (ha : a ≫ toSpec R M k = Spec.map (CommRingCat.ofHom (algebraMap R A))) :
+    Spec (.of A) ⟶ X :=
+  F A ((schemeHomEquiv R M k A).symm ⟨a, ha⟩)
+
+-- `homOfPointsAux` depends on the algebra structure on `A` only through its equality class.
+private lemma homOfPointsAux_congr
+    (F : ∀ (A : Type u) [CommRing A] [Algebra R A], G(k, A ⊗[R] M; A) → (Spec (.of A) ⟶ X))
+    (A : Type u) [CommRing A] (i j : Algebra R A) (h : i = j) (a : Spec (.of A) ⟶ scheme R M k)
+    (ha ha') : homOfPointsAux F A i a ha = homOfPointsAux F A j a ha' := by
+  subst h
+  rfl
+
+/-- The map of affine points underlying `homOfPoints`: the algebra structure of `A` over `R` is
+read off from the composite `Spec A ⟶ G(k, M) ⟶ Spec R`. -/
+private noncomputable def homOfPointsPoint
+    (F : ∀ (A : Type u) [CommRing A] [Algebra R A], G(k, A ⊗[R] M; A) → (Spec (.of A) ⟶ X))
+    {A : CommRingCat.{u}} (a : Spec A ⟶ scheme R M k) : Spec A ⟶ X :=
+  letI : Algebra R A := (Spec.preimage (a ≫ toSpec R M k)).hom.toAlgebra
+  homOfPointsAux F A ‹_› a <| by
+    rw [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom, Spec.map_preimage]
+
+private lemma homOfPointsPoint_toSchemeHom
+    (F : ∀ (A : Type u) [CommRing A] [Algebra R A], G(k, A ⊗[R] M; A) → (Spec (.of A) ⟶ X))
+    {A : Type u} [CommRing A] [Algebra R A] (N : G(k, A ⊗[R] M; A)) :
+    homOfPointsPoint F (toSchemeHom N) = F A N := by
+  have hφ : (Spec.preimage (toSchemeHom N ≫ toSpec R M k)).hom = algebraMap R A := by
+    rw [toSchemeHom_toSpec, Spec.preimage_map, CommRingCat.hom_ofHom]
+  have hi : (Spec.preimage (toSchemeHom N ≫ toSpec R M k)).hom.toAlgebra = ‹Algebra R A› := by
+    rw [hφ, toAlgebra_algebraMap]
+  unfold homOfPointsPoint
+  rw [homOfPointsAux_congr F A _ _ hi _ _ (toSchemeHom_toSpec N), homOfPointsAux]
+  congr 1
+  exact (Equiv.symm_apply_eq _).2 (Subtype.ext (coe_schemeHomEquiv_apply N).symm)
+
+/-- `homOfPointsPoint` is natural in the affine scheme when `F` is natural in the algebra. -/
+private lemma homOfPointsPoint_comp
+    (F : ∀ (A : Type u) [CommRing A] [Algebra R A], G(k, A ⊗[R] M; A) → (Spec (.of A) ⟶ X))
+    (hF : ∀ (A B : Type u) [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
+      (f : A →ₐ[R] B) (N : G(k, A ⊗[R] M; A)),
+      F B (map f N) = Spec.map (CommRingCat.ofHom (f : A →+* B)) ≫ F A N)
+    {B C : CommRingCat.{u}} (ψ : Spec C ⟶ Spec B) (a : Spec B ⟶ scheme R M k) :
+    homOfPointsPoint F (ψ ≫ a) = ψ ≫ homOfPointsPoint F a := by
+  -- give `B` and `C` the algebra structures over `R` read off from `a` and `ψ ≫ a`; with them,
+  -- `χ` is an `R`-algebra map `χ'`
+  obtain ⟨φ, hφ⟩ := Spec.map_surjective (a ≫ toSpec R M k)
+  obtain ⟨χ, rfl⟩ := Spec.map_surjective ψ
+  let _ : Algebra R B := φ.hom.toAlgebra
+  let _ : Algebra R C := (χ.hom.comp φ.hom).toAlgebra
+  let χ' : B →ₐ[R] C := { χ.hom with commutes' := fun _ ↦ rfl }
+  -- `χ'` has underlying ring map `χ`
+  have hχ : CommRingCat.ofHom (χ' : B →+* C) = χ := CommRingCat.ofHom_hom χ
+  have ha : a ≫ toSpec R M k = Spec.map (CommRingCat.ofHom (algebraMap R B)) := by
+    rw [← hφ, RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom]
+  obtain ⟨N, rfl⟩ := exists_toSchemeHom_eq (A := B) a ha
+  rw [← hχ, ← toSchemeHom_map, homOfPointsPoint_toSchemeHom, homOfPointsPoint_toSchemeHom, hF]
+
+/-- **A morphism out of the Grassmannian from its points.** A family of maps `F A` from the
+points of `G(k, M)` over each `R`-algebra `A` to the morphisms `Spec A ⟶ X`, natural in `A`,
+is composition with a unique morphism `G(k, M) ⟶ X` (`toSchemeHom_comp_homOfPoints`,
+`scheme_hom_ext`). -/
+noncomputable def homOfPoints
+    (F : ∀ (A : Type u) [CommRing A] [Algebra R A], G(k, A ⊗[R] M; A) → (Spec (.of A) ⟶ X))
+    (hF : ∀ (A B : Type u) [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
+      (f : A →ₐ[R] B) (N : G(k, A ⊗[R] M; A)),
+      F B (map f N) = Spec.map (CommRingCat.ofHom (f : A →+* B)) ≫ F A N) :
+    scheme R M k ⟶ X :=
+  Scheme.homOfAffinePoints (homOfPointsPoint F) (homOfPointsPoint_comp F hF)
+
+/-- **`homOfPoints` on points.** The morphism classifying `N` over an `R`-algebra `A`, composed
+with `homOfPoints F hF`, is `F A N`. -/
+@[reassoc (attr := simp)]
+theorem toSchemeHom_comp_homOfPoints
+    (F : ∀ (A : Type u) [CommRing A] [Algebra R A], G(k, A ⊗[R] M; A) → (Spec (.of A) ⟶ X))
+    (hF : ∀ (A B : Type u) [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
+      (f : A →ₐ[R] B) (N : G(k, A ⊗[R] M; A)),
+      F B (map f N) = Spec.map (CommRingCat.ofHom (f : A →+* B)) ≫ F A N)
+    {A : Type u} [CommRing A] [Algebra R A] (N : G(k, A ⊗[R] M; A)) :
+    toSchemeHom N ≫ homOfPoints F hF = F A N :=
+  (Scheme.comp_homOfAffinePoints _ _ _).trans (homOfPointsPoint_toSchemeHom F N)
+
+/-- **Uniqueness of `homOfPoints`.** A morphism `g : G(k, M) ⟶ X` with `toSchemeHom N ≫ g = F A N`
+for every point `N` over every `R`-algebra `A` is `homOfPoints F hF`. -/
+theorem eq_homOfPoints
+    (F : ∀ (A : Type u) [CommRing A] [Algebra R A], G(k, A ⊗[R] M; A) → (Spec (.of A) ⟶ X))
+    (hF : ∀ (A B : Type u) [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
+      (f : A →ₐ[R] B) (N : G(k, A ⊗[R] M; A)),
+      F B (map f N) = Spec.map (CommRingCat.ofHom (f : A →+* B)) ≫ F A N)
+    {g : scheme R M k ⟶ X}
+    (hg : ∀ (A : Type u) [CommRing A] [Algebra R A] (N : G(k, A ⊗[R] M; A)),
+      toSchemeHom N ≫ g = F A N) : g = homOfPoints F hF :=
+  scheme_hom_ext fun A _ _ N ↦ (hg A N).trans (toSchemeHom_comp_homOfPoints F hF N).symm
+
+end HomOfPoints
 
 section Extreme
 

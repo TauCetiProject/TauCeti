@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
 import Mathlib.RingTheory.Localization.BaseChange
+import TauCeti.Algebra.Polynomial.Degree.Operations
 
 /-!
 # Minimal polynomials in torsion-free algebras
@@ -101,10 +102,8 @@ theorem isIntegrallyClosed_smul_of_isTorsionFree [IsDomain R] [Module.IsTorsionF
     rw [aeval_comp, map_mul, aeval_C, aeval_X, ← Algebra.smul_def, minpoly.aeval]
   have hdeg : ((minpoly R s).scaleRoots r).natDegree ≤ (minpoly R (r • s)).natDegree := by
     rw [natDegree_scaleRoots]
-    refine (natDegree_le_of_dvd (isIntegrallyClosed_dvd_of_isTorsionFree hs hp) hp0).trans ?_
-    have hq : (C r * X).natDegree ≤ 1 := (natDegree_C_mul_le r X).trans natDegree_X_le
-    exact (natDegree_comp_le (p := minpoly R (r • s)) (q := C r * X)).trans
-      ((Nat.mul_le_mul_left _ hq).trans (Nat.mul_one _).le)
+    exact (natDegree_le_of_dvd (isIntegrallyClosed_dvd_of_isTorsionFree hs hp) hp0).trans
+      (natDegree_comp_C_mul_X_le r _)
   exact (eq_of_monic_of_dvd_of_natDegree_le (monic (hs.smul r))
     ((monic_scaleRoots_iff r).mpr (monic hs)) hdvd hdeg).symm
 

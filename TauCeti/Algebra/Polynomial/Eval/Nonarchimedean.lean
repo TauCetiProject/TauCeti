@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 public import Mathlib.Algebra.Polynomial.Monic
+public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 public import TauCeti.Algebra.Order.Ring.IsPowMul
 
 /-!
@@ -28,6 +29,12 @@ power-multiplicative ring seminorm or a valuation. If `x : R` is a root of a mon
 Otherwise `f (aᵢ xⁱ) < f (xᵈ)` for every `i < d`. As `f (-a) = f a` (`IsPowMul.map_neg_eq_map`), the
 leading-term criterion then gives `f 0 = f (p.eval x) = f (xᵈ)`, contradicting
 `f 0 ≤ f a₀ < f (xᵈ)`, where the first inequality is the nonarchimedean inequality for `a₀ + -a₀`.
+
+Applied to the equation of integrality mapped into an `R`-algebra, the root bound shows that such
+an `f` which is at most `1` on the image of `R` is at most `1` on every element integral over `R`
+(`IsNonarchimedean.apply_le_one_of_isIntegral_of_isPowMul`). This is the common argument behind
+the bounds for nonarchimedean absolute values (`IsNonarchimedean.apply_le_one_of_isIntegral`) and
+for power-multiplicative ultrametric seminorms (`IsUltrametricDist.norm_le_one_of_isIntegral`).
 
 For real-valued `f` with `f 0 = 0`, taking `(d - i)`-th roots gives the root bound
 `Polynomial.Monic.apply_le_iSup_apply_coeff_rpow_of_eval_eq_zero` over every ring, in
@@ -105,3 +112,29 @@ theorem exists_apply_pow_le_apply_coeff_of_eval_eq_zero [Nontrivial R] (hp : p.M
   exact (h0.trans_lt (hterm 0 hd)).ne heval
 
 end Polynomial.Monic
+
+namespace IsNonarchimedean
+
+variable {R F Γ : Type*} [CommRing R] [Ring F] [Algebra R F] [MonoidWithZero Γ] [LinearOrder Γ]
+  [ZeroLEOneClass Γ] [PosMulMono Γ] [MulPosStrictMono Γ] {f : F → Γ}
+
+/-- A nonnegative, submultiplicative, power-multiplicative and nonarchimedean function on an
+`R`-algebra, such as a nonarchimedean absolute value or a power-multiplicative ultrametric
+seminorm, which is at most `1` on the image of `R` is at most `1` on every element integral
+over `R`.
+
+This is the forward implication of Mathlib's `Valuation.Integers.isIntegral_iff_v_le_one` for
+such functions, and the proof follows it: a coefficient `aᵢ` of the equation of integrality has
+`f x ^ (d - i) ≤ f aᵢ ≤ 1`. -/
+theorem apply_le_one_of_isIntegral_of_isPowMul (hf_na : IsNonarchimedean f)
+    (hf_nn : ∀ a, 0 ≤ f a) (hf_mul : ∀ a b, f (a * b) ≤ f a * f b) (hf_pm : IsPowMul f)
+    (h : ∀ r : R, f (algebraMap R F r) ≤ 1) {x : F} (hx : IsIntegral R x) : f x ≤ 1 := by
+  by_contra! hx1
+  have : Nontrivial F := ⟨x, algebraMap R F 0, fun hx0 ↦ (h 0).not_gt (hx0 ▸ hx1)⟩
+  obtain ⟨p, hpm, hp⟩ := hx
+  obtain ⟨i, hi, hle⟩ := (hpm.map (algebraMap R F)).exists_apply_pow_le_apply_coeff_of_eval_eq_zero
+    hf_nn hf_mul hf_pm hf_na (by rwa [eval_map])
+  rw [coeff_map] at hle
+  exact (one_lt_pow₀ hx1 (Nat.sub_pos_of_lt hi).ne').not_ge (hle.trans (h _))
+
+end IsNonarchimedean
