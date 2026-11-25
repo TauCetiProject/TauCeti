@@ -32,6 +32,8 @@ of `A`.
 * `ValuationSubring.mem_comapResidue_iff`: its elements are those of `A` with residue in `U`.
 * `ValuationSubring.nonunits_subset_comapResidue`, `ValuationSubring.comapResidue_le`: it lies
   between the nonunits of `A` and `A`.
+* `ValuationSubring.algebraMap_residueField_mem_of_isTrivialOn`: if the composite contains a field
+  `k`, then `U` contains the residues of the elements of `k`.
 * `ValuationSubring.comapResidue_eq_self_iff`: it equals `A` exactly when `U = ⊤`.
 * `ValuationSubring.mapResidue`: the image in `κ(A)` of a valuation subring contained in `A`.
 * `ValuationSubring.comapResidue_mapResidue`: every valuation subring contained in `A` is the
@@ -126,6 +128,14 @@ theorem comapResidue_le : A.comapResidue U ≤ A :=
 /-- The composite contains every nonunit of `A`: their residues are `0`. -/
 theorem nonunits_subset_comapResidue : (A.nonunits : Set K) ⊆ A.comapResidue U := fun x hx ↦
   mem_comapResidue_iff.mpr ⟨nonunits_subset hx, by simp [residue_eq_zero_of_mem_nonunits A hx]⟩
+
+/-- If the composite of `A` with `U` contains a field `k`, then `U` contains the residues of the
+elements of `k`. -/
+theorem algebraMap_residueField_mem_of_isTrivialOn {k : Type*} [Field k] [Algebra k K]
+    [A.valuation.IsTrivialOn k] [(A.comapResidue U).valuation.IsTrivialOn k] (c : k) :
+    algebraMap k (ResidueField A) c ∈ U := by
+  simpa [IsScalarTower.algebraMap_apply k A (ResidueField A), ← coe_mem_comapResidue_iff]
+    using (A.comapResidue U).algebraMap_mem_of_isTrivialOn c
 
 @[simp]
 theorem comapResidue_le_comapResidue_iff : A.comapResidue U ≤ A.comapResidue U' ↔ U ≤ U' := by

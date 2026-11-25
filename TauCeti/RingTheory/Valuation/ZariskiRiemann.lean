@@ -131,10 +131,8 @@ theorem eq_of_le_of_isIntegral_residueField (V : ValuationSubring K) {W : Valuat
   refine comapResidue_eq_self_iff.mpr (_root_.eq_top_iff.mpr fun y _ ↦ ?_)
   -- `U` contains the residues of the constants, so it is integrally closed in the algebraic
   -- extension `κ(W)` of `k`
-  have : U.valuation.IsTrivialOn k := .of_le_one _ fun c ↦ by
-    rw [valuation_le_one_iff, IsScalarTower.algebraMap_apply k W (ResidueField W),
-      ResidueField.algebraMap_eq, ← coe_mem_comapResidue_iff, coe_algebraMap_of_isTrivialOn]
-    exact algebraMap_mem_of_isTrivialOn _ c
+  have : U.valuation.IsTrivialOn k := .of_le_one _ fun c ↦
+    (valuation_le_one_iff _ _).mpr (algebraMap_residueField_mem_of_isTrivialOn c)
   obtain ⟨u, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp
     ((Algebra.IsIntegral.isIntegral (R := k) y).tower_top (A := U))
   exact u.property
