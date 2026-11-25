@@ -213,13 +213,13 @@ theorem pushforward_ofFinsupp (a : S →₀ R) :
 
 /-- Along the identity of generators, the pushforward is the coefficient change
 `TauCeti.NovikovModule.mapRange`. -/
+@[simp]
 theorem pushforward_id_right : pushforward ρ id (fun _ : S => rfl) = mapRange (F := F) ρ :=
   LinearMap.ext fun a => Subtype.ext <| funext fun s => by
     rw [mapRange_apply_val]
     exact pushforward_apply_val_of_injective (π := id) (fun _ => rfl) ρ injective_id a s
 
 /-- The pushforward along the identities of coefficients and of generators is the identity. -/
-@[simp]
 theorem pushforward_id :
     pushforward (RingHom.id R) id (fun _ : S => rfl) = LinearMap.id (M := NovikovModule R F) :=
   (pushforward_id_right (RingHom.id R)).trans <| LinearMap.ext mapRange_id
@@ -246,6 +246,7 @@ theorem continuous_pushforward : Continuous (pushforward ρ π hπ) :=
 
 /-- **Functoriality.** Pushing forward along `π` and then along `π'` is pushing forward along
 `π' ∘ π`, with the composite coefficient map. -/
+@[simp]
 theorem pushforward_pushforward {π' : S' → S''} (hπ' : ∀ s', F'' (π' s') = F' s') (ρ' : R' →+* R'')
     (a : NovikovModule R F) :
     pushforward ρ' π' hπ' (pushforward ρ π hπ a) =
