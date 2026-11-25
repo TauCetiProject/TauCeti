@@ -53,6 +53,8 @@ Rotating each coordinate so that `c j ω j²` is real diagonalizes the real quad
   the coordinates of `S x` are those of `x` scaled by the eigenvalues.
 * `OrthonormalBasis.toBasis_equiv_refl`: for two finite orthonormal bases over the same index type,
   `Basis.equiv` along `Equiv.refl` agrees with `d₀.repr.trans c.repr.symm`.
+* `OrthonormalBasis.norm_det_of_apply_eq_one`: the matrix whose rows are the Euclidean coordinates
+  of an orthonormal basis of `EuclideanSpace 𝕜 ι` has determinant of norm `1`.
 * `LinearMap.toMatrix_orthonormalBasis_apply`: the entries of the matrix of a linear map in
   orthonormal bases `(bⱼ)` and `(cᵢ)` are `⟪cᵢ, T bⱼ⟫`.
 * `TauCeti.exists_linearIsometryEquiv_inner_eq_norm_mul_eval`: for a vector `v` and a prescribed
@@ -148,6 +150,19 @@ theorem toBasis_equiv_refl {F : Type*} [NormedAddCommGroup F] [InnerProductSpace
   refine LinearEquiv.toLinearMap_injective (d₀.toBasis.ext fun i ↦ ?_)
   rw [LinearEquiv.coe_coe, Module.Basis.equiv_apply]
   simp
+
+/-- The matrix whose rows are the Euclidean coordinates of an orthonormal basis of
+`EuclideanSpace 𝕜 ι` has determinant of norm `1`. -/
+@[simp]
+theorem norm_det_of_apply_eq_one [DecidableEq ι]
+    (v : OrthonormalBasis ι 𝕜 (EuclideanSpace 𝕜 ι)) :
+    ‖(Matrix.of fun k i ↦ v k i).det‖ = 1 := by
+  let e := EuclideanSpace.basisFun ι 𝕜
+  have hU : (Matrix.of fun k i ↦ v k i) = (e.toBasis.toMatrix v.toBasis).transpose := by
+    ext k i
+    simp [e, Module.Basis.toMatrix_apply, EuclideanSpace.basisFun_repr]
+  rw [hU, Matrix.det_transpose, ← Module.Basis.det_apply]
+  exact e.det_to_matrix_orthonormalBasis v
 
 end OrthonormalBasis
 

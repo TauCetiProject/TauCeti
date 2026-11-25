@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import Mathlib.Analysis.Matrix.Spectrum
+public import Mathlib.LinearAlgebra.Lagrange
 public import TauCeti.LinearAlgebra.Matrix.Jacobi
 import Mathlib.Analysis.Matrix.HermitianFunctionalCalculus
-import Mathlib.LinearAlgebra.Vandermonde
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
 import TauCeti.Analysis.Matrix.Spectrum
 import TauCeti.LinearAlgebra.Matrix.MulVec
@@ -25,10 +26,11 @@ eigenvector has nonzero first coordinate.
 
 The spectral weights `q k = (v k 0) ^ 2` — the squared first coordinates of unit eigenvectors for
 the ordered eigenvalues `λ k` — are independent of eigenvector sign choices and sum to `1` whenever
-the spectrum is simple. We define `TauCeti.jacobiSpectralWeight` directly by the Lagrange
-interpolation formula in the matrix and its ordered eigenvalues, which makes it canonically defined,
-globally measurable, bounded in `[0, 1]`, vanishing at repeated eigenvalues, and continuous at any
-matrix where the `k`-th eigenvalue is simple, while agreeing with `(v k 0) ^ 2` there.
+the spectrum is simple. We define `TauCeti.jacobiSpectralWeight` directly by evaluating Mathlib's
+Lagrange basis polynomial `Lagrange.basis` of the ordered eigenvalues at the Jacobi matrix and
+extracting the `(0, 0)` entry, which makes it canonically defined, globally measurable, bounded in
+`[0, 1]`, vanishing at repeated eigenvalues, and continuous at any matrix where the `k`-th
+eigenvalue is simple, while agreeing with `(v k 0) ^ 2` there.
 
 ## Main definitions
 
@@ -40,8 +42,7 @@ matrix where the `k`-th eigenvalue is simple, while agreeing with `(v k 0) ^ 2` 
 
 ## Main results
 
-* `TauCeti.mulVec_jacobiEigenvectorBasis` and `TauCeti.abs_det_of_jacobiEigenvectorBasis`:
-  eigenvector equation and unit absolute determinant for `jacobiEigenvectorBasis`.
+* `TauCeti.mulVec_jacobiEigenvectorBasis`: eigenvector equation for `jacobiEigenvectorBasis`.
 * `TauCeti.jacobiEigenvalues_strictAnti`: a real symmetric Jacobi matrix with nonzero subdiagonal
   entries has strictly decreasing eigenvalues.
 * `TauCeti.charpoly_symmJacobiMatrix` and `TauCeti.jacobiEigenvalues_eq_of_charpoly_eq`:
@@ -49,9 +50,10 @@ matrix where the `k`-th eigenvalue is simple, while agreeing with `(v k 0) ^ 2` 
 * `TauCeti.sum_jacobiEigenvalues_sq`:
   `∑ k, jacobiEigenvalues a b k ^ 2 = ∑ i, a i ^ 2 + 2 * ∑ k, b k ^ 2`.
 * `TauCeti.jacobiSpectralWeight_eq_sq_jacobiEigenvectorBasis`,
-  `TauCeti.jacobiSpectralWeight_eq_sq_eigenvector`, and
-  `TauCeti.jacobiSpectralWeight_eq_zero_of_jacobiEigenvalues_eq`: `jacobiSpectralWeight a b k`
-  equals `(v 0) ^ 2` when the `k`-th eigenvalue is simple and `0` when it is repeated.
+  `TauCeti.jacobiSpectralWeight_eq_sq_eigenvector`,
+  `TauCeti.jacobiSpectralWeight_eq_zero_of_jacobiEigenvalues_eq`, and
+  `TauCeti.jacobiSpectralWeight_eq_sq_or_eq_zero`: `jacobiSpectralWeight a b k` equals `(v 0) ^ 2`
+  when the `k`-th eigenvalue is simple and `0` when it is repeated.
 * `TauCeti.jacobiSpectralWeight_nonneg` and `TauCeti.jacobiSpectralWeight_le_one`: unconditional
   bounds `0 ≤ jacobiSpectralWeight a b k ≤ 1`.
 * `TauCeti.aeval_symmJacobiMatrix_apply_zero_zero` and
@@ -181,24 +183,13 @@ theorem mulVec_jacobiEigenvectorBasis (a : Fin (n + 1) → ℝ) (b : Fin n → �
     (k : Fin (n + 1)) :
     symmJacobiMatrix a b *ᵥ ⇑(jacobiEigenvectorBasis a b k) =
       jacobiEigenvalues a b k • ⇑(jacobiEigenvectorBasis a b k) := by
-  have h := (isSymmetric_toEuclideanLin_iff.mpr
-    (isHermitian_symmJacobiMatrix a b)).apply_eigenvectorBasis finrank_euclideanSpace
-      (k.cast (Fintype.card_fin (n + 1)).symm)
-  simpa only [jacobiEigenvectorBasis, OrthonormalBasis.reindex_apply, finCongr_symm,
-    finCongr_apply, jacobiEigenvalues, Matrix.IsHermitian.eigenvalues₀, Matrix.toLpLin_apply,
-    RCLike.ofReal_real_eq_id, id_eq, WithLp.ofLp_smul] using congrArg WithLp.ofLp h
-
-/-- The matrix whose rows are the orthonormal eigenvectors `jacobiEigenvectorBasis a b k` has
-determinant of absolute value `1`. -/
-theorem abs_det_of_jacobiEigenvectorBasis (a : Fin (n + 1) → ℝ) (b : Fin n → ℝ) :
-    |(Matrix.of fun k i => jacobiEigenvectorBasis a b k i).det| = 1 := by
-  let v := jacobiEigenvectorBasis a b
-  let e := EuclideanSpace.basisFun (Fin (n + 1)) ℝ
-  have hU : (Matrix.of fun k i => v k i) = (e.toBasis.toMatrix v.toBasis)ᵀ := by
-    ext k i
-    simp [e, Module.Basis.toMatrix_apply, EuclideanSpace.basisFun_repr]
-  rw [hU, Matrix.det_transpose, ← Real.norm_eq_abs, ← Module.Basis.det_apply]
-  exact e.det_to_matrix_orthonormalBasis v
+  have h := congrArg WithLp.ofLp <|
+    (isSymmetric_toEuclideanLin_iff.mpr (isHermitian_symmJacobiMatrix a b)).apply_eigenvectorBasis
+      finrank_euclideanSpace (k.cast (Fintype.card_fin (n + 1)).symm)
+  simp only [Matrix.toLpLin_apply, WithLp.ofLp_smul, RCLike.ofReal_real_eq_id, id_eq] at h
+  rw [jacobiEigenvectorBasis, OrthonormalBasis.reindex_apply, finCongr_symm, finCongr_apply,
+    jacobiEigenvalues_apply, Matrix.IsHermitian.eigenvalues₀]
+  exact h
 
 /-- A real symmetric Jacobi matrix with nonzero subdiagonal entries has strictly decreasing
 eigenvalues. -/
@@ -298,45 +289,23 @@ private theorem aeval_symmJacobiMatrix_apply_zero_zero_eq_sum_basis (a : Fin (n 
     RCLike.ofReal_real_eq_id, id_eq]
   ring
 
-private theorem nodup_filter_finRange_ne (k : Fin (n + 1)) :
-    ((List.finRange (n + 1)).filter (· ≠ k)).Nodup :=
-  (List.nodup_finRange (n + 1)).filter _
-
-private theorem toFinset_filter_finRange_ne (k : Fin (n + 1)) :
-    ((List.finRange (n + 1)).filter (· ≠ k)).toFinset = Finset.univ.erase k := by
-  ext j
-  simp [Finset.mem_erase]
-
 /-- The canonical spectral weight associated to the `k`-th decreasing eigenvalue of
-`symmJacobiMatrix a b`, defined by the Lagrange interpolation ratio in the matrix and its ordered
-eigenvalues. Whenever the `k`-th eigenvalue is simple, it equals `(v k 0) ^ 2` for every unit
-eigenvector `v k` of the `k`-th eigenvalue; when the eigenvalue is repeated, it vanishes. -/
+`symmJacobiMatrix a b`, defined as the `(0, 0)` entry of the Lagrange basis polynomial
+`Lagrange.basis Finset.univ (jacobiEigenvalues a b) k` evaluated at `symmJacobiMatrix a b`.
+Whenever the `k`-th eigenvalue is simple, it equals `(v k 0) ^ 2` for every unit eigenvector `v k`
+of the `k`-th eigenvalue; when the eigenvalue is repeated, it vanishes. -/
 def jacobiSpectralWeight (a : Fin (n + 1) → ℝ) (b : Fin n → ℝ) (k : Fin (n + 1)) : ℝ :=
-  let J := symmJacobiMatrix a b
-  let lam := jacobiEigenvalues a b
-  ((((List.finRange (n + 1)).filter (· ≠ k)).map
-      fun j => J - lam j • (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)).prod) 0 0 /
-    ∏ j ∈ Finset.univ.erase k, (lam k - lam j)
+  (Polynomial.aeval (symmJacobiMatrix a b)
+    (Lagrange.basis Finset.univ (jacobiEigenvalues a b) k)) 0 0
 
-private theorem list_prod_sub_smul_eq_aeval (a : Fin (n + 1) → ℝ) (b : Fin n → ℝ)
-    (k : Fin (n + 1)) :
-    (((List.finRange (n + 1)).filter (· ≠ k)).map
-      fun j => symmJacobiMatrix a b - jacobiEigenvalues a b j •
-        (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)).prod =
-      Polynomial.aeval (symmJacobiMatrix a b)
-        (∏ j ∈ Finset.univ.erase k,
-          (Polynomial.X - Polynomial.C (jacobiEigenvalues a b j))) := by
-  have hcomp : (fun j => symmJacobiMatrix a b - jacobiEigenvalues a b j •
-      (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)) =
-      (Polynomial.aeval (symmJacobiMatrix a b)) ∘
-        (fun j => Polynomial.X - Polynomial.C (jacobiEigenvalues a b j)) := by
-    funext j
-    simp [Algebra.algebraMap_eq_smul_one]
-  rw [hcomp, ← List.map_map, ← map_list_prod]
-  congr 1
-  rw [← toFinset_filter_finRange_ne k, List.prod_toFinset _ (nodup_filter_finRange_ne k)]
+/-- Defining formula for `jacobiSpectralWeight` via `Lagrange.basis`. -/
+theorem jacobiSpectralWeight_apply (a : Fin (n + 1) → ℝ) (b : Fin n → ℝ) (k : Fin (n + 1)) :
+    jacobiSpectralWeight a b k =
+      (Polynomial.aeval (symmJacobiMatrix a b)
+        (Lagrange.basis Finset.univ (jacobiEigenvalues a b) k)) 0 0 :=
+  (rfl)
 
-/-- Lagrange polynomial representation of `jacobiSpectralWeight a b k`. -/
+/-- Quotient representation of `jacobiSpectralWeight a b k` as a nodal polynomial quotient. -/
 theorem jacobiSpectralWeight_eq_aeval_div (a : Fin (n + 1) → ℝ) (b : Fin n → ℝ)
     (k : Fin (n + 1)) :
     jacobiSpectralWeight a b k =
@@ -344,28 +313,29 @@ theorem jacobiSpectralWeight_eq_aeval_div (a : Fin (n + 1) → ℝ) (b : Fin n �
         (∏ j ∈ Finset.univ.erase k,
           (Polynomial.X - Polynomial.C (jacobiEigenvalues a b j)))) 0 0 /
         ∏ j ∈ Finset.univ.erase k, (jacobiEigenvalues a b k - jacobiEigenvalues a b j) := by
-  unfold jacobiSpectralWeight
-  dsimp only
-  rw [list_prod_sub_smul_eq_aeval]
+  have hpoly : Lagrange.basis Finset.univ (jacobiEigenvalues a b) k =
+      (∏ j ∈ Finset.univ.erase k, (jacobiEigenvalues a b k - jacobiEigenvalues a b j))⁻¹ •
+        ∏ j ∈ Finset.univ.erase k,
+          (Polynomial.X - Polynomial.C (jacobiEigenvalues a b j)) := by
+    simp only [Lagrange.basis, Lagrange.basisDivisor, Finset.prod_mul_distrib, ← map_prod,
+      ← Finset.prod_inv_distrib, Polynomial.smul_eq_C_mul]
+  rw [jacobiSpectralWeight_apply, hpoly, map_smul, Matrix.smul_apply, smul_eq_mul, inv_mul_eq_div]
 
 /-- When the `k`-th ordered eigenvalue is simple, `jacobiSpectralWeight a b k` is the squared first
 coordinate of `jacobiEigenvectorBasis a b k`. -/
 theorem jacobiSpectralWeight_eq_sq_jacobiEigenvectorBasis {a : Fin (n + 1) → ℝ} {b : Fin n → ℝ}
     {k : Fin (n + 1)} (hsimple : ∀ j ≠ k, jacobiEigenvalues a b j ≠ jacobiEigenvalues a b k) :
     jacobiSpectralWeight a b k = (jacobiEigenvectorBasis a b k 0) ^ 2 := by
-  let lam := jacobiEigenvalues a b
-  have hden : ∏ j ∈ Finset.univ.erase k, (lam k - lam j) ≠ 0 :=
-    Finset.prod_ne_zero_iff.mpr fun j hj =>
-      sub_ne_zero.mpr (hsimple j (Finset.ne_of_mem_erase hj)).symm
-  rw [jacobiSpectralWeight_eq_aeval_div, aeval_symmJacobiMatrix_apply_zero_zero_eq_sum_basis,
+  rw [jacobiSpectralWeight_apply, aeval_symmJacobiMatrix_apply_zero_zero_eq_sum_basis,
     Finset.sum_eq_single k]
-  · simp [Polynomial.eval_prod, lam, mul_div_cancel_right₀ _ hden]
+  · have h1 : (Lagrange.basis Finset.univ (jacobiEigenvalues a b) k).eval
+        (jacobiEigenvalues a b k) = 1 := by
+      rw [Lagrange.basis, Polynomial.eval_prod]
+      exact Finset.prod_eq_one fun j hj => Lagrange.eval_basisDivisor_left_of_ne
+        (hsimple j (Finset.ne_of_mem_erase hj)).symm
+    rw [h1, mul_one]
   · intro m _ hmk
-    have hzero : (∏ j ∈ Finset.univ.erase k, (Polynomial.X - Polynomial.C (lam j))).eval
-        (lam m) = 0 := by
-      rw [Polynomial.eval_prod]
-      exact Finset.prod_eq_zero (Finset.mem_erase.mpr ⟨hmk, Finset.mem_univ m⟩) (by simp)
-    rw [hzero, mul_zero]
+    rw [Lagrange.eval_basis_of_ne hmk.symm (Finset.mem_univ m), mul_zero]
   · intro h; exact absurd (Finset.mem_univ k) h
 
 /-- Whenever the `k`-th eigenvalue of `symmJacobiMatrix a b` is simple, `jacobiSpectralWeight a b k`
@@ -408,37 +378,42 @@ theorem jacobiSpectralWeight_eq_zero_of_jacobiEigenvalues_eq {a : Fin (n + 1) �
     {b : Fin n → ℝ} {j k : Fin (n + 1)} (hjk : j ≠ k)
     (heq : jacobiEigenvalues a b j = jacobiEigenvalues a b k) :
     jacobiSpectralWeight a b k = 0 := by
-  have hden : ∏ i ∈ Finset.univ.erase k,
-      (jacobiEigenvalues a b k - jacobiEigenvalues a b i) = 0 :=
-    Finset.prod_eq_zero (Finset.mem_erase.mpr ⟨hjk, Finset.mem_univ j⟩) (by rw [heq, sub_self])
-  simp [jacobiSpectralWeight, hden]
+  have hzero : Lagrange.basis Finset.univ (jacobiEigenvalues a b) k = 0 :=
+    Finset.prod_eq_zero (Finset.mem_erase.mpr ⟨hjk, Finset.mem_univ j⟩)
+      (by rw [heq, Lagrange.basisDivisor_self])
+  simp [jacobiSpectralWeight_apply, hzero]
+
+/-- Every spectral weight equals either the squared first coordinate of the corresponding vector in
+`jacobiEigenvectorBasis a b` (when its eigenvalue is simple) or `0` (when repeated). -/
+theorem jacobiSpectralWeight_eq_sq_or_eq_zero (a : Fin (n + 1) → ℝ) (b : Fin n → ℝ)
+    (k : Fin (n + 1)) :
+    jacobiSpectralWeight a b k = (jacobiEigenvectorBasis a b k 0) ^ 2 ∨
+      jacobiSpectralWeight a b k = 0 := by
+  by_cases hsimple : ∀ j ≠ k, jacobiEigenvalues a b j ≠ jacobiEigenvalues a b k
+  · exact Or.inl (jacobiSpectralWeight_eq_sq_jacobiEigenvectorBasis hsimple)
+  · push Not at hsimple
+    obtain ⟨j, hjk, heq⟩ := hsimple
+    exact Or.inr (jacobiSpectralWeight_eq_zero_of_jacobiEigenvalues_eq hjk heq)
 
 /-- Every spectral weight is nonnegative. -/
 theorem jacobiSpectralWeight_nonneg (a : Fin (n + 1) → ℝ) (b : Fin n → ℝ) (k : Fin (n + 1)) :
     0 ≤ jacobiSpectralWeight a b k := by
-  by_cases hsimple : ∀ j ≠ k, jacobiEigenvalues a b j ≠ jacobiEigenvalues a b k
-  · rw [jacobiSpectralWeight_eq_sq_jacobiEigenvectorBasis hsimple]
-    exact sq_nonneg _
-  · push Not at hsimple
-    obtain ⟨j, hjk, heq⟩ := hsimple
-    rw [jacobiSpectralWeight_eq_zero_of_jacobiEigenvalues_eq hjk heq]
+  rcases jacobiSpectralWeight_eq_sq_or_eq_zero a b k with h | h
+  · rw [h]; exact sq_nonneg _
+  · rw [h]
 
 /-- Every spectral weight is at most `1`. -/
 theorem jacobiSpectralWeight_le_one (a : Fin (n + 1) → ℝ) (b : Fin n → ℝ) (k : Fin (n + 1)) :
     jacobiSpectralWeight a b k ≤ 1 := by
-  by_cases hsimple : ∀ j ≠ k, jacobiEigenvalues a b j ≠ jacobiEigenvalues a b k
-  · rw [jacobiSpectralWeight_eq_sq_jacobiEigenvectorBasis hsimple]
-    have hnorm : ∑ i : Fin (n + 1), (jacobiEigenvectorBasis a b k i) ^ 2 = 1 := by
+  rcases jacobiSpectralWeight_eq_sq_or_eq_zero a b k with h | h <;> rw [h]
+  · have hnorm : ∑ i : Fin (n + 1), (jacobiEigenvectorBasis a b k i) ^ 2 = 1 := by
       have h := EuclideanSpace.norm_sq_eq (jacobiEigenvectorBasis a b k)
       simp only [(jacobiEigenvectorBasis a b).orthonormal.1 k, one_pow, Real.norm_eq_abs,
         sq_abs] at h
       exact h.symm
     rw [← hnorm]
     exact Finset.single_le_sum (fun i _ => sq_nonneg _) (Finset.mem_univ 0)
-  · push Not at hsimple
-    obtain ⟨j, hjk, heq⟩ := hsimple
-    rw [jacobiSpectralWeight_eq_zero_of_jacobiEigenvalues_eq hjk heq]
-    exact zero_le_one
+  · exact zero_le_one
 
 /-- Every spectral weight of a symmetric Jacobi matrix with nonzero subdiagonals is strictly
 positive. -/
@@ -480,43 +455,44 @@ theorem sum_jacobiSpectralWeight {a : Fin (n + 1) → ℝ} {b : Fin n → ℝ}
 theorem jacobiSpectralWeight_smul {s : ℝ} (hs : 0 < s) (a : Fin (n + 1) → ℝ) (b : Fin n → ℝ) :
     jacobiSpectralWeight (s • a) (s • b) = jacobiSpectralWeight a b := by
   funext k
-  unfold jacobiSpectralWeight
-  dsimp only
-  rw [symmJacobiMatrix_smul, jacobiEigenvalues_smul hs.le]
-  have hmap : (fun j => s • symmJacobiMatrix a b - (s • jacobiEigenvalues a b) j •
-      (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)) =
-      (s • ·) ∘ (fun j => symmJacobiMatrix a b - jacobiEigenvalues a b j •
-        (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)) := by
-    funext j
-    rw [Function.comp_apply, Pi.smul_apply, smul_eq_mul, smul_sub, smul_smul]
-  rw [hmap, ← List.map_map, ← List.smul_prod, List.length_map]
-  have hlen : ((List.finRange (n + 1)).filter (· ≠ k)).length = (Finset.univ.erase k).card := by
-    rw [← toFinset_filter_finRange_ne k, List.toFinset_card_of_nodup (nodup_filter_finRange_ne k)]
-  have hden : ∏ j ∈ Finset.univ.erase k,
-      ((s • jacobiEigenvalues a b) k - (s • jacobiEigenvalues a b) j) =
-      s ^ (Finset.univ.erase k).card *
-        ∏ j ∈ Finset.univ.erase k, (jacobiEigenvalues a b k - jacobiEigenvalues a b j) := by
-    simp only [Pi.smul_apply, smul_eq_mul, ← mul_sub, Finset.prod_mul_distrib, Finset.prod_const]
-  rw [hlen, Matrix.smul_apply, smul_eq_mul, hden]
-  exact mul_div_mul_left _ _ (pow_ne_zero _ hs.ne')
+  rw [jacobiSpectralWeight_apply, jacobiSpectralWeight_apply, symmJacobiMatrix_smul,
+    jacobiEigenvalues_smul hs.le]
+  have haeval : s • symmJacobiMatrix a b =
+      Polynomial.aeval (symmJacobiMatrix a b) (Polynomial.C s * Polynomial.X) := by
+    simp [Algebra.algebraMap_eq_smul_one]
+  have hbasis : (Lagrange.basis Finset.univ (s • jacobiEigenvalues a b) k).comp
+      (Polynomial.C s * Polynomial.X) =
+      Lagrange.basis Finset.univ (jacobiEigenvalues a b) k := by
+    simp only [Lagrange.basis, Polynomial.prod_comp]
+    refine Finset.prod_congr rfl fun j _ => ?_
+    simp only [Lagrange.basisDivisor, Pi.smul_apply, smul_eq_mul, ← mul_sub, mul_inv,
+      Polynomial.mul_comp, Polynomial.sub_comp, Polynomial.C_comp, Polynomial.X_comp]
+    rw [Polynomial.C_mul (a := s), ← mul_sub, ← mul_assoc, ← Polynomial.C_mul, mul_assoc,
+      mul_comm _ s, inv_mul_cancel_left₀ hs.ne']
+  rw [haeval, ← Polynomial.aeval_comp, hbasis]
+
+private theorem continuous_aeval_symmJacobiMatrix_prod (s : Finset (Fin (n + 1))) :
+    Continuous fun p : (Fin (n + 1) → ℝ) × (Fin n → ℝ) =>
+      Polynomial.aeval (symmJacobiMatrix p.1 p.2)
+        (∏ j ∈ s, (Polynomial.X - Polynomial.C (jacobiEigenvalues p.1 p.2 j))) := by
+  induction s using Finset.induction_on with
+  | empty => simpa using continuous_const
+  | @insert j t hjt ih =>
+      have hj : Continuous fun p : (Fin (n + 1) → ℝ) × (Fin n → ℝ) =>
+          symmJacobiMatrix p.1 p.2 -
+            jacobiEigenvalues p.1 p.2 j • (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) :=
+        continuous_symmJacobiMatrix.sub
+          (((continuous_apply j).comp continuous_jacobiEigenvalues).smul continuous_const)
+      refine (hj.mul ih).congr fun p => ?_
+      simp [Finset.prod_insert hjt, Algebra.algebraMap_eq_smul_one]
 
 private theorem continuous_jacobiSpectralWeight_num (k : Fin (n + 1)) :
     Continuous fun p : (Fin (n + 1) → ℝ) × (Fin n → ℝ) =>
-      ((((List.finRange (n + 1)).filter (· ≠ k)).map
-        fun j => symmJacobiMatrix p.1 p.2 -
-          jacobiEigenvalues p.1 p.2 j •
-            (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)).prod) 0 0 := by
-  have hlam : ∀ j, Continuous fun p : (Fin (n + 1) → ℝ) × (Fin n → ℝ) =>
-      jacobiEigenvalues p.1 p.2 j := fun j =>
-    (continuous_apply j).comp continuous_jacobiEigenvalues
-  have hprod : Continuous fun p : (Fin (n + 1) → ℝ) × (Fin n → ℝ) =>
-      ((((List.finRange (n + 1)).filter (· ≠ k)).map
-        fun j => symmJacobiMatrix p.1 p.2 -
-          jacobiEigenvalues p.1 p.2 j •
-            (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)).prod) :=
-    continuous_list_prod ((List.finRange (n + 1)).filter (· ≠ k)) fun j _ =>
-      continuous_symmJacobiMatrix.sub ((hlam j).smul continuous_const)
-  exact (continuous_apply 0).comp ((continuous_apply 0).comp hprod)
+      (Polynomial.aeval (symmJacobiMatrix p.1 p.2)
+        (∏ j ∈ Finset.univ.erase k,
+          (Polynomial.X - Polynomial.C (jacobiEigenvalues p.1 p.2 j)))) 0 0 :=
+  (continuous_apply 0).comp
+    ((continuous_apply 0).comp (continuous_aeval_symmJacobiMatrix_prod (Finset.univ.erase k)))
 
 private theorem continuous_jacobiSpectralWeight_den (k : Fin (n + 1)) :
     Continuous fun p : (Fin (n + 1) → ℝ) × (Fin n → ℝ) =>
@@ -529,6 +505,7 @@ private theorem continuous_jacobiSpectralWeight_den (k : Fin (n + 1)) :
 theorem measurable_jacobiSpectralWeight :
     Measurable fun p : (Fin (n + 1) → ℝ) × (Fin n → ℝ) => jacobiSpectralWeight p.1 p.2 := by
   refine measurable_pi_iff.mpr fun k => ?_
+  simp_rw [jacobiSpectralWeight_eq_aeval_div]
   exact (continuous_jacobiSpectralWeight_num k).measurable.div
     (continuous_jacobiSpectralWeight_den k).measurable
 
@@ -537,8 +514,9 @@ eigenvalue is simple. -/
 theorem continuousAt_jacobiSpectralWeight_apply
     {p : (Fin (n + 1) → ℝ) × (Fin n → ℝ)} {k : Fin (n + 1)}
     (hsimple : ∀ j ≠ k, jacobiEigenvalues p.1 p.2 j ≠ jacobiEigenvalues p.1 p.2 k) :
-    ContinuousAt (fun q : (Fin (n + 1) → ℝ) × (Fin n → ℝ) => jacobiSpectralWeight q.1 q.2 k) p :=
-  (continuous_jacobiSpectralWeight_num k).continuousAt.div
+    ContinuousAt (fun q : (Fin (n + 1) → ℝ) × (Fin n → ℝ) => jacobiSpectralWeight q.1 q.2 k) p := by
+  simp_rw [jacobiSpectralWeight_eq_aeval_div]
+  exact (continuous_jacobiSpectralWeight_num k).continuousAt.div
     (continuous_jacobiSpectralWeight_den k).continuousAt <|
     Finset.prod_ne_zero_iff.mpr fun j hj =>
       sub_ne_zero.mpr (hsimple j (Finset.ne_of_mem_erase hj)).symm
@@ -594,7 +572,7 @@ theorem abs_prod_pow_eq_prod_sqrt_jacobiSpectralWeight_mul_prod_sub_jacobiEigenv
   by_cases hlam : Function.Injective (jacobiEigenvalues a b)
   · let v := jacobiEigenvectorBasis a b
     let W : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ := Matrix.of fun k i => v k i
-    have hdetW : |W.det| = 1 := abs_det_of_jacobiEigenvectorBasis a b
+    have hdetW : |W.det| = 1 := by simpa only [Real.norm_eq_abs] using v.norm_det_of_apply_eq_one
     have hdet : |(W * jacobiKrylovMatrix a b).det| =
         |(Matrix.diagonal (fun k => v k 0) * Matrix.vandermonde (jacobiEigenvalues a b)).det| :=
       congrArg (fun M : Matrix _ _ ℝ => |M.det|)

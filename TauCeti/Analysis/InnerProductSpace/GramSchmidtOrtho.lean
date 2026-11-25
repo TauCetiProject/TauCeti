@@ -61,8 +61,10 @@ continues to hold when the input family loses rank.
   `gramSchmidtOrthonormalBasis` is the product of the residual norms.
 * `InnerProductSpace.inner_gramSchmidt_eq_zero_of_mem_span_Iio`,
   `InnerProductSpace.inner_gramSchmidtNormed_eq_zero_of_mem_span_Iio`,
-  `InnerProductSpace.gramSchmidt_sub_mem_span_Iio` — orthogonality against the span of strictly
-  earlier inputs and membership of `gramSchmidt 𝕜 f i - f i` in that span.
+  `InnerProductSpace.gramSchmidt_sub_mem_span_Iio`,
+  `InnerProductSpace.map_gramSchmidt_sub_mem_span_Iio` — orthogonality against the span of strictly
+  earlier inputs, membership of `gramSchmidt 𝕜 f i - f i` in that span, and its image under a
+  chain-shifting linear map.
 * `ContDiffWithinAt.gramSchmidt`, `ContDiffWithinAt.gramSchmidtNormed` — the corresponding real
   smoothness statements, with at-point, on-set and global versions for the normalized process.
 -/
@@ -163,6 +165,21 @@ theorem gramSchmidt_sub_mem_span_Iio (f : ι → E) (i : ι) :
   refine Submodule.neg_mem _ (Submodule.sum_mem _ fun j hj => ?_)
   rw [Submodule.starProjection_singleton]
   exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨j, Finset.mem_Iio.mp hj, rfl⟩)
+
+/-- If a linear endomorphism `T` shifts a finite chain `w : Fin (n + 1) → E` by
+`T (w k.castSucc) = w k.succ`, then `T` maps `gramSchmidt 𝕜 w k.castSucc - w k.castSucc` into the
+span of `w '' Set.Iio k.succ`. -/
+theorem map_gramSchmidt_sub_mem_span_Iio {n : ℕ} {T : E →ₗ[𝕜] E} {w : Fin (n + 1) → E}
+    (hw : ∀ k : Fin n, T (w k.castSucc) = w k.succ) (k : Fin n) :
+    T (gramSchmidt 𝕜 w k.castSucc - w k.castSucc) ∈
+      Submodule.span 𝕜 (w '' Set.Iio k.succ) := by
+  refine Submodule.span_mono ?_
+    (Submodule.apply_mem_span_image_of_mem_span T (gramSchmidt_sub_mem_span_Iio w k.castSucc))
+  rintro _ ⟨_, ⟨j, hj, rfl⟩, rfl⟩
+  let j' : Fin n := ⟨j.val, lt_trans (Fin.lt_def.mp (Set.mem_Iio.mp hj)) k.isLt⟩
+  have hjcast : j'.castSucc = j := Fin.ext rfl
+  rw [← hjcast, hw j']
+  exact ⟨j'.succ, Set.mem_Iio.mpr (Fin.lt_def.mpr (Nat.succ_lt_succ (Fin.lt_def.mp hj))), rfl⟩
 
 /-- The Gram–Schmidt process fixes an input vector orthogonal to all earlier inputs. This is the
 pointwise form of Mathlib's `InnerProductSpace.gramSchmidt_of_orthogonal`: every earlier

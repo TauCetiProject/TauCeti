@@ -30,7 +30,9 @@ the spans of initial segments and of the whole family. A ring homomorphism carri
 `A` into a span over `B` as soon as it carries the generators into the target span and the
 scalars in `A` to scalars in `B`. Over a scalar extension, the image span of a semilinear map is
 spanned by its values on any spanning family of the domain. The span of any countable set admits
-a spanning sequence indexed by `ℕ` (`Set.Countable.exists_span_range_eq_top`).
+a spanning sequence indexed by `ℕ` (`Set.Countable.exists_span_range_eq_top`). A linear endomorphism
+shifting a finite chain `w k.castSucc ↦ w k.succ` maps `span R (w '' Set.Iic m.castSucc)` into
+`span R (w '' Set.Iic m.succ)` (`Submodule.map_mem_span_Iic_of_apply_castSucc`).
 -/
 
 public section
@@ -217,6 +219,26 @@ theorem span_range_eq_span_range_comp_of_span_eq_top
     (Set.forall_mem_range.mpr fun i ↦ subset_span ⟨i, rfl⟩) ⟨x, hv ▸ mem_top, rfl⟩
 
 end SpanningFamily
+
+section Chain
+
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {n : ℕ}
+
+/-- If a linear endomorphism `T` shifts a finite chain `w : Fin (n + 1) → M` by
+`T (w k.castSucc) = w k.succ`, then `T` maps `span R (w '' Set.Iic m.castSucc)` into
+`span R (w '' Set.Iic m.succ)`. -/
+theorem map_mem_span_Iic_of_apply_castSucc {T : M →ₗ[R] M} {w : Fin (n + 1) → M}
+    (hw : ∀ k : Fin n, T (w k.castSucc) = w k.succ) (m : Fin n) {u : M}
+    (hu : u ∈ span R (w '' Set.Iic m.castSucc)) :
+    T u ∈ span R (w '' Set.Iic m.succ) := by
+  refine span_mono ?_ (apply_mem_span_image_of_mem_span T hu)
+  rintro _ ⟨_, ⟨j, hj, rfl⟩, rfl⟩
+  let j' : Fin n := ⟨j.val, lt_of_le_of_lt (Fin.le_def.mp (Set.mem_Iic.mp hj)) m.isLt⟩
+  have hjcast : j'.castSucc = j := Fin.ext rfl
+  rw [← hjcast, hw j']
+  exact ⟨j'.succ, Set.mem_Iic.mpr (Fin.le_def.mpr (Nat.succ_le_succ (Fin.le_def.mp hj))), rfl⟩
+
+end Chain
 
 end Submodule
 

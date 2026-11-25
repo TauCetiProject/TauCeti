@@ -7,33 +7,46 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
+import TauCeti.LinearAlgebra.Matrix.CornerMinor
 
 /-!
-# Symmetric tridiagonal Jacobi matrices: algebraic structure and Krylov determinants
+# Tridiagonal Jacobi matrices: general recurrences, symmetric forms, and Krylov determinants
 
-A symmetric tridiagonal matrix of size `(n + 1) × (n + 1)` over a type with zero `R` is determined
-by its diagonal entries `a : Fin (n + 1) → R` and its subdiagonal (and superdiagonal) entries
-`b : Fin n → R`. Over a semiring, its powers propagate bandwidth one step per exponent, with
-band-edge entries given over a commutative semiring by products of consecutive entries of `b`. In
-particular, the Krylov matrix formed by the first-column vectors `(J ^ m) · 0` is upper triangular
-with determinant `∏ j : Fin n, b j ^ (n - j.val)`. Over any semiring without zero divisors, every
-nonzero eigenvector of a symmetric Jacobi matrix with nonzero subdiagonal entries has nonzero first
-coordinate.
+A truncated tridiagonal (Jacobi) matrix `TauCeti.jacobiMatrix a b c n` of size `n × n` over a type
+with zero `R` has diagonal entries `b₀, …, b_{n-1}`, superdiagonal entries `a₀, …, a_{n-2}`, and
+subdiagonal entries `c₁, …, c_{n-1}`. Over a commutative ring its determinants satisfy the
+three-term continuant recurrence (`TauCeti.det_jacobiMatrix_add_two`); for the characteristic
+polynomial identity connecting `jacobiMatrix` and `symmJacobiMatrix` to orthogonal polynomials, see
+`TauCeti.RingTheory.Polynomial.ThreeTermRecurrence`.
 
-For the general (not necessarily symmetric) three-sequence tridiagonal Jacobi matrix indexed by
-`ℕ → R`, see `TauCeti.jacobiMatrix` in `TauCeti.RingTheory.Polynomial.ThreeTermRecurrence`.
+An extensional `(n + 1) × (n + 1)` symmetric Jacobi matrix `TauCeti.symmJacobiMatrix a b` is
+determined without free tail coordinates by its diagonal `a : Fin (n + 1) → R` and its subdiagonal
+(and superdiagonal) `b : Fin n → R`, and coincides with `jacobiMatrix` on zero-extended sequences
+(`TauCeti.symmJacobiMatrix_eq_jacobiMatrix`). Over a semiring, its powers propagate bandwidth one
+step per exponent, with band-edge entries given over a commutative semiring by products of
+consecutive entries of `b`. In particular, the Krylov matrix formed by the first-column vectors
+`(J ^ m) · 0` is upper triangular with determinant `∏ j : Fin n, b j ^ (n - j.val)`. Over any
+semiring without zero divisors, every nonzero eigenvector of a symmetric Jacobi matrix with nonzero
+subdiagonal entries has nonzero first coordinate.
 
 ## Main definitions
 
+* `TauCeti.jacobiMatrix`: the `n × n` tridiagonal matrix with superdiagonal `a`, diagonal `b`, and
+  subdiagonal `c` indexed by `ℕ → R`.
 * `TauCeti.symmJacobiMatrix`: the symmetric tridiagonal `(n + 1) × (n + 1)` matrix with diagonal
-  `a` and subdiagonal `b`.
+  `a : Fin (n + 1) → R` and subdiagonal `b : Fin n → R`.
 * `TauCeti.jacobiKrylovMatrix`: the `(n + 1) × (n + 1)` Krylov matrix with `(i, m)` entry
   `(symmJacobiMatrix a b ^ m.val) i 0`.
 
 ## Main results
 
-* `TauCeti.symmJacobiMatrix_inj`:
-  `symmJacobiMatrix a₁ b₁ = symmJacobiMatrix a₂ b₂ ↔ a₁ = a₂ ∧ b₁ = b₂`.
+* `TauCeti.isSymm_jacobiMatrix_iff`, `TauCeti.submatrix_castSucc_jacobiMatrix`, and
+  `TauCeti.det_jacobiMatrix_add_two`: symmetry criterion, principal corner submatrix, and
+  three-term continuant determinant recurrence for `jacobiMatrix`.
+* `TauCeti.symmJacobiMatrix_eq_jacobiMatrix`: bridge expressing `symmJacobiMatrix a b` as a
+  special case of `jacobiMatrix`.
+* `TauCeti.symmJacobiMatrix_inj` and `TauCeti.symmJacobiMatrix_map`: injectivity in `(a, b)` and
+  compatibility with zero-preserving maps.
 * `TauCeti.trace_symmJacobiMatrix_sq`:
   `((symmJacobiMatrix a b) ^ 2).trace = ∑ i, a i ^ 2 + 2 * ∑ k, b k ^ 2`.
 * `TauCeti.symmJacobiMatrix_pow_apply_of_add_lt_left`,
@@ -54,6 +67,9 @@ For the general (not necessarily symmetric) three-sequence tridiagonal Jacobi ma
   5830–5847.
 * G. W. Anderson, A. Guionnet, O. Zeitouni, *An Introduction to Random Matrices*, Cambridge
   University Press (2010), §4.5.1.
+* M. E. H. Ismail, *Classical and Quantum Orthogonal Polynomials in One Variable*, Cambridge
+  University Press (2005), §2.2.
+* *NIST Digital Library of Mathematical Functions*, §18.2, equation 18.2.18.
 -/
 
 public section
@@ -62,7 +78,146 @@ open Matrix Finset
 
 namespace TauCeti
 
-/-! ### Definition and entrywise properties -/
+/-! ### General tridiagonal Jacobi matrices -/
+
+section General
+
+variable {R S : Type*} [Zero R]
+
+/-- The truncated Jacobi (tridiagonal) matrix `J_n` with diagonal `b₀, …, b_{n-1}`, entries `a_i`
+at `(i, i + 1)` above the diagonal and `c_i` at `(i, i - 1)` below it (DLMF 18.2.18). -/
+def jacobiMatrix (a b c : ℕ → R) (n : ℕ) : Matrix (Fin n) (Fin n) R :=
+  Matrix.of fun i j ↦
+    if (j : ℕ) = i then b i else if (j : ℕ) = i + 1 then a i else if (i : ℕ) = j + 1 then c i
+    else 0
+
+variable (a b c : ℕ → R)
+
+/-- Unified entrywise formula for `jacobiMatrix a b c n`. -/
+theorem jacobiMatrix_apply {n : ℕ} (i j : Fin n) :
+    jacobiMatrix a b c n i j =
+      if (j : ℕ) = i then b i else if (j : ℕ) = i + 1 then a i else if (i : ℕ) = j + 1 then c i
+      else 0 :=
+  (rfl)
+
+/-- Congruence for `jacobiMatrix a b c n` from agreement on the active index ranges. -/
+theorem jacobiMatrix_congr {a₁ a₂ b₁ b₂ c₁ c₂ : ℕ → R} {n : ℕ}
+    (ha : ∀ k, k + 1 < n → a₁ k = a₂ k) (hb : ∀ k, k < n → b₁ k = b₂ k)
+    (hc : ∀ k, 0 < k → k < n → c₁ k = c₂ k) :
+    jacobiMatrix a₁ b₁ c₁ n = jacobiMatrix a₂ b₂ c₂ n := by
+  ext i j
+  simp only [jacobiMatrix_apply]
+  split_ifs with h1 h2 h3
+  · exact hb i i.isLt
+  · exact ha i (h2 ▸ j.isLt)
+  · exact hc i (by omega) i.isLt
+  · rfl
+
+/-- The `(i, i)` diagonal entry of `jacobiMatrix a b c n` is `b i`. -/
+@[simp]
+theorem jacobiMatrix_apply_self {n : ℕ} (i : Fin n) : jacobiMatrix a b c n i i = b i := by
+  simp [jacobiMatrix_apply]
+
+/-- The entries `a_i` above the diagonal of a Jacobi matrix. -/
+theorem jacobiMatrix_apply_superdiag {n : ℕ} {i j : Fin n} (h : (j : ℕ) = i + 1) :
+    jacobiMatrix a b c n i j = a i := by
+  simp [jacobiMatrix_apply, h]
+
+/-- The entries `c_i` below the diagonal of a Jacobi matrix. -/
+theorem jacobiMatrix_apply_subdiag {n : ℕ} {i j : Fin n} (h : (i : ℕ) = j + 1) :
+    jacobiMatrix a b c n i j = c i := by
+  simp only [jacobiMatrix_apply]
+  split_ifs <;> first | rfl | omega
+
+/-- A Jacobi matrix vanishes off the three central diagonals. -/
+theorem jacobiMatrix_apply_eq_zero {n : ℕ} {i j : Fin n} (h : (i : ℕ) + 1 < j ∨ (j : ℕ) + 1 < i) :
+    jacobiMatrix a b c n i j = 0 := by
+  simp only [jacobiMatrix_apply]
+  split_ifs <;> first | rfl | omega
+
+/-- Jacobi matrices commute with zero-preserving maps applied to their entries. -/
+@[simp]
+theorem jacobiMatrix_map [Zero S] {f : R → S} (hf : f 0 = 0) (n : ℕ) :
+    (jacobiMatrix a b c n).map f = jacobiMatrix (f ∘ a) (f ∘ b) (f ∘ c) n := by
+  ext i j
+  simp only [Matrix.map_apply, jacobiMatrix_apply, Function.comp_apply]
+  split_ifs <;> simp [hf]
+
+/-- A Jacobi matrix `J_n` is symmetric exactly when `c_k = a_{k-1}` for `1 ≤ k < n`. -/
+theorem isSymm_jacobiMatrix_iff {n : ℕ} :
+    (jacobiMatrix a b c n).IsSymm ↔ ∀ k, 0 < k → k < n → c k = a (k - 1) := by
+  refine ⟨fun h k hk hkn ↦ ?_, fun h ↦ Matrix.IsSymm.ext fun i j ↦ ?_⟩
+  · have := h.apply (⟨k - 1, by omega⟩ : Fin n) ⟨k, hkn⟩
+    rwa [jacobiMatrix_apply_subdiag _ _ _ (by simp only; omega),
+      jacobiMatrix_apply_superdiag _ _ _ (by simp only; omega)] at this
+  · obtain h₁ | h₁ | h₁ | h₁ : (i : ℕ) = j ∨ (j : ℕ) = i + 1 ∨ (i : ℕ) = j + 1 ∨
+        ((i : ℕ) + 1 < j ∨ (j : ℕ) + 1 < i) := by omega
+    · rw [Fin.ext h₁]
+    · rw [jacobiMatrix_apply_subdiag _ _ _ h₁, jacobiMatrix_apply_superdiag _ _ _ h₁,
+        h _ (by omega) j.isLt, h₁, Nat.add_sub_cancel]
+    · rw [jacobiMatrix_apply_superdiag _ _ _ h₁, jacobiMatrix_apply_subdiag _ _ _ h₁,
+        h _ (by omega) i.isLt, h₁, Nat.add_sub_cancel]
+    · rw [jacobiMatrix_apply_eq_zero _ _ _ h₁.symm, jacobiMatrix_apply_eq_zero _ _ _ h₁]
+
+/-- The leading principal `n × n` submatrix of `J_{n+1}` is `J_n`. -/
+@[simp]
+theorem submatrix_castSucc_jacobiMatrix (n : ℕ) :
+    (jacobiMatrix a b c (n + 1)).submatrix Fin.castSucc Fin.castSucc = jacobiMatrix a b c n := by
+  ext i j
+  simp [jacobiMatrix_apply]
+
+end General
+
+section GeneralTraceDet
+
+/-- The trace of a Jacobi matrix is the sum of its diagonal entries. -/
+@[simp]
+theorem trace_jacobiMatrix {R : Type*} [AddCommMonoid R] (a b c : ℕ → R) (n : ℕ) :
+    (jacobiMatrix a b c n).trace = ∑ i : Fin n, b i := by
+  simp [Matrix.trace, Matrix.diag]
+
+section CommRing
+
+variable {R : Type*} [CommRing R] (a b c : ℕ → R)
+
+/-- The minor of `J_{n+2}` obtained by deleting the last row and column `n` is `a_n det J_n`. -/
+private theorem det_submatrix_jacobiMatrix (n : ℕ) :
+    ((jacobiMatrix a b c (n + 2)).submatrix Fin.castSucc
+      (Fin.last n).castSucc.succAbove).det = a n * (jacobiMatrix a b c n).det := by
+  have hcol : (Fin.last n).castSucc.succAbove (Fin.last n) = Fin.last (n + 1) := by
+    rw [Fin.succAbove_castSucc_self, Fin.succ_last]
+  have hminor : (Fin.last n).castSucc.succAbove ∘ Fin.castSucc = Fin.castSucc ∘ Fin.castSucc :=
+    funext fun k ↦ Fin.succAbove_castSucc_of_lt _ _ (Fin.castSucc_lt_last k)
+  -- Expand along the last column, whose only nonzero entry is the corner `a_n`.
+  rw [Matrix.det_eq_mul_det_submatrix_castSucc_of_col _ fun i hi ↦ by
+      rw [Matrix.submatrix_apply, hcol, jacobiMatrix_apply_eq_zero _ _ _ (Or.inl (by
+        simp only [Fin.val_castSucc, Fin.val_last]; exact Nat.succ_lt_succ (Fin.val_lt_last hi)))],
+    Matrix.submatrix_apply, hcol, jacobiMatrix_apply_superdiag _ _ _ (by simp),
+    Matrix.submatrix_submatrix, hminor, ← Matrix.submatrix_submatrix,
+    submatrix_castSucc_jacobiMatrix, submatrix_castSucc_jacobiMatrix, Fin.val_castSucc,
+    Fin.val_last]
+
+/-- **The continuant recurrence of tridiagonal determinants**:
+`det J_{n+2} = b_{n+1} det J_{n+1} - a_n c_{n+1} det J_n`. -/
+theorem det_jacobiMatrix_add_two (n : ℕ) :
+    (jacobiMatrix a b c (n + 2)).det =
+      b (n + 1) * (jacobiMatrix a b c (n + 1)).det -
+        a n * c (n + 1) * (jacobiMatrix a b c n).det := by
+  have hrow (j : Fin n) : jacobiMatrix a b c (n + 2) (Fin.last (n + 1)) j.castSucc.castSucc = 0 :=
+    jacobiMatrix_apply_eq_zero _ _ _ (Or.inr (by simp only [Fin.val_castSucc, Fin.val_last]; omega))
+  -- Expand along the last row: only the entries `c_{n+1}` and `b_{n+1}` survive.
+  rw [Matrix.det_succ_row _ (Fin.last (n + 1)), Fin.sum_univ_castSucc, Fin.sum_univ_castSucc]
+  simp only [hrow, mul_zero, zero_mul, sum_const_zero, zero_add]
+  rw [jacobiMatrix_apply_subdiag _ _ _ (by simp), jacobiMatrix_apply_self, Fin.succAbove_last,
+    det_submatrix_jacobiMatrix, submatrix_castSucc_jacobiMatrix, Fin.val_last, Fin.val_castSucc,
+    Fin.val_last, Odd.neg_one_pow ⟨n, by ring⟩, Even.neg_one_pow ⟨n + 1, rfl⟩]
+  ring
+
+end CommRing
+
+end GeneralTraceDet
+
+/-! ### Symmetric `(n + 1) × (n + 1)` Jacobi matrices and entrywise properties -/
 
 section Entries
 
@@ -87,28 +242,31 @@ theorem symmJacobiMatrix_apply (a : Fin (n + 1) → R) (b : Fin n → R) (i j : 
       else 0 :=
   (rfl)
 
-/-- The transpose of a symmetric Jacobi matrix is itself. -/
-@[simp]
-theorem symmJacobiMatrix_transpose (a : Fin (n + 1) → R) (b : Fin n → R) :
-    (symmJacobiMatrix a b)ᵀ = symmJacobiMatrix a b := by
+/-- Bridge expressing `symmJacobiMatrix a b` as an instance of `jacobiMatrix` on zero-extended
+sequences. -/
+theorem symmJacobiMatrix_eq_jacobiMatrix (a : Fin (n + 1) → R) (b : Fin n → R) :
+    symmJacobiMatrix a b =
+      jacobiMatrix
+        (fun k => if hk : k < n then b ⟨k, hk⟩ else 0)
+        (fun k => if hk : k < n + 1 then a ⟨k, hk⟩ else 0)
+        (fun k => if hk : k - 1 < n then b ⟨k - 1, hk⟩ else 0)
+        (n + 1) := by
   ext i j
-  simp only [transpose_apply, symmJacobiMatrix, of_apply]
-  by_cases hij : i = j
-  · subst hij; simp
-  · have hji : j ≠ i := Ne.symm hij
-    rw [ite_eq_right hji, ite_eq_right hij]
-    by_cases h1 : i.val = j.val + 1
-    · have h2 : ¬(j.val = i.val + 1) := by omega
-      rw [dite_eq_left h1, dite_eq_right h2, dite_eq_left h1]
-    · by_cases h2 : j.val = i.val + 1
-      · rw [dite_eq_right h1, dite_eq_left h2, dite_eq_left h2]
-      · rw [dite_eq_right h1, dite_eq_right h2, dite_eq_right h2, dite_eq_right h1]
+  simp only [symmJacobiMatrix, jacobiMatrix, of_apply, Fin.ext_iff]
+  split_ifs <;> first | rfl | omega | (congr 1; ext; simp; omega)
 
 /-- Every symmetric Jacobi matrix is symmetric. -/
 @[simp]
 theorem isSymm_symmJacobiMatrix (a : Fin (n + 1) → R) (b : Fin n → R) :
-    (symmJacobiMatrix a b).IsSymm :=
-  symmJacobiMatrix_transpose a b
+    (symmJacobiMatrix a b).IsSymm := by
+  rw [symmJacobiMatrix_eq_jacobiMatrix]
+  exact (isSymm_jacobiMatrix_iff _ _ _).mpr fun _ _ _ => rfl
+
+/-- The transpose of a symmetric Jacobi matrix is itself. -/
+@[simp]
+theorem symmJacobiMatrix_transpose (a : Fin (n + 1) → R) (b : Fin n → R) :
+    (symmJacobiMatrix a b)ᵀ = symmJacobiMatrix a b :=
+  isSymm_symmJacobiMatrix a b
 
 /-- Entrywise symmetry of `symmJacobiMatrix a b`. -/
 theorem symmJacobiMatrix_apply_symm (a : Fin (n + 1) → R) (b : Fin n → R) (i j : Fin (n + 1)) :
@@ -119,33 +277,51 @@ theorem symmJacobiMatrix_apply_symm (a : Fin (n + 1) → R) (b : Fin n → R) (i
 @[simp]
 theorem symmJacobiMatrix_apply_self (a : Fin (n + 1) → R) (b : Fin n → R) (i : Fin (n + 1)) :
     symmJacobiMatrix a b i i = a i := by
-  simp [symmJacobiMatrix]
+  rw [symmJacobiMatrix_eq_jacobiMatrix, jacobiMatrix_apply_self, dite_eq_left i.isLt]
 
 /-- The `(k, k + 1)` superdiagonal entry of `symmJacobiMatrix a b` is `b k`. -/
 @[simp]
 theorem symmJacobiMatrix_apply_castSucc_succ (a : Fin (n + 1) → R) (b : Fin n → R) (k : Fin n) :
     symmJacobiMatrix a b k.castSucc k.succ = b k := by
-  have hne : k.castSucc ≠ k.succ := Fin.ne_of_lt (Fin.castSucc_lt_succ (i := k))
-  simp [symmJacobiMatrix, hne]
+  rw [symmJacobiMatrix_eq_jacobiMatrix, jacobiMatrix_apply_superdiag _ _ _ (by simp)]
+  simp [k.isLt]
 
 /-- The `(k + 1, k)` subdiagonal entry of `symmJacobiMatrix a b` is `b k`. -/
 @[simp]
 theorem symmJacobiMatrix_apply_succ_castSucc (a : Fin (n + 1) → R) (b : Fin n → R) (k : Fin n) :
     symmJacobiMatrix a b k.succ k.castSucc = b k := by
-  rw [symmJacobiMatrix_apply_symm, symmJacobiMatrix_apply_castSucc_succ]
+  rw [symmJacobiMatrix_eq_jacobiMatrix, jacobiMatrix_apply_subdiag _ _ _ (by simp)]
+  simp [k.isLt]
 
 /-- Entries strictly below the subdiagonal vanish. -/
 theorem symmJacobiMatrix_apply_of_add_one_lt_left (a : Fin (n + 1) → R) (b : Fin n → R)
     {i j : Fin (n + 1)} (h : j.val + 1 < i.val) : symmJacobiMatrix a b i j = 0 := by
-  have h1 : i ≠ j := fun hij => by subst hij; omega
-  have h2 : ¬(j.val = i.val + 1) := by omega
-  have h3 : ¬(i.val = j.val + 1) := by omega
-  rw [symmJacobiMatrix, of_apply, ite_eq_right h1, dite_eq_right h2, dite_eq_right h3]
+  rw [symmJacobiMatrix_eq_jacobiMatrix]
+  exact jacobiMatrix_apply_eq_zero _ _ _ (Or.inr h)
 
 /-- Entries strictly above the superdiagonal vanish. -/
 theorem symmJacobiMatrix_apply_of_add_one_lt_right (a : Fin (n + 1) → R) (b : Fin n → R)
     {i j : Fin (n + 1)} (h : i.val + 1 < j.val) : symmJacobiMatrix a b i j = 0 := by
-  rw [symmJacobiMatrix_apply_symm, symmJacobiMatrix_apply_of_add_one_lt_left a b h]
+  rw [symmJacobiMatrix_eq_jacobiMatrix]
+  exact jacobiMatrix_apply_eq_zero _ _ _ (Or.inl h)
+
+/-- The leading principal `(n + 1) × (n + 1)` submatrix of `symmJacobiMatrix a b` on
+`Fin (n + 2)` restricts `a` and `b` along `Fin.castSucc`. -/
+@[simp]
+theorem submatrix_castSucc_symmJacobiMatrix (a : Fin (n + 2) → R) (b : Fin (n + 1) → R) :
+    (symmJacobiMatrix a b).submatrix Fin.castSucc Fin.castSucc =
+      symmJacobiMatrix (a ∘ Fin.castSucc) (b ∘ Fin.castSucc) := by
+  rw [symmJacobiMatrix_eq_jacobiMatrix, submatrix_castSucc_jacobiMatrix,
+    symmJacobiMatrix_eq_jacobiMatrix]
+  refine jacobiMatrix_congr (fun k hk => ?_) (fun k hk => ?_) (fun k hk0 hk => ?_)
+  · have hk' : k < n := by omega
+    have hk'' : k < n + 1 := by omega
+    simp [hk', hk'', Fin.castSucc_mk]
+  · have hk' : k < n + 2 := by omega
+    simp [hk, hk', Fin.castSucc_mk]
+  · have hk' : k - 1 < n := by omega
+    have hk'' : k - 1 < n + 1 := by omega
+    simp [hk', hk'', Fin.castSucc_mk]
 
 /-- Two symmetric Jacobi matrices are equal if and only if their diagonal and subdiagonal vectors
 agree. -/
@@ -162,20 +338,20 @@ theorem isHermitian_symmJacobiMatrix [Star R] [TrivialStar R] (a : Fin (n + 1) �
     (b : Fin n → R) : (symmJacobiMatrix a b).IsHermitian :=
   Matrix.isHermitian_iff_isSymm.mpr (isSymm_symmJacobiMatrix a b)
 
+/-- Symmetric Jacobi matrices commute with zero-preserving maps applied to their entries. -/
+@[simp]
+theorem symmJacobiMatrix_map {S : Type*} [Zero S] {f : R → S} (hf : f 0 = 0)
+    (a : Fin (n + 1) → R) (b : Fin n → R) :
+    (symmJacobiMatrix a b).map f = symmJacobiMatrix (f ∘ a) (f ∘ b) := by
+  rw [symmJacobiMatrix_eq_jacobiMatrix, symmJacobiMatrix_eq_jacobiMatrix, jacobiMatrix_map _ _ _ hf]
+  refine jacobiMatrix_congr (fun k _ => ?_) (fun k _ => ?_) (fun k _ _ => ?_) <;>
+    simp [Function.comp_apply, apply_dite f, hf]
+
 /-- Scaling the diagonal and subdiagonal vectors scales the symmetric Jacobi matrix. -/
 @[simp]
 theorem symmJacobiMatrix_smul {M : Type*} [SMulZeroClass M R] (c : M) (a : Fin (n + 1) → R)
-    (b : Fin n → R) : symmJacobiMatrix (c • a) (c • b) = c • symmJacobiMatrix a b := by
-  ext i j
-  simp only [Matrix.smul_apply, symmJacobiMatrix, of_apply]
-  by_cases hij : i = j
-  · simp [hij]
-  · rw [ite_eq_right hij, ite_eq_right hij]
-    by_cases h1 : j.val = i.val + 1
-    · simp [h1]
-    · by_cases h2 : i.val = j.val + 1
-      · rw [dite_eq_right h1, dite_eq_left h2, dite_eq_right h1, dite_eq_left h2, Pi.smul_apply]
-      · rw [dite_eq_right h1, dite_eq_right h2, dite_eq_right h1, dite_eq_right h2, smul_zero]
+    (b : Fin n → R) : symmJacobiMatrix (c • a) (c • b) = c • symmJacobiMatrix a b :=
+  (symmJacobiMatrix_map (f := (c • ·)) (smul_zero c) a b).symm
 
 end Entries
 
@@ -183,63 +359,72 @@ end Entries
 
 section Trace
 
-variable {R : Type*} {n : ℕ}
+variable {R : Type*}
 
 /-- The trace of a symmetric Jacobi matrix is the sum of its diagonal entries. -/
 @[simp]
-theorem trace_symmJacobiMatrix [AddCommMonoid R] (a : Fin (n + 1) → R) (b : Fin n → R) :
+theorem trace_symmJacobiMatrix {n : ℕ} [AddCommMonoid R] (a : Fin (n + 1) → R) (b : Fin n → R) :
     (symmJacobiMatrix a b).trace = ∑ i, a i := by
-  simp [Matrix.trace, Matrix.diag]
+  rw [symmJacobiMatrix_eq_jacobiMatrix, trace_jacobiMatrix]
+  exact Finset.sum_congr rfl fun i _ => dite_eq_left i.isLt
 
-/-- Entrywise decomposition of the squared entries in column `i` of `symmJacobiMatrix a b`. -/
-private theorem symmJacobiMatrix_col_sq_eq [Semiring R] (a : Fin (n + 1) → R) (b : Fin n → R)
-    (i j : Fin (n + 1)) :
-    symmJacobiMatrix a b j i ^ 2 =
-      (if j = i then a i ^ 2 else 0) +
-      (if h : i.val < n then if j = ⟨i.val + 1, by omega⟩ then b ⟨i.val, h⟩ ^ 2 else 0 else 0) +
-      (if h : 0 < i.val then
-        if j = ⟨i.val - 1, by omega⟩ then b ⟨i.val - 1, by omega⟩ ^ 2 else 0 else 0) := by
-  simp only [symmJacobiMatrix, of_apply]
-  split_ifs <;>
-    simp only [Fin.ext_iff] at * <;>
-    first
-    | omega
-    | (simp only [add_zero]; congr 2; ext; omega)
-    | (simp only [zero_add]; congr 2; ext; omega)
-    | simp
-
-/-- The sum of squared entries in column `i` of `symmJacobiMatrix a b`. -/
-private theorem sum_sq_symmJacobiMatrix_col [Semiring R] (a : Fin (n + 1) → R) (b : Fin n → R)
-    (i : Fin (n + 1)) :
-    ∑ j : Fin (n + 1), symmJacobiMatrix a b j i ^ 2 =
-      a i ^ 2 + (if h : i.val < n then b ⟨i.val, h⟩ ^ 2 else 0) +
-        (if h : 0 < i.val then b ⟨i.val - 1, by omega⟩ ^ 2 else 0) := by
-  simp_rw [symmJacobiMatrix_col_sq_eq, Finset.sum_add_distrib]
-  congr 1
-  · congr 1
-    · simp
-    · split_ifs <;> simp
-  · split_ifs <;> simp
+/-- The sum of squares of all entries of `symmJacobiMatrix a b` is
+`∑ i, a i ^ 2 + 2 * ∑ k, b k ^ 2`. -/
+private theorem sum_sq_symmJacobiMatrix_entries [Semiring R] :
+    ∀ {n : ℕ} (a : Fin (n + 1) → R) (b : Fin n → R),
+      (∑ i : Fin (n + 1), ∑ j : Fin (n + 1), symmJacobiMatrix a b i j ^ 2) =
+        ∑ i, a i ^ 2 + 2 * ∑ k, b k ^ 2
+  | 0, a, b => by
+      simp
+  | n + 1, a, b => by
+      have hsub :
+          (∑ i : Fin (n + 1), ∑ j : Fin (n + 1), symmJacobiMatrix a b i.castSucc j.castSucc ^ 2) =
+            ∑ i : Fin (n + 1), a i.castSucc ^ 2 + 2 * ∑ k : Fin n, b k.castSucc ^ 2 := by
+        have hblock (i j : Fin (n + 1)) :
+            symmJacobiMatrix a b i.castSucc j.castSucc =
+              symmJacobiMatrix (a ∘ Fin.castSucc) (b ∘ Fin.castSucc) i j := by
+          rw [← submatrix_castSucc_symmJacobiMatrix, Matrix.submatrix_apply]
+        simp_rw [hblock]
+        exact sum_sq_symmJacobiMatrix_entries (a ∘ Fin.castSucc) (b ∘ Fin.castSucc)
+      have hcol : ∑ i : Fin (n + 1), symmJacobiMatrix a b i.castSucc (Fin.last (n + 1)) ^ 2 =
+          b (Fin.last n) ^ 2 := by
+        rw [Fin.sum_univ_castSucc]
+        have h0 : ∑ k : Fin n, symmJacobiMatrix a b k.castSucc.castSucc (Fin.last (n + 1)) ^ 2 =
+            0 :=
+          Finset.sum_eq_zero fun k _ => by
+            rw [symmJacobiMatrix_apply_of_add_one_lt_right a b
+              (by simp only [Fin.val_castSucc, Fin.val_last]; omega), sq, zero_mul]
+        rw [h0, zero_add, ← Fin.succ_last, symmJacobiMatrix_apply_castSucc_succ]
+      have hrow : ∑ j : Fin (n + 1), symmJacobiMatrix a b (Fin.last (n + 1)) j.castSucc ^ 2 =
+          b (Fin.last n) ^ 2 := by
+        simp_rw [symmJacobiMatrix_apply_symm a b (Fin.last (n + 1))]
+        exact hcol
+      have hsplit :
+          (∑ i : Fin (n + 2), ∑ j : Fin (n + 2), symmJacobiMatrix a b i j ^ 2) =
+            (∑ i : Fin (n + 1), ∑ j : Fin (n + 1), symmJacobiMatrix a b i.castSucc j.castSucc ^ 2) +
+              (∑ i : Fin (n + 1), symmJacobiMatrix a b i.castSucc (Fin.last (n + 1)) ^ 2) +
+              ((∑ j : Fin (n + 1), symmJacobiMatrix a b (Fin.last (n + 1)) j.castSucc ^ 2) +
+                symmJacobiMatrix a b (Fin.last (n + 1)) (Fin.last (n + 1)) ^ 2) := by
+        rw [Fin.sum_univ_castSucc, Fin.sum_univ_castSucc (f := fun j =>
+          symmJacobiMatrix a b (Fin.last (n + 1)) j ^ 2)]
+        congr 1
+        rw [← Finset.sum_add_distrib]
+        exact Finset.sum_congr rfl fun i _ => Fin.sum_univ_castSucc _
+      rw [hsplit, hsub, hcol, hrow, symmJacobiMatrix_apply_self,
+        Fin.sum_univ_castSucc (f := fun i => a i ^ 2),
+        Fin.sum_univ_castSucc (f := fun k => b k ^ 2)]
+      simp only [mul_add, two_mul, add_assoc, add_left_comm, add_comm]
 
 /-- The trace of the square of a symmetric Jacobi matrix is `∑ i, a i ^ 2 + 2 * ∑ k, b k ^ 2`. -/
-theorem trace_symmJacobiMatrix_sq [Semiring R] (a : Fin (n + 1) → R) (b : Fin n → R) :
+theorem trace_symmJacobiMatrix_sq {n : ℕ} [Semiring R] (a : Fin (n + 1) → R) (b : Fin n → R) :
     ((symmJacobiMatrix a b) ^ 2).trace = ∑ i, a i ^ 2 + 2 * ∑ k, b k ^ 2 := by
-  have hdiag : ∀ i : Fin (n + 1), ((symmJacobiMatrix a b) ^ 2) i i =
-      ∑ j : Fin (n + 1), symmJacobiMatrix a b j i ^ 2 := fun i => by
+  have hdiag (i : Fin (n + 1)) : ((symmJacobiMatrix a b) ^ 2) i i =
+      ∑ j : Fin (n + 1), symmJacobiMatrix a b i j ^ 2 := by
     rw [sq, Matrix.mul_apply]
     refine Finset.sum_congr rfl fun j _ => ?_
-    rw [symmJacobiMatrix_apply_symm a b i j, sq]
-  simp only [Matrix.trace, Matrix.diag_apply, hdiag, sum_sq_symmJacobiMatrix_col,
-    Finset.sum_add_distrib]
-  have h1 : ∑ i : Fin (n + 1), (if h : i.val < n then b ⟨i.val, h⟩ ^ 2 else 0) =
-      ∑ k : Fin n, b k ^ 2 := by
-    rw [Fin.sum_univ_castSucc]
-    simp
-  have h2 : ∑ i : Fin (n + 1), (if h : 0 < i.val then b ⟨i.val - 1, by omega⟩ ^ 2 else 0) =
-      ∑ k : Fin n, b k ^ 2 := by
-    rw [Fin.sum_univ_succ]
-    simp
-  rw [h1, h2, add_assoc, ← two_mul]
+    rw [symmJacobiMatrix_apply_symm a b j i, sq]
+  simp only [Matrix.trace, Matrix.diag_apply, hdiag]
+  exact sum_sq_symmJacobiMatrix_entries a b
 
 end Trace
 

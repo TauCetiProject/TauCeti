@@ -5,36 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
 public import TauCeti.Analysis.Matrix.Jacobi.Basic
-import Mathlib.LinearAlgebra.Vandermonde
-import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
+import TauCeti.Analysis.InnerProductSpace.Lanczos
 import TauCeti.Analysis.Matrix.OrthogonalRows
 import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
-# Lanczos tridiagonalization and spectral reconstruction for real Jacobi matrices
+# Spectral reconstruction for real symmetric Jacobi matrices
 
-For any inner product space `E` over `𝕜` (`ℝ` or `ℂ`), any symmetric linear endomorphism
-`T : E →ₗ[𝕜] E`, and any chain of vectors `w : Fin (n + 1) → E` satisfying
-`T (w k.castSucc) = w k.succ`, the matrix elements `⟪e i, T (e j)⟫` along the normalized
-Gram–Schmidt family `e = gramSchmidtNormed 𝕜 w` form a real symmetric tridiagonal Jacobi matrix
-with diagonal `r ↦ re ⟪e r, T (e r)⟫` and nonnegative subdiagonal
-`k ↦ ‖gramSchmidt 𝕜 w k.castSucc‖⁻¹ * ‖gramSchmidt 𝕜 w k.succ‖`, without any linear-independence
-assumption on `w`. When `w` is linearly independent, every subdiagonal entry is strictly positive.
-
-Applying this Lanczos tridiagonalization to `T = (diagonal lam).toEuclideanLin` on
-`EuclideanSpace ℝ (Fin (n + 1))` and the weighted Vandermonde vectors `w m k = √(q k) * lam k ^ m`
-realizes every strictly decreasing sequence `lam : Fin (n + 1) → ℝ` and strictly positive
-probability vector `q : Fin (n + 1) → ℝ` (`∑ k, q k = 1`) as the ordered eigenvalues and spectral
-weights of a positive-subdiagonal symmetric Jacobi matrix.
+Applying Lanczos tridiagonalization (`TauCeti.Analysis.InnerProductSpace.Lanczos`) to the diagonal
+multiplication operator `T = (diagonal lam).toEuclideanLin` on `EuclideanSpace ℝ (Fin (n + 1))` and
+the weighted Vandermonde vectors `w m k = √(q k) * lam k ^ m` realizes every strictly decreasing
+sequence `lam : Fin (n + 1) → ℝ` and strictly positive probability vector `q : Fin (n + 1) → ℝ`
+(`∑ k, q k = 1`) as the ordered eigenvalues and Lagrange spectral weights of a symmetric Jacobi
+matrix with strictly positive subdiagonal entries.
 
 ## Main results
 
-* `TauCeti.inner_gramSchmidtNormed_succ_apply_castSucc`: unconditional Lanczos subdiagonal formula
-  `⟪e (k + 1), T (e k)⟫ = ‖gramSchmidt 𝕜 w k‖⁻¹ * ‖gramSchmidt 𝕜 w (k + 1)‖`.
-* `TauCeti.inner_gramSchmidtNormed_apply_eq_symmJacobiMatrix_map`: unconditional Lanczos
-  tridiagonalization of a symmetric operator along `gramSchmidtNormed 𝕜 w`.
 * `TauCeti.exists_jacobiEigenvalues_eq_and_jacobiSpectralWeight_eq`: surjectivity of
   `(a, b) ↦ (jacobiEigenvalues a b, jacobiSpectralWeight a b)` from positive-subdiagonal symmetric
   Jacobi matrices onto strictly decreasing spectra and strictly positive probability weights.
@@ -55,136 +42,6 @@ open Matrix Finset InnerProductSpace
 open scoped RealInnerProductSpace
 
 namespace TauCeti
-
-/-! ### Lanczos tridiagonalization along normalized Gram–Schmidt chains -/
-
-section Lanczos
-
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {n : ℕ}
-
-private theorem map_mem_span_Iic_of_apply_castSucc {T : E →ₗ[𝕜] E} {w : Fin (n + 1) → E}
-    (hw : ∀ k : Fin n, T (w k.castSucc) = w k.succ) (m : Fin n) {u : E}
-    (hu : u ∈ Submodule.span 𝕜 (w '' Set.Iic m.castSucc)) :
-    T u ∈ Submodule.span 𝕜 (w '' Set.Iic m.succ) := by
-  induction hu using Submodule.span_induction with
-  | mem x hx =>
-      rcases hx with ⟨j, hj, rfl⟩
-      let j' : Fin n := ⟨j.val, lt_of_le_of_lt hj m.isLt⟩
-      have hjcast : j'.castSucc = j := Fin.ext rfl
-      rw [← hjcast, hw j']
-      exact Submodule.subset_span ⟨j'.succ, Nat.succ_le_succ hj, rfl⟩
-  | zero => simp
-  | add x y _ _ hx hy => rw [map_add]; exact Submodule.add_mem _ hx hy
-  | smul c x _ hx => rw [map_smul]; exact Submodule.smul_mem _ c hx
-
-private theorem map_gramSchmidt_sub_mem_span_Iio {T : E →ₗ[𝕜] E} {w : Fin (n + 1) → E}
-    (hw : ∀ k : Fin n, T (w k.castSucc) = w k.succ) (k : Fin n) :
-    T (gramSchmidt 𝕜 w k.castSucc - w k.castSucc) ∈
-      Submodule.span 𝕜 (w '' Set.Iio k.succ) := by
-  have hrem := gramSchmidt_sub_mem_span_Iio (𝕜 := 𝕜) w k.castSucc
-  rcases k with ⟨kv, hkv⟩
-  cases kv with
-  | zero =>
-      have hemp : Set.Iio (⟨0, hkv⟩ : Fin n).castSucc = ∅ := by ext x; simp
-      rw [hemp, Set.image_empty, Submodule.span_empty, Submodule.mem_bot] at hrem
-      rw [hrem, map_zero]
-      exact Submodule.zero_mem _
-  | succ kv' =>
-      have hsub : Set.Iio (⟨kv' + 1, hkv⟩ : Fin n).castSucc =
-          Set.Iic (⟨kv', by omega⟩ : Fin n).castSucc := by
-        ext x
-        simp only [Set.mem_Iio, Set.mem_Iic, Fin.lt_def, Fin.le_def, Fin.val_castSucc]
-        omega
-      have hsub2 : Set.Iic (⟨kv', by omega⟩ : Fin n).succ ⊆
-          Set.Iio (⟨kv' + 1, hkv⟩ : Fin n).succ := fun x hx => by
-        simp only [Set.mem_Iic, Set.mem_Iio, Fin.le_def, Fin.lt_def, Fin.val_succ] at hx ⊢
-        omega
-      rw [hsub] at hrem
-      exact Submodule.span_mono (Set.image_mono hsub2)
-        (map_mem_span_Iic_of_apply_castSucc hw ⟨kv', by omega⟩ hrem)
-
-/-- **Lanczos subdiagonal formula**: if `T (w k.castSucc) = w k.succ` for every `k : Fin n`, then
-pairing the `(k + 1)`-st normalized Gram–Schmidt vector of `w` against the image of the `k`-th
-under `T` gives `‖gramSchmidt 𝕜 w k.castSucc‖⁻¹ * ‖gramSchmidt 𝕜 w k.succ‖` unconditionally
-(vanishing automatically if either Gram–Schmidt residual vanishes). -/
-theorem inner_gramSchmidtNormed_succ_apply_castSucc {T : E →ₗ[𝕜] E} {w : Fin (n + 1) → E}
-    (hw : ∀ k : Fin n, T (w k.castSucc) = w k.succ) (k : Fin n) :
-    inner 𝕜 (gramSchmidtNormed 𝕜 w k.succ) (T (gramSchmidtNormed 𝕜 w k.castSucc)) =
-      ((‖gramSchmidt 𝕜 w k.castSucc‖⁻¹ * ‖gramSchmidt 𝕜 w k.succ‖ : ℝ) : 𝕜) := by
-  have hdiff : T (gramSchmidt 𝕜 w k.castSucc) - w k.succ =
-      T (gramSchmidt 𝕜 w k.castSucc - w k.castSucc) := by
-    rw [map_sub, hw k]
-  have h0 : inner 𝕜 (gramSchmidtNormed 𝕜 w k.succ)
-      (T (gramSchmidt 𝕜 w k.castSucc) - w k.succ) = 0 := by
-    rw [hdiff]
-    exact inner_gramSchmidtNormed_eq_zero_of_mem_span_Iio w k.succ
-      (map_gramSchmidt_sub_mem_span_Iio hw k)
-  have hstep1 : inner 𝕜 (gramSchmidtNormed 𝕜 w k.succ) (T (gramSchmidt 𝕜 w k.castSucc)) =
-      inner 𝕜 (gramSchmidtNormed 𝕜 w k.succ) (w k.succ) :=
-    sub_eq_zero.mp (by rw [← inner_sub_right, h0])
-  have he_cast : gramSchmidtNormed 𝕜 w k.castSucc =
-      (‖gramSchmidt 𝕜 w k.castSucc‖ : 𝕜)⁻¹ • gramSchmidt 𝕜 w k.castSucc := by
-    rw [gramSchmidtNormed]
-  rw [he_cast, map_smul, inner_smul_right, hstep1, inner_gramSchmidtNormed_eq_norm,
-    ← RCLike.ofReal_inv, ← RCLike.ofReal_mul]
-
-private theorem inner_gramSchmidtNormed_apply_eq_zero_of_add_one_lt {T : E →ₗ[𝕜] E}
-    {w : Fin (n + 1) → E} (hw : ∀ k : Fin n, T (w k.castSucc) = w k.succ)
-    {i j : Fin (n + 1)} (h : j.val + 1 < i.val) :
-    inner 𝕜 (gramSchmidtNormed 𝕜 w i) (T (gramSchmidtNormed 𝕜 w j)) = 0 := by
-  let j' : Fin n := ⟨j.val, by omega⟩
-  have hj_eq : j = j'.castSucc := Fin.ext rfl
-  have hej : gramSchmidtNormed 𝕜 w j ∈ Submodule.span 𝕜 (w '' Set.Iic j'.castSucc) := by
-    rw [← span_gramSchmidt_Iic 𝕜 w j'.castSucc, ← span_gramSchmidtNormed w, hj_eq]
-    exact Submodule.subset_span ⟨j'.castSucc, Set.mem_Iic.mpr le_rfl, rfl⟩
-  have hsub : Set.Iic j'.succ ⊆ Set.Iio i := fun x hx => by
-    simp only [Set.mem_Iic, Set.mem_Iio, Fin.le_def, Fin.lt_def, Fin.val_succ, j'] at hx ⊢
-    omega
-  exact inner_gramSchmidtNormed_eq_zero_of_mem_span_Iio w i
-    (Submodule.span_mono (Set.image_mono hsub) (map_mem_span_Iic_of_apply_castSucc hw j' hej))
-
-/-- **Lanczos tridiagonalization**: for a symmetric operator `T` and any chain `w` satisfying
-`T (w k.castSucc) = w k.succ`, the matrix elements of `T` along `gramSchmidtNormed 𝕜 w` form the
-real symmetric Jacobi matrix with diagonal `r ↦ re ⟪e r, T (e r)⟫` and subdiagonal
-`k ↦ ‖gramSchmidt 𝕜 w k.castSucc‖⁻¹ * ‖gramSchmidt 𝕜 w k.succ‖`. -/
-theorem inner_gramSchmidtNormed_apply_eq_symmJacobiMatrix_map {T : E →ₗ[𝕜] E} (hT : T.IsSymmetric)
-    {w : Fin (n + 1) → E} (hw : ∀ k : Fin n, T (w k.castSucc) = w k.succ) (i j : Fin (n + 1)) :
-    inner 𝕜 (gramSchmidtNormed 𝕜 w i) (T (gramSchmidtNormed 𝕜 w j)) =
-      (symmJacobiMatrix
-        (fun r => RCLike.re (inner 𝕜 (gramSchmidtNormed 𝕜 w r) (T (gramSchmidtNormed 𝕜 w r))))
-        (fun k => ‖gramSchmidt 𝕜 w k.castSucc‖⁻¹ * ‖gramSchmidt 𝕜 w k.succ‖)).map
-        (algebraMap ℝ 𝕜) i j := by
-  let e := gramSchmidtNormed 𝕜 w
-  have hT_conj : ∀ x y, inner 𝕜 x (T y) = starRingEnd 𝕜 (inner 𝕜 y (T x)) := fun x y => by
-    rw [← hT x y, inner_conj_symm]
-  by_cases hij : i = j
-  · subst hij
-    simp only [Matrix.map_apply, symmJacobiMatrix_apply_self, RCLike.algebraMap_eq_ofReal]
-    exact (RCLike.conj_eq_iff_re.mp (hT_conj (e i) (e i)).symm).symm
-  · by_cases h1 : j.val = i.val + 1
-    · let k : Fin n := ⟨i.val, by omega⟩
-      have hi' : i = k.castSucc := Fin.ext rfl
-      have hj' : j = k.succ := Fin.ext (by simp [k, h1])
-      rw [hi', hj', Matrix.map_apply, symmJacobiMatrix_apply_castSucc_succ,
-        RCLike.algebraMap_eq_ofReal, hT_conj, inner_gramSchmidtNormed_succ_apply_castSucc hw k,
-        RCLike.conj_ofReal]
-    · by_cases h2 : i.val = j.val + 1
-      · let k : Fin n := ⟨j.val, by omega⟩
-        have hj' : j = k.castSucc := Fin.ext rfl
-        have hi' : i = k.succ := Fin.ext (by simp [k, h2])
-        rw [hi', hj', Matrix.map_apply, symmJacobiMatrix_apply_succ_castSucc,
-          RCLike.algebraMap_eq_ofReal, inner_gramSchmidtNormed_succ_apply_castSucc hw k]
-      · rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hij) with hlt | hgt
-        · rw [Matrix.map_apply, symmJacobiMatrix_apply_of_add_one_lt_right _ _ (i := i) (j := j)
-            (by omega), map_zero, hT_conj,
-            inner_gramSchmidtNormed_apply_eq_zero_of_add_one_lt hw (by omega), map_zero]
-        · rw [Matrix.map_apply, symmJacobiMatrix_apply_of_add_one_lt_left _ _ (i := i) (j := j)
-            (by omega), map_zero]
-          exact inner_gramSchmidtNormed_apply_eq_zero_of_add_one_lt hw (by omega)
-
-end Lanczos
-
-/-! ### Spectral reconstruction from eigenvalues and weights -/
 
 section Reconstruction
 

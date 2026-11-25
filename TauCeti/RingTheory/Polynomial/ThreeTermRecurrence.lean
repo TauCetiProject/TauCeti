@@ -7,8 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import Mathlib.RingTheory.Polynomial.Chebyshev
+public import TauCeti.LinearAlgebra.Matrix.Jacobi
 public import TauCeti.RingTheory.Polynomial.Hermite.Derivative
-import TauCeti.LinearAlgebra.Matrix.CornerMinor
 
 /-!
 # Polynomials of a three-term recurrence
@@ -21,16 +21,15 @@ and the *corecursive polynomials* `p_n^{(0)}` satisfy the same recurrence with t
 `p₀^{(0)} = 0`, `p₁^{(0)} = 1`. Every family of monic orthogonal polynomials on the real line is of
 the first kind (Favard's theorem is the converse), the corecursive polynomials are the numerators
 of the approximants of the associated J-fraction, and the characteristic polynomials of truncated
-tridiagonal (Jacobi) matrices are recurrence polynomials. This file develops this algebra over an
-arbitrary commutative ring, with no measure in sight; it is the common starting point of the
+tridiagonal (Jacobi) matrices (`TauCeti.jacobiMatrix` and `TauCeti.symmJacobiMatrix`, defined in
+`TauCeti.LinearAlgebra.Matrix.Jacobi`) are recurrence polynomials. This file develops this algebra
+over an arbitrary commutative ring, with no measure in sight; it is the common starting point of the
 theory of orthogonal polynomials, of Jacobi matrices and of J-fractions.
 
 ## Main definitions
 
 * `Polynomial.monicThreeTerm α β`: the monic polynomials of the three-term recurrence.
 * `Polynomial.corecursive α β`: the corecursive polynomials, with `p₀ = 0` and `p₁ = 1`.
-* `TauCeti.jacobiMatrix a b c n`: the `n × n` tridiagonal matrix with diagonal `b`, entries `a`
-  above the diagonal and `c` below it.
 
 ## Main results
 
@@ -47,11 +46,10 @@ theory of orthogonal polynomials, of Jacobi matrices and of J-fractions.
   `Polynomial.monicThreeTerm_mul_monicThreeTerm_sub_mul_monicThreeTerm`: the Casoratian identity
   `p_n p_{n+1}^{(0)} - p_{n+1} p_n^{(0)} = β₁ ⋯ β_n`, and its form
   `p_{n+1} p_{n+1}^{(1)} - p_{n+2} p_n^{(1)} = β₁ ⋯ β_{n+1}` for the associated polynomials.
-* `TauCeti.det_jacobiMatrix_add_two`: the continuant recurrence
-  `det J_{n+2} = b_{n+1} det J_{n+1} - a_n c_{n+1} det J_n` of tridiagonal determinants.
-* `TauCeti.charpoly_jacobiMatrix`: the characteristic polynomial of `J_n` is the recurrence
-  polynomial `p_n` with `α_k = b_k` and `β_k = a_{k-1} c_k`.
-* `TauCeti.isSymm_jacobiMatrix_iff`: `J_n` is symmetric iff `c_k = a_{k-1}` for `1 ≤ k < n`.
+* `TauCeti.charpoly_jacobiMatrix` and `TauCeti.charpoly_symmJacobiMatrix_eq_monicThreeTerm`: the
+  characteristic polynomial of `jacobiMatrix a b c n` is the recurrence polynomial `p_n` with
+  `α_k = b_k` and `β_k = a_{k-1} c_k`, specializing to `β_k = b_{k-1} ^ 2` for
+  `symmJacobiMatrix a b`.
 * `Polynomial.C_two_pow_mul_monicThreeTerm_eq_chebyshev_U` and
   `Polynomial.monicThreeTerm_natCast_eq_map_hermite`: the constant recurrence `α = 0`,
   `β = 1/4` gives the rescaled Chebyshev polynomials of the second kind `2^{-n} U_n`, and `α = 0`,
@@ -265,114 +263,13 @@ theorem monicThreeTerm_natCast_eq_map_hermite (n : ℕ) :
 
 end Polynomial
 
-/-! ## Jacobi matrices -/
+/-! ## Characteristic polynomials of Jacobi matrices -/
 
 namespace TauCeti
 
 open Polynomial
 
-variable {R S : Type*} [CommRing R] [CommRing S]
-
-/-- The truncated Jacobi (tridiagonal) matrix `J_n` with diagonal `b₀, …, b_{n-1}`, entries `a_i`
-at `(i, i + 1)` above the diagonal and `c_i` at `(i, i - 1)` below it (DLMF 18.2.18). -/
-noncomputable def jacobiMatrix (a b c : ℕ → R) (n : ℕ) : Matrix (Fin n) (Fin n) R :=
-  Matrix.of fun i j ↦
-    if (j : ℕ) = i then b i else if (j : ℕ) = i + 1 then a i else if (i : ℕ) = j + 1 then c i
-    else 0
-
-variable (a b c : ℕ → R)
-
-theorem jacobiMatrix_apply {n : ℕ} (i j : Fin n) :
-    jacobiMatrix a b c n i j =
-      if (j : ℕ) = i then b i else if (j : ℕ) = i + 1 then a i else if (i : ℕ) = j + 1 then c i
-      else 0 :=
-  (rfl)
-
-@[simp]
-theorem jacobiMatrix_apply_self {n : ℕ} (i : Fin n) : jacobiMatrix a b c n i i = b i := by
-  simp [jacobiMatrix_apply]
-
-/-- The entries `a_i` above the diagonal of a Jacobi matrix. -/
-theorem jacobiMatrix_apply_superdiag {n : ℕ} {i j : Fin n} (h : (j : ℕ) = i + 1) :
-    jacobiMatrix a b c n i j = a i := by
-  simp [jacobiMatrix_apply, h]
-
-/-- The entries `c_i` below the diagonal of a Jacobi matrix. -/
-theorem jacobiMatrix_apply_subdiag {n : ℕ} {i j : Fin n} (h : (i : ℕ) = j + 1) :
-    jacobiMatrix a b c n i j = c i := by
-  rw [jacobiMatrix_apply, ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_left h]
-
-/-- A Jacobi matrix vanishes off the three central diagonals. -/
-theorem jacobiMatrix_apply_eq_zero {n : ℕ} {i j : Fin n} (h : (i : ℕ) + 1 < j ∨ (j : ℕ) + 1 < i) :
-    jacobiMatrix a b c n i j = 0 := by
-  rw [jacobiMatrix_apply, ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega)]
-
-/-- Jacobi matrices commute with ring homomorphisms applied to their entries. -/
-@[simp]
-theorem jacobiMatrix_map (f : R →+* S) (n : ℕ) :
-    (jacobiMatrix a b c n).map f = jacobiMatrix (f ∘ a) (f ∘ b) (f ∘ c) n := by
-  ext i j
-  simp only [Matrix.map_apply, jacobiMatrix_apply]
-  split_ifs <;> simp
-
-/-- A Jacobi matrix `J_n` is symmetric exactly when `c_k = a_{k-1}` for `1 ≤ k < n`. -/
-theorem isSymm_jacobiMatrix_iff {n : ℕ} :
-    (jacobiMatrix a b c n).IsSymm ↔ ∀ k, 0 < k → k < n → c k = a (k - 1) := by
-  refine ⟨fun h k hk hkn ↦ ?_, fun h ↦ Matrix.IsSymm.ext fun i j ↦ ?_⟩
-  · have := h.apply (⟨k - 1, by omega⟩ : Fin n) ⟨k, hkn⟩
-    rwa [jacobiMatrix_apply_subdiag _ _ _ (by simp only; omega),
-      jacobiMatrix_apply_superdiag _ _ _ (by simp only; omega)] at this
-  · obtain h₁ | h₁ | h₁ | h₁ : (i : ℕ) = j ∨ (j : ℕ) = i + 1 ∨ (i : ℕ) = j + 1 ∨
-        ((i : ℕ) + 1 < j ∨ (j : ℕ) + 1 < i) := by omega
-    · rw [Fin.ext h₁]
-    · rw [jacobiMatrix_apply_subdiag _ _ _ h₁, jacobiMatrix_apply_superdiag _ _ _ h₁,
-        h _ (by omega) j.isLt, h₁, Nat.add_sub_cancel]
-    · rw [jacobiMatrix_apply_superdiag _ _ _ h₁, jacobiMatrix_apply_subdiag _ _ _ h₁,
-        h _ (by omega) i.isLt, h₁, Nat.add_sub_cancel]
-    · rw [jacobiMatrix_apply_eq_zero _ _ _ h₁.symm, jacobiMatrix_apply_eq_zero _ _ _ h₁]
-
-/-- The leading principal `n × n` submatrix of `J_{n+1}` is `J_n`. -/
-@[simp]
-theorem submatrix_castSucc_jacobiMatrix (n : ℕ) :
-    (jacobiMatrix a b c (n + 1)).submatrix Fin.castSucc Fin.castSucc = jacobiMatrix a b c n := by
-  ext i j
-  simp [jacobiMatrix_apply]
-
-/-- The minor of `J_{n+2}` obtained by deleting the last row and the column `n` is
-`a_n det J_n`: expand it along its last column, whose only nonzero entry is `a_n`. -/
-private theorem det_submatrix_jacobiMatrix (n : ℕ) :
-    ((jacobiMatrix a b c (n + 2)).submatrix Fin.castSucc
-      (Fin.last n).castSucc.succAbove).det = a n * (jacobiMatrix a b c n).det := by
-  have hcol : (Fin.last n).castSucc.succAbove (Fin.last n) = Fin.last (n + 1) := by
-    rw [Fin.succAbove_castSucc_self, Fin.succ_last]
-  have hminor : (Fin.last n).castSucc.succAbove ∘ Fin.castSucc = Fin.castSucc ∘ Fin.castSucc :=
-    funext fun k ↦ Fin.succAbove_castSucc_of_lt _ _ (Fin.castSucc_lt_last k)
-  -- The entries of the last column above the corner `a_n` vanish, and the corner minor is the
-  -- leading principal submatrix `J_n`.
-  rw [Matrix.det_eq_mul_det_submatrix_castSucc_of_col _ fun i hi ↦ by
-      rw [Matrix.submatrix_apply, hcol, jacobiMatrix_apply_eq_zero _ _ _ (Or.inl (by
-        simp only [Fin.val_castSucc, Fin.val_last]; exact Nat.succ_lt_succ (Fin.val_lt_last hi)))],
-    Matrix.submatrix_apply, hcol, jacobiMatrix_apply_superdiag _ _ _ (by simp),
-    Matrix.submatrix_submatrix, hminor, ← Matrix.submatrix_submatrix,
-    submatrix_castSucc_jacobiMatrix, submatrix_castSucc_jacobiMatrix, Fin.val_castSucc,
-    Fin.val_last]
-
-/-- **The continuant recurrence of tridiagonal determinants**: expanding along the last row,
-`det J_{n+2} = b_{n+1} det J_{n+1} - a_n c_{n+1} det J_n`. -/
-theorem det_jacobiMatrix_add_two (n : ℕ) :
-    (jacobiMatrix a b c (n + 2)).det =
-      b (n + 1) * (jacobiMatrix a b c (n + 1)).det -
-        a n * c (n + 1) * (jacobiMatrix a b c n).det := by
-  have hrow (j : Fin n) : jacobiMatrix a b c (n + 2) (Fin.last (n + 1)) j.castSucc.castSucc = 0 :=
-    jacobiMatrix_apply_eq_zero _ _ _ (Or.inr (by simp only [Fin.val_castSucc, Fin.val_last]; omega))
-  -- Expand along the last row: only the entries `c_{n+1}` and `b_{n+1}` survive, with the minors
-  -- computed by `det_submatrix_jacobiMatrix` and `submatrix_castSucc_jacobiMatrix`.
-  rw [Matrix.det_succ_row _ (Fin.last (n + 1)), Fin.sum_univ_castSucc, Fin.sum_univ_castSucc]
-  simp only [hrow, mul_zero, zero_mul, sum_const_zero, zero_add]
-  rw [jacobiMatrix_apply_subdiag _ _ _ (by simp), jacobiMatrix_apply_self, Fin.succAbove_last,
-    det_submatrix_jacobiMatrix, submatrix_castSucc_jacobiMatrix, Fin.val_last, Fin.val_castSucc,
-    Fin.val_last, Odd.neg_one_pow ⟨n, by ring⟩, Even.neg_one_pow ⟨n + 1, rfl⟩]
-  ring
+variable {R : Type*} [CommRing R] (a b c : ℕ → R)
 
 /-- The characteristic matrix of a Jacobi matrix is the Jacobi matrix over `R[X]` with diagonal
 `X - b_i` and off-diagonal entries `-a_i`, `-c_i`. -/
@@ -399,5 +296,19 @@ theorem charpoly_jacobiMatrix (n : ℕ) :
   | more n ih₀ ih₁ =>
     rw [det_jacobiMatrix_add_two, ih₀, ih₁, monicThreeTerm_add_two]
     simp
+
+/-- The characteristic polynomial of a symmetric Jacobi matrix `symmJacobiMatrix a b` is the monic
+three-term recurrence polynomial with diagonal `a` and squared subdiagonal `b ^ 2`. -/
+theorem charpoly_symmJacobiMatrix_eq_monicThreeTerm {n : ℕ} (a : Fin (n + 1) → R)
+    (b : Fin n → R) :
+    (symmJacobiMatrix a b).charpoly =
+      monicThreeTerm
+        (fun k ↦ if hk : k < n + 1 then a ⟨k, hk⟩ else 0)
+        (fun k ↦ if hk : k - 1 < n then b ⟨k - 1, hk⟩ ^ 2 else 0)
+        (n + 1) := by
+  rw [symmJacobiMatrix_eq_jacobiMatrix, charpoly_jacobiMatrix]
+  congr 1
+  funext k
+  split_ifs <;> simp [sq]
 
 end TauCeti
