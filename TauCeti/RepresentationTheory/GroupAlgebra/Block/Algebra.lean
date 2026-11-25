@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.MonoidAlgebra.Eigenvector
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Basic
 public import TauCeti.RingTheory.Idempotents.Corner.Basic
 
@@ -22,16 +23,23 @@ block algebras, `R[G] ≃ₐ[R] ∏_B e_B R[G]`, by `x ↦ (e_B x)_B` with inver
 (`TauCeti.exists_completeOrthogonalIdempotents_isBlockIdempotent`), and it is unique up to
 reindexing (`TauCeti.complete_blockIdempotents_unique`).
 
+If every `g ∈ G` acts on a block idempotent `b` of `K[G]` by a scalar, over a field `K`, then the
+block algebra `b K[G]` is the line `K b`, so it is isomorphic to `K = M₁(K)`.
+
 ## Main definitions
 
 * `TauCeti.IsBlockIdempotent.BlockAlgebra`: the block algebra `e_B R[G]` of a block idempotent
   `e_B`, Mathlib's corner ring of `e_B` in `R[G]`, an `R`-algebra with identity `e_B`.
 * `TauCeti.algEquivPiBlockAlgebra`: the block decomposition `R[G] ≃ₐ[R] ∏_B e_B R[G]` defined by
   a complete orthogonal family of block idempotents.
+* `TauCeti.blockAlgebraAlgEquivMatrixOfMulOfEqSmul`: the block algebra of a block idempotent on
+  which `G` acts by scalars is isomorphic to `M₁(K)`.
 
 ## Main results
 
 * `TauCeti.val_algEquivPiBlockAlgebra_apply`: the component of `x` in the block `B` is `e_B x`.
+* `TauCeti.algebraMap_surjective_blockAlgebra_of_mul_of_eq_smul`: the block algebra of a block
+  idempotent on which `G` acts by scalars is spanned by its identity.
 
 ## References
 
@@ -95,5 +103,35 @@ theorem algEquivPiBlockAlgebra_symm_apply (hb : CompleteOrthogonalIdempotents b)
     (hbp : ∀ i, IsBlockIdempotent (b i)) (y : ∀ i, (hbp i).BlockAlgebra) :
     (algEquivPiBlockAlgebra hb hbp).symm y = ∑ i, (y i).val :=
   hb.val_center.algEquivOfIsMulCentral_symm_apply _ y
+
+/-! ### Blocks on which the group acts by scalars -/
+
+section Scalar
+
+variable {K : Type*} [Field K] [Finite G]
+  {b : Subalgebra.center K (MonoidAlgebra K G)} (hb : IsBlockIdempotent b)
+
+/-- If every `g ∈ G` acts on the block idempotent `b` by a scalar, `b g = c(g) b`, then every
+element of the block algebra `b K[G]` is a scalar multiple of its identity `b`. -/
+theorem algebraMap_surjective_blockAlgebra_of_mul_of_eq_smul {c : G → K}
+    (hc : ∀ g, (b : MonoidAlgebra K G) * MonoidAlgebra.of K G g = c g • (b : MonoidAlgebra K G)) :
+    Function.Surjective (algebraMap K hb.BlockAlgebra) := by
+  have := Fintype.ofFinite G
+  intro x
+  have hx : x.val = (b : MonoidAlgebra K G) * x.val := (IsIdempotentElem.mul_corner_val _ x).symm
+  rw [mul_eq_smul_of_mul_of_eq_smul hc] at hx
+  exact ⟨_, Subtype.ext (by rw [IsIdempotentElem.Corner.val_algebraMap, ← hx])⟩
+
+/-- If every `g ∈ G` acts on the block idempotent `b` by a scalar, then the block algebra
+`b K[G]` is isomorphic to `K = M₁(K)`. -/
+noncomputable def blockAlgebraAlgEquivMatrixOfMulOfEqSmul {c : G → K}
+    (hc : ∀ g, (b : MonoidAlgebra K G) * MonoidAlgebra.of K G g = c g • (b : MonoidAlgebra K G)) :
+    hb.BlockAlgebra ≃ₐ[K] Matrix (Fin 1) (Fin 1) K :=
+  (AlgEquiv.ofBijective (Algebra.ofId K _) ⟨(algebraMap K _).injective,
+    algebraMap_surjective_blockAlgebra_of_mul_of_eq_smul hb hc⟩).symm.trans <|
+    AlgEquiv.ofBijective (Algebra.ofId K _) ⟨(algebraMap K _).injective, fun M ↦
+      ⟨M 0 0, by ext i j; fin_cases i; fin_cases j; simp [Algebra.algebraMap_eq_smul_one]⟩⟩
+
+end Scalar
 
 end TauCeti

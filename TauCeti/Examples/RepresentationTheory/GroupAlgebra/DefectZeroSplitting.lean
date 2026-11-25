@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Unique
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.Block
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Algebra
 public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.Basic
@@ -23,8 +22,6 @@ exactly when its block algebra is a matrix algebra over `k`. The splitting hypot
   `𝔽₄`, which splits `C₃`, the two blocks `1 + α² r + α r²` and `1 + α r + α² r²` into which
   `r + r²` splits (`TauCeti.GroupAlgebraBlockExamples.centerMapRingHom_r_add_r_sq`) have block
   algebras isomorphic to `K = M₁(K)`.
-
-This is a Check of ModularCharactersAndBlocks §6.2 (defect zero).
 -/
 
 public section
@@ -104,14 +101,17 @@ theorem two_le_finrank_blockAlgebra_r_add_r_sq :
 theorem finrank_blockAlgebra_r_add_r_sq :
     finrank (ZMod 2) isBlockIdempotent_r_add_r_sq.BlockAlgebra = 2 := by
   have h3 : finrank (ZMod 2) (MonoidAlgebra (ZMod 2) C₃) = 3 := by
-    rw [(coeffLinearEquiv (ZMod 2)).finrank_eq, finrank_finsupp_self]
-    rfl
+    rw [(coeffLinearEquiv (ZMod 2)).finrank_eq, finrank_finsupp_self,
+      Fintype.card_multiplicative, ZMod.card]
   rw [(algEquivPiBlockAlgebra completeOrthogonalIdempotents_blocksF₂
     isBlockIdempotent_blocksF₂).toLinearEquiv.finrank_eq, finrank_pi_fintype,
     Fin.sum_univ_two] at h3
   have h0 : 0 < finrank (ZMod 2) (isBlockIdempotent_blocksF₂ 0).BlockAlgebra :=
     finrank_pos
   have h1 := two_le_finrank_blockAlgebra_r_add_r_sq
+  -- `blocksF₂ 1` is `toCenter (r + r²)` by `Matrix.cons_val_one`, definitionally, so the block
+  -- algebras of `isBlockIdempotent_blocksF₂ 1` and `isBlockIdempotent_r_add_r_sq` coincide; the
+  -- dependent type of the block algebra blocks rewriting with that equation, hence `change`.
   change _ + finrank (ZMod 2) isBlockIdempotent_r_add_r_sq.BlockAlgebra = 3 at h3
   omega
 
@@ -128,36 +128,6 @@ theorem isEmpty_algEquiv_matrix_blockAlgebra_r_add_r_sq (n : ℕ) :
   · simp at h
   · simp at h
   · nlinarith
-
-/-! ### Blocks on which the group acts by scalars -/
-
-section Scalar
-
-variable {K G : Type*} [Field K] [Monoid G] [Finite G]
-  {b : Subalgebra.center K (MonoidAlgebra K G)} (hb : IsBlockIdempotent b)
-
-/-- If every `g ∈ G` acts on the block idempotent `b` by a scalar, `b g = c(g) b`, then every
-element of the block algebra `b K[G]` is a scalar multiple of its identity `b`. -/
-theorem algebraMap_surjective_blockAlgebra_of_mul_of_eq_smul {c : G → K}
-    (hc : ∀ g, (b : MonoidAlgebra K G) * of K G g = c g • (b : MonoidAlgebra K G)) :
-    Function.Surjective (algebraMap K hb.BlockAlgebra) := by
-  have := Fintype.ofFinite G
-  intro x
-  have hx : x.val = (b : MonoidAlgebra K G) * x.val := (IsIdempotentElem.mul_corner_val _ x).symm
-  rw [mul_eq_smul_of_mul_of_eq_smul hc] at hx
-  exact ⟨_, Subtype.ext (by rw [IsIdempotentElem.Corner.val_algebraMap, ← hx])⟩
-
-/-- If every `g ∈ G` acts on the block idempotent `b` by a scalar, then the block algebra
-`b K[G]` is isomorphic to `K = M₁(K)`. -/
-noncomputable def blockAlgebraAlgEquivMatrixOfMulOfEqSmul {c : G → K}
-    (hc : ∀ g, (b : MonoidAlgebra K G) * of K G g = c g • (b : MonoidAlgebra K G)) :
-    hb.BlockAlgebra ≃ₐ[K] Matrix (Fin 1) (Fin 1) K :=
-  (AlgEquiv.ofBijective (Algebra.ofId K _) ⟨(algebraMap K _).injective,
-    algebraMap_surjective_blockAlgebra_of_mul_of_eq_smul hb hc⟩).symm.trans <|
-    AlgEquiv.ofBijective (Algebra.ofId K _) ⟨(algebraMap K _).injective, fun M ↦
-      ⟨M 0 0, by ext i j; fin_cases i; fin_cases j; simp [Algebra.algebraMap_eq_smul_one]⟩⟩
-
-end Scalar
 
 /-! ### Over a field containing a primitive cube root of unity -/
 
