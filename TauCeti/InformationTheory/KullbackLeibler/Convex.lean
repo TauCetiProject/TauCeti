@@ -7,6 +7,7 @@ module
 
 public import Mathlib.InformationTheory.KullbackLeibler.Basic
 public import TauCeti.Analysis.SpecialFunctions.Log.MulLog
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue
 
 /-!
@@ -217,8 +218,7 @@ theorem sq_sub_le_mul_klFun_add_klFun_sub {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤
     (sq_sqrt_sub_sqrt_le_mul_log_sub_mul_log_sub hm0 hy)
   rw [← hdef] at hJ
   have hxy : (x - y) ^ 2 = (√x - √y) ^ 2 * (√x + √y) ^ 2 := by
-    rw [← mul_pow, show (√x - √y) * (√x + √y) = √x ^ 2 - √y ^ 2 by ring, sq_sqrt hx,
-      sq_sqrt hy]
+    rw [← sq_abs (x - y), ← abs_sqrt_sub_sqrt_mul_sqrt_add_sqrt x y hx hy, mul_pow, sq_abs]
   have h1 : (√x + √y) ^ 2 ≤ 2 * (x + y) := by
     nlinarith [sq_sqrt hx, sq_sqrt hy, sq_nonneg (√x - √y)]
   have h2 : (√x - √y) ^ 2 ≤ 2 * (klFun x + klFun y - 2 * klFun m) := by

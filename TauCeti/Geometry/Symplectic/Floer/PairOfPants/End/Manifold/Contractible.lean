@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Manifold
+import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.PeriodicLoop
+import TauCeti.Geometry.Manifold.Topology
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic
 import TauCeti.Geometry.Symplectic.Floer.Tameness
 import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
@@ -329,55 +332,27 @@ theorem
     ⟨(le_max_right _ _).trans_lt hz.1, hz.2⟩
   have hS {z : ℝ × ℝ} (hz : a < z.1) : positiveEndChart q z ∈ thricePuncturedSphereReal :=
     positiveEndChart_mem_thricePuncturedSphereReal (ha₀.trans_lt hz)
-  have hHd (t : ℝ) : MDifferentiable I 𝓘(ℝ) (H q t) :=
-    (hHs.comp (contMDiff_const.prodMk contMDiff_id)).mdifferentiable one_ne_zero
-  have hfloer' (z : ℝ × ℝ) (hz : z ∈ Ioi a ×ˢ Icc 0 1) :
-      mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun w ↦ u (positiveEndChart q w)) z stdComplexLineReal +
-        J (positiveEndChart q z)
-          (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun w ↦ u (positiveEndChart q w)) z stdComplexLineImag -
-            ω.hamiltonianVectorField (positiveEndHamiltonian H q z.2)
-              (u (positiveEndChart q z))) = 0 := by
-    have hcl := isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart hKH hH hHd
-      (haT.trans hz.1.le)
-      ((hu.contMDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds (hS hz.1))).mdifferentiableAt
-        one_ne_zero) (hfloer _ (hS hz.1))
-    simpa only [hamiltonianVectorField_const, Pi.zero_apply, sub_zero] using
-      (ω.isComplexLinearMap_perturbedMFDeriv_iff (fun _ _ ↦ 0)
-        (fun w ↦ positiveEndHamiltonian H q w.2) (fun w ↦ u (positiveEndChart q w)) z
-        (J (positiveEndChart q z))).1 hcl
   obtain ⟨s₀, hs₀, hnull₀⟩ := hnull
-  -- Time reversal fixes `t = 0`, so isolation at `0` among contractible orbits transfers to `H'_q`.
-  have hiso' : ∀ x ∈ contractiblePeriodicSolutions
-      (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) 1, (∀ t, x t ∈ B) →
-      ∀ᶠ p in 𝓝 (x 0), ∀ x' ∈ contractiblePeriodicSolutions
-        (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) 1,
-        (∀ t, x' t ∈ B) → x' 0 = p → x' = x := by
-    intro x hx hxB
-    have h0 := hiso (fun t ↦ x (q.endSign * t))
-      (mem_contractiblePeriodicSolutions_comp_endSign_mul hx) (fun _ ↦ hxB _)
-    rw [mul_zero] at h0
-    refine h0.mono fun p hp x' hx' hx'B hx'0 ↦ funext fun t ↦ ?_
-    have heq := congrFun (hp (fun r ↦ x' (q.endSign * r))
-      (mem_contractiblePeriodicSolutions_comp_endSign_mul hx') (fun _ ↦ hx'B _)
-      (by simpa only [mul_zero] using hx'0)) (q.endSign * t)
-    simpa only [← mul_assoc, endSign_mul_self, one_mul] using heq
   obtain ⟨x, hx, hxB, hconv, hpt⟩ :=
     hω.exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated
       (contMDiff_uncurry_positiveEndHamiltonian hHs) (periodic_positiveEndHamiltonian hH) he hB
       he_inj hde
       (hu.comp (contDiff_positiveEndChart q 1).contMDiff.contMDiffOn fun _ hz ↦ hS hz.1)
       (fun _ _ _ ↦ by simp only [comp_apply, positiveEndChart_add_one])
-      (fun s hs t ↦ huB _ (hS hs))
+      (fun s hs t ↦ huB _ (hS (z := (s, t)) hs))
       ⟨a + 1, lt_add_one a, exists_nullhomotopic_positiveEndChart hu.continuousOn hs₀
         (add_pos_of_nonneg_of_pos ha₀ zero_lt_one) hnull₀⟩
-      (fun z ↦ J (positiveEndChart q z)) hc (fun z hz v ↦ hJc z (hab hz) v) hfloer'
-      (ne_top_of_le_ne_top hE (setLIntegral_floerEnergyDensity_comp_positiveEndChart_le q hKH hH hHd
-        (hu.mdifferentiableOn one_ne_zero) ha₀ haT))
-      (fun z hz ↦ hC z (hab hz)) hiso'
-  refine ⟨_, mem_contractiblePeriodicSolutions_comp_endSign_mul hx, fun _ ↦ hxB _, ?_, fun t ↦ ?_⟩
-  · rw [funext fun s ↦ comp_endChart_eq_comp_positiveEndChart (fun z ↦ e (u z)) q s]
-    exact hconv.comp _
-  · simpa only [comp_apply, endChart_eq_positiveEndChart] using hpt (q.endSign * t)
+      (fun z ↦ J (positiveEndChart q z)) hc (fun z hz v ↦ hJc z (hab hz) v)
+      (fun _ hz ↦ ω.mfderiv_comp_positiveEndChart_add_hamiltonianVectorField_eq_zero q hKH hH hHs
+        isOpen_thricePuncturedSphereReal hu hfloer (haT.trans hz.1.le) (hS hz.1))
+      (ω.setLIntegral_floerEnergyDensity_comp_positiveEndChart_ne_top_of_isOpen q hKH hH hHs
+        isOpen_thricePuncturedSphereReal hu hE haT fun _ ↦ hS)
+      (fun z hz ↦ hC z (hab hz))
+      (eventually_forall_eq_of_comp_endSign_mul
+        (fun _ ↦ mem_contractiblePeriodicSolutions_comp_endSign_mul) hiso)
+  exact ⟨_, mem_contractiblePeriodicSolutions_comp_endSign_mul hx, fun _ ↦ hxB _,
+    tendstoUniformly_endChart_of_positiveEndChart (σ := id) hconv,
+    tendsto_endChart_of_positiveEndChart (σ := id) hpt⟩
 
 /-- **Convergence of a contractible end of a Floer pair of pants to a nondegenerate contractible
 orbit.** Let `ω` be a nondegenerate two-form on a Hausdorff boundaryless manifold `M`, `K` equal to
@@ -422,10 +397,7 @@ theorem
         ∀ t, Tendsto (fun s ↦ u (endChart q (q.endSign * s, t))) atTop (𝓝 (y t)) :=
   hω.exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isolated q
     hKH hH (hHs.of_le one_le_two) he hB he_inj hde hu huB hnull J hfloer hE hC hc hJc
-    fun y hy hyB ↦
-      (hω.eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq hHs
-        (contractiblePeriodicSolutions_subset hy) (hnd y hy hyB)).mono fun _ hp y' hy' _ ↦
-          hp y' (contractiblePeriodicSolutions_subset hy')
+    (hω.forall_mem_contractiblePeriodicSolutions_hamiltonianVectorField_eventually_eq hHs hnd)
 
 /-- **Convergence of a contractible end of a Floer pair of pants in a closed manifold to a
 nondegenerate contractible orbit.** Specialization of
@@ -656,10 +628,9 @@ theorem exists_mem_contractiblePeriodicSolutions_integral_of_eq_smul_endAngularF
             (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) :=
   hω.exists_mem_contractiblePeriodicSolutions_integral_of_eq_smul_endAngularForm_of_isolated
     hK hKH hH (fun q ↦ (hHs q).of_le one_le_two) he hB he_inj hde hu huB hnull J hc hJc hfloer hA
-    hR hC fun q y hy hyB ↦
-      (hω.eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq (hHs q)
-        (contractiblePeriodicSolutions_subset hy) (hnd q y hy hyB)).mono fun _ hp y' hy' _ ↦
-          hp y' (contractiblePeriodicSolutions_subset hy')
+    hR hC fun q ↦
+      hω.forall_mem_contractiblePeriodicSolutions_hamiltonianVectorField_eventually_eq (hHs q)
+        (hnd q)
 
 /-- **The energy identity for `pairOfPantsPerturbation` with isolated contractible asymptotic orbits
 in a compact set.** Specialization of
@@ -780,10 +751,9 @@ theorem
             z (u z) :=
   hω.exists_mem_contractiblePeriodicSolutions_integral_pairOfPantsPerturbation_of_isolated
     hH (fun q ↦ (hHs q).of_le one_le_two) he hB he_inj hde hu huB hnull J hc hJc hfloer hA hC
-    fun q y hy hyB ↦
-      (hω.eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq (hHs q)
-        (contractiblePeriodicSolutions_subset hy) (hnd q y hy hyB)).mono fun _ hp y' hy' _ ↦
-          hp y' (contractiblePeriodicSolutions_subset hy')
+    fun q ↦
+      hω.forall_mem_contractiblePeriodicSolutions_hamiltonianVectorField_eventually_eq (hHs q)
+        (hnd q)
 
 /-- **The energy identity for `pairOfPantsPerturbation` with nondegenerate contractible asymptotic
 orbits on a closed manifold.** Specialization of

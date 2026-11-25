@@ -9,10 +9,10 @@ public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
-import Mathlib.Analysis.PSeries
-import Mathlib.Data.Pi.Interval
+public import TauCeti.Analysis.InnerProductSpace.Euclidean.IntegerPoints
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.PSeries.Shifted
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Topology.Algebra.InfiniteSum.PiProd
 
@@ -34,9 +34,6 @@ The construction is a product of one-dimensional bumps
 
 ## Main declarations
 
-* `TauCeti.latticePoint j`: the point of `EuclideanSpace ℝ ι` with integer coordinates
-  `j : ι → ℤ`; only finitely many of them lie in a ball
-  (`TauCeti.finite_setOf_norm_latticePoint_lt`).
 * `TauCeti.latticeBump n`: the smooth function `χ(x) = ∏ᵢ latticeBump₁ (xᵢ)`.
 * `TauCeti.hasSum_latticeBump_sub`: `∑_{j ∈ ℤⁿ} χ(x - j) = 1`.
 * `TauCeti.abs_lt_one_of_latticeBump_ne_zero`: `χ(x) ≠ 0` implies `|xᵢ| < 1` for every `i`.
@@ -131,40 +128,6 @@ theorem hasSum_latticeBump₁_sub (t : ℝ) : HasSum (fun k : ℤ ↦ latticeBum
   exact hasSum_sum_of_ne_finset_zero fun k hk ↦ latticeBump₁_sub_eq_zero t hk
 
 /-! ### The bump on `ℝⁿ` -/
-
-/-- The point of `EuclideanSpace ℝ ι` with integer coordinates `j`. -/
-noncomputable def latticePoint {ι : Type*} (j : ι → ℤ) : EuclideanSpace ℝ ι :=
-  WithLp.toLp 2 fun i ↦ (j i : ℝ)
-
-@[simp]
-theorem latticePoint_apply {ι : Type*} (j : ι → ℤ) (i : ι) : latticePoint j i = j i :=
-  (rfl)
-
-theorem latticePoint_sub {ι : Type*} (j j' : ι → ℤ) :
-    latticePoint (j - j') = latticePoint j - latticePoint j' := by
-  ext i
-  simp
-
-/-- The lattice point with coordinates `j` is the integer combination `∑ i, j i • eᵢ` of the
-standard basis vectors. -/
-theorem latticePoint_eq_sum {ι : Type*} [Fintype ι] (j : ι → ℤ) :
-    latticePoint j = ∑ i, (j i : ℝ) • EuclideanSpace.basisFun ι ℝ i := by
-  classical
-  ext k
-  simp [EuclideanSpace.basisFun_apply, Pi.single_apply]
-
-/-- Only finitely many lattice points lie in a ball. -/
-theorem finite_setOf_norm_latticePoint_lt {ι : Type*} [Fintype ι] (R : ℝ) :
-    {j : ι → ℤ | ‖latticePoint j‖ < R}.Finite := by
-  classical
-  refine (Set.finite_Icc (-fun _ : ι ↦ ⌈R⌉) fun _ ↦ ⌈R⌉).subset fun j hj ↦ ?_
-  have hi : ∀ i, |(j i : ℝ)| ≤ R := fun i ↦ by
-    simpa using (PiLp.norm_apply_le (latticePoint j) i).trans (le_of_lt hj)
-  refine ⟨fun i ↦ ?_, fun i ↦ ?_⟩
-  · have h : (-(j i) : ℝ) ≤ ⌈R⌉ := by linarith [(abs_le.1 (hi i)).1, Int.le_ceil R]
-    simp only [Pi.neg_apply, neg_le]
-    exact_mod_cast h
-  · exact Int.cast_le.1 ((abs_le.1 (hi i)).2.trans (Int.le_ceil R))
 
 variable (n : ℕ)
 
@@ -322,14 +285,9 @@ theorem latticeWeight_nonneg (d : Fin n → ℤ) : 0 ≤ latticeWeight d :=
 theorem summable_latticeWeight : Summable (latticeWeight (n := n)) := by
   refine Summable.prod_pi_of_nonneg (ι := Fin n) (f := fun _ (m : ℤ) ↦ ((1 + |(m : ℝ)|) ^ 2)⁻¹)
     (fun _ ↦ ?_) fun _ m ↦ by positivity
-  rw [summable_int_iff_summable_nat_and_neg]
-  have h : Summable fun m : ℕ ↦ (((m + 1 : ℕ) : ℝ) ^ 2)⁻¹ :=
-    (summable_nat_add_iff 1).2 (Real.summable_nat_pow_inv.2 one_lt_two)
-  have e : ∀ m : ℕ, (((m + 1 : ℕ) : ℝ) ^ 2)⁻¹ = ((1 + |((m : ℤ) : ℝ)|) ^ 2)⁻¹ := fun m ↦ by
-    rw [Int.cast_natCast, abs_of_nonneg (Nat.cast_nonneg m), Nat.cast_succ, add_comm]
-  have e' : ∀ m : ℕ, (((m + 1 : ℕ) : ℝ) ^ 2)⁻¹ = ((1 + |((-(m : ℤ) : ℤ) : ℝ)|) ^ 2)⁻¹ :=
-    fun m ↦ by rw [Int.cast_neg, abs_neg, ← e]
-  exact ⟨h.congr e, h.congr e'⟩
+  refine (summable_one_add_abs_int_rpow (r := -2) (by norm_num)).congr fun m ↦ ?_
+  rw [Real.rpow_neg (by positivity)]
+  norm_cast
 
 /-- Decay like `(1 + ‖x - j‖²)⁻ⁿ` around a point `x` of `ℝⁿ` is dominated by the lattice weight of
 the displacement of `j` from the integer part `⌊x⌋` of `x`. -/

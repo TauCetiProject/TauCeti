@@ -9,7 +9,9 @@ public import TauCeti.Analysis.ODE.PeriodicOrbitLimit
 public import TauCeti.Geometry.Manifold.Flow.Periodic
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
 import Mathlib.Analysis.Complex.Tietze
+import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.PeriodicLoop
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.Topology
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
 import TauCeti.Topology.Compactness.Compact
@@ -792,10 +794,9 @@ theorem exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer
   obtain ⟨x, hx, -, h⟩ :=
     hω.exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact
       (hH.of_le one_le_two) hHper he isCompact_univ he_inj.injOn (fun p _ ↦ hde p) hu hper
-      (fun _ _ _ ↦ mem_univ _) hnull J hc hJc hfloer hE hC fun x hx _ ↦
-        (hω.eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq hH
-          (contractiblePeriodicSolutions_subset hx) (hnd x hx)).mono fun _ hp y hy _ ↦
-            hp y (contractiblePeriodicSolutions_subset hy)
+      (fun _ _ _ ↦ mem_univ _) hnull J hc hJc hfloer hE hC
+      (hω.forall_mem_contractiblePeriodicSolutions_hamiltonianVectorField_eventually_eq hH
+        fun x hx _ ↦ hnd x hx)
   exact ⟨x, hx, h⟩
 
 end IsNondegenerate

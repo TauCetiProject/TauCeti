@@ -19,6 +19,7 @@ import TauCeti.Analysis.Calculus.FDeriv.EuclideanMatrix
 import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Matrix.EuclideanLin
+import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Topology.Algebra.Module.Determinant
 
@@ -46,10 +47,10 @@ The zeroth-order coefficient and the right-hand side transform as densities, bec
 volume element changes by the factor `J`. The transformed principal coefficient is again
 uniformly elliptic and bounded when `DΦ` and its inverse are bounded and `J` is bounded below
 (`TauCeti.PDE.UniformlyEllipticOn.pullbackPrincipal`), and it is `r`-Hölder when `a` is, `Φ` is
-Lipschitz and the inverse of `DΦ` and the Jacobian are `r`-Hölder
-(`TauCeti.PDE.exists_holderOnWith_matrixBilinearForm_pullbackPrincipal`); for `r = 1` this is
+Lipschitz and the inverse of `DΦ` and the Jacobian are `r`-Hölder, with an explicit constant
+(`TauCeti.PDE.holderOnWith_matrixBilinearForm_pullbackPrincipal`); for `r = 1` this is
 Lipschitz continuity. The transformed drift is `r`-Hölder under the same conditions
-(`TauCeti.PDE.exists_holderOnWith_pullbackDrift`). If moreover `Φ` has an inverse change of
+(`TauCeti.PDE.holderOnWith_pullbackDrift`). If moreover `Φ` has an inverse change of
 variables, the transformed drift, zeroth-order coefficient and right-hand side stay in `Lᵖ`
 (`TauCeti.PDE.memLp_pullbackDrift`, `TauCeti.PDE.memLp_pullbackDensity`); with `p = ∞`, bounded
 lower-order coefficients stay bounded.
@@ -91,9 +92,11 @@ formulation transfers (`TauCeti.PDE.energyFormH1_compL_eq_setIntegral`).
 * `TauCeti.PDE.matrixBilinearForm_pullbackPrincipal_eq_bilinearComp`: the bilinear form of the
   transformed principal coefficient, written with a left inverse `T` of `DΦ`, and
   `TauCeti.PDE.pullbackPrincipal_apply_apply_of_comp_eq_id`: its entries in the same terms.
-* `TauCeti.PDE.exists_holderOnWith_matrixBilinearForm_pullbackPrincipal`: Hölder principal
-  coefficients stay Hölder, with the same exponent; in particular Lipschitz ones stay Lipschitz.
-* `TauCeti.PDE.exists_holderOnWith_pullbackDrift`: Hölder drifts and divergence data stay Hölder.
+* `TauCeti.PDE.holderOnWith_matrixBilinearForm_pullbackPrincipal`: Hölder principal
+  coefficients stay Hölder, with the same exponent and an explicit constant; in particular
+  Lipschitz ones stay Lipschitz.
+* `TauCeti.PDE.holderOnWith_pullbackDrift`: Hölder drifts and divergence data stay Hölder, with an
+  explicit constant.
 * `TauCeti.PDE.setIntegral_inner_pullbackDrift_gradient_compL`: the divergence-datum integral is
   invariant under the change of variables.
 * `TauCeti.PDE.memLp_pullbackDensity`, `TauCeti.PDE.memLp_pullbackDrift`: the transformed
@@ -118,6 +121,9 @@ formulation transfers (`TauCeti.PDE.energyFormH1_compL_eq_setIntegral`).
 * `TauCeti.PDE.energyFormH1_w1pCompL_restrictL_eq_setIntegral`: for a pure divergence-form
   equation with a right-hand side `F ∈ H¹` and Jacobian determinants of absolute value one, the
   transformed right-hand side is `F ∘ Φ ∈ H¹`.
+* `TauCeti.PDE.eLpNorm_pullbackDensity_le`: for such changes of variables with Jacobian
+  determinants of absolute value one, the transformed density has at most the `Lᵖ` norm of the
+  original one.
 
 ## References
 
@@ -449,77 +455,78 @@ open scoped NNReal
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- **Hölder principal coefficients stay Hölder.** Let `Φ` map `s` into `t`, and let `T` be a
-pointwise left inverse of `DΦ` on `s`. If `x ↦ a(x)` is `r`-Hölder and bounded on `t` in the
-operator norm of its bilinear forms, `Φ` is Lipschitz on `s`, and `T` and the Jacobian
-`|det DΦ|` are `r`-Hölder and bounded on `s`, then the transformed principal coefficient
-`a'(x) = |det DΦ(x)| M(x)⁻¹ a(Φ x) M(x)⁻ᵀ` is `r`-Hölder on `s`. For `r = 1` this says that
-Lipschitz principal coefficients stay Lipschitz under a change of variables with Lipschitz
-derivative. -/
-theorem exists_holderOnWith_matrixBilinearForm_pullbackPrincipal
+pointwise left inverse of `DΦ` on `s`. If `x ↦ a(x)` is `r`-Hölder with constant `Ka` and bounded
+by `M` on `t` in the operator norm of its bilinear forms, `Φ` is `KΦ`-Lipschitz on `s`, `T` is
+`r`-Hölder with constant `KT` and bounded by `L` on `s`, and the Jacobian `|det DΦ|` is `r`-Hölder
+with constant `KJ` and bounded by `J` on `s`, then the transformed principal coefficient
+`a'(x) = |det DΦ(x)| DΦ(x)⁻¹ a(Φ x) DΦ(x)⁻ᵀ` is `r`-Hölder on `s` with constant
+`Ka KΦ^r J L² + M (J KT + L KJ) L + M J L KT`. For `r = 1` this says that Lipschitz principal
+coefficients stay Lipschitz under a change of variables with Lipschitz derivative. -/
+theorem holderOnWith_matrixBilinearForm_pullbackPrincipal
     {s t : Set (EuclideanSpace ℝ ι)} {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
     {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     {T : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι}
-    {KΦ KT KJ Ka r : ℝ≥0} {L J M : ℝ} (hmaps : MapsTo Φ s t)
+    {KΦ KT KJ Ka r L J M : ℝ≥0} (hmaps : MapsTo Φ s t)
     (hT : ∀ x ∈ s, T x ∘L fderiv ℝ Φ x = ContinuousLinearMap.id ℝ _)
     (hΦ : LipschitzOnWith KΦ Φ s) (hTh : HolderOnWith KT r T s) (hTL : ∀ x ∈ s, ‖T x‖ ≤ L)
     (hJ : HolderOnWith KJ r (fun x => |(fderiv ℝ Φ x).det|) s)
     (hJb : ∀ x ∈ s, |(fderiv ℝ Φ x).det| ≤ J)
     (ha : HolderOnWith Ka r (fun y => matrixBilinearForm (a y)) t)
     (haM : ∀ y ∈ t, ‖matrixBilinearForm (a y)‖ ≤ M) :
-    ∃ K, HolderOnWith K r (fun x => matrixBilinearForm (pullbackPrincipal Φ a x)) s := by
-  -- The coefficient is `g(|det DΦ|, a ∘ Φ, T*)` for the smooth map `g(j, B, S) = B(j S ·, S ·)`,
-  -- and the argument is `r`-Hölder and bounded on `s`.
-  have hg : ContDiff ℝ 1 fun p : ℝ × (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) ×
-      (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) => p.2.1.bilinearComp (p.1 • p.2.2) p.2.2 :=
-    contDiffOn_univ.1 ((contDiff_fst.comp contDiff_snd).contDiffOn.clm_bilinearComp
-      (contDiff_fst.smul (contDiff_snd.comp contDiff_snd)).contDiffOn
-      (contDiff_snd.comp contDiff_snd).contDiffOn)
+    HolderOnWith (Ka * KΦ ^ (r : ℝ) * (J * L) * L + M * (J * KT + L * KJ) * L +
+        M * (J * L) * KT) r (fun x => matrixBilinearForm (pullbackPrincipal Φ a x)) s := by
+  -- The coefficient is `(a ∘ Φ)(|det DΦ| T* ·, T* ·)`, each factor Hölder and bounded on `s`.
   have haΦ : HolderOnWith (Ka * KΦ ^ (r : ℝ)) r (fun x => matrixBilinearForm (a (Φ x))) s := by
     simpa only [mul_one, Function.comp_def] using ha.comp hΦ.holderOnWith hmaps
-  have hh := hJ.prodMk (haΦ.prodMk ((ContinuousLinearMap.adjoint (𝕜 := ℝ)
-    (E := EuclideanSpace ℝ ι) (F := EuclideanSpace ℝ ι)).isometry.comp_holderOnWith hTh))
-  obtain ⟨K, hK⟩ := hg.contDiffOn.exists_holderOnWith_comp (convex_closedBall 0 (max J (max M L)))
-    (isCompact_closedBall 0 _) hh fun x hx => mem_closedBall_zero_iff.2 <| by
-      simp only [Function.comp_apply, norm_prod_le_iff, Real.norm_eq_abs, abs_abs,
-        LinearIsometryEquiv.norm_map]
-      exact ⟨(hJb x hx).trans (le_max_left _ _),
-        (haM _ (hmaps hx)).trans ((le_max_left _ _).trans (le_max_right _ _)),
-        (hTL x hx).trans ((le_max_right _ _).trans (le_max_right _ _))⟩
-  refine ⟨K, hK.congr fun z hz => ?_⟩
-  rw [Function.comp_apply, matrixBilinearForm_pullbackPrincipal_eq_bilinearComp a (hT z hz)]
-  ext η ξ
-  simp
+  have hTa : HolderOnWith KT r (fun x => (T x).adjoint) s :=
+    (ContinuousLinearMap.adjoint (𝕜 := ℝ) (E := EuclideanSpace ℝ ι)
+      (F := EuclideanSpace ℝ ι)).isometry.comp_holderOnWith hTh
+  have hTaL (x : EuclideanSpace ℝ ι) (hx : x ∈ s) : ‖(T x).adjoint‖ ≤ L := by
+    rw [LinearIsometryEquiv.norm_map]
+    exact hTL x hx
+  have hJn (x : EuclideanSpace ℝ ι) (hx : x ∈ s) : ‖|(fderiv ℝ Φ x).det|‖ ≤ J := by
+    rw [Real.norm_eq_abs, abs_abs]
+    exact hJb x hx
+  refine (ContinuousLinearMap.holderOnWith_bilinearComp haΦ (hJ.smul_of_norm_le hTa hJn hTaL) hTa
+    (fun x hx => haM _ (hmaps hx)) (fun x hx => ?_) hTaL).congr fun x hx => ?_
+  · rw [norm_smul, NNReal.coe_mul]
+    exact mul_le_mul (hJn x hx) (hTaL x hx) (norm_nonneg _) J.coe_nonneg
+  · rw [matrixBilinearForm_pullbackPrincipal_eq_bilinearComp a (hT x hx)]
+    ext η ξ
+    simp
 
 /-- **Hölder drifts stay Hölder.** Let `Φ` map `s` into `t`, and let `T` be a pointwise left
-inverse of `DΦ` on `s`. If `b` is `r`-Hölder and bounded on `t`, `Φ` is Lipschitz on `s`, and `T`
-and the Jacobian `|det DΦ|` are `r`-Hölder and bounded on `s`, then the transformed vector field
-`b'(x) = |det DΦ(x)| M(x)⁻¹ b(Φ x)` is `r`-Hölder on `s`. A vector field `G` in a divergence
-datum `div G` transforms in the same way
-(`TauCeti.PDE.setIntegral_inner_pullbackDrift_gradient_compL`). -/
-theorem exists_holderOnWith_pullbackDrift {s t : Set (EuclideanSpace ℝ ι)}
+inverse of `DΦ` on `s`. If `b` is `r`-Hölder with constant `Kb` and bounded by `M` on `t`, `Φ` is
+`KΦ`-Lipschitz on `s`, `T` is `r`-Hölder with constant `KT` and bounded by `L` on `s`, and the
+Jacobian `|det DΦ|` is `r`-Hölder with constant `KJ` and bounded by `J` on `s`, then the
+transformed vector field `b'(x) = |det DΦ(x)| DΦ(x)⁻¹ b(Φ x)` is `r`-Hölder on `s` with constant
+`J (L Kb KΦ^r + M KT) + L M KJ`. A vector field `G` in a divergence datum `div G` transforms in
+the same way (`TauCeti.PDE.setIntegral_inner_pullbackDrift_gradient_compL`). -/
+theorem holderOnWith_pullbackDrift {s t : Set (EuclideanSpace ℝ ι)}
     {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
     {T : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι}
-    {KΦ KT KJ Kb r : ℝ≥0} {L J M : ℝ} (hmaps : MapsTo Φ s t)
+    {KΦ KT KJ Kb r L J M : ℝ≥0} (hmaps : MapsTo Φ s t)
     (hT : ∀ x ∈ s, T x ∘L fderiv ℝ Φ x = ContinuousLinearMap.id ℝ _)
     (hΦ : LipschitzOnWith KΦ Φ s) (hTh : HolderOnWith KT r T s) (hTL : ∀ x ∈ s, ‖T x‖ ≤ L)
     (hJ : HolderOnWith KJ r (fun x => |(fderiv ℝ Φ x).det|) s)
     (hJb : ∀ x ∈ s, |(fderiv ℝ Φ x).det| ≤ J) (hb : HolderOnWith Kb r b t)
-    (hbM : ∀ y ∈ t, ‖b y‖ ≤ M) : ∃ K, HolderOnWith K r (pullbackDrift Φ b) s := by
-  -- The drift is `g(|det DΦ|, b ∘ Φ, T)` for the smooth map `g(j, v, S) = j S v`, and the
-  -- argument is `r`-Hölder and bounded on `s`.
-  have hg : ContDiff ℝ 1 fun p : ℝ × EuclideanSpace ℝ ι ×
-      (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) => p.fst • p.snd.snd p.snd.fst :=
-    contDiff_fst.smul ((contDiff_snd.comp contDiff_snd).clm_apply (contDiff_fst.comp contDiff_snd))
+    (hbM : ∀ y ∈ t, ‖b y‖ ≤ M) :
+    HolderOnWith (J * (L * (Kb * KΦ ^ (r : ℝ)) + M * KT) + L * M * KJ) r (pullbackDrift Φ b) s := by
+  -- The drift is `|det DΦ| T (b ∘ Φ)`, each factor Hölder and bounded on `s`.
   have hbΦ : HolderOnWith (Kb * KΦ ^ (r : ℝ)) r (fun x => b (Φ x)) s := by
     simpa only [mul_one, Function.comp_def] using hb.comp hΦ.holderOnWith hmaps
-  obtain ⟨K, hK⟩ := hg.contDiffOn.exists_holderOnWith_comp (convex_closedBall 0 (max J (max M L)))
-    (isCompact_closedBall 0 _) (hJ.prodMk (hbΦ.prodMk hTh)) fun x hx =>
-      mem_closedBall_zero_iff.2 <| by
-        simp only [norm_prod_le_iff, Real.norm_eq_abs, abs_abs]
-        exact ⟨(hJb x hx).trans (le_max_left _ _),
-          (hbM _ (hmaps hx)).trans ((le_max_left _ _).trans (le_max_right _ _)),
-          (hTL x hx).trans ((le_max_right _ _).trans (le_max_right _ _))⟩
-  exact ⟨K, hK.congr fun z hz => (pullbackDrift_eq_smul_apply b (hT z hz)).symm⟩
+  have hTb : HolderOnWith (L * (Kb * KΦ ^ (r : ℝ)) + M * KT) r (fun x => T x (b (Φ x))) s :=
+    ((ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι)).holderOnWith_comp₂
+      hTh hbΦ hTL fun x hx => hbM _ (hmaps hx)).mono_const
+      (mul_le_of_le_one_left zero_le ContinuousLinearMap.norm_id_le)
+  have hJn (x : EuclideanSpace ℝ ι) (hx : x ∈ s) : ‖|(fderiv ℝ Φ x).det|‖ ≤ J := by
+    rw [Real.norm_eq_abs, abs_abs]
+    exact hJb x hx
+  refine (hJ.smul_of_norm_le hTb hJn fun x hx => ?_).congr fun x hx =>
+    (pullbackDrift_eq_smul_apply b (hT x hx)).symm
+  rw [NNReal.coe_mul]
+  exact ((T x).le_opNorm _).trans
+    (mul_le_mul (hTL x hx) (hbM _ (hmaps hx)) (norm_nonneg _) L.coe_nonneg)
 
 end Holder
 
@@ -834,11 +841,11 @@ theorem exists_uniformlyEllipticOn_and_holderOnWith_pullbackPrincipal [Nonempty 
   obtain ⟨lam', Lam', hellip⟩ :=
     exists_uniformlyEllipticOn_pullbackPrincipal hΦ hΨ hΨΦ hΦΨ hsU hsne hmaps ha
   -- Hölder bound: the Jacobian is constant on `s`, and `DΨ ∘ Φ` is the left inverse of `DΦ`.
-  obtain ⟨K', hK'⟩ := exists_holderOnWith_matrixBilinearForm_pullbackPrincipal (KJ := 0)
-    (J := 1) hmaps hcomp hΦl hT hΨL
+  exact ⟨lam', Lam', _, hellip, holderOnWith_matrixBilinearForm_pullbackPrincipal (KJ := 0)
+    (J := 1) hmaps hcomp hΦl hT (fun x hx => (hΨL x hx).trans (Real.le_coe_toNNReal L'))
     (fun x hx y hy => by simp only [habs x hx, habs y hy, edist_self, zero_le])
-    (fun x hx => (habs x hx).le) hK fun y hy => ha.opNorm_matrixBilinearForm_le hy
-  exact ⟨lam', Lam', K', hellip, hK'⟩
+    (fun x hx => by rw [habs x hx, NNReal.coe_one]) hK
+    fun y hy => (ha.opNorm_matrixBilinearForm_le hy).trans (Real.le_coe_toNNReal Lam)⟩
 
 /-- **Ellipticity and Lipschitz bounds under mutually inverse changes of variables.** Let `Φ` and
 `Ψ` be mutually inverse changes of variables, `Φ` of order one and `Ψ` of order two, with Jacobian
@@ -953,6 +960,24 @@ theorem energyFormH1_w1pCompL_restrictL_eq_setIntegral
     hΦ.ae_comp (W1p.value_restrictL_ae hD F), ae_restrict_mem Ω'.isOpen.measurableSet]
     with x h1 h2 hx
   rw [pullbackDensity_apply, hΦ.abs_det_fderiv_eq_one hΨ hΨΦ hΦΨ hx, one_mul, h1, h2]
+
+omit [DecidableEq ι] in
+/-- **The `Lᵖ` norm of a pulled-back density.** For mutually inverse changes of variables of
+order one with Jacobian determinants at least one in absolute value, the transformed density
+`f' = |det DΦ| (f ∘ Φ)` has at most the `Lᵖ` norm of `f`. -/
+theorem eLpNorm_pullbackDensity_le (hΦ : Wkp.IsChangeOfVariables 1 U' U Φ L 1)
+    (hΨ : Wkp.IsChangeOfVariables 1 U U' Ψ L' 1) (hΨΦ : LeftInvOn Ψ Φ U')
+    (hΦΨ : RightInvOn Ψ Φ U) {q : ENNReal} {f : EuclideanSpace ℝ ι → ℝ}
+    (hf : AEStronglyMeasurable f (mu.restrict U)) :
+    eLpNorm (pullbackDensity Φ f) q (mu.restrict U') ≤ eLpNorm f q (mu.restrict U) := by
+  have hmap : (mu.restrict (U' : Set (EuclideanSpace ℝ ι))).map Φ ≤ mu.restrict U := by
+    simpa using hΦ.map_restrict_le mu
+  have heq : pullbackDensity Φ f =ᵐ[mu.restrict U'] f ∘ Φ := by
+    filter_upwards [ae_restrict_mem U'.isOpen.measurableSet] with y hy
+    rw [pullbackDensity_apply, hΦ.abs_det_fderiv_eq_one hΨ hΨΦ hΦΨ hy, one_mul,
+      Function.comp_apply]
+  rw [eLpNorm_congr_ae heq, ← eLpNorm_map_measure (hf.mono_measure hmap) hΦ.aemeasurable]
+  exact eLpNorm_mono_measure f hmap
 
 end Inverse
 
