@@ -36,6 +36,8 @@ from `GL₂(ℤ/m)` to `GL₂(ℤ/n)` for `n ∣ m` and `m ≠ 0`.
 
 * `Subgroup.projectiveIndex_eq_index`: if `-1 ∈ H`, the projective index is the index.
 * `Subgroup.two_mul_projectiveIndex`: if `-1 ∉ H`, the index is twice the projective index.
+* `Subgroup.map_subgroupOf_le_map_adjoinNegOne_subgroupOf`: inside any subgroup, the image of `H`
+  lies in the image of `±H`.
 * `Subgroup.comap_adjoinNegOne`: adjoining `-1` commutes with preimages under a homomorphism that
   commutes with negation.
 * `Subgroup.projectiveIndex_comap_of_surjective`, `Subgroup.projectiveIndex_pointwise_smul`: the
@@ -96,6 +98,14 @@ theorem projectiveIndex_comap_of_surjective (H : Subgroup G) {f : G' →* G}
     (H.comap f).projectiveIndex = H.projectiveIndex := by
   rw [projectiveIndex_def, ← comap_adjoinNegOne H f hf, index_comap_of_surjective _ hs,
     projectiveIndex_def]
+
+/-- Inside any subgroup `K`, the image of `H` lies in the image of `±H`. For `Γ ≤ SL(2, ℤ)` and
+`K = 𝒮ℒ` this says that the cosets of `Γ` refine those of `±Γ`, which gives the projection
+`Subgroup.quotientMapOfLE` from the cusps of `Γ` to those of `±Γ`. -/
+theorem map_subgroupOf_le_map_adjoinNegOne_subgroupOf {M : Type*} [Group M] (H : Subgroup G)
+    (f : G →* M) (K : Subgroup M) :
+    (H.map f).subgroupOf K ≤ (H.adjoinNegOne.map f).subgroupOf K :=
+  subgroupOf_mono _ (map_mono H.le_adjoinNegOne)
 
 open scoped Pointwise in
 /-- Conjugation does not change the projective index. -/

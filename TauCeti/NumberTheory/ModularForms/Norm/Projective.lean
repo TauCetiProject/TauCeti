@@ -182,19 +182,6 @@ theorem weightedOrderOfVanishingOnSubgroupOrbit_eq_relIndex_mul_div
 
 /-! ### Geometric orders at the cusps -/
 
-/-- `-I · x`, read in `GL(2, ℝ)`, is `-x`: the coercion of the `rangeRestrict` of `-I` is
-`mapGL ℝ (-I) = -I`. -/
-private lemma coe_rangeRestrict_neg_one_mul (x : 𝒮ℒ) :
-    (((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict (-1) * x : 𝒮ℒ) : GL (Fin 2) ℝ) = -x := by
-  rw [Subgroup.coe_mul, MonoidHom.coe_rangeRestrict, Matrix.SpecialLinearGroup.mapGL_neg_one,
-    neg_one_mul]
-
-/-- The cosets of `Γ` refine those of `±Γ`. -/
-private lemma subgroupOf_le_adjoinNegOne :
-    (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ ≤
-      (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ :=
-  Subgroup.subgroupOf_mono _ (Subgroup.map_mono Γ.le_adjoinNegOne)
-
 /-- **The geometric order of `f` at a cusp of `Γ`.** The cusps of `Γ` are indexed by the cusp
 translation orbits of `±Γ`, the `T`-orbits on `𝒮ℒ ⧸ ±Γ`. At the orbit of the coset of `x`,
 representing the cusp `x⁻¹ ∞` of geometric width `h`, the geometric order is
@@ -271,7 +258,8 @@ coset of `±Γ` below `q`. It is twice the geometric order at the cusp of `q`
 private noncomputable def doubleWidthOrder (f : F)
     (q : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) : ℤ :=
   qExpansionOrderAtCusp
-    (2 * (minimalPeriod (TSL • ·) (Subgroup.quotientMapOfLE subgroupOf_le_adjoinNegOne q) : ℝ))
+    (2 * (minimalPeriod (TSL • ·)
+      (Subgroup.quotientMapOfLE (Γ.map_subgroupOf_le_map_adjoinNegOne_subgroupOf _ _) q) : ℝ))
     (quotientFunc f q)
 
 /-- **Rescaling from the period of `q` to twice the period below it**: for `m` the period at `q`
@@ -280,7 +268,8 @@ times the order in `q_m`. -/
 private lemma natCast_minimalPeriod_mul_doubleWidthOrder (f : F)
     (q : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) :
     (minimalPeriod (TSL • ·) q : ℤ) * doubleWidthOrder f q =
-      2 * minimalPeriod (TSL • ·) (Subgroup.quotientMapOfLE subgroupOf_le_adjoinNegOne q) *
+      2 * minimalPeriod (TSL • ·)
+          (Subgroup.quotientMapOfLE (Γ.map_subgroupOf_le_map_adjoinNegOne_subgroupOf _ _) q) *
         qExpansionOrderAtCusp (minimalPeriod (TSL • ·) q : ℝ) (quotientFunc f q) := by
   induction q using QuotientGroup.induction_on with
   | H x =>
@@ -304,8 +293,10 @@ private lemma natCast_minimalPeriod_mul_doubleWidthOrder (f : F)
 private lemma doubleWidthOrder_TSL_zpow_smul (f : F)
     (q : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) (j : ℤ) :
     doubleWidthOrder f (TSL ^ j • q) = doubleWidthOrder f q := by
-  have hπ : Subgroup.quotientMapOfLE subgroupOf_le_adjoinNegOne (TSL ^ j • q) =
-      TSL ^ j • Subgroup.quotientMapOfLE subgroupOf_le_adjoinNegOne q := by
+  have hπ : Subgroup.quotientMapOfLE (Γ.map_subgroupOf_le_map_adjoinNegOne_subgroupOf _ _)
+      (TSL ^ j • q) =
+        TSL ^ j • Subgroup.quotientMapOfLE (Γ.map_subgroupOf_le_map_adjoinNegOne_subgroupOf _ _)
+          q := by
     induction q using QuotientGroup.induction_on with
     | H x => rw [MulAction.Quotient.smul_mk, Subgroup.quotientMapOfLE_apply_mk,
         Subgroup.quotientMapOfLE_apply_mk, MulAction.Quotient.smul_mk]
@@ -328,8 +319,9 @@ private lemma doubleWidthOrder_neg_one_mul (f : F) (x : 𝒮ℒ) :
     rw [QuotientGroup.eq, Subgroup.mem_subgroupOf, Subgroup.map_mapGL_adjoinNegOne]
     have : ((((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict (-1) * x)⁻¹ * x : 𝒮ℒ) :
         GL (Fin 2) ℝ) = -1 := by
-      rw [Subgroup.coe_mul, InvMemClass.coe_inv, coe_rangeRestrict_neg_one_mul, inv_neg,
-        neg_mul, inv_mul_cancel]
+      rw [Subgroup.coe_mul, InvMemClass.coe_inv, Subgroup.coe_mul,
+        Matrix.SpecialLinearGroup.coe_rangeRestrict_mapGL_neg_one, neg_one_mul, inv_neg, neg_mul,
+        inv_mul_cancel]
     rw [this]
     exact Subgroup.neg_one_mem_adjoinNegOne _
   have hpos : (0 : ℝ) < 2 * (minimalPeriod (TSL • ·) (QuotientGroup.mk x :
@@ -344,16 +336,17 @@ private lemma doubleWidthOrder_neg_one_mul (f : F) (x : 𝒮ℒ) :
   rw [doubleWidthOrder, doubleWidthOrder, Subgroup.quotientMapOfLE_apply_mk,
     Subgroup.quotientMapOfLE_apply_mk, hπ]
   rw [_root_.SlashInvariantForm.quotientFunc_mk] at hana ⊢
-  rw [_root_.SlashInvariantForm.quotientFunc_mk, coe_rangeRestrict_neg_one_mul, inv_neg,
+  rw [_root_.SlashInvariantForm.quotientFunc_mk, Subgroup.coe_mul,
+    Matrix.SpecialLinearGroup.coe_rangeRestrict_mapGL_neg_one, neg_one_mul, inv_neg,
     ModularForm.slash_neg]
   exact qExpansionOrderAtCusp_smul (zpow_ne_zero k (neg_ne_zero.mpr one_ne_zero)) hana
 
 /-- `doubleWidthOrder` depends only on the cusp below the coset. -/
 private lemma doubleWidthOrder_eq_of_mk_eq (f : F)
     {q₁ q₂ : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ}
-    (h : (⟦Subgroup.quotientMapOfLE subgroupOf_le_adjoinNegOne q₁⟧ :
+    (h : (⟦Subgroup.quotientMapOfLE (Γ.map_subgroupOf_le_map_adjoinNegOne_subgroupOf _ _) q₁⟧ :
         CuspTranslationOrbit (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ))) =
-      ⟦Subgroup.quotientMapOfLE subgroupOf_le_adjoinNegOne q₂⟧) :
+      ⟦Subgroup.quotientMapOfLE (Γ.map_subgroupOf_le_map_adjoinNegOne_subgroupOf _ _) q₂⟧) :
     doubleWidthOrder f q₁ = doubleWidthOrder f q₂ := by
   induction q₁ using QuotientGroup.induction_on with
   | H x₁ =>
@@ -380,7 +373,8 @@ private lemma doubleWidthOrder_eq_of_mk_eq (f : F)
       rw [MulAction.Quotient.smul_mk, smul_eq_mul, eq_comm, QuotientGroup.eq,
         Subgroup.mem_subgroupOf]
       convert hgx using 1
-      rw [Subgroup.coe_mul, InvMemClass.coe_inv, Subgroup.coe_mul, coe_rangeRestrict_neg_one_mul]
+      rw [Subgroup.coe_mul, InvMemClass.coe_inv, Subgroup.coe_mul, Subgroup.coe_mul,
+        Matrix.SpecialLinearGroup.coe_rangeRestrict_mapGL_neg_one, neg_one_mul]
       simp only [Subgroup.coe_mul, InvMemClass.coe_inv, mul_neg, inv_neg, neg_mul]
     rw [hq, doubleWidthOrder_TSL_zpow_smul, doubleWidthOrder_neg_one_mul]
 
@@ -388,10 +382,11 @@ private lemma doubleWidthOrder_eq_of_mk_eq (f : F)
 private lemma doubleWidthOrder_eq_two_mul_geometricOrderAtCusp (f : F)
     (q : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) :
     (doubleWidthOrder f q : ℚ) =
-      2 * geometricOrderAtCusp f ⟦Subgroup.quotientMapOfLE subgroupOf_le_adjoinNegOne q⟧ := by
+      2 * geometricOrderAtCusp f
+        ⟦Subgroup.quotientMapOfLE (Γ.map_subgroupOf_le_map_adjoinNegOne_subgroupOf _ _) q⟧ := by
   set c : CuspTranslationOrbit (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)) :=
-    ⟦Subgroup.quotientMapOfLE subgroupOf_le_adjoinNegOne q⟧
-  have hout : Subgroup.quotientMapOfLE subgroupOf_le_adjoinNegOne
+    ⟦Subgroup.quotientMapOfLE (Γ.map_subgroupOf_le_map_adjoinNegOne_subgroupOf _ _) q⟧
+  have hout : Subgroup.quotientMapOfLE (Γ.map_subgroupOf_le_map_adjoinNegOne_subgroupOf _ _)
       (QuotientGroup.mk c.out.out : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) = c.out := by
     rw [Subgroup.quotientMapOfLE_apply_mk, QuotientGroup.out_eq']
   have hq : doubleWidthOrder f q = doubleWidthOrder f (QuotientGroup.mk c.out.out) :=
@@ -447,14 +442,18 @@ private lemma orderAtCuspTranslationOrbit_div_eq (f : F)
     (q : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) :
     (orderAtCuspTranslationOrbit f (⟦q⟧ : CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) :
         ℚ) / cuspTranslationOrbitWidth (⟦q⟧ : CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) =
-      geometricOrderAtCusp f ⟦Subgroup.quotientMapOfLE subgroupOf_le_adjoinNegOne q⟧ /
-        cuspTranslationOrbitWidth (⟦Subgroup.quotientMapOfLE subgroupOf_le_adjoinNegOne q⟧ :
+      geometricOrderAtCusp f
+          ⟦Subgroup.quotientMapOfLE (Γ.map_subgroupOf_le_map_adjoinNegOne_subgroupOf _ _) q⟧ /
+        cuspTranslationOrbitWidth
+          (⟦Subgroup.quotientMapOfLE (Γ.map_subgroupOf_le_map_adjoinNegOne_subgroupOf _ _) q⟧ :
           CuspTranslationOrbit (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ))) := by
   have hm : (0 : ℚ) < minimalPeriod (TSL • ·) q := mod_cast Nat.pos_of_neZero _
   have hh : (0 : ℚ) < minimalPeriod (TSL • ·)
-      (Subgroup.quotientMapOfLE subgroupOf_le_adjoinNegOne q) := mod_cast Nat.pos_of_neZero _
+      (Subgroup.quotientMapOfLE (Γ.map_subgroupOf_le_map_adjoinNegOne_subgroupOf _ _) q) :=
+    mod_cast Nat.pos_of_neZero _
   have hscale : ((minimalPeriod (TSL • ·) q : ℤ) * doubleWidthOrder f q : ℚ) =
-      ((2 * minimalPeriod (TSL • ·) (Subgroup.quotientMapOfLE subgroupOf_le_adjoinNegOne q) *
+      ((2 * minimalPeriod (TSL • ·)
+          (Subgroup.quotientMapOfLE (Γ.map_subgroupOf_le_map_adjoinNegOne_subgroupOf _ _) q) *
         qExpansionOrderAtCusp (minimalPeriod (TSL • ·) q : ℝ) (quotientFunc f q) : ℤ) : ℚ) :=
     mod_cast natCast_minimalPeriod_mul_doubleWidthOrder f q
   push_cast at hscale
@@ -504,7 +503,7 @@ theorem sum_orderAtCuspTranslationOrbit_eq_relIndex_mul_sum_geometricOrderAtCusp
       Subgroup.relIndex_map_map_of_injective _ _ Matrix.SpecialLinearGroup.mapGL_injective]
   rw [← sum_div_cuspTranslationOrbitWidth, ← sum_div_cuspTranslationOrbitWidth]
   simp_rw [orderAtCuspTranslationOrbit_div_eq f]
-  rw [Subgroup.sum_comp_quotientMapOfLE subgroupOf_le_adjoinNegOne
+  rw [Subgroup.sum_comp_quotientMapOfLE (Γ.map_subgroupOf_le_map_adjoinNegOne_subgroupOf _ _)
     (fun q ↦ geometricOrderAtCusp f ⟦q⟧ / cuspTranslationOrbitWidth
       (⟦q⟧ : CuspTranslationOrbit (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)))), hrel, nsmul_eq_mul]
 
