@@ -81,31 +81,21 @@ variable (K : Type*) [Field K] [Algebra K Ω] (p : ℕ) [NeZero p]
 cyclotomic tower, an element of `K(ζ_m)`. Here `K(ζ_{mp})` is a `K(ζ_m)`-algebra through the
 inclusion of fields of the tower. -/
 def extendedCyclotomicNumber (m : ℕ) [NeZero m] : T.field K m :=
-  letI := (inclusion (T.field_le K (dvd_mul_right m p))).toAlgebra
+  letI := T.fieldAlgebra K (dvd_mul_right m p)
   Algebra.norm (T.field K m) (1 - T.zeta K (m * p))
 
 variable (m : ℕ) [NeZero m]
 
 theorem extendedCyclotomicNumber_def :
-    letI := (inclusion (T.field_le K (dvd_mul_right m p))).toAlgebra
+    letI := T.fieldAlgebra K (dvd_mul_right m p)
     T.extendedCyclotomicNumber K p m = Algebra.norm (T.field K m) (1 - T.zeta K (m * p)) :=
   (rfl)
-
-/-- Inside `K(ζ_{mp})`, the image of `ζ_m` is `ζ_{mp} ^ p`. -/
-private theorem algebraMap_zeta :
-    letI := (inclusion (T.field_le K (dvd_mul_right m p))).toAlgebra
-    algebraMap (T.field K m) (T.field K (m * p)) (T.zeta K m) = T.zeta K (m * p) ^ p := by
-  let _ := (inclusion (T.field_le K (dvd_mul_right m p))).toAlgebra
-  rw [RingHom.algebraMap_toAlgebra]
-  simp [Nat.mul_div_cancel_left p (NeZero.pos m)]
 
 /-- `c_m` is nonzero unless `m = p = 1`, in which case it is `1 - ζ_1 = 0`. -/
 theorem extendedCyclotomicNumber_ne_zero (h : m * p ≠ 1) :
     T.extendedCyclotomicNumber K p m ≠ 0 := by
-  let _ := (inclusion (T.field_le K (dvd_mul_right m p))).toAlgebra
-  have : IsScalarTower K (T.field K m) (T.field K (m * p)) := IsScalarTower.of_algebraMap_eq' rfl
-  have : Module.Finite (T.field K m) (T.field K (m * p)) :=
-    Module.Finite.of_restrictScalars_finite K _ _
+  let _ := T.fieldAlgebra K (dvd_mul_right m p)
+  have := T.finite_fieldAlgebra K (dvd_mul_right m p)
   rw [extendedCyclotomicNumber_def, ne_eq, Algebra.norm_eq_zero_iff, sub_eq_zero]
   refine fun h1 ↦ (T.isPrimitiveRoot_zeta K (m * p)).ne_one ?_ h1.symm
   have := NeZero.ne (m * p)
@@ -114,11 +104,11 @@ theorem extendedCyclotomicNumber_ne_zero (h : m * p ≠ 1) :
 /-- **Rubin's normalization.** The relative norm of `ζ_{mp} - 1` is `c_m` up to the sign
 `(-1) ^ [K(ζ_{mp}) : K(ζ_m)]`. -/
 theorem norm_zeta_mul_sub_one :
-    letI := (inclusion (T.field_le K (dvd_mul_right m p))).toAlgebra
+    letI := T.fieldAlgebra K (dvd_mul_right m p)
     Algebra.norm (T.field K m) (T.zeta K (m * p) - 1) =
       (-1) ^ Module.finrank (T.field K m) (T.field K (m * p)) *
         T.extendedCyclotomicNumber K p m := by
-  let _ := (inclusion (T.field_le K (dvd_mul_right m p))).toAlgebra
+  let _ := T.fieldAlgebra K (dvd_mul_right m p)
   rw [← neg_sub, Algebra.norm_neg, extendedCyclotomicNumber_def]
 
 variable {p}
@@ -127,10 +117,10 @@ variable {p}
 irreducible over `K`. -/
 theorem extendedCyclotomicNumber_of_dvd (hirr : Irreducible (cyclotomic (m * p) K)) (h : p ∣ m) :
     T.extendedCyclotomicNumber K p m = 1 - T.zeta K m := by
-  let _ := (inclusion (T.field_le K (dvd_mul_right m p))).toAlgebra
-  have : IsScalarTower K (T.field K m) (T.field K (m * p)) := IsScalarTower.of_algebraMap_eq' rfl
+  let _ := T.fieldAlgebra K (dvd_mul_right m p)
+  have := T.isScalarTower_fieldAlgebra K (dvd_mul_right m p)
   exact (T.isPrimitiveRoot_zeta K (m * p)).norm_one_sub_of_dvd hirr
-    (T.algebraMap_zeta K p m) h
+    (by rw [T.algebraMap_zeta K, Nat.mul_div_cancel_left p (NeZero.pos m)]) h
 
 /-- **`c_m` when `p ∤ m`**: if the prime `p` does not divide `m` and `p * p' ≡ 1 [MOD m]`, then
 `c_m * (1 - ζ_m ^ p') = 1 - ζ_m`, provided `Φ_{mp}` is irreducible over `K`. Here `ζ_m ^ p'` is
@@ -139,16 +129,16 @@ the image of `ζ_m` under the inverse of the arithmetic Frobenius at `p`, so for
 theorem extendedCyclotomicNumber_mul_one_sub_pow_of_not_dvd [Fact p.Prime]
     (hirr : Irreducible (cyclotomic (m * p) K)) (h : ¬p ∣ m) {p' : ℕ} (hp' : p * p' ≡ 1 [MOD m]) :
     T.extendedCyclotomicNumber K p m * (1 - T.zeta K m ^ p') = 1 - T.zeta K m := by
-  let _ := (inclusion (T.field_le K (dvd_mul_right m p))).toAlgebra
-  have : IsScalarTower K (T.field K m) (T.field K (m * p)) := IsScalarTower.of_algebraMap_eq' rfl
+  let _ := T.fieldAlgebra K (dvd_mul_right m p)
+  have := T.isScalarTower_fieldAlgebra K (dvd_mul_right m p)
   exact (T.isPrimitiveRoot_zeta K (m * p)).norm_one_sub_mul_one_sub_pow_of_not_dvd hirr
-    (T.algebraMap_zeta K p m) h hp'
+    (by rw [T.algebraMap_zeta K, Nat.mul_div_cancel_left p (NeZero.pos m)]) h hp'
 
 /-- **The norm of `c_m` down to `K` is `Φ_{mp}(1)`**, when `Φ_{mp}` is irreducible over `K`. -/
 theorem norm_extendedCyclotomicNumber (hirr : Irreducible (cyclotomic (m * p) K)) :
     Algebra.norm K (T.extendedCyclotomicNumber K p m) = (cyclotomic (m * p) K).eval 1 := by
-  let _ := (inclusion (T.field_le K (dvd_mul_right m p))).toAlgebra
-  have : IsScalarTower K (T.field K m) (T.field K (m * p)) := IsScalarTower.of_algebraMap_eq' rfl
+  let _ := T.fieldAlgebra K (dvd_mul_right m p)
+  have := T.isScalarTower_fieldAlgebra K (dvd_mul_right m p)
   rw [extendedCyclotomicNumber_def, Algebra.norm_norm,
     (T.isPrimitiveRoot_zeta K (m * p)).norm_one_sub_eq_eval_cyclotomic hirr]
 
