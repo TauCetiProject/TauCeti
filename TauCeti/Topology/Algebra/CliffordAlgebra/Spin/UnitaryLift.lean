@@ -41,7 +41,7 @@ structure `J₀`, along a unitary frame, are continuous as well
   continuous.
 * `OrthonormalBasis.continuous_centralizerSpinCLift` and `TauCeti.continuous_unitarySpinCLift`:
   the lifts of the unitary group of a complex structure are continuous; the latter is bundled as
-  the continuous homomorphism `TauCeti.unitarySpinCContinuousLift`.
+  the continuous homomorphism `TauCeti.unitarySpinCLiftContinuousMonoidHom`.
 
 ## References
 
@@ -126,14 +126,14 @@ theorem continuous_unitarySpinCLift : Continuous (unitarySpinCLift hJ₀ e h₀ 
 /-- The lift `TauCeti.unitarySpinCLift` of `U(ℝ⁴, J₀) ⊆ SO(4)` to `Spinᶜ(4)`, as a continuous
 homomorphism. It is exposed so that its underlying homomorphism is `TauCeti.unitarySpinCLift` by
 definition, which is what the extension of structure group along it is stated with. -/
-@[expose] noncomputable def unitarySpinCContinuousLift :
+@[expose] noncomputable def unitarySpinCLiftContinuousMonoidHom :
     Subgroup.centralizer {J₀} →ₜ*
       spinCGroup (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0).ne_zero :=
   ⟨unitarySpinCLift hJ₀ e h₀ h₂, continuous_unitarySpinCLift hJ₀ e h₀ h₂⟩
 
 @[simp]
-theorem unitarySpinCContinuousLift_apply (g : Subgroup.centralizer {J₀}) :
-    unitarySpinCContinuousLift hJ₀ e h₀ h₂ g = unitarySpinCLift hJ₀ e h₀ h₂ g :=
+theorem unitarySpinCLiftContinuousMonoidHom_apply (g : Subgroup.centralizer {J₀}) :
+    unitarySpinCLiftContinuousMonoidHom hJ₀ e h₀ h₂ g = unitarySpinCLift hJ₀ e h₀ h₂ g :=
   (rfl)
 
 end TauCeti
