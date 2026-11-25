@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Basic
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Functor
 public import TauCeti.CategoryTheory.GradedObject.Total
+public import TauCeti.CategoryTheory.Limits.Shapes.Products
 public import TauCeti.CategoryTheory.Monoidal.Mon
 public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 
@@ -48,6 +49,10 @@ is quasicoherent because coproducts of quasicoherent sheaves are.
   `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.one_ιTotal_comp`: hence an algebra
   morphism out of `⨁ₙ Aₙ` is multiplicative and unital on the homogeneous summands
   (`mul_ιTotal` and `one_ιTotal` for the identity);
+* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.isIso_ιTotal_zero` and
+  `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.isIso_one_toQuasicoherentAlgebra`: a
+  graded algebra whose positive-degree components vanish is its degree-zero component, and its
+  direct sum has invertible unit when `A₀` does;
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.ιTotal_toQuasicoherentAlgebra_map`:
   the algebra morphism induced by a graded algebra morphism is its degree-`n` component on the
   summand `Aₙ`;
@@ -293,6 +298,22 @@ theorem one_ιTotal_comp {B : CommMon X.Modules} (A : GradedQuasicoherentAlgebra
     A.obj.toMon.one ≫ ιTotal A 0 ≫ k.hom.hom = η[B.X] :=
   (Category.assoc _ _ _).symm.trans
     ((congrArg (· ≫ k.hom.hom) (one_ιTotal A)).trans (IsMonHom.one_hom k.hom.hom))
+
+/-- If every homogeneous component of positive degree vanishes, the inclusion of the degree-zero
+component into the direct sum `⨁ₙ Aₙ` is an isomorphism. -/
+theorem isIso_ιTotal_zero (A : GradedQuasicoherentAlgebra X)
+    (h : ∀ n, n ≠ 0 → IsZero (A.obj.X n)) : IsIso (ιTotal A 0) :=
+  Cofan.IsColimit.isIso_inj_of_isInitial (isColimitιTotal A) 0 fun n hn ↦ (h n hn).isInitial
+
+/-- **A graded algebra concentrated in degree zero has trivial direct sum.** If the unit
+`𝒪_X ⟶ A₀` is an isomorphism and every homogeneous component of positive degree vanishes, the
+unit of the direct-sum algebra `⨁ₙ Aₙ` is an isomorphism. -/
+theorem isIso_one_toQuasicoherentAlgebra (A : GradedQuasicoherentAlgebra X)
+    [IsIso A.obj.toMon.one] (h : ∀ n, n ≠ 0 → IsZero (A.obj.X n)) :
+    IsIso η[(toQuasicoherentAlgebra.obj A).obj.X] := by
+  have := A.isIso_ιTotal_zero h
+  rw [← one_ιTotal]
+  exact IsIso.comp_isIso' inferInstance this
 
 /-- On the summand `Aₙ`, the algebra morphism induced by a graded algebra morphism `f` is the
 degree-`n` component of `f`. -/

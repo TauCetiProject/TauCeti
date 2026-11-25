@@ -79,7 +79,8 @@ private theorem exp_opB : exp opB = Matrix.toEuclideanCLM (𝕜 := ℝ) !![1, 0;
   rw [opB, exp_toEuclideanCLM (by ext i j; fin_cases i <;> fin_cases j <;> simp)]
   simp [Matrix.one_fin_two]
 
-private theorem integrableOn_coeff : IntegrableOn coeff (Icc 0 2) :=
+/-- The coefficient `P` is integrable on `[0, 2]`. -/
+theorem integrableOn_coeff : IntegrableOn coeff (Icc 0 2) :=
   (integrableOn_const (C := opB) measure_Icc_lt_top.ne).add
     ((integrableOn_const (C := opA - opB) measure_Icc_lt_top.ne).indicator measurableSet_Iio)
 

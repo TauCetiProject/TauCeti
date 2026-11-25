@@ -114,6 +114,17 @@ theorem StrongConvexOn.add_add_le_of_hasFDerivWithinAt (hf : StrongConvexOn s m 
     f x + f' (y - x) + m / 2 * ‖y - x‖ ^ 2 ≤ f y :=
   hf.add_add_le_of_hasLineDerivWithinAt hx hy (hd.hasLineDerivWithinAt _)
 
+/-- The squared dual norm of a derivative within the domain bounds the value gap
+of a strongly convex function to any comparison point in the domain. -/
+theorem StrongConvexOn.mul_sub_le_norm_sq_of_hasFDerivWithinAt (hf : StrongConvexOn s m f)
+    (hm : 0 ≤ m) (hx : x ∈ s) (hy : y ∈ s) (hd : HasFDerivWithinAt f f' s x) :
+    2 * m * (f x - f y) ≤ ‖f'‖ ^ 2 := by
+  have ht := hf.add_add_le_of_hasFDerivWithinAt hx hy hd
+  have hb : -(‖f'‖ * ‖y - x‖) ≤ f' (y - x) :=
+    (neg_le_neg (f'.le_opNorm _)).trans (neg_abs_le _)
+  nlinarith [mul_nonneg hm (sub_nonneg.mpr ht), mul_nonneg hm (sub_nonneg.mpr hb),
+    sq_nonneg (‖f'‖ - m * ‖y - x‖)]
+
 /-- **Tangent support for convex functions.** If `f` is convex on `s` and has derivative `f'`
 within `s` at a point `x ∈ s`, then `f` lies above its tangent hyperplane at `x` on `s`:
 `f x + f' (y - x) ≤ f y` for every `y ∈ s`. -/

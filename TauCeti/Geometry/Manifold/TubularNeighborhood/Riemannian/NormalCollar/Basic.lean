@@ -17,7 +17,7 @@ import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 
 Let `f : M → N` be a smooth embedding of a compact manifold into a Riemannian manifold, of
 codimension one, and `ν` a continuous field of unit normal vectors along `f`, a section of the
-normal bundle of `f` (`TauCeti.SmoothEmbedding.NormalSpace`, with its induced normal metric). The
+normal bundle of `f` (`Manifold.IsImmersion.NormalSpace`, with its induced normal metric). The
 **normal collar** of `f` along `ν` is
 
 `c_ν (x, t) = exp_{f x} (t ν x)`,
@@ -71,7 +71,7 @@ private theorem exists_isOpenEmbedding_normalExp_comp
     (hP : Module.finrank ℝ P = 1) :
     let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
     letI := f.normalSpaceFiberBundle hn hdim
-    let ν : M → Type _ := fun x ↦ f.NormalSpace x hn
+    let ν : M → Type _ := fun x ↦ f.isImmersion.NormalSpace x hn
     letI : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
     ∀ u : (x : M) → ν x, Continuous (fun x ↦ TotalSpace.mk' P x (u x)) → (∀ x, ‖u x‖ = 1) →
       ∃ ε > 0, (∀ x (t : ℝ), |t| < ε → TotalSpace.mk' P x (t • u x) ∈ f.normalExpDomain hn) ∧
@@ -132,7 +132,7 @@ theorem exists_isOpenEmbedding_normalCollar
     (hP : Module.finrank ℝ P = 1) :
     let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
     letI := f.normalSpaceFiberBundle hn hdim
-    let ν : M → Type _ := fun x ↦ f.NormalSpace x hn
+    let ν : M → Type _ := fun x ↦ f.isImmersion.NormalSpace x hn
     letI : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
     ∀ u : (x : M) → ν x, Continuous (fun x ↦ TotalSpace.mk' P x (u x)) → (∀ x, ‖u x‖ = 1) →
       ∃ ε > 0, (∀ x (t : ℝ), |t| < ε → TotalSpace.mk' P x (t • u x) ∈ f.normalExpDomain hn) ∧
@@ -155,7 +155,7 @@ theorem exists_isBicollar_normalCollar
     (hP : Module.finrank ℝ P = 1) :
     let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
     letI := f.normalSpaceFiberBundle hn hdim
-    let ν : M → Type _ := fun x ↦ f.NormalSpace x hn
+    let ν : M → Type _ := fun x ↦ f.isImmersion.NormalSpace x hn
     letI : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
     ∀ u : (x : M) → ν x, Continuous (fun x ↦ TotalSpace.mk' P x (u x)) → (∀ x, ‖u x‖ = 1) →
       ∃ ε > 0, IsBicollar f (fun p : M × ℝ ↦
