@@ -17,7 +17,10 @@ Facts about the limits of the Cesàro means `T⁻¹ ∫₀ᵀ φ t dt` of real f
 * `TauCeti.tendsto_average_of_forall_le`: if a nonnegative function is bounded, up to an
   arbitrarily small additive constant, by functions whose Cesàro means tend to `0`, its Cesàro
   means tend to `0`;
-* `TauCeti.tendsto_average_add`: Cesàro means of a sum converge to the sum of the limits.
+* `TauCeti.tendsto_average_add`: Cesàro means of a sum converge to the sum of the limits;
+* `TauCeti.tendsto_average_norm_apply_add`, `TauCeti.isClosed_setOf_tendsto_average_norm`: for a
+  continuous family `φ x` additive in `x`, the `x` for which the Cesàro means of `‖φ x t‖` tend
+  to `0` are closed under addition, and form a closed set when `‖φ x t‖ ≤ C ‖x‖`.
 -/
 
 public section
@@ -66,5 +69,54 @@ theorem tendsto_average_add {ψ₁ ψ₂ : ℝ → ℝ} {a₁ a₂ : ℝ}
     (h₂ : Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, ψ₂ t) atTop (𝓝 a₂)) :
     Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, (ψ₁ t + ψ₂ t)) atTop (𝓝 (a₁ + a₂)) := by
   simpa [intervalIntegral.integral_add (h₁i _) (h₂i _), mul_add] using h₁.add h₂
+
+section Family
+
+variable {H E : Type*} [NormedAddCommGroup H] [NormedAddCommGroup E] {φ : H → ℝ → E}
+
+/-- For a continuous family `φ` additive in `x`, the `x` for which the Cesàro means of `‖φ x t‖`
+tend to `0` are closed under addition. -/
+theorem tendsto_average_norm_apply_add (hc : ∀ x, Continuous (φ x))
+    (hadd : ∀ x y t, φ (x + y) t = φ x t + φ y t) {x y : H}
+    (hx : Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, ‖φ x t‖) atTop (𝓝 0))
+    (hy : Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, ‖φ y t‖) atTop (𝓝 0)) :
+    Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, ‖φ (x + y) t‖) atTop (𝓝 0) := by
+  have hxy := tendsto_average_add (fun T => (hc x).norm.intervalIntegrable 0 T)
+    (fun T => (hc y).norm.intervalIntegrable 0 T) hx hy
+  rw [add_zero] at hxy
+  refine tendsto_average_of_forall_le (fun T => (hc _).norm.intervalIntegrable 0 T)
+    (fun _ => norm_nonneg _) fun ε hε => ⟨fun t => ‖φ x t‖ + ‖φ y t‖,
+      fun T => ((hc x).norm.add (hc y).norm).intervalIntegrable 0 T, hxy, fun t => ?_⟩
+  dsimp only
+  rw [hadd]
+  linarith [norm_add_le (φ x t) (φ y t)]
+
+/-- For a continuous family `φ` additive in `x` with `‖φ x t‖ ≤ C ‖x‖`, the `x` for which the
+Cesàro means of `‖φ x t‖` tend to `0` form a closed set. -/
+theorem isClosed_setOf_tendsto_average_norm (hc : ∀ x, Continuous (φ x))
+    (hadd : ∀ x y t, φ (x + y) t = φ x t + φ y t) {C : ℝ} (hC : ∀ x t, ‖φ x t‖ ≤ C * ‖x‖) :
+    IsClosed {x | Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, ‖φ x t‖) atTop (𝓝 0)} := by
+  refine isClosed_of_closure_subset fun x hx => ?_
+  refine tendsto_average_of_forall_le (fun T => (hc x).norm.intervalIntegrable 0 T)
+    (fun _ => norm_nonneg _) fun ε hε => ?_
+  have hC' : 0 < |C| + 1 := by positivity
+  obtain ⟨y, hy, hxy⟩ := Metric.mem_closure_iff.1 hx (ε / (|C| + 1)) (div_pos hε hC')
+  refine ⟨fun t => ‖φ y t‖, fun T => (hc y).norm.intervalIntegrable 0 T, hy, fun t => ?_⟩
+  have hsplit : φ x t = φ y t + φ (x - y) t := by
+    rw [← hadd, add_sub_cancel]
+  have hbound : ‖φ (x - y) t‖ ≤ ε :=
+    calc ‖φ (x - y) t‖ ≤ C * dist x y := by
+          rw [dist_eq_norm]
+          exact hC _ _
+      _ ≤ (|C| + 1) * dist x y :=
+          mul_le_mul_of_nonneg_right (by linarith [le_abs_self C]) dist_nonneg
+      _ ≤ ε := by
+          rw [lt_div_iff₀ hC'] at hxy
+          linarith
+  dsimp only
+  rw [hsplit]
+  linarith [norm_add_le (φ y t) (φ (x - y) t)]
+
+end Family
 
 end TauCeti
