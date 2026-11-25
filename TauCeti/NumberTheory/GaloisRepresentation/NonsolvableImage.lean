@@ -44,8 +44,8 @@ to continuous representations of profinite Galois groups as well.
 
 ## References
 
-* L. Dieulefait, A. Pacetti, *Modularity of compatible systems of Galois representations*,
-  proof of Theorem 1.5.
+* L. V. Dieulefait, A. M. Pacetti, *A simplified proof of Serre's conjecture*,
+  arXiv:2108.07577v2, Theorem 1.5 and its proof, p. 4.
 -/
 
 public section

@@ -48,8 +48,8 @@ residual Galois representations, where it survives the solvable base changes of 
 
 ## References
 
-* L. Dieulefait, A. Pacetti, *Modularity of compatible systems of Galois representations*,
-  proof of Theorem 1.5.
+* L. V. Dieulefait, A. M. Pacetti, *A simplified proof of Serre's conjecture*,
+  arXiv:2108.07577v2, Theorem 1.5 and its proof, p. 4.
 -/
 
 public section
