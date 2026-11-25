@@ -33,7 +33,9 @@ treated in `TauCeti.Geometry.Symplectic.Floer.Continuation.SobolevRealization`.
 * `TauCeti.SymplecticForm.floerJetCoeff` is the coefficient field of `D_u` on jets:
   `(v, v_s, v_t) ↦ v_s + J(z, u z) v_t + A(z) v`, so that on the jet `(ξ, ∂s ξ, ∂t ξ)` of a section
   it gives `D_u ξ` (`TauCeti.SymplecticForm.floerJetCoeff_jet`). At `z` it depends on the data only
-  through their values at `z` (`TauCeti.SymplecticForm.floerJetCoeff_congr_data`), and it is
+  through their values at `z` (`TauCeti.SymplecticForm.floerJetCoeff_congr_data`); for a constant
+  complex structure `J₀` it is that of `∂s + J₀ ∂t - dX_{K_s}(u) - J₀ dX_{K_t}(u)`
+  (`TauCeti.SymplecticForm.floerJetCoeff_const`); it is
   continuous for data that are `C¹` (with `C²` Hamiltonians `K_s`, `K_t`) along the graph of `u`
   (`TauCeti.SymplecticForm.continuous_floerJetCoeff`), and for the datum
   `H_t dt` it is bounded where `u` and the slice defect `∂t u - X_{H_t}(u)` are
@@ -86,11 +88,27 @@ for a Floer trajectory these are
 need only be continuous, and their nondegeneracy as Hamiltonian orbits is replaced by that of the
 shifted fields.
 
+The Fredholm property and the index of `D_u` depend only on the asymptotic orbits and on the end
+Hamiltonians of the Floer data, and in a unitary trivialization, for Floer data with a Hamiltonian
+`H` with a nondegenerate one-periodic orbit `x` at both ends, `D_u` is Fredholm of index zero along
+maps `u` from `x` to itself; both are proved by deformation in
+`TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm`, which proves
+`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_of_cylindrical`,
+`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_of_cylindrical_data`,
+`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt` and
+`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt_of_cylindrical`
+among others.
+
 The semi-Fredholm estimate for the formal adjoint `D_u^*` on `C²` covector fields is
 `TauCeti.SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint_add`
 along a Floer trajectory, with a version for data cylindrical near the ends (suffix
-`_of_cylindrical`). The finiteness of the cokernel, hence the Fredholm property and the index,
-still needs the Sobolev realization of `D_u^*` and the regularity of weak `L²` cokernel elements.
+`_of_cylindrical`). In a unitary trivialization the Fredholm property for distinct ends
+`x₋ ≠ x₊` follows from a parametrix built from the invertible end models, without the adjoint
+(`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_cylindrical` in
+`TauCeti.Geometry.Symplectic.Floer.Sobolev.Parametrix`), and for every compatible almost complex
+structure it follows by deformation
+(`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible`); the value
+of the index for distinct ends remains open.
 
 ## References
 
@@ -146,6 +164,20 @@ theorem floerJetCoeff_jet (ω : SymplecticForm V) (J : ℝ × ℝ → V → V �
   simp only [floerJetCoeff_apply, floerLinearization_eq_add, jet_apply, stdComplexLineReal_eq,
     stdComplexLineImag_eq]
 
+/-- **The coefficients of the linearized operator for a constant almost complex structure.** For a
+constant `J`, the perturbation `K = H dt` of an autonomous Hamiltonian and any map `u`, the
+coefficient field of the linearized Floer operator on jets is that of `∂s + J ∂t - J dX_H(u)`. -/
+theorem floerJetCoeff_const_eq (ω : SymplecticForm V) (J : AlmostComplexStructure V)
+    (H : V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ H) u z =
+      firstOrderJetCoeff J.toLinearMap.toContinuousLinearMap
+        (-(J.toLinearMap.toContinuousLinearMap.comp
+          (fderiv ℝ (ω.hamiltonianVectorField H) (u z)))) := by
+  rw [floerJetCoeff_def]
+  congr 1
+  ext v
+  simp [floerLinearizationCoeff_apply, hamiltonianVectorField_const]
+
 /-- The linearized Floer operator `D_u` along `u`, as an operator from the Sobolev space
 `W^{1,2}(ℝ × S¹, V)` (`TauCeti.CylinderSobolev.H1`) to `L²(ℝ × S¹, V)`. It is `0` by convention
 when the coefficients of `D_u` are not essentially bounded on the cylinder. -/
@@ -191,6 +223,17 @@ theorem floerJetCoeff_congr_data (ω : SymplecticForm V) {J J' : ℝ × ℝ → 
     ω.floerJetCoeff J Ks Kt u z = ω.floerJetCoeff J' Ks' Kt' u z :=
   ContinuousLinearMap.ext fun v ↦ by
     simp only [floerJetCoeff_apply, floerLinearizationCoeff_apply, hJ, hKs, hKt]
+
+/-- For a constant complex structure `J₀`, the coefficient field of the linearized Floer operator
+is that of `∂s + J₀ ∂t - dX_{K_s}(u) - J₀ dX_{K_t}(u)`: the term in the derivative of the complex
+structure vanishes. -/
+theorem floerJetCoeff_const (ω : SymplecticForm V) (J₀ : V →L[ℝ] V)
+    (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.floerJetCoeff (fun _ _ ↦ J₀) Ks Kt u z =
+      firstOrderJetCoeff J₀ (-fderiv ℝ (ω.hamiltonianVectorField (Ks z)) (u z) -
+        J₀.comp (fderiv ℝ (ω.hamiltonianVectorField (Kt z)) (u z))) := by
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  simp [floerJetCoeff_apply, floerLinearizationCoeff_apply, sub_eq_add_neg]
 
 /-- The coefficient field of the linearized Floer operator on jets is continuous when the data are
 `C¹` (and the Hamiltonians `C²`) along the graph of a `C¹` map `u`. -/
@@ -245,11 +288,9 @@ theorem exists_forall_norm_floerJetCoeff_le (ω : SymplecticForm V) {H : ℝ →
   -- The data as continuous functions of `(t, y)`, bounded on the compact set `K`.
   have hdJ : Continuous fun p : ℝ × V ↦
       fderiv ℝ (fun y ↦ (J p.1 y).toLinearMap.toContinuousLinearMap) p.2 :=
-    (ContDiff.fderiv (f := fun (p : ℝ × V) y ↦ (J p.1 y).toLinearMap.toContinuousLinearMap)
-      (hJ.comp (contDiff_fst.fst.prodMk contDiff_snd)) (contDiff_snd (n := 0)) (by simp)).continuous
+    continuous_fderiv_slice_right (f := fun t y ↦ (J t y).toLinearMap.toContinuousLinearMap) hJ
   have hdX : Continuous fun p : ℝ × V ↦ fderiv ℝ (ω.hamiltonianVectorField (H p.1)) p.2 :=
-    (ContDiff.fderiv (f := fun (p : ℝ × V) y ↦ ω.hamiltonianVectorField (H p.1) y)
-      (hX.comp (contDiff_fst.fst.prodMk contDiff_snd)) (contDiff_snd (n := 0)) (by simp)).continuous
+    continuous_fderiv_slice_right (f := fun t ↦ ω.hamiltonianVectorField (H t)) hX
   set K : Set (ℝ × V) := Icc 0 1 ×ˢ Metric.closedBall 0 Cu
   have hK : IsCompact K := isCompact_Icc.prod (isCompact_closedBall 0 Cu)
   obtain ⟨BJ, hBJ⟩ := hK.exists_bound_of_continuousOn hJ.continuous.continuousOn

@@ -119,6 +119,20 @@ theorem mapOrientation_neg (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b :
     e.mapOrientation ι hb (-o) = -e.mapOrientation ι hb o :=
   Module.Ray.map_neg _ o
 
+/-- Transporting an orientation of the model fibre back to the fibre commutes with negation. -/
+@[simp]
+theorem mapOrientation_symm_neg (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B}
+    (hb : b ∈ e.baseSet) (o : Orientation ℝ F ι) :
+    (e.mapOrientation ι hb).symm (-o) = -(e.mapOrientation ι hb).symm o := by
+  rw [Equiv.symm_apply_eq, mapOrientation_neg, Equiv.apply_symm_apply]
+
+/-- A trivialization reading `o` as `-ω` reads `-o` as `ω`. -/
+theorem mapOrientation_symm_eq_neg_of_eq_neg (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B}
+    (hb : b ∈ e.baseSet) {o : Orientation ℝ (E b) ι} {ω : Orientation ℝ F ι}
+    (h : e.mapOrientation ι hb o = -ω) :
+    (e.mapOrientation ι hb).symm ω = -o := by
+  rw [← neg_neg ω, ← h, mapOrientation_symm_neg, Equiv.symm_apply_apply]
+
 /-- Reading a fibre orientation in a trivialization commutes with reindexing its index type. -/
 @[simp]
 theorem mapOrientation_reindex {ι' : Type*} (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B}

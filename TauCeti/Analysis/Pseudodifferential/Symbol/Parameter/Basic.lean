@@ -14,7 +14,7 @@ import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.ContinuousLinearMapInverse
-import TauCeti.Analysis.Complex.SectorBounds
+import TauCeti.Analysis.Complex.Sector.Bounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
@@ -45,6 +45,9 @@ sector of spectral parameters, as used for contour integrals, lies in a slightly
   `TauCeti.parameterWeight_rpow_le_mul_one_add_norm_sq_rpow`: the weight dominates
   `⟨ξ⟩ = (1 + ‖ξ‖²) ^ (1 / 2)` and `1 + ‖z‖ ^ (1 / 2)`, and at a fixed spectral parameter it is at
   most a multiple of `⟨ξ⟩`;
+* `TauCeti.parameterWeight_add_le`, `TauCeti.parameterWeight_rpow_le_mul_parameterWeight_add_rpow`:
+  shifting the spectral parameter by `u` changes the weight by at most the factor
+  `1 + ‖u‖ ^ (1 / 2)`;
 * `TauCeti.ParameterSymbol.inclusion`: the order inclusions, and the complex vector space
   structure of each class;
 * `TauCeti.ParameterSymbol.comp`: the pointwise composition of symbols of orders `m'` and `m` has
@@ -66,7 +69,10 @@ sector of spectral parameters, as used for contour integrals, lies in a slightly
 * `TauCeti.ParameterSymbol.shiftedLaplacian`, `TauCeti.ParameterSymbol.isElliptic_shiftedLaplacian`:
   for `s ≥ 0` the symbol `(s + ‖ξ‖²) - z` of `s - Δ - z` has order `2` and is elliptic with
   parameter on every sector `Re z ≤ c ‖z‖`, `c < 1`, on which `s + ‖z‖` is bounded below by a
-  positive constant. Hence the resolvent symbol `((s + ‖ξ‖²) - z)⁻¹` has order `-2`
+  positive constant, and also on every half plane `Re z ≤ s - δ`, `δ > 0`, which for `δ < s`
+  contains the closed negative real axis
+  (`TauCeti.ParameterSymbol.isElliptic_shiftedLaplacian_of_re_le`).
+  Hence the resolvent symbol `((s + ‖ξ‖²) - z)⁻¹` has order `-2`
   (`TauCeti.ParameterSymbol.coefficient_inverse_shiftedLaplacian`). For `s = 0` it is the principal
   resolvent symbol `(‖ξ‖² - z)⁻¹`, which keeps its low-frequency values: at `ξ = 0` it is `1` for
   `z = -1` and `1 / 2` for `z = -2`.
@@ -183,6 +189,33 @@ theorem parameterWeight_rpow_le_mul_one_add_norm_sq_rpow (ξ : CoordinateSpace n
       _ ≤ (3 * (1 + ‖z‖) * (1 + ‖ξ‖ ^ 2)) ^ (r / 2) :=
           Real.rpow_le_rpow (by positivity) hsq (by linarith)
       _ = _ := by rw [abs_of_nonneg hr, Real.mul_rpow (by positivity) (by positivity)]
+
+/-- Shifting the spectral parameter by `u` enlarges the parameter weight by at most the factor
+`1 + ‖u‖ ^ (1 / 2)`. -/
+theorem parameterWeight_add_le (ξ : CoordinateSpace n) (z u : ℂ) :
+    parameterWeight ξ (z + u) ≤ (1 + Real.sqrt ‖u‖) * parameterWeight ξ z := by
+  have hsq : Real.sqrt ‖z + u‖ ≤ Real.sqrt ‖z‖ + Real.sqrt ‖u‖ := by
+    rw [Real.sqrt_le_left (by positivity)]
+    nlinarith [norm_add_le z u, Real.sq_sqrt (norm_nonneg z), Real.sq_sqrt (norm_nonneg u),
+      mul_nonneg (Real.sqrt_nonneg ‖z‖) (Real.sqrt_nonneg ‖u‖)]
+  have := Real.sqrt_nonneg ‖u‖
+  have := Real.sqrt_nonneg ‖z‖
+  rw [parameterWeight_def, parameterWeight_def]
+  nlinarith [norm_nonneg ξ]
+
+/-- For a nonpositive exponent `r`, shifting the spectral parameter by `u` changes the power
+`w ^ r` of the parameter weight by at most the factor `(1 + ‖u‖ ^ (1 / 2)) ^ (-r)`. -/
+theorem parameterWeight_rpow_le_mul_parameterWeight_add_rpow (ξ : CoordinateSpace n) (z u : ℂ)
+    {r : ℝ} (hr : r ≤ 0) :
+    parameterWeight ξ z ^ r ≤ (1 + Real.sqrt ‖u‖) ^ (-r) * parameterWeight ξ (z + u) ^ r := by
+  have hk : 0 < 1 + Real.sqrt ‖u‖ := by positivity
+  calc parameterWeight ξ z ^ r
+      = (1 + Real.sqrt ‖u‖) ^ (-r) * ((1 + Real.sqrt ‖u‖) * parameterWeight ξ z) ^ r := by
+        rw [Real.mul_rpow hk.le (parameterWeight_pos ξ z).le, ← mul_assoc, ← Real.rpow_add hk,
+          neg_add_cancel, Real.rpow_zero, one_mul]
+    _ ≤ (1 + Real.sqrt ‖u‖) ^ (-r) * parameterWeight ξ (z + u) ^ r :=
+        mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_nonpos (parameterWeight_pos ξ _)
+          (parameterWeight_add_le ξ z u) hr) (by positivity)
 
 variable (n) in
 /-- The anisotropic dilation `((y, η), μ) ↦ ((y, t η), t² μ)` of the position, frequency and
@@ -1057,6 +1090,10 @@ theorem IsSmoothing.neg {a : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing) :
   obtain ⟨a', ha'⟩ := ha m'
   exact ⟨-a', by simp [ha']⟩
 
+@[simp]
+theorem isSmoothing_neg_iff {a : ParameterSymbol n Λ V W m} : (-a).IsSmoothing ↔ a.IsSmoothing :=
+  ⟨fun ha => neg_neg a ▸ ha.neg, IsSmoothing.neg⟩
+
 theorem IsSmoothing.sub {a b : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing)
     (hb : b.IsSmoothing) : (a - b).IsSmoothing := by
   rw [sub_eq_add_neg]
@@ -1065,6 +1102,13 @@ theorem IsSmoothing.sub {a b : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing)
 theorem IsSmoothing.inclusion {a : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing) (h : m ≤ m') :
     (inclusion h a).IsSmoothing :=
   fun m'' => (ha m'').imp fun _ hb => by rw [hb, coefficient_inclusion]
+
+/-- Including a parameter-dependent symbol into a higher order does not change whether it is
+smoothing. -/
+@[simp]
+theorem isSmoothing_inclusion_iff {a : ParameterSymbol n Λ V W m} {h : m ≤ m'} :
+    (inclusion h a).IsSmoothing ↔ a.IsSmoothing :=
+  ⟨fun ha m'' => (ha m'').imp fun _ hb => by rw [hb, coefficient_inclusion], (·.inclusion h)⟩
 
 theorem IsSmoothing.spatialDeriv {a : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing)
     (v : CoordinateSpace n) : (a.spatialDeriv v).IsSmoothing := fun m' => by
@@ -1281,6 +1325,34 @@ theorem isElliptic_shiftedLaplacian {s c δ : ℝ} (hs : 0 ≤ s) (hc : c < 1) (
     exact (h x ξ hz).1
   · rw [coefficient_shiftedLaplacian s x ξ hz]
     exact (h x ξ hz).2
+
+/-- **Parameter-ellipticity of the shifted Laplacian near the negative real axis.** For `δ > 0`,
+the symbol of `s - Δ - z` is elliptic with parameter on every open set `Λ` of spectral parameters
+in the half plane `Re z ≤ s - δ`. Unlike the sectors of
+`TauCeti.ParameterSymbol.isElliptic_shiftedLaplacian`, such a set may contain `0` when `δ < s`,
+and so a neighbourhood of the closed negative real axis. -/
+theorem isElliptic_shiftedLaplacian_of_re_le {s δ : ℝ} (hδ : 0 < δ)
+    (hΛ : ∀ z ∈ Λ, z.re ≤ s - δ) :
+    (shiftedLaplacian V s : ParameterSymbol n Λ V V 2).IsElliptic := by
+  -- Write `(s + ‖ξ‖²) - z = (δ + ‖ξ‖²) - (z - (s - δ))`, with `z - (s - δ)` in the left half plane.
+  have heq (ξ : CoordinateSpace n) (z : ℂ) :
+      (((δ + ‖ξ‖ ^ 2 : ℝ) : ℂ) - (z - (s - δ : ℝ))) = ((s + ‖ξ‖ ^ 2 : ℝ) : ℂ) - z := by
+    push_cast
+    ring
+  have h (ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :=
+    isInvertible_ofReal_sub_smul_id_and_norm_inverse_le V one_pos zero_lt_one hδ
+      (q := δ + ‖ξ‖ ^ 2) (z := z - (s - δ : ℝ)) (by linarith)
+      (by simp only [Complex.sub_re, Complex.ofReal_re, zero_mul]; linarith [hΛ z hz])
+      (by linarith [norm_nonneg (z - (s - δ : ℝ)), sq_nonneg ‖ξ‖])
+  refine ⟨fun x ξ z hz ↦ ?_, fun K _ ↦
+    ⟨((1 - max 0 (-1)) / 2 / (3 * (1 + 1⁻¹ + δ⁻¹)))⁻¹ * (1 + Real.sqrt ‖((s - δ : ℝ) : ℂ)‖) ^ 2,
+      fun x _ ξ z hz ↦ ?_⟩⟩
+  · rw [coefficient_shiftedLaplacian s x ξ hz, ← heq]
+    exact (h ξ hz).1
+  · rw [coefficient_shiftedLaplacian s x ξ hz, ← heq, mul_assoc]
+    refine (h ξ hz).2.trans (mul_le_mul_of_nonneg_left ?_ (by norm_num; positivity))
+    simpa using parameterWeight_rpow_le_mul_parameterWeight_add_rpow ξ (z - (s - δ : ℝ))
+      ((s - δ : ℝ) : ℂ) (by norm_num : (-2 : ℝ) ≤ 0)
 
 /-- The coefficient of the resolvent symbol: the inverse of the symbol of `s - Δ - z` is
 `((s + ‖ξ‖²) - z)⁻¹ • id`, a parameter-dependent symbol of order `-2`. -/

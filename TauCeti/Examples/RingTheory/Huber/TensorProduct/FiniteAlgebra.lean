@@ -37,9 +37,6 @@ noncomputable local instance unitTensorTopology : TopologicalSpace (A ⊗[A] A) 
 local instance : IsTopologicalRing (A ⊗[A] A) := IsModuleTopology.isTopologicalRing A _
 local instance : IsHuberRing (A ⊗[A] A) := IsHuberRing.of_isModuleTopology (A := A)
 
-local instance : IsAdicHom (algebraMap A A) := by
-  simpa using (IsAdicHom.id (A := A))
-
 /-- *baseChangeIso_identity*: the inverse comparison followed by the unit map
 multiplies the specified coefficients. -/
 example (c a : A) :
@@ -67,9 +64,6 @@ example (S : Pair A) {a : A} (ha : a ∉ S.plus) :
 end Unit
 
 section Split
-
-local instance : IsAdicHom (algebraMap ℤ ℤ) := by
-  simpa using (IsAdicHom.id (A := ℤ))
 
 local instance : IsAdicHom (algebraMap ℤ (ℤ × ℤ)) :=
   IsAdicHom.of_discrete_iff.mpr inferInstance
