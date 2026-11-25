@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.FreeLoop
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Euclidean
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Existence
 public import TauCeti.Topology.MappingSpace.FreeLoop
