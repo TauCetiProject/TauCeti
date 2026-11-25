@@ -75,6 +75,18 @@ theorem mem_nontangentialCone {α : ℝ} {h : ℝ≥0∞} {x : ℝ} {z : ℂ} :
       0 < z.im ∧ |z.re - x| < α * z.im ∧ ENNReal.ofReal z.im < h :=
   Iff.rfl
 
+/-- A point of the cone `Γ^α_h(x)` lies within `(|α| + 1) Im z` of the vertex. -/
+theorem dist_lt_of_mem_nontangentialCone {α : ℝ} {h : ℝ≥0∞} {x : ℝ} {z : ℂ}
+    (hz : z ∈ nontangentialCone α h x) : dist z x < (|α| + 1) * z.im := by
+  obtain ⟨hz0, hzα, -⟩ := mem_nontangentialCone.1 hz
+  have hre : |z.re - x| < |α| * z.im :=
+    hzα.trans_le (mul_le_mul_of_nonneg_right (le_abs_self α) hz0.le)
+  calc dist z x ≤ |(z - x).re| + |(z - x).im| := by
+        rw [dist_eq_norm]; exact norm_le_abs_re_add_abs_im _
+    _ < |α| * z.im + z.im := by
+        simpa [abs_of_pos hz0] using add_lt_add_of_lt_of_le hre (le_refl z.im)
+    _ = (|α| + 1) * z.im := by ring
+
 /-- Cones grow with the aperture and the height. -/
 theorem nontangentialCone_mono {α β : ℝ} {h k : ℝ≥0∞} (hαβ : α ≤ β) (hhk : h ≤ k) (x : ℝ) :
     nontangentialCone α h x ⊆ nontangentialCone β k x := fun _ hz =>
@@ -114,6 +126,15 @@ theorem nontangentialMaximalFunction_mono {E : Type*} [ENorm E] {α β : ℝ} {h
     (hαβ : α ≤ β) (hhk : h ≤ k) (u : ℂ → E) (x : ℝ) :
     nontangentialMaximalFunction α h u x ≤ nontangentialMaximalFunction β k u x :=
   biSup_mono fun _ hz => nontangentialCone_mono hαβ hhk x hz
+
+/-- The nontangential maximal function of the Poisson integral is at most that of the extended
+Poisson integral. -/
+theorem nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le_upperHalfPlanePoissonLIntegral
+    (α : ℝ) (h : ℝ≥0∞) (ν : Measure ℝ) (x : ℝ) :
+    nontangentialMaximalFunction α h (upperHalfPlanePoissonIntegral ν) x ≤
+      nontangentialMaximalFunction α h (upperHalfPlanePoissonLIntegral ν) x :=
+  nontangentialMaximalFunction_mono_fun fun z hz => by
+    simpa using enorm_upperHalfPlanePoissonIntegral_le ν (mem_nontangentialCone.1 hz).1.le
 
 /-- **The cone comparison.** For `z = x' + iy` in the cone `Γ^α_∞(x)`, the Poisson kernel with
 pole `z` is at most `max 2 (1 + 2 α ^ 2)` times the Poisson kernel with pole `x + iy`. For
@@ -213,9 +234,8 @@ theorem nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le (α : ℝ)
     nontangentialMaximalFunction α h
         (upperHalfPlanePoissonIntegral (volume.withDensity fun s => ‖g s‖ₑ)) x ≤
       ENNReal.ofReal (max 2 (1 + 2 * α ^ 2)) * maximalFunction volume g x :=
-  (nontangentialMaximalFunction_mono_fun fun z hz => by
-      simpa using enorm_upperHalfPlanePoissonIntegral_le _ hz.1.le).trans
-    (nontangentialMaximalFunction_upperHalfPlanePoissonLIntegral_le α h g x)
+  (nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le_upperHalfPlanePoissonLIntegral
+    α h _ x).trans (nontangentialMaximalFunction_upperHalfPlanePoissonLIntegral_le α h g x)
 
 /-- **The nontangential maximal bound for aperture one.** The nontangential maximal function of
 the Poisson integral of `‖g‖ dx`, over cones of aperture one and any height, is at most `3` times

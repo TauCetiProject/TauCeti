@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.FractionalIdeal
+import TauCeti.Algebra.Algebra.NatCast
 
 /-!
 # The completion of an integral ideal in the integral finite adeles
@@ -126,13 +127,11 @@ theorem isOpen_completedIdeal {N : Ideal R} (hN : N ≠ ⊥) :
     (isOpen_integralAdeles R K).preimage (continuous_const.mul continuous_subtypeVal)
   have hUN : U ⊆ completedIdeal K N := by
     intro y hy
-    have hca : algebraMap R 𝔸ᶠ[R, K] a * c = 1 := by
-      rw [IsScalarTower.algebraMap_apply R K, ← map_mul,
-        mul_inv_cancel₀ ((map_ne_zero_iff _ (IsFractionRing.injective R K)).mpr ha), map_one]
     have hy' : y = algebraMap R (integralAdeles R K) a * ⟨_, hy⟩ := by
       refine Subtype.ext ?_
       simp only [Subalgebra.coe_mul, Subalgebra.coe_algebraMap]
-      rw [← mul_assoc, hca, one_mul]
+      rw [← mul_assoc, TauCeti.algebraMap_mul_algebraMap_inv
+        ((map_ne_zero_iff _ (IsFractionRing.injective R K)).mpr ha), one_mul]
     rw [SetLike.mem_coe, hy']
     exact Ideal.mul_mem_right _ _ (algebraMap_mem_completedIdeal haN)
   have h0 : (0 : integralAdeles R K) ∈ U := by

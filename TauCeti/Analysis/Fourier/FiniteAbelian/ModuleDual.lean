@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.ZMod
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import TauCeti.RingTheory.Trace.Dual
 -- Private: used only inside the proof of `AddChar.sum_dual_apply_eq_ite`.
 import TauCeti.LinearAlgebra.Dual.Basis
 
@@ -30,6 +31,16 @@ indicators of subspaces need orthogonality. Over a finite field `k` we assume `�
 which is exactly what they need: applied to the indicator of `0` on `W = k`, inversion forces it.
 It holds for every nontrivial character into a domain (`AddChar.sum_eq_zero_of_ne_one`), and for
 `φ = ψ ∘ Tr` whenever `ψ 1 - 1` is a unit.
+
+Over a finite extension `L` of a finite field `K`, for instance on `L ⊗[K] W` for a `K`-vector
+space `W`, the transform uses the character `φ ∘ Tr_{L/K}` of `L`; for `φ = ψ ∘ Tr_{K/𝔽_p}` this is
+`ψ ∘ Tr_{L/𝔽_p}`, by transitivity of the trace
+(`AddChar.compAddMonoidHom_trace_compAddMonoidHom_trace`, in
+`TauCeti.NumberTheory.AddCharacter.Trace`). The transform over `L` is then the transform of the
+underlying `K`-vector space, the `L`-linear forms being identified with the `K`-linear forms by
+composition with `Tr_{L/K}`, and the orthogonality hypothesis passes from `φ` to `φ ∘ Tr_{L/K}`.
+The trace functions over `𝔽_{qⁿ}` of the Fourier–Deligne transform are finite transforms with
+respect to these characters, for all `n` at once.
 
 ## Main definitions
 
@@ -59,6 +70,12 @@ It holds for every nontrivial character into a domain (`AddChar.sum_eq_zero_of_n
   `∑ w', 𝔉 t₁ w' * 𝔉 t₂ w' = |W| ∑ w, t₁ w * t₂ (-w)`.
 * `AddChar.fourierTransform_indicator_submodule`: the transform of the indicator of a subspace `U`
   is `|U|` times the indicator of its annihilator `U^⊥`.
+* `AddChar.fourierTransform_compAddMonoidHom_trace_apply`: the transform over `L` with respect to
+  `φ ∘ Tr_{L/K}` at `w'` is the transform over `K` with respect to `φ` at `Tr_{L/K} ∘ w'`.
+* `AddChar.fourierTransform_compAddMonoidHom_trace_traceCompEquiv_symm`: the same identity read
+  through the identification `Module.Dual.traceCompEquiv` of the two duals.
+* `AddChar.sum_compAddMonoidHom_trace_eq_zero`: the orthogonality hypothesis `∑ r, φ r = 0` passes
+  from a finite field `K` to `φ ∘ Tr_{L/K}` on a finite extension `L`.
 * `AddChar.fourierTransform_stdAddChar_mul`: for `ZMod.stdAddChar` on `ZMod N`, the transform is
   Mathlib's `ZMod.dft` up to `k ↦ -k`.
 
@@ -313,6 +330,47 @@ theorem fourierTransformEquiv_symm_apply (hφ : ∑ r, φ r = 0) (hW : IsUnit (F
   (rfl)
 
 end Field
+
+section Trace
+
+/-! ### Extension of the base field -/
+
+variable {Λ W : Type*} [CommSemiring Λ] [AddCommMonoid W] [Fintype W]
+
+/-- **Restriction of scalars.** The transform of an `L`-module with respect to the character
+`φ ∘ Tr_{L/K}` of `L`, at a linear form `w'`, is the transform of the underlying `K`-module with
+respect to `φ`, at the `K`-linear form `Tr_{L/K} ∘ w'`. -/
+theorem fourierTransform_compAddMonoidHom_trace_apply {K L : Type*} [CommRing K] [CommRing L]
+    [Algebra K L] [Module L W] [Module K W] [IsScalarTower K L W] (φ : AddChar K Λ) (t : W → Λ)
+    (w' : Module.Dual L W) :
+    (φ.compAddMonoidHom (Algebra.trace K L).toAddMonoidHom).fourierTransform t w' =
+      φ.fourierTransform t (Algebra.trace K L ∘ₗ w'.restrictScalars K) := by
+  simp [fourierTransform_apply]
+
+variable {K L : Type*} [Field K] [Field L] [Algebra K L] (φ : AddChar K Λ)
+
+/-- **Restriction of scalars, from the `K`-side.** For a finite separable extension `L / K`, the
+transform of the underlying `K`-module with respect to `φ`, at a `K`-linear form `μ`, is the
+transform over `L` with respect to `φ ∘ Tr_{L/K}`, at the `L`-linear form whose trace is `μ`. -/
+@[simp]
+theorem fourierTransform_compAddMonoidHom_trace_traceCompEquiv_symm [FiniteDimensional K L]
+    [Algebra.IsSeparable K L] [Module L W] [Module K W] [IsScalarTower K L W] (t : W → Λ)
+    (μ : Module.Dual K W) :
+    (φ.compAddMonoidHom (Algebra.trace K L).toAddMonoidHom).fourierTransform t
+        ((Module.Dual.traceCompEquiv K L W).symm μ) =
+      φ.fourierTransform t μ := by
+  simp [fourierTransform_apply]
+
+/-- **Orthogonality after extension of the base field.** If `∑ r, φ r = 0` over a finite field
+`K`, the character `φ ∘ Tr_{L/K}` of a finite extension `L` also sums to zero. Inversion,
+Plancherel and the transforms of indicators of subspaces therefore hold over `L` for
+`φ ∘ Tr_{L/K}`. -/
+theorem sum_compAddMonoidHom_trace_eq_zero [Fintype K] [Fintype L] (hφ : ∑ r, φ r = 0) :
+    ∑ x : L, φ.compAddMonoidHom (Algebra.trace K L).toAddMonoidHom x = 0 := by
+  have : FiniteDimensional K L := .of_finite
+  exact sum_comp_eq_zero_of_ne_zero hφ (Algebra.trace_ne_zero K L)
+
+end Trace
 
 /-- **Comparison with `ZMod.dft`.** For the standard character of `ZMod N`, the finite Fourier
 transform at the linear form `x ↦ k * x` is Mathlib's discrete Fourier transform at `-k`. -/

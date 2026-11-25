@@ -44,6 +44,8 @@ extension-closed subcategories inherit axiom E1.
   deflations, and deflations under cobase change along inflations.
 * `TauCeti.ExactStructure.exists_conflation_comp`: the Noether package for a composite of two
   inflations.
+* `TauCeti.ExactStructure.exists_conflation_of_conflation_comp`: the Noether conflation for an
+  arbitrary prescribed cokernel of the composite inflation.
 
 ## References
 
@@ -305,6 +307,30 @@ theorem exists_conflation_comp' {X Y Z W V : C} {i : X ⟶ Y} {p : Y ⟶ Z} {hip
     baseChangeι_snd (ShortComplex.mk v q hvq) sq,
     E.conflation_comp_of_isPullback h₁ h₂ sq, E.conflation_baseChange h₂ sq, sq.w,
     baseChangeι_fst (ShortComplex.mk v q hvq) sq⟩
+
+/-- **The Noether conflation with a prescribed cokernel.** Let `X ⟶ Y ⟶ Z` and `Y ⟶ W ⟶ V` be
+conflations, and let `X ⟶ W ⟶ Q` be any conflation on the composite inflation. Then there are
+maps `α : Z ⟶ Q` and `β : Q ⟶ V`, induced by the universal properties of the cokernels, which
+form a conflation `Z ⟶ Q ⟶ V`.
+
+Unlike `exists_conflation_comp`, the cokernel `Q` of the composite inflation is given in
+advance rather than constructed as a pushout; this lets several Noether conflations share the
+same middle object. -/
+theorem exists_conflation_of_conflation_comp {X Y Z W V Q : C} {i : X ⟶ Y} {p : Y ⟶ Z}
+    {hip : i ≫ p = 0} (h₁ : E.Conflation (ShortComplex.mk i p hip)) {j : Y ⟶ W} {v : W ⟶ V}
+    {hjv : j ≫ v = 0} (h₂ : E.Conflation (ShortComplex.mk j v hjv)) {c : W ⟶ Q}
+    {hc : (i ≫ j) ≫ c = 0} (h₃ : E.Conflation (ShortComplex.mk (i ≫ j) c hc)) :
+    ∃ (α : Z ⟶ Q) (β : Q ⟶ V) (hαβ : α ≫ β = 0),
+      E.Conflation (ShortComplex.mk α β hαβ) ∧ j ≫ c = p ≫ α ∧ c ≫ β = v := by
+  have hpair₁ := E.isKernelCokernelPair _ h₁
+  have hpair₃ := E.isKernelCokernelPair _ h₃
+  have hjc : i ≫ j ≫ c = 0 := by rw [← Category.assoc]; exact hc
+  have sq : IsPushout j p c (hpair₁.desc (j ≫ c) hjc) :=
+    IsPushout.of_isColimit_cokernelCofork_comp hpair₁.gIsCokernel hpair₃.gIsCokernel
+      (hpair₁.g_desc _ _).symm
+  exact ⟨_, _, inr_cobaseChangeπ (ShortComplex.mk j v hjv) sq,
+    E.conflation_cobaseChange h₂ sq, (hpair₁.g_desc _ _).symm,
+    inl_cobaseChangeπ (ShortComplex.mk j v hjv) sq⟩
 
 end ExactStructure
 

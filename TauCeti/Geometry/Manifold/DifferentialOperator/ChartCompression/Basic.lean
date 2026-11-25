@@ -8,11 +8,15 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 public import TauCeti.Geometry.Manifold.Algebra.ComplexSmoothFunctions
 public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Basic
+public import TauCeti.Geometry.Manifold.PullbackGroupoid
+import TauCeti.Algebra.GroupWithZero.Indicator
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 
 /-!
 # Differential operators on a manifold, compressed to a chart
@@ -48,6 +52,9 @@ with no continuity assumed) and computes their principal symbols:
   `x` of the chart target, the principal symbol of the compression at a covector `η` is
   `φ(x) ψ(x) σ(D)(e⁻¹ x)(η ∘ de)`: the principal symbol transforms as a function on the cotangent
   bundle, multiplied by the cutoffs.
+* `OpenPartialHomeomorph.complexChartCompression_conj`: for a diffeomorphism `Φ : M → N`, the chart
+  compression in a chart `e` of `M` of the transport `f ↦ (D (f ∘ Φ⁻¹)) ∘ Φ` of an operator `D` on
+  `N` is the chart compression of `D` in the chart `e ∘ Φ⁻¹` of `N`, by the same cutoffs.
 
 ## Main definitions
 
@@ -62,6 +69,12 @@ with no continuity assumed) and computes their principal symbols:
   and `OpenPartialHomeomorph.complexChartCompression`: the same constructions for complex-linear
   operators on complex-valued smooth functions, through which pseudodifferential operators on `M`
   are read in charts.
+
+## Main results
+
+* `IsCompact.exists_sum_cutoffPullback_eq_one`: a compact set has finitely many cutoffs in preferred
+  charts whose pullbacks sum to `1` on it, through which operators on `M` are assembled from
+  operators in charts.
 
 ## References
 
@@ -125,6 +138,21 @@ theorem cutoffPullback_apply_of_notMem (ψ : 𝓓(⟨e.target, e.open_target⟩,
     e.cutoffPullback he ψ f x = 0 :=
   indicator_of_notMem hx _
 
+/-- On the chart source, the pullback of the constant function `1` is the cutoff read through the
+chart. -/
+@[simp]
+theorem cutoffPullback_one_apply_of_mem (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) {x : M}
+    (hx : x ∈ e.source) : e.cutoffPullback he ψ 1 x = ψ (e x) := by
+  rw [cutoffPullback_apply_of_mem he _ _ hx, ContMDiffMap.coe_one, Pi.one_apply, mul_one]
+
+/-- The pullback `(ψ f) ∘ e` is supported in the image of the support of `ψ` under the inverse of
+the chart. -/
+theorem tsupport_cutoffPullback_subset (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) : tsupport (e.cutoffPullback he ψ f) ⊆ e.symm '' tsupport ψ :=
+  e.tsupport_subset_symm_image_tsupport ψ
+    (fun x hx h ↦ by rw [cutoffPullback_apply_of_mem he _ _ hx, h, zero_mul])
+    fun _ hx ↦ cutoffPullback_apply_of_notMem he _ _ hx
+
 /-- **Pushing a function on the manifold forward to a chart.** For a cutoff `φ` with compact
 support in the target of the chart `e`, the smooth function `φ · (h ∘ e⁻¹)` on `E`, which vanishes
 outside the chart target, as a linear map `C^∞(M) → C^∞(E)` in `h`. -/
@@ -151,6 +179,31 @@ theorem cutoffPushforward_apply (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     (h : C^∞⟮𝓘(ℝ, E), M; ℝ⟯) (y : E) :
     e.cutoffPushforward he φ h y = φ y * h (e.symm y) :=
   (rfl)
+
+/-- **Functions supported in a chart are cutoffs.** A smooth function `g` on `M` with compact
+support in the chart source is the pullback `ρ ∘ e`, extended by `0`, of a cutoff `ρ` with compact
+support in the chart target. This turns a partition of unity subordinate to chart sources into
+cutoffs in the charts. -/
+theorem exists_cutoffPullback_one_eq [FiniteDimensional ℝ E] {g : C^∞⟮𝓘(ℝ, E), M; ℝ⟯}
+    (hgc : HasCompactSupport g) (hg : tsupport g ⊆ e.source) :
+    ∃ ρ : 𝓓(⟨e.target, e.open_target⟩, ℝ), e.cutoffPullback he ρ 1 = g := by
+  -- A cutoff `θ` equal to `1` near the image `e (supp g)`, and `ρ = θ · (g ∘ e⁻¹)`.
+  obtain ⟨θ, hθ, -⟩ := TestFunction.exists_eventually_eq_one
+    (Ω := ⟨e.target, e.open_target⟩) (n := ⊤)
+    (hgc.isCompact.image_of_continuousOn (e.continuousOn.mono hg))
+    (image_subset_iff.2 fun p hp ↦ e.map_source (hg hp))
+  have hρ : ContDiff ℝ ∞ fun y ↦ θ y * g (e.symm y) := by
+    rw [← funext (e.cutoffPushforward_apply he θ g)]
+    exact contMDiff_iff_contDiff.1 (e.cutoffPushforward he θ g).contMDiff
+  refine ⟨⟨fun y ↦ θ y * g (e.symm y), hρ, θ.hasCompactSupport.mul_right,
+    tsupport_mul_subset_left.trans θ.tsupport_subset⟩, ?_⟩
+  ext p
+  by_cases hp : p ∈ e.source
+  · rw [cutoffPullback_one_apply_of_mem he _ hp, TestFunction.coe_mk, e.left_inv hp]
+    exact mul_eq_right_of_ne_zero_imp_eq_one fun hgp ↦
+      hθ.self_of_nhdsSet _ (mem_image_of_mem e (subset_tsupport _ hgp))
+  · rw [cutoffPullback_apply_of_notMem he _ _ hp,
+      image_eq_zero_of_notMem_tsupport fun h ↦ hp (hg h)]
 
 /-! ### Chart compressions -/
 
@@ -374,6 +427,54 @@ theorem complexCutoffPullback_apply_of_notMem (ψ : 𝓓(⟨e.target, e.open_tar
     e.complexCutoffPullback he ψ f x = 0 := by
   simp [complexCutoffPullback, cutoffPullback_apply_of_notMem he _ _ hx]
 
+/-- On the chart source, the complex pullback `(ψ f) ∘ e` multiplied by `g` only sees `f` on the
+points of the support of `ψ` read on `M` inside the support of `g`: if `f = ψ₁ • F` for a function
+`ψ₁` equal to `1` there, then `g · (ψ f) ∘ e = g · (ψ F) ∘ e`. -/
+theorem mul_complexCutoffPullback_apply_of_eq_smul (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    {g : M → ℂ} {ψ₁ : E → ℝ} (hψ₁ : EqOn ψ₁ 1 (tsupport ψ ∩ e.symm ⁻¹' tsupport g))
+    {f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯} {F : E → ℂ} (hf : ∀ y, f y = ψ₁ y • F y) {x : M}
+    (hx : x ∈ e.source) :
+    g x * e.complexCutoffPullback he ψ f x = g x * (ψ (e x) • F (e x)) := by
+  rw [complexCutoffPullback_apply_of_mem he _ _ hx, hf, smul_comm (ψ (e x)), mul_smul_comm]
+  refine smul_eq_right_of_ne_zero_imp_eq_one fun h ↦ hψ₁ ⟨subset_tsupport _
+    (left_ne_zero_of_smul (right_ne_zero_of_mul h)), ?_⟩
+  rw [mem_preimage, e.left_inv hx]
+  exact subset_tsupport _ (left_ne_zero_of_mul h)
+
+/-- The complex pullback of the constant `1` by a cutoff is the real pullback of `1`, read as a
+complex number. -/
+theorem complexCutoffPullback_one_apply (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (x : M) :
+    e.complexCutoffPullback he ψ 1 x = (e.cutoffPullback he ψ 1 x : ℂ) := by
+  by_cases hx : x ∈ e.source
+  · simp [complexCutoffPullback_apply_of_mem he _ _ hx, cutoffPullback_apply_of_mem he _ _ hx]
+  · simp [complexCutoffPullback_apply_of_notMem he _ _ hx, cutoffPullback_apply_of_notMem he _ _ hx]
+
+/-- The complex pullback `(ψ f) ∘ e` is supported in the image of the support of `ψ` under the
+inverse of the chart. -/
+theorem tsupport_complexCutoffPullback_subset (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯) :
+    tsupport (e.complexCutoffPullback he ψ f) ⊆ e.symm '' tsupport ψ :=
+  e.tsupport_subset_symm_image_tsupport ψ
+    (fun x hx h ↦ by rw [complexCutoffPullback_apply_of_mem he _ _ hx, h, zero_smul])
+    fun _ hx ↦ complexCutoffPullback_apply_of_notMem he _ _ hx
+
+/-- If a cutoff `χ` in a chart `e` is `1` near the support of a cutoff `ρ`, then on `M` the
+supports of `ρ` and of `1 - χ`, read through the chart, are disjoint. -/
+theorem disjoint_tsupport_complexCutoffPullback_one_sub {ρ χ : 𝓓(⟨e.target, e.open_target⟩, ℝ)}
+    (hχ : ∀ᶠ y in 𝓝ˢ (tsupport ρ), χ y = 1) :
+    Disjoint (tsupport (e.complexCutoffPullback he ρ 1))
+      (tsupport ⇑((1 : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯) - e.complexCutoffPullback he χ 1)) := by
+  -- `χ = 1` on an open set `N ⊇ supp ρ`, so `1 - χ` vanishes on the open set `e⁻¹(N ∩ target)`.
+  obtain ⟨N, hN, hρN, hNχ⟩ := mem_nhdsSet_iff_exists.1 hχ
+  have hO : IsOpen (e.symm '' (N ∩ e.target)) :=
+    e.symm.isOpen_image_of_subset_source (hN.inter e.open_target) inter_subset_right
+  refine Disjoint.mono_left ((tsupport_complexCutoffPullback_subset he ρ 1).trans
+      (image_mono (subset_inter hρN ρ.tsupport_subset))) (disjoint_compl_right.mono_right ?_)
+  refine closure_minimal (fun q hq hqO ↦ hq ?_) hO.isClosed_compl
+  obtain ⟨y, ⟨hyN, hyt⟩, rfl⟩ := hqO
+  have hχy : χ y = 1 := hNχ hyN
+  simp [complexCutoffPullback_apply_of_mem he _ _ (e.map_target hyt), e.right_inv hyt, hχy]
+
 /-- **Pushing a complex-valued function on the manifold forward to a chart.** For a cutoff `φ`
 with compact support in the target of the chart `e`, the smooth complex-valued function
 `φ · (h ∘ e⁻¹)` on `E`, which vanishes outside the chart target, as a complex-linear map in
@@ -417,6 +518,103 @@ theorem complexChartCompression_complexifyLinearMap (φ ψ : 𝓓(⟨e.target, e
   ext f y
   apply Complex.ext <;> simp
 
+section Diffeomorph
+
+variable {N : Type*} [TopologicalSpace N] [ChartedSpace E N] [IsManifold 𝓘(ℝ, E) ∞ N] [T2Space N]
+
+/-- **Chart compressions under a diffeomorphism.** Transport an operator `D` on the complex-valued
+smooth functions on `N` to `M` along a diffeomorphism `Φ : M → N`, by conjugation with the pullback
+`f ↦ f ∘ Φ`. Its chart compression in a chart `e` of `M` is the chart compression of `D`, by the
+same cutoffs, in the chart `e ∘ Φ⁻¹` of `N`, which has the same target as `e`. -/
+theorem complexChartCompression_conj (Φ : M ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ N)
+    (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (D : C^∞⟮𝓘(ℝ, E), N; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, E), N; 𝓘(ℝ, ℂ), ℂ⟯) :
+    e.complexChartCompression he φ ψ (Φ.compRightComplexAlgEquiv.toLinearEquiv.conj D) =
+      (Φ.symm.toHomeomorph.transOpenPartialHomeomorph e).complexChartCompression
+        (Φ.symm.transOpenPartialHomeomorph_mem_maximalAtlas le_rfl he) φ ψ D := by
+  have he' := Φ.symm.transOpenPartialHomeomorph_mem_maximalAtlas le_rfl he
+  -- Pulling back through `e` and then along `Φ⁻¹` is pulling back through `e ∘ Φ⁻¹`. The cutoff
+  -- `ψ` lives on `e.target`, which is the target of `e ∘ Φ⁻¹` only up to unfolding, so the two
+  -- pullbacks are compared by explicit terms rather than by rewriting.
+  have hpull (f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯) :
+      Φ.compRightComplexAlgEquiv.symm (e.complexCutoffPullback he ψ f) =
+        (Φ.symm.toHomeomorph.transOpenPartialHomeomorph e).complexCutoffPullback he' ψ f := by
+    ext z
+    by_cases hz : Φ.symm z ∈ e.source
+    · exact ((Φ.compRightComplexAlgEquiv_symm_apply _ z).trans
+        (complexCutoffPullback_apply_of_mem he ψ f hz)).trans
+          (complexCutoffPullback_apply_of_mem he' ψ f hz).symm
+    · exact ((Φ.compRightComplexAlgEquiv_symm_apply _ z).trans
+        (complexCutoffPullback_apply_of_notMem he ψ f hz)).trans
+          (complexCutoffPullback_apply_of_notMem he' ψ f hz).symm
+  ext f y
+  refine (complexChartCompression_apply he φ ψ _ f y).trans
+    (Eq.trans ?_ (complexChartCompression_apply he' φ ψ D f y).symm)
+  rw [LinearEquiv.conj_apply_apply, AlgEquiv.toLinearEquiv_apply,
+    Diffeomorph.compRightComplexAlgEquiv_apply]
+  exact congrArg₂ (fun g z ↦ φ y • D g z) (hpull f) (by simp)
+
+end Diffeomorph
+
 end Complex
 
 end OpenPartialHomeomorph
+
+/-! ### Chart cutoffs summing to one on a compact set -/
+
+section ChartPartition
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [T2Space M] [IsManifold 𝓘(ℝ, E) ∞ M]
+
+/-- **Chart cutoffs summing to one on a compact set.** A compact set `K` of a Hausdorff manifold
+modelled on a finite-dimensional space has finitely many points `cᵢ` and cutoffs `ρᵢ` with compact
+supports in the targets of the preferred charts at the `cᵢ` such that the functions
+`ρᵢ ∘ chartAt cᵢ`, extended by `0` off the chart sources (`OpenPartialHomeomorph.cutoffPullback`),
+add up to `1` on `K`. These are the cutoffs through which operators on `M` are assembled from
+operators in charts. -/
+theorem IsCompact.exists_sum_cutoffPullback_eq_one {K : Set M} (hK : IsCompact K) :
+    ∃ (N : ℕ) (c : Fin N → M)
+      (ρ : ∀ i, 𝓓(⟨(chartAt E (c i)).target, (chartAt E (c i)).open_target⟩, ℝ)),
+      ∀ y ∈ K, ∑ i, (chartAt E (c i)).cutoffPullback (IsManifold.chart_mem_maximalAtlas (c i))
+        (ρ i) 1 y = 1 := by
+  obtain ⟨ι, _, fs, -⟩ := hK.exists_smoothBumpCovering_isSubordinate 𝓘(ℝ, E)
+    (U := fun _ ↦ univ) fun _ _ ↦ univ_mem
+  set f := fs.toSmoothPartitionOfUnity
+  -- The partition function `fᵢ` is supported in the compact support of the bump function at `cᵢ`,
+  -- which lies in the source of the chart at `cᵢ`.
+  have hf (i : ι) : tsupport (f i) ⊆ tsupport (fs i) :=
+    closure_mono (fs.support_toSmoothPartitionOfUnity_subset i)
+  have hfe (i : ι) : tsupport (f i) ⊆ (chartAt E (fs.c i)).source :=
+    (hf i).trans (fs i).tsupport_subset_chartAt_source
+  have hK' (i : ι) : IsCompact (chartAt E (fs.c i) '' tsupport (f i)) :=
+    ((fs i).hasCompactSupport.isCompact.of_isClosed_subset (isClosed_tsupport _)
+      (hf i)).image_of_continuousOn ((chartAt E (fs.c i)).continuousOn.mono (hfe i))
+  -- In the chart at `cᵢ`, `ρᵢ` is `fᵢ ∘ (chartAt cᵢ)⁻¹` times a cutoff equal to `1` on the image of
+  -- the support of `fᵢ`.
+  choose θ hθ using fun i ↦ TestFunction.exists_eventually_eq_one
+    (Ω := ⟨(chartAt E (fs.c i)).target, (chartAt E (fs.c i)).open_target⟩) (n := ⊤) (hK' i)
+    (image_subset_iff.2 fun y hy ↦ (chartAt E (fs.c i)).map_source (hfe i hy))
+  have hg (i : ι) : ContDiffOn ℝ ∞ (f i ∘ (chartAt E (fs.c i)).symm) (chartAt E (fs.c i)).target :=
+    contMDiffOn_iff_contDiffOn.1 ((f i).contMDiff.comp_contMDiffOn
+      (contMDiffOn_symm_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas (fs.c i))))
+  have hρ (i : ι) (y : M) : (chartAt E (fs.c i)).cutoffPullback
+      (IsManifold.chart_mem_maximalAtlas (fs.c i))
+      (TestFunction.smulLeftCLMOfContDiffOn (hg i) (θ i)) 1 y = f i y := by
+    by_cases hy : y ∈ (chartAt E (fs.c i)).source
+    · rw [OpenPartialHomeomorph.cutoffPullback_one_apply_of_mem _ _ hy,
+        TestFunction.smulLeftCLMOfContDiffOn_apply, Function.comp_apply,
+        (chartAt E (fs.c i)).left_inv hy, smul_eq_mul]
+      by_cases hfy : f i y = 0
+      · rw [hfy, zero_mul]
+      · rw [(hθ i).1.self_of_nhdsSet _ (mem_image_of_mem _ (subset_tsupport _ hfy)), mul_one]
+    · rw [OpenPartialHomeomorph.cutoffPullback_apply_of_notMem _ _ _ hy,
+        image_eq_zero_of_notMem_tsupport fun h ↦ hy (hfe i h)]
+  -- Index the finitely many charts by `Fin N`.
+  set σ := Fintype.equivFin ι
+  refine ⟨Fintype.card ι, fun j ↦ fs.c (σ.symm j),
+    fun j ↦ TestFunction.smulLeftCLMOfContDiffOn (hg (σ.symm j)) (θ (σ.symm j)), fun y hy ↦ ?_⟩
+  rw [← f.sum_eq_one hy, finsum_eq_sum_of_fintype, ← σ.symm.sum_comp]
+  exact Finset.sum_congr rfl fun j _ ↦ hρ (σ.symm j) y
+
+end ChartPartition

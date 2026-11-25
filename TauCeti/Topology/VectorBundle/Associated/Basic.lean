@@ -208,6 +208,13 @@ instance instFiniteDimensional [FiniteDimensional 𝕜 F] (b : B) :
     FiniteDimensional 𝕜 (AssociatedBundle G P F b) :=
   (mkContinuousLinearEquiv 𝕜 G (F := F) (refPoint G P b)).toLinearEquiv.finiteDimensional
 
+/-- The associated fibers of a finite-dimensional model carry the module topology, the finest
+topology making addition and scalar multiplication continuous. -/
+instance instIsModuleTopology [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] (b : B) :
+    IsModuleTopology 𝕜 (AssociatedBundle G P F b) :=
+  haveI := FiberBundle.t2Space F (AssociatedBundle G P F) b
+  isModuleTopologyOfFiniteDimensional
+
 section AlternatingMap
 
 variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
