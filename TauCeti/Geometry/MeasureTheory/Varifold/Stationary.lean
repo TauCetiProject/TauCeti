@@ -26,6 +26,9 @@ Let `E` be a finite-dimensional real inner product space, `W ⊆ E` open and `V`
   `‖δV‖(U) = sup {δV(X) : X of class C¹ with compact support in U ∩ W, |X| ≤ 1} ∈ [0, ∞]`
   (`Euclidean.firstVariationMass`). It is defined for every varifold.
 
+The definitions accept any measure `V`. When `V` is not finite on compact sets, `δV` is `0` by
+convention, so `V` is then trivially stationary.
+
 These are Simon, *Lectures on Geometric Measure Theory*, 39.3, in Euclidean space. The
 identification of `‖δV‖` with the total variation measure of the extension of `δV` to continuous
 vector fields needs the Riesz representation for vector fields and is not proved here.
@@ -66,21 +69,25 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-- A varifold `V` on an open set `W` of a Euclidean space is **stationary** in `W` when its first
 variation `δV(X)` vanishes for every `C¹` vector field `X` with compact support in `W` (Simon,
-*Lectures on Geometric Measure Theory*, 39.3). -/
+*Lectures on Geometric Measure Theory*, 39.3). If `V` is not finite on compact sets, then `δV` is
+`0` by convention, so `V` is trivially stationary (`isStationary_of_not_isFiniteMeasureOnCompacts`).
+-/
 def IsStationary (V : Measure (W × grassmannian ℝ E k)) : Prop :=
   firstVariation V = 0
 
 /-- A varifold `V` on an open set `W` of a Euclidean space has **locally bounded first variation**
 in `W` when for each compact `K ⊆ W` there is `C` with `|δV(X)| ≤ C` for every `C¹` vector field
 `X` supported in `K` with `|X| ≤ 1` pointwise (Simon, *Lectures on Geometric Measure Theory*,
-39.3). -/
+39.3). If `V` is not finite on compact sets, then `δV` is `0` by convention, so this holds
+trivially. -/
 def HasLocallyBoundedFirstVariation (V : Measure (W × grassmannian ℝ E k)) : Prop :=
   ∀ K : Set E, IsCompact K → K ⊆ W → ∃ C : ℝ, ∀ X : 𝓓^{1}(W, E), tsupport X ⊆ K →
     (∀ x, ‖X x‖ ≤ 1) → |firstVariation V X| ≤ C
 
 /-- The **total first variation** `‖δV‖(U) = sup {δV(X) : X ∈ C¹_c(U ∩ W), |X| ≤ 1}` of a set `U`,
-in `[0, ∞]`. It is defined for every varifold; on open sets it is the total variation measure of
-`δV` when `V` has locally bounded first variation. -/
+in `[0, ∞]`. It is defined for every varifold. By Simon 39.3 it agrees on open sets with the
+total variation measure of `δV` when `V` has locally bounded first variation; that identification
+is not formalized here. -/
 def firstVariationMass (V : Measure (W × grassmannian ℝ E k)) (U : Set E) : ℝ≥0∞ :=
   ⨆ (X : 𝓓^{1}(W, E)) (_ : tsupport X ⊆ U) (_ : ∀ x, ‖X x‖ ≤ 1),
     ENNReal.ofReal (firstVariation V X)
