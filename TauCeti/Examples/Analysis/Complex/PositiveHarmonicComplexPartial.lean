@@ -16,8 +16,8 @@ import TauCeti.Analysis.Complex.Harmonic.ComplexPartial
 The Herglotz representation of a positive harmonic function `u` on the upper half-plane writes
 `u = Im F` for a holomorphic `F` with `F' = i (∂ₓu - i ∂ᵧu)`, where `∂ₓu - i ∂ᵧu` is the complex
 partial `fderiv ℝ u z 1 - I * fderiv ℝ u z I`
-(`HasDerivAt.I_mul_fderiv_im_one_sub_I_mul_fderiv_im_I`). These are the complex-partial parts of
-the first two Checks of §2.2 of the DiracScatteringAndNonlinearFourierTransform roadmap:
+(`HasDerivAt.I_mul_fderiv_im_one_sub_I_mul_fderiv_im_I`). These examples compute the complex
+partial for two positive harmonic functions on the upper half-plane, `Im z` and `P[δ₀]`:
 
 * for `u = Im z`, the complex partial is `-i`, and `F' = i · (-i) = 1` is the derivative of
   `F = z`; the conjugate partial `∂ₓu + i ∂ᵧu = i` is not `F'`;
@@ -56,18 +56,8 @@ example (z : ℂ) :
 
 /-! ### `u = P[δ₀]` -/
 
-/-- The Poisson integral of `δ₀` is `Im (-1 / (π z))`. -/
-theorem upperHalfPlanePoissonIntegral_dirac_zero_eq_im (w : ℂ) :
-    upperHalfPlanePoissonIntegral (Measure.dirac 0) w = (-((π : ℂ) * w)⁻¹).im := by
-  rw [upperHalfPlanePoissonIntegral_def, integral_dirac, upperHalfPlanePoissonKernel_eq,
-    ofReal_zero, zero_sub, normSq_neg, neg_im, inv_im, normSq_mul, normSq_ofReal, mul_im,
-    ofReal_re, ofReal_im, zero_mul, add_zero, neg_div, neg_neg]
-  rcases eq_or_ne (normSq w) 0 with h | h
-  · simp [h]
-  · field_simp
-
 /-- `F = -1 / (π z)` has derivative `1 / (π z²)` at `z ≠ 0`. -/
-theorem hasDerivAt_neg_inv (z : ℂ) (hz : z ≠ 0) :
+theorem hasDerivAt_neg_inv_pi_mul (z : ℂ) (hz : z ≠ 0) :
     HasDerivAt (fun w : ℂ => -((π : ℂ) * w)⁻¹) (1 / ((π : ℂ) * z ^ 2)) z := by
   have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.2 Real.pi_ne_zero
   have h1 : HasDerivAt (fun w : ℂ => (π : ℂ) * w) π z := by
@@ -80,21 +70,16 @@ example (z : ℂ) (hz : z ≠ 0) :
     I * ((fderiv ℝ (upperHalfPlanePoissonIntegral (Measure.dirac 0)) z 1 : ℂ) -
       I * fderiv ℝ (upperHalfPlanePoissonIntegral (Measure.dirac 0)) z I) =
         1 / ((π : ℂ) * z ^ 2) := by
-  simp_rw [show upperHalfPlanePoissonIntegral (Measure.dirac 0) =
-    fun w => (-((π : ℂ) * w)⁻¹).im from funext upperHalfPlanePoissonIntegral_dirac_zero_eq_im]
-  exact (hasDerivAt_neg_inv z hz).I_mul_fderiv_im_one_sub_I_mul_fderiv_im_I
+  rw [upperHalfPlanePoissonIntegral_dirac_zero_eq_im]
+  exact (hasDerivAt_neg_inv_pi_mul z hz).I_mul_fderiv_im_one_sub_I_mul_fderiv_im_I
 
 -- The complex partial of `P[δ₀]` is `-i / (π z²)`.
 example (z : ℂ) (hz : z ≠ 0) :
     (fderiv ℝ (upperHalfPlanePoissonIntegral (Measure.dirac 0)) z 1 : ℂ) -
       I * fderiv ℝ (upperHalfPlanePoissonIntegral (Measure.dirac 0)) z I =
         -I / ((π : ℂ) * z ^ 2) := by
-  simp_rw [show upperHalfPlanePoissonIntegral (Measure.dirac 0) =
-    fun w => (-((π : ℂ) * w)⁻¹).im from funext upperHalfPlanePoissonIntegral_dirac_zero_eq_im]
-  have h := (hasDerivAt_neg_inv z hz).I_mul_fderiv_im_one_sub_I_mul_fderiv_im_I
-  set P : ℂ := (fderiv ℝ (fun w => (-((π : ℂ) * w)⁻¹).im) z 1 : ℂ) -
-    I * fderiv ℝ (fun w => (-((π : ℂ) * w)⁻¹).im) z I
-  calc P = -I * (I * P) := by rw [← mul_assoc, neg_mul, I_mul_I, neg_neg, one_mul]
-    _ = -I / ((π : ℂ) * z ^ 2) := by rw [h]; ring
+  rw [upperHalfPlanePoissonIntegral_dirac_zero_eq_im]
+  linear_combination (norm := (ring_nf; simp))
+    -I * (hasDerivAt_neg_inv_pi_mul z hz).I_mul_fderiv_im_one_sub_I_mul_fderiv_im_I
 
 end TauCeti.PositiveHarmonicComplexPartialExamples

@@ -59,6 +59,7 @@ kernel, `S[ν]` is holomorphic on `ℂ₊`, and `P[ν] = Re S[ν]` is therefore 
   Schwarz integrals of a measure on `ℝ`, which vanish off the real axis for a measure that is not
   Poisson-finite (`TauCeti.upperHalfPlanePoissonIntegral_of_not_isPoissonFinite`,
   `TauCeti.upperHalfPlaneSchwarzIntegral_of_not_isPoissonFinite`).
+* `TauCeti.upperHalfPlanePoissonIntegral_dirac_zero_eq_im`: `P[δ₀](z) = Im (-1 / (π z))`.
 * `TauCeti.upperHalfPlanePoissonLIntegral`: the extended Poisson integral in `[0, ∞]`, infinite on
   `ℂ₊` exactly for measures that are not Poisson-finite
   (`TauCeti.upperHalfPlanePoissonLIntegral_eq_top_iff`).
@@ -384,6 +385,16 @@ theorem upperHalfPlanePoissonIntegral_smul_measure (ν : Measure ℝ) (c : ℝ�
 theorem upperHalfPlanePoissonIntegral_volume {z : ℂ} (hz : 0 < z.im) :
     upperHalfPlanePoissonIntegral volume z = 1 :=
   integral_upperHalfPlanePoissonKernel hz
+
+/-- The Poisson integral of the Dirac mass at `0` is `Im (-1 / (π z))`. -/
+theorem upperHalfPlanePoissonIntegral_dirac_zero_eq_im :
+    upperHalfPlanePoissonIntegral (Measure.dirac 0) = fun z => (-((π : ℂ) * z)⁻¹).im := by
+  ext z
+  rw [upperHalfPlanePoissonIntegral_def, integral_dirac, upperHalfPlanePoissonKernel_eq]
+  rcases eq_or_ne (normSq z) 0 with h | h
+  · simp [inv_im, h]
+  · simp [inv_im]
+    field_simp
 
 /-- The **extended Poisson integral** `P[ν](z) = ∫⁻ P(z, x) dν(x) ∈ [0, ∞]` of a measure `ν` on
 `ℝ`. On the upper half-plane it is finite exactly for Poisson-finite `ν`

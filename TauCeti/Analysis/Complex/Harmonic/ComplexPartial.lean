@@ -27,6 +27,8 @@ the upper half-plane, where `u` is the imaginary part of a holomorphic `F`.
 
 ## Main results
 
+* `HasDerivAt.fderiv_re_apply`, `HasDerivAt.fderiv_im_apply`: the real derivatives of `Re F` and
+  `Im F` at `z` send `v` to `Re (F' v)` and `Im (F' v)`.
 * `HasDerivAt.fderiv_re_one_sub_I_mul_fderiv_re_I`: `∂ₓ(Re F) - i ∂ᵧ(Re F) = F'`.
 * `HasDerivAt.I_mul_fderiv_im_one_sub_I_mul_fderiv_im_I`: `i (∂ₓ(Im F) - i ∂ᵧ(Im F)) = F'`.
 -/
@@ -41,19 +43,19 @@ variable {F : ℂ → ℂ} {F' z : ℂ}
 
 /-- The real derivative of the real part of a function with complex derivative `F'` sends `v` to
 `Re (F' v)`. -/
-private theorem fderiv_re_apply (h : HasDerivAt F F' z) (v : ℂ) :
+theorem fderiv_re_apply (h : HasDerivAt F F' z) (v : ℂ) :
     fderiv ℝ (fun w => (F w).re) z v = (F' * v).re := by
   have hd := reCLM.hasFDerivAt.comp z (h.hasFDerivAt.restrictScalars ℝ)
-  rw [show (fun w => (F w).re) = reCLM ∘ F from rfl, hd.fderiv]
-  simp [mul_comm]
+  simp only [Function.comp_def, reCLM_apply] at hd
+  simp [hd.fderiv, mul_comm]
 
 /-- The real derivative of the imaginary part of a function with complex derivative `F'` sends
 `v` to `Im (F' v)`. -/
-private theorem fderiv_im_apply (h : HasDerivAt F F' z) (v : ℂ) :
+theorem fderiv_im_apply (h : HasDerivAt F F' z) (v : ℂ) :
     fderiv ℝ (fun w => (F w).im) z v = (F' * v).im := by
   have hd := imCLM.hasFDerivAt.comp z (h.hasFDerivAt.restrictScalars ℝ)
-  rw [show (fun w => (F w).im) = imCLM ∘ F from rfl, hd.fderiv]
-  simp [mul_comm]
+  simp only [Function.comp_def, imCLM_apply] at hd
+  simp [hd.fderiv, mul_comm]
 
 /-- **The complex partial of a real part.** If `F` has complex derivative `F'` at `z`, the complex
 partial `∂ₓu - i ∂ᵧu` of `u = Re F` at `z` is `F'`. -/
