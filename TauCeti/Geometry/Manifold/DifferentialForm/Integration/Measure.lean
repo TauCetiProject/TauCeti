@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ChangeOfVariables
 public import TauCeti.MeasureTheory.Measure.Glue
 public import TauCeti.Geometry.Manifold.Measure.Chart
+public import TauCeti.Geometry.Manifold.Measure
 public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
@@ -60,6 +61,7 @@ this construction gives the Liouville measure of a symplectic manifold.
 * `TauCeti.RoughForm.isOpenPosMeasure_measure`: the measure of a continuous nowhere-vanishing form
   is positive on nonempty open sets.
 * `TauCeti.RoughForm.nullSingletonClass_measure`: in positive dimension points are null.
+* `TauCeti.RoughForm.measure_eq_zero_of_isNullSet`: chartwise null sets are null for `|φ|`.
 * `TauCeti.RoughForm.measure_eq_withDensity_addHaar`: on the model space `E`, `|φ|` is the Haar
   measure of a basis `b` with density `|φ(b)|`.
 * `Homeomorph.measurePreserving_measure_mpullback`: a differentiable homeomorphism `Φ` carries
@@ -305,6 +307,41 @@ instance nullSingletonClass_measure [Nontrivial E] (φ : RoughForm I M ℝ k) :
       (measurableSet_image_extChartAt_iff x hsub).1 (image_singleton ▸ measurableSet_singleton _)
     rw [φ.measure_apply_of_subset hx hsub, image_singleton]
     exact setLIntegral_measure_zero _ _ (measure_singleton _)
+
+/-- **Chartwise null sets are null for the measure of a top form.** A set whose images in the
+charts are null for Lebesgue measure (`TauCeti.IsNullSet`) has measure zero for `|φ|`, for every
+top form `φ`, since in each chart `|φ|` has a density with respect to Lebesgue measure. The set
+need not be measurable. -/
+theorem measure_eq_zero_of_isNullSet [mE : MeasurableSpace E] [hE : BorelSpace E]
+    (φ : RoughForm I M ℝ k) {s : Set M} (hs : IsNullSet I s) : φ.measure s = 0 := by
+  obtain rfl : mE = borel E := hE.measurable_eq
+  set b := finBasisOfFinrankEq ℝ E hk.out
+  obtain ⟨t, ht, hcover⟩ := LindelofSpace.elim_nhds_subcover
+    (fun x : M ↦ (extChartAt I x).source) fun x ↦ extChartAt_source_mem_nhds x
+  -- Countably many chart sources cover `M`, so it suffices to treat `s` in one chart source.
+  have hs_sub : s ⊆ ⋃ α ∈ t, s ∩ (extChartAt I α).source := fun x hx ↦ by
+    obtain ⟨α, hα, hxα⟩ := mem_iUnion₂.1 (hcover ▸ mem_univ x)
+    exact mem_iUnion₂.2 ⟨α, hα, hx, hxα⟩
+  refine measure_mono_null hs_sub ((measure_biUnion_null_iff ht).2 fun α _ ↦ ?_)
+  -- Enlarge `s ∩ e.source` to the measurable set `e.symm '' Z`, where `Z` is a measurable
+  -- Lebesgue-null hull of the chart image of `s ∩ e.source`.
+  set e := extChartAt I α
+  set Z := toMeasurable b.addHaar (e '' (s ∩ e.source)) ∩ e.target
+  have hZ : Z ⊆ e.target := inter_subset_right
+  have hu_sub : e.symm '' Z ⊆ e.source := by
+    rw [e.symm_image_eq_source_inter_preimage hZ]
+    exact inter_subset_left
+  have himage : e '' (e.symm '' Z) = Z := e.image_symm_image_of_subset_target hZ
+  have hu : MeasurableSet (e.symm '' Z) := by
+    rw [← measurableSet_image_extChartAt_iff α hu_sub, himage]
+    exact (measurableSet_toMeasurable _ _).inter (measurableSet_extChartAt_target α)
+  have hsu : s ∩ e.source ⊆ e.symm '' Z := fun x hx ↦
+    ⟨e x, ⟨subset_toMeasurable _ _ ⟨x, hx, rfl⟩, e.map_source hx.2⟩, e.left_inv hx.2⟩
+  refine measure_mono_null hsu ?_
+  rw [φ.measure_apply_of_subset hu hu_sub, himage]
+  refine setLIntegral_measure_zero _ _ (measure_mono_null inter_subset_left ?_)
+  rw [measure_toMeasurable]
+  exact hs.chartwise α _
 
 /-! ### Top forms on the model space -/
 
