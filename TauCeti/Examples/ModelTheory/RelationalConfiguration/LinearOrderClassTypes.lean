@@ -95,6 +95,6 @@ theorem not_countable_image_mk_linearOrderClass :
   have : Countable (Ico ω ω₁ : Set Ordinal.{0}) := by
     have := h.to_subtype
     exact hf.countable
-  exact not_countable_Ico_omega0_omega_one (countable_coe_iff.1 this)
+  exact not_countable_Ico_omega_one Ordinal.omega0_lt_omega_one (countable_coe_iff.1 this)
 
 end TauCeti.Examples.ModelTheory.LinearOrderClassTypes
