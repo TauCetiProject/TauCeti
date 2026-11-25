@@ -23,9 +23,10 @@ as an inner product space over `ℝ` or `ℂ`, does not carry as an instance.
 
 Over a field of characteristic zero, this file records the identities of descriptive statistics
 used for sample means and scatter operators: the sum of a family is its size times its mean, the
-deviations `zᵢ - m` sum to zero, subtracting a constant `c` from a nonempty family subtracts it
-from the mean, and appending a point `y` to a family of `n` points moves the mean by
-`(n + 1)⁻¹ (y - m)`, including for `n = 0`.
+deviations `zᵢ - m` sum to zero, for a scalar family the squared deviations from `m` sum to the
+squared deviations from any point `c` less `card ι (m - c)²`, subtracting a constant `c` from a
+nonempty family subtracts it from the mean, and appending a point `y` to a family of `n` points
+moves the mean by `(n + 1)⁻¹ (y - m)`, including for `n = 0`.
 
 ## Main declarations
 
@@ -33,6 +34,8 @@ from the mean, and appending a point `y` to a family of `n` points moves the mea
 * `TauCeti.finiteMean_of_isEmpty`: the mean of the empty family is `0`.
 * `TauCeti.sum_eq_card_smul_finiteMean`: `∑ i, z i = card ι • m`.
 * `TauCeti.sum_sub_finiteMean`: `∑ i, (z i - m) = 0`.
+* `TauCeti.sum_sub_finiteMean_sq`: `∑ i, (z i - m) ^ 2 = ∑ i, (z i - c) ^ 2 - card ι * (m - c) ^ 2`
+  for a scalar family.
 * `TauCeti.finiteMean_sub_const`: the mean of the deviations `zᵢ - c` is `m - c`.
 * `TauCeti.finiteMean_snoc`: the mean after appending a point.
 -/
@@ -93,6 +96,19 @@ theorem sum_eq_card_smul_finiteMean (z : ι → E) :
 /-- The deviations of a finite family from its mean sum to zero. -/
 theorem sum_sub_finiteMean (z : ι → E) : ∑ i, (z i - finiteMean R z) = 0 := by
   simp [← Nat.cast_smul_eq_nsmul R, ← sum_eq_card_smul_finiteMean]
+
+/-- **König–Huygens for a scalar family.** The sum of the squared deviations of a finite family
+from its mean is the sum of its squared deviations from any point `c`, less the size of the family
+times the squared deviation of the mean from `c`. -/
+theorem sum_sub_finiteMean_sq (z : ι → R) (c : R) :
+    ∑ i, (z i - finiteMean R z) ^ 2 =
+      ∑ i, (z i - c) ^ 2 - Fintype.card ι * (finiteMean R z - c) ^ 2 := by
+  -- Expand `zᵢ - c = (zᵢ - m) + (m - c)`; the cross terms sum to zero by `sum_sub_finiteMean`.
+  have h (i : ι) : (z i - c) ^ 2 = (z i - finiteMean R z) ^ 2 +
+      2 * (finiteMean R z - c) * (z i - finiteMean R z) + (finiteMean R z - c) ^ 2 := by ring
+  simp only [h, sum_add_distrib, ← mul_sum, sum_sub_finiteMean, sum_const, card_univ,
+    nsmul_eq_mul]
+  ring
 
 /-- Subtracting a constant from every member of a nonempty family subtracts it from the mean. -/
 theorem finiteMean_sub_const [Nonempty ι] (z : ι → E) (c : E) :

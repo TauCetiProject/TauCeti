@@ -24,9 +24,10 @@ or that take values in an incomplete space. The `Lᵖ` bounds on the component m
 `MeasureTheory.Measure.eLpNorm_integral_bind_le` and `MeasureTheory.Measure.memLp_integral_bind`.
 If almost every component has mass at most a constant, then for real observables in `Lᵖ` and
 `L^q` of the mixture with conjugate exponents `p` and `q` the component covariances are
-integrable; no assumption on the mixing measure is needed for this. The laws of total
-covariance and variance need almost every component to be a probability measure and the mixing
-measure to be finite, but not of mass one: Mathlib's `covariance` and `variance` are defined for
+integrable, and so are the component variances of a square-integrable observable; no assumption
+on the mixing measure is needed for this. The laws of total covariance and variance need almost
+every component to be a probability measure and the mixing measure to be finite, but not of mass
+one: Mathlib's `covariance` and `variance` are defined for
 every measure and center by raw integrals, not by normalized averages, and the identities hold in
 that sense for every finite mixing measure. They fail for some infinite mixing measures. The
 covariance formula applies to any pair of real observables in `Lᵖ` and `L^q` of the mixture with
@@ -93,6 +94,16 @@ theorem integrable_covariance_bind {c : ℝ≥0} (hK : AEMeasurable K μ)
   simp only [Pi.mul_apply] at hprod hmeans
   exact (hprod.add (hmeans.bdd_mul hm hbdd)).congr (covariance_ae_eq_bind hK
     (hmass.mono fun _ ha ↦ ⟨ha.trans_lt ENNReal.coe_lt_top⟩) hX hY).symm
+
+/-- If almost every component has mass at most `c`, then for a real observable that is
+square-integrable under the mixture, the component variances are integrable under the mixing
+measure. -/
+theorem integrable_variance_bind {c : ℝ≥0} (hK : AEMeasurable K μ)
+    (hmass : ∀ᵐ a ∂μ, K a Set.univ ≤ c) (hX : MemLp X 2 (μ.bind K)) :
+    Integrable (fun a ↦ variance X (K a)) μ := by
+  refine (integrable_covariance_bind hK hmass hX hX).congr ?_
+  filter_upwards [Measure.ae_memLp_bind hK hX] with a ha
+  exact covariance_self ha.aestronglyMeasurable.aemeasurable
 
 variable [IsFiniteMeasure μ]
 
@@ -163,7 +174,17 @@ end TauCeti.Probability
 namespace ProbabilityTheory.Kernel
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
-  {μ : Measure α} [IsFiniteMeasure μ] {X Y : β → ℝ}
+  {μ : Measure α} {X Y : β → ℝ}
+
+/-- For a finite kernel and a real observable that is square-integrable under the composition,
+the component variances are integrable under the measure. -/
+theorem integrable_variance (κ : Kernel α β) [IsFiniteKernel κ] (hX : MemLp X 2 (κ ∘ₘ μ)) :
+    Integrable (fun a ↦ variance X (κ a)) μ :=
+  TauCeti.Probability.integrable_variance_bind (c := κ.bound.toNNReal) κ.aemeasurable
+    (Filter.Eventually.of_forall fun a ↦ (κ.measure_le_bound a _).trans_eq
+      (ENNReal.coe_toNNReal κ.bound_ne_top).symm) hX
+
+variable [IsFiniteMeasure μ]
 
 /-- The law of total covariance for the composition of a finite measure and a Markov kernel, for
 real observables in `Lᵖ` and `L^q` of the composition with conjugate exponents `p` and `q`, for
