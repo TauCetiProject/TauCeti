@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Transpose.Basic
+import TauCeti.Geometry.Manifold.ContMDiffMap.LocallyFiniteSum
 import TauCeti.Geometry.Manifold.VectorField.CoordinateFrame
 
 /-!
@@ -85,24 +86,13 @@ private theorem locallyFinite_support_glue (g : C^∞⟮I, M; ℝ⟯) :
     ContMDiffMap.tsupport_mul_subset_left
 
 /-- The operator `g ↦ ∑ᶠ i, T i (ρ i * g)` glued from the operators `T i` along a smooth partition
-of unity `ρ`. -/
-private def glue : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ where
-  toFun g := ⟨fun y ↦ ∑ᶠ i, T i (ρ i * g) y,
-    contMDiff_finsum (fun i ↦ (T i (ρ i * g)).contMDiff) (locallyFinite_support_glue ρ T hT g)⟩
-  map_add' g₁ g₂ := by
-    ext y
-    simp only [mul_add, map_add, ContMDiffMap.coe_add, Pi.add_apply, ContMDiffMap.coeFn_mk]
-    exact finsum_add_distrib ((locallyFinite_support_glue ρ T hT g₁).point_finite y)
-      ((locallyFinite_support_glue ρ T hT g₂).point_finite y)
-  map_smul' c g := by
-    ext y
-    simp only [mul_smul_comm, map_smul, ContMDiffMap.coe_smul, Pi.smul_apply, smul_eq_mul,
-      ContMDiffMap.coeFn_mk, RingHom.id_apply]
-    exact (mul_finsum _ _).symm
+of unity `ρ`, as a locally finite sum. -/
+private def glue : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ :=
+  locallyFiniteSum (fun i ↦ T i ∘ₗ mulLeft ℝ (ρ i)) (locallyFinite_support_glue ρ T hT)
 
 private theorem glue_apply (g : C^∞⟮I, M; ℝ⟯) (y : M) :
     glue ρ T hT g y = ∑ᶠ i, T i (ρ i * g) y :=
-  rfl
+  locallyFiniteSum_apply g y
 
 /-- Gluing operators of order at most `m` gives an operator of order at most `m`: if `g` lies in
 `I_x ^ (m + 1)`, so does each `ρ i * g`, and every piece vanishes at `x`. -/

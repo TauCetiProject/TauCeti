@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Symbol.ChartCompression
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
+public import TauCeti.Geometry.Manifold.ContMDiffMap.LocallyFiniteSum
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Pow
 
@@ -48,9 +49,10 @@ values on compactly supported functions, and hence by its chart compressions.
 * `TauCeti.IsProperlySupported P`: the operator `P` is properly supported. The identity, sums,
   scalar multiples, products with smooth functions on either side and local operators
   (`TauCeti.IsProperlySupported.of_local`) are properly supported.
-* `TauCeti.locallyFiniteSum P hP`: the locally finite sum `f ↦ ∑ᵢ Pᵢ f` of operators, properly
-  supported when the outputs of `Pᵢ` lie in compact sets `Sᵢ` forming a locally finite family and
-  each `Pᵢ` only sees its input near `Sᵢ` (`TauCeti.isProperlySupported_locallyFiniteSum`).
+* `TauCeti.isProperlySupported_locallyFiniteSum`: the locally finite sum
+  `TauCeti.locallyFiniteSum P hP` of operators `f ↦ ∑ᵢ Pᵢ f` is properly supported when the
+  outputs of `Pᵢ` lie in compact sets `Sᵢ` forming a locally finite family and each `Pᵢ` only sees
+  its input near `Sᵢ`.
 * `TauCeti.classicalPseudodifferentialOperators m`: the properly supported operators all of whose
   chart compressions are quantizations of classical symbols of order `m`, a complex submodule of
   the operators on `C^∞(M, ℂ)`.
@@ -186,52 +188,9 @@ theorem IsProperlySupported.of_local
 /-! #### Locally finite sums -/
 
 variable {ι : Type*}
-
-/-- The **locally finite sum** `f ↦ ∑ᵢ Pᵢ f` of operators `Pᵢ` on the complex-valued smooth
-functions on `M`, when for every `f` the supports of the outputs `Pᵢ f` form a locally finite
-family. -/
-def locallyFiniteSum
-    (P : ι → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
-      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
-    (hP : ∀ f, LocallyFinite fun i ↦ Function.support (P i f)) :
-    C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
-      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ :=
-  -- The sum of the outputs, a smooth function since their supports are locally finite.
-  let F (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
-      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ :=
-    ⟨fun x ↦ ∑ᶠ i, P i f x, contMDiff_finsum (fun i ↦ (P i f).contMDiff) (hP f)⟩
-  { toFun := F
-    map_add' f g := by
-      ext x
-      simp only [F, ContMDiffMap.coeFn_mk, map_add, ContMDiffMap.coe_add, Pi.add_apply]
-      exact finsum_add_distrib ((hP f).point_finite x) ((hP g).point_finite x)
-    map_smul' c f := by
-      ext x
-      -- Evaluate the scalar multiple while `F f` still has the type of smooth maps.
-      simp only [ContMDiffMap.complex_smul_apply, RingHom.id_apply]
-      simp only [F, ContMDiffMap.coeFn_mk, map_smul, ContMDiffMap.complex_smul_apply,
-        ← smul_eq_mul]
-      exact (smul_finsum' c ((hP f).point_finite x)).symm }
-
-variable {P : ι → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
-  C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+  {P : ι → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+    C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
   {hP : ∀ f, LocallyFinite fun i ↦ Function.support (P i f)} {S : ι → Set M}
-
-/-- A locally finite sum of operators is evaluated pointwise as a `finsum`. -/
-@[simp]
-theorem locallyFiniteSum_apply (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) :
-    locallyFiniteSum P hP f x = ∑ᶠ i, P i f x :=
-  (rfl)
-
-/-- At a point of a compact set `K`, a locally finite sum of operators with outputs supported in
-the sets `Sᵢ` is the finite sum over the indices with `Sᵢ` meeting `K`. -/
-theorem locallyFiniteSum_apply_eq_sum (hS : LocallyFinite S)
-    (hsupp : ∀ i f, tsupport (P i f) ⊆ S i) {K : Set M} (hK : IsCompact K)
-    (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) {x : M} (hx : x ∈ K) :
-    locallyFiniteSum P hP f x =
-      ∑ i ∈ (hS.finite_nonempty_inter_compact hK).toFinset, P i f x :=
-  finsum_eq_sum_of_support_subset _ fun i hi ↦
-    (hS.finite_nonempty_inter_compact hK).mem_toFinset.2 ⟨x, hsupp i f (subset_tsupport _ hi), hx⟩
 
 /-- A locally finite sum of operators `Pᵢ` with outputs supported in compact sets `Sᵢ`, each only
 seeing its input near `Sᵢ`, is properly supported. -/
