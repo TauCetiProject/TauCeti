@@ -7,8 +7,12 @@ module
 
 public import TauCeti.Algebra.Module.Lattice
 public import TauCeti.LinearAlgebra.TensorProduct.Quotient
-public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LatticeDefect.Basic
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Reduction
 public import TauCeti.RepresentationTheory.Lattice
+-- Non-public: `IsSMulRegular.submodule` and `Subrepresentation.toSubmodule_le_toSubmodule` are
+-- used only in proofs.
+import Mathlib.RingTheory.Regular.IsSMulRegular
+import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # Reductions of stable lattices
@@ -43,7 +47,7 @@ For `O = ℤ` (not a discrete valuation ring) the same independence is
 `TauCeti.reductionK0_eq_of_nonempty_equiv_baseChange_rat`, proved through the lattice defect. For
 continuous representations over a field with a valuative topology, stable lattices are the
 integral models `TauCeti.GaloisLattice.IntegralModel`; the lattices here carry no topology, and
-`K` is the fraction field of an arbitrary domain.
+`K` is the fraction field of an arbitrary discrete valuation ring, with no completeness needed.
 
 ## Main results
 
@@ -129,12 +133,10 @@ theorem reductionK0_eq_of_pow_smul_le [IsNoetherianRing O] [Module.Finite O N] {
     ∀ {P Q : Subrepresentation σ}, P ≤ Q → r ^ n • Q.toSubmodule ≤ P.toSubmodule →
       reductionK0 k P.toRepresentation = reductionK0 k Q.toRepresentation := by
   -- Induction on `n`: the submodule `P + rⁿ⁻¹ Q` is one step from `P` and `n - 1` steps from `Q`.
-  have hreg (P : Subrepresentation σ) : IsSMulRegular P.toSubmodule r :=
-    fun x y hxy ↦ Subtype.ext (hN (congrArg Subtype.val hxy))
   induction n with
   | zero =>
     intro P Q hPQ hQP
-    rw [pow_zero, one_smul] at hQP
+    rw [pow_zero, one_smul, Subrepresentation.toSubmodule_le_toSubmodule] at hQP
     obtain rfl : P = Q := le_antisymm hPQ hQP
     rfl
   | succ n ih =>
@@ -149,8 +151,10 @@ theorem reductionK0_eq_of_pow_smul_le [IsNoetherianRing O] [Module.Finite O N] {
     have hrT : r • T.toSubmodule ≤ P.toSubmodule := by
       rw [Subrepresentation.toSubmodule_sup, Submodule.smul_sup', smul_smul, ← pow_succ']
       exact sup_le (Submodule.smul_le_self_of_tower _ _) hQP
-    have hTQ : T ≤ Q := sup_le hPQ fun _ hv ↦ Submodule.smul_le_self_of_tower _ _ hv
-    have hPT : P.toSubmodule ≤ T.toSubmodule := le_sup_left (a := P)
+    have hTQ : T ≤ Q := sup_le hPQ <|
+      Subrepresentation.toSubmodule_le_toSubmodule.mp (Submodule.smul_le_self_of_tower _ _)
+    have hPT : P.toSubmodule ≤ T.toSubmodule :=
+      Subrepresentation.toSubmodule_le_toSubmodule.mpr le_sup_left
     -- The inclusion `P → T` and multiplication by `r` from `T` to `P` compose to `r`.
     let a : IntertwiningMap P.toRepresentation T.toRepresentation :=
       ⟨Submodule.inclusion hPT, fun g ↦ rfl⟩
@@ -159,8 +163,13 @@ theorem reductionK0_eq_of_pow_smul_le [IsNoetherianRing O] [Module.Finite O N] {
         hrT (Submodule.smul_mem_pointwise_smul _ _ _ v.property), fun g ↦ by
         ext v
         exact (map_smul (σ g) r (v : N)).symm⟩
-    exact (reductionK0_eq_of_comp_eq_smul hk hker a b (fun _ ↦ rfl) (fun _ ↦ rfl)
-      (hreg P) (hreg T)).trans (ih hTQ le_sup_right)
+    have hab (w : T.toSubmodule) : a (b w) = r • w := Subtype.ext <| by
+      simp [a, b, ← IntertwiningMap.toLinearMap_apply]
+    have hba (v : P.toSubmodule) : b (a v) = r • v := Subtype.ext <| by
+      simp [a, b, ← IntertwiningMap.toLinearMap_apply]
+    exact (reductionK0_eq_of_comp_eq_smul hk hker a b hab hba
+      (IsSMulRegular.submodule P.toSubmodule r hN)
+      (IsSMulRegular.submodule T.toSubmodule r hN)).trans (ih hTQ le_sup_right)
 
 end Reduction
 
@@ -194,8 +203,7 @@ theorem reductionK0_residueField_eq_of_nonempty_equiv_baseChange [IsDomain O]
     intro w hw
     obtain ⟨x, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hw
     refine ⟨f' ((u⁻¹ : Oˣ) • x), ?_⟩
-    rw [IntertwiningMap.toLinearMap_apply, hff', hs, mul_comm (u : O), mul_smul,
-      ← Units.smul_def, smul_inv_smul]
+    simp [hff', hs, mul_comm (u : O), mul_smul, ← Units.smul_def]
   let k := IsLocalRing.ResidueField O
   let eρ : ρ.Equiv f.range.toRepresentation :=
     .mk (LinearEquiv.ofInjective f.toLinearMap hf) fun g ↦ by

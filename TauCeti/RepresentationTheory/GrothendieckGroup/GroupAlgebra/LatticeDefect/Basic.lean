@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.Algebra.Module.Torsion.Tensor
 public import TauCeti.LinearAlgebra.TensorProduct.Quotient
 public import TauCeti.RepresentationTheory.AsModule
 public import TauCeti.RepresentationTheory.BaseChange
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Reduction
 public import TauCeti.RepresentationTheory.TorsionBy
 -- Non-public: `DistribMulActionHom.toIntertwiningMap` is used only in proofs.
 import TauCeti.RepresentationTheory.Intertwining
@@ -24,9 +24,8 @@ a finitely generated abelian group, it has a class
 
 `TauCeti.reductionK0 k ρ = [k ⊗_ℤ W] ∈ G₀(k[G])`
 
-in the exact Grothendieck group of finitely generated `k[G]`-modules. The class is defined in the
-same way for a representation over any commutative ring `O` with an algebra `k`, such as the
-residue field of a discrete valuation ring.
+in the exact Grothendieck group of finitely generated `k[G]`-modules. The class and its basic
+API are defined, for a representation over any commutative ring, in a separate file.
 
 For a `G`-module `V` (an abelian group with a distributive `G`-action) and a natural number `ℓ`
 such that `V ⧸ ℓV` and the `ℓ`-torsion `V[ℓ]` are finite, the **lattice defect** is
@@ -53,12 +52,10 @@ defects. Neither the characteristic of `k` nor finiteness of `G` is used.
 
 ## Main definitions
 
-* `TauCeti.reductionK0`: the class in `G₀(k[G])` of the reduction `k ⊗_O W`.
 * `TauCeti.latticeDefect`: the class `[k ⊗_ℤ (V ⧸ ℓV)] - [k ⊗_ℤ V[ℓ]]`.
 
 ## Main results
 
-* `TauCeti.reductionK0_congr`: equivalent representations have equal reduction classes.
 * `TauCeti.reductionK0_quotSMulTop`: in characteristic `ℓ`, the reduction class of `W ⧸ ℓW` is
   that of `W`.
 * `TauCeti.latticeDefect_eq_reductionK0_sub`: in characteristic `ℓ`, the lattice defect is
@@ -88,62 +85,6 @@ universe u
 
 variable (k : Type u) [CommRing k] {G : Type u} [Monoid G]
 
-/-! ### The reduction class -/
-
-section Reduction
-
-variable {O : Type*} [CommRing O] [Algebra O k]
-
-/-- The module of a reduction `k ⊗_O W` that is finitely generated over `k`, for instance because
-`W` is finitely generated over `O`, is finitely generated over `k[G]`. -/
-instance instModuleFiniteAsModuleBaseChange {W : Type u} [AddCommGroup W] [Module O W]
-    [Module.Finite k (k ⊗[O] W)] (ρ : Representation O G W) :
-    Module.Finite k[G] (Representation.baseChange k ρ).asModule :=
-  Module.Finite.of_restrictScalars_finite k k[G] _
-
-variable {W : Type u} [AddCommGroup W] [Module O W] [Module.Finite k (k ⊗[O] W)]
-
-/-- **The reduction class** of a representation `ρ` of `G` on an `O`-module `W` whose reduction
-`k ⊗_O W` is finitely generated over `k`, for instance because `W` is finitely generated over `O`:
-the class in `G₀(k[G])` of its scalar extension `k ⊗_O W`, with `G` acting on the second factor.
-For `O = ℤ`, `W` is an abelian group. -/
-noncomputable def reductionK0 (ρ : Representation O G W) :
-    ExactK0 (finiteModulesExactStructure k[G]) :=
-  ExactK0.of (FGModuleCat.of k[G] (Representation.baseChange k ρ).asModule)
-
-/-- The reduction class is the class of the `k[G]`-module of the base-changed representation. -/
-theorem reductionK0_def (ρ : Representation O G W) :
-    reductionK0 k ρ = ExactK0.of (FGModuleCat.of k[G] (Representation.baseChange k ρ).asModule) :=
-  (rfl)
-
-/-- Equivalent scalar extensions have equal reduction classes. -/
-theorem reductionK0_congr_baseChange {W' : Type u} [AddCommGroup W'] [Module O W']
-    [Module.Finite k (k ⊗[O] W')] {ρ : Representation O G W} {σ : Representation O G W'}
-    (e : (Representation.baseChange k ρ).Equiv (Representation.baseChange k σ)) :
-    reductionK0 k ρ = reductionK0 k σ := by
-  rw [reductionK0_def, reductionK0_def]
-  exact ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv e).toFGModuleCatIso
-
-/-- Equivalent representations have equal reduction classes. -/
-theorem reductionK0_congr {W' : Type u} [AddCommGroup W'] [Module O W']
-    [Module.Finite k (k ⊗[O] W')]
-    {ρ : Representation O G W} {σ : Representation O G W'} (e : ρ.Equiv σ) :
-    reductionK0 k ρ = reductionK0 k σ :=
-  reductionK0_congr_baseChange k (e.baseChange k)
-
-/-- The reduction class of a zero module is zero. -/
-@[simp]
-theorem reductionK0_eq_zero_of_subsingleton [Subsingleton W] (ρ : Representation O G W) :
-    reductionK0 k ρ = 0 := by
-  have : Subsingleton (Representation.baseChange k ρ).asModule :=
-    (Representation.baseChange k ρ).asModuleEquiv.injective.subsingleton
-  exact ExactK0.of_eq_zero_of_isZero <| CategoryTheory.Limits.IsZero.of_full_of_faithful_of_isZero
-    (ModuleCat.isFG k[G]).ι _
-      (ModuleCat.isZero_of_subsingleton
-        (ModuleCat.of k[G] (Representation.baseChange k ρ).asModule))
-
-end Reduction
-
 /-- **The reduction of `W ⧸ ℓW` is that of `W`** in characteristic `ℓ`: the reduction classes of
 `ρ.quotSMulTop ℓ` and of `ρ` agree. Here `k ⊗_ℤ W` is finitely generated over `k` as soon as
 `k ⊗_ℤ (W ⧸ ℓW)` is, even when `W` is not. -/
@@ -156,8 +97,7 @@ theorem reductionK0_quotSMulTop (ℓ : ℕ) [CharP k ℓ] {W : Type u} [AddCommG
   haveI : Module.Finite k (k ⊗[ℤ] W) :=
     Module.Finite.equiv
       (ρ.baseChangeQuotSMulTopEquiv (A := k) (r := (ℓ : ℤ)) (by simp)).symm.toLinearEquiv
-  ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv
-    (ρ.baseChangeQuotSMulTopEquiv (by simp)).symm).toFGModuleCatIso
+  reductionK0_congr_baseChange k (ρ.baseChangeQuotSMulTopEquiv (by simp)).symm
 
 /-! ### The six-term sequence of reductions -/
 
@@ -229,6 +169,7 @@ private theorem reductionK0_six_term (hfg : Exact f g) (hf : Injective f) (hg : 
     exact LinearMap.lTensor_surjective k (QuotSMulTop.map_surjective _ hg)
   -- The module types are given explicitly: the instances of `Representation.asModule` used by
   -- `reductionLinearMap` differ syntactically from those `FGModuleCat.of` asks for.
+  simp only [reductionK0_def]
   exact exactK0_add_add_eq_add_add_of_exact (R := k[G])
     (M₁ := reductionModule k (ρ₁.torsionBy ℓ)) (M₂ := reductionModule k (ρ₂.torsionBy ℓ))
     (M₃ := reductionModule k (ρ₃.torsionBy ℓ)) (M₄ := reductionModule k (ρ₁.quotSMulTop ℓ))
