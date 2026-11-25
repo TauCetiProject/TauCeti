@@ -12,6 +12,7 @@ import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Analysis.Normed.Affine.AddTorsorBases
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.Topology.Instances.Real.Lemmas
+import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Convex.Caratheodory
 
 /-!
@@ -34,6 +35,8 @@ curve, is the tangent line at `γ s`, so `z = γ s`.
 
 * `TauCeti.ConvexTable.region`: the region `Ω` bounded by a table.
 * `TauCeti.ConvexTable.isCompact_region`: `Ω` is compact.
+* `TauCeti.ConvexTable.region_shift`, `TauCeti.ConvexTable.region_ofLE`,
+  `TauCeti.ConvexTable.region_rigidMotion`: the region under the operations on tables.
 * `TauCeti.ConvexTable.im_conj_deriv_mul_sub_pos_of_mem_region`: `Ω` minus the point of tangency
   lies in the open half-plane to the left of each tangent line.
 * `TauCeti.ConvexTable.interior_region_nonempty`: `Ω` has nonempty interior.
@@ -70,6 +73,7 @@ theorem convex_region : Convex ℝ T.region := convex_convexHull ℝ _
 
 theorem subset_region : range T ⊆ T.region := subset_convexHull ℝ _
 
+@[simp]
 theorem apply_mem_region (s : ℝ) : T s ∈ T.region := T.subset_region (mem_range_self s)
 
 /-- The image of a table is compact. -/
@@ -81,21 +85,28 @@ theorem isCompact_region : IsCompact T.region := T.isCompact_range.convexHull
 
 theorem isClosed_region : IsClosed T.region := T.isCompact_region.isClosed
 
-/-- A real linear functional on `ℂ` killing a unit vector `τ` is a multiple of the cross product
-with `τ`: `f w = f (i τ) (τ × w)`. -/
-theorem _root_.LinearMap.apply_eq_mul_im_conj_mul {f : ℂ →ₗ[ℝ] ℝ} {τ : ℂ} (hτ : ‖τ‖ = 1)
-    (hf : f τ = 0) (w : ℂ) : f w = f (I * τ) * (conj τ * w).im := by
-  have hw : w = (conj τ * w).re • τ + (conj τ * w).im • (I * τ) := by
-    have h1 : τ * conj τ = 1 := by
-      rw [mul_conj, normSq_eq_norm_sq, hτ]
-      norm_num
-    calc w = τ * (conj τ * w) := by rw [← mul_assoc, h1, one_mul]
-      _ = _ := by
-        conv_lhs => rw [← re_add_im (conj τ * w)]
-        simp only [real_smul]
-        ring
-  conv_lhs => rw [hw]
-  rw [map_add, map_smul, map_smul, hf, smul_eq_mul, smul_eq_mul, mul_zero, zero_add, mul_comm]
+/-- Reparametrizing a table by a shift does not change its region. -/
+@[simp]
+theorem region_shift (c : ℝ) : (T.shift c).region = T.region := by
+  have : range (T.shift c) = range T := by
+    ext z
+    exact ⟨fun ⟨s, hs⟩ => ⟨s + c, by rwa [shift_apply] at hs⟩, fun ⟨s, hs⟩ => ⟨s - c, by simp [hs]⟩⟩
+  rw [region_def, region_def, this]
+
+/-- Weakening the smoothness of a table does not change its region. -/
+@[simp]
+theorem region_ofLE {j : ℕ∞} (hj : 1 ≤ j) (hjk : j ≤ k) : (T.ofLE hj hjk).region = T.region := by
+  rw [region_def, region_def, coe_ofLE]
+
+/-- The region of a table moved by the rigid motion `z ↦ a z + b` is the image of its region. -/
+theorem region_rigidMotion (a : Circle) (b : ℂ) :
+    (T.rigidMotion a b).region = (fun z => a * z + b) '' T.region := by
+  let f : ℂ →ᵃ[ℝ] ℂ := (LinearMap.mulLeft ℝ (a : ℂ)).toAffineMap + AffineMap.const ℝ ℂ b
+  have hf : ⇑f = fun z => a * z + b := rfl
+  rw [region_def, region_def, ← hf, f.image_convexHull, ← range_comp]
+  congr 2
+  funext s
+  simp [hf]
 
 /-- At a local maximum of `f ∘ γ` for a continuous linear functional `f`, the functional kills the
 unit tangent. -/
@@ -103,19 +114,22 @@ private theorem map_deriv_eq_zero_of_isLocalMax {f : ℂ →L[ℝ] ℝ} {s : ℝ
     (h : IsLocalMax (fun t => f (T t)) s) : f (deriv T s) = 0 :=
   h.hasDerivAt_eq_zero (f.hasFDerivAt.comp_hasDerivAt s (T.hasDerivAt s))
 
+/-- The cross product with a fixed vector, measured from a base point `p`, is affine. -/
+private theorem im_conj_mul_smul_add_smul_sub {a b : ℝ} (hab : a + b = 1) (c x y p : ℂ) :
+    (conj c * (a • x + b • y - p)).im = a * (conj c * (x - p)).im + b * (conj c * (y - p)).im := by
+  have : a • x + b • y - p = a • (x - p) + b • (y - p) := by
+    calc a • x + b • y - p = a • x + b • y - (a + b) • p := by rw [hab, one_smul]
+      _ = _ := by rw [add_smul, smul_sub, smul_sub]; abel
+  rw [this]
+  simp only [real_smul, mul_add, mul_left_comm _ (a : ℂ), mul_left_comm _ (b : ℂ), add_im,
+    im_ofReal_mul]
+
 /-- **The region lies to the left of each tangent line.** Every point `z ≠ γ s` of the region
 satisfies `0 < τ(s) × (z − γ s)`. -/
 theorem im_conj_deriv_mul_sub_pos_of_mem_region {s : ℝ} {z : ℂ} (hz : z ∈ T.region)
     (hzs : z ≠ T s) : 0 < (conj (deriv T s) * (z - T s)).im := by
   set τ := deriv T s
   let H : Set ℂ := {w | 0 < (conj τ * (w - T s)).im} ∪ {T s}
-  have hlin (a b : ℝ) (x y : ℂ) (hab : a + b = 1) : (conj τ * (a • x + b • y - T s)).im =
-      a * (conj τ * (x - T s)).im + b * (conj τ * (y - T s)).im := by
-    have : a • x + b • y - T s = a • (x - T s) + b • (y - T s) := by
-      calc a • x + b • y - T s = a • x + b • y - (a + b) • T s := by rw [hab, one_smul]
-        _ = _ := by rw [add_smul, smul_sub, smul_sub]; abel
-    rw [this]
-    simp [real_smul, mul_add, mul_left_comm _ (a : ℂ), mul_left_comm _ (b : ℂ)]
   have hH : Convex ℝ H := by
     refine convex_iff_forall_pos.2 fun x hx y hy a b ha hb hab => ?_
     by_cases hxy : x = T s ∧ y = T s
@@ -123,7 +137,7 @@ theorem im_conj_deriv_mul_sub_pos_of_mem_region {s : ℝ} {z : ℂ} (hz : z ∈ 
       exact Or.inr rfl
     refine Or.inl ?_
     simp only [H, mem_union, mem_ofPred_eq, mem_singleton_iff] at hx hy ⊢
-    rw [hlin a b x y hab]
+    rw [im_conj_mul_smul_add_smul_sub hab]
     rcases hx with hx | rfl <;> rcases hy with hy | rfl
     · positivity
     · simp only [sub_self, mul_zero, zero_im]; positivity
@@ -143,8 +157,15 @@ theorem eq_of_mem_region_of_im_conj_deriv_mul_sub_nonpos {s : ℝ} {z : ℂ} (hz
     (h : (conj (deriv T s) * (z - T s)).im ≤ 0) : z = T s :=
   by_contra fun hzs => (T.im_conj_deriv_mul_sub_pos_of_mem_region hz hzs).not_ge h
 
+/-- Every point of the region satisfies `0 ≤ τ(s) × (z − γ s)`. -/
+theorem im_conj_deriv_mul_sub_nonneg_of_mem_region {s : ℝ} {z : ℂ} (hz : z ∈ T.region) :
+    0 ≤ (conj (deriv T s) * (z - T s)).im := by
+  by_cases h : z = T s
+  · simp [h]
+  · exact (T.im_conj_deriv_mul_sub_pos_of_mem_region hz h).le
+
 /-- The image of a table spans the plane as an affine space. -/
-theorem affineSpan_range : affineSpan ℝ (range T) = ⊤ := by
+theorem affineSpan_range_eq_top : affineSpan ℝ (range T) = ⊤ := by
   by_contra hne
   have hlt : vectorSpan ℝ (range T) < ⊤ := by
     rw [lt_top_iff_ne_top, ← direction_affineSpan]
@@ -171,7 +192,7 @@ theorem affineSpan_range : affineSpan ℝ (range T) = ⊤ := by
 
 /-- The region of a table has nonempty interior. -/
 theorem interior_region_nonempty : (interior T.region).Nonempty :=
-  interior_convexHull_nonempty_iff_affineSpan_eq_top.2 T.affineSpan_range
+  interior_convexHull_nonempty_iff_affineSpan_eq_top.2 T.affineSpan_range_eq_top
 
 /-- The points `γ s − ε i τ(s)` with `ε > 0`, strictly to the right of the tangent line at `γ s`,
 lie outside the region. -/
@@ -180,17 +201,15 @@ private theorem sub_smul_I_mul_deriv_notMem_region (s : ℝ) {ε : ℝ} (hε : 0
   have := T.im_conj_deriv_mul_sub_pos_of_mem_region (s := s) h (by
     rw [Ne, sub_eq_self, smul_eq_zero, not_or]
     exact ⟨hε.ne', mul_ne_zero I_ne_zero (T.deriv_ne_zero s)⟩)
-  have h1 : conj (deriv T s) * deriv T s = 1 := by
-    rw [mul_comm, mul_conj, normSq_eq_norm_sq, T.norm_deriv]
-    norm_num
+  have h1 : conj (deriv T s) * deriv T s = 1 := by simp [conj_mul']
   have h2 : conj (deriv T s) * (T s - ε • (I * deriv T s) - T s) = -(ε * I) := by
     rw [sub_sub_cancel_left, real_smul]
     linear_combination (-(ε : ℂ) * I) * h1
-  rw [h2] at this
-  simp at this
+  rw [h2, neg_im, mul_im, ofReal_re, ofReal_im, I_re, I_im] at this
   linarith
 
 /-- **The frontier of the region is the image of the table.** -/
+@[simp]
 theorem frontier_region : frontier T.region = range T := by
   refine Subset.antisymm (fun z hz => ?_) ?_
   · rw [T.isClosed_region.frontier_eq] at hz
@@ -240,26 +259,17 @@ theorem strictConvex_region : StrictConvex ℝ T.region := by
   obtain ⟨s, hs⟩ : a • x + b • y ∈ range T := by
     rw [← T.frontier_region, T.isClosed_region.frontier_eq]
     exact ⟨hp, hint⟩
-  have hzero : a * (conj (deriv T s) * (x - T s)).im +
-      b * (conj (deriv T s) * (y - T s)).im = 0 := by
-    have : a • (x - T s) + b • (y - T s) = 0 := by
-      rw [smul_sub, smul_sub, sub_add_sub_comm, ← add_smul, hab, one_smul, hs, sub_self]
-    have := congrArg (fun w => (conj (deriv T s) * w).im) this
-    simpa [real_smul, mul_add, mul_left_comm _ (a : ℂ), mul_left_comm _ (b : ℂ)] using this
-  have hx' : 0 ≤ (conj (deriv T s) * (x - T s)).im := by
-    by_cases h : x = T s
-    · simp [h]
-    · exact (T.im_conj_deriv_mul_sub_pos_of_mem_region hx h).le
-  have hy' : 0 ≤ (conj (deriv T s) * (y - T s)).im := by
-    by_cases h : y = T s
-    · simp [h]
-    · exact (T.im_conj_deriv_mul_sub_pos_of_mem_region hy h).le
+  have hzero := im_conj_mul_smul_add_smul_sub hab (deriv T s) x y (T s)
+  rw [← hs, sub_self, mul_zero, zero_im] at hzero
+  have hx' := T.im_conj_deriv_mul_sub_nonneg_of_mem_region (s := s) hx
+  have hy' := T.im_conj_deriv_mul_sub_nonneg_of_mem_region (s := s) hy
   have h1 := T.eq_of_mem_region_of_im_conj_deriv_mul_sub_nonpos hx (by nlinarith)
   have h2 := T.eq_of_mem_region_of_im_conj_deriv_mul_sub_nonpos hy (by nlinarith)
   exact hxy (h1.trans h2.symm)
 
 attribute [local instance] Complex.finrank_real_complex_fact in
 /-- The region of the circle of radius `R` is the closed disc of radius `R`. -/
+@[simp]
 theorem region_circle (R : ℝ) [Fact (0 < 2 * Real.pi * R)] :
     (circle R).region = Metric.closedBall 0 R := by
   have hR : 0 < R := Real.pos_of_fact_two_pi_mul_pos
