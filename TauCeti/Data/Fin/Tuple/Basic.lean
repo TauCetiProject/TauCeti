@@ -10,6 +10,7 @@ public import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.Algebra.NeZero
 import Mathlib.Data.Set.Image
 import Mathlib.Data.Set.Insert
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Insertions and appends in tuples
@@ -88,6 +89,8 @@ once.
 * `Fin.comp_succ_succAbove_comp_predAbove`: when adjacent entries at `p.castSucc` and `p.succ`
   agree, deleting `p.succ` via `p.succ.succAbove` and pulling back along `p.predAbove` recovers the
   tuple.
+* `Fin.insertNth_comp_succAbove_eq_comp_swap`: inserting `f i.castSucc` at `i.succ.succ` and
+  deleting `i.castSucc.castSucc` swaps the entries of `f` at `i.castSucc` and `i.succ`.
 -/
 
 public section
@@ -559,5 +562,28 @@ theorem comp_succ_succAbove_comp_predAbove {α : Type*} {n : ℕ} {f : Fin (n + 
   · subst hi
     simp [hf]
   · simp [Function.comp_apply, Fin.succ_succAbove_predAbove hi]
+
+/-- Inserting `f i.castSucc` at position `i.succ.succ` into a tuple `f : Fin (n + 2) → α` and then
+deleting position `i.castSucc.castSucc` swaps the entries at `i.castSucc` and `i.succ`. -/
+theorem insertNth_comp_succAbove_eq_comp_swap {n : ℕ} (i : Fin (n + 1)) (f : Fin (n + 2) → α) :
+    i.succ.succ.insertNth (α := fun _ ↦ α) (f i.castSucc) f ∘ i.castSucc.castSucc.succAbove =
+      f ∘ Equiv.swap i.castSucc i.succ := by
+  funext j
+  simp only [Function.comp_apply]
+  by_cases hj : j = i.succ
+  · subst hj
+    have h : i.castSucc.castSucc.succAbove i.succ = i.succ.succ :=
+      Fin.ext (by simp [val_succAbove])
+    rw [h, insertNth_apply_same, Equiv.swap_apply_right]
+  · have h : i.castSucc.castSucc.succAbove j =
+        i.succ.succ.succAbove (Equiv.swap i.castSucc i.succ j) := by
+      refine Fin.ext ?_
+      by_cases hj' : j = i.castSucc
+      · subst hj'
+        simp
+      · rw [Equiv.swap_apply_of_ne_of_ne hj' hj]
+        simp only [val_succAbove, Fin.ext_iff, val_castSucc, val_succ] at hj hj' ⊢
+        split_ifs <;> omega
+    rw [h, insertNth_apply_succAbove]
 
 end Fin

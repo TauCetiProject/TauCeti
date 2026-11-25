@@ -16,6 +16,7 @@ import Mathlib.Topology.MetricSpace.ThickenedIndicator
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Continuity
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
 import TauCeti.Analysis.Matrix.L2OpNorm
+import TauCeti.Analysis.Matrix.Spectrum
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.Topology.Instances.Matrix
 
@@ -255,9 +256,7 @@ theorem IsHermitian.trace_cfc (hA : A.IsHermitian) (f : ℝ → ℝ) :
 theorem IsHermitian.trace_cfc_eq_sum_eigenvalues₀ (hA : A.IsHermitian) (f : ℝ → ℝ) :
     (cfc f A).trace = ∑ i, (f (hA.eigenvalues₀ i) : 𝕜) := by
   rw [hA.trace_cfc]
-  simp only [IsHermitian.eigenvalues]
-  exact Equiv.sum_comp (Fintype.equivOfCardEq (Fintype.card_fin _)).symm
-    fun i ↦ (f (hA.eigenvalues₀ i) : 𝕜)
+  exact hA.sum_comp_eigenvalues fun x ↦ (f x : 𝕜)
 
 /-- The entries of `U⋆ V`, for the eigenvector unitaries `U` of `A` and `V` of `B`, are the inner
 products of the eigenvectors of `A` with those of `B`. -/

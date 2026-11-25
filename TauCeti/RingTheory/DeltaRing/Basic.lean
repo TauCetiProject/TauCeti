@@ -52,6 +52,8 @@ such a ring commutes with `δ` exactly when it commutes with the Frobenius lifts
   surjective ring homomorphism out of a `δ`-ring makes it a `δ`-map.
 * `TauCeti.DeltaRing.isEmpty_of_natCast_eq_zero`: a nonzero ring in which `p = 0` has no
   `δ`-structure.
+* `TauCeti.DeltaRing.delta_natCast_mul_notMem`: for a radical ideal `m ∋ p` and `w ∉ m`,
+  `δ (p w) ∉ m`; consequently `p w ≠ e c` when `e, c ∈ m` (`natCast_mul_ne_mul`).
 
 ## References
 
@@ -166,6 +168,37 @@ theorem IsFrobeniusLift.mk_eq {f : A →+* A} (hf : IsFrobeniusLift p f) (x : A)
     Ideal.Quotient.mk (Ideal.span {(p : A)}) (f x) =
       Ideal.Quotient.mk (Ideal.span {(p : A)}) (x ^ p) :=
   (isFrobeniusLift_iff_mk_eq f).mp hf x
+
+/-- A ring endomorphism is a Frobenius lift as soon as it lifts the `p`-th power map modulo `p`
+on a set generating its source as a ring: the elements `x` with `p ∣ f x - x ^ p` form a
+subring, by the binomial theorem modulo `p`. -/
+theorem isFrobeniusLift_of_closure_eq_top [hp : Fact p.Prime] {s : Set A}
+    (hs : Subring.closure s = ⊤) (f : A →+* A) (h : ∀ x ∈ s, (p : A) ∣ f x - x ^ p) :
+    IsFrobeniusLift p f := by
+  refine ⟨fun x => ?_⟩
+  induction (hs ▸ Subring.mem_top x : x ∈ Subring.closure s) using Subring.closure_induction with
+  | mem x hx => exact h x hx
+  | zero => simp [zero_pow hp.out.ne_zero]
+  | one => simp
+  | add x y _ _ hx hy =>
+    obtain ⟨a, ha⟩ := hx
+    obtain ⟨b, hb⟩ := hy
+    refine ⟨a + b + addCorrection p x y, ?_⟩
+    rw [map_add]
+    linear_combination ha + hb - natCast_mul_addCorrection (p := p) x y
+  | neg x _ hx =>
+    obtain ⟨a, ha⟩ := hx
+    refine ⟨-a - addCorrection p x (-x), ?_⟩
+    have h0 := natCast_mul_addCorrection (p := p) x (-x)
+    rw [add_neg_cancel, zero_pow hp.out.ne_zero, sub_zero] at h0
+    rw [map_neg]
+    linear_combination -ha + h0
+  | mul x y _ _ hx hy =>
+    obtain ⟨a, ha⟩ := hx
+    obtain ⟨b, hb⟩ := hy
+    refine ⟨a * f y + x ^ p * b, ?_⟩
+    rw [map_mul]
+    linear_combination f y * ha + x ^ p * hb
 
 /-- If `x` lies in an ideal `I`, so does `addCorrection p x y`: each of its monomials
 `x ^ i * y ^ (p - i)` has `0 < i`. -/
@@ -289,6 +322,20 @@ theorem eq_of_isDeltaMap_of_surjective {f : A →+* B} (hf : Function.Surjective
   exact (@IsDeltaMap.map_delta p A _ B _ _ δ₁ f h₁ x).symm.trans
     (@IsDeltaMap.map_delta p A _ B _ _ δ₂ f h₂ x)
 
+/-- A ring homomorphism is a `δ`-map as soon as it commutes with `δ` on a set generating its
+source as a ring: the elements on which it commutes with `δ` form a subring, by the sum and
+product rules of `δ`. -/
+theorem isDeltaMap_of_closure_eq_top {s : Set A} (hs : Subring.closure s = ⊤) (f : A →+* B)
+    (h : ∀ x ∈ s, f (delta p x) = delta p (f x)) : IsDeltaMap p f := by
+  refine ⟨fun x => ?_⟩
+  induction (hs ▸ Subring.mem_top x : x ∈ Subring.closure s) using Subring.closure_induction with
+  | mem x hx => exact h x hx
+  | zero => simp
+  | one => simp
+  | add x y _ _ hx hy => simp [delta_add, hx, hy]
+  | neg x _ hx => simp [delta_neg, hx]
+  | mul x y _ _ hx hy => simp [delta_mul, hx, hy]
+
 end IsDeltaMap
 
 section Frobenius
@@ -318,6 +365,16 @@ theorem frobenius_sub_pow (x : A) : frobenius p A x - x ^ p = p * delta p x := b
 /-- The Frobenius of a `δ`-ring lifts the `p`-th power map modulo `p`. -/
 theorem natCast_dvd_frobenius_sub_pow (x : A) : (p : A) ∣ frobenius p A x - x ^ p :=
   ⟨delta p x, frobenius_sub_pow x⟩
+
+/-- For a radical ideal `m` containing `p`, the Frobenius preserves and reflects membership in
+`m`, as `φ x ≡ x ^ p` modulo `p`. -/
+theorem frobenius_mem_iff_of_natCast_mem {m : Ideal A} (hm : m.IsRadical) (hpm : (p : A) ∈ m)
+    {x : A} : frobenius p A x ∈ m ↔ x ∈ m := by
+  have h : frobenius p A x - x ^ p ∈ m := by
+    rw [frobenius_sub_pow]
+    exact m.mul_mem_right _ hpm
+  refine ⟨fun hx ↦ hm ⟨p, by simpa using m.sub_mem hx h⟩, fun hx ↦ ?_⟩
+  simpa using m.add_mem h (m.pow_mem_of_mem hx p (Fact.out : p.Prime).pos)
 
 variable (p A) in
 /-- The Frobenius of a `δ`-ring is a Frobenius lift. -/
@@ -547,6 +604,34 @@ theorem delta_natCast_self : delta p (p : A) = 1 - (p : A) ^ (p - 1) := by
     rw [mul_sub, mul_one, ← pow_succ', Nat.sub_add_cancel hp.out.one_le]
   rw [delta_natCast, h, Int.mul_ediv_cancel_left _ hp0]
   simp
+
+/-- If `p` lies in a radical ideal `m` of a `δ`-ring and `w ∉ m`, then `δ (p w) ∉ m`: modulo `m`,
+`δ (p w)` is `w ^ p` (as `δ p = 1 - p ^ (p - 1)`). -/
+theorem delta_natCast_mul_notMem {m : Ideal A} (hm : m.IsRadical) (hpm : (p : A) ∈ m)
+    {w : A} (hwm : w ∉ m) : delta p ((p : A) * w) ∉ m := by
+  intro hδ
+  have hp1 : (p : A) ^ (p - 1) ∈ m := m.pow_mem_of_mem hpm _ (Nat.sub_pos_of_lt hp.out.one_lt)
+  have hL : delta p ((p : A) * w) - w ^ p ∈ m := by
+    have : delta p ((p : A) * w) - w ^ p = (p : A) ^ p * delta p w -
+        w ^ p * (p : A) ^ (p - 1) + p * (1 - (p : A) ^ (p - 1)) * delta p w := by
+      rw [delta_mul, delta_natCast_self]
+      ring
+    rw [this]
+    exact m.add_mem (m.sub_mem (m.mul_mem_right _ (m.pow_mem_of_mem hpm _ hp.out.pos))
+      (m.mul_mem_left _ hp1)) (m.mul_mem_right _ (m.mul_mem_right _ hpm))
+  exact hwm (hm ⟨p, by simpa using m.sub_mem hδ hL⟩)
+
+/-- If `p` lies in a radical ideal `m` of a `δ`-ring, then `p w ≠ e c` for `e, c ∈ m` and
+`w ∉ m`: applying `δ`, the left side lies outside `m` by `delta_natCast_mul_notMem`, while the
+right side lies in `m`. -/
+theorem natCast_mul_ne_mul {m : Ideal A} (hm : m.IsRadical) (hpm : (p : A) ∈ m)
+    {e c w : A} (hem : e ∈ m) (hcm : c ∈ m) (hwm : w ∉ m) : (p : A) * w ≠ e * c := by
+  intro hpw
+  refine delta_natCast_mul_notMem hm hpm hwm ?_
+  rw [hpw, delta_mul]
+  exact m.add_mem (m.add_mem (m.mul_mem_right _ (m.pow_mem_of_mem hem _ hp.out.pos))
+    (m.mul_mem_right _ (m.pow_mem_of_mem hcm _ hp.out.pos)))
+    (m.mul_mem_right _ (m.mul_mem_right _ hpm))
 
 omit [DeltaRing p A] in
 /-- A nonzero ring in which `p = 0`, for instance a nonzero ring of characteristic `p`, has no
