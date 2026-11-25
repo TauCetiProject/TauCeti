@@ -55,9 +55,10 @@ theorem paraboloidNormal_apply_two (x : V₂) : paraboloidNormal x 2 = 1 := by
   simp [paraboloidNormal, EuclideanSpace.basisFun_apply]
 
 /-- The normal has squared length `1+4‖x‖²`, and is therefore never zero. -/
-theorem inner_paraboloidNormal_self (x : V₂) :
-    inner ℝ (paraboloidNormal x) (paraboloidNormal x) = 1 + 4 * ‖x‖ ^ 2 := by
-  rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two]
+@[simp]
+theorem norm_paraboloidNormal_sq (x : V₂) :
+    ‖paraboloidNormal x‖ ^ 2 = 1 + 4 * ‖x‖ ^ 2 := by
+  rw [← real_inner_self_eq_norm_sq, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two]
   simp only [paraboloidNormal, inner_add_left, inner_add_right, real_inner_smul_left,
     real_inner_smul_right, EuclideanSpace.basisFun_apply, EuclideanSpace.inner_single_left]
   norm_num
@@ -66,11 +67,12 @@ theorem inner_paraboloidNormal_self (x : V₂) :
 /-- The upward graph normal never vanishes. -/
 theorem paraboloidNormal_ne_zero (x : V₂) : paraboloidNormal x ≠ 0 := by
   intro h
-  have hi := inner_paraboloidNormal_self x
-  rw [h, inner_zero_left] at hi
+  have hi := norm_paraboloidNormal_sq x
+  rw [h, norm_zero, zero_pow (by decide : 2 ≠ 0)] at hi
   nlinarith [sq_nonneg ‖x‖]
 
 /-- The normal is orthogonal to every graph tangent. -/
+@[simp]
 theorem inner_paraboloidNormal_fderiv_paraboloidGraph (x w : V₂) :
     inner ℝ (paraboloidNormal x) (fderiv ℝ paraboloidGraph x w) = 0 := by
   simp only [paraboloidNormal, inner_add_left, real_inner_smul_left, EuclideanSpace.basisFun_apply,
@@ -96,6 +98,7 @@ theorem fderiv_fderiv_paraboloidGraph_apply (x w z : V₂) :
     (Fin.castLEEmb (by decide : 2 ≤ 3))).toContinuousLinearMap
   have hgraph : paraboloidGraph = (L : V₂ → E₃) + (fun y ↦ ‖y‖ ^ 2 •
       EuclideanSpace.basisFun (Fin 3) ℝ 2) := by
+    -- The imported graph body is hidden; recover the decomposition from its coordinate API.
     funext y
     have he (j : Fin 2) := EuclideanSpace.piLpExtendByZero_castLEEmb_apply_castLE
       (n := 3) (by decide) y j
@@ -124,15 +127,11 @@ theorem inner_paraboloidNormal_secondFundamentalForm_paraboloidGraph (x w z : V�
 /-- The upward normal spans the whole graph normal space at every Cartesian point. -/
 theorem orthogonal_range_fderiv_paraboloidGraph_eq_span_paraboloidNormal (x : V₂) :
     (fderiv ℝ paraboloidGraph x).rangeᗮ = Submodule.span ℝ {paraboloidNormal x} := by
-  symm
-  apply Submodule.eq_of_le_of_finrank_eq
-    (Submodule.span_le.mpr (by
-      simpa using paraboloidNormal_mem_orthogonal_range_fderiv_paraboloidGraph x))
   have hdim := (fderiv ℝ paraboloidGraph x).range.finrank_add_finrank_orthogonal
   have hrank := LinearMap.finrank_range_of_inj (fderiv_paraboloidGraph_injective x)
-  rw [finrank_span_singleton (paraboloidNormal_ne_zero x)]
   norm_num at hdim hrank
-  omega
+  exact eq_span_singleton_of_mem_of_finrank_eq_one (by omega)
+    (paraboloidNormal_mem_orthogonal_range_fderiv_paraboloidGraph x) (paraboloidNormal_ne_zero x)
 
 /-- The second fundamental form is
 `B(w,z) = (2⟪w,z⟫ / (1 + 4‖x‖²)) • paraboloidNormal x` at every point, including the vertex. -/
@@ -142,8 +141,8 @@ theorem secondFundamentalForm_paraboloidGraph_apply (x w z : V₂) :
   have hm := TauCeti.secondFundamentalForm_apply_mem_orthogonal (𝕜 := ℝ) paraboloidGraph x w z
   rw [orthogonal_range_fderiv_paraboloidGraph_eq_span_paraboloidNormal] at hm
   have hp := Submodule.starProjection_eq_self_iff.mpr hm
-  rw [Submodule.starProjection_singleton, ← real_inner_self_eq_norm_sq,
-    inner_paraboloidNormal_self, inner_paraboloidNormal_secondFundamentalForm_paraboloidGraph] at hp
+  rw [Submodule.starProjection_singleton, norm_paraboloidNormal_sq,
+    inner_paraboloidNormal_secondFundamentalForm_paraboloidGraph] at hp
   exact hp.symm
 
 end TauCeti.Manifold
