@@ -217,6 +217,11 @@ the members with `p` columns. -/
 def chainComplexXIso (p : ℕ) : (F.chainComplex k).X p ≅ Rep.ofMulAction k G (F.carrier p) :=
   Iso.refl _
 
+/-- The identification `chainComplexXIso` is the isomorphism of the equality `chainComplex_X`. -/
+theorem chainComplexXIso_eq (p : ℕ) :
+    F.chainComplexXIso k p = eqToIso (F.chainComplex_X k p) :=
+  (rfl)
+
 /-- The differential of the augmented chain complex is the alternating sum of the faces, through
 the identifications `chainComplexXIso` of its objects. -/
 @[simp]
@@ -232,6 +237,12 @@ theorem chainComplex_d (p : ℕ) :
 columns: `x` is its first column and `y` its second, `x = face 1 e` and `y = face 0 e`. -/
 def Adjacent (x y : F.carrier 1) : Prop :=
   ∃ e : F.carrier 2, F.face 1 e = x ∧ F.face 0 e = y
+
+/-- Unfolding adjacency: `x` and `y` are the faces `face 1 e` and `face 0 e` of a member `e` with
+two columns. -/
+theorem adjacent_iff {x y : F.carrier 1} :
+    F.Adjacent x y ↔ ∃ e : F.carrier 2, F.face 1 e = x ∧ F.face 0 e = y :=
+  Iff.rfl
 
 /-- The augmented chain complex is exact in degree `0`, its augmentation onto the chains on the
 empty member is onto, as soon as some member has one column. -/
@@ -254,9 +265,9 @@ theorem chainComplex_exactAt_zero (h : (F.carrier 1).Nonempty) :
   intro x
   simp only [HomologicalComplex.shortComplexFunctor'_obj_g,
     HomologicalComplex.shortComplexFunctor'_obj_f, hg, chainComplex_d,
-    chainComplexXIso, Iso.refl_hom, Iso.refl_inv]
-  -- The identifications `chainComplexXIso` are identities, and composing with an identity leaves
-  -- the underlying map unchanged by definition.
+    chainComplexXIso_eq, eqToIso.hom, eqToIso.inv]
+  -- The identifications `chainComplexXIso` are `eqToHom`s of definitional equalities, hence
+  -- identities by definition, and composing with them leaves the underlying map unchanged.
   exact ⟨fun _ => hsurj x, fun _ => rfl⟩
 
 /-- A boundary is a cycle. -/
@@ -278,7 +289,7 @@ private theorem exact_d_one_d_zero (x₀ : F.carrier 1) (h : ∀ x, Relation.Eqv
     intro x y hxy
     induction hxy with
     | rel x y hxy =>
-      obtain ⟨e, rfl, rfl⟩ := hxy
+      obtain ⟨e, rfl, rfl⟩ := F.adjacent_iff.mp hxy
       refine ⟨MonoidAlgebra.single e 1, ?_⟩
       simp [d_hom_single, Fin.sum_univ_two, sub_eq_add_neg]
     | refl x => simp
@@ -313,9 +324,9 @@ theorem chainComplex_exactAt_one (x₀ : F.carrier 1)
   rw [HomologicalComplex.exactAt_iff' _ 2 1 0 (by simp) (by simp), Rep.exact_iff_function_exact]
   simp only [HomologicalComplex.shortComplexFunctor'_obj_g,
     HomologicalComplex.shortComplexFunctor'_obj_f, chainComplex_d,
-    chainComplexXIso, Iso.refl_hom, Iso.refl_inv]
-  -- The identifications `chainComplexXIso` are identities, and composing with an identity leaves
-  -- the underlying map unchanged by definition.
+    chainComplexXIso_eq, eqToIso.hom, eqToIso.inv]
+  -- The identifications `chainComplexXIso` are `eqToHom`s of definitional equalities, hence
+  -- identities by definition, and composing with them leaves the underlying map unchanged.
   exact F.exact_d_one_d_zero k x₀ h
 
 end ColumnSystem
@@ -425,7 +436,7 @@ theorem transpose_of_cons_cons_mem_unimodularFrames {v w : m → R} (r₁ r₂ :
 theorem ColumnSystem.adjacent_of_mem {φ : G →* GL m R} (F : ColumnSystem φ)
     {v w : m → R} (hv : (of ![v])ᵀ ∈ F.carrier 1) (hw : (of ![w])ᵀ ∈ F.carrier 1)
     (h : (of ![v, w])ᵀ ∈ F.carrier 2) : F.Adjacent ⟨_, hv⟩ ⟨_, hw⟩ :=
-  ⟨⟨_, h⟩, Subtype.ext <| by ext r c; fin_cases c; simp,
+  F.adjacent_iff.mpr ⟨⟨_, h⟩, Subtype.ext <| by ext r c; fin_cases c; simp,
     Subtype.ext <| by ext r c; fin_cases c; simp⟩
 
 variable (k : Type w) [Ring k]
