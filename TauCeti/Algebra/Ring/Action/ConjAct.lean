@@ -12,8 +12,8 @@ public import Mathlib.Algebra.Ring.Subsemiring.Pointwise
 # Pointwise conjugation normalization of subsemirings
 
 If a unit `x : Bˣ` normalizes a subsemiring `C ≤ B` under `ConjAct`, so do `x⁻¹`, every integer
-power `x ^ m`, and any product `E * x⁻¹` with another normalizing unit `E`. Consequently, left
-multiplication by `x ^ m` moves past elements of `C` via conjugation inside `C`.
+power `x ^ m`, and any product `E * x⁻¹` with another normalizing unit `E`. Consequently,
+conjugating any element of `C` by `x ^ m` stays in `C`.
 -/
 
 public section
@@ -50,14 +50,3 @@ theorem conj_zpow_mem {C : Subsemiring B} {x : Bˣ} (hx : ConjAct.toConjAct x �
     (conjAct_zpow_smul_eq hx m ▸ smul_mem_pointwise_smul (ConjAct.toConjAct (x ^ m)) c C hc)
 
 end Subsemiring
-
-namespace Units
-
-/-- Left multiplication by `x ^ m` rewrites as right multiplication after conjugating by `x ^ m`. -/
-theorem zpow_mul_eq_conj_mul_zpow {M : Type*} [Monoid M] (x : Mˣ) (m : ℤ) (c : M) :
-    ((x ^ m : Mˣ) : M) * c =
-      (((x ^ m : Mˣ) : M) * c * ((x ^ (-m) : Mˣ) : M)) * ((x ^ m : Mˣ) : M) := by
-  rw [mul_assoc (((x ^ m : Mˣ) : M) * c), ← Units.val_mul, ← zpow_add, neg_add_cancel, zpow_zero,
-    Units.val_one, mul_one]
-
-end Units

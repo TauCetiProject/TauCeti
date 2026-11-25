@@ -364,6 +364,7 @@ theorem coordinate_exchange_same :
     (M.exchange hΛ hΛ' k y hoff hcomm hyx).coordinate Finsupp.basisSingleOne k = y := by
   simp [coordinate_def]
 
+@[simp]
 theorem coordinate_exchange_of_ne {i : I} (hik : i ≠ k) :
     (M.exchange hΛ hΛ' k y hoff hcomm hyx).coordinate Finsupp.basisSingleOne i =
       M.coordinate Finsupp.basisSingleOne i := by
@@ -424,8 +425,7 @@ theorem exists_basedChart_of_exchange
     have hmap := congrArg χ'
       (monomial_mul_monomial_eq_smul_mul (R := R) (u := u) hΛ' (Finsupp.single k 1) a)
     rw [map_mul, map_smul, map_mul,
-      algHom_monomial_eq_of_apply_eq_zero (fun i _ ↦ hΛ.self_eq_zero _)
-        (fun i _ ↦ hΛ'.self_eq_zero _) h_off hoff ha] at hmap
+      algHom_monomial_eq_of_apply_eq_zero h_off hoff ha] at hmap
     simpa [y, c] using hmap
   refine ⟨y, hcomm, hyx, algHom_ext_of_basis Finsupp.basisSingleOne fun i ↦ ?_⟩
   rcases eq_or_ne k i with rfl | hik
