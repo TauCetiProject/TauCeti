@@ -12,7 +12,6 @@ import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Naturality
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.ClosedSubgroup
 import TauCeti.Algebra.AlgebraicGroup.UpperUnitriangular.Unipotent
 import TauCeti.Algebra.Coalgebra.Comodule.Transport
-import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 import TauCeti.CategoryTheory.Comma.Over
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Kolchin
@@ -108,21 +107,14 @@ finite-dimensional subcomodule, on which the points still act unipotently. -/
 theorem hasNonzeroFixedVector_of_forall_isNilpotent_endOfPoint_sub_one
     [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H] [Nontrivial M]
     (hM : ∀ g : WithConv (H →ₐ[k] k), IsNilpotent (endOfPoint M g.ofConv - 1)) :
-    HasNonzeroFixedVector k H M := by
-  obtain ⟨m, hm0⟩ := exists_ne (0 : M)
-  obtain ⟨N, hNfin, hmN⟩ := Subcomodule.exists_finite_subcomodule_mem (R := k) (C := H) m
-  have : FiniteDimensional k N := hNfin
-  have : Nontrivial N := ⟨⟨⟨m, hmN⟩, 0, fun h ↦ hm0 (congrArg Subtype.val h)⟩⟩
-  -- the points act unipotently on `N`, since `k ⊗ N → k ⊗ M` is injective and intertwines them
-  have hN (g : WithConv (H →ₐ[k] k)) : IsNilpotent (endOfPoint N g.ofConv - 1) :=
-    isNilpotent_endOfPoint_sub_one_of_injective (Subcomodule.subtype N) g.ofConv
-      (Module.Flat.lTensor_preserves_injective_linearMap _ (by
-        rw [Subcomodule.subtype_toLinearMap]
-        exact Subtype.val_injective)) (hM g)
-  obtain ⟨v, hv0, hvc⟩ := (hasNonzeroFixedVector_iff (k := k) (H := H) (M := N)).mp
-    (hasNonzeroFixedVector_of_finiteDimensional_of_forall_isNilpotent_endOfPoint_sub_one hN)
-  exact (hasNonzeroFixedVector_iff (k := k) (H := H) (M := M)).mpr
-    ⟨(v : M), fun h ↦ hv0 (Subtype.ext h), Subcomodule.coact_coe_eq_tmul_one N hvc⟩
+    HasNonzeroFixedVector k H M :=
+  hasNonzeroFixedVector_of_forall_subcomodule fun N _ _ ↦
+    hasNonzeroFixedVector_of_finiteDimensional_of_forall_isNilpotent_endOfPoint_sub_one fun g ↦
+      -- the points act unipotently on `N`, since `k ⊗ N → k ⊗ M` is injective and intertwines them
+      isNilpotent_endOfPoint_sub_one_of_injective (Subcomodule.subtype N) g.ofConv
+        (Module.Flat.lTensor_preserves_injective_linearMap _ (by
+          rw [Subcomodule.subtype_toLinearMap]
+          exact Subtype.val_injective)) (hM g)
 
 /-- If every point of a reduced finite-type commutative Hopf algebra over an algebraically closed
 field is unipotent, then every nonzero finite-dimensional comodule has a nonzero fixed vector. -/
@@ -138,13 +130,7 @@ theorem hasNonzeroFixedVector_of_forall_isUnipotentPoint
     hasNonzeroFixedVector_of_forall_isNilpotent_endOfPoint_sub_one fun g ↦
       (HopfAlgebra.isUnipotentPoint_iff_forall_isNilpotent_endOfPoint_sub_one g).mp
         (hH g) (FGComoduleCat.of (R := k) (C := H) (Fin (Module.finrank k M) → k))
-  obtain ⟨v, hv, hvc⟩ := (hasNonzeroFixedVector_iff (k := k) (H := H)).mp hfixed
-  refine (hasNonzeroFixedVector_iff (k := k) (H := H)).mpr
-    ⟨e.symm v, e.symm.map_ne_zero_iff.mpr hv, ?_⟩
-  have hmap := (Comodule.transportInvHom (R := k) (C := H) e).map_coact_apply v
-  rw [hvc] at hmap
-  simpa only [Comodule.transportInvHom_apply, Comodule.transportInvHom_toLinearMap,
-    LinearEquiv.coe_coe, TensorProduct.map_tmul, LinearMap.id_apply] using hmap.symm
+  exact hasNonzeroFixedVector_of_injective (transportInvHom e) (transportInvHom_injective e) hfixed
 
 /-- If all points are unipotent, every finite-dimensional comodule has a basis with upper
 unitriangular coefficient matrix. -/

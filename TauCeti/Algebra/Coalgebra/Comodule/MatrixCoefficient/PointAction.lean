@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
 public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
 public import TauCeti.LinearAlgebra.GeneralLinearGroup.Unipotent
 public import TauCeti.LinearAlgebra.Matrix.Triangular
+import Mathlib.RingTheory.Nilpotent.Lemmas
 import TauCeti.RingTheory.FiniteType.PointSeparation
 
 /-!
@@ -33,6 +34,8 @@ found on geometric points to an actual flag by subcomodules.
 
 * `TauCeti.Comodule.toMatrix_endOfPoint`: the matrix of a point action is the evaluated
   coefficient matrix.
+* `TauCeti.Comodule.isNilpotent_endOfPoint_sub_one_of_isUpperUnitriangular`: a point carrying a
+  coefficient matrix to an upper-unitriangular matrix acts unipotently.
 * `TauCeti.Comodule.charpoly_endOfPoint_comp`: characteristic polynomials of point actions
   commute with scalar extension.
 * `TauCeti.Comodule.mem_aroots_charpoly_endOfPoint_iff`: the roots of the characteristic
@@ -84,6 +87,27 @@ theorem toMatrix_endOfPoint (b : Basis i R M) (g : C →ₐ[R] A) :
   simp [Finsupp.single_apply]
 
 end Matrix
+
+section Unitriangular
+
+variable {R : Type u} {C : Type v} {M : Type w} {A : Type x} {i : Type y}
+variable [CommRing R] [Semiring C] [Algebra R C] [Coalgebra R C]
+variable [AddCommGroup M] [Module R M] [Comodule R C M]
+variable [CommRing A] [Algebra R A]
+variable [Finite i] [LinearOrder i]
+
+/-- A point acts unipotently on a finite free comodule when it carries the coefficient matrix of
+some basis to an upper-unitriangular matrix. -/
+theorem isNilpotent_endOfPoint_sub_one_of_isUpperUnitriangular (b : Basis i R M)
+    (g : C →ₐ[R] A) (h : ((coefficientMatrix (C := C) b).map g).IsUpperUnitriangular) :
+    IsNilpotent (endOfPoint M g - 1) := by
+  have := Fintype.ofFinite i
+  rw [← LinearMap.isNilpotent_toMatrix_iff (b.baseChange A),
+    _root_.map_sub (LinearMap.toMatrix (b.baseChange A) (b.baseChange A)),
+    LinearMap.toMatrix_one, toMatrix_endOfPoint]
+  exact h.isNilpotent_sub_one
+
+end Unitriangular
 
 section Charpoly
 
