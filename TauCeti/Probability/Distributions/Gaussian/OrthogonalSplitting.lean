@@ -93,9 +93,11 @@ preimage of `U` under the orthogonal projection onto `F`, has standard Gaussian 
 `F × Fᗮ → E` is a measurable embedding. -/
 theorem stdGaussian_preimage_orthogonalProjectionOnto (F : Submodule ℝ E) (U : Set F) :
     stdGaussian E (F.orthogonalProjectionOnto ⁻¹' U) = stdGaussian F U := by
-  have he : MeasurableEmbedding (fun p : F × Fᗮ ↦ (p.1 : E) + p.2) :=
-    (F.prodEquivOfIsCompl Fᗮ F.isCompl_orthogonal).toContinuousLinearEquiv.toHomeomorph
-      |>.measurableEmbedding
+  have he : MeasurableEmbedding (fun p : F × Fᗮ ↦ (p.1 : E) + p.2) := by
+    convert (F.prodEquivOfIsCompl Fᗮ F.isCompl_orthogonal).toContinuousLinearEquiv.toHomeomorph
+      |>.measurableEmbedding using 1
+    funext p
+    simp [Submodule.coe_prodEquivOfIsCompl']
   have hpre : (fun p : F × Fᗮ ↦ (p.1 : E) + p.2) ⁻¹' (F.orthogonalProjectionOnto ⁻¹' U) =
       U ×ˢ univ := by
     ext ⟨y, z⟩
