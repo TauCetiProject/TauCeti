@@ -70,7 +70,11 @@ gluing constructions, with explicit radii.
   form a continuous family (`TauCeti.exists_continuous_forall_add_add_eq_zero`). Smooth
   dependence is in `TauCeti.Analysis.Calculus.QuadraticCorrection`.
 * **Forcing.** On a common ball of radius `r ≤ δ` with `C L r ≤ 1 / 2`, solutions depend on the
-  residual with Lipschitz constant `2 C` (`TauCeti.norm_sub_le_two_mul_mul_norm_sub`). Suppose
+  residual with Lipschitz constant `2 C` (`TauCeti.norm_sub_le_two_mul_mul_norm_sub`). So if an
+  obstruction map `Φ₀` is `K`-Lipschitz along the solutions and is changed to `Φ₁` by at most `β`,
+  the reduced values move by at most `β + 2 C K ‖e - e'‖`
+  (`TauCeti.norm_sub_le_add_two_mul_mul_mul_norm_sub`), and stay away from zero when they started
+  with a larger margin (`TauCeti.sub_le_norm_of_add_add_eq_zero`). Suppose
   the residuals satisfy `‖e p‖ ≤ ε`, and add a forcing term `g p ρ` of size at most `β`,
   depending on a second parameter `ρ`, such that `2 C (ε + β) < δ / 2` and
   `4 C² L (ε + β) < 1`. If moreover `E` is complete and `N p 0 = 0`, the forced equations
@@ -230,6 +234,42 @@ theorem norm_sub_le_two_mul_mul_norm_sub {e' : F} {r : ℝ} (hrδ : r ≤ δ) (h
     (mem_closedBall_zero_iff.2 (hx.trans hrδ)) (mem_closedBall_zero_iff.2 (hy.trans hrδ)) hxQ hxe
     hyQ hye
   nlinarith [mul_le_mul_of_nonneg_right (one_half_le_one_sub_mul hr hx hy) (norm_nonneg (x - y))]
+
+/-- **The forcing budget of a reduced section.** Let `x` solve the unforced equation
+`e + D x + N x = 0` and `y` the forced equation `e' + D y + N y = 0`, both in the range of `Q` and
+of norm at most `r ≤ δ` with `C L r ≤ 1 / 2`. If the forced obstruction map `Φ₁` differs from the
+unforced one `Φ₀` by at most `β` at `y`, and `Φ₀` is `K`-Lipschitz between `x` and `y`, then the
+reduced sections satisfy `‖Φ₁ y - Φ₀ x‖ ≤ β + 2 C K ‖e - e'‖`. -/
+theorem norm_sub_le_add_two_mul_mul_mul_norm_sub {H : Type*} [SeminormedAddCommGroup H]
+    {Φ₀ Φ₁ : E → H} {e' : F} {r β K : ℝ} (hrδ : r ≤ δ) (hr : C * L * r ≤ 1 / 2) (hK : 0 ≤ K)
+    {x y : E} (hx : ‖x‖ ≤ r) (hy : ‖y‖ ≤ r) (hxQ : x ∈ range Q) (hxe : e + D x + N x = 0)
+    (hyQ : y ∈ range Q) (hye : e' + D y + N y = 0) (hΦ : ‖Φ₁ y - Φ₀ y‖ ≤ β)
+    (hΦ₀ : ‖Φ₀ y - Φ₀ x‖ ≤ K * ‖y - x‖) :
+    ‖Φ₁ y - Φ₀ x‖ ≤ β + 2 * C * K * ‖e - e'‖ := by
+  -- The forced correction moves by at most `2 C ‖e - e'‖`.
+  have hxy : ‖y - x‖ ≤ 2 * C * ‖e - e'‖ := by
+    rw [norm_sub_rev]
+    exact norm_sub_le_two_mul_mul_norm_sub hDQ hQ hN hrδ hr hx hy hxQ hxe hyQ hye
+  calc ‖Φ₁ y - Φ₀ x‖ ≤ ‖Φ₁ y - Φ₀ y‖ + ‖Φ₀ y - Φ₀ x‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
+    _ ≤ β + K * (2 * C * ‖e - e'‖) :=
+        add_le_add hΦ (hΦ₀.trans (mul_le_mul_of_nonneg_left hxy hK))
+    _ = β + 2 * C * K * ‖e - e'‖ := by ring
+
+/-- **Boundary separation.** In the situation of
+`TauCeti.norm_sub_le_add_two_mul_mul_mul_norm_sub`, if the unforced reduced section has norm at
+least `b` at `x`, then the forced reduced section has norm at least `b - (β + 2 C K ‖e - e'‖)` at
+`y`. In particular it does not vanish when `β + 2 C K ‖e - e'‖ < b`. -/
+theorem sub_le_norm_of_add_add_eq_zero {H : Type*} [SeminormedAddCommGroup H]
+    {Φ₀ Φ₁ : E → H} {e' : F} {r b β K : ℝ} (hrδ : r ≤ δ) (hr : C * L * r ≤ 1 / 2) (hK : 0 ≤ K)
+    {x y : E} (hx : ‖x‖ ≤ r) (hy : ‖y‖ ≤ r) (hxQ : x ∈ range Q) (hxe : e + D x + N x = 0)
+    (hyQ : y ∈ range Q) (hye : e' + D y + N y = 0) (hΦ : ‖Φ₁ y - Φ₀ y‖ ≤ β)
+    (hΦ₀ : ‖Φ₀ y - Φ₀ x‖ ≤ K * ‖y - x‖) (hb : b ≤ ‖Φ₀ x‖) :
+    b - (β + 2 * C * K * ‖e - e'‖) ≤ ‖Φ₁ y‖ := by
+  have h := norm_sub_le_add_two_mul_mul_mul_norm_sub hDQ hQ hN hrδ hr hK hx hy hxQ hxe hyQ hye hΦ
+    hΦ₀
+  have h' := norm_sub_norm_le (Φ₀ x) (Φ₁ y)
+  rw [norm_sub_rev] at h'
+  linarith
 
 /-- **Stability on a small ball.** A solution `x` of `e + D x + N x = 0` in the range of `Q` and a
 point `y` of the range, both of norm at most `r ≤ δ` with `C L r ≤ 1 / 2`, satisfy

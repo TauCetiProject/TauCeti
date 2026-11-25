@@ -60,9 +60,6 @@ reduced sections are continuous, as their local degrees require, when `Φ₀` an
 
 ## Main results
 
-* `TauCeti.norm_sub_le_add_two_mul_mul_mul_norm_sub`: the forced reduced section differs from the
-  unforced one by at most `β + 2 C K ‖e - e'‖`.
-* `TauCeti.sub_le_norm_of_add_add_eq_zero`: the boundary separation estimate.
 * `TauCeti.HomologicalOrientation.localDegree_restrict_eq_of_add_add_eq_zero`: forcing below the
   margin does not change the oriented count of the zeros of the reduced section.
 * `HomologicalOrientation.exists_mem_add_add_eq_zero_and_eq_zero_of_localDegree_restrict_ne_zero`:
@@ -82,53 +79,6 @@ open Module Metric Set TopologicalSpace
 open scoped NNReal
 
 namespace TauCeti
-
-section Pointwise
-
-variable {E F G : Type*} [FunLike G F E] {Q : G} {D N : E → F} {e : F} {C L : ℝ≥0} {δ : ℝ}
-  [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [AddMonoidHomClass G F E]
-  (hDQ : ∀ y, D (Q y) = y) (hQ : ∀ y, ‖Q y‖ ≤ C * ‖y‖)
-  (hN : ∀ x ∈ closedBall (0 : E) δ, ∀ y ∈ closedBall (0 : E) δ,
-    ‖N x - N y‖ ≤ L / 2 * (‖x‖ + ‖y‖) * ‖x - y‖)
-include hDQ hQ hN
-
-/-- **The forcing budget of a reduced section.** Let `x` solve the unforced equation
-`e + D x + N x = 0` and `y` the forced equation `e' + D y + N y = 0`, both in the range of `Q` and
-of norm at most `r ≤ δ` with `C L r ≤ 1 / 2`. If the forced obstruction map `Φ₁` differs from the
-unforced one `Φ₀` by at most `β` at `y`, and `Φ₀` is `K`-Lipschitz between `x` and `y`, then the
-reduced sections satisfy `‖Φ₁ y - Φ₀ x‖ ≤ β + 2 C K ‖e - e'‖`. -/
-theorem norm_sub_le_add_two_mul_mul_mul_norm_sub {H : Type*} [SeminormedAddCommGroup H]
-    {Φ₀ Φ₁ : E → H} {e' : F} {r β K : ℝ} (hrδ : r ≤ δ) (hr : C * L * r ≤ 1 / 2) (hK : 0 ≤ K)
-    {x y : E} (hx : ‖x‖ ≤ r) (hy : ‖y‖ ≤ r) (hxQ : x ∈ range Q) (hxe : e + D x + N x = 0)
-    (hyQ : y ∈ range Q) (hye : e' + D y + N y = 0) (hΦ : ‖Φ₁ y - Φ₀ y‖ ≤ β)
-    (hΦ₀ : ‖Φ₀ y - Φ₀ x‖ ≤ K * ‖y - x‖) :
-    ‖Φ₁ y - Φ₀ x‖ ≤ β + 2 * C * K * ‖e - e'‖ := by
-  -- The forced correction moves by at most `2 C ‖e - e'‖`.
-  have hxy : ‖y - x‖ ≤ 2 * C * ‖e - e'‖ := by
-    rw [norm_sub_rev]
-    exact norm_sub_le_two_mul_mul_norm_sub hDQ hQ hN hrδ hr hx hy hxQ hxe hyQ hye
-  calc ‖Φ₁ y - Φ₀ x‖ ≤ ‖Φ₁ y - Φ₀ y‖ + ‖Φ₀ y - Φ₀ x‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
-    _ ≤ β + K * (2 * C * ‖e - e'‖) :=
-        add_le_add hΦ (hΦ₀.trans (mul_le_mul_of_nonneg_left hxy hK))
-    _ = β + 2 * C * K * ‖e - e'‖ := by ring
-
-/-- **Boundary separation.** In the situation of
-`TauCeti.norm_sub_le_add_two_mul_mul_mul_norm_sub`, if the unforced reduced section has norm at
-least `b` at `x`, then the forced reduced section has norm at least `b - (β + 2 C K ‖e - e'‖)` at
-`y`. In particular it does not vanish when `β + 2 C K ‖e - e'‖ < b`. -/
-theorem sub_le_norm_of_add_add_eq_zero {H : Type*} [SeminormedAddCommGroup H]
-    {Φ₀ Φ₁ : E → H} {e' : F} {r b β K : ℝ} (hrδ : r ≤ δ) (hr : C * L * r ≤ 1 / 2) (hK : 0 ≤ K)
-    {x y : E} (hx : ‖x‖ ≤ r) (hy : ‖y‖ ≤ r) (hxQ : x ∈ range Q) (hxe : e + D x + N x = 0)
-    (hyQ : y ∈ range Q) (hye : e' + D y + N y = 0) (hΦ : ‖Φ₁ y - Φ₀ y‖ ≤ β)
-    (hΦ₀ : ‖Φ₀ y - Φ₀ x‖ ≤ K * ‖y - x‖) (hb : b ≤ ‖Φ₀ x‖) :
-    b - (β + 2 * C * K * ‖e - e'‖) ≤ ‖Φ₁ y‖ := by
-  have h := norm_sub_le_add_two_mul_mul_mul_norm_sub hDQ hQ hN hrδ hr hK hx hy hxQ hxe hyQ hye hΦ
-    hΦ₀
-  have h' := norm_sub_norm_le (Φ₀ x) (Φ₁ y)
-  rw [norm_sub_rev] at h'
-  linarith
-
-end Pointwise
 
 namespace HomologicalOrientation
 
@@ -156,7 +106,8 @@ norm at least `b` on the frontier, with `β + 2 C K η < b`, then the forced red
 theorem localDegree_restrict_eq_of_add_add_eq_zero {U : Opens M}
     (hU : IsCompact (closure (U : Set M))) {Φ₀ Φ₁ : M → X → H} {e₀ e₁ : ∀ p, Y p}
     {x₀ x₁ : M → X} {f g : C(M, H)} {r b β K η : ℝ} (hrδ : r ≤ δ) (hr : C * L * r ≤ 1 / 2)
-    (hK : 0 ≤ K) (hf : ∀ p, f p = Φ₀ p (x₀ p)) (hg : ∀ p, g p = Φ₁ p (x₁ p))
+    (hK : 0 ≤ K) (hf : ∀ p ∈ frontier (U : Set M), f p = Φ₀ p (x₀ p))
+    (hg : ∀ p ∈ frontier (U : Set M), g p = Φ₁ p (x₁ p))
     (hx₀ : ∀ p ∈ frontier (U : Set M), x₀ p ∈ range (Q p) ∧ ‖x₀ p‖ ≤ r ∧
       e₀ p + D p (x₀ p) + N p (x₀ p) = 0)
     (hx₁ : ∀ p ∈ frontier (U : Set M), x₁ p ∈ range (Q p) ∧ ‖x₁ p‖ ≤ r ∧
@@ -176,23 +127,24 @@ theorem localDegree_restrict_eq_of_add_add_eq_zero {U : Opens M}
   have hη : 2 * C * K * ‖e₀ p - e₁ p‖ ≤ 2 * C * K * η :=
     mul_le_mul_of_nonneg_left (he p hp) (mul_nonneg (mul_nonneg zero_le_two C.coe_nonneg) hK)
   have hbp := hb p hp
-  rw [hf] at hbp
-  rw [hf, hg, sub_zero, sub_zero]
+  rw [hf p hp] at hbp
+  rw [hf p hp, hg p hp, sub_zero, sub_zero]
   linarith [norm_nonneg (Φ₁ p (x₁ p))]
 
 include hH hDQ hQ hN in
 /-- **A nonzero unforced count gives a solution of the forced system.** In the situation of
 `TauCeti.HomologicalOrientation.localDegree_restrict_eq_of_add_add_eq_zero`, with the forced
-correction `x₁ p` defined over the closure of `U`, suppose that the unforced reduced section has
-nonzero local degree on `U` at `0`. Then there is `p ∈ U` and `y` in the range of `Q p`, of norm at
-most `r`, solving the forced complementary equation `e₁ p + D p y + N p y = 0` and the forced
-obstruction equation `Φ₁ p y = 0`. When `C L r < 1`, such a `y` is the only solution of the forced
-complementary equation at `p` in the range of `Q p` of norm at most `r`
-(`TauCeti.eq_of_add_add_eq_zero`). -/
+correction `x₁ p` and the forced reduced section `g p = Φ₁ p (x₁ p)` given over the closure of
+`U`, suppose that the unforced reduced section has nonzero local degree on `U` at `0`. Then there
+is `p ∈ U` and `y` in the range of `Q p`, of norm at most `r`, solving the forced complementary
+equation `e₁ p + D p y + N p y = 0` and the forced obstruction equation `Φ₁ p y = 0`. When
+`C L r < 1`, such a `y` is the only solution of the forced complementary equation at `p` in the
+range of `Q p` of norm at most `r` (`TauCeti.eq_of_add_add_eq_zero`). -/
 theorem exists_mem_add_add_eq_zero_and_eq_zero_of_localDegree_restrict_ne_zero {U : Opens M}
     (hU : IsCompact (closure (U : Set M))) {Φ₀ Φ₁ : M → X → H} {e₀ e₁ : ∀ p, Y p}
     {x₀ x₁ : M → X} {f g : C(M, H)} {r b β K η : ℝ} (hrδ : r ≤ δ) (hr : C * L * r ≤ 1 / 2)
-    (hK : 0 ≤ K) (hf : ∀ p, f p = Φ₀ p (x₀ p)) (hg : ∀ p, g p = Φ₁ p (x₁ p))
+    (hK : 0 ≤ K) (hf : ∀ p ∈ frontier (U : Set M), f p = Φ₀ p (x₀ p))
+    (hg : ∀ p ∈ closure (U : Set M), g p = Φ₁ p (x₁ p))
     (hx₀ : ∀ p ∈ frontier (U : Set M), x₀ p ∈ range (Q p) ∧ ‖x₀ p‖ ≤ r ∧
       e₀ p + D p (x₀ p) + N p (x₀ p) = 0)
     (hx₁ : ∀ p ∈ closure (U : Set M), x₁ p ∈ range (Q p) ∧ ‖x₁ p‖ ≤ r ∧
@@ -203,11 +155,12 @@ theorem exists_mem_add_add_eq_zero_and_eq_zero_of_localDegree_restrict_ne_zero {
     (hb : ∀ p ∈ frontier (U : Set M), b ≤ ‖f p‖) (hβ : β + 2 * C * K * η < b)
     (hdeg : (o.comap U.isOpenEmbedding').localDegree o' hE (f.restrict U) 0 ≠ 0) :
     ∃ p ∈ U, ∃ y ∈ range (Q p), ‖y‖ ≤ r ∧ e₁ p + D p y + N p y = 0 ∧ Φ₁ p y = 0 := by
-  rw [← o.localDegree_restrict_eq_of_add_add_eq_zero o' hE hH hDQ hQ hN hU hrδ hr hK hf hg hx₀
+  rw [← o.localDegree_restrict_eq_of_add_add_eq_zero o' hE hH hDQ hQ hN hU hrδ hr hK hf
+    (fun p hp ↦ hg p (frontier_subset_closure hp)) hx₀
     (fun p hp ↦ hx₁ p (frontier_subset_closure hp)) hΦ hΦ₀ he hb hβ] at hdeg
   obtain ⟨p, hpU, hp⟩ := o.exists_mem_apply_eq_of_localDegree_restrict_ne_zero o' hE hH hdeg
   obtain ⟨hpQ, hpr, hpe⟩ := hx₁ p (subset_closure hpU)
-  exact ⟨p, hpU, x₁ p, hpQ, hpr, hpe, (hg p).symm.trans hp⟩
+  exact ⟨p, hpU, x₁ p, hpQ, hpr, hpe, (hg p (subset_closure hpU)).symm.trans hp⟩
 
 end HomologicalOrientation
 
