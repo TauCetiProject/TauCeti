@@ -29,12 +29,29 @@ cannot be weakened to finite generation in general; this is why Chase's theorem,
 products of flat modules are flat, holds over coherent rings, where finitely generated ideals are
 finitely presented.
 
+For an `R`-algebra `N` and a finite index type, the identification
+`TensorProduct.piScalarRight : N ⊗[R] (ι → R) ≃ (ι → N)` sends `1 ⊗ x` to the coordinatewise image
+`algebraMap R N ∘ x` (`TensorProduct.piScalarRight_one_tmul`). Transporting the base change of a
+linear equivalence `(ι → R) ≃ (κ → R)` along it gives its scalar extension `(ι → A) ≃ (κ → A)`
+(`LinearEquiv.extendScalarsPi`), which acts on vectors with coordinates in `R` as the original
+equivalence and is compatible with identities, composition and inverses.
+
+## Main definitions
+
+* `LinearEquiv.extendScalarsPi`: the scalar extension of a linear equivalence between coordinate
+  spaces.
+
 ## Main results
 
 * `TensorProduct.piRightHom_comp_rTensor`: naturality of `TensorProduct.piRightHom` in the
   left factor.
 * `TensorProduct.piRightHom_bijective_of_finitePresentation`: tensoring with a finitely presented
   module commutes with arbitrary products.
+* `TensorProduct.piScalarRight_one_tmul`: `1 ⊗ x` corresponds to `algebraMap R N ∘ x`.
+* `LinearEquiv.extendScalarsPi_apply_algebraMap_comp`: the scalar extension of `e` carries
+  `algebraMap R A ∘ v` to `algebraMap R A ∘ e v`.
+* `LinearEquiv.extendScalarsPi_refl`, `LinearEquiv.extendScalarsPi_trans`,
+  `LinearEquiv.extendScalarsPi_symm`: functoriality of the scalar extension.
 
 ## References
 
@@ -46,6 +63,20 @@ public section
 open scoped TensorProduct
 
 namespace TensorProduct
+
+section ScalarExtension
+
+variable (R S : Type*) [CommSemiring R] [CommSemiring S] [Algebra R S] (ι : Type*) [Fintype ι]
+  [DecidableEq ι] {N : Type*} [Semiring N] [Algebra R N] [Module S N] [IsScalarTower R S N]
+
+/-- The identification `N ⊗[R] (ι → R) ≃ (ι → N)` sends `1 ⊗ x` to `x` read in `ι → N`. This is
+the forward direction of Mathlib's `TensorProduct.piScalarRight_symm_algebraMap`. -/
+theorem piScalarRight_one_tmul (x : ι → R) :
+    piScalarRight R S N ι (1 ⊗ₜ x) = algebraMap R N ∘ x := by
+  ext i
+  simp [piScalarRight_apply, piScalarRightHom_tmul, Algebra.algebraMap_eq_smul_one]
+
+end ScalarExtension
 
 variable {R : Type*} {ι : Type*} {M : ι → Type*}
 
@@ -118,3 +149,46 @@ theorem piRightHom_bijective_of_finitePresentation (S : Type*) [CommSemiring S] 
 end CommRing
 
 end TensorProduct
+
+namespace LinearEquiv
+
+open TensorProduct
+
+variable {R : Type*} (A : Type*) [CommSemiring R] [CommSemiring A] [Algebra R A]
+variable {ι κ μ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
+  [Fintype μ] [DecidableEq μ]
+
+/-- The scalar extension of a linear equivalence `e : (ι → R) ≃ (κ → R)` to an `R`-algebra `A`:
+the base change `A ⊗[R] (ι → R) ≃ A ⊗[R] (κ → R)` of `e`, transported to coordinates along
+`TensorProduct.piScalarRight`. It carries `algebraMap R A ∘ v` to `algebraMap R A ∘ e v`
+(`LinearEquiv.extendScalarsPi_apply_algebraMap_comp`). -/
+noncomputable def extendScalarsPi (e : (ι → R) ≃ₗ[R] (κ → R)) : (ι → A) ≃ₗ[A] (κ → A) :=
+  (piScalarRight R A A ι).symm ≪≫ₗ e.baseChange R A _ _ ≪≫ₗ piScalarRight R A A κ
+
+/-- The scalar extension of `e` acts on vectors with coordinates in `R` as `e`. -/
+@[simp]
+theorem extendScalarsPi_apply_algebraMap_comp (e : (ι → R) ≃ₗ[R] (κ → R)) (v : ι → R) :
+    e.extendScalarsPi A (algebraMap R A ∘ v) = algebraMap R A ∘ e v := by
+  rw [extendScalarsPi, trans_apply, trans_apply, ← piScalarRight_one_tmul R A ι,
+    symm_apply_apply, baseChange_tmul, piScalarRight_one_tmul]
+
+/-- The scalar extension of the identity is the identity. -/
+@[simp]
+theorem extendScalarsPi_refl : (refl R (ι → R)).extendScalarsPi A = refl A (ι → A) := by
+  ext x : 1
+  simp only [extendScalarsPi, trans_apply, refl_apply]
+  rw [← one_eq_refl, baseChange_one, one_eq_refl, refl_apply, apply_symm_apply]
+
+/-- The scalar extension of a composite is the composite of the scalar extensions. -/
+theorem extendScalarsPi_trans (e : (ι → R) ≃ₗ[R] (κ → R)) (f : (κ → R) ≃ₗ[R] (μ → R)) :
+    (e.trans f).extendScalarsPi A = (e.extendScalarsPi A).trans (f.extendScalarsPi A) := by
+  ext x : 1
+  simp only [extendScalarsPi, baseChange_trans, trans_apply, symm_apply_apply]
+
+/-- The scalar extension of the inverse is the inverse of the scalar extension. -/
+theorem extendScalarsPi_symm (e : (ι → R) ≃ₗ[R] (κ → R)) :
+    e.symm.extendScalarsPi A = (e.extendScalarsPi A).symm := by
+  ext x : 1
+  simp only [extendScalarsPi, baseChange_symm, trans_apply, symm_trans_apply, symm_symm]
+
+end LinearEquiv
