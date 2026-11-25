@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.ProductFormula
 public import TauCeti.Algebra.BigOperators.Finprod
 
+import Mathlib.NumberTheory.NumberField.Units.Basic
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
 /-!
@@ -57,6 +58,8 @@ products over the places give absolute heights.
   degree-normalized form.
 * `TauCeti.GlobalNumberFields.hasFiniteMulSupport_iSup_normalizedAbsValue`: a nonzero tuple has
   largest normalized absolute value `1` at all but finitely many places.
+* `TauCeti.GlobalNumberFields.one_lt_prod_infinitePlace_pow_mult`: a nonzero algebraic integer
+  that is not a unit has `∏ u, u π ^ mult u > 1` over the infinite places `u`.
 
 ## References
 
@@ -324,5 +327,17 @@ theorem finprod_normAbs_eq_one (hx : x ≠ 0) : ∏ᶠ v : Place K, normAbs v x 
     (Module.finrank_pos (R := ℚ) (M := K)).ne', finprod_pow (hasFiniteMulSupport_normAbs hx)]
   simp_rw [normAbs_pow_finrank]
   exact finprod_normalizedAbsValue_eq_one hx
+
+/-- A nonzero algebraic integer `π` that is not a unit has `∏ u, u π ^ mult u > 1` over the
+infinite places `u`: the product is the absolute value of the norm of `π`, a nonzero integer
+other than `±1`. -/
+theorem one_lt_prod_infinitePlace_pow_mult {π : 𝓞 K} (hπ0 : π ≠ 0) (hπ : ¬IsUnit π) :
+    1 < ∏ u : InfinitePlace K, u (π : K) ^ u.mult := by
+  rw [InfinitePlace.prod_eq_abs_norm, ← Algebra.coe_norm_int]
+  have h0 : Algebra.norm ℤ π ≠ 0 := Algebra.norm_ne_zero_iff.2 hπ0
+  have h1 : |Algebra.norm ℤ π| ≠ 1 := fun h ↦ hπ <| NumberField.isUnit_iff_norm.2 <| by
+    rw [NumberField.RingOfIntegers.coe_norm, ← Algebra.coe_norm_int]
+    exact_mod_cast h
+  exact_mod_cast (Int.one_le_abs h0).lt_of_ne h1.symm
 
 end TauCeti.GlobalNumberFields

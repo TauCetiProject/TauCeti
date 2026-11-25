@@ -37,8 +37,10 @@ is `h ↦ h Δf + 2 ⟪grad f, grad h⟫` and that its double commutators are mu
 
 * `TauCeti.smoothDivergence I M`: the divergence of smooth vector fields of a smooth metric, as a
   real-linear map to `C^∞(M)`.
+* `TauCeti.smoothGradient I M`: the gradient of smooth functions for a smooth metric, as a
+  real-linear map to smooth vector fields.
 * `TauCeti.smoothLaplaceBeltrami I M`: the Laplace–Beltrami operator of a smooth metric as a
-  real-linear endomorphism of `C^∞(M)`.
+  real-linear endomorphism of `C^∞(M)`, equal to `smoothDivergence I M ∘ₗ smoothGradient I M`.
 * `TauCeti.IsLaplaceType D c`: `D` is of Laplace type with constant `c`.
 
 ## Main results
@@ -222,6 +224,25 @@ theorem smoothDivergence_apply (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Typ
   (rfl)
 
 variable (I M) in
+/-- The Riemannian gradient `f ↦ grad f` (`TauCeti.Manifold.mgradient`) of a smooth metric, as a
+real-linear map from smooth functions to smooth vector fields. -/
+def smoothGradient :
+    C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ where
+  toFun f := ⟨mgradient I f, by simpa using contMDiff_mgradient_infty f.contMDiff⟩
+  map_add' f g := ContMDiffSection.ext fun x ↦ by
+    simp [mgradient_add (f.contMDiff.mdifferentiable (by simp))
+      (g.contMDiff.mdifferentiable (by simp))]
+  map_smul' c f := ContMDiffSection.ext fun x ↦ by simp
+
+@[simp]
+theorem coe_smoothGradient (f : C^∞⟮I, M; ℝ⟯) : ⇑(smoothGradient I M f) = mgradient I f :=
+  (rfl)
+
+theorem smoothGradient_apply (f : C^∞⟮I, M; ℝ⟯) (x : M) :
+    smoothGradient I M f x = mgradient I f x :=
+  (rfl)
+
+variable (I M) in
 /-- The Laplace–Beltrami operator `Δ = div ∘ grad` (`TauCeti.Manifold.laplaceBeltrami`) of a
 smooth Riemannian metric, as a real-linear endomorphism of the smooth functions. -/
 def smoothLaplaceBeltrami : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ where
@@ -236,6 +257,11 @@ def smoothLaplaceBeltrami : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ�
 theorem smoothLaplaceBeltrami_apply (f : C^∞⟮I, M; ℝ⟯) (x : M) :
     smoothLaplaceBeltrami I M f x = laplaceBeltrami I f x :=
   (rfl)
+
+/-- The Laplace–Beltrami operator is the divergence of the gradient, `Δ = div ∘ grad`. -/
+theorem smoothDivergence_comp_smoothGradient :
+    smoothDivergence I M ∘ₗ smoothGradient I M = smoothLaplaceBeltrami I M :=
+  LinearMap.ext fun f ↦ ContMDiffMap.ext fun x ↦ (laplaceBeltrami_def I f x).symm
 
 /-- A smooth function `u` is a `μ`-eigenfunction of the Laplace–Beltrami operator `Δ = div grad`
 exactly when `Δu = μ u` everywhere. -/
