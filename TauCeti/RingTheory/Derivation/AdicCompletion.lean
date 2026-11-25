@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.AdicCompletion.Algebra
 public import Mathlib.RingTheory.Derivation.Basic
 import Mathlib.RingTheory.AdicCompletion.Completeness
+import TauCeti.RingTheory.AdicCompletion.Basic
+import TauCeti.RingTheory.Derivation.Basic
 import TauCeti.RingTheory.Derivation.Ideal
 
 /-!
@@ -54,20 +56,12 @@ namespace Derivation
 variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A] [AddCommGroup M] [Module A M]
   [Module R M] (I : Ideal A)
 
-/-- A derivation identifies `I ^ (n + 1)`-congruent elements up to `I ^ n • M`. -/
-private theorem apply_smodEq_of_smodEq (D : Derivation R A M) {n : ℕ} {a b : A}
-    (h : a ≡ b [SMOD (I ^ (n + 1) • ⊤ : Submodule A A)]) :
-    D a ≡ D b [SMOD (I ^ n • ⊤ : Submodule A M)] := by
-  rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top] at h
-  rw [SModEq.sub_mem, ← map_sub]
-  exact D.apply_mem_pow_smul_top_of_mem_pow_succ h
-
 /-- Applying `D` to the terms of an `I`-adic Cauchy sequence, shifted by one, gives an `I`-adic
 Cauchy sequence. -/
 private noncomputable def adicCauchySequenceMap (D : Derivation R A M)
     (f : AdicCauchySequence I A) : AdicCauchySequence I M :=
   AdicCauchySequence.mk I M (fun n ↦ D (f (n + 1)))
-    fun n ↦ apply_smodEq_of_smodEq I D (f.property (Nat.le_succ (n + 1)))
+    fun n ↦ D.apply_smodEq_of_smodEq (f.property (Nat.le_succ (n + 1)))
 
 /-- The underlying function of `Derivation.adicCompletion`, through a choice of Cauchy
 representative. -/
@@ -79,7 +73,7 @@ private theorem adicCompletionFun_val (D : Derivation R A M) {x : AdicCompletion
     {a : A} (ha : x.val (n + 1) = Submodule.Quotient.mk a) :
     (adicCompletionFun I D x).val n = Submodule.Quotient.mk (D a) := by
   have hx := congrArg (fun y ↦ y.val (n + 1)) (AdicCompletion.mk_surjective I A x).choose_spec
-  refine apply_smodEq_of_smodEq I D ?_
+  refine D.apply_smodEq_of_smodEq ?_
   unfold SModEq
   rw [← ha, ← hx, mk_apply_coe, mkQ_apply]
 
@@ -87,14 +81,6 @@ private theorem adicCompletionFun_val (D : Derivation R A M) {x : AdicCompletion
 private theorem exists_val_eq (x : AdicCompletion I A) (n : ℕ) :
     ∃ a : A, x.val n = Submodule.Quotient.mk a :=
   (Submodule.Quotient.mk_surjective _ (x.val n)).imp fun _ h ↦ h.symm
-
-/-- The coordinate at `n` of an element of the completion is the reduction of a representative of
-its coordinate at `n + 1`. -/
-private theorem val_eq_of_val_succ_eq {N : Type*} [AddCommGroup N] [Module A N]
-    {x : AdicCompletion I N} {n : ℕ} {a : N} (ha : x.val (n + 1) = Submodule.Quotient.mk a) :
-    x.val n = Submodule.Quotient.mk a := by
-  rw [← x.property (Nat.le_succ n), ha, transitionMap, factorPow, ← mkQ_apply, factor_mk,
-    mkQ_apply]
 
 variable [IsScalarTower R A M]
 
@@ -108,32 +94,27 @@ noncomputable def adicCompletion (D : Derivation R A M) :
     ext n
     obtain ⟨a, ha⟩ := exists_val_eq I x (n + 1)
     obtain ⟨b, hb⟩ := exists_val_eq I y (n + 1)
-    rw [val_add_apply, adicCompletionFun_val I D ha, adicCompletionFun_val I D hb,
-      adicCompletionFun_val I D (a := a + b) (by rw [val_add_apply, ha, hb, Quotient.mk_add]),
-      map_add, Quotient.mk_add]
+    have hab : (x + y).val (n + 1) = Submodule.Quotient.mk (a + b) := by simp [ha, hb]
+    simp [adicCompletionFun_val I D ha, adicCompletionFun_val I D hb, adicCompletionFun_val I D hab]
   map_smul' r x := by
     ext n
     obtain ⟨a, ha⟩ := exists_val_eq I x (n + 1)
-    rw [RingHom.id_apply, val_smul_apply, adicCompletionFun_val I D ha,
-      adicCompletionFun_val I D (a := r • a) (by rw [val_smul_apply, ha, Quotient.mk_smul]),
-      map_smul, Quotient.mk_smul]
+    have hra : (r • x).val (n + 1) = Submodule.Quotient.mk (r • a) := by
+      rw [val_smul_apply, ha, Quotient.mk_smul]
+    simp [val_smul_apply, adicCompletionFun_val I D ha, adicCompletionFun_val I D hra]
   map_one_eq_zero' := by
     ext n
-    simp only [LinearMap.coe_mk, AddHom.coe_mk, val_zero_apply]
-    rw [adicCompletionFun_val I D (a := 1) (by rw [val_one, Ideal.Quotient.mk_eq_mk, map_one]),
-      map_one_eq_zero, Quotient.mk_zero]
+    have h1 : (1 : AdicCompletion I A).val (n + 1) = Submodule.Quotient.mk 1 := by simp
+    simp [adicCompletionFun_val I D h1]
   leibniz' x y := by
     ext n
     obtain ⟨a, ha⟩ := exists_val_eq I x (n + 1)
     obtain ⟨b, hb⟩ := exists_val_eq I y (n + 1)
-    simp only [LinearMap.coe_mk, AddHom.coe_mk, val_add_apply, smul_eval]
-    rw [adicCompletionFun_val I D ha, adicCompletionFun_val I D hb,
-      adicCompletionFun_val I D (a := a * b)
-        (by rw [val_mul, ha, hb, Ideal.Quotient.mk_eq_mk, Ideal.Quotient.mk_eq_mk, ← map_mul,
-          Ideal.Quotient.mk_eq_mk]),
-      val_eq_of_val_succ_eq I ha, val_eq_of_val_succ_eq I hb, leibniz, Quotient.mk_add,
-      Quotient.mk_smul, Quotient.mk_smul, Ideal.Quotient.mk_eq_mk, Ideal.Quotient.mk_eq_mk,
-      mk_smul_mk, mk_smul_mk]
+    have hab : (x * y).val (n + 1) = Submodule.Quotient.mk (a * b) := by simp [ha, hb]
+    simp [adicCompletionFun_val I D ha, adicCompletionFun_val I D hb, adicCompletionFun_val I D hab,
+      val_eq_mk_of_le I n.le_succ ha, val_eq_mk_of_le I n.le_succ hb]
+    -- `A` and `A ⧸ I ^ n` act alike on `M ⧸ I ^ n • M` (`AdicCompletion.mk_smul_mk`)
+    rfl
 
 /-- If `x` is represented by `a` modulo `I ^ (n + 1)`, then `D̂ x` is represented by `D a`
 modulo `I ^ n`. -/
@@ -148,16 +129,6 @@ theorem adicCompletion_of (D : Derivation R A M) (a : A) :
     D.adicCompletion I (of I A a) = of I M (D a) := by
   ext n
   exact D.val_adicCompletion_apply I (of_apply I A a (n + 1))
-
-/-- A derivation of the completion vanishing on `A` is `A`-linear. -/
-private theorem smul_apply_of_apply_of_eq_zero {N : Type*} [AddCommGroup N]
-    [Module (AdicCompletion I A) N] [Module R N] [Module A N]
-    [IsScalarTower A (AdicCompletion I A) N] (Δ : Derivation R (AdicCompletion I A) N)
-    (h : ∀ a : A, Δ (of I A a) = 0) (a : A) (x : AdicCompletion I A) :
-    Δ (a • x) = a • Δ x := by
-  have hof : algebraMap A (AdicCompletion I A) a = of I A a := by
-    rw [algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply]
-  rw [Algebra.smul_def, leibniz, hof, h, smul_zero, add_zero, ← hof, algebraMap_smul]
 
 /-- For a finitely generated ideal `I`, an `R`-derivation of the `I`-adic completion of `A` into
 an `I`-adically separated module, such as the completion of an `A`-module, is determined by its
@@ -182,7 +153,10 @@ theorem adicCompletion_ext (hI : I.FG) {N : Type*} [AddCommGroup N]
   have hΔx : Δ x = Δ (x - of I A a) := by rw [map_sub, hΔ, sub_zero]
   rw [hΔx]
   refine Submodule.smul_induction_on hmem (fun b hb y _ ↦ ?_) fun y z hy hz ↦ ?_
-  · rw [smul_apply_of_apply_of_eq_zero I Δ hΔ]
+  · -- `Δ` vanishes on `A`, so it is `A`-linear
+    have hΔA (a : A) : Δ (algebraMap A (AdicCompletion I A) a) = 0 := by
+      rw [algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply, hΔ]
+    rw [← coe_ofMapAlgebraMap Δ hΔA, map_smul]
     exact Submodule.smul_mem_smul hb Submodule.mem_top
   · rw [map_add]
     exact add_mem hy hz

@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.AdicCompletion.CompletedGenericField.Basic
 public import TauCeti.RingTheory.Derivation.AdicCompletion
 import TauCeti.RingTheory.Derivation.Localization
+import TauCeti.RingTheory.Derivation.ValuationIntegers
 
 /-!
 # Derivations of the completed generic field
@@ -163,47 +164,6 @@ theorem valuation_completedGenericFieldDerivation_le_one
   rw [completedGenericFieldDerivation_algebraMap]
   exact (completedGenericField_integers π hπ).map_le_one _
 
-/-- The values on the valuation ring of a derivation of the completed generic field mapping the
-valuation ring into itself, as elements of the valuation ring. -/
-private noncomputable def restrictIntegersFun (D : Derivation R (completedGenericField π hπ)
-    (completedGenericField π hπ)) (hD : ∀ x, Valued.v x ≤ 1 → Valued.v (D x) ≤ 1)
-    (x : completedGenericIntegers π) : completedGenericIntegers π :=
-  ((completedGenericField_integers π hπ).exists_of_le_one
-    (hD _ ((completedGenericField_integers π hπ).map_le_one x))).choose
-
-private theorem algebraMap_restrictIntegersFun (D : Derivation R (completedGenericField π hπ)
-    (completedGenericField π hπ)) (hD : ∀ x, Valued.v x ≤ 1 → Valued.v (D x) ≤ 1)
-    (x : completedGenericIntegers π) :
-    algebraMap _ (completedGenericField π hπ) (restrictIntegersFun π hπ D hD x) =
-      D (algebraMap _ (completedGenericField π hπ) x) :=
-  ((completedGenericField_integers π hπ).exists_of_le_one
-    (hD _ ((completedGenericField_integers π hπ).map_le_one x))).choose_spec
-
-/-- The restriction to the valuation ring of a derivation of the completed generic field mapping
-the valuation ring into itself. -/
-private noncomputable def restrictIntegers (D : Derivation R (completedGenericField π hπ)
-    (completedGenericField π hπ)) (hD : ∀ x, Valued.v x ≤ 1 → Valued.v (D x) ≤ 1) :
-    Derivation R (completedGenericIntegers π) (completedGenericIntegers π) where
-  toFun := restrictIntegersFun π hπ D hD
-  map_add' x y := (completedGenericField_integers π hπ).hom_inj (by
-    simp only [algebraMap_restrictIntegersFun, map_add])
-  map_smul' r x := (completedGenericField_integers π hπ).hom_inj (by
-    simp only [algebraMap_restrictIntegersFun, RingHom.id_apply, Algebra.smul_def, map_mul,
-      ← IsScalarTower.algebraMap_apply, Derivation.leibniz, Derivation.map_algebraMap, mul_zero,
-      add_zero])
-  map_one_eq_zero' := (completedGenericField_integers π hπ).hom_inj (by
-    simp only [LinearMap.coe_mk, AddHom.coe_mk, algebraMap_restrictIntegersFun, map_one,
-      Derivation.map_one_eq_zero, map_zero])
-  leibniz' x y := (completedGenericField_integers π hπ).hom_inj (by
-    simp only [LinearMap.coe_mk, AddHom.coe_mk, algebraMap_restrictIntegersFun, map_mul,
-      Derivation.leibniz, map_add, smul_eq_mul])
-
-private theorem algebraMap_restrictIntegers (D : Derivation R (completedGenericField π hπ)
-    (completedGenericField π hπ)) (hD : ∀ x, Valued.v x ≤ 1 → Valued.v (D x) ≤ 1)
-    (x : completedGenericIntegers π) :
-    algebraMap _ (completedGenericField π hπ) (restrictIntegers π hπ D hD x) =
-      D (algebraMap _ (completedGenericField π hπ) x) :=
-  algebraMap_restrictIntegersFun π hπ D hD x
 /-- An `R`-derivation of the completed generic field mapping the valuation ring into itself is
 determined by its values on `A`. -/
 theorem completedGenericField_derivation_ext
@@ -213,14 +173,16 @@ theorem completedGenericField_derivation_ext
     (h : ∀ a : A, D₁ (algebraMap A (completedGenericField π hπ) a) =
       D₂ (algebraMap A (completedGenericField π hπ) a)) : D₁ = D₂ := by
   -- the restrictions to the valuation ring agree on `A`, hence everywhere
-  have hint : restrictIntegers π hπ D₁ hD₁ = restrictIntegers π hπ D₂ hD₂ :=
-    completedGenericIntegers_derivation_ext π fun a ↦ (completedGenericField_integers π hπ).hom_inj
-      (by simpa only [algebraMap_restrictIntegers, ← IsScalarTower.algebraMap_apply] using h a)
+  have hv := completedGenericField_integers π hπ
+  have hint : D₁.restrictIntegers hv hD₁ = D₂.restrictIntegers hv hD₂ :=
+    completedGenericIntegers_derivation_ext π fun a ↦ hv.hom_inj (by
+      simpa only [Derivation.algebraMap_restrictIntegers, ← IsScalarTower.algebraMap_apply]
+        using h a)
   -- and the field is the fraction field of the valuation ring
   refine Derivation.ext <| congrFun <| IsLocalization.eq_of_leibniz
     (nonZeroDivisors (completedGenericIntegers π)) (fun x y ↦ D₁.leibniz x y)
     (fun x y ↦ D₂.leibniz x y) fun x ↦ ?_
-  rw [← algebraMap_restrictIntegers π hπ D₁ hD₁, ← algebraMap_restrictIntegers π hπ D₂ hD₂, hint]
+  rw [← D₁.algebraMap_restrictIntegers hv hD₁, ← D₂.algebraMap_restrictIntegers hv hD₂, hint]
 
 /-- The derivation of the completed generic field extending `D` is the only derivation mapping
 the valuation ring into itself and agreeing with `D` on `A`. -/
