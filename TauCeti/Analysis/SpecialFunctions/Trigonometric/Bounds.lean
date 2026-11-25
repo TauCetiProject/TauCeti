@@ -30,11 +30,19 @@ For angles `α, β > 0` and `γ ≥ 0` with
 second hyperbolic law of cosines it is the hyperbolic cosine of the side opposite `γ` in a
 hyperbolic triangle with angles `α`, `β`, `γ`. These supply the positive sine factors and the
 hyperbolic scale in the matrix representations of triangle groups.
+A circle of positive perimeter `2πR` has positive radius `R`
+(`Real.pos_of_fact_two_pi_mul_pos`), under the instance `Fact (0 < 2 * Real.pi * R)` that makes
+`AddCircle (2 * Real.pi * R)` usable.
 -/
 
 public section
 
 open Real
+
+/-- A circle of positive perimeter `2πR` has positive radius `R`. This recovers the radius from
+the instance `Fact (0 < 2 * Real.pi * R)` that makes `AddCircle (2 * Real.pi * R)` usable. -/
+theorem Real.pos_of_fact_two_pi_mul_pos {R : ℝ} [Fact (0 < 2 * Real.pi * R)] : 0 < R :=
+  pos_of_mul_pos_right (Fact.out : 0 < 2 * Real.pi * R) Real.two_pi_pos.le
 
 namespace TauCeti
 

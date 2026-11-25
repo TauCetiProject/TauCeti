@@ -26,6 +26,8 @@ to `erfc`.
   (DLMF 7.8.1).
 * `TauCeti.Real.millsRatio_bounds`: `1/(x + √(x² + 2)) < M(x) ≤ 1/(x + √(x² + 4/π))` for `x ≥ 0`
   (DLMF 7.8.2).
+* `TauCeti.Real.erfc_lt_exp_neg_sq_div`, `TauCeti.Real.erfc_lt_exp_neg_sq`: the consequences
+  `erfc x < e^{−x²}/(√π x)` and `erfc x < e^{−x²}` for `x > 0`.
 * `TauCeti.Real.erfc_le_exp_neg_sq`: `erfc x ≤ e^{−x²}` for `x ≥ 0`, a consequence of 7.8.2.
 * `TauCeti.Real.millsRatio_bounds_inv_affine`: `√π/(2√π x + 2) ≤ M(x) < 1/(x + 1)` for `x ≥ 0`
   (DLMF 7.8.3).
@@ -246,15 +248,58 @@ theorem millsRatio_bounds {x : ℝ} (hx : 0 ≤ x) :
   rw [← millsRatio_def]
   exact ⟨one_div_add_sqrt_two_lt_millsRatio hx, millsRatio_le_one_div_add_sqrt hx⟩
 
-/-- For `x ≥ 0`, `erfc x ≤ e^{-x²}`. This follows from the upper bound of DLMF 7.8.2, since
-`x + √(x² + 4/π) ≥ 2/√π`; at `x = 0` both sides are `1`. -/
+/-! ### Consequences for `erfc` -/
+
+/-- `erfc x = (2/√π) e^{−x²} M(x)`. -/
+private theorem erfc_eq_mul_millsRatio (x : ℝ) :
+    erfc x = 2 / Real.sqrt π * Real.exp (-x ^ 2) * millsRatio x := by
+  have hπ : Real.sqrt π ≠ 0 := (Real.sqrt_pos.mpr Real.pi_pos).ne'
+  have h1 : Real.exp (-x ^ 2) * Real.exp (x ^ 2) = 1 := by rw [← Real.exp_add]; simp
+  rw [millsRatio_def]
+  field_simp
+  linear_combination (-erfc x) * h1
+
+/-- `erfc x ≤ (2/√π) e^{−x²}/(x + √(x² + 4/π))` for `x ≥ 0`: the upper bound of DLMF 7.8.2 with
+Mills' ratio unfolded. -/
+private theorem erfc_le_div_add_sqrt {x : ℝ} (hx : 0 ≤ x) :
+    erfc x ≤ 2 / Real.sqrt π * Real.exp (-x ^ 2) * (1 / (x + Real.sqrt (x ^ 2 + 4 / π))) := by
+  rw [erfc_eq_mul_millsRatio]
+  gcongr
+  exact millsRatio_le_one_div_add_sqrt hx
+
+/-- `2/√π ≤ √(x² + 4/π)`. -/
+private theorem two_div_sqrt_pi_le_sqrt (x : ℝ) : 2 / Real.sqrt π ≤ Real.sqrt (x ^ 2 + 4 / π) := by
+  rw [← sqrt_four_div_pi]
+  exact Real.sqrt_le_sqrt (le_add_of_nonneg_left (sq_nonneg x))
+
+/-- For `x > 0`, `erfc x < e^{−x²}/(√π x)`: the leading term of the asymptotic expansion of
+`erfc` at `+∞` is an upper bound. -/
+theorem erfc_lt_exp_neg_sq_div {x : ℝ} (hx : 0 < x) :
+    erfc x < Real.exp (-x ^ 2) / (Real.sqrt π * x) := by
+  have hlt : 2 * x < x + Real.sqrt (x ^ 2 + 4 / π) := by
+    have : x < Real.sqrt (x ^ 2 + 4 / π) :=
+      Real.lt_sqrt_of_sq_lt (lt_add_of_pos_right _ (by positivity))
+    linarith
+  calc erfc x ≤ 2 / Real.sqrt π * Real.exp (-x ^ 2) *
+        (1 / (x + Real.sqrt (x ^ 2 + 4 / π))) := erfc_le_div_add_sqrt hx.le
+    _ < 2 / Real.sqrt π * Real.exp (-x ^ 2) * (1 / (2 * x)) := by gcongr
+    _ = Real.exp (-x ^ 2) / (Real.sqrt π * x) := by field_simp
+
+/-- For `x > 0`, `erfc x < e^{−x²}`. -/
+theorem erfc_lt_exp_neg_sq {x : ℝ} (hx : 0 < x) : erfc x < Real.exp (-x ^ 2) := by
+  calc erfc x ≤ 2 / Real.sqrt π * Real.exp (-x ^ 2) *
+        (1 / (x + Real.sqrt (x ^ 2 + 4 / π))) := erfc_le_div_add_sqrt hx.le
+    _ < 2 / Real.sqrt π * Real.exp (-x ^ 2) * (1 / (2 / Real.sqrt π)) := by
+        gcongr
+        linarith [two_div_sqrt_pi_le_sqrt x]
+    _ = Real.exp (-x ^ 2) := by field_simp
+
+/-- For `x ≥ 0`, `erfc x ≤ e^{-x²}`. For `x > 0` this is the strict bound `erfc_lt_exp_neg_sq`;
+at `x = 0` both sides are `1`. -/
 theorem erfc_le_exp_neg_sq {x : ℝ} (hx : 0 ≤ x) : erfc x ≤ Real.exp (-x ^ 2) := by
-  have hden : 2 / Real.sqrt π ≤ x + Real.sqrt (x ^ 2 + 4 / π) := by
-    rw [← sqrt_four_div_pi]
-    linarith [Real.sqrt_le_sqrt (le_add_of_nonneg_left (sq_nonneg x) : 4 / π ≤ x ^ 2 + 4 / π)]
-  have h := (millsRatio_bounds hx).2.trans (one_div_le_one_div_of_le (by positivity) hden)
-  rw [one_div_div, mul_assoc, mul_le_iff_le_one_right (by positivity)] at h
-  rwa [Real.exp_neg, inv_eq_one_div, le_div_iff₀' (Real.exp_pos _)]
+  rcases hx.eq_or_lt with rfl | hx
+  · simp [erfc_zero]
+  · exact (erfc_lt_exp_neg_sq hx).le
 
 /-- The lower bound of DLMF 7.8.3: `√π/(2√π x + 2) ≤ M(x)` for `x ≥ 0`. -/
 private theorem sqrt_pi_div_le_millsRatio {x : ℝ} (hx : 0 ≤ x) :

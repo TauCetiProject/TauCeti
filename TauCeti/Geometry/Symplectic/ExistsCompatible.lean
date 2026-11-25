@@ -45,6 +45,9 @@ are those of McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, Se
 * `TauCeti.SymplecticForm.even_finrank` and `TauCeti.SymplecticForm.isEmpty_of_odd_finrank`: a
   symplectic vector space has even dimension, so an odd-dimensional space carries no symplectic
   form at all.
+* `TauCeti.SymplecticForm.IsSymplectic.even_finrank` and
+  `TauCeti.SymplecticForm.IsSymplectic.two_le_finrank_of_mem`: a symplectic subspace has even
+  dimension, at least two when it is nonzero.
 -/
 
 public section
@@ -207,6 +210,21 @@ theorem isEmpty_of_odd_finrank (h : Odd (finrank ℝ V)) :
     IsEmpty (SymplecticForm V) :=
   haveI : Module.Finite ℝ V := Module.finite_of_finrank_pos h.pos
   ⟨fun ω => (Nat.not_even_iff_odd.2 h) ω.even_finrank⟩
+
+/-- A symplectic subspace of a finite-dimensional symplectic space has even dimension. -/
+theorem IsSymplectic.even_finrank [FiniteDimensional ℝ V] {ω : SymplecticForm V}
+    {L : Submodule ℝ V} (hL : ω.IsSymplectic L) : Even (finrank ℝ L) :=
+  (ω.restrict L hL.nondegenerate_restrict).even_finrank
+
+/-- A symplectic subspace containing a nonzero vector has dimension at least two: its dimension is
+even and nonzero. -/
+theorem IsSymplectic.two_le_finrank_of_mem [FiniteDimensional ℝ V] {ω : SymplecticForm V}
+    {L : Submodule ℝ V} (hL : ω.IsSymplectic L) {x : V} (hx : x ∈ L) (hx0 : x ≠ 0) :
+    2 ≤ finrank ℝ L := by
+  obtain ⟨r, hr⟩ := hL.even_finrank
+  have hpos : finrank ℝ L ≠ 0 := fun h0 ↦
+    hx0 ((Submodule.mem_bot ℝ).1 (Submodule.finrank_eq_zero.1 h0 ▸ hx))
+  omega
 
 end SymplecticForm
 
