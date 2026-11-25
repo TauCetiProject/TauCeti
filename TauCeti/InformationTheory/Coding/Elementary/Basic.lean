@@ -105,6 +105,7 @@ theorem natCard_singleParityCheckCode [Field R] [Finite R] [Fintype ι] :
 
 /-- Over a division ring, the parity-check code has dimension `n - 1` at length `n`, including at
 length zero, where the natural-number subtraction gives dimension zero. -/
+@[simp]
 theorem finrank_singleParityCheckCode [DivisionRing R] [Fintype ι] :
     Module.finrank R (singleParityCheckCode R ι) = Fintype.card ι - 1 := by
   cases isEmpty_or_nonempty ι with
