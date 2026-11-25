@@ -511,17 +511,10 @@ theorem sq_exp_mul_inv (θ : ℝ) (j k : ℤ) :
 /-- The rotation by `(d e⁻¹)²` is not the identity when the directions `d` and `e` are not
 parallel. -/
 theorem sq_mul_inv_ne_one {d e : Circle} (hde : d ≠ e) (hde' : d ≠ -e) : (d * e⁻¹) ^ 2 ≠ 1 := by
-  intro h
-  have h' : ((d : ℂ) * (e : ℂ)⁻¹) * ((d : ℂ) * (e : ℂ)⁻¹) = 1 := by
-    rw [← sq]
-    exact_mod_cast congrArg ((↑) : Circle → ℂ) h
-  have he : (e : ℂ) ≠ 0 := Circle.coe_ne_zero e
-  rcases mul_self_eq_one_iff.1 h' with h₁ | h₁
-  · exact hde (Circle.coe_injective (by field_simp at h₁; exact h₁))
-  · refine hde' (Circle.coe_injective ?_)
-    field_simp at h₁
-    rw [Circle.coe_neg]
-    linear_combination h₁
+  rw [Ne, sq_eq_one_iff]
+  rintro (h | h)
+  · exact hde (mul_inv_eq_one.1 h)
+  · exact hde' (by rw [mul_inv_eq_iff_eq_mul.1 h, neg_one_mul])
 
 end Circle
 

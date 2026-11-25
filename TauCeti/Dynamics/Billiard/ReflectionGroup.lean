@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Isometry
+public import TauCeti.Analysis.Complex.LinearIsometryGroup
 public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Dynamics.Billiard.SideReflection
 import Mathlib.Data.ZMod.QuotientGroup
@@ -20,7 +20,7 @@ its sides, and the table is rational when this group is finite.
 
 The side reflection `σ_d` is the reflection `TauCeti.Complex.conjReflection (d²)`
 (`TauCeti.Billiard.sideReflection_eq_conjReflection_sq`), so the general facts about groups of
-linear isometries of the plane in `TauCeti.Analysis.Complex.Isometry` apply: the
+linear isometries of the plane in `TauCeti.Analysis.Complex.LinearIsometryGroup` apply: the
 rotations of the reflection group form its rotation subgroup `TauCeti.Complex.rotationSubgroup`,
 and a finite group of isometries containing a reflection is dihedral
 (`TauCeti.Complex.nonempty_mulEquiv_dihedralGroup`). A reflection `v ↦ b · conj v` lies in the
@@ -96,8 +96,8 @@ theorem conjReflection_sq_mem_reflectionGroup {d : Circle} (hd : d ∈ D) :
 reflections `σ_d`, `d ∈ D`. -/
 theorem reflectionGroup_le_iff {H : Subgroup (ℂ ≃ₗᵢ[ℝ] ℂ)} :
     reflectionGroup D ≤ H ↔ ∀ d ∈ D, sideReflection d ∈ H := by
-  rw [reflectionGroup_def, Subgroup.closure_le, image_subset_iff]
-  rfl
+  simp only [reflectionGroup_def, Subgroup.closure_le, subset_def, forall_mem_image,
+    SetLike.mem_coe]
 
 theorem reflectionGroup_mono {D' : Set Circle} (h : D ⊆ D') :
     reflectionGroup D ≤ reflectionGroup D' := by
@@ -163,8 +163,8 @@ theorem rotationSubgroup_reflectionGroup :
 
 /-- A reflection group containing two non-parallel directions has a nontrivial rotation subgroup;
 when it is finite, of order at least `2`. -/
-theorem two_le_natCard_rotationSubgroup [Finite (reflectionGroup D)] {d e : Circle} (hd : d ∈ D)
-    (he : e ∈ D) (hde : d ≠ e) (hde' : d ≠ -e) :
+theorem two_le_natCard_rotationSubgroup_reflectionGroup [Finite (reflectionGroup D)]
+    {d e : Circle} (hd : d ∈ D) (he : e ∈ D) (hde : d ≠ e) (hde' : d ≠ -e) :
     2 ≤ Nat.card (rotationSubgroup (reflectionGroup D)) := by
   have hmem : (d * e⁻¹) ^ 2 ∈ rotationSubgroup (reflectionGroup D) := by
     rw [rotationSubgroup_reflectionGroup]
@@ -179,7 +179,7 @@ contains two directions that are not parallel, it is isomorphic to the dihedral 
 theorem exists_mulEquiv_dihedralGroup_reflectionGroup [Finite (reflectionGroup D)] {d e : Circle}
     (hd : d ∈ D) (he : e ∈ D) (hde : d ≠ e) (hde' : d ≠ -e) :
     ∃ N, 2 ≤ N ∧ Nonempty (reflectionGroup D ≃* DihedralGroup N) :=
-  ⟨_, two_le_natCard_rotationSubgroup hd he hde hde',
+  ⟨_, two_le_natCard_rotationSubgroup_reflectionGroup hd he hde hde',
     nonempty_mulEquiv_dihedralGroup (conjReflection_sq_mem_reflectionGroup hd)⟩
 
 /-- **Rotating the directions conjugates the reflection group.** Rotating every direction of `D`
@@ -191,9 +191,7 @@ theorem reflectionGroup_image_mul (a : Circle) (D : Set Circle) :
   rw [reflectionGroup_def, reflectionGroup_def, MonoidHom.map_closure, image_image, image_image]
   congr 1
   refine image_congr fun d _ => ?_
-  rw [← rotation_trans_sideReflection_trans_rotation, MulEquiv.coe_toMonoidHom,
-    MulAut.conj_apply, ← map_inv, LinearIsometryEquiv.mul_def, LinearIsometryEquiv.mul_def,
-    LinearIsometryEquiv.trans_assoc]
+  simp [sideReflection_eq_conjReflection_sq, ← map_inv, mul_pow, sq a, mul_right_comm a a]
 
 /-! ### Directions `exp(kθ)` -/
 
@@ -212,16 +210,12 @@ theorem rotationSubgroup_reflectionGroup_exp (θ : ℝ) {s : Set ℤ} (h0 : 0 �
     simp
 
 /-- For directions `exp(kθ)`, `k ∈ s`, with `0, 1 ∈ s`, the reflection group has order twice
-the order of `exp(2θ)`, when that order is finite. -/
-theorem natCard_reflectionGroup_exp (θ : ℝ) {s : Set ℤ} (h0 : 0 ∈ s) (h1 : 1 ∈ s)
-    (hθ : IsOfFinOrder (Circle.exp (2 * θ))) :
+the order of `exp(2θ)`. (When `exp(2θ)` has infinite order, both sides are `0`.) -/
+theorem natCard_reflectionGroup_exp (θ : ℝ) {s : Set ℤ} (h0 : 0 ∈ s) (h1 : 1 ∈ s) :
     Nat.card (reflectionGroup ((fun k : ℤ => Circle.exp (k * θ)) '' s)) =
       2 * orderOf (Circle.exp (2 * θ)) := by
-  have hrot := rotationSubgroup_reflectionGroup_exp θ h0 h1
-  have : Finite (reflectionGroup ((fun k : ℤ => Circle.exp (k * θ)) '' s)) := by
-    rw [finite_iff_finite_rotationSubgroup, hrot]
-    exact hθ.finite_zpowers
   rw [natCard_eq_two_mul_natCard_rotationSubgroup
-    (conjReflection_sq_mem_reflectionGroup (mem_image_of_mem _ h0)), hrot, Nat.card_zpowers]
+    (conjReflection_sq_mem_reflectionGroup (mem_image_of_mem _ h0)),
+    rotationSubgroup_reflectionGroup_exp θ h0 h1, Nat.card_zpowers]
 
 end TauCeti.Billiard

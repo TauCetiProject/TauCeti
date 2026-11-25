@@ -42,8 +42,7 @@ theorem natCard_reflectionGroup_square : Nat.card (reflectionGroup squareDirecti
     refine orderOf_eq_prime ?_ ?_
     · exact_mod_cast Circle.exp_two_mul_pi_div_pow 2
     · rw [mul_div_cancel₀ _ two_ne_zero]; exact Circle.exp_pi_ne_one
-  rw [squareDirections, natCard_reflectionGroup_exp _ (by simp) (by simp)
-    (orderOf_pos_iff.1 (by rw [h]; norm_num)), h]
+  rw [squareDirections, natCard_reflectionGroup_exp _ (by simp) (by simp), h]
 
 /-- The directions `1`, `exp(π/3)`, `exp(2π/3)` of the sides of an equilateral triangle. -/
 def equilateralDirections : Set Circle :=
@@ -61,8 +60,7 @@ theorem natCard_reflectionGroup_equilateral :
       have : (3 * n : ℝ) = 1 := by nlinarith [pi_pos]
       have : 3 * n = 1 := by exact_mod_cast this
       omega
-  rw [equilateralDirections, natCard_reflectionGroup_exp _ (by simp) (by simp)
-    (orderOf_pos_iff.1 (by rw [h]; norm_num)), h]
+  rw [equilateralDirections, natCard_reflectionGroup_exp _ (by simp) (by simp), h]
 
 /-- The directions `1` and `exp(π/√2)` of two sides of a triangle with an angle `π/√2`. -/
 def irrationalDirections : Set Circle :=
