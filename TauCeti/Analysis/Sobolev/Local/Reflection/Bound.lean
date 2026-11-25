@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Sobolev.Local.Norm
 public import TauCeti.Analysis.Sobolev.Local.Reflection
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.Sobolev.Local.Wkp
@@ -51,6 +52,9 @@ has reflected representatives with one common bound on each relatively compact s
   `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_ball_bound` and
   `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_reflectionCore_bound`: the packaged
   extension with its bound.
+* `TauCeti.eLpNormWkp_planarReflection_higherReflectionCoeff_le` and
+  `TauCeti.eLpNormWkp_planarReflection_higherReflectionCoeff_reflectionCore_le`: the
+  same bound for the `W^{k,p}` norms `TauCeti.eLpNormWkp`.
 * `TauCeti.Wkp.exists_planarReflection_higherReflectionCoeff_norm_le`: a native Sobolev
   representative of the reflection with an explicit norm bound.
 * `TauCeti.exists_uniform_wkp_planarReflection_norm_le`: a uniform native Sobolev bound for
@@ -268,8 +272,41 @@ theorem MemWkpLoc.planarReflection_higherReflectionCoeff_reflectionCore_bound {p
         (higherReflectionBound k p) k (TauCeti.planarReflection (higherReflectionCoeff k) u) u := by
   simpa only [Opens.coe_reflectionCore_inter_setOf_im_nonneg] using
     MemWkpLoc.planarReflection_higherReflectionCoeff_bound (Ω := Ω.reflectionCore) hp
-      (fun _ hz him j => Opens.imDilation_higherReflectionNode_mem_reflectionCore j hz him.le)
+      Opens.imDilation_higherReflectionNode_mem_reflectionCore_of_im_neg
       (by rwa [Opens.coe_reflectionCore_inter_setOf_im_nonneg])
+
+/-- **The `W^{k,p}` norm of the reflection.** If the node dilations map the lower part of `Ω` into
+`Ω`, then for every `u` the `W^{k,p}(Ω)` norm of its order-`k` higher
+reflection is at most `higherReflectionBound k p` times the `W^{k,p}(Ω ∩ {0 ≤ im})` norm of `u`.
+No membership of `u` is assumed: the bound is trivial when the right side is infinite. -/
+theorem eLpNormWkp_planarReflection_higherReflectionCoeff_le {p : ℝ≥0∞} (hp : 1 ≤ p)
+    {Ω : Opens ℂ}
+    (hΩ : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin k, imDilation (higherReflectionNode j) z ∈ Ω)
+    (u : ℂ → F) :
+    eLpNormWkp p Ω k (TauCeti.planarReflection (higherReflectionCoeff k) u) ≤
+      higherReflectionBound k p * eLpNormWkp p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u := by
+  have hC0 : higherReflectionBound k p ≠ 0 := by
+    rw [higherReflectionBound_eq]
+    exact (zero_lt_one.trans_le le_self_add).ne'
+  -- An infinite right side bounds everything; a finite one places `u` in the half-disc class.
+  by_cases hu : eLpNormWkp p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u = ∞
+  · rw [hu, ENNReal.mul_top hC0]
+    exact le_top
+  have hu := memWkpLoc_of_eLpNormWkp_ne_top hu
+  obtain ⟨hR, hchain⟩ := hu.planarReflection_higherReflectionCoeff_bound hp hΩ
+  exact hchain.eLpNormWkp_le (higherReflectionBound_ne_top _ _) hC0 hR
+
+/-- **The `W^{k,p}` norm of the reflection on the reflection core.** For every
+`u`, the `W^{k,p}` norm of its order-`k` higher reflection on the
+reflection core of `Ω` is at most `higherReflectionBound k p` times the `W^{k,p}(Ω ∩ {0 ≤ im})` norm
+of `u`. No symmetry of `Ω` is assumed. -/
+theorem eLpNormWkp_planarReflection_higherReflectionCoeff_reflectionCore_le
+    {p : ℝ≥0∞} (hp : 1 ≤ p) {Ω : Opens ℂ} (u : ℂ → F) :
+    eLpNormWkp p Ω.reflectionCore k (TauCeti.planarReflection (higherReflectionCoeff k) u) ≤
+      higherReflectionBound k p * eLpNormWkp p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u := by
+  simpa only [Opens.coe_reflectionCore_inter_setOf_im_nonneg] using
+    eLpNormWkp_planarReflection_higherReflectionCoeff_le (Ω := Ω.reflectionCore) hp
+      Opens.imDilation_higherReflectionNode_mem_reflectionCore_of_im_neg u
 
 /-! ### Native Sobolev representatives with quantitative bounds -/
 
