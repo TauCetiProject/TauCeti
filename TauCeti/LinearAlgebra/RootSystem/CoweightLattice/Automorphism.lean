@@ -76,11 +76,13 @@ lemma coweightEquiv_symm_apply_mem_coweightLattice (g : P.Aut) {x : N}
     rw [root'_coweightEquiv_symm_apply]
     exact P.mem_coweightLattice.1 hx _
 
-/-- The automorphisms of a root pairing preserve the coroot lattice. -/
-lemma coweightEquiv_symm_apply_mem_corootSpan (g : P.Aut) {x : N} (hx : x ∈ P.corootSpan ℤ) :
-    g.coweightEquiv.symm x ∈ P.corootSpan ℤ := by
-  have h : P.corootSpan ℤ ≤ (P.corootSpan ℤ).comap
-      ((g.coweightEquiv.symm.toLinearMap.restrictScalars ℤ : N →ₗ[ℤ] N)) :=
+/-- The automorphisms of a root pairing preserve the `S`-span of the coroots, in particular the
+coroot lattice (`S = ℤ`) and the ambient coroot span (`S = R`). -/
+lemma coweightEquiv_symm_apply_mem_corootSpan {S : Type*} [CommRing S] [Module S N]
+    [LinearMap.CompatibleSMul N N S R] (g : P.Aut) {x : N} (hx : x ∈ P.corootSpan S) :
+    g.coweightEquiv.symm x ∈ P.corootSpan S := by
+  have h : P.corootSpan S ≤ (P.corootSpan S).comap
+      (g.coweightEquiv.symm.toLinearMap.restrictScalars S) :=
     Submodule.span_le.2 <| range_subset_iff.2 fun i ↦ by
       rw [SetLike.mem_coe, Submodule.mem_comap, LinearMap.restrictScalars_apply,
         LinearEquiv.coe_coe, coweightEquiv_symm_coroot]

@@ -436,14 +436,22 @@ theorem inv_mem_reflectionCoset {i : ι} {m : G} (hm : m ∈ D.reflectionCoset i
   rw [this]
   exact D.mul_mem_reflectionCoset hconj hinv
 
+/-- The product of two elements of the same reflection coset `M a` lies in `T`. -/
 theorem mul_mem_T_of_mem_reflectionCoset {i : ι} {m m' : G}
     (hm : m ∈ D.reflectionCoset i) (hm' : m' ∈ D.reflectionCoset i) : m * m' ∈ D.T := by
   simpa using D.mul_inv_mem_T (D.inv_mem_reflectionCoset hm') hm
+
+/-- The square of any element of a reflection coset `M a` lies in `T`. -/
 theorem mul_self_mem_T {i : ι} {m : G} (hm : m ∈ D.reflectionCoset i) : m * m ∈ D.T :=
   D.mul_mem_T_of_mem_reflectionCoset hm hm
+
+/-- For `m, m' ∈ M a`, the left quotient `m⁻¹ * m'` lies in `T`. -/
 theorem inv_mul_mem_T {i : ι} {m m' : G}
     (hm : m ∈ D.reflectionCoset i) (hm' : m' ∈ D.reflectionCoset i) : m⁻¹ * m' ∈ D.T :=
   D.mul_mem_T_of_mem_reflectionCoset (D.inv_mem_reflectionCoset hm) hm'
+
+/-- Conjugating a reflection coset `M b` by an element `m ∈ M a` lands in the reflected coset
+`M (s_a b)` (Bruhat–Tits I, 6.1.2 (5)). -/
 theorem mul_mul_inv_mem_reflectionCoset {i j : ι} {m g : G}
     (hm : m ∈ D.reflectionCoset i) (hg : g ∈ D.reflectionCoset j) :
     m * g * m⁻¹ ∈ D.reflectionCoset (P.reflectionPerm i j) := by

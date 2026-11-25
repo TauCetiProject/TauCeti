@@ -39,8 +39,9 @@ which quantifies over both subgroups. Neither reduces a comparison to generators
   lies in a subgroup normalized by both, as soon as the commutators of the generators do.
 * `TauCeti.commutator_closure_le_iff`: for a normal target, the commutator of a subgroup with a
   subgroup presented by generators is tested on those generators.
-* `Subgroup.le_normalizer_iSup_of_commutator_le`: a subgroup normalizes a join if its
-  commutators with each joined subgroup lie in that join.
+* `Subgroup.le_normalizer_iSup_of_commutator_le`,
+  `Subgroup.le_normalizer_biSup_of_commutator_le`: a subgroup normalizes a join (or bounded join)
+  if its commutators with each participating subgroup lie in that join.
 * `TauCeti.commutator_le_iff_map_mk'_eq_bot`: `⁅A, B⁆ ≤ N` for a normal `N` says that the images
   of `A` and `B` in `G ⧸ N` commute.
 * `TauCeti.commutator_commutator_le_of_rotate`: the Three Subgroups Lemma relative to a normal
@@ -526,6 +527,16 @@ theorem le_normalizer_iSup_of_commutator_le {ι : Sort*} (H : Subgroup G)
   rw [iSup_eq_closure] at hc hb'
   simpa only [commutatorElement_def, mul_assoc, inv_mul_cancel, mul_one] using
     (closure (⋃ i, (K i : Set G))).mul_mem hc hb'
+
+/-- A subgroup normalizes a bounded join of subgroups if its commutators with each participating
+subgroup lie in that join. -/
+theorem le_normalizer_biSup_of_commutator_le {ι : Sort*} {p : ι → Prop} (H : Subgroup G)
+    (K : ι → Subgroup G) (h : ∀ i, p i → ⁅H, K i⁆ ≤ ⨆ (j) (_ : p j), K j) :
+    H ≤ normalizer ((⨆ (i) (_ : p i), K i : Subgroup G) : Set G) := by
+  refine le_normalizer_iSup_of_commutator_le H _ fun i ↦ ?_
+  by_cases hi : p i
+  · simpa only [iSup_pos hi] using h i hi
+  · simp [hi]
 
 /-- Suppose elements `xᵢⱼ(a)` indexed by distinct pairs in `Fin m` satisfy the relation
 
