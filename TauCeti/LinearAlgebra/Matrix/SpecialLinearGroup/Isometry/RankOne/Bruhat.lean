@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.TitsSystem.RankOne
+public import TauCeti.GroupTheory.TitsSystem.Split
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.RankOne.RootAction
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.RankOne.Basic
 import TauCeti.LinearAlgebra.Projectivization.Action
@@ -35,11 +36,11 @@ with parameters `(x, z)` sends `[0 : 0 : 1] = w [1 : 0 : 0]` to `[z : σ(x) : 1]
 element of `G` outside `B` lies in `U w B`, which is the **Bruhat decomposition**
 `G = B ∪ B w B`. Since a nontrivial element of `U` moves `[0 : 0 : 1]`, its conjugate by `w` lies
 outside `B`, and no nontrivial element of `U` lies in every conjugate of `B`. Together with
-`TauCeti.TitsSystem.ofRankOne` this gives an irreducible Tits system on `G`, and supplies the
-hypotheses on `U` of Tits's simplicity criterion
-`TauCeti.TitsSystem.isSimpleGroup_derivedCentralQuotient`: `U` is solvable, normalized by `B`,
-`B ≤ U (B ∩ N)`, and `U` meets the normal core of `B` trivially. That criterion additionally needs
-the normal closure of `U` to be the derived subgroup of `G` and perfect, which is not proved here.
+`TauCeti.TitsSystem.ofRankOne` this gives an irreducible Tits system on `G`. Since `U` is
+solvable and meets the torus trivially, it is a split Tits system (`TauCeti.SplitTitsSystem`), and
+`U` meets the normal core of `B` trivially. These are the hypotheses on `U` of Tits's simplicity
+criterion `TauCeti.SplitTitsSystem.isSimpleGroup_derivedCentralQuotient`, which additionally needs
+the normal closure of `U` to be the derived subgroup of `G` and perfect, not proved here.
 
 Everything holds over every field with an involution, including in characteristic two.
 
@@ -49,10 +50,12 @@ Everything holds over every field with an involution, including in characteristi
 * `TauCeti.UnitaryRankOne.borel`: the stabilizer of the point at infinity.
 * `TauCeti.UnitaryRankOne.monomial`: the torus together with its translate by `w`.
 * `TauCeti.UnitaryRankOne.titsSystem`: the Tits system `(B, N)` of rank one.
+* `TauCeti.UnitaryRankOne.splitTitsSystem`: the split Tits system `(B, N, U)` of rank one.
 
 ## Main results
 
 * `TauCeti.UnitaryRankOne.borel_eq_unipotent_sup_torus`: `B = U T`.
+* `TauCeti.UnitaryRankOne.unipotent_inf_torus`: `U ∩ T = 1`.
 * `TauCeti.UnitaryRankOne.exists_eq_unipotent_mul_weyl_mul`: every element outside `B` lies in
   `U w B`.
 * `TauCeti.UnitaryRankOne.mem_borel_or_mem_doubleCoset`: the Bruhat decomposition `G = B ∪ BwB`.
@@ -145,6 +148,19 @@ theorem torus_le_normalizer_unipotent :
   rw [Subgroup.mem_normalizer_iff]
   refine fun u ↦ ⟨mul_mul_inv_mem_unipotent R σ ht, fun hu ↦ ?_⟩
   simpa [mul_assoc] using mul_mul_inv_mem_unipotent R σ (inv_mem ht) hu
+
+/-- The unipotent subgroup meets the torus trivially: a diagonal upper unitriangular matrix is the
+identity. -/
+theorem unipotent_inf_torus : unipotent R σ ⊓ torus R σ = ⊥ := by
+  refine (Subgroup.eq_bot_iff_forall _).mpr fun g hg ↦ ?_
+  obtain ⟨hu, ht⟩ := Subgroup.mem_inf.mp hg
+  rw [mem_unipotent_iff, isUpperUnitriangular_def] at hu
+  rw [mem_torus_iff] at ht
+  refine Subtype.ext (Subtype.ext (Matrix.ext fun i j ↦ ?_))
+  rw [coe_one]
+  rcases eq_or_ne i j with rfl | hij
+  · rw [hu.2, one_apply_eq]
+  · rw [ht hij, one_apply_ne hij]
 
 /-! ### The monomial subgroup -/
 
@@ -431,5 +447,40 @@ theorem isIrreducible_titsSystem (hσ : Function.Involutive σ) :
     (titsSystem K hσ).IsIrreducible := by
   unfold titsSystem
   exact TitsSystem.isIrreducible_ofRankOne
+
+variable (K) in
+/-- **The split Tits system of the rank-one unitary group**: the Tits system
+`TauCeti.UnitaryRankOne.titsSystem` with the unipotent subgroup `U`, which is complemented in the
+Borel subgroup by the torus `B ∩ N`. -/
+def splitTitsSystem (hσ : Function.Involutive σ) : SplitTitsSystem (UnitaryRankOne.Group K σ) where
+  toTitsSystem := titsSystem K hσ
+  subgroupU := unipotent K σ
+  subgroupU_le_subgroupB := by
+    rw [titsSystem_subgroupB]
+    exact unipotent_le_borel K σ
+  normal_subgroupU_subgroupOf := by
+    rw [titsSystem_subgroupB,
+      Subgroup.normal_subgroupOf_iff_le_normalizer (unipotent_le_borel K σ)]
+    exact borel_le_normalizer_unipotent hσ
+  isSolvable_subgroupU := inferInstance
+  subgroupU_sup_eq := by
+    rw [titsSystem_subgroupB, titsSystem_subgroupN, borel_inf_monomial,
+      borel_eq_unipotent_sup_torus hσ]
+  subgroupU_inf_eq_bot := by
+    rw [titsSystem_subgroupB, titsSystem_subgroupN, borel_inf_monomial, unipotent_inf_torus]
+
+/-- The underlying Tits system of the split Tits system is `TauCeti.UnitaryRankOne.titsSystem`. -/
+@[simp]
+theorem splitTitsSystem_toTitsSystem (hσ : Function.Involutive σ) :
+    (splitTitsSystem K hσ).toTitsSystem = titsSystem K hσ := by
+  unfold splitTitsSystem
+  rfl
+
+/-- The subgroup `U` of the split Tits system is the unipotent subgroup. -/
+@[simp]
+theorem splitTitsSystem_subgroupU (hσ : Function.Involutive σ) :
+    (splitTitsSystem K hσ).subgroupU = unipotent K σ := by
+  unfold splitTitsSystem
+  rfl
 
 end TauCeti.UnitaryRankOne
