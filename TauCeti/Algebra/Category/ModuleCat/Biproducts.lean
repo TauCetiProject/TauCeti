@@ -47,6 +47,9 @@ each summand of a finitely generated biproduct (`ModuleCat.finite_of_finite_bipr
 * `ModuleCat.inl_comp_biprodIsoProd_hom`, `ModuleCat.inr_comp_biprodIsoProd_hom`: under
   `ModuleCat.biprodIsoProd`, the binary biproduct inclusions are `LinearMap.inl` and
   `LinearMap.inr`.
+* `ModuleCat.biprod_lift_comp_biprodIsoProd_hom`, `ModuleCat.biprodIsoProd_hom_comp_ofHom_coprod`:
+  under `ModuleCat.biprodIsoProd`, `biprod.lift f g` and `biprod.desc f g` are the pair map
+  `f.hom.prod g.hom` and the sum map `f.hom.coprod g.hom`.
 * `ModuleCat.bijective_biprod_map`: `biprod.map f g` is bijective when `f` and `g` are.
 * `ModuleCat.finite_biproduct`: a finite biproduct of finitely generated modules is finitely
   generated.
@@ -150,6 +153,21 @@ theorem inr_comp_biprodIsoProd_hom :
     biprod.inr ≫ (biprodIsoProd M N).hom = ofHom (LinearMap.inr R M N) := by
   rw [← Iso.eq_comp_inv]
   apply biprod.hom_ext <;> ext x <;> simp
+
+variable {M N} in
+/-- The map `biprod.lift f g` into a biproduct, followed by the identification of the biproduct
+with the product module, is the pair map `f.hom.prod g.hom`. -/
+theorem biprod_lift_comp_biprodIsoProd_hom {X : ModuleCat.{v} R} (f : X ⟶ M) (g : X ⟶ N) :
+    biprod.lift f g ≫ (biprodIsoProd M N).hom = ofHom (f.hom.prod g.hom) := by
+  rw [← Iso.eq_comp_inv]
+  apply biprod.hom_ext <;> ext x <;> simp
+
+variable {M N} in
+/-- The identification of the biproduct with the product module, followed by the sum map
+`f.hom.coprod g.hom`, is the map `biprod.desc f g` out of the biproduct. -/
+theorem biprodIsoProd_hom_comp_ofHom_coprod {Z : ModuleCat.{v} R} (f : M ⟶ Z) (g : N ⟶ Z) :
+    (biprodIsoProd M N).hom ≫ ofHom (f.hom.coprod g.hom) = biprod.desc f g := by
+  apply biprod.hom_ext' <;> ext x <;> simp
 
 variable {M N} in
 /-- The biproduct `biprod.map f g` of two bijective linear maps is bijective. -/
