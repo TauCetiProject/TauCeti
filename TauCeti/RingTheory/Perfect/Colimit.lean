@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Colimit.DirectLimit
+public import Mathlib.Data.ZMod.Basic
 public import Mathlib.FieldTheory.PerfectClosure
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.Algebra.CharP.Frobenius.PowRingHom
@@ -36,6 +37,8 @@ perfection of `X`.
   `mk A p hA n x` is the `p ^ n`-th root of `of A p hA x`.
 * `TauCeti.ColimitPerfection.of A p hA`: the canonical map `A →+* ColimitPerfection A p hA`.
 * `TauCeti.ColimitPerfection.lift`: the extension of a ring map into a perfect ring.
+* `TauCeti.ColimitPerfection.liftAlgEquiv`: restriction of `ZMod p`-algebra maps into a perfect
+  algebra, with inverse given by extension.
 * `TauCeti.ColimitPerfection.map`: functoriality in ring maps.
 * `TauCeti.ColimitPerfection.ringEquivPerfectClosure`: the comparison with Mathlib's
   `PerfectClosure A p` for rings of characteristic `p`.
@@ -243,6 +246,55 @@ theorem lift_unique (g : A →+* M) (h : ColimitPerfection A p hA →+* M)
   hom_ext (hh.trans (lift_comp_of g).symm)
 
 end Lift
+
+/-! ### The universal property over `ZMod p` -/
+
+section Algebra
+
+variable [Algebra (ZMod p) A]
+
+/-- The scalar map into the colimit perfection factors through the original algebra. -/
+instance instAlgebra : Algebra (ZMod p) (ColimitPerfection A p hA) :=
+  ((of A p hA).comp (algebraMap (ZMod p) A)).toAlgebra
+
+/-- The canonical map into the colimit perfection as a `ZMod p`-algebra homomorphism. -/
+def ofAlgHom : A →ₐ[ZMod p] ColimitPerfection A p hA where
+  toRingHom := of A p hA
+  commutes' _ := rfl
+
+/-- The algebra map into the perfection has the same values as the canonical ring map. -/
+@[simp]
+theorem ofAlgHom_apply (x : A) : ofAlgHom A p hA x = of A p hA x :=
+  (rfl)
+
+variable {A p} {M : Type*} [CommRing M] [Algebra (ZMod p) M] [PerfectRing M p]
+
+/-- Restriction along the canonical map identifies algebra maps from the colimit perfection to
+a perfect `ZMod p`-algebra with algebra maps from the original algebra. -/
+def liftAlgEquiv : (ColimitPerfection A p hA →ₐ[ZMod p] M) ≃ (A →ₐ[ZMod p] M) where
+  toFun g := g.comp (ofAlgHom A p hA)
+  invFun f :=
+    let g := lift hA f.toRingHom
+    { toRingHom := g
+      commutes' c := RingHom.congr_fun (Subsingleton.elim
+        (g.comp (algebraMap (ZMod p) (ColimitPerfection A p hA))) (algebraMap (ZMod p) M)) c }
+  left_inv g := AlgHom.toRingHom_injective <|
+    hom_ext (lift_comp_of (g.toRingHom.comp (of A p hA)))
+  right_inv f := AlgHom.toRingHom_injective (lift_comp_of f.toRingHom)
+
+/-- Restriction is precomposition with the canonical algebra homomorphism. -/
+@[simp]
+theorem liftAlgEquiv_apply (g : ColimitPerfection A p hA →ₐ[ZMod p] M) :
+    liftAlgEquiv hA g = g.comp (ofAlgHom A p hA) :=
+  (rfl)
+
+/-- The extension of an algebra map restricts to the original map. -/
+@[simp]
+theorem liftAlgEquiv_symm_comp_ofAlgHom (f : A →ₐ[ZMod p] M) :
+    ((liftAlgEquiv hA).symm f).comp (ofAlgHom A p hA) = f := by
+  rw [← liftAlgEquiv_apply, Equiv.apply_symm_apply]
+
+end Algebra
 
 /-! ### Functoriality -/
 

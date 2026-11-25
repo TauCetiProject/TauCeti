@@ -276,28 +276,10 @@ section Perfection
 
 variable (p ι) (hN : N < h)
 
-/-- The prime `p` vanishes in the finite determinant model. -/
-theorem natCast_eq_zero : (p : CoordinateRing p ι hN) = 0 := by
-  rw [← map_natCast (algebraMap (ZMod p) (CoordinateRing p ι hN)),
-    CharP.cast_eq_zero, map_zero]
-
 /-- The coordinate ring of the perfected finite-jet determinant locus. -/
 abbrev PerfectCoordinateRing :=
-  ColimitPerfection (CoordinateRing p ι hN) p (natCast_eq_zero p ι hN)
-
-instance : Algebra (ZMod p) (PerfectCoordinateRing p ι hN) :=
-  ((ColimitPerfection.of _ p (natCast_eq_zero p ι hN)).comp
-    (algebraMap (ZMod p) (CoordinateRing p ι hN))).toAlgebra
-
-/-- The map from the finite model to its coordinate-ring perfection. -/
-def toPerfect : CoordinateRing p ι hN →ₐ[ZMod p] PerfectCoordinateRing p ι hN where
-  toRingHom := ColimitPerfection.of _ p (natCast_eq_zero p ι hN)
-  commutes' _ := rfl
-
-@[simp]
-theorem toPerfect_apply (x : CoordinateRing p ι hN) :
-    toPerfect p ι hN x = ColimitPerfection.of _ p (natCast_eq_zero p ι hN) x :=
-  (rfl)
+  ColimitPerfection (CoordinateRing p ι hN) p (by
+    rw [← map_natCast (algebraMap (ZMod p) (CoordinateRing p ι hN)), ZMod.natCast_self, map_zero])
 
 variable {p ι}
 
@@ -306,30 +288,19 @@ algebras. -/
 def perfectHomEquiv [Algebra (ZMod p) R] [PerfectRing R p] :
     (PerfectCoordinateRing p ι hN →ₐ[ZMod p] R) ≃
       {A : Matrix ι ι (TruncatedWittVector p h R) // IsPoint hN A} :=
-  (Equiv.ofBijective (fun f ↦ f.comp (toPerfect p ι hN)) (by
-    constructor
-    · intro f g e
-      apply AlgHom.toRingHom_injective
-      exact ColimitPerfection.hom_ext (congrArg AlgHom.toRingHom e)
-    · intro f
-      let g := ColimitPerfection.lift (natCast_eq_zero p ι hN) f.toRingHom
-      let gAlg : PerfectCoordinateRing p ι hN →ₐ[ZMod p] R :=
-        { toRingHom := g
-          commutes' := fun c ↦ RingHom.congr_fun
-            (Subsingleton.elim (g.comp (algebraMap (ZMod p) _)) (algebraMap (ZMod p) R)) c }
-      refine ⟨gAlg, AlgHom.ext fun x ↦ ?_⟩
-      exact ColimitPerfection.lift_of f.toRingHom x)).trans (homEquiv hN)
+  (ColimitPerfection.liftAlgEquiv _).trans (homEquiv hN)
 
 @[simp]
 theorem perfectHomEquiv_apply [Algebra (ZMod p) R] [PerfectRing R p]
     (f : PerfectCoordinateRing p ι hN →ₐ[ZMod p] R) :
-    perfectHomEquiv hN f = homEquiv hN (f.comp (toPerfect p ι hN)) :=
-  (rfl)
+    perfectHomEquiv hN f = homEquiv hN (f.comp (ColimitPerfection.ofAlgHom _ p _)) := by
+  rw [perfectHomEquiv, Equiv.trans_apply, ColimitPerfection.liftAlgEquiv_apply]
 
 @[simp]
-theorem perfectHomEquiv_symm_comp_toPerfect [Algebra (ZMod p) R] [PerfectRing R p]
+theorem perfectHomEquiv_symm_comp_ofAlgHom [Algebra (ZMod p) R] [PerfectRing R p]
     (A : {A : Matrix ι ι (TruncatedWittVector p h R) // IsPoint hN A}) :
-    ((perfectHomEquiv hN).symm A).comp (toPerfect p ι hN) = homOfMatrix hN A.property := by
+    ((perfectHomEquiv hN).symm A).comp (ColimitPerfection.ofAlgHom _ p _) =
+      homOfMatrix hN A.property := by
   apply (homEquiv hN).injective
   rw [← perfectHomEquiv_apply, Equiv.apply_symm_apply, ← homEquiv_symm_apply,
     Equiv.apply_symm_apply]
@@ -341,7 +312,7 @@ theorem perfectHomEquiv_natural [Algebra (ZMod p) R] [PerfectRing R p]
     (perfectHomEquiv hN (g.comp f)).val =
       (perfectHomEquiv hN f).val.map (TruncatedWittVector.map h g.toRingHom) := by
   rw [perfectHomEquiv_apply, perfectHomEquiv_apply, AlgHom.comp_assoc]
-  exact homEquiv_natural hN g (f.comp (toPerfect p ι hN))
+  exact homEquiv_natural hN g (f.comp (ColimitPerfection.ofAlgHom _ p _))
 
 end Perfection
 
