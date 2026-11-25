@@ -219,6 +219,22 @@ theorem cappedPerturbation_zero_left (L : ℝ) (H : Puncture → ℝ → M → �
   funext w x
   simp [cappedPerturbation_def]
 
+/-- **Normalizing the end Hamiltonians.** Adding functions `c_q` of time to the end Hamiltonians
+adds the capped perturbation of the target-independent Hamiltonians `c_q`. -/
+theorem cappedPerturbation_add_const (a L : ℝ) (H : Puncture → ℝ → M → ℝ)
+    (c : Puncture → ℝ → ℝ) (w : ℂ) (x : M) :
+    cappedPerturbation a L (fun q t y ↦ H q t y + c q t) w x =
+      cappedPerturbation a L H w x + cappedPerturbation a L (fun q t (_ : M) ↦ c q t) w x := by
+  simp only [cappedPerturbation_def, mul_add, add_smul, Finset.sum_add_distrib]
+
+/-- The capped perturbation of target-independent Hamiltonians does not depend on the target
+point, nor on the target type. -/
+theorem cappedPerturbation_const_target {N : Type*} (a L : ℝ) (c : Puncture → ℝ → ℝ) (w : ℂ)
+    (x : M) (y : N) :
+    cappedPerturbation a L (fun q t (_ : M) ↦ c q t) w x =
+      cappedPerturbation a L (fun q t (_ : N) ↦ c q t) w y := by
+  simp only [cappedPerturbation_def]
+
 /-- Where the datum is nonzero, some end has signed longitudinal coordinate in `(1, L + 3)`. -/
 theorem exists_one_lt_and_lt_of_cappedPerturbation_ne_zero {w : ℂ} {x : M}
     (h : cappedPerturbation a L H w x ≠ 0) :
@@ -272,6 +288,14 @@ theorem eventually_cocompact_cappedPerturbation_eq_zero :
     ∀ᶠ w in cocompact ℂ, ∀ x : M, cappedPerturbation a L H w x = 0 := by
   filter_upwards [(isCompact_truncation (L + 3)).compl_mem_cocompact] with w hw x
   exact cappedPerturbation_eq_zero_of_notMem_truncation hw x
+
+/-- **The datum vanishes beyond a radius depending only on a bound for the neck length.** For
+`L ≤ L₀` the datum vanishes outside the disc of radius `2 exp (2π (L₀ + 3))`, which contains the
+truncation `S_{L + 3}`. -/
+theorem cappedPerturbation_eq_zero_of_lt_norm {L₀ : ℝ} (hL : L ≤ L₀) {w : ℂ}
+    (hw : 2 * Real.exp (2 * π * (L₀ + 3)) < ‖w‖) (x : M) : cappedPerturbation a L H w x = 0 :=
+  cappedPerturbation_eq_zero_of_notMem_truncation
+    (notMem_truncation_of_lt_norm (by linarith : L + 3 ≤ L₀ + 3) hw) x
 
 /-- **The datum on an end.** On the part `±s > 0` of the end `q`, the pullback of the datum along
 the end lift `φ` is `a P_L(±s) H_q(t) dt`: it sends a tangent vector `v` of the cylinder to
@@ -496,7 +520,7 @@ theorem contMDiff_cappedPerturbation {n : ℕ∞} (hH : ∀ q, Function.Periodic
   exact (hP.smul hHq).smul hdt
 
 /-- The capped perturbation is differentiable in the point of `ℂ`. -/
-private theorem differentiable_cappedPerturbation_domain (hH : ∀ q, Function.Periodic (H q) 1)
+theorem differentiable_cappedPerturbation_domain (hH : ∀ q, Function.Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (Function.uncurry (H q))) (a L : ℝ) (x : M)
     (v : ℂ) : Differentiable ℝ fun w ↦ cappedPerturbation a L H w x v := by
   have h : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1 fun w ↦ cappedPerturbation a L H w x :=

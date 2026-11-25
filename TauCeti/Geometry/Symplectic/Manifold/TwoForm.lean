@@ -48,6 +48,8 @@ example.
   to the coordinate expression in the preferred chart at that point.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt_transport`: transport of tangent-fiber
   symplectic forms by the differential of a symplectomorphism.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.isSymplectomorphism_mfderivToContinuousLinearEquiv`: the
+  differential of a symplectomorphism is a linear symplectomorphism of the tangent-fiber forms.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isNondegenerate_mpullback_of_isLocalDiffeomorph`: a local
   diffeomorphism pulls a nondegenerate form back to a nondegenerate form.
 * `IsLocalDiffeomorph.isNondegenerate_mpullback_iff`: for a surjective
@@ -75,6 +77,8 @@ example.
   partial-diffeomorphism pullback characterizations
   (`TauCeti.SymplecticForm.eval₂_constSmooth_mfderiv_eq`,
   `TauCeti.SmoothTwoForm.mpullback_constSmooth_eq_mpullback_subtype_val_iff`).
+* `TauCeti.SymplecticForm.IsSymplectomorphism.mpullback_constSmooth`: a linear symplectomorphism
+  pulls one constant symplectic form back to the other.
 
 The definitions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.2.
@@ -210,6 +214,14 @@ theorem IsNondegenerate.symplecticFormAt_transport (ψ : M ≃ₘ⟮I, I₂⟯ M
     ContinuousLinearEquiv.coe_toLinearEquiv, ← ContinuousLinearEquiv.coe_coe,
     Diffeomorph.mfderivToContinuousLinearEquiv_coe]
 
+/-- At every point, the differential of a diffeomorphism pulling `σ₂` back to `σ` is a linear
+symplectomorphism from the tangent-space symplectic form of `σ` to that of `σ₂`. -/
+theorem IsNondegenerate.isSymplectomorphism_mfderivToContinuousLinearEquiv (ψ : M ≃ₘ⟮I, I₂⟯ M₂)
+    (hψ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ) (y : M) :
+    SymplecticForm.IsSymplectomorphism (hσ.symplecticFormAt y) (hσ₂.symplecticFormAt (ψ y))
+      (ψ.mfderivToContinuousLinearEquiv (by simp) y).toLinearEquiv :=
+  SymplecticForm.isSymplectomorphism_iff_transport_eq.2 (hσ.symplecticFormAt_transport ψ hψ y)
+
 include hσ in
 /-- A local diffeomorphism, such as a diffeomorphism, pulls a nondegenerate form back to a
 nondegenerate form. -/
@@ -315,6 +327,12 @@ lemma Tames.isNondegenerate (h : form.Tames J) : form.IsNondegenerate := by
   by_contra hv0
   exact (h x v hv0).ne' (hv (J x v))
 
+/-- If `-form` tames `J`, then `form` tames `-J`. -/
+theorem Tames.neg (h : (-form).Tames J) : form.Tames (-J) := fun x v hv ↦ by
+  rw [SmoothAlmostComplexStructure.neg_apply, SmoothBundleForm.eval₂_neg_right,
+    ← SmoothBundleForm.eval₂_neg]
+  exact h x v hv
+
 /-- For two smooth almost complex structures tamed by `form`, the endomorphism `1 - J₁ J₀` of every
 tangent space is invertible. -/
 theorem Tames.isUnit_one_sub_toEndomorphism_mul [FiniteDimensional ℝ E]
@@ -325,6 +343,16 @@ theorem Tames.isUnit_one_sub_toEndomorphism_mul [FiniteDimensional ℝ E]
   have h := ((hform.tames_iff.1 h₁) x).isUnit_one_sub_mul ((hform.tames_iff.1 h₀) x)
   refine ContinuousLinearMap.isUnit_of_isUnit_toLinearMap_of_finiteDimensional ?_
   simpa using h
+
+/-- **Structures tamed by a common form are nowhere opposite.** If a smooth two-form tames `J₀`
+and `J₁`, then `v ↦ J₀ v + J₁ v` is injective on every tangent space. -/
+lemma Tames.injective_add {J₀ J₁ : SmoothAlmostComplexStructure I M} (h₀ : form.Tames J₀)
+    (h₁ : form.Tames J₁) (x : M) :
+    Function.Injective fun v : TangentSpace I x ↦ J₀ x v + J₁ x v := by
+  have h := SymplecticForm.Tames.injective_add (h₀.isNondegenerate.tames_iff.1 h₀ x)
+    (h₀.isNondegenerate.tames_iff.1 h₁ x)
+  simpa only [LinearMap.coe_add, SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
+    ContinuousLinearMap.coe_coe, Pi.add_def] using h
 
 /-- A smooth two-form is invariant under a smooth almost complex structure when applying the
 structure in both tangent arguments leaves the form unchanged. -/
@@ -542,6 +570,19 @@ lemma compatible_constSmooth_iff {omegaForm : SymplecticForm V} {J : AlmostCompl
     exact ⟨invariant_constSmooth_iff.mp h.invariant, tames_constSmooth_iff.mp h.tames⟩
   · rintro ⟨hinv, htame⟩
     exact ⟨invariant_constSmooth_iff.mpr hinv, tames_constSmooth_iff.mpr htame⟩
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] [FiniteDimensional ℝ W] in
+/-- A linear symplectomorphism pulls the constant symplectic form of its target back to that of its
+source. -/
+theorem IsSymplectomorphism.mpullback_constSmooth {σ₁ : SymplecticForm V} {σ₂ : SymplecticForm W}
+    {e : V ≃L[ℝ] W} (he : IsSymplectomorphism σ₁ σ₂ e) :
+    SmoothForm.mpullback e.toDiffeomorph e.toDiffeomorph.contMDiff σ₂.constSmooth =
+      σ₁.constSmooth := by
+  refine SmoothBundleForm.ext_eval₂ fun x v w ↦ ?_
+  rw [SmoothForm.eval₂_mpullback, ContinuousLinearEquiv.coe_toDiffeomorph,
+    ContinuousLinearEquiv.mfderiv_eq, fromTangentSpace_constSmooth_apply,
+    fromTangentSpace_constSmooth_apply]
+  exact he.apply _ _
 
 end SymplecticForm
 

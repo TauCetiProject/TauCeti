@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+-- `Nat.card` occurs in the statement of `TauCeti.card_residueField_of_surjective`.
+public import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
 # The quotient by a maximal ideal of a local ring
@@ -18,10 +20,14 @@ is the residue field `κ`. Likewise, any surjective `R₀`-algebra map `ψ : R �
 
 * `TauCeti.isLocalHom_algebraMap_residueField`: `algebraMap R (ResidueField R)` is a local
   homomorphism.
+* `TauCeti.residue_eq_residue_iff`: two elements have the same residue exactly when
+  their difference lies in the maximal ideal.
 * `TauCeti.quotientEquivResidueField`: `R ⧸ 𝔪 ≃ₗ[R] κ` for a maximal ideal `𝔪`,
   sending the class of `r` to `residue R r`.
 * `TauCeti.residueFieldAlgEquivOfSurjective`: `ResidueField R ≃ₐ[R₀] L` induced by a surjective
   `R₀`-algebra map `ψ : R →ₐ[R₀] L` onto a field `L`.
+* `TauCeti.card_residueField_of_surjective`: along a surjective ring homomorphism of
+  local rings, the residue fields have the same number of elements.
 -/
 
 public section
@@ -37,6 +43,12 @@ variable {R : Type*} [CommRing R] [IsLocalRing R]
 /-- The canonical algebra map `R →+* ResidueField R` of a local ring is a local homomorphism. -/
 instance isLocalHom_algebraMap_residueField : IsLocalHom (algebraMap R (ResidueField R)) :=
   ResidueField.algebraMap_eq (R := R) ▸ inferInstance
+
+/-- Two elements of a local ring have the same residue if and only if their difference lies in
+the maximal ideal. -/
+theorem residue_eq_residue_iff {x y : R} :
+    residue R x = residue R y ↔ x - y ∈ maximalIdeal R := by
+  rw [← sub_eq_zero, ← map_sub, residue_eq_zero_iff]
 
 /-- The quotient of a local ring by a maximal ideal is its residue field, as an `R`-linear
 equivalence sending the class of `r` to `residue R r`. -/
@@ -81,5 +93,14 @@ theorem residueFieldAlgEquivOfSurjective_symm_apply {R₀ L : Type*} [CommRing R
     (residueFieldAlgEquivOfSurjective hψ).symm (ψ r) = residue R r :=
   (residueFieldAlgEquivOfSurjective hψ).symm_apply_eq.mpr
     (residueFieldAlgEquivOfSurjective_residue hψ r).symm
+
+/-- Along a surjective ring homomorphism of local rings, the residue fields have the same number
+of elements, so the residue field of a quotient `A ⧸ I` by a proper ideal has as many elements as
+that of `A`. -/
+theorem card_residueField_of_surjective {A B : Type*} [CommRing A] [IsLocalRing A]
+    [CommRing B] [IsLocalRing B] {f : A →+* B} (hf : Function.Surjective f) :
+    Nat.card (ResidueField B) = Nat.card (ResidueField A) :=
+  (Nat.card_congr (residueFieldAlgEquivOfSurjective (ψ := ((residue B).comp f).toIntAlgHom)
+    (residue_surjective.comp hf)).toEquiv).symm
 
 end TauCeti

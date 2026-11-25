@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.RingTheory.PowerSeries.Exp
+public import TauCeti.RingTheory.PowerSeries.Rescale
 
 import Mathlib.Data.Rat.Cast.Lemmas
+import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
 # The exponential specialization of a monoid algebra
@@ -34,9 +36,9 @@ the coefficients (the augmentation), and the higher coefficients are the moments
 
 ## Main results
 
-* `PowerSeries.constantCoeff_rescale`: rescaling the variable keeps the constant coefficient.
 * `PowerSeries.rescale_exp_mul_rescale_neg_exp`, `PowerSeries.rescale_exp_mul_self`:
   `e^{aX} e^{-aX} = 1` and `e^{aX} e^{aX} = e^{2aX}`.
+* `PowerSeries.isUnit_rescale_exp_add_rescale_neg_exp`: `e^{aX} + e^{-aX}` is a unit.
 * `AddMonoidAlgebra.expAlgHom_single`: `e^m ↦ e^{φ(m) X}`.
 * `AddMonoidAlgebra.constantCoeff_expAlgHom`: the constant coefficient of the exponential
   specialization is the sum of the coefficients.
@@ -47,13 +49,6 @@ the coefficients (the augmentation), and the higher coefficients are the moments
 public section
 
 namespace PowerSeries
-
-/-- Rescaling the variable does not change the constant coefficient. -/
-@[simp]
-theorem constantCoeff_rescale {R : Type*} [CommSemiring R] (a : R) (f : R⟦X⟧) :
-    constantCoeff (rescale a f) = constantCoeff f := by
-  rw [← coeff_zero_eq_constantCoeff_apply, coeff_rescale]
-  simp
 
 variable (R : Type*) [CommRing R] [Algebra ℚ R]
 
@@ -75,6 +70,13 @@ theorem rescale_exp_mul_rescale_neg_exp (a : R) :
 theorem rescale_exp_mul_self (a : R) :
     rescale a (exp R) * rescale a (exp R) = rescale (2 * a) (exp R) := by
   rw [exp_mul_exp_eq_exp_add, two_mul]
+
+/-- `e^{aX} + e^{-aX}` is a unit, since its constant coefficient is `2`. -/
+theorem isUnit_rescale_exp_add_rescale_neg_exp (a : R) :
+    IsUnit (rescale a (exp R) + rescale (-a) (exp R)) := by
+  rw [isUnit_iff_constantCoeff]
+  simpa [constantCoeff_rescale, one_add_one_eq_two, map_ofNat] using
+    (isUnit_iff_ne_zero.mpr (two_ne_zero' ℚ)).map (algebraMap ℚ R)
 
 /-- The exponential monoid homomorphism sends `a` to the exponential series rescaled by `a`. -/
 @[simp]

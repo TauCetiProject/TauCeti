@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
-import TauCeti.LinearAlgebra.QuadraticForm.Binary.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.Binary
 
 /-!
 # Isometry classes of regular quadratic forms

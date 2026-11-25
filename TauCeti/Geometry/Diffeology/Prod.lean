@@ -95,10 +95,10 @@ instance instDiffeologicalSpaceProd : DiffeologicalSpace (X × Y) :=
     locality := fun _ _ hp ↦
       ⟨isPlotOn_of_locally fun z hz ↦
           let ⟨v, hv, hzv, h⟩ := hp z hz
-          ⟨v, hv, hzv, h.1⟩,
+          ⟨v, hv, hzv, h.1.mono inter_subset_right⟩,
         isPlotOn_of_locally fun z hz ↦
           let ⟨v, hv, hzv, h⟩ := hp z hz
-          ⟨v, hv, hzv, h.2⟩⟩ }
+          ⟨v, hv, hzv, h.2.mono inter_subset_right⟩⟩ }
 
 /-- A map into a product is a plot exactly when both of its components are plots. -/
 theorem isPlot_prod_iff {n : ℕ} {p : 𝔼ⁿ → X × Y} :

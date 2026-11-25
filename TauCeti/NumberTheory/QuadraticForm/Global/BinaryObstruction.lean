@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.Binary.Basic
+public import TauCeti.LinearAlgebra.QuadraticForm.Binary
 public import TauCeti.NumberTheory.LocalField.Padic
 public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
 public import Mathlib.NumberTheory.Padics.HeightOneSpectrum

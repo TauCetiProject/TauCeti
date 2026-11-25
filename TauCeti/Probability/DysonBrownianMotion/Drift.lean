@@ -365,19 +365,9 @@ theorem sum_dysonDrift_sq {n : ℕ} {x : Fin n → ℝ} (hx : Function.Injective
     simp_rw [hsplit, Finset.sum_add_distrib]
     rw [← Finset.add_sum_erase Finset.univ (fun j ↦ (x i - x j)⁻¹ ^ 2) (Finset.mem_univ i),
       sub_self, inv_zero, zero_pow two_ne_zero, zero_add]
-  have hpair : (∑ i : Fin n, ∑ j ∈ Finset.univ.erase i, (x i - x j)⁻¹ ^ 2) =
-      2 * ∑ i : Fin n, ∑ j ∈ Finset.Ioi i, (x i - x j)⁻¹ ^ 2 := by
-    calc ∑ i : Fin n, ∑ j ∈ Finset.univ.erase i, (x i - x j)⁻¹ ^ 2
-        = ∑ i : Fin n, ∑ j ∈ ({i}ᶜ : Finset (Fin n)), (x i - x j)⁻¹ ^ 2 := by
-          simp_rw [Finset.compl_singleton]
-      _ = ∑ i : Fin n, ∑ j ∈ Finset.Ioi i, ((x i - x j)⁻¹ ^ 2 + (x j - x i)⁻¹ ^ 2) :=
-          (Finset.sum_sum_Ioi_add_eq_sum_sum_off_diag (fun j i : Fin n ↦ (x i - x j)⁻¹ ^ 2)).symm
-      _ = 2 * ∑ i : Fin n, ∑ j ∈ Finset.Ioi i, (x i - x j)⁻¹ ^ 2 := by
-          have hsym (i j : Fin n) : (x j - x i)⁻¹ ^ 2 = (x i - x j)⁻¹ ^ 2 := by
-            rw [← neg_sub (x i) (x j), inv_neg, neg_sq]
-          simp_rw [hsym, ← two_mul, ← Finset.mul_sum]
   simp_rw [dysonDrift_eq_inv_mul_sum, mul_pow, ← Finset.mul_sum, hexpand, Finset.sum_add_distrib]
-  rw [Finset.sum_sum_sum_erase_sub_inv_mul_sub_inv_eq_zero Finset.univ hx.injOn, add_zero, hpair]
+  rw [Finset.sum_sum_sum_erase_sub_inv_mul_sub_inv_eq_zero Finset.univ hx.injOn, add_zero,
+    Finset.sum_sum_erase_sub_inv_sq]
   ring
 
 /-! ### Globally Lipschitz chamber truncations -/

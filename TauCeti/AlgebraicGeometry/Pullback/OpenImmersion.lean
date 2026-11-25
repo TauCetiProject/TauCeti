@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Pullbacks
+import Mathlib.AlgebraicGeometry.PullbackCarrier
 
 /-!
 # Pullback pasting along an open immersion into a fibre product
@@ -44,5 +45,18 @@ theorem Scheme.Pullback.exists_isOpenImmersion_pullback_of_isOpenImmersion
   refine ⟨a ≫ (pullbackLeftPullbackSndIso f φ ψ).hom, inferInstance, ?_, ?_⟩
   · simp [a, g]
   · simp [a, g]
+
+
+/-- The pullback of two open immersions has image the intersection of the inverse images
+of their ranges under the two projections. -/
+theorem Scheme.Pullback.opensRange_map {X Y S U V : Scheme.{u}}
+    (f : X ⟶ S) (g : Y ⟶ S) (i : U ⟶ X) (j : V ⟶ Y)
+    [IsOpenImmersion i] [IsOpenImmersion j] :
+    (pullback.map (i ≫ f) (j ≫ g) f g i j (𝟙 S)
+      (Category.comp_id _) (Category.comp_id _)).opensRange =
+      pullback.fst f g ⁻¹ᵁ i.opensRange ⊓ pullback.snd f g ⁻¹ᵁ j.opensRange := by
+  apply TopologicalSpace.Opens.ext
+  exact Scheme.Pullback.range_map (i ≫ f) (j ≫ g) f g i j (𝟙 S)
+    (Category.comp_id _) (Category.comp_id _)
 
 end AlgebraicGeometry
