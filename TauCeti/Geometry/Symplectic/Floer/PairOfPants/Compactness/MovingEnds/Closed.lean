@@ -95,29 +95,6 @@ variable {E G M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
   [NormedSpace ℝ F] {ω : SmoothTwoForm I M} {e : M → F}
   {ι : Type*} [Fintype ι] {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ}
 
-omit [Fintype ι] in
-/-- For a family of configurations `p ↦ (c p, a p)` of input ends, continuous on an open set `U`
-of parameters, the points `(p, z)` with `p ∈ U`, nonzero scales and the domain point `z` (in real
-coordinates) off the centers form an open set. -/
-private theorem isOpen_setOf_mem_and_forall_ne_zero_and_forall_ne [Finite ι] {P : Type*}
-    [TopologicalSpace P] {c a : P → ι → ℂ} {U : Set P} (hU : IsOpen U) (hc : ContinuousOn c U)
-    (ha : ContinuousOn a U) :
-    IsOpen {q : P × (ℝ × ℝ) | q.1 ∈ U ∧ (∀ i, a q.1 i ≠ 0) ∧
-      ∀ i, equivRealProdCLM.symm q.2 ≠ c q.1 i} := by
-  -- The conditions are open conditions on `((c p, a p), z)`, which is continuous on `U × ℝ²`.
-  have hO : IsOpen {r : ((ι → ℂ) × (ι → ℂ)) × ℂ | (∀ i, r.1.2 i ≠ 0) ∧ ∀ i, r.2 ≠ r.1.1 i} := by
-    simp only [ofPred_and, ofPred_forall]
-    exact (isOpen_iInter_of_finite fun i ↦ isOpen_ne_fun (by fun_prop) continuous_const).inter
-      (isOpen_iInter_of_finite fun i ↦ isOpen_ne_fun (by fun_prop) (by fun_prop))
-  have hcont : ContinuousOn
-      (fun q : P × (ℝ × ℝ) ↦ ((c q.1, a q.1), equivRealProdCLM.symm q.2)) (U ×ˢ univ) :=
-    ((hc.comp continuousOn_fst mapsTo_fst_prod).prodMk
-      (ha.comp continuousOn_fst mapsTo_fst_prod)).prodMk
-      (by fun_prop : Continuous fun q : P × (ℝ × ℝ) ↦ equivRealProdCLM.symm q.2).continuousOn
-  convert hcont.isOpen_inter_preimage (hU.prod isOpen_univ) hO using 1
-  ext q
-  simp
-
 /-- **Solutions on spheres with moving input ends in a closed manifold converge off finitely many
 bubbling points, uniformly over a compact window of configurations.** Let `ω` be a nondegenerate
 two-form on a closed manifold `M`, let `H i` and `Hout` be period-one `C³` Hamiltonians with
@@ -204,8 +181,8 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
   -- on which the components of the datum are `C³` jointly with the target point.
   set S := {q : P × (ℝ × ℝ) | q.1 ∈ U ∧ (∀ i, a q.1 i ≠ 0) ∧
     ∀ i, equivRealProdCLM.symm q.2 ≠ c q.1 i}
-  have hSo : IsOpen S := isOpen_setOf_mem_and_forall_ne_zero_and_forall_ne hU hc.continuousOn
-    ha.continuousOn
+  have hSo : IsOpen S :=
+    isOpen_setOf_mem_and_forall_ne_zero_and_forall_ne hU hc.continuousOn ha.continuousOn
   have hK (w : ℂ) (q : P × (ℝ × ℝ)) (hq : q ∈ S) (x : M) :
       ContMDiffAt (𝓘(ℝ, P × (ℝ × ℝ)).prod I) 𝓘(ℝ) ((2 : ℕ∞) + 1)
         (uncurry (uncurry fun p z x ↦
@@ -229,26 +206,16 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
       (fun α ↦ (hω.contDiffOn_hamiltonianVectorFieldInChartAt (hK Complex.I) α).mono (hsub α))
       (fun p hp z hz x ↦ hJt p hp z (hDT p hp hz) x) hκ hJκ hLs hLt
   refine ⟨δ, hδ, fun Ω p u A hΩ hΩD hpC hu hfl hA ↦ ?_⟩
-  have hHs₁ (i : ι) := (hHs i).of_le (by norm_num : (1 : WithTop ℕ∞) ≤ 3)
-  have hHouts₁ := hHouts.of_le (by norm_num : (1 : WithTop ℕ∞) ≤ 3)
-  -- The sphere minus the centers of `pₖ` is an open set containing `Σ_R`, on which `uₖ` is `C¹`.
-  have hVo (k : ℕ) : IsOpen {z : ℝ × ℝ | ∀ i, equivRealProdCLM.symm z ≠ c (p k) i} := by
-    simp only [ofPred_forall]
-    exact isOpen_iInter_of_finite fun i ↦ isOpen_ne_fun (by fun_prop) continuous_const
-  have hTV (k : ℕ) : equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation (c (p k)) (a (p k)) R ⊆
-      {z | ∀ i, equivRealProdCLM.symm z ≠ c (p k) i} := fun z hz i ↦
-    ne_of_mem_puncturedSphereTruncation (ha₀ _ (hpC k) i) hz
-  have hu₁ (k : ℕ) := (hu k).of_le (by norm_num : (1 : WithTop ℕ∞) ≤ 3)
   have hΩT (k : ℕ) := hΩD.trans (hDT _ (hpC k))
-  -- The energy over `Ω` is at most the topological energy on `Σ_R` plus `∑ i, B i + Bout`.
-  exact hconv hΩ hΩD hpC (fun k ↦ (hu k).mono ((hΩT k).trans (hTV k)))
-    (fun k z hz ↦ hfl k z (hΩT k hz))
-    (fun k ↦ (hω.integrableOn_floerEnergyDensity_puncturedSpherePerturbation_truncation hH hHs₁
-      hHout hHouts₁ (ha₀ _ (hpC k)) (hsep _ (hpC k)) (hout _ (hpC k)) (hVo k) (hTV k)
-      (hu₁ k)).mono_set (hΩT k))
-    fun k ↦ (hω.setIntegral_floerEnergyDensity_puncturedSpherePerturbation_le hH hHs₁ hHout
-      hHouts₁ (ha₀ _ (hpC k)) (hsep _ (hpC k)) (hout _ (hpC k)) hB hBout (hVo k) (hTV k) (hu₁ k) hR
-      (fun z hz ↦ hJt _ (hpC k) z hz _) (hfl k) (hΩT k)).trans (add_le_add (hA k) le_rfl)
+  -- Over `Ω` the energy density is integrable, with energy at most `A + ∑ i, B i + Bout`.
+  have hE (k : ℕ) :=
+    hω.integrableOn_and_setIntegral_floerEnergyDensity_puncturedSpherePerturbation_le hH
+      (fun i ↦ (hHs i).of_le (by norm_num)) hHout (hHouts.of_le (by norm_num)) (ha₀ _ (hpC k))
+      (hsep _ (hpC k)) (hout _ (hpC k)) hB hBout ((hu k).of_le (by norm_num)) hR
+      (fun z hz ↦ hJt _ (hpC k) z hz _) (hfl k) (hA k) (hΩT k)
+  exact hconv hΩ hΩD hpC (fun k ↦ (hu k).mono fun z hz i ↦
+      ne_of_mem_puncturedSphereTruncation (ha₀ _ (hpC k) i) (hΩT k hz))
+    (fun k z hz ↦ hfl k z (hΩT k hz)) (fun k ↦ (hE k).1) fun k ↦ (hE k).2
 
 /-- **Solutions along the associativity path in a closed manifold converge off finitely many
 bubbling points.** For a plumbing factor `0 < f` with `3 f ≤ 1`, the configurations

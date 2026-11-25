@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capping
 import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.Topology.Separation.Basic
 import Mathlib.Geometry.Manifold.Algebra.Monoid
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 
@@ -51,7 +52,8 @@ Suppose that the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and
   space of parameters and for a normed target,
   `TauCeti.Floer.contDiffAt_puncturedSpherePerturbation_comp` is the form jointly in the
   parameter, and `TauCeti.Floer.contMDiffAt_uncurry_uncurry_puncturedSpherePerturbation` that of
-  its components, in real coordinates, for a manifold target;
+  its components, in real coordinates, for a manifold target, on the open set of
+  `TauCeti.Floer.isOpen_setOf_mem_and_forall_ne_zero_and_forall_ne`;
 * for a symplectic vector space target, its integrated curvature along any map is at most
   `∑ i, sup |H i| + sup |Hout|`, whatever the configuration
   (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le`),
@@ -449,6 +451,26 @@ theorem contMDiffAt_uncurry_uncurry_puncturedSpherePerturbation {n : ℕ∞}
         contMDiff_fst).prodMk contMDiff_snd).contMDiffAt
   exact ((contMDiffAt_puncturedSpherePerturbation hH hHs hHout hHouts ha₀ hz x).comp ((p, z), x)
     hφ).clm_apply contMDiffAt_const
+
+omit [Fintype ι] in
+/-- For a family of configurations `p ↦ (c p, a p)` of input ends, continuous on an open set `U`
+of parameters, the points `(p, z)` with `p ∈ U`, nonzero scales and the domain point `z` (in real
+coordinates) off the centers form an open set. By
+`contMDiffAt_uncurry_uncurry_puncturedSpherePerturbation`, for a `C^n` family the components of the
+datum are `C^n` on it. -/
+theorem isOpen_setOf_mem_and_forall_ne_zero_and_forall_ne [Finite ι] {P : Type*}
+    [TopologicalSpace P] {c a : P → ι → ℂ} {U : Set P} (hU : IsOpen U) (hc : ContinuousOn c U)
+    (ha : ContinuousOn a U) :
+    IsOpen {q : P × (ℝ × ℝ) | q.1 ∈ U ∧ (∀ i, a q.1 i ≠ 0) ∧
+      ∀ i, Complex.equivRealProdCLM.symm q.2 ≠ c q.1 i} := by
+  have hUo := hU.prod (isOpen_univ (X := ℝ × ℝ))
+  have hz : Continuous fun q : P × (ℝ × ℝ) ↦ Complex.equivRealProdCLM.symm q.2 := by fun_prop
+  convert (isOpen_setOf_mem_and_forall_ne hUo (continuousOn_const (c := (0 : ℂ)))
+    (ha.comp continuousOn_fst mapsTo_fst_prod)).inter (isOpen_setOf_mem_and_forall_ne hUo
+      hz.continuousOn (hc.comp continuousOn_fst mapsTo_fst_prod)) using 1
+  ext q
+  simp only [mem_ofPred_eq, mem_inter_iff, mem_prod, mem_univ, and_true, ne_comm (a := (0 : ℂ))]
+  tauto
 
 /-- Off the centers of the input ends, the components of the datum of period-one `C¹`
 Hamiltonians on a manifold are differentiable in the domain point, in real coordinates, for
