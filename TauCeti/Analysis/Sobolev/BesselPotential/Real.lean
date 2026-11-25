@@ -350,12 +350,17 @@ instance isScalarTower_real_complex : IsScalarTower ℝ ℂ H^{s}(E) :=
 variable (E h) in
 /-- **The inclusion of real coordinates**: the bounded real-linear map
 `(ι → realSubmodule E h) → (ι → H^s(E))` including each coordinate into `H^s(E)`. -/
-@[expose] def coordInclusion {ι : Type*} : (ι → realSubmodule E h) →L[ℝ] (ι → H^{s}(E)) :=
+def coordInclusion {ι : Type*} : (ι → realSubmodule E h) →L[ℝ] (ι → H^{s}(E)) :=
   ContinuousLinearMap.piMap fun _ ↦ (realSubmodule E h).subtypeL
 
 @[simp]
 theorem coordInclusion_apply {ι : Type*} (u : ι → realSubmodule E h) (i : ι) :
     coordInclusion E h u i = u i :=
+  (rfl)
+
+/-- The inclusion of real coordinates as a function: it coerces each coordinate into `H^s(E)`. -/
+theorem coe_coordInclusion {ι : Type*} :
+    ⇑(coordInclusion E h (ι := ι)) = fun u i ↦ (u i : H^{s}(E)) :=
   (rfl)
 
 variable (E h) in

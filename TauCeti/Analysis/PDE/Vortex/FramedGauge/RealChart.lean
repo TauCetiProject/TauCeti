@@ -329,16 +329,20 @@ def realSobolevLinearizedEquation (hk : 2 ≤ k)
       (((sobolevLinearizedEquation f m (one_le_two.trans hk)
         (fun a ↦ (u a : H^{(k : ℝ) + 1}(ℂ)))).restrictScalars ℝ).comp
         (coordInclusion ℂ _))).codRestrict
-      (realSubmodule ℂ k.cast_nonneg) fun v ↦
-        sobolevLinearizedEquation_mem_realSubmodule (f := f) (m := m) hk u v i
+      (realSubmodule ℂ k.cast_nonneg) fun v ↦ by
+        simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
+          ContinuousLinearMap.proj_apply, coe_coordInclusion] using
+          sobolevLinearizedEquation_mem_realSubmodule (f := f) (m := m) hk u v i
 
 @[simp]
 theorem coe_realSobolevLinearizedEquation_apply (hk : 2 ≤ k)
     (u v : Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) (i : Fin 3) :
     (realSobolevLinearizedEquation f m hk u v i : H^{(k : ℝ)}(ℂ)) =
       sobolevLinearizedEquation f m (one_le_two.trans hk) (fun a ↦ (u a : H^{(k : ℝ) + 1}(ℂ)))
-        (fun a ↦ (v a : H^{(k : ℝ) + 1}(ℂ))) i :=
-  (rfl)
+        (fun a ↦ (v a : H^{(k : ℝ) + 1}(ℂ))) i := by
+  simp only [realSobolevLinearizedEquation, ContinuousLinearMap.pi_apply,
+    ContinuousLinearMap.coe_codRestrict_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.proj_apply, coe_coordInclusion]
 
 /-- For `k ≥ 2`, at real coordinates `u` the complexified gauge-fixing row sends real variations
 to real values: it computes `d₀*` at the `C¹` field `u` represents. -/
@@ -367,16 +371,18 @@ def realSobolevGaugeAdjoint (hk : 2 ≤ k)
   (((sobolevGaugeAdjoint f m (one_le_two.trans hk)
     (fun a ↦ (u a : H^{(k : ℝ) + 1}(ℂ)))).restrictScalars ℝ).comp
       (coordInclusion ℂ _)).codRestrict
-      (realSubmodule ℂ k.cast_nonneg) fun v ↦
-        sobolevGaugeAdjoint_mem_realSubmodule (f := f) (m := m) hk u v
+      (realSubmodule ℂ k.cast_nonneg) fun v ↦ by
+        simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
+          coe_coordInclusion] using sobolevGaugeAdjoint_mem_realSubmodule (f := f) (m := m) hk u v
 
 @[simp]
 theorem coe_realSobolevGaugeAdjoint_apply (hk : 2 ≤ k)
     (u v : Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) :
     (realSobolevGaugeAdjoint f m hk u v : H^{(k : ℝ)}(ℂ)) =
       sobolevGaugeAdjoint f m (one_le_two.trans hk) (fun a ↦ (u a : H^{(k : ℝ) + 1}(ℂ)))
-        (fun a ↦ (v a : H^{(k : ℝ) + 1}(ℂ))) :=
-  (rfl)
+        (fun a ↦ (v a : H^{(k : ℝ) + 1}(ℂ))) := by
+  simp only [realSobolevGaugeAdjoint, ContinuousLinearMap.coe_codRestrict_apply,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars', coe_coordInclusion]
 
 /-- The `L²` functions of the real coordinates of `x` are almost everywhere the complexified
 coordinates of the field `x - x_m`. -/
@@ -431,9 +437,7 @@ private theorem realSobolevEquation_eq_comp (hk : 2 ≤ k) :
       sobolevEquation f m (one_le_two.trans hk) ∘ coordInclusion ℂ _ := by
   funext u i
   rw [Function.comp_apply, Function.comp_apply, realPartPi_apply,
-    show coordInclusion ℂ _ u = fun a ↦ (u a : H^{(k : ℝ) + 1}(ℂ)) from
-      funext (coordInclusion_apply u),
-    ← coe_realSobolevEquation_apply hk, realPartCLM_coe]
+    coe_coordInclusion, ← coe_realSobolevEquation_apply hk, realPartCLM_coe]
 
 /-- **The real vortex equation map is real-analytic.** -/
 theorem contDiff_realSobolevEquation (hk : 2 ≤ k) :
@@ -455,11 +459,7 @@ theorem hasFDerivAt_realSobolevEquation (hk : 2 ≤ k)
   convert hD using 1
   ext v i : 2
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
-    realPartPi_apply,
-    show coordInclusion ℂ _ u = fun a ↦ (u a : H^{(k : ℝ) + 1}(ℂ)) from
-      funext (coordInclusion_apply u),
-    show coordInclusion ℂ _ v = fun a ↦ (v a : H^{(k : ℝ) + 1}(ℂ)) from
-      funext (coordInclusion_apply v)]
+    realPartPi_apply, coe_coordInclusion]
   rw [← coe_realSobolevLinearizedEquation_apply hk, realPartCLM_coe]
 
 /-- **The zeros of the real vortex equation map are the vortices.** For `k ≥ 2`, a continuous
