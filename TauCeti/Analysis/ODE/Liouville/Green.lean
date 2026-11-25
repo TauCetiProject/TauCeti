@@ -53,12 +53,13 @@ Variation of parameters turns the equation for `ε` into the Volterra integral e
   `ε(x) = ∫ₓ^∞ (e^{2ξ(x) - 2ξ(v)} - 1) / 2 · Φ(v) (1 + ε(v)) dv`,
 
 whose kernel is bounded by `1/2` because `ξ` is increasing. Its solution is supplied by
-`TauCeti.exists_volterra_solution`. Writing the solution as
+`TauCeti.exists_volterra_solution`, and the sharp bound `|ε| ≤ exp(V / 2) - 1` by
+`TauCeti.norm_volterra_solution_le_exp_sub_one`. Writing the solution as
 `ε = e^{2ξ} I / 2 - T / 2` with the tail integrals `T = ∫ₓ^∞ Φ (1 + ε)` and
 `I = ∫ₓ^∞ e^{-2ξ} Φ (1 + ε)`, the function `w₂ = y_- (1 - T / 2) + y_+ I / 2` is differentiated
-twice directly. The sharp bound `exp(V / 2) - 1` follows from the inequality
-`|ε(x)| ≤ u(x) = ½ ∫ₓ^∞ |Φ| (1 + |ε|)`: the product `(1 + u) e^{-V/2}` is increasing on `(a, ∞)`
-and tends to `1` at infinity.
+twice directly. Since `ε' = f^{1/2} e^{2ξ} I`, the bound on `ε'` follows from
+`|e^{2ξ(x)} I(x)| ≤ ∫ₓ^∞ |Φ| exp(V / 2) = 2 (exp(V(x) / 2) - 1)`
+(`MeasureTheory.IntegrableOn.integral_Ioi_mul_exp_integral_Ioi`).
 
 ## References
 
@@ -123,26 +124,35 @@ private lemma monotoneOn_of_hasDerivAt_sqrt {f ξ : ℝ → ℝ} {a : ℝ}
     (fun x hx ↦ (hξ x hx).continuousAt.continuousWithinAt)
     (fun x hx ↦ (hξ x (interior_subset hx)).hasDerivWithinAt) fun _ _ ↦ Real.sqrt_nonneg _
 
+/-- For `a < x ≤ v`, `e^{2ξ(x) - 2ξ(v)} ≤ 1`, because `ξ` is increasing. -/
+private lemma exp_two_mul_sub_le_one {ξ : ℝ → ℝ} {a x v : ℝ} (hξm : MonotoneOn ξ (Ioi a))
+    (hx : a < x) (hxv : x ≤ v) : Real.exp (2 * (ξ x - ξ v)) ≤ 1 :=
+  Real.exp_le_one_iff.2 (by nlinarith [hξm hx (hx.trans_le hxv) hxv])
+
 /-- The Volterra kernel `(e^{2ξ(x) - 2ξ(v)} - 1) / 2` of the Liouville–Green error is bounded by
 `1 / 2` for `x ≤ v`, because `ξ` is increasing. -/
 private lemma norm_liouvilleGreen_kernel_le {ξ : ℝ → ℝ} {a x v : ℝ} (hξm : MonotoneOn ξ (Ioi a))
     (hx : a < x) (hxv : x ≤ v) :
     ‖(((Real.exp (2 * (ξ x - ξ v)) - 1) / 2 : ℝ) : ℂ)‖ ≤ 1 / 2 := by
-  have he : Real.exp (2 * (ξ x - ξ v)) ≤ 1 := Real.exp_le_one_iff.2 (by
-    nlinarith [hξm hx (hx.trans_le hxv) hxv])
+  have he := exp_two_mul_sub_le_one hξm hx hxv
   rw [Complex.norm_real, Real.norm_eq_abs, abs_le]
   constructor <;> nlinarith [Real.exp_pos (2 * (ξ x - ξ v))]
 
+/-- The Liouville–Green integrand `Φ (1 + ε)` has norm at most `|Φ| (1 + C)` when `|ε| ≤ C`. -/
+private lemma norm_mul_one_add_le {Φ ε : ℂ} {C : ℝ} (hε : ‖ε‖ ≤ C) :
+    ‖Φ * (1 + ε)‖ ≤ ‖Φ‖ * (1 + C) := by
+  rw [norm_mul]
+  exact mul_le_mul_of_nonneg_left ((norm_add_le _ _).trans (by simp [hε])) (norm_nonneg _)
+
 /-- The Volterra integral equation of the Liouville–Green error has a continuous solution with
-the crude bound `|ε(x)| ≤ V(x) / 2 · exp(V(x) / 2)`, where `V(x) = ∫ₓ^∞ |Φ|`. -/
+the sharp bound `|ε(x)| ≤ exp(V(x) / 2) - 1`, where `V(x) = ∫ₓ^∞ |Φ|`. -/
 private lemma exists_liouvilleGreen_volterra {ξ : ℝ → ℝ} {Φ : ℝ → ℂ} {a : ℝ}
     (hξc : ContinuousOn ξ (Ioi a)) (hξm : MonotoneOn ξ (Ioi a)) (hΦc : ContinuousOn Φ (Ioi a))
     (hΦi : ∀ x ∈ Ioi a, IntegrableOn Φ (Ioi x)) :
     ∃ ε : ℝ → ℂ, ContinuousOn ε (Ioi a) ∧
       (∀ x ∈ Ioi a, ε x = ∫ v in Ioi x,
         (((Real.exp (2 * (ξ x - ξ v)) - 1) / 2 : ℝ) : ℂ) * (Φ v * (1 + ε v))) ∧
-      ∀ x ∈ Ioi a, ‖ε x‖ ≤
-        (∫ v in Ioi x, ‖Φ v‖) / 2 * Real.exp ((∫ v in Ioi x, ‖Φ v‖) / 2) := by
+      ∀ x ∈ Ioi a, ‖ε x‖ ≤ Real.exp ((∫ v in Ioi x, ‖Φ v‖) / 2) - 1 := by
   set S : Set (ℝ × ℝ) := {p | a < p.1 ∧ p.1 ≤ p.2}
   have h1 : ContinuousOn (fun p : ℝ × ℝ ↦ ξ p.1) S := hξc.comp continuousOn_fst fun p hp ↦ hp.1
   have h2 : ContinuousOn (fun p : ℝ × ℝ ↦ ξ p.2) S :=
@@ -156,105 +166,65 @@ private lemma exists_liouvilleGreen_volterra {ξ : ℝ → ℝ} {Φ : ℝ → �
       ‖(((Real.exp (2 * (ξ x - ξ v)) - 1) / 2 : ℝ) : ℂ)‖ ≤
         (fun _ ↦ (1 : ℝ)) x * (fun _ ↦ 1 / 2) v :=
     (norm_liouvilleGreen_kernel_le hξm hx hxv).trans_eq (one_mul _).symm
+  have hΦi' (x : ℝ) (hx : x ∈ Ioi a) : IntegrableOn (fun v ↦ 1 / 2 * ‖Φ v‖) (Ioi x) :=
+    (hΦi x hx).norm.const_mul _
+  -- The crude bound of `exists_volterra_solution` shows that `ε` is bounded at infinity, so the
+  -- sharp bound of `norm_volterra_solution_le_exp_sub_one` applies.
   obtain ⟨ε, hεc, hεeq, hεle⟩ := exists_volterra_solution (𝕜 := ℂ) (E := ℂ) (J := Φ) (ψ := Φ) hK
     hΦc hΦc continuousOn_const continuousOn_const (fun _ _ ↦ zero_le_one)
     (fun _ _ ↦ by norm_num) hKle (fun x hx ↦ (hΦi x hx).norm.const_mul _)
     (fun x hx ↦ (hΦi x hx).norm.const_mul _)
+  have hεO := isBigO_of_norm_le_volterra_bound (fun _ _ ↦ zero_le_one)
+    (fun _ _ ↦ by norm_num) (fun x hx ↦ (hΦi x hx).norm.const_mul _)
+    (fun x hx ↦ (hΦi x hx).norm.const_mul _) hεle
   refine ⟨ε, hεc, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
   · rw [hεeq x hx]
     congr 1 with v
     simp only [smul_eq_mul]
     ring
-  · have h := hεle x hx
-    simp only [one_mul, integral_const_mul] at h
-    convert h using 2 <;> ring_nf
+  · have h := norm_volterra_solution_le_exp_sub_one (Q := fun _ ↦ 1 / 2) hK hΦc hΦc
+      continuousOn_const zero_le_one (fun _ _ ↦ by norm_num) hKle (fun _ _ ↦ le_rfl) hΦi' hεc
+      hεeq hεO hx
+    rw [integral_const_mul] at h
+    convert h using 3
+    ring
 
-/-- With the crude bound on `ε`, the integrands `Φ (1 + ε)`, `e^{-2ξ} Φ (1 + ε)` and
-`|Φ| (1 + |ε|)` are integrable on `(x, ∞)` for every `x > a`. -/
+/-- With the bound on `ε`, the integrands `Φ (1 + ε)` and `e^{-2ξ} Φ (1 + ε)` are integrable on
+`(x, ∞)` for every `x > a`. -/
 private lemma integrableOn_liouvilleGreen_tails {ξ : ℝ → ℝ} {Φ ε : ℝ → ℂ} {a x : ℝ}
     (hξc : ContinuousOn ξ (Ioi a)) (hξm : MonotoneOn ξ (Ioi a)) (hΦc : ContinuousOn Φ (Ioi a))
     (hΦi : ∀ x ∈ Ioi a, IntegrableOn Φ (Ioi x)) (hεc : ContinuousOn ε (Ioi a))
-    (hεle : ∀ x ∈ Ioi a, ‖ε x‖ ≤
-      (∫ v in Ioi x, ‖Φ v‖) / 2 * Real.exp ((∫ v in Ioi x, ‖Φ v‖) / 2)) (hx : x ∈ Ioi a) :
+    (hεle : ∀ x ∈ Ioi a, ‖ε x‖ ≤ Real.exp ((∫ v in Ioi x, ‖Φ v‖) / 2) - 1) (hx : x ∈ Ioi a) :
     IntegrableOn (fun v ↦ Φ v * (1 + ε v)) (Ioi x) ∧
-    IntegrableOn (fun v ↦ (Real.exp (-(2 * ξ v)) : ℂ) * (Φ v * (1 + ε v))) (Ioi x) ∧
-    IntegrableOn (fun v ↦ ‖Φ v‖ * (1 + ‖ε v‖)) (Ioi x) := by
-  set C := (∫ v in Ioi x, ‖Φ v‖) / 2 * Real.exp ((∫ v in Ioi x, ‖Φ v‖) / 2)
+    IntegrableOn (fun v ↦ (Real.exp (-(2 * ξ v)) : ℂ) * (Φ v * (1 + ε v))) (Ioi x) := by
+  set C := Real.exp ((∫ v in Ioi x, ‖Φ v‖) / 2) - 1
   have hV := MeasureTheory.antitoneOn_integral_Ioi (fun v _ ↦ norm_nonneg (Φ v))
     fun y hy ↦ (hΦi y hy).norm
   have hC (v : ℝ) (hv : v ∈ Ioi x) : ‖ε v‖ ≤ C := by
     have hva : v ∈ Ioi a := mem_Ioi.2 (lt_trans hx hv)
-    have h0 : 0 ≤ ∫ t in Ioi v, ‖Φ t‖ :=
-      setIntegral_nonneg measurableSet_Ioi fun _ _ ↦ norm_nonneg _
     have hle : ∫ t in Ioi v, ‖Φ t‖ ≤ ∫ t in Ioi x, ‖Φ t‖ := hV hx hva (le_of_lt hv)
-    refine (hεle v hva).trans (mul_le_mul (by linarith) (Real.exp_le_exp.2 (by linarith))
-      (Real.exp_pos _).le (by linarith))
+    exact (hεle v hva).trans (sub_le_sub_right (Real.exp_le_exp.2 (by linarith)) 1)
   have hGc : ContinuousOn (fun v ↦ Φ v * (1 + ε v)) (Ioi a) :=
     hΦc.mul (continuousOn_const.add hεc)
-  have hG (v : ℝ) (hv : v ∈ Ioi x) : ‖Φ v * (1 + ε v)‖ ≤ ‖Φ v‖ * (1 + C) := by
-    rw [norm_mul]
-    exact mul_le_mul_of_nonneg_left ((norm_add_le _ _).trans (by simp [hC v hv])) (norm_nonneg _)
+  have hG (v : ℝ) (hv : v ∈ Ioi x) : ‖Φ v * (1 + ε v)‖ ≤ ‖Φ v‖ * (1 + C) :=
+    norm_mul_one_add_le (hC v hv)
   -- Each integrand is continuous and dominated on `(x, ∞)` by a multiple of `‖Φ‖`.
   have hsub : Ioi x ⊆ Ioi a := Ioi_subset_Ioi (le_of_lt hx)
-  have hdom {E : Type} [NormedAddCommGroup E] {F : ℝ → E} (K : ℝ) (hF : ContinuousOn F (Ioi a))
+  have hdom {F : ℝ → ℂ} (K : ℝ) (hF : ContinuousOn F (Ioi a))
       (hb : ∀ v ∈ Ioi x, ‖F v‖ ≤ ‖Φ v‖ * K) : IntegrableOn F (Ioi x) :=
     Integrable.mono' ((hΦi x hx).norm.mul_const K)
       ((hF.mono hsub).aestronglyMeasurable measurableSet_Ioi)
       ((ae_restrict_iff' measurableSet_Ioi).2 (Eventually.of_forall hb))
   refine ⟨hdom _ hGc hG, hdom (Real.exp (-(2 * ξ x)) * (1 + C))
       ((Complex.continuous_ofReal.comp_continuousOn (Real.continuous_exp.comp_continuousOn
-        (continuousOn_const.mul hξc).neg)).mul hGc) fun v hv ↦ ?_,
-    hdom (1 + C) (hΦc.norm.mul (continuousOn_const.add hεc.norm)) fun v hv ↦ ?_⟩
-  · rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (Real.exp_pos _).le]
-    have he : Real.exp (-(2 * ξ v)) ≤ Real.exp (-(2 * ξ x)) :=
-      Real.exp_le_exp.2 (by linarith [hξm hx (mem_Ioi.2 (lt_trans hx hv)) (le_of_lt hv)])
-    calc Real.exp (-(2 * ξ v)) * ‖Φ v * (1 + ε v)‖
-        ≤ Real.exp (-(2 * ξ x)) * (‖Φ v‖ * (1 + C)) :=
-          mul_le_mul he (hG v hv) (norm_nonneg _) (Real.exp_pos _).le
-      _ = ‖Φ v‖ * (Real.exp (-(2 * ξ x)) * (1 + C)) := by ring
-  · rw [norm_mul, norm_norm, Real.norm_of_nonneg (by positivity)]
-    exact mul_le_mul_of_nonneg_left (by linarith [hC v hv]) (norm_nonneg _)
-
-/-- **The sharp Liouville–Green bound.** Let `ε` be continuous on `(a, ∞)`, with
-`|Φ| (1 + |ε|)` integrable on every `(x, ∞)`, and suppose that `|ε(x)| ≤ u(x)` for every `x > a`,
-where `u(x) = ½ ∫ₓ^∞ |Φ| (1 + |ε|)`. Then `1 + u(x) ≤ exp(V(x) / 2)` with `V(x) = ∫ₓ^∞ |Φ|`. -/
-private lemma one_add_half_integral_le_exp {Φ ε : ℝ → ℂ} {a x : ℝ} (hΦc : ContinuousOn Φ (Ioi a))
-    (hεc : ContinuousOn ε (Ioi a)) (hΦi : ∀ v ∈ Ioi a, IntegrableOn Φ (Ioi v))
-    (hH : ∀ v ∈ Ioi a, IntegrableOn (fun t ↦ ‖Φ t‖ * (1 + ‖ε t‖)) (Ioi v))
-    (hle : ∀ v ∈ Ioi a, ‖ε v‖ ≤ (∫ t in Ioi v, ‖Φ t‖ * (1 + ‖ε t‖)) / 2) (hx : x ∈ Ioi a) :
-    1 + (∫ t in Ioi x, ‖Φ t‖ * (1 + ‖ε t‖)) / 2 ≤ Real.exp ((∫ t in Ioi x, ‖Φ t‖) / 2) := by
-  -- The product `φ = (1 + u) e^{-V/2}` has derivative `½ |Φ| e^{-V/2} (u - |ε|) ≥ 0`.
-  set u : ℝ → ℝ := fun v ↦ (∫ t in Ioi v, ‖Φ t‖ * (1 + ‖ε t‖)) / 2
-  set V : ℝ → ℝ := fun v ↦ ∫ t in Ioi v, ‖Φ t‖
-  have hder (v : ℝ) (hv : v ∈ Ioi a) : HasDerivAt (fun t ↦ (1 + u t) * Real.exp (-(V t / 2)))
-      (‖Φ v‖ / 2 * Real.exp (-(V v / 2)) * (u v - ‖ε v‖)) v := by
-    have hmid : a < (a + v) / 2 := by linarith [mem_Ioi.1 hv]
-    have hlt : (a + v) / 2 < v := by linarith [mem_Ioi.1 hv]
-    have hu := ((hH _ hmid).hasDerivAt_integral_Ioi ((hΦc.norm.mul
-      (continuousOn_const.add hεc.norm)).continuousAt (isOpen_Ioi.mem_nhds hv)) hlt).div_const 2
-    have hV := IntegrableOn.hasDerivAt_integral_Ioi (hΦi _ hmid).norm
-      (hΦc.norm.continuousAt (isOpen_Ioi.mem_nhds hv)) hlt
-    convert ((hu.const_add 1).mul (hV.div_const 2).neg.exp) using 1
-    simp only [u, V, Pi.neg_apply]
-    ring
-  have hmono : MonotoneOn (fun t ↦ (1 + u t) * Real.exp (-(V t / 2))) (Ioi a) :=
-    monotoneOn_of_hasDerivWithinAt_nonneg (convex_Ioi a)
-      (fun v hv ↦ (hder v hv).continuousAt.continuousWithinAt)
-      (fun v hv ↦ (hder v (interior_subset hv)).hasDerivWithinAt) fun v hv ↦ by
-        rw [interior_Ioi] at hv
-        exact mul_nonneg (mul_nonneg (div_nonneg (norm_nonneg _) two_pos.le) (Real.exp_pos _).le)
-          (sub_nonneg.2 (hle v hv))
-  have hlim : Tendsto (fun t ↦ (1 + u t) * Real.exp (-(V t / 2))) atTop (𝓝 1) := by
-    have hu0 : Tendsto u atTop (𝓝 0) := by
-      simpa using (tendsto_integral_Ioi_zero (f := fun t ↦ ‖Φ t‖ * (1 + ‖ε t‖))
-        (μ := volume) tendsto_id).div_const 2
-    have hV0 : Tendsto V atTop (𝓝 0) := tendsto_integral_Ioi_zero tendsto_id
-    simpa using ((hu0.const_add 1).mul ((hV0.div_const 2).neg.rexp))
-  have hφ : (1 + u x) * Real.exp (-(V x / 2)) ≤ 1 :=
-    ge_of_tendsto hlim ((eventually_ge_atTop x).mono fun t ht ↦
-      hmono hx (lt_of_lt_of_le hx ht) ht)
-  rw [Real.exp_neg, ← div_eq_mul_inv, div_le_one (Real.exp_pos _)] at hφ
-  exact hφ
+        (continuousOn_const.mul hξc).neg)).mul hGc) fun v hv ↦ ?_⟩
+  rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (Real.exp_pos _).le]
+  have he : Real.exp (-(2 * ξ v)) ≤ Real.exp (-(2 * ξ x)) := Real.exp_le_exp.2 (by
+    linarith [Real.exp_le_one_iff.1 (exp_two_mul_sub_le_one hξm hx (le_of_lt hv))])
+  calc Real.exp (-(2 * ξ v)) * ‖Φ v * (1 + ε v)‖
+      ≤ Real.exp (-(2 * ξ x)) * (‖Φ v‖ * (1 + C)) :=
+        mul_le_mul he (hG v hv) (norm_nonneg _) (Real.exp_pos _).le
+    _ = ‖Φ v‖ * (Real.exp (-(2 * ξ x)) * (1 + C)) := by ring
 
 /-- Splitting the kernel, the solution of the Volterra equation is
 `ε(x) = e^{2ξ(x)} I(x) / 2 - T(x) / 2` with `T(x) = ∫ₓ^∞ Φ (1 + ε)` and
@@ -273,42 +243,30 @@ private lemma liouvilleGreen_eq_sub {ξ : ℝ → ℝ} {Φ ε : ℝ → ℂ} {x 
     rw [← Real.exp_add]; ring_nf
   rw [h]; push_cast; ring
 
-/-- The solution of the Volterra equation satisfies `|ε(x)| ≤ ½ ∫ₓ^∞ |Φ| (1 + |ε|)`. -/
-private lemma norm_liouvilleGreen_le {ξ : ℝ → ℝ} {Φ ε : ℝ → ℂ} {a x : ℝ}
-    (hξm : MonotoneOn ξ (Ioi a)) (hx : x ∈ Ioi a)
-    (hεx : ε x = ∫ v in Ioi x,
-      (((Real.exp (2 * (ξ x - ξ v)) - 1) / 2 : ℝ) : ℂ) * (Φ v * (1 + ε v)))
-    (hH : IntegrableOn (fun v ↦ ‖Φ v‖ * (1 + ‖ε v‖)) (Ioi x)) :
-    ‖ε x‖ ≤ (∫ v in Ioi x, ‖Φ v‖ * (1 + ‖ε v‖)) / 2 := by
-  rw [hεx, ← integral_div]
-  refine norm_integral_le_of_norm_le (hH.div_const 2)
-    ((ae_restrict_iff' measurableSet_Ioi).2 (Eventually.of_forall fun v hv ↦ ?_))
-  have h1 : ‖1 + ε v‖ ≤ 1 + ‖ε v‖ := (norm_add_le _ _).trans (by simp)
-  rw [norm_mul, norm_mul]
-  calc _ ≤ 1 / 2 * (‖Φ v‖ * (1 + ‖ε v‖)) :=
-        mul_le_mul (norm_liouvilleGreen_kernel_le hξm hx (le_of_lt hv))
-          (mul_le_mul_of_nonneg_left h1 (norm_nonneg _)) (by positivity) (by norm_num)
-    _ = _ := by ring
-
 /-- The weighted tail integral in `ε'` satisfies
-`|e^{2ξ(x)} ∫ₓ^∞ e^{-2ξ} Φ (1 + ε)| ≤ ∫ₓ^∞ |Φ| (1 + |ε|)`. -/
+`|e^{2ξ(x)} ∫ₓ^∞ e^{-2ξ} Φ (1 + ε)| ≤ 2 (exp(V(x) / 2) - 1)` with `V(x) = ∫ₓ^∞ |Φ|`: its
+integrand is bounded by `|Φ| exp(V / 2)`, whose integral over `(x, ∞)` is `2 (exp(V(x) / 2) - 1)`.
+-/
 private lemma norm_exp_mul_integral_le {ξ : ℝ → ℝ} {Φ ε : ℝ → ℂ} {a x : ℝ}
-    (hξm : MonotoneOn ξ (Ioi a)) (hx : x ∈ Ioi a)
-    (hH : IntegrableOn (fun v ↦ ‖Φ v‖ * (1 + ‖ε v‖)) (Ioi x)) :
+    (hξm : MonotoneOn ξ (Ioi a)) (hx : x ∈ Ioi a) (hΦi : IntegrableOn Φ (Ioi x))
+    (hεle : ∀ v ∈ Ioi x, ‖ε v‖ ≤ Real.exp ((∫ t in Ioi v, ‖Φ t‖) / 2) - 1) :
     ‖(Real.exp (2 * ξ x) : ℂ) *
         ∫ v in Ioi x, (Real.exp (-(2 * ξ v)) : ℂ) * (Φ v * (1 + ε v))‖ ≤
-      ∫ v in Ioi x, ‖Φ v‖ * (1 + ‖ε v‖) := by
-  rw [← integral_const_mul]
-  refine norm_integral_le_of_norm_le hH
+      2 * (Real.exp ((∫ v in Ioi x, ‖Φ v‖) / 2) - 1) := by
+  have hg : IntegrableOn (fun v ↦ ‖Φ v‖ / 2) (Ioi x) := hΦi.norm.div_const 2
+  have hV (v : ℝ) : ∫ t in Ioi v, ‖Φ t‖ / 2 = (∫ t in Ioi v, ‖Φ t‖) / 2 := integral_div _ _
+  have hint := hg.mul_comp_integral_Ioi Real.continuous_exp.continuousOn
+  have heq := hg.integral_Ioi_mul_exp_integral_Ioi
+  simp only [hV] at hint heq
+  rw [← heq, ← integral_const_mul, ← integral_const_mul]
+  refine norm_integral_le_of_norm_le (hint.const_mul 2)
     ((ae_restrict_iff' measurableSet_Ioi).2 (Eventually.of_forall fun v hv ↦ ?_))
-  have h1 : ‖1 + ε v‖ ≤ 1 + ‖ε v‖ := (norm_add_le _ _).trans (by simp)
-  have he : Real.exp (2 * ξ x + -(2 * ξ v)) ≤ 1 :=
-    Real.exp_le_one_iff.2 (by linarith [hξm hx (mem_Ioi.2 (lt_trans hx hv)) (le_of_lt hv)])
-  rw [← mul_assoc, ← Complex.ofReal_mul, ← Real.exp_add, norm_mul, norm_mul, Complex.norm_real,
-    Real.norm_of_nonneg (Real.exp_pos _).le]
-  calc _ ≤ 1 * (‖Φ v‖ * (1 + ‖ε v‖)) :=
-        mul_le_mul he (mul_le_mul_of_nonneg_left h1 (norm_nonneg _)) (by positivity) zero_le_one
-    _ = _ := one_mul _
+  have he := exp_two_mul_sub_le_one hξm hx (le_of_lt hv)
+  rw [← mul_assoc, ← Complex.ofReal_mul, ← Real.exp_add, norm_mul, Complex.norm_real,
+    Real.norm_of_nonneg (Real.exp_pos _).le, show 2 * ξ x + -(2 * ξ v) = 2 * (ξ x - ξ v) by ring]
+  calc _ ≤ 1 * (‖Φ v‖ * (1 + (Real.exp ((∫ t in Ioi v, ‖Φ t‖) / 2) - 1))) :=
+        mul_le_mul he (norm_mul_one_add_le (hεle v hv)) (norm_nonneg _) zero_le_one
+    _ = _ := by ring
 
 /-- **Variation of parameters.** With `q = f^{-1/4}` and `y_σ = q e^{σξ}`, let `T` and `I` have
 derivatives `-Φ (1 + ε)` and `-e^{-2ξ} Φ (1 + ε)` at `x`, where
@@ -486,28 +444,21 @@ theorem exists_liouvilleGreen_atTop {f ξ : ℝ → ℝ} {g Φ : ℝ → ℂ} {a
     (Complex.continuous_ofReal.comp_continuousOn (Real.continuous_exp.comp_continuousOn
       (continuousOn_const.mul hξc).neg)).mul hGc
   have hdec (x : ℝ) (hx : x ∈ Ioi a) : ε x = ↑(Real.exp (2 * ξ x)) / 2 * I x - T x / 2 :=
-    liouvilleGreen_eq_sub (hεeq x hx) (hint x hx).1 (hint x hx).2.1
-  -- Derivatives of the tail integrals, taken from a point between `a` and `x`.
-  have hTI (x : ℝ) (hx : x ∈ Ioi a) : HasDerivAt T (-G x) x ∧ HasDerivAt I (-E x) x := by
-    have hmid : (a + x) / 2 ∈ Ioi a := by simp only [mem_Ioi] at hx ⊢; linarith
-    have hlt : (a + x) / 2 < x := by simp only [mem_Ioi] at hx; linarith
-    exact ⟨(hint _ hmid).1.hasDerivAt_integral_Ioi (hGc.continuousAt (isOpen_Ioi.mem_nhds hx)) hlt,
-      (hint _ hmid).2.1.hasDerivAt_integral_Ioi (hEc.continuousAt (isOpen_Ioi.mem_nhds hx)) hlt⟩
+    liouvilleGreen_eq_sub (hεeq x hx) (hint x hx).1 (hint x hx).2
+  have hTI (x : ℝ) (hx : x ∈ Ioi a) : HasDerivAt T (-G x) x ∧ HasDerivAt I (-E x) x :=
+    ⟨hasDerivAt_integral_Ioi_of_continuousOn (fun y hy ↦ (hint y hy).1) hGc hx,
+      hasDerivAt_integral_Ioi_of_continuousOn (fun y hy ↦ (hint y hy).2) hEc hx⟩
   obtain ⟨hwc, hw⟩ := liouvilleGreen_solution hf hf0 hg hξ hΦ (fun x hx ↦ (hTI x hx).1)
     (fun x hx ↦ (hTI x hx).2) hdec
   have hε1 (x : ℝ) (hx : x ∈ Ioi a) :=
     hasDerivAt_liouvilleGreen_error (hξ x hx) (hTI x hx).1 (hTI x hx).2 hdec hx
-  have hle (v : ℝ) (hv : v ∈ Ioi a) : ‖ε v‖ ≤ (∫ t in Ioi v, ‖Φ t‖ * (1 + ‖ε t‖)) / 2 :=
-    norm_liouvilleGreen_le hξm hv (hεeq v hv) (hint v hv).2.2
-  have hsharp (x : ℝ) (hx : x ∈ Ioi a) :=
-    one_add_half_integral_le_exp hΦc hεc hΦi (fun v hv ↦ (hint v hv).2.2) hle hx
   refine ⟨_, ε, hwc, fun x hx ↦ (hε1 x hx).differentiableAt.differentiableWithinAt,
-    fun x hx ↦ ⟨hw x hx, rfl, by linarith [hle x hx, hsharp x hx], ?_⟩⟩
+    fun x hx ↦ ⟨hw x hx, rfl, hεle x hx, ?_⟩⟩
   have hs := Real.sqrt_pos.2 (hf0 x hx)
-  have hI : ‖(↑(Real.exp (2 * ξ x)) : ℂ) * I x‖ ≤ ∫ t in Ioi x, ‖Φ t‖ * (1 + ‖ε t‖) :=
-    norm_exp_mul_integral_le hξm hx (hint x hx).2.2
+  have hI := norm_exp_mul_integral_le hξm hx (hΦi x hx) fun v hv ↦
+    hεle v (mem_Ioi.2 (lt_trans hx hv))
   rw [(hε1 x hx).deriv, norm_mul, Complex.norm_real, Real.norm_of_nonneg hs.le,
     mul_comm (2 : ℝ) (√(f x)), mul_div_mul_left _ _ hs.ne']
-  linarith [hsharp x hx]
+  linarith
 
 end TauCeti
