@@ -22,20 +22,22 @@ sending `E ↦ Eᵢ`, `F ↦ Fᵢ`, and `K^(±1) ↦ Kᵢ^(±1)`, upgrading to a
 homomorphism `fromUqSl2BialgHom` whenever `q ^ D.symmetrizer i ≠ 0` and the Serre quantum
 factorials of `D` are nonzero.
 
-When `[Unique ι]` and `n ↦ n • D.simpleTorus default` surjects onto `Y`, these maps upgrade
-unconditionally to algebra and bialgebra isomorphisms `uqSl2AlgEquivOfSurjective` and
-`uqSl2BialgEquivOfSurjective`, specializing on `CartanDatum.sl2` to `uqSl2AlgEquiv` and
-`uqSl2BialgEquiv`.
+When `[Unique ι]` and `n ↦ n • D.simpleTorus default` surjects onto `Y`, `fromUqSl2` upgrades
+unconditionally to an algebra isomorphism `uqSl2AlgEquivOfSurjective`, and for
+`q ^ D.symmetrizer default ≠ 0` to a bialgebra isomorphism `uqSl2BialgEquivOfSurjective`; on
+`CartanDatum.sl2` these specialize to `uqSl2AlgEquiv` (unconditional) and `uqSl2BialgEquiv` (for
+`q ≠ 0`).
 
 ## Main definitions and results
 
 * `TauCeti.QuantizedEnvelopingAlgebra.fromUqSl2`, `fromUqSl2BialgHom`: root-`i` algebra and
   bialgebra homomorphisms out of `UqSl2 (q ^ D.symmetrizer i)`.
 * `TauCeti.QuantizedEnvelopingAlgebra.uqSl2AlgEquivOfSurjective`,
-  `uqSl2BialgEquivOfSurjective`: rank-one algebra and bialgebra isomorphisms when `d₀ h₀`
-  generates `Y`.
-* `TauCeti.QuantizedEnvelopingAlgebra.uqSl2AlgEquiv`, `uqSl2BialgEquiv`: unconditional algebra and
-  bialgebra isomorphisms `UqSl2 q ≃ QuantizedEnvelopingAlgebra CartanDatum.sl2 q`.
+  `uqSl2BialgEquivOfSurjective`: rank-one algebra (unconditional) and bialgebra (for
+  `q ^ d₀ ≠ 0`) isomorphisms when `d₀ h₀` generates `Y`.
+* `TauCeti.QuantizedEnvelopingAlgebra.uqSl2AlgEquiv`, `uqSl2BialgEquiv`: the unconditional algebra
+  isomorphism and (for `q ≠ 0`) bialgebra isomorphism
+  `UqSl2 q ≃ QuantizedEnvelopingAlgebra CartanDatum.sl2 q`.
 
 ## References
 
@@ -112,38 +114,6 @@ def fromUqSl2BialgHom
 
 end FromUqSl2
 
-private theorem kUnit_zpow_conjugate_e (q : ℂ) (b : ℤ) :
-    ((UqSl2.kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) * UqSl2.e q *
-        ((UqSl2.kUnit q ^ (-b) : (UqSl2 q)ˣ) : UqSl2 q) =
-      q ^ (2 * b) • UqSl2.e q := by
-  rcases eq_or_ne q 0 with rfl | hq
-  · simp
-  · have : Fact (q ≠ 0) := ⟨hq⟩
-    rw [zpow_neg]
-    exact UqSl2.kUnit_zpow_mul_e_mul_inv b
-
-private theorem kUnit_zpow_conjugate_f (q : ℂ) (b : ℤ) :
-    ((UqSl2.kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) * UqSl2.f q *
-        ((UqSl2.kUnit q ^ (-b) : (UqSl2 q)ˣ) : UqSl2 q) =
-      q ^ (-(2 * b)) • UqSl2.f q := by
-  have h := UqSl2.f_mul_kUnit_zpow q (-b)
-  have h' := congrArg (((UqSl2.kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) * ·) h
-  rw [← mul_assoc] at h'
-  rw [h', mul_smul_comm, ← mul_assoc, ← Units.val_mul, ← zpow_add, add_neg_cancel, zpow_zero,
-    Units.val_one, one_mul, mul_neg]
-
-private theorem map_kUnit_zpow {A : Type*} [Ring A] [Algebra ℂ A] {q' : ℂ}
-    (F : UqSl2 q' →ₐ[ℂ] A) (u : Aˣ) (hu : F (UqSl2.k q') = u) (n : ℤ) :
-    F ↑(UqSl2.kUnit q' ^ n) = ↑(u ^ n) := by
-  have hmap : Units.map F.toMonoidHom (UqSl2.kUnit q') = u := by ext; simpa using hu
-  rw [← hmap]
-  exact congrArg (Units.val : Aˣ → A) ((Units.map F.toMonoidHom).map_zpow (UqSl2.kUnit q') n)
-
-private theorem kUnitsHom_zpow_val (D : CartanDatum ι X Y) (q : ℂ) (y : Y) (m : ℤ) :
-    ((kUnitsHom D q (.ofAdd y) ^ m : (QuantizedEnvelopingAlgebra D q)ˣ) :
-      QuantizedEnvelopingAlgebra D q) = k D q (m • y) := by
-  rw [← map_zpow, ← ofAdd_zsmul, val_kUnitsHom]
-
 section Unique
 
 variable [Unique ι]
@@ -181,11 +151,11 @@ private def toUqSl2Tuple (D : CartanDatum ι X Y) (q q' : ℂ) (hq' : q' = q ^ D
     k_zero := by simp [torusCoord]
     k_mul_k y₁ y₂ := by rw [hadd, zpow_add, Units.val_mul]
     conjugate_e y i := by
-      rw [Unique.eq_default i, hneg, kUnit_zpow_conjugate_e, hq', ← zpow_natCast q, ← zpow_mul,
-        hpair y]
+      rw [Unique.eq_default i, hneg, UqSl2.kUnit_zpow_mul_e_mul_zpow_neg, hq', ← zpow_natCast q,
+        ← zpow_mul, hpair y]
     conjugate_f y i := by
-      rw [Unique.eq_default i, hneg, kUnit_zpow_conjugate_f, hq', ← zpow_natCast q, ← zpow_mul,
-        mul_neg, hpair y]
+      rw [Unique.eq_default i, hneg, UqSl2.kUnit_zpow_mul_f_mul_zpow_neg, hq', ← zpow_natCast q,
+        ← zpow_mul, mul_neg, hpair y]
     commutator_self i := by
       have h1 : torusCoord D (D.simpleTorus default) = 1 := by simpa using torusCoord_zsmul D 1
       have hm1 : torusCoord D (-D.simpleTorus default) = -1 := by
@@ -210,8 +180,8 @@ private def uqSl2AlgEquivAux (D : CartanDatum ι X Y) (q q' : ℂ)
       · simp [f, g, fromUqSl2TupleAux, toUqSl2Tuple, Unique.eq_default x]
       · simp [f, g, fromUqSl2TupleAux, toUqSl2Tuple, Unique.eq_default x]
       · obtain ⟨n, rfl⟩ := hY x
-        simpa [g, toUqSl2Tuple, torusCoord_zsmul, kUnitsHom_zpow_val] using
-          map_kUnit_zpow f (kUnitsHom D q (.ofAdd (D.simpleTorus default)))
+        simpa [g, toUqSl2Tuple, torusCoord_zsmul] using
+          UqSl2.map_kUnit_zpow f (kUnitsHom D q (.ofAdd (D.simpleTorus default)))
             (by simp [f, fromUqSl2TupleAux, simpleK_def]) n)
     (by apply UqSl2.hom_ext <;> simp [f, g, fromUqSl2TupleAux, toUqSl2Tuple, simpleK_def, h1])
 
@@ -276,7 +246,7 @@ def uqSl2AlgEquiv : UqSl2 q ≃ₐ[ℂ] QuantizedEnvelopingAlgebra CartanDatum.s
 @[simp] theorem uqSl2AlgEquiv_symm_k (y : ℤ) :
     (uqSl2AlgEquiv q).symm (k CartanDatum.sl2 q y) = ↑(UqSl2.kUnit q ^ y) := by
   rw [AlgEquiv.symm_apply_eq]
-  simpa [kUnitsHom_zpow_val] using (map_kUnit_zpow (uqSl2AlgEquiv q).toAlgHom
+  simpa using (UqSl2.map_kUnit_zpow (uqSl2AlgEquiv q)
     (kUnitsHom CartanDatum.sl2 q (.ofAdd 1)) (by simp) y).symm
 
 /-- Bialgebra (hence Hopf algebra) isomorphism

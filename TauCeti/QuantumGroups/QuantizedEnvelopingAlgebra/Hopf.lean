@@ -283,6 +283,23 @@ variable (hserre : ∀ i j, i ≠ j → quantumFactorial (q ^ D.symmetrizer i) (
     Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul, one_mul,
     simpleKInv_mul_simpleK, ← normalizedF_def]
 
+private theorem comulAlgHom_zero_pow (i : ι) (n : ℕ)
+    (t : ℕ → QuantizedEnvelopingAlgebra D (0 : K) ⊗[K] QuantizedEnvelopingAlgebra D (0 : K))
+    (h00 : n = 0 → t 0 = 1) (h0n : n ≠ 0 → t 0 = 0) (ha : ∀ a ≠ 0, t a = 0)
+    (hserre₀ : ∀ i j, i ≠ j →
+      quantumFactorial ((0 : K) ^ D.symmetrizer i) (D.serreLength i j) ≠ 0) :
+    comulAlgHom D (0 : K) hserre₀ (0 ^ n) =
+      ∑ a ∈ range (n + 1),
+        (((0 : K) ^ D.symmetrizer i) ^ (a * (n - a)) *
+          quantumBinomial ((0 : K) ^ D.symmetrizer i) n a) • t a := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp [h00 rfl]
+  · rw [zero_pow hn, map_zero]
+    refine (sum_eq_zero fun a _ => ?_).symm
+    rcases eq_or_ne a 0 with rfl | ha0
+    · simp [h0n hn]
+    · simp [ha _ ha0]
+
 /-- **Coproduct of raising powers**: for every `n : ℕ` (including when `[n]_(qᵢ)! = 0`),
 `Δ(Eᵢ^n) = ∑_{a=0}^n (qᵢ^(a(n - a)) * [n choose a]_(qᵢ)) • ((Eᵢ^a Kᵢ^(n - a)) ⊗ Eᵢ^(n - a))`. -/
 theorem comulAlgHom_e_pow (i : ι) (n : ℕ) :
@@ -291,14 +308,12 @@ theorem comulAlgHom_e_pow (i : ι) (n : ℕ) :
         ((q ^ D.symmetrizer i) ^ (a * (n - a)) * quantumBinomial (q ^ D.symmetrizer i) n a) •
           ((e D q i ^ a * simpleK D q i ^ (n - a)) ⊗ₜ[K] (e D q i ^ (n - a))) := by
   rcases eq_or_ne q 0 with rfl | hq
-  · rcases n with _ | n
-    · simp [Algebra.TensorProduct.one_def]
-    · rw [e_zero, zero_pow n.succ_ne_zero, map_zero]
-      refine (sum_eq_zero fun a ha => ?_).symm
-      rcases eq_or_ne a 0 with rfl | ha0
-      · simp [zero_pow n.succ_ne_zero]
-      · simp [zero_pow ha0]
-  · rw [map_pow, comulAlgHom_e, ← comulElemE, comulElemE,
+  · rw [e_zero]
+    refine comulAlgHom_zero_pow D i n _ ?_ ?_ ?_ hserre
+    · rintro rfl; simp [Algebra.TensorProduct.one_def]
+    · intro hn; simp [zero_pow hn]
+    · intro _ ha; simp [zero_pow ha]
+  · rw [map_pow, comulAlgHom_e,
       add_pow_of_mul_eq_smul_mul (pow_ne_zero _ hq) (comulElemE_summand_comm D q i)]
     refine sum_congr rfl fun a _ => ?_
     rw [Algebra.TensorProduct.tmul_pow, one_pow, Algebra.TensorProduct.tmul_pow,
@@ -312,14 +327,12 @@ theorem comulAlgHom_f_pow (i : ι) (n : ℕ) :
         ((q ^ D.symmetrizer i) ^ (a * (n - a)) * quantumBinomial (q ^ D.symmetrizer i) n a) •
           ((f D q i ^ a) ⊗ₜ[K] (f D q i ^ (n - a) * simpleKInv D q i ^ a)) := by
   rcases eq_or_ne q 0 with rfl | hq
-  · rcases n with _ | n
-    · simp [Algebra.TensorProduct.one_def]
-    · rw [f_zero, zero_pow n.succ_ne_zero, map_zero]
-      refine (sum_eq_zero fun a ha => ?_).symm
-      rcases eq_or_ne a 0 with rfl | ha0
-      · simp [zero_pow n.succ_ne_zero]
-      · simp [zero_pow ha0]
-  · rw [map_pow, comulAlgHom_f, ← comulElemF, comulElemF, add_comm,
+  · rw [f_zero]
+    refine comulAlgHom_zero_pow D i n _ ?_ ?_ ?_ hserre
+    · rintro rfl; simp [Algebra.TensorProduct.one_def]
+    · intro hn; simp [zero_pow hn]
+    · intro _ ha; simp [zero_pow ha]
+  · rw [map_pow, comulAlgHom_f, add_comm,
       add_pow_of_mul_eq_smul_mul (pow_ne_zero _ hq) (comulElemF_summand_comm D q i),
       ← sum_range_reflect]
     refine sum_congr rfl fun a ha => ?_
@@ -471,14 +484,14 @@ theorem antipode_antipode_of_forall_pairing_root_eq {c : Y}
     HopfAlgebraStruct.antipode K (HopfAlgebraStruct.antipode K x) =
       k D q (-c) * x * k D q c := by
   let := hopfAlgebra D q hserre
-  simpa only [hopfAlgebra_antipode D q hserre, LinearEquiv.coe_coe] using
-    antipodeLinearEquiv_antipodeLinearEquiv_of_forall_pairing_root_eq hc x
+  rw [hopfAlgebra_antipode D q hserre, LinearEquiv.coe_coe]
+  exact antipodeLinearEquiv_antipodeLinearEquiv_of_forall_pairing_root_eq hc x
 
 end WithSerre
 
-/-- When `ι` has at most one simple root (empty torus or rank one), there are no off-diagonal Serre
-relations `i ≠ j`, so `QuantizedEnvelopingAlgebra D q` is unconditionally a `K`-bialgebra for every
-`q : K`. -/
+/-- When `ι` has at most one simple root (rank zero (no simple roots) or rank one), there are no
+off-diagonal Serre relations `i ≠ j`, so `QuantizedEnvelopingAlgebra D q` is unconditionally a
+`K`-bialgebra for every `q : K`. -/
 noncomputable instance instBialgebraOfSubsingleton [Subsingleton ι] :
     Bialgebra K (QuantizedEnvelopingAlgebra D q) :=
   bialgebra D q fun i j hij => (hij (Subsingleton.elim i j)).elim

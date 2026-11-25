@@ -207,6 +207,14 @@ theorem kInv_mul_kUnit_zpow (b : ℤ) :
       ((kUnit q ^ (b - 1) : (UqSl2 q)ˣ) : UqSl2 q) := by
   rw [← val_inv_kUnit, ← Units.val_mul, ← zpow_neg_one, ← zpow_add, neg_add_eq_sub]
 
+/-- Any multiplicative map out of `UqSl2 q` sending `K` to a unit `u` sends `K ^ n` to `u ^ n`. -/
+theorem map_kUnit_zpow {M F : Type*} [Monoid M] [FunLike F (UqSl2 q) M]
+    [MonoidHomClass F (UqSl2 q) M] (φ : F) (u : Mˣ) (hu : φ (k q) = u) (n : ℤ) :
+    φ ((kUnit q ^ n : (UqSl2 q)ˣ) : UqSl2 q) = ↑(u ^ n) := by
+  have hmap : Units.map (φ : UqSl2 q →* M) (kUnit q) = u := Units.ext (by simpa using hu)
+  simpa only [← hmap, Units.coe_map, MonoidHom.coe_ofClass] using
+    congrArg (Units.val : Mˣ → M) ((Units.map (φ : UqSl2 q →* M)).map_zpow (kUnit q) n)
+
 /-- At `q = 0` the relation `K E = 0 • E K` forces `E = 0`. -/
 @[simp]
 theorem e_zero : e (0 : ℂ) = 0 := by

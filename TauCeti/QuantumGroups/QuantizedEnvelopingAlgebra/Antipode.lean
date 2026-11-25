@@ -364,6 +364,9 @@ private noncomputable def kConjAlgHom (c : Y) :
   map_add' x y := by simp [mul_add, add_mul]
   commutes' r := by simp [Algebra.algebraMap_eq_smul_one]
 
+@[simp] private theorem kConjAlgHom_apply (c : Y) (x : QuantizedEnvelopingAlgebra D q) :
+    kConjAlgHom D q c x = k D q (-c) * x * k D q c := (rfl)
+
 /-- When `c ∈ Y` pairs with every simple root as `⟨αᵢ, c⟩ = 2 dᵢ` (a coweight playing the role of
 `2ρ∨`), `antipodeSqEquiv` acts as inner conjugation `x ↦ K_(-c) * x * K_c`. -/
 theorem antipodeSqEquiv_apply_of_forall_pairing_root_eq {D : CartanDatum ι X Y} {q : K} {c : Y}
@@ -372,14 +375,16 @@ theorem antipodeSqEquiv_apply_of_forall_pairing_root_eq {D : CartanDatum ι X Y}
     antipodeSqEquiv D q x = k D q (-c) * x * k D q c := by
   have h : (antipodeSqEquiv D q).toAlgHom = kConjAlgHom D q c := by
     apply hom_ext <;> intro a
-    · have he := k_mul_e_mul_k_neg D q (-c) a
+    · rw [AlgEquiv.coe_toAlgHom, antipodeSqEquiv_e, kConjAlgHom_apply]
+      have he := k_mul_e_mul_k_neg D q (-c) a
       rw [neg_neg, map_neg, hc a, zpow_neg_two_mul_symmetrizer] at he
-      exact (antipodeSqEquiv_e D q a).trans he.symm
-    · have hf := k_mul_f_mul_k_neg D q (-c) a
+      exact he.symm
+    · rw [AlgEquiv.coe_toAlgHom, antipodeSqEquiv_f, kConjAlgHom_apply]
+      have hf := k_mul_f_mul_k_neg D q (-c) a
       rw [neg_neg, map_neg, neg_neg, hc a, zpow_two_mul_symmetrizer] at hf
-      exact (antipodeSqEquiv_f D q a).trans hf.symm
-    · exact (antipodeSqEquiv_k D q a).trans (by simp [kConjAlgHom, k_mul_k, neg_add_cancel_comm])
-  exact AlgHom.congr_fun h x
+      exact hf.symm
+    · simp [neg_add_cancel_comm]
+  simpa only [AlgEquiv.coe_toAlgHom, kConjAlgHom_apply] using AlgHom.congr_fun h x
 
 /-- When `c ∈ Y` satisfies `⟨αᵢ, c⟩ = 2 dᵢ` for every simple root `i`, the squared antipode
 `S(S(x))` equals `K_(-c) * x * K_c`. -/

@@ -169,4 +169,16 @@ theorem e_mul_kUnit_zpow (b : ℤ) :
     rw [mul_assoc, Units.mul_inv_cancel_left]
   rw [hconj, h, mul_smul_comm, mul_neg, neg_mul]
 
+omit [Fact (q ≠ 0)] in
+/-- Conjugation by an integer power of `K` rescales `E` by `q ^ (2 * b)` for every `q : ℂ`. -/
+theorem kUnit_zpow_mul_e_mul_zpow_neg (b : ℤ) :
+    ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) * e q *
+        ((kUnit q ^ (-b) : (UqSl2 q)ˣ) : UqSl2 q) =
+      q ^ (2 * b) • e q := by
+  rcases eq_or_ne q 0 with rfl | hq
+  · simp
+  · have : Fact (q ≠ 0) := ⟨hq⟩
+    rw [zpow_neg]
+    exact kUnit_zpow_mul_e_mul_inv b
+
 end TauCeti.UqSl2

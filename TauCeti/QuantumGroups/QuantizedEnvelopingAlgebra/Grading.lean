@@ -183,20 +183,19 @@ private theorem k_mul_word_prod_mul_k_neg (w : List (Generator ι Y)) (y : Y) :
   induction w with
   | nil => simp
   | cons g w ih =>
-    rcases eq_or_ne q 0 with rfl | hq
-    · cases g with
-      | e _ | f _ => simp
-      | k y' =>
-        simp only [List.map_cons, List.prod_cons, List.sum_cons, generatorWeight_k, zero_add,
-          generator_k]
-        rw [← mul_assoc (k D 0 y), (commute_k_k D 0 y y').eq, mul_assoc (k D 0 y'), mul_assoc, ih,
-          mul_smul_comm]
-    · simp only [List.map_cons, List.prod_cons, List.sum_cons, map_add, LinearMap.add_apply]
-      calc k D q y * (generator D q g * (w.map (generator D q)).prod) * k D q (-y)
-          = (k D q y * generator D q g * k D q (-y)) *
-              (k D q y * (w.map (generator D q)).prod * k D q (-y)) := by
-            simp [mul_assoc, k_mul_k_assoc]
-        _ = _ := by rw [k_mul_generator_mul_k_neg, ih, smul_mul_smul_comm, ← zpow_add₀ hq]
+    simp only [List.map_cons, List.prod_cons, List.sum_cons, map_add, LinearMap.add_apply]
+    calc k D q y * (generator D q g * (w.map (generator D q)).prod) * k D q (-y)
+        = (k D q y * generator D q g * k D q (-y)) *
+            (k D q y * (w.map (generator D q)).prod * k D q (-y)) := by
+          simp [mul_assoc, k_mul_k_assoc]
+      _ = (q ^ D.pairing (generatorWeight D g) y *
+            q ^ D.pairing (w.map (generatorWeight D)).sum y) •
+            (generator D q g * (w.map (generator D q)).prod) := by
+          rw [k_mul_generator_mul_k_neg, ih, smul_mul_smul_comm]
+      _ = _ := by
+          rcases eq_or_ne q 0 with rfl | hq
+          · cases g <;> simp
+          · rw [← zpow_add₀ hq]
 
 /-- **Toral conjugation on homogeneous pieces**: for `x ∈ grade D q β` and `y ∈ Y`,
 `K_y * x * K_(-y) = q ^ ⟨β, y⟩ • x`. -/
@@ -215,76 +214,75 @@ theorem k_mul_of_mem_grade {β : X} {x : QuantizedEnvelopingAlgebra D q}
   rw [← smul_mul_assoc, ← k_mul_mul_k_neg_of_mem_grade hx y, mul_assoc, mul_assoc, k_neg_mul_k,
     mul_one]
 
-/-- Diagonal rescaling automorphisms preserve every homogeneous subspace `grade D q β`. -/
-theorem rescale_mem_grade (c : ι → Kˣ) {β : X} {x : QuantizedEnvelopingAlgebra D q}
-    (hx : x ∈ grade D q β) : rescale D q c x ∈ grade D q β := by
+private theorem map_mem_grade_of_generator
+    (f : QuantizedEnvelopingAlgebra D q →ₗ[K] QuantizedEnvelopingAlgebra D q) (φ : X →+ X)
+    (hone : f 1 ∈ grade D q 0)
+    (hmul : ∀ {α₁ α₂ a b}, f a ∈ grade D q α₁ → f b ∈ grade D q α₂ →
+      f (a * b) ∈ grade D q (α₁ + α₂))
+    (hgen : ∀ g, f (generator D q g) ∈ grade D q (φ (generatorWeight D g)))
+    {β : X} {x : QuantizedEnvelopingAlgebra D q} (hx : x ∈ grade D q β) :
+    f x ∈ grade D q (φ β) := by
   induction hx using grade_induction with
   | word w hw =>
     subst hw
     induction w with
-    | nil => simpa using one_mem_grade_zero
+    | nil => simpa using hone
     | cons g w ih =>
-      simp only [List.map_cons, List.prod_cons, List.sum_cons, map_mul]
-      refine SetLike.mul_mem_graded ?_ ih
-      cases g with
-      | e i => simpa using (grade D q (D.root i)).smul_mem (c i : K) (e_mem_grade i)
-      | f i => simpa using (grade D q (-D.root i)).smul_mem (c i : K)⁻¹ (f_mem_grade i)
-      | k y => simpa using k_mem_grade y
+      simp only [List.map_cons, List.prod_cons, List.sum_cons, map_add]
+      exact hmul (hgen g) ih
   | zero => simp
-  | add _ _ _ _ ha hb => rw [map_add]; exact (grade D q β).add_mem ha hb
-  | smul r _ _ ha => rw [map_smul]; exact (grade D q β).smul_mem r ha
+  | add _ _ _ _ ha hb => rw [map_add]; exact (grade D q (φ β)).add_mem ha hb
+  | smul r _ _ ha => rw [map_smul]; exact (grade D q (φ β)).smul_mem r ha
+
+/-- Diagonal rescaling automorphisms preserve every homogeneous subspace `grade D q β`. -/
+theorem rescale_mem_grade (c : ι → Kˣ) {β : X} {x : QuantizedEnvelopingAlgebra D q}
+    (hx : x ∈ grade D q β) : rescale D q c x ∈ grade D q β :=
+  map_mem_grade_of_generator (rescale D q c).toLinearMap (AddMonoidHom.id X)
+    (by simpa using one_mem_grade_zero)
+    (fun ha hb => by simpa using SetLike.mul_mem_graded ha hb)
+    (by
+      rintro (i | i | y)
+      · simpa using (grade D q (D.root i)).smul_mem (c i : K) (e_mem_grade i)
+      · simpa using (grade D q (-D.root i)).smul_mem (c i : K)⁻¹ (f_mem_grade i)
+      · simpa using k_mem_grade y)
+    hx
 
 /-- The Chevalley involution maps `grade D q β` into `grade D q (-β)`. -/
 theorem chevalleyInvolution_mem_grade {β : X} {x : QuantizedEnvelopingAlgebra D q}
-    (hx : x ∈ grade D q β) : chevalleyInvolution D q x ∈ grade D q (-β) := by
-  induction hx using grade_induction with
-  | word w hw =>
-    rcases hw with rfl
-    induction w with
-    | nil => simpa using one_mem_grade_zero
-    | cons g w ih =>
-      simp only [List.map_cons, List.prod_cons, List.sum_cons, neg_add_rev, map_mul]
-      rw [add_comm]
-      refine SetLike.mul_mem_graded ?_ ih
-      cases g with
-      | e i => simpa using f_mem_grade i
-      | f i => simpa using e_mem_grade i
-      | k y => simpa using k_mem_grade (-y)
-  | zero => simp
-  | add _ _ _ _ ha hb => rw [map_add]; exact (grade D q (-β)).add_mem ha hb
-  | smul r _ _ ha => rw [map_smul]; exact (grade D q (-β)).smul_mem r ha
+    (hx : x ∈ grade D q β) : chevalleyInvolution D q x ∈ grade D q (-β) :=
+  map_mem_grade_of_generator (chevalleyInvolution D q).toLinearMap (-AddMonoidHom.id X)
+    (by simpa using one_mem_grade_zero)
+    (fun ha hb => by simpa using SetLike.mul_mem_graded ha hb)
+    (by
+      rintro (i | i | y)
+      · simpa using f_mem_grade i
+      · simpa using e_mem_grade i
+      · simpa using k_mem_grade (-y))
+    hx
 
 /-- The antipode preserves every homogeneous subspace `grade D q β`. -/
 theorem antipodeLinearEquiv_mem_grade {β : X} {x : QuantizedEnvelopingAlgebra D q}
-    (hx : x ∈ grade D q β) : antipodeLinearEquiv D q x ∈ grade D q β := by
-  induction hx using grade_induction with
-  | word w hw =>
-    rcases hw with rfl
-    induction w with
-    | nil => simpa using one_mem_grade_zero
-    | cons g w ih =>
-      simp only [List.map_cons, List.prod_cons, List.sum_cons, antipodeLinearEquiv_mul]
-      rw [add_comm]
-      refine SetLike.mul_mem_graded ih ?_
-      cases g with
-      | e i =>
-        simpa [← normalizedE_def] using (grade D q (D.root i)).neg_mem (normalizedE_mem_grade i)
-      | f i =>
-        simpa [← normalizedF_def] using (grade D q (-D.root i)).neg_mem (normalizedF_mem_grade i)
-      | k y => simpa using k_mem_grade (-y)
-  | zero => simp
-  | add _ _ _ _ ha hb => rw [map_add]; exact (grade D q β).add_mem ha hb
-  | smul r _ _ ha => rw [map_smul]; exact (grade D q β).smul_mem r ha
+    (hx : x ∈ grade D q β) : antipodeLinearEquiv D q x ∈ grade D q β :=
+  map_mem_grade_of_generator (antipodeLinearEquiv D q).toLinearMap (AddMonoidHom.id X)
+    (by simpa using one_mem_grade_zero)
+    (fun ha hb => by simpa [add_comm] using SetLike.mul_mem_graded hb ha)
+    (by
+      rintro (i | i | y)
+      · simpa [← normalizedE_def] using (grade D q (D.root i)).neg_mem (normalizedE_mem_grade i)
+      · simpa [← normalizedF_def] using (grade D q (-D.root i)).neg_mem (normalizedF_mem_grade i)
+      · simpa using k_mem_grade (-y))
+    hx
+
+private theorem serreSum_term_deg (w w' : X) {n r : ℕ} (hr : r ≤ n) :
+    r • w + w' + (n - r) • w = n • w + w' := by
+  rw [add_right_comm, ← add_nsmul, Nat.add_sub_of_le hr]
 
 private theorem serreSum_term_mem_grade {wt : ι → X} {u : ι → QuantizedEnvelopingAlgebra D q}
     (hu : ∀ l, u l ∈ grade D q (wt l)) (i j : ι) {r : ℕ} (hr : r ≤ D.serreLength i j) :
     (-1 : K) ^ r • (quantumDividedPower (q ^ D.symmetrizer i) (u i) r * u j *
       quantumDividedPower (q ^ D.symmetrizer i) (u i) (D.serreLength i j - r)) ∈
-        grade D q (D.serreLength i j • wt i + wt j) := by
-  have hdeg : r • wt i + wt j + (D.serreLength i j - r) • wt i =
-      D.serreLength i j • wt i + wt j := by
-    rw [add_right_comm, ← add_nsmul, Nat.add_sub_of_le hr]
-  exact hdeg ▸ (grade D q _).smul_mem _ (SetLike.mul_mem_graded
+        grade D q (D.serreLength i j • wt i + wt j) :=
+  serreSum_term_deg (wt i) (wt j) hr ▸ (grade D q _).smul_mem _ (SetLike.mul_mem_graded
     (SetLike.mul_mem_graded (quantumDividedPower_mem_grade _ (hu i) r) (hu j))
     (quantumDividedPower_mem_grade _ (hu i) (D.serreLength i j - r)))
 
@@ -304,6 +302,11 @@ private theorem inGrade_eq {α₁ α₂ : X} {a₁ a₂ : QuantizedEnvelopingAlg
     {ha₁ : a₁ ∈ grade D q α₁} {ha₂ : a₂ ∈ grade D q α₂} (hdeg : α₁ = α₂) (hval : a₁ = a₂) :
     inGrade D q a₁ ha₁ = inGrade D q a₂ ha₂ := by
   subst hdeg hval; rfl
+
+private theorem inGrade_cast {α₁ α₂ : X} (h : α₁ = α₂) (a : QuantizedEnvelopingAlgebra D q)
+    (ha : a ∈ grade D q α₁) :
+    inGrade D q a ha = inGrade D q a (h ▸ ha) := by
+  subst h; rfl
 
 private theorem inGrade_zero (α : X) :
     inGrade D q 0 (grade D q α).zero_mem = 0 :=
@@ -327,7 +330,8 @@ private theorem inGrade_smul {α : X} (c : K) {a : QuantizedEnvelopingAlgebra D 
 private theorem inGrade_mul {α β : X} {a b : QuantizedEnvelopingAlgebra D q}
     (ha : a ∈ grade D q α) (hb : b ∈ grade D q β) :
     inGrade D q a ha * inGrade D q b hb = inGrade D q (a * b) (SetLike.mul_mem_graded ha hb) := by
-  simp only [inGrade, lof_eq_of, of_mul_of]; rfl
+  simp only [inGrade, lof_eq_of, of_mul_of]
+  exact congrArg (of _ _) (Subtype.ext (SetLike.coe_gMul _ _ _))
 
 @[simp] private theorem coeAlgHom_inGrade {α : X} (a : QuantizedEnvelopingAlgebra D q)
     (ha : a ∈ grade D q α) : coeAlgHom (grade D q) (inGrade D q a ha) = a := by
@@ -351,28 +355,20 @@ private theorem inGrade_quantumDividedPower (q' : K) {α : X} {a : QuantizedEnve
 private theorem inGrade_serreSum {wt : ι → X} {u : ι → QuantizedEnvelopingAlgebra D q}
     (hu : ∀ l, u l ∈ grade D q (wt l)) {i j : ι} (hserre : serreSum D q u i j = 0) :
     serreSum D q (fun l => inGrade D q (u l) (hu l)) i j = 0 := by
-  rw [serreSum_def, ← Finset.sum_attach]
   let l := lof K X (fun β => ↥(grade D q β)) (D.serreLength i j • wt i + wt j)
-  have hterm : ∀ r : { r // r ∈ range (D.serreLength i j + 1) },
-      (-1 : K) ^ r.val •
-        (quantumDividedPower (q ^ D.symmetrizer i) (inGrade D q (u i) (hu i)) r.val *
-          inGrade D q (u j) (hu j) *
-          quantumDividedPower (q ^ D.symmetrizer i) (inGrade D q (u i) (hu i))
-            (D.serreLength i j - r.val)) =
-      l ⟨_, serreSum_term_mem_grade hu i j (Nat.lt_succ_iff.mp (mem_range.mp r.property))⟩ := by
-    rintro ⟨r, hr⟩
-    have hrm : r ≤ D.serreLength i j := Nat.lt_succ_iff.mp (mem_range.mp hr)
+  let s : grade D q (D.serreLength i j • wt i + wt j) :=
+    ∑ r ∈ (range (D.serreLength i j + 1)).attach,
+      ⟨_, serreSum_term_mem_grade hu i j (Nat.lt_succ_iff.mp (mem_range.mp r.property))⟩
+  have hsum : serreSum D q (fun l' => inGrade D q (u l') (hu l')) i j = l s := by
+    rw [serreSum_def, ← Finset.sum_attach, map_sum]
+    refine Finset.sum_congr rfl fun ⟨r, hr⟩ _ => ?_
     rw [inGrade_quantumDividedPower, inGrade_quantumDividedPower, inGrade_mul, inGrade_mul,
       inGrade_smul]
-    exact inGrade_eq D q (by rw [add_right_comm, ← add_nsmul, Nat.add_sub_of_le hrm]) rfl
-  rw [Finset.sum_congr rfl fun r _ => hterm r, ← map_sum]
-  convert map_zero l
-  ext
-  simp only [Submodule.coe_sum, ZeroMemClass.coe_zero]
-  exact (Finset.sum_attach (range (D.serreLength i j + 1)) fun r =>
-    (-1 : K) ^ r • (quantumDividedPower (q ^ D.symmetrizer i) (u i) r * u j *
-      quantumDividedPower (q ^ D.symmetrizer i) (u i) (D.serreLength i j - r))).trans
-    ((serreSum_def D q u i j).symm.trans hserre)
+    exact inGrade_eq D q (serreSum_term_deg _ _ (Nat.lt_succ_iff.mp (mem_range.mp hr))) rfl
+  have hcoe := congrArg (coeAlgHom (grade D q)) hsum
+  simp only [map_serreSum, coeAlgHom_inGrade, hserre, l, lof_eq_of, coeAlgHom_of] at hcoe
+  have hs : s = 0 := Subtype.ext hcoe.symm
+  rw [hsum, hs, map_zero]
 
 /-- The `K`-algebra homomorphism decomposing `QuantizedEnvelopingAlgebra D q` into the direct sum
 `⨁ β : X, grade D q β` of its weight-homogeneous components. -/
@@ -391,23 +387,16 @@ def decomposeGrade : QuantizedEnvelopingAlgebra D q →ₐ[K] ⨁ β : X, grade 
         rw [inGrade_mul, inGrade_mul, inGrade_smul]
         exact inGrade_eq D q (by abel) (k_mul_f_mul_k_neg D q y i)
       commutator_self i := by
-        have hm₁ := SetLike.mul_mem_graded (e_mem_grade (D := D) (q := q) i) (f_mem_grade i)
-        have hm₂ := SetLike.mul_mem_graded (f_mem_grade (D := D) (q := q) i) (e_mem_grade i)
         have hrel : e D q i * f D q i - f D q i * e D q i =
             (q ^ D.symmetrizer i - (q ^ D.symmetrizer i)⁻¹)⁻¹ •
               (k D q (D.simpleTorus i) - k D q (-D.simpleTorus i)) := by
           simpa only [simpleK_def, simpleKInv_def] using e_mul_f_sub_f_mul_e_self D q i
-        rw [inGrade_mul, inGrade_mul,
-          inGrade_eq D q (add_neg_cancel _) rfl (ha₂ := add_neg_cancel (D.root i) ▸ hm₁),
-          inGrade_eq D q (neg_add_cancel _) rfl (ha₂ := neg_add_cancel (D.root i) ▸ hm₂),
-          inGrade_sub, inGrade_sub, inGrade_smul]
+        rw [inGrade_mul, inGrade_mul, inGrade_cast D q (add_neg_cancel (D.root i)),
+          inGrade_cast D q (neg_add_cancel (D.root i)), inGrade_sub, inGrade_sub, inGrade_smul]
         exact inGrade_eq D q rfl hrel
       commutator_ne := fun {i j} hij => by
-        have hm₂ := SetLike.mul_mem_graded (f_mem_grade (D := D) (q := q) j) (e_mem_grade i)
         rw [inGrade_mul, inGrade_mul,
-          inGrade_eq D q (a₁ := f D q j * e D q i) (add_comm _ _) rfl
-            (ha₂ := add_comm (-D.root j) (D.root i) ▸ hm₂),
-          inGrade_sub]
+          inGrade_cast D q (add_comm (-D.root j) (D.root i)) (f D q j * e D q i), inGrade_sub]
         exact (inGrade_eq D q rfl (e_mul_f_sub_f_mul_e_of_ne D q hij)).trans
           (map_zero (lof K X (fun β => ↥(grade D q β)) _))
       serre_e hij := inGrade_serreSum D q (fun l => e_mem_grade l) (serreE_eq_zero D q hij)
@@ -426,8 +415,15 @@ private theorem decomposeGrade_word_prod (w : List (Generator ι Y)) :
   | cons g w ih =>
     have hg : decomposeGrade D q (generator D q g) = inGrade D q _ (generator_mem_grade g) := by
       cases g <;> simp [decomposeGrade]
-    simp only [List.map_cons, List.prod_cons, map_mul, hg, ih, inGrade_mul]
-    rfl
+    calc decomposeGrade D q ((g :: w).map (generator D q)).prod
+        = decomposeGrade D q (generator D q g) *
+            decomposeGrade D q (w.map (generator D q)).prod := by
+          rw [List.map_cons, List.prod_cons, map_mul]
+      _ = inGrade D q (generator D q g * (w.map (generator D q)).prod)
+            (SetLike.mul_mem_graded (generator_mem_grade g) (word_prod_mem_grade w)) := by
+          rw [hg, ih, inGrade_mul]
+      _ = inGrade D q ((g :: w).map (generator D q)).prod (word_prod_mem_grade (g :: w)) :=
+          inGrade_eq D q (by simp) (by simp)
 
 /-- Applying `decomposeGrade` to an element of `grade D q β` embeds it into the `β`-summand of
 `⨁ α : X, grade D q α`. -/
