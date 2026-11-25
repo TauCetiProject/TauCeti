@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.GNS.Conjugation.Basic
 public import TauCeti.Analysis.CStarAlgebra.GNS.VonNeumannAlgebra
+public import TauCeti.Analysis.InnerProductSpace.ConjOperator
 
 /-!
 # Conjugating the GNS von Neumann algebra by the modular conjugation
@@ -14,9 +15,10 @@ public import TauCeti.Analysis.CStarAlgebra.GNS.VonNeumannAlgebra
 Let `f` be a tracial positive functional on a possibly nonunital C⋆-algebra `A`, with GNS
 representation `π`, right representation `πᵒᵖ`, `πᵒᵖ(bᵒᵖ)[c] = [c b]`, and modular conjugation
 `J`, `J [a] = [a⋆]`. Since `J` is conjugate linear, `x ↦ J x J` maps complex linear operators of
-the GNS space to complex linear operators; it is a conjugate-linear continuous equivalence of the
-operator algebra, `PositiveLinearMap.gnsConjOperator`. It is involutive, unital, multiplicative
-and compatible with adjoints, and it exchanges the two representations: `J π(b) J = πᵒᵖ(b⋆ᵒᵖ)` and
+the GNS space to complex linear operators; it is a conjugate-linear isometric equivalence of the
+operator algebra, `PositiveLinearMap.gnsConjOperator`, the case of `J` of the general conjugation
+`LinearIsometryEquiv.conjOperator`. It is involutive, unital, multiplicative and compatible with
+adjoints, and it exchanges the two representations: `J π(b) J = πᵒᵖ(b⋆ᵒᵖ)` and
 `J πᵒᵖ(bᵒᵖ) J = π(b⋆)`, so `πᵒᵖ(bᵒᵖ) = J π(b⋆) J`. Consequently `J M_f J ⊆ M_f'` for the GNS von
 Neumann algebra `M_f = π(A)''`: for `x ∈ M_f`, the operator `J x J` commutes with `π(a)` because
 `x` commutes with `J π(a) J = πᵒᵖ(a⋆ᵒᵖ)`, which lies in `M_f'`. For unital `A`, with GNS vector
@@ -25,7 +27,8 @@ Neumann algebra `M_f = π(A)''`: for `x ∈ M_f`, the operator `J x J` commutes 
 
 ## Main definitions
 
-* `PositiveLinearMap.gnsConjOperator f hf`: the conjugate-linear equivalence `x ↦ J x J`.
+* `PositiveLinearMap.gnsConjOperator f hf`: the conjugate-linear isometric equivalence
+  `x ↦ J x J`.
 
 ## Main results
 
@@ -52,23 +55,23 @@ variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing
   (f : A →ₚ[ℂ] ℂ) (hf : ∀ a b, f (a * b) = f (b * a))
 
 /-- The conjugation `x ↦ J x J` of operators of the GNS space of a tracial functional by the
-modular conjugation `J`, a conjugate-linear continuous equivalence of the operator algebra; each
-`J x J` is complex linear, `J` being conjugate linear. -/
+modular conjugation `J`, the general conjugation `LinearIsometryEquiv.conjOperator` of operators by
+a conjugate-linear isometric equivalence; each `J x J` is complex linear, `J` being conjugate
+linear. -/
 noncomputable def gnsConjOperator :
-    (f.GNS →L[ℂ] f.GNS) ≃SL[starRingEnd ℂ] (f.GNS →L[ℂ] f.GNS) :=
-  (gnsConj f hf).toContinuousLinearEquiv.arrowCongrSL (gnsConj f hf).toContinuousLinearEquiv
+    (f.GNS →L[ℂ] f.GNS) ≃ₗᵢ⋆[ℂ] (f.GNS →L[ℂ] f.GNS) :=
+  (gnsConj f hf).conjOperator
 
 /-- The operator `J x J` acts by `y ↦ J (x (J y))`. -/
 @[simp]
 theorem gnsConjOperator_apply (x : f.GNS →L[ℂ] f.GNS) (y : f.GNS) :
     gnsConjOperator f hf x y = gnsConj f hf (x (gnsConj f hf y)) := by
-  simp [gnsConjOperator]
+  simp [gnsConjOperator, gnsConj_symm]
 
 /-- Conjugation by `J` is its own inverse. -/
 @[simp]
 theorem gnsConjOperator_symm : (gnsConjOperator f hf).symm = gnsConjOperator f hf := by
-  ext x y
-  simp [gnsConjOperator]
+  rw [gnsConjOperator, LinearIsometryEquiv.conjOperator_symm, gnsConj_symm]
 
 /-- Conjugation by `J` is an involution. -/
 @[simp]
@@ -78,27 +81,20 @@ theorem gnsConjOperator_gnsConjOperator (x : f.GNS →L[ℂ] f.GNS) :
 
 /-- Conjugation by `J` fixes the identity operator. -/
 @[simp]
-theorem gnsConjOperator_one : gnsConjOperator f hf 1 = 1 := by
-  ext y
-  simp
+theorem gnsConjOperator_one : gnsConjOperator f hf 1 = 1 :=
+  (gnsConj f hf).conjOperator_one
 
 /-- Conjugation by `J` is multiplicative. -/
 @[simp]
 theorem gnsConjOperator_mul (x y : f.GNS →L[ℂ] f.GNS) :
-    gnsConjOperator f hf (x * y) = gnsConjOperator f hf x * gnsConjOperator f hf y := by
-  ext z
-  simp
+    gnsConjOperator f hf (x * y) = gnsConjOperator f hf x * gnsConjOperator f hf y :=
+  (gnsConj f hf).conjOperator_mul x y
 
 /-- Conjugation by `J` commutes with adjoints: `J x⋆ J = (J x J)⋆`. -/
 @[simp]
 theorem gnsConjOperator_star (x : f.GNS →L[ℂ] f.GNS) :
-    gnsConjOperator f hf (star x) = star (gnsConjOperator f hf x) := by
-  rw [ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.star_eq_adjoint,
-    ContinuousLinearMap.eq_adjoint_iff]
-  intro u v
-  rw [gnsConjOperator_apply, gnsConjOperator_apply]
-  conv_lhs => rw [← gnsConj_gnsConj f hf v, inner_gnsConj_gnsConj,
-    ContinuousLinearMap.adjoint_inner_right, ← inner_gnsConj_gnsConj f hf, gnsConj_gnsConj]
+    gnsConjOperator f hf (star x) = star (gnsConjOperator f hf x) :=
+  (gnsConj f hf).conjOperator_star x
 
 /-- Conjugating the GNS representation by the modular conjugation gives the right
 representation: `J π(b) J = πᵒᵖ(b⋆ᵒᵖ)`. -/
