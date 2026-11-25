@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.Circle.Basic
 import Mathlib.Tactic.Module
 import TauCeti.Analysis.Normed.Lp.DiscreteConvolution
 import TauCeti.Analysis.Normed.Module.RCLike.Basic
+import TauCeti.Analysis.Sobolev.Circle.Algebra
 import TauCeti.Analysis.Sobolev.Circle.Duality
 
 /-!
@@ -47,10 +48,8 @@ open Complex
 open scoped DiscreteConvolution ENNReal
 
 open DiscreteConvolution (AddConvolutionExists AddConvolutionExistsAt addConvolution_single_apply
-  addFiberEquivSub addConvolutionExists_and_summable_sq_one_add_abs_rpow_mul_norm_addConvolution
-  enorm_addConvolution_le single_addConvolution_apply
-  tsum_sq_mul_addRingConvolution_le_of_le_mul'
-  tsum_sq_one_add_abs_rpow_mul_norm_addConvolution_le)
+  addFiberEquivSub enorm_addConvolution_le single_addConvolution_apply
+  tsum_sq_mul_addRingConvolution_le_of_le_mul')
 
 namespace TauCeti
 namespace CircleSobolev
@@ -178,90 +177,26 @@ end RealLinear
 
 /-! ### Real-bilinear coefficient convolutions (symmetric and asymmetric) -/
 
-private def mkCoeffConvolution (K : ℝ) (B : G →L[ℝ] E' →L[ℝ] F)
-    (hex : ∀ (a : CircleSobolev r G) (b : CircleSobolev t E'),
-      AddConvolutionExists B.toLinearMap₁₂ a.coeff b.coeff)
-    (hmem : ∀ (a : CircleSobolev r G) (b : CircleSobolev t E'),
-      Memℓp (fun n ↦ weight t n • (a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff) n) 2)
-    (hnorm : ∀ (a : CircleSobolev r G) (b : CircleSobolev t E'),
-      ‖(⟨a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff, hmem a b⟩ : CircleSobolev t F)‖ ≤
-        K * ‖B‖ * ‖a‖ * ‖b‖) :
-    CircleSobolev r G →L[ℝ] CircleSobolev t E' →L[ℝ] CircleSobolev t F :=
-  LinearMap.mkContinuous₂
-    (LinearMap.mk₂ ℝ (fun a b ↦ ⟨a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff, hmem a b⟩)
-      (fun a a' b ↦ CircleSobolev.ext <| (hex a b).add_distrib _ (hex a' b))
-      (fun _ a b ↦ CircleSobolev.ext <| funext fun n ↦ (hex a b n).vadd_convolution _)
-      (fun a b b' ↦ CircleSobolev.ext <| (hex a b).distrib_add _ (hex a b'))
-      (fun _ a b ↦ CircleSobolev.ext <| funext fun n ↦ (hex a b n).convolution_vadd _))
-    (K * ‖B‖) fun a b ↦ hnorm a b
-
 section CoeffConvolution
 
 variable [CompleteSpace F]
 
-private theorem summable_sq_weight_mul_norm_coeff' (a : CircleSobolev s E) :
-    Summable fun n : ℤ ↦ ((1 + |(n : ℝ)|) ^ s * ‖a.coeff n‖) ^ 2 := by
-  simpa only [weight_def] using (hasSum_sq_weight_mul_norm_coeff a).summable
-
-private theorem addConvolutionExists_and_memℓp_real (hs : 1 / 2 < s) (B : G →L[ℝ] E' →L[ℝ] F)
-    (a : CircleSobolev s G) (b : CircleSobolev s E') :
-    AddConvolutionExists B.toLinearMap₁₂ a.coeff b.coeff ∧
-      Memℓp (fun n ↦ weight s n • (a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff) n) 2 :=
-  let ⟨h₁, h₂⟩ := addConvolutionExists_and_summable_sq_one_add_abs_rpow_mul_norm_addConvolution
-    B hs (summable_sq_weight_mul_norm_coeff' a) (summable_sq_weight_mul_norm_coeff' b)
-  ⟨h₁, (memℓp_weight_smul_iff _).2 (by simpa only [weight_def] using h₂)⟩
-
-private theorem norm_coeffConvolutionAux_le (hs : 1 / 2 < s) (B : G →L[ℝ] E' →L[ℝ] F)
-    (a : CircleSobolev s G) (b : CircleSobolev s E') :
-    ‖(⟨a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff,
-      (addConvolutionExists_and_memℓp_real hs B a b).2⟩ : CircleSobolev s F)‖ ≤
-      2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n) * ‖B‖ * ‖a‖ * ‖b‖ := by
-  set w : CircleSobolev s F := ⟨_, (addConvolutionExists_and_memℓp_real hs B a b).2⟩
-  have h := tsum_sq_one_add_abs_rpow_mul_norm_addConvolution_le B hs
-    (summable_sq_weight_mul_norm_coeff' a) (summable_sq_weight_mul_norm_coeff' b)
-  simp only [show a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff = w.coeff from rfl, neg_mul, ← weight_def]
-    at h
-  rw [(hasSum_sq_weight_mul_norm_coeff w).tsum_eq, (hasSum_sq_weight_mul_norm_coeff a).tsum_eq,
-    (hasSum_sq_weight_mul_norm_coeff b).tsum_eq] at h
-  refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 (h.trans_eq ?_)
-  have h4 : ((2 : ℝ) ^ (s + 1)) ^ 2 = 4 ^ (s + 1) := by
-    rw [sq, ← Real.mul_rpow (by norm_num) (by norm_num)]; norm_num
-  simp only [mul_pow, Real.sq_sqrt (tsum_nonneg fun n ↦ weight_nonneg _ n), h4]; ring
-
 private def coeffConvolution (hs : 1 / 2 < s) (B : G →L[ℝ] E' →L[ℝ] F) :
     CircleSobolev s G →L[ℝ] CircleSobolev s E' →L[ℝ] CircleSobolev s F :=
   mkCoeffConvolution (2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n)) B
-    (fun a b ↦ (addConvolutionExists_and_memℓp_real hs B a b).1)
-    (fun a b ↦ (addConvolutionExists_and_memℓp_real hs B a b).2) (norm_coeffConvolutionAux_le hs B)
+    (addConvolutionExists_coeff hs B) (memℓp_weight_smul_addConvolution_coeff hs B)
+    fun a b ↦ norm_le_of_coeff_eq_addConvolution hs B a b rfl
 
 @[simp] private theorem coeff_coeffConvolution (hs : 1 / 2 < s) (B : G →L[ℝ] E' →L[ℝ] F)
     (a : CircleSobolev s G) (b : CircleSobolev s E') :
-    (coeffConvolution hs B a b).coeff = a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff := (rfl)
+    (coeffConvolution hs B a b).coeff = a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff :=
+  coeff_mkCoeffConvolution _ _ _ _ _ a b
 
-private theorem toContinuousMap_coeffConvolution_eq (T : ℝ) [Fact (0 < T)] (hs : 1 / 2 < s)
-    (B : G →L[ℝ] E' →L[ℝ] F) (a : CircleSobolev s G) (c : CircleSobolev s E') (x : AddCircle T)
-    {f₁ : ℤ → G} {u : G} (ha : HasSum f₁ u) {f₂ : ℤ → E'} {v : E'} (hf : HasSum f₂ v)
-    (hterm : ∀ m k, fourier (T := T) (m + k) x • B (a.coeff m) (c.coeff k) = B (f₁ m) (f₂ k)) :
-    toContinuousMap T hs (coeffConvolution hs B a c) x = B u v := by
-  set g : ℤ × ℤ → F := fun p ↦ fourier (p.1 + p.2) x • B (a.coeff p.1) (c.coeff p.2) with hg
-  have hgs : Summable g := Summable.of_norm_bounded
-    (((summable_norm_coeff hs a).mul_of_nonneg (summable_norm_coeff hs c)
-      (fun _ ↦ norm_nonneg _) fun _ ↦ norm_nonneg _).mul_left ‖B‖) fun p ↦ by
-      simpa [hg, norm_smul, fourier_apply, mul_assoc] using B.le_opNorm₂ (a.coeff p.1) (c.coeff p.2)
-  have hrow (m : ℤ) : HasSum (fun k ↦ g (m, k)) (B (f₁ m) v) := by
-    convert hf.mapL (B (f₁ m)) using 1; exact funext fun k ↦ hterm m k
-  have hgB : HasSum g (B u v) :=
-    (ha.mapL (B.flip v)).unique (hgs.hasSum.prod_fiberwise hrow) ▸ hgs.hasSum
-  let e : (Σ _ : ℤ, ℤ) ≃ ℤ × ℤ :=
-    { toFun σ := (σ.1 - σ.2, σ.2), invFun p := ⟨p.1 + p.2, p.2⟩
-      left_inv _ := by simp, right_inv _ := by simp }
-  have hfib (n : ℤ) : HasSum (fun m ↦ (g ∘ e) ⟨n, m⟩)
-      (fourier n x • (coeffConvolution hs B a c).coeff n) := by
-    rw [coeff_coeffConvolution]
-    convert (((addConvolutionExists_and_memℓp_real hs B a c).1 n).hasSum_sub).const_smul
-      (fourier n x : ℂ) using 1
-    ext m; simp only [Function.comp_apply, hg, e, Equiv.coe_fn_mk, sub_add_cancel]; rfl
-  rw [toContinuousMap_apply]; exact ((e.hasSum_iff.2 hgB).sigma hfib).tsum_eq
+private theorem norm_coeffConvolution_le (hs : 1 / 2 < s) (B : G →L[ℝ] E' →L[ℝ] F)
+    (a : CircleSobolev s G) (b : CircleSobolev s E') :
+    ‖coeffConvolution hs B a b‖ ≤
+      2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n) * ‖B‖ * ‖a‖ * ‖b‖ :=
+  norm_mkCoeffConvolution_le _ _ _ _ _ a b
 
 private theorem addConvolutionExists_asym (hr : 0 ≤ r) (ht : 0 ≤ t) (B : G →L[ℝ] E' →L[ℝ] F)
     (a : CircleSobolev r G) (b : CircleSobolev t E') :
@@ -359,7 +294,8 @@ private theorem norm_coeffConvolutionAsymAux_le (ht : 0 ≤ t) (htr : t + 1 / 2 
   exact ofReal_tsum_sq_weight_mul_norm_addConvolution_asym_le ht htr B a b
 
 private def coeffConvolutionAsym [CompleteSpace F] (ht : 0 ≤ t) (htr : t + 1 / 2 < r)
-    (B : G →L[ℝ] E' →L[ℝ] F) : CircleSobolev r G →L[ℝ] CircleSobolev t E' →L[ℝ] CircleSobolev t F :=
+    (B : G →L[ℝ] E' →L[ℝ] F) :
+    CircleSobolev r G →L[ℝ] CircleSobolev t E' →L[ℝ] CircleSobolev t F :=
   mkCoeffConvolution √(∑' n, weight (-(2 * (r - t))) n) B
     (addConvolutionExists_asym (by linarith) ht B) (memℓp_asym ht htr B)
     (norm_coeffConvolutionAsymAux_le ht htr B)
@@ -367,7 +303,15 @@ private def coeffConvolutionAsym [CompleteSpace F] (ht : 0 ≤ t) (htr : t + 1 /
 @[simp] private theorem coeff_coeffConvolutionAsym [CompleteSpace F] (ht : 0 ≤ t)
     (htr : t + 1 / 2 < r) (B : G →L[ℝ] E' →L[ℝ] F) (a : CircleSobolev r G)
     (b : CircleSobolev t E') :
-    (coeffConvolutionAsym ht htr B a b).coeff = a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff := (rfl)
+    (coeffConvolutionAsym ht htr B a b).coeff = a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff :=
+  coeff_mkCoeffConvolution _ _ _ _ _ a b
+
+private theorem norm_coeffConvolutionAsym_le [CompleteSpace F] (ht : 0 ≤ t)
+    (htr : t + 1 / 2 < r) (B : G →L[ℝ] E' →L[ℝ] F) (a : CircleSobolev r G)
+    (b : CircleSobolev t E') :
+    ‖coeffConvolutionAsym ht htr B a b‖ ≤
+      √(∑' n, weight (-(2 * (r - t))) n) * ‖B‖ * ‖a‖ * ‖b‖ :=
+  norm_mkCoeffConvolution_le _ _ _ _ _ a b
 
 /-! ### Public real-bilinear convolutions via four-part sesquilinear decomposition -/
 
@@ -414,10 +358,11 @@ theorem norm_realConvolution_le (hs : 1 / 2 < s) (L : E →L[ℝ] E' →L[ℝ] F
   rw [realConvolution_apply]
   refine (norm_sum_bool_prod_le (2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n) * ‖L‖ * ‖a‖ * ‖b‖) _
     fun p ↦ ?_).trans_eq ?_
-  · refine (show ‖coeffConvolution hs _ _ _‖ ≤ _ from norm_coeffConvolutionAux_le hs _ _ _).trans ?_
+  · refine (norm_coeffConvolution_le hs _ _ _).trans ?_
     rw [norm_reflectIf, norm_reflectIf]; have := L.norm_sesquiPart_le p.1 p.2; gcongr
-  · have h4 : (4 : ℝ) * 2 ^ (s + 1) = 2 ^ (s + 3) := by
-      rw [show (4 : ℝ) = 2 ^ (2 : ℝ) by norm_num, ← Real.rpow_add two_pos]
+  · have h22 : (4 : ℝ) = 2 ^ (2 : ℝ) := by norm_num
+    have h4 : (4 : ℝ) * 2 ^ (s + 1) = 2 ^ (s + 3) := by
+      rw [h22, ← Real.rpow_add two_pos]
       exact congrArg ((2 : ℝ) ^ ·) (by ring)
     rw [← mul_assoc, ← mul_assoc, ← mul_assoc, ← mul_assoc, h4]
 
@@ -441,8 +386,7 @@ theorem norm_realConvolutionAsym_le (ht : 0 ≤ t) (htr : t + 1 / 2 < r) (L : E 
   rw [realConvolutionAsym_apply]
   refine (norm_sum_bool_prod_le (√(∑' n, weight (-(2 * (r - t))) n) * ‖L‖ * ‖a‖ * ‖b‖) _
     fun p ↦ ?_).trans_eq (by ring)
-  refine (show ‖coeffConvolutionAsym ht htr _ _ _‖ ≤ _ from
-    norm_coeffConvolutionAsymAux_le ht htr _ _ _).trans ?_
+  refine (norm_coeffConvolutionAsym_le ht htr _ _ _).trans ?_
   rw [norm_reflectIf, norm_reflectIf]; have := L.norm_sesquiPart_le p.1 p.2; gcongr
 
 private theorem hasSum_reflectIf (T : ℝ) [Fact (0 < T)] [CompleteSpace G] (hs : 1 / 2 < s)
@@ -468,9 +412,9 @@ private theorem hasSum_reflectIf (T : ℝ) [Fact (0 < T)] [CompleteSpace G] (hs 
     cases b <;> simp
   rw [realConvolution_apply, map_sum, ContinuousMap.coe_sum, Finset.sum_apply,
     ← L.sum_sesquiPart_apply (toContinuousMap T hs a x) (toContinuousMap T hs b x)]
-  refine Finset.sum_congr rfl fun p _ ↦ toContinuousMap_coeffConvolution_eq T hs
-    (L.sesquiPart p.1 p.2) (reflectIf p.1 a) (reflectIf p.2 b) x (hasSum_reflectIf T hs p.1 a x)
-    (hasSum_reflectIf T hs p.2 b x) fun m k ↦ ?_
+  refine Finset.sum_congr rfl fun p _ ↦ toContinuousMap_eq_of_coeff_eq_addConvolution T hs
+    (L.sesquiPart p.1 p.2) (reflectIf p.1 a) (reflectIf p.2 b) (coeff_coeffConvolution hs _ _ _) x
+    (hasSum_reflectIf T hs p.1 a x) (hasSum_reflectIf T hs p.2 b x) fun m k ↦ ?_
   rw [ContinuousLinearMap.sesquiPart_apply_smul, hstar, hstar, fourier_add]
 
 /-- `realConvolution` commutes with the Sobolev inclusions `H^s → H^t`, `1/2 < t ≤ s`. -/

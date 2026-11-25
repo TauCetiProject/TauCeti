@@ -113,9 +113,10 @@ private theorem exists_ball_prodEquiv_symm_mem_cthickening (u₀ : CircleSobolev
       ((toContinuousMap T hs.out).continuous.continuousAt.preimage_mem_nhds
         (Metric.ball_mem_nhds _ hδ))
   obtain ⟨r, hr, hsub⟩ := Metric.mem_nhds_iff.1 hnhds; refine ⟨r, hr, fun u₁ u₂ hu₁ hu₂ ↦ ?_⟩
-  obtain ⟨h1, h2⟩ := hsub (show (u₁, u₂) ∈ Metric.ball (u₀, u₀) r by
+  have hball : (u₁, u₂) ∈ Metric.ball (u₀, u₀) r := by
     rw [Metric.mem_ball, Prod.dist_eq]
-    exact max_lt (Metric.mem_ball.1 hu₁) (Metric.mem_ball.1 hu₂))
+    exact max_lt (Metric.mem_ball.1 hu₁) (Metric.mem_ball.1 hu₂)
+  obtain ⟨h1, h2⟩ := hsub hball
   rw [Metric.mem_ball, dist_eq_norm] at h1
   exact ⟨fun x ↦ Metric.mem_cthickening_of_dist_le _ _ δ _ ⟨x, rfl⟩
     ((ContinuousMap.dist_apply_le_dist x).trans (Metric.mem_ball.1 h2).le),

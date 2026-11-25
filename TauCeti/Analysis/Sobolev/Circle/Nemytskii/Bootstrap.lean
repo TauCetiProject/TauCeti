@@ -12,7 +12,6 @@ import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 import TauCeti.Analysis.Sobolev.Circle.OfContinuousMap
 import TauCeti.Analysis.Sobolev.Circle.Slobodeckij
-import TauCeti.MeasureTheory.Integral.ContinuousMap
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.CompactOpen
 
@@ -94,37 +93,9 @@ variable (T : ℝ) [hT : Fact (0 < T)]
   {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
   [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℂ F]
 
-private theorem exists_norm_ofContinuousMap_le_pointwise :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {M : ℝ}, 0 ≤ M → ∀ (ψ : C(AddCircle T, F)) (υ : C(AddCircle T, E)),
-      (∀ x, ‖ψ x‖ ≤ M * ‖υ x‖) → ‖ofContinuousMap T ψ‖ ≤ C * M * ‖ofContinuousMap T υ‖ := by
-  let eE := ((Module.finBasis ℂ E).equiv (EuclideanSpace.basisFun _ ℂ).toBasis (.refl _)
-    ).toContinuousLinearEquiv
-  let eF := ((Module.finBasis ℂ F).equiv (EuclideanSpace.basisFun _ ℂ).toBasis (.refl _)
-    ).toContinuousLinearEquiv
-  let LE := eE.toContinuousLinearMap; let LEi := eE.symm.toContinuousLinearMap
-  let LF := eF.toContinuousLinearMap; let LFi := eF.symm.toContinuousLinearMap
-  refine ⟨‖LFi‖ * ‖LF‖ * ‖LEi‖ * ‖LE‖, by positivity, fun {M} hM ψ υ hpt ↦ ?_⟩
-  let ψ' := (ContinuousMap.mk LF LF.continuous).comp ψ
-  let υ' := (ContinuousMap.mk LE LE.continuous).comp υ
-  have hL2 : ‖ofContinuousMap T ψ'‖ ≤ ‖LF‖ * M * ‖LEi‖ * ‖ofContinuousMap T υ'‖ := by
-    refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 ?_
-    rw [mul_pow, norm_ofContinuousMap_sq, norm_ofContinuousMap_sq, ← integral_const_mul]
-    refine integral_mono (ψ'.continuous.norm.pow 2).integrable_of_compactSpace
-      ((υ'.continuous.norm.pow 2).integrable_of_compactSpace.const_mul _) fun x ↦ ?_
-    dsimp only; rw [← mul_pow]; refine pow_le_pow_left₀ (norm_nonneg _) ?_ 2
-    have hυ : ‖υ x‖ ≤ ‖LEi‖ * ‖υ' x‖ := eE.symm_apply_apply (υ x) ▸ LEi.le_opNorm (υ' x)
-    exact ((LF.le_opNorm _).trans <| mul_le_mul_of_nonneg_left
-      ((hpt x).trans (mul_le_mul_of_nonneg_left hυ hM)) (norm_nonneg _)).trans_eq (by ring)
-  have hψ : ofContinuousMap T ψ = mapCLM LFi (ofContinuousMap T ψ') := ((mapCLM_ofContinuousMap T
-    LFi ψ').trans <| congrArg _ (ContinuousMap.ext fun x ↦ eF.symm_apply_apply (ψ x))).symm
-  rw [← mapCLM_ofContinuousMap T LE υ] at hL2; rw [hψ]
-  exact ((norm_mapCLM_le _ _).trans <| mul_le_mul_of_nonneg_left (hL2.trans <|
-    mul_le_mul_of_nonneg_left (norm_mapCLM_le _ _) (by positivity)) (norm_nonneg _)).trans_eq
-    (by ring)
-
 private theorem slobodeckijEnergy_ofContinuousMap_comp_le {s : ℝ} (hs : 1 / 2 < s) {K : Set E}
     {L : ℝ≥0} {f : E → F} (hLip : LipschitzOnWith L f K) {C₀ : ℝ}
-    (hpt0 : ∀ {M : ℝ}, 0 ≤ M → ∀ (ψ : C(AddCircle T, F)) (υ : C(AddCircle T, E)),
+    (hpt0 : ∀ {M : ℝ} (ψ : C(AddCircle T, F)) (υ : C(AddCircle T, E)),
       (∀ x, ‖ψ x‖ ≤ M * ‖υ x‖) → ‖ofContinuousMap T ψ‖ ≤ C₀ * M * ‖ofContinuousMap T υ‖)
     {u : CircleSobolev s E} (huK : ∀ x, toContinuousMap T hs u x ∈ K)
     (fu : C(AddCircle T, F)) (hfu : ∀ x, fu x = f (toContinuousMap T hs u x)) :
@@ -136,7 +107,7 @@ private theorem slobodeckijEnergy_ofContinuousMap_comp_le {s : ℝ} (hs : 1 / 2 
   rw [← ENNReal.ofReal_mul (sq_nonneg _), mul_div_assoc', ← mul_pow]; gcongr
   rw [rotate_ofContinuousMap, ← map_sub, ← ofContinuousMap_toContinuousMap T hs u,
     rotate_ofContinuousMap, ← map_sub]
-  refine hpt0 L.coe_nonneg _ _ fun x ↦ ?_
+  refine hpt0 _ _ fun x ↦ ?_
   simp only [ContinuousMap.sub_apply, ContinuousMap.comp_apply, ContinuousMap.coe_addRight, hfu]
   exact hLip.norm_sub_le (huK (x + h)) (huK x)
 
@@ -146,7 +117,7 @@ private theorem exists_toContinuousMap_eq_comp_and_norm_le_base {s : ℝ} (hs : 
       (∀ x, toContinuousMap T hs u x ∈ K) → ‖u‖ ≤ R → ∃ w : CircleSobolev s F,
         (∀ x, toContinuousMap T hs w x = f (toContinuousMap T hs u x)) ∧ ‖w‖ ≤ B := by
   have hs0 : 0 < s := by linarith
-  obtain ⟨C₀, _, hpt0⟩ := exists_norm_ofContinuousMap_le_pointwise (E := E) (F := F) T
+  obtain ⟨C₀, _, hpt0⟩ := exists_norm_ofContinuousMap_le_of_forall_norm_le (E := E) (G := F) T
   obtain ⟨L, hLip⟩ : ∃ L : ℝ≥0, LipschitzOnWith L f K :=
     LocallyLipschitzOn.exists_lipschitzOnWith_of_compact hK fun x hx ↦
       let ⟨L, t, ht, hL⟩ := (hf.contDiffAt (hU.mem_nhds (hKU hx))).exists_lipschitzOnWith
@@ -187,31 +158,6 @@ end BaseCase
 section Bootstrap
 
 variable (T : ℝ) [hT : Fact (0 < T)]
-
-private theorem tendsto_inclusion_of_norm_le_of_tendsto_toContinuousMap {r' r : ℝ} (hr'0 : 0 < r')
-    (hr'r : r' < r) (hr : 1 / 2 < r) {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
-    [FiniteDimensional ℂ G] {ι : Type*} {l : Filter ι} {g : ι → CircleSobolev r G}
-    {g₀ : CircleSobolev r G} {B : ℝ} (hB : ∀ᶠ i in l, ‖g i‖ ≤ B)
-    (hcont : Tendsto (fun i ↦ toContinuousMap T hr (g i)) l (𝓝 (toContinuousMap T hr g₀))) :
-    Tendsto (fun i ↦ inclusion hr'r.le (g i)) l (𝓝 (inclusion hr'r.le g₀)) := by
-  rw [Metric.tendsto_nhds]; intro ε hε
-  set M := max (B + ‖g₀‖) 1; have hM : 0 < M := lt_of_lt_of_le zero_lt_one (le_max_right _ _)
-  obtain ⟨C, _, hC⟩ := exists_norm_inclusion_le (E := G) hr'0.le hr'r (div_pos (half_pos hε) hM)
-  have h0 : Tendsto (fun i ↦ C * ‖ofContinuousMap T
-      (toContinuousMap T hr (g i) - toContinuousMap T hr g₀)‖) l (𝓝 0) := by
-    simpa using (((ofContinuousMap T (E := G)).continuous.tendsto 0).comp
-      (tendsto_sub_nhds_zero_iff.2 hcont)).norm.const_mul C
-  filter_upwards [hB, (tendsto_order.1 h0).2 (ε / 2) (half_pos hε)] with i hi hi0
-  rw [dist_eq_norm, ← map_sub]
-  have hnorm_d : ‖g i - g₀‖ ≤ M := by linarith [norm_sub_le (g i) g₀, le_max_left (B + ‖g₀‖) 1]
-  have hincl0 : inclusion (by linarith : (0 : ℝ) ≤ r) (g i - g₀) =
-      ofContinuousMap T (toContinuousMap T hr (g i) - toContinuousMap T hr g₀) := by
-    rw [map_sub, ← ofContinuousMap_toContinuousMap T hr (g i),
-      ← ofContinuousMap_toContinuousMap T hr g₀, ← map_sub]
-  have h1 := hC (g i - g₀); rw [hincl0] at h1
-  have h2 : ε / 2 / M * ‖g i - g₀‖ ≤ ε / 2 :=
-    (mul_le_mul_of_nonneg_left hnorm_d (by positivity)).trans_eq (div_mul_cancel₀ _ hM.ne')
-  linarith
 
 section BootstrapChain
 
@@ -300,7 +246,7 @@ private theorem exists_tendsto_inclusion_fderiv_approx {r' r s : ℝ} (hr' : 1 /
       (by simpa [toContinuousMap_inclusion] using hS.1) hS.2).choose_spec
     exact ⟨fun x ↦ by simpa [toContinuousMap_inclusion] using hspec.1 x, hspec.2⟩
   exact ⟨gS, (hev.and hgS_spec).mono fun _ h ↦ ⟨h.1.1, h.2.1⟩,
-    tendsto_inclusion_of_norm_le_of_tendsto_toContinuousMap T (by linarith) hr'r hr
+    tendsto_inclusion_of_norm_le_of_tendsto_toContinuousMap T hr'r hr
       (hgS_spec.mono fun _ h ↦ h.2) <| ContinuousMap.tendsto_of_eventually_eq_comp
         ((hf.continuousOn_fderiv_of_isOpen hU le_rfl).mono hKδU) huS_cont
         (hev.mono fun _ h ↦ h.1) (fun x ↦ Metric.self_subset_cthickening _ (huK x))
@@ -376,8 +322,9 @@ private theorem exists_toContinuousMap_eq_and_norm_le_of_derivative_coeff {t r s
   have hw_eval (x : AddCircle T) : toContinuousMap T hs w x = f (toContinuousMap T hs u x) := by
     refine congrArg (· x) ((toContinuousMap_eq_iff T hs w ⟨fun y ↦ f (toContinuousMap T hs u y),
       hf.comp_continuous (toContinuousMap T hs u).continuous huU⟩).2 fun n ↦ ?_)
-    rw [show w.coeff n = ar.coeff n by simpa [coeff_inclusion] using congrArg (·.coeff n) hw_incl,
-      ← fourierCoeff_toContinuousMap T hr ar n]
+    have hw_coeff : w.coeff n = ar.coeff n := by
+      simpa [coeff_inclusion] using congrArg (·.coeff n) hw_incl
+    rw [hw_coeff, ← fourierCoeff_toContinuousMap T hr ar n]
     exact congrArg (fourierCoeff · n) (funext fun y ↦ (har y).symm)
   have hat_norm : ‖inclusion htr ar‖ ≤ B₀ := (norm_inclusion_le _ _).trans har_norm
   refine ⟨w, hw_eval, (Real.le_sqrt (norm_nonneg w) (by positivity)).2 ?_⟩
@@ -433,9 +380,10 @@ private theorem exists_toContinuousMap_eq_comp_and_norm_le_aux :
       let b : CircleSobolev t F := A (inclusion hr'r.le gu) (derivative T hts_eq.le u)
       have hb_coeff (n : ℤ) :
           b.coeff n = (2 * π * I * n / T : ℂ) • (inclusion (by linarith : t ≤ r) ar).coeff n := by
-        rw [coeff_inclusion, ← fourierCoeff_toContinuousMap T hr ar n, show
-          (toContinuousMap T hr ar : AddCircle T → F) = fun x ↦ f (toContinuousMap T (by linarith)
-            u x) from funext fun x ↦ by simpa only [toContinuousMap_inclusion] using har x]
+        have har_coe : (toContinuousMap T hr ar : AddCircle T → F) =
+            fun x ↦ f (toContinuousMap T (by linarith) u x) :=
+          funext fun x ↦ by simpa only [toContinuousMap_inclusion] using har x
+        rw [coeff_inclusion, ← fourierCoeff_toContinuousMap T hr ar n, har_coe]
         exact coeff_realConvolutionAsym_eq_deriv_fourierCoeff T ht htr' hr'r hrs hts_eq
           hU hδ hK'U (hf.of_le (by norm_cast; omega)) hIH₁ huK huR
           (fun x ↦ by simpa only [toContinuousMap_inclusion] using hgu x) n
