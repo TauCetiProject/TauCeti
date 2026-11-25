@@ -7,11 +7,12 @@ module
 
 public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Power
 public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 public import TauCeti.AlgebraicGeometry.Morphisms.UniversalHomeomorphism
 import Mathlib.Algebra.TrivSqZeroExt.Ideal
 import Mathlib.RingTheory.Ideal.Quotient.PowTransition
-import TauCeti.AlgebraicGeometry.IdealSheaf.Reduced
+import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 
 /-!
 # Thickenings of schemes
@@ -60,7 +61,7 @@ module of homomorphisms into `I`.
   `I` satisfies `I ^ (n + 2) = 0` factors, by Mathlib's `IsClosedImmersion.lift`, through
   `V(I ^ (n + 1))` as a thickening with ideal of vanishing `(n + 1)`-st power followed by a
   first-order thickening.
-* `TauCeti.AlgebraicGeometry.isThickening_of_ker_pow_eq_bot`: a closed immersion with nilpotent
+* `TauCeti.AlgebraicGeometry.isThickening_of_isNilpotent_ker`: a closed immersion with nilpotent
   ideal sheaf is a thickening.
 * `TauCeti.AlgebraicGeometry.IsThickening.ker_le_ker`: a morphism from a reduced scheme kills the
   ideal sheaf of a thickening of its target, so it lifts along the thickening; the reduction
@@ -118,13 +119,16 @@ theorem isThickening_iff_ker_le_nilradical (i : Z ⟶ X) [IsClosedImmersion i] :
   simp [isThickening_iff, surjective_iff, hnil, ← Set.range_eq_univ, ← hrange,
     ‹IsClosedImmersion i›]
 
-/-- A closed immersion whose ideal sheaf has a vanishing nonzero power is a thickening. -/
-theorem isThickening_of_ker_pow_eq_bot (i : Z ⟶ X) [IsClosedImmersion i] {m : ℕ} (hm : m ≠ 0)
-    (h : i.ker ^ m = ⊥) : IsThickening i :=
-  (isThickening_iff_ker_le_nilradical i).2 <|
+/-- A closed immersion whose ideal sheaf is nilpotent is a thickening. -/
+theorem isThickening_of_isNilpotent_ker (i : Z ⟶ X) [IsClosedImmersion i]
+    (h : IsNilpotent i.ker) : IsThickening i := by
+  obtain ⟨m, hm⟩ := h
+  exact (isThickening_iff_ker_le_nilradical i).2 <|
     calc i.ker ≤ i.ker.radical := Scheme.IdealSheafData.le_radical _
-      _ = (i.ker ^ m).radical := (Scheme.IdealSheafData.radical_pow _ hm).symm
-      _ = X.nilradical := by rw [h, Scheme.IdealSheafData.radical_bot]
+      _ = (i.ker ^ (m + 1)).radical := (Scheme.IdealSheafData.radical_pow _ m.succ_ne_zero).symm
+      _ = X.nilradical := by
+        rw [pow_eq_zero_of_le m.le_succ hm, Scheme.IdealSheafData.zero_eq_bot,
+          Scheme.IdealSheafData.radical_bot]
 
 namespace IsThickening
 
@@ -197,15 +201,15 @@ class IsFirstOrderThickening (f : X ⟶ Y) : Prop extends IsClosedImmersion f wh
 
 namespace IsFirstOrderThickening
 
+/-- The ideal sheaf of a first-order thickening is nilpotent. -/
+theorem isNilpotent_ker (i : Z ⟶ X) [IsFirstOrderThickening i] : IsNilpotent i.ker :=
+  ⟨2, by simp [pow_two, ker_mul_self]⟩
+
 /-- A first-order thickening is a thickening: its ideal sheaf has square zero, so it lies in the
 nilradical. -/
 instance (priority := 100) isThickening (i : Z ⟶ X) [IsFirstOrderThickening i] :
     IsThickening i :=
-  isThickening_of_ker_pow_eq_bot i two_ne_zero (by rw [pow_two, ker_mul_self])
-
-/-- The ideal sheaf of a first-order thickening is nilpotent. -/
-theorem isNilpotent_ker (i : Z ⟶ X) [IsFirstOrderThickening i] : IsNilpotent i.ker :=
-  ⟨2, by simp [pow_two, ker_mul_self]⟩
+  isThickening_of_isNilpotent_ker i (isNilpotent_ker i)
 
 /-- An isomorphism is a first-order thickening. -/
 instance (priority := 100) of_isIso (i : Z ⟶ X) [IsIso i] : IsFirstOrderThickening i where
@@ -383,7 +387,7 @@ theorem factor_firstOrder (i : Z ⟶ X) [IsClosedImmersion i] {n : ℕ} (h : i.k
       (i.ker.ker_subschemeι_pow_le n.succ_ne_zero)).ker ^ (n + 1) = ⊥ :=
     Scheme.Hom.ker_pow_eq_bot_of_ker_comp_pow_le _ (i.ker ^ (n + 1)).subschemeι
       (by rw [IsClosedImmersion.lift_fac, Scheme.IdealSheafData.ker_subschemeι])
-  refine ⟨⟨?_⟩, isThickening_of_ker_pow_eq_bot _ (Nat.succ_ne_zero n) hker, hker⟩
+  refine ⟨⟨?_⟩, isThickening_of_isNilpotent_ker _ ⟨n + 1, hker⟩, hker⟩
   rw [Scheme.IdealSheafData.ker_subschemeι, ← pow_add, ← le_bot_iff, ← h]
   exact i.ker.pow_le_pow_right (by omega)
 
