@@ -34,12 +34,14 @@ of the direct image.
   (`AlgebraicGeometry.Scheme.aXAdjunction`), which exists for instance when the left Kan
   extensions along the inclusion exist and fppf sheafification does.
 
-Both inverse images preserve colimits as left adjoints. They are exact, that is they also
-preserve finite limits, under the corresponding hypotheses on `A`: for `ε` when `A` has finite
-limits and fppf sheafification preserves them (`HasSheafify`), and for `a_X` when moreover the
-left Kan extension along the inclusion `X.Etale ⥤ Over X` preserves finite limits
-(`AlgebraicGeometry.Scheme.preservesFiniteLimits_aXPullback`), the inclusion being representably
-flat as it preserves finite limits.
+Both inverse images preserve colimits as left adjoints. The inverse image of `ε` is exact, that
+is it also preserves finite limits, when `A` has finite limits and fppf sheafification preserves
+them (`HasSheafify`). For `a_X`, `AlgebraicGeometry.Scheme.preservesFiniteLimits_aXPullback` only
+reduces exactness to the exactness of the left Kan extension along the inclusion
+`X.Etale ⥤ Over X`, which it takes as a hypothesis. That hypothesis carries the content: Mathlib
+derives it from representable flatness (`CategoryTheory.lan_preservesFiniteLimits_of_flat`) only
+for small categories, and `X.Etale` is not small, so the inclusion being representably flat does
+not discharge it here. The unconditional exactness of the inverse image of `a_X` remains open.
 
 The morphism `a_X` factors through `ε`: its direct image is the direct image of `ε` followed by
 the restriction of big étale sheaves to the small étale site
@@ -175,13 +177,16 @@ noncomputable abbrev aXAdjunction : aXPullback X A ⊣ aXPushforward X A :=
 
 /-- The inverse image of `a_X` is exact when it is computed by left Kan extension along the
 inclusion of étale `X`-schemes among all `X`-schemes followed by fppf sheafification, and the left
-Kan extension and both sheafifications preserve finite limits. -/
+Kan extension and both sheafifications preserve finite limits. This reduces exactness to the
+exactness of the left Kan extension, which is assumed rather than proved: Mathlib proves it from
+representable flatness only for small categories, and `X.Etale` is not small. -/
 instance preservesFiniteLimits_aXPullback
     [∀ F : X.Etaleᵒᵖ ⥤ A, (Etale.forget X).op.HasLeftKanExtension F]
     [HasSheafify (smallEtaleTopology X) A] [HasSheafify (fppfTopology.over X) A]
     [PreservesFiniteLimits ((Etale.forget X).op.lan : (X.Etaleᵒᵖ ⥤ A) ⥤ (Over X)ᵒᵖ ⥤ A)] :
     PreservesFiniteLimits (aXPullback X A) := by
-  -- The inclusion is representably flat, as it preserves finite limits.
+  -- Mathlib's construction also asks for the inclusion to be representably flat, which holds as
+  -- it preserves finite limits; flatness alone does not give the exactness of the Kan extension.
   have : RepresentablyFlat (Etale.forget X) := flat_of_preservesFiniteLimits _
   exact Functor.sheafPullbackConstruction.preservesFiniteLimits _ _ _ _
 
