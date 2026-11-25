@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 
 /-!
 # Complex-valued smooth functions on real manifolds
@@ -479,6 +480,11 @@ theorem compRightComplexAlgEquiv_apply (φ : N ≃ₘ^n⟮J, I⟯ M) (f : C^n⟮
     (x : N) : compRightComplexAlgEquiv φ f x = f (φ x) := by
   simp [compRightComplexAlgEquiv]
 
+/-- As a function, the precomposition of `f` with `φ` is `f ∘ φ`. -/
+theorem coe_compRightComplexAlgEquiv (φ : N ≃ₘ^n⟮J, I⟯ M) (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    ⇑(compRightComplexAlgEquiv φ f) = f ∘ φ :=
+  funext <| compRightComplexAlgEquiv_apply φ f
+
 /-- Precomposition with `φ⁻¹` inverts precomposition with `φ`. -/
 @[simp]
 theorem compRightComplexAlgEquiv_symm (φ : N ≃ₘ^n⟮J, I⟯ M) :
@@ -511,14 +517,20 @@ def pushforwardOperator (Φ : M ≃ₘ^n⟮I, J⟯ N) :
 theorem pushforwardOperator_apply_apply (Φ : M ≃ₘ^n⟮I, J⟯ N)
     (P : Module.End ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (u : C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯) (y : N) :
     pushforwardOperator Φ P u y = P (compRightComplexAlgEquiv Φ u) (Φ.symm y) := by
-  have hΦ : Φ.symm.symm = Φ := Diffeomorph.ext fun _ ↦ rfl
-  simp [pushforwardOperator, LinearEquiv.conjAlgEquiv_apply, ← AlgEquiv.toLinearEquiv_symm, hΦ]
+  simp [pushforwardOperator, LinearEquiv.conjAlgEquiv_apply, ← AlgEquiv.toLinearEquiv_symm]
+
+/-- As a function, the pushforward of `P` applied to `u` is `P (u ∘ Φ) ∘ Φ⁻¹`. -/
+theorem coe_pushforwardOperator_apply (Φ : M ≃ₘ^n⟮I, J⟯ N)
+    (P : Module.End ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (u : C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯) :
+    ⇑(pushforwardOperator Φ P u) = P (compRightComplexAlgEquiv Φ u) ∘ Φ.symm :=
+  funext <| pushforwardOperator_apply_apply Φ P u
 
 /-- The pushforward along `Φ⁻¹` undoes the pushforward along `Φ`. -/
 @[simp]
 theorem pushforwardOperator_symm (Φ : M ≃ₘ^n⟮I, J⟯ N) :
-    (pushforwardOperator Φ).symm = pushforwardOperator Φ.symm :=
-  (rfl)
+    (pushforwardOperator Φ).symm = pushforwardOperator Φ.symm := by
+  rw [pushforwardOperator, pushforwardOperator, LinearEquiv.symm_conjAlgEquiv,
+    ← AlgEquiv.toLinearEquiv_symm, compRightComplexAlgEquiv_symm, symm_symm]
 
 /-- The pushforward along the identity is the identity. -/
 @[simp]

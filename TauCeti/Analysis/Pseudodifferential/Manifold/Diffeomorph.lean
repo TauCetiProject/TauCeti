@@ -19,8 +19,9 @@ complex-valued smooth functions on `M` is carried to the operator
 `Φ_* P : u ↦ P (u ∘ Φ) ∘ Φ⁻¹`
 
 on `N` (`Diffeomorph.pushforwardOperator`). This file shows that `Φ_*` preserves the classical
-pseudodifferential operators of every order `m` (`TauCeti.pushforwardOperator_mem_iff`) and
-that the principal symbol transforms through the cotangent map of `Φ`:
+pseudodifferential operators of every order `m`
+(`TauCeti.pushforwardOperator_mem_classicalPseudodifferentialOperators_iff`) and that the principal
+symbol transforms through the cotangent map of `Φ`:
 
 `σ_m(Φ_* P)(Φ x, ξ) = σ_m(P)(x, ξ ∘ dΦ_x)`
 
@@ -42,8 +43,8 @@ symbol is then compared through the chain rule `d(e ∘ Φ)_x = de_{Φ x} ∘ d�
 * `TauCeti.complexChartCompression_pushforwardOperator`: the chart compressions of `Φ_* P` in a
   chart `e` are those of `P` in the chart `Φ ≫ e`.
 * `TauCeti.pushforwardOperator_mem_classicalPseudodifferentialOperators`,
-  `TauCeti.pushforwardOperator_mem_iff`: `Φ_* P` is a classical pseudodifferential operator of
-  order `m` exactly when `P` is.
+  `TauCeti.pushforwardOperator_mem_classicalPseudodifferentialOperators_iff`: `Φ_* P` is a
+  classical pseudodifferential operator of order `m` exactly when `P` is.
 * `TauCeti.classicalPrincipalSymbol_pushforwardOperator`: the principal symbol of `Φ_* P` at
   `(Φ x, ξ)` is that of `P` at `(x, ξ ∘ dΦ_x)`.
 * `TauCeti.classicalPrincipalSymbol_apply_eq_of_pushforwardOperator_eq`: an operator invariant
@@ -72,21 +73,20 @@ variable {n : ℕ} {M N : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateS
   (Φ : M ≃ₘ^∞⟮𝓘(ℝ, CoordinateSpace n), 𝓘(ℝ, CoordinateSpace n)⟯ N)
 
 /-- **Proper support is invariant under diffeomorphisms.** If `P` is properly supported on `M`,
-then so is its pushforward `u ↦ P (u ∘ Φ) ∘ Φ⁻¹` on `N`: for a compact `K ⊆ N`, the compact set
-for `P` and `Φ⁻¹(K)` is carried to `N` by `Φ`. -/
+then so is its pushforward `u ↦ P (u ∘ Φ) ∘ Φ⁻¹` on `N`. -/
 theorem IsProperlySupported.pushforwardOperator (hP : IsProperlySupported P) :
     IsProperlySupported (Φ.pushforwardOperator P) := by
   refine isProperlySupported_iff.2 fun K hK ↦ ?_
   obtain ⟨K', hK', hP₁, hP₂⟩ :=
     isProperlySupported_iff.1 hP (Φ ⁻¹' K) (Φ.toHomeomorph.isCompact_preimage.2 hK)
+  -- The compact set for `P` and `Φ⁻¹(K)` is carried to `N` by `Φ`.
   refine ⟨Φ '' K', hK'.image Φ.continuous, fun f hf ↦ ?_, fun f hf y hy ↦ ?_⟩
-  · have hcomp : ⇑(Φ.compRightComplexAlgEquiv f) = f ∘ Φ.toHomeomorph :=
-      funext fun x ↦ by simp
-    have hpush : ⇑(Φ.pushforwardOperator P f) =
-        P (Φ.compRightComplexAlgEquiv f) ∘ Φ.toHomeomorph.symm :=
-      funext fun y ↦ by simp
-    have hsupp := hP₁ _ (by rw [hcomp, tsupport_comp_eq_preimage]; exact preimage_mono hf)
-    rw [hpush, tsupport_comp_eq_preimage]
+  · have hsupp := hP₁ _ (by
+      rw [Φ.coe_compRightComplexAlgEquiv f, ← Φ.coe_toHomeomorph,
+        tsupport_comp_eq_preimage]
+      exact preimage_mono hf)
+    rw [Φ.coe_pushforwardOperator_apply P f, ← Φ.coe_toHomeomorph_symm,
+      tsupport_comp_eq_preimage]
     exact fun y hy ↦ ⟨Φ.symm y, hsupp hy, Φ.apply_symm_apply y⟩
   · rw [Diffeomorph.pushforwardOperator_apply_apply]
     refine hP₂ _ ?_ _ (by simpa using hy)
@@ -123,13 +123,16 @@ theorem complexChartCompression_pushforwardOperator [IsManifold 𝓘(ℝ, Coordi
   ext u y
   rw [OpenPartialHomeomorph.complexChartCompression_apply,
     Diffeomorph.pushforwardOperator_apply_apply, hpull]
-  -- The inverse of `e'` is `Φ⁻¹ ∘ e⁻¹` by definition.
-  exact (OpenPartialHomeomorph.complexChartCompression_apply he' φ ψ P u y).symm
+  refine Eq.symm ((OpenPartialHomeomorph.complexChartCompression_apply he' φ ψ P u y).trans ?_)
+  rw [Homeomorph.transOpenPartialHomeomorph_symm_apply, Function.comp_apply,
+    Diffeomorph.coe_toHomeomorph_symm]
+  -- The two sides differ only in reading `φ` as a cutoff in the target of `e` or in the target of
+  -- `e'`, which is the target of `e` by definition.
+  rfl
 
 /-- **Diffeomorphism invariance of the classical pseudodifferential operators.** If `P` is a
 classical pseudodifferential operator of order `m` on `M`, then its pushforward
-`u ↦ P (u ∘ Φ) ∘ Φ⁻¹` along a diffeomorphism `Φ : M → N` is one on `N`: each of its chart
-compressions is a chart compression of `P`. -/
+`u ↦ P (u ∘ Φ) ∘ Φ⁻¹` along a diffeomorphism `Φ : M → N` is one on `N`. -/
 theorem pushforwardOperator_mem_classicalPseudodifferentialOperators
     [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] {m : ℝ}
     (hP : P ∈ classicalPseudodifferentialOperators m) :
@@ -137,13 +140,15 @@ theorem pushforwardOperator_mem_classicalPseudodifferentialOperators
   have hP' := mem_classicalPseudodifferentialOperators_iff.1 hP
   refine mem_classicalPseudodifferentialOperators_iff.2
     ⟨hP'.1.pushforwardOperator Φ, fun e he φ ψ ↦ ?_⟩
+  -- Each chart compression of `Φ_* P` is a chart compression of `P`.
   obtain ⟨a, ha⟩ := hP'.2 _ (Φ.transOpenPartialHomeomorph_mem_maximalAtlas le_rfl he) φ ψ
   exact ⟨a, fun u x ↦ by rw [ha, complexChartCompression_pushforwardOperator]⟩
 
 /-- The pushforward `u ↦ P (u ∘ Φ) ∘ Φ⁻¹` along a diffeomorphism `Φ : M → N` is a classical
 pseudodifferential operator of order `m` on `N` exactly when `P` is one on `M`. -/
-theorem pushforwardOperator_mem_iff [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
-    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ N] {m : ℝ} :
+@[simp]
+theorem pushforwardOperator_mem_classicalPseudodifferentialOperators_iff
+    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ N] {m : ℝ} :
     Φ.pushforwardOperator P ∈ classicalPseudodifferentialOperators m ↔
       P ∈ classicalPseudodifferentialOperators m := by
   refine ⟨fun h ↦ ?_, pushforwardOperator_mem_classicalPseudodifferentialOperators Φ⟩
@@ -163,7 +168,8 @@ theorem classicalPrincipalSymbol_pushforwardOperator [IsManifold 𝓘(ℝ, Coord
   by_cases hP : P ∈ classicalPseudodifferentialOperators m
   swap
   · rw [classicalPrincipalSymbol_of_notMem hP,
-      classicalPrincipalSymbol_of_notMem (by rwa [pushforwardOperator_mem_iff])]
+      classicalPrincipalSymbol_of_notMem
+        (by rwa [pushforwardOperator_mem_classicalPseudodifferentialOperators_iff])]
   -- Read both principal symbols in the preferred chart `e` at `Φ x` and the chart `Φ ≫ e` at `x`,
   -- with one cutoff `χ` equal to `1` at `e (Φ x)`: the two chart symbols coincide.
   set e := chartAt (CoordinateSpace n) (Φ x)
