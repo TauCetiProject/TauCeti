@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.NonlinearCaratheodory.Basic
 public import TauCeti.Analysis.ODE.VariationOfConstants
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Checks for the nonlinear Carathéodory theorem
@@ -16,9 +17,9 @@ constants formula, and without the Lipschitz bound uniqueness fails.
 
 * **The linear field.** For `P` and `G` integrable on `[a, b]`, the field
   `F(t, x) = P(t) x + G(t)` satisfies the hypotheses of the nonlinear Carathéodory theorem: its
-  sections `t ↦ F(t, x)` are integrable on `[a, b]`
-  (`TauCeti.Examples.NonlinearCaratheodory.integrableOn_linear`), and `F t` is Lipschitz with the
-  integrable constant `L = ‖P‖` (`TauCeti.Examples.NonlinearCaratheodory.lipschitzWith_linear`).
+  sections `t ↦ F(t, x)` are integrable on `[a, b]` (`TauCeti.integrableOn_Icc_clm_apply_add`),
+  and `F t` is Lipschitz with the integrable constant `L = ‖P‖`
+  (`ContinuousLinearMap.lipschitzWith_add_const`).
   The bound `‖F(t, x₀)‖ ≤ m(t)` of the a priori estimate holds with `m = ‖P‖ ‖x₀‖ + ‖G‖`
   (`TauCeti.Examples.NonlinearCaratheodory.norm_linear_le`). The solution is that of the linear
   theory, the variation of constants formula `N_P(t, t₀) x₀ + ∫ s in t₀..t, N_P(t, s) G(s)`
@@ -44,18 +45,9 @@ section Linear
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {P : ℝ → E →L[ℝ] E} {G : ℝ → E}
   {a b t₀ : ℝ} {x₀ : E}
 
-/-- The linear field `x ↦ P(t) x + G(t)` is Lipschitz with constant `‖P(t)‖`. -/
-theorem lipschitzWith_linear (t : ℝ) : LipschitzWith ‖P t‖₊ fun x ↦ P t x + G t :=
-  ((P t).lipschitzWith.add (LipschitzWith.const (G t))).weaken (by simp)
-
 /-- The linear field satisfies `‖P(t) x₀ + G(t)‖ ≤ ‖P(t)‖ ‖x₀‖ + ‖G(t)‖`. -/
 theorem norm_linear_le (t : ℝ) : ‖P t x₀ + G t‖ ≤ ‖P t‖ * ‖x₀‖ + ‖G t‖ :=
   (norm_add_le _ _).trans (add_le_add_left ((P t).le_opNorm x₀) _)
-
-/-- The sections `t ↦ P(t) x + G(t)` of the linear field are integrable on `[a, b]`. -/
-theorem integrableOn_linear (hP : IntegrableOn P (Icc a b)) (hG : IntegrableOn G (Icc a b))
-    (x : E) : IntegrableOn (fun t ↦ P t x + G t) (Icc a b) :=
-  (hP.apply_continuousLinearMap x).add hG
 
 /-- **The linear field: the solution is that of the linear theory.** For `P` and `G` integrable
 on `[a, b]` and `t₀, t ∈ [a, b]`, a curve continuous on `[a, b]` solving
@@ -82,11 +74,12 @@ theorem exists_eq_propagator_apply_add_integral_of_linear [CompleteSpace E]
       ∀ t ∈ Icc a b, Y t = ODE.picard (fun s x ↦ P s x + G s) t₀ x₀ Y t ∧
         Y t = propagator P t t₀ x₀ + ∫ s in t₀..t, propagator P t s (G s) := by
   obtain ⟨Y, hY, h⟩ := exists_continuousOn_forall_mem_Icc_eq_picard_of_lipschitzWith
-    (F := fun s x ↦ P s x + G s) (L := fun t ↦ ‖P t‖₊) (integrableOn_linear hP hG)
+    (F := fun s x ↦ P s x + G s) (L := fun t ↦ ‖P t‖₊)
+    (fun _ ↦ integrableOn_Icc_clm_apply_add hP hG continuousOn_const)
     (by
       have h : IntegrableOn (fun t ↦ ‖P t‖) (Icc a b) := hP.norm
       simpa only [coe_nnNorm] using h)
-    (.of_forall fun t ↦ lipschitzWith_linear t) ht₀ x₀
+    (.of_forall fun t ↦ (P t).lipschitzWith_add_const (G t)) ht₀ x₀
   exact ⟨Y, hY, fun t ht ↦ ⟨h t ht, eq_propagator_apply_add_integral_of_linear hP hG ht₀ hY h ht⟩⟩
 
 end Linear
