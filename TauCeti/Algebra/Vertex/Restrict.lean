@@ -46,7 +46,7 @@ def restrict (A : VertexOperator R V) (hA : ∀ n : ℤ, ∀ v ∈ p, (A[[n]]) v
     VertexOperator R p :=
   of_coeff
     (fun m ↦
-      { toFun v := ⟨(A[[-m - 1]]) v, hA _ _ v.2⟩
+      { toFun v := ⟨(A[[-m - 1]]) v, hA _ _ v.property⟩
         map_add' _ _ := Subtype.ext (map_add _ _ _)
         map_smul' _ _ := Subtype.ext (map_smul _ _ _) })
     fun v ↦ by
@@ -81,10 +81,7 @@ theorem IsLocalOfOrder.restrict {A B : VertexOperator R V} {N : ℕ} (h : A.IsLo
     (A.restrict hA).IsLocalOfOrder (B.restrict hB) N := by
   refine isLocalOfOrder_iff.2 fun m n ↦ LinearMap.ext fun v ↦ Subtype.ext ?_
   have h' := LinearMap.congr_fun (isLocalOfOrder_iff.1 h m n) (v : V)
-  simp only [LinearMap.sum_apply, LinearMap.smul_apply, LinearMap.sub_apply, mul_apply_eq_comp,
-    LinearMap.zero_apply] at h' ⊢
-  simpa only [AddSubmonoidClass.coe_finsetSum, AddSubmonoidClass.coe_nsmul,
-    AddSubgroupClass.coe_zsmul, AddSubgroupClass.coe_sub, coe_ncoeff_restrict_apply,
-    ZeroMemClass.coe_zero] using h'
+  simp only [LinearMap.sum_apply, LinearMap.smul_apply] at h' ⊢
+  simpa using h'
 
 end VertexOperator

@@ -29,8 +29,8 @@ automorphism group.
 * `TauCeti.FormalVertexAxioms.Hom`: morphisms of formal vertex algebras, with `Hom.id` and
   `Hom.comp`.
 * `TauCeti.FormalVertexAxioms.Equiv`: equivalences of formal vertex algebras, with `Equiv.refl`,
-  `Equiv.symm`, `Equiv.trans` and `Equiv.ofBijective`; `Equiv.aut` is the group structure on
-  `A.Equiv A`.
+  `Equiv.symm`, `Equiv.trans`, `Equiv.ofHom` (from mutually inverse morphisms) and
+  `Equiv.ofBijective`; `Equiv.aut` is the group structure on `A.Equiv A`.
 
 ## Main results
 
@@ -139,6 +139,10 @@ theorem coe_id (A : FormalVertexAxioms R V) : ⇑(Hom.id A) = _root_.id := (rfl)
 
 theorem id_apply (A : FormalVertexAxioms R V) (v : V) : Hom.id A v = v := (rfl)
 
+@[simp]
+theorem toLinearMap_id (A : FormalVertexAxioms R V) : (Hom.id A).toLinearMap = LinearMap.id :=
+  (rfl)
+
 /-- The composition of two morphisms of formal vertex algebras. -/
 def comp (g : B.Hom C) (f : A.Hom B) : A.Hom C where
   toLinearMap := g.toLinearMap ∘ₗ f.toLinearMap
@@ -153,6 +157,10 @@ def comp (g : B.Hom C) (f : A.Hom B) : A.Hom C where
 theorem coe_comp (g : B.Hom C) (f : A.Hom B) : ⇑(g.comp f) = g ∘ f := (rfl)
 
 theorem comp_apply (g : B.Hom C) (f : A.Hom B) (v : V) : g.comp f v = g (f v) := (rfl)
+
+@[simp]
+theorem toLinearMap_comp (g : B.Hom C) (f : A.Hom B) :
+    (g.comp f).toLinearMap = g.toLinearMap ∘ₗ f.toLinearMap := (rfl)
 
 @[simp]
 theorem comp_id (f : A.Hom B) : f.comp (Hom.id A) = f := (rfl)
@@ -232,6 +240,13 @@ def toHom (e : A.Equiv B) : A.Hom B where
 @[simp]
 theorem coe_toHom (e : A.Equiv B) : ⇑e.toHom = e := (rfl)
 
+@[simp]
+theorem toLinearMap_toHom (e : A.Equiv B) :
+    e.toHom.toLinearMap = e.toLinearEquiv.toLinearMap := (rfl)
+
+theorem toHom_injective : Function.Injective (toHom : A.Equiv B → A.Hom B) :=
+  fun _ _ h ↦ ext (DFunLike.congr_fun h :)
+
 /-- An equivalence intertwines the translation operators. -/
 @[simp]
 theorem map_translation (e : A.Equiv B) (a : V) : e (A.translation a) = B.translation (e a) :=
@@ -248,6 +263,13 @@ def refl (A : FormalVertexAxioms R V) : A.Equiv A where
 theorem coe_refl (A : FormalVertexAxioms R V) : ⇑(Equiv.refl A) = _root_.id := (rfl)
 
 theorem refl_apply (A : FormalVertexAxioms R V) (v : V) : Equiv.refl A v = v := (rfl)
+
+@[simp]
+theorem toLinearEquiv_refl (A : FormalVertexAxioms R V) :
+    (Equiv.refl A).toLinearEquiv = LinearEquiv.refl R V := (rfl)
+
+@[simp]
+theorem toHom_refl (A : FormalVertexAxioms R V) : (Equiv.refl A).toHom = Hom.id A := (rfl)
 
 /-- The inverse of an equivalence of formal vertex algebras. -/
 @[symm]
@@ -272,6 +294,26 @@ theorem symm_apply_apply (e : A.Equiv B) (v : V) : e.symm (e v) = v :=
 @[simp]
 theorem symm_symm (e : A.Equiv B) : e.symm.symm = e := (rfl)
 
+@[simp]
+theorem toLinearEquiv_symm (e : A.Equiv B) : e.symm.toLinearEquiv = e.toLinearEquiv.symm := (rfl)
+
+@[simp]
+theorem refl_symm (A : FormalVertexAxioms R V) : (Equiv.refl A).symm = Equiv.refl A := (rfl)
+
+theorem symm_apply_eq (e : A.Equiv B) {v : V} {w : W} : e.symm w = v ↔ w = e v :=
+  e.toLinearEquiv.symm_apply_eq
+
+theorem eq_symm_apply (e : A.Equiv B) {v : V} {w : W} : v = e.symm w ↔ e v = w :=
+  e.toLinearEquiv.eq_symm_apply
+
+@[simp]
+theorem toHom_comp_symm (e : A.Equiv B) : e.toHom.comp e.symm.toHom = Hom.id B :=
+  Hom.ext e.apply_symm_apply
+
+@[simp]
+theorem symm_comp_toHom (e : A.Equiv B) : e.symm.toHom.comp e.toHom = Hom.id A :=
+  Hom.ext e.symm_apply_apply
+
 /-- The composition of two equivalences of formal vertex algebras. -/
 @[trans]
 def trans (e : A.Equiv B) (e' : B.Equiv C) : A.Equiv C where
@@ -283,6 +325,14 @@ def trans (e : A.Equiv B) (e' : B.Equiv C) : A.Equiv C where
 theorem coe_trans (e : A.Equiv B) (e' : B.Equiv C) : ⇑(e.trans e') = e' ∘ e := (rfl)
 
 theorem trans_apply (e : A.Equiv B) (e' : B.Equiv C) (v : V) : e.trans e' v = e' (e v) := (rfl)
+
+@[simp]
+theorem toLinearEquiv_trans (e : A.Equiv B) (e' : B.Equiv C) :
+    (e.trans e').toLinearEquiv = e.toLinearEquiv.trans e'.toLinearEquiv := (rfl)
+
+@[simp]
+theorem symm_trans (e : A.Equiv B) (e' : B.Equiv C) : (e.trans e').symm = e'.symm.trans e.symm :=
+  (rfl)
 
 @[simp]
 theorem toHom_trans (e : A.Equiv B) (e' : B.Equiv C) :
@@ -310,6 +360,34 @@ theorem coe_ofBijective (f : A.Hom B) (hf : Function.Bijective f) : ⇑(ofBiject
 @[simp]
 theorem toHom_ofBijective (f : A.Hom B) (hf : Function.Bijective f) :
     (ofBijective f hf).toHom = f := (rfl)
+
+@[simp]
+theorem ofBijective_symm_apply_apply (f : A.Hom B) (hf : Function.Bijective f) (v : V) :
+    (ofBijective f hf).symm (f v) = v :=
+  (ofBijective f hf).symm_apply_apply v
+
+@[simp]
+theorem apply_ofBijective_symm_apply (f : A.Hom B) (hf : Function.Bijective f) (w : W) :
+    f ((ofBijective f hf).symm w) = w :=
+  (ofBijective f hf).apply_symm_apply w
+
+/-- Mutually inverse morphisms of formal vertex algebras form an equivalence. -/
+def ofHom (f : A.Hom B) (g : B.Hom A) (h₁ : g.comp f = Hom.id A) (h₂ : f.comp g = Hom.id B) :
+    A.Equiv B where
+  toLinearEquiv := LinearEquiv.ofLinearMap f.toLinearMap g.toLinearMap
+    (congrArg Hom.toLinearMap h₂) (congrArg Hom.toLinearMap h₁)
+  map_vacuum' := f.map_vacuum'
+  map_ncoeff_field_apply' := f.map_ncoeff_field_apply'
+
+@[simp]
+theorem coe_ofHom (f : A.Hom B) (g : B.Hom A) (h₁ h₂) : ⇑(ofHom f g h₁ h₂) = f := (rfl)
+
+@[simp]
+theorem toHom_ofHom (f : A.Hom B) (g : B.Hom A) (h₁ h₂) : (ofHom f g h₁ h₂).toHom = f := (rfl)
+
+@[simp]
+theorem symm_ofHom (f : A.Hom B) (g : B.Hom A) (h₁ h₂) :
+    (ofHom f g h₁ h₂).symm = ofHom g f h₂ h₁ := (rfl)
 
 @[simp]
 theorem trans_refl (e : A.Equiv B) : e.trans (Equiv.refl B) = e := (rfl)
@@ -347,6 +425,8 @@ instance : IsMulApplyEqComp (A.Equiv A) :=
   ⟨fun e e' v ↦ trans_apply e' e v⟩
 
 @[simp]
+theorem coe_inv (e : A.Equiv A) : ⇑(e⁻¹) = ⇑e.symm := (rfl)
+
 theorem inv_apply (e : A.Equiv A) (v : V) : e⁻¹ v = e.symm v := (rfl)
 
 end Equiv

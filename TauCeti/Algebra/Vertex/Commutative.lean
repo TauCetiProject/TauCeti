@@ -212,7 +212,8 @@ theorem ncoeff_neg_one_formalVertexAxioms_field_apply (a b : V) :
 
 section Hom
 
-variable {W : Type*} [CommRing W] [Algebra R W] [Algebra ℚ W] (D' : Derivation R W W)
+variable {W U : Type*} [CommRing W] [Algebra R W] [Algebra ℚ W] (D' : Derivation R W W)
+  [CommRing U] [Algebra R U] [Algebra ℚ U] (D'' : Derivation R U U)
 
 /-- An `R`-algebra homomorphism intertwining the derivations is a morphism of the commutative
 vertex algebras. -/
@@ -232,6 +233,20 @@ def formalVertexAxiomsHom (φ : V →ₐ[R] W) (hφ : ∀ v, φ (D v) = D' (φ v
 theorem coe_formalVertexAxiomsHom (φ : V →ₐ[R] W) (hφ : ∀ v, φ (D v) = D' (φ v)) :
     ⇑(D.formalVertexAxiomsHom D' φ hφ) = φ := (rfl)
 
+@[simp]
+theorem formalVertexAxiomsHom_id :
+    D.formalVertexAxiomsHom D (AlgHom.id R V) (fun _ ↦ by simp) =
+      TauCeti.FormalVertexAxioms.Hom.id D.formalVertexAxioms := by
+  ext
+  simp
+
+theorem formalVertexAxiomsHom_comp (ψ : W →ₐ[R] U) (hψ : ∀ w, ψ (D' w) = D'' (ψ w))
+    (φ : V →ₐ[R] W) (hφ : ∀ v, φ (D v) = D' (φ v)) :
+    D.formalVertexAxiomsHom D'' (ψ.comp φ) (fun v ↦ by simp [hφ, hψ]) =
+      (D'.formalVertexAxiomsHom D'' ψ hψ).comp (D.formalVertexAxiomsHom D' φ hφ) := by
+  ext
+  simp
+
 variable {D D'} in
 /-- A morphism of the commutative vertex algebras is an `R`-algebra homomorphism: it preserves
 the unit `|0⟩ = 1` and the product `a₍₋₁₎ b = a b`. -/
@@ -245,24 +260,55 @@ variable {D D'} in
 theorem _root_.TauCeti.FormalVertexAxioms.Hom.coe_toAlgHom
     (f : D.formalVertexAxioms.Hom D'.formalVertexAxioms) : ⇑f.toAlgHom = f := (rfl)
 
+@[simp]
+theorem _root_.TauCeti.FormalVertexAxioms.Hom.toAlgHom_id :
+    (TauCeti.FormalVertexAxioms.Hom.id D.formalVertexAxioms).toAlgHom = AlgHom.id R V := by
+  ext
+  simp
+
+variable {D D' D''} in
+@[simp]
+theorem _root_.TauCeti.FormalVertexAxioms.Hom.toAlgHom_comp
+    (g : D'.formalVertexAxioms.Hom D''.formalVertexAxioms)
+    (f : D.formalVertexAxioms.Hom D'.formalVertexAxioms) :
+    (g.comp f).toAlgHom = g.toAlgHom.comp f.toAlgHom := by
+  ext
+  simp
+
+@[simp]
+theorem toAlgHom_formalVertexAxiomsHom (φ : V →ₐ[R] W) (hφ : ∀ v, φ (D v) = D' (φ v)) :
+    (D.formalVertexAxiomsHom D' φ hφ).toAlgHom = φ := by
+  ext
+  simp
+
+@[simp]
+theorem formalVertexAxiomsHom_toAlgHom (f : D.formalVertexAxioms.Hom D'.formalVertexAxioms)
+    (hf : ∀ v, f.toAlgHom (D v) = D' (f.toAlgHom v)) :
+    D.formalVertexAxiomsHom D' f.toAlgHom hf = f := by
+  ext
+  simp
+
 /-- Morphisms of the commutative vertex algebras of differential algebras are exactly the
 `R`-algebra homomorphisms intertwining the derivations. -/
 def formalVertexAxiomsHomEquiv :
     D.formalVertexAxioms.Hom D'.formalVertexAxioms ≃
       {φ : V →ₐ[R] W // ∀ v, φ (D v) = D' (φ v)} where
   toFun f := ⟨f.toAlgHom, fun v ↦ by simpa using f.map_translation v⟩
-  invFun φ := D.formalVertexAxiomsHom D' φ.1 φ.2
+  invFun φ := D.formalVertexAxiomsHom D' φ.val φ.property
   left_inv _ := TauCeti.FormalVertexAxioms.Hom.ext fun _ ↦ rfl
   right_inv _ := Subtype.ext (AlgHom.ext fun _ ↦ rfl)
 
 @[simp]
+theorem formalVertexAxiomsHomEquiv_apply (f : D.formalVertexAxioms.Hom D'.formalVertexAxioms) :
+    (D.formalVertexAxiomsHomEquiv D' f : V →ₐ[R] W) = f.toAlgHom := (rfl)
+
 theorem coe_formalVertexAxiomsHomEquiv_apply
     (f : D.formalVertexAxioms.Hom D'.formalVertexAxioms) :
     ⇑(D.formalVertexAxiomsHomEquiv D' f : V →ₐ[R] W) = f := (rfl)
 
 @[simp]
 theorem formalVertexAxiomsHomEquiv_symm_apply (φ : {φ : V →ₐ[R] W // ∀ v, φ (D v) = D' (φ v)}) :
-    (D.formalVertexAxiomsHomEquiv D').symm φ = D.formalVertexAxiomsHom D' φ.1 φ.2 := (rfl)
+    (D.formalVertexAxiomsHomEquiv D').symm φ = D.formalVertexAxiomsHom D' φ.val φ.property := (rfl)
 
 end Hom
 
