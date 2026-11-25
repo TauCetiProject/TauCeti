@@ -144,12 +144,8 @@ def crossingComponentOfHalfEdge (h : Fin (4 * n)) : D.CrossingComponent :=
 /-- Two half-edges in the same directed `componentPerm` orbit have the same orientation. -/
 theorem orientation_eq_of_sameCycle_componentPerm {x y : Fin (4 * n)}
     (h : D.toPDCode.componentPerm.SameCycle x y) :
-    D.orientation x = D.orientation y := by
-  obtain ⟨k, rfl⟩ := h.exists_nat_pow_eq
-  clear h
-  induction k with
-  | zero => rfl
-  | succ k ih => rw [pow_succ', Perm.mul_apply, D.orientation_componentPerm, ih]
+    D.orientation x = D.orientation y :=
+  h.apply_eq_of_apply_eq D.orientation_componentPerm
 
 private theorem crossingComponentOfHalfEdge_eq_iff_of_outgoing {x y : Fin (4 * n)}
     (hx : D.orientation x = true) (hy : D.orientation y = true) :

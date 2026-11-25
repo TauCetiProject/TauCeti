@@ -54,8 +54,6 @@ hence is nonzero, so `Khⁱʲ(D; R)` is nonzero in at least one bidegree `(i, j)
 
 ## Main results
 
-* `TauCeti.OrientedPDCode.enhancedStateEulerSum_eq_sum_cubeState`: `E(D)` written over subsets
-  `S : Finset (Fin n)` of `B`-smoothed crossings.
 * `TauCeti.OrientedPDCode.enhancedStateEulerSum_changeCrossing`: crossing-change invariance of
   `E(D)`.
 * `TauCeti.OrientedPDCode.enhancedStateEulerSum_congr_toPDCode`: reorientation invariance of `E(D)`
@@ -65,22 +63,16 @@ hence is nonzero, so `Khⁱʲ(D; R)` is nonzero in at least one bidegree `(i, j)
   recurrence across arbitrary oriented smoothings of a crossing.
 * `TauCeti.OrientedPDCode.enhancedStateEulerSum_eq_two_pow_componentCount`: `E(D) = 2 ^ c` for
   every planar oriented code `D` with `c` components.
-* `TauCeti.OrientedPDCode.enhancedStateSum_ne_zero`: `D.enhancedStateSum ≠ 0` for every planar
-  oriented code `D`, including the empty diagram.
-* `TauCeti.OrientedPDCode.eval₂_neg_one_jonesPolynomial` and
-  `TauCeti.OrientedPDCode.jonesPolynomial_ne_zero`: for a nonempty planar code, evaluating the
-  Jones polynomial at `t ^ (1/2) = -1` gives `2 ^ (c - 1)`, so `D.jonesPolynomial ≠ 0`.
+* `TauCeti.OrientedPDCode.eval₂_neg_one_jonesPolynomial`: for a nonempty planar code, evaluating
+  the Jones polynomial at `t ^ (1/2) = -1` gives `2 ^ (c - 1)`.
 * `TauCeti.OrientedPDCode.eval₂_one_khovanovEulerChar` and
   `TauCeti.OrientedPDCode.khovanovEulerChar_ne_zero`: over any Noetherian commutative ring `R`
   satisfying rank-nullity, `χ_q Kh(D; R)` evaluates to `2 ^ c` at `q = 1` and is nonzero,
   including for the empty diagram.
-* `TauCeti.OrientedPDCode.two_pow_componentCount_le_sum_finrank_khovanovHomology`: the total rank
-  of `Kh(D; R)` is at least `2 ^ c`.
-* `TauCeti.OrientedPDCode.exists_mod_two_eq_finrank_khovanovHomology_pos`,
-  `TauCeti.OrientedPDCode.exists_finrank_khovanovHomology_pos`, and
+* `TauCeti.OrientedPDCode.exists_finrank_khovanovHomology_pos` and
   `TauCeti.OrientedPDCode.exists_not_isZero_khovanovHomology` (with explicit specializations to `ℤ`
-  and `ℚ`): Khovanov homology is nonzero (in a quantum degree congruent to `c` modulo `2`) for
-  every planar oriented link diagram, including the empty diagram.
+  and `ℚ`): Khovanov homology is nonzero for every planar oriented link diagram, including the
+  empty diagram.
 
 ## References
 
@@ -102,15 +94,7 @@ universe u
 
 variable {n : ℕ}
 
-/-! ### Cube-subset sum and crossing-change invariance -/
-
-/-- `enhancedStateEulerSum` written over subsets `S : Finset (Fin n)` of `B`-smoothed crossings. -/
-theorem enhancedStateEulerSum_eq_sum_cubeState (D : OrientedPDCode n) :
-    D.enhancedStateEulerSum = ∑ S : Finset (Fin n),
-      (-1 : ℤ) ^ (#S + D.negativeCrossingCount) *
-        2 ^ D.toPDCode.stateLoopCount (PDCode.cubeState S) := by
-  rw [enhancedStateEulerSum_def, ← Fintype.sum_bijective _ PDCode.cubeState_bijective _ _ fun S ↦ by
-    rw [PDCode.filter_cubeState_eq_false]]
+/-! ### Crossing-change invariance -/
 
 /-- **Crossing-change invariance of `E(D)`.** Switching crossing `i` between over and under leaves
 `E(D)` unchanged, without any planarity assumption. -/
@@ -243,15 +227,6 @@ theorem eval₂_one_enhancedStateSum_eq_two_pow (D : OrientedPDCode n) (hD : D.t
     eval₂ (RingHom.id ℤ) 1 D.enhancedStateSum = (2 : ℤ) ^ D.componentCount := by
   rw [D.eval₂_one_enhancedStateSum, D.enhancedStateEulerSum_eq_two_pow_componentCount hD]
 
-/-- **The enhanced state sum of every planar oriented diagram (including the empty diagram) is
-nonzero.** -/
-theorem enhancedStateSum_ne_zero (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar) :
-    D.enhancedStateSum ≠ 0 := by
-  intro hzero
-  have heval := D.eval₂_one_enhancedStateSum_eq_two_pow hD
-  rw [hzero, map_zero] at heval
-  exact (by positivity : (0 : ℤ) < (2 : ℤ) ^ D.componentCount).ne heval
-
 /-- **Evaluating the Jones polynomial of a nonempty planar diagram at `t ^ (1/2) = -1` gives
 `2 ^ (c - 1)`** (Jones 1985, Theorems 14–15; Lickorish 1997, Chapter 3). -/
 theorem eval₂_neg_one_jonesPolynomial (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar)
@@ -275,14 +250,6 @@ theorem eval₂_neg_one_jonesPolynomial (D : OrientedPDCode n) (hD : D.toPDCode.
   norm_num at hsum
   omega
 
-/-- **The Jones polynomial of every nonempty planar oriented diagram is nonzero.** -/
-theorem jonesPolynomial_ne_zero (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar)
-    (hpos : 0 < D.toPDCode.componentCount) : D.jonesPolynomial ≠ 0 := by
-  intro hzero
-  have heval := D.eval₂_neg_one_jonesPolynomial hD hpos
-  rw [hzero, map_zero] at heval
-  exact (by positivity : (0 : ℤ) < (2 : ℤ) ^ (D.componentCount - 1)).ne heval
-
 /-! ### Graded Euler characteristic and nonvanishing of Khovanov homology -/
 
 section Homology
@@ -300,59 +267,10 @@ theorem eval₂_one_khovanovEulerChar :
 diagram (including the empty diagram) over any Noetherian commutative ring `R` satisfying
 rank-nullity. -/
 theorem khovanovEulerChar_ne_zero : D.khovanovEulerChar hD R ≠ 0 := by
-  rw [D.khovanovEulerChar_eq_enhancedStateSum hD R]
-  exact D.enhancedStateSum_ne_zero hD
-
-/-- **Total rank lower bound for Khovanov homology**: the sum of `Module.finrank R (Khⁱʲ(D; R))`
-over the active quantum support and normalized cochain interval `[-n₋, n₊]` is at least
-`2 ^ D.componentCount`. -/
-theorem two_pow_componentCount_le_sum_finrank_khovanovHomology :
-    2 ^ D.componentCount ≤
-      ∑ j ∈ (D.khovanovEulerChar hD R).coeff.support,
-        ∑ i ∈ Finset.Icc (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount,
-          Module.finrank R (D.khovanovHomology hD R i j) := by
+  intro hzero
   have heval := D.eval₂_one_khovanovEulerChar hD R
-  rw [← Subsingleton.elim (algebraMap ℤ ℤ) (RingHom.id ℤ), ← laurentEval_eq_eval₂,
-    laurentEval_one_eq_sum, Finsupp.sum] at heval
-  have hle : ∑ j ∈ (D.khovanovEulerChar hD R).coeff.support, (D.khovanovEulerChar hD R).coeff j ≤
-      ∑ j ∈ (D.khovanovEulerChar hD R).coeff.support,
-        ∑ i ∈ Finset.Icc (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount,
-          (Module.finrank R (D.khovanovHomology hD R i j) : ℤ) := by
-    refine Finset.sum_le_sum fun j _ ↦ ?_
-    rw [D.coeff_khovanovEulerChar_eq_sum hD R j]
-    refine Finset.sum_le_sum fun i _ ↦ ?_
-    have hsign : (i.negOnePow : ℤ) ≤ 1 := by
-      have habs := Int.abs_negOnePow i
-      exact le_of_abs_le (by omega)
-    simpa using mul_le_mul_of_nonneg_right hsign
-      (Nat.cast_nonneg (Module.finrank R (D.khovanovHomology hD R i j)))
-  rw [heval] at hle
-  exact_mod_cast hle
-
-/-- **Khovanov homology has positive rank in at least one bidegree `(i, j)` with `i ∈ [-n₋, n₊]`
-and `j ≡ c (mod 2)`**, for every planar oriented diagram (including the empty diagram) over any
-Noetherian commutative ring `R` satisfying rank-nullity. -/
-theorem exists_mod_two_eq_finrank_khovanovHomology_pos :
-    ∃ i ∈ Finset.Icc (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount,
-      ∃ j : ℤ, j % 2 = (D.componentCount : ℤ) % 2 ∧
-        0 < Module.finrank R (D.khovanovHomology hD R i j) := by
-  have hne := D.khovanovEulerChar_ne_zero hD R
-  have hexJ : ∃ j : ℤ, (D.khovanovEulerChar hD R).coeff j ≠ 0 := by
-    by_contra! hall
-    exact hne (AddMonoidAlgebra.coeff_injective (Finsupp.ext fun j ↦ by simpa using hall j))
-  obtain ⟨j, hj⟩ := hexJ
-  have hmod : j % 2 = (D.componentCount : ℤ) % 2 := by
-    by_contra hmod
-    rw [D.khovanovEulerChar_eq_enhancedStateSum hD R, D.coeff_enhancedStateSum ℤ j] at hj
-    refine hj (Finset.sum_eq_zero fun s _ ↦ ?_)
-    rw [D.circleQuantumGrading_piece_eq_bot_of_mod_two_ne hD ℤ s hmod,
-      finrank_bot, Nat.cast_zero, smul_zero]
-  rw [D.coeff_khovanovEulerChar_eq_sum hD R j] at hj
-  obtain ⟨i, hi, hterm⟩ := Finset.exists_ne_zero_of_sum_ne_zero hj
-  have hpos : 0 < Module.finrank R (D.khovanovHomology hD R i j) := by
-    by_contra h0
-    simp [Nat.eq_zero_of_not_pos h0] at hterm
-  exact ⟨i, hi, j, hmod, hpos⟩
+  rw [hzero, map_zero] at heval
+  exact (by positivity : (0 : ℤ) < (2 : ℤ) ^ D.componentCount).ne heval
 
 /-- **Khovanov homology has positive rank in at least one bidegree `(i, j)` with `i ∈ [-n₋, n₊]`**,
 for every planar oriented diagram (including the empty diagram) over any Noetherian commutative
@@ -360,8 +278,14 @@ ring `R` satisfying rank-nullity. -/
 theorem exists_finrank_khovanovHomology_pos :
     ∃ i ∈ Finset.Icc (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount,
       ∃ j : ℤ, 0 < Module.finrank R (D.khovanovHomology hD R i j) := by
-  obtain ⟨i, hi, j, -, hpos⟩ := D.exists_mod_two_eq_finrank_khovanovHomology_pos hD R
-  exact ⟨i, hi, j, hpos⟩
+  by_contra h
+  refine D.khovanovEulerChar_ne_zero hD R
+    (AddMonoidAlgebra.coeff_injective <| Finsupp.ext fun j ↦ ?_)
+  rw [D.coeff_khovanovEulerChar_eq_sum hD R j]
+  refine Finset.sum_eq_zero fun i hi ↦ ?_
+  have hzero : Module.finrank R (D.khovanovHomology hD R i j) = 0 :=
+    Nat.eq_zero_of_not_pos fun hpos ↦ h ⟨i, hi, j, hpos⟩
+  simp [hzero]
 
 /-- **Nonvanishing of Khovanov homology**: for every planar oriented diagram (including the empty
 diagram) over any Noetherian commutative ring `R` satisfying rank-nullity, `Khⁱʲ(D; R)` is nonzero

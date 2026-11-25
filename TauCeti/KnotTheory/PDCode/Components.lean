@@ -21,9 +21,9 @@ The orbits of `componentPermOutgoing` correspond to the crossing-bearing compone
 unrestricted `componentPerm` preserves orientation and therefore has separate incoming and
 outgoing orbits for each such component. Conjugating `componentPerm` by `crossingTurn` inverts it
 (`TauCeti.PDCode.crossingTurn_permCongr_componentPerm`), carrying each directed orbit to the
-reversed orbit (`TauCeti.PDCode.sameCycle_componentPerm_crossingTurn_iff`,
-`TauCeti.PDCode.componentCycleReversal`) with no half-edge in the same directed orbit as its
-opposite-slot partner (`TauCeti.PDCode.not_sameCycle_componentPerm_crossingTurn`). Conversely,
+reversed orbit (`TauCeti.PDCode.sameCycle_componentPerm_crossingTurn_iff`) with no half-edge in
+the same directed orbit as its opposite-slot partner
+(`TauCeti.PDCode.not_sameCycle_componentPerm_crossingTurn`). Conversely,
 every unoriented `PDCode` admits a consistent orientation on its crossing-bearing components
 together with any prescribed crossing-free circle orientations (`TauCeti.PDCode.orient`).
 
@@ -168,7 +168,7 @@ theorem even_orbitCount_componentPerm (D : PDCode n) :
 theorem crossingTurn_permCongr_componentPerm (D : PDCode n) :
     D.crossingTurn.permCongr D.componentPerm = D.componentPerm⁻¹ := by
   have hsymm : D.crossingTurn.symm = D.crossingTurn :=
-    Equiv.ext fun z ↦ D.crossingTurn.symm_apply_eq.mpr (D.crossingTurn_apply_apply z).symm
+    Function.Involutive.symm_eq_self_of_involutive _ D.isPerfectMatching_crossingTurn.involutive
   refine mul_eq_one_iff_eq_inv.mp (Equiv.ext fun x ↦ ?_)
   rw [Perm.mul_apply, permCongr_apply, hsymm, componentPerm_apply, componentPerm_apply,
     crossingTurn_apply_apply, Perm.one_apply]
@@ -194,51 +194,6 @@ theorem not_sameCycle_componentPerm_crossingTurn (D : PDCode n) (x : Fin (4 * n)
     rw [← D.componentPerm_def]
     exact h.trans hedge.symm
   exact D.isPerfectMatching_crossingTurn.not_sameCycle_self_apply D.edgePair.prop x hself
-
-private def componentOrbitEquiv (D : PDCode n) :
-    Quotient (SameCycle.setoid (D.crossingTurn * D.edgePair.val)) ≃
-      Quotient (SameCycle.setoid D.componentPerm) :=
-  Quotient.congr (Equiv.refl _) fun _ _ ↦ by rw [componentPerm_def]; rfl
-
-private theorem componentOrbitEquiv_mk (D : PDCode n) (x : Fin (4 * n)) :
-    D.componentOrbitEquiv ⟦x⟧ = ⟦x⟧ :=
-  rfl
-
-private theorem componentOrbitEquiv_symm_mk (D : PDCode n) (x : Fin (4 * n)) :
-    D.componentOrbitEquiv.symm ⟦x⟧ = ⟦x⟧ :=
-  (Equiv.symm_apply_eq _).mpr rfl
-
-/-- **Reversal of the directed component orbits**: following the other end of an arc carries each
-directed traversal orbit of `D.componentPerm` to the opposite traversal of the same component. -/
-def componentCycleReversal (D : PDCode n) :
-    Perm (Quotient (SameCycle.setoid D.componentPerm)) :=
-  D.componentOrbitEquiv.permCongr
-    (D.isPerfectMatching_crossingTurn.involutive.cycleReversal D.edgePair.apply_apply)
-
-/-- Reversal sends the directed orbit of a half-edge to that of the other end of its arc. -/
-@[simp] theorem componentCycleReversal_mk (D : PDCode n) (x : Fin (4 * n)) :
-    D.componentCycleReversal ⟦x⟧ = ⟦D.edgePair.val x⟧ :=
-  -- Term proof: `rw` rejects `D.edgePair.val` before unfolding `PerfectMatching` at implicit
-  -- transparency, as in `TauCeti.PDCode.stateCycleReversal_mk`.
-  (Equiv.permCongr_apply _ _ _).trans <|
-    (congrArg _ ((congrArg _ (D.componentOrbitEquiv_symm_mk x)).trans
-      (Function.Involutive.cycleReversal_mk _ _ x))).trans (D.componentOrbitEquiv_mk _)
-
-/-- Reversal also sends the directed orbit of a half-edge to that of its opposite crossing slot. -/
-theorem componentCycleReversal_mk_eq_crossingTurn (D : PDCode n) (x : Fin (4 * n)) :
-    D.componentCycleReversal ⟦x⟧ = ⟦D.crossingTurn x⟧ := by
-  rw [componentCycleReversal_mk]
-  apply Quotient.sound
-  have h : D.componentPerm (D.edgePair.val x) = D.crossingTurn x :=
-    (D.componentPerm_apply (D.edgePair.val x)).trans
-      (congrArg D.crossingTurn (D.edgePair.apply_apply x))
-  exact ⟨(1 : ℕ), by rw [zpow_natCast, pow_one]; exact h⟩
-
-/-- Reversal of directed component orbits is a fixed-point-free involution. -/
-theorem isPerfectMatching_componentCycleReversal (D : PDCode n) :
-    IsPerfectMatching D.componentCycleReversal :=
-  PerfectMatching.isPerfectMatching_permCongr _
-    (D.isPerfectMatching_crossingTurn.isPerfectMatching_cycleReversal D.edgePair.prop)
 
 /-- The number of crossing-bearing components is half the number of directed traversal orbits. -/
 theorem crossingComponentCount_def (D : PDCode n) :
