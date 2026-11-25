@@ -54,6 +54,8 @@ No topology is put on the colimit of the spaces `𝓛ⁿ_x M`: the statement is 
 
 ## Main results
 
+* `TauCeti.Manifold.exists_basedCyclicDistanceCutCocone_ι_app_comp_homotopic`: a compact family of
+  based loops is homotopic to the broken geodesics through its samples at a late enough stage.
 * `TauCeti.Manifold.exists_comp_homotopic_basedCyclicDistanceCutFunctor_map`: sampling a compact
   family of based loops containing broken geodesics recovers the tuples of a later stage, up to
   homotopy.
@@ -167,6 +169,21 @@ theorem exists_comp_homotopic_basedCyclicDistanceCutFunctor_map (hpos : 0 < δ 0
     (cutoff_sub_le_of_forall_le_succ hδ n (N + 1)) hm x).comp
       (ContinuousMap.Homotopic.refl _)).symm
 
+/-- **Compact families of based loops are based broken geodesics up to homotopy.** Let the
+cut-offs `δ n i < r` grow from each stage to the next and start positive. Every compact family `K`
+of Moore loops based at `x` maps to some based distance cut `𝓛ⁿ_x M`, by sampling, so that the
+broken geodesics `geoⁿ ∘ e` through the samples are homotopic to the inclusion of `K`. -/
+theorem exists_basedCyclicDistanceCutCocone_ι_app_comp_homotopic (hpos : 0 < δ 0 0)
+    (hlt : ∀ n i, δ n i < r) (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) {x : M}
+    {K : Set (MooreLoopSpace M x)} (hK : IsCompact K) :
+    ∃ (n : ℕ) (e : C(K, basedCyclicDistanceCut (X := M) (δ n) x)),
+      (((basedCyclicDistanceCutCocone hr hlt hpos.le hδ x).ι.app n).hom.comp e).Homotopic
+        (ContinuousMap.subtypeVal K) := by
+  obtain ⟨N, hN⟩ := exists_basedCyclicDistanceCutBrokenGeodesic_comp_homotopic hr hK hpos
+  obtain ⟨e, -, he⟩ := hN (N + 1) (by omega) (δ (N + 1))
+    (fun i ↦ cutoff_le_of_forall_le_succ_of_lt hδ N.succ_pos 0 i) (hlt (N + 1))
+  exact ⟨N + 1, e, by rwa [basedCyclicDistanceCutCocone_ι_app_hom]⟩
+
 /-- **The singular homology of the based loop space is the colimit of the singular homology of the
 based distance cuts.** For cut-offs `δ n i < r` which grow from each stage to the next,
 `δ n i ≤ δ (n + 1) j`, and with `δ 0 0` positive, the broken-geodesic maps
@@ -180,12 +197,7 @@ def isColimitMapCoconeSingularHomologyBasedCyclicDistanceCutCocone {A : Type u} 
     IsColimit (((singularHomologyFunctor (ModuleCat.{u} A) m).obj V).mapCocone
       (basedCyclicDistanceCutCocone hr hlt hpos.le hδ x)) :=
   isColimitMapCoconeSingularHomologyOfCompactApprox V m _
-    (fun K hK ↦ by
-      -- Compact families of based loops are homotopic to broken geodesics through their samples.
-      obtain ⟨N, hN⟩ := exists_basedCyclicDistanceCutBrokenGeodesic_comp_homotopic hr hK hpos
-      obtain ⟨e, -, he⟩ := hN (N + 1) (by omega) (δ (N + 1))
-        (fun i ↦ cutoff_le_of_forall_le_succ_of_lt hδ N.succ_pos 0 i) (hlt (N + 1))
-      exact ⟨N + 1, e, by rwa [basedCyclicDistanceCutCocone_ι_app_hom]⟩)
+    (fun _ hK ↦ exists_basedCyclicDistanceCutCocone_ι_app_comp_homotopic hr hpos hlt hδ hK)
     fun n K L _ hL hKL ↦ by
       -- The leg of the cocone at `n` is `geoⁿ`.
       have hKL' : MapsTo (basedCyclicDistanceCutBrokenGeodesic hr (hlt n) x) K L := hKL
