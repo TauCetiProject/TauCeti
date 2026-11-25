@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.BesselPotential
-import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.Distribution.Sobolev
+import TauCeti.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 
 /-!
@@ -424,6 +424,18 @@ theorem besselPotentialInclusion_ofMemBesselPotential (h : r ≤ s)
       A.ofMemBesselPotential (hT.of_le h) :=
   A.besselPotentialToDistribution_injective (by simp)
 
+@[simp]
+theorem besselPotentialInclusion_self (u : A.besselPotentialSpace s p) :
+    A.besselPotentialInclusion le_rfl u = u :=
+  A.besselPotentialToDistribution_injective (by simp)
+
+@[simp]
+theorem besselPotentialInclusion_besselPotentialInclusion {t : ℝ} (h₁ : r ≤ s) (h₂ : t ≤ r)
+    (u : A.besselPotentialSpace s p) :
+    A.besselPotentialInclusion h₂ (A.besselPotentialInclusion h₁ u) =
+      A.besselPotentialInclusion (h₂.trans h₁) u :=
+  A.besselPotentialToDistribution_injective (by simp)
+
 theorem besselPotentialInclusion_injective (h : r ≤ s) :
     Function.Injective (A.besselPotentialInclusion (p := p) h) := fun u u' huu' ↦
   A.besselPotentialToDistribution_injective <| by
@@ -471,6 +483,29 @@ theorem toDistribution_besselPotentialSpaceTwoEquivSobolevSpace (u : A.besselPot
     A.toDistribution s (A.besselPotentialSpaceTwoEquivSobolevSpace s u) =
       A.besselPotentialToDistribution s 2 u := by
   simp [toDistribution_apply, besselPotentialToDistribution_apply]
+
+@[simp]
+theorem besselPotentialSpaceTwoEquivSobolevSpace_ofMemBesselPotential
+    {T : BundleTest I F V →L_c[ℝ] ℝ} (hT : A.MemBesselPotential s 2 T) :
+    A.besselPotentialSpaceTwoEquivSobolevSpace s (A.ofMemBesselPotential hT) =
+      A.ofMemSobolev s (A.memBesselPotential_two_iff_memSobolev.1 hT) :=
+  A.toDistribution_injective s (by simp)
+
+/-- The inverse isomorphism `H^s ≃ H^{s,2}` does not change the represented functional. -/
+@[simp]
+theorem besselPotentialToDistribution_besselPotentialSpaceTwoEquivSobolevSpace_symm
+    (v : A.sobolevSpace s) :
+    A.besselPotentialToDistribution s 2 ((A.besselPotentialSpaceTwoEquivSobolevSpace s).symm v) =
+      A.toDistribution s v := by
+  rw [← toDistribution_besselPotentialSpaceTwoEquivSobolevSpace,
+    ContinuousLinearEquiv.apply_symm_apply]
+
+@[simp]
+theorem besselPotentialSpaceTwoEquivSobolevSpace_symm_ofMemSobolev
+    {T : BundleTest I F V →L_c[ℝ] ℝ} (hT : A.MemSobolev s T) :
+    (A.besselPotentialSpaceTwoEquivSobolevSpace s).symm (A.ofMemSobolev s hT) =
+      A.ofMemBesselPotential (A.memBesselPotential_two_iff_memSobolev.2 hT) :=
+  A.besselPotentialToDistribution_injective (by simp)
 
 end BesselPotentialSpace
 
@@ -561,27 +596,6 @@ private theorem besselPotentialToDistribution_besselPotentialSpaceLinearEquiv
       A.besselPotentialToDistribution s p u := by
   simp [besselPotentialSpaceLinearEquiv]
 
-/-- The identification of the Bessel-potential spaces of two square chart partitions has a closed
-graph: its graph is the set of pairs representing the same functional, which is closed because the
-represented functionals depend continuously on the elements, test by test. -/
-private theorem isClosed_graph_besselPotentialSpaceLinearEquiv
-    (B : SquareChartPartition κ I F V) (s : ℝ) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
-    IsClosed ((A.besselPotentialSpaceLinearEquiv B s hp hp_top).toLinearMap.graph :
-      Set (A.besselPotentialSpace s p × B.besselPotentialSpace s p)) := by
-  have h : ((A.besselPotentialSpaceLinearEquiv B s hp hp_top).toLinearMap.graph :
-      Set (A.besselPotentialSpace s p × B.besselPotentialSpace s p)) =
-      ⋂ φ : BundleTest I F V, {q | B.besselPotentialToDistribution s p q.2 φ =
-        A.besselPotentialToDistribution s p q.1 φ} := by
-    ext q
-    simp only [SetLike.mem_coe, LinearMap.mem_graph_iff, LinearEquiv.coe_coe, mem_iInter,
-      Set.mem_ofPred_eq, ← DFunLike.ext_iff]
-    rw [← A.besselPotentialToDistribution_besselPotentialSpaceLinearEquiv B s hp hp_top q.1]
-    exact B.besselPotentialToDistribution_injective.eq_iff.symm
-  rw [h]
-  exact isClosed_iInter fun φ ↦ isClosed_eq
-    ((B.continuous_besselPotentialToDistribution_apply s p φ).comp continuous_snd)
-    ((A.continuous_besselPotentialToDistribution_apply s p φ).comp continuous_fst)
-
 /-- **Equivalence of the Bessel-potential spaces of two partitions.** Let `1 < p < ∞`. The
 Bessel-potential spaces `H^{s,p}` of two square chart partitions `A` and `B` of `V` are isomorphic
 as Banach spaces, through the map sending an element of `A.besselPotentialSpace s p` to the element
@@ -594,8 +608,12 @@ def besselPotentialSpaceCongr (B : SquareChartPartition κ I F V) (s : ℝ) (hp 
     (hp_top : p ≠ (∞ : ℝ≥0∞)) :
     A.besselPotentialSpace s p ≃L[ℝ] B.besselPotentialSpace s p :=
   (A.besselPotentialSpaceLinearEquiv B s hp hp_top).toContinuousLinearEquivOfContinuous
-    (LinearMap.continuous_of_isClosed_graph _
-      (A.isClosed_graph_besselPotentialSpaceLinearEquiv B s hp hp_top))
+    ((A.besselPotentialSpaceLinearEquiv B s hp hp_top).toLinearMap.continuous_of_injective_comp_eq
+      (continuous_pi (A.continuous_besselPotentialToDistribution_apply s p))
+      (continuous_pi (B.continuous_besselPotentialToDistribution_apply s p))
+      (DFunLike.coe_injective.comp B.besselPotentialToDistribution_injective) fun u ↦
+        congrArg DFunLike.coe
+          (A.besselPotentialToDistribution_besselPotentialSpaceLinearEquiv B s hp hp_top u))
 
 /-- The identification of the Bessel-potential spaces of two partitions preserves the represented
 functional. -/

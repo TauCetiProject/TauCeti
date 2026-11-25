@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.LocalRegularity
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
+import TauCeti.Analysis.Calculus.ContDiff.Cutoff
 import TauCeti.Analysis.Distribution.ChangeOfVariables.Tempered
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TestFunction.Schwartz
@@ -321,14 +322,9 @@ theorem isLocallyMemSobolevAt_iff_exists_memSobolev_cutoffTempered (hp : 1 < p) 
   rw [nhdsSet_singleton] at hχ1
   have hχ0 {y : E} (hy : φ y = 0) : y ∉ tsupport χ := fun h ↦ hχW h hy
   -- The quotient `χ / φ` is a test function.
-  have hg : ContDiff ℝ (⊤ : ℕ∞) fun y ↦ χ y * (φ y)⁻¹ := by
-    refine contDiff_iff_contDiffAt.2 fun y ↦ ?_
-    by_cases hy : φ y = 0
-    · refine (contDiffAt_const (c := (0 : ℂ))).congr_of_eventuallyEq ?_
-      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 (hχ0 hy)] with z hz
-      simp [hz]
-    · exact χ.contDiff.contDiffAt.mul (φ.contDiff.contDiffAt.inv hy)
-  let g : 𝓓(Ω, ℂ) := ⟨fun y ↦ χ y * (φ y)⁻¹, hg, χ.hasCompactSupport.mul_right,
+  let g : 𝓓(Ω, ℂ) := ⟨fun y ↦ χ y * (φ y)⁻¹,
+    χ.contDiff.mul_inv_of_forall_notMem_tsupport φ.contDiff fun _ ↦ hχ0,
+    χ.hasCompactSupport.mul_right,
     tsupport_mul_subset_left.trans χ.tsupport_subset⟩
   have hgφ (y : E) : g y * φ y = χ y := by
     by_cases hy : φ y = 0
@@ -435,10 +431,7 @@ theorem _root_.TemperedDistribution.MemSobolev.isLocallyMemSobolevAt_toDistribut
     (TemperedDistribution.toDistribution Ω u).IsLocallyMemSobolevAt s p x :=
   ⟨Ω, Ω.isOpen.mem_nhds hx, subset_rfl, fun φ _ ↦ by
     rw [cutoffTempered_toDistribution]
-    exact hu.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil hp hp_top fun n _ ↦
-      ⟨_, fun y ↦ by
-        simpa [coe_toSchwartzMapCLM] using
-          (toSchwartzMapCLM ℝ φ).norm_iteratedFDeriv_le_seminorm ℝ n y⟩⟩
+    exact hu.smulLeftCLM_testFunction hp hp_top φ⟩
 
 variable {e : OpenPartialHomeomorph E E} {U : Opens E}
   {he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source} {he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target}
