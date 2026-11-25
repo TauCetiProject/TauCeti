@@ -16,11 +16,15 @@ An element `x` of a Lie algebra `L` over a field `K` is **regular** when its cen
 `ker (ad x)` has the smallest dimension among the centralizers of all elements of `L`
 (`LieAlgebra.IsCentralizerRegular`). When the Killing form is nondegenerate and the field is
 infinite this minimal dimension is the rank `LieAlgebra.rank K L`
-(`LieAlgebra.isCentralizerRegular_iff_finrank_ker_ad_eq_rank`), and the regular elements include
-both the regular semisimple elements and the regular nilpotent ones. If `L` is the Lie algebra of
-an affine algebraic group `G` over a field of characteristic zero, the centralizer `C_G(x)` is
-smooth with Lie algebra `ker (ad x)`, so these are also the elements whose group centralizer has
-minimal dimension.
+(`LieAlgebra.isCentralizerRegular_iff_finrank_ker_ad_eq_rank`), and every element regular in
+Mathlib's sense is regular (`LieAlgebra.IsRegular.isCentralizerRegular`). Regular nilpotent
+elements need not exist under these conditions alone: `su(2)` over `ℝ` has a nondegenerate
+Killing form but no nonzero nilpotent elements. Over a field of characteristic zero, when a Cartan
+subalgebra splits `L` (for instance over an algebraically closed field), the nilpositive element
+of the principal `sl₂` triple is a regular nilpotent element
+(`IsSl2Triple.isCentralizerRegular_e`). If `L` is the Lie algebra of an affine algebraic group `G`
+over a field of characteristic zero, the centralizer `C_G(x)` is smooth with Lie algebra
+`ker (ad x)`, so these are also the elements whose group centralizer has minimal dimension.
 
 This notion differs from Mathlib's `LieAlgebra.IsRegular`, which is stated for `L` finite free
 over a commutative ring `R`. There the coefficients of the characteristic polynomial of `ad x` are
