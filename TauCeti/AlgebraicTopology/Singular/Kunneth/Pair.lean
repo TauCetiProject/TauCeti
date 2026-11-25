@@ -38,6 +38,10 @@ the interiors of `A × Y` and `X × B` cover the union
 (`TopPair.isIso_singularHomologyMap_prodExcisionFst`). The five lemma concludes
 (`TopCat.quasiIso_shufflePair_of_isIso`). The cover is used only through this excision.
 
+On homology, the relative cross product `Hₚ(X, A; R) ⊗ H_q(Y; S) ⟶ Hₙ(X × Y, A × Y; R ⊗ S)`
+followed by the restriction to `(X × Y, A × Y ∪ X × B)` is the cross product with the image in
+`H_q(Y, B; S)`, through `shufflePair` (`TopCat.singularHomologyCrossRel_comp_singularHomologyMap`).
+
 The map lives on simplicial singular chains, the chain model of the shuffle and
 Alexander–Whitney maps (`TopCat.shuffle`, `TopCat.alexanderWhitney`). The relative homology of
 `(X × Y, A × Y ∪ X × B)` is also reached through cubical chains, by the comparison
@@ -54,6 +58,8 @@ chain-level constructions are not compared here.
 * `TopCat.singularChainComplexπ_tensorHom_singularChainComplexπ_shufflePair`: the shuffle map of a
   product of pairs is induced by the absolute shuffle map.
 * `TopCat.shufflePair_naturality`: naturality in maps of both pairs.
+* `TopCat.singularHomologyCrossRel_comp_singularHomologyMap`: the relative cross product restricts
+  to the product of pairs through `shufflePair`.
 * `TopCat.quasiIso_shufflePair_of_isIso`: the relative Eilenberg–Zilber theorem for a product of
   pairs whose excision map `TopPair.prodExcisionFst` is a homology isomorphism.
 * `TopCat.quasiIso_shufflePair`: the same when the interiors of `A × Y` and `X × B` cover their
@@ -357,6 +363,58 @@ theorem shufflePair_naturality {X' Y' : TopCat.{w}} {A' : Set X'} {B' : Set Y'} 
             ).trans (Category.assoc _ _ _)))
 
 end Naturality
+
+section Cross
+
+variable (p q n : ℕ) (h : p + q = n)
+  [PreservesColimitsOfShape WalkingParallelPair
+    (tensorLeft (((TopPair.ofSubset A).singularChainComplex R).homology p))]
+  [PreservesColimitsOfShape WalkingParallelPair
+    (tensorRight (((toSSet.obj Y).chainComplex S).cycles q))]
+  [PreservesColimitsOfShape WalkingParallelPair
+    (tensorRight (((toSSet.obj Y).chainComplex S).X ((ComplexShape.down ℕ).prev q)))]
+  [PreservesColimitsOfShape WalkingParallelPair
+    (tensorRight (((TopPair.ofSubset B).singularChainComplex S).cycles q))]
+  [PreservesColimitsOfShape WalkingParallelPair
+    (tensorRight (((TopPair.ofSubset B).singularChainComplex S).X ((ComplexShape.down ℕ).prev q)))]
+
+/-- **The relative cross product restricts to the product of pairs.** The image of
+`a × b ∈ Hₙ(X × Y, A × Y; R ⊗ S)` in `Hₙ(X × Y, A × Y ∪ X × B; R ⊗ S)` is the cross product of `a`
+with the image of `b` in `H_q(Y, B; S)`, through the shuffle map of the product of pairs. -/
+theorem singularHomologyCrossRel_comp_singularHomologyMap :
+    singularHomologyCrossRel X Y A R S p q n h ≫
+      TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _) fun _ hz ↦ Or.inl hz :
+        TopPair.ofSubset (fst X Y ⁻¹' A) ⟶ TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B))
+        (R ⊗ S) n =
+      (𝟙 _ ⊗ₘ (TopPair.ofSubset B).singularHomologyπ S q) ≫
+        homologyCross ((TopPair.ofSubset A).singularChainComplex R)
+          ((TopPair.ofSubset B).singularChainComplex S) p q n h ≫
+        homologyMap (shufflePair X Y A B R S) n := by
+  have hcross : (𝟙 _ ⊗ₘ (TopPair.ofSubset B).singularHomologyπ S q) ≫
+      homologyCross ((TopPair.ofSubset A).singularChainComplex R)
+        ((TopPair.ofSubset B).singularChainComplex S) p q n h =
+      homologyCross ((TopPair.ofSubset A).singularChainComplex R) ((toSSet.obj Y).chainComplex S)
+        p q n h ≫
+        homologyMap (𝟙 _ ⊗ₘ (TopPair.ofSubset B).singularChainComplexπ S) n := by
+    have hn := homologyCross_naturality (L := (toSSet.obj Y).chainComplex S)
+      (𝟙 ((TopPair.ofSubset A).singularChainComplex R))
+      ((TopPair.ofSubset B).singularChainComplexπ S) p q n h
+    rw [homologyMap_id] at hn
+    -- `singularHomologyπ` is the map induced by `singularChainComplexπ`, and
+    -- `HomologicalComplex.tensorHom` is the tensor product `⊗ₘ` of chain maps.
+    exact hn
+  rw [singularHomologyCrossRel_def]
+  -- Relative singular homology and its maps are by definition the homology of the singular
+  -- chain complexes and the maps induced by chain maps.
+  change (homologyCross _ _ p q n h ≫ homologyMap (shuffleRel X Y A R S) n) ≫
+      homologyMap (TopPair.singularChainComplexMap _ _) n = _
+  rw [Category.assoc, ← homologyMap_comp, ← id_tensorHom_singularChainComplexπ_shufflePair,
+    reassoc_of% hcross]
+  -- The two sides differ only in the bracketing of `homologyMap ((𝟙 ⊗ π) ≫ shufflePair)`, which
+  -- `rw` cannot reach in the target produced by `change`.
+  exact (_ ≫= homologyMap_comp _ _ n).trans (Category.assoc _ _ _).symm
+
+end Cross
 
 section QuasiIso
 

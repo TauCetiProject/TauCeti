@@ -7,9 +7,9 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
 public import TauCeti.Geometry.Manifold.PontryaginThom.Cap
-import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Projective
+import TauCeti.Algebra.Module.Equiv.SpanSingleton
 import TauCeti.AlgebraicTopology.Singular.Kunneth.Pair
-import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
+import TauCeti.AlgebraicTopology.Singular.LocalHomology.Cross
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 
 /-!
@@ -26,8 +26,9 @@ for every coefficient module `L`, when the core `f(S)` is closed, as it is for c
 Hausdorff `M`
 (`TauCeti.IsFramedTube.bijective_singularHomologyMap_tubePairMap_singularHomologyCrossRel`): by
 excision the right side is the homology of `(V × S, (V ∖ 0) × S)`, and the relative Künneth theorem
-for the free local homology of `V` at `0` (`HomologicalComplex.bijective_homologyCross_tmul`) gives
-the suspension by `o`. So every class `z ∈ H_{r+q}(M; k ⊗ L)` determines a unique class
+for the free local homology of `V` at `0`
+(`TauCeti.bijective_homologyCross_tmul_singularChainComplex_complSingleton`) gives the suspension
+by `o`. So every class `z ∈ H_{r+q}(M; k ⊗ L)` determines a unique class
 `x ∈ H_q(S; L)` whose image under the tube is the image of `z` in `H_{r+q}(M, M ∖ f(S))`
 (`TauCeti.IsFramedTube.existsUnique_singularHomologyπ_eq_singularHomologyMap_tubePairMap`).
 
@@ -36,7 +37,8 @@ This class is local in `S`: at a point `s`, the image of `x` in the local homolo
 does (`TauCeti.IsFramedTube.span_singularHomologyToLocalHomology_eq_top_iff`). The cross product
 with `o` of the pair `(S, S ∖ s)`, through the shuffle map of a product of pairs, is again a
 bijection onto the local homology of `V × S` at `(0, s)`, which the tube carries onto the local
-homology of `M` at `f s`; restriction to `s` commutes with all these maps. Hence the class of a
+homology of `M` at `f s`; restriction to `s` commutes with all these maps
+(`TopCat.singularHomologyCrossRel_comp_singularHomologyMap`). Hence the class of a
 fundamental class of `M` is a fundamental class of `S`
 (`TauCeti.IsFramedTube.isFundamentalClass_of_singularHomologyπ_eq`): the fundamental class of
 `M`, localized along the core, is the cross product of the generator `o` of the fibre with a
@@ -162,13 +164,10 @@ private lemma isIso_singularHomologyMap_tubeLocalPairMap [T1Space M] (h : IsFram
     (s : S) {A : Type*} [Category* A] [HasCoproducts.{w} A] [Abelian A] (N : A) (n : ℕ) :
     IsIso (TopPair.singularHomologyMap (tubeLocalPairMap h s) N n) := by
   have hpre : tubeMap h ⁻¹' {f s} = {((0 : V), s)} := by
-    ext p
-    refine ⟨fun (hp : tubeMap h p = f s) ↦ ?_, ?_⟩
-    · rw [← h.apply_zero] at hp
-      have := h.isOpenEmbedding.injective hp
-      exact Prod.ext (congrArg Prod.snd this) (congrArg Prod.fst this)
-    · rintro rfl
-      exact h.apply_zero s
+    rw [← h.apply_zero s]
+    -- `τ (s, 0)` is `tubeMap h (0, s)`.
+    exact (congrArg _ (image_singleton (f := tubeMap h) (a := ((0 : V), s)))).symm.trans
+      ((isOpenEmbedding_tubeMap h).injective.preimage_image _)
   have hU : fst (TopCat.of V) (TopCat.of S) ⁻¹' {(0 : V)}ᶜ ∪
       snd (TopCat.of V) (TopCat.of S) ⁻¹' ({s}ᶜ : Set (TopCat.of S)) = ({((0 : V), s)})ᶜ := by
     ext ⟨v, x⟩
@@ -185,90 +184,7 @@ private lemma isIso_singularHomologyMap_tubeLocalPairMap [T1Space M] (h : IsFram
     rwa [localHomologyMap_def] at this
   exact key _ hU _
 
-variable {k : Type w} [CommRing k] (L : ModuleCat.{w} k)
-
-/-- **The relative cross product localizes at a point of the second factor.** Restricting
-`o × x ∈ Hₙ(V × S, (V ∖ 0) × S)` to the complement of `(V ∖ 0) × S ∪ V × (S ∖ s)` is the cross
-product of `o` with the local class of `x` at `s`, through the shuffle map of a product of pairs. -/
-private lemma singularHomologyCrossRel_comp_singularHomologyMap (s : S) {r q n : ℕ}
-    (hn : r + q = n) :
-    TopCat.singularHomologyCrossRel (TopCat.of V) (TopCat.of S) {(0 : V)}ᶜ
-        (𝟙_ (ModuleCat.{w} k)) L r q n hn ≫
-      TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _) fun _ hz ↦ Or.inl hz :
-        TopPair.ofSubset (fst (TopCat.of V) (TopCat.of S) ⁻¹' {(0 : V)}ᶜ) ⟶
-          TopPair.ofSubset (fst (TopCat.of V) (TopCat.of S) ⁻¹' {(0 : V)}ᶜ ∪
-            snd (TopCat.of V) (TopCat.of S) ⁻¹' ({s}ᶜ : Set (TopCat.of S))))
-        (𝟙_ (ModuleCat.{w} k) ⊗ L) n =
-      (𝟙 _ ⊗ₘ (TopPair.ofSubset ({s}ᶜ : Set (TopCat.of S))).singularHomologyπ L q) ≫
-        HomologicalComplex.homologyCross
-          ((TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ).singularChainComplex
-            (𝟙_ (ModuleCat.{w} k)))
-          ((TopPair.ofSubset ({s}ᶜ : Set (TopCat.of S))).singularChainComplex L) r q n hn ≫
-        HomologicalComplex.homologyMap (TopCat.shufflePair (TopCat.of V) (TopCat.of S) {(0 : V)}ᶜ
-          {s}ᶜ (𝟙_ (ModuleCat.{w} k)) L) n := by
-  have h₁ := TopCat.id_tensorHom_singularChainComplexπ_shufflePair (TopCat.of V) (TopCat.of S)
-    {(0 : V)}ᶜ ({s}ᶜ : Set (TopCat.of S)) (𝟙_ (ModuleCat.{w} k)) L
-  have h₂ := HomologicalComplex.homologyCross_naturality
-    (𝟙 ((TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ).singularChainComplex
-      (𝟙_ (ModuleCat.{w} k))))
-    ((TopPair.ofSubset ({s}ᶜ : Set (TopCat.of S))).singularChainComplexπ L) r q n hn
-  rw [HomologicalComplex.homologyMap_id] at h₂
-  rw [TopCat.singularHomologyCrossRel_def]
-  -- Relative singular homology and its maps are by definition the homology of the singular
-  -- chain complexes and the maps induced by chain maps.
-  change HomologicalComplex.homologyCross _ _ r q n hn ≫
-      HomologicalComplex.homologyMap (TopCat.shuffleRel (TopCat.of V) (TopCat.of S) {(0 : V)}ᶜ
-        (𝟙_ (ModuleCat.{w} k)) L) n ≫
-      HomologicalComplex.homologyMap (TopPair.singularChainComplexMap _ _) n = _
-  rw [← HomologicalComplex.homologyMap_comp, ← h₁]
-  -- The tensor product of chain maps is `HomologicalComplex.tensorHom`.
-  exact (HomologicalComplex.homologyCross _ _ r q n hn ≫=
-      HomologicalComplex.homologyMap_comp _ _ n).trans
-    ((Category.assoc _ _ _).symm.trans ((h₂.symm =≫ _).trans (Category.assoc _ _ _)))
-
-variable [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-
-/-- A generator of `H_r(V, V ∖ 0; k)` is a basis of it: this module is a copy of `k`, and a
-surjective endomorphism of `k` is bijective. -/
-private lemma bijective_toSpanSingleton_of_span_eq_top {r : ℕ} (hr : finrank ℝ V = r)
-    {o : (TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ).singularHomology
-      (C := ModuleCat.{w} k) (𝟙_ _) r} (ho : Submodule.span k {o} = ⊤) :
-    Function.Bijective (LinearMap.toSpanSingleton k _ o) := by
-  subst hr
-  let e := (singularHomologyComplSingletonFinrankIso (𝟙_ (ModuleCat.{w} k))
-    (OpenPartialHomeomorph.refl V) (x := 0) (mem_univ _)).toLinearEquiv
-  have hsurj : Function.Surjective (LinearMap.toSpanSingleton k _ o) :=
-    (Submodule.span_singleton_eq_top_iff _ _).mp ho
-  have hf := OrzechProperty.bijective_of_surjective_endomorphism
-    (e.toLinearMap ∘ₗ LinearMap.toSpanSingleton k _ o) (e.surjective.comp hsurj)
-  exact ⟨fun a b hab ↦ hf.1 (by rw [LinearMap.comp_apply, LinearMap.comp_apply, hab]), hsurj⟩
-
-/-- The cross product with a generator `o` of `H_r(V, V ∖ 0; k)` is bijective onto the homology
-of the tensor product of the relative chains of `(V, V ∖ 0)` with any chain complex: the local
-homology of `V` at `0` is one copy of `k`, in degree `r`. -/
-private lemma bijective_homologyCross_tmul_localChains (C : ChainComplex (ModuleCat.{w} k) ℕ)
-    {r : ℕ} (hr : finrank ℝ V = r)
-    {o : (TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ).singularHomology
-      (C := ModuleCat.{w} k) (𝟙_ _) r} (ho : Submodule.span k {o} = ⊤) (q n : ℕ) (hn : r + q = n) :
-    Function.Bijective fun x : C.homology q ↦ HomologicalComplex.homologyCross
-      ((TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ).singularChainComplex
-        (𝟙_ (ModuleCat.{w} k))) C r q n hn (o ⊗ₜ x) := by
-  have hK : ∀ p ≠ r, IsZero (((TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ).singularChainComplex
-      (𝟙_ (ModuleCat.{w} k))).homology p) := fun p hp ↦
-    isZero_singularHomology_complSingleton_of_ne _ (OpenPartialHomeomorph.refl V) (mem_univ _)
-      hr hp
-  -- The relative chains are a retract of the absolute chains, a sum of copies of `k`.
-  have (p : ℕ) : Module.Projective k
-      (((TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ).singularChainComplex
-        (𝟙_ (ModuleCat.{w} k))).X p) :=
-    have : Projective (𝟙_ (ModuleCat.{w} k)) :=
-      @ModuleCat.projective_of_categoryTheory_projective _ _ _
-        (inferInstanceAs (Module.Projective k k))
-    have := SSetPair.projective_chainComplex_X (𝟙_ (ModuleCat.{w} k))
-      (TopPair.toSSetPair.obj (TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ)) p
-    ModuleCat.projective_of_module_projective _
-  exact HomologicalComplex.bijective_homologyCross_tmul _ C hK
-    (bijective_toSpanSingleton_of_span_eq_top hr ho) q n hn
+variable {k : Type w} [CommRing k] (L : ModuleCat.{w} k) [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
 /-! ### The class of the core at a point -/
 
@@ -278,14 +194,13 @@ private lemma bijective_localHomology [T1Space S] [T1Space M] (h : IsFramedTube 
     {r : ℕ} (hr : finrank ℝ V = r)
     {o : (TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ).singularHomology
       (C := ModuleCat.{w} k) (𝟙_ _) r} (ho : Submodule.span k {o} = ⊤) (q n : ℕ) (hn : r + q = n) :
-    Function.Bijective (((TopPair.singularHomologyMap (tubeLocalPairMap h s)
-        (𝟙_ (ModuleCat.{w} k) ⊗ L) n).hom ∘ₗ
-      (HomologicalComplex.homologyMap (TopCat.shufflePair (TopCat.of V) (TopCat.of S) {(0 : V)}ᶜ
-        {s}ᶜ (𝟙_ (ModuleCat.{w} k)) L) n).hom ∘ₗ
-      (HomologicalComplex.homologyCross
+    Function.Bijective ((HomologicalComplex.homologyCross
           ((TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ).singularChainComplex
             (𝟙_ (ModuleCat.{w} k)))
-          ((TopPair.ofSubset ({s}ᶜ : Set (TopCat.of S))).singularChainComplex L) r q n hn).hom) ∘ₗ
+          ((TopPair.ofSubset ({s}ᶜ : Set (TopCat.of S))).singularChainComplex L) r q n hn ≫
+        HomologicalComplex.homologyMap (TopCat.shufflePair (TopCat.of V) (TopCat.of S) {(0 : V)}ᶜ
+          {s}ᶜ (𝟙_ (ModuleCat.{w} k)) L) n ≫
+        TopPair.singularHomologyMap (tubeLocalPairMap h s) (𝟙_ (ModuleCat.{w} k) ⊗ L) n).hom ∘ₗ
       TensorProduct.mk k _ _ o) := by
   have := TopCat.quasiIso_shufflePair_of_isOpen (TopCat.of V) (TopCat.of S)
     (A := {(0 : V)}ᶜ) (B := ({s}ᶜ : Set (TopCat.of S))) (𝟙_ (ModuleCat.{w} k)) L
@@ -296,7 +211,8 @@ private lemma bijective_localHomology [T1Space S] [T1Space M] (h : IsFramedTube 
   exact ((ConcreteCategory.isIso_iff_bijective _).1
       (isIso_singularHomologyMap_tubeLocalPairMap h s (𝟙_ (ModuleCat.{w} k) ⊗ L) n)).comp
     (((ConcreteCategory.isIso_iff_bijective _).1 hs).comp
-      (bijective_homologyCross_tmul_localChains _ hr ho q n hn))
+      (bijective_homologyCross_tmul_singularChainComplex_complSingleton
+        (OpenPartialHomeomorph.refl V) (mem_univ (0 : V)) _ hr ho q n hn))
 
 /-- **The class of the core is local.** Let `τ : S × V → M` be a framed tube around `f`, with `M` a
 `T₁` space and `V` of dimension `r`, let `o` generate `H_r(V, V ∖ 0; k)`, and let the image in
@@ -321,11 +237,8 @@ theorem span_singularHomologyToLocalHomology_eq_top_iff [T1Space M] (h : IsFrame
   have : T1Space S := h.isEmbedding.t1Space
   -- The bijection at `s` carries the local class of `x` to the local class of `z`, and a linear
   -- bijection preserves and reflects generators.
-  let e := LinearEquiv.ofBijective _ (bijective_localHomology L h s hr ho q n hn)
-  have he := Submodule.map_eq_top_iff (e := e)
-    (p := Submodule.span k {singularHomologyToLocalHomology L s q x})
-  rw [Submodule.map_span, image_singleton] at he
-  refine he.symm.trans (Eq.congr_left (congrArg (fun y ↦ Submodule.span k {y}) ?_))
+  let e := LinearEquiv.ofBijective (_ ∘ₗ TensorProduct.mk k _ _ o)
+    (bijective_localHomology L h s hr ho q n hn)
   -- Both sides are images of `o × x`: restrict to `(V × S, V × S ∖ {(0, s)})` and apply the tube,
   -- or apply the tube and restrict to `(M, M ∖ {f s})`.
   have hmap : h.tubePairMap ≫ TopPair.ofSubsetMap (𝟙 (TopCat.of M))
@@ -334,16 +247,21 @@ theorem span_singularHomologyToLocalHomology_eq_top_iff [T1Space M] (h : IsFrame
     rw [tubePairMap_eq]
     exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _
       ((Category.comp_id _).trans (Category.id_comp _).symm)
-  have hsq := ConcreteCategory.congr_hom (singularHomologyCrossRel_comp_singularHomologyMap L s hn)
-    (o ⊗ₜ x)
-  rw [singularHomologyToLocalHomology_eq_singularHomologyπ L s x,
-    singularHomologyToLocalHomology_eq_localHomologyRestriction _ (mem_range_self s) z, hz,
-    localHomologyRestriction_def, ← ConcreteCategory.comp_apply,
-    ← TopPair.singularHomologyMap_comp, hmap, TopPair.singularHomologyMap_comp,
-    ConcreteCategory.comp_apply,
-    ← ConcreteCategory.comp_apply (TopCat.singularHomologyCrossRel _ _ _ _ _ _ _ _ _), hsq]
-  -- Both sides apply the same maps to `o ⊗ x|_s`.
-  rfl
+  have hcross := TopCat.singularHomologyCrossRel_comp_singularHomologyMap (TopCat.of V)
+    (TopCat.of S) {(0 : V)}ᶜ ({s}ᶜ : Set (TopCat.of S)) (𝟙_ (ModuleCat.{w} k)) L r q n hn
+  have hex : e (singularHomologyToLocalHomology L s q x) =
+      singularHomologyToLocalHomology (𝟙_ (ModuleCat.{w} k) ⊗ L) (f s) n z := by
+    rw [singularHomologyToLocalHomology_eq_singularHomologyπ L s x,
+      singularHomologyToLocalHomology_eq_localHomologyRestriction _ (mem_range_self s) z, hz,
+      localHomologyRestriction_def, ← ConcreteCategory.comp_apply,
+      ← TopPair.singularHomologyMap_comp, hmap, TopPair.singularHomologyMap_comp,
+      ← ConcreteCategory.comp_apply (TopCat.singularHomologyCrossRel _ _ _ _ _ _ _ _ _),
+      reassoc_of% hcross]
+    -- Both sides apply `tube ∘ shuffle ∘ cross` to `o ⊗ x|_s`, where `(𝟙 ⊗ π) (o ⊗ x) = o ⊗ π x`.
+    -- `simp` cannot evaluate the right side: there `x` lies in `H_q(S; L)` as a value of
+    -- `singularHomologyFunctor`, which is the source of `singularHomologyπ` only up to unfolding.
+    rfl
+  rw [← hex, e.span_singleton_apply_eq_top_iff]
 
 /-- **The class of the core of a fundamental class is a fundamental class.** Let `τ : S × V → M`
 be a framed tube around `f`, with `M` a `T₁` space and `V` of dimension `r`, let `o` generate
@@ -392,8 +310,9 @@ theorem bijective_singularHomologyMap_tubePairMap_singularHomologyCrossRel
   have := ((ConcreteCategory.isIso_iff_bijective _).1
       (isIso_singularHomologyMap_tubePairMap h hf (𝟙_ (ModuleCat.{w} k) ⊗ L) n)).comp
     (((ConcreteCategory.isIso_iff_bijective _).1 hs).comp
-      (bijective_homologyCross_tmul_localChains ((TopCat.toSSet.obj (TopCat.of S)).chainComplex L)
-        hr ho q n hn))
+      (bijective_homologyCross_tmul_singularChainComplex_complSingleton
+        (OpenPartialHomeomorph.refl V) (mem_univ (0 : V))
+        ((TopCat.toSSet.obj (TopCat.of S)).chainComplex L) hr ho q n hn))
   -- The relative cross product is the cross product of chain complexes followed by the relative
   -- shuffle map.
   simp only [TopCat.singularHomologyCrossRel_def]
