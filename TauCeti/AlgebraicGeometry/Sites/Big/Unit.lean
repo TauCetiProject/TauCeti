@@ -27,11 +27,17 @@ of sections `(h^* 𝒪_S ≅ 𝒪_T)⁻¹ 1 ∈ Γ(T, h^* 𝒪_S)`, which is com
   `(𝒪_S)^a`.
 * `AlgebraicGeometry.Scheme.bigSheafUnitIso`: `(𝒪_S)^a ≅ unit`, the big-site module of the
   structure sheaf is the unit module over the big structure sheaf.
+* `AlgebraicGeometry.Scheme.bigSheafUnitObjLinearEquiv`: `(𝒪_S)^a(T) = Γ(T, 𝒪_T)` as
+  `Γ(T, 𝒪_T)`-modules, for every `S`-scheme `T`.
+* `AlgebraicGeometry.Scheme.bigSheafUnitObjSpecEquiv`: `(𝒪_S)^a(Spec R) = R`, semilinearly along
+  `Γ(Spec R, 𝒪) ≅ R`, for every affine `S`-scheme `Spec R`.
 -/
 
 public section
 
 open CategoryTheory Opposite MonoidalCategory
+
+attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm
 
 universe u
 
@@ -101,5 +107,54 @@ lemma bigSheafUnitIso_hom_val_app_apply (S : Scheme.{u}) (T : Over S)
   refine (congr(($((bigSheafUnitIso S).hom_inv_id)).val.app (op T) x)).trans ?_
   exact (congr(Modules.Hom.app $((Modules.pullbackObjUnitIso T.hom).hom_inv_id) ⊤ x)).symm.trans
     (unitToBigSheafUnit_val_app_apply S T _).symm
+
+/-- **`(𝒪_S)^a(T) = Γ(T, 𝒪_T)`.** The value of the big-site module of the structure sheaf on an
+`S`-scheme `T`, as a module over the value `Γ(T, 𝒪_T)` of the big structure sheaf, through
+`bigSheafUnitIso`. -/
+noncomputable def bigSheafUnitObjLinearEquiv (S : Scheme.{u}) (T : Over S) :
+    (Modules.bigSheaf (𝟙_ S.Modules)).val.obj (op T) ≃ₗ[(bigRingCatSheaf S).obj.obj (op T)]
+      (bigRingCatSheaf S).obj.obj (op T) :=
+  ((SheafOfModules.evaluation _ (op T)).mapIso (bigSheafUnitIso S)).toLinearEquiv
+
+/-- On sections, `bigSheafUnitObjLinearEquiv` is the identification `h^* 𝒪_S ≅ 𝒪_T` on global
+sections. -/
+lemma bigSheafUnitObjLinearEquiv_apply (S : Scheme.{u}) (T : Over S)
+    (x : Γ((Modules.pullback T.hom).obj (𝟙_ S.Modules), ⊤)) :
+    bigSheafUnitObjLinearEquiv S T x = (Modules.pullbackObjUnitIso T.hom).hom.app ⊤ x :=
+  bigSheafUnitIso_hom_val_app_apply S T x
+
+/-- The inverse of `bigSheafUnitObjLinearEquiv` is the inverse of the identification
+`h^* 𝒪_S ≅ 𝒪_T` on global sections. -/
+lemma bigSheafUnitObjLinearEquiv_symm_apply (S : Scheme.{u}) (T : Over S) (r : Γ(T.left, ⊤)) :
+    (bigSheafUnitObjLinearEquiv S T).symm r = (Modules.pullbackObjUnitIso T.hom).inv.app ⊤ r :=
+  unitToBigSheafUnit_val_app_apply S T r
+
+/-- **`(𝒪_S)^a(Spec R) = R`.** On an affine test scheme `h : Spec R ⟶ S`, the big-site module of
+the structure sheaf has value `R`, semilinearly along `bigRingCatSheafObjSpecRingEquiv`. -/
+noncomputable def bigSheafUnitObjSpecEquiv (S : Scheme.{u}) (R : CommRingCat.{u})
+    (h : Spec R ⟶ S) :
+    (Modules.bigSheaf (𝟙_ S.Modules)).val.obj (op (Over.mk h)) ≃ₛₗ[
+      RingHomClass.toRingHom (bigRingCatSheafObjSpecRingEquiv S R h)] R :=
+  (bigSheafUnitObjLinearEquiv S (Over.mk h)).trans
+    (bigRingCatSheafObjSpecRingEquiv S R h).toSemilinearEquiv
+
+/-- On sections, `bigSheafUnitObjSpecEquiv` is the identification `h^* 𝒪_S ≅ 𝒪_{Spec R}` on global
+sections, followed by `Γ(Spec R, 𝒪) ≅ R`. -/
+lemma bigSheafUnitObjSpecEquiv_apply (S : Scheme.{u}) (R : CommRingCat.{u}) (h : Spec R ⟶ S)
+    (x : Γ((Modules.pullback h).obj (𝟙_ S.Modules), ⊤)) :
+    bigSheafUnitObjSpecEquiv S R h x =
+      (Scheme.ΓSpecIso R).hom ((Modules.pullbackObjUnitIso h).hom.app ⊤ x) :=
+  (bigRingCatSheafObjSpecRingEquiv_apply S R h _).trans
+    (congrArg (Scheme.ΓSpecIso R).hom (bigSheafUnitObjLinearEquiv_apply S (Over.mk h) x))
+
+/-- The inverse of `bigSheafUnitObjSpecEquiv` is `R ≅ Γ(Spec R, 𝒪)` followed by the inverse of the
+identification `h^* 𝒪_S ≅ 𝒪_{Spec R}` on global sections. -/
+lemma bigSheafUnitObjSpecEquiv_symm_apply (S : Scheme.{u}) (R : CommRingCat.{u})
+    (h : Spec R ⟶ S) (r : R) :
+    (bigSheafUnitObjSpecEquiv S R h).symm r =
+      (Modules.pullbackObjUnitIso h).inv.app ⊤ ((Scheme.ΓSpecIso R).inv r) :=
+  (congrArg (bigSheafUnitObjLinearEquiv S (Over.mk h)).symm
+    (bigRingCatSheafObjSpecRingEquiv_symm_apply S R h r)).trans
+    (bigSheafUnitObjLinearEquiv_symm_apply S (Over.mk h) _)
 
 end AlgebraicGeometry.Scheme
