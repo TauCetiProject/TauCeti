@@ -71,10 +71,26 @@ namespace TauCeti
 
 namespace IsBicollar
 
-variable {E H M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I ∞ M] [T2Space M] [SigmaCompactSpace M] [TopologicalSpace N]
-  {f : N → M} {b : N × ℝ → M}
+variable {E H M N : Type*} [TopologicalSpace M] [TopologicalSpace N] {f : N → M} {b : N × ℝ → M}
+
+/-- The positive side of a bicollar is relatively clopen in any set of points of the bicollar off
+the collared image: its complement there is the negative side. -/
+private theorem isClopen_preimage_image_Ioi (h : IsBicollar f b) {W : Set M}
+    (hW : W ⊆ range b \ range f) :
+    IsClopen (((↑) : W → M) ⁻¹' (b '' (univ ×ˢ Ioi (0 : ℝ)))) := by
+  have hc : (((↑) : W → M) ⁻¹' (b '' (univ ×ˢ Ioi (0 : ℝ))))ᶜ =
+      ((↑) : W → M) ⁻¹' (b '' (univ ×ˢ Iio (0 : ℝ))) := by
+    ext x
+    exact ⟨fun hx ↦ (h.range_diff_range_eq_union.subset (hW x.property)).resolve_left hx,
+      fun hx hxP ↦ disjoint_left.1 h.disjoint_image_Ioi_Iio hxP hx⟩
+  refine ⟨isOpen_compl_iff.1 ?_,
+    (h.isOpenEmbedding.isOpenMap _ (isOpen_univ.prod isOpen_Ioi)).preimage continuous_subtypeVal⟩
+  exact hc ▸ (h.isOpenEmbedding.isOpenMap _ (isOpen_univ.prod isOpen_Iio)).preimage
+    continuous_subtypeVal
+
+variable [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+  [SigmaCompactSpace M]
 
 /-- With `H¹_dR(M) = 0`, a locally constant function on the complement of the image of a
 bicollared map with closed image separates the two sides of the bicollar. -/
@@ -84,52 +100,27 @@ private theorem exists_locallyConstant_apply_ne (hH : Subsingleton (deRhamCohomo
       (hm : b (a, -1) ∈ (range f)ᶜ), g ⟨b (a, 1), hp⟩ ≠ g ⟨b (a, -1), hm⟩ := by
   let A : Opens M := ⟨(range f)ᶜ, hclosed.isOpen_compl⟩
   let B : Opens M := ⟨range b, h.isOpenEmbedding.isOpen_range⟩
-  have hAB : A ⊔ B = ⊤ := by
-    refine eq_top_iff.2 fun x _ ↦ ?_
-    by_cases hx : x ∈ range f
-    · exact Or.inr (h.range_subset_range hx)
-    · exact Or.inl hx
   have hH' : Subsingleton (deRhamCohomology I (A ⊔ B : Opens M) 1) :=
-    (deRhamCohomology.equivOfDiffeomorph (Diffeomorph.ofTop (I := I) (n := ∞) _ hAB)
-      1).symm.toEquiv.subsingleton
-  -- The positive side, read in `A ⊓ B`, is clopen there: its complement is the negative side.
+    (deRhamCohomology.equivOfDiffeomorph (Diffeomorph.ofTop (I := I) (n := ∞) _
+      (Opens.ext h.compl_range_union_range)) 1).symm.toEquiv.subsingleton
   set P := b '' (univ ×ˢ Ioi (0 : ℝ))
-  have hP : IsOpen P := h.isOpenEmbedding.isOpenMap _ (isOpen_univ.prod isOpen_Ioi)
-  have hQ : IsOpen (b '' (univ ×ˢ Iio (0 : ℝ))) :=
-    h.isOpenEmbedding.isOpenMap _ (isOpen_univ.prod isOpen_Iio)
-  let S : Set (A ⊓ B : Opens M) := {x | (x : M) ∈ P}
-  have hS : IsClopen S := by
-    refine ⟨isOpen_compl_iff.1 ?_, hP.preimage continuous_subtypeVal⟩
-    convert hQ.preimage continuous_subtypeVal using 1
-    ext x
-    exact ⟨fun hx ↦ (h.range_diff_range_eq_union.subset ⟨x.property.2, x.property.1⟩).resolve_left
-      hx, fun hx hxP ↦ disjoint_left.1 h.disjoint_image_Ioi_Iio hxP hx⟩
-  classical
-  let φ : LocallyConstant (A ⊓ B : Opens M) ℝ :=
-    (LocallyConstant.ofIsClopen hS).map fun i : Fin 2 ↦ (i : ℝ)
-  -- `φ` is `0` on the positive side and `1` on the negative side, i.e. the indicator of the
-  -- negative side; it is `g - k` for locally constant `g` on `A` and `k` on `B`.
+  have hS := h.isClopen_preimage_image_Ioi (W := (A ⊓ B : Opens M)) fun _ hx ↦ ⟨hx.2, hx.1⟩
+  -- The indicator `φ` of the positive side is `g - k` for locally constant `g` on `A` and `k`
+  -- on `B`.
+  let φ : LocallyConstant (A ⊓ B : Opens M) ℝ := LocallyConstant.charFn ℝ hS
   obtain ⟨g, k, hg⟩ :=
     deRhamCohomology.exists_locallyConstant_eq_inclusion_sub_inclusion hH' φ
-  have hφS : ∀ x ∈ S, φ x = 0 := fun x hx ↦ by
-    have : LocallyConstant.ofIsClopen hS x = 0 := by
-      rwa [← mem_singleton_iff, ← mem_preimage, LocallyConstant.ofIsClopen_fiber_zero]
-    simp [φ, this]
-  have hφSc : ∀ x ∉ S, φ x = 1 := fun x hx ↦ by
-    have : LocallyConstant.ofIsClopen hS x = 1 := by
-      rwa [← mem_singleton_iff, ← mem_preimage, LocallyConstant.ofIsClopen_fiber_one]
-    simp [φ, this]
   have hmem : ∀ t : ℝ, t ≠ 0 → b (a, t) ∈ (A ⊓ B : Opens M) := fun t ht ↦
     ⟨h.apply_mem_compl_range a ht, mem_range_self _⟩
   have h1 : (b (a, 1)) ∈ P := mem_image_of_mem b ⟨mem_univ _, mem_Ioi.2 one_pos⟩
   have h2 : (b (a, -1)) ∉ P := fun hP' ↦
     disjoint_left.1 h.disjoint_image_Ioi_Iio hP'
       (mem_image_of_mem b ⟨mem_univ _, mem_Iio.2 (by norm_num)⟩)
-  have hpos : (0 : ℝ) = g ⟨b (a, 1), (hmem 1 one_ne_zero).1⟩ - k ⟨b (a, 1), mem_range_self _⟩ := by
-    rw [← hg ⟨b (a, 1), hmem 1 one_ne_zero⟩, hφS _ h1]
-  have hneg : (1 : ℝ) =
+  have hpos : (1 : ℝ) = g ⟨b (a, 1), (hmem 1 one_ne_zero).1⟩ - k ⟨b (a, 1), mem_range_self _⟩ := by
+    rw [← hg ⟨b (a, 1), hmem 1 one_ne_zero⟩, (LocallyConstant.charFn_eq_one ℝ _ hS).2 h1]
+  have hneg : (0 : ℝ) =
       g ⟨b (a, -1), (hmem (-1) (by norm_num)).1⟩ - k ⟨b (a, -1), mem_range_self _⟩ := by
-    rw [← hg ⟨b (a, -1), hmem (-1) (by norm_num)⟩, hφSc _ h2]
+    rw [← hg ⟨b (a, -1), hmem (-1) (by norm_num)⟩, (LocallyConstant.charFn_eq_zero ℝ _ hS).2 h2]
   -- `k` is constant along the line `t ↦ b (a, t)` in `B`.
   have hk : k ⟨b (a, 1), mem_range_self _⟩ = k ⟨b (a, -1), mem_range_self _⟩ :=
     k.apply_eq_of_isPreconnected (isPreconnected_range (f := fun t : ℝ ↦

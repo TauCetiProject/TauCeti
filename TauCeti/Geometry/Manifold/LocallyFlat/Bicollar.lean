@@ -149,6 +149,12 @@ theorem range_subset_range (h : IsBicollar f b) : range f ⊆ range b := by
   rintro _ ⟨x, rfl⟩
   exact ⟨(x, 0), h.apply_zero x⟩
 
+/-- The complement of the image of a collared map and the open set its bicollar sweeps out
+cover the target. -/
+theorem compl_range_union_range (h : IsBicollar f b) : (range f)ᶜ ∪ range b = univ :=
+  univ_subset_iff.1 <| (compl_union_self _).symm.subset.trans
+    (union_subset_union_right _ h.range_subset_range)
+
 /-- Read in a bicollar, the collared image is exactly the zero slice. -/
 theorem image_prod_singleton_zero (h : IsBicollar f b) :
     b '' (univ ×ˢ ({0} : Set ℝ)) = range f := by
