@@ -193,19 +193,12 @@ private theorem exists_boundary_piece {E : Type*} [NormedAddCommGroup E] [InnerP
   rw [hx] at H
   refine ⟨ρ', hρ', C.toNNReal, fun {u a G f Ka KG} hell hKa hKaM hKG hf hu => ?_⟩
   have hα : 0 < α := hβ.trans_le hβα
-  have hΩm := Ω.isOpen.measurableSet
   have : IsFiniteMeasure (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
     isFiniteMeasure_restrict.2 hΩ.measure_lt_top.ne
   -- The data are integrable on `Ω`, as the equation for the zero extension needs.
-  have ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (volume.restrict (Ω : Set _)) :=
-    memLp_energyIntegrand_of_memLp_top (hell.pos.le.trans hell.le)
-      (((continuousOn_of_continuousOn_matrixBilinearForm (hKa.continuousOn hα)).mono
-        subset_closure).aestronglyMeasurable hΩm)
-      (fun y hy => hell.upper_bound (subset_closure hy)) (memLp_top_const 0) (memLp_top_const 0)
   obtain ⟨CG, hCG⟩ := hΩ.isCompact_closure.exists_bound_of_continuousOn (hKG.continuousOn hα)
-  have hG : MemLp G 2 (volume.restrict (Ω : Set _)) :=
-    MemLp.of_bound (((hKG.continuousOn hα).mono subset_closure).aestronglyMeasurable hΩm) CG
-      ((ae_restrict_mem hΩm).mono fun y hy => hCG y (subset_closure hy))
+  obtain ⟨ha, hG⟩ :=
+    memLp_energyIntegrand_and_memLp_of_holderOnWith hα subset_closure hell hKa hKG hCG
   set U₀ : W1p volume (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2 :=
     (W1p0.extendByZeroL (Omega' := ⊤) le_top u).val
   obtain ⟨g, hg, hghol, hgb⟩ := H (W := ⊤) (u := U₀)

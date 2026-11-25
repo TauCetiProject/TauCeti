@@ -84,6 +84,8 @@ All in the `TauCeti.PDE` namespace.
   in a flattening chart.
 * `exists_holderOnWith_gradient_of_graph`: the same near a boundary that is locally the graph of a
   `C^{1,α}` function.
+* `memLp_energyIntegrand_and_memLp_of_holderOnWith`: Hölder coefficients and fields on a set of
+  finite measure give an essentially bounded energy integrand and a square-integrable field.
 
 ## References
 
@@ -505,7 +507,7 @@ private theorem ae_value_w1pCompL_eq_zero (hΦ : Wkp.IsChangeOfVariables 1 U' U 
 measure inside `t`, a uniformly elliptic coefficient `a` that is Hölder on `t` defines an
 essentially bounded energy integrand, and a field `G` that is Hölder and bounded on `t` is
 square integrable. -/
-private theorem memLp_energyIntegrand_and_memLp_of_holderOnWith {α : ℝ≥0} (hα : 0 < α)
+theorem memLp_energyIntegrand_and_memLp_of_holderOnWith {α : ℝ≥0} (hα : 0 < α)
     {D : Opens (EuclideanSpace ℝ (Fin (n + 1)))} [IsFiniteMeasure (volume.restrict
       (D : Set (EuclideanSpace ℝ (Fin (n + 1)))))] {t : Set (EuclideanSpace ℝ (Fin (n + 1)))}
     (hDt : (D : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ t)

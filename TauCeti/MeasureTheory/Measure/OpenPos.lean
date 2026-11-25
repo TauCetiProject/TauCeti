@@ -24,7 +24,8 @@ An almost-everywhere inclusion of an open set in another set implies inclusion i
 In particular, two almost-everywhere equal open sets have the same closure. Taking interiors
 then shows that regular open sets are determined by their almost-everywhere classes. Likewise a
 continuous function on the closure of an open set is determined by its values almost everywhere on
-the set.
+the set, and two functions continuous on `closure U ∩ V`, for open `U` and `V`, which agree almost
+everywhere on `U ∩ V` agree on `closure U ∩ V`.
 
 On a discrete space, such a measure charges every point, so the only null set is empty and
 almost everywhere means everywhere. If such a measure gives every point measure zero, on the other
@@ -38,6 +39,8 @@ set whose closure contains the point, for any measure positive on nonempty open 
 * `IsOpen.closure_eq_of_ae_eq`: a.e. equal open sets have equal closures.
 * `IsOpen.ext_closure_of_ae_eq`: a continuous function on the closure of an open set is determined
   by its values at almost every point of the set.
+* `TauCeti.eqOn_closure_inter_of_ae_eq`: two functions continuous on `closure U ∩ V`, for open `U`
+  and `V`, which agree almost everywhere on `U ∩ V` agree on `closure U ∩ V`.
 * `TauCeti.eq_of_ae_eq_of_interior_closure_eq`: a.e. equal regular open sets are equal.
 * `Metric.measureReal_ball_pos`: a ball of positive radius has positive real measure.
 * `Metric.measureReal_closedBall_pos`: a closed ball of positive radius has positive real
@@ -120,6 +123,21 @@ theorem eq_of_ae_eq_of_interior_closure_eq {X : Type*} [TopologicalSpace X] [Mea
     s = t := by
   have hsopen : IsOpen s := hs ▸ isOpen_interior
   rw [← hs, ← ht, hsopen.closure_eq_of_ae_eq (ht ▸ isOpen_interior) hst]
+
+/-- **Continuous functions agreeing almost everywhere agree up to the boundary.** For open sets
+`U` and `V` and a measure that charges every nonempty open set, two functions continuous on
+`closure U ∩ V` which agree almost everywhere on `U ∩ V` agree on `closure U ∩ V`: they agree on
+the open set `U ∩ V` by continuity, and `U ∩ V` is dense in `closure U ∩ V`. -/
+theorem eqOn_closure_inter_of_ae_eq {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    {μ : Measure X} [μ.IsOpenPosMeasure] {Y : Type*} [TopologicalSpace Y] [T2Space Y]
+    {U V : Set X} (hU : IsOpen U) (hV : IsOpen V) {f g : X → Y}
+    (hf : ContinuousOn f (closure U ∩ V)) (hg : ContinuousOn g (closure U ∩ V))
+    (hfg : f =ᵐ[μ.restrict (U ∩ V)] g) : EqOn f g (closure U ∩ V) := by
+  have hsub : U ∩ V ⊆ closure U ∩ V := inter_subset_inter_left _ subset_closure
+  refine (μ.eqOn_open_of_ae_eq hfg (hU.inter hV) (hf.mono hsub) (hg.mono hsub)).of_subset_closure
+    hf hg hsub fun x hx => ?_
+  rw [inter_comm U V]
+  exact hV.inter_closure ⟨hx.2, hx.1⟩
 
 /-- In a proper space, a measure that is positive on nonempty open sets and finite on compact sets
 gives every ball of positive radius positive real measure. -/

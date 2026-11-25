@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.MeasureTheory.Measure.Restrict
 public import Mathlib.Topology.Bases
+public import TauCeti.MeasureTheory.Measure.OpenPos
 public import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -24,12 +24,13 @@ of a set holds almost everywhere on that set, even if the cover is uncountable: 
 
 Pieces that are continuous up to the boundary are determined by their almost-everywhere values:
 for a measure charging every nonempty open set, two functions continuous on `closure U ∩ V`, for
-open `U` and `V`, which agree almost everywhere on `U ∩ V` agree on `closure U ∩ V`. Consequently
-bounded Hölder functions on the balls of a cover of a compact closure `closure U`, each agreeing
-almost everywhere on `U` with one function `F`, glue along a finite subcover to a single bounded
-Hölder function on `closure U`. Its constant depends only on `U`, the radii and weights of the
-cover and the exponent, so it is uniform over all such families of pieces. This is the step that
-assembles local regularity estimates, in the interior and up to the boundary, into global ones.
+open `U` and `V`, which agree almost everywhere on `U ∩ V` agree on `closure U ∩ V`
+(`TauCeti.eqOn_closure_inter_of_ae_eq`). Consequently bounded Hölder functions on the balls of a
+cover of a compact closure `closure U`, each agreeing almost everywhere on `U` with one function
+`F`, glue along a finite subcover to a single bounded Hölder function on `closure U`. Its constant
+depends only on `U`, the radii and weights of the cover and the exponent, so it is uniform over all
+such families of pieces. This is the step that assembles local regularity estimates, in the
+interior and up to the boundary, into global ones.
 
 ## Main results
 
@@ -38,8 +39,6 @@ assembles local regularity estimates, in the interior and up to the boundary, in
   function.
 * `TauCeti.ae_restrict_of_subset_iUnion_isOpen`: almost-everywhere statements on the members of an
   open cover hold almost everywhere on the covered set.
-* `TauCeti.eqOn_closure_inter_of_ae_eq`: two functions continuous on `closure U ∩ V`, for open `U`
-  and `V`, which agree almost everywhere on `U ∩ V` agree on `closure U ∩ V`.
 * `TauCeti.exists_holderOnWith_closure_of_forall_ae_eq`: Hölder functions on the balls of a cover
   of a compact closure `closure U`, each agreeing almost everywhere on `U` with one function `F`,
   glue to a single Hölder function on `closure U`, with a constant uniform over all such pieces.
@@ -84,20 +83,6 @@ theorem ae_restrict_of_subset_iUnion_isOpen [TopologicalSpace X] [SecondCountabl
   have : Countable T := hTc.to_subtype
   rw [← hT, Set.biUnion_eq_iUnion] at hs
   exact ae_mono (Measure.restrict_mono_set μ hs) ((ae_restrict_iUnion_iff _ _).2 fun i => h i)
-
-/-- **Continuous functions agreeing almost everywhere agree up to the boundary.** For open sets
-`U` and `V` and a measure that charges every nonempty open set, two functions continuous on
-`closure U ∩ V` which agree almost everywhere on `U ∩ V` agree on `closure U ∩ V`: they agree on
-the open set `U ∩ V` by continuity, and `U ∩ V` is dense in `closure U ∩ V`. -/
-theorem eqOn_closure_inter_of_ae_eq [TopologicalSpace X] [μ.IsOpenPosMeasure] {Y : Type*}
-    [TopologicalSpace Y] [T2Space Y] {U V : Set X} (hU : IsOpen U) (hV : IsOpen V) {f g : X → Y}
-    (hf : ContinuousOn f (closure U ∩ V)) (hg : ContinuousOn g (closure U ∩ V))
-    (hfg : f =ᵐ[μ.restrict (U ∩ V)] g) : EqOn f g (closure U ∩ V) := by
-  have hsub : U ∩ V ⊆ closure U ∩ V := inter_subset_inter_left _ subset_closure
-  refine (μ.eqOn_open_of_ae_eq hfg (hU.inter hV) (hf.mono hsub) (hg.mono hsub)).of_subset_closure
-    hf hg hsub fun x hx => ?_
-  rw [inter_comm U V]
-  exact hV.inter_closure ⟨hx.2, hx.1⟩
 
 /-- **Gluing Hölder pieces that agree almost everywhere.** Let `U` be open with compact closure in
 a pseudometric space with a measure charging every nonempty open set, and assign to each
