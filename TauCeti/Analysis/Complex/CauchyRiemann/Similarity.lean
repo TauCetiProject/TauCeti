@@ -109,7 +109,9 @@ holomorphic by Weyl's lemma, and `ξ = Ψ⁻¹ σ`. For finite `p` the Calderón
   differential inequality, with `Φ` complex-linear.
 * `TauCeti.exists_eventually_eq_mul_of_norm_conjWirtingerDeriv_le`: a scalar `C¹` function
   satisfying `‖\bar∂ f‖ ≤ K ‖f‖` is, near each point, a holomorphic function times a continuous
-  nonvanishing complex factor.
+  nonvanishing complex factor, through
+  `TauCeti.exists_eventually_eq_mul_of_eventually_eq_clm_apply`, which reads a scalar factorization
+  near a point as such a product.
 
 ## References
 
@@ -740,6 +742,21 @@ theorem setOf_ne_zero_mem_codiscreteWithin_of_norm_conjWirtingerDeriv_le (hΩ : 
     hf.continuousOn (fun _ hz _ ↦ hasSimilarityFactorizationAt_of_norm_le (M := fun w ↦ 2 * K w)
       hΩ hf hM hle hz) hne
 
+/-- A scalar similarity factorization `f = Φ σ` near `z₀`, with `Φ` a family of complex-linear
+endomorphisms of `ℂ` continuous and invertible at `z₀` and `σ` analytic at `z₀`, is a factorization
+`f = v * σ` near `z₀` with `v` continuous and nonzero at `z₀`: a complex-linear endomorphism of `ℂ`
+is multiplication by its value at `1`. -/
+theorem exists_eventually_eq_mul_of_eventually_eq_clm_apply {f : ℂ → ℂ} {z₀ : ℂ}
+    {Φ : ℂ → ℂ →L[ℂ] ℂ} {σ : ℂ → ℂ} (hΦ : ContinuousAt Φ z₀) (hΦu : IsUnit (Φ z₀))
+    (hσ : AnalyticAt ℂ σ z₀) (hfσ : ∀ᶠ z in 𝓝 z₀, f z = Φ z (σ z)) :
+    ∃ v σ : ℂ → ℂ, ContinuousAt v z₀ ∧ v z₀ ≠ 0 ∧ AnalyticAt ℂ σ z₀ ∧
+      ∀ᶠ z in 𝓝 z₀, f z = v z * σ z := by
+  refine ⟨fun z ↦ Φ z 1, σ, hΦ.clm_apply continuousAt_const, fun h0 ↦ ?_, hσ,
+    hfσ.mono fun z hz ↦ ?_⟩
+  · exact hΦu.ne_zero (ContinuousLinearMap.ext_ring (by simpa using h0))
+  · calc f z = Φ z (σ z • 1) := by rw [hz, smul_eq_mul, mul_one]
+      _ = Φ z 1 * σ z := by rw [map_smul, smul_eq_mul, mul_comm]
+
 /-- **Scalar similarity factorization under a differential inequality.** A function `f : ℂ → ℂ` of
 class `C¹` on an open set `Ω`, with `‖\bar∂ f(z)‖ ≤ K(z) ‖f(z)‖` on `Ω` for a locally bounded `K`,
 is near every point `z₀ ∈ Ω` the product `v * σ` of a function `v` continuous and nonzero at `z₀`
@@ -753,13 +770,9 @@ theorem exists_eventually_eq_mul_of_norm_conjWirtingerDeriv_le (hΩ : IsOpen Ω)
   -- `‖∂ₛ f + i ∂ₜ f‖ = 2 ‖\bar∂ f(1)‖ ≤ 2 K ‖f‖`
   obtain ⟨hM, hle⟩ := norm_fderiv_one_add_I_smul_le_of_norm_conjWirtingerDeriv_le hK hfK
   obtain ⟨r, hr, -, Φ, σ, hΦ, hΦu, hσ, hfσ⟩ := exists_similarity_of_norm_le hΩ hf hM hle hz₀
-  -- A complex-linear endomorphism of `ℂ` is multiplication by its value at `1`.
   have hball : ball z₀ r ∈ 𝓝 z₀ := ball_mem_nhds z₀ hr
-  refine ⟨fun z ↦ Φ z 1, σ, ((hΦ.continuousAt hball).clm_apply continuousAt_const), fun h0 ↦ ?_,
-    hσ.analyticAt hball, eventually_of_mem hball fun z hz ↦ ?_⟩
-  · exact (hΦu z₀ (mem_ball_self hr)).ne_zero (ContinuousLinearMap.ext_ring (by simpa using h0))
-  · calc f z = Φ z (σ z • 1) := by rw [hfσ hz, smul_eq_mul, mul_one]
-      _ = Φ z 1 * σ z := by rw [map_smul, smul_eq_mul, mul_comm]
+  exact exists_eventually_eq_mul_of_eventually_eq_clm_apply (hΦ.continuousAt hball)
+    (hΦu z₀ (mem_ball_self hr)) (hσ.analyticAt hball) (eventually_of_mem hball hfσ)
 
 end Classical
 

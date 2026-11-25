@@ -28,10 +28,9 @@ integrability of the boundary values. The identification with the original funct
 uses `ContinuousOn.torusIntegral_prod_sub_inv_smul`.
 
 The partial sums of the expansion are polynomials, hence entire. So a function holomorphic on an
-open polydisc is uniformly approximated by entire functions on every smaller closed polydisc
-(`DifferentiableOn.exists_differentiable_norm_sub_lt_of_pi`), the several-variable form of
-`DifferentiableOn.exists_differentiable_norm_sub_lt`. On `ι → ℂ` with its sup norm the polydiscs
-with equal radii are the balls.
+open polydisc is uniformly approximated by entire functions on every closed polydisc of smaller
+polyradius (`DifferentiableOn.exists_differentiable_norm_sub_lt_of_pi`), the several-variable form
+of `DifferentiableOn.exists_differentiable_norm_sub_lt`.
 
 For a function complex differentiable on an open polydisc, the Cauchy coefficients on every
 smaller torus are its multi-index Taylor coefficients `TauCeti.mvTaylorCoeff`
@@ -247,65 +246,79 @@ theorem tendstoUniformlyOn_torusIntegral_cauchyCoeff {P : Type*} {S : Set P}
         simp only [← mul_pow, div_eq_mul_inv]
 
 /-- The case `ι = Fin n` of `DifferentiableOn.exists_differentiable_norm_sub_lt_of_pi`: partial
-sums of the Cauchy expansion on a polydisc of intermediate radius. -/
+sums of the Cauchy expansion on a polydisc of intermediate polyradius. -/
 private theorem exists_differentiable_norm_sub_lt_of_fin {h : (Fin n → ℂ) → E} {c : Fin n → ℂ}
-    {r s ε : ℝ} (hh : DifferentiableOn ℂ h (ball c s)) (hrs : r < s) (hε : 0 < ε) :
-    ∃ P : (Fin n → ℂ) → E, Differentiable ℂ P ∧ ∀ z ∈ closedBall c r, ‖h z - P z‖ < ε := by
-  rcases lt_or_ge r 0 with hr | hr
-  · exact ⟨0, differentiable_const 0, by simp [closedBall_eq_empty.2 hr]⟩
-  -- Expand on the closed polydisc of radius `R`, `r < R < s`, which lies in `ball c s`.
-  set R := (r + s) / 2
-  have hrR : r < R := by simp only [R]; linarith
-  have hR : 0 < R := hr.trans_lt hrR
-  have hsub : (univ.pi fun i ↦ closedBall (c i) R) ⊆ ball c s := fun z hz ↦
-    mem_ball.2 <| ((dist_pi_le_iff hR.le).2 fun i ↦ hz i trivial).trans_lt
-      (by simp only [R]; linarith)
-  have hcont : ContinuousOn h (univ.pi fun i ↦ closedBall (c i) R) := hh.continuousOn.mono hsub
+    {r s : Fin n → ℝ} {ε : ℝ} (hh : DifferentiableOn ℂ h (univ.pi fun i ↦ ball (c i) (s i)))
+    (hrs : ∀ i, r i < s i) (hε : 0 < ε) :
+    ∃ P : (Fin n → ℂ) → E, Differentiable ℂ P ∧
+      ∀ z ∈ univ.pi fun i ↦ closedBall (c i) (r i), ‖h z - P z‖ < ε := by
+  by_cases hr : ∃ i, r i < 0
+  · obtain ⟨i, hi⟩ := hr
+    exact ⟨0, differentiable_const 0, fun z hz ↦
+      absurd (dist_nonneg.trans (mem_closedBall.1 (hz i trivial))) hi.not_ge⟩
+  push Not at hr
+  -- Expand on the closed polydisc of polyradius `R`, `r < R < s`, which lies in the open one.
+  set R : Fin n → ℝ := fun i ↦ (r i + s i) / 2
+  have hrR (i : Fin n) : r i < R i := by simp only [R]; linarith [hrs i]
+  have hsub : (univ.pi fun i ↦ closedBall (c i) (R i)) ⊆ univ.pi fun i ↦ ball (c i) (s i) :=
+    pi_mono fun i _ ↦ closedBall_subset_ball (by simp only [R]; linarith [hrs i])
+  have hcont : ContinuousOn h (univ.pi fun i ↦ closedBall (c i) (R i)) :=
+    hh.continuousOn.mono hsub
+  have hopen : IsOpen (univ.pi fun i ↦ ball (c i) (s i)) :=
+    isOpen_set_pi finite_univ fun i _ ↦ isOpen_ball
   obtain ⟨M, hM⟩ :=
-    (isCompact_univ_pi fun i ↦ isCompact_closedBall (c i) R).exists_bound_of_continuousOn hcont
+    (isCompact_univ_pi fun i ↦ isCompact_closedBall (c i) (R i)).exists_bound_of_continuousOn hcont
   have hU := tendstoUniformlyOn_torusIntegral_cauchyCoeff (S := (univ : Set Unit))
-    (f := fun _ ↦ h) (R := fun _ ↦ R) (r := fun _ ↦ r) (M := M) (fun _ ↦ hrR)
-    (fun _ _ ↦ hcont)
+    (f := fun _ ↦ h) (R := R) (r := r) (M := M) hrR (fun _ _ ↦ hcont)
     (fun _ _ z hz i _ ↦ by
       have hz' : Function.update z i (z i) = z := Function.update_eq_self i z
       refine DifferentiableAt.comp (z i) ?_ (hasFDerivAt_update z (z i)).differentiableAt
       rw [hz']
-      exact hh.differentiableAt (isOpen_ball.mem_nhds (hsub hz)))
+      exact hh.differentiableAt (hopen.mem_nhds (hsub hz)))
     fun _ _ z hz ↦ hM z fun i _ ↦ sphere_subset_closedBall (hz i trivial)
   obtain ⟨A, hA⟩ := (Metric.tendstoUniformlyOn_iff.1 hU ε hε).exists
   refine ⟨fun z ↦ ∑ α ∈ A, (∏ i, (z - c) i ^ α i) • ((2 * π * I : ℂ)⁻¹ ^ n •
-      ∯ w in T(c, fun _ ↦ R), (∏ i, (w i - c i) ^ (α i + 1))⁻¹ • h w), ?_, fun z hz ↦ ?_⟩
+      ∯ w in T(c, R), (∏ i, (w i - c i) ^ (α i + 1))⁻¹ • h w), ?_, fun z hz ↦ ?_⟩
   · refine Differentiable.fun_sum fun α _ ↦ Differentiable.smul_const ?_ _
     intro z
     classical
     exact (HasFDerivAt.finsetProd (u := Finset.univ) fun i _ ↦
       ((differentiableAt_apply i z).sub_const (c i)).pow (α i) |>.hasFDerivAt).differentiableAt
-  · have hzc : z - c ∈ univ.pi fun _ ↦ closedBall (0 : ℂ) r := fun i _ ↦ by
+  · have hzc : z - c ∈ univ.pi fun i ↦ closedBall (0 : ℂ) (r i) := fun i _ ↦ by
       rw [mem_closedBall, dist_zero_right, Pi.sub_apply, ← dist_eq_norm]
-      exact (dist_le_pi_dist z c i).trans (mem_closedBall.1 hz)
+      exact hz i trivial
     have := hA ((), z - c) ⟨trivial, hzc⟩
     rw [dist_eq_norm, add_sub_cancel] at this
     exact this
 
 /-- **Polynomial approximation on polydiscs.** A function holomorphic on the open polydisc
-`ball c s` of `ι → ℂ`, a ball for the sup norm, is uniformly approximated on every smaller closed
-polydisc `closedBall c r`, `r < s`, by entire functions: partial sums of its multivariate Cauchy
+`∏ B(c_i, s_i)` of `ι → ℂ` is uniformly approximated on every smaller closed polydisc
+`∏ closedBall(c_i, r_i)`, `r_i < s_i`, by entire functions: partial sums of its multivariate Cauchy
 expansion at `c`. -/
-theorem _root_.DifferentiableOn.exists_differentiable_norm_sub_lt_of_pi {ι : Type*} [Fintype ι]
-    {h : (ι → ℂ) → E} {c : ι → ℂ} {r s ε : ℝ} (hh : DifferentiableOn ℂ h (ball c s))
-    (hrs : r < s) (hε : 0 < ε) :
-    ∃ P : (ι → ℂ) → E, Differentiable ℂ P ∧ ∀ z ∈ closedBall c r, ‖h z - P z‖ < ε := by
-  -- Transport to `Fin n → ℂ` along the complex-linear isometry `L x = x ∘ e.symm` given by an
+theorem _root_.DifferentiableOn.exists_differentiable_norm_sub_lt_of_pi {ι : Type*} [Finite ι]
+    {h : (ι → ℂ) → E} {c : ι → ℂ} {r s : ι → ℝ} {ε : ℝ}
+    (hh : DifferentiableOn ℂ h (univ.pi fun i ↦ ball (c i) (s i))) (hrs : ∀ i, r i < s i)
+    (hε : 0 < ε) :
+    ∃ P : (ι → ℂ) → E, Differentiable ℂ P ∧
+      ∀ z ∈ univ.pi fun i ↦ closedBall (c i) (r i), ‖h z - P z‖ < ε := by
+  -- Transport to `Fin n → ℂ` along the complex-linear equivalence `L x = x ∘ e.symm` given by an
   -- enumeration `e` of `ι`.
+  have := Fintype.ofFinite ι
   let e := Fintype.equivFin ι
-  let L := ContinuousLinearEquiv.piCongrLeft ℂ (fun _ : Fin (Fintype.card ι) ↦ ℂ) e
-  have hL (x y : ι → ℂ) : dist (L x) (L y) = dist x y :=
-    (IsometryEquiv.piCongrLeft (Y := fun _ : Fin (Fintype.card ι) ↦ ℂ) e).dist_eq x y
+  let L : (ι → ℂ) ≃L[ℂ] (Fin (Fintype.card ι) → ℂ) :=
+    (LinearEquiv.funCongrLeft ℂ ℂ e.symm).toContinuousLinearEquiv
+  have hL {t : ι → ℝ} {B : ℂ → ℝ → Set ℂ} {x : ι → ℂ} :
+      L x ∈ (univ.pi fun k ↦ B (L c k) (t (e.symm k))) ↔ x ∈ univ.pi fun i ↦ B (c i) (t i) := by
+    simp only [mem_univ_pi]
+    refine e.symm.forall_congr_left.trans ?_
+    simp [L, LinearEquiv.funCongrLeft_apply]
   obtain ⟨P, hP, hPh⟩ := exists_differentiable_norm_sub_lt_of_fin (c := L c) (h := h ∘ L.symm)
+    (r := r ∘ e.symm) (s := s ∘ e.symm)
     (hh.comp L.symm.differentiable.differentiableOn fun y hy ↦ by
-      rwa [mem_ball, ← hL, L.apply_symm_apply]) hrs hε
+      rw [← L.apply_symm_apply y] at hy
+      exact hL.1 hy) (fun k ↦ hrs _) hε
   refine ⟨P ∘ L, hP.comp L.differentiable, fun z hz ↦ ?_⟩
-  simpa using hPh (L z) (by rwa [mem_closedBall, hL])
+  simpa using hPh (L z) (hL.2 hz)
 
 /-! ### Multi-index Taylor coefficients on polydiscs -/
 

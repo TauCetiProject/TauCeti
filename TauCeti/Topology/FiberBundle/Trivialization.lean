@@ -45,6 +45,7 @@ fibre is a bijection onto the base.
   the overlap of the base sets.
 * `Bundle.Trivialization.isOpen_preimage`: the preimage under `proj` of an open subset of
   `e.baseSet` is open.
+* `Bundle.Trivialization.eq_of_apply_eq`: a trivialization is injective over its base set.
 * `Bundle.Trivialization.coe_restrOpen`, `Bundle.Trivialization.coe_restrOpen_symm`,
   `Bundle.Trivialization.restrOpen_baseSet`: the restriction of a trivialization to an open set of
   the base keeps its forward and inverse maps and intersects its base set with that set.
@@ -132,6 +133,12 @@ theorem isOpen_preimage (e : Trivialization F proj) {s : Set B} (hs : IsOpen s)
     (hsub : s ⊆ e.baseSet) : IsOpen (proj ⁻¹' s) := by
   rw [← inter_eq_right.2 (e.preimage_subset_source hsub)]
   exact e.continuousOn_proj.isOpen_inter_preimage e.open_source hs
+
+/-- A trivialization is injective over its base set: two points over `e.baseSet` with the same
+image under `e` are equal. -/
+theorem eq_of_apply_eq (e : Trivialization F proj) {a b : Z} (ha : proj a ∈ e.baseSet)
+    (hb : proj b ∈ e.baseSet) (h : e a = e b) : a = b :=
+  e.toOpenPartialHomeomorph.injOn (e.mem_source.2 ha) (e.mem_source.2 hb) h
 
 section Equivariant
 
