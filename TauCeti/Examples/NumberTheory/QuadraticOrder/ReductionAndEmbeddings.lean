@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Algebra.Field.ZMod
 import Mathlib.Tactic.NormNum.RealSqrt
 import TauCeti.NumberTheory.NumberField.Quadratic.EmbeddingBound
 import TauCeti.NumberTheory.QuadraticOrder.CoordinateReduction
@@ -16,7 +17,9 @@ import TauCeti.NumberTheory.QuadraticOrder.Reduction
 These examples distinguish scalar divisibility from norm divisibility, injective coordinate
 rectangles from endpoint collisions, and bounds under complex algebra maps from injectivity.
 The square-root parameters include the nonsquare, non-squarefree integer `20`, the square `4`
-and the repeated-root case `0`. Reduction is also checked at moduli `0` and `1`.
+and the repeated-root case `0`. Reduction is also checked at moduli `0` and `1`, the quotient
+sizes `4` and `9` of `ℤ[√5]/(2)` and `ℤ[√20]/(3)` are exhibited, the latter a field, and the empty
+coordinate set gives the empty rectangle.
 -/
 
 open QuadraticAlgebra
@@ -34,6 +37,36 @@ example : ¬Finite (QuadraticAlgebra ℤ 5 0 ⧸ Ideal.span {(0 : QuadraticAlgeb
 /-- The one-element quotient has the advertised cardinality at modulus one. -/
 example : Nat.card (QuadraticAlgebra ℤ 5 0 ⧸ Ideal.span {(1 : QuadraticAlgebra ℤ 5 0)}) = 1 := by
   simp
+
+/-- Modulo `2` the order `ℤ[√5]` has four classes, those of `0`, `1`, `ω` and `1 + ω`. -/
+example :
+    let I := Ideal.span {((2 : ℕ) : QuadraticAlgebra ℤ 5 0)}
+    Nat.card (QuadraticAlgebra ℤ 5 0 ⧸ I) = 4 ∧
+      ({0, 1, Ideal.Quotient.mk I ω, Ideal.Quotient.mk I (1 + ω)} :
+        Set (QuadraticAlgebra ℤ 5 0 ⧸ I)) = Set.univ := by
+  intro I
+  refine ⟨card_quotient_span_natCast 5 0 2, Set.eq_univ_of_forall fun x ↦ ?_⟩
+  obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective x
+  have hz : Ideal.Quotient.mk I z = Ideal.Quotient.mk I ⟨z.re % 2, z.im % 2⟩ :=
+    mk_eq_mk_span_natCast_iff.mpr ⟨(Int.mod_modEq _ _).symm, (Int.mod_modEq _ _).symm⟩
+  have h0 : (⟨0, 0⟩ : QuadraticAlgebra ℤ 5 0) = 0 := by ext <;> simp
+  have h1 : (⟨1, 0⟩ : QuadraticAlgebra ℤ 5 0) = 1 := by ext <;> simp
+  have hω : (⟨0, 1⟩ : QuadraticAlgebra ℤ 5 0) = ω := by ext <;> simp
+  have h1ω : (⟨1, 1⟩ : QuadraticAlgebra ℤ 5 0) = 1 + ω := by ext <;> simp
+  rw [hz]
+  rcases Int.emod_two_eq z.re with h | h <;> rcases Int.emod_two_eq z.im with h' | h' <;>
+    simp [h, h', h0, h1, hω, h1ω]
+
+/-- Modulo `3` the order `ℤ[√20]` has nine classes; `20 ≡ 2` is not a square modulo `3`, so the
+quotient is the field with nine elements. -/
+example :
+    Nat.card (QuadraticAlgebra ℤ 20 0 ⧸ Ideal.span {((3 : ℕ) : QuadraticAlgebra ℤ 20 0)}) = 9 ∧
+      ¬IsSquare ((20 : ℤ) : ZMod 3) ∧
+      IsField (QuadraticAlgebra ℤ 20 0 ⧸ Ideal.span {((3 : ℕ) : QuadraticAlgebra ℤ 20 0)}) := by
+  refine ⟨card_quotient_span_natCast 20 0 3, by decide, ?_⟩
+  have : Fact (∀ r : ZMod 3, r ^ 2 ≠ ((20 : ℤ) : ZMod 3) + ((0 : ℤ) : ZMod 3) * r) :=
+    ⟨by decide⟩
+  exact (quotientSpanNatCastEquiv 20 0 3).toMulEquiv.isField_congr.mpr (Field.toIsField _)
 
 /-- Divisibility of the Gaussian norm does not imply scalar divisibility in the order. -/
 example : (2 : ℤ) ∣ norm (⟨1, 1⟩ : QuadraticAlgebra ℤ (-1) 0) ∧
@@ -60,6 +93,13 @@ example : Set.InjOn (Int.cast : ℤ → ZMod 0) ({0} : Set ℤ) ∧
   refine ⟨Set.injOn_singleton _ _, Set.injOn_singleton _ _, ?_⟩
   rw [ncard_setOf_re_mem_im_mem]
   norm_num
+
+/-- The empty coordinate set gives the empty rectangle, with `0 · #V = 0` elements. -/
+example (V : Set ℤ) :
+    {z : QuadraticAlgebra ℤ 20 0 | z.re ∈ (∅ : Set ℤ) ∧ z.im ∈ V} = ∅ ∧
+      {z : QuadraticAlgebra ℤ 20 0 | z.re ∈ (∅ : Set ℤ) ∧ z.im ∈ V}.ncard = 0 * V.ncard := by
+  refine ⟨by simp, ?_⟩
+  rw [ncard_setOf_re_mem_im_mem, Set.ncard_empty]
 
 /-- The Gaussian embedding has the Euclidean squared norm, including arbitrary rational
 coordinates. -/

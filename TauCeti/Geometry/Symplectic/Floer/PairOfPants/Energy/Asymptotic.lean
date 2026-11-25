@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.ThricePuncturedSphere.Exchange
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
@@ -47,12 +48,17 @@ specializations to the constant form `SymplecticForm.constSmooth`.
 
 ## Main results
 
-* `TauCeti.Floer.tendsto_setIntegral_truncation`,
+* `TauCeti.Floer.tendsto_setIntegral_exchangeTruncation`,
+  `TauCeti.Floer.tendsto_setIntegral_truncation`,
   `TauCeti.Floer.tendsto_intervalIntegral_endLoop`,
   `TauCeti.Floer.tendsto_intervalIntegral_endChart_of_isCompact`: integrals over `S` are limits of
-  integrals over its truncations, and integrals of a Hamiltonian along the end loops converge to
-  its integral along their pointwise limits, either when the Hamiltonian is globally bounded or
-  when the map takes values in a compact set.
+  integrals over its truncations, with the output end recentred at any `c` or not, and integrals
+  of a Hamiltonian along the end loops converge to its integral along their pointwise limits,
+  either when the Hamiltonian is globally bounded or when the map takes values in a compact set.
+* `SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_ne_top_of_isCompact`: when `u` maps
+  `S` into a compact set `B`, a nonnegative Floer energy density has finite integral as soon as the
+  area density and curvature term are integrable, without assuming convergence of the end integrals
+  beforehand.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation`: the energy
   identity on the whole pair of pants, for a map with asymptotic loops at the ends; the
   vector-space case is `SymplecticForm.integral_floerEnergyDensity_pairOfPantsPerturbation`.
@@ -89,18 +95,35 @@ namespace TauCeti
 
 namespace Floer
 
+/-- The truncation with output end recentred at `c` lies in `S`, in real coordinates. -/
+theorem preimage_exchangeTruncation_subset (c R : ℝ) :
+    Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R ⊆ thricePuncturedSphereReal :=
+  fun _ hz ↦ exchangeTruncation_subset c R hz
+
+/-- The truncations with output end recentred at `c` exhaust `S`, in real coordinates. -/
+theorem iUnion_preimage_exchangeTruncation (c : ℝ) :
+    ⋃ R : ℝ, Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R =
+      thricePuncturedSphereReal := by
+  ext z
+  simp only [← preimage_iUnion, iUnion_exchangeTruncation, mem_preimage, mem_ofPred_eq,
+    mem_thricePuncturedSphereReal_iff]
+
+/-- Integrals over `S` are the limits of the integrals over its truncations with output end
+recentred at `c`. -/
+theorem tendsto_setIntegral_exchangeTruncation (c : ℝ) {f : ℝ × ℝ → ℝ}
+    (hf : IntegrableOn f thricePuncturedSphereReal) :
+    Tendsto (fun R : ℝ ↦ ∫ z in Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R, f z)
+      atTop (𝓝 (∫ z in thricePuncturedSphereReal, f z)) := by
+  rw [← iUnion_preimage_exchangeTruncation c] at hf ⊢
+  exact tendsto_setIntegral_of_monotone (measurableSet_preimage_exchangeTruncation c)
+    (fun _ _ h ↦ preimage_mono (exchangeTruncation_mono c h)) hf
+
 /-- Integrals over `S` are the limits of the integrals over its truncations. -/
 theorem tendsto_setIntegral_truncation {f : ℝ × ℝ → ℝ}
     (hf : IntegrableOn f thricePuncturedSphereReal) :
     Tendsto (fun R : ℝ => ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, f z) atTop
       (𝓝 (∫ z in thricePuncturedSphereReal, f z)) := by
-  have hS : ⋃ R : ℝ, Complex.equivRealProdCLM.symm ⁻¹' truncation R =
-      thricePuncturedSphereReal := by
-    rw [← preimage_iUnion, iUnion_truncation]
-    rfl
-  rw [← hS] at hf ⊢
-  exact tendsto_setIntegral_of_monotone measurableSet_preimage_truncation
-    (fun _ _ h => preimage_mono (truncation_mono h)) hf
+  simpa only [exchangeTruncation_zero] using tendsto_setIntegral_exchangeTruncation 0 hf
 
 /-- If the loops of `u` along the circles `±s = R` of the end `q` converge pointwise to a loop `x`
 as `R → ∞`, then the integrals of a bounded continuous Hamiltonian along them converge to its
@@ -160,6 +183,57 @@ end Floer
 namespace SmoothTwoForm
 
 open Floer
+
+section
+
+variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I (⊤ : ℕ∞) M]
+  [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M} {H : Puncture → ℝ → M → ℝ}
+
+/-- **Finite Floer energy on a compact target set, without asymptotic convergence.** Let `ω` be a
+nondegenerate two-form on a finite-dimensional manifold `M`, and let `K` be `C¹` on `S × M` and
+equal to `H_q(t) dt` beyond `T₀` on each end `q`, for period-one Hamiltonians `H_q` that are
+jointly continuous on `ℝ × M`. Let `u` be `C¹` on `S`, mapping `S` into a compact set `B ⊆ M`,
+with nonnegative Floer energy density on `S` and integrable symplectic area density and curvature
+term `R_K(u)`. Then the Lebesgue integral of the Floer energy density of `u` is finite, without
+assuming beforehand that the end-loop integrals of `H_q` converge. -/
+theorem IsNondegenerate.lintegral_floerEnergyDensity_ne_top_of_isCompact
+    {K : ℂ → M → ℂ →L[ℝ] ℝ} {u : ℝ × ℝ → M} {T₀ : ℝ}
+    (hω : ω.IsNondegenerate)
+    (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
+      (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1)
+    (hHc : ∀ q, Continuous (uncurry (H q)))
+    {B : Set M} (hB : IsCompact B)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B)
+    (he : ∀ z ∈ thricePuncturedSphereReal, 0 ≤ ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z)
+    (hA : Integrable fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ))
+    (hR : Integrable fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)) :
+    ∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤ := by
+  choose C hC using fun q ↦ (isCompact_Icc.prod hB).exists_bound_of_continuousOn
+    (s := Icc (0 : ℝ) 1 ×ˢ B) (hHc q).continuousOn
+  refine ne_of_lt ((hω.lintegral_floerEnergyDensity_le_of_eq_smul_endAngularForm hK hKH hH hu he
+    hA hR (C := fun q ↦ max (C q) 0) fun q s hs ↦ ?_).trans_lt ENNReal.ofReal_lt_top)
+  have hs_pos : 0 < q.endSign * s := by linarith [le_max_left 2 T₀]
+  refine (Real.norm_eq_abs _).symm.trans_le ((intervalIntegral.norm_integral_le_of_norm_le_const
+    (C := max (C q) 0) fun t ht ↦ ?_).trans_eq (by norm_num))
+  rw [uIoc_of_le zero_le_one] at ht
+  exact (hC q (t, u (endChart q (s, t)))
+    ⟨⟨ht.1.le, ht.2⟩, huB _ (endChart_mem_thricePuncturedSphereReal hs_pos)⟩).trans
+    (le_max_left _ _)
+
+end
 
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]

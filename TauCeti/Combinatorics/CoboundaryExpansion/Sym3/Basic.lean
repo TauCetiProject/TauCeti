@@ -22,6 +22,8 @@ moved-point defect and cost of `Cochain.ofLt` on `complete V` as sums of support
 
 Balanced replication multiplies defect by `(Fintype.card ι) ^ 3`
 (`Cochain.defect_replicate`, in `TauCeti.Combinatorics.CoboundaryExpansion.Replication`).
+The same identity for the `Cochain.ofLt` of an edge function replicated on `V ×ₗ ι` is
+`Cochain.defect_ofLt_lex`, in `TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Replication`.
 
 ## References
 

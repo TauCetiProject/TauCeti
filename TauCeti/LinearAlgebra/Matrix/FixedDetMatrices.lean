@@ -33,6 +33,8 @@ common divisor one, the representatives `FixedDetMatrices.primitiveReps n` are t
   `FixedDetMatrices.reps n` into `FixedDetMatrices.reps n` is `g = 1`; hence
   (`FixedDetMatrices.eq_of_smul_eq_of_mem_reps`) two matrices of `FixedDetMatrices.reps n` in the
   same `SL(2, ℤ)`-orbit are equal.
+* `FixedDetMatrices.pos_val_one_one_of_mem_reps`: a representative `(a b; 0 d)` of positive
+  determinant has `0 < d`.
 * `FixedDetMatrices.repsEquiv`: the representatives are parametrized by positive factor pairs
   `(a, d)` of `|n|` and residues `0 ≤ b < d`.
 * `FixedDetMatrices.ncard_reps`: `FixedDetMatrices.reps n` has `σ₁(|n|)` elements.
@@ -114,6 +116,11 @@ theorem eq_of_smul_eq_of_mem_reps {A B : FixedDetMatrix (Fin 2) ℤ n} {g : SL(2
 lemma apply_zero_zero_mul_apply_one_one {R : Type*} [CommRing R] {m : R}
     {A : FixedDetMatrix (Fin 2) R m} (h : A.val 1 0 = 0) : A.val 0 0 * A.val 1 1 = m := by
   simpa only [det_fin_two, h, mul_zero, sub_zero] using A.property
+
+/-- A representative `(a b; 0 d)` of positive determinant has `0 < d`. -/
+theorem pos_val_one_one_of_mem_reps (hn : 0 < n) {A : FixedDetMatrix (Fin 2) ℤ n}
+    (hA : A ∈ reps n) : 0 < A.val 1 1 :=
+  pos_of_mul_pos_right ((apply_zero_zero_mul_apply_one_one hA.1).symm ▸ hn) hA.2.1.le
 
 /-- **The upper-triangular representatives, explicitly parametrized.** For `n ≠ 0`, a
 representative `(a b; 0 d)` is recorded by the positive factor pair `(|a|, |d|)` of `|n|`

@@ -7,11 +7,13 @@ module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
 public import TauCeti.Combinatorics.CoboundaryExpansion.Replication
+import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Replication
 import TauCeti.Combinatorics.CoboundaryExpansion.StarBound
 import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Basic
 import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Staircase
 import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree.Basic
 import TauCeti.GroupTheory.Perm.FinThree.Basic
+import Mathlib.Data.Fintype.Card
 public import Mathlib.Order.Prod.Lex.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
@@ -42,19 +44,21 @@ For the upper bound, every `k ≥ 3` is `4 q` or `(2 t + 1) q` with `t, q ≥ 1`
 
 * `k = (2 t + 1) q`: Kozlov's staircase graph `SimpleGraph.staircase q t`
   (`h1_complete_movedNorm_fin_three_le_of_card_eq_mul`).
-* `k = 4 q`: the seed `Sym3.seed`, with the three transpositions on the pairs `(1, 2)`,
-  `(1, 3)`, `(2, 3)`, has defect `8` (`defect_seed`) and gauge distance `6` (`gaugeDist_seed`).
-  The identity gauge costs `6` (`cost_one_seed`), and every gauge costs at least `6`: the cost is
-  `3` times the cross-degree pair cost (`Equiv.Perm.mul_distErr_mul_inv_eq_movedNorm`) and the
-  seed infimum is `2` (`ciInf_sum_distErr_fin_four_three_of_eq_setOf_isSwap`). Its balanced
-  replication `Sym3.replicatedSeed q = (Cochain.ofLt (complete (Fin 4)) seed).replicate (Fin q)`
-  has defect `8 q ^ 3` and gauge distance `6 q ^ 2` (`defect_replicatedSeed`,
-  `gaugeDist_replicatedSeed`, from `Cochain.defect_replicate` and `Cochain.gaugeDist_replicate`),
-  and the identity gauge costs `6 q ^ 2` (`cost_one_replicatedSeed`).
-  `Sym3.replicatedSeedOfCardEq` carries that cochain to any `V` with `card V = 4 q`.
-  `Sym3.defect_div_gaugeDist_replicatedSeedOfCardEq` is the ratio `card V / 3`, and
-  `Sym3.defect_div_gaugeDist_replicatedSeedOfCardEq_eq_h1` identifies it with `h1`.
-  `h1_complete_lex_le_card_mul_div` gives the upper bound `h1 ≤ q * (8 / 6) = 4 q / 3`.
+* `k = 4 q`: the `k = 4` seed `Sym3.seed`, with the three transpositions on the pairs `(1, 2)`,
+  `(1, 3)`, `(2, 3)`, replicated on `Fin 4 ×ₗ Fin q`. Its defect is `8 q ^ 3`
+  (`Cochain.defect_ofLt_lex`; `8` by `decide` for the seed), and every gauge costs at least
+  `6 q ^ 2`: the cost is `3` times the cross-degree pair cost
+  (`Equiv.Perm.mul_distErr_mul_inv_eq_movedNorm`), replication multiplies its infimum by at least
+  `q ^ 2` (`card_sq_mul_ciInf_le_ciInf_sum_distErr_lex`) and the seed infimum is `2`
+  (`ciInf_sum_distErr_fin_four_three_of_eq_setOf_isSwap`). So `h1_le_div` gives
+  `h1 ≤ 8 q ^ 3 / (6 q ^ 2) = 4 q / 3`.
+  The same witness is also stated through `Cochain.replicate`:
+  `Sym3.replicatedSeed q = (Cochain.ofLt (complete (Fin 4)) seed).replicate (Fin q)` has defect
+  `8 q ^ 3` and gauge distance `6 q ^ 2` (`defect_replicatedSeed`, `gaugeDist_replicatedSeed`,
+  from `defect_ofLt_seed` and `gaugeDist_seed`), the identity gauge costs `6 q ^ 2`
+  (`cost_one_replicatedSeed`), and `Sym3.replicatedSeedOfCardEq` carries it to any `V` with
+  `card V = 4 q`, where its ratio is `card V / 3`
+  (`Sym3.defect_div_gaugeDist_replicatedSeedOfCardEq`).
 
 ## References
 
@@ -64,8 +68,8 @@ For the upper bound, every `k ≥ 3` is `4 q` or `(2 t + 1) q` with `t, q ≥ 1`
 * D. N. Kozlov, *The first Cheeger constant of a simplex*, arXiv:1610.07136,
   Definition 3.2 (staircase graphs), Lemma 3.8 and Corollary 3.13 (cut-minimality).
 * Jeromie Beasley, `coboundary-k3-lean` (MIT), https://github.com/dicipler-pixel/coboundary-k3-lean,
-  commit `7f5f2c6`: the `k = 4` seed, called `w4` there, comes from `CoboundaryK3/Basic.lean`, and
-  the assembly of the seeds follows `CoboundaryK3/Constant.lean` and `CoboundaryK3/Staircase.lean`.
+  commit `7f5f2c6`: the `k = 4` seed `Sym3.seed` comes from `CoboundaryK3/Basic.lean`, and the
+  assembly of the seeds follows `CoboundaryK3/Constant.lean` and `CoboundaryK3/Staircase.lean`.
 -/
 
 public section
@@ -76,29 +80,50 @@ open Finset Equiv Equiv.Perm TwoComplex
 
 namespace Sym3
 
-/-- The four-vertex seed of Proposition 5, the edge labelling called `w4` in
-`CoboundaryK3/Basic.lean`: `swap 1 2`, `swap 0 1` and `swap 0 2` on the ordered pairs
-`(1, 2)`, `(1, 3)` and `(2, 3)`, and `1` on every other ordered pair. `Cochain.ofLt` reads it
-on `u < v`. -/
+/-- The `k = 4` seed of Proposition 5: `swap 1 2`, `swap 0 1`, `swap 0 2` on the ordered pairs
+`(1, 2)`, `(1, 3)`, `(2, 3)` and `1` on all other ordered pairs; it is read on `u < v` (via
+`Cochain.ofLt`). -/
 def seed (u v : Fin 4) : Perm (Fin 3) :=
   if u = 1 ∧ v = 2 then swap 1 2 else if u = 1 ∧ v = 3 then swap 0 1
   else if u = 2 ∧ v = 3 then swap 0 2 else 1
 
-/-- `seed` is `swap 1 2`, `swap 0 1`, `swap 0 2` on `(1, 2)`, `(1, 3)`, `(2, 3)`, and `1`
-elsewhere. -/
-theorem seed_apply (u v : Fin 4) : seed u v =
-    if u = 1 ∧ v = 2 then swap 1 2 else if u = 1 ∧ v = 3 then swap 0 1
-    else if u = 2 ∧ v = 3 then swap 0 2 else 1 :=
+/-- The values of the seed: `swap 1 2`, `swap 0 1`, `swap 0 2` on `(1, 2)`, `(1, 3)`, `(2, 3)`
+and `1` elsewhere. -/
+theorem seed_def (u v : Fin 4) :
+    seed u v = if u = 1 ∧ v = 2 then swap 1 2 else if u = 1 ∧ v = 3 then swap 0 1
+      else if u = 2 ∧ v = 3 then swap 0 2 else 1 :=
   (rfl)
 
-/-- The seed has moved-point defect `8`. -/
-theorem defect_seed :
+/-- The seed is `1` on the three edges at the vertex `0`. -/
+theorem seed_zero_of_pos : ∀ v : Fin 4, 0 < v → seed 0 v = 1 := by decide
+
+/-- The seed carries the three transpositions of `Perm (Fin 3)` on the edges `(1, 2)`, `(1, 3)`,
+`(2, 3)`, one each. -/
+theorem insert_seed_eq_setOf_isSwap :
+    ({seed 1 2, seed 1 3, seed 2 3} : Set (Perm (Fin 3))) = {σ | σ.IsSwap} := by
+  rw [setOf_isSwap_perm_fin_three]
+  ext σ
+  simp only [seed, Set.mem_insert_iff, Set.mem_singleton_iff]
+  decide +revert
+
+/-- The seed has moved-point defect `8`: each of its four triangles has a transposition as
+holonomy. -/
+theorem defect_ofLt_seed :
     (Cochain.ofLt (complete (Fin 4)) seed).defect (movedNorm (Fin 3)) = 8 := by
-  rw [Cochain.defect_ofLt_complete_movedNorm]
-  have h8 : ∑ p ∈ univ.filter fun p : Fin 4 × Fin 4 × Fin 4 => p.1 < p.2.1 ∧ p.2.1 < p.2.2,
-      (seed p.1 p.2.1 * seed p.2.1 p.2.2 * (seed p.1 p.2.2)⁻¹).support.card = 8 := by
+  rw [Cochain.defect_complete]
+  have h : ∀ p ∈ (univ.filter fun p : Fin 4 × Fin 4 × Fin 4 => p.1 < p.2.1 ∧ p.2.1 < p.2.2),
+      movedNorm (Fin 3) ((Cochain.ofLt (complete (Fin 4)) seed).holonomy p.1 p.2.1 p.2.2) =
+        ((#(seed p.1 p.2.1 * seed p.2.1 p.2.2 * (seed p.1 p.2.2)⁻¹).support : ℕ) : ℝ) := by
+    intro p hp
+    rw [mem_filter] at hp
+    rw [Cochain.holonomy_ofLt_complete _ hp.2.1 hp.2.2, movedNorm_apply]
+  rw [sum_congr rfl h, ← Nat.cast_sum]
+  have h8 :
+      ∑ p ∈ (univ.filter fun p : Fin 4 × Fin 4 × Fin 4 => p.1 < p.2.1 ∧ p.2.1 < p.2.2),
+        #(seed p.1 p.2.1 * seed p.2.1 p.2.2 * (seed p.1 p.2.2)⁻¹).support = 8 := by
     decide +kernel
-  exact_mod_cast h8
+  rw [h8]
+  norm_num
 
 /-- The identity gauge costs `6` against the seed: its three non-identity edges are
 transpositions. -/
@@ -116,12 +141,6 @@ theorem gaugeDist_seed :
     (Cochain.ofLt (complete (Fin 4)) seed).gaugeDist (movedNorm (Fin 3)) = 6 := by
   refine le_antisymm (((Cochain.ofLt (complete (Fin 4)) seed).gaugeDist_le_cost _
     (fun _ => 1)).trans cost_one_seed.le) ?_
-  have h0 : ∀ v : Fin 4, 0 < v → seed 0 v = 1 := by decide
-  have hsw : ({seed 1 2, seed 1 3, seed 2 3} : Set (Perm (Fin 3))) = {σ | σ.IsSwap} := by
-    rw [setOf_isSwap_perm_fin_three]
-    ext σ
-    simp only [seed, Set.mem_insert_iff, Set.mem_singleton_iff]
-    decide +revert
   refine (Cochain.le_gaugeDist_iff _ _).mpr fun β => ?_
   rw [Cochain.cost_complete]
   have hS : univ.filter (fun p : Fin 4 × Fin 4 => p.1 < p.2) =
@@ -138,7 +157,8 @@ theorem gaugeDist_seed :
       ← mul_distErr_mul_inv_eq_movedNorm]
     norm_num
   rw [sum_congr rfl hterm, ← mul_sum]
-  have hle := two_le_sum_distErr_fin_four_of_eq_setOf_isSwap seed h0 hsw β
+  have hle := two_le_sum_distErr_fin_four_of_eq_setOf_isSwap seed seed_zero_of_pos
+    insert_seed_eq_setOf_isSwap β
   linarith
 
 /-- The replicated seed on `Fin 4 ×ₗ Fin q`: the balanced replication of the cochain of `seed`,
@@ -155,7 +175,7 @@ theorem replicatedSeed_def (q : ℕ) : replicatedSeed q =
 /-- Replication multiplies the seed defect `8` by `q ^ 3`. -/
 theorem defect_replicatedSeed (q : ℕ) :
     (replicatedSeed q).defect (movedNorm (Fin 3)) = 8 * (q : ℝ) ^ 3 := by
-  rw [replicatedSeed, Cochain.defect_replicate, defect_seed, Fintype.card_fin]
+  rw [replicatedSeed, Cochain.defect_replicate, defect_ofLt_seed, Fintype.card_fin]
   ring
 
 /-- Replication multiplies the seed gauge distance `6` by `q ^ 2`. -/
@@ -175,17 +195,54 @@ theorem cost_one_replicatedSeed (q : ℕ) :
   rw [← hγ, Cochain.cost_replicate_comp, cost_one_seed, Fintype.card_fin]
   ring
 
-/-- The upper bound when `card V = 4 q`: replicate the seed, whose ratio is `8 / 6`. -/
+/-- Every gauge costs at least `6 q ^ 2` against the replication of `seed` on
+`Fin 4 ×ₗ Fin q`. -/
+private theorem six_mul_sq_le_gaugeDist_lex (q : ℕ) :
+    (6 * q ^ 2 : ℝ) ≤ (Cochain.ofLt (complete (Fin 4 ×ₗ Fin q)) fun x y =>
+      if (ofLex x).1 = (ofLex y).1 then 1 else seed (ofLex x).1 (ofLex y).1).gaugeDist
+        (movedNorm (Fin 3)) := by
+  have hinf := card_sq_mul_ciInf_le_ciInf_sum_distErr_lex (ι := Fin q) seed 3
+  rw [ciInf_sum_distErr_fin_four_three_of_eq_setOf_isSwap seed seed_zero_of_pos
+    insert_seed_eq_setOf_isSwap, Fintype.card_fin] at hinf
+  refine (Cochain.le_gaugeDist_iff _ _).mpr fun β => ?_
+  rw [Cochain.cost_complete]
+  have hterm : ∀ e ∈ (univ.filter fun p : (Fin 4 ×ₗ Fin q) × (Fin 4 ×ₗ Fin q) => p.1 < p.2),
+      movedNorm (Fin 3) ((β e.1)⁻¹ * (Cochain.ofLt (complete (Fin 4 ×ₗ Fin q)) fun x y =>
+        if (ofLex x).1 = (ofLex y).1 then 1 else seed (ofLex x).1 (ofLex y).1) e.1 e.2 *
+          β e.2) =
+      3 * distErr
+        (if (ofLex e.1).1 = (ofLex e.2).1 then 1 else seed (ofLex e.1).1 (ofLex e.2).1)
+        (β e.1 * (β e.2)⁻¹) := by
+    intro e he
+    rw [mem_filter] at he
+    rw [Cochain.ofLt_apply_of_lt _ ((adj_complete _ _).mpr he.2.ne) he.2,
+      ← mul_distErr_mul_inv_eq_movedNorm]
+    norm_num
+  rw [sum_congr rfl hterm, ← mul_sum]
+  have hle := ciInf_le (⟨0, Set.forall_mem_range.2 fun β' => sum_nonneg fun _ _ =>
+    distErr_nonneg _ _⟩ : BddBelow (Set.range fun β' : (Fin 4 ×ₗ Fin q) → Perm (Fin 3) =>
+      ∑ e ∈ (univ.filter fun p : (Fin 4 ×ₗ Fin q) × (Fin 4 ×ₗ Fin q) => p.1 < p.2),
+        distErr (if (ofLex e.1).1 = (ofLex e.2).1 then 1 else seed (ofLex e.1).1 (ofLex e.2).1)
+          (β' e.1 * (β' e.2)⁻¹))) β
+  linarith
+
+/-- The upper bound when `card V = 4 q`. -/
 private theorem h1_complete_le_of_card_eq_four_mul {V : Type*} [Fintype V] [LinearOrder V]
-    {q : ℕ} (hV : Fintype.card V = 4 * q) :
+    {q : ℕ} (hq : 0 < q) (hV : Fintype.card V = 4 * q) :
     h1 (complete V) (movedNorm (Fin 3)) ≤ (Fintype.card V : ℝ) / 3 := by
   rw [h1_complete_eq_of_card_eq isConjInvariant_movedNorm (W := Fin 4 ×ₗ Fin q)
     (by rw [hV, Fintype.card_lex, Fintype.card_prod, Fintype.card_fin, Fintype.card_fin])]
-  refine (h1_complete_lex_le_card_mul_div (ι := Fin q)
-    (by rw [gaugeDist_seed]; norm_num)).trans_eq ?_
-  rw [defect_seed, gaugeDist_seed, Fintype.card_fin, hV]
-  push_cast
-  ring
+  have hgd := six_mul_sq_le_gaugeDist_lex q
+  have hpos : (0 : ℝ) < 6 * q ^ 2 := by positivity
+  refine (h1_le_div (hpos.trans_le hgd)).trans ?_
+  rw [Cochain.defect_ofLt_lex, defect_ofLt_seed, Fintype.card_fin, hV]
+  calc (q : ℝ) ^ 3 * 8 / _ ≤ (q : ℝ) ^ 3 * 8 / (6 * q ^ 2) :=
+        div_le_div_of_nonneg_left (by positivity) hpos hgd
+    _ = ((4 * q : ℕ) : ℝ) / 3 := by
+        have hq' : (q : ℝ) ≠ 0 := by positivity
+        push_cast
+        field_simp
+        ring
 
 variable {V : Type*} [Fintype V] [LinearOrder V]
 
@@ -213,7 +270,7 @@ private theorem h1_complete_movedNorm_fin_three_le {V : Type*} [Fintype V] [Line
     h1 (complete V) (movedNorm (Fin 3)) ≤ (Fintype.card V : ℝ) / 3 := by
   rcases Nat.four_dvd_or_exists_odd_prime_and_dvd_of_two_lt (by omega : 2 < Fintype.card V) with
     ⟨q, hq⟩ | ⟨p, hp, ⟨q, hq⟩, t, rfl⟩
-  · exact Sym3.h1_complete_le_of_card_eq_four_mul hq
+  · exact Sym3.h1_complete_le_of_card_eq_four_mul (by omega) hq
   · have ht : 0 < t := by have := hp.one_lt; omega
     have hq0 : 0 < q := Nat.pos_of_ne_zero fun h => by simp [h] at hq; omega
     exact h1_complete_movedNorm_fin_three_le_of_card_eq_mul hq0 ht (by rw [hq]; ring)
@@ -262,7 +319,7 @@ theorem defect_div_gaugeDist_replicatedSeedOfCardEq {q : ℕ} (hq : 0 < q)
   have hq' : (q : ℝ) ≠ 0 := by exact_mod_cast hq.ne'
   simp only [replicatedSeedOfCardEq, Cochain.defect_relabelComplete isConjInvariant_movedNorm,
     Cochain.gaugeDist_relabelComplete, replicatedSeed, Cochain.defect_div_gaugeDist_replicate,
-    defect_seed, gaugeDist_seed, Fintype.card_fin, hV]
+    defect_ofLt_seed, gaugeDist_seed, Fintype.card_fin, hV]
   field_simp [hq']
   push_cast
   ring

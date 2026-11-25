@@ -25,11 +25,13 @@ functionals, and finite coordinate projections of `haarBasis 𝕜 p hp`, with in
 equal to `dyadicProj 𝕜 p N`.
 
 Over `ℝ`, Burkholder's martingale-transform bound gives the constant
-`max p.toReal (p.toReal / (p.toReal - 1)) - 1` for finite signed Haar sums, finite signed
-coordinate multipliers, finite coordinate projections, and the unconditional basis constant
-`nnNormProjBound`. Over `[RCLike 𝕜]`, the same bounds hold with an additional factor of `2`. At
-`p = 2`, finite Haar sums satisfy Parseval's identity, unimodular Haar multipliers are `L²`
-isometries, and `nnNormProjBound` equals `1`.
+`max p.toReal (p.toReal / (p.toReal - 1)) - 1` for finite signed Haar sums and finite signed
+coordinate multipliers, and hence `max p.toReal (p.toReal / (p.toReal - 1)) / 2` for finite
+coordinate projections and the unconditional basis constant `nnNormProjBound`. Over `[RCLike 𝕜]`,
+the signed bounds carry an additional factor of `2`, giving
+`max p.toReal (p.toReal / (p.toReal - 1)) - 1 / 2` for finite coordinate projections and
+`nnNormProjBound`. At `p = 2`, finite Haar sums satisfy Parseval's identity, unimodular Haar
+multipliers are `L²` isometries, and `nnNormProjBound` equals `1`.
 
 ## Main definitions
 
@@ -632,14 +634,18 @@ theorem norm_sum_signed_coord_haarBasis_real_le {p : ℝ≥0∞} [Fact (1 ≤ p)
           simpa using (dyadicProj ℝ p N).le_of_opNorm_le (norm_dyadicProj_le ℝ p N) g
 
 /-- Every finite coordinate projection of the real Haar basis on `Lᵖ(I)` (`1 < p < ∞`) has operator
-norm at most `max p.toReal (p.toReal / (p.toReal - 1)) - 1`. -/
+norm at most `max p.toReal (p.toReal / (p.toReal - 1)) / 2`. -/
 theorem norm_proj_haarBasis_real_le {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (hp1 : 1 < p) (hp : p ≠ ∞) (A : Finset ℕ) :
     ‖GeneralSchauderBasis.proj (haarBasis ℝ p hp) A‖ ≤
-      max p.toReal (p.toReal / (p.toReal - 1)) - 1 :=
-  (haarBasis ℝ p hp).norm_proj_finset_le_of_range_signed
-    (fun N _ hδ g => by
-      simpa using norm_sum_signed_coord_haarBasis_real_le hp1 hp (Finset.range N) hδ g) A
+      max p.toReal (p.toReal / (p.toReal - 1)) / 2 := by
+  have h := (haarBasis ℝ p hp).norm_proj_le_of_range_sign_bound (M := 1)
+    (fun N ε hε g => by
+      have hε' : ∀ k, |ε k| = 1 := fun k => (abs_eq zero_le_one).2 (hε k)
+      simpa only [RCLike.ofReal_real_eq_id, id_eq, smul_smul, GeneralSchauderBasis.proj_apply] using
+        norm_sum_signed_haarBasis_real_le hp1 hp (fun k => (haarBasis ℝ p hp).coord k g) hε' N)
+    (fun N => by rw [← SchauderBasis.proj, haarBasis_proj]; exact norm_dyadicProj_le ℝ p N) A
+  linarith
 
 /-- Every finite signed coordinate multiplier of the Haar basis on `Lᵖ(I; 𝕜)` (`1 < p < ∞`) has
 norm at most `2 * (max p.toReal (p.toReal / (p.toReal - 1)) - 1)`. -/
@@ -664,13 +670,18 @@ theorem norm_sum_signed_coord_haarBasis_le {𝕜 : Type*} [RCLike 𝕜] {p : ℝ
           simpa using (dyadicProj 𝕜 p N).le_of_opNorm_le (norm_dyadicProj_le 𝕜 p N) g
 
 /-- Every finite coordinate projection of the Haar basis on `Lᵖ(I; 𝕜)` (`1 < p < ∞`) has operator
-norm at most `2 * (max p.toReal (p.toReal / (p.toReal - 1)) - 1)`. -/
+norm at most `max p.toReal (p.toReal / (p.toReal - 1)) - 1 / 2`. -/
 theorem norm_proj_haarBasis_le {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (hp1 : 1 < p) (hp : p ≠ ∞) (A : Finset ℕ) :
     ‖GeneralSchauderBasis.proj (haarBasis 𝕜 p hp) A‖ ≤
-      2 * (max p.toReal (p.toReal / (p.toReal - 1)) - 1) :=
-  (haarBasis 𝕜 p hp).norm_proj_finset_le_of_range_signed
-    (fun N _ hδ g => norm_sum_signed_coord_haarBasis_le hp1 hp (Finset.range N) hδ g) A
+      max p.toReal (p.toReal / (p.toReal - 1)) - 1 / 2 := by
+  have h := (haarBasis 𝕜 p hp).norm_proj_le_of_range_sign_bound (M := 1)
+    (fun N ε hε g => by
+      have hε' : ∀ k, |ε k| = 1 := fun k => (abs_eq zero_le_one).2 (hε k)
+      simpa only [smul_smul, GeneralSchauderBasis.proj_apply] using
+        norm_sum_signed_haarBasis_le hp1 hp (fun k => (haarBasis 𝕜 p hp).coord k g) hε' N)
+    (fun N => by rw [← SchauderBasis.proj, haarBasis_proj]; exact norm_dyadicProj_le 𝕜 p N) A
+  linarith
 
 /-- **Unconditional convergence of the Haar expansion in `Lᵖ([0, 1]; 𝕜)`**, `1 < p < ∞`. -/
 theorem hasSum_haarBasis {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
@@ -726,19 +737,19 @@ theorem haarUnconditionalBasis_proj_range (hp1 : 1 < p) (hp : p ≠ ∞) (N : �
   rw [haarUnconditionalBasis_proj, ← SchauderBasis.proj, haarBasis_proj]
 
 /-- The unconditional basis constant of the real Haar basis of `Lᵖ([0, 1])` (`1 < p < ∞`) is at
-most `max p.toReal (p.toReal / (p.toReal - 1)) - 1`. -/
+most `max p.toReal (p.toReal / (p.toReal - 1)) / 2`. -/
 theorem nnNormProjBound_haarUnconditionalBasis_real_le (hp1 : 1 < p) (hp : p ≠ ∞) :
     ((haarUnconditionalBasis ℝ p hp1 hp).nnNormProjBound : ℝ) ≤
-      max p.toReal (p.toReal / (p.toReal - 1)) - 1 := by
+      max p.toReal (p.toReal / (p.toReal - 1)) / 2 := by
   refine (haarUnconditionalBasis ℝ p hp1 hp).coe_nnNormProjBound_le fun A => ?_
   rw [haarUnconditionalBasis_proj]
   exact norm_proj_haarBasis_real_le hp1 hp A
 
 /-- The unconditional basis constant of the Haar basis of `Lᵖ([0, 1]; 𝕜)` (`1 < p < ∞`) is at most
-`2 * (max p.toReal (p.toReal / (p.toReal - 1)) - 1)`. -/
+`max p.toReal (p.toReal / (p.toReal - 1)) - 1 / 2`. -/
 theorem nnNormProjBound_haarUnconditionalBasis_le (hp1 : 1 < p) (hp : p ≠ ∞) :
     ((haarUnconditionalBasis 𝕜 p hp1 hp).nnNormProjBound : ℝ) ≤
-      2 * (max p.toReal (p.toReal / (p.toReal - 1)) - 1) := by
+      max p.toReal (p.toReal / (p.toReal - 1)) - 1 / 2 := by
   refine (haarUnconditionalBasis 𝕜 p hp1 hp).coe_nnNormProjBound_le fun A => ?_
   rw [haarUnconditionalBasis_proj]
   exact norm_proj_haarBasis_le hp1 hp A

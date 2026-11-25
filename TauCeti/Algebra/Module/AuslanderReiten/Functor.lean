@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Module.AuslanderReiten.StableMorphism
 public import TauCeti.Algebra.Module.AuslanderReiten.FinitePresentation
 public import TauCeti.Algebra.Module.Projective.FinitePresentation
+public import TauCeti.Algebra.Category.ModuleCat.ProjectiveStable.FinitelyPresented
 
 /-!
 # The stable transpose functor
@@ -23,11 +24,10 @@ projectives. No Noetherian, commutativity, or minimality hypothesis is needed.
 
 ## Main definitions
 
-* `TauCeti.FinitelyPresentedStableModule`: finitely presented modules in the projective stable
-  quotient.
 * `TauCeti.stableTransposeFunctor`: the functor attached to a family of presentations.
 * `TauCeti.stableTransposeFunctorIso`: natural independence of that family.
-* `TauCeti.stableTranspose`: the functor obtained by choosing finite projective presentations.
+* `TauCeti.FinitelyPresentedStableModule.presentation` and `TauCeti.stableTranspose`: the chosen
+  finite projective presentations and the functor they define.
 
 ## References
 
@@ -42,16 +42,7 @@ open CategoryTheory
 
 universe u v
 
-variable (A : Type u) [Ring A]
-
-/-- Finitely presented modules, with morphisms taken modulo maps through projective modules.
-This is a full subcategory of the projective stable quotient of `ModuleCat`. -/
-abbrev FinitelyPresentedStableModule :=
-  ObjectProperty.FullSubcategory
-    (fun M : (ExactStructure.abelian (ModuleCat.{v} A)).ProjectiveStableCategory ↦
-      Module.FinitePresentation A M.as)
-
-variable {A}
+variable {A : Type u} [Ring A]
 
 local notation "S" =>
   ExactStructure.projectiveStableFunctor (ExactStructure.abelian (ModuleCat A))
@@ -233,17 +224,22 @@ theorem stableTransposeFunctorIso_symm :
   rw [Iso.symm_hom]
   exact ((Iso.hom_comp_eq_id _).1 h).symm
 
+/-- The finite projective presentation of a finitely presented stable module chosen by
+`TauCeti.stableTranspose`. -/
+noncomputable abbrev FinitelyPresentedStableModule.presentation
+    (M : FinitelyPresentedStableModule.{u, max u v} A) : FiniteProjectivePresentation M.obj.as :=
+  letI := M.property
+  FiniteProjectivePresentation.ofFinitePresentation
+
 variable (A)
 
 /-- The Auslander–Bridger transpose on finitely presented stable modules, using chosen finite
-projective presentations. The result is independent of the choices by
-`TauCeti.stableTransposeFunctorIso`. -/
+projective presentations (`TauCeti.FinitelyPresentedStableModule.presentation`). The result is
+independent of the choices by `TauCeti.stableTransposeFunctorIso`. -/
 noncomputable def stableTranspose :
     FinitelyPresentedStableModule.{u, max u v} A ⥤
       (FinitelyPresentedStableModule.{u, max u v} Aᵐᵒᵖ)ᵒᵖ :=
-  stableTransposeFunctor fun M ↦
-    letI := M.property
-    FiniteProjectivePresentation.ofFinitePresentation (M := M.obj.as)
+  stableTransposeFunctor FinitelyPresentedStableModule.presentation
 
 /-- The transpose is the functor constructed from the chosen finite projective presentations. -/
 theorem stableTranspose_def :
