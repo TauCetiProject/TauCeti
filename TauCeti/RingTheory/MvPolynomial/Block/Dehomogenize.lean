@@ -340,18 +340,9 @@ theorem blockDehomogenizeEquiv_symm_monomial {m : κ →₀ ℕ} (hm : ∀ h, m 
     (((blockDehomogenizeEquiv R e).symm ⟨monomial m 1, by simp [hm]⟩ :
         multiHomogeneousSubmodule R (Fin 2) e) : MvPolynomial (κ × Fin 2) R) =
       ∏ i, X (i, (1 : Fin 2)) ^ m i * X (i, 0) ^ (e i - m i) := by
-  have hH : IsMultiHomogeneous e (∏ i, X (i, (1 : Fin 2)) ^ m i * X (i, 0) ^ (e i - m i) :
-      MvPolynomial (κ × Fin 2) R) := by
-    have h := IsMultiHomogeneous.prod (R := R) Finset.univ
-      (fun i ↦ X (i, (1 : Fin 2)) ^ m i * X (i, 0) ^ (e i - m i)) (fun i ↦ Pi.single i (e i))
-      fun i _ ↦ by
-        have h1 := ((isMultiHomogeneous_X (R := R) i (1 : Fin 2)).pow (m i)).mul
-          ((isMultiHomogeneous_X (R := R) i (0 : Fin 2)).pow (e i - m i))
-        rwa [← add_smul, Nat.add_sub_cancel' (hm i), ← Pi.single_smul', smul_eq_mul,
-          mul_one] at h1
-    rwa [Finset.univ_sum_single] at h
   have h : (blockDehomogenizeEquiv R e).symm ⟨monomial m 1, by simp [hm]⟩ =
-      ⟨_, mem_multiHomogeneousSubmodule.2 hH⟩ := by
+      ⟨_, mem_multiHomogeneousSubmodule.2
+        (isMultiHomogeneous_prod_X_pow_mul_X_pow (R := R) hm (1 : Fin 2) 0)⟩ := by
     rw [LinearEquiv.symm_apply_eq]
     refine Subtype.ext ?_
     simp [monomial_eq, Finsupp.prod_fintype]

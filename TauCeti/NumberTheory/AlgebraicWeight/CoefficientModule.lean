@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.RepresentationTheory.Character.Twist
 public import TauCeti.RingTheory.MvPolynomial.Block.Dehomogenize
-public import TauCeti.RingTheory.MvPolynomial.LinearSubst
+public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.BlockSubst
 import TauCeti.RingTheory.MvPolynomial.Box
 
 /-!
@@ -96,15 +96,11 @@ degree at most `n i` in each `z_i`. Its monomial basis is
 noncomputable abbrev algWeightModule (n : ι → ℕ) : Submodule K (MvPolynomial ι K) :=
   restrictSupport K {m : ι →₀ ℕ | ∀ i, m i ≤ n i}
 
-/-- The algebraic coefficient module `L_n(K)` is free of rank `∏_i (n_i + 1)`, with the monomials
-`z^m`, `m ≤ n`, as a basis. -/
+/-- The algebraic coefficient module `L_n(K)` has rank `∏_i (n_i + 1)`; its monomial basis is
+`MvPolynomial.basisRestrictSupport`. -/
 theorem finrank_algWeightModule [Fintype ι] [StrongRankCondition K] (n : ι → ℕ) :
-    Module.finrank K (algWeightModule K n) = ∏ i, (n i + 1) := by
-  classical
-  rw [finrank_restrictSupport, ← range_boxMonomial,
-    ← Nat.card_congr (Equiv.ofInjective _ boxMonomial_injective), Nat.card_eq_fintype_card,
-    Fintype.card_pi]
-  simp
+    Module.finrank K (algWeightModule K n) = ∏ i, (n i + 1) :=
+  finrank_restrictSupport_box K n
 
 end Module
 
@@ -131,7 +127,7 @@ theorem algWeightSubstMatrix_apply (γ : ι → Matrix (Fin 2) (Fin 2) K) (x y :
   · simp [algWeightSubstMatrix, blockDiagonal_apply', h]
 
 /-- Changing coefficients commutes with forming `TauCeti.algWeightSubstMatrix`. -/
-theorem map_algWeightSubstMatrix {L : Type*} [CommRing L] (f : K →+* L)
+theorem algWeightSubstMatrix_map {L : Type*} [CommSemiring L] (f : K →+* L)
     (γ : ι → Matrix (Fin 2) (Fin 2) K) :
     (algWeightSubstMatrix γ).map f = algWeightSubstMatrix fun i ↦ (γ i).map f := by
   ext x y
@@ -146,6 +142,7 @@ theorem algWeightSubstMatrix_one : algWeightSubstMatrix (1 : ι → Matrix (Fin 
 
 variable [Fintype ι]
 
+@[simp]
 theorem algWeightSubstMatrix_mul (γ δ : ι → Matrix (Fin 2) (Fin 2) K) :
     algWeightSubstMatrix (γ * δ) = algWeightSubstMatrix γ * algWeightSubstMatrix δ := by
   rw [algWeightSubstMatrix, algWeightSubstMatrix, algWeightSubstMatrix, submatrix_mul_equiv,
@@ -154,35 +151,35 @@ theorem algWeightSubstMatrix_mul (γ δ : ι → Matrix (Fin 2) (Fin 2) K) :
   funext i
   exact (submatrix_mul_equiv (γ i) (δ i) Fin.rev Fin.revPerm Fin.rev).symm
 
+/-- The substitution of `TauCeti.algWeightSubstMatrix γ` is the substitution of the block-linear
+forms whose block at `i` is `γ_i` with rows and columns reindexed by `Fin.rev`. -/
+theorem linearSubst_algWeightSubstMatrix (γ : ι → Matrix (Fin 2) (Fin 2) K) :
+    linearSubst (algWeightSubstMatrix γ) = aeval (blockLinearForm fun i p q ↦ γ i p.rev q.rev) := by
+  rw [aeval_blockLinearForm_eq_linearSubst]
+  exact congrArg linearSubst (Matrix.ext (algWeightSubstMatrix_apply γ))
+
 /-- The substitution of `TauCeti.algWeightSubstMatrix γ` sends the affine variable `X_i` to
 `a_i X_i + b_i Y_i`. -/
 theorem linearSubst_algWeightSubstMatrix_X_one (γ : ι → Matrix (Fin 2) (Fin 2) K) (i : ι) :
     linearSubst (algWeightSubstMatrix γ) (X (i, 1)) =
       C (γ i 0 0) * X (i, 1) + C (γ i 0 1) * X (i, 0) := by
-  simp [linearSubst_X, algWeightSubstMatrix_apply, Fintype.sum_prod_type, apply_ite C, ite_mul,
-    Fin.sum_univ_two, add_comm]
+  rw [linearSubst_algWeightSubstMatrix, aeval_X, blockLinearForm_apply, Fin.sum_univ_two, add_comm]
+  simp
 
 /-- The substitution of `TauCeti.algWeightSubstMatrix γ` sends the homogenizing variable `Y_i` to
 `c_i X_i + d_i Y_i`. -/
 theorem linearSubst_algWeightSubstMatrix_X_zero (γ : ι → Matrix (Fin 2) (Fin 2) K) (i : ι) :
     linearSubst (algWeightSubstMatrix γ) (X (i, 0)) =
       C (γ i 1 0) * X (i, 1) + C (γ i 1 1) * X (i, 0) := by
-  simp [linearSubst_X, algWeightSubstMatrix_apply, Fintype.sum_prod_type, apply_ite C, ite_mul,
-    Fin.sum_univ_two, add_comm]
+  rw [linearSubst_algWeightSubstMatrix, aeval_X, blockLinearForm_apply, Fin.sum_univ_two, add_comm]
+  simp
 
 /-- The block-diagonal substitution preserves multihomogeneity in the pairs `(Y_i, X_i)`. -/
 theorem _root_.MvPolynomial.IsMultiHomogeneous.linearSubst_algWeightSubstMatrix {n : ι → ℕ}
     {P : MvPolynomial (ι × Fin 2) K} (hP : IsMultiHomogeneous n P)
     (γ : ι → Matrix (Fin 2) (Fin 2) K) :
-    IsMultiHomogeneous n (linearSubst (algWeightSubstMatrix γ) P) := by
-  rw [linearSubst_eq_aeval]
-  refine hP.aeval fun i p ↦ IsMultiHomogeneous.sum _ _ fun y _ ↦ ?_
-  rw [algWeightSubstMatrix_apply]
-  split_ifs with h
-  · obtain ⟨j, q⟩ := y
-    obtain rfl : i = j := h
-    exact (isMultiHomogeneous_X i q).C_mul _
-  · simp
+    IsMultiHomogeneous n (linearSubst (algWeightSubstMatrix γ) P) :=
+  hP.linearSubst_of_block fun x y h ↦ by simp [algWeightSubstMatrix_apply, h]
 
 end Matrix
 
@@ -250,17 +247,12 @@ theorem algWeightMatrixRep_scalar {n : ι → ℕ} (u : ι → K) :
       (∏ i, u i ^ n i) • LinearMap.id := by
   refine (basisRestrictSupport K _).ext fun m ↦ Subtype.ext ?_
   have hm : ∀ i, (m : ι →₀ ℕ) i ≤ n i := m.property
-  have hb : (basisRestrictSupport K {m : ι →₀ ℕ | ∀ i, m i ≤ n i} m : algWeightModule K n) =
-      ⟨monomial m 1, by simp⟩ := Subtype.ext (by simp)
-  rw [hb, coe_algWeightMatrixRep_monomial _ hm]
-  simp only [unop_op, scalar_apply, diagonal_apply, LinearMap.smul_apply, LinearMap.id_coe, id_eq,
-    SetLike.val_smul, smul_eq_C_mul, monomial_eq]
-  simp only [↓reduceIte, Fin.isValue, zero_ne_one, C_0, add_zero, one_ne_zero, zero_mul,
-    zero_add, map_prod, C_pow, C_1, Finsupp.prod_pow, one_mul, ← Finset.prod_mul_distrib]
-  refine Finset.prod_congr rfl fun i _ ↦ ?_
-  obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le (hm i)
-  rw [hk, Nat.add_sub_cancel_left]
-  ring
+  have key (i : ι) :
+      (C (u i) * X i) ^ (m : ι →₀ ℕ) i * C (u i) ^ (n i - (m : ι →₀ ℕ) i) =
+        C (u i) ^ n i * X i ^ (m : ι →₀ ℕ) i := by
+    rw [mul_pow, mul_right_comm, ← pow_add, Nat.add_sub_cancel' (hm i)]
+  rw [basisRestrictSupport_apply, coe_algWeightMatrixRep_monomial _ hm]
+  simp [smul_eq_C_mul, monomial_eq, Finsupp.prod_pow, key, Finset.prod_mul_distrib]
 
 end Rep
 
@@ -311,10 +303,12 @@ theorem algWeightSlash_eq_smul (n : ι → ℕ) (s : ι → ℤ) (γ : ι → GL
     algWeightSlash n s γ =
       ((∏ i, GeneralLinearGroup.det (γ i) ^ s i : Kˣ) : K) •
         algWeightMatrixRep K n (op fun i ↦ (γ i : Matrix (Fin 2) (Fin 2) K)) := by
+  have hγ : MonoidHom.compLeft (Units.coeHom (Matrix (Fin 2) (Fin 2) K)) ι γ =
+      fun i ↦ (γ i : Matrix (Fin 2) (Fin 2) K) :=
+    funext (MonoidHom.compLeft_apply _ _ γ)
   simp only [algWeightSlash, algWeightAction, Representation.charTwist_apply,
-    MonoidHom.comp_apply, MonoidHom.op_apply_apply, algWeightDetChar_apply, unop_op]
-  -- `MonoidHom.compLeft (Units.coeHom _) ι γ` is by definition `fun i ↦ (γ i : Matrix _ _ K)`
-  rfl
+    MonoidHom.comp_apply, MonoidHom.op_apply_apply, Function.comp_apply, algWeightDetChar_apply,
+    unop_op, hγ]
 
 @[simp]
 theorem algWeightSlash_one (n : ι → ℕ) (s : ι → ℤ) :
@@ -359,6 +353,15 @@ theorem algWeightSlash_scalar (n : ι → ℕ) (s : ι → ℤ) (u : ι → Kˣ)
   simp only [GeneralLinearGroup.det_scalar, Fintype.card_fin, ← key, Finset.prod_mul_distrib,
     Units.val_mul, Units.coe_prod, Units.val_pow_eq_pow_val]
 
+omit [DecidableEq ι] in
+/-- Changing coefficients along a ring map `f` carries the determinant character at `γ` to the
+determinant character at the image of `γ`. -/
+theorem algWeightDetChar_map {L : Type*} [CommRing L] (f : K →+* L) (s : ι → ℤ)
+    (γ : ι → GL (Fin 2) K) :
+    algWeightDetChar L s (op fun i ↦ GeneralLinearGroup.map f (γ i)) =
+      Units.map (f : K →* L) (algWeightDetChar K s (op γ)) := by
+  simp [GeneralLinearGroup.map_det, map_prod, map_zpow]
+
 /-- **Change of coefficients.** For a ring map `f : K →+* L`, changing the coefficients of
 `P ∣ γ` along `f` gives the slash, by the image of `γ`, of `P` with coefficients changed. -/
 theorem mapRestrictSupport_algWeightSlash {L : Type*} [CommRing L] (f : K →+* L) (n : ι → ℕ)
@@ -366,15 +369,10 @@ theorem mapRestrictSupport_algWeightSlash {L : Type*} [CommRing L] (f : K →+* 
     mapRestrictSupport _ f (algWeightSlash n s γ P) =
       algWeightSlash n s (fun i ↦ GeneralLinearGroup.map f (γ i)) (mapRestrictSupport _ f P) := by
   refine Subtype.ext ?_
-  rw [coe_mapRestrictSupport_apply, algWeightSlash_eq_smul, algWeightSlash_eq_smul,
-    LinearMap.smul_apply, LinearMap.smul_apply, Submodule.coe_smul, Submodule.coe_smul,
-    coe_algWeightMatrixRep_apply, coe_algWeightMatrixRep_apply, coe_mapRestrictSupport_apply,
-    smul_eq_C_mul, smul_eq_C_mul, map_mul, map_C, map_blockDehomogenize, map_linearSubst,
-    map_rename, ← blockHomogenize_map, map_algWeightSubstMatrix]
-  congr 2
-  rw [show ∏ i, GeneralLinearGroup.det (GeneralLinearGroup.map f (γ i)) ^ s i =
-      Units.map (f : K →* L) (∏ i, GeneralLinearGroup.det (γ i) ^ s i) by
-    simp [GeneralLinearGroup.map_det, map_prod, map_zpow], Units.coe_map, MonoidHom.coe_ofClass]
+  have hdet := congrArg Units.val (algWeightDetChar_map f s γ)
+  simp only [algWeightDetChar_apply, unop_op, Units.coe_map, MonoidHom.coe_ofClass] at hdet
+  simp [algWeightSlash_eq_smul, coe_algWeightMatrixRep_apply, smul_eq_C_mul, map_linearSubst,
+    map_blockDehomogenize, map_rename, ← blockHomogenize_map, algWeightSubstMatrix_map, hdet]
 
 end Twist
 
