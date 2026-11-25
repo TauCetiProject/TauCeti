@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.LinearAlgebra.LinearIndependent.Basic
+public import TauCeti.Analysis.SpecialFunctions.Complex.Exp.NegOfRealMulI
 
 /-!
 # The characteristic function of lozenge type weights and its zeros
@@ -18,8 +19,11 @@ public import Mathlib.LinearAlgebra.LinearIndependent.Basic
 For type weights `w = (w₁, w₂, w₃)` of the lozenge dimer model, the characteristic function is
 `P_w(θ, φ) = w₃ + w₂ e^{iθ} + w₁ e^{−iφ}` (`TauCeti.lozengeCharFun`), and `w` is liquid when the
 strict triangle inequalities hold (`TauCeti.IsLiquidWeights`); liquid weights are positive. For
-liquid `w` and `d ∈ ℤ²` the infinite inverse Kasteleyn kernel is
+`d ∈ ℤ²` the infinite inverse Kasteleyn kernel is
 `G_w(d) = (4π²)⁻¹ ∫∫_{[0,2π]²} e^{i(d₁θ + d₂φ)} / P_w(θ, φ) dθ dφ` (`TauCeti.lozengeKernel`).
+It is a Bochner integral, so it is defined for all `w` and equals `0` when `1 / P_w` is not
+integrable on the torus; it is the inverse Kasteleyn kernel wherever `1 / P_w` is integrable.
+That integrability for liquid weights, where `P_w` has zeros, is not established here.
 
 The main result locates the zeros of `P_w` for liquid `w`
 (`TauCeti.lozengeCharFun_eq_zero_iff`): modulo `2π` in each variable they are exactly
@@ -72,8 +76,11 @@ theorem isLiquidWeights_iff {w₁ w₂ w₃ : ℝ} :
   Iff.rfl
 
 /-- The infinite inverse Kasteleyn kernel
-`G_w(d) = (4π²)⁻¹ ∫∫_{[0,2π]²} e^{i(d₁θ + d₂φ)} / P_w(θ, φ) dθ dφ`. It is meant for liquid
-weights, for which `1 / P_w` is integrable on the torus. -/
+`G_w(d) = (4π²)⁻¹ ∫∫_{[0,2π]²} e^{i(d₁θ + d₂φ)} / P_w(θ, φ) dθ dφ`. As a Bochner integral it is
+total: it equals `0` when `1 / P_w` is not integrable on the torus, and it is the inverse
+Kasteleyn kernel wherever `1 / P_w` is integrable, for instance when `P_w` is bounded away from
+`0`, as for `w = (1, 1, 3)`. Integrability of `1 / P_w` for liquid weights, where `P_w` has
+zeros, is not yet established in this library. -/
 def lozengeKernel (w₁ w₂ w₃ : ℝ) (d : ℤ × ℤ) : ℂ :=
   ((4 * Real.pi ^ 2)⁻¹ : ℝ) • ∫ p in Ioc 0 (2 * Real.pi) ×ˢ Ioc 0 (2 * Real.pi),
     exp ((d.1 * p.1 + d.2 * p.2 : ℝ) * I) / lozengeCharFun w₁ w₂ w₃ p.1 p.2
@@ -103,21 +110,15 @@ theorem lozengeZeroAngleSnd_def (w₁ w₂ w₃ : ℝ) :
     lozengeZeroAngleSnd w₁ w₂ w₃ = Real.arccos ((w₂ ^ 2 - w₁ ^ 2 - w₃ ^ 2) / (2 * w₁ * w₃)) :=
   (rfl)
 
-private theorem exp_neg_ofReal_mul_I_re (φ : ℝ) : (exp (-(φ * I))).re = Real.cos φ := by
-  rw [show -((φ : ℂ) * I) = ((-φ : ℝ) : ℂ) * I by push_cast; ring, exp_ofReal_mul_I_re,
-    Real.cos_neg]
-
-private theorem exp_neg_ofReal_mul_I_im (φ : ℝ) : (exp (-(φ * I))).im = -Real.sin φ := by
-  rw [show -((φ : ℂ) * I) = ((-φ : ℝ) : ℂ) * I by push_cast; ring, exp_ofReal_mul_I_im,
-    Real.sin_neg]
-
 /-- The real part of `P_w(θ, φ)` is `w₃ + w₂ cos θ + w₁ cos φ`. -/
+@[simp]
 theorem lozengeCharFun_re (w₁ w₂ w₃ θ φ : ℝ) :
     (lozengeCharFun w₁ w₂ w₃ θ φ).re = w₃ + w₂ * Real.cos θ + w₁ * Real.cos φ := by
   simp only [lozengeCharFun, add_re, mul_re, ofReal_re, ofReal_im, zero_mul, sub_zero,
     exp_ofReal_mul_I_re, exp_neg_ofReal_mul_I_re]
 
 /-- The imaginary part of `P_w(θ, φ)` is `w₂ sin θ − w₁ sin φ`. -/
+@[simp]
 theorem lozengeCharFun_im (w₁ w₂ w₃ θ φ : ℝ) :
     (lozengeCharFun w₁ w₂ w₃ θ φ).im = w₂ * Real.sin θ - w₁ * Real.sin φ := by
   simp only [lozengeCharFun, add_im, mul_im, ofReal_re, ofReal_im, zero_mul, add_zero,
@@ -306,7 +307,7 @@ theorem hasDerivAt_lozengeCharFun_fst (w₁ w₂ w₃ θ φ : ℝ) :
   have h := ((((hasDerivAt_id θ).ofReal_comp).mul_const I).cexp.const_mul (w₂ : ℂ)).const_add
     (w₃ : ℂ) |>.add_const (w₁ * exp (-(φ * I)))
   simp only [id, ofReal_one, one_mul] at h
-  change HasDerivAt (fun θ : ℝ => (w₃ : ℂ) + w₂ * exp (θ * I) + w₁ * exp (-(φ * I))) _ θ
+  simp only [lozengeCharFun_def]
   convert h using 1
   ring
 
@@ -316,7 +317,7 @@ theorem hasDerivAt_lozengeCharFun_snd (w₁ w₂ w₃ θ φ : ℝ) :
   have h := ((((hasDerivAt_id φ).ofReal_comp).mul_const I).neg.cexp.const_mul
     (w₁ : ℂ)).const_add ((w₃ : ℂ) + w₂ * exp (θ * I))
   simp only [id, ofReal_one, one_mul, Pi.neg_apply] at h
-  change HasDerivAt (fun φ : ℝ => (w₃ : ℂ) + w₂ * exp (θ * I) + w₁ * exp (-(φ * I))) _ φ
+  simp only [lozengeCharFun_def]
   convert h using 1
   ring
 
@@ -332,11 +333,17 @@ theorem linearIndependent_deriv_lozengeCharFun (hw : IsLiquidWeights w₁ w₂ w
   rw [LinearIndependent.pair_iff]
   intro s t hst
   have hre : -(s * (w₂ * Real.sin θ)) - t * (w₁ * Real.sin φ) = 0 := by
-    simpa [exp_ofReal_mul_I_re, exp_ofReal_mul_I_im, exp_neg_ofReal_mul_I_re,
-      exp_neg_ofReal_mul_I_im, sub_eq_add_neg] using congrArg re hst
+    have h' := congrArg re hst
+    simp only [add_re, smul_re, smul_eq_mul, neg_re, mul_re, mul_im, I_re, I_im, ofReal_re,
+      ofReal_im, exp_ofReal_mul_I_re, exp_ofReal_mul_I_im, exp_neg_ofReal_mul_I_re,
+      exp_neg_ofReal_mul_I_im, zero_re] at h'
+    linear_combination h'
   have him : s * (w₂ * Real.cos θ) - t * (w₁ * Real.cos φ) = 0 := by
-    simpa [exp_ofReal_mul_I_re, exp_ofReal_mul_I_im, exp_neg_ofReal_mul_I_re,
-      exp_neg_ofReal_mul_I_im, sub_eq_add_neg] using congrArg im hst
+    have h' := congrArg im hst
+    simp only [add_im, smul_im, smul_eq_mul, neg_im, mul_re, mul_im, I_re, I_im, ofReal_re,
+      ofReal_im, exp_ofReal_mul_I_re, exp_ofReal_mul_I_im, exp_neg_ofReal_mul_I_re,
+      exp_neg_ofReal_mul_I_im, zero_im] at h'
+    linear_combination h'
   rw [Real.sin_add] at hd
   constructor
   · refine (mul_eq_zero.1 (?_ : s * (w₁ * w₂ * (Real.sin θ * Real.cos φ +

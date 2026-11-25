@@ -107,12 +107,10 @@ private theorem two_le_norm_three_add_exp (θ : ℝ) : 2 ≤ ‖(3 : ℂ) + exp 
 theorem one_le_norm_lozengeCharFun_one_one_three (θ φ : ℝ) :
     1 ≤ ‖lozengeCharFun 1 1 3 θ φ‖ := by
   have h := norm_sub_norm_le ((3 : ℂ) + exp (θ * I)) (-exp (-(φ * I)))
-  rw [sub_neg_eq_add, norm_neg, show -((φ : ℂ) * I) = ((-φ : ℝ) : ℂ) * I by push_cast; ring,
-    norm_exp_ofReal_mul_I] at h
+  rw [sub_neg_eq_add, norm_neg, norm_exp_neg_ofReal_mul_I] at h
   rw [lozengeCharFun_def]
   push_cast
   simp only [one_mul]
-  rw [show -((φ : ℂ) * I) = ((-φ : ℝ) : ℂ) * I by push_cast; ring]
   linarith [two_le_norm_three_add_exp θ]
 
 /-- The inner integral: `∫₀^{2π} 1 / (b + e^{−iφ}) dφ = 2π / b` for `‖b‖ > 1`. -/
