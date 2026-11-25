@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Dirac.D
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Dirac.Split
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Dirac.Square
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
+import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
 # The energy identity of a Dirac operator split along a parallel unit field
@@ -235,7 +236,7 @@ theorem two_mul_integral_inner_clifford_covariantDerivative_transverseDiracOpera
             (hcT hTσ) (.inl hσc)
       _ = _ := integral_congr_ae (.of_forall fun x ↦ congrArg (⟪σ x, ·⟫)
           (cov.transverseDiracOperator_clifford_eq c T (hT1 x)
-            (fun u w ↦ apply_apply_add_swap_eq_neg_two_inner c (hcl x) u (T x) w) (hpar hTσ x)))
+            (fun u w ↦ (c x).apply_apply_add_swap_eq_neg_two_inner (hcl x) u (T x) w) (hpar hTσ x)))
   have h₂ : Integrable (fun x ↦ ⟪σ x,
       -c x (T x) (cov.transverseDiracOperator c T (fun y ↦ cov σ y (T y)) x)⟫) μ :=
     hint (hcT (cov.contMDiff_transverseDiracOperator hc hTs hTσ)).neg_section

@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
-import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
 # The Dirac operator of a connection and a Clifford multiplication
@@ -47,8 +46,7 @@ equations. None of these hypotheses is used by the first-order calculus of this 
   order one (`diracOperator_smul_smul_sub`).
 * **Ellipticity.** Under the Clifford relation `c(v) c(v) = -⟪v, v⟫`, the symbol `c(grad f)` is
   injective where `df ≠ 0`: if `[D, f] σ` vanishes at such a point, so does `σ`
-  (`eq_zero_of_diracOperator_smul_sub_eq_zero`). The Clifford relation polarizes to
-  `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫` (`apply_apply_add_swap_eq_neg_two_inner`).
+  (`eq_zero_of_diracOperator_smul_sub_eq_zero`).
 * **Gradings.** If an endomorphism `γ` anticommutes with Clifford multiplication and `∇σ` lies in
   its `a`-eigenspace at a point, then `D σ` lies in its `-a`-eigenspace there
   (`apply_diracOperator_eq_neg_smul`).
@@ -142,16 +140,6 @@ theorem diracOperator_eq_zero_of_eq_zero (x : M) (hσ : cov σ x = 0) :
 theorem diracOperator_zero [VectorBundle ℝ F V] (x : M) :
     cov.diracOperator c (0 : Π y : M, V y) x = 0 :=
   cov.diracOperator_eq_zero_of_eq_zero c x (by simp)
-
-omit [FiniteDimensional ℝ E] in
-/-- The polarized Clifford relation `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫` for the Clifford
-multiplication at `x`, from `c(v)² = -⟪v, v⟫` there. -/
-theorem apply_apply_add_swap_eq_neg_two_inner {x : M}
-    (hcl : ∀ (v : TangentSpace I x) (s : V x), c x v (c x v s) = -⟪v, v⟫ • s)
-    (u v : TangentSpace I x) (s : V x) :
-    c x u (c x v s) + c x v (c x u s) = -(2 * ⟪u, v⟫) • s := by
-  simpa using LinearMap.apply_apply_add_swap_eq_neg_two_inner
-    ((ContinuousLinearMap.coeLM ℝ).comp (c x).toLinearMap) (by simpa using hcl) u v s
 
 /-- The Dirac operator at `x` depends on `σ` only through its covariant derivative `∇σ` at `x`. -/
 theorem diracOperator_congr {x : M} (h : cov σ x = cov τ x) :
