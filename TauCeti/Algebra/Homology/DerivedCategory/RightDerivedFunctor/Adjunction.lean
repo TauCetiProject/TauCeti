@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.Localization
 public import Mathlib.CategoryTheory.Functor.Derived.Adjunction
-public import Mathlib.CategoryTheory.Functor.Derived.PointwiseLeftDerived
-public import Mathlib.CategoryTheory.Localization.Adjunction
+public import TauCeti.Algebra.Homology.DerivedCategory.ExactFunctor
 public import TauCeti.Algebra.Homology.Adjunction
 public import TauCeti.Algebra.Homology.DerivedCategory.RightDerivedFunctor.Basic
 
@@ -48,56 +46,12 @@ universe w w' v v' u u'
 
 namespace CategoryTheory.Adjunction
 
-section HomotopyCategory
-
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C] {D : Type u'}
-  [Category.{v'} D] [Preadditive D] [HasBinaryBiproducts D] {F : D ⥤ C} {G : C ⥤ D} [F.Additive]
-  [G.Additive] (adj : F ⊣ G)
-
-/-- An additive functor induces a functor on homotopy categories compatibly with the quotient
-functors. -/
-private instance catCommSqMapHomotopyCategory {V W : Type*} [Category* V] [Preadditive V]
-    [Category* W] [Preadditive W] (H : V ⥤ W) [H.Additive] {ι : Type*} (c : ComplexShape ι) :
-    CatCommSq (H.mapHomologicalComplex c) (HomotopyCategory.quotient V c)
-      (HomotopyCategory.quotient W c) (H.mapHomotopyCategory c) :=
-  ⟨(H.mapHomotopyCategoryFactors c).symm⟩
-
-/-- An adjunction between additive functors induces an adjunction between the functors they
-induce on homotopy categories of cochain complexes. -/
-def mapHomotopyCategory : F.mapHomotopyCategory (.up ℤ) ⊣ G.mapHomotopyCategory (.up ℤ) :=
-  (adj.mapHomologicalComplex (.up ℤ)).localization (HomotopyCategory.quotient D (.up ℤ))
-    (HomologicalComplex.homotopyEquivalences D (.up ℤ)) (HomotopyCategory.quotient C (.up ℤ))
-    (HomologicalComplex.homotopyEquivalences C (.up ℤ)) _ _
-
-/-- On a complex, the unit of the adjunction on homotopy categories is the class of the unit of
-the adjunction on complexes, which is the unit of `F ⊣ G` in each degree. -/
-lemma mapHomotopyCategory_unit_app (K : CochainComplex D ℤ) :
-    adj.mapHomotopyCategory.unit.app ((HomotopyCategory.quotient D (.up ℤ)).obj K) =
-      (HomotopyCategory.quotient D (.up ℤ)).map
-        ((adj.mapHomologicalComplex (.up ℤ)).unit.app K) := by
-  simp only [mapHomotopyCategory, Adjunction.localization_unit_app, CatCommSq.iso, Iso.symm_hom]
-  -- the comparisons of `quotient ⋙ mapHomotopyCategory` with `mapHomologicalComplex ⋙ quotient`
-  -- are identities
-  rw [show (G.mapHomotopyCategoryFactors (.up ℤ)).inv.app ((F.mapHomologicalComplex (.up ℤ)).obj K)
-      = 𝟙 _ from rfl, show (F.mapHomotopyCategoryFactors (.up ℤ)).inv.app K = 𝟙 _ from rfl]
-  -- the identities live over composite functors, so they are removed up to unfolding
-  erw [Functor.map_id, Category.id_comp, Category.comp_id]
-
-end HomotopyCategory
-
 section Derived
 
 variable {C : Type u} [Category.{v} C] [Abelian C] {D : Type u'} [Category.{v'} D] [Abelian D]
   [HasDerivedCategory.{w} C] [HasDerivedCategory.{w'} D] [HasKInjectiveResolutions C]
   {F : D ⥤ C} {G : C ⥤ D} [F.Additive] [G.Additive] [PreservesFiniteLimits F]
   [PreservesFiniteColimits F] (adj : F ⊣ G)
-
-omit [HasKInjectiveResolutions C] in
-private lemma isLeftDerivedFunctor_mapDerivedCategory :
-    F.mapDerivedCategory.IsLeftDerivedFunctor F.mapDerivedCategoryFactorsh.hom
-      (HomotopyCategory.quasiIso D (.up ℤ)) :=
-  Functor.isLeftDerivedFunctor_of_inverts (HomotopyCategory.quasiIso D (.up ℤ)) _
-    F.mapDerivedCategoryFactorsh
 
 private lemma isLeftDerivedFunctor_mapDerivedCategory_comp_rightDerivedFunctor :
     (F.mapDerivedCategory ⋙ G.rightDerivedFunctor).IsLeftDerivedFunctor
@@ -128,10 +82,10 @@ private lemma isRightDerivedFunctor_rightDerivedFunctor_comp_mapDerivedCategory 
 to `G`, then the functor `F.mapDerivedCategory` induced by `F` on unbounded derived categories is
 left adjoint to the right derived functor `G.rightDerivedFunctor`. -/
 def mapDerivedCategoryRightDerivedFunctor : F.mapDerivedCategory ⊣ G.rightDerivedFunctor :=
-  have := isLeftDerivedFunctor_mapDerivedCategory (F := F)
+  have := F.isLeftDerivedFunctor_mapDerivedCategory
   have := isLeftDerivedFunctor_mapDerivedCategory_comp_rightDerivedFunctor (F := F) (G := G)
   have := isRightDerivedFunctor_rightDerivedFunctor_comp_mapDerivedCategory (F := F) (G := G)
-  adj.mapHomotopyCategory.derived (HomotopyCategory.quasiIso D (.up ℤ))
+  (adj.mapHomotopyCategory (.up ℤ)).derived (HomotopyCategory.quasiIso D (.up ℤ))
     (HomotopyCategory.quasiIso C (.up ℤ)) F.mapDerivedCategoryFactorsh.hom
     G.rightDerivedFunctorUnith
 
@@ -142,12 +96,12 @@ adjunction on homotopy categories followed by the comparison `G(F(K)) ⟶ RG(F(K
 lemma mapDerivedCategoryRightDerivedFunctor_unit_app (K : HomotopyCategory D (.up ℤ)) :
     adj.mapDerivedCategoryRightDerivedFunctor.unit.app (Qh.obj K) ≫
       G.rightDerivedFunctor.map (F.mapDerivedCategoryFactorsh.hom.app K) =
-      Qh.map (adj.mapHomotopyCategory.unit.app K) ≫
+      Qh.map ((adj.mapHomotopyCategory (.up ℤ)).unit.app K) ≫
         G.rightDerivedFunctorUnith.app ((F.mapHomotopyCategory (.up ℤ)).obj K) := by
-  have := isLeftDerivedFunctor_mapDerivedCategory (F := F)
+  have := F.isLeftDerivedFunctor_mapDerivedCategory
   have := isLeftDerivedFunctor_mapDerivedCategory_comp_rightDerivedFunctor (F := F) (G := G)
   have := isRightDerivedFunctor_rightDerivedFunctor_comp_mapDerivedCategory (F := F) (G := G)
-  exact adj.mapHomotopyCategory.derivedη_fac_app (HomotopyCategory.quasiIso D (.up ℤ))
+  exact (adj.mapHomotopyCategory (.up ℤ)).derivedη_fac_app (HomotopyCategory.quasiIso D (.up ℤ))
     F.mapDerivedCategoryFactorsh.hom G.rightDerivedFunctorUnith K
 
 end Derived

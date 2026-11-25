@@ -161,10 +161,6 @@ open CochainComplex HomologicalComplex ZeroObject
 
 variable {A : CommRingCat.{u}}
 
-/-- The global-section functor on `Spec A` is additive, as a right adjoint. -/
-instance : (moduleSpecΓFunctor (R := A)).Additive :=
-  (moduleSpecΓFunctor (R := A)).additive_of_preserves_binary_products
-
 /-- On complexes, the global-section functors with values in `A`-modules and in modules over the
 ring of global functions agree on quasi-isomorphisms: they have the same underlying abelian groups
 and maps. -/
@@ -235,7 +231,7 @@ instance isIso_tildeDerivedAdjunction_unit_app (M : DerivedCategory (ModuleCat.{
   intro K
   have hfac := tilde.adjunction.mapDerivedCategoryRightDerivedFunctor_unit_app K
   -- the unit of `M ↦ M~ ⊣ Γ` is an isomorphism, also on complexes
-  have h₁ : IsIso (Qh.map (tilde.adjunction.mapHomotopyCategory.unit.app K)) := by
+  have h₁ : IsIso (Qh.map ((tilde.adjunction.mapHomotopyCategory (.up ℤ)).unit.app K)) := by
     -- every object of the homotopy category is the class of its underlying complex
     rw [show K = (HomotopyCategory.quotient _ _).obj K.as from rfl,
       Adjunction.mapHomotopyCategory_unit_app]

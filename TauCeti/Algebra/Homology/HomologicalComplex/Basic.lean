@@ -112,6 +112,23 @@ lemma iCycles_toCycles (i j : ι) [K.HasHomology i] [K.HasHomology j] :
     K.iCycles i ≫ K.toCycles i j = 0 := by
   rw [← cancel_mono (K.iCycles j), Category.assoc, toCycles_i, iCycles_d, zero_comp]
 
+/-- The kernel of the corestricted differential `Kᵢ ⟶ Zⱼ` is the cycles in degree `i`,
+when `j` is the next degree. -/
+noncomputable def kernelToCyclesIso (i j : ι) [K.HasHomology i] [K.HasHomology j]
+    [HasKernel (K.toCycles i j)] (hij : c.next i = j) :
+    kernel (K.toCycles i j) ≅ K.cycles i :=
+  (kernelIsKernel _).conePointUniqueUpToIso
+    (isKernelOfComp (K.iCycles j) (K.d i j) (K.cyclesIsKernel i j hij)
+      (K.iCycles_toCycles i j) (K.toCycles_i i j))
+
+/-- The identification of the kernel of the corestricted differential with cycles respects the
+inclusion into the term of the complex. -/
+@[reassoc (attr := simp)]
+lemma kernelToCyclesIso_hom_iCycles (i j : ι) [K.HasHomology i] [K.HasHomology j]
+    [HasKernel (K.toCycles i j)] (hij : c.next i = j) :
+    (K.kernelToCyclesIso i j hij).hom ≫ K.iCycles i = kernel.ι (K.toCycles i j) := by
+  exact IsLimit.conePointUniqueUpToIso_hom_comp _ _ WalkingParallelPair.zero
+
 /-- The short complex `Zᵢ(K) ⟶ Kᵢ ⟶ Zⱼ(K)` cut out of a homological complex. Its
 second map is the differential with codomain restricted to the cycles in degree `j`. -/
 noncomputable def cyclesShortComplex (i j : ι) [K.HasHomology i] [K.HasHomology j] :

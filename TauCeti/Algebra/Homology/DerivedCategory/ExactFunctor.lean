@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.ExactFunctor
+public import Mathlib.CategoryTheory.Functor.Derived.PointwiseLeftDerived
 public import Mathlib.Algebra.Homology.DerivedCategory.HomologySequence
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
@@ -33,6 +34,14 @@ variable {C₁ : Type*} [Category* C₁] [Abelian C₁] [HasDerivedCategory.{w�
 namespace CategoryTheory.Functor
 
 variable (F : C₁ ⥤ C₂) [F.Additive] [PreservesFiniteLimits F] [PreservesFiniteColimits F]
+
+/-- The functor on derived categories induced by an exact functor is its left derived functor
+with respect to quasi-isomorphisms on homotopy categories. -/
+lemma isLeftDerivedFunctor_mapDerivedCategory :
+    F.mapDerivedCategory.IsLeftDerivedFunctor F.mapDerivedCategoryFactorsh.hom
+      (HomotopyCategory.quasiIso C₁ (.up ℤ)) :=
+  Functor.isLeftDerivedFunctor_of_inverts (HomotopyCategory.quasiIso C₁ (.up ℤ)) _
+    F.mapDerivedCategoryFactorsh
 
 /-- The homology of the functor induced by an exact functor `F` on derived categories is `F`
 applied to homology. -/

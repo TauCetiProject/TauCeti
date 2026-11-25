@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.Grp.Zero
 public import Mathlib.Algebra.Homology.Embedding.CochainComplex
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.AlgebraicGeometry.Cohomology.Affine
 public import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
@@ -26,9 +27,7 @@ of the cohomology sheaf differ. This file gives conditions under which they agre
 form that `Γ(X, -)` preserves the homology of the short complex `K.sc m`, so that Mathlib's
 `ShortComplex.mapHomologyIso` identifies `Hᵐ(Γ(X, K))` with `Γ(X, Hᵐ(K))` naturally.
 
-* `Scheme.Modules.shortExact_map_sectionsFunctor`: global sections of a short exact sequence whose
-  last map is surjective on global sections are short exact, and
-  `Scheme.Modules.exactAt_of_forall_isAffineOpen`: exactness of a complex of `𝒪_X`-modules follows
+* `Scheme.Modules.exactAt_of_forall_isAffineOpen`: exactness of a complex of `𝒪_X`-modules follows
   from exactness of the global sections of its restrictions to all affine opens.
 * `Scheme.Modules.preservesLeftHomologyOf_sectionsFunctor`: for a short complex
   `S = (M₁ ⟶ M₂ ⟶ M₃)`, global sections preserve the homology of `S` as soon as the kernel and
@@ -141,13 +140,6 @@ section Complex
 
 variable (K : CochainComplex X.Modules ℤ)
 
-/-- The kernel of `K.toCycles i j : Kⁱ ⟶ Zʲ` is the sheaf of cycles `Zⁱ`. -/
-private def kernelToCyclesIso (i j : ℤ) (hij : i + 1 = j) :
-    kernel (K.toCycles i j) ≅ K.cycles i :=
-  (kernelIsKernel _).conePointUniqueUpToIso
-    (isKernelOfComp (K.iCycles j) (K.d i j) (K.cyclesIsKernel i j (by simp [← hij]))
-      (by rw [← cancel_mono (K.iCycles j)]; simp) (K.toCycles_i i j))
-
 /-- **Acyclicity of cycles and boundaries.** If a complex `K` of `𝒪_X`-modules vanishes below some
 degree, and its terms and its cohomology sheaves have no higher cohomology, then neither have its
 sheaves of cycles `Zⁱ` nor its sheaves of boundaries, the images of `Kⁱ ⟶ Zⁱ⁺¹`. -/
@@ -161,7 +153,7 @@ theorem subsingleton_cohomology_cycles_and_image_toCycles (a : ℤ) [K.IsStrictl
       (p : ℕ) : Subsingleton (Cohomology (image (K.toCycles i j)) (p + 1)) := by
     have : Subsingleton (Cohomology (kernel (K.toCycles i j)) (p + 1 + 1)) :=
       have := hZ (p + 1)
-      subsingleton_cohomology_of_iso (kernelToCyclesIso K i j hij).symm _
+      subsingleton_cohomology_of_iso (K.kernelToCyclesIso i j (by simpa using hij)).symm _
     exact subsingleton_cohomology_X₃
       (ShortComplex.exact_kernel (K.toCycles i j)).shortExact_factorThruImage
       (p + 1) (p + 1 + 1) rfl (hX i p) this
@@ -201,11 +193,10 @@ theorem preservesLeftHomologyOf_sectionsFunctor_sc (a : ℤ) [K.IsStrictlyGE a]
     (hX : ∀ i p, Subsingleton (Cohomology (K.X i) (p + 1)))
     (hH : ∀ i p, Subsingleton (Cohomology (K.homology i) (p + 1))) (j : ℤ) :
     (Scheme.Modules.sectionsFunctor (⊤ : X.Opens)).PreservesLeftHomologyOf (K.sc j) := by
-  have hj : (ComplexShape.up ℤ).prev j + 1 = j := by simp
   have h := subsingleton_cohomology_cycles_and_image_toCycles K a hX hH ((ComplexShape.up ℤ).prev j)
   have : Subsingleton (Cohomology (K.cycles ((ComplexShape.up ℤ).prev j)) (0 + 1)) := h.1 0
   exact preservesLeftHomologyOf_sectionsFunctor (K.sc j)
-    (subsingleton_cohomology_of_iso (kernelToCyclesIso K _ j hj).symm _) (h.2 j hj 0)
+    (subsingleton_cohomology_of_iso (K.kernelToCyclesIso _ j (by simp)).symm _) (h.2 j (by simp) 0)
 
 end Complex
 
@@ -233,16 +224,6 @@ theorem exactAt_of_forall_isAffineOpen (F : CochainComplex X.Modules ℤ) (j : �
     -- sections over the image of `⊤`, with the same maps
     exact this s hs
 
-/-- Global sections of a short exact sequence of `𝒪_X`-modules whose last map is surjective on
-global sections form a short exact sequence of modules. -/
-theorem shortExact_map_sectionsFunctor {S : ShortComplex X.Modules} (hS : S.ShortExact)
-    (hg : Function.Surjective (S.g.app ⊤)) :
-    (S.map (Scheme.Modules.sectionsFunctor (⊤ : X.Opens))).ShortExact :=
-  have := hS.mono_f
-  ShortComplex.ShortExact.mk'
-    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).2 (exact_sections hS))
-    ((ModuleCat.mono_iff_injective _).2 (sections_injective S.f))
-    ((ModuleCat.epi_iff_surjective _).2 hg)
 
 end Local
 

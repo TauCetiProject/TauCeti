@@ -64,6 +64,10 @@ variable {R : CommRingCat.{u}} {M N : (Spec R).Modules}
 instance (R : CommRingCat.{u}) : (moduleSpecΓFunctor (R := R)).IsRightAdjoint :=
   (tilde.adjunction (R := R)).isRightAdjoint
 
+/-- The global-section functor on `Spec A` is additive, as a right adjoint. -/
+instance (A : CommRingCat.{u}) : (moduleSpecΓFunctor (R := A)).Additive :=
+  (moduleSpecΓFunctor (R := A)).additive_of_preserves_binary_products
+
 /-- An epimorphism between quasicoherent sheaves on an affine scheme is surjective on global
 sections. -/
 theorem moduleSpecΓFunctor_map_surjective_of_epi_of_isQuasicoherent

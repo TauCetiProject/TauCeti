@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Milnor.Basic
 public import TauCeti.Algebra.Homology.HomologicalComplex.DegreewiseQuasiIso
 public import TauCeti.Algebra.Homology.ModelCategory.KInjective.Tower
+public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.AlgebraicGeometry.Cohomology.Affine
 public import TauCeti.AlgebraicGeometry.Cohomology.Flasque
 public import TauCeti.AlgebraicGeometry.Cohomology.SectionsHomology
@@ -192,18 +193,9 @@ section Truncation
 
 variable {X : Scheme.{u}} (K : CochainComplex X.Modules ℤ)
 
-/-- The map `τ^{≥ -n-1} K ⟶ τ^{≥ -n} K` between consecutive canonical truncations. -/
-private def truncTransition (n : ℕ) :
-    K.truncGE (-((n + 1 : ℕ) : ℤ)) ⟶ K.truncGE (-(n : ℤ)) :=
-  have : (K.truncGE (-(n : ℤ))).IsStrictlyGE (-((n + 1 : ℕ) : ℤ)) :=
-    (K.truncGE _).isStrictlyGE_of_ge _ (-(n : ℤ)) (by push_cast; lia)
-  CochainComplex.truncGEMap (K.πTruncGE (-(n : ℤ))) _ ≫ inv ((K.truncGE (-(n : ℤ))).πTruncGE _)
-
-@[reassoc]
-private lemma πTruncGE_truncTransition (n : ℕ) :
-    K.πTruncGE (-((n + 1 : ℕ) : ℤ)) ≫ truncTransition K n = K.πTruncGE (-(n : ℤ)) := by
-  rw [truncTransition, ← Category.assoc, CochainComplex.πTruncGE_naturality, Category.assoc,
-    IsIso.hom_inv_id, Category.comp_id]
+/-- Consecutive truncation transitions, using the general comparison of lower truncations. -/
+private abbrev truncTransition (n : ℕ) :=
+  K.truncGETransition (-((n + 1 : ℕ) : ℤ)) (-(n : ℤ)) (by lia)
 
 /-- The tower of injective resolutions of the canonical truncations `τ^{≥ -n} K`. -/
 private abbrev truncTower : ℕᵒᵖ ⥤ CochainComplex X.Modules ℤ :=
@@ -238,7 +230,8 @@ private lemma truncTowerι_comp_map (n : ℕ) :
         towerResolutionπ (fun n ↦ K.truncGE (-(n : ℤ))) (truncTransition K) n =
       K.πTruncGE (-(n : ℤ)) ≫
         towerResolutionι (fun n ↦ K.truncGE (-(n : ℤ))) (truncTransition K) n := by
-    rw [Category.assoc, towerResolutionι_comp_towerResolutionπ, πTruncGE_truncTransition_assoc]
+    rw [Category.assoc, towerResolutionι_comp_towerResolutionπ,
+      CochainComplex.πTruncGE_truncGETransition_assoc]
   exact h
 
 /-- The transitions of the tower of resolutions of the truncations of `K` induce isomorphisms on

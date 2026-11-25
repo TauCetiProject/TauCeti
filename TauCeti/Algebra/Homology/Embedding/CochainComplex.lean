@@ -21,7 +21,8 @@ This file records the resulting two statements: outside `Finset.Icc a b`, the te
 bounded complex vanish, while its cohomology vanishes under the corresponding cohomological
 bounds. They are the finiteness input to alternating-sum (Euler characteristic) computations over
 a bounded complex. It also records that the canonical truncation `K.truncGE a` keeps an upper
-bound of `K`.
+bound of `K`. The canonical maps between lower truncations at different bounds are
+`CochainComplex.truncGETransition`.
 
 ## Main results
 
@@ -30,6 +31,7 @@ bound of `K`.
   bounding interval.
 * `CochainComplex.isStrictlyLE_truncGE`: the truncation `K.truncGE a` is strictly bounded above
   by any strict upper bound of `K`.
+* `CochainComplex.truncGETransition`: canonical maps between lower truncations at different bounds.
 -/
 
 public section
@@ -68,5 +70,20 @@ instance isStrictlyLE_truncGE [HasZeroObject A] (K : CochainComplex A ℤ) [∀ 
   · exact ((K.isZero_of_isStrictlyLE b a).of_epi (K.pOpcycles a)).of_iso
       (K.truncGEXIsoOpcycles a)
   · exact (K.truncGE a).isZero_of_isStrictlyGE a i
+
+/-- The canonical transition from a lower truncation bound to a higher one. -/
+noncomputable def truncGETransition [HasZeroObject A] (K : CochainComplex A ℤ)
+    [∀ i, K.HasHomology i] (a b : ℤ) (hab : a ≤ b) : K.truncGE a ⟶ K.truncGE b :=
+  have : (K.truncGE b).IsStrictlyGE a := (K.truncGE b).isStrictlyGE_of_ge a b hab
+  truncGEMap (K.πTruncGE b) a ≫ inv ((K.truncGE b).πTruncGE a)
+
+/-- The truncation projections commute with the transition between truncation bounds. -/
+@[reassoc (attr := simp)]
+lemma πTruncGE_truncGETransition [HasZeroObject A] (K : CochainComplex A ℤ)
+    [∀ i, K.HasHomology i] (a b : ℤ) (hab : a ≤ b) :
+    K.πTruncGE a ≫ K.truncGETransition a b hab = K.πTruncGE b := by
+  have : (K.truncGE b).IsStrictlyGE a := (K.truncGE b).isStrictlyGE_of_ge a b hab
+  rw [truncGETransition, ← Category.assoc, πTruncGE_naturality, Category.assoc,
+    IsIso.hom_inv_id, Category.comp_id]
 
 end CochainComplex

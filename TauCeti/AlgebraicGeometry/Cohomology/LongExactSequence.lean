@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.Basic
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
 public import TauCeti.LinearAlgebra.Exact
 
@@ -239,6 +240,18 @@ theorem sections_surjective (h₁ : Subsingleton (Cohomology S.X₁ 1)) :
   rw [← cohomologyZeroEquiv_cohomologyMap, hx, AddEquiv.apply_symm_apply]
 
 end ShortExact
+
+/-- Global sections of a short exact sequence of `𝒪_X`-modules whose last map is surjective on
+global sections form a short exact sequence of modules. -/
+theorem shortExact_map_sectionsFunctor {S : ShortComplex X.Modules} (hS : S.ShortExact)
+    (hg : Function.Surjective (S.g.app ⊤)) :
+    (S.map (Scheme.Modules.sectionsFunctor (⊤ : X.Opens))).ShortExact :=
+  have := hS.mono_f
+  ShortComplex.ShortExact.mk'
+    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).2 (exact_sections hS))
+    ((ModuleCat.mono_iff_injective _).2 (sections_injective S.f))
+    ((ModuleCat.epi_iff_surjective _).2 hg)
+
 
 /-- The connecting map is natural in the short exact sequence: a morphism `φ : S₁ ⟶ S₂` of short
 exact sequences of sheaves of modules makes the square formed by the two connecting maps and the
