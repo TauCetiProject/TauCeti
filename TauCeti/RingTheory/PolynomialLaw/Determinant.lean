@@ -36,8 +36,9 @@ to be a ring.
 
 * `TauCeti.Determinant A R d`: `d`-dimensional `A`-valued determinants on `R`, with their value
   `D x` (the ground map of the law), multiplicative and homogeneous of degree `d`.
-* `TauCeti.Determinant.toMonoidHom`, `TauCeti.Determinant.isUnit_apply`: a determinant is a
-  monoid map `R →* A`, so it sends units to units.
+* `TauCeti.Determinant.toMonoidHom`, `TauCeti.Determinant.isUnit_apply`,
+  `TauCeti.Determinant.apply_inv_eq_of_mul_eq_one`: a determinant is a monoid map `R →* A`, so it
+  sends units to units and inverses to inverses.
 * `TauCeti.Determinant.toFun_eq_one_of_dim_zero`, `TauCeti.Determinant.apply_eq_one_of_dim_zero`:
   a determinant of dimension zero is constantly `1`, and there is exactly one.
 * `TauCeti.Determinant.charCoeff`: the characteristic coefficients `Λᵢ`, with
@@ -146,6 +147,11 @@ theorem coe_toMonoidHom : ⇑D.toMonoidHom = D :=
 /-- A determinant sends units to units. -/
 theorem isUnit_apply {x : R} (hx : IsUnit x) : IsUnit (D x) :=
   hx.map D.toMonoidHom
+
+/-- A determinant sends the inverse of a unit `u` to the inverse of `D u`: if `D u * t = 1` then
+`D u⁻¹ = t`. -/
+theorem apply_inv_eq_of_mul_eq_one (u : Rˣ) {t : A} (h : D u * t = 1) : D ↑u⁻¹ = t :=
+  left_inv_eq_right_inv (by rw [← map_mul, Units.inv_mul, map_one]) h
 
 /-- A determinant of dimension zero is constantly `1`, after every scalar extension. -/
 @[simp]

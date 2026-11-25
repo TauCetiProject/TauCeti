@@ -91,10 +91,7 @@ theorem charpoly_inv_eq_of_charpoly_eq_glnHeckePolynomial_one (D : Determinant A
   have hT := D.leading_eq_one_of_charpoly_eq_glnHeckePolynomial h
   have hu : D u = T 1 := by
     simpa using D.apply_eq_of_charpoly_eq_glnHeckePolynomial h
-  have hinv : D ↑u⁻¹ = t := by
-    have := D.map_mul ↑u ↑u⁻¹
-    rw [Units.mul_inv, map_one, hu] at this
-    linear_combination -(D ↑u⁻¹ * ht) - t * this
+  have hinv : D ↑u⁻¹ = t := D.apply_inv_eq_of_mul_eq_one u (by rwa [hu])
   have hC : C t * C (T 1) = 1 := by rw [← C_mul, mul_comm, ht, C_1]
   rw [charpoly_inv, h, hinv, glnHeckePolynomial_one, hT, C_1, one_mul, reflect_sub,
     reflect_C, reflect_one_X]
@@ -110,15 +107,11 @@ theorem charpoly_inv_eq_of_charpoly_eq_glnHeckePolynomial_two (D : Determinant A
   have hT := D.leading_eq_one_of_charpoly_eq_glnHeckePolynomial h
   have hu : D u = q * T 2 := by
     simpa using D.apply_eq_of_charpoly_eq_glnHeckePolynomial h
-  have hinv : D ↑u⁻¹ = c := by
-    have := D.map_mul ↑u ↑u⁻¹
-    rw [Units.mul_inv, map_one, hu] at this
-    linear_combination -(D ↑u⁻¹ * hc) - c * this
+  have hinv : D ↑u⁻¹ = c := D.apply_inv_eq_of_mul_eq_one u (by rwa [hu])
   have hC : C c * (C q * C (T 2)) = 1 := by rw [← C_mul, ← C_mul, mul_comm, hc, C_1]
-  rw [charpoly_inv, h, hinv, glnHeckePolynomial_two, hT, C_1, one_mul, reflect_add, reflect_sub,
-    reflect_C, reflect_monomial, ← pow_one X, reflect_C_mul_X_pow, revAt_le le_rfl,
-    revAt_le (by norm_num : 1 ≤ 2)]
-  simp only [C_mul, C_pow, C_neg, C_1, pow_one, Nat.sub_self, Nat.reduceSub]
+  rw [charpoly_inv, h, hinv, glnHeckePolynomial_two, hT, C_1, one_mul]
+  have hX : reflect 2 (X : A[X]) = X := by simpa using reflect_monomial (R := A) 2 1
+  simp [hX, reflect_monomial, revAt_le]
   linear_combination (X ^ 2 : A[X]) * hC
 
 end Determinant

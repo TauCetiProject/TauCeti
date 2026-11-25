@@ -120,9 +120,10 @@ theorem charpoly_inv_eq_prod_satakeParameters (f : Newform N k) {p : ℕ} {R : T
   have hc : (p : ℂ) * f.glnHeckeEigenvalues p 2 * (α⁻¹ * β⁻¹) = 1 := by
     rw [mul_glnHeckeEigenvalues_two f hp, ← hprod]
     field_simp
-  rw [Determinant.charpoly_inv_eq_of_charpoly_eq_glnHeckePolynomial_two D h hc, hαβ,
-    Multiset.insert_eq_cons, Multiset.map_cons, Multiset.map_singleton, Multiset.prod_cons,
-    Multiset.prod_singleton, glnHeckeEigenvalues_one, ← hsum]
+  rw [Determinant.charpoly_inv_eq_of_charpoly_eq_glnHeckePolynomial_two D h hc,
+    glnHeckeEigenvalues_one, ← hsum]
+  simp only [hαβ, Multiset.insert_eq_cons, Multiset.map_cons, Multiset.map_singleton,
+    Multiset.prod_cons, Multiset.prod_singleton]
   have hC : C (α⁻¹ * β⁻¹) = C α⁻¹ * C β⁻¹ := C_mul
   have hC' : C ((α + β) * (α⁻¹ * β⁻¹)) = C α⁻¹ + C β⁻¹ := by
     rw [← C_add]
