@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import Mathlib.RingTheory.Polynomial.Tower
 import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Basic
+import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.OfReal
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 

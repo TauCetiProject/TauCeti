@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
+import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.SourceDescent
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Fiber
 import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Smooth
@@ -15,17 +16,16 @@ import TauCeti.RingTheory.Syntomic.SourceDescent
 /-!
 # Syntomicity along étale surjections of the source
 
-A morphism `f : X ⟶ S`, locally of finite presentation, is syntomic of relative dimension `n` as
-soon as `u ≫ f` is, for some étale surjection `u : X' ⟶ X`
-(`TauCeti.AlgebraicGeometry.SyntomicOfRelativeDimension.of_comp_surjective`). Flatness descends
-along the flat surjection `u`, and by the fibrewise criterion it suffices to treat a morphism to
+A morphism `f : X ⟶ S` is syntomic of relative dimension `n` as soon as `u ≫ f` is, for some
+étale surjection `u : X' ⟶ X`
+(`TauCeti.AlgebraicGeometry.SyntomicOfRelativeDimension.of_comp_surjective`). Local finite
+presentation descends along the smooth surjection `u`
+(`AlgebraicGeometry.LocallyOfFinitePresentation.of_comp_surjective`), flatness descends along the
+flat surjection `u`, and by the fibrewise criterion it suffices to treat a morphism to
 the spectrum of a field. There, near a point of `X` under a point of an affine open of `X'`, the
 ring-theoretic descent of local complete intersections along étale maps
 (`TauCeti.exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_isEtaleAt`)
-gives a standard syntomic basic open neighbourhood.
-
-The resulting morphism must be locally of finite presentation, as for smooth morphisms
-(`AlgebraicGeometry.Smooth.of_comp_surjective`). The étale cover need not be quasi-compact.
+gives a standard syntomic basic open neighbourhood. The étale cover need not be quasi-compact.
 
 ## References
 
@@ -113,13 +113,14 @@ private theorem SyntomicOfRelativeDimension.of_comp_surjective_of_field {K : Typ
     exists_notMem_isStandardSyntomicOfRelativeDimension_of_etale (n := n) (K := K) u x'
   exact ⟨a, by rwa [hx'] at ha, hstd⟩
 
-/-- **Syntomicity of a morphism locally of finite presentation descends along étale surjections of
-the source.** If `f` is locally of finite presentation, `u : X' ⟶ X` is étale and surjective, and
-`u ≫ f` is syntomic of relative dimension `n`, then so is `f`. The cover `u` need not be
-quasi-compact. -/
+/-- **Syntomicity descends along étale surjections of the source.** If `u : X' ⟶ X` is étale and
+surjective and `u ≫ f` is syntomic of relative dimension `n`, then so is `f`. The cover `u` need not
+be quasi-compact. -/
 theorem SyntomicOfRelativeDimension.of_comp_surjective {X' X S : Scheme.{u}} (u : X' ⟶ X)
-    (f : X ⟶ S) [Etale u] [Surjective u] [LocallyOfFinitePresentation f]
-    [SyntomicOfRelativeDimension n (u ≫ f)] : SyntomicOfRelativeDimension n f := by
+    (f : X ⟶ S) [Etale u] [Surjective u] [SyntomicOfRelativeDimension n (u ≫ f)] :
+    SyntomicOfRelativeDimension n f := by
+  have := SyntomicOfRelativeDimension.locallyOfFinitePresentation n (u ≫ f)
+  have : LocallyOfFinitePresentation f := .of_comp_surjective u f
   have := SyntomicOfRelativeDimension.flat n (u ≫ f)
   have : Flat f := Flat.of_comp_surjective u f
   refine SyntomicOfRelativeDimension.of_fiberToSpecResidueField f fun s ↦ ?_
@@ -134,10 +135,10 @@ theorem SyntomicOfRelativeDimension.of_comp_surjective {X' X S : Scheme.{u}} (u 
   exact SyntomicOfRelativeDimension.of_comp_surjective_of_field (K := S.residueField s)
     (pullback.snd u (pullback.fst f g)) (pullback.snd f g)
 
-/-- Among morphisms locally of finite presentation, syntomicity of relative dimension `n` can be
-checked after an étale surjection of the source. -/
+/-- Syntomicity of relative dimension `n` can be checked after an étale surjection of the
+source. -/
 theorem syntomicOfRelativeDimension_iff_comp_of_etale_of_surjective {X' X S : Scheme.{u}}
-    (u : X' ⟶ X) (f : X ⟶ S) [Etale u] [Surjective u] [LocallyOfFinitePresentation f] :
+    (u : X' ⟶ X) (f : X ⟶ S) [Etale u] [Surjective u] :
     SyntomicOfRelativeDimension n f ↔ SyntomicOfRelativeDimension n (u ≫ f) := by
   refine ⟨fun _ ↦ ?_, fun _ ↦ .of_comp_surjective u f⟩
   exact zero_add n ▸ inferInstanceAs (SyntomicOfRelativeDimension (0 + n) (u ≫ f))

@@ -134,7 +134,7 @@ theorem integral_cpow_div_exp_sub_one_eq_Gamma_mul_riemannZeta {s : ℂ} (hs : 1
 /-- **DLMF 8.22.2**, as a `HasSum`: for `1 < Re s` and `0 ≤ x`, the series
 `∑_{k ≥ 1} k^{−s} P(s, kx)` converges to `Γ(s)⁻¹ ∫₀ˣ t^{s−1}/(e^t − 1) dt`. -/
 theorem hasSum_cpow_neg_mul_regularizedGamma {s : ℂ} (hs : 1 < s.re) {x : ℝ} (hx : 0 ≤ x) :
-    HasSum (fun k : ℕ => (k : ℂ) ^ (-s) * Complex.regularizedGamma s (k * x))
+    HasSum (fun k : ℕ => (k : ℂ) ^ (-s) * regularizedGamma s (k * x))
       ((Gamma s)⁻¹ * ∫ t in (0 : ℝ)..x, (t : ℂ) ^ (s - 1) / (cexp t - 1)) := by
   have hs0 : 0 < s.re := by linarith
   have hG : Gamma s ≠ 0 := Gamma_ne_zero_of_re_pos hs0
@@ -156,12 +156,12 @@ theorem hasSum_cpow_neg_mul_regularizedGamma {s : ℂ} (hs : 1 < s.re) {x : ℝ}
 theorem inv_Gamma_mul_intervalIntegral_cpow_div_exp_sub_one_eq_tsum {s : ℂ} (hs : 1 < s.re)
     {x : ℝ} (hx : 0 ≤ x) :
     (Gamma s)⁻¹ * ∫ t in (0 : ℝ)..x, (t : ℂ) ^ (s - 1) / (cexp t - 1) =
-      ∑' k : ℕ, (k : ℂ) ^ (-s) * Complex.regularizedGamma s (k * x) :=
+      ∑' k : ℕ, (k : ℂ) ^ (-s) * regularizedGamma s (k * x) :=
   (hasSum_cpow_neg_mul_regularizedGamma hs hx).tsum_eq.symm
 
 /-- **DLMF 8.22.3**: for `1 < Re s`, `∑_{k ≥ 1} k^{−s} P(s, kx) → ζ(s)` as `x → ∞`. -/
 theorem tendsto_tsum_cpow_neg_mul_regularizedGamma_atTop {s : ℂ} (hs : 1 < s.re) :
-    Tendsto (fun x : ℝ => ∑' k : ℕ, (k : ℂ) ^ (-s) * Complex.regularizedGamma s (k * x)) atTop
+    Tendsto (fun x : ℝ => ∑' k : ℕ, (k : ℂ) ^ (-s) * regularizedGamma s (k * x)) atTop
       (𝓝 (riemannZeta s)) := by
   have hG : Gamma s ≠ 0 := Gamma_ne_zero_of_re_pos (by linarith)
   have h := (intervalIntegral_tendsto_integral_Ioi 0 (integrableOn_cpow_div_exp_sub_one hs)
