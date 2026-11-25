@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Basic
 public import TauCeti.Geometry.Manifold.IntegralCurve.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.TotalSpaceMFDeriv
+public import TauCeti.Geometry.Manifold.VectorBundle.TotalSpace.MFDeriv
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Coordinate.Change
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 

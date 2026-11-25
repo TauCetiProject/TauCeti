@@ -79,14 +79,9 @@ algebraic closure, only a domain, because the characters here are one-dimensiona
   (`Representation.asAlgebraHom_charIdempotent_apply_of_mem`).
 * `Representation.asAlgebraHom_charIdempotent_apply_of_mem_of_ne`: over a domain it kills the
   joint eigenspace of every other character.
-<<<<<<< HEAD
-* `Representation.isInternal_eigenspace`: for a finite commutative group with enough roots of
-  unity and `#H` a unit, `V` is the internal direct sum of its joint eigenspaces.
-=======
 * `Representation.isInternal_charEigenspace`: for a finite commutative group and a domain with
   enough roots of unity in which `#H` is a unit, a representation is the internal direct sum of
   its character eigensubmodules.
->>>>>>> origin/main
 
 ## References
 

@@ -27,7 +27,9 @@ prime field by the reduction of `complexRoot e'`
 (`TauCeti.Cyclotomic.closure_residue_zetaInteger_pow_ordProj_eq_top`). The reduction of
 `complexRoot e` generates `k` because `𝓞 F = ℤ[complexRoot e]`, and `complexRoot e'` is its
 `p ^ a`-th power, where `p ^ a` is the `p`-part of `e`; the `p ^ a`-th power map is an
-automorphism of the finite field `k`.
+automorphism of the finite field `k`. Consequently, when the reduction of `complexRoot e'` lies
+in the prime field, `k` has `p` elements
+(`TauCeti.Cyclotomic.natCard_residueField_of_residue_zetaInteger_pow_ordProj_eq_natCast`).
 
 Since `K` contains a primitive `e`-th root of unity, Mathlib's `rootsOfUnityEquivOfPrimitiveRoots`
 applied to the canonical map `F → K` is an isomorphism from the `e`-th roots of unity of `F` onto
@@ -105,21 +107,30 @@ theorem closure_residue_zetaInteger_pow_ordProj_eq_top (p : ℕ) [Fact p.Prime]
     _ = ⊤ := by
         rw [closure_residue_zetaInteger_eq_top, ← RingHom.range_eq_map, RingHom.range_eq_top.2 hφ]
 
+/-- At a place over `p`, if the reduction of `complexRoot e'` is the image of a natural number,
+where `e'` is the part of `e` prime to `p`, then the residue field of `F_v` is the prime field: it
+has `p` elements. -/
+theorem natCard_residueField_of_residue_zetaInteger_pow_ordProj_eq_natCast (p : ℕ)
+    [Fact p.Prime] (hp : (p : 𝓞 F) ∈ v.asIdeal) {n : ℕ}
+    (hn : residue O (algebraMap (𝓞 F) O (complexField.zetaInteger e ^ ordProj[p] e)) = n) :
+    Nat.card (ResidueField O) = p := by
+  have := v.charP_residueField_adicCompletionIntegers (K := F) p hp
+  let χ := ZMod.castHom (dvd_refl p) (ResidueField O)
+  have hχ : Function.Bijective χ := by
+    refine ⟨χ.injective, RingHom.range_eq_top.1 (eq_top_iff.2 ?_)⟩
+    rw [← closure_residue_zetaInteger_pow_ordProj_eq_top v p hp, Subring.closure_le,
+      Set.singleton_subset_iff, hn]
+    exact ⟨n, map_natCast χ n⟩
+  rw [← Nat.card_eq_of_bijective χ hχ, Nat.card_zmod]
+
 /-- When `e` is a power of `p`, so that `e' = 1`, the residue field of `F_v` at a place over `p`
 is the prime field: it has `p` elements. -/
 theorem natCard_residueField_of_ordCompl_eq_one (p : ℕ) [Fact p.Prime]
     (hp : (p : 𝓞 F) ∈ v.asIdeal) (he : ordCompl[p] e = 1) :
     Nat.card (ResidueField O) = p := by
-  have := v.charP_residueField_adicCompletionIntegers (K := F) p hp
-  have htop := closure_residue_zetaInteger_pow_ordProj_eq_top v p hp
   have hpe : ordProj[p] e = e := by
     simpa [he] using Nat.ordProj_mul_ordCompl_eq_self e p
-  rw [hpe, (complexField.isPrimitiveRoot_zetaInteger e).pow_eq_one, map_one, map_one] at htop
-  let χ := ZMod.castHom (dvd_refl p) (ResidueField O)
-  have hχ : Function.Bijective χ := by
-    refine ⟨χ.injective, RingHom.range_eq_top.1 (eq_top_iff.2 ?_)⟩
-    rw [← htop, Subring.closure_le, Set.singleton_subset_iff]
-    exact ⟨1, map_one χ⟩
-  rw [← Nat.card_eq_of_bijective χ hχ, Nat.card_zmod]
+  refine natCard_residueField_of_residue_zetaInteger_pow_ordProj_eq_natCast v p hp (n := 1) ?_
+  rw [hpe, (complexField.isPrimitiveRoot_zetaInteger e).pow_eq_one, map_one, map_one, Nat.cast_one]
 
 end TauCeti.Cyclotomic
