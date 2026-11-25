@@ -113,8 +113,7 @@ theorem nullhomotopic_iff_homotopic_refl [Fact (0 < p)] (f : C(AddCircle p, X)) 
   subst hx
   refine ⟨fun hf ↦ ?_, fun ⟨F⟩ ↦ ?_⟩
   · -- The loop `t ↦ t * p` of the circle, mapped by `f`, is `γ`.
-    let ℓ : Path (0 : AddCircle p) 0 :=
-      ⟨AddCircle.ofUnitInterval p, AddCircle.ofUnitInterval_zero, AddCircle.ofUnitInterval_one⟩
+    let ℓ : Path (0 : AddCircle p) 0 := (ContinuousMap.id (AddCircle p)).toLoop
     have hℓ : ℓ.map f.continuous = γ := by
       ext t
       exact (hγ t).symm

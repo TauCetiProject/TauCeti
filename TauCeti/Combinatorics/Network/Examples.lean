@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Order.Monoid.Prod
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.Fin.VecNotation
 import Mathlib.Tactic.FinCases
+import TauCeti.Algebra.Order.Ring.Cast
 import TauCeti.Combinatorics.Network.Acyclic
 import TauCeti.Combinatorics.Network.Coefficients
 import TauCeti.Combinatorics.Network.CycleAdjustment
@@ -681,11 +682,7 @@ end LexicographicAugmentationExample
 example :
     let lo : Assignment (fun _ _ : Bool ↦ Unit) ℤ := fun _ _ _ ↦ -2
     let hi : Assignment (fun _ _ : Bool ↦ Unit) ℤ := fun _ _ _ ↦ 1
-    let φ : ℤ →+o ℝ :=
-      { toFun := Int.cast
-        map_zero' := Int.cast_zero
-        map_add' := Int.cast_add
-        monotone' := Int.cast_mono }
+    let φ : ℤ →+o ℝ := Int.castOrderAddMonoidHom ℝ
     ∃ f : BoundedFlow lo hi false true, f.val = -1 ∧ (f.map φ).val = -1 ∧
       (f.map φ).toFun (x := false) (y := true) () = -1 := by
   intro lo hi φ
