@@ -12,6 +12,7 @@ public import TauCeti.Topology.FiberBundle.Countable
 public import TauCeti.Topology.FiberBundle.Separation
 public import TauCeti.Topology.VectorBundle.GrassmannBundle
 import Mathlib.Topology.Metrizable.Urysohn
+import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
 # Varifolds on the Grassmann bundle
@@ -35,10 +36,11 @@ support of the weight. For a Borel set `A ⊆ B`, `V⌞A` is `V.restrict (π ⁻
 * `V` is carried by `G_k(spt ‖V‖)` (`TauCeti.grassmannBundle.ae_mem_support_weight`), and for
   open `W' ⊆ B`, `spt ‖V⌞W'‖ ∩ W' = spt ‖V‖ ∩ W'`
   (`TauCeti.grassmannBundle.support_weight_restrict_inter`).
-* Over a Hausdorff second-countable base, two varifolds are equal when they have the same
-  integrals of compactly supported continuous functions on `G_k(E)`
-  (`TauCeti.grassmannBundle.ext_of_integral_eq`), or when they agree on the parts over the sets of
-  an open cover (`TauCeti.grassmannBundle.ext_of_restrict_preimage`).
+* For a finite-rank bundle with continuous fibre norm over a Hausdorff, second-countable, locally
+  compact base, two varifolds are equal when they have the same integrals of compactly supported
+  continuous functions on `G_k(E)` (`TauCeti.grassmannBundle.ext_of_integral_eq`).
+* Over a Lindelöf base, two varifolds are equal when they agree on the parts over the sets of an
+  open cover (`TauCeti.grassmannBundle.ext_of_restrict_preimage`).
 
 ## References
 
@@ -60,16 +62,16 @@ variable {B F : Type*} {E : B → Type*} [TopologicalSpace B]
   [∀ b, NormedAddCommGroup (E b)] [∀ b, InnerProductSpace ℝ (E b)] [∀ b, CompleteSpace (E b)]
   [FiberBundle F E] [VectorBundle ℝ F E] {k : ℕ} {V V₁ V₂ : Measure (grassmannBundle F E k)}
 
-/-- **Locality of varifolds.** Over a second-countable base, two varifolds that agree on the
-planes over each set of an open cover of `B` are equal. -/
-theorem ext_of_restrict_preimage [SecondCountableTopology B] {ι : Type*} {U : ι → Set B}
+/-- **Locality of varifolds.** Over a Lindelöf base, two varifolds that agree on the planes over
+each set of an open cover of `B` are equal. -/
+theorem ext_of_restrict_preimage [LindelofSpace B] {ι : Type*} {U : ι → Set B}
     (hU : ∀ i, IsOpen (U i)) (hcover : ⋃ i, U i = univ)
     (h : ∀ i, V₁.restrict (proj ⁻¹' U i) = V₂.restrict (proj ⁻¹' U i)) : V₁ = V₂ := by
-  obtain ⟨T, hT, hTU⟩ := isOpen_iUnion_countable U hU
+  obtain ⟨T, hT, hTU⟩ := isLindelof_univ.elim_countable_subcover U hU hcover.ge
   have : Countable T := hT.to_subtype
   refine (Measure.ext_iff_of_iUnion_eq_univ (s := fun i : T ↦ proj ⁻¹' U i) ?_).mpr
     fun i ↦ h i
-  rw [← preimage_iUnion, iUnion_subtype, hTU, hcover, preimage_univ]
+  rw [← preimage_iUnion, iUnion_subtype, univ_subset_iff.mp hTU, preimage_univ]
 
 /-! ### The weight of a varifold -/
 
@@ -90,11 +92,6 @@ theorem weight_zero : weight (0 : Measure (grassmannBundle F E k)) = 0 :=
   Measure.map_zero _
 
 variable [BorelSpace B]
-
-/-- The projection of the Grassmann bundle to the base is measurable. -/
-@[fun_prop]
-theorem measurable_proj : Measurable (proj : grassmannBundle F E k → B) :=
-  continuous_proj.measurable
 
 /-- The weight of a Borel set `A` is the mass that `V` gives to the planes over `A`. -/
 theorem weight_apply {A : Set B} (hA : MeasurableSet A) : weight V A = V (proj ⁻¹' A) :=
@@ -160,17 +157,15 @@ variable [FiniteDimensional ℝ F] [ContinuousFiberNorm F E]
 /-- **The weight of a varifold is a Radon measure**: the projection `π` is proper, so the planes
 over a compact set form a compact set. -/
 instance isFiniteMeasureOnCompacts_weight [T2Space B] [IsFiniteMeasureOnCompacts V] :
-    IsFiniteMeasureOnCompacts (weight V) where
-  lt_top_of_isCompact K hK := by
-    rw [weight_apply hK.isClosed.measurableSet]
-    exact ((isProperMap_proj F E k).isCompact_preimage hK).measure_lt_top
+    IsFiniteMeasureOnCompacts (weight V) :=
+  Measure.isFiniteMeasureOnCompacts_map_of_isProperMap V (isProperMap_proj F E k)
 
 variable [T2Space B] [SecondCountableTopology B] [LocallyCompactSpace B]
 
 omit [MeasurableSpace B] [BorelSpace B] in
-/-- **Extensionality of varifolds.** Over a Hausdorff, second-countable, locally compact base, two
-varifolds with the same integrals of every compactly supported continuous function on `G_k(E)`
-are equal. -/
+/-- **Extensionality of varifolds.** For a finite-rank bundle with continuous fibre norm over a
+Hausdorff, second-countable, locally compact base, two varifolds with the same integrals of every
+compactly supported continuous function on `G_k(E)` are equal. -/
 theorem ext_of_integral_eq [IsFiniteMeasureOnCompacts V₁] [IsFiniteMeasureOnCompacts V₂]
     (h : ∀ f : CompactlySupportedContinuousMap (grassmannBundle F E k) ℝ,
       ∫ p, f p ∂V₁ = ∫ p, f p ∂V₂) : V₁ = V₂ := by
