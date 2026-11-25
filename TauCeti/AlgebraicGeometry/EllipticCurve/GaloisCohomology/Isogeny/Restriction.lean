@@ -143,6 +143,19 @@ theorem pointRes_kerCoeffIncl (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).Ker
 
 /-! ### Restriction to the kernel of the dual of the base change -/
 
+/-- **The kernels of `φ̂_L` and `(φ_L)^` agree** as subgroups of `E₂(Lˢ)`: the base change of the
+dual of `φ` is the dual of its base change, by `TauCeti.Isogeny.dual_map`. -/
+theorem ker_pointCoeffMap_dual_baseChange :
+    ((ofIsogeny (φ.dual.baseChange L)).pointCoeffMap :
+        (W₂⁄L).PointCoeff →+ (W₁⁄L).PointCoeff).ker =
+      ((ofIsogeny (φ.baseChange L).dual).pointCoeffMap :
+        (W₂⁄L).PointCoeff →+ (W₁⁄L).PointCoeff).ker := by
+  rw [baseChange, dual_map φ (algebraMap K L)]
+  -- The dual produced by `dual_map` lives over the curves `W.toAffine.map (algebraMap K L)`, which
+  -- are `(W⁄L).toAffine` by definition of `WeierstrassCurve.baseChange`. These curves occur in the
+  -- types, so they are identified definitionally rather than by rewriting.
+  rfl
+
 /-- **The coordinate map along `τ` carries `E₂(Kˢ)[φ̂]` into `E₂(Lˢ)[(φ_L)^]`**, the kernel of the
 dual of the base change of `φ`. -/
 theorem pointCoeffBaseChange_mem_kerCoeff_dual {Q : W₂.PointCoeff}
@@ -150,8 +163,8 @@ theorem pointCoeffBaseChange_mem_kerCoeff_dual {Q : W₂.PointCoeff}
     W₂.pointCoeffBaseChange τ Q ∈
       ((ofIsogeny (φ.baseChange L).dual).pointCoeffMap :
         (W₂⁄L).PointCoeff →+ (W₁⁄L).PointCoeff).ker := by
-  have h := φ.dual.pointCoeffBaseChange_mem_kerCoeff τ hQ
-  rwa [baseChange, dual_map φ (algebraMap K L)] at h
+  rw [← ker_pointCoeffMap_dual_baseChange]
+  exact φ.dual.pointCoeffBaseChange_mem_kerCoeff τ hQ
 
 /-- **The map `E₂(Kˢ)[φ̂] → E₂(Lˢ)[(φ_L)^]`** along `τ`, the restriction of
 `pointCoeffBaseChange τ` to the kernel of `φ̂`. -/
@@ -227,12 +240,7 @@ restriction `kerRes τ` of `φ̂` followed by the isomorphism this equality indu
 class satisfies the strict local condition of `φ̂` at `L` exactly when `dualKerRes τ` kills it. -/
 theorem dualKerRes_eq_zero_iff {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff} :
     φ.dualKerRes τ c = 0 ↔ φ.dual.kerRes τ c = 0 := by
-  have h : ((ofIsogeny (φ.dual.baseChange L)).pointCoeffMap :
-        (W₂⁄L).PointCoeff →+ (W₁⁄L).PointCoeff).ker =
-      ((ofIsogeny (φ.baseChange L).dual).pointCoeffMap :
-        (W₂⁄L).PointCoeff →+ (W₁⁄L).PointCoeff).ker := by
-    rw [baseChange, dual_map φ (algebraMap K L)]
-    rfl
+  have h := φ.ker_pointCoeffMap_dual_baseChange (L := L)
   -- The inclusion between the two equal kernels is a bijective coefficient map.
   let f : (ofIsogeny (φ.dual.baseChange L)).KerCoeff →+[AbsoluteGaloisGroup L]
       (ofIsogeny (φ.baseChange L).dual).KerCoeff :=
