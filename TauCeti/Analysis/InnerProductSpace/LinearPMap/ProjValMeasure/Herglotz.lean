@@ -23,6 +23,11 @@ weighted mass `∫ (1 + t ^ 2)⁻¹ dν < ∞`, the measure `ν` is finite and `
 transform. By Stieltjes inversion the measure is then `μ_v`
 (`IsSelfAdjoint.eq_spectralPVM_diag_of_eq_subtractedResolventKernel_add`).
 
+Polarization then reconstructs the whole spectral measure from these Herglotz measures: if `ν_v`
+is the Herglotz measure of `F_v` for every `v`, then for every Borel set `B`
+`⟪ψ, P_A(B) ξ⟫ = ¼ (ν_(ξ+ψ)(B) + i ν_(ξ+iψ)(B) - ν_(ξ-ψ)(B) - i ν_(ξ-iψ)(B))`
+(`IsSelfAdjoint.inner_spectralPVM_proj_eq_of_eq_subtractedResolventKernel_add`).
+
 ## References
 
 * G. Teschl, *Mathematical Methods in Quantum Mechanics*, §3.4, Theorem 3.20 and the discussion of
@@ -64,5 +69,28 @@ theorem _root_.IsSelfAdjoint.eq_spectralPVM_diag_of_eq_subtractedResolventKernel
     (eventually_mul_abs_im_le_of_mul_norm_le hbound)
   have hm := eq_resolventTransform_of_eq_subtractedResolventKernel_add_of_bound hrep hbound
   exact Measure.ext_of_resolventTransform fun z hz ↦ (hm z hz).symm.trans (hF z hz)
+
+/-- **Polarization reconstructs the spectral measure from the Herglotz measures.** If for every
+vector `v` the resolvent matrix element `⟪v, (A - z)⁻¹ v⟫` has a Herglotz representation
+`a v + b v z + ∫ ((t - z)⁻¹ - t / (1 + t ^ 2)) dν_v(t)` on the upper half-plane, with `ν_v` of
+finite weighted mass, then every matrix element of the spectral projection `P_A(B)` is the
+polarization `¼ (ν_(ξ+ψ)(B) + i ν_(ξ+iψ)(B) - ν_(ξ-ψ)(B) - i ν_(ξ-iψ)(B))`. -/
+theorem _root_.IsSelfAdjoint.inner_spectralPVM_proj_eq_of_eq_subtractedResolventKernel_add
+    (hA : IsSelfAdjoint A) {a b : H → ℝ} {nu : H → Measure ℝ}
+    (hnu : ∀ v, ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu v < ⊤)
+    (hrep : ∀ v, ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
+      -⟪v, A.resolvent z v⟫_ℂ = a v + b v * z + ∫ t, subtractedResolventKernel z t ∂nu v)
+    (ψ ξ : H) {B : Set ℝ} (hB : MeasurableSet B) :
+    ⟪ψ, (A.spectralPVM hA).proj B hB ξ⟫_ℂ =
+      (1 / 4 : ℂ) * ((nu (ξ + ψ)).real B + I * (nu (ξ + I • ψ)).real B -
+        (nu (ξ - ψ)).real B - I * (nu (ξ - I • ψ)).real B) := by
+  have hdiag (v : H) : nu v = (A.spectralPVM hA).diag v :=
+    hA.eq_spectralPVM_diag_of_eq_subtractedResolventKernel_add v (hnu v) (hrep v)
+  set P := A.spectralPVM hA
+  have hpol := LinearMap.inner_polarization (P.proj B hB) ψ ξ
+  rw [ContinuousLinearMap.coe_coe, P.inner_proj B hB (ξ + ψ), P.inner_proj B hB (ξ + I • ψ),
+    P.inner_proj B hB (ξ - ψ), P.inner_proj B hB (ξ - I • ψ)] at hpol
+  rw [← hpol]
+  simp only [hdiag, measureReal_def]
 
 end LinearPMap
