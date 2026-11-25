@@ -56,8 +56,8 @@ perimeter.
   measure-preserving affine isometry equivalence with measurable inverse, with its inverse
   `AffineIsometryEquiv.compBV_symm` and its action on representatives, `L¹` classes and total
   variation.
-* `TauCeti.BV.isCompactOperator_toL1CLM_of_affineIsometryEquiv` and
-  `TauCeti.BV.isCompactOperator_toL1CLM_iff_of_affineIsometryEquiv`: invariance of compactness of
+* `AffineIsometryEquiv.isCompactOperator_toL1CLM` and
+  `AffineIsometryEquiv.isCompactOperator_toL1CLM_iff`: invariance of compactness of
   `BV.toL1CLM` under affine isometry equivalences.
 
 ## References
@@ -468,31 +468,27 @@ theorem compBV_ofFunction (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ
       MeasurePreserving f (μ.restrict V) (ν.restrict Ω)).quasiMeasurePreserving.ae_eq_comp
         (BV.coeFn_ofFunction u hu)).trans (BV.coeFn_ofFunction _ _).symm
 
-end AffineIsometryEquiv
-
-namespace TauCeti.BV
-
 /-- Pulling `BV` back along a measure-preserving affine isometry equivalence `f` with measurable
 inverse and `V = f ⁻¹' Ω` transports compactness of `BV.toL1CLM` from `Ω` to `V`. -/
-theorem isCompactOperator_toL1CLM_of_affineIsometryEquiv (f : E ≃ᵃⁱ[ℝ] E')
-    (hf : MeasurePreserving f μ ν) (hinv : Measurable f.symm) (hVO : (V : Set E) = f ⁻¹' Ω)
+theorem isCompactOperator_toL1CLM (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ ν)
+    (hinv : Measurable f.symm) (hVO : (V : Set E) = f ⁻¹' Ω)
     (hcpt : IsCompactOperator (BV.toL1CLM : BV ν Ω →L[ℝ] _)) :
     IsCompactOperator (BV.toL1CLM : BV μ V →L[ℝ] _) :=
-  isCompactOperator_toL1CLM_of_compEquiv
+  BV.isCompactOperator_toL1CLM_of_compEquiv
     (hVO ▸ hf.restrict_preimage Ω.isOpen.measurableSet)
     (f.compBV hf hinv hVO) (f.toL1_compBV hf hinv hVO) hcpt
 
 /-- **Invariance of compactness of `BV.toL1CLM` under affine isometry equivalences.** -/
-theorem isCompactOperator_toL1CLM_iff_of_affineIsometryEquiv (f : E ≃ᵃⁱ[ℝ] E')
-    (hf : MeasurePreserving f μ ν) (hinv : Measurable f.symm) (hVO : (V : Set E) = f ⁻¹' Ω) :
+theorem isCompactOperator_toL1CLM_iff (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ ν)
+    (hinv : Measurable f.symm) (hVO : (V : Set E) = f ⁻¹' Ω) :
     IsCompactOperator (BV.toL1CLM : BV μ V →L[ℝ] _) ↔
       IsCompactOperator (BV.toL1CLM : BV ν Ω →L[ℝ] _) :=
-  ⟨isCompactOperator_toL1CLM_of_compEquiv
+  ⟨BV.isCompactOperator_toL1CLM_of_compEquiv
     (MeasurePreserving.symm ⟨f.toEquiv, hf.measurable, hinv⟩
       (hVO ▸ hf.restrict_preimage Ω.isOpen.measurableSet))
     (f.compBV hf hinv hVO).symm (f.toL1_compBV_symm hf hinv hVO),
-    isCompactOperator_toL1CLM_of_affineIsometryEquiv f hf hinv hVO⟩
+    f.isCompactOperator_toL1CLM hf hinv hVO⟩
 
-end TauCeti.BV
+end AffineIsometryEquiv
 
 end BVSpace
