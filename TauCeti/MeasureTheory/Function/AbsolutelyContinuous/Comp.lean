@@ -87,7 +87,9 @@ protected theorem star {E : Type*} [SeminormedAddCommGroup E] [StarAddMonoid E]
 
 /-- The product of two absolutely continuous curves in a seminormed (not necessarily unital or
 commutative) ring is absolutely continuous. This generalizes `AbsolutelyContinuousOnInterval.mul`
-from real functions to rings whose norm is only submultiplicative, such as operator algebras. -/
+from real functions to rings whose norm is only submultiplicative, such as operator algebras.
+The proof is adapted from Mathlib's `AbsolutelyContinuousOnInterval.smul`, with `norm_mul_le`
+in place of the `NormSMulClass` hypothesis. -/
 @[to_fun]
 theorem mul' {A : Type*} [NonUnitalSeminormedRing A] {f g : ℝ → A} {a b : ℝ}
     (hf : AbsolutelyContinuousOnInterval f a b) (hg : AbsolutelyContinuousOnInterval g a b) :
