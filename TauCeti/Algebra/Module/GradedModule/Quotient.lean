@@ -169,6 +169,11 @@ theorem coe_decompose_ker (p : ι) (z : _root_.LinearMap.ker f) :
       decompose G.piece (z : M) p :=
   G.coe_decompose_submodule (_root_.LinearMap.ker f) hf.isHomogeneous_ker p z
 
+/-- The grading of the kernel of `f` vanishes in every degree in which the grading of `M` does. -/
+theorem ker_piece_eq_bot {p : ι} (hp : G.piece p = ⊥) : (G.ker hf).piece p = ⊥ :=
+  (Submodule.eq_bot_iff _).mpr fun _ hz ↦ Subtype.ext <|
+    (Submodule.eq_bot_iff _).mp hp _ ((G.mem_ker_piece hf).1 hz)
+
 end Ker
 
 section Quotient

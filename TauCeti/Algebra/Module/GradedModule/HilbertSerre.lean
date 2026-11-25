@@ -89,15 +89,6 @@ private noncomputable abbrev lengthSeries {M : Type*} [AddCommGroup M] [Module A
     (ℳ : ℤ → Submodule A M) (d₀ : ℤ) : PowerSeries ℤ :=
   mk fun n : ℕ ↦ ((Module.length A (ℳ (d₀ + n))).toNat : ℤ)
 
-/-- A power series whose coefficients vanish from some index on is a polynomial. -/
-private theorem exists_eq_coe_of_coeff_eq_zero {f : PowerSeries ℤ} {N : ℕ}
-    (hf : ∀ n, N ≤ n → coeff n f = 0) : ∃ h : Polynomial ℤ, f = h := by
-  refine ⟨trunc N f, PowerSeries.ext fun n ↦ ?_⟩
-  rw [Polynomial.coeff_coe, coeff_trunc]
-  split_ifs with hn
-  · rfl
-  · exact hf n (not_lt.mp hn)
-
 /-- The base of the induction: if every variable acts by zero, the shifted Hilbert series is a
 polynomial. -/
 private theorem exists_lengthSeries_eq_of_forall_X_smul_eq_zero {M : Type*} [AddCommGroup M]
@@ -107,7 +98,11 @@ private theorem exists_lengthSeries_eq_of_forall_X_smul_eq_zero {M : Type*} [Add
     ∃ p : Polynomial ℤ, lengthSeries G.piece d₀ = p := by
   have := finite_of_forall_X_smul_eq_zero h
   obtain ⟨B, hB⟩ := G.finite_piece_ne_bot.bddAbove
-  refine exists_eq_coe_of_coeff_eq_zero (N := (B - d₀ + 1).toNat) fun n hn ↦ ?_
+  -- The coefficients vanish from index `(B - d₀ + 1).toNat` on, so the series is its truncation.
+  refine ⟨trunc (B - d₀ + 1).toNat (lengthSeries G.piece d₀), PowerSeries.ext fun n ↦ ?_⟩
+  rw [Polynomial.coeff_coe, coeff_trunc]
+  split_ifs with hn
+  · rfl
   have hbot : G.piece (d₀ + n) = ⊥ := by
     by_contra hne
     have := hB hne
@@ -131,9 +126,14 @@ private theorem length_ker_piece_add_length_piece_add_one {M : Type*} [AddCommGr
     (f.restrictScalars A).restrict fun _ hx ↦ by exact hf.map_mem hx
   let f₃ : G.piece (d + 1) →ₗ[A] (G.quotient U hf.isHomogeneous_range).piece (d + 1) :=
     (U.mkQ.restrictScalars A).restrict fun _ hx ↦ by exact G.mk_mem_quotient_piece U _ hx
-  have hf₁ (z) : (f₁ z : M) = ((z : LinearMap.ker f) : M) := rfl
-  have hf₂ (x) : (f₂ x : M) = f x := rfl
-  have hf₃ (x) : (f₃ x : M ⧸ U) = Submodule.Quotient.mk (x : M) := rfl
+  have hf₁ (z) : (f₁ z : M) = ((z : LinearMap.ker f) : M) :=
+    (LinearMap.coe_restrict_apply _ z).trans <|
+      (LinearMap.restrictScalars_apply _ _ _).trans (Submodule.subtype_apply _)
+  have hf₂ (x) : (f₂ x : M) = f x :=
+    (LinearMap.coe_restrict_apply _ x).trans (LinearMap.restrictScalars_apply _ _ _)
+  have hf₃ (x) : (f₃ x : M ⧸ U) = Submodule.Quotient.mk (x : M) :=
+    (LinearMap.coe_restrict_apply _ x).trans <|
+      (LinearMap.restrictScalars_apply _ _ _).trans (Submodule.mkQ_apply _ _)
   refine length_add_length_eq_length_add_length_of_exact (f₁ := f₁) (f₂ := f₂) (f₃ := f₃)
     (fun z₁ z₂ h ↦ ?_) (fun y ↦ ?_) (fun y ↦ ?_) (fun y ↦ ?_)
   · exact Subtype.ext (Subtype.ext (by rw [← hf₁, ← hf₁, h]))
@@ -155,13 +155,6 @@ private theorem length_ker_piece_add_length_piece_add_one {M : Type*} [AddCommGr
       exact LinearMap.mem_range_self f x
   · obtain ⟨x, hx, hxy⟩ := (G.mem_quotient_piece_iff U _).mp y.property
     exact ⟨⟨x, hx⟩, Subtype.ext hxy⟩
-
-/-- Lengths in `ℕ∞` that are all finite satisfy the same additive relation as integers. -/
-private theorem toNat_add_toNat_eq {a b c d : ℕ∞} (ha : a ≠ ⊤) (hb : b ≠ ⊤) (hc : c ≠ ⊤)
-    (hd : d ≠ ⊤) (h : a + b = c + d) : (a.toNat : ℤ) + b.toNat = c.toNat + d.toNat := by
-  have := congrArg ENat.toNat h
-  rw [ENat.toNat_add ha hb, ENat.toNat_add hc hd] at this
-  exact_mod_cast this
 
 /-- The identity of Hilbert series behind the induction step: if `b d + a (d + 1) = a d + c (d + 1)`
 for every `d`, and `a` and `b` vanish at `d₀ - 1`, then the series of `a`, `b` and `c` starting in
@@ -203,13 +196,6 @@ private theorem smul_mem_ker_piece
     (i : ℕ) (j : ℤ) (p : MvPolynomial σ A) (hp : p ∈ homogeneousSubmodule σ A i)
     (z : LinearMap.ker f) (hz : z ∈ (G.ker hf).piece j) : p • z ∈ (G.ker hf).piece (j + i) :=
   (G.mem_ker_piece hf).2 (hG i j p hp _ ((G.mem_ker_piece hf).1 hz))
-
-/-- The kernel of a homogeneous map vanishes in every degree in which the module does. -/
-private theorem ker_piece_eq_bot {f : M →ₗ[MvPolynomial σ A] M}
-    (hf : LinearMap.IsHomogeneous f G.piece G.piece 1) {d : ℤ} (hd : G.piece d = ⊥) :
-    (G.ker hf).piece d = ⊥ :=
-  (Submodule.eq_bot_iff _).mpr fun _ hz ↦ Subtype.ext <|
-    (Submodule.eq_bot_iff _).mp hd _ ((G.mem_ker_piece hf).1 hz)
 
 /-- The quotient by a homogeneous submodule is again graded compatibly with the polynomial ring. -/
 private theorem smul_mem_quotient_piece
@@ -255,8 +241,9 @@ private theorem exists_lengthSeries_mul_eq (s : Finset σ) :
       (fun j hj z ↦ Subtype.ext <| by
         by_cases hji : j = i
         · subst hji
-          exact (LinearMap.mem_ker.mp z.property :)
-        · exact hs' j hj hji z) d₀ fun d hd ↦ ker_piece_eq_bot G hf (hd₀ d hd)
+          simpa only [Submodule.coe_smul, ZeroMemClass.coe_zero, LinearMap.lsmul_apply] using
+            LinearMap.mem_ker.mp z.property
+        · exact hs' j hj hji z) d₀ fun d hd ↦ G.ker_piece_eq_bot hf (hd₀ d hd)
     obtain ⟨hC, hhC⟩ := ih (G.quotient _ hf.isHomogeneous_range)
       (smul_mem_quotient_piece G hG _ _)
       (fun j hj y ↦ by
@@ -273,12 +260,15 @@ private theorem exists_lengthSeries_mul_eq (s : Finset σ) :
       (a := fun d ↦ ((Module.length A (G.piece d)).toNat : ℤ))
       (b := fun d ↦ ((Module.length A ((G.ker hf).piece d)).toNat : ℤ))
       (c := fun d ↦ ((Module.length A ((G.quotient _ hf.isHomogeneous_range).piece d)).toNat : ℤ))
-      (fun d ↦ toNat_add_toNat_eq (length_piece_ne_top (smul_mem_ker_piece G hG hf) d)
-        (length_piece_ne_top hG (d + 1)) (length_piece_ne_top hG d)
-        (length_piece_ne_top (smul_mem_quotient_piece G hG _ _) (d + 1))
-        (length_ker_piece_add_length_piece_add_one G hf d))
-      (by rw [hd₀ (d₀ - 1) (by omega), Module.length_bot]; rfl)
-      (by rw [ker_piece_eq_bot G hf (hd₀ (d₀ - 1) (by omega)), Module.length_bot]; rfl)
+      (fun d ↦ by
+        have := congrArg ENat.toNat (length_ker_piece_add_length_piece_add_one G hf d)
+        rw [ENat.toNat_add (length_piece_ne_top (smul_mem_ker_piece G hG hf) d)
+          (length_piece_ne_top hG (d + 1)), ENat.toNat_add (length_piece_ne_top hG d)
+          (length_piece_ne_top (smul_mem_quotient_piece G hG _ _) (d + 1))] at this
+        exact_mod_cast this)
+      (by rw [hd₀ (d₀ - 1) (by omega), Module.length_bot, ENat.toNat_zero, Nat.cast_zero])
+      (by rw [G.ker_piece_eq_bot hf (hd₀ (d₀ - 1) (by omega)), Module.length_bot,
+        ENat.toNat_zero, Nat.cast_zero])
     refine ⟨hC - Polynomial.X * hK, ?_⟩
     rw [Finset.card_insert_of_notMem hi, pow_succ', ← mul_assoc, key, sub_mul, mul_assoc, hhK,
       hhC, Polynomial.coe_sub, Polynomial.coe_mul, Polynomial.coe_X]
@@ -315,7 +305,7 @@ theorem exists_degree_lt_and_eval_eq_length
       p ∈ homogeneousSubmodule σ A i → ∀ m ∈ ℳ j, p • m ∈ ℳ (j + i)) :
     ∃ P : Polynomial ℚ, P.degree < (Fintype.card σ : WithBot ℕ) ∧
       ∃ N : ℤ, ∀ d, N ≤ d → P.eval (d : ℚ) = ((Module.length A (ℳ d)).toNat : ℚ) := by
-  obtain ⟨d₀, hd₀⟩ := exists_piece_eq_bot_of_lt hℳ
+  obtain ⟨d₀, hd₀⟩ := exists_forall_lt_piece_eq_bot hℳ
   obtain ⟨h, hh⟩ := exists_mk_length_mul_one_sub_X_pow_eq hℳ hd₀
   let q := h.map (Int.castRingHom ℚ)
   -- Over `ℚ`, the shifted Hilbert series is `q / (1 - T) ^ e`.

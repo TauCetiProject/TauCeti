@@ -13,8 +13,8 @@ public import TauCeti.Algebra.Module.GradedModule.Internal
 
 Let `A` be a commutative semiring and `M` a module over the polynomial ring `A[X_σ]`, with an
 integer grading `ℳ : ℤ → Submodule A M` by `A`-submodules on which a homogeneous polynomial of
-degree `i` raises degrees by `i`. This is a finitely generated graded module over the standard
-graded polynomial ring; its generators may sit in negative degrees.
+degree `i` raises degrees by `i`. This is a graded module over the standard graded polynomial
+ring; when finitely generated, its generators may sit in negative degrees.
 
 When `M` is finitely generated over `A[X_σ]` and `σ` is finite, every graded piece `ℳ d` is
 finitely generated over `A`, and the pieces vanish in all sufficiently negative degrees. Choosing
@@ -32,7 +32,7 @@ over an Artinian coefficient ring.
 * `TauCeti.MvPolynomial.piece_eq_iSup_map`: the degree-`d` piece is spanned over `A` by the
   homogeneous polynomials of degree `d - deg g` times the generators `g`.
 * `TauCeti.MvPolynomial.fg_piece`: each graded piece is a finitely generated `A`-module.
-* `TauCeti.MvPolynomial.exists_piece_eq_bot_of_lt`: the pieces vanish in sufficiently negative
+* `TauCeti.MvPolynomial.exists_forall_lt_piece_eq_bot`: the pieces vanish in sufficiently negative
   degrees.
 
 ## References
@@ -121,7 +121,7 @@ theorem piece_eq_iSup_map [IsScalarTower A (MvPolynomial σ A) M]
 
 /-- The graded pieces of a finitely generated graded module over a polynomial ring vanish in all
 sufficiently negative degrees. -/
-theorem exists_piece_eq_bot_of_lt [IsScalarTower A (MvPolynomial σ A) M]
+theorem exists_forall_lt_piece_eq_bot [IsScalarTower A (MvPolynomial σ A) M]
     [Module.Finite (MvPolynomial σ A) M]
     (hℳ : ∀ (i : ℕ) (j : ℤ) (p : MvPolynomial σ A),
       p ∈ homogeneousSubmodule σ A i → ∀ m ∈ ℳ j, p • m ∈ ℳ (j + i)) :
