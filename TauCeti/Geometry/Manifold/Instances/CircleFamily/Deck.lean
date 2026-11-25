@@ -9,7 +9,8 @@ public import TauCeti.Geometry.Manifold.Instances.CircleFamily
 public import TauCeti.Geometry.Manifold.Instances.Quotient
 import Mathlib.Topology.Instances.ZMultiples
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
+import TauCeti.Geometry.Manifold.Submersion.Diffeomorph
+import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
 
 /-!
 # The circle family as the orbit space of its deck action
@@ -30,6 +31,8 @@ of `Q` (`TauCeti.CircleFamily.Cover.orbitRel_iff`), and the induced map from the
 diffeomorphism onto `TauCeti.CircleFamily`
 (`TauCeti.CircleFamily.Cover.quotientDiffeomorph`), with its normalized atlas. It keeps the
 positive period: the orbit of `(p, t)` is sent to `(p, [t]_p)`, a point of period `p`.
+
+The construction follows `TauCeti.PeriodLine`, the fixed-period case for `AddCircle p`.
 
 ## Main definitions
 
@@ -248,30 +251,26 @@ private theorem isLocalDiffeomorph_quotientMk_cover :
 the representative map `(p, t) ↦ (p, [t]_p)`. -/
 def quotientDiffeomorph :
     MulAction.orbitRel.Quotient (Multiplicative ℤ) Cover ≃ₘ^n⟮𝓘(ℝ).prod 𝓘(ℝ), 𝓘(ℝ).prod 𝓘(ℝ)⟯
-      CircleFamily where
-  toEquiv := quotientEquiv
-  -- The orbit projection and the representative map are surjective local diffeomorphisms, so
-  -- smoothness in each direction can be tested after composing with one of them.
-  contMDiff_toFun := by
-    refine ((isLocalDiffeomorph_quotientMk_cover n).contMDiff_comp_iff Quotient.mk_surjective
-      le_rfl).1 ?_
-    exact (isLocalDiffeomorph_coverRep n).contMDiff.congr fun z ↦ quotientEquiv_mk z
-  contMDiff_invFun := by
-    refine ((isLocalDiffeomorph_coverRep n).contMDiff_comp_iff coverRep_surjective le_rfl).1 ?_
-    exact (isLocalDiffeomorph_quotientMk_cover n).contMDiff.congr fun z ↦
-      quotientEquiv.symm_apply_eq.2 (quotientEquiv_mk z).symm
+      CircleFamily :=
+  -- The orbit projection and the representative map are surjective local diffeomorphisms out of
+  -- the real cover, hence submersions, and `quotientEquiv` commutes with them.
+  quotientEquiv.diffeomorphOfSubmersions
+    ((isLocalDiffeomorph_quotientMk_cover n).isSubmersion_comp Manifold.IsSubmersion.id)
+    Quotient.mk_surjective
+    ((isLocalDiffeomorph_coverRep n).isSubmersion_comp Manifold.IsSubmersion.id)
+    (funext quotientEquiv_mk)
 
 /-- The deck quotient diffeomorphism sends the orbit of `(p, t)` to `(p, [t]_p)`. -/
 @[simp]
-theorem quotientDiffeomorph_mk (z : PositivePeriod × ℝ) :
-    quotientDiffeomorph n (Quotient.mk _ (ofProd z)) = representative z :=
-  quotientEquiv_mk (ofProd z)
+theorem quotientDiffeomorph_mk (z : Cover) :
+    quotientDiffeomorph n (Quotient.mk _ z) = representative (ofProd.symm z) := by
+  rw [quotientDiffeomorph, Equiv.diffeomorphOfSubmersions_apply, quotientEquiv_mk]
 
 /-- The inverse deck quotient diffeomorphism sends `(p, [t]_p)` to the orbit of `(p, t)`. -/
 @[simp]
 theorem quotientDiffeomorph_symm_representative (z : PositivePeriod × ℝ) :
     (quotientDiffeomorph n).symm (representative z) = Quotient.mk _ (ofProd z) :=
-  (quotientDiffeomorph n).symm_apply_eq.2 (quotientDiffeomorph_mk n z).symm
+  (quotientDiffeomorph n).symm_apply_eq.2 (by simp)
 
 end Cover
 
