@@ -40,8 +40,10 @@ induced structure is the standard one.
   structure of a Riemann surface with boundary.
 * `TauCeti.SmoothAlmostComplexStructure.ofBorderedHolomorphic_apply`: it is multiplication by `i`
   on every tangent space.
-* `TauCeti.SmoothAlmostComplexStructure.mfderiv_extend_symm_I_mul_of_mem_maximalAtlas`: off the
-  real axis, the inverse of a bordered holomorphic chart intertwines multiplication by `i` with it.
+* `TauCeti.ClosedUpperHalfPlane.mdifferentiableAt_extend_symm_of_im_pos` and
+  `TauCeti.SmoothAlmostComplexStructure.mfderiv_extend_symm_I_mul_of_mem_maximalAtlas`: off the
+  real axis, the inverse of a bordered holomorphic chart is differentiable and intertwines
+  multiplication by `i` with it.
 
 ## References
 
@@ -95,6 +97,25 @@ theorem inTangentCoordinates_ofBorderedHolomorphic {x₀ x : M}
       I • ContinuousLinearMap.id ℝ ℂ :=
   inTangentCoordinates_ofTangentCoordChangeISMul _ hx
 
+omit [HasGroupoid M borderedHolomorphicGroupoid] in
+open ClosedUpperHalfPlane in
+/-- Off the real axis, the inverse of a bordered holomorphic chart is differentiable. -/
+theorem _root_.TauCeti.ClosedUpperHalfPlane.mdifferentiableAt_extend_symm_of_im_pos
+    {φ : OpenPartialHomeomorph M ClosedUpperHalfPlane}
+    (hφ : φ ∈ borderedHolomorphicGroupoid.maximalAtlas M) {z : ℂ}
+    (hz : z ∈ (φ.extend closedUpperHalfPlaneModel).target) (hzim : 0 < z.im) :
+    MDifferentiableAt 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel
+      (φ.extend closedUpperHalfPlaneModel).symm z := by
+  refine φ.mdifferentiableAt_extend_symm_of_mem_interior one_ne_zero
+    (borderedHolomorphicGroupoid_maximalAtlas_subset (n := 1) (by exact_mod_cast le_top) hφ) ?_
+  rw [OpenPartialHomeomorph.extend_target] at hz ⊢
+  have hsub : closedUpperHalfPlaneModel.symm ⁻¹' φ.target ∩ {v : ℂ | 0 < v.im} ⊆
+      closedUpperHalfPlaneModel.symm ⁻¹' φ.target ∩ range closedUpperHalfPlaneModel :=
+    fun v hv ↦ ⟨hv.1, setOf_im_pos_subset_range_closedUpperHalfPlaneModel hv.2⟩
+  exact interior_maximal hsub
+    ((φ.open_target.preimage closedUpperHalfPlaneModel.continuous_symm).inter
+      (isOpen_lt continuous_const continuous_im)) ⟨hz.1, hzim⟩
+
 open ClosedUpperHalfPlane in
 /-- **Inverse bordered holomorphic charts are holomorphic off the real axis.** For a bordered
 holomorphic chart `φ` of a Riemann surface with boundary and a point `z` of positive imaginary part
@@ -112,21 +133,10 @@ theorem mfderiv_extend_symm_I_mul_of_mem_maximalAtlas
           w) := by
   set x := (φ.extend closedUpperHalfPlaneModel).symm z
   set χ := chartAt ClosedUpperHalfPlane x
-  have hφ' : φ ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M :=
-    borderedHolomorphicGroupoid_maximalAtlas_subset (by exact_mod_cast le_top) hφ
   have hzT : closedUpperHalfPlaneModel.symm z ∈ φ.target := by
     rw [OpenPartialHomeomorph.extend_target] at hz
     exact hz.1
-  -- The extended target is a neighbourhood of `z`, which is off the real axis.
-  have hT : closedUpperHalfPlaneModel '' φ.target ∈ 𝓝 z := by
-    rw [← φ.extend_target']
-    refine mem_of_superset ((φ.open_target.preimage closedUpperHalfPlaneModel.continuous_symm).inter
-      (isOpen_lt continuous_const continuous_im) |>.mem_nhds ⟨hzT, hzim⟩) fun v hv ↦ ?_
-    rw [OpenPartialHomeomorph.extend_target]
-    exact ⟨hv.1, setOf_im_pos_subset_range_closedUpperHalfPlaneModel hv.2⟩
-  have hφs : MDifferentiableAt 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel
-      (φ.extend closedUpperHalfPlaneModel).symm z :=
-    ((contMDiffOn_extend_symm hφ').contMDiffAt hT).mdifferentiableAt one_ne_zero
+  have hφs := mdifferentiableAt_extend_symm_of_im_pos hφ hz hzim
   -- The chart change `χ ∘ φ⁻¹`, read in `ℂ`, is holomorphic at `z`.
   have he : φ.symm ≫ₕ χ ∈ borderedHolomorphicGroupoid := (hφ χ (chart_mem_atlas _ x)).1
   have hD : IsOpen (closedUpperHalfPlaneModel.symm ⁻¹' (φ.symm ≫ₕ χ).source ∩

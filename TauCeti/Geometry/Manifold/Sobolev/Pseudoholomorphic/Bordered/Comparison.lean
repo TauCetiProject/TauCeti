@@ -291,13 +291,7 @@ private theorem isWeakCauchyRiemannOn_chart_of_isPseudoholomorphicOn
   -- The interior of `U` lies in the open upper half-plane.
   have hzim : 0 < z.im :=
     interior_subset_setOf_im_pos (inter_subset_left.trans φ.extend_target_subset_range) hz
-  have hφs : MDifferentiableAt 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel
-      (φ.extend closedUpperHalfPlaneModel).symm z :=
-    ((contMDiffOn_extend_symm (borderedHolomorphicGroupoid_maximalAtlas_subset
-      (by exact_mod_cast le_top) hφ)).contMDiffAt (by
-        rw [← φ.extend_target']
-        exact mem_interior_iff_mem_nhds.1 (interior_mono inter_subset_left hz))).mdifferentiableAt
-      one_ne_zero
+  have hφs := mdifferentiableAt_extend_symm_of_im_pos hφ hzU.1 hzim
   have hux : MDifferentiableAt closedUpperHalfPlaneModel I u x :=
     (hu.contMDiffAt (hs.mem_nhds hzU.2.1)).mdifferentiableAt one_ne_zero
   have hy : (u ∘ (φ.extend closedUpperHalfPlaneModel).symm) z ∈ ψ'.source := by
