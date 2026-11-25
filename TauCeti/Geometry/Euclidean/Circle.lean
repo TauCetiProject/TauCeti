@@ -30,8 +30,8 @@ This file provides two parametrizations of circles in Euclidean planes:
   the tangent-chord area-form identity (`Orientation.areaForm_deriv_circleCurve_sub`), injectivity
   on `[0, 2 π R)`, and the characterization of double normals as diameters
   (`Orientation.inner_circleCurve_sub_deriv_eq_zero_iff`). In the complex plane with its standard
-  orientation and starting vector `1`, it is Mathlib's `circleMap`
-  (`Complex.orientation_circleCurve_one`).
+  orientation and starting vector `1`, it is Mathlib's `circleMap` reparametrized by arclength,
+  `s ↦ circleMap c R (s / R)` (`Complex.orientation_circleCurve_one`).
 
 It also records the derivative of a rotating curve `s ↦ o.rotation (θ s) (c s)`
 (`Orientation.hasDerivAt_rotation`).

@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import TauCeti.Dynamics.Billiard.Circle
-public import TauCeti.Dynamics.Billiard.Circle.Basic
 public import TauCeti.Dynamics.Billiard.NextCollision
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Dynamics.Billiard.Inverse
@@ -62,11 +61,10 @@ in this sense are the tables on which the billiard ball map of a convex billiard
   no point of a table lies strictly between two others, so its image contains no segment.
 * `TauCeti.ConvexTable.coe_ne_comp_neg`: reversing the orientation of a table never gives a
   table.
-* `TauCeti.StrictConvexBilliardTable.circle_eq_circleBilliardTable`,
-  `TauCeti.ConvexTable.toStrictConvexBilliardTable_circle_eq_circleBilliardTable`: the circle
-  billiard table of radius `R`, and the convex table `circle R` regarded as a strictly convex
-  billiard table, are the circular table `Complex.orientation.circleBilliardTable 0 1 R` of
-  `TauCeti.Dynamics.Billiard.Circle.Basic`.
+* `TauCeti.ConvexTable.toStrictConvexBilliardTable_circle_eq_circleBilliardTable`: the convex
+  table `circle R`, regarded as a strictly convex billiard table, is the circular table
+  `Complex.orientation.circleBilliardTable 0 1 R` of `TauCeti.Dynamics.Billiard.Circle.Basic`
+  (via `TauCeti.StrictConvexBilliardTable.circle_eq_circleBilliardTable`).
 
 ## References
 
@@ -549,22 +547,6 @@ theorem not_segment_subset_range {p q : ℂ} (hpq : p ≠ q) : ¬segment ℝ p q
 
 end ConvexTable
 
-namespace StrictConvexBilliardTable
-
-attribute [local instance] Complex.finrank_real_complex_fact
-
-/-- The circle billiard table of radius `R` is the circular table
-`Complex.orientation.circleBilliardTable 0 1 R` of center `0` starting at `R`, so the
-next-collision and quotient billiard formulas of `TauCeti.Dynamics.Billiard.Circle.Basic`, stated
-in every oriented Euclidean plane, apply to it. -/
-theorem circle_eq_circleBilliardTable {R : ℝ} (hR : 0 < R) :
-    circle hR = Complex.orientation.circleBilliardTable 0 1 R (by simp) hR := by
-  refine StrictConvexBilliardTable.ext (funext fun s => ?_) ?_
-  · rw [circle_apply, Orientation.coe_circleBilliardTable, Complex.orientation_circleCurve_one]
-  · rw [period_circle, Orientation.circleBilliardTable_period]
-
-end StrictConvexBilliardTable
-
 namespace ConvexTable
 
 attribute [local instance] Complex.finrank_real_complex_fact
@@ -590,7 +572,7 @@ theorem toStrictConvexBilliardTable_circle_eq_circleBilliardTable (R : ℝ)
       Complex.orientation.circleBilliardTable 0 1 R (by simp)
         (Real.pos_of_fact_two_pi_mul_pos (R := R)) :=
   (toStrictConvexBilliardTable_circle R).trans
-    (StrictConvexBilliardTable.circle_eq_circleBilliardTable _)
+    StrictConvexBilliardTable.circle_eq_circleBilliardTable
 
 end ConvexTable
 
