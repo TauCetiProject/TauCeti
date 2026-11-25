@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Local.ChainRule
-public import TauCeti.Analysis.Sobolev.Local.Multiplication.Higher
+public import TauCeti.Analysis.Sobolev.Local.Basic
 import TauCeti.Analysis.Sobolev.Local.ChainRule.Supercritical
 
 /-!

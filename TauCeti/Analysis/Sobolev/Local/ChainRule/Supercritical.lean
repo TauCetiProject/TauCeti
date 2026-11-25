@@ -11,7 +11,6 @@ import TauCeti.Analysis.Sobolev.Local.Multiplication
 import TauCeti.Analysis.Sobolev.Local.Multiplication.Supercritical
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
 import TauCeti.Analysis.Sobolev.WeakDeriv.ChainRule
-import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 /-!
 # Composition of local Sobolev maps for `kp > 2`, including `p ≤ 2`
