@@ -62,8 +62,9 @@ potential, and the spectral flow is a junk value.
 * It extends the bounded spectral flow: on a finite-dimensional space, with `D = H` and `ι = 1`,
   every path of self-adjoint operators qualifies, and its spectral flow is
   `TauCeti.spectralFlow A a b` (`TauCeti.domainSpectralFlow_one`). Then `τ_c A` is the image
-  of `A` under the fractional linear function `x ↦ x / (1 - x / c)`, which preserves the spectral
-  flow (`TauCeti.spectralFlow_mul_ringInverse_one_add_smul`).
+  of `A` under the fractional linear function `x ↦ x / (1 - x / c)`
+  (`ContinuousLinearMap.shiftedResolventTransform_one_eq_mul_ringInverse`), which preserves the
+  spectral flow (`TauCeti.spectralFlow_mul_ringInverse_one_add_smul`).
 
 This is the spectral flow in the index formula `ind (∂ₛ - A) = -SF(A)` for the linearized Floer
 operator, which is Fredholm on a compactly embedded common domain
@@ -84,6 +85,7 @@ here.
 * `TauCeti.domainSpectralFlow_eq_spectralFlow_shiftedResolventTransform`: the spectral flow over
   an interval with a single admissible shift.
 * `TauCeti.domainSpectralFlow_add_adjacent_intervals`: concatenation.
+* `TauCeti.IsDomainSpectralFlowPotential.comp_of_mapsTo`: potentials of reparametrized paths.
 * `TauCeti.domainSpectralFlow_comp_of_mapsTo`, `TauCeti.domainSpectralFlow_comp_of_mapsTo_of_ge`,
   `TauCeti.domainSpectralFlow_comp_neg`: reparametrization and reversal.
 * `TauCeti.domainSpectralFlow_eq_zero_of_forall_isInvertible`: paths of invertible operators.
@@ -381,10 +383,7 @@ theorem domainSpectralFlow_eq_zero_of_forall_isInvertible {a b : ℝ} (hab : a �
     (hA : ContinuousOn A (Icc a b)) (hsymm : ∀ t ∈ Icc a b, ∀ x y, ⟪A t x, ι y⟫ = ⟪ι x, A t y⟫)
     (hinvA : ∀ t ∈ Icc a b, (A t).IsInvertible) : domainSpectralFlow ι A a b = 0 := by
   have h₀ (t : ℝ) (ht : t ∈ Icc a b) : ∃ c₀ : 𝕜, (c₀ • ι - A t).IsInvertible :=
-    ⟨0, by
-      rw [zero_smul, zero_sub, ← neg_one_smul 𝕜 (A t),
-        ContinuousLinearMap.isInvertible_smul_iff (neg_ne_zero.2 one_ne_zero)]
-      exact hinvA t ht⟩
+    ⟨0, by simpa [ContinuousLinearMap.isInvertible_neg_iff] using hinvA t ht⟩
   -- Every transform `c A (c ι - A)⁻¹` is invertible, so the zero function is a potential.
   have hp : IsDomainSpectralFlowPotential ι A a b 0 := by
     intro s t c has hst htb hc hinv
@@ -409,7 +408,7 @@ variable {φ : ℝ → ℝ} {a b p q : ℝ}
 subinterval `[s, t]` with an admissible shift `c`, the shift is admissible along `φ '' [s, t]`,
 an interval containing `φ s` and `φ t` on which the transforms form a regular path, so the
 spectral flow of the reparametrized transforms is that of the transforms from `φ s` to `φ t`. -/
-private theorem IsDomainSpectralFlowPotential.comp_of_mapsTo {F : ℝ → ℤ}
+theorem IsDomainSpectralFlowPotential.comp_of_mapsTo {F : ℝ → ℤ}
     (hFp : IsDomainSpectralFlowPotential ι A p q F) (hφ : ContinuousOn φ (Icc a b))
     (hmaps : MapsTo φ (Icc a b) (Icc p q)) (hA : ContinuousOn A (Icc p q))
     (hsymm : ∀ t ∈ Icc p q, ∀ x y, ⟪A t x, ι y⟫ = ⟪ι x, A t y⟫) :
@@ -532,23 +531,18 @@ theorem domainSpectralFlow_one [FiniteDimensional 𝕜 H] {A : ℝ → H →L[�
     (isCompactOperator_id_iff_finiteDimensional (𝕜 := 𝕜)).2 inferInstance
   rw [domainSpectralFlow_eq_spectralFlow_shiftedResolventTransform hι hab hA hsymm hc.ne' hinv]
   -- The transform is `A (1 - A / c)⁻¹`, the image of `A` under `x ↦ x / (1 - x / c)`.
-  have hc𝕜 : ((c⁻¹ : ℝ) : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.2 (inv_ne_zero hc.ne')
-  have hk (t : ℝ) : 1 + (-c⁻¹) • A t = ((c⁻¹ : ℝ) : 𝕜) • ((c : 𝕜) • (1 : H →L[𝕜] H) - A t) := by
-    rw [RCLike.real_smul_eq_coe_smul (K := 𝕜) (E := H →L[𝕜] H), smul_sub, smul_smul,
-      ← RCLike.ofReal_mul, inv_mul_cancel₀ hc.ne', RCLike.ofReal_one, one_smul, RCLike.ofReal_neg,
-      neg_smul, sub_eq_add_neg]
+  have hc𝕜 : (c : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.2 hc.ne'
   have hkunit (t : ℝ) (ht : t ∈ Icc a b) : IsUnit (1 + (-c⁻¹) • A t) := by
-    rw [hk t, ← ContinuousLinearMap.isInvertible_iff_isUnit,
-      ContinuousLinearMap.isInvertible_smul_iff hc𝕜]
+    have hk : 1 + (-c⁻¹) • A t = (c : 𝕜)⁻¹ • ((c : 𝕜) • (1 : H →L[𝕜] H) - A t) := by
+      rw [RCLike.real_smul_eq_coe_smul (K := 𝕜) (E := H →L[𝕜] H)]
+      match_scalars <;> field_simp
+    rw [hk, ← ContinuousLinearMap.isInvertible_iff_isUnit,
+      ContinuousLinearMap.isInvertible_smul_iff (inv_ne_zero hc𝕜)]
     exact hinv t ht
   have heq : EqOn (fun t ↦ (1 : H →L[𝕜] H).shiftedResolventTransform (A t) c)
       (fun t ↦ A t * Ring.inverse (1 + (-c⁻¹) • A t)) (Icc a b) := fun t ht ↦ by
-    dsimp only
-    refine (Ring.eq_mul_inverse_iff_mul_eq _ _ _ (hkunit t ht)).2 ?_
-    rw [hk t, ContinuousLinearMap.shiftedResolventTransform_def, mul_smul_comm, smul_mul_assoc,
-      smul_smul, ← RCLike.ofReal_mul, inv_mul_cancel₀ hc.ne', RCLike.ofReal_one, one_smul,
-      ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_assoc,
-      (hinv t ht).inverse_comp_self, ContinuousLinearMap.comp_id]
+    simpa only [RCLike.real_smul_eq_coe_smul (K := 𝕜) (E := H →L[𝕜] H)] using
+      ContinuousLinearMap.shiftedResolventTransform_one_eq_mul_ringInverse hc.ne' (hinv t ht)
   rw [spectralFlow_congr heq]
   exact spectralFlow_mul_ringInverse_one_add_smul hab hA hsa
     (fun t _ ↦ ContinuousLinearMap.isFredholm_of_finiteDimensional _) hkunit
