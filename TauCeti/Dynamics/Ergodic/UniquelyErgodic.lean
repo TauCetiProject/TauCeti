@@ -50,8 +50,9 @@ variable {X : Type*} [MeasurableSpace X] {T : X → X}
 
 /-- The integral of an integrable function against an invariant probability is a limit of the
 integrals of its Birkhoff averages; if these converge uniformly to `c`, the integral is `c`. -/
-theorem integral_eq_of_tendstoUniformly_birkhoffAverage {ν : ProbabilityMeasure X}
-    (hν : ν ∈ invariantProbabilities T) {f : X → ℝ} (hfi : Integrable f (ν : Measure X)) {c : ℝ}
+theorem integral_eq_of_tendstoUniformly_birkhoffAverage {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {ν : ProbabilityMeasure X}
+    (hν : ν ∈ invariantProbabilities T) {f : X → E} (hfi : Integrable f (ν : Measure X)) {c : E}
     (hc : TendstoUniformly (fun n ↦ birkhoffAverage ℝ T f n) (fun _ ↦ c) atTop) :
     ∫ x, f x ∂ν = c := by
   refine eq_of_forall_dist_le fun ε hε ↦ ?_
