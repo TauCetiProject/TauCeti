@@ -46,6 +46,7 @@ that the circle is two closed intervals glued at their endpoints `±1`.
   `Multiplicative ℝ →ₜ* Circle`.
 * `Circle.coordinate`: the coordinate function `z ↦ z` in `C(S¹, ℂ)`, and
   `Circle.coordinate_mem_unitary`.
+* `Circle.conj_coe_mul_mul_coe_mul`: `conj (a z) * (a w) = conj z * w` for `a` on the circle.
 * `Circle.re_sq_add_im_sq`, `Circle.coe_mul_conj` and `Circle.coe_add_inv_coe`:
   `Re z ^ 2 + Im z ^ 2 = 1`, `z * conj z = 1` and `z + z⁻¹ = 2 Re z` on the circle,
   and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first identity for a point of
@@ -156,6 +157,13 @@ theorem _root_.Complex.zpow_mul_conj_sub_eq_neg_of_mem_sphere {z : ℂ}
 /-- For a point of the circle, `z + z⁻¹ = 2 Re z`. -/
 theorem coe_add_inv_coe (z : Circle) : (z : ℂ) + (z : ℂ)⁻¹ = 2 * (z : ℂ).re := by
   rw [← coe_inv, coe_inv_eq_conj, Complex.add_conj, Complex.ofReal_mul, Complex.ofReal_ofNat]
+
+/-- Rotating both factors of the Hermitian product `conj z * w` by a point `a` of the circle does
+not change it. In particular the cross product `Im (conj z * w)` is invariant under rotations. -/
+theorem conj_coe_mul_mul_coe_mul (a : Circle) (z w : ℂ) :
+    conj ((a : ℂ) * z) * ((a : ℂ) * w) = conj z * w := by
+  rw [map_mul, mul_mul_mul_comm, ← Complex.normSq_eq_conj_mul_self, normSq_coe,
+    Complex.ofReal_one, one_mul]
 
 /-- Raising `exp (π * I / d)` to a nonzero natural power `d` gives `-1`. -/
 theorem exp_pow_eq_neg_one (d : ℕ) (hd : d ≠ 0) :

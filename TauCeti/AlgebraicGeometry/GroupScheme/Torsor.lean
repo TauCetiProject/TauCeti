@@ -11,7 +11,7 @@ public import Mathlib.CategoryTheory.Sites.SubcanonicalOver
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Descent
 public import TauCeti.CategoryTheory.Monoidal.Mod.Faithful
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.GrpObj
-public import TauCeti.CategoryTheory.Sites.Over
+public import TauCeti.CategoryTheory.Sites.Over.Basic
 
 /-!
 # Torsors under a group scheme

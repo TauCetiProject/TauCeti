@@ -15,13 +15,13 @@ import TauCeti.MeasureTheory.Integral.OddSymmetric
 # Esseen's concentration inequality
 
 For a finite measure `μ` on `ℝ`, every closed ball of radius `ε > 0` has mass at most
-`2 * ε * ∫ t in -ε⁻¹..ε⁻¹, ‖charFun μ t‖`
+`(24 / 23) ^ 2 * ε * ∫ t in -ε⁻¹..ε⁻¹, ‖charFun μ t‖`
 (`MeasureTheory.measureReal_closedBall_le_integral_norm_charFun`). The bound is uniform in the
 centre, so it bounds the Lévy concentration function `sup_v μ (closedBall v ε)`. The bound is
-four times the average of `‖charFun μ t‖` over `[-ε⁻¹, ε⁻¹]`, so it is small when that average
-modulus is small; then every interval of length `2 ε` has small mass. This is the analytic input
-of small-ball estimates for sums of independent random variables, whose characteristic function is
-a product.
+`2 * (24 / 23) ^ 2` times the average of `‖charFun μ t‖` over `[-ε⁻¹, ε⁻¹]`, so it is small when
+that average modulus is small; then every interval of length `2 ε` has small mass. This is the
+analytic input of small-ball estimates for sums of independent random variables, whose
+characteristic function is a product.
 
 The proof smooths `μ` with the Fejér kernel `T / 2 * sinc (T * (x - v) / 2) ^ 2`. Its integral
 against `μ` is the oriented interval integral from `0` to `T`, weighted by `1 - t / T`, of the
@@ -96,9 +96,9 @@ private theorem integral_one_sub_div_mul_re_le {T : ℝ} (hT : 0 < T) (v : ℝ) 
     _ ≤ ‖charFun μ t‖ := mul_le_of_le_one_left (norm_nonneg _) h₂
 
 /-- **Esseen's concentration inequality.** For a finite measure `μ` on `ℝ`, every closed ball of
-radius `ε > 0` has mass at most `2 * ε * ∫ t in -ε⁻¹..ε⁻¹, ‖charFun μ t‖`. -/
+radius `ε > 0` has mass at most `(24 / 23) ^ 2 * ε * ∫ t in -ε⁻¹..ε⁻¹, ‖charFun μ t‖`. -/
 theorem measureReal_closedBall_le_integral_norm_charFun (v : ℝ) {ε : ℝ} (hε : 0 < ε) :
-    μ.real (closedBall v ε) ≤ 2 * ε * ∫ t in -ε⁻¹..ε⁻¹, ‖charFun μ t‖ := by
+    μ.real (closedBall v ε) ≤ (24 / 23) ^ 2 * ε * ∫ t in -ε⁻¹..ε⁻¹, ‖charFun μ t‖ := by
   set T := ε⁻¹ with hT
   have hT₀ : 0 < T := inv_pos.2 hε
   -- The kernel is the cosine transform of the triangular weight on `[0, T]`, centred at `v`.
@@ -111,24 +111,32 @@ theorem measureReal_closedBall_le_integral_norm_charFun (v : ℝ) {ε : ℝ} (h�
   have hsymm : ∫ t in -T..T, ‖charFun μ t‖ = 2 * ∫ t in 0..T, ‖charFun μ t‖ := by
     rw [intervalIntegral.integral_eq_two_smul_of_even (fun t ↦ by
       rw [charFun_neg, Complex.norm_conj]), smul_eq_mul]
-  calc μ.real (closedBall v ε) = 4 / T * ∫ x in closedBall v ε, T / 4 ∂μ := by
-        rw [setIntegral_const, smul_eq_mul]
+  set c : ℝ := 2 * (24 / 23) ^ 2 / T with hc
+  have hc₀ : 0 ≤ c := by positivity
+  calc μ.real (closedBall v ε) = c * ∫ x in closedBall v ε, T / 2 * (23 / 24) ^ 2 ∂μ := by
+        rw [setIntegral_const, smul_eq_mul, hc]
         field_simp
-    _ ≤ 4 / T * ∫ x in closedBall v ε, K x ∂μ := by
-        refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+    _ ≤ c * ∫ x in closedBall v ε, K x ∂μ := by
+        refine mul_le_mul_of_nonneg_left ?_ hc₀
         refine setIntegral_mono_on integrableOn_const hK_int.integrableOn
-          measurableSet_closedBall fun x hx ↦ TauCeti.div_four_le_mul_sinc_sq ?_
-        simpa [hT, Real.dist_eq] using Metric.mem_closedBall.mp hx
-    _ ≤ 4 / T * ∫ x, K x ∂μ := by
-        refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+          measurableSet_closedBall fun x hx ↦ ?_
+        -- On the ball, `|T * (x - v) / 2| ≤ 1 / 2`, where the kernel's `sinc` is near one.
+        have hx' : |x - v| ≤ T⁻¹ := by
+          simpa [hT, Real.dist_eq] using Metric.mem_closedBall.mp hx
+        have hTx : |T * (x - v) / 2| ≤ 1 / 2 := by
+          rw [abs_div, abs_mul, abs_of_pos hT₀, abs_two, div_le_div_iff_of_pos_right two_pos]
+          simpa [hT₀.ne'] using mul_le_mul_of_nonneg_left hx' hT₀.le
+        exact mul_le_mul_of_nonneg_left
+          (pow_le_pow_left₀ (by norm_num) (TauCeti.le_sinc_of_abs_le_half hTx) 2) (by positivity)
+    _ ≤ c * ∫ x, K x ∂μ := by
+        refine mul_le_mul_of_nonneg_left ?_ hc₀
         exact setIntegral_le_integral hK_int (ae_of_all _ fun x ↦ by positivity)
-    _ ≤ 4 / T * ∫ t in 0..T, ‖charFun μ t‖ := by
+    _ ≤ c * ∫ t in 0..T, ‖charFun μ t‖ := by
         rw [integral_mul_sinc_sq_eq_integral_re_charFun v T]
         gcongr
         exact integral_one_sub_div_mul_re_le hT₀ v
-    _ = 2 * ε * ∫ t in -T..T, ‖charFun μ t‖ := by
-        rw [hsymm, hT]
+    _ = (24 / 23) ^ 2 * ε * ∫ t in -T..T, ‖charFun μ t‖ := by
+        rw [hsymm, hc, hT]
         field_simp
-        ring
 
 end MeasureTheory

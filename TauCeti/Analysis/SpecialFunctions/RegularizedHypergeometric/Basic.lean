@@ -121,6 +121,8 @@ with no condition on the lower parameters.
 * `Complex.hasSum_choose_mul_coeff_regularizedGaussHGFunSeries`,
   `Complex.hasSum_norm_choose_mul_coeff_regularizedGaussHGFunSeries` — the absolutely convergent
   binomial double series of `𝐅(a, b; c; u + z)` in powers of `u` and `z` for `‖u‖ + ‖z‖ < 1`.
+* `Complex.coeff_regularizedGaussHGFunSeries_eq_sub_mul_add_mul` — the shift of DLMF 15.5.15 for
+  the coefficients of the series, which holds for every `z`.
 * `Complex.analyticAt_uncurry_regularizedGaussHGFun`, `AnalyticAt.regularizedGaussHGFun`,
   `DifferentiableAt.regularizedGaussHGFun`, `DifferentiableWithinAt.regularizedGaussHGFun`,
   `DifferentiableOn.regularizedGaussHGFun`, `Differentiable.regularizedGaussHGFun` — joint
@@ -613,17 +615,20 @@ theorem coeff_regularizedGaussHGFunSeries_zero (a b c : ℂ) :
     (regularizedGaussHGFunSeries a b c).coeff 0 = (Gamma c)⁻¹ := by
   simp [coeff_regularizedGaussHGFunSeries]
 
-private theorem coeff_regularizedGaussHGFunSeries_c_shift (a b c : ℂ) (k : ℕ) :
-    (regularizedGaussHGFunSeries a b c).coeff k =
-      (c - a) * (regularizedGaussHGFunSeries a b (c + 1)).coeff k +
-        a * (regularizedGaussHGFunSeries (a + 1) b (c + 1)).coeff k := by
-  have hap : a * (ascPochhammer ℂ k).eval (a + 1) = (a + k) * (ascPochhammer ℂ k).eval a := by
+/-- The coefficients of the regularized Gauss series satisfy the contiguous shift in `c` and `a`
+of DLMF 15.5.15, for all complex parameters: the `n`-th coefficient of `𝐅(a, b; c; ·)` is
+`c − a` times that of `𝐅(a, b; c + 1; ·)` plus `a` times that of `𝐅(a + 1, b; c + 1; ·)`. -/
+theorem coeff_regularizedGaussHGFunSeries_eq_sub_mul_add_mul (a b c : ℂ) (n : ℕ) :
+    (regularizedGaussHGFunSeries a b c).coeff n =
+      (c - a) * (regularizedGaussHGFunSeries a b (c + 1)).coeff n +
+        a * (regularizedGaussHGFunSeries (a + 1) b (c + 1)).coeff n := by
+  have hap : a * (ascPochhammer ℂ n).eval (a + 1) = (a + n) * (ascPochhammer ℂ n).eval a := by
     rw [ascPochhammer_eval_succ, mul_comm]
-  have hΓ := one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (c + k)
+  have hΓ := one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (c + n)
   simp only [coeff_regularizedGaussHGFunSeries, div_eq_mul_inv, mul_inv]
-  rw [add_right_comm c 1 (k : ℂ), hΓ]
+  rw [add_right_comm c 1 (n : ℂ), hΓ]
   linear_combination
-    (ascPochhammer ℂ k).eval b * (k ! : ℂ)⁻¹ * (Gamma (c + k + 1))⁻¹ * (-hap)
+    (ascPochhammer ℂ n).eval b * (n ! : ℂ)⁻¹ * (Gamma (c + n + 1))⁻¹ * (-hap)
 
 private theorem coeff_regularizedGaussHGFunSeries_b_shift (a b c : ℂ) (k : ℕ) :
     (regularizedGaussHGFunSeries a b c).coeff (k + 1) =
@@ -649,7 +654,7 @@ private theorem regularizedGaussHGFun_eq_sub_mul_add_mul_of_summable {a b c z : 
   simp_rw [regularizedGaussHGFun_eq_tsum_coeff_mul_pow, ← tsum_mul_left,
     ← (hs₁.mul_left (c - a)).tsum_add (hs₂.mul_left a)]
   refine tsum_congr fun k => ?_
-  rw [coeff_regularizedGaussHGFunSeries_c_shift]
+  rw [coeff_regularizedGaussHGFunSeries_eq_sub_mul_add_mul]
   ring
 
 private theorem regularizedGaussHGFun_eq_sub_mul_mul_of_summable {a b c z : ℂ}
