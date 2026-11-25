@@ -12,12 +12,12 @@ public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Isomorphism
 # Transporting ear decompositions along multigraph isomorphisms
 
 A multigraph isomorphism `f : G.Iso H` transports ears, initial stages, and ear decompositions of
-subgraphs of `G` to those of the corresponding subgraphs of `H`. Edge identities are retained, so
-loops, parallel edges, and the kind of every ear are preserved. The transport sends each stage
-graph to its image under `Graph.Iso.mapSubgraph` and each ear walk to its image under
-`Graph.Iso.mapWalk`; transporting back along the inverse isomorphism recovers the original data.
-Consequently the existence of ear decompositions, of open ear decompositions, and of
-vertex-started ear decompositions is invariant under isomorphism.
+subgraphs of `G` to those of the corresponding subgraphs of `H`. Edges are transported
+individually along `f.edgeEquiv`, so loops, parallel edges, and the kind of every ear are
+preserved. The transport sends each stage graph to its image under `Graph.Iso.mapSubgraph` and
+each ear walk to its image under `Graph.Iso.mapWalk`; transporting back along the inverse
+isomorphism recovers the original data. Consequently the existence of ear decompositions, of open
+ear decompositions, and of vertex-started ear decompositions is invariant under isomorphism.
 
 ## Main definitions
 
