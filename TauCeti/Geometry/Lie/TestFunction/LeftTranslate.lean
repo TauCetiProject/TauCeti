@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.Adjoint.Basic
+public import TauCeti.Geometry.Lie.FundamentalVectorField
 public import TauCeti.Geometry.Lie.TestFunction.Continuity
 
 /-!
@@ -17,10 +17,10 @@ Left translation `λ_g a (x) = a (g⁻¹ x)` does not commute with left differen
 `L_X (λ_g a) = λ_g (L_{Ad(g⁻¹) X} a)` (`TauCeti.LieTestFunction.leftDeriv_leftTranslate`).
 
 On vector fields this is the statement that the derivative of left multiplication by `g` carries
-the right-invariant field of `X` to that of `Ad(g) X`
-(`TauCeti.mfderiv_mul_left_mulRightInvariantVectorField`): `g x y = (g x g⁻¹) (g y)`, so left
-multiplication by `g` after right multiplication by `y` is conjugation by `g` followed by right
-multiplication by `g y`.
+the right-invariant field of `X` to that of `Ad(g) X`: the right-invariant fields are the
+fundamental vector fields of `G` acting on itself by left multiplication
+(`TauCeti.fundamentalVectorField_eq_mulRightInvariantVectorField`), and these are equivariant
+(`TauCeti.mfderiv_smul_fundamentalVectorField`).
 
 Consequently the fixed-support seminorm of `λ_g a` along a word `w` is that of `a` along the word
 `Ad(g⁻¹) w` (`TauCeti.LieTestFunction.fixedSupportSeminorm_leftTranslate`), and left translation
@@ -30,8 +30,6 @@ is a continuous linear map from the test functions supported in `C` to those sup
 
 ## Main results
 
-* `TauCeti.mfderiv_mul_left_mulRightInvariantVectorField`: left multiplication by `g` transports
-  `X^R` to `(Ad(g) X)^R`.
 * `TauCeti.LieTestFunction.leftDeriv_leftTranslate`: `L_X (λ_g a) = λ_g (L_{Ad(g⁻¹) X} a)`.
 * `TauCeti.LieTestFunction.fixedSupportSeminorm_leftTranslate`: the seminorms of a left translate.
 * `TauCeti.LieTestFunction.FixedSupport.leftTranslate`: left translation on fixed-support spaces.
@@ -51,30 +49,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
 
-/-- **Left multiplication transports right-invariant fields through the adjoint action.** The
-derivative at `y` of `x ↦ g * x` sends the right-invariant field of `X` at `y` to the
-right-invariant field of `Ad(g) X` at `g * y`. -/
-theorem mfderiv_mul_left_mulRightInvariantVectorField (g y : G) (X : GroupLieAlgebra I G) :
-    mfderiv I I (g * ·) y (mulRightInvariantVectorField X y) =
-      mulRightInvariantVectorField (adjointContinuousLinearMap (I := I) g X) (g * y) := by
-  have hreg : (1 : ℕ∞ω) ≠ 0 := by simp
-  let C := conjDiffeomorph (I := I) (n := 1) g
-  -- `g * (x * y) = (g * x * g⁻¹) * (g * y)`.
-  have hfun : (fun x : G ↦ g * x) ∘ (· * y) = (· * (g * y)) ∘ C := by
-    funext x
-    simp [C, mul_assoc]
-  rw [mulRightInvariantVectorField_apply, mulRightInvariantVectorField_apply,
-    adjointContinuousLinearMap_apply,
-    ← mfderiv_comp_apply_of_eq (1 : G) (contMDiffAt_mul_left.mdifferentiableAt hreg)
-      (mdifferentiableAt_mul_right (a := y) (b := 1)) (one_mul y), hfun]
-  have hD : HasMFDerivAt I I ((· * (g * y)) ∘ C) 1
-      ((mfderiv I I (· * (g * y)) (C 1)).comp (mfderiv I I C 1)) :=
-    (mdifferentiableAt_mul_right (a := g * y) (b := C 1)).hasMFDerivAt.comp 1
-      ((C.mdifferentiable (by simp)) 1).hasMFDerivAt
-  rw [hD.mfderiv]
-  change mfderiv I I (· * (g * y)) (C 1) (mfderiv I I C 1 X) = _
-  rw [show C 1 = 1 by simp [C]]
-
 namespace LieTestFunction
 
 /-- **Left differentiation of a left translate**: `L_X (λ_g a) = λ_g (L_{Ad(g⁻¹) X} a)`. -/
@@ -84,10 +58,17 @@ theorem leftDeriv_leftTranslate (X : GroupLieAlgebra I G) (g : G) (a : LieTestFu
   have hreg : (1 : ℕ∞ω) ≠ 0 := by simp
   ext y
   have hcoe : ⇑(leftTranslate g a) = a ∘ (g⁻¹ * ·) := funext fun x ↦ leftTranslate_apply g a x
+  have : ContMDiffSMul I I 1 G G := ⟨contMDiff_mul I 1⟩
+  -- For `G` acting on itself by left multiplication, right-invariant fields are fundamental
+  -- vector fields, which left multiplication by `g⁻¹` transports through `Ad(g⁻¹)`.
+  have h := mfderiv_smul_fundamentalVectorField (M := G) (I' := I) g⁻¹ X y
+  rw [fundamentalVectorField_eq_mulRightInvariantVectorField,
+    fundamentalVectorField_eq_mulRightInvariantVectorField] at h
   rw [leftDeriv_apply, leftTranslate_apply, leftDeriv_apply, hcoe,
     mvfderiv_comp_apply y (a.contMDiff.mdifferentiableAt (by simp))
-      (contMDiffAt_mul_left.mdifferentiableAt hreg),
-    mfderiv_mul_left_mulRightInvariantVectorField]
+      (contMDiffAt_mul_left.mdifferentiableAt hreg)]
+  -- `g⁻¹ • x` is `g⁻¹ * x` by definition of the action of a monoid on itself.
+  exact congrArg _ h
 
 /-- Iterated left differentiation of a left translate:
 `L_{X_w} (λ_g a) = λ_g (L_{Ad(g⁻¹) X_w} a)`. -/
@@ -103,6 +84,7 @@ theorem leftDerivWord_leftTranslate (w : List (GroupLieAlgebra I G)) (g : G)
 
 /-- **The seminorms of a left translate**: the fixed-support seminorm of `λ_g a` along `w` is
 that of `a` along `Ad(g⁻¹) w`. -/
+@[simp]
 theorem fixedSupportSeminorm_leftTranslate (w : List (GroupLieAlgebra I G)) (g : G)
     (a : LieTestFunction I G) :
     fixedSupportSeminorm w (leftTranslate g a) =
