@@ -210,6 +210,25 @@ theorem exists_contMDiff_of_sobolevL_eq_zero (hp : 2 < p) {w : SobolevSection A 
 
 /-! ### The cokernel, in a chart -/
 
+omit [FiniteDimensional ℝ F] in
+/-- **The adjoint equation in planar form.** For a covector field `η`, a field `Z` of zeroth-order
+terms and a function `φ`, if `η` annihilates the value on `1` of `∂bar φ + Z φ` in integral, it
+annihilates `∂ₛφ + i ∂ₜφ + 2 Z(φ)(1)`, which is twice that value. This is the form of the adjoint
+equation for `J = i` and `S = 2 Z(·)(1)` taken by the planar regularity theorems. -/
+theorem integral_apply_cauchyRiemann_eq_zero_of_integral_eq_zero {η : ℂ → F →L[ℝ] ℝ}
+    {Z : ℂ → F →L[ℝ] ℂ →L[ℝ] F} {φ : ℂ → F}
+    (h : ∫ z, η z ((complexAntilinearPartL (fderiv ℝ φ z) + Z z (φ z)) 1) = 0) :
+    ∫ z, η z (fderiv ℝ φ z 1 + lsmul ℝ ℂ Complex.I (fderiv ℝ φ z Complex.I) +
+      ((2 : ℝ) • (ContinuousLinearMap.apply ℝ F (1 : ℂ)).comp (Z z)) (φ z)) = 0 := by
+  have h2 := congrArg ((2 : ℝ) * ·) h
+  rw [mul_zero, ← integral_const_mul] at h2
+  rw [← h2]
+  refine integral_congr_ae (.of_forall fun z ↦ ?_)
+  simp only [add_apply, complexAntilinearPartL_apply_one, smul_apply,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply, map_add, map_smul,
+    smul_eq_mul]
+  ring
+
 include hD hDs in
 /-- **Weak solutions of the adjoint equation are smooth in a chart.** Let `η` be a locally `L^q`
 covector field on the image of chart `i`, `q > 1`, such that `∫ η (∂bar φ + Zᵢ φ)(1) = 0` for every
@@ -228,15 +247,8 @@ theorem exists_contDiffOn_ae_eq_of_forall_integral_eq_zero {i : Fin A.n}
     (J := fun _ ↦ lsmul ℝ ℂ Complex.I) (S := fun z ↦ (2 : ℝ) •
       (ContinuousLinearMap.apply ℝ F (1 : ℂ)).comp (A.chartZeroOrder D i z))
     contDiffOn_const ((contDiffOn_const.clm_comp hZ).const_smul _)
-    (fun _ _ ↦ lsmul_I_mul_lsmul_I) hq hη fun φ ↦ ?_
-  have h2 := congrArg ((2 : ℝ) * ·) (h φ)
-  rw [mul_zero, ← integral_const_mul] at h2
-  rw [← h2]
-  refine integral_congr_ae (.of_forall fun z ↦ ?_)
-  simp only [add_apply, complexAntilinearPartL_apply_one, smul_apply,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply, map_add, map_smul,
-    smul_eq_mul]
-  ring
+    (fun _ _ ↦ lsmul_I_mul_lsmul_I) hq hη fun φ ↦
+      integral_apply_cauchyRiemann_eq_zero_of_integral_eq_zero (h φ)
 
 end IsRealCauchyRiemannOperator
 

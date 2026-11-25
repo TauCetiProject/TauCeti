@@ -453,17 +453,12 @@ theorem exists_eLpNorm_le_of_forall_eq_setIntegral (i : Fin A.n) {Q Q' : Opens �
   have hq₁ : Fact (1 ≤ q) := ⟨ENNReal.HolderConjugate.one_le q p⟩
   have hQ'' := subset_image_tangentHom A (hQ'.trans hQi)
   let b := finBasis ℝ F
-  -- `κ` is the dual basis of `b`, as continuous functionals.
-  let κ : Module.Basis (Fin (finrank ℝ F)) ℝ (F →L[ℝ] ℝ) :=
-    b.dualBasis.map LinearMap.toContinuousLinearMap
+  -- `κ c` is the `c`-th coordinate functional of `b`.
+  let κ (c : Fin (finrank ℝ F)) : F →L[ℝ] ℝ := (b.coord c).toContinuousLinearMap
   refine ⟨∑ c, ‖κ c‖ * ‖antilinearExtL (p := p) A hQ'' (b c)‖, fun Λ θ hθ hrep ↦ ?_⟩
-  -- The coordinates of `θ z` in `κ` are its values on `b`.
-  have hcoord (c : Fin (finrank ℝ F)) (z : ℂ) : κ.coord c (θ z) = θ z (b c) := by
-    simp [κ, Module.Basis.coord_apply, Module.Basis.map_repr, Module.Basis.dualBasis_repr]
   have hle : eLpNorm θ q (volume.restrict Q') ≤ ∑ c, ENNReal.ofReal ‖κ c‖ *
       eLpNorm (fun z ↦ θ z (b c)) q (volume.restrict Q') := by
-    simpa only [hcoord, ofReal_norm] using
-      κ.eLpNorm_le_sum_enorm_mul_eLpNorm_coord hθ.aestronglyMeasurable
+    simpa only [ofReal_norm] using b.eLpNorm_le_sum_enorm_mul_eLpNorm_apply hθ.aestronglyMeasurable
   have hfin (c : Fin (finrank ℝ F)) :
       ENNReal.ofReal ‖κ c‖ * eLpNorm (fun z ↦ θ z (b c)) q (volume.restrict Q') ≠ ⊤ :=
     ENNReal.mul_ne_top ENNReal.ofReal_ne_top
