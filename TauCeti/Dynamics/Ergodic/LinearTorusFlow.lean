@@ -55,6 +55,7 @@ noncomputable def linearTorusFlow (v : ι → ℝ) : Flow ℝ (UnitAddTorus ι) 
     ext i
     simp
 
+@[simp]
 theorem linearTorusFlow_apply (v : ι → ℝ) (t : ℝ) (x : UnitAddTorus ι) (i : ι) :
     linearTorusFlow v t x i = x i + ((t * v i : ℝ) : UnitAddCircle) :=
   (rfl)
@@ -66,13 +67,14 @@ theorem linearTorusFlow_one_apply (t : ℝ) (x : UnitAddTorus ι) :
   ext i
   rw [linearTorusFlow_apply, Pi.one_apply, mul_one, add_comm]
   obtain ⟨a, ha⟩ := QuotientAddGroup.mk_surjective (x i)
-  rw [Pi.vadd_apply, ← ha]
-  rfl
+  rw [Pi.vadd_apply, ← ha, AddAction.Quotient.vadd_mk, vadd_eq_add, QuotientAddGroup.mk_add]
 
 /-- The linear flow on the unit torus is jointly measurable in time and space. -/
-theorem measurable_uncurry_linearTorusFlow [Countable ι] (v : ι → ℝ) :
+theorem measurable_uncurry_linearTorusFlow (v : ι → ℝ) :
     Measurable fun p : ℝ × UnitAddTorus ι ↦ linearTorusFlow v p.1 p.2 :=
-  ((linearTorusFlow v).continuous continuous_fst continuous_snd).measurable
+  measurable_pi_iff.2 fun i ↦ by
+    simp only [linearTorusFlow_apply]
+    fun_prop
 
 variable [Fintype ι]
 
