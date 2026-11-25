@@ -26,6 +26,8 @@ this functor to coordinate rings of tori is the character-lattice functor used i
 
 * `TauCeti.CommHopfAlgCat.geometricCharacterMap`: the map on geometric characters induced by a
   Hopf-algebra morphism.
+* `TauCeti.CommHopfAlgCat.geometricCharacterMap_groupLikeBaseChange`: that map extends the map on
+  characters defined over the ground field.
 * `TauCeti.CommHopfAlgCat.additiveCharacterMap`: its integral-linear additive form.
 * `TauCeti.CommHopfAlgCat.geometricCharacterRepresentation`: the absolute-Galois representation
   on geometric characters.
@@ -69,6 +71,17 @@ theorem val_geometricCharacterMap {H K : _root_.CommHopfAlgCat.{u} k} (f : H ⟶
     (geometricCharacterMap f x).val =
       (baseChangeMap (K := AlgebraicClosure k) f).hom x.val := by
   rw [geometricCharacterMap, BialgHom.val_mapGroupLike]
+
+/-- The map on geometric characters induced by a Hopf-algebra morphism extends the map on
+characters defined over the ground field. -/
+@[simp]
+theorem geometricCharacterMap_groupLikeBaseChange {H K : _root_.CommHopfAlgCat.{u} k}
+    (f : H ⟶ K) (g : _root_.GroupLike k H) :
+    geometricCharacterMap f (groupLikeBaseChange g) =
+      groupLikeBaseChange (f.hom.mapGroupLike g) := by
+  apply _root_.GroupLike.val_injective
+  rw [val_geometricCharacterMap, val_groupLikeBaseChange, baseChangeMap_apply_tmul,
+    val_groupLikeBaseChange, BialgHom.val_mapGroupLike]
 
 /-- The map on geometric characters commutes with the absolute-Galois action. -/
 @[simp]
@@ -213,6 +226,43 @@ theorem geometricCharacterRepresentationMap_hom_apply
       rw [geometricCharacterRepresentationMap]
       exact Rep.hom_ofHom (additiveCharacterIntertwiningMap f)
     exact (congrArg (fun q ↦ q x) hhom).trans (additiveCharacterIntertwiningMap_apply f x)
+
+/-- If every Galois-equivariant homomorphism of geometric character groups is induced by a
+Hopf-algebra morphism, then so is every morphism of geometric-character representations. -/
+theorem geometricCharacterRepresentationMap_surjective_of_exists_geometricCharacterMap_eq
+    {H K : _root_.CommHopfAlgCat.{u} k}
+    (h : ∀ q : geometricCharacterGroup H →* geometricCharacterGroup K,
+      (∀ (sigma : Field.absoluteGaloisGroup k) x, q (sigma • x) = sigma • q x) →
+        ∃ g : H ⟶ K, geometricCharacterMap g = q) :
+    Function.Surjective (geometricCharacterRepresentationMap (H := H) (K := K)) := by
+  intro f
+  -- Normalize the representation carrier to the additive character group for scalar inference.
+  dsimp only [geometricCharacterRepresentation, Rep.ofMulDistribMulAction] at f
+  let q : geometricCharacterGroup H →* geometricCharacterGroup K :=
+    MonoidHom.toAdditive.symm f.hom.toLinearMap.toAddMonoidHom
+  have hq (sigma : Field.absoluteGaloisGroup k) x : q (sigma • x) = sigma • q x := by
+    have hx := Representation.IntertwiningMap.isIntertwining _ _ f.hom sigma
+      (Additive.ofMul (α := geometricCharacterGroup H) x)
+    simpa only [q, MonoidHom.toAdditive_symm_apply_apply, LinearMap.toAddMonoidHom_coe,
+      Representation.IntertwiningMap.toLinearMap_apply,
+      Representation.ofMulDistribMulAction_apply_apply, toMul_ofMul] using
+        congrArg (Additive.toMul (α := geometricCharacterGroup K)) hx
+  -- Evaluate `q` through the type tags rather than by unfolding them.
+  have hq_apply (x : additiveCharacterGroup H) :
+      q x.toMul = Additive.toMul (α := geometricCharacterGroup K) (f.hom x) := by
+    simp only [q, MonoidHom.toAdditive_symm_apply_apply, LinearMap.toAddMonoidHom_coe,
+      Representation.IntertwiningMap.toLinearMap_apply, ofMul_toMul]
+  obtain ⟨g, hg⟩ := h q hq
+  refine ⟨g, ?_⟩
+  apply Rep.hom_ext
+  apply Representation.IntertwiningMap.ext
+  apply LinearMap.ext
+  intro x
+  simp only [Representation.IntertwiningMap.toLinearMap_apply]
+  have hx := geometricCharacterRepresentationMap_hom_apply g x
+  apply (Additive.toMul (α := geometricCharacterGroup K)).injective
+  exact (congrArg Additive.toMul hx).trans
+    ((toMul_additiveCharacterMap g x).trans ((DFunLike.congr_fun hg x.toMul).trans (hq_apply x)))
 
 /-- Geometric character groups and their absolute-Galois actions are functorial in the
 coordinate Hopf algebra. -/

@@ -62,11 +62,9 @@ namespace GenEq
 
 open FreeGroup (substituteVars)
 
-variable {X Z A : Type*}
-
 namespace Solution
 
-variable {Ω : GenEq A}
+variable {A : Type*} {Ω : GenEq A}
 
 /-- A solution of a generalised equation is *constrained* by a family `D` of sets of letters,
 one for each item, when the word of each item `k` only uses letters of `D k`. -/
@@ -98,7 +96,9 @@ theorem isConstrained_iff_point_mem_closure {U : Ω.Solution} {D : Fin Ω.numIte
 
 end Solution
 
-variable (E : List (((X ⊕ A) × Bool) × List ((Z ⊕ A) × Bool)))
+section Entries
+
+variable {X Z A : Type*} (E : List (((X ⊕ A) × Bool) × List ((Z ⊕ A) × Bool)))
 
 /-- The constraint on the items of `ofEntries E` induced by a constraint `C` on the variables: a
 letter is allowed for an item when it is allowed for every variable one of whose entries has that
@@ -153,6 +153,8 @@ theorem Solution.isConstrained_itemAlphabet (U : (ofEntries E).Solution) {C : X 
     (s := E[k].1.2)).2 ⟨c, hc, hc', l, hl, rfl⟩
   rw [U.substituteVars_segment_entryStart_eq_wordMap (he x) hk] at hl'
   exact hfst ▸ hU k x hk l' hl'
+
+end Entries
 
 end GenEq
 

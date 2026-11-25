@@ -34,12 +34,12 @@ theorem _root_.TauCeti.Contour.Cycle.green_winding_integralTopForm (C : Contour.
     (hU : IsOpen U) (htrace : Contour.Cycle.IsIn C U)
     (hP : ContDiffOn ℝ 1 P U) (hQ : ContDiffOn ℝ 1 Q U)
     (hindex : Contour.Cycle.IsNullHomologous C U) :
-    (∀ γ ∈ FreeAbelianGroup.support C,
+    (∀ γ ∈ FreeAddCommGroup.support C,
       IntervalIntegrable (circulationFun P Q γ) volume γ.a γ.b) ∧
       IntegrableTopForm (I := 𝓘(ℝ, ℂ))
         (fun z ↦ C.windingWeight z •
             mextDeriv (manifoldOneForm P Q) z) ∧
-      (∑ γ ∈ FreeAbelianGroup.support C, (FreeAbelianGroup.coeff γ C : ℝ) *
+      (∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℝ) *
         ∫ t in γ.a..γ.b, circulationFun P Q γ t) =
         integralTopForm (Manifold.Orientation.model (I := 𝓘(ℝ, ℂ)) Complex.orientation
           (by simp))

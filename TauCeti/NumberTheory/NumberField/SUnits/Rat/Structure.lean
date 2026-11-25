@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Height.NumberField
+public import TauCeti.Data.Nat.Prime.Basic
 public import TauCeti.NumberTheory.Padics.HeightOneSpectrum
 public import TauCeti.NumberTheory.SmoothNumbers
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
@@ -32,6 +33,9 @@ every prime outside `S`. This file makes the group explicit.
   it has rank `|S|` when `S` consists of primes.
 * `TauCeti.mulHeight₁_sUnits_rat`: the height of `x ∈ U_S` is
   `max (∏_{p ∈ S} p ^ max(v_p(x), 0)) (∏_{p ∈ S} p ^ max(-v_p(x), 0))`.
+* `Padic.forall_norm_rat_eq_one_iff_exists_zpow`: for a prime `l`, a rational number is a `p`-adic
+  unit at every prime `p ≠ l` exactly when it is `± lⁿ` for an integer `n`; this is the case
+  `S = {l}`.
 
 The sign, product and height descriptions need `S` to consist of primes: for `S = {4}` the set
 `S'` is empty, so `U_S = {±1}`, while `4 = ∏_{p ∈ S} p ^ 1`.
@@ -61,7 +65,7 @@ theorem mem_sUnits_rat_iff_forall_padicValRat_eq_zero {S : Set ℕ} {x : ℚˣ} 
     have := h v (by simpa [hv] using hpS)
     rwa [valuation_eq_one_iff_padicValRat_eq_zero _ x.ne_zero, hv] at this
   · rw [valuation_eq_one_iff_padicValRat_eq_zero _ x.ne_zero]
-    exact h _ (primesEquiv v).2 hv
+    exact h _ (primesEquiv v).property hv
 
 variable {S : Finset ℕ}
 
@@ -117,14 +121,14 @@ private noncomputable def signExponents :
       rw [← ofAdd_add]
       congr 1
       funext p
-      have : Fact (p : ℕ).Prime := ⟨hS p p.2⟩
+      have : Fact (p : ℕ).Prime := ⟨hS p p.property⟩
       simp [padicValRat.mul (x : ℚˣ).ne_zero (y : ℚˣ).ne_zero] }
 
 /-- The rational `S`-unit `ε ∏ p ^ z_p` with prescribed sign and exponents. -/
 private noncomputable def ofSignExponents (w : ℤˣ × Multiplicative (S → ℤ)) :
     Set.unit {v : HeightOneSpectrum (𝓞 ℚ) | (primesEquiv v : ℕ) ∈ S} ℚ :=
   ⟨_, intCast_mem_sUnits_rat w.1⟩ *
-    ∏ p : S, ⟨_, natCast_mem_sUnits_rat (hS p p.2) p.2⟩ ^ w.2.toAdd p
+    ∏ p : S, ⟨_, natCast_mem_sUnits_rat (hS p p.property) p.property⟩ ^ w.2.toAdd p
 
 private theorem coe_ofSignExponents (w : ℤˣ × Multiplicative (S → ℤ)) :
     ((ofSignExponents hS w : ℚˣ) : ℚ) = (w.1 : ℚ) * ∏ p : S, ((p : ℕ) : ℚ) ^ w.2.toAdd p := by
@@ -145,19 +149,19 @@ private theorem signExponents_ofSignExponents (w : ℤˣ × Multiplicative (S �
     · rw [coe_signExponents_fst]
       rcases Int.units_eq_one_or w.1 with h | h <;> simp [h]
     · rw [toAdd_signExponents_snd]
-      have : Fact (p : ℕ).Prime := ⟨hS p p.2⟩
+      have : Fact (p : ℕ).Prime := ⟨hS p p.property⟩
       rcases Int.units_eq_one_or w.1 with h | h <;> simp [h]
-  have hp : ∀ p : S, signExponents hS ⟨_, natCast_mem_sUnits_rat (hS p p.2) p.2⟩ =
+  have hp : ∀ p : S, signExponents hS ⟨_, natCast_mem_sUnits_rat (hS p p.property) p.property⟩ =
       (1, .ofAdd (Pi.single p 1)) := by
     intro p
     refine Prod.ext (Units.ext ?_) (Multiplicative.toAdd.injective (funext fun q ↦ ?_))
     · rw [coe_signExponents_fst]
-      simp [(hS p p.2).pos]
+      simp [(hS p p.property).pos]
     · rw [toAdd_signExponents_snd]
-      have : Fact (q : ℕ).Prime := ⟨hS q q.2⟩
-      have : Fact (p : ℕ).Prime := ⟨hS p p.2⟩
+      have : Fact (q : ℕ).Prime := ⟨hS q q.property⟩
+      have : Fact (p : ℕ).Prime := ⟨hS p p.property⟩
       rcases eq_or_ne q p with rfl | hqp
-      · simp [padicValRat.self (hS q q.2).one_lt]
+      · simp [padicValRat.self (hS q q.property).one_lt]
       · simp only [Units.val_mk0, padicValRat.of_nat, toAdd_ofAdd, Pi.single_eq_of_ne hqp,
           Nat.cast_eq_zero]
         exact multiplicity_primes fun h ↦ hqp (Subtype.ext h)
@@ -180,7 +184,7 @@ private theorem signExponents_injective : Function.Injective (signExponents hS) 
     by_cases hpS : p ∈ S
     · have := congrArg (fun w ↦ w.2.toAdd ⟨p, hpS⟩) hx
       simpa [toAdd_signExponents_snd] using this
-    · exact (mem_sUnits_rat_iff_forall_padicValRat_eq_zero (S := (S : Set ℕ))).1 x.2 p hp hpS
+    · exact (mem_sUnits_rat_iff_forall_padicValRat_eq_zero (S := (S : Set ℕ))).1 x.property p hp hpS
   obtain ⟨hnum, hden⟩ := (forall_padicValRat_eq_zero_iff_mem_factoredNumbers hq).1 hval
   rw [Nat.factoredNumbers_empty, Set.mem_singleton_iff] at hnum hden
   have hpos : 0 < ((x : ℚˣ) : ℚ).num := Rat.num_pos.2 (sign_eq_one_iff.1 hsign)
@@ -235,7 +239,7 @@ theorem mem_sUnits_rat_iff_eq_sign_mul_prod {x : ℚˣ} :
     exact ⟨_, _, h⟩
   · have : x = ofSignExponents hS (ε, .ofAdd z) :=
       Units.ext (by rw [coe_ofSignExponents]; simpa using hx)
-    exact this ▸ (ofSignExponents hS _).2
+    exact this ▸ (ofSignExponents hS _).property
 
 include hS in
 /-- **The rank of the rational `S`-units.** If `S` consists of primes, the group of rational
@@ -248,7 +252,8 @@ theorem finrank_sUnits_rat :
       = Nat.card {p : Nat.Primes // (p : ℕ) ∈ S} :=
         Nat.card_congr (primesEquiv.subtypeEquiv fun _ ↦ Iff.rfl)
     _ = Nat.card S :=
-        Nat.card_congr ⟨fun p ↦ ⟨p.1, p.2⟩, fun p ↦ ⟨⟨p, hS p p.2⟩, p.2⟩, fun _ ↦ rfl, fun _ ↦ rfl⟩
+        Nat.card_congr ⟨fun p ↦ ⟨p.val, p.property⟩, fun p ↦ ⟨⟨p, hS p p.property⟩, p.property⟩,
+            fun _ ↦ rfl, fun _ ↦ rfl⟩
 
 include hS in
 /-- **The height of a rational `S`-unit.** If `S` consists of primes and `x` is an `S`-unit,
@@ -278,3 +283,43 @@ theorem mulHeight₁_sUnits_rat {x : ℚˣ}
   rw [Rat.mulHeight₁_eq_max, Nat.cast_max, hnum', hden']
 
 end TauCeti
+
+namespace Padic
+
+/-- For a prime `l`, a rational number is a `p`-adic unit at every prime `p ≠ l` exactly when it
+is `± lⁿ` for an integer `n`. This is the description of the rational `{l}`-units. -/
+theorem forall_norm_rat_eq_one_iff_exists_zpow {l : ℕ} [Fact l.Prime] {q : ℚ} :
+    (∀ p : Nat.Primes, (p : ℕ) ≠ l → ‖(q : ℚ_[p])‖ = 1) ↔
+      ∃ n : ℤ, q = (l : ℚ) ^ n ∨ q = -(l : ℚ) ^ n := by
+  have hl : l.Prime := Fact.out
+  have hnorm_l {p : Nat.Primes} (hp : (p : ℕ) ≠ l) : ‖((l : ℚ) : ℚ_[p])‖ = 1 := by
+    rw [Rat.cast_natCast, norm_natCast_eq_one_iff]
+    exact (Nat.coprime_primes p.prop hl).mpr hp
+  constructor
+  · intro h
+    have hq : q ≠ 0 := by
+      obtain ⟨p, hlp, hp⟩ := Nat.exists_infinite_primes (l + 1)
+      rintro rfl
+      simpa using h ⟨p, hp⟩ (show p ≠ l by omega)
+    -- Away from `l` the valuations of `q` vanish, so `q` is a rational `{l}`-unit.
+    have hv (p : ℕ) (hp : p.Prime) (hpl : p ∉ ((({l} : Finset ℕ)) : Set ℕ)) :
+        padicValRat p (Units.mk0 q hq : ℚ) = 0 := by
+      have : Fact p.Prime := ⟨hp⟩
+      have hpq := h ⟨p, hp⟩ (by simpa using hpl)
+      rw [eq_padicNorm, padicNorm.eq_zpow_of_ne_zero hq, Rat.cast_zpow, Rat.cast_natCast,
+        zpow_eq_one_iff_right₀ (Nat.cast_nonneg p) (mod_cast hp.ne_one)] at hpq
+      exact neg_eq_zero.mp hpq
+    have hS : ∀ p ∈ ({l} : Finset ℕ), p.Prime := by simpa using hl
+    obtain ⟨ε, z, hz⟩ := (TauCeti.mem_sUnits_rat_iff_eq_sign_mul_prod hS).mp
+      (TauCeti.mem_sUnits_rat_iff_forall_padicValRat_eq_zero.mpr hv)
+    rw [Units.val_mk0, Fintype.prod_eq_single ⟨l, Finset.mem_singleton_self l⟩
+      fun p hp ↦ absurd (Subtype.ext (Finset.mem_singleton.mp p.property)) hp] at hz
+    refine ⟨z ⟨l, Finset.mem_singleton_self l⟩, ?_⟩
+    rcases Int.units_eq_one_or ε with rfl | rfl
+    · exact .inl (by simpa using hz)
+    · exact .inr (by simpa using hz)
+  · rintro ⟨n, rfl | rfl⟩ p hp
+    · rw [Rat.cast_zpow, norm_zpow, hnorm_l hp, one_zpow]
+    · rw [Rat.cast_neg, norm_neg, Rat.cast_zpow, norm_zpow, hnorm_l hp, one_zpow]
+
+end Padic

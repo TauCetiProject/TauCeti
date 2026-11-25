@@ -112,9 +112,9 @@ theorem single_mem_lattice [DecidableEq ι] (C : AddSubgroup (ι → ZMod m)) (i
 
 /-- For a nonzero modulus and finite coordinates, every Construction A carrier is a full,
 finitely generated integer lattice. -/
-instance isLattice [NeZero m] [Finite ι] (C : AddSubgroup (ι → ZMod m)) :
-    (lattice m C).IsLattice ℚ where
-  fg := (IsNoetherian.noetherian _).map _
+instance isFullLattice [NeZero m] [Finite ι] (C : AddSubgroup (ι → ZMod m)) :
+    (lattice m C).IsFullLattice ℚ where
+  toIsLattice := Submodule.IsLattice.of_fg ℚ (M := lattice m C) ((IsNoetherian.noetherian _).map _)
   span_eq_top := by
     classical
     let := Fintype.ofFinite ι

@@ -36,6 +36,7 @@ equivalence and recover the cardinality and minimum distance of a finite additiv
 ## Main statements
 
 * `Set.weightEnumerator_eq_sum`: `W_C` is the sum over codewords of `X^(n - wt c) Y^(wt c)`.
+* `Set.weightPolynomial_eq_sum`: the weight polynomial is the sum over codewords of `Y^(wt c)`.
 * `Set.coeff_weightEnumerator`, `Set.coeff_weightPolynomial`: the coefficients are the weight
   distribution.
 * `Set.isHomogeneous_weightEnumerator`, `Set.eval_one_weightEnumerator`: `W_C` is homogeneous of
@@ -84,20 +85,20 @@ theorem weightDistribution_eq_card_filter (hC : C.Finite) (w : ℕ) :
 theorem weightDistribution_eq_zero_of_card_lt {w : ℕ} (hw : Fintype.card ι < w) :
     C.weightDistribution w = 0 := by
   rw [weightDistribution_def, Nat.card_eq_zero]
-  exact .inl ⟨fun x ↦ (hammingNorm_le_card_fintype.trans_lt hw).ne x.2.2⟩
+  exact .inl ⟨fun x ↦ (hammingNorm_le_card_fintype.trans_lt hw).ne x.property.2⟩
 
 /-- A set of words containing the zero word has exactly one word of weight zero. -/
 @[simp]
 theorem weightDistribution_zero (h : 0 ∈ C) : C.weightDistribution 0 = 1 := by
   rw [weightDistribution_def, Nat.card_eq_one_iff_exists]
   refine ⟨⟨0, h, hammingNorm_zero⟩, fun x ↦ Subtype.ext ?_⟩
-  exact hammingNorm_eq_zero.mp x.2.2
+  exact hammingNorm_eq_zero.mp x.property.2
 
 /-- In a finite set of words, a weight occurs exactly when some word has that weight. -/
 theorem weightDistribution_ne_zero_iff (hC : C.Finite) {w : ℕ} :
     C.weightDistribution w ≠ 0 ↔ ∃ x ∈ C, hammingNorm x = w := by
   rw [weightDistribution_eq_card_filter hC, Ne, Finset.card_eq_zero, ← Ne,
-    ← Finset.nonempty_iff_ne_empty]
+    Finset.ne_empty_iff_nonempty]
   simp [Finset.Nonempty]
 
 /-- The weight distribution of a finite set of words sums to its cardinality. -/
@@ -213,6 +214,12 @@ theorem aeval_weightEnumerator (C : Set (∀ i, β i)) :
   simp only [weightEnumerator_def, weightPolynomial_def, map_sum]
   refine sum_congr rfl fun w _ ↦ ?_
   simp [← Polynomial.C_mul_X_pow_eq_monomial]
+
+/-- The one-variable weight enumerator of a finite set of words is the sum over its words `c` of
+`Y^(wt c)`. -/
+theorem weightPolynomial_eq_sum (hC : C.Finite) :
+    C.weightPolynomial = ∑ c ∈ hC.toFinset, Polynomial.X ^ hammingNorm c := by
+  simp [← aeval_weightEnumerator, weightEnumerator_eq_sum hC]
 
 /-- The one-variable weight enumerator of a finite set of words evaluates to its cardinality at
 `Y = 1`. -/

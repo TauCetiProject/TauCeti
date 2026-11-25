@@ -7,14 +7,13 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-public import TauCeti.Analysis.LocallyConvex.WeakSpace
+public import TauCeti.Analysis.LocallyConvex.WeakSpace.Basic
 import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.Bochner.Set
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.MeasureTheory.Function.Lp.Norm
-import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
 # Lower semicontinuity of convex integral functionals on Lp
@@ -161,11 +160,6 @@ theorem continuous_setIntegral_sqrt_one_add_sq_sub_one (t : Set α) :
     refine ((Lp.memLp v).integrable_sq.div_const 2).mono' (by fun_prop) (ae_of_all _ fun x ↦ ?_)
     rw [Real.norm_of_nonneg (sub_nonneg.mpr (Real.one_le_sqrt_one_add_sq _))]
     exact Real.sqrt_one_add_sq_sub_one_le_sq_div_two _
-  -- Cauchy–Schwarz: `∫ ‖f‖ ‖g‖ ≤ ‖f‖₂ ‖g‖₂`.
-  have hcs (f g : Lp ℝ 2 ν) : ∫ x, ‖f x‖ * ‖g x‖ ∂ν ≤ ‖f‖ * ‖g‖ := by
-    have h := sq_integral_mul_le_integral_sq_mul_integral_sq (Lp.memLp f).norm (Lp.memLp g).norm
-    rw [Lp.integral_norm_sq_eq_norm_sq, Lp.integral_norm_sq_eq_norm_sq, ← mul_pow] at h
-    exact (abs_le_of_sq_le_sq h (by positivity)).trans' (le_abs_self _)
   have hbound (a b : Lp ℝ 2 ν) :
       dist (∫ x in t, (√(1 + b x ^ 2) - 1) ∂ν) (∫ x in t, (√(1 + a x ^ 2) - 1) ∂ν) ≤
         ‖b - a‖ * ‖b‖ + ‖b - a‖ * ‖a‖ := by
@@ -188,7 +182,7 @@ theorem continuous_setIntegral_sqrt_one_add_sq_sub_one (t : Set α) :
           setIntegral_le_integral (hi1.add hi2) (ae_of_all _ fun x ↦ by positivity)
       _ ≤ ‖b - a‖ * ‖b‖ + ‖b - a‖ * ‖a‖ := by
           rw [integral_add hi1 hi2]
-          exact add_le_add (hcs _ _) (hcs _ _)
+          exact add_le_add (Lp.integral_norm_mul_norm_le _ _) (Lp.integral_norm_mul_norm_le _ _)
   rw [continuous_iff_continuousAt]
   intro a
   rw [ContinuousAt, tendsto_iff_dist_tendsto_zero]

@@ -33,6 +33,9 @@ solutions have logarithmic growth prescribed by the zeros of `f`.
 * `TauCeti.norm_gradient_norm_sq_sq_of_differentiableAt`: `‖∇ ‖f‖²‖² = 4 ‖f‖² ‖f'‖²`.
 * `TauCeti.laplacian_log_one_add_norm_sq_of_analyticAt`:
   `Δ log (1 + ‖f‖²) = 4 ‖f'‖² / (1 + ‖f‖²)²`.
+* `TauCeti.laplacian_log_norm_sub_sq_add`: for `C > 0`,
+  `Δ log (‖z - a‖² + C) = 4 C / (‖z - a‖² + C)²`, the case `f(z) = (z - a) / √C`.
+* `TauCeti.tendsto_log_norm_sub_sq_add_sub`: `log (‖z - a‖² + C) - 2 log ‖z‖ → 0` at infinity.
 -/
 
 public section
@@ -102,5 +105,56 @@ theorem laplacian_log_one_add_norm_sq_of_analyticAt (hf : AnalyticAt ℂ f z) :
   rw [hcomp]
   field_simp
   ring
+
+/-- The Laplacian of `log (‖z - a‖² + C)` is `4 C / (‖z - a‖² + C)²`. -/
+theorem laplacian_log_norm_sub_sq_add {C : ℝ} (hC : 0 < C) (a z : ℂ) :
+    Δ (fun w : ℂ ↦ Real.log (‖w - a‖ ^ 2 + C)) z = 4 * C / (‖z - a‖ ^ 2 + C) ^ 2 := by
+  set c : ℂ := (((Real.sqrt C)⁻¹ : ℝ) : ℂ)
+  set f : ℂ → ℂ := fun w ↦ (w - a) * c
+  have hc2 : ‖c‖ ^ 2 = C⁻¹ := by
+    simp [c, Complex.norm_real, inv_pow, Real.sq_sqrt hC.le]
+  have hf : AnalyticAt ℂ f z := (analyticAt_id.sub analyticAt_const).mul analyticAt_const
+  -- Written as a sum of functions, so that `ContDiffAt.laplacian_add` applies.
+  have hfun : (fun w : ℂ ↦ Real.log (‖w - a‖ ^ 2 + C)) =
+      (fun _ ↦ Real.log C) + fun w ↦ Real.log (1 + ‖f w‖ ^ 2) := by
+    funext w
+    rw [Pi.add_apply, ← Real.log_mul hC.ne' (by positivity)]
+    congr 1
+    simp only [f, norm_mul, mul_pow, hc2]
+    field_simp
+    ring
+  have hg : ContDiffAt ℝ 2 (fun w ↦ Real.log (1 + ‖f w‖ ^ 2)) z :=
+    (contDiffAt_const.add ((hf.contDiffAt.restrict_scalars ℝ).norm_sq ℝ)).log (by positivity)
+  have hderiv : deriv f z = c := by
+    simp [f]
+  rw [hfun, contDiffAt_const.laplacian_add hg, laplacian_const, Pi.zero_apply, zero_add,
+    laplacian_log_one_add_norm_sq_of_analyticAt hf, hderiv, hc2]
+  simp only [f, norm_mul, mul_pow, hc2]
+  field_simp
+  ring
+
+/-- `log (‖z - a‖² + C) - 2 log ‖z‖ → 0` at infinity. -/
+theorem tendsto_log_norm_sub_sq_add_sub {C : ℝ} (hC : 0 < C) (a : ℂ) :
+    Tendsto (fun z : ℂ ↦ Real.log (‖z - a‖ ^ 2 + C) - 2 * Real.log ‖z‖) (cocompact ℂ) (𝓝 0) := by
+  have hinv : Tendsto (fun z : ℂ ↦ z⁻¹) (cocompact ℂ) (𝓝 0) := by
+    rw [← Metric.cobounded_eq_cocompact]
+    exact tendsto_inv₀_cobounded
+  have hq : Tendsto (fun z : ℂ ↦ ‖1 - a * z⁻¹‖ ^ 2 + C * ‖z⁻¹‖ ^ 2) (cocompact ℂ) (𝓝 1) := by
+    have h := (((tendsto_const_nhds (x := (1 : ℂ))).sub
+      ((tendsto_const_nhds (x := a)).mul hinv)).norm.pow 2).add
+      ((tendsto_const_nhds (x := C)).mul (hinv.norm.pow 2))
+    simpa using h
+  have hlog := ((Real.continuousAt_log one_ne_zero).tendsto.comp hq)
+  rw [Real.log_one] at hlog
+  refine hlog.congr' ?_
+  filter_upwards [(isCompact_singleton : IsCompact ({0} : Set ℂ)).compl_mem_cocompact] with z hz
+  rw [Set.mem_compl_singleton_iff] at hz
+  have hza : z - a = z * (1 - a * z⁻¹) := by field_simp
+  simp only [Function.comp_apply]
+  rw [hza, norm_mul, norm_inv,
+    show (2 : ℝ) * Real.log ‖z‖ = Real.log (‖z‖ ^ 2) by rw [Real.log_pow]; norm_num,
+    ← Real.log_div (by positivity) (by positivity)]
+  congr 1
+  field_simp
 
 end TauCeti

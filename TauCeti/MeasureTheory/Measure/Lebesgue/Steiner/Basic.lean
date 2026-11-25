@@ -220,7 +220,7 @@ theorem convex_steinerSymmetrization (e : E) (he : ‖e‖ = 1) {s : Set E}
     module
   have hne (z : E) (hz : ENNReal.ofReal |⟪e, z⟫| < volume {t : ℝ | z + t • e ∈ s} / 2) :
       {t : ℝ | z + t • e ∈ s}.Nonempty := by
-    refine nonempty_iff_ne_empty.2 fun h ↦ ?_
+    refine ne_empty_iff_nonempty.1 fun h ↦ ?_
     simp [h] at hz
   have hconv (z : E) : Convex ℝ {t : ℝ | z + t • e ∈ s} := by
     convert hs.affine_preimage (AffineMap.lineMap z (z + e)) using 1

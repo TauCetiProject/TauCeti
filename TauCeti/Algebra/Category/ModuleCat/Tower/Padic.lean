@@ -8,7 +8,9 @@ module
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 public import TauCeti.Algebra.Category.ModuleCat.Tower.ProZero
+import Mathlib.NumberTheory.Padics.ProperSpace
 import Mathlib.NumberTheory.Padics.RingHoms
+import TauCeti.Algebra.Category.ModuleCat.Tower.Compact
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
 
@@ -171,6 +173,11 @@ vanish. -/
 theorem not_isMittagLeffler_multiplicationTower :
     ¬(multiplicationTower (p : ℤ)).IsMittagLeffler := fun h ↦
   not_subsingleton _ ((multiplicationTower (p : ℤ)).subsingleton_limOne_of_isMittagLeffler h)
+
+/-- The tower `ℤ_[p] ← ℤ_[p] ← ⋯` with transitions multiplication by `p`, which are not surjective,
+has `lim¹ = 0` since `ℤ_[p]` is compact, unlike the same tower over `ℤ`. -/
+example : Subsingleton (multiplicationTower (p : ℤ_[p])).limOne :=
+  subsingleton_limOne_multiplicationTower_of_compactSpace _
 
 end ModuleTower
 

@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.FormalGlueing.Detection
 public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 public import Mathlib.RingTheory.Localization.BaseChange
 public import Mathlib.Algebra.Module.FinitePresentation
+import TauCeti.Algebra.Module.LocalizedModule.BaseChange
 import TauCeti.LinearAlgebra.TensorProduct.Kernel
 
 /-!
@@ -22,6 +23,11 @@ No Noetherian hypothesis is needed.
 This detects finiteness of a reconstructed module in formal glueing, in particular when passing
 from an algebra over a completion and an algebra on the complementary open set to a finite
 algebra over the original ring. It does not assert the existence of that reconstruction.
+`IsBaseChange.finite_of_formalGlueing` and `IsBaseChange.finitePresentation_of_formalGlueing`
+(together with their `LocalizedModule` variants
+`IsBaseChange.finite_of_formalGlueing_localizedModule` and
+`IsBaseChange.finitePresentation_of_formalGlueing_localizedModule`) package this criterion for
+an abstract base-change map `φ : E →ₗ[R] N` and principal-localization equivalences to `M`.
 
 ## References
 
@@ -49,14 +55,14 @@ theorem finite_iff_baseChange_and_localized
   refine ⟨fun _ ↦ ⟨inferInstance, fun _ _ ↦ inferInstance⟩, ?_⟩
   rintro ⟨hS, hloc⟩
   obtain ⟨P, hP, hPS⟩ := Submodule.exists_fg_baseChange_eq_top (R := R) (A := S) (M := M)
-  have hfg (g : G) : ∃ Q : Submodule R M, Q.FG ∧ Q.baseChange (Localization.Away g.1) = ⊤ := by
-    have := hloc g.1 g.2
+  have hfg (g : G) : ∃ Q : Submodule R M, Q.FG ∧ Q.baseChange (Localization.Away g.val) = ⊤ := by
+    have := hloc g.val g.property
     exact Submodule.exists_fg_baseChange_eq_top
   choose Q hQ hQg using hfg
   let N := P ⊔ ⨆ g : G, Q g
   have hN : N.FG := hP.sup (Submodule.fg_iSup _ hQ)
   have hNS : N.baseChange S = ⊤ := top_unique <| hPS ▸ Submodule.baseChange_mono S le_sup_left
-  have hNg (g : G) : N.baseChange (Localization.Away g.1) = ⊤ :=
+  have hNg (g : G) : N.baseChange (Localization.Away g.val) = ⊤ :=
     top_unique <| hQg g ▸ Submodule.baseChange_mono _ ((le_iSup Q g).trans le_sup_right)
   have : Subsingleton (S ⊗[R] (M ⧸ N)) :=
     (Submodule.baseChange_eq_top_iff_subsingleton S N).mp hNS
@@ -87,3 +93,86 @@ theorem finitePresentation_iff_baseChange_and_localized
   exact Module.finitePresentation_of_surjective f hf (Module.Finite.iff_fg.mp this)
 
 end TauCeti
+
+namespace IsBaseChange
+
+variable {R S E M N : Type*} [CommRing R] [CommRing S] [Algebra R S] [Module.Flat R S]
+  [AddCommGroup E] [Module R E] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] [Module S N] [IsScalarTower R S N]
+
+/-- Any module `E` glued from a finitely generated `S`-module `N` and locally finitely generated
+`R`-module `M` across `G` via `Localization.Away r ⊗[R] _` equivalences is finitely generated over
+`R`. -/
+@[stacks 05EU "finiteness of a glued module"]
+theorem finite_of_formalGlueing
+    {φ : E →ₗ[R] N} (hφ : IsBaseChange S φ) (G : Finset R)
+    (hG : Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map (algebraMap R S))
+      (algebraMap R S) Ideal.le_comap_map))
+    (e_loc : ∀ r ∈ G, Localization.Away r ⊗[R] E ≃ₗ[Localization.Away r]
+      Localization.Away r ⊗[R] M)
+    [Module.Finite S N]
+    (hM : ∀ r ∈ G, Module.Finite (Localization.Away r) (Localization.Away r ⊗[R] M)) :
+    Module.Finite R E :=
+  (TauCeti.finite_iff_baseChange_and_localized hG).mpr
+    ⟨Module.Finite.equiv hφ.equiv.symm, fun r hr ↦ by
+      have := hM r hr
+      exact Module.Finite.equiv (e_loc r hr).symm⟩
+
+/-- Any module `E` glued from a finitely presented `S`-module `N` and locally finitely presented
+`R`-module `M` across `G` via `Localization.Away r ⊗[R] _` equivalences is finitely presented over
+`R`. -/
+@[stacks 05EU "finite presentation of a glued module"]
+theorem finitePresentation_of_formalGlueing
+    {φ : E →ₗ[R] N} (hφ : IsBaseChange S φ) (G : Finset R)
+    (hG : Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map (algebraMap R S))
+      (algebraMap R S) Ideal.le_comap_map))
+    (e_loc : ∀ r ∈ G, Localization.Away r ⊗[R] E ≃ₗ[Localization.Away r]
+      Localization.Away r ⊗[R] M)
+    [Module.FinitePresentation S N]
+    (hM : ∀ r ∈ G, Module.FinitePresentation (Localization.Away r) (Localization.Away r ⊗[R] M)) :
+    Module.FinitePresentation R E :=
+  (TauCeti.finitePresentation_iff_baseChange_and_localized hG).mpr
+    ⟨.of_equiv hφ.equiv.symm, fun r hr ↦ by
+      have := hM r hr
+      exact .of_equiv (e_loc r hr).symm⟩
+
+/-- Any module `E` glued from a finitely generated `S`-module `N` and locally finitely generated
+`R`-module `M` across `G` via `LocalizedModule (.powers r) _` equivalences is finitely generated
+over `R`. -/
+@[stacks 05EU "finiteness of a glued module"]
+theorem finite_of_formalGlueing_localizedModule
+    {φ : E →ₗ[R] N} (hφ : IsBaseChange S φ) (G : Finset R)
+    (hG : Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map (algebraMap R S))
+      (algebraMap R S) Ideal.le_comap_map))
+    (e_loc : ∀ r ∈ G, LocalizedModule (.powers r) E ≃ₗ[Localization.Away r]
+      LocalizedModule (.powers r) M)
+    [Module.Finite S N]
+    (hM : ∀ r ∈ G, Module.Finite (Localization.Away r) (LocalizedModule (.powers r) M)) :
+    Module.Finite R E :=
+  hφ.finite_of_formalGlueing G hG
+    (fun r hr ↦ LocalizedModule.tensorProductEquivOfEquiv (e_loc r hr))
+    (fun r hr ↦ by
+      have := hM r hr
+      exact Module.Finite.equiv (LocalizedModule.equivTensorProduct (.powers r) M))
+
+/-- Any module `E` glued from a finitely presented `S`-module `N` and locally finitely presented
+`R`-module `M` across `G` via `LocalizedModule (.powers r) _` equivalences is finitely presented
+over `R`. -/
+@[stacks 05EU "finite presentation of a glued module"]
+theorem finitePresentation_of_formalGlueing_localizedModule
+    {φ : E →ₗ[R] N} (hφ : IsBaseChange S φ) (G : Finset R)
+    (hG : Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map (algebraMap R S))
+      (algebraMap R S) Ideal.le_comap_map))
+    (e_loc : ∀ r ∈ G, LocalizedModule (.powers r) E ≃ₗ[Localization.Away r]
+      LocalizedModule (.powers r) M)
+    [Module.FinitePresentation S N]
+    (hM : ∀ r ∈ G,
+      Module.FinitePresentation (Localization.Away r) (LocalizedModule (.powers r) M)) :
+    Module.FinitePresentation R E :=
+  hφ.finitePresentation_of_formalGlueing G hG
+    (fun r hr ↦ LocalizedModule.tensorProductEquivOfEquiv (e_loc r hr))
+    (fun r hr ↦ by
+      have := hM r hr
+      exact .of_equiv (LocalizedModule.equivTensorProduct (.powers r) M))
+
+end IsBaseChange

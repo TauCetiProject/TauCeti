@@ -179,15 +179,15 @@ theorem measurableSet_range_morleyCode [Countable V] (hΦ : Φ.Countable) :
   -- Index the conditions of `range_morleyCode` by the countable slices of `Φ`.
   have hrange : range (morleyCode (V := V) Φ) =
       ⋂ (n : ℕ) (φ : {φ : L.BoundedFormulaω Empty n // ⟨n, φ⟩ ∈ Φ}) (x : Fin n → V),
-        {e | e.eval (atom (morleyRel φ.1 φ.2) x) = true ↔
+        {e | e.eval (atom (morleyRel φ.val φ.property) x) = true ↔
           @BoundedFormulaInf.Realize L ℕ Empty V
-            ((lhomMorleyize Φ).reductConfiguration e).toStructure n φ.1 Empty.elim x} := by
+            ((lhomMorleyize Φ).reductConfiguration e).toStructure n φ.val Empty.elim x} := by
     rw [range_morleyCode]
     ext e
     simp only [mem_ofPred_eq, mem_iInter, Subtype.forall]
   rw [hrange]
   exact .iInter fun n => .iInter fun φ => .iInter fun x =>
-    (measurableSet_setOf_eval _ true).iff (hreduct n φ.1 x)
+    (measurableSet_setOf_eval _ true).iff (hreduct n φ.val x)
 
 /-- **The expansion code is a measurable embedding** along a countable family `Φ` on a countable
 carrier. Its measurable left inverse is the reduct, and its range is measurable. -/
