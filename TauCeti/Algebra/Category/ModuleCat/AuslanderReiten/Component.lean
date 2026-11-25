@@ -18,6 +18,7 @@ public import Mathlib.RingTheory.Length
 import Mathlib.Algebra.Category.ModuleCat.AB
 import Mathlib.RingTheory.HopkinsLevitzki
 import TauCeti.Algebra.Category.FGModuleCat.AlmostSplit.Basic
+import TauCeti.Algebra.Category.FGModuleCat.AlmostSplit.Sequence
 import TauCeti.Algebra.Category.FGModuleCat.Injective
 import TauCeti.Algebra.Category.FGModuleCat.KrullSchmidt
 import TauCeti.Algebra.Category.FGModuleCat.Projective
@@ -286,23 +287,15 @@ theorem forall_prop_and_isRepresentationFinite_of_length_le (hA : centralIdempot
     (hne : ∃ X, S X) (b : ℕ) (hb : ∀ X, S X → Module.length A X.obj ≤ b) :
     (∀ X : FGModuleCat.{w} A, Indecomposable X.obj → S X) ∧ IsRepresentationFinite.{w} A := by
   have : IsArtinianRing A := IsArtinianRing.of_finite R A
-  -- The source and sink maps at non-injective and non-projective modules come from the
-  -- almost-split sequences in `ModuleCat A`, restricted to `FGModuleCat A`.
+  -- The source and sink maps at non-injective and non-projective modules are the end maps of the
+  -- almost-split sequences of `FGModuleCat A`, moved to the given module along the end isomorphism.
   refine forall_prop_and_isRepresentationFinite_of_isLeftAlmostSplit_of_isRightAlmostSplit hA S hS
     (fun N hN hinj ↦ ?_) (fun M hM hproj ↦ ?_) hirr hne b hb
-  · have hinj' : ¬ Injective N.obj := fun _ ↦ hinj <| by
-      have := Module.injective_module_of_injective_object A N
-      exact FGModuleCat.injective_of_moduleInjective N
-    obtain ⟨E, _, f, _, _, hE, -, hseq⟩ :=
-      ModuleCat.exists_isAlmostSplit_of_not_injective R N.obj (hS N hN) hinj'
-    exact ⟨⟨E, (ModuleCat.isFG_iff _).mpr hE⟩, ObjectProperty.homMk f,
-      (ObjectProperty.ι _).isLeftAlmostSplit_of_map _ hseq.isLeftAlmostSplit_f⟩
-  · have hproj' : ¬ Projective M.obj := fun _ ↦ hproj <| by
-      have := ModuleCat.projective_of_module_projective (R := A) M.obj
-      exact FGModuleCat.projective_of_moduleProjective A M
-    obtain ⟨X, E, i, p, h, -, hE, hseq⟩ :=
-      ModuleCat.exists_isAlmostSplit_of_not_projective R M.obj (hS M hM) hproj'
-    exact ⟨⟨E, (ModuleCat.isFG_iff _).mpr hE⟩, ObjectProperty.homMk p,
-      (ObjectProperty.ι _).isRightAlmostSplit_of_map _ hseq.isRightAlmostSplit_g⟩
+  · obtain ⟨T, hT, ⟨e⟩⟩ := FGModuleCat.exists_isAlmostSplit_of_not_injective R N
+      ((FGModuleCat.indecomposable_obj_iff N).mp (hS N hN)) hinj
+    exact ⟨T.X₂, e.inv ≫ T.f, hT.isLeftAlmostSplit_f.iso_comp e.inv⟩
+  · obtain ⟨T, hT, ⟨e⟩⟩ := FGModuleCat.exists_isAlmostSplit R M
+      ((FGModuleCat.indecomposable_obj_iff M).mp (hS M hM)) hproj
+    exact ⟨T.X₂, T.g ≫ e.hom, hT.isRightAlmostSplit_g.comp_iso e.hom⟩
 
 end TauCeti
