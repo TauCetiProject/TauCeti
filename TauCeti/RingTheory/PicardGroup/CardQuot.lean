@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import Mathlib.RingTheory.PicardGroup
 public import TauCeti.RingTheory.Finiteness.Cardinality
+public import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
 # Lattice indices and tensor products with invertible modules
@@ -48,7 +49,7 @@ theorem card_tensorProduct [Finite T] : Nat.card (T ⊗[R] M) = Nat.card T := by
   -- `T` is a module over `R / Ann(T)`, which acts faithfully on the finite set `T`.
   let I := Module.annihilator R T
   let : Module (R ⧸ I) T := Module.quotientAnnihilator
-  have : IsScalarTower R (R ⧸ I) T := .of_algebraMap_smul fun r t ↦ rfl
+  have : IsScalarTower R (R ⧸ I) T := (Module.isTorsionBySet_annihilator R T).isScalarTower
   have : Finite (R ⧸ I) := Module.finite_quotient_annihilator
   -- `R / Ann(T)` is finite, so the invertible module `(R / Ann(T)) ⊗ M` over it is free.
   obtain ⟨e⟩ : Nonempty ((R ⧸ I) ⊗[R] M ≃ₗ[R ⧸ I] R ⧸ I) :=
@@ -93,10 +94,6 @@ theorem cardQuot_span_tmul {s : L} (hs : Function.Injective (LinearMap.toSpanSin
     rw [hrange, Submodule.cardQuot_apply, Submodule.cardQuot_apply, LinearMap.rTensor_def]
     exact (Nat.card_congr (TensorProduct.quotientTensorEquiv M (R ∙ s)).toEquiv).symm.trans
       Module.Invertible.card_tensorProduct
-  -- The coercion `↑φ : M →+ L ⊗ M` agrees with `φ.toAddMonoidHom`.
-  have hcoe : (φ : M →+ L ⊗[R] M) = φ.toAddMonoidHom := by ext; simp
-  unfold Submodule.cardQuot at hidx ⊢
-  rw [← hφt, Submodule.map_toAddSubgroup, AddSubgroup.index_map_of_injective _ hφ, mul_comm,
-    ← hidx, LinearMap.range_toAddSubgroup, hcoe]
+  rw [← hφt, cardQuot_map_of_injective hφ, hidx, mul_comm]
 
 end Submodule

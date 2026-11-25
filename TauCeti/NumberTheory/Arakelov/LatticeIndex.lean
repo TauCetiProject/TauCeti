@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Arakelov.HermitianVectorBundle
+import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
 # The lattice index term of the Arakelov degree
@@ -56,12 +57,7 @@ theorem sectionDegree_map_eq_add_log_cardQuot_range (f : E →ₗ[𝓞 K] F)
     rw [Submodule.map_span, Set.image_singleton]
   have hidx : (Submodule.span (𝓞 K) {f s}).cardQuot =
       (Submodule.span (𝓞 K) {s}).cardQuot * (LinearMap.range f).cardQuot := by
-    unfold Submodule.cardQuot
-    rw [hmap, Submodule.map_toAddSubgroup, AddSubgroup.index_map_of_injective _ hf]
-    -- `(LinearMap.range f).toAddSubgroup` is `(f : E →+ F).range` by definition. The rewrite
-    -- `LinearMap.range_toAddSubgroup` states this with `f.toAddMonoidHom` rather than the
-    -- coercion that `Submodule.map_toAddSubgroup` produces, so it does not match and `rfl` closes.
-    rfl
+    rw [hmap, Submodule.cardQuot_map_of_injective hf]
   simp only [sectionDegree_def, hnorm, hidx, Nat.cast_mul]
   rw [Real.log_mul]
   · ring
