@@ -42,7 +42,7 @@ elementary module. Its free part vanishes because `M` is torsion, and its vertic
 
 * `TauCeti.Iwasawa.IsPseudoNull.isTorsion_of_isScalarTower`: a pseudo-null `O⟦X⟧`-module is torsion
   over `O`.
-* `TauCeti.Iwasawa.IsPseudoIsomorphism.bijective_baseChange`: a pseudo-isomorphism of
+* `TauCeti.Iwasawa.IsPseudoIsomorphism.baseChange_bijective`: a pseudo-isomorphism of
   `O⟦X⟧`-modules becomes bijective after base change to `K`.
 * `TauCeti.Iwasawa.finite_tensorProduct_of_isTorsion`: `K ⊗[O] M` is finite-dimensional.
 * `TauCeti.Iwasawa.map_charPoly_eq_charpoly`: `F_M` is the characteristic polynomial of `X` on
@@ -71,6 +71,16 @@ private theorem pow_smul_quotient_span_C_pow {O : Type*} [CommRing O] (ϖ : O) (
     Submodule.Quotient.mk_eq_zero, smul_eq_mul]
   exact Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self _)
 
+/-- A product with a free factor `Fin r → A` over a nontrivial ring is torsion only when `r = 0`.
+This removes the free part of an elementary module. -/
+private theorem eq_zero_of_isTorsion_prod {A P : Type*} [CommRing A] [Nontrivial A]
+    [AddCommGroup P] [Module A P] {r : ℕ} (h : Module.IsTorsion A ((Fin r → A) × P)) : r = 0 := by
+  by_contra hr
+  let i : Fin r := ⟨0, Nat.pos_of_ne_zero hr⟩
+  obtain ⟨c, hc⟩ := h (x := (Pi.single i 1, 0))
+  exact nonZeroDivisors.coe_ne_zero c
+    (by simpa [Submonoid.smul_def] using congr_fun (congrArg Prod.fst hc) i)
+
 variable {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O] (K : Type*) [Field K]
   [Algebra O K] [IsFractionRing O K] {M N : Type*} [AddCommGroup M] [Module O⟦X⟧ M] [Module O M]
   [IsScalarTower O O⟦X⟧ M] [AddCommGroup N] [Module O⟦X⟧ N] [Module O N] [IsScalarTower O O⟦X⟧ N]
@@ -95,11 +105,11 @@ theorem IsPseudoNull.isTorsion_of_isScalarTower (h : IsPseudoNull O⟦X⟧ M) :
 /-- Over a discrete valuation ring `O` with fraction field `K`, a pseudo-isomorphism of
 `O⟦X⟧`-modules becomes bijective after base change to `K`: its kernel and cokernel are
 pseudo-null, hence torsion over `O`. -/
-theorem IsPseudoIsomorphism.bijective_baseChange {f : M →ₗ[O⟦X⟧] N}
+theorem IsPseudoIsomorphism.baseChange_bijective {f : M →ₗ[O⟦X⟧] N}
     (hf : IsPseudoIsomorphism f) : Function.Bijective ((f.restrictScalars O).baseChange K) := by
-  refine ((f.restrictScalars O).bijective_baseChange_iff_isTorsion K).mpr ⟨fun x ↦ ?_, fun y ↦ ?_⟩
-  · obtain ⟨a, ha⟩ := hf.isPseudoNull_ker.isTorsion_of_isScalarTower (x := ⟨x.val, x.property⟩)
-    exact ⟨a, Subtype.ext congr(($ha : M))⟩
+  refine ((f.restrictScalars O).baseChange_bijective_iff_isTorsion K).mpr ⟨?_, fun y ↦ ?_⟩
+  · rw [LinearMap.ker_restrictScalars]
+    exact hf.isPseudoNull_ker.isTorsion_of_isScalarTower
   · induction y using Submodule.Quotient.induction_on with | _ n
     obtain ⟨a, ha⟩ := hf.isPseudoNull_coker.isTorsion_of_isScalarTower
       (x := Submodule.Quotient.mk (p := LinearMap.range f) n)
@@ -120,20 +130,14 @@ private theorem exists_bijective_baseChange_pi (hM : Module.IsTorsion O⟦X⟧ M
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
   obtain ⟨r, a, b, m, F, n, -, hFn, f, hf⟩ := exists_isPseudoIsomorphism_elementary (M := M) hϖ
   -- The elementary module is torsion, so it has no free part.
-  obtain rfl : r = 0 := by
-    by_contra hr
-    obtain ⟨c, hc⟩ := hf.isTorsion_iff.mp hM (x := (Pi.single ⟨0, Nat.pos_of_ne_zero hr⟩ 1, 0))
-    have := congr_fun (congrArg Prod.fst hc) ⟨0, Nat.pos_of_ne_zero hr⟩
-    simp only [Submonoid.smul_def, Prod.smul_fst, Pi.smul_apply, Pi.single_eq_same, smul_eq_mul,
-      mul_one, Prod.fst_zero, Pi.zero_apply] at this
-    exact nonZeroDivisors.coe_ne_zero c this
+  obtain rfl : r = 0 := eq_zero_of_isTorsion_prod (hf.isTorsion_iff.mp hM)
   refine ⟨b, F, n, fun j ↦ (hFn j).1, hf.charPoly_eq_prod hϖ (fun j ↦ (hFn j).1)
     (fun j ↦ (hFn j).2.1), (LinearMap.snd _ _ _ ∘ₗ LinearMap.snd _ _ _) ∘ₗ f, ?_⟩
   rw [LinearMap.restrictScalars_comp, LinearMap.baseChange_comp, LinearMap.coe_comp]
-  refine Function.Bijective.comp ?_ (hf.bijective_baseChange K)
+  refine Function.Bijective.comp ?_ (hf.baseChange_bijective K)
   -- The projection onto the horizontal factors is surjective, and `ϖ ^ (∑ mᵢ)` kills its kernel.
-  refine (LinearMap.bijective_baseChange_iff_isTorsion _ K).mpr ⟨fun x ↦ ?_, fun y ↦ ?_⟩
-  · have hx : (x : Elementary O ϖ 0 m F n).2.2 = 0 := x.property
+  refine (LinearMap.baseChange_bijective_iff_isTorsion _ K).mpr ⟨fun x ↦ ?_, fun y ↦ ?_⟩
+  · have hx : (x : Elementary O ϖ 0 m F n).2.2 = 0 := by simpa using x.property
     refine ⟨⟨ϖ ^ ∑ i, m i, pow_mem (mem_nonZeroDivisors_of_ne_zero hϖ.ne_zero) _⟩, ?_⟩
     rw [Submonoid.mk_smul]
     refine Subtype.ext (Prod.ext (Subsingleton.elim _ _) (Prod.ext (funext fun i ↦ ?_) ?_))
@@ -146,7 +150,7 @@ private theorem exists_bijective_baseChange_pi (hM : Module.IsTorsion O⟦X⟧ M
   · induction y using Submodule.Quotient.induction_on with | _ h
     refine ⟨1, ?_⟩
     rw [one_smul, Submodule.Quotient.mk_eq_zero]
-    exact ⟨(0, 0, h), rfl⟩
+    exact LinearMap.mem_range.mpr ⟨(0, 0, h), by simp⟩
 
 /-- **The generic fiber of a torsion Iwasawa module is finite-dimensional.** Over a complete
 discrete valuation ring `O` with fraction field `K`, for a finitely generated torsion
@@ -187,9 +191,8 @@ theorem map_charPoly_eq_charpoly (hM : Module.IsTorsion O⟦X⟧ M) [Module.Fini
       LinearMap.piMap fun j ↦ Algebra.lmul O _ (Ideal.Quotient.mk _ X) := by
     refine LinearMap.ext fun x ↦ funext fun j ↦ ?_
     obtain ⟨q, hq⟩ := Ideal.Quotient.mk_surjective (x j)
-    rw [Algebra.lsmul_apply, LinearMap.coe_piMap, Pi.map_apply, Pi.smul_apply,
-      Algebra.coe_lmul_eq_mul, LinearMap.mul_apply', ← hq, ← map_mul, ← Ideal.Quotient.mk_eq_mk,
-      ← Ideal.Quotient.mk_eq_mk, ← Submodule.Quotient.mk_smul, smul_eq_mul]
+    -- The quotient map is an `O⟦X⟧`-algebra map, so it commutes with multiplication by `X`.
+    simpa [← hq, ← map_mul] using (map_smul (Ideal.Quotient.mkₐ O⟦X⟧ _) (X : O⟦X⟧) q).symm
   rw [← e.charpoly_conj, hconj, LinearMap.charpoly_baseChange, hpi, LinearMap.charpoly_piMap, hchar]
   simp only [fun j ↦ (hW j).charpoly_lmul_mk_X]
 

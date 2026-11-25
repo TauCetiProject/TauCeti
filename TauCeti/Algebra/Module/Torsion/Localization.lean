@@ -41,9 +41,9 @@ localization at every generator is zero. This identifies modules supported on th
   `K ⊗[R] M` is trivial, for the total ring of fractions `K` of `R`.
 * `TauCeti.isAddTorsion_iff_subsingleton_rat_tensorProduct`: an abelian group `G` is torsion if
   and only if `ℚ ⊗[ℤ] G` is trivial.
-* `LinearMap.injective_baseChange_iff_isTorsion_ker`,
-  `LinearMap.surjective_baseChange_iff_isTorsion_coker`,
-  `LinearMap.bijective_baseChange_iff_isTorsion`: `f.baseChange K` is injective, surjective or
+* `LinearMap.baseChange_injective_iff_isTorsion_ker`,
+  `LinearMap.baseChange_surjective_iff_isTorsion_coker`,
+  `LinearMap.baseChange_bijective_iff_isTorsion`: `f.baseChange K` is injective, surjective or
   bijective iff the kernel, the cokernel or both of `f` are torsion.
 * `Module.IsTorsion.of_isLocalizedModule`, `Module.IsTorsion.localizedModule`: the localization of
   a torsion module is torsion.
@@ -98,7 +98,7 @@ variable {R : Type*} [CommRing R] {M N : Type*} [AddCommGroup M] [Module R M] [A
 
 /-- The base change of a linear map to the total ring of fractions is injective iff the kernel of
 the map is torsion. -/
-theorem injective_baseChange_iff_isTorsion_ker :
+theorem baseChange_injective_iff_isTorsion_ker :
     Injective (f.baseChange K) ↔ Module.IsTorsion R (ker f) := by
   have := IsLocalization.flat K (nonZeroDivisors R)
   -- Base change to the flat algebra `K` keeps `ker f → M → N` exact and `ker f → M` injective.
@@ -114,7 +114,7 @@ theorem injective_baseChange_iff_isTorsion_ker :
 
 /-- The base change of a linear map to the total ring of fractions is surjective iff the cokernel
 of the map is torsion. -/
-theorem surjective_baseChange_iff_isTorsion_coker :
+theorem baseChange_surjective_iff_isTorsion_coker :
     Surjective (f.baseChange K) ↔ Module.IsTorsion R (N ⧸ range f) := by
   rw [IsLocalization.baseChange_surjective_iff (nonZeroDivisors R),
     LinearMap.localizedMap_surjective_iff_subsingleton_localized_coker,
@@ -123,11 +123,11 @@ theorem surjective_baseChange_iff_isTorsion_coker :
 
 /-- The base change of a linear map to the total ring of fractions is bijective iff the kernel and
 the cokernel of the map are torsion. -/
-theorem bijective_baseChange_iff_isTorsion :
+theorem baseChange_bijective_iff_isTorsion :
     Bijective (f.baseChange K) ↔
       Module.IsTorsion R (ker f) ∧ Module.IsTorsion R (N ⧸ range f) :=
-  and_congr (f.injective_baseChange_iff_isTorsion_ker K)
-    (f.surjective_baseChange_iff_isTorsion_coker K)
+  and_congr (f.baseChange_injective_iff_isTorsion_ker K)
+    (f.baseChange_surjective_iff_isTorsion_coker K)
 
 end LinearMap
 
