@@ -930,8 +930,10 @@ theorem sum_range_neg_one_pow_mul_finrank_singularHomology_upperBandPair_eq_neg_
     simp only [mem_ofPred_eq, add_tsub_cancel_right]
     exact and_congr_right fun _ ↦ by omega
   obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le' hi
-  rw [hset]
-  simp [add_tsub_cancel_right, hd, pow_add, mul_assoc, ← mul_assoc ((-1 : ℤ) ^ i), ← mul_pow]
+  have hsign : (-1 : ℤ) ^ (d + i) * (-1) ^ i = (-1) ^ d := by
+    rw [← pow_add, Nat.add_assoc, pow_add, Even.neg_one_pow ⟨i, rfl⟩, mul_one]
+  rw [hset, hd]
+  simp only [add_tsub_cancel_right, ← mul_assoc, hsign]
 
 end UpperBand
 

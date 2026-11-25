@@ -92,7 +92,10 @@ theorem le_of_forall_sum_range_neg_one_pow_mul_le {b c : ℕ → ℕ}
   have hgap (m : ℕ) : 0 ≤ strongGap b c m := sub_nonneg.2 (h m)
   intro n
   cases n with
-  | zero => simpa [strongGap] using hgap 0
+  | zero =>
+    have hzero := hgap 0
+    rw [strongGap_zero] at hzero
+    exact_mod_cast sub_nonneg.mp hzero
   | succ n =>
     have hnext := hgap (n + 1)
     rw [strongGap_succ] at hnext
