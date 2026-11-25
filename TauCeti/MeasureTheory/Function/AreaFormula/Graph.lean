@@ -13,7 +13,7 @@ import Mathlib.Analysis.Calculus.Rademacher
 import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
 
 /-!
-# Surface measure on normal graphs
+# Surface measure on Lipschitz graphs
 
 The normal graph parametrization of a function `φ : E → ℝ` sends `y` to `(φ y, y)` in the
 Euclidean product `WithLp 2 (ℝ × E)`. When `φ` is `K`-Lipschitz, this parametrization is
@@ -26,6 +26,11 @@ For a differentiable graph, the geometric Jacobian of the parametrization is
 surface-integration formula, with both extended nonnegative and Bochner integral versions. These
 results allow an `L²` trace constructed in graph coordinates to be interpreted as a trace with
 respect to Euclidean surface measure.
+
+In every codimension, the graph of a Lipschitz map `φ : E → F` between finite-dimensional real
+inner product spaces is parametrized by `x ↦ (x, φ x)` in `WithLp 2 (E × F)`. Its
+`dim E`-dimensional Euclidean Hausdorff measure over `s` is `∫_s sqrt (det (I + Dφ† Dφ))`, which
+reduces to the normal-graph factor `sqrt (1 + ‖Dφ‖²)` when `F = ℝ`.
 
 ## Main declarations
 

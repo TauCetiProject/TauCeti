@@ -28,11 +28,13 @@ elementary metric properties, and the graph map `v ↦ (v, A v)` of a continuous
 * `ContinuousLinearMap.normalGraphL`: the continuous linear graph map `x ↦ (A x, x)`.
 * `ContinuousLinearMap.injective_normalGraphL`: the linear graph map is injective.
 * `ContinuousLinearMap.range_normalGraphL`: its range is the linear graph of `A`.
-* `LipschitzWith.graph`: the graph parametrization `x ↦ (x, f x)` of a Lipschitz map is Lipschitz.
+* `LipschitzWith.graph`: a `K`-Lipschitz map has a `(K + 1)`-Lipschitz graph parametrization
+  `x ↦ (x, f x)`.
 * `ContinuousLinearMap.graphL`: the continuous linear graph map `v ↦ (v, A v)` of
   `A : E →L[ℝ] F`, in every codimension.
 * `ContinuousLinearMap.injective_graphL`, `ContinuousLinearMap.range_graphL`: it is injective,
   with range the graph `LinearMap.graph A`.
+* `ContinuousLinearMap.mem_range_graphL`: `z` is in that range exactly when `z.snd = A z.fst`.
 -/
 
 public section
@@ -159,13 +161,26 @@ theorem _root_.LipschitzWith.normalGraphEmbedding [PseudoEMetricSpace E] {K : �
     _ ≤ K * b + b := add_le_add (hφ x y) le_rfl
     _ = (K + 1) * b := by rw [add_mul, one_mul]
 
-/-- The graph parametrization `x ↦ (x, f x)` of a Lipschitz map into the `L²` product is
-Lipschitz. -/
+/-- A `K`-Lipschitz map has a `(K + 1)`-Lipschitz graph parametrization `x ↦ (x, f x)` into the
+`L²` product. -/
 theorem _root_.LipschitzWith.graph {α β : Type*} [PseudoEMetricSpace α] [PseudoEMetricSpace β]
     {K : ℝ≥0} {f : α → β} (hf : LipschitzWith K f) :
-    LipschitzWith ((2 : ℝ≥0) ^ (1 / (2 : ENNReal)).toReal * max 1 K)
-      (fun x ↦ WithLp.toLp 2 (x, f x)) :=
-  (WithLp.prod_lipschitzWith_toLp 2 α β).comp (LipschitzWith.id.prodMk hf)
+    LipschitzWith (K + 1) (fun x ↦ WithLp.toLp 2 (x, f x)) := fun x y ↦ by
+  set a := edist (f x) (f y)
+  set b := edist x y
+  calc
+    edist (WithLp.toLp 2 (x, f x)) (WithLp.toLp 2 (y, f y)) = (b ^ 2 + a ^ 2) ^ (1 / 2 : ℝ) := by
+      simp [WithLp.prod_edist_eq_add, a, b]
+    -- `b ^ 2 + a ^ 2 ≤ a ^ 2 + 2 * a * b + b ^ 2 = (a + b) ^ 2`.
+    _ ≤ ((a + b) ^ 2) ^ (1 / 2 : ℝ) := by
+      refine ENNReal.rpow_le_rpow ?_ (by norm_num)
+      rw [add_comm, add_sq]
+      exact add_le_add le_self_add le_rfl
+    _ = a + b := by
+      rw [← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
+      norm_num
+    _ ≤ K * b + b := add_le_add (hf x y) le_rfl
+    _ = (K + 1) * b := by rw [add_mul, one_mul]
 
 section
 
@@ -256,6 +271,12 @@ theorem _root_.ContinuousLinearMap.range_graphL (A : E →L[ℝ] F) :
       (LinearMap.graph (A : E →ₗ[ℝ] F)).map (WithLp.linearEquiv 2 ℝ (E × F)).symm.toLinearMap := by
   ext z
   simp [LinearMap.mem_graph_iff, WithLp.ext_iff, Prod.ext_iff, eq_comm]
+
+/-- A point of the Euclidean product lies in the range of the continuous linear graph map exactly
+when its second coordinate is `A` of its first. -/
+theorem _root_.ContinuousLinearMap.mem_range_graphL (A : E →L[ℝ] F) {z : WithLp 2 (E × F)} :
+    z ∈ LinearMap.range A.graphL.toLinearMap ↔ z.snd = A z.fst := by
+  simp [A.range_graphL, LinearMap.mem_graph_iff]
 
 end Linear
 
