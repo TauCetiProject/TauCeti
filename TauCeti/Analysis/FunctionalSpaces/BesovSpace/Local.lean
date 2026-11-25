@@ -160,11 +160,11 @@ theorem isLocallyMemBesovAt_restrictCLM_iff {Ω' : Opens E} (h : Ω' ≤ Ω) (hx
     refine ⟨U, hU, hUΩ'.trans h, fun ψ hψ ↦ ?_⟩
     obtain ⟨ψ', rfl⟩ := TestFunction.exists_monoCLM_eq_of_tsupport_subset h (hψ.trans hUΩ')
     rw [← cutoffTempered_restrictCLM h]
-    exact hT ψ' (by rwa [TestFunction.coe_monoCLM h] at hψ)
+    exact hT ψ' (by rwa [TestFunction.coe_monoCLM_of_le le_rfl h] at hψ)
   · rintro ⟨U, hU, -, hT⟩
     refine ⟨U ∩ Ω', inter_mem hU (Ω'.isOpen.mem_nhds hx), inter_subset_right, fun ψ hψ ↦ ?_⟩
     rw [cutoffTempered_restrictCLM h]
-    exact hT _ (by rw [TestFunction.coe_monoCLM h]; exact hψ.trans inter_subset_left)
+    exact hT _ (by rw [TestFunction.coe_monoCLM_of_le le_rfl h]; exact hψ.trans inter_subset_left)
 
 /-- A smooth multiple `g T` of a distribution `B^s_{p,q}` near `x` is `B^s_{p,q}` near `x`. -/
 theorem IsLocallyMemBesovAt.smulLeftCLM (h : T.IsLocallyMemBesovAt φ s p q x) {g : E → ℝ}
