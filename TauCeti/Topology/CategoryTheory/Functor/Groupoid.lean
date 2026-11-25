@@ -34,10 +34,11 @@ theorem isTopologicalGroupoid_of_isInducing {C D : Type*}
   · exact IsTopologicalGroupoid.continuous_source.comp h₁.continuous
   · exact IsTopologicalGroupoid.continuous_target.comp h₁.continuous
   · exact (IsTopologicalGroupoid.continuous_unit.comp h₀.continuous).congr fun x ↦ by
-      simp [Prefunctor.mapTotal]
+      simp
   · refine (IsTopologicalGroupoid.continuous_inverse.comp h₁.continuous).congr ?_
     rintro ⟨x, y, f⟩
-    simp [Prefunctor.mapTotal]
+    rw [Function.comp_apply, Prefunctor.mapTotal_mk]
+    simp
   · let g (p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left}) :
         {p : Quiver.Total D × Quiver.Total D // p.1.right = p.2.left} :=
       ⟨(F.toPrefunctor.mapTotal p.val.1, F.toPrefunctor.mapTotal p.val.2),
