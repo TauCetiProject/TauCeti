@@ -11,7 +11,6 @@ public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
 import TauCeti.AlgebraicGeometry.ResidueDegree
 import Mathlib.FieldTheory.FinTrdeg
-import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
 # Local dimension of schemes locally of finite type over a field

@@ -162,8 +162,7 @@ theorem height_eq_height_add_height_asFiber (f : X ⟶ Y) [f.IsOver (Spec (.of k
     ← (f.fiberι y).trdeg_residueField_eq_of_isIso_residueFieldMap x',
     trdeg_residueField_eq_add_of_over k K hF x',
     Cardinal.toNat_add (trdeg_residueField_lt_aleph0 k y) (trdeg_residueField_lt_aleph0 K x')]
-  push_cast
-  rfl
+  norm_cast
 
 /-- **Dimension of a generic point of a fibre.** Let `f : X ⟶ Y` be a morphism over a field `k`,
 of pure relative dimension `n`, between schemes locally of finite type over `k`. If `x` is the

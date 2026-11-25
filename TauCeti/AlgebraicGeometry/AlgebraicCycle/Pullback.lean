@@ -92,8 +92,7 @@ lemma pullbackMultiplicity_eq_one_of_isOpenImmersion (f : X ⟶ Y) [IsOpenImmers
   have : IsSimpleModule (X.presheaf.stalk x)
       (X.presheaf.stalk x ⧸ IsLocalRing.maximalIdeal (X.presheaf.stalk x)) :=
     isSimpleModule_iff_isCoatom.mpr (Ideal.isMaximal_def.mp inferInstance)
-  rw [hmap, Module.length_eq_one]
-  rfl
+  rw [hmap, Module.length_eq_one, ENat.toNat_one]
 
 /-- For `X` locally Noetherian, the pullback `f^* α`, with coefficient `α (f x) · m_f(x)` at `x`,
 has locally finite support. -/

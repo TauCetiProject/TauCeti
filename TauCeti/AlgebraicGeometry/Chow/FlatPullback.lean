@@ -65,10 +65,9 @@ lemma pullback_mem_cyclesOfDimension [IsLocallyNoetherian X] (f : X ⟶ Y)
   -- A generic point of a fibre over a point of dimension `m` has dimension `m + n`.
   have hg := AlgebraicCycle.isFiberGenericPoint_of_pullbackMultiplicity_ne_zero f
     (by exact_mod_cast right_ne_zero_of_mul hx)
-  refine mem_pointsOfDimension.mpr ⟨j + n, ?_, by push_cast; rfl⟩
+  refine mem_pointsOfDimension.mpr ⟨j + n, ?_, by push_cast; ring⟩
   rw [height_eq_height_add_of_isFiberGenericPoint k f n hg, hj]
-  push_cast
-  rfl
+  norm_cast
 
 /-- The pullback `Z_m(Y) →+ Z_{m+n}(X)` of `m`-cycles along a morphism `f` of pure relative
 dimension `n` between schemes locally of finite type over a field `k`:
