@@ -18,7 +18,9 @@ In a Hausdorff finite-dimensional real topological vector space, the interior of
 convex set equals its interior (`Convex.interior_closure`, Rockafellar, *Convex Analysis*,
 Theorem 6.3); unlike Mathlib's `Convex.interior_closure_eq_interior_of_nonempty_interior`, no
 nonempty-interior assumption is needed, because an affine subspace in finite dimension is closed and
-so a convex set with empty interior lies in a closed proper affine subspace.
+so a convex set with empty interior lies in a closed proper affine subspace. Hence a convex set and
+its closure have the same frontier (`Convex.frontier_closure`), so measurements of the frontier of a
+bounded convex set, such as its surface area, may be computed on its compact closure.
 
 A convex set symmetric about the origin has `0` in its interior as soon as its interior is
 nonempty. This lets volume arguments obtain the neighbourhood of the origin needed to use the
@@ -35,10 +37,12 @@ closed set `C` misses `⋃ x ∈ s, segment 𝕜 x₀ x` for an arbitrary set `s
 topological additive group, the convex join of any two compact sets is compact
 (`IsCompact.convexJoin`), so every compact set `K` lies in a compact set star-convex about any
 given point `y`, the union of the segments from `y` to `y` and to the points of `K`
-(`TopologicalSpace.Compacts.starHull`). Adjoining a point to a compact convex set keeps its convex
-hull compact (`IsCompact.convexHull_insert`), without finite-dimensionality, so in a Hausdorff
-space the closed convex hull of `insert x s` lies in any set containing `x` and star-convex about
-every point of a compact convex superset of `s`
+(`TopologicalSpace.Compacts.starHull`). For an inducing map `j : U → E` whose range is star-convex
+about `y ∈ range j`, the preimages of these star hulls are cofinal among the compact subsets of `U`
+(`Topology.IsInducing.exists_compacts_le_starConvex_image`). Adjoining a point to a compact convex
+set keeps its convex hull compact (`IsCompact.convexHull_insert`), without finite-dimensionality, so
+in a Hausdorff space the closed convex hull of `insert x s` lies in any set containing `x` and
+star-convex about every point of a compact convex superset of `s`
 (`IsCompact.closure_convexHull_insert_subset_of_forall_starConvex`).
 -/
 
@@ -70,6 +74,13 @@ theorem Convex.interior_closure {E : Type*} [AddCommGroup E] [Module ℝ E] [Top
   apply e.toHomeomorph.injective.image_injective
   rw [e.toHomeomorph.image_interior, e.toHomeomorph.image_closure, e.toHomeomorph.image_interior]
   exact interior_closure_eq_interior_normed (hs.linear_image e.toLinearMap)
+
+/-- In a Hausdorff finite-dimensional real topological vector space, a convex set and its closure
+have the same frontier, since they have the same interior (`Convex.interior_closure`). -/
+theorem Convex.frontier_closure {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] [T2Space E] [FiniteDimensional ℝ E]
+    {s : Set E} (hs : Convex ℝ s) : frontier (closure s) = frontier s := by
+  rw [frontier, frontier, closure_closure, hs.interior_closure]
 
 /-- The interior of a sum of convex sets with nonempty interiors is the sum of their
 interiors. -/
@@ -266,3 +277,24 @@ theorem starHull_subset {s : Set E} (hs : StarConvex 𝕜 y s) (hy : y ∈ s) (h
   exact hs.convexJoin_singleton_subset (insert_subset hy hK)
 
 end TopologicalSpace.Compacts
+
+open TopologicalSpace in
+/-- For an inducing map `j : U → E` whose range is star-convex about one of its points `y`, every
+compact subset `K₀` of `U` lies in a compact subset `K` whose image contains `y` and is star-convex
+about `y`: the preimage of the star hull about `y` of the image of `K₀`, which lies in the range of
+`j`. -/
+theorem Topology.IsInducing.exists_compacts_le_starConvex_image {𝕜 E U : Type*} [Ring 𝕜]
+    [PartialOrder 𝕜] [IsOrderedRing 𝕜] [TopologicalSpace 𝕜] [CompactIccSpace 𝕜] [AddCommGroup E]
+    [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E]
+    [TopologicalSpace U] {j : U → E} (hj : IsInducing j) {y : E} (hU : StarConvex 𝕜 y (range j))
+    (hy : y ∈ range j) (K₀ : Compacts U) :
+    ∃ K : Compacts U, K₀ ≤ K ∧ StarConvex 𝕜 y (j '' (K : Set U)) ∧ y ∈ j '' (K : Set U) := by
+  let S := (K₀.map j hj.continuous).starHull 𝕜 y
+  have hS : (S : Set E) ⊆ range j := Compacts.starHull_subset hU hy (image_subset_range _ _)
+  have hjS : j '' (j ⁻¹' S) = S := image_preimage_eq_of_subset hS
+  refine ⟨⟨j ⁻¹' S, hj.isCompact_preimage' S.isCompact hS⟩,
+    fun u hu ↦ Compacts.le_starHull 𝕜 y _ ⟨u, hu, rfl⟩, ?_, ?_⟩
+  · rw [Compacts.coe_mk, hjS]
+    exact Compacts.starConvex_starHull 𝕜 y _
+  · rw [Compacts.coe_mk, hjS]
+    exact Compacts.mem_starHull_self 𝕜 y _

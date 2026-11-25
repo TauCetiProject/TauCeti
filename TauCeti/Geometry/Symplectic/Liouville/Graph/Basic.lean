@@ -1,0 +1,356 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Symplectic.Liouville.Flow.Out
+public import TauCeti.Geometry.Symplectic.Liouville.Scaling
+public import Mathlib.Topology.Homotopy.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.Log
+
+/-!
+# Graphs over the boundary of a Liouville domain
+
+Let `Z` be a smooth complete vector field on a manifold `M`, the Liouville field of a one-form `α`,
+`ι_Z dα = α`, with flow `φ`, and let `ι : S → M` be a smooth map, typically the inclusion of the
+boundary `Σ` of a Liouville domain `W`. For a smooth positive function `f` on `S`, the
+**Liouville graph** of `f` (`TauCeti.liouvilleGraph`) is the map
+
+`j_f : S → M`,  `j_f(s) = φ_{log f(s)}(ι s)`,
+
+which pushes each point of `ι` along its Liouville trajectory to the radius `r = f(s)` of the
+symplectization `((0, ∞) × Σ, d(r α|_Σ))`, the coordinate `r` being `eᵗ` for the time `t` of the
+flow. Since the flow rescales the primitive and the primitive vanishes on its Liouville field, the
+graph pulls `α` back to `f` times its restriction to `ι`
+(`TauCeti.mpullback_liouvilleGraph_apply`):
+
+`j_f^* α = f ι^* α`.
+
+So every contact form `f ι^* α` defining the same cooriented contact structure as `ι^* α` is the
+restriction of the single ambient primitive `α` to the graph `j_f`. This is the graph
+construction of Barraud, Damian, Humilière and Oancea in their proof of Corollary E, which turns
+a closed Reeb orbit of `f ι^* α` into a closed characteristic of the hypersurface `j_f(S)`.
+
+The graph keeps the transversality of the Liouville field: if `ι` is an immersion and `Z` is
+transverse to it, then `j_f` is an immersion (`TauCeti.injective_mfderiv_liouvilleGraph`) and `Z`
+is transverse to it (`TauCeti.isTransverseAlong_liouvilleGraph`). Indeed the differential of
+`j_f` at `s` is `w ↦ dφₜ(d(log f)(w) Z + dι(w))`, and `dφₜ` carries `Z` to `Z`. For the boundary
+of a Liouville domain `W`, along which `Z` points outwards, transversality along `ι` is automatic
+(`TauCeti.IsLiouvilleDomain.isTransverseAlong`), and the graph is of restricted contact type with
+the same primitive and the same Liouville field
+(`TauCeti.IsLiouvilleDomain.isRestrictedContactType_liouvilleGraph`); on a completion of `W` the
+restriction of the primitive to it is a contact form
+(`TauCeti.IsLiouvilleCompletion.isContactForm_mpullback_liouvilleGraph`). For `f > 1` it lies
+outside `W` (`TauCeti.IsLiouvilleDomain.liouvilleGraph_notMem`), it is injective when `ι` is
+(`TauCeti.IsLiouvilleDomain.injective_liouvilleGraph`), hence a closed embedding when `S` is
+compact (`TauCeti.IsLiouvilleDomain.isClosedEmbedding_liouvilleGraph`). On a completion of `W`,
+the graph over a boundary point `ι s` with `f s ≥ 1` lies on the level `f s` of the radial
+coordinate (`TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_liouvilleGraph`). Moving `f`
+linearly to the constant `1` deforms the graph back to `ι` through the graphs of the functions
+`(1 - τ) f + τ` (`TauCeti.liouvilleGraphHomotopy`). Its intended application, not proved here, is
+to join each closed characteristic of `j_f(S)` to the corresponding closed Reeb orbit of
+`f ι^* α` on `Σ`.
+
+## Main definitions
+
+* `TauCeti.liouvilleGraph Z ι f`: the map `s ↦ φ_{log f(s)}(ι s)`.
+* `TauCeti.liouvilleGraphHomotopy`: the homotopy from `j_f` to `ι` through the graphs of the
+  functions `(1 - τ) f + τ`.
+
+## Main results
+
+* `TauCeti.mfderiv_liouvilleGraph_apply`: the differential `w ↦ dφₜ(d(log f)(w) Z + dι(w))`.
+* `TauCeti.mpullback_liouvilleGraph_apply`: `j_f^* α = f ι^* α`.
+* `TauCeti.injective_mfderiv_liouvilleGraph`, `TauCeti.isTransverseAlong_liouvilleGraph`: the
+  graph of an immersion transverse to `Z` is an immersion transverse to `Z`.
+* `TauCeti.IsLiouvilleDomain.isRestrictedContactType_liouvilleGraph`: a graph over the boundary of
+  a Liouville domain is of restricted contact type.
+* `TauCeti.IsLiouvilleCompletion.isContactForm_mpullback_liouvilleGraph`: on a completion, the
+  primitive restricts to a contact form on a graph over the boundary.
+* `TauCeti.IsLiouvilleDomain.liouvilleGraph_notMem`,
+  `TauCeti.IsLiouvilleDomain.injective_liouvilleGraph`,
+  `TauCeti.IsLiouvilleDomain.isClosedEmbedding_liouvilleGraph`: for `f > 1` it is an injective map
+  into the complement of the domain, and a closed embedding of a compact boundary.
+* `TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_liouvilleGraph`: on a completion, for a
+  boundary point `ι s` and `f s ≥ 1`, the radial coordinate of `j_f(s)` is `f(s)`.
+
+## References
+
+* J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
+  Applications to cotangent bundles*, arXiv:2404.07953, Corollary E and its proof (the graph of a
+  contact form in the symplectization of a hypersurface of restricted contact type).
+-/
+
+public section
+
+open Function Set
+open scoped Manifold
+
+namespace TauCeti
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  {Z : (x : M) → TangentSpace I x} {E' H' S : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} {ι : S → M} {f : S → ℝ}
+
+variable (Z ι f) in
+/-- The **Liouville graph** of a function `f` over a map `ι : S → M`: the point `ι s` flowed along
+the vector field `Z` for the time `log f(s)`. For the Liouville field of a primitive `α` and
+positive `f`, it pulls `α` back to `f ι^* α` (`TauCeti.mpullback_liouvilleGraph_apply`). -/
+noncomputable def liouvilleGraph (s : S) : M :=
+  flowOf Z (Real.log (f s)) (ι s)
+
+@[simp]
+theorem liouvilleGraph_apply (s : S) : liouvilleGraph Z ι f s = flowOf Z (Real.log (f s)) (ι s) :=
+  (rfl)
+
+/-- The Liouville graph as a function: `s ↦ φ_{log f(s)}(ι s)`. -/
+theorem liouvilleGraph_def : liouvilleGraph Z ι f = fun s ↦ flowOf Z (Real.log (f s)) (ι s) :=
+  funext liouvilleGraph_apply
+
+/-- The Liouville graph of the constant function `1` is the map itself. -/
+@[simp]
+theorem liouvilleGraph_one : liouvilleGraph Z ι (fun _ ↦ 1) = ι :=
+  funext fun s ↦ by simp
+
+section Domain
+
+variable [IsManifold I (⊤ : ℕ∞) M] [T2Space M] {ω : SmoothTwoForm I M} {α : SmoothForm I M ℝ 1}
+  {W : Set M}
+
+namespace IsLiouvilleDomain
+
+variable [I.Boundaryless]
+
+/-- **A graph over the boundary of a Liouville domain lies outside the domain.** If `ι s` is not an
+interior point of the Liouville domain `W` and `f s > 1`, then the Liouville graph of `f` at `s`,
+the point `ι s` flowed for the positive time `log f(s)`, is not in `W`. -/
+theorem liouvilleGraph_notMem (h : IsLiouvilleDomain ω α W)
+    (hZ : RoughForm.interior Z ω.val = α.val) {s : S}
+    (hp : (Real.log (f s), ι s) ∈ flowDomain Z) (hιW : ι s ∉ interior W) (hfs : 1 < f s) :
+    liouvilleGraph Z ι f s ∉ W :=
+  h.flowOf_notMem hZ hιW (Real.log_pos hfs) hp
+
+/-- **A graph over the boundary of a Liouville domain is injective** when the boundary map `ι` is,
+since the Liouville flow-out `(t, s) ↦ φₜ(ι s)` of the boundary is injective. -/
+theorem injective_liouvilleGraph (h : IsLiouvilleDomain ω α W)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hc : IsCompleteVectorField Z) (hι : Injective ι)
+    (hιW : ∀ s, ι s ∈ frontier W) : Injective (liouvilleGraph Z ι f) := fun s s' hss' ↦
+  congrArg Prod.snd (h.injective_flowOf_comp hZ hc hι hιW
+    (a₁ := (Real.log (f s), s)) (a₂ := (Real.log (f s'), s')) hss')
+
+end IsLiouvilleDomain
+
+/-- **A graph over the boundary lies on the level `f` of the radial coordinate.** On a completion of
+the Liouville domain `W`, the radial coordinate of the Liouville graph of `f` at a boundary point
+`ι s` is `f s`, as soon as `f s ≥ 1`. -/
+theorem IsLiouvilleCompletion.liouvilleRadialCoordinate_liouvilleGraph [FiniteDimensional ℝ E]
+    [I.Boundaryless] (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.val = α.val) {s : S} (hιW : ι s ∈ frontier W) (hfs : 1 ≤ f s) :
+    liouvilleRadialCoordinate Z W (liouvilleGraph Z ι f s) = f s := by
+  rw [liouvilleGraph_apply, h.liouvilleRadialCoordinate_flowOf hZ hιW (Real.log_nonneg hfs),
+    Real.exp_log (zero_lt_one.trans_le hfs)]
+
+end Domain
+
+variable [TopologicalSpace S] [ChartedSpace H' S]
+
+variable [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M]
+
+section Flow
+
+variable [IsManifold I 1 M] (hZ : ContMDiff I I.tangent 1 (T% Z)) (hc : IsCompleteVectorField Z)
+include hZ hc
+
+/-- The Liouville graph of a continuous nowhere vanishing function over a continuous map is
+continuous. -/
+theorem continuous_liouvilleGraph (hι : Continuous ι) (hf : Continuous f) (hf₀ : ∀ s, f s ≠ 0) :
+    Continuous (liouvilleGraph Z ι f) := by
+  rw [liouvilleGraph_def, flowOf_eq_globalFlow hZ hc]
+  exact (contMDiff_globalFlow_uncurry hc le_rfl hZ).continuous.comp
+    ((hf.log hf₀).prodMk hι)
+
+/-- **The radial homotopy.** For a continuous positive function `f`, the Liouville graphs of the
+functions `(1 - τ) f + τ`, `τ ∈ [0, 1]`, form a homotopy from the Liouville graph of `f` to the map
+`ι` itself, the graph of the constant `1`. Composed with a loop of `S`, it joins the loop of the
+graph to the loop of `ι` along the trajectories of `Z`. -/
+noncomputable def liouvilleGraphHomotopy (hι : Continuous ι) (hf : Continuous f)
+    (hf₀ : ∀ s, 0 < f s) :
+    ContinuousMap.Homotopy ⟨liouvilleGraph Z ι f,
+      continuous_liouvilleGraph hZ hc hι hf fun s ↦ (hf₀ s).ne'⟩ ⟨ι, hι⟩ where
+  toFun := liouvilleGraph Z (ι ∘ Prod.snd) fun p : unitInterval × S ↦ (1 - (p.1 : ℝ)) * f p.2 + p.1
+  continuous_toFun := by
+    have hpos (p : unitInterval × S) : 0 < (1 - (p.1 : ℝ)) * f p.2 + p.1 := by
+      nlinarith [unitInterval.nonneg p.1, hf₀ p.2,
+        mul_nonneg (sub_nonneg.2 (unitInterval.le_one p.1)) (hf₀ p.2).le]
+    exact continuous_liouvilleGraph hZ hc (hι.comp continuous_snd) (by fun_prop)
+      fun p ↦ (hpos p).ne'
+  map_zero_left s := by simp
+  map_one_left s := by simp
+
+@[simp]
+theorem liouvilleGraphHomotopy_apply (hι : Continuous ι) (hf : Continuous f) (hf₀ : ∀ s, 0 < f s)
+    (p : unitInterval × S) :
+    liouvilleGraphHomotopy hZ hc hι hf hf₀ p =
+      liouvilleGraph Z ι (fun s ↦ (1 - (p.1 : ℝ)) * f s + p.1) p.2 :=
+  (rfl)
+
+omit hc in
+/-- **The differential of the Liouville graph.** At a point `s` where `ι` and `f` are
+differentiable and `f s ≠ 0`, it sends `w` to `dφₜ(d(log f)(w) Z + dι(w))`, where
+`t = log f(s)`, provided `ι s` stays in the flow domain up to time `t`. -/
+theorem mfderiv_liouvilleGraph_apply {s : S} (hp : (Real.log (f s), ι s) ∈ flowDomain Z)
+    (hι : MDifferentiableAt J I ι s) (hf : MDifferentiableAt J 𝓘(ℝ) f s) (hf₀ : f s ≠ 0)
+    (w : TangentSpace J s) :
+    mfderiv J I (liouvilleGraph Z ι f) s w =
+      mfderiv I I (flowOf Z (Real.log (f s))) (ι s)
+        (mvfderiv J (fun s ↦ Real.log (f s)) s w • Z (ι s) + mfderiv J I ι s w) := by
+  have hτ : MDifferentiableAt J 𝓘(ℝ) (fun s ↦ Real.log (f s)) s :=
+    (Real.differentiableAt_log hf₀).comp_mdifferentiableAt hf
+  rw [liouvilleGraph_def, mfderiv_flowOf_comp_prodMk_apply hZ hτ hι hp w,
+    map_add, map_smul, mfderiv_flowOf_apply_self hZ hp]
+
+/-- **The graph of an immersion is an immersion.** Let `ι` be transverse to `Z`, and at `s` let
+`ι` have injective differential, `f` be differentiable and `f s ≠ 0`. Then the Liouville graph of
+`f` over `ι` has injective differential at `s`. -/
+theorem injective_mfderiv_liouvilleGraph {s : S} (hι : MDifferentiableAt J I ι s)
+    (hf : MDifferentiableAt J 𝓘(ℝ) f s) (hf₀ : f s ≠ 0) (hιs : Injective (mfderiv J I ι s))
+    (hZι : IsTransverseAlong J Z ι) : Injective (mfderiv J I (liouvilleGraph Z ι f) s) := by
+  refine (injective_iff_map_eq_zero _).2 fun w hw ↦ ?_
+  rw [mfderiv_liouvilleGraph_apply hZ (hc.mem_flowDomain _ _) hι hf hf₀] at hw
+  exact (hZι.eq_zero_of_smul_add_eq_zero hιs <| injective_mfderiv_flowOf hZ hc
+    (Real.log (f s)) (ι s) (hw.trans (map_zero _).symm)).2
+
+/-- **The graph keeps transversality.** If `ι` is a differentiable immersion transverse to `Z`,
+then `Z` is transverse to the Liouville graph of every differentiable nowhere vanishing function
+over `ι`. -/
+theorem isTransverseAlong_liouvilleGraph (hι : MDifferentiable J I ι)
+    (hf : MDifferentiable J 𝓘(ℝ) f) (hf₀ : ∀ s, f s ≠ 0)
+    (hιs : ∀ s, Injective (mfderiv J I ι s)) (hZι : IsTransverseAlong J Z ι) :
+    IsTransverseAlong J Z (liouvilleGraph Z ι f) := by
+  refine isTransverseAlong_iff.2 fun s ⟨w, hw⟩ ↦ ?_
+  rw [ContinuousLinearMap.coe_coe] at hw
+  set t := Real.log (f s)
+  set a := mvfderiv J (fun s ↦ Real.log (f s)) s w
+  -- `Z` at the graph point is the image of `Z (ι s)` under `dφₜ`.
+  have hZt : Z (liouvilleGraph Z ι f s) = mfderiv I I (flowOf Z t) (ι s) (Z (ι s)) :=
+    (mfderiv_flowOf_apply_self hZ (hc.mem_flowDomain t (ι s))).symm
+  rw [mfderiv_liouvilleGraph_apply hZ (hc.mem_flowDomain t (ι s)) (hι s) (hf s) (hf₀ s), hZt] at hw
+  have h : (a - 1) • Z (ι s) + mfderiv J I ι s w = 0 := by
+    refine injective_mfderiv_flowOf hZ hc t (ι s) ?_
+    rw [liouvilleGraph_apply] at hw
+    -- Keep `mvfderiv` folded, so that its value stays a real scalar.
+    simpa [-mvfderiv_apply_eq_mfderiv_apply, sub_smul, sub_add_eq_add_sub, map_sub, a] using
+      sub_eq_zero.2 hw
+  obtain ⟨ha, hw0⟩ := hZι.eq_zero_of_smul_add_eq_zero (hιs s) h
+  subst hw0
+  rw [show a = 0 from map_zero _, zero_sub] at ha
+  exact absurd ha (by norm_num)
+
+end Flow
+
+/-- **The graph restricts the primitive to `f` times its restriction.** If `Z` is the Liouville
+field of a differentiable one-form `α`, `ι_Z dα = α`, then the Liouville graph
+`s ↦ φ_{log f(s)}(ι s)` pulls `α` back to `f ι^* α` at every point `s` where `ι` and `f` are
+differentiable, `f s > 0` and `ι s` stays in the flow domain up to time `log f(s)`: the flow
+rescales the primitive by `e^{log f} = f`, and the primitive vanishes on its Liouville field. For a
+smooth form `α`, apply it to `α.val` with `α.mdifferentiable`. -/
+theorem mpullback_liouvilleGraph_apply [IsManifold I 2 M] (hZ : ContMDiff I I.tangent 1 (T% Z))
+    {α : RoughForm I M ℝ 1} {σ : RoughForm I M ℝ 2}
+    (hα : MDifferentiable I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
+      (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)))
+    (hdα : mextDeriv α = σ) (hZα : σ.interior Z = α) {s : S}
+    (hp : (Real.log (f s), ι s) ∈ flowDomain Z) (hι : MDifferentiableAt J I ι s)
+    (hf : MDifferentiableAt J 𝓘(ℝ) f s) (hfs : 0 < f s) :
+    mpullback J I (liouvilleGraph Z ι f) α s = f s • mpullback J I ι α s := by
+  -- The flow rescales the primitive: `(φₜ^* α)_x = eᵗ α_x`.
+  have hscale := mpullback_flowOf_apply_eq_exp_smul_of_interior_eq hZ hα hdα hZα hp
+  refine ContinuousAlternatingMap.ext fun v ↦ ?_
+  obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
+  have hs := congrArg (fun β ↦ β ![mvfderiv J (fun s ↦ Real.log (f s)) s w • Z (ι s) +
+    mfderiv J I ι s w]) hscale
+  simp only [mpullback_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
+    Matrix.cons_val_fin_one, ← Matrix.vec_single_eq_const] at hs ⊢
+  -- Differentiate the graph, then use that `α` is linear and vanishes on `Z`.
+  rw [mfderiv_liouvilleGraph_apply hZ hp hι hf hfs.ne', liouvilleGraph_apply, hs]
+  simp [-mvfderiv_apply_eq_mfderiv_apply, Real.exp_log hfs, ContinuousAlternatingMap.vecCons_add,
+    ContinuousAlternatingMap.vecCons_smul, RoughForm.apply_eq_zero_of_interior_eq hZα]
+
+/-- The Liouville graph of a `C^n` nowhere vanishing function over a `C^n` map, for a complete
+`C^n` field `Z` and `1 ≤ n`, is `C^n`. -/
+theorem contMDiff_liouvilleGraph {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I 1 M] [IsManifold I n M]
+    (hZ : ContMDiff I I.tangent n (T% Z)) (hc : IsCompleteVectorField Z) (hι : ContMDiff J I n ι)
+    (hf : ContMDiff J 𝓘(ℝ) n f) (hf₀ : ∀ s, f s ≠ 0) :
+    ContMDiff J I n (liouvilleGraph Z ι f) := fun _ ↦
+  contMDiffAt_flowOf_comp hn hZ ((hf.log hf₀).contMDiffAt) hι.contMDiffAt (hc.mem_flowDomain _ _)
+
+namespace IsLiouvilleDomain
+
+variable [IsManifold I (⊤ : ℕ∞) M] {ω : SmoothTwoForm I M} {α : SmoothForm I M ℝ 1} {W : Set M}
+
+/-- **A graph over the boundary of a Liouville domain is of restricted contact type.** Let `ι` be a
+differentiable immersion into the frontier of a Liouville domain `W` whose Liouville field `Z` is
+complete. For every differentiable nowhere vanishing function `f`, the Liouville graph of `f` over
+`ι` is of restricted contact type, with the same primitive `α` and the same Liouville field `Z`.
+For positive `f` its restriction of `α` is `f ι^* α` (`TauCeti.mpullback_liouvilleGraph_apply`). -/
+theorem isRestrictedContactType_liouvilleGraph (h : IsLiouvilleDomain ω α W)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hc : IsCompleteVectorField Z)
+    (hι : MDifferentiable J I ι) (hιs : ∀ s, Injective (mfderiv J I ι s))
+    (hιW : ∀ s, ι s ∈ frontier W) (hf : MDifferentiable J 𝓘(ℝ) f) (hf₀ : ∀ s, f s ≠ 0) :
+    IsRestrictedContactType J ω.val α.val (liouvilleGraph Z ι f) :=
+  isRestrictedContactType_iff.2 ⟨h.mextDeriv_eq, Z, h.contMDiff_of_interior_eq hZ, hZ,
+    isTransverseAlong_liouvilleGraph ((h.contMDiff_of_interior_eq hZ).of_le (by simp)) hc hι hf
+      hf₀ hιs (h.isTransverseAlong hZ hι hιW)⟩
+
+/-- **A graph over a compact boundary is a closed embedding.** If `S` is compact and `ι` is an
+injective continuous map into the frontier of a Liouville domain whose Liouville field `Z` is
+smooth and complete, then the Liouville graph of every continuous nowhere vanishing function over
+`ι` is a closed embedding of `S` into `M`. -/
+theorem isClosedEmbedding_liouvilleGraph [CompactSpace S] (h : IsLiouvilleDomain ω α W)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hc : IsCompleteVectorField Z) (hι : Continuous ι)
+    (hιi : Injective ι) (hιW : ∀ s, ι s ∈ frontier W) (hf : Continuous f) (hf₀ : ∀ s, f s ≠ 0) :
+    Topology.IsClosedEmbedding (liouvilleGraph Z ι f) :=
+  (continuous_liouvilleGraph ((h.contMDiff_of_interior_eq hZ).of_le (by simp)) hc hι hf
+    hf₀).isClosedEmbedding (h.injective_liouvilleGraph hZ hc hιi hιW)
+
+end IsLiouvilleDomain
+
+namespace IsLiouvilleCompletion
+
+variable [IsManifold I (⊤ : ℕ∞) M] {ω : SmoothTwoForm I M} {α : SmoothForm I M ℝ 1} {W : Set M}
+
+/-- The Liouville graph of a smooth nowhere vanishing function over a smooth map is smooth, on a
+completion of a Liouville domain, whose Liouville field is smooth and complete. -/
+theorem contMDiff_liouvilleGraph (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
+    (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f) (hf₀ : ∀ s, f s ≠ 0) :
+    ContMDiff J I (⊤ : ℕ∞) (liouvilleGraph Z ι f) :=
+  TauCeti.contMDiff_liouvilleGraph le_top (h.contMDiff_of_interior_eq hZ)
+    (h.isCompleteVectorField hZ) hι hf hf₀
+
+/-- **A graph over the boundary of a Liouville domain is a contact hypersurface.** Let `ι` be a
+smooth immersion into the frontier of a Liouville domain `W`, from a manifold of one dimension
+less, on a completion of `W`. For every smooth nowhere vanishing function `f`, the restriction
+`j^* α` of the primitive to the Liouville graph `j` of `f` over `ι` is a contact form; for positive
+`f` it is `f ι^* α` (`TauCeti.mpullback_liouvilleGraph_apply`). -/
+theorem isContactForm_mpullback_liouvilleGraph [IsManifold J (⊤ : ℕ∞) S]
+    (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.val = α.val)
+    (hι : ContMDiff J I (⊤ : ℕ∞) ι) (hιW : ∀ s, ι s ∈ frontier W)
+    (hιs : ∀ s, Injective (mfderiv J I ι s))
+    (hdim : Module.finrank ℝ E' + 1 = Module.finrank ℝ E) (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f)
+    (hf₀ : ∀ s, f s ≠ 0) :
+    (SmoothForm.mpullback (liouvilleGraph Z ι f) (h.contMDiff_liouvilleGraph hZ hι hf hf₀)
+      α).IsContactForm := by
+  have hZs := h.contMDiff_of_interior_eq hZ
+  have hc := h.isCompleteVectorField hZ
+  exact (h.isRestrictedContactType_liouvilleGraph hZ hc (hι.mdifferentiable (by simp)) hιs hιW
+    (hf.mdifferentiable (by simp)) hf₀).isContactType.isContactForm_mpullback h.isNondegenerate _
+    (fun s ↦ injective_mfderiv_liouvilleGraph (hZs.of_le (by simp)) hc
+      ((hι s).mdifferentiableAt (by simp)) ((hf s).mdifferentiableAt (by simp)) (hf₀ s) (hιs s)
+      (h.isTransverseAlong hZ (hι.mdifferentiable (by simp)) hιW)) hdim
+
+end IsLiouvilleCompletion
+
+end TauCeti

@@ -114,6 +114,8 @@ oriented from `γ` to its centre, as for `TauCeti.capArea`; the capped action
 
 * `TauCeti.Floer.IsSmoothBasedCap.homotopyClass_vsub_homotopyClass_toMul`: two smooth based caps
   differ by the sphere represented by their concatenation.
+* `TauCeti.Floer.IsSmoothBasedCap.exists_genLoop_homotopyClass_vsub_homotopyClass`: a
+  generalized loop representing the sphere bounded by two smooth based caps.
 * `TauCeti.Floer.IsSmoothBasedCap.sphereIntegral_homotopyClass_vsub_homotopyClass`: two smooth
   based caps differ by a sphere whose integral is the difference of their integrals.
 * `TauCeti.Floer.RawCap.area_homotopyClass`: the area of the raw cap of a smooth based cap is its
@@ -416,6 +418,17 @@ theorem homotopyClass_vsub_homotopyClass_toMul (hu : IsSmoothBasedCap I γ u)
   rw [hβ, toMul_ofMul, hrep, fundamentalGroupLoopSpaceMulEquiv_fromPath_mk]
   exact congrArg _ <| GenLoop.ext _ _ fun y ↦
     (fromDoubleLoop_trans_reparam_apply hu hu' y).trans (hp y).symm
+
+/-- For smooth based caps `u` and `u'` of the same loop, some generalized loop restricts their
+concatenation `rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u'` to the unit square, and it
+represents the sphere by which their raw caps differ. -/
+theorem exists_genLoop_homotopyClass_vsub_homotopyClass (hu : IsSmoothBasedCap I γ u)
+    (hu' : IsSmoothBasedCap I γ u') :
+    ∃ p : Ω^ (Fin 2) M x,
+      (∀ y, p y = rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u' ((y 0 : ℝ), (y 1 : ℝ))) ∧
+        hu'.homotopyClass -ᵥ hu.homotopyClass = Additive.ofMul ⟦p⟧ :=
+  ⟨_, fromDoubleLoop_trans_reparam_apply hu hu',
+    hu.homotopyClass_vsub_homotopyClass_toMul hu' (fromDoubleLoop_trans_reparam_apply hu hu')⟩
 
 /-- **Two smooth caps differ by the sphere they bound.** For smooth based caps `u` and `u'` of the
 same loop, the integral of a closed `C¹` two-form over the sphere by which their raw caps differ
