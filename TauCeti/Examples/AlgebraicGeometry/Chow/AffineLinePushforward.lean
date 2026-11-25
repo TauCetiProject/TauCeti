@@ -29,17 +29,12 @@ universe u
 
 variable (k : Type u) [Field k]
 
-/-- `Spec k` over itself through the identity. -/
-noncomputable instance instOverSpecSelf : (Spec (.of k)).Over (Spec (.of k)) := ⟨𝟙 _⟩
-
-instance isOver_affineLine : (Spec (.of k[X]) ↘ Spec (.of k)).IsOver (Spec (.of k)) :=
-  ⟨Category.comp_id _⟩
-
-instance locallyOfFiniteType_affineLine : LocallyOfFiniteType (Spec (.of k[X]) ↘ Spec (.of k)) :=
-  LocallyOfFiniteType.Spec_algebraMap
-
-instance locallyOfFiniteType_self : LocallyOfFiniteType (Spec (.of k) ↘ Spec (.of k)) :=
-  inferInstanceAs (LocallyOfFiniteType (𝟙 _))
+/-- The structure morphism `𝔸¹_k ⟶ Spec k` lies over `Spec k`, where `Spec k` is over itself
+through Mathlib's `specOverSpec`. Local, since only this example needs it to push cycles forward
+along the structure morphism. -/
+local instance isOver_affineLine : (Spec (.of k[X]) ↘ Spec (.of k)).IsOver (Spec (.of k)) :=
+  ⟨by rw [specOverSpec_over (A := .of k), Algebra.algebraMap_self, CommRingCat.ofHom_id,
+    Spec.map_id, Category.comp_id]⟩
 
 /-- The zero-cycle `[0]` of the origin of the affine line. -/
 noncomputable abbrev originCycle [DecidableEq (Spec (.of k[X]))] :
