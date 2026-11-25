@@ -11,20 +11,28 @@ public import TauCeti.CategoryTheory.Comma.Over
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.EqToHom
 
 /-!
-# Base change in over categories: coherence, faithfulness, and epimorphism preservation
+# Base change in over categories: coherence, commuting squares, faithfulness, and epimorphisms
 
 Mathlib identifies base change `Over.pullback` along an identity with the identity functor
 (`Over.pullbackId`) and base change along a composite with the composite of base changes
 (`Over.pullbackComp`). This file records that these identifications are coherent, up to the
-equalities `f ≫ 𝟙 Y = f` and `f ≫ g ≫ h = (f ≫ g) ≫ h`:
+equalities `f ≫ 𝟙 Y = f`, `𝟙 X ≫ f = f` and `f ≫ g ≫ h = (f ≫ g) ≫ h`:
 
 * `CategoryTheory.Over.pullbackComp_id_inv_app_comp_eqToHom`: `pullbackComp f (𝟙 Y)` is the base
   change along `f` of `pullbackId`;
+* `CategoryTheory.Over.pullbackComp_id_left_hom_app_comp_pullbackId`: `pullbackComp (𝟙 X) f`
+  followed by `pullbackId` is the identity of base change along `f`;
 * `CategoryTheory.Over.pullbackComp_comp_inv_app_comp_eqToHom`: the two identifications of base
   change along `f ≫ g ≫ h` with the composite of the three base changes agree;
 * `CategoryTheory.Over.pullback_iso_triangle`: for an isomorphism `e : X ≅ Y`, the unit and
   counit built from `pullbackId` and `pullbackComp` satisfy the triangle identity for
   `pullback e.hom` and `pullback e.inv`.
+
+For a commuting square `i' ≫ g = t ≫ i`, the natural isomorphism
+`CategoryTheory.Over.pullbackPullbackIsoOfComm` identifies base change along `g` and then along
+`i'` with base change along `i` and then along `t`;
+when `i` and `i'` are points, this says the fiber at `i'` of the base change along `g` is the base
+change along `t` of the fiber at `i`.
 
 It also establishes faithfulness and epimorphism preservation for the base-change functors
 `Over.pullback f : Over Y ⥤ Over X` and `Over.star X : C ⥤ Over X`:
@@ -75,6 +83,20 @@ theorem pullbackComp_id_inv_app_comp_eqToHom {X Y : C} (f : X ⟶ Y) [HasPullbac
   · simp [pullbackComp, pullbackId, eqToHom_comp_pullback_fst A.hom (Category.comp_id f)]
   · simp [pullbackComp, pullbackId, eqToHom_comp_pullback_snd A.hom (Category.comp_id f)]
 
+/-- Base change along `f` followed by base change along `𝟙 X` is base change along `𝟙 X ≫ f`: the
+composition isomorphism `pullbackComp (𝟙 X) f` followed by `pullbackId` is the identity, up to the
+equality `𝟙 X ≫ f = f`. -/
+@[reassoc]
+theorem pullbackComp_id_left_hom_app_comp_pullbackId {X Y : C} (f : X ⟶ Y) [HasPullbacksAlong f]
+    (A : Over Y) :
+    (pullbackComp (𝟙 X) f).hom.app A ≫ pullbackId.hom.app ((pullback f).obj A) =
+      eqToHom (by simp) := by
+  -- As above, the identity is checked on the two projections out of `A ×_Y X`.
+  ext1
+  apply pullback.hom_ext
+  · simp [pullbackComp, pullbackId, eqToHom_comp_pullback_fst A.hom (Category.id_comp f)]
+  · simp [pullbackComp, pullbackId, eqToHom_comp_pullback_snd A.hom (Category.id_comp f)]
+
 /-- The two ways of identifying base change along `f ≫ g ≫ h` with the composite of the base
 changes along `h`, `g` and `f` agree, up to the equality `f ≫ g ≫ h = (f ≫ g) ≫ h`. -/
 @[reassoc]
@@ -108,6 +130,51 @@ theorem pullback_iso_triangle {X Y : C} (e : X ≅ Y) (A : Over Y) :
   · exact (Over.w _).trans (Category.id_comp _).symm
 
 end Coherence
+
+section CommSquare
+
+variable {S S' s s' : C} {g : S' ⟶ S} {i : s ⟶ S} {i' : s' ⟶ S'} {t : s' ⟶ s}
+  [HasPullbacksAlong g] [HasPullbacksAlong i] [HasPullbacksAlong i'] [HasPullbacksAlong t]
+
+/-- For a commuting square `i' ≫ g = t ≫ i`, base change along `g : S' ⟶ S` and then along
+`i' : s' ⟶ S'` is naturally isomorphic to base change along `i : s ⟶ S` and then along
+`t : s' ⟶ s`. When `i` and `i'` are points, this is the **fiber of a base change**: the fiber at
+`i'` of the base change of `A` along `g` is the base change along `t` of the fiber of `A` at `i`. -/
+noncomputable def pullbackPullbackIsoOfComm (h : i' ≫ g = t ≫ i) :
+    pullback g ⋙ pullback i' ≅ pullback i ⋙ pullback t :=
+  (pullbackComp i' g).symm ≪≫ eqToIso (by simp only [h]) ≪≫ pullbackComp t i
+
+/-- `pullbackPullbackIsoOfComm` is `pullbackComp i' g` inverted, followed by `pullbackComp t i`,
+up to the equality `i' ≫ g = t ≫ i`. -/
+theorem pullbackPullbackIsoOfComm_hom_app (h : i' ≫ g = t ≫ i) (A : Over S) :
+    (pullbackPullbackIsoOfComm h).hom.app A =
+      (pullbackComp i' g).inv.app A ≫ eqToHom (by simp only [h]) ≫
+        (pullbackComp t i).hom.app A := by
+  simp [pullbackPullbackIsoOfComm, eqToHom_app]
+
+/-- `pullbackPullbackIsoOfComm` commutes with the projections to `A`. -/
+@[reassoc (attr := simp)]
+theorem pullbackPullbackIsoOfComm_hom_app_left_fst (h : i' ≫ g = t ≫ i) (A : Over S) :
+    ((pullbackPullbackIsoOfComm h).hom.app A).left ≫ pullback.fst (pullback.snd A.hom i) t ≫
+        pullback.fst A.hom i =
+      pullback.fst (pullback.snd A.hom g) i' ≫ pullback.fst A.hom g := by
+  simp only [pullbackPullbackIsoOfComm_hom_app, comp_left, eqToHom_left, Category.assoc]
+  have h₁ : ((pullbackComp t i).hom.app A).left ≫ pullback.fst (pullback.snd A.hom i) t ≫
+      pullback.fst A.hom i = pullback.fst A.hom (t ≫ i) := by
+    simp [pullbackComp]
+  have h₂ : ((pullbackComp i' g).inv.app A).left ≫ pullback.fst A.hom (i' ≫ g) =
+      pullback.fst (pullback.snd A.hom g) i' ≫ pullback.fst A.hom g := by
+    simp [pullbackComp]
+  rw [h₁, eqToHom_comp_pullback_fst A.hom h, h₂]
+
+/-- `pullbackPullbackIsoOfComm` commutes with the projections to `s'`. -/
+@[reassoc (attr := simp)]
+theorem pullbackPullbackIsoOfComm_hom_app_left_snd (h : i' ≫ g = t ≫ i) (A : Over S) :
+    ((pullbackPullbackIsoOfComm h).hom.app A).left ≫ pullback.snd (pullback.snd A.hom i) t =
+      pullback.snd (pullback.snd A.hom g) i' :=
+  Over.w ((pullbackPullbackIsoOfComm h).hom.app A)
+
+end CommSquare
 
 /-- Base change `Over.pullback f : Over Y ⥤ Over X` preserves epimorphisms whenever `Over.forget Y`
 does and epimorphisms in `C` are stable under base change. -/

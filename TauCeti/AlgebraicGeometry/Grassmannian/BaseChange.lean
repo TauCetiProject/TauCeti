@@ -36,7 +36,7 @@ The general form serves modules `M'` which are base changes without being tensor
 construction: for affine opens `V ≤ U` of a scheme `X` and a quasi-coherent `𝒪_X`-module `E`,
 restriction induces an isomorphism `Γ(X, V) ⊗[Γ(X, U)] Γ(E, U) ≃ₗ[Γ(X, V)] Γ(E, V)`, but the two
 modules are not definitionally identified
-(`TauCeti.AlgebraicGeometry.Grassmannian.Relative`).
+(`TauCeti.AlgebraicGeometry.Grassmannian.Relative.Basic`).
 
 ## Main definitions
 

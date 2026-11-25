@@ -98,8 +98,8 @@ of morphisms into `M.model` are morphisms into the base-changed model. -/
 def baseChange [Smooth g] (sq : IsPullback j' g' g j) (M : NeronModel j A) :
     NeronModel j' ((Over.pullback g').obj A) where
   model := (Over.pullback g).obj M.model
-  genericIso := ((Over.pullbackComp j' g).symm ≪≫ eqToIso (by simp only [sq.w]) ≪≫
-    Over.pullbackComp g' j).app M.model ≪≫ (Over.pullback g').mapIso M.genericIso
+  genericIso := (Over.pullbackPullbackIsoOfComm sq.w).app M.model ≪≫
+    (Over.pullback g').mapIso M.genericIso
   smooth := by dsimp; infer_instance
   isSeparated := by dsimp; infer_instance
   quasiCompact := by dsimp; infer_instance
@@ -113,8 +113,8 @@ theorem baseChange_model [Smooth g] (sq : IsPullback j' g' g j) (M : NeronModel 
 @[simp]
 theorem baseChange_genericIso_hom [Smooth g] (sq : IsPullback j' g' g j) (M : NeronModel j A) :
     (M.baseChange sq).genericIso.hom =
-      ((Over.pullbackComp j' g).inv ≫ eqToHom (by simp only [sq.w]) ≫
-        (Over.pullbackComp g' j).hom).app M.model ≫ (Over.pullback g').map M.genericIso.hom :=
+      (Over.pullbackPullbackIsoOfComm sq.w).hom.app M.model ≫
+        (Over.pullback g').map M.genericIso.hom :=
   (rfl)
 
 /-- Base change commutes with extension of morphisms to Néron models: the base change of the

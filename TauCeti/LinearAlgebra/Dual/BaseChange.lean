@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import TauCeti.LinearAlgebra.TensorProduct.Tower
 import Mathlib.LinearAlgebra.Contraction
+import Mathlib.RingTheory.Localization.BaseChange
 import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
@@ -27,10 +28,13 @@ is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
 * `TauCeti.Module.Dual.baseChangeEvaluation_one_tmul`: evaluation at a scalar-extended
   functional with coefficient one is its base change.
 * `TauCeti.Module.Dual.baseChangeEvaluation_tmul`: its value on two pure tensors.
+* `AlgHom.baseChangeEvaluation_rTensor`: naturality of evaluation in the scalar algebra.
 * `Module.Dual.baseChangeEvaluation_one_tmul_baseChange`: naturality of evaluation
   with respect to a base-changed linear map.
 * `TauCeti.Module.Dual.baseChangeEvaluation_comp_baseChange_dualMap`: naturality of
   `baseChangeEvaluation` with respect to dual maps.
+* `Module.Dual.baseChange_rTensor`: base change of a functional is compatible with a change of
+  coefficients `A ⟶ B`.
 * `Module.Dual.baseChange_apply_one_tmul`, `Module.Dual.baseChange_apply_toAddMonoidHom_mk_one`,
   `Module.Dual.baseChange_apply_one`: the value of a base-changed functional at `1 ⊗ m`, at
   `(TensorProduct.mk ℤ A M 1).toAddMonoidHom m`, and at the unit of a base-changed algebra.
@@ -45,6 +49,8 @@ is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
   coordinates in the base-changed basis.
 * `TauCeti.Module.Dual.eq_of_baseChange_eq`: base changes of all dual elements jointly
   separate vectors when the original module is projective.
+* `TauCeti.Module.Dual.eq_zero_of_forall_baseChange_eq_zero`: base changes to a fraction ring of
+  a set of functionals separating points separate points.
 
 ## References
 
@@ -96,6 +102,21 @@ theorem baseChangeEvaluation_tmul (a b : A) (φ : Module.Dual R M) (m : M) :
   rw [Algebra.algebraMap_self_apply]
   ac_rfl
 
+/-- Scalar-extended evaluation is natural in the scalar algebra: extending scalars along
+`f : A →ₐ[R] B` and then evaluating is `f` of the evaluation over `A`. -/
+theorem _root_.AlgHom.baseChangeEvaluation_rTensor {B : Type*} [CommSemiring B] [Algebra R B]
+    (f : A →ₐ[R] B) (ξ : A ⊗[R] Module.Dual R M) (v : A ⊗[R] M) :
+    baseChangeEvaluation (R := R) (M := M) (A := B)
+        (LinearMap.rTensor (Module.Dual R M) f.toLinearMap ξ)
+        (LinearMap.rTensor M f.toLinearMap v) =
+      f (baseChangeEvaluation (R := R) (M := M) (A := A) ξ v) := by
+  induction ξ using TensorProduct.inductionOn with
+  | add ξ ξ' hξ hξ' => simp only [map_add, LinearMap.add_apply, hξ, hξ']
+  | tmul a φ =>
+    induction v using TensorProduct.inductionOn with
+    | add v v' hv hv' => simp only [map_add, hv, hv']
+    | tmul b m => simp [map_mul]
+
 /-- Evaluation against a base-changed functional is natural with respect to the base change of
 a linear map. -/
 @[simp]
@@ -130,6 +151,18 @@ theorem _root_.Module.Dual.baseChange_apply_toAddMonoidHom_mk_one {M A : Type*} 
     φ.baseChange A ((TensorProduct.mk ℤ A M 1).toAddMonoidHom m) = (φ m : A) := by
   rw [LinearMap.toAddMonoidHom_coe, TensorProduct.mk_apply,
     Module.Dual.baseChange_apply_one_tmul, eq_intCast]
+
+/-- Base change of a functional is compatible with a change of coefficients `A ⟶ B`: evaluating
+the base change to `B` on the image of `v : A ⊗[R] M` is the image in `B` of the base change to
+`A` evaluated on `v`. -/
+theorem _root_.Module.Dual.baseChange_rTensor {B : Type*} [CommSemiring B] [Algebra R B]
+    [Algebra A B] [IsScalarTower R A B] (φ : Module.Dual R M) (v : A ⊗[R] M) :
+    φ.baseChange B (((Algebra.linearMap A B).restrictScalars R).rTensor M v) =
+      algebraMap A B (φ.baseChange A v) := by
+  induction v using TensorProduct.inductionOn with
+  | tmul a m =>
+    simp [Algebra.smul_def, IsScalarTower.algebraMap_apply R A B]
+  | add v w hv hw => simp only [map_add, hv, hw]
 
 /-- The base change of a functional `φ` on an `R`-algebra `S` takes the unit of `A ⊗[R] S` to
 the image of `φ 1` in `A`. -/
@@ -229,6 +262,20 @@ theorem eq_of_baseChange_eq [Module.Projective R M] {x y : A ⊗[R] M}
   refine TensorProduct.tensor_eq_of_forall_tensorComponent_eq fun φ ↦ ?_
   rw [hcomponent, LinearMap.restrictScalars_apply, LinearMap.restrictScalars_apply]
   exact h φ
+
+/-- If a set `Φ` of `R`-linear functionals jointly separates the points of `M`, then their base
+changes to a fraction ring `K` of `R` jointly separate the points of `K ⊗[R] M`. Unlike
+`eq_of_baseChange_eq`, `M` need not be projective. -/
+theorem eq_zero_of_forall_baseChange_eq_zero {R M K : Type*} [CommRing R] [AddCommMonoid M]
+    [Module R M] [CommRing K] [Algebra R K] [IsFractionRing R K] {Φ : Set (Module.Dual R M)}
+    (hΦ : ∀ m : M, (∀ φ ∈ Φ, φ m = 0) → m = 0) {v : K ⊗[R] M}
+    (h : ∀ φ ∈ Φ, Module.Dual.baseChange K φ v = 0) : v = 0 := by
+  obtain ⟨⟨m, r⟩, hv⟩ := IsLocalizedModule.surj (nonZeroDivisors R) (TensorProduct.mk R K M 1) v
+  have hm : m = 0 := hΦ m fun φ hφ ↦ IsFractionRing.injective R K <| by
+    rw [map_zero, ← Module.Dual.baseChange_apply_one_tmul, ← TensorProduct.mk_apply, ← hv,
+      Submonoid.smul_def, LinearMap.map_smul_of_tower, h φ hφ, smul_zero]
+  rw [hm, map_zero, Submonoid.smul_def, ← algebraMap_smul K] at hv
+  exact (IsLocalization.map_units K r).smul_eq_zero.mp hv
 
 end TauCeti.Module.Dual
 

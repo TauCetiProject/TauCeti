@@ -31,7 +31,7 @@ Dirichlet domains.
 * `TauCeti.UpperHalfPlane.dist_eq_dist_iff`: the planar equation of the hyperbolic perpendicular
   bisector.
 * `TauCeti.UpperHalfPlane.dist_le_dist_iff`: the planar inequality for the region of points at
-  least as close to `p` as to `q`.
+  least as close to `p` as to `q`; `dist_le_dist_iff_re_im` writes it in coordinates.
 * `TauCeti.UpperHalfPlane.dist_le_dist_of_im_le_half`: low centres impose no constraint high in
   a strip.
 * `TauCeti.UpperHalfPlane.dist_lt_dist_of_im_lt_half`: strictly lower centres are strictly
@@ -74,6 +74,14 @@ theorem dist_le_dist_iff {z p q : ℍ} :
     div_le_div_iff₀ (by positivity : 0 < 2 * z.im * p.im)
       (by positivity : 0 < 2 * z.im * q.im)]
   constructor <;> intro h <;> nlinarith [h]
+
+/-- A point is hyperbolically at least as close to `p` as to `q` exactly when
+`q.im * |z - p|² ≤ p.im * |z - q|²`, with both squared Euclidean distances in coordinates. -/
+theorem dist_le_dist_iff_re_im {z p q : ℍ} :
+    dist z p ≤ dist z q ↔ q.im * ((z.re - p.re) ^ 2 + (z.im - p.im) ^ 2) ≤
+      p.im * ((z.re - q.re) ^ 2 + (z.im - q.im) ^ 2) := by
+  rw [dist_le_dist_iff]
+  simp [Complex.dist_eq, Complex.sq_norm, Complex.normSq_apply, ← sq]
 
 /-- In a strip of horizontal half-width `r` about `p`, above height `p.im + r`, the excess of
 `p.im * |z - q|²` over `q.im * |z - p|²` is at least `z.im² * (p.im - 2 * q.im)`. -/

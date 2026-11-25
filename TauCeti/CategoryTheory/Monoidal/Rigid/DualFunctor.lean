@@ -68,7 +68,8 @@ the double right dual functor is a monoidal autoequivalence.
   `TauCeti.doubleRightDualFunctor_ε_eq_rightAdjointMate`);
 * `TauCeti.doubleRightDualFunctor_map_evaluation` and
   `TauCeti.doubleRightDualFunctor_map_coevaluation`: the double right dual functor carries the
-  evaluation and coevaluation of `(X, Xᘁ)` to those of `(Xᘁᘁ, Xᘁᘁᘁ)`;
+  evaluation and coevaluation of `(X, Xᘁ)` to those of `(Xᘁᘁ, Xᘁᘁᘁ)`, with the evaluation also
+  in the form `TauCeti.doubleRightDualFunctor_μ_comp_map_evaluation`;
 * `TauCeti.rigidCategoryOfIsoDoubleRightDual`: a right rigid category with isomorphisms
   `X ≅ Xᘁᘁ` is rigid, with left duals described by
   `TauCeti.rigidCategoryOfIsoDoubleRightDual_evaluation` and
@@ -466,6 +467,17 @@ theorem doubleRightDualFunctor_map_evaluation (X : C) :
       simp only [Category.assoc, Functor.Monoidal.δ_μ_assoc, Functor.Monoidal.η_ε,
         Category.comp_id]
     _ = _ := by rw [h]
+
+/-- The double right dual functor carries the evaluation of `(X, Xᘁ)` to the evaluation of
+`(Xᘁᘁ, Xᘁᘁᘁ)`, up to its tensor and unit comparisons: the form of
+`TauCeti.doubleRightDualFunctor_map_evaluation` with the tensor comparison on the other side. -/
+theorem doubleRightDualFunctor_μ_comp_map_evaluation (X : C) :
+    μ (doubleRightDualFunctor C) Xᘁ X ≫ (doubleRightDualFunctor C).map (ε_ X Xᘁ) =
+      ε_ ((doubleRightDualFunctor C).obj X) ((doubleRightDualFunctor C).obj X)ᘁ ≫
+        ε (doubleRightDualFunctor C) := by
+  rw [doubleRightDualFunctor_map_evaluation, Functor.Monoidal.μ_δ_assoc]
+  -- The two sides differ only in how the objects `Xᘁᘁ` are written.
+  rfl
 
 /-- The double right dual functor carries the coevaluation of `(X, Xᘁ)` to the coevaluation of
 `(Xᘁᘁ, Xᘁᘁᘁ)`, up to its unit and tensor comparisons. -/

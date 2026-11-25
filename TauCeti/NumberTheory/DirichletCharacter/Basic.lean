@@ -52,6 +52,8 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   `DirichletCharacter.changeLevel_primitiveCharacter_ofUnitHom_one_toUnitHom`.
 * `DirichletCharacter.factorsThroughEquiv`: the characters at level `N` factoring through
   `d ∣ N` correspond to the characters modulo `d`.
+* `DirichletCharacter.changeLevel_ringHomComp`: raising the level commutes with a change of
+  coefficient ring.
 * `DirichletCharacter.changeLevel_natCast_of_coprime`: changing the level preserves the values
   at naturals prime to the new level, and
   `DirichletCharacter.changeLevel_ringHomComp_intCast_apply`: the value of a lifted integer-valued
@@ -402,6 +404,13 @@ prime to the new level. -/
 theorem changeLevel_natCast_of_coprime {R : Type*} [CommMonoidWithZero R] {d n : ℕ} (h : d ∣ n)
     (χ : DirichletCharacter R d) {m : ℕ} (hm : m.Coprime n) : changeLevel h χ m = χ m := by
   simpa using changeLevel_eq_cast_of_dvd' χ h (a := (m : ℤ)) (Nat.isCoprime_iff_coprime.mpr hm)
+
+/-- Raising the level of a Dirichlet character commutes with changing its coefficient ring. -/
+theorem changeLevel_ringHomComp {R R' : Type*} [CommRing R] [CommRing R'] {d n : ℕ} (h : d ∣ n)
+    (χ : DirichletCharacter R d) (f : R →+* R') :
+    changeLevel h (χ.ringHomComp f) = (changeLevel h χ).ringHomComp f := by
+  ext u
+  simp [changeLevel_eq_cast_of_dvd]
 
 /-- The value of a Dirichlet character raised from level `d` to level `n` at a natural number:
 `χ m` when `m` is prime to `n`, and `0` otherwise. -/
