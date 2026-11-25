@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.QuadraticOrthogonal.Basic
+public import TauCeti.Algebra.AlgebraicGroup.QuadraticOrthogonal.Congruence
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.BaseChange
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange
 
@@ -36,6 +38,12 @@ base-change theorem for Hopf-ideal quotients then gives the isomorphism, as for
   (`TauCeti.QuadraticOrthogonal.coordinateHopfAlgebraBaseChangeIsoBaseChangeForm`).
 * `TauCeti.QuadraticOrthogonal.coordinateHopfAlgebraBaseChangeIso_hom_tmul_mkQuotient`: its value
   on a pure tensor of a class of a general-linear function.
+* `TauCeti.QuadraticOrthogonal.baseChangeMap_coordinateHopfAlgebraCongr_hom_comp`: the coordinate
+  isomorphism of an isometry is natural in the base ring.
+* `TauCeti.QuadraticOrthogonal.groupSchemeBaseChangeIso`: base change of the group scheme `O(q)`,
+  compatible with the inclusions into `GLₙ` (`map_inclusion_comp_groupSchemeBaseChangeIso_hom`)
+  and with the isomorphisms `TauCeti.QuadraticOrthogonal.groupSchemeCongr` of isometric forms
+  (`map_groupSchemeCongr_hom_comp_groupSchemeBaseChangeIso_hom`).
 
 ## References
 
@@ -46,13 +54,15 @@ base-change theorem for Hopf-ideal quotients then gives the isomorphism, as for
 
 public section
 
-open CategoryTheory Matrix
+open AlgebraicGeometry CategoryTheory Matrix
 open scoped TensorProduct
 open QuadraticForm (coefficientMatrix baseChangeForm)
 
 namespace TauCeti.QuadraticOrthogonal
 
 universe u v
+
+section Coordinate
 
 variable {R : Type u} {K : Type max u v} [CommRing R] [CommRing K] [Algebra R K] {n : ℕ}
 variable {q : QuadraticForm R (Fin n → R)} {q' : QuadraticForm K (Fin n → K)}
@@ -187,5 +197,121 @@ theorem coordinateHopfAlgebraBaseChangeIsoBaseChangeForm_def :
       coordinateHopfAlgebraBaseChangeIso
         (QuadraticForm.coefficientMatrix_baseChangeForm q K).symm :=
   (rfl)
+
+/-- The inverse base-change isomorphism of `O(q)` is compatible with the quotient morphisms from
+the general-linear coordinate Hopf algebras. -/
+@[reassoc]
+theorem mkQuotient_comp_coordinateHopfAlgebraBaseChangeIso_inv
+    (hq : (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R K) =
+      coefficientMatrix q' (Pi.basisFun K (Fin n))) :
+    CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra K n)
+          (definingHopfIdeal K n q') ≫ (coordinateHopfAlgebraBaseChangeIso hq).inv =
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).inv ≫
+        CommHopfAlgCat.baseChangeMap (K := K)
+          (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R n)
+            (definingHopfIdeal R n q)) :=
+  CommHopfAlgCat.mkQuotient_comp_quotientBaseChangeIsoOfMapEq_inv _ _ _ _
+
+/-- **The coordinate isomorphism of an isometry is natural in the base ring.** If `P` is an
+isometry from `q` to `q'` over `R`, and `q`, `q'` have the coefficients of `q₁`, `q₂` over `K`,
+then along the base-change isomorphisms the scalar extension of the coordinate isomorphism for `P`
+is the coordinate isomorphism for the image of `P`, an isometry from `q₁` to `q₂`. -/
+@[reassoc]
+theorem baseChangeMap_coordinateHopfAlgebraCongr_hom_comp {q₀ : QuadraticForm R (Fin n → R)}
+    {q₁ q₂ : QuadraticForm K (Fin n → K)} (P : GL (Fin n) R)
+    (hP : ∀ x, q₀ ((P : Matrix (Fin n) (Fin n) R) *ᵥ x) = q x)
+    (h₁ : (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R K) =
+      coefficientMatrix q₁ (Pi.basisFun K (Fin n)))
+    (h₂ : (coefficientMatrix q₀ (Pi.basisFun R (Fin n))).map (algebraMap R K) =
+      coefficientMatrix q₂ (Pi.basisFun K (Fin n)))
+    (hP' : ∀ x, q₂ ((GeneralLinearGroup.map (algebraMap R K) P : Matrix (Fin n) (Fin n) K) *ᵥ x) =
+      q₁ x) :
+    CommHopfAlgCat.baseChangeMap (K := K) (coordinateHopfAlgebraCongr P hP).hom ≫
+        (coordinateHopfAlgebraBaseChangeIso h₂).hom =
+      (coordinateHopfAlgebraBaseChangeIso h₁).hom ≫
+        (coordinateHopfAlgebraCongr (GeneralLinearGroup.map (algebraMap R K) P) hP').hom := by
+  rw [coordinateHopfAlgebraCongr_def, coordinateHopfAlgebraCongr_def]
+  refine CommHopfAlgCat.baseChangeMap_quotientIsoOfComapEq_hom_comp _ _ _ _ _ _
+    (baseChangeMap_mkQuotient_comp_coordinateHopfAlgebraBaseChangeIso_hom h₁)
+    (baseChangeMap_mkQuotient_comp_coordinateHopfAlgebraBaseChangeIso_hom h₂) ?_
+  rw [← map_inv]
+  exact GeneralLinear.baseChangeMap_conjCoordinateIso_hom_comp K P⁻¹
+
+end Coordinate
+
+/-! ### Base change of the group scheme -/
+
+section GroupScheme
+
+variable {R K : Type u} [CommRing R] [CommRing K] [Algebra R K] {n : ℕ}
+variable {q : QuadraticForm R (Fin n → R)} {q' : QuadraticForm K (Fin n → K)}
+
+/-- **Base change of the group scheme `O(q)`.** If the coefficients of `q` map to those of `q'`
+along `R → K`, the base change of `O(q)` to `K` is `O(q')`: the Hopf-ideal base-change comparison
+of `GLₙ` at the defining Hopf ideals. -/
+noncomputable def groupSchemeBaseChangeIso
+    (hq : (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R K) =
+      coefficientMatrix q' (Pi.basisFun K (Fin n))) :
+    (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).mapGrp.obj
+        (groupScheme R n q) ≅ groupScheme K n q' :=
+  GeneralLinear.hopfIdealBaseChangeIso R K n (definingHopfIdeal R n q) (definingHopfIdeal K n q')
+    (coordinateHopfAlgebraBaseChangeIso hq).symm
+
+/-- The base-change isomorphism of `O(q)` is the Hopf-ideal base-change comparison of `GLₙ` for
+the inverse base-change isomorphism of coordinate Hopf algebras. -/
+theorem groupSchemeBaseChangeIso_def
+    (hq : (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R K) =
+      coefficientMatrix q' (Pi.basisFun K (Fin n))) :
+    groupSchemeBaseChangeIso hq =
+      GeneralLinear.hopfIdealBaseChangeIso R K n (definingHopfIdeal R n q)
+        (definingHopfIdeal K n q') (coordinateHopfAlgebraBaseChangeIso hq).symm :=
+  (rfl)
+
+/-- **Base change of `O(q)` is compatible with the inclusions.** Along the base-change
+isomorphisms, the base change of the inclusion of `O(q)` into `GLₙ` is the inclusion of
+`O(q')`. -/
+@[reassoc]
+theorem map_inclusion_comp_groupSchemeBaseChangeIso_hom
+    (hq : (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R K) =
+      coefficientMatrix q' (Pi.basisFun K (Fin n))) :
+    (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).mapGrp.map
+          (inclusion R n q) ≫ (GeneralLinear.groupSchemeBaseChangeIso R K n).hom =
+      (groupSchemeBaseChangeIso hq).hom ≫ inclusion K n q' := by
+  rw [inclusion_def, inclusion_def, groupSchemeBaseChangeIso_def]
+  exact GeneralLinear.map_hopfIdealInclusion_comp_groupSchemeBaseChangeIso R K n _ _
+    (coordinateHopfAlgebraBaseChangeIso hq).symm
+    (mkQuotient_comp_coordinateHopfAlgebraBaseChangeIso_inv hq)
+
+/-- **The isomorphism of orthogonal group schemes of an isometry is natural in the base ring.**
+If `P` is an isometry from `q` to `q'` over `R`, and `q`, `q'` have the coefficients of `q₁`, `q₂`
+over `K`, then along the base-change isomorphisms the base change of `groupSchemeCongr P` is
+`groupSchemeCongr` of the image of `P`. -/
+@[reassoc]
+theorem map_groupSchemeCongr_hom_comp_groupSchemeBaseChangeIso_hom
+    {q₀ : QuadraticForm R (Fin n → R)} {q₁ q₂ : QuadraticForm K (Fin n → K)} (P : GL (Fin n) R)
+    (hP : ∀ x, q₀ ((P : Matrix (Fin n) (Fin n) R) *ᵥ x) = q x)
+    (h₁ : (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R K) =
+      coefficientMatrix q₁ (Pi.basisFun K (Fin n)))
+    (h₂ : (coefficientMatrix q₀ (Pi.basisFun R (Fin n))).map (algebraMap R K) =
+      coefficientMatrix q₂ (Pi.basisFun K (Fin n)))
+    (hP' : ∀ x, q₂ ((GeneralLinearGroup.map (algebraMap R K) P : Matrix (Fin n) (Fin n) K) *ᵥ x) =
+      q₁ x) :
+    (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).mapGrp.map
+          (groupSchemeCongr P hP).hom ≫ (groupSchemeBaseChangeIso h₂).hom =
+      (groupSchemeBaseChangeIso h₁).hom ≫
+        (groupSchemeCongr (GeneralLinearGroup.map (algebraMap R K) P) hP').hom := by
+  have hS := baseChangeMap_coordinateHopfAlgebraCongr_hom_comp P hP h₁ h₂ hP'
+  rw [groupSchemeCongr_def, groupSchemeCongr_def, groupSchemeBaseChangeIso_def,
+    groupSchemeBaseChangeIso_def, GeneralLinear.hopfIdealBaseChangeIso_def,
+    GeneralLinear.hopfIdealBaseChangeIso_def]
+  refine AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_trans_hom_naturality
+    (coordinateHopfAlgebraCongr P hP).inv
+    (coordinateHopfAlgebraCongr (GeneralLinearGroup.map (algebraMap R K) P) hP').inv
+    (coordinateHopfAlgebraBaseChangeIso h₁) (coordinateHopfAlgebraBaseChangeIso h₂) ?_
+  rw [← CommHopfAlgCat.baseChangeFunctor_map, ← Functor.mapIso_hom] at hS
+  rw [← CommHopfAlgCat.baseChangeFunctor_map, ← Functor.mapIso_inv]
+  exact (CommSq.horiz_inv ⟨hS⟩).w
+
+end GroupScheme
 
 end TauCeti.QuadraticOrthogonal
