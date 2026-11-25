@@ -43,10 +43,11 @@ thus a canonical representative of the a.e. class of `s`.
 
 For an additive Haar measure on a finite-dimensional real normed space of dimension `n`, a set
 filling a proportion `r ^ n ≤ c μ(s ∩ ball x r)` of every small ball around `x` does not have
-density zero at `x`. Conversely, at a point of the essential boundary, both `s` and its complement
-fill a fixed positive proportion of arbitrarily small closed balls: the proportion of `s` depends
-continuously on the radius, so as it tends neither to `0` nor to `1` it takes intermediate values
-at arbitrarily small radii.
+density zero at `x`; in particular, neither does a set containing a ball of radius `r / 2` inside
+every small ball `ball x r`. Conversely, at a point of the essential boundary, both `s` and its
+complement fill a fixed positive proportion of arbitrarily small closed balls: the proportion of
+`s` depends continuously on the radius, so as it tends neither to `0` nor to `1` it takes
+intermediate values at arbitrarily small radii.
 
 For a convex set `s` with nonempty interior, every frontier point is a point of the essential
 boundary, so the essential boundary is exactly the topological frontier. Near a frontier point
@@ -70,6 +71,8 @@ interior.
   theorem.
 * `TauCeti.not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball`: a lower
   volume density bound against a Haar measure rules out density zero.
+* `TauCeti.not_hasDensityAt_zero_of_eventually_exists_ball_subset`: so does containing a ball of
+  half the radius inside every small ball around `x`.
 * `TauCeti.exists_pos_frequently_ofReal_mul_measure_closedBall_le`: at a point of the essential
   boundary, `s` and its complement both fill a proportion at least `a > 0` of arbitrarily small
   closed balls.
@@ -542,6 +545,28 @@ theorem not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball
   rw [Measure.addHaar_closedBall μ x hr0.le, mul_right_comm]
   gcongr
   exact hr.trans (by gcongr; exact ball_subset_closedBall)
+
+/-- A set containing, for every small `ρ > 0`, a ball of radius `ρ / 2` inside `ball x ρ` does not
+have density zero at `x`. -/
+theorem not_hasDensityAt_zero_of_eventually_exists_ball_subset
+    (h : ∀ᶠ ρ in 𝓝[>] 0, ∃ y, ball y (ρ / 2) ⊆ s ∩ ball x ρ) : ¬HasDensityAt μ s x 0 := by
+  have hB : μ (ball (0 : E) 1) ≠ 0 := (measure_ball_pos μ 0 one_pos).ne'
+  have hBt : μ (ball (0 : E) 1) ≠ ∞ := measure_ball_lt_top.ne
+  refine not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball
+    (c := 2 ^ Module.finrank ℝ E * (μ (ball (0 : E) 1))⁻¹)
+    (ENNReal.mul_ne_top (by simp) (ENNReal.inv_ne_top.2 hB)) ?_
+  filter_upwards [h, self_mem_nhdsWithin] with ρ ⟨y, hy⟩ (hρ : 0 < ρ)
+  -- Halving the radius divides the volume by `2 ^ n`.
+  have h2 : ENNReal.ofReal (ρ ^ Module.finrank ℝ E) =
+      2 ^ Module.finrank ℝ E * ENNReal.ofReal ((ρ / 2) ^ Module.finrank ℝ E) := by
+    rw [← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_pow zero_le_two,
+      ← ENNReal.ofReal_mul (by positivity), ← mul_pow]
+    ring_nf
+  calc ENNReal.ofReal (ρ ^ Module.finrank ℝ E)
+      = 2 ^ Module.finrank ℝ E * (μ (ball (0 : E) 1))⁻¹ * μ (ball y (ρ / 2)) := by
+        rw [Measure.addHaar_ball_of_pos μ y (by positivity), h2, mul_comm _ (μ _), mul_assoc,
+          ENNReal.inv_mul_cancel_left hB hBt]
+    _ ≤ 2 ^ Module.finrank ℝ E * (μ (ball (0 : E) 1))⁻¹ * μ (s ∩ ball x ρ) := by gcongr
 
 /-- **Points of the essential boundary are balanced at arbitrarily small scales.** Against an
 additive Haar measure, at a point `x` of the essential boundary of any set `s`, there is `a > 0`
