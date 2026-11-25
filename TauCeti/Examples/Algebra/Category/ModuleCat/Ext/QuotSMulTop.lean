@@ -23,10 +23,6 @@ open CategoryTheory CategoryTheory.Abelian ModuleCat Pointwise
 
 namespace TauCeti.ExtQuotSMulTopExample
 
-/-- A nonzero integer is regular on `ℤ`. -/
-theorem isSMulRegular_int {n : ℤ} (hn : n ≠ 0) : IsSMulRegular ℤ n :=
-  mul_right_injective₀ hn
-
 /-- `ℤ ⧸ n ℤ` has `|n|` elements. -/
 theorem natCard_quotSMulTop_int (n : ℤ) : Nat.card (QuotSMulTop n ℤ) = n.natAbs := by
   have h : (n • ⊤ : Submodule ℤ ℤ) = Ideal.span {n} := by
@@ -37,13 +33,13 @@ theorem natCard_quotSMulTop_int (n : ℤ) : Nat.card (QuotSMulTop n ℤ) = n.nat
 /-- **`Ext¹(ℤ ⧸ n, ℤ) ≃ ℤ ⧸ n`.** For `n ≠ 0`, `Ext¹_ℤ(ℤ ⧸ n, ℤ)` has `|n|` elements. -/
 theorem natCard_ext_one_quotSMulTop_int {n : ℤ} (hn : n ≠ 0) :
     Nat.card (Ext.{0} (of ℤ (QuotSMulTop n ℤ)) (of ℤ ℤ) 1) = n.natAbs := by
-  rw [Nat.card_congr (extOneQuotSMulTopEquiv (isSMulRegular_int hn) (of ℤ ℤ)).toEquiv,
+  rw [Nat.card_congr (extOneQuotSMulTopEquiv (.of_ne_zero hn) (of ℤ ℤ)).toEquiv,
     natCard_quotSMulTop_int]
 
 /-- Higher `Ext` out of `ℤ ⧸ n` vanishes for `n ≠ 0`. -/
 theorem ext_quotSMulTop_int_add_two_eq_zero {n : ℤ} (hn : n ≠ 0) (X : ModuleCat.{0} ℤ) (k : ℕ)
     (e : Ext.{0} (of ℤ (QuotSMulTop n ℤ)) X (k + 2)) : e = 0 :=
-  ext_quotSMulTop_add_two_eq_zero (isSMulRegular_int hn) X k e
+  ext_quotSMulTop_add_two_eq_zero (.of_ne_zero hn) X k e
 
 /-- **The Cuntz algebra case.** For `n ≥ 2`, `Ext¹_ℤ(ℤ ⧸ (n - 1), ℤ)`, the `Ext` term of the
 universal coefficient theorem for `O_n`, has `n - 1` elements. -/
