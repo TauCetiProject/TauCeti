@@ -108,6 +108,7 @@ variable {θ : L ≃ₗ⁅K⁆ L}
 
 omit [IsStrictOrderedRing K] in
 /-- A Cartan involution is its own inverse. -/
+@[simp]
 theorem symm_eq (hθ : θ.IsCartanInvolution) : θ.symm = θ :=
   LieEquiv.ext fun x ↦ θ.symm_apply_eq.mpr (hθ.involutive x).symm
 

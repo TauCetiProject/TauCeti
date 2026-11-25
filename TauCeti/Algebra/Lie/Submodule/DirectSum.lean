@@ -8,8 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.Algebra.Lie.DirectSum
 public import TauCeti.LinearAlgebra.Projection
-public import Mathlib.Algebra.Lie.Semisimple.Basic
-import TauCeti.Algebra.Lie.Killing.Basic
+import TauCeti.Algebra.Lie.Basic
 
 /-!
 # An internal direct sum of Lie submodules is an external one
@@ -27,7 +26,7 @@ in `M` is read off a decomposition of `M` into irreducibles in
 `TauCeti/Algebra/Lie/Multiplicity.lean`. For a Lie algebra decomposed into Lie ideals, it also
 assembles automorphisms of the summands into an automorphism of the whole algebra
 (`LieEquiv.ofIsInternal`), which applies to the simple ideals of a semisimple Lie algebra
-(`LieAlgebra.IsSemisimple.isInternal_atoms`).
+(`LieAlgebra.IsSemisimple.isInternal_atoms` in `TauCeti/Algebra/Lie/Submodule/Decomposition.lean`).
 
 The file also proves the **regrouping theorem**
 `DirectSum.nonempty_lieModuleEquiv_sigma_of_isInternal`: a decomposition of `M` whose summands are
@@ -59,13 +58,13 @@ and `m` is the multiplicity.
 * `TauCeti.LieModule.finrank_lieModuleHom_eq_sum_of_isInternal`: the finrank of a morphism space
   is additive over an internal decomposition of its target.
 * `DirectSum.IsInternal.lieSubmodule_disjoint`, `DirectSum.IsInternal.lieSubmodule_induction`:
-  distinct summands meet trivially, and a predicate holding on every summand and closed under
-  addition holds everywhere.
+  distinct summands meet trivially, and a predicate holding at `0` and on every summand and closed
+  under addition holds everywhere.
+* `DirectSum.sum_support_lieModuleEquivOfIsInternal_symm`: an element is the sum of its components
+  in the summands.
 * `LieEquiv.eq_ofIsInternal_iff`: `LieEquiv.ofIsInternal` is the unique linear map acting by
   `θ i` on each summand; `LieEquiv.ofIsInternal_refl`, `LieEquiv.ofIsInternal_trans` and
   `LieEquiv.ofIsInternal_symm` make the assembly compatible with identity, composition and inverse.
-* `LieAlgebra.IsSemisimple.isInternal_atoms`: a semisimple Lie algebra is the internal direct sum
-  of its simple ideals.
 
 ## Applications
 
@@ -309,6 +308,14 @@ theorem IsInternal.lieSubmodule_induction {motive : M → Prop} (mem : ∀ i, �
   Submodule.iSup_induction _ (motive := motive) (h.submodule_iSup_eq_top ▸ Submodule.mem_top) mem
     zero add
 
+/-- An element of an internal direct sum of Lie submodules is the sum of its components. -/
+theorem sum_support_lieModuleEquivOfIsInternal_symm [∀ i (x : N i), Decidable (x ≠ 0)] (x : M) :
+    ∑ i ∈ ((lieModuleEquivOfIsInternal N h).symm x).support,
+      (((lieModuleEquivOfIsInternal N h).symm x i : N i) : M) = x := by
+  conv_rhs => rw [← (lieModuleEquivOfIsInternal N h).apply_symm_apply x,
+    ← sum_support_of ((lieModuleEquivOfIsInternal N h).symm x), map_sum]
+  simp only [lieModuleEquivOfIsInternal_apply, coeLieModuleHom_of]
+
 end Summands
 
 end DirectSum
@@ -328,24 +335,16 @@ variable {R L ι : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [DecidableEq
 private noncomputable abbrev sumEquiv : (⨁ i, I i) ≃ₗ[R] L :=
   (lieModuleEquivOfIsInternal I h).toLinearEquiv
 
-/-- The linear automorphism of `⨁ i, I i` acting by `θ i` on each summand. -/
-private noncomputable def lmapEquiv : (⨁ i, I i) ≃ₗ[R] ⨁ i, I i :=
-  LinearEquiv.ofLinearMap (lmap fun i ↦ (θ i : I i →ₗ[R] I i))
-    (lmap fun i ↦ ((θ i).symm : I i →ₗ[R] I i)) (by ext; simp) (by ext; simp)
-
 /-- The linear automorphism of `L` acting by `θ i` on each summand of an internal direct sum. -/
 private noncomputable def linearOfIsInternal : L ≃ₗ[R] L :=
-  (sumEquiv h).symm ≪≫ₗ lmapEquiv θ ≪≫ₗ sumEquiv h
+  (sumEquiv h).symm ≪≫ₗ congrLinearEquiv (fun i ↦ (θ i).toLinearEquiv) ≪≫ₗ sumEquiv h
 
 private theorem linearOfIsInternal_apply_of_mem {i : ι} {x : L} (hx : x ∈ I i) :
     linearOfIsInternal h θ x = θ i ⟨x, hx⟩ := by
   have hs : (sumEquiv h).symm x = of (fun i ↦ (I i : Type _)) i ⟨x, hx⟩ := by
     rw [LinearEquiv.symm_apply_eq, LieModuleEquiv.coe_toLinearEquiv,
       lieModuleEquivOfIsInternal_apply, coeLieModuleHom_of]
-  rw [linearOfIsInternal, LinearEquiv.trans_apply, LinearEquiv.trans_apply, hs, lmapEquiv,
-    LinearEquiv.coe_ofLinearMap, lmap_of, LieModuleEquiv.coe_toLinearEquiv,
-    lieModuleEquivOfIsInternal_apply, coeLieModuleHom_of]
-  rfl
+  simp [linearOfIsInternal, hs, coe_congrLinearEquiv, lmap_of]
 
 private theorem linearOfIsInternal_mem {i : ι} {x : L} (hx : x ∈ I i) :
     linearOfIsInternal h θ x ∈ I i := by
@@ -410,32 +409,15 @@ theorem ofIsInternal_trans (φ : ∀ i, I i ≃ₗ⁅R⁆ I i) :
     fun i x ↦ by simp [LieEquiv.trans_apply]) x).symm
 
 /-- Assembling automorphisms of the summands is compatible with inversion. -/
-theorem ofIsInternal_symm : ofIsInternal h (fun i ↦ (θ i).symm) = (ofIsInternal h θ).symm :=
-  LieEquiv.ext fun x ↦ (LinearMap.congr_fun ((eq_ofIsInternal_iff h _ _).mpr
-    fun i x ↦ by
-      rw [LieHom.coe_toLinearMap, LieEquiv.coe_coe, LieEquiv.symm_apply_eq,
-        ofIsInternal_apply_coe, LieEquiv.apply_symm_apply]) x).symm
+theorem ofIsInternal_symm : ofIsInternal h (fun i ↦ (θ i).symm) = (ofIsInternal h θ).symm := by
+  have hrefl : (ofIsInternal h θ).trans (ofIsInternal h fun i ↦ (θ i).symm) = LieEquiv.refl := by
+    simp only [← ofIsInternal_trans, LieEquiv.self_trans_symm, ofIsInternal_refl]
+  ext x
+  simpa using DFunLike.congr_fun hrefl ((ofIsInternal h θ).symm x)
 
 end OfIsInternal
 
 end LieEquiv
-
-namespace LieAlgebra
-
-variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
-
-open Classical in
-/-- A semisimple Lie algebra is the internal direct sum of its simple ideals, so
-`LieEquiv.ofIsInternal` applies to them. -/
-theorem IsSemisimple.isInternal_atoms [IsSemisimple R L] :
-    DirectSum.IsInternal fun I : {I : LieIdeal R L // IsAtom I} ↦ (I : LieIdeal R L).toSubmodule :=
-  DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-    (LieSubmodule.iSupIndep_toSubmodule.mpr
-      ((sSupIndep_iff _).mp IsSemisimple.sSupIndep_isAtom))
-    (LieSubmodule.iSup_toSubmodule_eq_top.mpr
-      ((sSup_eq_iSup' _).symm.trans IsSemisimple.sSup_atoms_eq_top))
-
-end LieAlgebra
 
 namespace TauCeti.LieModule
 

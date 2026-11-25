@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.CartanInvolution.Basic
+public import TauCeti.Algebra.Lie.Killing.CompactIdeal
 public import TauCeti.Algebra.Lie.Submodule.DirectSum
 public import Mathlib.Algebra.Lie.Prod
 import TauCeti.Algebra.Lie.Killing.Basic
@@ -15,42 +16,33 @@ import TauCeti.Algebra.Lie.Killing.Basic
 
 A Cartan involution `θ` of a real semisimple Lie algebra `𝔤₀` preserves every simple ideal: the
 Killing form `B` vanishes between two ideals with trivial intersection, while `B(x, θ x) < 0` for
-`x ≠ 0`, so a nonzero ideal meets its image under `θ`. Conversely, Cartan involutions of the
-summands of an internal direct sum of ideals, in particular of the simple ideals, assemble into a
-Cartan involution of `𝔤₀`. Finally `𝔤₀` is the direct sum of its *compact ideal*, the sum of the
-simple ideals on which the Killing form is negative definite, and its *noncompact ideal*, the sum
-of the other simple ideals; both are `θ`-stable, `θ` is the identity on the compact ideal, and the
-`-1`-eigenspace `𝔭` of `θ` lies in the noncompact ideal.
+`x ≠ 0`, so a nonzero ideal meets its image under `θ`. Conversely, when `𝔤₀` is finite-dimensional,
+Cartan involutions of the summands of an internal direct sum of ideals, in particular of the simple
+ideals, assemble into a Cartan involution of `𝔤₀`. Finally `θ` is the identity on the compact
+ideal `LieAlgebra.compactIdeal`, the sum of the simple ideals on which the Killing form is negative
+definite, and the `-1`-eigenspace `𝔭` of `θ` lies in the noncompact ideal
+`LieAlgebra.noncompactIdeal`, the sum of the other simple ideals.
 
 Simple ideals are the atoms of the lattice of Lie ideals, as in Mathlib's
 `LieAlgebra.IsSemisimple`. The general material used here lives elsewhere: the vanishing of the
 Killing form between ideals with trivial intersection (`LieIdeal.killingForm_eq_zero_of_disjoint`)
-in `TauCeti/Algebra/Lie/Killing/Basic.lean`, and the assembly `LieEquiv.ofIsInternal` of
-automorphisms of the summands of an internal direct sum of Lie ideals, together with
-`LieAlgebra.IsSemisimple.isInternal_atoms`, in `TauCeti/Algebra/Lie/Submodule/DirectSum.lean`.
-
-## Main definitions
-
-* `LieAlgebra.compactIdeal`, `LieAlgebra.noncompactIdeal`: the sum of the simple ideals on which
-  the Killing form is, respectively is not, negative definite.
+in `TauCeti/Algebra/Lie/Killing/Basic.lean`, the compact and noncompact ideals, with their
+stability under every automorphism (`LieEquiv.map_compactIdeal`, `LieEquiv.map_noncompactIdeal`),
+in `TauCeti/Algebra/Lie/Killing/CompactIdeal.lean`, the assembly `LieEquiv.ofIsInternal` of
+automorphisms of the summands of an internal direct sum of Lie ideals in
+`TauCeti/Algebra/Lie/Submodule/DirectSum.lean`, and `LieAlgebra.IsSemisimple.isInternal_atoms` in
+`TauCeti/Algebra/Lie/Submodule/Decomposition.lean`.
 
 ## Main results
 
 * `LieEquiv.IsCartanInvolution.map_eq_of_isAtom`: a Cartan involution preserves every simple
   ideal.
 * `LieEquiv.isCartanInvolution_ofIsInternal`: Cartan involutions of the summands of an internal
-  direct sum of ideals assemble into a Cartan involution.
-* `LieAlgebra.forall_killingForm_neg_iff`: on a Lie ideal, the Killing form of `L` is negative
-  definite exactly when the ideal's own Killing form is.
-* `LieAlgebra.le_compactIdeal_iff_of_isAtom`, `LieAlgebra.le_noncompactIdeal_iff_of_isAtom`: a
-  simple ideal lies in the compact ideal exactly when it is a compact Lie algebra, that is, its own
-  Killing form is negative definite, and in the noncompact ideal otherwise.
-* `LieAlgebra.isCompl_compactIdeal_noncompactIdeal`: a semisimple Lie algebra is the direct sum of
-  its compact and noncompact ideals.
-* `LieEquiv.IsCartanInvolution.map_compactIdeal`,
-  `LieEquiv.IsCartanInvolution.map_noncompactIdeal`: both are stable under a Cartan involution.
+  direct sum of ideals of a finite-dimensional Lie algebra assemble into a Cartan involution.
 * `LieEquiv.IsCartanInvolution.forall_apply_eq_iff_of_isAtom`: a simple ideal is compact exactly
   when a Cartan involution fixes it pointwise.
+* `LieEquiv.IsCartanInvolution.apply_eq_of_mem_compactIdeal`: a Cartan involution is the identity
+  on the compact ideal.
 * `LieEquiv.IsCartanInvolution.cartanP_le_noncompactIdeal`: `𝔭` lies in the noncompact ideal.
 * `LieEquiv.not_isCartanInvolution_prodComm`: the flip of `L × L` is not a Cartan involution for
   nontrivial `L`.
@@ -127,38 +119,29 @@ theorem isCartanInvolution_ofIsInternal [FiniteDimensional K L]
   · have hθθ : (fun i ↦ (θ i).trans (θ i)) = fun _ ↦ LieEquiv.refl :=
       funext fun i ↦ LieEquiv.ext (hθ i).involutive
     rw [← LieEquiv.trans_apply, ← ofIsInternal_trans, hθθ, ofIsInternal_refl, LieEquiv.refl_apply]
-  -- Write `x` as the sum of its components `d i ∈ I i`.
+  -- Write `x` as the sum of its components `d i ∈ I i`; the Killing form splits over them.
   set d := (DirectSum.lieModuleEquivOfIsInternal I h).symm x
-  have hx' : x = ∑ i ∈ d.support, (d i : L) := by
-    conv_lhs => rw [← (DirectSum.lieModuleEquivOfIsInternal I h).apply_symm_apply x]
-    rw [DirectSum.lieModuleEquivOfIsInternal_apply, ← LieModuleHom.coe_toLinearMap,
-      DirectSum.coeLieModuleHom_toLinearMap, DirectSum.coeLinearMap_eq_dfinsuppSum, DFinsupp.sum]
-  -- Components in distinct summands are Killing-orthogonal.
-  have hoff : ∀ i j, j ≠ i → killingForm K L (d i) (f (d j)) = 0 := fun i j hji ↦ by
-    rw [ofIsInternal_apply_coe]
-    exact LieIdeal.killingForm_eq_zero_of_disjoint (h.lieSubmodule_disjoint hji.symm)
-      (d i).property (θ j (d j)).property
+  have hx' : ∑ i ∈ d.support, (d i : L) = x :=
+    DirectSum.sum_support_lieModuleEquivOfIsInternal_symm h x
   have hsum : killingForm K L x (f x) =
       ∑ i ∈ d.support, killingForm K (I i) (d i) (θ i (d i)) := by
-    calc killingForm K L x (f x)
-        = ∑ i ∈ d.support, ∑ j ∈ d.support, killingForm K L (d i) (f (d j)) := by
-          conv_lhs => rw [hx']
-          simp only [map_sum, LinearMap.sum_apply]
-          exact Finset.sum_comm
-      _ = _ := Finset.sum_congr rfl fun i hi ↦ by
-          rw [Finset.sum_eq_single i (fun j _ ↦ hoff i j) (fun h ↦ absurd hi h),
-            ofIsInternal_apply_coe, LieIdeal.killingForm_apply_apply_coe]
+    rw [← hx', map_sum f, LieIdeal.killingForm_sum_sum (y := fun i ↦ f (d i))
+      (fun i j hij ↦ h.lieSubmodule_disjoint hij) _ (fun i ↦ (d i).property)
+      (fun i ↦ by rw [ofIsInternal_apply_coe]; exact (θ i _).property)]
+    exact Finset.sum_congr rfl fun i _ ↦ by
+      rw [ofIsInternal_apply_coe, LieIdeal.killingForm_apply_apply_coe]
   rw [hsum]
   refine Finset.sum_neg (fun i hi ↦ (hθ i).killingForm_apply_apply_neg
     (DFinsupp.mem_support_iff.mp hi)) (Finset.nonempty_of_ne_empty fun hd0 ↦ ?_)
-  exact hx (by rw [hx', hd0, Finset.sum_empty])
+  exact hx (by rw [← hx', hd0, Finset.sum_empty])
 
 end IsCartanInvolutionOfIsInternal
 
 /-! ### The flip of `L × L` -/
 
-/-- The flip of `L × L` is not a Cartan involution for nontrivial `L`: it exchanges the ideals
-`L × 0` and `0 × L` instead of preserving them. -/
+/-- The flip of `L × L` is not a Cartan involution for nontrivial `L`: for `x ≠ 0` it sends
+`(x, 0)` into the ideal `0 × L`, which meets `L × 0` trivially and so is Killing orthogonal to it,
+whereas a Cartan involution has `B(v, θ v) < 0` for `v ≠ 0`. -/
 theorem not_isCartanInvolution_prodComm {K L : Type*} [Field K] [LinearOrder K]
     [IsStrictOrderedRing K] [LieRing L] [LieAlgebra K L] [Nontrivial L] :
     ¬ (LieEquiv.prodComm (R := K) (L₁ := L) (L₂ := L)).IsCartanInvolution := by
@@ -173,135 +156,10 @@ theorem not_isCartanInvolution_prodComm {K L : Type*} [Field K] [LinearOrder K]
 
 end LieEquiv
 
-/-! ### The compact and noncompact ideals -/
-
-namespace LieAlgebra
-
-variable (K L : Type*) [Field K] [LinearOrder K] [LieRing L] [LieAlgebra K L]
-
-/-- The *compact ideal* of a Lie algebra over an ordered field: the sum of the simple ideals on
-which the Killing form is negative definite. -/
-noncomputable def compactIdeal : LieIdeal K L :=
-  sSup {I | IsAtom I ∧ ∀ x ∈ I, x ≠ 0 → killingForm K L x x < 0}
-
-/-- The *noncompact ideal* of a Lie algebra over an ordered field: the sum of the simple ideals on
-which the Killing form is not negative definite. -/
-noncomputable def noncompactIdeal : LieIdeal K L :=
-  sSup {I | IsAtom I ∧ ¬ ∀ x ∈ I, x ≠ 0 → killingForm K L x x < 0}
-
-/-- The compact ideal is the sum of the simple ideals with negative definite Killing form. The
-definition is not exposed, so this is how it is unfolded. -/
-theorem compactIdeal_def : compactIdeal K L =
-    sSup {I | IsAtom I ∧ ∀ x ∈ I, x ≠ 0 → killingForm K L x x < 0} :=
-  (rfl)
-
-/-- The noncompact ideal is the sum of the other simple ideals. The definition is not exposed, so
-this is how it is unfolded. -/
-theorem noncompactIdeal_def : noncompactIdeal K L =
-    sSup {I | IsAtom I ∧ ¬ ∀ x ∈ I, x ≠ 0 → killingForm K L x x < 0} :=
-  (rfl)
-
-variable {K L}
-
-/-- A simple ideal with negative definite Killing form lies in the compact ideal. -/
-theorem le_compactIdeal_of_isAtom {I : LieIdeal K L} (hI : IsAtom I)
-    (h : ∀ x ∈ I, x ≠ 0 → killingForm K L x x < 0) : I ≤ compactIdeal K L :=
-  compactIdeal_def K L ▸ le_sSup ⟨hI, h⟩
-
-/-- A simple ideal whose Killing form is not negative definite lies in the noncompact ideal. -/
-theorem le_noncompactIdeal_of_isAtom {I : LieIdeal K L} (hI : IsAtom I)
-    (h : ¬ ∀ x ∈ I, x ≠ 0 → killingForm K L x x < 0) : I ≤ noncompactIdeal K L :=
-  noncompactIdeal_def K L ▸ le_sSup ⟨hI, h⟩
-
-/-- The compact ideal lies in `J` exactly when every simple ideal with negative definite Killing
-form does. -/
-theorem compactIdeal_le_iff {J : LieIdeal K L} :
-    compactIdeal K L ≤ J ↔
-      ∀ I : LieIdeal K L, IsAtom I → (∀ x ∈ I, x ≠ 0 → killingForm K L x x < 0) → I ≤ J := by
-  simp only [compactIdeal_def, sSup_le_iff, Set.mem_ofPred_eq, and_imp]
-
-/-- The noncompact ideal lies in `J` exactly when every simple ideal whose Killing form is not
-negative definite does. -/
-theorem noncompactIdeal_le_iff {J : LieIdeal K L} :
-    noncompactIdeal K L ≤ J ↔
-      ∀ I : LieIdeal K L, IsAtom I → (¬ ∀ x ∈ I, x ≠ 0 → killingForm K L x x < 0) → I ≤ J := by
-  simp only [noncompactIdeal_def, sSup_le_iff, Set.mem_ofPred_eq, and_imp]
-
-/-- On a Lie ideal of a finite-dimensional Lie algebra, the Killing form of `L` is negative
-definite exactly when the Killing form of the ideal is. For a simple ideal of a semisimple Lie
-algebra, `LieAlgebra.le_compactIdeal_iff_of_isAtom` turns this into membership in the compact
-ideal. -/
-theorem forall_killingForm_neg_iff [FiniteDimensional K L] (I : LieIdeal K L) :
-    (∀ x ∈ I, x ≠ 0 → killingForm K L x x < 0) ↔
-      ∀ x : I, x ≠ 0 → killingForm K I x x < 0 := by
-  simp only [← LieIdeal.killingForm_apply_apply_coe]
-  exact ⟨fun h x hx ↦ h x x.property (by simpa using hx),
-    fun h x hx hx₀ ↦ h ⟨x, hx⟩ (by simpa using hx₀)⟩
-
-/-- A semisimple Lie algebra over an ordered field is the direct sum of its compact ideal and its
-noncompact ideal. -/
-theorem isCompl_compactIdeal_noncompactIdeal [IsSemisimple K L] :
-    IsCompl (compactIdeal K L) (noncompactIdeal K L) := by
-  have hind := (IsSemisimple.sSupIndep_isAtom (R := K) (L := L))
-  refine ⟨?_, codisjoint_iff.mpr ?_⟩
-  · have himage : ∀ Q : LieIdeal K L → Prop, sSup {I | IsAtom I ∧ Q I} =
-        ⨆ J ∈ {J : {I : LieIdeal K L | IsAtom I} | Q J}, (J : LieIdeal K L) := fun Q ↦ by
-      rw [← sSup_image]
-      congr 1
-      ext I
-      simp [and_comm]
-    rw [compactIdeal_def, noncompactIdeal_def, himage, himage]
-    exact ((sSupIndep_iff _).mp hind).disjoint_biSup_biSup
-      (Set.disjoint_left.mpr fun _ h₁ h₂ ↦ h₂ h₁)
-  · rw [compactIdeal_def, noncompactIdeal_def, ← sSup_union, ← IsSemisimple.sSup_atoms_eq_top]
-    congr 1
-    ext I
-    simp only [Set.mem_union, Set.mem_ofPred_eq, ← and_or_left, or_not, and_true]
-
-/-- **A simple ideal lies in the compact ideal exactly when it is a compact Lie algebra**: in a
-finite-dimensional semisimple Lie algebra, an atom `I` satisfies `I ≤ compactIdeal K L` exactly
-when its own Killing form is negative definite. -/
-theorem le_compactIdeal_iff_of_isAtom [FiniteDimensional K L] [IsSemisimple K L]
-    {I : LieIdeal K L} (hI : IsAtom I) :
-    I ≤ compactIdeal K L ↔ ∀ x : I, x ≠ 0 → killingForm K I x x < 0 := by
-  rw [← forall_killingForm_neg_iff]
-  refine ⟨fun hle ↦ ?_, le_compactIdeal_of_isAtom hI⟩
-  by_contra h
-  exact hI.1 (eq_bot_iff.mpr ((isCompl_compactIdeal_noncompactIdeal (K := K) (L := L)).disjoint
-    hle (le_noncompactIdeal_of_isAtom hI h)))
-
-/-- **A simple ideal lies in the noncompact ideal exactly when it is not a compact Lie algebra**:
-in a finite-dimensional semisimple Lie algebra, an atom `I` satisfies `I ≤ noncompactIdeal K L`
-exactly when its own Killing form is not negative definite. -/
-theorem le_noncompactIdeal_iff_of_isAtom [FiniteDimensional K L] [IsSemisimple K L]
-    {I : LieIdeal K L} (hI : IsAtom I) :
-    I ≤ noncompactIdeal K L ↔ ¬ ∀ x : I, x ≠ 0 → killingForm K I x x < 0 := by
-  refine ⟨fun hle h ↦ hI.1 (eq_bot_iff.mpr ?_), fun h ↦ le_noncompactIdeal_of_isAtom hI
-    ((forall_killingForm_neg_iff I).not.mpr h)⟩
-  exact (isCompl_compactIdeal_noncompactIdeal (K := K) (L := L)).disjoint
-    ((le_compactIdeal_iff_of_isAtom hI).mpr h) hle
-
-end LieAlgebra
-
 namespace LieEquiv.IsCartanInvolution
 
 variable {K L : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [LieRing L]
   [LieAlgebra K L] {θ : L ≃ₗ⁅K⁆ L}
-
-private theorem map_sSup_of_forall_isAtom (hθ : θ.IsCartanInvolution) {S : Set (LieIdeal K L)}
-    (hS : ∀ I ∈ S, IsAtom I) : (sSup S).map θ.toLieHom = sSup S := by
-  rw [(LieIdeal.gc_map_comap θ.toLieHom).l_sSup, sSup_eq_iSup]
-  exact iSup_congr fun I ↦ iSup_congr fun hI ↦ hθ.map_eq_of_isAtom (hS I hI)
-
-/-- The compact ideal is stable under a Cartan involution. -/
-theorem map_compactIdeal (hθ : θ.IsCartanInvolution) :
-    (compactIdeal K L).map θ.toLieHom = compactIdeal K L :=
-  hθ.map_sSup_of_forall_isAtom fun _ hI ↦ hI.1
-
-/-- The noncompact ideal is stable under a Cartan involution. -/
-theorem map_noncompactIdeal (hθ : θ.IsCartanInvolution) :
-    (noncompactIdeal K L).map θ.toLieHom = noncompactIdeal K L :=
-  hθ.map_sSup_of_forall_isAtom fun _ hI ↦ hI.1
 
 /-- A simple ideal has negative definite Killing form exactly when a Cartan involution fixes it
 pointwise. -/
@@ -337,7 +195,7 @@ theorem cartanP_le_noncompactIdeal (hθ : θ.IsCartanInvolution) :
     rw [← LieSubmodule.sup_toSubmodule, hc.sup_eq_top, LieSubmodule.top_toSubmodule]
   obtain ⟨c, hcm, n, hn, rfl⟩ := Submodule.mem_sup.mp (htop ▸ Submodule.mem_top : x ∈ _)
   have hθn : θ n ∈ noncompactIdeal K L := by
-    rw [← hθ.map_noncompactIdeal]
+    rw [← θ.map_noncompactIdeal]
     exact LieIdeal.mem_map hn
   -- `θ (c + n) = -(c + n)` and `θ c = c` give `2 c = -(n + θ n)`, in both ideals.
   have h2 : (2 : K) • c = -(n + θ n) := by
