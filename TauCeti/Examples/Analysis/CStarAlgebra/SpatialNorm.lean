@@ -26,8 +26,9 @@ matrix units `eᵢⱼ = |bᵢ⟩⟨bⱼ|` in the algebra `B(H)` (`TauCeti.Spatia
    `u⋆ u = e₂₂ ⊗ e₂₂ + e₁₁ ⊗ e₁₁` is a nonzero projection, so `‖u‖_min = 1`
    (`TauCeti.SpatialNormExample.spatialNorm_u`), whereas the cross norms of its two elementary
    tensors add up to `2` (`TauCeti.SpatialNormExample.spatialNorm_tmul_add_spatialNorm_tmul`).
-2. **The spatial norm is a cross norm.** `‖1 ⊗ 1‖_min = ‖1‖ ‖1‖ = 1` for `H ≠ 0`
-   (`TauCeti.SpatialNormExample.spatialNorm_one_tmul_one`).
+2. **The spatial norm of `1 ⊗ 1`.** `‖1 ⊗ 1‖_min = ‖1‖ ‖1‖ = 1` for `H ≠ 0`
+   (`TauCeti.SpatialNormExample.spatialNorm_one_tmul_one`), an instance of the cross-norm identity
+   `NonUnitalStarSubalgebra.spatialNorm_tmul`.
 
 Both are then specialized to the standard basis of `ℂ² = EuclideanSpace ℂ (Fin 2)`. Indices are
 `0` and `1` in Lean, so `e₁₂` is `e b 0 1`.
@@ -54,7 +55,7 @@ def e (b : Fin 2 → H) (i j : Fin 2) : BH H :=
 
 /-- A shortcut instance: `simp` times out finding the distributivity of multiplication on
 `B(H) ⊗[ℂ] B(H)` by itself. -/
-instance instDistribBHTensor : Distrib (BH H ⊗[ℂ] BH H) :=
+local instance instDistribBHTensor : Distrib (BH H ⊗[ℂ] BH H) :=
   inferInstance
 
 variable {b : Fin 2 → H}
@@ -77,8 +78,7 @@ theorem star_e (i j : Fin 2) : star (e b i j) = e b j i :=
 
 /-- Matrix units have norm `1`. -/
 theorem norm_e (hb : Orthonormal ℂ b) (i j : Fin 2) : ‖e b i j‖ = 1 := by
-  change ‖rankOne ℂ (b i) (b j)‖ = 1
-  rw [norm_rankOne, hb.norm_eq_one, hb.norm_eq_one, one_mul]
+  rw [AddSubgroupClass.coe_norm, e, norm_rankOne, hb.norm_eq_one, hb.norm_eq_one, one_mul]
 
 /-- The element `u = e₁₂ ⊗ e₁₂ + e₂₁ ⊗ e₂₁` of `B(H) ⊙ B(H)`. -/
 def u (b : Fin 2 → H) : BH H ⊗[ℂ] BH H :=
@@ -87,18 +87,14 @@ def u (b : Fin 2 → H) : BH H ⊗[ℂ] BH H :=
 /-- `u⋆ u = e₂₂ ⊗ e₂₂ + e₁₁ ⊗ e₁₁`. -/
 theorem star_u_mul_u (hb : Orthonormal ℂ b) :
     star (u b) * u b = e b 1 1 ⊗ₜ e b 1 1 + e b 0 0 ⊗ₜ e b 0 0 := by
-  simp only [u, star_add, TensorProduct.star_tmul, star_e, add_mul, mul_add,
-    Algebra.TensorProduct.tmul_mul_tmul, e_mul_e hb, e_mul_e_of_ne hb _ _ zero_ne_one,
-    e_mul_e_of_ne hb _ _ one_ne_zero, TensorProduct.zero_tmul, zero_add, add_zero]
+  simp [u, star_e, add_mul, mul_add, e_mul_e hb, e_mul_e_of_ne hb]
 
 /-- `e₂₂ ⊗ e₂₂ + e₁₁ ⊗ e₁₁` is a projection. -/
 theorem isStarProjection_star_u_mul_u (hb : Orthonormal ℂ b) :
     IsStarProjection (star (u b) * u b) := by
   refine ⟨?_, IsSelfAdjoint.star_mul_self (u b)⟩
   rw [IsIdempotentElem, star_u_mul_u hb]
-  simp only [add_mul, mul_add, Algebra.TensorProduct.tmul_mul_tmul, e_mul_e hb,
-    e_mul_e_of_ne hb _ _ zero_ne_one, e_mul_e_of_ne hb _ _ one_ne_zero,
-    TensorProduct.zero_tmul, zero_add, add_zero]
+  simp [add_mul, mul_add, e_mul_e hb, e_mul_e_of_ne hb]
 
 /-- The operator of `u⋆ u` is nonzero: it fixes `b₁ ⊗ b₁`. -/
 theorem spatialTensorHom_star_u_mul_u_ne_zero (hb : Orthonormal ℂ b) :
@@ -135,12 +131,12 @@ theorem spatialNorm_tmul_add_spatialNorm_tmul (hb : Orthonormal ℂ b) :
 def one (H : Type*) [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H] : BH H :=
   ⟨1, trivial⟩
 
-/-- **`‖1 ⊗ 1‖_min = 1`** for `H ≠ 0`: the spatial norm is a cross norm. -/
+/-- **`‖1 ⊗ 1‖_min = 1`** for `H ≠ 0`, an instance of the cross-norm identity
+`NonUnitalStarSubalgebra.spatialNorm_tmul`. -/
 theorem spatialNorm_one_tmul_one [Nontrivial H] :
     NonUnitalStarSubalgebra.spatialNorm (BH H) (BH H) (one H ⊗ₜ one H) = 1 := by
-  rw [NonUnitalStarSubalgebra.spatialNorm_tmul]
-  change ‖(1 : H →L[ℂ] H)‖ * ‖(1 : H →L[ℂ] H)‖ = 1
-  rw [norm_one, one_mul]
+  rw [NonUnitalStarSubalgebra.spatialNorm_tmul, AddSubgroupClass.coe_norm, one, norm_one,
+    one_mul]
 
 /-! ### The standard basis of `ℂ²` -/
 
