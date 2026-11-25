@@ -16,10 +16,10 @@ module sheaves. No Noetherian or finiteness hypothesis on the morphism is requir
 resolutions may be unbounded: the argument preserves exactness in every positive degree,
 not just a finite presentation.
 
-Flatness is used only on the short complexes of finite free resolving terms, which are
-quasi-coherent, to preserve exactness in positive degrees. Degree zero uses only right
-exactness of pullback to preserve the cokernel presentation of the augmentation. Restriction
-of pullback to an inverse-image open then gives the local result.
+Flatness is used only to preserve exactness of the resolution in positive degrees, since flat
+pullback is exact. Degree zero uses only right exactness of pullback to preserve the cokernel
+presentation of the augmentation. Restriction of pullback to an inverse-image open then gives the
+local result.
 
 ## References
 
@@ -46,9 +46,6 @@ theorem HasFiniteFreeResolution.pullback (h : M.HasFiniteFreeResolution)
   obtain ⟨P, π, hP, hπ⟩ := hasFiniteFreeResolution_iff.mp h
   have : PreservesColimits (Modules.pullback f) :=
     (pullbackPushforwardAdjunction f).leftAdjoint_preservesColimits
-  have hfree (n : ℕ) : (P.X n).IsQuasicoherent := by
-    obtain ⟨ι, _, ⟨e⟩⟩ := hP n
-    exact (SheafOfModules.isQuasicoherent Y.ringCatSheaf).prop_of_iso e.symm inferInstance
   let Q : ChainComplex X.Modules ℕ :=
     ((Modules.pullback f).mapHomologicalComplex (ComplexShape.down ℕ)).obj P
   let ε := (Modules.pullback f).map (π.f 0)
@@ -67,15 +64,13 @@ theorem HasFiniteFreeResolution.pullback (h : M.HasFiniteFreeResolution)
       -- Right exactness preserves the cokernel presentation of the augmentation.
       exact P.quasiIsoAt₀_of_map π (Modules.pullback f) ρ hρ
     | succ n =>
-      -- In positive degrees both adjacent resolving terms are quasi-coherent.
+      -- In positive degrees exactness is preserved by the exact functor of flat pullback.
       rw [quasiIsoAt_iff_exactAt' ρ (n + 1) (ChainComplex.exactAt_succ_single_obj _ _),
         exactAt_iff' _ (n + 2) (n + 1) n (by simp) (by simp)]
       have hexact : P.ExactAt (n + 1) :=
         (exactAt_iff_of_quasiIsoAt π (n + 1)).mpr (ChainComplex.exactAt_succ_single_obj _ _)
-      have : (P.sc' (n + 2) (n + 1) n).X₂.IsQuasicoherent := hfree (n + 1)
-      have : (P.sc' (n + 2) (n + 1) n).X₃.IsQuasicoherent := hfree n
-      exact f.exact_map_pullback_of_flat _
-        ((exactAt_iff' P (n + 2) (n + 1) n (by simp) (by simp)).mp hexact)
+      exact ((exactAt_iff' P (n + 2) (n + 1) n (by simp) (by simp)).mp hexact).map
+        (Modules.pullback f)
 
 /-- Pullback along a flat morphism preserves pseudo-coherence of module sheaves on arbitrary
 schemes. -/

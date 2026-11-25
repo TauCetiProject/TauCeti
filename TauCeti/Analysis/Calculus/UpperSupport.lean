@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.Calculus.Deriv.AffineMap
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
 # First-order upper supports and Lipschitz estimates
@@ -128,27 +129,14 @@ theorem sub_le_integral_of_upper_supports {f h : ℝ → ℝ} {a b : ℝ}
       HasDerivWithinAt g d (Ici x) x ∧ g x = f x ∧
         (∀ᶠ y in 𝓝[>] x, f y ≤ g y) ∧ d ≤ h x) :
     f b - f a ≤ ∫ x in a..b, h x := by
-  let B : ℝ → ℝ := fun t ↦ f a + ∫ x in a..t, h x
-  have hint : IntervalIntegrable h volume a b := hh.intervalIntegrable_of_Icc hab
-  have hBcont : ContinuousOn B (Icc a b) := by
-    apply continuousOn_const.add
-    simpa only [uIcc_of_le hab] using
-      intervalIntegral.continuousOn_primitive_interval' hint left_mem_uIcc
-  have hB : ∀ t ∈ Ico a b, HasDerivWithinAt B (h t) (Ici t) t := by
-    intro t ht
-    have hnhds : Icc a b ∈ 𝓝[≥] t := Icc_mem_nhdsGE_of_mem ht
-    have hright : ContinuousWithinAt h (Ioi t) t :=
-      ((hh t ⟨ht.1, ht.2.le⟩).mono_of_mem_nhdsWithin hnhds).mono Ioi_subset_Ici_self
-    have hmeas : StronglyMeasurableAtFilter h (𝓝[>] t) volume :=
-      ⟨Icc a b, nhdsWithin_mono _ Ioi_subset_Ici_self hnhds,
-        hh.aestronglyMeasurable measurableSet_Icc⟩
-    have hintt : IntervalIntegrable h volume a t :=
-      (hh.mono (Icc_subset_Icc le_rfl ht.2.le)).intervalIntegrable_of_Icc ht.1
-    exact (intervalIntegral.integral_hasDerivWithinAt_right hintt hmeas hright).const_add _
-  have hBa : f a ≤ B a := by simp [B]
-  have hcomp := image_le_of_upper_supports hf
-    hBcont hB hBa hsupport
-      b ⟨hab, le_rfl⟩
-  exact sub_le_iff_le_add.mpr (by simpa only [B, add_comm] using hcomp)
+  -- Compare `f` with `B = f a + (F - F a)` for a continuous primitive `F` of `h`, so that
+  -- `B' = h` on `[a, b]` and `B b = f a + ∫ₐᵇ h`.
+  obtain ⟨F, hFc, hFd, hFint⟩ := intervalIntegral.exists_continuous_primitive_Icc hh
+  have hcomp := image_le_of_upper_supports (B := fun t ↦ f a + (F t - F a)) hf
+    (continuous_const.add (hFc.sub continuous_const)).continuousOn
+    (fun x hx ↦ (((hFd x (Ico_subset_Icc_self hx)).sub_const _).const_add _).hasDerivWithinAt)
+    (by simp) hsupport b (right_mem_Icc.2 hab)
+  rw [hFint a (left_mem_Icc.2 hab) b (right_mem_Icc.2 hab)] at hcomp
+  linarith
 
 end TauCeti

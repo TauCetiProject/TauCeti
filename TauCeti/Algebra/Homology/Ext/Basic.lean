@@ -48,6 +48,9 @@ This file collects general `Ext` API that Mathlib does not state in this form:
 * dimension shifting: the connecting map `Extⁿ⁺¹(P, S.X₃) ⟶ Extⁿ⁺²(P, S.X₁)` of a short exact
   sequence `S` is bijective when `Extⁿ⁺¹(P, S.X₂)` and `Extⁿ⁺²(P, S.X₂)` vanish
   (`CategoryTheory.ShortComplex.ShortExact.extClass_postcomp_bijective`);
+* restriction along `S.f` is a bijection `Extⁿ⁺¹(S.X₂, Y) ⟶ Extⁿ⁺¹(S.X₁, Y)` when the cokernel
+  `S.X₃` is projective
+  (`CategoryTheory.ShortComplex.ShortExact.precomp_mk₀_f_bijective_of_projective`);
 * the right-exact case of the five lemma for covariant `Ext` along a morphism of short exact
   sequences: when `Ext^{j + 1}(P, S₁.X₂)` and `Ext^{j + 1}(P, S₂.X₂)` vanish, surjectivity on the
   second and bijectivity on the third terms in degree `j` give bijectivity on the first terms in
@@ -415,6 +418,17 @@ theorem extClass_postcomp_bijective (P : C) {n m : ℕ} (h : n + 1 + 1 = m)
   · obtain ⟨z, rfl⟩ := Ext.covariant_sequence_exact₃ P hS x h hx
     rw [Subsingleton.elim z 0, Ext.zero_comp]
   · exact Ext.covariant_sequence_exact₁ P hS x (Subsingleton.elim _ _) h
+
+/-- **Restriction to a subobject with projective quotient**: if `0 ⟶ S.X₁ ⟶ S.X₂ ⟶ S.X₃ ⟶ 0` is
+short exact and `S.X₃` is projective, precomposition with `S.f` is a bijection
+`Extⁿ⁺¹(S.X₂, Y) ⟶ Extⁿ⁺¹(S.X₁, Y)`, since `Extⁿ⁺¹(S.X₃, Y)` and `Extⁿ⁺²(S.X₃, Y)` vanish. -/
+theorem precomp_mk₀_f_bijective_of_projective [Projective S.X₃] (Y : C) (n : ℕ) :
+    Function.Bijective (Ext.precomp (Ext.mk₀ S.f) Y (zero_add (n + 1))) := by
+  refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_, fun x ↦ ?_⟩
+  · obtain ⟨z, rfl⟩ := Ext.contravariant_sequence_exact₂ hS Y x hx
+    rw [Ext.eq_zero_of_projective z, Ext.comp_zero]
+  · exact Ext.contravariant_sequence_exact₁ hS Y x (n₁ := n + 2) (by lia)
+      (Ext.eq_zero_of_projective _)
 
 /-- **Extension along a monomorphism with orthogonal cokernel**: if `S` is short exact and
 `Ext¹(S.X₃, Y) = 0`, every morphism `S.X₁ ⟶ Y` extends along `S.f`. -/

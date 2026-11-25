@@ -7,6 +7,10 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Rank
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Restriction
+public import TauCeti.AlgebraicGeometry.Modules.Differentials.Stalk
+import TauCeti.AlgebraicGeometry.Modules.Sheaf
+import TauCeti.AlgebraicGeometry.Modules.Stalk
+import TauCeti.AlgebraicGeometry.VectorBundle.Stalk
 
 /-!
 # Locally free quotients of the sheaf of differentials
@@ -26,10 +30,17 @@ The predicate is sensitive to the characteristic: for the cusp `y² = x³` and `
 * `HasLocallyFreeQuotientOfDifferentials k X d`: `Ω_{X/k}` admits a locally free quotient of
   rank `d`;
 * `hasLocallyFreeQuotientOfDifferentials_iff`: the defining existential condition;
+* `hasLocallyFreeQuotientOfDifferentials_of_isEmpty` and
+  `hasLocallyFreeQuotientOfDifferentials_zero`: the predicate holds for every rank on the empty
+  scheme, and for rank `0` on every scheme;
 * `HasLocallyFreeQuotientOfDifferentials.of_isOpenImmersion` and
   `HasLocallyFreeQuotientOfDifferentials.restrict`: the predicate passes to open subschemes;
 * `hasLocallyFreeQuotientOfDifferentials_of_smoothOfRelativeDimension`: on a scheme smooth of
-  relative dimension `d`, the identity of `Ω_{X/k}` witnesses the predicate.
+  relative dimension `d`, the identity of `Ω_{X/k}` witnesses the predicate;
+* `HasLocallyFreeQuotientOfDifferentials.exists_surjective_stalk`: the forward direction of the
+  stalk criterion, that at every point `x` there is a surjective `𝒪_{X,x}`-linear map
+  `Ω[𝒪_{X,x}⁄k] → 𝒪_{X,x}^d`. The stalk of a locally free quotient `Ω_{X/k} ⟶ E` at `x` is
+  surjective, `E_x` is free of rank `d`, and the stalk of `Ω_{X/k}` is `Ω[𝒪_{X,x}⁄k]`.
 
 ## References
 
@@ -65,6 +76,21 @@ theorem hasLocallyFreeQuotientOfDifferentials_iff (X : Scheme.{u}) [X.Over (Spec
         Epi q :=
   Iff.rfl
 
+/-- On the empty scheme, `Ω_{X/k}` admits a locally free quotient of every rank `d`. -/
+theorem hasLocallyFreeQuotientOfDifferentials_of_isEmpty (X : Scheme.{u}) [X.Over (Spec (.of k))]
+    [IsEmpty X] (d : ℕ) : HasLocallyFreeQuotientOfDifferentials k X d :=
+  ⟨FiniteLocallyFreeSheaf.FixedRank.free X d, 0,
+    Scheme.Modules.Hom.epi_of_forall_exists_surjective_smul _ fun x ↦ isEmptyElim x⟩
+
+/-- On every scheme, `Ω_{X/k}` admits a locally free quotient of rank `0`, namely the zero
+quotient. -/
+theorem hasLocallyFreeQuotientOfDifferentials_zero (X : Scheme.{u}) [X.Over (Spec (.of k))] :
+    HasLocallyFreeQuotientOfDifferentials k X 0 :=
+  have h : Limits.IsZero (FiniteLocallyFreeSheaf.FixedRank.free X 0).obj.obj := by
+    rw [FiniteLocallyFreeSheaf.FixedRank.free_obj, FiniteLocallyFreeSheaf.free_obj]
+    exact TauCeti.SheafOfModules.isZero_free _
+  ⟨FiniteLocallyFreeSheaf.FixedRank.free X 0, 0, h.epi _⟩
+
 variable {k}
 
 namespace HasLocallyFreeQuotientOfDifferentials
@@ -90,6 +116,21 @@ theorem restrict {X : Scheme.{u}} [X.Over (Spec (.of k))] {d : ℕ}
     (h : HasLocallyFreeQuotientOfDifferentials k X d) (V : X.Opens) :
     HasLocallyFreeQuotientOfDifferentials k V d :=
   h.of_isOpenImmersion V.ι
+
+/-- **Stalk criterion, forward direction.** If `Ω_{X/k}` admits a locally free quotient of rank
+`d`, then at every point `x` of `X` there is a surjective `𝒪_{X,x}`-linear map from the Kähler
+differentials `Ω[𝒪_{X,x}⁄k]` onto `𝒪_{X,x}^d`. -/
+theorem exists_surjective_stalk {X : Scheme.{u}} [X.Over (Spec (.of k))] {d : ℕ}
+    (h : HasLocallyFreeQuotientOfDifferentials k X d) (x : X) :
+    ∃ g : Ω[X.presheaf.stalk x⁄k] →ₗ[X.presheaf.stalk x] (Fin d → X.presheaf.stalk x),
+      Function.Surjective g := by
+  obtain ⟨E, q, _⟩ := h
+  let b := Module.finBasisOfFinrankEq _ _
+    ((FiniteLocallyFreeSheaf.finrank_stalk E.obj x).trans (E.rank_apply x))
+  refine ⟨b.equivFun.toLinearMap ∘ₗ q.stalkₗ x ∘ₗ
+    (X.relativeDifferentialsStalkEquiv k x).symm.toLinearMap, ?_⟩
+  exact b.equivFun.surjective.comp
+    ((q.stalkₗ_surjective_of_epi x).comp (LinearEquiv.surjective _))
 
 end HasLocallyFreeQuotientOfDifferentials
 

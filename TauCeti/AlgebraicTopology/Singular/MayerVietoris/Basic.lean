@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.SubcomplexColimits
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.MayerVietoris
+public import TauCeti.AlgebraicTopology.Singular.Reduced
 public import TauCeti.AlgebraicTopology.Singular.Subspace
 
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Equiv
@@ -48,6 +49,10 @@ of `X`.
 * `TopCat.epi_mayerVietorisFromBiprod_zero`: surjectivity at the degree-zero endpoint.
 * `TopCat.isIso_mayerVietorisToBiprod_of_isZero`: when `Hₙ₊₁(X)` and `Hₙ(X)` vanish,
   `Hₙ(U ∩ V) ≅ Hₙ(U) ⊞ Hₙ(V)`.
+* `TopCat.isIso_mayerVietorisFromBiprod_of_isZero`: when `Hₙ(U ∩ V)` and `Hₙ₋₁(U ∩ V)` vanish,
+  `Hₙ(U) ⊞ Hₙ(V) ≅ Hₙ(X)`.
+* `TopCat.isIso_biprodDesc_singularHomologyFunctor_map_of_disjoint`: for a cover by two disjoint
+  open sets, `Hₙ(U) ⊞ Hₙ(V) ≅ Hₙ(X)`.
 * `TopCat.mayerVietorisδ_naturality`: naturality of the connecting morphism.
 
 ## References
@@ -318,6 +323,41 @@ lemma epi_mayerVietorisFromBiprod_zero :
     exact epi_comp _ _
   rw [mayerVietorisFromBiprod_comp_homologyMap_ι] at hepi
   exact hepi
+
+include hU hV hUV in
+/-- If `Hₙ(U ∩ V)` vanishes, and so does `Hₘ(U ∩ V)` when `n = m + 1`, for instance when `U` and
+`V` are disjoint, the second map `Hₙ(U) ⊞ Hₙ(V) ⟶ Hₙ(X)` of the Mayer–Vietoris sequence of an
+open cover is an isomorphism. -/
+lemma isIso_mayerVietorisFromBiprod_of_isZero (n : ℕ)
+    (h₀ : IsZero ((toSSet.obj (of ↥(U ∩ V))).homology R n))
+    (h₁ : ∀ m, n = m + 1 → IsZero ((toSSet.obj (of ↥(U ∩ V))).homology R m)) :
+    IsIso (SSet.mayerVietorisFromBiprod R (toSSet.map (ofHom (ContinuousMap.subtypeVal U)))
+      (toSSet.map (ofHom (ContinuousMap.subtypeVal V))) n) := by
+  have := (mayerVietoris_exact₂ R hU hV hUV n).mono_g (h₀.eq_of_src _ _)
+  rcases n with _ | m
+  · have := epi_mayerVietorisFromBiprod_zero R hUV
+    exact isIso_of_mono_of_epi _
+  · have := (mayerVietoris_exact₃ R hU hV hUV (m + 1) m).epi_f ((h₁ m rfl).eq_of_tgt _ _)
+    exact isIso_of_mono_of_epi _
+
+include hU hV hUV in
+/-- For a cover of `X` by two disjoint open sets `U` and `V`, the sum `Hₙ(U) ⊞ Hₙ(V) ⟶ Hₙ(X)` of
+the maps induced by the subspace inclusions is an isomorphism: it is the second map of the
+Mayer–Vietoris sequence, and the homology of `U ∩ V` vanishes in every degree. -/
+lemma isIso_biprodDesc_singularHomologyFunctor_map_of_disjoint (hd : Disjoint U V) (n : ℕ) :
+    IsIso (biprod.desc
+      (((AlgebraicTopology.singularHomologyFunctor C n).obj R).map
+        (ofHom (ContinuousMap.subtypeVal U)))
+      (((AlgebraicTopology.singularHomologyFunctor C n).obj R).map
+        (ofHom (ContinuousMap.subtypeVal V)))) := by
+  have : IsEmpty ↥(U ∩ V) := ⟨fun x ↦ Set.disjoint_left.1 hd x.property.1 x.property.2⟩
+  have h (m : ℕ) := TauCeti.isZero_singularHomology_of_isEmpty R (of ↥(U ∩ V)) m
+  have := isIso_mayerVietorisFromBiprod_of_isZero R hU hV hUV n (h n) fun m _ ↦ h m
+  -- The Mayer–Vietoris map is this map: singular homology is by definition the homology of the
+  -- singular simplicial set (`TauCeti.singularHomologyFunctor_obj_map`).
+  rwa [show SSet.mayerVietorisFromBiprod R _ _ n = biprod.desc _ _ from biprod.hom_ext' _ _
+    ((SSet.inl_mayerVietorisFromBiprod R _ _ n).trans (biprod.inl_desc _ _).symm)
+    ((SSet.inr_mayerVietorisFromBiprod R _ _ n).trans (biprod.inr_desc _ _).symm)] at this
 
 variable {Y : TopCat.{w}} {U' V' : Set Y} (hU' : IsOpen U') (hV' : IsOpen V')
   (hUV' : U' ∪ V' = Set.univ) (f : X ⟶ Y) (hfU : Set.MapsTo f U U') (hfV : Set.MapsTo f V V')

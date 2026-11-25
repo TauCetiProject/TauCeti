@@ -99,7 +99,7 @@ theorem norm_fdBoundary_sub_rho_segment5 (ht : 4 ≤ t) :
     rcases ht.eq_or_lt with rfl | h4
     · rw [Complex.sub_im, fdBoundary_apply_four, rho_im]
       simp
-    · rw [Complex.sub_im, im_fdBoundary_of_gt_four h4, rho_im]
+    · rw [Complex.sub_im, im_fdBoundary_of_four_le h4.le, rho_im]
   have h1 : |(fdBoundary H t - (UpperHalfPlane.ρ : ℂ)).im| ≤
       ‖fdBoundary H t - (UpperHalfPlane.ρ : ℂ)‖ := Complex.abs_im_le_norm _
   exact him ▸ h1
@@ -135,7 +135,7 @@ theorem fdBoundary_sub_rho_mem_slitPlane_of_three_lt (hH : H ≠ Real.sqrt 3 / 2
   refine Complex.mem_slitPlane_iff.mpr (Or.inr ?_)
   rcases le_or_gt t 4 with ht4 | ht4
   swap
-  · rw [Complex.sub_im, im_fdBoundary_of_gt_four ht4, rho_im]
+  · rw [Complex.sub_im, im_fdBoundary_of_four_le ht4.le, rho_im]
     exact sub_ne_zero.mpr hH
   rw [fdBoundary_sub_rho_of_mem_Icc_three_four H ⟨ht3.le, ht4⟩]
   have him : ((((t - 3) * (H - Real.sqrt 3 / 2) : ℝ) : ℂ) * Complex.I).im =

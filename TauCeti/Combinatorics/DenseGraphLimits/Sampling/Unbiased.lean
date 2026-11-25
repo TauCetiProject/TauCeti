@@ -8,7 +8,7 @@ module
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Finite
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Structural
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Finite
-public import TauCeti.Combinatorics.SimpleGraph.Measurable
+public import TauCeti.Combinatorics.SimpleGraph.Measurable.Basic
 import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Closeness
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Measure.Restrict

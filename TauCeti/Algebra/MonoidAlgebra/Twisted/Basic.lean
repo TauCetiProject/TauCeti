@@ -49,6 +49,8 @@ a basis and the multiplication table above holds on the nose.
   representation with factor set `α` -- extends uniquely to an algebra map `k_α[G] →ₐ[k] A`.
   For a group `G`, such a map is already determined on a generating set
   (`TauCeti.TwistedMonoidAlgebra.algHom_ext_of_closure_eq_top`);
+* `TauCeti.TwistedMonoidAlgebra.repr_mul_apply_one_comm`: for a group `G`, the coefficient at the
+  identity is a trace on `k_α[G]`;
 * `TauCeti.TwistedMonoidAlgebra.monoidAlgebraEquiv`: for the trivial factor set, `k_α[G]` is the
   monoid algebra `MonoidAlgebra k G`;
 * `TauCeti.TwistedMonoidAlgebra.equivOfCoboundary`: two factor sets related by
@@ -74,8 +76,9 @@ representations.
 Nothing in the construction uses inverses in `G`, so `IsFactorSet`, the twisted algebra, its basis,
 the universal property and the two comparison isomorphisms are all stated for a monoid `G`. A group
 is assumed for descent to a quotient group and where an inverse appears, in
-`TauCeti.IsFactorSet.apply_inv_eq_inv_apply`, `TauCeti.TwistedMonoidAlgebra.isUnit_of` and
-`TauCeti.TwistedMonoidAlgebra.algHom_ext_of_closure_eq_top`.
+`TauCeti.IsFactorSet.apply_inv_eq_inv_apply`, `TauCeti.TwistedMonoidAlgebra.isUnit_of`,
+`TauCeti.TwistedMonoidAlgebra.algHom_ext_of_closure_eq_top` and
+`TauCeti.TwistedMonoidAlgebra.repr_mul_apply_one_comm`.
 The twisted translations themselves need only a multiplication on `G`; they are linearly
 independent whenever `G` has a two-sided identity, without any factor-set identities on `α`.
 
@@ -454,6 +457,23 @@ theorem algHom_ext_of_closure_eq_top {A : Type*} [Semiring A] [Algebra k A]
     rw [key, map_smul, map_smul]
     congr 1
     simpa using congrArg (fun v : Aˣ ↦ ((v⁻¹ : Aˣ) : A)) hfg
+
+/-- **The coefficient at the identity is a trace** on a twisted group algebra: `f * g` and `g * f`
+have the same coefficient at `1`. -/
+theorem repr_mul_apply_one_comm (f g : twistedMonoidAlgebra k G α) :
+    (basis k G α).repr (f * g) 1 = (basis k G α).repr (g * f) 1 := by
+  classical
+  -- Both sides are bilinear in `(f, g)`, so it suffices to compare them on basis elements.
+  have key : (LinearMap.mul k (twistedMonoidAlgebra k G α)).compr₂ ((basis k G α).coord 1) =
+      ((LinearMap.mul k (twistedMonoidAlgebra k G α)).compr₂ ((basis k G α).coord 1)).flip := by
+    refine (basis k G α).ext fun a ↦ (basis k G α).ext fun b ↦ ?_
+    simp only [LinearMap.compr₂_apply, LinearMap.flip_apply, LinearMap.mul_apply', basis_apply,
+      of_mul_of, map_smul, Module.Basis.coord_apply, repr_of, smul_eq_mul, Finsupp.single_apply]
+    by_cases hab : a * b = 1
+    · obtain rfl : b = a⁻¹ := eq_inv_of_mul_eq_one_right hab
+      simp [IsFactorSet.apply_inv_eq_inv_apply α a]
+    · simp [hab, mt mul_eq_one_comm.mp hab]
+  exact LinearMap.congr_fun₂ key f g
 
 end Group
 

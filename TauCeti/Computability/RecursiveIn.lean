@@ -198,9 +198,46 @@ theorem rfind {α : Type*} [Primcodable α] {O : Set (ℕ →. ℕ)} {p : α →
     · simp [hm]
     · cases b <;> simp [hm]
 
+/-- A partial function out of `ℕ` is recursive in `O` iff its encoded composition is
+`Nat.RecursiveIn` in `O`. -/
+theorem iff_nat_map_encode {β : Type*} [Primcodable β] {O : Set (ℕ →. ℕ)} {f : ℕ →. β} :
+    RecursiveIn O f ↔ Nat.RecursiveIn O fun n => (f n).map encode := by
+  simp [RecursiveIn]
+
 end RecursiveIn
 
 namespace ComputableIn
+
+/-- Binding an optional value to an optional function computable in `O` preserves computability
+in `O`. The function may also depend on the input. -/
+theorem option_bind {α β γ : Type*} [Primcodable α] [Primcodable β] [Primcodable γ]
+    {O : Set (ℕ →. ℕ)} {f : α → Option β} {g : α → β → Option γ}
+    (hf : ComputableIn O f) (hg : ComputableIn₂ O g) :
+    ComputableIn O fun a => (f a).bind (g a) := by
+  rcases isEmpty_or_nonempty β with hβ | ⟨⟨b⟩⟩
+  · refine RecursiveIn.of_eq (ComputableIn.const (none : Option γ)) fun a => ?_
+    simp only [Part.some_inj]
+    cases f a with
+    | none => rfl
+    | some b => exact (hβ.false b).elim
+  · have hget : ComputableIn O fun a => (f a).getD b :=
+      (Primrec.option_getD.comp Primrec.id (Primrec.const b)).computableIn.comp hf
+    have htag : Primrec fun p : Bool × Option γ => cond p.1 p.2 none :=
+      Primrec.cond Primrec.fst Primrec.snd (Primrec.const none)
+    refine RecursiveIn.of_eq (htag.computableIn.comp
+      ((Primrec.option_isSome.computableIn.comp hf).pair (hg.comp (ComputableIn.id.pair hget))))
+      fun a => ?_
+    simp only [Part.some_inj]
+    cases f a <;> rfl
+
+/-- Mapping an optional value by a function computable in `O` preserves computability in `O`.
+The map may also depend on the input. -/
+theorem option_map {α β γ : Type*} [Primcodable α] [Primcodable β] [Primcodable γ]
+    {O : Set (ℕ →. ℕ)} {f : α → Option β} {g : α → β → γ}
+    (hf : ComputableIn O f) (hg : ComputableIn₂ O g) :
+    ComputableIn O fun a => (f a).map (g a) := by
+  simp only [Option.map_eq_bind, Function.comp_def]
+  exact hf.option_bind (Primrec.option_some.computableIn.comp hg)
 
 /-- Total unbounded search: if `P` is decidable and computable in `O` and holds at some number for
 every parameter, then the least witness `Nat.find` is computable in `O`. -/
@@ -287,6 +324,22 @@ theorem list_range_map {f : α → ℕ → β} (hf : ComputableIn₂ O f) :
   induction n with
   | zero => rfl
   | succ n ih => simp [List.range_succ, ih]
+
+/-- Lifting a primitive-recursive computation on `Option ℕ` prefix lists to any `O`-computable
+family `σ`, when at bound `k` the computation depends only on the prefix `(List.range k).map (σ a)`
+via list lookup. -/
+theorem computableIn_of_primrec_range_map_option {β γ : Type*} [Primcodable β] [Primcodable γ]
+    {σ : α → ℕ → Option ℕ} (hσ : ComputableIn₂ O σ)
+    {F : (ℕ → Option ℕ) → ℕ → β → γ}
+    (hF : Primrec fun p : List (Option ℕ) × ℕ × β =>
+      F (fun z => p.1[z]?.bind id) p.2.1 p.2.2)
+    (hprefix : ∀ a k b,
+      F (fun z => (((List.range k).map (σ a))[z]?).bind id) k b = F (σ a) k b) :
+    ComputableIn O fun p : α × ℕ × β => F (σ p.1) p.2.1 p.2.2 := by
+  have hp : ComputableIn O fun p : α × ℕ × β => (List.range p.2.1).map (σ p.1) :=
+    hσ.list_range_map.comp (ComputableIn.fst.pair (ComputableIn.fst.comp ComputableIn.snd))
+  exact RecursiveIn.of_eq (hF.computableIn.comp (hp.pair ComputableIn.snd))
+    fun p => congrArg Part.some (hprefix p.1 p.2.1 p.2.2)
 
 end ComputableIn₂
 

@@ -93,7 +93,7 @@ theorem isCoveringMapOn_of_equivariant_trivialization (hρ : IsCoveringMap ρ)
     continuous_snd.comp <| t.continuousOn_toFun.comp_continuous
       (hφ.comp_continuous hσ_cont fun y ↦ by rw [mem_preimage, hσ_proj]; exact y.property)
       fun y ↦ by rw [t.mem_source, hproj, hσ_proj]; exact y.property.2
-  let shift : W × H ≃ₜ W × H := TauCeti.prodMulLeftHomeomorph c hc_cont
+  let shift : W × H ≃ₜ W × H := TauCeti.prodSMulHomeomorph c hc_cont
   -- In trivialized coordinates, `φ` is `Prod.map id ρ` followed by the left-translation shear.
   have hlocal : V.restrictPreimage φ = hCod.symm ∘ shift ∘ Prod.map id ρ ∘ hDom := by
     funext p
@@ -105,7 +105,7 @@ theorem isCoveringMapOn_of_equivariant_trivialization (hρ : IsCoveringMap ρ)
     have hp_eq : p.val = op g • σ y := (e.op_snd_smul_symm_one hprojP_smul he hpW.1).symm
     have hq_mem : projQ (φ (σ y)) ∈ t.baseSet := by rw [hproj, hσ_proj]; exact hpW.2
     simp only [Function.comp_apply, Homeomorph.apply_symm_apply, hDom_p, Prod.map_apply, id_eq,
-      shift, TauCeti.prodMulLeftHomeomorph_apply]
+      shift, TauCeti.prodSMulHomeomorph_apply, smul_eq_mul]
     simp only [hCod, t.preimageHomeomorph_apply hWt, Set.restrictPreimage_coe, c, Prod.mk.injEq]
     refine ⟨Subtype.ext (hproj p.val), ?_⟩
     rw [hp_eq, hequiv, ht (ρ g) (φ (σ y)) hq_mem]

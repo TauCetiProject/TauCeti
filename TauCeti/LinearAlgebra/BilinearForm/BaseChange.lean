@@ -32,8 +32,10 @@ also preserves it. The theorems
 `LinearMap.BilinForm.nondegenerate_baseChange_iff`, and the computations behind them,
 `LinearMap.BilinForm.toMatrix_baseChange` and `LinearMap.BilinForm.det_toMatrix_baseChange`, say
 that base change acts entrywise on the Gram matrix of a basis and maps its determinant accordingly.
+`IsBaseChange.nondegenerate_bilinForm_iff` transfers the latter to `IsBaseChange.bilinForm`.
 
-When the scalar algebra is free over the original semiring, base change preserves left separation
+When the scalar algebra is free over the original semiring, the left kernel of the base-changed
+form is the base change of the left kernel, so base change preserves left separation
 and nondegeneracy without any finiteness or freeness hypothesis on the module carrying the form.
 In particular, this applies to arbitrary extensions of fields, even in infinite dimension.
 Injective localizations also preserve separation and nondegeneracy without any condition on the
@@ -51,6 +53,8 @@ compared with its real extension.
 * `IsBaseChange.bilinForm_tmul`: extension commutes with tensor products of bilinear forms.
 * `LinearMap.BilinForm.baseChange_rTensor_rTensor`: the canonical base change is natural along
   algebra maps of the scalars.
+* `LinearMap.BilinForm.ker_baseChange`: the left kernel of a bilinear form commutes with a free
+  scalar extension.
 * `LinearMap.SeparatingLeft.baseChange`: a free scalar extension preserves left separation.
 * `LinearMap.BilinForm.Nondegenerate.baseChange`: a free scalar extension preserves
   nondegeneracy, without a finite-dimensionality assumption.
@@ -74,6 +78,7 @@ compared with its real extension.
   domain is, with no hypothesis on the structure map.
 * `LinearMap.BilinForm.nondegenerate_baseChange_iff`: along an injective structure map between
   integral domains the implication is an equivalence.
+* `IsBaseChange.nondegenerate_bilinForm_iff`: the same equivalence for `IsBaseChange.bilinForm`.
 * `LinearMap.BilinForm.IsometryEquiv.baseChange`: an isometric equivalence of bilinear forms
   base-changes to an isometric equivalence of their base changes.
 * `TauCeti.bilinFormBaseChangeProdIsometry`: base change commutes with products of
@@ -117,26 +122,40 @@ theorem baseChange_rTensor_rTensor {A' : Type*} [CommSemiring A'] [Algebra R A']
     | tmul a' m' => simp [map_mul]
 
 variable (A) in
+/-- **The kernel of a bilinear form commutes with free scalar extension.** The left kernel of the
+base change of `B` to a free `R`-algebra `A` is the base change of the left kernel of `B`, with no
+finiteness assumption on the module carrying the form. In particular this holds for every
+extension of fields, even in infinite dimension. -/
+theorem ker_baseChange [Module.Free R A] (B : LinearMap.BilinForm R M) :
+    LinearMap.ker (B.baseChange A) = (LinearMap.ker B).baseChange A := by
+  classical
+  refine le_antisymm (fun x hx => ?_) (Submodule.baseChange_le_iff_le_comap.2 fun m hm => ?_)
+  · let b := Module.Free.chooseBasis R A
+    let e := TensorProduct.equivFinsuppOfBasisLeft (N := M) b
+    -- Evaluating the extended form and then taking a scalar coordinate is the same as evaluating
+    -- the original form on the corresponding tensor coordinate.
+    have hcoord (z : A ⊗[R] M) (i) (w : M) :
+        B (e z i) w = b.repr (B.baseChange A z (1 ⊗ₜ[R] w)) i := by
+      induction z with
+      | tmul a m => simp [e, mul_comm]
+      | add z z' hz hz' => simp [hz, hz']
+    have hmem (i) : e x i ∈ LinearMap.ker B :=
+      LinearMap.ext fun w => by simpa [LinearMap.mem_ker.1 hx] using hcoord x i w
+    rw [← e.symm_apply_apply x, TensorProduct.equivFinsuppOfBasisLeft_symm_apply]
+    exact Submodule.finsuppSum_mem _ _ _ _ fun i _ =>
+      Submodule.tmul_mem_baseChange_of_mem _ (hmem i)
+  · rw [Submodule.mem_comap, Submodule.restrictScalars_mem, LinearMap.mem_ker]
+    ext y
+    simp [LinearMap.mem_ker.1 hm]
+
+variable (A) in
 /-- A free scalar extension preserves left separation of a bilinear form, with no finiteness
 assumption on the module carrying the form. -/
 theorem _root_.LinearMap.SeparatingLeft.baseChange [Module.Free R A]
     {B : LinearMap.BilinForm R M} (hB : B.SeparatingLeft) :
     (B.baseChange A).SeparatingLeft := by
-  classical
-  let b := Module.Free.chooseBasis R A
-  let e := TensorProduct.equivFinsuppOfBasisLeft (N := M) b
-  intro x hx
-  apply e.injective
-  ext i
-  apply hB
-  intro w
-  -- Evaluating the extended form and then taking a scalar coordinate is the same as evaluating
-  -- the original form on the corresponding tensor coordinate.
-  have hcoord (z : A ⊗[R] M) : B (e z i) w = b.repr (B.baseChange A z (1 ⊗ₜ[R] w)) i := by
-    induction z with
-    | tmul a m => simp [e, mul_comm]
-    | add z z' hz hz' => simp [hz, hz']
-  simpa [hx] using hcoord x
+  rw [LinearMap.separatingLeft_iff_ker_eq_bot] at hB ⊢
+  rw [ker_baseChange, hB, Submodule.baseChange_bot]
 
 variable (A) in
 /-- A free scalar extension preserves right separation of a bilinear form, with no finiteness
@@ -458,6 +477,27 @@ theorem nondegenerate_baseChange_iff [Finite ι] [IsDomain A] [FaithfulSMul R A]
 end Nondegenerate
 
 end LinearMap.BilinForm
+
+namespace IsBaseChange
+
+section Nondegenerate
+
+variable {R A M N : Type*} [CommRing R] [CommRing A] [Algebra R A]
+  [AddCommGroup M] [Module R M] [AddCommMonoid N] [Module R N] [Module A N]
+  [IsScalarTower R A N] {f : M →ₗ[R] N}
+
+/-- **Nondegeneracy is preserved and reflected by an injective abstract base change to an integral
+domain.** On a finite free module, `IsBaseChange.bilinForm` is a transport of Mathlib's tensor base
+change, to which `LinearMap.BilinForm.nondegenerate_baseChange_iff` applies. -/
+theorem nondegenerate_bilinForm_iff [Module.Free R M] [Module.Finite R M] [IsDomain A]
+    [FaithfulSMul R A] (h : IsBaseChange A f) (B : LinearMap.BilinForm R M) :
+    (h.bilinForm B).Nondegenerate ↔ B.Nondegenerate := by
+  rw [bilinForm_def, LinearMap.BilinForm.nondegenerate_congr_iff,
+    LinearMap.BilinForm.nondegenerate_baseChange_iff B (Module.Free.chooseBasis R M)]
+
+end Nondegenerate
+
+end IsBaseChange
 
 namespace TauCeti
 

@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.Groupoid.VertexGroup
 public import Mathlib.CategoryTheory.IsomorphismClasses
 public import Mathlib.Combinatorics.Quiver.Subquiver
 public import Mathlib.GroupTheory.GroupAction.Basic
+import TauCeti.GroupTheory.SemidirectProduct
 
 /-!
 # Isotropy, arrows and orbits of an action groupoid
@@ -336,11 +337,9 @@ an arrow labelled `k` is the arrow labelled `k` followed by an arrow labelled `�
 theorem commSq_inl_inr {x y y' z : ActionCategory (N ⋊[φ] K) X} {t : x ⟶ y} {r : y ⟶ z}
     {l : x ⟶ y'} {b : y' ⟶ z} {n : N} {k : K} (ht : t.hom = inl n) (hr : r.hom = inr k)
     (hl : l.hom = inr k) (hb : b.hom = inl (φ k n)) : CommSq t l r b := by
-  have h : (inr k : N ⋊[φ] K) * inl n = inl (φ k n) * inr k := by
-    rw [inl_aut, map_inv, inv_mul_cancel_right]
   refine ⟨Functor.Elements.hom_ext ?_⟩
   rw [ActionCategory.comp_hom, ActionCategory.comp_hom, ht, hr, hl, hb]
-  exact h
+  exact inr_mul_inl k n
 
 end SemidirectProduct
 

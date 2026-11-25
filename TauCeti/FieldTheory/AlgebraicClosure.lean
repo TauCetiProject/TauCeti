@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.IntermediateField
 public import Mathlib.FieldTheory.AlgebraicClosure
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RingTheory.AlgebraicIndependent.Defs
@@ -66,6 +67,9 @@ closure of `K`, and Mathlib's `IntermediateField.LinearDisjoint.isDomain`.
   `k`-algebra `A` (and `algebraicClosure k K = ⊥` when `K` is a field).
 * `TauCeti.isDomain_tensorProduct_of_isIntegrallyClosedIn`: exact constants give a domain after
   a separable algebraic extension of scalars.
+* `TauCeti.isAlgebraic_rat_algebraicClosure`: the algebraic closure of `ℚ` in a field `K` is
+  algebraic over `ℚ` for the `ℚ`-algebra structure `DivisionRing.toRatAlgebra` that instance
+  search finds on it, which differs from the intermediate field's own structure.
 
 ## References
 
@@ -193,5 +197,18 @@ theorem algebraicClosure_eq_bot_of_isDomain_tensorProduct (L : Type*) [Field L] 
     [IsAlgClosed L] [IsDomain (K ⊗[k] L)] : algebraicClosure k K = ⊥ :=
   algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.mpr
     (isIntegrallyClosedIn_of_isDomain_tensorProduct (k := k) (A := K) L)
+
+end TauCeti
+
+namespace TauCeti
+
+variable {K : Type*} [Field K] [Algebra ℚ K]
+
+/-- The algebraic closure of `ℚ` in `K` is algebraic over `ℚ`. Since the intermediate field has
+characteristic zero, instance search finds the `ℚ`-algebra structure `DivisionRing.toRatAlgebra`
+on it rather than its own, so Mathlib's `algebraicClosure.isAlgebraic` does not apply directly. -/
+instance isAlgebraic_rat_algebraicClosure : Algebra.IsAlgebraic ℚ (algebraicClosure ℚ K) := by
+  have h := algebraicClosure.isAlgebraic (F := ℚ) (E := K)
+  rwa [Subsingleton.elim (algebraicClosure ℚ K).algebra' DivisionRing.toRatAlgebra] at h
 
 end TauCeti

@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Polynomial.Degree.Units
 public import Mathlib.Algebra.Polynomial.Laurent
 public import Mathlib.Algebra.Polynomial.RingDivision
-public import Mathlib.Data.ZMod.QuotientGroup
 public import Mathlib.RingTheory.RootsOfUnity.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Grading
 public import TauCeti.Algebra.Polynomial.Laurent.Basic
@@ -167,16 +166,13 @@ noncomputable def shiftClassGroupLaurentPolynomialEquiv (R : Type*) [CommSemirin
     [Nontrivial R] (w : ℤ) :
     ShiftClassGroup (gradeBy R (zmultiplesHom ℤ w) : ℤ → Submodule R R[T;T⁻¹]) ≃+
       ZMod w.natAbs :=
-  (QuotientAddGroup.quotientAddEquivOfEq (by simp)).trans
-    (Int.quotientZMultiplesEquivZMod w)
+  ShiftClassGroup.equivZMod (by simp)
 
 /-- The identification of the shift classes of `R[T;T⁻¹]` with `ZMod |w|` sends the class of a
 shift `d` to `d mod |w|`. -/
 @[simp]
 theorem shiftClassGroupLaurentPolynomialEquiv_mk (R : Type*) [CommSemiring R] [Nontrivial R]
-    (w d : ℤ) : shiftClassGroupLaurentPolynomialEquiv R w d = d := by
-  -- Both quotient equivalences are induced by maps on representatives, and the last one is the
-  -- cast `ℤ → ZMod |w|`; Mathlib states no lemma evaluating them on a class.
-  rfl
+    (w d : ℤ) : shiftClassGroupLaurentPolynomialEquiv R w d = d :=
+  ShiftClassGroup.equivZMod_mk _ d
 
 end TauCeti
