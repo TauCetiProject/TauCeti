@@ -21,9 +21,10 @@ Let `H = {x | c₀ < ⟪x, ν⟫}` be an open half-space of `ℝ^{n+1}`, `ν ≠
 
 `-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `H`, `u = 0` on `∂H`,
 
-that is `∫_H ⟨a ∇u, ∇v⟩ = ∫_H f v` for every `v ∈ H¹₀(H)`, where `a` is uniformly elliptic, its
-entries are `C¹` with first derivatives `α`-Hölder on a ball `B(y₀, r)` about a point `y₀` of the
-boundary hyperplane, and `f ∈ L²(H)` is `α`-Hölder there. This file proves that the second
+that is `∫_H ⟨a ∇u, ∇v⟩ = ∫_H f v` for every `v ∈ H¹₀(H)`, where `a` is uniformly elliptic and
+Lipschitz, as a bilinear form, on all of `H`, its entries are `C¹` with first derivatives
+`α`-Hölder on a ball `B(y₀, r)` about a point `y₀` of the boundary hyperplane, and `f ∈ L²(H)` is
+`α`-Hölder up to the boundary there. This file proves that the second
 derivatives of `u` with a tangential direction are `α`-Hölder up to the boundary near `y₀`: for
 every `e` with `⟪e, ν⟫ = 0`, the weak derivative `∂ₑu` lies in `H¹₀(H)`, and the precise
 representative of its gradient for the Lebesgue measure on `H` is `α`-Hölder on the closed
@@ -57,10 +58,11 @@ coefficients on a half-space.
   `d = ∂ₑu` solves `-∂ᵢ(aⁱʲ ∂ⱼd) = -div G` on `B ∩ H`, with `G = -f e - (∂ₑa) P`
   (`energyFormH1_eq_setIntegral_inner_of_eq_neg_sub`). Products of bounded Hölder
   functions are Hölder, so `G` is `α`-Hölder on the closed half-ball
-  (`exists_holderOnWith_smul_neg_sub_toDual_symm_matrixBilinearForm`). Composed with the fold
-  across the hyperplane, which is `1`-Lipschitz and fixes the closed half-space
-  (`TauCeti.lipschitzWith_one_ite_hyperplaneReflection`), it becomes `α`-Hölder on the whole ball
-  `B(y₀, r / 2)` without changing the equation, which only sees `B ∩ H`.
+  (`exists_holderOnWith_smul_neg_sub_toDual_symm_matrixBilinearForm`, applied to `f` composed with
+  the fold across the hyperplane, which is `1`-Lipschitz and fixes the closed half-space,
+  `TauCeti.lipschitzWith_one_ite_hyperplaneReflection`). Composed with the fold, `G` becomes
+  `α`-Hölder on the whole ball `B(y₀, r / 2)` without changing the equation, which only sees
+  `B ∩ H`.
 * **Schauder for `∂ₑu`.** Since `d ∈ H¹₀(H)`, its zero extension vanishes on `B ∖ H`, and the
   Schauder estimate up to a flat boundary for a divergence datum,
   `exists_holderOnWith_preciseRepresentative_restrict_gradient_of_holderOnWith_matrixBilinearForm`,
@@ -135,9 +137,9 @@ private theorem preciseRepresentative_gradient_extendRestrict {U H : Opens E}
 
 /-- **Step 1: `∇u` is Hölder up to the boundary.** For the solution `u ∈ H¹₀(H)` of
 `-∂ᵢ(aⁱʲ ∂ⱼu) = f`, with `a` uniformly elliptic on `B(y₀, r)` and `α`-Hölder on
-`closedBall y₀ (3r / 4)`, and `f` bounded on that ball, the precise representative for the
-Lebesgue measure on `H` of the gradient of the zero extension of `u` to `B = B(y₀, 3r / 4)` is
-`α`-Hölder on `closedBall y₀ (r / 2) ∩ {c₀ ≤ ⟪y, ν⟫}`. -/
+`closedBall y₀ (3r / 4)`, and `f` bounded on the points of `H` in that ball, the precise
+representative for the Lebesgue measure on `H` of the gradient of the zero extension of `u` to
+`B = B(y₀, 3r / 4)` is `α`-Hölder on `closedBall y₀ (r / 2) ∩ {c₀ ≤ ⟪y, ν⟫}`. -/
 private theorem exists_holderOnWith_preciseRepresentative_gradient_extendRestrict {α : ℝ≥0}
     (hα : 0 < α) (hα1 : α < 1) {H B : Opens E} {ν : E} {c₀ : ℝ} (hν : ν ≠ 0)
     (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
@@ -145,7 +147,7 @@ private theorem exists_holderOnWith_preciseRepresentative_gradient_extendRestric
     (hellB : UniformlyEllipticOn (ball y₀ r) a lam Lam) {Ka : ℝ≥0}
     (hKa : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) (closedBall y₀ (3 * r / 4)))
     {f : E → ℝ} (hf : MemLp f 2 (volume.restrict H)) {Mf : ℝ}
-    (hMf : ∀ x ∈ closedBall y₀ (3 * r / 4), ‖f x‖ ≤ Mf) {u : W1p0 volume H 2}
+    (hMf : ∀ x ∈ closedBall y₀ (3 * r / 4), x ∈ H → ‖f x‖ ≤ Mf) {u : W1p0 volume H 2}
     (hu : ∀ v : W1p0 volume H 2, energyFormH1 a 0 0 (u : W1p volume H 2) (v : W1p volume H 2) =
       ∫ x in H, f x * W1p.value (v : W1p volume H 2) x) :
     ∃ C : ℝ≥0, HolderOnWith C α (preciseRepresentative (volume.restrict (H : Set E))
@@ -161,7 +163,7 @@ private theorem exists_holderOnWith_preciseRepresentative_gradient_extendRestric
     memLp_top_of_bound (hf.aestronglyMeasurable.mono_measure
         (Measure.restrict_mono inter_subset_right le_rfl)) Mf
       (ae_restrict_of_forall_mem (isOpen_thickening.measurableSet.inter H.isOpen.measurableSet)
-        fun x hx => hMf x (ball_subset_closedBall (hth hx.1)))
+        fun x hx => hMf x (ball_subset_closedBall (hth hx.1)) hx.2)
   obtain ⟨C, -, h⟩ :=
     exists_holderOnWith_preciseRepresentative_restrict_gradient_of_holderOnWith_of_memLp
       (n := n) hα hα1 le_rfl le_top (by simpa using hα1.le) (lam := lam) (Lam := Lam)
@@ -179,8 +181,28 @@ private theorem exists_holderOnWith_preciseRepresentative_gradient_extendRestric
       filter_upwards [W1p.value_ofTestFunctionₗ_ae (mu := volume) (p := 2) φ] with x hx
       rw [hx]) (by positivity) (hB ▸ hth)⟩
 
-/-- **Step 2: the folded datum is Hölder.** If the derivatives of the entries of `a` and `f` are
-`α`-Hölder near each point of `B(y₀, r)` and `P` is `α`-Hölder on the closed half-ball
+/-- If `f` is `α`-Hölder up to the boundary near each point of the closed half-ball
+`B(y₀, r) ∩ {c₀ ≤ ⟪y, ν⟫}`, then `f` composed with the fold across the boundary hyperplane is
+`α`-Hölder near each point of the whole ball `B(y₀, r)`. -/
+private theorem holderOnWith_comp_fold_ball {α : ℝ≥0} {ν : E} {c₀ : ℝ} (hν : ν ≠ 0) {y₀ : E}
+    (hy₀ : ⟪y₀, ν⟫_ℝ = c₀) {r : ℝ} {f : E → ℝ}
+    (hfH : ∀ x ∈ ball y₀ r ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}, ∃ ρ > 0, ∃ L : ℝ≥0,
+      HolderOnWith L α f (ball x ρ ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ})) :
+    ∀ x ∈ ball y₀ r, ∃ ρ > 0, ∃ L : ℝ≥0, HolderOnWith L α
+      (f ∘ fun y => if c₀ ≤ ⟪y, ν⟫_ℝ then y else hyperplaneReflection ν c₀ y) (ball x ρ) := by
+  intro x hx
+  obtain ⟨ρ, hρ, L, hL⟩ := hfH _ ⟨mapsTo_ite_hyperplaneReflection_ball hy₀ r hx,
+    le_inner_ite_hyperplaneReflection hν c₀ x⟩
+  have hF := lipschitzWith_one_ite_hyperplaneReflection ν c₀
+  -- The fold is `1`-Lipschitz, so it maps `B(x, ρ)` into the closed half-ball about its image.
+  refine ⟨ρ, hρ, L, ?_⟩
+  simpa only [NNReal.one_rpow, mul_one] using hL.comp hF.lipschitzOnWith.holderOnWith fun y hy =>
+    ⟨(hF.dist_le_mul y x).trans_lt (by rwa [NNReal.coe_one, one_mul]),
+      le_inner_ite_hyperplaneReflection hν c₀ y⟩
+
+/-- **Step 2: the folded datum is Hölder.** If the derivatives of the entries of `a` are
+`α`-Hölder near each point of `B(y₀, r)`, `f` is `α`-Hölder up to the boundary near each point of
+`B(y₀, r) ∩ {c₀ ≤ ⟪y, ν⟫}` and `P` is `α`-Hölder on the closed half-ball
 `S = closedBall y₀ (r / 2) ∩ {c₀ ≤ ⟪y, ν⟫}`, then the datum `G = -f e - (∂ₑa) P`, composed with the
 fold across the boundary hyperplane, is `α`-Hölder on the whole ball `B(y₀, r / 2)`. -/
 private theorem exists_holderOnWith_datum_comp_fold {α : ℝ≥0} (hα : 0 < α) {ν : E} {c₀ : ℝ}
@@ -188,7 +210,8 @@ private theorem exists_holderOnWith_datum_comp_fold {α : ℝ≥0} (hα : 0 < α
     {r : ℝ} (hr : 0 < r)
     (hda : ∀ x ∈ ball y₀ r, ∃ ρ > 0, ∃ L : ℝ≥0, ∀ i j,
       HolderOnWith L α (fderiv ℝ (fun y => a y i j)) (ball x ρ))
-    {f : E → ℝ} (hfH : ∀ x ∈ ball y₀ r, ∃ ρ > 0, ∃ L : ℝ≥0, HolderOnWith L α f (ball x ρ))
+    {f : E → ℝ} (hfH : ∀ x ∈ ball y₀ r ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}, ∃ ρ > 0, ∃ L : ℝ≥0,
+      HolderOnWith L α f (ball x ρ ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}))
     {P : E → E} {CP : ℝ≥0} (hP : HolderOnWith CP α P (closedBall y₀ (r / 2) ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}))
     (e : E) :
     ∃ K : ℝ≥0, HolderOnWith K α ((fun x => f x • (-e) - (toDual ℝ E).symm
@@ -197,16 +220,21 @@ private theorem exists_holderOnWith_datum_comp_fold {α : ℝ≥0} (hα : 0 < α
   set S := closedBall y₀ (r / 2) ∩ {y : E | c₀ ≤ ⟪y, ν⟫_ℝ}
   have hSc : IsCompact S := (isCompact_closedBall _ _).inter_right
     (isClosed_le continuous_const (continuous_id.inner continuous_const))
-  obtain ⟨K, hG⟩ := exists_holderOnWith_smul_neg_sub_toDual_symm_matrixBilinearForm hα hda hfH hSc
+  -- The datum built from `f` composed with the fold is Hölder on `S`.
+  obtain ⟨K, hG⟩ := exists_holderOnWith_smul_neg_sub_toDual_symm_matrixBilinearForm hα hda
+    (holderOnWith_comp_fold_ball hν hy₀ hfH) hSc
     (inter_subset_left.trans (closedBall_subset_ball (by linarith))) hP e
   -- The fold is `1`-Lipschitz and maps `B(y₀, r / 2)` into `S`.
   have hFs : MapsTo (fun y => if c₀ ≤ ⟪y, ν⟫_ℝ then y else hyperplaneReflection ν c₀ y)
       (ball y₀ (r / 2)) S := fun y hy =>
     ⟨ball_subset_closedBall (mapsTo_ite_hyperplaneReflection_ball hy₀ (r / 2) hy),
       le_inner_ite_hyperplaneReflection hν c₀ y⟩
-  refine ⟨K, ?_⟩
-  simpa only [NNReal.one_rpow, mul_one] using
-    hG.comp (lipschitzWith_one_ite_hyperplaneReflection ν c₀).lipschitzOnWith.holderOnWith hFs
+  have h := hG.comp (lipschitzWith_one_ite_hyperplaneReflection ν c₀).lipschitzOnWith.holderOnWith
+    hFs
+  simp only [NNReal.one_rpow, mul_one] at h
+  -- The fold fixes its own values, so folding `f` twice is folding it once.
+  refine ⟨K, h.congr fun y _ => ?_⟩
+  simp only [Function.comp_apply, le_inner_ite_hyperplaneReflection hν c₀ y, ↓reduceIte]
 
 /-- **Step 3: the equation for `∂ₑu`.** Let `u ∈ H¹(H)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `H`, with the
 entries of `a` `C¹` on an open set `W` containing the closure of `B ∩ H` and `B ∩ H` relatively
@@ -259,8 +287,10 @@ private theorem energyFormH1_extendRestrict_eq_setIntegral_inner {H B : Opens E}
 problem `-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `H`, that is `∫_H ⟨a ∇u, ∇v⟩ = ∫_H f v` for every `v ∈ H¹₀(H)`.
 Suppose that `a` is uniformly elliptic with constants `λ, Λ` on `H` and Lipschitz there, and that
 `f ∈ L²(H)`. Let `y₀` lie on the boundary hyperplane and `r > 0`, and suppose that the entries of
-`a` are `C¹` on `B(y₀, r)`, that `a` is uniformly elliptic on `B(y₀, r)`, and that the
-derivatives of its entries and `f` are `α`-Hölder near each point of `B(y₀, r)`.
+`a` are `C¹` on `B(y₀, r)`, that `a` is uniformly elliptic on `B(y₀, r)`, that the derivatives
+of its entries are `α`-Hölder near each point of `B(y₀, r)`, and that `f` is `α`-Hölder up to the
+boundary near each point of `B(y₀, r) ∩ {c₀ ≤ ⟪y, ν⟫}`: on `B(x, ρ) ∩ {c₀ ≤ ⟪y, ν⟫}` for some
+`ρ > 0`. The values of `f` outside the closed half-space play no role.
 
 Then for every tangential direction `e`, `⟪e, ν⟫ = 0`, the weak derivative `∂ₑu` lies in `H¹₀(H)`,
 and the precise representative of its gradient for the Lebesgue measure on `H` is `α`-Hölder on
@@ -278,7 +308,8 @@ theorem exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_restric
     (hda : ∀ x ∈ ball y₀ r, ∃ ρ > 0, ∃ L : ℝ≥0, ∀ i j,
       HolderOnWith L α (fderiv ℝ (fun y => a y i j)) (ball x ρ))
     {f : E → ℝ} (hf : MemLp f 2 (volume.restrict H))
-    (hfH : ∀ x ∈ ball y₀ r, ∃ ρ > 0, ∃ L : ℝ≥0, HolderOnWith L α f (ball x ρ))
+    (hfH : ∀ x ∈ ball y₀ r ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}, ∃ ρ > 0, ∃ L : ℝ≥0,
+      HolderOnWith L α f (ball x ρ ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}))
     {u : W1p0 volume H 2}
     (hu : ∀ v : W1p0 volume H 2, energyFormH1 a 0 0 (u : W1p volume H 2) (v : W1p volume H 2) =
       ∫ x in H, f x * W1p.value (v : W1p volume H 2) x)
@@ -300,13 +331,17 @@ theorem exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_restric
     (closure_mono inter_subset_left).trans closure_ball_subset_closedBall
   obtain ⟨Ka, hKa⟩ := exists_holderOnWith_matrixBilinearForm_of_contDiffOn isOpen_ball ha
     (isCompact_closedBall y₀ (3 * r / 4)) hBr hα1.le
+  -- `f` composed with the fold is Hölder near `closedBall y₀ (3r / 4)`, so `f` is bounded on `H`
+  -- there.
   obtain ⟨δf, hδf, -, Mf, -, hMf⟩ :=
     (isCompact_closedBall y₀ (3 * r / 4)).exists_holderOnWith_thickening_and_norm_le
-      fun x hx => hfH x (hBr hx)
+      fun x hx => holderOnWith_comp_fold_ball hν hy₀ hfH x (hBr hx)
   -- Step 1: the precise representative `P` of `∇u` is Hölder up to the boundary, and `P = ∇u`
   -- almost everywhere on `B ∩ H`.
   obtain ⟨CP, hP⟩ := exists_holderOnWith_preciseRepresentative_gradient_extendRestrict hα hα1 hν hH
-    hr (B := B) rfl hellB hKa hf (fun x hx => hMf x (self_subset_thickening hδf _ hx)) hu
+    hr (B := B) rfl hellB hKa hf (fun x hx hxH => by
+      simpa only [Function.comp_apply, ((hH x).1 hxH).le, ↓reduceIte] using
+        hMf x (self_subset_thickening hδf _ hx)) hu
   have hPV : preciseRepresentative (volume.restrict (H : Set E))
       (W1p.gradient (extendRestrict u B) : E → E)
         =ᵐ[volume.restrict (((B ⊓ H : Opens E)) : Set E)] W1p.gradient (u : W1p volume H 2) :=
