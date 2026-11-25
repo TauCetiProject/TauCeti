@@ -57,7 +57,7 @@ the retraction along `X₀` into the retraction along `X₁`
 (`TauCeti.exists_homotopyRel_sublevelRetraction_of_apply_eq_sub`). In particular the retractions
 along a rescaled adapted pseudo-gradient and along the normalized gradient are homotopic relative
 to `{f ≤ a}`
-(`TauCeti.IsAdaptedPseudoGradient.exists_homotopicRel_sublevelRetraction_neg_mgradient`).
+(`TauCeti.IsAdaptedPseudoGradient.exists_homotopyRel_sublevelRetraction_neg_mgradient`).
 
 ## Main results
 
@@ -72,7 +72,7 @@ to `{f ≤ a}`
 * `TauCeti.exists_homotopyRel_sublevelRetraction_of_mvfderiv_lt_zero`: the retractions along two
   normalized descending fields are homotopic relative to `{f ≤ a}` through the retractions along
   the segment of fields between them.
-* `TauCeti.IsAdaptedPseudoGradient.exists_homotopicRel_sublevelRetraction_neg_mgradient`: the
+* `TauCeti.IsAdaptedPseudoGradient.exists_homotopyRel_sublevelRetraction_neg_mgradient`: the
   retractions along a rescaled adapted pseudo-gradient and along the normalized gradient are
   homotopic relative to `{f ≤ a}`.
 
@@ -302,7 +302,7 @@ retractions `r` and `r'` of `{f ≤ b}` onto `{f ≤ a}`: each brings a point `x
 to `X'`: the homotopy `F` follows the flow of the field at parameter `s` from each point `x` for
 the time `max (f x - a) 0`. This is
 `TauCeti.exists_homotopyRel_sublevelRetraction_of_mvfderiv_lt_zero` for `Y` and `-grad f`. -/
-theorem exists_homotopicRel_sublevelRetraction_neg_mgradient
+theorem exists_homotopyRel_sublevelRetraction_neg_mgradient
     [RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, E) x)]
     [IsContMDiffRiemannianBundle 𝓘(ℝ, E) ∞ E (fun x : M ↦ TangentSpace 𝓘(ℝ, E) x)]
     (hY : IsAdaptedPseudoGradient f Y) (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) {a b : ℝ} (hab : a ≤ b)
