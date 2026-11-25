@@ -87,11 +87,17 @@ positive scales are meaningful. -/
 noncomputable def blowUp (μ : Measure E) (k : ℕ) (x : E) (r : ℝ) : Measure E :=
   (ENNReal.ofReal r)⁻¹ ^ k • μ.map fun y ↦ r⁻¹ • (y - x)
 
+omit [BorelSpace E] in
+/-- A blow-up is the push-forward of `μ` by the dilation `y ↦ r⁻¹ • (y - x)`, multiplied by
+`(ENNReal.ofReal r)⁻¹ ^ k`. -/
+theorem blowUp_def : μ.blowUp k x r = (ENNReal.ofReal r)⁻¹ ^ k • μ.map fun y ↦ r⁻¹ • (y - x) :=
+  (rfl)
+
 /-- The mass of a measurable set `s` under a blow-up is `(ENNReal.ofReal r)⁻¹ ^ k` times the mass
 of its preimage under the dilation; for `r > 0` the factor is `r ^ (-k)`. -/
 theorem blowUp_apply {s : Set E} (hs : MeasurableSet s) :
     μ.blowUp k x r s = (ENNReal.ofReal r)⁻¹ ^ k * μ ((fun y ↦ r⁻¹ • (y - x)) ⁻¹' s) := by
-  rw [blowUp, smul_apply, map_apply (by fun_prop) hs, smul_eq_mul]
+  rw [blowUp_def, smul_apply, map_apply (by fun_prop) hs, smul_eq_mul]
 
 /-- A blow-up gives the closed ball of radius `ρ` about `0` the mass
 `r ^ (-k) μ (closedBall x (r ρ))`. -/
@@ -121,46 +127,44 @@ private theorem coe_dilation_symm (hr : r ≠ 0) :
   ext z
   simp [dilation]
 
-/-- The preimage of a set `s` under the dilation `y ↦ r⁻¹ • (y - x)` is `x + r • s`. -/
-private theorem preimage_dilation (hr : r ≠ 0) (s : Set E) :
-    (fun y ↦ r⁻¹ • (y - x)) ⁻¹' s = x +ᵥ r • s := by
-  rw [← coe_dilation hr, ← (dilation x hr).image_symm, coe_dilation_symm, ← image_smul,
-    ← image_vadd, image_image]
-  simp [add_comm]
-
 /-- **The defining identity of blow-ups.** For `r ≠ 0`, a blow-up gives a measurable set `s` the
 mass `(ENNReal.ofReal r)⁻¹ ^ k * μ (x + r • s)`, that is `r ^ (-k) μ (x + r • s)` for `r > 0`. -/
 theorem blowUp_apply_vadd_smul (hr : r ≠ 0) {s : Set E} (hs : MeasurableSet s) :
     μ.blowUp k x r s = (ENNReal.ofReal r)⁻¹ ^ k * μ (x +ᵥ r • s) := by
-  rw [blowUp_apply hs, preimage_dilation hr]
+  rw [blowUp_apply hs]
+  change _ * μ ((· - x) ⁻¹' ((fun y ↦ r⁻¹ • y) ⁻¹' s)) = _
+  rw [preimage_smul_inv₀ hr]
+  congr 2
+  ext y
+  simp [mem_vadd_set_iff_neg_vadd_mem, sub_eq_neg_add]
 
 /-- Integrals against a blow-up are `r ^ (-k)` times integrals of the dilated function. -/
 theorem integral_blowUp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] (hr : 0 < r)
     (f : E → G) :
     ∫ y, f y ∂μ.blowUp k x r = (r ^ k)⁻¹ • ∫ y, f (r⁻¹ • (y - x)) ∂μ := by
-  rw [blowUp, integral_smul_measure, ← coe_dilation hr.ne', integral_map_equiv]
+  rw [blowUp_def, integral_smul_measure, ← coe_dilation hr.ne', integral_map_equiv]
   simp [ENNReal.toReal_inv, ENNReal.toReal_ofReal hr.le, coe_dilation]
 
 omit [BorelSpace E] in
 @[simp]
 theorem blowUp_zero : (0 : Measure E).blowUp k x r = 0 := by
-  simp [blowUp]
+  simp [blowUp_def]
 
 @[simp]
 theorem blowUp_add (μ ν : Measure E) :
     (μ + ν).blowUp k x r = μ.blowUp k x r + ν.blowUp k x r := by
-  rw [blowUp, blowUp, blowUp, Measure.map_add _ _ (by fun_prop), smul_add]
+  rw [blowUp_def, blowUp_def, blowUp_def, Measure.map_add _ _ (by fun_prop), smul_add]
 
 @[simp]
 theorem blowUp_smul {R : Type*} [SMul R ℝ≥0∞] [IsScalarTower R ℝ≥0∞ ℝ≥0∞]
     [SMulCommClass ℝ≥0∞ R ℝ≥0∞] (c : R) (μ : Measure E) :
     (c • μ).blowUp k x r = c • μ.blowUp k x r := by
-  rw [blowUp, blowUp, Measure.map_smul _ (by fun_prop), smul_comm]
+  rw [blowUp_def, blowUp_def, Measure.map_smul _ (by fun_prop), smul_comm]
 
 /-- The blow-up of a restriction is the restriction of the blow-up to the blown-up set. -/
 theorem blowUp_restrict (hr : r ≠ 0) (s : Set E) :
     (μ.restrict s).blowUp k x r = (μ.blowUp k x r).restrict ((fun z ↦ r • z + x) ⁻¹' s) := by
-  rw [blowUp, blowUp, restrict_smul, ← coe_dilation hr, MeasurableEquiv.restrict_map,
+  rw [blowUp_def, blowUp_def, restrict_smul, ← coe_dilation hr, MeasurableEquiv.restrict_map,
     ← coe_dilation_symm hr, ← preimage_comp, MeasurableEquiv.symm_comp_self, preimage_id]
 
 /-- At positive scales, the blow-ups of a locally finite measure are locally finite. -/
