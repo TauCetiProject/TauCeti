@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta.Kernel
-import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-import TauCeti.Analysis.Complex.SlitPlane
-import TauCeti.MeasureTheory.Integral.CurveIntegral.Segment
 
 /-!
 # Examples: the side of crossing matters on the diagonal
@@ -25,7 +22,7 @@ the definition must fix the side of crossing.
 public section
 
 open Complex Set
-open scoped Real ComplexConjugate Pointwise
+open scoped Real ComplexConjugate
 
 namespace TauCeti.IncompleteBetaDiagonalExample
 
@@ -36,15 +33,9 @@ theorem curveIntegral_inv_through_neg_one {ξ : ℂ} (hξ : -ξ ∈ slitPlane) :
         ContinuousLinearMap.toSpanSingleton ℂ z⁻¹) +
       ∫ᶜ z in Path.segment (-1 : ℂ) ξ, ContinuousLinearMap.toSpanSingleton ℂ z⁻¹) =
       ((arg (-ξ) / π : ℝ) : ℂ) := by
-  set S : Set ℂ := -slitPlane
-  have hstar : StarConvex ℝ (-1 : ℂ) S := by
-    simpa using (starConvex_ofReal_slitPlane (x := 1) one_pos).neg
-  have hmemS {z : ℂ} : z ∈ S ↔ -z ∈ slitPlane := Set.mem_neg
-  have hξS : ξ ∈ S := hmemS.2 hξ
-  have hξS' : conj ξ ∈ S := hmemS.2 (by rw [← map_neg]; exact conj_mem_slitPlane.2 hξ)
-  have h0 {z : ℂ} (hz : z ∈ S) : z ≠ 0 := fun h => slitPlane_ne_zero (hmemS.1 hz) (by simp [h])
-  have hint := curveIntegral_segment_add_segment_toSpanSingleton_eq_sub
-    (F := fun z => log (-z)) (f := fun z => z⁻¹) hstar hξS' hξS (fun z hz => ?_)
+  have h0 {z : ℂ} (hz : -z ∈ slitPlane) : z ≠ 0 := fun h => slitPlane_ne_zero hz (by simp [h])
+  have hint := curveIntegral_conj_neg_one_add_eq_sub
+    (F := fun z => log (-z)) (f := fun z => z⁻¹) hξ (fun z hz => ?_)
     (continuousOn_inv₀.mono fun z hz => h0 hz)
   · rw [hint]
     have e : log (-conj ξ) = conj (log (-ξ)) := by
@@ -53,7 +44,7 @@ theorem curveIntegral_inv_through_neg_one {ξ : ℂ} (hξ : -ξ ∈ slitPlane) :
     push_cast
     field_simp
   · have := h0 hz
-    convert (hasDerivAt_neg z).clog (hmemS.1 hz) using 1
+    convert (hasDerivAt_neg z).clog hz using 1
     field_simp
 
 /-- At the complex slope, crossing in `(-∞, 0)` gives `-(1 - s)`. -/
