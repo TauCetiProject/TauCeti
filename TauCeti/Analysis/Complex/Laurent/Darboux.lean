@@ -186,10 +186,8 @@ theorem tendsto_pow_mul_zpow_smul_circleLaurentCoeff_sub_of_iteratedDeriv [Compl
       circleLaurentCoeff_iteratedDeriv hU hg hρ hsph,
       smul_sub]
   -- The falling factorial is asymptotic to its leading monomial `n ^ m`.
-  have hcast : Tendsto (fun n : ℤ ↦ (n : ℂ)) cofinite (Bornology.cobounded ℂ) := by
-    rw [← tendsto_norm_atTop_iff_cobounded]
-    simpa [Function.comp_def] using
-      tendsto_norm_comp_cofinite_atTop_of_isClosedEmbedding Int.isClosedEmbedding_coe_real
+  have hcast : Tendsto (fun n : ℤ ↦ (n : ℂ)) cofinite (Bornology.cobounded ℂ) :=
+    Int.cofinite_eq ▸ tendsto_intCast_atBot_sup_atTop_cobounded
   obtain ⟨C, hC⟩ := ((isEquivalent_cobounded_leading_monomial (P := descPochhammer ℂ m)).symm
     |>.isBigO.comp_tendsto hcast).bound
   refine IsBigO.trans_tendsto (IsBigO.of_bound C (hC.mono fun n hn ↦ ?_)) hT
