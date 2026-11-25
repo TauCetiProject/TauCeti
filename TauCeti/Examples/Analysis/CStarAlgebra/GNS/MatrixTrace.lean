@@ -23,7 +23,9 @@ For the normalized trace `tr_n` on `M_n(ℂ)` and matrix units `e_ij` with `i �
   two agree only after replacing `b` by `b⋆`.
 
 For `n = 2`, `i = 1`, `j = 2`: `πᵒᵖ(e₁₂ᵒᵖ)ê₁₁ = ê₁₂` while `J π(e₁₂) J ê₁₁ = 0`, so
-`b ↦ J π(b) J` is not a representation of `M_nᵐᵒᵖ`.
+`b ↦ J π(b) J` differs from `πᵒᵖ`; being conjugate linear
+(`PositiveLinearMap.gnsConj_gnsNonUnitalStarAlgHom_smul_gnsConj`), it is not a representation of
+`M_nᵐᵒᵖ`.
 -/
 
 public section
@@ -55,9 +57,8 @@ theorem gnsTensorFunctional_matrixUnit (i j : n) :
 /-- The class of a matrix unit in the GNS space of the normalized trace is nonzero. -/
 theorem toGNS_matrixUnit_ne_zero (i j : n) :
     (tr n).toGNS (matrixUnit i j) ≠ 0 := by
-  rw [Ne, toGNS_eq_zero_iff, star_matrixUnit, matrixUnit_mul_matrixUnit,
-    PositiveContinuousLinearMap.coe_toPositiveLinearMap, normalizedTraceMap_apply]
   have : Nonempty n := ⟨i⟩
+  rw [Ne, toGNS_eq_zero_iff]
   simp [Fintype.card_ne_zero]
 
 /-- **The right representation is right multiplication.** `πᵒᵖ(e_ijᵒᵖ)[e_ii] = [e_ij]`. -/
