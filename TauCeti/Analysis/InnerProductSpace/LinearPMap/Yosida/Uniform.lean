@@ -12,17 +12,18 @@ public import TauCeti.Analysis.Normed.Operator.Dense
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 
 /-!
-# Uniform convergence of Yosida exponential approximants
+# Uniform Cauchy convergence of Yosida exponential approximants
 
 The exponential orbits of the symmetric Yosida approximations of a self-adjoint
-partial operator form a Cauchy family uniformly for time in any bounded interval.
+partial operator are uniformly Cauchy on bounded sets of times as the absolute value
+of the real shift tends to infinity.
 The proof first uses the **Duhamel estimate**
 
 `‖exp (t • Bₘ) ψ - exp (t • Bₙ) ψ‖ ≤ |t| ‖(Bₘ - Bₙ) ψ‖`
 
 for *commuting* skew-adjoint `Bₘ`, `Bₙ`, together with convergence of the
 approximations on the domain. Density and unitarity extend the uniform bound
-to every vector. No limit group is constructed in this module.
+to every vector.
 
 ## Sources
 
@@ -32,31 +33,19 @@ is standard (Reed--Simon, *Methods of Modern Mathematical Physics I*).
 
 ## Provenance
 
-The Duhamel and density arguments adapt
+The result and the strategy of combining Duhamel comparison on the domain with a density
+argument adapt the Kitware DKPS formalization at `b9a02d00c` (Jon Crall, Claude Opus 5,
+Kitware 2026, Apache 2.0), specifically
 `ForTauCeti/Analysis/InnerProductSpace/SkewAdjointExponential.lean` and
-`ForTauCeti/Analysis/InnerProductSpace/LinearPMap/YosidaApproximation.lean`
-in the Kitware DKPS formalization at `b9a02d00c`
-(Jon Crall, Claude Opus 5; Kitware 2026; Apache-2.0).
+`ForTauCeti/Analysis/InnerProductSpace/LinearPMap/YosidaApproximation.lean`.
 
-* **Original repository:** Spectra, commit `8dbaaf6728d1342ae16acf79fd7eef7c59b37e63`.
-* **Original module:** `Spectra/YosidaHille/Approximation/Commutation.lean`
-  (`norm_expBounded_pairwise_le` and its supporting commutation lemmas).
-* **Original authors / copyright / licence:** Copyright (c) 2026 Spectra
-  Formalization Project; `Authors: Adam Bornemann`; Apache 2.0.
-* **Extraction class:** *adapted.*  The proof architecture — differentiate
-  `s ↦ exp((t-s)Bₙ) exp(sBₘ) ψ`, recognise the derivative as
-  `exp((t-s)Bₙ) exp(sBₘ) (Bₘ - Bₙ) ψ`, integrate, and bound the integrand by
-  unitarity — is Spectra's, and is the classical Duhamel argument.
-* **Semantic differences from the donor:**
-  1. Stated over Mathlib's `NormedSpace.exp` rather than Spectra's hand-rolled
-     `expBounded` power series.  Spectra proves the two agree
-     (`expBounded_eq_exp`), so nothing is lost; what *is* saved is the 576 lines
-     of `ExpBounded/{Helpers,Adjoint,Unitary}` establishing summability, the
-     group law and unitarity, all of which Mathlib already has.
-  2. Norm preservation comes directly from the native bounded Stone group.
-     The Duhamel estimate specializes the native bounded-semigroup comparison
-     through one shared bounded-generator uniform-Cauchy criterion. It uses time-one
-     comparison for scaled generators, covering signed times directly.
+The DKPS comparison draws on the Duhamel argument in
+`Spectra/YosidaHille/Approximation/Commutation.lean` at Spectra commit
+`8dbaaf6728d1342ae16acf79fd7eef7c59b37e63` (`norm_expBounded_pairwise_le`
+and its supporting commutation lemmas, Adam Bornemann, copyright 2026 Spectra
+Formalization Project, Apache 2.0). Here the shared Tau Ceti bounded-generator criterion
+supplies the comparison. The result strengthens the donor's pointwise Cauchy conclusion
+to uniform Cauchy convergence on bounded sets of times.
 -/
 
 public section

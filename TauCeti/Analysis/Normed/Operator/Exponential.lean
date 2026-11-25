@@ -75,6 +75,8 @@ theorem restrictScalars_exp [NormedSpace ℝ X] [IsScalarTower ℝ 𝕜 X] (A : 
       map_zero' := restrictScalars_zero
       map_add' := restrictScalars_add }
   have hφ : Continuous φ := by
+    -- The local rational normed algebras carry the operator norm topologies. Expose the
+    -- underlying restriction map in those topologies to apply the restriction isometry.
     change Continuous (fun B : X →L[𝕜] X => B.restrictScalars ℝ)
     exact (restrictScalarsIsometry 𝕜 X X ℝ ℝ).continuous
   exact NormedSpace.map_exp φ hφ A
