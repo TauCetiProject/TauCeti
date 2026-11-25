@@ -30,9 +30,8 @@ domain of the product defines a term there.
 * `TauCeti.DomainDependentHomSection.ofChart`: the Hom section defined by a coordinate map.
 * `TauCeti.DomainDependentHomSection.inCoordinates_ofChart_tangentHom`: read in the tangent
   coordinates at the centre of the chart sources, the section is the coordinate map.
-* `TauCeti.ContMDiffAlmostComplexStructure.inChart_chartSource`,
-  `TauCeti.ContMDiffAlmostComplexStructureFamily.inChart_chartSourceCentre`: on chart sources, the
-  coordinate expressions at the centre are conjugation by the tangent frames.
+* `TauCeti.ContMDiffAlmostComplexStructureFamily.inChart_chartSourceCentre`: on chart sources, the
+  coordinate expression of a family at the centre is conjugation by the tangent frame.
 * `TauCeti.DomainDependentHomSection.ofChart_mem_inhomogeneousTerms`: an antilinear coordinate map
   defines an antilinear Hom section.
 * `TauCeti.InhomogeneousTerm.ofChart`: the inhomogeneous term defined by an antilinear coordinate
@@ -168,22 +167,6 @@ theorem inCoordinates_ofChart_tangentHom (q : P × M) (A : EP × E → EP →L[�
     (chartFrame (I := IP) q.1).continuousLinearMapAt_symmL hP]
 
 end DomainDependentHomSection
-
-omit [FiniteDimensional ℝ EP] in
-/-- On a chart source, a `Cⁿ` almost complex structure read in the chart at the centre is the
-structure conjugated by the tangent frame of the chart source. -/
-theorem ContMDiffAlmostComplexStructure.inChart_chartSource (x : P)
-    (j : ContMDiffAlmostComplexStructure IP n (chartSource (H := HP) x))
-    (y : chartSource (H := HP) x) :
-    j.inChart ⟨x, mem_chart_source HP x⟩ (extChartAt IP ⟨x, mem_chart_source HP x⟩ y) =
-      ((chartFrame (I := IP) x).continuousLinearMapAt ℝ y).comp
-        ((j.toEndomorphism y).comp ((chartFrame (I := IP) x).symmL ℝ y)) := by
-  have hy : y ∈ (extChartAt IP (⟨x, mem_chart_source HP x⟩ : chartSource (H := HP) x)).source := by
-    rw [extChartAt_source]
-    simp only [TopologicalSpace.Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_source,
-      Set.mem_preimage]
-    exact y.property
-  rw [inChart_def, (extChartAt IP _).left_inv hy, ContinuousLinearMap.inCoordinates]
 
 omit [FiniteDimensional ℝ EP] [IsManifold IP ∞ P] in
 /-- On a product of chart sources, a domain-dependent structure read in the product chart at the

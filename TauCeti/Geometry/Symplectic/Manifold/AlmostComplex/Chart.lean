@@ -14,7 +14,7 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.LinearAlgebra.Complex.Module
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
@@ -105,6 +105,21 @@ theorem inChart_def (z : E) :
   ext v
   rw [almostComplexCoordinates_apply]
   rfl
+
+/-- On a chart source, a structure read in the chart at the centre is the structure conjugated by
+the tangent frame of the chart source. -/
+theorem inChart_chartSource (x : M)
+    (j : ContMDiffAlmostComplexStructure I n (chartSource (H := H) x))
+    (y : chartSource (H := H) x) :
+    j.inChart ⟨x, mem_chart_source H x⟩ (extChartAt I ⟨x, mem_chart_source H x⟩ y) =
+      ((TangentBundle.chartFrame (I := I) x).continuousLinearMapAt ℝ y).comp
+        ((j.toEndomorphism y).comp ((TangentBundle.chartFrame (I := I) x).symmL ℝ y)) := by
+  have hy : y ∈ (extChartAt I (⟨x, mem_chart_source H x⟩ : chartSource (H := H) x)).source := by
+    rw [extChartAt_source]
+    simp only [TopologicalSpace.Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_source,
+      Set.mem_preimage]
+    exact y.property
+  rw [inChart_def, (extChartAt I _).left_inv hy, ContinuousLinearMap.inCoordinates]
 
 /-- The full coordinate field has the specified finite regularity on the full extended target.
 For a model with corners this is regularity within that target, not a claim that it is open in E. -/
