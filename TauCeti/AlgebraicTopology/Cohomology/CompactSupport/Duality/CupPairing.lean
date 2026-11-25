@@ -94,6 +94,12 @@ theorem intFundamentalClass_def :
         (TopCat.of M)).hom (o.fundamentalClass hn) :=
   (rfl)
 
+/-- Reversing the orientation negates the integral fundamental class. -/
+@[simp]
+theorem intFundamentalClass_neg : (-o).intFundamentalClass hn = -o.intFundamentalClass hn := by
+  rw [intFundamentalClass_def, intFundamentalClass_def, fundamentalClass_neg]
+  exact map_neg _ _
+
 attribute [local instance] MonoidalPreadditive.monoidalLinearInt in
 /-- **Poincaré duality for the integral fundamental class.** For a closed manifold `M` of
 dimension `n` with a homological orientation, capping with the fundamental class read with chain
