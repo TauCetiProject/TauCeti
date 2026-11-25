@@ -15,7 +15,8 @@ import Mathlib.RingTheory.Localization.Submodule
 For a prime `p` of `R` and a prime `Q` of the fibre ring `κ(p) ⊗[R] B` lying over the prime `q`
 of `B`, Mathlib's `Ideal.Fiber.algEquivAux₂` identifies the local ring `(κ(p) ⊗[R] B)_Q` with
 `B_q ⧸ p B_q`. This file records that this identification is compatible with the maps from `B`.
-It also records that the fibre ring of a Noetherian algebra is Noetherian.
+It also records that the fibre ring of a Noetherian algebra is Noetherian, and that the fibre ring
+over a maximal ideal `p` is the quotient `B ⧸ p B`.
 
 ## Main results
 
@@ -26,6 +27,11 @@ It also records that the fibre ring of a Noetherian algebra is Noetherian.
   `B_q ⧸ p B_q`.
 * `Ideal.Fiber.map_le_maximalIdeal`: the ideal `p B_q` lies in the maximal ideal of `B_q`.
 * `Ideal.Fiber.isNoetherianRing`: if `B` is Noetherian, so is the fibre ring `κ(p) ⊗[R] B`.
+* `Ideal.Fiber.algEquivQuotientMap`: for a maximal ideal `p`, the fibre ring `κ(p) ⊗[R] B` is
+  `B ⧸ p B`.
+
+The identification `Ideal.Fiber.algEquivQuotientMap` follows the one in Mathlib's private
+`Algebra.QuasiFinite.finite_of_isArtinianRing_of_isLocalRing`.
 -/
 
 public section
@@ -95,5 +101,13 @@ theorem map_le_maximalIdeal (Q : Ideal (p.Fiber B)) [Q.IsPrime] :
 instance isNoetherianRing [IsNoetherianRing B] : IsNoetherianRing (p.Fiber B) :=
   let : Algebra B (p.Fiber B) := rightAlgebra
   isNoetherianRing_of_ringEquiv _ (algEquivQuotient p).symm.toRingEquiv
+
+/-- The fibre ring `κ(p) ⊗[R] B` over a maximal ideal `p` is the quotient `B ⧸ p B`, since then
+`κ(p) = R ⧸ p`. -/
+noncomputable def algEquivQuotientMap (p : Ideal R) [p.IsMaximal] :
+    p.Fiber B ≃ₐ[R] B ⧸ p.map (algebraMap R B) :=
+  (congr (.symm <| .ofBijective _ (Ideal.bijective_algebraMap_quotient_residueField p)) .refl).trans
+    <| (Algebra.TensorProduct.comm _ _ _).trans
+      ((quotIdealMapEquivTensorQuot B p).symm.restrictScalars _)
 
 end Ideal.Fiber

@@ -16,9 +16,11 @@ public import TauCeti.AlgebraicGeometry.Morphisms.RelativeDimension
 
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 import TauCeti.AlgebraicGeometry.Normalization.Finite
 import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 import TauCeti.RingTheory.IntegralClosure.SeparatingCoordinate
+import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
 import TauCeti.RingTheory.Smooth.MinimalPrime
 
 /-!
@@ -148,17 +150,11 @@ private lemma krullDimLE_sections_quotient [AlgebraicGeometry.RelativeDimensionL
   have hdim :=
     (AlgebraicGeometry.relativeDimensionLE_SpecMap_iff R Γ(M.total, U)).mp this (maximalIdeal R)
   -- The fibre over the closed point is `Γ(U) ⧸ 𝔪 Γ(U)`, and `𝔪 = (π)`.
-  let e : (maximalIdeal R).Fiber Γ(M.total, U) ≃ₐ[R]
-      Γ(M.total, U) ⧸ (maximalIdeal R).map (algebraMap R Γ(M.total, U)) :=
-    (Algebra.TensorProduct.congr (.symm <| .ofBijective _
-      (Ideal.bijective_algebraMap_quotient_residueField (maximalIdeal R))) .refl).trans <|
-    (Algebra.TensorProduct.comm _ _ _).trans
-      ((Algebra.TensorProduct.quotIdealMapEquivTensorQuot _ (maximalIdeal R)).symm.restrictScalars
-        _)
   have hmap : (maximalIdeal R).map (algebraMap R Γ(M.total, U)) =
       Ideal.span {algebraMap R Γ(M.total, U) π} := by
     rw [hπ.maximalIdeal_eq, Ideal.map_span, Set.image_singleton]
-  rw [← hmap, Ring.krullDimLE_iff, ← ringKrullDim_eq_of_ringEquiv e.toRingEquiv]
+  rw [← hmap, Ring.krullDimLE_iff, ← ringKrullDim_eq_of_ringEquiv
+    (Ideal.Fiber.algEquivQuotientMap (B := Γ(M.total, U)) (maximalIdeal R)).toRingEquiv]
   exact_mod_cast hdim
 
 /-- The two maps from `R` to the sections of the generic fibre over `U ∩ C`, through the sections
@@ -173,19 +169,6 @@ private lemma appLE_comp_app_genericι (U : M.total.Opens) :
   rw [Scheme.ΓSpecIso_inv_naturality_assoc]
   -- The two sides differ only in writing `⊤` as `Spec.map _ ⁻¹ᵁ ⊤`.
   rfl
-
-/-- Over an affine open `U` of the total space, the sections of the generic fibre over `U ∩ C` form
-a `K`-algebra which is locally standard smooth of relative dimension one. -/
-private lemma locally_isStandardSmoothOfRelativeDimension_sections
-    [SmoothOfRelativeDimension 1 toK] (hU : IsAffineOpen U) :
-    letI := toK.sectionsAlgebra (M.genericι ⁻¹ᵁ U)
-    RingHom.Locally (RingHom.IsStandardSmoothOfRelativeDimension 1)
-      (algebraMap K Γ(C, M.genericι ⁻¹ᵁ U)) :=
-  toK.algebraMap_sections _ ▸
-  (RingHom.locally_respectsIso RingHom.isStandardSmoothOfRelativeDimension_respectsIso).right _
-    (Scheme.ΓSpecIso (.of K)).commRingCatIsoToRingEquiv.symm
-    (HasRingHomProperty.appLE (@SmoothOfRelativeDimension 1) toK inferInstance
-      ⟨⊤, isAffineOpen_top _⟩ ⟨_, hU.preimage M.genericι⟩ _)
 
 /-- **The normalization of a model of a smooth curve is finite.** If the generic fibre `C` is
 smooth of relative dimension one over `K` and the total space has relative dimension at most one
@@ -209,8 +192,8 @@ instance isFinite_fromNormalization_genericι [SmoothOfRelativeDimension 1 toK]
   let := toK.sectionsAlgebra (M.genericι ⁻¹ᵁ U)
   have : IsScalarTower R K Γ(C, M.genericι ⁻¹ᵁ U) :=
     .of_algebraMap_eq' <| by
-      change (M.genericι.app U).hom.comp (algebraMap R Γ(M.total, U)) = _
-      rw [M.toBase.algebraMap_sections, toK.algebraMap_sections]
+      rw [RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra, M.toBase.algebraMap_sections,
+        toK.algebraMap_sections]
       exact congr(($(appLE_comp_app_genericι U)).hom)
   have : Algebra.FiniteType R Γ(M.total, U) := RingHom.finiteType_algebraMap.mp <|
     M.toBase.algebraMap_sections U ▸ M.toBase.finiteType_ΓSpecIso_inv_comp_appLE hU
@@ -225,7 +208,7 @@ instance isFinite_fromNormalization_genericι [SmoothOfRelativeDimension 1 toK]
         M.range_genericι_eq_basicOpen ((mem_maximalIdeal π).mpr hπ.not_isUnit) hπ.ne_zero]
     rw [hrange, M.toBase.algebraMap_sections]
     exact (Scheme.basicOpen_appLE _ _ _ _ _).symm
-  have hB := locally_isStandardSmoothOfRelativeDimension_sections (M := M) hU
+  have hB := toK.locally_isStandardSmoothOfRelativeDimension_sections 1 (hU.preimage M.genericι)
   have := SmoothOfRelativeDimension.smooth 1 toK
   have := AlgebraicGeometry.IsRegular.of_smooth toK
   exact finite_integralClosure_of_forall_transcendental_and_finrank_kaehlerDifferential_eq_one

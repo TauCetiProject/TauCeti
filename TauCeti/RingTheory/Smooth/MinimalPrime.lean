@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.Kaehler.Separable
 
 import Mathlib.RingTheory.RingHom.LocallyStandardSmooth
 import TauCeti.RingTheory.Ideal.GoingDown
-import TauCeti.RingTheory.Kaehler.UnramifiedBase
+import TauCeti.RingTheory.Kaehler.BaseChange
 import TauCeti.RingTheory.Unramified.LocalRing
 
 /-!
@@ -34,17 +34,14 @@ The kernel of `B_t → κ(p)` is a minimal prime of `B_t`; by going down along t
 `K[X] → B_t` it contracts to the zero ideal of `K[X]`. So the image of `X` in `κ(p)` is
 transcendental over `K`. Since `κ(p)` is formally unramified over `K[X]`, the module
 `Ω[κ(p)⁄K]` is spanned by the image of `d X`
-(`KaehlerDifferential.mapBaseChange_surjective_of_formallyUnramified`), so its dimension is at
-most one, and it is nonzero because `κ(p)` is not algebraic over `K`
+(`TauCeti.finrank_kaehlerDifferential_le_of_formallyUnramified_mvPolynomial`), so its dimension
+is at most one, and it is nonzero because `κ(p)` is not algebraic over `K`
 (`TauCeti.finrank_kaehlerDifferential_pos`).
 
 ## Main results
 
 All in the namespace `TauCeti`:
 
-* `finrank_kaehlerDifferential_le_of_formallyUnramified_mvPolynomial`: a field formally
-  unramified over a polynomial ring `K[X_i]` has Kähler differentials over `K` of dimension at most
-  the number of variables.
 * `transcendental_and_finrank_kaehlerDifferential_eq_one_of_formallyUnramified`: a field which
   contains `K[X]` and is formally unramified over it is transcendental over `K`, with
   one-dimensional Kähler differentials.
@@ -69,21 +66,6 @@ open scoped TensorProduct
 namespace TauCeti
 
 universe u
-
-/-- **Differentials of a field unramified over a polynomial ring.** If a field `L` over a ring `K`
-is a formally unramified algebra over the polynomial ring `K[X_i]`, then `Ω[L⁄K]` is spanned by the
-images of the `d X_i`, so its dimension is at most the number of variables. -/
-theorem finrank_kaehlerDifferential_le_of_formallyUnramified_mvPolynomial {σ K L : Type*}
-    [Finite σ] [CommRing K] [Field L] [Algebra K L] [Algebra (MvPolynomial σ K) L]
-    [IsScalarTower K (MvPolynomial σ K) L] [Algebra.FormallyUnramified (MvPolynomial σ K) L] :
-    Module.finrank L Ω[L⁄K] ≤ Nat.card σ := by
-  have hsurj := mapBaseChange_surjective_of_formallyUnramified K (MvPolynomial σ K) L
-  have b := (mvPolynomialBasis K σ).baseChange L
-  have : Module.Finite L (L ⊗[MvPolynomial σ K] Ω[MvPolynomial σ K⁄K]) := .of_basis b
-  calc Module.finrank L Ω[L⁄K]
-      ≤ Module.finrank L (L ⊗[MvPolynomial σ K] Ω[MvPolynomial σ K⁄K]) :=
-        LinearMap.finrank_le_finrank_of_surjective hsurj
-    _ = Nat.card σ := by rw [Module.finrank_eq_nat_card_basis b]
 
 /-- **A field unramified over a polynomial ring in one variable.** Let `L` be a field over `K`,
 essentially of finite type, which contains the polynomial ring `K[X]` and is formally unramified
