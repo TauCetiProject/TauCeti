@@ -42,9 +42,10 @@ dualizes to `-2`.
 
 Every Lie algebra homomorphism `f : L → R` extends to `U(L)`, and restricting to the centre gives
 the character `TauCeti.UniversalEnvelopingAlgebra.liftCharacter f`, which takes the value `f y` on
-a central generator `ι y`. For an abelian Lie algebra every element of `U(L)` is central and every
-linear functional is a Lie algebra homomorphism, so every linear functional is the restriction to
-`L` of an infinitesimal character; for `gl₁` this says that every scalar is the value of an
+a central generator `ι y`. On a module where `L` acts through `f`, every element `u` of `U(L)`
+acts by the scalar `lift f u`. For an abelian Lie algebra every element of `U(L)` is central and
+every linear functional is a Lie algebra homomorphism, so every linear functional is the restriction
+to `L` of an infinitesimal character; for `gl₁` this says that every scalar is the value of an
 infinitesimal character on the generator.
 
 ## Main definitions
@@ -73,6 +74,8 @@ infinitesimal character on the generator.
   annihilation by a power of `ker χ` dualizes.
 * `TauCeti.UniversalEnvelopingAlgebra.dualCharacter_ι`: on a central element of degree one the
   dual character is the negative.
+* `TauCeti.UniversalEnvelopingAlgebra.representation_apply_of_lie_eq_smul`: on a module where `L`
+  acts through a Lie algebra homomorphism `f : L → R`, every `u ∈ U(L)` acts by `lift f u`.
 
 ## References
 
@@ -325,6 +328,18 @@ on the centre. -/
 theorem liftCharacter_apply (f : LieAlgebra.LieCharacter R L) (z : Subalgebra.center R U) :
     liftCharacter R L f z = _root_.UniversalEnvelopingAlgebra.lift R f (z : U) :=
   (rfl)
+
+/-- **On a module where `L` acts through a character `f`, every element `u` of `U(L)` acts by the
+scalar `lift f u`.** -/
+theorem representation_apply_of_lie_eq_smul (f : LieAlgebra.LieCharacter R L)
+    (hf : ∀ (y : L) (m : M), ⁅y, m⁆ = f y • m) (u : U) (m : M) :
+    representation R L M u m = _root_.UniversalEnvelopingAlgebra.lift R f u • m := by
+  have key : representation R L M =
+      (Algebra.ofId R (End R M)).comp (_root_.UniversalEnvelopingAlgebra.lift R f) := by
+    refine _root_.UniversalEnvelopingAlgebra.hom_ext R
+      (LieHom.ext fun y ↦ LinearMap.ext fun m ↦ ?_)
+    simp [hf, Algebra.ofId_apply, Algebra.algebraMap_eq_smul_one]
+  simp [key, Algebra.ofId_apply, Algebra.algebraMap_eq_smul_one]
 
 /-- The character extending a Lie algebra homomorphism `f` takes the value `f y` on a central
 generator `ι y`. -/

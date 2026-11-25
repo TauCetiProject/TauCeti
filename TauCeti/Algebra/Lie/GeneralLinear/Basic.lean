@@ -37,7 +37,8 @@ sits *inside* the derived ideal and the two are not complementary.
 * `TauCeti.slIdeal R n`: the trace-zero matrices, as a `LieIdeal R (Matrix n n R)`. Mathlib's
   `LieAlgebra.SpecialLinear.sl n R` is the same subspace packaged only as a Lie subalgebra, and
   `TauCeti.slIdeal_toLieSubalgebra_eq_sl` identifies the two.
-* `TauCeti.traceLieCharacter R n`: the trace `gl n R → R`, as a Lie algebra homomorphism.
+* `TauCeti.traceLieCharacter R n`: the trace `gl n R → R`, as a Lie algebra homomorphism; its
+  kernel is `TauCeti.slIdeal R n` (`TauCeti.ker_traceLieCharacter`).
 
 ## Main results
 
@@ -246,6 +247,12 @@ def traceLieCharacter : LieAlgebra.LieCharacter R (Matrix n n R) where
 @[simp]
 theorem traceLieCharacter_apply (X : Matrix n n R) : traceLieCharacter R n X = X.trace :=
   (rfl)
+
+variable (R n) in
+/-- The kernel of the trace character of `gl n R` is the special linear ideal. -/
+theorem ker_traceLieCharacter : (traceLieCharacter R n).ker = slIdeal R n := by
+  ext A
+  rw [LieHom.mem_ker, traceLieCharacter_apply, mem_slIdeal_iff]
 
 /-! ### The derived ideal of `gl n R` -/
 

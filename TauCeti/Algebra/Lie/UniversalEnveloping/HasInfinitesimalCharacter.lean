@@ -23,8 +23,10 @@ has every infinitesimal character, so uniqueness of the infinitesimal character 
 module (`HasInfinitesimalCharacter.eq`, for a module without `R`-torsion).
 
 If `L` acts on `M` through a Lie algebra homomorphism `f : L → R`, that is `⁅y, m⁆ = f y • m`,
-then every `u ∈ U(L)` acts by the scalar `lift f u` (`representation_apply_of_lie_eq_smul`), so `M`
-has the infinitesimal character `liftCharacter R L f` extending `f`
+then every `u ∈ U(L)` acts by the scalar `lift f u`
+(`TauCeti.UniversalEnvelopingAlgebra.representation_apply_of_lie_eq_smul`, in
+`TauCeti/Algebra/Lie/UniversalEnveloping/InfinitesimalCharacter.lean`), so `M` has the infinitesimal
+character `liftCharacter R L f` extending `f`
 (`HasInfinitesimalCharacter.of_lie_eq_smul`); the trivial module is the case `f = 0`. The values
 of these characters on the trace-form Casimir of `gl n` are computed in
 `TauCeti/Algebra/Lie/GeneralLinear/InfinitesimalCharacter.lean`.
@@ -43,8 +45,7 @@ of these characters on the trace-form Casimir of `gl n` are computed in
   `.lieSubmodule`, `.quotient`: invariance under homomorphisms of Lie modules.
 * `TauCeti.UniversalEnvelopingAlgebra.HasInfinitesimalCharacter.eq`: uniqueness for a nonzero
   torsion-free module.
-* `TauCeti.UniversalEnvelopingAlgebra.representation_apply_of_lie_eq_smul`,
-  `TauCeti.UniversalEnvelopingAlgebra.HasInfinitesimalCharacter.of_lie_eq_smul`,
+* `TauCeti.UniversalEnvelopingAlgebra.HasInfinitesimalCharacter.of_lie_eq_smul`,
   `TauCeti.UniversalEnvelopingAlgebra.hasInfinitesimalCharacter_of_isTrivial`: modules on which
   `L` acts through a character.
 
@@ -100,24 +101,6 @@ theorem hasInfinitesimalCharacter_iff_centerEigenspace_eq_top
 theorem hasInfinitesimalCharacter_of_subsingleton [Subsingleton M]
     (χ : Subalgebra.center R U →ₐ[R] R) : HasInfinitesimalCharacter R L M χ :=
   hasInfinitesimalCharacter_iff.mpr fun _ _ ↦ Subsingleton.elim _ _
-
-section LiftCharacter
-
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-/-- **On a module where `L` acts through a character `f`, every element `u` of `U(L)` acts by the
-scalar `lift f u`.** -/
-theorem representation_apply_of_lie_eq_smul (f : LieAlgebra.LieCharacter R L)
-    (hf : ∀ (y : L) (m : M), ⁅y, m⁆ = f y • m) (u : U) (m : M) :
-    representation R L M u m = _root_.UniversalEnvelopingAlgebra.lift R f u • m := by
-  have key : representation R L M =
-      (Algebra.ofId R (End R M)).comp (_root_.UniversalEnvelopingAlgebra.lift R f) := by
-    refine _root_.UniversalEnvelopingAlgebra.hom_ext R
-      (LieHom.ext fun y ↦ LinearMap.ext fun m ↦ ?_)
-    simp [hf, Algebra.ofId_apply, Algebra.algebraMap_eq_smul_one]
-  simp [key, Algebra.ofId_apply, Algebra.algebraMap_eq_smul_one]
-
-end LiftCharacter
 
 namespace HasInfinitesimalCharacter
 
