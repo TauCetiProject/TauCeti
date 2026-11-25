@@ -306,6 +306,12 @@ theorem abs_orientedJacobian_fin_zero (oV : Orientation ℝ V (Fin 0))
   rw [oV.orientedJacobian_fin_zero_eq_ite oW A]
   split_ifs <;> norm_num
 
+/-- In dimension `0` a positive oriented Jacobian is `1`. -/
+theorem orientedJacobian_eq_one_of_fin_zero (oV : Orientation ℝ V (Fin 0))
+    (oW : Orientation ℝ W (Fin 0)) {A : V →ₗ[ℝ] W} (h : 0 < oV.orientedJacobian oW A) :
+    oV.orientedJacobian oW A = 1 := by
+  simpa [abs_of_pos h] using oV.abs_orientedJacobian_fin_zero oW A
+
 /-- In dimension `0`, `oV.orientedJacobian oW A = 1` iff `oV` and `oW` have the same sign relative
 to `positiveOrientation` (`oV = positiveOrientation ↔ oW = positiveOrientation`). -/
 theorem orientedJacobian_fin_zero_eq_one_iff (oV : Orientation ℝ V (Fin 0))

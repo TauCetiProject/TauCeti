@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ChangeOfVariables
 public import TauCeti.MeasureTheory.Measure.Glue
+public import TauCeti.Geometry.Manifold.Measure.Chart
 public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
@@ -233,32 +234,15 @@ theorem isLocallyFiniteMeasure_measure {φ : RoughForm I M ℝ k} (hφ : IsSmoot
     IsLocallyFiniteMeasure φ.measure := by
   refine ⟨fun x ↦ ?_⟩
   set b := finBasisOfFinrankEq ℝ E hk.out
-  set e := extChartAt I x
-  set g : E → ℝ := fun y ↦ |φ.inChartAt x y b|
-  have hg : ContinuousOn g e.target :=
+  have hg : ContinuousOn (fun y ↦ |φ.inChartAt x y b|) (extChartAt I x).target :=
     continuous_abs.comp_continuousOn
       ((continuous_eval_const (b : Fin k → E)).comp_continuousOn
         (hφ.continuousOn_inChartAt x))
-  have hxe : x ∈ e.source := mem_extChartAt_source x
-  -- Near `e x` in the model, the coordinate density stays below `g (e x) + 1`.
-  have hbound : {y | g y < g (e x) + 1} ∈ 𝓝[range I] (e x) := by
-    rw [← nhdsWithin_extChartAt_target_eq' hxe]
-    exact (hg (e x) (e.map_source hxe)).eventually_lt_const (lt_add_one _)
-  set t := {y | g y < g (e x) + 1} ∩ Metric.ball (e x) 1
-  have ht : t ∈ 𝓝[range I] (e x) :=
-    Filter.inter_mem hbound (mem_nhdsWithin_of_mem_nhds (Metric.ball_mem_nhds _ one_pos))
-  have hs : e.source ∩ e ⁻¹' t ∈ 𝓝 x :=
-    Filter.inter_mem (extChartAt_source_mem_nhds' hxe)
-      (extChartAt_preimage_mem_nhds_of_mem_nhdsWithin hxe ht)
-  refine ⟨interior (e.source ∩ e ⁻¹' t), interior_mem_nhds.2 hs, ?_⟩
-  rw [φ.measure_apply_of_subset isOpen_interior.measurableSet
-    (interior_subset.trans inter_subset_left)]
-  have himage : e '' interior (e.source ∩ e ⁻¹' t) ⊆ t := by
-    rintro _ ⟨z, hz, rfl⟩
-    exact (interior_subset hz).2
-  refine setLIntegral_lt_top_of_le_nnreal ?_ ⟨(g (e x) + 1).toNNReal, fun y hy ↦ ?_⟩
-  · exact ((measure_mono (himage.trans inter_subset_right)).trans_lt measure_ball_lt_top).ne
-  · exact ENNReal.ofReal_le_ofReal (himage hy).1.le
+  -- Near each point the coordinate density is bounded, so its integral is finite.
+  obtain ⟨U, hUo, hxU, hUsub, hU⟩ :=
+    exists_isOpen_setLIntegral_image_extChartAt_lt_top hg b.addHaar
+  refine ⟨U, hUo.mem_nhds hxU, ?_⟩
+  rwa [φ.measure_apply_of_subset hUo.measurableSet hUsub]
 
 omit [FiniteDimensional ℝ E] hk [LindelofSpace M] in
 /-- The coordinate density `|φ(v)|` of a continuous top form in the chart at `α` is
@@ -290,14 +274,8 @@ theorem isOpenPosMeasure_measure {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm 
   refine ((?_ : 0 < φ.measure V).trans_le (measure_mono inter_subset_left)).ne'
   rw [φ.measure_apply_of_subset hV.measurableSet hVsub]
   -- The coordinate image of `V` has positive Lebesgue measure.
-  have hApos : 0 < b.addHaar (e '' V) := by
-    rw [e.image_eq_target_inter_inv_preimage hVsub]
-    apply Measure.measure_pos_of_nonempty_interior
-    refine Set.Nonempty.of_closure ⟨e x, ?_⟩
-    simpa only [inter_comm] using
-      (extChartAt_mem_closure_interior (I := I) (x₀ := x)
-        (subset_closure (mem_interior_iff_mem_nhds.mpr (hV.mem_nhds ⟨hx, mem_extChartAt_source x⟩)))
-        (mem_extChartAt_source x))
+  have hApos : 0 < b.addHaar (e '' V) := measure_image_extChartAt_inter_source_pos hU
+    ⟨x, hx, mem_extChartAt_source x⟩ _
   -- The coordinate density is measurable and vanishes nowhere on that image.
   have hd := aemeasurable_ofReal_abs_inChartAt hφ b hV.measurableSet hVsub (μ := b.addHaar)
   have hpos : ∀ y ∈ e '' V, ENNReal.ofReal |φ.inChartAt x y b| ≠ 0 := by
