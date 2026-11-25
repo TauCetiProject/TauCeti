@@ -78,8 +78,8 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 /-- **Deficiency vectors almost annihilate nearby shifted ranges.** For symmetric `S`, a vector
 `u` of the deficiency subspace `N_w(S)` and a vector `v` in the closure of the range of
 `conj z - S` satisfy `|im z| ‖⟪u, v⟫‖ ≤ ‖w - z‖ ‖u‖ ‖v‖`. -/
-theorem IsFormalAdjoint.abs_im_mul_norm_inner_le (hS : S.IsFormalAdjoint S) {u v : E}
-    (hu : u ∈ S.deficiencySubspace w)
+theorem IsFormalAdjoint.abs_im_mul_norm_inner_le_of_mem_deficiencySubspace
+    (hS : S.IsFormalAdjoint S) {u v : E} (hu : u ∈ S.deficiencySubspace w)
     (hv : v ∈ (LinearMap.range (S.smulSub (starRingEnd 𝕜 z))).topologicalClosure) :
     |im z| * ‖⟪u, v⟫_𝕜‖ ≤ ‖w - z‖ * ‖u‖ * ‖v‖ := by
   refine closure_minimal (s := (LinearMap.range (S.smulSub (starRingEnd 𝕜 z)) : Set E))
@@ -120,7 +120,7 @@ theorem IsFormalAdjoint.abs_im_mul_directedProjectionGap_deficiencySubspace_le [
   refine fun u hu ↦ (Submodule.norm_starProjection_le_iff_forall_norm_inner_le _ u
     (by positivity)).2 fun v hv ↦ ?_
   rw [orthogonal_deficiencySubspace] at hv
-  have h := hS.abs_im_mul_norm_inner_le hu hv
+  have h := hS.abs_im_mul_norm_inner_le_of_mem_deficiencySubspace hu hv
   calc ‖⟪v, u⟫_𝕜‖ = (|im z| * ‖⟪u, v⟫_𝕜‖) / |im z| := by
         rw [norm_inner_symm, mul_div_cancel_left₀ _ hz'.ne']
     _ ≤ (‖w - z‖ * ‖u‖ * ‖v‖) / |im z| := by gcongr

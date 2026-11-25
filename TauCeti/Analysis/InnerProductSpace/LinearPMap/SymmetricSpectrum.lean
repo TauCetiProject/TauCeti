@@ -31,7 +31,8 @@ not closed, its resolvent set is empty.
 For a closed densely defined symmetric `S` and nonreal `z`, the scalar `z` is a resolvent point
 exactly when `conj z` is not an eigenvalue of the adjoint `S†`: the range of `z • I - S` is
 closed, and its orthogonal complement is the eigenspace `ker (S† - conj z)`, the deficiency
-space at `z`. This is the link between the four alternatives and the deficiency indices of `S`.
+subspace `N_{conj z}(S)` (`LinearPMap.deficiencySubspace`). This is the link between the four
+alternatives and the deficiency indices of `S`.
 
 ## Main results
 
