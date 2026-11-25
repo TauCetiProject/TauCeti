@@ -101,8 +101,9 @@ theorem morseBoundary_comp_morseContinuationMap :
   -- The pulled-back pseudo-gradient is Morse–Smale and adapted to the Morse function `f₁ ∘ Ψ`,
   -- whose critical points are the preimages of those of `f₁`.
   have h₁' := h₁.pullback (hX := hX₁.mpullback Ψ) (Ψ.mfderiv_apply_mpullback (by simp) X₁)
-  exact hΨ.even_ncard_morseSourceBrokenPairSet_add_ncard_morseTargetBrokenPairSet h₀ h₁' hf₀
-    (hf₁.comp_isLocalDiffeomorph Ψ.isLocalDiffeomorph) p ((criticalPointsEquivOfComp rfl).symm r)
+  simpa only [coe_criticalPointsEquivOfComp_symm_apply] using
+    hΨ.even_ncard_morseSourceBrokenPairSet_add_ncard_morseTargetBrokenPairSet h₀ h₁' hf₀
+      (hf₁.comp_isLocalDiffeomorph Ψ.isLocalDiffeomorph) p ((criticalPointsEquivOfComp rfl).symm r)
 
 /-- **Broken continuation trajectories come in pairs.** For a transverse smooth continuation field
 at rate `C > 0` between Morse–Smale pseudo-gradients adapted to Morse functions on a compact
