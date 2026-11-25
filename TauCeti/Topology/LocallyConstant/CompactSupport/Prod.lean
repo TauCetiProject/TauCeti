@@ -31,6 +31,8 @@ indicators `1_K • m` of compact open sets, whose slices are the indicators of 
 
 * `LocallyConstant.compactlySupported.sliceRight_compactOpenIndicator`: the slice of `1_K • m` at
   `x` is `1_{K_x} • m`.
+* `LocallyConstant.compactlySupported.sliceLeft_compactOpenIndicator`: the slice of `1_K • m` at
+  `y` in the first variable is `1_{K^y} • m`, where `K^y = K.swap.slice y`.
 * `LocallyConstant.compactlySupported.swap_compactOpenIndicator`: exchanging the variables of
   `1_K • m` gives `1_{K.swap} • m`.
 * `LocallyConstant.compactlySupported.sliceRight_swap`: slicing `f ∘ swap` on the right is slicing
@@ -90,6 +92,11 @@ theorem swap_apply (f : compactlySupported R (X × Y) M) (p : Y × X) :
     (swap R M f : LocallyConstant (Y × X) M) p = (f : LocallyConstant (X × Y) M) p.swap :=
   (rfl)
 
+/-- Exchanging the variables twice gives back the original function. -/
+@[simp]
+theorem swap_swap (f : compactlySupported R (X × Y) M) : swap R M (swap R M f) = f :=
+  compactlySupported.ext fun p ↦ by rw [swap_apply, swap_apply, Prod.swap_swap]
+
 /-- Slicing `(y, x) ↦ f (x, y)` at `y` is slicing `f` at `y` in the other variable. -/
 @[simp]
 theorem sliceRight_swap (y : Y) (f : compactlySupported R (X × Y) M) :
@@ -107,6 +114,14 @@ theorem sliceRight_compactOpenIndicator (K : CompactOpens (X × Y)) (m : M) (x :
     sliceRight R M x ⟨compactOpenIndicator K m, compactOpenIndicator_mem_compactlySupported K m⟩ =
       ⟨compactOpenIndicator (K.slice x) m, compactOpenIndicator_mem_compactlySupported _ m⟩ :=
   compactlySupported.ext fun y ↦ by
+    by_cases h : (x, y) ∈ K <;> simp [h]
+
+/-- The slice at `y` of the indicator `1_K • m` of a compact open `K ⊆ X × Y`, in the first
+variable, is the indicator of the slice `K^y = {x | (x, y) ∈ K}`, that is of `K.swap.slice y`. -/
+theorem sliceLeft_compactOpenIndicator (K : CompactOpens (X × Y)) (m : M) (y : Y) :
+    sliceLeft R M y ⟨compactOpenIndicator K m, compactOpenIndicator_mem_compactlySupported K m⟩ =
+      ⟨compactOpenIndicator (K.swap.slice y) m, compactOpenIndicator_mem_compactlySupported _ m⟩ :=
+  compactlySupported.ext fun x ↦ by
     by_cases h : (x, y) ∈ K <;> simp [h]
 
 /-- Exchanging the variables of the indicator `1_K • m` of a compact open `K ⊆ X × Y` gives the

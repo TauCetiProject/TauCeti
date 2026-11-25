@@ -44,7 +44,9 @@ the factors carries `ν.prod μ` to `μ.prod ν` when `A` is commutative
   `∫ (∫ f (g, h) dν(h)) dμ(g) = ∫ f d(μ.prod ν)`.
 * `TauCeti.HaarMeasureWithValues.integral_integralLeft`:
   `∫ (∫ f (g, h) dμ(g)) dν(h) = ∫ f d(μ.prod ν)`.
-* `TauCeti.HaarMeasureWithValues.prod_apply_swap`: `(ν.prod μ)(K.swap) = (μ.prod ν)(K)`.
+* `TauCeti.HaarMeasureWithValues.isLocallyConstant_integral_sliceRight`,
+  `TauCeti.HaarMeasureWithValues.hasCompactSupport_integral_sliceRight`: the partial integral
+  `g ↦ ∫ f (g, h) dν(h)` is locally constant with compact support.
 * `TauCeti.HaarMeasureWithValues.integralRight_compactOpenIndicator`,
   `TauCeti.HaarMeasureWithValues.integralLeft_compactOpenIndicator`: the partial integrals of an
   indicator `1_K • m` are `g ↦ ν(K_g) • m` and `h ↦ μ(K^h) • m`.
@@ -62,60 +64,22 @@ open scoped Pointwise
 
 namespace TauCeti.HaarMeasureWithValues
 
-/-! ### Exchanging the factors -/
-
-section Swap
-
-variable {A G H : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G] [T2Space G]
-  [Group H] [TopologicalSpace H] [ContinuousMul H] [T2Space H] [NonUnitalNonAssocCommSemiring A]
-
-omit [T2Space G] [T2Space H] in
-private theorem swap_smul (x : G × H) (K : CompactOpens (G × H)) :
-    (x • K).swap = x.swap • K.swap :=
-  CompactOpens.ext (Set.ext fun y ↦ by
-    simp only [CompactOpens.coe_swap, CompactOpens.coe_smul, mem_preimage,
-      Set.mem_smul_set_iff_inv_smul_mem, smul_eq_mul, Prod.swap_mul, Prod.swap_inv,
-      Prod.swap_swap])
-
-/-- The volume `K ↦ (ν.prod μ)(K.swap)` on `G × H`, an `A`-valued Haar measure. -/
-private noncomputable def swapProd (μ : HaarMeasureWithValues A G)
-    (ν : HaarMeasureWithValues A H) : HaarMeasureWithValues A (G × H) where
-  toFun K := ν.prod μ K.swap
-  map_bot' := (congrArg (ν.prod μ) CompactOpens.swap_bot).trans (apply_bot _)
-  map_sup' K L hKL := (congrArg (ν.prod μ) (CompactOpens.swap_sup K L)).trans <|
-    apply_sup _ (by simpa only [CompactOpens.coe_swap] using hKL.preimage Prod.swap)
-  map_smul' x K := (congrArg (ν.prod μ) (swap_smul x K)).trans (apply_smul _ _ _)
-
-private theorem swapProd_apply (μ : HaarMeasureWithValues A G) (ν : HaarMeasureWithValues A H)
-    (K : CompactOpens (G × H)) : swapProd μ ν K = ν.prod μ K.swap := by
-  rw [swapProd, coe_mk]
-
-/-- **Exchanging the factors of a product measure.** For a commutative `A`, the volume under
-`ν.prod μ` of the image `K.swap` of `K ⊆ G × H` under `(g, h) ↦ (h, g)` is the volume of `K` under
-`μ.prod ν`. -/
-theorem prod_apply_swap (μ : HaarMeasureWithValues A G) (ν : HaarMeasureWithValues A H)
-    (K : CompactOpens (G × H)) : ν.prod μ K.swap = μ.prod ν K := by
-  -- `K ↦ (ν.prod μ)(K.swap)` is a Haar measure on `G × H` with the volumes of `μ.prod ν` on
-  -- rectangles.
-  rw [← swapProd_apply, eq_prod_of_apply_prod μ ν (swapProd μ ν) fun U V ↦ by
-    rw [swapProd_apply, CompactOpens.swap_prod, prod_apply_prod, mul_comm]]
-
-end Swap
-
 /-! ### Integration in one variable -/
 
 section Partial
 
-variable {A G H M : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G] [T2Space G]
-  [Group H] [TopologicalSpace H] [ContinuousMul H] [T2Space H]
+variable {A G H M : Type*} [TopologicalSpace G] [T2Space G] [TopologicalSpace H] [T2Space H]
   [CommSemiring A] [AddCommMonoid M] [Module A M]
 
-omit [Group G] [ContinuousMul G] in
-/-- The function `g ↦ ∫ f (g, h) dν(h)` is locally constant with compact support. -/
-private theorem exists_integralRight (ν : HaarMeasureWithValues A H)
+section Right
+
+variable [Group H] [ContinuousConstSMul H H]
+
+/-- The function `g ↦ ∫ f (g, h) dν(h)` is a locally constant function with compact support. -/
+private theorem exists_eq_integral_sliceRight (ν : HaarMeasureWithValues A H)
     (f : compactlySupported A (G × H) M) :
-    ∃ F : compactlySupported A G M,
-      ∀ g, (F : LocallyConstant G M) g = ν.integral (compactlySupported.sliceRight A M g f) := by
+    ∃ F : LocallyConstant G M, HasCompactSupport F ∧
+      ⇑F = fun g ↦ ν.integral (compactlySupported.sliceRight A M g f) := by
   obtain ⟨s, K, hf⟩ := exists_eq_sum_compactOpenIndicator (mem_compactlySupported.1 f.property)
   have hfs : f = ∑ m ∈ s, ⟨compactOpenIndicator (K m) m,
       compactOpenIndicator_mem_compactlySupported (K m) m⟩ :=
@@ -131,40 +95,48 @@ private theorem exists_integralRight (ν : HaarMeasureWithValues A H)
   have hFg (g : G) : F g = ∑ m ∈ s, ν ((K m).slice g) • m := by
     rw [← coeFnAddMonoidHom_apply, map_sum, Finset.sum_apply]
     simp only [coeFnAddMonoidHom_apply, LocallyConstant.coe_mk]
-  have hF : HasCompactSupport F := by
-    refine HasCompactSupport.intro' (K := ⋃ m ∈ s, Prod.fst '' ((K m : Set (G × H))))
+  refine ⟨F, HasCompactSupport.intro' (K := ⋃ m ∈ s, Prod.fst '' ((K m : Set (G × H))))
       (s.finite_toSet.isCompact_biUnion fun m _ ↦ (K m).isCompact.image continuous_fst)
       (s.finite_toSet.isClosed_biUnion fun m _ ↦
-        ((K m).isCompact.image continuous_fst).isClosed) fun g hg ↦ ?_
-    rw [hFg]
-    refine Finset.sum_eq_zero fun m hm ↦ ?_
-    simp only [mem_iUnion, not_exists] at hg
-    rw [CompactOpens.slice_eq_bot_of_notMem (hg m hm), apply_bot, zero_smul]
-  exact ⟨⟨F, mem_compactlySupported.2 hF⟩, fun g ↦ (hFg g).trans (hval g).symm⟩
+        ((K m).isCompact.image continuous_fst).isClosed) fun g hg ↦ ?_,
+    funext fun g ↦ (hFg g).trans (hval g).symm⟩
+  rw [hFg]
+  refine Finset.sum_eq_zero fun m hm ↦ ?_
+  simp only [mem_iUnion, not_exists] at hg
+  rw [CompactOpens.slice_eq_bot_of_notMem (hg m hm), apply_bot, zero_smul]
+
+/-- The partial integral `g ↦ ∫ f (g, h) dν(h)` of `f ∈ C_c^∞(G × H, M)` is locally constant. -/
+theorem isLocallyConstant_integral_sliceRight (ν : HaarMeasureWithValues A H)
+    (f : compactlySupported A (G × H) M) :
+    IsLocallyConstant fun g : G ↦ ν.integral (compactlySupported.sliceRight A M g f) := by
+  obtain ⟨F, -, hF⟩ := exists_eq_integral_sliceRight ν f
+  exact hF ▸ F.isLocallyConstant
+
+/-- The partial integral `g ↦ ∫ f (g, h) dν(h)` of `f ∈ C_c^∞(G × H, M)` has compact support. -/
+theorem hasCompactSupport_integral_sliceRight (ν : HaarMeasureWithValues A H)
+    (f : compactlySupported A (G × H) M) :
+    HasCompactSupport fun g : G ↦ ν.integral (compactlySupported.sliceRight A M g f) := by
+  obtain ⟨F, hFc, hF⟩ := exists_eq_integral_sliceRight ν f
+  exact hF ▸ hFc
 
 variable (M) in
 /-- **Integration in the second variable**: `f ↦ (g ↦ ∫ f (g, h) dν(h))`, an `A`-linear map
 `C_c^∞(G × H, M) → C_c^∞(G, M)`. -/
 noncomputable def integralRight (ν : HaarMeasureWithValues A H) :
     compactlySupported A (G × H) M →ₗ[A] compactlySupported A G M where
-  toFun f := (exists_integralRight ν f).choose
-  map_add' f f' := compactlySupported.ext fun g ↦ by
-    rw [(exists_integralRight ν (f + f')).choose_spec g, Submodule.coe_add,
-      LocallyConstant.add_apply, (exists_integralRight ν f).choose_spec g,
-      (exists_integralRight ν f').choose_spec g, map_add, map_add]
-  map_smul' c f := compactlySupported.ext fun g ↦ by
-    rw [(exists_integralRight ν (c • f)).choose_spec g, RingHom.id_apply, Submodule.coe_smul,
-      LocallyConstant.smul_apply, (exists_integralRight ν f).choose_spec g, map_smul, map_smul]
+  toFun f := ⟨⟨fun g ↦ ν.integral (compactlySupported.sliceRight A M g f),
+    isLocallyConstant_integral_sliceRight ν f⟩,
+    mem_compactlySupported.2 (hasCompactSupport_integral_sliceRight ν f)⟩
+  map_add' f f' := compactlySupported.ext fun g ↦ by simp [map_add]
+  map_smul' c f := compactlySupported.ext fun g ↦ by simp [map_smul]
 
-omit [Group G] [ContinuousMul G] in
 @[simp]
 theorem integralRight_apply (ν : HaarMeasureWithValues A H) (f : compactlySupported A (G × H) M)
     (g : G) :
     (integralRight M ν f : LocallyConstant G M) g =
       ν.integral (compactlySupported.sliceRight A M g f) :=
-  (exists_integralRight ν f).choose_spec g
+  (rfl)
 
-omit [Group G] [ContinuousMul G] in
 /-- Integrating an indicator `1_K • m` in the second variable gives `g ↦ ν(K_g) • m`. -/
 theorem integralRight_compactOpenIndicator (ν : HaarMeasureWithValues A H)
     (K : CompactOpens (G × H)) (m : M) (g : G) :
@@ -172,6 +144,41 @@ theorem integralRight_compactOpenIndicator (ν : HaarMeasureWithValues A H)
       LocallyConstant G M) g = ν (K.slice g) • m := by
   rw [integralRight_apply, compactlySupported.sliceRight_compactOpenIndicator,
     integral_compactOpenIndicator]
+
+end Right
+
+section Left
+
+variable [Group G] [ContinuousConstSMul G G]
+
+variable (M) in
+/-- **Integration in the first variable**: `f ↦ (h ↦ ∫ f (g, h) dμ(g))`, an `A`-linear map
+`C_c^∞(G × H, M) → C_c^∞(H, M)`. -/
+noncomputable def integralLeft (μ : HaarMeasureWithValues A G) :
+    compactlySupported A (G × H) M →ₗ[A] compactlySupported A H M :=
+  integralRight M μ ∘ₗ compactlySupported.swap A M
+
+@[simp]
+theorem integralLeft_apply (μ : HaarMeasureWithValues A G) (f : compactlySupported A (G × H) M)
+    (h : H) :
+    (integralLeft M μ f : LocallyConstant H M) h =
+      μ.integral (compactlySupported.sliceLeft A M h f) := by
+  rw [integralLeft, LinearMap.comp_apply, integralRight_apply, compactlySupported.sliceRight_swap]
+
+/-- Integrating an indicator `1_K • m` in the first variable gives `h ↦ μ(K^h) • m`, where
+`K^h = {g | (g, h) ∈ K}` is the slice `K.swap.slice h`. -/
+theorem integralLeft_compactOpenIndicator (μ : HaarMeasureWithValues A G)
+    (K : CompactOpens (G × H)) (m : M) (h : H) :
+    (integralLeft M μ ⟨compactOpenIndicator K m, compactOpenIndicator_mem_compactlySupported K m⟩ :
+      LocallyConstant H M) h = μ (K.swap.slice h) • m := by
+  rw [integralLeft_apply, compactlySupported.sliceLeft_compactOpenIndicator,
+    integral_compactOpenIndicator]
+
+end Left
+
+/-! ### Fubini's theorem -/
+
+variable [Group G] [ContinuousMul G] [Group H] [ContinuousMul H]
 
 /-- **Fubini's theorem**, integrating first in the second variable:
 `∫ (∫ f (g, h) dν(h)) dμ(g) = ∫ f d(μ.prod ν)`. -/
@@ -204,31 +211,6 @@ theorem integral_prod_swap (μ : HaarMeasureWithValues A G) (ν : HaarMeasureWit
     ((ν.prod μ).integral ∘ₗ compactlySupported.swap A M) fun K m ↦ ?_) f
   rw [LinearMap.comp_apply, compactlySupported.swap_compactOpenIndicator,
     integral_compactOpenIndicator, prod_apply_swap]
-
-variable (M) in
-/-- **Integration in the first variable**: `f ↦ (h ↦ ∫ f (g, h) dμ(g))`, an `A`-linear map
-`C_c^∞(G × H, M) → C_c^∞(H, M)`. -/
-noncomputable def integralLeft (μ : HaarMeasureWithValues A G) :
-    compactlySupported A (G × H) M →ₗ[A] compactlySupported A H M :=
-  integralRight M μ ∘ₗ compactlySupported.swap A M
-
-omit [Group H] [ContinuousMul H] in
-@[simp]
-theorem integralLeft_apply (μ : HaarMeasureWithValues A G) (f : compactlySupported A (G × H) M)
-    (h : H) :
-    (integralLeft M μ f : LocallyConstant H M) h =
-      μ.integral (compactlySupported.sliceLeft A M h f) := by
-  rw [integralLeft, LinearMap.comp_apply, integralRight_apply, compactlySupported.sliceRight_swap]
-
-omit [Group H] [ContinuousMul H] in
-/-- Integrating an indicator `1_K • m` in the first variable gives `h ↦ μ(K^h) • m`, where
-`K^h = {g | (g, h) ∈ K}` is the slice `K.swap.slice h`. -/
-theorem integralLeft_compactOpenIndicator (μ : HaarMeasureWithValues A G)
-    (K : CompactOpens (G × H)) (m : M) (h : H) :
-    (integralLeft M μ ⟨compactOpenIndicator K m, compactOpenIndicator_mem_compactlySupported K m⟩ :
-      LocallyConstant H M) h = μ (K.swap.slice h) • m := by
-  rw [integralLeft, LinearMap.comp_apply, compactlySupported.swap_compactOpenIndicator,
-    integralRight_compactOpenIndicator]
 
 /-- **Fubini's theorem**, integrating first in the first variable:
 `∫ (∫ f (g, h) dμ(g)) dν(h) = ∫ f d(μ.prod ν)`. -/
