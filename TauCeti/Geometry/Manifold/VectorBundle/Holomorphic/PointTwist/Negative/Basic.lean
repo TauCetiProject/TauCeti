@@ -57,9 +57,10 @@ second of these twists.
 
 ## Main results
 
-* `TauCeti.contMDiff_negPointTwist_pointTwistDiv_section` and
+* `TauCeti.contMDiff_negPointTwist_pointTwistDiv_section`,
+  `TauCeti.continuous_negPointTwist_pointTwistDiv_section` and
   `TauCeti.mdifferentiable_negPointTwist_pointTwistDiv_section`: the inclusion `pointTwistDiv` of
-  `E(-x)` into `E` preserves `C^n` and holomorphic sections.
+  `E(-x)` into `E` preserves `C^n`, continuous and holomorphic sections.
 * `TauCeti.mdifferentiable_negPointTwistOfZero`, `TauCeti.pointTwistDiv_negPointTwistOfZero` and
   `TauCeti.negPointTwistOfZero_pointTwistDiv`: the holomorphic sections of `E(-x)` correspond to
   the holomorphic sections of `E` vanishing at `x`.
@@ -155,6 +156,16 @@ theorem contMDiff_negPointTwist_pointTwistDiv_section {x : X}
     ContMDiff 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, F)) n
       (fun z ↦ TotalSpace.mk' F z (pointTwistDiv F E x z (τ z))) :=
   fun z₀ ↦ contMDiffAt_negPointTwist_pointTwistDiv_section (hτ z₀)
+
+omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)] in
+/-- The inclusion of the negative point twist into `E` sends continuous sections to continuous
+sections: the case `n = 0` of `TauCeti.contMDiff_negPointTwist_pointTwistDiv_section`. -/
+theorem continuous_negPointTwist_pointTwistDiv_section {x : X}
+    {τ : ∀ z, (negPointTwistCore F E x).Fiber z}
+    (hτ : Continuous fun z ↦ TotalSpace.mk' F z (τ z)) :
+    Continuous fun z ↦ TotalSpace.mk' F z (pointTwistDiv F E x z (τ z)) :=
+  contMDiff_zero_iff.1 (contMDiff_negPointTwist_pointTwistDiv_section (n := 0)
+    (contMDiff_zero_iff.2 hτ))
 
 /-! ### Holomorphic sections -/
 
