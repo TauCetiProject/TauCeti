@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Basic
 public import TauCeti.Topology.Algebra.PointTopology.Basic
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import TauCeti.Algebra.Algebra.Hom
@@ -319,5 +320,24 @@ theorem baseChangeConvHomeomorph_symm_apply_tmul (x : WithConv (A →ₐ[k] R)) 
   baseChangeHomeomorph_symm_apply_tmul x.ofConv c a
 
 end BaseChange
+
+section BaseChangeMulEquiv
+
+variable {k K A R : Type*} [CommSemiring k] [CommSemiring K] [Algebra k K]
+  [Semiring A] [Bialgebra k A] [CommSemiring R] [Algebra k R] [Algebra K R]
+  [IsScalarTower k K R] [TopologicalSpace R] [IsTopologicalSemiring R]
+
+/-- For a bialgebra `A`, the inverse of `baseChangeConvHomeomorph` is the convolution-monoid
+isomorphism `AlgHom.baseChangePointsMulEquiv`, so base change of points is at once a homeomorphism
+and a monoid isomorphism. -/
+theorem coe_baseChangeConvHomeomorph_symm :
+    ⇑(baseChangeConvHomeomorph k K A R).symm =
+      AlgHom.baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R) := by
+  funext x
+  rw [Homeomorph.symm_apply_eq]
+  ext a
+  simp
+
+end BaseChangeMulEquiv
 
 end TauCeti.PointTopology
