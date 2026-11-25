@@ -41,9 +41,10 @@ theorem and the Haar homothety change of variables `y ↦ x + s • (y - x)`
 * `TauCeti.sub_integral_sum_iteratedFDeriv_eq_setIntegral_taylorRemainderKernel`,
   `TauCeti.sub_setIntegral_sum_iteratedFDeriv_eq_setIntegral_taylorRemainderKernel`: pointwise
   representation formulas for `C^{m+1}` functions on star-shaped open sets.
-* `TauCeti.Wkp.averagedTaylorEval`: the derivative-form averaged Taylor polynomial of a Sobolev
-  function `u ∈ W^{m,p}(Ω)` evaluated at `x`, with linearity lemmas `averagedTaylorEval_add` and
-  `averagedTaylorEval_smul`, classical agreement
+* `TauCeti.Wkp.averagedTaylorEval`: recursive derivative-form integral expression for a Sobolev
+  function `u ∈ W^{m,p}(Ω)` at `x` (defining the averaged Taylor polynomial of degree at most `m`
+  when `φ` is measurable, bounded, and compactly supported), with linearity lemmas
+  `averagedTaylorEval_add` and `averagedTaylorEval_smul`, classical agreement
   `averagedTaylorEval_eq_setIntegral_sum_iteratedFDeriv`, and continuity
   `continuous_averagedTaylorEval_one`.
 * `TauCeti.Wkp.ae_sub_averagedTaylorEval_eq_setIntegral_taylorRemainderKernel`: the Sobolev
@@ -375,10 +376,12 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
 
-/-- The derivative-form averaged Taylor polynomial of degree at most `m` (order `m + 1` in
-Brenner–Scott) of a Sobolev function `u ∈ W^{m,p}(Ω)` with respect to a weight `φ : E → ℝ`,
-evaluated at `x : E`:
-`∑_{j ≤ m} (j!)⁻¹ ∫_{y ∈ Ω} φ y * ⟨D^j u(y), (x - y)^{⊗ j}⟩ dμ`. -/
+/-- Recursive derivative-form integral expression for a Sobolev function `u ∈ W^{m,p}(Ω)` with
+respect to an arbitrary weight `φ : E → ℝ`, evaluated at `x : E`:
+`∑_{j ≤ m} (j!)⁻¹ ∫_{y ∈ Ω} φ y * ⟨D^j u(y), (x - y)^{⊗ j}⟩ dμ`.
+When `φ` is measurable, bounded, and compactly supported, each integrand is integrable on `Ω` and
+`x ↦ averagedTaylorEval φ m u x` defines a polynomial of degree at most `m` (order `m + 1` in
+Brenner–Scott), the averaged Taylor polynomial of `u`. -/
 def averagedTaylorEval (φ : E → ℝ) : (m : ℕ) → Wkp mu Omega p m → E → ℝ
   | 0, u, _ => ∫ y in Omega, φ y * u y ∂mu
   | m + 1, u, x =>
