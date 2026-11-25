@@ -27,7 +27,9 @@ and `b`:
 * the Jacobian `J(A) = det A = |a|² - |b|²` (`TauCeti.det_wirtingerPartsCLM`), read off from the
   real matrix of `A` in the basis `(1, i)` (`TauCeti.toMatrix_wirtingerPartsCLM`); for any
   orientation `o` of `ℂ` used on both sides, the oriented Jacobian of `A` is this determinant
-  (`TauCeti.orientedJacobian_wirtingerPartsCLM`).
+  (`TauCeti.orientedJacobian_wirtingerPartsCLM`), positive exactly when `|b| < |a|`
+  (`TauCeti.orientedJacobian_wirtingerPartsCLM_pos_iff`,
+  `TauCeti.orientedJacobian_wirtingerPartsCLM_nonpos_iff`).
 
 The extremal directions are explicit. Writing `a = |a| e^{iα}` and `b = |b| e^{iβ}`, the image of
 the unit vector `e^{i((β - α)/2 + t)}` is `(|a| e^{it} + |b| e^{-it}) e^{i(α + β)/2}`
@@ -155,6 +157,18 @@ theorem orientedJacobian_wirtingerPartsCLM (o : Orientation ℝ ℂ (Fin 2)) (a 
     o.orientedJacobian o (wirtingerPartsCLM a b : ℂ →ₗ[ℝ] ℂ) = ‖a‖ ^ 2 - ‖b‖ ^ 2 := by
   rw [Orientation.orientedJacobian_self, det_wirtingerPartsCLM]
 
+/-- For any orientation of `ℂ` used on both sides, `z ↦ z a + conj z b` preserves orientation
+strictly, that is its oriented Jacobian is positive, exactly when `|b| < |a|`. -/
+theorem orientedJacobian_wirtingerPartsCLM_pos_iff (o : Orientation ℝ ℂ (Fin 2)) {a b : ℂ} :
+    0 < o.orientedJacobian o (wirtingerPartsCLM a b : ℂ →ₗ[ℝ] ℂ) ↔ ‖b‖ < ‖a‖ := by
+  rw [orientedJacobian_wirtingerPartsCLM, sub_pos, sq_lt_sq₀ (norm_nonneg b) (norm_nonneg a)]
+
+/-- For any orientation of `ℂ` used on both sides, the oriented Jacobian of
+`z ↦ z a + conj z b` is nonpositive exactly when `|a| ≤ |b|`. -/
+theorem orientedJacobian_wirtingerPartsCLM_nonpos_iff (o : Orientation ℝ ℂ (Fin 2)) {a b : ℂ} :
+    o.orientedJacobian o (wirtingerPartsCLM a b : ℂ →ₗ[ℝ] ℂ) ≤ 0 ↔ ‖a‖ ≤ ‖b‖ := by
+  rw [← not_lt, orientedJacobian_wirtingerPartsCLM_pos_iff, not_lt]
+
 /-- If `|b| < |a|`, the outer distortion of `z ↦ z a + conj z b` is
 `(|a| + |b|) / (|a| - |b|)`. -/
 theorem outerDistortion_wirtingerPartsCLM_of_lt (o : Orientation ℝ ℂ (Fin 2)) {a b : ℂ}
@@ -162,10 +176,10 @@ theorem outerDistortion_wirtingerPartsCLM_of_lt (o : Orientation ℝ ℂ (Fin 2)
     o.outerDistortion o (wirtingerPartsCLM a b : ℂ →ₗ[ℝ] ℂ) =
       ENNReal.ofReal ((‖a‖ + ‖b‖) / (‖a‖ - ‖b‖)) := by
   have hs : 0 < ‖a‖ - ‖b‖ := sub_pos.mpr h
-  have hJ : 0 < ‖a‖ ^ 2 - ‖b‖ ^ 2 := by nlinarith [norm_nonneg b]
-  rw [Orientation.outerDistortion_of_pos _ _ (by rwa [orientedJacobian_wirtingerPartsCLM]),
-    orientedJacobian_wirtingerPartsCLM, LinearMap.toContinuousLinearMap_coe,
+  have hJ := (orientedJacobian_wirtingerPartsCLM_pos_iff o).mpr h
+  rw [Orientation.outerDistortion_of_pos _ _ hJ, LinearMap.toContinuousLinearMap_coe,
     norm_wirtingerPartsCLM]
+  rw [orientedJacobian_wirtingerPartsCLM] at hJ ⊢
   congr 1
   rw [div_eq_div_iff hJ.ne' hs.ne']
   ring
@@ -176,8 +190,7 @@ theorem innerDistortion_wirtingerPartsCLM_of_lt (o : Orientation ℝ ℂ (Fin 2)
     (h : ‖b‖ < ‖a‖) :
     o.innerDistortion o (wirtingerPartsCLM a b : ℂ →ₗ[ℝ] ℂ) = (‖a‖ + ‖b‖) / (‖a‖ - ‖b‖) := by
   have hs : 0 < ‖a‖ - ‖b‖ := sub_pos.mpr h
-  have hJ : 0 < ‖a‖ ^ 2 - ‖b‖ ^ 2 := by nlinarith [norm_nonneg b]
-  rw [Orientation.innerDistortion_of_pos _ _ (by rwa [orientedJacobian_wirtingerPartsCLM]),
+  rw [Orientation.innerDistortion_of_pos _ _ ((orientedJacobian_wirtingerPartsCLM_pos_iff o).mpr h),
     orientedJacobian_wirtingerPartsCLM, minimalStretch_wirtingerPartsCLM, abs_of_pos hs,
     div_eq_div_iff (pow_pos hs 2).ne' hs.ne']
   ring
@@ -187,21 +200,19 @@ orientation strictly, so its outer distortion is `∞`. -/
 theorem outerDistortion_wirtingerPartsCLM_of_le (o : Orientation ℝ ℂ (Fin 2)) {a b : ℂ}
     (h : ‖a‖ ≤ ‖b‖) (hb : b ≠ 0) :
     o.outerDistortion o (wirtingerPartsCLM a b : ℂ →ₗ[ℝ] ℂ) = ⊤ := by
-  refine Orientation.outerDistortion_of_nonpos _ _ ?_ fun h0 ↦ ?_
-  · rw [orientedJacobian_wirtingerPartsCLM, sub_nonpos]
-    exact pow_le_pow_left₀ (norm_nonneg a) h 2
-  · have := norm_wirtingerPartsCLM a b
-    rw [← LinearMap.toContinuousLinearMap_coe (wirtingerPartsCLM a b), h0, map_zero,
-      norm_zero] at this
-    linarith [norm_nonneg a, norm_pos_iff.mpr hb]
+  refine Orientation.outerDistortion_of_nonpos _ _
+    ((orientedJacobian_wirtingerPartsCLM_nonpos_iff o).mpr h) fun h0 ↦ ?_
+  have := norm_wirtingerPartsCLM a b
+  rw [← LinearMap.toContinuousLinearMap_coe (wirtingerPartsCLM a b), h0, map_zero,
+    norm_zero] at this
+  linarith [norm_nonneg a, norm_pos_iff.mpr hb]
 
 /-- If `|a| ≤ |b|`, the inner distortion of `z ↦ z a + conj z b` is `0`. -/
 theorem innerDistortion_wirtingerPartsCLM_of_le (o : Orientation ℝ ℂ (Fin 2)) {a b : ℂ}
     (h : ‖a‖ ≤ ‖b‖) :
-    o.innerDistortion o (wirtingerPartsCLM a b : ℂ →ₗ[ℝ] ℂ) = 0 := by
-  refine Orientation.innerDistortion_of_nonpos _ _ ?_
-  rw [orientedJacobian_wirtingerPartsCLM, sub_nonpos]
-  exact pow_le_pow_left₀ (norm_nonneg a) h 2
+    o.innerDistortion o (wirtingerPartsCLM a b : ℂ →ₗ[ℝ] ℂ) = 0 :=
+  Orientation.innerDistortion_of_nonpos _ _
+    ((orientedJacobian_wirtingerPartsCLM_nonpos_iff o).mpr h)
 
 /-- For `k < 1`, the outer distortion of `z ↦ z a + conj z b` is at most `(1 + k) / (1 - k)`
 exactly when `|b| ≤ k |a|`. -/
