@@ -329,7 +329,7 @@ theorem chartValueL_sobolevSuccL_ofContMDiffSection_ae
   have hcoord := SobolevSection.chartValueL_ofContMDiffSection_ae A μ p (k + 1) s i
   have hc : ContDiffOn ℝ 1 (A.coord i s) (A.image i) :=
     ((A.contDiffOn_coord s.contMDiff i).of_le (by exact_mod_cast Nat.le_add_left 1 k)).mono
-      ((A.image_subset_chart_image_closure_dom i).trans (A.chart_image_closure_dom_subset i))
+      (A.image_subset_target_inter_preimage_baseSet i)
   filter_upwards [chartValueL_sobolevSuccL_ae A hD hDs μ p k _
       ((hc.hasWeakFDerivOn_fderiv (μ := μ) (Ω := A.image i)).congr_ae hcoord.symm),
     hcoord, ae_restrict_mem (A.image i).isOpen.measurableSet] with y h hc' hy
