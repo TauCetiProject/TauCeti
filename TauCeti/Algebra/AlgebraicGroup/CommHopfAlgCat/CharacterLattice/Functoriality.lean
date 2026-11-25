@@ -26,6 +26,8 @@ this functor to coordinate rings of tori is the character-lattice functor used i
 
 * `TauCeti.CommHopfAlgCat.geometricCharacterMap`: the map on geometric characters induced by a
   Hopf-algebra morphism.
+* `TauCeti.CommHopfAlgCat.geometricCharacterMap_groupLikeBaseChange`: that map extends the map on
+  characters defined over the ground field.
 * `TauCeti.CommHopfAlgCat.additiveCharacterMap`: its integral-linear additive form.
 * `TauCeti.CommHopfAlgCat.geometricCharacterRepresentation`: the absolute-Galois representation
   on geometric characters.
@@ -69,6 +71,17 @@ theorem val_geometricCharacterMap {H K : _root_.CommHopfAlgCat.{u} k} (f : H ⟶
     (geometricCharacterMap f x).val =
       (baseChangeMap (K := AlgebraicClosure k) f).hom x.val := by
   rw [geometricCharacterMap, BialgHom.val_mapGroupLike]
+
+/-- The map on geometric characters induced by a Hopf-algebra morphism extends the map on
+characters defined over the ground field. -/
+@[simp]
+theorem geometricCharacterMap_groupLikeBaseChange {H K : _root_.CommHopfAlgCat.{u} k}
+    (f : H ⟶ K) (g : _root_.GroupLike k H) :
+    geometricCharacterMap f (groupLikeBaseChange g) =
+      groupLikeBaseChange (f.hom.mapGroupLike g) := by
+  apply _root_.GroupLike.val_injective
+  rw [val_geometricCharacterMap, val_groupLikeBaseChange, baseChangeMap_apply_tmul,
+    val_groupLikeBaseChange, BialgHom.val_mapGroupLike]
 
 /-- The map on geometric characters commutes with the absolute-Galois action. -/
 @[simp]

@@ -332,11 +332,6 @@ combinatorial cycle map `cuspCycleMapOfLE` corresponds to `CuspOrbits.map`. -/
   rw [cuspCycleMapOfLE_mk, permTCycleEquivCuspOrbits_mk, permTCycleEquivCuspOrbits_mk,
     CuspOrbits.map_mk]
 
-/-- The combinatorial cusp count equals the cardinality of Mathlib's `CuspOrbits Γ'.liftSL`. -/
-theorem cuspCount_eq_card_cuspOrbits (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
-    cuspCount Γ' e = Nat.card (CuspOrbits (Γ'.liftSL : Subgroup (GL (Fin 2) ℝ))) := by
-  rw [cuspCount_def, orbitCount_def, Nat.card_congr (permTCycleEquivCuspOrbits Γ' e)]
-
 /-! ### Elliptic orbits -/
 
 private def fixedPermEquivFixed (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)

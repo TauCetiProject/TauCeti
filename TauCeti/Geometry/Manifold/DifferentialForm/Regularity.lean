@@ -13,6 +13,7 @@ import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
+import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
@@ -60,9 +61,10 @@ differentiation commutes with this extension.
 * `TauCeti.isSmoothForm_zeroDim`, `TauCeti.isSmoothForm_modelSpace_iff`: over a zero-dimensional
   model every form is smooth, and over the model space a form is a `C^n` section exactly when it
   is a `C^n` function.
-* `TauCeti.SmoothForm.ofFunction`: the `0`-form of a smooth function as a smooth form, and
-  conversely `TauCeti.SmoothForm.contMDiff_apply_zero`: the function underlying a smooth `0`-form
-  is smooth;
+* `TauCeti.SmoothForm.ofFunction`: the `0`-form of a smooth function as a smooth form, which for a
+  real function `u` is `u` times the constant `0`-form `1`
+  (`TauCeti.SmoothForm.ofFunction_eq_funSMulₗ_one`), and conversely
+  `TauCeti.SmoothForm.contMDiff_apply_zero`: the function underlying a smooth `0`-form is smooth;
   `TauCeti.SmoothForm.mextDerivₗ_cast` shows `mextDerivₗ` commutes with casts of the degree and
   `TauCeti.SmoothForm.mextDeriv_eq_bilinFormAt` identifies, for a real-valued smooth `1`-form `α`,
   `mextDeriv α.1 x ![v, w]` with `(mextDerivₗ I 1 α).bilinFormAt x v w`.
@@ -631,6 +633,14 @@ theorem contMDiff_apply_zero [IsManifold I 1 M] (f : SmoothForm I M F 0) :
     ContMDiff I 𝓘(ℝ, F) ∞ fun y ↦ f.val y 0 := by
   rw [← isSmoothForm_ofFunction_iff, ← RoughForm.eq_ofFunction]
   exact f.isSmoothForm
+
+/-- The smooth `0`-form of a real function `u` is `u` times the constant `0`-form `1`. -/
+theorem ofFunction_eq_funSMulₗ_one [IsManifold I 1 M] (u : C^∞⟮I, M; ℝ⟯) :
+    ofFunction u = funSMulₗ u (ofFunction (ContMDiffMap.const 1)) := by
+  apply Subtype.ext
+  funext x
+  ext v
+  simp [RoughForm.ofFunction_apply, ContMDiffMap.const_apply]
 
 /-- The exterior derivative of a smooth form is a smooth section. -/
 theorem contMDiff_mextDeriv [IsManifold I 2 M] (φ : SmoothForm I M F k) :

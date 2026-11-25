@@ -141,8 +141,8 @@ theorem ellipticThree_eq_card_fixed_permR :
     ellipticThree Γ' e = Fintype.card {x : Fin n // permR Γ' e x = x} := by
   have hconj : permR Γ' e = (permS Γ' e)⁻¹ * (modularTriple Γ' e).σ0⁻¹ * ((permS Γ' e)⁻¹)⁻¹ := by
     simpa only [inv_inv] using permR_eq_permS_inv_mul_σ0_inv_mul_permS Γ' e
-  rw [ellipticThree_eq_count_fullCycleType, card_subtype_apply_eq, ← count_one_fullCycleType,
-    hconj, fullCycleType_conj, fullCycleType_inv]
+  rw [ellipticThree_eq_count_fullCycleType, Fintype.card_subtype,
+    ← count_one_fullCycleType_eq_card_filter, hconj, fullCycleType_conj, fullCycleType_inv]
 
 /-- Transporting fixed points between `(modularTriple Γ' e).σ0` and `permR Γ' e` via conjugation
 by the involution `permS Γ' e`. -/
@@ -754,7 +754,8 @@ theorem ellipticThree_quotientRightRel (r : Quotient (QuotientGroup.rightRel Γ'
     ellipticThree Γ' ((QuotientGroup.quotientRightRelEquivQuotientLeftRel Γ').symm.trans r) =
       Fintype.card {x : Fin n // r.permCongr (Γ'.rightCosetPerm (R : PSL(2, ℤ))) x = x} := by
   rw [ellipticThree_eq_card_fixed_permR, (modularTriple_quotientRightRel Γ' r).2.2.2.2,
-    card_subtype_apply_eq, support_inv, ← card_subtype_apply_eq]
+    Fintype.card_subtype, ← count_one_fullCycleType_eq_card_filter, fullCycleType_inv,
+    count_one_fullCycleType_eq_card_filter, ← Fintype.card_subtype]
 
 /-- Under the opposite convention, `genus` agrees with the genus of `ofRightCosetPerms`. -/
 theorem genus_quotientRightRel (r : Quotient (QuotientGroup.rightRel Γ') ≃ Fin n) :

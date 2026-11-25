@@ -37,4 +37,12 @@ theorem quaternionClass_mem_quaternionSubgroup (a b : Kˣ) :
     quaternionClass a b ∈ quaternionSubgroup K :=
   Subgroup.subset_closure (Set.mem_range_self (a, b))
 
+/-- Every value of the quaternion symbol on square classes belongs to the quaternion subgroup. -/
+@[simp]
+theorem quaternionClassOnSquareClasses_mem_quaternionSubgroup (x y : SquareClassGroup K) :
+    quaternionClassOnSquareClasses x y ∈ quaternionSubgroup K := by
+  rw [← squareClass_toMul_out x, ← squareClass_toMul_out y,
+    quaternionClassOnSquareClasses_squareClass]
+  exact quaternionClass_mem_quaternionSubgroup K _ _
+
 end TauCeti.BrauerGroup

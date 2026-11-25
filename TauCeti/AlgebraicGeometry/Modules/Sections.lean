@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Free
 public import Mathlib.CategoryTheory.Linear.FunctorCategory
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
+public import TauCeti.AlgebraicGeometry.Scheme.Opens
 import TauCeti.Topology.Sheaves.Presheaf
 import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 
@@ -17,6 +18,9 @@ import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 Restricting global functions to an open equips its sections with a common scalar ring.
 Restriction maps are linear over that ring, so differences of restrictions and their
 cokernels can be formed as modules, even when the opens have different coordinate rings.
+Likewise, for opens `V ≤ U`, restricting functions from `U` makes `Γ(M, V)` a `Γ(X, U)`-module
+(`AlgebraicGeometry.Scheme.Modules.restrictionModule`), compatibly with the `Γ(X, U)`-algebra
+`Γ(X, V)` (`AlgebraicGeometry.Scheme.Modules.isScalarTower_restriction`).
 For a scheme over a commutative ring, this action is compatible with that of the base ring
 (`AlgebraicGeometry.Scheme.Modules.isScalarTower_sections`). Along a morphism over the base,
 `pushforwardSectionsBaseLinearEquiv` identifies sections of a pushforward with those on the
@@ -84,6 +88,34 @@ lemma sectionsRestrictionLinear_apply (M : X.Modules) {U V : X.Opens}
     (i : U ⟶ V) (s : Γ(M, V)) :
     sectionsRestrictionLinear M i s = M.presheaf.map i.op s :=
   (rfl)
+
+section RestrictionScalars
+
+variable (M : X.Modules) {U V : X.Opens} (hVU : V ≤ U)
+
+/-- `Γ(M, V)` as a `Γ(X, U)`-module through restriction of functions, for opens `V ≤ U`. -/
+abbrev restrictionModule : Module Γ(X, U) Γ(M, V) :=
+  Module.compHom _ (X.presheaf.map (homOfLE hVU).op).hom
+
+/-- The scalar action of `Scheme.Modules.restrictionModule` is through restriction of
+functions. -/
+theorem smul_restrictionModule (r : Γ(X, U)) (m : Γ(M, V)) :
+    letI := M.restrictionModule hVU
+    r • m = X.presheaf.map (homOfLE hVU).op r • m :=
+  rfl
+
+/-- `Scheme.restrictionAlgebra` and `Scheme.Modules.restrictionModule` form a scalar tower
+`Γ(X, U) → Γ(X, V) → Γ(M, V)`. -/
+theorem isScalarTower_restriction :
+    letI := Scheme.restrictionAlgebra hVU
+    letI := M.restrictionModule hVU
+    IsScalarTower Γ(X, U) Γ(X, V) Γ(M, V) :=
+  letI := Scheme.restrictionAlgebra hVU
+  letI := M.restrictionModule hVU
+  .of_algebraMap_smul fun r m ↦ by
+    rw [smul_restrictionModule, Scheme.algebraMap_restrictionAlgebra]
+
+end RestrictionScalars
 
 variable (R : Type u) [CommRing R] [X.Over (Spec (.of R))]
 
@@ -181,6 +213,12 @@ presheaf of sections. -/
 def sectionsBasePresheafCompForget₂Iso (M : X.Modules) :
     (sectionsBasePresheafFunctor R).obj M ⋙ forget₂ (ModuleCat.{u} R) Ab ≅ M.presheaf :=
   NatIso.ofComponents (fun _ ↦ Iso.refl _) fun _ ↦ rfl
+
+/-- The presheaf of `R`-modules of sections of a sheaf of modules is a sheaf. -/
+lemma isSheaf_sectionsBasePresheafFunctor_obj (M : X.Modules) :
+    Presheaf.IsSheaf (Opens.grothendieckTopology X) ((sectionsBasePresheafFunctor R).obj M) := by
+  rw [Presheaf.isSheaf_iff_isSheaf_comp _ _ (forget₂ (ModuleCat.{u} R) Ab)]
+  exact (Presheaf.isSheaf_of_iso_iff (sectionsBasePresheafCompForget₂Iso R M)).2 M.isSheaf
 
 /-- The identification `sectionsBasePresheafCompForget₂Iso` is natural in the sheaf of modules. -/
 @[reassoc]

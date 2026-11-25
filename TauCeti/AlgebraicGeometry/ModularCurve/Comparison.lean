@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Com
 public import TauCeti.AlgebraicGeometry.ModularCurve.Gamma.Full
 public import TauCeti.AlgebraicGeometry.ModularCurve.Gamma.One
 public import TauCeti.AlgebraicGeometry.ModularCurve.NaiveLevel
-public import TauCeti.AlgebraicGeometry.ModularCurve.YOne
+public import TauCeti.AlgebraicGeometry.ModularCurve.YOne.Basic
 import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
@@ -25,7 +25,11 @@ This file compares the integral Drinfeld moduli problems `[Γ₁(N)]` (`ModuliPr
    injective on every fibre (`EllipticCurveGeom.IsOfExactOrder.isFiberwiseInjective`). This
    defines an isomorphism `[Γ₁(N)] ⟶ [Γ₁(N)]_naive` (`ModuliProblem.gammaOneToGammaOneNaive`).
    Consequently `[Γ₁(N)]` inherits rigidity (`ModuliProblem.isRigid_gammaOne`) and is represented
-   by the fine curve `Y₁(N)` (`ModuliProblem.gammaOneRepresentableBy`) for `N ≥ 4`.
+   by the fine curve `Y₁(N)` (`ModuliProblem.gammaOneRepresentableBy`) for `N ≥ 4`. It also
+   inherits étaleness: the exact-order scheme of an elliptic curve `E/S` is étale over `S` when `N`
+   is invertible on `S` (`EllipticCurveGeom.etale_exactOrderScheme_hom`), so `[Γ₁(N)]` is étale
+   over `Ell/B` (`ModuliProblem.hasProperty_etale_gammaOneRelRepData`), and finite étale together
+   with `ModuliProblem.hasProperty_isFinite_gammaOneRelRepData`.
 2. **For `[Γ(N)]`**: over an arbitrary base `B`, every naive `[Γ(N)]`-structure is a Drinfeld
    basis (`EllipticCurveGeom.IsFiberwiseInjective.isDrinfeldBasis`), giving a
    `GL₂(ℤ/Nℤ)`-equivariant monomorphism `[Γ(N)]_naive ⟶ [Γ(N)]`
@@ -60,6 +64,11 @@ This file compares the integral Drinfeld moduli problems `[Γ₁(N)]` (`ModuliPr
   Drinfeld problem for `N ≥ 4` invertible on the base.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.isRigid_gammaOne`: where `N` is invertible on `B`,
   Drinfeld `[Γ₁(N)]`-structures are rigid for `N ≥ 4`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.etale_exactOrderScheme_hom`: where `N` is
+  invertible on `S`, the exact-order scheme of an elliptic curve over `S` is étale over `S`
+  (Katz–Mazur 3.7.1).
+* `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_etale_gammaOneRelRepData`: where `N` is
+  invertible on `B`, `[Γ₁(N)]` is étale over `Ell/B` (Katz–Mazur 3.7.1).
 * `TauCeti.AlgebraicGeometry.ModuliProblem.gammaNaiveAction_hom_comp_gammaNaiveToGamma` and
   `TauCeti.AlgebraicGeometry.ModuliProblem.gammaAction_hom_comp_gammaToGammaNaive`: the comparison
   morphisms between `[Γ(N)]` and `[Γ(N)]_naive` are `GL₂(ℤ/Nℤ)`-equivariant.
@@ -106,7 +115,7 @@ noncomputable def gammaOneToGammaOneNaive (hN : ∀ b : B, (N : B.residueField b
       EllipticCurveGeom.IsOfExactOrder.isFiberwiseInjective
         (by rw [zmodMonoidHomEquiv_symm_apply_ofAdd_one]
             exact (gammaOneEquiv X.unop α).property)
-        fun s ↦ X.unop.structureMap.natCast_residueField_ne_zero (hN _)⟩
+        fun s ↦ X.unop.structureMap.natCast_residueField_ne_zero_iff.mpr (hN _)⟩
   naturality X Y φ := by
     ext α
     apply (naiveLevelEquiv _).injective
@@ -156,7 +165,7 @@ instance isIso_gammaOneToGammaOneNaive : IsIso (gammaOneToGammaOneNaive B N hN) 
     have hP := EllipticCurveGeom.isFiberwiseInjective_iff_isOfNaiveExactOrder.mp hφ
     let β := (gammaOneEquiv X.unop).symm
       ⟨φ (.ofAdd 1), hP.isOfExactOrder fun s ↦
-        X.unop.structureMap.natCast_residueField_ne_zero (hN _)⟩
+        X.unop.structureMap.natCast_residueField_ne_zero_iff.mpr (hN _)⟩
     refine ⟨β, ?_⟩
     apply (naiveLevelEquiv X.unop).injective
     apply Subtype.ext
@@ -266,7 +275,7 @@ noncomputable def gammaToGammaNaive (hN : ∀ b : B, (N : B.residueField b) ≠ 
     gamma B N ⟶ gammaNaive B N where
   app X := TypeCat.ofHom fun α ↦ (naiveLevelEquiv X.unop).symm
     ⟨(gammaEquiv X.unop α).val, (gammaEquiv X.unop α).property.isFiberwiseInjective fun _ ↦
-      X.unop.structureMap.natCast_residueField_ne_zero (hN _)⟩
+      X.unop.structureMap.natCast_residueField_ne_zero_iff.mpr (hN _)⟩
   naturality X Y φ := by
     ext α
     apply (naiveLevelEquiv _).injective
@@ -362,6 +371,53 @@ theorem hasProperty_etale_gammaRelRepData (hN : ∀ b : B, (N : B.residueField b
     (gammaRelRepData B N).HasProperty @Etale := by
   exact ((gammaRelRepData B N).hasProperty_iff_of_iso gammaNaiveRelRepData
     (gammaIsoGammaNaive B N hN) @Etale).mpr hasProperty_etale_gammaNaiveRelRepData
+
+end ModuliProblem
+
+/-! ### Étaleness of `[Γ₁(N)]` where `N` is invertible -/
+
+namespace EllipticCurveGeom
+
+/-- **The exact-order scheme is étale where `N` is invertible** (Katz–Mazur, 3.7.1). If `N` is
+invertible in every residue field of `S`, the scheme `E.exactOrderScheme N` of points of exact order
+`N` of an elliptic curve `E/S` is étale over `S`: there it represents the same functor as the open
+naive locus of the étale `N`-torsion `E[N]`. Since `[Γ₁(N)]` is represented over each object of
+`Ell/B` by its exact-order scheme (`ModuliProblem.gammaOneRelRepData_rep`), this is the étaleness
+of `[Γ₁(N)]` over every object `E/S` on whose base `N` is invertible, whatever `B` is. -/
+theorem etale_exactOrderScheme_hom {S : Scheme.{u}} (E : EllipticCurveGeom S) (N : ℕ)
+    (hN : ∀ s : S, (N : S.residueField s) ≠ 0) : Etale (E.exactOrderScheme N).hom := by
+  rcases isEmpty_or_nonempty S with hS | ⟨⟨s⟩⟩
+  · -- over the empty scheme the exact-order scheme is empty, and so open in its base
+    have : IsEmpty (E.exactOrderScheme N).left := Function.isEmpty (E.exactOrderScheme N).hom
+    infer_instance
+  · have : NeZero N := ⟨fun h ↦ hN s (by simp [h])⟩
+    -- over `Ell/S`, the exact-order scheme of `E` is the representing scheme of `[Γ₁(N)]` at
+    -- the object `(E/S)`, and `[Γ₁(N)]` is isomorphic to the étale naive problem
+    have h := (ModuliProblem.RelRepData.hasProperty_iff _).mp
+      (((ModuliProblem.gammaOneRelRepData S N).hasProperty_iff_of_iso
+        ModuliProblem.gammaOneNaiveRelRepData
+        (asIso (ModuliProblem.gammaOneToGammaOneNaive S N hN)) @Etale).mpr
+        (ModuliProblem.hasProperty_etale_gammaOneNaiveRelRepData hN)) ⟨S, 𝟙 S, E⟩
+    rwa [ModuliProblem.gammaOneRelRepData_rep] at h
+
+end EllipticCurveGeom
+
+namespace ModuliProblem
+
+variable {B : Scheme.{u}}
+
+variable (B) in
+/-- **The moduli problem `[Γ₁(N)]` is étale over `Ell/B` when `N` is invertible on `B`**
+(Katz–Mazur, 3.7.1): every representing scheme, the exact-order scheme of an elliptic curve `E/S`
+over `B`, is étale over `S` (`EllipticCurveGeom.etale_exactOrderScheme_hom`). Together with
+`ModuliProblem.hasProperty_isFinite_gammaOneRelRepData`, this makes `[Γ₁(N)]` finite étale over
+`Ell/B` for `N ≠ 0`. -/
+theorem hasProperty_etale_gammaOneRelRepData (N : ℕ) (hN : ∀ b : B, (N : B.residueField b) ≠ 0) :
+    (gammaOneRelRepData B N).HasProperty @Etale :=
+  (RelRepData.hasProperty_iff _).mpr fun X ↦ by
+    rw [gammaOneRelRepData_rep]
+    exact X.curve.etale_exactOrderScheme_hom N fun _ ↦
+      X.structureMap.natCast_residueField_ne_zero_iff.mpr (hN _)
 
 end ModuliProblem
 

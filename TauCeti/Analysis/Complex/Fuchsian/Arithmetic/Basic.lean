@@ -127,6 +127,14 @@ theorem cuspOrbitOfSL2Z_eq_iff (γ γ' : SL(2, ℤ)) :
   exact ⟨fun ⟨_, ⟨h, hh, rfl⟩, hγ⟩ ↦ ⟨h, hh, (key h).mp hγ⟩,
     fun ⟨h, hh, hγ⟩ ↦ ⟨_, ⟨h, hh, rfl⟩, (key h).mpr hγ⟩⟩
 
+/-- Matrices representing the same cusp orbit differ by an element of `H` on the left and an
+element fixing `∞` on the right. -/
+theorem exists_eq_mul_mul_of_cuspOrbitOfSL2Z_eq {γ γ' : SL(2, ℤ)}
+    (hγ : H.cuspOrbitOfSL2Z γ = H.cuspOrbitOfSL2Z γ') :
+    ∃ g ∈ H, ∃ M : SL(2, ℤ), M 1 0 = 0 ∧ γ' = g * γ * M := by
+  obtain ⟨g, hg, hc⟩ := (H.cuspOrbitOfSL2Z_eq_iff γ γ').mp hγ
+  exact ⟨g⁻¹, inv_mem hg, γ⁻¹ * g * γ', hc, by group⟩
+
 /-- The matrices `γ` and `-γ` represent the same cusp orbit. -/
 @[simp] theorem cuspOrbitOfSL2Z_neg (γ : SL(2, ℤ)) :
     H.cuspOrbitOfSL2Z (-γ) = H.cuspOrbitOfSL2Z γ :=
@@ -136,6 +144,66 @@ theorem cuspOrbitOfSL2Z_eq_iff (γ γ' : SL(2, ℤ)) :
 `PSL(2, ℝ)` is cofinite. -/
 instance finite_cuspOrbit_map_sl2zToPSL2R : Finite (H.map sl2zToPSL2R).CuspOrbit :=
   H.isCofinite_map_sl2zToPSL2R.finite_cuspOrbit
+
+/-- **Mathlib's cusp orbits of `γ⁻¹ • ∞` and `γ'⁻¹ • ∞` agree** for the image of `H` in
+`GL(2, ℝ)` exactly when `γ h γ'⁻¹` fixes `∞`, that is has vanishing lower-left entry, for some
+`h ∈ H`. Here `cosetToCuspOrbit` sends the coset of `γ` to the orbit of `γ⁻¹ • ∞`. -/
+theorem cosetToCuspOrbit_map_mapGL_mk_eq_iff (γ γ' : SL(2, ℤ)) :
+    cosetToCuspOrbit (H.map (SpecialLinearGroup.mapGL ℝ)) ⟦γ⟧ =
+        cosetToCuspOrbit (H.map (SpecialLinearGroup.mapGL ℝ)) ⟦γ'⟧ ↔
+      ∃ h ∈ H, (γ * h * γ'⁻¹) 1 0 = 0 := by
+  have key (h : SL(2, ℤ)) : SpecialLinearGroup.mapGL ℝ h •
+      SpecialLinearGroup.mapGL ℝ γ'⁻¹ • (∞ : OnePoint ℝ) =
+        SpecialLinearGroup.mapGL ℝ γ⁻¹ • ∞ ↔ (γ * h * γ'⁻¹) 1 0 = 0 := by
+    have h10 (g : SL(2, ℤ)) :
+        SpecialLinearGroup.mapGL ℝ g • (∞ : OnePoint ℝ) = ∞ ↔ g 1 0 = 0 := by
+      rw [smul_infty_eq_self_iff]
+      simp
+    rw [← h10, map_mul, map_mul, mul_smul, mul_smul, map_inv (SpecialLinearGroup.mapGL ℝ) γ,
+      eq_inv_smul_iff]
+  rw [cosetToCuspOrbit_apply_mk, cosetToCuspOrbit_apply_mk, Quotient.eq, orbitRel_apply,
+    mem_orbit_iff]
+  simp only [Subtype.exists, Subtype.ext_iff, SubMulAction.val_smul, Subgroup.mk_smul,
+    Subgroup.mem_map, exists_prop]
+  constructor
+  · rintro ⟨_, ⟨h, hh, rfl⟩, hγ⟩
+    exact ⟨h, hh, (key h).mp hγ⟩
+  · rintro ⟨h, hh, hγ⟩
+    exact ⟨_, ⟨h, hh, rfl⟩, (key h).mpr hγ⟩
+
+/-- **Mathlib's cusp orbits are the Fuchsian cusp orbits.** For a finite-index subgroup `H` of
+`SL(2, ℤ)`, the cusp orbits `CuspOrbits` of its image in `GL(2, ℝ)` correspond to the cusp orbits of
+its effective image in `PSL(2, ℝ)`: the orbit of a cusp `γ • ∞`, `γ ∈ SL(2, ℤ)`, goes to the orbit
+of the same point (`Subgroup.cuspOrbitsEquivCuspOrbit_mk`). -/
+noncomputable def cuspOrbitsEquivCuspOrbit :
+    CuspOrbits (H.map (SpecialLinearGroup.mapGL ℝ)) ≃ (H.map sl2zToPSL2R).CuspOrbit :=
+  (Setoid.quotientKerEquivOfSurjective _
+      ((surjective_cosetToCuspOrbit _).comp QuotientGroup.mk_surjective)).symm.trans <|
+    (Quotient.congrRight fun γ γ' ↦ by
+      rw [Setoid.ker_def, Setoid.ker_def, Function.comp_apply, Function.comp_apply,
+        cuspOrbitOfSL2Z_eq_iff, inv_inv]
+      exact H.cosetToCuspOrbit_map_mapGL_mk_eq_iff γ γ').trans <|
+      Setoid.quotientKerEquivOfSurjective (fun γ ↦ H.cuspOrbitOfSL2Z γ⁻¹) fun C ↦
+        (H.cuspOrbitOfSL2Z_surjective C).elim fun γ hγ ↦ ⟨γ⁻¹, by simpa using hγ⟩
+
+/-- `Subgroup.cuspOrbitsEquivCuspOrbit` sends Mathlib's orbit of the cusp `γ • ∞` to the cusp orbit
+of `γ • ∞`. -/
+@[simp]
+theorem cuspOrbitsEquivCuspOrbit_mk (γ : SL(2, ℤ))
+    (hγ : SpecialLinearGroup.mapGL ℝ γ • (∞ : OnePoint ℝ) ∈
+      cuspsSubMulAction (H.map (SpecialLinearGroup.mapGL ℝ))) :
+    H.cuspOrbitsEquivCuspOrbit ⟦⟨SpecialLinearGroup.mapGL ℝ γ • ∞, hγ⟩⟧ = H.cuspOrbitOfSL2Z γ := by
+  have hA : Function.Surjective
+      (cosetToCuspOrbit (H.map (SpecialLinearGroup.mapGL ℝ)) ∘ QuotientGroup.mk) :=
+    (surjective_cosetToCuspOrbit _).comp QuotientGroup.mk_surjective
+  -- `cosetToCuspOrbit` sends the coset of `γ⁻¹` to the orbit of `γ • ∞`.
+  have h : (Setoid.quotientKerEquivOfSurjective _ hA).symm ⟦⟨_, hγ⟩⟧ = Quotient.mk _ γ⁻¹ :=
+    (Equiv.symm_apply_eq _).mpr ((congrArg _ (Subtype.ext (by simp only [inv_inv]))).trans
+      (cosetToCuspOrbit_apply_mk γ⁻¹).symm)
+  rw [cuspOrbitsEquivCuspOrbit, Equiv.trans_apply, Equiv.trans_apply, h]
+  -- `Quotient.congrRight` and `Setoid.quotientKerEquivOfSurjective` act on representatives by
+  -- definition
+  exact congrArg H.cuspOrbitOfSL2Z (inv_inv γ)
 
 end Subgroup
 
