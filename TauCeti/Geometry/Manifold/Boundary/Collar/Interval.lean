@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Smooth
 public import TauCeti.Geometry.Manifold.Boundary.Charts
 public import Mathlib.Geometry.Manifold.Instances.Icc
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
 # The interval collar of `[0, 1]`
@@ -64,10 +65,6 @@ local instance instIsManifoldUnitIntervalZeroAddOne {k : ℕ∞ω} :
 local notation "B" => ModelWithCorners.boundary (I := 𝓡∂ (0 + 1)) (Icc (0 : ℝ) 1)
 local notation "D" => normalIioOpens 1
 
-/-- The normal coordinate `t ∈ [0, 1)` of a point of `normalIioOpens 1`. -/
-private theorem normal_mem_Ico (t : D) : (t : EuclideanHalfSpace 1).val 0 ∈ Ico (0 : ℝ) 1 :=
-  ⟨(t : EuclideanHalfSpace 1).property, mem_normalIioOpens.1 t.property⟩
-
 /-- An endpoint of `[0, 1]` is `0` or `1`. -/
 private theorem boundary_coe_eq (x : B) : ((x : Icc (0 : ℝ) 1) : ℝ) = 0 ∨
     ((x : Icc (0 : ℝ) 1) : ℝ) = 1 := by
@@ -82,7 +79,8 @@ coordinate `t`. -/
 private theorem collar_mem_Icc (x : B) (t : D) :
     ((x : Icc (0 : ℝ) 1) : ℝ) + (1 - 2 * ((x : Icc (0 : ℝ) 1) : ℝ)) *
       ((t : EuclideanHalfSpace 1).val 0 / 2) ∈ Icc (0 : ℝ) 1 := by
-  obtain ⟨h0, h1⟩ := normal_mem_Ico t
+  obtain ⟨h0, h1⟩ := (homeomorphNormalIioOpens 1 t).property
+  rw [coe_homeomorphNormalIioOpens] at h0 h1
   rcases boundary_coe_eq x with hx | hx <;> rw [hx] <;> constructor <;> linarith
 
 /-- The underlying map of the interval collar of `[0, 1]`:
@@ -128,38 +126,31 @@ private theorem sign_mul_sub_nonneg (x : B) (z : Icc (0 : ℝ) 1) :
   obtain ⟨h0, h1⟩ := z.property
   rcases boundary_coe_eq x with hx | hx <;> rw [hx] <;> nlinarith
 
-/-- The normal coordinate `2 (1 - 2 x) (z - x)` of a point `z` of `[0, 1]` seen from the endpoint
-`x`, as a vector of the ambient space of the half-line model. -/
-private def normalVec (x : B) (z : Icc (0 : ℝ) 1) : EuclideanSpace ℝ (Fin 1) :=
-  (2 * (1 - 2 * ((x : Icc (0 : ℝ) 1) : ℝ)) * ((z : ℝ) - ((x : Icc (0 : ℝ) 1) : ℝ))) •
-    EuclideanSpace.single 0 1
-
-private theorem normalVec_apply_zero (x : B) (z : Icc (0 : ℝ) 1) : normalVec x z 0 =
-    2 * (1 - 2 * ((x : Icc (0 : ℝ) 1) : ℝ)) * ((z : ℝ) - ((x : Icc (0 : ℝ) 1) : ℝ)) := by
-  simp [normalVec]
-
-/-- The point of the half-line model with normal coordinate `2 (1 - 2 x) (z - x)`. -/
+/-- The point of the half-line model with normal coordinate `2 (1 - 2 x) (z - x)`: the normal
+coordinate of a point `z` of `[0, 1]` seen from the endpoint `x`. -/
 private def normalPoint (x : B) (z : Icc (0 : ℝ) 1) : EuclideanHalfSpace 1 :=
-  (𝓡∂ 1).symm (normalVec x z)
+  normalRay (2 * (1 - 2 * ((x : Icc (0 : ℝ) 1) : ℝ)) * ((z : ℝ) - ((x : Icc (0 : ℝ) 1) : ℝ)))
 
 private theorem normalPoint_apply_zero (x : B) (z : Icc (0 : ℝ) 1) :
     (normalPoint x z).val 0 =
       2 * (1 - 2 * ((x : Icc (0 : ℝ) 1) : ℝ)) * ((z : ℝ) - ((x : Icc (0 : ℝ) 1) : ℝ)) := by
-  have h : 0 ≤ normalVec x z 0 := by
-    rw [normalVec_apply_zero, mul_assoc]
-    exact mul_nonneg zero_le_two (sign_mul_sub_nonneg x z)
-  rw [normalPoint, modelWithCornersEuclideanHalfSpace_symm_apply_of_le h, normalVec_apply_zero]
+  rw [normalPoint, normalRay_coe_apply, max_eq_left]
+  rw [mul_assoc]
+  exact mul_nonneg zero_le_two (sign_mul_sub_nonneg x z)
 
 private theorem contMDiff_normalPoint {k : ℕ∞ω} (x : B) :
     ContMDiff (𝓡∂ (0 + 1)) (𝓡∂ 1) k (normalPoint x) := by
-  have hv : ContMDiff (𝓡∂ (0 + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) k (normalVec x) := by
-    have hc : ContDiff ℝ k (fun r : ℝ ↦ (2 * (1 - 2 * ((x : Icc (0 : ℝ) 1) : ℝ)) *
-        (r - ((x : Icc (0 : ℝ) 1) : ℝ))) • EuclideanSpace.single (0 : Fin 1) (1 : ℝ)) := by
-      fun_prop
+  let e := (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm
+  have hv : ContMDiff (𝓡∂ (0 + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) k (fun z : Icc (0 : ℝ) 1 ↦
+      e (2 * (1 - 2 * ((x : Icc (0 : ℝ) 1) : ℝ)) * ((z : ℝ) - ((x : Icc (0 : ℝ) 1) : ℝ)))) := by
+    have hc : ContDiff ℝ k (fun r : ℝ ↦ e (2 * (1 - 2 * ((x : Icc (0 : ℝ) 1) : ℝ)) *
+        (r - ((x : Icc (0 : ℝ) 1) : ℝ)))) :=
+      e.contDiff.comp (by fun_prop)
     exact hc.contMDiff.comp contMDiff_subtypeVal_Icc
-  refine (𝓡∂ 1).contMDiffOn_symm.comp_contMDiff hv fun z ↦ ?_
-  rw [range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq, normalVec_apply_zero, mul_assoc]
-  exact mul_nonneg zero_le_two (sign_mul_sub_nonneg x z)
+  have h := (𝓡∂ 1).contMDiffOn_symm.comp_contMDiff hv fun z ↦ by
+    rw [range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq, mul_assoc]
+    exact mul_nonneg zero_le_two (sign_mul_sub_nonneg x z)
+  exact h.congr fun z ↦ normalRay_eq_symm _
 
 /-- Two endpoints at distance less than `1/2` are equal. -/
 private theorem eq_of_abs_sub_lt {x y : B}
@@ -171,17 +162,11 @@ private theorem eq_of_abs_sub_lt {x y : B}
 /-- The interval collar stays within distance `1/2` of its endpoint. -/
 private theorem abs_unitIntervalCollarFun_sub_lt (p : B × D) :
     |(unitIntervalCollarFun p : ℝ) - ((p.1 : Icc (0 : ℝ) 1) : ℝ)| < 1 / 2 := by
-  obtain ⟨h0, h1⟩ := normal_mem_Ico p.2
+  obtain ⟨h0, h1⟩ := (homeomorphNormalIioOpens 1 p.2).property
+  rw [coe_homeomorphNormalIioOpens] at h0 h1
   rw [coe_unitIntervalCollarFun, add_sub_cancel_left]
   rcases boundary_coe_eq p.1 with hx | hx <;> rw [hx] <;> norm_num <;>
     rw [abs_of_nonneg (by linarith)] <;> linarith
-
-/-- A map into `normalIioOpens 1` is `C^k` at a point when its composition with the inclusion
-is. -/
-private theorem contMDiffAt_of_subtypeVal_comp {k : ℕ∞ω} {f : Icc (0 : ℝ) 1 → D}
-    {z : Icc (0 : ℝ) 1} (h : ContMDiffAt (𝓡∂ (0 + 1)) (𝓡∂ 1) k (Subtype.val ∘ f) z) :
-    ContMDiffAt (𝓡∂ (0 + 1)) (𝓡∂ 1) k f z :=
-  (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff ..).1 h
 
 /-- The points of `[0, 1]` at distance less than `1/2` from the endpoint `x`. -/
 private def nearEnd (x : B) : Set (Icc (0 : ℝ) 1) :=
@@ -240,10 +225,12 @@ private def localCollar (k : ℕ∞ω) (x : B) :
   open_target := isOpen_nearEnd x
   contMDiffOn_toFun := contMDiff_unitIntervalCollarFun.contMDiffOn
   contMDiffOn_invFun z hz := by
-    refine (contMDiffAt_const.prodMk (contMDiffAt_of_subtypeVal_comp ?_)).contMDiffWithinAt
-    refine ((contMDiff_normalPoint x) z).congr_of_eventuallyEq ?_
-    filter_upwards [(isOpen_nearEnd x).mem_nhds hz] with w hw
-    simp [hw]
+    have h : ContMDiffAt (𝓡∂ (0 + 1)) (𝓡∂ 1) k (fun w ↦ (localInv x w).2) z := by
+      refine (TauCeti.ContMDiffAt.subtypeVal_comp_iff D _ z).1 ?_
+      refine ((contMDiff_normalPoint x) z).congr_of_eventuallyEq ?_
+      filter_upwards [(isOpen_nearEnd x).mem_nhds hz] with w hw
+      simp [localInv, hw]
+    exact (contMDiffAt_const.prodMk h).contMDiffWithinAt
 
 /-- The interval collar is a local diffeomorphism. -/
 theorem isLocalDiffeomorph_unitIntervalCollarFun {k : ℕ∞ω} :
@@ -322,13 +309,10 @@ theorem not_injective_unitIntervalCollarFun_double :
     ¬Injective (fun p : B × D ↦ ((p.1 : Icc (0 : ℝ) 1) : ℝ) +
       (1 - 2 * ((p.1 : Icc (0 : ℝ) 1) : ℝ)) * (p.2 : EuclideanHalfSpace 1).val 0) := by
   intro h
-  let t : D := ⟨(𝓡∂ 1).symm (EuclideanSpace.single 0 (1 / 2)), by
-    rw [mem_normalIioOpens, modelWithCornersEuclideanHalfSpace_symm_apply_of_le (by simp)]
-    norm_num⟩
+  let t : D := (homeomorphNormalIioOpens 1).symm ⟨1 / 2, by norm_num⟩
   have ht : (t : EuclideanHalfSpace 1).val 0 = 1 / 2 := by
-    change ((𝓡∂ 1).symm (EuclideanSpace.single 0 (1 / 2))).val 0 = 1 / 2
-    rw [modelWithCornersEuclideanHalfSpace_symm_apply_of_le (by simp)]
-    simp
+    rw [coe_homeomorphNormalIioOpens_symm, normalRay_coe_apply]
+    norm_num
   have he := congrArg (fun p : B × D ↦ ((p.1 : Icc (0 : ℝ) 1) : ℝ))
     (h (a₁ := (⟨⊥, Icc_isBoundaryPoint_bot⟩, t)) (a₂ := (⟨⊤, Icc_isBoundaryPoint_top⟩, t))
       (by simp only [ht]; norm_num))
