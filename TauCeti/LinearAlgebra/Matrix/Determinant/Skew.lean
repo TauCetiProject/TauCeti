@@ -13,8 +13,9 @@ import Mathlib.LinearAlgebra.Matrix.Polynomial
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
-import TauCeti.LinearAlgebra.Matrix.Alternating
+import TauCeti.LinearAlgebra.Matrix.Alternating.Basic
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
+import TauCeti.LinearAlgebra.Matrix.Determinant.Pencil
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.LinearAlgebra.SymplecticGroup
 
@@ -114,12 +115,7 @@ theorem four_dvd_neg_one_pow_mul_det_add_transpose_sub_det_sub_transpose {k : �
   have hc (i : ℕ) (hi : i ≤ 2 * k) : q.coeff (2 * k - i) = q.coeff i := by
     conv_rhs => rw [← hrefl]
     rw [coeff_reflect, hk, revAt_le hi]
-  have heval (r : R) : q.eval r = (r • Sᵀ + S).det := by
-    rw [← coe_evalRingHom, RingHom.map_det]
-    congr 1
-    refine Matrix.ext fun i j ↦ ?_
-    simp only [Matrix.add_apply, Matrix.smul_apply, transpose_apply, eval_add, eval_mul, eval_X,
-      smul_eq_mul, RingHom.mapMatrix_apply, map_apply, coe_evalRingHom, eval_C]
+  have heval (r : R) : q.eval r = (r • Sᵀ + S).det := eval_det_X_add_C Sᵀ S r
   have hq : (-1) ^ k * q.eval 1 - q.eval (-1) =
       (-1) ^ k * ∑ i ∈ Finset.range (2 * k + 1), q.coeff i * (1 - (-1) ^ (k + i)) := by
     rw [eval_eq_sum_range' hdeg, eval_eq_sum_range' hdeg, Finset.mul_sum, Finset.mul_sum,

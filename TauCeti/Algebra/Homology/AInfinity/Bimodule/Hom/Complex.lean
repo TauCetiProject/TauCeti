@@ -240,8 +240,7 @@ theorem sub_negOnePow_smul_mem_homCochains {p : ℤ} (F : homCochains MM NN p) :
   · simpa only [mul_one] using
       MM.isLeftGradedCoderivation_barDifferential.commutator_coact
         NN.isLeftGradedCoderivation_barDifferential
-        (by simpa only [TensorWords.grading_piece] using
-          AA.isHomogeneous_coaugmentedBarDifferential)
+        AA.isHomogeneous_coaugmentedBarDifferential
         (F : _ →ₗ[R] _) (homCochains.leftCoact_comp F)
   · have h₁ := NN.isHomogeneous_barDifferential.comp (homCochains.isHomogeneous F)
     have h₂ := (homCochains.isHomogeneous F).comp MM.isHomogeneous_barDifferential

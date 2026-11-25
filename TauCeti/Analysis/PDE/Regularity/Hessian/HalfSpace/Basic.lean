@@ -176,10 +176,7 @@ private theorem eLpNorm_restrict_le_of_ae_eq_sub_comp_normalReflection
       D =ᵐ[(volume : Measure (WithLp 2 (ℝ × E))).restrict (normalHalfSpace (E := E) a)] W := by
     filter_upwards [ae_restrict_of_ae hW, ae_restrict_mem hS] with x hx hxS
     -- `ρ` maps `H` off itself.
-    have hρx : normalReflection E a x ∉ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) := by
-      rw [SetLike.mem_coe, normalReflection_mem_normalHalfSpace_iff]
-      exact ((mem_normalHalfSpace a x).1 hxS).not_gt
-    rw [hx, indicator_of_mem hxS, indicator_of_notMem hρx]
+    rw [hx, indicator_of_mem hxS, indicator_of_notMem (normalReflection_notMem_normalHalfSpace hxS)]
     simp
   rw [eLpNorm_congr_ae heq]
   exact eLpNorm_mono_measure _ Measure.restrict_le_self
@@ -283,7 +280,7 @@ omit [MeasurableSpace E] [BorelSpace E] in
 /-- For `A` on `ℝ × E` with `λ ‖ξ‖² ≤ ⟪A ξ, ξ⟫` and `0 < λ`, there is a linear automorphism `e`
 with `e e† = (A + A†) / 2` and `‖e⁻¹ x‖ ≤ ‖x‖ / √λ` that maps each half-space `{a / c < x.fst}`
 onto `{a < x.fst}`, for a fixed `c`. -/
-private theorem exists_continuousLinearEquiv_preimage_normalHalfSpace
+theorem exists_continuousLinearEquiv_preimage_normalHalfSpace
     {A : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)} {lam : ℝ} (hlam : 0 < lam)
     (hA : ∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A ξ, ξ⟫_ℝ) :
     ∃ (e : WithLp 2 (ℝ × E) ≃L[ℝ] WithLp 2 (ℝ × E)) (c : ℝ),
