@@ -34,11 +34,6 @@ open _root_.MonoidAlgebra TauCeti.GroupAlgebraBlockExamples TauCeti.PrincipalBlo
 
 /-! ### `p = 2` -/
 
-/-- `|S₃|₂ = 2¹`: the exponent of `2` in `|S₃| = 6` is `1`. -/
-theorem factorization_card_two : (Nat.card S₃).factorization 2 = 1 := by
-  rw [Nat.card_perm, Nat.card_fin, Nat.factorization_def _ Nat.prime_two]
-  exact multiplicity_eq_of_dvd_of_not_dvd (by decide) (by decide)
-
 /-- **The principal block of `𝔽₂[S₃]` has defect `1`**: its defect groups are the Sylow
 `2`-subgroups, of order `2 = 2¹`. -/
 theorem blockDefect_blockOneS₃ :
@@ -99,22 +94,11 @@ theorem zpowers_ρ_le_of_isDefectGroup {D : Subgroup S₃}
   isBlockIdempotent_one_zmod_three.le_of_isDefectGroup_of_isPGroup_of_normal isPGroup_zpowers_ρ
     hD
 
-/-- A `3`-subgroup of `S₃` containing `⟨ρ⟩` is `⟨ρ⟩`: its order is a power of `3` dividing `6`,
-so at most `3`. -/
+/-- A `3`-subgroup of `S₃` containing `⟨ρ⟩` is `⟨ρ⟩`: of index `2`, `⟨ρ⟩` is a Sylow
+`3`-subgroup, hence maximal among `3`-subgroups. -/
 theorem eq_zpowers_ρ_of_le {D : Subgroup S₃} (hD : IsPGroup 3 D) (hle : Subgroup.zpowers ρ ≤ D) :
-    D = Subgroup.zpowers ρ := by
-  obtain ⟨n, hn⟩ := hD.exists_card_eq
-  have h6 : 3 ^ n ∣ 6 := by
-    rw [← hn]
-    have := Subgroup.card_subgroup_dvd_card D
-    rwa [Nat.card_perm, Nat.card_fin] at this
-  have hn1 : n ≤ 1 := by
-    by_contra h
-    exact absurd ((Nat.pow_dvd_pow 3 (by omega : 2 ≤ n)).trans h6) (by decide)
-  refine (Subgroup.eq_of_le_of_card_ge hle ?_).symm
-  rw [hn, card_zpowers_ρ]
-  calc 3 ^ n ≤ 3 ^ 1 := Nat.pow_le_pow_right (by decide) hn1
-    _ = 3 := pow_one 3
+    D = Subgroup.zpowers ρ :=
+  (isPGroup_zpowers_ρ.toSylow (by rw [index_zpowers_ρ]; decide)).maximal_isPGroup.eq_of_ge hD hle
 
 /-- **The defect group of the block of `𝔽₃[S₃]` is `⟨ρ⟩ ≅ C₃`.** -/
 theorem isDefectGroup_one_zmod_three_iff {D : Subgroup S₃} :
@@ -126,10 +110,8 @@ theorem isDefectGroup_one_zmod_three_iff {D : Subgroup S₃} :
 
 /-- **The block of `𝔽₃[S₃]` has defect `1`**: its defect group `⟨ρ⟩` has order `3 = 3¹`. -/
 theorem blockDefect_one_zmod_three :
-    blockDefect 3 (1 : MonoidAlgebra (ZMod 3) S₃) = 1 := by
-  have h := isBlockIdempotent_one_zmod_three.card_eq_pow_blockDefect
-    (isDefectGroup_one_zmod_three_iff.2 rfl)
-  rw [Subalgebra.coe_one, card_zpowers_ρ] at h
-  exact Nat.pow_right_injective (a := 3) (by decide) (h.symm.trans (pow_one 3).symm)
+    blockDefect 3 (1 : MonoidAlgebra (ZMod 3) S₃) = 1 :=
+  blockDefect_eq_of_forall_card (isDefectGroup_one_zmod_three_iff.2 rfl) fun D hD => by
+    rw [isDefectGroup_one_zmod_three_iff.1 hD, card_zpowers_ρ, pow_one]
 
 end TauCeti.Examples.BlockDefectSymmetric
