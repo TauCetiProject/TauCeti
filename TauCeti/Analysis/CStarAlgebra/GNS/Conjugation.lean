@@ -118,7 +118,6 @@ theorem gnsConj_gnsNonUnitalStarAlgHom_gnsConj_toGNS (a b : A) :
 theorem gnsConj_apply_gnsVector {B : Type*} [CStarAlgebra B] [PartialOrder B]
     [StarOrderedRing B] (f : B →ₚ[ℂ] ℂ) (hf : ∀ a b, f (a * b) = f (b * a)) :
     gnsConj f hf f.gnsVector = f.gnsVector := by
-  have h : f.gnsVector = f.toGNS 1 := by simp [gnsVector_def]
-  rw [h, gnsConj_apply_toGNS, star_one]
+  rw [gnsVector_eq_toGNS_one, gnsConj_apply_toGNS, star_one]
 
 end PositiveLinearMap
