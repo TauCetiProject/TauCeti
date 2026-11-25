@@ -21,8 +21,6 @@ the period pair `(τ, 1)`, rather than just an abstract classification of the to
 In particular the zeros of `℘'` are the half-periods (`PeriodPair.derivWeierstrassP_eq_zero_iff`).
 A division point `(m ω₁ + n ω₂) / N` of exact order `N` has `gcd(m, n)` prime to `N`
 (`PeriodPair.coprime_gcd_of_addOrderOf_weierstrassPoint_div`).
-Since the `N`-torsion has `N²` points for every `N`, the group of points is infinite
-(`PeriodPair.infinite_point`).
 
 The lattice-quotient identification uses `TauCeti.torsionByδEquiv`, the connecting
 isomorphism for multiplication by `N` on the exact sequence
@@ -148,19 +146,6 @@ theorem coe_torsionEquivCoordinates_symm (x : Fin 2 → ZMod N) :
   rw [hs, coe_torsionEquivLatticeQuotient_symm_mk]
   congr 2
   simp [l, Fin.sum_univ_two, zsmul_eq_mul]
-
-/-- The group of points of the lattice curve is infinite: its `N`-torsion has `N²` elements for
-every `N`. -/
-instance infinite_point : Infinite L.weierstrassCurve.toAffine.Point := by
-  by_contra h
-  have : Finite L.weierstrassCurve.toAffine.Point := not_infinite_iff_finite.mp h
-  set n := Nat.card L.weierstrassCurve.toAffine.Point
-  have hcard := Nat.card_congr (L.torsionEquivCoordinates (n + 1)).toEquiv
-  rw [Nat.card_fun, Nat.card_zmod, Nat.card_fin] at hcard
-  have hle := Nat.card_le_card_of_injective _
-    (Subtype.coe_injective (p := (· ∈ AddSubgroup.torsionBy L.weierstrassCurve.toAffine.Point
-      ((n + 1 : ℕ) : ℤ))))
-  nlinarith
 
 /-- Dividing either basis period by `N` gives a point of exact order `N`. In particular,
 for the period pair `(τ,1)`, the point of `1/N` has exact order `N`. -/
