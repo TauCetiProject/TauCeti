@@ -18,8 +18,8 @@ complex generator, just as for the real generator.
 ## Main results
 
 * `StronglyContinuousGroup.reflect_isComplexLinear`: time reversal preserves complex linearity.
-* `StronglyContinuousGroup.map_smul_of_isComplexLinear`: complex linearity of the forward semigroup
-  extends to all real times.
+* `StronglyContinuousGroup.map_smul_of_isComplexLinear`: forward complex linearity extends to all
+  real times.
 * `StronglyContinuousGroup.reflect_complexGenerator`: time reversal negates the complex generator.
 -/
 
@@ -39,8 +39,8 @@ theorem reflect_isComplexLinear (U : StronglyContinuousGroup X)
   have hcomm := hU.map_smul t z (U (-(t : ℝ)) x)
   simpa only [toSemigroup_apply, reflect_apply, U.map_apply_map_neg_apply] using hcomm.symm
 
-/-- Complex linearity of the forward semigroup of a C₀-group forces every group operator, at
-positive and negative times alike, to be complex linear. -/
+/-- If the forward operators of a strongly continuous group are complex linear, then every
+operator of the group is complex linear at all real times. -/
 theorem map_smul_of_isComplexLinear (U : StronglyContinuousGroup X)
     (hU : U.toSemigroup.IsComplexLinear) (t : ℝ) (z : ℂ) (x : X) :
     U t (z • x) = z • U t x := by
@@ -48,9 +48,8 @@ theorem map_smul_of_isComplexLinear (U : StronglyContinuousGroup X)
   · rw [← U.toSemigroup_realOperator_of_nonneg ht]
     exact hU.realOperator_map_smul t z x
   · have hneg : 0 ≤ -t := neg_nonneg.mpr ht.le
-    have hrev := (U.reflect_isComplexLinear hU).realOperator_map_smul (-t) z x
-    simpa only [U.reflect.toSemigroup_realOperator_of_nonneg hneg, U.reflect_apply, neg_neg]
-      using hrev
+    have h := (U.reflect_isComplexLinear hU).realOperator_map_smul (-t) z x
+    rwa [U.reflect.toSemigroup_realOperator_of_nonneg hneg, reflect_apply, neg_neg] at h
 
 /-- Time reversal negates the complex generator of a complex-linear strongly continuous group.
 The generator domain is preserved. -/

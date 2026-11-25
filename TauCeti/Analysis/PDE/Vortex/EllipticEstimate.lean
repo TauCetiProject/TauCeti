@@ -513,7 +513,7 @@ theorem exists_norm_exp_mul_smul_le_mul_norm_of_forall_mem_framedFieldSpace
   exists_norm_exp_mul_smul_le_mul_norm_of_integral_inner_gaugeFixedAdjoint_eq k
     (contDiff_of_forall_mem_framedFieldSpace hx hmem) hsol
     (tendsto_normSq_of_mem_framedFieldSpace one_lt_two (by exact_mod_cast hmem 2) hx)
-    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2))) hc
+    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem i n) hc
 
 /-! ### The weighted estimate for the adjoint of the right inverse -/
 
@@ -635,6 +635,6 @@ theorem exists_norm_exp_mul_smul_adjoint_apply_le_mul_norm_of_forall_mem_framedF
   exists_norm_exp_mul_smul_adjoint_apply_le_mul_norm k
     (contDiff_of_forall_mem_framedFieldSpace hx hmem) hsol
     (tendsto_normSq_of_mem_framedFieldSpace one_lt_two (by exact_mod_cast hmem 2) hx)
-    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2))) hc
+    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem i n) hc
 
 end TauCeti.Vortex

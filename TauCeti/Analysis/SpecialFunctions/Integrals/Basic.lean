@@ -8,11 +8,12 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 public import Mathlib.RingTheory.Polynomial.Pochhammer
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
-import Mathlib.MeasureTheory.Integral.IntervalAverage
-import TauCeti.MeasureTheory.Integral.Average
+import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 
@@ -40,6 +41,9 @@ Interval integrals of elementary functions in closed form or as series, continui
   `c ≥ 0` and `δ ≥ 0`.
 * `TauCeti.integral_add_rpow_le_of_lt_neg_one`: `∫ s in 0..β, (r + s) ^ S ≤ r ^ (S + 1) / -(S + 1)`
   for `0 < r`, `0 ≤ β` and `S < -1`.
+* `TauCeti.integral_lt_abs_inv_sq`: `∫ t in {t | T < |t|}, (t²)⁻¹ = 2 / T` for `T ≥ 0`.
+* `TauCeti.integral_inv_add_abs`: `∫ t in -T..T, (σ + |t|)⁻¹ = 2 log (1 + T / σ)` for `σ > 0` and
+  `T ≥ 0`.
 * `TauCeti.norm_integral_le_of_ae_norm_le_mul_sub_rpow`: an integral over `[0, t' - h]` of a
   function bounded by `A h (t' - s)^((α - 4)/2)` is at most `2 / (2 - α) A h^(α/2)` for `α < 2`.
 * `TauCeti.integrable_one_div_sqrt_one_sub_sq` and `TauCeti.integral_one_div_sqrt_one_sub_sq`:
@@ -54,17 +58,14 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `TauCeti.integral_inv_mul_one_add_mul`:
   `∫ σ in s..t, 1 / (σ (1 + C σ)) = log (t / (1 + C t)) - log (s / (1 + C s))` for `s, t > 0` and
   `C ≥ 0`.
+* `TauCeti.integral_log_div_self`: `∫ x in a..b, log x / x = ((log b)² - (log a)²) / 2` on an
+  interval avoiding `0`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
-* `TauCeti.continuous_intervalIntegral_cexp_mul_I`: continuity of
-  `u ↦ ∫ t in a..b, exp (t * u * I)` in `u : ℝ`.
-* `TauCeti.norm_intervalIntegral_cexp_mul_I_le`: `‖∫ t in a..b, exp (t * u * I)‖ ≤ |b - a|` for
-  every real `u`, `a`, and `b`.
-* `TauCeti.norm_inv_mul_intervalIntegral_cexp_mul_I_le_one`,
-  `TauCeti.norm_inv_mul_intervalIntegral_cexp_mul_I_le`, and
-  `TauCeti.tendsto_inv_mul_intervalIntegral_cexp_mul_I`: the time average
-  `T⁻¹ * ∫ t in 0..T, exp (i t u)` has modulus at most `1` (and at most `2 / (|u| * |T|)` for
-  `u ≠ 0`) and tends to `1` when `u = 0` and `0` otherwise.
+* `TauCeti.norm_integral_cexp_le`, `TauCeti.norm_integral_cexp_le_of_ne_zero`: the integral
+  `∫ t in a..b, exp (t u i)` has modulus at most `|b - a|`, and at most `2 / |u|` for `u ≠ 0`.
+* `TauCeti.tendsto_average_integral_cexp`: the averages `T⁻¹ ∫ t in 0..T, exp (t u i)` tend to
+  `1` at `u = 0` and to `0` elsewhere as `T → ∞`.
 * `TauCeti.integral_cos_pow_mul_cexp`: `∫ θ in -π..π, cosᵏ θ exp (n θ i)` in closed form, via the
   binomial expansion `TauCeti.cos_pow_mul_cexp` of `cosᵏ θ exp (n θ i)` into characters.
 * `TauCeti.integral_sin_pow_even_eq_ascPochhammer`: the Wallis integral
@@ -361,6 +362,17 @@ theorem integral_inv_mul_one_add_mul {s t C : ℝ} (hs : 0 < s) (ht : 0 < t) (hC
     have := hpos σ hσ
     positivity
 
+/-- The integral of `x ↦ log x / x` over an interval avoiding `0`: an antiderivative is
+`x ↦ (log x)² / 2`. -/
+theorem integral_log_div_self {a b : ℝ} (h : (0 : ℝ) ∉ Set.uIcc a b) :
+    ∫ x in a..b, Real.log x / x = (Real.log b ^ 2 - Real.log a ^ 2) / 2 := by
+  have hne {x : ℝ} (hx : x ∈ Set.uIcc a b) : x ≠ 0 := fun h0 => h (h0 ▸ hx)
+  rw [sub_div]
+  refine intervalIntegral.integral_eq_sub_of_hasDerivAt (f := fun x => Real.log x ^ 2 / 2)
+    (fun x hx => ?_) (ContinuousOn.intervalIntegrable ?_)
+  · exact (((Real.hasDerivAt_log (hne hx)).pow 2).div_const 2).congr_deriv (by ring)
+  · exact (Real.continuousOn_log.mono fun x hx => hne hx).div continuousOn_id fun x hx => hne hx
+
 /-- The integral of the Fourier character `θ ↦ exp (k θ i)` over `[-π, π]`, for an integer `k`: it
 is `2π` when `k = 0`, and vanishes otherwise because `exp (k θ i)` has period `2π`. -/
 theorem integral_cexp_intCast_mul_mul_I (k : ℤ) :
@@ -378,77 +390,46 @@ theorem integral_cexp_intCast_mul_mul_I (k : ℤ) :
     simp_rw [mul_right_comm _ _ Complex.I]
     rw [integral_exp_mul_complex hc, ite_eq_right hk, hper, sub_self, zero_div]
 
-/-- The interval integral `u ↦ ∫ t in a..b, exp (t * u * I)` depends continuously on the real
-frequency `u`. -/
-theorem continuous_intervalIntegral_cexp_mul_I (a b : ℝ) :
-    Continuous fun u : ℝ => ∫ t in a..b, Complex.exp (t * u * Complex.I) :=
-  intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (by fun_prop) a b
+/-- The interval integral `∫ t in a..b, exp (t u i)` has modulus at most `|b - a|`. -/
+theorem norm_integral_cexp_le (u a b : ℝ) :
+    ‖∫ t in a..b, Complex.exp (↑(t * u) * Complex.I)‖ ≤ |b - a| := by
+  have h := intervalIntegral.norm_integral_le_of_norm_le_const (a := a) (b := b) (C := 1)
+    (f := fun t ↦ Complex.exp (↑(t * u) * Complex.I))
+    fun t _ ↦ (Complex.norm_exp_ofReal_mul_I _).le
+  rwa [one_mul] at h
 
-/-- The interval integral of a complex exponential character `t ↦ exp (t * u * I)` has modulus
-at most the interval length `|b - a|`. -/
-theorem norm_intervalIntegral_cexp_mul_I_le (u a b : ℝ) :
-    ‖∫ t in a..b, Complex.exp (t * u * Complex.I)‖ ≤ |b - a| := by
-  simpa only [one_mul] using
-    intervalIntegral.norm_integral_le_of_norm_le_const (a := a) (b := b) (C := 1) fun t _ => by
-      rw [← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I]
+/-- For `u ≠ 0` the interval integral `∫ t in a..b, exp (t u i)` has modulus at most `2 / |u|`,
+uniformly in `a` and `b`. -/
+theorem norm_integral_cexp_le_of_ne_zero {u : ℝ} (hu : u ≠ 0) (a b : ℝ) :
+    ‖∫ t in a..b, Complex.exp (↑(t * u) * Complex.I)‖ ≤ 2 / |u| := by
+  have hc : (u : ℂ) * Complex.I ≠ 0 := mul_ne_zero (Complex.ofReal_ne_zero.2 hu) Complex.I_ne_zero
+  have h : ∫ t in a..b, Complex.exp (↑(t * u) * Complex.I) =
+      (Complex.exp (↑(b * u) * Complex.I) - Complex.exp (↑(a * u) * Complex.I)) /
+        (u * Complex.I) := by
+    simp_rw [show ∀ t : ℝ, (↑(t * u) : ℂ) * Complex.I = u * Complex.I * t from fun t ↦ by
+      push_cast; ring]
+    rw [integral_exp_mul_complex hc]
+  rw [h, norm_div, norm_mul, Complex.norm_I, mul_one, Complex.norm_real, Real.norm_eq_abs]
+  gcongr
+  exact (norm_sub_le _ _).trans (by simp_rw [Complex.norm_exp_ofReal_mul_I]; norm_num)
 
-/-- The time average `T⁻¹ * ∫ t in 0..T, exp (t * u * I)` of a complex exponential character has
-modulus at most `1`, for every real frequency `u` and every `T : ℝ`. -/
-theorem norm_inv_mul_intervalIntegral_cexp_mul_I_le_one (u T : ℝ) :
-    ‖(T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖ ≤ 1 := by
-  simpa only [interval_average_eq, sub_zero, Complex.real_smul, Complex.ofReal_inv] using
-    TauCeti.norm_setAverage_le_of_norm_le_const (μ := MeasureTheory.volume) (s := Set.uIoc 0 T)
-      (f := fun t : ℝ => Complex.exp (t * u * Complex.I)) zero_le_one fun t _ => by
-        rw [← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I]
-
-/-- Quantitative `O(|u|⁻¹ |T|⁻¹)` decay of the time average `T⁻¹ * ∫ t in 0..T, exp (t * u * I)`
-for any nonzero real frequency `u` and every `T : ℝ`. -/
-theorem norm_inv_mul_intervalIntegral_cexp_mul_I_le {u : ℝ} (hu : u ≠ 0) (T : ℝ) :
-    ‖(T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖ ≤ 2 / (|u| * |T|) := by
-  have hc : (u : ℂ) * Complex.I ≠ 0 := mul_ne_zero (Complex.ofReal_ne_zero.mpr hu) Complex.I_ne_zero
-  have hint : ∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I) =
-      (Complex.exp ((u : ℂ) * Complex.I * T) - 1) / ((u : ℂ) * Complex.I) := by
-    have hfun : (fun t : ℝ => Complex.exp (t * u * Complex.I)) =
-        fun t : ℝ => Complex.exp (((u : ℂ) * Complex.I) * t) := funext fun t => by congr 1; ring
-    rw [hfun, integral_exp_mul_complex hc, Complex.ofReal_zero, mul_zero, Complex.exp_zero]
-  have hnum : ‖Complex.exp ((u : ℂ) * Complex.I * T) - 1‖ ≤ 2 := by
-    calc
-      ‖Complex.exp ((u : ℂ) * Complex.I * T) - 1‖
-          ≤ ‖Complex.exp ((u : ℂ) * Complex.I * T)‖ + ‖(1 : ℂ)‖ := norm_sub_le _ _
-      _ = 2 := by
-        rw [mul_right_comm, ← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I, norm_one]
-        norm_num
-  have hunorm : ‖(u : ℂ) * Complex.I‖ = |u| := by
-    rw [norm_mul, Complex.norm_real, Complex.norm_I, mul_one, Real.norm_eq_abs]
-  rw [hint, norm_mul, norm_div, norm_inv, Complex.norm_real, Real.norm_eq_abs, hunorm]
-  calc
-    |T|⁻¹ * (‖Complex.exp ((u : ℂ) * Complex.I * T) - 1‖ / |u|)
-        ≤ |T|⁻¹ * (2 / |u|) := by gcongr
-    _ = 2 / (|u| * |T|) := by
-      rw [div_eq_mul_inv, div_eq_mul_inv, mul_inv]
-      ring
-
-open Filter in
-open scoped Topology in
-/-- As `T → ∞`, the time average `T⁻¹ * ∫ t in 0..T, exp (t * u * I)` of a complex exponential
-character converges to `1` when `u = 0` and to `0` when `u ≠ 0`. -/
-theorem tendsto_inv_mul_intervalIntegral_cexp_mul_I (u : ℝ) :
-    Tendsto (fun T : ℝ => (T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I))
-      atTop (𝓝 (if u = 0 then (1 : ℂ) else 0)) := by
-  by_cases hu : u = 0
-  · subst hu
-    simp only [Complex.ofReal_zero, mul_zero, zero_mul, Complex.exp_zero, ↓reduceIte]
-    refine tendsto_const_nhds.congr' ?_
-    filter_upwards [eventually_gt_atTop (0 : ℝ)] with T hT
-    rw [intervalIntegral.integral_const, sub_zero, Complex.real_smul, mul_one,
-      inv_mul_cancel₀ (Complex.ofReal_ne_zero.mpr hT.ne')]
-  · simp only [hu, ↓reduceIte]
-    refine squeeze_zero_norm' (a := fun T : ℝ => 2 / (|u| * T)) ?_ ?_
-    · filter_upwards [eventually_gt_atTop (0 : ℝ)] with T hT
-      simpa only [abs_of_pos hT] using norm_inv_mul_intervalIntegral_cexp_mul_I_le hu T
-    · have hlim : Tendsto (fun T : ℝ => (2 / |u|) * T⁻¹) atTop (𝓝 0) := by
-        simpa only [mul_zero] using tendsto_inv_atTop_zero.const_mul (2 / |u|)
-      exact hlim.congr fun T => by ring
+open Filter Topology in
+/-- The averages `T⁻¹ ∫ t in 0..T, exp (t u i)` tend to `1` at `u = 0` and to `0` elsewhere as
+`T → ∞`. -/
+theorem tendsto_average_integral_cexp (u : ℝ) :
+    Tendsto (fun T : ℝ ↦ (T : ℂ)⁻¹ * ∫ t in (0 : ℝ)..T, Complex.exp (↑(t * u) * Complex.I))
+      atTop (𝓝 (({0} : Set ℝ).indicator 1 u)) := by
+  rcases eq_or_ne u 0 with rfl | hu
+  · refine tendsto_const_nhds.congr' ?_
+    filter_upwards [eventually_ne_atTop 0] with T hT
+    simp [hT]
+  · rw [Set.indicator_of_notMem (by simpa using hu)]
+    refine squeeze_zero_norm' ?_ ((tendsto_inv_atTop_zero.const_mul (2 / |u|)).trans
+      (by rw [mul_zero]))
+    filter_upwards [eventually_gt_atTop 0] with T hT
+    rw [norm_mul, norm_inv, Complex.norm_real, Real.norm_of_nonneg hT.le, mul_comm]
+    gcongr
+    exact norm_integral_cexp_le_of_ne_zero hu 0 T
 
 /-- The binomial expansion of `cosᵏ θ exp (n θ i)` into the Fourier characters
 `exp ((2m - k + n) θ i)`. -/
@@ -587,6 +568,55 @@ theorem integral_add_rpow_le_of_lt_neg_one {r β S : ℝ} (hr : 0 < r) (hS : S <
   rw [intervalIntegral.integral_comp_sub_left (fun x : ℝ => x ^ S) (r + β)] at h
   rw [intervalIntegral.integral_comp_add_left (fun x : ℝ => x ^ S) r]
   convert h using 2 <;> ring
+
+open MeasureTheory Set in
+/-- The integral of `t⁻²` over the tails `|t| > T` of the real line is `2/T`. At `T = 0` the
+integrand is not integrable and both sides are `0`. -/
+theorem integral_lt_abs_inv_sq {T : ℝ} (hT : 0 ≤ T) :
+    ∫ t in {t : ℝ | T < |t|}, (t ^ 2)⁻¹ = 2 / T := by
+  rcases hT.eq_or_lt with rfl | hT
+  · rw [div_zero]
+    refine integral_undef fun h ↦ ?_
+    have hsub : Ioo (0 : ℝ) 1 ⊆ {t : ℝ | 0 < |t|} := fun t ht ↦ abs_pos.mpr ht.1.ne'
+    have h' : IntegrableOn (fun t : ℝ ↦ t ^ (-2 : ℝ)) (Ioo 0 1) :=
+      (IntegrableOn.mono_set h hsub).congr_fun
+        (fun t ht ↦ by rw [Real.rpow_neg ht.1.le, Real.rpow_two]) measurableSet_Ioo
+    have := (intervalIntegral.integrableOn_Ioo_rpow_iff one_pos).1 h'
+    norm_num at this
+  have hS : MeasurableSet {t : ℝ | T < |t|} :=
+    measurableSet_lt measurable_const continuous_abs.measurable
+  have hind : ({t : ℝ | T < |t|}.indicator fun t ↦ (t ^ 2)⁻¹) =
+      fun t ↦ (Ioi T).indicator (fun u ↦ (u ^ 2)⁻¹) |t| := by
+    ext t
+    by_cases h : T < |t| <;> simp [indicator, h, sq_abs]
+  have hpow : ∫ u in Ioi T, (u ^ 2)⁻¹ = ∫ u in Ioi T, u ^ (-2 : ℝ) :=
+    setIntegral_congr_fun measurableSet_Ioi fun u (hu : T < u) ↦ by
+      rw [Real.rpow_neg (hT.trans hu).le, Real.rpow_two]
+  rw [← integral_indicator hS, hind, integral_comp_abs, setIntegral_indicator measurableSet_Ioi,
+    Ioi_inter_Ioi, max_eq_right hT.le, hpow, integral_Ioi_rpow_of_lt (by norm_num) hT]
+  norm_num [Real.rpow_neg_one]
+  ring
+
+open Set in
+/-- The integral of `(σ + |t|)⁻¹` over `[-T, T]` is `2 log(1 + T/σ)`. -/
+theorem integral_inv_add_abs {σ T : ℝ} (hσ : 0 < σ) (hT : 0 ≤ T) :
+    ∫ t in (-T)..T, (σ + |t|)⁻¹ = 2 * Real.log (1 + T / σ) := by
+  have hc : Continuous fun t : ℝ ↦ (σ + |t|)⁻¹ :=
+    (continuous_const.add continuous_abs).inv₀ fun t ↦
+      (add_pos_of_pos_of_nonneg hσ (abs_nonneg t)).ne'
+  have hpos : ∫ t in (0 : ℝ)..T, (σ + |t|)⁻¹ = Real.log (1 + T / σ) := by
+    rw [intervalIntegral.integral_congr (g := fun t ↦ (σ + t)⁻¹) fun t ht ↦ by
+        rw [uIcc_of_le hT] at ht; simp [abs_of_nonneg ht.1],
+      intervalIntegral.integral_comp_add_left (fun t ↦ t⁻¹) σ, add_zero,
+      integral_inv_of_pos hσ (by linarith)]
+    congr 1
+    field_simp
+  have hneg : ∫ t in (-T)..0, (σ + |t|)⁻¹ = ∫ t in (0 : ℝ)..T, (σ + |t|)⁻¹ := by
+    simpa [abs_neg] using
+      (intervalIntegral.integral_comp_neg (a := 0) (b := T) fun t ↦ (σ + |t|)⁻¹).symm
+  rw [← intervalIntegral.integral_add_adjacent_intervals (b := 0) (hc.intervalIntegrable _ _)
+    (hc.intervalIntegrable _ _), hneg, hpos]
+  ring
 
 end TauCeti
 

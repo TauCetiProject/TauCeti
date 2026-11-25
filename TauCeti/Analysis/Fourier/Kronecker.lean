@@ -87,28 +87,6 @@ theorem mFourier_coe_add_mul (n : d → ℤ) (θ ν : d → ℝ) (t : ℝ) :
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   ring
 
-/-- The time average of `mFourier n` along a line whose velocity `ν` satisfies `⟪n, ν⟫ ≠ 0` tends
-to `0`. -/
-private theorem tendsto_average_mFourier_of_ne_zero (n : d → ℤ) (θ ν : d → ℝ)
-    (hn : ∑ i, (n i : ℝ) * ν i ≠ 0) :
-    Tendsto (fun T : ℝ ↦ T⁻¹ • ∫ t in 0..T, mFourier n (fun i ↦ ((θ i + ν i * t : ℝ) :
-      UnitAddCircle))) atTop (𝓝 0) := by
-  simp_rw [mFourier_coe_add_mul, intervalIntegral.integral_const_mul]
-  set c : ℝ := ∑ i, (n i : ℝ) * ν i
-  set A : ℂ := Complex.exp (2 * π * Complex.I * ∑ i, (n i : ℂ) * θ i)
-  have hfreq : 2 * Real.pi * c ≠ 0 := mul_ne_zero (mul_ne_zero two_ne_zero Real.pi_ne_zero) hn
-  have hlim : Tendsto (fun T : ℝ ↦
-      A * ((T⁻¹ : ℂ) * ∫ t in 0..T, Complex.exp (t * (2 * Real.pi * c : ℝ) * Complex.I)))
-      atTop (𝓝 0) := by
-    simpa only [hfreq, ↓reduceIte, mul_zero] using
-      (TauCeti.tendsto_inv_mul_intervalIntegral_cexp_mul_I (2 * Real.pi * c)).const_mul A
-  have hint : ∀ T : ℝ,
-      (∫ t in 0..T, Complex.exp (t * (2 * Real.pi * c : ℝ) * Complex.I)) =
-        ∫ t in 0..T, Complex.exp (2 * π * Complex.I * c * t) := fun T ↦
-    intervalIntegral.integral_congr fun t _ ↦ by congr 1; push_cast; ring
-  refine hlim.congr fun T ↦ ?_
-  rw [Complex.real_smul, Complex.ofReal_inv, mul_left_comm, hint T]
-
 /-- Weyl's theorem for the trigonometric polynomials, the span of the monomials `mFourier n`. -/
 private theorem tendsto_inv_smul_intervalIntegral_of_mem_span {ν : d → ℝ}
     (hν : ∀ k : d → ℤ, ∑ i, (k i : ℝ) * ν i = 0 → k = 0) (θ : d → ℝ) {g : C(UnitAddTorus d, ℂ)}
@@ -129,7 +107,22 @@ private theorem tendsto_inv_smul_intervalIntegral_of_mem_span {ν : d → ℝ}
       refine tendsto_const_nhds.congr' ?_
       filter_upwards [eventually_gt_atTop 0] with T hT
       simp [mFourier_zero, hT.ne']
-    · exact tendsto_average_mFourier_of_ne_zero n θ ν fun h ↦ hn (hν n h)
+    · have hne : 2 * π * ∑ i, (n i : ℝ) * ν i ≠ 0 :=
+        mul_ne_zero (mul_ne_zero two_ne_zero Real.pi_ne_zero) fun h ↦ hn (hν n h)
+      have hlim := (TauCeti.tendsto_average_integral_cexp
+        (2 * π * ∑ i, (n i : ℝ) * ν i)).const_mul
+        (Complex.exp (2 * π * Complex.I * ∑ i, (n i : ℂ) * θ i))
+      rw [Set.indicator_of_notMem (by simpa using hne), mul_zero] at hlim
+      refine hlim.congr fun T ↦ ?_
+      have hexp : ∀ t : ℝ,
+          Complex.exp (2 * π * Complex.I * (∑ i, (n i : ℝ) * ν i : ℝ) * t) =
+            Complex.exp (↑(t * (2 * π * ∑ i, (n i : ℝ) * ν i)) * Complex.I) := fun t ↦ by
+        congr 1
+        push_cast
+        ring
+      simp_rw [mFourier_coe_add_mul, hexp, intervalIntegral.integral_const_mul, Complex.real_smul,
+        Complex.ofReal_inv]
+      ring
   | zero => simp
   | add g h _ _ hg hh =>
     simp only [ContinuousMap.add_apply, intervalIntegral.integral_add (hint g _) (hint h _),

@@ -396,7 +396,8 @@ theorem eq_complexify_iff (T : X →ₗ[ℝ] Y) (S : Complexification X →ₗ[�
 theorem conj_complexify (T : X →ₗ[ℝ] Y) (z : Complexification X) :
     conj Y (T.complexify z) = T.complexify (conj X z) := by
   obtain ⟨u, rfl⟩ := (tensorEquivComplexification X).surjective z
-  simpa [tensorEquivComplexification_baseChange, tensorEquivComplexification_tmulConj] using
+  simpa [-tmulConj_baseChange, tensorEquivComplexification_baseChange,
+    tensorEquivComplexification_tmulConj] using
     congrArg (tensorEquivComplexification Y) (tmulConj_baseChange T u)
 
 end LinearMap
