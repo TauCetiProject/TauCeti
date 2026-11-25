@@ -181,6 +181,15 @@ theorem halfSectionChartData_coord_ae_eq (i : Fin A.n) (s : ∀ x, V x) :
   filter_upwards [ae_restrict_mem (A.halfImage i).isOpen.measurableSet] with z hz
   exact A.halfSectionChartData_coord_of_mem s hz
 
+/-- On the interior of the image of chart `i`, a function is almost everywhere the reading of a
+section in the chart data of the atlas exactly when it is almost everywhere its reading
+`A.halfCoord i s`. -/
+theorem ae_eq_halfSectionChartData_coord_iff {i : Fin A.n} {s : ∀ x, V x} {f : ℂ → F} :
+    f =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfSectionChartData.coord i s ↔
+      f =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s :=
+  ⟨fun h ↦ h.trans (A.halfSectionChartData_coord_ae_eq i s),
+    fun h ↦ h.trans (A.halfSectionChartData_coord_ae_eq i s).symm⟩
+
 /-- The interior of the image of chart `i` has finite Lebesgue measure, since it lies in the
 compact image of the closure of the chart domain. -/
 instance isFiniteMeasure_restrict_halfImage (i : Fin A.n) :
@@ -400,13 +409,6 @@ theorem exists_section_memWkpLoc (w : BorderedSobolevSection A p k) :
   have hs' (i : Fin A.n) := (hs i).trans (A.halfSectionChartData_coord_ae_eq i s)
   exact ⟨s, hs', memWkpLoc_halfCoord w hs'⟩
 
-/-- Every element of `W^{k,p}(V)` consists of the chartwise components of a section, read in the
-charts of `A` as `A.halfCoord i s`. -/
-theorem exists_ae_eq_halfCoord (w : BorderedSobolevSection A p k) :
-    ∃ s : ∀ x, V x, ∀ i, A.halfSectionChartData.chartValueL volume p k i w
-      =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s :=
-  (exists_section_memWkpLoc w).imp fun _ h ↦ h.1
-
 /-- **Uniqueness.** Two elements of `W^{k,p}(V)` whose chart data are the readings
 `A.halfCoord i s` of the same section are equal. -/
 theorem eq_of_ae_eq_halfCoord {w w' : BorderedSobolevSection A p k} {s : ∀ x, V x}
@@ -416,34 +418,8 @@ theorem eq_of_ae_eq_halfCoord {w w' : BorderedSobolevSection A p k} {s : ∀ x, 
       =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s) :
     w = w' :=
   SectionChartData.eq_of_ae_eq_coord (s := s)
-    (fun i ↦ (hw i).trans (A.halfSectionChartData_coord_ae_eq i s).symm)
-    (fun i ↦ (hw' i).trans (A.halfSectionChartData_coord_ae_eq i s).symm)
-
-/-- The chart data of a sum are almost everywhere the readings of the sum of the sections. -/
-theorem chartValueL_add_ae_halfCoord {w w' : BorderedSobolevSection A p k} {s t : ∀ x, V x}
-    {i : Fin A.n}
-    (hs : A.halfSectionChartData.chartValueL volume p k i w
-      =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s)
-    (ht : A.halfSectionChartData.chartValueL volume p k i w'
-      =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i t) :
-    A.halfSectionChartData.chartValueL volume p k i (w + w' : BorderedSobolevSection A p k)
-      =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i (s + t) :=
-  (SectionChartData.chartValueL_add_ae_coord
-    (hs.trans (A.halfSectionChartData_coord_ae_eq i s).symm)
-    (ht.trans (A.halfSectionChartData_coord_ae_eq i t).symm)).trans
-      (A.halfSectionChartData_coord_ae_eq i (s + t))
-
-/-- The chart data of a multiple are almost everywhere the readings of the multiple of the
-section. -/
-theorem chartValueL_smul_ae_halfCoord (c : ℝ) {w : BorderedSobolevSection A p k} {s : ∀ x, V x}
-    {i : Fin A.n}
-    (hs : A.halfSectionChartData.chartValueL volume p k i w
-      =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s) :
-    A.halfSectionChartData.chartValueL volume p k i (c • w : BorderedSobolevSection A p k)
-      =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i (c • s) :=
-  (SectionChartData.chartValueL_smul_ae_coord c
-    (hs.trans (A.halfSectionChartData_coord_ae_eq i s).symm)).trans
-      (A.halfSectionChartData_coord_ae_eq i (c • s))
+    (fun i ↦ A.ae_eq_halfSectionChartData_coord_iff.2 (hw i))
+    (fun i ↦ A.ae_eq_halfSectionChartData_coord_iff.2 (hw' i))
 
 end BorderedSobolevSection
 

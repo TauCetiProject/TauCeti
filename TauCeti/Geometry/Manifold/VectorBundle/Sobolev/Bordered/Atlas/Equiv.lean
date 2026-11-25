@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Atlas.Equiv
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ChartData.ChangeAtlas
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic
 
 /-!
@@ -83,18 +83,18 @@ reading in chart `i` at the chart transition, which carries null sets to null se
 theorem FiniteBundleAtlas.readsFrom_halfSectionChartData
     [IsManifold closedUpperHalfPlaneModel 1 M] :
     A.halfSectionChartData.ReadsFrom A'.halfSectionChartData volume :=
-  ⟨fun i i' ↦ {y | (A'.chart i').symm (closedUpperHalfPlaneModel.symm y) ∈ A.dom i},
-    fun i i' y ↦ A.chart i ((A'.chart i').symm (closedUpperHalfPlaneModel.symm y)),
-    fun i i' y ↦ (A.triv i).coordChangeL ℝ (A'.triv i')
-      ((A'.chart i').symm (closedUpperHalfPlaneModel.symm y)),
-    fun _ ↦ ae_of_all _ fun _ ↦ A.exists_mem_dom _,
-    fun _ i' _ h ↦ A.ae_restrict_halfImage_chart_symm A' i' h,
+  .intro (fun i i' ↦ {y | (A'.chart i').symm (closedUpperHalfPlaneModel.symm y) ∈ A.dom i})
+    (fun i i' y ↦ A.chart i ((A'.chart i').symm (closedUpperHalfPlaneModel.symm y)))
+    (fun i i' y ↦ (A.triv i).coordChangeL ℝ (A'.triv i')
+      ((A'.chart i').symm (closedUpperHalfPlaneModel.symm y)))
+    (fun _ ↦ ae_of_all _ fun _ ↦ A.exists_mem_dom _)
+    (fun _ i' _ h ↦ A.ae_restrict_halfImage_chart_symm A' i' h)
     fun i i' s ↦ by
       filter_upwards [ae_restrict_mem (A'.halfImage i').isOpen.measurableSet] with y hyU hdom
       rw [A'.halfSectionChartData_coord_of_mem s hyU,
         A.halfSectionChartData_coord_of_mem s (A.coe_chart_mem_halfImage A' hyU hdom)]
       exact A.halfCoord_eq_coordChangeL_halfCoord A' s
-        (A'.dom_subset_baseSet i' (A'.symm_mem_dom (A'.mem_halfImage.1 hyU).1)) hdom⟩
+        (A'.dom_subset_baseSet i' (A'.symm_mem_dom (A'.mem_halfImage.1 hyU).1)) hdom
 
 namespace BorderedSobolevSection
 
@@ -104,7 +104,7 @@ variable (p : ℝ≥0∞) [Fact (1 ≤ p)] (k : ℕ)
 of `A` are those of an element of `W^{k,p}(V)` for `A` also has chart data in the charts of `A'`
 that are those of an element of `W^{k,p}(V)` for `A'`
 (`TauCeti.BorderedSobolevSection.transfersTo_iff`). -/
-@[expose] def TransfersTo : Prop :=
+abbrev TransfersTo : Prop :=
   A.halfSectionChartData.TransfersTo A'.halfSectionChartData volume p k
 
 variable {A A' p k}
@@ -117,13 +117,10 @@ theorem transfersTo_iff : TransfersTo A A' p k ↔
         =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s) →
         ∃ w' : BorderedSobolevSection A' p k,
           ∀ i', A'.halfSectionChartData.chartValueL volume p k i' w'
-            =ᵐ[volume.restrict (A'.halfImage i' : Set ℂ)] A'.halfCoord i' s := by
-  refine forall₂_congr fun w s ↦ ?_
-  refine imp_congr (forall_congr' fun i ↦ ?_) (exists_congr fun w' ↦ forall_congr' fun i' ↦ ?_)
-  · exact ⟨fun h ↦ h.trans (A.halfSectionChartData_coord_ae_eq i s),
-      fun h ↦ h.trans (A.halfSectionChartData_coord_ae_eq i s).symm⟩
-  · exact ⟨fun h ↦ h.trans (A'.halfSectionChartData_coord_ae_eq i' s),
-      fun h ↦ h.trans (A'.halfSectionChartData_coord_ae_eq i' s).symm⟩
+            =ᵐ[volume.restrict (A'.halfImage i' : Set ℂ)] A'.halfCoord i' s :=
+  SectionChartData.transfersTo_iff.trans <| forall₂_congr fun _ _ ↦
+    imp_congr (forall_congr' fun _ ↦ A.ae_eq_halfSectionChartData_coord_iff)
+      (exists_congr fun _ ↦ forall_congr' fun _ ↦ A'.ae_eq_halfSectionChartData_coord_iff)
 
 theorem transfersTo_refl : TransfersTo A A p k :=
   SectionChartData.transfersTo_refl
@@ -152,9 +149,8 @@ theorem chartValueL_changeAtlas_ae (h : TransfersTo A A' p k) {w : BorderedSobol
     (i' : Fin A'.n) :
     A'.halfSectionChartData.chartValueL volume p k i' (changeAtlas h w)
       =ᵐ[volume.restrict (A'.halfImage i' : Set ℂ)] A'.halfCoord i' s :=
-  (SectionChartData.chartValueL_changeAtlas_ae _ h
-    (fun i ↦ (hs i).trans (A.halfSectionChartData_coord_ae_eq i s).symm) i').trans
-      (A'.halfSectionChartData_coord_ae_eq i' s)
+  A'.ae_eq_halfSectionChartData_coord_iff.1 <| SectionChartData.chartValueL_changeAtlas_ae _ h
+    (fun i ↦ A.ae_eq_halfSectionChartData_coord_iff.2 (hs i)) i'
 
 /-- **Identification of the change of atlas.** An element `w'` for `A'` whose chart data are the
 readings in the charts of `A'` of a section of `w` is the image of `w`. -/
@@ -174,7 +170,7 @@ theorem changeAtlas_refl_apply (w : BorderedSobolevSection A p k) :
 @[simp]
 theorem changeAtlas_refl :
     changeAtlas (transfersTo_refl (A := A) (p := p) (k := k)) = ContinuousLinearMap.id ℝ _ :=
-  ContinuousLinearMap.ext changeAtlas_refl_apply
+  SectionChartData.changeAtlas_refl
 
 @[simp]
 theorem changeAtlas_changeAtlas {A'' : FiniteBundleAtlas ClosedUpperHalfPlane M F V}
@@ -186,7 +182,7 @@ theorem changeAtlas_changeAtlas {A'' : FiniteBundleAtlas ClosedUpperHalfPlane M 
 theorem changeAtlas_comp {A'' : FiniteBundleAtlas ClosedUpperHalfPlane M F V}
     (h : TransfersTo A A' p k) (h' : TransfersTo A' A'' p k) :
     (changeAtlas h').comp (changeAtlas h) = changeAtlas (h.trans h') :=
-  ContinuousLinearMap.ext (changeAtlas_changeAtlas h h')
+  SectionChartData.changeAtlas_comp _ _ _ h h'
 
 /-- The change of atlas is injective: two sections with the same readings almost everywhere in the
 charts of `A'` have the same readings almost everywhere in the charts of `A`. -/
@@ -213,48 +209,46 @@ theorem changeAtlas_ofContMDiffSection [IsManifold closedUpperHalfPlaneModel k M
 
 /-- **Independence of the atlas.** If sections transfer between `A` and `A'` in both directions,
 the Sobolev spaces of sections for the two atlases are isomorphic Banach spaces, an element
-corresponding to the element with the same section. In particular their norms are equivalent. -/
+corresponding to the element with the same section. In particular their norms are equivalent.
+It is `TauCeti.SectionChartData.atlasEquiv` for the chart data of the two atlases. -/
 def atlasEquiv (h : TransfersTo A A' p k) (h' : TransfersTo A' A p k) :
     BorderedSobolevSection A p k ≃L[ℝ] BorderedSobolevSection A' p k :=
-  ContinuousLinearEquiv.ofContinuousLinearMap (changeAtlas h) (changeAtlas h')
-    (ContinuousLinearMap.ext fun w ↦
-      (changeAtlas_changeAtlas h' h w).trans (changeAtlas_refl_apply w))
-    (ContinuousLinearMap.ext fun w ↦
-      (changeAtlas_changeAtlas h h' w).trans (changeAtlas_refl_apply w))
+  SectionChartData.atlasEquiv (A.readsFrom_halfSectionChartData A')
+    (A'.readsFrom_halfSectionChartData A) h h'
 
 @[simp]
 theorem toContinuousLinearMap_atlasEquiv (h : TransfersTo A A' p k)
     (h' : TransfersTo A' A p k) :
     (atlasEquiv h h' : BorderedSobolevSection A p k →L[ℝ] BorderedSobolevSection A' p k) =
       changeAtlas h :=
-  (rfl)
+  SectionChartData.toContinuousLinearMap_atlasEquiv _ _ h h'
 
 @[simp]
 theorem atlasEquiv_apply (h : TransfersTo A A' p k) (h' : TransfersTo A' A p k)
     (w : BorderedSobolevSection A p k) : atlasEquiv h h' w = changeAtlas h w :=
-  (rfl)
+  SectionChartData.atlasEquiv_apply _ _ h h' w
 
 theorem atlasEquiv_symm_apply (h : TransfersTo A A' p k) (h' : TransfersTo A' A p k)
     (w : BorderedSobolevSection A' p k) : (atlasEquiv h h').symm w = changeAtlas h' w :=
-  (rfl)
+  SectionChartData.atlasEquiv_symm_apply _ _ h h' w
 
 @[simp]
 theorem atlasEquiv_symm (h : TransfersTo A A' p k) (h' : TransfersTo A' A p k) :
     (atlasEquiv h h').symm = atlasEquiv h' h :=
-  ContinuousLinearEquiv.ext (funext fun w ↦ atlasEquiv_symm_apply h h' w)
+  SectionChartData.atlasEquiv_symm _ _ h h'
 
 @[simp]
 theorem atlasEquiv_refl :
     atlasEquiv (transfersTo_refl (A := A) (p := p) (k := k)) transfersTo_refl =
       ContinuousLinearEquiv.refl ℝ _ :=
-  ContinuousLinearEquiv.ext (funext changeAtlas_refl_apply)
+  SectionChartData.atlasEquiv_refl
 
 @[simp]
 theorem atlasEquiv_trans {A'' : FiniteBundleAtlas ClosedUpperHalfPlane M F V}
     (h₁ : TransfersTo A A' p k) (h₁' : TransfersTo A' A p k) (h₂ : TransfersTo A' A'' p k)
     (h₂' : TransfersTo A'' A' p k) :
     (atlasEquiv h₁ h₁').trans (atlasEquiv h₂ h₂') = atlasEquiv (h₁.trans h₂) (h₂'.trans h₁') :=
-  ContinuousLinearEquiv.ext (funext (changeAtlas_changeAtlas h₁ h₂))
+  SectionChartData.atlasEquiv_trans _ _ _ _ _ _ h₁ h₁' h₂ h₂'
 
 /-- **Equivalence of norms.** If sections transfer between `A` and `A'` in both directions, the
 norms of the Sobolev spaces of sections for the two atlases are equivalent: there is a positive

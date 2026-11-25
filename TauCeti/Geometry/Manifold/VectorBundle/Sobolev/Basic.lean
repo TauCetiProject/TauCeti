@@ -1089,6 +1089,15 @@ theorem sectionChartData_coord_ae_eq [MeasurableSpace E] [OpensMeasurableSpace E
   filter_upwards [ae_restrict_mem (A.image i).isOpen.measurableSet] with y hy
   exact A.sectionChartData_coord_of_mem s hy
 
+/-- On the image of chart `i`, a function is almost everywhere the reading of a section in the
+chart data of the atlas exactly when it is almost everywhere its reading `A.coord i s`. -/
+theorem ae_eq_sectionChartData_coord_iff [MeasurableSpace E] [OpensMeasurableSpace E]
+    (μ : Measure E) {i : Fin A.n} {s : ∀ x, V x} {f : E → F} :
+    f =ᵐ[μ.restrict (A.image i)] A.sectionChartData.coord i s ↔
+      f =ᵐ[μ.restrict (A.image i)] A.coord i s :=
+  ⟨fun h ↦ h.trans (A.sectionChartData_coord_ae_eq μ i s),
+    fun h ↦ h.trans (A.sectionChartData_coord_ae_eq μ i s).symm⟩
+
 section FiniteMeasure
 
 variable [T2Space E] [MeasurableSpace E] (μ : Measure E) [IsFiniteMeasureOnCompacts μ]

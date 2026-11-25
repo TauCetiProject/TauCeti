@@ -502,36 +502,6 @@ theorem ae_restrict_halfImage_chart_symm (A' : FiniteBundleAtlas ClosedUpperHalf
   · simp only [hleft, (A'.chart i').right_inv (A'.closure_image_subset_target i'
       (subset_closure hyU')), coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hy0.le]
 
-/-- **Almost everywhere statements on `M` do not depend on the atlas.** A property of points of `M`
-that holds almost everywhere in every chart of `A`, on the interiors of the chart images, holds
-almost everywhere in every chart of `A'`. -/
-theorem ae_restrict_halfImage_symm_of_ae (A' : FiniteBundleAtlas ClosedUpperHalfPlane M F' V')
-    {P : M → Prop}
-    (h : ∀ i, ∀ᵐ z ∂volume.restrict (A.halfImage i : Set ℂ),
-      P ((A.chart i).symm (closedUpperHalfPlaneModel.symm z)))
-    (i' : Fin A'.n) :
-    ∀ᵐ y ∂volume.restrict (A'.halfImage i' : Set ℂ),
-      P ((A'.chart i').symm (closedUpperHalfPlaneModel.symm y)) := by
-  have hall := ae_all_iff.2 fun i ↦ A.ae_restrict_halfImage_chart_symm A' i' (h i)
-  filter_upwards [hall] with y hy
-  obtain ⟨i, hi⟩ := A.exists_mem_dom ((A'.chart i').symm (closedUpperHalfPlaneModel.symm y))
-  simpa only [closedUpperHalfPlaneModel_symm_coe,
-    (A.chart i).left_inv (A.dom_subset_chart_source i hi)] using hy i hi
-
-/-- Sections whose readings agree almost everywhere in every chart of one finite bundle atlas, on
-the interiors of the chart images, agree almost everywhere in every chart of any other. -/
-theorem halfCoord_ae_eq_of_halfCoord_ae_eq (A' : FiniteBundleAtlas ClosedUpperHalfPlane M F V)
-    {s t : ∀ x, V x}
-    (h : ∀ i, A.halfCoord i s =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i t)
-    (i' : Fin A'.n) :
-    A'.halfCoord i' s =ᵐ[volume.restrict (A'.halfImage i' : Set ℂ)] A'.halfCoord i' t := by
-  have hst := A.ae_restrict_halfImage_symm_of_ae A' (P := fun x ↦ s x = t x) (fun i ↦ by
-    filter_upwards [h i, ae_restrict_mem (A.halfImage i).isOpen.measurableSet] with z hz hzU
-    rw [halfCoord_def, halfCoord_def] at hz
-    exact (A.coord_eq_coord_iff (A.mem_halfImage.1 hzU).1).1 hz) i'
-  filter_upwards [hst] with y hy
-  simp only [halfCoord_def, coord_def, hy]
-
 end FiniteBundleAtlas
 
 end Atlas
