@@ -169,7 +169,8 @@ theorem card_ker_nsmul_two_scaledLegendre (hΔ : (scaledLegendre d l).Δ ≠ 0) 
 @[simp]
 theorem sum_scaledLegendreTwoTorsionPoint_eq_zero :
     ∑ i : Fin 3, scaledLegendreTwoTorsionPoint d l hΔ i = 0 := by
-  obtain ⟨_, hd, hdl, hdd⟩ := two_ne_zero_and_scaledLegendreRoots_ne_of_Δ_ne_zero d l hΔ
+  obtain ⟨_, hd, hdl, hdd⟩ :=
+    two_ne_zero_and_ne_zero_and_mul_ne_zero_and_ne_mul_of_scaledLegendre_Δ_ne_zero d l hΔ
   rw [Fin.sum_univ_three,
     scaledLegendreTwoTorsionPoint_eq_some d l hΔ 0
       (nonsingular_scaledLegendreRoots d l hΔ 0),
