@@ -39,6 +39,8 @@ noncomputable abbrev twoDimRep : FDRep ℂ (QuaternionGroup 2) :=
 
 /-- `θ` is faithful: it takes the value `-1` at `a 2`. -/
 example : (centerChar ⟨QuaternionGroup.a 2, quaternionGroup_a_self_mem_center 2⟩ : ℂ) = -1 := by
+  -- Mathlib has `SubgroupClass.inclusion_mk` but no `Subgroup.inclusion_mk`, so the inclusion
+  -- of `⟨a 2, _⟩` is computed from `Subgroup.coe_inclusion`.
   rw [centerChar, MonoidHom.comp_apply,
     show Subgroup.inclusion (K := quaternionRotations 2) _
         ⟨QuaternionGroup.a 2, quaternionGroup_a_self_mem_center 2⟩ =
@@ -71,16 +73,10 @@ not the index `1` of the inertia group of `θ`. -/
 example : Module.finrank ℂ twoDimRep / Module.finrank ℂ (FDRep.ofLinearCharacter centerChar) = 2 ∧
     (Subgroup.center (QuaternionGroup 2)).index = 4 ∧
     (inertia (G := QuaternionGroup 2) (FDRep.ofLinearCharacter centerChar)).index = 1 := by
-  refine ⟨?_, ?_, by rw [inertia_centerChar, Subgroup.index_top]⟩
-  · rw [finrank_indFDRep_ofLinearCharacter, index_quaternionRotations,
-      FDRep.finrank_ofLinearCharacter]
-  · have hcard : Nat.card (Subgroup.center (QuaternionGroup 2)) = 2 := by
-      rw [center_quaternionGroup_eq_zpowers (by decide), Nat.card_zpowers,
-        QuaternionGroup.orderOf_a]
-      decide
-    have h := (Subgroup.center (QuaternionGroup 2)).card_mul_index
-    rw [hcard, Nat.card_eq_fintype_card, QuaternionGroup.card] at h
-    omega
+  refine ⟨?_, index_center_quaternionGroup (by decide), by
+    rw [inertia_centerChar, Subgroup.index_top]⟩
+  rw [finrank_indFDRep_ofLinearCharacter, index_quaternionRotations,
+    FDRep.finrank_ofLinearCharacter]
 
 -- The general theorem applies.
 example : Module.finrank ℂ twoDimRep / Module.finrank ℂ (FDRep.ofLinearCharacter centerChar) ∣

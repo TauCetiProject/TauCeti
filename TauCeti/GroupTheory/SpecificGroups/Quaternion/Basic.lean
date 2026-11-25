@@ -67,6 +67,8 @@ form used by its explicit Dixon-prime certificate.
   `TauCeti.isMulCommutative_quaternionGroup_iff`: for `n ≠ 1` the centre is
   `Subgroup.zpowers (QuaternionGroup.a n)`, it lies in the rotation subgroup, and
   `QuaternionGroup n` is non-commutative.
+* `TauCeti.natCard_center_quaternionGroup`, `TauCeti.index_center_quaternionGroup`: for nonzero
+  `n ≠ 1` the centre has order two and index `2 * n`.
 * `TauCeti.not_exists_isComplement'_zpowers_quaternionGroup_a`,
   `TauCeti.not_exists_isComplement'_center_quaternionGroup`,
   `TauCeti.not_exists_isComplement'_quaternionRotations`: for nonzero `n`, neither
@@ -389,6 +391,18 @@ theorem center_quaternionGroup_le_quaternionRotations {n : ℕ} (hn : n ≠ 1) :
     Subgroup.center (QuaternionGroup n) ≤ quaternionRotations n := by
   rw [center_quaternionGroup_eq_zpowers hn, Subgroup.zpowers_le]
   exact a_mem_quaternionRotations _
+
+/-- For nonzero `n ≠ 1`, the centre of `QuaternionGroup n` has order two. -/
+theorem natCard_center_quaternionGroup [NeZero n] (hn : n ≠ 1) :
+    Nat.card (Subgroup.center (QuaternionGroup n)) = 2 := by
+  rw [center_quaternionGroup_eq_zpowers hn, Nat.card_zpowers, orderOf_quaternionGroup_a_self]
+
+/-- For nonzero `n ≠ 1`, the centre of `QuaternionGroup n` has index `2 * n`. -/
+theorem index_center_quaternionGroup [NeZero n] (hn : n ≠ 1) :
+    (Subgroup.center (QuaternionGroup n)).index = 2 * n := by
+  have h := (Subgroup.center (QuaternionGroup n)).card_mul_index
+  rw [natCard_center_quaternionGroup hn, natCard_quaternionGroup] at h
+  omega
 
 /-- `QuaternionGroup n` is commutative if and only if `n = 1` (where it is cyclic of order four). -/
 @[simp]
