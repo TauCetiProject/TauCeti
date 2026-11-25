@@ -330,6 +330,12 @@ theorem relTrace_apply_of_mem {a : conjInvariants R Q} (ha : (a : MonoidAlgebra 
   Representation.relNorm_apply_of_forall_apply_eq _ fun g =>
     mem_conjInvariants_iff.1 ha _ g.property
 
+/-- **The trace from the trivial subgroup.** For finite `P`, `Tr_1^P(a) = ∑_{g ∈ P} g a g⁻¹`. -/
+theorem relTrace_bot_apply [Fintype P] (a : conjInvariants R (⊥ : Subgroup G)) :
+    (relTrace R ⊥ P a : MonoidAlgebra R G) = ∑ g : P, conjRepresentation R G (g : G) a := by
+  refine relTrace_apply_eq_sum_of_bijective id ⟨fun g h hgh => ?_, QuotientGroup.mk_surjective⟩ a
+  rwa [QuotientGroup.eq, Subgroup.bot_subgroupOf, Subgroup.mem_bot, inv_mul_eq_one] at hgh
+
 /-- The coefficient of `Tr_Q^P(a)` at an element of `C_G(P)` is `|P : Q|` times that of `a`. -/
 theorem coeff_relTrace_of_mem_centralizer (a : conjInvariants R Q) {c : G}
     (hc : c ∈ Subgroup.centralizer (P : Set G)) :
