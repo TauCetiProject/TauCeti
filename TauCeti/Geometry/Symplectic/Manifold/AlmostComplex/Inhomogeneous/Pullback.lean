@@ -39,7 +39,10 @@ intertwines `g^* J` with `J`. Read in a chart `φ` of `P` and the chart `g ≫ �
   laws `TauCeti.InhomogeneousTerm.pullback_refl` and `TauCeti.InhomogeneousTerm.pullback_trans`
   use `ofEq` to identify the pulled-back target structures.
 * `TauCeti.InhomogeneousTerm.chartTerm_pullback`,
-  `TauCeti.InhomogeneousTerm.chartTerm_pullback_trans`: transport in charts.
+  `TauCeti.InhomogeneousTerm.chartTerm_pullback_trans`: transport in charts;
+  `TauCeti.InhomogeneousTerm.chartTermExtend_pullback` and
+  `TauCeti.InhomogeneousTerm.chartTermExtend_pullback_trans` in the extended charts of domains
+  with boundary or corners.
 
 ## References
 
@@ -269,6 +272,46 @@ theorem chartTerm_pullback_trans {G : Type*} [NormedAddCommGroup G] [NormedSpace
     (ν.pullback g hnr).chartTerm φ (g.toHomeomorph.toOpenPartialHomeomorph.trans ψ) =
       ν.chartTerm φ ψ :=
   ν.chartTerm_pullback g hnr φ rfl rfl
+
+section Extend
+
+variable {HQ Q : Type*} [TopologicalSpace HQ] {IQ : ModelWithCorners ℝ ℂ HQ} [TopologicalSpace Q]
+  [ChartedSpace HQ Q] [IsManifold IQ ∞ Q] {jQ : ContMDiffAlmostComplexStructure IQ n Q}
+  {JQ : ContMDiffAlmostComplexStructureFamily I' N IQ Q n}
+
+/-- **Transport in extended charts.** Let `χ` be a chart of `M` and `ψ` a chart of `N` with
+`χ = ψ ∘ g` and `χ⁻¹ = g⁻¹ ∘ ψ⁻¹`, such as `g ≫ ψ`. Read in the extended chart of a chart `φ` of a
+domain `Q` modelled on `ℂ`, possibly with corners, and in `χ`, the pulled-back term `g^* ν` is `ν`
+read in `φ` and `ψ`. -/
+theorem chartTermExtend_pullback {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (νQ : InhomogeneousTerm jQ JQ) (φ : OpenPartialHomeomorph Q HQ)
+    {χ : OpenPartialHomeomorph M G} {ψ : OpenPartialHomeomorph N G} (hχ : ⇑χ = ψ ∘ g)
+    (hχs : ⇑χ.symm = g.symm ∘ ψ.symm) :
+    (νQ.pullback g hnr).chartTermExtend φ χ = νQ.chartTermExtend φ ψ := by
+  have hr : (r : ℕ∞ω) ≠ 0 := ENat.coe_ne_zero_of_add_one_le hnr
+  funext z v
+  set y := g.symm (ψ.symm v) with hy_def
+  have hy : g y = ψ.symm v := g.apply_symm_apply _
+  rw [chartTermExtend_apply, chartTermExtend_apply, hχs, Function.comp_apply, ← hy_def, hχ,
+    mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply, ← hy]
+  have h := DomainDependentHomSection.mfderiv_tangentHom_pullback_apply g νQ.val hnr
+    ((φ.extend IQ).symm z, y) (mfderivWithin 𝓘(ℝ, ℂ) IQ (φ.extend IQ).symm (Set.range IQ) z
+      (1 : ℂ))
+  rw [g.mfderiv_comp_diffeomorph hr, ContinuousLinearMap.comp_apply]
+  -- `h` is stated at the base point `((φ.extend IQ).symm z, y).2`, which is `y` by definition.
+  erw [h]
+
+/-- **Transport in extended charts.** Read in the extended chart of a chart `φ` of the domain and
+in the chart `g ≫ ψ` of `M`, the pulled-back term `g^* ν` is `ν` read in `φ` and `ψ`. -/
+@[simp]
+theorem chartTermExtend_pullback_trans {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (νQ : InhomogeneousTerm jQ JQ) (φ : OpenPartialHomeomorph Q HQ)
+    (ψ : OpenPartialHomeomorph N G) :
+    (νQ.pullback g hnr).chartTermExtend φ (g.toHomeomorph.toOpenPartialHomeomorph.trans ψ) =
+      νQ.chartTermExtend φ ψ :=
+  chartTermExtend_pullback g hnr νQ φ rfl rfl
+
+end Extend
 
 end InhomogeneousTerm
 
