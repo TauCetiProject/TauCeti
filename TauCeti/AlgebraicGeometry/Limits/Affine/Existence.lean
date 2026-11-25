@@ -126,8 +126,8 @@ private lemma isPullback_functor_map {U V : 𝒰.I₀} (h : U ⟶ V) :
       { pt := s.pt
         π :=
           { app j := pullback.lift (s.fst ≫ limit.π _ j ≫ pullback.fst _ _) s.snd (by
-              rw [Category.assoc, Category.assoc, pullback.condition, π_snd_assoc,
-                reassoc_of% s.condition, 𝒰.trans_map])
+              simp only [Category.assoc]
+              rw [pullback.condition, π_snd_assoc, reassoc_of% s.condition, 𝒰.trans_map])
             naturality j k f := by
               apply pullback.hom_ext
               · simp [← limit.w _ f]
@@ -142,16 +142,19 @@ private lemma isPullback_functor_map {U V : 𝒰.I₀} (h : U ⟶ V) :
   refine ⟨⟨functor_map_toCover D 𝒰 h⟩, ⟨PullbackCone.IsLimit.mk _ l ?_ hl_snd ?_⟩⟩
   · intro s
     refine limit.hom_ext fun j ↦ pullback.hom_ext ?_ ?_
-    · rw [Category.assoc, Category.assoc, functor_map_π_assoc, pullback.lift_fst,
-        Category.comp_id, hl_fst, Category.assoc]
-    · rw [Category.assoc, Category.assoc, Category.assoc, π_snd, functor_map_toCover,
-        ← Category.assoc, hl_snd]
+    · simp only [Category.assoc]
+      rw [functor_map_π_assoc, pullback.lift_fst, Category.comp_id, hl_fst]
+    · simp only [Category.assoc]
+      rw [π_snd, functor_map_toCover, reassoc_of% hl_snd]
       exact s.condition.symm
   · intro s m hm₁ hm₂
     refine limit.hom_ext fun j ↦ pullback.hom_ext ?_ ?_
-    · rw [Category.assoc, Category.assoc, hl_fst, ← hm₁,
-        Category.assoc, functor_map_π_assoc, pullback.lift_fst, Category.comp_id]
-    · rw [Category.assoc, Category.assoc, π_snd, hm₂, hl_snd]
+    · simp only [Category.assoc]
+      rw [hl_fst, ← hm₁]
+      simp only [Category.assoc]
+      rw [functor_map_π_assoc, pullback.lift_fst, Category.comp_id]
+    · simp only [Category.assoc]
+      rw [π_snd, hm₂, hl_snd]
 
 /-- (Implementation) The relative gluing datum of the affine limits `lim_j Dⱼ ×_{Dᵢ} 𝒰ᵤ`. -/
 private noncomputable abbrev gluingData : 𝒰.RelativeGluingData where
@@ -219,9 +222,11 @@ private lemma hom_ext {W : Scheme.{u}} {a b : W ⟶ (gluingData D 𝒰).glued}
     rw [Category.assoc, ← hab, ← pullback.condition]
   have hc : hP.lift _ _ wa = hP.lift _ _ wb := by
     refine limit.hom_ext fun j ↦ pullback.hom_ext ?_ ?_
-    · rw [Category.assoc, Category.assoc, ← ι_π, hP.lift_snd_assoc, hP.lift_snd_assoc,
-        Category.assoc, Category.assoc, h]
-    · rw [Category.assoc, Category.assoc, π_snd, hP.lift_fst, hP.lift_fst]
+    · simp only [Category.assoc]
+      rw [← ι_π, hP.lift_snd_assoc, hP.lift_snd_assoc]
+      simp only [Category.assoc, h]
+    · simp only [Category.assoc]
+      rw [π_snd, hP.lift_fst, hP.lift_fst]
   exact (hP.lift_snd _ _ wa).symm.trans ((congrArg (· ≫ _) hc).trans (hP.lift_snd _ _ wb))
 
 /-- (Implementation) Over a member of the cover, a cone over the members of `D` over `i` lifts
@@ -253,8 +258,7 @@ private lemma liftAux_comp_eq (s : Cone (Over.forget i ⋙ D)) {U V : 𝒰.I₀}
     x ≫ liftAux D 𝒰 s U ≫ colimit.ι (functor D 𝒰) U =
       y ≫ liftAux D 𝒰 s V ≫ colimit.ι (functor D 𝒰) V :=
   hom_ext D 𝒰 fun j ↦ by
-    rw [Category.assoc, Category.assoc, liftAux_π, Category.assoc, Category.assoc, liftAux_π,
-      reassoc_of% hxy]
+    simp only [Category.assoc, liftAux_π, reassoc_of% hxy]
 
 /-- (Implementation) The lift of a cone over the members of `D` over `i` to the glued scheme,
 glued from the lifts over the preimages of the members of the cover. -/
