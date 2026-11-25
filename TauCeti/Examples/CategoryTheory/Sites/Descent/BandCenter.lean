@@ -14,9 +14,8 @@ public import TauCeti.CategoryTheory.Sites.Descent.BandCenter
 # Checks for the evaluation of intrinsic central sections
 
 On the point site `Discrete PUnit`, the constant pseudofunctor `B(G)` has as its only fibre the
-one-object groupoid of a group `G`. The evaluation of an intrinsic central section of `B(G)` is an
-element of `G` commuting with every element, by naturality of the central component
-(`IntrinsicBandSections.evaluation_comm`).
+one-object groupoid of a group `G`. The evaluation of an intrinsic central section of `B(G)` is a
+central element of `G` (`IntrinsicBandSections.evaluation_comm`).
 
 For `G = S₃` the transposition `(0 1)` does not commute with `(1 2)`, so it is not the evaluation
 of any central section, and since the centre of `S₃` is trivial, `B(S₃)` has only the identity
@@ -24,7 +23,7 @@ section: evaluation onto all six automorphisms fails without abelian inertia.
 
 For a commutative group `G` every element `g` gives a central section acting by `g`
 (`centralSection`), and these are all the sections: for `G = C₃` there are exactly three, and the
-section of the generator evaluates to the nonidentity automorphism `1`.
+section of the generator evaluates to the nonidentity automorphism `Multiplicative.ofAdd 1`.
 -/
 
 @[expose] public section
@@ -97,9 +96,11 @@ def centerUnit {G : Type} [CommGroup G] (g : G) : (CatCenter (SingleObj G))ˣ :=
       simp only [Functor.id_map, asIso_hom, SingleObj.comp_as_mul]
       exact mul_comm _ _
 
-/-- The component of `centerUnit g` is `g`. -/
-theorem centerUnit_app {G : Type} [CommGroup G] (g : G) (x : SingleObj G) :
-    (centerUnit g).val.app x = g :=
+/-- The component of `centerUnit g` at an object of `B(G)` is `g`. -/
+@[simp]
+theorem toElem_centerUnit_app {G : Type} [CommGroup G] (g : G) {V : Discrete PUnit.{1}}
+    (x : (pointBG G).obj (.mk (op V))) :
+    toElem ((centerUnit g).val.app x) = g :=
   rfl
 
 /-- For a commutative group `G`, the central section of `B(G)` over the point acting by `g`
@@ -108,13 +109,17 @@ def centralSection {G : Type} [CommGroup G] (g : G) : IntrinsicBandSections (poi
   IntrinsicBandSections.ofCompatible (fun _ _ ↦ centerUnit g)
     ((isPullbackCompatible_iff _).2 fun _ _ _ _ _ ↦ rfl)
 
+/-- The components of `centralSection g` are `centerUnit g`. -/
+@[simp]
+theorem val_centralSection {G : Type} [CommGroup G] (g : G) (V : Discrete PUnit.{1})
+    (a : V ⟶ pt) : (centralSection g).val V a = centerUnit g :=
+  IntrinsicBandSections.val_ofCompatible _ _ V a
+
 /-- Evaluating `centralSection g` gives `g`. -/
 theorem toElem_evaluation_centralSection {G : Type} [CommGroup G] (g : G)
     {V : Discrete PUnit.{1}} (a : V ⟶ pt) (x : (pointBG G).obj (.mk (op V))) :
     toElem (IntrinsicBandSections.evaluation a x (centralSection g)).asIso.hom = g := by
-  erw [IntrinsicBandSections.evaluation_asIso_hom, centralSection,
-    IntrinsicBandSections.val_ofCompatible]
-  rfl
+  simp
 
 /-- For a commutative group `G`, every central section of `B(G)` over the point is
 `centralSection g` for the evaluation `g` of the section at the object over the point. -/
@@ -125,9 +130,8 @@ theorem centralSection_toElem_evaluation {G : Type} [CommGroup G]
   refine IntrinsicBandSections.ext fun V a x ↦ ?_
   obtain rfl : V = pt := Subsingleton.elim _ _
   obtain rfl : a = 𝟙 pt := Subsingleton.elim _ _
-  erw [centralSection, IntrinsicBandSections.val_ofCompatible, centerUnit_app,
-    IntrinsicBandSections.evaluation_asIso_hom]
-  rfl
+  obtain rfl : x = ptObj G := Subsingleton.elim (α := SingleObj G) _ _
+  simp
 
 /-- For a commutative group `G`, the central sections of `B(G)` over the point are the elements
 of `G`. -/
@@ -141,11 +145,10 @@ def centralSectionEquiv (G : Type) [CommGroup G] : G ≃ IntrinsicBandSections (
 /-- **The `B(C₃)` Check, count.** `B(C₃)` has exactly three central sections over the point. -/
 theorem natCard_intrinsicBandSections_C₃ :
     Nat.card (IntrinsicBandSections (pointBG (Multiplicative (ZMod 3))) pt) = 3 := by
-  rw [← Nat.card_congr (centralSectionEquiv _), Nat.card_eq_fintype_card]
-  rfl
+  rw [← Nat.card_congr (centralSectionEquiv _), Nat.card_congr Multiplicative.toAdd, Nat.card_zmod]
 
 /-- **The `B(C₃)` Check, generator.** The evaluation of the central section of the generator of
-`C₃` is the nonidentity automorphism `1` of the object. -/
+`C₃` is the nonidentity automorphism `Multiplicative.ofAdd 1` of the object. -/
 example :
     toElem (IntrinsicBandSections.evaluation (𝟙 pt)
       (ptObj (Multiplicative (ZMod 3)))

@@ -34,8 +34,8 @@ section by composition with `f`; it is a group homomorphism `ZF(U) →* ZF(V)`, 
 Evaluating a section at `a : V ⟶ U` and an object `x` over `V` gives a group homomorphism
 `ev_(a, x) : ZF(U) →* Aut x`. Conjugation by an isomorphism `x ≅ y` carries `ev_(a, x)` to
 `ev_(a, y)`, and the pullback functor `F(g)` carries it to `ev_(g ≫ a, F(g) x)`. Sections are
-determined by their evaluations. The automorphisms in the image are central: they commute with
-every endomorphism of `x`.
+determined by their evaluations. Evaluation is natural in `x`, so the automorphisms in the image
+are central: they commute with every endomorphism of `x`.
 
 ## Main definitions
 
@@ -63,6 +63,7 @@ every endomorphism of `x`.
 * `IntrinsicBandSections.mapAut_evaluation`: `F(g)` carries evaluation at `(a, x)` to evaluation
   at `(g ≫ a, F(g) x)`.
 * `IntrinsicBandSections.ext_evaluation`: sections with the same evaluations are equal.
+* `IntrinsicBandSections.evaluation_naturality`: morphisms `x ⟶ y` intertwine the evaluations.
 * `IntrinsicBandSections.evaluation_comm`: evaluations commute with every endomorphism of `x`.
 
 ## References
@@ -243,6 +244,22 @@ theorem ext_evaluation {s t : IntrinsicBandSections F U}
     s = t :=
   ext fun V a x ↦ by simpa using congrArg (fun g : Aut x ↦ g.asIso.hom) (h V a x)
 
+/-- **Naturality of evaluation.** Every morphism `h : x ⟶ y` over `V` intertwines the
+evaluations at `x` and at `y`. -/
+@[reassoc]
+theorem evaluation_naturality {V : C} (a : V ⟶ U) {x y : F.obj (.mk (op V))} (h : x ⟶ y)
+    (s : IntrinsicBandSections F U) :
+    h ≫ (evaluation a y s).asIso.hom = (evaluation a x s).asIso.hom ≫ h := by
+  simpa using CatCenter.naturality (s.val V a).val h
+
+/-- **Evaluations are central.** The evaluated automorphism commutes with every endomorphism of
+`x`. -/
+@[reassoc]
+theorem evaluation_comm {V : C} (a : V ⟶ U) (x : F.obj (.mk (op V)))
+    (s : IntrinsicBandSections F U) (h : x ⟶ x) :
+    h ≫ (evaluation a x s).asIso.hom = (evaluation a x s).asIso.hom ≫ h :=
+  evaluation_naturality a h s
+
 /-- **Transport along an isomorphism.** Conjugation by `e : x ≅ y` carries the evaluation at `x`
 to the evaluation at `y`. -/
 @[simp]
@@ -250,7 +267,7 @@ theorem autMulEquivOfIso_evaluation {V : C} (a : V ⟶ U) {x y : F.obj (.mk (op 
     (s : IntrinsicBandSections F U) :
     Aut.autMulEquivOfIso e (evaluation a x s) = evaluation a y s := by
   ext
-  simp [← CatCenter.naturality]
+  simp [-evaluation_asIso_hom, ← evaluation_naturality]
 
 /-- **Compatibility with pullback.** The pullback functor `F(g)` carries the evaluation at
 `(a, x)` to the evaluation at `(g ≫ a, F(g) x)`. -/
@@ -269,13 +286,6 @@ theorem evaluation_restrict {V W : C} (f : V ⟶ U) (b : W ⟶ V) (x : F.obj (.m
     evaluation b x (restrict f s) = evaluation (b ≫ f) x s := by
   ext
   simp
-
-/-- **Evaluations are central.** The evaluated automorphism commutes with every endomorphism of
-`x`, by naturality of the central component. -/
-theorem evaluation_comm {V : C} (a : V ⟶ U) (x : F.obj (.mk (op V)))
-    (s : IntrinsicBandSections F U) (h : x ⟶ x) :
-    h ≫ (evaluation a x s).asIso.hom = (evaluation a x s).asIso.hom ≫ h := by
-  simpa using CatCenter.naturality (s.val V a).val h
 
 end IntrinsicBandSections
 
