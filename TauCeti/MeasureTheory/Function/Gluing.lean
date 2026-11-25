@@ -25,7 +25,7 @@ of a set holds almost everywhere on that set, even if the cover is uncountable: 
 Pieces that are continuous up to the boundary are determined by their almost-everywhere values:
 for a measure charging every nonempty open set, two functions continuous on `closure U ∩ V`, for
 open `U` and `V`, which agree almost everywhere on `U ∩ V` agree on `closure U ∩ V`
-(`TauCeti.eqOn_closure_inter_of_ae_eq`). Consequently bounded Hölder functions on the balls of a
+(`IsOpen.eqOn_closure_inter_of_ae_eq`). Consequently bounded Hölder functions on the balls of a
 cover of a compact closure `closure U`, each agreeing almost everywhere on `U` with one function
 `F`, glue along a finite subcover to a single bounded Hölder function on `closure U`. Its constant
 depends only on `U`, the radii and weights of the cover and the exponent, so it is uniform over all
@@ -39,7 +39,7 @@ interior and up to the boundary, into global ones.
   function.
 * `TauCeti.ae_restrict_of_subset_iUnion_isOpen`: almost-everywhere statements on the members of an
   open cover hold almost everywhere on the covered set.
-* `TauCeti.exists_holderOnWith_closure_of_forall_ae_eq`: Hölder functions on the balls of a cover
+* `IsOpen.exists_holderOnWith_closure_of_forall_ae_eq`: Hölder functions on the balls of a cover
   of a compact closure `closure U`, each agreeing almost everywhere on `U` with one function `F`,
   glue to a single Hölder function on `closure U`, with a constant uniform over all such pieces.
   This is how local regularity estimates up to the boundary assemble into a global one.
@@ -93,7 +93,7 @@ function `g x` is `β`-Hölder with constant `κ x * B` and bounded by `κ x * B
 Then the pieces agree with each other where their balls overlap, and glue to a function `h` on
 `closure U` which is `β`-Hölder with constant `A * B`, bounded by `A * B`, agrees with every piece
 on its ball and agrees with `F` almost everywhere on `U`. -/
-theorem exists_holderOnWith_closure_of_forall_ae_eq [PseudoMetricSpace X]
+theorem _root_.IsOpen.exists_holderOnWith_closure_of_forall_ae_eq [PseudoMetricSpace X]
     [OpensMeasurableSpace X] [μ.IsOpenPosMeasure] {Y : Type*} [NormedAddCommGroup Y] {U : Set X}
     (hU : IsOpen U) (hc : IsCompact (closure U)) {β : ℝ≥0} (hβ : 0 < β) {ρ : X → ℝ}
     (hρ : ∀ x ∈ closure U, 0 < ρ x) (κ : X → ℝ≥0) :
@@ -121,7 +121,7 @@ theorem exists_holderOnWith_closure_of_forall_ae_eq [PseudoMetricSpace X]
       fun w hw => ⟨hw.2.2, hw.1⟩
     have hUy : U ∩ (ball x (ρ x) ∩ ball y (ρ y)) ⊆ U ∩ ball y (ρ y) := fun w hw => ⟨hw.1, hw.2.2⟩
     have hUx : U ∩ (ball x (ρ x) ∩ ball y (ρ y)) ⊆ U ∩ ball x (ρ x) := fun w hw => ⟨hw.1, hw.2.1⟩
-    refine eqOn_closure_inter_of_ae_eq (μ := μ) hU (isOpen_ball.inter isOpen_ball)
+    refine hU.eqOn_closure_inter_of_ae_eq (μ := μ) (isOpen_ball.inter isOpen_ball)
       (((hhol y hy.2).continuousOn hβ).mono hsy) (((hhol x hx).continuousOn hβ).mono hsx)
       (((hae y hy.2).filter_mono (ae_mono (Measure.restrict_mono hUy le_rfl))).trans
         ((hae x hx).filter_mono (ae_mono (Measure.restrict_mono hUx le_rfl))).symm)

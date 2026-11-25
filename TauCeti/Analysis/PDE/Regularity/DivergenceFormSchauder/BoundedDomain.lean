@@ -51,7 +51,7 @@ The estimate is assembled from local estimates by a covering argument.
 * **Gluing.** The pieces agree with `∇u` almost everywhere, so any two agree where both are
   defined, by continuity; compactness of `closure Ω` and a Lebesgue number of the cover by the
   balls of the pieces turn the local bounds into global ones
-  (`TauCeti.exists_holderOnWith_closure_of_forall_ae_eq`).
+  (`IsOpen.exists_holderOnWith_closure_of_forall_ae_eq`).
 
 ## Main declarations
 
@@ -199,6 +199,9 @@ private theorem exists_boundary_piece {E : Type*} [NormedAddCommGroup E] [InnerP
   obtain ⟨ha, hG⟩ :=
     memLp_energyIntegrand_and_memLp_of_holderOnWith (mu := volume) hα subset_closure hell hKa hKG
       hCG
+  have hsub : volume.restrict ((⊤ ⊓ Ω : Opens _) : Set (EuclideanSpace ℝ (Fin (n + 1)))) ≤
+      volume.restrict (Ω : Set _) :=
+    Measure.restrict_mono (SetLike.coe_subset_coe.mpr inf_le_right) le_rfl
   set U₀ : W1p volume (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2 :=
     (W1p0.extendByZeroL (Omega' := ⊤) le_top u).val
   obtain ⟨g, hg, hghol, hgb⟩ := H (W := ⊤) (u := U₀)
@@ -206,7 +209,9 @@ private theorem exists_boundary_piece {E : Type*} [NormedAddCommGroup E] [InnerP
     (hell.mono_set inter_subset_left) (hKa.mono inter_subset_left) hKaM
     (hKG.mono inter_subset_left) (hf.mono_measure (Measure.restrict_mono inter_subset_left le_rfl))
     (ae_restrict_of_ae (W1p0.value_extendByZeroL_ae_eq_zero_compl u))
-    (energyFormH1_restrictL_extendByZeroL_eq le_top ha hG (hf.mono_exponent hq) hu)
+    (energyFormH1_restrictL_extendByZeroL_eq le_top (ha.mono_measure hsub) (c := 0)
+      (by simp only [sub_zero]; exact hG.mono_measure hsub)
+      ((hf.mono_exponent hq).mono_measure hsub) hu)
   -- The data of the local estimate are bounded by those of `Ω`.
   have hQ : C * ((KG : ℝ) + (eLpNorm f q (volume.restrict ((Ω : Set _) ∩ ball x ρ))).toReal +
       ‖U₀‖) ≤
@@ -322,8 +327,8 @@ theorem exists_holderOnWith_gradient_closure_of_isBounded {E : Type*} [NormedAdd
           ‖g y‖ ≤ C * (KG + (eLpNorm f q (volume.restrict (Ω : Set _))).toReal + ‖u‖) := by
   choose! ρ hρ κ H using fun x (hx : x ∈ closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))) =>
     exists_piece hβ hβ1 hβα hq hβq hΩ hchart lam Lam M hx
-  obtain ⟨A, hA⟩ := exists_holderOnWith_closure_of_forall_ae_eq (μ := volume)
-    (Y := EuclideanSpace ℝ (Fin (n + 1))) Ω.isOpen hΩ.isCompact_closure hβ hρ κ
+  obtain ⟨A, hA⟩ := Ω.isOpen.exists_holderOnWith_closure_of_forall_ae_eq (μ := volume)
+    (Y := EuclideanSpace ℝ (Fin (n + 1))) hΩ.isCompact_closure hβ hρ κ
   refine ⟨A, A.coe_nonneg, fun {u a G f Ka KG} hell hKa hKaM hKG hf hu => ?_⟩
   have hQ : 0 ≤ (KG : ℝ) + (eLpNorm f q (volume.restrict (Ω : Set _))).toReal + ‖u‖ := by
     positivity
