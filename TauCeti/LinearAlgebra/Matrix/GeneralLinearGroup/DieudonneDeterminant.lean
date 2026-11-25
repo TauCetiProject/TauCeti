@@ -45,6 +45,8 @@ isomorphism `K₁(D) ≃* Dˣᵃᵇ`.
 * `TauCeti.AlgebraicK1.dieudonneDetEquiv`: the isomorphism `K₁(D) ≃* Dˣᵃᵇ`, sending the class of
   the `1 × 1` matrix `(d)` to the class of `d`.
 * `TauCeti.dieudonneDet`: the Dieudonné determinant `GLₙ(D) →* Dˣᵃᵇ`.
+* `TauCeti.dieudonneDetFintype`: the Dieudonné determinant `GL n D →* Dˣᵃᵇ` over an arbitrary
+  finite index type `n`, obtained by relabelling the indices by `Fin (Fintype.card n)`.
 
 ## Main results
 
@@ -58,6 +60,11 @@ isomorphism `K₁(D) ≃* Dˣᵃᵇ`.
   invertible diagonal matrix to the product of the classes of its entries.
 * `TauCeti.dieudonneDet_surjective`: `Δₙ` is surjective for `n ≥ 1`.
 * `TauCeti.ker_dieudonneDet`: `ker Δₙ = Eₙ(D)` for `n ≥ 2`.
+* `TauCeti.dieudonneDet_reindexGL`, `TauCeti.dieudonneDetFintype_eq`: relabelling the indices does
+  not change the determinant, so `dieudonneDetFintype` does not depend on the relabelling.
+* `TauCeti.dieudonneDetFintype_surjective`, `TauCeti.ker_dieudonneDetFintype`,
+  `TauCeti.dieudonneDetFintype_diagGL_mulSingle`, `TauCeti.dieudonneDetFintype_diagGL`: the same
+  surjectivity, kernel and diagonal values over an arbitrary finite index type.
 * `TauCeti.dieudonneDet_fin_two_of_ne_zero`, `TauCeti.dieudonneDet_fin_two_of_eq_zero`: the
   explicit formulas for `Δ₂`.
 
@@ -171,7 +178,8 @@ private theorem det₂_of_ne_zero' (g : GL (Fin 2) D) (hc : g 1 0 ≠ 0) :
     exact schur_ne_zero g ha (by rw [hst, ht, mul_zero, mul_zero])
   rw [hst, abClass_mul (neg_ne_zero.mpr hc) (mul_ne_zero (inv_ne_zero ha) ht),
     abClass_mul (inv_ne_zero ha) ht, abClass_inv ha]
-  rw [mul_left_comm, ← mul_assoc, ← mul_assoc, mul_inv_cancel_right]
+  -- In the abelian group `Dˣᵃᵇ` the factors `[a]` and `[a]⁻¹` cancel.
+  rw [mul_left_comm (abClass (g 0 0)), mul_inv_cancel_left]
 
 private theorem det₂_one : det₂ (1 : Matrix (Fin 2) (Fin 2) D) = 1 := by
   simp [det₂_of_ne_zero, abClass_one]
@@ -453,6 +461,78 @@ exactly when it is a product of elementary matrices. -/
 theorem dieudonneDet_eq_one_iff {n : ℕ} (hn : 2 ≤ n) {g : GL (Fin n) D} :
     dieudonneDet D n g = 1 ↔ g ∈ elementarySubgroup (Fin n) D := by
   rw [← MonoidHom.mem_ker, ker_dieudonneDet hn]
+
+/-- Relabelling the indices by a permutation does not change the Dieudonné determinant. -/
+@[simp]
+theorem dieudonneDet_reindexGL {n : ℕ} (σ : Equiv.Perm (Fin n)) (g : GL (Fin n) D) :
+    dieudonneDet D n (σ.reindexGL D g) = dieudonneDet D n g := by
+  -- Relabelling is conjugation by a permutation matrix, invisible in the abelian group `Dˣᵃᵇ`.
+  rw [← permutationGL_mul_mul_inv, map_mul, map_mul, map_inv, mul_inv_cancel_comm]
+
+/-! ## The Dieudonné determinant over an arbitrary finite index type -/
+
+section Fintype
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+variable (D n) in
+/-- The **Dieudonné determinant** `GL n D →* Dˣᵃᵇ` over an arbitrary finite index type `n`: the
+determinant `dieudonneDet` after relabelling the indices by `Fin (Fintype.card n)`. By
+`dieudonneDetFintype_eq` the value does not depend on the relabelling. -/
+def dieudonneDetFintype : GL n D →* Group.Abelianization Dˣ :=
+  (dieudonneDet D (Fintype.card n)).comp ((Fintype.equivFin n).reindexGL D).toMonoidHom
+
+/-- The Dieudonné determinant over `n` is `dieudonneDet` after relabelling the indices by any
+equivalence `n ≃ Fin k`. -/
+theorem dieudonneDetFintype_eq {k : ℕ} (e : n ≃ Fin k) (g : GL n D) :
+    dieudonneDetFintype D n g = dieudonneDet D k (e.reindexGL D g) := by
+  obtain rfl : Fintype.card n = k := by simpa using Fintype.card_congr e
+  -- The two relabellings differ by a permutation of `Fin (Fintype.card n)`.
+  have h : (Fintype.equivFin n).reindexGL D g =
+      (e.symm.trans (Fintype.equivFin n)).reindexGL D (e.reindexGL D g) := by
+    rw [← Equiv.reindexGL_trans_reindexGL, MulEquiv.trans_apply,
+      Equiv.reindexGL_symm_apply_reindexGL]
+  rw [dieudonneDetFintype, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, h,
+    dieudonneDet_reindexGL]
+
+/-- Over `Fin k`, the Dieudonné determinant `dieudonneDetFintype` is `dieudonneDet`. -/
+@[simp]
+theorem dieudonneDetFintype_fin {k : ℕ} (g : GL (Fin k) D) :
+    dieudonneDetFintype D (Fin k) g = dieudonneDet D k g := by
+  rw [dieudonneDetFintype_eq (Equiv.refl _), Equiv.reindexGL_refl, MulEquiv.refl_apply]
+
+/-- The Dieudonné determinant of an invertible diagonal matrix indexed by `n` is the product of
+the classes of its diagonal entries. -/
+@[simp]
+theorem dieudonneDetFintype_diagGL (t : n → Dˣ) :
+    dieudonneDetFintype D n (diagGL t) = ∏ i, Group.Abelianization.of (t i) := by
+  have h : (Fintype.equivFin n).reindexGL D (diagGL t) =
+      diagGL (t ∘ (Fintype.equivFin n).symm) := by
+    ext a b
+    simp [Matrix.diagonal_apply, (Fintype.equivFin n).symm.injective.eq_iff]
+  rw [dieudonneDetFintype_eq (Fintype.equivFin n), h, dieudonneDet_diagGL]
+  exact (Fintype.equivFin n).symm.prod_comp fun i ↦ Group.Abelianization.of (t i)
+
+/-- **The Dieudonné determinant of `diag(1, …, u, …, 1)` over `n`.** The diagonal matrix with `u`
+in position `i` and `1` elsewhere has Dieudonné determinant the class of `u`. -/
+theorem dieudonneDetFintype_diagGL_mulSingle (i : n) (u : Dˣ) :
+    dieudonneDetFintype D n (diagGL (Pi.mulSingle i u)) = Group.Abelianization.of u := by
+  simp [Pi.mulSingle_apply, apply_ite]
+
+/-- The Dieudonné determinant `GL n D →* Dˣᵃᵇ` is surjective when `n` is nonempty. -/
+theorem dieudonneDetFintype_surjective (hn : 1 ≤ Fintype.card n) :
+    Function.Surjective (dieudonneDetFintype D n) :=
+  (dieudonneDet_surjective hn).comp ((Fintype.equivFin n).reindexGL D).surjective
+
+/-- **Dieudonné.** When `n` has at least two elements, the kernel of the Dieudonné determinant
+`GL n D →* Dˣᵃᵇ` is the elementary subgroup. -/
+theorem ker_dieudonneDetFintype (hn : 2 ≤ Fintype.card n) :
+    (dieudonneDetFintype D n).ker = elementarySubgroup n D := by
+  ext g
+  rw [MonoidHom.mem_ker, dieudonneDetFintype_eq (Fintype.equivFin n), dieudonneDet_eq_one_iff hn,
+    Equiv.reindexGL_mem_elementarySubgroup_iff]
+
+end Fintype
 
 private theorem dieudonneDet_fin_two (g : GL (Fin 2) D) :
     dieudonneDet D 2 g = det₂ (g : Matrix (Fin 2) (Fin 2) D) :=

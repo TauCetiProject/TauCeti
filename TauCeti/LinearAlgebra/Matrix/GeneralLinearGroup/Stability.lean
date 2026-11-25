@@ -108,6 +108,11 @@ theorem ofUnits_surjective {R : Type*} [Ring R] (hR : HasStableRangeLE R 1) :
   apply uniqueRingEquiv.injective
   simp only [GeneralLinearGroup.coe_scalar, Units.coe_map, scalar_apply, uniqueRingEquiv_apply,
     diagonal_apply_eq]
+  -- `uniqueRingEquiv (m := Fin 1)` carries the `Fintype` instance derived from `Unique (Fin 1)`,
+  -- not that of `Fin 1`, so the goal's `toMonoidHom` coercion is not in `simp` normal form
+  -- (Mathlib has no `RingEquiv.coe_toMonoidHom`, and coercing to `→*` fails to synthesize
+  -- `MonoidHomClass` across the two instances). The two instances agree definitionally, so
+  -- `uniqueRingEquiv_apply` closes the goal up to that instance.
   exact uniqueRingEquiv_apply _
 
 /-- When `R` has Bass stable range at most `s` and `s ≤ n` (including at the boundary `n = s` where
