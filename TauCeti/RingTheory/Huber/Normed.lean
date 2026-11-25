@@ -440,7 +440,7 @@ a ring of definition containing the set (`PairOfDefinition.adjoin`). -/
 theorem exists_subring_ball_subset_forall_norm_le (K : Type*) [NontriviallyNormedField K]
     {A : Type*} [SeminormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A] {T : Finset A}
     (hT : ∀ t ∈ T, IsPowerBounded t) :
-    ∃ (A₀ : Subring A) (r N : ℝ), 0 < r ∧ 0 ≤ N ∧ (T : Set A) ⊆ A₀ ∧
+    ∃ (A₀ : Subring A) (r N : ℝ), 0 < r ∧ (T : Set A) ⊆ A₀ ∧
       Metric.ball (0 : A) r ⊆ A₀ ∧ ∀ x ∈ A₀, ‖x‖ ≤ N := by
   have := IsTateRing.of_normedAlgebra K A
   obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
@@ -448,8 +448,6 @@ theorem exists_subring_ball_subset_forall_norm_le (K : Type*) [NontriviallyNorme
   let Q := P.adjoin T hT
   obtain ⟨N, hN⟩ := hϖ.isBounded_iff_forall_norm_le.mp Q.isBounded_ringOfDefinition
   obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.mp Q.isOpen_ringOfDefinition 0 (zero_mem _)
-  exact ⟨Q.ringOfDefinition, r, max N 0, hr, le_max_right _ _,
-    fun t ht ↦ P.mem_adjoin_of_mem T hT ht, hball,
-    fun x hx ↦ (hN x hx).trans (le_max_left _ _)⟩
+  exact ⟨Q.ringOfDefinition, r, N, hr, fun t ht ↦ P.mem_adjoin_of_mem T hT ht, hball, hN⟩
 
 end TauCeti.Huber

@@ -59,12 +59,13 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
 norm, where `C` bounds `φ`. On polynomials this is `norm_prod_pow_sub_prod_pow_le` applied to each
 monomial; it extends by density. -/
 private theorem norm_restrictedLift_sub_restrictedLift_le (φ : A →ₐ[K] B) {C : ℝ} (hC : 0 ≤ C)
-    (hφ : ∀ a, ‖φ a‖ ≤ C * ‖a‖) {B₀ : Subring B} {N δ : ℝ} (hN0 : 0 ≤ N)
-    (hN : ∀ x ∈ B₀, ‖x‖ ≤ N) (hδ : 0 ≤ δ) {b y : Fin k → B} (hb : ∀ i, Huber.IsPowerBounded (b i))
+    (hφ : ∀ a, ‖φ a‖ ≤ C * ‖a‖) {B₀ : Subring B} {N δ : ℝ} (hN : ∀ x ∈ B₀, ‖x‖ ≤ N)
+    (hδ : 0 ≤ δ) {b y : Fin k → B} (hb : ∀ i, Huber.IsPowerBounded (b i))
     (hy : ∀ i, Huber.IsPowerBounded (y i)) (hbB₀ : ∀ i, b i ∈ B₀) (hyB₀ : ∀ i, y i ∈ B₀)
     (hyb : ∀ i, ‖y i - b i‖ ≤ δ) (h : IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1)) :
     ‖restrictedLift hA hB φ hy h - restrictedLift hA hB φ hb h‖ ≤ C * N * δ * ‖h‖ := by
   have := (hA.isRestricted_subring (τ := Fin k)).isNoetherianRing
+  have hN0 : 0 ≤ N := (norm_nonneg _).trans (hN 0 B₀.zero_mem)
   refine (denseRange_polynomialToRestricted (c := fun _ : Fin k ↦ (1 : ℝ))).induction_on h
     (isClosed_le ((hB.continuous_algHom _).sub (hB.continuous_algHom _)).norm (by fun_prop))
     fun p ↦ ?_
@@ -78,7 +79,8 @@ private theorem norm_restrictedLift_sub_restrictedLift_le (φ : A →ₐ[K] B) {
   calc ‖φ (p.coeff d) * _‖ ≤ ‖φ (p.coeff d)‖ * ‖_‖ := norm_mul_le _ _
     _ ≤ C * ‖polynomialToRestricted (fun _ ↦ 1) p‖ * (N * δ) :=
         mul_le_mul ((hφ _).trans (mul_le_mul_of_nonneg_left hcoeff hC))
-          (norm_prod_pow_sub_prod_pow_le hN0 hN hδ hyB₀ hbB₀ hyb d.support d) (norm_nonneg _)
+          (norm_prod_pow_sub_prod_pow_le hN hδ d.support (fun i _ ↦ hyB₀ i) (fun i _ ↦ hbB₀ i)
+            (fun i _ ↦ hyb i) d) (norm_nonneg _)
           (by positivity)
     _ = _ := by ring
 
@@ -104,9 +106,10 @@ theorem exists_pos_forall_surjective_restrictedLift (φ : A →ₐ[K] B) {b : Fi
   obtain ⟨R, hR⟩ := (L (restrictedLift hA hB φ hb)).exists_nonlinearRightInverse_of_surjective
     (LinearMap.range_eq_top.mpr hsurj)
   have hT : ∀ t ∈ Finset.univ.image b, Huber.IsPowerBounded t := by simpa using hb
-  obtain ⟨B₀, r, N, hr, hN0, hT₀, hball, hN⟩ :=
+  obtain ⟨B₀, r, N, hr, hT₀, hball, hN⟩ :=
     Huber.exists_subring_ball_subset_forall_norm_le K hT
   have hbB₀ (i : Fin k) : b i ∈ B₀ := hT₀ (by simp)
+  have hN0 : 0 ≤ N := (norm_nonneg _).trans (hN 0 B₀.zero_mem)
   have hφN : 0 ≤ ‖φL‖ * N := mul_nonneg (norm_nonneg _) hN0
   have hR0 : (0 : ℝ) < R.nnNorm := NNReal.coe_pos.mpr hR
   refine ⟨min r ((R.nnNorm : ℝ)⁻¹ / (‖φL‖ * N + 1)), lt_min hr (by positivity),
@@ -119,7 +122,7 @@ theorem exists_pos_forall_surjective_restrictedLift (φ : A →ₐ[K] B) {b : Fi
   have hlt : ‖L (restrictedLift hA hB φ hy) - L (restrictedLift hA hB φ hb)‖ <
       (R.nnNorm : ℝ)⁻¹ := by
     refine ((L _ - L _).opNorm_le_bound (by positivity) fun h ↦
-      norm_restrictedLift_sub_restrictedLift_le hA hB φ (norm_nonneg φL) φL.le_opNorm hN0 hN
+      norm_restrictedLift_sub_restrictedLift_le hA hB φ (norm_nonneg φL) φL.le_opNorm hN
         (by positivity) hb hy hbB₀ hyB₀ (fun i ↦ (hyb i).le) h).trans_lt ?_
     calc ‖φL‖ * N * δ ≤ ‖φL‖ * N * ((R.nnNorm : ℝ)⁻¹ / (‖φL‖ * N + 1)) :=
           mul_le_mul_of_nonneg_left (min_le_right _ _) hφN
