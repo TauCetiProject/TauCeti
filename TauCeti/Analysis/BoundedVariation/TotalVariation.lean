@@ -72,8 +72,8 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
 * `TauCeti.HasWeakFDerivOn.totalVariationOn_le_setLIntegral_enorm`: a weakly differentiable
   function has total variation at most the integral of the norm of its weak derivative, hence
   locally finite variation (`TauCeti.HasWeakFDerivOn.exists_totalVariationOn_ne_top`).
-* `TauCeti.HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm`: against an additive Haar
-  measure this is an equality, so a `W^{1,1}(Ω)` function has bounded variation on `Ω`, with
+* `TauCeti.HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm`: for any measure `μ` this is
+  an equality, so a `W^{1,1}(Ω)` function has bounded variation on `Ω`, with
   variation the `L¹` norm of its weak derivative
   (`TauCeti.HasWeakFDerivOn.totalVariationOn_lt_top_iff_integrableOn`).
 * `LocallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv`: for a locally Lipschitz

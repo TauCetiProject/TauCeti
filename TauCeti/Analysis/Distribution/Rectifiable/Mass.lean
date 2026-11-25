@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.Rectifiable.Basic
 import TauCeti.Analysis.Distribution.TestFunction.NormDuality
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
+-- Supplies the extended norm on the operator space `(V [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ`.
 import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
@@ -67,19 +68,44 @@ private theorem frameFunctional_apply (θ : V → ℝ) (τ : V → Fin k → V) 
     (ω : V [⋀^Fin k]→L[ℝ] ℝ) : frameFunctional θ τ x ω = θ x * ω (τ x) := by
   simp [frameFunctional]
 
+omit [MeasurableSpace V] [BorelSpace V] in
+private theorem frameFunctional_eq_formDualEquiv (θ : V → ℝ) (τ : V → Fin k → V) (x : V) :
+    frameFunctional θ τ x = formDualEquiv ℝ V k (frameDensity θ τ x) := by
+  ext ω
+  simp [frameFunctional, formVectorPairing_apply]
+
+omit [MeasurableSpace V] [BorelSpace V] in
+private theorem frameFunctional_eq_smul (θ : V → ℝ) (τ : V → Fin k → V) (x : V) :
+    frameFunctional θ τ x = θ x • formDualEquiv ℝ V k (ιMulti ℝ k (τ x)) := by
+  rw [frameFunctional_eq_formDualEquiv, frameDensity_apply, map_smul]
+
+/-- The frame functional is locally integrable on `Ω`: it is the frame density composed with the
+continuous linear map `exteriorPower.formVectorPairing.flip`. -/
+private theorem locallyIntegrableOn_frameFunctional {θ : V → ℝ} {τ : V → Fin k → V}
+    (hθ : LocallyIntegrableOn θ Ω μHE[k]) (hτ : Measurable τ)
+    (hτo : ∀ x, θ x ≠ 0 → Orthonormal ℝ (τ x)) :
+    LocallyIntegrableOn (frameFunctional θ τ) Ω μHE[k] := fun x hx ↦ by
+  obtain ⟨t, ht, hi⟩ := locallyIntegrableOn_frameDensity hθ hτ hτo x hx
+  refine ⟨t, ht, ?_⟩
+  unfold IntegrableOn
+  refine Integrable.mono' (β := (V [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ)
+    (hi.norm.const_mul √((Module.finrank ℝ V).choose k)) ?_ (ae_of_all _ fun y ↦ ?_)
+  · exact (formVectorPairing (E := V) (k := k)).flip.continuous.comp_aestronglyMeasurable hi.1
+  · rw [frameFunctional_eq_formDualEquiv]
+    exact norm_formDualEquiv_le _
+
 /-- The form `sign θ(x) ⟪τ₁(x) ∧ ⋯ ∧ τₖ(x), ·⟫`, which attains the norm of the frame
 functional. -/
 private def frameNormingForm (θ : V → ℝ) (τ : V → Fin k → V) (x : V) : V [⋀^Fin k]→L[ℝ] ℝ :=
-  (|θ x|⁻¹ * θ x) • TauCeti.alternatingFormEquiv V k (ιMulti ℝ k (τ x))
+  |θ x|⁻¹ • TauCeti.alternatingFormEquiv V k (frameDensity θ τ x)
 
 omit [MeasurableSpace V] [BorelSpace V] in
 private theorem norm_frameNormingForm_le {θ : V → ℝ} {τ : V → Fin k → V} {x : V}
     (hx : θ x ≠ 0 → Orthonormal ℝ (τ x)) : ‖frameNormingForm θ τ x‖ ≤ 1 := by
   by_cases hθ : θ x = 0
-  · simp [frameNormingForm, hθ]
-  rw [frameNormingForm, norm_smul, TauCeti.norm_alternatingFormEquiv_ιMulti,
-    (hx hθ).norm_ιMulti, norm_mul, norm_inv, Real.norm_eq_abs, abs_abs, Real.norm_eq_abs,
-    inv_mul_cancel₀ (abs_ne_zero.2 hθ), mul_one]
+  · simp [frameNormingForm, frameDensity_apply, hθ]
+  simp [frameNormingForm, frameDensity_apply, norm_smul, TauCeti.norm_alternatingFormEquiv_ιMulti,
+    (hx hθ).norm_ιMulti, hθ]
 
 omit [MeasurableSpace V] [BorelSpace V] in
 private theorem frameFunctional_frameNormingForm {θ : V → ℝ} {τ : V → Fin k → V} {x : V}
@@ -87,22 +113,22 @@ private theorem frameFunctional_frameNormingForm {θ : V → ℝ} {τ : V → Fi
     frameFunctional θ τ x (frameNormingForm θ τ x) = |θ x| := by
   by_cases hθ : θ x = 0
   · simp [frameFunctional_apply, hθ]
-  rw [frameFunctional_apply, frameNormingForm, ContinuousAlternatingMap.smul_apply,
-    TauCeti.alternatingFormEquiv_apply, real_inner_self_eq_norm_sq, (hx hθ).norm_ιMulti,
-    one_pow, smul_eq_mul, mul_one, ← mul_assoc, mul_comm (θ x), mul_assoc, ← sq, ← sq_abs,
-    sq, ← mul_assoc, inv_mul_cancel₀ (abs_ne_zero.2 hθ), one_mul]
+  simp only [frameFunctional_apply, frameNormingForm, frameDensity_apply, map_smul,
+    TauCeti.alternatingFormEquiv_apply, real_inner_self_eq_norm_sq, (hx hθ).norm_ιMulti, one_pow,
+    smul_eq_mul]
+  field_simp
+  exact (sq_abs _).symm
 
 omit [MeasurableSpace V] [BorelSpace V] in
 /-- At an orthonormal frame, the frame functional has norm `|θ(x)|`. -/
 private theorem norm_frameFunctional {θ : V → ℝ} {τ : V → Fin k → V} {x : V}
     (hx : θ x ≠ 0 → Orthonormal ℝ (τ x)) : ‖frameFunctional θ τ x‖ = |θ x| := by
-  refine le_antisymm (ContinuousLinearMap.opNorm_le_bound _ (abs_nonneg _) fun ω ↦ ?_) ?_
-  · rw [frameFunctional_apply]
-    by_cases hθ : θ x = 0
-    · simp [hθ]
-    rw [norm_mul, Real.norm_eq_abs]
-    gcongr
-    simpa [(hx hθ).1] using ω.le_opNorm (τ x)
+  by_cases hθ : θ x = 0
+  · simp [frameFunctional_eq_smul, hθ]
+  refine le_antisymm ?_ ?_
+  · rw [frameFunctional_eq_smul]
+    refine (ContinuousLinearMap.opNorm_smul_le _ _).trans_eq ?_
+    rw [norm_formDualEquiv_ιMulti, (hx hθ).norm_ιMulti, mul_one, Real.norm_eq_abs]
   · calc |θ x| = frameFunctional θ τ x (frameNormingForm θ τ x) :=
           (frameFunctional_frameNormingForm hx).symm
       _ ≤ ‖frameFunctional θ τ x (frameNormingForm θ τ x)‖ := Real.le_norm_self _
@@ -125,37 +151,17 @@ theorem localMass_frameCurrent {θ : V → ℝ} {τ : V → Fin k → V}
       (localMass_frameCurrent_le (n := n) (Ω := Ω) hτo _)
     exact enorm_le_localMass (subset_inter hφU φ.tsupport_subset) hφ
   set W := U ∩ (Ω : Set V)
-  have hθW : LocallyIntegrableOn θ W μHE[k] := hθ.mono_set inter_subset_right
-  have hθm : AEMeasurable θ (μHE[k].restrict W) := hθW.aestronglyMeasurable.aemeasurable
-  have hform : Continuous fun x : Fin k → V ↦ TauCeti.alternatingFormEquiv V k (ιMulti ℝ k x) :=
-    LinearMap.continuous_of_finiteDimensional (TauCeti.alternatingFormEquiv V k).toLinearMap |>.comp
-      (exteriorPower.ιMulti ℝ k (M := V)).toMultilinearMap.continuous_of_finiteDimensional
+  have hθm : AEMeasurable θ (μHE[k].restrict W) :=
+    (hθ.mono_set inter_subset_right).aestronglyMeasurable.aemeasurable
   have hσm : AEStronglyMeasurable (frameNormingForm θ τ) (μHE[k].restrict W) :=
-    (((continuous_abs.measurable.comp_aemeasurable hθm).inv.mul hθm).aestronglyMeasurable).smul
-      (hform.comp_aestronglyMeasurable hτ.aestronglyMeasurable)
-  -- The frame functional is `θ` times a continuous function of the frame.
-  have hH : Continuous fun v : Fin k → V ↦
-      (formVectorPairing (E := V) (k := k)).flip (ιMulti ℝ k v) :=
-    (formVectorPairing (E := V) (k := k)).flip.continuous.comp
-      (exteriorPower.ιMulti ℝ k (M := V)).toMultilinearMap.continuous_of_finiteDimensional
-  have hGe : frameFunctional θ τ =
-      fun y ↦ θ y • (formVectorPairing (E := V) (k := k)).flip (ιMulti ℝ k (τ y)) := by
-    funext y
-    simp [frameFunctional, frameDensity_apply]
-  -- The integrability of the frame functional is stated through the duality lemma itself, whose
-  -- statement fixes the extended norm on the iterated operator space.
+    ((continuous_abs.measurable.comp_aemeasurable hθm).inv.aestronglyMeasurable).smul
+      ((TauCeti.alternatingFormEquiv V k).toContinuousLinearMap.continuous
+        |>.comp_aestronglyMeasurable ((locallyIntegrableOn_frameDensity hθ hτ hτo).mono_set
+          inter_subset_right).aestronglyMeasurable)
   obtain ⟨ψ, hψd, hψc, hψW, hψ1, hψ⟩ :=
-    LocallyIntegrableOn.exists_contDiff_lt_ofReal_integral_apply (G := frameFunctional θ τ)
-      (μ := μHE[k]) (W := W) (fun x hx ↦ by
-        obtain ⟨t, ht, hint⟩ := hθW x hx
-        refine ⟨t, ht, ?_⟩
-        unfold IntegrableOn at hint ⊢
-        refine Integrable.mono' (Integrable.norm hint) ?_ (ae_of_all _ fun y ↦ ?_)
-        · rw [hGe]
-          exact hint.aestronglyMeasurable.smul
-            (hH.comp_aestronglyMeasurable hτ.aestronglyMeasurable)
-        · rw [norm_frameFunctional (hτo y), Real.norm_eq_abs])
-      (hU.inter Ω.isOpen) hσm (fun x ↦ norm_frameNormingForm_le (hτo x))
+    ((locallyIntegrableOn_frameFunctional hθ hτ hτo).mono_set inter_subset_right
+      ).exists_contDiff_lt_ofReal_integral_apply (hU.inter Ω.isOpen) hσm
+      (fun x ↦ norm_frameNormingForm_le (hτo x))
       (ae_of_all _ fun x _ ↦ by
         rw [frameFunctional_frameNormingForm (hτo x), norm_frameFunctional (hτo x)])
       (hc.trans_eq (lintegral_congr fun x ↦ by
