@@ -11,8 +11,8 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.UnitaryLift
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
 import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.Normed.Module.QuadraticMap
-import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Even
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Four
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Neg
 import TauCeti.Topology.Algebra.Quaternion.Unitary
 
 /-!
@@ -25,10 +25,8 @@ matrices and the quotient topology of `Spinᶜ(Q)` (`OrthonormalBasis.continuous
 Continuity is what lets the lift change the structure group of a principal `U(2)`-bundle.
 
 The lift is the compact coordinate model `TauCeti.realSpinCUnitary` transported along the frame
-comparison `OrthonormalBasis.realSpinCGroupHom`. The comparison is continuous since on
-representatives it applies the Spin comparison, whose Clifford values are a linear function of the
-even part (`OrthonormalBasis.continuous_realSpinGroupEquiv`); the same holds for its inverse
-(`OrthonormalBasis.continuous_realSpinCGroupEquiv_symm`). The compact coordinate model descends
+comparison `OrthonormalBasis.realSpinCGroupHom`, which is continuous
+(`OrthonormalBasis.continuous_realSpinCGroupHom`). The compact coordinate model descends
 from the continuous homomorphism `(a, w) ↦ [(a, w⁻¹), w]` of `Sp(1) × U(1)` along the surjection
 `(a, w) ↦ w • a` onto `U(2)`, which is a quotient map since `Sp(1) × U(1)` is compact and `U(2)` is
 Hausdorff (`TauCeti.continuous_realSpinCUnitary`).
@@ -39,8 +37,9 @@ reading the orthogonal transformations commuting with `J₀` as unitary matrices
 lift `U(V, J₀) → Spinᶜ(Q)` of the inclusion into the rotations, whose determinant character is the
 complex determinant (`OrthonormalBasis.centralizerSpinCLift`). On `ℝ⁴` the standard basis carries
 it to the coordinate group `Spinᶜ(4)` of the positive-definite form `realCliffordForm 4 0`
-(`TauCeti.unitarySpinCLift`), the structure-group homomorphism of the canonical `Spinᶜ` structure
-of an almost complex rank-four bundle.
+(`TauCeti.unitarySpinCLift`), the structure-group homomorphism of the `Spinᶜ` structure that
+`TauCeti.OrthonormalFrameBundle.canonicalSpinCStructure` builds from an almost complex rank-four
+bundle and the chosen frame `e`.
 
 ## Main definitions
 
@@ -51,9 +50,6 @@ of an almost complex rank-four bundle.
 
 ## Main results
 
-* `OrthonormalBasis.continuous_realSpinCGroupHom` and
-  `OrthonormalBasis.continuous_realSpinCGroupEquiv_symm`: the `Spinᶜ` frame comparison and its
-  inverse are continuous.
 * `TauCeti.continuous_realSpinCUnitary`: the lift of the compact coordinate model is continuous.
 * `OrthonormalBasis.continuous_spinCUnitary`: the lift `U(2) → Spinᶜ(Q)` along a frame is
   continuous.
@@ -74,58 +70,9 @@ open scoped Quaternion
 
 open CliffordAlgebra Matrix TauCeti
 
-namespace OrthonormalBasis
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
-  {n : ℕ} (b : OrthonormalBasis (Fin n) ℝ V) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-
-/-- The Spin frame comparison is continuous: its Clifford values are the even frame comparison of
-the even parts. -/
-@[fun_prop]
-theorem continuous_realSpinGroupEquiv : Continuous (b.realSpinGroupEquiv hQ) :=
-  continuous_spinGroup_of_coe_eq
-    ((even Q).val.toLinearMap ∘ₗ (b.realEvenCliffordEquiv hQ).toLinearMap) fun s ↦ by
-      rw [← coe_spinGroupToEven_apply, spinGroupToEven_realSpinGroupEquiv]
-      simp only [LinearMap.coe_comp, Function.comp_apply, AlgEquiv.toLinearMap_apply,
-        AlgHom.toLinearMap_apply, Subalgebra.coe_val]
-
-/-- The inverse of the Spin frame comparison is continuous. -/
-@[fun_prop]
-theorem continuous_realSpinGroupEquiv_symm : Continuous (b.realSpinGroupEquiv hQ).symm :=
-  continuous_spinGroup_of_coe_eq
-    ((even (realCliffordForm n 0)).val.toLinearMap ∘ₗ
-      (b.realEvenCliffordEquiv hQ).symm.toLinearMap) fun s ↦ by
-      rw [← coe_spinGroupToEven_apply]
-      congr 1
-      rw [AlgEquiv.toLinearMap_apply, AlgEquiv.eq_symm_apply, ← spinGroupToEven_realSpinGroupEquiv,
-        MulEquiv.apply_symm_apply]
-
-variable (hpos : realCliffordForm n 0 ≠ 0) (hQ₀ : Q ≠ 0)
-
-/-- The `Spinᶜ` frame comparison is continuous for the quotient topologies. -/
-@[fun_prop]
-theorem continuous_realSpinCGroupHom : Continuous (b.realSpinCGroupHom hQ hpos hQ₀) := by
-  apply (QuotientGroup.isQuotientMap_mk (spinCKernel _ hpos)).continuous_iff.mpr
-  simp only [Function.comp_def, ← spinCGroup.mk_apply, realSpinCGroupHom_mk]
-  exact (spinCGroup.continuous_mk Q hQ₀).comp
-    (((b.continuous_realSpinGroupEquiv hQ).comp continuous_fst).prodMk continuous_snd)
-
-/-- The inverse of the `Spinᶜ` frame isomorphism is continuous for the quotient topologies. -/
-@[fun_prop]
-theorem continuous_realSpinCGroupEquiv_symm :
-    Continuous (b.realSpinCGroupEquiv hQ hpos hQ₀).symm := by
-  apply (QuotientGroup.isQuotientMap_mk (spinCKernel Q hQ₀)).continuous_iff.mpr
-  simp only [Function.comp_def, ← spinCGroup.mk_apply, realSpinCGroupEquiv_symm_mk]
-  exact (spinCGroup.continuous_mk _ hpos).comp
-    (((b.continuous_realSpinGroupEquiv_symm hQ).comp continuous_fst).prodMk continuous_snd)
-
-end OrthonormalBasis
-
 namespace TauCeti
 
-/-- **The lift `U(2) → Spinᶜ(4)` of the compact coordinate model is continuous.** It descends
-from the continuous map `(a, w) ↦ [(a, w⁻¹), w]` along the quotient map `(a, w) ↦ w • a` from the
-compact group `Sp(1) × U(1)` onto `U(2)`. -/
+/-- **The lift `U(2) → Spinᶜ(4)` of the compact coordinate model is continuous.** -/
 @[fun_prop]
 theorem continuous_realSpinCUnitary : Continuous realSpinCUnitary := by
   have hquot : Topology.IsQuotientMap Quaternion.unitaryProdCircleToUnitaryGroup :=

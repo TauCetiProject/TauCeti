@@ -31,8 +31,8 @@ open scoped Quaternion
 
 namespace TauCeti
 
-/-- The inverse of the compact `Spin(4)` equivalence with pairs of unit quaternions is continuous:
-its Clifford values are a linear function of the pair. -/
+/-- The inverse of the compact `Spin(4)` equivalence with pairs of unit quaternions is
+continuous. -/
 @[fun_prop]
 theorem continuous_realSpinFourEquivQuaternionUnitaryProd_symm :
     Continuous realSpinFourEquivQuaternionUnitaryProd.symm := by

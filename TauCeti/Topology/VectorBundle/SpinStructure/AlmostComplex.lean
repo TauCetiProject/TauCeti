@@ -16,10 +16,11 @@ Let `E → X` be a rank-four real vector bundle with fibre inner products and a 
 orthogonal complex structure `J`, such as the tangent bundle of an almost Hermitian four-manifold.
 Its unitary frames form a lift of the orthonormal frame bundle along the inclusion of the unitary
 group `U(ℝ⁴, J₀)` into `SO(4)` (`TauCeti.OrthonormalFrameBundle.unitaryFrameLift`), where `J₀` is
-an orthogonal complex structure on the model `ℝ⁴`. The canonical `Spinᶜ` structure of `J` is the
-extension of this lift along a continuous homomorphism `U(ℝ⁴, J₀) → Spinᶜ(4)` lifting the inclusion
-along the rotation homomorphism `Spinᶜ(4) → SO(4)`
-(`TauCeti.OrthonormalFrameBundle.canonicalSpinCStructure`).
+an orthogonal complex structure on the model `ℝ⁴`. The canonical `Spinᶜ` structure of `J`,
+`TauCeti.OrthonormalFrameBundle.canonicalSpinCStructure`, is the extension of this lift along a
+continuous homomorphism `U(ℝ⁴, J₀) → Spinᶜ(4)` lifting the inclusion along the rotation
+homomorphism `Spinᶜ(4) → SO(4)`. It is defined relative to the chosen model complex structure `J₀`
+and a chosen unitary frame `e` of `J₀`; independence of these choices is not established here.
 
 The homomorphism is `TauCeti.unitarySpinCLift`, built in
 `TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.UnitaryLift`. A unitary frame `e` of
@@ -31,14 +32,15 @@ standard basis compares `Spinᶜ(Q)` with the coordinate group `Spinᶜ(4)` of t
 form `realCliffordForm 4 0` (`OrthonormalBasis.realSpinCGroupEquiv`). The rotation of
 `unitarySpinCLift g` is `g` (`TauCeti.toSpecialOrthogonal_unitarySpinCLift_apply`), and its
 determinant character is the determinant of the unitary matrix of `g`, the complex determinant
-(`TauCeti.det_unitarySpinCLift`). So the determinant line of the canonical `Spinᶜ` structure is
-associated to the unitary frames by the complex determinant: it is the anticanonical line
-`Λ²_ℂ (E, J)`, whose identification as a line bundle is not made here.
+(`TauCeti.det_unitarySpinCLift`). So at the level of structure groups the determinant character
+of the canonical `Spinᶜ` structure is the complex determinant; the expected identification of its
+determinant line with the anticanonical line `Λ²_ℂ (E, J)` as line bundles is not made here.
 
 ## Main definitions
 
 * `TauCeti.OrthonormalFrameBundle.canonicalSpinCStructure`: the canonical `Spinᶜ` structure of a
-  continuous fibrewise orthogonal complex structure on a rank-four bundle.
+  continuous fibrewise orthogonal complex structure on a rank-four bundle, relative to a chosen
+  unitary frame `e` of the model complex structure `J₀`.
 
 ## Main results
 
@@ -77,7 +79,8 @@ variable {X : Type*} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [No
 continuous fibrewise orthogonal complex structure `J`, the `Spinᶜ` structure induced from the
 unitary frame bundle `unitaryFrameLift` by the lift `TauCeti.unitarySpinCLift` of
 `U(ℝ⁴, J₀) ⊆ SO(4)` to `Spinᶜ(4)`, for a unitary frame `e` of the model complex structure `J₀`. Its
-principal bundle is `P ×_σ Spinᶜ(4)` for the unitary frames `P`. -/
+principal bundle is `P ×_σ Spinᶜ(4)` for the unitary frames `P`. The construction depends on the
+chosen `J₀` and `e`; its independence of these choices is not proved here. -/
 abbrev canonicalSpinCStructure : SpinCStructure F E 4 :=
   (unitaryFrameLift hJ hJ₂ hJ₀ hF).extendSpinC (unitarySpinCLift hJ₀ e h₀ h₂)
     (continuous_unitarySpinCLift hJ₀ e h₀ h₂)
