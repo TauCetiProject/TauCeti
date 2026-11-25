@@ -74,5 +74,6 @@ theorem QuotientGroup.lintegral_eq_lintegral_automorphize {G : Type*} [Group G]
     {μ : Measure G} [μ.IsMulRightInvariant] [HasFundamentalDomain Γ.op G μ]
     (ν : Measure (G ⧸ Γ)) [QuotientMeasureEqMeasurePreimage μ ν] {f : G → ℝ≥0∞}
     (hf : Measurable f) : ∫⁻ g, f g ∂μ = ∫⁻ x, automorphize f x ∂ν := by
-  unfold automorphize
-  exact MulAction.lintegral_eq_lintegral_automorphize ν hf
+  -- `QuotientGroup.automorphize` is by definition `MulAction.automorphize` for the right action
+  -- of `Γ.op`, and `G ⧸ Γ` is by definition the orbit quotient of that action.
+  exact MulAction.lintegral_eq_lintegral_automorphize (G := Γ.op) ν hf
