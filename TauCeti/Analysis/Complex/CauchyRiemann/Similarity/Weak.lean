@@ -137,8 +137,8 @@ private theorem differentiableOn_one_add_cauchyTransform_apply {p : ℝ≥0} (hp
       (hgp.restrict _) (hgs.trans (closedBall_subset_closedBall (Real.le_coe_toNNReal r))) U)
   -- the weak Leibniz rule for `ξ + T g ξ`
   let B : (V →L[ℂ] V) →L[ℝ] V →L[ℝ] V := ContinuousLinearMap.restrictScalarsL ℂ V V ℝ ℝ
-  have hleib := hDξ.add (hDT.bilin_of_memLpLoc B hp hp1 le_rfl hTg.continuousOn.memLpLoc hDTp
-    hDξ hξp hDξp)
+  have hleib := hDξ.add (hDT.bilin_of_finrank_lt B (by simpa using hp) hp1 le_rfl
+    hTg.continuousOn.memLpLoc hDTp hDξ hξp hDξp)
   have hσ : (ξ + fun z ↦ B (cauchyTransform g z) (ξ z)) =
       fun z ↦ (1 + cauchyTransform g z) (ξ z) := by
     ext1 z

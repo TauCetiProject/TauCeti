@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Basic
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Pseudodifferential.CoordinateChange.Chart
+import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
@@ -48,8 +49,14 @@ depends on the cutoffs only through their values at the point.
   degree `m` and vanishes at the zero covector.
 * `TauCeti.classicalPrincipalSymbol_add`, `TauCeti.classicalPrincipalSymbol_smul`: the principal
   symbol is linear in the operator.
+* `TauCeti.classicalPrincipalSymbol_neg`, `TauCeti.classicalPrincipalSymbol_sub`: the principal
+  symbol commutes with negation and subtraction of operators.
 * `TauCeti.classicalPrincipalSymbol_eq_zero_of_mem_sub_one`: an operator of order `m - 1` has
   principal symbol `0` in order `m`.
+* `TauCeti.classicalPrincipalSymbol_eq_zero_iff`: conversely, the principal symbol of an operator
+  of order `m` vanishes exactly when it has order `m - 1`; so two operators with the same principal
+  symbol differ by an operator of order `m - 1`
+  (`TauCeti.sub_mem_classicalPseudodifferentialOperators_of_classicalPrincipalSymbol_eq`).
 * `TauCeti.classicalPrincipalSymbol_complexifyLinearMap`: the principal symbol of the
   complexification of a differential operator `D` of order at most `m` is `i ^ m` times its
   geometric principal symbol (`TauCeti.smoothPrincipalSymbol`) at nonzero covectors, the
@@ -443,6 +450,63 @@ theorem classicalPrincipalSymbol_eq_zero_of_mem_sub_one
         rw [ClassicalSymbol.toSymbol_inclusion, Symbol.coefficient_inclusion, ha],
     ClassicalSymbol.principal_inclusion_succ]
   simp
+
+/-- The principal symbol of `-P` is minus that of `P`. -/
+theorem classicalPrincipalSymbol_neg (x : M) (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m (-P) x ξ = -classicalPrincipalSymbol m P x ξ := by
+  by_cases hP : P ∈ classicalPseudodifferentialOperators m
+  · rw [← neg_one_smul ℂ P, classicalPrincipalSymbol_smul hP, neg_one_mul]
+  · rw [classicalPrincipalSymbol_of_notMem hP,
+      classicalPrincipalSymbol_of_notMem (by rwa [neg_mem_iff]), neg_zero]
+
+/-- The principal symbol of `P - Q` is the difference of those of `P` and `Q`. -/
+theorem classicalPrincipalSymbol_sub (hP : P ∈ classicalPseudodifferentialOperators m)
+    (hQ : Q ∈ classicalPseudodifferentialOperators m) (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m (P - Q) x ξ =
+      classicalPrincipalSymbol m P x ξ - classicalPrincipalSymbol m Q x ξ := by
+  rw [sub_eq_add_neg, classicalPrincipalSymbol_add hP (neg_mem hQ), classicalPrincipalSymbol_neg,
+    ← sub_eq_add_neg]
+
+/-- **The kernel of the principal symbol.** A classical pseudodifferential operator of order `m`
+has vanishing principal symbol exactly when it is a classical pseudodifferential operator of order
+`m - 1`. -/
+theorem classicalPrincipalSymbol_eq_zero_iff (hP : P ∈ classicalPseudodifferentialOperators m) :
+    (∀ x ξ, classicalPrincipalSymbol m P x ξ = 0) ↔
+      P ∈ classicalPseudodifferentialOperators (m - 1) := by
+  refine ⟨fun h ↦ ?_, fun h x ξ ↦ classicalPrincipalSymbol_eq_zero_of_mem_sub_one h x ξ⟩
+  have hP' := mem_classicalPseudodifferentialOperators_iff.1 hP
+  refine mem_classicalPseudodifferentialOperators_iff.2 ⟨hP'.1, fun e he φ ψ ↦ ?_⟩
+  -- In every chart, the principal symbol of the local symbol vanishes: on the chart target by
+  -- `coefficient_principal_eq_classicalPrincipalSymbol`, and off it because there the output
+  -- cutoff, and hence the symbol, vanishes.
+  obtain ⟨a, ha⟩ := hP'.2 e he φ ψ
+  have h0 : a.principal = 0 := by
+    refine HomogeneousSymbol.ext_of_ne_zero fun y η _ ↦ ?_
+    rw [HomogeneousSymbol.coefficient_zero, Pi.zero_apply]
+    by_cases hy : y ∈ e.target
+    · rw [← e.right_inv hy,
+        coefficient_principal_eq_classicalPrincipalSymbol hP he φ ψ ha (e.map_target hy), h]
+      simp
+    · obtain ⟨C, hC⟩ := a.toSymbol.exists_norm_coefficient_le {y} isCompact_singleton
+      refine a.coefficient_principal_eq_zero_of_forall (fun ζ ↦
+        eq_zero_of_forall_quantizeSchwartzValue_eq_zero
+          (a.toSymbol.continuous_coefficient_slice y) (hC y rfl) (fun u _ ↦ ?_) ζ) η
+      rw [ha, OpenPartialHomeomorph.complexChartCompression_apply,
+        image_eq_zero_of_notMem_tsupport fun h ↦ hy (φ.tsupport_subset h), zero_smul]
+  obtain ⟨b, rfl⟩ := (ClassicalSymbol.principal_eq_zero_iff_exists_inclusion a).1 h0
+  exact ⟨b, fun u x ↦ by
+    rw [← ha, ClassicalSymbol.toSymbol_inclusion, Symbol.coefficient_inclusion]⟩
+
+/-- Two classical pseudodifferential operators of order `m` with the same principal symbol differ
+by an operator of order `m - 1`. -/
+theorem sub_mem_classicalPseudodifferentialOperators_of_classicalPrincipalSymbol_eq
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    (hQ : Q ∈ classicalPseudodifferentialOperators m)
+    (h : ∀ x ξ, classicalPrincipalSymbol m P x ξ = classicalPrincipalSymbol m Q x ξ) :
+    P - Q ∈ classicalPseudodifferentialOperators (m - 1) :=
+  (classicalPrincipalSymbol_eq_zero_iff (sub_mem hP hQ)).1 fun x ξ ↦ by
+    rw [classicalPrincipalSymbol_sub hP hQ, h, sub_self]
 
 /-! ### Differential operators -/
 

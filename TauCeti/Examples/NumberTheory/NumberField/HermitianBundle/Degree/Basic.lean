@@ -27,6 +27,8 @@ Checks for the degree `log #(E / 𝓞 K • s) - Σ_σ log ‖s‖_σ` of
   On the trivial line over `ℚ(i)`, replacing `1` by `2` raises the finite term by `log 4`
   and the sum over the two complex embeddings by `2 log 2`, whereas the sum over the single
   complex place, without its multiplicity `2`, is only `log 2`.
+* The degree of the dual: over `ℚ`, the trivial line whose generator has norm `e^(-a)` has degree
+  `a` and its dual has degree `-a`.
 
 `ℚ(i)` and `ℚ(√2)` are the models `QuadraticAlgebra ℚ d 0`, whose rings of integers are compared
 with `ℤ[√d]` by `QuadraticAlgebra.ringOfIntegersEquiv`.
@@ -192,5 +194,20 @@ example :
         QuadraticAlgebra.nrComplexPlaces_eq_one (by norm_num),
         IsTotallyComplex.nrRealPlaces_eq_zero]
     simp only [h2, hv, Finset.sum_const, Finset.card_univ, hcard, one_smul]
+
+/-! ### The degree of the dual -/
+
+/-- Over `ℚ`, the trivial line with generator norm `e^(-a)` has degree `a`, its dual degree `-a`,
+computed with the generator `1` and the identity functional. -/
+example (a : ℝ) :
+    ((HermitianMetric.trivial ℚ).rescale a).sectionDegree 1 = a ∧
+      ((HermitianMetric.trivial ℚ).rescale a).dual.sectionDegree LinearMap.id = -a := by
+  have h1 : ((HermitianMetric.trivial ℚ).rescale a).sectionDegree 1 = a := by
+    rw [HermitianMetric.sectionDegree_rescale _ _ one_ne_zero,
+      HermitianMetric.sectionDegree_trivial_one, Module.finrank_self]
+    simp
+  refine ⟨h1, ?_⟩
+  rw [HermitianMetric.sectionDegree_dual_of_span_eq_top _ Ideal.span_singleton_one
+    (LinearMap.id_apply 1), h1]
 
 end TauCeti.ArakelovDegreeChecks
