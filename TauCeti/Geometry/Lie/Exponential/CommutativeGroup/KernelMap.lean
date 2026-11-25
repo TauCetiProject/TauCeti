@@ -20,7 +20,7 @@ identifications `𝔤 / Λ ≃ G` of preconnected groups.
 
 Conversely, for preconnected `G` every real-linear map `φ : 𝔤 → 𝔤'` with `φ(Λ) ⊆ Λ'` is the Lie
 map of a unique continuous homomorphism, so continuous homomorphisms `G → G'` correspond exactly
-to linear maps carrying lattice into lattice (`ContinuousMonoidHom.lieMapKerEquiv`).
+to linear maps carrying `Λ` into `Λ'` (`ContinuousMonoidHom.lieMapKerEquiv`).
 
 The converse direction uses that the Lie map is characterized by the identity
 `f ∘ exp = exp ∘ φ` (`ContinuousMonoidHom.lieMap_apply_eq_of_lieExp`). As examples, the Lie map
@@ -223,9 +223,9 @@ theorem lieMap_ofLieLinearMap
     lieMap (I := I) (I' := I') (ofLieLinearMap φ hφ) X = φ X :=
   lieMap_apply_eq_of_lieExp _ φ (fun Y ↦ (ofLieLinearMap_lieExp φ hφ Y).symm) X
 
-/-- **Continuous homomorphisms of commutative Lie groups are lattice maps.** For a preconnected
-commutative Lie group `G`, differentiation identifies continuous homomorphisms `G → G'` with the
-real-linear maps `𝔤 → 𝔤'` carrying `ker(exp)` into `ker(exp')`. -/
+/-- **Continuous homomorphisms are linear maps preserving the exponential kernels.** For a
+preconnected commutative Lie group `G`, differentiation identifies continuous homomorphisms
+`G → G'` with the real-linear maps `𝔤 → 𝔤'` carrying `ker(exp)` into `ker(exp')`. -/
 def lieMapKerEquiv :
     (G →ₜ* G') ≃ {φ : LeftInvariantDerivation I G →ₗ[ℝ] LeftInvariantDerivation I' G' //
       ∀ X ∈ (lieExpAddMonoidHom (I := I) (G := G)).ker,
@@ -254,7 +254,7 @@ theorem lieMapKerEquiv_symm_apply
 
 end ContinuousMonoidHom
 
-/-! ### Checks: multiplication by `n` and dimension zero -/
+/-! ### Multiplication by `n` -/
 
 namespace ContinuousMonoidHom
 
@@ -274,7 +274,7 @@ theorem lieMap_powContinuousMonoidHom (n : ℕ) (X : LeftInvariantDerivation I G
     simp [Nat.cast_smul_eq_nsmul, lieExp_nsmul]
 
 /-- On the kernel of the exponential, the `n`-th power map acts as `λ ↦ n λ`; in particular
-multiplication by two acts as `λ ↦ 2 λ` on the lattice. -/
+multiplication by two acts as `λ ↦ 2 λ` on the kernel of the exponential. -/
 theorem lieMapKer_powContinuousMonoidHom (n : ℕ) :
     lieMapKer (I := I) (I' := I) (powContinuousMonoidHom G n) = n • AddMonoidHom.id _ := by
   ext X
