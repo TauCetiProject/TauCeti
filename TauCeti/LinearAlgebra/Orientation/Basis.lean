@@ -232,3 +232,20 @@ theorem TauCeti.orientation_basisSingleton_neg {R V ι : Type*} [Field R] [Linea
   refine Module.Basis.eq_of_apply_eq fun i ↦ ?_
   rw [Module.Basis.unitsSMul_apply, Unique.eq_default i, Function.update_self]
   simp [FiniteDimensional.basisSingleton_apply]
+
+/-- In a line, the basis `(c • v)` for a positive scalar `c` gives the same orientation as the
+basis `(v)`. -/
+@[simp]
+theorem TauCeti.orientation_basisSingleton_smul_of_pos {R V ι : Type*} [Field R] [LinearOrder R]
+    [IsStrictOrderedRing R] [AddCommGroup V] [Module R V] [Unique ι] [Fintype ι] [DecidableEq ι]
+    (hV : Module.finrank R V = 1) {c : R} (hc : 0 < c) {v : V} (hv : c • v ≠ 0) :
+    (FiniteDimensional.basisSingleton ι hV (c • v) hv).orientation =
+      (FiniteDimensional.basisSingleton ι hV v (right_ne_zero_of_smul hv)).orientation := by
+  -- The basis `(c • v)` is the basis `(v)` rescaled by the positive unit `c`.
+  have hβ : FiniteDimensional.basisSingleton ι hV (c • v) hv =
+      (FiniteDimensional.basisSingleton ι hV v (right_ne_zero_of_smul hv)).isUnitSMul
+        (w := fun _ ↦ c) fun _ ↦ hc.ne'.isUnit :=
+    Module.Basis.eq_of_apply_eq fun i ↦ by
+      simp only [FiniteDimensional.basisSingleton_apply, Module.Basis.isUnitSMul_apply]
+  rw [hβ, Module.Basis.isUnitSMul, Module.Basis.orientation_unitsSMul, Fintype.prod_unique]
+  exact Module.Ray.units_smul_of_pos _ (by simpa using hc) _
