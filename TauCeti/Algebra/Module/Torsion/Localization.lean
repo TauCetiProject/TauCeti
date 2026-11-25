@@ -39,7 +39,7 @@ localization at every generator is zero. This identifies modules supported on th
 * `Module.IsTorsion'.isUnit_addOrderOf`: in an abelian group which is `S`-torsion for a submonoid
   `S` of `ℤ`, the order of every element is a unit of every ring in which `S` becomes invertible,
   such as the localization of `ℤ` at `S`.
-* `Module.IsTorsionFree.injective_mk_one_of_isFractionRing`: a torsion-free module embeds in its
+* `Module.IsTorsionFree.mk_one_injective_of_isFractionRing`: a torsion-free module embeds in its
   base change `n ↦ 1 ⊗ n` to the total ring of fractions.
 * `Ideal.primaryComponent_span_eq_top_iff_subsingleton_localized`: ideal-power torsion is detected
   by vanishing on the complementary principal opens.
@@ -128,7 +128,7 @@ variable {R : Type*} [CommRing R] (K : Type*) [CommRing K] [Algebra R K] [IsFrac
 
 /-- A torsion-free module embeds in its base change to the total ring of fractions `K`:
 `n ↦ 1 ⊗ n` is injective. -/
-theorem injective_mk_one_of_isFractionRing : Function.Injective (TensorProduct.mk R K N 1) :=
+theorem mk_one_injective_of_isFractionRing : Function.Injective (TensorProduct.mk R K N 1) :=
   (IsLocalizedModule.injective_iff_isRegular (nonZeroDivisors R) _).mpr fun c ↦
     isSMulRegular (isRegular_iff_mem_nonZeroDivisors.mpr c.property)
 
@@ -136,7 +136,7 @@ variable {K} in
 /-- In a torsion-free module, an element `n` with `1 ⊗ n = 0` in the base change to the total
 ring of fractions is zero. -/
 theorem eq_zero_of_one_tmul_eq_zero {n : N} (h : (1 : K) ⊗ₜ[R] n = 0) : n = 0 :=
-  (map_eq_zero_iff _ (injective_mk_one_of_isFractionRing K)).mp h
+  (map_eq_zero_iff _ (mk_one_injective_of_isFractionRing K)).mp h
 
 end Module.IsTorsionFree
 

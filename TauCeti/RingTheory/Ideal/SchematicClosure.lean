@@ -36,10 +36,10 @@ the points of `Spec A` whose generic fibre lies in `V(I)`.
 ## Main results
 
 * `TauCeti.SchematicClosure.map_closureIdeal`: over a localization, `I^♮` generates `I`.
-* `TauCeti.SchematicClosure.closure_flat`: over a Dedekind domain, `A ⧸ I^♮` is flat.
+* `TauCeti.SchematicClosure.flat_closure`: over a Dedekind domain, `A ⧸ I^♮` is flat.
 * `TauCeti.SchematicClosure.closure_unique`: a torsion-free quotient `A ⧸ J` with `K ⊗ J = I`
   has `J = I^♮`.
-* `TauCeti.SchematicClosure.mem_closure_points`: a point with values in a torsion-free algebra
+* `TauCeti.SchematicClosure.closureIdeal_le_ker_iff`: a point with values in a torsion-free algebra
   kills `I^♮` iff its base change kills `I`.
 * `TauCeti.SchematicClosure.closureIdeal_bot_eq_scalarTorsionIdeal`: the closure of the zero
   ideal is the scalar-torsion ideal `TauCeti.scalarTorsionIdeal O A` of `A`.
@@ -195,7 +195,7 @@ instance isTorsionFree_closure (I : Ideal (K ⊗[O] A)) :
 
 /-- Over a Dedekind domain, for instance a discrete valuation ring, the closure `A ⧸ I^♮` is
 flat over `O`. -/
-theorem closure_flat [IsDedekindDomain O] (I : Ideal (K ⊗[O] A)) :
+theorem flat_closure [IsDedekindDomain O] (I : Ideal (K ⊗[O] A)) :
     Module.Flat O (closure K I) :=
   inferInstance
 
@@ -214,7 +214,7 @@ theorem closure_unique {I : Ideal (K ⊗[O] A)} {J : Ideal A}
 
 /-- **Points of the closure.** A point `f` of `Spec A` with values in an `O`-algebra `O'`
 that is torsion-free over `O` kills `I^♮` iff its base change `K ⊗ f` kills `I`. -/
-theorem mem_closure_points {O' : Type x} [CommRing O'] [Algebra O O']
+theorem closureIdeal_le_ker_iff {O' : Type x} [CommRing O'] [Algebra O O']
     [Module.IsTorsionFree O O'] (I : Ideal (K ⊗[O] A)) (f : A →ₐ[O] O') :
     closureIdeal K I ≤ RingHom.ker f ↔
       I ≤ RingHom.ker (Algebra.TensorProduct.map (AlgHom.id K K) f) := by
