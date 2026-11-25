@@ -111,7 +111,8 @@ theorem charpoly_inv_eq_of_charpoly_eq_glnHeckePolynomial_two (D : Determinant A
   have hC : C c * (C q * C (T 2)) = 1 := by rw [← C_mul, ← C_mul, mul_comm, hc, C_1]
   rw [charpoly_inv, h, hinv, glnHeckePolynomial_two, hT, C_1, one_mul]
   have hX : reflect 2 (X : A[X]) = X := by simpa using reflect_monomial (R := A) 2 1
-  simp [hX, reflect_monomial, revAt_le]
+  simp only [even_two, Even.neg_pow, one_pow, one_mul, _root_.map_mul, reflect_add, reflect_sub,
+    reflect_monomial, revAt_le le_rfl, tsub_self, pow_zero, reflect_C_mul, hX, reflect_C]
   linear_combination (X ^ 2 : A[X]) * hC
 
 end Determinant
