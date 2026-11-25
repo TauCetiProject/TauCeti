@@ -127,6 +127,10 @@ private theorem torusCoord_zsmul (D : CartanDatum ι X Y) (n : ℤ) :
   rw [torusCoord, map_zsmul, D.pairing_root_simpleTorus_self, zsmul_eq_mul]
   exact Int.mul_ediv_cancel n (by positivity)
 
+private theorem torusCoord_simpleTorus (D : CartanDatum ι X Y) :
+    torusCoord D (D.simpleTorus default) = 1 := by
+  simpa using torusCoord_zsmul D 1
+
 private def toUqSl2Tuple (D : CartanDatum ι X Y) (q q' : ℂ) (hq' : q' = q ^ D.symmetrizer default)
     (hY : Function.Surjective (fun n : ℤ => n • D.simpleTorus default)) :
     GeneratorTuple D q (UqSl2 q') :=
@@ -157,11 +161,8 @@ private def toUqSl2Tuple (D : CartanDatum ι X Y) (q q' : ℂ) (hq' : q' = q ^ D
       rw [Unique.eq_default i, hneg, UqSl2.kUnit_zpow_mul_f_mul_zpow_neg, hq', ← zpow_natCast q,
         ← zpow_mul, mul_neg, hpair y]
     commutator_self i := by
-      have h1 : torusCoord D (D.simpleTorus default) = 1 := by simpa using torusCoord_zsmul D 1
-      have hm1 : torusCoord D (-D.simpleTorus default) = -1 := by
-        simpa using torusCoord_zsmul D (-1)
-      rw [Unique.eq_default i, ← hq', h1, hm1, zpow_one, zpow_neg_one, UqSl2.val_kUnit,
-        UqSl2.val_inv_kUnit]
+      rw [Unique.eq_default i, ← hq', hneg, torusCoord_simpleTorus, zpow_one, zpow_neg_one,
+        UqSl2.val_kUnit, UqSl2.val_inv_kUnit]
       exact UqSl2.e_mul_f_sub_f_mul_e
     commutator_ne hij := (hij (Subsingleton.elim _ _)).elim
     serre_e hij := (hij (Subsingleton.elim _ _)).elim
@@ -173,7 +174,6 @@ private def uqSl2AlgEquivAux (D : CartanDatum ι X Y) (q q' : ℂ)
     UqSl2 q' ≃ₐ[ℂ] QuantizedEnvelopingAlgebra D q :=
   let f := UqSl2.lift (fromUqSl2TupleAux D q q' default hq')
   let g := lift (toUqSl2Tuple D q q' hq' hY)
-  have h1 : torusCoord D (D.simpleTorus default) = 1 := by simpa using torusCoord_zsmul D 1
   AlgEquiv.ofAlgHom f g
     (by
       ext x
@@ -183,7 +183,8 @@ private def uqSl2AlgEquivAux (D : CartanDatum ι X Y) (q q' : ℂ)
         simpa [g, toUqSl2Tuple, torusCoord_zsmul] using
           UqSl2.map_kUnit_zpow f (kUnitsHom D q (.ofAdd (D.simpleTorus default)))
             (by simp [f, fromUqSl2TupleAux, simpleK_def]) n)
-    (by apply UqSl2.hom_ext <;> simp [f, g, fromUqSl2TupleAux, toUqSl2Tuple, simpleK_def, h1])
+    (by apply UqSl2.hom_ext <;>
+      simp [f, g, fromUqSl2TupleAux, toUqSl2Tuple, simpleK_def, torusCoord_simpleTorus])
 
 variable (D : CartanDatum ι X Y) (q : ℂ)
 

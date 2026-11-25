@@ -33,8 +33,7 @@ its `GradedAlgebra (grade D q)` structure under `[DecidableEq X]`.
   conjugation `K_y x K_(-y) = q ^ ⟨β, y⟩ • x` on `grade D q β`.
 * `TauCeti.QuantizedEnvelopingAlgebra.rescale_mem_grade`, `chevalleyInvolution_mem_grade`,
   `antipodeLinearEquiv_mem_grade`: interaction of symmetries and the antipode with the grading.
-* `TauCeti.QuantizedEnvelopingAlgebra.decomposeGrade`, `instGradedAlgebra`: direct-sum decomposition
-  and `GradedAlgebra (grade D q)` instance.
+* `TauCeti.QuantizedEnvelopingAlgebra.instGradedAlgebra`: `GradedAlgebra (grade D q)` instance.
 
 ## References
 
@@ -194,7 +193,8 @@ private theorem k_mul_word_prod_mul_k_neg (w : List (Generator ι Y)) (y : Y) :
           rw [k_mul_generator_mul_k_neg, ih, smul_mul_smul_comm]
       _ = _ := by
           rcases eq_or_ne q 0 with rfl | hq
-          · cases g <;> simp
+          · -- `e_zero`/`f_zero` kill `e` and `f`; `k` has weight `0`, where `0 ^ 0 = 1`.
+            cases g <;> simp
           · rw [← zpow_add₀ hq]
 
 /-- **Toral conjugation on homogeneous pieces**: for `x ∈ grade D q β` and `y ∈ Y`,
@@ -298,6 +298,11 @@ private def inGrade {α : X} (a : QuantizedEnvelopingAlgebra D q) (ha : a ∈ gr
     ⨁ β : X, grade D q β :=
   lof K X (fun β => ↥(grade D q β)) α ⟨a, ha⟩
 
+private theorem inGrade_eq_of {α : X} (a : QuantizedEnvelopingAlgebra D q)
+    (ha : a ∈ grade D q α) :
+    inGrade D q a ha = of (fun β => ↥(grade D q β)) α ⟨a, ha⟩ :=
+  lof_eq_of K X (fun β => ↥(grade D q β)) α ⟨a, ha⟩
+
 private theorem inGrade_eq {α₁ α₂ : X} {a₁ a₂ : QuantizedEnvelopingAlgebra D q}
     {ha₁ : a₁ ∈ grade D q α₁} {ha₂ : a₂ ∈ grade D q α₂} (hdeg : α₁ = α₂) (hval : a₁ = a₂) :
     inGrade D q a₁ ha₁ = inGrade D q a₂ ha₂ := by
@@ -372,7 +377,7 @@ private theorem inGrade_serreSum {wt : ι → X} {u : ι → QuantizedEnveloping
 
 /-- The `K`-algebra homomorphism decomposing `QuantizedEnvelopingAlgebra D q` into the direct sum
 `⨁ β : X, grade D q β` of its weight-homogeneous components. -/
-def decomposeGrade : QuantizedEnvelopingAlgebra D q →ₐ[K] ⨁ β : X, grade D q β :=
+private def decomposeGrade : QuantizedEnvelopingAlgebra D q →ₐ[K] ⨁ β : X, grade D q β :=
   lift
     { e i := inGrade D q (e D q i) (e_mem_grade i)
       f i := inGrade D q (f D q i) (f_mem_grade i)
@@ -397,13 +402,12 @@ def decomposeGrade : QuantizedEnvelopingAlgebra D q →ₐ[K] ⨁ β : X, grade 
       commutator_ne := fun {i j} hij => by
         rw [inGrade_mul, inGrade_mul,
           inGrade_cast D q (add_comm (-D.root j) (D.root i)) (f D q j * e D q i), inGrade_sub]
-        exact (inGrade_eq D q rfl (e_mul_f_sub_f_mul_e_of_ne D q hij)).trans
-          (map_zero (lof K X (fun β => ↥(grade D q β)) _))
+        exact (inGrade_eq D q rfl (e_mul_f_sub_f_mul_e_of_ne D q hij)).trans (inGrade_zero D q _)
       serre_e hij := inGrade_serreSum D q (fun l => e_mem_grade l) (serreE_eq_zero D q hij)
       serre_f hij := inGrade_serreSum D q (fun l => f_mem_grade l) (serreF_eq_zero D q hij) }
 
 /-- Summing homogeneous components left-inverts `decomposeGrade`. -/
-theorem coeAlgHom_comp_decomposeGrade :
+private theorem coeAlgHom_comp_decomposeGrade :
     (coeAlgHom (grade D q)).comp (decomposeGrade D q) = AlgHom.id K _ := by
   ext <;> simp [decomposeGrade]
 
@@ -427,10 +431,10 @@ private theorem decomposeGrade_word_prod (w : List (Generator ι Y)) :
 
 /-- Applying `decomposeGrade` to an element of `grade D q β` embeds it into the `β`-summand of
 `⨁ α : X, grade D q α`. -/
-theorem decomposeGrade_coe (β : X) (x : grade D q β) :
+private theorem decomposeGrade_coe (β : X) (x : grade D q β) :
     decomposeGrade D q (x : QuantizedEnvelopingAlgebra D q) = of (fun α => ↥(grade D q α)) β x := by
   rcases x with ⟨x, hx⟩
-  rw [← lof_eq_of K, Submodule.coe_mk, ← inGrade]
+  rw [Submodule.coe_mk, ← inGrade_eq_of D q x hx]
   induction hx using grade_induction with
   | word w hw => exact (decomposeGrade_word_prod D q w).trans (inGrade_eq D q hw rfl)
   | zero => exact (map_zero _).trans (inGrade_zero D q β).symm
@@ -440,8 +444,10 @@ theorem decomposeGrade_coe (β : X) (x : grade D q β) :
 /-- The `X`-graded `K`-algebra structure on `QuantizedEnvelopingAlgebra D q`, supported on
 `D.rootLattice`. -/
 instance instGradedAlgebra : GradedAlgebra (grade D q) :=
-  GradedAlgebra.ofAlgHom (grade D q) (decomposeGrade D q)
-    (coeAlgHom_comp_decomposeGrade D q) (decomposeGrade_coe D q)
+  -- Route through `Prop`-valued `IsInternal` so `decomposeGrade` can remain `private`.
+  DirectSum.IsInternal.gradedAlgebra (by
+    exact (GradedAlgebra.ofAlgHom (grade D q) (decomposeGrade D q)
+      (coeAlgHom_comp_decomposeGrade D q) (decomposeGrade_coe D q)).toDecomposition.isInternal)
 
 end GradedAlgebra
 
