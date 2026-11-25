@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.TubularNeighborhood.Riemannian.NormalCollar
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Metric
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Riemannian.Coordinates
 public import TauCeti.Geometry.Manifold.VectorBundle.UnitSection
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Neighborhood
 
 /-!
@@ -98,30 +101,19 @@ theorem exists_partialDiffeomorph_normalCollar
     rintro ⟨x, t⟩ ⟨-, ht⟩
     rw [TauCeti.VectorBundle.unitSectionDiffeomorph_apply]
     refine hdisc x (t • u x) ?_
-    rw [norm_smul, hu1, mul_one, Real.norm_eq_abs]
-    exact (abs_lt.mpr ht).le.trans (hx₀ (mem_univ x))
-  let e := (ψ.toHomeomorph.toOpenPartialHomeomorph.restrOpen S hS).trans
-    Φ.toOpenPartialHomeomorph
-  have hsource : e.source = S := by
-    simp only [e, OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.restrOpen_source,
-      Homeomorph.toOpenPartialHomeomorph_source, univ_inter]
-    exact inter_eq_left.mpr fun p hp ↦ hψS p hp
-  refine ⟨ε, hε, {
-    toPartialEquiv := e.toPartialEquiv
-    open_source := e.open_source
-    open_target := e.open_target
-    contMDiffOn_toFun := ?_
-    contMDiffOn_invFun := ?_ }, hsource, fun p _ ↦ ?_, fun x ↦ ?_⟩
-  · rw [hsource]
-    exact Φ.contMDiffOn_toFun.comp ψ.contMDiff.contMDiffOn fun p hp ↦ hψS p hp
-  · have htarget : e.target ⊆ Φ.target := by
-      simp only [e, OpenPartialHomeomorph.trans_target]
-      exact inter_subset_left
-    exact ψ.symm.contMDiff.comp_contMDiffOn (Φ.contMDiffOn_invFun.mono htarget)
-  · change Φ (ψ p) = _
-    rw [hΦ, TauCeti.VectorBundle.unitSectionDiffeomorph_apply]
-  · change Φ (ψ (x, 0)) = _
-    rw [hΦ, TauCeti.VectorBundle.unitSectionDiffeomorph_apply, zero_smul]
+    simpa [norm_smul, hu1] using (abs_lt.mpr ht).le.trans (hx₀ (mem_univ x))
+  let c := (ψ.toPartialDiffeomorph.restrOpen S hS).trans Φ
+  have hc : ∀ p, c p = Φ (ψ p) := fun p ↦ by
+    simp only [c, PartialDiffeomorph.coe_trans, PartialDiffeomorph.coe_restrOpen,
+      Diffeomorph.coe_toPartialDiffeomorph, comp_apply]
+  have hsource : c.source = S := by
+    simp only [c, PartialDiffeomorph.trans_source, PartialDiffeomorph.restrOpen_source,
+      PartialDiffeomorph.coe_restrOpen, Diffeomorph.toPartialDiffeomorph_toPartialEquiv,
+      Equiv.toPartialEquiv_source, univ_inter]
+    exact inter_eq_left.mpr hψS
+  refine ⟨ε, hε, c, hsource, fun p _ ↦ ?_, fun x ↦ ?_⟩
+  · rw [hc, hΦ, TauCeti.VectorBundle.unitSectionDiffeomorph_apply]
+  · rw [hc, hΦ, TauCeti.VectorBundle.unitSectionDiffeomorph_apply, zero_smul]
     exact f.normalExp_zeroSection hn x
 
 end TauCeti.SmoothEmbedding
