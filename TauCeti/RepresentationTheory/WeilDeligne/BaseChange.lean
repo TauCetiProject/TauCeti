@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Dual.BaseChange
 public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RepresentationTheory.WeilDeligne.Operations
 public import TauCeti.RepresentationTheory.WeilDeligne.Special
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
-public import Mathlib.LinearAlgebra.Dual.BaseChange
 
 /-!
 # Scalar extension of raw Weil–Deligne parameters
@@ -58,9 +58,9 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
 open Module TensorProduct
+
+namespace TauCeti
 
 namespace WeilDeligneParameter
 
@@ -71,34 +71,19 @@ variable {E W V V' V₁ V₂ V₃ : Type*} [Field E] [Group W] [TopologicalSpace
   {deg : W →* Multiplicative ℤ} {q : ℕ}
   (E' : Type*) [Field E'] [Algebra E E']
 
-omit [TopologicalSpace W] in
-/-- Over a field, extending the scalars does not change the kernel of a representation, since
-`v ↦ 1 ⊗ v` is injective. -/
-private theorem ker_baseChange (ρ : Representation E W V) :
-    (Representation.baseChange E' ρ).ker = ρ.ker := by
-  refine le_antisymm (fun w hw ↦ ?_) (Representation.ker_le_ker_baseChange E' ρ)
-  rw [MonoidHom.mem_ker, Representation.baseChange_apply] at hw
-  rw [MonoidHom.mem_ker]
-  ext v
-  exact Module.Flat.tensorProduct_mk_injective (R := E) (S := E') (M := V)
-    (by simpa using LinearMap.congr_fun hw (1 ⊗ₜ v))
-
 /-- The **scalar extension** `(E' ⊗[E] V, E' ⊗ r, E' ⊗ N)` of a raw Weil–Deligne parameter along
 a field extension `E → E'`. -/
 def baseChange (D : WeilDeligneParameter E W V deg q) :
     WeilDeligneParameter E' W (E' ⊗[E] V) deg q where
   r := Representation.baseChange E' D.r
   isOpen_ker := by
-    rw [ker_baseChange]
+    rw [Representation.ker_baseChange]
     exact D.isOpen_ker
   N := D.N.baseChange E'
   isNilpotent_N := D.isNilpotent_N.map (Module.End.baseChangeHom E E' V)
   conj_N w := by
-    have h := congrArg (Module.End.baseChangeHom E E' V) (D.conj_N w)
-    rw [map_mul, map_mul, map_smul] at h
-    simp only [Representation.baseChange_apply]
-    rw [← algebraMap_smul E', map_zpow₀, map_natCast] at h
-    exact h
+    simp only [Representation.baseChange_apply, ← LinearMap.baseChange_mul, D.conj_N,
+      LinearMap.baseChange_smul, ← algebraMap_smul E', map_zpow₀, map_natCast]
 
 variable (D : WeilDeligneParameter E W V deg q) (D' : WeilDeligneParameter E W V' deg q)
 
@@ -124,8 +109,8 @@ variable {D₁ : WeilDeligneParameter E W V₁ deg q} {D₂ : WeilDeligneParamet
 def Hom.baseChange (f : Hom D₁ D₂) : Hom (D₁.baseChange E') (D₂.baseChange E') where
   toIntertwiningMap := f.toIntertwiningMap.baseChange E'
   comp_N := by
-    rw [Representation.IntertwiningMap.toLinearMap_baseChange, baseChange_N, baseChange_N,
-      ← LinearMap.baseChange_comp, ← LinearMap.baseChange_comp, f.comp_N]
+    ext v
+    simp [f.map_N_apply]
 
 @[simp]
 theorem Hom.baseChange_tmul (f : Hom D₁ D₂) (a : E') (v : V₁) :
@@ -150,11 +135,12 @@ def Iso.baseChange (f : Iso D₁ D₂) : Iso (D₁.baseChange E') (D₂.baseChan
   toRepresentationEquiv := f.toRepresentationEquiv.baseChange E'
   comp_N := by
     ext v
+    -- `simp` does not see through `(D₁.baseChange E').r = Representation.baseChange E' D₁.r` in the
+    -- coercion of the equivalence, so restate the goal (definitionally) through the latter for
+    -- `Representation.Equiv.baseChange_tmul` to apply.
     change (f.toRepresentationEquiv.baseChange E') (1 ⊗ₜ D₁.N v) =
       (D₂.N.baseChange E') ((f.toRepresentationEquiv.baseChange E') (1 ⊗ₜ v))
-    rw [Representation.Equiv.baseChange_tmul, Representation.Equiv.baseChange_tmul,
-      LinearMap.baseChange_tmul]
-    exact congrArg ((1 : E') ⊗ₜ[E] ·) (f.map_N_apply v)
+    simp [f.map_N_apply]
 
 @[simp]
 theorem Iso.baseChange_tmul (f : Iso D₁ D₂) (a : E') (v : V₁) :
@@ -216,10 +202,13 @@ theorem baseChangeProdIso_tmul (a : E') (x : V × V') :
 
 /-- **Scalar extension commutes with twists**: extending the scalars of the twist by `χ` gives the
 twist of the scalar extension by `χ` read in `E'ˣ`. -/
-theorem baseChange_twist [SeparatelyContinuousMul W] (χ : W →* Eˣ) (hχ : IsOpen (χ.ker : Set W))
-    (hχ' : IsOpen (((Units.map (algebraMap E E' : E →* E')).comp χ).ker : Set W)) :
+theorem baseChange_twist [SeparatelyContinuousMul W] (χ : W →* Eˣ) (hχ : IsOpen (χ.ker : Set W)) :
     (D.twist χ hχ).baseChange E' =
-      (D.baseChange E').twist ((Units.map (algebraMap E E' : E →* E')).comp χ) hχ' := by
+      (D.baseChange E').twist ((Units.map (algebraMap E E' : E →* E')).comp χ)
+        (by
+          convert hχ using 2
+          ext w
+          exact (Units.map_injective (algebraMap E E').injective).eq_iff' (map_one _)) := by
   refine WeilDeligneParameter.ext ?_ ?_
   · ext w v
     simp [TensorProduct.tmul_smul, Algebra.smul_def]
@@ -256,11 +245,11 @@ def baseChangeSpecialIso (n : ℕ) (hdeg : Continuous deg) (hq : (q : E) ≠ 0) 
     ext v i
     simp [finShift_apply]
 
-private theorem toDualBaseChange_tmul_tmul [FiniteDimensional E V] (a : E') (f : Module.Dual E V)
-    (v : V) :
-    (TensorProduct.isBaseChange E V E').toDualBaseChange (a ⊗ₜ f) (1 ⊗ₜ v) =
-      a * algebraMap E E' (f v) :=
-  IsBaseChange.toDualBaseChange_tmul ..
+@[simp]
+theorem baseChangeSpecialIso_tmul (n : ℕ) (hdeg : Continuous deg) (hq : (q : E) ≠ 0) (a : E')
+    (v : Fin n → E) (i : Fin n) :
+    baseChangeSpecialIso E' n hdeg hq (a ⊗ₜ v) i = a * algebraMap E E' (v i) := by
+  simp [baseChangeSpecialIso, Algebra.smul_def, mul_comm]
 
 /-- **Scalar extension commutes with duals** for finite-dimensional `V`:
 `E' ⊗ D^∨ ≅ (E' ⊗ D)^∨`, through Mathlib's `IsBaseChange.toDualBaseChange`. -/
@@ -269,10 +258,15 @@ def baseChangeDualIso [FiniteDimensional E V] :
   toRepresentationEquiv :=
     .mk (TensorProduct.isBaseChange E V E').toDualBaseChange fun w ↦ by
       ext f v
-      simp [Representation.dual_apply, Module.Dual.transpose_apply, toDualBaseChange_tmul_tmul]
+      simp [Representation.dual_apply, Module.Dual.transpose_apply]
   comp_N := by
     ext f v
-    simp [toDualBaseChange_tmul_tmul]
+    simp
+
+@[simp]
+theorem baseChangeDualIso_tmul_tmul [FiniteDimensional E V] (a : E') (f : Module.Dual E V)
+    (v : V) : D.baseChangeDualIso E' (a ⊗ₜ f) (1 ⊗ₜ v) = a * algebraMap E E' (f v) :=
+  IsBaseChange.toDualBaseChange_tmul ..
 
 end WeilDeligneParameter
 
