@@ -23,9 +23,10 @@ right one against `|D1_{u > t}|` for almost every `t`, and the Euclidean coarea 
 `TauCeti.lintegral_variationMeasure_eq_lintegral_lintegral` identifies them. Otherwise some
 compact `K ⊆ Ω` has infinite variation on each of its neighbourhoods. The weighted variation is
 then infinite (`TauCeti.exists_totalVariationOn_ne_top_of_weightedVariation_ne_top`), and so is
-the right side: on a neighbourhood `U` of `K` with compact closure in `Ω` the weight is bounded
-below by some `m > 0`, so `P_μ({u > t}; Ω) ≥ m P({u > t}; U)`, whose integral over `t` is
-`m |Du|(U) = ∞` by the Euclidean coarea formula `TauCeti.totalVariationOn_eq_lintegral_perimeter`.
+the right side: on a neighbourhood `U ≤ Ω` of `K` the weight is bounded below by some `m > 0`, so
+`P_μ({u > t}; Ω) ≥ m P({u > t}; U)` (`TauCeti.exists_mul_totalVariationOn_le_weightedVariation`),
+whose integral over `t` is `m |Du|(U) = ∞` by the Euclidean coarea formula
+`TauCeti.totalVariationOn_eq_lintegral_perimeter`.
 
 ## References
 
@@ -74,28 +75,16 @@ private theorem lintegral_weightedPerimeter_eq_top (hW : ContDiff ℝ 1 W)
     ∫⁻ t, weightedPerimeter W Ω {x | t < u x} = ∞ := by
   simp only [not_forall, not_exists, not_and, ne_eq, not_not] at hfin
   obtain ⟨K, hK, hKΩ, hinf⟩ := hfin
-  obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open Ω.isOpen hKΩ
-  let U : Opens E := ⟨Metric.thickening δ K, Metric.isOpen_thickening⟩
-  have hUΩ : U ≤ Ω := (Metric.thickening_subset_cthickening δ K).trans hδΩ
-  obtain ⟨m', hm', hm'W⟩ := hK.cthickening.exists_forall_le'
-    (Real.continuous_exp.comp hW.continuous.neg).continuousOn fun x _ => Real.exp_pos (-W x)
-  let m : ℝ≥0 := ⟨m', hm'.le⟩
-  have hm0 : m ≠ 0 := NNReal.coe_ne_zero.1 hm'.ne'
-  have hm (x : E) (hx : x ∈ U) : (m : ℝ) ≤ Real.exp (-W x) :=
-    hm'W x (Metric.thickening_subset_cthickening δ K hx)
-  have huU : LocallyIntegrableOn u U := hu.mono_set hUΩ
-  have hum : AEMeasurable u (volume.restrict U) := huU.aestronglyMeasurable.aemeasurable
+  obtain ⟨U, hKU, hUΩ, m, hm0, hm⟩ := exists_mul_totalVariationOn_le_weightedVariation hW hK hKΩ
+  have hum : AEMeasurable u (volume.restrict Ω) := hu.aestronglyMeasurable.aemeasurable
   have hle : (m : ℝ≥0∞) * totalVariationOn volume U u ≤
       ∫⁻ t, weightedPerimeter W Ω {x | t < u x} := by
-    rw [totalVariationOn_eq_lintegral_perimeter huU,
+    rw [totalVariationOn_eq_lintegral_perimeter (hu.mono_set hUΩ),
       ← lintegral_const_mul' _ _ ENNReal.coe_ne_top]
     refine lintegral_mono fun t => ?_
     rw [perimeter_def, weightedPerimeter_def]
-    exact (mul_totalVariationOn_le_weightedVariation hW
-      (locallyIntegrableOn_indicator_const (nullMeasurableSet_lt aemeasurable_const hum) 1)
-      hm).trans (weightedVariation_mono hUΩ)
-  rw [hinf U (Metric.self_subset_thickening hδ K), ENNReal.mul_top (ENNReal.coe_ne_zero.2 hm0)]
-    at hle
+    exact hm _ (locallyIntegrableOn_indicator_const (nullMeasurableSet_lt aemeasurable_const hum) 1)
+  rw [hinf U hKU, ENNReal.mul_top (ENNReal.coe_ne_zero.2 hm0)] at hle
   exact top_le_iff.1 hle
 
 /-- **The weighted coarea formula.** For a `C¹` weight `W` and `u` locally integrable on the open
