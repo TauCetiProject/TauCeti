@@ -35,9 +35,8 @@ theorem mem_separableClosure_of_pow_sub_mul_sub_eq_zero {K L : Type*} [Field K] 
   let g : E[X] := X ^ N - C c * X - C ⟨b, hb⟩
   have hNE : (N : E) = 0 := by simpa using congr(algebraMap K E $hN)
   have hg : g.Separable := by
-    rw [separable_def]
-    have hd : derivative g = -C c := by simp [g, derivative_X_pow, hNE]
-    exact hd ▸ isCoprime_one_right.of_isCoprime_of_dvd_right (isUnit_C.2 hc.isUnit).neg.dvd
+    simpa [g, sub_eq_add_neg] using
+      separable_C_mul_X_pow_add_C_mul_X_add_C (1 : E) (-c) (-⟨b, hb⟩) hNE hc.isUnit.neg
   have hgy : aeval y g = 0 := by simpa [g, c] using hy
   have hsep : IsSeparable E y := hg.of_dvd (minpoly.dvd E y hgy)
   exact mem_separableClosure_iff.2 (IsSeparable.of_algebra_isSeparable_of_isSeparable K hsep)

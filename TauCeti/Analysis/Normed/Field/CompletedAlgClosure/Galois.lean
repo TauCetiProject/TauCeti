@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.AbsoluteGaloisGroup
 public import Mathlib.Topology.Algebra.Algebra.Equiv
 public import TauCeti.Analysis.Normed.Field.CompletedAlgClosure.Basic
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.AlgEquiv
 public import TauCeti.Topology.Algebra.UniformRing
 
 import Mathlib.FieldTheory.KrullTopology
@@ -62,12 +63,11 @@ universe u
 
 /-- The group isomorphism between the absolute Galois group `G_K` and the group of `K`-algebra
 automorphisms of `SpectralAlgClosure K`. `Field.absoluteGaloisGroup K` is by definition
-`AlgebraicClosure K ≃ₐ[K] AlgebraicClosure K`, and this transports it along the canonical
-isomorphism `SpectralAlgClosure.algEquiv K`. -/
+`AlgebraicClosure K ≃ₐ[K] AlgebraicClosure K` (`Field.absoluteGaloisGroup.toAlgEquiv`), and this
+transports it along the canonical isomorphism `SpectralAlgClosure.algEquiv K`. -/
 def SpectralAlgClosure.absoluteGaloisGroupEquiv (K : Type u) [Field K] :
     Field.absoluteGaloisGroup K ≃* (SpectralAlgClosure K ≃ₐ[K] SpectralAlgClosure K) :=
-  (MulEquiv.refl (Field.absoluteGaloisGroup K)).trans
-    (AlgEquiv.autCongr (SpectralAlgClosure.algEquiv K))
+  Field.absoluteGaloisGroup.toAlgEquiv.trans (AlgEquiv.autCongr (SpectralAlgClosure.algEquiv K))
 
 /-- `SpectralAlgClosure.absoluteGaloisGroupEquiv K σ` acts as `σ` through the canonical
 isomorphism `SpectralAlgClosure.algEquiv K`. -/
@@ -96,7 +96,7 @@ theorem SpectralAlgClosure.absoluteGaloisGroupEquiv_apply_eq_toAlgHom (K : Type 
 theorem SpectralAlgClosure.continuous_absoluteGaloisGroupEquiv (K : Type u) [Field K] :
     Continuous (absoluteGaloisGroupEquiv K) :=
   -- `Field.absoluteGaloisGroup K` carries the Krull topology of `AlgebraicClosure K / K`, so the
-  -- first factor `MulEquiv.refl` is the identity.
+  -- first factor `Field.absoluteGaloisGroup.toAlgEquiv` is the identity.
   continuous_autCongr_algEquiv K
 
 variable {K : Type u} [NontriviallyNormedField K] [CompleteSpace K] [IsUltrametricDist K]
