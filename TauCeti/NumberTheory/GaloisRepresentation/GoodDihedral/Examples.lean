@@ -11,6 +11,7 @@ public import Mathlib.GroupTheory.SpecificGroups.Dihedral
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 import Mathlib.Tactic.NormNum.Prime
 import TauCeti.Data.ZMod.Pow
+import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 
 /-!
 # Examples of good-dihedral primes
@@ -65,11 +66,8 @@ def dihedralRep (u : Kˣ) (hu : u ^ 7 = 1) : DihedralGroup 7 →* GL (Fin 2) K :
     { toFun := dihedralMatrix u hu
       map_one' := by rw [one_def]; simp [dihedralMatrix, one_fin_two]
       map_mul' := by
-        rintro (i | i) (j | j) <;>
-          simp only [r_mul_r, r_mul_sr, sr_mul_r, sr_mul_sr, dihedralMatrix, mul_fin_two,
-            neg_add, neg_neg, sub_eq_add_neg, map_add_eq_mul, Units.val_mul, mul_zero,
-            zero_mul, add_zero, zero_add] <;>
-          ext a b <;> fin_cases a <;> fin_cases b <;> simp [mul_comm] }
+        rintro (i | i) (j | j) <;> ext a b <;> fin_cases a <;> fin_cases b <;>
+          simp [dihedralMatrix, map_add_eq_mul, sub_eq_add_neg, mul_comm] }
 
 /-- `dihedralRep u hu` sends the rotation `r i` to `diag(uⁱ, u⁻ⁱ)`. -/
 theorem coe_dihedralRep_r (u : Kˣ) (hu : u ^ 7 = 1) (i : ZMod 7) :
@@ -83,21 +81,6 @@ theorem coe_dihedralRep_sr (u : Kˣ) (hu : u ^ 7 = 1) (i : ZMod 7) :
       !![0, (zmodChar 7 hu (-i) : K); (zmodChar 7 hu i : K), 0] :=
   (rfl)
 
-/-- The character `i ↦ uⁱ` of `ℤ/n` has the same order as `u`. -/
-private theorem orderOf_toMonoidHom_zmodChar {n : ℕ} [NeZero n] {u : Kˣ} (hu : u ^ n = 1) :
-    orderOf (zmodChar n hu).toMonoidHom = orderOf u := by
-  refine orderOf_eq_orderOf_iff.mpr fun m ↦ ⟨fun h ↦ ?_, fun h ↦ MonoidHom.ext fun x ↦ ?_⟩
-  · have := congr($h (Multiplicative.ofAdd 1))
-    simpa [zmodChar_apply, pow_val_one hu, ← pow_mul] using this
-  · simp only [MonoidHom.pow_apply, toMonoidHom_apply, zmodChar_apply, MonoidHom.one_apply]
-    rw [← pow_mul, pow_mul', h, one_pow]
-
-/-- If `u ^ n = 1` and `k ≡ -1 (mod n)`, then `u^(-i) = (uⁱ)^k` for every `i : ℤ/n`. -/
-private theorem pow_neg_val_eq_pow_val_pow {n k : ℕ} {u : Kˣ} (hu : u ^ n = 1)
-    (hk : (k : ZMod n) = -1) (i : ZMod n) : u ^ (-i).val = (u ^ i.val) ^ k := by
-  have hx : (u ^ i.val) ^ n = 1 := by rw [pow_right_comm, hu, one_pow]
-  rw [← mul_neg_one, ← hk, pow_val_mul hu, pow_val_natCast hx]
-
 /-- For a unit `u` of order `7`, the prime `41` is good-dihedral for the dihedral
 representation `dihedralRep`, with inertia the rotation subgroup, characteristic `2` and
 conductor `41²`; the witnesses are `t = 7`, `a = 1`, the character `ψ : i ↦ uⁱ` and `B = 1`. -/
@@ -106,7 +89,7 @@ theorem isGoodDihedralAt_dihedralRep (u : Kˣ) (hu : orderOf u = 7) :
       41 := by
   have hu7 : u ^ 7 = 1 := hu ▸ pow_orderOf_eq_one u
   -- `ψ⁴¹ = ψ⁻¹` pointwise, since `41 ≡ -1 (mod 7)`.
-  have hpow := pow_neg_val_eq_pow_val_pow (k := 41) hu7 (by decide)
+  have hpow := pow_val_neg_eq_pow_val_pow (k := 41) hu7 (by decide)
   refine ⟨by norm_num, by norm_num, ⟨7, 1, (zmodChar 7 hu7).toMonoidHom, by norm_num, by norm_num,
     ?_, one_pos, ?_, 1, fun x ↦ ?_⟩, by norm_num, fun s hs hs2 ↦ ?_⟩
   · norm_num
