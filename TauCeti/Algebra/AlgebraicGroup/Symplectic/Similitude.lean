@@ -123,7 +123,7 @@ variable (R m A)
 
 /-- **The points identification**: the group of algebra-valued points of the coordinate Hopf
 algebra of `GSp₂ₘ` is `GSp₂ₘ(A)`. -/
-noncomputable def pointsMulEquiv :
+noncomputable abbrev pointsMulEquiv :
     HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R m) (CommAlgCat.of R A) ≃*
       pointsSubgroup R m A :=
   ConstantFormSimilitude.pointsMulEquiv R (m + m) (JFin m R)
