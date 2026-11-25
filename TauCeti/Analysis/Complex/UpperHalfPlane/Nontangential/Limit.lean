@@ -60,18 +60,6 @@ theorem nontangentialFilter_def (α x : ℝ) :
     nontangentialFilter α x = 𝓝[nontangentialCone α ⊤ x] (x : ℂ) :=
   (rfl)
 
-/-- A point of the cone `Γ^α_∞(x)` lies within `(|α| + 1) Im z` of the vertex. -/
-theorem dist_lt_of_mem_nontangentialCone {α : ℝ} {h : ℝ≥0∞} {x : ℝ} {z : ℂ}
-    (hz : z ∈ nontangentialCone α h x) : dist z x < (|α| + 1) * z.im := by
-  obtain ⟨hz0, hzα, -⟩ := mem_nontangentialCone.1 hz
-  have hre : |z.re - x| < |α| * z.im :=
-    hzα.trans_le (mul_le_mul_of_nonneg_right (le_abs_self α) hz0.le)
-  calc dist z x ≤ |(z - x).re| + |(z - x).im| := by
-        rw [dist_eq_norm]; exact norm_le_abs_re_add_abs_im _
-    _ < |α| * z.im + z.im := by
-        simpa [abs_of_pos hz0] using add_lt_add_of_lt_of_le hre (le_refl z.im)
-    _ = (|α| + 1) * z.im := by ring
-
 /-- **The truncated cones form a basis of the nontangential filter.** -/
 theorem nontangentialFilter_hasBasis (α x : ℝ) :
     (nontangentialFilter α x).HasBasis (fun h : ℝ≥0∞ => 0 < h)

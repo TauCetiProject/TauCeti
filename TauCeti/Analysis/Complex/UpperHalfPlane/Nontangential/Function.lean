@@ -26,7 +26,6 @@ So the nontangential maximal bounds proved for `P[|h| dx]` hold for `P[h]`:
 
 ## Main results
 
-* `TauCeti.enorm_upperHalfPlanePoissonIntegralFun_le`: the domination of `P[h]` by `P[|h| dx]`.
 * `TauCeti.nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_le`: the cone domination.
 * `TauCeti.lintegral_rpow_nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_le`: the
   strong type bound.
@@ -52,27 +51,6 @@ namespace TauCeti
 open Complex MeasureTheory Set
 
 open scoped Real ENNReal
-
-/-- **`P[h]` is dominated by the Poisson integral of `|h| dx`.** On the open upper half-plane,
-`‖P[h](z)‖ₑ ≤ ∫ P(z, x) |h(x)| dx`. -/
-theorem enorm_upperHalfPlanePoissonIntegralFun_le (h : ℝ → ℂ) {z : ℂ} (hz : 0 < z.im) :
-    ‖upperHalfPlanePoissonIntegralFun h z‖ₑ ≤
-      upperHalfPlanePoissonLIntegral (volume.withDensity fun s => ‖h s‖ₑ) z := by
-  by_cases hint : Integrable fun s => upperHalfPlanePoissonKernel z s • h s
-  · -- `h` is recovered from the integrand by dividing by the positive kernel.
-    have hmeas : AEStronglyMeasurable h := by
-      refine (((measurable_upperHalfPlanePoissonKernel z).inv.aestronglyMeasurable).smul
-        hint.aestronglyMeasurable).congr (.of_forall fun s => ?_)
-      simp only [Pi.smul_apply', Pi.inv_apply]
-      rw [smul_smul, inv_mul_cancel₀ (upperHalfPlanePoissonKernel_pos hz s).ne', one_smul]
-    rw [upperHalfPlanePoissonIntegralFun_def, upperHalfPlanePoissonLIntegral_def,
-      lintegral_withDensity_eq_lintegral_mul₀ hmeas.eNorm
-        (measurable_upperHalfPlanePoissonKernel z).ennreal_ofReal.aemeasurable]
-    refine (eNorm_integral_le_lintegral_eNorm _).trans_eq (lintegral_congr fun s => ?_)
-    rw [eNorm_smul, Real.eNorm_of_nonneg (upperHalfPlanePoissonKernel_nonneg hz.le s),
-      Pi.mul_apply, mul_comm]
-  · rw [upperHalfPlanePoissonIntegralFun_def, integral_undef hint, eNorm_zero]
-    exact zero_le
 
 /-- The nontangential maximal function of `P[h]` is at most that of the Poisson integral of
 `|h| dx`. -/
