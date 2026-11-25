@@ -92,13 +92,9 @@ theorem exists_hilbertBasis_nat_forall_apply_eq_smul_inner_monotone (hB : IsCoer
     exact hH (Module.Finite.of_basis b.toOrthonormalBasis.toBasis)
   obtain ⟨e, he⟩ := exists_equiv_monotone_comp_of_finite_setOf_le kappa hfin
   -- Reindex the eigenbasis along the nondecreasing enumeration `e`.
-  let basis : HilbertBasis ℕ ℝ H :=
-    HilbertBasis.mk (b.orthonormal.comp e e.injective)
-      (by rw [e.surjective.range_comp, b.dense_span])
-  have hbasis (k : ℕ) : basis k = b (e k) := by
-    simp only [basis, HilbertBasis.coe_mk, Function.comp_apply]
-  refine ⟨basis, kappa ∘ e, u ∘ e, he, tendsto_comp_atTop_of_finite_setOf_le hfin e.injective,
-    fun k ↦ hpos (e k), fun k ↦ by rw [hbasis]; exact hJb (e k), fun k v ↦ heq (e k) v,
+  refine ⟨b.reindex e.symm, kappa ∘ e, u ∘ e, he,
+    tendsto_comp_atTop_of_finite_setOf_le hfin e.injective, fun k ↦ hpos (e k),
+    fun k ↦ by rw [b.reindex_apply, e.symm_symm]; exact hJb (e k), fun k v ↦ heq (e k) v,
     fun kappa' ↦ ⟨fun ⟨w, hw, hweq⟩ ↦ ?_, fun ⟨k, hk⟩ ↦ ⟨u (e k), hune (e k), hk ▸ heq (e k)⟩⟩,
     fun h ↦ ?_⟩
   · -- An eigenvalue missing from the sequence would have an eigenfunction orthogonal to the whole
@@ -113,6 +109,7 @@ theorem exists_hilbertBasis_nat_forall_apply_eq_smul_inner_monotone (hB : IsCoer
     exact (mul_eq_mul_right_iff.1 h.symm).resolve_left hx
   · convert (e.hasSum_iff).2 (hsum h) using 1
     funext k
-    simp only [Function.comp_apply, HilbertBasis.repr_apply_apply, hbasis]
+    simp only [Function.comp_apply, HilbertBasis.repr_reindex_apply, HilbertBasis.reindex_apply,
+      Equiv.symm_symm]
 
 end IsCoercive

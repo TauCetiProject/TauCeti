@@ -410,6 +410,26 @@ private theorem energyFormH1_add_nonneg_of_garding {theta omega : ℝ} (htheta :
       omega * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2 :=
   (mul_nonneg htheta.le (sq_nonneg _)).trans (hgarding v)
 
+/-- **The mixed eigenvalues of a nonnegative form are nonnegative**: if `a(v, v) ≥ 0` for every
+`v ∈ H¹_Γ(Ω)`, then `0 ≤ λₖ` for every `k`. Every constant `C` admissible in the min–max
+principle is nonnegative, since an admissible subspace contains some `v` with nonzero value in
+`L²(Ω)`, and `0 ≤ a(v, v) ≤ C ‖v‖²_{L²(Ω)}`. -/
+theorem mixedEigenvalue_nonneg
+    (hnonneg : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+      0 ≤ energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2)) (k : ℕ) :
+    0 ≤ mixedEigenvalue mu Omega Γ a b c k := by
+  refine Real.sInf_nonneg fun C ⟨W, hW, hC⟩ ↦ ?_
+  have hne : W.map ((W1p.valueL (mu := mu) (Omega := Omega) (p := 2)).toLinearMap ∘ₗ
+      (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule.subtype) ≠ ⊥ := by
+    intro h
+    rw [h, finrank_bot] at hW
+    omega
+  obtain ⟨y, hy, hy0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hne
+  obtain ⟨v, hv, rfl⟩ := Submodule.mem_map.1 hy
+  have hpos : 0 < ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2 :=
+    pow_pos (norm_pos_iff.2 (by simpa [W1p.valueL_apply] using hy0)) 2
+  exact nonneg_of_mul_nonneg_left ((hnonneg v).trans (hC v hv)) hpos
+
 section Spectrum
 
 variable [Nonempty ι]
@@ -498,19 +518,6 @@ theorem isMixedEigenvalue_iff_exists_mixedEigenvalue_eq (kappa' : ℝ) :
       ∃ k, mixedEigenvalue mu Omega Γ a b c k = kappa' :=
   (mixedEigenvalue_properties hcoeff hrellich hΓ hsymm htheta hgarding
     hOmega_nonempty).2.2 kappa'
-
-/-- **The mixed eigenvalues of a nonnegative form are nonnegative**: if moreover
-`a(v, v) ≥ 0` for every `v ∈ H¹_Γ(Ω)`, then `0 ≤ λₖ` for every `k`, since `λₖ = a(uₖ, uₖ)` for a
-normalized eigenfunction `uₖ`. -/
-theorem mixedEigenvalue_nonneg
-    (hnonneg : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
-      0 ≤ energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2)) (k : ℕ) :
-    0 ≤ mixedEigenvalue mu Omega Γ a b c k := by
-  obtain ⟨basis, u, hvalue, heq⟩ :=
-    exists_hilbertBasis_mixedEigenvalue hcoeff hrellich hΓ hsymm htheta hgarding hOmega_nonempty
-  have h := heq k (u k)
-  rw [hvalue, real_inner_self_eq_norm_sq, basis.orthonormal.1 k, one_pow, mul_one] at h
-  exact h ▸ hnonneg (u k)
 
 end Spectrum
 
@@ -676,9 +683,8 @@ theorem mixedEigenvalue_laplacian_spectrum :
   have hgarding (v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :=
     norm_sq_le_energyFormH1_laplacian_add (v : W1p mu Omega 2)
   have hrellich := W1p.isCompactOperator_valueL_of_isLipschitzDomain (mu := mu) (p := 2) hΩ hb
-  exact ⟨mixedEigenvalue_nonneg hcoeff hrellich hΓ hsymm one_pos hgarding hOmega_nonempty
-      hnonneg 0, monotone_mixedEigenvalue hcoeff hrellich hΓ hsymm one_pos hgarding
-      hOmega_nonempty,
+  exact ⟨mixedEigenvalue_nonneg hnonneg 0,
+    monotone_mixedEigenvalue hcoeff hrellich hΓ hsymm one_pos hgarding hOmega_nonempty,
     tendsto_mixedEigenvalue_atTop hcoeff hrellich hΓ hsymm one_pos hgarding
       hOmega_nonempty,
     isMixedEigenvalue_iff_exists_mixedEigenvalue_eq hcoeff hrellich hΓ hsymm one_pos
