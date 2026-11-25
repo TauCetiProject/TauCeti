@@ -16,13 +16,15 @@ Let `G` be a topological group and `P` a presheaf of groups on the finite contin
 `ContAction.point G` is a group (`TauCeti.CategoryTheory.Sites.Point.GrpStalk`), and it is the
 stalk of the underlying presheaf of sets, on which `G` acts by translating the point
 (`ContAction.stalk`). This action is by group automorphisms, and its stabilizers are open
-(`ContAction.isSmooth_stalk`), so the stalk is a group with a smooth action of `G` by group
-automorphisms, the kind of coefficients of continuous nonabelian `H¹`. A morphism of presheaves of
-groups induces a `G`-equivariant homomorphism of stalks (`ContAction.grpStalkMap_smul`).
+(`ContAction.isOpen_stabilizer_grpStalk`, as in `ContAction.isSmooth_stalk`), so the stalk is a
+group with a smooth action of `G` by group automorphisms, the kind of coefficients of continuous
+nonabelian `H¹`. A morphism of presheaves of groups induces a `G`-equivariant homomorphism of
+stalks (`ContAction.grpStalkMap_smul`).
 
 ## Main results
 
 * `ContAction.smul_grpGerm`: `G` acts on germs by translating the point.
+* `ContAction.isOpen_stabilizer_grpStalk`: the stabilizers of this action are open.
 * `ContAction.grpStalkMap_smul`: the induced homomorphism of stalks is `G`-equivariant.
 -/
 
@@ -59,10 +61,19 @@ noncomputable instance instMulDistribMulActionGrpStalk :
     obtain ⟨S, s, -, -⟩ := (point G).exists_grpGerm_eq P 1
     rw [← map_one ((point G).grpGerm P S s), smul_grpGerm, map_one, map_one]
 
+/-- **The stabilizers of the `G`-action on the stalk of a presheaf of groups are open.** -/
+theorem isOpen_stabilizer_grpStalk (p : (point G).GrpStalk P) :
+    IsOpen (MulAction.stabilizer G p : Set G) := by
+  obtain ⟨S, s, a, rfl⟩ := (point G).exists_grpGerm_eq P p
+  refine Subgroup.isOpen_mono (fun g hg ↦ MulAction.mem_stabilizer_iff.2 ?_)
+    (isOpen_stabilizer S s)
+  rw [smul_grpGerm, MulAction.mem_stabilizer_iff.1 hg]
+
 variable {P} {Q : (ContAction FintypeCat.{u} G)ᵒᵖ ⥤ GrpCat.{u}}
 
 /-- The homomorphism of stalks induced by a morphism of presheaves of groups is
 `G`-equivariant. -/
+@[simp]
 theorem grpStalkMap_smul (f : P ⟶ Q) (g : G) (p : (point G).GrpStalk P) :
     (point G).grpStalkMap f (g • p) = g • (point G).grpStalkMap f p := by
   obtain ⟨S, s, a, rfl⟩ := (point G).exists_grpGerm_eq P p

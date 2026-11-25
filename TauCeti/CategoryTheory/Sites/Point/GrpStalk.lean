@@ -162,8 +162,8 @@ theorem coe_grpStalkMap (f : P ⟶ Q) :
     ⇑(Φ.grpStalkMap f) = Φ.presheafFiber.map (Functor.whiskerRight f (forget GrpCat)) := by
   funext p
   obtain ⟨X, x, a, rfl⟩ := Φ.exists_grpGerm_eq P p
-  rw [grpStalkMap_grpGerm, grpGerm_apply, grpGerm_apply, toPresheafFiber_naturality_apply]
-  rfl
+  rw [grpStalkMap_grpGerm, grpGerm_apply, grpGerm_apply, toPresheafFiber_naturality_apply,
+    Functor.whiskerRight_app, ConcreteCategory.forget_map_eq_ofHom, TypeCat.ofHom_apply]
 
 /-- The identity of a presheaf of groups induces the identity of its stalk. -/
 @[simp]
