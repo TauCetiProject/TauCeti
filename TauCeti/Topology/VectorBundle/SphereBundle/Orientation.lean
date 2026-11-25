@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.VectorBundle.Orientation.LocalSystem
 public import TauCeti.Topology.VectorBundle.SphereBundle.LocallyTrivial
 import TauCeti.LinearAlgebra.Orientation.Basis
+import TauCeti.Topology.VectorBundle.Orientation.ZeroSectionCompl
 
 /-!
 # The orientation local system of a line bundle and its unit sphere bundle
@@ -66,18 +67,14 @@ variable {B : Type u} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [N
 
 /-- In rank one a unit vector `v` orients its fibre: the map from the unit sphere bundle to the
 orientation double cover sending `v` to the orientation of its fibre in which `v` is positive.
-It lies over the base and carries `-v` to the opposite orientation
-(`TauCeti.sphereBundleOrientation_sphereBundleNeg`). -/
+It is the restriction of the map from the nonzero vectors
+(`TauCeti.zeroSectionComplToOrientationCover`), lies over the base and carries `-v` to the opposite
+orientation (`TauCeti.sphereBundleOrientation_sphereBundleNeg`). -/
 def sphereBundleOrientation : C(sphereBundle F E, VectorBundleOrientationCover F E (Fin 1)) where
-  toFun v := ⟨(v : TotalSpace F E).proj,
-    (FiniteDimensional.basisSingleton (Fin 1) ((VectorBundle.finrank_eq ℝ F E _).trans hF)
-      (v : TotalSpace F E).snd
-      (snd_ne_zero_of_mem_sphereBundle v.property)).orientation⟩
+  toFun v := zeroSectionComplToOrientationCover F E hF
+    ⟨v, mem_zeroSectionCompl.2 (snd_ne_zero_of_mem_sphereBundle v.property)⟩
   continuous_toFun :=
-    VectorBundleOrientationCover.continuous_mk_basis_orientation
-      ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal) _ fun i ↦ by
-        simp only [FiniteDimensional.basisSingleton_apply]
-        exact continuous_subtypeVal
+    (continuous_zeroSectionComplToOrientationCover hF).comp (continuous_subtypeVal.subtype_mk _)
 
 /-- The orientation map sends a unit vector `v` over `b` to the orientation of `E_b` given by the
 basis `(v)`. -/

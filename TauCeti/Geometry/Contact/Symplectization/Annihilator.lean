@@ -331,6 +331,13 @@ theorem mem_annihilatorPunctured {z : TotalSpace (Fin 1 → ℝ) fun x ↦ annih
     z ∈ hξ.annihilatorPunctured ↔ z.snd ≠ 0 :=
   mem_zeroSectionCompl
 
+/-- The symplectization is the complement of the zero section of the annihilator line. -/
+theorem coe_annihilatorPunctured :
+    letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
+    (hξ.annihilatorPunctured : Set (TotalSpace (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x)) =
+      zeroSectionCompl (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x :=
+  Set.ext fun _ ↦ hξ.mem_annihilatorPunctured.trans mem_zeroSectionCompl.symm
+
 variable [T2Space M]
 
 /-- **The symplectization of a contact structure is nondegenerate.** The exterior derivative of
