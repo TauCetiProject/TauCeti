@@ -49,9 +49,9 @@ variable {A : Type*} [CommRing A] {R : Type*} [Semiring R] [Algebra A R] {n : �
 theorem apply_eq_of_charpoly_eq_glnHeckePolynomial (D : Determinant A R n) {r : R} {q : A}
     {T : Fin (n + 1) → A} (h : D.charpoly r = glnHeckePolynomial n q T) :
     D r = q ^ n.choose 2 * T (Fin.last n) := by
-  rw [apply_eq_neg_one_pow_mul_eval_zero_charpoly, h, ← coeff_zero_eq_eval_zero,
-    coeff_zero_glnHeckePolynomial, ← mul_assoc, ← mul_assoc, ← mul_pow, neg_one_mul, neg_neg,
-    one_pow, one_mul]
+  refine (isUnit_neg_one.pow n).mul_left_cancel ?_
+  rw [← eval_zero_charpoly, h, ← coeff_zero_eq_eval_zero, coeff_zero_glnHeckePolynomial,
+    mul_assoc]
 
 /-- **Determinant coefficient with normalized Satake parameters.** For `q = s²` and
 `Tᵢ = s^{i(n-i)} eᵢ(z₁, …, zₙ)`, a determinant whose characteristic polynomial at `r` is the
