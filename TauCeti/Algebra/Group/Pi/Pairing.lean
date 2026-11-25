@@ -19,7 +19,7 @@ additive commutative monoid `P`. Their sum
 
 is a biadditive pairing of the products `∀ i, M i` and `∀ i, N i`. If every left adjoint
 `e i : M i → (N i →+ P)` is bijective, so is the left adjoint of the sum
-(`AddMonoidHom.bijective_piPairing`): an additive map out of a finite product is the sum of its
+(`AddMonoidHom.piPairing_bijective`): an additive map out of a finite product is the sum of its
 restrictions to the coordinates. This is how local duality at finitely many places assembles into
 duality for the product of the local cohomology groups.
 -/
@@ -47,7 +47,7 @@ theorem piPairing_apply_single [DecidableEq ι] (x : ∀ i, M i) (i : ι) (y : N
     fun j _ hj ↦ by rw [Pi.single_eq_of_ne hj, map_zero], Pi.single_eq_same]
 
 /-- The sum of pairings with bijective left adjoints has bijective left adjoint. -/
-theorem bijective_piPairing (he : ∀ i, Function.Bijective (e i)) :
+theorem piPairing_bijective (he : ∀ i, Function.Bijective (e i)) :
     Function.Bijective (piPairing e) := by
   classical
   refine ⟨fun x x' h ↦ funext fun i ↦ (he i).1 <| AddMonoidHom.ext fun y ↦ ?_, fun χ ↦ ?_⟩

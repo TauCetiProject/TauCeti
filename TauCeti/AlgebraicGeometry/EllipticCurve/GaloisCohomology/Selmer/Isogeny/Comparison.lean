@@ -34,7 +34,7 @@ are finite. Over `ℚ` they are, for every isogeny over every completion
 
 The proof is the orthogonality half of global duality. The local Tate pairings
 `H¹(K_v, E₁[φ]) × H¹(K_v, E₂[φ̂]) → ℤ/deg φ` at the places of `S` add up to a perfect pairing of
-the products (`AddMonoidHom.bijective_piPairing`). Under it, the classes of `∏_v H¹_φ(K_v)` and the
+the products (`AddMonoidHom.piPairing_bijective`). Under it, the classes of `∏_v H¹_φ(K_v)` and the
 localisations of `Sel_φ^S` are orthogonal to the localisations of `Sel_φ̂`: the former by local
 orthogonality of the Selmer conditions, the latter by global reciprocity
 (`TauCeti.Isogeny.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero`). Counting orthogonal
@@ -102,7 +102,7 @@ private theorem localPairing_apply (v : HeightOneSpectrum (𝓞 K))
         (isUnit_natCast_of_ne_zero ℚ (φ.baseChange (v.adicCompletion K)).degree_ne_zero) a b) :=
   (rfl)
 
-private theorem bijective_localPairing (v : HeightOneSpectrum (𝓞 K)) :
+private theorem localPairing_bijective (v : HeightOneSpectrum (𝓞 K)) :
     Function.Bijective (localPairing φ v) := by
   let e := ZMod.ringEquivCongr (degree_baseChange φ (K := v.adicCompletion K))
   -- `localPairing` is the composite of the local Tate pairing with transport of values; unfolding
@@ -200,7 +200,7 @@ private theorem natCard_sup_mul_natCard_map_le
       (ofIsogeny (φ.baseChange ((v : HeightOneSpectrum (𝓞 K)).adicCompletion K))).KerCoeff) := by
   have : NeZero φ.degree := ⟨φ.degree_ne_zero⟩
   refine (AddMonoidHom.piPairing fun v : S ↦ localPairing φ v).natCard_mul_natCard_le_zmod
-    (AddMonoidHom.bijective_piPairing _ fun v ↦ bijective_localPairing φ v)
+    (AddMonoidHom.piPairing_bijective _ fun v ↦ localPairing_bijective φ v)
     (fun y ↦ funext fun v ↦ nsmul_H1_eq_zero (fun Q ↦ ?_) (y v)) ?_
   · simpa only [degree_dual, degree_baseChange] using degree_nsmul_kerCoeff_eq_zero
       (φ.baseChange ((v : HeightOneSpectrum (𝓞 K)).adicCompletion K)).dual Q
