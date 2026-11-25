@@ -91,10 +91,7 @@ instance GeometricallyIrreducible.descendsAlong_surjective :
 field `k` is geometrically integral if its base change to some extension field of `k` is. -/
 instance GeometricallyIntegral.descendsAlong_surjective :
     DescendsAlong @GeometricallyIntegral.{u} @Surjective := by
-  rw [GeometricallyIntegral.eq_geometrically]
-  refine geometrically_descendsAlong_surjective _ fun {W V} p _ _ _ _ ↦ ?_
-  have : IsReduced V := IsSchemeTheoreticallyDominant.isReduced p
-  have : IrreducibleSpace V := p.surjective.irreducibleSpace p.continuous
-  exact isIntegral_of_irreducibleSpace_of_isReduced V
+  rw [GeometricallyIntegral.eq_geometricallyReduced_inf_geometricallyIrreducible]
+  exact DescendsAlong.inf
 
 end AlgebraicGeometry
