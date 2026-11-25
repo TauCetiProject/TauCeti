@@ -115,11 +115,11 @@ theorem iSup_basicOpen_ι_eq_top {κ : Type*} (v : κ → M)
   | add x y _ _ hx hy => exact add_mem hx hy
   | mul x y _ _ hx hy => exact mul_mem hx hy
 
-/-- On projective space of dimension zero, `Proj (Sym M)` for `M` free of rank one, the standard
-open `D₊(x)` of the coordinate `x` is the whole space. -/
-theorem basicOpen_ι_basis_eq_top {κ : Type*} [Unique κ] (b : Module.Basis κ R M) :
-    Proj.basicOpen (homogeneousSubmodule R M) (_root_.SymmetricAlgebra.ι R M (b default)) = ⊤ := by
-  simpa using iSup_basicOpen_ι_eq_top R M b b.span_eq
+/-- If a single element `x` spans `M` (for instance the coordinate of projective space of
+dimension zero), the standard open `D₊(x)` is the whole of `Proj (Sym M)`. -/
+theorem basicOpen_ι_eq_top {x : M} (hx : Submodule.span R {x} = ⊤) :
+    Proj.basicOpen (homogeneousSubmodule R M) (_root_.SymmetricAlgebra.ι R M x) = ⊤ := by
+  simpa using iSup_basicOpen_ι_eq_top R M (fun _ : Unit ↦ x) (by simpa using hx)
 
 /-- The projective spectrum of a finite module is proper over the coefficient ring.
 Freeness and projectivity are not required. -/

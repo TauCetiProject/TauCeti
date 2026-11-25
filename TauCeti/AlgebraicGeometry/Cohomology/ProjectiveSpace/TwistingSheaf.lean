@@ -156,8 +156,9 @@ theorem nontrivial_cohomology_zero_twistingSheaf_of_unique [Nontrivial R] [Uniqu
   obtain ⟨k, j, hkj⟩ : ∃ k j : ℕ, (j : ℤ) = k + m := ⟨m.natAbs, (m.natAbs + m).toNat, by omega⟩
   have hxk : x ^ k ∈ 𝒜 k := by simpa using SetLike.pow_mem_graded k hx
   have hxj : x ^ j ∈ 𝒜 j := by simpa using SetLike.pow_mem_graded j hx
+  have hspan : Submodule.span R {b default} = ⊤ := by simpa [Set.range_unique] using b.span_eq
   let s := Proj.twistingSheaf.const hkj (x ^ j) (x ^ k) hxj hxk ⊤
-    ((basicOpen_ι_basis_eq_top R M b).ge.trans (Proj.le_basicOpen_pow 𝒜 x k))
+    ((basicOpen_ι_eq_top R M hspan).ge.trans (Proj.le_basicOpen_pow 𝒜 x k))
   have hs : s ≠ 0 := by
     intro h0
     have h := congrArg ((Proj.twistingSheaf 𝒜 m).presheaf.map
