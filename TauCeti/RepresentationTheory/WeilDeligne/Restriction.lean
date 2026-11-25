@@ -50,6 +50,13 @@ variable {E W W' V V' : Type*} [Field E] [Group W] [TopologicalSpace W] [Group W
   [TopologicalSpace W'] [AddCommGroup V] [Module E V] [AddCommGroup V'] [Module E V']
   {deg : W →* Multiplicative ℤ} {deg' : W' →* Multiplicative ℤ} {q : ℕ}
 
+/-- Composing a homomorphism with open kernel with a continuous homomorphism `ι : W' →* W`
+gives a homomorphism with open kernel, since its kernel is the preimage under `ι`. -/
+theorem isOpen_ker_comp {G : Type*} [MulOneClass G] {χ : W →* G} (hχ : IsOpen (χ.ker : Set W))
+    {ι : W' →* W} (hι : Continuous ι) : IsOpen ((χ.comp ι).ker : Set W') := by
+  rw [← MonoidHom.comap_ker, Subgroup.coe_comap]
+  exact hχ.preimage hι
+
 variable (ι : W' →* W) (hι : Continuous ι) (f : ℕ)
   (hf : ∀ w, (deg (ι w)).toAdd = f * (deg' w).toAdd)
 
@@ -59,14 +66,10 @@ in place of `q`. For the Weil group of a finite extension of local fields, `f` i
 degree. -/
 def restrict (D : WeilDeligneParameter E W V deg q) : WeilDeligneParameter E W' V deg' (q ^ f) where
   r := D.r.comp ι
-  isOpen_ker := by
-    rw [← MonoidHom.comap_ker, Subgroup.coe_comap]
-    exact D.isOpen_ker.preimage hι
+  isOpen_ker := isOpen_ker_comp D.isOpen_ker hι
   N := D.N
   isNilpotent_N := D.isNilpotent_N
-  conj_N w := by
-    rw [MonoidHom.comp_apply, MonoidHom.comp_apply, map_inv, D.conj_N, hf, Nat.cast_pow,
-      zpow_mul, zpow_natCast]
+  conj_N w := by simp [D.conj_N, hf, ← zpow_natCast, ← zpow_mul]
 
 variable {ι hι f hf}
 
@@ -150,19 +153,21 @@ theorem Iso.restrict_symm (g : Iso D₁ D₂) :
     g.restrict.injective ((g.restrict.apply_symm_apply v).trans (by simp)))
 
 /-- The restriction of the rank-one parameter of `χ` is the rank-one parameter of `χ ∘ ι`. -/
+@[simp]
 theorem restrict_ofCharacter (χ : W →* Eˣ) (hχ : IsOpen (χ.ker : Set W)) :
     (ofCharacter deg q χ hχ).restrict ι hι f hf =
-      ofCharacter deg' (q ^ f) (χ.comp ι)
-        (show IsOpen ((χ.comp ι).ker : Set W') from hχ.preimage hι) := by
+      ofCharacter deg' (q ^ f) (χ.comp ι) (isOpen_ker_comp hχ hι) := by
   ext w <;> simp
 
 /-- Restriction commutes with direct sums. -/
+@[simp]
 theorem restrict_prod (D : WeilDeligneParameter E W V deg q)
     (D' : WeilDeligneParameter E W V' deg q) :
     (D.prod D').restrict ι hι f hf = (D.restrict ι hι f hf).prod (D'.restrict ι hι f hf) := by
   ext w x <;> simp
 
 /-- Restriction commutes with duals. -/
+@[simp]
 theorem restrict_dual (D : WeilDeligneParameter E W V deg q) :
     D.dual.restrict ι hι f hf = (D.restrict ι hι f hf).dual := by
   ext w φ <;> simp [Representation.dual_apply]
@@ -175,6 +180,7 @@ theorem detChar_restrict (D : WeilDeligneParameter E W V deg q) :
   simp
 
 /-- Restriction of `Sp(n)` along `ι` is `Sp(n)` for `W'` and `q ^ f`. -/
+@[simp]
 theorem restrict_special (hdeg : Continuous deg) (hq : (q : E) ≠ 0) (hdeg' : Continuous deg')
     (hq' : ((q ^ f : ℕ) : E) ≠ 0) (n : ℕ) :
     (special q n hdeg hq).restrict ι hι f hf = special (q ^ f) n hdeg' hq' := by
@@ -185,19 +191,22 @@ theorem restrict_special (hdeg : Continuous deg) (hq : (q : E) ≠ 0) (hdeg' : C
 variable [SeparatelyContinuousMul W] [SeparatelyContinuousMul W']
 
 /-- Restriction commutes with twists: the twist by `χ` restricts to the twist by `χ ∘ ι`. -/
+@[simp]
 theorem restrict_twist (D : WeilDeligneParameter E W V deg q) (χ : W →* Eˣ)
     (hχ : IsOpen (χ.ker : Set W)) :
-    (D.twist χ hχ).restrict ι hι f hf = (D.restrict ι hι f hf).twist (χ.comp ι)
-      (show IsOpen ((χ.comp ι).ker : Set W') from hχ.preimage hι) := by
+    (D.twist χ hχ).restrict ι hι f hf =
+      (D.restrict ι hι f hf).twist (χ.comp ι) (isOpen_ker_comp hχ hι) := by
   ext w x <;> simp [Representation.charTwist_apply]
 
 /-- Restriction commutes with tensor products. -/
+@[simp]
 theorem restrict_tensor (D : WeilDeligneParameter E W V deg q)
     (D' : WeilDeligneParameter E W V' deg q) :
     (D.tensor D').restrict ι hι f hf = (D.restrict ι hι f hf).tensor (D'.restrict ι hι f hf) := by
   ext w x <;> simp
 
 /-- Restriction commutes with determinants. -/
+@[simp]
 theorem restrict_det (D : WeilDeligneParameter E W V deg q) :
     D.det.restrict ι hι f hf = (D.restrict ι hι f hf).det := by
   ext w <;> simp

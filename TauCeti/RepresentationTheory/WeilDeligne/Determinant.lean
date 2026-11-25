@@ -115,26 +115,31 @@ theorem detChar_ofCharacter : (ofCharacter deg q χ hχ).detChar = χ := by
 theorem Iso.detChar_eq {D : WeilDeligneParameter E W V deg q}
     {D' : WeilDeligneParameter E W V' deg q} (f : Iso D D') : D.detChar = D'.detChar := by
   ext w
-  rw [f.eq_transport, coe_detChar_apply, coe_detChar_apply, transport_r,
-    LinearEquiv.conjAlgEquiv_apply, LinearMap.det_conj]
+  rw [f.eq_transport]
+  simpa [transport_r, LinearEquiv.conjAlgEquiv_apply] using
+    (LinearMap.det_conj (D.r w) f.toLinearEquiv).symm
 
 /-- The determinant of a direct sum is the product of the determinants. -/
+@[simp]
 theorem detChar_prod [FiniteDimensional E V] [FiniteDimensional E V']
     (D : WeilDeligneParameter E W V deg q) (D' : WeilDeligneParameter E W V' deg q) :
     (D.prod D').detChar = D.detChar * D'.detChar := by
   ext w
-  rw [coe_detChar_apply, MonoidHom.mul_apply, Units.val_mul, coe_detChar_apply,
-    coe_detChar_apply, prod_r]
-  exact LinearMap.det_prodMap _ _
+  simp only [coe_detChar_apply, MonoidHom.mul_apply, Units.val_mul, prod_r]
+  -- `Representation.prod` acts by `LinearMap.prodMap` by definition; Mathlib's `simps` lemma
+  -- `Representation.prod_apply_apply` only states this pointwise.
+  exact LinearMap.det_prodMap (D.r w) (D'.r w)
 
 /-- The determinant of the dual is the inverse of the determinant. -/
+@[simp]
 theorem detChar_dual [FiniteDimensional E V] (D : WeilDeligneParameter E W V deg q) :
     D.dual.detChar = D.detChar⁻¹ := by
   ext w
-  rw [coe_detChar_apply, dual_r, Representation.dual_apply, ← LinearMap.dualMap_def,
-    LinearMap.det_dualMap, ← coe_detChar_apply, map_inv, MonoidHom.inv_apply]
+  rw [MonoidHom.inv_apply, ← map_inv]
+  simp [Representation.dual_apply, ← LinearMap.dualMap_def, LinearMap.det_dualMap, -map_inv]
 
 /-- The determinant of `Sp(n)` is `ω ^ (n (n - 1) / 2)`. -/
+@[simp]
 theorem detChar_special (hdeg : Continuous deg) (hq : (q : E) ≠ 0) (n : ℕ) :
     (special q n hdeg hq).detChar = omega deg hq ^ (n * (n - 1) / 2) := by
   ext w
@@ -162,6 +167,11 @@ theorem det_r_apply (D : WeilDeligneParameter E W V deg q) (w : W) (x : E) :
 theorem det_N (D : WeilDeligneParameter E W V deg q) : D.det.N = 0 :=
   (rfl)
 
+/-- The determinant character of the determinant is the determinant character. -/
+@[simp]
+theorem detChar_det (D : WeilDeligneParameter E W V deg q) : D.det.detChar = D.detChar :=
+  detChar_ofCharacter
+
 /-- Two parameters with the same determinant character have the same determinant. -/
 theorem det_eq_det_of_detChar_eq {D : WeilDeligneParameter E W V deg q}
     {D' : WeilDeligneParameter E W V' deg q} (h : D.detChar = D'.detChar) : D.det = D'.det := by
@@ -180,12 +190,14 @@ theorem Iso.det_eq {D : WeilDeligneParameter E W V deg q}
   det_eq_det_of_detChar_eq f.detChar_eq
 
 /-- The determinant of a twist by `χ` is `χ ^ dim V · det`. -/
+@[simp]
 theorem detChar_twist (D : WeilDeligneParameter E W V deg q) :
     (D.twist χ hχ).detChar = χ ^ finrank E V * D.detChar := by
   ext w
   simp [twist_r, Representation.charTwist_apply, LinearMap.det_smul]
 
 /-- The determinant of a tensor product is `det r ^ dim V' · det r' ^ dim V`. -/
+@[simp]
 theorem detChar_tensor [FiniteDimensional E V] [FiniteDimensional E V']
     (D : WeilDeligneParameter E W V deg q) (D' : WeilDeligneParameter E W V' deg q) :
     (D.tensor D').detChar = D.detChar ^ finrank E V' * D'.detChar ^ finrank E V := by
