@@ -8,9 +8,10 @@ module
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.Topology.Algebra.Group.Matrix
+public import TauCeti.LinearAlgebra.Determinant.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Unique
 public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Archimedean.Character
-public import TauCeti.RepresentationTheory.LinearCharacter.OfLine
+public import TauCeti.RepresentationTheory.Continuous.Determinant.Basic
 
 /-!
 # The one-dimensional representations of the archimedean Weil groups
@@ -23,9 +24,11 @@ continuous representations of `W_ℝ` are multiplication by the characters throu
 classification of the irreducible continuous representations of the archimedean Weil groups; the
 irreducible representations of `W_ℝ` of dimension two are the inductions of characters of `ℂˣ`.
 
-Continuity of a representation `ρ` on a finite-dimensional space is continuity of its matrix
-coefficients `w ↦ f (ρ w v)`. Both statements are also given for parameters `G →* GL_n(ℂ)` with
-`n` a singleton index type, which are then the scalar matrices of a character.
+The representations are continuous representations `TauCeti.ContinuousRep` on a space with its
+module topology; on a line, `ρ w` is multiplication by its determinant
+(`LinearMap.apply_eq_det_smul_of_finrank_eq_one`), so `W` acts by the determinant character
+`ContinuousRep.det`, which is continuous. Both statements are also given for parameters
+`G →* GL_n(ℂ)` with `n` a singleton index type, which are then the scalar matrices of a character.
 
 ## Main results
 
@@ -46,33 +49,33 @@ coefficients `w ↦ f (ρ w v)`. Both statements are also given for parameters `
 
 public section
 
-namespace TauCeti.ClassFieldTheory
-
 open Matrix Module
 
-variable {V : Type*} [AddCommGroup V] [Module ℂ V]
+namespace TauCeti.ClassFieldTheory
+
+variable {V : Type*} [AddCommGroup V] [Module ℂ V] [TopologicalSpace V] [IsModuleTopology ℂ V]
 
 namespace WeilGroupComplex
 
 /-- **The continuous one-dimensional representations of `W_ℂ`**: `ℂˣ` acts by a character
 `z ↦ |z| ^ s * (z / |z|) ^ k`. -/
-theorem exists_eq_complexUnitsCharacter_smul (ρ : Representation ℂ WeilGroupComplex V)
-    (h : finrank ℂ V = 1) (hρ : ∀ (v : V) (f : Dual ℂ V), Continuous fun z ↦ f (ρ z v)) :
+theorem exists_eq_complexUnitsCharacter_smul (ρ : ContinuousRep WeilGroupComplex ℂ V)
+    (h : finrank ℂ V = 1) :
     ∃ (s : ℂ) (k : ℤ), ∀ z v, ρ z v = (complexUnitsCharacter s k z : ℂ) • v := by
-  obtain ⟨s, k, hsk⟩ :=
-    exists_eq_complexUnitsCharacter ⟨ρ.lineCharacter h, ρ.continuous_lineCharacter h hρ⟩
+  have : FiniteDimensional ℂ V := Module.finite_of_finrank_eq_succ h
+  obtain ⟨s, k, hsk⟩ := exists_eq_complexUnitsCharacter ρ.continuousDet
   refine ⟨s, k, fun z v ↦ ?_⟩
-  have hz : ρ.lineCharacter h z = complexUnitsCharacter s k z := DFunLike.congr_fun hsk z
-  rw [ρ.lineCharacter_smul h, hz]
+  have hz : ρ.continuousDet z = complexUnitsCharacter s k z := DFunLike.congr_fun hsk z
+  rw [LinearMap.apply_eq_det_smul_of_finrank_eq_one h, ← ρ.coe_det_apply_eq_linearMap_det,
+    ← ContinuousRep.coe_continuousDet, hz]
 
 /-- **The continuous irreducible finite-dimensional representations of `W_ℂ`** are
 one-dimensional, and `ℂˣ` acts on them by a character `z ↦ |z| ^ s * (z / |z|) ^ k`. -/
 theorem exists_eq_complexUnitsCharacter_smul_of_isIrreducible [FiniteDimensional ℂ V]
-    (ρ : Representation ℂ WeilGroupComplex V) [ρ.IsIrreducible]
-    (hρ : ∀ (v : V) (f : Dual ℂ V), Continuous fun z ↦ f (ρ z v)) :
+    (ρ : ContinuousRep WeilGroupComplex ℂ V) [ρ.toRepresentation.IsIrreducible] :
     finrank ℂ V = 1 ∧ ∃ (s : ℂ) (k : ℤ), ∀ z v, ρ z v = (complexUnitsCharacter s k z : ℂ) • v :=
-  have h := Representation.IsIrreducible.finrank_eq_one_of_isMulCommutative ρ
-  ⟨h, exists_eq_complexUnitsCharacter_smul ρ h hρ⟩
+  have h := Representation.IsIrreducible.finrank_eq_one_of_isMulCommutative ρ.toRepresentation
+  ⟨h, exists_eq_complexUnitsCharacter_smul ρ h⟩
 
 /-- **The continuous one-dimensional parameters of `W_ℂ`** are the scalar matrices of the
 characters `z ↦ |z| ^ s * (z / |z|) ^ k`. -/
@@ -92,13 +95,14 @@ namespace WeilGroupReal
 /-- **The continuous one-dimensional representations of `W_ℝ`**: `W_ℝ` acts by a character
 through the norm, `character s ε`, which is `|z| ^ (2 * s)` on `z ∈ ℂˣ` and `(-1) ^ ε` at
 `j`. -/
-theorem exists_eq_character_smul (ρ : Representation ℂ WeilGroupReal V) (h : finrank ℂ V = 1)
-    (hρ : ∀ (v : V) (f : Dual ℂ V), Continuous fun w ↦ f (ρ w v)) :
+theorem exists_eq_character_smul (ρ : ContinuousRep WeilGroupReal ℂ V) (h : finrank ℂ V = 1) :
     ∃ (s : ℂ) (ε : ZMod 2), ∀ w v, ρ w v = (character s ε w : ℂ) • v := by
-  obtain ⟨s, ε, hsε⟩ := exists_eq_character ⟨ρ.lineCharacter h, ρ.continuous_lineCharacter h hρ⟩
+  have : FiniteDimensional ℂ V := Module.finite_of_finrank_eq_succ h
+  obtain ⟨s, ε, hsε⟩ := exists_eq_character ρ.continuousDet
   refine ⟨s, ε, fun w v ↦ ?_⟩
-  have hw : ρ.lineCharacter h w = character s ε w := DFunLike.congr_fun hsε w
-  rw [ρ.lineCharacter_smul h, hw]
+  have hw : ρ.continuousDet w = character s ε w := DFunLike.congr_fun hsε w
+  rw [LinearMap.apply_eq_det_smul_of_finrank_eq_one h, ← ρ.coe_det_apply_eq_linearMap_det,
+    ← ContinuousRep.coe_continuousDet, hw]
 
 /-- **The continuous one-dimensional parameters of `W_ℝ`** are the scalar matrices of the
 characters `character s ε` through the norm. -/

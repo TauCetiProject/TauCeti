@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Equiv
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.Ray
@@ -13,9 +12,7 @@ import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
-import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
-import Mathlib.LinearAlgebra.Trace
 
 /-!
 # Spanning vectors and linear relations in a one-dimensional space
@@ -33,9 +30,6 @@ multiples of each other (`TauCeti.exists_pos_smul_eq_of_apply_pos_of_finrank_eq_
 
 Conversely, a nontrivial space that is not one-dimensional has rank greater than `1`
 (`TauCeti.one_lt_rank_of_finrank_ne_one`).
-
-The scalars are the endomorphism algebra of a one-dimensional vector space
-(`TauCeti.endEquivOfFinrankEqOne`).
 -/
 
 public section
@@ -116,28 +110,5 @@ theorem one_lt_rank_of_finrank_ne_one {K V : Type*} [DivisionRing K] [AddCommGro
   · have := Module.finrank_pos (R := K) (M := V)
     exact Module.one_lt_rank_of_one_lt_finrank (by omega)
   · exact Cardinal.one_lt_aleph0.trans_le (not_lt.1 (mt Module.rank_lt_aleph0_iff.1 hfin))
-
-/-- The scalars `k` are the endomorphism algebra of a one-dimensional vector space. -/
-noncomputable def endEquivOfFinrankEqOne {k V : Type*} [Field k] [AddCommGroup V] [Module k V]
-    (h : finrank k V = 1) : k ≃ₐ[k] Module.End k V :=
-  haveI : FiniteDimensional k V := Module.finite_of_finrank_eq_succ h
-  AlgEquiv.ofBijective (Algebra.ofId k (Module.End k V)) <| by
-    rw [show ⇑(Algebra.ofId k (Module.End k V)) = algebraMap k (Module.End k V) from
-      funext (Algebra.ofId_apply _)]
-    exact Module.Free.bijective_algebraMap_of_finrank_eq_one (by rw [Module.finrank_linearMap, h])
-
-/-- A scalar `c` acts on a one-dimensional space as multiplication by `c`. -/
-@[simp]
-theorem endEquivOfFinrankEqOne_apply {k V : Type*} [Field k] [AddCommGroup V] [Module k V]
-    (h : finrank k V = 1) (c : k) (v : V) : endEquivOfFinrankEqOne h c v = c • v := by
-  rw [endEquivOfFinrankEqOne, AlgEquiv.ofBijective_apply, Algebra.ofId_apply,
-    Module.algebraMap_end_apply]
-
-/-- The scalar corresponding to an endomorphism `f` of a one-dimensional space acts as `f`. -/
-@[simp]
-theorem endEquivOfFinrankEqOne_symm_apply_smul {k V : Type*} [Field k] [AddCommGroup V]
-    [Module k V] (h : finrank k V = 1) (f : Module.End k V) (v : V) :
-    (endEquivOfFinrankEqOne h).symm f • v = f v := by
-  rw [← endEquivOfFinrankEqOne_apply h, AlgEquiv.apply_symm_apply]
 
 end TauCeti
