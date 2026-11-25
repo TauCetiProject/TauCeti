@@ -11,14 +11,16 @@ public import TauCeti.GroupTheory.CompositionSeries.Basic
 /-!
 # Refining chief series to group composition series
 
-Every chief series from the trivial subgroup to the whole finite group refines to a group
-composition series containing all its terms. Each normal interval between consecutive chief
-terms has a composition series, and concatenating these interval series gives the refinement.
+A chief series whose last term is finite refines to a series of composition steps containing
+all its terms. Each normal interval between consecutive chief terms has a composition series,
+and concatenating these interval series gives the refinement. For a chief series from the
+trivial subgroup to the whole finite group, this yields a group composition series.
 
 ## Main results
 
-* `TauCeti.ChiefSeries.exists_relSeries_isCompositionStep_refinement`: a chief series refines to
-  a series of composition steps with the same endpoints and containing every chief term.
+* `TauCeti.ChiefSeries.exists_relSeries_isCompositionStep_refinement`: a chief series with a
+  finite last term refines to a series of composition steps with the same endpoints and
+  containing every chief term.
 * `TauCeti.ChiefSeries.exists_groupCompositionSeries_refinement`: a chief series with endpoints
   `⊥` and `⊤` refines to a group composition series containing every chief term.
 -/
@@ -29,16 +31,25 @@ namespace TauCeti
 
 variable {G : Type*} [Group G]
 
-/-- A chief series in a finite group refines to a series of composition steps with the same
-endpoints and containing every term of the chief series. -/
-theorem ChiefSeries.exists_relSeries_isCompositionStep_refinement [Finite G] (s : ChiefSeries G) :
+/-- A chief series with a finite last term refines to a series of composition steps with the
+same endpoints and containing every term of the chief series. -/
+theorem ChiefSeries.exists_relSeries_isCompositionStep_refinement (s : ChiefSeries G)
+    [Finite (s.last : Subgroup G)] :
     ∃ t : RelSeries {p : Subgroup G × Subgroup G | p.1.IsCompositionStep p.2},
       t.head = (s.head : Subgroup G) ∧ t.last = (s.last : Subgroup G) ∧
       ∀ i, ∃ j, t j = (s i : Subgroup G) := by
+  revert ‹Finite (s.last : Subgroup G)›
   induction s using RelSeries.inductionOn' with
   | singleton A =>
+    intro _
     exact ⟨RelSeries.singleton _ (A : Subgroup G), rfl, rfl, fun _ ↦ ⟨0, rfl⟩⟩
   | snoc s B hstep ih =>
+    intro hfinite
+    let : Finite (B : Subgroup G) := by
+      simpa only [RelSeries.last_snoc] using hfinite
+    let : Finite (s.last : Subgroup G) :=
+      Finite.of_injective (Subgroup.inclusion hstep.le)
+        (Subgroup.inclusion_injective hstep.le)
     obtain ⟨t, htHead, htLast, htMem⟩ := ih
     obtain ⟨u, huHead, huLast⟩ := exists_relSeries_isCompositionStep_between
       (A := (s.last : Subgroup G)) (B := (B : Subgroup G)) hstep.le inferInstance
