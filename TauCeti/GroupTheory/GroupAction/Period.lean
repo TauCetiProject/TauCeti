@@ -22,6 +22,7 @@ namespace MulAction
 
 /-- **The period of `g` is constant along the orbit of `⟨g⟩`**: translating a point by a power of
 `g` does not change the period of `g` there. -/
+@[simp]
 theorem minimalPeriod_zpow_smul {G α : Type*} [Group G] [MulAction G α] (g : G) (j : ℤ)
     (a : α) : Function.minimalPeriod (g • ·) (g ^ j • a) = Function.minimalPeriod (g • ·) a := by
   have key : ∀ (b : α) (i : ℤ),

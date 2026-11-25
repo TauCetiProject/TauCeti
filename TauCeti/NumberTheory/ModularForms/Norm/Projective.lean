@@ -58,6 +58,9 @@ The passage divides the whole native identity by `δ = [±Γ : Γ]`, which is `1
   order `TauCeti.ModularGroup.ellipticOrder`.
 * `TauCeti.ModularForm.weightedOrderOfVanishingOnSubgroupOrbit_eq_relIndex_mul_div`: the native
   interior weight is `[±Γ : Γ] · ord_P f / e_P`.
+* `cuspTranslationOrbitWidth_dvd_two_mul_cuspTranslationOrbitWidth_adjoinNegOne` (in
+  `TauCeti.ModularForm`): a cusp translation orbit of `Γ` has width dividing twice the width of the
+  cusp below it.
 * `TauCeti.ModularForm.geometricOrderAtCusp_mk`: the geometric order may be read at any
   representative of the cusp.
 * `TauCeti.ModularForm.geometricOrderAtCusp_mk_of_periodic`: at a regular cusp the geometric
@@ -211,13 +214,14 @@ theorem geometricOrderAtCusp_nonneg [SlashInvariantFormClass F (Γ : Subgroup (G
     0 ≤ geometricOrderAtCusp f c :=
   orderAtCusp_nonneg _ _
 
-/-- The period at the cosets of `Γ` divides twice the period at the cosets of `±Γ`: if
-`x⁻¹ T ^ h x = ±γ` with `γ ∈ Γ`, then `x⁻¹ T ^ (2h) x = γ²`. -/
-private lemma minimalPeriod_dvd_two_mul_minimalPeriod_adjoinNegOne (x : 𝒮ℒ) :
-    minimalPeriod (TSL • ·)
-        (QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) ∣
-      2 * minimalPeriod (TSL • ·)
-        (QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) := by
+/-- **The width of a cusp translation orbit of `Γ` divides twice the width of the cusp translation
+orbit of `±Γ` below it**: if `x⁻¹ T ^ h x = ±γ` with `γ ∈ Γ`, then `x⁻¹ T ^ (2h) x = γ²`. -/
+theorem cuspTranslationOrbitWidth_dvd_two_mul_cuspTranslationOrbitWidth_adjoinNegOne (x : 𝒮ℒ) :
+    cuspTranslationOrbitWidth (⟦QuotientGroup.mk x⟧ :
+        CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) ∣
+      2 * cuspTranslationOrbitWidth (⟦QuotientGroup.mk x⟧ :
+        CuspTranslationOrbit (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ))) := by
+  rw [cuspTranslationOrbitWidth_mk, cuspTranslationOrbitWidth_mk]
   set h := minimalPeriod (TSL • ·)
     (QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ)
   have hh := (minimalPeriod_TSL_dvd_iff (𝒢 := (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ))) x h).mp
@@ -231,13 +235,16 @@ private lemma minimalPeriod_dvd_two_mul_minimalPeriod_adjoinNegOne (x : 𝒮ℒ)
   · exact pow_mem hh 2
   · simpa only [neg_sq] using pow_mem hh 2
 
-/-- `minimalPeriod_dvd_two_mul_minimalPeriod_adjoinNegOne`, read in `ℝ`. -/
+/-- `cuspTranslationOrbitWidth_dvd_two_mul_cuspTranslationOrbitWidth_adjoinNegOne`, read on the
+periods in `ℝ`. -/
 private lemma exists_two_mul_minimalPeriod_adjoinNegOne_eq_mul (x : 𝒮ℒ) :
     ∃ t : ℕ, 2 * (minimalPeriod (TSL • ·)
         (QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) : ℝ) =
       t * minimalPeriod (TSL • ·)
         (QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) := by
-  obtain ⟨t, ht⟩ := minimalPeriod_dvd_two_mul_minimalPeriod_adjoinNegOne (Γ := Γ) x
+  obtain ⟨t, ht⟩ :=
+    cuspTranslationOrbitWidth_dvd_two_mul_cuspTranslationOrbitWidth_adjoinNegOne (Γ := Γ) x
+  rw [cuspTranslationOrbitWidth_mk, cuspTranslationOrbitWidth_mk] at ht
   exact ⟨t, by exact_mod_cast ht.trans (mul_comm _ _)⟩
 
 /-- The coset factor of the coset of `x` is periodic with period `2h`, for `h` the period at the
