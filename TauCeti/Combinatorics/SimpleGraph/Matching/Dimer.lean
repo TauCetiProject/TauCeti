@@ -37,7 +37,7 @@ For a finite set `F` of edges and a configuration `ω`, the *completion set*
 It depends on `ω` only off `F` (`SimpleGraph.dimerCompletionSet_congr`), is finite
 (`SimpleGraph.finite_dimerCompletionSet`) and contains `ω` when `ω` is a dimer configuration.
 Each member is the gluing of its restriction to `F` to `ω` off `F`
-(`SimpleGraph.updateFinset_restrict_of_mem_dimerCompletionSet`), so a sum over the completion set
+(`Function.updateFinset_restrict_of_eqOn_compl`), so a sum over the completion set
 is a sum over the configurations `η` on `F` whose gluing to `ω` is a dimer configuration
 (`SimpleGraph.sum_dimerCompletionSet_eq_sum_updateFinset`).
 Its members cover the same vertices by edges of `F` of value `true`
@@ -270,16 +270,6 @@ theorem dimerCompletionSet_congr {F : Finset G.edgeSet} {ω₁ ω₂ : G.edgeSet
   simp only [mem_dimerCompletionSet]
   exact and_congr_right fun _ => forall₂_congr fun e he => by rw [h e he]
 
-/-- A member of the completion set `Ω_F(ω)` is the gluing of its restriction to `F` to `ω` off
-`F`. -/
-theorem updateFinset_restrict_of_mem_dimerCompletionSet [DecidableEq G.edgeSet]
-    {F : Finset G.edgeSet} {ω ω' : G.edgeSet → Bool} (hω' : ω' ∈ G.dimerCompletionSet F ω) :
-    updateFinset ω F (F.restrict ω') = ω' := by
-  ext e
-  by_cases he : e ∈ F
-  · rw [updateFinset_apply_of_mem he, Finset.restrict_def]
-  · rw [updateFinset_apply_of_notMem he, hω'.2 e he]
-
 variable (G) in
 /-- The vertices covered by the edges of `F` of value `true` under `ω`. -/
 def dimerCoveredVertices [DecidableEq V] (F : Finset G.edgeSet) (ω : G.edgeSet → Bool) :
@@ -343,7 +333,7 @@ theorem dimerCompletionSet_eq_image [DecidableEq G.edgeSet] {F : Finset G.edgeSe
   ext ω'
   constructor
   · intro hω'
-    have hglue := updateFinset_restrict_of_mem_dimerCompletionSet hω'
+    have hglue := updateFinset_restrict_of_eqOn_compl hω'.2
     exact ⟨_, fun v _ => by rw [hglue]; exact hω'.1 v, hglue⟩
   · rintro ⟨η, hη, rfl⟩
     refine ⟨fun v => ?_, fun e he => updateFinset_apply_of_notMem he⟩
@@ -369,11 +359,11 @@ theorem sum_dimerCompletionSet_eq_sum_updateFinset [DecidableEq G.edgeSet] {M : 
     exact ⟨hη, fun e he => updateFinset_apply_of_notMem he⟩
   · intro ω' hω'
     rw [Finite.mem_toFinset] at hω'
-    simpa [updateFinset_restrict_of_mem_dimerCompletionSet hω'] using hω'.1
+    simpa [updateFinset_restrict_of_eqOn_compl hω'.2] using hω'.1
   · intro η _
     exact restrict_updateFinset ω η
   · intro ω' hω'
-    exact updateFinset_restrict_of_mem_dimerCompletionSet ((Finite.mem_toFinset _).1 hω')
+    exact updateFinset_restrict_of_eqOn_compl ((Finite.mem_toFinset _).1 hω').2
 
 /-- The restrictions to `F` of the members of the completion set of a dimer configuration `ω` at
 `F` are the configurations `η` on `F` whose gluing to `ω` off `F` covers every endpoint of an edge

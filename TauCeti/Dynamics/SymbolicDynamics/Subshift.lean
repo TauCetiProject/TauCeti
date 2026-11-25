@@ -94,6 +94,13 @@ theorem ext {X Y : Subshift Γ I S} (h : ∀ ω, ω ∈ X ↔ ω ∈ Y) : X = Y 
 theorem isClosed_coe (X : Subshift Γ I S) : IsClosed (X : Set (I → S)) :=
   X.isClosed
 
+/-- The set of configurations of a subshift is measurable when the product σ-algebra on the
+configurations contains the open sets, for instance over a countable index set and a
+second-countable Borel alphabet. -/
+theorem measurableSet_coe [MeasurableSpace S] [OpensMeasurableSpace (I → S)]
+    (X : Subshift Γ I S) : MeasurableSet (X : Set (I → S)) :=
+  X.isClosed_coe.measurableSet
+
 /-- The full shift: all configurations. -/
 instance : Top (Subshift Γ I S) :=
   ⟨{ carrier := univ
