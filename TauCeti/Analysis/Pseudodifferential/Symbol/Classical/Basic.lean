@@ -442,6 +442,11 @@ theorem principal_neg : (-a).principal = -a.principal :=
 theorem principal_sub : (a - b).principal = a.principal - b.principal := by
   simp [principal, castDegree_sub]
 
+@[simp]
+theorem principal_sum {ι : Type*} (s : Finset ι) (f : ι → ClassicalSymbol n V W m) :
+    (∑ i ∈ s, f i).principal = ∑ i ∈ s, (f i).principal :=
+  map_sum (AddMonoidHom.mk' principal principal_add) f s
+
 end Principal
 
 /-! ### Smoothing symbols and single homogeneous terms -/
@@ -745,8 +750,7 @@ theorem term_tail (j : ℕ) :
     (a.tail χ).term j = (a.term (j + 1)).castDegree (by push_cast; ring) :=
   (rfl)
 
-/-- A classical symbol is its cut-off principal term plus its tail, included back into order
-`m`. -/
+/-- A classical symbol is its cut-off principal term plus its tail, included back into order `m`. -/
 theorem inclusion_tail_add_ofHomogeneous :
     inclusion 1 (by simp) (a.tail χ) + ofHomogeneous χ a.principal = a :=
   ext <| Symbol.ext <| funext fun p => by simp
