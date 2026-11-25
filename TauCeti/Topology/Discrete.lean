@@ -23,8 +23,8 @@ discrete space reflects continuity (`TauCeti.continuous_of_injective_comp`); the
 surjectivity and the descent of cocycle conditions for continuous cochains of discrete modules
 in `TauCeti/RepresentationTheory/Homological/ContCohomology/ShortExact.lean`. A family of
 continuous maps indexed by a discrete space, read at a continuously varying index, is continuous
-(`TauCeti.continuous_apply_of_discrete`); this is how term realization on the functional coding
-space of a language is continuous.
+(`TauCeti.continuous_uncurry_comp_of_discreteTopology`); this is how term realization on the
+functional coding space of a language is continuous.
 
 For explicit pullbacks of the discrete topology `⊥`, an injective map pulls `⊥` back to `⊥`
 (`TauCeti.induced_bot_of_injective`), and the neighbourhood filter at `x` in
@@ -80,8 +80,8 @@ theorem continuous_of_injective_comp {X A B : Type*} [TopologicalSpace X] [Topol
 
 /-- A family of continuous maps indexed by a discrete space, read at a continuously varying index,
 is continuous: on a discrete index space, continuity in the index is automatic. -/
-theorem continuous_apply_of_discrete {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    [TopologicalSpace Z] [DiscreteTopology Z] {g : X → Z → Y}
+theorem continuous_uncurry_comp_of_discreteTopology {X Y Z : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [TopologicalSpace Z] [DiscreteTopology Z] {g : X → Z → Y}
     (hg : ∀ z, Continuous fun x => g x z) {a : X → Z} (ha : Continuous a) :
     Continuous fun x => g x (a x) :=
   ((continuous_prod_of_discrete_right (f := Function.uncurry g)).2 hg).comp
