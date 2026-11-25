@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
 public import TauCeti.Topology.Algebra.Group.Connected
+public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Scalar
 public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Stable
 
 /-!
@@ -50,8 +51,6 @@ of complex matrices out of this file.
 
 ## Main results
 
-* `Matrix.GeneralLinearGroup.continuous_scalar`: the scalar matrix `(u)` depends continuously on
-  the unit `u`.
 * `TauCeti.elementarySubgroup_le_connectedComponentOfOne`: over a connected topological ring,
   elementary matrices lie in the identity component of `GLₙ`.
 * `TauCeti.StableGeneralLinearGroup.identityComponent_normal`: the stable identity component is
@@ -80,19 +79,6 @@ public section
 noncomputable section
 
 open Matrix
-
-namespace Matrix.GeneralLinearGroup
-
-/-- The scalar matrix `u ↦ (u)` in `GL n R` depends continuously on the unit `u`. -/
-theorem continuous_scalar {n R : Type*} [Fintype n] [DecidableEq n] [Semiring R]
-    [TopologicalSpace R] : Continuous (scalar n : Rˣ → GL n R) := by
-  refine Units.continuous_iff.2 ⟨?_, ?_⟩
-  · simp only [Function.comp_def, coe_scalar, Matrix.scalar_apply]
-    fun_prop
-  · simp only [← map_inv, coe_scalar, Matrix.scalar_apply]
-    fun_prop
-
-end Matrix.GeneralLinearGroup
 
 namespace TauCeti
 
