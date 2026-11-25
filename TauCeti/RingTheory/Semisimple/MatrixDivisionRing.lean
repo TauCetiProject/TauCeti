@@ -50,6 +50,8 @@ fixed.
   `TauCeti.Matrix.mulOppositeAlgEquivEnd`, `TauCeti.Matrix.linearEquivPi`: the column module of
   `Matᵢ(D)` is simple with endomorphism ring `Dᵐᵒᵖ`, as a ring and over any shared base algebra,
   and the regular module is `Fintype.card ι` copies of it.
+* `TauCeti.Matrix.mopLinearEquivPi`: dually, the regular right module `Matᵢ(D)ᵐᵒᵖ` is
+  `Fintype.card ι` copies of the row module `ι → D`.
 * `TauCeti.length_eq_card_of_ringEquiv_matrix`: a ring presented as `Matᵢ(D)` has regular module of
   length `Fintype.card ι`.
 * `TauCeti.nonempty_end_ringEquiv_of_ringEquiv_matrix` and
@@ -76,10 +78,13 @@ saying that the trivial ring has regular module of length `0`, and are stated wi
 presentations are compared, nonemptiness is needed for one of them only: it makes the ring
 nontrivial, and the other index is then nonempty as well.
 
-Everything is stated for the *left* regular module, matching the convention of `IsSemisimpleRing`,
-so the simple module is the column module -- on which a matrix acts by `Matrix.mulVec` -- and the
-endomorphism ring, acting on the other side, comes out as `Dᵐᵒᵖ` rather than `D`.  This is also
-Mathlib's convention in `IsSimpleRing.exists_ringEquiv_matrix_end_mulOpposite`.
+The Artin--Wedderburn invariance results are stated for the *left* regular module, matching the
+convention of `IsSemisimpleRing`, so the simple module is the column module -- on which a matrix
+acts by `Matrix.mulVec` -- and the endomorphism ring, acting on the other side, comes out as `Dᵐᵒᵖ`
+rather than `D`.  This is also Mathlib's convention in
+`IsSimpleRing.exists_ringEquiv_matrix_end_mulOpposite`.  The *right* regular module appears only
+in `TauCeti.Matrix.mopLinearEquivPi`, which decomposes it into rows -- on which a matrix acts by
+`Matrix.vecMul` -- for the right-module Morita isomorphism `TauCeti.KZero.matrixEquiv`.
 
 Note that `DecidableEq ι` is needed to make `Matᵢ(D)` a ring, but not to state the ring-equivalence
 transport results, whose types mention only the multiplication and addition of `Matᵢ(D)`; those are
@@ -170,6 +175,31 @@ theorem Matrix.linearEquivPi_apply (A : Matrix ι ι D) (j i : ι) :
 theorem Matrix.linearEquivPi_symm_apply (f : ι → ι → D) (i j : ι) :
     (Matrix.linearEquivPi ι D).symm f i j = f j i := by
   simp only [Matrix.linearEquivPi]
+  rfl
+
+variable (ι D) in
+/-- **The regular right module of a matrix ring is the direct sum of its rows.** Right
+multiplication acts on each row separately, so `Matᵢ(D)ᵐᵒᵖ`, the right regular module, is
+`Fintype.card ι` copies of the row module `ι → D`, on which matrices act by `Matrix.vecMul`. -/
+def Matrix.mopLinearEquivPi : (Matrix ι ι D)ᵐᵒᵖ ≃ₗ[(Matrix ι ι D)ᵐᵒᵖ] (ι → (ι → D)) where
+  toFun A i j := A.unop i j
+  invFun f := MulOpposite.op (Matrix.of f)
+  map_add' _ _ := rfl
+  map_smul' B A := funext fun i ↦ funext fun j ↦ by
+    simp [Matrix.mul_apply, Matrix.vecMul, dotProduct]
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem Matrix.mopLinearEquivPi_apply (A : (Matrix ι ι D)ᵐᵒᵖ) (i j : ι) :
+    Matrix.mopLinearEquivPi ι D A i j = A.unop i j := by
+  simp only [Matrix.mopLinearEquivPi]
+  rfl
+
+@[simp]
+theorem Matrix.mopLinearEquivPi_symm_apply (f : ι → ι → D) :
+    (Matrix.mopLinearEquivPi ι D).symm f = MulOpposite.op (Matrix.of f) := by
+  simp only [Matrix.mopLinearEquivPi]
   rfl
 
 end Semiring
