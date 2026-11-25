@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Local.Morrey
 public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-import TauCeti.Analysis.Normed.Module.Multilinear.Basic
+import TauCeti.Analysis.Holder.CompLinear
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.Planar
 import TauCeti.Analysis.Sobolev.Local.Wkp
 import TauCeti.Topology.Algebra.Module.FiniteDimension
@@ -59,9 +59,9 @@ maps needed by the order-one estimates is `ContinuousMultilinearMap.instModuleFi
 * `TauCeti.MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball`: for real-valued maps and
   `2 < p < ∞`, the local `C^{j,1-2/p}` bound on a disc whose closure lies in `Ω`, by the norm in
   `W^{j+1,p}` of the disc.
-* `TauCeti.MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_finBasis`: the same bound
+* `TauCeti.MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_basis`: the same bound
   for values in a finite-dimensional space, by the norms in `W^{j+1,p}` of the disc of the
-  coordinates in `Module.finBasis`.
+  coordinates in a finite basis.
 
 ## References
 
@@ -198,70 +198,29 @@ theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball {q : ℝ≥
   exact ⟨v, hv, g, hg, hv.symm.trans hvg, hb⟩
 
 
-omit [FiniteDimensional ℝ F] in
-/-- Derivative bounds pass to finite sums `∑ₗ A l ∘ g l` with continuous linear `A l`: if each
-`g l` is `Cʲ` on the open set `V` and its derivatives of order `i ≤ j` are bounded by `M l` and
-`r`-Hölder with constant `M l` on `S ⊆ V`, then the derivatives of the sum are bounded by
-`∑ₗ ‖A l‖ M l` and `r`-Hölder with that constant on `S`. -/
-private theorem iteratedFDeriv_sum_clm_comp_le_and_holderOnWith {ι E : Type*} [Fintype ι]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] {V S : Set ℂ} (hV : IsOpen V) (hSV : S ⊆ V)
-    {j : ℕ} {r : ℝ≥0} (A : ι → E →L[ℝ] F) {g : ι → ℂ → E} (hg : ∀ l, ContDiffOn ℝ j (g l) V)
-    (M : ι → ℝ≥0) (hb : ∀ l, ∀ i ≤ j, (∀ z ∈ S, ‖iteratedFDeriv ℝ i (g l) z‖ ≤ M l) ∧
-      HolderOnWith (M l) r (iteratedFDeriv ℝ i (g l)) S) {i : ℕ} (hi : i ≤ j) :
-    (∀ z ∈ S, ‖iteratedFDeriv ℝ i (fun z => ∑ l, A l (g l z)) z‖ ≤ ∑ l, ‖A l‖₊ * M l) ∧
-      HolderOnWith (∑ l, ‖A l‖₊ * M l) r (iteratedFDeriv ℝ i (fun z => ∑ l, A l (g l z))) S := by
-  set L : ι → ContinuousMultilinearMap ℝ (fun _ : Fin i => ℂ) E →L[ℝ]
-      ContinuousMultilinearMap ℝ (fun _ : Fin i => ℂ) F :=
-    fun l => ContinuousLinearMap.compContinuousMultilinearMapL ℝ (fun _ : Fin i => ℂ) E F (A l)
-  have hL (l : ι) : ‖L l‖ ≤ ‖A l‖ := ContinuousLinearMap.norm_compContinuousMultilinearMapL_le _
-  -- On `S`, the derivatives of the sum are the sums of the images of those of the terms.
-  have hD (z : ℂ) (hz : z ∈ S) : iteratedFDeriv ℝ i (fun z => ∑ l, A l (g l z)) z =
-      ∑ l, L l (iteratedFDeriv ℝ i (g l) z) := by
-    have hza (l : ι) : ContDiffAt ℝ j (g l) z := (hg l).contDiffAt (hV.mem_nhds (hSV hz))
-    have hza' (l : ι) : ContDiffAt ℝ i (fun z => A l (g l z)) z :=
-      ((A l).contDiff.contDiffAt.comp z (hza l)).of_le (by exact_mod_cast hi)
-    rw [iteratedFDeriv_fun_sum_apply fun l _ => hza' l]
-    exact Finset.sum_congr rfl fun l _ =>
-      (A l).iteratedFDeriv_comp_left (hza l) (by exact_mod_cast hi)
-  refine ⟨fun z hz => ?_, ?_⟩
-  · rw [hD z hz]
-    refine (norm_sum_le _ _).trans ?_
-    push_cast
-    refine Finset.sum_le_sum fun l _ => ?_
-    exact ((L l).le_opNorm _).trans (mul_le_mul (hL l) ((hb l i hi).1 z hz) (norm_nonneg _)
-      (norm_nonneg _))
-  · refine (HolderOnWith.sum (s := Finset.univ) fun l _ =>
-      HolderOnWith.of_dist_le fun x hx y hy => ?_).congr fun z hz => (hD z hz).symm
-    refine (((L l).lipschitzWith.comp_holderOnWith (hb l i hi).2).dist_le hx hy).trans ?_
-    simp only [NNReal.coe_mul, coe_nnNorm]
-    gcongr
-    exact hL l
-
 /-- **Local `C^{j,1-2/q}` bounds on a disc, for finite-dimensional values.** For `2 < q < ∞`, a
-centre `c` and a radius `s` there is a constant `K` such that, for every open `Ω` containing the
-closure of `ball c s`, every `u ∈ MemWkpLoc q Ω (j + 1)` with values in `F` has coordinates in the
-basis `Module.finBasis ℝ F` represented on `ball c s` by elements `v l` of `W^{j+1,q}(ball c s)`,
-and agrees almost everywhere on `ball c s` with a map `g` that is `Cʲ` on `ball c s`, whose
-derivatives of order `i ≤ j` are bounded by `K ∑ₗ ‖v l‖` and Hölder of exponent `1 - 2 / q` with
-constant `K ∑ₗ ‖v l‖` on `ball c s`. This is
+finite basis `b` of `F`, a centre `c` and a radius `s` there is a constant `K` such that, for
+every open `Ω` containing the closure of `ball c s`, every `u ∈ MemWkpLoc q Ω (j + 1)` with values
+in `F` has coordinates in `b` represented on `ball c s` by elements `v l` of
+`W^{j+1,q}(ball c s)`, and agrees almost everywhere on `ball c s` with a map `g` that is `Cʲ` on
+`ball c s`, whose derivatives of order `i ≤ j` are bounded by `K ∑ₗ ‖v l‖` and Hölder of exponent
+`1 - 2 / q` with constant `K ∑ₗ ‖v l‖` on `ball c s`. This is
 `TauCeti.MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball` applied to each
 coordinate. -/
-theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_finBasis {q : ℝ≥0}
-    [Fact (1 ≤ (q : ℝ≥0∞))] (hq : 2 < q) (c : ℂ) (s : ℝ) (j : ℕ) :
+theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_basis {q : ℝ≥0}
+    [Fact (1 ≤ (q : ℝ≥0∞))] (hq : 2 < q) {ι : Type*} [Fintype ι] (b : Basis ι ℝ F) (c : ℂ)
+    (s : ℝ) (j : ℕ) :
     ∃ K : ℝ≥0, ∀ {Ω : Opens ℂ} (u : ℂ → F), closure (ball c s) ⊆ Ω →
       MemWkpLoc q Ω (j + 1) u →
-      ∃ v : Fin (finrank ℝ F) → Wkp volume (⟨ball c s, isOpen_ball⟩ : Opens ℂ) q (j + 1),
-        (∀ l, Wkp.value (j + 1) (v l) =ᵐ[volume.restrict (ball c s)]
-          fun z => Module.finBasis ℝ F |>.coord l (u z)) ∧
+      ∃ v : ι → Wkp volume (⟨ball c s, isOpen_ball⟩ : Opens ℂ) q (j + 1),
+        (∀ l, Wkp.value (j + 1) (v l) =ᵐ[volume.restrict (ball c s)] fun z => b.coord l (u z)) ∧
         ∃ g : ℂ → F, ContDiffOn ℝ j g (ball c s) ∧ u =ᵐ[volume.restrict (ball c s)] g ∧
           ∀ i ≤ j, (∀ z ∈ ball c s, ‖iteratedFDeriv ℝ i g z‖ ≤ K * ∑ l, ‖v l‖) ∧
             HolderOnWith (K * ∑ l, ‖v l‖₊) (1 - 2 / q) (iteratedFDeriv ℝ i g) (ball c s) := by
   obtain ⟨K, hK⟩ := exists_contDiffOn_holderOnWith_iteratedFDeriv_ball (j := j) hq c s
-  set b := Module.finBasis ℝ F
   -- Coordinates `ℓ l` and the inverse maps `A l : t ↦ t • b l`.
-  set ℓ : Fin (finrank ℝ F) → F →L[ℝ] ℝ := fun l => (b.coord l).toContinuousLinearMap
-  set A : Fin (finrank ℝ F) → ℝ →L[ℝ] F :=
-    fun l => (ContinuousLinearMap.id ℝ ℝ).smulRight (b l)
+  set ℓ : ι → F →L[ℝ] ℝ := fun l => (b.coord l).toContinuousLinearMap
+  set A : ι → ℝ →L[ℝ] F := fun l => (ContinuousLinearMap.id ℝ ℝ).smulRight (b l)
   refine ⟨(∑ l, ‖A l‖₊) * K, fun {Ω} u hsub hu => ?_⟩
   choose v hv g hg hug hb using fun l =>
     hK (Ω := Ω) (fun z => ℓ l (u z)) hsub (hu.clm_comp (ℓ l))
@@ -270,7 +229,7 @@ theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_finBasis {q
       LinearMap.coe_toContinuousLinearMap', Basis.coord_apply]
     exact (b.sum_repr x).symm
   -- The bounds `K ‖v l‖` of the coordinates are at most `K ∑ ‖v‖`.
-  have hb' (l : Fin (finrank ℝ F)) (i : ℕ) (hi : i ≤ j) :
+  have hb' (l : ι) (i : ℕ) (hi : i ≤ j) :
       (∀ z ∈ ball c s, ‖iteratedFDeriv ℝ i (g l) z‖ ≤ K * ∑ l', ‖v l'‖₊) ∧
         HolderOnWith (K * ∑ l', ‖v l'‖₊) (1 - 2 / q) (iteratedFDeriv ℝ i (g l)) (ball c s) := by
     have hvl : ‖v l‖₊ ≤ ∑ l', ‖v l'‖₊ :=
@@ -279,9 +238,9 @@ theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_finBasis {q
       ((hb l i hi).2.dist_le hx hy).trans ?_⟩
     · push_cast
       gcongr
-      exact Finset.single_le_sum (f := fun l' => ‖v l'‖) (fun _ _ => norm_nonneg _)
-        (Finset.mem_univ l)
-    · gcongr
+      simpa using NNReal.coe_le_coe.2 hvl
+    · gcongr ?_ * _
+      exact_mod_cast mul_le_mul' (le_refl K) hvl
   have hC : ∑ l, ‖A l‖₊ * (K * ∑ l', ‖v l'‖₊) = (∑ l, ‖A l‖₊) * K * ∑ l, ‖v l‖₊ := by
     rw [← Finset.sum_mul]
     ring
@@ -290,8 +249,9 @@ theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_finBasis {q
   · filter_upwards [ae_all_iff.2 hug] with z hz
     rw [hsum (u z)]
     exact Finset.sum_congr rfl fun l _ => by rw [hz l]
-  · obtain ⟨h1, h2⟩ := iteratedFDeriv_sum_clm_comp_le_and_holderOnWith isOpen_ball subset_rfl A
-      hg (fun _ => K * ∑ l', ‖v l'‖₊) (fun l i hi => hb' l i hi) hi
+  · obtain ⟨h1, h2⟩ := norm_iteratedFDeriv_sum_comp_left_le_and_holderOnWith A isOpen_ball
+      (fun l => (hg l).of_le (by exact_mod_cast hi)) (fun _ => K * ∑ l', ‖v l'‖₊)
+      (fun l => hb' l i hi)
     rw [hC] at h1 h2
     exact ⟨fun z hz => by simpa using h1 z hz, h2⟩
 

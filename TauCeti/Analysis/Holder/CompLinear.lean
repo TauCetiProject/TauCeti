@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.Holder.Iterated
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
+import TauCeti.Topology.MetricSpace.Holder
 import TauCeti.Analysis.Normed.Module.Multilinear.Basic
 
 /-!
@@ -24,7 +27,9 @@ Postcomposition by a continuous linear map `g : F →L[ℝ] G` of the values als
 is `g` applied to the corresponding derivative of `f`. For instance, the real part of a
 complex-valued bounded `C^{k,α}` map is a real-valued one. The same holds locally: on an open set,
 postcomposition by `T` multiplies the Hölder constant of the top derivative by `‖T‖`
-(`ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left`).
+(`ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left`), and the same holds for finite sums
+`x ↦ ∑ₗ A l (g l x)`, together with the bound on the derivative itself
+(`norm_iteratedFDeriv_sum_comp_left_le_and_holderOnWith`).
 
 The constructions use Mathlib's `ContinuousLinearMap.iteratedFDeriv_comp_right`,
 `ContinuousMultilinearMap.compContinuousLinearMapL`,
@@ -55,6 +60,35 @@ theorem ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left {X Y Z : Type*
   intro x hx y hy
   rw [hd x hx, hd y hy]
   exact hLf.mono_const (mul_le_mul_of_nonneg_right hL zero_le) x hx y hy
+
+/-- Derivative and Hölder bounds pass to finite sums of postcompositions with continuous linear
+maps: if on an open set `s` each `g l` is `Cⁿ` and its `n`-th derivative is bounded by `M l` and
+`α`-Hölder with constant `M l`, then the `n`-th derivative of `x ↦ ∑ₗ A l (g l x)` is bounded by
+`∑ₗ ‖A l‖ M l` and `α`-Hölder with that constant on `s`. This is the finite-sum form of
+`ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left`; it assembles bounds on coordinates
+`g l` into bounds on `∑ₗ g l • b l` for a basis `b`. -/
+theorem norm_iteratedFDeriv_sum_comp_left_le_and_holderOnWith {ι X Y Z : Type*} [Fintype ι]
+    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    [NormedAddCommGroup Z] [NormedSpace ℝ Z] (A : ι → Y →L[ℝ] Z) {g : ι → X → Y} {s : Set X}
+    {n : ℕ} {α : NNReal} (hs : IsOpen s) (hg : ∀ l, ContDiffOn ℝ n (g l) s) (M : ι → NNReal)
+    (hb : ∀ l, (∀ z ∈ s, ‖iteratedFDeriv ℝ n (g l) z‖ ≤ M l) ∧
+      HolderOnWith (M l) α (iteratedFDeriv ℝ n (g l)) s) :
+    (∀ z ∈ s, ‖iteratedFDeriv ℝ n (fun x ↦ ∑ l, A l (g l x)) z‖ ≤ ∑ l, ‖A l‖₊ * M l) ∧
+      HolderOnWith (∑ l, ‖A l‖₊ * M l) α (iteratedFDeriv ℝ n fun x ↦ ∑ l, A l (g l x)) s := by
+  have hza (l : ι) {z : X} (hz : z ∈ s) : ContDiffAt ℝ n (g l) z :=
+    (hg l).contDiffAt (hs.mem_nhds hz)
+  -- On `s`, the derivative of the sum is the sum of the derivatives of the terms.
+  have hD (z : X) (hz : z ∈ s) : iteratedFDeriv ℝ n (fun x ↦ ∑ l, A l (g l x)) z =
+      ∑ l, iteratedFDeriv ℝ n (fun x ↦ A l (g l x)) z :=
+    iteratedFDeriv_fun_sum_apply fun l _ ↦ (A l).contDiff.contDiffAt.comp z (hza l hz)
+  refine ⟨fun z hz ↦ ?_, (HolderOnWith.sum (s := Finset.univ) fun l _ ↦
+    (A l).holderOnWith_iteratedFDeriv_comp_left hs (hg l) (hb l).2).congr
+      fun z hz ↦ (hD z hz).symm⟩
+  rw [hD z hz]
+  refine (norm_sum_le _ _).trans ?_
+  push_cast
+  exact Finset.sum_le_sum fun l _ ↦ ((A l).norm_iteratedFDeriv_comp_left (hza l hz) le_rfl).trans
+    (mul_le_mul_of_nonneg_left ((hb l).1 z hz) (norm_nonneg _))
 
 namespace TauCeti.CkHolderSpace
 
