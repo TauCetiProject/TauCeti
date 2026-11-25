@@ -16,8 +16,9 @@ import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 # Changes of variables in the spaces `W^{1,p}_Γ(Ω)`
 
 The space `W^{1,p}_Γ(Ω)` of Sobolev functions vanishing on `Γ`
-(`TauCeti.w1pVanishingOnSubmodule`) is transported by changes of variables: if `Φ` is smooth,
-proper and maps `U` injectively into `V`, and `u ∈ W^{1,p}_Γ(V)`, then
+(`TauCeti.w1pVanishingOnSubmodule`) is transported by changes of variables: if `p < ∞`, `Φ` is
+smooth and proper, maps `U` injectively into `V`, has derivative bounded on `U` and Jacobian
+determinant bounded away from zero on `U`, and `u ∈ W^{1,p}_Γ(V)`, then
 `u ∘ Φ ∈ W^{1,p}_{Φ⁻¹(Γ)}(U)` (`TauCeti.W1p.compL_mem_w1pVanishingOnSubmodule`). The composite
 `φ ∘ Φ` of a generator `φ` is again a generator, since `tsupport (φ ∘ Φ) ⊆ Φ⁻¹(tsupport φ)` misses
 `Φ⁻¹(closure Γ) ⊇ closure (Φ⁻¹(Γ))`, and the composition operator is continuous.
@@ -32,8 +33,9 @@ equivalence (`TauCeti.W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_i
 
 ## Main results
 
-* `TauCeti.W1p.compL_mem_w1pVanishingOnSubmodule`: precomposition with a smooth proper change of
-  variables maps `W^{1,p}_Γ(V)` into `W^{1,p}_{Φ⁻¹(Γ)}(U)`.
+* `TauCeti.W1p.compL_mem_w1pVanishingOnSubmodule`: for `p < ∞`, precomposition with a smooth
+  proper change of variables admissible for `W1p.compL` maps `W^{1,p}_Γ(V)` into
+  `W^{1,p}_{Φ⁻¹(Γ)}(U)`.
 * `TauCeti.W1p.compL_mem_w1pVanishingOnSubmodule_iff`: the equivalence for a change of variables
   with a smooth proper inverse.
 * `TauCeti.W1p.compL_affine_mem_w1pVanishingOnSubmodule_iff`: the affine case, which contains the
@@ -88,7 +90,9 @@ variable {L c : ℝ} (Φ : E → E) (hp : p ≠ ⊤) (hΦ : DifferentiableOn ℝ
   (hmaps : MapsTo Φ U V) (hL : ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ L) (hc : 0 < c)
   (hdet : ∀ x ∈ (U : Set E), c ≤ |(fderiv ℝ Φ x).det|)
 
-/-- **Changes of variables preserve vanishing on a boundary part.** If `Φ` is smooth and proper,
+/-- **Changes of variables preserve vanishing on a boundary part.** Let `p < ∞`, and let `Φ` be
+a change of variables admissible for `W1p.compL`: it maps `U` injectively into `V`, with
+`‖fderiv Φ‖ ≤ L` and `0 < c ≤ |det fderiv Φ|` on `U`. If `Φ` is moreover smooth and proper,
 precomposition with `Φ` maps `W^{1,p}_Γ(V)` into `W^{1,p}_{Φ⁻¹(Γ)}(U)`. -/
 theorem W1p.compL_mem_w1pVanishingOnSubmodule (hΦc : ContDiff ℝ ∞ Φ) (hΦp : IsProperMap Φ)
     {u : W1p mu V p} (hu : u ∈ w1pVanishingOnSubmodule mu V p Γ) :
@@ -104,9 +108,10 @@ theorem W1p.compL_mem_w1pVanishingOnSubmodule (hΦc : ContDiff ℝ ∞ Φ) (hΦp
     with x h1 h2 h3
   rw [h1, h2, h3, TestFunction.compOfIsProperMap_apply]
 
-/-- **Invariance of `W^{1,p}_Γ` under changes of variables.** If `Φ` and `Ψ` are smooth and proper,
-`Φ` maps `U` injectively into `V`, `Ψ` maps `V` into `U` and `Φ ∘ Ψ = id`, then `u ∘ Φ` lies in
-`W^{1,p}_{Φ⁻¹(Γ)}(U)` exactly when `u` lies in `W^{1,p}_Γ(V)`. -/
+/-- **Invariance of `W^{1,p}_Γ` under changes of variables.** Let `p < ∞`. If `Φ` and `Ψ` are
+smooth and proper, `Φ` maps `U` injectively into `V`, `Ψ` maps `V` into `U`, both have bounded
+derivative and Jacobian determinant bounded away from zero on their domains, and `Φ ∘ Ψ = id`,
+then `u ∘ Φ` lies in `W^{1,p}_{Φ⁻¹(Γ)}(U)` exactly when `u` lies in `W^{1,p}_Γ(V)`. -/
 theorem W1p.compL_mem_w1pVanishingOnSubmodule_iff {Ψ : E → E} {L' c' : ℝ}
     (hΦc : ContDiff ℝ ∞ Φ) (hΦp : IsProperMap Φ) (hΨc : ContDiff ℝ ∞ Ψ) (hΨp : IsProperMap Ψ)
     (hΨmaps : MapsTo Ψ V U) (hΨL : ∀ y ∈ (V : Set E), ‖fderiv ℝ Ψ y‖ ≤ L') (hc' : 0 < c')
