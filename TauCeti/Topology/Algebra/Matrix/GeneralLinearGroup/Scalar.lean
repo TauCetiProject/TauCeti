@@ -28,10 +28,10 @@ namespace Matrix.GeneralLinearGroup
 @[continuity, fun_prop]
 theorem continuous_scalar {n R : Type*} [Fintype n] [DecidableEq n] [Semiring R]
     [TopologicalSpace R] : Continuous (scalar n : Rˣ → GL n R) := by
-  refine Units.continuous_iff.2 ⟨?_, ?_⟩
-  · simp only [Function.comp_def, coe_scalar, Matrix.scalar_apply]
-    fun_prop
-  · simp only [← map_inv, coe_scalar, Matrix.scalar_apply]
-    fun_prop
+  unfold scalar
+  refine Continuous.units_map _ ?_
+  simp only [RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
+  exact (show Continuous fun a : R ↦ diagonal fun _ : n ↦ a by fun_prop).congr
+    fun a ↦ (Matrix.scalar_apply a).symm
 
 end Matrix.GeneralLinearGroup
