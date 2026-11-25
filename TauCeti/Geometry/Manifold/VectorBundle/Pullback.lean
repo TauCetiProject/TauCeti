@@ -72,7 +72,9 @@ ambient differentials along an embedding are stated.
 
 The pullback of a `C^n` vector bundle along a `C^n` map `f`, given as an element of any
 `ContinuousMapClass` rather than as a bundled `C^n` map, is a `C^n` vector bundle
-(`Bundle.Pullback.contMDiffVectorBundle`).
+(`Bundle.Pullback.contMDiffVectorBundle`). In particular this makes the pullback along the
+underlying continuous map `(g : C(B', B))` of a bundled `C^n` map `g` a `C^n` vector bundle
+(`ContMDiffVectorBundle.pullbackContinuousMap`).
 
 ## References
 
@@ -388,6 +390,14 @@ instance Bundle.Pullback.instContMDiffVectorBundleSubtypeVal
     [ContMDiffVectorBundle n F E IB] (U : TopologicalSpace.Opens B) :
     ContMDiffVectorBundle n F ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, B)) *ᵖ E) IB :=
   ContMDiffVectorBundle.pullback F E IB ⟨Subtype.val, contMDiff_subtypeVal⟩
+
+/-- The pullback of a `C^n` vector bundle along a `C^n` map `g`, taken along its underlying
+continuous map `(g : C(B', B))`, is a `C^n` vector bundle. Mathlib's instance
+`ContMDiffVectorBundle.pullback` does not apply here, since its base map is `g` itself rather than
+its coercion through `C(B', B)`. -/
+instance ContMDiffVectorBundle.pullbackContinuousMap [ContMDiffVectorBundle n F E IB]
+    (g : C^n⟮IB', B'; IB, B⟯) : ContMDiffVectorBundle n F ((g : C(B', B)) *ᵖ E) IB' :=
+  Bundle.Pullback.contMDiffVectorBundle (f := (g : C(B', B))) g.contMDiff
 
 end ContMDiffVectorBundle
 
