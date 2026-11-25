@@ -23,7 +23,8 @@ field, with `E` flat and `F` invertible, the degree of `E ⊗ F` computed with a
 
 Both terms of the degree are additive: the norms by `‖s ⊗ t‖_σ = ‖s‖_σ ‖t‖_σ`
 (`TauCeti.HermitianMetric.norm_tmul_tmul`), and the lattice index by
-`#((E ⊗ F) / 𝓞 K (s ⊗ t)) = #(E / 𝓞 K s) · #(F / 𝓞 K t)` (`Submodule.cardQuot_span_tmul`).
+`#((E ⊗ F) / 𝓞 K (s ⊗ t)) = #(E / 𝓞 K s) · #(F / 𝓞 K t)`
+(`Submodule.cardQuot_span_singleton_tmul`).
 Together with the independence of the degree from the chosen section, this gives the additivity
 `deg(L ⊗ M) = deg L + deg M` of the Arakelov degree on tensor products of hermitian line bundles.
 
@@ -66,7 +67,7 @@ theorem sectionDegree_tmul [Module.Flat (𝓞 K) E] [Module.Invertible (𝓞 K) 
     (h.norm_pos (Codomain.one_tmul_ne_zero σ hs)).ne'
   have htσ (σ : K →+* ℂ) : h'.norm σ (1 ⊗ₜ t) ≠ 0 :=
     (h'.norm_pos (Codomain.one_tmul_ne_zero σ ht)).ne'
-  simp only [sectionDegree_def, norm_tmul_tmul, Submodule.cardQuot_span_tmul hinj t,
+  simp only [sectionDegree_def, norm_tmul_tmul, Submodule.cardQuot_span_singleton_tmul hinj t,
     Nat.cast_mul]
   rw [Real.log_mul hcs hct]
   simp only [Real.log_mul (hsσ _) (htσ _), Finset.sum_add_distrib]

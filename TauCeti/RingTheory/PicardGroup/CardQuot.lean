@@ -22,8 +22,8 @@ over the finite ring `R / Ann(T)`, over which `M` becomes free of rank one, sinc
 of a ring with finitely many maximal ideals is trivial (Mathlib).
 
 Consequently the index of the line spanned by a pure tensor is multiplicative
-(`Submodule.cardQuot_span_tmul`): if `s ∈ L` has trivial annihilator and `L / R s` is finite, then
-for every `t ∈ M`,
+(`Submodule.cardQuot_span_singleton_tmul`): if `s ∈ L` has trivial annihilator and `L / R s` is
+finite, then for every `t ∈ M`,
 
 `#((L ⊗ M) / R (s ⊗ t)) = #(L / R s) · #(M / R t)`.
 
@@ -68,8 +68,8 @@ variable {R : Type*} [CommRing R] {L M : Type*} [AddCommGroup L] [Module R L]
 /-- **The index of a pure tensor line is multiplicative.** If `s ∈ L` has trivial annihilator and
 `L / R s` is finite, then for `t` in an invertible module `M`,
 `#((L ⊗ M) / R (s ⊗ t)) = #(L / R s) · #(M / R t)`. -/
-theorem cardQuot_span_tmul {s : L} (hs : Function.Injective (LinearMap.toSpanSingleton R L s))
-    [Finite (L ⧸ R ∙ s)] (t : M) :
+theorem cardQuot_span_singleton_tmul {s : L}
+    (hs : Function.Injective (LinearMap.toSpanSingleton R L s)) [Finite (L ⧸ R ∙ s)] (t : M) :
     (R ∙ (s ⊗ₜ[R] t)).cardQuot = (R ∙ s).cardQuot * (R ∙ t).cardQuot := by
   -- `φ : M → L ⊗ M`, `m ↦ s ⊗ m`, is injective since `M` is flat.
   let φ : M →ₗ[R] L ⊗[R] M :=
