@@ -10,6 +10,7 @@ public import TauCeti.Dynamics.Billiard.OrientedLine
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Algebra.Group.Quotient
 import Mathlib.Topology.LocalAtTarget
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # Oriented lines and the phase cylinder of a convex table
@@ -87,13 +88,10 @@ theorem mem_orientedLineSet_orientedLineThrough (e : Circle) (z : ℂ) :
     z ∈ orientedLineSet (orientedLineThrough e z) :=
   mem_orientedLineSet.2 rfl
 
-theorem conj_mul_self_circle (e : Circle) : conj (e : ℂ) * e = 1 := by
-  rw [← Circle.coe_inv_eq_conj, ← Circle.coe_mul, inv_mul_cancel, Circle.coe_one]
-
 /-- Moving along the direction `e` does not change `e × z`. -/
 theorem im_conj_mul_add_smul (e : Circle) (z : ℂ) (t : ℝ) :
     (conj (e : ℂ) * (z + t • (e : ℂ))).im = (conj (e : ℂ) * z).im := by
-  rw [mul_add, real_smul, mul_left_comm, conj_mul_self_circle, mul_one, add_im, ofReal_im,
+  rw [mul_add, real_smul, mul_left_comm, Circle.conj_coe_mul_self, mul_one, add_im, ofReal_im,
     add_zero]
 
 /-- The oriented line `(e, c)` is `{z + t e : t ∈ ℝ}` for any of its points `z`. -/
@@ -107,7 +105,7 @@ theorem orientedLineSet_eq_range {p : Circle × ℝ} {z : ℂ} (hz : z ∈ orien
       Complex.ext (by simp) (by simp [him])
     simp only
     rw [real_smul, hreal]
-    linear_combination (w - z) * conj_mul_self_circle p.1
+    linear_combination (w - z) * Circle.conj_coe_mul_self p.1
   · rintro ⟨t, rfl⟩
     rw [mem_orientedLineSet, im_conj_mul_add_smul, hz]
 
@@ -138,8 +136,8 @@ theorem orientedLineSet_neg (p : Circle × ℝ) : orientedLineSet (-p) = oriente
 /-- A point of the line `(e, c)`: `c i e`. -/
 theorem smul_I_mul_mem_orientedLineSet (p : Circle × ℝ) :
     p.2 • (I * (p.1 : ℂ)) ∈ orientedLineSet p := by
-  rw [mem_orientedLineSet, real_smul, mul_left_comm, mul_left_comm (conj _), conj_mul_self_circle,
-    mul_one, mul_comm]
+  rw [mem_orientedLineSet, real_smul, mul_left_comm, mul_left_comm (conj _),
+    Circle.conj_coe_mul_self, mul_one, mul_comm]
   simp
 
 /-- Two representations have the same point set exactly when they are equal or opposite. -/
@@ -152,30 +150,27 @@ theorem orientedLineSet_eq_orientedLineSet_iff {p q : Circle × ℝ} :
       rw [orientedLineSet_eq_range hz]
       exact ⟨1, rfl⟩
     rw [h, mem_orientedLineSet] at hz hze
-    -- `u = conj e' e` is a real number of modulus one.
-    set u := conj (q.1 : ℂ) * p.1 with hu
-    have huim : u.im = 0 := by
+    -- `u = conj e' e` is a real point of the circle.
+    set u : Circle := q.1⁻¹ * p.1 with hu
+    have hu' : (u : ℂ) = conj (q.1 : ℂ) * p.1 := by
+      rw [hu, Circle.coe_mul, Circle.coe_inv_eq_conj]
+    have huim : (u : ℂ).im = 0 := by
       rw [one_smul, mul_add, add_im, hz] at hze
+      rw [hu']
       linarith
-    have hunorm : ‖u‖ = 1 := by simp [hu]
-    have hure : u.re = 1 ∨ u.re = -1 := by
-      have h1 : normSq u = 1 := by rw [Complex.normSq_eq_norm_sq, hunorm, one_pow]
-      rw [Complex.normSq_apply, huim, mul_zero, add_zero] at h1
-      exact mul_self_eq_one_iff.1 h1
     have hpe : (p.1 : ℂ) = q.1 * u := by
-      rw [hu, ← mul_assoc, mul_comm (q.1 : ℂ), conj_mul_self_circle, one_mul]
+      rw [hu', ← mul_assoc, Circle.coe_mul_conj_self, one_mul]
     have hqz : (conj (q.1 : ℂ) * z).im = q.2 := hz
-    rcases hure with h1 | h1
-    · have hu1 : u = 1 := Complex.ext (by simp [h1]) (by simp [huim])
-      have he : q.1 = p.1 := Circle.ext (by rw [hpe, hu1, mul_one])
+    rcases (Circle.im_coe_eq_zero_iff u).1 huim with hu1 | hu1
+    · have he : q.1 = p.1 := Circle.ext (by rw [hpe, hu1, Circle.coe_one, mul_one])
       refine Or.inl (Prod.ext he ?_)
       rw [← hqz, he]
-      simp [z, real_smul, mul_left_comm, conj_mul_self_circle]
-    · have hu1 : u = -1 := Complex.ext (by simp [h1]) (by simp [huim])
-      have he : q.1 = -p.1 := Circle.ext (by rw [Circle.coe_neg, hpe, hu1]; ring)
+      simp [z, real_smul, mul_left_comm, Circle.conj_coe_mul_self]
+    · have he : q.1 = -p.1 :=
+        Circle.ext (by rw [Circle.coe_neg, hpe, hu1, Circle.coe_neg, Circle.coe_one]; ring)
       refine Or.inr (Prod.ext he ?_)
       rw [← hqz, he, Prod.snd_neg]
-      simp [z, real_smul, mul_left_comm, conj_mul_self_circle]
+      simp [z, real_smul, mul_left_comm, Circle.conj_coe_mul_self]
   · rintro (rfl | rfl)
     · rfl
     · exact (orientedLineSet_neg p).symm
@@ -260,10 +255,7 @@ theorem orientedLineSet_orientedLine_inter_interior_eq_empty {s δ : ℝ} (hδ :
   have hline : (conj (exp (δ * I) * deriv T s) * (z - T s)).im = 0 := by
     rw [mem_orientedLineSet, coe_orientedLine_fst, orientedLine_snd] at hz
     rw [mul_sub, sub_im, hz, sub_self]
-  have hcos : Real.cos δ = 1 ∨ Real.cos δ = -1 := by
-    have := Real.sin_sq_add_cos_sq δ
-    rw [hδ] at this
-    exact mul_self_eq_one_iff.1 (by nlinarith)
+  have hcos := Real.sin_eq_zero_iff_cos_eq.1 hδ
   rw [map_mul, mul_assoc, ← exp_conj, map_mul, conj_ofReal, conj_I, mul_neg, ← neg_mul,
     exp_mul_I] at hline
   set w := conj (deriv T s) * (z - T s)
@@ -295,20 +287,17 @@ theorem orientedLine_eq_orientedLine_iff {s s' δ δ' : ℝ} (hδ : δ ∈ Ioo 0
     χ.orientedLine_eq_orientedLine_iff (Real.mapsTo_cos_Ioo hδ), coe_toStrictConvexBilliardTable,
     T.apply_eq_apply_iff, Real.injOn_cos.eq_iff (Ioo_subset_Icc_self hδ) hδ']
 
-/-- **Surjectivity onto the lines meeting the interior.** Every oriented line meeting the interior
-of `Ω` is `Λ(s, δ)` for some `s` and `δ ∈ (0, π)`: its entry state. -/
-theorem exists_orientedLine_eq {p : Circle × ℝ}
-    (hp : (orientedLineSet p ∩ interior T.region).Nonempty) :
-    ∃ s, ∃ δ ∈ Ioo 0 Real.pi, T.orientedLine s δ = p := by
-  obtain ⟨z₀, hz₀, hint⟩ := hp
-  set e : ℂ := (p.1 : ℂ)
+/-- The ray from an interior point `z₀` of `Ω` in the direction `−e` meets the curve: the last
+point of `Ω` on it is not interior, so it is a point `γ(s)`. -/
+private theorem exists_apply_eq_sub_smul {z₀ : ℂ} (hint : z₀ ∈ interior T.region) (e : Circle) :
+    ∃ r : ℝ, 0 ≤ r ∧ ∃ s, T s = z₀ - r • (e : ℂ) := by
   -- The parameters `r ≥ 0` with `z₀ − r e ∈ Ω` form a compact set; take the largest.
-  set S : Set ℝ := {r | 0 ≤ r ∧ z₀ - r • e ∈ T.region}
+  set S : Set ℝ := {r | 0 ≤ r ∧ z₀ - r • (e : ℂ) ∈ T.region}
   obtain ⟨M, hM⟩ := T.isCompact_region.isBounded.subset_closedBall 0
   have hSb : S ⊆ Icc 0 (‖z₀‖ + M) := fun r ⟨hr, hrΩ⟩ => by
     refine ⟨hr, ?_⟩
-    have h1 : ‖z₀ - r • e‖ ≤ M := by simpa using hM hrΩ
-    have h2 : r = ‖z₀ - (z₀ - r • e)‖ := by simp [e, abs_of_nonneg hr]
+    have h1 : ‖z₀ - r • (e : ℂ)‖ ≤ M := by simpa using hM hrΩ
+    have h2 : r = ‖z₀ - (z₀ - r • (e : ℂ))‖ := by simp [abs_of_nonneg hr]
     rw [h2]
     exact (norm_sub_le _ _).trans (by linarith)
   have hSc : IsCompact S := by
@@ -317,7 +306,7 @@ theorem exists_orientedLine_eq {p : Circle × ℝ}
   have hS0 : (0 : ℝ) ∈ S := ⟨le_rfl, by simpa using interior_subset hint⟩
   set r₀ := sSup S
   have hr₀ : r₀ ∈ S := hSc.sSup_mem ⟨0, hS0⟩
-  set w := z₀ - r₀ • e
+  set w := z₀ - r₀ • (e : ℂ)
   -- The last point `w` of `Ω` is not interior, so it lies on the curve.
   have hw : w ∉ interior T.region := by
     intro hw
@@ -325,7 +314,7 @@ theorem exists_orientedLine_eq {p : Circle × ℝ}
     have hmem : r₀ + ε / 2 ∈ S := by
       refine ⟨by linarith [hr₀.1], interior_subset (hball ?_)⟩
       rw [Metric.mem_ball, dist_eq_norm]
-      have : z₀ - (r₀ + ε / 2) • e - w = -((ε / 2) • e) := by simp only [w]; module
+      have : z₀ - (r₀ + ε / 2) • (e : ℂ) - w = -((ε / 2) • (e : ℂ)) := by simp only [w]; module
       rw [this, norm_neg, norm_smul, Circle.norm_coe, mul_one, Real.norm_of_nonneg (by positivity)]
       linarith
     have := le_csSup hSc.bddAbove hmem
@@ -333,12 +322,24 @@ theorem exists_orientedLine_eq {p : Circle × ℝ}
   obtain ⟨s, hs⟩ : w ∈ range T := by
     by_contra h
     exact hw (by rw [T.interior_region]; exact ⟨hr₀.2, h⟩)
+  exact ⟨r₀, hr₀.1, s, hs⟩
+
+/-- **Surjectivity onto the lines meeting the interior.** Every oriented line meeting the interior
+of `Ω` is `Λ(s, δ)` for some `s` and `δ ∈ (0, π)`: its entry state. -/
+theorem exists_orientedLine_eq {p : Circle × ℝ}
+    (hp : (orientedLineSet p ∩ interior T.region).Nonempty) :
+    ∃ s, ∃ δ ∈ Ioo 0 Real.pi, T.orientedLine s δ = p := by
+  obtain ⟨z₀, hz₀, hint⟩ := hp
+  set e : ℂ := (p.1 : ℂ)
+  -- The entry point `w = γ(s)` is the last point of `Ω` before `z₀`, in the reverse direction.
+  obtain ⟨r₀, hr₀, s, hs⟩ := T.exists_apply_eq_sub_smul hint p.1
+  set w := z₀ - r₀ • e
   -- The direction points to the left of `τ(s)`, so it is `exp(iδ) τ(s)` with `δ ∈ (0, π)`.
   have hleft : 0 < (conj (deriv T s) * e).im := by
     have h := (T.mem_interior_region_iff.1 hint) s
     have hz : z₀ - T s = r₀ • e := by rw [hs]; simp only [w]; abel
     rw [hz, real_smul, mul_left_comm, im_ofReal_mul] at h
-    exact pos_of_mul_pos_right h hr₀.1
+    exact pos_of_mul_pos_right h hr₀
   set u : Circle := (T.tangent s)⁻¹ * p.1
   have hu : (u : ℂ) = conj (deriv T s) * e := by
     rw [Circle.coe_mul, Circle.coe_inv_eq_conj, coe_tangent]
@@ -372,7 +373,7 @@ theorem isOpen_setOf_orientedLineSet_inter_interior_nonempty :
   have hmem (q : Circle × ℝ) : f q ∈ orientedLineSet q := by
     rw [mem_orientedLineSet]
     simp only [f, mul_add, add_im, real_smul]
-    rw [mul_left_comm, mul_left_comm (conj (q.1 : ℂ)), conj_mul_self_circle, mul_one]
+    rw [mul_left_comm, mul_left_comm (conj (q.1 : ℂ)), Circle.conj_coe_mul_self, mul_one]
     simp
   filter_upwards [hf.continuousAt.preimage_mem_nhds (hfp ▸ isOpen_interior.mem_nhds hint)]
     with q hq
