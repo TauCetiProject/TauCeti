@@ -10,21 +10,24 @@ public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.Relative
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.BrownModel
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.PositiveCell
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.ZeroCell
+public import TauCeti.Topology.CWComplex.Classical.PathComponent
+public import TauCeti.Topology.PathSpace.Moore.Comparison.Between
 
 /-!
 # Brown's semi-free model of the chains on the based path space of a CW complex
 
-Let `B` be a CW complex with a point `b`. The normalized cubical chains `C_*(P_b B; R)` on the
-Moore paths starting at `b` form a differential graded left module over the chain algebra
-`C_*(Ω_b B; R)` of the Moore loops at `b`, which act by concatenation in front
+Let `B` be a space with a point `b`, and `C` a CW complex in `B` containing the path component of
+`b`, for instance all of `B` when `B` is a path-connected CW complex. The normalized cubical chains
+`C_*(P_b B; R)` on the Moore paths starting at `b` form a differential graded left module over the
+chain algebra `C_*(Ω_b B; R)` of the Moore loops at `b`, which act by concatenation in front
 (`TauCeti.pathFromChain_isDGLeftModule`). Brown's twisted tensor product models this module by a
-semi-free one with one free generator for each cell of `B`: there are a row-finite twisting cocycle
+semi-free one with one free generator for each cell of `C`: there are a row-finite twisting cocycle
 `m` on the cells, the generator of an `n`-cell having index `n`, and a map `g` from its free module
 `K_m` to `C_*(P_b B; R)`, linear over `C_*(Ω_b B; R)`, which commutes with the differentials and is
 a quasi-isomorphism, that is a Brown model `TauCeti.BrownModel`
 (`TauCeti.exists_semifreeModel_pathFromChain`). `TauCeti.brownModel` is a choice of it.
 
-The model is built along the filtration of `C_*(P_b B; R)` by the chains over the skeleta of `B`
+The model is built along the filtration of `C_*(P_b B; R)` by the chains over the skeleta of `C`
 (`TauCeti.pathFromChainSkeleton`), one dimension of cells at a time. For this, choose a Moore path
 `τ n j` from `b` to the centre of every cell `j` of every dimension `n`. The **chain of the
 cell** (`TauCeti.cellPathChain H R τ n j`) is the point chain of `τ 0 j` for a `0`-cell, and the
@@ -52,10 +55,20 @@ with `D u = 0` and `g(u) = d w`, is a relative boundary `(D u', g(u') + d w')`. 
 (`TauCeti.exists_pathFromChainDifferential_eq_of_augmentation_eq_zero`); this is why Brown's model
 resolves `R` over `C_*(Ω_b B; R)`.
 
+The construction only needs the CW complex to contain the path component of `b`, where the paths
+from `b` stay. When `B` is not path connected, there are no paths from `b` to the cells of the
+other path components, and the model is built on the cells of the path component of `b`, a
+subcomplex (`Topology.CWComplex.pathComponentInSubcomplex`), as
+`TauCeti.pathComponentBrownModel`. With a basepoint chosen in each path component, these models
+together have one generator for each cell of `B`
+(`Topology.CWComplex.sigmaPathComponentCellEquiv`).
+
 ## Main definitions
 
 * `TauCeti.cellPathChain H R τ n j`: the chain of the `n`-cell `j` in the based path space.
 * `TauCeti.brownModel H R τ hC`: a choice of Brown's model of `C_*(P_b B; R)`.
+* `TauCeti.pathComponentBrownModel H R hC`: Brown's model on the cells of the path component of
+  `b`, for a CW complex that need not be path connected.
 
 ## Main results
 
@@ -65,6 +78,10 @@ resolves `R` over `C_*(Ω_b B; R)`.
   `TauCeti.brownModel_cocycle_m_mem_supported`,
   `TauCeti.exists_differential_eq_and_brownModel_comparison_add_eq_of_mem_supported`: the
   compatibility of the chosen model with the cells and the skeleta.
+* `TauCeti.nonempty_rowFiniteHomologous_brownModel_brownModel`: the chosen model does not depend on
+  the CW structure, the paths to the cells or the phantom parameter, up to homology.
+* `TauCeti.pathComponentBrownModel_def`: Brown's model on the path component of `b` is the chosen
+  model of that subcomplex.
 
 ## References
 
@@ -194,11 +211,12 @@ private theorem exists_mapRange_eq_and_linearCombination_cellPathChain_add_diffe
       exists_mapRange_eq_and_linearCombination_add_differential_sub_mem_pathFromChainSkeleton_succ
         (τ (m + 1)) y w hy hw hyw
 
-/-- **Brown's semi-free model of the chains on the based path space of a CW complex.** Let `B` be
-a CW complex with a point `b`, and choose a Moore path `τ n j` from `b` to the centre of every
-`n`-cell `j`. There is a Brown model `M` of `C_*(P_b B; R)` over `C_*(Ω_b B; R)` on the cells of
-`B`, the cell `⟨n, j⟩` of index `n`: a semi-free twisting cocycle `m` with images `g ⟨n, j⟩` of the
-generators, such that `g : K_m → C_*(P_b B; R)` is a quasi-isomorphism. Moreover:
+/-- **Brown's semi-free model of the chains on the based path space of a CW complex.** Let `C` be
+a CW complex in `B` containing the path component of a point `b`, for instance all of `B` when `B`
+is path connected, and choose a Moore path `τ n j` from `b` to the centre of every `n`-cell `j`.
+There is a Brown model `M` of `C_*(P_b B; R)` over `C_*(Ω_b B; R)` on the cells of `C`, the cell
+`⟨n, j⟩` of index `n`: a semi-free twisting cocycle `m` with images `g ⟨n, j⟩` of the generators,
+such that `g : K_m → C_*(P_b B; R)` is a quasi-isomorphism. Moreover:
 
 * `g ⟨n, j⟩` is a chain over the `n`-skeleton, congruent to the chain of the cell
   `TauCeti.cellPathChain τ n j` modulo the chains over the `(n - 1)`-skeleton;
@@ -207,7 +225,7 @@ generators, such that `g : K_m → C_*(P_b B; R)` is a quasi-isomorphism. Moreov
   onto the chains over the `(k - 1)`-skeleton: relative cycles `(u, w)` with `w` over the
   `(k - 1)`-skeleton are relative boundaries `(D u', g(u') + d w')` with `u'` on the same cells
   and `w'` over the same skeleton. -/
-theorem exists_semifreeModel_pathFromChain (hC : ∀ x, x ∈ C) :
+theorem exists_semifreeModel_pathFromChain (hC : pathComponent b ⊆ C) :
     ∃ M : BrownModel B b H R (Σ n, cell C n) fun x ↦ (x.1 : ℤ),
       (∀ x, M.comparison x ∈ pathFromChainSkeleton b C H R x.1) ∧
       (∀ x, M.comparison x - cellPathChain H R τ x.1 x.2 ∈
@@ -274,23 +292,25 @@ theorem exists_semifreeModel_pathFromChain (hC : ∀ x, x ∈ C) :
 variable (H R) in
 /-- **Brown's model of a CW complex**: a choice of the Brown model of
 `TauCeti.exists_semifreeModel_pathFromChain` of the chains `C_*(P_b B; R)` on the based path space,
-for a CW complex `B` and Moore paths `τ n j` from `b` to the centres of the cells. It has one free
-generator for each cell, of index the dimension of the cell. Any two such models, for instance for
-two choices of paths or two CW structures, are homologous
+for a CW complex `C` in `B` containing the path component of `b` (for instance all of `B` when `B`
+is path connected) and Moore paths `τ n j` from `b` to the centres of the cells. It has one free
+generator for each cell of `C`, of index the dimension of the cell. Any two such models, for
+instance for two choices of paths or two CW structures, are homologous
 (`TauCeti.BrownModel.exists_rowFiniteHomologous_homotopy`), and each computes the derived tensor
 product with `R` (`TauCeti.BrownModel.nonempty_localizedFunctor_iso_derivedTensor`). -/
-def brownModel (hC : ∀ x, x ∈ C) : BrownModel B b H R (Σ n, cell C n) fun x ↦ (x.1 : ℤ) :=
+def brownModel (hC : pathComponent b ⊆ C) : BrownModel B b H R (Σ n, cell C n) fun x ↦ (x.1 : ℤ) :=
   (exists_semifreeModel_pathFromChain τ hC).choose
 
 /-- The generator of an `n`-cell in Brown's model of a CW complex goes to a chain over the
 `n`-skeleton. -/
-theorem brownModel_comparison_mem_pathFromChainSkeleton (hC : ∀ x, x ∈ C) (x : Σ n, cell C n) :
+theorem brownModel_comparison_mem_pathFromChainSkeleton (hC : pathComponent b ⊆ C)
+    (x : Σ n, cell C n) :
     (brownModel H R τ hC).comparison x ∈ pathFromChainSkeleton b C H R x.1 :=
   (exists_semifreeModel_pathFromChain τ hC).choose_spec.1 x
 
 /-- The generator of an `n`-cell in Brown's model of a CW complex goes to the chain of the cell
 `TauCeti.cellPathChain τ n j`, modulo the chains over the `(n - 1)`-skeleton. -/
-theorem brownModel_comparison_sub_cellPathChain_mem_pathFromChainSkeleton (hC : ∀ x, x ∈ C)
+theorem brownModel_comparison_sub_cellPathChain_mem_pathFromChainSkeleton (hC : pathComponent b ⊆ C)
     (x : Σ n, cell C n) :
     (brownModel H R τ hC).comparison x - cellPathChain H R τ x.1 x.2 ∈
       pathFromChainSkeleton b C H R ((x.1 : ℤ) - 1) :=
@@ -298,7 +318,7 @@ theorem brownModel_comparison_sub_cellPathChain_mem_pathFromChainSkeleton (hC : 
 
 /-- The row of an `n`-cell in Brown's model of a CW complex only involves cells of dimension
 `< n`. -/
-theorem brownModel_cocycle_m_mem_supported (hC : ∀ x, x ∈ C) (x : Σ n, cell C n) :
+theorem brownModel_cocycle_m_mem_supported (hC : pathComponent b ⊆ C) (x : Σ n, cell C n) :
     (brownModel H R τ hC).cocycle.m x ∈
       supported (loopChainAlgebra B b R) (loopChainAlgebra B b R) {y | y.1 < x.1} :=
   (exists_semifreeModel_pathFromChain τ hC).choose_spec.2.2.1 x
@@ -308,7 +328,7 @@ comparison to the cells of dimension `< k` is a quasi-isomorphism onto the chain
 `(k - 1)`-skeleton: relative cycles `(u, w)` with `w` over the `(k - 1)`-skeleton are relative
 boundaries `(D u', g(u') + d w')` with `u'` on the same cells and `w'` over the same skeleton. -/
 theorem exists_differential_eq_and_brownModel_comparison_add_eq_of_mem_supported
-    (hC : ∀ x, x ∈ C) (k : ℕ) (u : (Σ n, cell C n) →₀ loopChainAlgebra B b R)
+    (hC : pathComponent b ⊆ C) (k : ℕ) (u : (Σ n, cell C n) →₀ loopChainAlgebra B b R)
     (w : cubicalChainModule (MoorePathFrom B b) H R)
     (hu : u ∈ supported (loopChainAlgebra B b R) (loopChainAlgebra B b R) {y | y.1 < k})
     (hDu : rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
@@ -328,5 +348,55 @@ theorem exists_differential_eq_and_brownModel_comparison_add_eq_of_mem_supported
         linearCombination (loopChainAlgebra B b R) (brownModel H R τ hC).comparison u' +
           cubicalChainModuleDifferential (MoorePathFrom B b) H R w' = w :=
   (exists_semifreeModel_pathFromChain τ hC).choose_spec.2.2.2 k u w hu hDu huw hw
+
+/-- **Brown's model of a CW complex does not depend on the choices.** For two CW complexes `C` and
+`C'` in `B` containing the path component of `b`, for instance two CW structures on `B`, any
+choices of Moore paths `τ` and `τ'` from `b` to the centres of their cells and any two phantom
+parameters `H` and `H'` of the chains on the path space, the cocycles of the two Brown models are
+homologous, so their twisted complexes with coefficients in any DG right module are homotopy
+equivalent (`TauCeti.RowFiniteHomologous.homotopyEquiv`), through specified continuation maps. -/
+theorem nonempty_rowFiniteHomologous_brownModel_brownModel (hC : pathComponent b ⊆ C) {C' : Set B}
+    [CWComplex C'] {H' : Type*} (τ' : ∀ (n : ℕ) (j : cell C' n), MoorePathBetween B b (map n j 0))
+    (hC' : pathComponent b ⊆ C') :
+    Nonempty (RowFiniteHomologous (loopChain_isDGAlgebra B b R) (brownModel H R τ hC).cocycle
+      (brownModel H' R τ' hC').cocycle) := by
+  obtain ⟨E, -⟩ := (brownModel H R τ hC).exists_rowFiniteHomologous_homotopy
+    ((brownModel H' R τ' hC').changePhantom H)
+  rw [BrownModel.changePhantom_cocycle] at E
+  exact ⟨E⟩
+
+/-! ### Complexes that are not path connected -/
+
+variable (b) in
+/-- A Moore path from `b` to the centre of every cell of the path component of `b` in the CW complex
+`C`, the subcomplex `Topology.CWComplex.pathComponentInSubcomplex C b`, whose cells have their
+centres joined to `b` inside `C`. -/
+def pathComponentCellPath (n : ℕ) (j : cell (CWComplex.pathComponentInSubcomplex C b : Set B) n) :
+    MoorePathBetween B b (map n j 0) :=
+  (nonempty_moorePathBetween_iff.2
+    ((CWComplex.mem_pathComponentInSubcomplex_I_iff C).1 j.property).joined).some
+
+variable (H R) in
+/-- **Brown's model of a CW complex that need not be path connected.** Let `C` be a CW complex in
+`B` containing the path component of `b`. The paths from `b` never leave the path component of `b`,
+so the chains `C_*(P_b B; R)` are modelled by the cells of that path component alone, which form
+the subcomplex `Topology.CWComplex.pathComponentInSubcomplex C b`: this is Brown's model
+`TauCeti.brownModel` of that subcomplex, with the paths `TauCeti.pathComponentCellPath` to its
+cells. On a CW complex `B` with several path components, a basepoint chosen in each of them gives
+one such model for each component, and their generators together are the cells of `B`, each once
+(`Topology.CWComplex.sigmaPathComponentCellEquiv`). -/
+def pathComponentBrownModel (hC : pathComponent b ⊆ C) :
+    BrownModel B b H R (Σ n, cell (CWComplex.pathComponentInSubcomplex C b : Set B) n)
+      fun x ↦ (x.1 : ℤ) :=
+  brownModel H R (pathComponentCellPath b)
+    (CWComplex.pathComponent_subset_pathComponentInSubcomplex C hC)
+
+/-- Brown's model on the path component of `b` is Brown's model `TauCeti.brownModel` of the
+subcomplex `Topology.CWComplex.pathComponentInSubcomplex C b`, with the paths
+`TauCeti.pathComponentCellPath`, so the properties of `TauCeti.brownModel` apply to it. -/
+theorem pathComponentBrownModel_def (hC : pathComponent b ⊆ C) :
+    pathComponentBrownModel H R hC = brownModel H R (pathComponentCellPath b)
+      (CWComplex.pathComponent_subset_pathComponentInSubcomplex C hC) :=
+  (rfl)
 
 end TauCeti

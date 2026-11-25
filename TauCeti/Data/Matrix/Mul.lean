@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Data.Matrix.Mul
 
 /-!
@@ -29,6 +30,9 @@ out to the left without any commutativity, since the left factor has entries `0`
 
 Transposing a product of rectangular matrices and passing to the opposite ring reverses the
 factors; transposition with `MulOpposite.op` and with `MulOpposite.unop` are mutually inverse.
+
+Sandwiching a matrix over an `R`-algebra between two matrices with entries in `R` gives entries that
+are `R`-linear combinations of the entries of the middle factor.
 If a rectangular matrix `U` intertwines `f a` and `g a` for every entry `a` of a list `L`, then
 `U` intertwines the ordered list products `(L.map f).prod` and `(L.map g).prod`.
 
@@ -53,6 +57,8 @@ If a rectangular matrix `U` intertwines `f a` and `g a` for every entry `a` of a
   reindexed vectors.
 * `Matrix.transpose_mul_map_op`: transposing a product and passing to the opposite ring reverses
   the factors, `(M * N)ᵀ.map op = Nᵀ.map op * Mᵀ.map op`, for rectangular `M` and `N`.
+* `Matrix.map_algebraMap_mul_mul_map_algebraMap_apply`: the entries of `F * u * G`, for `F` and
+  `G` with entries in `R` and `u` over an `R`-algebra, are `∑ q, ∑ p, (F i p * G q j) • u p q`.
 * `Matrix.list_prod_map_mul_eq_mul_list_prod_map`: list products preserve rectangular intertwiners.
 -/
 
@@ -219,6 +225,17 @@ theorem transpose_mul_map_op [Mul α] [AddCommMonoid α] [Fintype n] (M : Matrix
   simp [Matrix.mul_apply]
 
 end MulOpposite
+
+/-- The entries of a matrix over an `R`-algebra `A` sandwiched between two matrices over `R` are
+`R`-linear combinations of its entries. -/
+theorem map_algebraMap_mul_mul_map_algebraMap_apply {R A l m n o : Type*} [CommSemiring R]
+    [Semiring A] [Algebra R A] [Fintype m] [Fintype n] (F : Matrix l m R) (u : Matrix m n A)
+    (G : Matrix n o R) (i : l) (j : o) :
+    (F.map (algebraMap R A) * u * G.map (algebraMap R A)) i j =
+      ∑ q, ∑ p, (F i p * G q j) • u p q := by
+  simp only [Matrix.mul_apply, map_apply, Finset.sum_mul, Algebra.smul_def, map_mul]
+  refine Finset.sum_congr rfl fun q _ ↦ Finset.sum_congr rfl fun p _ ↦ ?_
+  rw [mul_assoc, ← Algebra.commutes (G q j), ← mul_assoc]
 
 section Semiring
 
