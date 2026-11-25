@@ -65,6 +65,12 @@ This file records general-purpose facts about open subsets of schemes.
   intersections of affine opens are affine.
 * `AlgebraicGeometry.Scheme.OpenCover.dense_of_forall_dense_subset`: a subset of a scheme is dense
   if its preimage in every chart of an open cover contains a dense subset.
+* `AlgebraicGeometry.Scheme.Hom.top_le_preimage` and
+  `AlgebraicGeometry.Scheme.Hom.basicOpen_appLE_eq_bot`: if a morphism `f` maps every point to `x`,
+  every open neighbourhood of `x` pulls back to the whole source, and a section whose basic open
+  misses `x` pulls back to a global section with empty basic open.
+* `AlgebraicGeometry.Scheme.notMem_closure_basicOpen_of_isNilpotent_germ`: a section with
+  nilpotent germ at `y` vanishes on a neighbourhood of `y`.
 -/
 
 open TopologicalSpace AlgebraicGeometry
@@ -408,6 +414,39 @@ lemma _root_.AlgebraicGeometry.Scheme.toSpecΓ_morphismRestrict_comp_basicOpenIs
   rw [← Spec.map_comp, ← CommRingCat.ofHom_comp]
   rw [hl]
   exact (Scheme.Opens.toSpecΓ_SpecMap_presheaf_map_top (X.basicOpen s)).symm
+
+/-- If `f` maps every point to `x`, the preimage of any open neighbourhood of `x` is everything. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.top_le_preimage {Y : Scheme.{u}} (f : Y ⟶ X) {x : X}
+    (hf : ∀ y, f y = x) (hxU : x ∈ U) : ⊤ ≤ f ⁻¹ᵁ U :=
+  fun y _ ↦ f.mem_preimage.mpr (hf y ▸ hxU)
+
+/-- If `f` maps every point to `x` and the basic open of `s` misses `x`, the pullback of `s` to
+the global sections of `Y` has empty basic open. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.basicOpen_appLE_eq_bot {Y : Scheme.{u}} (f : Y ⟶ X)
+    {x : X} (hf : ∀ y, f y = x) (e : ⊤ ≤ f ⁻¹ᵁ U) {s : Γ(X, U)} (hs : x ∉ X.basicOpen s) :
+    Y.basicOpen (f.appLE U ⊤ e s) = ⊥ := by
+  rw [Scheme.basicOpen_appLE, eq_bot_iff]
+  rintro y ⟨-, hy⟩
+  exact hs (hf y ▸ hy)
+
+/-- If the germ at `y` of a section `t` is nilpotent, then `t` vanishes on a neighbourhood of `y`,
+so `y` is not in the closure of the basic open of `t`. -/
+theorem _root_.AlgebraicGeometry.Scheme.notMem_closure_basicOpen_of_isNilpotent_germ {y : X}
+    (hy : y ∈ U) {t : Γ(X, U)} (h : IsNilpotent (X.presheaf.germ U y hy t)) :
+    y ∉ closure (X.basicOpen t : Set X) := by
+  obtain ⟨n, hn⟩ := h
+  -- Some power `t ^ (n + 1)` restricts to zero on an open neighbourhood `V ⊆ U` of `y`.
+  obtain ⟨V, hyV, iVU, _, hV⟩ := X.presheaf.germ_eq y hy hy (t ^ (n + 1)) 0
+    (by rw [map_pow, pow_succ, hn, zero_mul, map_zero])
+  rw [mem_closure_iff]
+  push Not
+  -- On `V`, the basic open of `t` agrees with that of the zero section, which is empty.
+  refine ⟨V, V.isOpen, hyV, Set.eq_empty_iff_forall_notMem.mpr fun z ⟨hzV, hz⟩ ↦ ?_⟩
+  have : z ∈ X.basicOpen (X.presheaf.map iVU.op (t ^ (n + 1))) := by
+    rw [Scheme.basicOpen_res, Scheme.basicOpen_pow _ _ n.succ_pos]
+    exact ⟨hzV, hz⟩
+  rw [hV, map_zero, Scheme.basicOpen_zero] at this
+  simp at this
 
 end
 

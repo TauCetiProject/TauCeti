@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Stalk
 public import Mathlib.AlgebraicGeometry.Properties
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
 # Local rings on the spectrum of a stalk
@@ -20,14 +21,10 @@ and pointwise ramification conditions.
 The local-ring comparison uses Mathlib's
 `isIso_specMap_stalkMap_localization` on an affine neighbourhood.
 
-If a morphism `f` maps every point to `x`, every open neighbourhood of `x` pulls back to the whole
-source (`Scheme.Hom.top_le_preimage`), and a section whose basic open misses `x` pulls back to a
-global section with empty basic open (`Scheme.Hom.basicOpen_appLE_eq_bot`).
 Pulling sections back along `Spec 𝒪_{Y,y} ⟶ Y` takes germs at `y`
 (`Scheme.Hom.fromSpecStalk_comp_appLE`). Hence if a morphism `f` is constant on the generizations
 of `y`, the germ at `y` of the pullback of a section vanishing at `f y` is nilpotent
-(`Scheme.Hom.isNilpotent_germ_app`), and a section with nilpotent germ at `y` vanishes on a
-neighbourhood of `y` (`Scheme.notMem_closure_basicOpen_of_isNilpotent_germ`).
+(`Scheme.Hom.isNilpotent_germ_app`).
 -/
 
 public section
@@ -78,41 +75,9 @@ theorem height_eq_ringKrullDim_fromSpecStalk (X : Scheme.{u}) (x : X)
   exact (ringKrullDim_eq_of_ringEquiv
     (asIso ((X.fromSpecStalk x).stalkMap q)).commRingCatIsoToRingEquiv).symm
 
-/-- If the germ at `y` of a section `t` is nilpotent, then `t` vanishes on a neighbourhood of `y`,
-so `y` is not in the closure of the basic open of `t`. -/
-theorem notMem_closure_basicOpen_of_isNilpotent_germ {Y : Scheme.{u}} {W : Y.Opens} {y : Y}
-    (hy : y ∈ W) {t : Γ(Y, W)} (h : IsNilpotent (Y.presheaf.germ W y hy t)) :
-    y ∉ closure (Y.basicOpen t : Set Y) := by
-  obtain ⟨n, hn⟩ := h
-  -- Some power `t ^ (n + 1)` restricts to zero on an open neighbourhood `V ⊆ W` of `y`.
-  obtain ⟨V, hyV, iVW, _, hV⟩ := Y.presheaf.germ_eq y hy hy (t ^ (n + 1)) 0
-    (by rw [map_pow, pow_succ, hn, zero_mul, map_zero])
-  rw [mem_closure_iff]
-  push Not
-  -- On `V`, the basic open of `t` agrees with that of the zero section, which is empty.
-  refine ⟨V, V.isOpen, hyV, Set.eq_empty_iff_forall_notMem.mpr fun z ⟨hzV, hz⟩ ↦ ?_⟩
-  have : z ∈ Y.basicOpen (Y.presheaf.map iVW.op (t ^ (n + 1))) := by
-    rw [Scheme.basicOpen_res, Scheme.basicOpen_pow _ _ n.succ_pos]
-    exact ⟨hzV, hz⟩
-  rw [hV, map_zero, Scheme.basicOpen_zero] at this
-  simp at this
-
 namespace Hom
 
 variable {X Y : Scheme.{u}} (f : Y ⟶ X)
-
-/-- If `f` maps every point to `x`, the preimage of any open neighbourhood of `x` is everything. -/
-theorem top_le_preimage {x : X} (hf : ∀ y, f y = x) {U : X.Opens} (hxU : x ∈ U) :
-    ⊤ ≤ f ⁻¹ᵁ U :=
-  fun y _ ↦ f.mem_preimage.mpr (hf y ▸ hxU)
-
-/-- If `f` maps every point to `x` and the basic open of `s` misses `x`, the pullback of `s` to
-the global sections of `Y` has empty basic open. -/
-theorem basicOpen_appLE_eq_bot {x : X} (hf : ∀ y, f y = x) {U : X.Opens} (e : ⊤ ≤ f ⁻¹ᵁ U)
-    {s : Γ(X, U)} (hs : x ∉ X.basicOpen s) : Y.basicOpen (f.appLE U ⊤ e s) = ⊥ := by
-  rw [Scheme.basicOpen_appLE, eq_bot_iff]
-  rintro y ⟨-, hy⟩
-  exact hs (hf y ▸ hy)
 
 /-- The pullback of a section `s` along `Spec 𝒪_{Y,y} ⟶ Y ⟶ X` is the image of the germ at `y`
 of the pullback of `s` under `Γ(Spec 𝒪_{Y,y}, ⊤) ≅ 𝒪_{Y,y}`. -/

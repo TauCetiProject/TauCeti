@@ -11,6 +11,7 @@ public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.AlgebraicGeometry.ResidueField
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Scheme.LocalSpectrum
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
 # Morphisms from reduced schemes onto a point factor through its residue field
