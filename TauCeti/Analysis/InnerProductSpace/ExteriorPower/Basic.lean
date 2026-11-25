@@ -643,7 +643,7 @@ theorem inner_twoVectorContraction_apply_left (F : ⋀[ℝ]^2 V) (u w : V) :
 
 /-- Contracting a two-vector coming from a subspace `W ≤ V` against a vector of `W` agrees with
 contracting inside `W`. -/
-private theorem twoVectorContraction_map_subtype (W : Submodule ℝ V) (X : ⋀[ℝ]^2 W) (w : W) :
+theorem twoVectorContraction_map_subtype (W : Submodule ℝ V) (X : ⋀[ℝ]^2 W) (w : W) :
     twoVectorContraction (map 2 W.subtype X) (W.subtype w) =
       W.subtype (twoVectorContraction X w) := by
   have key : LinearMap.applyₗ (R := ℝ) (W.subtype w) ∘ₗ twoVectorContractionₗ ∘ₗ map 2 W.subtype =
