@@ -45,6 +45,9 @@ kernel, `S[ν]` is holomorphic on `ℂ₊`, and `P[ν] = Re S[ν]` is therefore 
 * `TauCeti.upperHalfPlanePoissonKernel_eq_cauchyPDFReal`: `P(z, ·)` is `cauchyPDFReal` with
   location `Re z` and scale `Im z`, the Cauchy density when `Im z > 0` (for `Im z = 0` both vanish);
   hence `TauCeti.integral_upperHalfPlanePoissonKernel`, `∫ P(z, x) dx = 1` on `ℂ₊`.
+* `TauCeti.upperHalfPlanePoissonKernel_add_mul_I_eq_cauchyPDFReal`: at height `y ≥ 0`,
+  `P(x + iy, ·)` is the Cauchy density of scale `y` centred at `x`; with
+  `TauCeti.upperHalfPlanePoissonKernel_add_mul_I_comm`, `P(x + iy, t) = P(t + iy, x)`.
 * `TauCeti.setOf_lt_upperHalfPlanePoissonKernel`: the superlevel sets of `P(z, ·)` are balls
   centred at `Re z`.
 * `TauCeti.upperHalfPlanePoissonKernel_le`: `P(z, x) ≤ C(z) / (1 + x ^ 2)`.
@@ -53,6 +56,8 @@ kernel, `S[ν]` is holomorphic on `ℂ₊`, and `P[ν] = Re S[ν]` is therefore 
 * `TauCeti.upperHalfPlanePoissonMeasure`, `TauCeti.IsPoissonFinite`: the Poisson measure
   `dx / (1 + x ^ 2)`, which is `π` times the standard Cauchy distribution, and Poisson-finite
   measures.
+* `TauCeti.IsPoissonFinite.isFiniteMeasureOnCompacts`: a Poisson-finite measure is finite on
+  compact sets, hence σ-finite.
 * `TauCeti.integrable_upperHalfPlanePoissonMeasure_iff_integrable_smul`: `h` is integrable for the
   Poisson measure exactly when `h(x) / (1 + x ^ 2)` is Lebesgue integrable.
 * `TauCeti.upperHalfPlanePoissonIntegral`, `TauCeti.upperHalfPlaneSchwarzIntegral`: the Poisson and
@@ -122,6 +127,12 @@ theorem measurable_upperHalfPlanePoissonKernel (z : ℂ) :
   simp_rw [funext (upperHalfPlanePoissonKernel_eq z)]
   fun_prop
 
+/-- The Poisson kernel is jointly measurable in the pole and the boundary point. -/
+theorem measurable_uncurry_upperHalfPlanePoissonKernel :
+    Measurable (Function.uncurry upperHalfPlanePoissonKernel) := by
+  simp_rw [Function.uncurry_def, upperHalfPlanePoissonKernel_eq]
+  fun_prop
+
 /-- The Poisson kernel is nonnegative for a pole in the closed upper half-plane. -/
 theorem upperHalfPlanePoissonKernel_nonneg {z : ℂ} (hz : 0 ≤ z.im) (x : ℝ) :
     0 ≤ upperHalfPlanePoissonKernel z x := by
@@ -163,6 +174,33 @@ theorem integral_upperHalfPlanePoissonKernel {z : ℂ} (hz : 0 < z.im) :
     ∫ x : ℝ, upperHalfPlanePoissonKernel z x = 1 := by
   simp_rw [upperHalfPlanePoissonKernel_eq_cauchyPDFReal hz.le]
   exact ProbabilityTheory.integral_cauchyPDFReal_eq_one _ (Real.toNNReal_pos.2 hz).ne'
+
+/-- At height `y ≥ 0`, the Poisson kernel `P(x + iy, t)` is the Cauchy density of scale `y`
+evaluated at `t - x`. -/
+theorem upperHalfPlanePoissonKernel_add_mul_I_eq_cauchyPDFReal {y : ℝ} (hy : 0 ≤ y) (x t : ℝ) :
+    upperHalfPlanePoissonKernel (x + y * I) t =
+      ProbabilityTheory.cauchyPDFReal 0 y.toNNReal (t - x) := by
+  rw [upperHalfPlanePoissonKernel_eq_cauchyPDFReal (by simpa using hy)]
+  simp [ProbabilityTheory.cauchyPDFReal_def]
+
+/-- The explicit formula `P(x + iy, t) = y / (π ((t - x) ^ 2 + y ^ 2))`. -/
+theorem upperHalfPlanePoissonKernel_add_mul_I_eq (x y t : ℝ) :
+    upperHalfPlanePoissonKernel (x + y * I) t = y / (π * ((t - x) ^ 2 + y ^ 2)) := by
+  rw [upperHalfPlanePoissonKernel_eq, normSq_ofReal_sub]
+  simp
+
+/-- The Poisson kernel at height `y` is symmetric in the two real points:
+`P(x + iy, t) = P(t + iy, x)`. -/
+theorem upperHalfPlanePoissonKernel_add_mul_I_comm (x y t : ℝ) :
+    upperHalfPlanePoissonKernel (x + y * I) t = upperHalfPlanePoissonKernel (t + y * I) x := by
+  rw [upperHalfPlanePoissonKernel_add_mul_I_eq, upperHalfPlanePoissonKernel_add_mul_I_eq,
+    ← neg_sub, neg_sq]
+
+/-- At height `y > 0`, `∫ P(x + iy, t) dx = 1`. -/
+theorem integral_upperHalfPlanePoissonKernel_add_mul_I {y : ℝ} (hy : 0 < y) (t : ℝ) :
+    ∫ x : ℝ, upperHalfPlanePoissonKernel (x + y * I) t = 1 := by
+  simpa only [upperHalfPlanePoissonKernel_add_mul_I_comm _ y t] using
+    integral_upperHalfPlanePoissonKernel (z := t + y * I) (by simpa using hy)
 
 /-- The superlevel sets of the Poisson kernel are balls centred at the real part of the pole: for
 `0 < t`, `t < P(z, s)` exactly when `|s - Re z| < √(Im z / (π t) - Im z ^ 2)`. For `Im z ≤ 0`
@@ -308,6 +346,35 @@ theorem IsPoissonFinite.smul_measure {ν : Measure ℝ} (hν : IsPoissonFinite �
     (hc : c ≠ ∞) : IsPoissonFinite (c • ν) :=
   (isPoissonFinite_iff _).2 (((isPoissonFinite_iff ν).1 hν).smul_measure hc)
 
+/-- A Poisson-finite measure gives finite mass to every interval `[-R, R]`. -/
+theorem IsPoissonFinite.measure_Icc_lt_top {ν : Measure ℝ} (hν : IsPoissonFinite ν) (R : ℝ) :
+    ν (Icc (-R) R) < ∞ := by
+  have hI := (isPoissonFinite_iff_lintegral_lt_top ν).1 hν
+  calc ν (Icc (-R) R) = ∫⁻ _ in Icc (-R) R, 1 ∂ν := by simp
+    _ ≤ ∫⁻ x in Icc (-R) R, ENNReal.ofReal (1 + R ^ 2) * ENNReal.ofReal (1 + x ^ 2)⁻¹ ∂ν := by
+        refine setLIntegral_mono (by fun_prop) fun x hx ↦ ?_
+        have hx2 : x ^ 2 ≤ R ^ 2 := sq_le_sq' hx.1 hx.2
+        rw [← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_one]
+        refine ENNReal.ofReal_le_ofReal ?_
+        rw [← div_eq_mul_inv, one_le_div (by positivity)]
+        linarith
+    _ ≤ ∫⁻ x, ENNReal.ofReal (1 + R ^ 2) * ENNReal.ofReal (1 + x ^ 2)⁻¹ ∂ν :=
+        setLIntegral_le_lintegral _ _
+    _ = ENNReal.ofReal (1 + R ^ 2) * ∫⁻ x, ENNReal.ofReal (1 + x ^ 2)⁻¹ ∂ν :=
+        lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+    _ < ∞ := ENNReal.mul_lt_top ENNReal.ofReal_lt_top hI
+
+/-- A Poisson-finite measure is finite on compact sets. In particular it is locally finite and
+σ-finite. -/
+theorem IsPoissonFinite.isFiniteMeasureOnCompacts {ν : Measure ℝ} (hν : IsPoissonFinite ν) :
+    IsFiniteMeasureOnCompacts ν := by
+  refine ⟨fun K hK ↦ ?_⟩
+  obtain ⟨R, hR⟩ := hK.isBounded.subset_closedBall 0
+  refine (measure_mono fun x hx ↦ ?_).trans_lt (hν.measure_Icc_lt_top R)
+  have := hR hx
+  rw [mem_closedBall, Real.dist_eq, sub_zero, abs_le] at this
+  exact this
+
 /-- Reflecting the pole in the real axis changes the sign of the Poisson kernel. -/
 @[simp]
 theorem upperHalfPlanePoissonKernel_conj (z : ℂ) (x : ℝ) :
@@ -329,6 +396,12 @@ theorem IsPoissonFinite.integrable_upperHalfPlanePoissonKernel {ν : Measure ℝ
       funext fun x ↦ by simp
     rw [h]
     exact (key (conj z) (by simpa using hz)).neg
+
+/-- At every height, `x ↦ P(x + iy, t)` is Lebesgue integrable. -/
+theorem integrable_upperHalfPlanePoissonKernel_add_mul_I (y t : ℝ) :
+    Integrable fun x : ℝ ↦ upperHalfPlanePoissonKernel (x + y * I) t := by
+  simpa only [upperHalfPlanePoissonKernel_add_mul_I_comm _ y t] using
+    isPoissonFinite_volume.integrable_upperHalfPlanePoissonKernel (t + y * I)
 
 /-- Off the real axis, a measure is Poisson-finite exactly when the Poisson kernel is integrable
 against it. -/
