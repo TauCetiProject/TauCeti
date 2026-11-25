@@ -33,7 +33,7 @@ coefficient is `i` again (`TauCeti.crReflectionCoeff_conj_I`): this is the setti
 McDuff–Salamon, where `J(s) = i` on `ℝ` makes the reflected coefficient continuous across the
 axis. The weak identity itself needs no condition on `J` along `ℝ`.
 
-The proof follows the route of the roadmap (PH3.4, step 1). A test function `φ` on `Ω` is
+A test function `φ` on `Ω` is
 paired with its reflection `φ^R(z) = R φ(conj z)`; the sum `φ + φ^R` takes values in the fixed
 space of `R` on `ℝ`, so it is admissible for the boundary condition, and the lower half-plane
 part of the doubled pairing is the upper half-plane pairing with `φ^R`, by the
@@ -111,33 +111,69 @@ section Apply
 
 variable {z : ℂ}
 
+@[simp]
 theorem crReflection_of_im_nonneg (hz : 0 ≤ z.im) : crReflection R ξ z = ξ z := ite_eq_left hz
 
+@[simp]
 theorem crReflection_of_im_neg (hz : z.im < 0) : crReflection R ξ z = R (ξ (conj z)) :=
   ite_eq_right (not_le.2 hz)
 
+@[simp]
 theorem crReflectionCoeff_of_im_nonneg (hz : 0 ≤ z.im) : crReflectionCoeff R J z = J z :=
   ite_eq_left hz
 
+@[simp]
 theorem crReflectionCoeff_apply_of_im_neg (hz : z.im < 0) (v : V) :
     crReflectionCoeff R J z v = -R (J (conj z) (R.symm v)) := by
   simp [crReflectionCoeff, not_le.2 hz]
 
+@[simp]
 theorem crReflectionDeriv_of_im_nonneg (hz : 0 ≤ z.im) : crReflectionDeriv R DJ z = DJ z :=
   ite_eq_left hz
 
+@[simp]
 theorem crReflectionDeriv_apply_of_im_neg (hz : z.im < 0) (h : ℂ) (v : V) :
     crReflectionDeriv R DJ z h v = -R (DJ (conj z) (conj h) (R.symm v)) := by
   simp [crReflectionDeriv, not_le.2 hz]
 
+@[simp]
 theorem crReflectionZeroth_of_im_nonneg (hz : 0 ≤ z.im) : crReflectionZeroth R S z = S z :=
   ite_eq_left hz
 
+@[simp]
 theorem crReflectionZeroth_apply_of_im_neg (hz : z.im < 0) (v : V) :
     crReflectionZeroth R S z v = R (S (conj z) (R.symm v)) := by
   simp [crReflectionZeroth, not_le.2 hz]
 
+/-- Below the axis the reflected coefficient squares to `-1` where `J` does at the conjugate
+point: `(R J R⁻¹)² = R J² R⁻¹`. -/
+theorem crReflectionCoeff_mul_self_of_im_neg (hz : z.im < 0)
+    (hJ : J (conj z) * J (conj z) = -1) :
+    crReflectionCoeff R J z * crReflectionCoeff R J z = -1 := by
+  ext v
+  have h := congrArg (fun M : V →L[ℝ] V => M (R.symm v)) hJ
+  simp only [mul_apply_eq_comp, neg_apply, one_apply_eq_self] at h
+  simp [crReflectionCoeff_apply_of_im_neg hz, h]
+
 end Apply
+
+/-- The reflection of the zero derivative field is zero. -/
+@[simp]
+theorem crReflectionDeriv_zero : crReflectionDeriv R (0 : ℂ → ℂ →L[ℝ] V →L[ℝ] V) = 0 := by
+  funext z
+  rcases le_or_gt 0 z.im with hz | hz
+  · exact crReflectionDeriv_of_im_nonneg hz
+  · ext h v
+    simp [crReflectionDeriv_apply_of_im_neg hz]
+
+/-- The reflection of the zero zeroth-order coefficient is zero. -/
+@[simp]
+theorem crReflectionZeroth_zero : crReflectionZeroth R (0 : ℂ → V →L[ℝ] V) = 0 := by
+  funext z
+  rcases le_or_gt 0 z.im with hz | hz
+  · exact crReflectionZeroth_of_im_nonneg hz
+  · ext v
+    simp [crReflectionZeroth_apply_of_im_neg hz]
 
 /-- The reflected field agrees with the field on the closed upper half-plane. -/
 theorem eqOn_crReflection (R : V ≃ₗᵢ[ℝ] V) (ξ : ℂ → V) (U : Set ℂ) :
@@ -156,7 +192,7 @@ theorem MemLpLoc.crReflection {U : Set ℂ} (hU : MapsTo (starRingEnd ℂ) U U)
   convert hξ.ite_conj hU (R.toContinuousLinearEquiv : V →L[ℝ] V) using 1
   funext z
   by_cases hz : 0 ≤ z.im
-  · simp [crReflection_of_im_nonneg hz, hz]
+  · simp [hz]
   · simp [crReflection_of_im_neg (not_le.1 hz), hz]
 
 /-- A leading coefficient locally `Lᵖ` up to the real axis reflects to one locally `Lᵖ` on the
@@ -167,7 +203,7 @@ theorem MemLpLoc.crReflectionCoeff {U : Set ℂ} (hU : MapsTo (starRingEnd ℂ) 
     : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V)) using 1
   funext z
   by_cases hz : 0 ≤ z.im
-  · simp [crReflectionCoeff_of_im_nonneg hz, hz]
+  · simp [hz]
   · ext v
     simp [crReflectionCoeff_apply_of_im_neg (not_le.1 hz), hz]
 
@@ -181,7 +217,7 @@ theorem MemLpLoc.crReflectionDeriv {U : Set ℂ} (hU : MapsTo (starRingEnd ℂ) 
         (conjCLE : ℂ →L[ℝ] ℂ)))) using 1
   funext z
   by_cases hz : 0 ≤ z.im
-  · simp [crReflectionDeriv_of_im_nonneg hz, hz]
+  · simp [hz]
   · ext h v
     simp [crReflectionDeriv_apply_of_im_neg (not_le.1 hz), hz]
 
@@ -193,7 +229,7 @@ theorem MemLpLoc.crReflectionZeroth {U : Set ℂ} (hU : MapsTo (starRingEnd ℂ)
     : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V) using 1
   funext z
   by_cases hz : 0 ≤ z.im
-  · simp [crReflectionZeroth_of_im_nonneg hz, hz]
+  · simp [hz]
   · ext v
     simp [crReflectionZeroth_apply_of_im_neg (not_le.1 hz), hz]
 
@@ -210,53 +246,12 @@ end Integrability
 
 variable [CompleteSpace V]
 
-/-- Under the Hölder condition `1/p + 1/q ≤ 1`, the pairing of the formal adjoint of a test
-function with a locally `L^q` field is integrable for locally `Lᵖ` coefficients. -/
-private theorem integrable_inner_crFormalAdjoint_of_memLpLoc (hJ : MemLpLoc p Ω J)
-    (hDJ : MemLpLoc p Ω DJ) (hS : MemLpLoc p Ω S) (hpq : p⁻¹ + q⁻¹ ≤ 1) (hξ : MemLpLoc q Ω ξ)
-    (φ : 𝓓(Ω, V)) : Integrable (fun z => ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ) := by
-  have hloc := Ω.isOpen.isLocallyClosed
-  have hDJI : MemLpLoc p Ω (fun z => DJ z I) :=
-    hDJ.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I)
-  simp only [inner_crFormalAdjoint]
-  exact (((φ.integrable_inner_fderiv (hξ.locallyIntegrableOn
-    (ENNReal.inv_le_one.1 (le_add_self.trans hpq)) hloc) 1).neg.sub
-    (φ.integrable_inner_fderiv (hJ.locallyIntegrableOn_clm_apply hξ hpq hloc) I)).sub
-    (φ.integrable_inner (hDJI.locallyIntegrableOn_clm_apply hξ hpq hloc))).add
-    (φ.integrable_inner (hS.locallyIntegrableOn_clm_apply hξ hpq hloc))
-
-/-- An integral over `ℂ` is the integral over the open upper half-plane of the function plus its
-composition with conjugation: the real axis is null and `z ↦ conj z` preserves the measure. -/
-private theorem integral_eq_setIntegral_add_comp_conj {f : ℂ → ℝ} (hf : Integrable f) :
-    ∫ z, f z = ∫ z in {z : ℂ | 0 < z.im}, (f z + f (conj z)) := by
-  have hH : MeasurableSet {z : ℂ | 0 ≤ z.im} := measurableSet_le measurable_const measurable_im
-  have hpre : (conjLIE : ℂ → ℂ) ⁻¹' {z : ℂ | 0 ≤ z.im}ᶜ = {z : ℂ | 0 < z.im} := by
-    ext z
-    simp
-  rw [integral_add (g := fun z => f (conj z)) hf.integrableOn
-      ((conjLIE.measurePreserving.integrable_comp_of_integrable hf).integrableOn),
-    ← integral_add_compl hH hf, setIntegral_congr_set (Complex.setOf_le_im_ae_eq 0),
-    ← conjLIE.measurePreserving.setIntegral_preimage_emb
-      conjLIE.toHomeomorph.measurableEmbedding f {z : ℂ | 0 ≤ z.im}ᶜ, hpre]
-  rfl
-
 /-! ### The reflection theorem -/
 
 section Reflection
 
 variable (hR : ∀ v, R (R v) = v)
 include hR
-
-omit [CompleteSpace V] in
-/-- An isometric involution is self-adjoint. -/
-private theorem inner_map_left_of_involutive (v w : V) : ⟪R v, w⟫_ℝ = ⟪v, R w⟫_ℝ := by
-  conv_lhs => rw [← hR w]
-  exact R.inner_map_map v (R w)
-
-omit [CompleteSpace V] in
-/-- An involution is its own inverse. -/
-private theorem symm_apply_of_involutive (v : V) : R.symm v = R v :=
-  R.symm_apply_eq.2 (hR v).symm
 
 /-- The test function `z ↦ R φ(conj z)` on a conjugation-invariant open set. -/
 private def reflectTest (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓(Ω, V)) : 𝓓(Ω, V) :=
@@ -277,7 +272,7 @@ private theorem fderiv_reflectTest (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 
     simp [reflectTest]
   rw [h, fderiv_comp z (ContinuousLinearMap.differentiableAt _) hφ, ContinuousLinearMap.fderiv,
     ContinuousLinearMap.comp_apply, TestFunction.fderiv_compConj_apply]
-  rfl
+  simp
 
 /-- **The pointwise reflection identity.** At a point `z` of the open upper half-plane, the
 doubled pairing at `z` and at `conj z` adds up to the pairing of the formal adjoint of
@@ -302,10 +297,12 @@ private theorem inner_crFormalAdjoint_crReflection_add (hΩ : MapsTo (starRingEn
     crReflectionDeriv_apply_of_im_neg hz', crReflectionZeroth_apply_of_im_neg hz', conj_conj,
     FunLike.coe_add, Pi.add_apply, reflectTest_apply, conj_I, map_one, map_neg, neg_apply,
     LinearIsometryEquiv.symm_apply_apply, inner_add_left, inner_neg_right, inner_neg_left]
-  simp only [← inner_map_left_of_involutive hR]
+  have hadj (v w : V) : ⟪R v, w⟫_ℝ = ⟪v, R w⟫_ℝ := by
+    rw [R.inner_map_eq_flip, R.symm_apply_eq.2 (hR w).symm]
+  simp only [← hadj]
   ring
 
-/-- **Order-zero reflection for rough Cauchy–Riemann equations** (roadmap PH3.4, step 1). Let `Ω`
+/-- **Order-zero reflection for rough Cauchy–Riemann equations.** Let `Ω`
 be invariant under conjugation, `R` an isometric involution of `V` whose fixed vectors lie in
 the boundary subspace `Λ`, and `J`, `DJ`, `S` locally `Lᵖ` up to the real axis with
 `1/p + 1/q ≤ 1`. If `ξ` is a weak solution up to the real axis of `∂_s ξ + J ∂_t ξ + S ξ = η`
@@ -329,15 +326,16 @@ theorem IsWeakCRSolutionHalf.isWeakCRSolution_crReflection
     refine hΛ _ ?_
     simp only [FunLike.coe_add, Pi.add_apply, reflectTest_apply, conj_ofReal, map_add, hR]
     exact add_comm _ _
-  rw [integral_eq_setIntegral_add_comp_conj (hint φ),
-    integral_eq_setIntegral_add_comp_conj (φ.integrable_inner hη),
+  rw [Complex.integral_eq_setIntegral_add_comp_conj (hint φ),
+    Complex.integral_eq_setIntegral_add_comp_conj (φ.integrable_inner hη),
     setIntegral_congr_fun hH fun z hz => inner_crFormalAdjoint_crReflection_add hR hΩ φ hz,
     h.setIntegral_inner_crFormalAdjoint _ hψΛ]
   refine setIntegral_congr_fun hH fun z hz => ?_
-  have hz' : (conj z).im < 0 := by simpa using (show 0 < z.im from hz)
-  simp only [FunLike.coe_add, Pi.add_apply, reflectTest_apply,
-    crReflection_of_im_nonneg (le_of_lt (show 0 < z.im from hz)), crReflection_of_im_neg hz',
-    conj_conj, inner_add_left, inner_map_left_of_involutive hR]
+  have hz0 : 0 < z.im := hz.out
+  have hz' : (conj z).im < 0 := by simpa using hz0
+  simp only [FunLike.coe_add, Pi.add_apply, reflectTest_apply, crReflection_of_im_nonneg hz0.le,
+    crReflection_of_im_neg hz', conj_conj, inner_add_left, R.inner_map_eq_flip,
+    R.symm_apply_eq.2 (hR _).symm]
 
 /-! ### Regularity up to the boundary -/
 
@@ -376,10 +374,7 @@ theorem IsWeakCRSolutionHalf.memWkpLoc_one [FiniteDimensional ℝ V]
       exact hz ⟨hzΩ, h0⟩
     · have hJz := hzc ⟨hΩ hzΩ, by simpa using h0.le⟩
       simp only [conjLIE_apply] at hJz
-      ext v
-      have := congrArg (fun M : V →L[ℝ] V => M (R.symm v)) hJz
-      simp only [mul_apply_eq_comp, neg_apply, one_apply_eq_self] at this
-      simp [crReflectionCoeff_apply_of_im_neg h0, this]
+      exact crReflectionCoeff_mul_self_of_im_neg h0 hJz
   have hηR : MemLpLoc r Ω (crReflection R η) := hη.crReflection R hΩ
   exact (hw.memWkpLoc_one_of_le hc hp hJJ hpq hr hr_top hrp hηR).congr_mono
     (eqOn_crReflection R ξ Ω).symm hsub
@@ -428,22 +423,10 @@ theorem IsWeakCRSolutionHalf.memWkpLoc_one_of_I {ξ η : ℂ → ℂ}
     (hη : MemLpLoc r ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) η) :
     MemWkpLoc r ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 ξ := by
   -- The coefficients are bounded, so the exponent `p = ∞` applies.
-  have hDJ : crReflectionDeriv conjLIE (0 : ℂ → ℂ →L[ℝ] ℂ →L[ℝ] ℂ) = 0 := by
-    funext z
-    rcases le_or_gt 0 z.im with hz | hz
-    · exact crReflectionDeriv_of_im_nonneg hz
-    · ext w v
-      simp [crReflectionDeriv_apply_of_im_neg hz]
-  have hS : crReflectionZeroth conjLIE (0 : ℂ → ℂ →L[ℝ] ℂ) = 0 := by
-    funext z
-    rcases le_or_gt 0 z.im with hz | hz
-    · exact crReflectionZeroth_of_im_nonneg hz
-    · ext w
-      simp [crReflectionZeroth_apply_of_im_neg hz]
   have hc : IsSobolevCRCoefficients ⊤ Ω
       (crReflectionCoeff conjLIE fun _ => I • ContinuousLinearMap.id ℝ ℂ)
       (crReflectionDeriv conjLIE 0) (crReflectionZeroth conjLIE 0) := by
-    rw [crReflectionCoeff_conj_I, hDJ, hS]
+    rw [crReflectionCoeff_conj_I, crReflectionDeriv_zero, crReflectionZeroth_zero]
     simpa [fderiv_const] using IsSobolevCRCoefficients.of_contDiffOn
       (J := fun _ => I • ContinuousLinearMap.id ℝ ℂ) (S := 0) contDiffOn_const continuousOn_const ⊤
   have hR (v : ℂ) : conjLIE (conjLIE v) = v := by simp

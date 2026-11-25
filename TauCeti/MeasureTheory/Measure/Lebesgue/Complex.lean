@@ -16,6 +16,7 @@ import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Topology.Order.Compact
 import Mathlib.Analysis.Complex.Isometry
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Planar area of coordinate lines, graphs and rectangles
@@ -26,7 +27,9 @@ The set `s ×ℂ t = {z | z.re ∈ s ∧ z.im ∈ t}` is measurable when `s` and
 (`MeasurableSet.reProdIm`).
 Coordinate lines and continuous graphs over compact intervals have zero planar Lebesgue measure,
 so a half-disc `Ω ∩ {0 ≤ im}` agrees almost everywhere with its interior
-(`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`).
+(`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`), and an integral over `ℂ` is the integral over
+the open upper half-plane of the function plus its composition with conjugation
+(`Complex.integral_eq_setIntegral_add_comp_conj`).
 Interchanging the real and imaginary coordinates preserves planar area. On a rectangle
 `s ×ℂ t`, planar measure is the product of the restrictions to the sides, so a function of the
 imaginary part integrable on a rectangle of positive width is integrable on the vertical side,
@@ -112,6 +115,23 @@ theorem setOf_le_im_ae_eq (c : ℝ) : {z : ℂ | c ≤ z.im} =ᵐ[volume] {z : �
     exact le_antisymm (not_lt.1 h2) h1
   · have h1 : c < z.im := hz.1
     exact absurd h1.le hz.2
+
+/-- An integral over `ℂ` is the integral over the open upper half-plane of the function plus its
+composition with conjugation: the real axis is null and `z ↦ conj z` preserves the measure. -/
+theorem integral_eq_setIntegral_add_comp_conj {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {f : ℂ → E} (hf : Integrable f) :
+    ∫ z, f z = ∫ z in {z : ℂ | 0 < z.im}, (f z + f (starRingEnd ℂ z)) := by
+  have hH : MeasurableSet {z : ℂ | 0 ≤ z.im} := measurableSet_le measurable_const measurable_im
+  have hpre : (conjLIE : ℂ → ℂ) ⁻¹' {z : ℂ | 0 ≤ z.im}ᶜ = {z : ℂ | 0 < z.im} := by
+    ext z
+    simp
+  have hc : Integrable (fun z => f (starRingEnd ℂ z)) := by
+    simpa [Function.comp_def] using conjLIE.measurePreserving.integrable_comp_of_integrable hf
+  rw [integral_add hf.integrableOn hc.integrableOn, ← integral_add_compl hH hf,
+    setIntegral_congr_set (setOf_le_im_ae_eq 0),
+    ← conjLIE.measurePreserving.setIntegral_preimage_emb
+      conjLIE.toHomeomorph.measurableEmbedding f {z : ℂ | 0 ≤ z.im}ᶜ, hpre]
+  simp only [conjLIE_apply]
 
 /-- Restricted to a rectangle, planar Lebesgue measure is the product of the restrictions to its
 sides. -/

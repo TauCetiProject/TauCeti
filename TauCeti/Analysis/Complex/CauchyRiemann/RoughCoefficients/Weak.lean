@@ -275,10 +275,9 @@ theorem IsSobolevCRCoefficients.add_zeroth (hc : IsSobolevCRCoefficients p Ω J 
 
 omit [CompleteSpace V] in
 /-- The four terms of the pairing `⟪D* φ, ξ⟫` (see `TauCeti.inner_crFormalAdjoint`) are
-integrable under Sobolev coefficients and the Hölder condition `1/p + 1/q ≤ 1`. -/
-private theorem IsSobolevCRCoefficients.integrable_crFormalAdjoint_terms
-    (hc : IsSobolevCRCoefficients p Ω J DJ S) (hpq : p⁻¹ + q⁻¹ ≤ 1)
-    (hξ : MemLpLoc q Ω ξ) (φ : 𝓓(Ω, V)) :
+integrable for locally `Lᵖ` coefficients under the Hölder condition `1/p + 1/q ≤ 1`. -/
+private theorem integrable_crFormalAdjoint_terms (hJ : MemLpLoc p Ω J) (hDJ : MemLpLoc p Ω DJ)
+    (hS : MemLpLoc p Ω S) (hpq : p⁻¹ + q⁻¹ ≤ 1) (hξ : MemLpLoc q Ω ξ) (φ : 𝓓(Ω, V)) :
     Integrable (fun z => ⟪fderiv ℝ (φ : ℂ → V) z 1, ξ z⟫_ℝ) ∧
       Integrable (fun z => ⟪fderiv ℝ (φ : ℂ → V) z I, J z (ξ z)⟫_ℝ) ∧
       Integrable (fun z => ⟪(φ : ℂ → V) z, DJ z I (ξ z)⟫_ℝ) ∧
@@ -286,19 +285,29 @@ private theorem IsSobolevCRCoefficients.integrable_crFormalAdjoint_terms
   have hloc := Ω.isOpen.isLocallyClosed
   exact ⟨φ.integrable_inner_fderiv
       (hξ.locallyIntegrableOn (ENNReal.inv_le_one.1 (le_add_self.trans hpq)) hloc) 1,
-    φ.integrable_inner_fderiv (hc.memLpLoc_coeff.locallyIntegrableOn_clm_apply hξ hpq hloc) I,
-    φ.integrable_inner ((hc.memLpLoc_deriv_apply I).locallyIntegrableOn_clm_apply hξ hpq hloc),
-    φ.integrable_inner (hc.memLpLoc_zeroth.locallyIntegrableOn_clm_apply hξ hpq hloc)⟩
+    φ.integrable_inner_fderiv (hJ.locallyIntegrableOn_clm_apply hξ hpq hloc) I,
+    φ.integrable_inner (((hDJ.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I))
+      ).locallyIntegrableOn_clm_apply hξ hpq hloc),
+    φ.integrable_inner (hS.locallyIntegrableOn_clm_apply hξ hpq hloc)⟩
+
+/-- For locally `Lᵖ` coefficients `J`, `DJ`, `S` and the Hölder condition `1/p + 1/q ≤ 1`, the
+pairing `⟪D* φ, ξ⟫` of the weak equation is integrable for every locally `L^q` field `ξ`. No weak
+derivative relation between `J` and `DJ` is needed. -/
+theorem integrable_inner_crFormalAdjoint_of_memLpLoc (hJ : MemLpLoc p Ω J)
+    (hDJ : MemLpLoc p Ω DJ) (hS : MemLpLoc p Ω S) (hpq : p⁻¹ + q⁻¹ ≤ 1) (hξ : MemLpLoc q Ω ξ)
+    (φ : 𝓓(Ω, V)) : Integrable (fun z => ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ) := by
+  obtain ⟨h₁, h₂, h₃, h₄⟩ := integrable_crFormalAdjoint_terms hJ hDJ hS hpq hξ φ
+  simp only [inner_crFormalAdjoint]
+  exact ((h₁.neg.sub h₂).sub h₃).add h₄
 
 /-- Under Sobolev coefficients and the Hölder condition `1/p + 1/q ≤ 1`, the pairing
 `⟪D* φ, ξ⟫` of the weak equation is integrable for every locally `L^q` field `ξ`. -/
 theorem IsSobolevCRCoefficients.integrable_inner_crFormalAdjoint
     (hc : IsSobolevCRCoefficients p Ω J DJ S) (hpq : p⁻¹ + q⁻¹ ≤ 1)
     (hξ : MemLpLoc q Ω ξ) (φ : 𝓓(Ω, V)) :
-    Integrable (fun z => ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ) := by
-  obtain ⟨h₁, h₂, h₃, h₄⟩ := hc.integrable_crFormalAdjoint_terms hpq hξ φ
-  simp only [inner_crFormalAdjoint]
-  exact ((h₁.neg.sub h₂).sub h₃).add h₄
+    Integrable (fun z => ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ) :=
+  integrable_inner_crFormalAdjoint_of_memLpLoc hc.memLpLoc_coeff hc.memLpLoc_deriv
+    hc.memLpLoc_zeroth hpq hξ φ
 
 /-- The integral of `⟪D* φ, ξ⟫` splits into the integrals of its four terms. -/
 theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint_eq_terms
@@ -307,7 +316,8 @@ theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint_eq_terms
     ∫ z, ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ =
       -(∫ z, ⟪fderiv ℝ (φ : ℂ → V) z 1, ξ z⟫_ℝ) - (∫ z, ⟪fderiv ℝ (φ : ℂ → V) z I, J z (ξ z)⟫_ℝ) -
         (∫ z, ⟪(φ : ℂ → V) z, DJ z I (ξ z)⟫_ℝ) + ∫ z, ⟪(φ : ℂ → V) z, S z (ξ z)⟫_ℝ := by
-  obtain ⟨h₁, h₂, h₃, h₄⟩ := hc.integrable_crFormalAdjoint_terms hpq hξ φ
+  obtain ⟨h₁, h₂, h₃, h₄⟩ := integrable_crFormalAdjoint_terms hc.memLpLoc_coeff hc.memLpLoc_deriv
+    hc.memLpLoc_zeroth hpq hξ φ
   simp only [inner_crFormalAdjoint]
   rw [integral_add _ h₄, integral_sub _ h₃, integral_sub _ h₂, integral_neg]
   exacts [h₁.neg, h₁.neg.sub h₂, (h₁.neg.sub h₂).sub h₃]
@@ -344,7 +354,8 @@ theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint [FiniteDimensiona
       (fun K hK hKΩ => memLpLoc_iff.1 (hc.memLpLoc_deriv_apply I) K hKΩ hK)
       (fun K hK hKΩ => memLpLoc_iff.1 hξq K hKΩ hK)
       (fun K hK hKΩ => memLpLoc_iff.1 hDξI K hKΩ hK)
-  obtain ⟨-, -, hA, hC⟩ := hc.integrable_crFormalAdjoint_terms hpq hξq φ
+  obtain ⟨-, -, hA, hC⟩ := integrable_crFormalAdjoint_terms hc.memLpLoc_coeff hc.memLpLoc_deriv
+    hc.memLpLoc_zeroth hpq hξq φ
   have hB := φ.integrable_inner (hc.memLpLoc_coeff.locallyIntegrableOn_clm_apply hDξI hpq hloc)
   have hD := φ.integrable_inner (hDξ1.locallyIntegrableOn hq1 hloc)
   have hξ1 : ∫ z, ⟪fderiv ℝ (φ : ℂ → V) z 1, ξ z⟫_ℝ = -∫ z, ⟪(φ : ℂ → V) z, Dξ z 1⟫_ℝ := by
