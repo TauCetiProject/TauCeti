@@ -69,6 +69,9 @@ infrastructure independent of the diamond operators.
 * `CongruenceSubgroup.ker_map_intCast_zmod`, `CongruenceSubgroup.map_eq_one_of_mem_Gamma`,
   `CongruenceSubgroup.mem_Gamma_iff_dvd`: `Γ(N)` is the kernel of reduction modulo `N`, and its
   membership is equivalent to four entrywise integer divisibilities (valid at `N = 0` as well).
+* `CongruenceSubgroup.sq_dvd_two_sub_trace_of_mem_Gamma`,
+  `CongruenceSubgroup.sq_sub_two_le_abs_trace_of_mem_Gamma`: the trace of an element of `Γ(N)` is
+  congruent to `2` modulo `N²`, so a trace other than `2` has absolute value at least `N² - 2`.
 * `CongruenceSubgroup.mem_Gamma0_iff_dvd`: `Γ₀(N)` membership read as the integer divisibility
   `(N : ℤ) ∣ A 1 0` rather than as a `ZMod N` congruence, for a proof that wants to name the
   quotient. Valid at every level, `N = 0` included.
@@ -671,6 +674,37 @@ theorem dvd_two_sub_trace_of_mem_Gamma1 {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N
 theorem dvd_two_sub_trace_of_conj_mem_Gamma1 {γ g : SL(2, ℤ)} (h : γ * g * γ⁻¹ ∈ Gamma1 N) :
     (N : ℤ) ∣ 2 - (g : Matrix (Fin 2) (Fin 2) ℤ).trace := by
   simpa only [Matrix.SpecialLinearGroup.trace_mul_mul_inv] using dvd_two_sub_trace_of_mem_Gamma1 h
+
+/-- **The trace of an element of `Γ(N)` is congruent to `2` modulo `N²`.** Writing
+`γ = 1 + N A` with `A` integral, `det γ = 1` says `N tr A + N² det A = 0`, so
+`tr γ = 2 + N tr A = 2 - N² det A`. -/
+theorem sq_dvd_two_sub_trace_of_mem_Gamma {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma N) :
+    (N : ℤ) ^ 2 ∣ 2 - (γ : Matrix (Fin 2) (Fin 2) ℤ).trace := by
+  obtain ⟨⟨a, ha⟩, ⟨b, hb⟩, ⟨c, hc⟩, ⟨d, hd⟩⟩ := mem_Gamma_iff_dvd.mp hγ
+  have hdet := γ.det_coe
+  rw [Matrix.det_fin_two] at hdet
+  refine ⟨a * d - b * c, ?_⟩
+  rw [Matrix.trace_fin_two]
+  linear_combination (γ 1 1 - 1) * ha - γ 1 0 * hb - (N : ℤ) * b * hc + (N : ℤ) * a * hd - hdet
+
+/-- **A trace other than `2` in `Γ(N)` is at least `N² - 2` in absolute value.** The trace is
+`2 - k N²` for an integer `k` (`sq_dvd_two_sub_trace_of_mem_Gamma`), and `k ≠ 0` unless the trace
+is `2`. In particular every hyperbolic element of `Γ(N)` has `|tr| ≥ N² - 2`. -/
+theorem sq_sub_two_le_abs_trace_of_mem_Gamma {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma N)
+    (htr : (γ : Matrix (Fin 2) (Fin 2) ℤ).trace ≠ 2) :
+    (N : ℤ) ^ 2 - 2 ≤ |(γ : Matrix (Fin 2) (Fin 2) ℤ).trace| := by
+  obtain ⟨k, hk⟩ := sq_dvd_two_sub_trace_of_mem_Gamma hγ
+  have hk₀ : k ≠ 0 := by
+    rintro rfl
+    exact htr (by linarith)
+  have hN : 0 ≤ (N : ℤ) ^ 2 := sq_nonneg _
+  rcases lt_or_gt_of_ne hk₀ with hk' | hk'
+  · -- `k ≤ -1`: the trace is at least `2 + N²`
+    have : (N : ℤ) ^ 2 * 1 ≤ (N : ℤ) ^ 2 * -k := mul_le_mul_of_nonneg_left (by omega) hN
+    exact le_abs.mpr (.inl (by linarith))
+  · -- `k ≥ 1`: the trace is at most `2 - N²`
+    have : (N : ℤ) ^ 2 * 1 ≤ (N : ℤ) ^ 2 * k := mul_le_mul_of_nonneg_left (by omega) hN
+    exact le_abs.mpr (.inr (by linarith))
 
 /-- If a conjugate `γ g γ⁻¹` lies in `Γ(N)`, then `N` divides the lower-left entry of `g`: as
 `Γ(N)` is normal, `g` itself lies in `Γ(N)`. -/

@@ -46,6 +46,8 @@ unfolded by hand.
 * `Matrix.SpecialLinearGroup.toGL_smul`, `Matrix.SpecialLinearGroup.mapGL_smul`: the
   `SL(2, ℝ)`- and `SL(2, R)`-actions on `ℍ` agree with the `GL(2, ℝ)`-action of the underlying
   matrix, generalizing Mathlib's `ModularGroup.sl_moeb`.
+* `Matrix.SpecialLinearGroup.map_intCastRingHom_smul`: an integral matrix acts on `ℍ` as its
+  image in `SL(2, ℝ)`.
 * `UpperHalfPlane.num_mul`, `UpperHalfPlane.moebius_mul`: off the real line, the numerator of a
   raw Möbius transformation is a cocycle like `UpperHalfPlane.denom_cocycle`, so raw Möbius
   transformations compose like their matrices; `UpperHalfPlane.moebius_im_ne_zero`: they keep
@@ -117,6 +119,12 @@ theorem _root_.Matrix.SpecialLinearGroup.mapGL_smul {R : Type*} [CommRing R] [Al
     (g : SL(2, R)) (τ : ℍ) :
     Matrix.SpecialLinearGroup.mapGL ℝ g • τ = g • τ :=
   (MulAction.compHom_smul_def _ _ _).symm
+
+/-- An integral matrix acts on `ℍ` as its image in `SL(2, ℝ)`. -/
+theorem _root_.Matrix.SpecialLinearGroup.map_intCastRingHom_smul (g : SL(2, ℤ)) (τ : ℍ) :
+    Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) g • τ = g • τ := by
+  ext1
+  simp [coe_specialLinearGroup_apply]
 
 /-- The automorphy factor is a cocycle for the `SL(2, R)`-action on `ℍ`:
 `denom (a * b) τ = denom a (b • τ) * denom b τ`. -/
