@@ -13,8 +13,10 @@ public import Mathlib.LinearAlgebra.Matrix.Hermitian
 # Matrix star projections
 
 A matrix projection is a square matrix `p` over a star ring with `p * p = p` and `pᴴ = p`. This
-file records two facts about matrix projections that do not depend on comparing projections.
+file records facts about matrix projections that do not depend on comparing projections.
 Applying a star ring homomorphism to the entries of a matrix projection gives a matrix projection.
+If `a` is self-adjoint and `a * b = 0`, then rectangular matrices whose columns lie in the ranges
+of `a` and `b` are orthogonal: `vᴴ * w = 0`, and likewise for rows.
 Over a star-ordered proper star ring, such as `ℂ` or a C⋆-algebra with its spectral order,
 `vᴴ * v = 0` forces `v = 0` for rectangular matrices (`Matrix.conjTranspose_mul_self_eq_zero`).
 Hence a rectangular matrix `v` whose initial element `vᴴ * v` is a projection is a partial
@@ -24,6 +26,10 @@ isometry, `v * vᴴ * v = v`.
 
 * `IsStarProjection.matrix_map`: the entrywise image of a matrix projection under a star ring
   homomorphism is a matrix projection.
+* `Matrix.conjTranspose_mul_eq_zero_of_mul_eq_zero` and
+  `Matrix.mul_conjTranspose_eq_zero_of_mul_eq_zero`: if `a * b = 0` and `a` (respectively `b`)
+  is self-adjoint, then rectangular matrices with columns (respectively rows) in the ranges of
+  `a` and `b` are orthogonal.
 * `Matrix.mul_conjTranspose_mul_self_eq_of_isStarProjection`: over a star-ordered proper star
   ring, a matrix `v` with `vᴴ * v` a projection is a partial isometry.
 -/
@@ -42,6 +48,28 @@ theorem _root_.IsStarProjection.matrix_map {S F : Type*} [NonUnitalNonAssocSemir
     IsStarProjection (p.map f) :=
   ⟨by rw [IsIdempotentElem, ← Matrix.map_mul, hp.isIdempotentElem.eq],
     (IsHermitian.map hp.isSelfAdjoint f fun _ ↦ map_star f _).isSelfAdjoint⟩
+
+section NonUnitalSemiring
+
+variable [NonUnitalSemiring R] [StarRing R]
+
+/-- If `a` is self-adjoint and `a * b = 0`, then matrices `v` and `w` with `a * v = v` and
+`b * w = w` (columns in the ranges of `a` and `b`) satisfy `vᴴ * w = 0`. -/
+theorem conjTranspose_mul_eq_zero_of_mul_eq_zero {k l : Type*} {a b : Matrix n n R}
+    (ha : IsSelfAdjoint a) {v : Matrix n k R} {w : Matrix n l R} (hv : a * v = v)
+    (hw : b * w = w) (hab : a * b = 0) : vᴴ * w = 0 := by
+  rw [← hv, ← hw, conjTranspose_mul, ← star_eq_conjTranspose a, ha.star_eq, Matrix.mul_assoc,
+    ← Matrix.mul_assoc a, hab, Matrix.zero_mul, Matrix.mul_zero]
+
+/-- If `b` is self-adjoint and `a * b = 0`, then matrices `v` and `w` with `v * a = v` and
+`w * b = w` (rows in the ranges of `a` and `b`) satisfy `v * wᴴ = 0`. -/
+theorem mul_conjTranspose_eq_zero_of_mul_eq_zero {k l : Type*} {a b : Matrix m m R}
+    (hb : IsSelfAdjoint b) {v : Matrix k m R} {w : Matrix l m R} (hv : v * a = v)
+    (hw : w * b = w) (hab : a * b = 0) : v * wᴴ = 0 := by
+  rw [← hv, ← hw, conjTranspose_mul, ← star_eq_conjTranspose b, hb.star_eq, ← Matrix.mul_assoc,
+    Matrix.mul_assoc v, hab, Matrix.mul_zero, Matrix.zero_mul]
+
+end NonUnitalSemiring
 
 section StarOrderedRing
 

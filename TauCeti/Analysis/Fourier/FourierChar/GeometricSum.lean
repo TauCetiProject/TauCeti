@@ -37,6 +37,13 @@ theorem sum_Ico_fourierChar_eq_mul_sum_range (M N : ℕ) (β : ℝ) :
     simpa only [nsmul_eq_mul] using AddChar.map_nsmul_eq_pow (𝐞 : AddChar ℝ Circle) n β
   simp [add_mul, AddChar.map_add_eq_mul, hpow]
 
+/-- The norm of an exponential sum over a translated interval depends only on its length:
+removing the initial phase leaves the norm of the corresponding geometric progression. -/
+theorem norm_sum_Ico_fourierChar_eq_norm_sum_range (M N : ℕ) (β : ℝ) :
+    ‖∑ n ∈ Ico M N, (𝐞 ((n : ℝ) * β) : ℂ)‖ =
+      ‖∑ n ∈ range (N - M), (𝐞 β : ℂ) ^ n‖ := by
+  rw [sum_Ico_fourierChar_eq_mul_sum_range, norm_mul, Circle.norm_coe, one_mul]
+
 /-- On `[M, N)`, the geometric exponential sum is bounded by its length and, when the phase
 is not an integer, by the reciprocal of twice its distance from the integers. -/
 theorem norm_sum_Ico_fourierChar_le (M N : ℕ) (β : ℝ) :
@@ -45,8 +52,9 @@ theorem norm_sum_Ico_fourierChar_le (M N : ℕ) (β : ℝ) :
       else min ((N - M : ℕ) : ℝ) (1 / (2 * ‖(β : UnitAddCircle)‖)) := by
   have h := TauCeti.norm_sum_expTwoPiI_le (N - M) β
   simp only [TauCeti.expTwoPiI_eq_fourierChar, TauCeti.distInt_eq_norm, norm_eq_zero] at h
-  rw [← Finset.Ico_add_one_right_eq_Icc, sum_Ico_fourierChar_eq_mul_sum_range] at h
-  simpa only [sum_Ico_fourierChar_eq_mul_sum_range, norm_mul, Circle.norm_coe, one_mul,
-    Nat.add_sub_cancel] using h
+  rw [← Finset.Ico_add_one_right_eq_Icc, norm_sum_Ico_fourierChar_eq_norm_sum_range,
+    Nat.add_sub_cancel] at h
+  rw [norm_sum_Ico_fourierChar_eq_norm_sum_range]
+  exact h
 
 end Nat

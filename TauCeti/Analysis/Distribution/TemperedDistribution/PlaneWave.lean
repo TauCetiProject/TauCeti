@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Distribution.TemperedDistribution.HomogeneousLittlewoodPaley
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
 public import TauCeti.Analysis.Fourier.FourierChar.Deriv
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
@@ -32,7 +34,9 @@ basic example on which the dyadic decomposition can be computed exactly.
   (`TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta_of_norm_le`). For `ξ = 0` this is
   the constant function `1`, which is the distribution `volume.toTemperedDistribution`
   (`TemperedDistribution.fourierInv_delta_zero`): `Δ₀ 1 = 1` and `Δⱼ 1 = 0` for `j ≥ 1`
-  (`TemperedDistribution.littlewoodPaleyBlock_toTemperedDistribution_volume`).
+  (`TemperedDistribution.littlewoodPaleyBlock_toTemperedDistribution_volume`), while all its
+  homogeneous blocks vanish
+  (`TemperedDistribution.homogeneousLittlewoodPaleyBlock_toTemperedDistribution_volume`).
 * Differentiation multiplies `e_ξ` by its frequency, `∂_m e_ξ = 2πi ⟪ξ, m⟫ e_ξ`
   (`TemperedDistribution.lineDerivOp_fourierInv_delta`). Since `|e_ξ| = 1`, the plane wave of
   frequency `‖ξ‖ = R` in the direction `m = ξ / R` has `‖∂_m e_ξ‖_∞ = 2π R ‖e_ξ‖_∞`, while its
@@ -50,6 +54,8 @@ basic example on which the dyadic decomposition can be computed exactly.
   `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta_of_norm_le`,
   `TemperedDistribution.littlewoodPaleyBlock_toTemperedDistribution_volume`: the blocks of plane
   waves and of the constant `1`.
+* `TemperedDistribution.homogeneousLittlewoodPaleyBlock_toTemperedDistribution_volume`: the
+  homogeneous blocks of the constant `1` vanish.
 * `TemperedDistribution.lineDerivOp_fourierInv_delta`: the derivatives of a plane wave.
 * `TauCeti.two_mul_pi_le_of_forall_lineDerivOp_eq_and_norm_le`: the constant of Bernstein's
   inequality for one derivative in `L^∞` is at least `2π`.
@@ -138,6 +144,18 @@ theorem littlewoodPaleyBlock_toTemperedDistribution_volume (k : ℕ) :
       if k = 0 then (volume : Measure E).toTemperedDistribution else 0 := by
   rw [← fourierInv_delta_zero]
   exact littlewoodPaleyBlock_fourierInv_delta_of_norm_le φ (by simpa using φ.rIn_pos.le) k
+
+/-- **The homogeneous blocks of the constant `1` vanish.** The Fourier transform of the constant
+function `1`, the tempered distribution `volume.toTemperedDistribution`, is the Dirac mass at the
+origin, which every homogeneous block `Pⱼ` annihilates. -/
+@[simp]
+theorem homogeneousLittlewoodPaleyBlock_toTemperedDistribution_volume (j : ℤ) :
+    homogeneousLittlewoodPaleyBlock ℂ φ j (volume : Measure E).toTemperedDistribution = 0 := by
+  refine homogeneousLittlewoodPaleyBlock_eq_zero_of_isVanishingOn_compl_zero φ
+    (fun ψ hψ ↦ ?_) j
+  -- `𝓕 1 ψ = ∫ 𝓕 ψ = ψ 0`, and `ψ 0 = 0` since `ψ` vanishes near the origin.
+  have h0 : ψ 0 = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hψ h rfl
+  simpa [SchwartzMap.integral_fourier_eq] using h0
 
 /-- **The derivatives of a plane wave.** Differentiating the plane wave `𝓕⁻ δ_ξ` in the direction
 `m` multiplies it by `2πi ⟪ξ, m⟫`. -/

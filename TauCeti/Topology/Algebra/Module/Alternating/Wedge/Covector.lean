@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Basic
+import Mathlib.LinearAlgebra.Dimension.Constructions
 import TauCeti.LinearAlgebra.Alternating.TopDegree
 
 /-!
@@ -23,6 +24,11 @@ because `a` vanishes on `N`. A top-degree form is determined by this restriction
 (`AlternatingMap.curryLeft_compLinearMap_subtype_eq_zero_iff`), so `a ∧ ψ` vanishes exactly when
 `ψ` vanishes on `N`
 (`ContinuousAlternatingMap.pairedWedge_eq_zero_iff_compContinuousLinearMap_subtypeL_eq_zero`).
+The direction `ψ = 0` on `N` implies `a ∧ ψ = 0` holds in every dimension
+(`ContinuousAlternatingMap.pairedWedge_eq_zero_of_compContinuousLinearMap_subtypeL_eq_zero`): on
+linearly independent vectors the wedge is computed on their span, of dimension `l + 1`. Consequently
+`a ∧ ψ` depends only on the restriction of `ψ` to `N`
+(`ContinuousAlternatingMap.pairedWedge_congr_right_of_compContinuousLinearMap_subtypeL_eq`).
 
 This is the step from the contact volume form `α ∧ (dα)ⁿ` to the top power of `dα` on the
 hyperplane `ker α`.
@@ -77,5 +83,63 @@ theorem pairedWedge_eq_zero_iff_compContinuousLinearMap_subtypeL_eq_zero
     ← AlternatingMap.domDomCongr_eq_zero_iff (finCongr (Nat.add_comm 1 l)),
     ← AlternatingMap.curryLeft_compLinearMap_subtype_eq_zero_iff hn _ ((hf r).trans hr), hι,
     ← toAlternatingMap_zero, toAlternatingMap_injective.eq_iff]
+
+/-- **A wedge with a covector kills the forms vanishing on its kernel.** Let `N` be the kernel of a
+real covector `a`. If an `l`-form `ψ` vanishes on `N`, then `a ∧ ψ = 0`. Unlike
+`ContinuousAlternatingMap.pairedWedge_eq_zero_iff_compContinuousLinearMap_subtypeL_eq_zero`, this
+direction holds in every dimension: on linearly independent vectors `v` the wedge is computed on
+their span, which has dimension `l + 1`. -/
+theorem pairedWedge_eq_zero_of_compContinuousLinearMap_subtypeL_eq_zero
+    (a : E [⋀^Fin 1]→L[ℝ] ℝ) {ψ : E [⋀^Fin l]→L[ℝ] ℝ} {N : Submodule ℝ E}
+    (hN : ∀ u, u ∈ N ↔ a ![u] = 0) (h : ψ.compContinuousLinearMap N.subtypeL = 0) :
+    pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ a ψ =
+      0 := by
+  ext v
+  rw [coe_zero, Pi.zero_apply]
+  by_cases hli : LinearIndependent ℝ v
+  swap
+  · exact AlternatingMap.map_linearDependent (pairedWedge _ _ a ψ).toAlternatingMap v hli
+  by_cases hv : ∀ i, a ![v i] = 0
+  · exact pairedWedge_apply_eq_zero_of_forall _ _ a ψ v hv
+  obtain ⟨j, hj⟩ := not_forall.1 hv
+  -- Restrict to the span `W` of the vectors `v i`, of dimension `l + 1`, where `a` is nonzero.
+  set W := Submodule.span ℝ (Set.range v)
+  have hW : finrank ℝ W = l + 1 := by
+    rw [finrank_span_eq_card hli, Fintype.card_fin, Nat.add_comm]
+  let w : Fin (1 + l) → W := fun i ↦ ⟨v i, Submodule.subset_span (Set.mem_range_self i)⟩
+  -- The vector `a(v j)⁻¹ v j` of `W`, computed through the linear functional of `a`.
+  have hf := ofSubsingleton_symm_apply_apply ℝ E ℝ (0 : Fin 1) a
+  have hr : a.compContinuousLinearMap W.subtypeL ![(a ![v j])⁻¹ • w j] = 1 := by
+    simp only [Matrix.vec_single_eq_const, ← hf] at hj
+    simp only [compContinuousLinearMap_apply, Function.comp_def, Matrix.vec_single_eq_const,
+      Submodule.coe_subtypeL, Submodule.coe_subtype, SetLike.val_smul, ← hf, map_smul,
+      smul_eq_mul]
+    exact inv_mul_cancel₀ hj
+  have key := (pairedWedge_eq_zero_iff_compContinuousLinearMap_subtypeL_eq_zero hW
+    (a.compContinuousLinearMap W.subtypeL) (ψ.compContinuousLinearMap W.subtypeL)
+    (N := N.comap W.subtype) (fun u ↦ by simp [hN, Function.comp_def, Matrix.vec_single_eq_const])
+    hr).2 (by
+    ext u
+    simpa [Function.comp_def] using
+      congrArg (fun φ : N [⋀^Fin l]→L[ℝ] ℝ ↦ φ fun i ↦ ⟨u i, (u i).property⟩) h)
+  have hw := congrArg (fun φ : W [⋀^Fin (1 + l)]→L[ℝ] ℝ ↦ φ w) key
+  rw [← pairedWedge_compContinuousLinearMap, compContinuousLinearMap_apply] at hw
+  exact hw
+
+/-- **A wedge with a covector only sees its kernel.** Let `N` be the kernel of a real covector `a`.
+Two `l`-forms `ψ` and `ψ'` which agree on `N` have the same wedge with `a`: `a ∧ ψ = a ∧ ψ'`. -/
+theorem pairedWedge_congr_right_of_compContinuousLinearMap_subtypeL_eq
+    (a : E [⋀^Fin 1]→L[ℝ] ℝ) {ψ ψ' : E [⋀^Fin l]→L[ℝ] ℝ}
+    {N : Submodule ℝ E} (hN : ∀ u, u ∈ N ↔ a ![u] = 0)
+    (h : ψ.compContinuousLinearMap N.subtypeL = ψ'.compContinuousLinearMap N.subtypeL) :
+    pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ a ψ =
+      pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ a ψ' := by
+  -- The difference `ψ' - ψ` vanishes on `N`, hence so does its wedge with `a`.
+  have hdiff := pairedWedge_eq_zero_of_compContinuousLinearMap_subtypeL_eq_zero a (ψ := ψ' - ψ) hN
+    (by
+      ext w
+      simpa only [compContinuousLinearMap_apply, sub_apply, coe_zero, Pi.zero_apply,
+        sub_eq_zero] using (congrArg (fun φ : N [⋀^Fin l]→L[ℝ] ℝ ↦ φ w) h).symm)
+  rw [← add_sub_cancel ψ ψ', pairedWedge_add_right, hdiff, add_zero]
 
 end ContinuousAlternatingMap

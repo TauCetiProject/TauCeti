@@ -123,16 +123,14 @@ lemma square_two_triangles :
 
 /-- The two actual triangles have exactly the same geometric diagonal face. -/
 lemma square_diagonal :
-    (staircaseSimplex (swap (0 : Fin 2) 1)).comp
-      ⟨StdSimplex.map (1 : Fin 3).succAbove, by fun_prop⟩ =
-      (staircaseSimplex (1 : Perm (Fin 2))).comp
-        ⟨StdSimplex.map (1 : Fin 3).succAbove, by fun_prop⟩ := by
+    (staircaseSimplex (swap (0 : Fin 2) 1)).comp (StdSimplex.faceInclusion 1) =
+      (staircaseSimplex (1 : Perm (Fin 2))).comp (StdSimplex.faceInclusion 1) := by
   have h0 : (0 : Fin 1).castSucc = (0 : Fin 2) := rfl
   have h1 : (0 : Fin 1).succ = (1 : Fin 2) := rfl
   have h2 : (1 : Fin 2).castSucc = (1 : Fin 3) := rfl
   apply ContinuousMap.ext
   intro w
-  simpa only [one_mul, h0, h1, h2, ContinuousMap.comp_apply, ContinuousMap.coe_mk] using
+  simpa only [one_mul, h0, h1, h2, ContinuousMap.comp_apply, StdSimplex.faceInclusion_apply] using
     staircaseSimplex_mul_swap_face (1 : Perm (Fin 2)) (0 : Fin 1) w
 
 /-- The square boundary retains the ordered right, left, top and bottom edges. -/

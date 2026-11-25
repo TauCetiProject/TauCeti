@@ -11,11 +11,11 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
+import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Fourier.FourierChar.Deriv
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.InnerProductSpace.Calculus
@@ -92,28 +92,17 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- A smooth function equal to `t ↦ t⁻¹` on `[1, ∞)`. Its denominator
-`1 / 2 + s (2 t - 1) (t - 1 / 2)`, with `s` the smooth transition, is at least `1 / 2`
-everywhere. -/
+/-- A smooth function equal to `t ↦ t⁻¹` on `[1, ∞)`: the reciprocal of the smooth lower clamp
+at level `1 / 2`. -/
 private def smoothRecip (t : ℝ) : ℝ :=
-  (1 / 2 + Real.smoothTransition (2 * t - 1) * (t - 1 / 2))⁻¹
-
-private theorem smoothRecip_denom_pos (t : ℝ) :
-    0 < 1 / 2 + Real.smoothTransition (2 * t - 1) * (t - 1 / 2) := by
-  rcases le_or_gt (1 / 2) t with ht | ht
-  · have := mul_nonneg (Real.smoothTransition.nonneg (2 * t - 1)) (sub_nonneg.2 ht)
-    linarith
-  · rw [Real.smoothTransition.zero_of_nonpos (by linarith)]
-    norm_num
+  (smoothLowerClamp (1 / 2) t)⁻¹
 
 private theorem contDiff_smoothRecip : ContDiff ℝ ∞ smoothRecip :=
-  (contDiff_const.add ((Real.smoothTransition.contDiff.comp
-    ((contDiff_const.mul contDiff_id).sub contDiff_const)).mul
-      (contDiff_id.sub contDiff_const))).inv fun t ↦ (smoothRecip_denom_pos t).ne'
+  (contDiff_smoothLowerClamp _).inv fun t ↦
+    ((le_smoothLowerClamp (by norm_num) t).trans_lt' (by norm_num)).ne'
 
 private theorem smoothRecip_of_one_le {t : ℝ} (ht : 1 ≤ t) : smoothRecip t = t⁻¹ := by
-  rw [smoothRecip, Real.smoothTransition.one_of_one_le (by linarith)]
-  ring_nf
+  rw [smoothRecip, smoothLowerClamp_of_two_mul_le (by norm_num) (by linarith)]
 
 /-- The amplitudes produced by integrating by parts against `𝐞(Φ)` in the direction `w`, with the
 multiplier `v`: `h₀ = f` and `h_(k+1) = ∂_w (h_k v)`. -/
