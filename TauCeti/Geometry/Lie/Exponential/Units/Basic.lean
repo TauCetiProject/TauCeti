@@ -87,6 +87,7 @@ theorem expUnit_neg (x : R) : expUnit (-x) = (expUnit x)⁻¹ := by
   simpa only [expUnit_coe] using (Ring.inverse_exp x).symm
 
 /-- The value of a product of exponential units is the product of the exponentials. -/
+@[simp]
 theorem val_list_prod_map_expUnit (l : List R) :
     ((l.map expUnit).prod : R) = (l.map exp).prod := by
   rw [← Units.coeHom_apply, map_list_prod, List.map_map]
