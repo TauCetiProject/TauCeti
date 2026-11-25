@@ -24,7 +24,8 @@ table `e g * e h = α g h • e (g * h)` gives `e h⁻¹ * e g⁻¹ = α h⁻¹ 
 If moreover `α g⁻¹ g = 1` for every `g`, the basis elements are unitary and the coefficient at the
 identity satisfies the **Parseval identity** `(x⋆ x)_1 = Σ_g star (x_g) x_g`. Over a star-ordered
 ring without zero divisors, for instance `ℂ`, the coefficient at the identity is therefore a
-faithful positive functional.
+faithful positive functional; over `ℂ` it is packaged as one in
+`TauCeti.Algebra.MonoidAlgebra.Twisted.Positive`.
 
 ## Main definitions
 
@@ -39,6 +40,8 @@ faithful positive functional.
 * `TauCeti.TwistedMonoidAlgebra.map_star_of_map_of_inv`: a linear map out of `k_α[G]` commutes
   with the adjoints once it does so on the basis.
 * `TauCeti.TwistedMonoidAlgebra.of_mem_unitary`: the basis elements are unitary.
+* `TauCeti.TwistedMonoidAlgebra.map_star_iff`: when the basis elements are unitary, an algebra
+  map into a star algebra preserves the adjoint exactly when it sends them to unitaries.
 * `TauCeti.TwistedMonoidAlgebra.repr_star_mul_self_apply_one` and
   `TauCeti.TwistedMonoidAlgebra.repr_star_mul_self_apply_one_eq_zero_iff`: the Parseval identity
   and faithfulness of the coefficient at the identity.
@@ -166,6 +169,26 @@ theorem of_mem_unitary {g : G} (hg : (α g⁻¹ g : k) = 1) :
   have hg' : (α g g⁻¹ : k) = 1 := by rw [IsFactorSet.apply_inv_eq_inv_apply α g, hg]
   rw [Unitary.mem_iff, star_of]
   constructor <;> simp [hg, hg']
+
+/-- **The universal property as a star algebra**: when `α g⁻¹ g = 1` for every `g`, an algebra
+map from a twisted group algebra into a star algebra preserves the adjoint exactly when it sends
+every basis element to a unitary. -/
+theorem map_star_iff {A : Type*} [Semiring A] [StarRing A] [Algebra k A] [StarModule k A]
+    (hα : ∀ g, (α g⁻¹ g : k) = 1) {φ : twistedMonoidAlgebra k G α →ₐ[k] A} :
+    (∀ x, φ (star x) = star (φ x)) ↔ ∀ g, φ (of g) ∈ unitary A := by
+  constructor
+  · intro h g
+    have hg := of_mem_unitary (α := α) (hα g)
+    simp [Unitary.mem_iff, ← h, ← map_mul, -star_of, Unitary.star_mul_self_of_mem hg,
+      Unitary.mul_star_self_of_mem hg]
+  · intro h
+    refine map_star_of_map_of_inv φ.toLinearMap fun g ↦ ?_
+    -- Both sides are inverses of `φ (of g)`.
+    have hg := of_mem_unitary (α := α) (hα g)
+    rw [AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply, ← star_of]
+    exact left_inv_eq_right_inv (a := φ (of g))
+      (by rw [← map_mul, Unitary.star_mul_self_of_mem hg, map_one])
+      (Unitary.mul_star_self_of_mem (h g))
 
 end Adjoint
 
