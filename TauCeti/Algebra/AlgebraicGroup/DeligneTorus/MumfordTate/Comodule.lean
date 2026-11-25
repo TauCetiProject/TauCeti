@@ -38,8 +38,9 @@ This file computes the Mumford–Tate group in the basic examples.
 * For the tautological representation of `S` on `ℂ`, in the basis `(1, i)`, a real point
   `a + b i` acts by the matrix `[[a, -b], [b, a]]`. This is `H₁(ℂ/ℤ[i], ℚ)`. The
   multiplication by `i` is an endomorphism of the representation, so the Mumford–Tate group lies
-  in the centralizer of `J = [[0, -1], [1, 0]]`: the equations `X₁₁ - X₂₂` and `X₁₂ + X₂₁` lie in
-  the Mumford–Tate ideal, and the Mumford–Tate group is not all of `GL₂`.
+  in the centralizer of `J = [[0, -1], [1, 0]]`: every entry of `YJ - JY`, for `Y` the generic
+  matrix, lies in the Mumford–Tate ideal; in particular so do `X₁₁ - X₂₂` and `X₁₂ + X₂₁`, and the
+  Mumford–Tate group is not all of `GL₂`.
 
 ## Main declarations
 
@@ -54,6 +55,7 @@ This file computes the Mumford–Tate group in the basic examples.
   any homomorphism into `GL₀` is trivial.
 * `TauCeti.DeligneTorus.mumfordTateHopfIdeal_tateComodule_eq_bot`: `MT(ℚ(m)) = GL₁` for `m ≠ 0`.
 * `TauCeti.DeligneTorus.centralizerHopfIdeal_le_mumfordTateHopfIdeal_tautologicalComodule`,
+  `TauCeti.DeligneTorus.commutator_entry_mem_mumfordTateHopfIdeal_tautologicalComodule`,
   `TauCeti.DeligneTorus.genericMatrix_sub_mem_mumfordTateHopfIdeal_tautologicalComodule`,
   `TauCeti.DeligneTorus.genericMatrix_add_mem_mumfordTateHopfIdeal_tautologicalComodule` and
   `TauCeti.DeligneTorus.mumfordTateHopfIdeal_tautologicalComodule_ne_bot`: the Mumford–Tate
@@ -247,19 +249,32 @@ theorem centralizerHopfIdeal_le_mumfordTateHopfIdeal_tautologicalComodule :
   ext i j
   fin_cases i <;> fin_cases j <;> simp
 
+/-- **The entries of `YJ - JY` lie in the Mumford–Tate ideal of `H₁(ℂ/ℤ[i], ℚ)`**, where `Y` is
+the generic matrix of `GL₂` and `J = [[0, -1], [1, 0]]` is the matrix of multiplication by `i`. -/
+theorem commutator_entry_mem_mumfordTateHopfIdeal_tautologicalComodule (i j : Fin 2) :
+    letI := tautologicalComodule
+    (genericMatrix ℚ 2 * (!![0, -1; 1, 0] : Matrix (Fin 2) (Fin 2) ℚ).map (algebraMap ℚ _) -
+        (!![0, -1; 1, 0] : Matrix (Fin 2) (Fin 2) ℚ).map (algebraMap ℚ _) * genericMatrix ℚ 2 :
+        Matrix (Fin 2) (Fin 2) (coordinateHopfAlgebra ℚ 2)) i j ∈
+      mumfordTateHopfIdeal (comoduleDeligneHom Complex.basisOneI) := by
+  let := tautologicalComodule
+  refine centralizerHopfIdeal_le_mumfordTateHopfIdeal_tautologicalComodule ?_
+  rw [← HopfIdeal.mem_toIdeal, centralizerHopfIdeal_toIdeal_eq_map_centralizerIdeal,
+    LinearEquiv.apply_symm_apply]
+  convert Ideal.mem_map_of_mem _ (Matrix.commutator_entry_mem_centralizerIdeal
+    (!![0, -1; 1, 0] : Matrix (Fin 2) (Fin 2) ℚ) i j) using 1
+  simp [Matrix.mul_apply, genericMatrix_apply]
+
 /-- **`X₁₁ - X₂₂` lies in the Mumford–Tate ideal of `H₁(ℂ/ℤ[i], ℚ)`.** -/
 theorem genericMatrix_sub_mem_mumfordTateHopfIdeal_tautologicalComodule :
     letI := tautologicalComodule
     genericMatrix ℚ 2 0 0 - genericMatrix ℚ 2 1 1 ∈
       mumfordTateHopfIdeal (comoduleDeligneHom Complex.basisOneI) := by
   let := tautologicalComodule
-  refine centralizerHopfIdeal_le_mumfordTateHopfIdeal_tautologicalComodule ?_
-  rw [← HopfIdeal.mem_toIdeal, centralizerHopfIdeal_toIdeal_eq_map_centralizerIdeal,
-    LinearEquiv.apply_symm_apply, ← neg_sub]
-  refine neg_mem ?_
-  convert Ideal.mem_map_of_mem _ (Matrix.commutator_entry_mem_centralizerIdeal
-    (!![0, -1; 1, 0] : Matrix (Fin 2) (Fin 2) ℚ) 0 1) using 1
-  simp [Matrix.mul_apply, Fin.sum_univ_two, genericMatrix_apply]
+  rw [← HopfIdeal.mem_toIdeal]
+  convert neg_mem (HopfIdeal.mem_toIdeal.mpr
+    (commutator_entry_mem_mumfordTateHopfIdeal_tautologicalComodule 0 1)) using 1
+  simp [Matrix.mul_apply]
   abel
 
 /-- **`X₁₂ + X₂₁` lies in the Mumford–Tate ideal of `H₁(ℂ/ℤ[i], ℚ)`.** -/
@@ -268,12 +283,8 @@ theorem genericMatrix_add_mem_mumfordTateHopfIdeal_tautologicalComodule :
     genericMatrix ℚ 2 0 1 + genericMatrix ℚ 2 1 0 ∈
       mumfordTateHopfIdeal (comoduleDeligneHom Complex.basisOneI) := by
   let := tautologicalComodule
-  refine centralizerHopfIdeal_le_mumfordTateHopfIdeal_tautologicalComodule ?_
-  rw [← HopfIdeal.mem_toIdeal, centralizerHopfIdeal_toIdeal_eq_map_centralizerIdeal,
-    LinearEquiv.apply_symm_apply]
-  convert Ideal.mem_map_of_mem _ (Matrix.commutator_entry_mem_centralizerIdeal
-    (!![0, -1; 1, 0] : Matrix (Fin 2) (Fin 2) ℚ) 0 0) using 1
-  simp [Matrix.mul_apply, Fin.sum_univ_two, genericMatrix_apply]
+  convert commutator_entry_mem_mumfordTateHopfIdeal_tautologicalComodule 0 0 using 1
+  simp [Matrix.mul_apply]
 
 /-- **The Mumford–Tate group of `H₁(ℂ/ℤ[i], ℚ)` is not all of `GL₂`**: its ideal contains the
 nonzero function `X₁₁ - X₂₂`. -/
