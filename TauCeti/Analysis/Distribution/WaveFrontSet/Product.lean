@@ -131,6 +131,7 @@ wherever both factors are (`Distribution.singularSupport_product_subset`).
   point, with `product_apply_of_eventuallyEq_one` and the characterization `eq_product_iff`.
 * `Distribution.product_add_left`, `Distribution.product_smul_left`,
   `Distribution.product_add_right`, `Distribution.product_smul_right`: bilinearity.
+* `Distribution.cutoffProduct_comm`, `Distribution.product_comm`: commutativity.
 * `Distribution.dsupport_product_subset`: the support lies in `supp S ∩ supp T`.
 * `Distribution.product_apply_of_apply_eq_integral_right`,
   `Distribution.product_apply_of_apply_eq_integral_left`: the product with a smooth function is
@@ -930,6 +931,19 @@ theorem cutoffProduct_congr {φ φ' : 𝓓(Ω, ℂ)} (h : NoOppositeCovectorsOn 
     cutoffProduct_apply_eq_integral h' (fun x hx ↦ (hUφ (hχU hx).1).2) fun x hx ↦
       hχψ.self_of_nhdsSet x hx]
 
+/-- **The cut-off product is commutative.** -/
+theorem cutoffProduct_comm {φ : 𝓓(Ω, ℂ)} (h : NoOppositeCovectorsOn S T (tsupport φ)) :
+    T.cutoffProduct S φ h.symm = S.cutoffProduct T φ h := by
+  ext ψ
+  -- Moving the multiplier `ψ` from the second cutoff to the first, and substituting `η ↦ -η`,
+  -- exchanges the two factors.
+  have hψφ (x : E) : TestFunction.smulLeftCLM ψ.contDiff φ x =
+      toSchwartzMapCLM ℂ (postcompCLM (𝕜 := ℝ) ofRealCLM ψ) x * φ x := by
+    simp [TestFunction.smulLeftCLM_apply]
+  rw [cutoffProduct_apply, cutoffProduct_apply,
+    ← h.integral_localFourier_mul_localFourier_neg_eq subset_rfl _ hψφ hψφ, ← integral_neg_eq_self]
+  simp only [neg_neg, mul_comm]
+
 /-! ### The product -/
 
 omit [MeasurableSpace E] [BorelSpace E] in
@@ -1082,6 +1096,12 @@ theorem product_smul_right (h : ∀ x, NoOppositeCovectorsOn S T {x}) (c : ℂ) 
     ⟨hφ.smul_right c, fun ψ hφψ ↦ ?_⟩).symm
   rw [smul_apply, product_apply_of_eventuallyEq_one h hφ hφψ, cutoffProduct_smul_right hφ c,
     smul_apply]
+
+/-- **The product is commutative.** -/
+theorem product_comm (h : ∀ x, NoOppositeCovectorsOn S T {x}) :
+    T.product S (fun x ↦ (h x).symm) = S.product T h :=
+  eq_product_of_forall_cutoffProduct h h h fun _ hφ _ ↦ ⟨hφ, fun _ hφψ ↦ by
+    rw [product_apply_of_eventuallyEq_one _ hφ.symm hφψ, cutoffProduct_comm]⟩
 
 /-- If the products `φ² S T` vanish on `U ∩ W` for every cutoff `φ` equal to one on an open set
 `U`, then the product `S T` vanishes on `W`. -/

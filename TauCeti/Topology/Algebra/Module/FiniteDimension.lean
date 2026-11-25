@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Algebra.Star.Module
 public import Mathlib.Topology.Algebra.Star
 public import Mathlib.LinearAlgebra.Multilinear.Basic
@@ -83,6 +85,11 @@ basis `v` sends a coordinate vector `x` to the linear combination `∑ i, x i �
 `Module.Basis.equivFunL_symm_apply`, the continuous counterpart of
 `Module.Basis.equivFun_symm_apply`. Over a field with a continuous star, the conjugation of the
 coordinates `Module.Basis.coordConj` is continuous: `Module.Basis.coordConjL`.
+The matrix of a continuous endomorphism in a finite basis `b` is a continuous linear map
+`ContinuousLinearMap.toMatrixCLM b : (E →L[𝕜] E) →L[𝕜] Matrix ι ι 𝕜`, whose determinant is the
+determinant of the endomorphism (`ContinuousLinearMap.det_toMatrixCLM`). On a finite free module
+over a stably finite semiring, a right inverse of a continuous endomorphism is a left inverse:
+`ContinuousLinearMap.comp_eq_one_comm`, the continuous companion of `LinearMap.comp_eq_id_comm`.
 A composition `S ∘ T` of continuous linear maps expands in the products `b l ∘ a k` of finite
 bases `b` and `a` of the spaces of continuous linear maps containing `S` and `T`, with the products
 of their coordinates as coefficients: `ContinuousLinearMap.comp_eq_sum_coord`.
@@ -173,6 +180,38 @@ theorem dual_finrank_eq : Module.finrank 𝕜 (E →L[𝕜] 𝕜) = Module.finra
   rw [← LinearEquiv.finrank_eq
     (LinearMap.toContinuousLinearMap : (E →ₗ[𝕜] 𝕜) ≃ₗ[𝕜] E →L[𝕜] 𝕜)]
   exact Subspace.dual_finrank_eq
+
+/-- The matrix in a basis `b` of a continuous endomorphism of a finite-dimensional space, as a
+continuous linear map. -/
+noncomputable def toMatrixCLM {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι 𝕜 E) : (E →L[𝕜] E) →L[𝕜] Matrix ι ι 𝕜 :=
+  LinearMap.toContinuousLinearMap
+    ((LinearMap.toMatrix b b).toLinearMap.comp (ContinuousLinearMap.coeLM 𝕜))
+
+/-- `toMatrixCLM b` evaluates to `LinearMap.toMatrix b b`. -/
+@[simp]
+theorem toMatrixCLM_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι 𝕜 E)
+    (f : E →L[𝕜] E) : toMatrixCLM b f = LinearMap.toMatrix b b (f : E →ₗ[𝕜] E) :=
+  (rfl)
+
+/-- The determinant of the matrix of `f` in any basis is the determinant of `f`. -/
+theorem det_toMatrixCLM {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι 𝕜 E)
+    (f : E →L[𝕜] E) : (toMatrixCLM b f).det = LinearMap.det (f : E →ₗ[𝕜] E) :=
+  LinearMap.det_toMatrix b _
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {R M : Type*} [Semiring R] [IsStablyFiniteRing R] [AddCommMonoid M] [Module R M]
+  [TopologicalSpace M] [Module.Free R M] [Module.Finite R M]
+
+/-- On a finite free module over a stably finite semiring, such as a finite-dimensional vector
+space, continuous endomorphisms are inverse to each other on one side if and only if they are
+inverse to each other on the other side. -/
+theorem comp_eq_one_comm {f g : M →L[R] M} : f ∘L g = 1 ↔ g ∘L f = 1 := by
+  simp only [← coe_inj, one_def, coe_id]
+  exact LinearMap.comp_eq_id_comm R M
 
 end ContinuousLinearMap
 
