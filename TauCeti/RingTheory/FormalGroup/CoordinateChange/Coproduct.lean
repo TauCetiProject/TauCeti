@@ -18,9 +18,6 @@ on coefficients and degree `2i` on both families `bᵢ` and `bᵢ'`. The coprodu
 homogeneity, by the left counit identity. These results retain the integral coefficient ring;
 no torsion-freeness or division is required.
 
-The pushout map associated to a composable pair of graded classifying maps is graded as well.
-Thus a graded map out of the tensor square composed with the coproduct is graded.
-
 ## References
 
 * D. C. Ravenel, *Complex Cobordism and Stable Homotopy Groups of Spheres*, Appendix A2.1.
@@ -62,13 +59,11 @@ theorem coproduct_mem_coordinateTensorGrading {n : ℕ} {x : MvPolynomial ℕ+ L
 theorem coproduct_mem_coordinateTensorGrading_iff {n : ℕ} {x : MvPolynomial ℕ+ LazardRing} :
     coproduct x ∈ coordinateTensorGrading n ↔ x ∈ coordinateGrading n := by
   refine ⟨fun hx ↦ ?_, coproduct_mem_coordinateTensorGrading⟩
-  have h := pushoutLift_mem
-    (p := ⟨(C.comp counit, RingHom.id _), by
-      rw [RingHom.comp_assoc, counit_comp_rightUnit, RingHom.comp_id, RingHom.id_comp]⟩)
-    (coordinateTensorGrading_map_mem_iff coordinateGrading (.id ℕ) _)
-    X_mem_coordinateGrading
-    (fun _ _ hy ↦ C_mem_coordinateGrading (counit_mem_grading hy))
-    (fun _ _ hy ↦ hy) hx
+  have h := (coordinateTensorGrading_map_mem_iff coordinateGrading (.id ℕ)
+    (pushoutLift rightUnit ⟨(C.comp counit, RingHom.id _), by
+      rw [RingHom.comp_assoc, counit_comp_rightUnit, RingHom.comp_id, RingHom.id_comp]⟩)).mpr
+    ⟨fun _ _ hy ↦ by simpa using C_mem_coordinateGrading (counit_mem_grading hy),
+      fun _ ↦ by simp⟩ hx
   rwa [← RingHom.comp_apply, pushoutLift_counit_id_comp_coproduct, RingHom.id_apply,
     AddMonoidHom.id_apply] at h
 

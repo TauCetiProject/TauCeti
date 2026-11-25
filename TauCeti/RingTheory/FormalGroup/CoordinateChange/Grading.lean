@@ -59,8 +59,7 @@ theorem mem_coordinateGrading_iff_aeval {n : ℕ} {x : MvPolynomial ℕ+ LazardR
   simp only [mvPolynomialEquiv_X]
 
 /-- Multiplication in the coordinate-change ring adds homological degrees. -/
-instance : SetLike.GradedMonoid coordinateGrading :=
-  WeightedHomogeneousSubmodule.gradedMonoid_extensionGrading _ _ _
+instance : SetLike.GradedMonoid coordinateGrading := by unfold coordinateGrading; infer_instance
 
 /-- The coordinate-change ring is the direct sum of its combined homogeneous pieces. -/
 theorem isInternal_coordinateGrading : DirectSum.IsInternal coordinateGrading :=
@@ -173,8 +172,8 @@ def coordinateTensorGrading (n : ℕ) :
     (WeightedHomogeneousSubmodule.extensionEquiv ℤ ℕ+ ℕ+ mvPolynomialEquiv) n
 
 /-- Multiplication adds homological degrees in the ring of composable pairs. -/
-instance : SetLike.GradedMonoid coordinateTensorGrading :=
-  WeightedHomogeneousSubmodule.gradedMonoid_extensionGrading _ _ _
+instance : SetLike.GradedMonoid coordinateTensorGrading := by
+  unfold coordinateTensorGrading; infer_instance
 
 /-- The ring of composable pairs is the direct sum of its homogeneous pieces. -/
 theorem isInternal_coordinateTensorGrading : DirectSum.IsInternal coordinateTensorGrading :=

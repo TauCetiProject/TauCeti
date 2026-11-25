@@ -14,9 +14,6 @@ For a ring homomorphism `f : B →+* B'`, the polynomial ring `MvPolynomial σ B
 `B' ⊗_B MvPolynomial σ B` of `f` and `MvPolynomial.C`, with canonical inclusions `MvPolynomial.C`
 and `MvPolynomial.map f`. `MvPolynomial.pushoutLift` packages this universal property as an
 equivalence on ring homomorphisms.
-
-Factored from `TauCeti.LazardRing.tensorLift` in
-`TauCeti/RingTheory/FormalGroup/CoordinateChange/HopfAlgebroid.lean`.
 -/
 
 public section
@@ -70,19 +67,5 @@ end
 theorem pushout_ringHom_ext (f : B →+* B') {k k' : MvPolynomial σ B' →+* R}
     (h₁ : k.comp C = k'.comp C) (h₂ : k.comp (map f) = k'.comp (map f)) : k = k' :=
   (pushoutLift f).symm.injective (Subtype.ext (Prod.ext h₁ h₂))
-
-/-- `pushoutLift` preserves degrees when both component maps are graded. -/
-theorem pushoutLift_mem {M S₀ S₁ S₂ S ι : Type*} [AddCommMonoid M] [SetLike S₀ B']
-    [SetLike S₁ (MvPolynomial σ B)] [SetLike S₂ (MvPolynomial σ B')] [SetLike S R]
-    [AddCommMonoid ι] {w : σ → M} {ℬ : M → S₀} {𝒢 : M → S₁} {𝒯 : M → S₂} {𝒜 : ι → S}
-    {r : M →+ ι} {f : B →+* B'}
-    {p : {p : (B' →+* R) × (MvPolynomial σ B →+* R) // p.1.comp f = p.2.comp C}}
-    (h𝒯 : (∀ ⦃n⦄ ⦃x⦄, x ∈ 𝒯 n → pushoutLift f p x ∈ 𝒜 (r n)) ↔
-      (∀ ⦃n⦄ ⦃b⦄, b ∈ ℬ n → pushoutLift f p (C b) ∈ 𝒜 (r n)) ∧
-        ∀ i : σ, pushoutLift f p (X i) ∈ 𝒜 (r (w i)))
-    (hX : ∀ i, X i ∈ 𝒢 (w i)) (h₁ : ∀ ⦃n⦄ ⦃b⦄, b ∈ ℬ n → p.val.1 b ∈ 𝒜 (r n))
-    (h₂ : ∀ ⦃n⦄ ⦃y⦄, y ∈ 𝒢 n → p.val.2 y ∈ 𝒜 (r n)) {n : M} {x : MvPolynomial σ B'}
-    (hx : x ∈ 𝒯 n) : pushoutLift f p x ∈ 𝒜 (r n) :=
-  h𝒯.mpr ⟨fun _ _ hb ↦ by simpa using h₁ hb, fun i ↦ by simpa using h₂ (hX i)⟩ hx
 
 end MvPolynomial

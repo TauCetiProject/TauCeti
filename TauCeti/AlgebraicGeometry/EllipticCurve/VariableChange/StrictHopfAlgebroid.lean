@@ -265,14 +265,22 @@ theorem pushoutLift_conjugation_id_comp_coproduct :
     (pushoutLift rightUnit ⟨(conjugation, RingHom.id ArrowRing), by
         rw [conjugation_comp_rightUnit, RingHom.id_comp]⟩).comp coproduct =
       rightUnit.comp counit :=
-  MvPolynomial.ringHom_ext' (RingHom.ext fun _ ↦ by simp) fun i ↦ by (fin_cases i <;> simp); ring
+  MvPolynomial.ringHom_ext' (RingHom.ext fun _ ↦ by simp) fun i ↦ by
+    fin_cases i
+    · simp
+    · simp
+    · simp; ring
 
 /-- **The right antipode equation** `μ (id ⊗ c) Δ = η_L ε`. -/
 theorem pushoutLift_id_conjugation_comp_coproduct :
     (pushoutLift rightUnit ⟨(RingHom.id ArrowRing, conjugation), by
         rw [conjugation_comp_C, RingHom.id_comp]⟩).comp coproduct =
       C.comp counit :=
-  MvPolynomial.ringHom_ext' (RingHom.ext fun _ ↦ by simp) fun i ↦ by (fin_cases i <;> simp); ring
+  MvPolynomial.ringHom_ext' (RingHom.ext fun _ ↦ by simp) fun i ↦ by
+    fin_cases i
+    · simp
+    · simp
+    · simp; ring
 
 end Strict
 
@@ -367,8 +375,8 @@ theorem isIntegralModularForm_iff_strictRightUnit {k : ℕ} {f : MvPolynomial Co
           (VariableChange.scaling R u₀ • W)).specialize f =
         (VariableChange.scaling R u₀ • W).specialize f := by simpa using hk
     have h₂ : (VariableChange.scaling R u₀ • W).specialize f = ↑u₀⁻¹ ^ k * W.specialize f := by
-      rw [VariableChange.scaling_apply, specialize_mk_smul, hdeg.aeval_pow_mul]
-      exact congrArg _ (DFunLike.congr_fun (aeval_unique W.specialize.toIntAlgHom) f).symm
+      rw [VariableChange.scaling_apply]
+      exact isWeightedHomogeneous_iff_forall_specialize_mk_smul.mp hdeg R W u₀
     have hu : (VariableChange.heisenbergHom R a * VariableChange.scaling R u₀).u = u₀ := by
       simp [VariableChange.mul_def]
     rw [mul_smul, h₁, h₂, hu]

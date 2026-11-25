@@ -651,7 +651,7 @@ theorem mem_extensionGrading_iff_aeval [AddCommMonoid M] {w : τ → M} {v : α 
       p.IsWeightedHomogeneous (Sum.elim w v) n :=
   ⟨fun ⟨_, hq, hqe⟩ ↦ (extensionEquiv R τ α e).injective hqe ▸ hq, fun hp ↦ ⟨p, hp, rfl⟩⟩
 
-theorem gradedMonoid_extensionGrading [AddCommMonoid M] (w : τ → M) (v : α → M)
+instance [AddCommMonoid M] (w : τ → M) (v : α → M)
     (e : MvPolynomial α R ≃ₐ[R] B) : SetLike.GradedMonoid (extensionGrading w v e) :=
   gradedMonoid_map _ (extensionEquiv R τ α e)
 
@@ -679,6 +679,11 @@ theorem isInternal_extensionGrading {M α B : Type*} [AddCommMonoid M] [Decidabl
     [CommRing R] [CommRing B] [Algebra R B] (w : τ → M) (v : α → M)
     (e : MvPolynomial α R ≃ₐ[R] B) : DirectSum.IsInternal (extensionGrading w v e) :=
   isInternal_map _ (extensionEquiv R τ α e)
+
+noncomputable instance {M α B : Type*} [AddCommMonoid M] [DecidableEq M]
+    [CommRing R] [CommRing B] [Algebra R B] (w : τ → M) (v : α → M)
+    (e : MvPolynomial α R ≃ₐ[R] B) : GradedAlgebra (extensionGrading w v e) :=
+  (isInternal_extensionGrading w v e).gradedAlgebra
 
 /-- A ring map out of `MvPolynomial τ B` is graded for `extensionGrading` iff it is graded on
 coefficients `C b` and sends each generator `X i` into degree `r (w i)`. -/

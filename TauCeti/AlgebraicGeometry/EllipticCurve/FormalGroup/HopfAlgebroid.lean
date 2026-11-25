@@ -65,8 +65,8 @@ theorem isWeightedHomogeneous_lazardBaseHom {k : ℕ} {x : LazardRing}
 @[simp] theorem specialize_comp_lazardBaseHom {R : Type*} [CommRing R] (W : WeierstrassCurve R) :
     W.specialize.comp lazardBaseHom = LazardRing.lift ⟨formalGroup W, inferInstance⟩ := by
   apply LazardRing.hom_ext
-  rw [← FormalGroup.map_comp, map_lazardBaseHom_formalGroup, ← map_formalGroup, LazardRing.map_lift]
-  exact congrArg _ (WeierstrassCurve.map_specialize W)
+  rw [← FormalGroup.map_comp, map_lazardBaseHom_formalGroup, map_specialize_formalGroup,
+    LazardRing.map_lift]
 
 /-- `lazardBaseHom` extends `I_n` to `(formalGroup Universal.curve).heightIdeal p n`. -/
 theorem map_lazardBaseHom_heightIdeal (p n : ℕ) :
@@ -82,9 +82,10 @@ def gradedLazardArrowHom : LazardRing.coordinateGrading →+*ᵍ arrowGrading :=
   LazardRing.gradedCoordinateChangeLift
     ⟨(⟨formalGroup (WeierstrassCurve.map Universal.curve C), inferInstance⟩,
         ⟨formalCoordinate, formalCoordinate_mem_ker_linearCoeff⟩),
-      (WeierstrassCurve.map Universal.curve C).coeff_formalGroup_mem arrowGrading
-        (AddMonoidHom.mulLeft 2) (fun _ ↦ by
-          simp [WeierstrassCurve.specialize_map, Universal.specialize_curve]),
+      fun d ↦ by
+        dsimp only
+        rw [map_formalGroup, FormalGroup.map_toPowerSeries, MvPowerSeries.coeff_map]
+        exact C_mem_arrowGrading (Universal.coeff_formalGroup_mem_baseGrading d),
       coeff_succ_formalCoordinate_mem_arrowGrading⟩
 /-- The ring homomorphism `L[b₁, b₂, …] →+* A[r, s, t]` classifying `Strict.formalCoordinate`. -/
 def lazardArrowHom : MvPolynomial ℕ+ LazardRing →+* ArrowRing := gradedLazardArrowHom.toRingHom
@@ -165,7 +166,11 @@ theorem lazardArrowAlgSection_C (f : MvPolynomial Coeff ℤ) : lazardArrowAlgSec
   simp [lazardArrowAlgSection]
 @[simp] theorem lazardArrowAlgHom_comp_lazardArrowAlgSection :
     lazardArrowAlgHom.comp lazardArrowAlgSection = AlgHom.id (MvPolynomial Coeff ℤ) ArrowRing :=
-  MvPolynomial.algHom_ext fun i ↦ by (fin_cases i <;> simp [map_ofNat]); ring
+  MvPolynomial.algHom_ext fun i ↦ by
+    fin_cases i
+    · simp
+    · simp
+    · simp [map_ofNat]; ring
 @[simp] theorem lazardArrowAlgHom_lazardArrowAlgSection (p : ArrowRing) :
     lazardArrowAlgHom (lazardArrowAlgSection p) = p :=
   AlgHom.congr_fun lazardArrowAlgHom_comp_lazardArrowAlgSection p
@@ -230,10 +235,9 @@ def lazardTensorHom :
 theorem lazardTensorHom_mem_tensorGrading {n : ℕ}
     {x : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing)}
     (hx : x ∈ LazardRing.coordinateTensorGrading n) : lazardTensorHom x ∈ tensorGrading n :=
-  pushoutLift_mem (LazardRing.coordinateTensorGrading_map_mem_iff tensorGrading (.id ℕ) _)
-    LazardRing.X_mem_coordinateGrading
-    (fun _ _ hy ↦ C_mem_tensorGrading (lazardArrowHom_mem_arrowGrading hy))
-    (fun _ _ hy ↦ map_rightUnit_mem_tensorGrading (lazardArrowHom_mem_arrowGrading hy)) hx
+  (LazardRing.coordinateTensorGrading_map_mem_iff tensorGrading (.id ℕ) lazardTensorHom).mpr
+    ⟨fun _ _ hy ↦ by simpa using C_mem_tensorGrading (lazardArrowHom_mem_arrowGrading hy),
+      fun i ↦ by simpa using coeff_succ_formalCoordinate_mem_arrowGrading i⟩ hx
 
 /-- The graded ring homomorphism on tensor squares `Γ_L ⊗_L Γ_L →+*ᵍ Γ_W ⊗_A Γ_W`. -/
 def gradedLazardTensorHom : LazardRing.coordinateTensorGrading →+*ᵍ tensorGrading where
