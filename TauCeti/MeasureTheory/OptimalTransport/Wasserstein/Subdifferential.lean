@@ -298,18 +298,18 @@ private theorem exists_le_apply_of_mem_wassersteinSubdifferential {ν : Wasserst
   rwa [(hopt t ht).toIsCoupling.integral_inner_map_smul_add_smul, hdist] at this
 
 /-- **The subgradient inequality along a convex interpolation.** Let `ξ ∈ ∂φ(μ)` and let `γ` be
-an optimal coupling of `μ` and `ν` for the quadratic cost. Suppose that, when `φ ν ≠ ⊤`, the
-`m`-convexity inequality `φ μ_t ≤ (1 - t) φ μ + t φ ν - (m / 2) t (1 - t) W₂(μ, ν)²` holds at the
-laws `μ_t` of `(1 - t) • x + t • y` under `γ`, for `t ∈ [0, 1]`. Then
+an optimal coupling of `μ` and `ν` for the quadratic cost. Suppose that, when `φ ν ≠ ⊤`, `φ` is
+`m`-convex along every geodesic segment `c` from `μ` to `ν` whose laws `c t`, for `t ∈ [0, 1]`,
+are the laws of `(1 - t) • x + t • y` under `γ`. Then
 `φ ν ≥ φ μ + ∫ ⟪ξ x, y - x⟫ dγ + (m / 2) W₂(μ, ν)²`. -/
 theorem add_le_of_mem_wassersteinSubdifferential {m : ℝ}
     (hξ : ξ ∈ wassersteinSubdifferential φ μ) {ν : WassersteinSpace 2 E} {γ : Measure (E × E)}
     (hγ : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) γ
       ((μ : ProbabilityMeasure E) : Measure E) ((ν : ProbabilityMeasure E) : Measure E))
-    (hconv : φ ν ≠ ⊤ → ∀ t ∈ Icc (0 : ℝ) 1, ∀ ν' : WassersteinSpace 2 E,
-      ((ν' : ProbabilityMeasure E) : Measure E) = γ.map (fun z ↦ (1 - t) • z.1 + t • z.2) →
-      φ ν' ≤ ((1 - t : ℝ) : EReal) * φ μ + (t : EReal) * φ ν -
-        ((m / 2 * t * (1 - t) * dist μ ν ^ 2 : ℝ) : EReal)) :
+    (hconv : φ ν ≠ ⊤ → ∀ c : ℝ → WassersteinSpace 2 E, IsGeodesicSegment c μ ν →
+      (∀ t ∈ Icc (0 : ℝ) 1,
+        ((c t : ProbabilityMeasure E) : Measure E) = γ.map fun z ↦ (1 - t) • z.1 + t • z.2) →
+      ConvexAlong m φ c) :
     φ μ + ((∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ + m / 2 * dist μ ν ^ 2 : ℝ) : EReal) ≤ φ ν := by
   by_cases hν : φ ν = ⊤
   · rw [hν]
@@ -317,8 +317,8 @@ theorem add_le_of_mem_wassersteinSubdifferential {m : ℝ}
   obtain ⟨c, hc, hopt⟩ := WassersteinSpace.exists_isGeodesicSegment_isOptimalCoupling (p := 2)
     ENNReal.ofNat_ne_top (by rwa [ENNReal.toReal_ofNat])
   simp only [ENNReal.toReal_ofNat] at hopt
-  have hconv' (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) := hconv hν t ht (c t) (by
-    rw [← (hopt t ht).snd_eq, Measure.snd_map_prodMk (by fun_prop) (by fun_prop)])
+  have hconv' := hc.convexAlong_iff.1 <| hconv hν c hc fun t ht ↦ by
+    rw [← (hopt t ht).snd_eq, Measure.snd_map_prodMk (by fun_prop) (by fun_prop)]
   obtain ⟨r, hr⟩ : ∃ r : ℝ, φ μ = r :=
     ⟨(φ μ).toReal, (EReal.coe_toReal hξ.2.1 hξ.1).symm⟩
   -- The convexity inequality along `μ_t` rules out `φ ν = ⊥`.
@@ -349,15 +349,8 @@ theorem ConvexAlongGeodesics.mem_wassersteinSubdifferential_iff {m : ℝ}
       IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) γ
         ((μ : ProbabilityMeasure E) : Measure E) ((ν : ProbabilityMeasure E) : Measure E) →
       φ μ + ((∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ + m / 2 * dist μ ν ^ 2 : ℝ) : EReal) ≤ φ ν := by
-  refine ⟨fun hξ ν γ hγ ↦ add_le_of_mem_wassersteinSubdifferential hξ hγ fun hν t ht ν' hν' ↦ ?_,
-    mem_wassersteinSubdifferential_of_forall_le hbot htop⟩
-  -- The law `μ_t` lies on the geodesic segment traced by the interpolation of `γ`.
-  obtain ⟨c, hc, hopt⟩ := WassersteinSpace.exists_isGeodesicSegment_isOptimalCoupling (p := 2)
-    ENNReal.ofNat_ne_top (by rwa [ENNReal.toReal_ofNat])
-  simp only [ENNReal.toReal_ofNat] at hopt
-  obtain rfl : ν' = c t := WassersteinSpace.ext <| ProbabilityMeasure.toMeasure_injective <| by
-    rw [hν', ← (hopt t ht).snd_eq, Measure.snd_map_prodMk (by fun_prop) (by fun_prop)]
-  exact hc.convexAlong_iff.1 (convexAlongGeodesics_def.1 hφ htop hν hc) t ht
+  exact ⟨fun hξ ν γ hγ ↦ add_le_of_mem_wassersteinSubdifferential hξ hγ fun hν c hc _ ↦
+    convexAlongGeodesics_def.1 hφ htop hν hc, mem_wassersteinSubdifferential_of_forall_le hbot htop⟩
 
 /-- **Subgradients of energies convex along generalized geodesics.** If `φ` is `m`-convex along
 every generalized geodesic based at `μ` and `φ μ` is finite, then `ξ ∈ ∂φ(μ)` exactly when
@@ -370,18 +363,18 @@ theorem ConvexAlongGeneralizedGeodesics.mem_wassersteinSubdifferential_iff {m : 
       IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) γ
         ((μ : ProbabilityMeasure E) : Measure E) ((ν : ProbabilityMeasure E) : Measure E) →
       φ μ + ((∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ + m / 2 * dist μ ν ^ 2 : ℝ) : EReal) ≤ φ ν := by
-  refine ⟨fun hξ ν γ hγ ↦ add_le_of_mem_wassersteinSubdifferential hξ hγ fun hν t ht ν' hν' ↦ ?_,
+  refine ⟨fun hξ ν γ hγ ↦ add_le_of_mem_wassersteinSubdifferential hξ hγ fun hν c hc hlaw ↦ ?_,
     mem_wassersteinSubdifferential_of_forall_le hbot htop⟩
   obtain ⟨hγc, hγopt⟩ := (isOptimalCoupling_edist_rpow_iff measurable_edist two_ne_zero
     ENNReal.ofNat_ne_top).1 (by rwa [ENNReal.toReal_ofNat])
-  have hg : Measurable fun z : E × E ↦ (z.1, z.1, z.2) := by fun_prop
   have hsnd : (γ.map fun z ↦ (z.1, z.1, z.2)).snd = γ := by
-    rw [Measure.snd, Measure.map_map measurable_snd hg]
-    simp [Function.comp_def]
+    rw [Measure.snd_map_prodMk (by fun_prop) (by fun_prop)]
+    exact Measure.map_id
   have h := convexAlongGeneralizedGeodesicPlan_def.1 (convexAlongGeneralizedGeodesics_def.1 hφ htop
-    hν (hγc.isGeneralizedGeodesicPlan_map hγopt measurable_edist.aemeasurable)) t ht ν' (by
-    rw [hν', generalizedGeodesic_def, Measure.map_map (by fun_prop) hg, Function.comp_def])
-  rwa [hsnd, ← WassersteinSpace.dist_sq_eq_integral hγ] at h
+    hν (hγc.isGeneralizedGeodesicPlan_map hγopt measurable_edist.aemeasurable))
+  refine hc.convexAlong_iff.2 fun t ht ↦ ?_
+  have ht' := h t ht (c t) (by rw [hlaw t ht, generalizedGeodesic_eq_map_snd, hsnd])
+  rwa [hsnd, ← WassersteinSpace.dist_sq_eq_integral hγ] at ht'
 
 section PotentialEnergy
 

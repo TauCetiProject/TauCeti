@@ -163,11 +163,7 @@ theorem IsCoupling.isGeneralizedGeodesicPlan_map (hπ : IsCoupling π μ ν)
   have hright : (π.map fun z ↦ (z.1, z.1, z.2)).map (Prod.map id Prod.snd) = π := by
     rw [Measure.map_map (by fun_prop) hg]
     simp [Function.comp_def]
-  -- The diagonal coupling has zero displacement.
-  have hzero : eLpNorm (fun z : X × X ↦ edist z.1 z.2) p (graphPlan id μ) = 0 := by
-    rw [graphPlan_def] at hd ⊢
-    rw [eLpNorm_map_measure hd.aestronglyMeasurable (by fun_prop)]
-    exact eLpNorm_eq_zero_of_ae_zero (.of_forall fun x ↦ by simp)
+  have hzero := eLpNorm_edist_graphPlan_id_eq_zero hd p
   refine ⟨by rw [hleft]; exact isCoupling_graphPlan_id μ, ?_, by rw [hright]; exact hπ,
     by rw [hright]; exact hopt⟩
   rw [hleft, hzero]
@@ -217,6 +213,14 @@ def generalizedGeodesic (γ : Measure (E × E × E)) (t : ℝ) : Measure E :=
 theorem generalizedGeodesic_def (γ : Measure (E × E × E)) (t : ℝ) :
     generalizedGeodesic γ t = γ.map fun w ↦ (1 - t) • w.2.1 + t • w.2.2 := by
   rw [generalizedGeodesic]
+
+/-- The generalized geodesic at time `t` is the interpolation at time `t` of the endpoint coupling
+`γ.snd`: the law of `(1 - t) • y₀ + t • y₁` under `γ.snd`. -/
+theorem generalizedGeodesic_eq_map_snd [MeasurableAdd₂ E] [MeasurableSMul ℝ E]
+    (γ : Measure (E × E × E)) (t : ℝ) :
+    generalizedGeodesic γ t = γ.snd.map fun z ↦ (1 - t) • z.1 + t • z.2 := by
+  rw [generalizedGeodesic_def, Measure.snd, Measure.map_map (by fun_prop) measurable_snd]
+  rfl
 
 /-- The generalized geodesic of a probability measure is a curve of probability measures. -/
 instance isProbabilityMeasure_generalizedGeodesic (γ : Measure (E × E × E))
