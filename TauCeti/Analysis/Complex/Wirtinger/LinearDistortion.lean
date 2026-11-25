@@ -14,7 +14,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 
 Every real-linear map of the plane `ℂ` has the form `A z = z a + conj z b` for unique `a b : ℂ`: it
 is `TauCeti.wirtingerPartsCLM a b`, with `a` and `b` its two Wirtinger parts
-(`TauCeti.fderiv_eq_wirtingerPartsCLM`, `TauCeti.wirtingerPartsCLM_inj`). This file computes the
+(`TauCeti.exists_eq_wirtingerPartsCLM`, `TauCeti.wirtingerPartsCLM_inj`). This file computes the
 three quantities of linear distortion of `A` in terms of `a` and `b`:
 
 * the operator norm `‖A‖ = |a| + |b|` (`TauCeti.norm_wirtingerPartsCLM`);
@@ -29,6 +29,14 @@ the unit vector `e^{i((β - α)/2 + t)}` is `(|a| e^{it} + |b| e^{-it}) e^{i(α 
 (`TauCeti.wirtingerPartsCLM_apply_exp`, `TauCeti.norm_wirtingerPartsCLM_apply_exp`); `t = 0`
 stretches by `|a| + |b|` (`TauCeti.norm_wirtingerPartsCLM_apply_exp_zero`) and `t = π/2` by
 `||a| - |b||` (`TauCeti.norm_wirtingerPartsCLM_apply_exp_pi_div_two`).
+
+The sign of the Jacobian distinguishes maps close to complex multiplications from maps close to
+conjugate ones: `‖A - (z ↦ z c)‖ < ‖c‖` forces `J(A) > 0`
+(`TauCeti.det_pos_of_norm_sub_smulRight_lt`) and `‖A - (z ↦ conj z c)‖ < ‖c‖` forces `J(A) < 0`
+(`TauCeti.det_neg_of_norm_sub_smulRight_conjCLE_lt`); conversely each sign of `J(A)` is realized
+by such a `c`, the Wirtinger part `a` or `b` (`TauCeti.exists_norm_sub_smulRight_lt_of_det_pos`,
+`TauCeti.exists_norm_sub_smulRight_conjCLE_lt_of_det_neg`). This is how the sign of a transverse
+zero of a section of a complex line bundle is read from the real derivative of its chart reading.
 
 These formulas are the linear algebra behind the Beltrami coefficient `b / a` of a planar map:
 the outer distortion `‖A‖² / J(A)` of `A` is `(|a| + |b|) / (|a| - |b|)` when `|b| < |a|`.
@@ -130,6 +138,56 @@ theorem det_wirtingerPartsCLM (a b : ℂ) :
   rw [← LinearMap.det_toMatrix basisOneI, toMatrix_wirtingerPartsCLM, Matrix.det_fin_two_of,
     ← normSq_eq_norm_sq, ← normSq_eq_norm_sq, normSq_apply, normSq_apply]
   ring
+
+/-! ### The sign of the Jacobian near complex linear and antilinear maps -/
+
+/-- **A real-linear map close to a complex multiplication preserves orientation.** If
+`‖D - (z ↦ z c)‖ < ‖c‖`, then `det D > 0`: writing `D z = z a + conj z b`, the hypothesis is
+`|a - c| + |b| < |c|`, so `|b| < |a|` and `det D = |a|² - |b|²` is positive. -/
+theorem det_pos_of_norm_sub_smulRight_lt {D : ℂ →L[ℝ] ℂ} {c : ℂ}
+    (h : ‖D - (ContinuousLinearMap.id ℝ ℂ).smulRight c‖ < ‖c‖) : 0 < D.det := by
+  obtain ⟨a, b, rfl⟩ := exists_eq_wirtingerPartsCLM D
+  rw [smulRight_id_eq_wirtingerPartsCLM, ← wirtingerPartsCLM_sub, sub_zero,
+    norm_wirtingerPartsCLM] at h
+  rw [ContinuousLinearMap.det, det_wirtingerPartsCLM, sub_pos]
+  have hc : ‖c‖ ≤ ‖a‖ + ‖a - c‖ := (norm_le_insert' c a).trans_eq (by rw [norm_sub_rev])
+  exact pow_lt_pow_left₀ (by linarith) (norm_nonneg b) two_ne_zero
+
+/-- **A real-linear map close to a conjugate complex multiplication reverses orientation.** If
+`‖D - (z ↦ conj z c)‖ < ‖c‖`, then `det D < 0`: writing `D z = z a + conj z b`, the hypothesis is
+`|a| + |b - c| < |c|`, so `|a| < |b|` and `det D = |a|² - |b|²` is negative. -/
+theorem det_neg_of_norm_sub_smulRight_conjCLE_lt {D : ℂ →L[ℝ] ℂ} {c : ℂ}
+    (h : ‖D - conjCLE.toContinuousLinearMap.smulRight c‖ < ‖c‖) : D.det < 0 := by
+  obtain ⟨a, b, rfl⟩ := exists_eq_wirtingerPartsCLM D
+  rw [smulRight_conjCLE_eq_wirtingerPartsCLM, ← wirtingerPartsCLM_sub, sub_zero,
+    norm_wirtingerPartsCLM] at h
+  rw [ContinuousLinearMap.det, det_wirtingerPartsCLM, sub_neg]
+  have hc : ‖c‖ ≤ ‖b‖ + ‖b - c‖ := (norm_le_insert' c b).trans_eq (by rw [norm_sub_rev])
+  exact pow_lt_pow_left₀ (by linarith) (norm_nonneg a) two_ne_zero
+
+/-- **An orientation-preserving real-linear map is close to a complex multiplication.** If
+`det D > 0`, then `‖D - (z ↦ z a)‖ < ‖a‖` for the complex linear Wirtinger part `a` of `D`: the
+difference is `z ↦ conj z b`, of norm `|b| < |a|`. -/
+theorem exists_norm_sub_smulRight_lt_of_det_pos {D : ℂ →L[ℝ] ℂ} (h : 0 < D.det) :
+    ∃ c : ℂ, ‖D - (ContinuousLinearMap.id ℝ ℂ).smulRight c‖ < ‖c‖ := by
+  obtain ⟨a, b, rfl⟩ := exists_eq_wirtingerPartsCLM D
+  rw [ContinuousLinearMap.det, det_wirtingerPartsCLM, sub_pos] at h
+  refine ⟨a, ?_⟩
+  rw [smulRight_id_eq_wirtingerPartsCLM, ← wirtingerPartsCLM_sub, sub_self, sub_zero,
+    norm_wirtingerPartsCLM, norm_zero, zero_add]
+  exact lt_of_pow_lt_pow_left₀ 2 (norm_nonneg a) h
+
+/-- **An orientation-reversing real-linear map is close to a conjugate complex multiplication.** If
+`det D < 0`, then `‖D - (z ↦ conj z b)‖ < ‖b‖` for the complex antilinear Wirtinger part `b` of
+`D`: the difference is `z ↦ z a`, of norm `|a| < |b|`. -/
+theorem exists_norm_sub_smulRight_conjCLE_lt_of_det_neg {D : ℂ →L[ℝ] ℂ} (h : D.det < 0) :
+    ∃ c : ℂ, ‖D - conjCLE.toContinuousLinearMap.smulRight c‖ < ‖c‖ := by
+  obtain ⟨a, b, rfl⟩ := exists_eq_wirtingerPartsCLM D
+  rw [ContinuousLinearMap.det, det_wirtingerPartsCLM, sub_neg] at h
+  refine ⟨b, ?_⟩
+  rw [smulRight_conjCLE_eq_wirtingerPartsCLM, ← wirtingerPartsCLM_sub, sub_self, sub_zero,
+    norm_wirtingerPartsCLM, norm_zero, add_zero]
+  exact lt_of_pow_lt_pow_left₀ 2 (norm_nonneg b) h
 
 /-! ### Checks -/
 

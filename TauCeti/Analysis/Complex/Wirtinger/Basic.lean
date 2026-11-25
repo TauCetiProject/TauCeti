@@ -108,6 +108,9 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   `exp (a z - conj a conj z)` has `∂ = a ·` and `\bar∂ = -conj a ·`.
   Translation by `w` multiplies it by `exp (2πiθ)` when `Im (a w) = π (k + θ)` for an integer `k`
   (`TauCeti.cexp_mul_add_sub_conj_mul_conj_add_of_im_mul_eq`).
+* `TauCeti.exists_eq_wirtingerPartsCLM`: every real-linear map `ℂ →L[ℝ] W` is
+  `v ↦ v • a + conj v • b`; `TauCeti.smulRight_id_eq_wirtingerPartsCLM` and
+  `TauCeti.smulRight_conjCLE_eq_wirtingerPartsCLM` give `v ↦ v • c` and `v ↦ conj v • c`.
 * `TauCeti.fderiv_eq_wirtingerPartsCLM`, `TauCeti.wirtingerPartsCLM_inj`: in one variable the
   real derivative is `wirtingerPartsCLM` of its two Wirtinger parts, which it determines; the
   Wirtinger parts of `wirtingerPartsCLM a b` are `a` and `b`
@@ -871,6 +874,22 @@ theorem fderiv_eq_wirtingerPartsCLM (f : ℂ → W) (x : ℂ) :
     fderiv ℝ f x = wirtingerPartsCLM (wirtingerDeriv f x 1) (conjWirtingerDeriv f x 1) := by
   ext v
   rw [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv, wirtingerPartsCLM_apply]
+
+/-- Every real-linear map `D : ℂ →L[ℝ] W` is `v ↦ v • a + conj v • b` for some `a b : W`. -/
+theorem exists_eq_wirtingerPartsCLM (D : ℂ →L[ℝ] W) : ∃ a b : W, D = wirtingerPartsCLM a b :=
+  ⟨_, _, by simpa only [ContinuousLinearMap.fderiv] using fderiv_eq_wirtingerPartsCLM D 0⟩
+
+/-- The map `v ↦ v • c` is the real-linear map with Wirtinger parts `c` and `0`. -/
+theorem smulRight_id_eq_wirtingerPartsCLM (c : W) :
+    (ContinuousLinearMap.id ℝ ℂ).smulRight c = wirtingerPartsCLM c 0 := by
+  ext v
+  simp
+
+/-- The map `v ↦ conj v • c` is the real-linear map with Wirtinger parts `0` and `c`. -/
+theorem smulRight_conjCLE_eq_wirtingerPartsCLM (c : W) :
+    conjCLE.toContinuousLinearMap.smulRight c = wirtingerPartsCLM 0 c := by
+  ext v
+  simp
 
 /-- In one variable the real derivative is controlled by its two Wirtinger parts:
 `‖Df(x)‖ ≤ ‖∂f(x)‖ + ‖bar∂f(x)‖`. -/
