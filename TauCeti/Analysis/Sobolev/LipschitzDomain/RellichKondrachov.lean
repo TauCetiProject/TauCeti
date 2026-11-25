@@ -7,9 +7,11 @@ module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Compactness
+import TauCeti.Analysis.InnerProductSpace.OfLinearIsometry
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Components
 import TauCeti.Analysis.Sobolev.LipschitzDomain.SobolevEmbedding
+import TauCeti.Analysis.Sobolev.W1p.AddHaar
 import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
 import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.Data.ENNReal.InterpolatedExponent
@@ -42,6 +44,14 @@ finite `q`. For `q ≤ p` the inclusion factors through `Lᵖ(Ω)`, as `Ω` has 
 (`IsCompactOperator.of_forall_ae_eq_of_interpolation`). The inequality `1/p - 1/q < 1/n` is
 strict: at `q = p⋆` the inclusion is bounded but not compact.
 
+Compactness of the value map is invariant under measure-preserving changes of variables with a
+Lipschitz inverse (`TauCeti.W1p.isCompactOperator_valueL_of_measurePreserving`) and under changes
+of Haar measure (`TauCeti.W1p.isCompactOperator_valueL_of_addHaar`). Transporting along the affine
+isometries of the boundary charts, it holds for every additive Haar measure on every bounded open
+subset of a finite-dimensional inner product space satisfying the intrinsic Lipschitz-domain
+predicate `Set.IsLipschitzDomain`, such as a bounded Lipschitz domain of
+`EuclideanSpace ℝ (Fin n)`, on which the energy forms of divergence-form operators live.
+
 ## Main declarations
 
 * `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`: Rellich–Kondrachov
@@ -54,6 +64,10 @@ strict: at `q = p⋆` the inclusion is bounded but not compact.
   Poincaré–Wirtinger after subtracting the mean on each piece of a finite disjoint cover.
 * `TauCeti.W1p.exists_isCompactOperator_of_isLipschitzDomainWith`: Rellich–Kondrachov
   compactness of `W^{1,p}(Ω) → L^q(Ω)` for every subcritical `q`.
+* `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image` and
+  `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomain`: Rellich–Kondrachov compactness on
+  isometric copies of Lipschitz domains and for the intrinsic predicate, with respect to any
+  additive Haar measure.
 
 ## References
 
@@ -189,6 +203,58 @@ theorem W1p.exists_isCompactOperator_of_isLipschitzDomainWith {q : ℝ≥0∞}
   obtain ⟨T, hT⟩ := W1p.exists_lpEmbeddingL_of_eLpNorm_value_le subset_rfl
     (W1p.exists_eLpNorm_value_le_of_subcritical_gain_of_isLipschitzDomainWith hs hps hΩ hb)
   exact hK.of_forall_ae_eq_of_interpolation T hθ0 hθ1 hrel hS₀ fun u => (hS u).trans (hT u).symm
+
+end TauCeti
+
+/-! ### Changes of variables and the intrinsic Lipschitz-domain predicate -/
+
+namespace TauCeti
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+section Intrinsic
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  [MeasurableSpace F] [BorelSpace F] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {Ω : Opens F} {L : ℝ≥0}
+
+/-- **Rellich–Kondrachov on isometric copies of bounded Lipschitz domains.** Let
+`g : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)` be an affine isometry equivalence and `Ω ⊆ F` a bounded open set
+whose image `g '' Ω` is a Lipschitz domain with constant `L`. Then, with respect to any additive
+Haar measure `μ` on `F`, the value map `W^{1,p}(Ω) → Lᵖ(Ω)` is compact for `1 ≤ p ≤ ∞`. No
+inner-product, finite-dimensionality or measurability instances are assumed on `E`, as `g` embeds
+`E` linearly and isometrically into `F`. -/
+theorem W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image {μ : Measure F}
+    [μ.IsAddHaarMeasure] (g : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
+    (hΩ : (g '' (Ω : Set F)).IsLipschitzDomainWith L) (hb : IsBounded (Ω : Set F)) :
+    IsCompactOperator (W1p.valueL (mu := μ) (Omega := Ω) (p := p)) := by
+  -- The inner product of `F` restricts to `E` along the isometric embedding given by `g`.
+  let e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E) := g.linearIsometryEquiv
+  let _ : InnerProductSpace ℝ E := .ofLinearIsometry e.symmInr
+  have _ : FiniteDimensional ℝ E := e.finiteDimensional_snd
+  let _ : MeasurableSpace E := borel E
+  have _ : BorelSpace E := ⟨rfl⟩
+  let W : Opens (WithLp 2 (ℝ × E)) := ⟨g '' (Ω : Set F), ((isLipschitzDomainWith_iff _ _).1 hΩ).1⟩
+  have hWΩ : (W : Set (WithLp 2 (ℝ × E))) = g.symm ⁻¹' Ω :=
+    congrFun (image_eq_preimage_of_inverse g.symm_apply_apply g.apply_symm_apply) _
+  exact W1p.isCompactOperator_valueL_of_addHaar
+    (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv hΩ
+      (g.lipschitzWith.isBounded_image hb) g hWΩ)
+
+/-- **Rellich–Kondrachov on bounded Lipschitz domains of a Euclidean space.** Let `F` be a
+finite-dimensional real inner product space with an additive Haar measure `μ`, and `Ω ⊆ F` a
+bounded open set satisfying the intrinsic Lipschitz-domain condition
+`(Ω : Set F).IsLipschitzDomain E` for some normed tangential model space `E`. Then the value map
+`W^{1,p}(Ω) → Lᵖ(Ω)` is compact for `1 ≤ p ≤ ∞`. -/
+theorem W1p.isCompactOperator_valueL_of_isLipschitzDomain {μ : Measure F} [μ.IsAddHaarMeasure]
+    (hΩ : (Ω : Set F).IsLipschitzDomain E) (hb : IsBounded (Ω : Set F)) :
+    IsCompactOperator (W1p.valueL (mu := μ) (Omega := Ω) (p := p)) := by
+  rcases (frontier (Ω : Set F)).eq_empty_or_nonempty with hfr | hne
+  · exact W1p.isCompactOperator_valueL_of_frontier_eq_empty hb hfr
+  obtain ⟨g, L, hL⟩ := hΩ.exists_isLipschitzDomainWith_image hb hne
+  exact W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image g hL hb
+
+end Intrinsic
 
 end TauCeti
 
