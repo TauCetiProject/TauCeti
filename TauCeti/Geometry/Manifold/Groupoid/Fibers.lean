@@ -356,7 +356,7 @@ theorem leftMulDiffeomorph_apply_unit (g : Quiver.Total C) :
     leftMulDiffeomorph I J g ⟨⟨g.left, g.left, 𝟙 g.left⟩, rfl⟩ = ⟨g, rfl⟩ := by
   let := targetFiberChartedSpace I J g.left
   let := targetFiberChartedSpace I J g.right
-  exact Subtype.ext g.unit_comp
+  exact Subtype.ext (by simp only [coe_leftMulDiffeomorph_apply, Quiver.Total.unit_comp])
 
 @[simp]
 theorem leftMulDiffeomorph_unit (x : C) :
@@ -381,6 +381,27 @@ theorem leftMulDiffeomorph_symm (g : Quiver.Total C) :
   exact Diffeomorph.ext fun b ↦ Subtype.ext
     (by simp only [coe_leftMulDiffeomorph_symm_apply, coe_leftMulDiffeomorph_apply])
 
+/-- Pointwise functoriality of left translation along arbitrary composable total arrows. -/
+theorem coe_leftMulDiffeomorph_comp_apply {g₁ g₂ : Quiver.Total C} (hg : g₁.right = g₂.left)
+    (h : {a : Quiver.Total C // a.right = g₁.left}) :
+    letI := targetFiberChartedSpace I J g₁.left
+    letI := targetFiberChartedSpace I J g₂.left
+    letI := targetFiberChartedSpace I J g₂.right
+    letI := targetFiberChartedSpace I J (g₁.comp g₂ hg).left
+    letI := targetFiberChartedSpace I J (g₁.comp g₂ hg).right
+    (leftMulDiffeomorph I J g₂
+      ⟨(leftMulDiffeomorph I J g₁ h).val,
+        (leftMulDiffeomorph I J g₁ h).property.trans hg⟩).val =
+      (leftMulDiffeomorph I J (g₁.comp g₂ hg)
+        ⟨h.val, h.property.trans (g₁.comp_left g₂ hg).symm⟩).val := by
+  let := targetFiberChartedSpace I J g₁.left
+  let := targetFiberChartedSpace I J g₂.left
+  let := targetFiberChartedSpace I J g₂.right
+  let := targetFiberChartedSpace I J (g₁.comp g₂ hg).left
+  let := targetFiberChartedSpace I J (g₁.comp g₂ hg).right
+  simp only [coe_leftMulDiffeomorph_apply]
+  exact Quiver.Total.comp_assoc h.val g₁ g₂ h.property hg _ _
+
 /-- Functoriality of left translation: left translating by `f : x ⟶ y` and then by `g : y ⟶ z`
 equals left translating by `f ≫ g : x ⟶ z`. -/
 theorem leftMulDiffeomorph_trans {x y z : C} (f : x ⟶ y) (g : y ⟶ z) :
@@ -394,25 +415,10 @@ theorem leftMulDiffeomorph_trans {x y z : C} (f : x ⟶ y) (g : y ⟶ z) :
   let := targetFiberChartedSpace I J y
   let := targetFiberChartedSpace I J z
   refine Diffeomorph.ext fun h ↦ Subtype.ext ?_
-  have hab : h.val.right = ((⟨x, y, f⟩ : Quiver.Total C).comp ⟨y, z, g⟩ rfl).left :=
-    h.property.trans ((⟨x, y, f⟩ : Quiver.Total C).comp_left ⟨y, z, g⟩ rfl).symm
-  exact (Quiver.Total.comp_assoc h.val ⟨x, y, f⟩ ⟨y, z, g⟩ h.property rfl _ hab).trans
-    (Quiver.Total.comp_congr rfl (Quiver.Total.mk_comp_mk f g) hab h.property)
-
-/-- Pointwise functoriality of left translation along arbitrary composable total arrows. -/
-theorem coe_leftMulDiffeomorph_comp_apply {g₁ g₂ : Quiver.Total C} (hg : g₁.right = g₂.left)
-    (h : {a : Quiver.Total C // a.right = g₁.left}) :
-    letI := targetFiberChartedSpace I J g₁.left
-    letI := targetFiberChartedSpace I J g₂.left
-    letI := targetFiberChartedSpace I J g₂.right
-    letI := targetFiberChartedSpace I J (g₁.comp g₂ hg).left
-    letI := targetFiberChartedSpace I J (g₁.comp g₂ hg).right
-    (leftMulDiffeomorph I J g₂
-      ⟨(leftMulDiffeomorph I J g₁ h).val,
-        (leftMulDiffeomorph I J g₁ h).property.trans hg⟩).val =
-      (leftMulDiffeomorph I J (g₁.comp g₂ hg)
-        ⟨h.val, h.property.trans (g₁.comp_left g₂ hg).symm⟩).val :=
-  Quiver.Total.comp_assoc h.val g₁ g₂ h.property hg _ _
+  rw [Diffeomorph.coe_trans, Function.comp_apply]
+  refine (coe_leftMulDiffeomorph_comp_apply I J (g₁ := ⟨x, y, f⟩) (g₂ := ⟨y, z, g⟩) rfl h).trans ?_
+  simp only [coe_leftMulDiffeomorph_apply]
+  exact Quiver.Total.comp_congr rfl (Quiver.Total.mk_comp_mk f g) _ _
 
 /-- **Right translation** by an arrow `g : Quiver.Total C` (`h ↦ g ≫ h`, the geometric right
 product `h · g`) is a `C^∞` diffeomorphism from the source fibre `s⁻¹(t(g))` onto `s⁻¹(s(g))`, with
@@ -501,6 +507,27 @@ theorem rightMulDiffeomorph_symm (g : Quiver.Total C) :
   exact Diffeomorph.ext fun b ↦ Subtype.ext
     (by simp only [coe_rightMulDiffeomorph_symm_apply, coe_rightMulDiffeomorph_apply])
 
+/-- Pointwise functoriality of right translation along arbitrary composable total arrows. -/
+theorem coe_rightMulDiffeomorph_comp_apply {g₁ g₂ : Quiver.Total C} (hg : g₁.right = g₂.left)
+    (k : {a : Quiver.Total C // a.left = g₂.right}) :
+    letI := sourceFiberChartedSpace I J g₂.right
+    letI := sourceFiberChartedSpace I J g₁.right
+    letI := sourceFiberChartedSpace I J g₁.left
+    letI := sourceFiberChartedSpace I J (g₁.comp g₂ hg).right
+    letI := sourceFiberChartedSpace I J (g₁.comp g₂ hg).left
+    (rightMulDiffeomorph I J g₁
+      ⟨(rightMulDiffeomorph I J g₂ k).val,
+        (rightMulDiffeomorph I J g₂ k).property.trans hg.symm⟩).val =
+      (rightMulDiffeomorph I J (g₁.comp g₂ hg)
+        ⟨k.val, k.property.trans (g₁.comp_right g₂ hg).symm⟩).val := by
+  let := sourceFiberChartedSpace I J g₂.right
+  let := sourceFiberChartedSpace I J g₁.right
+  let := sourceFiberChartedSpace I J g₁.left
+  let := sourceFiberChartedSpace I J (g₁.comp g₂ hg).right
+  let := sourceFiberChartedSpace I J (g₁.comp g₂ hg).left
+  simp only [coe_rightMulDiffeomorph_apply]
+  exact (Quiver.Total.comp_assoc g₁ g₂ k.val hg k.property.symm _ _).symm
+
 /-- Contravariant functoriality of right translation: right translating by `g : y ⟶ z` and then by
 `f : x ⟶ y` equals right translating by `f ≫ g : x ⟶ z`. -/
 theorem rightMulDiffeomorph_trans {x y z : C} (f : x ⟶ y) (g : y ⟶ z) :
@@ -514,25 +541,11 @@ theorem rightMulDiffeomorph_trans {x y z : C} (f : x ⟶ y) (g : y ⟶ z) :
   let := sourceFiberChartedSpace I J y
   let := sourceFiberChartedSpace I J x
   refine Diffeomorph.ext fun h ↦ Subtype.ext ?_
-  have hbc : ((⟨x, y, f⟩ : Quiver.Total C).comp ⟨y, z, g⟩ rfl).right = h.val.left :=
-    ((⟨x, y, f⟩ : Quiver.Total C).comp_right ⟨y, z, g⟩ rfl).trans h.property.symm
-  exact (Quiver.Total.comp_assoc ⟨x, y, f⟩ ⟨y, z, g⟩ h.val rfl h.property.symm hbc _).symm.trans
-    (Quiver.Total.comp_congr (Quiver.Total.mk_comp_mk f g) rfl hbc h.property.symm)
-
-/-- Pointwise functoriality of right translation along arbitrary composable total arrows. -/
-theorem coe_rightMulDiffeomorph_comp_apply {g₁ g₂ : Quiver.Total C} (hg : g₁.right = g₂.left)
-    (k : {a : Quiver.Total C // a.left = g₂.right}) :
-    letI := sourceFiberChartedSpace I J g₂.right
-    letI := sourceFiberChartedSpace I J g₁.right
-    letI := sourceFiberChartedSpace I J g₁.left
-    letI := sourceFiberChartedSpace I J (g₁.comp g₂ hg).right
-    letI := sourceFiberChartedSpace I J (g₁.comp g₂ hg).left
-    (rightMulDiffeomorph I J g₁
-      ⟨(rightMulDiffeomorph I J g₂ k).val,
-        (rightMulDiffeomorph I J g₂ k).property.trans hg.symm⟩).val =
-      (rightMulDiffeomorph I J (g₁.comp g₂ hg)
-        ⟨k.val, k.property.trans (g₁.comp_right g₂ hg).symm⟩).val :=
-  (Quiver.Total.comp_assoc g₁ g₂ k.val hg k.property.symm _ _).symm
+  rw [Diffeomorph.coe_trans, Function.comp_apply]
+  refine
+    (coe_rightMulDiffeomorph_comp_apply I J (g₁ := ⟨x, y, f⟩) (g₂ := ⟨y, z, g⟩) rfl h).trans ?_
+  simp only [coe_rightMulDiffeomorph_apply]
+  exact Quiver.Total.comp_congr (Quiver.Total.mk_comp_mk f g) rfl _ _
 
 /-- Intertwining of right and left fibre translations under `inverseSourceTargetDiffeomorph`:
 right translating by `g` and inverting agrees with inverting and left translating by `g⁻¹`. -/
@@ -548,7 +561,13 @@ theorem rightMulDiffeomorph_trans_inverseSourceTargetDiffeomorph (g : Quiver.Tot
   let := sourceFiberChartedSpace I J g.left
   let := targetFiberChartedSpace I J g.right
   let := targetFiberChartedSpace I J g.left
-  exact Diffeomorph.ext fun h ↦ Subtype.ext (g.inv_comp h.val h.property.symm)
+  refine Diffeomorph.ext fun h ↦ Subtype.ext ?_
+  rw [Diffeomorph.coe_trans, Function.comp_apply, coe_inverseSourceTargetDiffeomorph_apply,
+    ← inverseDiffeomorph_apply I J C, coe_rightMulDiffeomorph_apply, inverseDiffeomorph_apply,
+    g.inv_comp h.val h.property.symm, Diffeomorph.coe_trans, Function.comp_apply,
+    coe_leftMulDiffeomorph_apply]
+  exact Quiver.Total.comp_congr (coe_inverseSourceTargetDiffeomorph_apply I J g.right h).symm rfl
+    _ _
 
 /-- Conjugating `rightMulDiffeomorph I J g` by `inverseSourceTargetDiffeomorph` yields left
 translation by `g⁻¹`. -/
