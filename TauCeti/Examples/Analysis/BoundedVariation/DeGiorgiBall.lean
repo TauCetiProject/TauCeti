@@ -50,8 +50,9 @@ theorem integral_trace_fderiv_mul_indicator_ball_eq_setIntegral_inner (hn : 2 �
     ∫ x, LinearMap.trace ℝ E (fderiv ℝ φ x : E →ₗ[ℝ] E) * (ball c r).indicator 1 x =
       ∫ x in sphere c r, ⟪φ x, r⁻¹ • (x - c)⟫ ∂μHE[finrank ℝ E - 1] := by
   rw [integral_trace_fderiv_mul_indicator_eq_setIntegral_inner_outerNormal hn
-    locallyIntegrableOn_indicator_ball forall_exists_totalVariationOn_indicator_ball_ne_top hφ hc
-    (by simp), reducedBoundary_ball hr]
+    locallyIntegrableOn_indicator_ball
+    forall_isCompact_exists_totalVariationOn_indicator_ball_ne_top
+    hφ hc (by simp), reducedBoundary_ball hr]
   exact setIntegral_congr_fun isClosed_sphere.measurableSet fun x hx => by
     rw [outerNormal_ball hr hx]
 
@@ -61,7 +62,8 @@ theorem perimeter_ball_eq_euclideanHausdorffMeasure_sphere (hn : 2 ≤ finrank �
     (hr : 0 < r) :
     perimeter volume ⊤ (ball c r) = μHE[finrank ℝ E - 1] (sphere c r) := by
   rw [perimeter_eq_euclideanHausdorffMeasure_reducedBoundary hn
-    locallyIntegrableOn_indicator_ball forall_exists_totalVariationOn_indicator_ball_ne_top,
+    locallyIntegrableOn_indicator_ball
+    forall_isCompact_exists_totalVariationOn_indicator_ball_ne_top,
     reducedBoundary_ball hr]
 
 /-- The two formulas agree: `TauCeti.perimeter_ball` computes the same perimeter as

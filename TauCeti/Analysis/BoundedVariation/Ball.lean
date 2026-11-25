@@ -52,9 +52,9 @@ of `r ↦ r^n ω`.
 * `TauCeti.perimeter_ball_eq_ofReal_div_mul`: `P(ball c r) = (n / r) μ (ball c r)`.
 * `TauCeti.perimeter_closedBall`: the same formula for closed balls.
 * `TauCeti.locallyIntegrableOn_indicator_ball`,
-  `TauCeti.forall_exists_totalVariationOn_indicator_ball_ne_top`: the indicator of a ball is
-  locally integrable and has locally finite total variation, the hypotheses of the Gauss–Green and
-  De Giorgi theorems.
+  `TauCeti.forall_isCompact_exists_totalVariationOn_indicator_ball_ne_top`: the indicator of a ball
+  is locally integrable and has locally finite total variation, the hypotheses of the Gauss–Green
+  and De Giorgi theorems.
 * `TauCeti.perimeter_ball_pow`: `P(ball c r)^n = n^n μ (ball 0 1) μ (ball c r)^(n-1)`.
 * `TauCeti.perimeter_ball_sdiff_closedBall`, `TauCeti.perimeter_ball_sdiff_closedBall_of_pos`: the
   perimeter of an annulus.
@@ -211,7 +211,7 @@ theorem locallyIntegrableOn_indicator_ball :
 
 /-- A ball has locally finite perimeter in the whole space: every compact set lies in an open set
 (the whole space) on which the indicator of the ball has finite total variation. -/
-theorem forall_exists_totalVariationOn_indicator_ball_ne_top :
+theorem forall_isCompact_exists_totalVariationOn_indicator_ball_ne_top :
     ∀ K, IsCompact K → K ⊆ (⊤ : Opens E) → ∃ U : Opens E, K ⊆ (U : Set E) ∧
       totalVariationOn μ U ((ball c r).indicator 1) ≠ ∞ := fun K _ _ => by
   refine ⟨⊤, by simp, ?_⟩
