@@ -24,16 +24,16 @@ algebraic, it is algebraic independence of the `xᵢ`.
 
 ## Main results
 
-* `IntermediateField.natCard_le_trdeg_adjoin_union_iff`: for a finite family `x` and a set `T`
+* `TauCeti.natCard_le_trdeg_adjoin_union_iff`: for a finite family `x` and a set `T`
   of algebraic elements, `F(x, T)` has transcendence degree at least `card ι` over `F` iff `x` is
   algebraically independent over `F`.
 -/
 
 public section
 
-open Set
+open IntermediateField Set
 
-namespace IntermediateField
+namespace TauCeti
 
 universe u v w
 
@@ -80,4 +80,4 @@ theorem natCard_le_trdeg_adjoin_union_iff {ι : Type w} [Finite ι] {x : ι → 
   have hb := Algebra.IsAlgebraic.isTranscendenceBasis_of_lift_le_trdeg_of_finite F x' h
   exact hb.1.map' (f := L.val) Subtype.val_injective
 
-end IntermediateField
+end TauCeti
