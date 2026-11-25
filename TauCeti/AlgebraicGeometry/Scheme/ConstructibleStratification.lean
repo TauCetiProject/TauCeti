@@ -359,6 +359,25 @@ lemma toFiniteStratification_inf (T : X.ConstructibleStratification U) :
   · rintro ⟨hs, _, ⟨-, i, rfl⟩, _, ⟨-, j, rfl⟩, rfl⟩
     exact ⟨hs, (i, j), by rw [S.range_f_inf T (i, j), Set.preimage_inter]⟩
 
+/-- If the images of the strata of a stratification `T` of an open `V` of `Y` are the preimages
+under a morphism `φ : V ⟶ U` of the images of the strata of `S`, then the stratification of `V` by
+the images of the strata of `T` is the pullback along `φ` of that of `S`. -/
+lemma toFiniteStratification_eq_comap {V : Y.Opens} (T : Y.ConstructibleStratification V)
+    (φ : (V : Scheme) ⟶ U)
+    (h : Set.range (fun j ↦ V.ι ⁻¹' Set.range (T.f j)) =
+      Set.range (fun i ↦ φ ⁻¹' (U.ι ⁻¹' Set.range (S.f i)))) :
+    T.toFiniteStratification = S.toFiniteStratification.comap φ φ.continuous := by
+  ext s
+  simp only [mem_toFiniteStratification_parts, TauCeti.FiniteStratification.mem_comap_parts]
+  constructor
+  · rintro ⟨hs, j, rfl⟩
+    obtain ⟨i, hi⟩ : ∃ i, φ ⁻¹' (U.ι ⁻¹' Set.range (S.f i)) = V.ι ⁻¹' Set.range (T.f j) :=
+      h.subset ⟨j, rfl⟩
+    rw [← hi] at hs ⊢
+    exact ⟨hs, _, ⟨(hs.image _).mono (Set.image_preimage_subset _ _), i, rfl⟩, rfl⟩
+  · rintro ⟨hs, _, ⟨-, i, rfl⟩, rfl⟩
+    exact ⟨hs, h.superset ⟨i, rfl⟩⟩
+
 /-- The images of the strata of the restriction to `V` form the pullback of the stratification of
 `U` by the images of the strata along the inclusion of `V` in `U`. -/
 @[simp]
@@ -368,16 +387,10 @@ lemma toFiniteStratification_restrict {V : X.Opens} (hVU : V ≤ U) :
   have h (i : (S.restrict hVU).ι) : V.ι ⁻¹' Set.range ((S.restrict hVU).f i) =
       X.homOfLE hVU ⁻¹' (U.ι ⁻¹' Set.range (S.f i)) := by
     ext x
-    rw [Set.mem_preimage, S.range_f_restrict hVU i, Set.mem_preimage, Set.mem_preimage,
-      ← Scheme.Hom.comp_apply, Scheme.homOfLE_ι, Set.mem_inter_iff, SetLike.mem_coe]
+    simp only [Set.mem_preimage, S.range_f_restrict hVU i, ← Scheme.Hom.comp_apply,
+      Scheme.homOfLE_ι, Set.mem_inter_iff]
     exact and_iff_left x.property
-  ext s
-  simp only [mem_toFiniteStratification_parts, h, TauCeti.FiniteStratification.mem_comap_parts]
-  constructor
-  · rintro ⟨hs, i, rfl⟩
-    exact ⟨hs, _, ⟨(hs.image _).mono (Set.image_preimage_subset _ _), i, rfl⟩, rfl⟩
-  · rintro ⟨hs, _, ⟨-, i, rfl⟩, rfl⟩
-    exact ⟨hs, i, rfl⟩
+  exact S.toFiniteStratification_eq_comap _ _ (congrArg Set.range (funext h))
 
 /-- The images of the strata of the pullback along `g` form the pullback of the stratification of
 `U` by the images of the strata along `g`. -/
@@ -390,13 +403,7 @@ lemma toFiniteStratification_pullback (g : Y ⟶ X) :
     ext x
     rw [Set.mem_preimage, S.range_f_pullback g i]
     simp only [Set.mem_preimage, ← Scheme.Hom.comp_apply, morphismRestrict_ι]
-  ext s
-  simp only [mem_toFiniteStratification_parts, h, TauCeti.FiniteStratification.mem_comap_parts]
-  constructor
-  · rintro ⟨hs, i, rfl⟩
-    exact ⟨hs, _, ⟨(hs.image _).mono (Set.image_preimage_subset _ _), i, rfl⟩, rfl⟩
-  · rintro ⟨hs, _, ⟨-, i, rfl⟩, rfl⟩
-    exact ⟨hs, i, rfl⟩
+  exact S.toFiniteStratification_eq_comap _ _ (congrArg Set.range (funext h))
 
 section Glue
 
