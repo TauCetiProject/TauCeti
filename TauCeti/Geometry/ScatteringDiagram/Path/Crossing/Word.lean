@@ -447,20 +447,20 @@ variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ 
 
 /-- The signed crossing word of an admissible polygonal path through the walls of a complex,
 with the first crossing rightmost. -/
-def crossingWord : {y : WallComplement (fun P : C.walls => (P : Set V))} →
-    AdmissiblePLPath x y → (C.walls → V →ₗ[ℝ] ℝ) → FreeGroup C.walls
-  | _, .nil, _ => 1
-  | _, .cons p e, ν => C.segmentCrossingWord ν e * crossingWord p ν
+def crossingWord (p : AdmissiblePLPath x y) (ν : C.walls → V →ₗ[ℝ] ℝ) : FreeGroup C.walls :=
+  MulOpposite.unop (p.weight fun e => MulOpposite.op (C.segmentCrossingWord ν e))
 
 /-- A constant path has trivial crossing word. -/
 @[simp]
 theorem crossingWord_nil (ν : C.walls → V →ₗ[ℝ] ℝ) :
-    (Quiver.Path.nil : AdmissiblePLPath x x).crossingWord ν = 1 := (rfl)
+    (Quiver.Path.nil : AdmissiblePLPath x x).crossingWord ν = 1 := by
+  simp only [crossingWord, weight_nil, MulOpposite.unop_one]
 
 /-- Appending a segment multiplies the crossing word on the left by the segment word. -/
 @[simp]
 theorem crossingWord_cons (p : AdmissiblePLPath x y) (e : y ⟶ z) (ν : C.walls → V →ₗ[ℝ] ℝ) :
-    (p.cons e).crossingWord ν = C.segmentCrossingWord ν e * p.crossingWord ν := (rfl)
+    (p.cons e).crossingWord ν = C.segmentCrossingWord ν e * p.crossingWord ν := by
+  simp only [crossingWord, weight_cons, MulOpposite.unop_mul, MulOpposite.unop_op]
 
 /-- The crossing word of a single segment is its segment word. -/
 @[simp]
@@ -474,9 +474,7 @@ on the left. -/
 theorem crossingWord_comp (p : AdmissiblePLPath x y) (q : AdmissiblePLPath y z)
     (ν : C.walls → V →ₗ[ℝ] ℝ) :
     (p.comp q).crossingWord ν = q.crossingWord ν * p.crossingWord ν := by
-  induction q with
-  | nil => simp
-  | cons q e ih => simp [ih, mul_assoc]
+  simp only [crossingWord, weight_comp, MulOpposite.unop_mul]
 
 /-- Reversing a path inverts its crossing word, for coorientations whose kernels are the wall
 directions. -/
