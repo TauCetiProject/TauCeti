@@ -52,10 +52,10 @@ abbrev relations : Ideal (MvPolynomial ℕ k) :=
   Ideal.span ((fun s ↦ monomial s (1 : k)) '' relationExponents)
 
 /-- The ring `A = k[x₀, x₁, …] ⧸ (x_j ^ (j + 2))`. -/
-abbrev Ring : Type u := MvPolynomial ℕ k ⧸ relations k
+abbrev TruncatedRing : Type u := MvPolynomial ℕ k ⧸ relations k
 
 /-- The ideal `I = (x₀, x₁, …)` of `A`. -/
-def ideal : Ideal (Ring k) := Ideal.span (Set.range fun j ↦ Ideal.Quotient.mk _ (X j))
+def ideal : Ideal (TruncatedRing k) := Ideal.span (Set.range fun j ↦ Ideal.Quotient.mk _ (X j))
 
 variable {k}
 
@@ -83,7 +83,7 @@ theorem mem_relations_of_X_pow_mul_mem {p : MvPolynomial ℕ k} {j n : ℕ} (hj 
 
 /-- For a nonzero class `a` of `A` and any `n`, some `xⁿ` with `x ∈ I` does not kill `a`: a
 variable `x_j` that does not occur in a representative of `a`, with `j + 2 > n`. -/
-theorem exists_pow_mul_ne_zero {a : Ring k} (ha : a ≠ 0) (n : ℕ) :
+theorem exists_pow_mul_ne_zero {a : TruncatedRing k} (ha : a ≠ 0) (n : ℕ) :
     ∃ x ∈ ideal k, x ^ n * a ≠ 0 := by
   obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective a
   let j := p.vars.sup id + n + 1
@@ -96,14 +96,14 @@ theorem exists_pow_mul_ne_zero {a : Ring k} (ha : a ≠ 0) (n : ℕ) :
   exact Ideal.Quotient.eq_zero_iff_mem.mpr (mem_relations_of_X_pow_mul_mem hj (by omega) h)
 
 /-- No nonzero element of `A` is killed by a power of `I`. -/
-theorem primaryComponent_ideal_eq_bot : Ideal.primaryComponent (Ring k) (ideal k) = ⊥ :=
+theorem primaryComponent_ideal_eq_bot : Ideal.primaryComponent (TruncatedRing k) (ideal k) = ⊥ :=
   Ideal.primaryComponent_eq_bot_of_forall_exists_pow_smul_ne_zero fun _ ha n ↦ by
     simpa only [smul_eq_mul] using exists_pow_mul_ne_zero ha n
 
 /-- **`H⁰_I(A) = 0`** for the native local cohomology of `A = k[x₀, x₁, …] ⧸ (x_j ^ (j + 2))`
 along `I = (x₀, x₁, …)`. -/
 theorem isZero_localCohomology_zero :
-    IsZero ((localCohomology (ideal k) 0).obj (ModuleCat.of (Ring k) (Ring k))) :=
+    IsZero ((localCohomology (ideal k) 0).obj (ModuleCat.of (TruncatedRing k) (TruncatedRing k))) :=
   (localCohomology.isZero_obj_zero_iff _ _).mpr primaryComponent_ideal_eq_bot
 
 /-- Every generator `x_j` of `I` is nilpotent: `x_j ^ (j + 2) = 0`. -/
@@ -112,7 +112,7 @@ theorem X_pow_eq_zero (j : ℕ) : (Ideal.Quotient.mk (relations k) (X j)) ^ (j +
   exact Ideal.subset_span ⟨_, ⟨j, rfl⟩, rfl⟩
 
 /-- `I` lies in the nilradical of `A`, so its zero locus `V(I)` is all of `Spec A`. -/
-theorem zeroLocus_ideal : PrimeSpectrum.zeroLocus (ideal k : Set (Ring k)) = Set.univ := by
+theorem zeroLocus_ideal : PrimeSpectrum.zeroLocus (ideal k : Set (TruncatedRing k)) = Set.univ := by
   rw [PrimeSpectrum.zeroLocus_eq_univ_iff, SetLike.coe_subset_coe, ideal, Ideal.span_le]
   rintro _ ⟨j, rfl⟩
   exact ⟨j + 2, X_pow_eq_zero j⟩
@@ -127,10 +127,10 @@ theorem one_notMem_relations [Nontrivial k] : (1 : MvPolynomial ℕ k) ∉ relat
 
 /-- **`A` is not Noetherian.** In a Noetherian ring the nilradical is nilpotent, but `x_m ^ m ≠ 0`
 for every `m`, although every `x_j` is nilpotent. -/
-theorem not_isNoetherianRing [Nontrivial k] : ¬ IsNoetherianRing (Ring k) := by
+theorem not_isNoetherianRing [Nontrivial k] : ¬ IsNoetherianRing (TruncatedRing k) := by
   intro _
-  obtain ⟨m, hm⟩ := IsNoetherianRing.isNilpotent_nilradical (Ring k)
-  have hx : Ideal.Quotient.mk (relations k) (X m) ∈ nilradical (Ring k) :=
+  obtain ⟨m, hm⟩ := IsNoetherianRing.isNilpotent_nilradical (TruncatedRing k)
+  have hx : Ideal.Quotient.mk (relations k) (X m) ∈ nilradical (TruncatedRing k) :=
     mem_nilradical.mpr ⟨_, X_pow_eq_zero m⟩
   have h := Ideal.pow_mem_pow hx m
   rw [hm, Ideal.zero_eq_bot, Ideal.mem_bot, ← map_pow, Ideal.Quotient.eq_zero_iff_mem,
