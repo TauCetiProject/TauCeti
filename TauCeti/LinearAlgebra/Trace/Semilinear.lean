@@ -29,7 +29,7 @@ namespace LinearEquiv
 
 open Module
 
-variable {R M M' : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup M']
+variable {R M M' : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid M']
   [Module R M'] [Module.Free R M] [Module.Finite R M] {σ σ' : R →+* R} [RingHomInvPair σ σ']
   [RingHomInvPair σ' σ]
 
@@ -63,7 +63,7 @@ end LinearEquiv
 
 namespace LinearMap
 
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {σ : R →+* R}
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] {σ : R →+* R}
   [RingHomInvPair σ σ] [RingHomCompTriple σ σ (RingHom.id R)]
 
 /-- Conjugating an endomorphism by a `σ`-semilinear involution `K` twists its trace by `σ`:

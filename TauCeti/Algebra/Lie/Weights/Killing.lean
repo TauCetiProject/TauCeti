@@ -96,6 +96,7 @@ theorem killingForm_eq_sum_root (h h' : H) :
   exact this.trans <| Finset.sum_congr rfl fun γ _ ↦
     congrArg₂ (· * ·) (Weight.toLinear_apply K H L γ h) (Weight.toLinear_apply K H L γ h')
 
+omit [CharZero K] in
 /-- **The roots separate the points of the Cartan subalgebra**: a point on which every root
 vanishes is zero. -/
 theorem eq_zero_of_forall_root_apply_eq_zero {h : H} (hh : ∀ γ ∈ H.root, γ h = 0) : h = 0 := by
