@@ -12,6 +12,8 @@ public import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 import Mathlib.Analysis.CStarAlgebra.Fuglede
 import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 import Mathlib.Tactic.Module
+import TauCeti.Data.Fintype.Fiber
+import TauCeti.LinearAlgebra.Charpoly.Roots
 
 /-!
 # Spectral theorems for commuting normal operators
@@ -47,6 +49,10 @@ dimensionality.
 * `LinearMap.exists_orthonormalBasis_apply_eq_smul_of_isStarNormal`: **the spectral theorem for
   normal operators**, a normal operator on a finite-dimensional complex inner product space has
   an orthonormal basis of eigenvectors, indexed by any finite type of the right cardinality.
+
+* `LinearMap.exists_orthonormalBasis_apply_eq_smul_of_map_eq_roots`: the spectral theorem with
+  a prescribed listing of the eigenvalues, the roots of the characteristic polynomial with
+  multiplicity.
 
 * `LinearMap.rootMultiplicity_charpoly_of_isStarNormal`: the algebraic multiplicity of an
   eigenvalue of a normal operator is its geometric multiplicity, since a normal operator is
@@ -289,5 +295,27 @@ geometric multiplicity. -/
 theorem rootMultiplicity_charpoly_of_isStarNormal (T : E →ₗ[ℂ] E) [IsStarNormal T] (μ : ℂ) :
     T.charpoly.rootMultiplicity μ = finrank ℂ (eigenspace T μ) :=
   (T.isFinitelySemisimple_of_isStarNormal).rootMultiplicity_charpoly μ
+
+end LinearMap
+
+namespace LinearMap
+
+/-- **The spectral theorem for normal operators, with a prescribed listing of the eigenvalues.**
+If `α : ι → ℂ` lists the roots of the characteristic polynomial of a normal operator `T`, with
+multiplicity, then `T` has an orthonormal basis `b` of eigenvectors indexed by `ι` with
+`T (b i) = α i • b i`. -/
+theorem exists_orthonormalBasis_apply_eq_smul_of_map_eq_roots (T : E →ₗ[ℂ] E) [IsStarNormal T]
+    {ι : Type*} [Fintype ι] {α : ι → ℂ}
+    (hα : Multiset.map α Finset.univ.val = T.charpoly.roots) :
+    ∃ b : OrthonormalBasis ι ℂ E, ∀ i, T (b i) = α i • b i := by
+  classical
+  obtain ⟨b, μ, hb⟩ := T.exists_orthonormalBasis_apply_eq_smul_of_isStarNormal
+    (ι := Fin (finrank ℂ E)) (Fintype.card_fin _)
+  have hμ := b.toBasis.roots_charpoly_of_apply T (a := μ) (by simpa using hb)
+  -- Match the listing `α` with the eigenvalues `μ` of the basis `b`, then reindex `b`.
+  obtain ⟨σ, hσ⟩ := Function.exists_equiv_of_occCount_eq (u := α) (v := μ) fun c ↦ by
+    rw [Function.occCount_eq_count_map_univ, Function.occCount_eq_count_map_univ, hα, hμ]
+  refine ⟨b.reindex σ.symm, fun i ↦ ?_⟩
+  rw [OrthonormalBasis.reindex_apply, Equiv.symm_symm, hb, ← hσ, Function.comp_apply]
 
 end LinearMap
