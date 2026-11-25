@@ -36,7 +36,7 @@ variable {σ A M : Type*} [CommSemiring A] [AddCommMonoid M] [Module A M]
 /-- A polynomial acts through its constant coefficient on a module on which every variable acts
 by zero. -/
 theorem smul_eq_constantCoeff_smul
-    (h : ∀ (i : σ) (m : M), (X i : MvPolynomial σ A) • m = 0) (p : MvPolynomial σ A) (m : M) :
+    (h : ∀ (i : σ) (m : M), (X i : MvPolynomial σ A) • m = 0) {p : MvPolynomial σ A} (m : M) :
     p • m = constantCoeff p • m := by
   induction p using MvPolynomial.induction_on with
   | C a => rw [constantCoeff_C, ← algebraMap_eq, algebraMap_smul]

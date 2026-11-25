@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
-public import TauCeti.Algebra.Module.GradedModule.Internal
+public import TauCeti.Algebra.Module.GradedModule.Quotient
 
 /-!
 # Integer-graded modules over a polynomial ring
@@ -34,6 +34,10 @@ over an Artinian coefficient ring.
 * `TauCeti.MvPolynomial.fg_piece`: each graded piece is a finitely generated `A`-module.
 * `TauCeti.MvPolynomial.exists_forall_lt_piece_eq_bot`: the pieces vanish in sufficiently negative
   degrees.
+* `TauCeti.MvPolynomial.isHomogeneous_lsmul_X`: multiplication by a variable has degree one.
+* `TauCeti.MvPolynomial.smul_mem_ker_piece`, `TauCeti.MvPolynomial.smul_mem_quotient_piece`: the
+  gradings of the kernel of a homogeneous map and of the quotient by a homogeneous submodule are
+  again compatible with the grading of the polynomial ring.
 
 ## References
 
@@ -48,6 +52,8 @@ open DirectSum MvPolynomial
 
 namespace TauCeti.MvPolynomial
 
+section Pieces
+
 variable {σ A M : Type*} [CommSemiring A] [AddCommMonoid M] [Module A M]
   [Module (MvPolynomial σ A) M] {ℳ : ℤ → Submodule A M} [Decomposition ℳ]
 
@@ -57,7 +63,7 @@ homogeneous component of `p` acting on `x`. -/
 theorem coe_decompose_smul_add_of_mem
     (hℳ : ∀ (i : ℕ) (j : ℤ) (p : MvPolynomial σ A),
       p ∈ homogeneousSubmodule σ A i → ∀ m ∈ ℳ j, p • m ∈ ℳ (j + i))
-    {x : M} {j : ℤ} (hx : x ∈ ℳ j) (p : MvPolynomial σ A) (n : ℕ) :
+    {x : M} {j : ℤ} (hx : x ∈ ℳ j) {p : MvPolynomial σ A} (n : ℕ) :
     (decompose ℳ (p • x) (j + n) : M) = homogeneousComponent n p • x := by
   classical
   have hterm (i : ℕ) : (decompose ℳ (homogeneousComponent i p • x) (j + n) : M) =
@@ -79,7 +85,7 @@ multiple of an element of degree `j` has no components in degrees below `j`. -/
 theorem coe_decompose_smul_of_lt
     (hℳ : ∀ (i : ℕ) (j : ℤ) (p : MvPolynomial σ A),
       p ∈ homogeneousSubmodule σ A i → ∀ m ∈ ℳ j, p • m ∈ ℳ (j + i))
-    {x : M} {j d : ℤ} (hx : x ∈ ℳ j) (p : MvPolynomial σ A) (hd : d < j) :
+    {x : M} {j d : ℤ} (hx : x ∈ ℳ j) {p : MvPolynomial σ A} (hd : d < j) :
     (decompose ℳ (p • x) d : M) = 0 := by
   classical
   conv_lhs => rw [← sum_homogeneousComponent p]
@@ -112,7 +118,7 @@ theorem piece_eq_iSup_map [IsScalarTower A (MvPolynomial σ A) M]
       rw [hd, coe_decompose_smul_add_of_mem hℳ (hs x hx), ← hd]
       exact Submodule.mem_iSup_of_mem x <| Submodule.mem_iSup_of_mem hx <|
         Submodule.mem_iSup_of_mem hxd ⟨_, homogeneousComponent_mem _ _, rfl⟩
-    · rw [coe_decompose_smul_of_lt hℳ (hs x hx) _ (not_le.mp hxd)]
+    · rw [coe_decompose_smul_of_lt hℳ (hs x hx) (not_le.mp hxd)]
       exact Submodule.zero_mem _
   · rintro _ ⟨p, hp, rfl⟩
     have h := hℳ _ _ p hp x (hs x hx)
@@ -154,5 +160,53 @@ theorem fg_piece [IsScalarTower A (MvPolynomial σ A) M] [Module.Finite (MvPolyn
   rw [piece_eq_iSup_map hℳ hdeg hspan d]
   exact Submodule.fg_biSup s _ fun x _ ↦
     Submodule.fg_iSup _ fun _ ↦ (homogeneousSubmodule_fg σ A _).map _
+
+end Pieces
+
+section Ker
+
+variable {σ A M : Type*} [CommSemiring A] [AddCommMonoid M] [Module A M]
+  [Module (MvPolynomial σ A) M] (G : InternalGrading A M ℤ)
+
+/-- Multiplication by a variable is homogeneous of degree one. -/
+theorem isHomogeneous_lsmul_X
+    (hG : ∀ (i : ℕ) (j : ℤ) (p : MvPolynomial σ A),
+      p ∈ homogeneousSubmodule σ A i → ∀ m ∈ G.piece j, p • m ∈ G.piece (j + i)) (i : σ) :
+    LinearMap.IsHomogeneous (LinearMap.lsmul (MvPolynomial σ A) M (X i)) G.piece G.piece 1 :=
+  LinearMap.isHomogeneous_def.2 fun p x hx ↦ by
+    simpa using hG 1 p (X i) ((mem_homogeneousSubmodule 1 _).mpr (isHomogeneous_X A i)) x hx
+
+variable [IsScalarTower A (MvPolynomial σ A) M]
+
+/-- The kernel of a homogeneous map is again graded compatibly with the polynomial ring. -/
+theorem smul_mem_ker_piece
+    (hG : ∀ (i : ℕ) (j : ℤ) (p : MvPolynomial σ A),
+      p ∈ homogeneousSubmodule σ A i → ∀ m ∈ G.piece j, p • m ∈ G.piece (j + i))
+    {N : Type*} [AddCommMonoid N] [Module A N] [Module (MvPolynomial σ A) N]
+    {H : InternalGrading A N ℤ} {f : M →ₗ[MvPolynomial σ A] N} {r : ℤ}
+    (hf : LinearMap.IsHomogeneous f G.piece H.piece r)
+    (i : ℕ) (j : ℤ) {p : MvPolynomial σ A} (hp : p ∈ homogeneousSubmodule σ A i)
+    (z : LinearMap.ker f) (hz : z ∈ (G.ker hf).piece j) : p • z ∈ (G.ker hf).piece (j + i) :=
+  (G.mem_ker_piece hf).2 (hG i j p hp _ ((G.mem_ker_piece hf).1 hz))
+
+end Ker
+
+section Quotient
+
+variable {σ A M : Type*} [CommRing A] [AddCommGroup M] [Module A M]
+  [Module (MvPolynomial σ A) M] [IsScalarTower A (MvPolynomial σ A) M] (G : InternalGrading A M ℤ)
+
+/-- The quotient by a homogeneous submodule is again graded compatibly with the polynomial ring. -/
+theorem smul_mem_quotient_piece
+    (hG : ∀ (i : ℕ) (j : ℤ) (p : MvPolynomial σ A),
+      p ∈ homogeneousSubmodule σ A i → ∀ m ∈ G.piece j, p • m ∈ G.piece (j + i))
+    (U : Submodule (MvPolynomial σ A) M) (hU : SetLike.IsHomogeneous G.piece U)
+    (i : ℕ) (j : ℤ) {p : MvPolynomial σ A} (hp : p ∈ homogeneousSubmodule σ A i)
+    (y : M ⧸ U) (hy : y ∈ (G.quotient U hU).piece j) : p • y ∈ (G.quotient U hU).piece (j + i) := by
+  obtain ⟨x, hx, rfl⟩ := (G.mem_quotient_piece_iff _ _).mp hy
+  rw [← Submodule.Quotient.mk_smul]
+  exact G.mk_mem_quotient_piece _ _ (hG i j p hp x hx)
+
+end Quotient
 
 end TauCeti.MvPolynomial

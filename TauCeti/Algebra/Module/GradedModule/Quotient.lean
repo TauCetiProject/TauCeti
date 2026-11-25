@@ -217,6 +217,10 @@ theorem mk_mem_quotient_piece {p : ι} {x : M} (hx : x ∈ G.piece p) :
     (Submodule.Quotient.mk x : M ⧸ U) ∈ (G.quotient U hU).piece p :=
   (G.mem_quotient_piece_iff U hU).2 ⟨x, hx, rfl⟩
 
+/-- The grading of the quotient vanishes in every degree in which the grading of `M` does. -/
+theorem quotient_piece_eq_bot {p : ι} (hp : G.piece p = ⊥) : (G.quotient U hU).piece p = ⊥ := by
+  rw [quotient_piece, hp, Submodule.map_bot]
+
 /-- The quotient map by a homogeneous submodule has degree zero. -/
 theorem isHomogeneous_mkQ [AddMonoid ι] :
     LinearMap.IsHomogeneous U.mkQ G.piece (G.quotient U hU).piece 0 :=

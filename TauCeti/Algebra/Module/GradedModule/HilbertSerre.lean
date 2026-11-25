@@ -12,7 +12,7 @@ public import TauCeti.Algebra.Module.GradedModule.MvPolynomial
 import Mathlib.Algebra.Polynomial.Taylor
 import Mathlib.RingTheory.Polynomial.Basic
 import Mathlib.RingTheory.PowerSeries.Trunc
-import TauCeti.Algebra.Module.GradedModule.Quotient
+import TauCeti.Algebra.Module.GradedModule.Length
 import TauCeti.Algebra.Module.MvPolynomial
 import TauCeti.RingTheory.Length
 
@@ -109,53 +109,6 @@ private theorem exists_lengthSeries_eq_of_forall_X_smul_eq_zero {M : Type*} [Add
     omega
   rw [coeff_mk, hbot, Module.length_bot, ENat.toNat_zero, Nat.cast_zero]
 
-/-- Multiplication by a homogeneous map `f` of degree one, with kernel `K` and cokernel `C`, gives
-exact sequences `0 → K_d → M_d → M_{d+1} → C_{d+1} → 0`, hence this identity of lengths. -/
-private theorem length_ker_piece_add_length_piece_add_one {M : Type*} [AddCommGroup M]
-    [Module A M] [Module (MvPolynomial σ A) M] [IsScalarTower A (MvPolynomial σ A) M]
-    (G : InternalGrading A M ℤ) {f : M →ₗ[MvPolynomial σ A] M}
-    (hf : LinearMap.IsHomogeneous f G.piece G.piece 1) (d : ℤ) :
-    Module.length A ((G.ker hf).piece d) + Module.length A (G.piece (d + 1)) =
-      Module.length A (G.piece d) +
-        Module.length A ((G.quotient _ hf.isHomogeneous_range).piece (d + 1)) := by
-  let U := LinearMap.range f
-  -- The three maps of the sequence: inclusion, multiplication, and the quotient map.
-  let f₁ : (G.ker hf).piece d →ₗ[A] G.piece d :=
-    ((LinearMap.ker f).subtype.restrictScalars A).restrict fun _ hz ↦ (G.mem_ker_piece hf).1 hz
-  let f₂ : G.piece d →ₗ[A] G.piece (d + 1) :=
-    (f.restrictScalars A).restrict fun _ hx ↦ by exact hf.map_mem hx
-  let f₃ : G.piece (d + 1) →ₗ[A] (G.quotient U hf.isHomogeneous_range).piece (d + 1) :=
-    (U.mkQ.restrictScalars A).restrict fun _ hx ↦ by exact G.mk_mem_quotient_piece U _ hx
-  have hf₁ (z) : (f₁ z : M) = ((z : LinearMap.ker f) : M) :=
-    (LinearMap.coe_restrict_apply _ z).trans <|
-      (LinearMap.restrictScalars_apply _ _ _).trans (Submodule.subtype_apply _)
-  have hf₂ (x) : (f₂ x : M) = f x :=
-    (LinearMap.coe_restrict_apply _ x).trans (LinearMap.restrictScalars_apply _ _ _)
-  have hf₃ (x) : (f₃ x : M ⧸ U) = Submodule.Quotient.mk (x : M) :=
-    (LinearMap.coe_restrict_apply _ x).trans <|
-      (LinearMap.restrictScalars_apply _ _ _).trans (Submodule.mkQ_apply _ _)
-  refine length_add_length_eq_length_add_length_of_exact (f₁ := f₁) (f₂ := f₂) (f₃ := f₃)
-    (fun z₁ z₂ h ↦ ?_) (fun y ↦ ?_) (fun y ↦ ?_) (fun y ↦ ?_)
-  · exact Subtype.ext (Subtype.ext (by rw [← hf₁, ← hf₁, h]))
-  · rw [← Subtype.coe_inj, hf₂, ZeroMemClass.coe_zero]
-    constructor
-    · intro hy
-      exact ⟨⟨⟨y, hy⟩, (G.mem_ker_piece hf).2 y.property⟩, Subtype.ext (hf₁ _)⟩
-    · rintro ⟨z, rfl⟩
-      rw [hf₁]
-      exact (z : LinearMap.ker f).property
-  · rw [← Subtype.coe_inj, hf₃, ZeroMemClass.coe_zero, Submodule.Quotient.mk_eq_zero]
-    constructor
-    · -- The degree-`d` component of a preimage is a homogeneous preimage.
-      rintro ⟨m, hm⟩
-      refine ⟨⟨_, (decompose G.piece m d).property⟩, Subtype.ext ?_⟩
-      rw [hf₂, hf.map_decompose, hm, decompose_of_mem_same G.piece y.property]
-    · rintro ⟨x, rfl⟩
-      rw [hf₂]
-      exact LinearMap.mem_range_self f x
-  · obtain ⟨x, hx, hxy⟩ := (G.mem_quotient_piece_iff U _).mp y.property
-    exact ⟨⟨x, hx⟩, Subtype.ext hxy⟩
-
 /-- The identity of Hilbert series behind the induction step: if `b d + a (d + 1) = a d + c (d + 1)`
 for every `d`, and `a` and `b` vanish at `d₀ - 1`, then the series of `a`, `b` and `c` starting in
 degree `d₀` satisfy `(1 - T) H_a = H_c - T H_b`. -/
@@ -173,42 +126,6 @@ private theorem mk_mul_one_sub_X_eq {a b c : ℤ → ℤ} {d₀ : ℤ}
   · have hn := h (d₀ + n)
     simp only [coeff_succ_mul_X, coeff_succ_X_mul, coeff_mk, Nat.cast_succ, ← add_assoc]
     linarith
-
-section Step
-
-variable {M : Type*} [AddCommGroup M] [Module A M] [Module (MvPolynomial σ A) M]
-  [IsScalarTower A (MvPolynomial σ A) M] (G : InternalGrading A M ℤ)
-
-omit [IsScalarTower A (MvPolynomial σ A) M] in
-/-- Multiplication by a variable is homogeneous of degree one. -/
-private theorem isHomogeneous_lsmul_X
-    (hG : ∀ (i : ℕ) (j : ℤ) (p : MvPolynomial σ A),
-      p ∈ homogeneousSubmodule σ A i → ∀ m ∈ G.piece j, p • m ∈ G.piece (j + i)) (i : σ) :
-    LinearMap.IsHomogeneous (LinearMap.lsmul (MvPolynomial σ A) M (X i)) G.piece G.piece 1 :=
-  LinearMap.isHomogeneous_def.2 fun p x hx ↦ by
-    simpa using hG 1 p (X i) ((mem_homogeneousSubmodule 1 _).mpr (isHomogeneous_X A i)) x hx
-
-/-- The kernel of a homogeneous map is again graded compatibly with the polynomial ring. -/
-private theorem smul_mem_ker_piece
-    (hG : ∀ (i : ℕ) (j : ℤ) (p : MvPolynomial σ A),
-      p ∈ homogeneousSubmodule σ A i → ∀ m ∈ G.piece j, p • m ∈ G.piece (j + i))
-    {f : M →ₗ[MvPolynomial σ A] M} (hf : LinearMap.IsHomogeneous f G.piece G.piece 1)
-    (i : ℕ) (j : ℤ) (p : MvPolynomial σ A) (hp : p ∈ homogeneousSubmodule σ A i)
-    (z : LinearMap.ker f) (hz : z ∈ (G.ker hf).piece j) : p • z ∈ (G.ker hf).piece (j + i) :=
-  (G.mem_ker_piece hf).2 (hG i j p hp _ ((G.mem_ker_piece hf).1 hz))
-
-/-- The quotient by a homogeneous submodule is again graded compatibly with the polynomial ring. -/
-private theorem smul_mem_quotient_piece
-    (hG : ∀ (i : ℕ) (j : ℤ) (p : MvPolynomial σ A),
-      p ∈ homogeneousSubmodule σ A i → ∀ m ∈ G.piece j, p • m ∈ G.piece (j + i))
-    (U : Submodule (MvPolynomial σ A) M) (hU : SetLike.IsHomogeneous G.piece U)
-    (i : ℕ) (j : ℤ) (p : MvPolynomial σ A) (hp : p ∈ homogeneousSubmodule σ A i)
-    (y : M ⧸ U) (hy : y ∈ (G.quotient U hU).piece j) : p • y ∈ (G.quotient U hU).piece (j + i) := by
-  obtain ⟨x, hx, rfl⟩ := (G.mem_quotient_piece_iff _ _).mp hy
-  rw [← Submodule.Quotient.mk_smul]
-  exact G.mk_mem_quotient_piece _ _ (hG i j p hp x hx)
-
-end Step
 
 variable [IsArtinianRing A] [Finite σ]
 
@@ -254,14 +171,14 @@ private theorem exists_lengthSeries_mul_eq (s : Finset σ) :
           exact LinearMap.mem_range_self _ x
         · rw [hs' j hj hji x]
           exact Submodule.zero_mem _) d₀
-      fun d hd ↦ by rw [InternalGrading.quotient_piece, hd₀ d hd, Submodule.map_bot]
+      fun d hd ↦ G.quotient_piece_eq_bot _ _ (hd₀ d hd)
     -- The exact sequences `0 → K_d → M_d → M_{d+1} → C_{d+1} → 0` give `(1 - T) H_M = H_C - T H_K`.
     have key := mk_mul_one_sub_X_eq (d₀ := d₀)
       (a := fun d ↦ ((Module.length A (G.piece d)).toNat : ℤ))
       (b := fun d ↦ ((Module.length A ((G.ker hf).piece d)).toNat : ℤ))
       (c := fun d ↦ ((Module.length A ((G.quotient _ hf.isHomogeneous_range).piece d)).toNat : ℤ))
       (fun d ↦ by
-        have := congrArg ENat.toNat (length_ker_piece_add_length_piece_add_one G hf d)
+        have := congrArg ENat.toNat (G.length_ker_piece_add_length_piece_add hf d)
         rw [ENat.toNat_add (length_piece_ne_top (smul_mem_ker_piece G hG hf) d)
           (length_piece_ne_top hG (d + 1)), ENat.toNat_add (length_piece_ne_top hG d)
           (length_piece_ne_top (smul_mem_quotient_piece G hG _ _) (d + 1))] at this
