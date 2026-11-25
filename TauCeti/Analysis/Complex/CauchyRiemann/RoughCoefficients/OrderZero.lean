@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Weak
-import TauCeti.Analysis.Complex.Wirtinger.DivergenceLaplace.Basic
+public import TauCeti.Analysis.Complex.Wirtinger.DivergenceLaplace.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
@@ -60,6 +60,10 @@ convergence of mollifications (`TauCeti.tendsto_integral_inner_mollify`,
   against bounded compactly supported Sobolev test fields.
 * `TauCeti.IsSobolevCRCoefficients.memLpLoc_top_coeff`: for `p > 2` a `W^{1,p}_loc` coefficient
   `J` is locally bounded.
+* `TauCeti.IsWeakCRSolution.integral_laplacian_smul_eq`: a weak solution solves
+  `Δξ = ∂_s f + ∂_t g` weakly, with the data `TauCeti.crDivergenceDataS` and
+  `TauCeti.crDivergenceDataT`, which are locally `Lʳ`
+  (`TauCeti.IsWeakCRSolution.memLpLoc_crDivergenceData`).
 * `TauCeti.IsWeakCRSolution.memWkpLoc_one`: order-zero interior regularity.
 
 ## References
@@ -202,22 +206,41 @@ private theorem inner_adjointApply (v : V) (M : V →L[ℝ] V) (w : V) :
   simp [adjointApply, ContinuousLinearMap.adjoint_inner_left]
 
 /-- The coefficient `f = η + (∂_t J) ξ - S ξ` of `∂_s` in the divergence-form Laplace equation
-`Δξ = ∂_s f + ∂_t g`. -/
-private noncomputable def orderZeroS (DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V) (S : ℂ → V →L[ℝ] V)
+`Δξ = ∂_s f + ∂_t g` satisfied by a weak solution of `∂_s ξ + J ∂_t ξ + S ξ = η`
+(`TauCeti.IsWeakCRSolution.integral_laplacian_smul_eq`). -/
+noncomputable def crDivergenceDataS (DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V) (S : ℂ → V →L[ℝ] V)
     (ξ η : ℂ → V) (z : ℂ) : V :=
   η z + DJ z I (ξ z) - S z (ξ z)
 
 /-- The coefficient `g = J S ξ - J η - (∂_s J) ξ - (∂_t J) J ξ - J (∂_t J) ξ` of `∂_t` in the
-divergence-form Laplace equation `Δξ = ∂_s f + ∂_t g`. -/
-private noncomputable def orderZeroT (J : ℂ → V →L[ℝ] V) (DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V)
+divergence-form Laplace equation `Δξ = ∂_s f + ∂_t g` satisfied by a weak solution of
+`∂_s ξ + J ∂_t ξ + S ξ = η` (`TauCeti.IsWeakCRSolution.integral_laplacian_smul_eq`). -/
+noncomputable def crDivergenceDataT (J : ℂ → V →L[ℝ] V) (DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V)
     (S : ℂ → V →L[ℝ] V) (ξ η : ℂ → V) (z : ℂ) : V :=
   J z (S z (ξ z)) - J z (η z) - DJ z 1 (ξ z) - DJ z I (J z (ξ z)) - J z (DJ z I (ξ z))
 
-/-- The coefficients `f` and `g` are locally `Lʳ` when `1/p + 1/q ≤ 1/r` and `η` is. -/
-private theorem memLpLoc_orderZero (h : IsWeakCRSolution q Ω J DJ S ξ η)
+omit [CompleteSpace V] in
+/-- The value of the divergence-form data `f = η + (∂_t J) ξ - S ξ` at a point. -/
+theorem crDivergenceDataS_apply (DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V) (S : ℂ → V →L[ℝ] V) (ξ η : ℂ → V)
+    (z : ℂ) : crDivergenceDataS DJ S ξ η z = η z + DJ z I (ξ z) - S z (ξ z) := by
+  rw [crDivergenceDataS]
+
+omit [CompleteSpace V] in
+/-- The value of the divergence-form data
+`g = J S ξ - J η - (∂_s J) ξ - (∂_t J) J ξ - J (∂_t J) ξ` at a point. -/
+theorem crDivergenceDataT_apply (J : ℂ → V →L[ℝ] V) (DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V)
+    (S : ℂ → V →L[ℝ] V) (ξ η : ℂ → V) (z : ℂ) :
+    crDivergenceDataT J DJ S ξ η z =
+      J z (S z (ξ z)) - J z (η z) - DJ z 1 (ξ z) - DJ z I (J z (ξ z)) - J z (DJ z I (ξ z)) := by
+  rw [crDivergenceDataT]
+
+/-- The divergence-form data `f = TauCeti.crDivergenceDataS DJ S ξ η` and
+`g = TauCeti.crDivergenceDataT J DJ S ξ η` of a weak solution with Sobolev coefficients and locally
+bounded `J` are locally `Lʳ` when `1/p + 1/q ≤ 1/r` and `η` is. -/
+theorem IsWeakCRSolution.memLpLoc_crDivergenceData (h : IsWeakCRSolution q Ω J DJ S ξ η)
     (hc : IsSobolevCRCoefficients p Ω J DJ S) (hJb : MemLpLoc ⊤ Ω J) {r : ℝ≥0∞}
     (hpqr : p⁻¹ + q⁻¹ ≤ r⁻¹) (hη : MemLpLoc r Ω η) :
-    MemLpLoc r Ω (orderZeroS DJ S ξ η) ∧ MemLpLoc r Ω (orderZeroT J DJ S ξ η) := by
+    MemLpLoc r Ω (crDivergenceDataS DJ S ξ η) ∧ MemLpLoc r Ω (crDivergenceDataT J DJ S ξ η) := by
   have : ENNReal.HolderTriple p q (p⁻¹ + q⁻¹)⁻¹ := ENNReal.HolderTriple.of p q
   have hrr : r ≤ (p⁻¹ + q⁻¹)⁻¹ := by rw [← ENNReal.inv_le_inv, inv_inv]; exact hpqr
   have happly : ∀ {A : ℂ → V →L[ℝ] V} {w : ℂ → V}, MemLpLoc p Ω A → MemLpLoc q Ω w →
@@ -300,8 +323,8 @@ formal adjoint with the test field `ψ = ∂_s φ • v - ∂_t φ • Jᵀ v`, 
 `-⟪v, Δφ • ξ + ∂_s φ • f + ∂_t φ • g⟫`. -/
 private theorem inner_crTestField_eq (φ : 𝓓(Ω, ℝ)) (v : V) (z : ℂ)
     (hJJ : z ∈ tsupport (φ : ℂ → ℝ) → J z (J z (ξ z)) = -ξ z) :
-    ⟪v, Δ (φ : ℂ → ℝ) z • ξ z⟫_ℝ + ⟪v, fderiv ℝ (φ : ℂ → ℝ) z 1 • orderZeroS DJ S ξ η z +
-      fderiv ℝ (φ : ℂ → ℝ) z I • orderZeroT J DJ S ξ η z⟫_ℝ =
+    ⟪v, Δ (φ : ℂ → ℝ) z • ξ z⟫_ℝ + ⟪v, fderiv ℝ (φ : ℂ → ℝ) z 1 • crDivergenceDataS DJ S ξ η z +
+      fderiv ℝ (φ : ℂ → ℝ) z I • crDivergenceDataT J DJ S ξ η z⟫_ℝ =
       -((-⟪crTestFieldDeriv J DJ φ v z 1, ξ z⟫_ℝ - ⟪crTestFieldDeriv J DJ φ v z I, J z (ξ z)⟫_ℝ -
         ⟪crTestField J φ v z, DJ z I (ξ z)⟫_ℝ + ⟪crTestField J φ v z, S z (ξ z)⟫_ℝ) -
           ⟪crTestField J φ v z, η z⟫_ℝ) := by
@@ -320,8 +343,8 @@ private theorem inner_crTestField_eq (φ : 𝓓(Ω, ℝ)) (v : V) (z : ℂ)
   rw [hΔ, ← TestFunction.lineDerivOp_apply_eq_fderiv φ 1,
     ← TestFunction.lineDerivOp_apply_eq_fderiv φ I]
   by_cases hz : z ∈ tsupport (φ : ℂ → ℝ)
-  · simp only [crTestField, crTestFieldDeriv, orderZeroS, orderZeroT, sub_apply, add_apply,
-      smul_apply, ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.comp_apply,
+  · simp only [crTestField, crTestFieldDeriv, crDivergenceDataS, crDivergenceDataT, sub_apply,
+      add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.comp_apply,
       inner_sub_left, inner_add_left, inner_sub_right, inner_add_right, real_inner_smul_left,
       inner_smul_right, inner_adjointApply, hJJ hz, inner_neg_right, hsymm]
     ring
@@ -330,31 +353,31 @@ private theorem inner_crTestField_eq (φ : 𝓓(Ω, ℝ)) (v : V) (z : ℂ)
     obtain ⟨hψ, hDψ⟩ := crTestField_eq_zero (J := J) (DJ := DJ) φ v hz
     simp [ha, hda, hb, hdb, hψ, hDψ]
 
-/-- **Order-zero interior regularity for real Cauchy–Riemann equations with Sobolev
-coefficients** (McDuff–Salamon, Lemma B.4.6). Let `V` be finite-dimensional, `p > 2`, and let
-`J ∈ W^{1,p}_loc(Ω)` with `J² = -1` almost everywhere and `S ∈ Lᵖ_loc(Ω)`, in the sense of
-`TauCeti.IsSobolevCRCoefficients`. If `ξ ∈ L^q_loc` is a weak solution of
-`∂_s ξ + J ∂_t ξ + S ξ = η` on `Ω`, and `η ∈ Lʳ_loc` with `1 < r < ∞` and `1/p + 1/q ≤ 1/r`,
-then `ξ ∈ W^{1,r}_loc(Ω)`. -/
-theorem IsWeakCRSolution.memWkpLoc_one [FiniteDimensional ℝ V]
+/-- **The divergence-form Laplace equation of a weak solution.** Let `V` be finite-dimensional,
+`p > 2`, and let `J ∈ W^{1,p}_loc(Ω)` with `J² = -1` almost everywhere and `S ∈ Lᵖ_loc(Ω)`, in the
+sense of `TauCeti.IsSobolevCRCoefficients`. If `ξ ∈ L^q_loc` is a weak solution of
+`∂_s ξ + J ∂_t ξ + S ξ = η` on `Ω` with `1/p + 1/q ≤ 1`, then `Δξ = ∂_s f + ∂_t g` weakly on `Ω`,
+with `f = TauCeti.crDivergenceDataS DJ S ξ η` and `g = TauCeti.crDivergenceDataT J DJ S ξ η`. -/
+theorem IsWeakCRSolution.integral_laplacian_smul_eq [FiniteDimensional ℝ V]
     (h : IsWeakCRSolution q Ω J DJ S ξ η) (hc : IsSobolevCRCoefficients p Ω J DJ S)
-    (hp : 2 < p) (hJ2 : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1) {r : ℝ≥0∞} (hr : 1 < r)
-    (hr_top : r ≠ ⊤) (hpqr : p⁻¹ + q⁻¹ ≤ r⁻¹) (hη : MemLpLoc r Ω η) :
-    MemWkpLoc r Ω 1 ξ := by
-  have hpq : p⁻¹ + q⁻¹ ≤ 1 := hpqr.trans (ENNReal.inv_le_one.2 hr.le)
+    (hp : 2 < p) (hJ2 : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1) (hpq : p⁻¹ + q⁻¹ ≤ 1)
+    (φ : 𝓓(Ω, ℝ)) :
+    ∫ z, Δ (φ : ℂ → ℝ) z • ξ z =
+      -∫ z, (fderiv ℝ (φ : ℂ → ℝ) z 1 • crDivergenceDataS DJ S ξ η z +
+        fderiv ℝ (φ : ℂ → ℝ) z I • crDivergenceDataT J DJ S ξ η z) := by
   have hloc := Ω.isOpen.isLocallyClosed
   have hJb := hc.memLpLoc_top_coeff hp
-  obtain ⟨hfr, hgr⟩ := memLpLoc_orderZero h hc hJb hpqr hη
+  have hη : MemLpLoc 1 Ω η := (memLpLoc_one_iff_locallyIntegrableOn hloc).2 h.locallyIntegrableOn
+  obtain ⟨hfr, hgr⟩ := h.memLpLoc_crDivergenceData hc hJb (by rwa [inv_one]) hη
   have hξloc : LocallyIntegrableOn ξ Ω volume :=
     h.memLpLoc.locallyIntegrableOn (ENNReal.inv_le_one.1 (le_add_self.trans hpq)) hloc
-  refine memWkpLoc_one_of_forall_integral_laplacian_smul_eq hr hr_top hξloc hfr hgr fun φ => ?_
   have hI1 : Integrable (fun z => Δ (φ : ℂ → ℝ) z • ξ z) := by
     simpa only [TestFunction.laplacianCLM_apply] using
       (laplacianCLM ℝ ℂ 𝓓(Ω, ℝ) φ).integrable_smul hξloc
-  have hI2 : Integrable (fun z => fderiv ℝ (φ : ℂ → ℝ) z 1 • orderZeroS DJ S ξ η z +
-      fderiv ℝ (φ : ℂ → ℝ) z I • orderZeroT J DJ S ξ η z) :=
-    (integrable_fderiv_smul_of_locallyIntegrableOn (hfr.locallyIntegrableOn hr.le hloc) φ 1).add
-      (integrable_fderiv_smul_of_locallyIntegrableOn (hgr.locallyIntegrableOn hr.le hloc) φ I)
+  have hI2 : Integrable (fun z => fderiv ℝ (φ : ℂ → ℝ) z 1 • crDivergenceDataS DJ S ξ η z +
+      fderiv ℝ (φ : ℂ → ℝ) z I • crDivergenceDataT J DJ S ξ η z) :=
+    (integrable_fderiv_smul_of_locallyIntegrableOn (hfr.locallyIntegrableOn le_rfl hloc) φ 1).add
+      (integrable_fderiv_smul_of_locallyIntegrableOn (hgr.locallyIntegrableOn le_rfl hloc) φ I)
   refine ext_inner_left ℝ fun v => ?_
   rw [← integral_inner hI1, inner_neg_right, ← integral_inner hI2]
   -- Test the weak equation against `ψ = ∂_s φ • v - ∂_t φ • Jᵀ v`.
@@ -373,9 +396,9 @@ theorem IsWeakCRSolution.memWkpLoc_one [FiniteDimensional ℝ V]
       simp [(crTestField_eq_zero (J := J) (DJ := DJ) φ v (hΩT z hz)).1]] at hPeq
   have hψη : Integrable (fun z => ⟪crTestField J φ v z, η z⟫_ℝ) := by
     have h1 := (integrable_fderiv_smul_of_locallyIntegrableOn
-      (hη.locallyIntegrableOn hr.le hloc) φ 1).const_inner (𝕜 := ℝ) v
+      h.locallyIntegrableOn φ 1).const_inner (𝕜 := ℝ) v
     have h2 := (integrable_fderiv_smul_of_locallyIntegrableOn
-      ((hJb.clm_apply hη).locallyIntegrableOn hr.le hloc) φ I).const_inner (𝕜 := ℝ) v
+      ((hJb.clm_apply hη).locallyIntegrableOn le_rfl hloc) φ I).const_inner (𝕜 := ℝ) v
     refine (h1.sub h2).congr (.of_forall fun z => ?_)
     simp only [Pi.sub_apply, crTestField, TestFunction.lineDerivOp_apply_eq_fderiv,
       inner_sub_left, real_inner_smul_left, inner_smul_right, inner_adjointApply]
@@ -387,5 +410,22 @@ theorem IsWeakCRSolution.memWkpLoc_one [FiniteDimensional ℝ V]
   rw [← integral_add (hI1.const_inner (𝕜 := ℝ) v) (hI2.const_inner (𝕜 := ℝ) v),
     integral_congr_ae (hJJ.mono fun z hz => inner_crTestField_eq φ v z hz), integral_neg,
     integral_sub (hPΩ.integrable_of_forall_notMem_eq_zero hP0) hψη, hPeq, sub_self, neg_zero]
+
+/-- **Order-zero interior regularity for real Cauchy–Riemann equations with Sobolev
+coefficients** (McDuff–Salamon, Lemma B.4.6). Let `V` be finite-dimensional, `p > 2`, and let
+`J ∈ W^{1,p}_loc(Ω)` with `J² = -1` almost everywhere and `S ∈ Lᵖ_loc(Ω)`, in the sense of
+`TauCeti.IsSobolevCRCoefficients`. If `ξ ∈ L^q_loc` is a weak solution of
+`∂_s ξ + J ∂_t ξ + S ξ = η` on `Ω`, and `η ∈ Lʳ_loc` with `1 < r < ∞` and `1/p + 1/q ≤ 1/r`,
+then `ξ ∈ W^{1,r}_loc(Ω)`. -/
+theorem IsWeakCRSolution.memWkpLoc_one [FiniteDimensional ℝ V]
+    (h : IsWeakCRSolution q Ω J DJ S ξ η) (hc : IsSobolevCRCoefficients p Ω J DJ S)
+    (hp : 2 < p) (hJ2 : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1) {r : ℝ≥0∞} (hr : 1 < r)
+    (hr_top : r ≠ ⊤) (hpqr : p⁻¹ + q⁻¹ ≤ r⁻¹) (hη : MemLpLoc r Ω η) :
+    MemWkpLoc r Ω 1 ξ := by
+  have hpq : p⁻¹ + q⁻¹ ≤ 1 := hpqr.trans (ENNReal.inv_le_one.2 hr.le)
+  obtain ⟨hfr, hgr⟩ := h.memLpLoc_crDivergenceData hc (hc.memLpLoc_top_coeff hp) hpqr hη
+  exact memWkpLoc_one_of_forall_integral_laplacian_smul_eq hr hr_top
+    (h.memLpLoc.locallyIntegrableOn (ENNReal.inv_le_one.1 (le_add_self.trans hpq))
+      Ω.isOpen.isLocallyClosed) hfr hgr (h.integral_laplacian_smul_eq hc hp hJ2 hpq)
 
 end TauCeti
