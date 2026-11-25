@@ -49,13 +49,13 @@ private noncomputable def zmodSixChar : PSL(2, ℤ) →* Multiplicative (ZMod 6)
     (by decide) (by decide) (pow_zero _) (by decide)).comp modularEquiv.symm.toMonoidHom
 
 private theorem zmodSixChar_S : zmodSixChar (S : PSL(2, ℤ)) = Multiplicative.ofAdd 3 := by
-  simp [zmodSixChar, (MulEquiv.symm_apply_eq _).2 modularEquiv_y.symm]
+  simp [zmodSixChar]
 
 private theorem zmodSixChar_T : zmodSixChar (T : PSL(2, ℤ)) = Multiplicative.ofAdd 1 := by
-  simp [zmodSixChar, (MulEquiv.symm_apply_eq _).2 modularEquiv_z.symm]
+  simp [zmodSixChar]
 
 private theorem zmodSixChar_U : zmodSixChar (U : PSL(2, ℤ)) = Multiplicative.ofAdd 2 := by
-  simp [zmodSixChar, (MulEquiv.symm_apply_eq _).2 modularEquiv_x.symm]
+  simp [zmodSixChar]
 
 /-- In the abelianization the class of `S` is the cube of the class of `T`: the relation
 `U³ = 1` with `U = S T⁻¹` gives `S³ = T³`, and `S² = 1`. -/
