@@ -216,7 +216,7 @@ theorem hasLaplace_toMeromorphicNFOn_or_exists_rightmost_real_pole_of_ae_le_exp
         (.of_forall fun u ↦ by simp [f])).integrableOn)
   have hNo (s : ℂ) (hs : θ < s.re) :
       0 ≤ meromorphicOrderAt H s ↔ 0 ≤ meromorphicOrderAt F s :=
-    (hP s hs).meromorphicOrderAt_fun_sub_nonneg_iff (hF s hs)
+    (hP s hs).meromorphicOrderAt_fun_sub_nonneg_iff
   have hf := hg.mono fun _ hu ↦ sub_nonneg.mpr hu
   rcases hasLaplace_toMeromorphicNFOn_or_exists_rightmost_real_pole hf hH hHS with
     ⟨hn, hl⟩ | ⟨β, hb, ha, hp, hn, hl⟩
