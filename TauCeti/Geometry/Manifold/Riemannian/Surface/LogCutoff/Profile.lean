@@ -112,6 +112,9 @@ private theorem one_le_logb_two {a b : ℝ} (ha : 0 < a) (hab : 2 * a ≤ b) :
   rw [← Real.logb_self_eq_one one_lt_two]
   exact Real.logb_le_logb_of_le one_lt_two two_pos ((le_div_iff₀ ha).2 hab)
 
+private theorem log_div_pos (hε : 0 < ε) (hεδ : 2 * ε ≤ δ) : 0 < log (δ / ε) :=
+  Real.log_pos ((one_lt_div hε).2 (by linarith))
+
 private theorem contDiff_logProfile : ContDiff ℝ ∞ (logProfile ε δ) := by
   have hτ : ContDiff ℝ ∞ smoothTransition := smoothTransition.contDiff
   have ha : ContDiff ℝ ∞ fun u : ℝ ↦ (u - log ε) / log 2 :=
@@ -147,7 +150,7 @@ private theorem logProfileDeriv_nonneg (hε : 0 < ε) (hεδ : 2 * ε ≤ δ) (u
   have h2 : 0 < log 2 := Real.log_pos one_lt_two
   have hlog : log 2 ≤ log (δ / ε) := Real.log_le_log two_pos ((le_div_iff₀ hε).2 hεδ)
   unfold logProfileDeriv
-  apply div_nonneg _ (h2.trans_le hlog).le
+  apply div_nonneg _ (log_div_pos hε hεδ).le
   have hge : 1 ≤ (u - log ε) / log 2 + (log δ - u) / log 2 := by
     rw [← add_div, le_div_iff₀ h2]
     rw [Real.log_div hδ.ne' hε.ne'] at hlog
@@ -168,7 +171,7 @@ private theorem logProfileDeriv_le (hε : 0 < ε) (h4 : 4 * ε ≤ δ) (u : ℝ)
     exact Real.log_le_log (by norm_num) ((le_div_iff₀ hε).2 h4)
   unfold logProfileDeriv
   rw [logCutoffConst_def]
-  apply div_le_div_of_nonneg_right _ (by linarith)
+  apply div_le_div_of_nonneg_right _ (log_div_pos hε (by linarith)).le
   have hge : 2 ≤ (u - log ε) / log 2 + (log δ - u) / log 2 := by
     rw [← add_div, le_div_iff₀ h2]
     rw [Real.log_div hδ.ne' hε.ne'] at hlog
@@ -184,16 +187,18 @@ private theorem logProfileDeriv_le (hε : 0 < ε) (h4 : 4 * ε ≤ δ) (u : ℝ)
       smoothTransition.mul_deriv_le_deriv ((u - log ε) / log 2),
       smoothTransition.deriv_le_iSup ((u - log ε) / log 2)]
 
-private theorem logCutoffProfile_eq_logProfile (hε : ε ≠ 0) (hδ : δ ≠ 0) (hr : 0 < r) :
+private theorem logCutoffProfile_eq_logProfile (hδ : δ ≠ 0) (hr : 0 < r) :
     logCutoffProfile ε δ r = logProfile ε δ (log r) := by
   unfold logCutoffProfile logProfile
-  rw [ite_eq_right hr.not_ge, Real.logb, Real.logb, Real.log_div hr.ne' hε,
-    Real.log_div hδ hr.ne']
+  rcases eq_or_ne ε 0 with rfl | hε
+  · simp [hr.not_ge, Real.logb, Real.log_div hδ hr.ne']
+  · rw [ite_eq_right hr.not_ge, Real.logb, Real.logb, Real.log_div hr.ne' hε,
+      Real.log_div hδ hr.ne']
 
-private theorem logCutoffProfile_eventuallyEq (hε : ε ≠ 0) (hδ : δ ≠ 0) (hr : 0 < r) :
+private theorem logCutoffProfile_eventuallyEq (hδ : δ ≠ 0) (hr : 0 < r) :
     logCutoffProfile ε δ =ᶠ[𝓝 r] logProfile ε δ ∘ log := by
   filter_upwards [lt_mem_nhds hr] with s hs
-  exact logCutoffProfile_eq_logProfile hε hδ hs
+  exact logCutoffProfile_eq_logProfile hδ hs
 
 private theorem logCutoffProfile_eq_one_sub_of_log_eq_zero (hΛ : log (δ / ε) = 0) (hr : 0 < r) :
     logCutoffProfile ε δ r = 1 - smoothTransition (Real.logb 2 (δ / r)) := by
@@ -202,10 +207,9 @@ private theorem logCutoffProfile_eq_one_sub_of_log_eq_zero (hΛ : log (δ / ε) 
 private theorem deriv_logCutoffProfile_eq (hΛ : log (δ / ε) ≠ 0) (hr : 0 < r) :
     deriv (logCutoffProfile ε δ) r = logProfileDeriv ε δ (log r) / r := by
   have hδ : δ ≠ 0 := fun h ↦ hΛ (by simp [h])
-  have hε : ε ≠ 0 := fun h ↦ hΛ (by simp [h])
   have hd := (hasDerivAt_logProfile hΛ (log r)).comp r (Real.hasDerivAt_log hr.ne')
   rw [← div_eq_mul_inv] at hd
-  exact (hd.congr_of_eventuallyEq (logCutoffProfile_eventuallyEq hε hδ hr)).deriv
+  exact (hd.congr_of_eventuallyEq (logCutoffProfile_eventuallyEq hδ hr)).deriv
 
 end LogVariable
 
@@ -279,7 +283,7 @@ private theorem logCutoffProfile_eventuallyEq_zero (hδ : δ ≠ 0) (hr : r ≤ 
     · exact hs.le
     · exact hs.le.trans (min_le_right _ _)
   have hb : 1 ≤ Real.logb 2 (δ / s) := by
-    rw [Real.logb, ← Real.log_abs, abs_div, abs_of_pos hs0, ← Real.logb]
+    rw [← Real.logb_abs, abs_div, abs_of_pos hs0]
     exact one_le_logb_two hs0 (by linarith)
   rw [logCutoffProfile_def, ite_eq_right hs0.not_ge, smoothTransition.one_of_one_le hb,
     sub_self, mul_zero, add_zero]
@@ -287,7 +291,7 @@ private theorem logCutoffProfile_eventuallyEq_zero (hδ : δ ≠ 0) (hr : r ≤ 
   · simp
   · simp only [hε, ↓reduceIte] at hs
     have ha : Real.logb 2 (s / ε) ≤ 0 := by
-      rw [Real.logb, ← Real.log_abs, abs_div, abs_of_pos hs0, ← Real.logb]
+      rw [← Real.logb_abs, abs_div, abs_of_pos hs0]
       exact Real.logb_nonpos one_lt_two (by positivity)
         ((div_le_one (abs_pos.2 hε)).2 (hs.le.trans (min_le_left _ _)))
     rw [smoothTransition.zero_of_nonpos ha, mul_zero]
@@ -297,19 +301,8 @@ theorem contDiff_logCutoffProfile (hδ : δ ≠ 0) : ContDiff ℝ ∞ (logCutoff
   rw [contDiff_iff_contDiffAt]
   intro r
   rcases lt_or_ge 0 r with hr | hr
-  · have hlog : ContDiffAt ℝ ∞ log r := Real.contDiffAt_log.2 hr.ne'
-    rcases eq_or_ne ε 0 with rfl | hε
-    · have hev : logCutoffProfile 0 δ =ᶠ[𝓝 r]
-          fun s ↦ 1 - smoothTransition ((log δ - log s) / log 2) := by
-        filter_upwards [lt_mem_nhds hr] with s hs
-        rw [logCutoffProfile_eq_one_sub_of_log_eq_zero (by simp) hs, Real.logb,
-          Real.log_div hδ hs.ne']
-      have hsub : ContDiffAt ℝ ∞ (fun s : ℝ ↦ (log δ - log s) / log 2) r :=
-        (contDiffAt_const.sub hlog).div_const _
-      have hτ := smoothTransition.contDiff.contDiffAt.comp r hsub
-      exact (contDiffAt_const.sub hτ).congr_of_eventuallyEq hev
-    · exact (contDiff_logProfile.contDiffAt.comp r hlog).congr_of_eventuallyEq
-        (logCutoffProfile_eventuallyEq hε hδ hr)
+  · exact (contDiff_logProfile.contDiffAt.comp r
+      (Real.contDiffAt_log.2 hr.ne')).congr_of_eventuallyEq (logCutoffProfile_eventuallyEq hδ hr)
   · exact contDiffAt_const.congr_of_eventuallyEq (logCutoffProfile_eventuallyEq_zero hδ hr)
 
 /-- The derivative of the logarithmic cutoff profile is nonnegative. -/
@@ -317,9 +310,7 @@ theorem deriv_logCutoffProfile_nonneg (hε : 0 < ε) (hεδ : 2 * ε ≤ δ) (r 
     0 ≤ deriv (logCutoffProfile ε δ) r := by
   rcases le_or_gt r 0 with hr | hr
   · rw [(logCutoffProfile_eventuallyEq_zero (by linarith) hr).deriv_eq, deriv_const]
-  · have hΛ : log (δ / ε) ≠ 0 :=
-      (Real.log_pos ((lt_div_iff₀ hε).2 (by linarith))).ne'
-    rw [deriv_logCutoffProfile_eq hΛ hr]
+  · rw [deriv_logCutoffProfile_eq (log_div_pos hε hεδ).ne' hr]
     exact div_nonneg (logProfileDeriv_nonneg hε hεδ _) hr.le
 
 /-- The logarithmic cutoff profile is nondecreasing. -/
@@ -337,9 +328,9 @@ theorem logCutoffProfile_nonneg (hε : 0 < ε) (hεδ : 2 * ε ≤ δ) (r : ℝ)
   · exact (logCutoffProfile_eq_zero_of_le hεδ le_rfl).symm.trans_le
       (monotone_logCutoffProfile hε hεδ hr)
 
-/-- For `2ε ≤ δ` and `r ≤ ε`, Lean's `deriv (logCutoffProfile ε δ) r` is `0`. Except at the
-degenerate triple `ε = δ = r = 0` (where the profile has a jump discontinuity from `0` to `1` and
-`deriv` takes its default value `0`), the profile is differentiable at `r` with derivative `0`. -/
+/-- For `2ε ≤ δ` and `r ≤ ε`, Lean's `deriv (logCutoffProfile ε δ) r` is `0`; at the degenerate
+triple `ε = δ = r = 0` the profile has a jump discontinuity from `0` to `1` and this is `deriv`'s
+default value. -/
 @[simp]
 theorem deriv_logCutoffProfile_eq_zero_of_le (hεδ : 2 * ε ≤ δ) (hr : r ≤ ε) :
     deriv (logCutoffProfile ε δ) r = 0 := by
@@ -392,9 +383,7 @@ theorem deriv_logCutoffProfile_le (hε : 0 < ε) (h4 : 4 * ε ≤ δ) (hr : 0 �
     deriv (logCutoffProfile ε δ) r ≤ logCutoffConst / (r * Real.log (δ / ε)) := by
   rcases hr.eq_or_lt with rfl | hr0
   · simp [deriv_logCutoffProfile_eq_zero_of_le (by linarith : 2 * ε ≤ δ) hε.le]
-  · have hΛ : log (δ / ε) ≠ 0 :=
-      (Real.log_pos ((lt_div_iff₀ hε).2 (by linarith))).ne'
-    rw [deriv_logCutoffProfile_eq hΛ hr0, mul_comm r, ← div_div]
+  · rw [deriv_logCutoffProfile_eq (log_div_pos hε (by linarith)).ne' hr0, mul_comm r, ← div_div]
     exact div_le_div_of_nonneg_right (logProfileDeriv_le hε h4 _) hr0.le
 
 /-- For `0 < r ≤ δ / 2`, the derivative is `(τ(a) + a τ'(a)) / (r log (δ / ε))` with
@@ -429,10 +418,10 @@ theorem deriv_logCutoffProfile_of_le_half (hr0 : 0 < r) (hr : r ≤ δ / 2) :
     field_simp
     ring
 
-/-- For `0 < ε` and `2ε ≤ r`, the derivative is `(τ(b) + b τ'(b)) / (r log (δ / ε))` with
-`b = log₂ (δ / r)` when `log (δ / ε) ≠ 0`. When `log (δ / ε) = 0` (`δ = 0` or `|δ| = ε`), the
-profile is locally constant equal to `1` near `r` so its derivative is `0`, matching the
-right-hand side under Lean's totalized division `x / 0 = 0`. -/
+/-- For `0 < ε` and `2ε ≤ r`, `deriv (logCutoffProfile ε δ) r` equals
+`(τ(b) + b τ'(b)) / (r log (δ / ε))` with `b = log₂ (δ / r)` when `log (δ / ε) ≠ 0`. When
+`log (δ / ε) = 0` (`δ = 0` or `|δ| = ε`), both sides are `0` under Lean's totalized division
+`x / 0 = 0`. -/
 theorem deriv_logCutoffProfile_of_two_mul_le (hε : 0 < ε) (hr : 2 * ε ≤ r) :
     deriv (logCutoffProfile ε δ) r =
       (smoothTransition (Real.logb 2 (δ / r)) +
@@ -459,7 +448,7 @@ theorem deriv_logCutoffProfile_of_two_mul_le (hε : 0 < ε) (hr : 2 * ε ≤ r) 
       have hb : Real.logb 2 (δ / s) ≤ 0 := by
         rcases eq_or_ne δ 0 with rfl | hδ
         · simp
-        · rw [Real.logb, ← Real.log_abs, abs_div, abs_of_pos hs0, ← Real.logb]
+        · rw [← Real.logb_abs, abs_div, abs_of_pos hs0]
           exact Real.logb_nonpos one_lt_two (by positivity) ((div_le_one hs0).2 hs.le)
       rw [smoothTransition.zero_of_nonpos hb, sub_zero]
     rw [hev.deriv_eq, deriv_const]
@@ -486,7 +475,7 @@ theorem one_sub_logCutoffProfile_le (hε : 0 < ε) (hεδ : 2 * ε ≤ δ)
     (hr : 0 < r) (hrδ : r ≤ δ) :
     1 - logCutoffProfile ε δ r ≤ Real.log (2 * δ / r) / Real.log (δ / ε) := by
   have hδ : 0 < δ := by linarith
-  have hΛ : 0 < Real.log (δ / ε) := Real.log_pos ((lt_div_iff₀ hε).2 (by linarith))
+  have hΛ : 0 < Real.log (δ / ε) := log_div_pos hε hεδ
   by_cases hr2 : 2 * ε ≤ r
   · rw [logCutoffProfile_of_two_mul_le hε hr2, sub_sub_cancel]
     have hsub :

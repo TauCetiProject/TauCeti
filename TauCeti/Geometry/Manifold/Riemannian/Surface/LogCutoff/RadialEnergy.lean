@@ -44,13 +44,17 @@ private noncomputable def radialEnergyDensity (ε δ : ℝ) (L : ℝ → ℝ) (t
   deriv (logCutoffProfile ε δ) t ^ 2 * L t
 
 private theorem intervalIntegrable_radialEnergyDensity
-    (hδ : δ ≠ 0) (hL : ContinuousOn L (Icc 0 δ))
+    (hL : ContinuousOn L (Icc 0 δ))
     {a b : ℝ} (ha : a ∈ Icc 0 δ) (hb : b ∈ Icc 0 δ) :
     IntervalIntegrable (radialEnergyDensity ε δ L) volume a b := by
-  unfold radialEnergyDensity
-  simpa only [Pi.mul_def, Pi.pow_def] using
-    ((((contDiff_logCutoffProfile hδ).continuous_deriv (by simp)).pow 2).continuousOn.mul
-      hL |>.mono (uIcc_subset_Icc ha hb)).intervalIntegrable
+  rcases eq_or_ne δ 0 with rfl | hδ
+  · obtain rfl : a = 0 := le_antisymm ha.2 ha.1
+    obtain rfl : b = 0 := le_antisymm hb.2 hb.1
+    exact IntervalIntegrable.refl
+  · unfold radialEnergyDensity
+    simpa only [Pi.mul_def, Pi.pow_def] using
+      ((((contDiff_logCutoffProfile hδ).continuous_deriv (by simp)).pow 2).continuousOn.mul
+        hL |>.mono (uIcc_subset_Icc ha hb)).intervalIntegrable
 
 private theorem integral_radialEnergyDensity_split
     (hε : 0 < ε) (hεδ : 4 * ε ≤ δ) (hL : ContinuousOn L (Icc 0 δ)) :
@@ -61,7 +65,7 @@ private theorem integral_radialEnergyDensity_split
   have hδ : 0 < δ := by linarith
   have h2εδ : 2 * ε ≤ δ := by linarith
   have hfi {a b : ℝ} (ha : a ∈ Icc 0 δ) (hb : b ∈ Icc 0 δ) :=
-    intervalIntegrable_radialEnergyDensity (ε := ε) hδ.ne' hL ha hb
+    intervalIntegrable_radialEnergyDensity (ε := ε) hL ha hb
   have h0 : (0 : ℝ) ∈ Icc 0 δ := ⟨le_rfl, hδ.le⟩
   have h1 : ε ∈ Icc 0 δ := ⟨hε.le, by linarith⟩
   have h2 : 2 * ε ∈ Icc 0 δ := ⟨by linarith, by linarith⟩
@@ -91,7 +95,7 @@ private theorem abs_integral_radialEnergyDensity_le
   have hinv := (intervalIntegrable_inv_iff (a := a) (b := b)).mpr
     (.inr (by rw [uIcc_of_le hab]; exact fun h ↦ ha0.not_ge h.1))
   refine intervalIntegral.integral_mono_on hab
-    (intervalIntegrable_radialEnergyDensity (by linarith) hL ha hb).abs
+    (intervalIntegrable_radialEnergyDensity hL ha hb).abs
     (hinv.const_mul _) fun t ht ↦ ?_
   have ht0 : 0 < t := ha0.trans_le ht.1
   have h2εδ : 2 * ε ≤ δ := by linarith
@@ -116,7 +120,7 @@ private theorem abs_integral_radialEnergyDensity_middle_sub_le
   have hδ : 0 < δ := by linarith
   have h2 : 2 * ε ∈ Icc 0 δ := ⟨by linarith, by linarith⟩
   have h3 : δ / 2 ∈ Icc 0 δ := ⟨by linarith, by linarith⟩
-  have hfi := intervalIntegrable_radialEnergyDensity (ε := ε) hδ.ne' hL h2 h3
+  have hfi := intervalIntegrable_radialEnergyDensity (ε := ε) hL h2 h3
   have hmid_eq :
       (∫ t in 2 * ε..δ / 2, radialEnergyDensity ε δ L t) -
         2 * π * (Λ - 2 * Real.log 2) / Λ ^ 2 =
