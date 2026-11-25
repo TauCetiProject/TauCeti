@@ -40,10 +40,14 @@ namespace TauCeti.TopologicalDegreeExamples
 
 variable (K : Type u) [Field K]
 
--- `z ↦ z²` on the affine line has topological degree `2`, in every characteristic.
-example : Scheme.RationalMap.topologicalDegree (Spec.map (CommRingCat.ofHom
-    (MvPolynomial.expand 2 : MvPolynomial PUnit.{u + 1} K →ₐ[K] _).toRingHom)).toRationalMap =
-    2 := by
+/-- The squaring map `z ↦ z²` of the affine line over `K`, as `Spec` of `MvPolynomial.expand 2`. -/
+noncomputable abbrev squareMap :
+    Spec (.of (MvPolynomial PUnit.{u + 1} K)) ⟶ Spec (.of (MvPolynomial PUnit.{u + 1} K)) :=
+  Spec.map (CommRingCat.ofHom
+    (MvPolynomial.expand 2 : MvPolynomial PUnit.{u + 1} K →ₐ[K] _).toRingHom)
+
+/-- `z ↦ z²` on the affine line has topological degree `2`, in every characteristic. -/
+theorem topologicalDegree_squareMap : (squareMap K).toRationalMap.topologicalDegree = 2 := by
   rw [topologicalDegree_toRationalMap_SpecMap_expand, Nat.card_unique, pow_one]
 
 -- In characteristic `2` as well: over `ZMod 2` the degree is still `2`.
@@ -92,16 +96,6 @@ example : (projection K).toRationalMap.topologicalDegree = 0 := by
   norm_num
 
 /-! ### `z ↦ z²` is not birational -/
-
-/-- The squaring map `z ↦ z²` of the affine line over `K`, as `Spec` of `MvPolynomial.expand 2`. -/
-noncomputable abbrev squareMap :
-    Spec (.of (MvPolynomial PUnit.{u + 1} K)) ⟶ Spec (.of (MvPolynomial PUnit.{u + 1} K)) :=
-  Spec.map (CommRingCat.ofHom
-    (MvPolynomial.expand 2 : MvPolynomial PUnit.{u + 1} K →ₐ[K] _).toRingHom)
-
-/-- `z ↦ z²` on the affine line has topological degree `2`. -/
-theorem topologicalDegree_squareMap : (squareMap K).toRationalMap.topologicalDegree = 2 := by
-  rw [topologicalDegree_toRationalMap_SpecMap_expand, Nat.card_unique, pow_one]
 
 /-- The pullback of rational functions along `z ↦ z²`, the inclusion `K(z²) ⊆ K(z)`, is not
 surjective. -/
