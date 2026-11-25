@@ -154,8 +154,7 @@ theorem exists_le_isIntegral_residueField (V₀ : ValuationSubring K) {A : Subal
   -- the image `B` of `A` in `κ(W)` lies in no proper valuation subring of `κ(W)`, since its
   -- composite with `W` would be a smaller valuation subring containing `A`
   let f : A →ₐ[k] ResidueField W := (IsScalarTower.toAlgHom k W (ResidueField W)).comp
-    ⟨A.val.toRingHom.codRestrict W fun a ↦ hAW a.property, fun c ↦
-      Subtype.ext (W.coe_algebraMap_of_isTrivialOn c).symm⟩
+    ⟨A.val.toRingHom.codRestrict W fun a ↦ hAW a.property, fun c ↦ Subtype.ext (by simp)⟩
   have hf (a : A) : f a = residue W ⟨a, hAW a.property⟩ := by
     simp only [f, AlgHom.comp_apply, IsScalarTower.coe_toAlgHom', ResidueField.algebraMap_eq]
     exact congrArg (residue W) (Subtype.ext (by simp))
