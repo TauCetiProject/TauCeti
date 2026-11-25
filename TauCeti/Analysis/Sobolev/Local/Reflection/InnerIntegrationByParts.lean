@@ -23,7 +23,7 @@ on the real axis.
 * `TauCeti.HasWeakLineDerivOn.setIntegral_im_pos_eq_zero`: if `g` and `g'` vanish off a compact
   set whose part in `{0 ≤ im}` lies in `Ω`, then `∫_{0 < im} g' = 0`, provided `v` is tangent to
   the axis, or `g` is continuous up to the axis and zero on it.
-* `TauCeti.setIntegral_im_pos_inner_fderiv_eq_neg`: for `g = w` with values in a
+* `TestFunction.setIntegral_im_pos_inner_fderiv_eq_neg`: for `g = w` with values in a
   finite-dimensional inner product space and a vector-valued test function `φ ∈ 𝓓(Ω, V)`,
   `∫_{0 < im} ⟪∂_v φ, w⟫ = -∫_{0 < im} ⟪φ, w'⟫`, under the same alternative for `⟪φ, w⟫`.
 
@@ -31,7 +31,8 @@ Both test the scalar identities `TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_s
 `TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_continuousOn` against a cutoff
 equal to `1` near the support. The bridge from local integrability up to the axis to
 integrability against test functions on the upper half-plane is
-`TauCeti.MemLpLoc.locallyIntegrableOn_restrict_setOf_im_nonneg`.
+`TauCeti.MemLpLoc.locallyIntegrableOn_restrict_setOf_im_nonneg`, which gives
+`TestFunction.integrableOn_im_pos_inner_of_memLpLoc` and its derivative form.
 -/
 
 public section
@@ -76,19 +77,45 @@ theorem HasWeakLineDerivOn.setIntegral_im_pos_eq_zero {g g' : ℂ → F} {v : �
     · exact hg.setIntegral_fderiv_smul_eq_neg_of_continuousOn hgc hg0 hg'1 hψ hψc
         fun z hz => hψΩ hz.1
   -- On the upper half-plane `ψ = 1` near `K`, so `∂_v ψ • g = 0` and `ψ • g' = g'`.
-  have hl (z : ℂ) (hz : z ∈ {z : ℂ | 0 < z.im}) : fderiv ℝ ψ z v • g z = 0 := by
+  have hl (z : ℂ) (hz : 0 < z.im) : fderiv ℝ ψ z v • g z = 0 := by
     by_cases hzK : z ∈ K
-    · have h1 : ψ =ᶠ[𝓝 z] fun _ => (1 : ℝ) := hψ1 z ⟨hzK, show (0 : ℝ) ≤ z.im from le_of_lt hz⟩
+    · have h1 : ψ =ᶠ[𝓝 z] fun _ => (1 : ℝ) := hψ1 z ⟨hzK, hz.le⟩
       simp [h1.fderiv_eq]
     · simp [hgK z hzK]
-  have hr (z : ℂ) (hz : z ∈ {z : ℂ | 0 < z.im}) : ψ z • g' z = g' z := by
+  have hr (z : ℂ) (hz : 0 < z.im) : ψ z • g' z = g' z := by
     by_cases hzK : z ∈ K
-    · simp [(hψ1 z ⟨hzK, show (0 : ℝ) ≤ z.im from le_of_lt hz⟩).self_of_nhds]
+    · simp [(hψ1 z ⟨hzK, hz.le⟩).self_of_nhds]
     · simp [hg'K z hzK]
   rwa [setIntegral_congr_fun hH hl, setIntegral_congr_fun hH hr, integral_zero, eq_comm,
     neg_eq_zero] at key
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+end TauCeti
+
+namespace TestFunction
+
+open TauCeti
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Ω : Opens ℂ}
+
+/-- The pairing of a test function with a field locally `L¹` up to the axis is integrable on the
+upper half-plane. -/
+theorem integrableOn_im_pos_inner_of_memLpLoc (φ : 𝓓(Ω, V)) {w : ℂ → V}
+    (hw : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) w) :
+    IntegrableOn (fun z => ⟪(φ : ℂ → V) z, w z⟫_ℝ) {z : ℂ | 0 < z.im} :=
+  IntegrableOn.mono_set (φ.integrable_inner hw.locallyIntegrableOn_restrict_setOf_im_nonneg)
+    (ofPred_subset_ofPred.2 fun _ h => h.le)
+
+/-- The pairing of a directional derivative of a test function with a field locally `L¹` up to
+the axis is integrable on the upper half-plane. -/
+theorem integrableOn_im_pos_inner_fderiv_of_memLpLoc (φ : 𝓓(Ω, V)) {w : ℂ → V}
+    (hw : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) w) (v : ℂ) :
+    IntegrableOn (fun z => ⟪fderiv ℝ (φ : ℂ → V) z v, w z⟫_ℝ) {z : ℂ | 0 < z.im} :=
+  IntegrableOn.mono_set
+    (φ.integrable_inner_fderiv hw.locallyIntegrableOn_restrict_setOf_im_nonneg v)
+    (ofPred_subset_ofPred.2 fun _ h => h.le)
+
+variable [FiniteDimensional ℝ V]
+
 
 /-- **Integration by parts on the upper half-plane against a vector-valued test function.** Let
 `w'` be a weak derivative of `w` in the direction `v` on the upper part of `Ω`, with `w` and `w'`
@@ -126,11 +153,8 @@ theorem setIntegral_im_pos_inner_fderiv_eq_neg (φ : 𝓓(Ω, V)) {w w' : ℂ �
     (fun z hz => by simp [image_eq_zero_of_notMem_tsupport hz])
     (fun z hz => by simp [image_eq_zero_of_notMem_tsupport hz, fderiv_of_notMem_tsupport ℝ hz])
     (hv.imp_right fun ⟨hwc, hw0⟩ => ⟨hc.inner hwc, hw0⟩)
-  have hpos : {z : ℂ | 0 < z.im} ⊆ {z | 0 ≤ z.im} := ofPred_subset_ofPred.2 fun _ => le_of_lt
-  rw [integral_add (IntegrableOn.mono_set
-    (φ.integrable_inner hw'1.locallyIntegrableOn_restrict_setOf_im_nonneg) hpos)
-    (IntegrableOn.mono_set
-      (φ.integrable_inner_fderiv hw1.locallyIntegrableOn_restrict_setOf_im_nonneg v) hpos)] at key
+  rw [integral_add (φ.integrableOn_im_pos_inner_of_memLpLoc hw'1)
+    (φ.integrableOn_im_pos_inner_fderiv_of_memLpLoc hw1 v)] at key
   linarith
 
-end TauCeti
+end TestFunction
