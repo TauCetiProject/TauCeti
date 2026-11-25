@@ -223,12 +223,9 @@ characteristic zero, `1 ⊗ D` is numerically trivial exactly when `𝒪_X(D)` i
 theorem numericallyTrivial_one_tmul_iff [CharZero K] (D : CartierDivisor X) :
     NumericallyTrivial K k x (1 ⊗ₜ D) ↔
       LineBundleClass.NumericallyTrivial k x D.toLineBundleClass := by
-  rw [numericallyTrivial_iff, LineBundleClass.numericallyTrivial_iff]
-  refine ⟨fun h C _ _ i _ hi hC ↦ ?_, fun h C _ _ _ _ i _ hi hC ↦ ?_⟩
-  · have := isProper_of_eq_comp hi
-    have := relativeDimensionLE_one_of_topologicalKrullDim_eq_one (C ↘ Spec (.of k)) hC
-    simpa using h C i hi hC
-  · simpa using h C i hi hC
+  rw [LineBundleClass.numericallyTrivial_iff]
+  refine ⟨fun h C _ _ i _ hi hC ↦ by simpa using h C i hi hC,
+    fun h ↦ numericallyTrivial_iff.mpr fun C _ _ _ _ i _ hi hC ↦ by simpa using h C i hi hC⟩
 
 variable (K k x) in
 /-- **`K`-linear equivalence implies numerical equivalence**: every `K`-combination of principal
@@ -368,21 +365,9 @@ theorem qCartierIntersectionNumber_eq_of_sub_mem_baseChange_principalSubgroup
     (h : (D - D' : ℚ ⊗[ℤ] SchemeWeilDivisor X) ∈
       (WeilDivisor.OrderSystem.ofScheme X).principalSubgroup.toIntSubmodule.baseChange ℚ) :
     qCartierIntersectionNumber k ι D = qCartierIntersectionNumber k ι D' := by
-  have hle : (WeilDivisor.OrderSystem.ofScheme X).principalSubgroup.toIntSubmodule.baseChange ℚ ≤
-      (principalSubmodule ℚ X).map (baseChangeToWeilDivisor ℚ X) := by
-    refine Submodule.baseChange_le_iff_le_comap.mpr fun w hw ↦ ?_
-    obtain ⟨g, rfl⟩ := (WeilDivisor.OrderSystem.mem_principalSubgroup _).mp hw
-    refine ⟨1 ⊗ₜ principalCartierDivisor X g.toMul,
-      tmul_mem_principalSubmodule ℚ 1 (mem_principalSubgroup.mpr ⟨_, rfl⟩), ?_⟩
-    rw [baseChangeToWeilDivisor_tmul, toWeilDivisor_principalCartierDivisor, mk_apply]
-  obtain ⟨E, hE, hED⟩ := hle h
-  have hE' : E = (qCartierEquiv X).symm D - (qCartierEquiv X).symm D' := by
-    apply baseChangeToWeilDivisor_injective ℚ
-    rw [hED, map_sub, ← coe_qCartierEquiv_apply, ← coe_qCartierEquiv_apply,
-      LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
-  have h0 := principalSubmodule_le_ker_baseChangeIntersectionNumber ℚ k ι hE
-  rw [LinearMap.mem_ker, hE', map_sub, sub_eq_zero] at h0
-  exact h0
+  rw [← sub_eq_zero, ← map_sub]
+  exact principalSubmodule_le_ker_baseChangeIntersectionNumber ℚ k ι
+    (qCartierEquiv_symm_mem_principalSubmodule h)
 
 end Weil
 

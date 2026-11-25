@@ -31,7 +31,9 @@ integer `r ≥ 1`; these form the range of that extension, a `ℚ`-subspace isom
   (`Scheme.CartierDivisor.baseChangeToWeilDivisor_injective`);
 * `Scheme.CartierDivisor.qCartierSubmodule X`: the `ℚ`-Cartier Weil divisors, characterized by
   `Scheme.CartierDivisor.mem_qCartierSubmodule_iff`;
-* `Scheme.CartierDivisor.qCartierEquiv X`: the isomorphism `Div(X)_ℚ ≃ₗ[ℚ] qCartierSubmodule X`.
+* `Scheme.CartierDivisor.qCartierEquiv X`: the isomorphism `Div(X)_ℚ ≃ₗ[ℚ] qCartierSubmodule X`,
+  which carries `ℚ`-combinations of principal Weil divisors back into `principalSubmodule ℚ X`
+  (`Scheme.CartierDivisor.qCartierEquiv_symm_mem_principalSubmodule`).
 
 ## References
 
@@ -125,6 +127,18 @@ theorem mem_qCartierSubmodule_iff {D : ℚ ⊗[ℤ] SchemeWeilDivisor X} :
     rw [Int.cast_neg, neg_smul, neg_eq_iff_eq_neg, Int.cast_natCast] at h'
     simp [h', ← toWeilDivisorHom_apply, tmul_neg]
 
+variable (X) in
+/-- Every `K`-combination of principal Weil divisors is the image of a `K`-combination of principal
+Cartier divisors under the extended Cartier-to-Weil map. -/
+theorem baseChange_principalSubgroup_le_map_principalSubmodule :
+    (WeilDivisor.OrderSystem.ofScheme X).principalSubgroup.toIntSubmodule.baseChange K ≤
+      (principalSubmodule K X).map (baseChangeToWeilDivisor K X) := by
+  refine Submodule.baseChange_le_iff_le_comap.mpr fun w hw ↦ ?_
+  obtain ⟨g, rfl⟩ := (WeilDivisor.OrderSystem.mem_principalSubgroup _).mp hw
+  refine ⟨1 ⊗ₜ principalCartierDivisor X g.toMul,
+    tmul_mem_principalSubmodule K 1 (mem_principalSubgroup.mpr ⟨_, rfl⟩), ?_⟩
+  rw [baseChangeToWeilDivisor_tmul, toWeilDivisor_principalCartierDivisor, mk_apply]
+
 variable [IsNormalScheme X]
 
 /-- On a Noetherian normal integral scheme, the Cartier-to-Weil map stays injective after
@@ -143,7 +157,17 @@ def qCartierEquiv : (ℚ ⊗[ℤ] CartierDivisor X) ≃ₗ[ℚ] qCartierSubmodul
 @[simp]
 lemma coe_qCartierEquiv_apply (E : ℚ ⊗[ℤ] CartierDivisor X) :
     (qCartierEquiv X E : ℚ ⊗[ℤ] SchemeWeilDivisor X) = baseChangeToWeilDivisor ℚ X E :=
-  (rfl)
+  LinearEquiv.ofInjective_apply _ E
+
+/-- A `ℚ`-Cartier Weil divisor that is a `ℚ`-combination of principal Weil divisors comes from a
+`ℚ`-combination of principal Cartier divisors. -/
+theorem qCartierEquiv_symm_mem_principalSubmodule {D : qCartierSubmodule X}
+    (h : (D : ℚ ⊗[ℤ] SchemeWeilDivisor X) ∈
+      (WeilDivisor.OrderSystem.ofScheme X).principalSubgroup.toIntSubmodule.baseChange ℚ) :
+    (qCartierEquiv X).symm D ∈ principalSubmodule ℚ X := by
+  obtain ⟨E, hE, hED⟩ := baseChange_principalSubgroup_le_map_principalSubmodule ℚ X h
+  rwa [(qCartierEquiv X).symm_apply_eq.mpr
+    (Subtype.ext ((coe_qCartierEquiv_apply E).trans hED)).symm]
 
 end Weil
 
