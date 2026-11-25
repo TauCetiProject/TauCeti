@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
+public import TauCeti.Analysis.Normed.Lp.ProdLp.QuadraticForm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.LinearAlgebra.Orientation.Prod
@@ -94,19 +95,24 @@ variable {V W : Type*} [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module 
 
 include hQ in
 /-- The quadratic isometry `ℂ ⊗ (V ⊕ W) ≃ (ℂ ⊗ V) × (ℂ ⊗ W)`, `z ⊗ (v, w) ↦ (z ⊗ v, z ⊗ w)`: the
-instance of `QuadraticMap.IsometryEquiv.baseChangeProd` for `WithLp.linearEquiv`. -/
+instance of `QuadraticMap.IsometryEquiv.baseChangeProd` for
+`QuadraticMap.IsometryEquiv.withLpProd`. -/
 def complexWithLpProd :
     (Q.baseChange ℂ).IsometryEquiv ((Q₁.baseChange ℂ).prod (Q₂.baseChange ℂ)) :=
-  QuadraticMap.IsometryEquiv.baseChangeProd
-    { toLinearEquiv := WithLp.linearEquiv 2 ℝ (V × W)
-      map_app' := fun x ↦ (hQ x).symm } ℂ
+  (QuadraticMap.IsometryEquiv.withLpProd hQ).baseChangeProd ℂ
+
+/-- Unfolding `CliffordAlgebra.complexWithLpProd` through
+`QuadraticMap.IsometryEquiv.withLpProd`. -/
+theorem complexWithLpProd_def :
+    complexWithLpProd hQ = (QuadraticMap.IsometryEquiv.withLpProd hQ).baseChangeProd ℂ :=
+  (rfl)
 
 /-- On pure tensors, `CliffordAlgebra.complexWithLpProd` separates the two `L²`-product
 coordinates. -/
 @[simp]
 theorem complexWithLpProd_tmul (z : ℂ) (x : WithLp 2 (V × W)) :
-    complexWithLpProd hQ (z ⊗ₜ x) = (z ⊗ₜ (WithLp.ofLp x).1, z ⊗ₜ (WithLp.ofLp x).2) :=
-  QuadraticMap.IsometryEquiv.baseChangeProd_tmul _ z x
+    complexWithLpProd hQ (z ⊗ₜ x) = (z ⊗ₜ (WithLp.ofLp x).1, z ⊗ₜ (WithLp.ofLp x).2) := by
+  simp [complexWithLpProd]
 
 end WithLpProd
 

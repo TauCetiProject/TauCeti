@@ -33,7 +33,8 @@ quadratic space's rational symmetries act on each scalar extension, and shows th
 carries the reflection in a vector `v` to the reflection in `1 ⊗ₜ v`, so that a reflection
 factorization `τ_{v₀} ⋯ τ_{vₙ₋₁}` extends to the factorization `τ_{1 ⊗ v₀} ⋯ τ_{1 ⊗ vₙ₋₁}`. Base
 change also distributes over orthogonal sums, so an isometric equivalence with an orthogonal sum
-extends to one between the base changes.
+extends to one between the base changes, compatibly with swapping summands and deleting trivial
+factors.
 
 These results complement Mathlib's construction `QuadraticForm.baseChange` and its pure-tensor
 evaluation theorem.  They allow localizations of a quadratic space to inherit maps, injective
@@ -47,6 +48,28 @@ noncomputable section
 open scoped TensorProduct
 
 universe uR uA uM uN uP
+
+section Semiring
+
+variable {R : Type uR} {A : Type uA} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  {P : Type uP} [AddCommMonoid P] [Module R P]
+  {N : Type uN} [AddCommMonoid N] [Module A N]
+  {C : Type*} [AddCommMonoid C] [Module A C]
+  {Q₁ : QuadraticMap A (A ⊗[R] P) C} {Q₂ : QuadraticMap A N C}
+
+/-- Two `A`-linear quadratic isometric equivalences out of `A ⊗[R] P` agree if they agree on all
+pure tensors `1 ⊗ₜ x`. -/
+theorem QuadraticMap.IsometryEquiv.baseChange_ext ⦃d₁ d₂ : Q₁.IsometryEquiv Q₂⦄
+    (h : ∀ x, d₁ (1 ⊗ₜ x) = d₂ (1 ⊗ₜ x)) : d₁ = d₂ :=
+  DFunLike.ext _ _ fun y ↦ by
+    induction y using TensorProduct.inductionOn with
+    | tmul a x =>
+      rw [show a ⊗ₜ[R] x = a • (1 ⊗ₜ[R] x) by
+          rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one],
+        map_smul, map_smul, h x]
+    | add u v hu hv => rw [map_add, map_add, hu, hv]
+
+end Semiring
 
 section CommRing
 
@@ -335,6 +358,42 @@ theorem QuadraticMap.IsometryEquiv.baseChangeProd_tmul
     (f : Q₃.IsometryEquiv (Q₁.prod Q₂)) (a : A) (x : P) :
     f.baseChangeProd A (a ⊗ₜ x) = (a ⊗ₜ (f x).1, a ⊗ₜ (f x).2) := by
   simp [QuadraticMap.IsometryEquiv.baseChangeProd, ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
+
+/-- Precomposing `QuadraticMap.IsometryEquiv.baseChangeProd` with a base-changed isometric
+equivalence agrees with extending the composite equivalence. -/
+theorem QuadraticMap.IsometryEquiv.baseChange_trans_baseChangeProd {M' : Type*}
+    [AddCommGroup M'] [Module R M'] {Q₄ : QuadraticForm R M'}
+    (e : Q₄.IsometryEquiv Q₃) (f : Q₃.IsometryEquiv (Q₁.prod Q₂)) :
+    (e.baseChange A).trans (f.baseChangeProd A) = (e.trans f).baseChangeProd A := by
+  rw [baseChangeProd, baseChangeProd, baseChange_trans]
+  exact DFunLike.ext _ _ fun _ ↦ rfl
+
+/-- Postcomposing `QuadraticMap.IsometryEquiv.baseChangeProd` with `IsometryEquiv.prodComm`
+agrees with extending the swapped equivalence. -/
+theorem QuadraticMap.IsometryEquiv.baseChangeProd_trans_prodComm
+    (f : Q₃.IsometryEquiv (Q₁.prod Q₂)) :
+    (f.baseChangeProd A).trans
+        (QuadraticMap.IsometryEquiv.prodComm (Q₁.baseChange A) (Q₂.baseChange A)) =
+      (f.trans (QuadraticMap.IsometryEquiv.prodComm Q₁ Q₂)).baseChangeProd A :=
+  QuadraticMap.IsometryEquiv.baseChange_ext fun _ ↦ by simp
+
+/-- Postcomposing `QuadraticMap.IsometryEquiv.baseChangeProd` with `IsometryEquiv.uniqueProd`
+agrees with extending the projected equivalence. -/
+theorem QuadraticMap.IsometryEquiv.baseChangeProd_trans_uniqueProd
+    [Unique M] [Unique (A ⊗[R] M)] (f : Q₃.IsometryEquiv (Q₁.prod Q₂)) :
+    (f.baseChangeProd A).trans
+        (QuadraticMap.IsometryEquiv.uniqueProd (Q₁.baseChange A) (Q₂.baseChange A)) =
+      (f.trans (QuadraticMap.IsometryEquiv.uniqueProd Q₁ Q₂)).baseChange A :=
+  QuadraticMap.IsometryEquiv.baseChange_ext fun _ ↦ by simp
+
+/-- Postcomposing `QuadraticMap.IsometryEquiv.baseChangeProd` with `IsometryEquiv.prodUnique`
+agrees with extending the projected equivalence. -/
+theorem QuadraticMap.IsometryEquiv.baseChangeProd_trans_prodUnique
+    [Unique N] [Unique (A ⊗[R] N)] (f : Q₃.IsometryEquiv (Q₁.prod Q₂)) :
+    (f.baseChangeProd A).trans
+        (QuadraticMap.IsometryEquiv.prodUnique (Q₁.baseChange A) (Q₂.baseChange A)) =
+      (f.trans (QuadraticMap.IsometryEquiv.prodUnique Q₁ Q₂)).baseChange A :=
+  QuadraticMap.IsometryEquiv.baseChange_ext fun _ ↦ by simp
 
 namespace QuadraticForm
 

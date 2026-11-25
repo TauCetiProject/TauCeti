@@ -71,19 +71,14 @@ theorem lid_complexProdTensor (a : CliffordAlgebra (Q.baseChange ℂ)) (z : ℂ 
       ρ₂ (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpUniqueProd hQ).baseChange ℂ) a)
         (TensorProduct.lid ℂ F z) := by
   have : Unique (ℂ ⊗[ℝ] V) := TensorProduct.uniqueRight
-  have hdiag : (map (QuadraticMap.IsometryEquiv.uniqueProd
-        (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)).toIsometry).comp
-        (equivOfIsometry (complexWithLpProd hQ)).toAlgHom =
-      (equivOfIsometry
-        ((QuadraticMap.IsometryEquiv.withLpUniqueProd hQ).baseChange ℂ)).toAlgHom :=
-    CliffordAlgebra.hom_ext <| TensorProduct.AlgebraTensorModule.ext fun c x ↦ by
-      simp [equivOfIsometry_apply]
   have hγ : ρ₁ (complexVolume Q₁ (positiveOrientation : Orientation ℝ V (Fin 0))) = 1 := by simp
   rw [complexProdTensor_def,
     AlgHom.cliffordProdTensor_congr_grading ρ₁ _ _ _ ρ₂ hγ (one_mul 1)
       (fun v ↦ by simp [Subsingleton.elim v 0]),
-    AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgHom.lid_cliffordProdTensor]
-  exact congrArg (ρ₂ · (TensorProduct.lid ℂ F z)) (DFunLike.congr_fun hdiag a)
+    AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgHom.lid_cliffordProdTensor,
+    ← equivOfIsometry_apply, ← AlgEquiv.trans_apply, equivOfIsometry_trans,
+    complexWithLpProd_def, QuadraticMap.IsometryEquiv.baseChangeProd_trans_uniqueProd,
+    ← QuadraticMap.IsometryEquiv.withLpUniqueProd_def]
 
 /-- **Left unit of `CliffordAlgebra.complexProdTensor`**: for the zero space `V` with
 `positiveOrientation`, conjugating by `TensorProduct.lid ℂ F` identifies `complexProdTensor` on
@@ -155,16 +150,11 @@ theorem rid_complexProdTensor (a : CliffordAlgebra (Q.baseChange ℂ)) (z : E �
       ρ₁ (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProdUnique hQ).baseChange ℂ) a)
         (TensorProduct.rid ℂ E z) := by
   have : Unique (ℂ ⊗[ℝ] W) := TensorProduct.uniqueRight
-  have hdiag : (map (QuadraticMap.IsometryEquiv.prodUnique
-        (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)).toIsometry).comp
-        (equivOfIsometry (complexWithLpProd hQ)).toAlgHom =
-      (equivOfIsometry
-        ((QuadraticMap.IsometryEquiv.withLpProdUnique hQ).baseChange ℂ)).toAlgHom :=
-    CliffordAlgebra.hom_ext <| TensorProduct.AlgebraTensorModule.ext fun c x ↦ by
-      simp [equivOfIsometry_apply]
   rw [complexProdTensor_def, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-    AlgHom.rid_cliffordProdTensor]
-  exact congrArg (ρ₁ · (TensorProduct.rid ℂ E z)) (DFunLike.congr_fun hdiag a)
+    AlgHom.rid_cliffordProdTensor, ← equivOfIsometry_apply, ← AlgEquiv.trans_apply,
+    equivOfIsometry_trans, complexWithLpProd_def,
+    QuadraticMap.IsometryEquiv.baseChangeProd_trans_prodUnique,
+    ← QuadraticMap.IsometryEquiv.withLpProdUnique_def]
 
 /-- **Right unit of `CliffordAlgebra.complexProdTensor`**: when `W` is trivial, conjugating by
 `TensorProduct.rid ℂ E` identifies `complexProdTensor` on `E ⊗ ℂ` with `ρ₁` pulled back along

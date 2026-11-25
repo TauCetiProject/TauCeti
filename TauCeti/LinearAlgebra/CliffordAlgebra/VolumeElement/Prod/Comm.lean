@@ -102,17 +102,19 @@ theorem koszulComm_complexProdTensor (a : CliffordAlgebra (Q.baseChange ℂ)) (z
         ((ρ₁ (complexVolume Q₁ o₁)).koszulComm (ρ₂ (complexVolume Q₂ o₂))
           (ρ₁.involutive_complexVolume o₁ hQ₁)
           (ρ₂.involutive_complexVolume o₂ hQ₂) z) := by
-  have hdiag : (map (QuadraticMap.IsometryEquiv.prodComm
-        (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)).toIsometry).comp
-        (equivOfIsometry (complexWithLpProd hQ)).toAlgHom =
-      (equivOfIsometry (complexWithLpProd hQ')).toAlgHom.comp
-        (map ((QuadraticMap.IsometryEquiv.withLpProdComm hQ hQ').toIsometry.baseChange ℂ)) :=
-    CliffordAlgebra.hom_ext <| TensorProduct.AlgebraTensorModule.ext fun c x ↦ by
-      simp [equivOfIsometry_apply]
-  have hdiag_a := DFunLike.congr_fun hdiag a
-  simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom] at hdiag_a
+  have hdiag : map (QuadraticMap.IsometryEquiv.prodComm
+        (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)).toIsometry
+        (equivOfIsometry (complexWithLpProd hQ) a) =
+      equivOfIsometry (complexWithLpProd hQ')
+        (map ((QuadraticMap.IsometryEquiv.withLpProdComm hQ hQ').toIsometry.baseChange ℂ) a) := by
+    rw [← equivOfIsometry_apply, ← AlgEquiv.trans_apply, equivOfIsometry_trans,
+      ← QuadraticMap.IsometryEquiv.baseChange_toIsometry, ← equivOfIsometry_apply,
+      ← AlgEquiv.trans_apply, equivOfIsometry_trans, complexWithLpProd_def, complexWithLpProd_def,
+      QuadraticMap.IsometryEquiv.baseChangeProd_trans_prodComm,
+      QuadraticMap.IsometryEquiv.baseChange_trans_baseChangeProd,
+      QuadraticMap.IsometryEquiv.withLpProdComm_trans_withLpProd]
   rw [complexProdTensor_def, complexProdTensor_def, AlgHom.comp_apply, AlgHom.comp_apply,
-    AlgEquiv.coe_toAlgHom, AlgEquiv.coe_toAlgHom, ← hdiag_a]
+    AlgEquiv.coe_toAlgHom, AlgEquiv.coe_toAlgHom, ← hdiag]
   exact AlgHom.koszulComm_cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
     (ρ₁.involutive_complexVolume o₁ hQ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁)
     ρ₂ (ρ₂ (complexVolume Q₂ o₂))
