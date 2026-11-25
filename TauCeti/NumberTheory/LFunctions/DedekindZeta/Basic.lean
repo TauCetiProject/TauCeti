@@ -34,6 +34,7 @@ with `riemannZeta` as punctured germs everywhere and pointwise away from the pol
 ## Main results
 
 * `TauCeti.LFunctions.meromorphicNFOn_dedekindZetaC`: it is in meromorphic normal form on `ℂ`.
+* `TauCeti.LFunctions.meromorphic_dedekindZetaC`: it is meromorphic on `ℂ`.
 * `TauCeti.LFunctions.analyticOnNhd_dedekindZetaC`: it is holomorphic on `Re s > 1`.
 * `TauCeti.LFunctions.dedekindZeta_rat_eq_riemannZeta`,
   `TauCeti.LFunctions.dedekindZetaC_rat_eventuallyEq_riemannZeta`, and
@@ -70,6 +71,11 @@ theorem dedekindZetaC_def :
 /-- The continued Dedekind zeta function is in meromorphic normal form on the plane. -/
 theorem meromorphicNFOn_dedekindZetaC : MeromorphicNFOn (dedekindZetaC K) univ :=
   meromorphicNFOn_meromorphicContinuation _ _
+
+/-- The continued Dedekind zeta function is meromorphic on the plane. -/
+@[fun_prop]
+theorem meromorphic_dedekindZetaC : Meromorphic (dedekindZetaC K) :=
+  meromorphicOn_univ.mp (meromorphicNFOn_dedekindZetaC K).meromorphicOn
 
 /-- The continued Dedekind zeta function is holomorphic on `Re s > 1`. -/
 theorem analyticOnNhd_dedekindZetaC : AnalyticOnNhd ℂ (dedekindZetaC K) {s | 1 < s.re} :=

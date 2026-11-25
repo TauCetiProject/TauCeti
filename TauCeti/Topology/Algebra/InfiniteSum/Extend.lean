@@ -33,3 +33,11 @@ theorem Function.Injective.tprod_fiber_eq_extend {α β M : Type*}
   · rw [extend_apply' _ _ _ hy]
     have : IsEmpty (f ⁻¹' {y}) := ⟨fun x ↦ hy ⟨x, x.property⟩⟩
     exact tprod_empty
+
+/-- Reindexing a fiber product over `f '' B` along a map `f` injective on `B`. -/
+@[to_additive /-- Reindexing a fiber sum over `f '' B` along a map `f` injective on `B`. -/]
+theorem Set.InjOn.tprod_fiber_image {U V W M : Type*} [CommMonoid M] [TopologicalSpace M]
+    {f : U → V} {B : Set U} (hf : InjOn f B) (g : V → W) (w : V → M) (y : W) :
+    (∏' x : ↥((f '' B) ∩ g ⁻¹' {y}), w x) = ∏' u : ↥(B ∩ (g ∘ f) ⁻¹' {y}), w (f u) := by
+  rw [← image_inter_preimage f B (g ⁻¹' {y})]
+  exact tprod_image w (hf.mono inter_subset_left)
