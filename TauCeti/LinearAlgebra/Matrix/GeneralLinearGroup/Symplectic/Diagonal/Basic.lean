@@ -112,13 +112,13 @@ theorem coe_diagonal (t : Fin m → Rˣ) :
     · simp [Matrix.diagonal_apply, finSumFinEquiv_symm_apply_castAdd]
     · have h : Fin.castAdd m i ≠ j.addNat m := by
         simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
-          Fin.natAdd_eq_addNat] using finSumFinEquiv_inl_ne_inr i j
+          Fin.natAdd_eq_addNat] using Fin.finSumFinEquiv_inl_ne_inr i j
       simp [h, finSumFinEquiv_symm_addNat,
         finSumFinEquiv_symm_apply_castAdd]
   · obtain ⟨j | j, rfl⟩ := finSumFinEquiv.surjective j
     · have h : i.addNat m ≠ Fin.castAdd m j := by
         simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
-          Fin.natAdd_eq_addNat] using finSumFinEquiv_inr_ne_inl i j
+          Fin.natAdd_eq_addNat] using Fin.finSumFinEquiv_inr_ne_inl i j
       simp [h, finSumFinEquiv_symm_addNat,
         finSumFinEquiv_symm_apply_castAdd]
     · simp only [Matrix.submatrix_apply, Equiv.symm_apply_apply,

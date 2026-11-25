@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.ExponentialRegularity
 public import TauCeti.Analysis.PDE.Vortex.Kernel.Decay
 public import TauCeti.Analysis.PDE.Vortex.WeakKernel
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
 
 /-!
 # Weighted Sobolev estimates for the kernel projection at a plane vortex
@@ -34,9 +35,9 @@ and the elliptic identification of the weak kernel with the smooth one. As a wea
 (`exp_mul_smul_mem_sobolevFields_natCast_add_one_of_memLp`).
 
 **The projection.** For an orthonormal basis `(eᵢ)` of the kernel, `Π f = ∑ᵢ ⟪eᵢ, f⟫ eᵢ`. Writing
-`⟪eᵢ, f⟫ = ∫ ⟪exp(-c ρ) eᵢ, exp(c ρ) f⟫` and using the decay of `eᵢ` at the rate `-c`, the
-coefficients are bounded by the weighted `L²` norm of `f`, and the decay of `eᵢ` at the rate `c`
-with all its derivatives gives
+`⟪eᵢ, f⟫ = ∫ ⟪exp(-c ρ) eᵢ, exp(c ρ) f⟫` (`TauCeti.abs_inner_le_of_memLp_exp_mul_smul`) and
+using the decay of `eᵢ` at the rate `-c`, the coefficients are bounded by the weighted `L²` norm
+of `f`, and the decay of `eᵢ` at the rate `c` with all its derivatives gives
 
 `‖exp(c ρ) Π f‖_(H^s) ≤ K ‖exp(c ρ) f‖_(L²)`
 
@@ -53,7 +54,20 @@ The statements are given at a smooth vortex with `|α| → 1` whose coordinates 
 derivatives of every order, and at a continuous vortex lying in the affine field space `A_m^k` for
 every `k` (`exists_norm_exp_mul_smul_starProjection_le_mul_eLpNorm_of_forall_mem_framedFieldSpace`,
 `exists_norm_exp_mul_smul_sub_starProjection_le_mul_norm_of_forall_mem_framedFieldSpace`). The
-constants depend on the vortex; nothing here is uniform over the moduli space of vortices.
+constants of these Sobolev estimates depend on the vortex.
+
+**Uniformity over windows of divisors.** In `L²`, the weighted estimates hold with one constant for
+all smooth framed vortices of degree `m` whose zeros lie in a fixed disc, collisions of zeros
+included; every compact window of `Sym ℂ m` lies in such a disc. The decay of the kernel is uniform
+there (`exists_forall_eLpNorm_exp_mul_smul_le_of_mem_weakGaugeFixedKernel_of_forall_mem_norm_le`),
+because the exterior estimate behind it is. The projection is then estimated without a basis of
+the kernel: `p = Π f` satisfies `‖p‖₂² = ⟪p, f⟫ ≤ ‖exp(-c ρ) p‖₂ ‖exp(c ρ) f‖₂`, and of the two
+weights `exp(± c ρ)` on `p` one is at most one while the other is controlled by the uniform decay.
+This gives `‖exp(c ρ) Π f‖₂ ≤ K ‖exp(c ρ) f‖₂` and `‖exp(c ρ) (f - Π f)‖₂ ≤ K ‖exp(c ρ) f‖₂` with
+`K` depending only on `m`, the radius of the disc and `c`
+(`exists_forall_eLpNorm_exp_mul_smul_starProjection_le_of_forall_mem_norm_le`,
+`exists_forall_eLpNorm_exp_mul_smul_sub_starProjection_le_of_forall_mem_norm_le`). Nothing here is
+uniform over the whole noncompact moduli space of vortices.
 
 ## Main results
 
@@ -65,6 +79,9 @@ constants depend on the vortex; nothing here is uniform over the moduli space of
   estimate for the kernel projection.
 * `TauCeti.Vortex.exists_norm_exp_mul_smul_sub_starProjection_le_mul_norm`: the weighted Sobolev
   estimate for the complementary projection.
+* `TauCeti.Vortex.exists_forall_eLpNorm_exp_mul_smul_starProjection_le_of_forall_mem_norm_le`,
+  `TauCeti.Vortex.exists_forall_eLpNorm_exp_mul_smul_sub_starProjection_le_of_forall_mem_norm_le`:
+  the weighted `L²` estimates for both projections, uniformly over a window of divisors.
 
 ## References
 
@@ -81,7 +98,7 @@ noncomputable section
 namespace TauCeti.Vortex
 
 open Complex MeasureTheory Filter BesselPotentialSpace
-open scoped Topology RealInnerProductSpace ContDiff BesselPotentialSpace
+open scoped Topology RealInnerProductSpace ContDiff BesselPotentialSpace NNReal ENNReal
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
@@ -135,28 +152,6 @@ theorem exp_mul_smul_mem_sobolevFields_of_mem_weakGaugeFixedKernel (hx : ContDif
     (memLp_exp_mul_smul_of_mem_weakGaugeFixedKernel hx hbound hsol hlim hc hu) hwf
 
 /-! ### The kernel projection -/
-
-/-- The `L²` pairing of a kernel element `e` with a field `f` is bounded by the weighted `L²` norms
-`‖exp(-c ρ) e‖₂ ‖exp(c ρ) f‖₂`. -/
-private theorem abs_inner_le_of_mem_weakGaugeFixedKernel (hx : ContDiff ℝ ∞ x)
-    (hbound : ∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
-    (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    {c : ℝ} (hc : -c < 1 / 2) {e : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)}
-    (he : e ∈ weakGaugeFixedKernel x) {f : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)}
-    (hf : MemLp (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume) :
-    |⟪e, f⟫| ≤ (eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • e z) 2 volume).toReal *
-      (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume).toReal := by
-  have he' := memLp_exp_mul_smul_of_mem_weakGaugeFixedKernel hx hbound hsol hlim hc he
-  -- Moving the weight across the pairing: `⟪e, f⟫ = ⟪exp(-c ρ) e, exp(c ρ) f⟫` in `L²`.
-  have hinner : ⟪e, f⟫ = ⟪he'.toLp _, hf.toLp _⟫ := by
-    rw [L2.inner_def, L2.inner_def]
-    refine integral_congr_ae ?_
-    filter_upwards [he'.coeFn_toLp, hf.coeFn_toLp] with z hez hfz
-    simp only [hez, hfz, real_inner_smul_left, real_inner_smul_right, ← mul_assoc, ← Real.exp_add,
-      ← add_mul, add_neg_cancel, zero_mul, Real.exp_zero, one_mul]
-  rw [hinner, ← Lp.norm_toLp _ he', ← Lp.norm_toLp _ hf]
-  exact abs_real_inner_le_norm _ _
 
 /-- **The weighted Sobolev estimate for the kernel projection.** Let `x` be a smooth solution of the
 plane vortex equations with `|α| → 1` at infinity whose coordinates have bounded derivatives of
@@ -214,8 +209,9 @@ theorem exists_norm_exp_mul_smul_starProjection_le_mul_eLpNorm {s : ℝ} (hs : 0
     rw [Finset.sum_mul]
     refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
     rw [norm_smul, Complex.norm_real, Real.norm_eq_abs]
-    have h := abs_inner_le_of_mem_weakGaugeFixedKernel hx hbound hsol hlim
-      (lt_of_le_of_lt (neg_le_abs c) hc) (he i) hf
+    have h := abs_inner_le_of_memLp_exp_mul_smul
+      (memLp_exp_mul_smul_of_mem_weakGaugeFixedKernel hx hbound hsol hlim
+        (lt_of_le_of_lt (neg_le_abs c) hc) (he i)) hf
     calc |⟪e i, f⟫| * ‖v i‖ ≤ C i * N * ‖v i‖ := by gcongr
       _ = C i * ‖v i‖ * N := by ring
 
@@ -281,7 +277,7 @@ theorem exists_norm_exp_mul_smul_starProjection_le_mul_eLpNorm_of_forall_mem_fra
         ‖u‖ ≤ K * (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume).toReal :=
   exists_norm_exp_mul_smul_starProjection_le_mul_eLpNorm hs
     (contDiff_of_forall_mem_framedFieldSpace hx hmem)
-    (fun i n ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2))) hsol
+    (exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem) hsol
     (tendsto_normSq_of_mem_framedFieldSpace one_lt_two (by exact_mod_cast hmem 2) hx) hc
 
 /-- **The weighted Sobolev estimate for the complementary projection at a vortex of every
@@ -304,7 +300,175 @@ theorem exists_norm_exp_mul_smul_sub_starProjection_le_mul_norm_of_forall_mem_fr
         ‖u‖ ≤ K * ‖v‖ :=
   exists_norm_exp_mul_smul_sub_starProjection_le_mul_norm hs
     (contDiff_of_forall_mem_framedFieldSpace hx hmem)
-    (fun i n ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2))) hsol
+    (exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem) hsol
     (tendsto_normSq_of_mem_framedFieldSpace one_lt_two (by exact_mod_cast hmem 2) hx) hc
+
+/-! ### Uniformity over windows of divisors -/
+
+/-- **Exponential decay of the weak kernel, uniformly over a window of divisors.** For every
+degree `m`, radius `R₀` and rate `c < 1/2` there is a constant `K` with the following property,
+where `ρ(z) = √(1 + |z|²)`. Let `x` be a smooth plane vortex with the degree-`m` end framing whose
+zeros lie in the closed disc of radius `R₀` and whose coordinates have bounded derivatives of every
+order. Then every element `u` of the weak `L²` kernel of `L_x` satisfies `‖exp(c ρ) u‖₂ ≤ K ‖u‖₂`.
+The constant depends only on `m`, `R₀` and `c`; the derivative bounds only serve to identify the
+weak kernel with the smooth one. -/
+theorem exists_forall_eLpNorm_exp_mul_smul_le_of_mem_weakGaugeFixedKernel_of_forall_mem_norm_le
+    (m : ℕ) (R₀ : ℝ) {c : ℝ} (hc : c < 1 / 2) :
+    ∃ K : ℝ≥0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
+      (∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C) →
+      (∀ z, equation x z = 0) →
+      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) → (∀ b ∈ D, ‖b‖ ≤ R₀) →
+      ∀ u ∈ weakGaugeFixedKernel x,
+        eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • u z) 2 volume ≤
+          K * eLpNorm u 2 volume := by
+  obtain ⟨K, hK⟩ :=
+    exists_forall_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel_of_forall_mem_norm_le m R₀ hc
+  refine ⟨K, fun x D hx hbound hsol hframe hD hD₀ u hu ↦ ?_⟩
+  obtain ⟨y, -, -, hy, huy⟩ :=
+    exists_contDiff_and_mem_gaugeFixedKernel_ae_eq_of_mem_weakGaugeFixedKernel hx hbound hu
+  have hw : (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • u z) =ᵐ[volume]
+      fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z := by
+    filter_upwards [huy] with z hz
+    rw [hz]
+  rw [eLpNorm_congr_ae hw, eLpNorm_congr_ae huy]
+  exact hK x D hx hsol hframe hD hD₀ y hy
+
+/-- At a vortex, the projection `p = Π f` onto the weak kernel satisfies
+`‖p‖₂² = ⟪p, f⟫ ≤ ‖exp(-c ρ) p‖₂ ‖exp(c ρ) f‖₂`. So if the weight `exp(-c ρ)` costs at most `a` on
+`p` and the weight `exp(c ρ)` at most `b`, then `‖exp(c ρ) p‖₂ ≤ b a ‖exp(c ρ) f‖₂`. -/
+private theorem eLpNorm_exp_mul_smul_starProjection_le (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    {c : ℝ} (hc : -c < 1 / 2) {f : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)}
+    (hf : MemLp (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume) {a b : ℝ≥0}
+    (ha : eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) •
+      (weakGaugeFixedKernel x).starProjection f z) 2 volume ≤
+        a * eLpNorm ((weakGaugeFixedKernel x).starProjection f) 2 volume)
+    (hb : eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
+      (weakGaugeFixedKernel x).starProjection f z) 2 volume ≤
+        b * eLpNorm ((weakGaugeFixedKernel x).starProjection f) 2 volume) :
+    eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
+      (weakGaugeFixedKernel x).starProjection f z) 2 volume ≤
+        (b * a : ℝ≥0) * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume := by
+  set p := (weakGaugeFixedKernel x).starProjection f
+  set N := eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume
+  -- `‖p‖₂² = ⟪p, f⟫`, since `f - p` is orthogonal to the kernel.
+  have hpf : ⟪p, f⟫ = ‖p‖ ^ 2 := by
+    have h := (weakGaugeFixedKernel x).re_inner_starProjection_eq_normSq f
+    rwa [RCLike.re_to_real, ← Submodule.norm_coe, ← Submodule.starProjection_apply] at h
+  have hpair : |⟪p, f⟫| ≤
+      (eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • p z) 2 volume).toReal * N.toReal :=
+    abs_inner_le_of_memLp_exp_mul_smul (memLp_exp_mul_smul_of_mem_weakGaugeFixedKernel hx hbound
+      hsol hlim hc ((weakGaugeFixedKernel x).starProjection_apply_mem f)) hf
+  have ha' : (eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • p z) 2 volume).toReal ≤
+      a * ‖p‖ := by
+    simpa [Lp.norm_def, ENNReal.toReal_mul] using ENNReal.toReal_mono
+      (ENNReal.mul_ne_top ENNReal.coe_ne_top (Lp.eLpNorm_ne_top p)) ha
+  -- Hence `‖p‖₂ ≤ a ‖exp(c ρ) f‖₂`.
+  have hP : ‖p‖ ≤ a * N.toReal := by
+    have h₁ : ‖p‖ ^ 2 ≤ a * ‖p‖ * N.toReal := by
+      rw [← hpf]
+      exact (le_abs_self _).trans
+        (hpair.trans (mul_le_mul_of_nonneg_right ha' ENNReal.toReal_nonneg))
+    rcases (norm_nonneg p).eq_or_lt with h | h
+    · rw [← h]
+      positivity
+    · nlinarith
+  calc _ ≤ b * eLpNorm p 2 volume := hb
+    _ = b * ENNReal.ofReal ‖p‖ := by rw [Lp.norm_def, ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top p)]
+    _ ≤ b * ENNReal.ofReal (a * N.toReal) := by gcongr
+    _ = (b * a : ℝ≥0) * N := by
+      rw [ENNReal.ofReal_mul a.coe_nonneg, ENNReal.ofReal_coe_nnreal,
+        ENNReal.ofReal_toReal hf.eLpNorm_ne_top, ENNReal.coe_mul, mul_assoc]
+
+/-- **The weighted estimate for the kernel projection, uniformly over a window of divisors.** For
+every degree `m`, radius `R₀` and rate `|c| < 1/2` there is a constant `K` with the following
+property, where `ρ(z) = √(1 + |z|²)`. Let `x` be a smooth plane vortex with the degree-`m` end
+framing whose zeros lie in the closed disc of radius `R₀` and whose coordinates have bounded
+derivatives of every order, and let `Π` be the `L²`-orthogonal projection onto the weak kernel of
+`L_x`. Then every field `f` with `exp(c ρ) f` square integrable satisfies
+
+`‖exp(c ρ) Π f‖₂ ≤ K ‖exp(c ρ) f‖₂`.
+
+The constant depends only on `m`, `R₀` and `c`, not on the vortex or on the position of its zeros
+in the disc, collisions included. -/
+theorem exists_forall_eLpNorm_exp_mul_smul_starProjection_le_of_forall_mem_norm_le (m : ℕ)
+    (R₀ : ℝ) {c : ℝ} (hc : |c| < 1 / 2) :
+    ∃ K : ℝ≥0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
+      (∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C) →
+      (∀ z, equation x z = 0) →
+      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) → (∀ b ∈ D, ‖b‖ ≤ R₀) →
+      ∀ f : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ),
+        MemLp (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume →
+        eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
+          (weakGaugeFixedKernel x).starProjection f z) 2 volume ≤
+            K * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume := by
+  obtain ⟨K, hK⟩ :=
+    exists_forall_eLpNorm_exp_mul_smul_le_of_mem_weakGaugeFixedKernel_of_forall_mem_norm_le m R₀
+      hc
+  refine ⟨K, fun x D hx hbound hsol hframe hD hD₀ f hf ↦ ?_⟩
+  set p := (weakGaugeFixedKernel x).starProjection f
+  have hKp := hK x D hx hbound hsol hframe hD hD₀ p
+    ((weakGaugeFixedKernel x).starProjection_apply_mem f)
+  -- A smaller rate gives a smaller weighted norm.
+  have hmono (c' c'' : ℝ) (h : c' ≤ c'') :
+      eLpNorm (fun z ↦ Real.exp (c' * √(1 + ‖z‖ ^ 2)) • p z) 2 volume ≤
+        eLpNorm (fun z ↦ Real.exp (c'' * √(1 + ‖z‖ ^ 2)) • p z) 2 volume := by
+    have hW : Continuous fun z : ℂ ↦ Real.exp (c' * √(1 + ‖z‖ ^ 2)) :=
+      (contDiff_exp_mul_sqrt_add_norm_sq (n := 0) c' one_pos).continuous
+    refine eLpNorm_mono (hW.aestronglyMeasurable.smul (Lp.aestronglyMeasurable p)) fun z ↦ ?_
+    rw [norm_smul, norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le,
+      Real.norm_of_nonneg (Real.exp_pos _).le]
+    gcongr
+  -- So the weights of rate at most `|c|` cost at most `K`, those of rate at most `0` at most `1`.
+  have hw (c' : ℝ) (h : c' ≤ |c|) :
+      eLpNorm (fun z ↦ Real.exp (c' * √(1 + ‖z‖ ^ 2)) • p z) 2 volume ≤
+        K * eLpNorm p 2 volume := (hmono c' |c| h).trans hKp
+  have hw₀ (c' : ℝ) (h : c' ≤ 0) :
+      eLpNorm (fun z ↦ Real.exp (c' * √(1 + ‖z‖ ^ 2)) • p z) 2 volume ≤
+        (1 : ℝ≥0) * eLpNorm p 2 volume := by
+    simpa using hmono c' 0 h
+  have hlim := tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe
+  have hc' : -c < 1 / 2 := (neg_le_abs c).trans_lt hc
+  rcases le_total 0 c with h0 | h0
+  · simpa using eLpNorm_exp_mul_smul_starProjection_le hx hbound hsol hlim hc' hf
+      (hw₀ (-c) (by linarith)) (hw c (le_abs_self c))
+  · simpa using eLpNorm_exp_mul_smul_starProjection_le hx hbound hsol hlim hc' hf
+      (hw (-c) (neg_le_abs c)) (hw₀ c h0)
+
+/-- **The weighted estimate for the complementary projection, uniformly over a window of
+divisors.** For every degree `m`, radius `R₀` and rate `|c| < 1/2` there is a constant `K` such
+that, under the hypotheses of
+`exists_forall_eLpNorm_exp_mul_smul_starProjection_le_of_forall_mem_norm_le`, the component
+`f - Π f` orthogonal to the weak kernel satisfies `‖exp(c ρ) (f - Π f)‖₂ ≤ K ‖exp(c ρ) f‖₂`. The
+constant depends only on `m`, `R₀` and `c`. -/
+theorem exists_forall_eLpNorm_exp_mul_smul_sub_starProjection_le_of_forall_mem_norm_le (m : ℕ)
+    (R₀ : ℝ) {c : ℝ} (hc : |c| < 1 / 2) :
+    ∃ K : ℝ≥0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
+      (∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C) →
+      (∀ z, equation x z = 0) →
+      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) → (∀ b ∈ D, ‖b‖ ≤ R₀) →
+      ∀ f : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ),
+        MemLp (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume →
+        eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
+          (f - (weakGaugeFixedKernel x).starProjection f) z) 2 volume ≤
+            K * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume := by
+  obtain ⟨K, hK⟩ := exists_forall_eLpNorm_exp_mul_smul_starProjection_le_of_forall_mem_norm_le m
+    R₀ hc
+  refine ⟨1 + K, fun x D hx hbound hsol hframe hD hD₀ f hf ↦ ?_⟩
+  set p := (weakGaugeFixedKernel x).starProjection f
+  have hw : (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • (f - p) z) =ᵐ[volume]
+      (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) -
+        fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • p z := by
+    filter_upwards [Lp.coeFn_sub f p] with z hz
+    rw [hz]
+    simp only [Pi.sub_apply, smul_sub]
+  rw [eLpNorm_congr_ae hw, ENNReal.coe_add, ENNReal.coe_one, add_mul, one_mul]
+  exact (eLpNorm_sub_le one_le_two).trans
+    (add_le_add le_rfl (hK x D hx hbound hsol hframe hD hD₀ f hf))
 
 end TauCeti.Vortex

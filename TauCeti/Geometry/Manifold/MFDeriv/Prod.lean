@@ -49,7 +49,8 @@ fields on a product manifold.
   factor times a function of the second factor.
 * `TauCeti.mvfderiv_comp_snd_apply_eq_smul_deriv`: for a scalar second factor, the same in terms of
   the one-variable derivative `deriv`.
-* `TauCeti.mvfderiv_curry_right`: the derivative of a slice with fixed first coordinate.
+* `TauCeti.mvfderiv_curry_left`, `TauCeti.mvfderiv_curry_right`: the derivative of a slice with
+  fixed second, respectively first, coordinate.
 * `TauCeti.mvfderiv_diag_eq_add`: the derivative of `x ↦ S(x, x)` is the sum of the two
   partial derivatives of `S` on the diagonal.
 * `TauCeti.mvfderiv_comp_prodMk_apply`: the chain rule for `y ↦ S(f y, g y)`, as the sum of the
@@ -281,6 +282,22 @@ theorem mvfderiv_comp_snd_apply_eq_smul_deriv (g : 𝕜 → F) (p : M × 𝕜)
   rw [mvfderiv_comp_snd_apply, mvfderiv_eq_fderiv]
   -- `NormedSpace.fromTangentSpace` is the identity of `𝕜`.
   exact fderiv_eq_smul_deriv (f := g) (x := p.2) (v.2 : 𝕜)
+
+/-- The derivative of a slice with fixed second coordinate is the product derivative composed
+with the inclusion of the first tangent factor. -/
+theorem mvfderiv_curry_left {f : M × N → F} (p : M) (x : N)
+    (hf : MDifferentiableAt (I.prod J) 𝓘(𝕜, F) f (p, x)) :
+    mvfderiv I (fun y ↦ f (y, x)) p =
+      (mvfderiv (I.prod J) f (p, x)).comp
+        (ContinuousLinearMap.inl 𝕜 (TangentSpace I p) (TangentSpace J x)) := by
+  have hd := mvfderiv_comp_of_eq hf
+    (mdifferentiableAt_id.prodMk mdifferentiableAt_const) (rfl : (p, x) = (p, x))
+  -- Remove the identity in the fixed-parameter inclusion `y ↦ (id y, x)`.
+  dsimp only [id_eq] at hd
+  rw [mfderiv_prod_left] at hd
+  -- The product tangent synonym and the product of tangent synonyms have the same vectors;
+  -- their `inl` maps agree pointwise.
+  exact hd.trans (by ext v; rfl)
 
 /-- The derivative of a slice with fixed first coordinate is the product derivative composed
 with the inclusion of the second tangent factor. -/
