@@ -113,19 +113,21 @@ namespace PatchedModule
 
 variable {h : π₁.comp p₁ = π₂.comp p₂} {α : BalancedExtension π₁ P₁ →ₗ[Q] BalancedExtension π₂ P₂}
 
+attribute [simp] apply_tmul_one_fst
+
 instance : Zero (PatchedModule h α) where
   zero := ⟨0, 0, by simp⟩
 
 instance : Add (PatchedModule h α) where
   add x y := ⟨x.fst + y.fst, x.snd + y.snd, by
-    simp [tmul_add, x.apply_tmul_one_fst, y.apply_tmul_one_fst]⟩
+    simp [tmul_add]⟩
 
 instance : Neg (PatchedModule h α) where
-  neg x := ⟨-x.fst, -x.snd, by simp [x.apply_tmul_one_fst]⟩
+  neg x := ⟨-x.fst, -x.snd, by simp⟩
 
 instance : Sub (PatchedModule h α) where
   sub x y := ⟨x.fst - y.fst, x.snd - y.snd, by
-    simp [tmul_sub, x.apply_tmul_one_fst, y.apply_tmul_one_fst]⟩
+    simp [tmul_sub]⟩
 
 instance : SMul ℕ (PatchedModule h α) where
   smul n x := ⟨n • x.fst, n • x.snd, by
@@ -208,6 +210,24 @@ theorem fst_lift (g₁ : N →ₛₗ[p₁] P₁) (g₂ : N →ₛₗ[p₂] P₂)
 theorem snd_lift (g₁ : N →ₛₗ[p₁] P₁) (g₂ : N →ₛₗ[p₂] P₂)
     (hg : ∀ n, α (tmul π₁ 1 (g₁ n)) = tmul π₂ 1 (g₂ n)) (n : N) :
     (lift (h := h) g₁ g₂ hg n).snd = g₂ n := (rfl)
+
+@[simp]
+theorem fstHom_comp_lift (g₁ : N →ₛₗ[p₁] P₁) (g₂ : N →ₛₗ[p₂] P₂)
+    (hg : ∀ n, α (tmul π₁ 1 (g₁ n)) = tmul π₂ 1 (g₂ n)) :
+    (fstHom h α).comp (lift g₁ g₂ hg) = g₁ := (rfl)
+
+@[simp]
+theorem sndHom_comp_lift (g₁ : N →ₛₗ[p₁] P₁) (g₂ : N →ₛₗ[p₂] P₂)
+    (hg : ∀ n, α (tmul π₁ 1 (g₁ n)) = tmul π₂ 1 (g₂ n)) :
+    (sndHom h α).comp (lift g₁ g₂ hg) = g₂ := (rfl)
+
+/-- `D`-linear maps into a patched module are determined by their two components: the uniqueness
+half of the universal property `lift`. -/
+@[ext]
+theorem hom_ext {φ ψ : N →ₗ[D] PatchedModule h α}
+    (h₁ : (fstHom h α).comp φ = (fstHom h α).comp ψ)
+    (h₂ : (sndHom h α).comp φ = (sndHom h α).comp ψ) : φ = ψ :=
+  LinearMap.ext fun n ↦ PatchedModule.ext (LinearMap.congr_fun h₁ n) (LinearMap.congr_fun h₂ n)
 
 end Lift
 
