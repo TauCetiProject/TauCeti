@@ -31,6 +31,8 @@ with the operator norm and Mathlib's `LinearMap.det`. The condition uses `det Du
   `TauCeti.IsQuasiregularOn.ae_norm_pow_le_mul_det` and `TauCeti.isQuasiregularOn_iff`: the
   condition does not depend on the choice of the weak derivative, since two weak derivatives agree
   almost everywhere (`TauCeti.HasWeakFDerivOn.ae_eq`).
+* `TauCeti.IsQuasiregularOn.ae_det_nonneg`: a quasiregular map preserves orientation almost
+  everywhere.
 * `TauCeti.IsQuasiregularOn.weaken` and `TauCeti.IsQuasiregularOn.mono`: it is monotone in `K`
   and passes to open subsets.
 * `TauCeti.isQuasiregularOn_iff_of_differentiableAt`: for `f` differentiable on `Ω` with locally
@@ -126,16 +128,23 @@ theorem isQuasiregularOn_iff {Du : E → E →L[ℝ] E} (hDu : HasWeakFDerivOn v
       hf.ae_norm_pow_le_mul_det hDu⟩,
     fun ⟨hK, hc, hint, hle⟩ ↦ ⟨hK, hc, Du, hDu, hint, hle⟩⟩
 
+/-- **Quasiregular maps preserve orientation.** Every weak derivative `Du` of a quasiregular map
+has `det Du ≥ 0` almost everywhere, since `0 ≤ ‖Du‖ⁿ ≤ K det Du` with `K > 0`. -/
+theorem IsQuasiregularOn.ae_det_nonneg (hf : IsQuasiregularOn K Ω f)
+    {Du : E → E →L[ℝ] E} (hDu : HasWeakFDerivOn volume Ω f Du) :
+    ∀ᵐ x ∂volume.restrict (Ω : Set E), 0 ≤ LinearMap.det (Du x : E →ₗ[ℝ] E) := by
+  filter_upwards [hf.ae_norm_pow_le_mul_det hDu] with x hx
+  exact nonneg_of_mul_nonneg_right ((pow_nonneg (norm_nonneg _) _).trans hx)
+    (zero_lt_one.trans_le hf.one_le)
+
 /-- A `K`-quasiregular map is `K'`-quasiregular for every `K' ≥ K`: the determinant of the weak
 derivative is almost everywhere nonnegative. -/
 theorem IsQuasiregularOn.weaken (hf : IsQuasiregularOn K Ω f) (hKK' : K ≤ K') :
     IsQuasiregularOn K' Ω f := by
-  obtain ⟨hK, hc, Du, hDu, hint, hle⟩ := hf
-  refine ⟨hK.trans hKK', hc, Du, hDu, hint, ?_⟩
-  filter_upwards [hle] with x hx
-  have hdet : 0 ≤ LinearMap.det (Du x : E →ₗ[ℝ] E) :=
-    nonneg_of_mul_nonneg_right ((pow_nonneg (norm_nonneg _) _).trans hx)
-      (zero_lt_one.trans_le hK)
+  obtain ⟨Du, hDu⟩ := hf.exists_hasWeakFDerivOn
+  refine (isQuasiregularOn_iff hDu).2 ⟨hf.one_le.trans hKK', hf.continuousOn,
+    hf.locallyIntegrableOn_norm_pow hDu, ?_⟩
+  filter_upwards [hf.ae_norm_pow_le_mul_det hDu, hf.ae_det_nonneg hDu] with x hx hdet
   exact hx.trans (mul_le_mul_of_nonneg_right hKK' hdet)
 
 /-- A map that is `K`-quasiregular on `Ω` is `K`-quasiregular on every open subset of `Ω`. -/
@@ -181,18 +190,18 @@ impossible on a set of positive measure. -/
 theorem not_isQuasiregularOn_of_eqOn_of_det_neg {U : Opens E} (hU : U ≤ Ω)
     (hUne : (U : Set E).Nonempty) {A : E →L[ℝ] E} (hA : LinearMap.det (A : E →ₗ[ℝ] E) < 0)
     (hfA : EqOn f A U) : ¬ IsQuasiregularOn K Ω f := by
-  rintro ⟨hK, -, Du, hDu, -, hle⟩
+  intro hf
+  obtain ⟨Du, hDu⟩ := hf.exists_hasWeakFDerivOn
   have hA' : HasWeakFDerivOn volume U f (fun _ ↦ A) :=
     hasWeakFDerivOn_of_hasFDerivAt_off_countable countable_empty
       (A.continuous.continuousOn.congr hfA) (locallyIntegrableOn_const A) fun x hx ↦
         A.hasFDerivAt.congr_of_eventuallyEq
           (Filter.eventuallyEq_of_mem (U.isOpen.mem_nhds hx.1) hfA)
   have hfalse : ∀ᵐ _ ∂volume.restrict (U : Set E), False := by
-    filter_upwards [(hDu.mono hU).ae_eq hA', ae_restrict_of_ae_restrict_of_subset hU hle]
-      with x hx hxle
-    rw [hx] at hxle
-    exact (mul_neg_of_pos_of_neg (zero_lt_one.trans_le hK) hA).not_ge
-      ((pow_nonneg (norm_nonneg _) _).trans hxle)
+    filter_upwards [(hDu.mono hU).ae_eq hA',
+      ae_restrict_of_ae_restrict_of_subset hU (hf.ae_det_nonneg hDu)] with x hx hdet
+    rw [hx] at hdet
+    exact hA.not_ge hdet
   rw [Filter.eventually_false_iff_eq_bot, ae_eq_bot, Measure.restrict_eq_zero] at hfalse
   exact (U.isOpen.measure_pos volume hUne).ne' hfalse
 
@@ -216,9 +225,7 @@ theorem not_isQuasiregularOn_fold {u : E} (hu : ‖u‖ = 1)
     norm_num
   · simp only [Opens.coe_inf, Opens.coe_mk, Set.mem_inter_iff, Set.mem_ofPred_eq] at hx
     have hx0 : ⟪u, x⟫ < 0 := hx.2
-    rw [ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-      Submodule.reflection_orthogonal_apply, Submodule.reflection_singleton_apply]
-    simp only [abs_of_neg hx0, hu, RCLike.ofReal_real_eq_id, id_eq, one_pow, div_one, neg_sub]
-    module
+    simp [Submodule.reflection_orthogonal_apply, Submodule.reflection_singleton_apply,
+      abs_of_neg hx0, hu, sub_eq_add_neg, add_smul, two_smul]
 
 end TauCeti
