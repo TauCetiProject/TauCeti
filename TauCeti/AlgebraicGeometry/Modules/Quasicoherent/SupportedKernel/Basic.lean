@@ -63,6 +63,8 @@ generation gives one power of the ideal.
   the basic opens of finitely many sections, the supported kernel is the power torsion of the
   ideal they generate; `mem_range_supportedKernelι_app_iff_mem_primaryComponent_of_inf_eq` is the
   same statement with `W ⊓ j.opensRange` in place of `j ''ᵁ (j ⁻¹ᵁ W)`.
+* `AlgebraicGeometry.Scheme.Modules.isZero_supportedQuotient_of_isZero_restrict`: if `N|_V` is
+  zero, so is the supported quotient.
 * `AlgebraicGeometry.Scheme.Modules.mem_range_supportedKernelι_app_iff_mem_ker_ideal`: for
   quasi-compact `j`, over an affine open `U` the supported kernel of `𝒪_Y` has the same sections
   as the ideal of `j.ker`, which cuts out the scheme-theoretic image of `j`.
@@ -305,6 +307,17 @@ theorem mem_range_supportedKernelι_app_iff_mem_primaryComponent_of_inf_eq
       s ∈ (Ideal.span (G : Set Γ(Y, W))).primaryComponent Γ(N, W) := by
   refine N.mem_range_supportedKernelι_app_iff_mem_primaryComponent _ hW G ?_ s
   rw [← hG, Scheme.Hom.image_preimage_eq_opensRange_inf, inf_comm]
+
+/-- **A module vanishing on `V` has zero supported quotient**: if `N|_V` is zero, every section of
+`N` vanishes on `V`, so the supported kernel is all of `N`. -/
+theorem isZero_supportedQuotient_of_isZero_restrict (h : IsZero (N.restrict j)) :
+    IsZero (N.supportedQuotient j) := by
+  have h₀ : ((restrictAdjunction j).unit.app N : N ⟶ (pushforward j).obj (N.restrict j)) = 0 :=
+    ((pushforward j).map_isZero h).eq_of_tgt _ _
+  have : IsIso (kernel.ι ((restrictAdjunction j).unit.app N :
+      N ⟶ (pushforward j).obj (N.restrict j))) :=
+    KernelFork.IsLimit.isIso_ι _ (limit.isLimit _) h₀
+  exact isZero_cokernel_of_epi _
 
 omit N in
 /-- **The supported kernel of `𝒪_Y` is the ideal of the scheme-theoretic image.** For a

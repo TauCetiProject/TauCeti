@@ -7,22 +7,24 @@ module
 
 public import Mathlib.Data.Fin.VecNotation
 public import TauCeti.Algebra.Lie.Free.Enveloping
+public import TauCeti.Algebra.Lie.UniversalEnveloping.BCH
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Completion.Primitive
 public import TauCeti.RingTheory.Ideal.Quotient.Nilpotent
 public import TauCeti.RingTheory.Nilpotent.BCH
 
 /-!
-# The universal Baker–Campbell–Hausdorff element
+# The universal Baker–Campbell–Hausdorff product and element
 
 For `F = FreeLieAlgebra ℚ S` graded by word length over `PositiveDegrees.naturals` with enveloping
 augmentation ideal `J`, the degree ideals agree with the lower central series of `F` and the
 enveloping degree filtration agrees with `J ^ k`. Combining
 `AlgFiltration.isCompletedGroupLike_completedExp_iff`,
 `AlgFiltration.isCompletedPrimitive_completedLog_iff`, and
-`UniversalEnvelopingAlgebra.completedPrimitiveLieEquiv` produces `bchQuotient S c x y` on
-`F ⧸ LieModule.lowerCentralSeries ℚ F F c`, uniquely characterized by
-`exp (ι_c (bchQuotient S c x y)) = exp (ι_c x) * exp (ι_c y)` in `U(F) ⧸ J ^ (c + 1)`.
-Specializing `S = Fin 2` at `X = of ℚ 0` and `Y = of ℚ 1` defines `bchElement c`.
+`UniversalEnvelopingAlgebra.completedPrimitiveLieEquiv` produces the Baker–Campbell–Hausdorff
+product `bchQuotient S c x y` on `F ⧸ LieModule.lowerCentralSeries ℚ F F c`, uniquely characterized
+by `exp (ι_c (bchQuotient S c x y)) = exp (ι_c x) * exp (ι_c y)` in `U(F) ⧸ J ^ (c + 1)`.
+Specializing `S = Fin 2` at `X = of ℚ 0` and `Y = of ℚ 1` defines the universal
+Baker–Campbell–Hausdorff element `bchElement c`.
 
 ## Main definitions
 
@@ -34,16 +36,24 @@ Specializing `S = Fin 2` at `X = of ℚ 0` and `Y = of ℚ 1` defines `bchElemen
 
 * `TauCeti.FreeLieAlgebra.lowerCentralQuotientι_bchQuotient`,
   `TauCeti.FreeLieAlgebra.exp_lowerCentralQuotientι_bchQuotient`, and
-  `TauCeti.FreeLieAlgebra.bchQuotient_unique`: log formula, exponential law, and uniqueness.
+  `TauCeti.FreeLieAlgebra.eq_bchQuotient_iff`: logarithm formula, exponential law, and uniqueness.
+* `TauCeti.FreeLieAlgebra.exists_exp_ι_eq_exp_mul_exp`: in `U(F) ⧸ J ^ (c + 1)`, a product of
+  exponentials of Lie elements is the exponential of a Lie element.
 * `TauCeti.FreeLieAlgebra.bchQuotient_assoc`,
   `TauCeti.FreeLieAlgebra.map_bchQuotient_of_lowerCentralQuotientι`,
-  `TauCeti.FreeLieAlgebra.factor_bchQuotient`, `TauCeti.FreeLieAlgebra.mapQ_bchQuotient`,
-  `TauCeti.FreeLieAlgebra.mapQ_lift_bchElement`, and
-  `TauCeti.FreeLieAlgebra.exists_bch_exp_mul_exp`: group laws, functoriality, and evaluation.
+  `TauCeti.FreeLieAlgebra.factor_bchQuotient`, `TauCeti.FreeLieAlgebra.mapQ_bchQuotient`, and
+  `TauCeti.FreeLieAlgebra.mapQ_lift_bchElement`: group laws, functoriality, and evaluation of
+  `bchElement`.
+* `TauCeti.FreeLieAlgebra.exp_lowerCentralQuotientι_bchElement`,
+  `TauCeti.FreeLieAlgebra.eq_bchElement_iff`,
+  `TauCeti.FreeLieAlgebra.lowerCentralQuotientι_bchElement`,
+  `TauCeti.FreeLieAlgebra.factor_bchElement`, and `TauCeti.FreeLieAlgebra.bchElement_three`:
+  characterization, compatibility across classes, and explicit formulas through degree three.
 
 ## References
 
-* N. Bourbaki, *Lie Groups and Lie Algebras*, Chapters 1–3, Ch. II, §6.
+* C. Reutenauer, *Free Lie Algebras*, Oxford University Press (1993), §3.1.
+* N. Bourbaki, *Lie Groups and Lie Algebras*, Chapters 1–3, Springer (1989), Chapter II, §6.
 -/
 
 public section
@@ -62,6 +72,7 @@ local notation "J" => HopfIdeal.toIdeal (HopfIdeal.augmentation ℚ U)
 local notation "ℒ" => homogeneousSubmodule ℚ S
 local notation "δ" => PositiveDegrees.naturals
 local notation "LCS" => LieModule.lowerCentralSeries ℚ F F
+local notation "ι" => _root_.UniversalEnvelopingAlgebra.ι ℚ
 local notation "ι_c" => UniversalEnvelopingAlgebra.lowerCentralQuotientι ℚ F
 
 private noncomputable abbrev freeFiltration : AlgFiltration U :=
@@ -166,44 +177,58 @@ theorem lowerCentralQuotientι_bchQuotient (c : ℕ) (x y : F ⧸ LCS c) :
 
 /-- `bchQuotient S c x y` is the unique element of the free nilpotent quotient whose exponential in
 `U(F) ⧸ J ^ (c + 1)` equals `exp (ι_c x) * exp (ι_c y)`. -/
-theorem bchQuotient_unique (c : ℕ) {x y z : F ⧸ LCS c} :
-    IsNilpotent.exp (ι_c c z) = IsNilpotent.exp (ι_c c x) * IsNilpotent.exp (ι_c c y) ↔
-      z = bchQuotient S c x y := by
-  refine ⟨fun h => lowerCentralQuotientι_injective_of_ratAlgebra ℚ S c ?_,
-    fun h => h ▸ exp_lowerCentralQuotientι_bchQuotient S c x y⟩
+theorem eq_bchQuotient_iff {c : ℕ} {x y z : F ⧸ LCS c} :
+    z = bchQuotient S c x y ↔
+      IsNilpotent.exp (ι_c c z) = IsNilpotent.exp (ι_c c x) * IsNilpotent.exp (ι_c c y) := by
+  refine ⟨fun h => h ▸ exp_lowerCentralQuotientι_bchQuotient S c x y,
+    fun h => lowerCentralQuotientι_injective_of_ratAlgebra ℚ S c ?_⟩
   rw [lowerCentralQuotientι_bchQuotient, ← h,
     IsNilpotent.log_exp (UniversalEnvelopingAlgebra.isNilpotent_lowerCentralQuotientι ℚ F c z)]
+
+/-- In the enveloping algebra of a free Lie algebra over `ℚ`, truncated at the `(c + 1)`-st power
+of the augmentation ideal, a product of the exponentials of two Lie elements is the exponential of
+a Lie element. -/
+theorem exists_exp_ι_eq_exp_mul_exp (c : ℕ) (x y : F) :
+    ∃ b : F, IsNilpotent.exp (Ideal.Quotient.mk ((J) ^ (c + 1)) (ι b)) =
+      IsNilpotent.exp (Ideal.Quotient.mk ((J) ^ (c + 1)) (ι x)) *
+        IsNilpotent.exp (Ideal.Quotient.mk ((J) ^ (c + 1)) (ι y)) := by
+  obtain ⟨b, hb⟩ := LieIdeal.surjective_mkQ (LCS c)
+    (bchQuotient S c (LieSubmodule.Quotient.mk x) (LieSubmodule.Quotient.mk y))
+  refine ⟨b, ?_⟩
+  simpa only [← hb, LieIdeal.mkQ_apply, UniversalEnvelopingAlgebra.lowerCentralQuotientι_mk] using
+    exp_lowerCentralQuotientι_bchQuotient S c
+      (LieSubmodule.Quotient.mk x) (LieSubmodule.Quotient.mk y)
 
 /-- The Baker–Campbell–Hausdorff operation on `F ⧸ lowerCentralSeries ℚ F F c` is associative. -/
 theorem bchQuotient_assoc (c : ℕ) (x y z : F ⧸ LCS c) :
     bchQuotient S c (bchQuotient S c x y) z = bchQuotient S c x (bchQuotient S c y z) := by
-  rw [← bchQuotient_unique, exp_lowerCentralQuotientι_bchQuotient,
+  rw [eq_bchQuotient_iff, exp_lowerCentralQuotientι_bchQuotient,
     exp_lowerCentralQuotientι_bchQuotient, mul_assoc, ← exp_lowerCentralQuotientι_bchQuotient]
 
 /-- Zero is a left identity for `bchQuotient`. -/
 @[simp] theorem bchQuotient_zero_left (c : ℕ) (x : F ⧸ LCS c) : bchQuotient S c 0 x = x := by
-  symm; rw [← bchQuotient_unique, map_zero, IsNilpotent.exp_zero, one_mul]
+  symm; rw [eq_bchQuotient_iff, map_zero, IsNilpotent.exp_zero, one_mul]
 
 /-- Zero is a right identity for `bchQuotient`. -/
 @[simp] theorem bchQuotient_zero_right (c : ℕ) (x : F ⧸ LCS c) : bchQuotient S c x 0 = x := by
-  symm; rw [← bchQuotient_unique, map_zero, IsNilpotent.exp_zero, mul_one]
+  symm; rw [eq_bchQuotient_iff, map_zero, IsNilpotent.exp_zero, mul_one]
 
 /-- Negation is a left inverse for `bchQuotient`. -/
 @[simp] theorem bchQuotient_neg_left (c : ℕ) (x : F ⧸ LCS c) : bchQuotient S c (-x) x = 0 := by
-  symm; rw [← bchQuotient_unique, map_zero, map_neg, IsNilpotent.exp_zero]
+  symm; rw [eq_bchQuotient_iff, map_zero, map_neg, IsNilpotent.exp_zero]
   exact (IsNilpotent.exp_neg_mul_exp_self
     (UniversalEnvelopingAlgebra.isNilpotent_lowerCentralQuotientι ℚ F c x)).symm
 
 /-- Negation is a right inverse for `bchQuotient`. -/
 @[simp] theorem bchQuotient_neg_right (c : ℕ) (x : F ⧸ LCS c) : bchQuotient S c x (-x) = 0 := by
-  symm; rw [← bchQuotient_unique, map_zero, map_neg, IsNilpotent.exp_zero]
+  symm; rw [eq_bchQuotient_iff, map_zero, map_neg, IsNilpotent.exp_zero]
   exact (IsNilpotent.exp_mul_exp_neg_self
     (UniversalEnvelopingAlgebra.isNilpotent_lowerCentralQuotientι ℚ F c x)).symm
 
 /-- Commuting elements in `F ⧸ lowerCentralSeries ℚ F F c` have `bchQuotient` equal to `x + y`. -/
 theorem bchQuotient_of_lie_eq_zero (c : ℕ) {x y : F ⧸ LCS c} (hxy : ⁅x, y⁆ = 0) :
     bchQuotient S c x y = x + y := by
-  symm; rw [← bchQuotient_unique, map_add]
+  symm; rw [eq_bchQuotient_iff, map_add]
   have hlie := congrArg (ι_c c) hxy
   rw [LieHom.map_lie, map_zero, Ring.lie_def, sub_eq_zero] at hlie
   exact IsNilpotent.exp_add_of_commute hlie
@@ -226,7 +251,7 @@ theorem map_bchQuotient_of_lowerCentralQuotientι {T : Type*} {c d : ℕ}
         φ (ι_c c z))
     (x y : F ⧸ LCS c) :
     g (bchQuotient S c x y) = bchQuotient T d (g x) (g y) := by
-  rw [← bchQuotient_unique, hg, hg, hg]
+  rw [eq_bchQuotient_iff, hg, hg, hg]
   have hnil := UniversalEnvelopingAlgebra.isNilpotent_lowerCentralQuotientι ℚ F c
   rw [← IsNilpotent.map_exp (hnil _) φ, ← IsNilpotent.map_exp (hnil x) φ,
     ← IsNilpotent.map_exp (hnil y) φ, exp_lowerCentralQuotientι_bchQuotient, map_mul]
@@ -339,23 +364,15 @@ theorem lowerCentralQuotientι_bchElement (c : ℕ) : ι₂_c c (bchElement c) =
     exp_lowerCentralQuotientι_bchQuotient (Fin 2) c
       (LieSubmodule.Quotient.mk X₀) (LieSubmodule.Quotient.mk Y₀)
 
-/-- Uniqueness of the universal Baker–Campbell–Hausdorff element of class `c`. -/
-theorem bchElement_unique (c : ℕ) {z : F₂ ⧸ LCS₂ c} :
-    IsNilpotent.exp (ι₂_c c z) = IsNilpotent.exp (Ideal.Quotient.mk ((J₂) ^ (c + 1)) (ι₂ X₀)) *
-        IsNilpotent.exp (Ideal.Quotient.mk ((J₂) ^ (c + 1)) (ι₂ Y₀)) ↔ z = bchElement c := by
-  simpa only [bchElement, UniversalEnvelopingAlgebra.lowerCentralQuotientι_mk] using
-    bchQuotient_unique (Fin 2) c
-      (x := LieSubmodule.Quotient.mk X₀) (y := LieSubmodule.Quotient.mk Y₀) (z := z)
-
-/-- Existence of a Lie representative `b : FreeLieAlgebra ℚ (Fin 2)` satisfying
-`exp (ι b) = exp (ι X) * exp (ι Y)` in `U(FreeLieAlgebra ℚ (Fin 2)) ⧸ J ^ (c + 1)`. -/
-theorem exists_bch_exp_mul_exp (c : ℕ) :
-    ∃ b : F₂, IsNilpotent.exp (Ideal.Quotient.mk ((J₂) ^ (c + 1)) (ι₂ b)) =
-      IsNilpotent.exp (Ideal.Quotient.mk ((J₂) ^ (c + 1)) (ι₂ X₀)) *
+/-- The Baker–Campbell–Hausdorff element is the unique element of the free nilpotent Lie algebra
+whose image `b` in the truncated enveloping algebra satisfies `exp b = exp X * exp Y`. -/
+theorem eq_bchElement_iff {c : ℕ} {z : F₂ ⧸ LCS₂ c} :
+    z = bchElement c ↔
+      IsNilpotent.exp (ι₂_c c z) = IsNilpotent.exp (Ideal.Quotient.mk ((J₂) ^ (c + 1)) (ι₂ X₀)) *
         IsNilpotent.exp (Ideal.Quotient.mk ((J₂) ^ (c + 1)) (ι₂ Y₀)) := by
-  obtain ⟨b, hb⟩ := LieIdeal.surjective_mkQ (LCS₂ c) (bchElement c)
-  exact ⟨b, by rw [← exp_lowerCentralQuotientι_bchElement, ← hb, LieIdeal.mkQ_apply,
-    UniversalEnvelopingAlgebra.lowerCentralQuotientι_mk]⟩
+  simpa only [bchElement, UniversalEnvelopingAlgebra.lowerCentralQuotientι_mk] using
+    eq_bchQuotient_iff (Fin 2)
+      (x := LieSubmodule.Quotient.mk X₀) (y := LieSubmodule.Quotient.mk Y₀) (z := z)
 
 /-- The elements `bchElement c` form a compatible family in the lower-central tower. -/
 @[simp] theorem factor_bchElement {c d : ℕ} (h : c ≤ d) :
@@ -366,23 +383,23 @@ theorem exists_bch_exp_mul_exp (c : ℕ) :
 @[simp] theorem bchElement_zero : bchElement 0 = 0 := bchQuotient_zero (Fin 2) _ _
 
 /-- At nilpotency class one, `bchElement 1` is `X + Y`. -/
-theorem bchElement_one :
-    bchElement 1 = (LieSubmodule.Quotient.mk X₀ : F₂ ⧸ LCS₂ 1) + LieSubmodule.Quotient.mk Y₀ :=
-  bchQuotient_one (Fin 2) _ _
+theorem bchElement_one : bchElement 1 = LieSubmodule.Quotient.mk (X₀ + Y₀) := by
+  simpa [bchElement_def] using
+    bchQuotient_one (Fin 2) (LieSubmodule.Quotient.mk X₀) (LieSubmodule.Quotient.mk Y₀)
 
 /-- At nilpotency class two, `bchElement 2` is `X + Y + (1 / 2) • ⁅X, Y⁆`. -/
-theorem bchElement_two : bchElement 2 =
-    let X : F₂ ⧸ LCS₂ 2 := LieSubmodule.Quotient.mk X₀
-    let Y : F₂ ⧸ LCS₂ 2 := LieSubmodule.Quotient.mk Y₀
-    X + Y + (1 / 2 : ℚ) • ⁅X, Y⁆ := bchQuotient_two (Fin 2) _ _
+theorem bchElement_two :
+    bchElement 2 = LieSubmodule.Quotient.mk (X₀ + Y₀ + (1 / 2 : ℚ) • ⁅X₀, Y₀⁆) := by
+  simpa [bchElement_def, LieSubmodule.Quotient.mk_bracket] using
+    bchQuotient_two (Fin 2) (LieSubmodule.Quotient.mk X₀) (LieSubmodule.Quotient.mk Y₀)
 
-/-- At nilpotency class three, `bchElement 3` is
-`X + Y + (1 / 2) • ⁅X, Y⁆ + (1 / 12) • (⁅X, ⁅X, Y⁆⁆ + ⁅Y, ⁅Y, X⁆⁆)`. -/
-theorem bchElement_three : bchElement 3 =
-    let X : F₂ ⧸ LCS₂ 3 := LieSubmodule.Quotient.mk X₀
-    let Y : F₂ ⧸ LCS₂ 3 := LieSubmodule.Quotient.mk Y₀
-    X + Y + (1 / 2 : ℚ) • ⁅X, Y⁆ + (1 / 12 : ℚ) • (⁅X, ⁅X, Y⁆⁆ + ⁅Y, ⁅Y, X⁆⁆) :=
-  bchQuotient_three (Fin 2) _ _
+/-- **The Baker–Campbell–Hausdorff element through degree three**: the element of class three is
+`X + Y + ½ ⁅X, Y⁆ + 1/12 (⁅X, ⁅X, Y⁆⁆ + ⁅Y, ⁅Y, X⁆⁆)`. -/
+theorem bchElement_three :
+    bchElement 3 = LieSubmodule.Quotient.mk (X₀ + Y₀ + (1 / 2 : ℚ) • ⁅X₀, Y₀⁆ +
+      (1 / 12 : ℚ) • (⁅X₀, ⁅X₀, Y₀⁆⁆ + ⁅Y₀, ⁅Y₀, X₀⁆⁆)) := by
+  simpa [bchElement_def, LieSubmodule.Quotient.mk_bracket] using
+    bchQuotient_three (Fin 2) (LieSubmodule.Quotient.mk X₀) (LieSubmodule.Quotient.mk Y₀)
 
 end BCHElement
 

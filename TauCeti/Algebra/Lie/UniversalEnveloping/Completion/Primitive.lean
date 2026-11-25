@@ -111,7 +111,9 @@ theorem isPrimitiveElem_decompose_of_isCompletedPrimitive
     · have hzero := (TauCeti.GradedAlgebra.mem_tensorProduct_degreeFiltration_ideal_iff 𝒰 𝒰
         d _ d _).mp hmem i j (by have := congrArg d hij; simp only [map_add] at this; omega)
       rw [map_sub] at hzero
-      rw [← hij, ← map_proj_comul ℒ u i j, sub_eq_zero.mp hzero, add_comm (u ⊗ₜ[R] (1 : U))]
+      rw [← hij]
+      conv_lhs => rw [← _root_.GradedAlgebra.proj_apply, ← map_proj_comul ℒ i j u]
+      rw [sub_eq_zero.mp hzero, add_comm (u ⊗ₜ[R] (1 : U))]
       exact map_proj_tmul_one_add_one_tmul ℒ u rfl
     · rw [map_proj_comul_eq_zero_of_mem_ne ℒ hun_mem hij, map_add,
         TauCeti.GradedAlgebra.proj_eq_homogeneousComponent,

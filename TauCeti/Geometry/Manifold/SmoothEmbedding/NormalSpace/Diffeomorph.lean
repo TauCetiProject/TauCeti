@@ -52,7 +52,7 @@ def normalBundleDiffeomorphOrthogonal (f : SmoothEmbedding I 𝓘(ℝ, V) n M V)
     letI := normalFiberBundle
       (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn))
       (f.isImmersion.mfderiv_injective hn) hdim
-    TotalSpace F (fun x => f.NormalSpace x hn) ≃ₘ^m⟮I.prod 𝓘(ℝ, F), I.prod 𝓘(ℝ, F)⟯
+    TotalSpace F (fun x => f.isImmersion.NormalSpace x hn) ≃ₘ^m⟮I.prod 𝓘(ℝ, F), I.prod 𝓘(ℝ, F)⟯
       TotalSpace F (fun x => normalSubspace I f x) := by
   let := f.orthogonalNormalSpaceFiberBundle hn hdim
   let := normalFiberBundle
@@ -98,7 +98,7 @@ variable (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
 
 /-- The smooth identification takes the orthogonal representative of each normal class. -/
 @[simp] theorem normalBundleDiffeomorphOrthogonal_apply
-    (p : TotalSpace F (fun x => f.NormalSpace x hn)) :
+    (p : TotalSpace F (fun x => f.isImmersion.NormalSpace x hn)) :
     letI := f.orthogonalNormalSpaceFiberBundle hn hdim
     letI := normalFiberBundle
       (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn))
@@ -116,7 +116,7 @@ variable (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
       (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn))
       (f.isImmersion.mfderiv_injective hn) hdim
     (f.normalBundleDiffeomorphOrthogonal hn hdim m).symm p =
-      ⟨p.proj, f.normalClass p.proj hn
+      ⟨p.proj, f.isImmersion.normalClass p.proj hn
         ((NormedSpace.fromTangentSpace (f p.proj)).symm p.snd)⟩ := by
   simpa only [← Diffeomorph.coe_toHomeomorph_symm,
     normalBundleDiffeomorphOrthogonal_toHomeomorph]

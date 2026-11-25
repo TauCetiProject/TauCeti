@@ -11,6 +11,7 @@ import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Components
 import TauCeti.Analysis.Sobolev.LipschitzDomain.SobolevEmbedding
 import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
+import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.Data.ENNReal.InterpolatedExponent
 
 /-!
@@ -45,6 +46,8 @@ strict: at `q = p⋆` the inclusion is bounded but not compact.
 
 * `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`: Rellich–Kondrachov
   compactness of `W^{1,p}(Ω) → Lᵖ(Ω)`.
+* `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv`: the same
+  on an affine-isometric copy of `Ω`.
 * `TauCeti.W1p.exists_eLpNorm_value_sub_setAverage_le_of_isLipschitzDomainWith`: the
   Poincaré–Wirtinger inequality on a bounded connected Lipschitz domain.
 * `TauCeti.W1p.exists_eqOn_setAverage_and_eLpNorm_value_sub_le_of_finite_isLipschitzDomain`:
@@ -87,6 +90,20 @@ theorem W1p.isCompactOperator_valueL_of_isLipschitzDomainWith
     rw [ContinuousLinearMap.comp_assoc, hT, ContinuousLinearMap.comp_id]
   rw [heq]
   exact hK.comp_clm T
+
+/-- **Rellich–Kondrachov on rigid copies of bounded Lipschitz domains.** Let an affine isometry
+`e` carry `U` onto a bounded Lipschitz domain `Ω ⊆ ℝ × E`, in the sense that `Ω = e⁻¹⁻¹(U)`.
+Then for `1 ≤ p ≤ ∞` the value map `W^{1,p}(U) → Lᵖ(U)` is a compact operator. -/
+theorem W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    [MeasurableSpace F] [BorelSpace F] {U : Opens F}
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) (e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
+    (hΩU : (Ω : Set (WithLp 2 (ℝ × E))) = e.symm ⁻¹' U) :
+    IsCompactOperator (W1p.valueL (mu := volume) (Omega := U) (p := p)) :=
+  W1p.isCompactOperator_valueL_of_affineIsometryEquiv e
+    (hΩU ▸ (e.toHomeomorph.toEquiv.preimage_symm_preimage U).symm)
+    (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hΩ hb)
 
 /-- **The Poincaré–Wirtinger inequality on bounded connected Lipschitz domains.** Let `Ω` be a
 bounded, preconnected Lipschitz domain, let `S ⊆ Ω` have positive measure, and let `1 ≤ p ≤ ∞`.

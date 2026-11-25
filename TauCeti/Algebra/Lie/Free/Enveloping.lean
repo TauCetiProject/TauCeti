@@ -44,6 +44,11 @@ Injectivity of `ι` holds whenever `F` is free as an `R`-module
 * `TauCeti.FreeLieAlgebra.lowerCentralQuotientι_injective`: if `ι` is injective, so is the
   induced map `TauCeti.UniversalEnvelopingAlgebra.lowerCentralQuotientι` from
   `F ⧸ lowerCentralSeries c` to `U(F) ⧸ J ^ (c + 1)`.
+* `TauCeti.FreeLieAlgebra.naturals_degreeFiltration_eq_augmentation_pow`: the same filtration
+  identification written for `PositiveDegrees.naturals`.
+* `TauCeti.FreeLieAlgebra.comap_augmentation_pow_ι_of_ratAlgebra` and
+  `TauCeti.FreeLieAlgebra.lowerCentralQuotientι_injective_of_ratAlgebra`: unconditional forms over
+  any commutative `ℚ`-algebra `R`.
 
 ## Attribution
 

@@ -6,15 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Graded.Completion
-public import TauCeti.Algebra.Lie.UniversalEnveloping.DegreeFiltration
+public import TauCeti.Algebra.Lie.UniversalEnveloping.GradedComul
 public import TauCeti.RingTheory.FilteredAlgebra.Bialgebra
 public import TauCeti.RingTheory.GradedAlgebra.Degree.TensorProduct
 
 /-!
 # Degree completions of universal enveloping algebras as completed bialgebras
 
-For a `Γ`-graded Lie algebra `L` over a commutative ring `R`, comultiplication on `U(L)` carries
-`homogeneousSubmodule ℒ n` into the sum of bidegree tensor summands `U_i ⊗ U_j` with `i + j = n`.
+For a `Γ`-graded Lie algebra `L` over a commutative ring `R`, comultiplication on `U(L)` is
+homogeneous of degree `0` (`TauCeti.UniversalEnvelopingAlgebra.isHomogeneous_comul`).
 Every nonnegative `UniversalEnvelopingAlgebra.degreeFiltration ℒ d hneg` is therefore a bialgebra
 filtration (`AlgFiltration.IsBialgFiltration`), equipping its completion with `completedCoproduct`,
 `completedCounit`, and the Lie subalgebra `completedPrimitives`. When `[IsPositiveGrading d ℒ]`,
@@ -45,106 +45,14 @@ namespace TauCeti.UniversalEnvelopingAlgebra
 
 open _root_.UniversalEnvelopingAlgebra
 
-section Support
-
-variable {Γ R L : Type*} [AddCommMonoid Γ] [CommRing R] [LieRing L] [LieAlgebra R L]
-  (ℒ : Γ → Submodule R L)
-
-local notation "U" => _root_.UniversalEnvelopingAlgebra R L
-local notation "𝒰" => homogeneousSubmodule ℒ
-
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-private def bidegreePiece (p : Γ × Γ) : Submodule R (U ⊗[R] U) :=
-  Submodule.map₂ (TensorProduct.mk R U U) (𝒰 p.1) (𝒰 p.2)
-
-private def comulHomogeneousSpan (n : Γ) : Submodule R (U ⊗[R] U) :=
-  ⨆ p : {p : Γ × Γ // p.1 + p.2 = n}, bidegreePiece ℒ p.val
-
-private theorem comulHomogeneousSpan_le_comap_mulLeft {m n : Γ} {x : L} (hx : x ∈ ℒ m) :
-    comulHomogeneousSpan ℒ n ≤ (comulHomogeneousSpan ℒ (m + n)).comap
-      (LinearMap.mulLeft R (ι R x ⊗ₜ[R] (1 : U) + (1 : U) ⊗ₜ[R] ι R x)) := by
-  refine iSup_le fun p => ?_
-  have hx' := ι_mem_homogeneousSubmodule ℒ hx
-  have hL : bidegreePiece ℒ p.val ≤ (bidegreePiece ℒ (m + p.val.1, p.val.2)).comap
-      (LinearMap.mulLeft R (ι R x ⊗ₜ[R] (1 : U))) := Submodule.map₂_le.mpr fun _ hu _ hv => by
-    simp only [Submodule.mem_comap, LinearMap.mulLeft_apply, TensorProduct.mk_apply,
-      Algebra.TensorProduct.tmul_mul_tmul, one_mul]
-    exact Submodule.apply_mem_map₂ _ (SetLike.mul_mem_graded hx' hu) hv
-  have hR : bidegreePiece ℒ p.val ≤ (bidegreePiece ℒ (p.val.1, m + p.val.2)).comap
-      (LinearMap.mulLeft R ((1 : U) ⊗ₜ[R] ι R x)) := Submodule.map₂_le.mpr fun _ hu _ hv => by
-    simp only [Submodule.mem_comap, LinearMap.mulLeft_apply, TensorProduct.mk_apply,
-      Algebra.TensorProduct.tmul_mul_tmul, one_mul]
-    exact Submodule.apply_mem_map₂ _ hu (SetLike.mul_mem_graded hx' hv)
-  intro t ht
-  simp only [Submodule.mem_comap, LinearMap.mulLeft_apply, add_mul]
-  exact add_mem
-    (le_iSup (fun q : {q : Γ × Γ // q.1 + q.2 = m + n} => bidegreePiece ℒ q.val)
-      ⟨(m + p.val.1, p.val.2), by rw [add_assoc, p.property]⟩ (hL ht))
-    (le_iSup (fun q : {q : Γ × Γ // q.1 + q.2 = m + n} => bidegreePiece ℒ q.val)
-      ⟨(p.val.1, m + p.val.2), by rw [add_left_comm, p.property]⟩ (hR ht))
-
-private theorem comul_prod_mem_comulHomogeneousSpan (l : List (Σ i, ℒ i)) :
-    Coalgebra.comul (R := R) (l.map fun x => ι R (x.2 : L)).prod ∈
-      comulHomogeneousSpan ℒ (l.map Sigma.fst).sum := by
-  induction l with
-  | nil =>
-    simp only [List.map_nil, List.prod_nil, List.sum_nil, Bialgebra.comul_one]
-    exact le_iSup (fun q : {q : Γ × Γ // q.1 + q.2 = 0} => bidegreePiece ℒ q.val)
-      ⟨(0, 0), add_zero 0⟩
-      (Submodule.apply_mem_map₂ _ (SetLike.one_mem_graded 𝒰) (SetLike.one_mem_graded 𝒰))
-  | cons a l ih =>
-    simp only [List.map_cons, List.prod_cons, List.sum_cons, Bialgebra.comul_mul, comul_ι]
-    exact comulHomogeneousSpan_le_comap_mulLeft ℒ a.2.property ih
-
-private theorem comul_mem_comulHomogeneousSpan {n : Γ} {u : U} (hu : u ∈ 𝒰 n) :
-    Coalgebra.comul (R := R) u ∈ comulHomogeneousSpan ℒ n :=
-  ((homogeneousSubmodule_le_iff ℒ n
-    ((comulHomogeneousSpan ℒ n).comap (Coalgebra.comul (R := R)))).mpr
-    fun l hl => hl ▸ comul_prod_mem_comulHomogeneousSpan ℒ l) hu
-
-end Support
-
 section GradedBialgebra
 
 variable {Γ R L : Type*} [AddCommMonoid Γ] [CommRing R] [LieRing L] [LieAlgebra R L]
   (ℒ : Γ → Submodule R L) [DecidableEq Γ] [GradedLieAlgebra ℒ]
 
 local notation "U" => _root_.UniversalEnvelopingAlgebra R L
-local notation "𝒰" => homogeneousSubmodule ℒ
 
 attribute [local instance 100] LieRing.ofAssociativeRing
-
-/-- On an enveloping element of homogeneous degree `n`, every bidegree projection of `Δ(u)` with
-`i + j ≠ n` vanishes. -/
-theorem map_proj_comul_eq_zero_of_mem_ne {n : Γ} {u : U} (hu : u ∈ 𝒰 n) {i j : Γ}
-    (hij : i + j ≠ n) :
-    TensorProduct.map (_root_.GradedAlgebra.proj 𝒰 i) (_root_.GradedAlgebra.proj 𝒰 j)
-      (Coalgebra.comul (R := R) u) = 0 := by
-  have hker : comulHomogeneousSpan ℒ n ≤ LinearMap.ker
-      (TensorProduct.map (_root_.GradedAlgebra.proj 𝒰 i) (_root_.GradedAlgebra.proj 𝒰 j)) :=
-    iSup_le fun p _ ht => LinearMap.mem_ker.mpr <| by
-      rw [TauCeti.GradedAlgebra.proj_eq_homogeneousComponent,
-        TauCeti.GradedAlgebra.proj_eq_homogeneousComponent]
-      exact TauCeti.map_homogeneousComponent_eq_zero_of_mem_ne 𝒰 𝒰 ht
-        fun hp => hij (by simpa only [hp] using p.property)
-  exact LinearMap.mem_ker.mp (hker (comul_mem_comulHomogeneousSpan ℒ hu))
-
-/-- The `(i, j)`-bidegree projection of `Δ(u)` depends only on the `(i + j)`-homogeneous component
-of `u`. -/
-theorem map_proj_comul (u : U) (i j : Γ) :
-    TensorProduct.map (_root_.GradedAlgebra.proj 𝒰 i) (_root_.GradedAlgebra.proj 𝒰 j)
-      (Coalgebra.comul (R := R) u) =
-    TensorProduct.map (_root_.GradedAlgebra.proj 𝒰 i) (_root_.GradedAlgebra.proj 𝒰 j)
-      (Coalgebra.comul (R := R) (DirectSum.decompose 𝒰 u (i + j) : U)) := by
-  induction u using _root_.DirectSum.Decomposition.inductionOn 𝒰 with
-  | zero => simp
-  | add x y hx hy => simp [hx, hy]
-  | @homogeneous m x =>
-    by_cases hm : m = i + j
-    · subst hm; rw [_root_.DirectSum.decompose_of_mem_same 𝒰 x.property]
-    · rw [map_proj_comul_eq_zero_of_mem_ne ℒ x.property (Ne.symm hm),
-        _root_.DirectSum.decompose_of_mem_ne 𝒰 x.property hm]; simp
 
 /-- Comultiplication preserves nonnegative degree filtrations on a graded enveloping algebra. -/
 theorem degreeFiltration_ideal_le_comap_comul (d : Γ →+ ℤ) (hneg : ∀ n, d n < 0 → ℒ n = ⊥) (k : ℕ) :
@@ -154,8 +62,10 @@ theorem degreeFiltration_ideal_le_comap_comul (d : Γ →+ ℤ) (hneg : ∀ n, d
     degreeFiltration_eq_gradedAlgebra_degreeFiltration ℒ d hneg,
     TauCeti.GradedAlgebra.mem_tensorProduct_degreeFiltration_ideal_iff]
   intro i j hij
-  rw [map_proj_comul, (mem_degreeFiltration_ideal_iff ℒ d hneg).mp hu (i + j)
-    (by simpa only [map_add] using hij)]; simp
+  rw [map_proj_comul ℒ i j u, _root_.GradedAlgebra.proj_apply,
+    (mem_degreeFiltration_ideal_iff ℒ d hneg).mp hu (i + j)
+      (by simpa only [map_add] using hij)]
+  simp
 
 /-- Every nonnegative degree filtration on a graded enveloping algebra is a bialgebra filtration. -/
 instance degreeFiltration_isBialgFiltration (d : Γ →+ ℤ) (hneg : ∀ n, d n < 0 → ℒ n = ⊥) :

@@ -58,8 +58,15 @@ central `p`-polynomials of positive characteristic, both live inside `U⁺(L)`.
 * `TauCeti.UniversalEnvelopingAlgebra.lowerCentralQuotientι_injective_iff`: this map is injective
   exactly when the preimage of `U⁺(L) ^ (c + 1)` under the canonical map is contained in the
   `c`-th term of the lower central series.
+* `TauCeti.UniversalEnvelopingAlgebra.lowerCentralQuotientι_mem_map_augmentation`: the image of the
+  nilpotent quotient lies in the image of the augmentation ideal.
+* `TauCeti.UniversalEnvelopingAlgebra.isNilpotent_mk_ι`: the class of a Lie element in the
+  truncated enveloping algebra is nilpotent.
 * `TauCeti.UniversalEnvelopingAlgebra.isNilpotent_lowerCentralQuotientι`: the image of the
   nilpotent quotient in the truncated enveloping algebra consists of nilpotent elements.
+* `TauCeti.UniversalEnvelopingAlgebra.augmentation_toIdeal_pow_le_comap_map` and
+  `TauCeti.UniversalEnvelopingAlgebra.lowerCentralQuotientι_mapQ`: naturality of augmentation
+  powers and `lowerCentralQuotientι` along Lie homomorphisms.
 
 ## References
 
@@ -288,14 +295,22 @@ theorem lowerCentralQuotientι_mem_map_augmentation (c : ℕ)
   rw [LieIdeal.mkQ_apply, lowerCentralQuotientι_mk]
   exact Ideal.mem_map_of_mem _ (HopfIdeal.mem_toIdeal.mpr (ι_mem_augmentation R L x))
 
+/-- The class of a Lie element in the truncated enveloping algebra `U(L) ⧸ U⁺(L) ^ (c + 1)` is
+nilpotent. -/
+theorem isNilpotent_mk_ι (c : ℕ) (x : L) :
+    IsNilpotent (Ideal.Quotient.mk ((HopfIdeal.augmentation R U).toIdeal ^ (c + 1))
+      (_root_.UniversalEnvelopingAlgebra.ι R x)) := by
+  refine ⟨c + 1, ?_⟩
+  rw [← map_pow, Ideal.Quotient.eq_zero_iff_mem]
+  exact Ideal.pow_mem_pow (HopfIdeal.mem_toIdeal.mpr (ι_mem_augmentation R L x)) _
+
 /-- Every element in the image of `lowerCentralQuotientι` is nilpotent. -/
 theorem isNilpotent_lowerCentralQuotientι (c : ℕ)
     (z : L ⧸ LieModule.lowerCentralSeries R L L c) :
     IsNilpotent (lowerCentralQuotientι R L c z) := by
   obtain ⟨z, rfl⟩ := LieIdeal.surjective_mkQ _ z
-  refine ⟨c + 1, ?_⟩
-  rw [LieIdeal.mkQ_apply, lowerCentralQuotientι_mk, ← map_pow, Ideal.Quotient.eq_zero_iff_mem]
-  exact Ideal.pow_mem_pow (HopfIdeal.mem_toIdeal.mpr (ι_mem_augmentation R L z)) _
+  rw [LieIdeal.mkQ_apply, lowerCentralQuotientι_mk]
+  exact isNilpotent_mk_ι R L c z
 
 /-- The maps `lowerCentralQuotientι` commute with the transitions to smaller nilpotency
 classes. -/
