@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.RingTheory.Henselian
 public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.Order.Compact
+import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Henselian
 import TauCeti.LinearAlgebra.Matrix.Diagonal
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.LineHyperplane
