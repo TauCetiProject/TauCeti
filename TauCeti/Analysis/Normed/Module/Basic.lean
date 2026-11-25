@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Tactic.Module
 
@@ -62,6 +63,11 @@ normed spaces:
   of the locus where `‖y‖` vanishes.
 * `IsOpen.diam_pos`: a nonempty bounded open set in a nontrivial real normed space has positive
   diameter.
+* `Units.norm_coe_zpow_smul`, `Units.exists_zpow_smul_mem_annulus`: on the nonzero vectors of a
+  normed space, the dilation by `cᵏ` for a unit `c` of the scalar field multiplies norms by
+  `‖c‖ ^ k`, so for `1 < ‖c‖` every orbit meets the annulus `1 ≤ ‖v‖ < ‖c‖`.
+* `Units.coe_zpow_smul_of_eq_algebraMap`: a unit that is the image of a real `r` acts on nonzero
+  vectors by powers of `r`.
 * `LipschitzWith.smul_const`: if a scalar function `f` is `K`-Lipschitz, then `y ↦ f y • c` is
   `K ‖c‖`-Lipschitz.
 * `LinearMap.norm_apply_le_sum_norm_mul`: for a semilinear map `L : (ι → R) →ₛₗ[σ] F` on a
@@ -279,6 +285,41 @@ theorem IsOpen.diam_pos {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [
     _ = Metric.diam (Metric.ball x r) := (Metric.diam_ball_eq x hr.le).symm
     _ ≤ Metric.diam s := Metric.diam_mono hball hb
 
+namespace Units
+
+section Norm
+
+/-! ### Norms of dilated nonzero vectors -/
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E]
+
+/-- The dilation by `cᵏ` multiplies the norm of a nonzero vector by `‖c‖ ^ k`. -/
+theorem norm_coe_zpow_smul (c : 𝕜ˣ) (k : ℤ) (v : {v : E // v ≠ 0}) :
+    ‖((c ^ k • v : {v : E // v ≠ 0}) : E)‖ = ‖(c : 𝕜)‖ ^ k * ‖(v : E)‖ := by
+  rw [Units.smul_coe, Units.smul_def, norm_smul, Units.val_zpow_eq_zpow_val, norm_zpow]
+
+/-- For `1 < ‖c‖` every nonzero vector has a multiple by a power of `c` in the annulus
+`1 ≤ ‖v‖ < ‖c‖`. -/
+theorem exists_zpow_smul_mem_annulus {c : 𝕜ˣ} (hc : 1 < ‖(c : 𝕜)‖) (v : {v : E // v ≠ 0}) :
+    ∃ k : ℤ, 1 ≤ ‖((c ^ k • v : {v : E // v ≠ 0}) : E)‖ ∧
+      ‖((c ^ k • v : {v : E // v ≠ 0}) : E)‖ < ‖(c : 𝕜)‖ := by
+  obtain ⟨k, -, hk₂, hk₁, -⟩ := rescale_to_shell_zpow hc (one_pos.trans hc) v.property
+  rw [div_self (one_pos.trans hc).ne'] at hk₁
+  refine ⟨k, ?_, ?_⟩ <;>
+    rwa [Units.smul_coe, Units.smul_def, Units.val_zpow_eq_zpow_val]
+
+/-- A power of a unit of a normed `ℝ`-algebra `𝕜` that is the image of a real `r` acts on
+nonzero vectors as the real scalar `r ^ k`. -/
+theorem coe_zpow_smul_of_eq_algebraMap [NormedAlgebra ℝ 𝕜] [NormedSpace ℝ E]
+    [IsScalarTower ℝ 𝕜 E] {c : 𝕜ˣ} {r : ℝ} (hc : (c : 𝕜) = algebraMap ℝ 𝕜 r) (k : ℤ)
+    (v : {v : E // v ≠ 0}) : ((c ^ k • v : {v : E // v ≠ 0}) : E) = (r ^ k) • (v : E) := by
+  rw [Units.smul_coe, Units.smul_def, Units.val_zpow_eq_zpow_val, hc, ← map_zpow₀,
+    algebraMap_smul]
+
+end Norm
+
+end Units
 /-- If a scalar function `f` is `K`-Lipschitz, then `y ↦ f y • c` is `K ‖c‖`-Lipschitz. -/
 theorem LipschitzWith.smul_const {α 𝕜 E : Type*} [PseudoEMetricSpace α] [SeminormedRing 𝕜]
     [SeminormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] {K : NNReal} {f : α → 𝕜}

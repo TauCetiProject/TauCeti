@@ -252,13 +252,13 @@ private theorem lintegral_ofReal_sq_mul_norm_sq_le (hx : Continuous x) {c₁ R d
 /-! ### Exponential decay of the kernel -/
 
 /-- **Exponential decay of the vortex kernel from an exterior estimate.** Let `c` be a rate, `c₁`
-a mass with `max c 0 < c₁`, and `R > 0` a radius, and put `ρ(z) = √(1 + |z|²)`. There is a
-constant `K`, depending only on `c`, `c₁` and `R`, with the following property. Let `x` be a
-continuous field for which `L_x` satisfies the exterior estimate `c₁² ∫ |u|² ≤ ∫ |L_x u|²` for
-every compactly supported `C²` variation `u` vanishing on the closed disc of radius `R`. Then every
-`C²` square-integrable solution `y` of `L_x y = 0` satisfies `‖exp(c ρ) y‖₂ ≤ K ‖y‖₂`. -/
+a mass with `max c 0 < c₁`, and `R` a radius, and put `ρ(z) = √(1 + |z|²)`. There is a constant
+`K`, depending only on `c`, `c₁` and `R`, with the following property. Let `x` be a continuous
+field for which `L_x` satisfies the exterior estimate `c₁² ∫ |u|² ≤ ∫ |L_x u|²` for every
+compactly supported `C²` variation `u` vanishing on the closed disc of radius `R`. Then every `C²`
+square-integrable solution `y` of `L_x y = 0` satisfies `‖exp(c ρ) y‖₂ ≤ K ‖y‖₂`. -/
 theorem exists_forall_eLpNorm_exp_mul_smul_le_of_mul_integral_norm_sq_le {c c₁ R : ℝ}
-    (hc₁ : max c 0 < c₁) (hR0 : 0 < R) :
+    (hc₁ : max c 0 < c₁) :
     ∃ K : ℝ≥0, ∀ x : ℂ → EuclideanSpace ℝ (Fin 4), Continuous x →
       (∀ u : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 u → HasCompactSupport u →
         (∀ z, ‖z‖ ≤ R → u z = 0) →
@@ -268,12 +268,15 @@ theorem exists_forall_eLpNorm_exp_mul_smul_le_of_mul_integral_norm_sq_le {c c₁
   -- Work with the rate `d = max c 0`, below the exterior mass `c₁`.
   set d := max c 0
   have hd0 : 0 ≤ d := le_max_right _ _
-  -- `b` is one on the disc of radius `R` and vanishes beyond `2 R`; the cutoff is `1 - b`.
+  -- The exterior estimate also holds outside every disc of radius `R' ≥ R`; take `R' > 0`.
+  obtain ⟨R', hR'0, hRR'⟩ : ∃ R', 0 < R' ∧ R ≤ R' :=
+    ⟨max R 1, lt_max_of_lt_right one_pos, le_max_left R 1⟩
+  -- `b` is one on the disc of radius `R'` and vanishes beyond `2 R'`; the cutoff is `1 - b`.
   obtain ⟨A, hA, hcut⟩ := exists_cutoff_fderiv_bound (E := ℂ)
-  obtain ⟨b, b', hb, hb01, hb1, hb0, hbd, hbb, hb'c, hb'0⟩ := hcut 0 R hR0
+  obtain ⟨b, b', hb, hb01, hb1, hb0, hbd, hbb, hb'c, hb'0⟩ := hcut 0 R' hR'0
   set W : ℂ → ℝ := fun z ↦ Real.exp (d * √(1 + ‖z‖ ^ 2))
-  set E := Real.exp (d * √(1 + (2 * R) ^ 2))
-  set K := 2 * ((2 * d * (A * R⁻¹) + (A * R⁻¹) ^ 2) * E ^ 2 / (c₁ ^ 2 - d ^ 2)) + 2 * E ^ 2
+  set E := Real.exp (d * √(1 + (2 * R') ^ 2))
+  set K := 2 * ((2 * d * (A * R'⁻¹) + (A * R'⁻¹) ^ 2) * E ^ 2 / (c₁ ^ 2 - d ^ 2)) + 2 * E ^ 2
   have hK : 0 ≤ K := by
     have : 0 < c₁ ^ 2 - d ^ 2 := by nlinarith
     positivity
@@ -284,7 +287,8 @@ theorem exists_forall_eLpNorm_exp_mul_smul_le_of_mul_integral_norm_sq_le {c c₁
       ‖y z‖ ^ 2) ≤ ENNReal.ofReal (K * ∫ z, ‖y z‖ ^ 2) := by
     have hε : 0 < 1 / ((n : ℝ) + 1) := by positivity
     have hV0 := exp_div_one_add_mul_exp_nonneg (E := ℂ) (b := 1) d hε.le
-    refine lintegral_ofReal_sq_mul_norm_sq_le hx hR hd0 hc₁
+    refine lintegral_ofReal_sq_mul_norm_sq_le hx
+      (fun u hu huc hu0 ↦ hR u hu huc fun z hz ↦ hu0 z (hz.trans hRR')) hd0 hc₁
       (Real.exp_pos _).le (hb 2) hb01 (fun z hz ↦ hb1 z (by simpa using hz))
       (fun z hz ↦ hb0 z (by simpa using hz)) hbd hbb hb'c
       (fun z hz ↦ hb'0 z (by simpa using hz))
@@ -323,11 +327,11 @@ theorem exists_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel (hx : ContDiff �
       eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 ≤ K * eLpNorm y 2 := by
   -- An exterior mass strictly between `max c 0` and `1 / 2`.
   have hd : max c 0 < 1 / 2 := max_lt hc (by norm_num)
-  obtain ⟨R, hR0, hR⟩ := exists_exterior_integral_norm_sq_gaugeFixedOperator_ge (μ := volume)
+  obtain ⟨R, -, hR⟩ := exists_exterior_integral_norm_sq_gaugeFixedOperator_ge (μ := volume)
     hx hsol hlim hcov (c := (max c 0 + 1 / 2) / 2) (by linarith [le_max_right c 0])
     (by linarith)
   obtain ⟨K, hK⟩ := exists_forall_eLpNorm_exp_mul_smul_le_of_mul_integral_norm_sq_le (c := c)
-    (c₁ := (max c 0 + 1 / 2) / 2) (by linarith) hR0
+    (c₁ := (max c 0 + 1 / 2) / 2) (by linarith)
   exact ⟨K, hK x hx.continuous hR⟩
 
 /-- **Exponential decay of the vortex kernel, uniformly over a window of divisors.** For every
@@ -353,11 +357,11 @@ theorem exists_forall_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel_of_forall_
   have hc₁ : |(max c 0 + 1 / 2) / 2| < 1 / 2 := by
     rw [abs_of_pos (by linarith [le_max_right c 0])]
     linarith
-  obtain ⟨R, hR0, hR⟩ :=
+  obtain ⟨R, -, hR⟩ :=
     exists_forall_exterior_integral_norm_sq_gaugeFixedOperator_ge_of_forall_mem_norm_le
       (μ := volume) m R₀ hc₁
   obtain ⟨K, hK⟩ := exists_forall_eLpNorm_exp_mul_smul_le_of_mul_integral_norm_sq_le (c := c)
-    (c₁ := (max c 0 + 1 / 2) / 2) (by linarith) hR0
+    (c₁ := (max c 0 + 1 / 2) / 2) (by linarith)
   exact ⟨K, fun x D hx hsol hframe hD hD₀ ↦ hK x hx.continuous (hR x D hx hsol hframe hD hD₀)⟩
 
 /-- **Kernel elements of the vortex operator decay exponentially.** Let `x` be a `C¹` plane vortex
