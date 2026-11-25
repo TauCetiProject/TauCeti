@@ -27,7 +27,9 @@ series `∑ₙ e_{h,n} • dₙ` of Amice's vectors, with `dₙ → 0`, and its 
 `aₙ = ⌊n / pʰ⌋! dₙ` (`TauCeti.AnalyticStage.mahlerEquiv_eval`). On the other hand `μ` takes the
 value `⌊n / pʰ⌋! dₙ bₙ` on `e_{h,n} • dₙ` (`TauCeti.LocallyAnalyticDistribution.stage_amiceTerm`),
 and its restriction to `LA_h(K)` is continuous, so the value of `μ` is the convergent sum
-`∑ₙ bₙ aₙ`. The Mahler coefficients of `χ_z` are the powers `zⁿ`
+`∑ₙ bₙ aₙ`
+(`TauCeti.LocallyAnalyticDistribution.hasSum_coeff_amiceTransform_smul_mahlerEquiv`). The Mahler
+coefficients of `χ_z` are the powers `zⁿ`
 (`PadicInt.mahlerEquiv_eq_pow_of_coe_eq_addChar`). No `ℚ_p`-structure on `K` is needed for this.
 
 When `K` is moreover a normed `ℚ_p`-module, the character `χ_z` is locally analytic for every `z`
@@ -37,9 +39,6 @@ the restriction of `μ` to `LA_h(K)` takes the value `A_μ(z)`.
 
 ## Main results
 
-* `TauCeti.LocallyAnalyticDistribution.hasSum_coeff_amiceTransform_smul_mahlerEquiv`: on every
-  locally analytic function `f`, `μ` takes the value of the convergent series `∑ₙ bₙ aₙ` of its
-  moments against the Mahler coefficients of `f`.
 * `TauCeti.LocallyAnalyticDistribution.hasSum_coeff_amiceTransform_smul_pow`: on every locally
   analytic function evaluating to `χ_z`, `μ` takes the value of the convergent series `∑ₙ bₙ zⁿ`.
 * `TauCeti.LocallyAnalyticDistribution.apply_eq_evalAt_amiceTransform`: `μ` takes the value
@@ -66,21 +65,6 @@ open AnalyticStage LocallyAnalytic
 
 variable {K : Type*} [NontriviallyNormedField K] [Algebra ℤ_[p] K] [IsBoundedSMul ℤ_[p] K]
   [IsUltrametricDist K] [CompleteSpace K]
-
-/-- **Integration in Mahler coordinates.** On every locally analytic function `f`, a locally
-analytic distribution `μ` takes the value `∑ₙ bₙ aₙ`, the series of its moments `bₙ` against the
-Mahler coefficients `aₙ` of `f`, and this series converges. -/
-theorem hasSum_coeff_amiceTransform_smul_mahlerEquiv (μ : LocallyAnalyticDistribution p K)
-    (f : LocallyAnalytic p K K) :
-    HasSum
-      (fun n ↦ (amiceTransform μ).coeff n • PadicInt.mahlerEquiv K (LocallyAnalytic.eval K f) n)
-      ((μ : Module.Dual K (LocallyAnalytic p K K)) f) := by
-  obtain ⟨h, c, rfl⟩ := exists_ofStage K f
-  have hsum := (hasSum_amiceMap K ((amiceEquiv p h K).symm c)).mapL (stage h μ)
-  rw [← amiceEquiv_apply, LinearIsometryEquiv.apply_symm_apply] at hsum
-  rw [← stage_apply]
-  convert hsum using 2 with n
-  rw [stage_amiceTerm, eval_ofStage, mahlerEquiv_eval, nsmul_eq_mul, smul_eq_mul, mul_comm]
 
 /-- **Integration of characters, as a convergent series.** On every locally analytic function `f`
 evaluating to the character `χ_z(x) = (1 + z) ^ x`, a locally analytic distribution `μ` takes the
