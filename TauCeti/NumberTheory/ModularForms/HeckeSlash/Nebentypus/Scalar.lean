@@ -95,7 +95,7 @@ theorem twistedHeckeSlashSumCharEnd_diagCosetGamma0_const (c : ℕ) (hc : 0 < c)
       ((χ (ZMod.unitOfCoprime c hcN) : ℂ) * (c : ℂ) ^ (k - 2)) • 1 := by
   refine LinearMap.ext fun f ↦ Subtype.ext ?_
   rw [coe_twistedHeckeSlashSumCharEnd, LinearMap.smul_apply, one_apply_eq_self]
-  exact twistedHeckeSlashSum_diagCosetGamma0_const k χ c hc hcN f f.2
+  exact twistedHeckeSlashSum_diagCosetGamma0_const k χ c hc hcN f f.property
 
 /-- The constant diagonal double coset acts on modular forms by
 `χ(c) * c ^ (k - 2)`. -/
@@ -112,7 +112,7 @@ theorem twistedHeckeSlashModularFormCharEnd_diagCosetGamma0_const
   rw [coe_twistedHeckeSlashModularFormCharEnd]
   have h := congrFun (twistedHeckeSlashSum_diagCosetGamma0_const k χ c hc hcN
     (⇑(f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k))
-    ((coe_mem_functionCharSpace_iff k χ _).mpr f.2)) z
+    ((coe_mem_functionCharSpace_iff k χ _).mpr f.property)) z
   -- This exposes only scalar multiplication through the endomorphism, subtype, bundled form,
   -- and function coercions; `h` is the function-space mathematical statement.
   change twistedHeckeSlashSum k χ _
@@ -135,7 +135,7 @@ theorem twistedHeckeSlashCuspFormCharEnd_diagCosetGamma0_const
   rw [coe_twistedHeckeSlashCuspFormCharEnd]
   have hmem : ⇑(f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ functionCharSpace k χ :=
     (coe_mem_functionCharSpace_iff k χ _).mpr
-      ((coe_mem_modFormCharSpace_iff k χ _).mpr f.2)
+      ((coe_mem_modFormCharSpace_iff k χ _).mpr f.property)
   have h := congrFun (twistedHeckeSlashSum_diagCosetGamma0_const k χ c hc hcN
     (⇑(f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)) hmem) z
   -- As above, this exposes only the bundled scalar/coercion layers before applying the

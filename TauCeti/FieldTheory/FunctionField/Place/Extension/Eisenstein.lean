@@ -242,7 +242,7 @@ theorem isEisensteinAt_map (P : Place k F) {ψ : Polynomial P.integers}
       h.leading (by rw [h0]; exact Submodule.zero_mem _)
     have hlc0 : (ψ.leadingCoeff : F) ≠ 0 := fun h0 => hlcne (Subtype.ext h0)
     have hnonneg : 0 ≤ P.ord (ψ.leadingCoeff : F) :=
-      P.mem_integers_iff_ord_nonneg.mp ψ.leadingCoeff.2
+      P.mem_integers_iff_ord_nonneg.mp ψ.leadingCoeff.property
     have hnotpos : ¬0 < P.ord (ψ.leadingCoeff : F) := fun hp =>
       h.leading ((P.mem_maximalIdeal_iff_ord_pos hlc0).mpr hp)
     rw [hlc]
@@ -269,7 +269,7 @@ private theorem valuation_lt_of_ord_lt {a b : F'} (hb : b ≠ 0)
     (h : a ≠ 0 → P'.ord b < P'.ord a) : P'.valuation a < P'.valuation b := by
   rcases eq_or_ne a 0 with rfl | ha
   · rw [map_zero]
-    exact zero_lt_iff.mpr (P'.valuation.ne_zero_iff.mpr hb)
+    exact pos_iff_ne_zero.mpr (P'.valuation.ne_zero_iff.mpr hb)
   · rw [P'.valuation_eq_exp_neg_ord ha, P'.valuation_eq_exp_neg_ord hb, WithZero.exp_lt_exp]
     have := h ha
     omega

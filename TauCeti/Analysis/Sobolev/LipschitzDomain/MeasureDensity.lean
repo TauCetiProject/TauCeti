@@ -58,6 +58,7 @@ to `R` reduce to the radius `ρ` at the cost of the factor `ρ / R`.
   inside a chart.
 * `Set.IsLipschitzDomain.exists_ball_subset_inter_ball`: the interior corkscrew condition of a
   Lipschitz domain with compact frontier.
+* `Set.IsLipschitzDomain.exists_closedBall_subset_inter_ball`: its form with closed inner balls.
 * `Set.IsLipschitzDomain.exists_pos_mul_measure_ball_le_measure_ball_inter`,
   `Set.IsLipschitzDomain.exists_pos_mul_measure_closedBall_le_measure_closedBall_inter`: the
   measure density property of a Lipschitz domain with compact frontier, for open and closed balls.
@@ -66,6 +67,8 @@ to `R` reduce to the radius `ρ` at the cost of the factor `ρ / R`.
 * `Set.IsLipschitzDomain.exists_pos_mul_measure_ball_le_measure_ball_sdiff_closure`,
   `Set.IsLipschitzDomain.exists_pos_mul_measure_closedBall_le_measure_closedBall_sdiff_closure`:
   the exterior measure density property of a Lipschitz domain with compact frontier.
+* `Set.IsLipschitzDomain.exists_pos_mul_measureReal_ball_le_measureReal_ball_diff`: its real-valued
+  form `c μ(B(x, r)) ≤ μ(B(x, r) \ Ω)`, the exterior density hypothesis of the boundary estimates.
 * `Set.IsLipschitzDomain.exists_holderOnWith_ae_eq_iff_campanatoSeminormPow_ne_top`: Campanato's
   characterization `𝓛^{p, n + p α}(Ω) = C^{0,α}(Ω)` on a bounded Lipschitz domain.
 
@@ -107,7 +110,7 @@ theorem exists_ball_subset_inter_ball (hc : Ω.IsLipschitzChart e γ K h r) {z :
   have hzC : e z ∈ normalCylinder h r := hball (mem_ball_self (by positivity))
   -- In the chart, `z` lies on or above the graph.
   have hzγ : γ (e z).snd ≤ (e z).fst := (hc.mem_closure_iff hzC).1 hz
-  have hK : (0 : ℝ) ≤ K := K.2
+  have hK : (0 : ℝ) ≤ K := K.property
   set t := s / (1 + K) with ht_def
   have _ : 0 < t := by positivity
   have hts : t ≤ s := div_le_self hs.le (by linarith)
@@ -158,7 +161,7 @@ theorem exists_ball_subset_inter_ball (hΩ : Ω.IsLipschitzDomain E)
   obtain ⟨K, m, e, γ, h, ρ, hc, hcov⟩ := hΩ.exists_finite_cover hK
   obtain ⟨ρ₀, hρ₀, hleb⟩ := lebesgue_number_lemma_of_metric hK
     (fun i ↦ (isOpen_normalCylinder (h i) (ρ i)).preimage (e i).continuous) hcov
-  have hK : (0 : ℝ) ≤ K := K.2
+  have hK : (0 : ℝ) ≤ K := K.property
   -- The corkscrew condition at radii up to the Lebesgue number `ρ₀`, with `δ = 1 / (4 (1 + K))`.
   have hsmall : ∀ x ∈ closure Ω, ∀ r : ℝ, 0 < r → r ≤ ρ₀ →
       ∃ y, ball y (r / 4 / (1 + K)) ⊆ Ω ∩ ball x r := by
@@ -197,6 +200,20 @@ theorem exists_ball_subset_inter_ball (hΩ : Ω.IsLipschitzDomain E)
   calc 1 / 4 / (1 + K) * min 1 (ρ₀ / R) * r = 1 / 4 / (1 + K) * (min 1 (ρ₀ / R) * r) := by ring
     _ ≤ 1 / 4 / (1 + K) * min r ρ₀ := by gcongr
     _ = min r ρ₀ / 4 / (1 + K) := by ring
+
+/-- **The interior corkscrew condition with closed balls.** For a Lipschitz domain `Ω` with compact
+frontier and `R > 0` there is `0 < c ≤ 1` such that for every `x` in the closure of `Ω` and every
+`0 < r ≤ R`, the ball `B(x, r)` contains a closed ball of radius `c r` lying in `Ω`. This is the
+form of `Set.IsLipschitzDomain.exists_ball_subset_inter_ball` that estimates on closed balls
+centred in `Ω` use. -/
+theorem exists_closedBall_subset_inter_ball (hΩ : Ω.IsLipschitzDomain E)
+    (hK : IsCompact (frontier Ω)) {R : ℝ} (hR : 0 < R) :
+    ∃ c > 0, c ≤ 1 ∧ ∀ x ∈ closure Ω, ∀ r : ℝ, 0 < r → r ≤ R →
+      ∃ y, closedBall y (c * r) ⊆ Ω ∩ ball x r := by
+  obtain ⟨δ, hδ, hball⟩ := hΩ.exists_ball_subset_inter_ball hK hR
+  refine ⟨min δ 1 / 2, by positivity, by linarith [min_le_right δ 1], fun x hx r hr hrR ↦ ?_⟩
+  obtain ⟨y, hy⟩ := hball x hx r hr hrR
+  exact ⟨y, (closedBall_subset_ball (by nlinarith [min_le_left δ 1])).trans hy⟩
 
 /-- **The exterior corkscrew condition.** For a Lipschitz domain `Ω` with compact frontier, for
 instance a bounded Lipschitz domain in a proper space, and `R > 0` there is `δ > 0` such that for
@@ -258,6 +275,22 @@ theorem exists_pos_mul_measure_ball_le_measure_ball_sdiff_closure
   refine ⟨c, hc, fun x hx r hr hrR ↦ ?_⟩
   rw [sdiff_eq]
   exact hdens x (hΩ.closure_compl_closure ▸ mem_compl hx) r hr hrR
+
+/-- **The exterior measure density property of a Lipschitz domain, in real form.** For a
+Lipschitz domain `Ω` with compact frontier, an additive Haar measure `μ` and `R > 0`, there is a
+real `c > 0` such that `c μ(B(x, r)) ≤ μ(B(x, r) \ Ω)` for every `x ∉ Ω` and every `0 < r ≤ R`,
+where `B(x, r)` is the open ball and the measures are real-valued. -/
+theorem exists_pos_mul_measureReal_ball_le_measureReal_ball_diff
+    (hΩ : Ω.IsLipschitzDomain E) (hK : IsCompact (frontier Ω)) {R : ℝ} (hR : 0 < R) :
+    ∃ c : ℝ, 0 < c ∧ ∀ x ∉ Ω, ∀ r : ℝ, 0 < r → r ≤ R →
+      c * μ.real (ball x r) ≤ μ.real (ball x r \ Ω) := by
+  obtain ⟨c, hc, hdens⟩ :=
+    hΩ.exists_pos_mul_measure_ball_le_measure_ball_sdiff_closure (μ := μ) hK hR
+  refine ⟨c, hc, fun x hx r hr hrR ↦ ?_⟩
+  have hdens' := (hdens x hx r hr hrR).trans
+    (measure_mono (sdiff_subset_sdiff_right subset_closure))
+  rw [measureReal_def, measureReal_def, ← ENNReal.coe_toReal, ← ENNReal.toReal_mul]
+  exact ENNReal.toReal_mono ((measure_mono sdiff_subset).trans_lt measure_ball_lt_top).ne hdens'
 
 /-- **The exterior measure density property of a Lipschitz domain.** For a Lipschitz domain `Ω`
 with compact frontier, an additive Haar measure `μ` and `R > 0`, there is `c > 0` such that

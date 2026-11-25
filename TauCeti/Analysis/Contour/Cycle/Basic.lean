@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.FreeAbelianGroup.Finsupp
 public import TauCeti.Analysis.Contour.Curve.Integrability
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # Cycles of piecewise-`C¹` curves
@@ -17,7 +18,7 @@ file packages that definition as the free abelian group on parametrized closed c
 the contour integral and winding number additively from curves to cycles.
 
 Individual curves remain functions on real intervals, as elsewhere in the contour library. The
-small `PiecewiseC1ClosedCurve` bundle exists only because `FreeAbelianGroup` needs a type of
+small `PiecewiseC1ClosedCurve` bundle exists only because `FreeAddCommGroup` needs a type of
 generators; it records exactly an interval-restricted function, its oriented parameter interval,
 its regularity, and its closedness. Its canonical extension to `ℝ` lets existing raw-function
 contour results apply directly. In particular, it does not introduce a second notion of contour
@@ -33,11 +34,14 @@ contribution to every additive invariant.
 * `TauCeti.Contour.Cycle` — the free abelian group on such curves.
 * `TauCeti.Contour.Cycle.trace` — the geometric trace of a cycle.
 * `TauCeti.Contour.Cycle.integral` — the additive extension of the contour integral.
+* `TauCeti.Contour.Cycle.integral_of_not_completeSpace`: in an incomplete codomain every integral
+  over a cycle is `0`.
 * `TauCeti.Contour.Cycle.integral_comp_comm`: continuous linear maps commute with the integral
   of a vector-valued function over a cycle, when its contour integrand is integrable.
 * `TauCeti.Contour.Cycle.integral_congr`, `TauCeti.Contour.Cycle.integral_add`,
-  `TauCeti.Contour.Cycle.integral_sub`, `TauCeti.Contour.Cycle.integral_smul`: the integral depends
-  only on the integrand on the trace, and is linear in integrands continuous there.
+  `TauCeti.Contour.Cycle.integral_sub`, `TauCeti.Contour.Cycle.integral_finsetSum`,
+  `TauCeti.Contour.Cycle.integral_smul`: the integral depends only on the integrand on the trace,
+  and is linear in integrands continuous there.
 * `TauCeti.Contour.Cycle.integral_smul_const`: the integral of a scalar function times a constant
   vector.
 * `TauCeti.Contour.Cycle.norm_integral_le_of_norm_le_const`: a bound for the integrand on the
@@ -191,25 +195,25 @@ theorem intervalIntegrable_deriv (γ : PiecewiseC1ClosedCurve) :
 end PiecewiseC1ClosedCurve
 
 /-- A contour cycle is a finite formal `ℤ`-linear combination of closed piecewise-`C¹` curves. -/
-abbrev Cycle : Type := FreeAbelianGroup PiecewiseC1ClosedCurve
+abbrev Cycle : Type := FreeAddCommGroup PiecewiseC1ClosedCurve
 
 namespace Cycle
 
 /-- The geometric trace of a cycle: the union of the images of the curves occurring with nonzero
 coefficient. -/
 def trace (C : Cycle) : Set ℂ :=
-  ⋃ γ ∈ FreeAbelianGroup.support C, γ '' uIcc γ.a γ.b
+  ⋃ γ ∈ FreeAddCommGroup.support C, γ '' uIcc γ.a γ.b
 
 /-- Membership in the trace means membership in the image of a generator with nonzero
 coefficient. -/
 @[simp]
 theorem mem_trace_iff {C : Cycle} {z : ℂ} :
-    z ∈ trace C ↔ ∃ γ ∈ FreeAbelianGroup.support C, z ∈ γ '' uIcc γ.a γ.b := by
+    z ∈ trace C ↔ ∃ γ ∈ FreeAddCommGroup.support C, z ∈ γ '' uIcc γ.a γ.b := by
   simp only [trace, mem_iUnion, exists_prop]
 
 /-- A point outside the trace of a cycle is avoided by every curve in its canonical support. -/
 theorem avoids_of_mem_support {C : Cycle} {z : ℂ} (hz : z ∉ trace C)
-    {γ : PiecewiseC1ClosedCurve} (hγ : γ ∈ FreeAbelianGroup.support C) :
+    {γ : PiecewiseC1ClosedCurve} (hγ : γ ∈ FreeAddCommGroup.support C) :
     ∀ t ∈ uIcc γ.a γ.b, γ t ≠ z := by
   intro t ht htz
   exact hz (mem_trace_iff.mpr ⟨γ, hγ, t, ht, htz⟩)
@@ -217,7 +221,7 @@ theorem avoids_of_mem_support {C : Cycle} {z : ℂ} (hz : z ∉ trace C)
 /-- The trace of a contour cycle is compact. -/
 theorem isCompact_trace (C : Cycle) : IsCompact (trace C) := by
   rw [trace]
-  exact (FreeAbelianGroup.support C).isCompact_biUnion fun γ _ ↦
+  exact (FreeAddCommGroup.support C).isCompact_biUnion fun γ _ ↦
     isCompact_uIcc.image_of_continuousOn γ.continuousOn
 
 /-- The zero cycle has empty trace. -/
@@ -228,13 +232,13 @@ theorem trace_zero : trace (0 : Cycle) = ∅ := by
 /-- The trace of a single generator is its image on its parameter interval. -/
 @[simp]
 theorem trace_of (γ : PiecewiseC1ClosedCurve) :
-    trace (FreeAbelianGroup.of γ) = γ '' uIcc γ.a γ.b := by
+    trace (FreeAddCommGroup.of γ) = γ '' uIcc γ.a γ.b := by
   simp [trace]
 
 /-- The trace of a raw curve bundled as a one-generator cycle is its raw interval image. -/
 theorem trace_of_raw {a b : ℝ} (γ : ℝ → ℂ) (hγ : IsPiecewiseC1On γ a b)
     (hclosed : γ a = γ b) :
-    trace (FreeAbelianGroup.of (PiecewiseC1ClosedCurve.of γ hγ hclosed)) =
+    trace (FreeAddCommGroup.of (PiecewiseC1ClosedCurve.of γ hγ hclosed)) =
       γ '' uIcc a b := by
   rw [trace_of]
   exact PiecewiseC1ClosedCurve.image_of γ hγ hclosed
@@ -251,7 +255,7 @@ theorem trace_add_subset (C D : Cycle) : trace (C + D) ⊆ trace C ∪ trace D :
   intro z hz
   rw [mem_trace_iff] at hz
   obtain ⟨γ, hγ, hz⟩ := hz
-  rcases Finset.mem_union.mp (FreeAbelianGroup.support_add C D hγ) with hγC | hγD
+  rcases Finset.mem_union.mp (FreeAddCommGroup.support_add C D hγ) with hγC | hγD
   · exact Set.mem_union_left _ (mem_trace_iff.mpr ⟨γ, hγC, hz⟩)
   · exact Set.mem_union_right _ (mem_trace_iff.mpr ⟨γ, hγD, hz⟩)
 
@@ -281,7 +285,7 @@ theorem isIn_iff {C : Cycle} {Ω : Set ℂ} : IsIn C Ω ↔ trace C ⊆ Ω :=
 into `Ω`. -/
 theorem isIn_of_raw_iff {a b : ℝ} (γ : ℝ → ℂ) (hγ : IsPiecewiseC1On γ a b)
     (hclosed : γ a = γ b) (Ω : Set ℂ) :
-    IsIn (FreeAbelianGroup.of (PiecewiseC1ClosedCurve.of γ hγ hclosed)) Ω ↔
+    IsIn (FreeAddCommGroup.of (PiecewiseC1ClosedCurve.of γ hγ hclosed)) Ω ↔
       MapsTo γ (uIcc a b) Ω := by
   rw [isIn_iff, trace_of, ← Set.mapsTo_iff_image_subset]
   exact PiecewiseC1ClosedCurve.mapsTo_of_iff γ hγ hclosed Ω
@@ -290,7 +294,7 @@ theorem isIn_of_raw_iff {a b : ℝ} (γ : ℝ → ℂ) (hγ : IsPiecewiseC1On γ
 `Ω`. -/
 @[simp]
 theorem isIn_of_iff {γ : PiecewiseC1ClosedCurve} {Ω : Set ℂ} :
-    IsIn (FreeAbelianGroup.of γ) Ω ↔ MapsTo γ (uIcc γ.a γ.b) Ω := by
+    IsIn (FreeAddCommGroup.of γ) Ω ↔ MapsTo γ (uIcc γ.a γ.b) Ω := by
   simpa [isIn_iff] using
     (Set.mapsTo_iff_image_subset (f := γ) (s := uIcc γ.a γ.b) (t := Ω)).symm
 
@@ -305,10 +309,20 @@ theorem IsIn.add {C D : Cycle} {Ω : Set ℂ} (hC : IsIn C Ω) (hD : IsIn D Ω) 
   rw [isIn_iff] at hC hD ⊢
   exact (trace_add_subset C D).trans (union_subset hC hD)
 
+/-- A cycle in `Ω` lies in every larger set. -/
+theorem IsIn.mono {C : Cycle} {Ω Ω' : Set ℂ} (hC : IsIn C Ω) (hΩ : Ω ⊆ Ω') : IsIn C Ω' :=
+  hC.trans hΩ
+
 /-- Negation preserves containment in a set. -/
 @[simp]
 theorem isIn_neg_iff {C : Cycle} {Ω : Set ℂ} : IsIn (-C) Ω ↔ IsIn C Ω := by
   simp [isIn_iff]
+
+/-- A difference of two cycles in `Ω` is in `Ω`. -/
+theorem IsIn.sub {C D : Cycle} {Ω : Set ℂ} (hC : IsIn C Ω) (hD : IsIn D Ω) :
+    IsIn (C - D) Ω := by
+  rw [sub_eq_add_neg]
+  exact hC.add (isIn_neg_iff.mpr hD)
 
 /-- Every integer multiple of a cycle in `Ω` is in `Ω`. -/
 theorem IsIn.zsmul {C : Cycle} {Ω : Set ℂ} (hC : IsIn C Ω) (n : ℤ) : IsIn (n • C) Ω := by
@@ -323,40 +337,46 @@ theorem IsIn.zsmul {C : Cycle} {Ω : Set ℂ} (hC : IsIn C Ω) (n : ℤ) : IsIn 
 `∫ t in γ.a..γ.b, deriv γ t • f (γ t)` from generators. -/
 def integral {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     (f : ℂ → E) : Cycle →+ E :=
-  FreeAbelianGroup.lift
+  FreeAddCommGroup.lift
     fun γ : PiecewiseC1ClosedCurve ↦ ∫ t in γ.a..γ.b, deriv γ t • f (γ t)
 
 /-- Integrating over a raw curve bundled as a one-generator cycle gives its raw contour integral. -/
 theorem integral_of_raw {a b : ℝ} (γ : ℝ → ℂ) (hγ : IsPiecewiseC1On γ a b)
     (hclosed : γ a = γ b) {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     (f : ℂ → E) :
-    integral f (FreeAbelianGroup.of (PiecewiseC1ClosedCurve.of γ hγ hclosed)) =
+    integral f (FreeAddCommGroup.of (PiecewiseC1ClosedCurve.of γ hγ hclosed)) =
       ∫ t in a..b, deriv γ t • f (γ t) := by
-  rw [integral, FreeAbelianGroup.lift_apply_of]
+  rw [integral, FreeAddCommGroup.lift_apply_of]
   exact PiecewiseC1ClosedCurve.integral_of γ hγ hclosed f
 
 /-- Integrating over a one-generator cycle gives the raw contour integral over that curve. -/
 @[simp]
 theorem integral_of {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     (γ : PiecewiseC1ClosedCurve) (f : ℂ → E) :
-    integral f (FreeAbelianGroup.of γ) =
+    integral f (FreeAddCommGroup.of γ) =
       ∫ t in γ.a..γ.b, deriv γ t • f (γ t) := by
-  rw [integral, FreeAbelianGroup.lift_apply_of]
+  rw [integral, FreeAddCommGroup.lift_apply_of]
 
 /-- The integral over a cycle is the coefficient-weighted sum of the integrals over the curves in
 its canonical support. -/
 theorem integral_eq_sum_support {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     (f : ℂ → E) (C : Cycle) :
-    integral f C = ∑ γ ∈ FreeAbelianGroup.support C,
-      FreeAbelianGroup.coeff γ C • (∫ t in γ.a..γ.b, deriv γ t • f (γ t)) := by
-  conv_lhs => rw [FreeAbelianGroup.eq_sum_support_coeff_smul_of C]
+    integral f C = ∑ γ ∈ FreeAddCommGroup.support C,
+      FreeAddCommGroup.coeff γ C • (∫ t in γ.a..γ.b, deriv γ t • f (γ t)) := by
+  conv_lhs => rw [FreeAddCommGroup.eq_sum_support_coeff_smul_of C]
   simp only [map_sum, map_zsmul, integral_of]
+
+/-- In an incomplete codomain every integral over a cycle is `0`. -/
+theorem integral_of_not_completeSpace {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    (hE : ¬CompleteSpace E) (f : ℂ → E) (C : Cycle) : integral f C = 0 := by
+  simp only [integral_eq_sum_support, _root_.intervalIntegral.integral_of_not_completeSpace hE,
+    smul_zero, Finset.sum_const_zero]
 
 /-- Along every curve in the support of a cycle, the contour integrand of a function continuous on
 the trace of the cycle is interval-integrable. -/
 theorem intervalIntegrable_of_mem_support {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     {f : ℂ → E} {C : Cycle} (hf : ContinuousOn f (trace C)) {γ : PiecewiseC1ClosedCurve}
-    (hγ : γ ∈ FreeAbelianGroup.support C) :
+    (hγ : γ ∈ FreeAddCommGroup.support C) :
     IntervalIntegrable (fun t ↦ deriv γ t • f (γ t)) volume γ.a γ.b :=
   γ.isPiecewiseC1On.intervalIntegrable_deriv_smul_comp_of_mapsTo hf
     fun t ht ↦ mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩
@@ -368,7 +388,7 @@ the cycle. For `f` continuous on the trace, this integrability is
 theorem integral_comp_comm {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] {f : ℂ → E}
     {C : Cycle}
-    (hf : ∀ γ ∈ FreeAbelianGroup.support C,
+    (hf : ∀ γ ∈ FreeAddCommGroup.support C,
       IntervalIntegrable (fun t ↦ deriv γ t • f (γ t)) volume γ.a γ.b)
     (L : E →L[ℂ] F) :
     integral (fun z ↦ L (f z)) C = L (integral f C) := by
@@ -406,6 +426,18 @@ theorem integral_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f g
     (intervalIntegrable_of_mem_support hg hγ)]
   simp only [smul_sub]
 
+/-- The integral over a cycle commutes with finite sums of integrands continuous on its trace. -/
+@[simp]
+theorem integral_finsetSum {ι E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {s : Finset ι} {f : ι → ℂ → E} {C : Cycle} (hf : ∀ i ∈ s, ContinuousOn (f i) (trace C)) :
+    integral (fun z ↦ ∑ i ∈ s, f i z) C = ∑ i ∈ s, integral (f i) C := by
+  simp only [integral_eq_sum_support]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun γ hγ ↦ ?_
+  rw [← Finset.smul_sum, ← intervalIntegral.integral_finsetSum fun i hi ↦
+    intervalIntegrable_of_mem_support (hf i hi) hγ]
+  simp only [Finset.smul_sum]
+
 /-- Scalar multiples can be taken out of the integral over a cycle. -/
 @[simp]
 theorem integral_smul {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℂ E]
@@ -433,10 +465,10 @@ theorem integral_smul_const {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ 
 its coefficient. -/
 theorem norm_integral_le_of_norm_le_const {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     {f : ℂ → E} {C : Cycle} {M : ℝ} (hM : ∀ z ∈ trace C, ‖f z‖ ≤ M) :
-    ‖integral f C‖ ≤ (∑ γ ∈ FreeAbelianGroup.support C,
-      |(FreeAbelianGroup.coeff γ C : ℝ)| * ∫ t in Ι γ.a γ.b, ‖deriv γ t‖) * M := by
+    ‖integral f C‖ ≤ (∑ γ ∈ FreeAddCommGroup.support C,
+      |(FreeAddCommGroup.coeff γ C : ℝ)| * ∫ t in Ι γ.a γ.b, ‖deriv γ t‖) * M := by
   -- Each generator contributes at most its length times `M`.
-  have hgen : ∀ γ ∈ FreeAbelianGroup.support C,
+  have hgen : ∀ γ ∈ FreeAddCommGroup.support C,
       ‖∫ t in γ.a..γ.b, deriv γ t • f (γ t)‖ ≤ (∫ t in Ι γ.a γ.b, ‖deriv γ t‖) * M := by
     intro γ hγ
     have hbound : ∀ᵐ t ∂volume.restrict (Ι γ.a γ.b), ‖deriv γ t • f (γ t)‖ ≤ ‖deriv γ t‖ * M :=
@@ -458,23 +490,23 @@ theorem norm_integral_le_of_norm_le_const {E : Type*} [NormedAddCommGroup E] [No
 /-- The winding number of a cycle, obtained by additively extending the generalized winding number
 of its generators. -/
 def windingNumber (z₀ : ℂ) : Cycle →+ ℂ :=
-  FreeAbelianGroup.lift
+  FreeAddCommGroup.lift
     fun γ : PiecewiseC1ClosedCurve ↦ TauCeti.Contour.windingNumber γ γ.a γ.b z₀
 
 /-- The winding number of a raw curve bundled as a one-generator cycle is its raw winding number. -/
 theorem windingNumber_of_raw {a b : ℝ} (γ : ℝ → ℂ) (hγ : IsPiecewiseC1On γ a b)
     (hclosed : γ a = γ b) (z₀ : ℂ) :
-    windingNumber z₀ (FreeAbelianGroup.of (PiecewiseC1ClosedCurve.of γ hγ hclosed)) =
+    windingNumber z₀ (FreeAddCommGroup.of (PiecewiseC1ClosedCurve.of γ hγ hclosed)) =
       TauCeti.Contour.windingNumber γ a b z₀ := by
-  rw [windingNumber, FreeAbelianGroup.lift_apply_of]
+  rw [windingNumber, FreeAddCommGroup.lift_apply_of]
   exact PiecewiseC1ClosedCurve.windingNumber_of γ hγ hclosed z₀
 
 /-- The winding number of a one-generator cycle is the winding number of that curve. -/
 @[simp]
 theorem windingNumber_of (γ : PiecewiseC1ClosedCurve) (z₀ : ℂ) :
-    windingNumber z₀ (FreeAbelianGroup.of γ) =
+    windingNumber z₀ (FreeAddCommGroup.of γ) =
       TauCeti.Contour.windingNumber γ γ.a γ.b z₀ := by
-  rw [windingNumber, FreeAbelianGroup.lift_apply_of]
+  rw [windingNumber, FreeAddCommGroup.lift_apply_of]
 
 /-- A cycle is null-homologous in `Ω` when its winding number vanishes at every point outside
 `Ω`. -/
@@ -494,7 +526,7 @@ theorem IsNullHomologous.mono {C : Cycle} {Ω Ω' : Set ℂ} (hC : IsNullHomolog
 /-- Null-homology of a raw curve bundled as a one-generator cycle is the raw-curve predicate. -/
 theorem isNullHomologous_of_raw_iff {a b : ℝ} (γ : ℝ → ℂ)
     (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b) (Ω : Set ℂ) :
-    IsNullHomologous (FreeAbelianGroup.of (PiecewiseC1ClosedCurve.of γ hγ hclosed)) Ω ↔
+    IsNullHomologous (FreeAddCommGroup.of (PiecewiseC1ClosedCurve.of γ hγ hclosed)) Ω ↔
       TauCeti.Contour.IsNullHomologous γ a b Ω := by
   simp only [isNullHomologous_iff, windingNumber_of_raw,
     TauCeti.Contour.isNullHomologous_iff]
@@ -502,7 +534,7 @@ theorem isNullHomologous_of_raw_iff {a b : ℝ} (γ : ℝ → ℂ)
 /-- Cycle null-homology specializes on a generator to the raw-curve predicate. -/
 @[simp]
 theorem isNullHomologous_of_iff {γ : PiecewiseC1ClosedCurve} {Ω : Set ℂ} :
-    IsNullHomologous (FreeAbelianGroup.of γ) Ω ↔
+    IsNullHomologous (FreeAddCommGroup.of γ) Ω ↔
       TauCeti.Contour.IsNullHomologous γ γ.a γ.b Ω := by
   simp only [isNullHomologous_iff, windingNumber_of,
     TauCeti.Contour.isNullHomologous_iff]

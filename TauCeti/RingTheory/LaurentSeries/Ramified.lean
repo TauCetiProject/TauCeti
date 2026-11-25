@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Frobenius
 public import Mathlib.Data.PNat.Prime
 public import Mathlib.RingTheory.LaurentSeries
 public import Mathlib.RingTheory.PowerSeries.Expand
+public import TauCeti.Data.Int.MulOrderEmbedding
 public import TauCeti.Data.Rat.NumDenDvd
 public import TauCeti.RingTheory.HahnSeries.EmbDomain
+public import TauCeti.RingTheory.HahnSeries.Map
 public import TauCeti.RingTheory.LaurentSeries.Basic
 public import TauCeti.RingTheory.LaurentSeries.Convergence
 
@@ -34,7 +37,8 @@ definitionally equal to it, so the algebra maps here are assembled from the ring
 
 ## Main definitions
 
-* `LaurentSeries.expand R d`: the `R`-algebra map `R⸨X⸩ → R⸨X⸩` substituting `X ↦ X ^ d`.
+* `LaurentSeries.expand R d`: the `R`-algebra map `R⸨X⸩ → R⸨X⸩` substituting `X ↦ X ^ d`, the
+  exponent embedding along `Int.mulOrderEmbedding d` (`LaurentSeries.expand_apply`).
 * `LaurentSeries.contract`: the exponent-congruence component of a Laurent series.
 * `LaurentSeries.ramifiedEmbedding R n`: the `R`-algebra map `R⸨X⸩ → HahnSeries ℚ R` substituting
   `X ↦ t ^ (1 / n)`.
@@ -51,8 +55,13 @@ definitionally equal to it, so the algebra maps here are assembled from the ring
 * `LaurentSeries.expand_coe`: `expand` extends `PowerSeries.expand`.
 * `LaurentSeries.valuation_expand`: over a field, expansion `X ↦ X ^ d` raises the valuation to
   the `d`-th power.
+* `LaurentSeries.continuous_expand`: expansion `X ↦ X ^ d` is continuous for the valuation
+  topology.
 * `FiniteField.LaurentSeries.expand_card`: over a finite field with `q` elements, the expansion
   `X ↦ X ^ q` of a Laurent series is its `q`-th power.
+* `LaurentSeries.mapRingHom_frobenius_expand`: over a commutative semiring of exponential
+  characteristic `d`, applying `frobenius R d` to the coefficients of `expand R d f` gives
+  `f ^ (d : ℕ)`.
 * `LaurentSeries.sum_single_mul_expand_contract`: reconstruction from congruence components.
 * `LaurentSeries.contract_eq_of_sum_eq`: uniqueness of the congruence components.
 * `LaurentSeries.contract_expand_mul`: `contract d (expand d g * h) r = g * contract d h r`.
@@ -83,40 +92,33 @@ variable (R : Type*) [CommSemiring R]
 
 /-! ### Expansion `X ↦ X ^ d` -/
 
-/-- Multiplication by a positive integer as an order embedding of `ℤ`. -/
-private def mulOrderEmbedding (d : ℕ+) : ℤ ↪o ℤ :=
-  OrderEmbedding.ofStrictMono (fun k ↦ (d : ℤ) * k)
-    (strictMono_mul_left_of_pos (by exact_mod_cast d.pos))
-
-private theorem mulOrderEmbedding_apply (d : ℕ+) (k : ℤ) : mulOrderEmbedding d k = d * k :=
-  rfl
-
 /-- The substitution `X ↦ X ^ d` in Laurent series, sending the coefficient of `X ^ k` to the
 coefficient of `X ^ (d * k)`. -/
 noncomputable def expand (d : ℕ+) : R⸨X⸩ →ₐ[R] R⸨X⸩ where
-  toFun := embDomain (mulOrderEmbedding d)
-  map_one' := embDomain_one _ (mul_zero _)
-  map_mul' := embDomain_mul _ fun _ _ ↦ mul_add _ _ _
+  toFun := embDomain (Int.mulOrderEmbedding d)
+  map_one' := embDomain_one _ (by simp)
+  map_mul' := embDomain_mul _ fun _ _ ↦ by simp [mul_add]
   map_zero' := embDomain_zero
   map_add' := embDomain_add _
-  commutes' r := by simp [algebraMap_apply', mulOrderEmbedding_apply]
+  commutes' r := by simp [algebraMap_apply']
 
 variable {R}
 
-private theorem expand_apply (d : ℕ+) (f : R⸨X⸩) :
-    expand R d f = embDomain (mulOrderEmbedding d) f :=
-  rfl
+/-- The substitution `X ↦ X ^ d` is the exponent embedding along multiplication by `d`. -/
+theorem expand_apply (d : ℕ+) (f : R⸨X⸩) :
+    expand R d f = embDomain (Int.mulOrderEmbedding d) f :=
+  (rfl)
 
 /-- The coefficient of `X ^ (d * k)` in `expand R d f` is the coefficient of `X ^ k` in `f`. -/
 @[simp]
 theorem coeff_expand_mul (d : ℕ+) (f : R⸨X⸩) (k : ℤ) :
-    (expand R d f).coeff ((d : ℤ) * k) = f.coeff k :=
-  embDomain_coeff (f := mulOrderEmbedding d)
+    (expand R d f).coeff ((d : ℤ) * k) = f.coeff k := by
+  rw [expand_apply, ← Int.mulOrderEmbedding_apply, embDomain_coeff]
 
 /-- The coefficients of `expand R d f` at exponents not divisible by `d` vanish. -/
 theorem coeff_expand_of_not_dvd (d : ℕ+) (f : R⸨X⸩) {k : ℤ} (hk : ¬ (d : ℤ) ∣ k) :
     (expand R d f).coeff k = 0 :=
-  embDomain_of_notMem_range fun ⟨j, hj⟩ ↦ hk ⟨j, hj.symm⟩
+  embDomain_of_notMem_range fun ⟨j, hj⟩ ↦ hk ⟨j, by simp [← hj]⟩
 
 /-- The coefficients of `expand R d f` below `d` times the order of `f` vanish. -/
 theorem coeff_expand_of_lt_mul_order (d : ℕ+) {f : R⸨X⸩} {k : ℤ} (hk : k < d * f.order) :
@@ -130,13 +132,13 @@ theorem coeff_expand_of_lt_mul_order (d : ℕ+) {f : R⸨X⸩} {k : ℤ} (hk : k
 /-- Expansion sends the monomial `r X ^ k` to `r X ^ (d * k)`. -/
 @[simp]
 theorem expand_single (d : ℕ+) (k : ℤ) (r : R) :
-    expand R d (single k r) = single ((d : ℤ) * k) r :=
-  embDomain_single
+    expand R d (single k r) = single ((d : ℤ) * k) r := by
+  rw [expand_apply, embDomain_single, Int.mulOrderEmbedding_apply]
 
 /-- The support of `expand R d f` is the support of `f` multiplied by `d`. -/
 theorem support_expand (d : ℕ+) (f : R⸨X⸩) :
-    (expand R d f).support = (fun k : ℤ ↦ (d : ℤ) * k) '' f.support :=
-  support_embDomain _ f
+    (expand R d f).support = (fun k : ℤ ↦ (d : ℤ) * k) '' f.support := by
+  rw [expand_apply, support_embDomain, ← funext (Int.mulOrderEmbedding_apply d)]
 
 /-- Expansion multiplies the order by `d`. -/
 @[simp]
@@ -147,7 +149,7 @@ theorem orderTop_expand (d : ℕ+) (f : R⸨X⸩) :
   | top =>
     obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero d.ne_zero
     simp [hk, succ_nsmul]
-  | coe k => simp [mulOrderEmbedding_apply, ← WithTop.coe_nsmul]
+  | coe k => simp [← WithTop.coe_nsmul]
 
 /-- Expansion is injective. -/
 theorem expand_injective (d : ℕ+) : Function.Injective (expand R d) :=
@@ -175,7 +177,7 @@ theorem mem_range_expand_iff (d : ℕ+) {f : R⸨X⸩} :
     f ∈ (expand R d).range ↔ ∀ k ∈ f.support, (d : ℤ) ∣ k := by
   rw [AlgHom.mem_range, ← Set.mem_range, funext (expand_apply d), mem_range_embDomain_iff]
   refine forall₂_congr fun k _ ↦ ?_
-  exact ⟨fun ⟨j, hj⟩ ↦ ⟨j, hj.symm⟩, fun ⟨j, hj⟩ ↦ ⟨j, hj.symm⟩⟩
+  exact ⟨fun ⟨j, hj⟩ ↦ ⟨j, by simp [← hj]⟩, fun ⟨j, hj⟩ ↦ ⟨j, by simp [hj]⟩⟩
 
 variable (R) in
 /-- Expansion by `1` is the identity. -/
@@ -190,7 +192,7 @@ theorem expand_expand (d e : ℕ+) (f : R⸨X⸩) :
   rw [expand_apply, expand_apply, expand_apply, embDomain_embDomain]
   congr 1
   ext k
-  simp [mulOrderEmbedding_apply, mul_assoc]
+  simp [mul_assoc]
 
 /-- On power series, expansion of Laurent series is Mathlib's `PowerSeries.expand`. -/
 theorem expand_coe {R : Type*} [CommRing R] (d : ℕ+) (f : R⟦X⟧) :
@@ -224,6 +226,22 @@ theorem valuation_expand {K : Type*} [Field K] (d : ℕ+) (f : K⸨X⸩) :
   rw [TauCeti.LaurentSeries.valuation_eq_exp_neg_order hf,
     TauCeti.LaurentSeries.valuation_eq_exp_neg_order hf', h, ← WithZero.exp_nsmul, smul_neg]
 
+/-- Expansion `X ↦ X ^ d` is continuous for the valuation topology. -/
+theorem continuous_expand {K : Type*} [Field K] (d : ℕ+) : Continuous (expand K d) := by
+  refine continuous_of_continuousAt_zero (expand K d) ?_
+  rw [ContinuousAt, map_zero, TauCeti.tendsto_laurentSeries_iff_orderTop_sub]
+  intro a
+  filter_upwards [(TauCeti.tendsto_laurentSeries_iff_orderTop_sub id 0).mp Filter.tendsto_id
+    (max a 0)] with f hf
+  rw [id, sub_zero] at hf
+  rw [sub_zero, orderTop_expand]
+  calc (a : WithTop ℤ) ≤ ((max a 0 : ℤ) : WithTop ℤ) := WithTop.coe_le_coe.mpr (le_max_left a 0)
+    _ ≤ (d : ℕ) • ((max a 0 : ℤ) : WithTop ℤ) := by
+      rw [← WithTop.coe_nsmul, WithTop.coe_le_coe, nsmul_eq_mul]
+      have : (1 : ℤ) ≤ d := by exact_mod_cast d.pos
+      nlinarith [le_max_right a 0]
+    _ ≤ (d : ℕ) • f.orderTop := nsmul_le_nsmul_right hf d
+
 /-- Over a finite field with `q` elements, the expansion `X ↦ X ^ q` of a Laurent series is its
 `q`-th power. The modulus is given as a positive natural number `d` with `d = q`. -/
 theorem _root_.FiniteField.LaurentSeries.expand_card {K : Type*} [Field K] [Fintype K] (d : ℕ+)
@@ -231,6 +249,34 @@ theorem _root_.FiniteField.LaurentSeries.expand_card {K : Type*} [Field K] [Fint
   rw [← single_order_mul_powerSeriesPart f]
   simp [-single_order_mul_powerSeriesPart, expand_coe, FiniteField.PowerSeries.expand_card,
     mul_pow, single_pow, hd]
+
+/-- Over a commutative semiring `R` of exponential characteristic `d`, applying `frobenius R d` to
+the coefficients of `expand R d f` produces `f ^ (d : ℕ)`. -/
+theorem mapRingHom_frobenius_expand (d : ℕ+) [ExpChar R d] (f : R⸨X⸩) :
+    mapRingHom (frobenius R d) (expand R d f) = f ^ (d : ℕ) := by
+  rcases (expChar_iff R d).mp ‹ExpChar R d› with ⟨_, hd1⟩ | ⟨hp, hchar⟩
+  · obtain rfl : d = 1 := PNat.eq hd1
+    ext k
+    simp [frobenius_def]
+  · have : CharP R d := hchar
+    let : Neg R := ⟨fun x ↦ ((d - 1 : ℕ) : R) * x⟩
+    let : CommRing R :=
+      { ‹CommSemiring R› with
+        zsmul := zsmulRec
+        neg_add_cancel x := by
+          calc ((d - 1 : ℕ) : R) * x + x
+              = (((d - 1 : ℕ) + 1 : ℕ) : R) * x := by
+                rw [Nat.cast_add, Nat.cast_one, add_mul, one_mul]
+            _ = (d : R) * x := by rw [Nat.sub_add_cancel hp.one_le]
+            _ = 0 := by rw [CharP.cast_eq_zero, zero_mul] }
+    conv_lhs => rw [← single_order_mul_powerSeriesPart f]
+    conv_rhs => rw [← single_order_mul_powerSeriesPart f]
+    have hsingle : mapRingHom (frobenius R d) (single ((d : ℤ) * f.order) (1 : R)) =
+        single ((d : ℤ) * f.order) 1 := by
+      ext k
+      by_cases hk : k = (d : ℤ) * f.order <;> simp [hk]
+    rw [map_mul, map_mul, expand_single, hsingle, expand_coe, mapRingHom_apply, map_ofPowerSeries,
+      PowerSeries.map_frobenius_expand, map_pow, mul_pow, single_pow, one_pow, nsmul_eq_mul]
 
 /-! ### Contraction by exponent congruence classes -/
 
@@ -491,7 +537,7 @@ theorem ramifiedEmbedding_expand (n d : ℕ+) (f : R⸨X⸩) :
   congr 1
   ext k
   have hd : ((d : ℕ) : ℚ) ≠ 0 := by exact_mod_cast d.ne_zero
-  simp only [RelEmbedding.trans_apply, mulOrderEmbedding_apply, divOrderEmbedding_apply,
+  simp only [RelEmbedding.trans_apply, Int.mulOrderEmbedding_apply, divOrderEmbedding_apply,
     PNat.mul_coe, Int.cast_mul, Int.cast_natCast, Nat.cast_mul]
   field_simp
 

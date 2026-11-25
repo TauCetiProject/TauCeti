@@ -7,7 +7,7 @@ module
 
 import Mathlib.NumberTheory.Padics.PadicIntegers
 import Mathlib.Algebra.Polynomial.Degree.Lemmas
-import TauCeti.RingTheory.Perfectoid.Integral
+import TauCeti.RingTheory.Perfectoid.Integral.Basic
 
 /-!
 # Checks for integral perfectoid rings
@@ -15,6 +15,9 @@ import TauCeti.RingTheory.Perfectoid.Integral
 * `𝔽_p`, and the non-domain `𝔽_p × 𝔽_p`, are integral perfectoid, with adic element `0`; over
   `𝔽_p` the kernel of Fontaine's map is computed to be `(p)`, and Frobenius `A ⧸ π → A ⧸ π ^ p`
   is surjective for the adic element `π = 0`.
+* An integral perfectoid ring of characteristic `p` is perfect, hence reduced. The idempotent step
+  in the proof that a principal Fontaine kernel in characteristic `p` is `(p)` cannot be skipped:
+  over `𝔽_p × 𝔽_p` the two coordinate equations of `p = ξ a` hold with `a₀` not a unit.
 * The zero ring is integral perfectoid, although `p` is a unit there.
 * `ℤ_p` is not integral perfectoid, although Frobenius on `ℤ_p ⧸ p = 𝔽_p` is bijective: `π ^ p ∣ p`
   forces `π` to be a unit, and `ℤ_p` is not complete for a unit. So the adic element cannot be
@@ -43,6 +46,22 @@ example : letI : Fact ¬IsUnit (p : ZMod p) := ⟨IsIntegralPerfectoid.not_isUni
       span {(p : WittVector p (PreTilt (ZMod p) p))} :=
   letI : Fact ¬IsUnit (p : ZMod p) := ⟨IsIntegralPerfectoid.not_isUnit_natCast⟩
   WittVector.ker_fontaineTheta_eq_span_p
+
+-- In characteristic `p` the integral perfectoid rings are exactly the perfect rings; for instance
+-- an integral perfectoid ring of characteristic `p` is reduced.
+example (A : Type*) [CommRing A] [CharP A p] [IsIntegralPerfectoid p A] : IsReduced A :=
+  have := IsIntegralPerfectoid.perfectRing (p := p) (A := A)
+  isReduced_of_perfectRing A p
+
+-- The idempotent step for principal Fontaine kernels in characteristic `p` is needed: in
+-- `W(𝔽_p × 𝔽_p)`, Witt coordinates `ξ₀ = (1, 0)`, `ξ₁ = (0, 1)`, `a₀ = (0, 1)` and `a₁ = (1, 0)`
+-- satisfy the coordinate equations `ξ₀ a₀ = 0` and `ξ₀ ^ p a₁ + ξ₁ a₀ ^ p = 1` of `p = ξ a`, yet
+-- `a₀` is not a unit. What forces `ξ₀ = 0` is that `ξ₀` generates the kernel of the zeroth tilt
+-- coordinate.
+example : ((1, 0) : ZMod p × ZMod p) * (0, 1) = 0 ∧
+    ((1, 0) : ZMod p × ZMod p) ^ p * (1, 0) + (0, 1) * (0, 1) ^ p = 1 ∧
+    ¬IsUnit ((0, 1) : ZMod p × ZMod p) := by
+  simp [Prod.isUnit_iff, hp.out.ne_zero]
 
 -- With `π = 0`, the Frobenius `𝔽_p ⧸ 0 → 𝔽_p ⧸ 0` is surjective.
 example (h : (0 : ZMod p) ^ p ∣ (p : ZMod p)) : Function.Surjective (frobeniusModPow p h) :=

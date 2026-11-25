@@ -1,14 +1,21 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Robby Sneiderman, The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 
 /-!
-# Riemann--Lebesgue along a vertical line
+# Riemann--Lebesgue for Fourier coefficients, sine modulation and along a vertical line
+
+The Fourier coefficients of any function on the circle `AddCircle T` tend to `0` as the frequency
+`n → ±∞`, that is, along the cofinite filter on `ℤ`. This is Mathlib's Riemann--Lebesgue lemma on
+`ℝ` applied to the restriction of the function to a period interval. As there, no hypothesis on
+the function is needed: if it is not integrable, every coefficient is `0`. The same holds for the
+coefficients `fourierCoeffOn` of a function on an interval `[a, b]`.
 
 Testing a function on the vertical line `Re s = c` against a Dirichlet series produces the
 oscillating factor `x ^ (i t)`, which is the Fourier character of frequency `-(2π)⁻¹ log x` in
@@ -21,6 +28,11 @@ simple-pole factor `1 / (σ + i t - 1)` for `σ > 1`.
 
 ## Main declarations
 
+* `TauCeti.tendsto_fourierCoeff_cofinite`, `TauCeti.tendsto_fourierCoeffOn_cofinite`: the Fourier
+  coefficients of any function on the circle, or on an interval, tend to `0` as `n → ±∞`.
+* `MeasureTheory.Integrable.tendsto_integral_sin_smul_atTop`: sine-modulated integrals
+  tend to zero as the real frequency tends to positive infinity.
+
 * `TauCeti.continuous_cpow_mul_I`, `TauCeti.norm_cpow_mul_I`: the factor `x ^ (t * I)` is
   continuous in `t` and has modulus `1`.
 * `TauCeti.integrable_inv_sub_one_mul_mul_cpow`: the simple-pole integrand
@@ -32,12 +44,42 @@ simple-pole factor `1 / (σ + i t - 1)` for `σ > 1`.
 
 public section
 
-open Complex Filter MeasureTheory
+open Complex Filter MeasureTheory Set
 open scoped FourierTransform Real Topology
 
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- **Riemann--Lebesgue for Fourier coefficients**: the Fourier coefficients of any function on
+`AddCircle T` tend to `0` as `n → ±∞`. If `f` is not integrable, every coefficient is `0`. -/
+theorem tendsto_fourierCoeff_cofinite {T : ℝ} [hT : Fact (0 < T)] (f : AddCircle T → E) :
+    Tendsto (fourierCoeff f) cofinite (𝓝 0) := by
+  have hfreq : Tendsto (fun n : ℤ ↦ (n : ℝ) * T⁻¹) cofinite (cocompact ℝ) :=
+    ((Homeomorph.mulRight₀ T⁻¹ (inv_ne_zero hT.out.ne')).isClosedEmbedding.tendsto_cocompact).comp
+      Int.tendsto_coe_cofinite
+  have h := ((Real.tendsto_integral_exp_smul_cocompact
+    ((Ioc 0 T).indicator fun x : ℝ ↦ f x)).comp hfreq).const_smul (1 / T)
+  rw [smul_zero] at h
+  refine h.congr fun n ↦ ?_
+  rw [fourierCoeff_eq_intervalIntegral f n 0, zero_add, intervalIntegral.integral_of_le hT.out.le,
+    ← integral_indicator measurableSet_Ioc]
+  rw [indicator_smul]
+  congr 1
+  refine integral_congr_ae (.of_forall fun x ↦ ?_)
+  dsimp only
+  rw [Circle.smul_def, Real.fourierChar_apply, fourier_coe_apply]
+  congr 2
+  push_cast
+  field_simp
+
+/-- **Riemann--Lebesgue for Fourier coefficients on an interval**: the Fourier coefficients
+`fourierCoeffOn hab f n` of any function `f` on `[a, b]` tend to `0` as `n → ±∞`. -/
+theorem tendsto_fourierCoeffOn_cofinite {a b : ℝ} (hab : a < b) (f : ℝ → E) :
+    Tendsto (fourierCoeffOn hab f) cofinite (𝓝 0) := by
+  -- `fourierCoeffOn` is defined as the Fourier coefficient of the `(b - a)`-periodic lift of `f`.
+  have := Fact.mk (sub_pos.2 hab)
+  exact tendsto_fourierCoeff_cofinite _
 
 /-- **Riemann--Lebesgue on a vertical line**: the integral of `f` against the oscillating factor
 `x ^ (i t)` tends to `0` as `x → ∞`.
@@ -94,3 +136,45 @@ theorem integrable_inv_sub_one_mul_mul_cpow {psi : ℝ → ℂ} {x sigma : ℝ} 
     (.of_forall fun t ↦ by ring)
 
 end TauCeti
+
+/-- The sine-modulated integral of an integrable function tends to zero at positive infinite
+frequency. The codomain need not be complete. -/
+theorem MeasureTheory.Integrable.tendsto_integral_sin_smul_atTop
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {q : ℝ → E} (hq : Integrable q) :
+    Tendsto (fun T : ℝ ↦ ∫ u, (Real.sin (2 * π * T * u) : ℂ) • q u) atTop (nhds 0) := by
+  have hn := (Real.zero_at_infty_fourier q).mono_left atTop_le_cocompact
+  have hp := (Real.zero_at_infty_fourier q).comp
+    (tendsto_neg_atTop_atBot.mono_right atBot_le_cocompact)
+  have H := (hn.sub hp).const_smul ((2 : ℂ)⁻¹ * I)
+  simp only [sub_zero, smul_zero] at H
+  refine H.congr' ?_
+  filter_upwards with T
+  dsimp only [Function.comp_apply]
+  rw [Real.fourier_real_eq_integral_exp_smul, Real.fourier_real_eq_integral_exp_smul]
+  have hi (A : ℝ) : Integrable (fun u ↦ Complex.exp (((A * u : ℝ) : ℂ) * I) • q u) := by
+    apply hq.bdd_smul 1 (by fun_prop)
+    filter_upwards with u
+    rw [norm_exp_ofReal_mul_I]
+  rw [← integral_sub, ← MeasureTheory.integral_smul]
+  · apply integral_congr_ae
+    filter_upwards with u
+    rw [← sub_smul, ← smul_assoc]
+    congr 1
+    have hneg : ((-2 * π * u * T : ℝ) : ℂ) * I =
+        -((2 * π * T * u : ℝ) : ℂ) * I := by push_cast; ring
+    have hpos : ((-2 * π * u * -T : ℝ) : ℂ) * I =
+        ((2 * π * T * u : ℝ) : ℂ) * I := by push_cast; ring
+    rw [hneg, hpos, Complex.ofReal_sin, smul_eq_mul]
+    linear_combination -(1 / 2 : ℂ) * (Complex.two_sin ((2 * π * T * u : ℝ) : ℂ))
+  · have heq : (fun u : ℝ ↦ Complex.exp ((((-2 * π * T) * u : ℝ) : ℂ) * I) • q u) =
+        (fun u : ℝ ↦ Complex.exp (((-2 * π * u * T : ℝ) : ℂ) * I) • q u) := by
+      ext u
+      -- Match hi at frequency -2 * π * T to the input-first phase in the sine decomposition.
+      rw [show (-2 * π * T) * u = -2 * π * u * T by ring]
+    exact heq ▸ hi (-2 * π * T)
+  · have heq : (fun u : ℝ ↦ Complex.exp ((((2 * π * T) * u : ℝ) : ℂ) * I) • q u) =
+        (fun u : ℝ ↦ Complex.exp (((-2 * π * u * -T : ℝ) : ℂ) * I) • q u) := by
+      ext u
+      -- The reflected parameter -T supplies the opposite frequency in the second phase.
+      rw [show (2 * π * T) * u = -2 * π * u * -T by ring]
+    exact heq ▸ hi (2 * π * T)

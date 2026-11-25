@@ -69,6 +69,8 @@ and `β`.
 * `WeierstrassCurve.isIntegralModularForm_c₄`, `isIntegralModularForm_c₆`,
   `isIntegralModularForm_Δ`: the invariants `c₄`, `c₆` and `Δ` of the universal curve are
   integral modular forms of weights `4`, `6` and `12`.
+* `WeierstrassCurve.isWeightedHomogeneous_iff_forall_specialize_mk_smul`: weighted homogeneity
+  of weight `k` is the transformation law `u⁻ᵏ` under the scalings `(u, 0, 0, 0)` alone.
 * `WeierstrassCurve.IsIntegralModularForm.isWeightedHomogeneous`: an integral modular form of
   weight `k` is weighted homogeneous of weight `k`; in particular a nonzero integral modular form
   has a unique weight (`WeierstrassCurve.IsIntegralModularForm.inj_right`).
@@ -199,14 +201,9 @@ theorem isIntegralModularForm_iff_forall_isElliptic : IsIntegralModularForm k f 
   let W := Universal.curve.map (MvPolynomial.map (Int.castRingHom CoordinateRing))
   let C := (TauCeti.WeierstrassChange.ChangeRing.universalChange ℤ).map
     (algebraMap CoordinateRing (MvPolynomial Coeff CoordinateRing))
-  have hℤ : Function.Injective (Int.castRingHom CoordinateRing) := by
-    -- Evaluating a coordinate change at the identity retracts the integer inclusion.
-    apply Function.LeftInverse.injective (g := (1 : VariableChange ℤ).specialize)
-    intro n
-    simp only [Int.coe_castRingHom, map_intCast, Int.cast_id]
   have hΔ : W.Δ ≠ 0 := by
     rw [map_Δ]
-    exact (map_ne_zero_iff _ (MvPolynomial.map_injective _ hℤ)).mpr
+    exact (map_ne_zero_iff _ (MvPolynomial.map_injective _ (Int.castRingHom _).injective_int)).mpr
       Universal.curve_Δ_ne_zero
   let S := Localization.Away W.Δ
   let φ := algebraMap (MvPolynomial Coeff CoordinateRing) S
@@ -228,9 +225,6 @@ theorem isIntegralModularForm_smul_iff {n : ℤ} (hn : n ≠ 0) :
   refine ⟨fun h ↦ isIntegralModularForm_iff_universal.2 ?_, fun hf ↦ hf.smul n⟩
   -- The ring `Γ = ℤ[u, u⁻¹, r, s, t][a₁, ⋯, a₆]` has no additive torsion, so the universal
   -- transformation law of `n • f` can be divided by `n`.
-  have : CharZero TauCeti.WeierstrassChange.Universal.CoordinateRing :=
-    charZero_of_injective_algebraMap (IsLocalization.injective _
-      (powers_le_nonZeroDivisors_of_noZeroDivisors (X_ne_zero (R := ℤ) (σ := Fin 4) 0)))
   have := isIntegralModularForm_iff_universal.1 h
   rw [zsmul_eq_mul, map_mul, map_mul, map_intCast, map_intCast, mul_left_comm] at this
   exact mul_left_cancel₀ (Int.cast_ne_zero.mpr hn) this
@@ -267,11 +261,19 @@ theorem isIntegralModularForm_c₆ : IsIntegralModularForm 6 Universal.curve.c�
 theorem isIntegralModularForm_Δ : IsIntegralModularForm 12 Universal.curve.Δ :=
   fun R _ W C ↦ by rw [specialize_Δ, specialize_Δ, variableChange_Δ]
 
-/-- **The weight of an integral modular form.** An integral modular form of weight `k` is
-weighted homogeneous of weight `k` for the weights `coefficientWeight`. -/
-theorem IsIntegralModularForm.isWeightedHomogeneous (hf : IsIntegralModularForm k f) :
-    f.IsWeightedHomogeneous coefficientWeight k := by
-  -- Test `hf` on the universal curve over `ℚ[a₁, ⋯, a₆]` and the scaling with `u⁻¹ = 2`, which
+/-- **Weights from scalings.** A polynomial `f` in the Weierstrass coefficients is weighted
+homogeneous of weight `k` for the weights `coefficientWeight` exactly when every scaling
+`(u, 0, 0, 0)`, over every commutative ring, multiplies its value by `u⁻ᵏ`. Unlike the
+transformation law of an integral modular form, only the changes of variables with
+`r = s = t = 0` are tested. -/
+theorem isWeightedHomogeneous_iff_forall_specialize_mk_smul :
+    f.IsWeightedHomogeneous coefficientWeight k ↔
+      ∀ (R : Type) [CommRing R] (W : WeierstrassCurve R) (u : Rˣ),
+        ((⟨u, 0, 0, 0⟩ : VariableChange R) • W).specialize f = ↑u⁻¹ ^ k * W.specialize f := by
+  refine ⟨fun hk R _ W u ↦ ?_, fun h ↦ ?_⟩
+  · rw [specialize_mk_smul, hk.aeval_pow_mul]
+    exact congrArg _ (DFunLike.congr_fun (aeval_unique W.specialize.toIntAlgHom) f).symm
+  -- Test `h` on the universal curve over `ℚ[a₁, ⋯, a₆]` and the scaling with `u⁻¹ = 2`, which
   -- multiplies each monomial of weight `n` by `2 ^ n`; these powers are pairwise distinct.
   set φ := MvPolynomial.map (Int.castRingHom ℚ) f
   set W := Universal.curve.map (MvPolynomial.map (Int.castRingHom ℚ))
@@ -288,7 +290,7 @@ theorem IsIntegralModularForm.isWeightedHomogeneous (hf : IsIntegralModularForm 
       aeval_def, eval₂_map,
       RingHom.ext_int (algebraMap ℤ _) ((algebraMap ℚ _).comp (Int.castRingHom ℚ))]
     simp only [hW, map_X, map_pow]
-  have h := hf.specialize_smul W ⟨v⁻¹, 0, 0, 0⟩
+  have h := h _ W v⁻¹
   rw [hvW, hW, inv_inv, hv, ← map_pow] at h
   have hφ : φ.IsWeightedHomogeneous coefficientWeight k :=
     isWeightedHomogeneous_of_aeval_C_pow_mul_X_eq (t := (2 : ℚ))
@@ -296,6 +298,12 @@ theorem IsIntegralModularForm.isWeightedHomogeneous (hf : IsIntegralModularForm 
   intro d hd
   refine hφ ?_
   rwa [coeff_map, eq_intCast, Int.cast_ne_zero]
+
+/-- **The weight of an integral modular form.** An integral modular form of weight `k` is
+weighted homogeneous of weight `k` for the weights `coefficientWeight`. -/
+theorem IsIntegralModularForm.isWeightedHomogeneous (hf : IsIntegralModularForm k f) :
+    f.IsWeightedHomogeneous coefficientWeight k :=
+  isWeightedHomogeneous_iff_forall_specialize_mk_smul.2 fun _ _ W _ ↦ hf.specialize_smul W _
 
 /-- A nonzero integral modular form has a unique weight. -/
 theorem IsIntegralModularForm.inj_right (hf : f ≠ 0) (hk : IsIntegralModularForm k f)
@@ -315,8 +323,7 @@ theorem isIntegralModularForm_iff_of_mem_adjoin
       ((⟨C.u, 0, 0, 0⟩ : VariableChange R) • W).specialize.toIntAlgHom ?_ hf
     rintro _ (rfl | rfl | rfl) <;>
       simp [variableChange_c₄, variableChange_c₆, variableChange_Δ]
-  rw [h, specialize_mk_smul, hk.aeval_pow_mul]
-  exact congrArg _ (DFunLike.congr_fun (aeval_unique W.specialize.toIntAlgHom) f).symm
+  rw [h, isWeightedHomogeneous_iff_forall_specialize_mk_smul.1 hk]
 
 /-- **Integral modular forms after inverting `6`.** If `f` is an integral modular form of weight
 `k`, then `6ᵏ f` is the value of `f` at the short Weierstrass equation

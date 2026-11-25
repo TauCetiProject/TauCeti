@@ -87,6 +87,12 @@ theorem isHomeomorph_comm : IsHomeomorph (comm A B C) :=
     comm A B C (inr A B C c) = inl A C B c := by
   simp [comm, commHom]
 
+/-- Exchange fixes the image of the base ring. -/
+@[simp] theorem comm_algebraMap (a : A) :
+    comm A B C (algebraMap A (CompletedTensor A B C) a) =
+      algebraMap A (CompletedTensor A C B) a := by
+  rw [← inl_algebraMap, comm_inl, inr_algebraMap]
+
 /-- Exchange sends the completed pure tensor `b ⊗ c` to `c ⊗ b`. -/
 theorem comm_tmul (b : B) (c : C) :
     comm A B C (toCompletion A B C (b ⊗ₜ[A] c)) =
@@ -129,6 +135,45 @@ theorem comm_plus :
   ext x
   simpa only [RingEquiv.toRingHom_eq_coe, Subring.mem_map_equiv, CompletedTensor.comm_symm] using
     (comm_mem_plus A T S x)
+
+/-- Exchanging the two factors of `(B, B⁺) ⊗̂_A (C, C⁺)` as a morphism of Huber pairs. -/
+noncomputable def commHom : Hom (S.completedTensor A T) (T.completedTensor A S) where
+  toRingHom := (CompletedTensor.comm A B C).toRingHom
+  continuous_toRingHom := CompletedTensor.continuous_comm A B C
+  map_mem_plus _ hx := (comm_mem_plus A S T _).mpr hx
+
+/-- The underlying ring homomorphism of `commHom` is `CompletedTensor.comm`. -/
+@[simp]
+theorem toRingHom_commHom :
+    (commHom A S T).toRingHom = (CompletedTensor.comm A B C).toRingHom :=
+  (rfl)
+
+/-- Exchanging the factors of a completed tensor pair twice is the identity morphism. -/
+@[simp]
+theorem commHom_comp_commHom :
+    (commHom A T S).comp (commHom A S T) = Hom.id (S.completedTensor A T) := by
+  apply Hom.ext
+  ext x
+  simp only [Hom.toRingHom_comp, toRingHom_commHom, RingHom.comp_apply, Hom.toRingHom_id,
+    RingHom.id_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom]
+  rw [← CompletedTensor.comm_symm]
+  exact (CompletedTensor.comm A B C).symm_apply_apply x
+
+/-- Composing `commHom` with the left coprojection gives the right coprojection. -/
+@[simp]
+theorem commHom_comp_inl :
+    (commHom A S T).comp (inl A S T) = inr A T S := by
+  apply Hom.ext
+  ext b
+  simp
+
+/-- Composing `commHom` with the right coprojection gives the left coprojection. -/
+@[simp]
+theorem commHom_comp_inr :
+    (commHom A S T).comp (inr A S T) = inl A T S := by
+  apply Hom.ext
+  ext c
+  simp
 
 end Pair.completedTensor
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Norm.Basic
 public import TauCeti.RingTheory.Norm.Quadratic
+import Mathlib.RingTheory.Valuation.Integral
 
 /-!
 # Unit norms of a quadratic extension in an integral basis
@@ -54,12 +55,9 @@ open ValuativeRel IsLocalRing TauCeti
 
 namespace TauCeti
 
-variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
-  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
-  [Algebra.IsQuadraticExtension K L]
+variable {K L : Type*} [Field K] [ValuativeRel K] [Field L] [ValuativeRel L]
+  [Algebra K L] [ValuativeExtension K L] [Algebra.IsQuadraticExtension K L]
 
-omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
 open Polynomial in
 /-- If `x ∉ K` is a square root of `a`, `2b = s t` and `b² - a = s² c` with `t, c ∈ 𝒪[K]`, then
 `(x - b)/s` lies in `𝒪[L]`, with trace `-t` and norm `c`. -/
@@ -98,8 +96,8 @@ theorem exists_integerRing_eq_div_of_sq_eq {x : L} {a b s : K} {t c : 𝒪[K]}
         IsScalarTower.algebraMap_apply 𝒪[K] K L, Algebra.algebraMap_ofSubsemiring_apply]
       rw [map_neg] at hsq
       linear_combination hsq
-  exact ⟨⟨y, (Valuation.Integers.isIntegral_iff_valuation_le_one
-    (Valuation.integer.integers (valuation K)) _).1 hint⟩, rfl, htr, hn⟩
+  exact ⟨⟨y, (Valuation.integer.integers (valuation L)).mem_of_integral hint.tower_top⟩,
+    rfl, htr, hn⟩
 
 end TauCeti
 

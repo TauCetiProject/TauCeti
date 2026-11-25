@@ -71,24 +71,6 @@ variable {R : Type*} [CommRing R] {n : ℤ} {w : ℕ}
 
 /-! ### The binary form of the evaluation at `∞` and `0` -/
 
-/-- The value at `∞` of the monomial `Xⁱ Yʷ⁻ⁱ` is `1` for `i = w` and `0` otherwise. -/
-private theorem evalCusp_infty_binaryFormMonomialBasis (i : Fin (w + 1)) :
-    evalCusp R w ∞ (binaryFormMonomialBasis R w i) = if i = Fin.last w then 1 else 0 := by
-  have hi : (i : ℕ) ≤ w := Nat.lt_succ_iff.mp i.2
-  rw [evalCusp_infty, coe_binaryFormMonomialBasis]
-  simp only [eval_mul, eval_pow, eval_X, Matrix.cons_val_zero, Matrix.cons_val_one, one_pow,
-    one_mul, zero_pow_eq, Nat.sub_eq_zero_iff_le, hi.ge_iff_eq',
-    Fin.ext_iff, Fin.val_last]
-  split_ifs <;> first | rfl | omega
-
-/-- The value at `0` of the monomial `Xⁱ Yʷ⁻ⁱ` is `1` for `i = 0` and `0` otherwise. -/
-private theorem evalCusp_zero_binaryFormMonomialBasis (i : Fin (w + 1)) :
-    evalCusp R w (0 : ℚ) (binaryFormMonomialBasis R w i) = if i = 0 then 1 else 0 := by
-  rw [evalCusp_coe, coe_binaryFormMonomialBasis]
-  simp only [Rat.num_zero, Rat.den_zero, Int.cast_zero, Nat.cast_one, eval_mul, eval_pow, eval_X,
-    Matrix.cons_val_zero, Matrix.cons_val_one, one_pow, mul_one, zero_pow_eq, Fin.ext_iff,
-    Fin.val_zero]
-
 /-- **The Eisenstein polynomial is the binary form of the evaluation at `∞` and `0`.** For even
 `w`, the binary form attached to `P ↦ P(1, 0) - P(0, 1)` is `Y^w - X^w`. -/
 theorem binaryFormDual_evalCusp_infty_sub_evalCusp_zero (hw : Even w) :
@@ -99,8 +81,9 @@ theorem binaryFormDual_evalCusp_infty_sub_evalCusp_zero (hw : Even w) :
   have hzero : ∀ j : Fin (w + 1), Fin.rev j = 0 ↔ j = Fin.last w := fun j ↦ by
     rw [← Fin.rev_last, Fin.rev_inj]
   rw [binaryFormDual_apply]
-  simp only [LinearMap.sub_apply, evalCusp_infty_binaryFormMonomialBasis,
-    evalCusp_zero_binaryFormMonomialBasis, hlast, hzero, mul_sub, mul_ite, mul_one, mul_zero]
+  simp only [LinearMap.sub_apply, evalCusp_infty, evalCusp_coe, Rat.num_zero, Rat.den_zero,
+    Int.cast_zero, Nat.cast_one, eval_one_zero_binaryFormMonomialBasis,
+    eval_zero_one_binaryFormMonomialBasis, hlast, hzero, mul_sub, mul_ite, mul_one, mul_zero]
   apply Subtype.ext
   simp only [Submodule.coe_sum, Submodule.coe_smul, sub_smul, ite_smul, zero_smul,
     Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
@@ -113,7 +96,7 @@ namespace TraceFormulaMatrixModule
 /-- The functional `P ↦ (P ∣ adj M)(v_{M∞})` attached to a determinant-`n` matrix `M`. -/
 private noncomputable def infinityEval (hn : n ≠ 0) (A : TraceFormulaMatrix n) :
     homogeneousSubmodule (Fin 2) R w →ₗ[R] R :=
-  evalCusp R w (toGL hn A • ∞) ∘ₗ binaryFormAdjugateRep R w A.1
+  evalCusp R w (toGL hn A • ∞) ∘ₗ binaryFormAdjugateRep R w A.val
 
 private theorem infinityEval_neg (hn : n ≠ 0) (hw : Even w) (A : TraceFormulaMatrix n) :
     infinityEval (R := R) (w := w) hn (-A) = infinityEval hn A := by
@@ -131,18 +114,18 @@ private theorem infinityEval_smul (hn : n ≠ 0) (hw : Even w) (g : SL(2, ℤ))
 /-- On an upper-triangular representative `(a b; 0 d)`, `infinityEval` is `P ↦ dʷ P(1, 0)`. -/
 private theorem infinityEval_of_mem_reps (hn : n ≠ 0) (A : TraceFormulaMatrix n)
     (hA : A ∈ FixedDetMatrices.reps n) :
-    infinityEval (R := R) (w := w) hn A = ((A.1 1 1 : ℤ) : R) ^ w • evalCusp R w ∞ := by
+    infinityEval (R := R) (w := w) hn A = ((A.val 1 1 : ℤ) : R) ^ w • evalCusp R w ∞ := by
   ext P
-  have hc : A.1 1 0 = 0 := hA.1
+  have hc : A.val 1 0 = 0 := hA.1
   have hinf : toGL hn A • (∞ : OnePoint ℚ) = ∞ :=
     smul_infty_eq_self_iff.2 (by simp [FixedDetMatrices.coe_toGL, hc])
   -- `adj A (1, 0) = (d, 0) = d • (1, 0)`
-  have hv : Matrix.mulVec ((Matrix.adjugate A.1).map (Int.cast : ℤ → R)) ![1, 0] =
-      ((A.1 1 1 : ℤ) : R) • ![1, 0] := by
+  have hv : Matrix.mulVec ((Matrix.adjugate A.val).map (Int.cast : ℤ → R)) ![1, 0] =
+      ((A.val 1 1 : ℤ) : R) • ![1, 0] := by
     ext i
     fin_cases i <;> simp [Matrix.adjugate_fin_two, Matrix.mulVec, dotProduct, hc]
   simp only [infinityEval, LinearMap.comp_apply, hinf, evalCusp_infty, binaryFormAdjugateRep_apply,
-    coe_binaryFormRep_apply, eval_linearSubst, hv, ((mem_homogeneousSubmodule _ _).1 P.2).eval_smul,
+    eval_binaryFormRep_apply, hv, ((mem_homogeneousSubmodule _ _).1 P.property).eval_smul,
     LinearMap.smul_apply, smul_eq_mul]
 
 /-- The linear extension of `infinityEval` to `R[ℳₙ]`. -/
@@ -178,13 +161,13 @@ private theorem infinityEvalAction_upperTriangularSum (hn : n ≠ 0) (hw : Even 
   rw [upperTriangularSum_eq_sum_reps, map_sum, ← FixedDetMatrices.sum_reps_pow hw,
     Finset.sum_smul]
   refine Finset.sum_congr rfl fun A _ ↦ ?_
-  rw [infinityEvalAction, linearLift_single, one_smul, infinityEval_of_mem_reps hn A.1 A.2]
+  rw [infinityEvalAction, linearLift_single, one_smul, infinityEval_of_mem_reps hn A.val A.property]
 
 /-! ### The values at the cusps `a0` -/
 
 /-- The value of `P ∣ adj M` at `M0` is the value of `(P ∣ S) ∣ adj (MS)` at `(MS)∞`. -/
 private theorem evalCusp_toGL_smul_zero (hn : n ≠ 0) (A : TraceFormulaMatrix n) :
-    evalCusp R w (toGL hn A • ((0 : ℚ) : OnePoint ℚ)) ∘ₗ binaryFormAdjugateRep R w A.1 =
+    evalCusp R w (toGL hn A • ((0 : ℚ) : OnePoint ℚ)) ∘ₗ binaryFormAdjugateRep R w A.val =
       infinityEval hn (traceFormulaMatrixRight S⁻¹ A) ∘ₗ
         binaryFormRep R w (op (S : Matrix (Fin 2) (Fin 2) ℤ)) := by
   ext P
@@ -195,7 +178,8 @@ private theorem evalCusp_toGL_smul_zero (hn : n ≠ 0) (A : TraceFormulaMatrix n
 /-- The values at the cusps `a0` sum to `σ_{w+1}(|n|)` times the value at `0`. -/
 private theorem sum_reps_evalCusp_toGL_smul_zero (hn : n ≠ 0) (hw : Even w) :
     ∑ A : FixedDetMatrices.reps n,
-        evalCusp R w (toGL hn A.1 • ((0 : ℚ) : OnePoint ℚ)) ∘ₗ binaryFormAdjugateRep R w A.1.1 =
+        evalCusp R w (toGL hn A.val • ((0 : ℚ) : OnePoint ℚ)) ∘ₗ binaryFormAdjugateRep R w A.val.val
+            =
       (ArithmeticFunction.sigma (w + 1) n.natAbs : R) • evalCusp R w (0 : ℚ) := by
   -- the left side is `infinityEvalAction` of `Tₙ^∞ S`, which has the coinvariant class of `Tₙ^∞`
   have hS : infinityEvalAction (w := w) hn hw
@@ -208,7 +192,7 @@ private theorem sum_reps_evalCusp_toGL_smul_zero (hn : n ≠ 0) (hw : Even w) :
   have hsum : infinityEvalAction (w := w) hn hw
       (ofMulAction R PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) (op (S : PSL(2, ℤ)))
         (upperTriangularSum R n)) =
-      ∑ A : FixedDetMatrices.reps n, infinityEval hn (traceFormulaMatrixRight S⁻¹ A.1) := by
+      ∑ A : FixedDetMatrices.reps n, infinityEval hn (traceFormulaMatrixRight S⁻¹ A.val) := by
     rw [upperTriangularSum_eq_sum_reps, map_sum, map_sum]
     refine Finset.sum_congr rfl fun A _ ↦ ?_
     rw [ofMulAction_single, op_smul_mk, infinityEvalAction, linearLift_single, one_smul]
@@ -220,8 +204,7 @@ private theorem sum_reps_evalCusp_toGL_smul_zero (hn : n ≠ 0) (hw : Even w) :
         ![(((0 : ℚ).num : ℤ) : R), (((0 : ℚ).den : ℕ) : R)] := by
       ext i
       fin_cases i <;> simp [coe_S, Matrix.mulVec, dotProduct]
-    rw [LinearMap.comp_apply, evalCusp_infty, coe_binaryFormRep_apply, eval_linearSubst, hv,
-      evalCusp_coe]
+    rw [LinearMap.comp_apply, evalCusp_infty, eval_binaryFormRep_apply, hv, evalCusp_coe]
   simp_rw [evalCusp_toGL_smul_zero hn]
   rw [← hval, ← LinearMap.smul_comp, ← infinityEvalAction_upperTriangularSum hn hw, ← hS, hsum]
   ext P

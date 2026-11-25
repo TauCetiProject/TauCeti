@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.DualNumber
 public import Mathlib.GroupTheory.GroupExtension.Basic
+public import TauCeti.AlgebraicGeometry.AugmentationPoint.Basic
 public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Category
-public import TauCeti.AlgebraicGeometry.DualNumber
+public import TauCeti.AlgebraicGeometry.Deformation.InfinitesimalAut.Basic
 
 /-!
 # Infinitesimal automorphisms of prestable maps
@@ -47,6 +49,9 @@ automorphisms, and, under a generic separability hypothesis, no infinitesimal on
   `Aut F_T` as a semidirect product.
 * `TauCeti.AlgebraicGeometry.PrestableMap.infinitesimalAut`: the infinitesimal automorphisms of
   a prestable map over `Spec R`.
+* `TauCeti.AlgebraicGeometry.PrestableMap.infinitesimalAutToTotal`: forgetting the map and the
+  markings, an infinitesimal automorphism of `F` is one of its total space,
+  `TauCeti.AlgebraicGeometry.infinitesimalAut`.
 
 ## Main results
 
@@ -60,6 +65,8 @@ automorphisms, and, under a generic separability hypothesis, no infinitesimal on
   restricts to the identity exactly when it fixes the total space of `F` along `ι`.
 * `TauCeti.AlgebraicGeometry.PrestableMap.mem_infinitesimalAut_iff`: the same description of
   infinitesimal automorphisms.
+* `TauCeti.AlgebraicGeometry.PrestableMap.infinitesimalAutToTotal_injective`: an infinitesimal
+  automorphism of a prestable map is determined by the one of its total space.
 
 ## References
 
@@ -283,15 +290,21 @@ theorem autPullbackSplitting_apply (g : Aut F) :
     (F.autPullbackSplitting h) g = F.pullbackAut p g :=
   (rfl)
 
-/-- The action on the restriction kernel is conjugation by the base-changed automorphism. -/
+/-- The conjugation action of the automorphism extension on the restriction kernel is
+conjugation in `Aut (F.pullback p)`. -/
 @[simp]
+theorem autPullbackExtension_conjAct_apply_coe (e : Aut (F.pullback p))
+    (x : (F.restrictAut h).ker) :
+    ((F.autPullbackExtension h).conjAct e x : Aut (F.pullback p)) =
+      e * (x : Aut (F.pullback p)) * e⁻¹ := by
+  simpa only [autPullbackExtension_inl, Subgroup.subtype_apply] using
+    (F.autPullbackExtension h).inl_conjAct_comm (e := e) (n := x)
+
+/-- The action on the restriction kernel is conjugation by the base-changed automorphism. -/
 theorem autPullbackSplitting_conjAct_apply_coe (g : Aut F) (x : (F.restrictAut h).ker) :
     ((F.autPullbackSplitting h).conjAct g x : Aut (F.pullback p)) =
-      F.pullbackAut p g * (x : Aut (F.pullback p)) * (F.pullbackAut p g)⁻¹ := by
-  simpa only [GroupExtension.Splitting.conjAct, MonoidHom.comp_apply,
-    MonoidHom.coe_ofClass, autPullbackSplitting_apply,
-    autPullbackExtension_inl, Subgroup.subtype_apply] using
-    (F.autPullbackExtension h).inl_conjAct_comm (e := F.pullbackAut p g) (n := x)
+      F.pullbackAut p g * (x : Aut (F.pullback p)) * (F.pullbackAut p g)⁻¹ :=
+  F.autPullbackExtension_conjAct_apply_coe h (F.pullbackAut p g) x
 
 /-- The automorphism group of `F.pullback p` is the semidirect product of the automorphisms
 restricting to the identity along the section and the base changes of the automorphisms of `F`,
@@ -320,16 +333,64 @@ its base change along `Spec R[ε] ⟶ Spec R` to the dual numbers that reduce to
 they fix every marking and commute with the map to the target. -/
 def infinitesimalAut (F : PrestableMap q n) :
     Subgroup (Aut (F.pullback (Spec.map (CommRingCat.ofHom (algebraMap R (DualNumber R)))))) :=
-  (F.restrictAut (dualNumberSplitEpi R)).ker
+  (F.restrictAut (TrivSqZeroExt.fstHom R R R).specSplitEpi).ker
 
 /-- An automorphism of the base change of `F` to the dual numbers is infinitesimal exactly when it
 fixes the total space of `F`, included over `ε ↦ 0`. -/
 theorem mem_infinitesimalAut_iff (F : PrestableMap q n)
     (e : Aut (F.pullback (Spec.map (CommRingCat.ofHom (algebraMap R (DualNumber R)))))) :
     e ∈ F.infinitesimalAut ↔
-      F.pullbackSectionι (dualNumberSplitEpi R) ≫ e.asIso.hom.curve.hom =
-        F.pullbackSectionι (dualNumberSplitEpi R) :=
+      F.pullbackSectionι (TrivSqZeroExt.fstHom R R R).specSplitEpi ≫ e.asIso.hom.curve.hom =
+        F.pullbackSectionι (TrivSqZeroExt.fstHom R R R).specSplitEpi :=
   F.mem_ker_restrictAut_iff _ e
+
+/-- The inclusion over `ε ↦ 0` of the total space of `F` into its base change to the dual numbers
+is the inclusion `TauCeti.AlgebraicGeometry.dualNumberDeformationι` of the total space over
+`Spec R`. -/
+theorem pullbackSectionι_fstHom_specSplitEpi (F : PrestableMap q n) :
+    F.pullbackSectionι (TrivSqZeroExt.fstHom R R R).specSplitEpi =
+      dualNumberDeformationι F.curve.toBase := by
+  refine Limits.pullback.hom_ext ?_ ?_
+  · exact (F.pullbackSectionι_fst _).trans (dualNumberDeformationι_fst _).symm
+  · refine (F.pullbackSectionι_snd _).trans ?_
+    rw [AlgHom.specSplitEpi_section]
+    exact (dualNumberDeformationι_snd _).symm
+
+/-- Forgetting the map and the markings, from the automorphisms of the base change of `F` to the
+dual numbers to the automorphisms of the base change of its total space. -/
+private def autPullbackToTotal (F : PrestableMap q n) :
+    Aut (F.pullback (Spec.map (CommRingCat.ofHom (algebraMap R (DualNumber R))))) →*
+      Aut (dualNumberDeformation F.curve.toBase) :=
+  (PointedPrestableFamily.autToOver _).comp (autToCurve _)
+
+private theorem autPullbackToTotal_apply_asIso_hom_left (F : PrestableMap q n)
+    (e : Aut (F.pullback (Spec.map (CommRingCat.ofHom (algebraMap R (DualNumber R)))))) :
+    (F.autPullbackToTotal e).asIso.hom.left = e.asIso.hom.curve.hom :=
+  (PointedPrestableFamily.autToOver_apply_asIso_hom_left _).trans
+    congr(PointedPrestableFamily.Hom.hom $(autToCurve_apply_asIso_hom e))
+
+/-- Forgetting the map and the markings, an infinitesimal automorphism of a prestable map over
+`Spec R` is an infinitesimal automorphism of its total space over `Spec R`. -/
+def infinitesimalAutToTotal (F : PrestableMap q n) :
+    F.infinitesimalAut →* TauCeti.AlgebraicGeometry.infinitesimalAut F.curve.toBase :=
+  (F.autPullbackToTotal.comp F.infinitesimalAut.subtype).codRestrict _ fun e ↦ by
+    rw [MonoidHom.comp_apply, TauCeti.AlgebraicGeometry.mem_infinitesimalAut_iff,
+      autPullbackToTotal_apply_asIso_hom_left,
+      ← pullbackSectionι_fstHom_specSplitEpi]
+    exact (F.mem_infinitesimalAut_iff e.val).1 e.property
+
+@[simp]
+theorem infinitesimalAutToTotal_apply_asIso_hom_left (F : PrestableMap q n)
+    (e : F.infinitesimalAut) :
+    (F.infinitesimalAutToTotal e).val.asIso.hom.left = e.val.asIso.hom.curve.hom :=
+  F.autPullbackToTotal_apply_asIso_hom_left e.val
+
+/-- An infinitesimal automorphism of a prestable map is determined by the infinitesimal
+automorphism of its total space. -/
+theorem infinitesimalAutToTotal_injective (F : PrestableMap q n) :
+    Function.Injective F.infinitesimalAutToTotal := fun _ _ h ↦
+  Subtype.ext (autToCurve_injective _ (PointedPrestableFamily.autToOver_injective _
+    congr(Subtype.val $h)))
 
 end Infinitesimal
 

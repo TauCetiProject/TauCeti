@@ -139,7 +139,7 @@ theorem vectorsOfNorm_one_unitNormComplement : L.unitNormComplement.vectorsOfNor
   rw [mem_vectorsOfNorm_one_iff, integralForm_unitNormComplementEquiv] at hy
   have hmem : (t : L) ∈ L.unitNormSubmodule :=
     L.vectorsOfNorm_one_subset_unitNormSubmodule ((L.mem_vectorsOfNorm_one_iff).2 hy)
-  have h0 := LinearMap.BilinForm.mem_orthogonal_iff.1 t.2 _ hmem
+  have h0 := LinearMap.BilinForm.mem_orthogonal_iff.1 t.property _ hmem
   omega
 
 variable {L}
@@ -182,7 +182,7 @@ private noncomputable def signRep (q : Quotient (signSetoid L)) : L :=
   (Quotient.out q : L.vectorsOfNorm 1)
 
 private theorem signRep_mem (q : Quotient (signSetoid L)) : signRep L q ∈ L.vectorsOfNorm 1 :=
-  (Quotient.out q).2
+  (Quotient.out q).property
 
 private theorem signRep_mk (x : L.vectorsOfNorm 1) :
     signRep L ⟦x⟧ = x ∨ signRep L ⟦x⟧ = -x :=
