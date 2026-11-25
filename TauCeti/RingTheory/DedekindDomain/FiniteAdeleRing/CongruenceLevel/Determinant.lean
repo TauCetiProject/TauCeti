@@ -11,14 +11,16 @@ public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.CongruenceLevel
 -- Non-public: the determinants of the levels of `GL₂` over a commutative ring, used only in the
 -- proofs.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.CongruenceLevel.Determinant
+-- Non-public: the determinants of the reduction kernel, used only in the proofs.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 
 /-!
 # Determinants of the congruence levels of `GL₂(𝔸_f)`
 
 Over the finite adeles of a Dedekind domain `R` with fraction field `K`, with `Ô` the integral
 adeles, the determinants of the levels of `GL₂` over a commutative ring
-(`TauCeti.GL2K1.map_det`, `TauCeti.GL2K0.map_det`, `TauCeti.map_det_ker_map_quotientMk`)
-give for every ideal `N` of `R`:
+(`TauCeti.GL2K1.map_det`, `TauCeti.GL2K0.map_det`) and of the reduction kernel
+(`Matrix.GeneralLinearGroup.map_det_ker_map_quotientMk`) give for every ideal `N` of `R`:
 
 * `det K₀(N) = det K₁(N) = Ô^×`, viewed in `𝔸_f^×`;
 * `det K(N) = {x ∈ Ô^× : x ≡ 1 mod NÔ}`.
@@ -84,7 +86,8 @@ theorem map_det_principalLevel (N : Ideal R) :
       (Units.map (Ideal.Quotient.mk (completedIdeal K N) :
           integralAdeles R K →* integralAdeles R K ⧸ completedIdeal K N)).ker.map
         (Units.map ((integralAdeles R K).val.toRingHom : integralAdeles R K →* 𝔸ᶠ[R, K])) := by
-  rw [principalLevel_eq_map_ker, map_det_map_integralGL, map_det_ker_map_quotientMk]
+  rw [principalLevel_eq_map_ker, map_det_map_integralGL,
+    GeneralLinearGroup.map_det_ker_map_quotientMk]
 
 variable {K}
 
@@ -98,12 +101,5 @@ theorem integralGL_diagGL_mem_level1 (N : Ideal R) (u : (integralAdeles R K)ˣ) 
 theorem integralGL_diagGL_mem_level0 (N : Ideal R) (u : (integralAdeles R K)ˣ) :
     integralGL K 2 (diagGL ![u, 1]) ∈ level0 K N :=
   level1_le_level0 K N (integralGL_diagGL_mem_level1 N u)
-
-/-- The determinant of `diag(u, 1)` in `GL₂(𝔸_f)`, for a unit `u` of the integral adeles, is the
-image of `u`. -/
-theorem det_integralGL_diagGL (u : (integralAdeles R K)ˣ) :
-    GeneralLinearGroup.det (integralGL K 2 (diagGL ![u, 1])) =
-      Units.map ((integralAdeles R K).val.toRingHom : integralAdeles R K →* 𝔸ᶠ[R, K]) u := by
-  rw [det_integralGL, det_diagGL_unit_one]
 
 end IsDedekindDomain.FiniteAdeleRing
