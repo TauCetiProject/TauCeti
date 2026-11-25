@@ -13,6 +13,7 @@ import TauCeti.Algebra.Group.Subgroup.Pi
 import TauCeti.Algebra.Module.ZMod.Annihilator
 import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Orthogonality
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
+import TauCeti.GroupTheory.Index.Comap
 
 /-!
 # The orthogonality bound for the Selmer groups of an isogeny and its dual
@@ -218,8 +219,9 @@ private theorem natCard_sup :
         ((φ.selmerStructure τ).relaxedAt (Sum.inl '' S)).selmerGroup.map (locRes φ τ S) :) =
       (φ.selmerGroup τ).relIndex ((φ.selmerStructure τ).relaxedAt (Sum.inl '' S)).selmerGroup *
         Nat.card (localConditions φ S) := by
-  rw [← AddSubgroup.relIndex_mul_card, inf_sup_self, AddSubgroup.relIndex_sup_left,
-    ← AddSubgroup.relIndex_comap, ← AddSubgroup.inf_relIndex_right,
+  -- After `natCard_sup_map`, it remains to show that inside the relaxed Selmer group the
+  -- preimage of the local conditions is `Sel_φ`.
+  rw [AddSubgroup.natCard_sup_map, ← AddSubgroup.inf_relIndex_right,
     ← AddSubgroup.inf_relIndex_right (φ.selmerGroup τ)]
   congr 2
   ext c
