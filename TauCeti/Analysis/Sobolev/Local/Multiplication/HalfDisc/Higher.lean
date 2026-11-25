@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Multiplication.Higher
+import TauCeti.Analysis.Sobolev.Local.Multiplication.HalfDisc
 import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Sobolev.Local.Locality
 import TauCeti.Analysis.Sobolev.Local.Reflection
@@ -29,6 +30,8 @@ fields in the same local Sobolev classes, up to the real axis.
 * `TauCeti.MemWkpLoc.bilin_succ_halfPlane`: mixed-exponent products at every positive order.
 * `TauCeti.MemWkpLoc.clm_apply_succ_halfPlane`: the field form `z ↦ A z (u z)`.
 * `TauCeti.MemWkpLoc.compL_succ_halfPlane`: the composition form `z ↦ A z ∘L C z`.
+* `TauCeti.MemWkpLoc.bilin_of_memWkpLoc_succ_halfPlane`: products of a `W^{k,p}_loc` map with a
+  `W^{k+1,q}_loc` map are in `W^{k,q}_loc`, for every `k ≥ 0`.
 
 ## References
 
@@ -91,5 +94,21 @@ theorem MemWkpLoc.compL_succ_halfPlane [FiniteDimensional ℝ H] (hp : 2 < p) (h
     (hC : MemWkpLoc q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) C) :
     MemWkpLoc q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) (fun z => (A z).comp (C z)) :=
   hA.bilin_succ_halfPlane (ContinuousLinearMap.compL ℝ F G H) hp hq hqp hC
+
+/-- **Mixed-exponent products losing one order on half-discs.** For `p > 2` and `1 < q ≤ p`, the
+product of a `W^{k,p}_loc` map with a `W^{k+1,q}_loc` map on `Ω ∩ {0 ≤ im}`, both with
+finite-dimensional values, is in `W^{k,q}_loc` there, for every `k ≥ 0`. At `k = 0` this is the
+order-zero product `TauCeti.MemLpLoc.bilin_of_memWkpLoc_halfPlane`; for `k ≥ 1` it follows from
+`TauCeti.MemWkpLoc.bilin_succ_halfPlane`. -/
+theorem MemWkpLoc.bilin_of_memWkpLoc_succ_halfPlane [CompleteSpace H] (B : F →L[ℝ] G →L[ℝ] H)
+    (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p) {k : ℕ} {f : ℂ → F} {g : ℂ → G}
+    (hf : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k f)
+    (hg : MemWkpLoc q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) g) :
+    MemWkpLoc q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k (fun z => B (f z) (g z)) := by
+  cases k with
+  | zero =>
+    let _ : Fact (1 ≤ (q : ℝ≥0∞)) := ⟨by exact_mod_cast hq.le⟩
+    exact memWkpLoc_zero_iff.2 (hf.memLpLoc.bilin_of_memWkpLoc_halfPlane B hp hqp hg)
+  | succ k => exact hf.bilin_succ_halfPlane B hp hq hqp hg.of_succ
 
 end TauCeti

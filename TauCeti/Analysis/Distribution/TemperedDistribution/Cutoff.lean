@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -52,6 +53,9 @@ on `Ω` be replaced by one acting on the tempered distribution `χ T`.
 * `Distribution.cutoffTempered_congr`: independence of the cutoff near the support of `T`.
 * `Distribution.cutoffTempered_zero`, `Distribution.cutoffTempered_add`,
   `Distribution.cutoffTempered_smul`, `Distribution.cutoffTempered_sum`: `φ T` is linear in `T`.
+* `Distribution.cutoffTempered_induction`: a property of tempered distributions that holds for `0`
+  and is preserved by sums passes from the cut-off distributions `ψ T` with `ψ` supported near
+  each point of the support of `χ` to `χ T`.
 * `Distribution.cutoffTempered_smulLeftCLM`: `φ (g T) = (g φ) T` for a smooth real `g`.
 * `Distribution.cutoffTempered_restrictCLM`: cutting off the restriction of `T` to an open
   `Ω' ≤ Ω` by `φ` is cutting off `T` by `φ` extended by zero.
@@ -61,6 +65,7 @@ on `Ω` be replaced by one acting on the tempered distribution `χ T`.
   `φ`, then `φ (χ T) = φ T` and `φ ∂^m (χ T) = φ ∂^m T`.
 * `Distribution.smulLeftCLM_cutoffTempered_of_eqOn_one`: if `g = 1` on the support of `φ`, then
   `g (φ T) = φ T`.
+* `Distribution.smulLeftCLM_cutoffTempered_of_mul_eq`: if `g φ = χ`, then `g (φ T) = χ T`.
 * `Distribution.cutoffTempered_toDistribution`: for a tempered distribution `u`, restricted to `Ω`
   by `TemperedDistribution.toDistribution`, the tempered distribution `φ u` is the product of `u`
   with `φ`.
@@ -248,6 +253,22 @@ theorem cutoffTempered_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω,
   ext ψ
   simp only [smul_apply, cutoffTempered_def, map_smul, smul_eq_mul]
 
+/-- **From local to global properties of cut-off distributions.** Let `P` be a property of
+tempered distributions that holds for `0` and is preserved by sums. If every point of the support
+of `χ` has a neighbourhood `U` such that `P (ψ T)` holds for every test function `ψ` supported in
+`U`, then `P (χ T)` holds: `χ` is a finite sum of test functions supported in such
+neighbourhoods. -/
+theorem cutoffTempered_induction (P : 𝓢'(E, ℂ) → Prop) (zero : P 0)
+    (add : ∀ u v, P u → P v → P (u + v)) {T : 𝓓'(Ω, ℂ)} {χ : 𝓓(Ω, ℂ)}
+    (h : ∀ x ∈ tsupport χ, ∃ U ∈ 𝓝 x, ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → P (T.cutoffTempered ψ)) :
+    P (T.cutoffTempered χ) := by
+  choose U hU hUP using fun x : tsupport χ ↦ h x x.property
+  obtain ⟨t, ψ, hψU, hψχ, -⟩ := χ.exists_sum_subordinate (fun x ↦ interior (U x))
+    (fun _ ↦ isOpen_interior) fun x hx ↦
+      mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx⟩)⟩
+  rw [← hψχ, cutoffTempered_sum_cutoff]
+  exact Finset.sum_induction _ P add zero fun i _ ↦ hUP i _ ((hψU i).trans interior_subset)
+
 end Cutoff
 
 section Operations
@@ -291,22 +312,29 @@ theorem lineDerivOp_cutoffTempered (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (v 
     map_neg]
   ring
 
-/-- **Cutting off a cut-off distribution.** If `χ = 1` on the support of `φ`, then
-`φ (χ T) = φ T`. -/
-theorem smulLeftCLM_cutoffTempered (T : 𝓓'(Ω, ℂ)) {χ φ : 𝓓(Ω, ℂ)}
-    (h : ∀ x ∈ tsupport φ, χ x = 1) :
-    TemperedDistribution.smulLeftCLM ℂ (φ : E → ℂ) (T.cutoffTempered χ) = T.cutoffTempered φ := by
+/-- **Changing the cutoff by a multiplier.** If a function `g` of temperate growth satisfies
+`g φ = χ`, then `g (φ T) = χ T`. -/
+theorem smulLeftCLM_cutoffTempered_of_mul_eq (T : 𝓓'(Ω, ℂ)) {φ χ : 𝓓(Ω, ℂ)} {g : E → ℂ}
+    (hg : g.HasTemperateGrowth) (h : ∀ x, g x * φ x = χ x) :
+    TemperedDistribution.smulLeftCLM ℂ g (T.cutoffTempered φ) = T.cutoffTempered χ := by
   ext ψ
   rw [TemperedDistribution.smulLeftCLM_apply_apply, cutoffTempered_def, cutoffTempered_def]
   congr 1
   ext x
   simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply',
-    SchwartzMap.smulLeftCLM_apply (φ.hasCompactSupport.hasTemperateGrowth φ.contDiff),
-    smul_eq_mul]
-  by_cases hx : x ∈ tsupport φ
-  · rw [h x hx]
-    ring
-  · simp [image_eq_zero_of_notMem_tsupport hx]
+    SchwartzMap.smulLeftCLM_apply_apply hg, smul_eq_mul, ← h x]
+  ring
+
+/-- **Cutting off a cut-off distribution.** If `χ = 1` on the support of `φ`, then
+`φ (χ T) = φ T`. -/
+theorem smulLeftCLM_cutoffTempered (T : 𝓓'(Ω, ℂ)) {χ φ : 𝓓(Ω, ℂ)}
+    (h : ∀ x ∈ tsupport φ, χ x = 1) :
+    TemperedDistribution.smulLeftCLM ℂ (φ : E → ℂ) (T.cutoffTempered χ) = T.cutoffTempered φ :=
+  smulLeftCLM_cutoffTempered_of_mul_eq T (φ.hasCompactSupport.hasTemperateGrowth φ.contDiff)
+    fun x ↦ by
+      by_cases hx : x ∈ tsupport φ
+      · rw [h x hx, mul_one]
+      · simp [image_eq_zero_of_notMem_tsupport hx]
 
 /-- **Multiplying a cut-off distribution by a function equal to one on the cutoff.** If a function
 `g` of temperate growth equals `1` on the support of `φ`, then `g (φ T) = φ T`. -/
