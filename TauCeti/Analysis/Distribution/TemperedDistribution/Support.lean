@@ -245,13 +245,15 @@ theorem dsupport_subset_singleton_iff_mem_span {T : 𝓢'(E, ℂ)} {x : E} :
       fun i ↦ ∂^{b ∘ i.2} (delta x)
     -- Tempered distributions as linear functionals.
     let toLin := PointwiseConvergenceCLM.coeLM ℂ 𝓢(E, ℂ) ℂ
+    -- Applying `toLin S` is applying `S` itself.
+    have htoLin (S : 𝓢'(E, ℂ)) (f : 𝓢(E, ℂ)) : toLin S f = S f := rfl
     have hker : ⨅ i, LinearMap.ker (toLin (D i)) ≤ LinearMap.ker (toLin T) := by
       intro f hf
       simp only [Submodule.mem_iInf, LinearMap.mem_ker] at hf
       refine hN f fun n hn ↦ ContinuousMultilinearMap.toMultilinearMap_injective
         (Module.Basis.ext_multilinear (fun _ ↦ b) fun v ↦ ?_)
       have := hf ⟨⟨n, Nat.lt_succ_of_le hn⟩, v ∘ Fin.rev⟩
-      change (∂^{b ∘ (v ∘ Fin.rev)} (delta x)) f = 0 at this
+      simp only [htoLin, D] at this
       rw [iteratedLineDerivOp_delta_apply, mul_eq_zero] at this
       simpa only [ContinuousMultilinearMap.coe_coe, ContinuousMultilinearMap.toMultilinearMap_zero,
         zero_apply, Function.comp_def, Fin.rev_rev] using
@@ -261,7 +263,7 @@ theorem dsupport_subset_singleton_iff_mem_span {T : 𝓢'(E, ℂ)} {x : E} :
     have hT : T = ∑ i, c i • D i := by
       simp only [← map_smul, ← map_sum] at hc
       ext f
-      exact (LinearMap.congr_fun hc f).symm
+      simpa only [htoLin] using (LinearMap.congr_fun hc f).symm
     rw [hT]
     refine Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ?_)
     exact mem_iUnion.2 ⟨i.1, b ∘ i.2, rfl⟩
