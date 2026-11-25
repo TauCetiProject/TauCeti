@@ -40,6 +40,12 @@ differential of the inclusion is not proved here.
   `Topology.IsEmbedding.subtypeVal`, since `K` carries the subspace topology.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.isSmoothEmbedding_subtypeVal`: the smooth embedding of
   a subgroup with a finite-dimensional boundaryless ambient model.
+* `TauCeti.Lie.EmbeddedLieSubgroupData.isImmersion_codRestrict`: an immersion into the ambient
+  group with values in an embedded Lie subgroup is an immersion into the subgroup.
+* `TauCeti.Lie.EmbeddedLieSubgroupData.contMDiffSMul`: an embedded Lie subgroup acts smoothly on
+  every manifold on which the ambient group acts smoothly, such as the ambient group itself, and
+  `TauCeti.Lie.EmbeddedLieSubgroupData.injective_mfderiv_mul_left_subtypeVal`: the differential of
+  `k ↦ g k` is injective.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.ofIsClosed`: selected data for a closed subgroup.
 * `TauCeti.Lie.IsEmbeddedLieSubgroup`: a subgroup admits such data, with
   `TauCeti.Lie.isEmbeddedLieSubgroup_iff` its characterization.
@@ -118,6 +124,59 @@ theorem isSmoothEmbedding_subtypeVal [FiniteDimensional ℝ E] [LieGroup I ∞ G
   let _ := d.lieGroup
   exact ⟨d.contMDiff_subtypeVal.isImmersion_of_injective_mfderiv (by simp)
     d.injective_mfderiv_subtypeVal, Topology.IsEmbedding.subtypeVal⟩
+
+/-- An immersion into the ambient group with values in an embedded Lie subgroup is an immersion
+into the subgroup. -/
+theorem isImmersion_codRestrict [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    [LieGroup I ∞ G] [I.Boundaryless] (d : EmbeddedLieSubgroupData I K E')
+    {EM : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM] {HM : Type*} [TopologicalSpace HM]
+    {IM : ModelWithCorners ℝ EM HM} [IM.Boundaryless] {M : Type*} [TopologicalSpace M]
+    [ChartedSpace HM M] [IsManifold IM ∞ M] {f : M → G} (himm : Manifold.IsImmersion IM I ∞ f)
+    (hf : ∀ x, f x ∈ K) :
+    let _ := d.chartedSpace
+    Manifold.IsImmersion IM 𝓘(ℝ, E') ∞ (fun x ↦ (⟨f x, hf x⟩ : K)) := by
+  let _ := d.chartedSpace
+  let _ := d.lieGroup
+  exact d.isSmoothEmbedding_subtypeVal.isImmersion_of_isImmersion_comp (by simp) himm
+
+/-- An embedded Lie subgroup acts smoothly on every manifold on which the ambient group acts
+smoothly, for instance on the ambient group itself by left multiplication. -/
+theorem contMDiffSMul {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H'' M] [MulAction G M]
+    [ContMDiffSMul I I'' ∞ G M] (d : EmbeddedLieSubgroupData I K E') :
+    let _ := d.chartedSpace
+    ContMDiffSMul 𝓘(ℝ, E') I'' ∞ K M := by
+  let _ := d.chartedSpace
+  exact MulAction.contMDiffSMul_compHom (f := K.subtype) d.contMDiff_subtypeVal
+
+/-- On an embedded Lie subgroup, the map `k ↦ g k` into the ambient group is
+differentiable. -/
+theorem mdifferentiableAt_mul_left_subtypeVal [ContMDiffMul I ∞ G]
+    (d : EmbeddedLieSubgroupData I K E') (g : G) (k : K) :
+    let _ := d.chartedSpace
+    MDifferentiableAt 𝓘(ℝ, E') I (fun x : K ↦ g * x) k := by
+  let _ := d.chartedSpace
+  exact ((contMDiff_mul_left (I := I) (n := ∞)).comp d.contMDiff_subtypeVal k).mdifferentiableAt
+    (by simp)
+
+/-- On an embedded Lie subgroup, the differential of `k ↦ g k` is injective: left translation by
+`g⁻¹` turns it into the differential of the inclusion. -/
+theorem injective_mfderiv_mul_left_subtypeVal [ContMDiffMul I ∞ G]
+    (d : EmbeddedLieSubgroupData I K E') (g : G) (k : K) :
+    let _ := d.chartedSpace
+    Function.Injective (mfderiv 𝓘(ℝ, E') I (fun x : K ↦ g * x) k) := by
+  intro _ v w hvw
+  apply d.injective_mfderiv_subtypeVal k
+  -- The inclusion is left translation by `g⁻¹` after `x ↦ g x`.
+  have hcomp : (fun x : K ↦ (x : G)) = (g⁻¹ * ·) ∘ fun x : K ↦ g * x :=
+    funext fun x ↦ by simp
+  have hder (u) : mfderiv 𝓘(ℝ, E') I (fun x : K ↦ (x : G)) k u =
+      mfderiv I I (g⁻¹ * ·) (g * (k : G)) (mfderiv 𝓘(ℝ, E') I (fun x : K ↦ g * x) k u) := by
+    rw [hcomp]
+    exact mfderiv_comp_apply k mdifferentiableAt_mul_left
+      (d.mdifferentiableAt_mul_left_subtypeVal g k) u
+  rw [hder, hder, hvw]
 
 end EmbeddedLieSubgroupData
 

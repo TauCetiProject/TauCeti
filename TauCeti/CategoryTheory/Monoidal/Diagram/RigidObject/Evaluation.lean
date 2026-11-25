@@ -6,279 +6,356 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Diagram.RigidObject.Substitution
-public import TauCeti.CategoryTheory.Monoidal.TensorList.Basic
-public import TauCeti.CategoryTheory.Monoidal.Rigid.MixedDualFunctor
+public import TauCeti.CategoryTheory.Monoidal.Rigid.DualFunctor
+public import TauCeti.CategoryTheory.Monoidal.Rigid.IteratedDual
+public import TauCeti.CategoryTheory.Monoidal.Rigid.LeftDualFunctor
 
 /-!
-# Categorical evaluation of rigid object syntax and winding words
+# Evaluating rigid objects and the normalization comparison
 
-Given a valuation `f : α → C` into a rigid monoidal category `C`, this file evaluates both
-integer-labelled winding words (`WindingWord.evalObj`) and parenthesized formal rigid object
-expressions (`RigidObject.evalObj`) as objects of `C`, together with structural comparisons.
+Let `C` be a rigid monoidal category and `f : α → C` an assignment of objects to generators.
+A formal rigid object `X : RigidObject α` evaluates to `RigidObject.eval f X`, reading the
+formal tensor, unit and duals as those of `C`, with the duals chosen by its rigid structure.
+A winding word evaluates letterwise: the letter `(a, n)` becomes `TauCeti.iteratedDual n (f a)`
+(from `TauCeti.CategoryTheory.Monoidal.Rigid.IteratedDual`), the `n`-fold right dual of `f a`
+when `n ≥ 0` and the `-n`-fold left dual when `n < 0`, and a word is the right-associated
+tensor product of its letters, closed by the unit (`WindingWord.eval`). The canonical
+expression `RigidObject.ofWord L` of a word evaluates to `WindingWord.eval f L`
+(`RigidObject.eval_ofWord`).
 
-* `TauCeti.iteratedRightDual`, `TauCeti.iteratedLeftDual`, `TauCeti.iteratedDual`: iterated chosen
-  duals (`RightRigidCategory.rightDual`, `LeftRigidCategory.leftDual`) indexed by `ℕ` and `ℤ`,
-  with step comparisons `TauCeti.iteratedDualRightDualIso` and `TauCeti.iteratedDualLeftDualIso`;
-* `TauCeti.WindingWord.evalObj`: right-associated tensor evaluation of `WindingWord α` in `C`,
-  with `evalObjAppendIso`, `evalObjRightDualIso`, `evalObjLeftDualIso`, `evalObjDualPowIso`, and
-  `evalObjSubstIso`;
-* `TauCeti.RigidObject.evalObj` and `TauCeti.RigidObject.evalObjNormalizeIso`: direct evaluation of
-  `RigidObject α` and its structural isomorphism to `X.normalize.evalObj f`.
+This file constructs the comparison isomorphism
+`RigidObject.normalizeIso f X : RigidObject.eval f X ≅ WindingWord.eval f X.normalize`
+from a formal expression to its normalized winding word. It is assembled from
+the structural isomorphisms of `C`:
 
-## References
+* `WindingWord.evalAppendIso`: concatenation of words is the tensor product, through
+  associators and the left unitor;
+* `WindingWord.evalRightDualIso` and `WindingWord.evalLeftDualIso`: the dual of an evaluated word
+  is the evaluated dual word. The tensor order is reversed by Mathlib's `rightDualTensorIso` and
+  `leftDualTensorIso`, the dual of the unit is identified with the unit, and on letters the level
+  changes by one (`TauCeti.iteratedDualRightDualIso`, `TauCeti.iteratedDualLeftDualIso`). A mixed
+  double dual `(ᘁY)ᘁ` or `ᘁ(Yᘁ)` is identified with `Y` by Mathlib's comparisons `rightDualIso`
+  and `leftDualIso` between two duals; two duals of the same handedness are never identified, so
+  the integer levels are kept.
 
-* [A. Joyal and R. Street, *Planar diagrams and tensor algebra*][joyalStreet1988], §2
-* [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §2.10
+As a consequence, two formal objects with the same normalization have isomorphic evaluations
+(`RigidObject.evalIsoOfNormalizeEq`). For instance `ᘁ(Xᘁ)` and `X` do, whereas `Xᘁᘁ` and `X` have
+different normalizations (`RigidObject.normalize_rightDual_rightDual_ne`), and no comparison
+between them is produced. No pivotal structure is used.
+
+Evaluation is compatible with substitution: `RigidObject.eval_subst` for formal objects, and
+`WindingWord.evalSubstIso` for words, which transports each replacing word through the
+integer dual level of its occurrence using `WindingWord.evalDualPowIso`.
+
+The integer-level convention is that of Joyal and Street, *Planar diagrams and tensor
+algebra*, §2: the right dual of a letter at level `n` is at level `n + 1`.
 -/
 
 public section
 
-open CategoryTheory MonoidalCategory MonoidalOpposite Opposite
+open CategoryTheory MonoidalCategory
+
+universe v u w w'
 
 namespace TauCeti
 
-universe v u
-
-variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
-
-/-! ### Iterated chosen duals -/
-
-/-- `k`-fold chosen right dual of `X` in a right rigid monoidal category. -/
-@[expose]
-def iteratedRightDual [RightRigidCategory C] (X : C) : ℕ → C
-  | 0 => X
-  | k + 1 => (iteratedRightDual X k)ᘁ
-
-@[simp] theorem iteratedRightDual_zero [RightRigidCategory C] (X : C) :
-    iteratedRightDual X 0 = X := by rfl
-@[simp] theorem iteratedRightDual_succ [RightRigidCategory C] (X : C) (k : ℕ) :
-    iteratedRightDual X (k + 1) = (iteratedRightDual X k)ᘁ := by rfl
-theorem iteratedRightDual_one [RightRigidCategory C] (X : C) :
-    iteratedRightDual X 1 = Xᘁ := by rfl
-
-/-- `k`-fold chosen left dual of `X` in a left rigid monoidal category. -/
-@[expose]
-def iteratedLeftDual [LeftRigidCategory C] (X : C) : ℕ → C
-  | 0 => X
-  | k + 1 => ᘁ(iteratedLeftDual X k)
-
-@[simp] theorem iteratedLeftDual_zero [LeftRigidCategory C] (X : C) :
-    iteratedLeftDual X 0 = X := by rfl
-@[simp] theorem iteratedLeftDual_succ [LeftRigidCategory C] (X : C) (k : ℕ) :
-    iteratedLeftDual X (k + 1) = ᘁ(iteratedLeftDual X k) := by rfl
-theorem iteratedLeftDual_one [LeftRigidCategory C] (X : C) :
-    iteratedLeftDual X 1 = ᘁX := by rfl
-
-/-- `ℤ`-indexed iterated dual of `X` in a rigid monoidal category: nonnegative integers iterate
-chosen right duals and negative integers iterate chosen left duals. -/
-@[expose]
-def iteratedDual [RigidCategory C] (X : C) : ℤ → C
-  | .ofNat k => iteratedRightDual X k
-  | .negSucc k => iteratedLeftDual X (k + 1)
-
-section
-variable [RigidCategory C]
-
-@[simp] theorem iteratedDual_natCast (X : C) (k : ℕ) :
-    iteratedDual X (k : ℤ) = iteratedRightDual X k := by rfl
-@[simp] theorem iteratedDual_zero (X : C) : iteratedDual X 0 = X := by rfl
-@[simp] theorem iteratedDual_one (X : C) : iteratedDual X 1 = Xᘁ := by rfl
-@[simp] theorem iteratedDual_two (X : C) : iteratedDual X 2 = (Xᘁ : C)ᘁ := by rfl
-@[simp] theorem iteratedDual_negSucc (X : C) (k : ℕ) :
-    iteratedDual X (.negSucc k) = iteratedLeftDual X (k + 1) := by rfl
-@[simp] theorem iteratedDual_neg_one (X : C) : iteratedDual X (-1) = ᘁX := by rfl
-
-/-- Structural comparison `(iteratedDual X n)ᘁ ≅ iteratedDual X (n + 1)`, canceling the outermost
-left dual at negative levels via `rightDualLeftDualIso`. -/
-@[expose]
-noncomputable def iteratedDualRightDualIso (X : C) :
-    (n : ℤ) → (iteratedDual X n)ᘁ ≅ iteratedDual X (n + 1)
-  | .ofNat k => Iso.refl (iteratedRightDual X (k + 1))
-  | .negSucc 0 => (rightDualLeftDualIso C).app X
-  | .negSucc (k + 1) => (rightDualLeftDualIso C).app (iteratedLeftDual X (k + 1))
-
-@[simp] theorem iteratedDualRightDualIso_natCast (X : C) (k : ℕ) :
-    iteratedDualRightDualIso X (k : ℤ) = Iso.refl (iteratedRightDual X (k + 1)) := by rfl
-@[simp] theorem iteratedDualRightDualIso_neg_one (X : C) :
-    iteratedDualRightDualIso X (-1) = (rightDualLeftDualIso C).app X := by rfl
-@[simp] theorem iteratedDualRightDualIso_negSucc_succ (X : C) (k : ℕ) :
-    iteratedDualRightDualIso X (.negSucc (k + 1)) =
-      (rightDualLeftDualIso C).app (iteratedLeftDual X (k + 1)) := by rfl
-
-/-- Structural comparison `ᘁ(iteratedDual X n) ≅ iteratedDual X (n - 1)`, canceling the outermost
-right dual at positive levels via `leftDualRightDualIso`. -/
-@[expose]
-noncomputable def iteratedDualLeftDualIso (X : C) :
-    (n : ℤ) → (ᘁ(iteratedDual X n)) ≅ iteratedDual X (n - 1)
-  | .ofNat 0 => Iso.refl _
-  | .ofNat (k + 1) => (leftDualRightDualIso C).app (iteratedRightDual X k) ≪≫
-      eqToIso (congrArg (iteratedDual X) (add_sub_cancel_right (k : ℤ) 1).symm)
-  | .negSucc _ => Iso.refl _
-
-@[simp] theorem iteratedDualLeftDualIso_zero (X : C) :
-    iteratedDualLeftDualIso X 0 = Iso.refl (iteratedLeftDual X 1) := by rfl
-@[simp] theorem iteratedDualLeftDualIso_one (X : C) :
-    iteratedDualLeftDualIso X 1 = (leftDualRightDualIso C).app X := by ext; exact Category.comp_id _
-@[simp] theorem iteratedDualLeftDualIso_negSucc (X : C) (k : ℕ) :
-    iteratedDualLeftDualIso X (.negSucc k) = Iso.refl (iteratedLeftDual X (k + 2)) := by rfl
-end
-
-/-! ### Evaluation of winding words -/
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RigidCategory C]
 
 namespace WindingWord
 
-variable {α β : Type*}
+variable {α : Type w} {β : Type w'}
 
-/-- Right dual of a winding word as reversal followed by shifting every integer level by `+1`. -/
-theorem rightDual_eq_map_reverse (L : WindingWord α) :
-    L.rightDual = L.reverse.map fun p ↦ (p.1, p.2 + 1) := by induction L <;> simp_all
-/-- Left dual of a winding word as reversal followed by shifting every integer level by `-1`. -/
-theorem leftDual_eq_map_reverse (L : WindingWord α) :
-    L.leftDual = L.reverse.map fun p ↦ (p.1, p.2 - 1) := by induction L <;> simp_all
-
-variable [RigidCategory C]
-
-private abbrev iDual (f : α → C) (p : α × ℤ) : C := iteratedDual (f p.1) p.2
-
-/-- Evaluate `L : WindingWord α` as the right-associated tensor of `iteratedDual (f p.1) p.2`. -/
+/-- Evaluate a winding word in a rigid monoidal category: the letter `(a, n)` becomes the
+iterated dual `iteratedDual n (f a)`, and the word is the right-associated tensor product of its
+letters, closed by the unit. In particular the empty word evaluates to `𝟙_ C`. -/
 @[expose]
-def evalObj (f : α → C) (L : WindingWord α) : C :=
-  tensorList (fun p : α × ℤ ↦ iteratedDual (f p.1) p.2) L
+def eval (f : α → C) : WindingWord α → C
+  | [] => 𝟙_ C
+  | p :: L => iteratedDual p.2 (f p.1) ⊗ eval f L
 
-@[simp] theorem evalObj_nil (f : α → C) : evalObj f ([] : WindingWord α) = 𝟙_ C := by rfl
-@[simp] theorem evalObj_cons (f : α → C) (p : α × ℤ) (L : WindingWord α) :
-    evalObj f (p :: L) = iteratedDual (f p.1) p.2 ⊗ evalObj f L := by rfl
+@[simp] theorem eval_nil (f : α → C) : eval f [] = 𝟙_ C := rfl
 
-/-- Right-unitor isomorphism `evalObj f [p] ≅ iteratedDual (f p.1) p.2` on a single port. -/
-@[expose]
-def evalObjSingletonIso (f : α → C) (p : α × ℤ) : evalObj f [p] ≅ iteratedDual (f p.1) p.2 :=
-  tensorListSingletonIso (fun q : α × ℤ ↦ iteratedDual (f q.1) q.2) p
+@[simp] theorem eval_cons (f : α → C) (p : α × ℤ) (L : WindingWord α) :
+    eval f (p :: L) = iteratedDual p.2 (f p.1) ⊗ eval f L := rfl
 
-/-- Concatenation comparison `evalObj f L ⊗ evalObj f M ≅ evalObj f (L ++ M)`. -/
-@[expose]
-def evalObjAppendIso (f : α → C) (L M : WindingWord α) :
-    evalObj f L ⊗ evalObj f M ≅ evalObj f (L ++ M) :=
-  tensorListAppendIso (fun p : α × ℤ ↦ iteratedDual (f p.1) p.2) L M
+/-- The evaluation of a concatenation is the tensor product of the evaluations. -/
+def evalAppendIso (f : α → C) : (L M : WindingWord α) → eval f (L ++ M) ≅ eval f L ⊗ eval f M
+  | [], M => (λ_ (eval f M)).symm
+  | p :: L, M => whiskerLeftIso (iteratedDual p.2 (f p.1)) (evalAppendIso f L M) ≪≫ (α_ _ _ _).symm
 
-@[simp] theorem evalObjAppendIso_nil (f : α → C) (M : WindingWord α) :
-    evalObjAppendIso f [] M = λ_ (evalObj f M) := tensorListAppendIso_nil _ M
-theorem evalObjAppendIso_cons_hom (f : α → C) (p : α × ℤ) (L M : WindingWord α) :
-    (evalObjAppendIso f (p :: L) M).hom =
-      (α_ (iteratedDual (f p.1) p.2) (evalObj f L) (evalObj f M)).hom ≫
-        iteratedDual (f p.1) p.2 ◁ (evalObjAppendIso f L M).hom :=
-  tensorListAppendIso_cons_hom _ p L M
+@[simp] theorem evalAppendIso_nil (f : α → C) (M : WindingWord α) :
+    evalAppendIso f [] M = (λ_ (eval f M)).symm := (rfl)
 
-/-- Right-dual comparison `(evalObj f L)ᘁ ≅ evalObj f L.rightDual` reversing tensor factors and
-advancing each dual level by `+1`. -/
-noncomputable def evalObjRightDualIso (f : α → C) (L : WindingWord α) :
-    (evalObj f L)ᘁ ≅ evalObj f L.rightDual :=
-  (rightDualFunctor C).opMopTensorListIso (iDual f) L ≪≫
-    tensorListCongrIso (fun p : α × ℤ ↦ iteratedDualRightDualIso (f p.1) p.2) L.reverse ≪≫
-    tensorListMapIso (iDual f) (fun p ↦ (p.1, p.2 + 1)) L.reverse ≪≫
-    eqToIso (congrArg (evalObj f) (rightDual_eq_map_reverse L).symm)
+@[simp] theorem evalAppendIso_cons (f : α → C) (p : α × ℤ) (L M : WindingWord α) :
+    evalAppendIso f (p :: L) M =
+      whiskerLeftIso (iteratedDual p.2 (f p.1)) (evalAppendIso f L M) ≪≫ (α_ _ _ _).symm := (rfl)
 
-theorem evalObjRightDualIso_hom (f : α → C) (L : WindingWord α) :
-    (evalObjRightDualIso f L).hom =
-      ((rightDualFunctor C).opMopTensorListIso (fun p : α × ℤ ↦ iteratedDual (f p.1) p.2) L).hom ≫
-        tensorListCongrHom (fun p : α × ℤ ↦ (iteratedDualRightDualIso (f p.1) p.2).hom) L.reverse ≫
-        (tensorListMapIso (fun q : α × ℤ ↦ iteratedDual (f q.1) q.2)
-          (fun p ↦ (p.1, p.2 + 1)) L.reverse).hom ≫
-        eqToHom (congrArg (evalObj f) (rightDual_eq_map_reverse L).symm) :=
-  congrArg (fun g ↦ _ ≫ g ≫ _ ≫ _) (tensorListCongrIso_hom _ _)
+/-- The chosen right dual of an evaluated word is the evaluation of its right dual word: the
+tensor order is reversed, the dual of the unit is the unit, and each level rises by one. -/
+noncomputable def evalRightDualIso (f : α → C) :
+    (L : WindingWord α) → (eval f L)ᘁ ≅ eval f (rightDual L)
+  | [] => rightDualUnitIso C ≪≫ eqToIso (by simp)
+  | p :: L =>
+    rightDualTensorIso _ _ ≪≫
+      (evalRightDualIso f L ⊗ᵢ (iteratedDualRightDualIso p.2 (f p.1) ≪≫ (ρ_ _).symm)) ≪≫
+      (evalAppendIso f (rightDual L) [(p.1, p.2 + 1)]).symm ≪≫
+      eqToIso (congrArg (eval f) (rightDual_cons p L).symm)
 
-/-- Left-dual comparison `ᘁ(evalObj f L) ≅ evalObj f L.leftDual` reversing tensor factors and
-shifting each dual level by `-1`. -/
-noncomputable def evalObjLeftDualIso (f : α → C) (L : WindingWord α) :
-    (ᘁ(evalObj f L)) ≅ evalObj f L.leftDual :=
-  (leftDualFunctor C).opMopTensorListIso (iDual f) L ≪≫
-    tensorListCongrIso (fun p : α × ℤ ↦ iteratedDualLeftDualIso (f p.1) p.2) L.reverse ≪≫
-    tensorListMapIso (iDual f) (fun p ↦ (p.1, p.2 - 1)) L.reverse ≪≫
-    eqToIso (congrArg (evalObj f) (leftDual_eq_map_reverse L).symm)
+/-- The chosen left dual of an evaluated word is the evaluation of its left dual word: the
+tensor order is reversed, the dual of the unit is the unit, and each level falls by one. -/
+noncomputable def evalLeftDualIso (f : α → C) :
+    (L : WindingWord α) → (ᘁ(eval f L) : C) ≅ eval f (leftDual L)
+  | [] => leftDualUnitIso C ≪≫ eqToIso (by simp)
+  | p :: L =>
+    leftDualTensorIso _ _ ≪≫
+      (evalLeftDualIso f L ⊗ᵢ (iteratedDualLeftDualIso p.2 (f p.1) ≪≫ (ρ_ _).symm)) ≪≫
+      (evalAppendIso f (leftDual L) [(p.1, p.2 - 1)]).symm ≪≫
+      eqToIso (congrArg (eval f) (leftDual_cons p L).symm)
 
-theorem evalObjLeftDualIso_hom (f : α → C) (L : WindingWord α) :
-    (evalObjLeftDualIso f L).hom =
-      ((leftDualFunctor C).opMopTensorListIso (fun p : α × ℤ ↦ iteratedDual (f p.1) p.2) L).hom ≫
-        tensorListCongrHom (fun p : α × ℤ ↦ (iteratedDualLeftDualIso (f p.1) p.2).hom) L.reverse ≫
-        (tensorListMapIso (fun q : α × ℤ ↦ iteratedDual (f q.1) q.2)
-          (fun p ↦ (p.1, p.2 - 1)) L.reverse).hom ≫
-        eqToHom (congrArg (evalObj f) (leftDual_eq_map_reverse L).symm) :=
-  congrArg (fun g ↦ _ ≫ g ≫ _ ≫ _) (tensorListCongrIso_hom _ _)
+@[simp] theorem evalRightDualIso_nil (f : α → C) :
+    evalRightDualIso f [] =
+      rightDualUnitIso C ≪≫ eqToIso (by simp) := (rfl)
 
-private noncomputable def evalObjRightPowIso (f : α → C) :
-    (k : ℕ) → (L : WindingWord α) → iteratedRightDual (evalObj f L) k ≅ evalObj f (L.dualPow k)
-  | 0, L => eqToIso (congrArg (evalObj f) (dualPow_zero L).symm)
-  | k + 1, L => ((rightDualFunctor C).mapIso (evalObjRightPowIso f k L).symm).unmop.unop ≪≫
-      evalObjRightDualIso f (L.dualPow k) ≪≫
-      eqToIso (congrArg (evalObj f) (by rw [Int.natCast_succ, dualPow_add_one]))
-private noncomputable def evalObjLeftPowIso (f : α → C) :
-    (k : ℕ) → (L : WindingWord α) →
-      iteratedLeftDual (evalObj f L) (k + 1) ≅ evalObj f (L.dualPow (.negSucc k))
-  | 0, L => evalObjLeftDualIso f L ≪≫ eqToIso (congrArg (evalObj f) (dualPow_neg_one L).symm)
-  | k + 1, L => ((leftDualFunctor C).mapIso (evalObjLeftPowIso f k L).symm).unmop.unop ≪≫
-      evalObjLeftDualIso f (L.dualPow (.negSucc k)) ≪≫
-      eqToIso (congrArg (evalObj f) (dualPow_sub_one (.negSucc k) L).symm)
+@[simp] theorem evalRightDualIso_cons (f : α → C) (p : α × ℤ) (L : WindingWord α) :
+    evalRightDualIso f (p :: L) =
+      rightDualTensorIso _ _ ≪≫
+        (evalRightDualIso f L ⊗ᵢ (iteratedDualRightDualIso p.2 (f p.1) ≪≫ (ρ_ _).symm)) ≪≫
+        (evalAppendIso f (rightDual L) [(p.1, p.2 + 1)]).symm ≪≫
+        eqToIso (congrArg (eval f) (rightDual_cons p L).symm) := (rfl)
 
-/-- Iterated-dual comparison `iteratedDual (evalObj f L) n ≅ evalObj f (L.dualPow n)`. -/
-noncomputable def evalObjDualPowIso (f : α → C) :
-    (n : ℤ) → (L : WindingWord α) → iteratedDual (evalObj f L) n ≅ evalObj f (L.dualPow n)
-  | .ofNat k, L => evalObjRightPowIso f k L
-  | .negSucc k, L => evalObjLeftPowIso f k L
+@[simp] theorem evalLeftDualIso_nil (f : α → C) :
+    evalLeftDualIso f [] =
+      leftDualUnitIso C ≪≫ eqToIso (by simp) := (rfl)
 
-@[simp] theorem evalObjDualPowIso_zero (f : α → C) (L : WindingWord α) :
-    evalObjDualPowIso f 0 L = eqToIso (congrArg (evalObj f) (dualPow_zero L).symm) := by rfl
+@[simp] theorem evalLeftDualIso_cons (f : α → C) (p : α × ℤ) (L : WindingWord α) :
+    evalLeftDualIso f (p :: L) =
+      leftDualTensorIso _ _ ≪≫
+        (evalLeftDualIso f L ⊗ᵢ (iteratedDualLeftDualIso p.2 (f p.1) ≪≫ (ρ_ _).symm)) ≪≫
+        (evalAppendIso f (leftDual L) [(p.1, p.2 - 1)]).symm ≪≫
+        eqToIso (congrArg (eval f) (leftDual_cons p L).symm) := (rfl)
 
-/-- Substitution comparison `evalObj (fun a ↦ evalObj f (σ a)) L ≅ evalObj f (L.subst σ)`. -/
-noncomputable def evalObjSubstIso (f : β → C) (σ : α → WindingWord β) (L : WindingWord α) :
-    evalObj (fun a ↦ evalObj f (σ a)) L ≅ evalObj f (L.subst σ) :=
-  tensorListCongrIso (fun p : α × ℤ ↦ evalObjDualPowIso f p.2 (σ p.1)) L ≪≫
-    tensorListFlatMapIso (iDual f) (fun p : α × ℤ ↦ (σ p.1).dualPow p.2) L ≪≫
-    eqToIso (congrArg (evalObj f) (subst_def σ L).symm)
+/-- The evaluation of the `n`-th right dual word is the `n`-fold iterated right dual. -/
+noncomputable def evalRightDualPowIso (f : α → C) :
+    (n : ℕ) → (L : WindingWord α) → eval f (dualPow (n : ℤ) L) ≅ iteratedRightDual n (eval f L)
+  | 0, L => eqToIso (by simp)
+  | n + 1, L =>
+    eqToIso (by simp) ≪≫
+      (evalRightDualIso f (dualPow (n : ℤ) L)).symm ≪≫
+      (evalRightDualPowIso f n L).symm.rightAdjointMate
+
+/-- The evaluation of the `n`-th left dual word is the `n`-fold iterated left dual. -/
+noncomputable def evalLeftDualPowIso (f : α → C) :
+    (n : ℕ) → (L : WindingWord α) → eval f (dualPow (-(n : ℤ)) L) ≅ iteratedLeftDual n (eval f L)
+  | 0, L => eqToIso (by simp)
+  | n + 1, L =>
+    eqToIso (congrArg (eval f)
+        (by rw [show -((n + 1 : ℕ) : ℤ) = -(n : ℤ) - 1 by omega, dualPow_sub_one])) ≪≫
+      (evalLeftDualIso f (dualPow (-(n : ℤ)) L)).symm ≪≫
+      (evalLeftDualPowIso f n L).symm.leftAdjointMate
+
+/-- The evaluation of an integer dual power of a word is the iterated dual at that level. -/
+noncomputable def evalDualPowIso (f : α → C) :
+    (n : ℤ) → (L : WindingWord α) → eval f (dualPow n L) ≅ iteratedDual n (eval f L)
+  | .ofNat n, L => evalRightDualPowIso f n L
+  | .negSucc n, L =>
+    eqToIso (congrArg (fun k ↦ eval f (dualPow k L))
+        (by omega : Int.negSucc n = -((n + 1 : ℕ) : ℤ))) ≪≫
+      evalLeftDualPowIso f (n + 1) L
+
+/-- Substituting words for generators and then evaluating agrees, up to isomorphism, with
+evaluating at the evaluated replacing words: the replacing word at level `n` is evaluated
+through `n` duals (`evalDualPowIso`). -/
+noncomputable def evalSubstIso (g : β → C) (F : α → WindingWord β) :
+    (L : WindingWord α) → eval g (subst F L) ≅ eval (fun a ↦ eval g (F a)) L
+  | [] => eqToIso (by simp)
+  | p :: L =>
+    eqToIso (congrArg (eval g) (subst_cons F p L)) ≪≫
+      evalAppendIso g (dualPow p.2 (F p.1)) (subst F L) ≪≫
+      (evalDualPowIso g p.2 (F p.1) ⊗ᵢ evalSubstIso g F L)
+
+@[simp] theorem evalRightDualPowIso_zero (f : α → C) (L : WindingWord α) :
+    evalRightDualPowIso f 0 L = eqToIso (by simp) := (rfl)
+
+@[simp] theorem evalRightDualPowIso_succ (f : α → C) (n : ℕ) (L : WindingWord α) :
+    evalRightDualPowIso f (n + 1) L =
+      eqToIso (by simp) ≪≫ (evalRightDualIso f (dualPow (n : ℤ) L)).symm ≪≫
+        (evalRightDualPowIso f n L).symm.rightAdjointMate := (rfl)
+
+@[simp] theorem evalLeftDualPowIso_zero (f : α → C) (L : WindingWord α) :
+    evalLeftDualPowIso f 0 L = eqToIso (by simp) := (rfl)
+
+@[simp] theorem evalLeftDualPowIso_succ (f : α → C) (n : ℕ) (L : WindingWord α) :
+    evalLeftDualPowIso f (n + 1) L =
+      eqToIso (congrArg (eval f)
+          (by rw [show -((n + 1 : ℕ) : ℤ) = -(n : ℤ) - 1 by omega, dualPow_sub_one])) ≪≫
+        (evalLeftDualIso f (dualPow (-(n : ℤ)) L)).symm ≪≫
+        (evalLeftDualPowIso f n L).symm.leftAdjointMate := (rfl)
+
+@[simp] theorem evalDualPowIso_natCast (f : α → C) (n : ℕ) (L : WindingWord α) :
+    evalDualPowIso f (n : ℤ) L = evalRightDualPowIso f n L := (rfl)
+
+@[simp] theorem evalDualPowIso_negSucc (f : α → C) (n : ℕ) (L : WindingWord α) :
+    evalDualPowIso f (.negSucc n) L =
+      eqToIso (congrArg (fun k ↦ eval f (dualPow k L))
+          (by omega : Int.negSucc n = -((n + 1 : ℕ) : ℤ))) ≪≫
+        evalLeftDualPowIso f (n + 1) L := (rfl)
+
+@[simp] theorem evalSubstIso_nil (g : β → C) (F : α → WindingWord β) :
+    evalSubstIso g F [] = eqToIso (by simp) := (rfl)
+
+@[simp] theorem evalSubstIso_cons (g : β → C) (F : α → WindingWord β) (p : α × ℤ)
+    (L : WindingWord α) :
+    evalSubstIso g F (p :: L) =
+      eqToIso (congrArg (eval g) (subst_cons F p L)) ≪≫
+        evalAppendIso g (dualPow p.2 (F p.1)) (subst F L) ≪≫
+        (evalDualPowIso g p.2 (F p.1) ⊗ᵢ evalSubstIso g F L) := (rfl)
 
 end WindingWord
 
-/-! ### Direct evaluation of formal rigid objects -/
-
 namespace RigidObject
 
-variable [RigidCategory C] {α : Type*}
+variable {α : Type w} {β : Type w'}
 
-/-- Evaluate `RigidObject α` directly in `C` using chosen tensor products, unit, and duals. -/
+/-- Evaluate a formal rigid object in a rigid monoidal category, reading the formal tensor,
+unit and duals as those of `C`; the duals are the ones chosen by the rigid structure. -/
 @[expose]
-def evalObj (f : α → C) : RigidObject α → C
+def eval (f : α → C) : RigidObject α → C
   | .of a => f a
   | .unit => 𝟙_ C
-  | .tensor X Y => evalObj f X ⊗ evalObj f Y
-  | .rightDual X => (evalObj f X)ᘁ
-  | .leftDual X => ᘁ(evalObj f X)
+  | .tensor X Y => eval f X ⊗ eval f Y
+  | .rightDual X => (eval f X)ᘁ
+  | .leftDual X => (ᘁ(eval f X) : C)
 
-@[simp] theorem evalObj_of (f : α → C) (a : α) : evalObj f (.of a) = f a := by rfl
-@[simp] theorem evalObj_unit (f : α → C) : evalObj f (.unit : RigidObject α) = 𝟙_ C := by rfl
-@[simp] theorem evalObj_tensor (f : α → C) (X Y : RigidObject α) :
-    evalObj f (X.tensor Y) = evalObj f X ⊗ evalObj f Y := by rfl
-@[simp] theorem evalObj_rightDual (f : α → C) (X : RigidObject α) :
-    evalObj f X.rightDual = (evalObj f X)ᘁ := by rfl
-@[simp] theorem evalObj_leftDual (f : α → C) (X : RigidObject α) :
-    evalObj f X.leftDual = ᘁ(evalObj f X) := by rfl
+@[simp] theorem eval_of (f : α → C) (a : α) : eval f (.of a) = f a := rfl
 
-/-- Canonical comparison isomorphism between `X.evalObj f` and `X.normalize.evalObj f`. -/
-noncomputable def evalObjNormalizeIso (f : α → C) :
-    (X : RigidObject α) → X.evalObj f ≅ X.normalize.evalObj f
-  | .of a => (ρ_ (f a)).symm ≪≫ eqToIso (congrArg (WindingWord.evalObj f) (normalize_of a).symm)
-  | .unit => eqToIso (congrArg (WindingWord.evalObj f) normalize_unit.symm)
-  | .tensor X Y => (evalObjNormalizeIso f X ⊗ᵢ evalObjNormalizeIso f Y) ≪≫
-      WindingWord.evalObjAppendIso f X.normalize Y.normalize ≪≫
-      eqToIso (congrArg (WindingWord.evalObj f) (normalize_tensor X Y).symm)
-  | .rightDual X => ((rightDualFunctor C).mapIso (evalObjNormalizeIso f X).symm).unmop.unop ≪≫
-      WindingWord.evalObjRightDualIso f X.normalize ≪≫
-      eqToIso (congrArg (WindingWord.evalObj f) (normalize_rightDual X).symm)
-  | .leftDual X => ((leftDualFunctor C).mapIso (evalObjNormalizeIso f X).symm).unmop.unop ≪≫
-      WindingWord.evalObjLeftDualIso f X.normalize ≪≫
-      eqToIso (congrArg (WindingWord.evalObj f) (normalize_leftDual X).symm)
+@[simp] theorem eval_unit (f : α → C) : eval f (.unit : RigidObject α) = 𝟙_ C := rfl
 
-@[simp] theorem evalObjNormalizeIso_unit (f : α → C) :
-    evalObjNormalizeIso f (.unit : RigidObject α) =
-      eqToIso (congrArg (WindingWord.evalObj f) normalize_unit.symm) := by rfl
+@[simp] theorem eval_tensor (f : α → C) (X Y : RigidObject α) :
+    eval f (X.tensor Y) = eval f X ⊗ eval f Y := rfl
+
+@[simp] theorem eval_rightDual (f : α → C) (X : RigidObject α) :
+    eval f X.rightDual = (eval f X)ᘁ := rfl
+
+@[simp] theorem eval_leftDual (f : α → C) (X : RigidObject α) :
+    eval f X.leftDual = (ᘁ(eval f X) : C) := rfl
+
+/-- Evaluation commutes with substitution of formal objects for generators. -/
+@[simp] theorem eval_subst (g : β → C) (F : α → RigidObject β) (X : RigidObject α) :
+    eval g (subst F X) = eval (fun a ↦ eval g (F a)) X := by
+  induction X with
+  | of a => rw [subst_of, eval_of]
+  | unit => rw [subst_unit, eval_unit, eval_unit]
+  | tensor X Y ihX ihY => rw [subst_tensor, eval_tensor, eval_tensor, ihX, ihY]
+  | rightDual X ih => rw [subst_rightDual, eval_rightDual, eval_rightDual, ih]
+  | leftDual X ih => rw [subst_leftDual, eval_leftDual, eval_leftDual, ih]
+
+private theorem eval_rightDual_iterate (f : α → C) (n : ℕ) (X : RigidObject α) :
+    eval f (rightDual^[n] X) = iteratedRightDual n (eval f X) := by
+  induction n with
+  | zero => rfl
+  | succ n ih => rw [Function.iterate_succ_apply', eval_rightDual, ih, iteratedRightDual_succ]
+
+private theorem eval_leftDual_iterate (f : α → C) (n : ℕ) (X : RigidObject α) :
+    eval f (leftDual^[n] X) = iteratedLeftDual n (eval f X) := by
+  induction n with
+  | zero => rfl
+  | succ n ih => rw [Function.iterate_succ_apply', eval_leftDual, ih, iteratedLeftDual_succ]
+
+/-- The formal atom at level `n` evaluates to the iterated dual at level `n`. -/
+@[simp] theorem eval_atLevel (f : α → C) (a : α) (n : ℤ) :
+    eval f (atLevel a n) = iteratedDual n (f a) := by
+  cases n with
+  | ofNat n =>
+    rw [Int.ofNat_eq_natCast, atLevel_natCast, eval_rightDual_iterate, eval_of,
+      iteratedDual_natCast]
+  | negSucc n =>
+    rw [atLevel_negSucc, eval_leftDual_iterate, eval_of, iteratedDual_negSucc]
+
+/-- The canonical expression realizing a winding word evaluates to that word. -/
+@[simp] theorem eval_ofWord (f : α → C) (L : WindingWord α) :
+    eval f (ofWord L) = WindingWord.eval f L := by
+  induction L with
+  | nil => rw [ofWord_nil, eval_unit, WindingWord.eval_nil]
+  | cons p L ih => rcases p with ⟨a, n⟩; simp [ih]
+
+/-- The comparison isomorphism from a formal rigid object to its normalized winding word. It is
+built from the unitors and associators (`WindingWord.evalAppendIso`) and the dual comparisons
+`WindingWord.evalRightDualIso` and `WindingWord.evalLeftDualIso`; no pivotal structure is
+involved. -/
+noncomputable def normalizeIso (f : α → C) :
+    (X : RigidObject α) → eval f X ≅ WindingWord.eval f X.normalize
+  | .of a => (ρ_ (f a)).symm ≪≫ eqToIso (by simp)
+  | .unit => eqToIso (by simp)
+  | .tensor X Y =>
+    (normalizeIso f X ⊗ᵢ normalizeIso f Y) ≪≫
+      (WindingWord.evalAppendIso f X.normalize Y.normalize).symm ≪≫
+      eqToIso (congrArg (WindingWord.eval f) (normalize_tensor X Y).symm)
+  | .rightDual X =>
+    (normalizeIso f X).symm.rightAdjointMate ≪≫ WindingWord.evalRightDualIso f X.normalize ≪≫
+      eqToIso (congrArg (WindingWord.eval f) (normalize_rightDual X).symm)
+  | .leftDual X =>
+    (normalizeIso f X).symm.leftAdjointMate ≪≫ WindingWord.evalLeftDualIso f X.normalize ≪≫
+      eqToIso (congrArg (WindingWord.eval f) (normalize_leftDual X).symm)
+
+@[simp] theorem normalizeIso_of (f : α → C) (a : α) :
+    normalizeIso f (.of a) =
+      (ρ_ (f a)).symm ≪≫ eqToIso (by simp) := (rfl)
+
+@[simp] theorem normalizeIso_unit (f : α → C) :
+    normalizeIso f (.unit : RigidObject α) =
+      eqToIso (by simp) := (rfl)
+
+@[simp] theorem normalizeIso_tensor (f : α → C) (X Y : RigidObject α) :
+    normalizeIso f (X.tensor Y) =
+      (normalizeIso f X ⊗ᵢ normalizeIso f Y) ≪≫
+        (WindingWord.evalAppendIso f X.normalize Y.normalize).symm ≪≫
+        eqToIso (congrArg (WindingWord.eval f) (normalize_tensor X Y).symm) := (rfl)
+
+@[simp] theorem normalizeIso_rightDual (f : α → C) (X : RigidObject α) :
+    normalizeIso f X.rightDual =
+      (normalizeIso f X).symm.rightAdjointMate ≪≫ WindingWord.evalRightDualIso f X.normalize ≪≫
+        eqToIso (congrArg (WindingWord.eval f) (normalize_rightDual X).symm) := (rfl)
+
+@[simp] theorem normalizeIso_leftDual (f : α → C) (X : RigidObject α) :
+    normalizeIso f X.leftDual =
+      (normalizeIso f X).symm.leftAdjointMate ≪≫ WindingWord.evalLeftDualIso f X.normalize ≪≫
+        eqToIso (congrArg (WindingWord.eval f) (normalize_leftDual X).symm) := (rfl)
+
+/-- Formal rigid objects with the same normalization have isomorphic evaluations, through their
+normalization comparisons. -/
+noncomputable def evalIsoOfNormalizeEq (f : α → C) {X Y : RigidObject α}
+    (h : X.normalize = Y.normalize) : eval f X ≅ eval f Y :=
+  normalizeIso f X ≪≫ eqToIso (congrArg (WindingWord.eval f) h) ≪≫ (normalizeIso f Y).symm
+
+@[simp] theorem evalIsoOfNormalizeEq_hom (f : α → C) {X Y : RigidObject α}
+    (h : X.normalize = Y.normalize) :
+    (evalIsoOfNormalizeEq f h).hom =
+      (normalizeIso f X).hom ≫ eqToHom (congrArg (WindingWord.eval f) h) ≫
+        (normalizeIso f Y).inv := (rfl)
+
+@[simp] theorem evalIsoOfNormalizeEq_inv (f : α → C) {X Y : RigidObject α}
+    (h : X.normalize = Y.normalize) :
+    (evalIsoOfNormalizeEq f h).inv =
+      (normalizeIso f Y).hom ≫ eqToHom (congrArg (WindingWord.eval f) h.symm) ≫
+        (normalizeIso f X).inv := by
+  simp [evalIsoOfNormalizeEq]
+
+@[simp] theorem evalIsoOfNormalizeEq_refl (f : α → C) (X : RigidObject α) :
+    evalIsoOfNormalizeEq f (rfl : X.normalize = X.normalize) = Iso.refl _ := by
+  ext; simp [evalIsoOfNormalizeEq]
+
+@[simp] theorem evalIsoOfNormalizeEq_symm (f : α → C) {X Y : RigidObject α}
+    (h : X.normalize = Y.normalize) :
+    (evalIsoOfNormalizeEq f h).symm = evalIsoOfNormalizeEq f h.symm := by
+  ext; simp [evalIsoOfNormalizeEq]
+
+@[simp] theorem evalIsoOfNormalizeEq_trans (f : α → C) {X Y Z : RigidObject α}
+    (h : X.normalize = Y.normalize) (h' : Y.normalize = Z.normalize) :
+    evalIsoOfNormalizeEq f h ≪≫ evalIsoOfNormalizeEq f h' =
+      evalIsoOfNormalizeEq f (h.trans h') := by
+  ext; simp [evalIsoOfNormalizeEq]
 
 end RigidObject
 
 end TauCeti
+

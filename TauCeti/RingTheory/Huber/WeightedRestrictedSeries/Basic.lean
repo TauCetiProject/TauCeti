@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Huber.Restricted.PowerSeries
 public import Mathlib.RingTheory.MvPowerSeries.Equiv
 public import Mathlib.Topology.Algebra.Nonarchimedean.Bases
 import TauCeti.Topology.Algebra.Nonarchimedean.Absorption
+import TauCeti.Topology.Algebra.Nonarchimedean.OpenSubgroupBasis
 
 /-!
 # Weighted restricted power series `A⟨X⟩_T`
@@ -59,13 +60,14 @@ The subring, `weightedNhd`, topology and maps into them take this hypothesis; `w
   `nonarchimedeanRing_weightedTopology` and `continuous_weightedC`.
 * `TauCeti.Huber.weightedC_mem_weightedNhd` tests constants;
   `weightedC_mul_weightedX_pow_mem_weightedNhd` bounds monomials; `isOpen_weightedNhd`
-  gives openness.
+  and `isClosed_weightedNhd` give openness and closedness.
 * `TauCeti.Huber.weightedRestrictedSubring_one_weight` recovers ordinary restricted series
   (Wedhorn Example 5.54); the `subringCongr_one_weight_weightedX` and `_weightedC` lemmas identify
   the variables and constants.
 * `TauCeti.Huber.weightedPolynomials` consists of finite-support series, characterized by
   `mem_weightedPolynomials_iff`.
-  `dense_weightedPolynomials` is Wedhorn 5.49(1), via `exists_mvPolynomial_forall_coeff_sub_mem`.
+  `dense_weightedPolynomials` is the density half of Wedhorn 5.49(1), via
+  `exists_mvPolynomial_forall_coeff_sub_mem`.
 * `TauCeti.Huber.weightedPolynomialEquivOfDiscrete`, `discreteTopology_weightedRestrictedSubring`
   and `weightedPolynomials_eq_top` identify weighted series over a discrete ring with polynomials.
 * `TauCeti.Huber.weightedRestrictedSubring_fin_zero`, `weightedRestrictedSubringFinZeroEquiv`
@@ -155,7 +157,8 @@ set `1 = {1}`. -/
 theorem weightPow_zero (T : Fin k → Set A) : weightPow T 0 = 1 := by
   simp [weightPow]
 
-/-- Weights are multiplicative in the multi-index: `T^(α+β) = T^α · T^β`. -/
+/-- Weights are multiplicative in the multi-index: `T^(α+β) = T^α * T^β` (pointwise
+product of sets). -/
 theorem weightPow_add (T : Fin k → Set A) (α β : Fin k →₀ ℕ) :
     weightPow T (α + β) = weightPow T α * weightPow T β := by
   simp only [weightPow, Finsupp.add_apply, pow_add]
@@ -172,11 +175,7 @@ theorem weightPow_nsmul (T : Fin k → Set A) (n : ℕ) (ν : Fin k →₀ ℕ) 
 `Tᵢ ^ m`. -/
 theorem weightPow_single (T : Fin k → Set A) (i : Fin k) (m : ℕ) :
     weightPow T (Finsupp.single i m) = T i ^ m := by
-  rw [weightPow, Finset.prod_eq_single i]
-  · simp
-  · intro j _ hj
-    simp [Ne.symm hj]
-  · simp
+  simp [weightPow_def, Finsupp.single_apply, pow_ite]
 
 /-- With every weight equal to `{1}`, the weight of any multi-index is `{1}`. -/
 @[simp]
@@ -339,7 +338,7 @@ variable [TopologicalSpace A]
 variable `i`, every `m`, and every neighbourhood `U` of zero, the subgroup `Tᵢ^m · U` is again a
 neighbourhood of zero.
 
-Without it `A⟨X⟩_T` is not multiplicatively closed. Take `A = ℚ_p⟨Y, Z⟩`, `T = {Y}`, `f = Z X`
+Without it `A⟨X⟩_T` need not be multiplicatively closed. Take `A = ℚ_p⟨Y, Z⟩`, `T = {Y}`, `f = Z X`
 and `g = ∑ₙ Yⁿ pⁿ Xⁿ`: both are `T`-restricted, but the `Xᵏ` coefficient of `f * g` is
 `Z Yᵏ⁻¹ pᵏ⁻¹`, which never lies in `Tᵏ · A = Yᵏ A`. Note that there `A` is complete, Tate and
 Huber and `T` is finite, bounded and power-bounded — so none of those conditions substitute for
@@ -429,7 +428,6 @@ theorem isWeightedRestricted_zero (T : Fin k → Set A) :
 @[simp]
 theorem isWeightedRestricted_one (T : Fin k → Set A) :
     IsWeightedRestricted T (1 : MvPowerSeries (Fin k) A) := by
-  classical
   intro U
   filter_upwards [(Set.finite_singleton (0 : Fin k →₀ ℕ)).compl_mem_cofinite] with ν hν
   rw [MvPowerSeries.coeff_one, ite_eq_right (by simpa using hν)]
@@ -491,18 +489,8 @@ theorem isWeightedRestricted_one_weight_iff [NonarchimedeanAddGroup A]
     {f : MvPowerSeries (Fin k) A} :
     IsWeightedRestricted (fun _ : Fin k ↦ ({1} : Set A)) f ↔
       Tendsto (fun ν ↦ MvPowerSeries.coeff ν f) cofinite (nhds 0) := by
-  rw [isWeightedRestricted_iff]
-  constructor
-  · intro h
-    rw [tendsto_nhds]
-    intro V hV h0V
-    obtain ⟨U, hUV⟩ := NonarchimedeanAddGroup.is_nonarchimedean V (hV.mem_nhds h0V)
-    filter_upwards [h U] with ν hν
-    exact hUV (by simpa using hν)
-  · intro h U
-    have := (tendsto_nhds.mp h) _ U.isOpen (SetLike.mem_coe.mpr U.zero_mem)
-    filter_upwards [this] with ν hν
-    simpa using hν
+  simp [isWeightedRestricted_iff,
+    (NonarchimedeanAddGroup.nhds_zero_hasBasis_openAddSubgroup A).tendsto_right_iff]
 
 /-- Anything with only finitely many nonzero coefficients is `T`-restricted, whatever the weight:
 the zero coefficients meet every bound. This is the source of all the polynomial constructors
@@ -520,7 +508,6 @@ theorem isWeightedRestricted_of_finite_support (T : Fin k → Set A)
 @[simp]
 theorem isWeightedRestricted_monomial (T : Fin k → Set A) (μ : Fin k →₀ ℕ) (a : A) :
     IsWeightedRestricted T (MvPowerSeries.monomial μ a) := by
-  classical
   refine isWeightedRestricted_of_finite_support T ((Set.finite_singleton μ).subset fun ν hν ↦ ?_)
   simp only [Set.mem_ofPred_eq, MvPowerSeries.coeff_monomial] at hν
   by_contra hne
@@ -537,7 +524,6 @@ theorem isWeightedRestricted_C (T : Fin k → Set A) (a : A) :
 @[simp]
 theorem isWeightedRestricted_X (T : Fin k → Set A) (i : Fin k) :
     IsWeightedRestricted T (MvPowerSeries.X i : MvPowerSeries (Fin k) A) := by
-  classical
   exact isWeightedRestricted_monomial T (Finsupp.single i 1) (1 : A)
 
 /-- A sum of `T`-restricted series is `T`-restricted. -/
@@ -568,7 +554,6 @@ theorem IsWeightedRestricted.exists_coeff_mem_weightMul {T : Fin k → Set A}
       ∀ ν, MvPowerSeries.coeff ν g =
         if MvPowerSeries.coeff ν f ∈ weightMul T ν U.toAddSubgroup
         then MvPowerSeries.coeff ν f else u ν := by
-  classical
   let g : MvPowerSeries (Fin k) A := fun ν ↦
     if MvPowerSeries.coeff ν f ∈ weightMul T ν U.toAddSubgroup
     then MvPowerSeries.coeff ν f else u ν
@@ -620,7 +605,6 @@ theorem IsWeightedRestricted.mul [NonarchimedeanRing A] {T : Fin k → Set A}
   -- into its own `Tα · U`.  Writing `F_Z`, `G_Z` for the bad sets against `Z`, the exceptional
   -- set is `E = (F + G_Z) ∪ (F_Z + G)`, which is finite; for `ν ∉ E` every splitting
   -- `α + β = ν` has `α` bad, `β` bad, or neither, and each case lands in `Tν · U`.
-  classical
   intro U
   obtain ⟨W, hWU⟩ := NonarchimedeanRing.mul_subset U
   have hF := hf.finite_coeff_notMem W
@@ -668,8 +652,8 @@ theorem IsWeightedRestricted.neg {T : Fin k → Set A} {f : MvPowerSeries (Fin k
 /-- **Wedhorn's `A⟨X⟩_T`**: the weighted restricted power series form a subring of `A[[X]]`.
 
 The weight family must satisfy Wedhorn's standing hypothesis
-(`TauCeti.Huber.IsWeightFamily`); without it the carrier is not closed under multiplication, and
-the docstring of that definition records the counterexample. -/
+(`TauCeti.Huber.IsWeightFamily`); without it the carrier need not be closed under multiplication,
+and the docstring of that definition records the counterexample. -/
 def weightedRestrictedSubring [NonarchimedeanRing A] (T : Fin k → Set A) (hT : IsWeightFamily T) :
     Subring (MvPowerSeries (Fin k) A) where
   carrier := {f | IsWeightedRestricted T f}
@@ -690,6 +674,7 @@ noncomputable def weightedC [NonarchimedeanRing A] (T : Fin k → Set A) (hT : I
     A →+* weightedRestrictedSubring T hT :=
   (MvPowerSeries.C : A →+* MvPowerSeries (Fin k) A).codRestrict _ (isWeightedRestricted_C T)
 
+/-- The constant series `weightedC a` is the constant series `C a` of `A[[X]]`. -/
 @[simp]
 theorem coe_weightedC [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T} (a : A) :
     (weightedC T hT a : MvPowerSeries (Fin k) A) = MvPowerSeries.C a := (rfl)
@@ -713,6 +698,7 @@ noncomputable def weightedX [NonarchimedeanRing A] (T : Fin k → Set A) (hT : I
     weightedRestrictedSubring T hT :=
   ⟨MvPowerSeries.X i, isWeightedRestricted_X T i⟩
 
+/-- The variable `weightedX i` is the variable `X i` of `A[[X]]`. -/
 @[simp]
 theorem coe_weightedX [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T}
     (i : Fin k) :
@@ -837,16 +823,6 @@ theorem weightedC_mem_weightedNhd [NonarchimedeanRing A] {T : Fin k → Set A}
       exact ha
     · exact (weightMul T ν U).zero_mem
 
-/-- A monomial `c Xᵢ ^ j` lies in `U⟨X⟩` when `c` meets the bound `T(j eᵢ) · U` of its degree. -/
-theorem weightedC_mul_weightedX_pow_mem_weightedNhd [NonarchimedeanRing A] {T : Fin k → Set A}
-    (hT : IsWeightFamily T) {U : AddSubgroup A} {c : A} {i : Fin k} {j : ℕ}
-    (hc : c ∈ weightMul T (Finsupp.single i j) U) :
-    weightedC T hT c * weightedX T hT i ^ j ∈ weightedNhd T hT U := fun ν ↦ by
-  classical
-  simp only [Subring.coe_mul, SubmonoidClass.coe_pow, coe_weightedC, coe_weightedX,
-    MvPowerSeries.coeff_C_mul, MvPowerSeries.coeff_X_pow]
-  split_ifs with h <;> simp [h, hc]
-
 /-- `R⟨X⟩_T` for a subring `R` of `A`: the series all of whose coefficients meet the `R` bound,
 `aν ∈ Tν · R` for every `ν`. Its carrier is the subgroup `TauCeti.Huber.weightedNhd` of `R`; that
 it is a subring is coefficientwise multiplicativity of `R`.
@@ -896,7 +872,7 @@ theorem exists_weightedNhd_mul_mem [NonarchimedeanRing A] {T : Fin k → Set A}
   classical
   have hUnhds : (U : Set A) ∈ nhds (0 : A) := U.isOpen.mem_nhds U.zero_mem
   obtain ⟨W, hWU⟩ := NonarchimedeanRing.mul_subset U
-  have hx : IsWeightedRestricted T (x : MvPowerSeries (Fin k) A) := x.2
+  have hx : IsWeightedRestricted T (x : MvPowerSeries (Fin k) A) := x.property
   have hF := hx.finite_coeff_notMem W
   obtain ⟨Zx, hZx⟩ := NonarchimedeanAddGroup.exists_openAddSubgroup_forall_mul_mem hF.toFinset
     (fun α ↦ MvPowerSeries.coeff α (x : MvPowerSeries (Fin k) A))
@@ -946,9 +922,9 @@ the standing hypothesis are implicit because they are read off the carrier's own
 
 **On diamonds.** Mathlib does register a topology on `MvPowerSeries σ R`, but as a *scoped*
 instance in `MvPowerSeries.WithPiTopology` (`Mathlib/RingTheory/MvPowerSeries/PiTopology.lean`).
-It is therefore invisible here, and no file in this repository opens that scope; a downstream file
-that did would get the induced subtype topology on the carrier alongside this instance, and would
-have to say which it means. -/
+It is therefore invisible here. A downstream file that opened the scope would not be asked which
+topology is meant: instance search silently returns `weightedTopology` (not defeq to the induced
+subtype topology on the carrier). -/
 noncomputable instance weightedTopology [NonarchimedeanRing A] {T : Fin k → Set A}
     {hT : IsWeightFamily T} : TopologicalSpace (weightedRestrictedSubring T hT) :=
   (weightedNhd_subgroups_basis hT).topology
@@ -977,6 +953,12 @@ theorem isOpen_weightedNhd [NonarchimedeanRing A] {T : Fin k → Set A} (hT : Is
     {U : AddSubgroup A} (hU : IsOpen (U : Set A)) :
     IsOpen (weightedNhd T hT U : Set (weightedRestrictedSubring T hT)) :=
   ((weightedNhd_subgroups_basis hT).openAddSubgroup ⟨U, hU⟩).isOpen'
+
+/-- `U⟨X⟩_T` is closed in `A⟨X⟩_T` when `U` is open in `A`, being an open subgroup. -/
+theorem isClosed_weightedNhd [NonarchimedeanRing A] {T : Fin k → Set A} (hT : IsWeightFamily T)
+    {U : AddSubgroup A} (hU : IsOpen (U : Set A)) :
+    IsClosed (weightedNhd T hT U : Set (weightedRestrictedSubring T hT)) :=
+  AddSubgroup.isClosed_of_isOpen _ (isOpen_weightedNhd hT hU)
 
 /-- `R⟨X⟩_T` is open in `A⟨X⟩_T` when `R` is open in `A`. -/
 theorem isOpen_weightedSubring [NonarchimedeanRing A] {T : Fin k → Set A} (hT : IsWeightFamily T)
@@ -1034,6 +1016,7 @@ noncomputable def weightedPolynomialHom [NonarchimedeanRing A] (T : Fin k → Se
   MvPolynomial.coeToMvPowerSeries.ringHom.codRestrict _
     (isWeightedRestricted_toMvPowerSeries T)
 
+/-- A polynomial and its image under `weightedPolynomialHom` are the same series in `A[[X]]`. -/
 @[simp]
 theorem coe_weightedPolynomialHom [NonarchimedeanRing A] {T : Fin k → Set A}
     {hT : IsWeightFamily T} (p : MvPolynomial (Fin k) A) :
@@ -1045,30 +1028,52 @@ theorem coe_weightedPolynomialHom [NonarchimedeanRing A] {T : Fin k → Set A}
 theorem weightedPolynomialHom_C [NonarchimedeanRing A] {T : Fin k → Set A}
     {hT : IsWeightFamily T} (a : A) :
     weightedPolynomialHom T hT (MvPolynomial.C a) = weightedC T hT a :=
-  Subtype.ext (by simp [coe_weightedC])
+  Subtype.ext (by simp)
 
 /-- The inclusion sends the polynomial variable `X i` to the weighted variable `weightedX i`. -/
 @[simp]
 theorem weightedPolynomialHom_X [NonarchimedeanRing A] {T : Fin k → Set A}
     {hT : IsWeightFamily T} (i : Fin k) :
     weightedPolynomialHom T hT (MvPolynomial.X i) = weightedX T hT i :=
-  Subtype.ext (by simp [coe_weightedX])
+  Subtype.ext (by simp)
 
-/-- A monomial `a Xν` lies in `R⟨X⟩_T` exactly when its coefficient meets the `R` bound,
-`a ∈ Tν · R`. -/
+/-- A polynomial lies in `U⟨X⟩` exactly when each of its coefficients `aν` lies in `Tν · U`, for any
+additive subgroup `U`. -/
+theorem weightedPolynomialHom_mem_weightedNhd [NonarchimedeanRing A] {T : Fin k → Set A}
+    {hT : IsWeightFamily T} {U : AddSubgroup A} {p : MvPolynomial (Fin k) A} :
+    weightedPolynomialHom T hT p ∈ weightedNhd T hT U ↔ ∀ ν, p.coeff ν ∈ weightMul T ν U := by
+  simp only [mem_weightedNhd, coe_weightedPolynomialHom, MvPolynomial.coeff_coe]
+
+/-- A monomial `a Xν` lies in `U⟨X⟩` exactly when `a ∈ Tν · U`. -/
+@[simp 1100] theorem weightedPolynomialHom_monomial_mem_weightedNhd [NonarchimedeanRing A]
+    {T : Fin k → Set A} {hT : IsWeightFamily T} {U : AddSubgroup A} {ν : Fin k →₀ ℕ} {a : A} :
+    weightedPolynomialHom T hT (MvPolynomial.monomial ν a) ∈ weightedNhd T hT U ↔
+      a ∈ weightMul T ν U := by
+  classical
+  rw [weightedPolynomialHom_mem_weightedNhd]
+  refine ⟨fun h ↦ by simpa using h ν, fun h μ ↦ ?_⟩
+  rw [MvPolynomial.coeff_monomial]
+  split_ifs with hμ
+  · exact hμ ▸ h
+  · exact zero_mem _
+
+/-- A monomial `a Xν` lies in `R⟨X⟩_T` exactly when its coefficient is in `Tν · R`. -/
 -- Apply before `mem_weightedSubring`, which expands the bound on every coefficient.
 @[simp 1100]
 theorem weightedPolynomialHom_monomial_mem_weightedSubring [NonarchimedeanRing A]
     {T : Fin k → Set A} {hT : IsWeightFamily T} {R : Subring A} {ν : Fin k →₀ ℕ} {a : A} :
     weightedPolynomialHom T hT (MvPolynomial.monomial ν a) ∈ weightedSubring T hT R ↔
-      a ∈ weightMul T ν R.toAddSubgroup := by
-  classical
-  simp only [mem_weightedSubring, mem_weightedNhd, coe_weightedPolynomialHom,
-    MvPolynomial.coe_monomial, MvPowerSeries.coeff_monomial]
-  refine ⟨fun h ↦ by simpa using h ν, fun h μ ↦ ?_⟩
-  split_ifs with hμ
-  · exact hμ ▸ h
-  · exact zero_mem _
+      a ∈ weightMul T ν R.toAddSubgroup :=
+  mem_weightedSubring.trans weightedPolynomialHom_monomial_mem_weightedNhd
+
+/-- A monomial `c Xᵢ ^ j` lies in `U⟨X⟩` exactly when `c ∈ T(j eᵢ) · U`. -/
+@[simp 1100] theorem weightedC_mul_weightedX_pow_mem_weightedNhd [NonarchimedeanRing A]
+    {T : Fin k → Set A} (hT : IsWeightFamily T) {U : AddSubgroup A} {c : A} {i : Fin k} {j : ℕ} :
+    weightedC T hT c * weightedX T hT i ^ j ∈ weightedNhd T hT U ↔
+      c ∈ weightMul T (Finsupp.single i j) U := by
+  rw [← weightedPolynomialHom_monomial_mem_weightedNhd (hT := hT),
+    ← MvPolynomial.C_mul_X_pow_eq_monomial, map_mul, map_pow, weightedPolynomialHom_C,
+    weightedPolynomialHom_X]
 
 /-- **The inclusion of the polynomials is injective**: a polynomial is determined by its
 coefficients, and the inclusion changes none of them.
@@ -1098,6 +1103,7 @@ noncomputable def weightedPolynomialsEquiv [NonarchimedeanRing A] {T : Fin k →
     ⟨fun _ _ h ↦ weightedPolynomialHom_injective hT (congrArg Subtype.val h),
       (weightedPolynomialHom T hT).rangeRestrict_surjective⟩
 
+/-- The equivalence `weightedPolynomialsEquiv` agrees with `weightedPolynomialHom`. -/
 @[simp]
 theorem coe_weightedPolynomialsEquiv [NonarchimedeanRing A] {T : Fin k → Set A}
     {hT : IsWeightFamily T} (p : MvPolynomial (Fin k) A) :
@@ -1136,7 +1142,7 @@ theorem weightedX_mem_weightedPolynomials [NonarchimedeanRing A] {T : Fin k → 
     {hT : IsWeightFamily T} (i : Fin k) : weightedX T hT i ∈ weightedPolynomials T hT :=
   ⟨MvPolynomial.X i, weightedPolynomialHom_X i⟩
 
-/-- **Wedhorn 5.49(1)**: the polynomials are dense in `A⟨X⟩_T`. -/
+/-- **Wedhorn 5.49(1), the density half**: the polynomials are dense in `A⟨X⟩_T`. -/
 theorem dense_weightedPolynomials [NonarchimedeanRing A] {T : Fin k → Set A}
     (hT : IsWeightFamily T) :
     Dense (weightedPolynomials T hT : Set (weightedRestrictedSubring T hT)) := by
@@ -1203,7 +1209,7 @@ theorem weightedPolynomials_eq_top [NonarchimedeanRing A] [DiscreteTopology A]
   rw [Subring.eq_top_iff']
   intro f
   rw [mem_weightedPolynomials_iff]
-  have h := (isWeightedRestricted_iff.mp (mem_weightedRestrictedSubring.mp f.2))
+  have h := (isWeightedRestricted_iff.mp (mem_weightedRestrictedSubring.mp f.property))
     ⟨⊥, isOpen_discrete _⟩
   simpa [weightMul_bot, Filter.eventually_cofinite] using h
 

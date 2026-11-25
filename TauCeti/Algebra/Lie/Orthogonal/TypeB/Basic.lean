@@ -43,13 +43,21 @@ section EntryRelations
 
 variable {K ι : Type*} [CommRing K] [DecidableEq ι] [Fintype ι]
 
+/-- A matrix lies in the split type-`B` Lie algebra exactly when it satisfies the skew-adjointness
+equation `Aᵀ * JB = JB * (-A)` for the split odd orthogonal form. -/
+theorem mem_iff (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) :
+    A ∈ LieAlgebra.Orthogonal.typeB ι K ↔
+      Aᵀ * LieAlgebra.Orthogonal.JB ι K = LieAlgebra.Orthogonal.JB ι K * (-A) := by
+  rw [LieAlgebra.Orthogonal.typeB, mem_skewAdjointMatricesLieSubalgebra,
+    mem_skewAdjointMatricesSubmodule]
+  rfl
+
 /-- The skew-adjointness equation defining the split type-`B` Lie algebra, as an equation between
 matrices. -/
 private theorem transpose_mul_JB (A : LieAlgebra.Orthogonal.typeB ι K) :
     (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K)ᵀ * LieAlgebra.Orthogonal.JB ι K =
-      LieAlgebra.Orthogonal.JB ι K * (-(A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K)) := by
-  simpa only [LieAlgebra.Orthogonal.typeB, mem_skewAdjointMatricesLieSubalgebra,
-    mem_skewAdjointMatricesSubmodule, Matrix.IsSkewAdjoint, Matrix.IsAdjointPair] using A.property
+      LieAlgebra.Orthogonal.JB ι K * (-(A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K)) :=
+  (mem_iff _).1 A.property
 
 /-- In a type-`B` matrix, the anisotropic diagonal entry vanishes when `2` is regular. -/
 theorem apply_inl_inl (A : LieAlgebra.Orthogonal.typeB ι K) (h2 : IsRegular (2 : K))

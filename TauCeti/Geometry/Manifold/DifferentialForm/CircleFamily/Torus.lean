@@ -34,6 +34,13 @@ those of the periods `p i ∘ f`; in particular, along the inclusion of an open 
 to the periods `q` keeps the normalized angles, so it pulls the angle form `β_i` of `q` back to that
 of `p`, and the time form `η_i` of `q` back to `(q i / p i)` times the time form `η_i` of `p`.
 
+For smooth period functions, the forms are computed on the real cover
+`Q(b, t) = (b, ([t j]_(p j b))ⱼ)` of the family (`TauCeti.TorusFamily.representative`), the
+covering map from `B × (ι → ℝ)`: `Q^* β_i = d(t_i / p_i)` and
+`Q^* η_i = dt_i - (t_i / p_i) • dp_i`, where `p_i` stands for `(b, t) ↦ p i b`. Every form pulled
+back along `Q` is invariant under the deck translations `t ↦ t + (k j * p j b)ⱼ`; for `Q^* η_i`
+the term `k_i dp_i` coming from the translated coordinate is cancelled by the change of `t_i / p_i`.
+
 ## Main definitions
 
 * `TauCeti.TorusFamily.angleForm p IB i`: the angle form `β_i`.
@@ -52,6 +59,11 @@ of `p`, and the time form `η_i` of `q` back to `(q i / p i)` times the time for
   compatibility with base change.
 * `TauCeti.TorusFamily.mpullback_rescale_angleForm`,
   `TauCeti.TorusFamily.mpullback_rescale_timeForm`: compatibility with the fiberwise rescalings.
+* `TauCeti.TorusFamily.mpullback_representative_angleForm`,
+  `TauCeti.TorusFamily.mpullback_representative_timeForm`: on the real cover,
+  `Q^* β_i = d(t_i / p_i)` and `Q^* η_i = dt_i - (t_i / p_i) • dp_i`.
+* `TauCeti.TorusFamily.mpullback_deck_mpullback_representative`: forms pulled back to the real
+  cover are invariant under the deck translations.
 
 ## References
 
@@ -108,7 +120,7 @@ tangent lines of the unit-period circle. -/
 @[simp]
 theorem angleForm_apply (i : ι) (z : TorusFamily p)
     (v : Fin 1 → TangentSpace (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) z) :
-    (angleForm p IB i).1 z v =
+    (angleForm p IB i).val z v =
       mfderiv (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) 𝓘(ℝ)
         (fun z ↦ (normalization p IB ∞ z).2 i) z (v 0) := by
   have hg := ((contMDiff_snd.comp (CircleFamily.Pullback.normalization (p i) IB ∞).contMDiff)
@@ -154,7 +166,7 @@ theorem mpullback_coord_timeForm (i : ι) (hp : ContMDiff IB 𝓘(ℝ) ∞ (p i)
 @[simp]
 theorem timeForm_apply (i : ι) (hp : ContMDiff IB 𝓘(ℝ) ∞ (p i)) (z : TorusFamily p)
     (v : Fin 1 → TangentSpace (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) z) :
-    (timeForm p IB i hp).1 z v = p i z.base * (angleForm p IB i).1 z v := by
+    (timeForm p IB i hp).val z v = p i z.base * (angleForm p IB i).val z v := by
   rw [timeForm, angleForm, SmoothForm.mpullback_apply, SmoothForm.mpullback_apply,
     CircleFamily.Pullback.timeForm_apply, base_coord]
 
@@ -168,15 +180,15 @@ theorem mpullback_mk_timeForm (i : ι) (hp : ContMDiff IB 𝓘(ℝ) ∞ (p i)) (
 
 /-- The exterior derivative of the time form `η_i` is `d(p_i ∘ base) ∧ β_i`. -/
 theorem mextDeriv_timeForm (i : ι) (hp : ContMDiff IB 𝓘(ℝ) ∞ (p i)) :
-    mextDeriv (timeForm p IB i hp).1 =
+    mextDeriv (timeForm p IB i hp).val =
       RoughForm.wedge
         (mextDeriv (RoughForm.ofFunction (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)))
           fun z : TorusFamily p ↦ (p i z.base : ℝ)))
-        (angleForm p IB i).1 := by
+        (angleForm p IB i).val := by
   have hc := contMDiff_coord p IB ∞ i
   have hg : ContMDiff (IB.prod 𝓘(ℝ)) 𝓘(ℝ, ℝ) ∞
       fun z : CircleFamily.Pullback (p i) ↦ (p i z.base : ℝ) :=
-    (contMDiff_subtype_val.comp hp).comp (CircleFamily.Pullback.contMDiff_base (p i) IB ∞)
+    (contMDiff_subtypeVal.comp hp).comp (CircleFamily.Pullback.contMDiff_base (p i) IB ∞)
   have hcomp : (fun z : CircleFamily.Pullback (p i) ↦ (p i z.base : ℝ)) ∘ coord p i =
       fun z ↦ (p i z.base : ℝ) :=
     funext fun z ↦ by simp
@@ -245,8 +257,8 @@ theorem mpullback_rescale_angleForm (i : ι) :
 theorem mpullback_rescale_timeForm (i : ι) (hp : ContMDiff IB 𝓘(ℝ) ∞ (p i))
     (hq : ContMDiff IB 𝓘(ℝ) ∞ (q i)) :
     (SmoothForm.mpullback (rescale p IB q ∞) (rescale p IB q ∞).contMDiff
-        (timeForm q IB i hq)).1 =
-      fun z ↦ ((q i z.base : ℝ) / p i z.base) • (timeForm p IB i hp).1 z := by
+        (timeForm q IB i hq)).val =
+      fun z ↦ ((q i z.base : ℝ) / p i z.base) • (timeForm p IB i hp).val z := by
   refine funext fun z ↦ ContinuousAlternatingMap.ext fun v ↦ ?_
   have h := DFunLike.congr_fun
     (congrFun (congrArg Subtype.val (mpullback_rescale_angleForm p IB q i)) z) v
@@ -254,6 +266,100 @@ theorem mpullback_rescale_timeForm (i : ι) (hp : ContMDiff IB 𝓘(ℝ) ∞ (p 
   rw [SmoothForm.mpullback_apply, timeForm_apply, base_rescale, h,
     ContinuousAlternatingMap.smul_apply, timeForm_apply, smul_eq_mul]
   field_simp [(p i z.base).property.ne']
+
+/-! ### The real cover -/
+
+section RealCover
+
+variable {p IB} (hp : ∀ j, ContMDiff IB 𝓘(ℝ) ∞ (p j))
+
+omit [IsManifold IB ∞ B] in
+include hp in
+/-- The normalized time `t i / p i b` of a real point `(b, t)` is smooth: it is the `i`-th time
+coordinate of the real normalization. -/
+private theorem contMDiff_normalizedTime (i : ι) :
+    ContMDiff (IB.prod 𝓘(ℝ, ι → ℝ)) 𝓘(ℝ, ℝ) ∞ fun z : B × (ι → ℝ) ↦ z.2 i / (p i z.1 : ℝ) := by
+  have h := ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).contMDiff.comp
+    contMDiff_snd).comp (realNormalization p IB hp).contMDiff
+  simpa only [Function.comp_def, realNormalization_apply, ContinuousLinearMap.proj_apply] using h
+
+include hp in
+/-- On the real cover `Q(b, t) = (b, ([t j]_(p j b))ⱼ)`, the angle form `β_i` is the differential
+of the normalized time `t i / p i b`. -/
+theorem mpullback_representative_angleForm (i : ι) :
+    mpullback (IB.prod 𝓘(ℝ, ι → ℝ)) (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)))
+        (representative p) (angleForm p IB i).val =
+      mextDeriv (RoughForm.ofFunction (IB.prod 𝓘(ℝ, ι → ℝ))
+        fun z : B × (ι → ℝ) ↦ z.2 i / (p i z.1 : ℝ)) := by
+  have hcomp : (fun z ↦ (normalization p IB ∞ z).2 i) ∘ representative p =
+      ((↑) : ℝ → AddCircle (1 : ℝ)) ∘ fun z : B × (ι → ℝ) ↦ z.2 i / (p i z.1 : ℝ) :=
+    funext fun z ↦ by simp only [Function.comp_apply, normalization_representative]
+  funext z
+  refine ContinuousAlternatingMap.ext fun v ↦ ?_
+  have hQ := (contMDiff_representative p IB hp z).mdifferentiableAt (by simp)
+  have hg : MDifferentiableAt (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) 𝓘(ℝ)
+      (fun z ↦ (normalization p IB ∞ z).2 i) (representative p z) :=
+    (((contMDiff_apply (i := i)).comp contMDiff_snd).comp (normalization p IB ∞).contMDiff
+      _).mdifferentiableAt (by simp)
+  have hh := (contMDiff_normalizedTime hp i z).mdifferentiableAt (by simp)
+  have hc := ((AddCircle.contMDiff_coe 1 ∞) (z.2 i / (p i z.1 : ℝ))).mdifferentiableAt (by simp)
+  rw [mpullback_apply, angleForm_apply, ← mfderiv_comp_apply z hg hQ, hcomp,
+    mfderiv_comp_apply z hc hh, AddCircle.mfderiv_coe, mextDeriv_ofFunction,
+    ContinuousAlternatingMap.ofSubsingleton_apply_apply, mvfderiv_apply_eq_mfderiv_apply]
+  -- The derivative of `ℝ → AddCircle 1` is the identity of `ℝ`, whose source is the tangent space
+  -- of the circle only up to definitional unfolding, so `ContinuousLinearMap.id_apply` does not
+  -- rewrite here.
+  rfl
+
+include hp in
+/-- On the real cover `Q(b, t) = (b, ([t j]_(p j b))ⱼ)`, the time form `η_i` is
+`dt_i - (t i / p i b) • d(p i ∘ pr₁)`: the product rule for `t i = p i b * (t i / p i b)`. -/
+theorem mpullback_representative_timeForm (i : ι) :
+    mpullback (IB.prod 𝓘(ℝ, ι → ℝ)) (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)))
+        (representative p) (timeForm p IB i (hp i)).val =
+      mextDeriv (RoughForm.ofFunction (IB.prod 𝓘(ℝ, ι → ℝ)) fun z : B × (ι → ℝ) ↦ z.2 i) -
+        fun z ↦ (z.2 i / (p i z.1 : ℝ)) •
+          mextDeriv (RoughForm.ofFunction (IB.prod 𝓘(ℝ, ι → ℝ))
+            fun z : B × (ι → ℝ) ↦ (p i z.1 : ℝ)) z := by
+  have hper : ContMDiff (IB.prod 𝓘(ℝ, ι → ℝ)) 𝓘(ℝ, ℝ) ∞ fun z : B × (ι → ℝ) ↦ (p i z.1 : ℝ) :=
+    (contMDiff_subtypeVal.comp (hp i)).comp contMDiff_fst
+  have ht : (fun z : B × (ι → ℝ) ↦ (p i z.1 : ℝ)) * (fun z ↦ z.2 i / (p i z.1 : ℝ)) =
+      fun z ↦ z.2 i :=
+    funext fun z ↦ by simp [mul_div_cancel₀ _ (p i z.1).property.ne']
+  funext z
+  refine ContinuousAlternatingMap.ext fun v ↦ ?_
+  have hv := DFunLike.congr_fun (congrFun (mpullback_representative_angleForm hp i) z) v
+  rw [mpullback_apply] at hv
+  rw [mpullback_apply, timeForm_apply, hv, base_representative, Pi.sub_apply, ← ht,
+    mextDeriv_ofFunction_mul ((hper z).mdifferentiableAt (by simp))
+      ((contMDiff_normalizedTime hp i z).mdifferentiableAt (by simp))]
+  simp
+
+omit [IsManifold IB ∞ B] in
+include hp in
+/-- Every form pulled back to the real cover `Q(b, t) = (b, ([t j]_(p j b))ⱼ)` is invariant under
+the deck translations `(b, t) ↦ (b, t + (k j * p j b)ⱼ)`, which fix `Q`. For the time forms this is
+the invariance of `Q^* η_i = dt_i - (t i / p i b) • d(p i ∘ pr₁)`. -/
+theorem mpullback_deck_mpullback_representative {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {l : ℕ} (k : ι → ℤ)
+    (φ : RoughForm (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) (TorusFamily p) F l) :
+    mpullback (IB.prod 𝓘(ℝ, ι → ℝ)) (IB.prod 𝓘(ℝ, ι → ℝ))
+        (fun z : B × (ι → ℝ) ↦ (z.1, z.2 + fun j ↦ k j * (p j z.1 : ℝ)))
+        (mpullback (IB.prod 𝓘(ℝ, ι → ℝ)) (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)))
+          (representative p) φ) =
+      mpullback (IB.prod 𝓘(ℝ, ι → ℝ)) (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)))
+        (representative p) φ := by
+  have hdeck : ContMDiff (IB.prod 𝓘(ℝ, ι → ℝ)) (IB.prod 𝓘(ℝ, ι → ℝ)) ∞
+      fun z : B × (ι → ℝ) ↦ (z.1, z.2 + fun j ↦ k j * (p j z.1 : ℝ)) :=
+    contMDiff_fst.prodMk (contMDiff_snd.add (contMDiff_pi_module_iff.2 fun j ↦
+      contMDiff_const.mul ((contMDiff_subtypeVal.comp (hp j)).comp contMDiff_fst)))
+  have hcomp : representative p ∘
+      (fun z : B × (ι → ℝ) ↦ (z.1, z.2 + fun j ↦ k j * (p j z.1 : ℝ))) = representative p :=
+    funext fun z ↦ representative_add_intCast_mul p z.1 z.2 k
+  rw [← mpullback_comp (hdeck.mdifferentiable (by simp))
+    ((contMDiff_representative p IB hp).mdifferentiable (by simp)), hcomp]
+
+end RealCover
 
 end TorusFamily
 

@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-import TauCeti.CategoryTheory.ObjectProperty
+import TauCeti.CategoryTheory.ObjectProperty.Equivalence
 public import TauCeti.Algebra.AlgebraicGroup.Semisimple.Basic
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Connected
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Smooth

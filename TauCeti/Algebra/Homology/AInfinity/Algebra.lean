@@ -36,9 +36,13 @@ vanish, rather than being unconstrained data hidden from the bar construction.
 
 * `TauCeti.AInfinityAlgebra.stasheff`: the unsuspended Stasheff identities, with
   `stasheff_arity_one` through `stasheff_arity_four` evaluated verbatim.
+* `TauCeti.AInfinity.stasheff_arity_two_of_stasheffSum_eq_zero`: an operation family satisfying
+  the arity-two identity on homogeneous inputs satisfies the graded Leibniz rule on all inputs.
 * `TauCeti.AInfinityAlgebra.taylor_of_two` and
   `TauCeti.AInfinityAlgebra.barDifferential_of_two`: the Taylor map and the bar differential on a
   two-letter word.
+* `TauCeti.AInfinityAlgebra.taylor_eq_of_m_eq_zero`: the Taylor map when the operations of arity
+  at least three vanish.
 
 ## References
 
@@ -254,34 +258,45 @@ theorem stasheff_arity_one (𝒜 : AInfinityAlgebra R A) (x : A) : 𝒜.m 1 ![�
     simpa [E, AInfinity.stasheffSum_one] using h
   rw [hE, LinearMap.zero_apply]
 
+/-- **The arity-two Stasheff identity on all inputs.** If an operation family satisfies the
+arity-two Stasheff identity on homogeneous inputs, its unary operation is a graded derivation of
+its binary operation, with sign `(-1)^p` on the second differentiated input when the first input
+has degree `p`; the second input need not be homogeneous. -/
+theorem _root_.TauCeti.AInfinity.stasheff_arity_two_of_stasheffSum_eq_zero
+    (G : InternalGrading R A ℤ) (m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A)
+    (hm : ∀ (e : ℕ → ℤ) (a : ℕ → A), (∀ i < 2, a i ∈ G.piece (e i)) →
+      AInfinity.stasheffSum m e a 2 = 0)
+    (x y : A) (p : ℤ) (hx : x ∈ G.piece p) :
+    m 1 ![m 2 ![x, y]] = m 2 ![m 1 ![x], y] + negOnePowCast R p • m 2 ![x, m 1 ![y]] := by
+  let L : A →ₗ[R] A :=
+    ((m 1).curryRight ![]).comp ((m 2).curryRight ![x])
+  let Q : A →ₗ[R] A :=
+    (m 2).curryRight ![m 1 ![x]] +
+      negOnePowCast R p • ((m 2).curryRight ![x]).comp ((m 1).curryRight ![])
+  suffices L y = Q y by simpa [L, Q] using this
+  have hLQ : L = Q := by
+    apply G.linearMap_ext
+    intro q z hz
+    let d : ℕ → ℤ := fun i ↦ if i = 0 then p else q
+    let a : ℕ → A := fun i ↦ if i = 0 then x else z
+    have ha : ∀ i < 2, a i ∈ G.piece (d i) := by
+      intro i hi
+      have hi' : i = 0 ∨ i = 1 := by omega
+      rcases hi' with rfl | rfl
+      · simpa [a, d] using hx
+      · simpa [a, d] using hz
+    have h := (AInfinity.stasheffSum_two_eq_zero_iff m d a).mp (hm d a ha)
+    simpa [L, Q, a, d] using h
+  exact LinearMap.congr_fun hLQ y
+
 /-- The arity-two identity is the graded Leibniz rule, with sign `(-1)^(d 0)` on the second
 differentiated input. -/
 theorem stasheff_arity_two (𝒜 : AInfinityAlgebra R A) (x y : A) (p : ℤ)
     (hx : x ∈ 𝒜.grading.piece p) :
     𝒜.m 1 ![𝒜.m 2 ![x, y]] =
       𝒜.m 2 ![𝒜.m 1 ![x], y] +
-        negOnePowCast R p • 𝒜.m 2 ![x, 𝒜.m 1 ![y]] := by
-  let L : A →ₗ[R] A :=
-    ((𝒜.m 1).curryRight ![]).comp ((𝒜.m 2).curryRight ![x])
-  let Q : A →ₗ[R] A :=
-    (𝒜.m 2).curryRight ![𝒜.m 1 ![x]] +
-      negOnePowCast R p • ((𝒜.m 2).curryRight ![x]).comp ((𝒜.m 1).curryRight ![])
-  suffices L y = Q y by simpa [L, Q] using this
-  have hLQ : L = Q := by
-    apply 𝒜.grading.linearMap_ext
-    intro q z hz
-    let d : ℕ → ℤ := fun i ↦ if i = 0 then p else q
-    let a : ℕ → A := fun i ↦ if i = 0 then x else z
-    have ha : ∀ i < 2, a i ∈ 𝒜.grading.piece (d i) := by
-      intro i hi
-      have hi' : i = 0 ∨ i = 1 := by omega
-      rcases hi' with rfl | rfl
-      · simpa [a, d] using hx
-      · simpa [a, d] using hz
-    have h := (AInfinity.stasheffSum_two_eq_zero_iff 𝒜.m d a).mp
-      (𝒜.stasheff 2 d a ha)
-    simpa [L, Q, a, d] using h
-  exact LinearMap.congr_fun hLQ y
+        negOnePowCast R p • 𝒜.m 2 ![x, 𝒜.m 1 ![y]] :=
+  AInfinity.stasheff_arity_two_of_stasheffSum_eq_zero 𝒜.grading 𝒜.m (𝒜.stasheff 2) x y p hx
 
 /-- The arity-three Stasheff identity, with the Koszul signs determined by the degrees of its
 first two inputs. -/
@@ -509,15 +524,26 @@ theorem m_three_mem_piece (𝒜 : AInfinityAlgebra R A) {p q r : ℤ} {x y z : A
 /-- On a pure tensor word of length `n` the Taylor map evaluates the arity-`n` operation after
 twisting the `i`-th letter by the Koszul twist of parameter `n - 1 - i`; on homogeneous letters
 these twists multiply to the suspension sign `(-1) ^ suspExp n d`. -/
-theorem taylor_of_tprod (𝒜 : AInfinityAlgebra R A) (n : {n : ℕ // 0 < n}) (x : Fin n.1 → A) :
+theorem taylor_of_tprod (𝒜 : AInfinityAlgebra R A) (n : {n : ℕ // 0 < n}) (x : Fin n.val → A) :
     𝒜.taylor (ReducedTensorWords.of R A n (PiTensorProduct.tprod R x)) =
-      𝒜.m n.1 fun i ↦ 𝒜.grading.koszulTwist ((n.1 : ℤ) - 1 - i) (x i) := by
+      𝒜.m n.val fun i ↦ 𝒜.grading.koszulTwist ((n.val : ℤ) - 1 - i) (x i) := by
   rw [𝒜.taylor_isSuspension.taylor_eq (AInfinity.isSuspension_suspensionTaylor _ _),
     AInfinity.suspensionTaylor_of_tprod]
 
+/-- The suspended Taylor map sends the word of the first `n` letters of a natural-indexed family of
+homogeneous letters to the piece of their total suspended degree plus one. -/
+theorem taylor_of_tprod_mem (𝒜 : AInfinityAlgebra R A) {n : ℕ} (hn : 0 < n) (a : ℕ → A)
+    (dA : ℕ → ℤ) (ha : ∀ i < n, a i ∈ (𝒜.grading.shift 1).piece (dA i)) :
+    𝒜.taylor (ReducedTensorWords.of R A ⟨n, hn⟩ (PiTensorProduct.tprod R fun j : Fin n ↦ a j)) ∈
+      (𝒜.grading.shift 1).piece (∑ i ∈ Finset.range n, dA i + 1) := by
+  have h := ReducedTensorWords.mem_gradedPiece_of_tprod (𝒜.grading.shift 1) hn
+    (fun j : Fin n ↦ a j) (fun j ↦ dA j) fun j ↦ ha j j.isLt
+  rw [Fin.sum_univ_eq_sum_range (fun i ↦ dA i)] at h
+  exact (𝒜.taylor_isSuspension.isHomogeneous 𝒜.m_degree).map_mem h
+
 /-- A vanishing operation has vanishing suspended Taylor component. -/
 theorem taylor_comp_of_eq_zero_of_m_eq_zero (𝒜 : AInfinityAlgebra R A)
-    (n : {n : ℕ // 0 < n}) (hn : 𝒜.m n.1 = 0) :
+    (n : {n : ℕ // 0 < n}) (hn : 𝒜.m n.val = 0) :
     𝒜.taylor ∘ₗ ReducedTensorWords.of R A n = 0 := by
   apply PiTensorProduct.ext
   apply MultilinearMap.ext
@@ -548,6 +574,40 @@ theorem taylor_of_three (𝒜 : AInfinityAlgebra R A) (a b c : A) :
   congr 1
   funext i
   fin_cases i <;> simp [InternalGrading.koszulTwist_zero]
+
+/-- If the operations of arity at least three vanish, the Taylor map is the unary operation on the
+letter component plus the binary operation on the two halves of each cut, with the degree-one
+Koszul twist of the left half carrying the suspension sign.  Only words of length one and two
+contribute: every cut of a longer word has a half of length at least two. -/
+theorem taylor_eq_of_m_eq_zero (𝒜 : AInfinityAlgebra R A) (h₃ : ∀ n, 3 ≤ n → 𝒜.m n = 0) :
+    𝒜.taylor = 𝒜.differential ∘ₗ ReducedTensorWords.letter R A +
+      TensorProduct.lift 𝒜.mul ∘ₗ
+        TensorProduct.map (𝒜.grading.koszulTwist 1 ∘ₗ ReducedTensorWords.letter R A)
+          (ReducedTensorWords.letter R A) ∘ₗ ReducedTensorWords.deconcatenation R A := by
+  refine ReducedTensorWords.linearMap_ext R A fun ⟨n, hn⟩ x ↦ ?_
+  match n, hn, x with
+  | 1, hn, x =>
+    rw [ReducedTensorWords.of_tprod_eq_subword R hn, ReducedTensorWords.subword_one R A x hn]
+    simp
+  | 2, hn, x =>
+    rw [ReducedTensorWords.of_tprod_eq_subword R hn, ReducedTensorWords.subword_two_eq R x le_rfl]
+    simp [taylor_of_two, ReducedTensorWords.deconcatenation_of_two, (𝒜.m 1).map_coord_zero 0]
+  | n + 3, hn, x =>
+    have h₀ := LinearMap.congr_fun
+      (𝒜.taylor_comp_of_eq_zero_of_m_eq_zero ⟨n + 3, hn⟩ (h₃ (n + 3) (by omega)))
+      (PiTensorProduct.tprod R x)
+    rw [LinearMap.comp_apply] at h₀
+    rw [h₀, LinearMap.zero_apply, ReducedTensorWords.of_tprod_eq_subword R hn, LinearMap.add_apply,
+      LinearMap.comp_apply, ReducedTensorWords.letter_subword_of_ne_one R A x _ (by omega),
+      map_zero, zero_add, LinearMap.comp_apply, LinearMap.comp_apply,
+      ReducedTensorWords.deconcatenation_subword, map_sum, map_sum]
+    refine (Finset.sum_eq_zero fun c hc ↦ ?_).symm
+    rw [Finset.mem_Ioo] at hc
+    rw [TensorProduct.map_tmul, TensorProduct.lift.tmul]
+    rcases eq_or_ne c 1 with rfl | hc₁
+    · rw [ReducedTensorWords.letter_subword_of_ne_one R A x _ (by omega), map_zero]
+    · rw [LinearMap.comp_apply, ReducedTensorWords.letter_subword_of_ne_one R A x _ hc₁, map_zero,
+        map_zero, LinearMap.zero_apply]
 
 /-- The bar differential of a two-letter word: the unary operation applied to either letter, and
 the collapse of both letters to the binary operation.  Koszul twists carry the suspension signs. -/
