@@ -118,6 +118,16 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   (c : Π x : M, TangentSpace I x →L[ℝ] V x →L[ℝ] V x)
   {σ : Π y : M, V y}
 
+/-- The polarized Clifford relation `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫` for the Clifford
+multiplication at `x`, from `c(v)² = -⟪v, v⟫` there. -/
+private theorem apply_apply_add_swap_eq_neg_two_inner
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] {x : M}
+    (hcl : ∀ (v : TangentSpace I x) (s : V x), c x v (c x v s) = -⟪v, v⟫ • s)
+    (u v : TangentSpace I x) (s : V x) :
+    c x u (c x v s) + c x v (c x u s) = -(2 * ⟪u, v⟫) • s := by
+  simpa using LinearMap.apply_apply_add_swap_eq_neg_two_inner
+    ((ContinuousLinearMap.coeLM ℝ).comp (c x).toLinearMap) (by simpa using hcl) u v s
+
 section ParallelFrame
 
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [FiniteDimensional ℝ F]
@@ -189,10 +199,7 @@ private theorem sum_sum_secondCovariantDerivative_eq (hσ : CMDiff ∞ (T% σ)) 
   -- The Clifford multiplications by the basis vectors satisfy the Clifford relations.
   have hγ (i j : ι) (s : V x) : c x (b i) (c x (b j) s) + c x (b j) (c x (b i) s) =
       if i = j then -(2 • s) else 0 := by
-    have h : c x (b i) (c x (b j) s) + c x (b j) (c x (b i) s) = -(2 * ⟪b i, b j⟫) • s :=
-      ((ContinuousLinearMap.coeLM ℝ).comp (c x).toLinearMap).apply_apply_add_swap_eq_neg_two_inner
-        hcl _ _ _
-    rw [h, b.inner_eq_ite]
+    rw [apply_apply_add_swap_eq_neg_two_inner c hcl, b.inner_eq_ite]
     split_ifs <;> simp [two_smul]
   -- The symmetric part contracts to the trace, the antisymmetric part to the curvature.
   have h := TauCeti.two_nsmul_sum_sum_apply_apply_eq (fun i ↦ c x (b i)) hγ
@@ -430,8 +437,7 @@ theorem diracOperator_diracOperator_eq_roughLaplacian_add_sum_lt {ι : Type*} [F
     have h : c x (b i) (c x (b j) (cov.curvatureTensor x (b i) (b j) (σ x))) +
         c x (b j) (c x (b i) (cov.curvatureTensor x (b i) (b j) (σ x))) =
           -(2 * ⟪b i, b j⟫) • cov.curvatureTensor x (b i) (b j) (σ x) :=
-      ((ContinuousLinearMap.coeLM ℝ).comp (c x).toLinearMap).apply_apply_add_swap_eq_neg_two_inner
-        hcl _ _ _
+      apply_apply_add_swap_eq_neg_two_inner c hcl _ _ _
     simp only [b.inner_eq_ite, hij, ite_false, mul_zero, neg_zero, zero_smul] at h
     simp only [hf, cov.curvatureTensor_antisymm x (b j) (b i), LinearMap.neg_apply, map_neg]
     linear_combination (norm := module) -h
@@ -442,8 +448,8 @@ theorem diracOperator_diracOperator_eq_roughLaplacian_add_sum_lt {ι : Type*} [F
   simp only [Finset.sum_filter, Finset.smul_sum]
   refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
   split_ifs with h
-  · rw [Prod.fst_swap, Prod.snd_swap, hsymm i j h.ne, ← two_smul ℝ, smul_smul,
-      inv_mul_cancel₀ two_ne_zero, one_smul]
+  · rw [Prod.fst_swap, Prod.snd_swap, hsymm i j h.ne]
+    module
   · exact smul_zero _
 
 end CovariantDerivative
