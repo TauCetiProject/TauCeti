@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.DefiningFunction.Examples
-public import TauCeti.Geometry.Manifold.Riemannian.ClosedBall.OutwardUnitNormal
+public import TauCeti.Geometry.Manifold.Riemannian.ClosedBall.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.InwardUnitNormal
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 
@@ -52,15 +52,14 @@ theorem mvfderiv_subtypeVal_mgradient_closedBallDefiningFunction (x : closedBall
   have h := Manifold.inner_mgradient (I := 𝓡∂ (n + 1)) (f := closedBallDefiningFunction) (x := x)
     (e.symm w)
   rw [inner_tangentSpace_closedBall, mvfderiv_closedBallDefiningFunction_symm_apply,
-    mvfderiv_subtypeVal_closedBall] at h
-  rw [mvfderiv_subtypeVal_closedBall]
-  have he : (e.toContinuousLinearMap : _ →L[ℝ] E) (e.symm w) = w := e.apply_symm_apply w
-  rw [he] at h
+    mvfderiv_subtypeVal_closedBall, ContinuousLinearEquiv.coe_coe, e.apply_symm_apply] at h
+  rw [mvfderiv_subtypeVal_closedBall, ContinuousLinearEquiv.coe_coe]
   rw [h, inner_smul_left]
   simp
 
 /-- The differential of `ρ = 1 - ‖x‖²` on the closed unit ball has norm `2‖x‖` for the
 Euclidean metric. -/
+@[simp]
 theorem norm_mvfderiv_closedBallDefiningFunction (x : closedBall (0 : E) 1) :
     ‖mvfderiv (𝓡∂ (n + 1)) closedBallDefiningFunction x‖ = 2 * ‖(x : E)‖ := by
   rw [← Manifold.norm_mgradient_eq_norm_mvfderiv, norm_tangentSpace_closedBall,
