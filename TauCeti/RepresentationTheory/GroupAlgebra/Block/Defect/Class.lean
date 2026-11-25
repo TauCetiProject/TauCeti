@@ -29,6 +29,8 @@ exist over a field that does not split `G`.
 
 ## Main results
 
+* `TauCeti.isDefectClass_iff_ne_zero_and`: `C` is a defect class exactly when both factors
+  `a_b(C)` and `φ(K_C)` are nonzero.
 * `TauCeti.isDefectClass_mk_iff`: the condition read at a representative `g` of `C`.
 * `TauCeti.exists_isDefectClass`: if `φ(b) = 1`, then `b` has a defect class for `φ`.
 * `TauCeti.IsBlockIdempotent.exists_isDefectClass`: over an algebraically closed field, every
@@ -47,8 +49,9 @@ variable {k G : Type*} [Field k] [Group G] [Fintype G] [DecidableEq G]
 
 /-- A **defect class** of `b ∈ Z(k[G])` for a `k`-algebra homomorphism `φ : Z(k[G]) → k`: a
 conjugacy class `C` whose coefficient `a_b(C)` in `b` and value `φ(K_C)` at the class sum have
-nonzero product (Martínez, Definition 3.2, p. 17). The case of interest is a block idempotent `b`
-with its central character `φ`. -/
+nonzero product (Martínez, Definition 3.2, p. 17). The predicate is defined for every `φ`, but it
+is Martínez's defect class only when `φ(b) = 1`, as for a block idempotent `b` with its central
+character `φ`. -/
 def IsDefectClass (φ : Subalgebra.center k (MonoidAlgebra k G) →ₐ[k] k)
     (b : Subalgebra.center k (MonoidAlgebra k G)) (C : ConjClasses G) : Prop :=
   classSumBasis.repr b C * φ (classSumCenter C) ≠ 0
@@ -58,6 +61,32 @@ theorem isDefectClass_iff {φ : Subalgebra.center k (MonoidAlgebra k G) →ₐ[k
     {b : Subalgebra.center k (MonoidAlgebra k G)} {C : ConjClasses G} :
     IsDefectClass φ b C ↔ classSumBasis.repr b C * φ (classSumCenter C) ≠ 0 :=
   Iff.rfl
+
+/-- `C` is a defect class of `b` for `φ` exactly when both the coefficient of `b` on `C` and the
+value of `φ` at the class sum of `C` are nonzero. -/
+theorem isDefectClass_iff_ne_zero_and {φ : Subalgebra.center k (MonoidAlgebra k G) →ₐ[k] k}
+    {b : Subalgebra.center k (MonoidAlgebra k G)} {C : ConjClasses G} :
+    IsDefectClass φ b C ↔ classSumBasis.repr b C ≠ 0 ∧ φ (classSumCenter C) ≠ 0 :=
+  mul_ne_zero_iff
+
+/-- The coefficient of `b` on a defect class is nonzero. -/
+theorem IsDefectClass.repr_ne_zero {φ : Subalgebra.center k (MonoidAlgebra k G) →ₐ[k] k}
+    {b : Subalgebra.center k (MonoidAlgebra k G)} {C : ConjClasses G} (h : IsDefectClass φ b C) :
+    classSumBasis.repr b C ≠ 0 :=
+  (isDefectClass_iff_ne_zero_and.1 h).1
+
+/-- The value of `φ` at the class sum of a defect class is nonzero. -/
+theorem IsDefectClass.apply_classSumCenter_ne_zero
+    {φ : Subalgebra.center k (MonoidAlgebra k G) →ₐ[k] k}
+    {b : Subalgebra.center k (MonoidAlgebra k G)} {C : ConjClasses G} (h : IsDefectClass φ b C) :
+    φ (classSumCenter C) ≠ 0 :=
+  (isDefectClass_iff_ne_zero_and.1 h).2
+
+/-- The coefficient of `b` at a representative `g` of a defect class is nonzero. -/
+theorem IsDefectClass.coeff_ne_zero {φ : Subalgebra.center k (MonoidAlgebra k G) →ₐ[k] k}
+    {b : Subalgebra.center k (MonoidAlgebra k G)} {g : G}
+    (h : IsDefectClass φ b (ConjClasses.mk g)) : (b : MonoidAlgebra k G).coeff g ≠ 0 := by
+  simpa [classSumBasis_repr_apply, centerToConjClasses_mk] using h.repr_ne_zero
 
 /-- The class of `g` is a defect class of `b` for `φ` exactly when the coefficient of `b` at `g`
 times `φ` of the class sum of `g` is nonzero. -/

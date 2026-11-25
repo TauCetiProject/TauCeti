@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.DefectGroup.Principal
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.DefectZeroSplitting
-public import TauCeti.RepresentationTheory.GroupAlgebra.Block.DefectClass
+public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Defect.Class
 
 /-!
 # Defect classes of small blocks
@@ -16,8 +16,9 @@ The Checks of defect classes (`TauCeti.IsDefectClass`).
 
 * **Defect classes need a splitting field.** The block `r + r²` of `𝔽₂[C₃]` has no central
   character: an `𝔽₂`-algebra homomorphism `φ` of the centre sends `r` to a cube root of unity of
-  `𝔽₂`, that is to `1`, so `φ(r + r²) = 0`. Hence it has no defect class, although its defect
-  group is `1`.
+  `𝔽₂`, that is to `1`, so `φ(r + r²) = 0`. Hence it has no defect class with respect to a central
+  character, although its defect group is `1`
+  (`TauCeti.DefectZeroSplittingExamples.isDefectGroup_r_add_r_sq_bot`).
 * Over a field `K` of characteristic `2` containing a root `α` of `X² + X + 1`, for instance `𝔽₄`,
   which splits `C₃`, every central character `λ` of the block `1 + α² r + α r²` has `λ(r) = α`;
   the coefficient of the block on the class `{r}` is `α²`, and `α² · α = 1 ≠ 0`, so `{r}` is a
@@ -42,13 +43,6 @@ section C₃
 
 variable {k : Type*} [Field k]
 
-/-- In the commutative group `C₃`, the class sum of `r` is `r`. -/
-theorem classSumCenter_mk_r :
-    classSumCenter (k := k) (ConjClasses.mk r) = toCenter (of k C₃ r) := by
-  refine Subtype.ext (ext (Finsupp.ext fun g => ?_))
-  simp only [classSumCenter_coe, classSum_coeff, coe_toCenter, ConjClasses.mk_eq_mk_iff_isConj,
-    isConj_iff_eq, of_apply, coeff_single, Finsupp.single_apply, eq_comm]
-
 /-- **No central character without a splitting field.** No `𝔽₂`-algebra homomorphism
 `Z(𝔽₂[C₃]) → 𝔽₂` takes the value `1` at the block `r + r²`: it sends `r` to a cube root of unity
 in `𝔽₂`, that is to `1`, and so `r + r²` to `1 + 1 = 0`. -/
@@ -65,9 +59,11 @@ theorem not_exists_algHom_r_add_r_sq_eq_one :
   have key : ∀ y : ZMod 2, y ^ 3 = 1 → y + y ^ 2 ≠ 1 := by decide
   exact key x h3 hφ
 
-/-- **The block `r + r²` of `𝔽₂[C₃]` has no defect class**, for any `𝔽₂`-algebra homomorphism
-of the centre to `𝔽₂`: there is no central character to test the classes with. Its defect group
-is `1` all the same (`TauCeti.DefectZeroSplittingExamples`). -/
+/-- **The block `r + r²` of `𝔽₂[C₃]` has no defect class for a central character**, since no
+`𝔽₂`-algebra homomorphism of the centre to `𝔽₂` takes the value `1` at the block. (For the
+augmentation, which sends `r + r²` to `0`, the class `{r}` does satisfy `IsDefectClass`, but the
+augmentation is not a central character of this block.) Its defect group is `1` all the same
+(`TauCeti.DefectZeroSplittingExamples.isDefectGroup_r_add_r_sq_bot`). -/
 theorem not_exists_isDefectClass_r_add_r_sq :
     ¬ ∃ (φ : Subalgebra.center (ZMod 2) (MonoidAlgebra (ZMod 2) C₃) →ₐ[ZMod 2] ZMod 2),
       φ (toCenter (of (ZMod 2) C₃ r + of (ZMod 2) C₃ (r ^ 2))) = 1 ∧
@@ -92,7 +88,7 @@ character `λ`: the coefficient `α²` times `λ(r) = α` is `α³ = 1`. -/
 theorem isDefectClass_eOne_r (hα : α ^ 2 + α + 1 = 0)
     {φ : Subalgebra.center k (MonoidAlgebra k C₃) →ₐ[k] k} (hφ : φ (toCenter (eOne α)) = 1) :
     IsDefectClass φ (toCenter (eOne α)) (ConjClasses.mk r) := by
-  rw [isDefectClass_mk_iff, classSumCenter_mk_r, apply_toCenter_of_r hα hφ, coe_toCenter]
+  rw [isDefectClass_mk_iff, classSumCenter_mk_of_commGroup, apply_toCenter_of_r hα hφ, coe_toCenter]
   have hcoeff : (eOne α).coeff r = α ^ 2 := by
     simp +decide [one_def]
   rw [hcoeff, ← pow_succ, show α ^ 3 = 1 by linear_combination (α - 1) * hα]
@@ -122,11 +118,9 @@ theorem classSumCenter_mk_ρ :
   revert g
   decide +kernel
 
-/-- The augmentation is a central character of the principal block `1 + ρ + ρ²` of `𝔽₂[S₃]`. -/
-theorem centerAugmentation_blockOneS₃ : centerAugmentation (ZMod 2) S₃ blockOneS₃ = 1 := by
-  rw [centerAugmentation_apply, augmentation_blockOneS₃]
-
-/-- **`{1}` is a defect class of `1 + ρ + ρ²`**: coefficient `1` and `λ(1) = 1`. -/
+/-- **`{1}` is a defect class of `1 + ρ + ρ²`**: coefficient `1` and `λ(1) = 1`. The
+augmentation is the central character of this principal block
+(`TauCeti.centerAugmentation_principalBlockIdempotent`). -/
 theorem isDefectClass_blockOneS₃_one :
     IsDefectClass (centerAugmentation (ZMod 2) S₃) blockOneS₃ (ConjClasses.mk 1) := by
   simp only [isDefectClass_mk_iff, classSumCenter_mk_one, map_one, mul_one, coeff_blockOneS₃]
@@ -139,17 +133,12 @@ theorem not_isDefectClass_blockOneS₃_ρ :
   rw [isDefectClass_mk_iff, classSumCenter_mk_ρ, centerAugmentation_apply,
     augmentation_blockTwoS₃, mul_zero, not_not]
 
-/-- `⟨τ⟩` is a `2`-group. -/
-theorem isPGroup_zpowers_τ : IsPGroup 2 (Subgroup.zpowers τ) :=
-  IsPGroup.of_card (n := 1) (by
-    rw [Nat.card_zpowers, orderOf_eq_prime (p := 2) (by decide) (by decide), pow_one])
-
 /-- The Sylow `2`-subgroup `1` of `C_{S₃}(ρ) = ⟨ρ⟩` is not a defect group of `1 + ρ + ρ²`: the
 defect groups are the Sylow `2`-subgroups of `S₃ = C_{S₃}(1)`, of order `2`. -/
 theorem not_isDefectGroup_blockOneS₃_bot :
     ¬ IsDefectGroup (ZMod 2) 2 (blockOneS₃ : MonoidAlgebra (ZMod 2) S₃) ⊥ := fun h => by
   obtain ⟨S, hS⟩ := isDefectGroup_blockOneS₃_iff_sylow.1 h
-  have hτ := S.maximal_isPGroup.eq_of_le isPGroup_zpowers_τ (hS ▸ bot_le)
+  have hτ := S.maximal_isPGroup.eq_of_le (IsPGroup.of_card card_zpowers_τ) (hS ▸ bot_le)
   have : τ ∈ (⊥ : Subgroup S₃) := hS ▸ hτ ▸ Subgroup.mem_zpowers τ
   exact absurd (Subgroup.mem_bot.1 this) (by decide)
 

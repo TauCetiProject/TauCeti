@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.MonoidAlgebra.Center
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.Basic
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
@@ -186,5 +187,21 @@ theorem finrank_center_monoidAlgebra :
   let := Classical.decEq G
   rw [Module.finrank_eq_card_basis (classSumBasis (G := G) (k := k))]
   exact Fintype.card_eq_nat_card
+
+end TauCeti
+
+namespace TauCeti
+
+variable {k G : Type*} [CommSemiring k] [CommGroup G] [Fintype G] [DecidableEq G]
+
+/-- In a commutative group the conjugacy class of `g` is `{g}`, so its class sum, as an element of
+the center, is `g`. -/
+theorem classSumCenter_mk_of_commGroup (g : G) :
+    classSumCenter (k := k) (ConjClasses.mk g) =
+      MonoidAlgebra.toCenter (MonoidAlgebra.of k G g) := by
+  refine Subtype.ext (MonoidAlgebra.ext (Finsupp.ext fun x => ?_))
+  simp only [classSumCenter_coe, classSum_coeff, MonoidAlgebra.coe_toCenter,
+    ConjClasses.mk_eq_mk_iff_isConj, isConj_iff_eq, MonoidAlgebra.of_apply,
+    MonoidAlgebra.coeff_single, Finsupp.single_apply, eq_comm]
 
 end TauCeti
