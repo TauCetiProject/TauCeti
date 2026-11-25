@@ -109,8 +109,9 @@ private theorem exists_approx [Nontrivial A] {ψ : A →CP B} (hψ : ψ.IsNuclea
     _ < ε := mul_div_mul_lt hc hM hε
 
 /-- **Independence of the scaling.** On a unital C⋆-algebra, a nuclear completely positive map
-`φ` with `‖φ 1‖ ≤ 1`, that is, a nuclear contraction in the sense of maps, is a nuclear
-contraction: the approximants through matrix algebras can be taken contractive. -/
+`φ` with `‖φ 1‖ ≤ 1` (equivalently, a nuclear map that is itself contractive) is a nuclear
+contraction: its approximants through matrix algebras can be taken to be completely positive
+contractions. -/
 theorem IsNuclear.isNuclearContraction {φ : A →CP B} (hφ : φ.IsNuclear) (h1 : ‖φ 1‖ ≤ 1) :
     φ.IsNuclearContraction := by
   rcases subsingleton_or_nontrivial A with hA | hA
