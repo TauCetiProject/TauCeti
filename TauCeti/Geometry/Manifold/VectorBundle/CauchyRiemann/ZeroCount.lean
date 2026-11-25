@@ -199,18 +199,14 @@ theorem eq_zero_of_evalFundamentalClass_complexEulerClass_lt_ncard [ConnectedSpa
         (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id X)
         (complexEulerClass ℂ L (r := 0) (finrank_self ℂ))).down < S.ncard) :
     s = 0 := by
-  obtain ⟨d⟩ := nonempty_chartData hD hDs hs hs0
-  rw [complexEulerClass_def] at hlt
-  exact funext <| VectorBundleOrientation.eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard
-    _ Complex.finrank_real_complex _ hs.continuous (fun z ↦ chartAt ℂ (d z).c)
-    (fun z ↦ trivializationAt ℂ L (d z).c) (fun _ ↦ Complex.orientation)
-    (fun z ↦ (d z).mem_source) (fun z ↦ (d z).Ω) (fun z _ ↦ (d z).C) (fun z ↦ (d z).mem_baseSet)
-    (fun z ↦ Eventually.of_forall fun _ hx ↦
-      VectorBundleOrientation.mapOrientation_reindex_complex_eq_orientation _ _ hx)
-    (fun z ↦ localHomologyMap_complexHomologicalOrientation_of_mem_maximalAtlas
-      (IsManifold.chart_mem_maximalAtlas (n := 1) (d z).c) (d z).mem_source)
-    (fun z ↦ (d z).isOpen) (fun z ↦ (d z).mem) (fun z ↦ (d z).contDiffOn)
-    (fun z _ _ ↦ ⟨(d z).C, Eventually.of_forall fun _ ↦ le_rfl⟩) (fun z ↦ (d z).norm_le) hS hlt
+  -- A nonzero section has finitely many zeros, at most `c₁(L)[X]` of them, while it vanishes on
+  -- `S`, which has more.
+  by_contra hne
+  obtain ⟨x, hx⟩ := Function.ne_iff.1 hne
+  have hZ := finite_setOf_eq_zero hD hDs hs hs0 ⟨x, hx⟩
+  have hle := ncard_le_evalFundamentalClass_complexEulerClass hD hDs hs hs0 hZ
+  have hSZ : S.ncard ≤ {x | s x = 0}.ncard := ncard_le_ncard hS hZ
+  omega
 
 include hD hDs in
 /-- **Vanishing of the kernel in negative degree.** On a compact connected Riemann surface, if the
