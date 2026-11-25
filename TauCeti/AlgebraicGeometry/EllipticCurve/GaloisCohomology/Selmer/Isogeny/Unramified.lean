@@ -7,8 +7,10 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Unramified
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Isogeny.Basic
+public import TauCeti.NumberTheory.NumberField.Global.Places.Completion
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.AlmostEverywhere
+import TauCeti.NumberTheory.NumberField.GaloisCohomology.FiniteRamification
 
 /-!
 # Unramified local conditions of the `φ`-Selmer structure
@@ -61,6 +63,8 @@ The statements and organization adapt the `[m]`-torsion and local-Selmer analogu
   Dedekind domain with finite residue fields, whenever `deg φ ≠ 0` in `K`, the local condition of
   `φ.selmerStructure τ` equals `(φ.baseChange K_v).unramifiedKerCohomology` for all but finitely
   many height-one primes `v`.
+* `TauCeti.Isogeny.eventually_kerRes_mem_localKummerCondition`: over a number field, every global
+  kernel cohomology class satisfies the local Kummer condition at almost every place.
 
 ## References
 
@@ -100,7 +104,7 @@ theorem localCondition_selmerStructure_le_unramifiedKerCohomology
     (φ.selmerStructure τ).localCondition i ≤ (φ.baseChange (L i)).unramifiedKerCohomology := by
   rw [selmerStructure_localCondition]
   have hd : (φ.baseChange (L i)).degree = φ.degree := degree_map φ _
-  exact (φ.baseChange (L i)).ker_explicitCoeff1_kerCoeffIncl_le_unramifiedKerCohomology
+  exact (φ.baseChange (L i)).localKummerCondition_le_unramifiedKerCohomology
     (by rwa [hd])
 
 /-- For an arbitrary localization family `τ`, every `φ`-Selmer class restricts into the unramified
@@ -111,10 +115,9 @@ theorem kerRes_mem_unramifiedKerCohomology_of_mem_selmerGroup
     (hdeg : (φ.degree : 𝓀[L i]) ≠ 0)
     {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff} (hc : c ∈ φ.selmerGroup τ) :
     φ.kerRes (τ i) c ∈ (φ.baseChange (L i)).unramifiedKerCohomology := by
-  have hloc : φ.kerRes (τ i) c ∈ (φ.selmerStructure τ).localCondition i := by
-    rw [selmerStructure_localCondition, AddMonoidHom.mem_ker, ← pointRes_kerCoeffIncl]
-    exact (W₁.mem_shafarevichTateGroup_iff τ).1 ((φ.mem_selmerGroup_iff τ).1 hc) i
-  exact φ.localCondition_selmerStructure_le_unramifiedKerCohomology τ i hdeg hloc
+  rw [selmerGroup_def, SelmerStructure.mem_selmerGroup_iff] at hc
+  rw [← selmerStructure_localization φ τ i]
+  exact φ.localCondition_selmerStructure_le_unramifiedKerCohomology τ i hdeg (hc i)
 
 end ArbitraryFamily
 
@@ -148,7 +151,7 @@ theorem localCondition_selmerStructure_eq_unramifiedKerCohomology (v : HeightOne
   have hd : (φ.baseChange (v.adicCompletion K)).degree = φ.degree := degree_map φ _
   rw [selmerStructure_localCondition]
   exact
-    (φ.baseChange (v.adicCompletion K)).ker_explicitCoeff1_kerCoeffIncl_eq_unramifiedKerCohomology
+    (φ.baseChange (v.adicCompletion K)).localKummerCondition_eq_unramifiedKerCohomology
       v (by rwa [hd])
 
 end DedekindSinglePlace
@@ -205,5 +208,55 @@ theorem eventually_localCondition_selmerStructure_eq_unramifiedKerCohomology
   exact φ.localCondition_selmerStructure_eq_unramifiedKerCohomology τ v (hTdeg v hv)
 
 end DedekindGlobal
+
+section NumberField
+
+open IsDedekindDomain
+open scoped _root_.NumberField
+
+variable {K : Type*} [Field K] [NumberField K]
+  {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
+  (φ : Isogeny W₁.toAffine W₂.toAffine)
+
+private theorem eventually_kerRes_mem_unramifiedKerCohomology
+    (τf : ∀ v : HeightOneSpectrum (𝓞 K),
+      SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :
+    ∀ᶠ v in Filter.cofinite,
+      φ.kerRes (τf v) c ∈ (φ.baseChange (v.adicCompletion K)).unramifiedKerCohomology := by
+  simpa only [unramifiedKerCohomology_eq_unramifiedH1, kerRes_eq_explicitMap1] using
+    (eventually_explicitMap1_mem_unramifiedH1
+      (M := (ofIsogeny φ).KerCoeff)
+      (N := fun v ↦ (ofIsogeny (φ.baseChange (v.adicCompletion K))).KerCoeff)
+      τf (fun v ↦ φ.kerCoeffBaseChange (τf v))
+      (fun v ↦ φ.kerCoeffBaseChange_smul (τf v)) c)
+
+private theorem eventually_kerRes_mem_localKummerCondition_at_finitePlaces
+    (τf : ∀ v : HeightOneSpectrum (𝓞 K),
+      SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :
+    ∀ᶠ v in Filter.cofinite,
+      φ.kerRes (τf v) c ∈ (φ.baseChange (v.adicCompletion K)).localKummerCondition := by
+  have hcond := φ.eventually_localCondition_selmerStructure_eq_unramifiedKerCohomology
+    (_root_.NumberField.RingOfIntegers K) τf (Nat.cast_ne_zero.mpr φ.degree_ne_zero)
+  filter_upwards [eventually_kerRes_mem_unramifiedKerCohomology φ τf c, hcond] with v hv hvc
+  rwa [← selmerStructure_localCondition φ τf v, hvc]
+
+/-- Every global kernel cohomology class satisfies the local Kummer condition at almost every
+place of a number field. -/
+theorem eventually_kerRes_mem_localKummerCondition
+    (τ : ∀ v : GlobalNumberFields.Place K,
+      SeparableClosure K →ₐ[K] SeparableClosure v.Completion)
+    (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :
+    ∀ᶠ v in Filter.cofinite,
+      φ.kerRes (τ v) c ∈ (φ.baseChange v.Completion).localKummerCondition := by
+  rw [Filter.eventually_cofinite]
+  apply Set.finite_preimage_inl_and_inr.mp
+  -- At `Sum.inl v`, `Place.Completion` and its instances reduce to `v.adicCompletion K`.
+  exact ⟨Filter.eventually_cofinite.mp
+    (eventually_kerRes_mem_localKummerCondition_at_finitePlaces φ (fun v ↦ τ (Sum.inl v)) c),
+    Set.toFinite _⟩
+
+end NumberField
 
 end TauCeti.Isogeny

@@ -42,6 +42,20 @@ laws behind the strict monoidal structure of the Temperley–Lieb diagram catego
   diagram.
 * `TauCeti.TLDiagram.tensor_assoc`, `TauCeti.TLDiagram.id_zero_tensor`,
   `TauCeti.TLDiagram.tensor_id_zero`: associativity and unitality of the tensor product.
+* `TauCeti.TLDiagram.matching_zero_tensor`, `TauCeti.TLDiagram.matching_tensor_zero`: a diagram
+  `0 → 0`, which only carries circles, does not change the matching of the other factor.
+* `TauCeti.TLDiagram.matching_tensor_eq_iff`, `TauCeti.TLDiagram.tensor_left_inj`,
+  `TauCeti.TLDiagram.tensor_right_inj`: the tensor product is injective in each factor.
+* `TauCeti.PlanarMatching.insertBlock_zero`, `TauCeti.PlanarMatching.zero_insertBlock`,
+  `TauCeti.PlanarMatching.nested_insertBlock`,
+  `TauCeti.PlanarMatching.cast_insertBlock_insertBlock`: the unit, identity and associativity
+  laws of block insertion, from which the corresponding laws of the tensor product follow.
+* `TauCeti.PlanarMatching.insertBlock_append`, `TauCeti.PlanarMatching.append_insertBlock`,
+  `TauCeti.PlanarMatching.cast_insertBlock_insertBlock_eq_insertBlock_append`,
+  `TauCeti.PlanarMatching.add_zero_insertBlock`, `TauCeti.PlanarMatching.zero_add_insertBlock`:
+  block insertion and juxtaposition of planar matchings.
+* `TauCeti.PlanarMatching.insertBlock_eq_insertBlock_iff`: block insertion determines both the
+  outer and the inserted matching.
 
 ## Implementation notes
 
@@ -523,6 +537,195 @@ private theorem insFn_insFn_assoc {n n' l' : ℕ} (φ : ℕ → ℕ) (ψ : ℕ �
     · rw [insFn_add _ _ ht, ← Nat.add_assoc, insFn_add _ _ ht]
       omega
 
+/-! ### Laws of block insertion -/
+
+private theorem insFn_zero (c : ℕ) (φ ψ : ℕ → ℕ) : insFn c 0 φ ψ = φ := by
+  funext q
+  simp only [insFn, ins, Nat.add_zero, Nat.sub_zero]
+  split_ifs <;> rfl
+
+private theorem insFn_zero_left (x : PlanarMatching (0 + 0)) (y : PlanarMatching l) :
+    insFn 0 l (pv x) (pv y) = pv y := by
+  funext q
+  by_cases hq : q < l
+  · simpa only [Nat.zero_add] using insFn_add (c := 0) (pv x) (pv y) hq
+  · have e : q = ins 0 l (q - l) := by rw [ins_of_le (Nat.zero_le _)]; omega
+    rw [e, insFn_ins, pv_of_le x (Nat.zero_le _), ← e, pv_of_le y (by omega)]
+
+/-- Juxtaposing on the right does not move a block inserted into the left factor. -/
+private theorem appendFn_insFn_left {K K' c : ℕ} (φ ψ χ : ℕ → ℕ) (hc : c ≤ K) :
+    appendFn (K + l) K' (insFn c l φ ψ) χ = insFn c l (appendFn K K' φ χ) ψ := by
+  funext q
+  rcases exists_eq_ins_or_add c l q with ⟨v, rfl⟩ | ⟨j, hj, rfl⟩
+  · rw [insFn_ins]
+    by_cases h₁ : v < K
+    · have : ins c l v < K + l := by simp only [ins]; split_ifs <;> omega
+      rw [appendFn_of_lt _ _ this, insFn_ins, appendFn_of_lt _ _ h₁]
+    rw [ins_of_le (by omega)]
+    by_cases h₂ : v < K + K'
+    · rw [appendFn_of_le_of_lt _ _ (by omega) (by omega), appendFn_of_le_of_lt _ _ (by omega) h₂,
+        ins_of_le (by omega), Nat.add_sub_add_right]
+      omega
+    · rw [appendFn_of_le _ _ (by omega), appendFn_of_le _ _ (by omega), ins_of_le (by omega)]
+  · rw [appendFn_of_lt _ _ (by omega), insFn_add _ _ hj, insFn_add _ _ hj]
+
+/-- Juxtaposing on the left moves a block inserted into the right factor past the left factor. -/
+private theorem appendFn_insFn_right {K K' c : ℕ} (φ ψ χ : ℕ → ℕ) (hc : c ≤ K')
+    (hφ : ∀ q < K, φ q < K) :
+    appendFn K (K' + l) φ (insFn c l χ ψ) = insFn (K + c) l (appendFn K K' φ χ) ψ := by
+  have hadd : ∀ i, ins (K + c) l (K + i) = K + ins c l i := fun i => by
+    simp only [ins]; split_ifs <;> omega
+  funext q
+  rcases exists_eq_ins_or_add (K + c) l q with ⟨v, rfl⟩ | ⟨j, hj, rfl⟩
+  · rw [insFn_ins]
+    by_cases h₁ : v < K
+    · have := hφ v h₁
+      rw [ins_of_lt (by omega), appendFn_of_lt _ _ h₁, appendFn_of_lt _ _ h₁, ins_of_lt (by omega)]
+    obtain ⟨u, rfl⟩ := Nat.exists_eq_add_of_le (Nat.not_lt.mp h₁)
+    rw [hadd]
+    by_cases h₂ : u < K'
+    · have : ins c l u < K' + l := by simp only [ins]; split_ifs <;> omega
+      rw [appendFn_of_le_of_lt _ _ (by omega) (by omega), Nat.add_sub_cancel_left, insFn_ins,
+        appendFn_of_le_of_lt _ _ (by omega) (by omega), Nat.add_sub_cancel_left, hadd]
+    · have : K' + l ≤ ins c l u := by simp only [ins]; split_ifs <;> omega
+      rw [appendFn_of_le _ _ (by omega), appendFn_of_le _ _ (by omega), hadd]
+  · rw [insFn_add _ _ hj, appendFn_of_le_of_lt _ _ (by omega) (by omega), Nat.add_assoc K c j,
+      Nat.add_sub_cancel_left, insFn_add _ _ hj, Nat.add_assoc]
+
+/-- Inserting the empty planar matching changes nothing. -/
+@[simp]
+theorem insertBlock_zero (x : PlanarMatching (a + b)) (y : PlanarMatching 0) :
+    x.insertBlock y = x :=
+  ext_pv fun q _ => by rw [pv_insertBlock, insFn_zero]
+
+/-- Inserting a block into the empty planar matching gives the block, up to the relabelling of the
+size. -/
+@[simp]
+theorem zero_insertBlock (x : PlanarMatching (0 + 0)) (y : PlanarMatching l) :
+    x.insertBlock y = cast (by omega) y :=
+  ext_pv fun q _ => by rw [pv_insertBlock, pv_cast, insFn_zero_left]
+
+/-- Inserting a fully nested matching into a fully nested matching, between its two halves, gives a
+fully nested matching, up to the relabelling of the size. -/
+@[simp]
+theorem nested_insertBlock (n n' : ℕ) :
+    (nested n).insertBlock (nested n') = cast (by omega) (nested (n + n')) := by
+  refine ext_pv fun q hq => ?_
+  rw [pv_insertBlock, pv_cast, pv_nested (n + n') (by omega)]
+  rcases exists_eq_ins_or_add n (n' + n') q with ⟨v, rfl⟩ | ⟨j, hj, rfl⟩
+  · have hv : v < n + n := ins_lt_iff.mp hq
+    rw [insFn_ins, pv_nested n hv]
+    simp only [ins]
+    split_ifs <;> omega
+  · rw [insFn_add _ _ hj, pv_nested n' hj]
+    omega
+
+/-- **Block insertion is associative**: inserting `z` into the result of inserting `y` into `x`,
+at a point of the block of `y`, is inserting into `x` the result of inserting `z` into `y`, up to
+the relabelling of the sizes. -/
+theorem cast_insertBlock_insertBlock {a' b' b'' : ℕ} (h : a + (a' + b') + b = a + a' + b'')
+    (x : PlanarMatching (a + b)) (y : PlanarMatching (a' + b')) (z : PlanarMatching l) :
+    (cast h (x.insertBlock y)).insertBlock z =
+      cast (by omega) (x.insertBlock (y.insertBlock z)) := by
+  refine ext_pv fun q _ => ?_
+  rw [pv_cast, pv_insertBlock, pv_cast_eq, pv_insertBlock, pv_insertBlock, pv_insertBlock,
+    insFn_insFn_assoc _ _ z (by omega : a' ≤ a' + b'), Nat.add_right_comm a' b' l]
+
+/-- Block insertion commutes with relabelling the size of the inserted matching. -/
+theorem insertBlock_cast {l' : ℕ} (h : l = l') (x : PlanarMatching (a + b))
+    (y : PlanarMatching l) : x.insertBlock (cast h y) = cast (by omega) (x.insertBlock y) := by
+  subst h
+  simp
+
+/-- Block insertion commutes with relabelling the size of the outer matching, as long as the
+insertion position stays the same. -/
+theorem cast_insertBlock {a' b' : ℕ} (ha : a = a') (h : a + b = a' + b')
+    (x : PlanarMatching (a + b)) (y : PlanarMatching l) :
+    (cast h x).insertBlock y = cast (by omega) (x.insertBlock y) := by
+  subst ha
+  obtain rfl : b = b' := by omega
+  simp
+
+/-- Juxtaposing on the right does not move a block inserted into the left factor. -/
+theorem insertBlock_append {l' : ℕ} (x : PlanarMatching (a + b)) (y : PlanarMatching l)
+    (z : PlanarMatching l') :
+    (x.insertBlock y).append z =
+      cast (by omega) ((cast (Nat.add_assoc a b l') (x.append z)).insertBlock y) := by
+  refine ext_pv fun q _ => ?_
+  rw [pv_cast, pv_insertBlock, pv_cast_eq, pv_append_eq, pv_append_eq, pv_insertBlock,
+    Nat.add_right_comm a l b, appendFn_insFn_left _ _ _ (Nat.le_add_right a b)]
+
+/-- Juxtaposing on the left moves a block inserted into the right factor past the left factor. -/
+theorem append_insertBlock {l' : ℕ} (x : PlanarMatching l') (z : PlanarMatching (a + b))
+    (y : PlanarMatching l) :
+    x.append (z.insertBlock y) =
+      cast (by omega) ((cast (Nat.add_assoc l' a b).symm (x.append z)).insertBlock y) := by
+  refine ext_pv fun q _ => ?_
+  rw [pv_cast, pv_insertBlock, pv_cast_eq, pv_append_eq, pv_append_eq, pv_insertBlock,
+    Nat.add_right_comm a l b, appendFn_insFn_right _ _ _ (Nat.le_add_right a b)
+      fun q hq => pv_lt x hq]
+
+/-- Inserting two blocks at the same position is inserting their juxtaposition. -/
+theorem cast_insertBlock_insertBlock_eq_insertBlock_append {l' : ℕ} (x : PlanarMatching (a + b))
+    (y : PlanarMatching l) (z : PlanarMatching l') :
+    (cast (Nat.add_assoc a l' b) (x.insertBlock z)).insertBlock y =
+      cast (by omega) (x.insertBlock (y.append z)) := by
+  refine ext_pv fun q _ => ?_
+  rw [pv_cast, pv_insertBlock, pv_cast_eq, pv_insertBlock, pv_insertBlock, pv_append_eq,
+    insFn_insFn_eq]
+
+/-- Inserting a block into a matching with no points after the insertion position juxtaposes on
+the right. -/
+theorem add_zero_insertBlock (x : PlanarMatching (a + 0)) (y : PlanarMatching l) :
+    x.insertBlock y = cast (by omega) (x.append y) := by
+  refine ext_pv fun q hq => ?_
+  rw [pv_cast, pv_insertBlock, pv_append_eq]
+  rcases exists_eq_ins_or_add a l q with ⟨v, rfl⟩ | ⟨j, hj, rfl⟩
+  · have hv : v < a + 0 := ins_lt_iff.mp hq
+    rw [insFn_ins, ins_of_lt (show v < a by omega), appendFn_of_lt _ _ hv,
+      ins_of_lt (lt_of_lt_of_eq (pv_lt x hv) (Nat.add_zero a))]
+  · rw [insFn_add _ _ hj, appendFn_of_le_of_lt _ _ (by omega) (by omega), Nat.add_zero,
+      Nat.add_sub_cancel_left]
+
+/-- Inserting a block into a matching with no points before the insertion position juxtaposes on
+the left. -/
+theorem zero_add_insertBlock (x : PlanarMatching (0 + b)) (y : PlanarMatching l) :
+    x.insertBlock y = cast (by omega) (y.append (cast (Nat.zero_add b) x)) := by
+  refine ext_pv fun q hq => ?_
+  rw [pv_cast, pv_insertBlock, pv_append_eq]
+  rcases exists_eq_ins_or_add 0 l q with ⟨v, rfl⟩ | ⟨j, hj, rfl⟩
+  · have hv : v < 0 + b := ins_lt_iff.mp hq
+    rw [insFn_ins, ins_of_le (Nat.zero_le _), ins_of_le (Nat.zero_le _),
+      appendFn_of_le_of_lt _ _ (by omega) (by omega), Nat.add_sub_cancel, pv_cast]
+    omega
+  · rw [insFn_add _ _ hj, Nat.zero_add (pv y j), Nat.zero_add j, appendFn_of_lt _ _ hj]
+
+/-- Block insertion determines both the outer and the inserted matching. -/
+@[simp]
+theorem insertBlock_eq_insertBlock_iff {x₁ x₂ : PlanarMatching (a + b)}
+    {y₁ y₂ : PlanarMatching l} :
+    x₁.insertBlock y₁ = x₂.insertBlock y₂ ↔ x₁ = x₂ ∧ y₁ = y₂ := by
+  refine ⟨fun h => ?_, by rintro ⟨rfl, rfl⟩; rfl⟩
+  have e := congrArg pv h
+  rw [pv_insertBlock, pv_insertBlock] at e
+  refine ⟨ext_pv fun q _ => ?_, ext_pv fun q hq => ?_⟩
+  · have := congrFun e (ins a l q)
+    rw [insFn_ins, insFn_ins] at this
+    exact ins_injective a l this
+  · have := congrFun e (a + q)
+    rw [insFn_add _ _ hq, insFn_add _ _ hq] at this
+    omega
+
+/-- Inserting a fixed block is injective in the outer matching. -/
+theorem insertBlock_left_injective (y : PlanarMatching l) :
+    Function.Injective fun x : PlanarMatching (a + b) => x.insertBlock y :=
+  fun _ _ h => (insertBlock_eq_insertBlock_iff.mp h).1
+
+/-- Inserting into a fixed matching is injective in the inserted block. -/
+theorem insertBlock_right_injective (x : PlanarMatching (a + b)) :
+    Function.Injective fun y : PlanarMatching l => x.insertBlock y :=
+  fun _ _ h => (insertBlock_eq_insertBlock_iff.mp h).2
+
 end PlanarMatching
 
 namespace TLDiagram
@@ -623,23 +826,7 @@ theorem tensor_comp_tensor (f₁ : TLDiagram n m) (f₂ : TLDiagram n' m') (g₁
 @[simp]
 theorem id_tensor_id (n n' : ℕ) : (id n).tensor (id n') = id (n + n') := by
   ext : 1
-  · apply eq_of_pv_eq
-    rw [pv_matching_tensor]
-    simp only [matching_id]
-    funext q
-    rcases exists_eq_ins_or_add n (n' + n') q with ⟨u, rfl⟩ | ⟨v, hv, rfl⟩
-    · rw [insFn_ins]
-      by_cases hu : u < n + n
-      · rw [pv_nested _ hu, pv_nested (n + n') (show ins n (n' + n') u < n + n' + (n + n') by
-          simp only [ins]; split_ifs <;> omega)]
-        simp only [ins]
-        split_ifs <;> omega
-      · rw [pv_of_le (nested n) (show n + n ≤ u by omega), pv_of_le (nested (n + n'))
-          (show n + n' + (n + n') ≤ ins n (n' + n') u by
-            simp only [ins]; split_ifs <;> omega)]
-    · rw [insFn_add _ _ hv, pv_nested _ hv,
-        pv_nested (n + n') (show n + v < n + n' + (n + n') by omega)]
-      omega
+  · simp [matching_id]
   · simp
 
 /-- **Associativity of the tensor product**: `(f ⊗ g) ⊗ h` is `f ⊗ (g ⊗ h)`, transported along the
@@ -661,25 +848,52 @@ theorem tensor_assoc (f : TLDiagram n m) (g : TLDiagram n' m') (h : TLDiagram n'
 theorem id_zero_tensor (f : TLDiagram n m) :
     (id 0).tensor f = TLDiagram.cast (Nat.zero_add n).symm (Nat.zero_add m).symm f := by
   ext : 1
-  · apply eq_of_pv_eq
-    rw [matching_cast, pv_cast_eq, pv_matching_tensor, matching_id]
-    funext q
-    rcases exists_eq_ins_or_add 0 (n + m) q with ⟨u, rfl⟩ | ⟨v, hv, rfl⟩
-    · rw [insFn_ins, pv_of_le (nested 0) (show 0 + 0 ≤ u by omega),
-        ins_of_le (Nat.zero_le u), pv_of_le f.matching (show n + m ≤ u + (n + m) by omega)]
-    · rw [insFn_add _ _ hv]
-      simp only [Nat.zero_add]
+  · simp [matching_id]
   · simp
 
 /-- The empty diagram on the right is a unit for the tensor product. -/
 @[simp]
 theorem tensor_id_zero (f : TLDiagram n m) : f.tensor (id 0) = f := by
   ext : 1
-  · apply eq_of_pv_eq
-    rw [pv_matching_tensor]
-    funext q
-    by_cases hq : q < n <;> simp [insFn, ins, hq]
+  · simp [matching_id]
   · simp
+
+/-- Tensoring with a diagram `0 → 0` on the left keeps the matching, up to the relabelling of the
+sizes. -/
+theorem matching_zero_tensor (g : TLDiagram 0 0) (f : TLDiagram n m) :
+    (g.tensor f).matching = PlanarMatching.cast (by omega) f.matching := by
+  rw [matching_tensor, zero_insertBlock, PlanarMatching.cast_cast]
+
+/-- Tensoring with a diagram `0 → 0` on the right keeps the matching. -/
+theorem matching_tensor_zero (f : TLDiagram n m) (g : TLDiagram 0 0) :
+    (f.tensor g).matching = f.matching := by
+  apply eq_of_pv_eq
+  rw [matching_tensor, pv_cast_eq, insertBlock_zero]
+
+/-- The matching of a tensor product determines the matchings of both factors. -/
+theorem matching_tensor_eq_iff {f₁ f₂ : TLDiagram n m} {g₁ g₂ : TLDiagram n' m'} :
+    (f₁.tensor g₁).matching = (f₂.tensor g₂).matching ↔
+      f₁.matching = f₂.matching ∧ g₁.matching = g₂.matching := by
+  rw [matching_tensor, matching_tensor, EmbeddingLike.apply_eq_iff_eq,
+    insertBlock_eq_insertBlock_iff]
+
+/-- Tensoring with a fixed diagram on the right is injective. -/
+@[simp]
+theorem tensor_left_inj (g : TLDiagram n' m') {f₁ f₂ : TLDiagram n m} :
+    f₁.tensor g = f₂.tensor g ↔ f₁ = f₂ := by
+  refine ⟨fun h => ?_, by rintro rfl; rfl⟩
+  have hc := congrArg circles h
+  rw [circles_tensor, circles_tensor] at hc
+  exact TLDiagram.ext (matching_tensor_eq_iff.mp (congrArg matching h)).1 (by omega)
+
+/-- Tensoring with a fixed diagram on the left is injective. -/
+@[simp]
+theorem tensor_right_inj (f : TLDiagram n m) {g₁ g₂ : TLDiagram n' m'} :
+    f.tensor g₁ = f.tensor g₂ ↔ g₁ = g₂ := by
+  refine ⟨fun h => ?_, by rintro rfl; rfl⟩
+  have hc := congrArg circles h
+  rw [circles_tensor, circles_tensor] at hc
+  exact TLDiagram.ext (matching_tensor_eq_iff.mp (congrArg matching h)).2 (by omega)
 
 end TLDiagram
 

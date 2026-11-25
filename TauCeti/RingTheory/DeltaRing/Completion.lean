@@ -62,8 +62,7 @@ prismatic cohomology*, Lemma 2.17). The loss of one power is sharp: in `ℤ` wit
 theorem delta_mem_pow_of_mem_pow_succ (hp : (p : A) ∈ I) {n : ℕ} {x : A}
     (hx : x ∈ I ^ (n + 1)) : delta p x ∈ I ^ n := by
   rcases eq_or_ne p 0 with rfl | hp0
-  · -- For `p = 0` the product rule applied to `x * 0` gives `δ x = 0`.
-    rw [show delta 0 x = 0 by simpa using (delta_mul (p := 0) x 0).symm]
+  · rw [delta_eq_zero_of_p_eq_zero rfl]
     exact zero_mem _
   induction n generalizing x with
   | zero => simp

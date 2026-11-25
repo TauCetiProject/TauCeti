@@ -52,6 +52,7 @@ group.
 
 * `TauCeti.HeisenbergGroup.commutatorElement_eq`: the commutator formula.
 * `TauCeti.HeisenbergGroup.commutator_eq_zAxis`: the commutator subgroup is the `z`-axis.
+* The Heisenberg group is nilpotent (`Group.IsNilpotent` instance).
 * `TauCeti.HeisenbergGroup.pow_eq`: the power formula
   `(x, y, z) ^ n = (n • x, n • y, n • z + (n choose 2) • (x * y))`.
 * `TauCeti.HeisenbergGroup.pLowerCentralSeries_top_two_eq_bot`: over a ring of characteristic
@@ -65,7 +66,7 @@ group.
 public section
 
 open Subgroup
-open scoped commutatorElement
+open scoped commutatorElement Matrix
 
 namespace TauCeti
 
@@ -229,6 +230,12 @@ def toMatrix : HeisenbergGroup R →* Matrix (Fin 3) (Fin 3) R where
 theorem toMatrix_apply (a : HeisenbergGroup R) :
     toMatrix a = !![1, a.x, a.z; 0, 1, a.y; 0, 0, 1] := (rfl)
 
+/-- The Heisenberg matrix acts on vectors by its three coordinate formulas. -/
+theorem toMatrix_mulVec (a : HeisenbergGroup R) (v : Fin 3 → R) :
+    toMatrix a *ᵥ v = ![v 0 + a.x * v 1 + a.z * v 2, v 1 + a.y * v 2, v 2] := by
+  ext i
+  fin_cases i <;> simp [toMatrix_apply, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+
 /-- A group element is determined by its matrix. -/
 theorem toMatrix_injective : Function.Injective (toMatrix : HeisenbergGroup R → _) := by
   intro a b h
@@ -270,6 +277,11 @@ theorem projXY_apply (a : HeisenbergGroup R) : projXY a = .ofAdd (a.x, a.y) :=
 theorem ker_projXY : (projXY : HeisenbergGroup R →* _).ker = zAxis := by
   ext a
   simp [MonoidHom.mem_ker, Prod.ext_iff]
+
+/-- **The Heisenberg group is nilpotent**: the kernel of the projection onto the abelian group
+`R × R` is the central `z`-axis. -/
+instance : Group.IsNilpotent (HeisenbergGroup R) :=
+  isNilpotent_of_ker_le_center projXY (ker_projXY.trans_le zAxis_le_center)
 
 /-- **The abelianization of the Heisenberg group** is the additive group `R × R`, through the
 projection `(x, y, z) ↦ (x, y)`. -/

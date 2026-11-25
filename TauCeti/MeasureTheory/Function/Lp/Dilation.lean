@@ -36,11 +36,16 @@ the `Lᵖ` seminorm on `s`, for any set `s`. The codomain only needs a continuou
 ## Main declarations
 
 * `MeasureTheory.Measure.eLpNorm_comp_inv_smul`: `‖u (r⁻¹ • ·)‖_p = |r| ^ (n / p) * ‖u‖_p`.
+* `MeasureTheory.Measure.dilateLp`: the normalized dilation of `Lᵖ`, and
+  `MeasureTheory.Measure.eLpNorm_dilateLp`, its effect `r ^ (n / q - n / p)` on every `Lᵠ`
+  seminorm.
 * `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv`:
   `‖u ∘ e‖_p = |det e|^(-1 / p) * ‖u‖_p`.
 * `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage`: the same identity
   for the `Lᵖ` seminorms on `e ⁻¹' s` and on `s`.
-* `MeasureTheory.MemLp.comp_continuousLinearEquiv`: so composing with `e` preserves `Lᵖ`.
+* `MeasureTheory.MemLp.comp_continuousLinearEquiv`: so composing with `e` preserves `Lᵖ`, and
+  `MeasureTheory.MemLp.comp_continuousLinearEquiv_restrict_preimage` carries `Lᵖ` on `s` to `Lᵖ`
+  on `e ⁻¹' s`.
 -/
 
 public section
@@ -92,12 +97,20 @@ theorem eLpNorm_comp_continuousLinearEquiv (u : E → G) (e : E ≃L[ℝ] E) (p 
   simpa using eLpNorm_comp_continuousLinearEquiv_restrict_preimage μ u e p (s := Set.univ)
 
 variable {μ} in
+/-- Precomposition with a linear automorphism `e` maps `Lᵖ` on a set `s` to `Lᵖ` on `e ⁻¹' s`, for
+an additive Haar measure. -/
+theorem _root_.MeasureTheory.MemLp.comp_continuousLinearEquiv_restrict_preimage {p : ℝ≥0∞}
+    {u : E → G} {s : Set E} (hu : MemLp u p (μ.restrict s)) (e : E ≃L[ℝ] E) :
+    MemLp (fun x ↦ u (e x)) p (μ.restrict (e ⁻¹' s)) := by
+  rw [memLp_iff, ← Function.comp_def, eLpNorm_comp_continuousLinearEquiv_restrict_preimage]
+  exact ENNReal.mul_lt_top (ENNReal.rpow_lt_top_of_nonneg ENNReal.toReal_nonneg
+    ENNReal.ofReal_ne_top) hu.eLpNorm_lt_top
+
+variable {μ} in
 /-- Precomposition with a linear automorphism preserves `Lᵖ` for an additive Haar measure. -/
 theorem _root_.MeasureTheory.MemLp.comp_continuousLinearEquiv {p : ℝ≥0∞} {u : E → G}
     (hu : MemLp u p μ) (e : E ≃L[ℝ] E) : MemLp (fun x ↦ u (e x)) p μ := by
-  rw [memLp_iff, ← Function.comp_def, eLpNorm_comp_continuousLinearEquiv]
-  exact ENNReal.mul_lt_top (ENNReal.rpow_lt_top_of_nonneg ENNReal.toReal_nonneg
-    ENNReal.ofReal_ne_top) hu.eLpNorm_lt_top
+  simpa using (hu.restrict Set.univ).comp_continuousLinearEquiv_restrict_preimage e
 
 variable {μ} {𝕜 F : Type*} [NormedField 𝕜] [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] {p : ℝ≥0∞} [Fact (1 ≤ p)] {r s : ℝ}
@@ -159,6 +172,48 @@ theorem coe_dilateLp_eq_coe_dilateLp (𝕜' : Type*) [NormedField 𝕜'] [Normed
   apply Lp.ext
   filter_upwards [coeFn_dilateLp (𝕜 := 𝕜) hr f, coeFn_dilateLp (𝕜 := 𝕜') hr f] with x hx hy
   rw [hx, hy]
+
+/-- The normalized dilation of a class with representative `g` is almost everywhere
+`r ^ (-n / p) • g (r⁻¹ • ·)`. -/
+theorem coeFn_dilateLp_of_ae_eq (hr : 0 < r) {f : Lp F p μ} {g : E → F} (hf : f =ᵐ[μ] g) :
+    ⇑(dilateLp μ 𝕜 p r hr f) =ᵐ[μ]
+      fun x ↦ r ^ (-((finrank ℝ E : ℝ) / p.toReal)) • g (r⁻¹ • x) := by
+  filter_upwards [coeFn_dilateLp (𝕜 := 𝕜) hr f,
+    (quasiMeasurePreserving_smul μ (inv_ne_zero hr.ne')).ae_eq_comp hf] with x hx hy
+  simp only [Function.comp_apply] at hy
+  rw [hx, hy]
+
+/-- At `p = ∞` the normalized dilation carries no weight: it is almost everywhere the plain
+precomposition `f (r⁻¹ • ·)`. -/
+theorem coeFn_dilateLp_top (hr : 0 < r) (f : Lp F ∞ μ) :
+    ⇑(dilateLp μ 𝕜 ∞ r hr f) =ᵐ[μ] fun x ↦ f (r⁻¹ • x) := by
+  simpa using coeFn_dilateLp (𝕜 := 𝕜) hr f
+
+/-- At `p = ∞` the normalized dilation of a class with representative `g` is almost everywhere
+`g (r⁻¹ • ·)`. -/
+theorem coeFn_dilateLp_top_of_ae_eq (hr : 0 < r) {f : Lp F ∞ μ} {g : E → F} (hf : f =ᵐ[μ] g) :
+    ⇑(dilateLp μ 𝕜 ∞ r hr f) =ᵐ[μ] fun x ↦ g (r⁻¹ • x) := by
+  simpa using coeFn_dilateLp_of_ae_eq (𝕜 := 𝕜) hr hf
+
+variable (μ) in
+/-- **`Lᵠ` seminorm of a dilate with an arbitrary normalization:**
+`‖r ^ (-a) • u (r⁻¹ • ·)‖_q = r ^ (n / q - a) * ‖u‖_q` for `r > 0`. The exponent `n / q` is
+`n / q.toReal`, which is `0` at `q = 0` and `q = ∞`. -/
+theorem eLpNorm_rpow_neg_smul_comp_inv_smul (u : E → F) (hr : 0 < r) (a : ℝ) (q : ℝ≥0∞) :
+    eLpNorm (fun x ↦ r ^ (-a) • u (r⁻¹ • x)) q μ =
+      ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) / q.toReal - a)) * eLpNorm u q μ := by
+  have h : (fun x ↦ r ^ (-a) • u (r⁻¹ • x)) = r ^ (-a) • fun x ↦ u (r⁻¹ • x) := rfl
+  rw [h, eLpNorm_const_smul, eLpNorm_comp_inv_smul μ u hr.ne', ← mul_assoc, abs_of_pos hr,
+    Real.eNorm_eq_ofReal (by positivity), ← ENNReal.ofReal_mul (by positivity), ← Real.rpow_add hr,
+    neg_add_eq_sub]
+
+/-- **`Lᵠ` seminorm of a normalized dilate:** the normalized dilation of `Lᵖ` by `r > 0`
+multiplies every `Lᵠ` seminorm by `r ^ (n / q - n / p)`, so it preserves the `Lᵖ` norm. -/
+theorem eLpNorm_dilateLp (hr : 0 < r) (f : Lp F p μ) (q : ℝ≥0∞) :
+    eLpNorm (dilateLp μ 𝕜 p r hr f) q μ =
+      ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) / q.toReal - finrank ℝ E / p.toReal)) *
+        eLpNorm f q μ := by
+  rw [eLpNorm_congr_ae (coeFn_dilateLp (𝕜 := 𝕜) hr f), eLpNorm_rpow_neg_smul_comp_inv_smul μ _ hr]
 
 /-- The dilation by `1` is the identity. -/
 @[simp]

@@ -14,8 +14,10 @@ import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.Basic
 
 Pinned simple Weyl representatives at a double bond satisfy the length-four braid
 relation over every commutative ring. This is an equality in the actual point group,
-not just in a Weyl quotient. It supplies the double-bond relation needed to identify
-the quotient of the Weyl subgroup by the torus.
+not just in a Weyl quotient. With the orthogonal, single-bond and triple-bond relations
+it feeds the Coxeter braid relations in
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.Coxeter`
+(`ChevalleyDatum.weylWord_braidWord_eq`).
 
 The rational operator identity is
 `IsSerreSystem.weylUnit_braid_of_cartan_eq_neg_two`. Restrict it to the datum's

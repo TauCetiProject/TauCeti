@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.NonUnitalHom
 public import Mathlib.Data.Matrix.Basis
+public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 
 /-!
 # Products of matrix units
@@ -17,13 +18,20 @@ Only the shared index type needs to be finite. `Matrix.smul_vecMulVec_single_sin
 scaled outer product of two coordinate vectors as a matrix unit, and
 `Matrix.one_add_single_mul_one_add_single_of_ne` multiplies two elementary matrices `1 + c Eᵢⱼ`
 and `1 + d Eₖₗ` with `j ≠ k`, whose cross term vanishes. `LinearMap.apply_eq_sum_sum_smul_single`
-expands a linear map on matrices along the matrix units.
+expands a linear map on matrices along the matrix units, and
+`Matrix.submodule_eq_top_of_single_one_mem` shows that the matrix units span all matrices.
 
 `Matrix.singleNonUnitalAlgHom` bundles the diagonal corner `x ↦ Matrix.single r r x` as a nonunital
 algebra homomorphism, accompanied by column, row, and entry matrix-unit identities valid without
 associativity.
 
 Two off-diagonal matrix units witness that transposition does not preserve all products.
+
+`Matrix.single_eq_smul_single_one` writes a matrix with one nonzero entry `c` as `c` times the
+corresponding matrix unit. For a homomorphism `f` out of `Mₙ(R)`,
+`Matrix.map_single_mul_map_single` says that the images of the matrix units multiply like matrix
+units, and `Matrix.star_map_single` that a `⋆`-homomorphism maps the adjoint `Eⱼᵢ` of `Eᵢⱼ` to the
+adjoint of its image.
 -/
 
 /-- The product of two matrix units vanishes unless their inner indices agree. -/
@@ -62,6 +70,18 @@ public theorem LinearMap.apply_eq_sum_sum_smul_single {ι κ R M : Type*} [Finty
   simp only [map_sum]
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   rw [← map_smul, Matrix.smul_single, smul_eq_mul, mul_one]
+
+/-- A submodule of `Matrix m n R` that contains every matrix unit `single i j 1` is `⊤`. -/
+public theorem Matrix.submodule_eq_top_of_single_one_mem {m n R : Type*} [Finite m] [Finite n]
+    [DecidableEq m] [DecidableEq n] [Semiring R] {S : Submodule R (Matrix m n R)}
+    (h : ∀ i j, Matrix.single i j (1 : R) ∈ S) : S = ⊤ := by
+  have := Fintype.ofFinite m
+  have := Fintype.ofFinite n
+  refine eq_top_iff.mpr fun A _ => ?_
+  rw [Matrix.matrix_eq_sum_single A]
+  refine S.sum_mem fun i _ => S.sum_mem fun j _ => ?_
+  rw [← mul_one (A i j), ← smul_eq_mul, ← Matrix.smul_single]
+  exact S.smul_mem _ (h i j)
 
 /-- Transposition does not preserve all products of square matrices over a nontrivial semiring
 when there are at least two indices. -/
@@ -152,5 +172,31 @@ theorem sum_single_mul_single {l m n o p q A : Type*} [NonUnitalNonAssocSemiring
     (Y : Matrix m n A) (i : l) (j : n) (r : o) (s : p) (t : q) :
     ∑ u : m, single r s (X i u) * single s t (Y u j) = single r t ((X * Y) i j) := by
   simp_rw [single_mul_single_same]; ext u v; simp [Matrix.sum_apply, Matrix.mul_apply, single]
+
+/-- A matrix with one nonzero entry `c` is `c` times the corresponding matrix unit. -/
+theorem single_eq_smul_single_one {m n R : Type*} [DecidableEq m] [DecidableEq n]
+    [MulZeroOneClass R] (i : m) (j : n) (c : R) : single i j c = c • single i j (1 : R) := by
+  rw [smul_single, smul_eq_mul, mul_one]
+
+section MapSingle
+variable {n R B F : Type*} [Fintype n] [DecidableEq n] [NonAssocSemiring R]
+  [FunLike F (Matrix n n R) B]
+
+/-- The images of the matrix units multiply like matrix units. -/
+theorem map_single_mul_map_single [NonUnitalNonAssocSemiring B]
+    [NonUnitalRingHomClass F (Matrix n n R) B] (f : F) (i j k l : n) :
+    f (single i j 1) * f (single k l 1) = if j = k then f (single i l 1) else 0 := by
+  rw [← map_mul]
+  split_ifs with h
+  · rw [h, single_mul_single_same, mul_one]
+  · simp [h]
+
+omit [Fintype n] in
+/-- A `⋆`-homomorphism maps the adjoint `Eⱼᵢ` of a matrix unit `Eᵢⱼ` to the adjoint of its
+image. -/
+theorem star_map_single [StarRing R] [Star B] [StarHomClass F (Matrix n n R) B] (f : F)
+    (i j : n) : star (f (single i j 1)) = f (single j i 1) := by
+  rw [← map_star, star_eq_conjTranspose, conjTranspose_single, star_one]
+end MapSingle
 end Matrix
 end
