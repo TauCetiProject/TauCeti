@@ -31,7 +31,8 @@ along `J` (`IsCoercive.formSolutionOperator`). When `J` has dense range, its gra
 
 `{(J u, f) : Q(u, v) = ⟪f, J v⟫ for every v ∈ V}`
 
-(`IsCoercive.mem_graph_formOperator_iff`), so it does not depend on the shift `c`
+(`IsCoercive.mem_graph_formOperator_iff`), so it is the only operator with that graph
+(`IsCoercive.eq_formOperator_of_mem_graph_iff`), it does not depend on the shift `c`
 (`IsCoercive.formOperator_eq`), and its domain consists of the `J u` for which `v ↦ Q(u, v)` is
 bounded by a multiple of `‖J v‖` (`IsCoercive.mem_domain_formOperator_iff`), by the Riesz
 representation of that functional, extended from the dense range of `J`. When `J` has dense
@@ -141,6 +142,15 @@ theorem mem_graph_formOperator_iff (hB : IsCoercive B) (hJ : DenseRange J)
   · rintro ⟨u, hu, hQ⟩
     rw [← hB.eq_formSolutionMap J (u := u) fun v ↦ by
       rw [hBQ, hQ, inner_add_left, real_inner_smul_left, hu], hu]
+
+/-- **The form operator is determined by its graph.** If `B(u, v) = Q(u, v) + c ⟪J u, J v⟫`, `J`
+has dense range and the graph of `T` consists of the pairs `(J u, f)` with `Q(u, v) = ⟪f, J v⟫`
+for every `v ∈ V`, then `T` is the form operator. -/
+theorem eq_formOperator_of_mem_graph_iff (hB : IsCoercive B) (hJ : DenseRange J)
+    (hBQ : ∀ u v, B u v = Q u v + c * ⟪J u, J v⟫_ℝ) {T : H →ₗ.[ℝ] H}
+    (hT : ∀ x : H × H, x ∈ T.graph ↔ ∃ u : V, J u = x.1 ∧ ∀ v, Q u v = ⟪x.2, J v⟫_ℝ) :
+    T = hB.formOperator J c :=
+  eq_of_eq_graph <| Submodule.ext fun x ↦ by rw [hT, hB.mem_graph_formOperator_iff hJ hBQ]
 
 /-- **The form operator does not depend on the shift.** When `J` has dense range, two coercive
 shifts `B = Q + c ⟪J·, J·⟫` and `B' = Q + c' ⟪J·, J·⟫` of the same form `Q` give the same

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Multiplication
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Calculus.ContDiff.Indicator
@@ -44,6 +45,10 @@ bounded together with its gradient preserves it, as for `W^{1,p}_0(Ω)`.
 * `TauCeti.w1p0Submodule_le_w1pVanishingOnSubmodule`: it contains `W^{1,p}_0(Ω)` when `Γ` misses
   `Ω`.
 * `TauCeti.w1pVanishingOnSubmodule_frontier`: at `Γ = frontier Ω` it is `W^{1,p}_0(Ω)`.
+* `TauCeti.W1pVanishingOn.valueL`: its value map into `Lᵖ(Ω)`, with dense range for `p = 2` when
+  `Γ` misses `Ω` (`TauCeti.W1pVanishingOn.denseRange_valueL_two`) and compact when the value map
+  of `W^{1,p}(Ω)` is (`TauCeti.W1pVanishingOn.isCompactOperator_valueL`); `W^{1,p}_Γ(Ω)` is
+  complete.
 * `TauCeti.W1p.contDiffSMul_mem_w1pVanishingOnSubmodule`: it is stable under multiplication by
   smooth functions bounded with their gradients.
 
@@ -207,6 +212,39 @@ theorem w1pVanishingOnSubmodule_frontier :
   rw [W1p.restrictL_ofTestFunctionₗ_eq_of_eqOn le_top (ψ := ψ) fun x hx => by
     rw [hψ, indicator_of_mem hx]]
   exact W1p.ofTestFunctionₗ_mem_w1p0Submodule ψ
+
+/-! ### Completeness and the value map -/
+
+/-- `W^{1,p}_Γ(Ω)` is complete: it is a closed subspace of the complete space `W^{1,p}(Ω)`. -/
+instance : CompleteSpace (w1pVanishingOnSubmodule mu Omega p Γ).toSubmodule :=
+  (w1pVanishingOnSubmodule mu Omega p Γ).isClosed.completeSpace_coe
+
+/-- **The value map of `W^{1,p}_Γ(Ω)`**, the value component of the Sobolev jet, as a continuous
+linear map into `Lᵖ(Ω)`. -/
+def W1pVanishingOn.valueL :
+    (w1pVanishingOnSubmodule mu Omega p Γ).toSubmodule →L[ℝ] Lp ℝ p (mu.restrict Omega) :=
+  W1p.valueL.comp (w1pVanishingOnSubmodule mu Omega p Γ).toSubmodule.subtypeL
+
+@[simp]
+theorem W1pVanishingOn.valueL_apply (u : (w1pVanishingOnSubmodule mu Omega p Γ).toSubmodule) :
+    W1pVanishingOn.valueL u = W1p.value (u : W1p mu Omega p) := by
+  simp [W1pVanishingOn.valueL]
+
+/-- The value map `W^{1,2}_Γ(Ω) → L²(Ω)` has dense range when `Γ` misses `Ω`, since `W^{1,2}_Γ(Ω)`
+contains `W^{1,2}_0(Ω)`, whose value map has dense range. -/
+theorem W1pVanishingOn.denseRange_valueL_two (hΓ : Disjoint Γ Omega) :
+    DenseRange (W1pVanishingOn.valueL (mu := mu) (Omega := Omega) (p := 2) (Γ := Γ)) :=
+  W1p0.denseRange_valueL_two.mono <| by
+    rintro _ ⟨w, rfl⟩
+    exact ⟨⟨w, w1p0Submodule_le_w1pVanishingOnSubmodule hΓ w.property⟩, by
+      simp only [W1pVanishingOn.valueL_apply, W1p0.valueL_apply]⟩
+
+/-- The value map `W^{1,p}_Γ(Ω) → Lᵖ(Ω)` is compact when the value map of `W^{1,p}(Ω)` is, as
+for a bounded Lipschitz domain by Rellich--Kondrachov. -/
+theorem W1pVanishingOn.isCompactOperator_valueL
+    (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := p))) :
+    IsCompactOperator (W1pVanishingOn.valueL (mu := mu) (Omega := Omega) (p := p) (Γ := Γ)) :=
+  hK.comp_clm _
 
 /-! ### Multiplication by smooth functions -/
 
