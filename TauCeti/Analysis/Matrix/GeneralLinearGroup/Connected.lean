@@ -18,9 +18,11 @@ import Mathlib.Analysis.Matrix.Normed
 import Mathlib.Analysis.Normed.Ring.Units
 import Mathlib.Topology.Algebra.Module.LocallyConvex
 import Mathlib.Topology.UniformSpace.Matrix
+import TauCeti.Analysis.Normed.Ring.Units
 import TauCeti.Analysis.Matrix.Polar
 import TauCeti.Analysis.Matrix.PosDef
 import TauCeti.Analysis.Matrix.UnitaryGroup.Connected
+import TauCeti.Topology.Algebra.IsOpenUnits
 
 /-!
 # Path connectedness of the complex general linear group
@@ -109,12 +111,13 @@ variable {A : Type*} [NormedRing A] [NormedAlgebra ℝ A] [CompleteSpace A] {n :
 open scoped Matrix.Norms.Operator in
 /-- The group of invertible matrices over a real Banach algebra is locally path connected: under
 the `L^∞` operator norm, which induces the product topology, the matrices form a real Banach
-algebra, in which the invertible elements form an open set. -/
+algebra, whose units are locally path connected (`Units.instLocallyPathConnectedSpace`). -/
 instance instLocallyPathConnectedSpace : LocallyPathConnectedSpace (GL n A) := by
   -- The operator norm induces the product uniformity, which is complete.
   have : @CompleteSpace (Matrix n n A) PseudoMetricSpace.toUniformSpace :=
     inferInstanceAs (CompleteSpace (n → n → A))
-  exact Units.isOpenEmbedding_val.locallyPathConnectedSpace
+  exact @Units.instLocallyPathConnectedSpace _ _ PseudoMetricSpace.toUniformSpace.toTopologicalSpace
+    _ _
 
 end Matrix.GeneralLinearGroup
 
