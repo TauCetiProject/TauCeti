@@ -10,7 +10,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.OrderedProduct
 import TauCeti.Algebra.Group.Subgroup.OrderedProduct
-import TauCeti.LinearAlgebra.RootSystem.Finite.PositiveCombinations
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.Rational
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.NotG2
 
