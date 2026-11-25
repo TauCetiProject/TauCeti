@@ -8,10 +8,10 @@ module
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import Mathlib.Data.ZMod.Units
 public import Mathlib.FieldTheory.Normal.Defs
+public import Mathlib.FieldTheory.Minpoly.IsConjRoot
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
 import Mathlib.FieldTheory.KummerExtension
-import Mathlib.FieldTheory.Minpoly.IsConjRoot
 import Mathlib.Algebra.Module.Torsion.Free
 import TauCeti.Algebra.Group.Action.Pow
 import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
@@ -76,6 +76,8 @@ divisible by `p ^ r` as a product of differences with exponents prime to `p`.
   cyclotomic character at the primitive `n`-th root `ζ` reduced modulo `m`.
 * `AlgEquiv.apply_eq_apply_of_abelianization_of_eq`: two automorphisms with the same image in the
   abelianization agree on every root of unity.
+* `IsPrimitiveRoot.isConjRoot_pow_of_coprime`: coprime powers of a primitive root are conjugate
+  over a field where `Φ_n` is irreducible.
 * `IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime`: every coprime power of a primitive
   root in a normal extension is realized by an automorphism if `Φ_n` is irreducible.
 * `MonoidHom.apply_pow_eq_one_of_card_eq`: a character of a group of order `n` takes values whose
@@ -131,21 +133,30 @@ theorem _root_.IsPrimitiveRoot.of_algebraMap_eq_pow {K L : Type*} [Field K] [Com
     (hζ : IsPrimitiveRoot ζ (m * ℓ)) (hη : algebraMap K L η = ζ ^ ℓ) : IsPrimitiveRoot η m :=
   .of_map_of_injective (hη ▸ hζ.pow (NeZero.pos _) (mul_comm m ℓ)) (algebraMap K L).injective
 
+/-- If `Φ_n` is irreducible over `K`, every coprime power of a primitive `n`-th root of unity
+is conjugate to that root over `K`. -/
+theorem _root_.IsPrimitiveRoot.isConjRoot_pow_of_coprime
+    {K L : Type*} [Field K] [CommRing L] [IsDomain L] [Algebra K L]
+    {n j : ℕ} {ζ : L} (hζ : IsPrimitiveRoot ζ n) (hj : n.Coprime j)
+    (hirr : Irreducible (Polynomial.cyclotomic n K)) :
+    IsConjRoot K (ζ ^ j) ζ := by
+  have : NeZero n :=
+    ⟨by rintro rfl; exact not_irreducible_one (Polynomial.cyclotomic_zero K ▸ hirr)⟩
+  have := hζ.neZero'
+  have : NeZero (n : K) := ⟨fun hn ↦
+    (NeZero.ne (n : L)) (by simpa using congrArg (algebraMap K L) hn)⟩
+  rw [isConjRoot_def,
+    ((hζ.pow_of_coprime j hj.symm).minpoly_eq_cyclotomic_of_irreducible hirr).symm,
+    (hζ.minpoly_eq_cyclotomic_of_irreducible hirr).symm]
+
 /-- If `Φ_n` is irreducible over `K`, every coprime power of a primitive root in a normal
 extension is the image of that root under a `K`-algebra automorphism. -/
 theorem _root_.IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime
     {K L : Type*} [Field K] [Field L] [Algebra K L] [Normal K L]
-    {n j : ℕ} [NeZero n] {ζ : L} (hζ : IsPrimitiveRoot ζ n) (hj : n.Coprime j)
+    {n j : ℕ} {ζ : L} (hζ : IsPrimitiveRoot ζ n) (hj : n.Coprime j)
     (hirr : Irreducible (Polynomial.cyclotomic n K)) :
-    ∃ σ : L ≃ₐ[K] L, σ ζ = ζ ^ j := by
-  have := hζ.neZero'
-  have : NeZero (n : K) := ⟨fun hn ↦
-    (NeZero.ne (n : L)) (by simpa using congrArg (algebraMap K L) hn)⟩
-  have hpow : IsPrimitiveRoot (ζ ^ j) n := hζ.pow_of_coprime j hj.symm
-  have hconj : IsConjRoot K (ζ ^ j) ζ := by
-    rw [isConjRoot_def, (hpow.minpoly_eq_cyclotomic_of_irreducible hirr).symm,
-      (hζ.minpoly_eq_cyclotomic_of_irreducible hirr).symm]
-  exact hconj.exists_algEquiv
+    ∃ σ : L ≃ₐ[K] L, σ ζ = ζ ^ j :=
+  (hζ.isConjRoot_pow_of_coprime hj hirr).exists_algEquiv
 
 /-- A character of a group of order `n` takes values whose `n`-th power is `1`. -/
 theorem _root_.MonoidHom.apply_pow_eq_one_of_card_eq {n : ℕ} {G M : Type*} [Group G] [Monoid M]

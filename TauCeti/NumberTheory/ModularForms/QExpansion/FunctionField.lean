@@ -57,6 +57,10 @@ fields `F_N`.
   functions with coefficients in a subfield of `ℂ`.
 * `Subgroup.CompactifiedQuotient.mapRingHom_laurentQExpansion_eq_of_mem_coeffSubfield`: a
   coefficient map fixing that subfield pointwise fixes their expansions.
+* `Subgroup.CompactifiedQuotient.mapRingHom_laurentQExpansion_eq_mapRingHom_of_mem_coeffSubfield`
+  and `Subgroup.CompactifiedQuotient.mapRingHom_laurentQExpansion_of_mem_coeffSubfield_bot`:
+  coefficient maps agreeing on that subfield agree on their expansions, and every coefficient
+  map fixes an expansion with rational coefficients.
 * `Subgroup.CompactifiedQuotient.laurentQExpansion_compactifiedQuotientComap` and
   `Subgroup.CompactifiedQuotient.compactifiedQuotientComap_mem_coeffSubfield_iff`: the expansion
   and the coefficients of a pullback along the map induced by an inclusion of subgroups.
@@ -243,6 +247,30 @@ theorem mem_coeffSubfield_iff_exists_mapRingHom_eq {K : Subfield ℂ} :
       ∃ φ : LaurentSeries K, HahnSeries.mapRingHom K.subtype φ = laurentQExpansion D F := by
   rw [← RingHom.mem_rangeS, HahnSeries.mem_map_rangeS, mem_coeffSubfield]
   exact forall_congr' fun n ↦ ⟨fun h ↦ ⟨⟨_, h⟩, rfl⟩, fun ⟨c, hc⟩ ↦ hc ▸ c.property⟩
+
+/-- Coefficient maps agreeing on the coefficient field give the same Laurent expansion at
+any cusp datum. -/
+theorem mapRingHom_laurentQExpansion_eq_mapRingHom_of_mem_coeffSubfield {K : Subfield ℂ}
+    {σ σ' : ℂ →+* ℂ} (hF : F ∈ coeffSubfield D K) (h : K ≤ σ.eqLocusField σ') :
+    HahnSeries.mapRingHom σ (laurentQExpansion D F) =
+      HahnSeries.mapRingHom σ' (laurentQExpansion D F) := by
+  obtain ⟨φ, hφ⟩ := (mem_coeffSubfield_iff_exists_mapRingHom_eq D).mp
+    ((mem_coeffSubfield D).mpr fun n ↦ h ((mem_coeffSubfield D).mp hF n))
+  have heq : σ.eqLocusS σ' = (σ.eqLocusField σ').subtype.rangeS := by
+    ext z
+    simp
+  have hmem : laurentQExpansion D F ∈
+      (HahnSeries.mapRingHom (σ.eqLocusField σ').subtype).rangeS :=
+    RingHom.mem_rangeS.mpr ⟨φ, hφ⟩
+  rw [← HahnSeries.eqLocusS_mapRingHom (Γ := ℤ) heq] at hmem
+  exact RingHom.mem_eqLocusS.mp hmem
+
+/-- Every field endomorphism of `ℂ` fixes an expansion with rational coefficients. -/
+theorem mapRingHom_laurentQExpansion_of_mem_coeffSubfield_bot (σ : ℂ →+* ℂ)
+    (hF : F ∈ coeffSubfield D ⊥) :
+    HahnSeries.mapRingHom σ (laurentQExpansion D F) = laurentQExpansion D F := by
+  simpa using mapRingHom_laurentQExpansion_eq_mapRingHom_of_mem_coeffSubfield D hF
+    (bot_le : (⊥ : Subfield ℂ) ≤ σ.eqLocusField (RingHom.id ℂ))
 
 /-- A constant function lies in `coeffSubfield D K` exactly when its value lies in `K`. -/
 @[simp]

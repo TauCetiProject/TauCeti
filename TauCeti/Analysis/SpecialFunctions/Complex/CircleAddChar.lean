@@ -27,9 +27,12 @@ estimate, after summing over nonzero frequencies.
 
 * `ZMod.coe_toCircle_natCast_self`: `ZMod.toCircle (n : ZMod (2n)) = -1`.
 * `ZMod.le_norm_stdAddChar_sub_one`: a lower bound for the distance to `1`.
+* `ZMod.stdAddChar_natCast`: `stdAddChar i = ζ_N ^ i` for a natural number `i`.
 * `ZMod.map_stdAddChar_of_map_stdAddChar_one`: a multiplicative map of `ℂ` sending `ζ_N` to
   `ζ_N^d` sends every character value `stdAddChar j` to `stdAddChar (d * j)`.
 * `ZMod.isPrimitiveRoot_stdAddChar_one`: `ζ_N = stdAddChar 1` is a primitive `N`-th root of unity.
+* `MonoidHom.exists_map_stdAddChar_one_eq`: every injective multiplicative map of `ℂ` sends `ζ_N`
+  to `ζ_N^d` for a unit `d` of `ZMod N`.
 * `ZMod.exists_map_stdAddChar_one_eq`: every ring endomorphism of `ℂ` sends `ζ_N` to `ζ_N^d` for
   a unit `d` of `ZMod N`.
 * `ZMod.two_div_norm_stdAddChar_sub_one_le`: an upper bound for the reciprocal chord length.
@@ -90,14 +93,18 @@ theorem le_norm_stdAddChar_sub_one {N : ℕ} [NeZero N] (k : ZMod N) :
 
 variable {N : ℕ} [NeZero N]
 
+/-- A standard character value at a natural number is a power of its value at `1`. -/
+theorem stdAddChar_natCast (i : ℕ) :
+    stdAddChar (i : ZMod N) = stdAddChar (1 : ZMod N) ^ i := by
+  rw [← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, mul_one]
+
 /-- A multiplicative map of `ℂ` sending the generator `ζ_N = stdAddChar 1` to
 `stdAddChar d = ζ_N^d` sends every value `stdAddChar j` to `stdAddChar (d * j)`. -/
 theorem map_stdAddChar_of_map_stdAddChar_one {F : Type*} [FunLike F ℂ ℂ]
     [MonoidHomClass F ℂ ℂ] {σ : F} {d : ZMod N} (hσ : σ (stdAddChar (1 : ZMod N)) = stdAddChar d)
     (j : ZMod N) : σ (stdAddChar j) = stdAddChar (d * j) := by
-  have hj : stdAddChar j = stdAddChar (1 : ZMod N) ^ j.val := by
-    rw [← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, mul_one, natCast_zmod_val]
-  rw [hj, map_pow, hσ, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, natCast_zmod_val, mul_comm]
+  rw [← natCast_zmod_val j, stdAddChar_natCast, map_pow, hσ,
+    ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, natCast_zmod_val, mul_comm]
 
 variable (N) in
 /-- The generator `ζ_N = stdAddChar 1 = exp (2πi/N)` is a primitive `N`-th root of unity. -/
@@ -107,15 +114,21 @@ theorem isPrimitiveRoot_stdAddChar_one : IsPrimitiveRoot (stdAddChar (1 : ZMod N
   rw [h]
   exact Complex.isPrimitiveRoot_exp N (NeZero.ne N)
 
+/-- Every injective multiplicative map of `ℂ` sends `ζ_N = stdAddChar 1` to a character value
+indexed by a unit. -/
+theorem _root_.MonoidHom.exists_map_stdAddChar_one_eq (σ : ℂ →* ℂ)
+    (hσ : Function.Injective σ) :
+    ∃ d : (ZMod N)ˣ, σ (stdAddChar (1 : ZMod N)) = stdAddChar (d : ZMod N) := by
+  have hζ := isPrimitiveRoot_stdAddChar_one N
+  obtain ⟨i, -, hi, hpow⟩ := hζ.isPrimitiveRoot_iff.mp (hζ.map_of_injective hσ)
+  refine ⟨unitOfCoprime i hi, ?_⟩
+  rw [coe_unitOfCoprime, stdAddChar_natCast, ← hpow]
+
 /-- Every ring endomorphism of `ℂ` sends `ζ_N = stdAddChar 1` to `ζ_N^d = stdAddChar d` for a
 unit `d` of `ZMod N`, since it sends primitive `N`-th roots of unity to primitive ones. -/
 theorem exists_map_stdAddChar_one_eq {F : Type*} [FunLike F ℂ ℂ] [RingHomClass F ℂ ℂ] (σ : F) :
-    ∃ d : (ZMod N)ˣ, σ (stdAddChar (1 : ZMod N)) = stdAddChar (d : ZMod N) := by
-  have hζ := isPrimitiveRoot_stdAddChar_one N
-  have hσ := hζ.map_of_injective (f := σ) (by simpa using RingHom.injective (σ : ℂ →+* ℂ))
-  obtain ⟨i, -, hi⟩ := hζ.eq_pow_of_pow_eq_one hσ.pow_eq_one
-  refine ⟨unitOfCoprime i ((hζ.pow_iff_coprime (NeZero.pos N) i).mp (hi ▸ hσ)), ?_⟩
-  rw [coe_unitOfCoprime, ← hi, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, mul_one]
+    ∃ d : (ZMod N)ˣ, σ (stdAddChar (1 : ZMod N)) = stdAddChar (d : ZMod N) :=
+  MonoidHom.exists_map_stdAddChar_one_eq (σ : ℂ →+* ℂ).toMonoidHom (RingHom.injective _)
 
 /-- The reciprocal chord bound in terms of the least nonnegative representatives of a
 nonzero residue and its negative. -/
