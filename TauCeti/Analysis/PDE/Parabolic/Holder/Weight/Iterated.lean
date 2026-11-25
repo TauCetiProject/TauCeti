@@ -203,17 +203,6 @@ theorem euclideanWeightedZerothOrderCoeff_sub (hα : α ≤ 1)
       Finset.sum_sub_distrib]
     ring
 
-/-- The product of two scalar maps of order `k` has norm at most `21 (k + 1)² 2ᵏ` times the
-product of their norms. -/
-private theorem norm_mul_compParabolicCkHolder₂_le (hα : α ≤ 1)
-    (X Y : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht) :
-    ‖(ContinuousLinearMap.mul ℝ ℝ).compParabolicCkHolder₂ hα X Y‖ ≤
-      21 * (k + 1) ^ 2 * 2 ^ k * (‖X‖ * ‖Y‖) := by
-  refine (ContinuousLinearMap.norm_compParabolicCkHolder₂_apply_le _ hα X Y).trans ?_
-  have h1 : ‖ContinuousLinearMap.mul ℝ ℝ‖ ≤ 1 := ContinuousLinearMap.opNorm_mul_le ℝ ℝ
-  calc _ ≤ 21 * (k + 1) ^ 2 * 2 ^ k * 1 * ‖X‖ * ‖Y‖ := by gcongr
-    _ = _ := by ring
-
 variable (a b c dℓ d2ℓ) in
 /-- **Bound on the conjugated first-order coefficient.**
 `‖b_wⁱ‖ ≤ ‖bⁱ‖ + 2 M ∑ⱼ (‖aⁱʲ‖ + ‖aʲⁱ‖) ‖∂ⱼℓ‖` in `C_{par,b}^{k+α}`, where `M = 21 (k + 1)² 2ᵏ` is
@@ -226,7 +215,8 @@ theorem norm_euclideanWeightedFirstOrderCoeff_le (hα : α ≤ 1) (i : ι) :
       ‖b i‖ + 2 * (21 * (k + 1) ^ 2 * 2 ^ k) * ∑ j, (‖a i j‖ + ‖a j i‖) * ‖dℓ j‖ := by
   rw [Finset.mul_sum]
   refine (norm_add_le _ _).trans (add_le_add le_rfl ((norm_sum_le _ _).trans
-    (Finset.sum_le_sum fun j _ ↦ (norm_mul_compParabolicCkHolder₂_le hα _ _).trans ?_)))
+    (Finset.sum_le_sum fun j _ ↦
+      (ContinuousLinearMap.norm_mul_compParabolicCkHolder₂_apply_le hα _ _).trans ?_)))
   have h₁ := norm_add_le (a i j) (a j i)
   have h₂ := CkHolderSpace.norm_compSlabSpaceL_apply_le (hab := ht) (dℓ j)
   calc _ ≤ 21 * (k + 1) ^ 2 * 2 ^ k * ((‖a i j‖ + ‖a j i‖) * (2 * ‖dℓ j‖)) := by gcongr
@@ -251,7 +241,7 @@ theorem norm_euclideanWeightedZerothOrderCoeff_le (hα : α ≤ 1) :
     refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
     rw [Finset.mul_sum]
     refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦
-      (norm_mul_compParabolicCkHolder₂_le hα _ _).trans ?_)
+      (ContinuousLinearMap.norm_mul_compParabolicCkHolder₂_apply_le hα _ _).trans ?_)
     -- The second factor is `∂ᵢ∂ⱼℓ + ∂ᵢℓ ∂ⱼℓ`, lifted to the slab.
     have h : ‖CkHolderSpace.compSlabSpaceL ht (d2ℓ i j) +
         (ContinuousLinearMap.mul ℝ ℝ).compParabolicCkHolder₂ hα
@@ -259,14 +249,15 @@ theorem norm_euclideanWeightedZerothOrderCoeff_le (hα : α ≤ 1) :
         2 * (‖d2ℓ i j‖ + 2 * M * (‖dℓ i‖ * ‖dℓ j‖)) := by
       refine (norm_add_le _ _).trans ?_
       calc _ ≤ 2 * ‖d2ℓ i j‖ + M * ((2 * ‖dℓ i‖) * (2 * ‖dℓ j‖)) :=
-            add_le_add (hS _) ((norm_mul_compParabolicCkHolder₂_le hα _ _).trans
-              (by gcongr <;> exact hS _))
+            add_le_add (hS _)
+              ((ContinuousLinearMap.norm_mul_compParabolicCkHolder₂_apply_le hα _ _).trans
+                (by gcongr <;> exact hS _))
         _ = _ := by ring
     calc _ ≤ M * (‖a i j‖ * (2 * (‖d2ℓ i j‖ + 2 * M * (‖dℓ i‖ * ‖dℓ j‖)))) := by gcongr
       _ = _ := by ring
   · rw [Finset.mul_sum]
     refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦
-      (norm_mul_compParabolicCkHolder₂_le hα _ _).trans ?_)
+      (ContinuousLinearMap.norm_mul_compParabolicCkHolder₂_apply_le hα _ _).trans ?_)
     calc _ ≤ M * (‖b i‖ * (2 * ‖dℓ i‖)) := by gcongr; exact hS _
       _ = _ := by ring
 

@@ -175,4 +175,14 @@ theorem norm_coe_symm_sub_coe_symm_le (e e' : E ≃L[𝕜] F) :
     ContinuousLinearMap.IsInvertible.norm_inverse_sub_inverse_le
       (⟨e, rfl⟩ : (e : E →L[𝕜] F).IsInvertible) (⟨e', rfl⟩ : (e' : E →L[𝕜] F).IsInvertible)
 
+/-- Inverses bounded by `C` of two continuous linear equivalences at distance at most `D` are at
+distance at most `C D C`, by `ContinuousLinearEquiv.norm_coe_symm_sub_coe_symm_le`. -/
+theorem norm_coe_symm_sub_coe_symm_le_of_le {e e' : E ≃L[𝕜] F} {C D : ℝ}
+    (he : ‖(e.symm : F →L[𝕜] E)‖ ≤ C) (he' : ‖(e'.symm : F →L[𝕜] E)‖ ≤ C)
+    (hD : ‖(e' : E →L[𝕜] F) - (e : E →L[𝕜] F)‖ ≤ D) :
+    ‖(e.symm : F →L[𝕜] E) - e'.symm‖ ≤ C * D * C :=
+  (e.norm_coe_symm_sub_coe_symm_le e').trans <| mul_le_mul
+    (mul_le_mul he hD (norm_nonneg _) ((norm_nonneg _).trans he)) he' (norm_nonneg _)
+    (mul_nonneg ((norm_nonneg _).trans he) ((norm_nonneg _).trans hD))
+
 end ContinuousLinearEquiv

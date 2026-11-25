@@ -229,7 +229,7 @@ theorem exists_norm_euclideanInitialDataCLE_symm_sub_le (hα₀ : 0 < α) (hα�
           (euclideanInitialDataCLE hα₀ hα₁ hT a' b' c'
             ⟨lam, hlam, ha'⟩).symm.toContinuousLinearMap‖ ≤
           C * (∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖) := by
-  obtain ⟨C, hC, hest⟩ := exists_norm_euclideanInitialDataCLE_symm_le (ι := ι) hα₀ hα₁ hlam K T₀
+  obtain ⟨C, -, hest⟩ := exists_norm_euclideanInitialDataCLE_symm_le (ι := ι) hα₀ hα₁ hlam K T₀
   refine ⟨24 * C ^ 2, by positivity,
     fun T hT hTT₀ a a' b b' c c' ha ha' hak hbk hck hak' hbk' hck' ↦ ?_⟩
   set e := euclideanInitialDataCLE hα₀ hα₁ hT a b c ⟨lam, hlam, ha⟩
@@ -250,13 +250,11 @@ theorem exists_norm_euclideanInitialDataCLE_symm_sub_le (hα₀ : 0 < α) (hα�
             euclideanParabolicOperatorL hα₁.le a b c) u‖ := by
           simp [e, e', Prod.norm_def]
       _ ≤ 24 * δ * ‖u‖ := hP.trans (mul_le_mul_of_nonneg_right (hL.trans hδ) (norm_nonneg u))
-  have h₁ := hest T hT hTT₀ a b c ha hak hbk hck
-  have h₂ := hest T hT hTT₀ a' b' c' ha' hak' hbk' hck'
+  have h := ContinuousLinearEquiv.norm_coe_symm_sub_coe_symm_le_of_le
+    (hest T hT hTT₀ a b c ha hak hbk hck) (hest T hT hTT₀ a' b' c' ha' hak' hbk' hck') hdiff
   -- The resolvent bound and the goal differ in instance arguments on the spaces of operators,
   -- which `trans` fails to unify, as in `exists_norm_euclideanTerminalDataCLE_symm_sub_le`.
-  convert (e.norm_coe_symm_sub_coe_symm_le e').trans ?_ using 1
-  calc _ ≤ C * (24 * δ) * C := by gcongr
-    _ = 24 * C ^ 2 * δ := by ring
+  convert h.trans_eq (by ring : C * (24 * δ) * C = 24 * C ^ 2 * δ) using 1
 
 /-! ### The terminal-value problem -/
 

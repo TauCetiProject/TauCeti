@@ -542,11 +542,8 @@ private theorem exists_eq_sum_mul_and_norm_le (hα : α ≤ 1) {j : ℕ} {T : �
     (E := EuclideanSpace ℝ ι) (hab := hT) hα
   set c : ℝ := 21 * (j + 1) ^ 2 * 2 ^ j
   have hmul (X Y : ParabolicCkHolderSpace j α (EuclideanSpace ℝ ι) ℝ hT) :
-      ‖mulL X Y‖ ≤ c * (‖X‖ * ‖Y‖) := by
-    refine (ContinuousLinearMap.norm_compParabolicCkHolder₂_apply_le _ hα X Y).trans ?_
-    have h1 : ‖ContinuousLinearMap.mul ℝ ℝ‖ ≤ 1 := ContinuousLinearMap.opNorm_mul_le ℝ ℝ
-    calc c * ‖ContinuousLinearMap.mul ℝ ℝ‖ * ‖X‖ * ‖Y‖ ≤ c * 1 * ‖X‖ * ‖Y‖ := by gcongr
-      _ = c * (‖X‖ * ‖Y‖) := by ring
+      ‖mulL X Y‖ ≤ c * (‖X‖ * ‖Y‖) :=
+    ContinuousLinearMap.norm_mul_compParabolicCkHolder₂_apply_le hα X Y
   refine ⟨∑ i, ∑ l, mulL (A i l) (H i l) + ∑ i, mulL (B i) (G i) + mulL C V,
     fun p ↦ by simp [mulL, Finset.sum_apply], ?_⟩
   have h₁ : ‖∑ i, ∑ l, mulL (A i l) (H i l)‖ ≤ c * ∑ i, ∑ l, ‖A i l‖ * ‖H i l‖ := by
@@ -1060,17 +1057,6 @@ private theorem coeffPerturbation_le {k : ℕ} {T : ℝ≥0} {hT : (0 : ℝ) < T
         mul_le_mul_of_nonneg_left (add_le_add (add_le_add hA hB) hC) (by positivity)
     _ = _ := by simp only [N]; ring
 
-/-- Inverses bounded by `C` of two equivalences at distance at most `D` are at distance at most
-`C D C`, by the resolvent bound `ContinuousLinearEquiv.norm_coe_symm_sub_coe_symm_le`. -/
-private theorem norm_symm_sub_symm_le_of_le {X Y : Type*} [NormedAddCommGroup X]
-    [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y] {e e' : X ≃L[ℝ] Y} {C D : ℝ}
-    (he : ‖e.symm.toContinuousLinearMap‖ ≤ C) (he' : ‖e'.symm.toContinuousLinearMap‖ ≤ C)
-    (hD : ‖e'.toContinuousLinearMap - e.toContinuousLinearMap‖ ≤ D) :
-    ‖e.symm.toContinuousLinearMap - e'.symm.toContinuousLinearMap‖ ≤ C * D * C :=
-  (e.norm_coe_symm_sub_coe_symm_le e').trans <| mul_le_mul
-    (mul_le_mul he hD (norm_nonneg _) ((norm_nonneg _).trans he)) he' (norm_nonneg _)
-    (mul_nonneg ((norm_nonneg _).trans he) ((norm_nonneg _).trans hD))
-
 /-- **The Cauchy problem at every order: Lipschitz dependence on the coefficients.** Under the
 bounds of `exists_norm_euclideanInitialDataCLE_symm_le`, the solution operators of two Cauchy
 problems on `ℝⁿ × [0, T]`, `T ≤ T₀`, differ in operator norm by at most
@@ -1103,8 +1089,9 @@ theorem exists_norm_euclideanInitialDataCLE_symm_sub_le (hα₀ : 0 < α) (hα�
       M * (∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖) := by
     rw [norm_sub_rev, coe_euclideanInitialDataCLE, coe_euclideanInitialDataCLE]
     exact (norm_initialDataL_sub_le hα₁.le).trans (coeffPerturbation_le a a' b b' c c')
-  exact (norm_symm_sub_symm_le_of_le (hest T hT hTT₀ a b c ha hak hbk hck)
-    (hest T hT hTT₀ a' b' c' ha' hak' hbk' hck') hdiff).trans_eq (by ring)
+  exact (ContinuousLinearEquiv.norm_coe_symm_sub_coe_symm_le_of_le
+    (hest T hT hTT₀ a b c ha hak hbk hck) (hest T hT hTT₀ a' b' c' ha' hak' hbk' hck')
+    hdiff).trans_eq (by ring)
 
 /-- **The terminal-value problem at every order: Lipschitz dependence on the coefficients.** Under
 the bounds of `exists_norm_euclideanTerminalDataCLE_symm_le`, the solution operators of two
@@ -1140,8 +1127,9 @@ theorem exists_norm_euclideanTerminalDataCLE_symm_sub_le (hα₀ : 0 < α) (hα�
     rw [norm_sub_rev, coe_euclideanTerminalDataCLE, coe_euclideanTerminalDataCLE]
     exact (norm_terminalDataL_sub_le hα₁.le _ _ _ _ _ _).trans
       (coeffPerturbation_le a a' b b' c c')
-  exact (norm_symm_sub_symm_le_of_le (hest T hT hTT₀ a b c ha hak hbk hck)
-    (hest T hT hTT₀ a' b' c' ha' hak' hbk' hck') hdiff).trans_eq (by ring)
+  exact (ContinuousLinearEquiv.norm_coe_symm_sub_coe_symm_le_of_le
+    (hest T hT hTT₀ a b c ha hak hbk hck) (hest T hT hTT₀ a' b' c' ha' hak' hbk' hck')
+    hdiff).trans_eq (by ring)
 
 end Estimate
 
