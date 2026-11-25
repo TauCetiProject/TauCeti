@@ -5,21 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Module.LocallyConvex
+public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.AddCircle
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.UniversalCover
-public import TauCeti.AlgebraicTopology.UniversalCover.SemilocallySimplyConnected
+public import TauCeti.Topology.Instances.AddCircle.LocallyPathConnected
+public import TauCeti.Topology.Instances.AddCircle.UnitInterval
 
 /-!
 # The deck transformations of the universal cover of a circle
 
 For a real period `p`, the covering `(↑) : ℝ → AddCircle p` has a simply connected,
-locally path-connected total space. So `AddCircle p` is locally path-connected and semilocally
+locally path-connected total space, and `AddCircle p` is locally path-connected and semilocally
 simply connected (`AddCircle.instLocallyPathConnectedSpaceReal`,
-`AddCircle.instSemilocallySimplyConnectedSpaceReal`), Tau Ceti's based-path universal cover
-`TauCeti.UniversalCover (0 : AddCircle p)` exists, and by uniqueness of simply connected covers it
-is identified with `ℝ` over the circle, the base lift going to `0`
+`AddCircle.instSemilocallySimplyConnectedSpaceReal`). So Tau Ceti's based-path universal cover
+`TauCeti.UniversalCover (0 : AddCircle p)` exists, and by the classification of pointed covers
+(`IsCoveringMap.totalSpaceHomeomorphOfRangeEq`, both recovered subgroups being trivial) it is
+identified with `ℝ` over the circle, the base lift going to `0`
 (`AddCircle.universalCoverHomeomorph`).
 
 Under this identification the deck dictionary
@@ -33,10 +35,11 @@ determined by its value at `0` (`deck.addCircleCoe_eq_add_apply_zero`). The fund
 action convention, `TauCeti.UniversalCover.loopDeck`, gives the inverse translation by `-p`
 (`AddCircle.universalCoverHomeomorph_loopDeck_periodLoop`).
 
-For `p = 1` this is the TeichmullerGeometry §4.2 Check "on the circle, `Π ≃ ℤ` and
-`η(op(generator))` is the unit translation of `ℝ` in the direction of the loop; the opposite
-convention gives the inverse translation", with `Π ≃ ℤ` from
-`AddCircle.fundamentalGroupMulEquivZero`.
+For `p ≠ 0` the class of `AddCircle.periodLoop` is the generator `1` of
+`π₁(AddCircle p, 0) ≃* Multiplicative ℤ`
+(`AddCircle.fundamentalGroupMulEquivZero_fromPath_periodLoop`).
+So for `p = 1` the deck transformation of the generator is the unit translation of `ℝ` in the
+direction of the loop, and the opposite convention gives the inverse translation.
 -/
 
 public section
@@ -49,53 +52,60 @@ namespace AddCircle
 
 variable (p : ℝ)
 
--- `ℝ → AddCircle p` is a simply connected, locally path-connected covering.
-private theorem lpc_and_slsc :
-    LocallyPathConnectedSpace (AddCircle p) ∧ SemilocallySimplyConnectedSpace (AddCircle p) :=
-  (locallyPathConnectedSpace_and_semilocallySimplyConnectedSpace_iff_exists_universalCover _).2
-    ⟨ℝ, inferInstance, inferInstance, (↑), isCoveringMap_coe p, inferInstance⟩
-
-/-- A real additive circle is locally path-connected. -/
-instance instLocallyPathConnectedSpaceReal : LocallyPathConnectedSpace (AddCircle p) :=
-  (lpc_and_slsc p).1
-
-/-- A real additive circle is semilocally simply connected. -/
-instance instSemilocallySimplyConnectedSpaceReal :
-    SemilocallySimplyConnectedSpace (AddCircle p) :=
-  (lpc_and_slsc p).2
-
 /-- The loop `t ↦ t p` around `AddCircle p`, based at `0`, whose lift to `ℝ` from `0` ends at
-`p`. -/
+`p`: the map `AddCircle.ofUnitInterval p` read as a loop. -/
 def periodLoop : Path (0 : AddCircle p) 0 where
-  toFun t := ((t * p : ℝ) : AddCircle p)
-  continuous_toFun := by fun_prop
-  source' := by simp
-  target' := by simp
+  toContinuousMap := ofUnitInterval p
+  source' := ofUnitInterval_zero
+  target' := ofUnitInterval_one
+
+/-- `AddCircle.periodLoop` sends `t` to the class of `t * p`. -/
+@[simp]
+theorem periodLoop_apply (t : I) : periodLoop p t = ((t * p : ℝ) : AddCircle p) :=
+  ofUnitInterval_apply t
+
+/-- **The period loop generates the fundamental group.** For `p ≠ 0`, the class of
+`AddCircle.periodLoop` is the generator `1` of `π₁(AddCircle p, 0) ≃* Multiplicative ℤ`. -/
+theorem fundamentalGroupMulEquivZero_fromPath_periodLoop (hp : p ≠ 0) :
+    fundamentalGroupMulEquivZero p hp
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (periodLoop p))) =
+      Multiplicative.ofAdd 1 := by
+  rw [fundamentalGroupMulEquivZero_apply_eq_iff, toAdd_ofAdd, one_smul]
+  have h := (isCoveringMap_coe p).monodromy_eq_apply_one
+    (γ := periodLoop p) (e := ⟨0, by simp⟩) (Γ := ⟨fun t : I ↦ (t : ℝ) * p, by fun_prop⟩)
+    (by funext t; simp) (by simp)
+  simpa using h
+
+-- Both covers are simply connected, so both recover the trivial subgroup of `π₁(AddCircle p, 0)`.
+private theorem range_mapOfEq_proj_eq_range_mapOfEq_coe :
+    (_root_.FundamentalGroup.mapOfEq
+        ⟨proj, (UniversalCover.isCoveringMap (0 : AddCircle p)).continuous⟩
+        (proj_basepointLift 0)).range =
+      (_root_.FundamentalGroup.mapOfEq ⟨((↑) : ℝ → AddCircle p), (isCoveringMap_coe p).continuous⟩
+        (QuotientAddGroup.mk_zero _)).range := by
+  rw [FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton,
+    FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton]
 
 /-- **The universal cover of a circle is `ℝ`.** The homeomorphism over `AddCircle p` from Tau Ceti's
-based-path universal cover at `0` to `ℝ` sending the base lift to `0`, from the uniqueness of
-simply connected covers (`IsCoveringMap.exists_homeomorph_comp_eq_of_simplyConnectedSpace`). -/
+based-path universal cover at `0` to `ℝ` sending the base lift to `0`: the comparison
+homeomorphism `IsCoveringMap.totalSpaceHomeomorphOfRangeEq` of these two simply connected covers. -/
 def universalCoverHomeomorph : UniversalCover (0 : AddCircle p) ≃ₜ ℝ :=
-  (IsCoveringMap.exists_homeomorph_comp_eq_of_simplyConnectedSpace
-    (UniversalCover.isCoveringMap (0 : AddCircle p))
-    (isCoveringMap_coe p) (proj_basepointLift 0) (QuotientAddGroup.mk_zero _)).choose
+  IsCoveringMap.totalSpaceHomeomorphOfRangeEq (UniversalCover.isCoveringMap 0)
+    (isCoveringMap_coe p) (proj_basepointLift 0) (QuotientAddGroup.mk_zero _)
+    (range_mapOfEq_proj_eq_range_mapOfEq_coe p)
 
 /-- `AddCircle.universalCoverHomeomorph` sends the base lift to `0`. -/
 -- Not a `simp` lemma: `simp` unfolds `basepointLift`, so the left-hand side is not in simp-normal
 -- form.
 theorem universalCoverHomeomorph_basepointLift :
     universalCoverHomeomorph p (basepointLift (0 : AddCircle p)) = 0 :=
-  (IsCoveringMap.exists_homeomorph_comp_eq_of_simplyConnectedSpace
-    (UniversalCover.isCoveringMap (0 : AddCircle p))
-    (isCoveringMap_coe p) (proj_basepointLift 0) (QuotientAddGroup.mk_zero _)).choose_spec.1
+  IsCoveringMap.totalSpaceHomeomorphOfRangeEq_apply_basepoint ..
 
 /-- `AddCircle.universalCoverHomeomorph` lies over the circle. -/
 @[simp]
 theorem coe_universalCoverHomeomorph (u : UniversalCover (0 : AddCircle p)) :
     (universalCoverHomeomorph p u : AddCircle p) = proj u :=
-  congrFun (IsCoveringMap.exists_homeomorph_comp_eq_of_simplyConnectedSpace
-    (UniversalCover.isCoveringMap (0 : AddCircle p))
-    (isCoveringMap_coe p) (proj_basepointLift 0) (QuotientAddGroup.mk_zero _)).choose_spec.2 u
+  IsCoveringMap.comp_totalSpaceHomeomorphOfRangeEq_apply ..
 
 /-- **The deck transformation of the period loop is translation by the period.** Read on `ℝ`
 through `AddCircle.universalCoverHomeomorph`, the deck transformation attached by
@@ -109,8 +119,11 @@ theorem universalCoverHomeomorph_deck_periodLoop (u : UniversalCover (0 : AddCir
   set e := universalCoverHomeomorph p
   set η := (deckFundamentalGroupEquiv (0 : AddCircle p)).symm
     (GeometricFundamentalGroup.mk (periodLoop p))
-  let ψ := Deck.conjMulEquiv e (coe_universalCoverHomeomorph p) η
-  have hψ (r : ℝ) : ψ.val r = e (η.val (e.symm r)) := Deck.conjMulEquiv_apply_coe _ _ _ _
+  let ψ := IsCoveringMap.deckMulEquivOfRangeEq (UniversalCover.isCoveringMap 0)
+    (isCoveringMap_coe p) (proj_basepointLift 0) (QuotientAddGroup.mk_zero _)
+    (range_mapOfEq_proj_eq_range_mapOfEq_coe p) η
+  have hψ (r : ℝ) : ψ.val r = e (η.val (e.symm r)) :=
+    IsCoveringMap.deckMulEquivOfRangeEq_apply_coe ..
   -- The lift of the loop from the base lift, carried to `ℝ`, is `t ↦ t p`.
   have hlift : e ∘ (UniversalCover.isCoveringMap (0 : AddCircle p)).liftPath (periodLoop p)
       (basepointLift (0 : AddCircle p))
@@ -119,9 +132,10 @@ theorem universalCoverHomeomorph_deck_periodLoop (u : UniversalCover (0 : AddCir
     refine (isCoveringMap_coe p).eq_of_comp_eq
       (e.continuous.comp (ContinuousMap.continuous _)) (by fun_prop) ?_ 0 ?_
     · funext t
-      rw [Function.comp_apply, Function.comp_apply, coe_universalCoverHomeomorph]
-      exact (congrFun ((UniversalCover.isCoveringMap (0 : AddCircle p)).liftPath_lifts _ _ _)
-        t).trans rfl
+      rw [Function.comp_apply, Function.comp_apply, coe_universalCoverHomeomorph,
+        ← Function.comp_apply (f := proj),
+        (UniversalCover.isCoveringMap (0 : AddCircle p)).liftPath_lifts,
+        ContinuousMap.coe_ofClass, periodLoop_apply, Function.comp_apply]
     · rw [Function.comp_apply, IsCoveringMap.liftPath_zero, Set.Icc.coe_zero, zero_mul]
       exact universalCoverHomeomorph_basepointLift p
   have h0 : ψ.val 0 = p := by
@@ -145,8 +159,8 @@ theorem universalCoverHomeomorph_loopDeck_periodLoop (u : UniversalCover (0 : Ad
   have h : loopDeck (0 : AddCircle p) g = η⁻¹ := by
     rw [← inv_inv g, ← deckFundamentalGroupEquiv_symm_op, MulOpposite.op_inv, map_inv]
   have hη : η.val ((η⁻¹ : deck _).val u) = u := by
-    rw [← Homeomorph.mul_apply, ← Subgroup.coe_mul, mul_inv_cancel]
-    rfl
+    rw [← Homeomorph.mul_apply, ← Subgroup.coe_mul, mul_inv_cancel, Subgroup.coe_one,
+      Homeomorph.one_apply]
   have := universalCoverHomeomorph_deck_periodLoop p ((η⁻¹ : deck _).val u)
   rw [hη] at this
   rw [h]
