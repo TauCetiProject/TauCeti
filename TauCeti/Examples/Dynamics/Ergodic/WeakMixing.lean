@@ -98,8 +98,8 @@ theorem TwoPoint.preimage_vadd (t : ℝ) (s : Set TwoPoint) : (fun x => t +ᵥ x
 def TwoPoint.pt (b : Bool) : TwoPoint := b
 
 /-- Each point has measure `1/2` for the uniform probability measure on the two-point space. -/
-theorem uniformOn_univ_real_singleton (b : Bool) :
-    (uniformOn (univ : Set TwoPoint)).real {TwoPoint.pt b} = 1 / 2 := by
+theorem TwoPoint.uniformOn_univ_real_singleton (x : TwoPoint) :
+    (uniformOn (univ : Set TwoPoint)).real {x} = 1 / 2 := by
   simp [measureReal_def, uniformOn_univ, TwoPoint.card_eq, ENNReal.toReal_inv]
 
 /-- **The trivial action on two points is not weakly mixing.** For the uniform probability
@@ -108,7 +108,7 @@ example : ¬(uniformOn (univ : Set TwoPoint)).IsWeaklyMixing := by
   intro h
   have := h.measureReal_eq_zero_or_one (measurableSet_singleton (TwoPoint.pt true))
     fun t => by rw [TwoPoint.preimage_vadd]
-  rw [uniformOn_univ_real_singleton] at this
+  rw [TwoPoint.uniformOn_univ_real_singleton] at this
   norm_num at this
 
 /-- For the trivial action on two points with the uniform probability measure, the integrand of
@@ -119,7 +119,7 @@ example (t : ℝ) :
       (uniformOn (univ : Set TwoPoint)).real {TwoPoint.pt true} *
         (uniformOn (univ : Set TwoPoint)).real {TwoPoint.pt true}| = 1 / 4 := by
   rw [integrand_self_of_invariant (by rw [TwoPoint.preimage_vadd]),
-    uniformOn_univ_real_singleton]
+    TwoPoint.uniformOn_univ_real_singleton]
   norm_num
 
 end TauCeti.Examples.WeakMixing
