@@ -73,9 +73,9 @@ private theorem adicCompletionFun_val (D : Derivation R A M) {x : AdicCompletion
     {a : A} (ha : x.val (n + 1) = Submodule.Quotient.mk a) :
     (adicCompletionFun I D x).val n = Submodule.Quotient.mk (D a) := by
   have hx := congrArg (fun y ↦ y.val (n + 1)) (AdicCompletion.mk_surjective I A x).choose_spec
-  refine D.apply_smodEq_of_smodEq ?_
-  unfold SModEq
-  rw [← ha, ← hx, mk_apply_coe, mkQ_apply]
+  rw [adicCompletionFun, mk_apply_coe, mkQ_apply, adicCauchySequenceMap, AdicCauchySequence.mk_coe]
+  refine SModEq.def.mp (D.apply_smodEq_of_smodEq ?_)
+  rw [SModEq.def, ← ha, ← hx, mk_apply_coe, mkQ_apply]
 
 /-- Every coordinate of an element of the completion has a representative. -/
 private theorem exists_val_eq (x : AdicCompletion I A) (n : ℕ) :
