@@ -113,10 +113,15 @@ theorem arakelovClass_eq_arakelovClass_iff [Module.Invertible (𝓞 K) E]
 
 variable {h h'} in
 /-- Isometric hermitian lines have the same class. -/
-theorem IsometryEquiv.arakelovClass_eq [Module.Invertible (𝓞 K) E] (e : IsometryEquiv h h') :
+theorem IsometryEquiv.arakelovClass_eq (e : IsometryEquiv h h') :
     h.arakelovClass = h'.arakelovClass := by
-  obtain ⟨D, hD, ⟨e₀⟩⟩ := h.exists_isometryEquiv_arakelovClass
-  rw [hD, arakelovClass_eq_mk_of_isometryEquiv (e.symm.trans e₀)]
+  by_cases hD : ∃ D : ArakelovDivisor K, Nonempty (IsometryEquiv h D.hermitianMetric)
+  · obtain ⟨D, ⟨e₀⟩⟩ := hD
+    rw [arakelovClass_eq_mk_of_isometryEquiv e₀,
+      arakelovClass_eq_mk_of_isometryEquiv (e.symm.trans e₀)]
+  · have hD' : ¬ ∃ D : ArakelovDivisor K, Nonempty (IsometryEquiv h' D.hermitianMetric) :=
+      fun ⟨D, ⟨e'⟩⟩ ↦ hD ⟨D, ⟨e.trans e'⟩⟩
+    simp only [arakelovClass, hD, hD', ↓reduceDIte]
 
 /-- **The degree of the class of a hermitian line is its Arakelov degree**, computed with any
 nonzero section. -/
