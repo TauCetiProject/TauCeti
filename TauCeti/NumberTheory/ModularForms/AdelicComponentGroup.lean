@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.CongruenceLevel
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Topology
+import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 
 /-!
 # The congruence groups of the `GL₂` components
@@ -23,11 +24,12 @@ reduction modulo `M` on the integral points of `GL₂(𝔸_f)`) lies in `gUg⁻�
 congruence subgroup `Γ(M)` of `SL₂(ℤ)` lies in `Γ_{g,U}`, so for `M ≠ 0` the integral matrices
 of `Γ_{g,U}` form a subgroup of finite index of `SL₂(ℤ)`.
 
-The argument is a direct computation with determinants. The determinants of the compact group
-`gUg⁻¹` form a compact subgroup of `𝔸_f^×`, and every compact subgroup of the finite ideles lies
-in the everywhere-integral units `Ô^×` (`TauCeti.map_det_le_integralUnits_of_isCompact`, for any
-Dedekind domain). A positive rational number whose principal finite idele lies in `Ô^×` is a unit
-of `ℤ`, hence equal to `1` (`IsDedekindDomain.FiniteAdeleRing.eq_one_of_pos_of_mem_integralUnits`).
+That every element of `Γ_{g,U}` has determinant `1` is a direct computation with determinants.
+The determinants of the compact group `gUg⁻¹` form a compact subgroup of `𝔸_f^×`, and every
+compact subgroup of the finite ideles lies in the everywhere-integral units `Ô^×`
+(`TauCeti.map_det_le_integralUnits_of_isCompact`, for any Dedekind domain). A positive rational
+number whose principal finite idele lies in `Ô^×` is a unit of `ℤ`, hence equal to `1`
+(`IsDedekindDomain.FiniteAdeleRing.eq_one_of_pos_of_mem_integralUnits`).
 
 ## Main definitions
 
@@ -131,7 +133,7 @@ theorem componentGroup_mul_mul {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ �
   rw [Subgroup.mem_map_equiv, mem_componentGroup_iff, mem_componentGroup_iff,
     MulAut.conj_symm_apply]
   have hdet : (GeneralLinearGroup.det (q⁻¹ * γ * q) : ℚ) = GeneralLinearGroup.det γ := by
-    rw [map_mul, map_mul, map_inv, mul_comm, ← mul_assoc, mul_inv_cancel, one_mul]
+    simp [mul_comm]
   have hconj : (GeneralLinearGroup.map (algebraMap ℚ (FiniteAdeleRing ℤ ℚ)) q * g * u)⁻¹ *
       GeneralLinearGroup.map (algebraMap ℚ (FiniteAdeleRing ℤ ℚ)) γ *
         (GeneralLinearGroup.map (algebraMap ℚ (FiniteAdeleRing ℤ ℚ)) q * g * u) =
@@ -151,11 +153,8 @@ theorem map_Gamma_le_componentGroup {U : Subgroup (GL (Fin 2) (FiniteAdeleRing �
   rintro _ ⟨γ, hγ, rfl⟩
   have hmem : ∀ i j, (γ.toGL : Matrix (Fin 2) (Fin 2) ℤ) i j -
       (1 : Matrix (Fin 2) (Fin 2) ℤ) i j ∈ Ideal.span {(M : ℤ)} := by
-    intro i j
-    rw [Ideal.mem_span_singleton, ← ZMod.intCast_zmod_eq_zero_iff_dvd]
-    have := congrArg (fun A : SL(2, ZMod M) ↦ (A : Matrix (Fin 2) (Fin 2) (ZMod M)) i j)
-      (CongruenceSubgroup.Gamma_mem'.mp hγ)
-    fin_cases i <;> fin_cases j <;> simp_all
+    obtain ⟨h00, h01, h10, h11⟩ := CongruenceSubgroup.mem_Gamma_iff_dvd.mp hγ
+    simp [Fin.forall_fin_two, Ideal.mem_span_singleton, h00, h01, h10, h11]
   have himage : GeneralLinearGroup.map (algebraMap ℚ (FiniteAdeleRing ℤ ℚ))
       (SpecialLinearGroup.mapGL ℚ γ) =
         GeneralLinearGroup.map (algebraMap ℤ (FiniteAdeleRing ℤ ℚ)) γ.toGL := by
