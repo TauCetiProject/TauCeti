@@ -63,6 +63,8 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   a finite free module `M` and `B (F x) (F' y) = c • B x y`, then `det F * det F' = c ^ finrank M`.
 * `Matrix.detRowAlternating_mulVec`: multiplication by a square matrix scales the
   standard-basis determinant form by the matrix determinant.
+* `Matrix.detRowAlternating_apply`: the row determinant form evaluated on a family of rows is
+  the determinant of the matrix with those rows.
 * `Matrix.detRowAlternating_pi_apply`: evaluating the row determinant form on a family of
   linear functionals gives the determinant of their evaluation matrix.
 * `Matrix.detRowAlternating_compLinearMap_pi_apply`: the same evaluation in multilinear-map
@@ -429,6 +431,13 @@ theorem det_ker_eq_bot_of_finrank_le_one {R V : Type*} [CommRing R] [AddCommGrou
 end LinearEquiv
 
 namespace Matrix
+
+/-- The row determinant form evaluated on a family of rows is the determinant of the matrix with
+those rows. -/
+theorem detRowAlternating_apply {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    (v : n → n → R) : detRowAlternating v = (Matrix.of v).det :=
+  -- Mathlib defines `det` as evaluation of `detRowAlternating` on the rows.
+  rfl
 
 /-- Evaluating the row determinant form after a family of linear functionals gives the
 matrix of those functionals evaluated on the input vectors. -/

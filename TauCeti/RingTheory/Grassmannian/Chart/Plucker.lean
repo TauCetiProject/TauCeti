@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.Grassmannian.Chart.Basic
 public import TauCeti.RingTheory.Grassmannian.Plucker
 
+import TauCeti.LinearAlgebra.Determinant.Basic
+
 /-!
 # The Plücker map on the standard charts
 
@@ -59,13 +61,6 @@ namespace Module.Grassmannian
 
 variable (R : Type u) [CommRing R] {M : Type v} [AddCommGroup M] [Module R M] {k : ℕ}
 
-/-- The row determinant form evaluated on a family of rows is the determinant of the matrix with
-those rows. -/
-private theorem detRowAlternating_eq_det {A : Type*} [CommRing A] (v : Fin k → Fin k → A) :
-    Matrix.detRowAlternating v = (Matrix.of v).det :=
-  -- `Matrix.det` is by definition `Matrix.detRowAlternating` applied to the rows
-  rfl
-
 namespace ChartAlgebra
 
 /-- **The Plücker form** of the chart at `x`: the linear map `⋀ᵏ M → C_x` sending
@@ -85,7 +80,7 @@ theorem pluckerForm_ιMulti (x m : Fin k → M) :
     pluckerForm R x (exteriorPower.ιMulti R k m) =
       (Matrix.of fun j i ↦ universalLinearMap R x (m j) i).det := by
   rw [pluckerForm, exteriorPower.alternatingMapLinearEquiv_apply_ιMulti]
-  exact detRowAlternating_eq_det fun j ↦ universalLinearMap R x (m j)
+  exact Matrix.detRowAlternating_apply fun j ↦ universalLinearMap R x (m j)
 
 /-- The Plücker form of the chart at `x` takes the value `1` at `x₁ ∧ ⋯ ∧ xₖ`. -/
 @[simp]
@@ -174,7 +169,7 @@ private theorem liftBaseChange_pluckerChartHom_comp_equivBaseChange (x : Fin k �
   have hid (y : Fin k → ChartAlgebra R x) : (LinearMap.id (R := R)).compLeft (Fin k) y = y := by
     ext; simp
   simp [hA, hid, pluckerForm_ιMulti, exteriorPower.alternatingMapLinearEquiv_apply_ιMulti,
-    detRowAlternating_eq_det, Function.comp_def]
+    Matrix.detRowAlternating_apply, Function.comp_def]
 
 /-- **The Plücker map on the universal point of a chart.** The Plücker point of the universal point
 of the chart of `G(k, M)` at `x` is the point of the chart of `G(1, ⋀ᵏ M)` at `x₁ ∧ ⋯ ∧ xₖ`
