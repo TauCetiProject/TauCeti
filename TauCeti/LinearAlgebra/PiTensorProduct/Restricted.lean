@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Colimit.Module
-public import Mathlib.Data.Finset.Update
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import TauCeti.Data.Finset.Update
 public import TauCeti.LinearAlgebra.PiTensorProduct.Contraction
 
 /-!
@@ -106,12 +106,12 @@ theorem stageMultilinear_apply (w : ∀ i, W i) {S T : Finset ι} (h : S ⊆ T) 
       PiTensorProduct.tprod R (T.restrict (Function.updateFinset w S f)) := by
   refine congrArg (PiTensorProduct.tprod R) (funext fun i ↦ ?_)
   by_cases hi : i.val ∈ S
-  · simp only [Finset.restrict, Function.updateFinset, dite_eq_left hi]
+  · simp only [Finset.restrict, Function.updateFinset_apply_of_mem hi, dite_eq_left hi]
     -- The inverse of `Equiv.subtypeSubtypeEquivSubtype` sends `⟨i, hi⟩` to `⟨i, hi⟩` by
     -- definition, so the reindexed entry is `f ⟨i, hi⟩`; the dependent type of the entry
     -- blocks rewriting with `Equiv.piCongrLeft'_symm_apply_apply`.
     rfl
-  · simp [Function.updateFinset, hi]
+  · simp [hi]
 
 /-- The transition map `⨂_{i ∈ S} W i → ⨂_{i ∈ T} W i` adjoining the reference vectors at the
 places of `T \ S`. -/
@@ -164,7 +164,7 @@ theorem stageMap_injective (w : ∀ i, W i) {S T : Finset ι} (h : S ⊆ T)
     refine PiTensorProduct.ext <| MultilinearMap.ext fun f ↦ ?_
     have hprod : ∏ i : {i : T // i.val ∉ S}, φ i (Function.updateFinset w S f i) = 1 :=
       Fintype.prod_eq_one _ fun i ↦ by
-        simp [Function.updateFinset, i.property, hφ i i.val.property i.property]
+        simp [Function.updateFinset_apply_of_notMem i.property, hφ i i.val.property i.property]
     simp only [LinearMap.compMultilinearMap_apply, LinearMap.coe_comp, Function.comp_apply,
       stageMap_tprod, PiTensorProduct.lift.tprod, LinearMap.id_compMultilinearMap,
       PiTensorProduct.contractMultilinear_apply, Finset.restrict, hprod, one_smul]
@@ -296,8 +296,8 @@ theorem tprod_eq_ofFinite (f : ∀ i, W i) (hf : {i | f i ≠ w i}.Finite) (S : 
     congr 1
     funext i
     by_cases hi : i.val ∈ U
-    · simp [Function.updateFinset, hi]
-    · simp [Function.updateFinset, hi, hU i hi]
+    · simp [Function.updateFinset_apply_of_mem hi]
+    · simp [Function.updateFinset_apply_of_notMem hi, hU i hi]
   rw [tprod, ← key hf.toFinset hsub fun i hi ↦ by simpa using hi, ofFinite_stageMap]
 
 /-- The pure tensor of the reference family is the image of the empty pure tensor at the empty
@@ -360,7 +360,9 @@ private theorem map_comp_stageMap (f : ∀ i, W i →ₗ[R] W' i) (hf : ∀ i, f
       stageMap_tprod, PiTensorProduct.map_tprod]
     congr 1
     funext i
-    by_cases hi : i.val ∈ S <;> simp [Function.updateFinset, hi, hf]
+    by_cases hi : i.val ∈ S
+    · simp [Function.updateFinset_apply_of_mem hi]
+    · simp [Function.updateFinset_apply_of_notMem hi, hf]
 
 /-- Linear maps `f i : W i → W' i` sending the references to the references induce a linear map
 of restricted tensor products, `⨂ₜ g ↦ ⨂ₜ (f i (g i))`. -/
