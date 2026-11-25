@@ -92,8 +92,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
     `TauCeti.mvfderiv_eq_iff_fderiv_comp_extChartAt_symm_eq`,
     `TauCeti.eventually_mfderiv_eq_zero_iff_extChartAt_symm`, and
     `TauCeti.exists_norm_fderiv_comp_extend_symm_le_mul_norm_fderiv_comp_extChartAt_symm`: compare
-    differentials, zeros, injectivity, critical points, and norms across arbitrary charts for
-    maps into a normed space.
+    differentials, zeros, injectivity, critical points, and (for boundaryless sources) Fréchet
+    derivative norms across arbitrary charts for maps into a normed space.
   - `TauCeti.fderivWithin_comp_extChartAt_symm`,
     `ContMDiffOn.exists_forall_norm_mvfderiv_le_mul_norm`,
     `HasMFDerivAt.hasFDerivAt_extChartAt_comp`, `ContinuousAt.fderiv_extChartAt_comp_apply`, and
@@ -120,7 +120,7 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
     their model space.
   - `TauCeti.writtenInExtChartAt_chartAt_comp_eventuallyEq`, `TauCeti.hasMFDerivAt_chartAt_comp`,
     and `TauCeti.contMDiffAt_chartAt_comp`: preferred charts of a composite charted space read as
-    the identity near their centre.
+    the identity near their centre within `range I`.
   - `TauCeti.fderiv_comp_extChartAt_symm_apply_zero_one`,
     `TauCeti.deriv_prodMk_eventuallyEq_fderiv`, `ContMDiff.contMDiff_deriv_prodMk`, and
     `ContMDiff.continuous_deriv_prodMk`: derivatives along the scalar factor of `M × 𝕜` in
@@ -474,13 +474,18 @@ theorem mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
     -- The two sides differ only in the point indexing the tangent space of `F`, which is `F`.
     rfl
   obtain ⟨L, hL⟩ := isInvertible_mfderiv_extend he hx
+  let L' : TangentSpace I x ≃L[𝕜] E := L.trans (NormedSpace.fromTangentSpace (e.extend I x))
+  have hcomp' :
+      ((fderiv 𝕜 (f ∘ (e.extend I).symm) (e.extend I x)).comp
+        (NormedSpace.fromTangentSpace (e.extend I x)).toContinuousLinearMap).comp
+        L.toContinuousLinearMap =
+      (fderiv 𝕜 (f ∘ (e.extend I).symm) (e.extend I x)).comp L'.toContinuousLinearMap :=
+    ContinuousLinearMap.comp_assoc _ _ _
   rw [hcomp, mvfderiv_comp_of_eq hg.mdifferentiableAt
-    ((e.contMDiffAt_extend he hx).mdifferentiableAt one_ne_zero) rfl, mvfderiv_eq_fderiv, ← hL]
-  -- Precomposition with the invertible chart derivative `L` neither creates nor kills zeros.
-  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]; exact ContinuousLinearMap.zero_comp _⟩
-  ext u
-  rw [← L.apply_symm_apply u]
-  exact DFunLike.congr_fun h (L.symm u)
+    ((e.contMDiffAt_extend he hx).mdifferentiableAt one_ne_zero) rfl, mvfderiv_eq_fderiv, ← hL,
+    hcomp', ← ContinuousLinearMap.zero_comp L'.toContinuousLinearMap,
+    ← DFunLike.coe_injective.eq_iff, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp,
+    ContinuousLinearEquiv.coe_coe, L'.surjective.right_cancellable, DFunLike.coe_injective.eq_iff]
 
 end TauCeti
 
@@ -549,10 +554,11 @@ point. -/
 theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm :
     mfderiv I 𝓘(𝕜, F) f x = 0 ↔
       fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 := by
-  rw [← mvfderiv_eq_fderiv_comp_extChartAt_symm]
-  refine ⟨fun h ↦ by rw [mvfderiv, h]; exact ContinuousLinearMap.comp_zero _, fun h ↦ ?_⟩
+  rw [← mvfderiv_eq_fderiv_comp_extChartAt_symm, mvfderiv]
+  refine ⟨fun h ↦ by rw [h]; exact ContinuousLinearMap.comp_zero _, fun h ↦ ?_⟩
   ext u
-  exact DFunLike.congr_fun h u
+  exact (NormedSpace.fromTangentSpace (f x)).injective
+    ((DFunLike.congr_fun h u).trans (map_zero _).symm)
 
 /-- On a boundaryless manifold, `mvfderiv I f x`, read on the model space `E`, agrees with the
 Fréchet derivative of the preferred coordinate expression at `extChartAt I x x`, even without a
@@ -560,8 +566,18 @@ differentiability hypothesis (both vanish when `f` is not differentiable at `x`)
 theorem mvfderiv_comp_tangentSpaceCastModel_symm (f : M → F) (x : M) :
     (mvfderiv I f x).comp ((tangentSpaceCastModel I x).symm : E →L[𝕜] TangentSpace I x) =
       fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
-  ext v
-  exact DFunLike.congr_fun (mvfderiv_eq_fderiv_comp_extChartAt_symm (I := I)) v
+  by_cases hf : MDifferentiableAt I 𝓘(𝕜, F) f x
+  · ext v
+    simpa only [mvfderiv, NormedSpace.fromTangentSpace, ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply,
+      writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
+      Function.id_comp] using hf.tangentSpaceCastModel_mfderiv_apply
+        ((tangentSpaceCastModel I x).symm v)
+  · have hd : ¬ DifferentiableAt 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) :=
+      mt mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm.mpr hf
+    rw [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hf,
+      fderiv_zero_of_not_differentiableAt hd, ContinuousLinearMap.comp_zero,
+      ContinuousLinearMap.zero_comp]
 
 /-- On a boundaryless manifold, `mvfderiv I f x` evaluated on `v` equals the Fréchet derivative of
 the preferred coordinate expression evaluated on `tangentSpaceCastModel I x v`, without any
@@ -682,12 +698,21 @@ theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero
     mfderiv I 𝓘(𝕜, F) f y = 0 ↔
       fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x y) = 0 := by
   obtain ⟨L, hL⟩ := isInvertible_mfderiv_extChartAt hy
-  rw [mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy hg, ← hL]
-  -- Precomposition with the invertible chart derivative `L` detects the zero map.
-  refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_, fun h ↦ ContinuousLinearMap.ext fun w ↦ ?_⟩
-  · obtain ⟨w, rfl⟩ := L.surjective v
-    exact DFunLike.congr_fun h w
-  · exact DFunLike.congr_fun h (L w)
+  let L' : TangentSpace I y ≃L[𝕜] E := L.trans (NormedSpace.fromTangentSpace (extChartAt I x y))
+  have h0 : mfderiv I 𝓘(𝕜, F) f y = 0 ↔ mvfderiv I f y = 0 := by
+    refine ⟨fun h ↦ by rw [mvfderiv, h]; exact ContinuousLinearMap.comp_zero _, fun h ↦ ?_⟩
+    ext u
+    exact (NormedSpace.fromTangentSpace (f y)).injective
+      ((DFunLike.congr_fun h u).trans (map_zero _).symm)
+  have hcoe : mvfderiv I f y =
+      (fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x y)).comp L'.toContinuousLinearMap := by
+    ext w
+    simp only [mvfderiv, mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy hg, ← hL]
+    -- `NormedSpace.fromTangentSpace` is the identity on `E` and `F`.
+    rfl
+  rw [h0, hcoe, ← ContinuousLinearMap.zero_comp L'.toContinuousLinearMap,
+    ← DFunLike.coe_injective.eq_iff, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp,
+    ContinuousLinearEquiv.coe_coe, L'.surjective.right_cancellable, DFunLike.coe_injective.eq_iff]
 
 /-- Read in a chart whose source contains `y`, two maps into a normed space have the same
 differential at `y` exactly when, near the chart image of `y`, their coordinate expressions agree
@@ -703,14 +728,20 @@ theorem mvfderiv_eq_iff_fderiv_comp_extChartAt_symm_eq {g : M → F} {f' g' : E 
     mvfderiv I f y = mvfderiv I g y ↔
       fderiv 𝕜 f' (extChartAt I x y) = fderiv 𝕜 g' (extChartAt I x y) := by
   obtain ⟨L, hL⟩ := isInvertible_mfderiv_extChartAt hy
-  simp only [mvfderiv,
-    mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy (hf'.congr_of_eventuallyEq hf),
-    mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy (hg'.congr_of_eventuallyEq hg),
-    hf.fderiv_eq, hg.fderiv_eq, ← hL]
-  -- Both sides are the Fréchet derivatives after the invertible chart derivative `L`, read in `F`.
-  refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_, fun h ↦ by rw [h]; rfl⟩
-  obtain ⟨w, rfl⟩ := L.surjective v
-  exact DFunLike.congr_fun h w
+  let L' : TangentSpace I y ≃L[𝕜] E := L.trans (NormedSpace.fromTangentSpace (extChartAt I x y))
+  have hcoe : ∀ {h : M → F} {h' : E → F},
+      h ∘ (extChartAt I x).symm =ᶠ[𝓝 (extChartAt I x y)] h' →
+      DifferentiableAt 𝕜 h' (extChartAt I x y) →
+      (mvfderiv I h y : TangentSpace I y → F) = fderiv 𝕜 h' (extChartAt I x y) ∘ L' := by
+    intro h h' heq hd
+    ext w
+    simp only [mvfderiv,
+      mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy (hd.congr_of_eventuallyEq heq),
+      heq.fderiv_eq, ← hL]
+    -- `NormedSpace.fromTangentSpace` is the identity on `E` and `F`.
+    rfl
+  rw [← DFunLike.coe_injective.eq_iff, hcoe hf hf', hcoe hg hg', L'.surjective.right_cancellable,
+    DFunLike.coe_injective.eq_iff]
 
 open Filter in
 /-- Transfer of local uniqueness of critical points to the manifold. Suppose that `η q.1` lies in
@@ -740,11 +771,11 @@ theorem eventually_mfderiv_eq_zero_iff_extChartAt_symm {P : Type*} [TopologicalS
   rw [mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero hs hg']
   exact hu.trans (φ.symm_apply_eq hs ht).symm
 
-/-- **Bounds on the differential read in a chart do not depend on the chart.** If `f` is `C¹` at
-`x` and `e` is a chart of the `C¹` maximal atlas whose source contains `x`, then near `x` the
-differential of the coordinate expression of `f` in `e` has norm at most a fixed multiple of that of
-its coordinate expression in the preferred extended chart at `x`. The constant bounds the
-derivative of the change of coordinates near the image of `x`. -/
+/-- **Bounds on the differential read in a chart do not depend on the chart.** On a boundaryless
+manifold, if `f` is `C¹` at `x` and `e` is a chart of the `C¹` maximal atlas whose source contains
+`x`, then near `x` the ordinary Fréchet derivative of the coordinate expression of `f` in `e` has
+norm at most a fixed multiple of that of its coordinate expression in the preferred extended chart
+at `x`. The constant bounds the derivative of the change of coordinates near the image of `x`. -/
 theorem exists_norm_fderiv_comp_extend_symm_le_mul_norm_fderiv_comp_extChartAt_symm
     [I.Boundaryless] {e : OpenPartialHomeomorph M H} (he : e ∈ IsManifold.maximalAtlas I 1 M)
     (hx : x ∈ e.source) (hf : ContMDiffAt I 𝓘(𝕜, F) 1 f x) :
@@ -1241,7 +1272,7 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace H X]
 
 /-- For the composite charts `ChartedSpace.comp H X N` of a space charted over a charted space `X`,
 the preferred `X`-valued chart at `x`, read in the composite chart at `x` and the chart of `X` at
-its image, is the identity near the image of `x`. -/
+its image, is eventually the identity near `extChartAt I x x` within the model range `range I`. -/
 theorem writtenInExtChartAt_chartAt_comp_eventuallyEq (x : N) :
     letI := ChartedSpace.comp H X N
     writtenInExtChartAt I I x (chartAt X x) =ᶠ[𝓝[range I] extChartAt I x x] id := by
@@ -1284,9 +1315,10 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : M × 𝕜 
 
 namespace TauCeti
 
-/-- **The derivative along `𝕜` in coordinates.** At the chart image of a point `(x, s)` of the
-chart source, the derivative of the coordinate expression of `f : M × 𝕜 → F` in the direction
-`(0, 1)` is the derivative of the slice of `f` through `x`. -/
+/-- **The derivative along `𝕜` in coordinates.** At the chart image of a point `(x, s)` with `x` in
+the source of `extChartAt I z.1`, if the preferred-chart coordinate expression of `f : M × 𝕜 → F`
+at `z` is Fréchet differentiable at `(extChartAt I z.1 x, s)`, then its Fréchet derivative there
+in the direction `(0, 1)` is the derivative of the slice `s' ↦ f (x, s')` at `s`. -/
 theorem fderiv_comp_extChartAt_symm_apply_zero_one {z : M × 𝕜} {x : M} {s : 𝕜}
     (hx : x ∈ (extChartAt I z.1).source)
     (hf : DifferentiableAt 𝕜 (f ∘ (extChartAt (I.prod 𝓘(𝕜)) z).symm) (extChartAt I z.1 x, s)) :
@@ -1297,10 +1329,11 @@ theorem fderiv_comp_extChartAt_symm_apply_zero_one {z : M × 𝕜} {x : M} {s : 
   rw [← comp_extChartAt_symm_prodMk_left z hx]
   exact ((hf.hasFDerivAt.comp_hasDerivAt s h).deriv).symm
 
-/-- **The derivative along `𝕜` near a point, in coordinates.** Near a point `z₀` at which
-`f : M × 𝕜 → F` is `C¹`, the derivative of `f` along `𝕜` at `(x, t)` is the derivative of the
-coordinate expression of `f` in the preferred chart at `z₀`, in the direction `(0, 1)`, at the chart
-image `(φ x, t)` of `(x, t)`. -/
+/-- **The derivative along `𝕜` near a point, in coordinates.** If the preferred-chart coordinate
+expression of `f : M × 𝕜 → F` at `z₀` is `C¹` (`ContDiffAt 𝕜 1`) on the ambient model space at
+`(extChartAt I z₀.1 z₀.1, z₀.2)`, then near `z₀` the derivative of `f` along `𝕜` at `(x, t)` is
+the Fréchet derivative of that coordinate expression in the direction `(0, 1)` at the chart image
+`(extChartAt I z₀.1 x, t)`. -/
 theorem deriv_prodMk_eventuallyEq_fderiv {z₀ : M × 𝕜}
     (hf : ContDiffAt 𝕜 1 (f ∘ (extChartAt (I.prod 𝓘(𝕜)) z₀).symm)
       (extChartAt I z₀.1 z₀.1, z₀.2)) :
