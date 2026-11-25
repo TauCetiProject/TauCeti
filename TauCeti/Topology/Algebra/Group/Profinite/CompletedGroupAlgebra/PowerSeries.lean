@@ -68,6 +68,9 @@ it is invariant under these substitutions.
 
 ## Main results
 
+* `TauCeti.completedGroupAlgebra.isTopologicallyNilpotent_of_forall_pow_eq_one`: `γ - 1` is
+  topologically nilpotent in `ℤ_p[[Γ]]` whenever `γ` has `p`-power order modulo every open normal
+  subgroup; the next two results are its special cases.
 * `TauCeti.completedGroupAlgebra.isTopologicallyNilpotent_of_sub_one`: `γ - 1` is topologically
   nilpotent in `ℤ_p[[Γ]]` for a pro-`p` group `Γ`; as this is `PowerSeries.HasEval`, the
   evaluation `PowerSeries.aeval` of power series at `γ - 1` is available.
@@ -111,18 +114,26 @@ namespace TauCeti.completedGroupAlgebra
 
 variable {p : ℕ} [Fact p.Prime] {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
 
+/-- **`γ - 1` is topologically nilpotent** in the completed group algebra `ℤ_p[[Γ]]` as soon as
+the class of `γ` has `p`-power order in `Γ ⧸ U` for every open normal subgroup `U`: at each finite
+level `ℤ_p[Γ ⧸ U]` the coefficients of `(γ - 1) ^ n` then tend to zero. -/
+theorem isTopologicallyNilpotent_of_forall_pow_eq_one {γ : Γ}
+    (h : ∀ U : OpenNormalSubgroup Γ, ∃ k : ℕ, (γ : Γ ⧸ U.toSubgroup) ^ p ^ k = 1) :
+    IsTopologicallyNilpotent (of ℤ_[p] Γ γ - 1) := by
+  refine (isInducing_coeffFamily ℤ_[p] Γ).tendsto_nhds_iff.mpr
+    (tendsto_pi_nhds.mpr fun U ↦ tendsto_pi_nhds.mpr fun g ↦ ?_)
+  obtain ⟨k, hk⟩ := h U
+  simp only [Function.comp_def, coeffFamily_apply, map_pow, map_sub, map_one, proj_of, map_zero,
+    MonoidAlgebra.coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
+  exact PadicInt.tendsto_coeff_single_sub_one_pow hk g
+
 /-- **`γ - 1` is topologically nilpotent** in the completed group algebra `ℤ_p[[Γ]]` of a pro-`p`
 group `Γ`. As `PowerSeries.HasEval` is this predicate, power series over `ℤ_[p]` can be evaluated
 at `γ - 1` by `PowerSeries.aeval` once `ℤ_p[[Γ]]` is a complete linearly topologized commutative
 ring, which it is for `Γ` compact and commutative. -/
 theorem isTopologicallyNilpotent_of_sub_one (hΓ : IsProP p Γ) (γ : Γ) :
-    IsTopologicallyNilpotent (of ℤ_[p] Γ γ - 1) := by
-  refine (isInducing_coeffFamily ℤ_[p] Γ).tendsto_nhds_iff.mpr
-    (tendsto_pi_nhds.mpr fun U ↦ tendsto_pi_nhds.mpr fun g ↦ ?_)
-  obtain ⟨k, hk⟩ := (isProP_iff.mp hΓ) U (γ : Γ ⧸ U.toSubgroup)
-  simp only [Function.comp_def, coeffFamily_apply, map_pow, map_sub, map_one, proj_of, map_zero,
-    MonoidAlgebra.coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
-  exact PadicInt.tendsto_coeff_single_sub_one_pow hk g
+    IsTopologicallyNilpotent (of ℤ_[p] Γ γ - 1) :=
+  isTopologicallyNilpotent_of_forall_pow_eq_one fun U ↦ isProP_iff.mp hΓ U _
 
 /-- **`[φ 1] - 1` is topologically nilpotent** in the completed group algebra `ℤ_p[[Γ]]` of any
 topological group `Γ`, for every continuous homomorphism `φ : ℤ_p → Γ`. No pro-`p` hypothesis on
@@ -130,18 +141,14 @@ topological group `Γ`, for every continuous homomorphism `φ : ℤ_p → Γ`. N
 `φ 1` has `p`-power order modulo `U`. When `ℤ_p[[Γ]]` is complete and linearly topologized, power
 series over `ℤ_p` can be evaluated at `[φ 1] - 1` by `PowerSeries.aeval`. -/
 theorem isTopologicallyNilpotent_of_apply_ofAdd_one_sub_one (φ : Multiplicative ℤ_[p] →ₜ* Γ) :
-    IsTopologicallyNilpotent (of ℤ_[p] Γ (φ (.ofAdd 1)) - 1) := by
-  refine (isInducing_coeffFamily ℤ_[p] Γ).tendsto_nhds_iff.mpr
-    (tendsto_pi_nhds.mpr fun U ↦ tendsto_pi_nhds.mpr fun g ↦ ?_)
-  obtain ⟨k, hk⟩ := isProP_iff.mp (isProP_multiplicative_padicInt p)
-    (U.comap (φ : Multiplicative ℤ_[p] →* Γ) φ.continuous) (QuotientGroup.mk (.ofAdd 1))
-  replace hk : ((φ (.ofAdd 1) : Γ) : Γ ⧸ U.toSubgroup) ^ p ^ k = 1 := by
+    IsTopologicallyNilpotent (of ℤ_[p] Γ (φ (.ofAdd 1)) - 1) :=
+  isTopologicallyNilpotent_of_forall_pow_eq_one fun U ↦ by
+    obtain ⟨k, hk⟩ := isProP_iff.mp (isProP_multiplicative_padicInt p)
+      (U.comap (φ : Multiplicative ℤ_[p] →* Γ) φ.continuous) (QuotientGroup.mk (.ofAdd 1))
+    refine ⟨k, ?_⟩
     rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff, ← map_pow]
     rwa [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff, OpenNormalSubgroup.toSubgroup_comap,
       Subgroup.mem_comap] at hk
-  simp only [Function.comp_def, coeffFamily_apply, map_pow, map_sub, map_one, proj_of, map_zero,
-    MonoidAlgebra.coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
-  exact PadicInt.tendsto_coeff_single_sub_one_pow hk g
 
 section
 
