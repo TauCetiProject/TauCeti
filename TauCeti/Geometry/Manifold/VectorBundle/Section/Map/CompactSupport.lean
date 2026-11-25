@@ -53,7 +53,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 include A hA in
 /-- Fixed linear expressions in common frames make compact-support transport continuous for the
-existing final locally convex topologies. This follows from continuity on every compact stage. -/
+existing final locally convex topologies. -/
 theorem continuous_mapCompactlySupportedEquiv :
     let _ := compactlySupportedTopology (I := I) (n := n) e U he
     let _ := compactlySupportedTopology (I := I) (n := n) d U hd

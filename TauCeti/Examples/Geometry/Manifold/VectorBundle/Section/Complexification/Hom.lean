@@ -11,10 +11,13 @@ import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 /-!
 # Native density-valued Hom test coefficients
 
-These examples specialize the generic real continuous linear equivalence to the actual
-`DensityBundle`. They include arbitrary normed source models, a constructed nonzero value,
-a rank-zero source and a concrete empty base. No complex module structure is added to
-`BundleTest` and no distribution-dual identification is asserted.
+The density examples specialize the native Hom comparison
+`TauCeti.BundleTest.homComplexificationCLE` to the actual `DensityBundle`, with an arbitrary normed
+source model and a constructed nonzero density-valued value. The rank-zero source and concrete
+empty-base examples use trivial target bundles. The last example applies the generic native
+transport `TauCeti.BundleTest.mapCLE` to a non-Hom fibre map, negation on the trivial line bundle.
+No complex module structure is added to `BundleTest` and no distribution-dual identification is
+asserted.
 -/
 
 public section
