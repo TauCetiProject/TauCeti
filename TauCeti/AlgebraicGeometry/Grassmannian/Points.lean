@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.Grassmannian.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.AffinePoints
 public import TauCeti.RingTheory.Grassmannian.Chart.Locus
 public import TauCeti.RingTheory.Grassmannian.Localization
+import Mathlib.AlgebraicGeometry.ResidueField
 
 /-!
 # The points of the Grassmannian scheme
@@ -54,6 +55,10 @@ Consequently, a map on points natural in the algebra is induced by a morphism of
 * `Module.Grassmannian.toSchemeHom_map`: naturality of `toSchemeHom` in the algebra.
 * `Module.Grassmannian.toSchemeHom_injective` and `Module.Grassmannian.exists_toSchemeHom_eq`:
   every morphism over `Spec R` classifies a unique point.
+* `Module.Grassmannian.toSchemeHom_apply_mem_opensRange_chartι_iff`: a field-valued point lies in
+  the image of the chart at `x` exactly when it lies in the chart at `x`.
+* `Module.Grassmannian.exists_toSchemeHom_apply_eq`: every point of `G(k, M)` is the image of a
+  field-valued point, over its residue field.
 * `Module.Grassmannian.affinePoint_induction`: a property of all morphisms `Spec B ⟶ G(k, M)` holds
   once it holds for the morphisms `toSchemeHom N`.
 * `Module.Grassmannian.scheme_hom_ext` and `Module.Grassmannian.toSchemeHom_comp_homOfPoints`:
@@ -473,6 +478,57 @@ theorem toSchemeHom_schemeHomEquiv_symm_apply
       h ≫ toSpec R M k = Spec.map (CommRingCat.ofHom (algebraMap R A))}) :
     toSchemeHom ((schemeHomEquiv R M k A).symm h) = h.val :=
   congrArg Subtype.val ((schemeHomEquiv R M k A).apply_symm_apply h)
+
+section FieldPoints
+
+/-- A field-valued point lies in the chart at `x` exactly when the morphism classifying it lands in
+the chart: for a field `K` and `N ∈ G(k, K ⊗[R] M; K)`, the image of the point of `Spec K` under
+`toSchemeHom N` lies in the open of `G(k, M)` that is the image of `chartι R x` exactly when `N`
+lies in the chart at `1 ⊗ₜ x`. -/
+theorem toSchemeHom_apply_mem_opensRange_chartι_iff {K : Type u} [Field K] [Algebra R K]
+    (N : G(k, K ⊗[R] M; K)) (x : Fin k → M) (p : Spec (.of K)) :
+    toSchemeHom N p ∈ (chartι R x).opensRange ↔ N ∈ chart K (fun i ↦ (1 : K) ⊗ₜ[R] x i) := by
+  refine ⟨fun hp ↦ ?_, fun hN ↦ ?_⟩
+  · -- `Spec K` is a point, so `toSchemeHom N` factors through the chart
+    have hrange : Set.range (toSchemeHom N) ⊆ Set.range (chartι R x) := by
+      rintro _ ⟨q, rfl⟩
+      rw [Subsingleton.elim q p]
+      exact hp
+    have hl := IsOpenImmersion.lift_fac (chartι R x) (toSchemeHom N) hrange
+    obtain ⟨φ, hφ⟩ := Spec.map_surjective (IsOpenImmersion.lift (chartι R x) (toSchemeHom N) hrange)
+    rw [← hφ] at hl
+    -- the factorization is a map of `R`-algebras
+    have hφR : CommRingCat.ofHom (algebraMap R (ChartAlgebra R x)) ≫ φ =
+        CommRingCat.ofHom (algebraMap R K) := by
+      apply Spec.map_injective
+      rw [Spec.map_comp, ← chartι_toSpec, reassoc_of% hl, toSchemeHom_toSpec]
+    let g : ChartAlgebra R x →ₐ[R] K :=
+      { φ.hom with commutes' := fun r ↦ DFunLike.congr_fun (congrArg CommRingCat.Hom.hom hφR) r }
+    -- `g` is `φ` repackaged as an `R`-algebra map
+    have hgφ : CommRingCat.ofHom (g : ChartAlgebra R x →+* K) = φ := CommRingCat.ofHom_hom φ
+    have hg : toSchemeHom N = toSchemeHom (chartHomEquiv R x K g).val := by
+      rw [toSchemeHom_chartHomEquiv, ← hl, hgφ]
+    rw [toSchemeHom_injective hg]
+    exact (chartHomEquiv R x K g).property
+  · refine ⟨Spec.map (CommRingCat.ofHom
+      ((chartHomEquiv R x K).symm ⟨N, hN⟩ : ChartAlgebra R x →+* K)) p, ?_⟩
+    rw [← Scheme.Hom.comp_apply, ← toSchemeHom_chartHomEquiv, Equiv.apply_symm_apply]
+
+variable (R M k) in
+/-- Every point of `G(k, M)` is the image of the point of `Spec K` under the morphism classifying a
+point of `G(k, K ⊗[R] M; K)`, for a field `K` (its residue field). -/
+theorem exists_toSchemeHom_apply_eq (z : scheme R M k) :
+    ∃ (K : Type u) (_ : Field K) (_ : Algebra R K) (N : G(k, K ⊗[R] M; K)) (p : Spec (.of K)),
+      toSchemeHom N p = z := by
+  let K : Type u := IsLocalRing.ResidueField ((scheme R M k).presheaf.stalk z)
+  obtain ⟨φ, hφ⟩ := Spec.map_surjective ((scheme R M k).fromSpecResidueField z ≫ toSpec R M k)
+  let _ : Algebra R K := φ.hom.toAlgebra
+  obtain ⟨N, hN⟩ := exists_toSchemeHom_eq (A := K) ((scheme R M k).fromSpecResidueField z)
+    hφ.symm
+  exact ⟨K, inferInstance, inferInstance, N, default,
+    by rw [hN]; exact (scheme R M k).fromSpecResidueField_apply z _⟩
+
+end FieldPoints
 
 section HomOfPoints
 

@@ -40,8 +40,6 @@ determinant of the matrix with rows `u_x(m₁), …, u_x(mₖ)`
   surjective.
 * `Module.Grassmannian.pluckerBaseChange_chartHomEquiv_id`: the Plücker point of the universal
   point of the chart at `x` is the point classified by `pluckerChartHom R x`.
-* `TauCeti.exteriorPower.span_singleton_ιMulti_eq_top_iff`: over a field, `n` vectors span an
-  `n`-dimensional space exactly when their wedge spans its top exterior power.
 * `Module.Grassmannian.pluckerBaseChange_mem_chart_iff`: over a field, the Plücker point of `N`
   lies in the chart at `x₁ ∧ ⋯ ∧ xₖ` exactly when `N` lies in the chart at `x`.
 
@@ -213,45 +211,6 @@ end Module.Grassmannian
 
 /-! ### Charts of the Plücker point over a field -/
 
-namespace TauCeti.exteriorPower
-
-open _root_.exteriorPower
-
-/-- If `v₁, …, vₙ` span `M`, then the wedge `v₁ ∧ ⋯ ∧ vₙ` spans `⋀ⁿ M`. -/
-theorem span_singleton_ιMulti_eq_top_of_span_eq_top {R : Type*} [CommRing R] {M : Type*}
-    [AddCommGroup M] [Module R M] {n : ℕ} {v : Fin n → M}
-    (hv : Submodule.span R (Set.range v) = ⊤) :
-    Submodule.span R {ιMulti R n v} = ⊤ := by
-  refine eq_top_iff.2 ((ιMulti_family_span_of_span R (n := n) hv).symm.le.trans ?_)
-  refine Submodule.span_le.2 ?_
-  rintro _ ⟨s, rfl⟩
-  -- the only `n`-element subset of `Fin n` is enumerated by the identity
-  have hs : (s : Finset (Fin n)) = Finset.univ :=
-    Finset.eq_univ_of_card _ (by rw [s.prop, Fintype.card_fin])
-  have he : ⇑(Set.powersetCard.ofFinEmbEquiv.symm s) = id := by
-    rw [Set.powersetCard.ofFinEmbEquiv_symm_apply]
-    exact (Finset.orderEmbOfFin_unique (s.prop) (fun _ ↦ hs ▸ Finset.mem_univ _)
-      strictMono_id).symm
-  simp [ιMulti_family, he]
-
-/-- Over a field, `n` vectors of an `n`-dimensional vector space span it exactly when their wedge
-spans `⋀ⁿ V`. -/
-theorem span_singleton_ιMulti_eq_top_iff {K : Type*} [Field K] {V : Type*} [AddCommGroup V]
-    [Module K V] [Module.Finite K V] {n : ℕ} (hV : Module.finrank K V = n) (v : Fin n → V) :
-    Submodule.span K {ιMulti K n v} = ⊤ ↔ Submodule.span K (Set.range v) = ⊤ := by
-  refine ⟨fun h ↦ ?_, span_singleton_ιMulti_eq_top_of_span_eq_top⟩
-  -- `⋀ⁿ V` is nonzero: it contains the wedge of a basis
-  let b := Module.finBasisOfFinrankEq K V hV
-  have hne : ιMulti K n v ≠ 0 := by
-    intro h0
-    rw [h0, Set.singleton_zero, Submodule.span_zero] at h
-    exact (_root_.exteriorPower.ιMulti_ne_zero_iff (⇑b)).2 b.linearIndependent
-      (Submodule.eq_bot_iff _ |>.1 h.symm _ Submodule.mem_top)
-  exact ((_root_.exteriorPower.ιMulti_ne_zero_iff v).1 hne).span_eq_top_of_card_eq_finrank'
-    (by rw [Fintype.card_fin, hV])
-
-end TauCeti.exteriorPower
-
 namespace Module.Grassmannian
 
 variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M] {k : ℕ}
@@ -268,22 +227,28 @@ theorem pluckerBaseChange_mem_chart_iff (N : G(k, K ⊗[R] M; K)) (x : Fin k →
   set q := N.toSubmodule.mkQ
   set F := _root_.exteriorPower.map k q
   set e := TauCeti.exteriorPower.equivBaseChange (R := R) (M := M) K k
+  set y : Fin k → K ⊗[R] M := fun i ↦ (1 : K) ⊗ₜ[R] x i
+  set w := _root_.exteriorPower.ιMulti K k y
   have hF : LinearMap.range F = ⊤ :=
     LinearMap.range_eq_top.2 (_root_.exteriorPower.map_surjective N.toSubmodule.mkQ_surjective)
-  have he : e.symm ((1 : K) ⊗ₜ[R] _root_.exteriorPower.ιMulti R k x) =
-      _root_.exteriorPower.ιMulti K k (fun i ↦ (1 : K) ⊗ₜ[R] x i) := by
+  have he : e.symm ((1 : K) ⊗ₜ[R] _root_.exteriorPower.ιMulti R k x) = w := by
     rw [TauCeti.exteriorPower.equivBaseChange_symm_tmul_ιMulti, one_smul]
+  -- transport the chart condition on the Plücker point along `e`
   have hsup : (pluckerBaseChange N).toSubmodule ⊔
       Submodule.span K (Set.range fun _ : Fin 1 ↦ (1 : K) ⊗ₜ[R]
         _root_.exteriorPower.ιMulti R k x) =
-      (LinearMap.ker F ⊔ Submodule.span K
-        {_root_.exteriorPower.ιMulti K k (fun i ↦ (1 : K) ⊗ₜ[R] x i)}).map e.toLinearMap := by
+      (LinearMap.ker F ⊔ Submodule.span K {w}).map e.toLinearMap := by
     rw [toSubmodule_pluckerBaseChange, Submodule.map_sup, Submodule.map_span, Set.image_singleton,
       ← he, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, Set.range_const]
-  rw [mem_chart_iff_sup_eq_top, mem_chart_iff_sup_eq_top, hsup, Submodule.map_eq_top_iff,
-    sup_comm (LinearMap.ker F), ← LinearMap.map_eq_top_iff hF, Submodule.map_span,
-    Set.image_singleton, _root_.exteriorPower.map_apply_ιMulti, ← Submodule.map_mkQ_eq_top,
-    Submodule.map_span, ← Set.range_comp]
+  -- pass to the quotient by `ker F`, which is `⋀ᵏ` of the universal quotient
+  have hker : LinearMap.ker F ⊔ Submodule.span K {w} = ⊤ ↔ Submodule.span K {F w} = ⊤ := by
+    rw [sup_comm, ← LinearMap.map_eq_top_iff hF, Submodule.map_span, Set.image_singleton]
+  -- pass to the universal quotient on the side of `N`
+  have hN : N.toSubmodule ⊔ Submodule.span K (Set.range y) = ⊤ ↔
+      Submodule.span K (Set.range (q ∘ y)) = ⊤ := by
+    rw [← Submodule.map_mkQ_eq_top, Submodule.map_span, ← Set.range_comp]
+  rw [mem_chart_iff_sup_eq_top, mem_chart_iff_sup_eq_top, hsup, Submodule.map_eq_top_iff, hker,
+    hN, _root_.exteriorPower.map_apply_ιMulti]
   exact TauCeti.exteriorPower.span_singleton_ιMulti_eq_top_iff (finrank_quotient N) _
 
 end Module.Grassmannian
