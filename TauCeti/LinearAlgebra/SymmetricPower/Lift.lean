@@ -23,7 +23,9 @@ symmetric tensor `⨂ₛ` is a bijection from the linear maps `Sym[R] ι M →�
 permutation-invariant multilinear maps `Mⁱ → N`, for every `N`.
 
 As a first use, prepending a fixed factor to a pure tensor is permutation-invariant in the remaining
-factors, so it lifts to `SymmetricPower.consMul : M →ₗ[R] Sym[R]^k M →ₗ[R] Sym[R]^(k + 1) M`.
+factors, so it lifts to `SymmetricPower.consMul : M →ₗ[R] Sym[R]^k M →ₗ[R] Sym[R]^(k + 1) M`. Over a
+subsingleton index type, evaluation at the single index lifts to an isomorphism
+`SymmetricPower.subsingletonEquiv` from the symmetric power onto `M`.
 
 ## Main definitions
 
@@ -31,6 +33,8 @@ factors, so it lifts to `SymmetricPower.consMul : M →ₗ[R] Sym[R]^k M →ₗ[
   multilinear map.
 * `SymmetricPower.consMul`: multiplication of a symmetric tensor of degree `k` by one more
   factor, the lift of the pure tensor with that factor prepended.
+* `SymmetricPower.subsingletonEquiv`: the symmetric power indexed by a subsingleton type, for
+  instance `Sym[R]^1 M`, is `M`.
 
 ## Main results
 
@@ -137,5 +141,37 @@ theorem consMul_comm (k : ℕ) (m m' : M) (x : Sym[R]^k M) :
     (Matrix.cons_cons_comp_swap_zero_one m m' v)
 
 end ConsMul
+
+/-! ### Symmetric powers over a subsingleton index type -/
+
+section Subsingleton
+
+variable [CommSemiring R] [AddCommMonoid M] [Module R M] [Subsingleton ι]
+
+variable (R M) in
+/-- The symmetric power indexed by a subsingleton type with element `i₀` is `M` itself, through
+`⨂ₛ v ↦ v i₀`. In particular `Sym[R]^1 M ≃ₗ[R] M`. -/
+noncomputable def subsingletonEquiv (i₀ : ι) : Sym[R] ι M ≃ₗ[R] M :=
+  LinearEquiv.ofLinearMap
+    (lift (MultilinearMap.ofSubsingleton (RingHom.id R) M M i₀ LinearMap.id) fun e ↦ by
+      ext v
+      simpa using congrArg v (Subsingleton.elim (e i₀) i₀))
+    ((MultilinearMap.ofSubsingleton (RingHom.id R) M (Sym[R] ι M) i₀).symm (tprod R))
+    (LinearMap.ext fun x ↦ by simp [lift_tprod])
+    (SymmetricPower.ext fun v ↦ by
+      have hv : (fun _ ↦ v i₀) = v := (eq_const_of_subsingleton v i₀).symm
+      simp [lift_tprod, hv])
+
+@[simp]
+theorem subsingletonEquiv_tprod (i₀ : ι) (v : ι → M) :
+    subsingletonEquiv R M i₀ (⨂ₛ[R] i, v i) = v i₀ := by
+  simp [subsingletonEquiv, lift_tprod]
+
+@[simp]
+theorem subsingletonEquiv_symm_apply (i₀ : ι) (x : M) :
+    (subsingletonEquiv R M i₀).symm x = ⨂ₛ[R] _ : ι, x :=
+  (rfl)
+
+end Subsingleton
 
 end SymmetricPower

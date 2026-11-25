@@ -78,19 +78,11 @@ def sym (D : WeilDeligneParameter E W V deg q) (m : ℕ) :
   N := SymmetricPower.differential E V m D.N
   isNilpotent_N := SymmetricPower.isNilpotent_differential m D.isNilpotent_N
   conj_N w := by
-    have h : D.r w ∘ₗ D.N = ((q : E) ^ (deg w).toAdd • D.N) ∘ₗ D.r w := by
-      rw [← D.conj_N w, Module.End.mul_eq_comp, Module.End.mul_eq_comp, LinearMap.comp_assoc,
-        LinearMap.comp_assoc, ← Module.End.mul_eq_comp (D.r w⁻¹), ← map_mul, inv_mul_cancel,
-        map_one, Module.End.one_eq_id, LinearMap.comp_id]
-    have h' := SymmetricPower.map_comp_differential m h
-    rw [map_smul] at h'
-    have hinv : SymmetricPower.map (ι := Fin m) (D.r w) ∘ₗ SymmetricPower.map (D.r w⁻¹) =
-        LinearMap.id := by
-      rw [← SymmetricPower.map_comp, ← Module.End.mul_eq_comp, ← map_mul, mul_inv_cancel,
-        map_one, Module.End.one_eq_id, SymmetricPower.map_id]
-    rw [Representation.symmetricPower_apply, Representation.symmetricPower_apply,
-      Module.End.mul_eq_comp, Module.End.mul_eq_comp, h', LinearMap.comp_assoc, hinv,
-      LinearMap.comp_id]
+    have h := SymmetricPower.map_comp_differential m
+      ((D.r_mul_N w).trans (smul_mul_assoc _ _ _).symm)
+    rw [map_smul, ← Representation.symmetricPower_apply D.r m w] at h
+    rw [Module.End.mul_eq_comp _ (SymmetricPower.differential E V m D.N), h,
+      ← Module.End.mul_eq_comp, mul_assoc, ← map_mul, mul_inv_cancel, map_one, mul_one]
 
 variable (D : WeilDeligneParameter E W V deg q) (m : ℕ)
 
@@ -153,31 +145,19 @@ theorem Iso.toHom_sym (f : Iso D₁ D₂) : (f.sym m).toHom = f.toHom.sym m := b
   rw [Iso.toHom_toLinearMap, Hom.sym_toLinearMap, Iso.toHom_toLinearMap]
   exact Representation.Equiv.symmetricPower_toLinearMap ..
 
-private theorem Iso.sym_toRepresentationEquiv (f : Iso D₁ D₂) :
-    (f.sym m).toRepresentationEquiv = f.toRepresentationEquiv.symmetricPower m :=
-  (rfl)
-
 @[simp]
-theorem Iso.sym_refl : (Iso.refl D₁).sym m = Iso.refl (D₁.sym m) := by
-  ext1
-  rw [Iso.sym_toRepresentationEquiv, Iso.refl_toRepresentationEquiv,
-    Representation.Equiv.symmetricPower_refl, Iso.refl_toRepresentationEquiv]
-  rfl
+theorem Iso.sym_refl : (Iso.refl D₁).sym m = Iso.refl (D₁.sym m) :=
+  Iso.ext <| LinearEquiv.toLinearMap_injective <| SymmetricPower.ext fun v ↦ by simp
 
 @[simp]
 theorem Iso.sym_trans (f : Iso D₁ D₂) (g : Iso D₂ D₃) :
-    (f.trans g).sym m = (f.sym m).trans (g.sym m) := by
-  ext1
-  rw [Iso.sym_toRepresentationEquiv, Iso.trans_toRepresentationEquiv,
-    Representation.Equiv.symmetricPower_trans, Iso.trans_toRepresentationEquiv]
-  rfl
+    (f.trans g).sym m = (f.sym m).trans (g.sym m) :=
+  Iso.ext <| LinearEquiv.toLinearMap_injective <| SymmetricPower.ext fun v ↦ by simp
 
 @[simp]
-theorem Iso.sym_symm (f : Iso D₁ D₂) : f.symm.sym m = (f.sym m).symm := by
-  ext1
-  rw [Iso.sym_toRepresentationEquiv, Iso.symm_toRepresentationEquiv,
-    Representation.Equiv.symmetricPower_symm, Iso.symm_toRepresentationEquiv]
-  rfl
+theorem Iso.sym_symm (f : Iso D₁ D₂) : f.symm.sym m = (f.sym m).symm :=
+  Iso.ext <| LinearEquiv.toLinearMap_injective <| SymmetricPower.ext fun v ↦ by
+    simp [← (f.sym m).injective.eq_iff]
 
 /-! ### Low symmetric powers, twists and zero monodromy -/
 
@@ -194,44 +174,21 @@ theorem sym_zero_N : (D.sym 0).N = 0 :=
 theorem sym_N_eq_zero (h : D.N = 0) : (D.sym m).N = 0 := by
   rw [sym_N, h, map_zero]
 
-/-- The first symmetric power `Sym[E]^1 V` is `V`, through `v ↦ v`. -/
-private def symOneLinearEquiv : (Sym[E]^1 V) ≃ₗ[E] V :=
-  LinearEquiv.ofLinearMap
-    (SymmetricPower.lift (MultilinearMap.ofSubsingleton (RingHom.id E) V V 0 LinearMap.id)
-      fun e ↦ by
-        ext v
-        simpa using congrArg v (Subsingleton.elim (e 0) 0))
-    ((SymmetricPower.mk E (Fin 1) V).comp
-      (PiTensorProduct.subsingletonEquiv (R := E) (s := fun _ : Fin 1 ↦ V) 0).symm.toLinearMap)
-    (LinearMap.ext fun v ↦ by simp [PiTensorProduct.subsingletonEquiv])
-    (SymmetricPower.ext fun v ↦ by
-      have h : (PiTensorProduct.subsingletonEquiv (R := E) (s := fun _ : Fin 1 ↦ V) 0).symm
-          (v 0) = PiTensorProduct.tprod E v :=
-        (LinearEquiv.symm_apply_eq _).2 (PiTensorProduct.subsingletonEquiv_apply_tprod _ v).symm
-      simp only [LinearMap.comp_apply, LinearMap.id_apply, LinearEquiv.coe_coe,
-        SymmetricPower.lift_tprod, MultilinearMap.ofSubsingleton_apply_apply, LinearMap.id_apply, h]
-      rfl)
-
-private theorem symOneLinearEquiv_tprod (v : Fin 1 → V) :
-    symOneLinearEquiv (⨂ₛ[E] i, v i) = v 0 := by
-  simp [symOneLinearEquiv]
-
 /-- **The first symmetric power is the parameter itself**: `Sym^1 ∘ D ≅ D`, through
 `Sym[E]^1 V ≃ V`, `v ↦ v`. -/
 def symOneIso : Iso (D.sym 1) D where
-  toRepresentationEquiv := .mk symOneLinearEquiv fun w ↦ SymmetricPower.ext fun v ↦ by
-    simp [symOneLinearEquiv_tprod, Representation.symmetricPower_apply]
-  comp_N := SymmetricPower.ext fun v ↦ by
-    simp [symOneLinearEquiv_tprod]
+  toRepresentationEquiv := .mk (SymmetricPower.subsingletonEquiv E V 0) fun w ↦
+    SymmetricPower.ext fun v ↦ by simp [Representation.symmetricPower_apply]
+  comp_N := SymmetricPower.ext fun v ↦ by simp
 
 @[simp]
 theorem symOneIso_tprod (v : Fin 1 → V) : D.symOneIso (⨂ₛ[E] i, v i) = v 0 :=
-  symOneLinearEquiv_tprod v
+  SymmetricPower.subsingletonEquiv_tprod 0 v
 
 /-- **Symmetric powers of twists**: `Sym^m (D ⊗ χ) = Sym^m D ⊗ χ ^ m`. -/
-theorem sym_twist (χ : W →* Eˣ) (hχ : IsOpen (χ.ker : Set W))
-    (hχm : IsOpen ((χ ^ m).ker : Set W)) :
-    (D.twist χ hχ).sym m = (D.sym m).twist (χ ^ m) hχm := by
+theorem sym_twist (χ : W →* Eˣ) (hχ : IsOpen (χ.ker : Set W)) :
+    (D.twist χ hχ).sym m = (D.sym m).twist (χ ^ m)
+      (Subgroup.isOpen_mono (fun w hw ↦ by simp_all [MonoidHom.mem_ker]) hχ) := by
   refine WeilDeligneParameter.ext ?_ (by rw [sym_N, twist_N, twist_N, sym_N])
   ext w : 1
   refine SymmetricPower.ext fun v ↦ ?_
