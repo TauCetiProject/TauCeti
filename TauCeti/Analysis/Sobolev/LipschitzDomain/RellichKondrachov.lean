@@ -65,11 +65,10 @@ Lipschitz-domain predicate `Set.IsLipschitzDomain`, such as a bounded Lipschitz 
   Poincaré–Wirtinger after subtracting the mean on each piece of a finite disjoint cover.
 * `TauCeti.W1p.exists_isCompactOperator_of_isLipschitzDomainWith`: Rellich–Kondrachov
   compactness of `W^{1,p}(Ω) → L^q(Ω)` for every subcritical `q`.
-* `TauCeti.W1p.isCompactOperator_valueL_of_frontier_eq_empty`: compactness of the value map on a
-  bounded open set with empty frontier.
 * `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image` and
   `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomain`: Rellich–Kondrachov compactness on
-  isometric copies of Lipschitz domains and for the intrinsic predicate.
+  isometric copies of Lipschitz domains, with respect to Lebesgue measure `volume`, and for the
+  intrinsic predicate, with respect to any additive Haar measure.
 
 ## References
 
@@ -224,10 +223,10 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDim
 
 /-- **Rellich–Kondrachov on isometric copies of bounded Lipschitz domains.** Let
 `g : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)` be an affine isometry equivalence and `Ω ⊆ F` a bounded open set
-whose image `g '' Ω` is a Lipschitz domain with constant `L`. Then the value map
-`W^{1,p}(Ω) → Lᵖ(Ω)` is compact for `1 ≤ p ≤ ∞`. No inner-product, finite-dimensionality or
-measurability instances are assumed on `E`, as `g` embeds `E` linearly and isometrically into
-`F`. -/
+whose image `g '' Ω` is a Lipschitz domain with constant `L`. Then, with respect to Lebesgue
+measure `volume`, the value map `W^{1,p}(Ω) → Lᵖ(Ω)` is compact for `1 ≤ p ≤ ∞`. No
+inner-product, finite-dimensionality or measurability instances are assumed on `E`, as `g` embeds
+`E` linearly and isometrically into `F`. -/
 theorem W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image
     (g : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
     (hΩ : (g '' (Ω : Set F)).IsLipschitzDomainWith L) (hb : IsBounded (Ω : Set F)) :
@@ -243,22 +242,6 @@ theorem W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image
     congrFun (image_eq_preimage_of_inverse g.symm_apply_apply g.apply_symm_apply) _
   exact W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv hΩ
     (g.lipschitzWith.isBounded_image hb) g hWΩ
-
-/-- With empty frontier, a bounded open set has compact closure inside itself, so the value map is
-compact by local Rellich–Kondrachov compactness. -/
-theorem W1p.isCompactOperator_valueL_of_frontier_eq_empty {μ : Measure F}
-    [μ.IsAddHaarMeasure] (hb : IsBounded (Ω : Set F)) (hfr : frontier (Ω : Set F) = ∅) :
-    IsCompactOperator (W1p.valueL (mu := μ) (Omega := Ω) (p := p)) := by
-  have hcl : closure (Ω : Set F) ⊆ (Ω : Set F) :=
-    (isClopen_iff_frontier_eq_empty.mpr hfr).isClosed.closure_subset
-  have hK : IsCompactOperator
-      ((W1p.valueL (mu := μ) (Omega := Ω) (p := p)).comp (W1p.restrictL le_rfl)) :=
-    W1p.isCompactOperator_valueL_restrictL hb.isCompact_closure hcl
-  have heq : W1p.valueL (mu := μ) (Omega := Ω) (p := p) =
-      (W1p.valueL (mu := μ) (Omega := Ω) (p := p)).comp (W1p.restrictL le_rfl) := by
-    ext1 u
-    simp
-  exact heq ▸ hK
 
 /-- Rellich–Kondrachov for the intrinsic predicate and Lebesgue measure. -/
 private theorem W1p.isCompactOperator_valueL_volume_of_isLipschitzDomain {Ω : Opens F}

@@ -15,6 +15,7 @@ import TauCeti.Analysis.BoundedVariation.Compactness
 import TauCeti.Analysis.BoundedVariation.W1p
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.Basic
 import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
+import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
 
 /-!
 # Global `L¹` compactness of BV functions and sets of finite perimeter on bounded Lipschitz domains
@@ -25,14 +26,16 @@ boundary of `Ω`. Global compactness in `L¹(Ω)` fails on arbitrary bounded ope
 a countable union of disjoint open intervals accumulating at `0`), because variations can vanish
 while values jump freely across components.
 
-On a bounded Lipschitz domain `Ω`, however, the Rellich–Kondrachov theorem makes the Sobolev value
-projection `W^{1,1}(Ω) → L¹(Ω)` a compact operator
-(`TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`), and strict `W^{1,1}`
+On a bounded Lipschitz domain `Ω`, however, the Rellich–Kondrachov theorems of
+`TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov` make the Sobolev value projection
+`W^{1,1}(Ω) → L¹(Ω)` a compact operator, in the model space
+(`TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`), on isometric images
+(`TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image`) and for the intrinsic
+predicate (`TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomain`). Strict `W^{1,1}`
 approximation transfers compactness from `W^{1,1}(Ω)` to `BV(Ω)`
 (`TauCeti.BV.isCompactOperator_toL1CLM_iff_isCompactOperator_valueL`). Combined with the
 domain-independent consequences of `IsCompactOperator BV.toL1CLM` in
-`TauCeti.Analysis.BoundedVariation.Compactness` and isometric transport in
-`TauCeti.Analysis.BoundedVariation.Isometry`, this file proves global `L¹(Ω)` compactness for
+`TauCeti.Analysis.BoundedVariation.Compactness`, this file proves global `L¹(Ω)` compactness for
 bounded Lipschitz domains with respect to any additive Haar measure `μ`:
 
 * for bounded `IsLipschitzDomainWith` domains in the model space `WithLp 2 (ℝ × E)`;
