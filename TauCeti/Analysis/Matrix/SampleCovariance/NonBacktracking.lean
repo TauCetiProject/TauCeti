@@ -7,14 +7,17 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.Matrix.Spectrum
+public import TauCeti.Analysis.Matrix.SampleSecondMoment
 public import TauCeti.LinearAlgebra.Matrix.NonBacktracking
 import Mathlib.Tactic.NoncommRing
 import TauCeti.Analysis.Matrix.Eigenvalues.Basic
 import TauCeti.Analysis.Matrix.Eigenvalues.OperatorNorm
 import TauCeti.Analysis.Matrix.L2OpNorm
 import TauCeti.Analysis.Matrix.NonBacktracking
+import TauCeti.Analysis.Matrix.SampleCovariance.Eigenvalues
 import TauCeti.Data.Matrix.Block
 import TauCeti.LinearAlgebra.Matrix.Block
+import TauCeti.Topology.MetricSpace.Pseudo.Basic
 
 /-!
 # Non-backtracking bounds for the spectrum of a sample covariance matrix
@@ -65,7 +68,7 @@ asymptotically.
 public section
 
 open Finset Filter
-open scoped Matrix.Norms.L2Operator NNReal
+open scoped Matrix.Norms.L2Operator NNReal Topology
 
 namespace Matrix
 
@@ -428,6 +431,47 @@ private theorem max_add_div_max_lt {c ε : ℝ} (hc : 0 ≤ c) (hε : 0 < ε) :
     max_le (by linarith) ((min_le_right _ _).trans (by linarith [Real.sqrt_nonneg c]))
   linarith
 
+/-- If the entries of `Y` tend uniformly to zero and its squared row and column norms
+tend uniformly to `1` and `y ≠ 0`, the adjoint rescaled by the square root of the column
+count divided by the row count has the corresponding limits `0`, `1`, and `y⁻¹`,
+provided that the ratio of column count to row count tends to `y⁻¹`. -/
+theorem eventually_row_col_norm_sq_normalized_conjTranspose {ι : Type*} {F : Filter ι}
+    {p n : ι → Type*} [∀ i, Fintype (p i)] [∀ i, Fintype (n i)]
+    {Y : (i : ι) → Matrix (p i) (n i) 𝕜} {y : ℝ≥0} (hy : y ≠ 0)
+    (hratio : Tendsto (fun i ↦ (Fintype.card (n i) : ℝ) / Fintype.card (p i)) F
+      (𝓝 ((y : ℝ)⁻¹)))
+    (hdegrees : ∀ ε > 0, ∀ᶠ i in F, (∀ a v, ‖Y i a v‖ ≤ ε) ∧
+      (∀ a, |∑ v, ‖Y i a v‖ ^ 2 - 1| ≤ ε) ∧ (∀ v, |∑ a, ‖Y i a v‖ ^ 2 - y| ≤ ε)) :
+    let Z (i : ι) := √((Fintype.card (n i) : ℝ) / Fintype.card (p i)) • (Y i)ᴴ
+    ∀ ε > 0, ∀ᶠ i in F, (∀ v a, ‖Z i v a‖ ≤ ε) ∧
+      (∀ v, |∑ a, ‖Z i v a‖ ^ 2 - 1| ≤ ε) ∧ (∀ a, |∑ v, ‖Z i v a‖ ^ 2 - (y : ℝ)⁻¹| ≤ ε) := by
+  have he := hratio.sqrt.eventually_dist_mul_le
+    (g := fun i (va : n i × p i) ↦ ‖Y i va.2 va.1‖) (s := 0) fun ε hε ↦
+      (hdegrees ε hε).mono fun _ h va ↦ by simpa [Real.dist_eq] using h.1 va.2 va.1
+  have hr := hratio.eventually_dist_mul_le (g := fun i (v : n i) ↦ ∑ a, ‖Y i a v‖ ^ 2)
+    fun ε hε ↦ by simpa only [Real.dist_eq] using (hdegrees ε hε).mono fun _ h ↦ h.2.2
+  have hc := hratio.eventually_dist_mul_le (g := fun i (a : p i) ↦ ∑ v, ‖Y i a v‖ ^ 2)
+    fun ε hε ↦ by simpa only [Real.dist_eq] using (hdegrees ε hε).mono fun _ h ↦ h.2.1
+  have hy' : (y : ℝ) ≠ 0 := by exact_mod_cast hy
+  dsimp only
+  intro ε hε
+  filter_upwards [he ε hε, hr ε hε, hc ε hε] with i hi hri hci
+  let r : ℝ := (Fintype.card (n i) : ℝ) / Fintype.card (p i)
+  have hs : 0 ≤ r := by positivity
+  have hentry (v : n i) (a : p i) : ‖(√r • (Y i)ᴴ) v a‖ = √r * ‖Y i a v‖ := by
+    simp only [Matrix.smul_apply, norm_smul, Real.norm_eq_abs,
+      abs_of_nonneg (Real.sqrt_nonneg _), conjTranspose_apply, norm_star]
+  simp only [r] at hs hentry
+  refine ⟨fun v a ↦ ?_, fun v ↦ ?_, fun a ↦ ?_⟩
+  · rw [hentry]
+    have hnonneg : 0 ≤ √r * ‖Y i a v‖ := by positivity
+    simp only [r] at hnonneg
+    simpa only [Real.dist_eq, mul_zero, sub_zero, abs_of_nonneg hnonneg] using hi (v, a)
+  · simpa only [Real.dist_eq, hentry, mul_pow, Real.sq_sqrt hs, ← Finset.mul_sum,
+      inv_mul_cancel₀ hy'] using hri v
+  · simpa only [Real.dist_eq, hentry, mul_pow, Real.sq_sqrt hs, ← Finset.mul_sum,
+      mul_one] using hci a
+
 section BaiYin
 
 variable {ι : Type*} {F : Filter ι} {p n : ι → Type*} [∀ i, Fintype (p i)] [∀ i, Fintype (n i)]
@@ -577,6 +621,37 @@ theorem eventually_eigenvalues₀_mul_conjTranspose_mem_Icc {c : ℝ≥0} (hc : 
   rw [hev, neg_smul, ← sub_eq_add_neg, Pi.add_apply, Real.norm_eq_abs] at hle
   have hsq : (√(c : ℝ)) ^ 2 = c := Real.sq_sqrt c.coe_nonneg
   constructor <;> nlinarith [abs_le.mp (hle.trans hi)]
+
+/-- Lower spectral bounds from non-backtracking walk growth and uniform degree estimates
+persist under a perturbation that vanishes in operator norm after normalization by the
+square root of the sample size. -/
+theorem eventually_lt_eigenvalues₀_sampleCovariance_of_nonbacktracking
+    {X T : (i : ι) → Matrix (p i) (n i) 𝕜} {c : ℝ≥0} (hc : c ≤ 1)
+    (happrox : Tendsto (fun i ↦ ‖X i - T i‖ / √(Fintype.card (n i))) F (𝓝 0))
+    (hdegrees :
+      let Y (i : ι) := (√(Fintype.card (n i) : ℝ))⁻¹ • T i
+      ∀ ε > 0, ∀ᶠ i in F, (∀ a v, ‖Y i a v‖ ≤ ε) ∧
+        (∀ a, |∑ v, ‖Y i a v‖ ^ 2 - 1| ≤ ε) ∧
+        (∀ v, |∑ a, ‖Y i a v‖ ^ 2 - c| ≤ ε))
+    (hwalk :
+      let Y (i : ι) := (√(Fintype.card (n i) : ℝ))⁻¹ • T i
+      ∃ (C : ℝ) (d : ℕ), ∀ k : ℕ, ∀ᶠ i in F,
+        ‖(nonbacktrackingPow (fromBlocks 0 (Y i) (Y i)ᴴ 0) (2 * k)).toBlocks₁₁‖ ≤
+          C * ((k : ℝ) + 1) ^ d * √c ^ k) :
+    ∀ r < (1 - √c) ^ 2, ∀ᶠ i in F, ∀ j,
+      r < (isHermitian_sampleCovariance (X i)).eigenvalues₀ j := by
+  let Y (i : ι) := (√(Fintype.card (n i) : ℝ))⁻¹ • T i
+  have hbox := eventually_eigenvalues₀_mul_conjTranspose_mem_Icc (Y := Y) hc
+    (fun ε hε ↦ (hdegrees ε hε).mono fun _ h ↦ h.1)
+    (fun ε hε ↦ (hdegrees ε hε).mono fun _ h ↦ h.2.1)
+    (fun ε hε ↦ (hdegrees ε hε).mono fun _ h ↦ h.2.2) hwalk
+  refine eventually_lt_eigenvalues₀_sampleCovariance_of_tendsto_norm_sub_div_sqrt happrox ?_
+  intro r hr
+  filter_upwards [hbox (((1 - √c) ^ 2 - r) / 2) (by linarith)] with i hi j
+  have heq := sampleCovariance_eq_mul_conjTranspose_self_inv_sqrt_smul (T i)
+  rw [congrFun (IsHermitian.eigenvalues₀_congr heq (isHermitian_sampleCovariance _)
+    (isHermitian_mul_conjTranspose_self _)) j]
+  linarith [(hi j).1]
 
 end BaiYin
 

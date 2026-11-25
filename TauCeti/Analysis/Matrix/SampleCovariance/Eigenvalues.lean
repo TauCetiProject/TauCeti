@@ -25,7 +25,7 @@ covariance matrices with their distinct normalizations.
 public section
 
 open Filter
-open scoped Matrix.Norms.L2Operator Topology
+open scoped Matrix.Norms.L2Operator NNReal Topology
 
 namespace Matrix
 
@@ -130,5 +130,44 @@ theorem eventually_lt_eigenvalues₀_sampleCovariance_of_tendsto_norm_sub_div_sq
     exact (Real.sqrt_lt_sqrt_iff hc₀).mp (by linarith)
   · exact .of_forall fun i k ↦ (lt_of_not_ge hc₀).trans_le
       ((posSemidef_sampleCovariance (X i)).eigenvalues₀_nonneg k)
+
+omit [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n] in
+/-- If the aspect ratio tends to `y`, an asymptotic lower bound of `(1 - √(y⁻¹)) ^ 2`
+for the sample covariance of the adjoint gives a lower bound of `(√y - 1) ^ 2` for the
+original covariance eigenvalues indexed below the sample size. -/
+theorem eventually_lt_eigenvalues₀_sampleCovariance_of_conjTranspose
+    {ι : Type*} {p q : ι → Type*} [∀ i, Fintype (p i)] [∀ i, Fintype (q i)]
+    [∀ i, DecidableEq (p i)] [∀ i, DecidableEq (q i)] {l : Filter ι} {y : ℝ≥0}
+    {X : (i : ι) → Matrix (p i) (q i) 𝕜}
+    (hp : Tendsto (fun i ↦ (Fintype.card (p i) : ℝ) / Fintype.card (q i)) l (𝓝 (y : ℝ)))
+    (hlow : ∀ c < (1 - √(↑(y⁻¹) : ℝ)) ^ 2, ∀ᶠ k in l, ∀ j,
+      c < (isHermitian_sampleCovariance (X k)ᴴ).eigenvalues₀ j) :
+    ∀ c < (√y - 1) ^ 2, ∀ᶠ k in l, ∀ i : Fin (Fintype.card (p k)), i.val < Fintype.card (q k) →
+      c < (isHermitian_sampleCovariance (X k)).eigenvalues₀ i := by
+  intro c hc
+  rcases eq_or_ne y 0 with rfl | hy
+  · -- At ratio zero the adjoint has a forced zero whenever there is an index in range.
+    filter_upwards [hp.eventually (gt_mem_nhds (by norm_num : (↑(0 : ℝ≥0) : ℝ) < 1)),
+      hlow (1 / 2) (by norm_num)] with k hk hlowk i hi
+    have hq : 0 < Fintype.card (q k) := (Nat.zero_le i.val).trans_lt hi
+    have hcard : Fintype.card (p k) < Fintype.card (q k) := by
+      exact_mod_cast (div_lt_one (Nat.cast_pos.mpr hq)).mp hk
+    let j : Fin (Fintype.card (q k)) := ⟨Fintype.card (p k), hcard⟩
+    have hj := eigenvalues₀_sampleCovariance_eq_zero_of_card_le (X k)ᴴ j le_rfl
+    linarith [hlowk j]
+  have hy' : (0 : ℝ) < y := by exact_mod_cast (pos_of_ne_zero hy)
+  have hsqrt := Real.sqrt_pos.mpr hy'
+  have hscale : (y : ℝ) * (1 - √(↑(y⁻¹) : ℝ)) ^ 2 = (√y - 1) ^ 2 := calc
+    _ = (√(y : ℝ)) ^ 2 * (1 - (√(y : ℝ))⁻¹) ^ 2 := by
+      rw [Real.sq_sqrt hy'.le, NNReal.coe_inv, Real.sqrt_inv]
+    _ = _ := by rw [← mul_pow, mul_sub, mul_one, mul_inv_cancel₀ hsqrt.ne']
+  obtain ⟨b, hcb, hb⟩ := exists_between ((div_lt_iff₀ hy').2 (by rwa [mul_comm, hscale]) :
+    c / y < (1 - √(↑(y⁻¹) : ℝ)) ^ 2)
+  have hcb' : c < (y : ℝ) * b := by simpa only [mul_comm b] using (div_lt_iff₀ hy').1 hcb
+  filter_upwards [hlow b hb, (hp.mul_const b).eventually (lt_mem_nhds hcb')] with k hk hkb i hi
+  let j : Fin (Fintype.card (q k)) := ⟨i, hi⟩
+  rw [eigenvalues₀_sampleCovariance_eq_div_mul_eigenvalues₀_sampleCovariance_conjTranspose
+    (X k) i j rfl]
+  exact hkb.trans_le (mul_le_mul_of_nonneg_left (hk j).le (by positivity))
 
 end Matrix

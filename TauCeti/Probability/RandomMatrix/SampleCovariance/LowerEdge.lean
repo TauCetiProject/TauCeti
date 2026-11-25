@@ -42,36 +42,6 @@ open scoped Matrix.Norms.L2Operator NNReal Topology
 
 namespace TauCeti.Probability
 
-private theorem eventually_lt_eigenvalues₀_sampleCovariance_of_nonbacktracking
-    {ι 𝕜 : Type*} [RCLike 𝕜] {m n : ι → Type*} [∀ i, Fintype (m i)] [∀ i, Fintype (n i)]
-    [∀ i, DecidableEq (m i)] [∀ i, DecidableEq (n i)] {l : Filter ι}
-    {X T : (i : ι) → Matrix (m i) (n i) 𝕜} {c : ℝ≥0} (hc : c ≤ 1)
-    (happrox : Tendsto (fun i ↦ ‖X i - T i‖ / √(Fintype.card (n i))) l (𝓝 0))
-    (hdegrees :
-      let Y (i : ι) := (√(Fintype.card (n i) : ℝ))⁻¹ • T i
-      ∀ ε > 0, ∀ᶠ i in l, (∀ a v, ‖Y i a v‖ ≤ ε) ∧
-        (∀ a, |∑ v, ‖Y i a v‖ ^ 2 - 1| ≤ ε) ∧
-        (∀ v, |∑ a, ‖Y i a v‖ ^ 2 - c| ≤ ε))
-    (hwalk :
-      let Y (i : ι) := (√(Fintype.card (n i) : ℝ))⁻¹ • T i
-      ∃ (C : ℝ) (d : ℕ), ∀ k : ℕ, ∀ᶠ i in l,
-        ‖(nonbacktrackingPow (fromBlocks 0 (Y i) (Y i)ᴴ 0) (2 * k)).toBlocks₁₁‖ ≤
-          C * ((k : ℝ) + 1) ^ d * √c ^ k) :
-    ∀ r < (1 - √c) ^ 2, ∀ᶠ i in l, ∀ j,
-      r < (isHermitian_sampleCovariance (X i)).eigenvalues₀ j := by
-  let Y (i : ι) := (√(Fintype.card (n i) : ℝ))⁻¹ • T i
-  have hbox := eventually_eigenvalues₀_mul_conjTranspose_mem_Icc (Y := Y) hc
-    (fun ε hε ↦ (hdegrees ε hε).mono fun _ h ↦ h.1)
-    (fun ε hε ↦ (hdegrees ε hε).mono fun _ h ↦ h.2.1)
-    (fun ε hε ↦ (hdegrees ε hε).mono fun _ h ↦ h.2.2) hwalk
-  refine eventually_lt_eigenvalues₀_sampleCovariance_of_tendsto_norm_sub_div_sqrt happrox ?_
-  intro r hr
-  filter_upwards [hbox (((1 - √c) ^ 2 - r) / 2) (by linarith)] with i hi j
-  have heq := sampleCovariance_eq_mul_conjTranspose_self_inv_sqrt_smul (T i)
-  rw [congrFun (IsHermitian.eigenvalues₀_congr heq (isHermitian_sampleCovariance _)
-    (isHermitian_mul_conjTranspose_self _)) j]
-  linarith [(hi j).1]
-
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {x : ℕ × ℕ → Ω → ℂ}
   {ν : Measure ℂ} {p : ℕ → ℕ} [∀ n, NeZero (p n)] {y : ℝ≥0}
 
@@ -232,111 +202,6 @@ theorem ae_tendsto_eigenvalues₀_card_sub_one_sampleCovariance_of_nonbacktracki
 
 section ConjTranspose
 
-omit [∀ n, NeZero (p n)] in
-private theorem eventually_row_col_norm_sq_normalized_conjTranspose
-    {𝕜 : Type*} [RCLike 𝕜] {Y : (n : ℕ) → Matrix (Fin (p n)) (Fin n) 𝕜}
-    (hy : y ≠ 0) (hratio : Tendsto (fun n : ℕ ↦ (n : ℝ) / p n) atTop (𝓝 ((y : ℝ)⁻¹)))
-    (hdegrees : ∀ ε > 0, ∀ᶠ n in atTop, (∀ i j, ‖Y n i j‖ ≤ ε) ∧
-      (∀ i, |∑ j, ‖Y n i j‖ ^ 2 - 1| ≤ ε) ∧ (∀ j, |∑ i, ‖Y n i j‖ ^ 2 - y| ≤ ε)) :
-    let Z (n : ℕ) := √((n : ℝ) / p n) • (Y n)ᴴ
-    ∀ ε > 0, ∀ᶠ n in atTop, (∀ i j, ‖Z n i j‖ ≤ ε) ∧
-      (∀ i, |∑ j, ‖Z n i j‖ ^ 2 - 1| ≤ ε) ∧ (∀ j, |∑ i, ‖Z n i j‖ ^ 2 - (y : ℝ)⁻¹| ≤ ε) := by
-  -- Use the filter pulled back along the dimension projection to express uniform convergence.
-  have uniform_mul {ι : ℕ → Type} {f : ℕ → ℝ} {g : (n : ℕ) → ι n → ℝ} {r s : ℝ}
-      (hf : Tendsto f atTop (𝓝 r))
-      (hg : ∀ ε > 0, ∀ᶠ n in atTop, ∀ i, |g n i - s| ≤ ε) :
-      ∀ ε > 0, ∀ᶠ n in atTop, ∀ i, |f n * g n i - r * s| ≤ ε := by
-    have ht : Tendsto (fun a : Σ n, ι n ↦ g a.1 a.2) (comap Sigma.fst atTop) (𝓝 s) := by
-      refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
-      rw [eventually_comap]
-      filter_upwards [hg (ε / 2) (half_pos hε)] with n hn ⟨m, i⟩ hm
-      obtain rfl : m = n := hm
-      exact (Real.dist_eq _ _).trans_le (hn i) |>.trans_lt (half_lt_self hε)
-    intro ε hε
-    have h := Metric.tendsto_nhds.1 ((hf.comp tendsto_comap).mul ht) ε hε
-    rw [eventually_comap] at h
-    exact h.mono fun n hn i ↦ (Real.dist_eq _ _).ge.trans (hn ⟨n, i⟩ rfl).le
-  have he := uniform_mul (ι := fun n ↦ Fin n × Fin (p n))
-    (g := fun n ij ↦ ‖Y n ij.2 ij.1‖) (s := 0) hratio.sqrt fun ε hε ↦
-      (hdegrees ε hε).mono fun _ h ij ↦ by simpa using h.1 ij.2 ij.1
-  have hr := uniform_mul (g := fun n (i : Fin n) ↦ ∑ j, ‖Y n j i‖ ^ 2) hratio fun ε hε ↦
-    (hdegrees ε hε).mono fun _ h ↦ h.2.2
-  have hc := uniform_mul (g := fun n (j : Fin (p n)) ↦ ∑ i, ‖Y n j i‖ ^ 2) hratio fun ε hε ↦
-    (hdegrees ε hε).mono fun _ h ↦ h.2.1
-  have hy' : (y : ℝ) ≠ 0 := by exact_mod_cast hy
-  dsimp only
-  intro ε hε
-  filter_upwards [he ε hε, hr ε hε, hc ε hε] with n hn hrn hcn
-  have hs : 0 ≤ (n : ℝ) / p n := by positivity
-  have hentry (i : Fin n) (j : Fin (p n)) :
-      ‖(√((n : ℝ) / p n) • (Y n)ᴴ) i j‖ = √((n : ℝ) / p n) * ‖Y n j i‖ := by
-    simp only [Matrix.smul_apply, norm_smul, Real.norm_eq_abs,
-      abs_of_nonneg (Real.sqrt_nonneg _), conjTranspose_apply, norm_star]
-  refine ⟨fun i j ↦ ?_, fun i ↦ ?_, fun j ↦ ?_⟩
-  · rw [hentry]
-    have hnonneg : 0 ≤ √((n : ℝ) / p n) * ‖Y n j i‖ := by positivity
-    simpa only [mul_zero, sub_zero, abs_of_nonneg hnonneg] using hn (i, j)
-  · simpa only [hentry, mul_pow, Real.sq_sqrt hs, ← Finset.mul_sum, inv_mul_cancel₀ hy'] using hrn i
-  · simpa only [hentry, mul_pow, Real.sq_sqrt hs, ← Finset.mul_sum, mul_one] using hcn j
-
-omit [∀ n, NeZero (p n)] in
-private theorem eventually_lt_eigenvalues₀_sampleCovariance_of_conjTranspose
-    {X : (n : ℕ) → Matrix (Fin (p n)) (Fin n) ℂ}
-    (hy : 0 < y) (hp : Tendsto (fun n ↦ (p n : ℝ) / n) atTop (𝓝 (y : ℝ)))
-    (hlow : ∀ c < (1 - √(↑(y⁻¹) : ℝ)) ^ 2, ∀ᶠ n in atTop, ∀ j,
-      c < (isHermitian_sampleCovariance (X n)ᴴ).eigenvalues₀ j) :
-    ∀ c < (√y - 1) ^ 2, ∀ᶠ n in atTop, ∀ i : Fin (Fintype.card (Fin (p n))), i.val < n →
-      c < (isHermitian_sampleCovariance (X n)).eigenvalues₀ i := by
-  have hy' : (0 : ℝ) < y := by exact_mod_cast hy
-  have hsqrt := Real.sqrt_pos.mpr hy'
-  have hscale : (y : ℝ) * (1 - √(↑(y⁻¹) : ℝ)) ^ 2 = (√y - 1) ^ 2 := calc
-    _ = (√(y : ℝ)) ^ 2 * (1 - (√(y : ℝ))⁻¹) ^ 2 := by
-      rw [Real.sq_sqrt hy'.le, NNReal.coe_inv, Real.sqrt_inv]
-    _ = _ := by rw [← mul_pow, mul_sub, mul_one, mul_inv_cancel₀ hsqrt.ne']
-  intro c hc
-  obtain ⟨b, hcb, hb⟩ := exists_between ((div_lt_iff₀ hy').2 (by rwa [mul_comm, hscale]) :
-    c / y < (1 - √(↑(y⁻¹) : ℝ)) ^ 2)
-  have hcb' : c < (y : ℝ) * b := by simpa only [mul_comm b] using (div_lt_iff₀ hy').1 hcb
-  filter_upwards [hlow b hb, (hp.mul_const b).eventually (lt_mem_nhds hcb')] with n hn hnb i hi
-  let j : Fin (Fintype.card (Fin n)) := ⟨i, by simpa only [Fintype.card_fin] using hi⟩
-  rw [eigenvalues₀_sampleCovariance_eq_div_mul_eigenvalues₀_sampleCovariance_conjTranspose
-    (X n) i j rfl, Fintype.card_fin, Fintype.card_fin]
-  exact hnb.trans_le (mul_le_mul_of_nonneg_left (hn j).le (by positivity))
-
-private theorem tendsto_sInf_pos_eigenvalues₀_sampleCovariance_of_tendsto_marchenkoPastur
-    {X : (n : ℕ) → Matrix (Fin (p n)) (Fin n) ℂ}
-    (hy : 1 < y)
-    (hMP : Tendsto (fun n ↦ (sampleCovariance (X n)).spectralMeasure
-      (isHermitian_sampleCovariance _)) atTop (𝓝 (marchenkoPastur y).toProbabilityMeasure))
-    (hlow : ∀ c < (√y - 1) ^ 2, ∀ᶠ n in atTop, ∀ i : Fin (Fintype.card (Fin (p n))), i.val < n →
-      c < (isHermitian_sampleCovariance (X n)).eigenvalues₀ i) :
-    let S (n : ℕ) := {s | 0 < s} ∩ Set.range (isHermitian_sampleCovariance (X n)).eigenvalues₀
-    (∀ᶠ n in atTop, IsLeast (S n) (sInf (S n))) ∧
-      Tendsto (fun n ↦ sInf (S n)) atTop (𝓝 ((√y - 1) ^ 2)) := by
-  let S (n : ℕ) := {s | 0 < s} ∩ Set.range (isHermitian_sampleCovariance (X n)).eigenvalues₀
-  have hedge : (1 - √(y : ℝ)) ^ 2 = (√y - 1) ^ 2 := by ring
-  have hexists {c : ℝ} (hc : (√y - 1) ^ 2 < c) :
-      ∀ᶠ n in atTop, ∃ i, (isHermitian_sampleCovariance (X n)).eigenvalues₀ i ∈ Set.Ioo 0 c :=
-    eventually_exists_eigenvalues₀_mem_Ioo_of_tendsto_marchenkoPastur hMP hy.ne'
-      (hedge.trans_lt hc)
-  have hleast : ∀ᶠ n in atTop, IsLeast (S n) (sInf (S n)) := by
-    filter_upwards [hexists (lt_add_one ((√y - 1) ^ 2))] with n ⟨i, hi⟩
-    have hfinite : (S n).Finite := (Set.finite_range _).subset Set.inter_subset_right
-    obtain ⟨s, hs, hmin⟩ := Set.exists_min_image (S n) id hfinite ⟨_, hi.1, ⟨i, rfl⟩⟩
-    have hleast : IsLeast (S n) s := ⟨hs, hmin⟩
-    rwa [hleast.csInf_eq]
-  refine ⟨hleast, tendsto_order.2 ⟨?_, ?_⟩⟩
-  · intro c hc
-    filter_upwards [hleast, hlow c hc] with n hi hb
-    obtain ⟨hpos, i, hi⟩ := hi.1
-    have hni : i.val < n := lt_of_not_ge fun hn ↦ (ne_of_gt hpos) (hi.symm.trans
-      (eigenvalues₀_sampleCovariance_eq_zero_of_card_le _ i
-        (by simpa only [Fintype.card_fin] using hn)))
-    exact hi ▸ hb i hni
-  · intro c hc
-    filter_upwards [hleast, hexists hc] with n hi ⟨j, hj₀, hjc⟩
-    exact (hi.2 ⟨hj₀, ⟨j, rfl⟩⟩).trans_lt hjc
-
 /-- Under the fourth-moment hypotheses for the lower covariance edge and aspect ratio `y > 1`,
 normalize the adjoints of the centered truncated corners by `√(p n)`. Suppose the row blocks of
 their non-backtracking walk matrices satisfy the almost-sure growth bound for aspect ratio
@@ -379,7 +244,8 @@ theorem ae_tendsto_sInf_pos_eigenvalues₀_sampleCovariance_of_nonbacktracking
   have hz : ∀ᶠ n in atTop, Z n = √((n : ℝ) / p n) • (Y n)ᴴ := by
     filter_upwards [eventually_gt_atTop 0] with n hn
     simp only [Y, Z, conjTranspose_smul, star_trivial, smul_smul, hscale n hn]
-  have hdeg := eventually_row_col_norm_sq_normalized_conjTranspose (Y := Y) hy₀.ne' hratio hd
+  have hdeg := eventually_row_col_norm_sq_normalized_conjTranspose (Y := Y) hy₀.ne'
+    (by simpa only [Fintype.card_fin] using hratio) hd
   have hnorm' : Tendsto (fun n ↦ ‖(X n)ᴴ - (T n)ᴴ‖ / √(p n : ℝ)) atTop (𝓝 0) := by
     have h := hratio.sqrt.mul hnorm
     rw [mul_zero] at h
@@ -399,7 +265,8 @@ theorem ae_tendsto_sInf_pos_eigenvalues₀_sampleCovariance_of_nonbacktracking
       simpa only [Fintype.card_fin, NNReal.coe_inv, ← hn, Z] using hd')
     (by simpa only [Fintype.card_fin] using hw)
   obtain ⟨hleast, hlim⟩ := tendsto_sInf_pos_eigenvalues₀_sampleCovariance_of_tendsto_marchenkoPastur
-    hy hMP (eventually_lt_eigenvalues₀_sampleCovariance_of_conjTranspose hy₀ hp hlow)
+    hMP (eventually_lt_eigenvalues₀_sampleCovariance_of_conjTranspose
+      (by simpa only [Fintype.card_fin] using hp) hlow)
   exact ⟨(eventually_eigenvalues₀_card_sub_one_sampleCovariance_eq_zero_of_one_lt_ratio X hy'
     (by simpa only [Fintype.card_fin] using hp)).and hleast, hlim⟩
 
