@@ -7,14 +7,14 @@ module
 
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Idempotent
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
-import Mathlib.Tactic.Abel
+public import TauCeti.Algebra.Ring.Idempotent.Pair
 
 /-!
 # Ranges of intertwined projections
 
-For idempotent continuous linear maps `p` and `q` on a topological module, the operator
-`U = q * p + (1 - q) * (1 - p)` satisfies `q * U = U * p`. When `U` is invertible, it therefore
-carries the range of `p` isomorphically onto the range of `q`
+For idempotent continuous linear maps `p` and `q` on a topological module, the intertwiner
+`U = TauCeti.intertwiner p q = q * p + (1 - q) * (1 - p)` satisfies `q * U = U * p`. When `U` is
+invertible, it therefore carries the range of `p` isomorphically onto the range of `q`
 (`ContinuousLinearMap.IsIdempotentElem.rangeEquiv`). This is the intertwining operator of a pair
 of projections; it is the local chart of the image bundle of a continuous family of projections,
 and it shows that nearby projections have isomorphic ranges.
@@ -29,18 +29,19 @@ A pseudo-inverse `g` of `f`, with `f ∘ g ∘ f = f`, gives the projection `g �
 ## Main definitions
 
 * `ContinuousLinearMap.IsIdempotentElem.rangeEquiv`: the isomorphism of the ranges of `p` and
-  `q` induced by `q * p + (1 - q) * (1 - p)`, when that operator is invertible.
+  `q` induced by the intertwiner `TauCeti.intertwiner p q`, when that operator is invertible.
 * `ContinuousLinearMap.rangeEquivOfRetract`: the identification of the range of `e` with the
   range of its extension `i ∘ e ∘ r` along a retract.
 
 ## Main results
 
+* `ContinuousLinearMap.IsIdempotentElem.comp_self`,
+  `ContinuousLinearMap.IsIdempotentElem.comp_comp_self`: idempotence stated with `∘L` in place
+  of `*`.
 * `ContinuousLinearMap.IsIdempotentElem.apply_coe_range`: an idempotent continuous linear map
   fixes every vector of its range.
 * `ContinuousLinearMap.IsIdempotentElem.completeSpace_range`: the range of an idempotent
   continuous linear map on a complete space is complete.
-* `ContinuousLinearMap.IsIdempotentElem.mul_self_add_one_sub_mul_one_sub`: the operator
-  `p * p + (1 - p) * (1 - p)` intertwining an idempotent `p` with itself is the identity.
 * `ContinuousLinearMap.isIdempotentElem_comp_comp_of_retract`: the extension of an idempotent
   along a retract is idempotent.
 * `ContinuousLinearMap.isIdempotentElem_comp_of_comp_comp_eq_self`: if `g` is a pseudo-inverse
@@ -56,7 +57,25 @@ public section
 
 open scoped Ring
 
+open TauCeti
+
 namespace ContinuousLinearMap.IsIdempotentElem
+
+section Semiring
+
+variable {R M : Type*} [Semiring R] [TopologicalSpace M] [AddCommMonoid M] [Module R M]
+  {p : M →L[R] M}
+
+/-- An idempotent continuous linear map composed with itself is itself. -/
+theorem comp_self (hp : IsIdempotentElem p) : p ∘L p = p :=
+  (mul_def p p).symm.trans hp.eq
+
+/-- Idempotence in the left-associated form `(X ∘L p) ∘L p = X ∘L p`, for any `X` out of `M`. -/
+theorem comp_comp_self {N : Type*} [TopologicalSpace N] [AddCommMonoid N] [Module R N]
+    (hp : IsIdempotentElem p) (X : M →L[R] N) : (X ∘L p) ∘L p = X ∘L p := by
+  rw [comp_assoc, comp_self hp]
+
+end Semiring
 
 variable {R M : Type*} [Ring R] [TopologicalSpace M] [AddCommGroup M] [Module R M]
   {p q : M →L[R] M}
@@ -69,41 +88,17 @@ theorem apply_coe_range (hp : IsIdempotentElem p) (w : p.range) : p w = w :=
 
 variable [IsTopologicalAddGroup M]
 
-/-- The operator `p * p + (1 - p) * (1 - p)`, which intertwines an idempotent `p` with itself, is
-the identity. -/
-theorem mul_self_add_one_sub_mul_one_sub (hp : IsIdempotentElem p) :
-    p * p + (1 - p) * (1 - p) = 1 := by
-  rw [hp.eq, hp.one_sub.eq, add_sub_cancel]
-
-/-- The operator `p * p + (1 - p) * (1 - p)` is invertible for an idempotent `p`. -/
-theorem isUnit_mul_self_add_one_sub_mul_one_sub (hp : IsIdempotentElem p) :
-    IsUnit (p * p + (1 - p) * (1 - p)) := by
-  rw [mul_self_add_one_sub_mul_one_sub hp]
-  exact isUnit_one
-
-/-- The operator `q * p + (1 - q) * (1 - p)`, which intertwines `p` with `q`. -/
-private def intertwiner (p q : M →L[R] M) : M →L[R] M :=
-  q * p + (1 - q) * (1 - p)
-
-private theorem mul_intertwiner (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) :
-    q * intertwiner p q = intertwiner p q * p := by
-  have h := hq.eq
-  have h₀ := hp.eq
-  simp only [intertwiner, mul_add, add_mul, mul_sub, sub_mul, mul_one, one_mul, ← mul_assoc, h]
-  simp only [mul_assoc, h₀]
-  abel
-
 /-- Where the intertwiner is invertible, its inverse intertwines `q` with `p`. -/
 private theorem inverse_intertwiner_mul (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
     (hU : IsUnit (intertwiner p q)) :
     (intertwiner p q)⁻¹ʳ * q = p * (intertwiner p q)⁻¹ʳ := by
-  have h := congr((intertwiner p q)⁻¹ʳ * $(mul_intertwiner hp hq) * (intertwiner p q)⁻¹ʳ)
+  have h := congr((intertwiner p q)⁻¹ʳ * $((hp.intertwiner_mul hq).symm) * (intertwiner p q)⁻¹ʳ)
   simpa only [mul_assoc, Ring.mul_inverse_cancel _ hU, Ring.inverse_mul_cancel_left _ _ hU,
     mul_one] using h
 
 private theorem apply_intertwiner (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) (v : M) :
     q (intertwiner p q v) = intertwiner p q (p v) :=
-  congr($(mul_intertwiner hp hq) v)
+  congr($((hp.intertwiner_mul hq).symm) v)
 
 private theorem inverse_intertwiner_apply (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
     (hU : IsUnit (intertwiner p q)) (v : M) :
@@ -123,10 +118,11 @@ private theorem inverse_intertwiner_mem_range (hp : IsIdempotentElem p)
       congr((intertwiner p q)⁻¹ʳ $(apply_coe_range hq w))⟩
 
 /-- **Intertwined projections have isomorphic ranges.** For idempotents `p` and `q` such that
-`U = q * p + (1 - q) * (1 - p)` is invertible, `U` restricts to an isomorphism from the range
-of `p` onto the range of `q`, with inverse the restriction of `U⁻¹`. -/
+the intertwiner `U = intertwiner p q = q * p + (1 - q) * (1 - p)` is invertible, `U` restricts to
+an isomorphism from the range of `p` onto the range of `q`, with inverse the restriction of
+`U⁻¹`. -/
 noncomputable def rangeEquiv (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
-    (hU : IsUnit (q * p + (1 - q) * (1 - p))) : p.range ≃L[R] q.range :=
+    (hU : IsUnit (intertwiner p q)) : p.range ≃L[R] q.range :=
   .ofContinuousLinearMap ((intertwiner p q ∘L p.range.subtypeL).codRestrict q.range
       (intertwiner_mem_range hp hq))
     (((intertwiner p q)⁻¹ʳ ∘L q.range.subtypeL).codRestrict p.range
@@ -135,18 +131,18 @@ noncomputable def rangeEquiv (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
     (ContinuousLinearMap.ext fun w ↦ Subtype.ext (congr($(Ring.inverse_mul_cancel _ hU) (w : M))))
 
 variable (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
-  (hU : IsUnit (q * p + (1 - q) * (1 - p)))
+  (hU : IsUnit (intertwiner p q))
 
-/-- The isomorphism of ranges applies `q * p + (1 - q) * (1 - p)`. -/
+/-- The isomorphism of ranges applies the intertwiner `intertwiner p q`. -/
 @[simp]
 theorem coe_rangeEquiv_apply (w : p.range) :
-    (rangeEquiv hp hq hU w : M) = (q * p + (1 - q) * (1 - p)) w :=
+    (rangeEquiv hp hq hU w : M) = intertwiner p q w :=
   (rfl)
 
-/-- The inverse isomorphism of ranges applies the inverse of `q * p + (1 - q) * (1 - p)`. -/
+/-- The inverse isomorphism of ranges applies the inverse of the intertwiner `intertwiner p q`. -/
 @[simp]
 theorem coe_rangeEquiv_symm_apply (w : q.range) :
-    ((rangeEquiv hp hq hU).symm w : M) = (q * p + (1 - q) * (1 - p))⁻¹ʳ w :=
+    ((rangeEquiv hp hq hU).symm w : M) = (intertwiner p q)⁻¹ʳ w :=
   (rfl)
 
 /-- The range of an idempotent continuous linear map on a complete space is complete. -/

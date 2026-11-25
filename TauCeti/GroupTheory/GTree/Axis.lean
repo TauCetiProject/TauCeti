@@ -167,27 +167,8 @@ followed by its translate under `g` without backtracking. -/
 theorem smul_ne_rev_of_mem_axis {g : G} {x : T.V} (hx : x ∈ T.axis g) {p : T.Path x (g • x)}
     (hp : Path.IsReduced T.toSerreGraph p) :
     ∀ e ∈ (Path.darts T.toSerreGraph p).getLast?,
-      ∀ f ∈ (Path.darts T.toSerreGraph p).head?, g • f ≠ T.rev e := by
-  intro e he f hf hfe
-  have hlen : p.length = T.translationLength g := by
-    rw [← mem_axis_iff.mp hx, (IsTree.isAcyclic _ T.isTree).dist_eq_length hp]
-  rcases Nat.lt_or_ge p.length 2 with h | h
-  · -- A path with one dart: `g` would invert it.
-    obtain ⟨a, ha⟩ : ∃ a, Path.darts T.toSerreGraph p = [a] := by
-      rw [← List.length_eq_one_iff, Path.length_darts]
-      have : p.length ≠ 0 := fun h0 => by
-        rw [← Path.length_darts, List.length_eq_zero_iff] at h0
-        simp [h0] at he
-      omega
-    simp only [ha, List.getLast?_singleton, List.head?_cons, Option.mem_def,
-      Option.some.injEq] at he hf
-    subst he hf
-    exact T.smul_ne_rev g _ hfe
-  · -- Otherwise `g` moves the second vertex of the path by two less than the translation length.
-    have h₁ := Path.dist_tgt_src_add_two_le p hf he h
-    have h₂ := translationLength_le g (T.tgt f)
-    rw [← tgt_smul, hfe, tgt_rev] at h₂
-    omega
+      ∀ f ∈ (Path.darts T.toSerreGraph p).head?, g • f ≠ T.rev e :=
+  smul_ne_rev_of_dist_smul_eq_translationLength hx hp
 
 /-- A vertex `x` moved by the translation length satisfies `d(x, gⁿ x) = n ℓ(g)`. -/
 theorem dist_pow_smul_of_mem_axis {g : G} {x : T.V} (hx : x ∈ T.axis g) (n : ℕ) :

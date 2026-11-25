@@ -11,18 +11,16 @@ public import Mathlib.Topology.Algebra.Algebra
 import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
-# Kernels of continuous algebra homomorphisms
+# Topological algebra basics
 
-The kernel of a continuous algebra homomorphism into a `T₁` space is the preimage of the closed
-point `0`, so it is closed. This is the algebra counterpart of Mathlib's
-`ContinuousLinearMap.isClosed_ker`. It is stated as an instance so that, for instance, the
-quotient of a normed algebra by the kernel of a continuous homomorphism is found to be a normed
-algebra.
-
-## Main results
+This file collects basic topological algebra facts:
 
 * `ContinuousAlgHom.isClosed_ker`: the kernel of a continuous algebra homomorphism into a `T₁`
-  space is closed.
+  space is closed (the algebra counterpart of `ContinuousLinearMap.isClosed_ker`, stated as an
+  instance so that quotients of normed algebras by kernels of continuous homomorphisms inherit
+  normed algebra structures).
+* `Algebra.mem_elemental_iff`: membership in `Algebra.elemental R w` is equivalent to membership
+  in the topological closure of `Algebra.adjoin R {w}`.
 -/
 
 public section
@@ -36,3 +34,14 @@ instance isClosed_ker {R A B : Type*} [CommSemiring R] [Semiring A] [Topological
   RingHom.isClosed_ker f.continuous
 
 end ContinuousAlgHom
+
+namespace Algebra
+
+/-- Membership in `Algebra.elemental R w` is equivalent to membership in the topological closure
+of `Algebra.adjoin R {w}`. -/
+theorem mem_elemental_iff {R A : Type*} [CommSemiring R] [Semiring A] [TopologicalSpace A]
+    [Algebra R A] [IsSemitopologicalSemiring A] {w x : A} :
+    x ∈ elemental R w ↔ x ∈ closure (adjoin R {w} : Set A) := by
+  rw [← SetLike.mem_coe, elemental, Subalgebra.topologicalClosure_coe]
+
+end Algebra

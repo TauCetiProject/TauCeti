@@ -14,7 +14,7 @@ import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.ContinuousLinearMapInverse
-import TauCeti.Analysis.Complex.SectorBounds
+import TauCeti.Analysis.Complex.Sector.Bounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
@@ -77,7 +77,8 @@ The estimates are proved at one point `p = ((x, ξ), z)` at a time. Pulling a fu
 `v ↦ p + parameterDilation n t v`, with `t` the weight at `p`, turns the dilated derivatives at
 `p` into ordinary iterated derivatives at `0`
 (`TauCeti.parameterIteratedFDeriv_eq_iteratedFDeriv_comp`), where the uniform Leibniz bound
-`TauCeti.exists_norm_iteratedFDeriv_bilinear_le` applies. The inverse estimates come from
+`TauCeti.exists_norm_iteratedFDeriv_bilinear_le` applies
+(`TauCeti.exists_norm_parameterIteratedFDeriv_bilinear_le`). The inverse estimates come from
 `TauCeti.exists_norm_iteratedFDeriv_clm_inverse_le`, an induction on the order from
 `∂ᵤ(a⁻¹) = -a⁻¹ (∂ᵤ a) a⁻¹`, as for the cut-off inverse `TauCeti.Symbol.cutoffInverse` of a
 symbol.
@@ -328,6 +329,31 @@ theorem contDiffOn_comp_parameterDilation {Λ : Set ℂ} (hΛ : IsOpen Λ)
   exact hf.comp (contDiff_const.add (parameterDilation n t).contDiff).contDiffOn
     (mapsTo_preimage _ _)
 
+/-- **Leibniz rule** for dilated derivatives: at a point `p` with `p.2 ∈ Λ`, if the dilated
+derivatives of order at most `k` of `f` and `g`, smooth on `univ ×ˢ Λ`, are bounded by `C` and `D`,
+those of `B (f ·) (g ·)` are bounded by `E * (C * D)`, with `E` depending only on `B` and `k`. -/
+theorem exists_norm_parameterIteratedFDeriv_bilinear_le (B : X →L[ℝ] Y →L[ℝ] Z) (k : ℕ) :
+    ∃ E : ℝ, 0 ≤ E ∧ ∀ {Λ : Set ℂ}, IsOpen Λ →
+      ∀ (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → X)
+        (g : (CoordinateSpace n × CoordinateSpace n) × ℂ → Y),
+      ContDiffOn ℝ ∞ f (univ ×ˢ Λ) → ContDiffOn ℝ ∞ g (univ ×ˢ Λ) →
+      ∀ p : (CoordinateSpace n × CoordinateSpace n) × ℂ, p.2 ∈ Λ → ∀ C D : ℝ,
+      (∀ i ≤ k, ‖parameterIteratedFDeriv i f p‖ ≤ C) →
+      (∀ i ≤ k, ‖parameterIteratedFDeriv i g p‖ ≤ D) →
+      ∀ j ≤ k, ‖parameterIteratedFDeriv j (fun q => B (f q) (g q)) p‖ ≤ E * (C * D) := by
+  obtain ⟨E, hE, hB⟩ := exists_norm_iteratedFDeriv_bilinear_le
+    ((CoordinateSpace n × CoordinateSpace n) × ℂ) B k
+  refine ⟨E, hE, fun hΛ f g hf hg p hp C D hC hD j hj => ?_⟩
+  obtain ⟨hU, h0, hfT⟩ := contDiffOn_comp_parameterDilation hΛ hf hp (parameterWeight p.1.2 p.2)
+  obtain ⟨-, -, hgT⟩ := contDiffOn_comp_parameterDilation hΛ hg hp (parameterWeight p.1.2 p.2)
+  have hk : ((k : ℕ∞ω)) ≤ ∞ := by exact_mod_cast le_top
+  rw [parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
+  refine hB _ _ _ 0 hU h0 (hfT.of_le hk) (hgT.of_le hk) C D (fun i hi => ?_) (fun i hi => ?_) j hj
+  · rw [← parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
+    exact hC i hi
+  · rw [← parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
+    exact hD i hi
+
 /-- The estimates of order `m` for a function of positions, frequencies and spectral parameters in
 `Λ`: on every compact set of positions, `‖parameterIteratedFDeriv k f ((x, ξ), z)‖` is at most a
 constant times `parameterWeight ξ z ^ m`. -/
@@ -420,23 +446,12 @@ private theorem Bounds.bilinear (hΛ : IsOpen Λ) (B : X →L[ℝ] Y →L[ℝ] Z
     (hbg : Bounds Λ m' g) : Bounds Λ (m + m') (fun p => B (f p) (g p)) := fun K hK k => by
   obtain ⟨C, hC, hf'⟩ := hbf.exists_forall_le hK k
   obtain ⟨D, hD, hg'⟩ := hbg.exists_forall_le hK k
-  obtain ⟨E, hE, hB⟩ := exists_norm_iteratedFDeriv_bilinear_le
-    ((CoordinateSpace n × CoordinateSpace n) × ℂ) B k
+  obtain ⟨E, hE, hB⟩ := exists_norm_parameterIteratedFDeriv_bilinear_le (n := n) B k
   refine ⟨E * (C * D), by positivity, fun x hx ξ z hz => ?_⟩
-  obtain ⟨hU, h0, hfT⟩ := contDiffOn_comp_parameterDilation hΛ hf (p := ((x, ξ), z)) hz
-    (parameterWeight ξ z)
-  obtain ⟨-, -, hgT⟩ := contDiffOn_comp_parameterDilation hΛ hg (p := ((x, ξ), z)) hz
-    (parameterWeight ξ z)
-  have hk : ((k : ℕ∞ω)) ≤ ∞ := by exact_mod_cast le_top
-  rw [parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
-  refine (hB _ _ _ 0 hU h0 (hfT.of_le hk) (hgT.of_le hk) (C * parameterWeight ξ z ^ m)
-    (D * parameterWeight ξ z ^ m') (fun i hi => ?_) (fun i hi => ?_) k le_rfl).trans_eq ?_
-  · rw [← parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
-    exact hf' i hi x hx ξ z hz
-  · rw [← parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
-    exact hg' i hi x hx ξ z hz
-  · rw [Real.rpow_add (parameterWeight_pos ξ z)]
-    ring
+  refine (hB hΛ f g hf hg _ hz (C * parameterWeight ξ z ^ m) (D * parameterWeight ξ z ^ m')
+    (fun i hi => hf' i hi x hx ξ z hz) (fun i hi => hg' i hi x hx ξ z hz) k le_rfl).trans_eq ?_
+  rw [Real.rpow_add (parameterWeight_pos ξ z)]
+  ring
 
 /-- The pointwise inverse of a function of order `m` whose inverse has the bound of order `-m`
 has order `-m`. -/
@@ -473,6 +488,34 @@ private theorem bounds_const (c : A) :
   rcases k with _ | k
   · simp
   · simp [iteratedFDeriv_const_of_ne]
+
+/-- A smooth function of the position alone has order `0`: the dilations do not scale the position
+directions, so its dilated derivatives are its ordinary derivatives in the position. -/
+private theorem bounds_comp_fst_fst {g : CoordinateSpace n → A} (hg : ContDiff ℝ ∞ g) :
+    Bounds Λ 0 (fun p : (CoordinateSpace n × CoordinateSpace n) × ℂ => g p.1.1) :=
+  fun K hK k => by
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn
+    (hg.continuous_iteratedFDeriv (m := k) (by exact_mod_cast le_top)).continuousOn
+  refine ⟨max C 0, le_max_right _ _, fun x hx ξ z _ => ?_⟩
+  set L : (CoordinateSpace n × CoordinateSpace n) × ℂ →L[ℝ] CoordinateSpace n :=
+    (ContinuousLinearMap.fst ℝ _ _).comp (ContinuousLinearMap.fst ℝ _ _)
+  have hL : ‖L‖ ≤ 1 := L.opNorm_le_bound zero_le_one fun v => by
+    simpa [L] using (norm_fst_le v.1).trans (norm_fst_le v)
+  have hfun : (fun v => g (((x, ξ), z) + parameterDilation n (parameterWeight ξ z) v).1.1) =
+      (fun y => g (x + y)) ∘ L := by
+    funext v
+    simp [L]
+  rw [parameterIteratedFDeriv_eq_iteratedFDeriv_comp, Real.rpow_zero, mul_one, hfun,
+    L.iteratedFDeriv_comp_right (f := fun y => g (x + y))
+      (hg.comp (contDiff_const.add contDiff_id)) 0 (by exact_mod_cast le_top), map_zero,
+    iteratedFDeriv_comp_add_left, add_zero]
+  refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
+  calc ‖iteratedFDeriv ℝ k g x‖ * ∏ _ : Fin k, ‖L‖ ≤ ‖iteratedFDeriv ℝ k g x‖ * 1 :=
+        mul_le_mul_of_nonneg_left
+          (Finset.prod_le_one₀ (fun _ _ => norm_nonneg _) fun _ _ => hL) (norm_nonneg _)
+    _ ≤ max C 0 := by
+        rw [mul_one]
+        exact (hC x hx).trans (le_max_left _ _)
 
 /-- A continuous linear map `L` has order `m` if both `L` and `L` composed with the dilations are
 bounded by multiples of the weight to the power `m`. -/
@@ -769,6 +812,28 @@ theorem coefficient_comp (b : ParameterSymbol n Λ W U m') (a : ParameterSymbol 
     (p : (CoordinateSpace n × CoordinateSpace n) × ℂ) :
     (b.comp a).coefficient p = (b.coefficient p).comp (a.coefficient p) := (rfl)
 
+open scoped Classical in
+/-- A smooth function `f` of the position alone, as a parameter-dependent symbol of order `0`: its
+coefficient is `f(x)` at every frequency and every spectral parameter in `Λ`. Composing a symbol
+with it multiplies the symbol by `f`; it is the counterpart of `TauCeti.Symbol.ofSpatial`. -/
+def ofSpatial (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f) :
+    ParameterSymbol n Λ V W 0 where
+  coefficient p := if p.2 ∈ Λ then f p.1.1 else 0
+  contDiffOn_coefficient :=
+    (hf.comp (contDiff_fst.comp contDiff_fst)).contDiffOn.congr fun p hp => by
+      simp [SetLike.mem_coe.1 hp.2]
+  coefficient_of_notMem p hp := by simp [hp]
+  exists_bound := (bounds_comp_fst_fst hf).congr fun p hp => by
+    filter_upwards [(Λ.isOpen.preimage continuous_snd).mem_nhds hp] with q hq
+    have hq' : q.2 ∈ Λ := hq
+    simp [hq']
+
+@[simp]
+theorem coefficient_ofSpatial (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f)
+    (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :
+    (ofSpatial f hf : ParameterSymbol n Λ V W 0).coefficient ((x, ξ), z) = f x := by
+  simp [ofSpatial, hz]
+
 /-! ### Derivatives in the position and frequency directions -/
 
 /-- The coefficient of a parameter-dependent symbol is smooth at every point whose spectral
@@ -992,6 +1057,10 @@ theorem IsSmoothing.neg {a : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing) :
   obtain ⟨a', ha'⟩ := ha m'
   exact ⟨-a', by simp [ha']⟩
 
+@[simp]
+theorem isSmoothing_neg_iff {a : ParameterSymbol n Λ V W m} : (-a).IsSmoothing ↔ a.IsSmoothing :=
+  ⟨fun ha => neg_neg a ▸ ha.neg, IsSmoothing.neg⟩
+
 theorem IsSmoothing.sub {a b : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing)
     (hb : b.IsSmoothing) : (a - b).IsSmoothing := by
   rw [sub_eq_add_neg]
@@ -1000,6 +1069,13 @@ theorem IsSmoothing.sub {a b : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing)
 theorem IsSmoothing.inclusion {a : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing) (h : m ≤ m') :
     (inclusion h a).IsSmoothing :=
   fun m'' => (ha m'').imp fun _ hb => by rw [hb, coefficient_inclusion]
+
+/-- Including a parameter-dependent symbol into a higher order does not change whether it is
+smoothing. -/
+@[simp]
+theorem isSmoothing_inclusion_iff {a : ParameterSymbol n Λ V W m} {h : m ≤ m'} :
+    (inclusion h a).IsSmoothing ↔ a.IsSmoothing :=
+  ⟨fun ha m'' => (ha m'').imp fun _ hb => by rw [hb, coefficient_inclusion], (·.inclusion h)⟩
 
 theorem IsSmoothing.spatialDeriv {a : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing)
     (v : CoordinateSpace n) : (a.spatialDeriv v).IsSmoothing := fun m' => by
