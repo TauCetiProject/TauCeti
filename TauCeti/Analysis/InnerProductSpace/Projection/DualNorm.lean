@@ -27,14 +27,12 @@ with `x` has norm at most `c ‖u‖` for every `u ∈ K`. -/
 theorem norm_starProjection_le_iff_forall_norm_inner_le (K : Submodule 𝕜 E)
     [K.HasOrthogonalProjection] (x : E) {c : ℝ} (hc : 0 ≤ c) :
     ‖K.starProjection x‖ ≤ c ↔ ∀ u ∈ K, ‖⟪u, x⟫_𝕜‖ ≤ c * ‖u‖ := by
-  have he (u : E) (hu : u ∈ K) : ⟪u, K.starProjection x⟫_𝕜 = ⟪u, x⟫_𝕜 := by
-    rw [← K.inner_starProjection_left_eq_right u x, K.starProjection_eq_self_iff.mpr hu]
-  -- The projection is the Riesz representative of the inner-product functional on `K`.
+  -- The projection is the Riesz representative of the inner-product functional on `K`, so the
+  -- bound is the operator-norm bound `‖⟪P_K x, u⟫‖ ≤ c ‖u‖` on `K`, and `⟪P_K x, u⟫ = ⟪x, u⟫`.
   rw [starProjection_apply, norm_coe, ← innerSL_apply_norm 𝕜,
     ContinuousLinearMap.opNorm_le_iff hc, Subtype.forall]
-  refine forall₂_congr fun u hu ↦ ?_
-  rw [innerSL_apply_apply, coe_inner, ← norm_coe, coe_mk, norm_inner_symm, ← starProjection_apply,
-    he u hu, mul_comm]
+  simp only [innerSL_apply_apply, inner_orthogonalProjectionOnto_eq_of_mem_right, ← norm_coe,
+    norm_inner_symm x]
 
 /-- For nested subspaces `S ≤ L` and any vector `m`, the pairings of `P_L x - m` with `S` are
 uniformly bounded, `‖⟪u, P_L x - m⟫‖ ≤ c ‖u‖` for all `u ∈ S`, exactly when

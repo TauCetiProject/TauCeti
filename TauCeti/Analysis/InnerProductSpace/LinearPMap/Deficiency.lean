@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
 public import TauCeti.Analysis.InnerProductSpace.Projection.DualNorm
 public import TauCeti.Analysis.InnerProductSpace.Projection.Acute.Isometry
+public import TauCeti.Analysis.RCLike.Convex
 
 /-!
 # Deficiency subspaces of a symmetric operator on half-planes
@@ -119,8 +120,11 @@ theorem IsFormalAdjoint.abs_im_mul_directedProjectionGap_deficiencySubspace_le [
   refine fun u hu ↦ (Submodule.norm_starProjection_le_iff_forall_norm_inner_le _ u
     (by positivity)).2 fun v hv ↦ ?_
   rw [orthogonal_deficiencySubspace] at hv
-  simpa [norm_inner_symm, div_eq_mul_inv, mul_assoc, mul_left_comm, mul_comm] using
-    (le_div_iff₀' hz').2 (hS.abs_im_mul_norm_inner_le hu hv)
+  have h := hS.abs_im_mul_norm_inner_le hu hv
+  calc ‖⟪v, u⟫_𝕜‖ = (|im z| * ‖⟪u, v⟫_𝕜‖) / |im z| := by
+        rw [norm_inner_symm, mul_div_cancel_left₀ _ hz'.ne']
+    _ ≤ (‖w - z‖ * ‖u‖ * ‖v‖) / |im z| := by gcongr
+    _ = ‖w - z‖ / |im z| * ‖u‖ * ‖v‖ := by ring
 
 /-- For symmetric `S` on a Hilbert space and `‖w - z‖ < |im z|`, no nonzero vector of `N_w(S)`
 is orthogonal to `N_z(S)`. -/
@@ -170,7 +174,7 @@ theorem IsFormalAdjoint.nonempty_linearIsometryEquiv_deficiencySubspace_of_im_po
     [CompleteSpace E] (hS : S.IsFormalAdjoint S) (hz : 0 < im z) (hw : 0 < im w) :
     Nonempty (S.deficiencySubspace z ≃ₗᵢ[𝕜] S.deficiencySubspace w) :=
   hS.nonempty_linearIsometryEquiv_deficiencySubspace
-    (convex_halfSpace_gt (imLm_coe (K := 𝕜) ▸ imLm.isLinear) 0).isPreconnected
+    (convex_halfSpace_im_gt 0).isPreconnected
     (fun _ h ↦ ne_of_gt h) hz hw
 
 /-- **Von Neumann's theorem on the lower half-plane.** For symmetric `S` on a Hilbert space, the
@@ -180,7 +184,7 @@ theorem IsFormalAdjoint.nonempty_linearIsometryEquiv_deficiencySubspace_of_im_ne
     [CompleteSpace E] (hS : S.IsFormalAdjoint S) (hz : im z < 0) (hw : im w < 0) :
     Nonempty (S.deficiencySubspace z ≃ₗᵢ[𝕜] S.deficiencySubspace w) :=
   hS.nonempty_linearIsometryEquiv_deficiencySubspace
-    (convex_halfSpace_lt (imLm_coe (K := 𝕜) ▸ imLm.isLinear) 0).isPreconnected
+    (convex_halfSpace_im_lt 0).isPreconnected
     (fun _ h ↦ ne_of_lt h) hz hw
 
 end LinearPMap
