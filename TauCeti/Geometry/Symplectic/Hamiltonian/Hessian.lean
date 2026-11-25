@@ -56,12 +56,8 @@ theorem hamiltonianVectorField_norm_sq (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) :
   symm
   rw [eq_hamiltonianVectorField_iff, (hasStrictFDerivAt_norm_sq y).hasFDerivAt.fderiv]
   intro v
-  have h : ω ((-2 : ℝ) • J y) v = -2 * ω (J y) v := by
-    change ω.toBilinForm _ v = _
-    rw [map_smul, LinearMap.smul_apply, smul_eq_mul]
-  rw [_root_.smul_apply]
-  change ω ((-2 : ℝ) • J y) v = _
-  rw [h, ← ω.neg_eq, hg, real_inner_comm]
+  have h : ω ((-2 : ℝ) • J y) v = -2 * ω (J y) v := LinearMap.map_smul₂ ω.toBilinForm _ _ _
+  rw [_root_.smul_apply, LinearMap.coe_toContinuousLinearMap', h, ← ω.neg_eq, hg, real_inner_comm]
   simp only [_root_.smul_apply, innerSL_apply_apply, nsmul_eq_mul]
   push_cast
   ring

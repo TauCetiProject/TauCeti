@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.TimeIndependent.Sobolev
 import TauCeti.Analysis.Calculus.Morse.NormSq
-import TauCeti.Analysis.Fredholm.SemiFredholm
+import TauCeti.Analysis.Sobolev.Cylinder.Slice.NonzeroMode
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.UnitaryFrame
 import TauCeti.Geometry.Symplectic.Hamiltonian.ConstantOrbit
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
@@ -48,7 +48,7 @@ at `0` is nondegenerate, so the operator is invertible
 (`isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_compatible` in the namespace
 `TauCeti.SymplecticForm`) and its restriction is bijective. The family is then Fredholm of constant
 index `0` along the segment, and an injective operator of index `0` is onto
-(`ContinuousOn.surjective_of_isPreconnected`).
+(`TauCeti.CylinderSobolev.exists_eq_of_sliceAverageLp_eq_zero_of_isPreconnected`).
 
 ## References
 
@@ -99,10 +99,7 @@ private theorem isInvertible_floerSobolevOperator_const_mul_norm_sq
       fun v ↦ (hΦ v).symm
   have hinv := ω.isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_compatible hL
     (contDiff_const.mul ((contDiff_norm_sq ℝ).comp contDiff_snd)) (fun _ ↦ rfl) (x := fun _ ↦ 0)
-    (fun t ↦ by
-      show HasDerivAt _ (ω.hamiltonianVectorField (fun y ↦ ε * ‖y‖ ^ 2) 0) t
-      rw [hX, map_zero]
-      exact hasDerivAt_const t 0) (fun _ ↦ rfl)
+    (fun t ↦ by simpa only [hX, map_zero] using hasDerivAt_const t (0 : V)) (fun _ ↦ rfl)
     (J := fun _ _ ↦ J) hg hΦ hΦω (fun _ ↦ hJ) contDiff_const (fun _ ↦ rfl) hnd
   convert hinv using 1
   rw [floerSobolevOperator_def, floerSobolevOperator_def]
@@ -238,67 +235,6 @@ private theorem segmentOperator_sliceAverageL (ω : SymplecticForm V) (J : Almos
       sliceAverageLp (segmentOperator ω J H γ ε τ x) :=
   floerSobolevOperator_sliceAverageL ω J _ γ x
 
-/-- **Onto the nonzero modes along a segment.** Let `D τ` be operators `W^{1,2} → L²` commuting
-with the slice average, depending affinely on `τ`, and bounded below on the nonzero modes uniformly
-for `τ ∈ [0, 1]`. If `D 0` maps the nonzero modes of `W^{1,2}` onto those of `L²`, so does `D 1`. -/
-private theorem exists_eq_of_sliceAverageLp_eq_zero_of_segment
-    {D : ℝ → H1 V →L[ℝ] Lp V 2 stripMeasure}
-    (hcomm : ∀ τ x, D τ (sliceAverageL x) = sliceAverageLp (D τ x))
-    (haff : ∀ τ, D τ = D 0 + τ • (D 1 - D 0)) {c : ℝ} (hc : 0 < c)
-    (hlow : ∀ τ ∈ Icc (0 : ℝ) 1, ∀ x : H1 V, sliceAverageL x = 0 → c * ‖x‖ ≤ ‖D τ x‖)
-    (h₀ : ∀ y, sliceAverageLp y = 0 → ∃ x, sliceAverageL x = 0 ∧ D 0 x = y)
-    {y : Lp V 2 stripMeasure} (hy : sliceAverageLp y = 0) :
-    ∃ x, sliceAverageL x = 0 ∧ D 1 x = y := by
-  -- The nonzero modes `E` of `W^{1,2}`, inside `L²` jets, and `G` of `L²`.
-  set E : Submodule ℝ (Lp (V × V × V) 2 stripMeasure) :=
-    H1 V ⊓ (sliceAverageLp : Lp (V × V × V) 2 stripMeasure →L[ℝ] _).ker
-  set G : Submodule ℝ (Lp V 2 stripMeasure) :=
-    (sliceAverageLp : Lp V 2 stripMeasure →L[ℝ] Lp V 2 stripMeasure).ker
-  set ι : E →L[ℝ] H1 V :=
-    E.subtypeL.codRestrict (H1 V) fun x ↦ (Submodule.mem_inf.1 x.property).1
-  have hι (x : E) : sliceAverageL (ι x) = 0 := by
-    refine Subtype.ext ?_
-    rw [coe_sliceAverageL]
-    exact LinearMap.mem_ker.1 (Submodule.mem_inf.1 x.property).2
-  have hmaps (τ : ℝ) (x : E) : (D τ).comp ι x ∈ G := by
-    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, comp_apply, ← hcomm, hι, map_zero]
-  -- The restrictions `T τ` to the nonzero modes form an affine family.
-  set T : ℝ → E →L[ℝ] G := fun τ ↦ ((D τ).comp ι).codRestrict G (hmaps τ)
-  have hT : T = fun τ ↦ T 0 + τ • (T 1 - T 0) := by
-    funext τ
-    ext1 x
-    refine Subtype.ext ?_
-    simp only [T, coe_codRestrict_apply, comp_apply, add_apply, _root_.smul_apply, sub_apply,
-      Submodule.coe_add, Submodule.coe_smul, Submodule.coe_sub]
-    rw [haff τ, add_apply, _root_.smul_apply, sub_apply]
-  have hcont : ContinuousOn T (Icc 0 1) := by
-    rw [hT]
-    let : ContinuousAdd (E →L[ℝ] G) :=
-      (ContinuousLinearMap.isTopologicalAddGroup (E := E) (F := G)).toContinuousAdd
-    exact ((continuous_const (y := T 0)).add
-      ((continuous_id (X := ℝ)).smul (continuous_const (y := T 1 - T 0)))).continuousOn
-  -- Each `T τ` is injective with closed range, and `T 0` is onto.
-  have hH1 : IsClosed (H1 V : Set (Lp (V × V × V) 2 stripMeasure)) :=
-    coe_jetClosure (testSection V) ▸ isClosed_closure
-  have : CompleteSpace E := (hH1.inter (isClosed_ker _)).completeSpace_coe
-  have hK (τ : ℝ) (hτ : τ ∈ Icc (0 : ℝ) 1) (x : E) : ‖x‖ ≤ c⁻¹ * ‖T τ x‖ := by
-    rw [le_inv_mul_iff₀ hc]
-    exact hlow τ hτ (ι x) (hι x)
-  have hinj (τ : ℝ) (hτ : τ ∈ Icc (0 : ℝ) 1) : Function.Injective (T τ) := by
-    refine (injective_iff_map_eq_zero _).2 fun x hx ↦ norm_le_zero_iff.1 ?_
-    simpa [hx] using hK τ hτ x
-  have hclosed (τ : ℝ) (hτ : τ ∈ Icc (0 : ℝ) 1) : IsClosed ((T τ).range : Set G) := by
-    rw [LinearMap.coe_range]
-    exact ((T τ).antilipschitz_of_bound (K := ⟨_, by positivity⟩) (hK τ hτ)).isClosed_range
-      (T τ).uniformContinuous
-  have hsurj0 : Function.Surjective (T 0) := fun z ↦ by
-    obtain ⟨x, hx, hDx⟩ := h₀ z z.property
-    refine ⟨⟨x, Submodule.mem_inf.2 ⟨x.property, LinearMap.mem_ker.2 ?_⟩⟩, Subtype.ext hDx⟩
-    rw [ContinuousLinearMap.coe_coe, ← coe_sliceAverageL, hx, Submodule.coe_zero]
-  obtain ⟨x, hx⟩ := hcont.surjective_of_isPreconnected hinj hclosed isPreconnected_Icc
-    (left_mem_Icc.2 zero_le_one) hsurj0 (right_mem_Icc.2 zero_le_one) ⟨y, hy⟩
-  exact ⟨ι x, hι x, congrArg Subtype.val hx⟩
-
 /-- At `τ = 0` the segment operator is invertible and commutes with the slice average, so it maps
 the nonzero modes of `W^{1,2}` onto those of `L²`. -/
 private theorem exists_segmentOperator_zero_eq (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) {F : Type*}
@@ -341,11 +277,18 @@ theorem exists_floerSobolevOperator_eq_of_sliceAverageLp_eq_zero
   have hsmall : |ε| * (2 * ‖Jc‖) < Real.log 2 :=
     hεJ.trans_lt (by linarith [Real.log_pos one_lt_two])
   have hb : 0 < 2 * π - max a (1 / 2) := sub_pos.2 (max_lt ha (by linarith [two_le_pi]))
+  have hcont : Continuous (segmentOperator ω J H γ ε) := by
+    rw [funext (segmentOperator_eq hg hH hγ haγ ε)]
+    let : ContinuousAdd (H1 V →L[ℝ] Lp V 2 stripMeasure) :=
+      (isTopologicalAddGroup (E := H1 V) (F := Lp V 2 stripMeasure)).toContinuousAdd
+    exact continuous_const.add (continuous_id.smul continuous_const)
   rw [← segmentOperator_one ω J H γ ε]
-  refine exists_eq_of_sliceAverageLp_eq_zero_of_segment (segmentOperator_sliceAverageL ω J H γ ε)
-    (segmentOperator_eq hg hH hγ haγ ε) (c := (2 * π - max a (1 / 2)) / (2 * π + 1))
-    (div_pos hb (by linarith [pi_pos])) (fun τ hτ x hx ↦ ?_)
-    (fun _ hz ↦ exists_segmentOperator_zero_eq hg hΦ hΦω hε0.ne' hsmall hz) hy
+  refine exists_eq_of_sliceAverageLp_eq_zero_of_isPreconnected hcont.continuousOn
+    isPreconnected_Icc (fun τ _ ↦ segmentOperator_sliceAverageL ω J H γ ε τ)
+    (fun τ hτ ↦ ⟨(2 * π - max a (1 / 2)) / (2 * π + 1), div_pos hb (by linarith [pi_pos]),
+      fun x hx ↦ ?_⟩) (left_mem_Icc.2 zero_le_one)
+    (fun _ hz ↦ exists_segmentOperator_zero_eq hg hΦ hΦω hε0.ne' hsmall hz)
+    (right_mem_Icc.2 zero_le_one) hy
   rw [div_mul_eq_mul_div, div_le_iff₀ (by linarith [pi_pos])]
   exact (mul_norm_le_mul_norm_segmentOperator hg hH hγ ha haγ (hεJ.trans (by linarith)) hτ
     hx).trans_eq (mul_comm _ _)
