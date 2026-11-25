@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.ShortComplex.Basic
 public import TauCeti.CategoryTheory.Exact.Bicartesian
 
 /-!
@@ -38,10 +39,10 @@ for the top row follows from the one for the bottom row in the opposite exact ca
 
 The proofs read the columns of a `3 × 3` diagram through two families of `rfl` lemmas. The
 column `D.map ShortComplex.πᵢ` is the short complex `ShortComplex.mk D.f.τᵢ D.g.τᵢ _`
-(`map_π₁_eq`, `map_π₂_eq`, `map_π₃_eq`). In the opposite diagram
+(`CategoryTheory.ShortComplex.map_π₁_eq` and its siblings). In the opposite diagram
 `ShortComplex.mk (ShortComplex.opMap D.g) (ShortComplex.opMap D.f)`, the rows are `D.X₃.op`,
 `D.X₂.op`, `D.X₁.op`, and its `i`-th column is `(D.map ShortComplex.π₄₋ᵢ).op`
-(`opMap_map_π₁`, `opMap_map_π₂`, `opMap_map_π₃`).
+(`CategoryTheory.ShortComplex.opMap_map_π₁` and its siblings).
 
 ## Main results
 
@@ -73,47 +74,6 @@ open CategoryTheory CategoryTheory.Limits
 universe v u
 
 variable {C : Type u} [Category.{v} C] [Preadditive C]
-
-section Columns
-
-/-! ### The columns of a `3 × 3` diagram -/
-
-variable (D : ShortComplex (ShortComplex C))
-
-/-- The left column of a `3 × 3` diagram `D` is the short complex `D.f.τ₁`, `D.g.τ₁`. -/
-private theorem map_π₁_eq :
-    D.map ShortComplex.π₁ = ShortComplex.mk D.f.τ₁ D.g.τ₁ (by simp [← ShortComplex.comp_τ₁]) :=
-  rfl
-
-/-- The middle column of a `3 × 3` diagram `D` is the short complex `D.f.τ₂`, `D.g.τ₂`. -/
-private theorem map_π₂_eq :
-    D.map ShortComplex.π₂ = ShortComplex.mk D.f.τ₂ D.g.τ₂ (by simp [← ShortComplex.comp_τ₂]) :=
-  rfl
-
-/-- The right column of a `3 × 3` diagram `D` is the short complex `D.f.τ₃`, `D.g.τ₃`. -/
-private theorem map_π₃_eq :
-    D.map ShortComplex.π₃ = ShortComplex.mk D.f.τ₃ D.g.τ₃ (by simp [← ShortComplex.comp_τ₃]) :=
-  rfl
-
-/-- The left column of the opposite of a `3 × 3` diagram `D` is the opposite of its right
-column. -/
-private theorem opMap_map_π₁ (w : ShortComplex.opMap D.g ≫ ShortComplex.opMap D.f = 0) :
-    (ShortComplex.mk _ _ w).map ShortComplex.π₁ = (D.map ShortComplex.π₃).op :=
-  rfl
-
-/-- The middle column of the opposite of a `3 × 3` diagram `D` is the opposite of its middle
-column. -/
-private theorem opMap_map_π₂ (w : ShortComplex.opMap D.g ≫ ShortComplex.opMap D.f = 0) :
-    (ShortComplex.mk _ _ w).map ShortComplex.π₂ = (D.map ShortComplex.π₂).op :=
-  rfl
-
-/-- The right column of the opposite of a `3 × 3` diagram `D` is the opposite of its left
-column. -/
-private theorem opMap_map_π₃ (w : ShortComplex.opMap D.g ≫ ShortComplex.opMap D.f = 0) :
-    (ShortComplex.mk _ _ w).map ShortComplex.π₃ = (D.map ShortComplex.π₁).op :=
-  rfl
-
-end Columns
 
 namespace ExactStructure
 
@@ -210,7 +170,7 @@ private theorem exists_threeByThree_cokernel {D : ShortComplex (ShortComplex C)}
       E.Conflation (ShortComplex.mk (D.X₁.f ≫ D.f.τ₂) c hc') ∧
       E.Conflation (ShortComplex.mk α₂ β₂ hαβ₂) ∧ c ≫ β₂ = D.g.τ₂ ∧ c ≫ β₁ = D.X₂.g ∧
       α₂ ≫ β₁ = D.f.τ₃ ∧ β₂ ≫ D.X₃.g = β₁ ≫ D.g.τ₃ := by
-  rw [map_π₂_eq] at h₂
+  rw [ShortComplex.map_π₂_eq] at h₂
   have : Epi D.X₁.g := (E.isKernelCokernelPair _ hX₁).epi_g
   obtain ⟨Q, c, hc', hQ'⟩ := (ConflationClass.isInflation_iff _ (D.X₁.f ≫ D.f.τ₂)).1
     (E.isInflation_comp D.X₁.f D.f.τ₂ (E.isInflation_f hX₁) (E.isInflation_f h₂))
@@ -235,8 +195,8 @@ theorem conflation_X₃_of_conflation_X₁ {D : ShortComplex (ShortComplex C)}
     (h₁ : E.Conflation (D.map ShortComplex.π₁)) (h₂ : E.Conflation (D.map ShortComplex.π₂))
     (h₃ : E.Conflation (D.map ShortComplex.π₃)) (hX₁ : E.Conflation D.X₁)
     (hX₂ : E.Conflation D.X₂) : E.Conflation D.X₃ := by
-  rw [map_π₁_eq] at h₁
-  rw [map_π₃_eq] at h₃
+  rw [ShortComplex.map_π₁_eq] at h₁
+  rw [ShortComplex.map_π₃_eq] at h₃
   have : Epi D.g.τ₁ := (E.isKernelCokernelPair _ h₁).epi_g
   -- The two Noether conflations `A'' ⟶ Q ⟶ C` and `C' ⟶ Q ⟶ B''` through the cokernel `Q` of the
   -- composite inflation from the top left corner to the centre.
@@ -273,9 +233,9 @@ theorem conflation_X₁_of_conflation_X₃ {D : ShortComplex (ShortComplex C)}
   have h₁' := (E.op_conflation_op_iff _).2 h₃
   have h₂' := (E.op_conflation_op_iff _).2 h₂
   have h₃' := (E.op_conflation_op_iff _).2 h₁
-  rw [← opMap_map_π₁ D w] at h₁'
-  rw [← opMap_map_π₂ D w] at h₂'
-  rw [← opMap_map_π₃ D w] at h₃'
+  rw [← ShortComplex.opMap_map_π₁ D w] at h₁'
+  rw [← ShortComplex.opMap_map_π₂ D w] at h₂'
+  rw [← ShortComplex.opMap_map_π₃ D w] at h₃'
   exact (E.op_conflation_op_iff D.X₁).1 <| conflation_X₃_of_conflation_X₁ h₁' h₂' h₃'
     ((E.op_conflation_op_iff _).2 hX₃) ((E.op_conflation_op_iff _).2 hX₂)
 
@@ -295,7 +255,7 @@ theorem conflation_X₂_of_conflation_X₁_of_conflation_X₃ {D : ShortComplex 
     (h₁ : E.Conflation (D.map ShortComplex.π₁)) (h₂ : E.Conflation (D.map ShortComplex.π₂))
     (h₃ : E.Conflation (D.map ShortComplex.π₃)) (hX₁ : E.Conflation D.X₁)
     (hX₃ : E.Conflation D.X₃) : E.Conflation D.X₂ := by
-  rw [map_π₁_eq] at h₁
+  rw [ShortComplex.map_π₁_eq] at h₁
   have hpair₁ := E.isKernelCokernelPair _ h₁
   have : Epi D.g.τ₁ := hpair₁.epi_g
   -- The Noether conflation `C' ⟶ Q ⟶ B''` through the cokernel `Q` of the composite inflation
