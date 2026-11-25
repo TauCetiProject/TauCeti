@@ -211,74 +211,6 @@ namespace Complex
 
 variable {f : ℂ → ℂ} {c z : ℂ} {ρ : ℝ} {k : ℕ}
 
-/-- The Cauchy kernel `(w - c) / (w - z) ^ (k + 1)` of a point `z` of `ball c ρ` is continuous on
-the circle `sphere c ρ`. -/
-private theorem continuousOn_div_sub_pow_sphere (hz : z ∈ ball c ρ) :
-    ContinuousOn (fun w ↦ (w - c) / (w - z) ^ (k + 1)) (sphere c |ρ|) := by
-  have hρ : 0 < ρ := dist_nonneg.trans_lt (mem_ball.mp hz)
-  have h₁ : ContinuousOn (fun w : ℂ ↦ w - c) (sphere c ρ) := by fun_prop
-  have h₂ : ContinuousOn (fun w : ℂ ↦ (w - z) ^ (k + 1)) (sphere c ρ) := by fun_prop
-  rw [abs_of_pos hρ]
-  refine h₁.div h₂ fun w hw ↦ pow_ne_zero _ (sub_ne_zero.2 fun hwz ↦ ?_)
-  rw [mem_sphere, hwz] at hw
-  exact (mem_ball.mp hz).ne hw
-
-/-- The circle average of the Cauchy kernel `(w - c) / (w - z) ^ (k + 1)` against the conjugate of a
-holomorphic function vanishes once `k ≥ 1`: on the circle, the conjugate kernel is holomorphic on
-the closed disc and vanishes at `c`. -/
-private theorem circleAverage_div_sub_pow_mul_conj_eq_zero {g : ℂ → ℂ}
-    (hg : DiffContOnCl ℂ g (ball c ρ)) (hk : 1 ≤ k) (hz : z ∈ ball c ρ) :
-    circleAverage (fun w ↦ (w - c) / (w - z) ^ (k + 1) * conj (g w)) c ρ = 0 := by
-  have hzc : ‖z - c‖ < ρ := by simpa [dist_eq_norm] using hz
-  have hρ : 0 < ρ := (norm_nonneg _).trans_lt hzc
-  -- On the circle, `conj (w - c) = ρ ^ 2 / (w - c)`, so the conjugate of the kernel is the
-  -- rational function `A` below, holomorphic on a neighbourhood of the closed disc.
-  have hconjK (w : ℂ) (hw : w ∈ sphere c ρ) : conj ((w - c) / (w - z) ^ (k + 1)) =
-      (ρ : ℂ) ^ 2 * (w - c) ^ k / ((ρ : ℂ) ^ 2 - (w - c) * conj (z - c)) ^ (k + 1) := by
-    have hwc : ‖w - c‖ = ρ := by simpa [dist_eq_norm] using hw
-    have hu : w - c ≠ 0 := norm_ne_zero_iff.mp (hwc.trans_ne hρ.ne')
-    have hconj : conj (w - c) = (ρ : ℂ) ^ 2 / (w - c) := by
-      rw [eq_div_iff hu, mul_comm, mul_conj, normSq_eq_norm_sq, hwc]; push_cast; ring
-    have hsub : conj (w - z) = ((ρ : ℂ) ^ 2 - (w - c) * conj (z - c)) / (w - c) := by
-      rw [show w - z = (w - c) - (z - c) by ring, map_sub, hconj]
-      field_simp
-    rw [map_div₀, map_pow, hconj, hsub, div_pow, pow_succ (w - c)]
-    field_simp
-  set A : ℂ → ℂ := fun w ↦
-    (ρ : ℂ) ^ 2 * (w - c) ^ k / ((ρ : ℂ) ^ 2 - (w - c) * conj (z - c)) ^ (k + 1)
-  have hden (w : ℂ) (hw : w ∈ closedBall c ρ) :
-      ((ρ : ℂ) ^ 2 - (w - c) * conj (z - c)) ^ (k + 1) ≠ 0 := by
-    refine pow_ne_zero _ fun h0 ↦ ?_
-    have hwc : ‖w - c‖ ≤ ρ := by simpa [dist_eq_norm] using hw
-    have : ‖(w - c) * conj (z - c)‖ = ρ ^ 2 := by
-      rw [← sub_eq_zero.mp h0]
-      simp [sq, abs_of_pos hρ]
-    rw [norm_mul, norm_conj] at this
-    nlinarith [norm_nonneg (z - c), norm_nonneg (w - c)]
-  have hA : DifferentiableOn ℂ A (closure (ball c ρ)) := by
-    have h₁ : DifferentiableOn ℂ (fun w : ℂ ↦ (ρ : ℂ) ^ 2 * (w - c) ^ k) (closedBall c ρ) := by
-      fun_prop
-    have h₂ : DifferentiableOn ℂ (fun w : ℂ ↦ ((ρ : ℂ) ^ 2 - (w - c) * conj (z - c)) ^ (k + 1))
-        (closedBall c ρ) := by
-      fun_prop
-    rw [closure_ball c hρ.ne']
-    exact h₁.div h₂ hden
-  have hh : DiffContOnCl ℂ (fun w ↦ A w • g w) (ball c |ρ|) := by
-    rw [abs_of_pos hρ]
-    exact hA.diffContOnCl.smul hg
-  calc circleAverage (fun w ↦ (w - c) / (w - z) ^ (k + 1) * conj (g w)) c ρ
-      = circleAverage (conjCLE.toContinuousLinearMap ∘ fun w ↦ A w • g w) c ρ := by
-        refine circleAverage_congr_sphere fun w hw ↦ ?_
-        rw [abs_of_pos hρ] at hw
-        simp only [Function.comp_apply, ContinuousLinearEquiv.coe_coe, conjCLE_apply,
-          smul_eq_mul, map_mul, A]
-        rw [← hconjK w hw, conj_conj]
-    _ = 0 := by
-        rw [ContinuousLinearMap.circleAverage_comp_comm _
-          (hh.continuousOn_ball.mono sphere_subset_closedBall).circleIntegrable',
-          hh.circleAverage]
-        simp [A, zero_pow (Nat.one_le_iff_ne_zero.mp hk)]
-
 /-- Against the Cauchy kernel `(w - c) / (w - z) ^ (k + 1)` with `k ≥ 1`, a holomorphic `f` has
 the same circle average as `-2 (M - re f)`, for every real `M`: write `f = 2 re f - conj f`. -/
 private theorem circleAverage_div_sub_pow_mul_eq_neg_two_mul (hf : DiffContOnCl ℂ f (ball c ρ))
@@ -306,7 +238,7 @@ private theorem circleAverage_div_sub_pow_mul_eq_neg_two_mul (hf : DiffContOnCl 
     (hKs.mul (continuous_conj.comp_continuousOn (hfs.sub continuousOn_const))).circleIntegrable'
   have h₃ : DiffContOnCl ℂ (fun w ↦ f w - 2 * (M : ℂ)) (ball c ρ) := hf.sub diffContOnCl_const
   rw [hdecomp, circleAverage_fun_sub h₁ h₂, circleAverage_fun_smul, smul_eq_mul,
-    circleAverage_div_sub_pow_mul_conj_eq_zero h₃ hk hz, sub_zero]
+    h₃.circleAverage_div_sub_pow_mul_conj_eq_zero hk hz, sub_zero]
 
 /-- **Derivative form of the Borel–Carathéodory inequality on a closed disc.** Let `f` be
 holomorphic on `ball c ρ` and continuous on its closure, with `re (f w) ≤ M` on `sphere c ρ`. For
