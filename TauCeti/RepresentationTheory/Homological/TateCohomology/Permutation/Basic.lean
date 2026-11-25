@@ -217,7 +217,6 @@ stabilizer. -/
 theorem herbrandQuotient_ofMulAction_of_isPretransitive {G X : Type} [Group G] [Fintype G]
     [MulAction G X] [IsPretransitive G X] (x : X) :
     herbrandQuotient (Rep.ofMulAction ℤ G X) = Nat.card (stabilizer G x) := by
-  have := (pretransitive_iff_subsingleton_quotient G X).1 ‹_›
   have := Fintype.ofSubsingleton (Quotient.mk (orbitRel G X) x)
   rw [herbrandQuotient_ofMulAction, Fintype.prod_subsingleton _ (Quotient.mk (orbitRel G X) x),
     Nat.card_congr
