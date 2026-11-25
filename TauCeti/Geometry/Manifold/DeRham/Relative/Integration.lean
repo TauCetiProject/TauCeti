@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DeRham.Relative.Basic
-public import TauCeti.Geometry.Manifold.SmoothSingular.DeRham
+public import TauCeti.Geometry.Manifold.SmoothSingular.DeRham.Basic
 import TauCeti.Algebra.Homology.Embedding.Extend
 import TauCeti.Algebra.Homology.ModuleCat.LinearYoneda
 import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
@@ -199,14 +199,11 @@ private theorem d_eq_zero_of_d_eq (j : ℕ)
     (hc : 𝒮[M].d (j + 1 + 1) (j + 1) c =
       (SSet.chainComplexMap (smoothSingularSubcomplexMap (Subtype.val : W → M)
         contMDiff_subtypeVal) (ModuleCat.of ℝ ℝ)).f (j + 1) c') :
-    𝒮[W].d (j + 1) j c' = 0 := by
-  apply (ModuleCat.mono_iff_injective ((SSet.chainComplexMap (smoothSingularSubcomplexMap
-    (Subtype.val : W → M) contMDiff_subtypeVal) (ModuleCat.of ℝ ℝ)).f j)).mp inferInstance
-  have h := ConcreteCategory.congr_hom ((SSet.chainComplexMap (smoothSingularSubcomplexMap
-    (Subtype.val : W → M) contMDiff_subtypeVal) (ModuleCat.of ℝ ℝ)).comm (j + 1) j) c'
-  simp only [ModuleCat.comp_apply] at h
-  rw [map_zero, ← h, ← hc, ← ModuleCat.comp_apply, HomologicalComplex.d_comp_d]
-  simp
+    𝒮[W].d (j + 1) j c' = 0 :=
+  HomologicalComplex.d_apply_eq_zero_of_d_f_apply_eq_zero
+    (SSet.chainComplexMap (smoothSingularSubcomplexMap (Subtype.val : W → M)
+      contMDiff_subtypeVal) (ModuleCat.of ℝ ℝ))
+    (by rw [← hc, ← ModuleCat.comp_apply, HomologicalComplex.d_comp_d]; simp)
 
 omit [IsManifold I 2 M] in
 /-- On the `W`-part `c'` of a relative smooth cycle, the coboundary `db` of a cochain of `W` of

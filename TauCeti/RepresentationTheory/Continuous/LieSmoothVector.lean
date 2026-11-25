@@ -32,6 +32,7 @@ smooth vectors.
 
 * `ContRepresentation.IsLieSmoothVector I π v`: the orbit map of `v` is smooth.
 * `ContRepresentation.lieSmoothVectors I π`: the submodule of smooth vectors.
+* `ContRepresentation.lieSmoothVectorsAction I π`: the action of `G` on the smooth vectors.
 * `ContRepresentation.lieDerivative π X v`: the derivative of `t ↦ π (lieExp (t • X)) v` at `0`.
 * `ContRepresentation.lieSmoothVectorsDerivative I π X`: the derived action of `X` as an
   `R`-linear endomorphism of `lieSmoothVectors I π`.
@@ -114,6 +115,20 @@ def lieSmoothVectors : Submodule R V where
 @[simp]
 theorem mem_lieSmoothVectors {v : V} : v ∈ lieSmoothVectors I π ↔ IsLieSmoothVector I π v :=
   Iff.rfl
+
+variable [ContMDiffMul I ∞ G]
+
+/-- The action of the group on its smooth vectors: the restriction of the representation to the
+invariant submodule `lieSmoothVectors I π` (`IsLieSmoothVector.apply`). -/
+def lieSmoothVectorsAction : Representation R G (lieSmoothVectors I π) :=
+  π.toRepresentation.subrepresentation (lieSmoothVectors I π) fun g _ hw ↦
+    (mem_lieSmoothVectors I π).2 (((mem_lieSmoothVectors I π).1 hw).apply g)
+
+/-- The action of the group on smooth vectors is the action of the representation. -/
+@[simp]
+theorem coe_lieSmoothVectorsAction_apply (g : G) (w : lieSmoothVectors I π) :
+    (lieSmoothVectorsAction I π g w : V) = π g w :=
+  (rfl)
 
 end Submodule
 

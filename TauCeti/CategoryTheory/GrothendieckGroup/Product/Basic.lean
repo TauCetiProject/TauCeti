@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Group.Prod
 public import TauCeti.CategoryTheory.Exact.Product
 public import TauCeti.CategoryTheory.GrothendieckGroup.Exact
-public import TauCeti.CategoryTheory.GrothendieckGroup.Triangulated
+public import TauCeti.CategoryTheory.GrothendieckGroup.Triangulated.Basic
 public import TauCeti.CategoryTheory.Triangulated.Prod
 
 /-!

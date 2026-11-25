@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Morse.Bott.Count
 public import TauCeti.Geometry.Manifold.Morse.Bott.Inequalities
+public import TauCeti.Topology.VectorBundle.Orientation.BettiNumber
 public import TauCeti.Topology.VectorBundle.Thom.TwistedHomology
-import TauCeti.Algebra.Category.ModuleCat.Biproducts
-import TauCeti.Algebra.Category.ModuleCat.Finrank
+import TauCeti.Geometry.Manifold.Topology
 
 /-!
 # The Morse–Bott inequalities with coefficients twisted by the negative orientation
@@ -17,34 +18,58 @@ Let `f` be a Morse–Bott function on a compact boundaryless manifold `M`, exhib
 `i j : S j → M` of critical submanifolds (`TauCeti.IsMorseBottFamily`), and let `g j` be smooth
 fibre metrics on their normal bundles. The negative normal spaces of `S j` relative to `g j` form
 a real vector bundle `ν⁻ j` of rank `r j`, the index of the piece, with orientation local system
-`o(ν⁻ j)` (`TauCeti.VectorBundleOrientationCover.signLocalSystem`). Let `K` be a field in which `2`
-is invertible, such as `ℚ`. Write `bₙ = dim Hₙ(M; K)` and
+`o(ν⁻ j)` (`TauCeti.VectorBundleOrientationCover.signLocalSystem`). Let `K` be any field. Write
+`bₙ = dim Hₙ(M; K)` and
 
 `cₙ = ∑ⱼ dim H_{n - r j}(S j; o(ν⁻ j) ⊗ K)`,
 
 the sum running over the pieces of index `r j ≤ n`. This file proves the **Morse–Bott
 inequalities** for `b` and `c`: the weak inequalities `bₙ ≤ cₙ`, the strong inequalities
-`bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ cₙ - cₙ₋₁ + ⋯ ± c₀`, Euler's equality in degrees at least `dim M`, and the
+`bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ cₙ - cₙ₋₁ + ⋯ ± c₀`, Euler's equality in degrees at least `dim M`, the
 polynomial identity `∑ₙ cₙ tⁿ = ∑ₙ bₙ tⁿ + (1 + t) Q(t)` with `Q` having natural number
-coefficients. No orientation of the negative normal bundles is assumed: the contribution of a
-piece is its homology twisted by the orientation of its negative normal bundle, which is its
+coefficients, and the lacunary principle: if no two consecutive `cₙ` are both nonzero, then
+`bₙ = cₙ` for every `n`. No orientation of the negative normal bundles is assumed: the contribution
+of a piece is its homology twisted by the orientation of its negative normal bundle, which is its
 ordinary homology when that bundle is orientable. For instance, on the real projective plane the
 function `[x : y : z] ↦ (x² + y²) / (x² + y² + z²)` has a minimum at `[0 : 0 : 1]` and a critical
 circle of index `1` on which it is maximal, whose negative normal bundle is a Möbius line. Over `ℚ`
 the circle contributes nothing, as its homology with coefficients in the orientation system of the
 Möbius line vanishes, so `c = (1, 0, 0)` is the sequence of Betti numbers of the plane over `ℚ`;
-its untwisted homology would contribute `t + t²`. Over `𝔽₂`, where the twist disappears, the
+its untwisted homology would contribute `t + t²`. Over a field of characteristic two, such as
+`𝔽₂`, the twist disappears: the twisted Betti numbers are the ordinary ones
+(`TauCeti.IsMorseBottFamily.twistedBettiNumber_eq_bettiNumber_of_two_eq_zero`), and the
 inequalities are those of `TauCeti.Geometry.Manifold.Morse.Bott.Inequalities`.
 
-The proof is that of the mod `2` inequalities, with the twisted Thom isomorphism
-(`VectorBundleOrientationCover.finrank_singularHomology_thomPair_eq_finrank_twistedHomology`)
-in place of the mod `2` one. The homology of a band with one critical value `c` is the direct sum
-of the homologies of the Thom pairs of the negative normal bundles of the pieces on the level `c`
+The proof is that of the mod `2` inequalities. The homology of a band with one critical value `c`
+is the direct sum of the homologies of the Thom pairs of the negative normal bundles of the pieces
+on the level `c`
 (`TauCeti.IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair`), so its
 dimension is the sum of their contributions
-(`TauCeti.IsMorseBottFamily.finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber`),
-and the inequalities of the filtration of `M` by sublevels at a cut of the values of `f`
-(`TauCeti.IsMorseBottFamily.exists_cut_sum_finrank_sublevelPair_eq_sum`) give the result.
+(`TauCeti.IsMorseBottFamily.finrank_singularHomology_sublevelPair_eq_sum_of_finrank_thomPair`, here
+`TauCeti.IsMorseBottFamily.finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber`).
+Over a field, the Thom pair of a bundle of rank `r` has the twisted homology of its base shifted by
+`r`. A field either has characteristic two or has `2` invertible. In the first case the twist
+disappears and the mod `2` Thom isomorphism applies
+(`TauCeti.finrank_singularHomology_thomPair_of_two_eq_zero`); in the second the twisted Thom
+isomorphism does
+(`VectorBundleOrientationCover.finrank_singularHomology_thomPair_eq_finrank_twistedHomology`).
+The inequalities of the filtration of `M` by sublevels at a cut of the values of `f`
+(`TauCeti.IsMorseBottFamily.exists_cut_sum_finrank_sublevelPair_eq_sum`) then give the result.
+
+The twisted counts `cₙ` reduce to the untwisted ones where the twist is invisible. The twisted Betti
+numbers of a piece are its ordinary Betti numbers over `K` when its negative normal bundle is
+oriented, when the piece is simply connected, and when `2 = 0` in `K`
+(`twistedBettiNumber_eq_bettiNumber_of_orientation`,
+`twistedBettiNumber_eq_bettiNumber_of_simplyConnectedSpace` and
+`twistedBettiNumber_eq_bettiNumber_of_two_eq_zero`). So with oriented negative normal bundles
+`cₙ` is the Morse–Bott count `∑ⱼ b_{n - r j}(S j; K)`
+(`TauCeti.IsMorseBottFamily.morseBottCount`), and the inequalities here are those of
+`TauCeti.Geometry.Manifold.Morse.Bott.Inequalities` for oriented negative normal bundles. For a
+Morse function every piece is a point, so `cₙ` is the number of critical points of index `n`
+(`sum_twistedBettiNumber_eq_criticalCount`) and the inequalities are the Morse inequalities.
+Otherwise the twist is visible already in degree zero: if `2 ≠ 0` in `K`, the zeroth twisted Betti
+number of a piece is `1` or `0` according as its negative normal bundle is orientable or not
+(`twistedBettiNumber_zero`).
 
 The hypothesis `hV` gives the negative normal spaces local frames of size `r j`, which makes them a
 vector bundle of rank `r j`; such frames exist exactly when `r j` is the Morse index of `f` along
@@ -65,7 +90,20 @@ In the namespace `TauCeti.IsMorseBottFamily`:
   `sum_range_neg_one_pow_mul_bettiNumber_eq_sum_twistedBettiNumber` and
   `exists_sum_range_monomial_sum_twistedBettiNumber_eq_add_mul`: the weak and strong
   Morse–Bott inequalities, Euler's equality and the Morse–Bott polynomial identity with
-  coefficients twisted by the orientation local systems of the negative normal bundles.
+  coefficients twisted by the orientation local systems of the negative normal bundles, over every
+  field.
+* `twistedBettiNumber_eq_bettiNumber_of_orientation`,
+  `twistedBettiNumber_eq_bettiNumber_of_simplyConnectedSpace` and
+  `twistedBettiNumber_eq_bettiNumber_of_two_eq_zero`: the twisted Betti numbers of a piece are its
+  ordinary Betti numbers when its negative normal bundle is oriented, when it is simply connected,
+  and in characteristic two.
+* `twistedBettiNumber_zero`: away from characteristic two, the zeroth twisted Betti number of a
+  piece detects the orientability of its negative normal bundle.
+* `sum_twistedBettiNumber_eq_morseBottCount_of_orientation` and
+  `sum_twistedBettiNumber_eq_criticalCount`: with oriented negative normal bundles the twisted
+  counts are the Morse–Bott counts, and for a Morse function they are the critical counts.
+* `bettiNumber_eq_sum_twistedBettiNumber_of_forall_eq_zero_or_eq_zero`: the lacunary principle
+  with twisted coefficients.
 
 ## References
 
@@ -111,12 +149,12 @@ variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace �
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
     ∀ j, HasLocalSubbundleFrames (P j) (Fin (r j))
       ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric))
-  (K : Type) [Field K] [Invertible (2 : K)]
+  (K : Type) [Field K]
 
 include hV
 
-omit [T2Space M] [SecondCountableTopology M] [CompactSpace M] [Fintype ι] [∀ j, (J j).Boundaryless]
-  [Invertible (2 : K)] in
+omit [T2Space M] [SecondCountableTopology M] [CompactSpace M] [Fintype ι]
+  [∀ j, (J j).Boundaryless] in
 /-- **The twisted Betti numbers of a piece of a Morse–Bott function.** Let the family
 `i j : S j → M` exhibit `f` as a Morse–Bott function, let `g j` be smooth fibre metrics on the
 normal bundles of the pieces, and let the negative normal spaces relative to `g j` have local frames
@@ -143,8 +181,8 @@ def twistedBettiNumber (j : ι) (k : ℕ) : ℕ :=
     (fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
       (g j).toRiemannianMetric s) K ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) k)
 
-omit [T2Space M] [SecondCountableTopology M] [CompactSpace M] [Fintype ι] [∀ j, (J j).Boundaryless]
-  [Invertible (2 : K)] in
+omit [T2Space M] [SecondCountableTopology M] [CompactSpace M] [Fintype ι]
+  [∀ j, (J j).Boundaryless] in
 /-- The twisted Betti number `dim Hₖ(S j; o(ν⁻ j) ⊗ K)` is the dimension of the twisted homology
 of `S j` with coefficients in the orientation local system of `ν⁻ j`. -/
 theorem twistedBettiNumber_def (j : ι) (k : ℕ) :
@@ -171,13 +209,31 @@ theorem twistedBettiNumber_def (j : ι) (k : ℕ) :
         (g j).toRiemannianMetric s) K ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) k) :=
   (rfl)
 
+omit [T2Space M] [SecondCountableTopology M] [CompactSpace M] [Fintype ι]
+  [∀ j, (J j).Boundaryless] in
+/-- **The twisted Betti numbers in characteristic two.** If `2 = 0` in `K`, as for `K = 𝔽₂`, the
+orientation local system of every bundle is constant, so
+`dim Hₖ(S j; o(ν⁻ j) ⊗ K) = bₖ(S j; K)` for every piece, oriented or not. -/
+theorem twistedBettiNumber_eq_bettiNumber_of_two_eq_zero (h2 : (2 : K) = 0) (j : ι) (k : ℕ) :
+    h.twistedBettiNumber hn hdim g hV K j k = bettiNumber K (S j) k := by
+  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+    fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+  let _ := subbundleTopology (P j) (F' := Fin (r j) → ℝ)
+    ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
+  let _ := (hV j).fiberBundle
+  have := (hV j).vectorBundle
+  rw [twistedBettiNumber_def]
+  exact VectorBundleOrientationCover.finrank_twistedHomology_signLocalSystem_of_two_eq_zero _ h2 k
+
 open scoped Classical in
 /-- **The homology of a critical band of a Morse–Bott function, with twisted coefficients.** Let
 the family `i j : S j → M` exhibit `f` as a Morse–Bott function on a compact boundaryless manifold,
 let `g j` be smooth fibre metrics on the normal bundles of the pieces, and let the negative normal
 spaces relative to `g j` have local frames of size `r j`, so that they form the negative normal
-bundle `ν⁻ j` of rank `r j`. Let `K` be a field in which `2` is invertible, and let `a < c < b`
-be such that `c` is the only critical value of `f` in `[a, b]`. Then
+bundle `ν⁻ j` of rank `r j`. Let `K` be any field, and let `a < c < b` be such that `c` is the
+only critical value of `f` in `[a, b]`. Then
 `dim Hₙ({f ≤ b}, {f ≤ a}; K) = ∑ dim H_{n - r j}(S j; o(ν⁻ j) ⊗ K)`, the sum running over the
 pieces on the level `f = c` with `r j ≤ n`, where `o(ν⁻ j)` is the orientation local system of
 `ν⁻ j`. If `c` is not a critical value, the sum is empty. -/
@@ -191,43 +247,24 @@ theorem finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber {a b c :
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
   let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-  set V : ∀ j, S j → Type := fun j s ↦
-    (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric s
-  let _ : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ) (V j)) :=
-    fun j ↦ subbundleTopology (P j) (F' := Fin (r j) → ℝ)
+  let _ : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ) fun s ↦
+      (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric s) :=
+    fun j ↦ subbundleTopology (P j)
       ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
-  let _ : ∀ j, FiberBundle (Fin (r j) → ℝ) (V j) := fun j ↦ (hV j).fiberBundle
-  have (j : ι) : VectorBundle ℝ (Fin (r j) → ℝ) (V j) := (hV j).vectorBundle
-  -- The frames have size the dimension of the negative normal spaces, which is the index.
-  have hr (j : ι) (s : S j) : manifoldMorseIndex I f (i j s) = r j := by
-    rw [← (h.isNondegenerateCriticalSubmanifold j).finrank_negativeNormalSpace hn
-      (g j).toRiemannianMetric, (hV j).finrank_eq, Fintype.card_fin]
-  -- The band has the homology of the direct sum of the Thom pairs of the pieces on the level `c`.
-  obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair hn hac hcb hcrit hdim
-    g hr (ModuleCat.of K K) n
-  let W (j : {j // ∀ s, f (i j s) = c}) : ModuleCat K :=
-    (thomPair (Fin (r j) → ℝ) (V j)).singularHomology (ModuleCat.of K K) n
-  let e' := e ≪≫ (biproduct.isoCoproduct W).symm
-  have := finite_singularHomology_sublevelPair_of_criticalValue (ModuleCat.of K K) h.contMDiff
-    h.contMDiff.continuous.isProperMap hac hcb hcrit n
-  have := Module.Finite.equiv e'.toLinearEquiv
-  have := ModuleCat.finite_of_finite_biproduct (R := K) W
-  rw [e'.toLinearEquiv.finrank_eq, ModuleCat.finrank_biproduct]
-  -- Each Thom pair has the twisted homology of its base, shifted by the rank.
-  have hW (j : {j // ∀ s, f (i j s) = c}) : finrank K (W j) =
-      if r j ≤ n then h.twistedBettiNumber hn hdim g hV K j (n - r j) else 0 := by
-    split_ifs with hrn
-    · rw [twistedBettiNumber_def]
-      exact finrank_singularHomology_thomPair_eq_finrank_twistedHomology _ _ _ _
-        (by rw [finrank_fin_fun]; omega)
-    · have hz := isZero_singularHomology_thomPair (F := Fin (r j) → ℝ) (E := V j)
-        (ModuleCat.of K K) (n := n) (by rw [finrank_fin_fun]; omega)
-      have := ModuleCat.isZero_iff_subsingleton.1 hz
-      exact Module.finrank_zero_of_subsingleton
-  simp only [hW]
-  rw [← Finset.filter_filter, Finset.sum_filter]
-  exact (Finset.sum_subtype _ (fun j ↦ by simp) fun j ↦
-    if r j ≤ n then h.twistedBettiNumber hn hdim g hV K j (n - r j) else 0).symm
+  let _ (j : ι) := (hV j).fiberBundle
+  have (j : ι) := (hV j).vectorBundle
+  -- Each Thom pair has the twisted homology of its piece shifted by the index.
+  refine h.finrank_singularHomology_sublevelPair_eq_sum_of_finrank_thomPair hn K hdim g hV
+    (h.twistedBettiNumber hn hdim g hV K) (fun j p ↦ ?_) hac hcb hcrit n
+  rcases eq_or_ne (2 : K) 0 with h2 | h2
+  · -- In characteristic two the twist disappears, and the mod `2` Thom isomorphism applies.
+    rw [h.twistedBettiNumber_eq_bettiNumber_of_two_eq_zero hn hdim g hV K h2]
+    exact finrank_singularHomology_thomPair_of_two_eq_zero _ _ h2 _ _ (by rw [finrank_fin_fun])
+  · -- Otherwise `2` is invertible, and the twisted Thom isomorphism applies.
+    let _ : Invertible (2 : K) := invertibleOfNonzero h2
+    rw [twistedBettiNumber_def]
+    exact finrank_singularHomology_thomPair_eq_finrank_twistedHomology _ _ _ K
+      (by rw [finrank_fin_fun])
 
 open scoped Classical in
 /-- **A cut of the values of a Morse–Bott function, with twisted coefficients.** Under the
@@ -249,7 +286,7 @@ private theorem exists_cut_sum_finrank_sublevelPair_eq_sum_twistedBettiNumber :
 exhibit `f` as a Morse–Bott function on a compact boundaryless manifold, let `g j` be smooth fibre
 metrics on the normal bundles of the pieces, and let the negative normal spaces relative to `g j`
 have local frames of size `r j`, so that they form the negative normal bundle `ν⁻ j` of rank `r j`.
-Let `K` be a field in which `2` is invertible, such as `ℚ`. Then
+Let `K` be any field, such as `ℚ`. Then
 `bₙ(M; K) ≤ ∑ dim H_{n - r j}(S j; o(ν⁻ j) ⊗ K)`, the sum running over the pieces with `r j ≤ n`,
 where `o(ν⁻ j)` is the orientation local system of `ν⁻ j`. -/
 theorem bettiNumber_le_sum_twistedBettiNumber (n : ℕ) :
@@ -307,5 +344,123 @@ theorem exists_sum_range_monomial_sum_twistedBettiNumber_eq_add_mul {n : ℕ}
     (ModuleCat.of K K) h.contMDiff hs hs₀ hsN hreg hdimn
   simp only [← bettiNumber_def, hsum] at hQ
   exact ⟨Q, hQ⟩
+
+/-- **The lacunary principle for a Morse–Bott function with twisted coefficients.** Under the
+hypotheses of `TauCeti.IsMorseBottFamily.bettiNumber_le_sum_twistedBettiNumber`, write
+`cₖ = ∑ dim H_{k - r j}(S j; o(ν⁻ j) ⊗ K)` over the pieces with `r j ≤ k`. If of any two
+consecutive counts `cₖ` and `cₖ₊₁` one vanishes, then `bₙ(M; K) = cₙ` for every `n`: the
+Morse–Bott function is perfect over `K`. -/
+theorem bettiNumber_eq_sum_twistedBettiNumber_of_forall_eq_zero_or_eq_zero
+    (hlac : ∀ k, ∑ p with r p ≤ k, h.twistedBettiNumber hn hdim g hV K p (k - r p) = 0 ∨
+      ∑ p with r p ≤ k + 1, h.twistedBettiNumber hn hdim g hV K p (k + 1 - r p) = 0) (n : ℕ) :
+    bettiNumber K M n = ∑ p with r p ≤ n, h.twistedBettiNumber hn hdim g hV K p (n - r p) :=
+  congrFun (eq_of_forall_sum_range_neg_one_pow_mul_le
+    (h.sum_range_neg_one_pow_mul_bettiNumber_le_sum_twistedBettiNumber hn hdim g hV K) hlac) n
+
+/-! ### Comparison with the untwisted counts -/
+
+omit [T2Space M] [SecondCountableTopology M] [CompactSpace M] [Fintype ι]
+  [∀ j, (J j).Boundaryless] in
+/-- **The twisted Betti numbers of a piece with an oriented negative normal bundle.** If the
+negative normal bundle `ν⁻ j` of the piece `S j` is oriented, then
+`dim Hₖ(S j; o(ν⁻ j) ⊗ K) = bₖ(S j; K)`: the orientation trivializes the orientation local
+system. -/
+theorem twistedBettiNumber_eq_bettiNumber_of_orientation (j : ι)
+    (o : (h.isNondegenerateCriticalSubmanifold j).NegativeNormalBundleOrientation hn h.contMDiff
+      (hdim j) (g j)
+      ((h.isNondegenerateCriticalSubmanifold j).manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn
+        _ (hV j)))
+    (k : ℕ) :
+    h.twistedBettiNumber hn hdim g hV K j k = bettiNumber K (S j) k := by
+  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+    fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+  let _ := subbundleTopology (P j) (F' := Fin (r j) → ℝ)
+    ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
+  let _ := (hV j).fiberBundle
+  have := (hV j).vectorBundle
+  rw [twistedBettiNumber_def]
+  exact VectorBundleOrientation.finrank_twistedHomology_signLocalSystem _ o k
+
+omit [T2Space M] [SecondCountableTopology M] [CompactSpace M] [Fintype ι]
+  [∀ j, (J j).Boundaryless] in
+/-- **The twisted Betti numbers of a simply connected piece.** Over a simply connected piece
+`S j`, for instance a point, the negative normal bundle is orientable, so
+`dim Hₖ(S j; o(ν⁻ j) ⊗ K) = bₖ(S j; K)`. -/
+theorem twistedBettiNumber_eq_bettiNumber_of_simplyConnectedSpace (j : ι)
+    [SimplyConnectedSpace (S j)] (k : ℕ) :
+    h.twistedBettiNumber hn hdim g hV K j k = bettiNumber K (S j) k :=
+  h.twistedBettiNumber_eq_bettiNumber_of_orientation hn hdim g hV K j
+    ((h.isNondegenerateCriticalSubmanifold j).nonempty_negativeNormalBundleOrientation hn
+      h.contMDiff (hdim j) (g j) _).some k
+
+open scoped Classical in
+omit [T2Space M] [SecondCountableTopology M] [CompactSpace M] [Fintype ι]
+  [∀ j, (J j).Boundaryless] in
+/-- **The twist in degree zero.** If `2 ≠ 0` in `K`, the zeroth twisted Betti number
+`dim H₀(S j; o(ν⁻ j) ⊗ K)` of a piece is `1` when its negative normal bundle `ν⁻ j` is orientable
+and `0` when it is not, whereas its ordinary zeroth Betti number is `1`, the piece being connected.
+So over `ℚ` a piece of index `r j` whose negative normal bundle is not orientable, such as a
+critical circle with a Möbius negative line, contributes nothing in degree `r j`. -/
+theorem twistedBettiNumber_zero (h2 : (2 : K) ≠ 0) (j : ι) :
+    h.twistedBettiNumber hn hdim g hV K j 0 =
+      if Nonempty ((h.isNondegenerateCriticalSubmanifold j).NegativeNormalBundleOrientation hn
+          h.contMDiff (hdim j) (g j)
+          ((h.isNondegenerateCriticalSubmanifold j).manifoldMorseIndex_eq_of_hasLocalSubbundleFrames
+            hn _ (hV j))) then 1 else 0 := by
+  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+    fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+  let _ := subbundleTopology (P j) (F' := Fin (r j) → ℝ)
+    ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
+  let _ := (hV j).fiberBundle
+  have := (hV j).vectorBundle
+  have := h.preconnectedSpace j
+  have : ConnectedSpace (S j) := ⟨h.nonempty j⟩
+  have := (J j).locallyPathConnectedSpace_of_chartedSpace (S j)
+  rw [twistedBettiNumber_def]
+  exact VectorBundleOrientationCover.finrank_twistedHomology_zero_signLocalSystem _ h2
+
+omit [T2Space M] [SecondCountableTopology M] [CompactSpace M] [∀ j, (J j).Boundaryless] in
+/-- **The twisted count of oriented negative normal bundles is the Morse–Bott count.** If the
+negative normal bundle of every piece is oriented, then the coefficient
+`∑ dim H_{n - r j}(S j; o(ν⁻ j) ⊗ K)` of `tⁿ` in the twisted Morse–Bott polynomial, the sum running
+over the pieces with `r j ≤ n`, is the Morse–Bott count `∑ b_{n - r j}(S j; K)`
+(`TauCeti.IsMorseBottFamily.morseBottCount`), the index of each piece being the rank `r j` of its
+negative normal bundle. -/
+theorem sum_twistedBettiNumber_eq_morseBottCount_of_orientation
+    (o : ∀ j, (h.isNondegenerateCriticalSubmanifold j).NegativeNormalBundleOrientation hn
+      h.contMDiff (hdim j) (g j)
+      ((h.isNondegenerateCriticalSubmanifold j).manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn
+        _ (hV j)))
+    (n : ℕ) :
+    (∑ p with r p ≤ n, h.twistedBettiNumber hn hdim g hV K p (n - r p) : ℕ∞) =
+      h.morseBottCount K n := by
+  have hr (p : ι) : h.index p = r p :=
+    (h.index_def p).trans <|
+      (h.isNondegenerateCriticalSubmanifold p).manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _
+        (hV p) _
+  simp only [h.morseBottCount_eq_sum, hr, Nat.cast_sum,
+    h.twistedBettiNumber_eq_bettiNumber_of_orientation hn hdim g hV K _ (o _)]
+
+omit [T2Space M] [SecondCountableTopology M] [CompactSpace M] [∀ j, (J j).Boundaryless] in
+/-- **The twisted count of a Morse function is its critical count.** If the Morse–Bott function
+`f` is a Morse function, every piece is a point, whose negative normal bundle is orientable, so the
+coefficient `∑ dim H_{n - r j}(S j; o(ν⁻ j) ⊗ K)` of `tⁿ` in the twisted Morse–Bott polynomial is
+the number of critical points of `f` of index `n`: the twisted Morse–Bott inequalities specialize to
+the Morse inequalities. -/
+theorem sum_twistedBettiNumber_eq_criticalCount (hf : IsMorse I f) (n : ℕ) :
+    (∑ p with r p ≤ n, h.twistedBettiNumber hn hdim g hV K p (n - r p) : ℕ∞) =
+      criticalCount I f n := by
+  have (p : ι) : SimplyConnectedSpace (S p) := by
+    have := h.subsingleton_of_isMorse hf p
+    have := h.nonempty p
+    infer_instance
+  rw [← h.morseBottCount_eq_criticalCount K hf n]
+  exact h.sum_twistedBettiNumber_eq_morseBottCount_of_orientation hn hdim g hV K
+    (fun p ↦ ((h.isNondegenerateCriticalSubmanifold p).nonempty_negativeNormalBundleOrientation hn
+      h.contMDiff (hdim p) (g p) _).some) n
 
 end TauCeti.IsMorseBottFamily

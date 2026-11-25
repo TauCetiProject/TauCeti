@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Immersion
-import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation
+import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation.Basic
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 
 /-!

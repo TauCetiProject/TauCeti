@@ -6,12 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Ring.Basic
+import Mathlib.Algebra.Ring.Idempotent
 
 /-!
 # Elementary inequalities in seminormed rings
 
 This file records elementary consequences of the submultiplicativity of the norm (for instance, a
-nonzero idempotent has norm at least `1`: `IsIdempotentElem.one_le_norm`), exact positive-power
+nonzero idempotent has norm at least `1`: `IsIdempotentElem.one_le_norm`, forcing an idempotent
+of norm `< 1` to be `0` and one within `< 1` of `1` to be `1`), including its form
+`‖a * b‖ₑ ≤ ‖a‖ₑ * ‖b‖ₑ` for the extended norm (`TauCeti.eNorm_mul_le`), exact positive-power
 norms without `NormOneClass`, an estimate for `‖w - 1‖` with `‖w‖ = 1` when the norm is
 multiplicative, convergence to `0` of finite partial products when factors tend to `0` cofinitely
 (`TauCeti.tendsto_finsetProd_cofinite_zero`), and norm bounds for powers of units — including the
@@ -25,8 +28,15 @@ The affine estimate `TauCeti.sub_mul_mem_closedBall_of_norm_le` bounds the dista
 Among the former are the estimates `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + ‖e * b - c‖`
 (`TauCeti.norm_mul_sub_le_left`) and `‖a * e - c‖ ≤ ‖a - b‖ ‖e‖ + ‖b * e - c‖`
 (`TauCeti.norm_mul_sub_le_right`), which compare a product with `c` through the product with `b`,
+the nonvanishing `1 - x ≠ 0` for `‖x‖ < 1` (`TauCeti.one_sub_ne_zero_of_norm_lt_one`),
+the lower bound `1 - ‖q‖ ≤ ‖1 - qⁿ‖` for `‖q‖ ≤ 1` and `n ≠ 0`
+(`TauCeti.one_sub_norm_le_norm_one_sub_pow`),
 and `‖a * c - b * d‖ₑ ≤ ‖a - b‖ₑ + ‖c - d‖ₑ` for `‖b‖ ≤ 1` and `‖c‖ ≤ 1`
 (`TauCeti.enorm_mul_sub_mul_le`), which bounds the change of a product of two factors.
+
+Multiplying by elements of norm at most one on the left, on the right or on both sides does not
+increase the norm (`TauCeti.norm_mul_le_of_norm_le_one_left`,
+`TauCeti.norm_mul_le_of_norm_le_one_right`, `TauCeti.norm_mul_mul_le_of_norm_le_one`).
 -/
 
 public section
@@ -48,6 +58,11 @@ theorem norm_mul_lt_one {K : Type*} [NonUnitalSeminormedRing K] (u v : K) (hu : 
     _ ≤ ‖u‖ := by
       simpa only [mul_one] using mul_le_mul_of_nonneg_left hv.le (norm_nonneg u)
     _ < 1 := hu
+
+/-- The extended norm is submultiplicative: `‖a * b‖ₑ ≤ ‖a‖ₑ * ‖b‖ₑ`. -/
+theorem eNorm_mul_le {R : Type*} [NonUnitalSeminormedRing R] (a b : R) :
+    ‖a * b‖ₑ ≤ ‖a‖ₑ * ‖b‖ₑ := by
+  simpa only [eNorm_eq_nnNorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe] using nnNorm_mul_le a b
 
 /-- The distance from `e * a` to `c` exceeds the distance from `e * b` to `c` by at most
 `‖e‖ ‖a - b‖`: `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + ‖e * b - c‖`. -/
@@ -76,6 +91,26 @@ theorem enorm_mul_sub_mul_le {R : Type*} [NonUnitalSeminormedRing R] {a b c d : 
   rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_add (norm_nonneg _)
     (norm_nonneg _)]
   exact ENNReal.ofReal_le_ofReal h
+
+section NormLeOne
+
+variable {R : Type*} [NonUnitalSeminormedRing R] {p q : R}
+
+/-- Left multiplication by an element of norm at most one does not increase the norm. -/
+theorem norm_mul_le_of_norm_le_one_left (hq : ‖q‖ ≤ 1) (x : R) : ‖q * x‖ ≤ ‖x‖ :=
+  (norm_mul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) hq)
+
+/-- Right multiplication by an element of norm at most one does not increase the norm. -/
+theorem norm_mul_le_of_norm_le_one_right (hq : ‖q‖ ≤ 1) (x : R) : ‖x * q‖ ≤ ‖x‖ :=
+  (norm_mul_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _) hq)
+
+/-- Multiplying on the left and on the right by elements of norm at most one does not increase
+the norm. -/
+theorem norm_mul_mul_le_of_norm_le_one (hp : ‖p‖ ≤ 1) (hq : ‖q‖ ≤ 1) (x : R) :
+    ‖p * x * q‖ ≤ ‖x‖ :=
+  (norm_mul_le_of_norm_le_one_right hq _).trans (norm_mul_le_of_norm_le_one_left hp x)
+
+end NormLeOne
 
 /-- Consecutive powers stay in the open unit ball when the first factor is strictly inside
 and the second factor is in the closed unit ball. -/
@@ -277,6 +312,26 @@ theorem ne_zero_of_norm_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass 
   rintro rfl
   simp at hz
 
+/-- An element of norm less than `1` is not `1`, that is, `1 - x ≠ 0`. -/
+theorem one_sub_ne_zero_of_norm_lt_one {R : Type*} [SeminormedRing R] [NormOneClass R] {x : R}
+    (hx : ‖x‖ < 1) : 1 - x ≠ 0 :=
+  sub_ne_zero.2 fun h ↦ by simp [← h] at hx
+
+/-- For `‖q‖ ≤ 1` and `n ≠ 0`, `1 - qⁿ` has norm at least `1 - ‖q‖`. -/
+theorem one_sub_norm_le_norm_one_sub_pow {R : Type*} [SeminormedRing R] [NormOneClass R] {q : R}
+    (hq : ‖q‖ ≤ 1) {n : ℕ} (hn : n ≠ 0) : 1 - ‖q‖ ≤ ‖1 - q ^ n‖ := by
+  have h := norm_sub_norm_le (1 : R) (q ^ n)
+  have h' : ‖q ^ n‖ ≤ ‖q‖ :=
+    (norm_pow_le' q (Nat.pos_of_ne_zero hn)).trans (pow_le_of_le_one (norm_nonneg q) hq hn)
+  rw [norm_one] at h
+  linarith
+
+/-- For `‖q‖ < 1` and `n ≠ 0`, `qⁿ ≠ 1`, that is, `1 - qⁿ ≠ 0`. For integer powers in a normed
+division ring with `‖q‖ ≠ 1`, see `TauCeti.one_sub_zpow_ne_zero`. -/
+theorem one_sub_pow_ne_zero {R : Type*} [SeminormedRing R] [NormOneClass R] {q : R}
+    (hq : ‖q‖ < 1) {n : ℕ} (hn : n ≠ 0) : 1 - q ^ n ≠ 0 :=
+  one_sub_ne_zero_of_norm_lt_one (norm_pow_lt_one hq hn)
+
 /-- If `f` tends to `0` along the cofinite filter in a seminormed commutative ring, then so do its
 finite partial products `s ↦ ∏ i ∈ s, f i`. -/
 theorem tendsto_finsetProd_cofinite_zero {ι R : Type*} [SeminormedCommRing R] {f : ι → R}
@@ -324,6 +379,19 @@ theorem one_le_norm {R : Type*} [NonUnitalNormedRing R] {p : R} (hp : IsIdempote
     (hp0 : p ≠ 0) : 1 ≤ ‖p‖ :=
   (le_mul_iff_one_le_right (norm_pos_iff.mpr hp0)).mp <| by
     simpa only [hp.eq] using norm_mul_le p p
+
+/-- An idempotent of norm strictly less than one in a nonunital normed ring is zero. -/
+theorem eq_zero_of_norm_lt_one {R : Type*} [NonUnitalNormedRing R] {e : R}
+    (he : IsIdempotentElem e) (h : ‖e‖ < 1) : e = 0 := by
+  by_contra he₀
+  exact (he.one_le_norm he₀).not_gt h
+
+/-- An idempotent within norm distance `1` of `1` in a normed ring is `1`, since `1 - e` is an
+idempotent of norm strictly less than `1`. -/
+theorem eq_one_of_norm_sub_one_lt_one {R : Type*} [NormedRing R] {e : R}
+    (he : IsIdempotentElem e) (h : ‖e - 1‖ < 1) : e = 1 :=
+  sub_eq_zero.mp <| neg_eq_zero.mp <| by
+    simpa only [neg_sub] using he.one_sub.eq_zero_of_norm_lt_one (by rwa [norm_sub_rev])
 
 end IsIdempotentElem
 

@@ -64,8 +64,7 @@ variable {n : Type*} [DecidableEq n]
 
 /-- Multiplication by `i` realifies to the standard alternating matrix `J`. -/
 theorem realify_I_smul_one : (Complex.I • (1 : Matrix n n ℂ)).realify = J n ℝ := by
-  ext p q
-  rcases p with i | i <;> rcases q with j | j <;> by_cases h : i = j <;> simp [J, h]
+  simp [realify_smul_one]
 
 variable [Fintype n]
 

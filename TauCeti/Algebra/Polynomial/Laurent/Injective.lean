@@ -43,7 +43,8 @@ theorem coeff_pow_T_add_C_mul_T_neg_add_C_of_le (r s : R) (n : ℕ) (k : ℤ)
       simp [eq_comm]
   | succ n ih =>
       rw [pow_succ', add_mul, add_mul, mul_assoc]
-      simp only [AddMonoidAlgebra.coeff_add, Finsupp.add_apply, coeff_T_mul, coeff_C_mul]
+      simp only [AddMonoidAlgebra.coeff_add, Finsupp.add_apply, T_mul, coeff_mul_T,
+        coeff_C_mul]
       rw [ih (k - 1) (by omega), ih (k - -1) (by omega), ih k (by omega)]
       have h₁ : k - -1 ≠ (n : ℤ) := by omega
       have h₂ : k ≠ (n : ℤ) := by omega

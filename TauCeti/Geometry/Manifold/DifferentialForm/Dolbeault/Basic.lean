@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Nijenhuis
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 public import TauCeti.Geometry.Manifold.DifferentialForm.Squared
-public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Trivial
+public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Trivial.Basic
 
 /-!
 # The operators `∂` and `∂bar` on an almost complex manifold
