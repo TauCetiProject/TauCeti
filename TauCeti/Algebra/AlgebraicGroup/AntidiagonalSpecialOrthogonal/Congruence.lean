@@ -38,6 +38,11 @@ as commutative Hopf algebras over `R`, where `O(SO_l)` is
 orthogonal group of the identity form
 (`TauCeti.AntidiagonalSpecialOrthogonal.coordinateHopfAlgebraIsoSpecialOrthogonal`), and `SO_l^J`
 is smooth over `R` (`TauCeti.AntidiagonalSpecialOrthogonal.smooth_coordinateHopfAlgebra`).
+Taking spectra gives an isomorphism of group schemes `SO_l^J ≅ SO_l`
+(`TauCeti.AntidiagonalSpecialOrthogonal.groupSchemeIsoSpecialOrthogonal`), which inside `GL_l` is
+conjugation by `P`
+(`TauCeti.AntidiagonalSpecialOrthogonal.groupSchemeIsoSpecialOrthogonal_hom_comp_inclusion`) and
+on `A`-valued points sends `M ∈ SO_l(A)` to `P⁻¹ M P`.
 
 ## References
 
@@ -50,7 +55,7 @@ open CategoryTheory Matrix WithConv
 
 namespace TauCeti
 
-universe u
+universe u v
 
 namespace AntidiagonalSpecialOrthogonal
 
@@ -193,6 +198,62 @@ theorem smooth_coordinateHopfAlgebra (hi : i * i = -1) :
     Algebra.Smooth R (coordinateHopfAlgebra R l) :=
   Algebra.Smooth.of_equiv
     (CommHopfAlgCat.ofIso (coordinateHopfAlgebraIsoSpecialOrthogonal l hi).symm).toAlgEquiv
+
+/-! ### The isomorphism of group schemes -/
+
+/-- **`SO_l^J` is isomorphic to `SO_l` as a group scheme** over a ring containing `1/2` and a
+square root `i` of `-1`: the spectrum of the isomorphism of coordinate Hopf algebras, so that on
+points it is conjugation by the congruence matrix `P`. -/
+noncomputable def groupSchemeIsoSpecialOrthogonal (hi : i * i = -1) :
+    groupScheme R l ≅ SpecialOrthogonal.groupScheme R l :=
+  (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).mapIso
+      (coordinateHopfAlgebraIsoSpecialOrthogonal l hi).op.symm ≪≫
+    eqToIso (SpecialOrthogonal.groupScheme_def R l).symm
+
+/-- The isomorphism of group schemes is the spectrum of the isomorphism of coordinate Hopf
+algebras. -/
+theorem groupSchemeIsoSpecialOrthogonal_def (hi : i * i = -1) :
+    groupSchemeIsoSpecialOrthogonal l hi =
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).mapIso
+          (coordinateHopfAlgebraIsoSpecialOrthogonal l hi).op.symm ≪≫
+        eqToIso (SpecialOrthogonal.groupScheme_def R l).symm :=
+  (rfl)
+
+/-- **Inside `GL_l`, the isomorphism `SO_l^J ≅ SO_l` is conjugation by the congruence matrix.**
+Followed by the inclusion of `SO_l`, it is the inclusion of `SO_l^J` followed by the automorphism
+of `GL_l` induced by `GeneralLinear.conjCoordinateIso P`. -/
+theorem groupSchemeIsoSpecialOrthogonal_hom_comp_inclusion (hi : i * i = -1) :
+    (groupSchemeIsoSpecialOrthogonal l hi).hom ≫ SpecialOrthogonal.inclusion R l =
+      inclusion R l ≫ eqToHom (GeneralLinear.groupScheme_def R l) ≫
+        (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
+          (GeneralLinear.conjCoordinateIso (congrUnit l hi)).hom.op ≫
+        eqToHom (GeneralLinear.groupScheme_def R l).symm := by
+  rw [groupSchemeIsoSpecialOrthogonal_def, SpecialOrthogonal.inclusion_eq_eqToHom_comp_hopfSpec_map,
+    inclusion_def, GeneralLinear.hopfIdealInclusion_def, CommHopfAlgCat.quotientSpecι_def,
+    ← coordinateMap_def]
+  simp only [Iso.trans_hom, Functor.mapIso_hom, Iso.symm_hom, Iso.op_inv, eqToIso.hom,
+    Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, ← Functor.map_comp_assoc,
+    ← op_comp, coordinateMap_comp_coordinateHopfAlgebraIsoSpecialOrthogonal_inv]
+
+/-- **On points, the isomorphism `SO_l^J ≅ SO_l` is conjugation by the congruence matrix.**
+Precomposing with `coordinateHopfAlgebraIsoSpecialOrthogonal l hi` sends an `A`-valued point of
+`SO_l` with ambient matrix `M` to the point of `SO_l^J` with ambient matrix `P⁻¹ M P`. -/
+theorem pointsMulEquiv_mapPointsFunctor_coordinateHopfAlgebraIsoSpecialOrthogonal_hom
+    (hi : i * i = -1) (A : CommAlgCat.{v} R)
+    (f : HopfAlgebra.points (R := R) (H := SpecialOrthogonal.coordinateHopfAlgebra R l) A) :
+    GeneralLinear.pointsMulEquiv l
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap R l)).app A
+          ((CommHopfAlgCat.Hom.mapPointsFunctor
+            (coordinateHopfAlgebraIsoSpecialOrthogonal l hi).hom).app A f)) =
+      GeneralLinearGroup.map (algebraMap R A) (congrUnit l hi)⁻¹ *
+          GeneralLinear.pointsMulEquiv l
+            ((CommHopfAlgCat.Hom.mapPointsFunctor (SpecialOrthogonal.coordinateMap R l)).app A
+              f) *
+        (GeneralLinearGroup.map (algebraMap R A) (congrUnit l hi)⁻¹)⁻¹ := by
+  rw [← CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply,
+    coordinateMap_comp_coordinateHopfAlgebraIsoSpecialOrthogonal_hom,
+    CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply]
+  exact GeneralLinear.pointsMulEquiv_mapPointsFunctor_conjCoordinateIso _ A _
 
 end AntidiagonalSpecialOrthogonal
 
