@@ -30,6 +30,8 @@ isometry, `v * vᴴ * v = v`.
   `Matrix.mul_conjTranspose_eq_zero_of_mul_eq_zero`: if `a * b = 0` and `a` (respectively `b`)
   is self-adjoint, then rectangular matrices with columns (respectively rows) in the ranges of
   `a` and `b` are orthogonal.
+* `IsStarProjection.diag_nonneg`: over a star-ordered ring, the diagonal entries of a matrix
+  projection are nonnegative.
 * `Matrix.mul_conjTranspose_mul_self_eq_of_isStarProjection`: over a star-ordered proper star
   ring, a matrix `v` with `vᴴ * v` a projection is a partial isometry.
 -/
@@ -70,6 +72,14 @@ theorem mul_conjTranspose_eq_zero_of_mul_eq_zero {k l : Type*} {a b : Matrix m m
     Matrix.mul_assoc v, hab, Matrix.mul_zero, Matrix.zero_mul]
 
 end NonUnitalSemiring
+
+/-- Over a star-ordered ring, the diagonal entries of a matrix projection are nonnegative. -/
+theorem _root_.IsStarProjection.diag_nonneg [NonUnitalSemiring R] [PartialOrder R] [StarRing R]
+    [StarOrderedRing R] {p : Matrix m m R} (hp : IsStarProjection p) (i : m) : 0 ≤ p i i := by
+  have h : pᴴ * p = p := by
+    rw [← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq, hp.isIdempotentElem.eq]
+  rw [← h, Matrix.mul_apply]
+  exact Finset.sum_nonneg fun k _ ↦ by simp
 
 section StarOrderedRing
 

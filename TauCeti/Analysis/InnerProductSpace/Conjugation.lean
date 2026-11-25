@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.InnerProductSpace.ConjOperator
 
 /-!
 # Coordinatewise conjugation in an orthonormal basis
@@ -128,50 +129,41 @@ variable {𝕜 ι V : Type*} [RCLike 𝕜] [Fintype ι]
   [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
 
 /-- **Conjugation of continuous linear operators**, `A ↦ J ∘ A ∘ J` for `J` the conjugation of
-`e`. The two conjugate-linearities of `J` cancel, so `J ∘ A ∘ J` is again `𝕜`-linear, and it has the
-norm of `A` because `J` is an isometric involution. As a map of operators it is itself a
-conjugate-linear isometric involution. -/
+`e`: the conjugation `LinearIsometryEquiv.conjOperator` of operators by the conjugate-linear
+isometric involution `J`. The two conjugate-linearities of `J` cancel, so `J ∘ A ∘ J` is again
+`𝕜`-linear, and it has the norm of `A` because `J` is isometric. As a map of operators it is itself
+a conjugate-linear isometric involution. -/
 noncomputable def conjCLM (e : OrthonormalBasis ι 𝕜 V) : (V →L[𝕜] V) ≃ₗᵢ⋆[𝕜] (V →L[𝕜] V) :=
-  let J : V →SL[starRingEnd 𝕜] V := e.conjugation
-  let C : (V →L[𝕜] V) →ₗ⋆[𝕜] (V →L[𝕜] V) :=
-    { toFun A := J.comp (A.comp J)
-      map_add' A B := by ext; simp [J]
-      map_smul' c A := by ext; simp [J] }
-  { LinearEquiv.ofInvolutive C fun A ↦ by ext; simp [C, J] with
-    norm_map' A := (ContinuousLinearMap.opNorm_linearIsometryEquiv_comp _ _).trans
-      (A.opNorm_comp_linearIsometryEquiv e.conjugation) }
+  e.conjugation.conjOperator
 
 variable (e : OrthonormalBasis ι 𝕜 V)
 
 /-- Evaluation of a conjugated operator. -/
 @[simp]
 theorem conjCLM_apply (A : V →L[𝕜] V) (x : V) :
-    e.conjCLM A x = e.conjugation (A (e.conjugation x)) :=
-  (rfl)
+    e.conjCLM A x = e.conjugation (A (e.conjugation x)) := by
+  simp [conjCLM]
 
 /-- Conjugation fixes the identity, because `J` is an involution. -/
 @[simp]
-theorem conjCLM_one : e.conjCLM 1 = 1 := by
-  ext x
-  simp
+theorem conjCLM_one : e.conjCLM 1 = 1 :=
+  e.conjugation.conjOperator_one
 
 /-- Conjugation is multiplicative, again because `J` is an involution: the two inner copies of `J`
 cancel. -/
 @[simp]
-theorem conjCLM_mul (A B : V →L[𝕜] V) : e.conjCLM (A * B) = e.conjCLM A * e.conjCLM B := by
-  ext x
-  simp
+theorem conjCLM_mul (A B : V →L[𝕜] V) : e.conjCLM (A * B) = e.conjCLM A * e.conjCLM B :=
+  e.conjugation.conjOperator_mul A B
+
+/-- Conjugation of operators is its own inverse. -/
+@[simp]
+theorem conjCLM_symm : e.conjCLM.symm = e.conjCLM := by
+  rw [conjCLM, LinearIsometryEquiv.conjOperator_symm, conjugation_symm]
 
 /-- Conjugation of operators is an involution, because `J` is. -/
 @[simp]
 theorem conjCLM_conjCLM (A : V →L[𝕜] V) : e.conjCLM (e.conjCLM A) = A := by
-  ext x
-  simp
-
-/-- Conjugation of operators is its own inverse. -/
-@[simp]
-theorem conjCLM_symm : e.conjCLM.symm = e.conjCLM :=
-  LinearIsometryEquiv.ext fun A ↦ e.conjCLM.symm_apply_eq.mpr (e.conjCLM_conjCLM A).symm
+  simpa only [conjCLM_symm] using e.conjCLM.symm_apply_apply A
 
 end ConjugateOperator
 
