@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues.Sorted
+import TauCeti.LinearAlgebra.Dimension.CardEqFinrank
 
 /-!
 # Continuity of the sorted eigenvalue vector relative to a varying form
@@ -214,13 +215,19 @@ private theorem eq_relEigenvalueVector_of_mapClusterPt {l : Filter ι}
 /-- **Continuity of the sorted eigenvalue vector in the pair of forms.** If Hermitian forms `h i`
 and `a i` converge pointwise to `h₀` and `a₀` along a filter, with `h₀` positive definite, then
 `λ_{h i}[a i] → λ_{h₀}[a₀]`. The reference forms `h i` are allowed to vary. -/
-theorem tendsto_relEigenvalueVector [FiniteDimensional 𝕜 E] {l : Filter ι}
+theorem tendsto_relEigenvalueVector {l : Filter ι}
     (hh : ∀ᶠ i in l, (h i).IsSymm) (ha : ∀ᶠ i in l, (a i).IsSymm)
     (hpos₀ : ∀ v, v ≠ 0 → 0 < RCLike.re (h₀ v v))
     (hhl : ∀ u v, Tendsto (fun i ↦ h i u v) l (𝓝 (h₀ u v)))
     (hal : ∀ u v, Tendsto (fun i ↦ a i u v) l (𝓝 (a₀ u v))) :
     Tendsto (fun i ↦ relEigenvalueVector (h i · ·) (a i · ·)) l
       (𝓝 (relEigenvalueVector (h₀ · ·) (a₀ · ·))) := by
+  by_cases hE : FiniteDimensional 𝕜 E
+  swap
+  · -- in infinite dimension `finrank 𝕜 E = 0` and the eigenvalue vectors are empty
+    have : IsEmpty (Fin (finrank 𝕜 E)) :=
+      Module.isEmpty_of_card_eq_finrank_of_not_finite (Fintype.card_fin _) hE
+    exact tendsto_const_nhds.congr fun _ ↦ Subsingleton.elim _ _
   set n := finrank 𝕜 E
   set b := Module.finBasis 𝕜 E
   set M := fun i ↦ relEigenvalueVector (h i · ·) (a i · ·)
@@ -269,8 +276,7 @@ theorem tendsto_relEigenvalueVector [FiniteDimensional 𝕜 E] {l : Filter ι}
 /-- **Continuity of the sorted eigenvalue vector of a family of forms.** If families of Hermitian
 forms `h x` and `a x` on a topological space are pointwise continuous at `x₀`, with `h x₀`
 positive definite, then `x ↦ λ_{h x}[a x]` is continuous at `x₀`. -/
-theorem continuousAt_relEigenvalueVector [FiniteDimensional 𝕜 E] {X : Type*}
-    [TopologicalSpace X]
+theorem continuousAt_relEigenvalueVector {X : Type*} [TopologicalSpace X]
     {h a : X → E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜} {x₀ : X}
     (hh : ∀ᶠ x in 𝓝 x₀, (h x).IsSymm) (ha : ∀ᶠ x in 𝓝 x₀, (a x).IsSymm)
     (hpos₀ : ∀ v, v ≠ 0 → 0 < RCLike.re (h x₀ v v))
