@@ -9,6 +9,8 @@ public import TauCeti.NumberTheory.NumberField.ArakelovDivisor.HermitianLine
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.Degree.Line
 public import TauCeti.RingTheory.FractionalIdeal.Projective
 
+import TauCeti.RingTheory.PicardGroup.Contraction
+
 /-!
 # The Arakelov degree of the line of an Arakelov divisor
 
@@ -37,12 +39,12 @@ variable {K : Type*} [Field K] [NumberField K]
 @[simp]
 theorem lineDegree_hermitianMetric (D : ArakelovDivisor K) :
     D.hermitianMetric.lineDegree = degree K D := by
-  obtain ⟨s, hs⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
-    ((FractionalIdeal.coeToSubmodule_ne_bot).mpr (Units.ne_zero (D.finitePart⁻¹)))
-  set s' : (((D.finitePart⁻¹ : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) :
-      Submodule (𝓞 K) K) := ⟨s, hs.1⟩
-  have hs' : s' ≠ 0 := fun h0 ↦ hs.2 (congrArg Subtype.val h0)
-  rw [D.hermitianMetric.lineDegree_eq_sectionDegree_of_invertible hs',
-    D.sectionDegree_hermitianMetric hs']
+  have := Module.Invertible.nontrivial (𝓞 K)
+    (((D.finitePart⁻¹ : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) :
+      Submodule (𝓞 K) K)
+  obtain ⟨s, hs⟩ := exists_ne (0 : (((D.finitePart⁻¹ : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K))
+  rw [D.hermitianMetric.lineDegree_eq_sectionDegree_of_invertible hs,
+    D.sectionDegree_hermitianMetric hs]
 
 end TauCeti.ArakelovDivisor

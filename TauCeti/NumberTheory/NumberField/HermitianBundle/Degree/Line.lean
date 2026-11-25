@@ -79,11 +79,9 @@ theorem IsometryEquiv.lineDegree_eq [Module.Finite (𝓞 K) E] [Module.Flat (�
   have hF : Module.finrank K (K ⊗[𝓞 K] F) = 1 := by
     rw [← hE]
     exact (LinearEquiv.finrank_eq (e.toLinearEquiv.baseChange (𝓞 K) K E F)).symm
-  obtain ⟨s, hs⟩ : ∃ s : E, s ≠ 0 := by
-    by_contra! h0
-    have : Subsingleton E := ⟨fun x y ↦ (h0 x).trans (h0 y).symm⟩
-    have : Subsingleton (K ⊗[𝓞 K] E) := inferInstance
-    simp [Module.finrank_zero_of_subsingleton] at hE
+  have : Nontrivial E := (subsingleton_or_nontrivial E).resolve_left fun _ ↦
+    not_nontrivial (K ⊗[𝓞 K] E) (Module.nontrivial_of_finrank_eq_succ hE)
+  obtain ⟨s, hs⟩ := exists_ne (0 : E)
   rw [h.lineDegree_eq_sectionDegree hE hs, ← IsometryEquiv.sectionDegree_map h e s,
     h'.lineDegree_eq_sectionDegree hF ((map_ne_zero_iff e e.toLinearEquiv.injective).2 hs)]
 
