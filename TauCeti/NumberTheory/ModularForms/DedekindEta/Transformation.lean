@@ -128,8 +128,7 @@ theorem eta_neg_one_div {τ : ℂ} (hτ : 0 < τ.im) :
 
 private theorem sqrt_denom_mul_eta_ne_zero (γ : SL(2, ℤ)) (τ : ℍ) :
     Complex.sqrt ((γ 1 0 : ℂ) * τ + γ 1 1) * η τ ≠ 0 :=
-  mul_ne_zero (Complex.sqrt_eq_zero_iff.not.2 (UpperHalfPlane.denom_ne_zero γ τ))
-    (_root_.ModularForm.eta_ne_zero τ.coe_im_pos)
+  mul_ne_zero (UpperHalfPlane.sqrt_denom_ne_zero γ τ) (_root_.ModularForm.eta_ne_zero τ.coe_im_pos)
 
 /-- `Δ(γ τ) = (c τ + d)¹² Δ(τ)` for `γ ∈ SL(2, ℤ)`, in terms of `η`. -/
 private theorem eta_smul_pow_twentyFour (γ : SL(2, ℤ)) (τ : ℍ) :
@@ -484,12 +483,10 @@ theorem etaMultiplier_inv_of_c_ne_zero (γ : SL(2, ℤ)) (hc : γ 1 0 ≠ 0) :
   let τ : ℍ := UpperHalfPlane.I
   set w : ℂ := (γ 1 0 : ℂ) * τ + γ 1 1 with hw_def
   set w' : ℂ := ((γ⁻¹ : SL(2, ℤ)) 1 0 : ℂ) * (γ • τ : ℍ) + (γ⁻¹ : SL(2, ℤ)) 1 1 with hw'_def
-  have hdenom (g : SL(2, ℤ)) (z : ℍ) :
-      UpperHalfPlane.denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z = (g 1 0 : ℂ) * z + g 1 1 := by
-    simp [UpperHalfPlane.denom]
   have hcocycle : w' * w = 1 := by
     have h := Matrix.SpecialLinearGroup.denom_mapGL_mul γ⁻¹ γ τ
-    rw [inv_mul_cancel, map_one, UpperHalfPlane.denom_one, hdenom, hdenom] at h
+    rw [inv_mul_cancel, map_one, UpperHalfPlane.denom_one, ModularGroup.denom_mapGL,
+      ModularGroup.denom_mapGL] at h
     exact h.symm
   have hw' : w' = w⁻¹ := eq_inv_of_mul_eq_one_left hcocycle
   have hw_im : w.im ≠ 0 := by simpa [hw_def, τ] using hc
@@ -497,8 +494,7 @@ theorem etaMultiplier_inv_of_c_ne_zero (γ : SL(2, ℤ)) (hc : γ 1 0 ≠ 0) :
   have hsqrt : Complex.sqrt w' = (Complex.sqrt w)⁻¹ := by
     rw [hw', Complex.sqrt, Complex.inv_cpow w (2⁻¹ : ℂ) hw_arg, ← Complex.sqrt]
   refine etaMultiplier_eq_of_eta_smul_eq (τ := γ • τ) ?_
-  have hsqrt_ne : Complex.sqrt w ≠ 0 :=
-    Complex.sqrt_eq_zero_iff.not.mpr fun h ↦ hw_im (by simp [h])
+  have hsqrt_ne : Complex.sqrt w ≠ 0 := UpperHalfPlane.sqrt_denom_ne_zero γ τ
   rw [inv_smul_smul, ← hw'_def, hsqrt, eta_smul γ τ, ← hw_def]
   field_simp [etaMultiplier_ne_zero γ, hsqrt_ne]
 

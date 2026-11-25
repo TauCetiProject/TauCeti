@@ -36,6 +36,9 @@ as `x → 0+`.
 
 ## Main results
 
+* `Complex.upperIncompleteGamma_ofReal_eq_ofReal_integral`,
+  `Complex.upperIncompleteGamma_ofReal_im`: for real `a` and `0 ≤ x`, `Γ(a, x)` is the real
+  integral `∫ₓ^∞ t^{a−1} e^{−t} dt`, hence real;
 * `Complex.hasDerivAt_upperIncompleteGamma`, `Complex.deriv_upperIncompleteGamma`,
   `Complex.analyticOnNhd_upperIncompleteGamma`: `∂Γ(a, z)/∂z = −z^{a−1} e^{−z}` on the slit
   plane (DLMF 8.8.13), so `Γ(a, ·)` is holomorphic there;
@@ -64,7 +67,8 @@ positive axis is Mathlib's `MeasureTheory.IntegrableOn.continuousOn_Ici_primitiv
   <https://dlmf.nist.gov/8.2>
 
 The results after `Complex.partialGamma_add_upperIncompleteGamma` are new proofs; the statements
-follow DLMF.
+follow DLMF. `Complex.upperIncompleteGamma_ofReal_eq_ofReal_integral` is adapted from the lean-DLMF
+project (<https://github.com/bjbraams/lean-DLMF>), file `DLMF/IncompleteGamma/RealIntegrals.lean`.
 -/
 
 public section
@@ -141,6 +145,19 @@ theorem upperIncompleteGamma_ofReal (a : ℂ) (x : ℝ) :
     (measurePreserving_add_left volume x).setIntegral_preimage_emb
       (MeasurableEquiv.addLeft x).measurableEmbedding
       (fun t : ℝ => (t : ℂ) ^ (a - 1) * _root_.Complex.exp (-(t : ℂ))) (Ioi x)
+
+/-- For real `a` and `0 ≤ x`, `Γ(a, x)` is the real tail integral `∫ₓ^∞ t^{a−1} e^{−t} dt`. -/
+theorem upperIncompleteGamma_ofReal_eq_ofReal_integral (a : ℝ) {x : ℝ} (hx : 0 ≤ x) :
+    upperIncompleteGamma a x = ((∫ t in Ioi x, t ^ (a - 1) * Real.exp (-t) : ℝ) : ℂ) := by
+  rw [upperIncompleteGamma_ofReal, ← integral_complex_ofReal]
+  refine setIntegral_congr_fun measurableSet_Ioi fun t ht => ?_
+  rw [ofReal_mul, ofReal_cpow (hx.trans ht.le), ofReal_exp, ofReal_sub, ofReal_one, ofReal_neg]
+
+/-- `Γ(a, x)` is real for every real `a` and `0 ≤ x`. -/
+@[simp]
+theorem upperIncompleteGamma_ofReal_im (a : ℝ) {x : ℝ} (hx : 0 ≤ x) :
+    (upperIncompleteGamma a x).im = 0 := by
+  rw [upperIncompleteGamma_ofReal_eq_ofReal_integral a hx, ofReal_im]
 
 /-- At shape one the ray integral is an exponential, even on the branch cut. -/
 @[simp]
