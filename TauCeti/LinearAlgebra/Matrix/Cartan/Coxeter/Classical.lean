@@ -147,16 +147,6 @@ theorem isOneDegenerateOrder_D (n : ℕ) :
 
 /-! ### Shared matrix helpers: unimodular difference basis and shifts -/
 
-private theorem mul_reflMatrix_apply {m k : ℕ} (M : Matrix (Fin m) (Fin k) ℤ)
-    (A : Matrix (Fin k) (Fin k) ℤ) (i : Fin k) (p : Fin m) (q : Fin k) :
-    (M * reflMatrix A i) p q = M p q - M p i * A q i := by
-  simp [Matrix.mul_apply, reflMatrix_apply, mul_sub, mul_ite]
-
-private theorem transposition_symm {m : ℕ} (i : Fin m) :
-    (BraidGroup.transposition (n := m + 1) i).symm = BraidGroup.transposition (n := m + 1) i := by
-  rw [← Equiv.Perm.inv_def, inv_eq_iff_mul_eq_one]
-  exact BraidGroup.transposition_mul_self (n := m + 1) i
-
 /-- Unit lower-triangular basis `ε₀ - ε₁, …, ε_{m-2} - ε_{m-1}, ε_{m-1}` of `ℤᵐ`. -/
 private def diffBasis (m : ℕ) : Matrix (Fin m) (Fin m) ℤ :=
   Matrix.of fun p q => if p = q then 1 else if p.val = q.val + 1 then -1 else 0
@@ -307,7 +297,7 @@ private theorem permMatrixHom_transposition_mul_diffBasis {n : ℕ} (i : Fin n) 
     permMatrixHom (BraidGroup.transposition (n := n + 1) i) * diffBasis (n + 1) =
       diffBasis (n + 1) * extReflA i := by
   ext p q
-  rw [permMatrixHom_mul_apply, transposition_symm]
+  rw [permMatrixHom_mul_apply, BraidGroup.symm_transposition]
   have hp := p.isLt; have hq := q.isLt; have hi := i.isLt
   rcases lt_or_eq_of_le (Nat.lt_succ_iff.mp hq) with hqlt | hqlast
   · let jq : Fin n := ⟨q.val, hqlt⟩
@@ -419,7 +409,7 @@ private theorem permMatrixHom_transposition_mul_diffBasis_B {m : ℕ} (i : Fin m
     permMatrixHom (BraidGroup.transposition (n := m + 1) i) * diffBasis (m + 1) =
       diffBasis (m + 1) * reflMatrix (CartanMatrix.B (m + 1)) i.castSucc := by
   ext p q
-  rw [permMatrixHom_mul_apply, transposition_symm, mul_reflMatrix_apply]
+  rw [permMatrixHom_mul_apply, BraidGroup.symm_transposition, mul_reflMatrix_apply]
   have _ := i.isLt
   simp only [diffBasis, CartanMatrix.B, Matrix.of_apply, Fin.ext_iff, Fin.val_castSucc,
     BraidGroup.val_transposition_apply, Nat.add_sub_cancel]
@@ -625,7 +615,7 @@ private theorem permMatrixHom_transposition_mul_basisD {m : ℕ} (i : Fin (m + 1
     permMatrixHom (BraidGroup.transposition (n := m + 2) i) * basisD m =
       basisD m * reflMatrix (CartanMatrix.D (m + 2)) i.castSucc := by
   ext p q
-  rw [permMatrixHom_mul_apply, transposition_symm, mul_reflMatrix_apply]
+  rw [permMatrixHom_mul_apply, BraidGroup.symm_transposition, mul_reflMatrix_apply]
   have _ := p.isLt; have _ := q.isLt; have hi := i.isLt
   have hicv : (i.castSucc : Fin (m + 2)).val = i.val := rfl
   have hD : CartanMatrix.D (m + 2) q i.castSucc =
