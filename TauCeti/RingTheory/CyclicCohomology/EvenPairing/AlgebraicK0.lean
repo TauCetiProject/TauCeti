@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
-public import TauCeti.LinearAlgebra.Matrix.Idempotent
+public import TauCeti.LinearAlgebra.Matrix.Idempotent.Basic
 public import TauCeti.RingTheory.CyclicCohomology.EvenPairing.Invariance
 
 /-!
@@ -159,7 +159,7 @@ theorem evenPairingK0_of_linearEquiv_range {ι : Type*} [Fintype ι] [DecidableE
   -- The image of `e` is a direct summand of `A^ι`, with idempotent `e` itself.
   have hsub : e.vecMulLinear.rangeRestrict ∘ₗ (LinearMap.range e.vecMulLinear).subtype =
       LinearMap.id :=
-    LinearMap.ext fun v ↦ Subtype.ext (he.mem_range_vecMulLinear_iff.1 v.2)
+    LinearMap.ext fun v ↦ Subtype.ext (he.mem_range_vecMulLinear_iff.1 v.property)
   have hmat : e.vecMulLinear.toMatrixRight' = e :=
     Matrix.toLinearMapRight'.injective (LinearMap.ext fun v ↦ by simp)
   rw [evenPairingK0_of, objPairing_eq θ hsub]

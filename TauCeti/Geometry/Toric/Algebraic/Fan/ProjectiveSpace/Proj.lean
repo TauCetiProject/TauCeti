@@ -93,6 +93,16 @@ theorem projectiveSpaceRatioMonomial_def {k : Option ι}
           (projectiveSpaceRatioCharacter_mem_dualSemigroup b hi j k (by simp))⟩) 1 :=
   (rfl)
 
+/-- Raising monomials to the `q`-th power sends the ratio `X_j / X_k` to its `q`-th power. This
+ring map is the coordinate-ring map of the toric power morphism on the chart
+(`TauCeti.Toric.Fan.affineToricChartι_comp_algebraicMap_nsmulHom`), so in homogeneous coordinates
+that morphism is `[X_j] ↦ [X_j ^ q]`. -/
+theorem mapDomainRingHom_powMonoidHom_projectiveSpaceRatioMonomial (q : ℕ) {k : Option ι}
+    (hσ : σ ≤ projectiveSpaceCone b i {k}ᶜ) (j : Option ι) :
+    MonoidAlgebra.mapDomainRingHom ℂ (powMonoidHom q) (projectiveSpaceRatioMonomial b hi hσ j) =
+      projectiveSpaceRatioMonomial b hi hσ j ^ q := by
+  simp [projectiveSpaceRatioMonomial_def, MonoidAlgebra.single_pow]
+
 /-- The ratio `X_k / X_k` is `1`. -/
 @[simp]
 theorem projectiveSpaceRatioMonomial_self {k : Option ι}
@@ -235,15 +245,14 @@ private theorem val_awayRatio (j : Option ι) :
     ← TauCeti.Localization.mk'_pow_eq_invSelf_pow_mul]
 
 omit [Fintype ι] in
-private theorem awayRatio_self : awayRatio k k = 1 := by
-  apply val_injective
-  rw [val_awayRatio, val_one, mul_comm, IsLocalization.Away.mul_invSelf]
+private theorem awayRatio_self : awayRatio k k = 1 :=
+  Away.mk_self _ _
 
 /-- The characters of the maximal cone omitting `k` act on the chart `D₊(X_k)`: a character with
 exponents `a_j` along the rays `j ≠ k` goes to `∏ (X_j / X_k) ^ a_j`. -/
 private noncomputable def awayMonoidHom :
     Multiplicative (dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ)) →* Away 𝒜 (X k) where
-  toFun m := ∏ j, awayRatio k j.1 ^ projectiveSpaceDualSemigroupEquiv b hi k (toAdd m) j
+  toFun m := ∏ j, awayRatio k j.val ^ projectiveSpaceDualSemigroupEquiv b hi k (toAdd m) j
   map_one' := by simp
   map_mul' m m' := by
     simp only [toAdd_mul, map_add, Pi.add_apply, pow_add, Finset.prod_mul_distrib]
@@ -257,7 +266,7 @@ private noncomputable def toAway :
 private theorem awayMonoidHom_apply
     (m : dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ)) :
     awayMonoidHom b hi k (ofAdd m) =
-      ∏ j, awayRatio k j.1 ^ projectiveSpaceDualSemigroupEquiv b hi k m j :=
+      ∏ j, awayRatio k j.val ^ projectiveSpaceDualSemigroupEquiv b hi k m j :=
   (rfl)
 
 omit [DecidableEq ι] in
@@ -298,12 +307,12 @@ private theorem ofAway_mk {n : ℕ} {a : _root_.SymmetricAlgebra ℂ (Option ι 
 /-- A product of powers of the ratios `X_j / X_k` is the monomial of the corresponding sum of
 ratio characters. -/
 private theorem prod_projectiveSpaceRatioMonomial_pow (a : {j : Option ι // j ≠ k} → ℕ) :
-    ∏ j, projectiveSpaceRatioMonomial b hi le_rfl j.1 ^ a j =
+    ∏ j, projectiveSpaceRatioMonomial b hi le_rfl j.val ^ a j =
       MonoidAlgebra.single (ofAdd ((projectiveSpaceDualSemigroupEquiv b hi k).symm a)) 1 := by
   rw [projectiveSpaceDualSemigroupEquiv_symm_apply, ofAdd_sum, ← MonoidAlgebra.of_apply, map_prod]
   -- The general formula sums over `univ` built from classical decidable equality.
   refine Finset.prod_congr (by congr!) fun j _ ↦ ?_
-  rw [projectiveSpaceRatioMonomial_eq_single b hi k j.2, ofAdd_nsmul, map_pow,
+  rw [projectiveSpaceRatioMonomial_eq_single b hi k j.property, ofAdd_nsmul, map_pow,
     MonoidAlgebra.of_apply]
 
 private theorem ofAway_comp_toAway : (ofAway b hi k).comp (toAway b hi k) = AlgHom.id ℂ _ := by
@@ -481,7 +490,7 @@ private noncomputable def projCocone : Cocone (projectiveSpace b hi).affineToric
   pt := Proj 𝒜
   ι :=
     { app σ := projectiveSpaceChartToProj b hi
-        (exists_le_projectiveSpaceCone_compl b hi σ.2).choose_spec
+        (exists_le_projectiveSpaceCone_compl b hi σ.property).choose_spec
       naturality _ _ _ :=
         (faceAffineToricSchemeMap_comp_projectiveSpaceChartToProj _ _).trans
           ((projectiveSpaceChartToProj_eq _ _).trans (Category.comp_id _).symm) }
@@ -498,7 +507,7 @@ variable {b hi}
 given by the homogeneous coordinates normalized by `X_k = 1`. -/
 @[reassoc]
 theorem affineToricChartι_comp_projectiveSpaceToProj (σ : (projectiveSpace b hi).cones)
-    {k : Option ι} (hσ : σ.1 ≤ projectiveSpaceCone b i {k}ᶜ) :
+    {k : Option ι} (hσ : σ.val ≤ projectiveSpaceCone b i {k}ᶜ) :
     (projectiveSpace b hi).affineToricChartι σ ≫ projectiveSpaceToProj b hi =
       projectiveSpaceChartToProj b hi hσ := by
   have h := (projectiveSpace b hi).isColimitAffineToricCocone.fac (projCocone b hi) σ
@@ -511,7 +520,7 @@ instance isOver_projectiveSpaceToProj :
     (projectiveSpaceToProj b hi).IsOver (Spec (.of ℂ)) where
   comp_over := by
     refine algebraicRealization_hom_ext _ fun σ ↦ ?_
-    obtain ⟨k, hk⟩ := exists_le_projectiveSpaceCone_compl b hi σ.2
+    obtain ⟨k, hk⟩ := exists_le_projectiveSpaceCone_compl b hi σ.property
     rw [affineToricChartι_comp_projectiveSpaceToProj_assoc σ hk,
       SymmetricAlgebra.over_eq_projToSpec, projectiveSpaceChartToProj, Category.assoc,
       SymmetricAlgebra.awayι_projToSpec, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
@@ -527,8 +536,9 @@ private theorem exists_affineToricChartι_projectiveSpaceMaximalCone_apply_eq
     (x : (projectiveSpace b hi).algebraicRealization) :
     ∃ k y, (projectiveSpace b hi).affineToricChartι (projectiveSpaceMaximalCone b hi k) y = x := by
   obtain ⟨σ, y, rfl⟩ := (projectiveSpace b hi).exists_affineToricChartι_apply_eq x
-  obtain ⟨k, hk⟩ := exists_le_projectiveSpaceCone_compl b hi σ.2
-  have hσk := (projectiveSpace b hi).isFaceOf_of_le (projectiveSpaceMaximalCone b hi k).2 σ.2 hk
+  obtain ⟨k, hk⟩ := exists_le_projectiveSpaceCone_compl b hi σ.property
+  have hσk := (projectiveSpace b hi).isFaceOf_of_le (projectiveSpaceMaximalCone b hi k).property
+      σ.property hk
   exact ⟨k, faceAffineToricSchemeMap _ hσk y, by
     rw [← Scheme.Hom.comp_apply, faceAffineToricSchemeMap_comp_affineToricChartι]⟩
 
@@ -544,10 +554,10 @@ private theorem affineToricChartι_mem_range_of_mem_basicOpen {k : Option ι}
   let m : dualSemigroup hi (projectiveSpaceCone b i {k}ᶜ) :=
     ⟨projectiveSpaceRatioCharacter b l k,
       projectiveSpaceRatioCharacter_mem_dualSemigroup b hi l k (by simp)⟩
-  have hk := (projectiveSpaceMaximalCone b hi k).2
-  have hl := (projectiveSpaceMaximalCone b hi l).2
+  have hk := (projectiveSpaceMaximalCone b hi k).property
+  have hl := (projectiveSpaceMaximalCone b hi l).property
   have hy' : y ∈ Set.range (faceAffineToricSchemeMap hi
-      (PointedCone.isFaceOf_inf_ker ((mem_dualSemigroup hi m).1 m.2))) := by
+      (PointedCone.isFaceOf_inf_ker ((mem_dualSemigroup hi m).1 m.property))) := by
     rw [range_faceAffineToricSchemeMap hi (Φ.isToricCone hk).fg m]
     exact (projectiveSpaceChartToProj_preimage_basicOpen k l).le hy
   obtain ⟨z, rfl⟩ := hy'

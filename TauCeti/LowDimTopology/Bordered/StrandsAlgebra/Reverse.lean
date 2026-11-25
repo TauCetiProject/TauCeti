@@ -29,7 +29,7 @@ rotation carries the crossing of the strands from `x` to `a` and from `y` to `b`
 the rotated strands from `a` to `x` and from `b` to `y`, and resolving one crossing and rotating is
 resolving the other (`TauCeti.StrandDiagram.reverse_resolve`). The corresponding statements for the
 algebra `A(Z)` of a pointed matched circle are in
-`TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Opposite`.
+`TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Opposite.Basic`.
 
 Both maps respect the grading of `TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading.Basic`,
 through maps of grading groups. Relabelling transports the boundary of a class and keeps the Maslov
@@ -797,6 +797,12 @@ def rev : StrandGradingGroup (Fin n) ≃* (StrandGradingGroup (Fin n))ᵐᵒᵖ 
 
 variable {n}
 
+/-- The orientation reversal of the grading group of `{1, …, n}` is the reversal followed by the
+relabelling of the reversed order. -/
+theorem unop_rev_apply (g : StrandGradingGroup (Fin n)) :
+    (rev n g).unop = map Fin.revOrderIso (reverse g).unop :=
+  (rfl)
+
 @[simp]
 theorem rev_maslov (g : StrandGradingGroup (Fin n)) : (rev n g).unop.maslov = g.maslov := by
   simp [rev, MulEquiv.op]
@@ -892,10 +898,10 @@ grading `StrandGradingGroup.map e g`. -/
 @[simp]
 theorem mapAlgEquiv_mem_gradedPart_iff (e : α ≃o β) {g : StrandGradingGroup α}
     {x : StrandsAlgebra R α} :
-    mapAlgEquiv e x ∈ gradedPart R (StrandGradingGroup.map e g) ↔ x ∈ gradedPart R g :=
-  mem_gradedPart_iff_of_basis (mapAlgEquiv e).toLinearEquiv (mapEquiv e)
-    (StrandGradingGroup.map e).injective
-    (mapAlgEquiv_of e) (grading_map e)
+    mapAlgEquiv e x ∈ gradedPart R (StrandGradingGroup.map e g) ↔ x ∈ gradedPart R g := by
+  rw [gradedPart_eq_gradedPartBy, gradedPart_eq_gradedPartBy]
+  exact mem_gradedPartBy_iff_of_basis (mapAlgEquiv e).toLinearEquiv (mapEquiv e)
+    (StrandGradingGroup.map e).injective (mapAlgEquiv_of e) (grading_map e)
 
 /-- **Orientation reversal of the strands algebra is graded by the reversal of the grading
 group**: it carries the part of grading `g` onto the part of grading `R(g)`. -/
@@ -903,8 +909,9 @@ group**: it carries the part of grading `g` onto the part of grading `R(g)`. -/
 theorem unop_reverseAlgEquiv_mem_gradedPart_iff {g : StrandGradingGroup α}
     {x : StrandsAlgebra R α} :
     (reverseAlgEquiv x).unop ∈ gradedPart R (StrandGradingGroup.reverse g).unop ↔
-      x ∈ gradedPart R g :=
-  mem_gradedPart_iff_of_basis (reverseAlgEquiv.toLinearEquiv.trans (opLinearEquiv R).symm)
+      x ∈ gradedPart R g := by
+  rw [gradedPart_eq_gradedPartBy, gradedPart_eq_gradedPartBy]
+  exact mem_gradedPartBy_iff_of_basis (reverseAlgEquiv.toLinearEquiv.trans (opLinearEquiv R).symm)
     reverseEquiv (unop_injective.comp StrandGradingGroup.reverse.injective)
     (fun φ ↦ by simp) grading_reverse
 
@@ -913,11 +920,9 @@ onto the part of grading `TauCeti.StrandGradingGroup.rev n g`. -/
 @[simp]
 theorem unop_revAlgEquiv_mem_gradedPart_iff {n : ℕ} {g : StrandGradingGroup (Fin n)}
     {x : StrandsAlgebra R (Fin n)} :
-    (revAlgEquiv n x).unop ∈ gradedPart R (rev n g).unop ↔ x ∈ gradedPart R g :=
-  mem_gradedPart_iff_of_basis ((revAlgEquiv n).toLinearEquiv.trans (opLinearEquiv R).symm)
-    (reverseEquiv.trans (mapEquiv Fin.revOrderIso))
-    (unop_injective.comp (rev n).injective) (fun φ ↦ by simp)
-    (fun φ ↦ by simp [rev, MulEquiv.op])
+    (revAlgEquiv n x).unop ∈ gradedPart R (rev n g).unop ↔ x ∈ gradedPart R g := by
+  rw [unop_revAlgEquiv_apply, unop_rev_apply, mapAlgEquiv_mem_gradedPart_iff,
+    unop_reverseAlgEquiv_mem_gradedPart_iff]
 
 end StrandsAlgebra
 

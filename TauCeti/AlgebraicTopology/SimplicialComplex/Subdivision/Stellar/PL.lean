@@ -203,7 +203,7 @@ private theorem coord_mem_source [Finite ι]
   · simpa using hxf₀.1
   · simpa using hxf₀.2.1
   · have hface : (Finsupp.equivFunOnFinite.symm x).support ∈ K.stellarSubdivision σ v := by
-      apply (K.stellarSubdivision σ v).isRelLowerSet_faces.mem_of_le τ.2 hxf₀.2.2
+      apply (K.stellarSubdivision σ v).isRelLowerSet_faces.mem_of_le τ.property hxf₀.2.2
       apply Finsupp.support_nonempty_iff.mpr
       intro hzero
       have hsum := hxf₀.2.1
@@ -219,16 +219,16 @@ private theorem stellarSubdivision_face_relabel
     (hKκ : ∀ q : Finset κ, q ∈ Kκ ↔ q.image e ∈ K)
     (hσ_spec : ∀ i : κ, i ∈ σ' ↔ e i ∈ σ)
     (hface_spec : ∀ (τ : (K.stellarSubdivision σ v).faces) (i : κ),
-      i ∈ face' τ ↔ e i ∈ τ.1)
+      i ∈ face' τ ↔ e i ∈ τ.val)
     (hσ_range : ∀ i ∈ σ, ∃ j : κ, e j = i)
     (hface_range : ∀ (τ : (K.stellarSubdivision σ v).faces) (i : ι),
-      i ∈ τ.1 → ∃ j : κ, e j = i)
+      i ∈ τ.val → ∃ j : κ, e j = i)
     (hev : e v' = v) :
     σ'.image e = σ ∧ ({v'} : Finset κ).image e = {v} ∧
       ∀ τ : (K.stellarSubdivision σ v).faces,
         face' τ ∈ Kκ.stellarSubdivision σ' v' ∧
-          (face' τ).image e = τ.1 ∧
-            ((face' τ).erase v').image e = τ.1.erase v := by
+          (face' τ).image e = τ.val ∧
+            ((face' τ).erase v').image e = τ.val.erase v := by
   have hσimage : σ'.image e = σ := Finset.coe_injective <| by
     rw [Finset.coe_image, show (σ' : Set κ) = e ⁻¹' σ from Set.ext hσ_spec]
     exact Set.image_preimage_eq_of_subset fun i hi => hσ_range i hi
@@ -237,13 +237,14 @@ private theorem stellarSubdivision_face_relabel
     simp [hev]
   refine ⟨hσimage, hvimage, ?_⟩
   intro τ
-  have hτVimage : (face' τ).image e = τ.1 := Finset.coe_injective <| by
-    rw [Finset.coe_image, show (face' τ : Set κ) = e ⁻¹' (τ.1 : Set ι) from Set.ext (hface_spec τ)]
+  have hτVimage : (face' τ).image e = τ.val := Finset.coe_injective <| by
+    rw [Finset.coe_image, show (face' τ : Set κ) = e ⁻¹' (τ.val : Set ι) from Set.ext
+        (hface_spec τ)]
     exact Set.image_preimage_eq_of_subset fun i hi => hface_range τ i hi
-  have herase : ((face' τ).erase v').image e = τ.1.erase v := by
+  have herase : ((face' τ).erase v').image e = τ.val.erase v := by
     rw [Finset.image_erase e.injective, hτVimage]
     simp [hev]
-  have hτL : τ.1 ∈ K.stellarSubdivision σ v := τ.2
+  have hτL : τ.val ∈ K.stellarSubdivision σ v := τ.property
   rw [mem_stellarSubdivision_iff] at hτL
   rw [mem_stellarSubdivision_iff]
   refine ⟨?_, hτVimage, herase⟩
@@ -354,10 +355,10 @@ theorem exists_isPLOn_stellarSubdivisionLeftInverse
               ⟨v, hVv⟩ ''
             (⋃ τ : (K.stellarSubdivision σ v).faces,
               convexHull ℝ ((Pi.single · (1 : ℝ)) ''
-                (τ.1.preimage (fun i : κ => (i : ι)) Subtype.val_injective.injOn : Set κ)))) ∧
+                (τ.val.preimage (fun i : κ => (i : ι)) Subtype.val_injective.injOn : Set κ)))) ∧
         ∀ x ∈ (⋃ τ : (K.stellarSubdivision σ v).faces,
             convexHull ℝ ((Pi.single · (1 : ℝ)) ''
-              (τ.1.preimage (fun i : κ => (i : ι)) Subtype.val_injective.injOn : Set κ))),
+              (τ.val.preimage (fun i : κ => (i : ι)) Subtype.val_injective.injOn : Set κ))),
           g (stellarSubdivisionCoordinateMap
               (σ.preimage (fun i : κ => (i : ι)) Subtype.val_injective.injOn)
               ⟨v, hVv⟩ x) = x := by
@@ -370,7 +371,7 @@ theorem exists_isPLOn_stellarSubdivisionLeftInverse
   let σ' : Finset κ := σ.preimage e e.injective.injOn
   let v' : κ := ⟨v, hVv⟩
   let L := K.stellarSubdivision σ v
-  let face' (τ : L.faces) : Finset κ := τ.1.preimage e e.injective.injOn
+  let face' (τ : L.faces) : Finset κ := τ.val.preimage e e.injective.injOn
   let Kκ : PreAbstractSimplicialComplex κ :=
     { faces := {q | q.image e ∈ K}
       isRelLowerSet_faces := by
@@ -386,7 +387,7 @@ theorem exists_isPLOn_stellarSubdivisionLeftInverse
   -- Relabel finite-coordinate faces, then use injectivity and the finite-simplex criterion.
   have hfaceκ_data : σ'.image e = σ ∧ ({v'} : Finset κ).image e = {v} ∧
       ∀ τ : L.faces, face' τ ∈ Kκ.stellarSubdivision σ' v' ∧
-        (face' τ).image e = τ.1 ∧ ((face' τ).erase v').image e = τ.1.erase v := by
+        (face' τ).image e = τ.val ∧ ((face' τ).erase v').image e = τ.val.erase v := by
     apply stellarSubdivision_face_relabel e face' (by intro q; rfl)
     · intro i
       simp [σ', e]
@@ -395,7 +396,7 @@ theorem exists_isPLOn_stellarSubdivisionLeftInverse
     · intro i hi
       exact ⟨⟨i, hVσ hi⟩, rfl⟩
     · intro τ i hi
-      exact ⟨⟨i, hV τ.1 τ.2 hi⟩, rfl⟩
+      exact ⟨⟨i, hV τ.val τ.property hi⟩, rfl⟩
     · rfl
   have hfaceκ (τ : L.faces) : face' τ ∈ (Kκ.stellarSubdivision σ' v').faces :=
     (hfaceκ_data.2.2 τ).1
@@ -422,11 +423,11 @@ theorem exists_homeomorph_stellarSubdivision_with_inverse
     (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K)
     (hK : K ≤ A.toPreAbstractSimplicialComplex)
     (hS : stellarSubdivision K σ v ≤ A.toPreAbstractSimplicialComplex) :
-    ∃ e : {x : Realization A // x.1.support ∈ stellarSubdivision K σ v} ≃ₜ
-        {x : Realization A // x.1.support ∈ K},
-      (∀ x, ((e x).1.1 : ι → ℝ) = Finset.stellarSubdivisionCoordinateMap σ v x.1.1) ∧
-      ∀ y, ((e.symm y).1.1 : ι → ℝ) =
-        Finset.stellarSubdivisionInverseExtension σ (K.isRelLowerSet_faces hσ).1 v y.1.1 := by
+    ∃ e : {x : Realization A // x.val.support ∈ stellarSubdivision K σ v} ≃ₜ
+        {x : Realization A // x.val.support ∈ K},
+      (∀ x, ((e x).val.val : ι → ℝ) = Finset.stellarSubdivisionCoordinateMap σ v x.val.val) ∧
+      ∀ y, ((e.symm y).val.val : ι → ℝ) =
+        Finset.stellarSubdivisionInverseExtension σ (K.isRelLowerSet_faces hσ).1 v y.val.val := by
   obtain ⟨e, he⟩ := exists_homeomorph_stellarSubdivision hσ hv hK hS
   refine ⟨e, fun x => ?_, fun y => ?_⟩
   · simp [he x]
@@ -434,7 +435,7 @@ theorem exists_homeomorph_stellarSubdivision_with_inverse
     rw [e.symm_apply_apply, he x]
     exact (Finset.stellarSubdivisionInverseExtension_stellarSubdivisionLinearMap
       (K.isRelLowerSet_faces hσ).1 (notMem_of_singleton_notMem hv hσ)
-      (Realization.nonneg A x.1) x.2).symm
+      (Realization.nonneg A x.val) x.property).symm
 
 end
 
@@ -461,11 +462,11 @@ theorem IsStellarMove.plHomeomorphic
     Finset.stellarSubdivisionInverseExtension σ (A.isRelLowerSet_faces hσ).1 v
   let g : (ι → ℝ) → (ι → ℝ) := Finset.stellarSubdivisionCoordinateMap σ v
   have hf : IsPLOn f (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
-      x.1.support ∈ A} => (x.1.1 : ι → ℝ)) := by
+      x.val.support ∈ A} => (x.val.val : ι → ℝ)) := by
     exact (Finset.isPiecewiseAffineOn_stellarSubdivisionInverseExtension σ
       (A.isRelLowerSet_faces hσ).1 v).isPLOn.mono (subset_univ _)
   have hg : IsPLOn g (range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) //
-      x.1.support ∈ stellarSubdivision A σ v} => (x.1.1 : ι → ℝ)) := by
+      x.val.support ∈ stellarSubdivision A σ v} => (x.val.val : ι → ℝ)) := by
     exact isPLOn_continuousAffineMap
       (Finset.stellarSubdivisionCoordinateMap σ v).toContinuousAffineMap _
   exact PLHomeomorphic.intro e.symm f g hf hg

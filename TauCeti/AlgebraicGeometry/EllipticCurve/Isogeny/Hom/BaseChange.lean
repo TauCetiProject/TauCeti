@@ -41,6 +41,10 @@ and the identification of morphisms with their tautological points in `Isogeny.H
 * `TauCeti.Isogeny.Hom.pointMap_map_algebraMap_map`: compatibility of the action on points of the
   base changes `W⁄L` and `W⁄M` with Mathlib's point map along an algebra homomorphism `L →ₐ[F] M`;
   for an automorphism of `L` over `F` this is Galois equivariance.
+* `TauCeti.Isogeny.Hom.pointMap_map_algebraMap_genericPoint` and
+  `TauCeti.Isogeny.Hom.pointMap_map_algebraMap_map_genericPoint`: the base change of `f` to `F(W₁)`
+  sends `W₁.genericPoint` to `f.tautologicalPoint`, and along `σ : F(W₁) →ₐ[F] M` sends
+  `Point.map σ W₁.genericPoint` to `Point.map σ f.tautologicalPoint`.
 
 ## References
 
@@ -297,6 +301,41 @@ theorem pointMap_map_algebraMap_map {L M : Type*} [Field L] [Field M] [Algebra F
   · exact (congrArg _ (pointMap_map _ _ P)).trans (Point.map_eq_cast_mapAlong σ _).symm
 
 end PointMap
+
+section GenericPoint
+
+variable [W₁.IsElliptic] [W₂.IsElliptic]
+
+/-- **The base change of a morphism to `F(W₁)` sends the generic point of `W₁` to the tautological
+point of the morphism.** -/
+theorem pointMap_map_algebraMap_genericPoint [DecidableEq W₁.FunctionField] (f : Hom W₁ W₂) :
+    (f.map (algebraMap F W₁.FunctionField)).pointMap W₁.genericPoint = f.tautologicalPoint := by
+  -- `erw` unfolds the `WeierstrassCurve.baseChange` spelling `(W⁄F(W₁)).toAffine` vs `W.map ι`.
+  rcases eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩
+  · erw [zero_map, zero_pointMap, tautologicalPoint_zero]
+    rfl
+  set ι := algebraMap F W₁.FunctionField
+  erw [ofIsogeny_map, pointMap_eq_iff, tautologicalPoint_ofIsogeny, tautologicalPoint_ofIsogeny,
+    ← Point.some_coords (CoordinatePullback.tautologicalPoint_ne_zero ((φ.map ι).pullback)),
+    ← Point.some_coords (CoordinatePullback.tautologicalPoint_ne_zero φ.pullback),
+    genericPoint_eq_some, coe_pointEquivDegreeOnePlace_some, Point.equivBaseChangeSelf_some,
+    some_sub_baseChange_mem_polePoints_iff]
+  simp only [CoordinatePullback.xCoord_tautologicalPoint,
+    CoordinatePullback.yCoord_tautologicalPoint, Isogeny.map_pullback,
+    CoordinatePullback.map_of_X, CoordinatePullback.map_root]
+  exact ⟨W₁.valuation_pointPlace_genericX_genericY_map_sub_algebraMap_lt_one _,
+    W₁.valuation_pointPlace_genericX_genericY_map_sub_algebraMap_lt_one _⟩
+
+/-- **Evaluating a base-changed morphism at an `F`-algebra image of the generic point pushes the
+tautological point forward along that `F`-algebra map.** -/
+theorem pointMap_map_algebraMap_map_genericPoint {M : Type*} [Field M] [Algebra F M]
+    [DecidableEq M] (f : Hom W₁ W₂) (σ : W₁.FunctionField →ₐ[F] M) :
+    (f.map (algebraMap F M)).pointMap (Point.map σ W₁.genericPoint) =
+      Point.map σ f.tautologicalPoint := by
+  classical
+  rw [pointMap_map_algebraMap_map, pointMap_map_algebraMap_genericPoint]
+
+end GenericPoint
 
 end TauCeti.Isogeny.Hom
 

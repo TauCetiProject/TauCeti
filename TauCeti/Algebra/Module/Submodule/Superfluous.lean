@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.Ideal.Operations
 public import TauCeti.RingTheory.Jacobson.Module
 
+import Mathlib.LinearAlgebra.Quotient.Basic
+
 /-!
 # Superfluous submodules
 
@@ -30,6 +32,8 @@ contained in the radical `Module.jacobson`.
   downstream.
 * `TauCeti.isSuperfluous_bot`, `TauCeti.IsSuperfluous.mono`, `TauCeti.isSuperfluous_sup_iff`: the
   superfluous submodules of `M` are closed downwards and under binary suprema, and contain `⊥`.
+* `TauCeti.isSuperfluous_iSup_iff` and `TauCeti.isSuperfluous_pi_univ_iff`: finite suprema and
+  finite products of submodules are superfluous exactly when each member is.
 * `TauCeti.isSuperfluous_top_iff`: `⊤` is superfluous exactly for the zero module.
 * `TauCeti.IsSuperfluous.map`: the image of a superfluous submodule under any linear map is
   superfluous; `TauCeti.isSuperfluous_map_equiv_iff` records that along an equivalence this is an
@@ -50,6 +54,8 @@ contained in the radical `Module.jacobson`.
   `TauCeti.isSuperfluous_jacobson` records that the radical itself is then superfluous.
 * `TauCeti.isSuperfluous_smul_top_of_isNilpotent`: the form of Nakayama's lemma that needs no
   hypothesis on the module at all — a nilpotent ideal times any module is superfluous in it.
+* `TauCeti.IsSuperfluous.finite_of_finite_quotient`: a module is finitely generated when its
+  quotient by a superfluous submodule is.
 
 ## References
 
@@ -116,6 +122,19 @@ theorem IsSuperfluous.sup {N N' : Submodule R M} (hN : IsSuperfluous N) (hN' : I
 theorem isSuperfluous_sup_iff {N N' : Submodule R M} :
     IsSuperfluous (N ⊔ N') ↔ IsSuperfluous N ∧ IsSuperfluous N' :=
   ⟨fun h => ⟨h.mono le_sup_left, h.mono le_sup_right⟩, fun h => h.1.sup h.2⟩
+
+/-- A finite supremum of superfluous submodules is superfluous. -/
+theorem isSuperfluous_iSup {ι : Sort*} [Finite ι] {N : ι → Submodule R M}
+    (hN : ∀ i, IsSuperfluous (N i)) : IsSuperfluous (⨆ i, N i) := by
+  have := Fintype.ofFinite (PLift ι)
+  rw [← iSup_plift_down, ← Finset.sup_univ_eq_iSup]
+  exact Finset.sup_induction isSuperfluous_bot (fun _ ha _ hb ↦ ha.sup hb) fun i _ ↦ hN i.down
+
+/-- A finite supremum of submodules is superfluous exactly when each of them is. -/
+@[simp]
+theorem isSuperfluous_iSup_iff {ι : Sort*} [Finite ι] {N : ι → Submodule R M} :
+    IsSuperfluous (⨆ i, N i) ↔ ∀ i, IsSuperfluous (N i) :=
+  ⟨fun h i ↦ h.mono (le_iSup N i), isSuperfluous_iSup⟩
 
 /-- The whole module is superfluous in itself exactly when it is zero: superfluity of `⊤` says
 precisely that `⊥ = ⊤`. -/
@@ -264,6 +283,24 @@ theorem isSuperfluous_ker_iff_forall_surjective {f : M →ₗ[R] M₂} (hf : Fun
     have hsub : Function.Surjective (K.subtype) := H (M₃ := K) K.subtype hs
     exact (Submodule.range_subtype K).symm.trans (LinearMap.range_eq_top.mpr hsub)
 
+/-- A finite product of superfluous submodules is superfluous. -/
+theorem isSuperfluous_pi_univ {ι : Type*} [Finite ι] {M : ι → Type*} [∀ i, AddCommGroup (M i)]
+    [∀ i, Module R (M i)] {K : ∀ i, Submodule R (M i)} (hK : ∀ i, IsSuperfluous (K i)) :
+    IsSuperfluous (Submodule.pi Set.univ K) := by
+  classical
+  rw [← Submodule.iSup_map_single]
+  exact isSuperfluous_iSup fun i ↦ (hK i).map _
+
+/-- A finite product of submodules is superfluous exactly when each factor is. -/
+@[simp]
+theorem isSuperfluous_pi_univ_iff {ι : Type*} [Finite ι] {M : ι → Type*}
+    [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] {K : ∀ i, Submodule R (M i)} :
+    IsSuperfluous (Submodule.pi Set.univ K) ↔ ∀ i, IsSuperfluous (K i) := by
+  classical
+  exact ⟨fun h i ↦ (h.map (LinearMap.proj i)).mono fun x hx ↦
+    ⟨Pi.single i x, Submodule.le_comap_single_pi (I := Set.univ) K hx, by simp⟩,
+    isSuperfluous_pi_univ⟩
+
 end AddCommGroup
 
 section Ring
@@ -304,6 +341,23 @@ runs on. -/
 theorem isSuperfluous_jacobson [IsCoatomic (Submodule R M)] :
     IsSuperfluous (Module.jacobson R M) :=
   isSuperfluous_of_le_jacobson le_rfl
+
+/-- **Finite generation lifts across a superfluous submodule.** If `N` is superfluous in `M` and
+`M ⧸ N` is finitely generated, then `M` is finitely generated. With
+`TauCeti.isSuperfluous_smul_top_of_isNilpotent` this is Nakayama's lemma for a nilpotent ideal
+`I` in the form that needs no finiteness of `M`: `M` is finitely generated as soon as `M ⧸ I • M`
+is. -/
+theorem IsSuperfluous.finite_of_finite_quotient {N : Submodule R M} (hN : IsSuperfluous N)
+    [Module.Finite R (M ⧸ N)] : Module.Finite R M := by
+  classical
+  obtain ⟨n, s, hs⟩ := Module.Finite.exists_fin (R := R) (M := M ⧸ N)
+  choose t ht using fun i ↦ N.mkQ_surjective (s i)
+  -- Lifts of generators of `M ⧸ N` span a supplement of `N`, which is everything.
+  refine ⟨⟨Finset.univ.image t, hN.eq_top_of_sup_eq_top ?_⟩⟩
+  rw [← Submodule.map_mkQ_eq_top, Submodule.map_span, ← hs]
+  congr 1
+  ext
+  simp [← ht]
 
 end Ring
 

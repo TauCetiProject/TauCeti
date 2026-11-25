@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.LKJ.Basic
 public import TauCeti.Probability.Distributions.LKJ.Determinant
 import TauCeti.Probability.Distributions.LKJ.PartialCorrelation
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Determinant moments of the LKJ law
@@ -54,7 +55,7 @@ theorem integral_rpow_det_lkjMeasure (hη : 0 < η) (hq : -η < q) :
   have hlkjPDF : lkjPDF p η = fun R ↦ ENNReal.ofReal (lkjPDFReal p η R) := by
     funext R
     rw [lkjPDF_def]
-  rw [hlkjPDF, TauCeti.Probability.integral_withDensity_ofReal
+  rw [hlkjPDF, TauCeti.MeasureTheory.integral_withDensity_ofReal
     (measurable_lkjPDFReal p η).aemeasurable (ae_of_all _ (lkjPDFReal_nonneg hη))]
   rw [lkjPDFReal_eq_indicator]
   simp only [smul_eq_mul]
@@ -98,7 +99,7 @@ private theorem map_det_lkjMeasure_eq_map_det_partialCorrelationGram (hη : 0 < 
         (R : Matrix (Fin p) (Fin p) ℝ).det) =
         Matrix.det ∘ (Subtype.val : selfAdjoint.submodule ℝ
           (Matrix (Fin p) (Fin p) ℝ) → Matrix (Fin p) (Fin p) ℝ) := rfl
-  rw [hdet, ← Measure.map_map (by fun_prop) measurable_subtype_coe, map_coe_lkjMeasure hη,
+  rw [hdet, ← Measure.map_map (by fun_prop) measurable_subtypeVal, map_coe_lkjMeasure hη,
     Measure.map_map (by fun_prop) (by fun_prop)]
   rfl
 
@@ -158,3 +159,65 @@ theorem integral_rpow_det_lkjMeasure_of_le_one (hp : p ≤ 1) (hη : 0 < η) (q 
   simp
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {p : ℕ} {η q : ℝ}
+  {X : Ω → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
+
+/-- A real determinant power of a random matrix with positive-shape LKJ law in dimension at least
+two is integrable exactly when its exponent is greater than the negative shape. -/
+theorem integrable_rpow_det_lkjMeasure_iff (hX : HasLaw X (lkjMeasure p η) P)
+    (hp : 2 ≤ p) (hη : 0 < η) (q : ℝ) :
+    Integrable (fun ω ↦ (X ω : Matrix (Fin p) (Fin p) ℝ).det ^ q) P ↔ -η < q := by
+  have hdet : Measurable fun R : selfAdjoint.submodule ℝ
+      (Matrix (Fin p) (Fin p) ℝ) ↦ (R : Matrix (Fin p) (Fin p) ℝ).det := by fun_prop
+  have hrpow : Measurable fun z : ℝ × ℝ ↦ z.1 ^ z.2 := by fun_prop
+  have hmeas : Measurable fun R : selfAdjoint.submodule ℝ
+      (Matrix (Fin p) (Fin p) ℝ) ↦ (R : Matrix (Fin p) (Fin p) ℝ).det ^ q :=
+    hrpow.comp (hdet.prodMk measurable_const)
+  calc
+    Integrable (fun ω ↦ (X ω : Matrix (Fin p) (Fin p) ℝ).det ^ q) P ↔
+        Integrable (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+          (R : Matrix (Fin p) (Fin p) ℝ).det ^ q) (Measure.map X P) := by
+      simpa only [Function.comp_def] using
+        (integrable_map_measure hmeas.aestronglyMeasurable hX.aemeasurable).symm
+    _ ↔ -η < q := by
+      rw [hX.map_eq, TauCeti.Probability.integrable_rpow_det_lkjMeasure_iff hp hη q]
+
+/-- When `q > -η`, the determinant-power moment of a random matrix with positive-shape LKJ law is
+the ratio of the normalizers at the shifted and original shapes. -/
+theorem integral_rpow_det_lkjMeasure (hX : HasLaw X (lkjMeasure p η) P)
+    (hη : 0 < η) (hq : -η < q) :
+    ∫ ω, (X ω : Matrix (Fin p) (Fin p) ℝ).det ^ q ∂P =
+      lkjNormalizer p (η + q) / lkjNormalizer p η := by
+  have hdet : Measurable fun R : selfAdjoint.submodule ℝ
+      (Matrix (Fin p) (Fin p) ℝ) ↦ (R : Matrix (Fin p) (Fin p) ℝ).det := by fun_prop
+  have hrpow : Measurable fun z : ℝ × ℝ ↦ z.1 ^ z.2 := by fun_prop
+  exact (hX.integral_comp
+    (hrpow.comp (hdet.prodMk measurable_const)).aestronglyMeasurable).trans
+    (TauCeti.Probability.integral_rpow_det_lkjMeasure hη hq)
+
+/-- In dimensions zero and one, every real determinant power of a random matrix with
+positive-shape LKJ law is integrable. -/
+theorem integrable_rpow_det_lkjMeasure_of_le_one (hX : HasLaw X (lkjMeasure p η) P)
+    (hp : p ≤ 1) (hη : 0 < η) (q : ℝ) :
+    Integrable (fun ω ↦ (X ω : Matrix (Fin p) (Fin p) ℝ).det ^ q) P :=
+  hX.integrable_fun_comp
+    (TauCeti.Probability.integrable_rpow_det_lkjMeasure_of_le_one hp hη q)
+
+/-- In dimensions zero and one, every real determinant-power moment of a random matrix with
+positive-shape LKJ law equals one. -/
+theorem integral_rpow_det_lkjMeasure_of_le_one (hX : HasLaw X (lkjMeasure p η) P)
+    (hp : p ≤ 1) (hη : 0 < η) (q : ℝ) :
+    ∫ ω, (X ω : Matrix (Fin p) (Fin p) ℝ).det ^ q ∂P = 1 := by
+  have hdet : Measurable fun R : selfAdjoint.submodule ℝ
+      (Matrix (Fin p) (Fin p) ℝ) ↦ (R : Matrix (Fin p) (Fin p) ℝ).det := by fun_prop
+  have hrpow : Measurable fun z : ℝ × ℝ ↦ z.1 ^ z.2 := by fun_prop
+  exact (hX.integral_comp
+    (hrpow.comp (hdet.prodMk measurable_const)).aestronglyMeasurable).trans
+    (TauCeti.Probability.integral_rpow_det_lkjMeasure_of_le_one hp hη q)
+
+end ProbabilityTheory.HasLaw

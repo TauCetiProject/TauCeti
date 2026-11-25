@@ -161,9 +161,10 @@ noncomputable def coweightQuotientHom : P.Aut →*
       fun _ hx ↦ g.coweightEquiv_symm_apply_mem_corootSpan hx
     -- Both laws hold pointwise on representatives, by those of `RootPairing.coweightAffineHom`.
     map_one' := Submodule.linearMap_qext _ <| LinearMap.ext fun x ↦
-      congrArg Submodule.Quotient.mk <| Subtype.ext congr($(map_one P.coweightAffineHom) x.1)
+      congrArg Submodule.Quotient.mk <| Subtype.ext congr($(map_one P.coweightAffineHom) x.val)
     map_mul' g h := Submodule.linearMap_qext _ <| LinearMap.ext fun x ↦
-      congrArg Submodule.Quotient.mk <| Subtype.ext congr($(map_mul P.coweightAffineHom g h) x.1) }
+      congrArg Submodule.Quotient.mk <| Subtype.ext congr($(map_mul P.coweightAffineHom g h) x.val)
+          }
 
 /-- An automorphism `g` acts on `P∨ / (P∨ ∩ Q∨)` by sending the class of `λ` to the class of
 `g λ`. -/
@@ -171,7 +172,7 @@ noncomputable def coweightQuotientHom : P.Aut →*
 lemma coweightQuotientHom_mk (g : P.Aut) (x : P.coweightLattice) :
     P.coweightQuotientHom g (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk
-        ⟨g.coweightEquiv.symm x, g.coweightEquiv_symm_apply_mem_coweightLattice x.2⟩ :=
+        ⟨g.coweightEquiv.symm x, g.coweightEquiv_symm_apply_mem_coweightLattice x.property⟩ :=
   (rfl)
 
 /-- **The Weyl group acts trivially on `P∨ / (P∨ ∩ Q∨)`**: it moves each coweight by an element
@@ -181,12 +182,12 @@ theorem weylGroup_le_ker_coweightQuotientHom : P.weylGroup ≤ P.coweightQuotien
   refine (Subgroup.closure_le _).2 <| range_subset_iff.2 fun i ↦ ?_
   refine LinearEquiv.ext fun q ↦ ?_
   induction q using Submodule.Quotient.induction_on with | H x => ?_
-  have h := congr($(P.coweightAffineHom_reflection i) x.1)
+  have h := congr($(P.coweightAffineHom_reflection i) x.val)
   rw [coweightAffineHom_apply, LinearEquiv.coe_toAffineEquiv] at h
   rw [coweightQuotientHom_mk, FunLike.coe_one_eq_id, id, Submodule.Quotient.eq,
     Submodule.mem_comap]
   simp only [Submodule.subtype_apply, Submodule.coe_sub, h]
   exact P.sub_mem_corootSpan_of_mem_closure_range_coreflection
-    (Subgroup.subset_closure (mem_range_self i)) x.2
+    (Subgroup.subset_closure (mem_range_self i)) x.property
 
 end RootPairing

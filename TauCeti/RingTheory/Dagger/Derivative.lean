@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Dagger.WashnitzerAlgebra
-public import TauCeti.RingTheory.MvPowerSeries.HasseDeriv.GaussNorm
+public import TauCeti.RingTheory.Dagger.AnalyticSubst
+public import TauCeti.RingTheory.Dagger.Subst
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Derivative
 public import Mathlib.RingTheory.Finiteness.Defs
 
 import TauCeti.RingTheory.Dagger.NoetherNormalization
@@ -49,9 +50,15 @@ The Hasse derivatives `∂^d` are `R`-linear endomorphisms of `W` satisfying
 * `TauCeti.Dagger.hasseDeriv_mem_washnitzerAlgebra` and
   `TauCeti.Dagger.pderiv_mem_washnitzerAlgebra`: Hasse and partial derivatives of overconvergent
   series are overconvergent.
-* `TauCeti.Dagger.washnitzerAlgebra.toTate_hasseDeriv` and
-  `TauCeti.Dagger.washnitzerAlgebra.norm_toTate_hasseDeriv_le`: the inclusion into the Tate
-  algebra intertwines the Hasse derivatives, which do not increase the Gauss norm.
+* `TauCeti.Dagger.washnitzerAlgebra.toTate_hasseDeriv`,
+  `TauCeti.Dagger.washnitzerAlgebra.toTate_pderiv`,
+  `TauCeti.Dagger.washnitzerAlgebra.hasseDeriv_ofRestricted`, and
+  `TauCeti.Dagger.washnitzerAlgebra.pderiv_ofRestricted`: compatibility with `toTate`, polyradius
+  inclusions, and bounded coefficient maps, together with Gauss-norm contractivity and continuity.
+* `TauCeti.Dagger.washnitzerAlgebra.pderiv_analyticSubst`,
+  `TauCeti.Dagger.washnitzerAlgebra.pderiv_translate`, and
+  `TauCeti.Dagger.washnitzerAlgebra.pderiv_subst`: the chain rule for analytic and polynomial
+  substitutions, and commutation of partial derivatives with translations.
 * `TauCeti.Dagger.washnitzerAlgebra.hasseDeriv_mul`: the Leibniz rule
   `∂^d (f g) = ∑_{a + b = d} ∂^a f · ∂^b g`, and
   `TauCeti.Dagger.washnitzerAlgebra.hasseDeriv_comp`: the composition rule, from which
@@ -102,7 +109,7 @@ variable (σ R) in
 algebra. -/
 noncomputable def hasseDeriv (d : σ →₀ ℕ) : washnitzerAlgebra σ R →ₗ[R] washnitzerAlgebra σ R :=
   (MvPowerSeries.hasseDeriv d ∘ₗ (washnitzerAlgebra σ R).toSubmodule.subtype).codRestrict
-    (washnitzerAlgebra σ R).toSubmodule fun f ↦ hasseDeriv_mem_washnitzerAlgebra f.2 d
+    (washnitzerAlgebra σ R).toSubmodule fun f ↦ hasseDeriv_mem_washnitzerAlgebra f.property d
 
 /-- The Hasse derivative in `W` is the Hasse derivative of the underlying series. -/
 @[simp]
@@ -131,9 +138,9 @@ variable (σ R) in
 /-- The partial derivative `∂/∂Xᵢ`, as an `R`-derivation of the Monsky–Washnitzer algebra. -/
 noncomputable def pderiv (i : σ) :
     Derivation R (washnitzerAlgebra σ R) (washnitzerAlgebra σ R) where
-  toFun f := ⟨MvPowerSeries.pderiv i f, pderiv_mem_washnitzerAlgebra f.2 i⟩
-  map_add' f g := Subtype.ext (map_add (MvPowerSeries.pderiv i) f.1 g.1)
-  map_smul' r f := Subtype.ext ((MvPowerSeries.pderiv i).map_smul r f.1)
+  toFun f := ⟨MvPowerSeries.pderiv i f, pderiv_mem_washnitzerAlgebra f.property i⟩
+  map_add' f g := Subtype.ext (map_add (MvPowerSeries.pderiv i) f.val g.val)
+  map_smul' r f := Subtype.ext ((MvPowerSeries.pderiv i).map_smul r f.val)
   map_one_eq_zero' := Subtype.ext (MvPowerSeries.pderiv_one (R := R))
   leibniz' f g := Subtype.ext <| by simp [smul_eq_mul]
 
@@ -178,13 +185,13 @@ theorem hasseDeriv_comp (a b : σ →₀ ℕ) :
   LinearMap.ext fun f ↦ Subtype.ext (by
     simpa only [LinearMap.comp_apply, LinearMap.smul_apply, coe_hasseDeriv,
       Subalgebra.coe_smul] using
-      LinearMap.congr_fun (MvPowerSeries.hasseDeriv_comp a b) f.1)
+      LinearMap.congr_fun (MvPowerSeries.hasseDeriv_comp a b) f.val)
 
 /-- Hasse derivatives in `W` commute: `∂^a ∘ ∂^b = ∂^b ∘ ∂^a`. -/
 theorem hasseDeriv_comm (a b : σ →₀ ℕ) :
     (hasseDeriv σ R a).comp (hasseDeriv σ R b) = (hasseDeriv σ R b).comp (hasseDeriv σ R a) :=
   LinearMap.ext fun f ↦ Subtype.ext
-    (LinearMap.congr_fun (MvPowerSeries.hasseDeriv_comm (R := R) a b) f.1)
+    (LinearMap.congr_fun (MvPowerSeries.hasseDeriv_comm (R := R) a b) f.val)
 
 /-- Partial derivatives of overconvergent series commute. -/
 theorem pderiv_comm (i j : σ) (f : washnitzerAlgebra σ R) :
@@ -199,7 +206,7 @@ theorem forall_pderiv_eq_zero_iff [HasUniqueDiv R] (g : washnitzerAlgebra σ R) 
     (∀ i, pderiv σ R i g = 0) ↔ ∃ c : R, algebraMap R (washnitzerAlgebra σ R) c = g := by
   constructor
   · intro hg
-    refine ⟨constantCoeff g.1, Subtype.ext ?_⟩
+    refine ⟨constantCoeff g.val, Subtype.ext ?_⟩
     apply MvPowerSeries.pderiv.ext
     · intro i
       simpa [MvPowerSeries.algebraMap_apply] using
@@ -244,11 +251,115 @@ theorem toTate_hasseDeriv (d : σ →₀ ℕ) (f : washnitzerAlgebra σ R) :
     toTate σ R (hasseDeriv σ R d f) = restrictedHasseDeriv d (toTate σ R f) :=
   Subtype.ext (by simp)
 
-/-- **The Cauchy estimate at unit radius**: Hasse derivatives do not increase the Gauss norm of an
-overconvergent series. -/
-theorem norm_toTate_hasseDeriv_le (d : σ →₀ ℕ) (f : washnitzerAlgebra σ R) :
-    ‖toTate σ R (hasseDeriv σ R d f)‖ ≤ ‖toTate σ R f‖ := by
-  simpa [toTate_hasseDeriv] using norm_restrictedHasseDeriv_le d (toTate σ R f)
+/-- **The Cauchy estimate at unit radius**: Hasse derivatives do not increase the unit Gauss norm
+of an overconvergent series. -/
+theorem norm_hasseDeriv_le (d : σ →₀ ℕ) (f : washnitzerAlgebra σ R) :
+    ‖hasseDeriv σ R d f‖ ≤ ‖f‖ := by
+  rw [← norm_toTate, toTate_hasseDeriv]
+  simpa using norm_restrictedHasseDeriv_le d (toTate σ R f)
+
+/-- Hasse derivatives are continuous for the unit Gauss norm on `W`. -/
+@[continuity]
+theorem continuous_hasseDeriv (d : σ →₀ ℕ) : Continuous (hasseDeriv σ R d) :=
+  AddMonoidHomClass.continuous_of_bound (hasseDeriv σ R d) 1 fun f ↦ by
+    simpa using norm_hasseDeriv_le d f
+
+/-- The inclusion into the Tate algebra intertwines the partial derivatives of `W` and of the
+unit-radius Tate algebra. -/
+@[simp]
+theorem toTate_pderiv (i : σ) (f : washnitzerAlgebra σ R) :
+    toTate σ R (pderiv σ R i f) = TauCeti.MvPowerSeries.restrictedPDeriv i (toTate σ R f) :=
+  Subtype.ext (by simp)
+
+/-- Partial derivatives do not increase the unit Gauss norm on `W`. -/
+theorem norm_pderiv_le (i : σ) (f : washnitzerAlgebra σ R) :
+    ‖pderiv σ R i f‖ ≤ ‖f‖ := by
+  simpa only [hasseDeriv_single_one] using norm_hasseDeriv_le (Finsupp.single i 1) f
+
+/-- Partial derivatives are continuous for the unit Gauss norm on `W`. -/
+@[continuity]
+theorem continuous_pderiv (i : σ) : Continuous (pderiv σ R i) :=
+  AddMonoidHomClass.continuous_of_bound (pderiv σ R i) 1 fun f ↦ by
+    simpa using norm_pderiv_le i f
+
+/-- Polyradius inclusions `ofRestricted` intertwine `restrictedHasseDeriv` and `hasseDeriv`. -/
+@[simp]
+theorem hasseDeriv_ofRestricted {c : σ → ℝ} [∀ j, Fact (0 < c j)] {ρ : ℝ}
+    (hρ : 1 < ρ) (hc : ∀ j, ρ ≤ c j) (d : σ →₀ ℕ) (f : IsRestricted.subring (R := R) c) :
+    hasseDeriv σ R d (ofRestricted hρ hc f) = ofRestricted hρ hc (restrictedHasseDeriv d f) :=
+  Subtype.ext (by simp)
+
+/-- Polyradius inclusions `ofRestricted` intertwine `restrictedPDeriv` and `pderiv`. -/
+@[simp]
+theorem pderiv_ofRestricted {c : σ → ℝ} [∀ j, Fact (0 < c j)] {ρ : ℝ}
+    (hρ : 1 < ρ) (hc : ∀ j, ρ ≤ c j) (i : σ) (f : IsRestricted.subring (R := R) c) :
+    pderiv σ R i (ofRestricted hρ hc f) =
+      ofRestricted hρ hc (TauCeti.MvPowerSeries.restrictedPDeriv i f) :=
+  Subtype.ext (by simp)
+
+/-- Finite-variable polyradius inclusions `ofOneLt` intertwine `restrictedHasseDeriv` and
+`hasseDeriv`. -/
+@[simp]
+theorem hasseDeriv_ofOneLt [Finite σ] {c : σ → ℝ} [∀ j, Fact (0 < c j)] (hc : ∀ j, 1 < c j)
+    (d : σ →₀ ℕ) (f : IsRestricted.subring (R := R) c) :
+    hasseDeriv σ R d (ofOneLt hc f) = ofOneLt hc (restrictedHasseDeriv d f) :=
+  Subtype.ext (by simp)
+
+/-- Finite-variable polyradius inclusions `ofOneLt` intertwine `restrictedPDeriv` and `pderiv`. -/
+@[simp]
+theorem pderiv_ofOneLt [Finite σ] {c : σ → ℝ} [∀ j, Fact (0 < c j)] (hc : ∀ j, 1 < c j)
+    (i : σ) (f : IsRestricted.subring (R := R) c) :
+    pderiv σ R i (ofOneLt hc f) =
+      ofOneLt hc (TauCeti.MvPowerSeries.restrictedPDeriv i f) :=
+  Subtype.ext (by simp)
+
+/-- Bounded coefficient maps commute with Hasse derivatives on `W`. -/
+@[simp]
+theorem map_hasseDeriv {S : Type*} [NormedCommRing S] [IsUltrametricDist S]
+    (φ : R →+* S) {C : ℝ} (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖) (d : σ →₀ ℕ)
+    (f : washnitzerAlgebra σ R) :
+    map φ hφ (hasseDeriv σ R d f) = hasseDeriv σ S d (map φ hφ f) :=
+  Subtype.ext <| MvPowerSeries.ext fun m ↦ by
+    simp [MvPowerSeries.coeff_hasseDeriv]
+
+/-- Bounded coefficient maps commute with partial derivatives on `W`. -/
+@[simp]
+theorem map_pderiv {S : Type*} [NormedCommRing S] [IsUltrametricDist S]
+    (φ : R →+* S) {C : ℝ} (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖) (i : σ)
+    (f : washnitzerAlgebra σ R) :
+    map φ hφ (pderiv σ R i f) = pderiv σ S i (map φ hφ f) := by
+  simpa only [hasseDeriv_single_one] using map_hasseDeriv φ hφ (Finsupp.single i 1) f
+
+/-- **Chain rule for polynomial substitutions in `W`.** -/
+theorem pderiv_subst [Fintype σ] [NormOneClass R] {τ : Type*}
+    (a : σ → MvPolynomial τ R) (ha₀ : ∀ s, (a s).constantCoeff = 0)
+    (ha₁ : ∀ s t, ‖(a s).coeff t‖ ≤ 1) (j : τ) (f : washnitzerAlgebra σ R) :
+    pderiv τ R j (subst a ha₀ ha₁ f) =
+      ∑ s, subst a ha₀ ha₁ (pderiv σ R s f) * ofMvPolynomial τ R (MvPolynomial.pderiv j (a s)) := by
+  apply Subtype.ext
+  rw [coe_pderiv, coe_subst, MvPowerSeries.pderiv_subst (hasSubst_coe ha₀)]
+  simp [MvPowerSeries.pderiv_coe]
+
+/-- **The overconvergent chain rule for analytic substitution.** Over a complete ultrametric normed
+commutative ring `R`, for `g₁, …, g_k ∈ R⟨Y⟩†` with `‖gᵢ‖₁ ≤ 1` and `f ∈ R⟨X₁, …, X_k⟩†`,
+`∂ⱼ (f(g)) = ∑ᵢ (∂ᵢ f)(g) · ∂ⱼ gᵢ`. -/
+theorem pderiv_analyticSubst [CompleteSpace R] {k : ℕ} {τ : Type*}
+    (g : Fin k → washnitzerAlgebra τ R) (hg : ∀ i, ‖toTate τ R (g i)‖ ≤ 1)
+    (j : τ) (f : washnitzerAlgebra (Fin k) R) :
+    pderiv τ R j (analyticSubst g hg f) =
+      ∑ i, analyticSubst g hg (pderiv (Fin k) R i f) * pderiv τ R j (g i) := by
+  apply toTate_injective
+  simpa only [toTate_pderiv, toTate_analyticSubst, map_sum, map_mul] using
+    TauCeti.MvPowerSeries.restrictedPDeriv_restrictedAnalyticSubst
+      (fun i ↦ toTate τ R (g i)) hg j (toTate (Fin k) R f)
+
+/-- **Translations commute with partial derivatives in `W`**: `∂ᵢ (f(X + a)) = (∂ᵢ f)(X + a)`. -/
+theorem pderiv_translate [CompleteSpace R] [NormOneClass R] {k : ℕ}
+    (a : Fin k → R) (ha : ∀ i, ‖a i‖ ≤ 1) (i : Fin k) (f : washnitzerAlgebra (Fin k) R) :
+    pderiv (Fin k) R i (translate a ha f) = translate a ha (pderiv (Fin k) R i f) := by
+  apply toTate_injective
+  simpa only [toTate_pderiv, toTate_translate] using
+    TauCeti.MvPowerSeries.restrictedPDeriv_restrictedTranslate a ha i (toTate (Fin k) R f)
 
 section Primitive
 
@@ -265,7 +376,7 @@ theorem pderiv_primitive (i : σ) (f : washnitzerAlgebra σ K) :
 theorem pderiv_primitive_of_ne {i j : σ} (hij : i ≠ j) (f : washnitzerAlgebra σ K) :
     pderiv σ K j (primitive σ K i f) = primitive σ K i (pderiv σ K j f) := by
   apply Subtype.ext
-  simpa only [coe_pderiv, coe_primitive] using MvPowerSeries.pderiv_primitive_of_ne hij f.1
+  simpa only [coe_pderiv, coe_primitive] using MvPowerSeries.pderiv_primitive_of_ne hij f.val
 
 end Primitive
 

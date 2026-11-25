@@ -46,6 +46,8 @@ to the glued curves and assembles the automorphism group.
 * `NodalGluing.Iso.gluedCurveHomeomorph_mk`, `gluedCurveHomeomorph_nodeOfFlag`: descent commutes
   with the quotient maps and sends the node of `f` to the node of `e.edgeEquiv f`; in particular
   it preserves the node set (`image_gluedCurveHomeomorph_nodeSet`).
+* `NodalGluing.Iso.lift_comp_gluedCurveHomeomorph`: maps out of the normalizations intertwined by
+  an isomorphism descend to maps of glued curves intertwined by the descended homeomorphism.
 * `NodalGluing.Iso.gluedCurveHomeomorph_injective`: descent is faithful as soon as the points
   which are not flag points are dense in the normalization, as they are for curves.  So an
   isomorphism of normalizations is determined by the map of glued curves it induces.
@@ -462,6 +464,16 @@ theorem image_gluedCurveHomeomorph_nodeSet (e : Iso I n d d') :
 @[simp] theorem gluedCurveHomeomorph_symm (e : Iso I n d d') :
     e.symm.gluedCurveHomeomorph = e.gluedCurveHomeomorph.symm :=
   Homeomorph.ext fun q ↦ Quotient.inductionOn q fun _ ↦ rfl
+
+/-- **Descent of maps is compatible with isomorphisms.** If maps `g` out of the normalization of
+`d'` and `g₀` out of the normalization of `d` descend to the glued curves and `g ∘ e = g₀`, then
+the descended maps correspond under the descended homeomorphism. -/
+theorem lift_comp_gluedCurveHomeomorph (e : Iso I n d d') {Y : Type*} {g : (Σ i, X' i) → Y}
+    (hg : ∀ f, g (fstPoint d' f) = g (sndPoint d' f)) {g₀ : (Σ i, X i) → Y}
+    (hg₀ : ∀ f, g₀ (fstPoint d f) = g₀ (sndPoint d f)) (h : g ∘ e = g₀) :
+    GluedCurve.lift d' g hg ∘ e.gluedCurveHomeomorph = GluedCurve.lift d g₀ hg₀ :=
+  funext fun q ↦ Quotient.inductionOn q fun x ↦ by
+    simp only [Function.comp_apply, gluedCurveHomeomorph_mk, GluedCurve.lift_mk, ← h]
 
 /-- **Descent is faithful.**  If the points of the normalization which are not flag points are
 dense, then an isomorphism of nodal curves is determined by the homeomorphism of glued curves it

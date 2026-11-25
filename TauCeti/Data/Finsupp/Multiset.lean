@@ -22,13 +22,18 @@ which it takes each value.
 
 * `Finsupp.card_toMultiset_eq_degree`: `card (toMultiset e) = e.degree`.
 * `Finsupp.toMultiset_add_single_one`: `toMultiset (e + single a 1) = a ::ₘ toMultiset e`.
+* `Finsupp.induction_add_single_one`: induction on exponent vectors by unit steps.
 * `Finsupp.toMultiset_sum_single_one`: `toMultiset (∑ i ∈ s, single (p i) 1) = s.val.map p`.
+* `Finsupp.sum_single_one_injective`: a finset is determined by the sum of its unit steps.
 * `Finsupp.sum_single_one_apply`: along a family `f` indexed by a finite type, the coefficient of
   `a` in `∑ t, single (f t) 1` is the number of indices `t` with `f t = a`;
   `Finsupp.sum_sum_single_one_apply` and `Finsupp.sum_single_one_apply_ne_zero_iff` record that
   these letter counts sum to the number of indices and are nonzero exactly at the values of `f`.
+* `Finsupp.finsetSum_single_one_apply`: the coefficient of `a` in the indicator
+  `∑ i ∈ s, single i 1` of a finset `s` is `1` if `a ∈ s` and `0` otherwise.
 * `Finsupp.exists_sum_single_eq_iff`: the letter counts of ordered `n`-tuples are exactly the
   exponent vectors of total degree `n`.
+* `Multiset.toFinsupp_replicate`: `toFinsupp (replicate k i) = single i k`.
 
 The same unit steps summed along a list, with coefficients in any additive commutative monoid
 with one, count the occurrences of each letter; in characteristic zero these counts determine a
@@ -56,6 +61,22 @@ theorem toMultiset_add_single_one {α : Type*} (e : α →₀ ℕ) (a : α) :
     toMultiset (e + single a 1) = a ::ₘ toMultiset e := by
   simp [toMultiset_add, add_comm]
 
+/-- Induction on exponent vectors by unit steps: a property of `0` that is preserved by adding
+`single a 1` for every `a` holds for every exponent vector. -/
+@[elab_as_elim]
+theorem induction_add_single_one {α : Type*} {motive : (α →₀ ℕ) → Prop} (e : α →₀ ℕ)
+    (zero : motive 0) (add_single_one : ∀ a e, motive e → motive (e + single a 1)) :
+    motive e := by
+  induction e using Finsupp.induction with
+  | zero => exact zero
+  | single_add a n e _ _ ih =>
+    clear * - ih add_single_one
+    induction n with
+    | zero => simpa using ih
+    | succ n ihn =>
+      rw [single_add, add_right_comm]
+      exact add_single_one a _ ihn
+
 /-- The multiset of a sum of unit steps along a family `p` indexed by a finset `s` is the
 multiset of the values of `p` on `s`. -/
 theorem toMultiset_sum_single_one {α ι : Type*} (s : Finset ι) (p : ι → α) :
@@ -63,10 +84,22 @@ theorem toMultiset_sum_single_one {α ι : Type*} (s : Finset ι) (p : ι → α
   simpa [toMultiset_sum, one_nsmul, Finset.sum_map_val] using
     Multiset.sum_map_singleton (s.val.map p)
 
+/-- A finite set is determined by the sum of the unit steps at its elements, the exponent vector
+of its squarefree monomial. -/
+theorem sum_single_one_injective {ι : Type*} :
+    Function.Injective fun s : Finset ι ↦ ∑ i ∈ s, single i (1 : ℕ) := fun s t h ↦
+  Finset.val_inj.1 (by simpa [toMultiset_sum_single] using congr(toMultiset $h))
+
 /-- The letter counts of a family: the coefficient of `a` in `∑ₜ single (f t) 1` is the
 number of indices `t` with `f t = a`. -/
 theorem sum_single_one_apply {α ι : Type*} [Fintype ι] [DecidableEq α] (f : ι → α) (a : α) :
     (∑ t, single (f t) 1 : α →₀ ℕ) a = (Finset.univ.filter fun t => f t = a).card := by
+  simp [finsetSum_apply, single_apply]
+
+/-- The coefficients of the indicator `∑ i ∈ s, single i 1` of a finset `s`: the coefficient of
+`a` is `1` if `a ∈ s` and `0` otherwise. -/
+theorem finsetSum_single_one_apply {α : Type*} [DecidableEq α] (s : Finset α) (a : α) :
+    (∑ i ∈ s, single i 1 : α →₀ ℕ) a = if a ∈ s then 1 else 0 := by
   simp [finsetSum_apply, single_apply]
 
 /-- The letter counts of a family with values in `F` sum, over `F`, to the number of indices. -/
@@ -100,6 +133,17 @@ theorem exists_sum_single_eq_iff {α : Type*} {n : ℕ} (l : α →₀ ℕ) :
       ← List.ofFn_congr hL (toMultiset l).toList.get, List.ofFn_get, Multiset.coe_toList]
 
 end Finsupp
+
+namespace Multiset
+
+/-- The finitely supported function of `k` copies of `i` is `single i k`. -/
+@[simp]
+theorem toFinsupp_replicate {α : Type*} [DecidableEq α] (k : ℕ) (i : α) :
+    toFinsupp (replicate k i) = Finsupp.single i k := by
+  ext a
+  rw [toFinsupp_apply, count_replicate, Finsupp.single_apply]
+
+end Multiset
 
 namespace List
 
