@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Star.UnitaryStarAlgAut
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.LinearAlgebra.UnitaryGroup
+import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
@@ -200,19 +201,18 @@ end DiagonalStabilizer
 
 namespace specialUnitaryGroup
 
-/-- For a subsingleton index type `n`, `specialUnitaryGroup n α` has at most one element: the
-determinant-one condition forces the unique entry (if any) to be `1`. Taking `StarRing α` as an
-implicit parameter rather than an instance lets typeclass search also resolve
+/-- For a subsingleton index type `n`, `specialUnitaryGroup n α` has at most one element since a
+special unitary matrix has determinant `1` and so defines an element of `SpecialLinearGroup n α`
+(`Matrix.SpecialLinearGroup.subsingleton_of_subsingleton`). Taking `StarRing α` as an implicit
+parameter rather than an instance lets typeclass search also resolve
 `Subsingleton (specialOrthogonalGroup n R)`, where `starRingOfComm` is baked into the abbreviation
 rather than active in context. -/
 instance subsingleton_of_subsingleton {n α : Type*} [Fintype n] [DecidableEq n] [CommRing α]
     {_ : StarRing α} [Subsingleton n] :
-    Subsingleton (specialUnitaryGroup n α) := by
-  refine ⟨fun A B => Subtype.ext <| Matrix.ext fun i j => ?_⟩
-  have hAdet := (mem_specialUnitaryGroup_iff.mp A.property).2
-  have hBdet := (mem_specialUnitaryGroup_iff.mp B.property).2
-  rw [det_eq_elem_of_subsingleton _ i] at hAdet hBdet
-  rw [Subsingleton.elim j i, hAdet, hBdet]
+    Subsingleton (specialUnitaryGroup n α) :=
+  ⟨fun A B => Subtype.ext <| (SpecialLinearGroup.mk_inj
+    (mem_specialUnitaryGroup_iff.mp A.property).2
+    (mem_specialUnitaryGroup_iff.mp B.property).2).mp (Subsingleton.elim _ _)⟩
 
 section StarRing
 
