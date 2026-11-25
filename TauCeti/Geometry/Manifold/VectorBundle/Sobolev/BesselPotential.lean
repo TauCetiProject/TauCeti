@@ -703,8 +703,9 @@ theorem memSobolev_iff_forall_isLocallySobolevAt {s : ℝ} {T : BundleTest I F V
     have hcx := (A.chartData i).chart.map_source hx
     refine (BundleTest.isLocallySobolevAt_iff T (A.chartData i).contMDiffOn_chart
       (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset hx).2
-      (Bundle.Trivialization.isLocallySobolevAt_chartComponent_of_basis (Module.finBasis ℝ F) T
-        hcx fun j ↦ ?_)
+      (Bundle.Trivialization.chartComponent_of_basis
+        (Distribution.isInvariantLocalRegularity_isLocallySobolevAt s).toIsLocalRegularity
+        (Module.finBasis ℝ F) T hcx fun j ↦ ?_)
     -- The localization `χᵢ Tᵢⱼ` is `H^s`, and the chart cutoff does not vanish at `cᵢ x`.
     refine Distribution.isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered.2
       ⟨A.chartCutoff i, ?_, hT i j⟩
