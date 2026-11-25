@@ -173,36 +173,20 @@ end Involute
 
 /-! ### Inverses of homogeneous elements -/
 
-/-- In a `ℤ/2`-grading, a two-sided inverse of a homogeneous element modulo a scalar `f` that
-fixes it is homogeneous of the same parity. -/
+/-- If `a ∈ evenOdd Q i` and `a * b = b * a = algebraMap f` for a scalar `f` with `f • b = b`,
+then `b ∈ evenOdd Q i`. This is `TauCeti.GradedAlgebra.mem_of_mul_eq_algebraMap` for the
+`ℤ/2`-grading, where `i + i = 0`. -/
 theorem mem_evenOdd_of_mul_eq_algebraMap {i : ZMod 2} {a b : CliffordAlgebra Q} {f : R}
     (ha : a ∈ evenOdd Q i) (hb : f • b = b) (hab : a * b = algebraMap R _ f)
-    (hba : b * a = algebraMap R _ f) : b ∈ evenOdd Q i := by
-  classical
-  have hne : (0 : ZMod 2) ≠ i + (i + 1) := (by decide : ∀ i : ZMod 2, 0 ≠ i + (i + 1)) i
-  have hz : a * (DirectSum.decompose (evenOdd Q) b (i + 1) : CliffordAlgebra Q) = 0 := by
-    rw [← DirectSum.coe_decompose_mul_add_of_left_mem (evenOdd Q) ha, hab]
-    exact DirectSum.decompose_of_mem_ne _ (SetLike.algebraMap_mem_graded _ f) hne
-  have hfz : f • (DirectSum.decompose (evenOdd Q) b (i + 1) : CliffordAlgebra Q) =
-      DirectSum.decompose (evenOdd Q) b (i + 1) := by
-    conv_rhs => rw [← hb, DirectSum.decompose_smul, DirectSum.smul_apply, Submodule.coe_smul]
-  have hzero : (DirectSum.decompose (evenOdd Q) b (i + 1) : CliffordAlgebra Q) = 0 := by
-    rw [← hfz, Algebra.smul_def, ← hba, mul_assoc, hz, mul_zero]
-  rw [← DirectSum.sum_support_decompose (evenOdd Q) b]
-  refine Submodule.sum_mem _ fun j _ => ?_
-  obtain rfl | rfl : j = i ∨ j = i + 1 := (by decide : ∀ i j : ZMod 2, j = i ∨ j = i + 1) i j
-  · exact SetLike.coe_mem _
-  · rw [hzero]
-    exact Submodule.zero_mem _
+    (hba : b * a = algebraMap R _ f) : b ∈ evenOdd Q i :=
+  TauCeti.GradedAlgebra.mem_of_mul_eq_algebraMap (evenOdd Q)
+    ((by decide : ∀ j : ZMod 2, j + j = 0) i) ha hb hab hba
 
 /-- **The inverse of a homogeneous unit is homogeneous** of the same parity. -/
 theorem coe_inv_mem_evenOdd {i : ZMod 2} {x : (CliffordAlgebra Q)ˣ}
     (hx : (x : CliffordAlgebra Q) ∈ evenOdd Q i) :
-    ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ evenOdd Q i := by
-  refine TauCeti.GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular (evenOdd Q) hx
-    x.isUnit.isRegular.left ?_
-  rw [Units.mul_inv, (by decide : ∀ j : ZMod 2, j + j = 0) i]
-  exact SetLike.one_mem_graded _
+    ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ evenOdd Q i :=
+  mem_evenOdd_of_mul_eq_algebraMap hx (one_smul R _) (by simp) (by simp)
 
 end CliffordAlgebra
 

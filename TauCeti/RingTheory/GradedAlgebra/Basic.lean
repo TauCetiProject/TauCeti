@@ -33,6 +33,8 @@ of degree `i` with `i + l = d`.
   an idempotent with zero degree-zero component is zero.
 * `TauCeti.GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular`: if `a ∈ 𝒜 i` is left regular and
   `a * b ∈ 𝒜 (i + j)`, then `b ∈ 𝒜 j`.
+* `TauCeti.GradedAlgebra.mem_of_mul_eq_algebraMap`: an inverse, up to a scalar fixing it, of an
+  element of degree `i` is homogeneous of every degree `j` with `i + j = 0`.
 * `TauCeti.GradedAlgebra.apply_coe_decompose_mul_of_forall_ne`: for a functional vanishing off
   one degree `d`, pairing with an element of degree `l` only sees the component of degree `i`,
   where `i + l = d`.
@@ -152,6 +154,36 @@ theorem mem_of_mul_mem_add_of_isLeftRegular {a b : A} {i j : ι} (ha : a ∈ �
   exact (decompose 𝒜 b j).property
 
 end Regular
+
+section Inverse
+
+variable {R A ι : Type*} [AddLeftCancelMonoid ι] [DecidableEq ι] [CommSemiring R] [Semiring A]
+  [Algebra R A] (𝒜 : ι → Submodule R A) [GradedAlgebra 𝒜]
+
+/-- **An inverse up to a scalar of a homogeneous element is homogeneous.** If `a` is homogeneous
+of degree `i` and `a * b = b * a = algebraMap R A f` for a scalar `f` with `f • b = b`, then `b`
+is homogeneous of every degree `j` with `i + j = 0`. -/
+theorem mem_of_mul_eq_algebraMap {a b : A} {f : R} {i j : ι} (hij : i + j = 0) (ha : a ∈ 𝒜 i)
+    (hb : f • b = b) (hab : a * b = algebraMap R A f) (hba : b * a = algebraMap R A f) :
+    b ∈ 𝒜 j := by
+  classical
+  -- A component of `b` away from degree `j` is killed by `a`, hence by `f = b * a`, which fixes it.
+  have hk (k : ι) (hk : k ≠ j) : (decompose 𝒜 b k : A) = 0 := by
+    have hz : a * (decompose 𝒜 b k : A) = 0 := by
+      rw [← coe_decompose_mul_add_of_left_mem 𝒜 ha, hab]
+      exact decompose_of_mem_ne 𝒜 (SetLike.algebraMap_mem_graded 𝒜 f)
+        fun h ↦ hk (add_left_cancel (h.symm.trans hij.symm))
+    have hf : f • (decompose 𝒜 b k : A) = decompose 𝒜 b k := by
+      conv_rhs => rw [← hb, decompose_smul, DirectSum.smul_apply, Submodule.coe_smul]
+    rw [← hf, Algebra.smul_def, ← hba, mul_assoc, hz, mul_zero]
+  rw [← sum_support_decompose 𝒜 b]
+  refine Submodule.sum_mem _ fun k _ ↦ ?_
+  obtain rfl | hkj := eq_or_ne k j
+  · exact SetLike.coe_mem _
+  · rw [hk k hkj]
+    exact Submodule.zero_mem _
+
+end Inverse
 
 section Functional
 
