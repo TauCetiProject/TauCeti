@@ -17,16 +17,18 @@ coefficients on the centralizer `C_G(P)`. Its kernel is the sum of the relative 
 Lemma 12.5.3).
 
 Both inclusions are coefficient computations. The coefficient of `Tr_Q^P(a)` at `c ∈ C_G(P)` is
-`|P : Q|` times that of `a`, which vanishes in characteristic `p` when `Q < P`. Conversely, an
-element `x ∈ R[G]^P` has coefficients constant on the `P`-conjugacy orbits of `G`. For `g` in its
-support, outside `C_G(P)` when `Br_P(x) = 0`, the orbit sum of `g` is the relative trace of `g`
-from its stabilizer `Q = P ⊓ C_G(g) < P` (`TauCeti.coeff_relTrace_single_inf_centralizer`), so
-`x` is `x_g` times that trace plus an element of `R[G]^P` whose support misses the orbit of `g`,
-and induction on the support writes `x` as a sum of such traces. This direction uses neither the
-characteristic nor that `P` is a `p`-group.
+`|P : Q ∩ P|` times that of `a`, which vanishes in characteristic `p` when `P ≰ Q`, in particular
+when `Q < P`. Conversely, an element `x ∈ R[G]^P` has coefficients constant on the
+`P`-conjugacy orbits of `G`. For `g` in its support, outside `C_G(P)` when `Br_P(x) = 0`, the
+orbit sum of `g` is the relative trace of `g` from its stabilizer `Q = P ⊓ C_G(g) < P`
+(`TauCeti.coeff_relTrace_single_inf_centralizer`), so `x` is `x_g` times that trace plus an element
+of `R[G]^P` whose support misses the orbit of `g`, and induction on the support writes `x` as a sum
+of such traces. This direction uses neither the characteristic nor that `P` is a `p`-group.
 
 ## Main results
 
+* `TauCeti.brauerProjection_relTrace_eq_zero_of_not_le`: `Br_P` kills `Tr_Q^P(a)` whenever
+  `P ≰ Q`.
 * `TauCeti.brauerProjection_relTrace_eq_zero`: `Br_P` kills `Tr_Q^P(a)` for `Q < P`.
 * `TauCeti.ker_brauerHom`: `ker Br_P = ∑_{Q < P} R[G]^P_Q`.
 

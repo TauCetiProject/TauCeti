@@ -113,12 +113,12 @@ theorem conj (h : IsDefectGroup R p e P) {g : G} (hg : conjRepresentation R G g 
     (conjRepresentation R G).inv_apply_eq_iff.2 hg.symm
   refine isDefectGroup_iff.2
     ⟨h.isPGroup.of_equiv (Subgroup.equivSMul _ P), ?_, fun Q hQ hQe hPQ => ?_⟩
-  · rw [Ne, ← hg, brauerProjection_conj_eq_zero_iff]
-    exact h.brauerProjection_ne_zero
+  · exact (brauerProjection_conj_eq_zero_iff_of_conjRepresentation_eq hg).not.2
+      h.brauerProjection_ne_zero
   · have hQ' : IsPGroup p (MulAut.conj g⁻¹ • Q : Subgroup G) :=
       hQ.of_equiv (Subgroup.equivSMul _ Q)
     have hQe' : brauerProjection (MulAut.conj g⁻¹ • Q) e ≠ 0 := by
-      rwa [Ne, ← hg', brauerProjection_conj_eq_zero_iff]
+      rwa [Ne, brauerProjection_conj_eq_zero_iff_of_conjRepresentation_eq hg']
     have hPQ' : P ≤ MulAut.conj g⁻¹ • Q := by
       rw [← Subgroup.pointwise_smul_le_pointwise_smul_iff (a := MulAut.conj g), map_inv,
         smul_inv_smul]
@@ -191,36 +191,18 @@ lies in `∑_{Q < P} Tr_Q^G(R[G]^Q)` and Rosenberg's lemma puts it in one summan
 
 variable {R G : Type*} [CommSemiring R] [Group G]
 
+/-- A block idempotent `b ∈ Z(R[G])`, viewed in `R[G]^G = Z(R[G])`, is a primitive idempotent
+there. -/
+theorem IsBlockIdempotent.isPrimitiveIdempotent_conjInvariants
+    {b : Subalgebra.center R (MonoidAlgebra R G)} (hb : IsBlockIdempotent b) :
+    IsPrimitiveIdempotent
+      (⟨b, center_le_conjInvariants ⊤ b.property⟩ : conjInvariants R (⊤ : Subgroup G)) := by
+  simpa using IsPrimitiveIdempotent.map
+    (Subalgebra.equivOfEq _ _ conjInvariants_top.symm).toRingEquiv hb
+
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
-/-- The relative trace into `P` depends on `P` only through its value. -/
-private theorem coe_relTrace_of_eq {Q P P' : Subgroup G} (h : P = P')
-    [(Q.subgroupOf P).FiniteIndex] [(Q.subgroupOf P').FiniteIndex] (a : conjInvariants R Q) :
-    (relTrace R Q P a : MonoidAlgebra R G) = relTrace R Q P' a := by
-  subst h
-  rfl
-
-/-- A central element with nonzero Brauer projection at `P` has nonzero Brauer projection at
-every conjugate of `P`. -/
-private theorem brauerProjection_conj_ne_zero {P : Subgroup G}
-    {x : conjInvariants R (⊤ : Subgroup G)} (hx : brauerProjection P (x : MonoidAlgebra R G) ≠ 0)
-    (g : G) : brauerProjection (MulAut.conj g • P) (x : MonoidAlgebra R G) ≠ 0 := by
-  rwa [Ne, ← mem_conjInvariants_iff.1 x.property g (Subgroup.mem_top g),
-    brauerProjection_conj_eq_zero_iff]
-
 variable [Finite G]
-
-/-- A central element is a trace from `P` exactly when it is a trace from any conjugate `gPg⁻¹`:
-`g Tr_P^G(a) g⁻¹ = Tr_{gPg⁻¹}^G(g a g⁻¹)`. -/
-theorem mem_relTraceIdeal_conj {P : Subgroup G} {x : conjInvariants R (⊤ : Subgroup G)}
-    (hx : x ∈ relTraceIdeal R (le_top : P ≤ ⊤)) (g : G) :
-    x ∈ relTraceIdeal R (le_top : MulAut.conj g • P ≤ ⊤) := by
-  obtain ⟨a, rfl⟩ := (mem_relTraceIdeal_iff _).1 hx
-  refine (mem_relTraceIdeal_iff _).2 ⟨conjInvariantsEquiv R g P a, Subtype.ext ?_⟩
-  have h := congrArg Subtype.val (conjInvariantsEquiv_relTrace (R := R) g (P := ⊤) a)
-  rw [coe_conjInvariantsEquiv,
-    mem_conjInvariants_iff.1 (relTrace R P ⊤ a).property g (Subgroup.mem_top g)] at h
-  rw [h, coe_relTrace_of_eq (Subgroup.conj_smul_eq_self_of_mem (h := g) (H := ⊤) trivial).symm]
 
 variable {p : ℕ} [Fact p.Prime] [CharP R p]
 
@@ -249,8 +231,7 @@ private theorem eq_conj_of_conj_le {P Q : Subgroup G} {e : conjInvariants R (⊤
     (hgQ : MulAut.conj g • P ≤ Q) : Q = MulAut.conj g • P := by
   obtain ⟨h, hh⟩ := exists_le_conj_of_mem_relTraceIdeal hP hQ hQe
   refine (Subgroup.eq_of_le_of_card_ge hgQ ((Subgroup.card_le_of_le hh).trans ?_)).symm
-  rw [← Nat.card_congr (Subgroup.equivSMul (MulAut.conj h) P).toEquiv,
-    ← Nat.card_congr (Subgroup.equivSMul (MulAut.conj g) P).toEquiv]
+  rw [card_conj_smul_eq h P, card_conj_smul_eq g P]
 
 end Conjugacy
 
@@ -311,12 +292,15 @@ theorem isDefectGroup_iff_exists_eq_conj (he : IsPrimitiveIdempotent e) {P : Sub
   have hPe := brauerProjection_ne_zero_of_minimal_mem_relTraceIdeal he hP
   have hconj (g : G) : IsPGroup p (MulAut.conj g • P : Subgroup G) :=
     hPp.of_equiv (Subgroup.equivSMul _ P)
+  have hconjPe (g : G) : brauerProjection (MulAut.conj g • P) (e : MonoidAlgebra R G) ≠ 0 :=
+    (brauerProjection_conj_eq_zero_iff_of_conjRepresentation_eq
+      (mem_conjInvariants_iff.1 e.property g (Subgroup.mem_top g))).not.2 hPe
   refine ⟨fun hD => ?_, ?_⟩
   · obtain ⟨g, hg⟩ := exists_le_conj_of_mem_relTraceIdeal hP.prop hD.isPGroup
       hD.brauerProjection_ne_zero
-    exact ⟨g, hD.eq_of_le ⟨hconj g, brauerProjection_conj_ne_zero hPe g⟩ hg⟩
+    exact ⟨g, hD.eq_of_le ⟨hconj g, hconjPe g⟩ hg⟩
   · rintro ⟨g, rfl⟩
-    exact isDefectGroup_iff.2 ⟨hconj g, brauerProjection_conj_ne_zero hPe g,
+    exact isDefectGroup_iff.2 ⟨hconj g, hconjPe g,
       fun Q hQ hQe hgQ => eq_conj_of_conj_le hP.prop hQ hQe hgQ⟩
 
 /-- **Defect groups are the minimal trace subgroups.** For a primitive idempotent `e` of
@@ -331,8 +315,8 @@ theorem isDefectGroup_iff_minimal (he : IsPrimitiveIdempotent e) {D : Subgroup G
   obtain ⟨g, rfl⟩ := (isDefectGroup_iff_exists_eq_conj he hP).1 hD
   refine ⟨mem_relTraceIdeal_conj hP.prop g, fun Q hQ hQg => ?_⟩
   obtain ⟨h, hh⟩ := exists_le_conj_of_mem_relTraceIdeal hQ hD.isPGroup hD.brauerProjection_ne_zero
-  refine (Subgroup.eq_of_le_of_card_ge hQg ((Subgroup.card_le_of_le hh).trans ?_)).ge
-  rw [← Nat.card_congr (Subgroup.equivSMul (MulAut.conj h) Q).toEquiv]
+  exact (Subgroup.eq_of_le_of_card_ge hQg
+    ((Subgroup.card_le_of_le hh).trans (card_conj_smul_eq h Q).le)).ge
 
 /-- **Defect groups are conjugate.** Any two defect groups of a primitive idempotent `e` of
 `R[G]^G = Z(R[G])`, with `R` an Artinian ring of characteristic `p`, are conjugate in `G` (Webb,
@@ -355,10 +339,8 @@ theorem isDefectGroup_iff_minimal (hb : IsBlockIdempotent b) {D : Subgroup G} :
     IsDefectGroup R p (b : MonoidAlgebra R G) D ↔
       Minimal (fun Q : Subgroup G => ∃ a : conjInvariants R Q,
         (relTrace R Q ⊤ a : MonoidAlgebra R G) = b) D := by
-  refine (TauCeti.isDefectGroup_iff_minimal (p := p) (D := D) (IsPrimitiveIdempotent.map
-    (Subalgebra.equivOfEq _ _ conjInvariants_top.symm).toRingEquiv hb)).trans ?_
-  simp only [mem_relTraceIdeal_iff, Subtype.ext_iff]
-  rfl
+  simpa only [mem_relTraceIdeal_iff, Subtype.ext_iff] using
+    TauCeti.isDefectGroup_iff_minimal (p := p) (D := D) hb.isPrimitiveIdempotent_conjInvariants
 
 /-- **Defect groups of a block are conjugate.** Any two defect groups of a block idempotent of
 `R[G]`, with `R` an Artinian ring of characteristic `p`, for instance a field of characteristic
@@ -367,8 +349,7 @@ theorem isDefectGroup_conj (hb : IsBlockIdempotent b) {D D' : Subgroup G}
     (hD : IsDefectGroup R p (b : MonoidAlgebra R G) D)
     (hD' : IsDefectGroup R p (b : MonoidAlgebra R G) D') :
     ∃ g : G, D' = MulAut.conj g • D :=
-  TauCeti.isDefectGroup_conj (IsPrimitiveIdempotent.map
-    (Subalgebra.equivOfEq _ _ conjInvariants_top.symm).toRingEquiv hb) hD hD'
+  TauCeti.isDefectGroup_conj hb.isPrimitiveIdempotent_conjInvariants hD hD'
 
 end IsBlockIdempotent
 
