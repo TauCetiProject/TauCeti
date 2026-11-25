@@ -77,11 +77,11 @@ private theorem cup_cor_add_one (M N : Rep k G) (H : Subgroup G) {p q r : ℤ} (
           x (res N H (q + 1) y)) =
       cup M N p (q + 1) (r + 1) (by omega) (cor M H p x) y := by
   have hD : (ShortComplex.mk (coindBotUnit N) (dimensionShiftUpπ N)
-      (coindBotUnit_comp_dimensionShiftUpπ N)).ShortExact := by
-    simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact N
+      (coindBotUnit_comp_dimensionShiftUpπ N)).ShortExact :=
+    dimensionShiftUpSES_shortExact N
   have hMD : ((ShortComplex.mk (coindBotUnit N) (dimensionShiftUpπ N)
-      (coindBotUnit_comp_dimensionShiftUpπ N)).map (tensorLeft M)).ShortExact := by
-    simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_tensorLeft_shortExact N M
+      (coindBotUnit_comp_dimensionShiftUpπ N)).map (tensorLeft M)).ShortExact :=
+    dimensionShiftUpSES_tensorLeft_shortExact N M
   obtain ⟨y, rfl⟩ : ∃ y', (dimensionShiftUpIso N q).hom y' = y :=
     ⟨(dimensionShiftUpIso N q).inv y, Iso.inv_hom_id_apply _ _⟩
   have hres := congr($(δ_comp_res hD H q) y)
@@ -135,11 +135,11 @@ private theorem cup_cor_of_add_one (M N : Rep k G) (H : Subgroup G) {p q r : ℤ
         (cup (Rep.res H.subtype M) (Rep.res H.subtype N) p q r h x (res N H q y)) =
       cup M N p q r h (cor M H p x) y := by
   have hD : (ShortComplex.mk (dimensionShiftDownι N) (indBotCounit N)
-      (dimensionShiftDownι_comp_indBotCounit N)).ShortExact := by
-    simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact N
+      (dimensionShiftDownι_comp_indBotCounit N)).ShortExact :=
+    dimensionShiftDownSES_shortExact N
   have hMD : ((ShortComplex.mk (dimensionShiftDownι N) (indBotCounit N)
-      (dimensionShiftDownι_comp_indBotCounit N)).map (tensorLeft M)).ShortExact := by
-    simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_tensorLeft_shortExact N M
+      (dimensionShiftDownι_comp_indBotCounit N)).map (tensorLeft M)).ShortExact :=
+    dimensionShiftDownSES_tensorLeft_shortExact N M
   obtain ⟨ρ, hρ⟩ := Rep.exists_leftInverse_of_rightInverse hD.exact (rightInverse_indBotCounit N)
   -- The tensored downward connecting map is an isomorphism, so it detects equality.
   refine (tensorDimensionShiftDownIso N M r (r + 1) rfl).toLinearEquiv.injective ?_
@@ -160,13 +160,13 @@ private theorem cup_cor_of_add_one (M N : Rep k G) (H : Subgroup G) {p q r : ℤ
     (cup_δ_of_leftInverse (Rep.res H.subtype M) ((shortExact_res H.subtype).2 hD)
       hρ h x (res N H q y))
   dsimp only [ShortComplex.map_X₁, ShortComplex.map_X₃, curriedTensor_obj_obj] at hcup
-  rw [negOnePow_smul_negOnePow_smul] at hcup
+  rw [Int.negOnePow_smul_negOnePow_smul] at hcup
   refine (congrArg (cor (M ⊗ dimensionShiftDown N) H (r + 1)) hcup.symm).trans ?_
   erw [map_zsmul_unit]
   erw [← hres, ih]
   have htarget := congrArg (p.negOnePow • ·)
     (cup_dimensionShiftDownIso_hom M N hq h rfl (cor M H p x) y)
-  rw [negOnePow_smul_negOnePow_smul, dimensionShiftDownIso_hom,
+  rw [Int.negOnePow_smul_negOnePow_smul, dimensionShiftDownIso_hom,
     tensorDimensionShiftDownIso_hom] at htarget
   exact htarget
 

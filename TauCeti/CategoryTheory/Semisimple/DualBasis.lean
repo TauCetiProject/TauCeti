@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
+public import TauCeti.CategoryTheory.Linear.SplitSimpleFamily
 public import TauCeti.CategoryTheory.Preadditive.Schur
 public import TauCeti.CategoryTheory.Semisimple.Basic
 public import TauCeti.CategoryTheory.Simple.Classes
@@ -29,7 +30,10 @@ basis `b` of `S ⟶ X` has a dual basis `b.homDual` of `X ⟶ S`, characterized 
 These dual bases satisfy the **completeness relation**: choosing for each simple class `S` a
 basis `b S` of morphisms from its representative into `X`,
 
-`∑ S, ∑ i, (b S).homDual i ≫ b S i = 𝟙 X`.
+`∑ S, ∑ i, (b S).homDual i ≫ b S i = 𝟙 X`,
+
+and likewise for any finite family of simple objects in which every simple class occurs exactly
+once.
 
 The element `∑ i, b.homDual i ⊗ b i` of `(X ⟶ S) ⊗ (S ⟶ X)` does not depend on the basis, and
 it is natural in `X`: for `h : A ⟶ A'` and any bilinear map `β`,
@@ -38,6 +42,11 @@ it is natural in `X`: for `h : A ⟶ A'` and any bilinear map `β`,
 
 Combining the two, a sum over a basis of `S ⟶ F.obj B`, for an additive functor `F`, can be
 computed through the simple constituents `T` of `B`, using bases of `S ⟶ F.obj T` and `T ⟶ B`.
+
+The representatives of the simple classes form a split simple family in the sense of
+`TauCeti.IsSplitSimpleFamily`, and `TauCeti.homPairing` is the composition pairing
+`TauCeti.homPairingOfBijective` of an object with scalar endomorphisms, so the general results
+over a commutative semiring of `TauCeti.CategoryTheory.Linear.SplitSimpleFamily` apply here.
 
 These identities are the linear algebra behind sums of the shape `∑ i, b i ⊗ … ⊗ b.homDual i`
 in a fusion category, such as the half-braiding of the object `⨁ S, S ⊗ X ⊗ Sᘁ` of the Drinfeld
@@ -50,11 +59,17 @@ factorization through simple constituents gives compatibility with tensor produc
 * `Module.Basis.homDual`: the dual basis of `X ⟶ S` of a basis of `S ⟶ X`, characterized by
   `Module.Basis.apply_comp_homDual` and `Module.Basis.eq_homDual_iff`, with coordinates computed
   by `Module.Basis.comp_homDual` and `Module.Basis.homDual_repr`;
-* `TauCeti.sum_sum_homDual_comp_eq_id`: the completeness relation;
+* `TauCeti.sum_sum_homDual_comp_eq_id`: the completeness relation, and
+  `TauCeti.sum_sum_homDual_comp_eq_id_of_bijective` its version for any finite family of simple
+  objects containing each simple class exactly once, such as the right duals of the
+  representatives;
 * `Module.Basis.sum_homDual_comp`: naturality of the canonical element, and
   `Module.Basis.sum_homDual_eq` its independence of the basis;
 * `TauCeti.sum_homDual_eq_sum_map_homDual`: the canonical element computed through the simple
-  constituents of an object.
+  constituents of an object;
+* `TauCeti.homPairing_eq_homPairingOfBijective` and `TauCeti.isSplitSimpleFamily_simpleClasses`:
+  the comparison with the split simple families of
+  `TauCeti.CategoryTheory.Linear.SplitSimpleFamily`.
 
 ## References
 
@@ -96,6 +111,34 @@ instance isPerfPair_homPairing (S X : C) [Simple S] [FiniteDimensional k (S ⟶ 
     exact zero_ne_one h
 
 end Perfect
+
+section SplitSimpleFamily
+
+variable (k : Type w) [Field k] [IsAlgClosed k]
+
+/-- By Schur's lemma, the composition pairing of a simple object is the composition pairing of an
+object with scalar endomorphisms. -/
+theorem homPairing_eq_homPairingOfBijective {C : Type u} [Category.{v} C] [Preadditive C]
+    [Linear k C] [HasKernels C] (S X : C) [Simple S] [FiniteDimensional k (S ⟶ S)] :
+    homPairing k S X = homPairingOfBijective (bijective_algebraMap_end_of_simple k S) X := by
+  ext f g
+  rw [eq_comm, homPairingOfBijective_eq_iff, homPairing_smul_id]
+
+/-- **The field case.** In a finite semisimple category over an algebraically closed field, with
+finite-dimensional endomorphisms of simple objects, the representatives of the simple classes
+form a split simple family. No finiteness of `SimpleClasses C` is needed. -/
+theorem isSplitSimpleFamily_simpleClasses {C : Type u} [Category.{v} C] [Abelian C]
+    [HasFiniteBiproducts C] [Linear k C] [IsFiniteSemisimpleCategory C]
+    [∀ S : SimpleClasses C, FiniteDimensional k (S.repr ⟶ S.repr)] :
+    IsSplitSimpleFamily k (fun S : SimpleClasses C ↦ S.repr) where
+  bijective_algebraMap S := bijective_algebraMap_end_of_simple k S.repr
+  homOrthogonal := SimpleClasses.homOrthogonal_repr
+  exists_iso_biproduct X := by
+    obtain ⟨κ, _, f, _, _, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples X
+    exact ⟨κ, inferInstance, fun j ↦ SimpleClasses.classOf (f j),
+      ⟨e ≪≫ biproduct.mapIso fun j ↦ (SimpleClasses.classOfReprIso (f j)).symm⟩⟩
+
+end SplitSimpleFamily
 
 end TauCeti
 
@@ -162,14 +205,11 @@ from the basis of `S ⟶ A` to the dual basis of `A' ⟶ S` does not change the 
 theorem sum_homDual_comp (a : Basis ι k (S ⟶ A)) (a' : Basis ι' k (S ⟶ A')) (h : A ⟶ A')
     (β : (A ⟶ S) →ₗ[k] (S ⟶ A') →ₗ[k] M) :
     ∑ i, β (a.homDual i) (a i ≫ h) = ∑ j, β (h ≫ a'.homDual j) (a' j) := by
-  -- Expand `a i ≫ h` in the basis `a'` and `h ≫ a'.homDual j` in the basis `a.homDual`; both
-  -- sides become `∑ i, ∑ j, c i j • β (a.homDual i) (a' j)` with `c i j` the pairing of
-  -- `a i ≫ h ≫ a'.homDual j`.
-  conv_lhs => enter [2, i]; rw [← a'.sum_repr (a i ≫ h)]
-  conv_rhs => enter [2, j]; rw [← a.homDual.sum_repr (h ≫ a'.homDual j)]
-  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, ← homPairing_homDual,
-    homDual_repr, homPairing_comp]
-  exact Finset.sum_comm
+  have : FiniteDimensional k (S ⟶ A) := Module.Finite.of_basis a
+  have hp : (homPairingOfBijective (bijective_algebraMap_end_of_simple k S) A).IsPerfPair := by
+    rw [← homPairing_eq_homPairingOfBijective]
+    infer_instance
+  exact a.sum_dual_comp hp a.apply_comp_homDual a' a'.apply_comp_homDual h β
 
 /-- The canonical element `∑ i, b.homDual i ⊗ b i` does not depend on the basis `b`. -/
 theorem sum_homDual_eq (a : Basis ι k (S ⟶ X)) (a' : Basis ι' k (S ⟶ X))
@@ -189,6 +229,40 @@ variable {k : Type w} [Field k] [IsAlgClosed k]
 variable {C : Type u} [Category.{v} C] [Abelian C] [Linear k C] [IsFiniteSemisimpleCategory C]
   [∀ S : SimpleClasses C, FiniteDimensional k (S.repr ⟶ S.repr)]
 
+omit [∀ S : SimpleClasses C, FiniteDimensional k (S.repr ⟶ S.repr)] in
+/-- **The completeness relation for a family of simple objects.** In a finite semisimple
+category, let `Y` be a finite family of simple objects in which every simple class occurs exactly
+once, and choose for every `j` a basis `b j` of the morphisms from `Y j` into `X`. Then the
+identity of `X` is the sum, over the family and the basis elements, of the composites of the dual
+basis elements with the basis elements. -/
+theorem sum_sum_homDual_comp_eq_id_of_bijective {κ : Type*} [Fintype κ] (Y : κ → C)
+    [∀ j, Simple (Y j)] [∀ j, FiniteDimensional k (Y j ⟶ Y j)]
+    (hY : Function.Bijective fun j ↦ classOf (Y j)) (X : C)
+    {ι : κ → Type*} [∀ j, Fintype (ι j)] [∀ j, DecidableEq (ι j)]
+    (b : ∀ j, Basis (ι j) k (Y j ⟶ X)) :
+    ∑ j, ∑ i, (b j).homDual i ≫ b j i = 𝟙 X := by
+  classical
+  refine (𝟭 C).hom_ext_of_simple fun T _ t ↦ ?_
+  simp only [Functor.id_map]
+  -- Reduce to morphisms out of the member `Y j₀` of the family in the class of `T`.
+  obtain ⟨j₀, hj₀⟩ := hY.2 (classOf T)
+  obtain ⟨θ⟩ := (classOf_eq_iff_nonempty_iso _ _).1 hj₀
+  suffices H : ∀ s : Y j₀ ⟶ X, s ≫ ∑ j, ∑ i, (b j).homDual i ≫ b j i = s by
+    simpa using congrArg (θ.inv ≫ ·) (H (θ.hom ≫ t))
+  intro s
+  simp only [Preadditive.comp_sum]
+  rw [Finset.sum_eq_single j₀]
+  · simp only [← Category.assoc, Basis.comp_homDual, Linear.smul_comp, Category.id_comp,
+      Basis.sum_repr]
+  · -- Morphisms between members of distinct classes vanish, by Schur's lemma.
+    intro j _ hj
+    refine Finset.sum_eq_zero fun i _ ↦ ?_
+    have h0 : s ≫ (b j).homDual i = 0 := by
+      by_contra h
+      exact hj (hY.1 (classOf_eq_iff_exists_ne_zero.2 ⟨_, h⟩)).symm
+    rw [← Category.assoc, h0, zero_comp]
+  · simp
+
 /-- **The completeness relation.** In a finite semisimple category with finitely many simple
 classes, choose for every simple class `S` a basis `b S` of the morphisms from its representative
 into `X`. Then the identity of `X` is the sum, over the simple classes and the basis elements,
@@ -197,23 +271,10 @@ theorem sum_sum_homDual_comp_eq_id [Fintype (SimpleClasses C)] (X : C)
     {ι : SimpleClasses C → Type*} [∀ S, Fintype (ι S)] [∀ S, DecidableEq (ι S)]
     (b : ∀ S : SimpleClasses C, Basis (ι S) k (S.repr ⟶ X)) :
     ∑ S, ∑ i, (b S).homDual i ≫ b S i = 𝟙 X := by
-  classical
-  refine (𝟭 C).hom_ext_of_simple fun T _ t ↦ ?_
-  simp only [Functor.id_map]
-  -- Reduce to morphisms out of the representative `R` of the class of `T`.
-  suffices H : ∀ s : (classOf T).repr ⟶ X, s ≫ ∑ S, ∑ i, (b S).homDual i ≫ b S i = s by
-    simpa using congrArg ((classOfReprIso T).inv ≫ ·) (H ((classOfReprIso T).hom ≫ t))
-  intro s
-  simp only [Preadditive.comp_sum]
-  rw [Finset.sum_eq_single (classOf T)]
-  · simp only [← Category.assoc, Basis.comp_homDual, Linear.smul_comp, Category.id_comp,
-      Basis.sum_repr]
-  · -- Morphisms between representatives of distinct classes vanish.
-    intro S _ hS
-    refine Finset.sum_eq_zero fun i _ ↦ ?_
-    have := homOrthogonal_repr (D := C) (Ne.symm hS)
-    rw [← Category.assoc, Subsingleton.elim (s ≫ (b S).homDual i) 0, zero_comp]
-  · simp
+  have hY : Function.Bijective fun S : SimpleClasses C ↦ classOf S.repr := by
+    simp only [classOf_repr]
+    exact Function.bijective_id
+  exact sum_sum_homDual_comp_eq_id_of_bijective (k := k) SimpleClasses.repr hY X b
 
 variable {D : Type u'} [Category.{v'} D] [Abelian D] [Linear k D] [IsFiniteSemisimpleCategory D]
 variable {M : Type*} [AddCommGroup M] [Module k M]

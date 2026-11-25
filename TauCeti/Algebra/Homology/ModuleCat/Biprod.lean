@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Homology.HomologicalComplexBiprod
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.Basis.Prod
 public import TauCeti.Algebra.Category.ModuleCat.Biproducts
+public import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
 
 /-!
 # Biproducts of complexes of modules
@@ -25,12 +26,24 @@ The comparison uses `ModuleCat.inl_comp_biprodIsoProd_hom` and
 under Mathlib's identification `ModuleCat.biprodIsoProd` of the biproduct of two modules with
 their product, the biproduct inclusions are `LinearMap.inl` and `LinearMap.inr`. Along the same
 identification, bases of `K.X i` and `L.X i` give the basis `HomologicalComplex.biprodXBasis` of
-`(K ⊞ L).X i`, made of their images under the two biproduct inclusions; this is how a direct sum
-of based complexes is based.
+`(K ⊞ L).X i`, and bases of `K.homology i` and `L.homology i` give the basis
+`HomologicalComplex.biprodHomologyBasis` of `(K ⊞ L).homology i`, made of their images under the
+two biproduct inclusions; this is how a direct sum of based complexes is based on chains and on
+homology.
 
 On elements, `biprod.lift` and `biprod.desc` act componentwise
 (`HomologicalComplex.biprod_desc_f_apply`, `HomologicalComplex.biprod_lift_f_apply`),
 which is how elements of the middle term of a Mayer–Vietoris sequence are handled.
+
+Along `ModuleCat.biprodIsoProd`, exactness of a short complex of modules through a biproduct
+`A ⊞ B`, with maps `biprod.lift f₁ f₂` into or `biprod.desc g₁ g₂` out of it, is exactness
+(`Function.Exact`) of the pair map `f₁.hom.prod f₂.hom` into or the sum map
+`g₁.hom.coprod g₂.hom` out of the product module `A × B`
+(`CategoryTheory.ShortComplex.moduleCat_exact_biprod_lift_desc_iff`,
+`CategoryTheory.ShortComplex.moduleCat_exact_biprod_lift_iff`,
+`CategoryTheory.ShortComplex.moduleCat_exact_biprod_desc_iff`). This turns the homology sequences
+of `TauCeti.Algebra.Homology.HomologySequenceBiprod`, such as the Mayer–Vietoris sequences, into
+exact sequences of linear maps through `A × B`.
 
 ## References
 
@@ -42,6 +55,46 @@ public section
 open CategoryTheory Limits
 
 universe u v
+
+namespace CategoryTheory.ShortComplex
+
+variable {R : Type u} [Ring R] {X A B Z Y : ModuleCat.{v} R}
+
+/-- A short complex `X ⟶ A ⊞ B ⟶ Z` of modules with maps `biprod.lift f₁ f₂` and
+`biprod.desc g₁ g₂` is exact if and only if the pair map `X → A × B` and the sum map
+`A × B → Z` are exact. -/
+lemma moduleCat_exact_biprod_lift_desc_iff {f₁ : X ⟶ A} {f₂ : X ⟶ B} {g₁ : A ⟶ Z}
+    {g₂ : B ⟶ Z} (w : biprod.lift f₁ f₂ ≫ biprod.desc g₁ g₂ = 0) :
+    (ShortComplex.mk _ _ w).Exact ↔
+      Function.Exact (f₁.hom.prod f₂.hom) (g₁.hom.coprod g₂.hom) := by
+  rw [ShortExact.moduleCat_exact_iff_function_exact]
+  exact (Function.Exact.iff_of_ladder_linearEquiv (e₁ := LinearEquiv.refl R X)
+    (e₂ := (ModuleCat.biprodIsoProd A B).toLinearEquiv) (e₃ := LinearEquiv.refl R Z)
+    congr(ModuleCat.Hom.hom $(ModuleCat.biprod_lift_comp_biprodIsoProd_hom f₁ f₂)).symm
+    congr(ModuleCat.Hom.hom $(ModuleCat.biprodIsoProd_hom_comp_ofHom_coprod g₁ g₂))).symm
+
+/-- A short complex `Y ⟶ X ⟶ A ⊞ B` of modules whose second map is `biprod.lift f₁ f₂` is exact
+if and only if its first map and the pair map `X → A × B` are exact. -/
+lemma moduleCat_exact_biprod_lift_iff {δ : Y ⟶ X} {f₁ : X ⟶ A} {f₂ : X ⟶ B}
+    (w : δ ≫ biprod.lift f₁ f₂ = 0) :
+    (ShortComplex.mk _ _ w).Exact ↔ Function.Exact δ.hom (f₁.hom.prod f₂.hom) := by
+  rw [ShortExact.moduleCat_exact_iff_function_exact]
+  exact (Function.Exact.iff_of_ladder_linearEquiv (e₁ := LinearEquiv.refl R Y)
+    (e₂ := LinearEquiv.refl R X) (e₃ := (ModuleCat.biprodIsoProd A B).toLinearEquiv) rfl
+    congr(ModuleCat.Hom.hom $(ModuleCat.biprod_lift_comp_biprodIsoProd_hom f₁ f₂)).symm).symm
+
+/-- A short complex `A ⊞ B ⟶ Z ⟶ Y` of modules whose first map is `biprod.desc g₁ g₂` is exact
+if and only if the sum map `A × B → Z` and its second map are exact. -/
+lemma moduleCat_exact_biprod_desc_iff {g₁ : A ⟶ Z} {g₂ : B ⟶ Z} {δ : Z ⟶ Y}
+    (w : biprod.desc g₁ g₂ ≫ δ = 0) :
+    (ShortComplex.mk _ _ w).Exact ↔ Function.Exact (g₁.hom.coprod g₂.hom) δ.hom := by
+  rw [ShortExact.moduleCat_exact_iff_function_exact]
+  exact (Function.Exact.iff_of_ladder_linearEquiv
+    (e₁ := (ModuleCat.biprodIsoProd A B).toLinearEquiv) (e₂ := LinearEquiv.refl R Z)
+    (e₃ := LinearEquiv.refl R Y)
+    congr(ModuleCat.Hom.hom $(ModuleCat.biprodIsoProd_hom_comp_ofHom_coprod g₁ g₂)) rfl).symm
+
+end CategoryTheory.ShortComplex
 
 namespace HomologicalComplex
 
@@ -137,6 +190,68 @@ theorem biprodXBasis_inr (k : σ) :
   rw [biprodXBasis, Module.Basis.map_apply, LinearEquiv.symm_apply_eq, Iso.toLinearEquiv_apply,
     ← ModuleCat.comp_apply, inr_f_comp_biprodXIso_trans_biprodIsoProd_hom]
   simp
+
+section HomologyBasis
+
+attribute [local instance] preservesBinaryBiproduct_of_preservesBiproduct
+
+/-- The basis of the homology `(K ⊞ L).homology i` of a biproduct of complexes of modules made of
+the images of a basis `b` of `K.homology i` under `homologyMap biprod.inl i`, followed by the
+images of a basis `b'` of `L.homology i` under `homologyMap biprod.inr i`. -/
+noncomputable def biprodHomologyBasis (hb : Module.Basis κ R (K.homology i))
+    (hb' : Module.Basis σ R (L.homology i)) :
+    Module.Basis (κ ⊕ σ) R ((K ⊞ L).homology i) :=
+  (hb.prod hb').map (homologyBiprodIso K L i ≪≫ ModuleCat.biprodIsoProd _ _).toLinearEquiv.symm
+
+variable (K L i) in
+/-- Under the identification `homologyBiprodIso K L i ≪≫ ModuleCat.biprodIsoProd _ _` of
+`(K ⊞ L).homology i` with the product module `K.homology i × L.homology i`, the map induced on
+homology by the first biproduct inclusion is `LinearMap.inl`. -/
+theorem homologyMap_inl_comp_homologyBiprodIso_trans_biprodIsoProd_hom :
+    homologyMap (biprod.inl : K ⟶ K ⊞ L) i ≫
+        (homologyBiprodIso K L i ≪≫ ModuleCat.biprodIsoProd _ _).hom =
+      ModuleCat.ofHom (LinearMap.inl R (K.homology i) (L.homology i)) := by
+  have hinl : (biprod.inl : K.homology i ⟶ K.homology i ⊞ L.homology i) ≫
+      (homologyBiprodIso K L i).inv = homologyMap (biprod.inl : K ⟶ K ⊞ L) i :=
+    biprod.inl_desc _ _
+  rw [Iso.trans_hom, ← hinl, Category.assoc, Iso.inv_hom_id_assoc,
+    ModuleCat.inl_comp_biprodIsoProd_hom]
+
+variable (K L i) in
+/-- Under the identification `homologyBiprodIso K L i ≪≫ ModuleCat.biprodIsoProd _ _` of
+`(K ⊞ L).homology i` with the product module `K.homology i × L.homology i`, the map induced on
+homology by the second biproduct inclusion is `LinearMap.inr`. -/
+theorem homologyMap_inr_comp_homologyBiprodIso_trans_biprodIsoProd_hom :
+    homologyMap (biprod.inr : L ⟶ K ⊞ L) i ≫
+        (homologyBiprodIso K L i ≪≫ ModuleCat.biprodIsoProd _ _).hom =
+      ModuleCat.ofHom (LinearMap.inr R (K.homology i) (L.homology i)) := by
+  have hinr : (biprod.inr : L.homology i ⟶ K.homology i ⊞ L.homology i) ≫
+      (homologyBiprodIso K L i).inv = homologyMap (biprod.inr : L ⟶ K ⊞ L) i :=
+    biprod.inr_desc _ _
+  rw [Iso.trans_hom, ← hinr, Category.assoc, Iso.inv_hom_id_assoc,
+    ModuleCat.inr_comp_biprodIsoProd_hom]
+
+@[simp]
+theorem biprodHomologyBasis_inl (hb : Module.Basis κ R (K.homology i))
+    (hb' : Module.Basis σ R (L.homology i)) (k : κ) :
+    biprodHomologyBasis hb hb' (.inl k) =
+      (homologyMap (biprod.inl : K ⟶ K ⊞ L) i).hom (hb k) := by
+  rw [biprodHomologyBasis, Module.Basis.map_apply, LinearEquiv.symm_apply_eq,
+    Iso.toLinearEquiv_apply, ← ModuleCat.comp_apply,
+    homologyMap_inl_comp_homologyBiprodIso_trans_biprodIsoProd_hom]
+  simp
+
+@[simp]
+theorem biprodHomologyBasis_inr (hb : Module.Basis κ R (K.homology i))
+    (hb' : Module.Basis σ R (L.homology i)) (k : σ) :
+    biprodHomologyBasis hb hb' (.inr k) =
+      (homologyMap (biprod.inr : L ⟶ K ⊞ L) i).hom (hb' k) := by
+  rw [biprodHomologyBasis, Module.Basis.map_apply, LinearEquiv.symm_apply_eq,
+    Iso.toLinearEquiv_apply, ← ModuleCat.comp_apply,
+    homologyMap_inr_comp_homologyBiprodIso_trans_biprodIsoProd_hom]
+  simp
+
+end HomologyBasis
 
 end Basis
 

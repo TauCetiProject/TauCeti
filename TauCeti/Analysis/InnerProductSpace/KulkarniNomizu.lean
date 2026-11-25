@@ -44,7 +44,7 @@ product of `h` with the inner product gives `(n - 2) h + (tr h) g`. -/
 theorem sum_kulkarniNomizu_innerₗ {ι : Type*} [Fintype ι] (h : BilinForm ℝ W)
     (b : OrthonormalBasis ι ℝ W) (y z : W) :
     ∑ j, kulkarniNomizu h (innerₗ W) (b j) y z (b j) =
-      ((Module.finrank ℝ W : ℝ) - 2) * h y z + TauCeti.bilinFormTrace h * inner ℝ y z := by
+      ((Module.finrank ℝ W : ℝ) - 2) * h y z + LinearMap.BilinMap.metricTrace h * inner ℝ y z := by
   have hleft : ∑ j, h (b j) z * inner ℝ y (b j) = h y z := by
     conv_rhs => rw [← b.sum_repr' y]
     simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply,
@@ -55,10 +55,10 @@ theorem sum_kulkarniNomizu_innerₗ {ι : Type*} [Fintype ι] (h : BilinForm ℝ
     simp only [map_sum, map_smul, smul_eq_mul]
     exact Finset.sum_congr rfl fun j _ ↦ mul_comm _ _
   have hdim : ∑ j, inner ℝ (b j) (b j) = (Module.finrank ℝ W : ℝ) := by
-    simpa using (TauCeti.bilinFormTrace_eq_sum (innerₗ W) b).symm
+    simpa using (LinearMap.BilinMap.metricTrace_eq_sum (innerₗ W) b).symm
   simp only [kulkarniNomizu_apply, innerₗ_apply_apply, Finset.sum_sub_distrib,
     Finset.sum_add_distrib, ← Finset.sum_mul, ← Finset.mul_sum, hleft, hright, hdim,
-    ← TauCeti.bilinFormTrace_eq_sum h b]
+    ← LinearMap.BilinMap.metricTrace_eq_sum h b]
   ring
 
 /-- **In dimension at least `3`, the Kulkarni–Nomizu product with the inner product is
@@ -68,12 +68,14 @@ theorem kulkarniNomizu_innerₗ_eq_zero_iff (hW : 3 ≤ Module.finrank ℝ W) {h
     kulkarniNomizu h (innerₗ W) = 0 ↔ h = 0 := by
   refine ⟨fun H ↦ ?_, fun H ↦ by simp [H]⟩
   have hW' : (3 : ℝ) ≤ Module.finrank ℝ W := by exact_mod_cast hW
-  have hc : ((Module.finrank ℝ W : ℝ) - 2) • h + TauCeti.bilinFormTrace h • innerₗ W = 0 := by
+  have hc :
+      ((Module.finrank ℝ W : ℝ) - 2) • h + LinearMap.BilinMap.metricTrace h • innerₗ W = 0 := by
     ext y z
     simpa [H] using (sum_kulkarniNomizu_innerₗ h (stdOrthonormalBasis ℝ W) y z).symm
-  have htr : TauCeti.bilinFormTrace h = 0 := by
-    have := congrArg TauCeti.bilinFormTrace hc
-    simp only [map_add, map_smul, TauCeti.bilinFormTrace_inner, smul_eq_mul, map_zero] at this
+  have htr : LinearMap.BilinMap.metricTrace h = 0 := by
+    have := congrArg LinearMap.BilinMap.metricTrace hc
+    simp only [map_add, map_smul, LinearMap.BilinMap.metricTrace_inner, smul_eq_mul,
+      map_zero] at this
     nlinarith
   rw [htr, zero_smul, add_zero, smul_eq_zero] at hc
   exact hc.resolve_left (by linarith)

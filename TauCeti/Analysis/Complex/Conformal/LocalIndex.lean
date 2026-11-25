@@ -9,10 +9,10 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RegularValue
 public import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import Mathlib.LinearAlgebra.Complex.Determinant
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.AlgebraicTopology.Singular.LocalHomology.Holomorphic
 import TauCeti.Analysis.Analytic.IsolatedCriticalPoints
 import TauCeti.Analysis.Analytic.Order
-import TauCeti.Analysis.Complex.Determinant
-import TauCeti.Analysis.Normed.Module.Ball.Radial.ProperExtension
+import TauCeti.Analysis.Complex.IsolatedZero
 
 /-!
 # The local index of a holomorphic map is its order of vanishing
@@ -37,6 +37,15 @@ with invertible derivative: complex conjugation has local index `-1`
 (`TauCeti.HomologicalOrientation.localIndex_conj`), so the statements here depend on `f` being
 holomorphic, not only on the orientation being the same on both sides.
 
+A continuous nonvanishing factor does not change the local index: if `f = v * σ` near a zero `z₀`
+of `σ`, with `v` continuous and nonzero at `z₀` and `σ` analytic at `z₀`, then by Rouché's principle
+(`TauCeti.HomologicalOrientation.localIndex_eq_of_norm_sub_lt`) `f` has the local index of a
+monomial `c * (z - z₀) ^ m`, where `m` is the order of `σ`
+(`TauCeti.HomologicalOrientation.localIndex_eq_of_eventually_eq_mul_pow`,
+`TauCeti.HomologicalOrientation.localIndex_eq_analyticOrderNatAt_of_eventually_eq_mul`). This is
+how the zeros of solutions of linear Cauchy–Riemann equations, which the similarity principle writes
+in this form, acquire positive multiplicities.
+
 The same statements hold for a map `f : M → N` read near a point `x` through open embeddings
 `j : M → ℂ` and `k : N → ℂ`, oriented by pulling back `o`, as a map `φ : ℂ → ℂ` with
 `φ (j z) = k (f z)` near `x`, such as a holomorphic function on a domain or a map of Riemann
@@ -47,14 +56,11 @@ is computed for a map of `ℂ` agreeing with `φ` near `j x`
 
 The proof of the general statement counts preimages. Choose a closed disc `D` around `z₀` on which
 `f` is analytic, `z₀` is the only solution of `f z = f z₀`, and `f'` vanishes nowhere except
-possibly at `z₀`. Extend `f|_D` radially to a proper map `g : ℂ → ℂ` whose values outside the open
-disc stay a fixed distance away from `f z₀`
-(`ContinuousOn.exists_isProperMap_eqOn_closedBall_and_le_norm_sub`).
-The degree of `g` is its local index at `z₀`, the only preimage of `f z₀`, which is the local index
-of `f`. At a value `w ≠ f z₀` close to `f z₀`, the preimages of `w` under `g` are the `m` distinct
-simple solutions of `f z = w` in the disc, with `m` the order of `f - f z₀` at `z₀`
-(`TauCeti.localDegree_card`, a Rouché argument). Each has local index `1`, so the degree of `g` is
-also `m`.
+possibly at `z₀`. The local index of `f` at `z₀` is then the number of solutions in the disc of
+`f z = w`, for any value `w` close to `f z₀` at whose solutions `f'` does not vanish
+(`TauCeti.HomologicalOrientation.localIndex_eq_ncard_of_hasFDerivAt`). For `w ≠ f z₀` these are
+the `m` distinct simple solutions of `f z = w` in the disc, with `m` the order of `f - f z₀` at
+`z₀` (`TauCeti.localDegree_card`, a Rouché argument).
 
 ## Main results
 
@@ -65,11 +71,18 @@ also `m`.
 * `TauCeti.HomologicalOrientation.localIndex_pos_iff_of_analyticAt`: it is positive exactly when
   `f` is not constant near `z₀`.
 * `TauCeti.HomologicalOrientation.localIndex_pow`: `z ↦ z ^ m` has local index `m` at `0`.
+* `TauCeti.HomologicalOrientation.localIndex_eq_of_eventually_eq_mul_pow`: a map which is near `z₀`
+  the power `(z - z₀) ^ m`, `m ≠ 0`, times a factor continuous and nonzero at `z₀` has local index
+  `m` at `z₀`.
+* `TauCeti.HomologicalOrientation.localIndex_eq_analyticOrderNatAt_of_eventually_eq_mul`: the local
+  index at `z₀` of a map which is near `z₀` a holomorphic map `σ` vanishing at `z₀` times a factor
+  continuous and nonzero at `z₀` is the order of vanishing of `σ`.
 * `TauCeti.HomologicalOrientation.localIndex_conj`: complex conjugation has local index `-1`.
 * `TauCeti.HomologicalOrientation.localIndex_comap_eq_one_of_hasDerivAt`,
   `TauCeti.HomologicalOrientation.localIndex_comap_eq_analyticOrderNatAt_sub`,
-  `TauCeti.HomologicalOrientation.localIndex_comap_pos_iff_of_analyticAt`: the same for maps
-  read through open embeddings into `ℂ`, such as maps between open subsets of `ℂ`.
+  `TauCeti.HomologicalOrientation.localIndex_comap_pos_iff_of_analyticAt`,
+  `TauCeti.HomologicalOrientation.localIndex_comap_eq_analyticOrderNatAt_of_eventually_eq_mul`: the
+  same for maps read through open embeddings into `ℂ`, such as maps between open subsets of `ℂ`.
 
 ## References
 
@@ -97,13 +110,9 @@ variable (o : HomologicalOrientation ℂ ℂ 2)
 differentiable at `z` with nonzero derivative `c`, its local index at `z` is `1`: the real
 derivative is multiplication by `c`, whose Jacobian determinant `‖c‖²` is positive. -/
 theorem localIndex_eq_one_of_hasDerivAt {f : C(ℂ, ℂ)} {c z : ℂ} (hf : HasDerivAt f c z)
-    (hc : c ≠ 0) : o.localIndex o f z = 1 := by
-  have hdet : ((ContinuousLinearMap.toSpanSingleton ℂ c).restrictScalars ℝ).det = ‖c‖ ^ 2 := by
-    simpa [ContinuousLinearMap.smulRight_one_eq_toSpanSingleton] using
-      ContinuousLinearMap.det_restrictScalars_smulRight_one c
-  have hpos : 0 < ‖c‖ ^ 2 := pow_pos (norm_pos_iff.2 hc) 2
-  rw [o.localIndex_eq_sign_det finrank_real_complex (hf.hasFDerivAt.restrictScalars ℝ)
-    (hdet ▸ hpos.ne'), hdet, sign_pos hpos, SignType.coe_one]
+    (hc : c ≠ 0) : o.localIndex o f z = 1 :=
+  o.localIndex_eq_one_of_hasFDerivAt finrank_real_complex hf.hasFDerivAt
+    (smul_left_injective ℂ hc)
 
 /-- **Complex conjugation reverses orientation**: it has local index `-1` at every point, for the
 same orientation of `ℂ` on source and target. -/
@@ -125,34 +134,13 @@ private theorem localIndex_eq_analyticOrderNatAt_sub_of_closedBall {f : C(ℂ, �
     (hisolr : ∀ z ∈ closedBall z₀ r, z ≠ z₀ → f z ≠ f z₀)
     (hderivr : ∀ z ∈ ball z₀ r, z ≠ z₀ → deriv f z ≠ 0) :
     o.localIndex o f z₀ = analyticOrderNatAt (fun z ↦ f z - f z₀) z₀ := by
-  have hE : finrank ℝ ℂ = 2 := finrank_real_complex
   -- Values within `δ₁` of `f z₀` have `m` distinct simple preimages in the open disc, and `f` stays
   -- at distance at least `δ₂` from `f z₀` on the circle.
   obtain ⟨δ₁, hδ₁, hcard⟩ := localDegree_card hr hfr hisolr hderivr
   obtain ⟨δ₂, hδ₂, hδ₂le⟩ := exists_pos_le_norm_of_mem_sphere (f := fun z ↦ f z - f z₀)
     (f.continuous.continuousOn.sub continuousOn_const) fun z hz ↦ sub_ne_zero.2
       (hisolr z (sphere_subset_closedBall hz) (ne_of_mem_sphere hz hr.ne'))
-  obtain ⟨g, hgp, hgf, hgout⟩ :=
-    f.continuous.continuousOn.exists_isProperMap_eqOn_closedBall_and_le_norm_sub hr hδ₂ hδ₂le
-  have hgf_nhds (x : ℂ) (hx : x ∈ ball z₀ r) : g =ᶠ[𝓝 x] f :=
-    eventually_of_mem (isOpen_ball.mem_nhds hx) fun _ hy ↦ hgf (ball_subset_closedBall hy)
-  -- Outside the open disc `g` misses the ball of radius `δ₂` about `f z₀`, so the fibres of `g`
-  -- over that ball are the solutions of `f z = w` in the open disc.
-  have hgfib {w : ℂ} (hw : ‖w - f z₀‖ < δ₂) : g ⁻¹' {w} = {z ∈ ball z₀ r | f z = w} := by
-    ext z
-    simp only [mem_preimage, mem_singleton_iff, mem_ofPred_eq]
-    refine ⟨fun hz ↦ ?_, fun hz ↦ (hgf (ball_subset_closedBall hz.1)).trans hz.2⟩
-    have hzb : z ∈ ball z₀ r := mem_ball.2 (not_le.1 fun h ↦ (hgout z h).not_gt (hz ▸ hw))
-    exact ⟨hzb, (hgf (ball_subset_closedBall hzb)).symm.trans hz⟩
-  have hfib₀ : g ⁻¹' {f z₀} = {z₀} := by
-    rw [hgfib (by simpa using hδ₂)]
-    ext z
-    refine ⟨fun hz ↦ mem_singleton_iff.2 ?_, fun hz ↦ ?_⟩
-    · by_contra hne
-      exact hisolr z (ball_subset_closedBall hz.1) hne hz.2
-    · rw [mem_singleton_iff.1 hz]
-      exact ⟨mem_ball_self hr, rfl⟩
-  -- A value `w ≠ f z₀` close to `f z₀`, and its fibre under `g`.
+  -- A value `w ≠ f z₀` close to `f z₀`.
   set w : ℂ := f z₀ + ((min δ₁ δ₂ / 2 : ℝ) : ℂ) with hw_def
   have hwnorm : ‖w - f z₀‖ = min δ₁ δ₂ / 2 := by
     rw [hw_def, add_sub_cancel_left, norm_real, Real.norm_of_nonneg
@@ -164,22 +152,14 @@ private theorem localIndex_eq_analyticOrderNatAt_sub_of_closedBall {f : C(ℂ, �
     rw [hwnorm]; linarith [min_le_left δ₁ δ₂, half_lt_self (lt_min hδ₁ hδ₂)]
   have hw₂ : ‖w - f z₀‖ < δ₂ := by
     rw [hwnorm]; linarith [min_le_right δ₁ δ₂, half_lt_self (lt_min hδ₁ hδ₂)]
-  obtain ⟨hfin, hncard, -⟩ := hcard w hwne hw₁
-  have hfibw := hgfib hw₂
-  have hfin' : (g ⁻¹' {w}).Finite := hfibw ▸ hfin
-  -- The degree of `g` is its local index at `z₀`, which is that of `f` ...
-  have hdeg₀ := o.localDegree_eq_degree o hE hE hgp (f z₀)
-  rw [o.localDegree_eq_localIndex o hE hE g hfib₀,
-    o.localIndex_congr o hE (hgf_nhds z₀ (mem_ball_self hr))] at hdeg₀
-  -- ... and the number of preimages of `w`, each of local index `1`.
-  have hidx (x : ℂ) (hx : x ∈ hfin'.toFinset) : o.localIndex o g x = 1 := by
-    rw [Finite.mem_toFinset, hfibw] at hx
-    have hxz : x ≠ z₀ := fun h ↦ hwne (h ▸ hx.2).symm
-    rw [o.localIndex_congr o hE (hgf_nhds x hx.1)]
-    exact o.localIndex_eq_one_of_hasDerivAt
-      (hfr x (ball_subset_closedBall hx.1)).differentiableAt.hasDerivAt (hderivr x hx.1 hxz)
-  rw [hdeg₀, o.degree_eq_sum_localIndex o hE hE hgp hfin', Finset.sum_eq_card_nsmul hidx,
-    ← ncard_eq_toFinset_card _ hfin', hfibw, hncard, nsmul_one]
+  obtain ⟨-, hncard, -⟩ := hcard w hwne hw₁
+  -- The local index counts the solutions of `f z = w` in the disc, at each of which `f` has nonzero
+  -- derivative.
+  rw [o.localIndex_eq_ncard_of_hasFDerivAt finrank_real_complex hr hδ₂ hδ₂le
+    (fun z hz hfz ↦ by_contra fun hne ↦ hisolr z (ball_subset_closedBall hz) hne hfz) hw₂
+    (f' := fun z ↦ (1 : ℂ →L[ℂ] ℂ).smulRight (deriv f z))
+    (fun z hz _ ↦ (hfr z (ball_subset_closedBall hz)).differentiableAt.hasDerivAt.hasFDerivAt)
+    (fun z hz hfz ↦ smul_left_injective ℂ (hderivr z hz fun h ↦ hwne (h ▸ hfz).symm)), hncard]
 
 /-- **The local index of a holomorphic map is its order of vanishing.** If `f : ℂ → ℂ` is analytic
 at `z₀`, its local index at `z₀`, for the same orientation of `ℂ` on source and target, is the
@@ -219,6 +199,76 @@ theorem localIndex_pow (m : ℕ) : o.localIndex o ⟨(· ^ m), continuous_pow m�
   · simp [analyticOrderNatAt]
   · simp only [ContinuousMap.coe_mk]
     rw [analyticOrderNatAt, analyticOrderAt_pow_sub_zero_pow hm, ENat.toNat_natCast]
+
+/-- **The local index of a power times a nonvanishing factor.** If `f` agrees near `z₀` with
+`w * (z - z₀) ^ m`, for some `m ≠ 0` and a function `w` continuous and nonzero at `z₀`, then the
+local index of `f` at `z₀` is `m`: by Rouché's principle `f` has the local index of the monomial
+`w z₀ * (z - z₀) ^ m`. For `m = 0` this fails: `f z = 1 + (z - z₀)` has local index `1`. -/
+theorem localIndex_eq_of_eventually_eq_mul_pow {f : C(ℂ, ℂ)} {z₀ : ℂ} {w : ℂ → ℂ} {m : ℕ}
+    (hm : m ≠ 0) (hw : ContinuousAt w z₀) (hw₀ : w z₀ ≠ 0)
+    (hf : ∀ᶠ z in 𝓝 z₀, f z = w z * (z - z₀) ^ m) : o.localIndex o f z₀ = m := by
+  have hf₀ : f z₀ = 0 := by rw [hf.self_of_nhds, sub_self, zero_pow hm, mul_zero]
+  -- Near `z₀` the factor `w` stays closer to `w z₀` than to `0`.
+  have hwnear : ∀ᶠ z in 𝓝 z₀, ‖w z₀ - w z‖ < ‖w z‖ := by
+    filter_upwards [hw.eventually (Metric.ball_mem_nhds (w z₀)
+      (half_pos (norm_pos_iff.2 hw₀)))] with z hz
+    rw [dist_eq_norm] at hz
+    have hz' : ‖w z₀ - w z‖ < ‖w z₀‖ / 2 := by rwa [norm_sub_rev]
+    have := norm_sub_norm_le (w z₀) (w z)
+    linarith
+  -- By Rouché's principle `f` has the local index of the monomial `w z₀ * (z - z₀) ^ m`.
+  let g : C(ℂ, ℂ) := ⟨fun z ↦ w z₀ * (z - z₀) ^ m, by fun_prop⟩
+  have hg₀ : g z₀ = 0 := by simp [g, hm]
+  have hrouche : o.localIndex o f z₀ = o.localIndex o g z₀ := by
+    refine o.localIndex_eq_of_norm_sub_lt o finrank_real_complex ?_
+    filter_upwards [eventually_nhdsWithin_of_eventually_nhds (hf.and hwnear),
+      self_mem_nhdsWithin] with z ⟨hfz, hwz⟩ hz
+    have hpow : 0 < ‖(z - z₀) ^ m‖ := norm_pos_iff.2 (pow_ne_zero _ (sub_ne_zero.2 hz))
+    simp only [g, ContinuousMap.coe_mk, hfz, hf₀, sub_zero, ← sub_mul, norm_mul]
+    exact mul_lt_mul_of_pos_right hwz hpow
+  have hgA : AnalyticAt ℂ g z₀ :=
+    (by fun_prop : AnalyticAt ℂ (fun z ↦ w z₀ * (z - z₀) ^ m) z₀)
+  rw [hrouche, o.localIndex_eq_analyticOrderNatAt_sub hgA, hg₀]
+  have hord : analyticOrderAt (fun z ↦ g z - 0) z₀ = m :=
+    (hgA.sub analyticAt_const).analyticOrderAt_eq_natCast.2 ⟨fun _ ↦ w z₀, analyticAt_const, hw₀,
+      .of_forall fun z ↦ by simp [g, mul_comm]⟩
+  rw [analyticOrderNatAt, hord, ENat.toNat_natCast]
+
+/-- **The local index of a holomorphic map times a nonvanishing factor.** Let `f` agree near `z₀`
+with `v * σ`, for a function `v` continuous and nonzero at `z₀` and a function `σ` analytic at `z₀`
+with `σ z₀ = 0`. Then the local index of `f` at `z₀` is the order of vanishing of `σ` at `z₀`, a
+nonnegative integer. The factor `v` need not be differentiable, so `f` need not be holomorphic:
+these are the factorizations given by the similarity principle for solutions of linear
+Cauchy–Riemann equations. -/
+theorem localIndex_eq_analyticOrderNatAt_of_eventually_eq_mul {f : C(ℂ, ℂ)} {z₀ : ℂ}
+    {v σ : ℂ → ℂ} (hv : ContinuousAt v z₀) (hv₀ : v z₀ ≠ 0) (hσ : AnalyticAt ℂ σ z₀)
+    (hσ₀ : σ z₀ = 0) (hf : ∀ᶠ z in 𝓝 z₀, f z = v z * σ z) :
+    o.localIndex o f z₀ = analyticOrderNatAt σ z₀ := by
+  have hf₀ : f z₀ = 0 := by rw [hf.self_of_nhds, hσ₀, mul_zero]
+  rcases hσ.eventually_eq_zero_or_eventually_ne_zero with hzero | hne
+  · -- `σ` vanishes near `z₀`, hence so does `f`, and both sides are `0`.
+    rw [analyticOrderNatAt, analyticOrderAt_eq_top.2 hzero, ENat.toNat_top, Nat.cast_zero]
+    have hfreq : ∃ᶠ z in 𝓝[≠] z₀, f z = f z₀ :=
+      (eventually_nhdsWithin_of_eventually_nhds (hf.and hzero)).frequently.mono
+        fun z hz ↦ by rw [hz.1, hz.2, mul_zero, hf₀]
+    exact o.localIndex_of_frequently_eq o f hfreq
+  -- Otherwise `σ z = (z - z₀) ^ m * τ z` with `τ z₀ ≠ 0`, where `m ≠ 0` is the order of `σ`.
+  have htop : analyticOrderAt σ z₀ ≠ ⊤ := fun h ↦
+    (eventually_nhdsWithin_of_eventually_nhds (analyticOrderAt_eq_top.1 h)).and hne
+      |>.exists.elim fun _ hz ↦ hz.2 hz.1
+  have hm0 : analyticOrderNatAt σ z₀ ≠ 0 := fun h ↦ by
+    have h0 : analyticOrderAt σ z₀ = 0 := by
+      rw [← Nat.cast_analyticOrderNatAt htop, h, Nat.cast_zero]
+    rcases analyticOrderAt_eq_zero.1 h0 with h' | h'
+    exacts [h' hσ, h' hσ₀]
+  obtain ⟨τ, hτ, hτ₀, hστ⟩ :=
+    hσ.analyticOrderAt_eq_natCast.1 (Nat.cast_analyticOrderNatAt htop).symm
+  -- So `f = (v * τ) * (z - z₀) ^ m` near `z₀`, with `v * τ` continuous and nonzero at `z₀`.
+  refine o.localIndex_eq_of_eventually_eq_mul_pow hm0 (hv.mul hτ.continuousAt)
+    (mul_ne_zero hv₀ hτ₀) ?_
+  filter_upwards [hf, hστ] with z hfz hσz
+  rw [hfz, hσz, smul_eq_mul, Pi.mul_apply]
+  ring
 
 /-! ### Maps read through open embeddings into `ℂ` -/
 
@@ -268,6 +318,20 @@ theorem localIndex_comap_pos_iff_of_analyticAt (hφ : ∀ᶠ z in 𝓝 x, φ (j 
   obtain ⟨G, hGφ, h⟩ :=
     o.exists_eventuallyEq_and_localIndex_comap_eq o finrank_real_complex hj hk hφ
   rw [h, o.localIndex_pos_iff_of_analyticAt (hd.congr hGφ.symm), hGφ.eventuallyConst_iff]
+
+/-- **The local index of a holomorphic map times a nonvanishing factor, in open coordinates.** Let
+`j : M → ℂ` and `k : N → ℂ` be open embeddings, with the orientations pulled back from `o`, and let
+`f : M → N` be given near `x` by a map `φ : ℂ → ℂ`, so that `φ (j z) = k (f z)` near `x`. If `φ`
+agrees near `j x` with `v * σ`, for `v` continuous and nonzero at `j x` and `σ` analytic at `j x`
+with `σ (j x) = 0`, then the local index of `f` at `x` is the order of vanishing of `σ` at `j x`. -/
+theorem localIndex_comap_eq_analyticOrderNatAt_of_eventually_eq_mul
+    (hφ : ∀ᶠ z in 𝓝 x, φ (j z) = k (f z)) {v σ : ℂ → ℂ} (hv : ContinuousAt v (j x))
+    (hv₀ : v (j x) ≠ 0) (hσ : AnalyticAt ℂ σ (j x)) (hσ₀ : σ (j x) = 0)
+    (hφvσ : ∀ᶠ z in 𝓝 (j x), φ z = v z * σ z) :
+    (o.comap hj).localIndex (o.comap hk) f x = analyticOrderNatAt σ (j x) := by
+  obtain ⟨G, hGφ, h⟩ :=
+    o.exists_eventuallyEq_and_localIndex_comap_eq o finrank_real_complex hj hk hφ
+  rw [h, o.localIndex_eq_analyticOrderNatAt_of_eventually_eq_mul hv hv₀ hσ hσ₀ (hGφ.trans hφvσ)]
 
 end OpenEmbedding
 

@@ -53,6 +53,8 @@ out of the middle term by local conditions, as in `WeierstrassCurve.selmerGroup`
   whose image is rational.
 * `TauCeti.Isogeny.kummerShortExact`: the Kummer sequence of a separable isogeny.
 * `TauCeti.Isogeny.kummerMap`: the Kummer map `E₂(K) → H¹(G_K, E₁[φ])`.
+* `TauCeti.Isogeny.localKummerCondition`: the kernel of the coefficient inclusion on `H¹`,
+  equal to the Kummer image for a separable isogeny.
 * `TauCeti.Isogeny.kummerClassMap`: the induced map on `E₂(K) ⧸ φ(E₁(K))`.
 * `TauCeti.Isogeny.quotientRangeEquivRangeKummerMap`: the identification of `E₂(K) ⧸ φ(E₁(K))`
   with the image of the Kummer map.
@@ -189,7 +191,7 @@ def kerPointMapEquivInvariants [DecidableEq K] (f : Hom W₁.toAffine W₂.toAff
   let ι : f.pointMapHom.ker →+ H0 (AbsoluteGaloisGroup K) f.KerCoeff :=
     { toFun P := ⟨⟨W₁.basePointCoeff P, by
         rw [AddMonoidHom.mem_ker, AddMonoidHom.coe_ofClass,
-          pointCoeffMap_basePointCoeff, (Hom.mem_ker_pointMapHom_iff _ _).1 P.2, map_zero]⟩,
+          pointCoeffMap_basePointCoeff, (Hom.mem_ker_pointMapHom_iff _ _).1 P.property, map_zero]⟩,
         (FixedPoints.mem_addSubgroup _ _ _).2 fun σ ↦ Subtype.ext (W₁.smul_basePointCoeff σ P)⟩
       map_zero' := by ext; simp
       map_add' _ _ := by ext; simp }
@@ -201,14 +203,14 @@ def kerPointMapEquivInvariants [DecidableEq K] (f : Hom W₁.toAffine W₂.toAff
   intro P
   obtain ⟨Q, hQ⟩ := W₁.basePointEquivInvariants.surjective
     ⟨P.val.val, (FixedPoints.mem_addSubgroup _ _ _).2
-      fun σ ↦ congrArg Subtype.val ((FixedPoints.mem_addSubgroup _ _ _).1 P.2 σ)⟩
+      fun σ ↦ congrArg Subtype.val ((FixedPoints.mem_addSubgroup _ _ _).1 P.property σ)⟩
   have hQ : W₁.basePointCoeff Q = P.val.val := by
     simpa only [coe_basePointEquivInvariants] using congrArg Subtype.val hQ
   have hker : Q ∈ f.pointMapHom.ker := by
     apply (Hom.mem_ker_pointMapHom_iff _ _).2
     apply W₂.basePointCoeff_injective
     rw [map_zero, ← pointCoeffMap_basePointCoeff, hQ]
-    exact P.val.2
+    exact P.val.property
   exact ⟨⟨Q, hker⟩, Subtype.ext (Subtype.ext hQ)⟩
 
 /-- The kernel-invariant equivalence is the usual inclusion of rational points into `E(Kˢ)`. -/
@@ -273,7 +275,28 @@ open Hom
 
 variable {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
   (φ : Isogeny W₁.toAffine W₂.toAffine)
-  [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField]
+
+/-- The local Kummer condition is the kernel of `H¹(G_K, E₁[φ]) → H¹(G_K, E₁)` induced by
+coefficient inclusion. For a separable isogeny it is the image of the Kummer map. -/
+def localKummerCondition : AddSubgroup (H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :=
+  (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology).ker
+
+/-- The local Kummer condition is computed using the inclusion of the isogeny kernel. -/
+theorem localKummerCondition_def :
+    φ.localKummerCondition =
+      (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology).ker := by
+  simp only [localKummerCondition]
+
+/-- A kernel cohomology class satisfies the local Kummer condition exactly when its image
+under coefficient inclusion vanishes. -/
+@[simp]
+theorem mem_localKummerCondition_iff
+    (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :
+    c ∈ φ.localKummerCondition ↔
+      explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology c = 0 := by
+  simp [localKummerCondition_def]
+
+variable [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField]
 
 /-! ### The Kummer sequence of a separable isogeny -/
 
@@ -445,12 +468,9 @@ theorem natCard_range_kummerMap_of_isSepClosed [IsSepClosed K] :
   obtain ⟨P, rfl⟩ := φ.toPointHom_surjective Q
   exact ⟨P, by rw [Hom.pointMapHom_apply, Hom.pointMap_ofIsogeny_eq_toPointHom]⟩
 
-/-- **The image of the Kummer map is the kernel of `H¹(G_K, E₁[φ]) → H¹(G_K, E₁)`.** -/
-theorem range_kummerMap :
-    φ.kummerMap.range =
-      (explicitCoeff1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff (ofIsogeny φ).kerCoeffIncl
-        continuous_of_discreteTopology).ker := by
-  rw [← Isogeny.kummerShortExact_inclDistribMulActionHom φ]
+/-- The image of the Kummer map is the local Kummer condition. -/
+theorem range_kummerMap : φ.kummerMap.range = φ.localKummerCondition := by
+  rw [localKummerCondition_def, ← Isogeny.kummerShortExact_inclDistribMulActionHom φ]
   exact φ.kummerShortExact.range_explicitDelta0_comp W₂.basePointEquivInvariants.surjective
 
 omit [DecidableEq K] in

@@ -9,7 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Legendre
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Algebraic
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.HalfAngle
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Pow

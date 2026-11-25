@@ -9,10 +9,18 @@ public import Mathlib.Analysis.InnerProductSpace.ExteriorPower
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import TauCeti.Algebra.Lie.ExteriorPower
 public import TauCeti.Analysis.InnerProductSpace.Dual
+public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
+public import TauCeti.LinearAlgebra.BilinearForm.ExteriorSquare
+public import Mathlib.LinearAlgebra.UnitaryGroup
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
+import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Ortho
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
+import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.LinearAlgebra.ExteriorPower.Basis
+import TauCeti.LinearAlgebra.ExteriorPower.Square
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
@@ -35,11 +43,20 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
   real and imaginary parts of a complex-valued covector `P`.
 * `TauCeti.twoVectorContraction F`: the skew endomorphism `u ↦ u ⌟ F` of a two-vector, with
   `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`.
+* `TauCeti.twoVectorAlternatingSum θ a b c`: the alternating sum
+  `θ(a)(b, c) - θ(b)(a, c) + θ(c)(a, b)` of a map with values in two-vectors, which is
+  `dω(a, b, c)` for `θ v = ∇_v ω` and a torsion-free connection. It is linear in `θ` and
+  alternating in `a`, `b`, `c` (`TauCeti.twoVectorAlternatingSum_swap₁₂`,
+  `TauCeti.twoVectorAlternatingSum_swap₂₃`).
 
 ## Main results
 
 * `exteriorPower.inner_map_map`: `⟪⋀ⁿ f x, ⋀ⁿ f y⟫ = ⟪x, y⟫` for a linear isometry `f`.
-* `exteriorPower.inner_ιMulti_two`: `⟪a ∧ b, u ∧ w⟫ = ⟪a, u⟫ ⟪b, w⟫ - ⟪a, w⟫ ⟪b, u⟫`.
+* `exteriorPower.inner_ιMulti_two`: `⟪a ∧ b, u ∧ w⟫ = ⟪a, u⟫ ⟪b, w⟫ - ⟪a, w⟫ ⟪b, u⟫`, and
+  `exteriorPower.orthonormal_ιMulti_two_of_orthonormal`: for an orthonormal triple `e, x, y`, the
+  wedges `e ∧ x` and `e ∧ y` are orthonormal.
+* `Orthonormal.orthonormal_ιMulti_two_add_one_add_two`: for an orthonormal triple `v`, the wedges
+  `v 1 ∧ v 2`, `v 2 ∧ v 0`, `v 0 ∧ v 1` are orthonormal.
 * `exteriorPower.ext_inner_ιMulti`: elements of `⋀ⁿ E` with the same inner products against all
   wedges of vectors are equal, and `exteriorPower.linearMap_ext_inner_ιMulti` is the
   corresponding extensionality principle for linear maps between exterior powers;
@@ -50,8 +67,11 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 * `OrthonormalBasis.sum_norm_sq_ιMulti_two`: contraction of squared wedge norms in a basis.
 * `OrthonormalBasis.inner_toBasis_exteriorPower`: the induced basis of `⋀ⁿ E` is orthonormal.
 * `OrthonormalBasis.ιMulti_two_eq_sum`, `OrthonormalBasis.inner_ιMulti_two_eq_sum`,
+  `OrthonormalBasis.eq_sum_inner_smul_ιMulti_two`,
   `OrthonormalBasis.norm_sq_eq_sum_sq_inner_ιMulti_two`: the coordinates of two-vectors in the
   basis `bᵢ ∧ bⱼ` induced by an orthonormal basis `b` of a four-dimensional space.
+* `OrthonormalBasis.wedgeTwoBasis`: the orthonormal basis `bᵢ ∧ bⱼ`, `i < j`, of `⋀² E` indexed
+  by `Fin 6`.
 * `exteriorPower.norm_ιMulti_sq`: `‖v₁ ∧ ⋯ ∧ vₙ‖ ^ 2` is the Gram determinant of `v`.
 * `exteriorPower.norm_ιMulti_le_prod_norm`: Hadamard's inequality `‖v₁ ∧ ⋯ ∧ vₙ‖ ≤ ∏ ‖vᵢ‖`, and
   `exteriorPower.norm_ιMulti_two_le`: its case `‖u ∧ w‖ ≤ ‖u‖ ‖w‖` of two vectors.
@@ -59,6 +79,11 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
   `exteriorPower.norm_ιMulti_update_smul`: the volume of a frame is invariant under linear
   isometries and reorderings, and scales by `|c|` when one vector is multiplied by `c`.
 * `Orthonormal.norm_ιMulti`: orthonormal frames, the empty frame among them, have volume one.
+* `Orthonormal.ιMulti_eq_ιMulti_iff`: two orthonormal frames have the same wedge exactly when they
+  differ by a special orthogonal change of frame.
+* `exteriorPower.exists_orthonormal_span_eq_and_ιMulti_eq_norm_smul`: every linearly independent
+  `n`-frame `v` admits an orthonormal `n`-frame `u` with the same span and
+  `v₁ ∧ ⋯ ∧ vₙ = ‖v₁ ∧ ⋯ ∧ vₙ‖ • (u₁ ∧ ⋯ ∧ uₙ)`.
 * `ContinuousLinearMap.inner_gradientWedge_ιMulti`: for a real-linear `P : E → ℂ`, the two-form
   `Im (conj (P u) P w)` is represented by `p₁ ∧ p₂`, `⟪p₁ ∧ p₂, u ∧ w⟫ = Im (conj (P u) P w)`,
   and `ContinuousLinearMap.norm_gradientWedge_le`: `‖p₁ ∧ p₂‖ ≤ ‖P‖ ^ 2`.
@@ -66,6 +91,10 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
   `F ∈ ⋀² V` by `⟪u, ·⟫` (`TauCeti.twoVectorContraction`) represents the two-form of `F`,
   `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`: on two-forms, wedging with `u` is adjoint to contracting with
   `⟪u, ·⟫`. So `u ↦ u ⌟ F` is skew-adjoint (`TauCeti.inner_twoVectorContraction_apply_left`).
+* `TauCeti.twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint`: up to sign,
+  `F ↦ (u ↦ u ⌟ F)` is the identification `LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint` of
+  `⋀² V` with the skew-adjoint endomorphisms for the inner product, so it is injective
+  (`TauCeti.twoVectorContraction_injective`).
 -/
 
 public section
@@ -104,6 +133,35 @@ theorem inner_ιMulti_two (a b u w : E) :
     ⟪ιMulti ℝ 2 ![a, b], ιMulti ℝ 2 ![u, w]⟫ = ⟪a, u⟫ * ⟪b, w⟫ - ⟪a, w⟫ * ⟪b, u⟫ := by
   simp [inner_ιMulti_ιMulti, Matrix.det_fin_two]
   ring
+
+/-- For an orthonormal triple `e, x, y`, the wedges `e ∧ x` and `e ∧ y` are orthonormal. -/
+theorem orthonormal_ιMulti_two_of_orthonormal {e x y : E} (h : Orthonormal ℝ ![e, x, y]) :
+    Orthonormal ℝ ![ιMulti ℝ 2 ![e, x], ιMulti ℝ 2 ![e, y]] := by
+  have he : ‖e‖ = 1 := h.left 0
+  have hx : ‖x‖ = 1 := h.left 1
+  have hy : ‖y‖ = 1 := h.left 2
+  have hex : ⟪e, x⟫ = 0 := h.right (by decide : (0 : Fin 3) ≠ 1)
+  have hey : ⟪e, y⟫ = 0 := h.right (by decide : (0 : Fin 3) ≠ 2)
+  have hxy : ⟪x, y⟫ = 0 := h.right (by decide : (1 : Fin 3) ≠ 2)
+  have hyx : ⟪y, x⟫ = 0 := h.right (by decide : (2 : Fin 3) ≠ 1)
+  rw [orthonormal_iff_ite]
+  intro i j
+  fin_cases i <;> fin_cases j <;>
+    simp only [Fin.zero_eta, Fin.mk_one, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one] <;>
+    rw [inner_ιMulti_two] <;>
+    simp [he, hx, hy, hex, hey, hxy, hyx]
+
+/-- For an orthonormal family `v` indexed by `Fin 3`, the wedges `v (k + 1) ∧ v (k + 2)` of
+cyclically consecutive vectors, namely `v 1 ∧ v 2`, `v 2 ∧ v 0` and `v 0 ∧ v 1`, are
+orthonormal. -/
+theorem _root_.Orthonormal.orthonormal_ιMulti_two_add_one_add_two {v : Fin 3 → E}
+    (hv : Orthonormal ℝ v) :
+    Orthonormal ℝ fun k : Fin 3 ↦ ιMulti ℝ 2 ![v (k + 1), v (k + 2)] := by
+  have hv' := orthonormal_iff_ite.mp hv
+  rw [orthonormal_iff_ite]
+  intro i j
+  rw [inner_ιMulti_two]
+  fin_cases i <;> fin_cases j <;> simp [hv', hv.1]
 
 /-- Elements of `⋀ⁿ E` are determined by their inner products with wedges of vectors, since these
 wedges span `⋀ⁿ E`. -/
@@ -223,6 +281,65 @@ theorem _root_.Orthonormal.norm_ιMulti {v : Fin n → E} (hv : Orthonormal ℝ 
   rw [← pow_left_inj₀ (norm_nonneg _) zero_le_one two_ne_zero, norm_ιMulti_sq,
     Matrix.gram_eq_one_iff_orthonormal.mpr hv, Matrix.det_one, one_pow]
 
+omit [FiniteDimensional ℝ E] in
+/-- Two orthonormal frames have the same wedge exactly when one is obtained from the other by a
+special orthogonal change of frame, `vⱼ = ∑ i, A j i • eᵢ` with `A ∈ SO(n)`: they span the same
+subspace and induce the same orientation on it. -/
+theorem _root_.Orthonormal.ιMulti_eq_ιMulti_iff {e v : Fin n → E} (he : Orthonormal ℝ e)
+    (hv : Orthonormal ℝ v) :
+    ιMulti ℝ n v = ιMulti ℝ n e ↔
+      ∃ A ∈ Matrix.specialOrthogonalGroup (Fin n) ℝ, v = fun j ↦ ∑ i, A j i • e i := by
+  classical
+  refine ⟨fun h ↦ ?_, ?_⟩
+  swap
+  · rintro ⟨A, hA, rfl⟩
+    rw [ιMulti_sum_smul, (Matrix.mem_specialOrthogonalGroup_iff.1 hA).2, one_smul]
+  -- Every `vⱼ` lies in the span of `e`, since `vⱼ ∧ e₁ ∧ ⋯ ∧ eₙ = vⱼ ∧ v₁ ∧ ⋯ ∧ vₙ = 0`.
+  have hmem (j : Fin n) : v j ∈ Submodule.span ℝ (Set.range e) := by
+    rw [TauCeti.exteriorPower.mem_span_range_iff_ι_mul_ιMulti_eq_zero he.linearIndependent, ← h]
+    exact (TauCeti.exteriorPower.mem_span_range_iff_ι_mul_ιMulti_eq_zero hv.linearIndependent
+      (v j)).1 (Submodule.subset_span ⟨j, rfl⟩)
+  choose c hc using fun j ↦ (Submodule.mem_span_range_iff_exists_fun ℝ).1 (hmem j)
+  let A : Matrix (Fin n) (Fin n) ℝ := Matrix.of c
+  have hvA : v = fun j ↦ ∑ i, A j i • e i := funext fun j ↦ (hc j).symm
+  have hAO : A ∈ Matrix.orthogonalGroup (Fin n) ℝ :=
+    (he.orthonormal_sum_smul_iff_mem_unitaryGroup A).1 (hvA ▸ hv)
+  refine ⟨A, Matrix.mem_specialOrthogonalGroup_iff.2 ⟨hAO, ?_⟩, hvA⟩
+  refine smul_left_injective ℝ ((ιMulti_ne_zero_iff e).2 he.linearIndependent) ?_
+  simp only [← ιMulti_sum_smul, ← hvA, h, one_smul]
+
+/-- Every linearly independent `n`-frame `v` in a finite-dimensional real inner product space
+admits an orthonormal `n`-frame `u` with the same span and positive orientation, scaling the
+exterior product by the parallelepiped volume: `v₁ ∧ ⋯ ∧ vₙ = ‖v₁ ∧ ⋯ ∧ vₙ‖ • (u₁ ∧ ⋯ ∧ uₙ)`. -/
+theorem exists_orthonormal_span_eq_and_ιMulti_eq_norm_smul {v : Fin n → E}
+    (hv : LinearIndependent ℝ v) :
+    ∃ u : Fin n → E, Orthonormal ℝ u ∧
+      Submodule.span ℝ (Set.range u) = Submodule.span ℝ (Set.range v) ∧
+      ιMulti ℝ n v = ‖ιMulti ℝ n v‖ • ιMulti ℝ n u := by
+  set W := Submodule.span ℝ (Set.range v)
+  let w : Fin n → W := fun i ↦ ⟨v i, Submodule.subset_span (Set.mem_range_self i)⟩
+  have hdim : Module.finrank ℝ W = Fintype.card (Fin n) := finrank_span_eq_card hv
+  let e : OrthonormalBasis (Fin n) ℝ W := InnerProductSpace.gramSchmidtOrthonormalBasis hdim w
+  let u : Fin n → E := W.subtype ∘ e
+  have hu_orth : Orthonormal ℝ u := by
+    simpa only [u, Submodule.coe_subtypeₗᵢ] using e.orthonormal.comp_linearIsometry W.subtypeₗᵢ
+  have hspan : Submodule.span ℝ (Set.range u) = W := by
+    dsimp only [u]
+    rw [Set.range_comp, ← e.coe_toBasis, ← Submodule.map_span, e.toBasis.span_eq,
+      Submodule.map_top, W.range_subtype]
+  have hdet_nonneg : 0 ≤ e.toBasis.det w := by
+    rw [InnerProductSpace.gramSchmidtOrthonormalBasis_det_eq_prod_norm]
+    exact Finset.prod_nonneg fun _ _ ↦ norm_nonneg _
+  have hdet_eq : e.toBasis.det w = ‖ιMulti ℝ n v‖ := by
+    have hgram : Matrix.gram ℝ w = Matrix.gram ℝ v := by ext i j; simp [Matrix.gram, w]
+    refine (pow_left_inj₀ hdet_nonneg (norm_nonneg _) two_ne_zero).mp ?_
+    rw [norm_ιMulti_sq, ← hgram]
+    simpa [Real.norm_eq_abs, sq_abs] using (e.det_gram_eq_norm_det_sq w).symm
+  refine ⟨u, hu_orth, hspan, ?_⟩
+  have h := congr($(AlternatingMap.eq_basis_det_smulRight e.toBasis
+    ((ιMulti ℝ n).compLinearMap W.subtype)) w)
+  simpa [w, u, hdet_eq, e.coe_toBasis, Function.comp_def] using h
+
 end exteriorPower
 
 namespace ContinuousLinearMap
@@ -318,6 +435,58 @@ theorem inner_ιMulti_two_eq_sum (b : OrthonormalBasis (Fin 4) ℝ E) (x : ⋀[�
   conv_lhs => rw [b.ιMulti_two_eq_sum u w]
   simp only [inner_add_right, real_inner_smul_right]
 
+/-- A two-vector is the sum of its coordinates times the basis vectors `bᵢ ∧ bⱼ`, `i < j`, of
+`⋀² E` induced by an orthonormal basis `b` indexed by `Fin 4`. -/
+theorem eq_sum_inner_smul_ιMulti_two (b : OrthonormalBasis (Fin 4) ℝ E) (x : ⋀[ℝ]^2 E) :
+    x = ⟪x, ιMulti ℝ 2 ![b 0, b 1]⟫ • ιMulti ℝ 2 ![b 0, b 1] +
+      ⟪x, ιMulti ℝ 2 ![b 0, b 2]⟫ • ιMulti ℝ 2 ![b 0, b 2] +
+      ⟪x, ιMulti ℝ 2 ![b 0, b 3]⟫ • ιMulti ℝ 2 ![b 0, b 3] +
+      ⟪x, ιMulti ℝ 2 ![b 1, b 2]⟫ • ιMulti ℝ 2 ![b 1, b 2] +
+      ⟪x, ιMulti ℝ 2 ![b 1, b 3]⟫ • ιMulti ℝ 2 ![b 1, b 3] +
+      ⟪x, ιMulti ℝ 2 ![b 2, b 3]⟫ • ιMulti ℝ 2 ![b 2, b 3] := by
+  refine ext_inner_ιMulti_two fun u w ↦ ?_
+  rw [b.inner_ιMulti_two_eq_sum x u w]
+  simp only [inner_add_left, real_inner_smul_left, inner_ιMulti_two, ← b.repr_apply_apply]
+  ring
+
+/-- The six wedges `bᵢ ∧ bⱼ`, `i < j`, of an orthonormal basis `b` indexed by `Fin 4`, in
+lexicographic order. -/
+private noncomputable def wedgeTwoFamily (b : OrthonormalBasis (Fin 4) ℝ E) : Fin 6 → ⋀[ℝ]^2 E :=
+  ![ιMulti ℝ 2 ![b 0, b 1], ιMulti ℝ 2 ![b 0, b 2], ιMulti ℝ 2 ![b 0, b 3],
+    ιMulti ℝ 2 ![b 1, b 2], ιMulti ℝ 2 ![b 1, b 3], ιMulti ℝ 2 ![b 2, b 3]]
+
+/-- The wedges `bᵢ ∧ bⱼ`, `i < j`, of an orthonormal basis `b` indexed by `Fin 4` are
+orthonormal. -/
+private theorem orthonormal_wedgeTwoFamily (b : OrthonormalBasis (Fin 4) ℝ E) :
+    Orthonormal ℝ b.wedgeTwoFamily := by
+  rw [orthonormal_iff_ite]
+  intro i j
+  fin_cases i <;> fin_cases j <;> simp [wedgeTwoFamily, inner_ιMulti_two, b.inner_eq_ite]
+
+/-- The wedges `bᵢ ∧ bⱼ`, `i < j`, of an orthonormal basis `b` indexed by `Fin 4` span `⋀² E`. -/
+private theorem top_le_span_wedgeTwoFamily (b : OrthonormalBasis (Fin 4) ℝ E) :
+    ⊤ ≤ Submodule.span ℝ (Set.range b.wedgeTwoFamily) := by
+  intro x _
+  -- Rewrite the expansion `eq_sum_inner_smul_ιMulti_two` as a sum over the family.
+  have hx : x = ∑ i, ⟪x, b.wedgeTwoFamily i⟫ • b.wedgeTwoFamily i := by
+    rw [Fin.sum_univ_six]
+    simpa only [wedgeTwoFamily, Matrix.cons_val] using b.eq_sum_inner_smul_ιMulti_two x
+  rw [hx]
+  exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
+
+/-- The orthonormal basis `bᵢ ∧ bⱼ`, `i < j`, of `⋀² E` induced by an orthonormal basis `b`
+indexed by `Fin 4`, indexed by `Fin 6` in lexicographic order. -/
+noncomputable def wedgeTwoBasis (b : OrthonormalBasis (Fin 4) ℝ E) :
+    OrthonormalBasis (Fin 6) ℝ (⋀[ℝ]^2 E) :=
+  OrthonormalBasis.mk b.orthonormal_wedgeTwoFamily b.top_le_span_wedgeTwoFamily
+
+/-- The vectors of `b.wedgeTwoBasis` are the wedges `bᵢ ∧ bⱼ`, `i < j`. -/
+@[simp]
+theorem coe_wedgeTwoBasis (b : OrthonormalBasis (Fin 4) ℝ E) :
+    ⇑b.wedgeTwoBasis = ![ιMulti ℝ 2 ![b 0, b 1], ιMulti ℝ 2 ![b 0, b 2], ιMulti ℝ 2 ![b 0, b 3],
+      ιMulti ℝ 2 ![b 1, b 2], ιMulti ℝ 2 ![b 1, b 3], ιMulti ℝ 2 ![b 2, b 3]] :=
+  OrthonormalBasis.coe_mk _ _
+
 /-- The squared norm of a two-vector is the sum of the squares of its coordinates in the
 basis `bᵢ ∧ bⱼ`, `i < j`, induced by an orthonormal basis `b` indexed by `Fin 4`. -/
 theorem norm_sq_eq_sum_sq_inner_ιMulti_two (b : OrthonormalBasis (Fin 4) ℝ E)
@@ -329,18 +498,7 @@ theorem norm_sq_eq_sum_sq_inner_ιMulti_two (b : OrthonormalBasis (Fin 4) ℝ E)
       ⟪x, ιMulti ℝ 2 ![b 1, b 3]⟫ ^ 2 +
       ⟪x, ιMulti ℝ 2 ![b 2, b 3]⟫ ^ 2 := by
   -- Expand the second factor of `⟪x, x⟫` in the basis `bᵢ ∧ bⱼ`.
-  have hx : x = ⟪x, ιMulti ℝ 2 ![b 0, b 1]⟫ • ιMulti ℝ 2 ![b 0, b 1] +
-      ⟪x, ιMulti ℝ 2 ![b 0, b 2]⟫ • ιMulti ℝ 2 ![b 0, b 2] +
-      ⟪x, ιMulti ℝ 2 ![b 0, b 3]⟫ • ιMulti ℝ 2 ![b 0, b 3] +
-      ⟪x, ιMulti ℝ 2 ![b 1, b 2]⟫ • ιMulti ℝ 2 ![b 1, b 2] +
-      ⟪x, ιMulti ℝ 2 ![b 1, b 3]⟫ • ιMulti ℝ 2 ![b 1, b 3] +
-      ⟪x, ιMulti ℝ 2 ![b 2, b 3]⟫ • ιMulti ℝ 2 ![b 2, b 3] := by
-    refine ext_inner_ιMulti_two fun u w ↦ ?_
-    rw [b.inner_ιMulti_two_eq_sum x u w]
-    simp only [inner_add_left, real_inner_smul_left, inner_ιMulti_two,
-      ← b.repr_apply_apply]
-    ring
-  have h := congrArg (fun y ↦ ⟪x, y⟫) hx
+  have h := congrArg (fun y ↦ ⟪x, y⟫) (b.eq_sum_inner_smul_ιMulti_two x)
   simp only [inner_add_right, real_inner_smul_right] at h
   rw [← real_inner_self_eq_norm_sq, h]
   ring
@@ -402,6 +560,39 @@ theorem twoVectorContraction_neg (F : ⋀[ℝ]^2 V) :
   ext u
   simp [twoVectorContraction_apply]
 
+omit [FiniteDimensional ℝ V] in
+/-- The contraction `(F, u) ↦ u ⌟ F` as a bilinear map, linear in the two-vector `F` as well as in
+`u`. -/
+noncomputable def twoVectorContractionₗ : ⋀[ℝ]^2 V →ₗ[ℝ] V →ₗ[ℝ] V where
+  toFun := twoVectorContraction
+  map_add' := twoVectorContraction_add
+  map_smul' := twoVectorContraction_smul
+
+omit [FiniteDimensional ℝ V] in
+@[simp]
+theorem twoVectorContractionₗ_apply (F : ⋀[ℝ]^2 V) :
+    twoVectorContractionₗ F = twoVectorContraction F :=
+  (rfl)
+
+omit [FiniteDimensional ℝ V] in
+/-- The contraction `u ⌟ F`, read back in the exterior algebra, is the contraction of `F` by the
+functional `⟪u, ·⟫`. -/
+@[simp]
+theorem ι_twoVectorContraction (F : ⋀[ℝ]^2 V) (u : V) :
+    ExteriorAlgebra.ι ℝ (twoVectorContraction F u) =
+      contractLeft (innerₗ V u) (F : ExteriorAlgebra ℝ V) :=
+  ExteriorAlgebra.ι_ιInv_of_mem_exteriorPower_one
+    (ExteriorAlgebra.contractLeft_mem_exteriorPower (innerₗ V u) (n := 1) F.property)
+
+omit [FiniteDimensional ℝ V] in
+/-- **The contraction of a simple two-vector**: `u ⌟ (a ∧ b) = ⟪u, a⟫ b - ⟪u, b⟫ a`. -/
+@[simp]
+theorem twoVectorContraction_ιMulti (w : Fin 2 → V) (u : V) :
+    twoVectorContraction (ιMulti ℝ 2 w) u = ⟪u, w 0⟫ • w 1 - ⟪u, w 1⟫ • w 0 := by
+  apply (ExteriorAlgebra.ι_leftInverse (R := ℝ) (M := V)).injective
+  rw [ι_twoVectorContraction, ιMulti_apply_coe, ExteriorAlgebra.contractLeft_ιMulti]
+  simp [Fin.sum_univ_two, Fin.removeNth, ExteriorAlgebra.ιMulti_apply, sub_eq_add_neg]
+
 /-- **The contraction represents the two-form of `F`**: `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`. Equivalently,
 on two-forms, wedging with `u` is adjoint to contracting with `⟪u, ·⟫`. -/
 @[simp]
@@ -409,30 +600,21 @@ theorem inner_twoVectorContraction_apply (F : ⋀[ℝ]^2 V) (u w : V) :
     ⟪twoVectorContraction F u, w⟫ = ⟪F, ιMulti ℝ 2 ![u, w]⟫ := by
   -- Both sides are linear in `F`, so it suffices to compare them on `p ∧ q`.
   have key : innerₗ (⋀[ℝ]^2 V) (ιMulti ℝ 2 ![u, w]) =
-      innerₗ V w ∘ₗ ExteriorAlgebra.ιInv ∘ₗ contractLeft (Q := (0 : QuadraticForm ℝ V))
-        (innerₗ V u) ∘ₗ (⋀[ℝ]^2 V).subtype := by
-    refine exteriorPower.linearMap_ext ?_
-    ext v
-    simp [inner_ιMulti_ιMulti, Matrix.det_fin_two, ExteriorAlgebra.ιMulti_apply,
-      contractLeft_ι_mul, ← Algebra.commutes, ← Algebra.smul_def, ExteriorAlgebra.ι_leftInverse _,
-      inner_sub_right, real_inner_smul_right, Matrix.vecTail]
-    ring
-  rw [real_inner_comm w, real_inner_comm _ F, twoVectorContraction_apply]
+      innerₗ V w ∘ₗ LinearMap.applyₗ (R := ℝ) u ∘ₗ twoVectorContractionₗ :=
+    exteriorPower.linearMap_ext_ιMulti_two fun p q ↦ by
+      simp [inner_ιMulti_ιMulti, Matrix.det_fin_two, inner_sub_right, real_inner_smul_right]
+      ring
+  rw [real_inner_comm w, real_inner_comm _ F]
   simpa using (LinearMap.congr_fun key F).symm
 
 omit [FiniteDimensional ℝ V] in
 /-- The contraction by a two-vector is orthogonal to its argument, `⟪u ⌟ F, u⟫ = 0`. -/
 theorem inner_twoVectorContraction_apply_self (F : ⋀[ℝ]^2 V) (u : V) :
     ⟪twoVectorContraction F u, u⟫ = 0 := by
-  -- The contraction `u ⌟ F` is a one-form, the image of the vector `a`, and contracting by `u`
-  -- twice gives zero.
-  set a := twoVectorContraction F u with ha
-  have hιa : ExteriorAlgebra.ι ℝ a = contractLeft (innerₗ V u) (F : ExteriorAlgebra ℝ V) := by
-    rw [ha, twoVectorContraction_apply]
-    exact ExteriorAlgebra.ι_ιInv_of_mem_exteriorPower_one
-      (ExteriorAlgebra.contractLeft_mem_exteriorPower (innerₗ V u) (n := 1) F.2)
+  -- The contraction `u ⌟ F` is a one-form, the image of the vector `u ⌟ F`, and contracting by
+  -- `u` twice gives zero.
   have h0 := contractLeft_contractLeft (innerₗ V u) (F : ExteriorAlgebra ℝ V)
-  rw [← hιa, contractLeft_ι, ExteriorAlgebra.algebraMap_eq_zero_iff] at h0
+  rw [← ι_twoVectorContraction, contractLeft_ι, ExteriorAlgebra.algebraMap_eq_zero_iff] at h0
   rw [real_inner_comm]
   exact h0
 
@@ -446,6 +628,87 @@ theorem inner_twoVectorContraction_apply_left (F : ⋀[ℝ]^2 V) (u w : V) :
   rw [real_inner_comm _ u]
   linarith
 
+/-- The skew endomorphism `u ↦ u ⌟ F` is the negative of the image of `F` under the
+identification `LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint` of `⋀² V` with the skew-adjoint
+endomorphisms for the inner product, whose sign is chosen to match the Clifford bivector action. -/
+theorem twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint (F : ⋀[ℝ]^2 V) :
+    twoVectorContraction F =
+      -(LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint (innerₗ V) bijective_innerₗ
+        isSymm_innerₗ F : Module.End ℝ V) := by
+  let : LieRing (Module.End ℝ V) := LieRing.ofAssociativeRing
+  let : LieAlgebra ℝ (Module.End ℝ V) := LieAlgebra.ofAssociativeAlgebra
+  -- Both sides are linear in `F`, so it suffices to compare them on pure wedges.
+  have key : (twoVectorContractionₗ : ⋀[ℝ]^2 V →ₗ[ℝ] Module.End ℝ V) =
+      -((skewAdjointLieSubalgebra (innerₗ V)).toSubmodule.subtype ∘ₗ
+        (LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint (innerₗ V) bijective_innerₗ
+          isSymm_innerₗ).toLinearMap) := by
+    refine linearMap_ext_ιMulti_two fun a b ↦ ?_
+    ext u
+    simp [real_inner_comm u]
+  exact LinearMap.congr_fun key F
+
+/-- A two-vector is determined by its skew endomorphism `u ↦ u ⌟ X`. -/
+theorem twoVectorContraction_injective :
+    Function.Injective (twoVectorContraction : ⋀[ℝ]^2 V → Module.End ℝ V) := fun X Y h ↦ by
+  refine (LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint (innerₗ V) bijective_innerₗ
+    isSymm_innerₗ).injective (Subtype.ext ?_)
+  rw [← neg_inj, ← twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint,
+    ← twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint, h]
+
 end TwoVectorContraction
+
+section TwoVectorAlternatingSum
+
+/-- The **alternating sum** `θ(a)(b, c) - θ(b)(a, c) + θ(c)(a, b)` of a map `θ` from `V` to
+two-vectors, each two-vector `η` read as the two-form `(u, w) ↦ ⟪η, u ∧ w⟫`. When `θ v = ∇_v ω`
+is the covariant derivative of a two-form `ω` for a torsion-free connection, it is the exterior
+derivative `dω(a, b, c)`. -/
+noncomputable def twoVectorAlternatingSum (θ : V → ⋀[ℝ]^2 V) (a b c : V) : ℝ :=
+  ⟪θ a, ιMulti ℝ 2 ![b, c]⟫ - ⟪θ b, ιMulti ℝ 2 ![a, c]⟫ + ⟪θ c, ιMulti ℝ 2 ![a, b]⟫
+
+theorem twoVectorAlternatingSum_def (θ : V → ⋀[ℝ]^2 V) (a b c : V) :
+    twoVectorAlternatingSum θ a b c =
+      ⟪θ a, ιMulti ℝ 2 ![b, c]⟫ - ⟪θ b, ιMulti ℝ 2 ![a, c]⟫ + ⟪θ c, ιMulti ℝ 2 ![a, b]⟫ :=
+  (rfl)
+
+@[simp]
+theorem twoVectorAlternatingSum_zero (a b c : V) :
+    twoVectorAlternatingSum (0 : V → ⋀[ℝ]^2 V) a b c = 0 := by
+  simp [twoVectorAlternatingSum_def]
+
+@[simp]
+theorem twoVectorAlternatingSum_add (θ η : V → ⋀[ℝ]^2 V) (a b c : V) :
+    twoVectorAlternatingSum (θ + η) a b c =
+      twoVectorAlternatingSum θ a b c + twoVectorAlternatingSum η a b c := by
+  simp only [twoVectorAlternatingSum_def, Pi.add_apply, inner_add_left]
+  ring
+
+@[simp]
+theorem twoVectorAlternatingSum_smul (r : ℝ) (θ : V → ⋀[ℝ]^2 V) (a b c : V) :
+    twoVectorAlternatingSum (r • θ) a b c = r * twoVectorAlternatingSum θ a b c := by
+  simp only [twoVectorAlternatingSum_def, Pi.smul_apply, real_inner_smul_left]
+  ring
+
+@[simp]
+theorem twoVectorAlternatingSum_neg (θ : V → ⋀[ℝ]^2 V) (a b c : V) :
+    twoVectorAlternatingSum (-θ) a b c = -twoVectorAlternatingSum θ a b c := by
+  simp only [twoVectorAlternatingSum_def, Pi.neg_apply, inner_neg_left]
+  ring
+
+/-- The alternating sum changes sign when its first two arguments are swapped. -/
+theorem twoVectorAlternatingSum_swap₁₂ (θ : V → ⋀[ℝ]^2 V) (a b c : V) :
+    twoVectorAlternatingSum θ b a c = -twoVectorAlternatingSum θ a b c := by
+  rw [twoVectorAlternatingSum_def, twoVectorAlternatingSum_def, ιMulti_two_swap a b,
+    inner_neg_right]
+  ring
+
+/-- The alternating sum changes sign when its last two arguments are swapped. -/
+theorem twoVectorAlternatingSum_swap₂₃ (θ : V → ⋀[ℝ]^2 V) (a b c : V) :
+    twoVectorAlternatingSum θ a c b = -twoVectorAlternatingSum θ a b c := by
+  rw [twoVectorAlternatingSum_def, twoVectorAlternatingSum_def, ιMulti_two_swap b c,
+    inner_neg_right]
+  ring
+
+end TwoVectorAlternatingSum
 
 end TauCeti

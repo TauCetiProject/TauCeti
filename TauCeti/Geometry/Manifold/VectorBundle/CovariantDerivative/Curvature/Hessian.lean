@@ -93,7 +93,7 @@ theorem mvfderiv_hessian_sub_swap {φ : M → ℝ} (hφ : ContMDiff I 𝓘(ℝ) 
   -- By symmetry of the Hessian, `Hess φ(a, b) = ⟪∇_b grad φ, a⟫`.
   have hsym (y : M) (a b : TangentSpace I y) :
       hessian I φ y a b = inner ℝ (cov (mgradient I φ) y b) a := by
-    rw [hessian_symm y hφ2.contMDiffAt, hessian_def]
+    rw [hessian_symm y hφ2.contMDiffAt, I.hessian_eq_inner_leviCivitaConnection_mgradient]
   have hfun (W : Π x : M, TangentSpace I x) : (fun y ↦ hessian I φ y (X y) (W y)) =
       fun y ↦ inner ℝ (cov (mgradient I φ) y (W y)) (X y) := funext fun y ↦ hsym y _ _
   have hcovG {W : Π x : M, TangentSpace I x} (hW : CMDiff ∞ (T% W)) :
@@ -191,7 +191,7 @@ theorem inner_secondCovariantDerivative_mgradient_eq_mvfderiv_hessian {φ : M �
   have hd := (CovariantDerivative.isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
     (FiberBundle.extend E u) hGV hW
   simp only [FiberBundle.extend_apply_self] at hd
-  simp only [hessian_def]
+  simp only [I.hessian_eq_inner_leviCivitaConnection_mgradient]
   rw [hd, cov.secondCovariantDerivative_apply cov hG x hV]
   simp only [cov, inner_sub_left]
   ring

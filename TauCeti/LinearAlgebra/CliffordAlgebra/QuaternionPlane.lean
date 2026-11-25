@@ -79,7 +79,7 @@ variable (Q : QuadraticForm R M) (a b : Rˣ)
 private abbrev planeScale : R := -(↑a⁻¹ * ↑b⁻¹)
 
 private theorem planeScale_mul : planeScale a b * -((a : R) * b) = 1 := by
-  rw [planeScale, neg_mul_neg, mul_mul_mul_comm, Units.inv_mul, Units.inv_mul, one_mul]
+  simp [planeScale, mul_mul_mul_comm]
 
 private abbrev PlaneForm : QuadraticForm R ((R × R) × M) :=
   (CliffordAlgebraQuaternion.Q (a : R) b).prod Q
@@ -115,21 +115,21 @@ private theorem planeGenerator_sq (x : (R × R) × M) :
   set A : PlaneTensor Q a b := pureQuaternion a b x.1 ⊗ₜ 1 with hA
   set B : PlaneTensor Q a b := (⟨0, 0, 0, 1⟩ : ℍ[R,(a : R),(b : R)]) ⊗ₜ ι _ x.2 with hB
   have hAA : A * A = algebraMap R _ (CliffordAlgebraQuaternion.Q (a : R) b x.1) := by
-    rw [hA, Algebra.TensorProduct.tmul_mul_tmul, pureQuaternion,
-      ← CliffordAlgebraQuaternion.toQuaternion_ι, ← map_mul, ι_sq_scalar, AlgHom.commutes,
-      one_mul, Algebra.TensorProduct.algebraMap_apply]
+    rw [hA, Algebra.TensorProduct.tmul_mul_tmul, mul_one, Algebra.TensorProduct.algebraMap_apply]
+    -- `pureQuaternion a b v` is the image of the Clifford generator `ι v`, whose square is `Q v`.
+    rw [pureQuaternion, ← CliffordAlgebraQuaternion.toQuaternion_ι, ← map_mul, ι_sq_scalar,
+      AlgHom.commutes]
   have hBB : B * B = algebraMap R _ (Q x.2) := by
-    rw [hB, Algebra.TensorProduct.tmul_mul_tmul, k_mul_k, ι_sq_scalar,
-      Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, TensorProduct.smul_tmul_smul,
-      ← Algebra.TensorProduct.one_def, ← Algebra.algebraMap_eq_smul_one, smul_apply, smul_eq_mul,
-      ← mul_assoc, mul_comm (-((a : R) * b)), planeScale_mul, one_mul]
+    have hs : -((a : R) * b) * (planeScale a b * Q x.2) = Q x.2 := by
+      rw [mul_left_comm, ← mul_assoc, planeScale_mul, one_mul]
+    simp only [hB, Algebra.TensorProduct.tmul_mul_tmul, k_mul_k, ι_sq_scalar, smul_apply,
+      smul_eq_mul, Algebra.algebraMap_eq_smul_one, TensorProduct.smul_tmul_smul, hs,
+      ← Algebra.TensorProduct.one_def]
   have hAB : A * B + B * A = 0 := by
     rw [hA, hB, Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul,
       one_mul, mul_one, ← TensorProduct.add_tmul, add_comm, k_mul_pureQuaternion_add,
       TensorProduct.zero_tmul]
-  have hexpand : (A + B) * (A + B) = A * A + (A * B + B * A) + B * B := by
-    simp only [add_mul, mul_add]
-    abel
+  have hexpand : (A + B) * (A + B) = A * A + (A * B + B * A) + B * B := by noncomm_ring
   rw [hexpand, hAA, hBB, hAB, add_zero, ← map_add, QuadraticMap.prod_apply]
 
 private noncomputable def planeToTensor :
@@ -152,9 +152,8 @@ private noncomputable def quaternionInclusion :
 private theorem quaternionInclusion_pureQuaternion (v : R × R) :
     quaternionInclusion Q a b (pureQuaternion a b v) = ι _ (v, 0) := by
   rw [pureQuaternion, ← CliffordAlgebraQuaternion.toQuaternion_ι, quaternionInclusion,
-    AlgHom.comp_apply, CliffordAlgebraQuaternion.ofQuaternion_toQuaternion, map_apply_ι]
-  -- Mathlib states no apply lemma for `QuadraticMap.Isometry.inl`; it is `LinearMap.inl`.
-  rfl
+    AlgHom.comp_apply, CliffordAlgebraQuaternion.ofQuaternion_toQuaternion, map_apply_ι,
+    Isometry.inl_apply]
 
 /-- The volume element `e₁e₂` of the plane, the image of the quaternion unit `k`. -/
 private noncomputable abbrev planeVolume : CliffordAlgebra (PlaneForm Q a b) :=
@@ -180,7 +179,7 @@ private theorem commute_ι_inr_planeVolume (m : M) :
     (Isometry.inr (CliffordAlgebraQuaternion.Q (a : R) b) Q)
     (fun x y => IsOrtho.inl_inr x y) _ (ι Q m)
     (hk ▸ ι_mul_ι_mem_evenOdd_zero _ _ _) (ι_mem_evenOdd_one Q m)
-  rw [map_apply_ι] at h
+  rw [map_apply_ι, Isometry.inr_apply] at h
   exact h.symm
 
 /-- The generators of `C(-a⁻¹b⁻¹ · Q)` inside `C(⟨a, b⟩ ⊥ Q)`: `m ↦ -a⁻¹b⁻¹ · ι m · ω`. -/
@@ -201,10 +200,8 @@ private theorem baseGenerator_sq (m : M) :
       planeVolume_mul_self, ι_sq_scalar, ← map_mul, QuadraticMap.prod_apply, map_zero, zero_add]
   rw [baseGenerator_apply, smul_mul_smul_comm, hX, Algebra.smul_def, ← map_mul, smul_apply,
     smul_eq_mul]
-  congr 1
-  calc
-    _ = (planeScale a b * Q m) * (planeScale a b * -((a : R) * b)) := by ring
-    _ = _ := by rw [planeScale_mul, mul_one]
+  -- `s² · (Q m · -ab) = (s · Q m) · (s · -ab)` with `s · -ab = 1`.
+  rw [mul_mul_mul_comm, planeScale_mul, mul_one]
 
 private noncomputable def baseInclusion :
     CliffordAlgebra (planeScale a b • Q) →ₐ[R] CliffordAlgebra (PlaneForm Q a b) :=
@@ -236,13 +233,10 @@ private theorem commute_quaternionInclusion_baseInclusion (x : ℍ[R,(a : R),(b 
     rw [AlgHom.commutes]
     exact Algebra.commutes r _
   | ι v =>
-    have hv : map (Isometry.inl (CliffordAlgebraQuaternion.Q (a : R) b) Q) (ι _ v) =
-        ι (PlaneForm Q a b) (v, 0) :=
-      -- As above, `QuadraticMap.Isometry.inl` unfolds to `LinearMap.inl`.
-      map_apply_ι _ v
     have hvm : ι (PlaneForm Q a b) (v, 0) * ι _ (0, m) = -(ι _ (0, m) * ι _ (v, 0)) :=
       ι_mul_ι_comm_of_isOrtho (IsOrtho.inl_inr v m)
-    rw [hv, Commute, SemiconjBy, ← mul_assoc, hvm, mul_assoc, planeVolume_anticomm]
+    rw [map_apply_ι, Isometry.inl_apply, Commute, SemiconjBy, ← mul_assoc, hvm, mul_assoc,
+      planeVolume_anticomm]
     simp only [neg_mul, mul_neg, mul_assoc]
   | mul z₁ z₂ h₁ h₂ => simpa only [map_mul] using h₁.mul_left h₂
   | add z₁ z₂ h₁ h₂ => simpa only [map_add] using h₁.add_left h₂
@@ -256,9 +250,9 @@ private noncomputable def tensorToPlane :
 
 private theorem planeVolume_mul_baseInclusion_ι (m : M) :
     planeVolume Q a b * baseInclusion Q a b (ι _ m) = ι _ (0, m) := by
-  rw [baseInclusion_ι, mul_smul_comm, ← mul_assoc, ← (commute_ι_inr_planeVolume Q a b m).eq,
-    mul_assoc, planeVolume_mul_self, ← Algebra.commutes, ← Algebra.smul_def, smul_smul,
-    planeScale_mul, one_smul]
+  rw [baseInclusion_ι, mul_smul_comm, (commute_ι_inr_planeVolume Q a b m).symm.left_comm,
+    planeVolume_mul_self, ← Algebra.commutes, ← Algebra.smul_def, smul_smul, planeScale_mul,
+    one_smul]
 
 private theorem tensorToPlane_comp_planeToTensor :
     (tensorToPlane Q a b).comp (planeToTensor Q a b) = AlgHom.id R _ := by
@@ -287,12 +281,13 @@ private theorem planeToTensor_comp_baseInclusion :
     (planeToTensor Q a b).comp (baseInclusion Q a b) = Algebra.TensorProduct.includeRight := by
   apply CliffordAlgebra.hom_ext
   ext m
+  have h0 : pureQuaternion a b (0 : R × R) = 0 := by ext <;> simp
   simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, AlgHom.comp_apply,
     baseInclusion_ι, map_smul, map_mul, planeToTensor_ι, planeToTensor_planeVolume,
-    Algebra.TensorProduct.includeRight_apply, pureQuaternion, Prod.fst_zero, Prod.snd_zero]
-  have h0 : (⟨0, 0, 0, 0⟩ : ℍ[R,(a : R),(b : R)]) = 0 := by ext <;> rfl
-  rw [h0, TensorProduct.zero_tmul, zero_add, Algebra.TensorProduct.tmul_mul_tmul, mul_one, k_mul_k,
-    Algebra.algebraMap_eq_smul_one, TensorProduct.smul_tmul, ← TensorProduct.tmul_smul,
+    Algebra.TensorProduct.includeRight_apply, h0, TensorProduct.zero_tmul, zero_add,
+    Algebra.TensorProduct.tmul_mul_tmul, mul_one, k_mul_k]
+  -- Move the scalar `-ab` across the tensor product and cancel it against `-a⁻¹b⁻¹`.
+  rw [Algebra.algebraMap_eq_smul_one, TensorProduct.smul_tmul, ← TensorProduct.tmul_smul,
     smul_smul, planeScale_mul, one_smul]
 
 private theorem planeToTensor_comp_tensorToPlane :
@@ -331,18 +326,14 @@ theorem quaternionPlaneEquivTensor_symm_tmul_one (x : ℍ[R,(a : R),(b : R)]) :
     (quaternionPlaneEquivTensor Q a b).symm (x ⊗ₜ 1) =
       map (Isometry.inl (CliffordAlgebraQuaternion.Q (a : R) b) Q)
         (CliffordAlgebraQuaternion.ofQuaternion x) := by
-  rw [quaternionPlaneEquivTensor, AlgEquiv.ofAlgHom_symm, AlgEquiv.ofAlgHom_apply, tensorToPlane,
-    Algebra.TensorProduct.lift_tmul, map_one, mul_one, quaternionInclusion, AlgHom.comp_apply]
+  simp [quaternionPlaneEquivTensor, tensorToPlane, quaternionInclusion]
 
 /-- The inverse of `quaternionPlaneEquivTensor` sends `1 ⊗ ι m` to `-a⁻¹b⁻¹ · ι m · e₁e₂`. -/
 @[simp]
 theorem quaternionPlaneEquivTensor_symm_one_tmul (m : M) :
     (quaternionPlaneEquivTensor Q a b).symm (1 ⊗ₜ ι _ m) =
       -(↑a⁻¹ * ↑b⁻¹ : R) • (ι _ (0, m) * ι _ ((1, 0), 0) * ι _ ((0, 1), 0)) := by
-  rw [quaternionPlaneEquivTensor, AlgEquiv.ofAlgHom_symm, AlgEquiv.ofAlgHom_apply, tensorToPlane,
-    Algebra.TensorProduct.lift_tmul, map_one, one_mul, baseInclusion_ι, mul_assoc]
-  congr 2
-  rw [planeVolume, quaternionInclusion, AlgHom.comp_apply]
-  simp
+  simp [quaternionPlaneEquivTensor, tensorToPlane, baseInclusion_ι, planeVolume,
+    quaternionInclusion, mul_assoc]
 
 end CliffordAlgebra

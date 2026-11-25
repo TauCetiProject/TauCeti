@@ -48,7 +48,7 @@ variable [Semifield k]
 noncomputable def characterPairing :
     LinearMap.BilinForm k (ClassFunction k G) :=
   LinearMap.mk₂ k
-    (fun f₁ f₂ => (Nat.card G : k)⁻¹ * ∑ g : G, f₁.1 g * f₂.1 g⁻¹)
+    (fun f₁ f₂ => (Nat.card G : k)⁻¹ * ∑ g : G, f₁.val g * f₂.val g⁻¹)
     (by
       intro f₁ f₂ f₃
       simp [add_mul, Finset.sum_add_distrib, mul_add])
@@ -67,7 +67,7 @@ noncomputable def characterPairing :
 /-- The defining formula for the character pairing. -/
 theorem characterPairing_apply (f₁ f₂ : ClassFunction k G) :
     characterPairing f₁ f₂ =
-      (Nat.card G : k)⁻¹ * ∑ g : G, f₁.1 g * f₂.1 g⁻¹ :=
+      (Nat.card G : k)⁻¹ * ∑ g : G, f₁.val g * f₂.val g⁻¹ :=
   (rfl)
 
 /-- The character pairing is symmetric. -/
@@ -99,12 +99,24 @@ theorem characterPairing_invMap_invMap (f₁ f₂ : ClassFunction k G) :
   congr 1
   exact Fintype.sum_equiv (Equiv.inv G) _ _ fun g => by simp
 
+/-- **The character pairing is invariant under a group isomorphism**: pulling two class functions
+back along an isomorphism `e : H ≃* G` does not change their pairing. For an automorphism of `G`,
+this says that automorphisms act on class functions by isometries of the pairing. -/
+@[simp]
+theorem characterPairing_comap_mulEquiv {H : Type*} [Group H] [Fintype H] (e : H ≃* G)
+    (f₁ f₂ : ClassFunction k G) :
+    characterPairing (comap (e : H →* G) f₁) (comap (e : H →* G) f₂) =
+      characterPairing f₁ f₂ := by
+  rw [characterPairing_apply, characterPairing_apply, Nat.card_congr e.toEquiv]
+  congr 1
+  exact Fintype.sum_equiv e.toEquiv _ _ fun h => by simp
+
 /-- **Pairing against a class indicator evaluates a class function.** Pairing `f` with the indicator
 of the class of `x⁻¹` returns the value of `f` at `x`, weighted by the size of the class of `x` and
 the normalization `|G|⁻¹`. -/
 theorem characterPairing_classIndicator_inv (f : ClassFunction k G) (x : G) :
     characterPairing f (classIndicator x⁻¹) =
-      (Nat.card G : k)⁻¹ * (Nat.card (ConjClasses.mk x).carrier * f.1 x) := by
+      (Nat.card G : k)⁻¹ * (Nat.card (ConjClasses.mk x).carrier * f.val x) := by
   classical
   let : Fintype (ConjClasses.mk x).carrier := Fintype.ofFinite _
   have hcarrier : (ConjClasses.mk x).carrier = {g | IsConj g x} := by
@@ -117,11 +129,11 @@ theorem characterPairing_classIndicator_inv (f : ClassFunction k G) (x : G) :
   rw [characterPairing_apply]
   congr 1
   calc
-    _ = ∑ g : G, if IsConj g x then f.1 g else 0 := by
+    _ = ∑ g : G, if IsConj g x then f.val g else 0 := by
       simp [classIndicator_apply, hconj, mul_ite]
-    _ = ∑ g ∈ Finset.univ.filter (fun g => IsConj g x), f.1 g := by
+    _ = ∑ g ∈ Finset.univ.filter (fun g => IsConj g x), f.val g := by
       rw [Finset.sum_filter]
-    _ = ∑ _g ∈ Finset.univ.filter (fun g => IsConj g x), f.1 x := by
+    _ = ∑ _g ∈ Finset.univ.filter (fun g => IsConj g x), f.val x := by
       apply Finset.sum_congr rfl
       intro g hg
       exact ClassFunction.eq_of_isConj f (by simpa using Finset.mem_filter.mp hg |>.2)

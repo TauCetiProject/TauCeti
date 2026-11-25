@@ -94,9 +94,10 @@ theorem wordLength_le_iff {w : T.WeylGroup} {n : ℕ} :
       (T.wordProd_eq_prod l).symm⟩
     simp only [List.mem_map, forall_exists_index, and_imp]
     rintro _ x _ rfl
-    exact x.1.2
+    exact x.1.property
   · rintro ⟨l, hl, hlen, rfl⟩
-    refine ⟨l.attach.map fun x ↦ ((⟨x.1, hl x.1 x.2⟩ : T.simple), true), by simpa using hlen, ?_⟩
+    refine ⟨l.attach.map fun x ↦ ((⟨x.val, hl x.val x.property⟩ : T.simple), true),
+        by simpa using hlen, ?_⟩
     rw [T.wordProd_eq_prod, List.map_map]
     exact congrArg List.prod (List.attach_map_subtype_val l)
 

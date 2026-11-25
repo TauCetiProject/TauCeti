@@ -82,8 +82,9 @@ applied to `a` and `b`. -/
 theorem normalHessian_normalClass_trivializationAt_symm [I.Boundaryless] [IsManifold I 2 M]
     (h : i.IsCriticalSubmanifold f) {s₀ s : S} (hs : i s ∈ (chartAt H (i s₀)).source) (a b : E) :
     h.normalHessian hn s
-        (i.normalClass s hn ((trivializationAt E (TangentSpace I) (i s₀)).symm (i s) a))
-        (i.normalClass s hn ((trivializationAt E (TangentSpace I) (i s₀)).symm (i s) b)) =
+        (i.isImmersion.normalClass s hn ((trivializationAt E (TangentSpace I) (i s₀)).symm (i s) a))
+        (i.isImmersion.normalClass s hn
+            ((trivializationAt E (TangentSpace I) (i s₀)).symm (i s) b)) =
       fderiv ℝ (fderiv ℝ (f ∘ (extChartAt I (i s₀)).symm)) (extChartAt I (i s₀) (i s)) a b := by
   rw [normalHessian_normalClass, criticalHessian_trivializationAt_symm_apply hs (h.contMDiffAt s)
     (TauCeti.mem_criticalPoints.mp (h.mem_criticalPoints s))]
@@ -149,7 +150,9 @@ theorem contMDiff_normalHessian_apply_self {k : ℕ∞ω} [IsManifold I (k + 2) 
     haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
     letI := i.normalSpaceFiberBundle hn hdim
     ContMDiff (J.prod 𝓘(ℝ, P)) 𝓘(ℝ) k
-      fun x : TotalSpace P (fun s ↦ i.NormalSpace s hn) ↦ h.normalHessian hn x.proj x.2 x.2 := by
+      fun x : TotalSpace P (fun s ↦ i.isImmersion.NormalSpace s hn) ↦
+          h.normalHessian hn x.proj x.snd x.snd
+          := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
   have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -161,7 +164,7 @@ theorem contMDiff_normalHessian_apply_self {k : ℕ∞ω} [IsManifold I (k + 2) 
   obtain ⟨Q, hQ, hQe⟩ := h.exists_contMDiffOn_normalHessian_normalSpaceTrivialization hn
     (le_self_add.trans hk) hf hdim x₀.proj
   rw [← i.normalSpaceFiberBundle_trivializationAt hn hdim] at hQ hQe
-  set e := trivializationAt P (fun s ↦ i.NormalSpace s hn) x₀.proj
+  set e := trivializationAt P (fun s ↦ i.isImmersion.NormalSpace s hn) x₀.proj
   have hx₀ : x₀.proj ∈ e.baseSet := mem_baseSet_trivializationAt P _ x₀.proj
   have hQx : ContMDiffAt (J.prod 𝓘(ℝ, P)) 𝓘(ℝ, P →L[ℝ] P →L[ℝ] ℝ) k (fun x ↦ Q x.proj) x₀ :=
     (hQ.contMDiffAt (e.open_baseSet.mem_nhds hx₀)).comp x₀ (Bundle.contMDiff_proj _).contMDiffAt

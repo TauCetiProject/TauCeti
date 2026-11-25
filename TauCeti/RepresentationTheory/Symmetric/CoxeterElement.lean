@@ -9,6 +9,8 @@ public import Mathlib.RingTheory.RootsOfUnity.Complex
 public import TauCeti.GroupTheory.Perm.Coxeter
 public import TauCeti.LinearAlgebra.Charpoly.Permutation
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Standard
+import TauCeti.RingTheory.Polynomial.Cyclotomic.Roots
+import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
 
 /-!
 # Eigenvalues of the Coxeter elements of the symmetric group
@@ -79,9 +81,9 @@ theorem charpoly_ofMulAction_wordProd_permCoxeterSystem (R : Type*) [CommRing R]
       (permCoxeterSystem n).wordProd ω :=
     Equiv.ext fun _ ↦ rfl
   rw [Representation.charpoly_ofMulAction, hperm,
-    Equiv.Perm.fullCycleType_of_forall_sameCycle _
-      (sameCycle_wordProd_permCoxeterSystem hω ⟨0, Nat.pos_of_ne_zero hn⟩),
-    Multiset.map_singleton, Multiset.prod_singleton, Fintype.card_fin]
+    (Equiv.Perm.fullCycleType_eq_singleton_iff _).mpr
+      ⟨⟨_, sameCycle_wordProd_permCoxeterSystem hω ⟨0, Nat.pos_of_ne_zero hn⟩⟩, Fintype.card_fin n⟩,
+    Multiset.map_singleton, Multiset.prod_singleton]
 
 /-- **A Coxeter element of `S_n` on the reflection representation.** A product of all the
 adjacent transpositions, each taken once in any order, acts on the trace-zero hyperplane of
@@ -112,25 +114,11 @@ theorem roots_charpoly_standardRepresentation_wordProd_permCoxeterSystem_of_isPr
     (hω : ω.Perm (List.finRange (n - 1))) :
     (standardRepresentation K (Fin n) ((permCoxeterSystem n).wordProd ω)).charpoly.roots =
       (Multiset.range (n - 1)).map fun e ↦ ζ ^ (e + 1) := by
-  obtain rfl | hn := eq_or_ne n 0
+  rcases n with _ | m
   · simp [roots_charpoly_standardRepresentation_fin_zero]
-  set p := (standardRepresentation K (Fin n) ((permCoxeterSystem n).wordProd ω)).charpoly
-  have : NeZero n := ⟨hn⟩
-  -- The roots of `p * (X - 1) = X ^ n - 1` are the `n`-th roots of unity `ζ ^ k`, `k < n`, and the
-  -- root `1 = ζ ^ 0` comes from the factor `X - 1`.
-  have hp : p * (X - C 1) = X ^ n - C 1 := by
-    rw [C_1, ← charpoly_ofMulAction_wordProd_permCoxeterSystem K hω hn,
-      ← charpoly_augmentationSubrepresentation_mul_X_sub_one,
-      toRepresentation_augmentationSubrepresentation]
-  have hroots : p.roots + {1} = (Multiset.range n).map fun k ↦ ζ ^ k * 1 := by
-    rw [← roots_X_sub_C, ← roots_mul (hp ▸ X_pow_sub_C_ne_zero (Nat.pos_of_ne_zero hn) 1), hp,
-      ← nthRoots, hζ.nthRoots_eq (one_pow n)]
-  -- Split off the exponent `0` of the root `1`: `range n = {0} + (range (n - 1)).map (1 + ·)`.
-  obtain ⟨m, rfl⟩ : ∃ m, n = 1 + m := ⟨n - 1, by omega⟩
-  rw [Multiset.range_add, show Multiset.range 1 = {0} from rfl, Multiset.map_add,
-    Multiset.map_singleton, pow_zero, one_mul, Multiset.map_map, add_comm] at hroots
-  rw [add_left_cancel hroots, Nat.add_sub_cancel_left]
-  exact Multiset.map_congr rfl fun e _ ↦ by simp [add_comm]
+  · rw [charpoly_standardRepresentation_wordProd_permCoxeterSystem K hω (Nat.succ_ne_zero m),
+      Polynomial.roots_sum_range_X_pow hζ, Nat.add_sub_cancel, ← Multiset.coe_range,
+      Multiset.map_coe]
 
 /-- **The eigenvalues of a Coxeter element of `S_n` on its complex reflection representation** are
 the `exp (2πi e / n)` for the exponents `e = 1, …, n - 1`, each with multiplicity one. -/
@@ -144,10 +132,7 @@ theorem roots_charpoly_standardRepresentation_wordProd_permCoxeterSystem
   rw [roots_charpoly_standardRepresentation_wordProd_permCoxeterSystem_of_isPrimitiveRoot
     (Complex.isPrimitiveRoot_exp n hn) hω]
   refine Multiset.map_congr rfl fun e _ ↦ ?_
-  rw [← Complex.exp_nat_mul]
-  congr 1
-  push_cast
-  ring
+  rw [exp_two_pi_I_div_pow, ← mul_div_assoc]
 
 /-- **The eigenvalues of a Coxeter element of `S_n` from the invariant degrees.** Let `dᵢ` be the
 degrees of any system of basic invariants of the reflection representation `V₀` of `S_n` over
