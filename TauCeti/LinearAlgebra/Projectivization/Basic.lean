@@ -44,6 +44,8 @@ The file also records `Projectivization.submodule_map`: the line of the image of
 point under an injective semilinear map is the image of its line. A semilinear equivalence induces
 a bijection of projective spaces (`LinearEquiv.mapProjectivization`), and a vector lies on the line
 of a point exactly when it is zero or spans that point (`Projectivization.mem_submodule_iff`).
+Rescaling an injective linear map by a nonzero scalar does not change the map it induces on
+projective spaces (`Projectivization.map_smul_eq_map`).
 Over a field, `Projectivization.mk_eq_mk_iff_forall_mul_eq` characterizes equality of projective
 points by vanishing of all their `2 × 2` homogeneous minors.
 
@@ -305,5 +307,15 @@ theorem mem_submodule_iff {x : Projectivization K V} {v : V} :
   by_cases hv : v = 0
   · simp [hv]
   · simp [hv, submodule_mk, mk_eq_mk_iff_mem_span hv hw]
+
+/-- Rescaling an injective linear map by a nonzero scalar does not change the induced map of
+projective spaces. -/
+theorem map_smul_eq_map {K V W : Type*} [Field K] [AddCommGroup V] [Module K V]
+    [AddCommGroup W] [Module K W] {f : V →ₗ[K] W} (hf : Function.Injective f) {c : K}
+    (hcf : Function.Injective (c • f)) : map (c • f) hcf = map f hf := by
+  funext x
+  induction x using ind with | h v hv =>
+  rw [map_mk, map_mk, mk_eq_mk_iff']
+  exact ⟨c, by simp⟩
 
 end Projectivization
