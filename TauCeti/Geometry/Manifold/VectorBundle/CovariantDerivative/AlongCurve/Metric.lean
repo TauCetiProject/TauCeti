@@ -26,9 +26,9 @@ differentiable functions and satisfies the ambient product rule
 differentiable vector fields satisfy it by the chain rule. A differentiable field along the curve
 is locally a finite linear combination of pullbacks of smooth local-frame fields; the additive and
 scalar Leibniz laws of `CovariantDerivative.alongCurveWithin` finish the argument. The
-Riemannian product rule is the specialization to the inner product, using Mathlib's ambient
-`CovariantDerivative.IsMetricCompatible.mvfderiv_inner_eq`; metrics of other signatures specialize
-the same theorem.
+Riemannian product rule is the specialization to the inner product, using the ambient directional
+product rule `CovariantDerivative.IsMetricCompatible.mvfderiv_inner_apply`; metrics of other
+signatures specialize the same theorem.
 
 ## Main results
 
@@ -314,8 +314,7 @@ theorem hasDerivWithinAt_apply_alongCurveWithin
         (fun r ↦ β.coord i (sectionCoord ℝ (F := E) γ a (γ t) r)) s t :=
     (LinearMap.toContinuousLinearMap (β.coord i)).differentiableAt.comp_differentiableWithinAt t ha
   have hframe (i : Fin (Module.finrank ℝ E)) : MDiffAt (T% (e.localFrame β i)) (γ t) :=
-    (((e.isLocalFrameOn_localFrame_baseSet I 1 β).contMDiffOn i).mdifferentiableOn
-      one_ne_zero).mdifferentiableAt (e.open_baseSet.mem_nhds hbase)
+    (contMDiffAt_localFrame_of_mem 1 _ β i hbase).mdifferentiableAt one_ne_zero
   have hcoordX (i : Fin (Module.finrank ℝ E)) : DifferentiableWithinAt ℝ
       (sectionCoord ℝ (F := E) γ (fun r ↦ e.localFrame β i (γ r)) (γ t)) s t :=
     differentiableWithinAt_sectionCoord γ (fun r ↦ e.localFrame β i (γ r))
