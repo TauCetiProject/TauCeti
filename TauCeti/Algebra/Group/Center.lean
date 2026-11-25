@@ -9,10 +9,12 @@ public import Mathlib.Algebra.Group.Center
 public import Mathlib.Algebra.Group.Units.Defs
 
 /-!
-# Centralizers, conjugation by units, and images of commutative magmas
+# Centralizers, multiplicative equivalences, conjugation by units, and commutative magmas
 
-Basic membership lemmas for `Set.centralizer`:
+Basic lemmas for `Set.centralizer`:
 
+* `Set.centralizer_image` (and its additive counterpart `Set.addCentralizer_image`): multiplicative
+  equivalences commute with taking centralizers.
 * `Set.conj_mem_centralizer`: if conjugation by the inverse of a unit `u` maps a set `S` of a
   monoid into itself, then conjugation by `u` maps the centralizer of `S` into itself. Applying
   this twice shows that a double commutant is preserved by every unit whose conjugations preserve
@@ -29,6 +31,19 @@ Basic membership lemmas for `Set.centralizer`:
 public section
 
 namespace Set
+
+/-- A multiplicative equivalence maps the centralizer of a set onto the centralizer of its
+image. -/
+@[to_additive addCentralizer_image
+  /-- An additive equivalence maps the additive centralizer of a set onto the additive centralizer
+  of its image. -/]
+theorem centralizer_image {A B F : Type*} [Mul A] [Mul B] [EquivLike F A B]
+    [MulEquivClass F A B] (e : F) (s : Set A) : (e '' s).centralizer = e '' s.centralizer := by
+  ext b; refine ⟨fun hb ↦ ?_, ?_⟩
+  · obtain ⟨c, rfl⟩ := EquivLike.surjective e b
+    exact ⟨c, fun a ha ↦ EquivLike.injective e <| by
+      rw [map_mul, map_mul]; exact hb (e a) ⟨a, ha, rfl⟩, rfl⟩
+  · rintro ⟨a, ha, rfl⟩ _ ⟨x, hx, rfl⟩; rw [← map_mul, ← map_mul, ha x hx]
 
 section Monoid
 
