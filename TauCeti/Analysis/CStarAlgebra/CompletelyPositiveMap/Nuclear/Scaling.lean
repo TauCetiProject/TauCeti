@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.CStarAlgebra.Basic
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Matrix
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Nuclear
 
@@ -39,11 +40,6 @@ namespace CompletelyPositiveMap
 
 variable {A B : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
-
-private theorem norm_one_le_one {M : Type*} [CStarAlgebra M] : ‖(1 : M)‖ ≤ 1 := by
-  rcases subsingleton_or_nontrivial M with h | h
-  · simp [Subsingleton.elim (1 : M) 0]
-  · rw [CStarRing.norm_one]
 
 /-- Rescaling by `(1 + η)⁻¹` moves a vector by at most `η` times its norm. -/
 private theorem norm_inv_one_add_smul_sub_le {E : Type*} [SeminormedAddCommGroup E]
@@ -116,7 +112,7 @@ private theorem exists_approx [Nontrivial A] {ψ : A →CP B} (hψ : ψ.IsNuclea
   have ht (y : B) : t • y = (1 + (c : ℝ) * δ)⁻¹ • y := NNReal.smul_def t y
   refine ⟨n, α', t • β', fun a ↦ ?_, fun x ↦ ?_, fun a ha ↦ ?_⟩
   · exact (CompletelyPositiveMapClass.norm_map_one_le_one_iff α').1
-      (hα'1 ▸ norm_one_le_one) a
+      (hα'1 ▸ CStarRing.norm_one_le) a
   · rw [smul_apply, ht]
     exact norm_inv_one_add_smul_apply_le β' hcδ hβ'1 x
   have hX : ‖(c : ℝ) • β (α a)‖ ≤ c * M := by
@@ -151,7 +147,7 @@ when `‖φ 1‖ ≤ 1`. -/
 theorem isNuclearContraction_iff_isNuclear_and_norm_map_one_le_one {φ : A →CP B} :
     φ.IsNuclearContraction ↔ φ.IsNuclear ∧ ‖φ 1‖ ≤ 1 := by
   refine ⟨fun h ↦ ⟨h.isNuclear, ?_⟩, fun h ↦ h.1.isNuclearContraction h.2⟩
-  exact (h.norm_apply_le 1).trans norm_one_le_one
+  exact (h.norm_apply_le 1).trans CStarRing.norm_one_le
 
 /-- **Normalization.** On a unital C⋆-algebra, a completely positive map `φ` is nuclear exactly
 when its normalization `‖φ 1‖⁻¹ • φ` is a nuclear contraction. (When `φ 1 = 0`, `φ = 0` and the
