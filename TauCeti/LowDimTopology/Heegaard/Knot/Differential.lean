@@ -220,11 +220,10 @@ theorem aeval_knotCoefficient {S : Type*} [CommSemiring S] [Algebra (ZMod 2) S] 
     (hg : ∀ a b : ℕ, g 0 ^ a * g 1 ^ b ≠ 0) :
     aeval g (H.knotCoefficient χ w z x y) = ∑ᶠ D ∈ H.minusDomains χ x y,
       g 0 ^ (D (H.basepoint w)).toNat * g 1 ^ (D (H.basepoint z)).toNat := by
-  by_cases hfin : (H.minusDomains χ x y).Finite
-  · rw [knotCoefficient_eq_sum hfin, map_sum, finsum_mem_eq_finite_toFinset_sum _ hfin]
-    simp
-  · rw [knotCoefficient_eq_zero_of_infinite hfin, map_zero, finsum_mem_eq_zero_of_infinite]
-    rwa [Set.inter_eq_left.mpr fun D _ => Function.mem_support.mpr (hg _ _)]
+  rw [← fullCoefficient_withBasepoints_eq_knotCoefficient,
+    aeval_fullCoefficient g fun m => by simpa [Fin.prod_univ_two] using hg (m 0) (m 1),
+    minusDomains_withBasepoints]
+  simp [Fin.prod_univ_two]
 
 end Coefficient
 

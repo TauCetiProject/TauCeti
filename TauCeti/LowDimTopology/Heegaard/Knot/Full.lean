@@ -46,7 +46,8 @@ For a knot or link the variables of the `w`'s are kept. Setting the variables of
 `1` gives the filtered differential, which counts the domains with any multiplicity at the `z`'s;
 setting them to `0` gives its associated graded differential, which counts only those with
 `n_z = 0`.
-Evaluation at an arbitrary family of values is `aeval_fullCoefficient`, and on chains
+Evaluation at an arbitrary family of values is `aeval_fullCoefficient` (or
+`aeval_fullCoefficient_of_finite` when finitely many domains are counted), and on chains
 `mapRange_fullDifferential_apply`. For the multi-pointed diagram of a grid diagram these two
 specializations are the filtered and the unblocked grid differentials
 (`TauCeti.LowDimTopology.Heegaard.Grid.MinusDifferential`).
@@ -68,7 +69,8 @@ count has the properties listed.
 
 * `TauCeti.HeegaardRegionSystem.coeff_fullCoefficient`: the coefficients count domains by their
   multiplicities at the basepoints.
-* `TauCeti.HeegaardRegionSystem.aeval_fullCoefficient`: evaluating the variables.
+* `TauCeti.HeegaardRegionSystem.aeval_fullCoefficient` and
+  `TauCeti.HeegaardRegionSystem.aeval_fullCoefficient_of_finite`: evaluating the variables.
 * `TauCeti.HeegaardRegionSystem.aeval_X_fullCoefficient` and
   `TauCeti.HeegaardRegionSystem.constantCoeff_fullCoefficient`: the minus and hat coefficients.
 * `TauCeti.HeegaardRegionSystem.mapRange_fullDifferential_apply`,
@@ -170,12 +172,24 @@ theorem exists_mem_minusDomains_of_coeff_fullCoefficient_ne_zero {m : Basepoint 
 
 /-- Evaluating each variable `X_b` at an element `g b` of an algebra, the full coefficient becomes
 the sum of `∏_b g b ^ n_b(D)` over the counted domains, when there are finitely many. -/
-theorem aeval_fullCoefficient {S : Type*} [CommSemiring S] [Algebra (ZMod 2) S]
+theorem aeval_fullCoefficient_of_finite {S : Type*} [CommSemiring S] [Algebra (ZMod 2) S]
     (g : Basepoint → S) (hfin : (H.minusDomains χ x y).Finite) :
     aeval g (H.fullCoefficient χ x y) =
       ∑ᶠ D ∈ H.minusDomains χ x y, ∏ b, g b ^ (D (H.basepoint b)).toNat := by
   rw [fullCoefficient_eq_sum hfin, map_sum, finsum_mem_eq_finite_toFinset_sum _ hfin]
   simp
+
+/-- Evaluating each variable `X_b` at an element `g b` of an algebra, the full coefficient becomes
+the sum of `∏_b g b ^ n_b(D)` over the counted domains, provided none of the products
+`∏_b g b ^ m b` vanishes. -/
+theorem aeval_fullCoefficient {S : Type*} [CommSemiring S] [Algebra (ZMod 2) S]
+    (g : Basepoint → S) (hg : ∀ m : Basepoint → ℕ, ∏ b, g b ^ m b ≠ 0) :
+    aeval g (H.fullCoefficient χ x y) =
+      ∑ᶠ D ∈ H.minusDomains χ x y, ∏ b, g b ^ (D (H.basepoint b)).toNat := by
+  by_cases hfin : (H.minusDomains χ x y).Finite
+  · exact aeval_fullCoefficient_of_finite g hfin
+  · rw [fullCoefficient_eq_zero_of_infinite hfin, map_zero, finsum_mem_eq_zero_of_infinite]
+    rwa [Set.inter_eq_left.mpr fun D _ => Function.mem_support.mpr (hg _)]
 
 /-- **Setting every variable to `U` gives the minus coefficient.** Evaluating every variable at
 `X`, the full coefficient becomes the minus coefficient, which records the total multiplicity of a
@@ -184,7 +198,7 @@ domain at the basepoints. -/
 theorem aeval_X_fullCoefficient :
     aeval (fun _ => Polynomial.X) (H.fullCoefficient χ x y) = H.minusCoefficient χ x y := by
   by_cases hfin : (H.minusDomains χ x y).Finite
-  · rw [aeval_fullCoefficient _ hfin, minusCoefficient_def]
+  · rw [aeval_fullCoefficient_of_finite _ hfin, minusCoefficient_def]
     refine finsum_mem_congr rfl fun D hD => ?_
     have h : ∑ b, D (H.basepoint b) = ((∑ b, (D (H.basepoint b)).toNat : ℕ) : ℤ) := by
       push_cast

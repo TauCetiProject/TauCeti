@@ -208,7 +208,7 @@ theorem aeval_fullCoefficient_gridStateEquivGenerator {S : Type*} [CommSemiring 
       ∑ R ∈ GridRectangleBetween.emptyRectangles x y,
         (∏ c, if (c, G.O c) ∈ R.toGridRectangle.coveredSquares then g (Sum.inl c) else 1) *
           ∏ c, if (c, G.X c) ∈ R.toGridRectangle.coveredSquares then g (Sum.inr c) else 1 := by
-  rw [HeegaardRegionSystem.aeval_fullCoefficient _ (G.finite_minusDomains _ _),
+  rw [HeegaardRegionSystem.aeval_fullCoefficient_of_finite _ (G.finite_minusDomains _ _),
     finsum_mem_minusDomains]
   exact Finset.sum_congr rfl fun R _ => G.prod_pow_domain_basepoint g _
 
