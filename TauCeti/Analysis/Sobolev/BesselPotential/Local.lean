@@ -299,11 +299,7 @@ theorem _root_.TemperedDistribution.MemSobolev.smulLeftCLM_testFunction {F : Typ
     [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] (hp : 1 < p)
     (hp_top : p ≠ ∞) {u : 𝓢'(E, F)} (hu : TemperedDistribution.MemSobolev s p u) (ψ : 𝓓(Ω, ℂ)) :
     TemperedDistribution.MemSobolev s p (TemperedDistribution.smulLeftCLM F (ψ : E → ℂ) u) := by
-  -- The derivatives of `ψ` are bounded by the seminorms of `ψ` as a Schwartz function.
-  refine hu.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil hp hp_top fun n _ ↦
-    ⟨SchwartzMap.seminorm ℝ 0 n (TestFunction.toSchwartzMapCLM ℂ ψ), fun y ↦ ?_⟩
-  have h := SchwartzMap.norm_iteratedFDeriv_le_seminorm ℝ (TestFunction.toSchwartzMapCLM ℂ ψ) n y
-  rwa [TestFunction.coe_toSchwartzMapCLM] at h
+  simpa using hu.smulLeftCLM_schwartzMap hp hp_top (TestFunction.toSchwartzMapCLM ℂ ψ)
 
 /-- **Testing with one cutoff.** Let `1 < p < ∞`. A distribution is `H^{s,p}` near `x` exactly
 when `φ T ∈ H^{s,p}` for some test function `φ` with `φ x ≠ 0`. Indeed `φ` does not vanish near
