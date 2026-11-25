@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
+import Mathlib.RingTheory.LocalRing.Module
 
 /-!
 # `K₀` of rings whose projective modules are stably free
@@ -46,6 +47,8 @@ zero ring every module is zero and `K₀` is trivial.
   finitely generated projective module is stably free, every class is a multiple of `[A]`.
 * `TauCeti.FiniteProjectiveModules.rankEquiv_of`: the class of a free module goes to its rank.
 * `TauCeti.FiniteProjectiveModules.subsingleton_splitK0`: `K₀` of the zero ring is trivial.
+* `TauCeti.FiniteProjectiveModules.isAddTorsionFree_splitK0`: the split `K₀` of finitely
+  generated projective modules over a commutative local ring is torsion-free.
 * `TauCeti.kZero_divisionRing`: `K₀` of a division ring is `ℤ`, with `[D] ↦ 1`.
 * `TauCeti.kZero_of_isPrincipalIdealRing`: `K₀` of a commutative principal ideal domain is `ℤ`,
   with `[R] ↦ 1`, and `TauCeti.kZero_int` the case of `ℤ`.
@@ -174,6 +177,17 @@ instance FiniteProjectiveModules.subsingleton_splitK0 (A : Type u) [Ring A] [Sub
       (finiteProjectiveModules A).ι P (ModuleCat.isZero_of_subsingleton _))
   | neg x hx => rw [hx, neg_zero]
   | add x y hx hy => rw [hx, hy, add_zero]
+
+/-- Over a commutative local ring every finitely generated projective module is free, so the split
+`K₀` of finitely generated projective modules is `ℤ` (`TauCeti.FiniteProjectiveModules.rankEquiv`)
+and in particular torsion-free. -/
+instance FiniteProjectiveModules.isAddTorsionFree_splitK0 (B : Type u) [CommRing B]
+    [IsLocalRing B] :
+    IsAddTorsionFree (SplitK0.{u} (finiteProjectiveModules B).FullSubcategory) :=
+  let e := rankEquiv B fun P ↦
+    have : Module.Free B P.obj := Module.free_of_flat_of_isLocalRing
+    inferInstance
+  e.injective.isAddTorsionFree e.toAddMonoidHom
 
 /-- `K₀` of a division ring `D` is `ℤ`, with the class of the free right module of rank one going
 to `1`. -/

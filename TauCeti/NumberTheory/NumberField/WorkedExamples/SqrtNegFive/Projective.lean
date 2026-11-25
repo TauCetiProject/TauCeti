@@ -95,6 +95,9 @@ private theorem eq_of_two_mul_eq {x y : QuadraticAlgebra ℤ (-5) 0} (h : 2 * x 
 noncomputable def primeAboveTwo : Ideal (QuadraticAlgebra ℤ (-5) 0) :=
   Ideal.span {2, 1 + ω}
 
+theorem primeAboveTwo_def : primeAboveTwo = Ideal.span {2, 1 + ω} :=
+  (rfl)
+
 namespace primeAboveTwo
 
 /-- Membership in `𝔭 = (2, 1 + √-5)`. -/
@@ -222,9 +225,11 @@ theorem retraction_comp_inclusion : retraction ∘ₗ inclusion = LinearMap.id :
 theorem retraction_inclusion (a : primeAboveTwo) : retraction (inclusion a) = a :=
   LinearMap.congr_fun retraction_comp_inclusion a
 
+/-- `π : A² → 𝔭` is surjective: `2` and `1 + √-5` generate `𝔭`, and `π ∘ ι = id`. -/
 theorem retraction_surjective : Function.Surjective retraction :=
   fun a ↦ ⟨inclusion a, retraction_inclusion a⟩
 
+/-- `ι : 𝔭 → A²` is injective, having `π` as a left inverse. -/
 theorem inclusion_injective : Function.Injective inclusion :=
   Function.LeftInverse.injective retraction_inclusion
 
@@ -247,6 +252,9 @@ is `ι ∘ π`. -/
 def idempotent : Matrix (Fin 2) (Fin 2) (QuadraticAlgebra ℤ (-5) 0) :=
   !![ω - 1, -1 - ω; -3, 2 - ω]
 
+theorem idempotent_def : idempotent = !![ω - 1, -1 - ω; -3, 2 - ω] :=
+  (rfl)
+
 /-- Right multiplication of row vectors by
 `TauCeti.NumberField.SqrtNegFive.primeAboveTwo.idempotent` is `ι ∘ π`. -/
 theorem vecMul_idempotent (r : Fin 2 → QuadraticAlgebra ℤ (-5) 0) :
@@ -257,9 +265,13 @@ theorem vecMul_idempotent (r : Fin 2 → QuadraticAlgebra ℤ (-5) 0) :
   · linear_combination (-r 1) * omega_mul_omega
   · linear_combination r 1 * omega_mul_omega
 
+/-- Right multiplication of row vectors by
+`TauCeti.NumberField.SqrtNegFive.primeAboveTwo.idempotent` is `ι ∘ π` as a linear map. -/
 theorem vecMulLinear_idempotent : idempotent.vecMulLinear = inclusion ∘ₗ retraction :=
   LinearMap.ext vecMul_idempotent
 
+/-- The matrix `TauCeti.NumberField.SqrtNegFive.primeAboveTwo.idempotent` is idempotent:
+`e * e = e`. -/
 theorem isIdempotentElem_idempotent : IsIdempotentElem idempotent := by
   refine Matrix.ext fun i j ↦ ?_
   fin_cases i <;> fin_cases j <;> simp [idempotent, Matrix.mul_apply, Fin.sum_univ_two]
@@ -284,12 +296,18 @@ noncomputable def rangeEquiv :
 
 @[simp]
 theorem rangeEquiv_apply (x : LinearMap.range idempotent.vecMulLinear) :
-    rangeEquiv x = retraction x :=
-  (rfl)
+    rangeEquiv x = retraction x := by
+  simp [rangeEquiv, LinearEquiv.ofLeftInverse_symm_apply, LinearEquiv.coe_ofEq_apply]
+
+@[simp]
+theorem coe_rangeEquiv_symm_apply (a : primeAboveTwo) :
+    (rangeEquiv.symm a : Fin 2 → QuadraticAlgebra ℤ (-5) 0) = inclusion a := by
+  simp [rangeEquiv, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply,
+    LinearEquiv.ofLeftInverse_apply]
 
 theorem inclusion_rangeEquiv (x : LinearMap.range idempotent.vecMulLinear) :
-    inclusion (rangeEquiv x) = x :=
-  congrArg Subtype.val ((LinearEquiv.ofLeftInverse retraction_inclusion).apply_symm_apply _)
+    inclusion (rangeEquiv x) = x := by
+  rw [← coe_rangeEquiv_symm_apply, LinearEquiv.symm_apply_apply]
 
 /-- The class of the idempotent `e` in `V(A)` maps to the class `[𝔭]` in projective `K₀(A)`. -/
 theorem toSplitK0_mk_idempotent :
@@ -390,20 +408,15 @@ theorem addOrderOf_classOf :
   addOrderOf_eq_prime two_nsmul_classOf classOf_ne_zero
 
 /-- **`[𝔭] - [A]` is invisible locally**: it maps to zero in projective `K₀` of every commutative
-local ring `B` receiving `ℤ[√-5]`. There every finitely generated projective module is free, so
-`K₀(B) ≃ ℤ` is torsion-free, while `[𝔭] - [A]` is `2`-torsion. -/
+local ring `B` receiving `ℤ[√-5]`. There `K₀(B)` is torsion-free
+(`TauCeti.FiniteProjectiveModules.isAddTorsionFree_splitK0`), while `[𝔭] - [A]` is `2`-torsion. -/
 theorem map_classOf_eq_zero_of_isLocalRing {B : Type} [CommRing B] [IsLocalRing B]
     (f : QuadraticAlgebra ℤ (-5) 0 →+* B) :
     SplitK0.map.{0, 0} f.finiteProjectiveModulesExtendScalars
       (classOf (QuadraticAlgebra ℤ (-5) 0) primeAboveTwo 1) = 0 := by
-  let e := rankEquiv B fun P ↦
-    have : Module.Free B P.obj := Module.free_of_flat_of_isLocalRing
-    inferInstance
-  have h := congrArg e (congrArg (SplitK0.map.{0, 0} f.finiteProjectiveModulesExtendScalars)
-    two_nsmul_classOf)
-  rw [map_nsmul, map_nsmul, map_zero, map_zero, nsmul_eq_mul] at h
-  rw [← e.map_eq_zero_iff]
-  simpa using h
+  have h := congrArg (SplitK0.map.{0, 0} f.finiteProjectiveModulesExtendScalars) two_nsmul_classOf
+  rw [map_nsmul, map_zero] at h
+  exact (nsmul_eq_zero_iff_right two_ne_zero).1 h
 
 /-- `[𝔭] - [A]` maps to zero in projective `K₀` of the localization of `ℤ[√-5]` at every prime. -/
 theorem map_classOf_localization_eq_zero (q : Ideal (QuadraticAlgebra ℤ (-5) 0)) [q.IsPrime] :
