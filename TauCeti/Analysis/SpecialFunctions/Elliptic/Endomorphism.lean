@@ -38,8 +38,6 @@ non-real algebraic integer of degree two: the curve has complex multiplication.
 
 ## Main results
 
-* `PeriodPair.scalarPointHom_add`, `PeriodPair.scalarPointHom_eq_zero_iff`: the scalar maps are
-  additive in the scalar and vanish only for the scalar `0`.
 * `PeriodPair.endRingHom_injective`: the action is faithful.
 * `PeriodPair.multiplierRing_smul`: the multiplier ring depends only on the homothety class.
 * `PeriodPair.sq_sub_trace_mul_add_norm_eq_zero`: `α² - (2 Re α) α + |α|² = 0` with integer
@@ -48,7 +46,8 @@ non-real algebraic integer of degree two: the curve has complex multiplication.
 * `PeriodPair.exists_intCast_eq_of_im_eq_zero`, `PeriodPair.multiplierRing_eq_bot_iff`: the real
   multipliers are the integers, and the multiplier ring is `ℤ` exactly when all multipliers are
   real.
-* `PeriodPair.natCard_ker_endRingHom`: the degree of the endomorphism of `α` is `|α|²`.
+* `PeriodPair.natCard_ker_endRingHom`: the degree of the endomorphism of `α ≠ 0` is `|α|²`
+  (stated with `Nat.card`, so that it also holds at `α = 0`).
 
 ## References
 
@@ -65,29 +64,6 @@ open ComplexConjugate
 namespace PeriodPair
 
 variable {L L' : PeriodPair}
-
-/-! ### Additivity in the scalar -/
-
-/-- The scalar maps are additive in the scalar. -/
-lemma scalarPointHom_add {α β : ℂ} (hα : ∀ z ∈ L.lattice, α * z ∈ L'.lattice)
-    (hβ : ∀ z ∈ L.lattice, β * z ∈ L'.lattice) :
-    scalarPointHom (α + β) (fun z hz ↦ by rw [add_mul]; exact add_mem (hα z hz) (hβ z hz)) =
-      scalarPointHom α hα + scalarPointHom β hβ :=
-  L.pointHom_ext fun z ↦ by simp [add_mul]
-
-/-- The scalar `0` induces the zero map. -/
-@[simp]
-lemma scalarPointHom_zero : scalarPointHom (L := L) (L' := L') 0 (fun z _ ↦ by simp) = 0 :=
-  L.pointHom_ext fun z ↦ by simp [weierstrassPoint_zero]
-
-/-- A scalar map vanishes only for the scalar `0`: the map of `α ≠ 0` is surjective, and the
-curve of `Λ'` has the nonzero point `P(ω₁' / 2)`. -/
-lemma scalarPointHom_eq_zero_iff {α : ℂ} (h : ∀ z ∈ L.lattice, α * z ∈ L'.lattice) :
-    scalarPointHom α h = 0 ↔ α = 0 := by
-  refine ⟨fun h0 ↦ by_contra fun hα ↦ ?_, fun hα ↦ by subst hα; exact scalarPointHom_zero⟩
-  obtain ⟨P, hP⟩ := scalarPointHom_surjective hα h (L'.weierstrassPoint (L'.ω₁ / 2))
-  rw [h0, AddMonoidHom.zero_apply, eq_comm, weierstrassPoint_eq_zero_iff] at hP
-  exact L'.ω₁_div_two_notMem_lattice hP
 
 /-! ### The multiplier ring and its action -/
 
@@ -110,12 +86,7 @@ variable (L)
 /-- The multiplier ring depends only on the homothety class of the lattice. -/
 @[simp]
 lemma multiplierRing_smul (c : ℂˣ) : (c • L).multiplierRing = L.multiplierRing := by
-  ext α
-  simp only [mem_multiplierRing, lattice_smul, Submodule.mem_map, LinearMap.mulLeft_apply,
-    forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
-  refine forall₂_congr fun z _ ↦ ?_
-  rw [mul_left_comm]
-  exact ⟨fun ⟨w, hw, hwz⟩ ↦ mul_left_cancel₀ c.ne_zero hwz ▸ hw, fun h ↦ ⟨_, h, rfl⟩⟩
+  simp only [multiplierRing, ← Submodule.toSubring_leftOrder, leftOrder_lattice_smul]
 
 /-- The action of the multiplier ring on the points of the Weierstrass curve by the scalar maps:
 these are the analytic endomorphisms of `E_Λ(ℂ)`. -/
@@ -242,9 +213,10 @@ theorem multiplierRing_eq_bot_iff :
   · refine le_antisymm (fun α hα ↦ ?_) bot_le
     exact Subring.mem_bot.mpr (exists_intCast_eq_of_im_eq_zero hα (h α hα))
 
-/-- **The degree of an endomorphism is the norm.** The kernel of the endomorphism of a
-multiplier `α` has `|α|²` elements. For `α = 0` both sides vanish: the kernel is the whole infinite
-group of points, whose `Nat.card` is `0`. -/
+/-- **The degree of an endomorphism is the norm.** The `Nat.card` of the kernel of the
+endomorphism of a multiplier `α` is `|α|²`: for `α ≠ 0` the kernel is finite with `|α|²` elements,
+and for `α = 0` both sides vanish, since the kernel is the whole infinite group of points and
+`Nat.card` of an infinite type is `0`. -/
 theorem natCard_ker_endRingHom (α : L.multiplierRing) :
     (Nat.card (L.endRingHom α).ker : ℝ) = Complex.normSq α := by
   obtain rfl | hα := eq_or_ne α 0
