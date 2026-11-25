@@ -130,8 +130,11 @@ private theorem one_le_mul_norm_one_sub (σ : PadicAlgCl p ≃ₐ[ℚ_[p]] Padic
   have h_trace : T (1 - (σ w - w)) = 1 := by
     have h1 : T 1 = 1 := by
       simpa using Algebra.normalizedTrace_algebraMap_apply ℚ_[p] ℚ_[p] (PadicAlgCl p) 1
-    rw [map_sub, map_sub, h1, show T (σ w) = T w from
-      Algebra.normalizedTrace_map ℚ_[p] (PadicAlgCl p) σ.toAlgHom w, sub_self, sub_zero]
+    -- The normalized trace is invariant under `σ`.
+    have hσ : T (σ w) = T w := by
+      simpa only [T, AlgEquiv.coe_toAlgHom] using
+        Algebra.normalizedTrace_map ℚ_[p] (PadicAlgCl p) σ.toAlgHom w
+    rw [map_sub, map_sub, h1, hσ, sub_self, sub_zero]
   have h_mem : 1 - (σ w - w) ∈ 𝔽 :=
     sub_mem (one_mem _) (sub_mem (TauCeti.apply_mem_cyclotomicTower σ hw) hw)
   have h := PadicAlgCl.norm_normalizedTrace_le h_mem

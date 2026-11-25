@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.Cyclotomic.Tower
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.NumberTheory.Cyclotomic.Irreducible
+import TauCeti.NumberTheory.Padics.NormedAlgebra
 import TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow
 import TauCeti.RingTheory.RootsOfUnity.Ultrametric
 
@@ -124,27 +125,6 @@ private theorem exists_sum_smul_sub_one_pow_eq {n : ℕ} {ζ z : PadicAlgCl p}
       (Algebra.IsAlgebraic.isAlgebraic _)]
   exact h_mem
 
-/-- If `‖π‖ ^ e = p⁻¹` with `0 < ‖π‖ < 1`, the nonzero terms `aᵢ πⁱ`, `i < e`, of a
-`ℚ_p`-combination of powers of `π` have pairwise distinct norms: the norm of `aᵢ πⁱ` is
-`‖π‖ ^ (e v(aᵢ) + i)`, and these exponents differ modulo `e`. -/
-private theorem pairwise_norm_ne {π : PadicAlgCl p} {e : ℕ} {a : ℕ → ℚ_[p]} {s : Finset ℕ}
-    (hπ0 : 0 < ‖π‖) (hπ1 : ‖π‖ < 1) (hπe : ‖π‖ ^ e = (p : ℝ)⁻¹)
-    (hs : ∀ i ∈ s, i < e ∧ a i ≠ 0) :
-    (s : Set ℕ).Pairwise fun i j ↦ ‖a i • π ^ i‖ ≠ ‖a j • π ^ j‖ := by
-  have h_norm (i : ℕ) (ha : a i ≠ 0) : ‖a i • π ^ i‖ = ‖π‖ ^ ((e : ℤ) * (a i).valuation + i) := by
-    rw [norm_smul, norm_pow, Padic.norm_eq_zpow_neg_valuation ha, zpow_add₀ hπ0.ne', zpow_mul,
-      zpow_natCast, hπe, zpow_natCast, inv_zpow', zpow_neg]
-  intro i hi j hj hij h
-  obtain ⟨hie, hai⟩ := hs i hi
-  obtain ⟨hje, haj⟩ := hs j hj
-  rw [h_norm i hai, h_norm j haj, zpow_right_inj₀ hπ0 hπ1.ne] at h
-  have h_mod := congrArg (· % (e : ℤ)) h
-  simp only [Int.mul_add_emod_self_left] at h_mod
-  exact hij (by
-    rw [Int.emod_eq_of_lt (by positivity) (by exact_mod_cast hie),
-      Int.emod_eq_of_lt (by positivity) (by exact_mod_cast hje)] at h_mod
-    exact_mod_cast h_mod)
-
 /-- **Tate's bound for the normalized trace.** On the full cyclotomic extension `ℚ_p(μ_{p^∞})`,
 the normalized trace to `ℚ_p` satisfies `‖T z‖ ≤ p ‖z‖`. -/
 theorem norm_normalizedTrace_le {z : PadicAlgCl p}
@@ -183,7 +163,7 @@ theorem norm_normalizedTrace_le {z : PadicAlgCl p}
     _ ≤ p * ‖∑ j ∈ Finset.range e with a j • (ζ - 1) ^ j ≠ 0, a j • (ζ - 1) ^ j‖ := by
         gcongr
         rw [IsUltrametricDist.norm_sum_eq_sup'_of_pairwise_ne ⟨i, hi⟩
-          (pairwise_norm_ne hπ0 hπ1 hπe fun j hj ↦ ?_)]
+          (TauCeti.pairwise_norm_smul_pow_ne hπ0 hπ1 hπe fun j hj ↦ ?_)]
         · exact Finset.le_sup' (fun j ↦ ‖a j • (ζ - 1) ^ j‖) hi
         obtain ⟨hj, hj0⟩ := Finset.mem_filter.mp hj
         exact ⟨Finset.mem_range.mp hj, fun h0 ↦ hj0 (by simp [h0])⟩
