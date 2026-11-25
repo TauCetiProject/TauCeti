@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.CartanInvolution.Basic
 public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot
-public import TauCeti.Algebra.Lie.Subalgebra.Abelian
 public import Mathlib.Algebra.Lie.Weights.Linear
 import TauCeti.Algebra.Lie.Weights.SelfAdjoint
 
