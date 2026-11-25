@@ -23,7 +23,8 @@ the subtype `Ω`, finite on compact subsets of `Ω`, such that:
 * on every open set `U` of `E`, `‖T‖ (Ω ∩ U)` is the local mass of `T` on `U`, the supremum of
   `|T φ|` over the tests `φ` supported in `U` with `‖φ x‖ ≤ 1`; in particular `‖T‖ Ω = mass T`;
 * `|T φ| ≤ ∫ ‖φ‖ d‖T‖` for every test `φ`;
-* `‖T‖` is the least outer regular measure with this domination property.
+* `‖T‖` is the least outer regular measure with this domination property; in particular
+  `‖S₁ - S₂‖ ≤ ‖S₁‖ + ‖S₂‖`.
 
 The measure lives on `Ω` and not on `E`: it need not be finite near the frontier of `Ω`. None of
 this uses finite dimension: on an infinite-dimensional space every test function is zero, so
@@ -54,6 +55,7 @@ them by open sets of almost the same measure.
   `L M(T)`.
 * `Distribution.enorm_apply_le_lintegral_massMeasure`: the domination `|T φ| ≤ ∫ ‖φ‖ d‖T‖`.
 * `Distribution.massMeasure_le_of_enorm_apply_le`: minimality among outer regular measures.
+* `Distribution.massMeasure_sub_le`: `‖S₁ - S₂‖ ≤ ‖S₁‖ + ‖S₂‖`.
 
 ## References
 
@@ -389,6 +391,22 @@ theorem massMeasure_le_of_enorm_apply_le (ν : Measure Ω) [ν.OuterRegular]
   refine Measure.le_iff'.2 fun s => ?_
   rw [s.measure_eq_iInf_isOpen (massMeasure T), s.measure_eq_iInf_isOpen ν]
   exact iInf₂_mono fun U _ => iInf_mono fun hU => hopen U hU
+
+/-- **Subadditivity of the mass measure.** `‖S₁ - S₂‖ ≤ ‖S₁‖ + ‖S₂‖` for continuous linear maps of
+locally finite mass. -/
+theorem massMeasure_sub_le {S₁ S₂ : 𝓓^{n}(Ω, F) →L[ℝ] ℝ} (h₁ : HasLocallyFiniteMass S₁)
+    (h₂ : HasLocallyFiniteMass S₂) :
+    massMeasure (S₁ - S₂) ≤ massMeasure S₁ + massMeasure S₂ := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · simp [massMeasure_eq_zero_of_not_finiteDimensional hE]
+  have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
+  have : IsFiniteMeasureOnCompacts (massMeasure S₁ + massMeasure S₂) :=
+    ⟨fun K hK ↦ by simpa using ⟨hK.measure_lt_top, hK.measure_lt_top⟩⟩
+  refine massMeasure_le_of_enorm_apply_le _ fun φ ↦ ?_
+  rw [lintegral_add_measure, sub_apply]
+  exact eNorm_sub_le.trans (add_le_add (enorm_apply_le_lintegral_massMeasure h₁ φ)
+    (enorm_apply_le_lintegral_massMeasure h₂ φ))
 
 /-- **Uniqueness of the mass measure.** An outer regular measure on `Ω` whose value on `Ω ∩ U` is
 the local mass of `T` on `U`, for every open set `U` of `E`, is the mass measure. -/
