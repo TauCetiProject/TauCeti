@@ -351,4 +351,16 @@ theorem smoothSectionFiberMap_comp [FiniteDimensional ℝ F'] [ContMDiffVectorBu
     smoothSectionFiberMap x (L ∘ₗ L') = smoothSectionFiberMap x L ∘ₗ smoothSectionFiberMap x L' :=
   (smoothSectionFiberMap_eq_iff x _ _).2 fun s ↦ by simp
 
+/-- The fibre maps of a function-linear equivalence `e : Γ(V) ≃ Γ(W)` of sections of finite-rank
+bundles are bijective, with inverses the fibre maps of `e.symm`. -/
+theorem smoothSectionFiberMap_bijective [FiniteDimensional ℝ F'] [ContMDiffVectorBundle ∞ F' W I]
+    (x : M) (e : Cₛ^∞⟮I; F, V⟯ ≃ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯) :
+    Function.Bijective (smoothSectionFiberMap x e.toLinearMap) := by
+  refine Function.bijective_iff_has_inverse.2
+    ⟨smoothSectionFiberMap x e.symm.toLinearMap, fun v ↦ ?_, fun w ↦ ?_⟩
+  · rw [← LinearMap.comp_apply, ← smoothSectionFiberMap_comp, e.symm_comp, smoothSectionFiberMap_id,
+      LinearMap.id_apply]
+  · rw [← LinearMap.comp_apply, ← smoothSectionFiberMap_comp, e.comp_symm, smoothSectionFiberMap_id,
+      LinearMap.id_apply]
+
 end TauCeti
