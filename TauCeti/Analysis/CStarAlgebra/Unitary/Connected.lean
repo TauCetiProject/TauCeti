@@ -8,7 +8,11 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
 public import Mathlib.Topology.Algebra.Star.Unitary
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.RealImaginaryPart
+import Mathlib.Analysis.Normed.Module.Connected
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NormNum
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Unitary paths from spectral cuts
@@ -17,6 +21,13 @@ A unitary with nonnegative real part, and any self-adjoint unitary, is joined to
 These continuous-functional-calculus paths supply the two factors of the reflection argument
 for Hilbert-space unitaries. They do not assert connectedness of the unitary group of a general
 C⋆-algebra.
+
+Multiplying a unitary by a unimodular scalar other than `-1` stays in its path component
+(`Unitary.joined_smul`). Hence a unitary whose spectrum misses a point `z` of the unit circle is
+joined to the identity (`Unitary.joined_one_of_notMem_spectrum`): rotating, `-1` is not in the
+spectrum of `-z⋆ u`, so `‖-z⋆ u - 1‖ < 2` and Mathlib's exponential path `Unitary.joined` joins
+`-z⋆ u` to `1`, while scalar rotations join `u` to `-z⋆ u`. In particular every unitary with
+finite spectrum is joined to the identity (`Unitary.joined_one_of_finite_spectrum`).
 
 The proofs are adapted from
 [AtiyahSinger/Analysis/FredholmPaths.lean][fredholm-paths] in Lean-Atiyah-Singer.
@@ -74,3 +85,79 @@ theorem Unitary.joined_one_of_isSelfAdjoint
     simp [star_smul, hu.star_eq]
   simpa using hw.inv.mul hwu
 
+
+section Spectrum
+
+variable {A : Type*} [CStarAlgebra A]
+
+/-- Multiplying a unitary by a unimodular scalar `w ≠ -1` stays in its path component. -/
+theorem Unitary.joined_smul (v : unitary A) {w : ℂ} (hw : w ∈ unitary ℂ) (hw₁ : w ≠ -1) :
+    Joined v ⟨w • (v : A), Unitary.smul_mem_of_mem hw v.prop⟩ := by
+  refine Unitary.joined _ _ ?_
+  have h : ‖w - 1‖ < 2 := by
+    rw [Unitary.norm_sub_one_lt_two_iff hw]
+    have : spectrum ℂ w = {w} := by simpa using spectrum.scalar_eq (A := ℂ) w
+    rw [this, Set.mem_singleton_iff]
+    exact hw₁.symm
+  have hv : ‖(v : A)‖ ≤ 1 := by
+    rcases subsingleton_or_nontrivial A with _ | _
+    · simp [Subsingleton.elim (v : A) 0]
+    · exact (CStarRing.norm_coe_unitary v).le
+  calc ‖w • (v : A) - v‖ = ‖(w - 1) • (v : A)‖ := by rw [sub_smul, one_smul]
+    _ ≤ ‖w - 1‖ * ‖(v : A)‖ := norm_smul_le _ _
+    _ ≤ ‖w - 1‖ * 1 := by gcongr
+    _ < 2 := by rwa [mul_one]
+
+/-- **Unitaries whose spectrum misses a point of the circle are joined to `1`.** If `‖z‖ = 1` and
+`z ∉ σ(u)`, then `-1 ∉ σ(-z⋆ u)`, so `-z⋆ u` is joined to `1` by an exponential path, and `u` is
+joined to `-z⋆ u` by scalar rotations. -/
+theorem Unitary.joined_one_of_notMem_spectrum (u : unitary A) {z : ℂ} (hz : ‖z‖ = 1)
+    (hzu : z ∉ spectrum ℂ (u : A)) : Joined 1 u := by
+  -- A complex number of norm one is unitary.
+  have hmem {w : ℂ} (hw : ‖w‖ = 1) : w ∈ unitary ℂ := by
+    rw [Unitary.mem_iff_star_mul_self, RCLike.star_def, RCLike.conj_mul, hw]
+    simp
+  have hz' : z ∈ unitary ℂ := hmem hz
+  set c : ℂ := -star z
+  have hc : c ∈ unitary ℂ := hmem (by rw [norm_neg, norm_star, hz])
+  have hcz : star c * c = 1 := Unitary.star_mul_self_of_mem hc
+  set v : unitary A := ⟨c • (u : A), Unitary.smul_mem_of_mem hc u.prop⟩
+  -- `-1 ∉ σ(c u) = c σ(u)`, since `-1 = c w` forces `w = z`.
+  have hv : Joined 1 v := by
+    refine Unitary.joined _ _ ?_
+    rw [OneMemClass.coe_one, Unitary.norm_sub_one_lt_two_iff v.prop]
+    have hc₀ : c ≠ 0 := by rintro h; simp [h] at hcz
+    rw [show (v : A) = (Units.mk0 c hc₀ : ℂˣ) • (u : A) by rw [Units.smul_mk0],
+      spectrum.unit_smul_eq_smul]
+    rintro ⟨w, hw, hcw⟩
+    refine hzu ?_
+    have hzz : star z * z = 1 := Unitary.star_mul_self_of_mem hz'
+    have : w = z := by
+      simp only [Units.val_mk0, smul_eq_mul, c] at hcw
+      linear_combination (-w) * hzz - z * hcw
+    exact this ▸ hw
+  -- `u = c⋆ v`, reached from `v` by one or two scalar rotations.
+  have hu : (u : A) = star c • (v : A) := by
+    simp only [v, smul_smul, hcz, one_smul]
+  refine hv.trans ?_
+  by_cases hc₁ : star c = -1
+  · have hI : Complex.I ∈ unitary ℂ := hmem (by simp)
+    refine (Unitary.joined_smul v hI (by simp [Complex.ext_iff])).trans ?_
+    convert Unitary.joined_smul _ hI (by simp [Complex.ext_iff]) using 1
+    ext
+    simp only [hu, hc₁, smul_smul, Complex.I_mul_I]
+  · convert Unitary.joined_smul v (Unitary.star_mem hc) hc₁ using 1
+    exact Subtype.ext hu
+
+/-- A unitary with finite spectrum is joined to `1` by a path of unitaries: its spectrum misses a
+point of the infinite unit circle. -/
+theorem Unitary.joined_one_of_finite_spectrum (u : unitary A)
+    (h : (spectrum ℂ (u : A)).Finite) : Joined 1 u := by
+  have hinf : (Metric.sphere (0 : ℂ) 1).Infinite :=
+    IsPreconnected.infinite_of_nontrivial (isConnected_sphere (E := ℂ)
+      (by rw [Complex.rank_real_complex]; norm_num) 0 zero_le_one).isPreconnected
+      ⟨1, by simp, -1, by simp, by norm_num⟩
+  obtain ⟨z, hz, hzu⟩ := hinf.exists_notMem_finite h
+  exact Unitary.joined_one_of_notMem_spectrum u (by simpa using hz) hzu
+
+end Spectrum

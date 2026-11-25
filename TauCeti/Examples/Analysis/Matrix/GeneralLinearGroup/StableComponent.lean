@@ -22,13 +22,11 @@ namespace TauCeti.StableComponentExample
 
 /-- The stable component group of the finite-dimensional C⋆-algebra `ℂ³` is trivial. -/
 example : Subsingleton (StableComponentGroup (Fin 3 → ℂ)) :=
-  StableComponentGroup.subsingleton_of_finiteDimensional
+  inferInstance
 
 /-- The stable component group of the finite-dimensional C⋆-algebra `M₂(ℂ)` is trivial. -/
-example : Subsingleton (StableComponentGroup (CStarMatrix (Fin 2) (Fin 2) ℂ)) := by
-  have : FiniteDimensional ℂ (CStarMatrix (Fin 2) (Fin 2) ℂ) :=
-    LinearEquiv.finiteDimensional (CStarMatrix.ofMatrixₗ (R := ℂ))
-  exact StableComponentGroup.subsingleton_of_finiteDimensional
+example : Subsingleton (StableComponentGroup (CStarMatrix (Fin 2) (Fin 2) ℂ)) :=
+  inferInstance
 
 /-- The polar unitary of the invertible element `2 ∈ ℂ` is `1`. -/
 example : (Units.mk0 (2 : ℂ) two_ne_zero).polarUnitary = 1 :=
