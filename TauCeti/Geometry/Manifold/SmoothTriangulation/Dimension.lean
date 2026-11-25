@@ -49,12 +49,13 @@ theorem finrank_ker_sum_proj {σ : Finset ι} (hσ : σ.Nonempty) :
   rw [hs, finrank_top, finrank_self, Module.finrank_fintype_fun_eq_card, Fintype.card_coe] at h
   omega
 
-/-- A `Cⁿ` immersion of the closed simplex on a nonempty vertex set `σ` into a manifold modelled on
-a finite-dimensional space `E` has `|σ| ≤ dim E + 1`: the simplex has dimension at most `dim E`. -/
-theorem IsSimplexImmersion.card_le {σ : Finset ι} (hσ : σ.Nonempty) {g : StandardSimplex σ → M}
+/-- A `Cⁿ` immersion of the closed simplex on a vertex set `σ` into a manifold modelled on a
+finite-dimensional space `E` has `|σ| ≤ dim E + 1`: the simplex has dimension at most `dim E`. -/
+theorem IsSimplexImmersion.card_le {σ : Finset ι} {g : StandardSimplex σ → M}
     (h : IsSimplexImmersion I n g) : σ.card ≤ finrank ℝ E + 1 := by
+  rcases σ.eq_empty_or_nonempty with rfl | ⟨a₀, ha₀⟩
+  · simp
   obtain ⟨F, -, -, hF'⟩ := isSimplexImmersion_iff.mp h
-  obtain ⟨a₀, ha₀⟩ := hσ
   obtain ⟨F', -, hinj⟩ := hF' (Convexity.StdSimplex.single (⟨a₀, ha₀⟩ : σ))
   set S := LinearMap.ker (∑ a : σ, LinearMap.proj a : (σ → ℝ) →ₗ[ℝ] ℝ)
   have hS : Injective ((F' : (σ → ℝ) →ₗ[ℝ] E).domRestrict S) := by
@@ -70,7 +71,7 @@ theorem IsSimplexImmersion.card_le {σ : Finset ι} (hσ : σ.Nonempty) {g : Sta
 has at most `dim E + 1` vertices. -/
 theorem IsSmoothTriangulation.card_le {K : AbstractSimplicialComplex ι} {κ : Realization K ≃ₜ M}
     (h : IsSmoothTriangulation I n κ) {σ : Finset ι} (hσ : σ ∈ K) : σ.card ≤ finrank ℝ E + 1 :=
-  (isSmoothTriangulation_iff.mp h ⟨σ, hσ⟩).card_le (K.isRelLowerSet_faces.prop_of_mem hσ)
+  (isSmoothTriangulation_iff.mp h ⟨σ, hσ⟩).card_le
 
 /-- A smooth triangulation of a manifold modelled on a finite-dimensional space `E` has dimension
 at most `dim E`: it has no simplices of dimension above that of the manifold. -/
