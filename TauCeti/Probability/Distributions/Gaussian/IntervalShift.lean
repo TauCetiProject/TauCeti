@@ -15,10 +15,11 @@ has standard Gaussian measure `Φ(b) − Φ(a)` and its two endpoints contribute
 Gaussian perimeter. This file proves that shifting an interval with `a + b ≥ 0` to the right,
 keeping its Gaussian measure, strictly decreases this sum: if `a < a'` and
 `Φ(b') − Φ(a') = Φ(b) − Φ(a)`, then `φ(a') + φ(b') < φ(a) + φ(b)`
-(`TauCeti.Probability.gaussianPDFReal_add_lt_of_shift_right`), and likewise when the shifted
-interval is a half-line `(a', ∞)`, whose perimeter is `φ(a')`
-(`TauCeti.Probability.gaussianPDFReal_lt_of_shift_right_Ioi`). The mirror statements for
-`a + b ≤ 0` and shifts to the left follow by the symmetry `x ↦ −x`.
+(`TauCeti.Probability.gaussianPDFReal_add_lt_of_shift_right`). The mirror statement for
+`a + b ≤ 0` and shifts to the left follows by the symmetry `x ↦ −x`. When the shifted interval is
+a half-line `(a', ∞)`, whose perimeter is `φ(a')`, the sum also decreases, and here no sign
+condition on `a + b` is needed, since the mirror case is again a half-line `(a', ∞)`
+(`TauCeti.Probability.gaussianPDFReal_lt_of_shift_right_Ioi`).
 
 The proof parametrises the shifted intervals by the measure `u = Φ(a')` of the half-line to the
 left of them: with `m = Φ(b) − Φ(a)`, the sum is `I(u) + I(u + m)` for the Gaussian isoperimetric
@@ -27,10 +28,11 @@ Since `a' > a` and `b' > b`, this is negative along the shift.
 
 ## Main results
 
-* `TauCeti.Probability.gaussianPDFReal_add_lt_of_shift_right`,
-  `TauCeti.Probability.gaussianPDFReal_lt_of_shift_right_Ioi`: right shifts for `a + b ≥ 0`.
-* `TauCeti.Probability.gaussianPDFReal_add_lt_of_shift_left`,
-  `TauCeti.Probability.gaussianPDFReal_lt_of_shift_left_Iio`: left shifts for `a + b ≤ 0`.
+* `TauCeti.Probability.gaussianPDFReal_add_lt_of_shift_right`: right shifts for `a + b ≥ 0`.
+* `TauCeti.Probability.gaussianPDFReal_add_lt_of_shift_left`: left shifts for `a + b ≤ 0`.
+* `TauCeti.Probability.gaussianPDFReal_lt_of_shift_right_Ioi`,
+  `TauCeti.Probability.gaussianPDFReal_lt_of_shift_left_Iio`: shifts to a half-line, for any
+  `a` and `b`.
 
 ## References
 
@@ -117,10 +119,9 @@ theorem gaussianPDFReal_add_lt_of_shift_right {a b a' b' : ℝ} (hsum : 0 ≤ a 
     hab.le (by linarith) hb (by linarith)
   linarith
 
-/-- **Shifting an interval to a half-line on the right.** If `a + b ≥ 0`, `a < a'` and the
-half-line `(a', ∞)` has the standard Gaussian measure of `(a, b)`, `1 − Φ(a') = Φ(b) − Φ(a)`,
-then `φ(a') < φ(a) + φ(b)`. -/
-theorem gaussianPDFReal_lt_of_shift_right_Ioi {a b a' : ℝ} (hsum : 0 ≤ a + b) (ha : a < a')
+/-- The case `a + b ≥ 0` of `TauCeti.Probability.gaussianPDFReal_lt_of_shift_right_Ioi`. -/
+private theorem gaussianPDFReal_lt_of_shift_right_Ioi_of_nonneg {a b a' : ℝ}
+    (hsum : 0 ≤ a + b)
     (h : 1 - cdf (gaussianReal 0 1) a' =
       cdf (gaussianReal 0 1) b - cdf (gaussianReal 0 1) a) :
     gaussianPDFReal 0 1 a' < gaussianPDFReal 0 1 a + gaussianPDFReal 0 1 b := by
@@ -128,6 +129,7 @@ theorem gaussianPDFReal_lt_of_shift_right_Ioi {a b a' : ℝ} (hsum : 0 ≤ a + b
   have ha'1 := cdf_gaussianReal_lt_one 0 (one_ne_zero : (1 : NNReal) ≠ 0) a'
   have hab : a ≤ b := (hmono.lt_iff_lt.1 (by linarith)).le
   have hb1 := cdf_gaussianReal_lt_one 0 (one_ne_zero : (1 : NNReal) ≠ 0) b
+  have ha : a < a' := hmono.lt_iff_lt.1 (by linarith)
   have key := strictAntiOn_shift hab hsum ⟨le_rfl, by linarith⟩
     ⟨(hmono ha).le, by linarith⟩ (hmono ha)
   have e1 : cdf (gaussianReal 0 1) a + (cdf (gaussianReal 0 1) b - cdf (gaussianReal 0 1) a) =
@@ -137,27 +139,29 @@ theorem gaussianPDFReal_lt_of_shift_right_Ioi {a b a' : ℝ} (hsum : 0 ≤ a + b
   simpa only [e1, e2, gaussianIsoperimetricProfile_cdf, gaussianIsoperimetricProfile_one,
     add_zero] using key
 
-/-- **Shifting an interval to the left.** If `a + b ≤ 0`, `b' < b` and the intervals `(a, b)` and
-`(a', b')` have the same standard Gaussian measure, then `φ(a') + φ(b') < φ(a) + φ(b)`. -/
-theorem gaussianPDFReal_add_lt_of_shift_left {a b a' b' : ℝ} (hsum : a + b ≤ 0) (hb : b' < b)
-    (h : cdf (gaussianReal 0 1) b' - cdf (gaussianReal 0 1) a' =
+/-- **Shifting an interval to a half-line on the right.** If the half-line `(a', ∞)` has the
+standard Gaussian measure of `(a, b)`, `1 − Φ(a') = Φ(b) − Φ(a)`, then `φ(a') < φ(a) + φ(b)`.
+No sign condition on `a + b` is needed, and `a < a'` follows from the equation. -/
+theorem gaussianPDFReal_lt_of_shift_right_Ioi {a b a' : ℝ}
+    (h : 1 - cdf (gaussianReal 0 1) a' =
       cdf (gaussianReal 0 1) b - cdf (gaussianReal 0 1) a) :
-    gaussianPDFReal 0 1 a' + gaussianPDFReal 0 1 b' <
-      gaussianPDFReal 0 1 a + gaussianPDFReal 0 1 b := by
-  have := gaussianPDFReal_add_lt_of_shift_right (a := -b) (b := -a) (a' := -b') (b' := -a')
-    (by linarith) (by linarith) (by simp only [cdf_gaussianReal_zero_one_neg]; linarith)
+    gaussianPDFReal 0 1 a' < gaussianPDFReal 0 1 a + gaussianPDFReal 0 1 b := by
+  rcases le_total 0 (a + b) with hsum | hsum
+  · exact gaussianPDFReal_lt_of_shift_right_Ioi_of_nonneg hsum h
+  -- For `a + b ≤ 0`, the mirror interval `(−b, −a)` has the same measure and perimeter.
+  have := gaussianPDFReal_lt_of_shift_right_Ioi_of_nonneg (a := -b) (b := -a) (a' := a')
+    (by linarith) (by simp only [cdf_gaussianReal_zero_one_neg]; linarith)
   simp only [gaussianPDFReal_zero_neg] at this
   linarith
 
-/-- **Shifting an interval to a half-line on the left.** If `a + b ≤ 0`, `b' < b` and the
-half-line `(−∞, b')` has the standard Gaussian measure of `(a, b)`, `Φ(b') = Φ(b) − Φ(a)`, then
-`φ(b') < φ(a) + φ(b)`. -/
-theorem gaussianPDFReal_lt_of_shift_left_Iio {a b b' : ℝ} (hsum : a + b ≤ 0) (hb : b' < b)
+/-- **Shifting an interval to a half-line on the left.** If the half-line `(−∞, b')` has the
+standard Gaussian measure of `(a, b)`, `Φ(b') = Φ(b) − Φ(a)`, then `φ(b') < φ(a) + φ(b)`.
+No sign condition on `a + b` is needed, and `b' < b` follows from the equation. -/
+theorem gaussianPDFReal_lt_of_shift_left_Iio {a b b' : ℝ}
     (h : cdf (gaussianReal 0 1) b' = cdf (gaussianReal 0 1) b - cdf (gaussianReal 0 1) a) :
     gaussianPDFReal 0 1 b' < gaussianPDFReal 0 1 a + gaussianPDFReal 0 1 b := by
-  have := gaussianPDFReal_lt_of_shift_right_Ioi (a := -b) (b := -a) (a' := -b')
-    (by linarith) (by linarith) (by simp only [cdf_gaussianReal_zero_one_neg]; linarith)
-  simp only [gaussianPDFReal_zero_neg] at this
-  linarith
+  have := gaussianPDFReal_lt_of_shift_right_Ioi (a := a) (b := b) (a' := -b')
+    (by simp only [cdf_gaussianReal_zero_one_neg]; linarith)
+  rwa [gaussianPDFReal_zero_neg] at this
 
 end TauCeti.Probability
