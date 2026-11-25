@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Family.Chart
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
 # The Floer equation in a chart of a manifold
@@ -248,41 +249,6 @@ theorem almostComplexInChartAt_almostComplexStructureAt (J : P → SmoothAlmostC
   rw [almostComplexInChartAt, SmoothAlmostComplexStructure.inChart_def,
     SmoothAlmostComplexStructure.toContinuousLinearMap_almostComplexStructureAt]
 
-omit [FiniteDimensional ℝ E] in
-/-- The coordinates, in the trivialization at `α`, of a section `(q, x) ↦ σ q x` of a vector bundle
-`V` over `M` depending on a point `q` of a normed space `Q`, read along the chart at `α`, are `Cⁿ`
-on `U × (extChartAt I α).target` when the section is jointly `Cⁿ` at every point of `U × M` and the
-chart target lies over the base set of the trivialization. The chart readings of families of
-structures and of Hamiltonian vector fields are such coordinates. Unlike
-`TauCeti.Manifold.contDiffOn_trivializationAt_extChartAt_symm`, which treats a single tangent vector
-field, the section here is of any vector bundle and depends jointly on the parameter `q`. -/
-private theorem contDiffOn_trivializationAt_extChartAt_symm {Q F : Type*} [NormedAddCommGroup Q]
-    [NormedSpace ℝ Q] [NormedAddCommGroup F] [NormedSpace ℝ F] {V : M → Type*}
-    [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)] [∀ x, AddCommMonoid (V x)]
-    [∀ x, Module ℝ (V x)] [FiberBundle F V] [VectorBundle ℝ F V] {n : ℕ∞}
-    [ContMDiffVectorBundle n F V I] {U : Set Q} {σ : Q → (x : M) → V x} {α : M}
-    (hbase : ∀ w ∈ (extChartAt I α).target,
-      (extChartAt I α).symm w ∈ (trivializationAt F V α).baseSet)
-    (hσ : ∀ q ∈ U, ∀ x, ContMDiffAt (𝓘(ℝ, Q).prod I) (I.prod 𝓘(ℝ, F)) n
-      (fun p : Q × M ↦ TotalSpace.mk' F p.2 (σ p.1 p.2)) (q, x)) :
-    ContDiffOn ℝ n (fun p : Q × E ↦ (trivializationAt F V α
-        ⟨(extChartAt I α).symm p.2, σ p.1 ((extChartAt I α).symm p.2)⟩).2)
-      (U ×ˢ (extChartAt I α).target) := by
-  rintro ⟨q, y⟩ ⟨hq, hy⟩
-  -- The coordinates of the section in the trivialization at `α` are `Cⁿ` at `(q, x)`, for the
-  -- point `x` with chart coordinate `y`.
-  have hcoord := ((Bundle.Trivialization.contMDiffAt_iff (e := trivializationAt F V α)
-    (f := fun p : Q × M ↦ TotalSpace.mk' F p.2 (σ p.1 p.2))
-    ((trivializationAt F V α).mem_source.2 (hbase y hy))).1
-    (hσ q hq ((extChartAt I α).symm y))).2
-  -- The map `(q, y) ↦ (q, x)` into `Q × M` is `Cⁿ` over the chart target.
-  have hψ : ContMDiffWithinAt 𝓘(ℝ, Q × E) (𝓘(ℝ, Q).prod I) n
-      (fun p : Q × E ↦ (p.1, (extChartAt I α).symm p.2)) (U ×ˢ (extChartAt I α).target) (q, y) :=
-    (contDiff_fst.contMDiff _).contMDiffWithinAt.prodMk
-      (((contMDiffOn_extChartAt_symm (I := I) (n := n) α _ hy).comp (q, y)
-        (contDiff_snd.contMDiff _).contMDiffWithinAt fun _ hp ↦ hp.2))
-  exact (contMDiffWithinAt_iff_contDiffWithinAt.1 (hcoord.comp_contMDiffWithinAt (q, y) hψ) :)
-
 /-- **A jointly regular family of structures is regular in a chart.** Let `J_q(x)` be structures
 on the tangent spaces of `M`, depending on a point `q` of a normed space `Q`, such as the domain
 `ℝ × ℝ` of the Floer equation or a space of parameters times it, and let the section
@@ -299,7 +265,7 @@ theorem contDiffOn_almostComplexInChartAt {Q : Type*} [NormedAddCommGroup Q] [No
     (α : M) :
     ContDiffOn ℝ n (almostComplexInChartAt I α J) (U ×ˢ (extChartAt I α).target) :=
   -- In the trivialization at `α`, the section is the family in tangent coordinates.
-  (contDiffOn_trivializationAt_extChartAt_symm (V := fun x : M ↦
+  (Manifold.contDiffOn_trivializationAt_extChartAt_symm_prod (V := fun x : M ↦
       TangentSpace I x →L[ℝ] TangentSpace I x)
     (σ := fun q x ↦ (J q x).toLinearMap.toContinuousLinearMap)
     (fun _ hw ↦ by simpa using TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hw)
@@ -436,7 +402,7 @@ theorem IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt (hω : ω.IsN
     simpa using (extChartAt I α).map_target hw
   -- The Hamiltonian vector fields form a section of the tangent bundle which is `C^n` on `U × M`,
   -- and in the trivialization at `α` it is the vector field in tangent coordinates.
-  refine (Floer.contDiffOn_trivializationAt_extChartAt_symm (V := TangentSpace I)
+  refine (Manifold.contDiffOn_trivializationAt_extChartAt_symm_prod (V := TangentSpace I)
     (σ := fun z ↦ ω.hamiltonianVectorField (K z)) (fun _ ↦ hbase) fun z hz x ↦
       hω.contMDiffAt_hamiltonianVectorField_uncurry (n := n) (by exact_mod_cast le_top)
         (hK z hz x)).congr fun p hp ↦ ?_
