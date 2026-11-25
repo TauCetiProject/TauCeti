@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Scalar
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # Parameter derivatives of one-parameter families of vector fields
@@ -101,23 +103,8 @@ theorem ContMDiff.one_sub_smul_add_smul_vectorField
     (hX₀ : ContMDiff I I.tangent n (fun y ↦ (⟨y, X₀ y⟩ : TangentBundle I M)))
     (hX₁ : ContMDiff I I.tangent n (fun y ↦ (⟨y, X₁ y⟩ : TangentBundle I M))) :
     ContMDiff (𝓘(ℝ).prod I) I.tangent n
-      (fun p : ℝ × M ↦ (⟨p.2, (1 - p.1) • X₀ p.2 + p.1 • X₁ p.2⟩ : TangentBundle I M)) := by
-  rintro ⟨s, x⟩
-  rw [contMDiffAt_totalSpace_iff]
-  refine ⟨contMDiffAt_snd, ?_⟩
-  -- In the trivialization at `x`, the coordinates of the segment are the segment of the
-  -- coordinates, since the trivialization is linear on the fibres over its base set.
-  set e := trivializationAt E (TangentSpace I) x
-  have h₀ : ContMDiffAt (𝓘(ℝ).prod I) 𝓘(ℝ, E) n (fun p : ℝ × M ↦ (e ⟨p.2, X₀ p.2⟩).2) (s, x) :=
-    (contMDiffAt_totalSpace_iff.1 (hX₀ x)).2.comp (f := Prod.snd) (s, x) contMDiffAt_snd
-  have h₁ : ContMDiffAt (𝓘(ℝ).prod I) 𝓘(ℝ, E) n (fun p : ℝ × M ↦ (e ⟨p.2, X₁ p.2⟩).2) (s, x) :=
-    (contMDiffAt_totalSpace_iff.1 (hX₁ x)).2.comp (f := Prod.snd) (s, x) contMDiffAt_snd
-  have hc : ContMDiffAt (𝓘(ℝ).prod I) 𝓘(ℝ) n (fun p : ℝ × M ↦ 1 - p.1) (s, x) :=
-    contMDiffAt_const.sub contMDiffAt_fst
-  refine ((hc.smul h₀).add (contMDiffAt_fst.smul h₁)).congr_of_eventuallyEq ?_
-  filter_upwards [(e.open_baseSet.preimage continuous_snd).mem_nhds
-    (FiberBundle.mem_baseSet_trivializationAt' x)] with p hp
-  have hlin := e.linear ℝ hp
-  rw [hlin.map_add, hlin.map_smul, hlin.map_smul, Pi.add_apply, Pi.smul_apply', Pi.smul_apply']
+      (fun p : ℝ × M ↦ (⟨p.2, (1 - p.1) • X₀ p.2 + p.1 • X₁ p.2⟩ : TangentBundle I M)) :=
+  ((contMDiff_const.sub contMDiff_fst).smul_totalSpace (hX₀.comp contMDiff_snd)).add_sectionAlong
+    (contMDiff_fst.smul_totalSpace (hX₁.comp contMDiff_snd))
 
 end Segment
