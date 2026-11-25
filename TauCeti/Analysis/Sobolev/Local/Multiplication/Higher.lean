@@ -73,8 +73,8 @@ theorem MemWkpLoc.bilin_succ [CompleteSpace H] (B : F →L[ℝ] G →L[ℝ] H) (
     obtain ⟨Dg, hDg, hDgk⟩ := hg.exists_weakFDeriv_of_isOpen
     -- `f` is locally bounded, by the local gain of integrability at `q = p`.
     have hfi : MemLpLoc ∞ Ω f := (hf.of_le (by omega)).memLpLoc_of_holderTriple hp le_rfl
-    have hD := hDf.bilin_of_memLpLoc B hp hq hqp (hfi.mono_exponent le_top) hDfk.memLpLoc hDg
-      hg.memLpLoc hDgk.memLpLoc
+    have hD := hDf.bilin_of_finrank_lt B (by simpa using hp) hq hqp (hfi.mono_exponent le_top)
+      hDfk.memLpLoc hDg hg.memLpLoc hDgk.memLpLoc
     refine memWkpLoc_succ_iff_of_isOpen.2 ⟨h1.memLpLoc, _, hD, ?_⟩
     exact (ih (B.precompL ℂ) hDfk hg.of_succ).add (ih (B.precompR ℂ) hf.of_succ hDgk)
 

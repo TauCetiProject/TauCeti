@@ -379,11 +379,8 @@ end EndLoop
 /-- The reflection `ρ` preserves integrals: the integral of `g ∘ ρ` over `ρ⁻¹ s` is the integral
 of `g` over `s`. -/
 private theorem setIntegral_preimage_reflectL (g : ℝ × ℝ → ℝ) (s : Set (ℝ × ℝ)) :
-    ∫ w in reflectL ⁻¹' s, g (reflectL w) = ∫ z in s, g z := by
-  have hmp : MeasurePreserving (Prod.map (Neg.neg : ℝ → ℝ) (id : ℝ → ℝ)) :=
-    (Measure.measurePreserving_neg volume).prod (MeasurePreserving.id volume)
-  exact hmp.setIntegral_preimage_emb
-    ((MeasurableEquiv.neg ℝ).measurableEmbedding.prodMap MeasurableEmbedding.id) g s
+    ∫ w in reflectL ⁻¹' s, g (reflectL w) = ∫ z in s, g z :=
+  setIntegral_preimage_prodMap_neg_id g s
 
 /-- The reflection `ρ` carries `[-b, -a] × [0, 1]` onto `[a, b] × [0, 1]`, preserving
 integrals. -/

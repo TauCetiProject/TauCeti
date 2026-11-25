@@ -136,13 +136,13 @@ classes of ambient tangent vectors are `C^m` on the pulled-back ambient tangent 
 theorem contMDiff_normalBundle_of_contMDiff_normalClass (f : SmoothEmbedding I J n M N)
     (hn : n ≠ 0) (hm : m + 1 ≤ n)
     (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E)
-    (r : (x : M) → f.NormalSpace x hn → TangentSpace J (f x))
+    (r : (x : M) → f.isImmersion.NormalSpace x hn → TangentSpace J (f x))
     (hr : ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
-        (⟨f p.proj, r p.proj (f.normalClass p.proj hn p.snd)⟩ : TangentBundle J N))) :
+        (⟨f p.proj, r p.proj (f.isImmersion.normalClass p.proj hn p.snd)⟩ : TangentBundle J N))) :
     letI := f.normalSpaceFiberBundle hn hdim
     ContMDiff (I.prod 𝓘(ℝ, P)) (J.prod 𝓘(ℝ, V)) m
-      (fun p : TotalSpace P (fun x ↦ f.NormalSpace x hn) ↦
+      (fun p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) ↦
         (⟨f p.proj, r p.proj p.snd⟩ : TangentBundle J N)) := by
   let := f.normalSpaceFiberBundle hn hdim
   rw [f.contMDiff_normalBundle_iff hn hm hdim]
