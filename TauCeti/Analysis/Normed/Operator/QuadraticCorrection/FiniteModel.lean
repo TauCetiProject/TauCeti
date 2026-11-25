@@ -30,8 +30,9 @@ A small forcing then perturbs everything at once (Taubes adds a curvature pertur
 size `t = ‖ρ‖`): it adds `g p` with `‖g p‖ ≤ B_c t` to the complementary equation, whose solution
 becomes `x p`, it changes the section directly by at most `B_φ t`, and a second parameter (the
 coefficients of the point sections) moves the section by at most `H`. This file shows that the
-count survives, under an explicit tolerance on `t` that depends only on the constants of the
-unforced problem.
+count survives, under an explicit tolerance on `t` that depends on the constants `C, L, δ, b` of
+the unforced problem and on a constant `B` dominating the forcing budgets `B_c` and
+`B_φ + 2 C K B_c`.
 
 **The tolerance.** `TauCeti.IsForcingTolerance C L B δ b τ` records the three budgets
 
@@ -59,10 +60,10 @@ reduced section, at the forced correction
 
 **The count.** Since these estimates hold on the frontier of an isolating `U`, the local degree on
 `U` of the forced reduced section is that of the reference section
-(`TauCeti.HomologicalOrientation.localDegree_restrict_eq_of_isForcingTolerance`), and when this
-count is nonzero the forced reduced section has a zero in `U`
-(`TauCeti.HomologicalOrientation.exists_mem_apply_eq_zero_of_isForcingTolerance`). The hypotheses
-are only needed on the frontier of `U`.
+(`TauCeti.HomologicalOrientation.localDegree_restrict_eq_of_isForcingTolerance`); for this, the
+hypotheses are only needed on the frontier of `U`. When this count is nonzero and the continuous
+map agrees with the forced reduced section on all of `U`, the forced reduced section has a zero
+in `U` (`TauCeti.HomologicalOrientation.exists_mem_apply_eq_zero_of_isForcingTolerance`).
 
 ## Main declarations
 
@@ -98,7 +99,9 @@ namespace TauCeti
 constant `L` and radius `δ`, a forcing constant `B` and a boundary margin `b`: a nonnegative `τ`
 with `16 C² L (1 + B) τ ≤ 1`, `8 C (1 + B) τ ≤ δ` and `4 (1 + B) τ ≤ b`. Forcings of size `t < τ`
 then keep the forced correction in the contraction and uniqueness regions of the unforced
-problem and move the reduced section by less than `b / 4`. -/
+problem and keep the forcing term `B t` below `b / 4`, so that under the budgets of
+`TauCeti.norm_apply_sub_apply_lt_of_isForcingTolerance` the reduced section moves by less than
+`b / 2`. -/
 structure IsForcingTolerance (C L B : ℝ≥0) (δ b τ : ℝ) : Prop where
   /-- The tolerance is nonnegative. -/
   nonneg : 0 ≤ τ
@@ -377,15 +380,17 @@ theorem localDegree_restrict_eq_of_isForcingTolerance (hU : IsCompact (closure (
 
 include hF in
 /-- **A nonzero count has a forced solution.** Under the hypotheses of
-`TauCeti.HomologicalOrientation.localDegree_restrict_eq_of_isForcingTolerance`, if `f₀` has nonzero
-local degree on `U` at `0`, then `f` vanishes at some point of `U`. -/
+`TauCeti.HomologicalOrientation.localDegree_restrict_eq_of_isForcingTolerance`, if `f` also agrees
+with the forced reduced section `p ↦ φ p (x p)` on `U` and `f₀` has nonzero local degree on `U` at
+`0`, then the forced reduced section vanishes at some point of `U`. -/
 theorem exists_mem_apply_eq_zero_of_isForcingTolerance (hU : IsCompact (closure (U : Set M)))
-    (hb : ∀ p ∈ frontier (U : Set M), b ≤ ‖f₀ p‖)
+    (hb : ∀ p ∈ frontier (U : Set M), b ≤ ‖f₀ p‖) (hfU : ∀ p ∈ (U : Set M), f p = φ p (x p))
     (hdeg : (o.comap U.isOpenEmbedding').localDegree o' hE (f₀.restrict U) 0 ≠ 0) :
-    ∃ p ∈ U, f p = 0 := by
+    ∃ p ∈ U, φ p (x p) = 0 := by
   rw [← o.localDegree_restrict_eq_of_isForcingTolerance o' hE hF hDQ hQ hN he hε hεδ hτ ht₀ ht
     hg hBc hxQ hx hxe hx₀Q hx₀ hx₀e hφ hψ hH hHb hB hf hf₀ hU hb] at hdeg
-  exact o.exists_mem_apply_eq_of_localDegree_restrict_ne_zero o' hE hF hdeg
+  obtain ⟨p, hp, hfp⟩ := o.exists_mem_apply_eq_of_localDegree_restrict_ne_zero o' hE hF hdeg
+  exact ⟨p, hp, hfU p hp ▸ hfp⟩
 
 end HomologicalOrientation
 
