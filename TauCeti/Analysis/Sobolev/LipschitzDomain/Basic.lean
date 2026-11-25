@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Lp.GraphDomain
 public import TauCeti.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.MetricSpace.Lipschitz
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Topology.MetricSpace.Bounded
 
 /-!
 # Domains with Lipschitz boundary
@@ -82,6 +83,9 @@ support-containment lemmas provide the shared geometry for chart trace and exten
   a bounded Lipschitz domain is covered by finitely many shortened chart cylinders.
 * `Set.IsLipschitzDomain.exists_isLipschitzDomainWith`: a Lipschitz domain with compact frontier
   has a uniform Lipschitz bound.
+* `Set.IsLipschitzDomain.exists_isLipschitzDomainWith_image`: a bounded Lipschitz domain with
+  nonempty frontier in a proper space is carried by one of its boundary charts onto a Lipschitz
+  domain of the model space with a uniform Lipschitz bound.
 
 ## References
 
@@ -913,6 +917,21 @@ theorem IsLipschitzDomain.exists_isLipschitzDomainWith {Omega : Set (WithLp 2 (�
   have heq := hc'.fst_apply_eq_of_mem_frontier hx
     (hex ▸ zero_mem_normalCylinder hc'.height_pos hc'.radius_pos)
   simpa [hex] using heq.symm
+
+/-- A bounded Lipschitz domain with nonempty frontier in a proper space is carried by an affine
+isometry onto the model space (any of its boundary charts) to a Lipschitz domain of the model space
+with a uniform Lipschitz bound. -/
+theorem IsLipschitzDomain.exists_isLipschitzDomainWith_image [ProperSpace F] {Omega : Set F}
+    (h : Omega.IsLipschitzDomain E) (hb : Bornology.IsBounded Omega)
+    (hne : (frontier Omega).Nonempty) :
+    ∃ (g : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (L : ℝ≥0), (g '' Omega).IsLipschitzDomainWith L := by
+  obtain ⟨x₀, hx₀⟩ := hne
+  obtain ⟨g, -, -, -, -, -, -⟩ := h x₀ hx₀
+  have hfr : IsCompact (frontier (g '' Omega)) := by
+    rw [← g.coe_toHomeomorph, ← g.toHomeomorph.image_frontier]
+    exact hb.isCompact_frontier.image g.continuous
+  obtain ⟨L, hL⟩ := (h.image g).exists_isLipschitzDomainWith hfr
+  exact ⟨g, L, hL⟩
 
 end Set
 
