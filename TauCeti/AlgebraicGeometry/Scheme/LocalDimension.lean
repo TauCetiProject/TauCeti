@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 public import Mathlib.AlgebraicGeometry.ZariskisMainTheorem
-import Mathlib.FieldTheory.FinTrdeg
 import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
 import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 import TauCeti.AlgebraicGeometry.ResidueDegree
@@ -63,7 +62,6 @@ All in the namespace `TauCeti.AlgebraicGeometry`:
 * `height_apply_eq_height_of_residueDegree_ne_zero`: a morphism over `k` preserves the height of
   a point with finite residue field extension.
 * `height_apply_of_isOpenImmersion`: an open immersion into `X` preserves the height of points.
-* `height_apply_le_height`: a morphism over `k` does not increase the height of a point.
 * `finite_preimage_singleton_of_height_eq`: a fibre whose points all have the height of their
   image is finite.
 * `exists_isFinite_morphismRestrict_of_height_add_one`: a proper dominant morphism from an
@@ -273,39 +271,6 @@ theorem height_apply_of_isOpenImmersion {U : Scheme.{u}} (j : U ⟶ X) [IsOpenIm
   exact height_apply_eq_height_of_residueDegree_ne_zero k j
     (by rw [Scheme.Hom.residueDegree_eq_one_of_surjectiveOnStalks]; exact one_ne_zero)
 
-/-- The residue field `κ(x)` of a scheme locally of finite type over a field `k` is essentially of
-finite type over `k`. In particular it has finite transcendence degree over `k`. -/
-instance essFiniteType_residueField (x : X) : Algebra.EssFiniteType k (X.residueField x) := by
-  rw [← RingHom.essFiniteType_algebraMap]
-  have h : algebraMap k (X.residueField x) =
-      ((Scheme.Spec.residueFieldIsoOfField ((X ↘ Spec (.of k)) x)).inv ≫
-        (X ↘ Spec (.of k)).residueFieldMap x).hom := by
-    rw [Scheme.Hom.residueFieldIsoOfField_inv_residueFieldMap]
-    ext c
-    rw [Scheme.algebraMap_residueField_eq_residue_comp_baseRingToStalk, RingHom.comp_apply,
-      Scheme.residue_baseRingToStalk, Scheme.Modules.baseRingToGlobalSections_apply]
-    rfl
-  rw [h, CommRingCat.hom_comp]
-  let he := (Scheme.Spec.residueFieldIsoOfField ((X ↘ Spec (.of k)) x)).commRingCatIsoToRingEquiv
-  exact (RingHom.FiniteType.of_surjective _ he.symm.surjective).essFiniteType.comp
-    (LocallyOfFiniteType.stalkMap (X ↘ Spec (.of k)) x).residueFieldMap
-
-/-- **Morphisms do not increase heights.** For a morphism `f : X ⟶ Y` of schemes locally of finite
-type over a field `k`, the closure of `f x` has dimension at most that of the closure of `x`:
-`κ(f x)` is a subfield of `κ(x)`, so its transcendence degree over `k` is at most that of `κ(x)`. -/
-theorem height_apply_le_height {Y : Scheme.{u}} [Y.Over (Spec (.of k))]
-    [LocallyOfFiniteType (Y ↘ Spec (.of k))] (f : X ⟶ Y) [f.IsOver (Spec (.of k))] (x : X) :
-    Order.height (f x) ≤ Order.height x := by
-  let : Algebra (Y.residueField (f x)) (X.residueField x) := (f.residueFieldMap x).hom.toAlgebra
-  have : IsScalarTower k (Y.residueField (f x)) (X.residueField x) :=
-    IsScalarTower.of_algebraMap_eq fun c ↦ (f.residueFieldMap_algebraMap k x c).symm
-  have hsum := trdeg_add_eq k (Y.residueField (f x)) (A := X.residueField x)
-  have hfin : Algebra.trdeg k (X.residueField x) < Cardinal.aleph0 := trdeg_lt_aleph0 _ _
-  rw [← hsum, Cardinal.add_lt_aleph0_iff] at hfin
-  rw [height_eq_toNat_trdeg_residueField k, height_eq_toNat_trdeg_residueField k, ← hsum,
-    Cardinal.toNat_add hfin.1 hfin.2, Nat.cast_le]
-  exact Nat.le_add_right _ _
-
 /-- **Fibres of equal height are finite.** Let `f : X ⟶ Y` be a quasi-compact morphism of schemes
 over a field `k`, with `X` locally of finite type over `k`, and let `y ∈ Y` be such that every
 point of the fibre over `y` has the height of `y`. Then the fibre is finite. -/
@@ -339,13 +304,13 @@ theorem finite_preimage_singleton_of_height_eq {Y : Scheme.{u}} [Y.Over (Spec (.
   exact f.range_fiberι y ▸ Set.finite_range _
 
 /-- **Proper generically finite morphisms are finite in codimension one.** Let `f : X ⟶ Y` be a
-proper dominant morphism of schemes locally of finite type over a field `k`, with `X` irreducible
-(so `Y` is irreducible too), both of dimension `n + 1`, and let `y ∈ Y` be a point of codimension
-one, that is, of height `n`. Then `f` is finite over an open neighbourhood of `y` (Stacks,
-Tag 02UP, since the fibre over `y` is finite). -/
+proper dominant morphism of schemes over a field `k`, with `X` irreducible and locally of
+finite type over `k` (so `Y` is irreducible too), both of dimension `n + 1`, and let `y ∈ Y` be
+a point of codimension one, that is, of height `n`. Then `f` is finite over an open neighbourhood
+of `y` (Stacks, Tag 02UP, since the fibre over `y` is finite). -/
 theorem exists_isFinite_morphismRestrict_of_height_add_one {Y : Scheme.{u}}
-    [Y.Over (Spec (.of k))] [LocallyOfFiniteType (Y ↘ Spec (.of k))] [IrreducibleSpace X]
-    (f : X ⟶ Y) [f.IsOver (Spec (.of k))] [IsProper f] [IsDominant f] {n : ℕ}
+    [Y.Over (Spec (.of k))] [IrreducibleSpace X] (f : X ⟶ Y) [f.IsOver (Spec (.of k))]
+    [IsProper f] [IsDominant f] {n : ℕ}
     (hX : topologicalKrullDim X = n + 1) (hY : topologicalKrullDim Y = n + 1) {y : Y}
     (hy : Order.height y = n) :
     ∃ V : Y.Opens, y ∈ V ∧ IsFinite (f ∣_ V) := by
@@ -354,12 +319,13 @@ theorem exists_isFinite_morphismRestrict_of_height_add_one {Y : Scheme.{u}}
       Order.height (genericPoint Z) = n + 1 := fun Z _ hZ ↦ by
     rw [← (genericPoint_spec Z).height_eq_topologicalKrullDim] at hZ
     exact_mod_cast hZ
-  -- Every point `x` over `y` has height `n`: at least `n` since `f` does not increase heights,
-  -- and less than `n + 1` since `x` is not the generic point of `X`, which maps to that of `Y`.
+  -- Every point `x` over `y` has height `n`: at least `n` since the closed map `f` does not
+  -- increase heights, and less than `n + 1` since `x` is not the generic point of `X`, which maps
+  -- to that of `Y`.
   refine exists_isFinite_morphismRestrict_of_finite_preimage_singleton f y
     (finite_preimage_singleton_of_height_eq k f y fun x hx ↦ ?_)
   subst hx
-  refine le_antisymm ?_ (height_apply_le_height k f x)
+  refine le_antisymm ?_ (f.isClosedMap.specializingMap.height_apply_le_height x)
   have hne : x ≠ genericPoint X := by
     rintro rfl
     have h := hgen Y hY
