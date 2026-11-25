@@ -91,13 +91,6 @@ noncomputable def torsorStalkSmoothTorsor :
   smul_distrib_smul := smul_torsorStalk_smul P
   isOpen_stabilizer := isOpen_stabilizer_torsorStalk P
 
-variable {P} {Q : Sheaf.Torsor 𝒢}
-
-/-- The map of stalks induced by a morphism of torsors commutes with the action of `G`. -/
-theorem presheafFiber_map_smul_G (f : P ⟶ Q) (g : G) (x : (point G).TorsorStalk P) :
-    (point G).presheafFiber.map f.hom.hom (g • x) = g • (point G).presheafFiber.map f.hom.hom x :=
-  ConcreteCategory.congr_hom (((stalk G).map f.hom.hom).comm g) x
-
 variable [TopologicalSpace ((point G).GrpStalk 𝒢.obj)]
 
 variable (𝒢) in
@@ -107,7 +100,7 @@ noncomputable def nonabelianH1ToStalk :
     Sheaf.NonabelianH1 𝒢 → TauCeti.NonabelianH1 G ((point G).GrpStalk 𝒢.obj) :=
   Sheaf.NonabelianH1.lift (fun P ↦ (torsorStalkSmoothTorsor P).cls) fun _ _ f ↦
     TauCeti.NonabelianH1.SmoothTorsor.cls_eq_cls_of_map ((point G).presheafFiber.map f.hom.hom)
-      ((point G).presheafFiber_map_smul f) (presheafFiber_map_smul_G f)
+      ((point G).presheafFiber_map_smul f) (presheafFiber_map_smul f.hom.hom)
 
 /-- The class of a torsor goes to the class of its stalk. -/
 @[simp]
@@ -128,10 +121,7 @@ theorem nonabelianH1ToStalk_one : nonabelianH1ToStalk 𝒢 1 = 1 := by
   refine ⟨(point G).toPresheafFiber e.obj e.val (Sheaf.Torsor.trivial 𝒢).sheaf.obj
     (1 : 𝒢.obj.obj (op e.obj)), fun g ↦ ?_⟩
   refine (smul_toPresheafFiber_torsorStalk _ g e.obj e.val _).trans ?_
-  have h (s : (fiberFunctor G).obj e.obj) :
-      (point G).toPresheafFiber e.obj s (Sheaf.Torsor.trivial 𝒢).sheaf.obj
-        (1 : 𝒢.obj.obj (op e.obj)) = (point G).grpGerm 𝒢.obj e.obj s 1 :=
-    ((point G).grpGerm_apply 𝒢.obj e.obj s 1).symm
-  rw [h, h, map_one, map_one]
+  rw [GrothendieckTopology.Point.toPresheafFiber_trivial,
+    GrothendieckTopology.Point.toPresheafFiber_trivial, map_one, map_one]
 
 end ContAction

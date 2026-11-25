@@ -116,6 +116,13 @@ theorem exists_grpGerm_eq_toPresheafFiber_eq (g : Φ.GrpStalk G.obj) (p : Φ.Tor
   exact ⟨Z, z, G.obj.map f₁.op a, P.sheaf.obj.map f₂.op b, Φ.grpGerm_map G.obj f₁ z a,
     Φ.toPresheafFiber_w_apply f₂ z P.sheaf.obj b⟩
 
+/-- Germs of sections of the trivial `G`-torsor are germs of sections of `G`. -/
+theorem toPresheafFiber_trivial (X : C) (x : Φ.fiber.obj X) (a : G.obj.obj (op X)) :
+    Φ.toPresheafFiber X x (Sheaf.Torsor.trivial G).sheaf.obj a = Φ.grpGerm G.obj X x a :=
+  -- The sheaf of sets underlying the trivial torsor is `G.obj ⋙ forget GrpCat`
+  -- (`Sheaf.Torsor.trivial_sheaf`), whose stalk is `Φ.GrpStalk G.obj`.
+  (Φ.grpGerm_apply G.obj X x a).symm
+
 variable {P} in
 /-- The map of stalks induced by a morphism of torsors commutes with the action of the stalk
 of `G`. -/
