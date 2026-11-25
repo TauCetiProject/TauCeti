@@ -41,7 +41,8 @@ on the groups or on the representations.
   span an induced representation.
 * `Representation.indV_mk_apply`: the generator map at `h` turns the action of `g` on the
   coefficient into the induced action of `h⁻¹ φ(g) h`, and `Representation.indV_mk_comp_conjNormal`
-  is the resulting equivariance for a normal subgroup `N ≤ S`, twisted by conjugation.
+  is the resulting `N`-equivariance for subgroups `N ≤ H` of `G` with `N` normal, twisted by
+  conjugation `n ↦ s n s⁻¹`.
 * `Rep.indMap_injective` and `Rep.indFunctor_faithful`: induction from a subgroup is faithful.
 * `Representation.IntertwiningMap.ind_id`, `Representation.IntertwiningMap.ind_comp`: induction
   of intertwining maps is functorial.
