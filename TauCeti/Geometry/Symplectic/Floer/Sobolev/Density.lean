@@ -26,7 +26,8 @@ records the derivatives of a section cut off by a function of `s`.
 ## Main results
 
 * `TauCeti.Floer.sobolevDensity_nonneg`: the density is nonnegative.
-* `TauCeti.Floer.continuous_sobolevDensity`: the density of a `C¹` map is continuous.
+* `TauCeti.Floer.continuous_sobolevDensity`, `TauCeti.Floer.continuousAt_sobolevDensity`: the
+  density of a `C¹` map is continuous, and that of a map `C¹` at a point is continuous there.
 * `TauCeti.Floer.sobolevDensity_congr_of_eventuallyEq`: the density at `z` depends only on the
   germ of the map at `z`.
 * `TauCeti.Floer.integrableOn_sobolevDensity_of_eventuallyEq_zero`: a map with continuous density
@@ -69,13 +70,18 @@ theorem sobolevDensity_nonneg (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : 0 ≤ s
 theorem sobolevDensity_zero (z : ℝ × ℝ) : sobolevDensity (0 : ℝ × ℝ → V) z = 0 := by
   simp [sobolevDensity_apply]
 
-/-- The `W^{1,2}` energy density of a `C¹` map is continuous. -/
-theorem continuous_sobolevDensity {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) :
-    Continuous (sobolevDensity ξ) := by
-  have := hξ.continuous_fderiv one_ne_zero
-  have := hξ.continuous
+/-- The `W^{1,2}` energy density of a map that is `C¹` at `z` is continuous at `z`. -/
+theorem continuousAt_sobolevDensity {ξ : ℝ × ℝ → V} {z : ℝ × ℝ} (hξ : ContDiffAt ℝ 1 ξ z) :
+    ContinuousAt (sobolevDensity ξ) z := by
+  have := hξ.continuousAt_fderiv one_ne_zero
+  have := hξ.continuousAt
   simp only [funext (sobolevDensity_apply ξ)]
   fun_prop
+
+/-- The `W^{1,2}` energy density of a `C¹` map is continuous. -/
+theorem continuous_sobolevDensity {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) :
+    Continuous (sobolevDensity ξ) :=
+  continuous_iff_continuousAt.2 fun _ ↦ continuousAt_sobolevDensity hξ.contDiffAt
 
 /-- Two maps that agree near `z` have the same energy density at `z`. -/
 theorem sobolevDensity_congr_of_eventuallyEq {ξ η : ℝ × ℝ → V} {z : ℝ × ℝ}

@@ -113,6 +113,24 @@ theorem dist_mul_sub_mul_I (v : ℂ) (s h : ℝ) : dist (v * (s - h * I)) (v * s
   have := dist_mul_add_mul_I v s (-h)
   rwa [ofReal_neg, neg_mul, ← sub_eq_add_neg, abs_neg] at this
 
+/-- The negative imaginary part of the inverse square in Cartesian coordinates. -/
+theorem neg_im_one_div_sq (z : ℂ) :
+    -((1 : ℂ) / z ^ 2).im = 2 * z.re * z.im / Complex.normSq z ^ 2 := by
+  simp [pow_two, Complex.mul_im]
+  ring
+
+/-- The negative imaginary part of `I` divided by a square in Cartesian coordinates. -/
+theorem neg_im_I_div_sq (z : ℂ) :
+    -(Complex.I / z ^ 2).im = (z.im ^ 2 - z.re ^ 2) / Complex.normSq z ^ 2 := by
+  simp [Complex.div_im, pow_two, Complex.normSq_mul, Complex.mul_re]
+  ring
+
+/-- The negative imaginary part of `-1` divided by a square in Cartesian coordinates. -/
+theorem neg_im_neg_one_div_sq (z : ℂ) :
+    -((-1 : ℂ) / z ^ 2).im = -(2 * z.re * z.im) / Complex.normSq z ^ 2 := by
+  simpa only [neg_div, Complex.neg_im, neg_neg] using
+    congrArg Neg.neg (neg_im_one_div_sq z)
+
 end Complex
 
 namespace TauCeti
