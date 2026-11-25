@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Complex.Order
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Functoriality
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.QExpansion
-import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.NumberTheory.ModularForms.JacobiTheta.OneVariable
 
 /-!
@@ -30,14 +29,10 @@ across `ℍ` `Θ_{(c ℤ)^∨} = Θ_{c ℤ}`, each hold if and only if `|c| = 1`
 (`ZLattice.thetaSeries_dual_span_singleton_eq_iff_of_re_eq_zero`,
 `ZLattice.thetaSeries_dual_span_singleton_eq_iff`).
 
-For the non-integral lattice `L = ½ ℤ ⊆ ℝ`, the dual is `L^∨ = 2 ℤ < L`
-(`ZLattice.dual_span_inv_two`, `ZLattice.dual_span_inv_two_lt`), the discriminant group `A_L` is
-trivial (`ZLattice.subsingleton_discriminantGroup_span_inv_natCast`), and
-`Θ_{2ℤ}(i) < Θ_{½ℤ}(i)`, so `Θ_{2ℤ}(i) ≠ Θ_{½ℤ}(i)` and `Θ_{L^∨}(i) ≠ ∑_{γ ∈ A_L} θ_γ(i)`
-(`ZLattice.thetaSeries_span_two_ne_thetaSeries_span_inv_two_I`,
-`ZLattice.thetaSeries_dual_span_inv_natCast_ne_sum_thetaCosetClass_I`,
-`ZLattice.thetaSeries_dual_span_inv_two_ne_tsum_thetaCosetClass_I`). This witnesses directly that
-`ZLattice.IsIntegral.thetaSeries_dual_eq_sum` cannot drop its integrality hypothesis.
+For any `n ≠ 1`, the lattice `L = n⁻¹ ℤ ⊆ ℝ` satisfies `Θ_{L^∨}(i) ≠ ∑_{γ ∈ A_L} θ_γ(i)` whenever
+`A_L` is finite (`ZLattice.thetaSeries_dual_span_inv_natCast_ne_sum_thetaCosetClass_I`): for
+`n ≥ 2`, `A_L` is trivial (`ZLattice.subsingleton_discriminantGroup_span_inv_natCast`) while
+`L^∨ = n ℤ < L`.
 
 ## Main statements
 
@@ -51,12 +46,8 @@ trivial (`ZLattice.subsingleton_discriminantGroup_span_inv_natCast`), and
   `ZLattice.thetaSeries_dual_span_singleton_eq_iff_of_re_eq_zero`,
   `ZLattice.thetaSeries_dual_span_singleton_eq_iff`: strict antitone comparison in `|c|` on the
   imaginary axis, and `Θ_{(c ℤ)^∨} = Θ_{c ℤ} ↔ |c| = 1`.
-* `ZLattice.thetaSeries_span_two_lt_thetaSeries_span_inv_two`,
-  `ZLattice.thetaSeries_span_two_ne_thetaSeries_span_inv_two_I`,
-  `ZLattice.thetaSeries_dual_span_inv_two_ne_I`,
-  `ZLattice.thetaSeries_dual_span_inv_natCast_ne_sum_thetaCosetClass_I`,
-  `ZLattice.thetaSeries_dual_span_inv_two_ne_tsum_thetaCosetClass_I`: the non-integral lattices
-  `n⁻¹ ℤ` (`n ≠ 1`) and `½ ℤ`, where `L^∨ = 2 ℤ < L` and `Θ_{L^∨}(i) ≠ ∑_{γ ∈ A_L} θ_γ(i)`.
+* `ZLattice.thetaSeries_dual_span_inv_natCast_ne_sum_thetaCosetClass_I`: for `n ≠ 1`, the
+  lattice `L = n⁻¹ ℤ ⊆ ℝ` satisfies `Θ_{L^∨}(i) ≠ ∑_{γ ∈ A_L} θ_γ(i)` whenever `A_L` is finite.
 
 ## References
 
@@ -102,9 +93,8 @@ theorem thetaSeries_dual_span_singleton (c : ℝ) (τ : ℍ) :
         hball _ (by simpa [abs_of_pos hε] using half_lt_self hε)
       have hval : ε / 2 = 0 := congrArg Subtype.val hmem
       linarith
-    rw [Submodule.span_zero_singleton, dual_bot, ← thetaCoset_zero,
-      thetaCoset_eq_zero_of_forall_not_summable _ 0 fun y hy hs ↦
-        hnd (discreteTopology_of_summable_exp_neg_mul_norm_add_sq _ 0 (by positivity) hs)]
+    rw [Submodule.span_zero_singleton, dual_bot,
+      thetaSeries_eq_zero_of_not_discreteTopology _ hnd, Pi.zero_apply]
     simp [jacobiTheta_eq_jacobiTheta₂, jacobiTheta₂_undef]
   · rw [dual_span_singleton hc, thetaSeries_span_singleton (inv_ne_zero hc), inv_pow]
 
@@ -135,7 +125,7 @@ theorem hasSum_thetaSeries_span_one_qParam (τ : ℍ) :
     Nat.cast_ofNat, Nat.cast_zero] using
     isUnimodular_span_one.isIntegral.hasSum_thetaSeries_qParam_two τ
 
-/-! ### Imaginary-axis comparison and the lattice `½ ℤ` -/
+/-! ### Imaginary-axis comparison and the lattices `n⁻¹ ℤ` -/
 
 /-- On the imaginary axis (`re τ = 0`), scaling up the generator of `c ℤ ⊆ ℝ` strictly decreases
 its theta value: for `0 < |c₁| < |c₂|`, `Θ_{c₂ ℤ}(τ) < Θ_{c₁ ℤ}(τ)` in the real-part order on `ℂ`
@@ -159,8 +149,7 @@ theorem thetaSeries_dual_span_singleton_eq_iff_of_re_eq_zero {c : ℝ} {τ : ℍ
       thetaSeries (span ℤ {c} : Submodule ℤ ℝ) τ ↔ |c| = 1 := by
   refine ⟨fun heq ↦ ?_, fun h1 ↦ by rw [(isUnimodular_span_singleton_iff.mpr h1).dual_eq]⟩
   rcases eq_or_ne c 0 with rfl | hc
-  · rw [thetaSeries_dual_span_singleton, span_singleton_eq_bot.mpr rfl, thetaSeries_apply,
-      tsum_eq_single (0 : (⊥ : Submodule ℤ ℝ)) fun v hv ↦ (hv (Subsingleton.elim v 0)).elim] at heq
+  · rw [thetaSeries_dual_span_singleton, span_singleton_eq_bot.mpr rfl] at heq
     simp [jacobiTheta_eq_jacobiTheta₂, jacobiTheta₂_undef] at heq
   rcases lt_trichotomy |c| 1 with hlt | h1 | hgt
   · have hlt' : |c| < |c⁻¹| := by
@@ -184,25 +173,6 @@ theorem thetaSeries_dual_span_singleton_eq_iff {c : ℝ} :
       (congrFun h _),
     fun h1 ↦ by rw [(isUnimodular_span_singleton_iff.mpr h1).dual_eq]⟩
 
-/-- On the imaginary axis, `Θ_{2ℤ}(τ) < Θ_{½ℤ}(τ)` as real numbers. -/
-theorem thetaSeries_span_two_lt_thetaSeries_span_inv_two {τ : ℍ} (hτ : τ.re = 0) :
-    thetaSeries (span ℤ {(2 : ℝ)} : Submodule ℤ ℝ) τ <
-      thetaSeries (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) τ :=
-  thetaSeries_span_singleton_lt_of_abs_lt (by norm_num) (by norm_num) hτ
-
-/-- At `τ = i`, `Θ_{2ℤ}(i) ≠ Θ_{½ℤ}(i)`. -/
-theorem thetaSeries_span_two_ne_thetaSeries_span_inv_two_I :
-    thetaSeries (span ℤ {(2 : ℝ)} : Submodule ℤ ℝ) UpperHalfPlane.I ≠
-      thetaSeries (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) UpperHalfPlane.I :=
-  (thetaSeries_span_two_lt_thetaSeries_span_inv_two UpperHalfPlane.I_re).ne
-
-/-- For `L = ½ ℤ ⊆ ℝ`, `Θ_{L^∨}(i) ≠ Θ_L(i)`. -/
-theorem thetaSeries_dual_span_inv_two_ne_I :
-    thetaSeries (dual (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ)) UpperHalfPlane.I ≠
-      thetaSeries (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) UpperHalfPlane.I := by
-  rw [dual_span_inv_two]
-  exact thetaSeries_span_two_ne_thetaSeries_span_inv_two_I
-
 /-- For `n ≠ 1`, the lattice `L = n⁻¹ ℤ ⊆ ℝ` satisfies `Θ_{L^∨}(i) ≠ ∑_{γ ∈ A_L} θ_γ(i)` whenever
 `A_L` is finite (`n = 0` is vacuous since `A_0 ≃ ℝ` is infinite, and for `n ≥ 2`, `A_L` is trivial
 while `L^∨ = n ℤ < L`): `IsIntegral L` cannot be dropped in
@@ -222,16 +192,5 @@ theorem thetaSeries_dual_span_inv_natCast_ne_sum_thetaCosetClass_I {n : ℕ} (hn
     have hn1 : (1 : ℝ) < n := by exact_mod_cast (by omega : 1 < n)
     rw [abs_inv, abs_of_pos (zero_lt_one.trans hn1)]
     exact (inv_lt_one_of_one_lt₀ hn1).ne
-
-/-- For `L = ½ ℤ ⊆ ℝ`, `A_L = L^∨ ⧸ (L ∩ L^∨)` is trivial (`L^∨ = 2 ℤ < L`), so
-`∑'_{γ ∈ A_L} θ_γ(i) = Θ_{½ℤ}(i) ≠ Θ_{L^∨}(i)`. -/
-theorem thetaSeries_dual_span_inv_two_ne_tsum_thetaCosetClass_I :
-    thetaSeries (dual (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ)) UpperHalfPlane.I ≠
-      ∑' γ : DiscriminantGroup (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ),
-        thetaCosetClass (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) γ UpperHalfPlane.I := by
-  have : Subsingleton (DiscriminantGroup (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ)) := by
-    simpa using subsingleton_discriminantGroup_span_inv_natCast two_ne_zero
-  rw [tsum_eq_single 0 fun γ hγ ↦ (hγ (Subsingleton.elim γ 0)).elim, thetaCosetClass_zero]
-  exact thetaSeries_dual_span_inv_two_ne_I
 
 end ZLattice

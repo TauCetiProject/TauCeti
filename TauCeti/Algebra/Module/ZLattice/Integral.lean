@@ -27,7 +27,10 @@ In a real inner product space, an even lattice is integral, by polarization:
 (`ZLattice.IsEven.isIntegral`). The converse fails: `ℤ ⊆ ℝ` is unimodular, hence integral, but not
 even (`ZLattice.not_isEven_span_one`), while `√2 ℤ ⊆ ℝ` is even (`ZLattice.isEven_span_sqrt_two`).
 More generally the `ℤ`-span of an orthonormal basis, the lattice `ℤⁿ ⊆ ℝⁿ`, is unimodular
-(`ZLattice.isUnimodular_span_orthonormalBasis`).
+(`ZLattice.isUnimodular_span_orthonormalBasis`). On the other hand, `½ ℤ ⊆ ℝ` is not integral
+(`ZLattice.not_isIntegral_span_one_half`). The zero lattice is even and integral, and it is
+unimodular exactly in the zero space, where its dual is again zero
+(`ZLattice.isUnimodular_bot_iff`).
 
 All three predicates are invariant under linear isometry equivalences
 (`ZLattice.isIntegral_comap_iff`, `ZLattice.isEven_comap_iff`, `ZLattice.isUnimodular_comap_iff`),
@@ -54,8 +57,8 @@ unimodular lattice has a theta series of level one.
 * `ZLattice.isEven_span_singleton_iff`, `ZLattice.isIntegral_span_singleton_iff`,
   `ZLattice.isIntegral_span_inv_natCast_iff`, `ZLattice.isUnimodular_span_singleton_iff`:
   `ℤ v` is even iff `‖v‖² ∈ 2ℤ` and integral iff `‖v‖² ∈ ℤ`, `n⁻¹ ℤ ⊆ ℝ` is integral iff `n ≤ 1`
-  (`ZLattice.not_isIntegral_span_inv_natCast`, with `2 ℤ = (½ ℤ)^∨ < ½ ℤ` recorded as
-  `ZLattice.dual_span_inv_two_lt`), and `c ℤ ⊆ ℝ` is unimodular iff `|c| = 1`.
+  (`ZLattice.not_isIntegral_span_inv_natCast`, `ZLattice.not_isIntegral_span_one_half`), and
+  `c ℤ ⊆ ℝ` is unimodular iff `|c| = 1`.
 * `ZLattice.IsEven.exists_norm_add_sq_sub_norm_sq_eq`,
   `ZLattice.IsIntegral.exists_norm_add_sq_sub_norm_sq_eq`: for `γ ∈ L^∨` and `v ∈ L`,
   `‖γ + v‖² - ‖γ‖²` lies in `2ℤ` when `L` is even and in `ℤ` when `L` is integral, so `‖γ‖² / 2`
@@ -87,6 +90,16 @@ theorem isEven_iff {L : Submodule ℤ E} : IsEven L ↔ ∀ x ∈ L, ∃ m : ℤ
 /-- A sublattice of an even lattice is even. -/
 theorem IsEven.mono {L M : Submodule ℤ E} (hM : IsEven M) (h : L ≤ M) : IsEven L :=
   fun x hx ↦ hM x (h hx)
+
+/-- The zero lattice is even. -/
+@[simp]
+theorem isEven_bot : IsEven (⊥ : Submodule ℤ E) :=
+  fun x hx ↦ ⟨0, by simp [(mem_bot ℤ).mp hx]⟩
+
+/-- Every lattice in the zero space is even, being the zero lattice. -/
+@[simp]
+theorem isEven_of_subsingleton [Subsingleton E] (L : Submodule ℤ E) : IsEven L :=
+  Subsingleton.elim (⊥ : Submodule ℤ E) L ▸ isEven_bot
 
 /-- The lattice spanned by a single vector `v` is even if and only if `‖v‖²` is an even
 integer. -/
@@ -147,6 +160,11 @@ theorem isIntegral_iff {L : Submodule ℤ E} :
 theorem IsIntegral.mono {L M : Submodule ℤ E} (hM : IsIntegral M) (h : L ≤ M) : IsIntegral L :=
   h.trans (hM.trans (dual_anti h))
 
+/-- The zero lattice is integral. -/
+@[simp]
+theorem isIntegral_bot : IsIntegral (⊥ : Submodule ℤ E) :=
+  bot_le
+
 /-- The lattice spanned by a single vector `v` is integral if and only if `‖v‖²` is an integer. -/
 theorem isIntegral_span_singleton_iff {v : E} :
     IsIntegral (span ℤ {v}) ↔ ∃ m : ℤ, ‖v‖ ^ 2 = m := by
@@ -188,20 +206,6 @@ theorem not_isIntegral_span_inv_natCast {n : ℕ} (hn : 1 < n) :
     ¬ IsIntegral (span ℤ {((n : ℝ)⁻¹)} : Submodule ℤ ℝ) :=
   mt isIntegral_span_inv_natCast_iff.mp hn.not_ge
 
-/-- The lattice `½ ℤ ⊆ ℝ` is not integral, hence neither even nor unimodular. -/
-theorem not_isIntegral_span_inv_two :
-    ¬ IsIntegral (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) := by
-  simpa using not_isIntegral_span_inv_natCast one_lt_two
-
-/-- For `L = ½ ℤ ⊆ ℝ`, the dual lattice `L^∨ = 2 ℤ` is a strict sublattice of `L`. -/
-theorem dual_span_inv_two_lt :
-    dual (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) < span ℤ {(2⁻¹ : ℝ)} := by
-  rw [dual_span_inv_two]
-  refine lt_of_le_of_ne ?_ fun heq ↦ not_isIntegral_span_inv_two ?_
-  · rw [span_singleton_le_iff_mem, mem_span_singleton]
-    exact ⟨4, by norm_num⟩
-  · rw [isIntegral_iff_le_dual, dual_span_inv_two, heq]
-
 /-- An integral lattice is discrete. -/
 theorem IsIntegral.discreteTopology {L : Submodule ℤ E} (h : IsIntegral L) :
     DiscreteTopology L := by
@@ -211,7 +215,7 @@ theorem IsIntegral.discreteTopology {L : Submodule ℤ E} (h : IsIntegral L) :
   refine ⟨1, one_pos, fun x hx ↦ ?_⟩
   have hx1 : ‖(x : E)‖ < 1 := by simpa using hx
   by_contra hx0
-  obtain ⟨m, hm⟩ := isIntegral_iff.1 h x.1 x.2 x.1 x.2
+  obtain ⟨m, hm⟩ := isIntegral_iff.1 h x.val x.property x.val x.property
   rw [real_inner_self_eq_norm_sq] at hm
   have hpos : (0 : ℝ) < ‖(x : E)‖ := norm_pos_iff.2 fun h0 ↦ hx0 (Subtype.ext h0)
   have hm0 : (0 : ℤ) < m := by exact_mod_cast hm ▸ pow_pos hpos 2
@@ -278,6 +282,11 @@ theorem IsEven.exists_natCast_mul_norm_add_sq_eq {L : Submodule ℤ E} (hL : IsE
   obtain ⟨j, hj⟩ := hL.exists_norm_add_sq_sub_norm_sq_eq hγ hv
   exact ⟨n + N * j, by push_cast; linear_combination (N : ℝ) * hj + hn⟩
 
+/-- The lattice `½ ℤ ⊆ ℝ` is not integral. -/
+theorem not_isIntegral_span_one_half :
+    ¬ IsIntegral (span ℤ {1 / 2} : Submodule ℤ ℝ) :=
+  mt isIntegral_iff_le_dual.mp dual_span_one_half_lt.not_ge
+
 /-! ### Unimodular lattices -/
 
 /-- A lattice is unimodular if it is equal to its dual. -/
@@ -293,6 +302,19 @@ theorem IsUnimodular.dual_eq {L : Submodule ℤ E} (h : IsUnimodular L) : dual L
 /-- A unimodular lattice is integral. -/
 theorem IsUnimodular.isIntegral {L : Submodule ℤ E} (h : IsUnimodular L) : IsIntegral L :=
   h.le
+
+/-- The zero lattice is unimodular exactly in the zero space: its dual is the whole space. -/
+@[simp]
+theorem isUnimodular_bot_iff : IsUnimodular (⊥ : Submodule ℤ E) ↔ Subsingleton E := by
+  rw [isUnimodular_iff_eq_dual, dual_bot, ← Submodule.subsingleton_iff ℤ,
+    subsingleton_iff_bot_eq_top]
+
+/-- Every lattice in the zero space is unimodular, being the zero lattice. In particular it is
+fixed by every scaling, so statements that a scaled lattice is not unimodular need a nontrivial
+space. -/
+@[simp]
+theorem isUnimodular_of_subsingleton [Subsingleton E] (L : Submodule ℤ E) : IsUnimodular L :=
+  Subsingleton.elim _ _
 
 /-- A unimodular lattice in a finite-dimensional real inner product space spans the space over
 `ℝ`; in particular it is a full lattice. -/

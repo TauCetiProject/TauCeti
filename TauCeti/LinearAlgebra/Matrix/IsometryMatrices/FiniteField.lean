@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Field
-public import TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.Quadric
+public import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
+import TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.Quadric
 
 /-!
 # Orders of finite orthogonal groups
@@ -56,10 +57,10 @@ namespace Matrix
 
 variable {F : Type*} {ι : Type u} [Field F] [Fintype ι] [DecidableEq ι]
 
-/-- A nondegenerate symmetric matrix over a field in which `2` is invertible is congruent to a
+/-- For a nondegenerate symmetric matrix `A` over a field in which `2` is invertible, there is a
 block diagonal matrix `fromBlocks A' 0 0 (diagonal (fun _ ↦ c))` indexed by
 `{i // i ≠ i₀} ⊕ Unit`, with `A'` nondegenerate symmetric, `c ≠ 0`, and `det A' · c` in the square
-class of `det A`; the two matrices are preserved by equally many matrices. -/
+class of `det A`, such that `A` and this matrix are preserved by equally many matrices. -/
 private theorem exists_natCard_isometryMatrices_eq_fromBlocks [Invertible (2 : F)]
     {A : Matrix ι ι F} (hA : A.IsSymm) (hdet : A.det ≠ 0) (i₀ : ι) :
     ∃ (A' : Matrix {i // i ≠ i₀} {i // i ≠ i₀} F) (c : F), A'.IsSymm ∧ A'.det ≠ 0 ∧ c ≠ 0 ∧

@@ -8,7 +8,11 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
 /-!
-# Lower bounds for the growth scale `(1 + r) log (2 + r)`
+# The logarithmic scales `log (x + 2)` and `(1 + r) log (2 + r)`
+
+For `x ≥ 0`, `log (x + 2) ≥ log 2`, and shifting `x` by at most `2` at most doubles
+`log (x + 2)`, since `x + 4 ≤ (x + 2)²`. This lets a logarithmic scale `log (|t| + 2)` in a height
+`t` absorb a bounded change of height.
 
 For `r ≥ 0`, both `log (2 + r)` and `(1 + r) log (2 + r)` are at least `1 / 2`. These lower
 bounds let a constant be absorbed into a multiple of the scale `(1 + r) log (2 + r)` that
@@ -17,8 +21,12 @@ measures order-one growth of entire functions: a factor `D ≥ 0` in front of
 
 ## Main results
 
+* `Real.log_two_le_log_add_two`: `log 2 ≤ log (x + 2)` for `0 ≤ x`.
+* `Real.log_add_two_le_two_mul_log_add_two`: `log (y + 2) ≤ 2 log (x + 2)` for `0 ≤ x` and
+  `0 ≤ y ≤ x + 2`.
 * `Real.one_half_le_log_two_add`: `1 / 2 ≤ log (2 + r)` for `0 ≤ r`.
 * `Real.one_half_le_one_add_mul_log_two_add`: `1 / 2 ≤ (1 + r) * log (2 + r)` for `0 ≤ r`.
+* `Real.one_add_le_exp_one_add_mul_log_two_add`: `1 + r ≤ exp ((1 + r) * log (2 + r))` for `0 ≤ r`.
 * `Real.mul_exp_mul_one_add_mul_log_two_add_le`: absorption of a nonnegative factor into the
   exponent.
 * `Real.exp_mul_one_add_mul_log_two_add_le_of_le`: `exp (C (1 + r) log (2 + r))` is monotone
@@ -28,6 +36,17 @@ measures order-one growth of entire functions: a factor `D ≥ 0` in front of
 public section
 
 namespace Real
+
+/-- For nonnegative `x`, `log 2 ≤ log (x + 2)`. -/
+theorem log_two_le_log_add_two {x : ℝ} (hx : 0 ≤ x) : log 2 ≤ log (x + 2) :=
+  log_le_log two_pos (by linarith)
+
+/-- A shift by at most `2` at most doubles `log (· + 2)`: for `0 ≤ x` and `0 ≤ y ≤ x + 2`,
+`log (y + 2) ≤ 2 log (x + 2)`, since `y + 2 ≤ x + 4 ≤ (x + 2)²`. -/
+theorem log_add_two_le_two_mul_log_add_two {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y)
+    (hyx : y ≤ x + 2) : log (y + 2) ≤ 2 * log (x + 2) := by
+  calc log (y + 2) ≤ log ((x + 2) ^ 2) := log_le_log (by linarith) (by nlinarith)
+    _ = 2 * log (x + 2) := by rw [log_pow, Nat.cast_ofNat]
 
 /-- For nonnegative `r`, the logarithm `log (2 + r)` is at least `1 / 2`. -/
 theorem one_half_le_log_two_add {r : ℝ} (hr : 0 ≤ r) : (1 / 2 : ℝ) ≤ log (2 + r) := by
@@ -40,6 +59,16 @@ theorem one_half_le_one_add_mul_log_two_add {r : ℝ} (hr : 0 ≤ r) :
     (1 / 2 : ℝ) ≤ (1 + r) * log (2 + r) := by
   have hL := one_half_le_log_two_add hr
   nlinarith
+
+/-- For `0 ≤ r`, `1 + r` is dominated by `exp ((1 + r) * log (2 + r))` with unit constant. -/
+theorem one_add_le_exp_one_add_mul_log_two_add {r : ℝ} (hr : 0 ≤ r) :
+    1 + r ≤ exp ((1 + r) * log (2 + r)) := by
+  have hpos : 0 < 2 + r := by linarith
+  calc
+    1 + r ≤ 2 + r := by linarith
+    _ = exp (log (2 + r)) := (exp_log hpos).symm
+    _ ≤ exp ((1 + r) * log (2 + r)) :=
+      exp_le_exp.mpr (le_mul_of_one_le_left (log_nonneg (by linarith)) (by linarith))
 
 /-- A nonnegative factor `D` in front of `exp (C (1 + r) log (2 + r))` is absorbed by enlarging
 the constant to `C + 2 D`. -/

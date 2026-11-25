@@ -34,6 +34,8 @@ numbers, which is the group-theoretic half of the statement that the permutation
   `H \ G / K ≃ ((G ⧸ H) × (G ⧸ K)) / G`.
 * `TauCeti.orbitOfCosetTranslate`: the `𝒢`-orbit a class in `ℋ ⧸ 𝒢.subgroupOf ℋ` translates a
   point into — the index map along which a coset sum is regrouped into an orbit sum.
+* `Subgroup.orbitOfRightCoset`: for a subgroup `Γ` and a point `v`, the map `Γ g ↦ Γ (g • v)`
+  from right cosets of `Γ` to `Γ`-orbits induced by the orbit map of `v`.
 
 ## Main statements
 
@@ -47,6 +49,8 @@ numbers, which is the group-theoretic half of the statement that the permutation
 * `TauCeti.card_fiber_orbitOfCosetTranslate_mul_card_stabilizer_coset`: that count, carried out —
   the fibre size times the order of the stabiliser of the class inside `stabilizer ℋ p` is the
   order of `stabilizer ℋ p`.
+* `TauCeti.orbitOfCosetTranslate_smul`: translating the point by `u ∈ ℋ` translates the coset
+  argument by `u⁻¹`, so a sum over the cosets depends only on the `ℋ`-orbit of the point.
 * `TauCeti.card_fiber_orbitOfCosetTranslate_mul_cardStabilizerOnOrbit`: the multiplicity identity
   behind regrouping a sum over `ℋ ⧸ 𝒢.subgroupOf ℋ` into a sum over `𝒢`-orbits — the fibre size
   times the stabiliser order on the orbit is `|stabilizer ℋ p|`, with
@@ -56,6 +60,9 @@ numbers, which is the group-theoretic half of the statement that the permutation
 * `TauCeti.card_fiber_orbitOfCosetTranslate_eq_relIndex`: the fibre size itself, as the relative
   index of the stabilisers of the translate `h⁻¹ • p` in `𝒢` and in `ℋ`; this determines the
   fibre also when the stabilisers are infinite.
+* `Subgroup.ncard_fiber_orbitOfRightCoset_eq_relIndex`: the fibre of `Subgroup.orbitOfRightCoset`
+  over the orbit of `x ∈ G • v` has `Γ.relIndex (stabilizer G x)` elements, the right-coset
+  counterpart of `TauCeti.card_fiber_orbitOfCosetTranslate_eq_relIndex` taken in `G` itself.
 * `TauCeti.preimage_orbit_eq_doubleCoset`: the double coset `KsH` is the preimage of the
   `K`-orbit of `sH`.
 * `TauCeti.card_doubleCosetQuotient_eq_card_orbitQuotient`: the two sides of that bijection have
@@ -104,7 +111,7 @@ theorem mem_doubleCoset_iff_mk_mem_orbit (s : G) (H K : Subgroup G) {x : G} :
   · rintro ⟨k, hkx⟩
     rw [Subgroup.smul_def, Quotient.smul_coe,
       smul_eq_mul, QuotientGroup.eq] at hkx
-    exact ⟨k, k.2, ((k : G) * s)⁻¹ * x, hkx, (mul_inv_cancel_left _ _).symm⟩
+    exact ⟨k, k.property, ((k : G) * s)⁻¹ * x, hkx, (mul_inv_cancel_left _ _).symm⟩
 
 /-- The double coset `KsH` is the preimage, under `G → G ⧸ H`, of the `K`-orbit of the coset `sH`.
 So the partition of `G` into `K`-`H` double cosets is the partition of `G ⧸ H` into `K`-orbits. -/
@@ -199,7 +206,7 @@ theorem orbitRel_smul_iff_mem_doubleCoset_stabilizer (K : Subgroup G) (p : α) (
   rw [orbitRel_apply, mem_orbit_iff, DoubleCoset.mem_doubleCoset]
   constructor
   · rintro ⟨k, hk⟩
-    refine ⟨(k : G), k.2, y⁻¹ * ((k : G)⁻¹ * x), ?_, by simp [mul_assoc]⟩
+    refine ⟨(k : G), k.property, y⁻¹ * ((k : G)⁻¹ * x), ?_, by simp [mul_assoc]⟩
     rw [SetLike.mem_coe, mem_stabilizer_iff, mul_smul, mul_smul, ← hk, Subgroup.smul_def,
       inv_smul_smul, inv_smul_smul]
   · rintro ⟨a, ha, b, hb, rfl⟩
@@ -233,6 +240,16 @@ theorem orbitOfCosetTranslate_mk {𝒢 ℋ : Subgroup G} (p : α) (h : ℋ) :
     orbitOfCosetTranslate (𝒢 := 𝒢) p (⟦h⟧ : ℋ ⧸ 𝒢.subgroupOf ℋ) = Quotient.mk'' ((h : G)⁻¹ • p) :=
   (rfl)
 
+/-- Translating the base point by `u ∈ ℋ` translates the coset argument of
+`orbitOfCosetTranslate` by `u⁻¹`. -/
+theorem orbitOfCosetTranslate_smul {𝒢 ℋ : Subgroup G} (u : ℋ) (p : α)
+    (c : ℋ ⧸ 𝒢.subgroupOf ℋ) :
+    orbitOfCosetTranslate (𝒢 := 𝒢) (u • p) c = orbitOfCosetTranslate p (u⁻¹ • c) := by
+  induction c using QuotientGroup.induction_on with
+  | H k =>
+    rw [MulAction.Quotient.smul_mk, orbitOfCosetTranslate_mk, orbitOfCosetTranslate_mk]
+    simp [Subgroup.smul_def, mul_smul]
+
 /-- **The fibres of `orbitOfCosetTranslate` are the `stabilizer ℋ p`-orbits.** Two classes have
 the same image exactly when they lie in one orbit of the stabilizer of `p`, acting on the coset
 space by left translation.
@@ -259,7 +276,8 @@ theorem orbitOfCosetTranslate_eq_iff {𝒢 ℋ : Subgroup G} (hle : 𝒢 ≤ ℋ
         -- `y` lies in `ℋ`: solving `hr` gives `y = b * x⁻¹ * a⁻¹`, and `𝒢 ≤ ℋ` puts `x` there
         have hyH : y ∈ ℋ := by
           have hy2 : y = (b : G) * x⁻¹ * (a : G)⁻¹ := by rw [hr]; simp [mul_assoc]
-          exact hy2 ▸ mul_mem (mul_mem b.2 (inv_mem (hle (SetLike.mem_coe.1 hx)))) (inv_mem a.2)
+          exact hy2 ▸ mul_mem (mul_mem b.property (inv_mem (hle (SetLike.mem_coe.1 hx))))
+              (inv_mem a.property)
         have ha : (a : G) = y⁻¹ * (b : G) * x⁻¹ := by
           rw [← inv_inv (a : G), hr]; simp [mul_assoc]
         refine ⟨⟨(⟨y, hyH⟩ : ℋ)⁻¹, inv_mem ((Subgroup.mem_subgroupOf (H := stabilizer G p)).2
@@ -277,7 +295,8 @@ theorem orbitOfCosetTranslate_eq_iff {𝒢 ℋ : Subgroup G} (hle : 𝒢 ≤ ℋ
           Subgroup.mem_subgroupOf] at hs
         refine ⟨(((((s : ℋ) * b)⁻¹ * a : ℋ)⁻¹ : ℋ) : G), SetLike.mem_coe.2 (inv_mem hs),
           ((s : ℋ) : G)⁻¹,
-          SetLike.mem_coe.2 (inv_mem ((Subgroup.mem_subgroupOf (H := stabilizer G p)).1 s.2)), ?_⟩
+          SetLike.mem_coe.2 (inv_mem ((Subgroup.mem_subgroupOf (H
+              := stabilizer G p)).1 s.property)), ?_⟩
         rw [Subgroup.coe_inv, Subgroup.coe_mul, Subgroup.coe_inv, Subgroup.coe_mul]
         simp [mul_assoc]
 
@@ -415,3 +434,80 @@ theorem sum_card_fixedBy_mul_card_fixedBy_eq_card_doubleCosetQuotient_mul_card_g
   exact sum_card_fixedBy_mul_card_fixedBy_eq_card_orbits_mul_card_group (G ⧸ H) (G ⧸ K)
 
 end TauCeti
+
+namespace Subgroup
+
+open QuotientGroup
+
+variable {G α : Type*} [Group G] [MulAction G α]
+
+/-- The map `Γ g ↦ Γ (g • v)` from right cosets of `Γ` to `Γ`-orbits induced by the orbit map
+of `v`. -/
+def orbitOfRightCoset (Γ : Subgroup G) (v : α) :
+    Quotient (rightRel Γ) → orbitRel.Quotient Γ α :=
+  Quotient.lift (fun g ↦ Quotient.mk (orbitRel Γ α) (g • v)) fun a b hab ↦ by
+    refine Quotient.sound (orbitRel_apply.mpr ⟨⟨a * b⁻¹, ?_⟩, ?_⟩)
+    · simpa using inv_mem (rightRel_apply.mp hab)
+    · simp [Subgroup.smul_def, mul_smul]
+
+variable {Γ : Subgroup G} {v : α}
+
+/-- `Subgroup.orbitOfRightCoset` sends the coset of `g` to the orbit of `g • v`. -/
+@[simp]
+theorem orbitOfRightCoset_mk (g : G) :
+    Γ.orbitOfRightCoset v (Quotient.mk (rightRel Γ) g) = Quotient.mk (orbitRel Γ α) (g • v) :=
+  (rfl)
+
+/-- **The fibre of `Subgroup.orbitOfRightCoset` over the orbit of `x = g • v`** has
+`[stabilizer G x : Γ ⊓ stabilizer G x]` elements: the coset of `h * g` for `h` in the stabilizer
+of `x` runs through the fibre, and two such cosets agree exactly when the elements of the
+stabilizer differ by an element of `Γ`. -/
+theorem ncard_fiber_orbitOfRightCoset_eq_relIndex {x : α} (hx : x ∈ orbit G v) :
+    (Γ.orbitOfRightCoset v ⁻¹' {Quotient.mk (orbitRel Γ α) x}).ncard =
+      Γ.relIndex (stabilizer G x) := by
+  obtain ⟨g, rfl⟩ := hx
+  set K := stabilizer G (g • v)
+  have hrel : ∀ a b : K, (Quotient.mk (rightRel Γ) ((a : G) * g) =
+      Quotient.mk (rightRel Γ) ((b : G) * g)) ↔ rightRel (Γ.subgroupOf K) a b := by
+    intro a b
+    rw [Quotient.eq, rightRel_apply, rightRel_apply, mem_subgroupOf]
+    simp [mul_assoc]
+  let ψ : Quotient (rightRel (Γ.subgroupOf K)) → Quotient (rightRel Γ) :=
+    Quotient.lift (fun a : K ↦ Quotient.mk (rightRel Γ) ((a : G) * g))
+      fun a b hab ↦ (hrel a b).mpr hab
+  have hψ : Function.Injective ψ := by
+    intro c d hcd
+    induction c using Quotient.inductionOn
+    induction d using Quotient.inductionOn
+    exact Quotient.sound ((hrel _ _).mp hcd)
+  have hrange : Set.range ψ = Γ.orbitOfRightCoset v ⁻¹' {Quotient.mk (orbitRel Γ α) (g • v)} := by
+    ext c
+    induction c using Quotient.inductionOn with
+    | h k =>
+      simp only [Set.mem_range, Set.mem_preimage, Set.mem_singleton_iff, orbitOfRightCoset_mk]
+      constructor
+      · rintro ⟨d, hd⟩
+        induction d using Quotient.inductionOn with
+        | h a =>
+          -- `ψ` evaluates on the class of `a` by the computation rule of `Quotient.lift`
+          have hk : Quotient.mk (rightRel Γ) k = Quotient.mk (rightRel Γ) ((a : G) * g) := hd.symm
+          rw [← orbitOfRightCoset_mk, hk, orbitOfRightCoset_mk, mul_smul,
+            mem_stabilizer_iff.mp a.property]
+      · intro hk
+        obtain ⟨γ, hγ⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.exact hk))
+        have ha : (γ : G)⁻¹ * k * g⁻¹ ∈ K := by
+          rw [mem_stabilizer_iff, mul_smul, mul_smul, inv_smul_smul, ← hγ, Subgroup.smul_def,
+            inv_smul_smul]
+        refine ⟨Quotient.mk _ ⟨_, ha⟩, Quotient.sound (rightRel_apply.mpr ?_)⟩
+        simp [mul_assoc]
+  rw [← hrange, ← Set.image_univ, Set.ncard_image_of_injective _ hψ, Set.ncard_univ,
+    Nat.card_congr (quotientRightRelEquivQuotientLeftRel _), relIndex, index_eq_card]
+
+/-- The fibres of `Subgroup.orbitOfRightCoset` over the orbits of points of `G • v` are
+nonempty. -/
+theorem nonempty_fiber_orbitOfRightCoset {x : α} (hx : x ∈ orbit G v) :
+    (Γ.orbitOfRightCoset v ⁻¹' {Quotient.mk (orbitRel Γ α) x}).Nonempty := by
+  obtain ⟨g, rfl⟩ := hx
+  exact ⟨Quotient.mk _ g, rfl⟩
+
+end Subgroup
