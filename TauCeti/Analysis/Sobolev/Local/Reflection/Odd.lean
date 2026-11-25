@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Reflection
-import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
@@ -23,11 +22,12 @@ test function `χ`, including those that do not vanish on the axis
 
 `TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg` proves this when `v` is tangent to the
 axis or `χ` vanishes on it; here the vanishing is moved onto `g`. The proof tests the weak
-derivative against `ψₙ χ`, where `ψₙ = TauCeti.imCutoff n` vanishes where `(n + 1) im z ≤ 1`,
-near the axis, and lets `n → ∞`. The boundary layer `χ ∂_v ψₙ • g` lives in the strip
-`{0 < im ≤ 2 / (n + 1)}`, where `∂_v ψₙ = O(n)` and the area is `O(1/n)`, while `g = o(1)` there
-by uniform continuity, since `g` vanishes on the axis. The rest of the argument is shared with
-`TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg` through
+derivative against `ψₙ χ`, where `ψₙ` is a smooth cutoff vanishing where `(n + 1) im z ≤ 1`,
+near the axis, and lets `n → ∞`. The boundary layer `χ ∂_v ψₙ • g`, with
+`∂_v ψₙ = TauCeti.imCutoffLayer n v.im`, lives in the strip `{0 < im ≤ 2 / (n + 1)}`, where
+`∂_v ψₙ = O(n)` and the area is `O(1/n)`, while `g = o(1)` there by uniform continuity
+(`TauCeti.exists_forall_norm_lt_of_im_lt`), since `g` vanishes on the axis. The rest of the
+argument is shared with `TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg` through
 `TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_tendsto`.
 
 As consequences:
@@ -66,29 +66,6 @@ namespace TauCeti
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-! ### The boundary layer -/
-
-omit [NormedSpace ℝ F] in
-/-- A function continuous on `Ω ∩ {0 ≤ im}` and zero on `Ω ∩ ℝ` is uniformly small near the axis
-on every compact subset of `Ω ∩ {0 ≤ im}`. -/
-private theorem exists_forall_norm_lt_of_im_lt {Ω : Opens ℂ} {g : ℂ → F}
-    (hgc : ContinuousOn g ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) (hg0 : ∀ x : ℝ, (x : ℂ) ∈ Ω → g x = 0)
-    {T : Set ℂ} (hT : IsCompact T) (hTΩ : T ⊆ Ω) (hT0 : T ⊆ {z | 0 ≤ z.im}) {ε : ℝ}
-    (hε : 0 < ε) : ∃ δ > 0, ∀ z ∈ T, z.im < δ → ‖g z‖ < ε := by
-  have hclosed : IsClosed {z : ℂ | 0 ≤ z.im} := Complex.isClosed_setOfPred_le_im 0
-  obtain ⟨r, hr, hrΩ⟩ := hT.exists_cthickening_subset_open Ω.isOpen hTΩ
-  have hC : IsCompact (cthickening r T ∩ {z : ℂ | 0 ≤ z.im}) := hT.cthickening.inter_right hclosed
-  obtain ⟨δ, hδ, hgδ⟩ := Metric.uniformContinuousOn_iff.1 (hC.uniformContinuousOn_of_continuous
-    (hgc.mono fun z hz => ⟨hrΩ hz.1, hz.2⟩)) ε hε
-  refine ⟨min δ r, lt_min hδ hr, fun z hzT hzδ => ?_⟩
-  have hz0 : 0 ≤ z.im := hT0 hzT
-  have hdist : dist (z.re : ℂ) z = z.im := by
-    rw [Complex.dist_eq_re_im]
-    simp [Real.sqrt_sq hz0]
-  have hz' : (z.re : ℂ) ∈ cthickening r T ∩ {z : ℂ | 0 ≤ z.im} :=
-    ⟨mem_cthickening_of_dist_le _ z r T hzT (by linarith [min_le_right δ r]), by simp⟩
-  have h := hgδ z ⟨self_subset_cthickening T hzT, hz0⟩ _ hz'
-    (by rw [dist_comm, hdist]; linarith [min_le_left δ r])
-  rwa [hg0 _ (hrΩ hz'.1), dist_zero_right] at h
 
 /-- An integrand over the upper half-plane that vanishes off the strip `T ∩ {0 < im ≤ w}`, for
 `T` in the disc of radius `ρ`, and is bounded by `c` on it, has integral at most `c · 2ρw`. -/
@@ -274,15 +251,6 @@ theorem MemWkpLoc.planarReflection_neg_one {p : ℝ≥0∞} (hp : 1 ≤ p) {Ω :
   have hDgp' : MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) Dg := memWkpLoc_zero_iff.1 hDgp
   refine memWkpLoc_succ_iff_of_isOpen.2 ⟨hgp.planarReflection hΩ' _, _,
     hDg.planarReflection_neg_one hΩ hgc hg0 (hDgp'.mono_exponent hp), ?_⟩
-  have h := (((hDgp'.clm_comp (ContinuousLinearMap.apply ℝ F 1)).planarReflection hΩ'
-    (fun _ : Fin 1 => (-1 : ℝ))).clm_comp (ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ F reCLM)).add
-    (((hDgp'.clm_comp (ContinuousLinearMap.apply ℝ F I)).planarReflection hΩ'
-      (fun j : Fin 1 => (-1 : ℝ) * higherReflectionNode j)).clm_comp
-        (ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ F imCLM))
-  refine memWkpLoc_zero_iff.2 ?_
-  convert h using 1
-  funext z
-  refine ContinuousLinearMap.coe_injective (basisOneI.ext fun i => ?_)
-  fin_cases i <;> simp [planarReflectionFDeriv_apply_one, planarReflectionFDeriv_apply_I]
+  exact memWkpLoc_zero_iff.2 (hDgp'.planarReflectionFDeriv hΩ' _)
 
 end TauCeti

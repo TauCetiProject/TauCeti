@@ -883,6 +883,22 @@ theorem planarReflectionFDeriv_of_neg (d : Fin k → ℝ) (Dg : ℂ → ℂ →L
   rw [hv, imDilation_apply_re, imDilation_apply_im]
   module
 
+/-- The candidate derivative `planarReflectionFDeriv d Dg` of a reflection is locally `Lᵖ` when
+`Dg` is locally `Lᵖ` up to the real axis, for any weights, provided the node dilations map the
+lower part of `Ω` into `Ω`. -/
+theorem MemLpLoc.planarReflectionFDeriv {p : ℝ≥0∞} {Ω : Set ℂ}
+    (hΩ : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin k, imDilation (higherReflectionNode j) z ∈ Ω)
+    {Dg : ℂ → ℂ →L[ℝ] F} (hDg : MemLpLoc p (Ω ∩ {z : ℂ | 0 ≤ z.im}) Dg) (d : Fin k → ℝ) :
+    MemLpLoc p Ω (TauCeti.planarReflectionFDeriv d Dg) := by
+  have h := (((hDg.clm_comp (ContinuousLinearMap.apply ℝ F 1)).planarReflection hΩ d).clm_comp
+    (ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ F reCLM)).add
+    (((hDg.clm_comp (ContinuousLinearMap.apply ℝ F I)).planarReflection hΩ
+      (fun j => d j * higherReflectionNode j)).clm_comp
+        (ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ F imCLM))
+  convert h using 1
+  funext z
+  simp [TauCeti.planarReflectionFDeriv]
+
 /-- **Weak gluing of the full derivative.** If `Dg` is the weak derivative of `g` on the upper
 part of `Ω`, both integrable on compact subsets of `Ω ∩ {0 ≤ im}`, and the weights sum to one, then
 `planarReflectionFDeriv d Dg` is the weak derivative of `planarReflection d g` on all of `Ω`. -/
