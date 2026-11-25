@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.IsAlgClosed.Automorphism
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.QExpansion
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleAddChar
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Degree
 
 /-!
@@ -26,10 +27,11 @@ is the Fricke function `f_{(a₀, d a₁)}` when `σ (ζ_N) = ζ_N ^ d`
 (`TauCeti.adjoin_insert_image_frickeMeromorphicFunction_eq_top`).
 
 So the automorphism group of `ℂ` acts on `ℂ(X(N))` by ring automorphisms
-(`TauCeti.modularFunctionCoeffAction`), semilinearly: `(c F)^σ = σ(c) F^σ`. Dividing a modular
-form of level `N` by a power of the discriminant gives an element of `ℂ(X(N))`, so this action is
-the starting point for conjugating modular forms of level `N` through their Fourier coefficients,
-as in Shimura's proof that spaces of cusp forms have bases with rational Fourier coefficients.
+(`TauCeti.modularFunctionCoeffAction`), semilinearly: `(c F)^σ = σ(c) F^σ`. For a modular form
+`f` of level `N` and weight `k ≥ 0`, the quotient `f ^ 12 / Δ ^ k` has weight zero and is an
+element of `ℂ(X(N))`, so this action is the starting point for conjugating modular forms of level
+`N` through their Fourier coefficients, as in Shimura's proof that spaces of cusp forms have bases
+with rational Fourier coefficients.
 
 The action interacts with the rest of the structure as follows.
 
@@ -89,23 +91,6 @@ private theorem mem_coeffConjSubfield {σ : ℂ →+* ℂ}
         HahnSeries.mapRingHom σ (laurentQExpansion (cuspDatumInftyGamma N) F) := by
   simp [coeffConjSubfield, RingHom.mem_fieldRange]
 
-/-- A subfield of the function field of `X(N)` containing the constants, the modular invariant `j`
-and the Fricke functions is the whole function field. -/
-private theorem subfield_eq_top_of_mem
-    {S : Subfield (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient)}
-    (hc : ∀ c : ℂ, algebraMap ℂ _ c ∈ S)
-    (hj : Subgroup.compactifiedQuotientComap (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R
-      ModularGroup.jMeromorphicFunction ∈ S)
-    (hf : ∀ a : Fin 2 → ZMod N, frickeMeromorphicFunction a ∈ S) : S = ⊤ := by
-  have h : IntermediateField.adjoin ℂ (insert (Subgroup.compactifiedQuotientComap
-      (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R ModularGroup.jMeromorphicFunction)
-      (frickeMeromorphicFunction '' {a : Fin 2 → ZMod N | a ≠ 0})) ≤ S.toIntermediateField hc :=
-    IntermediateField.adjoin_le_iff.mpr <| by
-      rintro F (rfl | ⟨a, -, rfl⟩)
-      exacts [hj, hf a]
-  rw [adjoin_insert_image_frickeMeromorphicFunction_eq_top] at h
-  exact eq_top_iff.mpr fun F _ ↦ h IntermediateField.mem_top
-
 /-- **Conjugate expansions are expansions.** For every ring endomorphism `σ` of `ℂ` and every
 meromorphic function `F` on `X(N)`, applying `σ` to the coefficients of the Laurent expansion of
 `F` at `∞` gives the Laurent expansion of a meromorphic function on `X(N)`. -/
@@ -114,8 +99,8 @@ theorem exists_laurentQExpansion_eq_mapRingHom (σ : ℂ →+* ℂ)
     ∃ G, laurentQExpansion (cuspDatumInftyGamma N) G =
       HahnSeries.mapRingHom σ (laurentQExpansion (cuspDatumInftyGamma N) F) := by
   obtain ⟨d, hd⟩ := ZMod.exists_map_stdAddChar_one_eq (N := N) σ
-  refine mem_coeffConjSubfield.mp ((subfield_eq_top_of_mem (N := N) (S := coeffConjSubfield σ)
-    (fun c ↦ ?_) ?_ fun a ↦ ?_).symm ▸ Subfield.mem_top F)
+  refine mem_coeffConjSubfield.mp ((subfield_eq_top_of_frickeMeromorphicFunction_mem (N := N)
+    (S := coeffConjSubfield σ) (fun c ↦ ?_) ?_ fun a ↦ ?_).symm ▸ Subfield.mem_top F)
   · refine mem_coeffConjSubfield.mpr ⟨algebraMap ℂ _ (σ c), ?_⟩
     simp [LaurentSeries.algebraMap_apply, HahnSeries.C_apply, HahnSeries.mapRingHom_single]
   · exact mem_coeffConjSubfield.mpr ⟨_, (mapRingHom_laurentQExpansion_eq_of_mem_coeffSubfield _
@@ -263,14 +248,6 @@ theorem mem_coeffSubfield_iff_forall_modularFunctionCoeffAction_eq {K : Subfield
   rw [← hc]
   exact c.property
 
-omit [NeZero N] in
-/-- The diagonal matrix `diag(1, d)` acts on residue vectors by multiplying the second
-coordinate by `d`. -/
-private theorem vecMul_diagonal_one (d : ZMod N) (a : Fin 2 → ZMod N) :
-    a ᵥ* Matrix.diagonal ![1, d] = ![a 0, d * a 1] := by
-  ext i
-  fin_cases i <;> simp [Matrix.vecMul_diagonal, mul_comm]
-
 /-- **Twisted commutation with fractional linear maps.** Let `σ (ζ_N) = ζ_N ^ d`. If
 `g, g' ∈ SL(2, ℤ/Nℤ)` satisfy `g diag(1, d) = diag(1, d) g'`, then `(F ∘ g)^σ = F^σ ∘ g'` for
 every meromorphic function `F` on `X(N)`. -/
@@ -286,8 +263,10 @@ theorem modularFunctionCoeffAction_unop_modularFunctionActionZMod {σ : ℂ ≃+
     (unop (modularFunctionActionZMod N g)).toRingEquiv.toRingHom
   let ψ := (unop (modularFunctionActionZMod N g')).toRingEquiv.toRingHom.comp
     (modularFunctionCoeffAction N σ).toRingHom
+  have hd₁ (b : Fin 2 → ZMod N) : b ᵥ* Matrix.diagonal ![1, (d : ZMod N)] = ![b 0, d * b 1] := by
+    rw [Matrix.vecMul_diagonal_vec2, mul_one, mul_comm]
   have h : φ.eqLocusField ψ = ⊤ := by
-    refine subfield_eq_top_of_mem (fun c ↦ ?_) ?_ fun a ↦ ?_ <;>
+    refine subfield_eq_top_of_frickeMeromorphicFunction_mem (fun c ↦ ?_) ?_ fun a ↦ ?_ <;>
       simp only [RingHom.mem_eqLocusField, φ, ψ, RingHom.coe_comp, Function.comp_apply,
         RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv]
     · simp
@@ -295,8 +274,8 @@ theorem modularFunctionCoeffAction_unop_modularFunctionActionZMod {σ : ℂ ≃+
     · rw [unop_modularFunctionActionZMod_frickeMeromorphicFunction,
         modularFunctionCoeffAction_frickeMeromorphicFunction hσ,
         modularFunctionCoeffAction_frickeMeromorphicFunction hσ,
-        unop_modularFunctionActionZMod_frickeMeromorphicFunction, ← vecMul_diagonal_one,
-        ← vecMul_diagonal_one, Matrix.vecMul_vecMul, Matrix.vecMul_vecMul, hg]
+        unop_modularFunctionActionZMod_frickeMeromorphicFunction, ← hd₁, ← hd₁,
+        Matrix.vecMul_vecMul, Matrix.vecMul_vecMul, hg]
   exact (h.symm ▸ Subfield.mem_top F : F ∈ φ.eqLocusField ψ)
 
 end TauCeti
