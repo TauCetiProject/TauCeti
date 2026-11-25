@@ -486,12 +486,11 @@ theorem neg_coeff_graphAssignment :
   · rw [inverseHi_of_neg hA, restHi_eq_zero_of_subsingleton]
     norm_num [q, hrow, A]
 
-/-- A zero coefficient forces both product unknowns of a feasible assignment to `0`, so they cannot
-act as free variables in the row sums. -/
-theorem zero_coeff_products_of_isFeasible {n m : ℕ} {A : Matrix (Fin m) (Fin n) ℝ}
-    {q₀ : Raw n m} {p : Assignment n m} (h : IsFeasible A q₀ p) {i : Fin m} {j : Fin n}
-    (hA : A i j = 0) : p.zL i j = 0 ∧ p.zU i j = 0 :=
-  ⟨by rw [h.zL_eq, zLo_of_zero hA], by rw [h.zU_eq, zHi_of_zero hA]⟩
+/-- For `A = !![1, 0]`, both product unknowns at the zero coefficient of every feasible
+assignment are `0`, so they cannot act as free variables in the row sum. -/
+theorem zero_coeff_products_of_isFeasible {q₀ : Raw 2 1} {p : Assignment 2 1}
+    (h : IsFeasible !![1, 0] q₀ p) : p.zL 0 1 = 0 ∧ p.zU 0 1 = 0 :=
+  ⟨h.zL_eq_zero rfl, h.zU_eq_zero rfl⟩
 
 /-- With no rows and initial box `[0, 2]`, the canonical assignments of `[0, 1]` and `[1, 2]` are
 feasible with objective `1` and that of `[0, 2]` is feasible with objective `2`, whereas `[0, 3]` is

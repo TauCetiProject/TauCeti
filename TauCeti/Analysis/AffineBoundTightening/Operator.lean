@@ -860,10 +860,8 @@ theorem graph_survives (A : Matrix (Fin m) (Fin n) ℝ) (q₀ : Raw n m)
 /-- The singleton box at an initially enclosed graph point is fixed by `step A q₀`. -/
 theorem isFixedPt_step_graph {A : Matrix (Fin m) (Fin n) ℝ} {q₀ : Raw n m} {x : Fin n → ℝ}
     (hx : graph A x ∈ Icc q₀.1 q₀.2) :
-    Function.IsFixedPt (step A q₀) (graph A x, graph A x) := by
-  have hmem := graph_mem_Icc_step (q := (graph A x, graph A x)) ⟨le_rfl, le_rfl⟩ hx
-  have hw := step_within_self A q₀ (graph A x, graph A x)
-  exact Prod.ext (le_antisymm hmem.1 hw.fst_le) (le_antisymm hw.le_snd hmem.2)
+    Function.IsFixedPt (step A q₀) (graph A x, graph A x) :=
+  (step_within_self A q₀ _).antisymm (within_iff.mpr (graph_mem_Icc_step ⟨le_rfl, le_rfl⟩ hx))
 
 /-- Supplying an initially enclosed graph point witnesses nonemptiness of every public iterate. -/
 theorem coe_publicRun_nonempty_of_graph {A : Matrix (Fin m) (Fin n) ℝ} {q₀ : Raw n m}

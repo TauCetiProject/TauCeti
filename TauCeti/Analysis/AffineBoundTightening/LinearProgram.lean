@@ -197,6 +197,16 @@ theorem eq_of_endpoints_eq {p' : Assignment n m} (h : IsFeasible A q₀ p)
 theorem objective_nonneg (h : IsFeasible A q₀ p) : 0 ≤ objective p :=
   width_nonneg h.fst_le_snd
 
+/-- A zero coefficient forces the lower product unknown of a feasible assignment to `0`. -/
+theorem zL_eq_zero (h : IsFeasible A q₀ p) {i : Fin m} {j : Fin n} (hA : A i j = 0) :
+    p.zL i j = 0 := by
+  rw [h.zL_eq, zLo_of_zero hA]
+
+/-- A zero coefficient forces the upper product unknown of a feasible assignment to `0`. -/
+theorem zU_eq_zero (h : IsFeasible A q₀ p) {i : Fin m} {j : Fin n} (hA : A i j = 0) :
+    p.zU i j = 0 := by
+  rw [h.zU_eq, zHi_of_zero hA]
+
 /-- A feasible assignment has objective at most the width of the initial endpoints. -/
 theorem objective_le (h : IsFeasible A q₀ p) : objective p ≤ width q₀ :=
   h.within.width_le
@@ -283,6 +293,11 @@ theorem exists_isFeasible_iff {A : Matrix (Fin m) (Fin n) ℝ} {q₀ : Raw n m} 
 def graphAssignment (A : Matrix (Fin m) (Fin n) ℝ) (x : Fin n → ℝ) : Assignment n m :=
   canonical A (graph A x, graph A x)
 
+/-- A graph assignment is the canonical assignment of the singleton box at the graph point. -/
+theorem graphAssignment_def (A : Matrix (Fin m) (Fin n) ℝ) (x : Fin n → ℝ) :
+    graphAssignment A x = canonical A (graph A x, graph A x) :=
+  (rfl)
+
 /-- Both endpoints of a graph assignment are the graph point. -/
 @[simp]
 theorem graphAssignment_endpoints (A : Matrix (Fin m) (Fin n) ℝ) (x : Fin n → ℝ) :
@@ -293,13 +308,13 @@ theorem graphAssignment_endpoints (A : Matrix (Fin m) (Fin n) ℝ) (x : Fin n �
 @[simp]
 theorem graphAssignment_zL (A : Matrix (Fin m) (Fin n) ℝ) (x : Fin n → ℝ) (i : Fin m)
     (j : Fin n) : (graphAssignment A x).zL i j = A i j * x j := by
-  simp [graphAssignment]
+  simp [graphAssignment_def]
 
 /-- The upper products of a graph assignment are the ordinary products `A i j * x j`. -/
 @[simp]
 theorem graphAssignment_zU (A : Matrix (Fin m) (Fin n) ℝ) (x : Fin n → ℝ) (i : Fin m)
     (j : Fin n) : (graphAssignment A x).zU i j = A i j * x j := by
-  simp [graphAssignment]
+  simp [graphAssignment_def]
 
 /-- Every graph point in the initial box gives a feasible singleton assignment. -/
 theorem isFeasible_graphAssignment {A : Matrix (Fin m) (Fin n) ℝ} {q₀ : Raw n m}
