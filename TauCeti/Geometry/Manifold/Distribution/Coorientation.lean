@@ -116,6 +116,26 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {k : ℕ} {D : Π x : M, Submodule ℝ (TangentSpace I x)}
   {σ : Π x : M, TangentSpace I x →L[ℝ] ℝ}
 
+namespace SmoothForm
+
+variable {α : SmoothForm I M ℝ 1} {x : M}
+
+/-- The covector of a one-form at `x` annihilates its kernel there. -/
+theorem degreeOneEquiv_mem_annihilatorSpace (h : RoughForm.ker α.val x = D x) :
+    degreeOneEquiv α x ∈ CotangentBundle.annihilatorSpace I D x :=
+  CotangentBundle.mem_annihilatorSpace_iff.2 fun v hv ↦ by
+    rw [← h, RoughForm.ker_eq_ker_eval, SmoothForm.eval_val] at hv
+    exact LinearMap.mem_ker.1 hv
+
+/-- The annihilator of the kernel of a one-form not vanishing at `x` is a line. -/
+theorem finrank_annihilatorSpace_eq_one (h : α.val x ≠ 0) (hker : RoughForm.ker α.val x = D x) :
+    finrank ℝ (CotangentBundle.annihilatorSpace I D x) = 1 := by
+  rw [CotangentBundle.annihilatorSpace_eq_span_singleton (α := degreeOneEquiv α x)
+    (by rw [← hker, RoughForm.ker_eq_ker_eval, SmoothForm.eval_val])]
+  exact finrank_span_singleton (degreeOneEquiv_ne_zero h)
+
+end SmoothForm
+
 namespace IsContMDiffDistribution
 
 /-- **A one-form proportional to a nonzero annihilating covector defines the hyperplane.** If the
@@ -186,9 +206,8 @@ theorem exists_smoothForm_ker_eq_iff_exists_continuous (hD : IsContMDiffDistribu
   · rintro ⟨α, hα⟩
     refine ⟨fun x ↦ SmoothForm.degreeOneEquiv α x,
       (SmoothForm.degreeOneEquiv α).contMDiff.continuous,
-      fun x ↦ ⟨SmoothForm.degreeOneEquiv_ne_zero (hα x).1, ?_⟩⟩
-    refine CotangentBundle.mem_annihilatorSpace_iff.2 fun v hv ↦ ?_
-    simpa [← (hα x).2] using hv
+      fun x ↦ ⟨SmoothForm.degreeOneEquiv_ne_zero (hα x).1,
+        SmoothForm.degreeOneEquiv_mem_annihilatorSpace (hα x).2⟩⟩
   · rintro ⟨σ, hσ, hσD⟩
     obtain ⟨α, hα⟩ := hD.exists_smoothForm_pos_smul hk hσ (fun x ↦ (hσD x).1) fun x ↦ (hσD x).2
     exact ⟨α, fun x ↦ (hα x).1⟩
@@ -260,20 +279,6 @@ namespace SmoothForm
 
 variable {α β : SmoothForm I M ℝ 1} {x : M}
 
-/-- The covector of a one-form at `x` annihilates its kernel there. -/
-private theorem degreeOneEquiv_mem_annihilatorSpace (h : RoughForm.ker α.val x = D x) :
-    degreeOneEquiv α x ∈ annihilatorSpace I D x :=
-  mem_annihilatorSpace_iff.2 fun v hv ↦ by
-    rw [← h, RoughForm.ker_eq_ker_eval, SmoothForm.eval_val] at hv
-    exact LinearMap.mem_ker.1 hv
-
-/-- The annihilator of the kernel of a one-form not vanishing at `x` is a line. -/
-private theorem finrank_annihilatorSpace_eq_one (h : α.val x ≠ 0)
-    (hker : RoughForm.ker α.val x = D x) : finrank ℝ (annihilatorSpace I D x) = 1 := by
-  rw [annihilatorSpace_eq_span_singleton (α := degreeOneEquiv α x)
-    (by rw [← hker, RoughForm.ker_eq_ker_eval, SmoothForm.eval_val])]
-  exact finrank_span_singleton (degreeOneEquiv_ne_zero h)
-
 /-- The one-vector basis `(α_x)` of the annihilator line `D⁰_x`, for a one-form `α` not vanishing
 at `x` with kernel `D x`. -/
 private def coorientationBasis (hα : α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x) :
@@ -335,6 +340,10 @@ theorem coorientation_neg (hα : ∀ x, (-α).val x ≠ 0 ∧ RoughForm.ker (-α
     (-α).coorientation hα =
       -α.coorientation fun x ↦ neg_val_ne_zero_and_ker_eq_iff.1 (hα x) := by
   funext x
+  -- Both sides are orientations of the one-vector bases `coorientationBasis`, which are by
+  -- definition `basisSingleton` bases; unfolding them exposes the shape of the general lemma
+  -- `orientation_basisSingleton_neg`. It remains to match the vector `(-α)_x` with `-α_x` and
+  -- the corresponding nonvanishing proofs, which `convert` separates.
   rw [Pi.neg_apply, coorientation, coorientation, coorientationBasis, coorientationBasis]
   convert orientation_basisSingleton_neg _ _ using 3
   · exact Subtype.ext (by simp)
@@ -372,7 +381,7 @@ theorem neg (ho : IsCoorientation I D o) : IsCoorientation I D (-o) := fun x ↦
     fun y _ ↦ by simp, fun y hy ↦ ?_⟩
   obtain ⟨b, hb, hbo⟩ := hpos y hy
   refine ⟨b.unitsSMul (Function.update 1 0 (-1)), ?_, ?_⟩
-  · rw [Basis.unitsSMul_apply, Function.update_self, hb, Units.neg_smul, one_smul, Pi.neg_apply]
+  · simp [Basis.unitsSMul_apply, hb]
   · rw [Basis.orientation_neg_single, hbo, Pi.neg_apply]
 
 /-- **Coorientations are the orientations of the annihilator line bundle.** For any structure of a
@@ -403,8 +412,8 @@ theorem iff_exists_vectorBundleOrientation
     obtain ⟨U, hU, σ, hσ, hpos⟩ := o'.exists_continuousOn_section_basis_orientation_eq hι x
     exact ⟨U, hU, σ, hcont.1 hσ, hpos⟩
 
-/-- **A connected manifold has at most two coorientations.** On a preconnected manifold, two
-coorientations of a smooth hyperplane field are equal or opposite. -/
+/-- **A smooth hyperplane field on a connected manifold has at most two coorientations.** On a
+preconnected manifold, two coorientations of a smooth hyperplane field are equal or opposite. -/
 theorem eq_or_eq_neg [PreconnectedSpace M] (hD : IsContMDiffDistribution I ∞ k D)
     (hk : k + 1 = finrank ℝ E) (ho : IsCoorientation I D o) (ho' : IsCoorientation I D o') :
     o' = o ∨ o' = -o := by
@@ -461,8 +470,8 @@ theorem exists_coorientation_eq [T2Space M] [SigmaCompactSpace M]
   refine ⟨α, fun x ↦ (hα x).1, funext fun x ↦ ?_⟩
   obtain ⟨b, hb, hbo⟩ := hpos x
   obtain ⟨c, hc, hαc⟩ := (hα x).2
-  rw [← hbo, eq_comm, SmoothForm.orientation_eq_coorientation_iff, hαc]
-  exact (congrArg Subtype.val hb).symm ▸ SameRay.sameRay_pos_smul_right _ hc
+  rw [← hbo, eq_comm, SmoothForm.orientation_eq_coorientation_iff, hαc, ← hb]
+  exact SameRay.sameRay_pos_smul_right _ hc
 
 end IsCoorientation
 
