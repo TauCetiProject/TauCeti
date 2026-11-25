@@ -64,12 +64,12 @@ vertex preserves this condition and commutes with defrosting and with freezing.
 ## Implementation notes
 
 The rational full matrix reuses the matrix-level theory of `ExchangeMatrix/Basic.lean` and
-`ExchangeMatrix/Mutation/Basic.lean`, which is stated over any linearly ordered ring: the weights form
-a `Matrix.IsSkewSymmetrizer` of the full matrix, mutation is `TauCeti.matrixMutation` along
+`ExchangeMatrix/Mutation/Basic.lean`, which is stated over any linearly ordered ring: the weights
+form a `Matrix.IsSkewSymmetrizer` of the full matrix, mutation is `TauCeti.matrixMutation` along
 `Function.Embedding.refl I`, its involutivity is `TauCeti.matrixMutation_matrixMutation`,
-preservation of the skew-symmetrizer is `Matrix.IsSkewSymmetrizer.matrixMutation`, and
-preservation of integrality at a vertex is `TauCeti.forall_matrixMutation_refl_mem_iff` for the
-subring of integers.
+preservation of the skew-symmetrizer is `Matrix.IsSkewSymmetrizer.matrixMutation`, and preservation
+of integrality at a vertex is `TauCeti.forall_matrixMutation_refl_mem_iff` for the subring of
+integers.
 
 ## References
 

@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Cluster.ExchangeMatrix.Basic
 import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Ring
 
 /-!
 # Matrix mutation
@@ -344,6 +345,13 @@ theorem matrixMutation_refl_apply_of_ne {i j : K} (hi : i ≠ k) (hj : j ≠ k) 
       B i j + (B i k)⁺ * (B k j)⁺ - (B i k)⁻ * (B k j)⁻ :=
   matrixMutation_apply_of_ne hi hj
 
+end square
+
+section sourceSink
+
+variable [Ring R] [LinearOrder R] [IsStrictOrderedRing R] [DecidableEq K] {B : Matrix K K R}
+  {s : K → R}
+
 /-- Away from its incident row and column, mutation at a nonnegative row fixes entries. -/
 theorem _root_.Matrix.IsSkewSymmetrizer.matrixMutation_apply_of_row_nonneg
     (h : B.IsSkewSymmetrizer s) {k i j : K}
@@ -368,6 +376,13 @@ theorem _root_.Matrix.IsSkewSymmetrizer.matrixMutation_apply_of_row_nonneg_or_no
     · have hneg : ∀ l, 0 ≤ (-B) k l := fun l ↦ neg_nonneg.mpr (hk l)
       have heq := h.neg.matrixMutation_apply_of_row_nonneg hneg hi hj
       simpa only [TauCeti.matrixMutation_neg, Matrix.neg_apply, neg_inj] using heq
+
+end sourceSink
+
+section square
+
+variable [Ring R] [LinearOrder R] [DecidableEq K] {B : Matrix K K R} {k : K}
+
 /-- The row and the column of the mutation of a square matrix at a vertex `i` lie in a subring,
 provided those of the matrix at `i` and at the direction `k` do. Mutation reverses itself, so
 this is an equivalence once the row and the column at `k` lie in the subring. -/

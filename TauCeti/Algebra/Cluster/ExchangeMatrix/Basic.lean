@@ -130,8 +130,8 @@ section NoZeroDivisors
 
 variable [Ring R] [PartialOrder R] [NoZeroDivisors R] {B : Matrix K K R} {s : K → R}
 
-/-- A skew-symmetrizable matrix has zero diagonal. -/
-theorem apply_self (h : B.IsSkewSymmetrizer s) (i : K) : B i i = 0 :=
+/-- A skew-symmetrizable matrix over an additively torsion-free ring has zero diagonal. -/
+theorem apply_self [IsAddTorsionFree R] (h : B.IsSkewSymmetrizer s) (i : K) : B i i = 0 :=
   (mul_eq_zero.mp (self_eq_neg.mp (h.mul_apply i i))).resolve_left (h.pos i).ne'
 
 /-- In a skew-symmetrizable matrix, an entry vanishes exactly when the entry in the transposed
