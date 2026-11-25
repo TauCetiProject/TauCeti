@@ -71,6 +71,17 @@ variable {X : TopCat.{u}} (F : X.Presheaf CommRingCat.{u}) (J : Ideal (F.obj (op
 def stalkIdeal (x : X) : Ideal (F.stalk x) :=
   J.map (F.germ ⊤ x (Opens.mem_top x)).hom
 
+/-- The stalk ideal `J_x` is the image of `J` under the germ map at `x`. -/
+theorem stalkIdeal_eq_map (x : X) :
+    F.stalkIdeal J x = J.map (F.germ ⊤ x (Opens.mem_top x)).hom :=
+  (rfl)
+
+variable {F J} in
+/-- Stalk ideals are monotone in the ideal of global sections. -/
+theorem stalkIdeal_mono {K : Ideal (F.obj (op ⊤))} (h : J ≤ K) (x : X) :
+    F.stalkIdeal J x ≤ F.stalkIdeal K x :=
+  Ideal.map_mono h
+
 variable {F J} in
 /-- The germ of a global section in `J` lies in each stalk ideal of `J`. -/
 theorem germ_mem_stalkIdeal {f : F.obj (op ⊤)} (hf : f ∈ J) (x : X) :
