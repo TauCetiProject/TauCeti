@@ -90,8 +90,8 @@ end ContinuousLinearMap
 
 namespace IsCompactOperator
 
-variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {T : E →L[𝕜] F}
+variable {𝕜 E F : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] {T : E →L[𝕜] F}
 
 /-- A compact operator becomes arbitrarily small on a closed subspace of finite codimension.
 The conclusion controls the actual restricted operator in its native subspace norm. -/

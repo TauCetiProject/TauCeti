@@ -156,15 +156,16 @@ open scoped Topology in
 /-- If `S` is totally bounded and the antitone sequence `s` satisfies `s |N| ≤ C ε` for every
 finite `ε`-cover `N` of `S`, then `s` tends to zero. -/
 theorem Antitone.tendsto_atTop_nhds_zero_of_isCover {X : Type*} [PseudoEMetricSpace X]
-    {S : Set X} {s : ℕ → ℝ≥0} (hs : Antitone s) (hS : TotallyBounded S) {C : ℝ≥0} (hC : C ≠ 0)
+    {S : Set X} {s : ℕ → ℝ≥0} (hs : Antitone s) (hS : TotallyBounded S) {C : ℝ≥0}
     (h : ∀ (ε : ℝ≥0) (N : Finset X), IsCover ε S N → s N.card ≤ C * ε) :
     Tendsto s atTop (𝓝 0) := by
   refine tendsto_order.2 ⟨fun _ ha ↦ (ha.not_ge zero_le).elim, fun a ha ↦ ?_⟩
-  -- Cover `S` by finitely many balls of radius `a / (2 C)`.
-  have hε : a / (2 * C) ≠ 0 := (div_pos ha (by positivity)).ne'
+  -- Cover `S` by finitely many balls of radius `a / (2 (C + 1))`.
+  have hε : a / (2 * (C + 1)) ≠ 0 := (div_pos ha (by positivity)).ne'
   obtain ⟨N, -, hNfin, hN⟩ := exists_finite_isCover_of_totallyBounded hε hS
   refine eventually_atTop.2 ⟨hNfin.toFinset.card, fun n hn ↦ ?_⟩
-  have hCa : C * (a / (2 * C)) = a / 2 := by field_simp
-  refine ((hs hn).trans (h _ _ (by simpa using hN))).trans_lt ?_
-  rw [hCa]
-  exact NNReal.half_lt_self ha.ne'
+  have hCa : C * (a / (2 * (C + 1))) ≤ a / 2 :=
+    calc C * (a / (2 * (C + 1))) ≤ (C + 1) * (a / (2 * (C + 1))) := by gcongr; exact le_self_add
+      _ = a / 2 := by field_simp
+  exact ((hs hn).trans (h _ _ (by simpa using hN))).trans_lt <|
+    hCa.trans_lt (NNReal.half_lt_self ha.ne')

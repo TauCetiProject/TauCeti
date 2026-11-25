@@ -108,7 +108,6 @@ theorem tendsto_kolmogorovNumber_atTop_nhds_zero_of_totallyBounded {T : E →L[�
     Tendsto T.kolmogorovNumber atTop (𝓝 0) := by
   obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
   exact T.antitone_kolmogorovNumber.tendsto_atTop_nhds_zero_of_isCover hT
-    (one_pos.trans (by exact_mod_cast hc)).ne'
     fun _ _ hN ↦ T.kolmogorovNumber_le_nnnorm_mul_of_isCover le_rfl hN hc
 
 /-- Every compact operator has Kolmogorov numbers tending to zero. -/
@@ -245,7 +244,7 @@ theorem gelfandNumber_two_pow_le_two_mul_entropyNumber (T : E →L[𝕜] F) (n :
 theorem tendsto_gelfandNumber_atTop_nhds_zero_of_totallyBounded {T : E →L[𝕜] F}
     (hT : TotallyBounded ((T : E → F) '' closedBall 0 1)) :
     Tendsto T.gelfandNumber atTop (𝓝 0) :=
-  T.antitone_gelfandNumber.tendsto_atTop_nhds_zero_of_isCover hT two_ne_zero
+  T.antitone_gelfandNumber.tendsto_atTop_nhds_zero_of_isCover hT
     fun _ _ hN ↦ T.gelfandNumber_le_two_mul_of_isCover le_rfl hN
 
 /-- Every compact operator has Gelfand numbers tending to zero. -/
