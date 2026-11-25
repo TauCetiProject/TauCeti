@@ -51,6 +51,9 @@ linear combination to the combination of the images with the twisted coefficient
   matrix entry vanishes.
 * `Fintype.linearCombination_intCast`: an additive map sends an integer linear combination to the
   linear combination of the images with the integer coefficients cast to the scalar ring.
+* `Fintype.linearCombination_comp_equiv` and `Fintype.bijective_linearCombination_comp_equiv_iff`:
+  reindexing a family along an equivalence reindexes the coefficients of its linear combinations,
+  and preserves the bijectivity of the linear combination map.
 * `Finsupp.mapRange_linearCombination`: applying a ring homomorphism `f` coefficientwise sends
   `∑ᵢ gᵢ • vᵢ` to `∑ᵢ f gᵢ • (f ∘ vᵢ)`, for finitely supported vectors `vᵢ`.
 * `Finsupp.apply_linearCombinationₛₗ`: a `σ`-semilinear map `f` sends `∑ᵢ lᵢ • vᵢ` to
@@ -204,6 +207,30 @@ theorem Fintype.linearCombination_intCast {ι R N M : Type*} [Fintype ι] [Ring 
     Fintype.linearCombination R (fun j ↦ f (u j)) (fun j ↦ (k j : R)) =
       f (Fintype.linearCombination ℤ u k) := by
   simp [Fintype.linearCombination_apply, map_sum, Int.cast_smul_eq_zsmul]
+
+section Reindex
+
+variable {ι κ R M : Type*} [Fintype ι] [Fintype κ] [Semiring R] [AddCommMonoid M] [Module R M]
+
+/-- Reindexing a family `v` along an equivalence `e : κ ≃ ι` reindexes the coefficients of its
+linear combinations along `e.symm`. -/
+theorem Fintype.linearCombination_comp_equiv (e : κ ≃ ι) (v : ι → M) :
+    Fintype.linearCombination R (v ∘ e) =
+      Fintype.linearCombination R v ∘ₗ (LinearEquiv.funCongrLeft R R e.symm).toLinearMap := by
+  ext c
+  simp only [Fintype.linearCombination_apply, LinearMap.coe_comp, LinearEquiv.coe_coe,
+    Function.comp_apply, LinearEquiv.funCongrLeft_apply]
+  exact Fintype.sum_equiv e _ _ fun k ↦ by simp
+
+/-- Reindexing a family along an equivalence does not change whether its linear combination map
+is bijective, that is, whether it is a basis. -/
+theorem Fintype.bijective_linearCombination_comp_equiv_iff (e : κ ≃ ι) {v : ι → M} :
+    Function.Bijective (Fintype.linearCombination R (v ∘ e)) ↔
+      Function.Bijective (Fintype.linearCombination R v) := by
+  rw [Fintype.linearCombination_comp_equiv, LinearMap.coe_comp]
+  exact Function.Bijective.of_comp_iff _ (LinearEquiv.funCongrLeft R R e.symm).bijective
+
+end Reindex
 
 namespace Finsupp
 
