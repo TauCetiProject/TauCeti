@@ -14,6 +14,7 @@ import Mathlib.FieldTheory.SeparableDegree
 import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 import Mathlib.RingTheory.Smooth.Fiber
 import TauCeti.RingTheory.DedekindDomain.IntegralClosure
+import TauCeti.RingTheory.Ideal.GoingUp
 import TauCeti.RingTheory.Ideal.LiesOver
 import TauCeti.RingTheory.Localization.Integral
 import TauCeti.RingTheory.RamificationInertia.Bijective

@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import Mathlib.RingTheory.RamificationInertia.Ramification
 import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 import Mathlib.RingTheory.Ideal.GoingUp
-import TauCeti.RingTheory.Ideal.LiesOver
+import TauCeti.RingTheory.Ideal.GoingUp
 import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 import TauCeti.RingTheory.Polynomial.Eisenstein.LocalRing
 import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing

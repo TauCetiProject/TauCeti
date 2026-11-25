@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.DiscreteValuationRing.AbhyankarModel.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.Eisenstein
 public import Mathlib.RingTheory.RingHom.Unramified
 import Mathlib.RingTheory.Unramified.LocalRing
-import TauCeti.RingTheory.Ideal.LiesOver
+import TauCeti.RingTheory.Ideal.GoingUp
 import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 import TauCeti.RingTheory.RegularLocalRing.Basic

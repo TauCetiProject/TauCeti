@@ -18,6 +18,11 @@ Along an integral algebra, maximal ideals contract to maximal ideals, so the ext
 ideal contained in the Jacobson radical of the contraction of an ideal `J` is contained in the
 Jacobson radical of `J`.
 
+For an integral algebra `B` over a local ring `A`, every maximal ideal of `B` therefore lies over
+the maximal ideal of `A`. For local `B` this includes `maximalIdeal B`, for which Mathlib's
+instance needs `IsLocalHom (algebraMap A B)`; an example is the integral closure of a local ring in
+a field whenever that closure is local.
+
 Incomparability over the zero ideal: an ideal of a `P`-algebra `B` lying over the zero ideal of `P`
 is minimal as soon as it contains a minimal prime `p` with `B ⧸ p` algebraic over `P`.
 
@@ -29,6 +34,8 @@ is minimal as soon as it contains a minimal prime `p` with `B ⧸ p` algebraic o
   `T` contracts to a prime alone above `p` in any intermediate ring over which `T` is integral.
 * `Ideal.comap_eq_maximalIdeal_of_isIntegral`: along an integral algebra over a local ring, every
   maximal ideal contracts to the maximal ideal.
+* `Ideal.liesOver_maximalIdeal_of_isIntegral`: for an integral algebra `B` over a local ring `A`,
+  every maximal ideal of `B` lies over `maximalIdeal A`.
 * `TauCeti.radical_map_maximalIdeal_of_isIntegral`: along an integral algebra of local
   rings, the radical of the extended maximal ideal is the maximal ideal of the target.
 * `Ideal.map_le_jacobson_of_isIntegral`: along an integral algebra, the extension of an ideal in
@@ -92,6 +99,15 @@ theorem comap_eq_maximalIdeal_of_isIntegral {R : Type*} [CommRing R] [IsLocalRin
     [Algebra R S] [Algebra.IsIntegral R S] (P : Ideal S) [P.IsMaximal] :
     P.comap (algebraMap R S) = IsLocalRing.maximalIdeal R :=
   IsLocalRing.eq_maximalIdeal (IsMaximal.under R P)
+
+/-- For an integral algebra `B` over a local ring `A`, every maximal ideal of `B` lies over the
+maximal ideal of `A`. In particular, when `B` is local, so does `maximalIdeal B`; unlike Mathlib's
+instance for that case, this needs no `IsLocalHom (algebraMap A B)`: the contraction of a maximal
+ideal is maximal by integrality. -/
+instance liesOver_maximalIdeal_of_isIntegral {A B : Type*} [CommRing A] [IsLocalRing A]
+    [CommRing B] [Algebra A B] [Algebra.IsIntegral A B] (P : Ideal B) [P.IsMaximal] :
+    P.LiesOver (IsLocalRing.maximalIdeal A) :=
+  ⟨(comap_eq_maximalIdeal_of_isIntegral P).symm⟩
 
 /-- **An ideal over zero above an algebraic component is minimal.** Let `B` be a `P`-algebra, `p` a
 minimal prime of `B` with `B ⧸ p` algebraic over `P`, and `q ≥ p` an ideal of `B` lying over the

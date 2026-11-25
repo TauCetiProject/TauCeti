@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.DiscreteValuationRing.TamelyRamified
 
 import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
 import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
-import TauCeti.RingTheory.Ideal.LiesOver
+import TauCeti.RingTheory.Ideal.GoingUp
 
 /-!
 # Comparing tame ramification for local fields and discrete valuation rings

@@ -15,7 +15,7 @@ import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.IntermediateField.ScalarTower
 import TauCeti.FieldTheory.Kummer.Extension
 import TauCeti.RingTheory.DiscreteValuationRing.Eisenstein
-import TauCeti.RingTheory.Ideal.LiesOver
+import TauCeti.RingTheory.Ideal.GoingUp
 import TauCeti.RingTheory.LocalRing.Roots
 import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly

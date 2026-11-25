@@ -16,7 +16,7 @@ public import TauCeti.RingTheory.Subring.Torsion
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
 import TauCeti.RingTheory.AdicCompletion.Finite
-import TauCeti.RingTheory.Ideal.LiesOver
+import TauCeti.RingTheory.Ideal.GoingUp
 
 /-!
 # The ring of integers of an extension of local fields is a finite free module
