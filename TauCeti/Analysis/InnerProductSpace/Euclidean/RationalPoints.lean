@@ -66,8 +66,7 @@ theorem dense_rationalPoints {n : ℕ} : Dense (rationalPoints n) := by
   rw [rationalPoints_eq_range]
   have h : DenseRange fun q : Fin n → ℚ ↦ fun i ↦ (q i : ℝ) :=
     DenseRange.piMap fun _ ↦ Rat.denseRange_cast
-  exact ((PiLp.continuousLinearEquiv 2 ℝ fun _ : Fin n ↦ ℝ).symm.surjective.denseRange.comp h
-    (PiLp.continuousLinearEquiv 2 ℝ fun _ : Fin n ↦ ℝ).symm.continuous)
+  exact (WithLp.toLp_surjective 2).denseRange.comp h (PiLp.continuous_toLp 2 _)
 
 /-- The points of rational coordinates form a null set, for `n ≠ 0`. -/
 theorem volume_rationalPoints {n : ℕ} [NeZero n] : volume (rationalPoints n) = 0 :=
