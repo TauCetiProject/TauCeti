@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.CongruenceLevel
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.CompletedIdeal
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Subalgebra
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.Topology.Instances.Matrix
 
@@ -119,15 +120,10 @@ theorem mem_range_mapGL_of_det_eq_one {γ : GL (Fin n) K}
   have hent (i j : Fin n) : (γ : Matrix (Fin n) (Fin n) K) i j ∈ (algebraMap R K).range := by
     rw [← algebraMap_mem_integralAdeles_iff (R := R)]
     simpa using (mem_range_integralGL_iff.mp hint).1 i j
-  choose m hm using hent
-  have hmat : (Matrix.of m).map (algebraMap R K) = (γ : Matrix (Fin n) (Fin n) K) := by
-    ext i j
-    simpa using hm i j
-  have hdet' : (Matrix.of m).det = 1 := by
-    apply IsFractionRing.injective R K
-    simpa [RingHom.map_det, hmat] using congrArg Units.val hdet
-  exact ⟨⟨Matrix.of m, hdet'⟩,
-    Units.ext ((Matrix.SpecialLinearGroup.mapGL_coe_matrix _).trans hmat)⟩
+  obtain ⟨σ, hσ⟩ := (Matrix.SpecialLinearGroup.mem_range_map_iff (IsFractionRing.injective R K)
+    ⟨(γ : Matrix (Fin n) (Fin n) K), by simpa using congrArg Units.val hdet⟩).mpr hent
+  exact ⟨σ, Units.ext ((Matrix.SpecialLinearGroup.mapGL_coe_matrix σ).trans
+    (congrArg Subtype.val hσ))⟩
 
 variable (K n) in
 /-- The inclusion `GL_n(Ô) → GL_n(𝔸_f)` is an open embedding: through the homeomorphisms
