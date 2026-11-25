@@ -25,8 +25,9 @@ normed space of finite dimension `r`, and let `o` generate the local homology
 for every coefficient module `L`, when the core `f(S)` is closed, as it is for compact `S` and
 Hausdorff `M`
 (`TauCeti.IsFramedTube.bijective_singularHomologyMap_tubePairMap_singularHomologyCrossRel`): by
-excision the right side is the homology of `(V × S, (V ∖ 0) × S)`, and the relative Künneth theorem
-for the free local homology of `V` at `0`
+excision (`TauCeti.IsFramedTube.isIso_singularHomologyMap_tubePairMap`) the right side is the
+homology of `(V × S, (V ∖ 0) × S)`, and the relative Künneth theorem for the free local homology of
+`V` at `0`
 (`TauCeti.bijective_homologyCross_tmul_singularChainComplex_complSingleton`) gives the suspension
 by `o`. So every class `z ∈ H_{r+q}(M; k ⊗ L)` determines a unique class
 `x ∈ H_q(S; L)` whose image under the tube is the image of `z` in `H_{r+q}(M, M ∖ f(S))`
@@ -95,64 +96,15 @@ section Tube
 variable {V : Type w} [NormedAddCommGroup V] {S M : Type w} [TopologicalSpace S]
   [TopologicalSpace M] {f : S → M} {τ : S × V → M}
 
-/-- The tube with its factors exchanged, `(v, x) ↦ τ (x, v)`, as a continuous map: the map of
-ambient spaces of `TauCeti.IsFramedTube.tubePairMap`. -/
-private def tubeMap (h : IsFramedTube f τ) : C((TopCat.of V ⊗ TopCat.of S : TopCat), M) :=
-  ⟨fun p ↦ τ (snd (TopCat.of V) (TopCat.of S) p, fst (TopCat.of V) (TopCat.of S) p),
-    h.isOpenEmbedding.continuous.comp
-      ((snd (TopCat.of V) (TopCat.of S)).hom.continuous.prodMk
-        (fst (TopCat.of V) (TopCat.of S)).hom.continuous)⟩
-
-private lemma isOpenEmbedding_tubeMap (h : IsFramedTube f τ) : IsOpenEmbedding (tubeMap h) :=
-  h.isOpenEmbedding.comp (Homeomorph.prodComm V S).isOpenEmbedding
-
-/-- The core is the image of the zero section, and only of it. -/
-private lemma preimage_tubeMap_range (h : IsFramedTube f τ) :
-    tubeMap h ⁻¹' range f = fst (TopCat.of V) (TopCat.of S) ⁻¹' {0} := by
-  ext p
-  refine ⟨fun ⟨y, hy⟩ ↦ ?_, fun hp ↦ ⟨snd (TopCat.of V) (TopCat.of S) p, ?_⟩⟩
-  · rw [← h.apply_zero] at hy
-    exact (congrArg Prod.snd (h.isOpenEmbedding.injective hy)).symm
-  · rw [← h.apply_zero]
-    exact congrArg (fun v ↦ τ (snd (TopCat.of V) (TopCat.of S) p, v)) hp.symm
-
-private lemma range_subset_range_tubeMap (h : IsFramedTube f τ) : range f ⊆ range (tubeMap h) := by
-  rintro _ ⟨x, rfl⟩
-  exact ⟨((0 : V), x), h.apply_zero x⟩
-
-/-- The tube as a map of pairs is the map of pairs induced by `TauCeti.IsFramedTube.tubeMap`. -/
-private lemma mapsTo_tubeMap (h : IsFramedTube f τ) :
-    MapsTo (TopCat.ofHom (tubeMap h)) (fst (TopCat.of V) (TopCat.of S) ⁻¹' {(0 : V)}ᶜ)
-      ((range f)ᶜ : Set (TopCat.of M)) := by
-  intro p hp hpf
-  exact hp ((preimage_tubeMap_range h).subset hpf)
-
-private lemma tubePairMap_eq (h : IsFramedTube f τ) :
-    h.tubePairMap = TopPair.ofSubsetMap (TopCat.ofHom (tubeMap h)) (mapsTo_tubeMap h) :=
-  TopPair.hom_ext_of_fst _ (ConcreteCategory.hom_ext _ _ fun p ↦ by
-    rw [TopPair.ofSubsetMap_fst]
-    -- Both sides are `τ (x, v)` at `p = (v, x)`.
-    exact h.tubePairMap_fst_apply p)
-
-/-- **Excision along the tube**: when the core is closed, `(V × S, (V ∖ 0) × S) → (M, M ∖ f(S))`
-induces isomorphisms on relative homology. -/
-private lemma isIso_singularHomologyMap_tubePairMap (h : IsFramedTube f τ)
-    (hf : IsClosed (range f)) {A : Type*} [Category* A] [HasCoproducts.{w} A] [Abelian A] (N : A)
-    (n : ℕ) : IsIso (TopPair.singularHomologyMap h.tubePairMap N n) := by
-  have := isIso_localHomologyMap N (tubeMap h) (isOpenEmbedding_tubeMap h)
-    (preimage_tubeMap_range h) hf (range_subset_range_tubeMap h) n
-  rw [localHomologyMap_def] at this
-  rwa [tubePairMap_eq]
-
 /-- The tube as a map from the pair `(V × S, V × S ∖ {(0, s)})`, written as in the cross product of
 the pairs `(V, V ∖ 0)` and `(S, S ∖ s)`, to the local pair `(M, M ∖ {f s})`. -/
 private def tubeLocalPairMap (h : IsFramedTube f τ) (s : S) :
     TopPair.ofSubset (fst (TopCat.of V) (TopCat.of S) ⁻¹' {(0 : V)}ᶜ ∪
       snd (TopCat.of V) (TopCat.of S) ⁻¹' ({s}ᶜ : Set (TopCat.of S))) ⟶
       TopPair.ofSubset ({f s}ᶜ : Set (TopCat.of M)) :=
-  TopPair.ofSubsetMap (TopCat.ofHom (tubeMap h)) (by
-    rintro p hp (hps : tubeMap h p = f s)
-    rw [← h.apply_zero] at hps
+  TopPair.ofSubsetMap (TopCat.ofHom h.tubeMap) (by
+    rintro p hp (hps : h.tubeMap p = f s)
+    rw [tubeMap_apply, ← h.apply_zero] at hps
     have := h.isOpenEmbedding.injective hps
     rcases hp with hp | hp
     · exact hp (congrArg Prod.snd this)
@@ -163,26 +115,25 @@ private def tubeLocalPairMap (h : IsFramedTube f τ) (s : S) :
 private lemma isIso_singularHomologyMap_tubeLocalPairMap [T1Space M] (h : IsFramedTube f τ)
     (s : S) {A : Type*} [Category* A] [HasCoproducts.{w} A] [Abelian A] (N : A) (n : ℕ) :
     IsIso (TopPair.singularHomologyMap (tubeLocalPairMap h s) N n) := by
-  have hpre : tubeMap h ⁻¹' {f s} = {((0 : V), s)} := by
-    rw [← h.apply_zero s]
-    -- `τ (s, 0)` is `tubeMap h (0, s)`.
-    exact (congrArg _ (image_singleton (f := tubeMap h) (a := ((0 : V), s)))).symm.trans
-      ((isOpenEmbedding_tubeMap h).injective.preimage_image _)
   have hU : fst (TopCat.of V) (TopCat.of S) ⁻¹' {(0 : V)}ᶜ ∪
       snd (TopCat.of V) (TopCat.of S) ⁻¹' ({s}ᶜ : Set (TopCat.of S)) = ({((0 : V), s)})ᶜ := by
     ext ⟨v, x⟩
     -- The projections of the product in `TopCat` are those of `V × S`.
     change (v ≠ 0 ∨ x ≠ s) ↔ ¬((v, x) = ((0 : V), s))
     rw [Prod.ext_iff, not_and_or]
-  -- Transport the excision isomorphism along the equality of subsets.
-  have key : ∀ U : Set (TopCat.of V ⊗ TopCat.of S : TopCat), U = {((0 : V), s)}ᶜ →
-      ∀ hm : MapsTo (TopCat.ofHom (tubeMap h)) U ({f s}ᶜ : Set (TopCat.of M)),
+  -- Transport the excision isomorphism at `(0, s)` along the equality of subsets and along
+  -- `h.tubeMap (0, s) = f s`.
+  have key : ∀ (U : Set (TopCat.of V ⊗ TopCat.of S : TopCat)) (y : M), U = {((0 : V), s)}ᶜ →
+      h.tubeMap ((0 : V), s) = y →
+      ∀ hm : MapsTo (TopCat.ofHom h.tubeMap) U ({y}ᶜ : Set (TopCat.of M)),
       IsIso (TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hm) N n) := by
-    rintro U rfl _
-    have := isIso_localHomologyMap N (tubeMap h) (isOpenEmbedding_tubeMap h) hpre
-      isClosed_singleton (singleton_subset_iff.2 ⟨((0 : V), s), h.apply_zero s⟩) n
+    rintro U y rfl rfl _
+    -- `rw [localHomologyIsoOfIsOpenEmbedding_hom]` finds no instance of its left side in
+    -- `IsIso (localHomologyIsoOfIsOpenEmbedding ..).hom`, so the equation is applied with `▸`.
+    have := localHomologyIsoOfIsOpenEmbedding_hom N h.isOpenEmbedding_tubeMap ((0 : V), s) n ▸
+      (localHomologyIsoOfIsOpenEmbedding N h.isOpenEmbedding_tubeMap ((0 : V), s) n).isIso_hom
     rwa [localHomologyMap_def] at this
-  exact key _ hU _
+  exact key _ _ hU ((h.tubeMap_apply _).trans (h.apply_zero s)) _
 
 variable {k : Type w} [CommRing k] (L : ModuleCat.{w} k) [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
@@ -244,7 +195,6 @@ theorem span_singularHomologyToLocalHomology_eq_top_iff [T1Space M] (h : IsFrame
   have hmap : h.tubePairMap ≫ TopPair.ofSubsetMap (𝟙 (TopCat.of M))
       (compl_subset_compl.2 (singleton_subset_iff.2 (mem_range_self s))) =
       TopPair.ofSubsetMap (𝟙 _) (fun _ hz ↦ Or.inl hz) ≫ tubeLocalPairMap h s := by
-    rw [tubePairMap_eq]
     exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _
       ((Category.comp_id _).trans (Category.id_comp _).symm)
   have hcross := TopCat.singularHomologyCrossRel_comp_singularHomologyMap (TopCat.of V)
@@ -308,7 +258,7 @@ theorem bijective_singularHomologyMap_tubePairMap_singularHomologyCrossRel
     (TopCat.shuffleRel (TopCat.of V) (TopCat.of S) {(0 : V)}ᶜ (𝟙_ (ModuleCat.{w} k)) L) n).1
       inferInstance
   have := ((ConcreteCategory.isIso_iff_bijective _).1
-      (isIso_singularHomologyMap_tubePairMap h hf (𝟙_ (ModuleCat.{w} k) ⊗ L) n)).comp
+      (h.isIso_singularHomologyMap_tubePairMap hf (𝟙_ (ModuleCat.{w} k) ⊗ L) n)).comp
     (((ConcreteCategory.isIso_iff_bijective _).1 hs).comp
       (bijective_homologyCross_tmul_singularChainComplex_complSingleton
         (OpenPartialHomeomorph.refl V) (mem_univ (0 : V))
