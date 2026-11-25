@@ -510,15 +510,6 @@ private abbrev dHom ⦃Y : C⦄ (q : Y ⟶ S) ⦃k₁ k₂ : κ⦄ (f₁ : Y ⟶
     pullObj f₁ (dObj E k₁) ⟶ pullObj f₂ (dObj E k₂) :=
   E.hom q f₁ f₂ hf₁ hf₂
 
-private lemma dHom_self ⦃Y : C⦄ (q : Y ⟶ S) ⦃k : κ⦄ (g : Y ⟶ V k) (hg : g ≫ f k = q) :
-    dHom E q g g hg hg = 𝟙 _ :=
-  E.hom_self q g hg
-
-private lemma dHom_comp ⦃Y : C⦄ (q : Y ⟶ S) ⦃k₁ k₂ k₃ : κ⦄ (f₁ : Y ⟶ V k₁) (f₂ : Y ⟶ V k₂)
-    (f₃ : Y ⟶ V k₃) (hf₁ : f₁ ≫ f k₁ = q) (hf₂ : f₂ ≫ f k₂ = q) (hf₃ : f₃ ≫ f k₃ = q) :
-    dHom E q f₁ f₂ hf₁ hf₂ ≫ dHom E q f₂ f₃ hf₂ hf₃ = dHom E q f₁ f₃ hf₁ hf₃ :=
-  E.hom_comp q f₁ f₂ f₃ hf₁ hf₂ hf₃
-
 private lemma dHom_congr ⦃Y : C⦄ (q q' : Y ⟶ S) ⦃k₁ k₂ : κ⦄ (f₁ f₁' : Y ⟶ V k₁)
     (f₂ f₂' : Y ⟶ V k₂) (hf₁ : f₁ ≫ f k₁ = q) (hf₂ : f₂ ≫ f k₂ = q) (e : q = q')
     (e₁ : f₁ = f₁') (e₂ : f₂ = f₂') ⦃T : C⦄ ⦃i₁ : (dObj E k₁).ι⦄ ⦃i₂ : (dObj E k₂).ι⦄
@@ -577,14 +568,15 @@ private lemma dApp_comp ⦃T : C⦄ ⦃k₁ k₂ k₃ : κ⦄ ⦃i₁ : (dObj E 
     dApp E a₁ a₂ h₁₂ ≫ dApp E a₂ a₃ h₂₃ = dApp E a₁ a₃ (h₁₂.trans h₂₃) := by
   rw [dApp, dApp, dApp, dHom_congr E (a₂ ≫ (dObj E k₂).f i₂ ≫ f k₂) (a₁ ≫ (dObj E k₁).f i₁ ≫ f k₁)
     _ _ _ _ _ _ h₁₂.symm rfl rfl, ← pullApp_comp]
-  rw [dHom_comp]
+  rw [show dHom E _ _ _ _ _ ≫ dHom E _ _ _ _ _ = dHom E _ _ _ _ _ from
+    E.hom_comp _ _ _ _ _ _ _]
 
 private lemma dApp_self ⦃T : C⦄ ⦃k : κ⦄ ⦃i i' : (dObj E k).ι⦄ (a : T ⟶ (dObj E k).X i)
     (a' : T ⟶ (dObj E k).X i') (h : a ≫ (dObj E k).f i = a' ≫ (dObj E k).f i') :
     dApp E a a' (by rw [reassoc_of% h]) =
       (dObj E k).D.hom (a ≫ (dObj E k).f i) a a' rfl h.symm := by
-  rw [dApp, dHom_congr E _ _ _ _ _ (a ≫ (dObj E k).f i) _ _ rfl rfl h.symm, dHom_self,
-    pullApp_id]
+  rw [dApp, dHom_congr E _ _ _ _ _ (a ≫ (dObj E k).f i) _ _ rfl rfl h.symm,
+    show dHom E _ _ _ _ _ = 𝟙 _ from E.hom_self _ _ (Category.assoc _ _ _), pullApp_id]
   exact (dObj E k).D.hom_congr _ _ _ _ _ _ (Category.id_comp _)
 
 variable (hf : Sieve.ofArrows V f ∈ J S)
