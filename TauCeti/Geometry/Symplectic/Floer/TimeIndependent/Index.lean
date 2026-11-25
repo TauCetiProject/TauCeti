@@ -15,6 +15,8 @@ import TauCeti.Analysis.ODE.EnergyEstimate.Index
 import TauCeti.Analysis.Normed.Operator.MethodOfContinuity
 import TauCeti.Geometry.Symplectic.CompatibleMetric
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
+import TauCeti.Geometry.Symplectic.Complex.Module.Exp
+import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 
 /-!
 # The cokernel and index of the linearized operator along a time-independent cylinder
@@ -31,7 +33,10 @@ along the time-independent cylinder `(s, t) ↦ γ(s)`
 `M ζ = ζ' - J dX_H(γ) ζ` on `W^{1,2}(ℝ, V)` (`TauCeti.WeakDerivStep.trajectoryOperator`), and the
 nonzero modes carry no kernel; so `D` and `M` have the same kernel
 (`TauCeti.SymplecticForm.ker_floerSobolevOperator_eq_map_zeroModeL`). This file compares their
-cokernels, so that `D` and `M` are Fredholm together and have the same index.
+cokernels, so that `D` and `M` are Fredholm together and have the same index. Only the statement on
+the zero mode of the range holds for a general compatible pair `(ω, J)`; the cokernel comparison,
+the Fredholm equivalence and the equality of indices are proved in a unitary trivialization, where
+`V = F` is a complex inner product space with `ω = Im ⟪·, ·⟫` and `J = i`.
 
 * **The zero mode of the range.** The zero mode of `f ∈ L²(ℝ, V)` lies in the range of `D` exactly
   when `f` lies in the range of `M`
@@ -69,9 +74,10 @@ cokernels, so that `D` and `M` are Fredholm together and have the same index.
   sum of the eigenspaces of `-i dX_H(p)`, the negative of the Hessian of `H` at `p`, at negative
   eigenvalues.
 
-So along a time-independent Floer cylinder of a `C²`-small Hamiltonian, a gradient line, both the
-Fredholm index of the linearized Floer operator and its surjectivity, the regularity of the Floer
-cylinder, are those of the gradient line as a Morse trajectory.
+So along a time-independent Floer cylinder of a `C²`-small Hamiltonian, a gradient line, in a
+unitary trivialization (`ω = Im ⟪·, ·⟫`, `J = i`), both the Fredholm index of the linearized
+Floer operator and its surjectivity, the regularity of the Floer cylinder, are those of the
+gradient line as a Morse trajectory.
 
 ## References
 
@@ -239,32 +245,6 @@ section Quadratic
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J : AlmostComplexStructure V}
 
-/-- If the inner product of `V` is the metric `ω(·, J ·)`, the quadratic Hamiltonian
-`Q(y) = (c / 2) ‖y‖²` has the linear Hamiltonian vector field `X_Q(y) = -c J y`. -/
-private theorem hamiltonianVectorField_quadratic (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (c : ℝ) :
-    ω.hamiltonianVectorField (fun y ↦ c / 2 * ‖y‖ ^ 2) =
-      ⇑(-c • J.toLinearMap.toContinuousLinearMap) := by
-  funext y
-  rw [eq_comm, eq_hamiltonianVectorField_iff]
-  intro v
-  have hd : HasFDerivAt (fun y : V ↦ c / 2 * ‖y‖ ^ 2) ((c / 2) • (2 • innerSL ℝ y)) y :=
-    (hasStrictFDerivAt_norm_sq y).hasFDerivAt.const_mul (c / 2)
-  have hJ : ω (J y) v = -⟪y, v⟫ := by rw [real_inner_comm, ← hg v y, ω.neg_eq]
-  rw [hd.fderiv]
-  simp [hJ]
-  ring
-
-/-- If the inner product of `V` is the metric `ω(·, J ·)`, the derivative `-c J` of the Hamiltonian
-vector field of `Q(y) = (c / 2) ‖y‖²` has norm at most `c ≥ 0`, since `J` is an isometry. -/
-private theorem norm_fderiv_hamiltonianVectorField_quadratic_le (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
-    {c : ℝ} (hc : 0 ≤ c) (y : V) :
-    ‖fderiv ℝ (ω.hamiltonianVectorField fun y ↦ c / 2 * ‖y‖ ^ 2) y‖ ≤ c := by
-  rw [hamiltonianVectorField_quadratic hg c, ContinuousLinearMap.fderiv, norm_smul, norm_neg,
-    Real.norm_eq_abs, abs_of_nonneg hc]
-  refine mul_le_of_le_one_right hc (opNorm_le_bound _ zero_le_one fun v ↦ ?_)
-  rw [one_mul, LinearMap.coe_toContinuousLinearMap']
-  exact (ω.norm_apply_eq_norm_of_apply_apply_self_eq_inner (fun v ↦ hg v v) v).le
-
 /-- **The gap on the nonzero modes, without squares.** Under the hypotheses of
 `TauCeti.SymplecticForm.mul_sq_norm_le_mul_sq_norm_floerSobolevOperator_of_sliceAverageL_eq_zero`
 with `b < 2π`, an element `x` of `W^{1,2}` whose slice average vanishes satisfies
@@ -310,7 +290,7 @@ private theorem ker_sliceAverageLp_le_range_floerSobolevOperator_of_bijective
   set Q : V → ℝ := fun y ↦ π / 2 * ‖y‖ ^ 2
   have hQ₂ : ContDiff ℝ 2 Q := contDiff_const.mul (contDiff_norm_sq ℝ)
   have hQγ (s : ℝ) : ‖fderiv ℝ (ω.hamiltonianVectorField Q) (γ s)‖ ≤ π :=
-    norm_fderiv_hamiltonianVectorField_quadratic_le hg pi_pos.le (γ s)
+    norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le hg pi_pos.le (γ s)
   set b := max a π
   have hb : b < 2 * π := max_lt ha (by linarith [pi_pos])
   -- The nonzero modes of `W^{1,2}`, as `L²` jets, and of `L²`. Every operator of the segment, the
@@ -369,37 +349,6 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDim
   {ω : SymplecticForm F} {H : F → ℝ} {γ : ℝ → F}
   {A : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ))}
 
-omit [FiniteDimensional ℂ F] in
-/-- When `ω = Im ⟪·, ·⟫`, the metric `ω(·, i ·)` is the real inner product `Re ⟪·, ·⟫`. -/
-private theorem apply_ofComplexModule_eq_inner (hω : ∀ v w, ω v w = (inner ℂ v w).im) (v w : F) :
-    ω v (AlmostComplexStructure.ofComplexModule F w) =
-      @inner ℝ F InnerProductSpace.complexToReal.toInner v w := by
-  rw [hω, AlmostComplexStructure.ofComplexModule_apply, inner_smul_right, real_inner_eq_re_inner ℂ]
-  simp
-
-/-- In the algebra of real-linear maps of a complex normed space, `exp (-π i) = -1`. -/
-private theorem exp_neg_pi_smul_ofComplexModule :
-    NormedSpace.exp
-      (-π • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap) =
-      -1 := by
-  -- Multiplication by complex scalars is a continuous ring homomorphism, so it commutes with `exp`.
-  let ψ : ℂ →+* (F →L[ℝ] F) :=
-    { toFun := fun z ↦ lsmul ℝ ℂ z
-      map_one' := by ext; simp
-      map_mul' := fun z w ↦ by ext; simp [mul_smul]
-      map_zero' := by ext; simp
-      map_add' := fun z w ↦ by ext; simp }
-  have hψ : Continuous ψ := (lsmul ℝ ℂ : ℂ →L[ℝ] F →L[ℝ] F).continuous
-  have hx : -(π : ℂ) * Complex.I ∈ Metric.eball (0 : ℂ) (NormedSpace.expSeries ℝ ℂ).radius := by
-    rw [NormedSpace.expSeries_radius_eq_top]
-    exact edist_lt_top _ _
-  have hψx : ψ (-(π : ℂ) * Complex.I) =
-      -π • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap := by
-    ext v
-    simp [ψ, AlmostComplexStructure.ofComplexModule_apply, mul_smul, Complex.coe_smul]
-  rw [← hψx, ← NormedSpace.map_exp_of_mem_ball ψ hψ _ hx, ← Complex.exp_eq_exp_ℂ, neg_mul,
-    Complex.exp_neg, Complex.exp_pi_mul_I, inv_neg, inv_one, map_neg, map_one]
-
 /-- **The linearized operator of the quadratic Hamiltonian.** For `Q(y) = (π / 2) ‖y‖²` and any
 curve `γ`, the Sobolev realization of the linearized operator along `(s, t) ↦ γ(s)` is the
 stationary cylinder operator `∂s + i ∂t - π` over the orbit `0` of `Q`. Its return map is
@@ -412,7 +361,7 @@ private theorem bijective_floerSobolevOperator_quadratic (hω : ∀ v w, ω v w 
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   set Jc := (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap
   set B : F →L[ℝ] F := -π • Jc
-  have hX := hamiltonianVectorField_quadratic (apply_ofComplexModule_eq_inner hω) π
+  have hX := hamiltonianVectorField_div_two_mul_norm_sq (ω.apply_ofComplexModule_eq_inner hω) π
   have hcoeff : ω.floerJetCoeff (fun _ _ ↦ Jc) (fun _ _ ↦ 0)
       (fun _ ↦ fun y ↦ π / 2 * ‖y‖ ^ 2) (fun z ↦ γ z.1) =
       Floer.stationaryJetCoeff (fun _ ↦ AlmostComplexStructure.ofComplexModule F) fun _ ↦ B := by
@@ -433,7 +382,8 @@ private theorem bijective_floerSobolevOperator_quadratic (hω : ∀ v w, ω v w 
           F →L[ℝ] F) = (2 : ℝ) • ContinuousLinearMap.id ℝ F := by
       have hconst : (fun t : ℝ ↦ (ContinuousMap.const _ B : C(AddCircle (1 : ℝ), F →L[ℝ] F)) t) =
           fun _ ↦ B := rfl
-      rw [hconst, dysonSeriesLeft_const, one_smul, exp_neg_pi_smul_ofComplexModule]
+      rw [hconst, dysonSeriesLeft_const, one_smul,
+        AlmostComplexStructure.exp_neg_pi_smul_ofComplexModule]
       ext v
       simp [two_smul]
     rw [h2, toLinearMap_smul, coe_id, LinearMap.det_smul, LinearMap.det_id, mul_one]
@@ -456,7 +406,8 @@ theorem ker_sliceAverageLp_le_range_floerSobolevOperator (hω : ∀ v w, ω v w 
         (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1)).range := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   exact ker_sliceAverageLp_le_range_floerSobolevOperator_of_bijective
-    (apply_ofComplexModule_eq_inner hω) hH hγ ha haγ (bijective_floerSobolevOperator_quadratic hω γ)
+    (ω.apply_ofComplexModule_eq_inner hω) hH hγ ha haγ
+    (bijective_floerSobolevOperator_quadratic hω γ)
 
 /-- Under the hypotheses of
 `TauCeti.SymplecticForm.ker_sliceAverageLp_le_range_floerSobolevOperator`, a section of `L²` and
@@ -613,7 +564,7 @@ theorem isFredholm_floerSobolevOperator_iff_isFredholm_trajectoryOperator
       (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1)).ker =
         (WeakDerivStep.trajectoryOperator (p := 2) A).ker.map (zeroModeL F).toLinearMap := by
     let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-    exact ker_floerSobolevOperator_eq_map_zeroModeL (apply_ofComplexModule_eq_inner hω) hH hγ ha
+    exact ker_floerSobolevOperator_eq_map_zeroModeL (ω.apply_ofComplexModule_eq_inner hω) hH hγ ha
       haγ hA
   have ek := (Submodule.equivMapOfInjective _ zeroModeL_injective _).trans
     (LinearEquiv.ofEq _ _ hker.symm)
@@ -643,7 +594,7 @@ theorem index_floerSobolevOperator_eq_index_trajectoryOperator
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   rw [index_eq_finrank_sub, index_eq_finrank_sub,
     finrank_ker_floerSobolevOperator_eq_finrank_ker_trajectoryOperator
-      (apply_ofComplexModule_eq_inner hω) hH hγ ha haγ hA,
+      (ω.apply_ofComplexModule_eq_inner hω) hH hγ ha haγ hA,
     finrank_quotient_range_floerSobolevOperator_eq_finrank_quotient_range_trajectoryOperator hω hH
       hγ ha haγ hA]
 
@@ -671,7 +622,7 @@ theorem index_floerSobolevOperator_eq_finrank_pointSpectralSubspace_sub_finrank
           ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
             (fderiv ℝ (ω.hamiltonianVectorField H) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) (Iio 0)) := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  have hg := apply_ofComplexModule_eq_inner hω
+  have hg := ω.apply_ofComplexModule_eq_inner hω
   set Jc := (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap
   -- The coefficient `B(y) = -i dX_H(y)` of the Morse operator, continuous in `y`.
   set B : F → F →L[ℝ] F := fun y ↦ -(Jc.comp (fderiv ℝ (ω.hamiltonianVectorField H) y))
