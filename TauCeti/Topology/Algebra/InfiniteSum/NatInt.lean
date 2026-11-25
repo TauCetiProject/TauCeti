@@ -15,7 +15,8 @@ public import TauCeti.Topology.Algebra.InfiniteSum.Constructions
 
 This file supplements Mathlib's results on infinite sums over `ℕ` and `ℤ` with a reindexing
 lemma for an integer-indexed family whose support is bounded below, with reindexing lemmas for
-the tails `∑_{m > n} f m` of a family indexed by the natural numbers, with the splitting of a
+the tails `∑_{m > n} f m` of a family indexed by the natural numbers, with the reduction of a
+series whose terms vanish from `M` on to a finite sum, with the splitting of a
 summable integer-indexed family into its residue classes modulo `M`, and with the grouping of an
 integer-indexed sum, or of a product or sum indexed by the natural numbers, into blocks of `M`
 consecutive terms.
@@ -27,6 +28,9 @@ consecutive terms.
   their sum.
 * `TauCeti.tsum_Ioi_eq_tsum_nat_add`: the tail `∑_{m > n} f m` is the sum of the family shifted
   by `n + 1`.
+* `TauCeti.tprod_ite_lt_eq_prod_range`, `TauCeti.tsum_ite_lt_eq_sum_range`: a product or sum
+  over the natural numbers whose factors or terms are trivial from `M` on is a finite product or
+  sum over `Finset.range M`.
 * `Summable.tsum_Ioi_eq_add`: the tail `∑_{m > n} f m` splits off its first term `f (n + 1)`,
   in any topological monoid.
 * `TauCeti.tsum_int_eq_sum_fin_tsum`: a summable family on `ℤ` sums to the sum over the residues
@@ -99,6 +103,15 @@ theorem tsum_Ioi_eq_tsum_nat_add {α : Type*} [AddCommMonoid α] [TopologicalSpa
     simp only [Set.mem_range, Set.mem_Ioi]
     exact ⟨fun ⟨j, hj⟩ ↦ by omega, fun hm ↦ ⟨m - (n + 1), by omega⟩⟩
   rw [← hrange, tsum_range f (add_left_injective (n + 1))]
+
+/-- An infinite product over the natural numbers whose factors are `1` from `M` on is the finite
+product of its first `M` factors. -/
+@[to_additive /-- An infinite sum over the natural numbers whose terms vanish from `M` on is the
+finite sum of its first `M` terms. -/]
+theorem tprod_ite_lt_eq_prod_range {α : Type*} [CommMonoid α] [TopologicalSpace α] (M : ℕ)
+    (f : ℕ → α) : ∏' k, (if k < M then f k else 1) = ∏ k ∈ Finset.range M, f k := by
+  rw [tprod_eq_prod (s := Finset.range M) fun k hk ↦ ite_eq_right (by simpa using hk)]
+  exact Finset.prod_congr rfl fun k hk ↦ ite_eq_left (Finset.mem_range.1 hk)
 
 end TauCeti
 
