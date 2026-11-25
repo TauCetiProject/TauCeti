@@ -509,8 +509,8 @@ private theorem continuous_relocalizeStageLinearMap (K : Compacts N) :
       (trivializationAt F V x).open_baseSet⟩
     let hAU : ∀ x, (AU x : Set U) ⊆ (eU x).baseSet := fun _ ↦ subset_rfl
     let eN := fun x : N ↦ trivializationAt G Z x
-    let AN := fun x : N ↦ (⟨(eN x).baseSet, (eN x).open_baseSet⟩ : Opens N)
-    let hAN : ∀ x, (AN x : Set N) ⊆ (eN x).baseSet := fun _ ↦ subset_rfl
+    let AN := fun x : N ↦ (eN x).baseSetOpens
+    let hAN : ∀ x, (AN x : Set N) ⊆ (eN x).baseSet := fun x ↦ (eN x).coe_baseSetOpens.subset
     letI := frameTopology (I := I) (n := ∞) eN AN hAN
     letI := frameTopology (I := I) (n := ∞) eU AU hAU
     Continuous (relocalizeStageLinearMap T q hT K) := by
@@ -547,8 +547,8 @@ def localizeCLM :
     (relocalizeLinearMap T q hT)
   refine ⟨L, ?_⟩
   let eN := fun x : N ↦ trivializationAt G Z x
-  let AN := fun x : N ↦ (⟨(eN x).baseSet, (eN x).open_baseSet⟩ : Opens N)
-  let hAN : ∀ x, (AN x : Set N) ⊆ (eN x).baseSet := fun _ ↦ subset_rfl
+  let AN := fun x : N ↦ (eN x).baseSetOpens
+  let hAN : ∀ x, (AN x : Set N) ⊆ (eN x).baseSet := fun x ↦ (eN x).coe_baseSetOpens.subset
   let eM := fun x : M ↦ trivializationAt F V x
   let AM := fun x : M ↦ (⟨(eM x).baseSet, (eM x).open_baseSet⟩ : Opens M)
   let eU := fun x : M ↦ (eM x).pullback c
