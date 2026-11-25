@@ -50,8 +50,8 @@ diagonal reflection and under column commutations
 The symmetries of grid diagrams are in Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and
 Links*, Chapter 3, and unblocked grid homology is defined in Chapter 4.6.
 The construction adapts the half-turn symmetry of `TauCeti.KnotTheory.Grid.Homology.HalfTurn`
-(`GridDiagram.unblockedHomologyRotateEquiv`, its grading preservation and
-`GridDiagram.IsKnot.unblockedHomologyIsomorphic_rotate`) to the diagonal reflection.
+(`GridDiagram.unblockedHomologyRotateEquiv` and its grading preservation on chains) to the
+diagonal reflection.
 -/
 
 public section
