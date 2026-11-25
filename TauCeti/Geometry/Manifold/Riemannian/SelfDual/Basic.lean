@@ -961,6 +961,13 @@ theorem coe_selfDualPart (α : SmoothForm I M ℝ k) :
     (selfDualPart o α : RoughForm I M ℝ k) = RoughForm.selfDualPart o α :=
   (rfl)
 
+/-- The self-dual part of a smooth form is `(α + ⋆α) / 2`. -/
+theorem selfDualPart_apply (α : SmoothForm I M ℝ k) :
+    selfDualPart o α = (2⁻¹ : ℝ) • (α + hodgeStar o rfl α) := by
+  apply Subtype.ext
+  simp only [coe_selfDualPart, Submodule.coe_smul, Submodule.coe_add, coe_hodgeStar,
+    RoughForm.selfDualPart_apply]
+
 /-- The anti-self-dual part of a smooth form is that of the underlying rough form. -/
 @[simp]
 theorem coe_antiSelfDualPart (α : SmoothForm I M ℝ k) :
