@@ -21,8 +21,8 @@ chart at `p` (`TauCeti.sectionLinearization_eq_vectorFieldChartDerivative`): bot
 tangent-bundle trivialization at `p`, which is the identity on the fibre over `p`. This holds at
 every point, whether or not `V` vanishes or is differentiable there.
 
-In positive finite dimension, a chart derivative of nonzero determinant is not the junk value `0`,
-so the field is differentiable there
+In finite dimension, a chart derivative of nonzero determinant is not the junk value `0` (in
+positive dimension), so the field is differentiable there
 (`TauCeti.mdifferentiableAt_of_det_vectorFieldChartDerivative_ne_zero`).
 
 ## Main results
@@ -75,16 +75,20 @@ theorem sectionLinearization_eq_vectorFieldChartDerivative (V : (x : M) → Tang
     (sectionLinearization (F := E) I id V p).toLinearMap = vectorFieldChartDerivative I V p :=
   LinearMap.ext (sectionLinearization_apply_eq_vectorFieldChartDerivative V p)
 
-/-- **Nondegenerate chart derivatives come from differentiable fields.** In positive finite
-dimension, a vector field whose chart derivative at `p` has nonzero determinant is differentiable
-at `p` as a section of the tangent bundle: otherwise the chart derivative is `0`, whose
-determinant vanishes. -/
+/-- **Nondegenerate chart derivatives come from differentiable fields.** In finite dimension, a
+vector field whose chart derivative at `p` has nonzero determinant is differentiable at `p` as a
+section of the tangent bundle: in positive dimension, otherwise the chart derivative is `0`, whose
+determinant vanishes, and in dimension `0` every field is differentiable. -/
 theorem mdifferentiableAt_of_det_vectorFieldChartDerivative_ne_zero [FiniteDimensional 𝕜 E]
-    [Nontrivial E] {V : (x : M) → TangentSpace I x} {p : M}
+    {V : (x : M) → TangentSpace I x} {p : M}
     (hdet : LinearMap.det (vectorFieldChartDerivative I V p) ≠ 0) :
     MDifferentiableAt I I.tangent (fun x ↦ (V x : TangentBundle I M)) p := by
   refine mdifferentiableAt_section_iff_differentiableAt_mpullbackWithin_extChartAt_symm.2 ?_
   rw [I.range_eq_univ, VectorField.mpullbackWithin_univ]
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- A map into the zero space is constant.
+    exact (differentiableAt_const (0 : E)).congr_of_eventuallyEq
+      (Filter.Eventually.of_forall fun _ ↦ Subsingleton.elim _ _)
   by_contra hd
   rw [vectorFieldChartDerivative_def, fderiv_zero_of_not_differentiableAt hd,
     ContinuousLinearMap.toLinearMap_zero, LinearMap.det_zero,

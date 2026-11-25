@@ -98,7 +98,6 @@ theorem sectionIndex_eq_sign_det_vectorFieldChartDerivative {V : (x : M) → Tan
     oM.toVectorBundleOrientation.sectionIndex hX (oM.toHomologicalOrientation hX) hV z =
       SignType.sign (LinearMap.det (vectorFieldChartDerivative 𝓘(ℝ, X) V z)) := by
   classical
-  have := Module.nontrivial_of_finrank_eq_succ hX
   have hVd := mdifferentiableAt_of_det_vectorFieldChartDerivative_ne_zero hdet
   have hL := sectionLinearization_apply_eq_vectorFieldChartDerivative (I := 𝓘(ℝ, X)) V z
   -- The chart derivative has nonzero determinant, so it is surjective, and so is the
