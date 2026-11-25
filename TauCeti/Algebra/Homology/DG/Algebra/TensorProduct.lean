@@ -30,6 +30,8 @@ has degree one the second summand carries the twist `a ↦ (-1) ^ |a| a` on the 
   factors, as morphisms of differential graded algebras.
 * `TauCeti.dgTensorLift`: the morphism of differential graded algebras out of the tensor product
   induced by two morphisms whose images satisfy the Koszul commutation rule.
+* `TauCeti.dgTensorMap`: the tensor product `f ⊗ g` of two morphisms of differential graded
+  algebras.
 
 ## Main results
 
@@ -315,5 +317,51 @@ theorem dgTensorAlgHom_ext ⦃f g : DGAlgHom (isDGAlgebra_gradedTensorGrading hA
       gradedTensorIncludeRight_apply, dgTensorIncludeRight_apply] using DFunLike.congr_fun hb x
 
 end Lift
+
+
+section Map
+
+variable {A' : Type*} {B' : Type*} [Ring A'] [Ring B'] [Algebra R A'] [Algebra R B']
+  {𝒜' : ℤ → Submodule R A'} {ℬ' : ℤ → Submodule R B'} [GradedAlgebra 𝒜'] [GradedAlgebra ℬ']
+  {dA' : A' →ₗ[R] A'} {dB' : B' →ₗ[R] B'} {hA : IsDGAlgebra 𝒜 dA} {hB : IsDGAlgebra ℬ dB}
+  {hA' : IsDGAlgebra 𝒜' dA'} {hB' : IsDGAlgebra ℬ' dB'}
+
+/-- The tensor product `f ⊗ g : A ⊗ B → A' ⊗ B'` of two morphisms of differential graded algebras,
+sending `a ᵍ⊗ₜ b` to `f a ᵍ⊗ₜ g b`. -/
+noncomputable def dgTensorMap (f : DGAlgHom hA hA') (g : DGAlgHom hB hB') :
+    DGAlgHom (isDGAlgebra_gradedTensorGrading hA hB) (isDGAlgebra_gradedTensorGrading hA' hB') :=
+  dgTensorLift ((dgTensorIncludeLeft hA' hB').comp f) ((dgTensorIncludeRight hA' hB').comp g)
+    fun i j a b ↦ by
+      have hfa : f a ∈ 𝒜' i := f.toGradedAlgHom.map_mem a.property
+      have hgb : g b ∈ ℬ' j := g.toGradedAlgHom.map_mem b.property
+      simp only [DGAlgHom.comp_apply, dgTensorIncludeLeft_apply, dgTensorIncludeRight_apply]
+      rw [gradedTensor_tmul_one_mul_one_tmul_comm hfa hgb, mul_comm i j]
+
+/-- The tensor product of two morphisms sends `a ᵍ⊗ₜ b` to `f a ᵍ⊗ₜ g b`. -/
+@[simp]
+theorem dgTensorMap_tmul (f : DGAlgHom hA hA') (g : DGAlgHom hB hB') (a : A) (b : B) :
+    dgTensorMap f g (a ᵍ⊗ₜ[R] b) = f a ᵍ⊗ₜ[R] g b := by
+  simp [dgTensorMap, GradedTensorProduct.tmul_one_mul_one_tmul]
+
+/-- The tensor product of two identities is the identity. -/
+@[simp]
+theorem dgTensorMap_id :
+    dgTensorMap (DGAlgHom.id hA) (DGAlgHom.id hB) =
+      DGAlgHom.id (isDGAlgebra_gradedTensorGrading hA hB) :=
+  dgTensorAlgHom_ext (hA := hA) (hB := hB) (DGAlgHom.ext fun _ ↦ by simp)
+    (DGAlgHom.ext fun _ ↦ by simp)
+
+/-- The tensor product of morphisms is compatible with composition. -/
+theorem dgTensorMap_comp {A'' B'' : Type*} [Ring A''] [Ring B''] [Algebra R A''] [Algebra R B'']
+    {𝒜'' : ℤ → Submodule R A''} {ℬ'' : ℤ → Submodule R B''} [GradedAlgebra 𝒜'']
+    [GradedAlgebra ℬ''] {dA'' : A'' →ₗ[R] A''} {dB'' : B'' →ₗ[R] B''}
+    {hA'' : IsDGAlgebra 𝒜'' dA''} {hB'' : IsDGAlgebra ℬ'' dB''}
+    (f' : DGAlgHom hA' hA'') (g' : DGAlgHom hB' hB'') (f : DGAlgHom hA hA')
+    (g : DGAlgHom hB hB') :
+    dgTensorMap (f'.comp f) (g'.comp g) = (dgTensorMap f' g').comp (dgTensorMap f g) :=
+  dgTensorAlgHom_ext (hA := hA) (hB := hB) (DGAlgHom.ext fun _ ↦ by simp)
+    (DGAlgHom.ext fun _ ↦ by simp)
+
+end Map
 
 end TauCeti

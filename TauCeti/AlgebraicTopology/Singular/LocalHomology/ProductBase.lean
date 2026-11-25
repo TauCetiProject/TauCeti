@@ -311,39 +311,6 @@ private theorem exists_singularHomologyCrossRel_eq (p : X → Q) (b' : M) (b : Q
         (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) (d + k)).hom
       hw).trans ((ConcreteCategory.congr_hom hexc z).symm.trans hz))⟩
 
-/-- **A relative cross product with a class from the complement vanishes at the fibre.** The image
-of `o b' × ι_* w`, for a class `w` of `X ∖ F` with inclusion `ι`, modulo the complement of
-`{b'} × F` vanishes, since `M × (X ∖ F)` lies in that complement. -/
-private theorem singularHomologyMap_singularHomologyCrossRel_homologyMap_eq_zero (p : X → Q)
-    (b' : M) (b : Q) {k : ℕ}
-    (w : ((TopCat.toSSet.obj (TopCat.of ↥((p ⁻¹' {b})ᶜ))).homology
-        (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
-    (TopPair.singularHomologyMap (TopPair.ofSubsetMap _ (mapsTo_preimage_fst_compl_fiber p b' b))
-        (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) (d + k)).hom
-      ((TopCat.singularHomologyCrossRel (TopCat.of M) (TopCat.of X) ({b'}ᶜ)
-        (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) d k (d + k) rfl).hom
-          ((o b').val ⊗ₜ (SSet.homologyMap (TopCat.toSSet.map (TopPair.ofSubset
-            ((p ⁻¹' {b})ᶜ : Set (TopCat.of X))).map) (ModuleCat.of ℤ (ULift.{0} ℤ)) k).hom w)) =
-      0 := by
-  have hzero : TopPair.singularHomologyMap (prodComplPairMap p b' b)
-      (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) (d + k) ≫
-      TopPair.singularHomologyMap
-        (TopPair.ofSubsetMap _ (mapsTo_preimage_fst_compl_fiber p b' b)) _ (d + k) = 0 :=
-    (TopPair.singularHomologyMap_comp _ _
-      (TopPair.ofSubsetMap _ (mapsTo_preimage_fst_compl_fiber p b' b)) (d + k)).symm.trans
-      (TopPair.singularHomologyMap_eq_zero_of_fac (prodComplPairMap p b' b ≫
-        TopPair.ofSubsetMap _ (mapsTo_preimage_fst_compl_fiber p b' b)) _
-        (TopCat.ofHom ⟨fun z : M × ↥((p ⁻¹' {b})ᶜ) ↦
-          (⟨(z.1, z.2.1), fun hz ↦ z.2.2 (congrArg Prod.snd hz)⟩ :
-            ↥(((Prod.map id p) ⁻¹' {(b', b)})ᶜ : Set (M × X))), by fun_prop⟩)
-        (by
-          ext z
-          -- The composite is written through the projection of `M ⊗ X`, so `rw` does not see it.
-          erw [TopPair.Hom.fst_comp, TopPair.ofSubsetMap_fst, TopPair.ofSubsetMap_fst]
-          rfl) _)
-  refine (congrArg _ (o.singularHomologyCrossRel_tmul_homologyMap_map b' X _ w)).trans ?_
-  exact (ConcreteCategory.congr_hom hzero _).trans (LinearMap.zero_apply _)
-
 include hd in
 /-- **Cross products with the fundamental class over a product base.** Let `M` be a compact
 oriented `d`-manifold, `p : X → Q` a map whose fibre `p⁻¹(b)` is closed, and `α ∈ Hₖ(X; ℤ)`.
@@ -380,13 +347,12 @@ theorem livesOverFundamentalClass_prodMap_singularHomologyCross_fundamentalClass
     exact (ConcreteCategory.congr_hom ((TopPair.ofSubset ((p ⁻¹' {b})ᶜ :
       Set (TopCat.of X))).homologyMap_comp_singularHomologyπ (ModuleCat.of ℤ (ULift.{0} ℤ)) k)
         w).trans (LinearMap.zero_apply _)
-  · -- If `α` comes from `X ∖ F`, so does `o b' × α`.
+  · -- This is the general fact that `α` lives over the fundamental class when `[M] × α` does.
     intro hα
-    obtain ⟨w, rfl⟩ := (ShortComplex.moduleCat_exact_iff _).1
-      ((TopPair.ofSubset ((p ⁻¹' {b})ᶜ : Set (TopCat.of X))).singularHomology_exact_space
-        (ModuleCat.of ℤ (ULift.{0} ℤ)) k) α hα
-    exact hloc.trans
-      (o.singularHomologyMap_singularHomologyCrossRel_homologyMap_eq_zero p b' b w)
+    by_contra hne
+    exact (livesOverFundamentalClass_iff _ _ _ _).1
+      (LivesOverFundamentalClass.right_of_singularHomologyCross_prodMap _ _ rfl
+        ((livesOverFundamentalClass_iff _ _ _ _).2 hne)) hα
 
 end HomologicalOrientation
 

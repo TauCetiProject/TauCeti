@@ -384,7 +384,7 @@ theorem δ_cyclicRepShortComplex_groupCohomologyπOdd_one_of_nsmul_eq
   -- `s` is fixed by `AE`, since `m • AE s = AE (i v) = i (AΛ v) = i v = m • s`.
   have hfix : AE s = s := hm <| by
     simp only
-    rw [← map_nsmul, hv, ← hi, (AΛ.mem_ker_cyclicRep_applyAsHom_sub_iff hΛ v.1).1 v.2]
+    rw [← map_nsmul, hv, ← hi, (AΛ.mem_ker_cyclicRep_applyAsHom_sub_iff hΛ v.val).1 v.property]
   rw [Finset.sum_congr rfl fun j _ ↦ Function.iterate_fixed hfix j, Finset.sum_const,
     Finset.card_range, hv]
 
@@ -663,7 +663,7 @@ noncomputable def groupCohomologyOddEquivTorsionBy (i : ℕ) (hi : Odd i) :
     groupCohomology ((AddEquiv.refl T).cyclicRep (AddEquiv.iterate_refl m)) i ≃ₗ[ℤ]
       Submodule.torsionBy ℤ T m :=
   let ι := (Submodule.torsionBy ℤ T m).subtype.codRestrict _ fun x ↦
-    (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).2 x.2
+    (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).2 x.property
   (LinearEquiv.ofBijective ((groupCohomologyπOdd ((AddEquiv.refl T).cyclicRep
       (AddEquiv.iterate_refl m)) (.ofAdd 1) mem_zpowers_ofAdd_one i hi).hom ∘ₗ ι)
     ⟨fun x y h ↦ by
@@ -673,14 +673,14 @@ noncomputable def groupCohomologyOddEquivTorsionBy (i : ℕ) (hi : Odd i) :
     fun c ↦ by
       obtain ⟨x, rfl⟩ := groupCohomologyπOdd_surjective _ _ mem_zpowers_ofAdd_one i hi c
       -- `ι` sends `⟨x, _⟩` to `x`.
-      exact ⟨⟨x, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).1 x.2⟩, rfl⟩⟩).symm
+      exact ⟨⟨x, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).1 x.property⟩, rfl⟩⟩).symm
 
 /-- The odd-degree class corresponding to `x : T[m]` is the class of `x`. -/
 theorem groupCohomologyOddEquivTorsionBy_symm_apply (i : ℕ) (hi : Odd i)
     (x : Submodule.torsionBy ℤ T m) :
     (groupCohomologyOddEquivTorsionBy T m i hi).symm x =
       groupCohomologyπOdd ((AddEquiv.refl T).cyclicRep (AddEquiv.iterate_refl m)) (.ofAdd 1)
-        mem_zpowers_ofAdd_one i hi ⟨x, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).2 x.2⟩ :=
+        mem_zpowers_ofAdd_one i hi ⟨x, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).2 x.property⟩ :=
   (rfl)
 
 /-- The odd-degree class of a norm-zero element `x` corresponds to `x` in `T[m]`. -/
@@ -690,7 +690,7 @@ theorem groupCohomologyOddEquivTorsionBy_groupCohomologyπOdd (i : ℕ) (hi : Od
     groupCohomologyOddEquivTorsionBy T m i hi
       (groupCohomologyπOdd ((AddEquiv.refl T).cyclicRep (AddEquiv.iterate_refl m)) (.ofAdd 1)
         mem_zpowers_ofAdd_one i hi x) =
-      ⟨x, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).1 x.2⟩ := by
+      ⟨x, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).1 x.property⟩ := by
   rw [← LinearEquiv.eq_symm_apply, groupCohomologyOddEquivTorsionBy_symm_apply]
 
 /-- **Even-degree cohomology of the trivial action.** When `C_m` acts trivially on `T`, its
@@ -763,14 +763,14 @@ theorem groupCohomologyEvenEquivQuotSMulTop_δ
   obtain ⟨s, hs⟩ := hsurj t
   obtain ⟨v, hv⟩ := (hexact (m • s)).1 <| by
     rw [map_nsmul, hs, ← natCast_zsmul]
-    exact (Submodule.mem_torsionBy_iff _ _).1 t.2
+    exact (Submodule.mem_torsionBy_iff _ _).1 t.property
   -- `δ` sends the class of `t` to the class of `v`, and so does the snake map.
   have hδ := δ_cyclicRepShortComplex_groupCohomologyπOdd_one
     (i.toAddMonoidHom.shortExact_cyclicRepShortComplex p.toAddMonoidHom
       (hΛ := AddEquiv.iterate_refl m) (hE := AddEquiv.iterate_refl m)
       (hT := AddEquiv.iterate_refl m) (hi := by simp) (hp := by simp)
       (hpi := by simpa using hexact.apply_apply_eq_zero) hinj hexact hsurj)
-    ⟨t, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).2 t.2⟩ s (by simpa using hs)
+    ⟨t, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).2 t.property⟩ s (by simpa using hs)
     ⟨v, AddEquiv.mem_ker_cyclicRep_refl_applyAsHom_sub v⟩ (by simp [hv])
   rw [LinearEquiv.apply_symm_apply, groupCohomologyOddEquivTorsionBy_symm_apply, hδ,
     groupCohomologyEvenEquivQuotSMulTop_groupCohomologyπEven,

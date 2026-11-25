@@ -56,6 +56,11 @@ Koszul complex `K(x)` of the sequence, whose zeroth homology is `R ⧸ (x₁, �
 ## References
 
 * [The Stacks Project, Tags 0622, 0623 and 0624](https://stacks.math.columbia.edu/tag/0621)
+* [The Stacks Project, Tag 0626](https://stacks.math.columbia.edu/tag/0626) (Lemma 15.29.5,
+  `f = de + ed` for `f = φ(e)`), for `TauCeti.koszulComplex.smulHomotopy`, and
+  [Tag 0663](https://stacks.math.columbia.edu/tag/0663) (Lemma 15.29.6, multiplication by `fᵢ` is
+  null-homotopic, so `(f₁, …, fᵣ)` annihilates the Koszul homology), for
+  `TauCeti.koszulComplex.smul_homology_eq_zero`
 
 The interface (the Koszul complex of a linear functional with exterior-power terms, the
 alternating-deletion differential, `koszulComplex.map` along `ψ ∘ g = φ`, and the homotopy
@@ -109,7 +114,7 @@ theorem koszulDifferential_ιMulti (n : ℕ) (v : Fin (n + 1) → M) :
 @[simp]
 theorem koszulDifferential_comp_koszulDifferential (n : ℕ) :
     koszulDifferential φ n ∘ₗ koszulDifferential φ (n + 1) = 0 :=
-  LinearMap.ext fun x ↦ Subtype.ext (contractLeft_contractLeft φ x.1)
+  LinearMap.ext fun x ↦ Subtype.ext (contractLeft_contractLeft φ x.val)
 
 /-- The Koszul differential squares to zero, elementwise. -/
 @[simp]
@@ -196,7 +201,7 @@ theorem map_fst_koszulDifferential_snd_comp_wedgeLeft (n : ℕ) :
           exteriorPower.map n (LinearMap.inl R M R)) = LinearMap.id :=
   LinearMap.ext fun b ↦ Subtype.ext <| by
     simpa [contractLeft_ι_mul, ExteriorAlgebra.contractLeft_map, LinearMap.snd_comp_inl] using
-      ExteriorAlgebra.leftInverse_map_fst_map_inl (N := R) b.1
+      ExteriorAlgebra.leftInverse_map_fst_map_inl (N := R) b.val
 
 /-- The `b`-component `⋀ fst (d_snd a)` of `a ∈ ⋀ⁿ⁺¹ M ⊆ ⋀ⁿ⁺¹ (M × R)` is zero. -/
 theorem map_fst_koszulDifferential_snd_comp_map_inl (n : ℕ) :
@@ -222,7 +227,7 @@ theorem wedgeLeft_comp_add_map_inl_comp (n : ℕ) :
     simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply, Submodule.coe_add,
       ExteriorAlgebra.coe_wedgeLeft_apply, exteriorPower.coe_map, coe_koszulDifferential_apply]
     rw [add_comm]
-    exact ExteriorAlgebra.map_inl_map_fst_add_ι_inr_mul_contractLeft_snd z.1
+    exact ExteriorAlgebra.map_inl_map_fst_add_ι_inr_mul_contractLeft_snd z.val
 
 variable {φ} in
 /-- **Exactness passes to retracts.** If `g : M → N` has a retraction `h` and `ψ = φ ∘ h` (so
@@ -260,7 +265,8 @@ theorem exact_koszulDifferential_of_subsingleton [Subsingleton M] (n : ℕ) :
 theorem koszulDifferential_comp_wedgeLeft_zero (m : M) :
     koszulDifferential φ 0 ∘ₗ ExteriorAlgebra.wedgeLeft m 0 = φ m • LinearMap.id :=
   LinearMap.ext fun x ↦ Subtype.ext <| by
-    simp [contractLeft_ι_mul, ExteriorAlgebra.contractLeft_eq_zero_of_mem_exteriorPower_zero φ x.2]
+    simp [contractLeft_ι_mul, ExteriorAlgebra.contractLeft_eq_zero_of_mem_exteriorPower_zero φ
+        x.property]
 
 /-- The Koszul homotopy identity in positive degrees: `m ∧ d(v) + d(m ∧ v) = φ(m) v`. -/
 theorem wedgeLeft_comp_koszulDifferential_add (m : M) (n : ℕ) :
@@ -420,7 +426,8 @@ theorem range_le_annihilator_homology (n : ℕ) :
 @[simp]
 theorem primaryComponent_homology_eq_top (n : ℕ) :
     Ideal.primaryComponent ((koszulComplex φ).homology n) (LinearMap.range φ) = ⊤ :=
-  Ideal.primaryComponent_eq_top_of_le_annihilator _ (range_le_annihilator_homology φ n)
+  Ideal.primaryComponent_eq_top_of_le_annihilator _ (n := 1)
+    ((pow_one _).trans_le (range_le_annihilator_homology φ n))
 
 end Homotopy
 

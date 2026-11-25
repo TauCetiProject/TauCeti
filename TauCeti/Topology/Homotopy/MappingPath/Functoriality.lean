@@ -50,8 +50,8 @@ def map (a : C(B, B')) (b : C(K, K')) (h : b.comp f = f'.comp a) (hk : b k = k')
   ⟨fun p ↦ ⟨(a p.val.1, b.comp p.val.2),
     (congrArg b p.property.1).trans (ContinuousMap.congr_fun h p.val.1),
     (congrArg b p.property.2).trans hk⟩,
-    ((a.continuous.comp continuous_subtype_val.fst).prodMk
-      ((ContinuousMap.continuous_postcomp b).comp continuous_subtype_val.snd)).subtype_mk _⟩
+    ((a.continuous.comp continuous_subtypeVal.fst).prodMk
+      ((ContinuousMap.continuous_postcomp b).comp continuous_subtypeVal.snd)).subtype_mk _⟩
 
 @[simp]
 theorem map_val (a : C(B, B')) (b : C(K, K')) (h : b.comp f = f'.comp a)
@@ -145,11 +145,11 @@ def mapHomotopy :
     by simpa only [ContinuousMap.coe_mk, q.2.property.1] using hs q.1 q.2.val.1,
     by simpa only [ContinuousMap.coe_mk, q.2.property.2] using hk q.1⟩
   continuous_toFun := by
-    refine ((A.continuous.comp (continuous_fst.prodMk continuous_snd.subtype_val.fst)).prodMk
+    refine ((A.continuous.comp (continuous_fst.prodMk continuous_snd.subtypeVal.fst)).prodMk
       ?_).subtype_mk _
     apply ContinuousMap.continuous_of_continuous_uncurry
     exact H.continuous.comp ((continuous_fst.comp continuous_fst).prodMk
-      (((continuous_snd.comp continuous_fst).subtype_val.snd).eval continuous_snd))
+      (((continuous_snd.comp continuous_fst).subtypeVal.snd).eval continuous_snd))
   map_zero_left p := by
     apply Subtype.ext
     apply Prod.ext

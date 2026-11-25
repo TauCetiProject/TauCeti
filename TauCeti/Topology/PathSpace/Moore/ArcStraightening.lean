@@ -41,6 +41,9 @@ reparametrization at unit speed is a separate step.
 * `TauCeti.MoorePath.sample_arcStraighteningMap`: the homotopy fixes the sampled vertices.
 * `TauCeti.MoorePath.exists_subset_arcsWithin`: compact families are finely subdivided into arcs
   within an entourage.
+* `TauCeti.MooreFreeLoopSpace.exists_subset_arcsWithin_mapsTo_sample_cyclicDistanceCut`: compact
+  families of free loops are finely subdivided into arcs of small radius and sampled into the
+  distance cuts.
 
 ## References
 
@@ -91,7 +94,7 @@ private def straightenArcsUnit (hρ : IsPathInterpolation ρ U) (hr : 0 < r) :
     C((I × arcsWithin U r) × I, X) where
   toFun q := straightenArcs ρ r (q.1.2 : MoorePath X).toUnitPath q.1.1 q.2
   continuous_toFun := (continuous_straightenArcs hρ hr
-    (continuous_toUnitPath.comp continuous_subtype_val) fun γ ↦ γ.2).comp
+    (continuous_toUnitPath.comp continuous_subtypeVal) fun γ ↦ γ.property).comp
       (by fun_prop : Continuous fun q : (I × arcsWithin U r) × I ↦ (q.1.2, q.1.1, q.2))
 
 private theorem straightenArcsUnit_apply (hρ : IsPathInterpolation ρ U) (hr : 0 < r) (t s : I)
@@ -143,21 +146,18 @@ theorem arcStraighteningMap_zero (γ : arcsWithin U r) :
   have h : (straightenArcsUnit hρ hr).curry (0, ⟨γ, hγ⟩) = γ.toUnitPath := by
     ext s
     exact straightenArcs_zero hρ hr hγ s
-  simp only [arcStraighteningMap, ContinuousMap.coe_mk, h, ofUnitPath_toUnitPath]
-  rcases eq_or_ne γ.length 0 with h0 | -
-  · rw [h0, rescale_zero, source_rescale, ← eq_refl_of_length_eq_zero h0]
-  · rw [rescale_rescale _ one_ne_zero, rescale_length]
+  simp only [arcStraighteningMap, ContinuousMap.coe_mk, h, ofUnitPath_toUnitPath_rescale_length]
 
 @[simp]
 theorem source_arcStraighteningMap (t : I) (γ : arcsWithin U r) :
     (arcStraighteningMap hρ hr (t, γ)).source = (γ : MoorePath X).source := by
   rw [← toUnitPath_zero, toUnitPath_arcStraighteningMap,
-    straightenArcs_source hρ hr γ.2, toUnitPath_zero]
+    straightenArcs_source hρ hr γ.property, toUnitPath_zero]
 
 @[simp]
 theorem target_arcStraighteningMap (t : I) (γ : arcsWithin U r) :
     (arcStraighteningMap hρ hr (t, γ)).target = (γ : MoorePath X).target := by
-  rw [← toUnitPath_one, toUnitPath_arcStraighteningMap, straightenArcs_target hρ hr γ.2,
+  rw [← toUnitPath_one, toUnitPath_arcStraighteningMap, straightenArcs_target hρ hr γ.property,
     toUnitPath_one]
 
 /-- The straightening homotopy fixes the sampled vertices. -/
@@ -166,7 +166,7 @@ theorem sample_arcStraighteningMap (t : I) (γ : arcsWithin U r) :
     (arcStraighteningMap hρ hr (t, γ)).sample r = (γ : MoorePath X).sample r := by
   funext i
   rw [sample_eq_toUnitPath_arcPoint, sample_eq_toUnitPath_arcPoint, toUnitPath_arcStraighteningMap,
-    straightenArcs_arcPoint_zero hρ γ.2 i.2]
+    straightenArcs_arcPoint_zero hρ γ.property i.isLt]
 
 /-- The broken path through the sampled vertices of a Moore path whose arcs lie in `U`, of the
 same length. -/
@@ -177,6 +177,11 @@ def brokenPathMap : C(arcsWithin U r, MoorePath X) :=
 theorem brokenPathMap_apply (γ : arcsWithin U r) :
     brokenPathMap hρ hr γ = arcStraighteningMap hρ hr (1, γ) :=
   (rfl)
+
+/-- The broken path through the sampled vertices of a Moore path has the same length. -/
+theorem length_brokenPathMap (γ : arcsWithin U r) :
+    (brokenPathMap hρ hr γ).length = (γ : MoorePath X).length := by
+  rw [brokenPathMap_apply, length_arcStraighteningMap]
 
 /-- The broken path of a Moore path, reparametrized to the unit interval, is the broken path of
 its reparametrization. -/
@@ -217,9 +222,25 @@ theorem mem_arcsWithin {γ : MooreFreeLoopSpace X} :
     γ ∈ arcsWithin U r ↔ ArcsWithin U r γ.toMoorePath.toUnitPath :=
   Iff.rfl
 
+/-- The consecutive closed sampled vertices of a free Moore loop whose `r` arcs lie in `U` form
+pairs in `U`. -/
+theorem closedSample_mem_of_mem_arcsWithin {γ : MooreFreeLoopSpace X} (hγ : γ ∈ arcsWithin U r)
+    (i : Fin r) : (γ.closedSample r i.castSucc, γ.closedSample r i.succ) ∈ U := by
+  rw [closedSample_eq_toUnitPath γ i.pos, closedSample_eq_toUnitPath γ i.pos, Fin.val_castSucc,
+    Fin.val_succ, ← unitInterval.arcPoint_one]
+  exact mem_arcsWithin.1 hγ i i.isLt 1
+
+/-- Each sampled vertex of a free Moore loop whose `n + 1` arcs lie in `U` forms a pair in `U`
+with the preceding one, the last vertex preceding the first. -/
+theorem sample_sub_one_mem_of_mem_arcsWithin {n : ℕ} {γ : MooreFreeLoopSpace X}
+    (hγ : γ ∈ arcsWithin U (n + 1)) (i : Fin (n + 1)) :
+    (γ.toMoorePath.sample (n + 1) (i - 1), γ.toMoorePath.sample (n + 1) i) ∈ U := by
+  have h := closedSample_mem_of_mem_arcsWithin hγ (i - 1)
+  rwa [closedSample_castSucc, closedSample_succ, sub_add_cancel] at h
+
 /-- A free Moore loop whose arcs lie in `U`, as a Moore path whose arcs lie in `U`. -/
 def toArcsWithin (γ : arcsWithin U r) : MoorePath.arcsWithin U r :=
-  ⟨(γ : MooreFreeLoopSpace X).toMoorePath, MoorePath.mem_arcsWithin.2 (mem_arcsWithin.1 γ.2)⟩
+  ⟨(γ : MooreFreeLoopSpace X).toMoorePath, MoorePath.mem_arcsWithin.2 (mem_arcsWithin.1 γ.property)⟩
 
 @[simp]
 theorem coe_toArcsWithin (γ : arcsWithin U r) :
@@ -228,7 +249,7 @@ theorem coe_toArcsWithin (γ : arcsWithin U r) :
 
 @[fun_prop]
 theorem continuous_toArcsWithin : Continuous (toArcsWithin : arcsWithin U r → _) :=
-  (continuous_toMoorePath.comp continuous_subtype_val).subtype_mk _
+  (continuous_toMoorePath.comp continuous_subtypeVal).subtype_mk _
 
 variable (hρ : IsPathInterpolation ρ U) (hr : 0 < r)
 
@@ -237,7 +258,7 @@ closed because it fixes the end points. -/
 def arcStraighteningMap : C(I × arcsWithin U r, MooreFreeLoopSpace X) where
   toFun p := ⟨MoorePath.arcStraighteningMap hρ hr (p.1, toArcsWithin p.2), by
     rw [MoorePath.target_arcStraighteningMap, MoorePath.source_arcStraighteningMap,
-      coe_toArcsWithin, p.2.1.target_eq_source]⟩
+      coe_toArcsWithin, p.2.val.target_eq_source]⟩
   continuous_toFun := isEmbedding_toMoorePath.continuous_iff.2 <|
     (MoorePath.arcStraighteningMap hρ hr).continuous.comp (by fun_prop)
 
@@ -247,6 +268,13 @@ theorem toMoorePath_arcStraighteningMap (t : I) (γ : arcsWithin U r) :
       MoorePath.arcStraighteningMap hρ hr
         (t, toArcsWithin γ) :=
   (rfl)
+
+/-- The straightening homotopy of free Moore loops keeps the base point. -/
+@[simp]
+theorem basepoint_arcStraighteningMap (t : I) (γ : arcsWithin U r) :
+    (arcStraighteningMap hρ hr (t, γ)).basepoint = (γ : MooreFreeLoopSpace X).basepoint := by
+  rw [← source_toMoorePath]
+  simp
 
 /-- The broken loop through the sampled vertices of a free Moore loop whose arcs lie in `U`. -/
 def brokenPathMap : C(arcsWithin U r, MooreFreeLoopSpace X) :=
@@ -290,9 +318,39 @@ theorem exists_subset_arcsWithin {K : Set (MoorePath X)} (hK : IsCompact K) {U :
   have hrpos : (0 : ℝ) < r := by exact_mod_cast (Nat.zero_le i).trans_lt hi
   rw [← sample_eq_toUnitPath_arcPoint γ ⟨i, hi⟩]
   refine h r hr γ hγ ⟨i, hi⟩ (arcPoint r i a) ?_ ?_ <;> rw [coe_arcPoint hi]
-  · exact div_le_div_of_nonneg_right (le_add_of_nonneg_right a.2.1) hrpos.le
-  · exact div_le_div_of_nonneg_right (by linarith [a.2.2]) hrpos.le
+  · exact div_le_div_of_nonneg_right (le_add_of_nonneg_right a.property.1) hrpos.le
+  · exact div_le_div_of_nonneg_right (by linarith [a.property.2]) hrpos.le
 
 end MoorePath
+
+namespace MooreFreeLoopSpace
+
+variable {X : Type*} [PseudoMetricSpace X]
+
+/-- The samples of a free Moore loop whose `n + 1` arcs are shorter than `r` are at distance less
+than `r` from the preceding ones, the last one preceding the first one. -/
+theorem dist_sample_sub_one_lt_of_mem_arcsWithin {n : ℕ} {r : ℝ} {γ : MooreFreeLoopSpace X}
+    (hγ : γ ∈ arcsWithin {p : X × X | dist p.1 p.2 < r} (n + 1)) (i : Fin (n + 1)) :
+    dist (γ.toMoorePath.sample (n + 1) i) (γ.toMoorePath.sample (n + 1) (i - 1)) < r := by
+  rw [dist_comm]
+  exact sample_sub_one_mem_of_mem_arcsWithin hγ i
+
+/-- **Fine samplings of compact families of free loops.** For a compact family `K` of free Moore
+loops, `r > 0` and `ε > 0` there is `N` such that for every `n ≥ N` the `n + 1` arcs of every loop
+of `K` lie within distance `r` of their initial vertices, and the sampling at `n + 1` times maps `K`
+into the distance cut with any cut-offs `δ i ≥ ε`. -/
+theorem exists_subset_arcsWithin_mapsTo_sample_cyclicDistanceCut {K : Set (MooreFreeLoopSpace X)}
+    (hK : IsCompact K) {r : ℝ} (hr : 0 < r) {ε : ℝ} (hε : 0 < ε) :
+    ∃ N : ℕ, ∀ n ≥ N, K ⊆ arcsWithin {p : X × X | dist p.1 p.2 < r} (n + 1) ∧
+      ∀ δ : Fin (n + 1) → ℝ, (∀ i, ε ≤ δ i) →
+        MapsTo (fun γ : MooreFreeLoopSpace X ↦ γ.toMoorePath.sample (n + 1)) K
+          (cyclicDistanceCut δ) := by
+  obtain ⟨N₁, -, hN₁⟩ := MoorePath.exists_subset_arcsWithin (hK.image continuous_toMoorePath)
+    (Metric.dist_mem_uniformity hr)
+  obtain ⟨N₂, hN₂⟩ := exists_mapsTo_sample_cyclicDistanceCut hK hε
+  exact ⟨max N₁ N₂, fun n hn ↦ ⟨fun γ hγ ↦ mem_arcsWithin.2 (MoorePath.mem_arcsWithin.1
+    (hN₁ (n + 1) (by omega) ⟨γ, hγ, rfl⟩)), hN₂ n (le_of_max_le_right hn)⟩⟩
+
+end MooreFreeLoopSpace
 
 end TauCeti

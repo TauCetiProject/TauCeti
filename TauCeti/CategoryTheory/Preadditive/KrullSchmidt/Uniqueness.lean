@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.RingTheory.LocalRing.Basic
 public import Mathlib.Logic.Equiv.Option
 public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.Basic
-import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 import TauCeti.CategoryTheory.Preadditive.Indecomposable
 import TauCeti.RingTheory.LocalRing.Basic
 
@@ -177,7 +177,7 @@ private theorem exists_equiv_iso_aux (n : ℕ) : ∀ {ι : Type w} {κ : Type w'
     have := hX i₀
     obtain ⟨j₀, ⟨φ₀⟩, ⟨φ'⟩⟩ := exchange Y hY ((biproductSubtypeNeIso X i₀).symm ≪≫ e)
     obtain ⟨σ', hσ'⟩ := ih (Subtype.restrict (· ≠ i₀) X) (Subtype.restrict (· ≠ j₀) Y)
-      (by simp [Fintype.card_subtype_compl, hn]) (fun i ↦ hX i.1) (fun j ↦ hY j.1) φ'
+      (by simp [Fintype.card_subtype_compl, hn]) (fun i ↦ hX i.val) (fun j ↦ hY j.val) φ'
     refine ⟨(Equiv.optionSubtypeNe i₀).symm.trans ((Equiv.optionCongr σ').trans
       (Equiv.optionSubtypeNe j₀)), fun i ↦ ?_⟩
     by_cases hi : i = i₀

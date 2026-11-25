@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.NormResidueSymbol.Basic
-public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+public import TauCeti.NumberTheory.LocalField.Units.Decomposition
 import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.FieldTheory.Kummer.Degree
 import TauCeti.NumberTheory.ClassFieldTheory.Local.Unramified
@@ -106,7 +106,7 @@ theorem coe_normResidueSymbol_uniformizer (hp : ¬ ringChar 𝓀[K] ∣ n) {π b
   set ω : Kˣ := (y.1 : Kˣ)
   have hn : IsUnit (n : 𝒪[K]) := isUnit_natCast_iff_not_dvd.2 hp
   -- The principal-unit component of `b` is an `n`-th power, so `(π, b) = (π, ω)`.
-  obtain ⟨w, hw⟩ := unitFiltration_one_le_range_powMonoidHom_of_isUnit hn y.2.2
+  obtain ⟨w, hw⟩ := unitFiltration_one_le_range_powMonoidHom_of_isUnit hn y.2.property
   have hbω : b = ω * w ^ n := by
     rw [← powMonoidHom_apply, hw, coe_unitFiltrationZeroEquivProd_apply_snd, mul_comm b,
       mul_inv_cancel_left]
@@ -116,7 +116,7 @@ theorem coe_normResidueSymbol_uniformizer (hp : ¬ ringChar 𝓀[K] ∣ n) {π b
   obtain ⟨z, hz⟩ := IsAlgClosed.exists_pow_nat_eq (algebraMap K (AlgebraicClosure K) (ω : K))
     (Nat.pos_of_neZero n)
   have hωq : (ω : K) ^ (q - 1) = 1 := by
-    simpa using congrArg Units.val ((mem_rootsOfUnity _ _).1 y.1.2)
+    simpa using congrArg Units.val ((mem_rootsOfUnity _ _).1 y.1.property)
   have hzm : z ^ (n * (q - 1)) = 1 := by rw [pow_mul, hz, ← map_pow, hωq, map_one]
   have hcop : (n * (q - 1)).Coprime (ringChar 𝓀[K]) := by
     have hq := isUnit_natCast_natCard_pow_sub_one K one_ne_zero
@@ -175,7 +175,7 @@ theorem normResidueSymbol_mul_inv_zpow_mem_unitFiltration_one (hp : ¬ ringChar 
   have hωb : (y.1 : Kˣ) * b⁻¹ = (y.2 : Kˣ)⁻¹ := by
     rw [coe_unitFiltrationZeroEquivProd_apply_snd, mul_inv_rev, inv_inv, mul_comm]
   rw [coe_normResidueSymbol_of_mem_unitFiltration_zero hp a hb, ← inv_zpow, ← mul_zpow, hωb]
-  exact zpow_mem (inv_mem y.2.2) _
+  exact zpow_mem (inv_mem y.2.property) _
 
 /-- **The tame congruence characterizes the symbol.** If `n` is prime to the residue
 characteristic and `b` is a unit of `𝒪[K]`, then `(a, b)` is the unique `n`-th root of unity
@@ -191,7 +191,7 @@ theorem normResidueSymbol_eq_iff_mul_inv_zpow_mem_unitFiltration_one (hp : ¬ ri
   rw [mul_div_mul_right_eq_div] at hmem
   have h1 := Subgroup.disjoint_def.mp
     (disjoint_rootsOfUnity_unitFiltration_one_of_isUnit (isUnit_natCast_iff_not_dvd.2 hp))
-    (div_mem (normResidueSymbol K n a b).2 ζ.2) hmem
+    (div_mem (normResidueSymbol K n a b).property ζ.property) hmem
   exact Subtype.ext (div_eq_one.1 h1)
 
 end TauCeti

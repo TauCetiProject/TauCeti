@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.FinitePresentation
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.RingTheory.Localization.Module
 public import Mathlib.RingTheory.QuotSMulTop
@@ -26,6 +27,8 @@ submonoid `S`:
   after localizing at `S`.
 * `LocalizedModule.bijective_map_single`: the inclusion of a factor of a finite product becomes
   bijective after localizing at `S` if every other factor vanishes there.
+* `LocalizedModule.map_injective_of_ker_le_torsion`: a linear map with torsion kernel stays
+  injective after localizing, when the localized source is torsion-free.
 * `LocalizedModule.equivLocalization`: the localization of `R` itself as a module is
   `Localization S`, sending `mk r s` to `Localization.mk r s`.
 * `LinearMap.exists_comp_eq_lsmul_of_comp_localizedModule_map_eq_id`: if `M` is finitely
@@ -142,6 +145,34 @@ theorem equivLocalization_symm_mk (r : R) (s : S) :
 
 end LocalizedModule
 
+namespace LocalizedModule
+
+/-- A linear map whose kernel consists of torsion elements stays injective after localizing at
+`S`, when the localization of its source is torsion-free over `Localization S`. -/
+theorem map_injective_of_ker_le_torsion {R M N : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] (S : Submonoid R) (q : M →ₗ[R] N)
+    (htors : LinearMap.ker q ≤ Submodule.torsion R M)
+    [Module.IsTorsionFree (Localization S) (LocalizedModule S M)] :
+    Function.Injective (map S q) := by
+  refine IsLocalizedModule.injective_of_map_zero S (mkLinearMap S M) fun x hx ↦ ?_
+  rw [IsLocalizedModule.map_apply, IsLocalizedModule.eq_zero_iff S] at hx
+  obtain ⟨u, hu⟩ := hx
+  have hux : (u : R) • x ∈ LinearMap.ker q := by
+    rw [LinearMap.mem_ker, map_smul, ← Submonoid.smul_def]
+    exact hu
+  obtain ⟨b, hbx⟩ := (Submodule.mem_torsion_iff _).mp (htors hux)
+  -- The image of `b * u` in `Localization S` is regular, so it acts injectively.
+  have hreg : IsRegular (algebraMap R (Localization S) ((b : R) * u)) := by
+    rw [isRegular_iff_mem_nonZeroDivisors, map_mul]
+    exact mul_mem (IsLocalization.nonZeroDivisors_le_comap S _ b.property)
+      (IsLocalization.map_units _ u).mem_nonZeroDivisors
+  have h0 : algebraMap R (Localization S) ((b : R) * u) • mkLinearMap S M x = 0 := by
+    rw [mkLinearMap_apply, algebraMap_smul, smul'_mk, mul_smul, ← Submonoid.smul_def, hbx,
+      zero_mk]
+  exact hreg.isSMulRegular (h0.trans (smul_zero _).symm)
+
+end LocalizedModule
+
 namespace LinearMap
 
 open LocalizedModule
@@ -170,7 +201,7 @@ theorem exists_comp_eq_lsmul_of_comp_localizedModule_map_eq_id
     simp [h₁, h₂, Submonoid.smul_def, smul'_mk]
   obtain ⟨u, hu⟩ := Module.Finite.exists_smul_of_comp_eq_of_isLocalizedModule S
     (mkLinearMap S N) _ _ key
-  refine ⟨u * s, mul_mem u.2 s.2, (u : R) • φ, ?_⟩
+  refine ⟨u * s, mul_mem u.property s.property, (u : R) • φ, ?_⟩
   ext n
   simpa [Submonoid.smul_def, mul_smul] using congr($hu n)
 

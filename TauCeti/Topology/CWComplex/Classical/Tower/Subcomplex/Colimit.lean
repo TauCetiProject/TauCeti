@@ -11,6 +11,7 @@ public import TauCeti.Topology.CWComplex.Classical.Quotient
 public import TauCeti.Topology.CWComplex.Classical.RelativeCWComplex
 public import TauCeti.Topology.CWComplex.Classical.Tower.Subcomplex.Basic
 import TauCeti.Topology.CWComplex.Classical.Image
+import TauCeti.Topology.Category.TopCat.Normal
 
 /-!
 # CW structure and normality on colimits of CW subcomplex towers
@@ -99,18 +100,18 @@ private lemma cellPartialEquiv_image_eq_of_le {n : ℕ} {p : Σ m : ℕ, newCell
 private lemma ι_map_eq_cellPartialEquiv {k n : ℕ} (i : cell (univ : Set (W k)) n)
     {x : Fin n → ℝ} (hx : x ∈ closedBall 0 1) :
     c.ι.app k (map (C := (univ : Set (W k))) n i x) =
-      T.cellPartialEquiv hc n ((T.stageCellEquiv k n).symm i).1 x := by
+      T.cellPartialEquiv hc n ((T.stageCellEquiv k n).symm i).val x := by
   let q := (T.stageCellEquiv k n).symm i; rw [T.coe_cellPartialEquiv]
   exact (congrArg (fun j ↦ c.ι.app k (map n j x))
     ((T.stageCellEquiv k n).apply_symm_apply i)).symm.trans
-    (T.ι_map_stageCellEquiv (c := c) q.2 n q.1.2 hx)
+    (T.ι_map_stageCellEquiv (c := c) q.property n q.val.2 hx)
 
 private lemma image_ι_image_map_eq_cellPartialEquiv {k n : ℕ} (i : cell (univ : Set (W k)) n)
     {s : Set (Fin n → ℝ)} (hs : s ⊆ closedBall 0 1) :
     c.ι.app k '' (map (C := (univ : Set (W k))) n i '' s) =
-      T.cellPartialEquiv hc n ((T.stageCellEquiv k n).symm i).1 '' s := by
+      T.cellPartialEquiv hc n ((T.stageCellEquiv k n).symm i).val '' s := by
   let q := (T.stageCellEquiv k n).symm i
-  rw [T.cellPartialEquiv_image_eq_of_le hc q.2 hs, (T.stageCellEquiv k n).apply_symm_apply i]
+  rw [T.cellPartialEquiv_image_eq_of_le hc q.property hs, (T.stageCellEquiv k n).apply_symm_apply i]
 
 /-- **Classical `CWComplex` structure on any colimit `c.pt` of a `CWSubcomplexTower`.**
 Its `n`-cells correspond to `Σ k : ℕ, newCell k n` (`cwComplexOfIsColimitCellEquiv`), with
@@ -140,7 +141,7 @@ def cwComplexOfIsColimit : CWComplex (univ : Set c.pt) where
   mapsTo' n p := by
     obtain ⟨I, hI⟩ := CWComplex.mapsTo (C := (univ : Set (W p.1))) n (T.birthCell p.1 n p.2)
     let emb (m : ℕ) : cell (univ : Set (W p.1)) m ↪ Σ k : ℕ, newCell k m :=
-      ⟨fun i ↦ ((T.stageCellEquiv p.1 m).symm i).1,
+      ⟨fun i ↦ ((T.stageCellEquiv p.1 m).symm i).val,
         Subtype.val_injective.comp (T.stageCellEquiv p.1 m).symm.injective⟩
     refine ⟨fun m ↦ (I m).map (emb m), fun x hx ↦ ?_⟩
     obtain ⟨m, hmn, i, hiI, y, hyB, hyx⟩ := by simpa only [mem_iUnion, exists_prop] using hI hx
@@ -150,14 +151,14 @@ def cwComplexOfIsColimit : CWComplex (univ : Set c.pt) where
     (CWComplex.closed (univ : Set (W k)) (c.ι.app k ⁻¹' A) (subset_univ _)).2 fun n i ↦ by
       rw [← (T.isClosedEmbedding_ι hc k).injective.preimage_image (closedCell n i),
         ← preimage_inter, closedCell, T.image_ι_image_map_eq_cellPartialEquiv hc i Subset.rfl]
-      exact (hA n ((T.stageCellEquiv k n).symm i).1).preimage (c.ι.app k).hom.continuous
+      exact (hA n ((T.stageCellEquiv k n).symm i).val).preimage (c.ι.app k).hom.continuous
   union' := eq_univ_of_forall fun z ↦ by
     obtain ⟨k, y, rfl⟩ :=
       Types.jointly_surjective_of_isColimit (isColimitOfPreserves (forget TopCat) hc) z
     obtain ⟨n, i, x, hx, rfl⟩ :=
       mem_iUnion₂.1 ((CWComplex.union (C := (univ : Set (W k)))).symm ▸ mem_univ y)
     exact mem_iUnion₂.2
-      ⟨n, ((T.stageCellEquiv k n).symm i).1, x, hx, (T.ι_map_eq_cellPartialEquiv hc i hx).symm⟩
+      ⟨n, ((T.stageCellEquiv k n).symm i).val, x, hx, (T.ι_map_eq_cellPartialEquiv hc i hx).symm⟩
 
 /-- Equivalence identifying the `n`-cells of `T.cwComplexOfIsColimit hc` with
 `Σ k : ℕ, newCell k n` without unfolding the CW structure. -/
@@ -230,7 +231,7 @@ theorem ι_map_eq_map (k n : ℕ) (i : cell (univ : Set (W k)) n) {x : Fin n →
     (hx : x ∈ closedBall 0 1) : letI := T.cwComplexOfIsColimit hc
     c.ι.app k (map (C := (univ : Set (W k))) n i x) =
       map (C := (univ : Set c.pt)) n
-        ((T.cwComplexOfIsColimitCellEquiv hc n).symm ((T.stageCellEquiv k n).symm i).1) x := by
+        ((T.cwComplexOfIsColimitCellEquiv hc n).symm ((T.stageCellEquiv k n).symm i).val) x := by
   let _ := T.cwComplexOfIsColimit hc; rw [T.map_cwComplexOfIsColimitCellEquiv_symm hc]
   exact T.ι_map_eq_cellPartialEquiv hc i hx
 
@@ -239,7 +240,7 @@ theorem image_ι_openCell (k n : ℕ) (i : cell (univ : Set (W k)) n) :
     letI := T.cwComplexOfIsColimit hc
     c.ι.app k '' openCell (C := (univ : Set (W k))) n i =
       openCell (C := (univ : Set c.pt)) n
-        ((T.cwComplexOfIsColimitCellEquiv hc n).symm ((T.stageCellEquiv k n).symm i).1) := by
+        ((T.cwComplexOfIsColimitCellEquiv hc n).symm ((T.stageCellEquiv k n).symm i).val) := by
   let _ := T.cwComplexOfIsColimit hc
   rw [openCell, openCell, T.map_cwComplexOfIsColimitCellEquiv_symm hc]
   exact T.image_ι_image_map_eq_cellPartialEquiv hc i ball_subset_closedBall
@@ -250,7 +251,7 @@ theorem image_ι_closedCell (k n : ℕ) (i : cell (univ : Set (W k)) n) :
     letI := T.cwComplexOfIsColimit hc
     c.ι.app k '' closedCell (C := (univ : Set (W k))) n i =
       closedCell (C := (univ : Set c.pt)) n
-        ((T.cwComplexOfIsColimitCellEquiv hc n).symm ((T.stageCellEquiv k n).symm i).1) := by
+        ((T.cwComplexOfIsColimitCellEquiv hc n).symm ((T.stageCellEquiv k n).symm i).val) := by
   let _ := T.cwComplexOfIsColimit hc
   rw [closedCell, closedCell, T.map_cwComplexOfIsColimitCellEquiv_symm hc]
   exact T.image_ι_image_map_eq_cellPartialEquiv hc i Subset.rfl
@@ -294,7 +295,7 @@ theorem cellFrontier_subset_finite_closedCell_cwComplexOfIsColimitCellEquiv_fst_
           (T.cwComplexOfIsColimitCellEquiv hc m j).1 ≤
             (T.cwComplexOfIsColimitCellEquiv hc n i).1},
         cellFrontier (C := (univ : Set c.pt)) n i ⊆
-          ⋃ (m < n) (j ∈ I m), closedCell (C := (univ : Set c.pt)) m j.1 := by
+          ⋃ (m < n) (j ∈ I m), closedCell (C := (univ : Set c.pt)) m j.val := by
   let _ := T.cwComplexOfIsColimit hc; intro i
   obtain ⟨p, rfl⟩ := (T.cwComplexOfIsColimitCellEquiv hc n).symm.surjective i
   obtain ⟨J, hJ⟩ := CWComplex.cellFrontier_subset_finite_closedCell (C := (univ : Set (W p.1))) n
@@ -302,16 +303,16 @@ theorem cellFrontier_subset_finite_closedCell_cwComplexOfIsColimitCellEquiv_fst_
   let emb (m : ℕ) : cell (univ : Set (W p.1)) m ↪
       {j : cell (univ : Set c.pt) m // (T.cwComplexOfIsColimitCellEquiv hc m j).1 ≤
         (T.cwComplexOfIsColimitCellEquiv hc n ((T.cwComplexOfIsColimitCellEquiv hc n).symm p)).1} :=
-    ⟨fun a ↦ ⟨(T.cwComplexOfIsColimitCellEquiv hc m).symm ((T.stageCellEquiv p.1 m).symm a).1,
-        by simp [((T.stageCellEquiv p.1 m).symm a).2]⟩,
+    ⟨fun a ↦ ⟨(T.cwComplexOfIsColimitCellEquiv hc m).symm ((T.stageCellEquiv p.1 m).symm a).val,
+        by simp [((T.stageCellEquiv p.1 m).symm a).property]⟩,
       fun a₁ a₂ h ↦ (T.stageCellEquiv p.1 m).symm.injective <| Subtype.ext <|
         (T.cwComplexOfIsColimitCellEquiv hc m).symm.injective (congrArg Subtype.val h)⟩
   refine ⟨fun m ↦ (J m).map (emb m), ?_⟩
   rw [T.cellFrontier_cwComplexOfIsColimitCellEquiv_symm hc]; rintro _ ⟨y, hy, rfl⟩
   obtain ⟨m, hmn, a, haJ, hya⟩ := by simpa only [mem_iUnion, exists_prop] using hJ hy
   refine mem_iUnion₂.2 ⟨m, hmn, mem_iUnion₂.2 ⟨emb m a, Finset.mem_map_of_mem _ haJ, ?_⟩⟩
-  have hemb : (emb m a).1 =
-      (T.cwComplexOfIsColimitCellEquiv hc m).symm ((T.stageCellEquiv p.1 m).symm a).1 := rfl
+  have hemb : (emb m a).val =
+      (T.cwComplexOfIsColimitCellEquiv hc m).symm ((T.stageCellEquiv p.1 m).symm a).val := rfl
   rw [hemb, ← T.image_ι_closedCell hc]; exact mem_image_of_mem _ hya
 
 /-- A cell's closure in `c.pt` meets only finitely many open cells of `c.pt`. -/
@@ -341,8 +342,8 @@ def stageSubcomplex (k : ℕ) :
       · rintro ⟨y, rfl⟩
         obtain ⟨n, i, hyi⟩ := mem_iUnion₂.1
           ((CWComplex.iUnion_openCell_eq_complex (C := (univ : Set (W k)))) ▸ mem_univ y)
-        refine ⟨n, ⟨(T.cwComplexOfIsColimitCellEquiv hc n).symm ((T.stageCellEquiv k n).symm i).1,
-          by simp [((T.stageCellEquiv k n).symm i).2]⟩, ?_⟩
+        refine ⟨n, ⟨(T.cwComplexOfIsColimitCellEquiv hc n).symm ((T.stageCellEquiv k n).symm i).val,
+          by simp [((T.stageCellEquiv k n).symm i).property]⟩, ?_⟩
         rw [← T.image_ι_openCell hc]; exact mem_image_of_mem _ hyi }
 
 @[simp] lemma coe_stageSubcomplex (k : ℕ) : letI := T.cwComplexOfIsColimit hc
@@ -601,15 +602,15 @@ lemma closedCell_unionCellEquiv_symm_of_le (n : ℕ) (p : Σ m : ℕ, newCell m 
 theorem incl_map_eq_map (k n : ℕ) (i : cell (univ : Set (W k)) n) {x : Fin n → ℝ}
     (hx : x ∈ closedBall 0 1) : T.incl k (map (C := (univ : Set (W k))) n i x) =
       map (C := (univ : Set T.Union)) n
-        ((T.unionCellEquiv n).symm ((T.stageCellEquiv k n).symm i).1) x :=
+        ((T.unionCellEquiv n).symm ((T.stageCellEquiv k n).symm i).val) x :=
   T.ι_map_eq_map (colimit.isColimit T.diagram) k n i hx
 theorem image_incl_openCell (k n : ℕ) (i : cell (univ : Set (W k)) n) :
     T.incl k '' openCell (C := (univ : Set (W k))) n i = openCell (C := (univ : Set T.Union)) n
-      ((T.unionCellEquiv n).symm ((T.stageCellEquiv k n).symm i).1) :=
+      ((T.unionCellEquiv n).symm ((T.stageCellEquiv k n).symm i).val) :=
   T.image_ι_openCell (colimit.isColimit T.diagram) k n i
 theorem image_incl_closedCell (k n : ℕ) (i : cell (univ : Set (W k)) n) :
     T.incl k '' closedCell (C := (univ : Set (W k))) n i = closedCell (C := (univ : Set T.Union)) n
-      ((T.unionCellEquiv n).symm ((T.stageCellEquiv k n).symm i).1) :=
+      ((T.unionCellEquiv n).symm ((T.stageCellEquiv k n).symm i).val) :=
   T.image_ι_closedCell (colimit.isColimit T.diagram) k n i
 lemma closure_openCell_subset_range_incl (n : ℕ) (i : cell (univ : Set T.Union) n) :
     closure (openCell (C := (univ : Set T.Union)) n i) ⊆ range (T.incl (T.unionCellEquiv n i).1) :=
@@ -621,7 +622,7 @@ theorem cellFrontier_subset_finite_closedCell_unionCellEquiv_fst_le (n : ℕ)
     ∃ I : ∀ m, Finset {j : cell (univ : Set T.Union) m //
         (T.unionCellEquiv m j).1 ≤ (T.unionCellEquiv n i).1},
       cellFrontier (C := (univ : Set T.Union)) n i ⊆
-        ⋃ (m < n) (j ∈ I m), closedCell (C := (univ : Set T.Union)) m j.1 :=
+        ⋃ (m < n) (j ∈ I m), closedCell (C := (univ : Set T.Union)) m j.val :=
   T.cellFrontier_subset_finite_closedCell_cwComplexOfIsColimitCellEquiv_fst_le
     (colimit.isColimit T.diagram) n i
 

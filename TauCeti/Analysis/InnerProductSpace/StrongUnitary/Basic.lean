@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.WeakOperatorTopology
 public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 public import Mathlib.Topology.MetricSpace.Polish
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.InnerProductSpace.Continuous
 import TauCeti.Analysis.InnerProductSpace.Gram.Rigidity
 import TauCeti.Analysis.Normed.Operator.Dense
@@ -169,7 +169,7 @@ theorem coe_toUnitary (u : StrongUnitary 𝕜 H) : (u.toUnitary : H →L[𝕜] H
 
 @[simp]
 theorem toCLM_mem_unitary (u : StrongUnitary 𝕜 H) : u.toCLM ∈ unitary (H →L[𝕜] H) :=
-  u.toUnitary.2
+  u.toUnitary.property
 
 instance : FunLike (StrongUnitary 𝕜 H) H H where
   coe u := ⇑u.toCLM
@@ -324,7 +324,7 @@ theorem continuous_toPointwiseConvergenceCLM :
 theorem continuous_ofUnitary : Continuous (ofUnitary (𝕜 := 𝕜) (H := H)) :=
   isInducing_toPointwiseConvergenceCLM.continuous_iff.2 <|
     (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H).continuous.comp
-      continuous_subtype_val
+      continuous_subtypeVal
 
 instance : T2Space (StrongUnitary 𝕜 H) :=
   isEmbedding_toPointwiseConvergenceCLM.t2Space
@@ -474,7 +474,7 @@ instance : ContinuousSMul (unitary 𝕜) (StrongUnitary 𝕜 H) where
     rw [continuous_iff_forall_continuous]
     intro ξ
     have hc : Continuous fun p : unitary 𝕜 × StrongUnitary 𝕜 H => (p.1 : 𝕜) • p.2 ξ :=
-      (continuous_subtype_val.comp continuous_fst).smul
+      (continuous_subtypeVal.comp continuous_fst).smul
         ((continuous_eval_const ξ).comp continuous_snd)
     simpa only [smul_apply] using hc
 

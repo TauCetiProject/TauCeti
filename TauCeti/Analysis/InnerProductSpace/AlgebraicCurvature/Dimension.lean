@@ -16,6 +16,7 @@ import Mathlib.Tactic.Ring
 import TauCeti.LinearAlgebra.ExteriorPower.Bilinear
 import TauCeti.LinearAlgebra.ExteriorPower.Square
 import TauCeti.LinearAlgebra.Multilinear.SectionalPolarization
+import TauCeti.LinearAlgebra.SesquilinearForm.Basic
 
 /-!
 # Polarization and dimension of algebraic curvature tensors
@@ -72,10 +73,13 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 theorem apply_eq_zero_of_not_linearIndependent_of_antisymm_first {r : FourTensor V} {u v : V}
     (huv : ¬LinearIndependent ℝ ![u, v])
     (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) (z w : V) : r ![u, v, z, w] = 0 := by
-  have hAlt : (toLinearMap₄ r).IsAlt := fun a ↦ LinearMap.ext₂ fun c d ↦ by
-    rw [toLinearMap₄_apply]; exact CharZero.eq_neg_self_iff.mp (h₁ a a c d)
-  simpa using congr($(AlternatingMap.map_linearDependent (K := ℝ) (N := V →ₗ[ℝ] V →ₗ[ℝ] ℝ)
-    hAlt.toAlternatingMap ![u, v] huv) z w)
+  -- Doubling is injective on the values, which form a real vector space.
+  have := HasUniqueDiv.of_isTorsionFree ℝ (V →ₗ[ℝ] V →ₗ[ℝ] ℝ)
+  have h2 : IsSMulRegular (V →ₗ[ℝ] V →ₗ[ℝ] ℝ) (2 : ℕ) := .nat_of_hasUniqueDiv two_ne_zero
+  have hAlt : (toLinearMap₄ r).IsAlt := .of_neg_eq_flip (N := V →ₗ[ℝ] V →ₗ[ℝ] ℝ) h2 fun a b ↦
+    LinearMap.ext₂ fun c d ↦ by simp only [LinearMap.neg_apply, toLinearMap₄_apply, ← h₁]
+  simpa using congr($(hAlt.eq_zero_of_not_linearIndependent
+    (fun _ ↦ smul_left_injective ℝ (M := V →ₗ[ℝ] V →ₗ[ℝ] ℝ)) huv) z w)
 
 /-- An algebraic curvature tensor vanishes on `(u, v, u, v)` for linearly dependent `u, v`. -/
 theorem IsAlgebraicCurvature.apply_self_eq_zero_of_not_linearIndependent {r : FourTensor V}
@@ -83,27 +87,27 @@ theorem IsAlgebraicCurvature.apply_self_eq_zero_of_not_linearIndependent {r : Fo
     r ![u, v, u, v] = 0 :=
   apply_eq_zero_of_not_linearIndependent_of_antisymm_first huv hr.antisymm_first u v
 
-/-- **Sectional polarization**: algebraic curvature tensors agreeing on all `(u, v, u, v)` agree. -/
-theorem IsAlgebraicCurvature.eq_of_apply_self_eq {r₁ r₂ : FourTensor V}
+/-- **Sectional polarization**: algebraic curvature tensors agreeing on `(u, v, u, v)` for every
+linearly independent pair `u, v` agree. -/
+theorem IsAlgebraicCurvature.eq_of_apply_self_eq_of_linearIndependent {r₁ r₂ : FourTensor V}
     (hr₁ : IsAlgebraicCurvature r₁) (hr₂ : IsAlgebraicCurvature r₂)
-    (h : ∀ u v, r₁ ![u, v, u, v] = r₂ ![u, v, u, v]) : r₁ = r₂ :=
-  toLinearMap₄_injective <| LinearMap.eq_of_cyclic_eq_zero
-    (IsRegular.of_ne_zero' (by norm_num : (6 : ℝ) ≠ 0)).left
+    (h : ∀ u v, LinearIndependent ℝ ![u, v] → r₁ ![u, v, u, v] = r₂ ![u, v, u, v]) : r₁ = r₂ :=
+  toLinearMap₄_injective <| (toLinearMap₄ r₁).eq_of_apply_self_eq_of_linearIndependent
+    (fun _ ↦ smul_left_injective ℝ) (by norm_num)
     (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using hr₁.antisymm_first ..)
     (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using hr₁.antisymm_last ..)
     (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using hr₁.cyclic_eq_zero ..)
     (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using hr₂.antisymm_first ..)
     (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using hr₂.antisymm_last ..)
     (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using hr₂.cyclic_eq_zero ..)
-    fun _ _ ↦ by simp only [toLinearMap₄_apply]; rw [hr₁.antisymm_last, hr₂.antisymm_last, h]
+    fun u v huv ↦ by
+      simp only [toLinearMap₄_apply]; rw [hr₁.antisymm_last, hr₂.antisymm_last, h u v huv]
 
-/-- **Sectional polarization**: agreeing on linearly independent `(u, v, u, v)` suffices. -/
-theorem IsAlgebraicCurvature.eq_of_apply_self_eq_of_linearIndependent {r₁ r₂ : FourTensor V}
+/-- **Sectional polarization**: algebraic curvature tensors agreeing on all `(u, v, u, v)` agree. -/
+theorem IsAlgebraicCurvature.eq_of_apply_self_eq {r₁ r₂ : FourTensor V}
     (hr₁ : IsAlgebraicCurvature r₁) (hr₂ : IsAlgebraicCurvature r₂)
-    (h : ∀ u v, LinearIndependent ℝ ![u, v] → r₁ ![u, v, u, v] = r₂ ![u, v, u, v]) : r₁ = r₂ :=
-  hr₁.eq_of_apply_self_eq hr₂ fun u v ↦ (em _).elim (h u v) fun huv ↦ by
-    rw [hr₁.apply_self_eq_zero_of_not_linearIndependent huv,
-      hr₂.apply_self_eq_zero_of_not_linearIndependent huv]
+    (h : ∀ u v, r₁ ![u, v, u, v] = r₂ ![u, v, u, v]) : r₁ = r₂ :=
+  hr₁.eq_of_apply_self_eq_of_linearIndependent hr₂ fun u v _ ↦ h u v
 
 /-- Pair-antisymmetric, pair-interchange-symmetric four-tensors (symmetric forms on `⋀[ℝ]^2 V`). -/
 structure IsBivectorSymmetric (r : FourTensor V) : Prop where
@@ -123,10 +127,12 @@ variable (V) in
 def bivectorSymmetricSubmodule : Submodule ℝ (FourTensor V) where
   carrier := {r | IsBivectorSymmetric r}
   zero_mem' := ⟨by simp, by simp, by simp⟩
-  add_mem' hr hq := ⟨fun _ _ _ _ ↦ by simp only [add_apply]; rw [hr.1, hq.1, neg_add],
+  add_mem' hr hq := ⟨fun _ _ _ _ ↦ by simp only [add_apply]; rw [hr.antisymm_first,
+      hq.antisymm_first, neg_add],
     fun _ _ _ _ ↦ by simp only [add_apply]; rw [hr.antisymm_last, hq.antisymm_last, neg_add],
     fun _ _ _ _ ↦ by simp only [add_apply]; rw [hr.swap_pairs, hq.swap_pairs]⟩
-  smul_mem' _ _ hr := ⟨fun _ _ _ _ ↦ by simp only [smul_apply, smul_eq_mul]; rw [hr.1, mul_neg],
+  smul_mem' _ _ hr := ⟨fun _ _ _ _ ↦ by simp only [smul_apply, smul_eq_mul]; rw [hr.antisymm_first,
+      mul_neg],
     fun _ _ _ _ ↦ by simp only [smul_apply, smul_eq_mul]; rw [hr.antisymm_last, mul_neg],
     fun _ _ _ _ ↦ by simp only [smul_apply, smul_eq_mul]; rw [hr.swap_pairs]⟩
 
@@ -166,17 +172,19 @@ private theorem bianchiMultilinear_map_eq_zero_of_lt {r : FourTensor V}
 /-- The Bianchi cyclic sum as a linear map from `bivectorSymmetricSubmodule V` to four-forms. -/
 def bianchiAlternatingMap : bivectorSymmetricSubmodule V →ₗ[ℝ] V [⋀^Fin 4]→ₗ[ℝ] ℝ where
   toFun r :=
-    { toMultilinearMap := bianchiMultilinear r.1
+    { toMultilinearMap := bianchiMultilinear r.val
       map_eq_zero_of_eq' m _ _ hm hij := hij.lt_or_gt.elim
-        (bianchiMultilinear_map_eq_zero_of_lt (mem_bivectorSymmetricSubmodule.mp r.2) m hm)
-        (bianchiMultilinear_map_eq_zero_of_lt (mem_bivectorSymmetricSubmodule.mp r.2) m hm.symm) }
+        (bianchiMultilinear_map_eq_zero_of_lt (mem_bivectorSymmetricSubmodule.mp r.property) m hm)
+        (bianchiMultilinear_map_eq_zero_of_lt (mem_bivectorSymmetricSubmodule.mp r.property) m
+            hm.symm) }
   map_add' _ _ := AlternatingMap.ext fun _ ↦ by simp [bianchiMultilinear]; ring
   map_smul' _ _ := AlternatingMap.ext fun _ ↦ by simp [bianchiMultilinear]; ring
 
 /-- Evaluation of `bianchiAlternatingMap`. -/
 @[simp] theorem bianchiAlternatingMap_apply (r : bivectorSymmetricSubmodule V) (m : Fin 4 → V) :
     bianchiAlternatingMap r m =
-      r.1 ![m 0, m 1, m 2, m 3] + r.1 ![m 1, m 2, m 0, m 3] + r.1 ![m 2, m 0, m 1, m 3] := (rfl)
+      r.val ![m 0, m 1, m 2, m 3] + r.val ![m 1, m 2, m 0, m 3] + r.val ![m 2, m 0, m 1, m 3] :=
+          (rfl)
 
 /-- The kernel of `bianchiAlternatingMap` is `algebraicCurvatureSubmodule V`. -/
 theorem ker_bianchiAlternatingMap :
@@ -186,7 +194,8 @@ theorem ker_bianchiAlternatingMap :
   simp only [LinearMap.mem_ker, Submodule.mem_comap, Submodule.coe_subtype,
     mem_algebraicCurvatureSubmodule, AlternatingMap.ext_iff, bianchiAlternatingMap_apply,
     zero_apply]
-  exact ⟨fun h ↦ ⟨hr.1, hr.2, hr.3, fun u v z w ↦ h ![u, v, z, w]⟩,
+  exact ⟨fun h ↦ ⟨hr.antisymm_first, hr.antisymm_last, hr.swap_pairs, fun u v z w ↦ h ![u, v, z,
+      w]⟩,
     fun h m ↦ h.cyclic_eq_zero (m 0) (m 1) (m 2) (m 3)⟩
 
 private theorem isBivectorSymmetric_toLinearMap₄_isAlt {r : FourTensor V}
@@ -195,15 +204,15 @@ private theorem isBivectorSymmetric_toLinearMap₄_isAlt {r : FourTensor V}
 
 private def exteriorBilinOfBivectorSymmetric (r : bivectorSymmetricSubmodule V) :
     BilinForm ℝ (⋀[ℝ]^2 V) :=
-  let hr := mem_bivectorSymmetricSubmodule.mp r.2
-  (toLinearMap₄ r.1).exteriorSquareBilinear
+  let hr := mem_bivectorSymmetricSubmodule.mp r.property
+  (toLinearMap₄ r.val).exteriorSquareBilinear
     (fun _ _ _ ↦ by rw [toLinearMap₄_apply]; exact isBivectorSymmetric_self_first hr ..)
     (isBivectorSymmetric_toLinearMap₄_isAlt hr)
 
 private theorem isSymm_exteriorBilinOfBivectorSymmetric (r : bivectorSymmetricSubmodule V) :
     (exteriorBilinOfBivectorSymmetric r).IsSymm :=
-  ⟨fun a b ↦ (LinearMap.congr_fun₂ (LinearMap.flip_exteriorSquareBilinear (toLinearMap₄ r.1) _ _
-    (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using r.2.3 ..)) a b).symm⟩
+  ⟨fun a b ↦ (LinearMap.congr_fun₂ (LinearMap.flip_exteriorSquareBilinear (toLinearMap₄ r.val) _ _
+    (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using r.property.swap_pairs ..)) a b).symm⟩
 
 end NormedSpace
 
@@ -243,19 +252,19 @@ private theorem fourTensorOfExteriorBilin_apply (B : BilinForm ℝ (⋀[ℝ]^2 V
 
 private theorem isBivectorSymmetric_fourTensorOfExteriorBilin
     (B : LinearMap.BilinForm.symmSubmodule ℝ (⋀[ℝ]^2 V)) :
-    IsBivectorSymmetric (fourTensorOfExteriorBilin B.1) := by
+    IsBivectorSymmetric (fourTensorOfExteriorBilin B.val) := by
   refine ⟨fun u v z w ↦ ?_, fun u v z w ↦ ?_, fun u v z w ↦ ?_⟩ <;>
     simp only [fourTensorOfExteriorBilin_apply]
   · rw [exteriorPower.ιMulti_two_swap v u, map_neg, LinearMap.neg_apply]
   · rw [exteriorPower.ιMulti_two_swap w z, map_neg]
-  · exact (LinearMap.BilinForm.mem_symmSubmodule.mp B.2).eq _ _
+  · exact (LinearMap.BilinForm.mem_symmSubmodule.mp B.property).eq _ _
 
 /-- Linear equivalence from `bivectorSymmetricSubmodule V` to symmetric forms on `⋀[ℝ]^2 V`. -/
 def bivectorSymmetricEquivSymmBilin :
     bivectorSymmetricSubmodule V ≃ₗ[ℝ] LinearMap.BilinForm.symmSubmodule ℝ (⋀[ℝ]^2 V) where
   toFun r := ⟨exteriorBilinOfBivectorSymmetric r,
     LinearMap.BilinForm.mem_symmSubmodule.mpr (isSymm_exteriorBilinOfBivectorSymmetric r)⟩
-  invFun B := ⟨fourTensorOfExteriorBilin B.1,
+  invFun B := ⟨fourTensorOfExteriorBilin B.val,
     mem_bivectorSymmetricSubmodule.mpr (isBivectorSymmetric_fourTensorOfExteriorBilin B)⟩
   map_add' _ _ := Subtype.ext <| (LinearMap.exteriorSquareBilinear_eq_iff ..).mpr fun _ _ ↦ by
     simp [exteriorBilinOfBivectorSymmetric, LinearMap.exteriorSquareBilinear_ιMulti_ιMulti]
@@ -264,7 +273,7 @@ def bivectorSymmetricEquivSymmBilin :
   left_inv r := Subtype.ext <| toLinearMap₄_injective <| by
     ext u v z w; simp only [toLinearMap₄_apply, fourTensorOfExteriorBilin_apply]
     exact (LinearMap.exteriorSquareBilinear_ιMulti_ιMulti
-      (toLinearMap₄ r.1) _ _ ![u, v] ![z, w]).trans (toLinearMap₄_apply r.1 u v z w)
+      (toLinearMap₄ r.val) _ _ ![u, v] ![z, w]).trans (toLinearMap₄_apply r.val u v z w)
   right_inv _ := Subtype.ext <| (LinearMap.exteriorSquareBilinear_eq_iff ..).mpr fun v w ↦ by
     rw [toLinearMap₄_apply, fourTensorOfExteriorBilin_apply, ← FinVec.etaExpand_eq v,
       ← FinVec.etaExpand_eq w]; rfl
@@ -272,17 +281,17 @@ def bivectorSymmetricEquivSymmBilin :
 /-- Evaluation of `bivectorSymmetricEquivSymmBilin` on pure wedges `u ∧ v` and `z ∧ w`. -/
 @[simp] theorem bivectorSymmetricEquivSymmBilin_apply_ιMulti (r : bivectorSymmetricSubmodule V)
     (u v z w : V) :
-    (bivectorSymmetricEquivSymmBilin r).1 (exteriorPower.ιMulti ℝ 2 ![u, v])
-        (exteriorPower.ιMulti ℝ 2 ![z, w]) = r.1 ![u, v, z, w] :=
-  (LinearMap.exteriorSquareBilinear_ιMulti_ιMulti (toLinearMap₄ r.1) _ _ ![u, v] ![z, w]).trans
-    (toLinearMap₄_apply r.1 u v z w)
+    (bivectorSymmetricEquivSymmBilin r).val (exteriorPower.ιMulti ℝ 2 ![u, v])
+        (exteriorPower.ιMulti ℝ 2 ![z, w]) = r.val ![u, v, z, w] :=
+  (LinearMap.exteriorSquareBilinear_ιMulti_ιMulti (toLinearMap₄ r.val) _ _ ![u, v] ![z, w]).trans
+    (toLinearMap₄_apply r.val u v z w)
 
 /-- Evaluation of `bivectorSymmetricEquivSymmBilin.symm` on four vectors via pure wedges. -/
 @[simp] theorem bivectorSymmetricEquivSymmBilin_symm_apply
     (B : LinearMap.BilinForm.symmSubmodule ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
-    (bivectorSymmetricEquivSymmBilin.symm B).1 ![u, v, z, w] =
-      B.1 (exteriorPower.ιMulti ℝ 2 ![u, v]) (exteriorPower.ιMulti ℝ 2 ![z, w]) :=
-  fourTensorOfExteriorBilin_apply B.1 u v z w
+    (bivectorSymmetricEquivSymmBilin.symm B).val ![u, v, z, w] =
+      B.val (exteriorPower.ιMulti ℝ 2 ![u, v]) (exteriorPower.ιMulti ℝ 2 ![z, w]) :=
+  fourTensorOfExteriorBilin_apply B.val u v z w
 
 /-- `bianchiAlternatingMap` is surjective onto alternating four-forms. -/
 theorem bianchiAlternatingMap_surjective :
@@ -411,7 +420,8 @@ theorem ricci_eq_half_scalar_smul_innerₗ_of_finrank_eq_two_of_antisymm {r : Fo
 theorem IsAlgebraicCurvature.ricci_eq_half_scalar_smul_innerₗ_of_finrank_eq_two {r : FourTensor V}
     (hr : IsAlgebraicCurvature r) (hdim : Module.finrank ℝ V = 2) :
     ricci r = (scalar r / 2) • innerₗ V :=
-  ricci_eq_half_scalar_smul_innerₗ_of_finrank_eq_two_of_antisymm hdim hr.1 hr.2
+  ricci_eq_half_scalar_smul_innerₗ_of_finrank_eq_two_of_antisymm hdim hr.antisymm_first
+      hr.antisymm_last
 
 end InnerProductSpace
 

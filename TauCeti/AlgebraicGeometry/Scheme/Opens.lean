@@ -20,6 +20,9 @@ This file records general-purpose facts about open subsets of schemes.
   subset of any nonempty scheme.
 * `AlgebraicGeometry.IsAffineOpen.presheaf_map_fromSpec_appIso_hom` identifies restriction of
   structure-sheaf sections along the affine chart `Spec Γ(X, U)`.
+* `AlgebraicGeometry.Scheme.Hom.disjoint_preimage` and
+  `AlgebraicGeometry.Scheme.Hom.pairwise_disjoint_preimage`: inverse images of (pairwise) disjoint
+  opens are (pairwise) disjoint.
 * `AlgebraicGeometry.Scheme.Hom.preimage_finset_inf` and
   `AlgebraicGeometry.Scheme.Hom.preimage_finite_product`: inverse images commute with finite
   intersections, written as `Finset.inf` or as finite products of opens.
@@ -36,6 +39,9 @@ This file records general-purpose facts about open subsets of schemes.
 * `AlgebraicGeometry.Scheme.Hom.preimage_eq_preimage_inf_of_comp_eq`: in a commutative square, the
   preimage under `f'` of an open of the base lying over `W` lies in the preimage under `g'` of
   `f⁻¹ W`.
+* `TauCeti.AlgebraicGeometry.preimage_preimage_eq_of_comp_eq` and
+  `TauCeti.AlgebraicGeometry.preimageSquareIso`: the two sides of a commutative square of schemes
+  have the same preimages of opens of the base.
 * `AlgebraicGeometry.Scheme.forall_affineOpens_map_of_le`: a condition on the restrictions of a
   section over `V` to all affine opens inside `V` is inherited by its restriction to any smaller
   open.
@@ -44,11 +50,21 @@ This file records general-purpose facts about open subsets of schemes.
 * `AlgebraicGeometry.Scheme.eq_of_forall_affineOpens_map_eq`: global sections are determined by
   their restrictions to the affine opens, and
   `AlgebraicGeometry.Scheme.presheaf_map_homOfLE_comp` composes restriction homomorphisms.
+* `AlgebraicGeometry.Scheme.restrictionAlgebra`: for opens `V ≤ U`, `Γ(X, V)` as a
+  `Γ(X, U)`-algebra through restriction of functions.
 * `AlgebraicGeometry.Scheme.exists_finite_affineOpens_cover`: a quasi-compact open is covered by
   finitely many affine opens contained in it, in the form used by sheaf gluing.
 * `AlgebraicGeometry.IsAffineOpen.fromSpec_appLE_self` and
   `AlgebraicGeometry.Scheme.Hom.appLE_ΓSpecIso_hom_naturality` compute the global sections of
   affine charts `Spec R ⟶ X` and their precomposites with `Spec.map φ`.
+* `AlgebraicGeometry.Spec.map_appLE_basicOpen_algebraMap`: the section map of a spectral
+  morphism on principal opens sends a numerator to its ring-map image.
+* `AlgebraicGeometry.Scheme.Hom.congr_appLE`: equal scheme morphisms induce equal section maps.
+* `CategoryTheory.CommSq.preimage_preimage_eq` and
+  `CategoryTheory.CommSq.app_comp_app_eq_app_comp_appLE`: the two paths around a commutative
+  square induce equal inverse images and equal section maps.
+* `CategoryTheory.CommSq.rightSheafMap` and `CategoryTheory.CommSq.rightSheafMap_app`: the
+  transported structure-sheaf map across an arbitrary commutative square and its components.
 * `AlgebraicGeometry.IsAffineOpen.span_restrict_basicOpen_le_eq_top`: for affine opens `V ≤ U`,
   the restrictions of the functions on `U` whose basic open lies in `V` generate the unit ideal of
   `Γ(X, V)`.
@@ -89,6 +105,18 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.preimage_sup_eq_top {Y : Scheme.{u}}
     f ⁻¹ᵁ U ⊔ f ⁻¹ᵁ V = ⊤ := by
   rw [← f.preimage_sup, hUV, f.preimage_top]
 
+/-- Preimages of disjoint opens are disjoint. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.disjoint_preimage {Y : Scheme.{u}} (f : X ⟶ Y)
+    {U V : Y.Opens} (hUV : Disjoint U V) : Disjoint (f ⁻¹ᵁ U) (f ⁻¹ᵁ V) := by
+  rw [disjoint_iff, ← f.preimage_inf, disjoint_iff.mp hUV, f.preimage_bot]
+
+open scoped Function in
+/-- Preimages of pairwise disjoint opens are pairwise disjoint. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pairwise_disjoint_preimage {Y : Scheme.{u}}
+    (f : X ⟶ Y) {ι : Type*} {U : ι → Y.Opens} (hU : Pairwise (Disjoint on U)) :
+    Pairwise (Disjoint on fun i ↦ f ⁻¹ᵁ U i) :=
+  fun _ _ hij ↦ f.disjoint_preimage (hU hij)
+
 /-- Taking inverse images under a morphism of schemes commutes with finite intersections. -/
 @[simp]
 lemma _root_.AlgebraicGeometry.Scheme.Hom.preimage_finset_inf {Y : Scheme.{u}} (f : X ⟶ Y)
@@ -120,12 +148,12 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.isAffineOpen_finset_inf_preimage {Y : 
 cover `X`. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.iSup_affineOpens_le_preimage_eq_top {Y : Scheme.{u}}
     (f : X ⟶ Y) :
-    ⨆ V : {V : X.affineOpens // ∃ U : Y.affineOpens, V.1 ≤ f ⁻¹ᵁ U.1}, V.1.1 = ⊤ := by
+    ⨆ V : {V : X.affineOpens // ∃ U : Y.affineOpens, V.val ≤ f ⁻¹ᵁ U.val}, V.val.val = ⊤ := by
   refine eq_top_iff.2 fun x _ ↦ ?_
   obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
     Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f x)) isOpen_univ
   obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
-    X.isBasis_affineOpens.exists_subset_of_mem_open hxU (f ⁻¹ᵁ U).2
+    X.isBasis_affineOpens.exists_subset_of_mem_open hxU (f ⁻¹ᵁ U).is_open'
   exact Opens.mem_iSup.2 ⟨⟨⟨V, hV⟩, ⟨U, hU⟩, hVU⟩, hxV⟩
 
 /-- An affine open in a scheme with affine diagonal has affine inclusion. -/
@@ -162,12 +190,36 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.preimage_eq_preimage_inf_of_comp_eq
   rw [← Scheme.Hom.comp_preimage, hw, Scheme.Hom.comp_preimage]
   exact f'.preimage_mono h
 
+/-- In a commutative square `g' ≫ f = f' ≫ g` of schemes, the two sides of the square have the
+same preimages of opens of the base `S`. -/
+theorem preimage_preimage_eq_of_comp_eq {X' S S' : Scheme.{u}} {f : X ⟶ S} {f' : X' ⟶ S'}
+    {g : S' ⟶ S} {g' : X' ⟶ X} (h : g' ≫ f = f' ≫ g) (V : S.Opens) :
+    f' ⁻¹ᵁ g ⁻¹ᵁ V = g' ⁻¹ᵁ f ⁻¹ᵁ V :=
+  (congrArg (fun φ : X' ⟶ S ↦ φ ⁻¹ᵁ V) h).symm
+
+/-- In a commutative square `g' ≫ f = f' ≫ g` of schemes, taking preimages of opens of the base
+`S` along the two sides of the square gives isomorphic functors. -/
+def preimageSquareIso {X' S S' : Scheme.{u}} {f : X ⟶ S} {f' : X' ⟶ S'} {g : S' ⟶ S}
+    {g' : X' ⟶ X} (h : g' ≫ f = f' ≫ g) :
+    (Opens.map f.base).op ⋙ (Opens.map g'.base).op ≅
+      (Opens.map g.base).op ⋙ (Opens.map f'.base).op :=
+  NatIso.ofComponents (fun U ↦ eqToIso (congrArg op
+    (congrArg (fun φ : X' ⟶ S ↦ φ ⁻¹ᵁ U.unop) h))) (fun _ ↦ rfl)
+
+/-- The components of `preimageSquareIso` are the identifications of the two preimages. -/
+@[simp]
+lemma preimageSquareIso_hom_app {X' S S' : Scheme.{u}} {f : X ⟶ S} {f' : X' ⟶ S'}
+    {g : S' ⟶ S} {g' : X' ⟶ X} (h : g' ≫ f = f' ≫ g) (U : S.Opensᵒᵖ) :
+    (preimageSquareIso h).hom.app U =
+      eqToHom (congrArg op (congrArg (fun φ : X' ⟶ S ↦ φ ⁻¹ᵁ U.unop) h)) :=
+  (rfl)
+
 /-- A condition imposed on the restrictions of a section `b` over `V` to all affine opens inside `V`
 is inherited by the restriction of `b` to any smaller open `V'`. -/
 theorem _root_.AlgebraicGeometry.Scheme.forall_affineOpens_map_of_le {V V' : X.Opens}
     (hV'V : V' ≤ V) {b : Γ(X, V)} {P : ∀ W : X.affineOpens, Γ(X, W) → Prop}
-    (h : ∀ (W : X.affineOpens) (hWV : W.1 ≤ V), P W (X.presheaf.map (homOfLE hWV).op b))
-    (W : X.affineOpens) (hWV' : W.1 ≤ V') :
+    (h : ∀ (W : X.affineOpens) (hWV : W.val ≤ V), P W (X.presheaf.map (homOfLE hWV).op b))
+    (W : X.affineOpens) (hWV' : W.val ≤ V') :
     P W (X.presheaf.map (homOfLE hWV').op (X.presheaf.map (homOfLE hV'V).op b)) := by
   rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp, homOfLE_comp]
   exact h W (hWV'.trans hV'V)
@@ -176,29 +228,32 @@ theorem _root_.AlgebraicGeometry.Scheme.forall_affineOpens_map_of_le {V V' : X.O
 affine open `U` of `X`, compatible with restriction from an affine open to a smaller one, consists
 of the restrictions of a unique global section. -/
 theorem _root_.AlgebraicGeometry.Scheme.existsUnique_gluing_affineOpens (X : Scheme.{u})
-    (s : ∀ U : X.affineOpens, Γ(X, U.1))
-    (hs : ∀ (U V : X.affineOpens) (h : V.1 ≤ U.1), X.presheaf.map (homOfLE h).op (s U) = s V) :
+    (s : ∀ U : X.affineOpens, Γ(X, U.val))
+    (hs : ∀ (U V : X.affineOpens) (h : V.val ≤ U.val), X.presheaf.map (homOfLE h).op (s U) = s V) :
     ∃! t : Γ(X, ⊤), ∀ U : X.affineOpens, X.presheaf.map (homOfLE le_top).op t = s U := by
   -- every open `V` is covered by the affine opens it contains
-  have hcov (V : X.Opens) : V ≤ ⨆ W : {W : X.affineOpens // W.1 ≤ V}, W.1.1 := fun x hx ↦ by
+  have hcov (V : X.Opens) : V ≤ ⨆ W : {W : X.affineOpens // W.val ≤ V}, W.val.val := fun x hx ↦ by
     obtain ⟨_, ⟨W, hW, rfl⟩, hxW, hWV⟩ :=
       X.isBasis_affineOpens.exists_subset_of_mem_open hx V.isOpen
     exact Opens.mem_iSup.mpr ⟨⟨⟨W, hW⟩, hWV⟩, hxW⟩
-  refine X.sheaf.existsUnique_gluing' (fun U : X.affineOpens ↦ U.1) ⊤ (fun _ ↦ homOfLE le_top)
+  refine X.sheaf.existsUnique_gluing' (fun U : X.affineOpens ↦ U.val) ⊤ (fun _ ↦ homOfLE le_top)
     (iSup_affineOpens_eq_top X).ge s fun U U' ↦ ?_
   -- on `U ⊓ U'`, the two restrictions agree on every affine open `W ⊆ U ⊓ U'`
-  refine X.sheaf.eq_of_locally_eq' (fun W : {W : X.affineOpens // W.1 ≤ U.1 ⊓ U'.1} ↦ W.1.1) _
-    (fun W ↦ homOfLE W.2) (hcov _) _ _ fun W ↦ ?_
+  refine X.sheaf.eq_of_locally_eq' (fun W : {W : X.affineOpens // W.val ≤ U.val ⊓ U'.val} ↦
+      W.val.val) _
+    (fun W ↦ homOfLE W.property) (hcov _) _ _ fun W ↦ ?_
   -- stated through `X.presheaf`, the underlying presheaf of `X.sheaf`
-  have h₁ : X.presheaf.map (homOfLE W.2).op (X.presheaf.map (Opens.infLELeft U.1 U'.1).op (s U)) =
-      s W.1 := by
+  have h₁ : X.presheaf.map (homOfLE W.property).op (X.presheaf.map (Opens.infLELeft U.val U'.val).op
+      (s U)) =
+      s W.val := by
     rw [← ConcreteCategory.comp_apply, ← Functor.map_comp]
-    exact hs U W.1 (W.2.trans inf_le_left)
+    exact hs U W.val (W.property.trans inf_le_left)
   have h₂ :
-      X.presheaf.map (homOfLE W.2).op (X.presheaf.map (Opens.infLERight U.1 U'.1).op (s U')) =
-        s W.1 := by
+      X.presheaf.map (homOfLE W.property).op (X.presheaf.map (Opens.infLERight U.val U'.val).op
+          (s U')) =
+        s W.val := by
     rw [← ConcreteCategory.comp_apply, ← Functor.map_comp]
-    exact hs U' W.1 (W.2.trans inf_le_right)
+    exact hs U' W.val (W.property.trans inf_le_right)
   exact h₁.trans h₂.symm
 
 /-- Restriction of sections from `W` to `U` followed by restriction to `V ≤ U` is restriction from
@@ -210,13 +265,25 @@ theorem _root_.AlgebraicGeometry.Scheme.presheaf_map_homOfLE_comp {V U W : X.Ope
   rw [← CommRingCat.hom_comp, ← Functor.map_comp]
   rfl
 
+/-- `Γ(X, V)` as a `Γ(X, U)`-algebra through restriction of functions, for opens `V ≤ U`. -/
+abbrev _root_.AlgebraicGeometry.Scheme.restrictionAlgebra {V : X.Opens} (hVU : V ≤ U) :
+    Algebra Γ(X, U) Γ(X, V) :=
+  (X.presheaf.map (homOfLE hVU).op).hom.toAlgebra
+
+/-- The algebra map of `Scheme.restrictionAlgebra` is restriction of functions. -/
+theorem _root_.AlgebraicGeometry.Scheme.algebraMap_restrictionAlgebra {V : X.Opens}
+    (hVU : V ≤ U) :
+    letI := Scheme.restrictionAlgebra hVU
+    algebraMap Γ(X, U) Γ(X, V) = (X.presheaf.map (homOfLE hVU).op).hom :=
+  RingHom.algebraMap_toAlgebra _
+
 /-- **Global sections are determined by their restrictions to the affine opens.** -/
 theorem _root_.AlgebraicGeometry.Scheme.eq_of_forall_affineOpens_map_eq (X : Scheme.{u})
     {x y : Γ(X, ⊤)}
-    (h : ∀ U : X.affineOpens, X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op x =
-      X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op y) :
+    (h : ∀ U : X.affineOpens, X.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op x =
+      X.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op y) :
     x = y :=
-  (X.existsUnique_gluing_affineOpens (fun U ↦ X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op y)
+  (X.existsUnique_gluing_affineOpens (fun U ↦ X.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op y)
     fun _ _ hVU ↦ congrArg (· y)
       (congrArg DFunLike.coe (Scheme.presheaf_map_homOfLE_comp (X := X) hVU le_top))).unique h
     fun _ ↦ rfl
@@ -227,11 +294,34 @@ below `U` whose supremum contains `U`, the form taken by the sheaf gluing lemmas
 `TopCat.Sheaf.eq_of_locally_eq'` and `TopCat.Sheaf.existsUnique_gluing'`. -/
 theorem _root_.AlgebraicGeometry.Scheme.exists_finite_affineOpens_cover
     (hU : IsCompact (U : Set X)) :
-    ∃ (s : Set X.affineOpens) (_ : Finite s), (∀ i : s, (i.1 : X.Opens) ≤ U) ∧
-      U ≤ ⨆ i : s, (i.1 : X.Opens) := by
+    ∃ (s : Set X.affineOpens) (_ : Finite s), (∀ i : s, (i.val : X.Opens) ≤ U) ∧
+      U ≤ ⨆ i : s, (i.val : X.Opens) := by
   obtain ⟨s, hs, e⟩ := isCompact_iff_finite_and_eq_biUnion_affineOpens.mp hU
-  exact ⟨s, hs.to_subtype, fun i ↦ e ▸ le_biSup (fun j : X.affineOpens ↦ (j : X.Opens)) i.2,
+  exact ⟨s, hs.to_subtype, fun i ↦ e ▸ le_biSup (fun j : X.affineOpens ↦ (j : X.Opens)) i.property,
     by rw [e, iSup_subtype']⟩
+
+/-- A compact open admits a finite affine refinement whose members map into affine
+opens of the target of a given scheme morphism. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.exists_finite_affine_refinement
+    {Y S : Scheme.{u}} (p : Y ⟶ S) (V : Y.Opens) (hV : IsCompact (V : Set Y)) :
+    ∃ (U : V → Y.Opens), (∀ x, IsAffineOpen (U x)) ∧
+      (∀ x, U x ≤ V) ∧ ∃ (W : V → S.Opens), (∀ x, IsAffineOpen (W x)) ∧
+        (∀ x, U x ≤ p ⁻¹ᵁ W x) ∧ ∃ t : Finset V,
+          (V : Set Y) ⊆ ⋃ x ∈ t, (U x : Set Y) := by
+  classical
+  have hnbhd (x : V) : ∃ (U : Y.Opens), IsAffineOpen U ∧ x.val ∈ U ∧
+      U ≤ V ∧ ∃ W : S.Opens, IsAffineOpen W ∧ U ≤ p ⁻¹ᵁ W := by
+    obtain ⟨W, hW, hxW, _⟩ := exists_isAffineOpen_mem_and_subset
+      (X := S) (x := p x.val) (U := ⊤) (by trivial)
+    obtain ⟨U, hU, hxU, hUV⟩ := exists_isAffineOpen_mem_and_subset
+      (U := V ⊓ p ⁻¹ᵁ W) ⟨x.property, hxW⟩
+    exact ⟨U, hU, hxU, le_trans hUV inf_le_left, W, hW, le_trans hUV inf_le_right⟩
+  choose U hU hxU hUV W hW hUW using hnbhd
+  obtain ⟨t, ht⟩ := hV.elim_finite_subcover (fun x ↦ (U x : Set Y))
+    (fun x ↦ (U x).isOpen) (by
+      intro x hx
+      exact Set.mem_iUnion.mpr ⟨⟨x, hx⟩, hxU ⟨x, hx⟩⟩)
+  exact ⟨U, hU, hUV, W, hW, hUW, t, ht⟩
 
 /-- Along the open immersion `hU.fromSpec : Spec Γ(X, U) ⟶ X` onto an affine open `U`,
 restricting a section of `𝒪_X` from `U` to the image of an open `V` and transporting it to `V`
@@ -273,15 +363,15 @@ theorem _root_.AlgebraicGeometry.IsAffineOpen.span_restrict_basicOpen_le_eq_top 
 opens of `U` contained in `W`. -/
 theorem _root_.AlgebraicGeometry.IsAffineOpen.exists_finset_sup_basicOpen_eq (hU : IsAffineOpen U)
     {W : X.Opens} (hW : IsCompact (W : Set X)) (hWU : W ≤ U) :
-    ∃ s : Finset {f : Γ(X, U) // X.basicOpen f ≤ W}, s.sup (fun i ↦ X.basicOpen i.1) = W := by
+    ∃ s : Finset {f : Γ(X, U) // X.basicOpen f ≤ W}, s.sup (fun i ↦ X.basicOpen i.val) = W := by
   obtain ⟨s, hs⟩ := hW.elim_finite_subcover
-    (fun i : {f : Γ(X, U) // X.basicOpen f ≤ W} ↦ (X.basicOpen i.1 : Set X))
-    (fun i ↦ (X.basicOpen i.1).isOpen) fun x hx ↦ by
+    (fun i : {f : Γ(X, U) // X.basicOpen f ≤ W} ↦ (X.basicOpen i.val : Set X))
+    (fun i ↦ (X.basicOpen i.val).isOpen) fun x hx ↦ by
       obtain ⟨f, hf, hxf⟩ := hU.exists_basicOpen_le ⟨x, hx⟩ (hWU hx)
       exact Set.mem_iUnion.mpr ⟨⟨f, hf⟩, hxf⟩
-  refine ⟨s, le_antisymm (Finset.sup_le fun i _ ↦ i.2) fun x hx ↦ ?_⟩
+  refine ⟨s, le_antisymm (Finset.sup_le fun i _ ↦ i.property) fun x hx ↦ ?_⟩
   obtain ⟨i, hi, hxi⟩ := Set.mem_iUnion₂.mp (hs hx)
-  exact (Finset.le_sup (f := fun i : {f : Γ(X, U) // X.basicOpen f ≤ W} ↦ X.basicOpen i.1) hi) hxi
+  exact (Finset.le_sup (f := fun i : {f : Γ(X, U) // X.basicOpen f ≤ W} ↦ X.basicOpen i.val) hi) hxi
 
 /-- The basic opens `X.basicOpen f` of sections `f` over an open `U` are closed under binary
 intersections. -/
@@ -410,3 +500,93 @@ end Scheme
 end AlgebraicGeometry
 
 end TauCeti
+
+public section
+
+universe u
+
+namespace AlgebraicGeometry
+
+open CategoryTheory
+
+variable {X Y : Scheme.{u}} (f : X ⟶ Y)
+
+/-- On principal opens, the section map of `Spec.map f` sends a numerator `x` to `f x`.
+The section rings use the native structure-sheaf presentation, so their canonical localization
+algebra structures agree with those used by `StructureSheaf.comap_basicOpen`. -/
+theorem Spec.map_appLE_basicOpen_algebraMap {R S : CommRingCat.{u}} (f : R ⟶ S)
+    (a : R) (b : S) (hab : f a = b)
+    (e : PrimeSpectrum.basicOpen b ≤ Spec.map f ⁻¹ᵁ PrimeSpectrum.basicOpen a) (x : R) :
+    (Spec.map f).appLE (PrimeSpectrum.basicOpen a) (PrimeSpectrum.basicOpen b) e
+        (algebraMap R ((Spec.structureSheaf R).obj.obj (Opposite.op (PrimeSpectrum.basicOpen a)))
+          x) =
+      algebraMap S ((Spec.structureSheaf S).obj.obj (Opposite.op (PrimeSpectrum.basicOpen b)))
+        (f x) := by
+  subst b
+  exact (ConcreteCategory.congr_hom (Spec.map_appLE f e) _).trans
+    ((DFunLike.congr_fun (StructureSheaf.comap_basicOpen f.hom a) _).trans
+      (IsLocalization.map_eq _ x))
+
+/-- Equal morphisms induce the same maps on sections `Γ(Y, U) ⟶ Γ(X, V)`. Unlike rewriting along
+`f = g`, this applies when the proofs of `V ≤ f ⁻¹ᵁ U` and of `V ≤ g ⁻¹ᵁ U` are unrelated. -/
+theorem Scheme.Hom.congr_appLE {g : X ⟶ Y} (e : f = g) (U : Y.Opens) (V : X.Opens) (hf hg) :
+    f.appLE U V hf = g.appLE U V hg := by
+  subst e
+  rfl
+
+end AlgebraicGeometry
+
+namespace CategoryTheory
+
+open AlgebraicGeometry
+
+/-- The two paths around a commutative square of schemes give the same inverse image of
+an open of the target. -/
+theorem CommSq.preimage_preimage_eq {W X Y Z : Scheme.{u}}
+    {i : W ⟶ X} {j : W ⟶ Y} {f : X ⟶ Z} {g : Y ⟶ Z}
+    (h : CommSq i j f g) (U : Z.Opens) : i ⁻¹ᵁ f ⁻¹ᵁ U = j ⁻¹ᵁ g ⁻¹ᵁ U := by
+  rw [← Scheme.Hom.comp_preimage, ← Scheme.Hom.comp_preimage, h.w]
+
+/-- The two paths around a commutative square give the same pullback of sections, with
+`appLE` presenting the second composite on the first path's inverse-image open. -/
+theorem CommSq.app_comp_app_eq_app_comp_appLE {W X Y Z : Scheme.{u}}
+    {i : W ⟶ X} {j : W ⟶ Y} {f : X ⟶ Z} {g : Y ⟶ Z}
+    (h : CommSq i j f g) (U : Z.Opens) :
+    f.app U ≫ i.app (f ⁻¹ᵁ U) =
+      g.app U ≫ j.appLE (g ⁻¹ᵁ U) (i ⁻¹ᵁ f ⁻¹ᵁ U) (h.preimage_preimage_eq U).le := by
+  have e := Scheme.Hom.congr_appLE _ h.w U (i ⁻¹ᵁ f ⁻¹ᵁ U)
+    (by rw [Scheme.Hom.comp_preimage])
+    (by rw [Scheme.Hom.comp_preimage]; exact (h.preimage_preimage_eq U).le)
+  simpa only [Scheme.Hom.comp_appLE, Scheme.Hom.appLE_eq_app] using e
+
+variable {W X Y Z : Scheme.{u}}
+    {i : W ⟶ X} {j : W ⟶ Y} {f : X ⟶ Z} {g : Y ⟶ Z}
+
+/-- The structure-sheaf map along the right edge of a commutative square, pushed to its
+bottom vertex and transported to the double pushforward along the left path. -/
+noncomputable def CommSq.rightSheafMap (h : CommSq i j f g) :
+    (TopCat.Sheaf.pushforward _ g.base).obj Y.sheaf ⟶
+      (TopCat.Sheaf.pushforward _ f.base).obj
+        ((TopCat.Sheaf.pushforward _ i.base).obj W.sheaf) :=
+  ⟨(TopCat.Presheaf.pushforward _ g.base).map j.c ≫
+    (TopCat.Presheaf.Pushforward.comp j.base g.base W.presheaf).inv ≫
+    (TopCat.Presheaf.pushforwardEq
+      (congrArg (fun k : W ⟶ Z ↦ k.base) h.w.symm) W.presheaf).hom ≫
+    (TopCat.Presheaf.Pushforward.comp i.base f.base W.presheaf).hom⟩
+
+/-- The transported structure-sheaf map on an open is the pullback on sections along the
+right edge, restricted to the inverse image along the left path. -/
+@[simp]
+theorem CommSq.rightSheafMap_app (h : CommSq i j f g) (U : Z.Opens) :
+    h.rightSheafMap.hom.app (Opposite.op U) =
+      j.appLE (g ⁻¹ᵁ U) (i ⁻¹ᵁ f ⁻¹ᵁ U) (h.preimage_preimage_eq U).le := by
+  -- Evaluate the underlying presheaf morphism through the sheaf wrapper.
+  change ((TopCat.Presheaf.pushforward _ g.base).map j.c ≫ _ ≫ _ ≫ _).app _ = _
+  simp only [TopCat.Presheaf.comp_app, TopCat.Presheaf.Pushforward.comp_inv_app,
+    TopCat.Presheaf.pushforward_map_app']
+  -- Use the native scheme section-ring presentation for the appLE composition law.
+  change j.app (g ⁻¹ᵁ U) ≫ 𝟙 _ ≫ W.presheaf.map
+    (homOfLE (h.preimage_preimage_eq U).le).op ≫ 𝟙 _ = _
+  rw [Category.id_comp, Category.comp_id, Scheme.Hom.app_eq_appLE, Scheme.Hom.appLE_map]
+
+end CategoryTheory

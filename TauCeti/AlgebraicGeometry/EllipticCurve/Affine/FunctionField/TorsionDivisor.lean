@@ -41,7 +41,7 @@ variable {F : Type*} [Field F] (W : WeierstrassCurve.Affine F)
 /-- **At an `n`-torsion point, `n(T) - n(O)` is the divisor of a function** (Silverman III.8.1). -/
 theorem exists_principal_eq_zsmul_ofPoint_sub_infinity {n : ℤ} {T : W.Point} (hT : n • T = 0) :
     ∃ z : W.FunctionFieldˣ, Divisor.principal W.isFunctionField z =
-      n • (WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace T).1 -
+      n • (WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace T).val -
         WeilDivisor.ofPoint (Place.infinity W)) := by
   rw [← coe_pointEquivDegreeOnePlace_zero]
   exact W.divisorSum_eq_zero_iff (D := n • ⟨_, W.ofPoint_sub_ofPoint_mem_ker_degree T .zero⟩) |>.1

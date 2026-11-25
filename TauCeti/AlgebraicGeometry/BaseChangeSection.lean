@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
 public import Mathlib.AlgebraicGeometry.Limits
 public import TauCeti.CategoryTheory.Comma.Over
+import Mathlib.AlgebraicGeometry.PullbackCarrier
 
 /-!
 # Base change of a section of a scheme morphism
@@ -117,6 +118,26 @@ lemma baseChangeSection_fst (T : Over S) :
 lemma baseChangeSection_snd (T : Over S) :
     baseChangeSection f x₀ hx₀ T ≫ pullback.snd T.hom f = T.hom ≫ x₀ :=
   graphSection_snd _
+
+/-- Over a scheme with at most one point, a point of a base change that projects into the image
+of a section is the value of the base-changed section. -/
+lemma baseChangeSection_eq_of_snd_eq {T : Scheme.{u}} [Subsingleton T] (g : T ⟶ S)
+    (t : T) {y : (pullback g f : Scheme.{u})} {s : S}
+    (hy : (pullback.snd g f : _ ⟶ X) y = x₀ s) :
+    baseChangeSection f x₀ hx₀ (Over.mk g) t = y := by
+  have : IsIso (x₀ ≫ f) := by rw [hx₀]; infer_instance
+  have : Subsingleton (pullback (pullback.snd g f) x₀ : Scheme.{u}) :=
+    ((pullbackLeftPullbackSndIso g f x₀).hom ≫ pullback.fst _ _).homeomorph.subsingleton
+  have image_mem (z : (pullback g f : Scheme.{u}))
+      (hz : (pullback.snd g f : _ ⟶ X) z ∈ Set.range x₀) :
+      z ∈ Set.range (pullback.fst (pullback.snd g f) x₀ : _ ⟶ _) := by
+    rw [Scheme.Pullback.range_fst]
+    exact hz
+  obtain ⟨y', hy'⟩ := image_mem y ⟨s, hy.symm⟩
+  obtain ⟨z', hz'⟩ := image_mem (baseChangeSection f x₀ hx₀ (Over.mk g) t) ⟨g t, by
+    simpa only [Over.mk_hom, Scheme.Hom.comp_apply] using
+      congrArg (fun m : T ⟶ X ↦ m t) (baseChangeSection_snd f x₀ hx₀ (Over.mk g)).symm⟩
+  rw [← hy', ← hz', Subsingleton.elim y' z']
 
 /-- The base-changed sections are compatible with the morphisms `T' ×_S X ⟶ T ×_S X` induced by
 morphisms `T' ⟶ T` over `S`. -/

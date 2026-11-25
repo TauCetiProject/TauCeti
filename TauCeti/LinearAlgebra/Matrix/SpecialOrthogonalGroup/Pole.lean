@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.LinearAlgebra.Matrix.Action
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Axis
+public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Stabilizer
 
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Tactic.FieldSimp
@@ -71,7 +72,9 @@ All declarations are in the namespace `TauCeti.Matrix.SpecialOrthogonalGroup`.
 * `card_orbitRel_quotient_poles_eq_two_or_three`: a nontrivial finite group of rotations has two
   or three orbits of poles.
 * `stabilizer_eq_top_of_card_orbitRel_quotient_poles_eq_two`: if there are two orbits, every pole
-  is fixed by all of `K`.
+  is fixed by all of `K`, and `isCyclic_of_card_orbitRel_quotient_poles_eq_two`: `K` is then cyclic.
+* The stabilizer of a pole is cyclic, an instance deduced from
+  `isCyclic_stabilizer_of_ne_zero`.
 
 ## References
 
@@ -95,7 +98,7 @@ def poles (K : Subgroup (specialOrthogonalGroup (Fin 3) ℝ)) : SubMulAction K (
     rintro ⟨hp, g, hg, hgp⟩
     refine ⟨?_, k * g * k⁻¹, by simpa using hg, by rw [mul_smul, mul_smul, inv_smul_smul, hgp]⟩
     -- A rotation preserves the dot product.
-    have hk := (mem_specialOrthogonalGroup_iff.mp (k : specialOrthogonalGroup (Fin 3) ℝ).2).1
+    have hk := (mem_specialOrthogonalGroup_iff.mp (k : specialOrthogonalGroup (Fin 3) ℝ).property).1
     simpa [Subgroup.smul_def, Submonoid.smul_def, hp] using
       mem_orthogonalGroup_iff_dotProduct_mulVec.mp hk p p
 
@@ -115,7 +118,7 @@ namespace poles
 /-- A pole is a unit vector. -/
 @[simp]
 theorem coe_dotProduct_self (p : poles K) : (p : Fin 3 → ℝ) ⬝ᵥ p = 1 :=
-  p.2.1
+  p.property.1
 
 /-- A pole is nonzero. -/
 @[simp]
@@ -124,7 +127,7 @@ theorem coe_ne_zero (p : poles K) : (p : Fin 3 → ℝ) ≠ 0 := fun h ↦ by
 
 /-- The antipodal map on the poles. -/
 instance : InvolutiveNeg (poles K) where
-  neg p := ⟨-p, neg_mem_poles.mpr p.2⟩
+  neg p := ⟨-p, neg_mem_poles.mpr p.property⟩
   neg_neg p := Subtype.ext (neg_neg (p : Fin 3 → ℝ))
 
 @[simp, norm_cast]
@@ -157,7 +160,7 @@ theorem fixedBy_poles_eq_pair {g : K} (hg : g ≠ 1) {p : poles K} (hgp : g • 
     fixedBy (poles K) g = {p, -p} := by
   have hgp' : g • (p : Fin 3 → ℝ) = p := by rw [← SubMulAction.val_smul, hgp]
   have hpair := setOf_mulVec_eq_self_eq_pair_of_mem_specialOrthogonalGroup
-    (g : specialOrthogonalGroup (Fin 3) ℝ).2 (by simpa using hg)
+    (g : specialOrthogonalGroup (Fin 3) ℝ).property (by simpa using hg)
     (by simpa [Subgroup.smul_def, Submonoid.smul_def, smul_eq_mulVec] using hgp')
   ext q
   have hq := Set.ext_iff.mp hpair q
@@ -172,7 +175,7 @@ on the unit sphere. -/
 theorem exists_fixedBy_poles_eq_pair {g : K} (hg : g ≠ 1) :
     ∃ p : poles K, fixedBy (poles K) g = {p, -p} := by
   obtain ⟨v, hv, hgv⟩ := exists_dotProduct_self_eq_one_mulVec_eq_self_of_mem_specialOrthogonalGroup
-    (by decide) (g : specialOrthogonalGroup (Fin 3) ℝ).2
+    (by decide) (g : specialOrthogonalGroup (Fin 3) ℝ).property
   have hgv' : g • v = v := by simpa [Subgroup.smul_def, Submonoid.smul_def] using hgv
   exact ⟨⟨v, hv, g, hg, hgv'⟩,
     fixedBy_poles_eq_pair hg (Subtype.ext (by rw [SubMulAction.val_smul]; exact hgv'))⟩
@@ -200,19 +203,25 @@ instance [Finite K] : Finite (poles K) := by
   -- Each nonidentity element contributes the two endpoints of its axis.
   refine Set.finite_univ_iff.mp ((Set.finite_iUnion
     (f := fun g : {g : K // g ≠ 1} ↦ fixedBy (poles K) (g : K)) fun g ↦ ?_).subset ?_)
-  · obtain ⟨p, hp⟩ := exists_fixedBy_poles_eq_pair g.2
+  · obtain ⟨p, hp⟩ := exists_fixedBy_poles_eq_pair g.property
     rw [hp]
     exact Set.toFinite _
   · rintro p -
-    obtain ⟨-, g, hg, hgp⟩ := p.2
+    obtain ⟨-, g, hg, hgp⟩ := p.property
     exact Set.mem_iUnion.mpr
       ⟨⟨g, hg⟩, mem_fixedBy.mpr (Subtype.ext (by rw [SubMulAction.val_smul, hgp]))⟩
 
 /-- The stabilizer of a pole is nontrivial. -/
 instance (p : poles K) : Nontrivial (stabilizer K p) := by
-  obtain ⟨-, g, hg, hgp⟩ := p.2
+  obtain ⟨-, g, hg, hgp⟩ := p.property
   exact ⟨⟨g, mem_stabilizer_iff.mpr (Subtype.ext (by rw [SubMulAction.val_smul, hgp]))⟩, 1,
     fun h ↦ hg ((Subgroup.mk_eq_one _).mp h)⟩
+
+/-- **The stabilizer of a pole is cyclic**, for a finite group of rotations: it is a finite group
+of rotations about the axis through the pole (`isCyclic_stabilizer_of_ne_zero`). -/
+instance [Finite K] (p : poles K) : IsCyclic (stabilizer K p) := by
+  rw [SubMulAction.stabilizer_of_subMul]
+  exact isCyclic_stabilizer_of_ne_zero K (poles.coe_ne_zero p)
 
 /-- **Every orbit of poles has a stabilizer of order at least `2`**, for a finite group of
 rotations: the stabilizer of a pole contains a nonidentity rotation. -/
@@ -348,5 +357,14 @@ theorem stabilizer_eq_top_of_card_orbitRel_quotient_poles_eq_two [Finite K]
     (Quotient.mk'' p) (Finset.mem_univ _)
   rw [cardStabilizerOnOrbit_mk, sub_eq_zero, _root_.inv_inj, Nat.cast_inj] at hterm
   exact (Subgroup.card_eq_iff_eq_top _).mp hterm
+
+/-- **In the two-orbit case, `K` is cyclic.** If a finite group `K` of rotations has exactly two
+orbits of poles, then `K` fixes every pole, so it is the stabilizer of a pole, which is cyclic. -/
+theorem isCyclic_of_card_orbitRel_quotient_poles_eq_two [Finite K]
+    (h : Nat.card (orbitRel.Quotient K (poles K)) = 2) : IsCyclic K := by
+  obtain ⟨ω⟩ : Nonempty (orbitRel.Quotient K (poles K)) := (Nat.card_pos_iff.mp (by omega)).1
+  rw [← (Subgroup.topEquiv (G := K)).isCyclic,
+    ← stabilizer_eq_top_of_card_orbitRel_quotient_poles_eq_two h ω.out]
+  infer_instance
 
 end TauCeti.Matrix.SpecialOrthogonalGroup

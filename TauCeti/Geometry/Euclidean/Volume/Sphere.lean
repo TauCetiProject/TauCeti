@@ -50,7 +50,8 @@ lower bound on the dimension is needed: in dimension one, both measures count po
   spheres, with the integral and integrability forms
   `TauCeti.setLIntegral_sphere_eq_mul_setLIntegral_sphere_zero_one`,
   `TauCeti.setIntegral_sphere_eq_smul_setIntegral_sphere_zero_one` and
-  `TauCeti.integrableOn_sphere_iff`.
+  `TauCeti.integrableOn_sphere_iff`. For `r ≤ 0` the sphere contains at most its center
+  (`TauCeti.setIntegral_sphere_eq_zero_of_nonpos`).
 * `TauCeti.euclideanHausdorffMeasure_image_eq_finrank_mul_volume_Ioo_smul`: the cone formula for
   a regular injective parametrization of a piece of the unit sphere.
 * `TauCeti.toSphere_volume_eq_comap_euclideanHausdorffMeasure`: Mathlib's surface measure on the
@@ -65,9 +66,14 @@ lower bound on the dimension is needed: in dimension one, both measures count po
   `n`-dimensional Hausdorff measure (not the ambient Lebesgue measure, which vanishes).
 * `TauCeti.euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume`: the unit sphere of every
   real inner product space of dimension `n + 1` has `n`-dimensional Hausdorff measure `|Sⁿ|`; in
-  particular this measure is finite.
+  particular this measure is finite. The sphere of radius `r > 0` has measure `r ^ n |Sⁿ|`
+  (`TauCeti.euclideanHausdorffMeasure_sphere_eq_ofReal_pow_mul_roundSphereVolume`).
 * `TauCeti.roundSphereVolume_eq_two_mul_pi_rpow_div_Gamma`, `TauCeti.roundSphereVolume_pos`: the
   value `|Sⁿ| = 2 π ^ ((n + 1) / 2) / Γ((n + 1) / 2)` and the positivity of `|Sⁿ|`.
+* `TauCeti.eventually_integrableOn_sphere_of_isBigO_one`: in dimension `d + 1`, a function that
+  is bounded at infinity is integrable on the spheres of large radius around the origin.
+* `TauCeti.tendsto_setIntegral_sphere_of_isLittleO`: in dimension `d + 1`, the integral over the
+  sphere of radius `r` of a function that is `o(‖x‖ ^ (-d))` at infinity tends to `0` as `r → ∞`.
 
 ## References
 
@@ -145,6 +151,15 @@ theorem setIntegral_sphere_eq_smul_setIntegral_sphere_zero_one {F : Type*}
     (addSMulEquiv c hr.ne').measurableEmbedding.integral_map, ← ENNReal.ofReal_pow hr.le,
     ENNReal.toReal_ofReal (pow_nonneg hr.le d)]
   simp only [addSMulEquiv_apply]
+
+omit [NormedSpace ℝ E] [BorelSpace E] in
+/-- A sphere of radius `r ≤ 0` contains at most its center, so the integral over it of a function
+vanishing at the center is zero, for every measure. -/
+theorem setIntegral_sphere_eq_zero_of_nonpos {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (μ : Measure E) (c : E) {r : ℝ} (hr : r ≤ 0) {f : E → F} (hf : f c = 0) :
+    ∫ y in sphere c r, f y ∂μ = 0 :=
+  setIntegral_eq_zero_of_forall_eq_zero fun _ hy ↦ by
+    rwa [dist_le_zero.1 ((mem_sphere.1 hy).le.trans hr)]
 
 /-- A function is integrable for `d`-dimensional Hausdorff measure on `sphere c r`, `r > 0`, if
 and only if its pullback by `u ↦ c + r • u` is integrable on the unit sphere. -/
@@ -298,11 +313,12 @@ private theorem euclideanHausdorffMeasure_image_coe_of_forall_ne {v : E} (hv : �
       finrank ℝ E * volume (Ioo (0 : ℝ) 1 • (((↑) : sphere (0 : E) 1 → E) '' s)) := by
   set ψ := stereoInvFunAux v ∘ ((↑) : (ℝ ∙ v)ᗮ → E)
   set A := ((↑) : sphere (0 : E) 1 → E) '' s
-  have hnorm (w : (ℝ ∙ v)ᗮ) : ‖ψ w‖ = 1 := mem_sphere_zero_iff_norm.1 (stereoInvFunAux_mem hv w.2)
+  have hnorm (w : (ℝ ∙ v)ᗮ) : ‖ψ w‖ = 1 := mem_sphere_zero_iff_norm.1
+      (stereoInvFunAux_mem hv w.property)
   have hd : Differentiable ℝ ψ :=
     (contDiff_stereoInvFunAux.comp (ℝ ∙ v)ᗮ.subtypeL.contDiff).differentiable one_ne_zero
   have hA : MeasurableSet A :=
-    (MeasurableEmbedding.subtype_coe isClosed_sphere.measurableSet).measurableSet_image.2 hs
+    (MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet).measurableSet_image.2 hs
   have himage : ψ '' (ψ ⁻¹' A) = A := by
     refine image_preimage_eq_of_subset fun x hx => ?_
     obtain ⟨y, hy, rfl⟩ := hx
@@ -323,11 +339,11 @@ theorem toSphere_volume_eq_comap_euclideanHausdorffMeasure :
     (volume : Measure E).toSphere = (μHE[finrank ℝ E - 1] : Measure E).comap (↑) := by
   rcases subsingleton_or_nontrivial E with hE | hE
   · have : IsEmpty (sphere (0 : E) 1) :=
-      ⟨fun x => by simpa [Subsingleton.elim (x : E) 0] using x.2⟩
+      ⟨fun x => by simpa [Subsingleton.elim (x : E) 0] using x.property⟩
     ext s
     simp [Set.eq_empty_of_isEmpty s]
   have hemb :=
-    MeasurableEmbedding.subtype_coe (isClosed_sphere (x := (0 : E)) (ε := 1)).measurableSet
+    MeasurableEmbedding.subtypeVal (isClosed_sphere (x := (0 : E)) (ε := 1)).measurableSet
   have key {v : E} (hv : ‖v‖ = 1) {s : Set (sphere (0 : E) 1)} (hs : MeasurableSet s)
       (hvs : ∀ x ∈ s, (x : E) ≠ v) :
       (volume : Measure E).toSphere s = (μHE[finrank ℝ E - 1] : Measure E).comap (↑) s := by
@@ -341,7 +357,7 @@ theorem toSphere_volume_eq_comap_euclideanHausdorffMeasure :
     norm_num at h₂
   ext s hs
   set t : Set (sphere (0 : E) 1) := {x | (x : E) = v}
-  have ht : MeasurableSet t := measurableSet_eq_fun measurable_subtype_coe measurable_const
+  have ht : MeasurableSet t := measurableSet_eq_fun measurable_subtypeVal measurable_const
   rw [← measure_inter_add_sdiff s ht, ← measure_inter_add_sdiff s ht (μ := Measure.comap _ _)]
   congr 1
   · exact key (v := -v) (by simpa using hv) (hs.inter ht) fun x hx => hx.2.symm ▸ hvneg
@@ -354,14 +370,14 @@ theorem euclideanHausdorffMeasure_restrict_sphere :
     (μHE[finrank ℝ E - 1] : Measure E).restrict (sphere 0 1) =
       (volume : Measure E).toSphere.map (↑) := by
   rw [toSphere_volume_eq_comap_euclideanHausdorffMeasure,
-    (MeasurableEmbedding.subtype_coe isClosed_sphere.measurableSet).map_comap, Subtype.range_coe]
+    (MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet).map_comap, Subtype.range_coe]
 
 /-- The unit sphere of an `n`-dimensional real inner product space has `(n - 1)`-dimensional
 Hausdorff measure `n ω_n`, where `ω_n` is the volume of the unit ball. -/
 theorem euclideanHausdorffMeasure_sphere_zero_one :
     μHE[finrank ℝ E - 1] (sphere (0 : E) 1) = finrank ℝ E * volume (ball (0 : E) 1) := by
   rw [← toSphere_apply_univ, toSphere_volume_eq_comap_euclideanHausdorffMeasure,
-    (MeasurableEmbedding.subtype_coe isClosed_sphere.measurableSet).comap_apply, image_univ,
+    (MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet).comap_apply, image_univ,
     Subtype.range_coe]
 
 /-- The unit sphere of an `n`-dimensional real inner product space has `(n - 1)`-dimensional
@@ -443,5 +459,62 @@ theorem euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume {n : ℕ}
     μHE[n] (sphere (0 : E) 1) = ENNReal.ofReal (roundSphereVolume n) := by
   rw [euclideanHausdorffMeasure_sphere_eq_ofReal_Gamma hE,
     roundSphereVolume_eq_two_mul_pi_rpow_div_Gamma]
+
+omit [FiniteDimensional ℝ E] in
+/-- A sphere of radius `r > 0` in a real inner product space of dimension `n + 1` has normalized
+`n`-dimensional Hausdorff measure `r ^ n |Sⁿ|`. -/
+theorem euclideanHausdorffMeasure_sphere_eq_ofReal_pow_mul_roundSphereVolume {n : ℕ}
+    (hE : finrank ℝ E = n + 1) (c : E) {r : ℝ} (hr : 0 < r) :
+    μHE[n] (sphere c r) = ENNReal.ofReal (r ^ n * roundSphereVolume n) := by
+  rw [← restrict_apply_univ, euclideanHausdorffMeasure_restrict_sphere_eq_smul_map _ c hr,
+    _root_.smul_apply, map_apply (by fun_prop) MeasurableSet.univ, preimage_univ,
+    restrict_apply_univ, euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume hE,
+    smul_eq_mul, ← ENNReal.ofReal_pow hr.le, ← ENNReal.ofReal_mul (pow_nonneg hr.le n)]
+
+omit [FiniteDimensional ℝ E] in
+/-- In a real inner product space of dimension `d + 1`, an `AEStronglyMeasurable` function that is
+bounded at infinity is integrable, for `d`-dimensional Hausdorff measure, on the spheres of large
+radius around the origin: these have finite measure `r ^ d |Sᵈ|`. -/
+theorem eventually_integrableOn_sphere_of_isBigO_one {F : Type*} [NormedAddCommGroup F] {d : ℕ}
+    (hE : finrank ℝ E = d + 1) {f : E → F} (hm : AEStronglyMeasurable f μHE[d])
+    (hf : f =O[Bornology.cobounded E] fun _ ↦ (1 : ℝ)) :
+    ∀ᶠ r in atTop, IntegrableOn f (sphere (0 : E) r) μHE[d] := by
+  obtain ⟨C, hC⟩ := hf.bound
+  obtain ⟨R, -, hR⟩ := hasBasis_cobounded_norm.eventually_iff.1 hC
+  filter_upwards [eventually_ge_atTop R, eventually_gt_atTop 0] with r hRr hr
+  refine Measure.integrableOn_of_bounded (M := C * ‖(1 : ℝ)‖) ?_ hm ?_
+  · rw [euclideanHausdorffMeasure_sphere_eq_ofReal_pow_mul_roundSphereVolume hE 0 hr]
+    exact ENNReal.ofReal_ne_top
+  · refine (ae_restrict_iff' isClosed_sphere.measurableSet).2 (Eventually.of_forall fun x hx ↦ ?_)
+    exact hR (show R ≤ ‖x‖ by rw [mem_sphere_zero_iff_norm.1 hx]; exact hRr)
+
+omit [FiniteDimensional ℝ E] in
+/-- **Sphere integrals of functions decaying faster than the area.** If `f = o(‖x‖ ^ (-d))` at
+infinity in a real inner product space of dimension `d + 1`, then the integral of `f` over the
+sphere of radius `r` around the origin, for `d`-dimensional Hausdorff measure, tends to `0` as
+`r → ∞`: the sphere has area `r ^ d |Sᵈ|`. -/
+theorem tendsto_setIntegral_sphere_of_isLittleO {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {d : ℕ} (hE : finrank ℝ E = d + 1) {f : E → F}
+    (hf : f =o[Bornology.cobounded E] fun x ↦ ‖x‖ ^ (-(d : ℝ))) :
+    Tendsto (fun r ↦ ∫ x in sphere (0 : E) r, f x ∂μHE[d]) atTop (𝓝 0) := by
+  have hS := roundSphereVolume_pos d
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  -- Outside a ball, `‖f x‖ ≤ ε ‖x‖ ^ (-d) / (2 |Sᵈ|)`.
+  obtain ⟨R, -, hR⟩ := hasBasis_cobounded_norm.eventually_iff.1
+    (hf.def (c := ε / (2 * roundSphereVolume d)) (by positivity))
+  filter_upwards [eventually_ge_atTop R, eventually_gt_atTop 0] with r hRr hr
+  have hμ := euclideanHausdorffMeasure_sphere_eq_ofReal_pow_mul_roundSphereVolume hE 0 hr
+  rw [dist_zero_right]
+  refine (norm_setIntegral_le_of_norm_le_const
+    (C := ε / (2 * roundSphereVolume d) * r ^ (-(d : ℝ)))
+    (by rw [hμ]; exact ENNReal.ofReal_lt_top) fun x hx ↦ ?_).trans_lt ?_
+  · have hx : ‖x‖ = r := mem_sphere_zero_iff_norm.1 hx
+    have := hR (show R ≤ ‖x‖ by rw [hx]; exact hRr)
+    rwa [hx, Real.norm_of_nonneg (Real.rpow_nonneg hr.le _)] at this
+  · rw [measureReal_def, hμ, ENNReal.toReal_ofReal (by positivity), Real.rpow_neg hr.le,
+      Real.rpow_natCast]
+    field_simp
+    linarith
 
 end TauCeti

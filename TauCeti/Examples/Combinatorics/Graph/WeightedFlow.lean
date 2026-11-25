@@ -62,7 +62,7 @@ private abbrev pBackward : graph.BidirectedHom t s := pLink.symm.toBidirectedHom
 private abbrev qForward : graph.BidirectedHom s t := qLink.toBidirectedHom
 private abbrev loopArrow : graph.BidirectedHom s s := loopLink.toBidirectedHom
 
-private def edgeCapacity (e : E(graph)) : ℤ := if e.1 = 0 then 2 else 1
+private def edgeCapacity (e : E(graph)) : ℤ := if e.val = 0 then 2 else 1
 
 private noncomputable def assignment : Assignment graph.BidirectedHom ℤ :=
   Assignment.single pForward 2 + Assignment.single pBackward 1 +
@@ -89,11 +89,11 @@ private noncomputable def bidirectedFlow : Flow (graph.bidirectedCapacity edgeCa
     rcases v with ⟨v, hv⟩
     fin_cases v <;> simp_all
   excessAt_sink_nonneg := by
-    simp [assignment, excessAt_add]
+    simp [assignment, excessAt_add_apply]
 
 private theorem bidirectedFlow_val : bidirectedFlow.val = 2 := by
   rw [BoundedFlow.val_def]
-  simp [bidirectedFlow, assignment, excessAt_add]
+  simp [bidirectedFlow, assignment, excessAt_add_apply]
 
 -- The original flow uses both directions of `p` and carries a nonzero loop circulation.
 example : bidirectedFlow.toFun pForward = 2 ∧ bidirectedFlow.toFun pBackward = 1 ∧

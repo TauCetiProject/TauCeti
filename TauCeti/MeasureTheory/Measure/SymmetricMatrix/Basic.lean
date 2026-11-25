@@ -5,7 +5,7 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.SelfAdjointMatrix
+public import TauCeti.MeasureTheory.Measure.SelfAdjointMatrix.Basic
 public import Mathlib.Data.Sym.Card
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.Order.Sym2
@@ -18,10 +18,11 @@ self-adjoint subspace `selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)`. 
 transpose, so this is exactly the subspace of symmetric matrices, and
 `Matrix.isHermitian_iff_isSelfAdjoint` connects membership to the spectral API.
 
-`TauCeti.MeasureTheory.Measure.SelfAdjointMatrix` equips
+`TauCeti.Analysis.Matrix.SelfAdjoint` equips
 `selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)` with the ambient Frobenius norm and real
 inner product while keeping the subtype topology and uniformity definitionally equal to the induced
-product ones, with Borel measurable structure and `volume` from `measureSpaceOfInnerProductSpace`.
+product ones, and `TauCeti.MeasureTheory.Measure.SelfAdjointMatrix.Basic` adds the Borel measurable
+structure, with `volume` from `measureSpaceOfInnerProductSpace`.
 
 This file specializes the entry and trace-pairing API to `ℝ` and fixes the upper-triangular
 coordinate system used to normalize Lebesgue measure on the subspace:
@@ -124,7 +125,7 @@ This coordinate system fixes the normalization of `TauCeti.symmetricLebesgue`. -
 def symmetricCoordinates :
     (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) ≃L[ℝ] (upperTriangle p → ℝ) :=
   LinearEquiv.toContinuousLinearEquiv
-    { toFun A ij := (A : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2
+    { toFun A ij := (A : Matrix (Fin p) (Fin p) ℝ) ij.val.1 ij.val.2
       map_add' A B := rfl
       map_smul' c A := rfl
       invFun x :=
@@ -155,7 +156,7 @@ def symmetricCoordinates :
 @[simp]
 theorem symmetricCoordinates_apply (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))
     (ij : upperTriangle p) :
-    symmetricCoordinates p A ij = (A : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2 :=
+    symmetricCoordinates p A ij = (A : Matrix (Fin p) (Fin p) ℝ) ij.val.1 ij.val.2 :=
   (rfl)
 
 @[simp]
@@ -213,7 +214,7 @@ on-or-above-diagonal entries. -/
 @[simp]
 theorem symmetricBasis_repr (x : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))
     (ij : upperTriangle p) :
-    (symmetricBasis p).repr x ij = (x : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2 := by
+    (symmetricBasis p).repr x ij = (x : Matrix (Fin p) (Fin p) ℝ) ij.val.1 ij.val.2 := by
   simp [symmetricBasis]
 
 theorem coe_symmetricBasis_apply_of_le (ij : upperTriangle p) {k l : Fin p} (h : k ≤ l) :
@@ -323,7 +324,7 @@ theorem continuous_trace_mul_coe {p : ℕ}
 theorem continuous_coe_apply {p : ℕ} (i j : Fin p) :
     Continuous fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       (A : Matrix (Fin p) (Fin p) ℝ) i j :=
-  continuous_subtype_val.matrix_elem i j
+  continuous_subtypeVal.matrix_elem i j
 
 /-- Reading off an entry of a symmetric matrix is measurable. -/
 @[fun_prop]

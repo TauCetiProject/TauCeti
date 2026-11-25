@@ -112,7 +112,7 @@ def steinbergIndexedRels (ι : Type*) (R : Type*) [Ring R] :
     Set (FreeGroup ({p : ι × ι // p.1 ≠ p.2} × R)) :=
   {r | (∃ (p : {p : ι × ι // p.1 ≠ p.2}) (a b : R),
           r = FreeGroup.of (p, a) * FreeGroup.of (p, b) * (FreeGroup.of (p, a + b))⁻¹) ∨
-       (∃ (p q : {p : ι × ι // p.1 ≠ p.2}) (a b : R), p.1.2 ≠ q.1.1 ∧ p.1.1 ≠ q.1.2 ∧
+       (∃ (p q : {p : ι × ι // p.1 ≠ p.2}) (a b : R), p.val.2 ≠ q.val.1 ∧ p.val.1 ≠ q.val.2 ∧
           r = FreeGroup.of (p, a) * FreeGroup.of (q, b) * (FreeGroup.of (p, a))⁻¹ *
             (FreeGroup.of (q, b))⁻¹) ∨
        (∃ (i j k : ι) (hij : i ≠ j) (hjk : j ≠ k) (hik : i ≠ k) (a b : R),
@@ -128,7 +128,7 @@ theorem mem_steinbergIndexedRels_iff {ι R : Type*} [Ring R]
     r ∈ steinbergIndexedRels ι R ↔
       (∃ (p : {p : ι × ι // p.1 ≠ p.2}) (a b : R),
         r = FreeGroup.of (p, a) * FreeGroup.of (p, b) * (FreeGroup.of (p, a + b))⁻¹) ∨
-      (∃ (p q : {p : ι × ι // p.1 ≠ p.2}) (a b : R), p.1.2 ≠ q.1.1 ∧ p.1.1 ≠ q.1.2 ∧
+      (∃ (p q : {p : ι × ι // p.1 ≠ p.2}) (a b : R), p.val.2 ≠ q.val.1 ∧ p.val.1 ≠ q.val.2 ∧
         r = FreeGroup.of (p, a) * FreeGroup.of (q, b) * (FreeGroup.of (p, a))⁻¹ *
           (FreeGroup.of (q, b))⁻¹) ∨
       (∃ (i j k : ι) (hij : i ≠ j) (hjk : j ≠ k) (hik : i ≠ k) (a b : R),
@@ -154,13 +154,13 @@ def x {i j : ι} (hij : i ≠ j) (a : R) : IndexedSteinbergGroup ι R :=
 /-- Each raw presentation generator `PresentedGroup.of (p, a)` is `x p.2 a`. -/
 @[simp]
 theorem of_eq_x (p : {p : ι × ι // p.1 ≠ p.2}) (a : R) :
-    (PresentedGroup.of (p, a) : IndexedSteinbergGroup ι R) = x p.2 a :=
+    (PresentedGroup.of (p, a) : IndexedSteinbergGroup ι R) = x p.property a :=
   (rfl)
 
 /-! ### Defining relations and algebraic consequences -/
 
 private theorem mk_freeGroup_of (p : {p : ι × ι // p.1 ≠ p.2}) (a : R) :
-    PresentedGroup.mk (steinbergIndexedRels ι R) (FreeGroup.of (p, a)) = x p.2 a :=
+    PresentedGroup.mk (steinbergIndexedRels ι R) (FreeGroup.of (p, a)) = x p.property a :=
   of_eq_x p a
 
 /-- Additivity of Steinberg generators in the parameter:
@@ -253,10 +253,10 @@ theorem induction_on {motive : IndexedSteinbergGroup ι R → Prop}
   | one => simpa only [map_one] using one
   | of pa =>
     rcases pa with ⟨p, a⟩
-    simpa only [mk_freeGroup_of] using x p.2 a
+    simpa only [mk_freeGroup_of] using x p.property a
   | inv_of pa _ =>
     rcases pa with ⟨p, a⟩
-    simpa only [map_inv, mk_freeGroup_of, x_inv] using x p.2 (-a)
+    simpa only [map_inv, mk_freeGroup_of, x_inv] using x p.property (-a)
   | mul w₁ w₂ ih₁ ih₂ => simpa only [map_mul] using mul _ _ ih₁ ih₂
 
 /-- Two homomorphisms out of `IndexedSteinbergGroup ι R` agree when they agree on every generator
@@ -292,7 +292,7 @@ private theorem lift_rels {G : Type*} [Group G] (f : ∀ ⦃i j : ι⦄, i ≠ j
     (hchain : ∀ ⦃i j k : ι⦄ (hij : i ≠ j) (hjk : j ≠ k) (hik : i ≠ k) (a b : R),
       ⁅f hij a, f hjk b⁆ = f hik (a * b)) :
     ∀ r ∈ steinbergIndexedRels ι R,
-      FreeGroup.lift (fun pa : {p : ι × ι // p.1 ≠ p.2} × R ↦ f pa.1.2 pa.2) r = 1 := by
+      FreeGroup.lift (fun pa : {p : ι × ι // p.1 ≠ p.2} × R ↦ f pa.1.property pa.2) r = 1 := by
   rintro r (⟨⟨⟨i, j⟩, hij⟩, a, b, rfl⟩ | ⟨⟨⟨i, j⟩, hij⟩, ⟨⟨k, l⟩, hkl⟩, a, b, hjk, hik, rfl⟩ |
     ⟨i, j, k, hij, hjk, hik, a, b, rfl⟩)
   · simp [hadd hij a b]
@@ -352,6 +352,14 @@ theorem map_comp (g : S →+* T) (f : R →+* S) :
 theorem map_map (g : S →+* T) (f : R →+* S) (z : IndexedSteinbergGroup ι R) :
     map g (map f z) = map (g.comp f) z :=
   DFunLike.congr_fun (map_comp g f).symm z
+
+/-- A surjective ring homomorphism induces a surjective homomorphism of Steinberg groups. -/
+theorem map_surjective {f : R →+* S} (hf : Function.Surjective f) :
+    Function.Surjective (map (ι := ι) f) := by
+  rw [← MonoidHom.range_eq_top, subgroup_eq_top_iff]
+  intro i j hij b
+  obtain ⟨a, rfl⟩ := hf b
+  exact ⟨x hij a, map_x f hij a⟩
 
 /-- A ring isomorphism induces an isomorphism of Steinberg groups. -/
 def mapEquiv (e : R ≃+* S) : IndexedSteinbergGroup ι R ≃* IndexedSteinbergGroup ι S :=
@@ -612,6 +620,12 @@ def toElementarySubgroup :
   toGL.codRestrict (TauCeti.elementarySubgroup ι R) fun z ↦
     range_toGL (ι := ι) (R := R) ▸ ⟨z, rfl⟩
 
+/-- The elementary subgroup inclusion composes with `toElementarySubgroup` to give `toGL`. -/
+theorem subtype_comp_toElementarySubgroup :
+    (TauCeti.elementarySubgroup ι R).subtype.comp
+        (toElementarySubgroup (ι := ι) (R := R)) = toGL :=
+  (rfl)
+
 @[simp]
 theorem coe_toElementarySubgroup (z : IndexedSteinbergGroup ι R) :
     (toElementarySubgroup z : GL ι R) = toGL z :=
@@ -631,15 +645,45 @@ theorem ker_toElementarySubgroup :
   ext z
   simp [MonoidHom.mem_ker, Subtype.ext_iff]
 
+/-- The projection `St_ι(R) →* GL ι R` intertwines `IndexedSteinbergGroup.map` with entrywise
+scalar change. -/
+theorem toGL_comp_map (f : R →+* S) :
+    (toGL (ι := ι) (R := S)).comp (map f) =
+      (Units.map (f.mapMatrix (m := ι)).toMonoidHom).comp toGL := by
+  ext i j hij a
+  simp [RingHom.unitsMap_mapMatrix_transvectionUnit]
+
+/-- The projection `St_ι(R) →* GL ι R` is natural in ring homomorphisms. -/
+@[simp]
+theorem toGL_map (f : R →+* S) (z : IndexedSteinbergGroup ι R) :
+    toGL (map f z) = Units.map (f.mapMatrix (m := ι)).toMonoidHom (toGL z) :=
+  DFunLike.congr_fun (toGL_comp_map f) z
+
+/-- The projection `St_ι(R) →* E_ι(R)` intertwines `IndexedSteinbergGroup.map` with
+`RingHom.elementarySubgroupMap`. -/
+theorem toElementarySubgroup_comp_map (f : R →+* S) :
+    (toElementarySubgroup (ι := ι) (R := S)).comp (map f) =
+      f.elementarySubgroupMap.comp toElementarySubgroup :=
+  MonoidHom.ext fun z ↦ Subtype.ext (by simp)
+
+/-- The projection `St_ι(R) →* E_ι(R)` is natural in ring homomorphisms. -/
+@[simp]
+theorem toElementarySubgroup_map (f : R →+* S) (z : IndexedSteinbergGroup ι R) :
+    toElementarySubgroup (map f z) = f.elementarySubgroupMap (toElementarySubgroup z) :=
+  DFunLike.congr_fun (toElementarySubgroup_comp_map f) z
+
+/-- Reindexing the Steinberg group along `e : ι ≃ κ` intertwines `toGL` with `e.reindexGL R`. -/
+theorem toGL_comp_congrIndex [Fintype κ] [DecidableEq κ] (e : ι ≃ κ) :
+    (toGL (ι := κ) (R := R)).comp (congrIndex e).toMonoidHom =
+      (e.reindexGL R).toMonoidHom.comp toGL := by
+  ext i j hij a
+  simp [Equiv.reindexGL_transvectionUnit]
+
 /-- Reindexing the Steinberg group along `e : ι ≃ κ` corresponds under `toGL` to `e.reindexGL R`. -/
 theorem toGL_congrIndex [Fintype κ] [DecidableEq κ] (e : ι ≃ κ)
     (z : IndexedSteinbergGroup ι R) :
-    toGL (congrIndex e z) = e.reindexGL R (toGL z) := by
-  have hhom : (toGL (ι := κ) (R := R)).comp (congrIndex e).toMonoidHom =
-      (e.reindexGL R).toMonoidHom.comp toGL := by
-    ext i j hij a
-    simp [Equiv.reindexGL_transvectionUnit]
-  exact DFunLike.congr_fun hhom z
+    toGL (congrIndex e z) = e.reindexGL R (toGL z) :=
+  DFunLike.congr_fun (toGL_comp_congrIndex e) z
 
 /-- Under `toGL`, `transposeOp` acts by inverse transpose into the opposite ring:
 `M ↦ (M⁻¹)ᵀ.map MulOpposite.op`. -/
@@ -667,15 +711,19 @@ theorem coe_toGL_transposeOp (z : IndexedSteinbergGroup ι R) :
 
 end FiniteIndex
 
+/-- Along the standard inclusion `Fin m ↪ Fin n` (`m ≤ n`), `toGL` intertwines `mapIndex` with
+matrix stabilization `TauCeti.stabilizeGL`. -/
+theorem toGL_comp_mapIndex_castLE {m n : ℕ} (h : m ≤ n) :
+    (toGL (ι := Fin n) (R := R)).comp (mapIndex (Fin.castLEEmb h)) =
+      (stabilizeGL R h).comp toGL := by
+  ext i j hij a
+  simp [stabilizeGL_transvectionUnit]
+
 /-- Along the standard inclusion `Fin m ↪ Fin n` (`m ≤ n`), `toGL` commutes with matrix
 stabilization `TauCeti.stabilizeGL`. -/
 theorem toGL_mapIndex_castLE {m n : ℕ} (h : m ≤ n) (z : IndexedSteinbergGroup (Fin m) R) :
-    toGL (mapIndex (Fin.castLEEmb h) z) = stabilizeGL R h (toGL z) := by
-  have hhom : (toGL (ι := Fin n) (R := R)).comp (mapIndex (Fin.castLEEmb h)) =
-      (stabilizeGL R h).comp toGL := by
-    ext i j hij a
-    simp [stabilizeGL_transvectionUnit]
-  exact DFunLike.congr_fun hhom z
+    toGL (mapIndex (Fin.castLEEmb h) z) = stabilizeGL R h (toGL z) :=
+  DFunLike.congr_fun (toGL_comp_mapIndex_castLE h) z
 
 end IndexedSteinbergGroup
 
@@ -810,7 +858,7 @@ private theorem toDirectLimit_ofFin (n : ℕ) (u : IndexedSteinbergGroup (Fin n)
   have hhom : (toDirectLimit (R := R)).comp (ofFin R n) = ofDirectLimit n := by
     ext i j hij a
     simp only [MonoidHom.comp_apply, ofFin_x, toDirectLimit, IndexedSteinbergGroup.lift_x]
-    exact ofDirectLimit_x_eq (Fin.val_ne_of_ne hij) a i.2 j.2
+    exact ofDirectLimit_x_eq (Fin.val_ne_of_ne hij) a i.isLt j.isLt
   exact DFunLike.congr_fun hhom u
 
 variable (R) in
@@ -881,18 +929,22 @@ theorem toStableGL_of (p : {p : ℕ × ℕ // p.1 ≠ p.2}) (a : R) :
     toStableGL R (PresentedGroup.of (p, a)) = stableTransvection p a := by
   rw [IndexedSteinbergGroup.of_eq_x, toStableGL_x]
 
+/-- On the image of `Stₙ(R)`, `toStableGL R` intertwines `ofFin R n` with
+`StableGeneralLinearGroup.of R n` composed with `IndexedSteinbergGroup.toGL`. -/
+theorem toStableGL_comp_ofFin (n : ℕ) :
+    (toStableGL R).comp (ofFin R n) =
+      (StableGeneralLinearGroup.of R n).comp IndexedSteinbergGroup.toGL := by
+  ext i j hij a
+  simp only [MonoidHom.comp_apply, ofFin_x, toStableGL_x, IndexedSteinbergGroup.toGL_x]
+  exact stableTransvection_eq_of ⟨(i.val, j.val), Fin.val_ne_of_ne hij⟩ a i.isLt j.isLt
+
 /-- On the image of `Stₙ(R)`, `toStableGL R` agrees with `IndexedSteinbergGroup.toGL` followed by
 `StableGeneralLinearGroup.of R n`. -/
 @[simp]
 theorem toStableGL_ofFin (n : ℕ) (u : IndexedSteinbergGroup (Fin n) R) :
     toStableGL R (ofFin R n u) =
-      StableGeneralLinearGroup.of R n (IndexedSteinbergGroup.toGL u) := by
-  have hhom : (toStableGL R).comp (ofFin R n) =
-      (StableGeneralLinearGroup.of R n).comp IndexedSteinbergGroup.toGL := by
-    ext i j hij a
-    simp only [MonoidHom.comp_apply, ofFin_x, toStableGL_x, IndexedSteinbergGroup.toGL_x]
-    exact stableTransvection_eq_of ⟨(i.1, j.1), Fin.val_ne_of_ne hij⟩ a i.2 j.2
-  exact DFunLike.congr_fun hhom u
+      StableGeneralLinearGroup.of R n (IndexedSteinbergGroup.toGL u) :=
+  DFunLike.congr_fun (toStableGL_comp_ofFin n) u
 
 /-- The image of `toStableGL R` in `GL_∞(R)` is the stable elementary subgroup `E_∞(R)`. -/
 theorem range_toStableGL :
@@ -906,12 +958,35 @@ theorem range_toStableGL :
     obtain ⟨z, rfl⟩ := hu
     exact ⟨ofFin R n z, toStableGL_ofFin n z⟩
 
+/-- The projection `St(R) →* GL_∞(R)` intertwines `IndexedSteinbergGroup.map` with
+`StableGeneralLinearGroup.map`. -/
+theorem toStableGL_comp_map (f : R →+* S) :
+    (toStableGL S).comp (IndexedSteinbergGroup.map f) =
+      (StableGeneralLinearGroup.map f).comp (toStableGL R) := by
+  ext i j hij a
+  simp
+
+/-- The projection `St(R) →* GL_∞(R)` is natural in ring homomorphisms. -/
+@[simp]
+theorem toStableGL_map (f : R →+* S) (z : SteinbergGroup R) :
+    toStableGL S (IndexedSteinbergGroup.map f z) =
+      StableGeneralLinearGroup.map f (toStableGL R z) :=
+  DFunLike.congr_fun (toStableGL_comp_map f) z
+
 variable (R) in
 /-- The canonical projection `St(R) →* E_∞(R)` onto the stable elementary subgroup. -/
 def toElementarySubgroup :
     SteinbergGroup R →* StableGeneralLinearGroup.elementarySubgroup R :=
   (toStableGL R).codRestrict (StableGeneralLinearGroup.elementarySubgroup R) fun z ↦
     range_toStableGL (R := R) ▸ ⟨z, rfl⟩
+
+variable (R) in
+/-- The stable elementary subgroup inclusion composes with `toElementarySubgroup R` to give
+`toStableGL R`. -/
+theorem subtype_comp_toElementarySubgroup :
+    (StableGeneralLinearGroup.elementarySubgroup R).subtype.comp (toElementarySubgroup R) =
+      toStableGL R :=
+  (rfl)
 
 @[simp]
 theorem coe_toElementarySubgroup (z : SteinbergGroup R) :
@@ -931,6 +1006,20 @@ theorem ker_toElementarySubgroup :
     (toElementarySubgroup R).ker = (toStableGL R).ker := by
   ext z
   simp [MonoidHom.mem_ker, Subtype.ext_iff]
+
+/-- The projection `St(R) →* E_∞(R)` intertwines `IndexedSteinbergGroup.map` with
+`StableGeneralLinearGroup.elementarySubgroupMap`. -/
+theorem toElementarySubgroup_comp_map (f : R →+* S) :
+    (toElementarySubgroup S).comp (IndexedSteinbergGroup.map f) =
+      (StableGeneralLinearGroup.elementarySubgroupMap f).comp (toElementarySubgroup R) :=
+  MonoidHom.ext fun z ↦ Subtype.ext (by simp)
+
+/-- The projection `St(R) →* E_∞(R)` is natural in ring homomorphisms. -/
+@[simp]
+theorem toElementarySubgroup_map (f : R →+* S) (z : SteinbergGroup R) :
+    toElementarySubgroup S (IndexedSteinbergGroup.map f z) =
+      StableGeneralLinearGroup.elementarySubgroupMap f (toElementarySubgroup R z) :=
+  DFunLike.congr_fun (toElementarySubgroup_comp_map f) z
 
 end ToStableGL
 

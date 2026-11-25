@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Localization.Finiteness
-public import TauCeti.RingTheory.Localization.AtPrime
+public import TauCeti.RingTheory.Localization.AtPrime.FractionRing
 
 /-!
 # Finiteness and clearing denominators under localization
@@ -23,6 +23,9 @@ the form recorded here, it suffices to find, around every closed point of `Spec 
 
 ## Main results
 
+* `Submodule.exists_finset_smul_mem_span_of_fg_span_image`: a submodule whose image in a module
+  over a localization spans a finitely generated submodule is finitely generated up to the
+  localizing submonoid.
 * `LinearMap.apply_mem_span_image_iff_exists_smul_mem_span`: an injective linear map sends an
   element into the localized span of the image of a set if and only if a multiple of that element
   by a denominator lies in the original span.
@@ -58,6 +61,30 @@ theorem apply_mem_span_image_iff_exists_smul_mem_span {f : B →ₗ[A] L} (hf : 
     exact (Submodule.smul_mem_iff_of_isUnit _ (IsLocalization.map_units K ⟨a, ha⟩)).mp h
 
 end LinearMap
+
+namespace Submodule
+
+variable {A K B L : Type*} [CommSemiring A] [CommSemiring K] [Algebra A K]
+  [AddCommMonoid B] [AddCommMonoid L] [Module A B] [Module A L] [Module K L]
+  [IsScalarTower A K L]
+
+/-- Let `f : B →ₗ[A] L` be injective, with `L` a module over a localization `K` of `A` at `M`. If
+the image of a submodule `N` spans a finitely generated `K`-submodule, then `N` is finitely
+generated up to `M`: a finite subset of `N` spans a submodule containing a multiple `a • x`, with
+`a ∈ M`, of every `x ∈ N`. -/
+theorem exists_finset_smul_mem_span_of_fg_span_image {f : B →ₗ[A] L}
+    (hf : Function.Injective f) (M : Submonoid A) [IsLocalization M K] {N : Submodule A B}
+    (hN : (span K (f '' N)).FG) :
+    ∃ s : Finset B, (s : Set B) ⊆ N ∧ ∀ x ∈ N, ∃ a ∈ M, a • x ∈ span A (s : Set B) := by
+  classical
+  obtain ⟨s', hs'N, hspan⟩ := (fg_span_iff_fg_span_finset_subset (f '' N)).mp hN
+  obtain ⟨s, hsN, rfl⟩ := Finset.subset_set_image_iff.mp hs'N
+  refine ⟨s, hsN, fun x hx ↦
+    (LinearMap.apply_mem_span_image_iff_exists_smul_mem_span (K := K) hf M).mp ?_⟩
+  rw [← Finset.coe_image, ← hspan]
+  exact subset_span ⟨x, hx, rfl⟩
+
+end Submodule
 
 namespace TauCeti.Localization.AtPrime
 
@@ -120,7 +147,7 @@ theorem of_forall_isMaximal_exists_notMem
     Module.Finite R M := by
   -- The elements `r` with `M_r` finite generate the unit ideal: no maximal ideal contains them.
   refine of_localizationSpan
-    {r | Module.Finite (Localization.Away r) (LocalizedModule.Away r M)} ?_ fun r ↦ r.2
+    {r | Module.Finite (Localization.Away r) (LocalizedModule.Away r M)} ?_ fun r ↦ r.property
   by_contra h
   obtain ⟨q, hq, hle⟩ := Ideal.exists_le_maximal _ h
   obtain ⟨r, hrq, hr⟩ := H q hq

@@ -61,7 +61,7 @@ vectors. -/
 theorem map_eq_span_of_span_eq_top (p : Submodule R M) {v : ι → p}
     (hv : span R (Set.range v) = ⊤) (f : M →ₛₗ[σ₁₂] M₂) :
     p.map f = span R₂ (Set.range fun i ↦ f (v i)) := by
-  conv_lhs => rw [← (span_range_subtype_eq_top_iff p fun i ↦ (v i).2).1 hv]
+  conv_lhs => rw [← (span_range_subtype_eq_top_iff p fun i ↦ (v i).property).1 hv]
   rw [map_span, ← Set.range_comp, Function.comp_def]
 
 /-- The image of the line spanned by `x` is the line spanned by `f x`. -/
@@ -106,9 +106,9 @@ submodules of the source containing the kernel. -/
 def submoduleComapOrderIsoOfSurjective (f : V →ₛₗ[σ] W) (hf : Function.Surjective f) :
     Submodule B W ≃o Set.Ici (LinearMap.ker f) where
   toFun Q := ⟨Q.comap f, f.ker_le_comap⟩
-  invFun P := P.1.map f
+  invFun P := P.val.map f
   left_inv Q := Submodule.map_comap_eq_of_surjective hf Q
-  right_inv P := Subtype.ext (Submodule.comap_map_eq_self P.2)
+  right_inv P := Subtype.ext (Submodule.comap_map_eq_self P.property)
   map_rel_iff' := Submodule.comap_le_comap_iff_of_surjective hf
 
 /-- The correspondence along a surjection takes inverse images. -/
@@ -122,7 +122,7 @@ theorem coe_submoduleComapOrderIsoOfSurjective (f : V →ₛₗ[σ] W) (hf : Fun
 @[simp]
 theorem submoduleComapOrderIsoOfSurjective_symm_apply (f : V →ₛₗ[σ] W) (hf : Function.Surjective f)
     (P : Set.Ici (LinearMap.ker f)) :
-    (submoduleComapOrderIsoOfSurjective f hf).symm P = P.1.map f :=
+    (submoduleComapOrderIsoOfSurjective f hf).symm P = P.val.map f :=
   (rfl)
 
 end Correspondence

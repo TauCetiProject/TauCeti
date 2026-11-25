@@ -98,7 +98,7 @@ of `v` to the orthogonal complement of its image `w`. -/
 def orthogonalComplementSingletonMap (f : E →ₗᵢ[𝕜] F) {v : E} {w : F} (hw : f v = w) :
     (𝕜 ∙ v)ᗮ →ₗᵢ[𝕜] (𝕜 ∙ w)ᗮ where
   toLinearMap := (f.toLinearMap.domRestrict (𝕜 ∙ v)ᗮ).codRestrict (𝕜 ∙ w)ᗮ fun y ↦
-    f.map_mem_orthogonal_singleton hw y.2
+    f.map_mem_orthogonal_singleton hw y.property
   norm_map' y := f.norm_map y
 
 @[simp]
@@ -271,6 +271,28 @@ theorem forall_orthonormal_sum_re_inner_conj_iff (U : E ≃ₗᵢ[𝕜] F) {T : 
   simpa only [map_sum] using U.forall_orthonormal_sum_inner_conj_iff fun z ↦ P (RCLike.re z)
 
 end LinearIsometryEquiv
+
+namespace Submodule
+
+open Module
+open scoped InnerProductSpace
+
+variable {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] {e : F}
+
+/-- The orthogonal projection onto `e^⊥` removes the `e` component. -/
+theorem coe_orthogonalProjectionOnto_orthogonal_singleton (he : ‖e‖ = 1) (y : F) :
+    ((𝕜 ∙ e)ᗮ.orthogonalProjectionOnto y : F) = y - ⟪e, y⟫_𝕜 • e := by
+  rw [Submodule.coe_orthogonalProjectionOnto_apply, Submodule.starProjection_orthogonal_val,
+    Submodule.starProjection_unit_singleton 𝕜 he]
+
+/-- The projection of `k + c e` onto `e^⊥` is `k`, without a unit-norm assumption. -/
+@[simp]
+theorem orthogonalProjectionOnto_add_smul (k : (𝕜 ∙ e)ᗮ) (c : 𝕜) :
+    (𝕜 ∙ e)ᗮ.orthogonalProjectionOnto ((k : F) + c • e) = k := by
+  simp [map_add, map_smul, orthogonalProjectionOnto_mem_subspace_eq_self,
+    orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero]
+
+end Submodule
 
 namespace TauCeti
 

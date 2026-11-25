@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.MeasureTheory.Group.Integral
@@ -42,6 +43,9 @@ the integral to `z`.
   `differentiableOn_of_hasLaplace`, and `differentiableOn_of_hasLaplace_re_gt` (holomorphic
   differentiation under the integral sign with respect to `s`, producing the transform of
   `t ↦ -(t : ℂ) • f t`).
+* Higher derivatives: `hasLaplace_neg_pow_smul_iteratedDeriv` (the `n`-th derivative is the
+  transform of `t ↦ (-t) ^ n • f t`) and `hasLaplace_pow_div_factorial_smul_iteratedDeriv` (the
+  normalised coefficient `(-1) ^ n / n ! • F⁽ⁿ⁾` is the transform of `t ↦ (t ^ n / n !) • f t`).
 * Transform of a derivative: `intervalIntegral_cexp_neg_mul_smul_of_eq_add_intervalIntegral`
   establishes the finite-cutoff identity on `[0, T]`; `TauCeti.hasLaplace_deriv_of_primitive` proves
   `HasLaplace g s (s • z - f 0)` for a primitive `f(t) = f(0) + ∫₀ᵗ g(u) du` on `[0, ∞)` assuming
@@ -98,6 +102,12 @@ theorem HasLaplace.intro {f : ℝ → E} {s : ℂ} {z : E} {μ : Measure ℝ}
     (heq : ∫ t : ℝ, Complex.exp (-s * t) • f t ∂μ = z) :
     HasLaplace f s z μ :=
   ⟨hint, heq⟩
+
+/-- An integrable Laplace integrand has, as its transform, its integral. -/
+theorem _root_.MeasureTheory.Integrable.hasLaplace {f : ℝ → E} {s : ℂ} {μ : Measure ℝ}
+    (hf : Integrable (fun t : ℝ ↦ Complex.exp (-s * t) • f t) μ) :
+    HasLaplace f s (∫ t : ℝ, Complex.exp (-s * t) • f t ∂μ) μ :=
+  ⟨hf, rfl⟩
 
 /-- A convergent Laplace transform has an integrable integrand. -/
 @[grind →]
@@ -276,12 +286,13 @@ theorem HasLaplace.cexp_mul_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace
   hasLaplace_cexp_mul_smul_iff.mpr hf
 
 /-- Positive time dilation for the one-sided Laplace transform: for `0 < c`,
-`HasLaplace f (s / c) z` gives `HasLaplace (fun t ↦ f (c * t)) s ((c : ℂ)⁻¹ • z)`. -/
-theorem HasLaplace.comp_mul_left {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [MulAction ℂ E] [IsScalarTower ℝ ℂ E]
+`HasLaplace f (s / c) z` gives `HasLaplace (fun t ↦ f (c * t)) s (c⁻¹ • z)`. The value is the real
+scalar `c⁻¹ • z`, so no compatibility of the real and complex actions on `E` is needed; for `E = ℂ`
+it is `(c : ℂ)⁻¹ * z`, by `Complex.real_smul`. -/
+theorem HasLaplace.comp_mul_left {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [SMul ℂ E]
     {f : ℝ → E} {s : ℂ} {z : E} {c : ℝ} (hc : 0 < c)
     (hf : HasLaplace f (s / c) z) :
-    HasLaplace (fun t : ℝ ↦ f (c * t)) s ((c : ℂ)⁻¹ • z) := by
+    HasLaplace (fun t : ℝ ↦ f (c * t)) s (c⁻¹ • z) := by
   let g : ℝ → E := fun u ↦ Complex.exp (-(s / c) * u) • f u
   have hc0 : (c : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hc.ne'
   have hfun : (fun t : ℝ ↦ Complex.exp (-s * t) • f (c * t)) = fun t : ℝ ↦ g (c * t) := by
@@ -293,22 +304,18 @@ theorem HasLaplace.comp_mul_left {E : Type*} [NormedAddCommGroup E] [NormedSpace
   refine ⟨?_, ?_⟩
   · rw [hfun, ← IntegrableOn, integrableOn_Ioi_comp_mul_left_iff g 0 hc, mul_zero]
     exact hf.1
-  · rw [hfun, integral_comp_mul_left_Ioi g 0 hc, mul_zero, hf.2, ← Complex.ofReal_inv,
-      ← Complex.coe_algebraMap, IsScalarTower.algebraMap_smul]
+  · rw [hfun, integral_comp_mul_left_Ioi g 0 hc, mul_zero, hf.2]
 
 /-- Equivalence form of positive time dilation for the one-sided Laplace transform. -/
 theorem hasLaplace_comp_mul_left_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [MulAction ℂ E] [IsScalarTower ℝ ℂ E]
-    {f : ℝ → E} {s : ℂ} {z : E} {c : ℝ} (hc : 0 < c) :
-    HasLaplace (fun t : ℝ ↦ f (c * t)) s ((c : ℂ)⁻¹ • z) ↔ HasLaplace f (s / c) z := by
+    [SMul ℂ E] {f : ℝ → E} {s : ℂ} {z : E} {c : ℝ} (hc : 0 < c) :
+    HasLaplace (fun t : ℝ ↦ f (c * t)) s (c⁻¹ • z) ↔ HasLaplace f (s / c) z := by
   refine ⟨fun h ↦ ?_, HasLaplace.comp_mul_left hc⟩
   have hc0 : (c : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hc.ne'
   have hs : s / c / (c⁻¹ : ℝ) = s := by
     rw [Complex.ofReal_inv, div_inv_eq_mul, div_mul_cancel₀ _ hc0]
   have h1 := HasLaplace.comp_mul_left (inv_pos.mpr hc) (s := s / c) (by rwa [hs])
-  have htarget : ((c⁻¹ : ℝ) : ℂ)⁻¹ • (c : ℂ)⁻¹ • z = z := by
-    rw [Complex.ofReal_inv, inv_inv, ← mul_smul, mul_inv_cancel₀ hc0, one_smul]
-  rw [htarget] at h1
+  rw [inv_inv, smul_inv_smul₀ hc.ne'] at h1
   exact h1.congr_ae (.of_forall fun t ↦ by simp [mul_inv_cancel_left₀ hc.ne'])
 
 /-- Right-translation (Heaviside delay) of a one-sided Laplace transform: for `0 ≤ a`, shifting `f`
@@ -484,6 +491,34 @@ theorem differentiableOn_of_hasLaplace_re_gt {E : Type*}
     (hF : ∀ s : ℂ, a < s.re → HasLaplace f s (F s)) :
     DifferentiableOn ℂ F {s : ℂ | a < s.re} :=
   differentiableOn_of_hasLaplace (isOpen_lt continuous_const Complex.continuous_re) hF
+
+/-- **Derivatives of a Laplace transform.** If `F` is the one-sided Laplace transform of `f` near
+`s`, then the `n`-th derivative of `F` at `s` is the Laplace transform of `u ↦ (-u) ^ n • f u`. -/
+theorem hasLaplace_neg_pow_smul_iteratedDeriv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : ℝ → E} {F : ℂ → E} {s : ℂ} (hF : ∀ᶠ w in 𝓝 s, HasLaplace f w (F w)) (n : ℕ) :
+    HasLaplace (fun u : ℝ ↦ (-(u : ℂ)) ^ n • f u) s (iteratedDeriv n F s) := by
+  induction n generalizing s with
+  | zero => simpa only [pow_zero, one_smul, iteratedDeriv_zero] using hF.self_of_nhds
+  | succ n ih =>
+    obtain ⟨z', hz', hder⟩ := exists_hasLaplace_neg_smul_and_hasDerivAt
+      (hF.eventually_nhds.mono fun w hw ↦ ih hw)
+    rw [iteratedDeriv_succ, hder.deriv]
+    simpa only [pow_succ', mul_smul] using hz'
+
+open scoped Nat in
+/-- **Taylor coefficients of a Laplace transform.** If `F` is the one-sided Laplace transform of
+`f` near `s`, then `(-1) ^ n / n !` times the `n`-th derivative of `F` at `s`, the `n`-th Taylor
+coefficient of `F` at `s` up to the sign `(-1) ^ n`, is the Laplace transform of
+`u ↦ (u ^ n / n !) • f u`. -/
+theorem hasLaplace_pow_div_factorial_smul_iteratedDeriv {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {f : ℝ → E} {F : ℂ → E} {s : ℂ} (hF : ∀ᶠ w in 𝓝 s, HasLaplace f w (F w))
+    (n : ℕ) :
+    HasLaplace (fun u : ℝ ↦ ((u : ℂ) ^ n / n !) • f u) s
+      (((-1) ^ n / n ! : ℂ) • iteratedDeriv n F s) := by
+  have hc : ∀ u : ℝ, ((-1) ^ n / n ! : ℂ) * (-(u : ℂ)) ^ n = (u : ℂ) ^ n / n ! := fun u ↦ by
+    rw [div_mul_eq_mul_div, ← mul_pow, neg_one_mul, neg_neg]
+  simpa only [Pi.smul_def, smul_smul, hc] using
+    (hasLaplace_neg_pow_smul_iteratedDeriv hF n).const_smul ((-1) ^ n / n ! : ℂ)
 
 end HalfPlane
 

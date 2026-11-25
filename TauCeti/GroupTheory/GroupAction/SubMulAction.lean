@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.GroupTheory.GroupAction.SubMulAction.OfStabilizer
 public import Mathlib.Algebra.Module.LinearMap.End
 public import Mathlib.LinearAlgebra.Span.Basic
+public import Mathlib.Algebra.Module.Torsion.Free
 
 /-!
 # Faithful actions on invariant subsets
@@ -23,6 +24,10 @@ The stabilizer of a point `a` in a faithful group action acts faithfully on the 
 An additive action commuting with scalar multiplication is determined on the span of an
 invariant subset. Consequently, restricting a faithful action to a spanning invariant subset
 remains faithful. The acting type needs no monoid structure.
+
+The units of a ring without zero divisors act freely on the nonzero vectors of a torsion-free
+module, Mathlib's `Units.nonZeroSubMul`: `a • v = b • v` with `v ≠ 0` forces `a = b`. This covers
+the units of a division ring acting on the nonzero vectors of any module.
 -/
 
 public section
@@ -36,7 +41,8 @@ instance ofStabilizer.faithfulSMul {G α : Type*} [Group G] [MulAction G α] [Fa
   eq_of_smul_eq_smul {g h} hgh := by
     refine Subtype.ext (eq_of_smul_eq_smul (α := α) fun x ↦ ?_)
     by_cases hx : x = a
-    · rw [hx, MulAction.mem_stabilizer_iff.mp g.2, MulAction.mem_stabilizer_iff.mp h.2]
+    · rw [hx, MulAction.mem_stabilizer_iff.mp g.property, MulAction.mem_stabilizer_iff.mp
+        h.property]
     · simpa only [val_smul, MulAction.subgroup_smul_def] using
         congrArg Subtype.val (hgh ⟨x, (mem_ofStabilizer_iff G a).mpr hx⟩)
 
@@ -54,3 +60,17 @@ theorem faithfulSMul_of_span_eq_top (p : SubMulAction G M)
     exact LinearMap.congr_fun heq x
 
 end SubMulAction
+
+namespace Units
+
+variable {R V : Type*} [Ring R] [IsCancelMulZero R] [AddCommGroup V] [Module R V]
+  [Module.IsTorsionFree R V]
+
+/-- The units of a ring without zero divisors act freely on the nonzero vectors of a torsion-free
+module, for instance the units of a division ring on the nonzero vectors of any module. -/
+instance isCancelSMul_nonZero : IsCancelSMul Rˣ {v : V // v ≠ 0} where
+  left_cancel' a v w h := by simpa using h
+  right_cancel' a b v h := Units.ext <| smul_left_injective R v.property <| by
+    simpa [Units.smul_def] using congrArg Subtype.val h
+
+end Units

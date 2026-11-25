@@ -47,6 +47,8 @@ angle** `Circle.angleChange γ = θ 1 - θ 0`, for any continuous lift `θ`. Its
 products, odd under reversal and pointwise inversion, and invariant under homotopies fixing the
 endpoints. It is the
 continuous part of the Maslov index of a path of Lagrangian frames.
+The same angle for an unbundled map `w : I → Circle` is `Circle.sweptAngle w`, set to `0` when
+`w` is not continuous, so that it can be defined before continuity is proved.
 
 ## Main declarations
 
@@ -81,10 +83,15 @@ continuous part of the Maslov index of a path of Lagrangian frames.
   pointwise products; the corresponding laws of the degree are derived from these.
 * `Circle.angleChange_eq_add_of_halves`: it is the sum of the angles swept by the two halves of
   the path.
+* `Circle.sweptAngle`: the angle swept by a map `I → Circle`, `0` unless it is continuous, with
+  `Circle.sweptAngle_eq_sub`, `Circle.sweptAngle_const`, `Circle.sweptAngle_mul` and
+  `Circle.sweptAngle_comp_symm`.
 * `Circle.exists_forall_eq_add_of_exp_eq`: on a preconnected space, two continuous lifts of the
   same map through `Circle.exp` differ by a constant.
 * `Circle.exists_int_forall_eq_add_of_exp_eq`: on a preconnected space, two continuous lifts of
   the same map through `Circle.exp` differ by a constant integer multiple of `2π`.
+* `IsPreconnected.exists_forall_sub_eq_of_coe_eq`: two real functions continuous on a preconnected
+  set and equal there in `Real.Angle` differ by a constant on it.
 -/
 
 public section
@@ -119,6 +126,20 @@ theorem exists_int_forall_eq_add_of_exp_eq {A : Type*} [TopologicalSpace A]
     rwa [hc a₀, exp_add, mul_eq_left] at this
   obtain ⟨m, hm⟩ := exp_eq_one.1 hexp
   exact ⟨m, fun a ↦ by rw [hc a, hm]⟩
+
+/-- **Continuous lifts of an angle differ by a constant.** Two real functions that are continuous
+on a preconnected set and agree there modulo `2π` differ by a constant on it: this is
+`Circle.exists_forall_eq_add_of_exp_eq` on the subtype, through `Real.Angle.toCircle`. -/
+theorem _root_.IsPreconnected.exists_forall_sub_eq_of_coe_eq {α : Type*} [TopologicalSpace α]
+    {s : Set α} (hs : IsPreconnected s) {f g : α → ℝ} (hf : ContinuousOn f s)
+    (hg : ContinuousOn g s) (h : ∀ x ∈ s, (f x : Real.Angle) = g x) :
+    ∃ C, ∀ x ∈ s, f x - g x = C := by
+  have := isPreconnected_iff_preconnectedSpace.1 hs
+  obtain ⟨c, hc⟩ := Circle.exists_forall_eq_add_of_exp_eq (G := fun x : s ↦ f x)
+    (G' := fun x : s ↦ g x) hf.domRestrict hg.domRestrict
+    fun x ↦ by
+      simpa only [Real.Angle.toCircle_coe] using congrArg Real.Angle.toCircle (h x x.property)
+  exact ⟨c, fun x hx ↦ by linarith [hc ⟨x, hx⟩]⟩
 
 /-- Every path in the circle has a continuous lift through `Circle.exp`. -/
 theorem exists_lift {x y : Circle} (γ : Path x y) :
@@ -313,6 +334,63 @@ theorem angleChange_eq_add_of_halves {x y x₁ y₁ x₂ y₂ : Circle} (γ : Pa
       (fun s => by rw [hθ, h₂ s _ (hk₂ s)]), hhalf, h0, h1]
   ring
 
+/-! ### The angle swept by a map from the interval -/
+
+open Classical in
+/-- The **angle swept by a map** `w : I → Circle`: the angle `Circle.angleChange` swept by `w`, as
+a path from `w 0` to `w 1`, when `w` is continuous, and `0` otherwise. So it is `θ 1 - θ 0` for
+every continuous lift `θ` of a continuous `w` (`Circle.sweptAngle_eq_sub`). It names the angle of a
+family of points of the circle whose continuity is only proved later. -/
+noncomputable def sweptAngle (w : I → Circle) : ℝ :=
+  if h : Continuous w then angleChange ⟨⟨w, h⟩, rfl, rfl⟩ else 0
+
+/-- A continuous map sweeps the angle `Circle.angleChange` of its path. -/
+theorem sweptAngle_of_continuous {w : I → Circle} (hw : Continuous w) :
+    sweptAngle w = angleChange ⟨⟨w, hw⟩, rfl, rfl⟩ :=
+  dite_eq_left hw
+
+/-- A discontinuous map sweeps the angle `0` by convention. -/
+theorem sweptAngle_of_not_continuous {w : I → Circle} (hw : ¬Continuous w) : sweptAngle w = 0 :=
+  dite_eq_right hw
+
+/-- A constant map sweeps no angle. -/
+@[simp]
+theorem sweptAngle_const (z : Circle) : sweptAngle (fun _ : I ↦ z) = 0 := by
+  rw [sweptAngle_of_continuous continuous_const]
+  exact angleChange_refl z
+
+/-- The angle swept by a continuous map is `θ 1 - θ 0` for every continuous lift `θ`. -/
+theorem sweptAngle_eq_sub {w : I → Circle} (hw : Continuous w) {θ : I → ℝ} (hθ : Continuous θ)
+    (hθw : ∀ t, exp (θ t) = w t) : sweptAngle w = θ 1 - θ 0 := by
+  rw [sweptAngle_of_continuous hw]
+  exact angleChange_eq_sub _ hθ hθw
+
+/-- The exponential of the angle swept by a continuous map `w` is `w 1 / w 0`. -/
+theorem exp_sweptAngle {w : I → Circle} (hw : Continuous w) : exp (sweptAngle w) = w 1 / w 0 := by
+  rw [sweptAngle_of_continuous hw, exp_angleChange]
+
+/-- The angle swept by a continuous map is the change of one of its continuous lifts. -/
+theorem exists_sweptAngle_eq_sub {w : I → Circle} (hw : Continuous w) :
+    ∃ θ : I → ℝ, Continuous θ ∧ (∀ t, exp (θ t) = w t) ∧ sweptAngle w = θ 1 - θ 0 := by
+  obtain ⟨θ, hθ⟩ := exists_lift (⟨⟨w, hw⟩, rfl, rfl⟩ : Path (w 0) (w 1))
+  exact ⟨θ, θ.continuous, hθ, sweptAngle_eq_sub hw θ.continuous hθ⟩
+
+/-- The angle swept by a pointwise product of continuous maps is the sum of the angles they
+sweep. -/
+theorem sweptAngle_mul {w w' : I → Circle} (hw : Continuous w) (hw' : Continuous w') :
+    sweptAngle (w * w') = sweptAngle w + sweptAngle w' := by
+  rw [sweptAngle_of_continuous hw, sweptAngle_of_continuous hw',
+    sweptAngle_of_continuous (hw.mul hw')]
+  exact angleChange_mul (⟨⟨w, hw⟩, rfl, rfl⟩ : Path (w 0) (w 1))
+    (⟨⟨w', hw'⟩, rfl, rfl⟩ : Path (w' 0) (w' 1))
+
+/-- Running a continuous map backwards negates the angle it sweeps. -/
+theorem sweptAngle_comp_symm {w : I → Circle} (hw : Continuous w) :
+    sweptAngle (fun t ↦ w (σ t)) = -sweptAngle w := by
+  rw [sweptAngle_of_continuous (w := fun t ↦ w (σ t)) (hw.comp unitInterval.continuous_symm),
+    sweptAngle_of_continuous hw, ← angleChange_symm]
+  exact angleChange_congr _ _ fun _ ↦ rfl
+
 /-- A loop sweeping the angle `n * (2 * π)` has degree `n`. -/
 private theorem degree_eq_of_angleChange_eq {x : Circle} (γ : Path x x) {n : ℤ}
     (h : angleChange γ = n * (2 * π)) : degree γ = n := by
@@ -450,9 +528,9 @@ theorem degree_eq_of_forall_eq_pow {x : Circle} (γ : Path x x) {a b : ℝ} (hab
   have hb : 0 < b := (pos_iff_pos_of_mul_pos hab).1 ha
   -- Deform `a` and `b` linearly to `1`, through the positive numbers `(1 - s) c + s`.
   have hc {c : ℝ} (hc : 0 < c) (s : I) : 0 < (1 - (s : ℝ)) * c + s := by
-    rcases s.2.1.eq_or_lt with h | h
+    rcases s.property.1.eq_or_lt with h | h
     · simpa [← h] using hc
-    · nlinarith [mul_nonneg (sub_nonneg.2 s.2.2) hc.le]
+    · nlinarith [mul_nonneg (sub_nonneg.2 s.property.2) hc.le]
   let z : I × I → ℂ := fun p ↦ (((1 - (p.1 : ℝ)) * a + p.1) * cos (2 * π * p.2) : ℝ) +
     (((1 - (p.1 : ℝ)) * b + p.1) * sin (2 * π * p.2) : ℝ) * Complex.I
   have hz (p : I × I) : 0 < ‖z p‖ := by

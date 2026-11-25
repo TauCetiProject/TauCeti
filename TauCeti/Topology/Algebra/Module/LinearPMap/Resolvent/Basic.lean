@@ -23,13 +23,14 @@ Over a noncommutative ring, the scalar expression `x ↦ lambda • x - A x` nee
 The predicate still requires its inverse to be linear over the full scalar ring; a parameter
 whose shift is not linear therefore does not belong to the resolvent set.
 
-This file gives the graph characterization, the two inverse identities, the fact that a point of
-the resolvent set is not an eigenvalue, and the fact that an operator has no proper extension
-sharing a resolvent point. The pointwise resolvent identity
-holds over rings. Over division rings resolvents commute, and the resolvent at `lambda` acts on
-an eigenvector for the eigenvalue `c` as multiplication by `(lambda - c)⁻¹`. For topological
-additive groups, an invertible continuous linear perturbation gives another resolvent. Over
-commutative rings with continuous scalar multiplication by constants, the resolvent of an
+This file gives the graph characterization, the two inverse identities, the fact that a point of the
+resolvent set is not an eigenvalue, and the fact that an operator has no proper extension sharing a
+resolvent point. The pointwise resolvent identity holds over rings, as does the second resolvent
+identity `R_{A+V}(z) - R_A(z) = R_{A+V}(z) V R_A(z)` for a perturbation `V` defined on `dom A`
+(`LinearPMap.resolvent_add_sub_apply`). Over division rings resolvents commute, and the resolvent at
+`lambda` acts on an eigenvector for the eigenvalue `c` as multiplication by `(lambda - c)⁻¹`. For
+topological additive groups, an invertible continuous linear perturbation gives another resolvent.
+Over commutative rings with continuous scalar multiplication by constants, the resolvent of an
 everywhere defined continuous linear operator agrees with Mathlib's algebraic resolvent, and their
 spectra agree.
 
@@ -208,6 +209,20 @@ theorem smul_sub_apply_resolvent (h : lambda ∈ resolventSet A) (y : X) :
     A ⟨resolvent A lambda y, resolvent_mem_domain h y⟩ = lambda • resolvent A lambda y - y :=
   (isResolventAt_resolvent h).apply_eq_smul_sub y
 
+/-- The composite `y ↦ V (R(lambda, A) y)` of the resolvent with a partial semilinear map `V`
+whose domain contains that of `A`, as a semilinear map. -/
+def compResolvent {𝕜₂ G : Type*} [Ring 𝕜₂] {σ : 𝕜 →+* 𝕜₂} [AddCommGroup G] [Module 𝕜₂ G]
+    {V : X →ₛₗ.[σ] G} (hV : A.domain ≤ V.domain) (h : lambda ∈ resolventSet A) : X →ₛₗ[σ] G :=
+  V.toFun.comp ((Submodule.inclusion hV).comp
+    ((resolvent A lambda : X →ₗ[𝕜] X).codRestrict A.domain (resolvent_mem_domain h)))
+
+/-- `compResolvent` evaluates `V` at the resolvent. -/
+@[simp]
+theorem compResolvent_apply {𝕜₂ G : Type*} [Ring 𝕜₂] {σ : 𝕜 →+* 𝕜₂} [AddCommGroup G]
+    [Module 𝕜₂ G] {V : X →ₛₗ.[σ] G} (hV : A.domain ≤ V.domain) (h : lambda ∈ resolventSet A)
+    (y : X) : compResolvent hV h y = V ⟨resolvent A lambda y, hV (resolvent_mem_domain h y)⟩ :=
+  (rfl)
+
 /-- At a point of the resolvent set, `lambda • I - A : D(A) → X` is a bijection. -/
 theorem smul_sub_bijective (h : lambda ∈ resolventSet A) :
     Function.Bijective fun x : A.domain => lambda • (x : X) - A x :=
@@ -241,6 +256,29 @@ theorem resolvent_apply_comm (h : lambda ∈ resolventSet A) (x : A.domain) :
 end Basic
 
 /-! ## The resolvent identity -/
+
+section SecondResolvent
+
+variable {𝕜 X : Type*} [Ring 𝕜] [AddCommGroup X] [TopologicalSpace X] [Module 𝕜 X]
+variable {A : X →ₗ.[𝕜] X} {z : 𝕜}
+
+/-- **The second resolvent identity.** If `dom A ⊆ dom V` and `z` lies in the resolvent sets of
+both `A` and `A + V`, then `R_{A+V}(z) - R_A(z) = R_{A+V}(z) V R_A(z)`. -/
+theorem resolvent_add_sub_apply {V : X →ₗ.[𝕜] X} (h : A.domain ≤ V.domain)
+    (hz : z ∈ A.resolventSet) (hz' : z ∈ (A + V).resolventSet) (y : X) :
+    (A + V).resolvent z y - A.resolvent z y = (A + V).resolvent z (compResolvent h hz y) := by
+  set x := A.resolvent z y
+  have hx : x ∈ (A + V).domain := ⟨resolvent_mem_domain hz y, h (resolvent_mem_domain hz y)⟩
+  have hsolve := resolvent_smul_sub_apply hz' ⟨x, hx⟩
+  have hAx : A ⟨x, resolvent_mem_domain hz y⟩ = z • x - y := apply_resolvent hz y
+  have hsplit : z • x - (A + V) ⟨x, hx⟩ = y - V ⟨x, h (resolvent_mem_domain hz y)⟩ := by
+    rw [add_apply, hAx]
+    abel
+  rw [hsplit, ContinuousLinearMap.map_sub] at hsolve
+  rw [compResolvent_apply]
+  exact sub_eq_iff_comm.mp hsolve
+
+end SecondResolvent
 
 section Ring
 
@@ -370,7 +408,7 @@ theorem _root_.ContinuousLinearMap.isResolventAt_vadd_of_isUnit_one_sub_mul_reso
       abel
     rw [hstep, smul_sub_apply_resolvent h (U y), hcancel y]
   · have hx : R (lambda • (x : X) - A x) = (x : X) :=
-      resolvent_smul_sub_apply h ⟨(x : X), x.2⟩
+      resolvent_smul_sub_apply h ⟨(x : X), x.property⟩
     have hstep : lambda • (x : X) - ((B : X →ₗ[𝕜] X) +ᵥ A) x
         = (lambda • (x : X) - A x) - B (R (lambda • (x : X) - A x)) := by
       rw [LinearPMap.vadd_apply, hx]

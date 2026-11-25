@@ -42,14 +42,13 @@ namespace TauCeti.ClassFieldTheory
 
 section BrInvLift
 
-variable {F : Type*} [Field F] [CharZero F] (n : ℕ) [NeZero n]
+variable {F : Type*} [Field F] (n : ℕ) [NeZero n]
 
 private theorem exists_toRatAddCircle_eq_brInv (inv : Br F →+ AddCircle (1 : ℚ))
     (x : continuousCohomology 2 (muNRep n F)) :
     inv (h2MuToBr n F x) ∈ Set.range (ZMod.toRatAddCircle n) :=
   ZMod.exists_toRatAddCircle_eq_of_nsmul_eq_zero n <| by
-    rw [← map_nsmul,
-      (h2MuToBr_range n F (isUnit_natCast_of_ne_zero (NeZero.ne n)) _).mp ⟨x, rfl⟩, map_zero]
+    rw [← map_nsmul, nsmul_h2MuToBr n F x, map_zero]
 
 private def h2MuToZModOfBrInv (inv : Br F →+ AddCircle (1 : ℚ)) :
     continuousCohomology 2 (muNRep n F) →+ ZMod n :=
@@ -65,9 +64,10 @@ private theorem toRatAddCircle_h2MuToZModOfBrInv (inv : Br F →+ AddCircle (1 :
       (ZMod.toRatAddCircle n) (ZMod.toRatAddCircle_injective n)).mpr
       (exists_toRatAddCircle_eq_brInv n inv)).exists.choose_spec x
 
-private theorem h2MuToZModOfBrInv_injective {inv : Br F →+ AddCircle (1 : ℚ)}
-    (hinv : Function.Injective inv) : Function.Injective (h2MuToZModOfBrInv n inv) := fun x y hxy =>
-  h2MuToBr_injective n F (isUnit_natCast_of_ne_zero (NeZero.ne n)) <| hinv <| by
+private theorem h2MuToZModOfBrInv_injective (hn : IsUnit (n : F))
+    {inv : Br F →+ AddCircle (1 : ℚ)} (hinv : Function.Injective inv) :
+    Function.Injective (h2MuToZModOfBrInv n inv) := fun x y hxy =>
+  h2MuToBr_injective n F hn <| hinv <| by
     rw [← toRatAddCircle_h2MuToZModOfBrInv n inv x, ← toRatAddCircle_h2MuToZModOfBrInv n inv y, hxy]
 
 private theorem two_nsmul_h2MuToZModOfBrInv {inv : Br F →+ AddCircle (1 : ℚ)}
@@ -100,7 +100,7 @@ theorem realH2MuToZMod_eq_iff (x : continuousCohomology 2 (muNRep n ℝ)) (z : Z
 
 /-- **The real roots-of-unity invariant into `ZMod n` is injective** for every nonzero `n`. -/
 theorem realH2MuToZMod_injective : Function.Injective (realH2MuToZMod n) :=
-  h2MuToZModOfBrInv_injective n realInv_injective
+  h2MuToZModOfBrInv_injective n (isUnit_natCast_of_ne_zero ℚ (NeZero.ne n)) realInv_injective
 
 /-- `realH2MuToZMod` vanishes exactly when its cohomology class vanishes. -/
 @[simp]
@@ -139,7 +139,8 @@ theorem infiniteH2MuToZMod_eq_iff (x : continuousCohomology 2 (muNRep n w.Comple
 
 /-- **The archimedean roots-of-unity invariant into `ZMod n` is injective** at every `w`. -/
 theorem infiniteH2MuToZMod_injective : Function.Injective (infiniteH2MuToZMod w n) :=
-  h2MuToZModOfBrInv_injective n (infiniteInvMap_injective w)
+  h2MuToZModOfBrInv_injective n (isUnit_natCast_of_ne_zero ℚ (NeZero.ne n))
+    (infiniteInvMap_injective w)
 
 /-- `infiniteH2MuToZMod` vanishes exactly when its cohomology class vanishes. -/
 @[simp]
@@ -181,7 +182,8 @@ private theorem smul_kummerCoeff_congr_eq_neg {F L : Type*} [Field F] [Field L] 
   let u : (SeparableClosure L)ˣ := (y.toMul : rootsOfUnity n (SeparableClosure L))
   let uF : (SeparableClosure F)ˣ := Units.map e.separableClosureCongr.toRingHom.toMonoidHom u
   have huF : uF ∈ rootsOfUnity n (SeparableClosure F) :=
-    (mem_rootsOfUnity n uF).mpr (by rw [← map_pow, (mem_rootsOfUnity n u).mp y.toMul.2, map_one])
+    (mem_rootsOfUnity n uF).mpr
+        (by rw [← map_pow, (mem_rootsOfUnity n u).mp y.toMul.property, map_one])
   have hval := (smul_kummerCoeff_eq_neg_iff (e.absoluteGaloisGroupCongr g)
     (Additive.ofMul ⟨uF, huF⟩)).mp (hF _ hg' (Additive.ofMul ⟨uF, huF⟩))
   rw [smul_kummerCoeff_eq_neg_iff]
@@ -202,7 +204,7 @@ theorem smul_kummerCoeff_completion_eq_neg {K : Type*} [Field K] (w : InfinitePl
     (y.toMul : rootsOfUnity n (SeparableClosure w.Completion))
   have hz : ((u : SeparableClosure w.Completion) : AlgebraicClosure w.Completion) ^ n = 1 := by
     have hu : (u : SeparableClosure w.Completion) ^ n = 1 := by
-      rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity n u).mp y.toMul.2, Units.val_one]
+      rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity n u).mp y.toMul.property, Units.val_one]
     exact_mod_cast hu
   have hinv := fieldAbsoluteGaloisGroup_apply_eq_inv w hσ (NeZero.ne n) hz
   rw [absoluteGaloisGroupRestrictEquiv_symm_apply_coe] at hinv
@@ -264,7 +266,7 @@ theorem natCard_mul_natCard_H1_real {A : Type*} [AddCommGroup A] [TopologicalSpa
     Nat.card A * Nat.card (H1 (Gal ℝ) A) =
       Nat.card (H0 (Gal ℝ) A) * Nat.card (H0 (Gal ℝ) (InternalHom (Gal ℝ) A (KummerCoeff ℝ n))) :=
   natCard_mul_natCard_H1_of_natCard_eq_two natCard_absoluteGaloisGroup_real
-    (kummerCoeffAddEquivZMod (isUnit_natCast_of_ne_zero (NeZero.ne n))) hA
+    (kummerCoeffAddEquivZMod (isUnit_natCast_of_ne_zero ℚ (NeZero.ne n))) hA
     (fun _ hg => smul_kummerCoeff_real_eq_neg hg)
 
 variable (A : Type*) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
@@ -296,7 +298,7 @@ variable {A} {n : ℕ} [NeZero n]
 theorem natCard_H1_internalHom_kummerCoeff_real (hA : ∀ a : A, n • a = 0) :
     Nat.card (H1 (Gal ℝ) (InternalHom (Gal ℝ) A (KummerCoeff ℝ n))) = Nat.card (H1 (Gal ℝ) A) :=
   natCard_H1_internalHom_eq_of_natCard_eq_two natCard_absoluteGaloisGroup_real
-    (kummerCoeffAddEquivZMod (isUnit_natCast_of_ne_zero (NeZero.ne n))) hA
+    (kummerCoeffAddEquivZMod (isUnit_natCast_of_ne_zero ℚ (NeZero.ne n))) hA
     (fun _ hg => smul_kummerCoeff_real_eq_neg hg)
 
 /-- **Real local Tate duality in degree one (cohomological target).** -/
@@ -304,13 +306,13 @@ theorem dualityMap1_kummerCoeff_real_bijective (hA : ∀ a : A, n • a = 0) :
     Function.Bijective (dualityMap1 (Gal ℝ) A (KummerCoeff ℝ n)) :=
   dualityMap1_kummerCoeff_bijective_of_natCard_eq_two_or_subsingleton
     (Or.inl natCard_absoluteGaloisGroup_real)
-    (isUnit_natCast_of_ne_zero (NeZero.ne n)) hA (fun _ hg => smul_kummerCoeff_real_eq_neg hg)
+    (isUnit_natCast_of_ne_zero ℚ (NeZero.ne n)) hA (fun _ hg => smul_kummerCoeff_real_eq_neg hg)
 
 /-- **Real local Tate duality in degree one (`ℤ/n` target).** -/
 theorem realTatePairing_bijective (hA : ∀ a : A, n • a = 0) :
     Function.Bijective (realTatePairing A n) :=
   tatePairingOfH2MuHom_bijective_of_natCard_eq_two_or_subsingleton
-    (Or.inl natCard_absoluteGaloisGroup_real) (isUnit_natCast_of_ne_zero (NeZero.ne n))
+    (Or.inl natCard_absoluteGaloisGroup_real) (isUnit_natCast_of_ne_zero ℚ (NeZero.ne n))
     (realH2MuToZMod_injective n) hA (fun _ hg => smul_kummerCoeff_real_eq_neg hg)
 
 end RealDuality
@@ -341,7 +343,7 @@ theorem natCard_pow_mult_mul_natCard_H1_completion {A : Type*} [AddCommGroup A] 
       Nat.card (H0 (Gal w.Completion) A) *
         Nat.card (H0 (Gal w.Completion)
           (InternalHom (Gal w.Completion) A (KummerCoeff w.Completion n))) := by
-  have hn : IsUnit (n : w.Completion) := isUnit_natCast_of_ne_zero (NeZero.ne n)
+  have hn : IsUnit (n : w.Completion) := isUnit_natCast_of_ne_zero ℚ (NeZero.ne n)
   rcases w.isReal_or_isComplex with hw | hw
   · rw [hw.mult_eq_one, pow_one]
     exact natCard_mul_natCard_H1_of_natCard_eq_two (natCard_absoluteGaloisGroup_of_isReal w hw)
@@ -390,7 +392,7 @@ theorem natCard_H1_internalHom_kummerCoeff_completion (hA : ∀ a : A, n • a =
       Nat.card (H1 (Gal w.Completion) A) := by
   rcases natCard_eq_two_or_subsingleton_completion w with h2 | _
   · exact natCard_H1_internalHom_eq_of_natCard_eq_two h2
-      (kummerCoeffAddEquivZMod (isUnit_natCast_of_ne_zero (NeZero.ne n))) hA
+      (kummerCoeffAddEquivZMod (isUnit_natCast_of_ne_zero ℚ (NeZero.ne n))) hA
       (fun _ hg => smul_kummerCoeff_completion_eq_neg w hg)
   · have h1 := subsingleton_H1_of_subsingleton (Gal w.Completion) A
     have h2 := subsingleton_H1_of_subsingleton (Gal w.Completion)
@@ -402,14 +404,14 @@ theorem natCard_H1_internalHom_kummerCoeff_completion (hA : ∀ a : A, n • a =
 theorem dualityMap1_kummerCoeff_completion_bijective (hA : ∀ a : A, n • a = 0) :
     Function.Bijective (dualityMap1 (Gal w.Completion) A (KummerCoeff w.Completion n)) :=
   dualityMap1_kummerCoeff_bijective_of_natCard_eq_two_or_subsingleton
-    (natCard_eq_two_or_subsingleton_completion w) (isUnit_natCast_of_ne_zero (NeZero.ne n)) hA
+    (natCard_eq_two_or_subsingleton_completion w) (isUnit_natCast_of_ne_zero ℚ (NeZero.ne n)) hA
     (fun _ hg => smul_kummerCoeff_completion_eq_neg w hg)
 
 /-- **Archimedean local Tate duality in degree one (`ℤ/n` target).** -/
 theorem infiniteTatePairing_bijective (hA : ∀ a : A, n • a = 0) :
     Function.Bijective (infiniteTatePairing w A n) :=
   tatePairingOfH2MuHom_bijective_of_natCard_eq_two_or_subsingleton
-    (natCard_eq_two_or_subsingleton_completion w) (isUnit_natCast_of_ne_zero (NeZero.ne n))
+    (natCard_eq_two_or_subsingleton_completion w) (isUnit_natCast_of_ne_zero ℚ (NeZero.ne n))
     (infiniteH2MuToZMod_injective w n) hA (fun _ hg => smul_kummerCoeff_completion_eq_neg w hg)
 
 end InfiniteDuality

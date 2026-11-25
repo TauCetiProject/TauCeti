@@ -264,7 +264,7 @@ def tangentSectionsSplitEquiv :
     simp [mul_add, mul_assoc]
   left_inv p := by
     have hp : sphereCoord R ⬝ᵥ (p.1 : ι → C(sphere (0 : EuclideanSpace ℝ ι) 1, R)) = 0 :=
-      mem_tangentSections_iff.mp p.1.2
+      mem_tangentSections_iff.mp p.1.property
     ext1
     · ext i
       simp [dotProduct_add, hp, dotProduct_smul, dotProduct_sphereCoord_self]
@@ -329,18 +329,11 @@ theorem classOf_tangentSections (n : ℕ) (R : Type*) [CommRing R]
 `tangentSections (Fin (n + 1)) R` is `n` times the class of `C(Sⁿ, R)`. -/
 theorem splitK0_of_tangentSections.{u} (n : ℕ) (R : Type u) [CommRing R]
     [TopologicalSpace R] [IsTopologicalRing R] [Algebra ℝ R] [ContinuousSMul ℝ R] :
-    SplitK0.of.{u}
-        (⟨ModuleCat.of C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)
-            (tangentSections (Fin (n + 1)) R),
-          finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩ :
-          (finiteProjectiveModules
-            C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)).FullSubcategory) =
-      n • SplitK0.of.{u}
-        (⟨ModuleCat.of C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)
-            C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R),
-          finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩ :
-          (finiteProjectiveModules
-            C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)).FullSubcategory) := by
+    SplitK0.of.{u} (FiniteProjectiveModules.of C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)
+        (tangentSections (Fin (n + 1)) R)) =
+      n • SplitK0.of.{u} (FiniteProjectiveModules.of
+        C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)
+        C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)) := by
   rw [← sub_eq_zero, ← FiniteProjectiveModules.classOf_def]
   exact classOf_tangentSections n R
 
@@ -430,14 +423,14 @@ def tangentSectionsCircleEquiv :
     simp only [cons_val_zero, cons_val_one]
     linear_combination f * sphereCoord_fin_two_sq_add_sq R
   right_inv v := by
-    have hv : sphereCoord R (0 : Fin 2) * v.1 0 + sphereCoord R (1 : Fin 2) * v.1 1 = 0 := by
-      simpa [dotProduct, Fin.sum_univ_two] using mem_tangentSections_iff.mp v.2
+    have hv : sphereCoord R (0 : Fin 2) * v.val 0 + sphereCoord R (1 : Fin 2) * v.val 1 = 0 := by
+      simpa [dotProduct, Fin.sum_univ_two] using mem_tangentSections_iff.mp v.property
     refine Subtype.ext (funext fun i ↦ ?_)
     fin_cases i
     · simp only [Fin.zero_eta, cons_val_zero]
-      linear_combination v.1 0 * sphereCoord_fin_two_sq_add_sq R - sphereCoord R (0 : Fin 2) * hv
+      linear_combination v.val 0 * sphereCoord_fin_two_sq_add_sq R - sphereCoord R (0 : Fin 2) * hv
     · simp only [Fin.mk_one, cons_val_one, cons_val_zero]
-      linear_combination v.1 1 * sphereCoord_fin_two_sq_add_sq R - sphereCoord R (1 : Fin 2) * hv
+      linear_combination v.val 1 * sphereCoord_fin_two_sq_add_sq R - sphereCoord R (1 : Fin 2) * hv
 
 @[simp]
 theorem coe_tangentSectionsCircleEquiv_apply
@@ -449,7 +442,7 @@ theorem coe_tangentSectionsCircleEquiv_apply
 @[simp]
 theorem tangentSectionsCircleEquiv_symm_apply (v : tangentSections (Fin 2) R) :
     (tangentSectionsCircleEquiv R).symm v =
-      -sphereCoord R 1 * v.1 0 + sphereCoord R 0 * v.1 1 :=
+      -sphereCoord R 1 * v.val 0 + sphereCoord R 0 * v.val 1 :=
   (rfl)
 
 instance : Module.Free C(sphere (0 : EuclideanSpace ℝ (Fin 2)) 1, R)
@@ -464,7 +457,7 @@ section NonFreeEvenSphere
 `ℝ`-linear map into `EuclideanSpace ℝ (Fin (n + 1))`. -/
 private def evalTangentAt {n : ℕ} (x₀ : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
     tangentSections (Fin (n + 1)) ℝ →ₗ[ℝ] EuclideanSpace ℝ (Fin (n + 1)) where
-  toFun v := WithLp.toLp 2 fun j ↦ v.1 j x₀
+  toFun v := WithLp.toLp 2 fun j ↦ v.val j x₀
   map_add' v w := by ext j; rfl
   map_smul' r v := by ext j; rfl
 
@@ -472,7 +465,7 @@ private def evalTangentAt {n : ℕ} (x₀ : sphere (0 : EuclideanSpace ℝ (Fin 
 private theorem evalTangentAt_apply {n : ℕ}
     (x₀ : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
     (v : tangentSections (Fin (n + 1)) ℝ) :
-    evalTangentAt x₀ v = WithLp.toLp 2 fun j ↦ v.1 j x₀ :=
+    evalTangentAt x₀ v = WithLp.toLp 2 fun j ↦ v.val j x₀ :=
   (rfl)
 
 private theorem evalTangentAt_smul_fun {n : ℕ}
@@ -511,11 +504,11 @@ private theorem not_basis_tangentSections_of_even {k : ℕ} (hk : Even (k + 1))
   have : Fact (Module.finrank ℝ (EuclideanSpace ℝ (Fin (k + 2))) = (k + 1) + 1) :=
     ⟨finrank_euclideanSpace_fin⟩
   have hcont : Continuous fun x : sphere (0 : EuclideanSpace ℝ (Fin (k + 2))) 1 ↦
-      WithLp.toLp 2 fun j ↦ (b 0).1 j x :=
-    (PiLp.continuous_toLp 2 _).comp (continuous_pi fun j ↦ ((b 0).1 j).continuous)
+      WithLp.toLp 2 fun j ↦ (b 0).val j x :=
+    (PiLp.continuous_toLp 2 _).comp (continuous_pi fun j ↦ ((b 0).val j).continuous)
   have hinner : ∀ x : sphere (0 : EuclideanSpace ℝ (Fin (k + 2))) 1,
-      ⟪WithLp.toLp 2 (fun j ↦ (b 0).1 j x), (x : EuclideanSpace ℝ _)⟫_ℝ = 0 :=
-    mem_tangentSections_real_iff_inner.mp (b 0).2
+      ⟪WithLp.toLp 2 (fun j ↦ (b 0).val j x), (x : EuclideanSpace ℝ _)⟫_ℝ = 0 :=
+    mem_tangentSections_real_iff_inner.mp (b 0).property
   obtain ⟨x₀, hx₀⟩ := exists_eq_zero_of_continuous_of_inner_eq_zero (n := k + 1) hk hcont hinner
   have hx₀' : evalTangentAt x₀ (b 0) = 0 := by rw [evalTangentAt_apply]; exact hx₀
   have hrange_le : LinearMap.range (evalTangentAt x₀) ≤

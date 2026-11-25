@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPolynomial.DeterminantalIdeal
-public import TauCeti.LinearAlgebra.Matrix.MvPolynomial
+public import TauCeti.LinearAlgebra.Matrix.MvPolynomial.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.RowSubset
 import TauCeti.Data.Finset.Sort
 
@@ -105,7 +105,7 @@ theorem flagMinor_singleton (r : Fin n) : flagMinor R {r} = X (r, ⟨0, r.pos⟩
   have : Unique (Fin #{r}) := card_singleton r ▸ inferInstance
   rw [flagMinor_def, Matrix.mvPolynomialMinor_one, mem_singleton.1 (orderEmbOfFin_mem _ _ _)]
   congr
-  exact Fin.ext (Nat.lt_one_iff.1 ((default : Fin #{r}).2.trans_eq (card_singleton r)))
+  exact Fin.ext (Nat.lt_one_iff.1 ((default : Fin #{r}).isLt.trans_eq (card_singleton r)))
 
 /-- The first column, reindexed from the rows of a two-element set. -/
 private theorem castLE_cast_zero {d : ℕ} (h : d ≤ n + 2) (h' : 2 = d) :
@@ -160,7 +160,7 @@ theorem flagDiagonalExponent_apply (I : Finset (Fin n)) (r c : Fin n) :
   · refine Fintype.sum_eq_zero _ fun d ↦ Finsupp.single_eq_of_ne fun h ↦ hc ?_
     have := congrArg (fun x ↦ ((ofLex x).2 : ℕ)) h
     simp only [ofLex_toLex, Fin.val_castLE] at this
-    exact this ▸ d.2
+    exact this ▸ d.isLt
 
 /-- The diagonal exponent of a single row `r` is that of the variable `z_(r,0)`. -/
 @[simp]
@@ -169,7 +169,7 @@ theorem flagDiagonalExponent_singleton (r : Fin n) :
   have : Unique (Fin #{r}) := card_singleton r ▸ inferInstance
   rw [flagDiagonalExponent, Fintype.sum_unique, mem_singleton.1 (orderEmbOfFin_mem _ _ _)]
   congr
-  exact Fin.ext (Nat.lt_one_iff.1 ((default : Fin #{r}).2.trans_eq (card_singleton r)))
+  exact Fin.ext (Nat.lt_one_iff.1 ((default : Fin #{r}).isLt.trans_eq (card_singleton r)))
 
 /-- The diagonal exponent of two rows `i < j` is that of the diagonal `z_(i,0) z_(j,1)`. -/
 @[simp]
@@ -285,8 +285,8 @@ theorem exponentEntries_succ_sub (e : Fin n ×ₗ Fin n →₀ ℕ) (r c : Fin n
     ext r'
     simp only [mem_filter, mem_univ, true_and, mem_insert, Fin.ext_iff]
     omega
-  have h₁ : (c : ℕ) < n ∧ (r : ℕ) + 1 ≤ n := ⟨c.2, r.2⟩
-  have h₂ : (c : ℕ) < n ∧ (r : ℕ) ≤ n := ⟨c.2, r.2.le⟩
+  have h₁ : (c : ℕ) < n ∧ (r : ℕ) + 1 ≤ n := ⟨c.isLt, r.isLt⟩
+  have h₂ : (c : ℕ) < n ∧ (r : ℕ) ≤ n := ⟨c.isLt, r.isLt.le⟩
   simp only [exponentEntries_apply, h₁, h₂, and_self, dite_true, hfilter]
   rw [sum_insert (by simp), add_sub_cancel_right]
 

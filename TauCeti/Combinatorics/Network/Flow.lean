@@ -380,8 +380,8 @@ variable {cap : Assignment Q K} {s t : V}
 def zero (hcap : 0 ≤ cap) : Flow cap s t where
   toFun := 0
   mem_Icc := ⟨le_rfl, hcap⟩
-  conserve v _ _ := excessAt_zero v
-  excessAt_sink_nonneg := (excessAt_zero t).ge
+  conserve v _ _ := excessAt_zero_apply v
+  excessAt_sink_nonneg := (excessAt_zero_apply t).ge
 
 @[simp]
 theorem zero_toFun (hcap : 0 ≤ cap) : (zero hcap : Flow cap s t).toFun = 0 :=
@@ -389,7 +389,7 @@ theorem zero_toFun (hcap : 0 ≤ cap) : (zero hcap : Flow cap s t).toFun = 0 :=
 
 @[simp]
 theorem val_zero (hcap : 0 ≤ cap) : (zero hcap : Flow cap s t).val = 0 := by
-  rw [BoundedFlow.val_def, zero_toFun, excessAt_zero]
+  rw [BoundedFlow.val_def, zero_toFun, excessAt_zero_apply]
 
 theorem nonneg (f : Flow cap s t) {x y : V} (e : Q x y) : 0 ≤ f.toFun e :=
   f.lower_le e
@@ -401,7 +401,7 @@ theorem val_nonneg (f : Flow cap s t) : 0 ≤ f.val :=
 nonnegative value. -/
 def equivBoundedFlow : Flow cap s t ≃ {f : BoundedFlow 0 cap s t // 0 ≤ f.val} where
   toFun f := ⟨f.toBoundedFlow, f.val_nonneg⟩
-  invFun f := ⟨f.1, f.2⟩
+  invFun f := ⟨f.val, f.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
 

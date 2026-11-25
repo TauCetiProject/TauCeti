@@ -7,10 +7,12 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
+public import Mathlib.RingTheory.PowerSeries.Derivative
 import Mathlib.Algebra.Algebra.Rat
 import Mathlib.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Algebra.NatCast
+import TauCeti.RingTheory.PowerSeries.Derivative
 
 /-!
 # The elementary symmetric polynomials through the power sums
@@ -34,6 +36,8 @@ polynomial exists: `p₁² - p₂ = 2 e₂`.
 
 * `TauCeti.mul_esymm_succ_eq_sum`: **Newton's identities** in the form
   `(n + 1) e_(n + 1) = ∑_{i + j = n} (-1)ʲ eᵢ p_(j + 1)`.
+* `TauCeti.X_mul_derivative_mk_esymm`: the same identities as the logarithmic derivative
+  `t E'(t) = E(t) ∑_{k ≥ 1} (-1)^(k-1) pₖ tᵏ` of the generating function `E(t) = ∑ₙ eₙ tⁿ`.
 * `TauCeti.esymmPsumPoly_succ`,
   `TauCeti.mul_esymmPsumPoly_succ`: Newton's recursion for `E_n`.
 * `TauCeti.aeval_psum_esymmPsumPoly`: in a finite alphabet, `E_n` evaluated at
@@ -78,6 +82,24 @@ theorem mul_esymm_succ_eq_sum (σ : Type*) [Fintype σ] (R : Type*) [CommRing R]
   rw [← mul_assoc, ← mul_assoc, ← pow_add, hexp, pow_add, pow_mul]
   simp
 
+open PowerSeries in
+/-- **The logarithmic derivative of the generating function of the elementary symmetric
+polynomials**: `t E'(t) = E(t) ∑_{k ≥ 1} (-1)^(k-1) pₖ tᵏ`, where `E(t) = ∑ₙ eₙ tⁿ = ∏ᵢ (1 + xᵢ t)`
+and `pₖ` is the `k`-th power sum. Comparing coefficients gives back Newton's identities
+`TauCeti.mul_esymm_succ_eq_sum`. -/
+theorem X_mul_derivative_mk_esymm (σ : Type*) [Fintype σ] (R : Type*) [CommRing R] :
+    PowerSeries.X * d⁄dX (mk fun n => esymm σ R n) =
+      (mk fun n => esymm σ R n) * mk fun n => if n = 0 then 0 else (-1) ^ (n + 1) * psum σ R n := by
+  refine PowerSeries.ext fun k => ?_
+  rcases k with _ | k
+  · simp [coeff_X_mul_derivative]
+  rw [coeff_X_mul_derivative, coeff_mk, PowerSeries.coeff_mul, Nat.sum_antidiagonal_succ',
+    Nat.cast_succ, mul_esymm_succ_eq_sum]
+  simp only [coeff_mk, ↓reduceIte, Nat.add_eq_zero_iff, one_ne_zero, and_false, mul_zero,
+    zero_add]
+  refine sum_congr rfl fun x _ => ?_
+  ring
+
 section
 
 variable (R : Type*) [CommRing R] [Algebra ℚ R]
@@ -88,9 +110,9 @@ expresses the elementary symmetric function `e_n` over a `ℚ`-algebra: `E₀ = 
 noncomputable def esymmPsumPoly : ℕ → MvPolynomial ℕ R
   | 0 => 1
   | n + 1 => algebraMap ℚ R ((n : ℚ) + 1)⁻¹ •
-      ∑ x ∈ (antidiagonal n).attach, (-1) ^ x.1.2 * esymmPsumPoly x.1.1 * X x.1.2
+      ∑ x ∈ (antidiagonal n).attach, (-1) ^ x.val.2 * esymmPsumPoly x.val.1 * X x.val.2
 decreasing_by
-  have := Nat.antidiagonal.fst_lt x.2
+  have := Nat.antidiagonal.fst_lt x.property
   omega
 
 @[simp]
@@ -110,7 +132,8 @@ theorem esymmPsumPoly_succ (n : ℕ) :
 theorem mul_esymmPsumPoly_succ (n : ℕ) :
     (n + 1 : MvPolynomial ℕ R) * esymmPsumPoly R (n + 1) =
       ∑ x ∈ antidiagonal n, (-1) ^ x.2 * esymmPsumPoly R x.1 * X x.2 := by
-  rw [esymmPsumPoly_succ, natCast_add_one_mul_algebraMap_inv_smul]
+  rw [esymmPsumPoly_succ, mul_smul_comm,
+    algebraMap_inv_natCast_add_one_smul_natCast_add_one_mul _ (Nat.cast_add_one_ne_zero _)]
 
 @[simp]
 theorem esymmPsumPoly_one : esymmPsumPoly R 1 = X 0 := by
@@ -138,9 +161,10 @@ theorem aeval_psum_esymmPsumPoly (σ : Type*) [Fintype σ] (n : ℕ) :
   | _ n ih =>
     obtain _ | n := n
     · simp
-    refine (isUnit_natCast_add_one (K := MvPolynomial σ R) n).mul_left_cancel ?_
-    rw [esymmPsumPoly_succ, map_smul, natCast_add_one_mul_algebraMap_inv_smul, map_sum,
-      mul_esymm_succ_eq_sum]
+    refine (isUnit_natCast_add_one ℚ (A := MvPolynomial σ R) n).mul_left_cancel ?_
+    rw [esymmPsumPoly_succ, map_smul, mul_smul_comm,
+      algebraMap_inv_natCast_add_one_smul_natCast_add_one_mul _ (Nat.cast_add_one_ne_zero _),
+      map_sum, mul_esymm_succ_eq_sum]
     refine sum_congr rfl fun x hx => ?_
     rw [map_mul, map_mul, map_pow, map_neg, map_one, aeval_X,
       ih x.1 (Nat.antidiagonal.fst_lt hx)]

@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.GTree.Lifting
 public import TauCeti.GroupTheory.GraphOfGroups.SpanningTree
 public import TauCeti.GroupTheory.GraphOfGroups.Hom
 public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
+import TauCeti.GroupTheory.CoprodI
 import TauCeti.GroupTheory.GraphOfGroups.NormalForm
 
 /-!
@@ -49,9 +50,12 @@ orbit-comparison elements gives mutually inverse morphisms of graphs of groups b
 When every dart stabilizer is trivial, `D.equivCoprodFreeGroup` decomposes `G` as the free product
 of the lifted vertex groups `D.graphOfGroups.vertexGroup b` (that is, `stabilizer G (D.vertex b)`)
 with a free group on the positively oriented darts outside `D.tree`; this is the algebraic step of
-Kurosh's subgroup theorem. When every vertex stabilizer is trivial, `D.equivFreeGroup` identifies
-`G` with that free group, and `GTree.isFreeGroup_of_stabilizer_eq_bot` concludes that every group
-acting freely without inversions on a tree is free.
+Kurosh's subgroup theorem. Dropping the trivial vertex groups, `G` is then the internal free product
+of a free subgroup and of the stabilizers of one vertex from each orbit of vertices with nontrivial
+stabilizer (`GTree.exists_bijective_coprod_lift_stabilizer`). When every vertex stabilizer is
+trivial, `D.equivFreeGroup` identifies `G` with that free group, and
+`GTree.isFreeGroup_of_stabilizer_eq_bot` concludes that every group acting freely without inversions
+on a tree is free.
 
 ## Main definitions
 
@@ -75,12 +79,15 @@ acting freely without inversions on a tree is free.
 * `TauCeti.GTree.Lifting.exists_hom_graphOfGroups`: for any two liftings `D₁` and `D₂`, there are
   mutually inverse morphisms of graphs of groups between `D₁.graphOfGroups` and
   `D₂.graphOfGroups` over the identity of `T.quotient`.
+* `TauCeti.GTree.exists_bijective_coprod_lift_stabilizer`: a group acting without inversions on a
+  tree with trivial dart stabilizers is the internal free product of a free subgroup and of the
+  stabilizers of representatives of the orbits of vertices with nontrivial stabilizer.
 * `TauCeti.GTree.isFreeGroup_of_stabilizer_eq_bot`: a group acting freely without inversions on a
   tree is a free group.
 
 ## References
 
-* J.-P. Serre, *Trees*, Chapter I, §3.3, Theorem 4, and §5.4, Theorem 13.
+* J.-P. Serre, *Trees*, Chapter I, §3.3, Theorem 4, §5.4, Theorem 13, and §5.5, Theorem 14.
 * I. Kapovich, R. Weidmann and A. Myasnikov, *Foldings, graphs of groups and the membership
   problem*, Internat. J. Algebra Comput. 15 (2005), §2, Proposition 2.6 and Remark 2.7.
 -/
@@ -201,10 +208,10 @@ noncomputable instance instCoeOutEdgeGroup (z : T.quotient.GeomEdge) :
 -- `(g : G)` elaborates to `D.vertexGroupSubtype b g` / `D.edgeGroupSubtype z g`, so `@[simp]` goes
 -- on `*_mk` rather than `*_apply` to keep `(g : G)` in `simp`-normal form.
 theorem vertexGroupSubtype_apply (b : T.quotient.V) (g : D.graphOfGroups.vertexGroup b) :
-    D.vertexGroupSubtype b g = (g : stabilizer G (D.vertex b)).1 := (rfl)
+    D.vertexGroupSubtype b g = (g : stabilizer G (D.vertex b)).val := (rfl)
 
 theorem edgeGroupSubtype_apply (z : T.quotient.GeomEdge) (g : D.graphOfGroups.edgeGroup z) :
-    D.edgeGroupSubtype z g = (g : stabilizer G (D.dart (GeomEdge.out T.quotient z))).1 := (rfl)
+    D.edgeGroupSubtype z g = (g : stabilizer G (D.dart (GeomEdge.out T.quotient z))).val := (rfl)
 
 @[simp] theorem vertexGroupSubtype_mk (b : T.quotient.V) (g : G)
     (hg : g ∈ stabilizer G (D.vertex b)) : D.vertexGroupSubtype b ⟨g, hg⟩ = g := (rfl)
@@ -214,10 +221,10 @@ theorem edgeGroupSubtype_apply (z : T.quotient.GeomEdge) (g : D.graphOfGroups.ed
     D.edgeGroupSubtype z ⟨g, hg⟩ = g := (rfl)
 
 theorem vertexGroupSubtype_mem (b : T.quotient.V) (g : D.graphOfGroups.vertexGroup b) :
-    (g : G) ∈ stabilizer G (D.vertex b) := g.2
+    (g : G) ∈ stabilizer G (D.vertex b) := g.property
 
 theorem edgeGroupSubtype_mem (z : T.quotient.GeomEdge) (g : D.graphOfGroups.edgeGroup z) :
-    (g : G) ∈ stabilizer G (D.dart (GeomEdge.out T.quotient z)) := g.2
+    (g : G) ∈ stabilizer G (D.dart (GeomEdge.out T.quotient z)) := g.property
 
 @[simp] theorem range_vertexGroupSubtype (b : T.quotient.V) :
     (D.vertexGroupSubtype b).range = stabilizer G (D.vertex b) := Subgroup.range_subtype _
@@ -320,7 +327,7 @@ theorem mem_range_ω_iff {y : T.quotient.E}
   rw [D.stabilizer_dart_rev_eq_map_edgeTwist y, Subgroup.mem_map]
   refine ⟨fun ⟨c, hc⟩ => ?_, fun ⟨x, hx, hgx⟩ => ?_⟩
   · subst hc
-    exact ⟨c, c.2, (coe_ω_eq_conj_edgeTwist D y c).symm⟩
+    exact ⟨c, c.property, (coe_ω_eq_conj_edgeTwist D y c).symm⟩
   · exact ⟨⟨x, hx⟩, Subtype.ext ((coe_ω_eq_conj_edgeTwist D y ⟨x, hx⟩).trans hgx)⟩
 
 /-- For an arrow `e : a ⟶ b` of `T.quotient`, an element of the vertex group at `b` lies in the
@@ -328,7 +335,7 @@ image of `ωArrow e` precisely when it fixes `D.dart (rev e.1)`. -/
 theorem mem_range_ωArrow_iff {a b : T.quotient.V} {e : a ⟶ b}
     {g : D.graphOfGroups.vertexGroup b} :
     g ∈ (D.graphOfGroups.ωArrow e).range ↔
-      (g : G) ∈ stabilizer G (D.dart (T.quotient.rev e.1)) := by
+      (g : G) ∈ stabilizer G (D.dart (T.quotient.rev e.val)) := by
   obtain ⟨y, rfl, rfl⟩ := e
   simpa using D.mem_range_ω_iff
 
@@ -336,7 +343,7 @@ theorem mem_range_ωArrow_iff {a b : T.quotient.V} {e : a ⟶ b}
 image of `αArrow e` precisely when it fixes `D.dart e.1`. -/
 theorem mem_range_αArrow_iff {a b : T.quotient.V} {e : a ⟶ b}
     {g : D.graphOfGroups.vertexGroup a} :
-    g ∈ (D.graphOfGroups.αArrow e).range ↔ (g : G) ∈ stabilizer G (D.dart e.1) := by
+    g ∈ (D.graphOfGroups.αArrow e).range ↔ (g : G) ∈ stabilizer G (D.dart e.val) := by
   rw [← D.graphOfGroups.range_ωArrow_reverse, D.mem_range_ωArrow_iff, T.quotient.reverse_val,
     T.quotient.rev_rev]
 
@@ -379,7 +386,7 @@ theorem π₁TreeToGroup_surjective : Function.Surjective D.π₁TreeToGroup := 
 private noncomputable def evalAlt {a : T.quotient.V} :
     ∀ {b : T.quotient.V}, D.graphOfGroups.AlternatingPath a b → G
   | _, .single g => g
-  | _, .cons p e g => evalAlt p * D.twist e.1 * g
+  | _, .cons p e g => evalAlt p * D.twist e.val * g
 
 private theorem π₁TreeToGroup_toπ₁Tree_toPath {a b : T.quotient.V}
     (p : D.graphOfGroups.AlternatingPath a b) :
@@ -393,16 +400,16 @@ length-zero path ends definitionally at `D.vertex a`. -/
 private noncomputable def endVertex {a : T.quotient.V} :
     ∀ {b : T.quotient.V}, D.graphOfGroups.AlternatingPath a b → T.V
   | _, .single _ => D.vertex a
-  | b, .cons p e _ => (D.evalAlt p * D.twist e.1) • D.vertex b
+  | b, .cons p e _ => (D.evalAlt p * D.twist e.val) • D.vertex b
 
 private theorem endVertex_eq {a : T.quotient.V} :
     ∀ {b : T.quotient.V} (p : D.graphOfGroups.AlternatingPath a b),
       D.endVertex p = D.evalAlt p • D.vertex b
-  | _, .single g => (mem_stabilizer_iff.mp g.2).symm
+  | _, .single g => (mem_stabilizer_iff.mp g.property).symm
   | _, .cons p e g => by
     simp only [endVertex, evalAlt]
-    rw [mul_smul (D.evalAlt p * D.twist e.1)]
-    exact congrArg ((D.evalAlt p * D.twist e.1) • ·) (mem_stabilizer_iff.mp g.2).symm
+    rw [mul_smul (D.evalAlt p * D.twist e.val)]
+    exact congrArg ((D.evalAlt p * D.twist e.val) • ·) (mem_stabilizer_iff.mp g.property).symm
 
 /-- The edge path in `T` traced by an alternating path `g₀, e₁, g₁, …, e_k, g_k` of
 `D.graphOfGroups` starting at `D.vertex a`: the `i`-th dart is the translate of `D.dart e_i` by the
@@ -412,28 +419,28 @@ private noncomputable def liftAlt {a : T.quotient.V} :
       T.Path (D.vertex a) (D.endVertex p)
   | _, .single _ => Quiver.Path.nil
   | _, .cons p e _ =>
-    (liftAlt p).cons ⟨D.evalAlt p • D.dart e.1,
-      by rw [src_smul, D.src_dart, e.2.1, D.endVertex_eq],
-      by rw [tgt_smul, D.tgt_dart, e.2.2, ← mul_smul]; rfl⟩
+    (liftAlt p).cons ⟨D.evalAlt p • D.dart e.val,
+      by rw [src_smul, D.src_dart, e.property.1, D.endVertex_eq],
+      by rw [tgt_smul, D.tgt_dart, e.property.2, ← mul_smul]; rfl⟩
 
 /-- Two consecutive lifted darts backtrack in `T` precisely when the alternating path has a
 Bass–Serre cancellation `e₁, g₁, e₂` with `e₁ = rev e₂` and `g₁ ∈ range (αArrow e₂)`. -/
 private theorem smul_dart_eq_rev_iff_cancels {a b c d : T.quotient.V}
     (p : D.graphOfGroups.AlternatingPath a b) (e₁ : b ⟶ c)
     (g₁ : D.graphOfGroups.vertexGroup c) (e₂ : c ⟶ d) :
-    D.evalAlt (.cons p e₁ g₁) • D.dart e₂.1 = T.rev (D.evalAlt p • D.dart e₁.1) ↔
+    D.evalAlt (.cons p e₁ g₁) • D.dart e₂.val = T.rev (D.evalAlt p • D.dart e₁.val) ↔
       (GraphOfGroups.AlternatingPath.cons p e₁ g₁).Cancels e₂ := by
   rw [GraphOfGroups.AlternatingPath.cancels_cons_iff, D.mem_range_αArrow_iff, mem_stabilizer_iff,
     rev_smul, evalAlt, mul_assoc, mul_smul, smul_left_cancel_iff]
   refine ⟨fun h => ?_, fun ⟨he, hg⟩ => ?_⟩
-  · have hq : e₂.1 = T.quotient.rev e₁.1 := by
+  · have hq : e₂.val = T.quotient.rev e₁.val := by
       simpa using congrArg T.quotientMap.mapE h
-    have he₁ : e₁.1 = T.quotient.rev e₂.1 := by
+    have he₁ : e₁.val = T.quotient.rev e₂.val := by
       rw [hq, T.quotient.rev_rev]
     refine ⟨he₁, ?_⟩
-    rw [hq, ← D.twist_smul_dart_rev e₁.1, mul_smul, smul_left_cancel_iff] at h
+    rw [hq, ← D.twist_smul_dart_rev e₁.val, mul_smul, smul_left_cancel_iff] at h
     rwa [← hq] at h
-  · rw [he, mul_smul, hg, ← D.twist_smul_dart_rev (T.quotient.rev e₂.1), T.quotient.rev_rev]
+  · rw [he, mul_smul, hg, ← D.twist_smul_dart_rev (T.quotient.rev e₂.val), T.quotient.rev_rev]
 
 /-- An alternating path of `D.graphOfGroups` is reduced in the Bass–Serre sense if and only if its
 lifted path in the tree `T` is reduced. -/
@@ -567,6 +574,19 @@ theorem π₁Equiv_apply (b₀ : T.quotient.V) (x : GraphOfGroups.π₁ D.graphO
     D.π₁Equiv b₀ (GraphOfGroups.π₁.ofPathGroup D.graphOfGroups b₀ (D.tree.loop b₀ y)) =
       D.twist y := by
   simp [π₁Equiv]
+
+/-- On the vertex group at the base vertex, `π₁(D.graphOfGroups, b₀) ≃* G` is the inclusion of the
+stabilizer of the lifted vertex. -/
+theorem π₁Equiv_vertexHom_nil {b₀ : T.quotient.V} (g : D.graphOfGroups.vertexGroup b₀) :
+    D.π₁Equiv b₀ (GraphOfGroups.π₁.vertexHom Quiver.Path.nil g) = g := by
+  simp
+
+/-- The inverse of `π₁(D.graphOfGroups, b₀) ≃* G` sends an element `g` of the vertex group at
+`b₀`, read in `G`, to the image of `g` in `π₁(D.graphOfGroups, b₀)`. -/
+@[simp] theorem π₁Equiv_symm_coe_vertex {b₀ : T.quotient.V}
+    (g : D.graphOfGroups.vertexGroup b₀) :
+    (D.π₁Equiv b₀).symm (g : G) = GraphOfGroups.π₁.vertexHom Quiver.Path.nil g :=
+  (D.π₁Equiv b₀).symm_apply_eq.2 (D.π₁Equiv_vertexHom_nil g).symm
 
 end Basic
 
@@ -911,7 +931,7 @@ noncomputable def equivCoprodFreeGroup (hE : ∀ e : T.E, stabilizer G e = ⊥)
 
 @[simp] theorem equivCoprodFreeGroup_symm_inr_of (hE : ∀ e : T.E, stabilizer G e = ⊥)
     {O : Set T.quotient.E} (hO : T.quotient.IsOrientation O) (y : ↥(O \ D.tree.darts)) :
-    (D.equivCoprodFreeGroup hE hO).symm (Monoid.Coprod.inr (FreeGroup.of y)) = D.twist y.1 := by
+    (D.equivCoprodFreeGroup hE hO).symm (Monoid.Coprod.inr (FreeGroup.of y)) = D.twist y.val := by
   have := D.subsingleton_edgeGroup_of_stabilizer_eq_bot hE
   simp [equivCoprodFreeGroup, π₁TreeEquiv_apply]
 
@@ -944,7 +964,7 @@ noncomputable def equivFreeGroup (hV : ∀ v : T.V, stabilizer G v = ⊥)
 
 @[simp] theorem equivFreeGroup_symm_of (hV : ∀ v : T.V, stabilizer G v = ⊥)
     {O : Set T.quotient.E} (hO : T.quotient.IsOrientation O) (y : ↥(O \ D.tree.darts)) :
-    (D.equivFreeGroup hV hO).symm (FreeGroup.of y) = D.twist y.1 := by
+    (D.equivFreeGroup hV hO).symm (FreeGroup.of y) = D.twist y.val := by
   have := D.subsingleton_vertexGroup_of_stabilizer_eq_bot hV
   simp [equivFreeGroup, π₁TreeEquiv_apply]
 
@@ -976,6 +996,47 @@ theorem isFreeGroup_of_stabilizer_eq_bot (T : GTree.{u, v} G)
   obtain ⟨D⟩ := (inferInstance : Nonempty T.Lifting)
   obtain ⟨O, hO⟩ := T.quotient.exists_isOrientation
   exact IsFreeGroup.ofMulEquiv (D.equivFreeGroup hV hO).symm
+
+/-- **Kurosh decomposition of a group acting on a tree with trivial dart stabilizers.** Let `G` act
+without inversions on a tree in which every dart has trivial stabilizer. Then there are vertices
+`x j`, one from each orbit of vertices with nontrivial stabilizer, and a homomorphism
+`f : FreeGroup X →* G`, such that `G` is the internal free product of the stabilizers of the `x j`
+and of the free group `F(X)` along `f`: the homomorphism `(∗ⱼ G_{x j}) ∗ F(X) →* G` induced by the
+inclusions and by `f` is bijective. This is the tree-level step in the proof of Serre, *Trees*,
+Chapter I, §5.5, Theorem 14 (Kurosh). -/
+theorem exists_bijective_coprod_lift_stabilizer (T : GTree.{u, v} G)
+    (hE : ∀ e : T.E, stabilizer G e = ⊥) :
+    ∃ (J : Type u) (x : J → T.V) (X : Type v) (f : FreeGroup X →* G),
+      Function.Bijective
+        (Monoid.Coprod.lift (Monoid.CoprodI.lift fun j => (stabilizer G (x j)).subtype) f) ∧
+      (∀ j, stabilizer G (x j) ≠ ⊥) ∧
+      (∀ j j' (g : G), g • x j = x j' → j = j') ∧
+      (∀ y : T.V, stabilizer G y ≠ ⊥ → ∃ j, ∃ g : G, g • x j = y) := by
+  obtain ⟨D⟩ := (inferInstance : Nonempty T.Lifting)
+  obtain ⟨O, hO⟩ := T.quotient.exists_isOrientation
+  -- The vertex groups of `D.graphOfGroups` outside `p` are trivial and are dropped.
+  let p : T.quotient.V → Prop := fun b => stabilizer G (D.vertex b) ≠ ⊥
+  have hp (b : T.quotient.V) (hb : ¬p b) : Subsingleton (D.graphOfGroups.vertexGroup b) := by
+    rw [D.graphOfGroups_vertexGroup, not_not.1 hb]
+    infer_instance
+  let F : FreeGroup ↥(O \ D.tree.darts) →* G := FreeGroup.lift fun y => D.twist y.val
+  refine ⟨{b // p b}, fun b => D.vertex b.val, _, F, ?_, fun b => b.property, ?_, ?_⟩
+  · have hsymm : (D.equivCoprodFreeGroup hE hO).symm.toMonoidHom =
+        Monoid.Coprod.lift (Monoid.CoprodI.lift D.vertexGroupSubtype) F := by
+      ext b m
+      · simp
+      · simp [F]
+    have h := (Monoid.Coprod.lift_coprodI_lift_subtype_bijective_iff hp D.vertexGroupSubtype F).2
+      (hsymm ▸ (D.equivCoprodFreeGroup hE hO).symm.bijective)
+    -- `D.graphOfGroups.vertexGroup b` is `stabilizer G (D.vertex b)` by definition
+    -- (`graphOfGroups_vertexGroup`), and `D.vertexGroupSubtype b` is its subgroup inclusion.
+    exact h
+  · intro j j' g h
+    exact Subtype.ext (by simpa using congrArg T.quotientMap.mapV h)
+  · intro y hy
+    obtain ⟨g, hg⟩ := quotientMap_mapV_eq_iff.1 (D.quotientMap_vertex (T.quotientMap.mapV y))
+    refine ⟨⟨T.quotientMap.mapV y, fun h => hy ?_⟩, g, hg⟩
+    rw [← hg, stabilizer_smul_eq_stabilizer_map_conj, h, Subgroup.map_bot]
 
 end GTree
 

@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 public import TauCeti.FieldTheory.Galois.Quotient
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+import TauCeti.FieldTheory.Galois.FixedField
 
 /-!
 # The absolute Galois group of a finite separable extension as an open subgroup
@@ -275,7 +276,7 @@ theorem absoluteGaloisGroupExtend_apply_separableClosureRingEquiv
 /-- The embedding `G_L → G_K` induced by an embedding of a finite extension is continuous. -/
 theorem continuous_absoluteGaloisGroupExtend : Continuous (absoluteGaloisGroupExtend K L σ) :=
   (absoluteGaloisGroupRestrictEquiv K).symm.continuous_toFun.comp <|
-    continuous_subtype_val.comp <|
+    continuous_subtypeVal.comp <|
       (galoisSubgroupEquiv K L σ).continuous_toFun.comp
         (absoluteGaloisGroupRestrictEquiv L).continuous_toFun
 
@@ -295,7 +296,7 @@ theorem mem_range_absoluteGaloisGroupExtend_iff {g : Field.absoluteGaloisGroup K
   refine ⟨?_, fun hg ↦ ?_⟩
   · rintro ⟨τ, rfl⟩
     rw [absoluteGaloisGroupRestrictEquiv_absoluteGaloisGroupExtend]
-    exact (galoisSubgroupEquiv K L σ _).2
+    exact (galoisSubgroupEquiv K L σ _).property
   · refine ⟨(absoluteGaloisGroupRestrictEquiv L).symm
       ((galoisSubgroupEquiv K L σ).symm ⟨absoluteGaloisGroupRestrictEquiv K g, hg⟩),
       (absoluteGaloisGroupRestrictEquiv K).injective ?_⟩
@@ -368,9 +369,9 @@ def absoluteGaloisGroupRestrictSubgroupEquiv {U : Subgroup (Field.absoluteGalois
       AbsoluteGaloisGroup K).subgroupMap U).trans
     (MulEquiv.subgroupCongr (hU ▸ map_range_absoluteGaloisGroupExtend K L σ))
   continuous_toFun :=
-    ((absoluteGaloisGroupRestrictEquiv K).continuous.comp continuous_subtype_val).subtype_mk _
+    ((absoluteGaloisGroupRestrictEquiv K).continuous.comp continuous_subtypeVal).subtype_mk _
   continuous_invFun :=
-    ((absoluteGaloisGroupRestrictEquiv K).symm.continuous.comp continuous_subtype_val).subtype_mk _
+    ((absoluteGaloisGroupRestrictEquiv K).symm.continuous.comp continuous_subtypeVal).subtype_mk _
 
 /-- `absoluteGaloisGroupRestrictSubgroupEquiv` is the restriction isomorphism
 `absoluteGaloisGroupRestrictEquiv K`. -/
@@ -500,9 +501,8 @@ variable {K} in
 /-- **The fixed field of an open subgroup of `G_K` is a finite extension of `K`**: the subgroup
 fixing it is the open subgroup itself. -/
 instance finiteDimensional_fixedField_toSubgroup (U : OpenSubgroup (AbsoluteGaloisGroup K)) :
-    FiniteDimensional K (fixedField U.toSubgroup) := by
-  rw [← InfiniteGalois.isOpen_iff_finite, ← toSubgroup_eq_fixingSubgroup_of_fixedField_eq rfl]
-  exact U.isOpen
+    FiniteDimensional K (fixedField U.toSubgroup) :=
+  IntermediateField.finiteDimensional_fixedField_of_isOpen U.isOpen
 
 variable {K} in
 /-- Below every open subgroup `W` of `G_K` lies an open subgroup whose fixed field contains the

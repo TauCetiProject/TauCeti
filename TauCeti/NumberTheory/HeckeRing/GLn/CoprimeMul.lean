@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.HeckeRing.GLn.Diagonal.Cosets
 import Mathlib.LinearAlgebra.Matrix.Integer
 import TauCeti.Data.Nat.GCD
 import TauCeti.GroupTheory.DoubleCoset.Identity
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.CongruenceSplit
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Congruence.Split
 
 /-!
 # Coprime multiplication in the `GL_n` Hecke ring
@@ -212,7 +212,7 @@ private lemma mulMap_coprime_eq (a b : Fin n → ℕ) (hcop : Nat.Coprime (∏ i
   obtain ⟨h₁a, hh₁a, h₂a, hh₂a, hδa⟩ := exists_rep_diagCoset_eq_mul_natDiagGL_mul a
   obtain ⟨h₁b, hh₁b, h₂b, hh₂b, hδb⟩ := exists_rep_diagCoset_eq_mul_natDiagGL_mul b
   obtain ⟨σ, hσ⟩ := (mem_SLnZ_iff n).mp
-    ((SLnZ n).mul_mem ((SLnZ n).mul_mem hh₂a p.2.out.2) hh₁b)
+    ((SLnZ n).mul_mem ((SLnZ n).mul_mem hh₂a p.2.out.property) hh₁b)
   have h_cop := mul_mem_doubleCoset_of_coprime n a b hcop σ
   rw [hσ, mem_doubleCoset] at h_cop
   obtain ⟨hc₁, hhc₁, hc₂, hhc₂, h_eq⟩ := h_cop
@@ -229,7 +229,7 @@ private lemma mulMap_coprime_eq (a b : Fin n → ℕ) (hcop : Nat.Coprime (∏ i
       _ = σ₁ * h₁a * hc₁ * natDiagGL n (a * b) * (hc₂ * h₂b) := by group
   rw [diagCoset_def (a * b)]
   exact HeckeCoset.mulMap_eq_of_eq_mul_mul
-    ((SLnZ n).mul_mem ((SLnZ n).mul_mem p.1.out.2 hh₁a) hhc₁)
+    ((SLnZ n).mul_mem ((SLnZ n).mul_mem p.1.out.property hh₁a) hhc₁)
     ((SLnZ n).mul_mem hhc₂ hh₂b) hprod
 
 end CoprimeCosets
@@ -491,7 +491,7 @@ private lemma multiplicity_coprime_le_one (a b : Fin n → ℕ) (ha_pos : ∀ i,
   rw [QuotientGroup.eq] at h12
   obtain ⟨σ', hσ'⟩ := (mem_SLnZ_iff n).mp
     ((SLnZ n).mul_mem ((SLnZ n).mul_mem ((SLnZ n).inv_mem hh₁a)
-      ((SLnZ n).mul_mem ((SLnZ n).inv_mem i₁.out.2) i₂.out.2)) hh₁a)
+      ((SLnZ n).mul_mem ((SLnZ n).inv_mem i₁.out.property) i₂.out.property)) hh₁a)
   obtain rfl : i₁ = i₂ := by
     refine DoubleCoset.mk_out_mul_injective (SLnZ n) (SLnZ n) δa' ?_
     rw [QuotientGroup.eq]
@@ -500,7 +500,7 @@ private lemma multiplicity_coprime_le_one (a b : Fin n → ℕ) (ha_pos : ∀ i,
       (j₂.out : GL (Fin n) ℚ) (j₁.out : GL (Fin n) ℚ) h₁a h₂a h₁b h₂b
       (((i₁.out : GL (Fin n) ℚ) * δa' * ((j₁.out : GL (Fin n) ℚ) * δb'))⁻¹ *
         ((i₂.out : GL (Fin n) ℚ) * δa' * ((j₂.out : GL (Fin n) ℚ) * δb')))
-      hh₂a hh₁b hh₂b j₂.out.2 j₁.out.2 h12
+      hh₂a hh₁b hh₂b j₂.out.property j₁.out.property h12
       (hδa'_def.trans hδa) (hδb'_def.trans hδb) σ' hσ' (by group)
     have hgoal : ((i₁.out : GL (Fin n) ℚ) * δa')⁻¹ * ((i₂.out : GL (Fin n) ℚ) * δa') =
         δa'⁻¹ * (i₁.out : GL (Fin n) ℚ)⁻¹ * (i₂.out : GL (Fin n) ℚ) * δa' := by group

@@ -73,9 +73,9 @@ theorem matrixCyclicCochainExtension_connesS [Invertible (n + 3 : R)] (ψ : cycl
   ext1; simp [matrixCochainExtension_cyclicNorm, matrixCochainExtension_cochainPeriodicity]
 /-- Matrix extension of cyclic cocycles commutes with `cyclicCocyclesPeriodicity`. -/
 theorem matrixCyclicCochainExtension_cyclicCocyclesPeriodicity (φ : cyclicCocycles R A M n) :
-    matrixCyclicCochainExtension ι (n + 2) (cyclicCocyclesPeriodicity R A M n φ).1 =
-      (cyclicCocyclesPeriodicity R (Matrix ι ι A) M n ⟨matrixCyclicCochainExtension ι n φ.1,
-        matrixCyclicCochainExtension_mem_cyclicCocycles φ.2⟩).1 := by
+    matrixCyclicCochainExtension ι (n + 2) (cyclicCocyclesPeriodicity R A M n φ).val =
+      (cyclicCocyclesPeriodicity R (Matrix ι ι A) M n ⟨matrixCyclicCochainExtension ι n φ.val,
+        matrixCyclicCochainExtension_mem_cyclicCocycles φ.property⟩).val := by
   ext1; simp [coe_cyclicCocyclesPeriodicity_apply, matrixCochainExtension_cochainPeriodicity]
 end Assoc
 
@@ -91,8 +91,8 @@ noncomputable def matrixCyclicTotalCochainExtension (m : ℕ) :
   cyclicTotalCochainsMapRows (fun q ↦ matrixCochainExtension ι q) m
 /-- Row `q` of `matrixCyclicTotalCochainExtension ι m x` is `matrixCochainExtension ι q (x q)`. -/
 @[simp] theorem coe_matrixCyclicTotalCochainExtension_apply {m : ℕ}
-    (x : cyclicTotalCochains R A M m) (q : ℕ) : (matrixCyclicTotalCochainExtension ι m x).1 q =
-      matrixCochainExtension ι q (x.1 q) := coe_cyclicTotalCochainsMapRows_apply _ x q
+    (x : cyclicTotalCochains R A M m) (q : ℕ) : (matrixCyclicTotalCochainExtension ι m x).val q =
+      matrixCochainExtension ι q (x.val q) := coe_cyclicTotalCochainsMapRows_apply _ x q
 /-- Rowwise matrix extension commutes with the periodicity shift on total cochains. -/
 @[simp] theorem matrixCyclicTotalCochainExtension_cyclicTotalPeriodicity {m : ℕ}
     (x : cyclicTotalCochains R A M m) :
@@ -214,8 +214,8 @@ noncomputable def cyclicTotalHomologyMatrixExtension (m : ℕ) :
     (x : LinearMap.ker (cyclicTotalDifferential R A M m)) :
     cyclicTotalHomologyMatrixExtension M ι m (cyclicTotalHomologyMk R A M m x) =
       cyclicTotalHomologyMk R (Matrix ι ι A) M m
-        ⟨matrixCyclicTotalCochainExtension ι m x.1,
-          matrixCyclicTotalCochainExtension_mem_ker x.2⟩ :=
+        ⟨matrixCyclicTotalCochainExtension ι m x.val,
+          matrixCyclicTotalCochainExtension_mem_ker x.property⟩ :=
   cyclicTotalHomologyMapRows_cyclicTotalHomologyMk _ _ _ x
 /-- Matrix extension on `Hᵐ(Tot)` commutes with the projection `I` onto Hochschild cohomology. -/
 @[simp] theorem homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyMatrixExtension
@@ -280,8 +280,8 @@ noncomputable def cyclicTotalHomologyMatrixRestriction [DecidableEq ι] (r : ι)
     {m : ℕ} (x : LinearMap.ker (cyclicTotalDifferential R (Matrix ι ι A) M m)) :
     cyclicTotalHomologyMatrixRestriction M r m (cyclicTotalHomologyMk R (Matrix ι ι A) M m x) =
       cyclicTotalHomologyMk R A M m
-        ⟨cyclicTotalCochainsMapRows (fun q ↦ matrixCochainRestriction r q) m x.1,
-          cyclicTotalCochainsMapRows_matrixCochainRestriction_mem_ker r x.2⟩ :=
+        ⟨cyclicTotalCochainsMapRows (fun q ↦ matrixCochainRestriction r q) m x.val,
+          cyclicTotalCochainsMapRows_matrixCochainRestriction_mem_ker r x.property⟩ :=
   cyclicTotalHomologyMapRows_cyclicTotalHomologyMk _ _ _ x
 /-- Corner restriction on `Hᵐ(Tot)` commutes with `S : Hᵐ(Tot) → Hᵐ⁺²(Tot)`. -/
 @[simp] theorem cyclicTotalHomologyMatrixRestriction_cyclicTotalHomologyPeriodicity [DecidableEq ι]
@@ -317,7 +317,7 @@ variable {R A M : Type*} [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M] [M
   simp only [homologyMap_cyclicCochainComplexToTotal_mk, cyclicCohomology.matrixExtension_mk,
     cyclicTotalHomologyMatrixExtension_cyclicTotalHomologyMk]
   exact congrArg (cyclicTotalHomologyMk R (Matrix ι ι A) M m)
-    (Subtype.ext (matrixCyclicTotalCochainExtension_cyclicCochainsToTotal ι φ.1))
+    (Subtype.ext (matrixCyclicTotalCochainExtension_cyclicCochainsToTotal ι φ.val))
 /-- Matrix extension commutes with Connes' operator `B : HHᵐ⁺¹ → Hᵐ(Tot)`. -/
 @[simp] theorem cyclicTotalHomologyMatrixExtension_cyclicTotalHomologyConnesB [DecidableEq ι]
     (m : ℕ) (c : hochschildCohomology R A M (m + 1)) :
@@ -496,7 +496,7 @@ variable (ι) in
 /-- **Matrix Morita invariance of cyclic cohomology** over a `ℚ`-algebra `R`. -/
 theorem bijective_matrixExtension (n : ℕ) :
     Function.Bijective (matrixExtension (R := R) (A := A) M ι n) :=
-  bijective_matrixExtension_of_isUnit ι n fun q _ ↦ isUnit_natCast_add_one q
+  bijective_matrixExtension_of_isUnit ι n fun q _ ↦ isUnit_natCast_add_one ℚ q
 variable (M ι) in
 /-- **Matrix Morita equivalence on cyclic cohomology** over a `ℚ`-algebra `R`. -/
 noncomputable def matrixExtensionEquiv (n : ℕ) :

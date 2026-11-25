@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Torsion
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.SeparableClosure
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation.Basic
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Inflation
 import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Coinvariants
@@ -185,8 +185,8 @@ theorem apply_mem_fixedPoints_of_forall_mem_separableClosureInertiaSubgroup
     (hf : ∀ ⦃τ : AbsoluteGaloisGroup K⦄, τ ∈ separableClosureInertiaSubgroup K → f.val τ = 0)
     (g : AbsoluteGaloisGroup K) :
     f.val g ∈ FixedPoints.addSubgroup (separableClosureInertiaSubgroup K) M :=
-  coe_descendZ1_apply_mk f (fun τ ↦ hf τ.2) g ▸
-    ((descendZ1 f (fun τ ↦ hf τ.2)).val (g : AbsoluteGaloisGroup K ⧸ _)).2
+  coe_descendZ1_apply_mk f (fun τ ↦ hf τ.property) g ▸
+    ((descendZ1 f (fun τ ↦ hf τ.property)).val (g : AbsoluteGaloisGroup K ⧸ _)).property
 
 /-- A continuous `1`-cocycle of `AbsoluteGaloisGroup K` that vanishes on
 `separableClosureInertiaSubgroup K` represents an unramified cohomology class. -/
@@ -198,7 +198,7 @@ theorem mk_mem_unramifiedH1_of_forall_mem_separableClosureInertiaSubgroup
   refine ⟨0, fun τ ↦ ?_⟩
   rw [smul_zero, sub_zero, cocyclesMap1_apply, AddMonoidHom.id_apply,
     ContinuousMonoidHom.subgroupSubtype_apply]
-  exact (hf τ.2).symm
+  exact (hf τ.property).symm
 
 /-- A continuous `1`-cocycle of `AbsoluteGaloisGroup K` that vanishes on the restriction of
 `inertiaSubgroup K` represents an unramified cohomology class. -/
@@ -445,14 +445,14 @@ theorem unramifiedH1AddEquivCoinvariants_mk_of_isArithFrobeniusLift
         ⟨f.val (absoluteGaloisGroupRestrictEquiv K σ),
           apply_mem_fixedPoints_of_forall_mem_separableClosureInertiaSubgroup hf _⟩ := by
   have hdesc : (⟨(f : H1 (AbsoluteGaloisGroup K) M), hc⟩ : unramifiedH1 K M) =
-      quotientH1AddEquivUnramifiedH1 K M (descendZ1 f (fun τ ↦ hf τ.2) : H1 _ _) := by
+      quotientH1AddEquivUnramifiedH1 K M (descendZ1 f (fun τ ↦ hf τ.property) : H1 _ _) := by
     apply Subtype.ext
     rw [coe_quotientH1AddEquivUnramifiedH1_apply, explicitInfl1_descendZ1]
   rw [hdesc, unramifiedH1AddEquivCoinvariants_quotientH1AddEquivUnramifiedH1_mk,
     unramifiedQuotientFrobenius_eq_mk_of_isArithFrobeniusLift hσ]
   congr 1
   exact Subtype.ext
-    (coe_descendZ1_apply_mk f (fun τ ↦ hf τ.2) (absoluteGaloisGroupRestrictEquiv K σ))
+    (coe_descendZ1_apply_mk f (fun τ ↦ hf τ.property) (absoluteGaloisGroupRestrictEquiv K σ))
 
 /-- On the coinvariant class of `f (absoluteGaloisGroupRestrictEquiv K σ)` for an arithmetic
 Frobenius lift `σ` and a continuous `1`-cocycle `f` vanishing on inertia,

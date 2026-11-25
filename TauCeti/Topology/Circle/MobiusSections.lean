@@ -5,26 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.GroupTheory.OrderOfElement
-public import Mathlib.Topology.ContinuousMap.Algebra
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Morita
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
-public import TauCeti.Topology.Instances.AddCircle.Coe
-import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
-import Mathlib.RingTheory.Finiteness.Prod
-import Mathlib.Topology.Instances.Matrix
+public import TauCeti.Topology.Instances.AddCircle.MobiusModule
+import TauCeti.Topology.Instances.AddCircle.Coe
 
 /-!
-# Real sections of the Möbius line
+# Antiperiodic sections of the real Möbius line
 
-Write the circle as `ℝ / ℤ`. A section of the Möbius line is an antiperiodic real function on
-`ℝ`, with scalars acting by pullback from the circle. Two copies become free of rank two via
-rotation by the half-angle. In contrast, adjoining any finite free module to a single copy does
-not give a free module of the corresponding rank: the determinant of a putative frame would be
-continuous, nowhere zero and antiperiodic. The resulting class `[M] - [R]` in projective `K₀`
-has exact order two, where `R = C(ℝ / ℤ, ℝ)`.
+Write the circle as `ℝ / ℤ`. An antiperiodic function `v` on `ℝ` determines a section of the
+fixed line of the Möbius reflection by multiplying `v(t)` by `(cos (πt), sin (πt))`.
+The inverse takes the coefficient along that unit vector. Via this comparison the doubled
+trivialization is rotation by the half-angle, and the stabilization obstruction for the
+reflection model gives exact order two for the reduced class in `K₀`.
 
 For the bundle interpretation, see Charles A. Weibel, *The K-book*, Chapter I, §4.9.1.
 -/
@@ -33,7 +28,7 @@ public section
 
 namespace TauCeti
 
-open ContinuousMap Module
+open ContinuousMap Module Real
 
 local notation "T" => AddCircle (1 : ℝ)
 local notation "R" => C(T, ℝ)
@@ -44,61 +39,77 @@ local notation "R" => C(T, ℝ)
     (compRightAlgHom ℝ ℝ ⟨((↑) : ℝ → T), continuous_quotient_mk'⟩).toRingHom
   ModuleCat.of R C(ℝ, ℝ)
 
+/-- Read a vector in the restricted-scalar module as a continuous map on the covering line. -/
+def mobiusCoverToContinuousMap (v : mobiusCoverModule) : C(ℝ, ℝ) := v
+
 /-- The real section module of the Möbius line, expressed by antiperiodic functions. -/
-def mobiusSections : Submodule R mobiusCoverModule where
-  carrier := {v | Function.Antiperiodic (show C(ℝ, ℝ) from v) (1 : ℝ)}
+def mobiusAntiperiodicSections : Submodule R mobiusCoverModule where
+  carrier := {v | Function.Antiperiodic (mobiusCoverToContinuousMap v) 1}
   zero_mem' := fun _ ↦ neg_zero.symm
   add_mem' {v w} hv hw := fun t ↦ by
-    let a : C(ℝ, ℝ) := v
-    let b : C(ℝ, ℝ) := w
-    -- The ambient addition is that of continuous maps, evaluated at `t + 1` and `t`.
-    change a (t + 1) + b (t + 1) = -(a t + b t)
-    have ha : a (t + 1) = -a t := hv t
-    have hb : b (t + 1) = -b t := hw t
-    rw [ha, hb, neg_add]
+    -- The restricted module retains pointwise addition on the covering line.
+    change mobiusCoverToContinuousMap v (t + 1) + mobiusCoverToContinuousMap w (t + 1) =
+      -(mobiusCoverToContinuousMap v t + mobiusCoverToContinuousMap w t)
+    rw [hv t, hw t, neg_add]
   smul_mem' f v hv := fun t ↦ by
-    let a : C(ℝ, ℝ) := v
-    -- Expose the pointwise values of the restricted scalar action.
-    change f ((t + 1 : ℝ) : T) * a (t + 1) = -(f (t : T) * a t)
-    have ha : a (t + 1) = -a t := hv t
-    rw [AddCircle.coe_add_period, ha, mul_neg]
+    -- Restriction of scalars evaluates `f` at the quotient class before multiplying.
+    change f ((t + 1 : ℝ) : T) * mobiusCoverToContinuousMap v (t + 1) =
+      -(f (t : T) * mobiusCoverToContinuousMap v t)
+    rw [AddCircle.coe_add_period, hv t, mul_neg]
 
-/-- A function lies in the Möbius section module exactly when it changes sign on translation
-by one. -/
-@[simp] theorem mem_mobiusSections (v : mobiusCoverModule) :
-    v ∈ mobiusSections ↔ Function.Antiperiodic (show C(ℝ, ℝ) from v) (1 : ℝ) := (Iff.rfl)
+/-- Membership in the section submodule is the sign-change condition over one turn. -/
+@[simp] theorem mem_mobiusAntiperiodicSections (v : mobiusCoverModule) :
+    v ∈ mobiusAntiperiodicSections ↔ Function.Antiperiodic (mobiusCoverToContinuousMap v) 1 :=
+  (Iff.rfl)
 
 /-- The type of continuous antiperiodic sections of the real Möbius line. -/
-abbrev MobiusSections := ↥mobiusSections
+abbrev MobiusSections := ↥mobiusAntiperiodicSections
 
 namespace MobiusSections
 
 /-- Regard a continuous antiperiodic function on the covering line as a Möbius section. -/
-def ofContinuousMap (v : C(ℝ, ℝ)) (hv : Function.Antiperiodic v (1 : ℝ)) : MobiusSections :=
-  ⟨v, (mem_mobiusSections _).mpr hv⟩
+def ofContinuousMap (v : C(ℝ, ℝ)) (hv : Function.Antiperiodic v 1) : MobiusSections :=
+  ⟨v, (mem_mobiusAntiperiodicSections v).mpr hv⟩
+
+/-- The underlying continuous map of a section on the covering line. -/
+def toContinuousMap (v : MobiusSections) : C(ℝ, ℝ) := mobiusCoverToContinuousMap v.val
 
 /-- Evaluate a section in the standard frame of the covering line. -/
-def eval (v : MobiusSections) (t : ℝ) : ℝ := (show C(ℝ, ℝ) from v.val) t
+def eval (v : MobiusSections) (t : ℝ) : ℝ := v.toContinuousMap t
+
+/-- Evaluating the underlying continuous map is evaluation in the covering frame. -/
+@[simp] theorem toContinuousMap_apply (v : MobiusSections) (t : ℝ) :
+    v.toContinuousMap t = v.eval t := (rfl)
+
+/-- The underlying map of a section constructed from an antiperiodic map is that map. -/
+@[simp] theorem toContinuousMap_ofContinuousMap (v : C(ℝ, ℝ)) (hv : Function.Antiperiodic v 1) :
+    (ofContinuousMap v hv).toContinuousMap = v := (rfl)
 
 /-- The section constructed from an antiperiodic function has the same covering coordinates. -/
-@[simp] theorem eval_ofContinuousMap (v : C(ℝ, ℝ)) (hv : Function.Antiperiodic v (1 : ℝ))
-    (t : ℝ) : (ofContinuousMap v hv).eval t = v t := (rfl)
+@[simp] theorem eval_ofContinuousMap (v : C(ℝ, ℝ)) (hv : Function.Antiperiodic v 1) (t : ℝ) :
+    (ofContinuousMap v hv).eval t = v t := (rfl)
 
 /-- Evaluation in the covering frame determines a section. -/
 @[ext] theorem ext {v w : MobiusSections} (h : ∀ t, v.eval t = w.eval t) : v = w :=
-  Subtype.ext (ContinuousMap.ext (f := (show C(ℝ, ℝ) from v.val))
-    (g := (show C(ℝ, ℝ) from w.val)) h)
+  Subtype.ext (ContinuousMap.ext (f := v.toContinuousMap) (g := w.toContinuousMap) h)
 
 /-- The covering coordinate of a section is continuous. -/
 @[fun_prop] theorem continuous_eval (v : MobiusSections) : Continuous v.eval :=
-  (show C(ℝ, ℝ) from v.val).continuous
+  v.toContinuousMap.continuous
 
 /-- The covering coordinate of a section is antiperiodic. -/
 theorem antiperiodic_eval (v : MobiusSections) : Function.Antiperiodic v.eval 1 :=
-  (mem_mobiusSections _).mp v.property
+  (mem_mobiusAntiperiodicSections _).mp v.property
 
 /-- Addition of sections in the covering frame is pointwise. -/
 @[simp] theorem add_eval (v w : MobiusSections) (t : ℝ) : (v + w).eval t = v.eval t + w.eval t :=
+  (rfl)
+
+/-- Negation of sections in the covering frame is pointwise. -/
+@[simp] theorem neg_eval (v : MobiusSections) (t : ℝ) : (-v).eval t = -v.eval t := (rfl)
+
+/-- Subtraction of sections in the covering frame is pointwise. -/
+@[simp] theorem sub_eval (v w : MobiusSections) (t : ℝ) : (v - w).eval t = v.eval t - w.eval t :=
   (rfl)
 
 /-- Scalar multiplication uses the value of the scalar at the corresponding circle point. -/
@@ -108,192 +119,151 @@ theorem antiperiodic_eval (v : MobiusSections) : Function.Antiperiodic v.eval 1 
 /-- The zero section vanishes at every point. -/
 @[simp] theorem zero_eval (t : ℝ) : (0 : MobiusSections).eval t = 0 := (rfl)
 
-private noncomputable abbrev cosHalf (t : ℝ) := Real.cos (Real.pi * t)
-private noncomputable abbrev sinHalf (t : ℝ) := Real.sin (Real.pi * t)
-
-private theorem cosHalf_anti : Function.Antiperiodic cosHalf 1 := by
+private theorem antiperiodic_cosHalf : Function.Antiperiodic (fun t ↦ cos (π * t)) 1 := by
   intro t
-  simp [cosHalf, mul_add, Real.cos_add_pi]
+  simp [mul_add, cos_add_pi]
 
-private theorem sinHalf_anti : Function.Antiperiodic sinHalf 1 := by
+private theorem antiperiodic_sinHalf : Function.Antiperiodic (fun t ↦ sin (π * t)) 1 := by
   intro t
-  simp [sinHalf, mul_add, Real.sin_add_pi]
-
-private noncomputable def rotate (vw : MobiusSections × MobiusSections) : R × R :=
-  have hc : Continuous cosHalf := by fun_prop
-  have hs : Continuous sinHalf := by fun_prop
-  ⟨((cosHalf_anti.mul vw.1.antiperiodic_eval).sub
-      (sinHalf_anti.mul vw.2.antiperiodic_eval)).liftContinuousMap
-        ((hc.mul vw.1.continuous_eval).sub (hs.mul vw.2.continuous_eval)),
-    ((sinHalf_anti.mul vw.1.antiperiodic_eval).add
-      (cosHalf_anti.mul vw.2.antiperiodic_eval)).liftContinuousMap
-        ((hs.mul vw.1.continuous_eval).add (hc.mul vw.2.continuous_eval))⟩
-
-private noncomputable def unrotate (ab : R × R) : MobiusSections × MobiusSections :=
-  ⟨ofContinuousMap ⟨fun t ↦ cosHalf t * ab.1 (t : T) + sinHalf t * ab.2 (t : T), by fun_prop⟩
-      (fun t ↦ by simp only [coe_mk, cosHalf_anti t, sinHalf_anti t, AddCircle.coe_add_period,
-        neg_mul, neg_add]),
-    ofContinuousMap ⟨fun t ↦ -(sinHalf t * ab.1 (t : T)) + cosHalf t * ab.2 (t : T), by fun_prop⟩
-      (fun t ↦ by simp only [coe_mk, cosHalf_anti t, sinHalf_anti t, AddCircle.coe_add_period,
-        neg_mul, neg_add])⟩
-
-private theorem rotate_fst (vw : MobiusSections × MobiusSections) (t : ℝ) :
-    (rotate vw).1 (t : T) = cosHalf t * vw.1.eval t - sinHalf t * vw.2.eval t := by
-  simp [rotate]
-
-private theorem rotate_snd (vw : MobiusSections × MobiusSections) (t : ℝ) :
-    (rotate vw).2 (t : T) = sinHalf t * vw.1.eval t + cosHalf t * vw.2.eval t := by
-  simp [rotate]
-
-private theorem unrotate_fst (ab : R × R) (t : ℝ) :
-    (unrotate ab).1.eval t = cosHalf t * ab.1 (t : T) + sinHalf t * ab.2 (t : T) := (rfl)
-
-private theorem unrotate_snd (ab : R × R) (t : ℝ) :
-    (unrotate ab).2.eval t = -(sinHalf t * ab.1 (t : T)) + cosHalf t * ab.2 (t : T) := (rfl)
-
-/-- Two copies of the Möbius line have a free section module: rotation by `πt` sends the two
-antiperiodic coordinates at `t` to a periodic pair. -/
-noncomputable def prodLinearEquiv :
-    (MobiusSections × MobiusSections) ≃ₗ[R] (R × R) where
-  toFun := rotate
-  invFun := unrotate
-  left_inv vw := by
-    apply Prod.ext <;> apply MobiusSections.ext <;> intro t
-    · rw [unrotate_fst, rotate_fst, rotate_snd]
-      linear_combination vw.1.eval t * Real.cos_sq_add_sin_sq (Real.pi * t)
-    · rw [unrotate_snd, rotate_fst, rotate_snd]
-      linear_combination vw.2.eval t * Real.cos_sq_add_sin_sq (Real.pi * t)
-  right_inv ab := by
-    apply Prod.ext <;> apply AddCircle.continuousMap_ext_coe <;> intro t
-    · rw [rotate_fst, unrotate_fst, unrotate_snd]
-      linear_combination ab.1 (t : T) * Real.cos_sq_add_sin_sq (Real.pi * t)
-    · rw [rotate_snd, unrotate_fst, unrotate_snd]
-      linear_combination ab.2 (t : T) * Real.cos_sq_add_sin_sq (Real.pi * t)
-  map_add' v w := by
-    apply Prod.ext <;> apply AddCircle.continuousMap_ext_coe <;> intro t <;>
-      simp only [Prod.fst_add, Prod.snd_add, ContinuousMap.add_apply, rotate_fst, rotate_snd,
-        add_eval] <;> ring
-  map_smul' f v := by
-    apply Prod.ext <;> apply AddCircle.continuousMap_ext_coe <;> intro t <;>
-      simp only [RingHom.id_apply, Prod.smul_fst, Prod.smul_snd, smul_eq_mul,
-        ContinuousMap.mul_apply, rotate_fst, rotate_snd, smul_eval] <;> ring
-
-/-- The first coordinate of the doubled trivialization in the covering frame. -/
-@[simp] theorem prodLinearEquiv_fst_apply (vw : MobiusSections × MobiusSections) (t : ℝ) :
-    (prodLinearEquiv vw).1 (t : T) =
-      Real.cos (Real.pi * t) * vw.1.eval t - Real.sin (Real.pi * t) * vw.2.eval t :=
-  rotate_fst vw t
-
-/-- The second coordinate of the doubled trivialization in the covering frame. -/
-@[simp] theorem prodLinearEquiv_snd_apply (vw : MobiusSections × MobiusSections) (t : ℝ) :
-    (prodLinearEquiv vw).2 (t : T) =
-      Real.sin (Real.pi * t) * vw.1.eval t + Real.cos (Real.pi * t) * vw.2.eval t :=
-  rotate_snd vw t
-
-/-- The first covering coordinate of the inverse doubled trivialization. -/
-@[simp] theorem prodLinearEquiv_symm_fst_eval (ab : R × R) (t : ℝ) :
-    (prodLinearEquiv.symm ab).1.eval t =
-      Real.cos (Real.pi * t) * ab.1 (t : T) + Real.sin (Real.pi * t) * ab.2 (t : T) :=
-  unrotate_fst ab t
-
-/-- The second covering coordinate of the inverse doubled trivialization. -/
-@[simp] theorem prodLinearEquiv_symm_snd_eval (ab : R × R) (t : ℝ) :
-    (prodLinearEquiv.symm ab).2.eval t =
-      -(Real.sin (Real.pi * t) * ab.1 (t : T)) + Real.cos (Real.pi * t) * ab.2 (t : T) :=
-  unrotate_snd ab t
+  simp [mul_add, sin_add_pi]
 
 /-- Evaluation in the covering frame hits every real number at each point. -/
 theorem eval_surjective (t : ℝ) : Function.Surjective (fun v : MobiusSections ↦ v.eval t) := by
   intro a
-  let f : C(ℝ, ℝ) := ⟨fun s ↦ a * cosHalf (s - t), by fun_prop⟩
-  have h : Function.Antiperiodic f 1 := (cosHalf_anti.sub_const t).smul a
-  exact ⟨ofContinuousMap f h, by simp [f, cosHalf]⟩
+  let f : C(ℝ, ℝ) := ⟨fun s ↦ a * cos (π * (s - t)), by fun_prop⟩
+  have h : Function.Antiperiodic f 1 := (antiperiodic_cosHalf.sub_const t).smul a
+  exact ⟨ofContinuousMap f h, by simp [f]⟩
 
+private noncomputable def reflectionCoords (v : MobiusSections) : Fin 2 → R :=
+  have hc := v.antiperiodic_eval.mul antiperiodic_cosHalf
+  have hs := v.antiperiodic_eval.mul antiperiodic_sinHalf
+  ![⟨hc.lift, hc.continuous_lift (by fun_prop)⟩, ⟨hs.lift, hs.continuous_lift (by fun_prop)⟩]
+
+private theorem reflectionCoords_zero (v : MobiusSections) (t : ℝ) :
+    reflectionCoords v 0 (t : T) = v.eval t * cos (π * t) := by
+  simp [reflectionCoords, Function.Periodic.lift_coe]
+
+private theorem reflectionCoords_one (v : MobiusSections) (t : ℝ) :
+    reflectionCoords v 1 (t : T) = v.eval t * sin (π * t) := by
+  simp [reflectionCoords, Function.Periodic.lift_coe]
+
+private theorem reflectionCoords_mem (v : MobiusSections) :
+    reflectionCoords v ∈ mobiusSections := by
+  refine mem_mobiusSections_iff.mpr fun t ↦ ?_
+  rw [reflectionCoords_zero, reflectionCoords_one, mul_assoc, cos_two_mul, sin_two_mul]
+  constructor
+  · linear_combination 2 * v.eval t * cos (π * t) * cos_sq_add_sin_sq (π * t)
+  · ring
+
+/-- The antiperiodic section model is linearly equivalent to the reflection's fixed module.
+The forward map multiplies by the unit vector `(cos (πt), sin (πt))`, and the inverse takes
+its coefficient along that vector. -/
+noncomputable def reflectionLinearEquiv : MobiusSections ≃ₗ[R] mobiusSections where
+  toFun v := ⟨reflectionCoords v, reflectionCoords_mem v⟩
+  invFun w := ofContinuousMap ⟨mobiusSectionCoeff w, continuous_mobiusSectionCoeff w⟩
+    (antiperiodic_mobiusSectionCoeff w)
+  left_inv v := by
+    apply MobiusSections.ext
+    intro t
+    simp only [eval_ofContinuousMap, coe_mk, mobiusSectionCoeff_apply, reflectionCoords_zero,
+      reflectionCoords_one]
+    linear_combination v.eval t * cos_sq_add_sin_sq (π * t)
+  right_inv w := by
+    apply Subtype.ext
+    funext i
+    apply AddCircle.continuousMap_ext_coe
+    intro t
+    obtain ⟨h₀, h₁⟩ := apply_eq_mobiusSectionCoeff_mul w.property t
+    let v := ofContinuousMap ⟨mobiusSectionCoeff w, continuous_mobiusSectionCoeff w⟩
+      (antiperiodic_mobiusSectionCoeff w)
+    have hzero : reflectionCoords v 0 (t : T) = (w : Fin 2 → R) 0 (t : T) := by
+      rw [reflectionCoords_zero]
+      exact h₀.symm
+    have hone : reflectionCoords v 1 (t : T) = (w : Fin 2 → R) 1 (t : T) := by
+      rw [reflectionCoords_one]
+      exact h₁.symm
+    fin_cases i
+    · exact hzero
+    · exact hone
+  map_add' v w := by
+    apply Subtype.ext
+    funext i
+    apply AddCircle.continuousMap_ext_coe
+    intro t
+    fin_cases i <;>
+      simp [reflectionCoords_zero, reflectionCoords_one, add_mul]
+  map_smul' f v := by
+    apply Subtype.ext
+    funext i
+    apply AddCircle.continuousMap_ext_coe
+    intro t
+    fin_cases i <;>
+      simp [reflectionCoords_zero, reflectionCoords_one, smul_eq_mul, mul_assoc]
+
+/-- The first coordinate after multiplying by the unit vector on the fixed line. -/
+@[simp] theorem reflectionLinearEquiv_apply_zero (v : MobiusSections) (t : ℝ) :
+    (reflectionLinearEquiv v : Fin 2 → R) 0 (t : T) = v.eval t * cos (π * t) :=
+  reflectionCoords_zero v t
+
+/-- The second coordinate after multiplying by the unit vector on the fixed line. -/
+@[simp] theorem reflectionLinearEquiv_apply_one (v : MobiusSections) (t : ℝ) :
+    (reflectionLinearEquiv v : Fin 2 → R) 1 (t : T) = v.eval t * sin (π * t) :=
+  reflectionCoords_one v t
+
+/-- In the inverse comparison, the covering coordinate is the coefficient along the unit vector. -/
+@[simp] theorem reflectionLinearEquiv_symm_eval (w : mobiusSections) (t : ℝ) :
+    (reflectionLinearEquiv.symm w).eval t = mobiusSectionCoeff w t := (rfl)
+
+/-- The antiperiodic section module is finite, by comparison with the reflection model. -/
 instance : Module.Finite R MobiusSections :=
-  letI : Module.Finite R (MobiusSections × MobiusSections) :=
-    Module.Finite.of_surjective prodLinearEquiv.symm.toLinearMap prodLinearEquiv.symm.surjective
-  Module.Finite.of_surjective (LinearMap.fst R MobiusSections MobiusSections)
-    (fun v ↦ ⟨(v, 0), rfl⟩)
+  Module.Finite.of_surjective reflectionLinearEquiv.symm.toLinearMap
+    reflectionLinearEquiv.symm.surjective
 
+/-- The antiperiodic section module is projective, by comparison with the reflection model. -/
 instance : Module.Projective R MobiusSections :=
-  letI : Module.Projective R (MobiusSections × MobiusSections) :=
-    Module.Projective.of_equiv prodLinearEquiv.symm
-  Module.Projective.of_split (LinearMap.inl R MobiusSections MobiusSections)
-    (LinearMap.fst R MobiusSections MobiusSections) (by ext; rfl)
+  Module.Projective.of_equiv reflectionLinearEquiv.symm
 
-private def stabilizedEval {n : ℕ} (t : ℝ) :
-    (MobiusSections × (Fin n → R)) →+ (Fin (n + 1) → ℝ) where
-  toFun v := Fin.cons (v.1.eval t) (fun i ↦ v.2 i (t : T))
-  map_zero' := by ext i; cases i using Fin.cases <;> simp
-  map_add' v w := by ext i; cases i using Fin.cases <;> simp
+/-- Rotation by `πt` sends a pair of antiperiodic coordinates to periodic coordinates. -/
+noncomputable def prodLinearEquiv : (MobiusSections × MobiusSections) ≃ₗ[R] (R × R) :=
+  (reflectionLinearEquiv.prodCongr reflectionLinearEquiv).trans
+    (mobiusSectionsProdEquiv.trans (LinearEquiv.finTwoArrow R R))
 
-private theorem stabilizedEval_smul {n : ℕ} (t : ℝ) (f : R)
-    (v : MobiusSections × (Fin n → R)) (i : Fin (n + 1)) :
-    stabilizedEval t (f • v) i = f (t : T) * stabilizedEval t v i := by
-  cases i using Fin.cases <;>
-    simp [stabilizedEval, smul_eq_mul, ContinuousMap.mul_apply]
+/-- The first coordinate of the doubled trivialization in the covering frame. -/
+@[simp] theorem prodLinearEquiv_fst_apply (vw : MobiusSections × MobiusSections) (t : ℝ) :
+    (prodLinearEquiv vw).1 (t : T) = cos (π * t) * vw.1.eval t - sin (π * t) * vw.2.eval t := by
+  simp [prodLinearEquiv, Matrix.vecHead, sub_eq_add_neg, mul_comm]
 
-private theorem stabilizedEval_surjective {n : ℕ} (t : ℝ) :
-    Function.Surjective (stabilizedEval (n := n) t) := by
-  intro y
-  obtain ⟨v, hv⟩ := eval_surjective t (y 0)
-  refine ⟨(v, fun i ↦ ContinuousMap.const T (y i.succ)), ?_⟩
-  ext i
-  cases i using Fin.cases <;> simp [stabilizedEval, hv]
+/-- The second coordinate of the doubled trivialization in the covering frame. -/
+@[simp] theorem prodLinearEquiv_snd_apply (vw : MobiusSections × MobiusSections) (t : ℝ) :
+    (prodLinearEquiv vw).2 (t : T) = sin (π * t) * vw.1.eval t + cos (π * t) * vw.2.eval t := by
+  simp [prodLinearEquiv, Matrix.vecHead, Matrix.vecTail, mul_comm]
 
-private noncomputable def frameMatrix {n : ℕ}
-    (b : Basis (Fin (n + 1)) R (MobiusSections × (Fin n → R))) (t : ℝ) :
-    Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ :=
-  Matrix.of fun i j ↦ stabilizedEval t (b j) i
+/-- The first covering coordinate of the inverse doubled trivialization. -/
+@[simp] theorem prodLinearEquiv_symm_fst_eval (ab : R × R) (t : ℝ) :
+    (prodLinearEquiv.symm ab).1.eval t =
+      cos (π * t) * ab.1 (t : T) + sin (π * t) * ab.2 (t : T) := by
+  have hfst := prodLinearEquiv_fst_apply (prodLinearEquiv.symm ab) t
+  have hsnd := prodLinearEquiv_snd_apply (prodLinearEquiv.symm ab) t
+  rw [prodLinearEquiv.apply_symm_apply] at hfst hsnd
+  rw [hfst, hsnd]
+  linear_combination -(prodLinearEquiv.symm ab).1.eval t * cos_sq_add_sin_sq (π * t)
 
-private theorem continuous_frameMatrix {n : ℕ}
-    (b : Basis (Fin (n + 1)) R (MobiusSections × (Fin n → R))) :
-    Continuous (frameMatrix b) := by
-  refine continuous_pi fun i ↦ continuous_pi fun j ↦ ?_
-  cases i using Fin.cases
-  · exact (b j).1.continuous_eval
-  · exact ((b j).2 _).continuous.comp continuous_quotient_mk'
-
-private theorem det_frameMatrix_ne_zero {n : ℕ}
-    (b : Basis (Fin (n + 1)) R (MobiusSections × (Fin n → R))) (t : ℝ) :
-    (frameMatrix b t).det ≠ 0 := by
-  apply isUnit_iff_ne_zero.mp
-  apply (Matrix.isUnit_iff_isUnit_det _).mp
-  apply Matrix.mulVec_surjective_iff_isUnit.mp
-  intro y
-  obtain ⟨v, rfl⟩ := stabilizedEval_surjective t y
-  refine ⟨fun j ↦ b.repr v j (t : T), ?_⟩
-  funext i
-  conv_rhs => rw [← b.sum_repr v, map_sum, Finset.sum_apply]
-  simp only [Matrix.mulVec, dotProduct, frameMatrix, Matrix.of_apply, stabilizedEval_smul, mul_comm]
-
-private theorem antiperiodic_det_frameMatrix {n : ℕ}
-    (b : Basis (Fin (n + 1)) R (MobiusSections × (Fin n → R))) :
-    Function.Antiperiodic (fun t ↦ (frameMatrix b t).det) 1 := by
-  intro t
-  have h : frameMatrix b (t + 1) =
-      (frameMatrix b t).updateRow 0 ((-1 : ℝ) • frameMatrix b t 0) := by
-    ext i j
-    cases i using Fin.cases
-    · simp [frameMatrix, stabilizedEval, (b j).1.antiperiodic_eval t]
-    · simp [frameMatrix, stabilizedEval]
-  -- Translation by one negates the determinant because it negates exactly the first row.
-  have hdet := Matrix.det_updateRow_smul (frameMatrix b t) 0 (-1 : ℝ) (frameMatrix b t 0)
-  simpa [h] using hdet
+/-- The second covering coordinate of the inverse doubled trivialization. -/
+@[simp] theorem prodLinearEquiv_symm_snd_eval (ab : R × R) (t : ℝ) :
+    (prodLinearEquiv.symm ab).2.eval t = -(sin (π * t) * ab.1 (t : T)) +
+      cos (π * t) * ab.2 (t : T) := by
+  have hfst := prodLinearEquiv_fst_apply (prodLinearEquiv.symm ab) t
+  have hsnd := prodLinearEquiv_snd_apply (prodLinearEquiv.symm ab) t
+  rw [prodLinearEquiv.apply_symm_apply] at hfst hsnd
+  rw [hfst, hsnd]
+  linear_combination -(prodLinearEquiv.symm ab).2.eval t * cos_sq_add_sin_sq (π * t)
 
 /-- A single Möbius line cannot be made free of rank `n + 1` by adding `n` free generators. -/
 theorem not_nonempty_stabilizedLinearEquiv (n : ℕ) :
     ¬ Nonempty ((MobiusSections × (Fin n → R)) ≃ₗ[R] (Fin (n + 1) → R)) := by
   rintro ⟨e⟩
-  let b := (Pi.basisFun R (Fin (n + 1))).map e.symm
-  let f : ℝ → ℝ := fun t ↦ (frameMatrix b t).det
-  have hc : Continuous f := (continuous_frameMatrix b).matrix_det
-  have h : f 1 = -f 0 := (antiperiodic_det_frameMatrix b).eq
-  obtain ⟨t, -, ht⟩ : ∃ t ∈ Set.Icc (0 : ℝ) 1, f t = 0 := by
-    rcases le_total (f 0) 0 with h₀ | h₀
-    · exact intermediate_value_Icc zero_le_one hc.continuousOn ⟨h₀, by linarith⟩
-    · exact intermediate_value_Icc' zero_le_one hc.continuousOn ⟨by linarith, h₀⟩
-  exact det_frameMatrix_ne_zero b t ht
+  exact (isEmpty_mobiusSections_prod_linearEquiv n).false
+    ((reflectionLinearEquiv.symm.prodCongr (LinearEquiv.refl R _)).trans e)
 
 -- Right modules over a commutative ring are obtained by restriction along `unop`.
 private noncomputable def toRightKZero :

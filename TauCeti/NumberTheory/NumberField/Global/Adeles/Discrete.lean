@@ -76,7 +76,7 @@ instance discreteTopology_principalSubgroup :
         (continuous_norm.comp ((continuous_apply w).comp continuous_fst)) continuous_const
     · exact (FiniteAdeleRing.isOpen_integralAdeles (𝓞 K) K).preimage continuous_snd
   rw [discreteTopology_iff_isOpen_singleton_zero]
-  convert hU.preimage continuous_subtype_val
+  convert hU.preimage continuous_subtypeVal
   ext ⟨_, x, rfl⟩
   simp only [Set.mem_singleton_iff, Set.mem_preimage, Set.mem_inter_iff, Set.mem_iInter,
     Set.mem_ofPred_eq, U]

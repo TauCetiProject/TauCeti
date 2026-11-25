@@ -112,6 +112,12 @@ spectrum from that of its orthogonal complement.
   spectral subspace.
 * `ContinuousLinearMap.abs_le_norm_of_mem_restrictedPointSpectrum`: every real eigenvalue of a
   bounded operator `T` has absolute value at most `‖T‖`.
+* `ContinuousLinearMap.pointSpectralSubspace_inter_closedBall_norm`: consequently the
+  point-spectral subspaces of `T` only see the selected reals in `[-‖T‖, ‖T‖]`.
+* `ContinuousLinearMap.ker_sub_smul_id_eq_bot_of_not_hasEigenvalue`: if `μ` is not an eigenvalue
+  of a bounded operator `T`, then `T - μ • id` is injective.
+* `ContinuousLinearMap.isSymmetric_sub_smul_id`: shifting a symmetric bounded operator by a real
+  multiple of the identity keeps it symmetric.
 * `LinearMap.IsSymmetric.pointSpectrumIn_Iic_iff`, `LinearMap.IsSymmetric.pointSpectrumIn_Ici_iff`:
   on a finite-dimensional invariant subspace, point-spectral containment in a half-line is a
   quadratic-form bound.
@@ -287,6 +293,14 @@ theorem pointSpectralSubspace_mono (h : Ω ⊆ Ω') :
 theorem pointSpectralSubspace_empty : A.pointSpectralSubspace ∅ = ⊥ := by
   simp [pointSpectralSubspace]
 
+/-- The point-spectral subspace selected by `Ω` vanishes exactly when `A` has no eigenvalue in
+`Ω`. -/
+@[simp]
+theorem pointSpectralSubspace_eq_bot_iff :
+    A.pointSpectralSubspace Ω = ⊥ ↔ ∀ μ ∈ Ω, ¬A.HasEigenvalue (μ : 𝕜) := by
+  rw [← le_bot_iff, pointSpectralSubspace_le_iff]
+  simp only [le_bot_iff, hasEigenvalue_iff, not_not]
+
 /-- The point-spectral subspace of a union is the sum of the two point-spectral subspaces. -/
 @[simp]
 theorem pointSpectralSubspace_union :
@@ -419,6 +433,20 @@ theorem pointSpectralSubspace_smul_id_of_notMem {c : ℝ} (hc : c ∉ Ω) :
   by_contra hx0
   exact hμc (smul_left_injective 𝕜 hx0 hx.symm)
 
+/-- The point-spectral subspace of the identity selected by a set containing `1` is the whole
+space. With `Module.End.pointSpectralSubspace_neg` this also computes it for `-1`. -/
+@[simp]
+theorem pointSpectralSubspace_one_of_mem (h : 1 ∈ Ω) :
+    (1 : Module.End 𝕜 E).pointSpectralSubspace Ω = ⊤ := by
+  simpa [Module.End.one_eq_id] using pointSpectralSubspace_smul_id_of_mem (𝕜 := 𝕜) (E := E) h
+
+/-- The point-spectral subspace of the identity selected by a set not containing `1` is zero.
+With `Module.End.pointSpectralSubspace_neg` this also computes it for `-1`. -/
+@[simp]
+theorem pointSpectralSubspace_one_of_notMem (h : 1 ∉ Ω) :
+    (1 : Module.End 𝕜 E).pointSpectralSubspace Ω = ⊥ := by
+  simpa [Module.End.one_eq_id] using pointSpectralSubspace_smul_id_of_notMem (𝕜 := 𝕜) (E := E) h
+
 /-- Conjugating an endomorphism by a linear equivalence transports its point-spectral subspaces:
 the point-spectral subspace of `e ∘ A ∘ e⁻¹` selected by `Ω` is the image under `e` of that of
 `A`. -/
@@ -449,15 +477,15 @@ theorem finrank_pointSpectralSubspace_eq_finsum_finrank_eigenspace [FiniteDimens
   let S : Set ℝ := Ω ∩ {μ : ℝ | A.HasEigenvalue (μ : 𝕜)}
   have hS : S.Finite :=
     (A.finite_hasEigenvalue.preimage RCLike.ofReal_injective.injOn).subset Set.inter_subset_right
-  have hiSup : A.pointSpectralSubspace Ω = ⨆ μ : hS.toFinset, A.eigenspace (μ.1 : 𝕜) := by
+  have hiSup : A.pointSpectralSubspace Ω = ⨆ μ : hS.toFinset, A.eigenspace (μ.val : 𝕜) := by
     refine le_antisymm (iSup₂_le fun μ hμ ↦ ?_)
-      (iSup_le fun μ ↦ eigenspace_le_pointSpectralSubspace (hS.mem_toFinset.mp μ.2).1)
+      (iSup_le fun μ ↦ eigenspace_le_pointSpectralSubspace (hS.mem_toFinset.mp μ.property).1)
     by_cases h : A.HasEigenvalue (μ : 𝕜)
-    · exact le_iSup (fun ν : hS.toFinset ↦ A.eigenspace (ν.1 : 𝕜))
+    · exact le_iSup (fun ν : hS.toFinset ↦ A.eigenspace (ν.val : 𝕜))
         ⟨μ, hS.mem_toFinset.mpr ⟨hμ, h⟩⟩
     · rw [Module.End.hasEigenvalue_iff, not_not] at h
       simp [h]
-  have hind : iSupIndep (fun μ : hS.toFinset ↦ A.eigenspace (μ.1 : 𝕜)) :=
+  have hind : iSupIndep (fun μ : hS.toFinset ↦ A.eigenspace (μ.val : 𝕜)) :=
     (A.eigenspaces_iSupIndep.comp RCLike.ofReal_injective).comp Subtype.val_injective
   rw [hiSup, TauCeti.finrank_iSup_eq_sum_finrank_of_iSupIndep hind,
     Finset.sum_coe_sort hS.toFinset (fun μ : ℝ ↦ Module.finrank 𝕜 (A.eigenspace (μ : 𝕜)))]
@@ -741,7 +769,7 @@ private theorem eigenvalues_restrict_mem (hA : A.IsSymmetric) (hU : ∀ x ∈ U,
     (i : Fin (Module.finrank 𝕜 U)) :
     (hA.restrict_invariant hU).eigenvalues rfl i ∈ A.restrictedPointSpectrum U := by
   set hB := hA.restrict_invariant hU
-  refine Module.End.mem_restrictedPointSpectrum (hB.eigenvectorBasis rfl i).2 ?_ ?_
+  refine Module.End.mem_restrictedPointSpectrum (hB.eigenvectorBasis rfl i).property ?_ ?_
   · exact_mod_cast (hB.eigenvectorBasis rfl).orthonormal.ne_zero i
   · exact congrArg Subtype.val (hB.apply_eigenvectorBasis rfl i)
 
@@ -877,6 +905,51 @@ theorem abs_le_norm_of_mem_restrictedPointSpectrum {T : E →L[𝕜] E} {U : Sub
   have h := T.le_opNorm x
   rw [← coe_coe, hx, norm_smul, RCLike.norm_ofReal] at h
   exact le_of_mul_le_mul_right h (norm_pos_iff.mpr hx0)
+
+/-- A bounded operator `T` has no eigenvector for a real eigenvalue of absolute value larger than
+`‖T‖`. -/
+theorem eigenspace_eq_bot_of_norm_lt_abs {T : E →L[𝕜] E} {μ : ℝ} (hμ : ‖T‖ < |μ|) :
+    eigenspace (T : E →ₗ[𝕜] E) (μ : 𝕜) = ⊥ := by
+  by_contra h
+  refine hμ.not_ge (abs_le_norm_of_mem_restrictedPointSpectrum (U := ⊤) ?_)
+  rwa [mem_restrictedPointSpectrum_iff_inf_eigenspace_ne_bot, top_inf_eq]
+
+/-- The point-spectral subspace of a bounded operator `T` selected by `Ω` only depends on the
+reals of `Ω` in `[-‖T‖, ‖T‖]`, where all real eigenvalues of `T` lie. -/
+@[simp]
+theorem pointSpectralSubspace_inter_closedBall_norm (T : E →L[𝕜] E) (Ω : Set ℝ) :
+    pointSpectralSubspace (T : E →ₗ[𝕜] E) (Ω ∩ Metric.closedBall 0 ‖T‖) =
+      pointSpectralSubspace (T : E →ₗ[𝕜] E) Ω := by
+  refine le_antisymm (pointSpectralSubspace_mono Set.inter_subset_left)
+    (pointSpectralSubspace_le_iff.2 fun μ hμ ↦ ?_)
+  by_cases h : |μ| ≤ ‖T‖
+  · exact eigenspace_le_pointSpectralSubspace
+      ⟨hμ, by rwa [mem_closedBall_zero_iff, Real.norm_eq_abs]⟩
+  · rw [eigenspace_eq_bot_of_norm_lt_abs (not_le.1 h)]
+    exact bot_le
+
+/-- If `μ` is not an eigenvalue of `T`, then `T - μ • id` has trivial kernel. -/
+theorem ker_sub_smul_id_eq_bot_of_not_hasEigenvalue {T : E →L[𝕜] E} {μ : 𝕜}
+    (hT : ¬HasEigenvalue (T : E →ₗ[𝕜] E) μ) :
+    LinearMap.ker ((T - μ • ContinuousLinearMap.id 𝕜 E : E →L[𝕜] E) : E →ₗ[𝕜] E) = ⊥ := by
+  rw [hasEigenvalue_iff, not_not] at hT
+  rw [← hT]
+  ext x
+  simp [sub_eq_zero]
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+open scoped ComplexConjugate in
+/-- Shifting a symmetric operator by a real multiple `c` of the identity, given as a scalar fixed
+by conjugation, keeps it symmetric. -/
+theorem isSymmetric_sub_smul_id {T : E →L[𝕜] E} (hT : (T : E →ₗ[𝕜] E).IsSymmetric) {c : 𝕜}
+    (hc : conj c = c) :
+    ((T - c • ContinuousLinearMap.id 𝕜 E : E →L[𝕜] E) : E →ₗ[𝕜] E).IsSymmetric := by
+  simpa using hT.sub (LinearMap.IsSymmetric.id.smul hc)
 
 end ContinuousLinearMap
 

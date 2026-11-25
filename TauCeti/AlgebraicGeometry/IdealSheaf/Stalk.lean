@@ -24,7 +24,9 @@ the germ map on any affine neighbourhood. Independence of that neighbourhood mak
 ideal order available for arbitrary schemes. On an affine chart it agrees with ideal order
 at the corresponding prime, without a rationality or regularity assumption on the point.
 
-The stalk construction preserves sums, products and powers. Its being a proper ideal
+The stalk construction preserves sums, products and powers, and it detects inclusion of ideal
+sheaves (`AlgebraicGeometry.Scheme.IdealSheafData.le_iff_forall_stalkIdeal_le`), because an
+ideal of a ring is determined by its localizations at maximal ideals. Its being a proper ideal
 characterizes membership in the support, so order at least one recovers the usual support;
 higher order thresholds retain information about multiplicity.
 
@@ -58,13 +60,13 @@ universe u
 variable {X : Scheme.{u}}
 
 private theorem map_ideal_germ_eq (I : X.IdealSheafData) (U V : X.affineOpens)
-    (x : X) (hxU : x ∈ U.1) (hxV : x ∈ V.1) :
-    (I.ideal U).map (X.presheaf.germ U.1 x hxU).hom =
-      (I.ideal V).map (X.presheaf.germ V.1 x hxV).hom := by
+    (x : X) (hxU : x ∈ U.val) (hxV : x ∈ V.val) :
+    (I.ideal U).map (X.presheaf.germ U.val x hxU).hom =
+      (I.ideal V).map (X.presheaf.germ V.val x hxV).hom := by
   obtain ⟨W, hW, hxW, hWU⟩ := Opens.isBasis_iff_nbhd.mp X.isBasis_affineOpens
     (Opens.mem_inf.mpr ⟨hxU, hxV⟩)
-  have h (A : X.affineOpens) (hxA : x ∈ A.1) (hWA : W ≤ A.1) :
-      (I.ideal A).map (X.presheaf.germ A.1 x hxA).hom =
+  have h (A : X.affineOpens) (hxA : x ∈ A.val) (hWA : W ≤ A.val) :
+      (I.ideal A).map (X.presheaf.germ A.val x hxA).hom =
         (I.ideal ⟨W, hW⟩).map (X.presheaf.germ W x hxW).hom := by
     rw [← I.map_ideal (U := ⟨W, hW⟩) (V := A) hWA, Ideal.map_map,
       ← CommRingCat.hom_comp]
@@ -80,25 +82,25 @@ noncomputable def stalkIdeal (I : X.IdealSheafData) (x : X) : Ideal (X.presheaf.
 
 /-- Every affine neighbourhood computes the stalk ideal by its germ map. -/
 theorem stalkIdeal_eq_map (I : X.IdealSheafData) (U : X.affineOpens)
-    (x : X) (hxU : x ∈ U.1) :
-    I.stalkIdeal x = (I.ideal U).map (X.presheaf.germ U.1 x hxU).hom :=
+    (x : X) (hxU : x ∈ U.val) :
+    I.stalkIdeal x = (I.ideal U).map (X.presheaf.germ U.val x hxU).hom :=
   map_ideal_germ_eq I _ U x _ hxU
 
 /-- A germ lies in the stalk ideal exactly when a denominator outside the point's prime
 clears it to a section in the affine ideal. -/
 theorem mem_stalkIdeal_iff (I : X.IdealSheafData) (U : X.affineOpens)
-    (x : X) (hxU : x ∈ U.1) (s : X.presheaf.stalk x) :
+    (x : X) (hxU : x ∈ U.val) (s : X.presheaf.stalk x) :
     s ∈ I.stalkIdeal x ↔
-      ∃ f ∈ I.ideal U, ∃ t : Γ(X, U), t ∉ (U.2.primeIdealOf ⟨x, hxU⟩).asIdeal ∧
-        s * (X.presheaf.germ U.1 x hxU).hom t = (X.presheaf.germ U.1 x hxU).hom f := by
+      ∃ f ∈ I.ideal U, ∃ t : Γ(X, U), t ∉ (U.property.primeIdealOf ⟨x, hxU⟩).asIdeal ∧
+        s * (X.presheaf.germ U.val x hxU).hom t = (X.presheaf.germ U.val x hxU).hom f := by
   let := X.presheaf.algebra_section_stalk ⟨x, hxU⟩
-  let := U.2.isLocalization_stalk ⟨x, hxU⟩
+  let := U.property.isLocalization_stalk ⟨x, hxU⟩
   have hg : algebraMap Γ(X, U) (X.presheaf.stalk x) =
-      (X.presheaf.germ U.1 x hxU).hom :=
+      (X.presheaf.germ U.val x hxU).hom :=
     X.presheaf.stalk_open_algebraMap ⟨x, hxU⟩
   rw [I.stalkIdeal_eq_map U x hxU]
   exact (IsLocalization.mem_map_algebraMap_iff
-    (U.2.primeIdealOf ⟨x, hxU⟩).asIdeal.primeCompl (X.presheaf.stalk x)).trans
+    (U.property.primeIdealOf ⟨x, hxU⟩).asIdeal.primeCompl (X.presheaf.stalk x)).trans
     (by
       simp only [Prod.exists, Subtype.exists, Ideal.mem_primeCompl_iff, exists_prop, hg])
 
@@ -138,23 +140,41 @@ theorem stalkIdeal_pow (I : X.IdealSheafData) (n : ℕ) (x : X) :
 /-- The stalk ideal is the localized section ideal under the canonical affine localization
 equivalence. -/
 theorem stalkIdeal_eq_map_localization (I : X.IdealSheafData) (U : X.affineOpens)
-    (x : X) (hxU : x ∈ U.1) :
+    (x : X) (hxU : x ∈ U.val) :
     let := X.presheaf.algebra_section_stalk ⟨x, hxU⟩
-    let := U.2.isLocalization_stalk ⟨x, hxU⟩
-    let p := (U.2.primeIdealOf ⟨x, hxU⟩).asIdeal
+    let := U.property.isLocalization_stalk ⟨x, hxU⟩
+    let p := (U.property.primeIdealOf ⟨x, hxU⟩).asIdeal
     I.stalkIdeal x =
       ((I.ideal U).map (algebraMap Γ(X, U) (Localization.AtPrime p))).map
         (IsLocalization.algEquiv p.primeCompl (Localization.AtPrime p)
           (X.presheaf.stalk x)).toRingHom := by
   let := X.presheaf.algebra_section_stalk ⟨x, hxU⟩
-  let := U.2.isLocalization_stalk ⟨x, hxU⟩
+  let := U.property.isLocalization_stalk ⟨x, hxU⟩
   dsimp only
   rw [I.stalkIdeal_eq_map U x hxU, Ideal.map_map]
   congr 1
   ext r
-  exact (IsLocalization.algEquiv (U.2.primeIdealOf ⟨x, hxU⟩).asIdeal.primeCompl
-    (Localization.AtPrime (U.2.primeIdealOf ⟨x, hxU⟩).asIdeal)
+  exact (IsLocalization.algEquiv (U.property.primeIdealOf ⟨x, hxU⟩).asIdeal.primeCompl
+    (Localization.AtPrime (U.property.primeIdealOf ⟨x, hxU⟩).asIdeal)
     (X.presheaf.stalk x)).commutes r |>.symm
+
+/-- **Inclusion of ideal sheaves is checked on stalks.** An ideal sheaf is contained in another
+exactly when its stalk ideal is contained in the other's at every point. -/
+theorem le_iff_forall_stalkIdeal_le {I J : X.IdealSheafData} :
+    I ≤ J ↔ ∀ x, I.stalkIdeal x ≤ J.stalkIdeal x := by
+  refine ⟨fun h ↦ stalkIdeal_mono h, fun h ↦ le_of_comap_Spec_isLocalRing fun R _ _ φ ↦ ?_⟩
+  -- `φ` factors through `Spec 𝒪_{X,x}` at the image `x` of the closed point, and on an affine
+  -- neighbourhood of `x` the inverse images along `Spec 𝒪_{X,x} ⟶ X` are the stalk ideals.
+  let x := φ (IsLocalRing.closedPoint R)
+  let U : X.affineOpens := ⟨_, isAffineOpen_opensRange (X.affineCover.f (X.affineCover.idx x))⟩
+  have hxU : x ∈ U.val := X.affineCover.covers x
+  have heq : X.fromSpecStalk x = Spec.map (X.presheaf.germ U.val x hxU) ≫ U.property.fromSpec :=
+    (U.property.fromSpecStalk_eq_fromSpecStalk hxU).symm
+  rw [← Scheme.Spec_stalkClosedPointTo_fromSpecStalk φ, heq, ← Category.assoc, ← Spec.map_comp]
+  refine (comap_SpecMap_fromSpec_le_iff U.property _).mpr ?_
+  rw [CommRingCat.hom_comp, ← Ideal.map_map, ← Ideal.map_map, ← stalkIdeal_eq_map,
+    ← stalkIdeal_eq_map]
+  exact Ideal.map_mono (h x)
 
 end AlgebraicGeometry.Scheme.IdealSheafData
 
@@ -266,15 +286,15 @@ theorem natCast_le_stalkOrder_iff (I : X.IdealSheafData) (x : X) (n : ℕ) :
 
 /-- An affine chart identifies stalk order with ideal order at its corresponding prime. -/
 theorem stalkOrder_eq_orderAt (I : X.IdealSheafData) (U : X.affineOpens)
-    (x : X) (hxU : x ∈ U.1) :
-    I.stalkOrder x = (I.ideal U).orderAt (U.2.primeIdealOf ⟨x, hxU⟩) := by
+    (x : X) (hxU : x ∈ U.val) :
+    I.stalkOrder x = (I.ideal U).orderAt (U.property.primeIdealOf ⟨x, hxU⟩) := by
   let := X.presheaf.algebra_section_stalk ⟨x, hxU⟩
-  let := U.2.isLocalization_stalk ⟨x, hxU⟩
+  let := U.property.isLocalization_stalk ⟨x, hxU⟩
   rw [stalkOrder, I.stalkIdeal_eq_map_localization U x hxU, Ideal.orderAt_def]
   simpa only [RingEquiv.toRingHom_eq_coe, Ideal.map_coe] using
     Ideal.localOrder_map_equiv _ (IsLocalization.algEquiv
-      (U.2.primeIdealOf ⟨x, hxU⟩).asIdeal.primeCompl
-      (Localization.AtPrime (U.2.primeIdealOf ⟨x, hxU⟩).asIdeal)
+      (U.property.primeIdealOf ⟨x, hxU⟩).asIdeal.primeCompl
+      (Localization.AtPrime (U.property.primeIdealOf ⟨x, hxU⟩).asIdeal)
       (X.presheaf.stalk x)).toRingEquiv
 
 /-- Positive stalk order recovers the support of the ideal sheaf. -/

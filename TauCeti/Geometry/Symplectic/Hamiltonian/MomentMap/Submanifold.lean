@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Level
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.PullbackGroupoid
+import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.RegularLevel
 
 /-!
 # Regular levels of moment maps as embedded submanifolds
@@ -96,7 +97,7 @@ private theorem coords_eq_iff {x : M} :
 
 private theorem contMDiff_coords (h : σ.IsMomentMap a μ) :
     ContMDiff I 𝓘(ℝ, Fin (finrank ℝ 𝔤) → ℝ) ∞ (coords μ) :=
-  contMDiff_pi_module_iff.2 fun i ↦ h.contMDiff (Module.finBasis ℝ 𝔤 i)
+  h.contMDiff_components (Module.finBasis ℝ 𝔤)
 
 /-- The derivative of the coordinates of `μ` is the differential `dμ_x` read in the dual basis. -/
 private theorem mfderiv_coords_apply (h : σ.IsMomentMap a μ) (x : M) (v : TangentSpace I x) :
@@ -268,7 +269,7 @@ theorem ker_bilinFormAt_mpullback_coe_level (z : {x : M // μ x = c})
   let := h.levelChartedSpace hreg hn
   have := h.isManifold_level hreg hn
   rw [h.ker_bilinFormAt_mpullback (h.contMDiff_coe_level hreg hn) hσz hcz
-    (h.range_mfderiv_coe_level hreg hn z), z.2]
+    (h.range_mfderiv_coe_level hreg hn z), z.property]
 
 end IsMomentMap
 

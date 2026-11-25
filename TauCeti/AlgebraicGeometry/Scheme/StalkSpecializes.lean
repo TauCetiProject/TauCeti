@@ -51,6 +51,8 @@ off.
 * `TauCeti.AlgebraicGeometry.Scheme.isFractionRing_residueField_of_specializes`: if every
   nonzero prime of `𝒪_{X,y}` is maximal and `x ≠ y`, then `κ(x)` is a fraction field of
   `𝒪_{X,y}`.
+* `TauCeti.AlgebraicGeometry.Scheme.Spec.Γevaluation_eq_toStalk_stalkSpecializes`: affine
+  coordinate evaluation at a generization factors through specialization from the stalk.
 * `AlgebraicGeometry.Scheme.Hom.stalkSpecializes_residue_residueFieldCongr_residueFieldMap`: for
   a morphism `g`, the stalk map and the residue field map are compatible with the specializations
   `x ⤳ g ξ'` and `x' ⤳ ξ'`, after identifying the residue fields at `x = g x'`.
@@ -78,6 +80,24 @@ namespace Scheme
 universe u
 
 variable {X : Scheme.{u}} {x y : X}
+
+/-- Affine coordinates evaluated at a generization `x` of `y` are obtained by taking their
+germs at `y`, specializing to the stalk at `x`, and passing to its residue field. -/
+theorem Spec.Γevaluation_eq_toStalk_stalkSpecializes (R : CommRingCat.{u})
+    {x y : Spec R} (h : x ⤳ y) :
+    (Scheme.ΓSpecIso R).inv ≫ (Spec R).Γevaluation x =
+      StructureSheaf.toStalk R y ≫ (Spec R).presheaf.stalkSpecializes h ≫
+        (Spec R).residue x := by
+  have heval : (Spec R).Γevaluation x =
+      (Spec R).presheaf.germ ⊤ x trivial ≫ (Spec R).residue x :=
+    ((Spec R).germ_residue (U := ⊤) x trivial).symm
+  have hgerm : ((Scheme.ΓSpecIso R).inv ≫ (Spec R).presheaf.germ ⊤ x trivial) ≫
+      (Spec R).residue x = StructureSheaf.toStalk R x ≫ (Spec R).residue x :=
+    (Scheme.ΓSpecIso_inv R).symm ▸
+      StructureSheaf.algebraMap_germ_assoc ⊤ x trivial ((Spec R).residue x)
+  rw [heval, ← Category.assoc, hgerm]
+  exact (StructureSheaf.toStalk_stalkSpecializes_assoc h ((Spec R).residue x)).symm.trans
+    (Category.assoc _ _ _)
 
 /-- For a specialization `x ⤳ y`, the stalk `𝒪_{X,x}` is the localization of `𝒪_{X,y}` at the
 prime lying under the maximal ideal of `𝒪_{X,x}`, via the specialization map. -/
@@ -120,7 +140,7 @@ theorem isLocalization_stalkSpecializes (h : x ⤳ y) :
     refine ⟨algebraMap _ _ (m : Γ(X, U)), r, ?_, by rw [← hrm, mul_comm]⟩
     refine (IsLocalization.AtPrime.isUnit_to_map_iff (X.presheaf.stalk x) q r).mp ?_
     rw [IsScalarTower.algebraMap_apply Γ(X, U) (X.presheaf.stalk y), ← hrm, map_mul]
-    refine IsUnit.mul ?_ (((IsLocalization.AtPrime.isUnit_to_map_iff _ p m).mpr m.2).map _)
+    refine IsUnit.mul ?_ (((IsLocalization.AtPrime.isUnit_to_map_iff _ p m).mpr m.property).map _)
     simpa [Ideal.primeCompl, mem_maximalIdeal, mem_nonunits_iff, RingHom.algebraMap_toAlgebra]
       using hs
 
@@ -269,7 +289,7 @@ theorem isFractionRing_residueField_of_specializes [Ring.DimensionLEOne (X.presh
   refine IsFractionRing.of_field _ _ fun z ↦ ?_
   obtain ⟨s, rfl⟩ := X.residue_surjective x z
   obtain ⟨⟨a, b⟩, rfl⟩ := IsLocalization.mk'_surjective (nonZeroDivisors (X.presheaf.stalk y)) s
-  refine ⟨a, b, eq_div_of_mul_eq (hres b (nonZeroDivisors.ne_zero b.2)) ?_⟩
+  refine ⟨a, b, eq_div_of_mul_eq (hres b (nonZeroDivisors.ne_zero b.property)) ?_⟩
   rw [RingHom.algebraMap_toAlgebra, CommRingCat.hom_comp, RingHom.comp_apply, RingHom.comp_apply,
     ← map_mul]
   exact congrArg _ (IsLocalization.mk'_spec _ a b)

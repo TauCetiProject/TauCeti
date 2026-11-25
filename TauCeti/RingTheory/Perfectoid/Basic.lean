@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.AdicCompletion.Frobenius
 public import TauCeti.RingTheory.Huber.Prod
 public import TauCeti.RingTheory.Ideal.Quotient.Frobenius
 public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
+import TauCeti.RingTheory.Jacobson.Associated
 
 /-!
 # Perfectoid Tate rings
@@ -39,6 +40,14 @@ Frobenius on `R° ⧸ (p)` once some `ϖ` with `ϖ ^ p ∣ p` in `R°` is given
 (`TauCeti.tfae_forall_exists_dvd_sub_pow`). Consequently the perfectoid condition can be tested
 modulo `p`.
 
+The condition can also be tested on any open bounded subring `A₀` in place of `R°`: if a
+pseudouniformiser `π ∈ A₀` has `π ^ p ∣ p` in `A₀` and Frobenius `A₀ ⧸ (π) → A₀ ⧸ (π ^ p)` is
+bijective, then `R` is perfectoid (Bhatt–Morrow–Scholze, Lemma 3.21). Injectivity makes `A₀` closed
+under `p`-th roots, hence `π R° ⊆ A₀`, so `R` is uniform; surjectivity and completeness of `A₀`
+give a unit multiple of `π` with a `p`-th root, through which approximate `p`-th roots in `A₀`
+yield approximate `p`-th roots in `R°`. This applies to untilts, where `𝕎 R⁺ ⧸ (ξ)` is an open
+bounded subring whose relation to the power-bounded elements is not known in advance.
+
 ## Main definitions
 
 * `TauCeti.Perfectoid.IsPerfectoidTateRing p R`: `R` is a perfectoid Tate ring.
@@ -62,12 +71,16 @@ modulo `p`.
   `R° ⧸ (p)` is surjective.
 * `TauCeti.Perfectoid.IsPerfectoidTateRing.exists_natCast_dvd_sub_pow`: in a perfectoid Tate
   ring every element of `R°` is a `p`-th power modulo `p`.
+* `TauCeti.Perfectoid.IsPerfectoidTateRing.of_bijective_frobeniusModPow`: a complete Hausdorff
+  Tate ring with an open bounded subring `A₀` and a pseudouniformiser `π ∈ A₀` such that
+  `π ^ p ∣ p` in `A₀` and Frobenius `A₀ ⧸ (π) → A₀ ⧸ (π ^ p)` is bijective is perfectoid
+  (Bhatt–Morrow–Scholze, Lemma 3.21).
 
 ## References
 
 * P. Scholze, *Étale cohomology of diamonds*, Definition 3.1 and Remarks 3.2–3.3.
 * P. Scholze, *Perfectoid spaces*, Definition 5.1 and Proposition 5.8.
-* B. Bhatt, M. Morrow, P. Scholze, *Integral p-adic Hodge theory*, Lemma 3.9 and §3.2.
+* B. Bhatt, M. Morrow, P. Scholze, *Integral p-adic Hodge theory*, Lemmas 3.9 and 3.21 and §3.2.
 -/
 
 public section
@@ -120,7 +133,7 @@ theorem IsPerfectoidTateRing.isTopologicallyNilpotent_natCast
   have hp' : (p : R) = (c : R) * (ϖ : R) ^ p := by
     simpa [mul_comm] using congrArg (powerBoundedSubring R).subtype hc
   rw [hp']
-  exact (mem_powerBoundedSubring.mp c.2).isTopologicallyNilpotent_mul
+  exact (mem_powerBoundedSubring.mp c.property).isTopologicallyNilpotent_mul
     (hϖ.isTopologicallyNilpotent.pow hp)
 
 variable (R) in
@@ -231,6 +244,88 @@ theorem isPerfectoidTateRing_iff_frobenius_surjective_modP [IsUniform R] :
   exact ⟨ϖ, hϖ, h, IsPerfectoidTateRing.exists_natCast_dvd_sub_pow⟩
 
 end FrobeniusModP
+
+section RingOfDefinition
+
+variable {p : ℕ} [Fact p.Prime] {R : Type*} [CommRing R] [UniformSpace R] [IsTopologicalRing R]
+  [IsTateRing R]
+
+/-- Let `A₀ ⊆ R°` be a subring and `π ∈ A₀` a unit of `R`, associated in `A₀` to a `p`-th power
+`t ^ p`, such that `π R° ⊆ A₀` and every element of `A₀` is a `p`-th power modulo `π p`. Then every
+element of `R°` is a `p`-th power modulo `p`: if `π x ≡ y ^ p` modulo `π p`, then
+`x ≡ (y / t) ^ p` modulo `p`. -/
+private theorem exists_natCast_dvd_sub_pow_of_mul_mem {A₀ : Subring R}
+    (hA₀ : ∀ a : A₀, IsPowerBounded (a : R)) {π t : A₀} {u : A₀ˣ} (hπ : IsUnit (π : R))
+    (hu : π * u = t ^ p) (hmem : ∀ x : R, IsPowerBounded x → (π : R) * x ∈ A₀)
+    (hs : ∀ a : A₀, ∃ y, π * p ∣ a - y ^ p) (x : powerBoundedSubring R) :
+    ∃ y, (p : powerBoundedSubring R) ∣ x - y ^ p := by
+  have hp : p.Prime := Fact.out
+  have hu' : (π : R) * (u : A₀) = (t : R) ^ p := by
+    rw [← Subring.coe_mul, hu, Subring.coe_pow]
+  have hT : IsUnit ((t : R) ^ p) := hu' ▸ hπ.mul ((u.isUnit).map A₀.subtype)
+  obtain ⟨y, c, hc⟩ := hs ⟨_, hmem _ ((hA₀ u).mul (mem_powerBoundedSubring.mp x.property))⟩
+  have hc' : (π : R) * (u : A₀) * x - (y : R) ^ p = π * p * c := by
+    simpa [mul_assoc] using congrArg Subtype.val hc
+  have hTt : IsUnit (t : R) := (isUnit_pow_iff hp.ne_zero).mp hT
+  set z : R := y * ↑hTt.unit⁻¹
+  have hz : (t : R) * z = y := by rw [mul_left_comm, hTt.mul_val_inv, mul_one]
+  set d : R := c * ((u⁻¹ : A₀ˣ) : A₀)
+  have hd : d ∈ A₀ := A₀.mul_mem c.property ((u⁻¹ : A₀ˣ) : A₀).property
+  have hzd : z ^ p = x - p * d := by
+    have hud : ((u : A₀) : R) * ((u⁻¹ : A₀ˣ) : A₀) = 1 := by
+      rw [← Subring.coe_mul, Units.mul_inv, Subring.coe_one]
+    refine hT.mul_left_cancel ?_
+    rw [← mul_pow, hz, ← hu']
+    linear_combination (-1 : R) * hc' + (π : R) * p * c * hud
+  have hpd : (p : R) * d ∈ powerBoundedSubring R :=
+    mem_powerBoundedSubring.mpr (hA₀ ⟨_, A₀.mul_mem (natCast_mem A₀ p) hd⟩)
+  have hzb : z ∈ powerBoundedSubring R := mem_powerBoundedSubring.mpr <|
+    IsPowerBounded.of_pow hp.ne_zero (hzd ▸ mem_powerBoundedSubring.mp (sub_mem x.property hpd))
+  exact ⟨⟨z, hzb⟩, ⟨d, mem_powerBoundedSubring.mpr (hA₀ ⟨d, hd⟩)⟩, Subtype.ext (by simp [hzd])⟩
+
+variable [IsUniformAddGroup R] [CompleteSpace R] [T2Space R]
+
+/-- **Perfectoid Tate rings from a ring of definition with bijective Frobenius**
+(Bhatt–Morrow–Scholze, *Integral p-adic Hodge theory*, Lemma 3.21). Let `R` be a complete
+Hausdorff Tate ring, `A₀ ⊆ R` an open bounded subring and `π ∈ A₀` a pseudouniformiser of `R` with
+`π ^ p ∣ p` in `A₀` such that Frobenius `A₀ ⧸ (π) → A₀ ⧸ (π ^ p)` is bijective. Then `R` is a
+perfectoid Tate ring. By `TauCeti.Perfectoid.IsIntegralPerfectoid.of_bijective_frobeniusModPow`,
+such an `A₀` is an integral perfectoid ring; `A₀` need not be integrally closed in `R`, but
+`π R° ⊆ A₀` (`TauCeti.Huber.mul_mem_of_isPowerBounded_of_pow_dvd_pow`). -/
+theorem IsPerfectoidTateRing.of_bijective_frobeniusModPow {A₀ : Subring R}
+    (hA₀o : IsOpen (A₀ : Set R)) (hA₀b : IsBounded (A₀ : Set R)) {π : A₀}
+    (hπ : IsPseudoUniformizer (π : R)) (h : π ^ p ∣ (p : A₀))
+    (hbij : Function.Bijective (frobeniusModPow p h)) : IsPerfectoidTateRing p R := by
+  have hp : p.Prime := Fact.out
+  have hinj := (frobeniusModPow_injective_iff h).mp hbij.1
+  have := isUniform_of_pow_dvd_pow hA₀o hA₀b hπ hp.one_lt hinj
+  have := A₀.isAdicComplete_span_singleton hA₀o hA₀b π hπ
+  -- every element of `A₀` is a `p`-th power modulo `π p`
+  have hs := exists_mul_dvd_sub_pow ((frobeniusModPow_surjective_iff h).mp hbij.2)
+  have hA₀ (a : A₀) : IsPowerBounded (a : R) := hA₀b.isPowerBounded_of_mem a.property
+  -- `π` is associated to a `p`-th power `t ^ p`, since `p` lies in the Jacobson radical of `A₀`
+  obtain ⟨t, ht⟩ := hs π
+  have hp_jac : (p : A₀) ∈ (⊥ : Ideal A₀).jacobson := by
+    rw [Ideal.jacobson_bot]
+    exact IsAdicComplete.le_jacobson _
+      (Ideal.mem_span_singleton.mpr ((dvd_pow_self π hp.ne_zero).trans h))
+  obtain ⟨u, hu⟩ := associated_of_mul_dvd_sub_of_mem_jacobson hp_jac (dvd_sub_comm.mp ht)
+  -- the pseudouniformiser `ϖ = t ^ p = u π ∈ R°` has `ϖ ^ p ∣ p`
+  let ϖ : powerBoundedSubring R := ⟨(t : R) ^ p, mem_powerBoundedSubring.mpr ((hA₀ t).pow p)⟩
+  have hϖu : (ϖ : R) = (u : A₀) * π := by
+    rw [mul_comm, ← Subring.coe_mul, hu, Subring.coe_pow]
+  have hϖ : IsPseudoUniformizer (ϖ : R) := hϖu ▸ isPseudoUniformizer_iff.mpr
+    ⟨(u.isUnit.map A₀.subtype).mul hπ.isUnit,
+      (hA₀ u).isTopologicallyNilpotent_mul hπ.isTopologicallyNilpotent⟩
+  have hϖp : ϖ ^ p ∣ (p : powerBoundedSubring R) := by
+    obtain ⟨c, hc⟩ := (Associated.pow_pow (n := p) ⟨u, hu⟩).symm.dvd.trans h
+    refine ⟨⟨c, mem_powerBoundedSubring.mpr (hA₀ c)⟩, Subtype.ext ?_⟩
+    simpa using congrArg Subtype.val hc
+  exact isPerfectoidTateRing_iff_frobenius_surjective_modP.mpr ⟨ϖ, hϖ, hϖp,
+    exists_natCast_dvd_sub_pow_of_mul_mem hA₀ hπ.isUnit hu
+      (fun _ ↦ mul_mem_of_isPowerBounded_of_pow_dvd_pow hA₀o hπ hp.one_lt hinj) hs⟩
+
+end RingOfDefinition
 
 section Prod
 

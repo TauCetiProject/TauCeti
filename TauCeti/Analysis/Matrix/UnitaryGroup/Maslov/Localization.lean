@@ -121,7 +121,7 @@ theorem souriau_eq_cayley_of_coe_eq_mul {U : unitaryGroup n ℂ} {A M : Matrix n
       conjTranspose_eq_transpose_of_trivial, transpose_map]
   -- Unitarity of `U` gives `Nᵀ (Y X) N = 1`, hence `N Nᵀ = (Y X)⁻¹`.
   have hunit : Nᵀ * (Y * X) * N = 1 := by
-    have h := mem_unitaryGroup_iff'.1 U.2
+    have h := mem_unitaryGroup_iff'.1 U.property
     rw [star_eq_conjTranspose, hU, conjTranspose_mul, hXH, hNH] at h
     simpa only [Matrix.mul_assoc] using h
   have hNN : N * Nᵀ = (Y * X)⁻¹ :=
@@ -168,23 +168,23 @@ theorem exists_path_realImage_eq_and_souriau_eq_cayley
 /-- The determinant of the Cayley transform of a real symmetric matrix, as a point of the
 circle. -/
 private noncomputable def cayleyDet (B : SymmMatrix n) : Circle :=
-  detCircle ⟨cayley (B.1.map ((↑) : ℝ → ℂ)), B.2.map_ofReal.cayley_mem_unitaryGroup⟩
+  detCircle ⟨cayley (B.val.map ((↑) : ℝ → ℂ)), B.property.map_ofReal.cayley_mem_unitaryGroup⟩
 
 private theorem continuous_cayleyDet : Continuous (cayleyDet (n := n)) := by
-  have hz : Continuous fun B : SymmMatrix n => det (1 + Complex.I • B.1.map ((↑) : ℝ → ℂ)) :=
-    Continuous.matrix_det (A := fun B : SymmMatrix n => 1 + Complex.I • B.1.map ((↑) : ℝ → ℂ))
+  have hz : Continuous fun B : SymmMatrix n => det (1 + Complex.I • B.val.map ((↑) : ℝ → ℂ)) :=
+    Continuous.matrix_det (A := fun B : SymmMatrix n => 1 + Complex.I • B.val.map ((↑) : ℝ → ℂ))
       (continuous_const.add
-        ((continuous_subtype_val.matrix_map continuous_ofReal).const_smul Complex.I))
+        ((continuous_subtypeVal.matrix_map continuous_ofReal).const_smul Complex.I))
   have hc : Continuous fun B : SymmMatrix n => (cayleyDet B : ℂ) :=
     (hz.div (continuous_conj.comp hz) fun B => (map_ne_zero _).2
-      B.2.map_ofReal.isUnit_det_one_add_I_smul.ne_zero).congr fun B => by
+      B.property.map_ofReal.isUnit_det_one_add_I_smul.ne_zero).congr fun B => by
         simp only [cayleyDet, coe_detCircle]
-        exact B.2.map_ofReal.det_cayley.symm
+        exact B.property.map_ofReal.det_cayley.symm
   exact continuous_induced_rng.2 hc
 
 /-- A frame whose Souriau map is the Cayley transform of `B` has Maslov phase `det (cayley B)`. -/
 private theorem detCircle_souriau_eq_cayleyDet {U : unitaryGroup n ℂ} {B : SymmMatrix n}
-    (h : (souriau U : Matrix n n ℂ) = cayley (B.1.map ((↑) : ℝ → ℂ))) :
+    (h : (souriau U : Matrix n n ℂ) = cayley (B.val.map ((↑) : ℝ → ℂ))) :
     detCircle (souriau U) = cayleyDet B :=
   congrArg detCircle (Subtype.ext h)
 
@@ -193,10 +193,10 @@ Cayley transforms along a path `P` of symmetric matrices, the Maslov index of `�
 angle swept by `t ↦ det (cayley (P t))` and the endpoints of `P`. -/
 private theorem maslovIndex_eq_angleChange_cayleyDet {U V : unitaryGroup n ℂ} (γ : Path U V)
     {B₀ B₁ : SymmMatrix n} (P : Path B₀ B₁)
-    (h : ∀ t, (souriau (γ t) : Matrix n n ℂ) = cayley ((P t).1.map ((↑) : ℝ → ℂ))) :
+    (h : ∀ t, (souriau (γ t) : Matrix n n ℂ) = cayley ((P t).val.map ((↑) : ℝ → ℂ))) :
     maslovIndex γ = Circle.angleChange (P.map continuous_cayleyDet) / (2 * Real.pi) -
-      (spectralAngleSum (cayley (B₁.1.map ((↑) : ℝ → ℂ))) -
-        spectralAngleSum (cayley (B₀.1.map ((↑) : ℝ → ℂ)))) := by
+      (spectralAngleSum (cayley (B₁.val.map ((↑) : ℝ → ℂ))) -
+        spectralAngleSum (cayley (B₀.val.map ((↑) : ℝ → ℂ)))) := by
   have h0 := h 0
   have h1 := h 1
   rw [γ.source, P.source] at h0
@@ -208,31 +208,34 @@ private theorem maslovIndex_eq_angleChange_cayleyDet {U V : unitaryGroup n ℂ} 
 
 /-- The segment `t ↦ t B` from `0` to a symmetric matrix `B`. -/
 private def segment (B : SymmMatrix n) : Path (⟨0, isHermitian_zero⟩ : SymmMatrix n) B where
-  toFun t := ⟨(t : ℝ) • B.1, B.2.smul (IsSelfAdjoint.all _)⟩
-  continuous_toFun := (continuous_subtype_val.smul continuous_const).subtype_mk _
+  toFun t := ⟨(t : ℝ) • B.val, B.property.smul (IsSelfAdjoint.all _)⟩
+  continuous_toFun := (continuous_subtypeVal.smul continuous_const).subtype_mk _
   source' := Subtype.ext (by simp)
   target' := Subtype.ext (by simp)
 
 omit [Fintype n] [DecidableEq n] in
 private theorem coe_segment_apply (B : SymmMatrix n) (t : I) :
-    ((segment B t : SymmMatrix n) : Matrix n n ℝ) = (t : ℝ) • B.1 :=
+    ((segment B t : SymmMatrix n) : Matrix n n ℝ) = (t : ℝ) • B.val :=
   (rfl)
 
 /-- The eigenvector matrix of a symmetric matrix, as a unitary complex matrix. -/
 private noncomputable def eigenFrame (B : SymmMatrix n) : unitaryGroup n ℂ :=
-  ⟨(B.2.eigenvectorUnitary : Matrix n n ℝ).map (↑),
-    map_ofReal_mem_unitaryGroup B.2.eigenvectorUnitary.2⟩
+  ⟨(B.property.eigenvectorUnitary : Matrix n n ℝ).map (↑),
+    map_ofReal_mem_unitaryGroup B.property.eigenvectorUnitary.property⟩
 
 /-- The diagonal frames `diag (e^{i arctan (t λⱼ)})` of the graphs of `t D`, for `D` the
 diagonal matrix of eigenvalues of `B`. -/
 private noncomputable def diagonalFrame (B : SymmMatrix n) :
-    Path (TauCeti.unitaryTorusHom n fun j => Circle.exp (Real.arctan ((0 : I) * B.2.eigenvalues j)))
-      (TauCeti.unitaryTorusHom n fun j => Circle.exp (Real.arctan ((1 : I) * B.2.eigenvalues j)))
+    Path (TauCeti.unitaryTorusHom n fun j => Circle.exp (Real.arctan
+        ((0 : I) * B.property.eigenvalues j)))
+      (TauCeti.unitaryTorusHom n fun j => Circle.exp (Real.arctan ((1 : I) * B.property.eigenvalues
+          j)))
     where
-  toFun t := TauCeti.unitaryTorusHom n fun j => Circle.exp (Real.arctan (t * B.2.eigenvalues j))
+  toFun t := TauCeti.unitaryTorusHom n fun j => Circle.exp (Real.arctan
+      (t * B.property.eigenvalues j))
   continuous_toFun := TauCeti.continuous_unitaryTorusHom.comp <| continuous_pi fun _ =>
     Circle.exp.continuous.comp (Real.continuous_arctan.comp
-      (continuous_subtype_val.mul continuous_const))
+      (continuous_subtypeVal.mul continuous_const))
   source' := rfl
   target' := rfl
 
@@ -246,36 +249,35 @@ private theorem segmentFrame_apply (B : SymmMatrix n) (t : I) :
 
 /-- A real symmetric matrix, read as a complex matrix, in its eigenvector frame. -/
 private theorem map_ofReal_smul_eq (B : SymmMatrix n) (t : ℝ) :
-    ((t • B.1).map ((↑) : ℝ → ℂ)) = (eigenFrame B : Matrix n n ℂ) *
-      diagonal (fun j => ((t * B.2.eigenvalues j : ℝ) : ℂ)) * (eigenFrame B : Matrix n n ℂ)ᵀ := by
-  have hsmul : (t • B.1).map ((↑) : ℝ → ℂ) = (t : ℂ) • B.1.map ((↑) : ℝ → ℂ) := by
+    ((t • B.val).map ((↑) : ℝ → ℂ)) = (eigenFrame B : Matrix n n ℂ) *
+      diagonal (fun j => ((t * B.property.eigenvalues j : ℝ) : ℂ)) * (eigenFrame B : Matrix n n ℂ)ᵀ
+          := by
+  have hsmul : (t • B.val).map ((↑) : ℝ → ℂ) = (t : ℂ) • B.val.map ((↑) : ℝ → ℂ) := by
     ext i j
     simp
-  have hdiag : diagonal (fun j => ((t * B.2.eigenvalues j : ℝ) : ℂ)) =
-      (t : ℂ) • (diagonal (RCLike.ofReal ∘ B.2.eigenvalues)).map ((↑) : ℝ → ℂ) := by
+  have hdiag : diagonal (fun j => ((t * B.property.eigenvalues j : ℝ) : ℂ)) =
+      (t : ℂ) • (diagonal (RCLike.ofReal ∘ B.property.eigenvalues)).map ((↑) : ℝ → ℂ) := by
     simp [diagonal_map, ← diagonal_smul, Pi.smul_def]
-  have h := B.2.spectral_theorem
+  have h := B.property.spectral_theorem
   rw [Unitary.conjStarAlgAut_apply, star_eq_conjTranspose,
     conjTranspose_eq_transpose_of_trivial] at h
   rw [hsmul, hdiag, Matrix.mul_smul, Matrix.smul_mul]
   congr 1
   conv_lhs => rw [h]
   simp only [eigenFrame, ← transpose_map]
-  -- `Matrix.map_mul` at `Complex.ofRealHom`, whose coercion is `(↑)` (`Complex.ofRealHom_eq_coe`).
-  exact (Matrix.map_mul (f := Complex.ofRealHom)).trans
-    (congrArg (· * _) (Matrix.map_mul (f := Complex.ofRealHom)))
+  rw [map_ofReal_mul, map_ofReal_mul]
 
 /-- The frames `O diag (e^{i arctan (t λⱼ)})` frame the graphs of the segment `t ↦ t B`: their
 Souriau maps are the Cayley transforms of `t B`. -/
 private theorem souriau_segmentFrame (B : SymmMatrix n) (t : I) :
     (souriau (segmentFrame B t) : Matrix n n ℂ) =
-      cayley ((segment B t).1.map ((↑) : ℝ → ℂ)) := by
+      cayley ((segment B t).val.map ((↑) : ℝ → ℂ)) := by
   have hO : (eigenFrame B : Matrix n n ℂ) * (eigenFrame B : Matrix n n ℂ)ᵀ = 1 :=
-    map_ofReal_mul_transpose_map_ofReal_eq_one B.2.eigenvectorUnitary.2
+    map_ofReal_mul_transpose_map_ofReal_eq_one B.property.eigenvectorUnitary.property
   have hD : (souriau (diagonalFrame B t) : Matrix n n ℂ) =
-      diagonal fun j => exp (↑(2 * Real.arctan (t * B.2.eigenvalues j)) * Complex.I) := by
+      diagonal fun j => exp (↑(2 * Real.arctan (t * B.property.eigenvalues j)) * Complex.I) := by
     rw [coe_souriau_of_coe_eq_diagonal (d := fun j =>
-      exp (↑(Real.arctan (t * B.2.eigenvalues j)) * Complex.I))
+      exp (↑(Real.arctan (t * B.property.eigenvalues j)) * Complex.I))
         (by simp [diagonalFrame, Circle.coe_exp])]
     congr 1
     funext j
@@ -287,18 +289,18 @@ private theorem souriau_segmentFrame (B : SymmMatrix n) (t : I) :
 
 /-- Along the segment from `0` to `B`, the Maslov index of the graphs is `sign (B) / 2`. -/
 private theorem maslovIndex_segmentFrame (B : SymmMatrix n) :
-    maslovIndex (segmentFrame B) = (signature B.1 : ℝ) / 2 := by
-  have hsig : signature B.1 = B.2.signature :=
-    (IsHermitian.signature_map_ofReal (𝕜 := ℝ) (M := B.1) B.2).symm
+    maslovIndex (segmentFrame B) = (signature B.val : ℝ) / 2 := by
+  have hsig : signature B.val = B.property.signature :=
+    (IsHermitian.signature_map_ofReal (𝕜 := ℝ) (M := B.val) B.property).symm
   rw [hsig, segmentFrame, maslovIndex_map_mul_left _
-    (map_ofReal_mul_transpose_map_ofReal_eq_one B.2.eigenvectorUnitary.2),
+    (map_ofReal_mul_transpose_map_ofReal_eq_one B.property.eigenvectorUnitary.property),
     maslovIndex_eq_sum_sign_of_diagonal_arctan (diagonalFrame B)
-      (a := fun j t => t * B.2.eigenvalues j)
-      (fun j => continuous_subtype_val.mul continuous_const)
+      (a := fun j t => t * B.property.eigenvalues j)
+      (fun j => continuous_subtypeVal.mul continuous_const)
       (fun t => by simp [diagonalFrame, Circle.coe_exp]),
     IsHermitian.signature_def, Int.cast_sum, Finset.sum_div]
   refine Finset.sum_congr rfl fun j _ => ?_
-  rcases lt_trichotomy (B.2.eigenvalues j) 0 with h | h | h
+  rcases lt_trichotomy (B.property.eigenvalues j) 0 with h | h | h
   · simp [h, Real.sign_of_neg, h.not_gt]
   · simp [h]
   · simp [h, Real.sign_of_pos]

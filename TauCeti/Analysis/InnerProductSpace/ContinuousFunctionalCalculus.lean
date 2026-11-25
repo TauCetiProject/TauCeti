@@ -13,8 +13,10 @@ public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Subalgebra
 public import TauCeti.Analysis.InnerProductSpace.Complexification
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Analysis.Normed.Operator.Banach
+import TauCeti.Analysis.InnerProductSpace.Positive.Basic
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.RealImaginaryPart
 
 /-!
@@ -75,6 +77,10 @@ so it intertwines the two calculi (`ContinuousLinearMap.restrictScalars_cfc`).
 * `LinearIsometryEquiv.cfcₙ_conjStarAlgEquiv`, `LinearIsometryEquiv.posPart_conjStarAlgEquiv`,
   `LinearIsometryEquiv.negPart_conjStarAlgEquiv`: isometric conjugation commutes with the
   non-unital continuous functional calculus and with positive and negative parts.
+* `LinearIsometryEquiv.cfc_conjStarAlgEquiv`, `LinearIsometryEquiv.spectrum_conjStarAlgEquiv`,
+  `LinearIsometryEquiv.finrank_range_conjStarAlgEquiv`: isometric conjugation commutes with the
+  continuous functional calculus and preserves spectra and ranks, so it preserves the ranks of
+  spectral projections.
 
 ## Acknowledgements
 
@@ -159,7 +165,7 @@ instance instIsometricContinuousFunctionalCalculusRealIsSelfAdjoint :
     · rw [hsp] at hx
       simpa [hgf ⟨x, hx⟩] using f.norm_coe_le_norm ⟨x, hx⟩
     · rw [← hgf x]
-      exact norm_apply_le_norm_cfc g T.complexifyL2 (by rw [hsp]; exact x.2) (hsp ▸ hg)
+      exact norm_apply_le_norm_cfc g T.complexifyL2 (by rw [hsp]; exact x.property) (hsp ▸ hg)
         (by simpa using hT)
 
 section RCLike
@@ -308,6 +314,62 @@ theorem inner_sqrt_apply_sqrt_apply_eq_inner {T : X →L[ℝ] X} (hT : 0 ≤ T) 
   rw [← (nonneg_iff_isPositive.mp (CFC.sqrt_nonneg T)).inner_left_eq_inner_right,
     ← mul_apply_eq_comp, CFC.sqrt_mul_sqrt_self T hT]
 
+open scoped ComplexOrder in
+/-- A strictly positive operator on an inner product space is positive definite. -/
+theorem _root_.IsStrictlyPositive.inner_pos_left {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] {T : E →L[𝕜] E} (hT : IsStrictlyPositive T) {x : E} (hx : x ≠ 0) :
+    0 < ⟪T x, x⟫_𝕜 := by
+  have hT' := nonneg_iff_isPositive.mp hT.nonneg
+  refine (hT'.inner_nonneg_left x).lt_of_ne fun h0 ↦ hx ?_
+  -- `T x = 0`, and `T` is invertible.
+  have hTx := LinearMap.IsPositive.apply_eq_zero_of_inner_map_self_eq_zero hT' h0.symm
+  obtain ⟨u, hu⟩ := hT.isUnit
+  rw [coe_coe, ← hu] at hTx
+  have := congr(($(u.inv_mul) : E →L[𝕜] E) x)
+  rwa [mul_apply_eq_comp, hTx, map_zero, one_apply_eq_self, eq_comm] at this
+
+/-- **Uniqueness of square roots with nonnegative quadratic form.** An operator on a real Hilbert
+space whose quadratic form is nonnegative and whose square is the square of a positive operator `B`
+is `B` itself. Unlike `CFC.mul_self_eq_mul_self_iff`, `S` need not be self-adjoint. -/
+theorem eq_of_mul_self_eq_mul_self_of_inner_nonneg {S B : X →L[ℝ] X} (hB : 0 ≤ B)
+    (hS : ∀ x, 0 ≤ ⟪S x, x⟫_ℝ) (h : S * S = B * B) : S = B := by
+  have hB' := nonneg_iff_isPositive.mp hB
+  -- `S` commutes with `B * B = S * S`, hence with `B = √(B * B)`.
+  have hSB : Commute B S := by
+    have hBS : Commute (B * B) S := h ▸ (Commute.refl S).mul_left (Commute.refl S)
+    have := hBS.cfc_nnreal NNReal.sqrt
+    rwa [← CFC.sqrt_eq_cfc, CFC.sqrt_mul_self B hB] at this
+  refine sub_eq_zero.mp (ContinuousLinearMap.ext fun x ↦ ?_)
+  set y := (S - B) x
+  -- `S + B` kills `y`, as `(S + B) (S - B) = S * S - B * B = 0`. Both quadratic forms are
+  -- nonnegative, so `B y = 0` and `S y = 0`.
+  have hy : S y + B y = 0 := by
+    have hzero : (S + B) * (S - B) = 0 := by
+      rw [add_mul, mul_sub, mul_sub, hSB.eq, h]
+      abel
+    rw [← add_apply, ← mul_apply_eq_comp, hzero, zero_apply]
+  have hBy : B y = 0 := by
+    refine LinearMap.IsPositive.apply_eq_zero_of_inner_map_self_eq_zero hB' ?_
+    have := congr(⟪$hy, y⟫_ℝ)
+    rw [inner_add_left, inner_zero_left] at this
+    rw [coe_coe]
+    exact le_antisymm (by linarith [hS y]) (hB'.inner_nonneg_left y)
+  have hSy : S y = 0 := by rwa [hBy, add_zero] at hy
+  -- Along the line `x + t • y`, the quadratic form of `S` is `⟪S x, x⟫ + t * ‖y‖ ^ 2`.
+  have hline (t : ℝ) : 0 ≤ ⟪S x, x⟫_ℝ + t * ‖y‖ ^ 2 := by
+    have hxy : ⟪S x, y⟫_ℝ = ‖y‖ ^ 2 := by
+      rw [show S x = y + B x by simp [y], inner_add_left, hB'.inner_left_eq_inner_right, hBy,
+        inner_zero_right, add_zero, real_inner_self_eq_norm_sq]
+    have := hS (x + t • y)
+    rwa [map_add, map_smul, hSy, smul_zero, add_zero, inner_add_right, inner_smul_right,
+      hxy] at this
+  rw [zero_apply, ← norm_eq_zero]
+  by_contra hne
+  have hpos : 0 < ‖y‖ ^ 2 := by positivity
+  have := hline (-(⟪S x, x⟫_ℝ + 1) / ‖y‖ ^ 2)
+  rw [div_mul_cancel₀ _ hpos.ne'] at this
+  linarith
+
 /-- Negative real powers of a positive real Hilbert space operator above the identity are
 contractions in operator norm. -/
 theorem norm_rpow_le_one_of_one_le_of_nonpos (P : X →L[ℝ] X) (hP : 1 ≤ P)
@@ -345,7 +407,7 @@ theorem nonneg_add_star_sub_smul_of_spectrum_re
     (hspec : ∀ z ∈ spectrum ℂ W, a ≤ z.re) :
     0 ≤ W + star W - ((2 * a : ℝ) : ℂ) • 1 := by
   have hreal : algebraMap ℝ (E →L[ℂ] E) a ≤ (ℜ W : E →L[ℂ] E) := by
-    apply (algebraMap_le_iff_le_spectrum (ha := (ℜ W).2)).2
+    apply (algebraMap_le_iff_le_spectrum (ha := (ℜ W).property)).2
     rw [spectrum_realPart' W]
     rintro _ ⟨z, hz, rfl⟩
     exact hspec z hz
@@ -366,6 +428,28 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 theorem continuous_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) : Continuous e.conjStarAlgEquiv :=
   e.toContinuousLinearEquiv.conjContinuousAlgEquiv.continuous.congr fun _ ↦ rfl
 
+/-- The range of the conjugate `e ∘ A ∘ e⁻¹` of an operator `A` is the image of its range
+under `e`. -/
+theorem range_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) (A : E →L[𝕜] E) :
+    (e.conjStarAlgEquiv A).range = A.range.map (e.toLinearEquiv : E →ₗ[𝕜] F) := by
+  ext y
+  simp [e.symm.surjective.exists, ← e.eq_symm_apply]
+
+/-- Conjugation by a linear isometric equivalence preserves the rank of an operator. -/
+@[simp]
+theorem finrank_range_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) (A : E →L[𝕜] E) :
+    Module.finrank 𝕜 (e.conjStarAlgEquiv A).range = Module.finrank 𝕜 A.range := by
+  rw [range_conjStarAlgEquiv, LinearEquiv.finrank_map_eq]
+
+/-- Conjugation by a linear isometric equivalence preserves finiteness of the rank of an
+operator. -/
+@[simp]
+theorem finiteDimensional_range_conjStarAlgEquiv_iff (e : E ≃ₗᵢ[𝕜] F) (A : E →L[𝕜] E) :
+    FiniteDimensional 𝕜 (e.conjStarAlgEquiv A).range ↔ FiniteDimensional 𝕜 A.range := by
+  rw [range_conjStarAlgEquiv]
+  exact ⟨fun _ ↦ (Submodule.equivMapOfInjective _ e.injective A.range).symm.finiteDimensional,
+    fun _ ↦ (Submodule.equivMapOfInjective _ e.injective A.range).finiteDimensional⟩
+
 variable [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
   [Algebra ℝ (F →L[𝕜] F)] [IsScalarTower ℝ 𝕜 (F →L[𝕜] F)]
 
@@ -375,10 +459,26 @@ theorem cfcₙ_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) (f : ℝ → ℝ) (A :
     cfcₙ f (e.conjStarAlgEquiv A) = e.conjStarAlgEquiv (cfcₙ f A) :=
   (cfcₙ_eq_cfcₙ_transfer (p := IsSelfAdjoint) (q := IsSelfAdjoint)
     (e.conjStarAlgEquiv.restrictScalars ℝ) e.continuous_conjStarAlgEquiv
-    (fun x ↦ ⟨fun hx ↦ hx.map e.conjStarAlgEquiv,
-      fun hx ↦ e.conjStarAlgEquiv.symm_apply_apply x ▸ hx.map e.conjStarAlgEquiv.symm⟩)
+    (fun _ ↦ (e.conjStarAlgEquiv.injective.isSelfAdjoint_apply_iff e.conjStarAlgEquiv).symm)
     f (e.conjStarAlgEquiv A)).trans
     (congrArg (fun X ↦ e.conjStarAlgEquiv (cfcₙ f X)) (e.conjStarAlgEquiv.symm_apply_apply A))
+
+/-- Conjugation by a linear isometric equivalence preserves the real spectrum of an operator. -/
+@[simp]
+theorem spectrum_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) (A : E →L[𝕜] E) :
+    spectrum ℝ (e.conjStarAlgEquiv A) = spectrum ℝ A :=
+  AlgEquiv.spectrum_eq (e.conjStarAlgEquiv.restrictScalars ℝ) A
+
+/-- Conjugation by a linear isometric equivalence commutes with the continuous functional calculus
+for self-adjoint operators, for any such calculi on the two operator algebras. -/
+theorem cfc_conjStarAlgEquiv [ContinuousFunctionalCalculus ℝ (E →L[𝕜] E) IsSelfAdjoint]
+    [ContinuousFunctionalCalculus ℝ (F →L[𝕜] F) IsSelfAdjoint] (e : E ≃ₗᵢ[𝕜] F) (f : ℝ → ℝ)
+    (A : E →L[𝕜] E) : cfc f (e.conjStarAlgEquiv A) = e.conjStarAlgEquiv (cfc f A) :=
+  (cfc_eq_cfc_transfer (p := IsSelfAdjoint) (q := IsSelfAdjoint)
+    (e.conjStarAlgEquiv.restrictScalars ℝ) e.continuous_conjStarAlgEquiv
+    (fun _ ↦ (e.conjStarAlgEquiv.injective.isSelfAdjoint_apply_iff e.conjStarAlgEquiv).symm)
+    f (e.conjStarAlgEquiv A)).trans
+    (congrArg (fun X ↦ e.conjStarAlgEquiv (cfc f X)) (e.conjStarAlgEquiv.symm_apply_apply A))
 
 /-- Conjugation by a linear isometric equivalence commutes with the positive part of a bounded
 operator. -/

@@ -307,7 +307,7 @@ private theorem torsionBracketWithHomology_shortExact
       (Fin.append (Fin.append (fun k ↦ (S.f.f (j + 1)).hom (s₁₀ k)) w₀) t₀ k) =
         shortExactBoundaryBasisWithHomology hS (hf j) (hfg j) b₁₀ u₁₀ w₀ z₁₁₀ hw₀ hz₁₁₀ b₃₀ t₀
           ht₀ k) :
-    torsionBracketWithHomology c₂
+    torsionBracketWithHomology c₂ (by simp) (by simp)
         (shortExactBoundaryBasisWithHomology hS (hf (j + 1)) (hfg (j + 1)) b₁₁ u₁₁ w₁ z₁₁₁ hw₁
           hz₁₁₁ b₃₁ t₁ ht₁)
         h₂' (Fin.append (cyclesMap S.f (j + 1) ∘ z₁₂₁) z₂₂₁ ∘ Fin.cast hm₂₁.symm) hy₂'
@@ -315,26 +315,26 @@ private theorem torsionBracketWithHomology_shortExact
           ht₀)
         (Fin.append (Fin.append (fun k ↦ (S.f.f (j + 1)).hom (s₁₀ k)) w₀) t₀) hs₂₀ =
       (-1 : F) ^ (p₃₁ * r₂₁ + (p₃₁ + r₃₁) * p₁₀) *
-        (torsionBracketWithHomology c₁ b₁₁ h₁' (Fin.append z₁₁₁ z₁₂₁ ∘ Fin.cast hm₁₁.symm) hy₁'
-            b₁₀ s₁₀ hs₁₀ *
-          torsionBracketWithHomology c₃ b₃₁ h₃'
+        (torsionBracketWithHomology c₁ (by simp) (by simp) b₁₁ h₁'
+            (Fin.append z₁₁₁ z₁₂₁ ∘ Fin.cast hm₁₁.symm) hy₁' b₁₀ s₁₀ hs₁₀ *
+          torsionBracketWithHomology c₃ (by simp) (by simp) b₃₁ h₃'
             (Fin.append (cyclesMap S.g (j + 1) ∘ z₂₂₁) z₃₂₀ ∘ Fin.cast hm₃₁.symm) hy₃'
             b₃₀ (fun k ↦ (S.g.f (j + 1)).hom (t₀ k)) ht₀) := by
   -- Express all three brackets as determinants of concatenated families.
-  have hn₁ := eq_add_add_of_homology c₁ b₁₁ h₁' (Fin.append z₁₁₁ z₁₂₁ ∘ Fin.cast hm₁₁.symm) hy₁'
-    b₁₀ s₁₀ hs₁₀
-  have hn₃ := eq_add_add_of_homology c₃ b₃₁ h₃'
+  have hn₁ := eq_add_add_of_homology c₁ (by simp) (by simp) b₁₁ h₁'
+    (Fin.append z₁₁₁ z₁₂₁ ∘ Fin.cast hm₁₁.symm) hy₁' b₁₀ s₁₀ hs₁₀
+  have hn₃ := eq_add_add_of_homology c₃ (by simp) (by simp) b₃₁ h₃'
     (Fin.append (cyclesMap S.g (j + 1) ∘ z₂₂₁) z₃₂₀ ∘ Fin.cast hm₃₁.symm) hy₃' b₃₀ _ ht₀
   have hN : n₁ (j + 1) + n₃ (j + 1) =
       (p₁₁ + r₁₁) + r₂₁ + p₁₀ + (p₃₁ + r₃₁ + (r₁₀ + p₃₀)) := by omega
   have hlen₂ : n₁ (j + 1) + n₃ (j + 1) =
       ((p₁₁ + r₁₁) + p₃₁) + m₂₁ + ((p₁₀ + r₁₀) + p₃₀) := by omega
-  rw [torsionBracketWithHomology_eq_det_append c₂ _ _
+  rw [torsionBracketWithHomology_eq_det_append c₂ _ _ _ _
       (Fin.append (cyclesMap S.f (j + 1) ∘ z₁₂₁) z₂₂₁ ∘ Fin.cast hm₂₁.symm) hy₂' _ _ hs₂₀ hlen₂,
     coe_shortExactBoundaryBasisWithHomology_f,
-    torsionBracketWithHomology_eq_det_append c₁ b₁₁ h₁'
+    torsionBracketWithHomology_eq_det_append c₁ _ _ b₁₁ h₁'
       (Fin.append z₁₁₁ z₁₂₁ ∘ Fin.cast hm₁₁.symm) hy₁' b₁₀ s₁₀ hs₁₀ hn₁,
-    torsionBracketWithHomology_eq_det_append c₃ b₃₁ h₃'
+    torsionBracketWithHomology_eq_det_append c₃ _ _ b₃₁ h₃'
       (Fin.append (cyclesMap S.g (j + 1) ∘ z₂₂₁) z₃₂₀ ∘ Fin.cast hm₃₁.symm) hy₃' b₃₀ _ ht₀ hn₃]
   -- Reorder the six blocks of the `S.X₂` family into the `S.X₁` blocks followed by the `S.X₃`
   -- blocks, extracting the Koszul sign via `AlternatingMap.map_append_append_append_comm`.
@@ -573,13 +573,15 @@ private theorem reidemeisterTorsionWithHomology_eq_mul_of_adapted_cycles
     ← finprod_mul_distrib hsupp₁ hsupp₃, ← finprod_mul_distrib hε (hsupp₁.fun_mul hsupp₃)]
   -- Apply the six-block bracket identity in each degree `j + 1`.
   refine finprod_congr fun j ↦ ?_
-  have hy₃_eq : torsionBracketWithHomology c₃ (chosenBoundaryBasis S.X₃ c₃ (j + 1 + 1) (j + 1))
+  have hy₃_eq : torsionBracketWithHomology c₃ (by simp) (by simp)
+      (chosenBoundaryBasis S.X₃ c₃ (j + 1 + 1) (j + 1))
       (h₃' (j + 1)) _ (hy₃Aux j) (chosenBoundaryBasis S.X₃ c₃ (j + 1) j)
       (fun k ↦ (S.g.f (j + 1)).hom (t j k)) (ht j) =
-      torsionBracketWithHomology c₃ (chosenBoundaryBasis S.X₃ c₃ (j + 1 + 1) (j + 1))
+      torsionBracketWithHomology c₃ (by simp) (by simp)
+      (chosenBoundaryBasis S.X₃ c₃ (j + 1 + 1) (j + 1))
       (h₃' (j + 1)) (y₃ (j + 1)) (hy₃ (j + 1)) (chosenBoundaryBasis S.X₃ c₃ (j + 1) j)
       (fun k ↦ (S.g.f (j + 1)).hom (t j k)) (ht j) := by
-    rw [torsionBracketWithHomology_eq_mul c₃ (chosenBoundaryBasis S.X₃ c₃ (j + 1 + 1) (j + 1))
+    rw [torsionBracketWithHomology_eq_mul c₃ _ _ (chosenBoundaryBasis S.X₃ c₃ (j + 1 + 1) (j + 1))
       (h₃' (j + 1)) (y₃ (j + 1)) (hy₃ (j + 1)) (chosenBoundaryBasis S.X₃ c₃ (j + 1) j) _ (ht j)]
     simp [Basis.det_self]
   rw [torsionBracketWithHomology_shortExact hS hc₁ hc₃ hf hfg (hm₁_eq (j + 1)) (hm₂_eq (j + 1))

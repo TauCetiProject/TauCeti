@@ -106,7 +106,7 @@ theorem moduleFinite_integralClosure_of_isFunctionField {k : Type u} {F : Type v
     IsIntegralClosure.finite_integralClosure_integralClosure_adjoin k t F'
   have hR : ∀ r : R, algebraMap R F r ∈ P.integers := fun r ↦
     P.mem_integers_iff.mpr
-      (P.forall_algebraMap_mem_integers_integralClosure_adjoin_iff.mpr hti r r.2)
+      (P.forall_algebraMap_mem_integers_integralClosure_adjoin_iff.mpr hti r r.property)
   let p : HeightOneSpectrum R := P.center hR
   let _ : Algebra R P.integers := ((algebraMap R F).codRestrict P.integers hR).toAlgebra
   have : IsScalarTower R P.integers F := .of_algebraMap_eq fun _ ↦ rfl
@@ -128,33 +128,7 @@ variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 
-/-- The scalar tower `k → 𝒪_P → F'` under `algebraIntegersExtension`. -/
-private theorem isScalarTower_constants_integers (P : Place k F) :
-    IsScalarTower k P.integers F' :=
-  .of_algebraMap_eq fun c ↦ by
-    rw [IsScalarTower.algebraMap_apply P.integers F F',
-      ← IsScalarTower.algebraMap_apply k P.integers F, ← IsScalarTower.algebraMap_apply k F F']
-
 variable [Algebra.IsIntegral k k']
-
-/-- The constants `k'` lie in the local integral closure `𝒪'_P` whenever `k' / k` is integral,
-endowing `𝒪'_P` with a `k'`-algebra structure. -/
-@[instance_reducible]
-private noncomputable def algebraConstantsIntegralClosure (P : Place k F) :
-    Algebra k' (integralClosure P.integers F') :=
-  letI := isScalarTower_constants_integers (F' := F') P
-  ((algebraMap k' F').codRestrict (integralClosure P.integers F') fun c ↦
-    (mem_integralClosure_iff P.integers F').mpr
-      (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top).toAlgebra
-
-/-- The `k'`-algebra `algebraConstantsIntegralClosure` on `𝒪'_P` is compatible with the inclusion
-into `F'`. -/
-private theorem isScalarTower_constants_integralClosure (P : Place k F) :
-    letI := algebraConstantsIntegralClosure (k' := k') (F' := F') P
-    IsScalarTower k' (integralClosure P.integers F') F' :=
-  letI := algebraConstantsIntegralClosure (k' := k') (F' := F') P
-  .of_algebraMap_eq fun _ ↦ by
-    rw [Subalgebra.algebraMap_apply, RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply]
 
 variable [FiniteDimensional F F']
 
@@ -171,7 +145,7 @@ theorem mem_integralClosure_iff_forall_restrict_eq_mem_integers (P : Place k F) 
     exact algebraMap_mem_integers_of_mem_integralClosure k F P' ⟨y, hy⟩
   · let B := integralClosure P.integers F'
     have : IsDedekindDomain B := TauCeti.integralClosure.isDedekindDomain P.integers F F'
-    have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ r.2
+    have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ r.property
     let _ := algebraConstantsIntegralClosure (k' := k') (F' := F') P
     have := isScalarTower_constants_integralClosure (k' := k') (F' := F') P
     obtain ⟨b, hb⟩ := HeightOneSpectrum.mem_integers_of_valuation_le_one (R := B) F' y fun 𝔓 ↦ by
@@ -183,7 +157,7 @@ theorem mem_integralClosure_iff_forall_restrict_eq_mem_integers (P : Place k F) 
       have hP' : (ofPrime k' F' 𝔓).restrict k F = P :=
         (restrict_ofPrime k F (P.center hR) 𝔓).trans (ofPrime_center k F P hR)
       simpa only [mem_integers_iff, valuation_ofPrime] using hy (ofPrime k' F' 𝔓) hP'
-    exact hb ▸ b.2
+    exact hb ▸ b.property
 
 variable (k F)
 
@@ -200,7 +174,7 @@ theorem sum_ramificationIdx_mul_relativeDegree_eq_finrank_of_moduleFinite
     ∑ P' ∈ s, ramificationIdx F P' * relativeDegree k F P' = Module.finrank F F' := by
   have : IsDedekindDomain (integralClosure P.integers F') :=
     TauCeti.integralClosure.isDedekindDomain P.integers F F'
-  have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ r.2
+  have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ r.property
   let _ := algebraConstantsIntegralClosure (k' := k') (F' := F') P
   have := isScalarTower_constants_integralClosure (k' := k') (F' := F') P
   refine sum_ramificationIdx_mul_relativeDegree_eq_finrank (S := integralClosure P.integers F')

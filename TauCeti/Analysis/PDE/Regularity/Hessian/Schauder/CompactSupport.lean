@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.VariableCoefficient
 
+import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Normed.Module.Ball.Retraction
 
 /-!
@@ -110,16 +111,8 @@ theorem exists_holderWith_iteratedFDeriv_two_of_support_subset_closedBall
         (EuclideanSpace.single j 1)) := by
     convert hf using 1
     funext x
-    by_cases hx : x ∈ Function.support (iteratedFDeriv ℝ 2 u)
-    · simp only [a', hq_eq (hsupp hx)]
-    · have hzero : iteratedFDeriv ℝ 2 u x = 0 := by simpa [Function.mem_support] using hx
-      have hentry (i j : Fin (n + 1)) : fderiv ℝ (fderiv ℝ u) x
-          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) = 0 := by
-        have hzero' := congrArg (fun H : E [×2]→L[ℝ] ℝ =>
-          H ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]) hzero
-        simpa only [iteratedFDeriv_two_apply, zero_apply, Matrix.cons_val_zero,
-          Matrix.cons_val_one] using hzero'
-      simp [hentry]
+    exact TauCeti.eqOn_sum_sum_smul_fderiv_fderiv_apply (v := fun i => EuclideanSpace.single i 1)
+      (t := univ) (fun y hy => hsupp hy.1) (fun y hy => by simp only [a', hq_eq hy]) (mem_univ x)
   have hH2 : MemLp (iteratedFDeriv ℝ 2 u) 2 volume :=
     (hu.continuous_iteratedFDeriv (by norm_num)).memLp_of_hasCompactSupport
       (HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall x₀ R) hsupp)
