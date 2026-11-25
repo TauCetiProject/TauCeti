@@ -42,11 +42,11 @@ norm modulo the kernel of the top derivative is equivalent to the top seminorm.
 Two consequences adapt such an estimate to a changed operator or a changed error term. A compact
 perturbation `S` of `T` satisfies an estimate of the same form
 (`ContinuousLinearMap.exists_compact_estimate_of_isCompactOperator_sub`), so the semi-Fredholm
-conclusions pass to `S`. And over `ℝ` or `ℂ`, on a complete domain, the compact error may be
-replaced by `‖j x‖` for any continuous linear `j` which is injective on `ker T`, compact or not
-(`ContinuousLinearMap.exists_norm_le_mul_norm_add_norm_of_compact_estimate`): the projection bound
-controls the component of `x` off the kernel, and on the finite-dimensional kernel `‖j ·‖` is a
-norm. For an elliptic operator with a compact lower-order perturbation, this recovers the elliptic
+conclusions pass to `S`. And on a complete domain, over any nontrivially normed field, the compact
+error may be replaced by `‖j x‖` for any continuous linear `j` which is injective on `ker T`,
+compact or not (`ContinuousLinearMap.exists_norm_le_mul_norm_add_norm_of_compact_estimate`): the
+pair `(T, j)` is injective and satisfies the same compact-error estimate, so it is bounded below.
+For an elliptic operator with a compact lower-order perturbation, this recovers the elliptic
 estimate with an `Lᵖ` error term from one whose error contains the perturbation.
 
 The argument uses Mathlib's Riesz lemma, uniform-inducing maps, the sequential closed-range
@@ -220,6 +220,38 @@ theorem exists_norm_quotientMk_ker_le_of_compact_estimate
     let ⟨x, ψ, hψ, hx, _⟩ := T.exists_subseq_tendsto_of_compact_estimate hK hbound hv hTv
     ⟨x, ψ, hψ, hx⟩
 
+/-- **Changing the error term of a compact-error estimate.** Let `‖x‖ ≤ C * ‖T x‖ + ‖K x‖` on a
+complete space, with `K` compact, and let `j` be a continuous linear map which is injective on the
+kernel of `T`. Then the compact error may be replaced by `j`: there is `C'` with
+`‖x‖ ≤ C' * (‖T x‖ + ‖j x‖)` for every `x`.
+
+No compactness of `j` is needed, and `j` need not be injective off the kernel of `T`. For an
+elliptic operator `T` on a compact base whose estimate carries a compact lower-order perturbation
+in `K`, taking for `j` the inclusion into `Lᵖ` gives the elliptic estimate with an `Lᵖ` error. -/
+theorem exists_norm_le_mul_norm_add_norm_of_compact_estimate {Z : Type*}
+    [NormedAddCommGroup Z] [NormedSpace 𝕜 Z] (hK : IsCompactOperator K)
+    (hbound : ∀ x, ‖x‖ ≤ C * ‖T x‖ + ‖K x‖) {j : E →L[𝕜] Z}
+    (hj : Disjoint T.ker j.ker) :
+    ∃ C' : ℝ, 0 ≤ C' ∧ ∀ x, ‖x‖ ≤ C' * (‖T x‖ + ‖j x‖) := by
+  -- The pair `(T, j)` is injective and satisfies a compact-error estimate, hence is bounded below.
+  have hTj (x : E) : ‖T x‖ ≤ ‖(T.prod j) x‖ := by
+    simpa only [prod_apply] using norm_fst_le (T x, j x)
+  have hbound' (x : E) : ‖x‖ ≤ |C| * ‖(T.prod j) x‖ + ‖K x‖ :=
+    (hbound x).trans (add_le_add_left
+      ((mul_le_mul_of_nonneg_right (le_abs_self C) (norm_nonneg _)).trans
+        (mul_le_mul_of_nonneg_left (hTj x) (abs_nonneg C))) _)
+  have hker : Disjoint (T.prod j).ker (⊤ : Submodule 𝕜 E) := by
+    rw [ker_prod, disjoint_top]
+    exact hj.eq_bot
+  obtain ⟨c, hc, hcx⟩ := (T.prod j).exists_pos_mul_norm_le_of_compact_estimate hK hbound'
+    (by simp) hker
+  refine ⟨c⁻¹, inv_nonneg.2 hc.le, fun x ↦ ?_⟩
+  rw [le_inv_mul_iff₀ hc]
+  calc c * ‖x‖ ≤ ‖(T.prod j) x‖ := hcx x Submodule.mem_top
+    _ ≤ ‖T x‖ + ‖j x‖ := by
+        rw [prod_apply, Prod.norm_def]
+        exact max_le_add_of_nonneg (norm_nonneg _) (norm_nonneg _)
+
 section Projection
 
 variable [IsRCLikeNormedField 𝕜]
@@ -244,49 +276,6 @@ theorem exists_projection_norm_sub_le_of_compact_estimate
   rw [← Submodule.projectionL_eq_self_sub_projectionL, le_inv_mul_iff₀ hc,
     ← T.apply_projectionL_ker h.symm x]
   exact hcX _ (Submodule.projectionL_apply_mem h.symm x)
-
-/-- **Changing the error term of a compact-error estimate.** Over `ℝ` or `ℂ`, let
-`‖x‖ ≤ C * ‖T x‖ + ‖K x‖` on a complete space, with `K` compact, and let `j` be a continuous
-linear map which is injective on the kernel of `T`. Then the compact error may be replaced by
-`j`: there is `C'` with `‖x‖ ≤ C' * (‖T x‖ + ‖j x‖)` for every `x`.
-
-No compactness of `j` is needed, and `j` need not be injective off the kernel of `T`. For an
-elliptic operator `T` on a compact base whose estimate carries a compact lower-order perturbation
-in `K`, taking for `j` the inclusion into `Lᵖ` gives the elliptic estimate with an `Lᵖ` error. -/
-theorem exists_norm_le_mul_norm_add_norm_of_compact_estimate {Z : Type*}
-    [NormedAddCommGroup Z] [NormedSpace 𝕜 Z] (hK : IsCompactOperator K)
-    (hbound : ∀ x, ‖x‖ ≤ C * ‖T x‖ + ‖K x‖) {j : E →L[𝕜] Z}
-    (hj : Disjoint T.ker j.ker) :
-    ∃ C' : ℝ, 0 ≤ C' ∧ ∀ x, ‖x‖ ≤ C' * (‖T x‖ + ‖j x‖) := by
-  let := IsRCLikeNormedField.rclike 𝕜
-  have := T.finiteDimensional_ker_of_compact_estimate hK hbound
-  obtain ⟨P, C₁, hC₁, -, hP, hPx⟩ := T.exists_projection_norm_sub_le_of_compact_estimate hK hbound
-  -- On the finite-dimensional kernel of `T`, the injective map `j` is bounded below.
-  obtain ⟨c, -, hc⟩ := (j.toLinearMap.comp T.ker.subtype).exists_antilipschitzWith (by
-    rw [LinearMap.ker_comp]
-    exact Submodule.disjoint_iff_comap_eq_bot.1 hj)
-  have hPj (x : E) : ‖P x‖ ≤ c * ‖j (P x)‖ := by
-    have hmem : P x ∈ T.ker := by
-      rw [← hP]
-      exact ⟨x, rfl⟩
-    simpa using hc.le_mul_norm (map_zero _) ⟨P x, hmem⟩
-  refine ⟨C₁ + c * (1 + ‖j‖ * C₁), by positivity, fun x ↦ ?_⟩
-  have hjP : ‖j (P x)‖ ≤ ‖j x‖ + ‖j‖ * (C₁ * ‖T x‖) := by
-    calc ‖j (P x)‖ = ‖j x - j (x - P x)‖ := by rw [map_sub, sub_sub_cancel]
-      _ ≤ ‖j x‖ + ‖j (x - P x)‖ := norm_sub_le _ _
-      _ ≤ ‖j x‖ + ‖j‖ * (C₁ * ‖T x‖) := by
-          gcongr
-          exact (j.le_opNorm _).trans (by gcongr; exact hPx x)
-  calc ‖x‖ = ‖(x - P x) + P x‖ := by rw [sub_add_cancel]
-    _ ≤ ‖x - P x‖ + ‖P x‖ := norm_add_le _ _
-    _ ≤ C₁ * ‖T x‖ + c * (‖j x‖ + ‖j‖ * (C₁ * ‖T x‖)) := by
-        gcongr
-        · exact hPx x
-        · exact (hPj x).trans (by gcongr)
-    _ ≤ (C₁ + c * (1 + ‖j‖ * C₁)) * (‖T x‖ + ‖j x‖) := by
-        have hc₀ : (0 : ℝ) ≤ c := c.coe_nonneg
-        nlinarith [mul_nonneg (mul_nonneg (mul_nonneg hc₀ (norm_nonneg j)) hC₁) (norm_nonneg (j x)),
-          mul_nonneg hC₁ (norm_nonneg (j x)), mul_nonneg hc₀ (norm_nonneg (T x))]
 
 end Projection
 

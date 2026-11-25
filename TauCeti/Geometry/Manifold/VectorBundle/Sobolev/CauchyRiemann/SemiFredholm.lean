@@ -53,9 +53,10 @@ compact operator of `ξ`
 (`TauCeti.IsRealCauchyRiemannOperator.isCompactOperator_perturbedSobolevL_sub`), so the error is
 again compact (`ContinuousLinearMap.exists_compact_estimate_of_isCompactOperator_sub`) and
 Peetre's lemma applies. The rough term cannot simply be absorbed, since it is not small.
-Instead, Peetre's estimate modulo the finite-dimensional kernel of `D₀ + α` lets the compact error
-be replaced by any norm which is a norm on that kernel
-(`ContinuousLinearMap.exists_norm_le_mul_norm_add_norm_of_compact_estimate`), here the `L^q` norm.
+Instead, the compact error may be replaced by any continuous seminorm which is a norm on the
+kernel of `D₀ + α`, since together with `D₀ + α` it satisfies the same compact-error estimate and
+is injective (`ContinuousLinearMap.exists_norm_le_mul_norm_add_norm_of_compact_estimate`), here the
+`L^q` norm.
 
 The finite dimension of the cokernel, which completes the Fredholm property, is not proved here.
 
@@ -109,9 +110,10 @@ namespace IsRealCauchyRiemannOperator
 
 /-
 The abstract estimates of `TauCeti.Analysis.Normed.Operator.Compact.Estimate` are applied below
-with their type and instance arguments given explicitly. Left to unification, the instances on the
-Sobolev section spaces are found through a different path, whose comparison with the instances in
-the elliptic estimates exceeds the default heartbeat limit.
+with their type arguments, operators and constant named, and only then applied to the compactness
+and estimate hypotheses, so that instance search on the Sobolev section spaces runs first. Left to
+unification against those hypotheses, the instances are found through a different path, whose
+comparison with the instances in the elliptic estimates exceeds the default heartbeat limit.
 -/
 
 /-! ### Smooth operators -/
@@ -142,10 +144,10 @@ include hD hDs in
 theorem finiteDimensional_ker_sobolevL (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
     FiniteDimensional ℝ (hD.sobolevL A hDs volume p).ker := by
   obtain ⟨C, K, hK, hC⟩ := exists_compact_estimate_sobolevL A hD hDs hp hp_top
-  exact @ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate ℝ
-    (SobolevSection A volume p 1) (zeroOneSobolevSections A volume p 0)
-    (SobolevSection A volume p 0) _ inferInstance inferInstance inferInstance inferInstance C _
-    inferInstance inferInstance (hD.sobolevL A hDs volume p) K hK hC
+  have h := ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate (𝕜 := ℝ)
+    (E := SobolevSection A volume p 1) (F := zeroOneSobolevSections A volume p 0)
+    (G := SobolevSection A volume p 0) (hD.sobolevL A hDs volume p) (C := C) (K := K)
+  exact h hK hC
 
 include hD hDs in
 /-- **Closed range.** On a closed surface, a smooth real Cauchy–Riemann operator
@@ -153,10 +155,10 @@ include hD hDs in
 theorem isClosed_range_sobolevL (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
     IsClosed ((hD.sobolevL A hDs volume p).range : Set (zeroOneSobolevSections A volume p 0)) := by
   obtain ⟨C, K, hK, hC⟩ := exists_compact_estimate_sobolevL A hD hDs hp hp_top
-  exact @ContinuousLinearMap.isClosed_range_of_compact_estimate ℝ
-    (SobolevSection A volume p 1) (zeroOneSobolevSections A volume p 0)
-    (SobolevSection A volume p 0) _ inferInstance inferInstance inferInstance inferInstance C
-    inferInstance inferInstance inferInstance (hD.sobolevL A hDs volume p) K hK hC
+  have h := ContinuousLinearMap.isClosed_range_of_compact_estimate (𝕜 := ℝ)
+    (E := SobolevSection A volume p 1) (F := zeroOneSobolevSections A volume p 0)
+    (G := SobolevSection A volume p 0) (hD.sobolevL A hDs volume p) (C := C) (K := K)
+  exact h hK hC
 
 end Smooth
 
@@ -179,11 +181,12 @@ private theorem exists_compact_estimate_perturbedSobolevL (hp : 2 < p) (hq : 1 <
   obtain ⟨C, K, hK, hC⟩ := exists_compact_estimate_sobolevL A hD hDs (p := (q : ℝ≥0∞))
     (by exact_mod_cast hq) ENNReal.coe_ne_top
   have hST := isCompactOperator_perturbedSobolevL_sub A hD hDs volume hp hqp α
-  exact @ContinuousLinearMap.exists_compact_estimate_of_isCompactOperator_sub ℝ
-    (SobolevSection A volume q 1) (zeroOneSobolevSections A volume q 0)
-    (SobolevSection A volume q 0) _ inferInstance inferInstance inferInstance inferInstance C
-    inferInstance inferInstance (hD.sobolevL A hDs volume q)
-    (hD.perturbedSobolevL A hDs volume hp hqp α) K hK hC hST
+  have h := ContinuousLinearMap.exists_compact_estimate_of_isCompactOperator_sub (𝕜 := ℝ)
+    (E := SobolevSection A volume q 1) (F := zeroOneSobolevSections A volume q 0)
+    (G := SobolevSection A volume q 0) (C := C) (T := hD.sobolevL A hDs volume q)
+    (S := hD.perturbedSobolevL A hDs volume hp hqp α) (K := K)
+  -- `hST` is stated for the pointwise difference, which is the coercion of the operator `S - T`.
+  exact h hK hC (by simpa only [FunLike.coe_sub, Pi.sub_def] using hST)
 
 include hD hDs in
 /-- **The elliptic estimate for real Cauchy–Riemann operators with a rough zeroth-order term.**
@@ -203,14 +206,12 @@ theorem exists_norm_le_norm_perturbedSobolevL_add_norm (hp : 2 < p) (hq : 1 < q)
     refine LinearMap.ker_eq_bot.2 ?_
     have h := A.sectionChartData.lowerOrdersL_injective volume (q : ℝ≥0∞) 0 1
     rwa [SectionChartData.lowerOrdersL_one] at h
-  obtain ⟨C', -, hC'⟩ :=
-    @ContinuousLinearMap.exists_norm_le_mul_norm_add_norm_of_compact_estimate ℝ
-      (SobolevSection A volume q 1) (zeroOneSobolevSections A volume q 0)
-      (zeroOneSobolevSections A volume q 0 × SobolevSection A volume q 0) _ inferInstance
-      inferInstance inferInstance inferInstance C inferInstance inferInstance inferInstance
-      (hD.perturbedSobolevL A hDs volume hp hqp α) K _ (SobolevSection A volume q 0)
-      inferInstance inferInstance hK hC (A.sectionChartData.lowerOrderL volume q 0)
-      (by rw [hL]; exact disjoint_bot_right)
+  have h := ContinuousLinearMap.exists_norm_le_mul_norm_add_norm_of_compact_estimate (𝕜 := ℝ)
+    (E := SobolevSection A volume q 1) (F := zeroOneSobolevSections A volume q 0)
+    (G := zeroOneSobolevSections A volume q 0 × SobolevSection A volume q 0)
+    (Z := SobolevSection A volume q 0) (C := C) (hD.perturbedSobolevL A hDs volume hp hqp α)
+    (K := K) (j := A.sectionChartData.lowerOrderL volume q 0)
+  obtain ⟨C', -, hC'⟩ := h hK hC (by rw [hL]; exact disjoint_bot_right)
   exact ⟨C', hC'⟩
 
 include hD hDs in
@@ -221,11 +222,11 @@ theorem finiteDimensional_ker_perturbedSobolevL (hp : 2 < p) (hq : 1 < q) (hqp :
     (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p 0) :
     FiniteDimensional ℝ (hD.perturbedSobolevL A hDs volume hp hqp α).ker := by
   obtain ⟨C, K, hK, hC⟩ := exists_compact_estimate_perturbedSobolevL A hD hDs hp hq hqp α
-  exact @ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate ℝ
-    (SobolevSection A volume q 1) (zeroOneSobolevSections A volume q 0)
-    (zeroOneSobolevSections A volume q 0 × SobolevSection A volume q 0) _ inferInstance
-    inferInstance inferInstance inferInstance C _ inferInstance inferInstance
-    (hD.perturbedSobolevL A hDs volume hp hqp α) K hK hC
+  have h := ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate (𝕜 := ℝ)
+    (E := SobolevSection A volume q 1) (F := zeroOneSobolevSections A volume q 0)
+    (G := zeroOneSobolevSections A volume q 0 × SobolevSection A volume q 0) (C := C)
+    (hD.perturbedSobolevL A hDs volume hp hqp α) (K := K)
+  exact h hK hC
 
 include hD hDs in
 /-- **Closed range with a rough zeroth-order term.** On a closed surface, the realization
@@ -236,11 +237,11 @@ theorem isClosed_range_perturbedSobolevL (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ 
     IsClosed ((hD.perturbedSobolevL A hDs volume hp hqp α).range :
       Set (zeroOneSobolevSections A volume q 0)) := by
   obtain ⟨C, K, hK, hC⟩ := exists_compact_estimate_perturbedSobolevL A hD hDs hp hq hqp α
-  exact @ContinuousLinearMap.isClosed_range_of_compact_estimate ℝ
-    (SobolevSection A volume q 1) (zeroOneSobolevSections A volume q 0)
-    (zeroOneSobolevSections A volume q 0 × SobolevSection A volume q 0) _ inferInstance
-    inferInstance inferInstance inferInstance C inferInstance inferInstance inferInstance
-    (hD.perturbedSobolevL A hDs volume hp hqp α) K hK hC
+  have h := ContinuousLinearMap.isClosed_range_of_compact_estimate (𝕜 := ℝ)
+    (E := SobolevSection A volume q 1) (F := zeroOneSobolevSections A volume q 0)
+    (G := zeroOneSobolevSections A volume q 0 × SobolevSection A volume q 0) (C := C)
+    (hD.perturbedSobolevL A hDs volume hp hqp α) (K := K)
+  exact h hK hC
 
 end Rough
 
