@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import TauCeti.Data.Set.Restrict
 public import TauCeti.Dynamics.Ergodic.Factor
 public import Mathlib.MeasureTheory.Measure.Count
 
@@ -19,6 +20,12 @@ and `S`, and measure-preserving maps `X → Y`, `Y → X` that restrict to mutua
 `X₀ ≃ᵐ Y₀` preserving the restricted measures and conjugating the restrictions of `T` and `S`
 (`IsomorphismModNull.toMeasurableEquiv`); recording it through maps on the whole spaces makes the
 composition of isomorphisms a matter of intersecting conull sets.
+
+Conversely, such a measurable equivalence `X₀ ≃ᵐ Y₀` gives an isomorphism mod 0 by extending
+the two maps by constants off the conull sets (`IsomorphismModNull.ofMeasurableEquivRestrict`).
+This needs `X` and `Y` nonempty: when `Y` is empty, `X` is not and both measures vanish, the empty
+sets `X₀ = Y₀ = ∅` are conull and `∅ ≃ᵐ ∅`, but there is no map `X → Y`, so the systems are not
+isomorphic mod 0 in the sense of `IsIsomorphicModNull`.
 
 ## Main definitions
 
@@ -35,15 +42,21 @@ composition of isomorphisms a matter of intersecting conull sets.
   conull invariant sets, which preserves the restricted measures
   (`IsomorphismModNull.measurePreserving_toMeasurableEquiv`) and conjugates the restricted systems
   (`IsomorphismModNull.toMeasurableEquiv_restrict`).
-* `TauCeti.IsomorphismModNull.isFactorMap`: both maps of an isomorphism mod 0 are factor maps.
-* `TauCeti.IsIsomorphicModNull.ergodic_iff`: ergodicity is invariant under isomorphism mod 0.
+* `TauCeti.IsomorphismModNull.ofMeasurableEquivRestrict`: conversely, for nonempty `X` and `Y`, a
+  measurable equivalence of conull invariant sets preserving the restricted measures and
+  conjugating the restricted systems gives an isomorphism mod 0.
+* `TauCeti.IsomorphismModNull.isFactorMap`, `TauCeti.IsomorphismModNull.isFactorMap_invFun`: the
+  forward and inverse maps of an isomorphism mod 0 are factor maps.
+* `TauCeti.IsIsomorphicModNull.ergodic_iff`: for measurable `T` and `S`, ergodicity is invariant
+  under isomorphism mod 0.
 * `TauCeti.not_isIsomorphicModNull_id_not`: on two points of equal mass the identity and the
   swap are not isomorphic mod 0 (the swap is ergodic, the identity is not), although both preserve
   the measure.
 
 ## References
 
-This is the isomorphism part of §0.1 of the Tau Ceti roadmap `ClassicalErgodicTheory`.
+* P. Walters, *An Introduction to Ergodic Theory*, Graduate Texts in Mathematics 79, Springer,
+  1982, Chapter 2.
 -/
 
 public section
@@ -59,6 +72,7 @@ variable {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y] [MeasurableSpac
 conull sets `source ⊆ X`, `target ⊆ Y` invariant under `T` and `S`, and measure-preserving maps
 `toFun : X → Y`, `invFun : Y → X` restricting to mutually inverse bijections between `source` and
 `target`, with `toFun ∘ T = S ∘ toFun` on `source`. -/
+@[ext]
 structure IsomorphismModNull (T : X → X) (μ : Measure X) (S : Y → Y) (ν : Measure Y) where
   /-- The forward map. -/
   toFun : X → Y
@@ -101,6 +115,10 @@ def IsIsomorphicModNull (T : X → X) (μ : Measure X) (S : Y → Y) (ν : Measu
   Nonempty (IsomorphismModNull T μ S ν)
 
 namespace IsomorphismModNull
+
+/-- An isomorphism mod 0 shows that the two systems are isomorphic mod 0. -/
+theorem isIsomorphicModNull (e : IsomorphismModNull T μ S ν) : IsIsomorphicModNull T μ S ν :=
+  ⟨e⟩
 
 /-- The inverse map conjugates `S` to `T` on the target. -/
 theorem invFun_comp (e : IsomorphismModNull T μ S ν) {y : Y} (hy : y ∈ e.target) :
@@ -149,6 +167,11 @@ protected def symm (e : IsomorphismModNull T μ S ν) : IsomorphismModNull S ν 
   measurePreserving_toFun := e.measurePreserving_invFun
   measurePreserving_invFun := e.measurePreserving_toFun
   toFun_comp _ hy := e.invFun_comp hy
+
+/-- Inverting an isomorphism mod 0 twice gives it back. -/
+@[simp]
+theorem symm_symm (e : IsomorphismModNull T μ S ν) : e.symm.symm = e :=
+  rfl
 
 /-- The composition of two isomorphisms mod 0. The new conull sets are the points of `source` whose
 image lies in the second source, and the points of the second target whose inverse image lies in
@@ -242,7 +265,7 @@ theorem measurable_invFun (e : IsomorphismModNull T μ S ν) : Measurable e.invF
   e.measurePreserving_invFun.measurable
 
 /-- The measurable equivalence between the conull invariant sets given by an isomorphism mod 0. -/
-@[expose] def toMeasurableEquiv (e : IsomorphismModNull T μ S ν) : e.source ≃ᵐ e.target where
+def toMeasurableEquiv (e : IsomorphismModNull T μ S ν) : e.source ≃ᵐ e.target where
   toFun := e.mapsTo_toFun.restrict
   invFun := e.mapsTo_invFun.restrict
   left_inv x := Subtype.ext (e.invFun_toFun x x.property)
@@ -253,12 +276,12 @@ theorem measurable_invFun (e : IsomorphismModNull T μ S ν) : Measurable e.invF
 @[simp]
 theorem coe_toMeasurableEquiv_apply (e : IsomorphismModNull T μ S ν) (x : e.source) :
     (e.toMeasurableEquiv x : Y) = e.toFun x :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem coe_toMeasurableEquiv_symm_apply (e : IsomorphismModNull T μ S ν) (y : e.target) :
     (e.toMeasurableEquiv.symm y : X) = e.invFun y :=
-  rfl
+  (rfl)
 
 /-- The measurable equivalence of an isomorphism mod 0 preserves the measures restricted to the
 conull invariant sets. -/
@@ -270,18 +293,9 @@ theorem measurePreserving_toMeasurableEquiv (e : IsomorphismModNull T μ S ν) :
   rw [Measure.map_apply e.toMeasurableEquiv.measurable hA,
     comap_subtypeVal_apply e.measurableSet_source,
     comap_subtypeVal_apply e.measurableSet_target,
-    ← e.measurePreserving_toFun.measure_preimage hA'.nullMeasurableSet]
-  have hset : ((↑) '' (e.toMeasurableEquiv ⁻¹' A) : Set X) =
-      e.toFun ⁻¹' ((↑) '' A) ∩ e.source := by
-    ext x
-    constructor
-    · rintro ⟨⟨x, hx⟩, hA, rfl⟩
-      exact ⟨⟨e.toMeasurableEquiv ⟨x, hx⟩, hA, rfl⟩, hx⟩
-    · rintro ⟨⟨y, hy, hyx⟩, hx⟩
-      refine ⟨⟨x, hx⟩, ?_, rfl⟩
-      have : e.toMeasurableEquiv ⟨x, hx⟩ = y := Subtype.ext hyx.symm
-      rwa [mem_preimage, this]
-  rw [hset]
+    ← e.measurePreserving_toFun.measure_preimage hA'.nullMeasurableSet,
+    show ⇑e.toMeasurableEquiv = e.mapsTo_toFun.restrict from rfl,
+    e.mapsTo_toFun.image_val_preimage_restrict, inter_comm]
   exact measure_inter_conull e.measure_compl_source
 
 /-- The measurable equivalence of an isomorphism mod 0 conjugates the restrictions of the two
@@ -291,37 +305,130 @@ theorem toMeasurableEquiv_restrict (e : IsomorphismModNull T μ S ν) (x : e.sou
       MapsTo.restrict S e.target e.target e.mapsTo_target (e.toMeasurableEquiv x) :=
   Subtype.ext (e.toFun_comp x x.property)
 
+/-- Extending by a constant a map between measurable conull sets that preserves the restricted
+measures gives a measure-preserving map of the whole spaces. -/
+private theorem measurePreserving_extend_val {s : Set X} {t : Set Y} (hs : MeasurableSet s)
+    (ht : MeasurableSet t) (hνt : ν tᶜ = 0) (hμs : μ sᶜ = 0) {g : s → t}
+    (hg : MeasurePreserving g (μ.comap (↑)) (ν.comap (↑))) (y₀ : Y) :
+    MeasurePreserving (extend (↑) (fun x ↦ (g x : Y)) fun _ ↦ y₀) μ ν := by
+  set F : X → Y := extend (↑) (fun x ↦ (g x : Y)) fun _ ↦ y₀
+  have hF : Measurable F := (MeasurableEmbedding.subtypeVal hs).measurable_extend
+    (measurable_subtypeVal.comp hg.measurable) measurable_const
+  refine ⟨hF, Measure.ext fun B hB ↦ ?_⟩
+  have hFg : ((↑) : s → X) ⁻¹' (F ⁻¹' B) = g ⁻¹' ((↑) ⁻¹' B) := by
+    rw [← preimage_comp, extend_comp Subtype.val_injective]
+    rfl
+  rw [Measure.map_apply hF hB, ← measure_inter_conull hμs, inter_comm,
+    ← Subtype.image_preimage_coe, ← comap_subtypeVal_apply hs, hFg,
+    hg.measure_preimage (measurable_subtypeVal hB).nullMeasurableSet,
+    comap_subtypeVal_apply ht, Subtype.image_preimage_coe, inter_comm, measure_inter_conull hνt]
+
+section OfMeasurableEquivRestrict
+
+variable [Nonempty X] [Nonempty Y] {X₀ : Set X} {Y₀ : Set Y}
+  (hX₀ : MeasurableSet X₀) (hY₀ : MeasurableSet Y₀) (hμ : μ X₀ᶜ = 0) (hν : ν Y₀ᶜ = 0)
+  (hT : MapsTo T X₀ X₀) (hS : MapsTo S Y₀ Y₀) (e : X₀ ≃ᵐ Y₀)
+  (he : MeasurePreserving e (μ.comap (↑)) (ν.comap (↑)))
+  (h : Semiconj e (hT.restrict T X₀ X₀) (hS.restrict S Y₀ Y₀))
+
+/-- An isomorphism mod 0 from a measurable equivalence `e : X₀ ≃ᵐ Y₀` of measurable conull
+invariant sets that preserves the restricted measures and conjugates the restricted systems. The
+maps of the whole spaces extend `e` and `e.symm` by constants. This is the converse of
+`toMeasurableEquiv`; it needs `X` and `Y` nonempty, see the module docstring. -/
+noncomputable def ofMeasurableEquivRestrict : IsomorphismModNull T μ S ν where
+  toFun := extend (↑) (fun x ↦ (e x : Y)) fun _ ↦ Classical.arbitrary Y
+  invFun := extend (↑) (fun y ↦ (e.symm y : X)) fun _ ↦ Classical.arbitrary X
+  source := X₀
+  target := Y₀
+  measurableSet_source := hX₀
+  measurableSet_target := hY₀
+  measure_compl_source := hμ
+  measure_compl_target := hν
+  mapsTo_source := hT
+  mapsTo_target := hS
+  mapsTo_toFun x hx := by
+    rw [extend_val_apply hx]
+    exact (e ⟨x, hx⟩).property
+  mapsTo_invFun y hy := by
+    rw [extend_val_apply hy]
+    exact (e.symm ⟨y, hy⟩).property
+  invFun_toFun x hx := by
+    rw [extend_val_apply hx, extend_val_apply (e ⟨x, hx⟩).property, Subtype.coe_eta,
+      e.symm_apply_apply]
+  toFun_invFun y hy := by
+    rw [extend_val_apply hy, extend_val_apply (e.symm ⟨y, hy⟩).property, Subtype.coe_eta,
+      e.apply_symm_apply]
+  measurePreserving_toFun :=
+    measurePreserving_extend_val hX₀ hY₀ hν hμ he _
+  measurePreserving_invFun :=
+    measurePreserving_extend_val hY₀ hX₀ hμ hν (he.symm e) _
+  toFun_comp x hx := by
+    rw [extend_val_apply (hT hx), extend_val_apply hx]
+    exact congrArg Subtype.val (h ⟨x, hx⟩)
+
+/-- The source of `ofMeasurableEquivRestrict` is `X₀`. -/
+@[simp]
+theorem ofMeasurableEquivRestrict_source :
+    (ofMeasurableEquivRestrict hX₀ hY₀ hμ hν hT hS e he h).source = X₀ :=
+  (rfl)
+
+/-- The target of `ofMeasurableEquivRestrict` is `Y₀`. -/
+@[simp]
+theorem ofMeasurableEquivRestrict_target :
+    (ofMeasurableEquivRestrict hX₀ hY₀ hμ hν hT hS e he h).target = Y₀ :=
+  (rfl)
+
+/-- On the conull set `X₀`, the forward map of `ofMeasurableEquivRestrict` is `e`. -/
+theorem ofMeasurableEquivRestrict_toFun_of_mem {x : X} (hx : x ∈ X₀) :
+    (ofMeasurableEquivRestrict hX₀ hY₀ hμ hν hT hS e he h).toFun x = e ⟨x, hx⟩ :=
+  extend_val_apply (g := fun x ↦ (e x : Y)) (j := fun _ ↦ Classical.arbitrary Y) hx
+
+/-- On the conull set `Y₀`, the inverse map of `ofMeasurableEquivRestrict` is `e.symm`. -/
+theorem ofMeasurableEquivRestrict_invFun_of_mem {y : Y} (hy : y ∈ Y₀) :
+    (ofMeasurableEquivRestrict hX₀ hY₀ hμ hν hT hS e he h).invFun y = e.symm ⟨y, hy⟩ :=
+  extend_val_apply (g := fun y ↦ (e.symm y : X)) (j := fun _ ↦ Classical.arbitrary X) hy
+
+end OfMeasurableEquivRestrict
+
 end IsomorphismModNull
+
+/-- Two systems are isomorphic mod 0 exactly when there is an isomorphism mod 0 between them. -/
+theorem isIsomorphicModNull_iff_nonempty :
+    IsIsomorphicModNull T μ S ν ↔ Nonempty (IsomorphismModNull T μ S ν) :=
+  Iff.rfl
 
 namespace IsIsomorphicModNull
 
 /-- Every system is isomorphic mod 0 to itself. -/
 protected theorem refl (T : X → X) (μ : Measure X) : IsIsomorphicModNull T μ T μ :=
-  ⟨.refl T μ⟩
+  (IsomorphismModNull.refl T μ).isIsomorphicModNull
 
 /-- Isomorphism mod 0 is symmetric. -/
 protected theorem symm (h : IsIsomorphicModNull T μ S ν) : IsIsomorphicModNull S ν T μ :=
-  h.map IsomorphismModNull.symm
+  (isIsomorphicModNull_iff_nonempty.mp h).map IsomorphismModNull.symm
 
 /-- Isomorphism mod 0 is transitive. -/
 protected theorem trans (h : IsIsomorphicModNull T μ S ν) (h' : IsIsomorphicModNull S ν R ρ) :
     IsIsomorphicModNull T μ R ρ :=
-  h.elim fun e ↦ h'.elim fun f ↦ ⟨e.trans f⟩
+  (isIsomorphicModNull_iff_nonempty.mp h).elim fun e ↦
+    (isIsomorphicModNull_iff_nonempty.mp h').elim fun f ↦ (e.trans f).isIsomorphicModNull
 
 /-- Systems that are conjugate by a measure-preserving measurable equivalence are isomorphic
 mod 0. -/
 theorem of_measurableEquiv (e : X ≃ᵐ Y) (he : MeasurePreserving e μ ν) (h : Semiconj e T S) :
     IsIsomorphicModNull T μ S ν :=
-  ⟨.ofMeasurableEquiv e he h⟩
+  (IsomorphismModNull.ofMeasurableEquiv e he h).isIsomorphicModNull
 
 /-- Pre-ergodicity is invariant under isomorphism mod 0. -/
 theorem preErgodic_iff (h : IsIsomorphicModNull T μ S ν) : PreErgodic T μ ↔ PreErgodic S ν :=
-  h.elim fun e ↦ ⟨e.isFactorMap.preErgodic, e.isFactorMap_invFun.preErgodic⟩
+  (isIsomorphicModNull_iff_nonempty.mp h).elim fun e ↦
+    ⟨e.isFactorMap.preErgodic, e.isFactorMap_invFun.preErgodic⟩
 
 /-- Ergodicity is invariant under isomorphism mod 0 of systems given by measurable maps. -/
 theorem ergodic_iff (h : IsIsomorphicModNull T μ S ν) (hT : Measurable T) (hS : Measurable S) :
     Ergodic T μ ↔ Ergodic S ν :=
-  h.elim fun e ↦ ⟨fun h ↦ e.isFactorMap.ergodic h hS, fun h ↦ e.isFactorMap_invFun.ergodic h hT⟩
+  (isIsomorphicModNull_iff_nonempty.mp h).elim fun e ↦
+    ⟨fun h ↦ e.isFactorMap.ergodic h hS, fun h ↦ e.isFactorMap_invFun.ergodic h hT⟩
 
 end IsIsomorphicModNull
 
@@ -335,18 +442,17 @@ theorem ergodic_not_count : Ergodic not (Measure.count : Measure Bool) := by
       show not ⁻¹' {b} = {!b} by ext c; cases b <;> cases c <;> simp]
     simp
   refine ⟨hmp, ⟨fun s _ hs ↦ ?_⟩⟩
-  have hs' : ∀ b, b ∈ s ↔ (!b) ∈ s := fun b ↦ by
-    have := Measure.ae_count_iff.mp hs b
-    simpa [eq_comm] using this.symm
-  by_cases htrue : true ∈ s
-  · have hfalse : false ∈ s := (hs' true).mp htrue
-    have : s = univ := eq_univ_of_forall fun b ↦ by cases b <;> assumption
-    rw [this]
-    exact Filter.EventuallyConst.const _
-  · have hfalse : false ∉ s := fun h ↦ htrue ((hs' false).mp h)
-    have : s = ∅ := eq_empty_of_forall_notMem fun b ↦ by cases b <;> assumption
-    rw [this]
-    exact Filter.EventuallyConst.const _
+  -- `hs` is an almost-everywhere statement, which for `count` holds at every point: `s` contains
+  -- `!b` exactly when it contains `b`.
+  have hswap : ∀ b, (!b) ∈ s ↔ b ∈ s := Measure.ae_count_iff.mp hs
+  have hconst : ∀ b, b ∈ s ↔ true ∈ s := fun b ↦ by
+    cases b
+    exacts [hswap true, Iff.rfl]
+  have hs₀ : s = univ ∨ s = ∅ := by
+    by_cases htrue : true ∈ s
+    · exact .inl (eq_univ_of_forall fun b ↦ (hconst b).mpr htrue)
+    · exact .inr (eq_empty_of_forall_notMem fun b hb ↦ htrue ((hconst b).mp hb))
+  rcases hs₀ with rfl | rfl <;> exact Filter.EventuallyConst.const _
 
 /-- The identity of two points of equal mass is not ergodic. -/
 theorem not_ergodic_id_count : ¬ Ergodic id (Measure.count : Measure Bool) := by
