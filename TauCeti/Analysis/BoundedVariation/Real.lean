@@ -14,6 +14,7 @@ import TauCeti.MeasureTheory.Covering.DensityTheorem
 import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Analysis.BoundedVariation.DerivativeMeasure
+import TauCeti.Analysis.BoundedVariation.Hyperplane
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
@@ -50,12 +51,17 @@ These are the statements about almost every line section that slicing arguments 
 finite perimeter in higher dimensions apply: a section of perimeter less than `4` is an interval
 up to a null set.
 
+By `TauCeti.perimeter_setOf_inner_lt`, a half-line with endpoint `x` has perimeter `1` in an open
+set containing `x` and `0` in any other open set (`TauCeti.Real.perimeter_Iio`,
+`TauCeti.Real.perimeter_Ioi`).
+
 ## Main results
 
 * `TauCeti.Real.ofReal_sum_abs_sub_le_totalVariationOn`: the variation of `u` along Lebesgue
   points in `Ω` is at most `|Du|(Ω)`.
 * `TauCeti.Real.two_le_perimeter`, `TauCeti.Real.four_le_perimeter`,
   `TauCeti.Real.perimeter_Ioo` and `TauCeti.Real.perimeter_eq_two_iff`.
+* `TauCeti.Real.perimeter_Iio` and `TauCeti.Real.perimeter_Ioi`: the perimeter of a half-line.
 
 ## References
 
@@ -68,7 +74,7 @@ up to a null set.
 public section
 
 open Filter Set MeasureTheory Metric TopologicalSpace TestFunction LineDeriv
-open scoped Topology ENNReal Distributions BoundedContinuousFunction
+open scoped Topology ENNReal Distributions BoundedContinuousFunction RealInnerProductSpace
 
 namespace TauCeti.Real
 
@@ -354,6 +360,25 @@ theorem perimeter_Ioo {a b : ℝ} (hab : a < b) : perimeter volume ⊤ (Ioo a b)
   have hb := hφ b
   rw [Real.norm_eq_abs, abs_le] at ha hb
   linarith
+
+/-- **The perimeter of a half-line ending at a point**: by `TauCeti.perimeter_setOf_inner_lt`, the
+perimeter of `(-∞, x)` in an open set `Ω` is `1` if `x ∈ Ω` and `0` otherwise. -/
+@[simp]
+theorem perimeter_Iio (x : ℝ) (Ω : Opens ℝ) :
+    perimeter volume Ω (Iio x) = (Ω : Set ℝ).indicator 1 x := by
+  have h := perimeter_setOf_inner_lt (F := ℝ) (ν := 1) (by simp) x Ω
+  have hlt : {y : ℝ | ⟪y, (1 : ℝ)⟫ < x} = Iio x := by ext y; simp
+  have heq : {y : ℝ | ⟪y, (1 : ℝ)⟫ = x} = {x} := by ext y; simp
+  rw [hlt, heq] at h
+  by_cases hx : x ∈ (Ω : Set ℝ) <;> simpa [hx] using h
+
+/-- **The perimeter of a half-line starting at a point**: the perimeter of `(x, ∞)` in an open
+set `Ω` is `1` if `x ∈ Ω` and `0` otherwise. -/
+@[simp]
+theorem perimeter_Ioi (x : ℝ) (Ω : Opens ℝ) :
+    perimeter volume Ω (Ioi x) = (Ω : Set ℝ).indicator 1 x := by
+  rw [← compl_Iic, perimeter_compl, perimeter_congr_ae (ae_restrict_of_ae Iio_ae_eq_Iic.symm)]
+  exact perimeter_Iio x Ω
 
 /-- **Equality in the isoperimetric inequality on the line.** A null-measurable set of finite
 measure in `ℝ` has perimeter two exactly when it agrees almost everywhere with a nonempty bounded

@@ -84,6 +84,13 @@ space.
   `area (pantsGlue P D₁ D₂) = ∫ w^* φ + area D₁ + area D₂` (`TauCeti.Floer.RawCap.area_pantsGlue`).
   For a smooth based pair of pants, this is the form the area term `∫ w^* ω` takes in terms of
   the areas of caps of its three ends.
+* **The area of a cap class.** Let `ω` and `c` be homomorphisms on `H₂(M; ℤ)` defining the period
+  group `Γ = SphericalPeriodGroup ω c`, and suppose that `ω` of the Hurewicz class of every sphere
+  `a` is `∫_a σ`, for a closed `C¹` real two-form `σ`. Then the area of raw caps descends to the cap
+  classes `TauCeti.Floer.SphericalCapClass ω c γ` (`TauCeti.Floer.SphericalCapClass.area`).
+  Recapping by `B ∈ Γ` adds the area of `B` (`TauCeti.Floer.SphericalCapClass.area_vadd`), and
+  gluing a smooth cylinder or a smooth pair of pants to cap classes adds its integral
+  (`TauCeti.Floer.SphericalCapClass.area_glue`, `TauCeti.Floer.SphericalCapClass.area_pantsGlue`).
 
 The recapping law is the hypothesis of `TauCeti.Floer.CapClass.lift`, with the area homomorphism
 `TauCeti.sphereIntegralHom` on the group `π₂(M, x)` of spheres. The area is measured with the cap
@@ -101,6 +108,7 @@ oriented from `γ` to its centre, as for `TauCeti.capArea`; the capped action
   loop space; for a smooth based cap, its raw cap.
 * `TauCeti.Floer.RawCap.area φ h D`: the integral of `φ` over a raw cap `D` of a loop with a
   smooth based cap (`h`).
+* `TauCeti.Floer.SphericalCapClass.area`: the area of a loop with a cap class.
 
 ## Main results
 
@@ -129,6 +137,9 @@ oriented from `γ` to its centre, as for `TauCeti.capArea`; the capped action
   based homotopies placed side by side is the sum of their integrals.
 * `TauCeti.Floer.RawCap.area_pantsGlue`: gluing raw caps to a smooth pair of pants adds its integral
   to the sum of their areas.
+* `TauCeti.Floer.SphericalCapClass.area_vadd`, `TauCeti.Floer.SphericalCapClass.area_sub_area`,
+  `TauCeti.Floer.SphericalCapClass.area_glue`, `TauCeti.Floer.SphericalCapClass.area_pantsGlue`:
+  the recapping and gluing laws of the area of cap classes.
 
 ## References
 
@@ -146,9 +157,11 @@ public section
 noncomputable section
 
 open Set CategoryTheory HomotopyGroup
-open scoped Manifold ContDiff Topology Topology.Homotopy
+open scoped Manifold Topology Topology.Homotopy
 
 namespace TauCeti.Floer
+
+open scoped ContDiff
 
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
@@ -767,3 +780,83 @@ theorem RawCap.area_pantsGlue (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ =
 end Area
 
 end TauCeti.Floer
+
+/-! ### The area of a cap class -/
+
+namespace TauCeti.Floer.SphericalCapClass
+
+open AlgebraicTopology
+
+-- `ω` names the area homomorphism here, so the `ContDiff` scope, whose notation includes `ω`, is
+-- not opened, and smoothness `∞` is written out.
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [FiniteDimensional ℝ E] [I.Boundaryless]
+  {M : Type} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I ((⊤ : ℕ∞) : WithTop ℕ∞) M] [CompactSpace M] [T2Space M] {x : M} {γ : Ω M x}
+  {σ : RoughForm I M ℝ 2} {hσ : IsSmoothForm I 1 σ} {hdσ : mextDeriv σ = 0}
+  {ω : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj
+    (TopCat.of M) →+ ℝ}
+  {c : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj
+    (TopCat.of M) →+ ℤ}
+
+/-- The **area** of a loop `γ` with a cap class, for a closed `C¹` two-form `σ` and a homomorphism
+`ω` on `H₂(M; ℤ)` that agrees with the integral of `σ` on the Hurewicz classes of spheres (`hω`):
+the area `TauCeti.Floer.RawCap.area` of any raw cap in the class. It is well defined because raw
+caps in the same class differ by a sphere whose Hurewicz class has zero `ω`, hence zero integral.
+The cap is oriented from `γ` to its centre. -/
+def area (hσ : IsSmoothForm I 1 σ) (hdσ : mextDeriv σ = 0)
+    (hω : ∀ a, ω (hurewiczIntHom M x 1 a) = sphereIntegralHom x hσ hdσ a)
+    (h : ∃ u, IsSmoothBasedCap I γ u) : SphericalCapClass ω c γ → ℝ :=
+  lift (PeriodGroup.area _ _) (RawCap.area σ h) fun a D ↦ by
+    rw [RawCap.area_vadd hσ hdσ, SphericalPeriodGroup.area_ofHomotopyGroup, hω]
+
+variable (hω : ∀ a, ω (hurewiczIntHom M x 1 a) = sphereIntegralHom x hσ hdσ a)
+  (h : ∃ u, IsSmoothBasedCap I γ u)
+
+/-- The area of the cap class of a raw cap is the area of the raw cap. -/
+@[simp]
+theorem area_mk (D : RawCap γ) : area hσ hdσ hω h (mk ω c D) = RawCap.area σ h D :=
+  lift_mk _ _ _ D
+
+/-- **Two cap classes differ by a class of the period group.** The areas of two cap classes of `γ`
+differ by the area of the class by which they differ. -/
+theorem area_sub_area (q' q : SphericalCapClass ω c γ) :
+    area hσ hdσ hω h q' - area hσ hdσ hω h q = PeriodGroup.area _ _ (q' -ᵥ q) := by
+  induction q' using induction_on with | h D' =>
+  induction q using induction_on with
+  | h D => rw [area_mk, area_mk, mk_vsub_mk, SphericalPeriodGroup.area_ofHomotopyGroup, hω,
+      RawCap.area_sub_area hσ hdσ]
+
+/-- **Gluing a smooth cylinder to a cap class adds its area.** Gluing a smooth based homotopy `w`
+from `γ₀` to `γ` to a cap class of `γ` adds the integral of `σ` over `w` to its area. -/
+theorem area_glue {γ₀ : Ω M x} {w : ℝ × ℝ → M} (hw : IsSmoothBasedHomotopy I γ₀ γ w)
+    (h₀ : ∃ u, IsSmoothBasedCap I γ₀ u) (q : SphericalCapClass ω c γ) :
+    area hσ hdσ hω h₀ (glue hw.homotopyClass q) =
+      rectangleIntegral σ w (0, 0) (1, 1) + area hσ hdσ hω h q := by
+  induction q using induction_on with
+  | h D => rw [glue_mk, area_mk, area_mk, RawCap.area_homotopyClass_comp hσ hdσ hw h₀ h]
+
+/-- **Gluing cap classes to a smooth pair of pants adds its area.** Let `w` be a smooth based
+homotopy from `γ₀` to the collared concatenation of `γ₁` and `γ₂`, a smooth pair of pants with
+output `γ₀` and inputs `γ₁`, `γ₂`. Gluing cap classes `q₁` of `γ₁` and `q₂` of `γ₂` to it gives a
+cap class of `γ₀` whose area is the integral of `σ` over `w` plus the areas of `q₁` and `q₂`. -/
+theorem area_pantsGlue {γ₀ γ₁ γ₂ : Ω M x} {w : ℝ × ℝ → M}
+    (hw : IsSmoothBasedHomotopy I γ₀ (γ₁.collaredTrans γ₂) w) (h₀ : ∃ u, IsSmoothBasedCap I γ₀ u)
+    (h₁ : ∃ u, IsSmoothBasedCap I γ₁ u) (h₂ : ∃ u, IsSmoothBasedCap I γ₂ u)
+    (q₁ : SphericalCapClass ω c γ₁) (q₂ : SphericalCapClass ω c γ₂) :
+    area hσ hdσ hω h₀ (pantsGlue (hw.homotopyClass ≫ inv (Path.collaredTransHom γ₁ γ₂)) q₁ q₂) =
+      rectangleIntegral σ w (0, 0) (1, 1) + area hσ hdσ hω h₁ q₁ + area hσ hdσ hω h₂ q₂ := by
+  induction q₁ using induction_on with | h D₁ =>
+  induction q₂ using induction_on with
+  | h D₂ => rw [pantsGlue_mk, area_mk, area_mk, area_mk, RawCap.area_pantsGlue hσ hdσ hw h₀ h₁ h₂]
+
+variable [PathConnectedSpace M]
+
+/-- **The recapping law of the area.** Recapping a cap class by a class `B` of the period group adds
+the area of `B`. -/
+@[simp]
+theorem area_vadd (B : SphericalPeriodGroup ω c) (q : SphericalCapClass ω c γ) :
+    area hσ hdσ hω h (B +ᵥ q) = PeriodGroup.area _ _ B + area hσ hdσ hω h q :=
+  lift_vadd _ _ _ B q
+
+end TauCeti.Floer.SphericalCapClass

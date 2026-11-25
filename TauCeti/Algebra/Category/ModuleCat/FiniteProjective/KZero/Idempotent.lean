@@ -209,8 +209,7 @@ theorem kZeroEquiv_of_mk {e : Matrix ι ι R} (he : IsIdempotentElem e) (X : Fin
 theorem kZeroEquiv_of_mk_one (m : ℕ) :
     kZeroEquiv R (GrothendieckAddGroup.of (mk (1 : Matrix (Fin m) (Fin m) R) .one)) =
       m • SplitK0.of.{u} (finiteProjectiveModulesRegular Rᵐᵒᵖ) := by
-  rw [kZeroEquiv_of_mk _ ⟨ModuleCat.of Rᵐᵒᵖ (Fin m → Rᵐᵒᵖ),
-    finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
+  rw [kZeroEquiv_of_mk _ (FiniteProjectiveModules.of Rᵐᵒᵖ (Fin m → Rᵐᵒᵖ))
     (rangeMulVecBilinOneEquiv (Fin m) R).symm]
   exact SplitK0.of_eq_nsmul_of_linearEquiv_fin (.refl _ _) (.refl _ _)
 
