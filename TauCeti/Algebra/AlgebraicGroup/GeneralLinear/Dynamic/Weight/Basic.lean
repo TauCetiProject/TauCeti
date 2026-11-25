@@ -83,6 +83,7 @@ theorem pointsMulEquiv_pointsHom_weightCocharacter (w : Fin N → ℤ) (t : Aˣ)
 
 /-- The `m`-th power `t ↦ λ(t ^ m)` of the weight cocharacter with weights `w` is the weight
 cocharacter with weights `w i * m`. -/
+@[simp]
 theorem powCocharacter_weightCocharacter (w : Fin N → ℤ) (m : ℤ) :
     (weightCocharacter (R := R) w).powCocharacter m = weightCocharacter (fun i ↦ w i * m) := by
   -- Both cocharacters send a unit `u` to the diagonal point with entries `u ^ (w i * m)`.
