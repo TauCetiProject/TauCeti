@@ -13,7 +13,9 @@ public import TauCeti.AlgebraicGeometry.GroupScheme.FiniteFlat
 
 A closed subgroup scheme `P` of a commutative group scheme `G₀` over a base scheme `S` whose
 structure morphism to `S` is finite, flat, and locally of finite presentation bundles into a
-`FiniteFlatCommGroupScheme S` (`TauCeti.ClosedSubgroupScheme.toFiniteFlatCommGroupScheme`).
+`FiniteFlatCommGroupScheme S` (`TauCeti.ClosedSubgroupScheme.toFiniteFlatCommGroupScheme`), with
+underlying group object `(P.val : Grp (Over S))`
+(`TauCeti.ClosedSubgroupScheme.grpMk_toFiniteFlatCommGroupScheme`).
 -/
 
 public section
@@ -58,6 +60,14 @@ theorem toFiniteFlatCommGroupScheme_toOver (P : ClosedSubgroupScheme G₀)
     [IsFinite (P.val : Grp (Over S)).X.hom] [Flat (P.val : Grp (Over S)).X.hom]
     [LocallyOfFinitePresentation (P.val : Grp (Over S)).X.hom] :
     P.toFiniteFlatCommGroupScheme.toOver = Over.mk (P.val : Grp (Over S)).X.hom :=
+  (rfl)
+
+/-- The group object underlying `P.toFiniteFlatCommGroupScheme` is `(P.val : Grp (Over S))`. -/
+@[simp]
+theorem grpMk_toFiniteFlatCommGroupScheme (P : ClosedSubgroupScheme G₀)
+    [IsFinite (P.val : Grp (Over S)).X.hom] [Flat (P.val : Grp (Over S)).X.hom]
+    [LocallyOfFinitePresentation (P.val : Grp (Over S)).X.hom] :
+    Grp.mk P.toFiniteFlatCommGroupScheme.toOver = (P.val : Grp (Over S)) :=
   (rfl)
 
 /-- The rank function of `P.toFiniteFlatCommGroupScheme` is that of
