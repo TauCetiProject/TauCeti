@@ -69,7 +69,7 @@ theorem mem_relTraceIdeal_iff_conjInvariantsMap_mem (hπ : Function.Surjective �
   set T := relTraceIdeal R (le_top : P ≤ ⊤)
   set t := b * relTrace R P ⊤ a
   have htT : t ∈ T := T.mul_mem_left b (relTrace_mem_relTraceIdeal _ a)
-  have htb : t * b = t := by rw [conjInvariants_top_mul_comm, ← mul_assoc, hb.eq]
+  have htb : t * b = t := by rw [mul_comm, ← mul_assoc, hb.eq]
   have hbt : b - t ∈ RingHom.ker π • (⊤ : Submodule R (conjInvariants R (⊤ : Subgroup G))) := by
     refine mem_smul_top_of_conjInvariantsMap_eq_zero π ?_
     rw [map_sub, map_mul, conjInvariantsMap_relTrace, ha',

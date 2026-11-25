@@ -25,7 +25,8 @@ import TauCeti.GroupTheory.DoubleCoset.Cover
 A group `G` acts on its group algebra `R[G]` by conjugation, `x ↦ g x g⁻¹`
 (`TauCeti.conjRepresentation`). For a subgroup `H ≤ G` the fixed points `R[G]^H` form a
 subalgebra, the centralizer of the image of `H` (`TauCeti.conjInvariants`). The centre of `R[G]`
-is contained in every `R[G]^H`, and it is `R[G]^G`; the trivial subgroup fixes all of `R[G]`.
+is contained in every `R[G]^H`, and it is `R[G]^G`, a commutative ring; the trivial subgroup
+fixes all of `R[G]`.
 
 For subgroups `Q ≤ P` with `Q` of finite index in `P`, the **relative trace**
 `Tr_Q^P : R[G]^Q → R[G]^P` sends `a` to `∑_{x ∈ P/Q} x a x⁻¹` (`TauCeti.relTrace`). It is the
@@ -67,7 +68,6 @@ are described through them.
 
 * `TauCeti.conjInvariants_top`, `TauCeti.conjInvariants_bot`: `R[G]^G = Z(R[G])` and
   `R[G]^1 = R[G]`.
-* `TauCeti.conjInvariants_top_mul_comm`: `R[G]^G` is commutative.
 * `TauCeti.mem_conjInvariants_closure_iff`: `R[G]^{⟨S⟩}` is the centralizer of `S`.
 * `TauCeti.relTrace_apply_eq_sum_of_bijective`: `Tr_Q^P(a) = ∑ᵢ sᵢ a sᵢ⁻¹` for every transversal.
 * `TauCeti.relTrace_self`, `TauCeti.relTrace_apply_of_mem`: `Tr_P^P = id`, and
@@ -249,12 +249,14 @@ theorem conjInvariants_top :
   | add y z hy hz => rw [add_mul, mul_add, hy, hz]
   | smul r y hy => rw [smul_mul_assoc, mul_smul_comm, hy]
 
-/-- The centre `R[G]^G` is commutative. -/
-theorem conjInvariants_top_mul_comm (x y : conjInvariants R (⊤ : Subgroup G)) :
-    x * y = y * x := Subtype.ext <| by
-  have hy : (y : MonoidAlgebra R G) ∈ Subalgebra.center R (MonoidAlgebra R G) := by
-    rw [← conjInvariants_top]; exact y.property
-  exact Subalgebra.mem_center_iff.1 hy x
+/-- The centre `R[G]^G` is a commutative semiring. -/
+noncomputable instance instCommSemiringConjInvariantsTop :
+    CommSemiring (conjInvariants R (⊤ : Subgroup G)) :=
+  { (inferInstance : Semiring (conjInvariants R (⊤ : Subgroup G))) with
+    mul_comm x y := Subtype.ext <| by
+      have hy : (y : MonoidAlgebra R G) ∈ Subalgebra.center R (MonoidAlgebra R G) := by
+        rw [← conjInvariants_top]; exact y.property
+      exact Subalgebra.mem_center_iff.1 hy x }
 
 /-- The trivial subgroup fixes all of `R[G]`. -/
 @[simp]
@@ -276,6 +278,12 @@ theorem conjInvariants_toSubmodule {G : Type*} [Group G] (H : Subgroup G) :
   ext x
   rw [Subalgebra.mem_toSubmodule, mem_conjInvariants_iff, Representation.mem_invariants]
   exact ⟨fun hx h => hx h h.property, fun hx h hh => hx ⟨h, hh⟩⟩
+
+/-- The centre `R[G]^G` is a commutative ring. -/
+noncomputable instance instCommRingConjInvariantsTop {G : Type*} [Group G] :
+    CommRing (conjInvariants R (⊤ : Subgroup G)) :=
+  { (inferInstance : CommSemiring (conjInvariants R (⊤ : Subgroup G))),
+    (inferInstance : Ring (conjInvariants R (⊤ : Subgroup G))) with }
 
 end Ring
 
