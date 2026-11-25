@@ -14,6 +14,8 @@ import TauCeti.RepresentationTheory.FDRep.Basic
 -- Non-public: irreducibility transports along an equivariant linear equivalence, used to move an
 -- irreducible representation onto a coordinate space.
 import TauCeti.RepresentationTheory.Irreducible
+-- Non-public: a linear character is the character of its line `Representation.ofLinearCharacter`.
+import TauCeti.RepresentationTheory.LinearCharacter.Basic
 
 /-!
 # The character table of a finite group
@@ -53,7 +55,8 @@ take their familiar Hermitian form, because inversion conjugates character value
 
 * `TauCeti.card_irreducibleCharacters`: **`G` has as many irreducible characters as conjugacy
   classes**, so the table is square; `TauCeti.character_mem_irreducibleCharacters` is the statement
-  that no irreducible character is missing from it.
+  that no irreducible character is missing from it, and `MonoidHom.coe_mem_irreducibleCharacters`
+  puts every linear character `G →* kˣ` in it.
 * `TauCeti.characterTable_apply`: the entries of the table are the irreducible character values.
 * `TauCeti.card_inv_mul_sum_characterTable_mul_characterTable_inv` and
   `TauCeti.card_inv_mul_sum_characterTable_mul_conj`: **first (row) orthogonality**, over `k` and in
@@ -157,6 +160,14 @@ theorem _root_.FDRep.character_mem_irreducibleCharacters (X : FDRep k G)
     [CategoryTheory.Simple X] : X.character ∈ irreducibleCharacters k G :=
   have := FDRep.isIrreducible_of_simple X
   TauCeti.character_mem_irreducibleCharacters X.ρ
+
+/-- **A linear character is an irreducible character**: `g ↦ χ g`, read in `k`, is the character
+of the line `Representation.ofLinearCharacter χ`. -/
+@[simp]
+theorem _root_.MonoidHom.coe_mem_irreducibleCharacters (χ : G →* kˣ) :
+    (fun g => (χ g : k)) ∈ irreducibleCharacters k G := by
+  rw [← funext (Representation.char_ofLinearCharacter χ)]
+  exact character_mem_irreducibleCharacters _
 
 /-- **The trivial character is irreducible**: the constant function `1` is the character of the
 trivial one-dimensional representation. -/
