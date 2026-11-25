@@ -149,6 +149,7 @@ theorem toPrimitiveRayClassCharacter_inv (ψ : PrimitiveDirichletCharacter) :
 
 /-- At a nonzero ideal, the primitive ray class character associated to `ψ` has weight given by
 `ψ` at the ideal norm, with both sides zero at ideals meeting the conductor. -/
+@[simp]
 theorem toMultiplicativeIdealWeight_toPrimitiveRayClassCharacter_apply
     (ψ : PrimitiveDirichletCharacter) {J : Ideal (𝓞 ℚ)} (hJ : J ≠ ⊥) :
     (toPrimitiveRayClassCharacter ψ).character.toMultiplicativeIdealWeight J =
@@ -186,6 +187,7 @@ theorem toMultiplicativeIdealWeight_toPrimitiveRayClassCharacter_apply
 
 /-- The coefficients of the corresponding ray class and Dirichlet series agree at every
 positive index. -/
+@[simp]
 theorem normCoeff_toPrimitiveRayClassCharacter (ψ : PrimitiveDirichletCharacter)
     {n : ℕ} (hn : n ≠ 0) :
     normCoeff ℚ
