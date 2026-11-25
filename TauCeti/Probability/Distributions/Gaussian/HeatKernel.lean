@@ -8,20 +8,30 @@ module
 public import TauCeti.Analysis.PDE.HeatKernel.Basic
 public import TauCeti.Probability.Distributions.Gaussian.Density
 
+import TauCeti.Analysis.PDE.HeatKernel.Bounds
+
 /-!
 # The isotropic Gaussian density is the heat kernel
 
 For `v > 0` the isotropic Gaussian law `N(m, v • 1)` on `EuclideanSpace ℝ ι` has density
 `(2πv)^(-d/2) exp(-‖y - m‖² / (2v))`, which is the heat kernel at time `v / 2` evaluated at
-`y - m`. This identification transfers the analytic results proved for the heat kernel
-(smoothness, Gaussian bounds on all derivatives, the semigroup law) to Gaussian densities.
+`y - m`. Through this identification the heat-kernel results apply to Gaussian densities: the
+density is smooth and all of its derivatives are bounded. Its gradient is `-v⁻¹ φ(y) (y - m)`,
+so the score of `N(m, v • 1)` is `-(y - m) / v`.
 
 ## Main results
 
 * `TauCeti.Probability.multivariateGaussianPDFReal_smul_one`: the density of `N(m, v • 1)` at `y`
   is `heatKernel (v / 2) (y - m)`.
+* `TauCeti.Probability.multivariateGaussianPDFReal_zero_smul_one`: the density of `N(0, v • 1)` is
+  `heatKernel (v / 2)`.
 * `TauCeti.Probability.multivariateGaussian_smul_one_eq_withDensity_heatKernel`: `N(m, v • 1)` is
   Lebesgue measure weighted by this translated heat kernel.
+* `TauCeti.Probability.contDiff_multivariateGaussianPDFReal_smul_one` and
+  `TauCeti.Probability.exists_norm_iteratedFDeriv_multivariateGaussianPDFReal_smul_one_le`: the
+  density of `N(m, v • 1)` is smooth and all of its derivatives are bounded.
+* `TauCeti.Probability.hasGradientAt_multivariateGaussianPDFReal_smul_one`: the density `φ` of
+  `N(m, v • 1)` has gradient `-v⁻¹ φ(y) (y - m)`, so its score is `-(y - m) / v`.
 -/
 
 public section
@@ -54,6 +64,30 @@ theorem multivariateGaussianPDFReal_smul_one {v : ℝ} (hv : 0 < v) (m y : Eucli
   field_simp
   ring
 
+/-- For `v > 0`, the density of the centred isotropic Gaussian law `N(0, v • 1)` is the heat kernel
+at time `v / 2`. -/
+theorem multivariateGaussianPDFReal_zero_smul_one {v : ℝ} (hv : 0 < v) :
+    multivariateGaussianPDFReal (0 : EuclideanSpace ℝ ι) (v • 1) = heatKernel (v / 2) :=
+  funext fun y ↦ by rw [multivariateGaussianPDFReal_smul_one hv, sub_zero]
+
+/-- For `v > 0`, the density of the isotropic Gaussian law `N(m, v • 1)` is smooth. -/
+theorem contDiff_multivariateGaussianPDFReal_smul_one {v : ℝ} (hv : 0 < v)
+    (m : EuclideanSpace ℝ ι) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (multivariateGaussianPDFReal m (v • 1)) := by
+  rw [funext (multivariateGaussianPDFReal_smul_one hv m)]
+  exact (contDiff_heatKernel _).comp (contDiff_id.sub contDiff_const)
+
+/-- For `v > 0`, every derivative of the density of the isotropic Gaussian law `N(m, v • 1)` is
+bounded. -/
+theorem exists_norm_iteratedFDeriv_multivariateGaussianPDFReal_smul_one_le {v : ℝ} (hv : 0 < v)
+    (m : EuclideanSpace ℝ ι) (k : ℕ) :
+    ∃ C, ∀ y, ‖iteratedFDeriv ℝ k (multivariateGaussianPDFReal m (v • 1)) y‖ ≤ C := by
+  obtain ⟨C, hC⟩ :=
+    exists_norm_iteratedFDeriv_heatKernel_le_const (E := EuclideanSpace ℝ ι) (half_pos hv) k
+  refine ⟨C, fun y ↦ ?_⟩
+  rw [funext (multivariateGaussianPDFReal_smul_one hv m), iteratedFDeriv_comp_sub]
+  exact hC _
+
 /-- For `v > 0`, the isotropic Gaussian law `N(m, v • 1)` is Lebesgue measure weighted by the
 heat kernel at time `v / 2`, translated to `m`. -/
 theorem multivariateGaussian_smul_one_eq_withDensity_heatKernel {v : ℝ} (hv : 0 < v)
@@ -83,7 +117,8 @@ theorem hasGradientAt_multivariateGaussianPDFReal_smul_one {v : ℝ} (hv : 0 < v
   rw [hasGradientAt_iff_hasFDerivAt, hfun]
   refine (((hsq.mul_const (-(2 * v)⁻¹)).exp).const_mul A).congr_fderiv ?_
   ext w
-  simp
+  simp only [id_eq, ContinuousLinearMap.comp_id, smul_apply, coe_innerSL_apply, nsmul_eq_mul,
+    Nat.cast_ofNat, smul_eq_mul, map_smul, InnerProductSpace.toDual_apply_apply]
   field_simp
 
 end TauCeti.Probability

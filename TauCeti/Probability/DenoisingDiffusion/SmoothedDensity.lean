@@ -12,7 +12,6 @@ public import Mathlib.Probability.Independence.Basic
 public import TauCeti.Probability.Distributions.Gaussian.HeatKernel
 
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
-import TauCeti.Analysis.PDE.HeatKernel.Bounds
 import TauCeti.MeasureTheory.Group.Convolution.Translation
 import TauCeti.Probability.Distributions.Gaussian.Affine
 import TauCeti.MeasureTheory.Measure.Mixture.Basic
@@ -105,36 +104,6 @@ theorem noisyScore_apply (μ₀ : Measure (EuclideanSpace ℝ ι)) (c s : ℝ) (
 
 section Kernel
 
-open scoped ContDiff
-
-/-- For `s ≠ 0` the density of `N(0, s² • 1)` is the heat kernel at time `s² / 2`. -/
-private theorem pdf_eq_heatKernel (hs : s ≠ 0) :
-    multivariateGaussianPDFReal (0 : EuclideanSpace ℝ ι) (s ^ 2 • 1) = heatKernel (s ^ 2 / 2) := by
-  funext z
-  rw [multivariateGaussianPDFReal_smul_one (by positivity), sub_zero]
-
-private theorem pdf_pos (hs : s ≠ 0) (z : EuclideanSpace ℝ ι) :
-    0 < multivariateGaussianPDFReal (0 : EuclideanSpace ℝ ι) (s ^ 2 • 1) z := by
-  rw [pdf_eq_heatKernel hs]
-  exact heatKernel_pos (by positivity) z
-
-private theorem contDiff_pdf (hs : s ≠ 0) :
-    ContDiff ℝ ∞ (multivariateGaussianPDFReal (0 : EuclideanSpace ℝ ι) (s ^ 2 • 1)) := by
-  rw [pdf_eq_heatKernel hs]
-  exact contDiff_heatKernel _
-
-/-- Every derivative of the Gaussian density is bounded. -/
-private theorem exists_norm_iteratedFDeriv_pdf_le (hs : s ≠ 0) (k : ℕ) :
-    ∃ C, ∀ z, ‖iteratedFDeriv ℝ k
-      (multivariateGaussianPDFReal (0 : EuclideanSpace ℝ ι) (s ^ 2 • 1)) z‖ ≤ C := by
-  have ht : 0 < s ^ 2 / 2 := by positivity
-  obtain ⟨C, hC₀, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_le
-    (E := EuclideanSpace ℝ ι) ht k
-  refine ⟨C * (4 * π * (2 * (s ^ 2 / 2))) ^ (-(Module.finrank ℝ (EuclideanSpace ℝ ι) : ℝ) / 2),
-    fun z ↦ ?_⟩
-  rw [pdf_eq_heatKernel hs]
-  exact (hC z).trans (mul_le_mul_of_nonneg_left (heatKernel_le (by positivity) z) hC₀.le)
-
 private theorem measurable_pdf_sub_smul (y : EuclideanSpace ℝ ι) :
     Measurable fun x : EuclideanSpace ℝ ι ↦
       multivariateGaussianPDFReal (0 : EuclideanSpace ℝ ι) (s ^ 2 • 1) (y - c • x) :=
@@ -144,7 +113,8 @@ private theorem measurable_pdf_sub_smul (y : EuclideanSpace ℝ ι) :
 private theorem integrable_pdf_sub_smul [IsFiniteMeasure μ₀] (hs : s ≠ 0)
     (y : EuclideanSpace ℝ ι) :
     Integrable (fun x ↦ multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x)) μ₀ := by
-  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_pdf_le (ι := ι) hs 0
+  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_multivariateGaussianPDFReal_smul_one_le
+    (ι := ι) (by positivity : 0 < s ^ 2) 0 0
   refine Integrable.of_bound (C := C) (measurable_pdf_sub_smul y).aestronglyMeasurable
     (.of_forall fun x ↦ ?_)
   simpa using hC (y - c • x)
@@ -156,7 +126,7 @@ end Kernel
 /-- For `s ≠ 0`, the smoothed density is the integral of the heat kernel at time `s² / 2`. -/
 theorem smoothedDensity_eq_integral_heatKernel (hs : s ≠ 0) (y : EuclideanSpace ℝ ι) :
     smoothedDensity μ₀ c s y = ∫ x, heatKernel (s ^ 2 / 2) (y - c • x) ∂μ₀ := by
-  rw [smoothedDensity_apply, pdf_eq_heatKernel hs]
+  rw [smoothedDensity_apply, multivariateGaussianPDFReal_zero_smul_one (by positivity)]
 
 /-- The smoothed density is nonnegative. -/
 theorem smoothedDensity_nonneg (μ₀ : Measure (EuclideanSpace ℝ ι)) (c s : ℝ)
@@ -168,7 +138,8 @@ theorem smoothedDensity_pos [IsFiniteMeasure μ₀] [NeZero μ₀] (hs : s ≠ 0
     (y : EuclideanSpace ℝ ι) : 0 < smoothedDensity μ₀ c s y := by
   rw [smoothedDensity_apply, integral_pos_iff_support_of_nonneg
     (fun _ ↦ multivariateGaussianPDFReal_nonneg _ _ _) (integrable_pdf_sub_smul hs y),
-    Function.support_eq_univ fun _ ↦ (pdf_pos hs _).ne']
+    Function.support_eq_univ fun _ ↦ (multivariateGaussianPDFReal_pos
+      (Matrix.PosDef.one.smul (by positivity : 0 < s ^ 2)).det_pos _ _).ne']
   exact Measure.measure_univ_pos.2 (NeZero.ne μ₀)
 
 /-- **Gaussian smoothing of a finite measure has a density.** Mixing the isotropic Gaussian laws
@@ -181,7 +152,8 @@ theorem bind_multivariateGaussian_eq_withDensity_smoothedDensity [IsFiniteMeasur
   have hdens (x : EuclideanSpace ℝ ι) : multivariateGaussian (c • x) (s ^ 2 • 1) =
       volume.withDensity fun y ↦
         ENNReal.ofReal (multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x)) := by
-    rw [multivariateGaussian_smul_one_eq_withDensity_heatKernel hs2, pdf_eq_heatKernel hs]
+    rw [multivariateGaussian_smul_one_eq_withDensity_heatKernel hs2,
+      multivariateGaussianPDFReal_zero_smul_one hs2]
   simp_rw [hdens]
   rw [Measure.bind_withDensity μ₀ volume
     ((measurable_multivariateGaussianPDFReal _ _).comp (by fun_prop)).ennreal_ofReal.aemeasurable]
@@ -228,11 +200,14 @@ derivatives of the Gaussian kernel. -/
 private theorem exists_hasFTaylorSeriesUpTo_smoothedDensity [IsFiniteMeasure μ₀] (hs : s ≠ 0) :
     ∃ p, HasFTaylorSeriesUpTo ∞ (smoothedDensity μ₀ c s) p ∧ ∀ y (k : ℕ), p y k =
       ∫ x, iteratedFDeriv ℝ k (multivariateGaussianPDFReal 0 (s ^ 2 • 1)) (y - c • x) ∂μ₀ := by
-  have hφ := contDiff_pdf (ι := ι) hs
+  have hs2 : 0 < s ^ 2 := by positivity
+  have hφ : ContDiff ℝ ∞ (multivariateGaussianPDFReal (0 : EuclideanSpace ℝ ι) (s ^ 2 • 1)) :=
+    contDiff_multivariateGaussianPDFReal_smul_one hs2 0
   have hshift (x : EuclideanSpace ℝ ι) :
       ContDiff ℝ ∞ fun y ↦ multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) :=
     hφ.comp (contDiff_id.sub contDiff_const)
-  choose C hC using exists_norm_iteratedFDeriv_pdf_le (ι := ι) hs
+  choose C hC using exists_norm_iteratedFDeriv_multivariateGaussianPDFReal_smul_one_le
+    (ι := ι) hs2 0
   have h := hasFTaylorSeriesUpToOn_integral_of_le_bound (μ := μ₀) (n := ∞)
     (F := fun y x ↦ multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x))
     (p := fun y x ↦ ftaylorSeries ℝ
@@ -275,30 +250,21 @@ theorem hasGradientAt_smoothedDensity [IsFiniteMeasure μ₀] (hs : s ≠ 0)
   set g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι := fun z ↦ -(s ^ 2)⁻¹ • φ z • z
   have hg (z : EuclideanSpace ℝ ι) : HasGradientAt φ (g z) z := by
     simpa [g] using hasGradientAt_multivariateGaussianPDFReal_smul_one hs2 0 z
-  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_pdf_le (ι := ι) hs 1
-  have hgC (z : EuclideanSpace ℝ ι) : ‖toDual ℝ _ (g z)‖ ≤ C := by
-    rw [← (hg z).hasFDerivAt.fderiv, ← norm_iteratedFDeriv_one]
-    exact hC z
-  have hgcont : Continuous g := by
-    have : Continuous φ := (contDiff_pdf (ι := ι) hs).continuous
-    fun_prop
-  have hderiv : HasFDerivAt (smoothedDensity μ₀ c s)
-      (∫ x, toDual ℝ _ (g (y - c • x)) ∂μ₀) y := by
-    refine hasFDerivAt_integral_of_dominated_of_fderiv_le (bound := fun _ ↦ C)
-      (F' := fun y x ↦ toDual ℝ _ (g (y - c • x))) Filter.univ_mem
-      (.of_forall fun y ↦ (measurable_pdf_sub_smul y).aestronglyMeasurable)
-      (integrable_pdf_sub_smul hs y) ?_ (.of_forall fun x y _ ↦ hgC _) (integrable_const C)
-      (.of_forall fun x y _ ↦ ?_)
-    · exact ((toDual ℝ _).continuous.comp (hgcont.comp (by fun_prop))).aestronglyMeasurable
-    · exact (hg (y - c • x)).hasFDerivAt.comp y ((hasFDerivAt_id y).sub_const (c • x))
-        |>.congr_fderiv (by ext; simp)
-  have hcomm : ∫ x, toDual ℝ _ (g (y - c • x)) ∂μ₀ = toDual ℝ _ (∫ x, g (y - c • x) ∂μ₀) :=
-    (toDual ℝ (EuclideanSpace ℝ ι)).toContinuousLinearEquiv.integral_comp_comm _
-  rw [hcomm] at hderiv
+  -- The first-order term of the Taylor series is the integral of the derivative of `φ`.
+  obtain ⟨p, hp, hpk⟩ := exists_hasFTaylorSeriesUpTo_smoothedDensity (μ₀ := μ₀) (c := c) hs
+  have hint (x : EuclideanSpace ℝ ι) : continuousMultilinearCurryFin1 ℝ (EuclideanSpace ℝ ι) ℝ
+      (iteratedFDeriv ℝ 1 φ (y - c • x)) = toDual ℝ _ (g (y - c • x)) := by
+    ext w
+    simp [(hg _).hasFDerivAt.fderiv]
+  have hp1 : continuousMultilinearCurryFin1 ℝ (EuclideanSpace ℝ ι) ℝ (p y 1) =
+      toDual ℝ _ (∫ x, g (y - c • x) ∂μ₀) := by
+    rw [hpk]
+    refine ((continuousMultilinearCurryFin1 ℝ (EuclideanSpace ℝ ι) ℝ).toContinuousLinearEquiv
+      |>.integral_comp_comm _).symm.trans ((integral_congr_ae (.of_forall hint)).trans ?_)
+    exact (toDual ℝ _).toContinuousLinearEquiv.integral_comp_comm _
   rw [hasGradientAt_iff_hasFDerivAt]
-  convert hderiv using 2
-  simp only [g]
-  rw [integral_smul]
+  convert hp.hasFDerivAt (by simp) y using 2
+  rw [hp1, integral_smul]
 
 /-- The gradient of the smoothed density, as a value. -/
 theorem gradient_smoothedDensity [IsFiniteMeasure μ₀] (hs : s ≠ 0) (y : EuclideanSpace ℝ ι) :
@@ -347,6 +313,7 @@ theorem smoothedDensity_dirac (x₀ : EuclideanSpace ℝ ι) (c s : ℝ) (y : Eu
 theorem noisyScore_dirac (x₀ : EuclideanSpace ℝ ι) (hs : s ≠ 0) (y : EuclideanSpace ℝ ι) :
     noisyScore (Measure.dirac x₀) c s y = -(s ^ 2)⁻¹ • (y - c • x₀) := by
   rw [noisyScore_eq_integral hs, integral_dirac, smoothedDensity_dirac, smul_smul (_ : ℝ)⁻¹,
-    inv_mul_cancel₀ (pdf_pos hs _).ne', one_smul]
+    inv_mul_cancel₀ (multivariateGaussianPDFReal_pos
+      (Matrix.PosDef.one.smul (by positivity : 0 < s ^ 2)).det_pos _ _).ne', one_smul]
 
 end TauCeti.Probability
