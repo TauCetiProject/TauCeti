@@ -32,6 +32,7 @@ complex, and CM by `TauCeti.NumberField.IsCMField.of_forall_isConj`.
 
 ## Main results
 
+* `TauCeti.CMType.reflexFieldConj_apply_apply`: complex conjugation on `E*` is an involution.
 * `TauCeti.CMType.apply_conj_eq_conj_apply`: every `σ ∈ Aut(ℂ)` commutes with complex
   conjugation on the reflex field.
 * `TauCeti.CMType.isConj_reflexFieldConj`: complex conjugation on `E*` is the conjugation of every
@@ -88,6 +89,12 @@ noncomputable def reflexFieldConj (Φ : CMType E) : Gal(Φ.reflexField/ℚ) wher
 theorem coe_reflexFieldConj_apply (Φ : CMType E) (x : Φ.reflexField) :
     (Φ.reflexFieldConj x : ℂ) = conj (x : ℂ) :=
   (rfl)
+
+/-- Complex conjugation on the reflex field is an involution. -/
+@[simp]
+theorem reflexFieldConj_apply_apply (Φ : CMType E) (x : Φ.reflexField) :
+    Φ.reflexFieldConj (Φ.reflexFieldConj x) = x :=
+  Subtype.ext (Complex.conj_conj _)
 
 /-- Every automorphism `σ` of `ℂ` commutes with complex conjugation on the reflex field: on a type
 trace both `σ ∘ ι` and `ι ∘ σ` give the type trace of `σ(ιΦ) = ι(σΦ)`. -/
