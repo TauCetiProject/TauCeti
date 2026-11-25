@@ -233,8 +233,7 @@ private theorem bijective_higherDirectImageBaseChange_app_app {V : Y'.Opens}
     exact (bijective_cohomologyOnBaseChange H₀ M (f.isCompact_preimage hY.isCompact)
       (f.isQuasiSeparated_preimage hY.isQuasiSeparated) q).comp (LinearEquiv.bijective _)
   have hL : Function.Bijective (φV ∘ hψ₀.equiv) :=
-    ⟨hb.1.of_comp, fun y ↦ (hb.2 (κ y)).imp fun _ hz ↦
-      injective_sectionsToCohomologyPreimage g' f' M q hV hz⟩
+    hb.of_comp_left (injective_sectionsToCohomologyPreimage g' f' M q hV)
   exact (Function.Bijective.of_comp_iff φV hψ₀.equiv.bijective).mp hL
 
 /-- **Flat base change for higher direct images.** Let `g' ≫ f = f' ≫ g` be a cartesian square of
