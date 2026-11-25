@@ -6,21 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.CompletelyBounded.Basic
-import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 import Mathlib.Analysis.CStarAlgebra.Hom
-import Mathlib.Analysis.CStarAlgebra.Unitization
 import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Factor
 
 /-!
-# Smith's lemma and completely bounded maps into commutative C⋆-algebras
+# Smith's lemma
 
 For a linear map `u : A → M_n(ℂ)` from a C⋆-algebra into the `n × n` matrices (indexed by any
 finite type), **Smith's lemma** says that the cb norm is attained at level `n`:
 `‖u‖_cb = ‖uₙ‖`. Every bound on the level-`n` amplification `uₙ : M_n(A) → M_n(M_n(ℂ))` bounds
 every amplification `uₘ`, so `u` is completely bounded exactly when `uₙ` is bounded.
-
-For a bounded linear map `u : A → B` into a commutative C⋆-algebra, the cb norm equals the norm:
-`‖u‖_cb = ‖u‖`.
 
 ## Main declarations
 
@@ -30,9 +25,6 @@ For a bounded linear map `u : A → B` into a commutative C⋆-algebra, the cb n
   `LinearMap.cbNorm_le_iff_level`: complete boundedness and the cb norm of `u : A → M_n(ℂ)` are
   read off at level `n`.
 * `LinearMap.cbNorm_eq_opNorm_level`: `‖u‖_cb = ‖uₙ‖`, for `uₙ` given as a continuous linear map.
-* `ContinuousLinearMap.isCompletelyBounded_toLinearMap_of_comm`,
-  `ContinuousLinearMap.cbNorm_toLinearMap_of_comm`: a bounded map into a commutative C⋆-algebra
-  is completely bounded with `‖u‖_cb = ‖u‖`.
 
 ## Implementation notes
 
@@ -43,16 +35,11 @@ vectors `eₜ ∈ ℂᵐ`, each a unit vector or zero, spanning every `vᵣ`. So
 `⟪w', uₙ(y) v'⟫` for the compression `y = [∑ k l, (eₜ k fₜ' l*) x k l]_{t t'} ∈ M_n(A)`, and
 `‖y‖ ≤ ‖x‖` because the maps `a ↦ (∑ t, eₜ k aₜ)ₖ` are contractions of Hilbert `A`-modules.
 
-For a commutative unital target `B`, the Gelfand transform reduces the norm of
-`⟪w, uₘ(x) v⟫ ∈ B` to its values under characters `χ`, and `χ ∘ u` is a bounded functional, whose
-cb norm is its norm by `ContinuousLinearMap.cbNorm_toLinearMap`. A nonunital target embeds
-isometrically in its unitization, which is commutative and unital.
-
 ## References
 
 * R. R. Smith, *Completely bounded maps between C⋆-algebras*, J. London Math. Soc. (2) 27
   (1983), Theorem 2.10.
-* V. Paulsen, *Completely Bounded Maps and Operator Algebras*, Chapters 3 and 8.
+* V. Paulsen, *Completely Bounded Maps and Operator Algebras*, Chapter 8.
 -/
 
 public section
@@ -176,83 +163,3 @@ theorem cbNorm_eq_opNorm_level {ι : Type*} [Fintype ι] {u : A →ₗ[ℂ] CSta
 end Smith
 
 end LinearMap
-
-namespace ContinuousLinearMap
-
-variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-
-/-- The amplifications of a bounded map into a commutative unital C⋆-algebra are bounded by its
-norm. -/
-private theorem norm_map_le_opNorm_mul_of_unital {B : Type*} [CommCStarAlgebra B] [PartialOrder B]
-    [StarOrderedRing B] (u : A →L[ℂ] B) {κ : Type*} [Fintype κ]
-    (x : CStarMatrix κ κ A) : ‖x.map (u : A →ₗ[ℂ] B)‖ ≤ ‖u‖ * ‖x‖ := by
-  refine (CStarMatrix.norm_le_of_forall_inner_le (M := x.map (u : A →ₗ[ℂ] B))
-    (C := ‖u‖₊ * ‖x‖₊) fun v w => ?_).trans_eq (by rw [NNReal.coe_mul, coe_nnNorm, coe_nnNorm])
-  rw [← (AddMonoidHomClass.isometry_iff_norm _).mp (gelfandTransform_isometry B),
-    ContinuousMap.norm_le _ (by positivity)]
-  intro χ
-  rw [WeakDual.gelfandTransform_apply_apply]
-  let ψ : A →L[ℂ] ℂ := (WeakDual.toStrongDual (χ : WeakDual ℂ B)).comp u
-  have hχ (b : B) : ‖χ b‖ ≤ ‖b‖ := by
-    simpa using (WeakDual.toStrongDual (χ : WeakDual ℂ B)).le_of_opNorm_le
-      (WeakDual.CharacterSpace.norm_toStrongDual_le_one χ) b
-  have hψ : ‖ψ‖ ≤ ‖u‖ := (opNorm_comp_le _ _).trans
-    (mul_le_of_le_one_left (norm_nonneg _) (WeakDual.CharacterSpace.norm_toStrongDual_le_one χ))
-  have hvec (v : C⋆ᵐᵒᵈ(B, κ → B)) : ‖(equiv ℂ (κ → ℂ)).symm fun i => χ (v i)‖ ≤ ‖v‖ := by
-    rw [← pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero, pi_norm_sq,
-      pi_norm_sq]
-    simp only [equiv_symm_pi_apply, inner_def, ← map_star χ, ← map_mul, ← map_sum]
-    exact hχ _
-  have key : χ ⟪w, CStarMatrix.toCLM (x.map (u : A →ₗ[ℂ] B)) v⟫_B =
-      ⟪(equiv ℂ (κ → ℂ)).symm fun i => χ (w i),
-        CStarMatrix.toCLM (x.map (ψ : A →ₗ[ℂ] ℂ)) ((equiv ℂ (κ → ℂ)).symm fun i => χ (v i))⟫_ℂ := by
-    simp [pi_inner, CStarMatrix.toCLM_apply_eq_sum, inner_def, map_sum, map_mul, map_star, ψ]
-  rw [key]
-  refine (norm_inner_le _).trans ?_
-  calc _ ≤ ‖w‖ * (‖x.map (ψ : A →ₗ[ℂ] ℂ)‖ * ‖v‖) := by
-        gcongr
-        · exact hvec w
-        · exact ((CStarMatrix.toCLM (x.map (ψ : A →ₗ[ℂ] ℂ))).le_opNorm _).trans
-            (mul_le_mul_of_nonneg_left (hvec v) (norm_nonneg _))
-    _ ≤ ‖w‖ * ((‖u‖ * ‖x‖) * ‖v‖) := by
-        gcongr
-        refine (LinearMap.norm_map_le_cbNorm_mul (isCompletelyBounded_toLinearMap ψ) x).trans ?_
-        rw [cbNorm_toLinearMap]
-        gcongr
-    _ = _ := by rw [NNReal.coe_mul, coe_nnNorm, coe_nnNorm]; ring
-
-variable {B : Type*} [NonUnitalCommCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
-
-/-- The amplifications of a bounded map into a commutative C⋆-algebra are bounded by its norm:
-compose with the isometric inclusion into the unitization. -/
-private theorem norm_map_le_opNorm_mul_of_comm (u : A →L[ℂ] B) {κ : Type*} [Fintype κ]
-    (x : CStarMatrix κ κ A) : ‖x.map (u : A →ₗ[ℂ] B)‖ ≤ ‖u‖ * ‖x‖ := by
-  let ι := Unitization.inrNonUnitalStarAlgHom ℂ B
-  let u' : A →L[ℂ] Unitization ℂ B := ((ι : B →ₗ[ℂ] Unitization ℂ B) ∘ₗ u).mkContinuous ‖u‖
-    fun a => by simpa [ι, Unitization.norm_inr] using u.le_opNorm a
-  have hι : Function.Injective (CStarMatrix.mapₙₐ (n := κ) ι) := fun M N h => by
-    ext i j
-    exact Unitization.inr_injective (congr($h i j))
-  have hmap : CStarMatrix.mapₙₐ ι (x.map (u : A →ₗ[ℂ] B)) =
-      x.map (u' : A →ₗ[ℂ] Unitization ℂ B) := by
-    refine CStarMatrix.ext fun i j => ?_
-    simp [u', ι, CStarMatrix.mapₙₐ_apply]
-  rw [← NonUnitalStarAlgHom.norm_map _ hι, hmap]
-  exact (norm_map_le_opNorm_mul_of_unital u' x).trans (by
-    gcongr
-    exact LinearMap.mkContinuous_norm_le _ (norm_nonneg u) _)
-
-/-- A bounded linear map into a commutative C⋆-algebra is completely bounded. -/
-theorem isCompletelyBounded_toLinearMap_of_comm (u : A →L[ℂ] B) :
-    (u : A →ₗ[ℂ] B).IsCompletelyBounded :=
-  LinearMap.isCompletelyBounded_iff_exists_bound.mpr
-    ⟨‖u‖, fun _ x => norm_map_le_opNorm_mul_of_comm u x⟩
-
-/-- **A bounded linear map into a commutative C⋆-algebra has cb norm equal to its norm.** -/
-theorem cbNorm_toLinearMap_of_comm (u : A →L[ℂ] B) : (u : A →ₗ[ℂ] B).cbNorm = ‖u‖ :=
-  le_antisymm
-    (LinearMap.cbNorm_le_of_bound (norm_nonneg u) fun _ x => norm_map_le_opNorm_mul_of_comm u x) <|
-    u.opNorm_le_bound (LinearMap.cbNorm_nonneg _) fun a =>
-      LinearMap.norm_apply_le_cbNorm_mul (isCompletelyBounded_toLinearMap_of_comm u) a
-
-end ContinuousLinearMap
