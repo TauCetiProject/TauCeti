@@ -101,13 +101,6 @@ theorem isUnitary_ofBoundedExp (A : H →L[ℂ] H) (hA : IsSelfAdjoint A) :
     simpa only [Complex.coe_smul] using hu0
   exact (NormedSpace.exp ((t : ℂ) • (Complex.I • A))).inner_map_map_of_mem_unitary hu x y
 
-/-- Imaginary-time exponentials of bounded self-adjoint operators have norm at most one. -/
-theorem norm_exp_smul_I_le (A : H →L[ℂ] H) (hA : IsSelfAdjoint A) (t : ℝ) :
-    ‖NormedSpace.exp (t • (Complex.I • A))‖ ≤ 1 := by
-  have h := (isUnitary_ofBoundedExp A hA).opNorm_le_one t
-  rw [ofBoundedExp_apply, ContinuousLinearMap.norm_restrictScalars] at h
-  simpa only [Complex.coe_smul] using h
-
 end StronglyContinuousGroup
 
 end

@@ -80,10 +80,15 @@ theorem _root_.IsSelfAdjoint.yosida_exponential_uniform_cauchy
     (hε : 0 < ε) : ∃ N : ℕ+, ∀ m ≥ N, ∀ n ≥ N, ∀ t : ℝ, |t| ≤ R →
       ‖NormedSpace.exp (t • (I • A.symmetricYosidaApproximation (m : ℝ))) x -
         NormedSpace.exp (t • (I • A.symmetricYosidaApproximation (n : ℝ))) x‖ < ε := by
+  have hnorm (n : ℕ+) (t : ℝ) :
+      ‖exp (t • (I • A.symmetricYosidaApproximation (n : ℝ)))‖ ≤ 1 := by
+    have h := (Semigroups.StronglyContinuousGroup.isUnitary_ofBoundedExp _
+      (hA.isSelfAdjoint_symmetricYosidaApproximation (n : ℝ))).opNorm_le_one t
+    rw [Semigroups.StronglyContinuousGroup.ofBoundedExp_apply,
+      ContinuousLinearMap.norm_restrictScalars] at h
+    simpa only [Complex.coe_smul] using h
   have hbound : ∀ᶠ n : ℕ+ in atTop, ∀ t ∈ {t : ℝ | |t| ≤ R}, ‖yosidaFlow A n t‖ ≤ 1 := by
-    exact Filter.Eventually.of_forall fun n t _ =>
-      Semigroups.StronglyContinuousGroup.norm_exp_smul_I_le _
-        (hA.isSelfAdjoint_symmetricYosidaApproximation (n : ℝ)) t
+    exact Filter.Eventually.of_forall fun n t _ => hnorm n t
   have hdomain : ∀ y ∈ (A.domain : Set H),
       UniformCauchySeqOn (fun n t => yosidaFlow A n t y) atTop {t : ℝ | |t| ≤ R} := by
     intro y hy
@@ -96,9 +101,7 @@ theorem _root_.IsSelfAdjoint.yosida_exponential_uniform_cauchy
         ((hA.commute_symmetricYosidaApproximation (p.1 : ℝ) (p.2 : ℝ)).smul_left I).smul_right I)
       (hconv.const_smul I)
       (Filter.Eventually.of_forall fun n t _ s _ => by
-        simpa only [Complex.coe_smul] using!
-          Semigroups.StronglyContinuousGroup.norm_exp_smul_I_le _
-            (hA.isSelfAdjoint_symmetricYosidaApproximation (n : ℝ)) (s * t))
+        simpa only [Complex.coe_smul] using! hnorm n (s * t))
       (fun _ ht => ht)
     simpa only [yosidaFlow, Complex.coe_smul] using! h
   have hu := ContinuousLinearMap.uniformCauchySeqOn_apply_of_dense
