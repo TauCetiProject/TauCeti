@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Lemmas
+import Mathlib.Algebra.CharP.Basic
 
 /-!
 # Natural casts and `p`-power maps in exponential characteristic `p`
@@ -16,7 +17,8 @@ additive monoid with one in which `1 ≠ 0` some prime, `2` or `3`, has a nonzer
 one picks a prime `ℓ` different from the characteristic of a field. In a nontrivial ring only the
 characteristic can vanish among the primes, so there are arbitrarily large primes with nonzero
 cast. Without zero divisors, `4` is nonzero whenever `2` is. A natural number prime to the
-characteristic of a nontrivial ring is nonzero.
+characteristic of a nontrivial ring is nonzero. A ring map from a ring of prime characteristic `p`
+to a nontrivial ring shows that the target has characteristic `p` as well.
 
 In a ring of exponential characteristic `p`, raising to the power `q = p ^ n` commutes with
 negation. Mathlib records the special case `(-1) ^ q = -1` (`neg_one_pow_expChar_pow`) and the
@@ -35,6 +37,8 @@ law.
 * `TauCeti.four_ne_zero_of_two_ne_zero`: without zero divisors, `2 ≠ 0` implies `4 ≠ 0`.
 * `TauCeti.ne_zero_of_coprime_ringChar`: a natural number prime to the characteristic of a
   nontrivial ring is nonzero.
+* `TauCeti.charP_of_ringHom_of_prime`: a nontrivial ring receiving a ring map from a ring of prime
+  characteristic `p` has characteristic `p`.
 * `TauCeti.neg_pow_expChar_pow`: `(-x) ^ p ^ n = -x ^ p ^ n`.
 -/
 
@@ -72,6 +76,14 @@ theorem ne_zero_of_coprime_ringChar {R : Type*} [NonAssocSemiring R] [Nontrivial
     (hm : m.Coprime (ringChar R)) : m ≠ 0 := by
   rintro rfl
   exact CharP.ringChar_ne_one (Nat.coprime_zero_left _ |>.1 hm)
+
+/-- A nontrivial ring receiving a ring map from a ring of prime characteristic `p` has
+characteristic `p`: the image of `p` vanishes, and only the characteristic can vanish among the
+primes. -/
+theorem charP_of_ringHom_of_prime {R S : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
+    [Nontrivial S] (f : R →+* S) (p : ℕ) [Fact p.Prime] [CharP R p] : CharP S p :=
+  (CharP.charP_iff_prime_eq_zero Fact.out).2 <| by
+    rw [← map_natCast f, CharP.cast_eq_zero, map_zero]
 
 /-- **Arbitrarily large primes have nonzero cast** in a nontrivial ring: a prime with zero cast is
 divisible by the characteristic, so it is the characteristic. -/

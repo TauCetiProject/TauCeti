@@ -12,6 +12,9 @@ import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Algebra.Algebra.ZMod
 import Mathlib.FieldTheory.IsPerfectClosure
 import Mathlib.FieldTheory.PerfectClosure
+import TauCeti.Algebra.CharP.Frobenius.Basic
+import TauCeti.Algebra.CharP.Frobenius.Localization
+import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.RingTheory.AdicCompletion.Flat.Basic
 import TauCeti.RingTheory.AdicCompletion.Flat.Frobenius
 import TauCeti.RingTheory.AdicCompletion.Noetherian
@@ -91,10 +94,10 @@ private theorem isRegularLocalRing_of_flat_frobenius_of_isAdicComplete [IsLocalR
     IsRegularLocalRing R := by
   -- A Cohen presentation `φ : κ⟦x₁, …, x_e⟧ → R` over the residue field `κ`.
   let := ZMod.algebra R p
-  obtain ⟨s, -, φ, hφ, -, -⟩ :=
+  obtain ⟨-, -, φ, hφ, -, -⟩ :=
     exists_surjective_mvPowerSeries_spanFinrank (ZMod p) R (maximalIdeal R).fg_of_isNoetherianRing
   let P₀ := MvPowerSeries (Fin (maximalIdeal R).spanFinrank) (ResidueField R)
-  have : CharP (ResidueField R) p := (RingHom.charP_iff_charP s p).2 inferInstance
+  have : CharP (ResidueField R) p := charP_of_ringHom_of_prime (residue R) p
   have : CharP P₀ p := charP_of_injective_algebraMap (algebraMap (ResidueField R) P₀).injective p
   -- The perfection of `φ` is a surjection onto `R_perf` from the perfection of a regular ring.
   let f : PerfectClosure P₀ p →+* PerfectClosure R p :=
@@ -126,7 +129,7 @@ theorem IsRegularLocalRing.of_flat_frobenius [IsLocalRing R] [IsNoetherianRing R
     (h : (frobenius R p).Flat) : IsRegularLocalRing R := by
   -- Pass to the completion, which is faithfully flat over `R` and has flat Frobenius.
   have : CharP (AdicCompletion (maximalIdeal R) R) p :=
-    (expChar_prime_iff (R := AdicCompletion (maximalIdeal R) R) hp.out).1 inferInstance
+    charP_of_ringHom_of_prime (algebraMap R _) p
   have := isRegularLocalRing_of_flat_frobenius_of_isAdicComplete p
     (AdicCompletion.flat_frobenius p h)
   exact IsRegularLocalRing.of_faithfullyFlat (S := AdicCompletion (maximalIdeal R) R)
@@ -137,7 +140,6 @@ Frobenius endomorphism is flat is a regular ring (Bhatt–Scholze, Corollary 11.
 theorem IsRegularRing.of_flat_frobenius [IsNoetherianRing R] (h : (frobenius R p).Flat) :
     IsRegularRing R := by
   refine isRegularRing_iff.mpr fun J hJ ↦ ?_
-  have := charP_localization_atPrime p J
   have h' := h.localRingHom J J (hJ.comap_frobenius p).symm
   rw [localRingHom_frobenius] at h'
   exact IsRegularLocalRing.of_flat_frobenius p h'
