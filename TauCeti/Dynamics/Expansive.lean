@@ -11,8 +11,9 @@ public import Mathlib.GroupTheory.GroupAction.IterateAct
 public import Mathlib.Topology.UniformSpace.Equiv
 public import TauCeti.Topology.MetricSpace.Isometry.Group
 public import TauCeti.Topology.MetricSpace.Pseudo.Basic
-import Mathlib.Analysis.Real.Cardinality
 import Mathlib.Topology.Separation.Connected
+import TauCeti.Algebra.AddCircle
+import TauCeti.Topology.Homeomorph.Semiconj
 
 /-!
 # Expansive maps and actions
@@ -105,7 +106,7 @@ theorem IsExpansiveAction.subMulAction (h : IsExpansiveAction M X) (S : SubMulAc
 
 /-- An expansive `M`-action stays expansive for any `N`-action through a map `f : M → N` with
 `f m • x = m • x`: every `M`-orbit lies in an `N`-orbit. -/
-theorem IsExpansiveAction.of_compHom {N : Type*} [SMul N X] (h : IsExpansiveAction M X)
+theorem IsExpansiveAction.of_smul_eq {N : Type*} [SMul N X] (h : IsExpansiveAction M X)
     (f : M → N) (hf : ∀ (m : M) (x : X), f m • x = m • x) : IsExpansiveAction N X := by
   obtain ⟨U, hU, hsep⟩ := isExpansiveAction_iff.1 h
   exact isExpansiveAction_iff.2
@@ -211,13 +212,7 @@ variable {X : Type*} [PseudoMetricSpace X]
 distinct points are more than `δ` apart under some power of `T` in the group `X ≃ₜ X`. -/
 theorem isExpansive_toEquiv_iff {T : X ≃ₜ X} {δ : ℝ} :
     IsExpansive T.toEquiv δ ↔ ∀ x y : X, x ≠ y → ∃ n : ℤ, δ < dist ((T ^ n) x) ((T ^ n) y) := by
-  let φ : (X ≃ₜ X) →* Equiv.Perm X :=
-    { toFun := Homeomorph.toEquiv
-      map_one' := by ext; simp
-      map_mul' := fun _ _ ↦ by ext; simp }
-  -- `φ` is `Homeomorph.toEquiv`, so `φ S` and `S` have the same coercion by definition.
-  have hpow (n : ℤ) : ⇑(T.toEquiv ^ n) = ⇑(T ^ n) := congrArg DFunLike.coe (map_zpow φ T n).symm
-  simp only [TauCeti.isExpansive_iff, hpow]
+  simp only [TauCeti.isExpansive_iff, Homeomorph.coe_zpow]
 
 end Homeomorph
 
@@ -253,16 +248,11 @@ open TauCeti
 /-- No rotation of the circle `AddCircle p` is expansive with any constant `δ > 0`. -/
 theorem not_isExpansive_addRight {p : ℝ} (a : AddCircle p) {δ : ℝ} (hδ : 0 < δ) :
     ¬ IsExpansive (Equiv.addRight a) δ := by
-  -- `AddCircle p` is nontrivial: otherwise `ℝ` would be the countable set `ℤ • p`.
-  have : Nontrivial (AddCircle p) := by
-    by_contra h
-    rw [not_nontrivial_iff_subsingleton] at h
-    refine Cardinal.not_countable_real ((Set.countable_range fun n : ℤ ↦ n • p).mono fun x _ ↦ ?_)
-    exact (AddCircle.coe_eq_zero_iff p).1 (Subsingleton.elim _ _)
   have hT : Isometry (Equiv.addRight a) := by
     rw [← IsometryEquiv.addRight_toEquiv, IsometryEquiv.coe_toEquiv]
     exact (IsometryEquiv.addRight a).isometry
-  -- `AddCircle p` is connected and T1, so its nontriviality leaves no point isolated.
+  -- `AddCircle p` is connected, T1 and infinite (`AddCircle.infinite`), hence nontrivial, so no
+  -- point is isolated.
   exact hT.not_isExpansive (x := 0) inferInstance hδ
 
 end AddCircle
