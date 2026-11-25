@@ -9,67 +9,37 @@ public import TauCeti.RingTheory.NovikovModule.Sewing
 public import TauCeti.Geometry.Symplectic.Floer.Cap.Unit
 public import TauCeti.Geometry.Symplectic.Floer.Cap.Comparison
 public import TauCeti.Geometry.Symplectic.Floer.Cap.Aspherical
+import TauCeti.Geometry.Symplectic.Floer.Grading
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
 
 /-!
 # Operator readout and coevaluation sewing of class-indexed Floer count functionals
 
-Counts of rigid moduli spaces in Hamiltonian Floer theory with ordered input ends in `X` and an
-output orbit in `CF₀` naturally define functionals on `X ⊗ CF₀^∨`, indexed class by class in a
-common class group `G` mapping to the period group `Γ = PeriodGroup ω c` by an area-preserving
-homomorphism `q`. In `TauCeti.RingTheory.NovikovModule.Readout` and
-`TauCeti.RingTheory.NovikovModule.Sewing`, functional kernels on generators are converted
-to operator kernels by the graded bidual sign involution `NovikovModule.kernelReadout`, and broken
-configurations are contracted along `1 ↦ ∑ₚ (-1)^|p| p^∨ ⊗ p` by `NovikovModule.functionalSew`.
+Counts of rigid moduli spaces in Hamiltonian Floer theory with input ends in `X` and an output orbit
+in `CF₀` define functionals on `X ⊗ CF₀^∨`, indexed class by class in `G` over `Γ = PeriodGroup ω c`
+via an area-preserving homomorphism `q`. Recapping an orbit `k` by `γ ∈ Γ` shifts `μ₀` by the even
+integer `2 c₁(γ)`, so the graded bidual sign `(-1)^(n - μ₀(k, D₀))` depends only on `k` and agrees
+with `(-1)^(n - μ₀(k, r₀ k))` at any reference cap `r₀ k`
+(`TauCeti.Floer.negOnePowCast_cochain_eq_ref`).
+Operator readout therefore acts directly on `G`-indexed series (`TauCeti.Floer.seriesReadout`) and
+agrees on all capped generators with `NovikovModule.combinationReadout` and
+`NovikovModule.kernelReadout`:
 
-On capped generators `p = ⟨k, D₀⟩` of an orbit `k`, recapping by `γ ∈ Γ` shifts the grading `μ₀`
-by the even integer `2 c₁(γ)`, so the readout sign `(-1)^(n - μ₀(k, D₀))` depends only on the
-orbit `k` and agrees with `(-1)^(n - μ₀(k, r₀ k))` at any reference cap `r₀ k`
-(`TauCeti.Floer.negOnePowCast_cochain_eq_ref`). Operator readout therefore acts directly on
-`G`-indexed generating series (`TauCeti.Floer.seriesReadout`), and this class-level involution
-agrees on all capped generators with `NovikovModule.combinationReadout` on cap combinations and
-with `NovikovModule.kernelReadout` on `mapKernelOfMatrix` and `kernelOfMatrix`
-(`TauCeti.Floer.combinationReadout_coordinates_symm_coefficientComparison`,
-`TauCeti.Floer.kernelReadout_mapKernelOfMatrix_coefficientComparison`,
-`TauCeti.Floer.kernelReadout_kernelOfMatrix_coefficientComparison`). In particular:
-
-* **Invariance under change of reference caps.** Replacing `r₀ k` by `γ k +ᵥ r₀ k` leaves
-  `seriesReadout` unchanged (`TauCeti.Floer.seriesReadout_vadd`), so shifting reference caps by
-  lifts `gₗ` and multiplying functional series by `q^(g₀ - g₁ - g₂)` leaves the readout product on
-  completed capped modules unchanged
-  (`TauCeti.Floer.novikovProductOfMatrix_seriesReadout_vadd`).
-* **Unit cap functionals.** Under the PSS plane rigidity condition `μ₁(r₁ i) - 2 c₁(q A) = n`,
-  every orbit carrying a nonzero count has even cochain degree `n - μ₁(r₁ i) = -2 c₁(q A)`, so the
-  combination readout of the unit cap functional is the series itself
-  (`TauCeti.Floer.seriesReadout_eq_self_of_unit_index`).
-* **Class-indexed coevaluation sewing and functional boundaries.** Coevaluation contraction of
-  class-indexed functionals (`TauCeti.Floer.seriesSew`, `TauCeti.Floer.seriesSewPair`) intertwines
-  `seriesReadout` with matrix sum-product composition (`TauCeti.Floer.seriesSew_seriesReadout`,
-  `TauCeti.Floer.seriesReadout_seriesSew`,
-  `TauCeti.Floer.seriesReadout_seriesSewPair_of_index`), with `TauCeti.Floer.seriesEval` as
-  two-sided identity readout. The class-indexed Koszul boundary (`TauCeti.Floer.seriesBoundary`)
-  intertwines `seriesReadout` with the Hom differential whenever nonzero counts have fixed degree
-  parity, which the Floer Fredholm index condition supplies automatically even when `c₁ ≠ 0`
-  because `2 c₁(q A)` is even (`TauCeti.Floer.seriesBoundary_seriesReadout_of_index`).
-* **Capped Floer operator equations from functional boundaries.** Combining these identities with
-  the capped theorems of `TauCeti.Geometry.Symplectic.Floer.Cap.Product`,
-  `TauCeti.Geometry.Symplectic.Floer.Cap.Unit`, and
-  `TauCeti.Geometry.Symplectic.Floer.Cap.Comparison` yields the Leibniz rule
-  (`TauCeti.Floer.novikovMapOfMatrix_novikovProductOfMatrix_seriesReadout_eq_add`), left and right
-  unit homotopies
-  (`TauCeti.Floer.novikovProductOfMatrix_seriesReadout_sub_novikovMapOfMatrix_right`,
-  `TauCeti.Floer.novikovProductOfMatrix_seriesReadout_sub_novikovMapOfMatrix_left`), associativity
-  homotopy (`TauCeti.Floer.novikovProductOfMatrix_seriesReadout_assoc_sub_eq_add`), and
-  multiplicative PSS comparisons
-  (`novikovMapOfMatrix_novikovProductOfMatrix_seriesReadout_sub_novikovProductOfMatrix`,
-  `novikovProductOfMatrix_seriesReadout_sub_novikovMapOfMatrix_novikovProductOfMatrix`) directly
-  from boundary identities of class-indexed count functionals, without post-hoc sign adjustments.
-* **Classical odd-degree sign check.** At an output orbit of odd cochain degree, `seriesReadout`
-  negates the count functional (`TauCeti.Floer.seriesReadout_eq_neg_of_odd`). On a trivial period
-  group, a closed skew-symmetric count functional on two degree-`1` generators into a degree-`2`
-  generator reads out to a nonvanishing skew-commutative product `e₀ ⋆ e₁ = -(e₁ ⋆ e₀)`
-  (`TauCeti.Floer.novikovProductOfMatrix_seriesReadout_skew_of_subsingleton`).
+* **Reference-cap invariance and unit caps:** `seriesReadout` is invariant under translating
+  reference caps (`seriesReadout_vadd`, `novikovProductOfMatrix_seriesReadout_vadd`) and fixes any
+  PSS unit cap functional satisfying `μ₁(r₁ i) - 2 c₁(q A) = n`
+  (`seriesReadout_eq_self_of_unit_index`).
+* **Class-indexed sewing and boundaries:** `seriesSew` and `seriesSewPair` intertwine
+  `seriesReadout` with matrix composition (`seriesSew_seriesReadout`, `seriesReadout_seriesSew`,
+  `seriesReadout_seriesSewPair_of_index`), with `seriesEval` as identity readout; `seriesBoundary`
+  intertwines `seriesReadout` with the Hom differential under the Floer Fredholm index condition
+  (`seriesBoundary_seriesReadout_of_index`), even when `c₁ ≠ 0`.
+* **Capped Floer identities and classical sign check:** Combining readout with `Cap.Product`,
+  `Cap.Unit`, and `Cap.Comparison` yields the capped Leibniz rule, left/right unit homotopies,
+  associativity homotopy, and multiplicative PSS comparisons directly from count-functional
+  boundaries, together with the odd-degree skew-commutativity check
+  `novikovProductOfMatrix_seriesReadout_skew_of_subsingleton`.
 
 ## References
 
@@ -94,15 +64,14 @@ variable {R S : Type*} [CommRing R] [AddCommGroup S] {ω : S →+ ℝ} {c : S �
 private theorem exists_mem_support_of_ne_zero {f : NovikovSeries R G ωG} (hf : f ≠ 0) :
     ∃ A, A ∈ f.support := by
   by_contra! h
-  exact hf (NovikovSeries.ext fun A => not_ne_iff.1 (mt mem_support.2 (h A)))
+  exact hf (NovikovSeries.ext fun A => not_ne_iff.mp (mt mem_support.mpr (h A)))
 
 section SeriesReadout
 
 variable {ι₁ ι₂ ι₀ : Type*} {P₁ : ι₁ → Type*} {P₂ : ι₂ → Type*} {P₀ : ι₀ → Type*}
 
-/-- **Orbit invariance of the readout sign.** Because recapping shifts `μ₀` by the even integer
-`2 c₁(γ)`, the bidual readout sign `(-1)^(n - μ₀(k, D₀))` at any cap `D₀` equals its value at the
-reference cap `r₀ k`. -/
+/-- **Orbit invariance of the readout sign.** Recapping shifts `μ₀` by `2 c₁(γ)`, so
+`(-1)^(n - μ₀(k, D₀))` equals `(-1)^(n - μ₀(k, r₀ k))` at any reference cap `r₀ k`. -/
 theorem negOnePowCast_cochain_eq_ref [∀ k, AddTorsor (PeriodGroup ω c) (P₀ k)] (r₀ : ∀ k, P₀ k)
     {μ₀ : (Σ k, P₀ k) → ℤ}
     (hμ₀ : ∀ k γ (D : P₀ k), μ₀ ⟨k, γ +ᵥ D⟩ = degree ω c γ + μ₀ ⟨k, D⟩)
@@ -110,13 +79,11 @@ theorem negOnePowCast_cochain_eq_ref [∀ k, AddTorsor (PeriodGroup ω c) (P₀ 
     negOnePowCast R (n - μ₀ ⟨k, D₀⟩) = negOnePowCast R (n - μ₀ ⟨k, r₀ k⟩) := by
   have hd : n - μ₀ ⟨k, D₀⟩ =
       (n - μ₀ ⟨k, (D₀ -ᵥ r₀ k) +ᵥ r₀ k⟩ - (n - μ₀ ⟨k, r₀ k⟩)) + (n - μ₀ ⟨k, r₀ k⟩) := by
-    rw [vsub_vadd]
-    ring
+    rw [vsub_vadd]; ring
   rw [hd, negOnePowCast_add, negOnePowCast_even (even_cochain_vadd_sub hμ₀ n k _ _), one_mul]
 
-/-- **Operator readout of class-indexed count functionals.** Multiplying the generating series at
-output orbit `k` by `(-1)^(n - μ₀(k, r₀ k))` converts a functional series on `X ⊗ CF₀^∨` into the
-corresponding operator series into `CF₀` (and conversely). -/
+/-- **Operator readout of class-indexed count functionals**, multiplying at output orbit `k` by
+`(-1)^(n - μ₀(k, r₀ k))`. -/
 def seriesReadout (r₀ : ∀ k, P₀ k) (μ₀ : (Σ k, P₀ k) → ℤ) (n : ℤ)
     (Ψ : ι₀ → NovikovSeries R G ωG) (k : ι₀) : NovikovSeries R G ωG :=
   negOnePowCast R (n - μ₀ ⟨k, r₀ k⟩) • Ψ k
@@ -124,43 +91,35 @@ def seriesReadout (r₀ : ∀ k, P₀ k) (μ₀ : (Σ k, P₀ k) → ℤ) (n : �
 /-- A value of `TauCeti.Floer.seriesReadout` at an output orbit. -/
 theorem seriesReadout_apply (r₀ : ∀ k, P₀ k) (μ₀ : (Σ k, P₀ k) → ℤ) (n : ℤ)
     (Ψ : ι₀ → NovikovSeries R G ωG) (k : ι₀) :
-    seriesReadout r₀ μ₀ n Ψ k = negOnePowCast R (n - μ₀ ⟨k, r₀ k⟩) • Ψ k :=
-  (rfl)
+    seriesReadout r₀ μ₀ n Ψ k = negOnePowCast R (n - μ₀ ⟨k, r₀ k⟩) • Ψ k := (rfl)
 
 /-- Class-indexed operator readout is an involution. -/
 @[simp]
 theorem seriesReadout_seriesReadout (r₀ : ∀ k, P₀ k) (μ₀ : (Σ k, P₀ k) → ℤ) (n : ℤ)
     (Ψ : ι₀ → NovikovSeries R G ωG) :
-    seriesReadout r₀ μ₀ n (seriesReadout r₀ μ₀ n Ψ) = Ψ := by
-  funext k
-  simp [seriesReadout_apply]
+    seriesReadout r₀ μ₀ n (seriesReadout r₀ μ₀ n Ψ) = Ψ := by funext k; simp [seriesReadout_apply]
 
 @[simp]
 theorem seriesReadout_zero (r₀ : ∀ k, P₀ k) (μ₀ : (Σ k, P₀ k) → ℤ) (n : ℤ) :
     seriesReadout r₀ μ₀ n (0 : ι₀ → NovikovSeries R G ωG) = 0 := by
-  funext k
-  simp [seriesReadout_apply]
+  funext k; simp [seriesReadout_apply]
 
 @[simp]
 theorem seriesReadout_add (r₀ : ∀ k, P₀ k) (μ₀ : (Σ k, P₀ k) → ℤ) (n : ℤ)
     (Ψ Ψ' : ι₀ → NovikovSeries R G ωG) :
     seriesReadout r₀ μ₀ n (Ψ + Ψ') = seriesReadout r₀ μ₀ n Ψ + seriesReadout r₀ μ₀ n Ψ' := by
-  funext k
-  simp [seriesReadout_apply, smul_add]
+  funext k; simp [seriesReadout_apply, smul_add]
 
 @[simp]
 theorem seriesReadout_neg (r₀ : ∀ k, P₀ k) (μ₀ : (Σ k, P₀ k) → ℤ) (n : ℤ)
     (Ψ : ι₀ → NovikovSeries R G ωG) :
-    seriesReadout r₀ μ₀ n (-Ψ) = -seriesReadout r₀ μ₀ n Ψ := by
-  funext k
-  simp [seriesReadout_apply]
+    seriesReadout r₀ μ₀ n (-Ψ) = -seriesReadout r₀ μ₀ n Ψ := by funext k; simp [seriesReadout_apply]
 
 @[simp]
 theorem seriesReadout_sub (r₀ : ∀ k, P₀ k) (μ₀ : (Σ k, P₀ k) → ℤ) (n : ℤ)
     (Ψ Ψ' : ι₀ → NovikovSeries R G ωG) :
     seriesReadout r₀ μ₀ n (Ψ - Ψ') = seriesReadout r₀ μ₀ n Ψ - seriesReadout r₀ μ₀ n Ψ' := by
-  funext k
-  simp [seriesReadout_apply, smul_sub]
+  funext k; simp [seriesReadout_apply, smul_sub]
 
 @[simp]
 theorem seriesReadout_sub_apply (r₀ : ∀ k, P₀ k) (μ₀ : (Σ k, P₀ k) → ℤ) (n : ℤ)
@@ -169,22 +128,19 @@ theorem seriesReadout_sub_apply (r₀ : ∀ k, P₀ k) (μ₀ : (Σ k, P₀ k) �
       seriesReadout r₀ μ₀ n Ψ k - seriesReadout r₀ μ₀ n Ψ' k := by
   simp [seriesReadout_apply, smul_sub]
 
-/-- Operator readout preserves class supports, so energy bounds and Fredholm index conditions pass
-unchanged between functional series and operator series. -/
+/-- Operator readout preserves class supports. -/
 theorem support_seriesReadout_subset (r₀ : ∀ k, P₀ k) (μ₀ : (Σ k, P₀ k) → ℤ) (n : ℤ)
     (Ψ : ι₀ → NovikovSeries R G ωG) (k : ι₀) :
     (seriesReadout r₀ μ₀ n Ψ k).support ⊆ (Ψ k).support :=
   support_smul_subset _ (Ψ k)
 
-/-- At an output orbit of odd cochain degree, `seriesReadout` negates the count functional,
-distinguishing graded bidual readout from the ungraded transpose whenever `2 • Ψ k ≠ 0`. -/
+/-- At an output orbit of odd cochain degree, `seriesReadout` negates the count functional. -/
 theorem seriesReadout_eq_neg_of_odd (r₀ : ∀ k, P₀ k) (μ₀ : (Σ k, P₀ k) → ℤ) (n : ℤ)
     (Ψ : ι₀ → NovikovSeries R G ωG) {k : ι₀} (hk : Odd (n - μ₀ ⟨k, r₀ k⟩)) :
     seriesReadout r₀ μ₀ n Ψ k = -Ψ k := by
   rw [seriesReadout_apply, negOnePowCast_odd hk, neg_one_smul]
 
-/-- **Change of reference caps preserves `seriesReadout`.** Translating each reference cap `r₀ k`
-by a period `γ k` does not alter the readout sign. -/
+/-- **Change of reference caps preserves `seriesReadout`.** -/
 theorem seriesReadout_vadd [∀ k, AddTorsor (PeriodGroup ω c) (P₀ k)] (r₀ : ∀ k, P₀ k)
     {μ₀ : (Σ k, P₀ k) → ℤ}
     (hμ₀ : ∀ k γ (D : P₀ k), μ₀ ⟨k, γ +ᵥ D⟩ = degree ω c γ + μ₀ ⟨k, D⟩)
@@ -194,9 +150,8 @@ theorem seriesReadout_vadd [∀ k, AddTorsor (PeriodGroup ω c) (P₀ k)] (r₀ 
   rw [seriesReadout_apply, seriesReadout_apply,
     negOnePowCast_cochain_eq_ref r₀ hμ₀ n k (γ k +ᵥ r₀ k)]
 
-/-- **Unit cap functionals equal their own combination readout.** Under the PSS plane rigidity
-condition `μ₁(r₁ i) - 2 c₁(q A) = n`, every orbit with a nonzero count has even cochain degree
-`n - μ₁(r₁ i) = -2 c₁(q A)`, so `seriesReadout` fixes `Ε`. -/
+/-- **Unit cap functionals equal their own combination readout** when
+`μ₁(r₁ i) - 2 c₁(q A) = n`. -/
 theorem seriesReadout_eq_self_of_unit_index (q : G →+ PeriodGroup ω c) (r₁ : ∀ i, P₁ i)
     (μ₁ : (Σ i, P₁ i) → ℤ) (n : ℤ) {Ε : ι₁ → NovikovSeries R G ωG}
     (hΕ : ∀ i, ∀ A ∈ (Ε i).support, μ₁ ⟨i, r₁ i⟩ - degree ω c (q A) = n) :
@@ -205,11 +160,8 @@ theorem seriesReadout_eq_self_of_unit_index (q : G →+ PeriodGroup ω c) (r₁ 
   by_cases hi : Ε i = 0
   · simp [seriesReadout_apply, hi]
   · obtain ⟨A, hA⟩ := exists_mem_support_of_ne_zero hi
-    have hev : Even (n - μ₁ ⟨i, r₁ i⟩) := by
-      have hd : n - μ₁ ⟨i, r₁ i⟩ = -degree ω c (q A) := by linarith [hΕ i A hA]
-      rw [hd]
-      exact (even_degree ω c (q A)).neg
-    rw [seriesReadout_apply, negOnePowCast_even hev, one_smul]
+    have hd : n - μ₁ ⟨i, r₁ i⟩ = -degree ω c (q A) := by linarith [hΕ i A hA]
+    rw [seriesReadout_apply, hd, negOnePowCast_even (even_degree ω c (q A)).neg, one_smul]
 
 variable [∀ i, AddTorsor (PeriodGroup ω c) (P₁ i)] [∀ j, AddTorsor (PeriodGroup ω c) (P₂ j)]
   [∀ k, AddTorsor (PeriodGroup ω c) (P₀ k)]
@@ -258,9 +210,8 @@ theorem kernelReadout_kernelOfMatrix_coefficientComparison (n : ℤ)
     kernelReadout (fun p => n - μ₀ p)
         (fun x : (Σ i, P₁ i) × (Σ j, P₂ j) =>
           kernelOfMatrix r₁ r₂ r₀ (fun i j k => coefficientComparison q hq (Ψ i j k)) x.1 x.2) =
-      fun x =>
-        kernelOfMatrix r₁ r₂ r₀
-          (fun i j k => coefficientComparison q hq (seriesReadout r₀ μ₀ n (Ψ i j) k)) x.1 x.2 := by
+      fun x => kernelOfMatrix r₁ r₂ r₀
+        (fun i j k => coefficientComparison q hq (seriesReadout r₀ μ₀ n (Ψ i j) k)) x.1 x.2 := by
   funext ⟨⟨i, D₁⟩, ⟨j, D₂⟩⟩ ⟨k, D₀⟩
   rw [kernelReadout_apply, kernelOfMatrix_apply, kernelOfMatrix_apply,
     negOnePowCast_cochain_eq_ref r₀ hμ₀ n k D₀, seriesReadout_apply, map_negOnePowCast_smul,
@@ -268,10 +219,9 @@ theorem kernelReadout_kernelOfMatrix_coefficientComparison (n : ℤ)
 
 end KernelAgreement
 
-/-- **Change of reference caps for the readout product.** Shifting reference caps to
-`q(gₗ) +ᵥ rₗ` and multiplying functional series by `q^(g₀ - g₁ - g₂)` leaves the operator product
-read out via `seriesReadout` unchanged. -/
-theorem novikovProductOfMatrix_seriesReadout_vadd {G : Type*} [AddCommGroup G] {ωG : G →+ ℝ}
+/-- **Change of reference caps for the readout product.** Shifting reference caps to `q(gₗ) +ᵥ rₗ`
+and multiplying functional series by `q^(g₀ - g₁ - g₂)` preserves the readout product. -/
+theorem novikovProductOfMatrix_seriesReadout_vadd {G : Type*} [AddGroup G] {ωG : G →+ ℝ}
     [Finite ι₁] [Finite ι₂] [Finite ι₀]
     (q : G →+ PeriodGroup ω c) (hq : ∀ A, area ω c (q A) = ωG A)
     (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ : ∀ k, P₀ k)
@@ -292,8 +242,8 @@ theorem novikovProductOfMatrix_seriesReadout_vadd {G : Type*} [AddCommGroup G] {
   have hsmul : ∀ i j k,
       seriesReadout (fun k => q (g₀ k) +ᵥ r₀ k) μ₀ n
           (fun k => NovikovSeries.single (g₀ k - g₁ i - g₂ j) 1 * Ψ i j k) k =
-        NovikovSeries.single (g₀ k - g₁ i - g₂ j) 1 * seriesReadout r₀ μ₀ n (Ψ i j) k := by
-    intro i j k
+        NovikovSeries.single (g₀ k - g₁ i - g₂ j) 1 *
+          seriesReadout r₀ μ₀ n (Ψ i j) k := fun i j k => by
     rw [seriesReadout_vadd r₀ hμ₀, seriesReadout_apply, seriesReadout_apply, mul_smul_comm]
   simp only [hsmul]
   exact novikovProductOfMatrix_coefficientComparison_vadd r₁ r₂ r₀ q hq hF₁ hF₂ hF₀
@@ -305,15 +255,14 @@ section SeriesSew
 
 variable {ι₁ ι₀ : Type*} {P₁ : ι₁ → Type*} {P₀ : ι₀ → Type*}
 
-/-- **Class-indexed coevaluation sewing.** Contracts an intermediate output orbit `t ∈ ι₁` of `Φ`
-with the input orbit `t` of `Ψ` via the graded coevaluation weight `(-1)^(n - μ₁(t, r₁ t))`. -/
+/-- **Class-indexed coevaluation sewing** along intermediate orbits `t ∈ ι₁` with weight
+`(-1)^(n - μ₁(t, r₁ t))`. -/
 def seriesSew [Fintype ι₁] (r₁ : ∀ t, P₁ t) (μ₁ : (Σ t, P₁ t) → ℤ) (n : ℤ)
     (Φ : ι₁ → NovikovSeries R G ωG) (Ψ : ι₁ → ι₀ → NovikovSeries R G ωG) (l : ι₀) :
     NovikovSeries R G ωG :=
   ∑ t, negOnePowCast R (n - μ₁ ⟨t, r₁ t⟩) • (Φ t * Ψ t l)
 
-/-- **Class-indexed right-evaluation functional** `γ_min`, whose operator readout is the identity
-matrix `[k = k']`. -/
+/-- **Class-indexed right-evaluation functional** `γ_min`, reading out to `[k = k']`. -/
 def seriesEval [DecidableEq ι₀] (r₀ : ∀ k, P₀ k) (μ₀ : (Σ k, P₀ k) → ℤ) (n : ℤ)
     (k k' : ι₀) : NovikovSeries R G ωG :=
   if k = k' then negOnePowCast R (n - μ₀ ⟨k, r₀ k⟩) • 1 else 0
@@ -323,10 +272,7 @@ theorem seriesReadout_seriesEval [DecidableEq ι₀] (r₀ : ∀ k, P₀ k) (μ�
     (n : ℤ) (k k' : ι₀) :
     seriesReadout r₀ μ₀ n (seriesEval r₀ μ₀ n k : ι₀ → NovikovSeries R G ωG) k' =
       if k = k' then 1 else 0 := by
-  by_cases h : k = k'
-  · subst h
-    simp [seriesReadout_apply, seriesEval]
-  · simp [seriesReadout_apply, seriesEval, h]
+  obtain rfl | h := eq_or_ne k k' <;> simp [seriesReadout_apply, seriesEval, *]
 
 /-- **Sewing two readout functionals gives the readout of the matrix product.** -/
 theorem seriesSew_seriesReadout [Fintype ι₁] (r₁ : ∀ t, P₁ t) (r₀ : ∀ l, P₀ l)
@@ -336,9 +282,9 @@ theorem seriesSew_seriesReadout [Fintype ι₁] (r₁ : ∀ t, P₁ t) (r₀ : �
       seriesReadout r₀ μ₀ n fun l => ∑ t, T t * S t l := by
   funext l
   rw [seriesSew, seriesReadout_apply, Finset.smul_sum]
-  refine Finset.sum_congr rfl fun t _ => ?_
-  rw [seriesReadout_apply, seriesReadout_apply, smul_mul_assoc, mul_smul_comm, smul_smul,
-    negOnePowCast_mul_self, one_smul]
+  exact Finset.sum_congr rfl fun t _ => by
+    rw [seriesReadout_apply, seriesReadout_apply, smul_mul_assoc, mul_smul_comm, smul_smul,
+      negOnePowCast_mul_self, one_smul]
 
 /-- **Operator readout turns `seriesSew` into matrix composition of readouts.** -/
 @[simp]
@@ -352,17 +298,13 @@ theorem seriesReadout_seriesSew [Fintype ι₁] (r₁ : ∀ t, P₁ t) (r₀ : �
       ← funext fun t => seriesReadout_seriesReadout r₀ μ₀ n (Ψ t)]
   rw [seriesSew_seriesReadout, seriesReadout_seriesReadout]
 
-/-- **Class-indexed Koszul functional boundary.** For an input complex piece of cochain degree
-`d_in`, `B_in` collects the input breakings of a count functional `Ψ`, and `D₀` is the output
-cylinder differential. -/
+/-- **Class-indexed Koszul functional boundary** for an input piece of cochain degree `d_in`. -/
 def seriesBoundary [Fintype ι₀] (d_in : ℤ) (r₀ : ∀ l, P₀ l) (μ₀ : (Σ l, P₀ l) → ℤ) (n : ℤ)
     (B_in : ι₀ → NovikovSeries R G ωG) (D₀ : ι₀ → ι₀ → NovikovSeries R G ωG)
     (Ψ : ι₀ → NovikovSeries R G ωG) (l : ι₀) : NovikovSeries R G ωG :=
   B_in l - negOnePowCast R (d_in + (n - μ₀ ⟨l, r₀ l⟩)) • ∑ m, Ψ m * D₀ m l
 
-/-- **Intertwining of `seriesBoundary` and `seriesReadout` under degree parity.** Only parity
-modulo `2` (`Even (n - μ₀(r₀ m) - (d_in + j))`) is needed, so the identity holds for arbitrary
-spherical Chern classes `c₁`. -/
+/-- **Intertwining of `seriesBoundary` and `seriesReadout` under degree parity.** -/
 theorem seriesBoundary_seriesReadout [Fintype ι₀] (d_in j : ℤ)
     (r₀ : ∀ l, P₀ l) (μ₀ : (Σ l, P₀ l) → ℤ) (n : ℤ)
     (B_in : ι₀ → NovikovSeries R G ωG) (D₀ : ι₀ → ι₀ → NovikovSeries R G ωG)
@@ -377,10 +319,9 @@ theorem seriesBoundary_seriesReadout [Fintype ι₀] (d_in j : ℤ)
     refine Finset.sum_congr rfl fun m _ => ?_
     by_cases hm : T m = 0
     · simp [seriesReadout_apply, hm]
-    · have hsign : negOnePowCast R (n - μ₀ ⟨m, r₀ m⟩) = negOnePowCast R (d_in + j) := by
-        have hd : n - μ₀ ⟨m, r₀ m⟩ = (n - μ₀ ⟨m, r₀ m⟩ - (d_in + j)) + (d_in + j) := by ring
-        rw [hd, negOnePowCast_add, negOnePowCast_even (hT m hm), one_mul]
-      rw [seriesReadout_apply, hsign, smul_mul_assoc]
+    · have hd : n - μ₀ ⟨m, r₀ m⟩ = (n - μ₀ ⟨m, r₀ m⟩ - (d_in + j)) + (d_in + j) := by ring
+      rw [seriesReadout_apply, hd, negOnePowCast_add, negOnePowCast_even (hT m hm), one_mul,
+        smul_mul_assoc]
   rw [seriesBoundary, hsum, seriesReadout_apply, seriesReadout_apply]
   ext A
   simp only [coeff_sub', Pi.sub_apply, coeff_smul, smul_eq_mul, negOnePowCast_add,
@@ -391,19 +332,15 @@ theorem seriesBoundary_seriesReadout [Fintype ι₀] (d_in j : ℤ)
     (-(negOnePowCast R (n - μ₀ ⟨l, r₀ l⟩) * (B_in l).coeff A)) *
       negOnePowCast_mul_self (R := R) j
 
-/-- **Floer Fredholm index implies degree parity.** Whenever every class `A ∈ (T m).support`
-satisfies `μ₀(r₀ m) - 2 c₁(q A) = n - (d_in + j)`, every nonzero `T m` has `n - μ₀(r₀ m)` congruent
-modulo `2` to `d_in + j`. -/
+/-- **Floer Fredholm index implies degree parity.** -/
 theorem even_cochain_sub_of_index (q : G →+ PeriodGroup ω c) (d_in j : ℤ)
-    (r₀ : ∀ l, P₀ l) (μ₀ : (Σ l, P₀ l) → ℤ) (n : ℤ)
-    {T : ι₀ → NovikovSeries R G ωG}
+    (r₀ : ∀ l, P₀ l) (μ₀ : (Σ l, P₀ l) → ℤ) (n : ℤ) {T : ι₀ → NovikovSeries R G ωG}
     (hT : ∀ m, ∀ A ∈ (T m).support, μ₀ ⟨m, r₀ m⟩ - degree ω c (q A) = n - (d_in + j))
     (m : ι₀) (hm : T m ≠ 0) :
     Even (n - μ₀ ⟨m, r₀ m⟩ - (d_in + j)) := by
   obtain ⟨A, hA⟩ := exists_mem_support_of_ne_zero hm
   have hd : n - μ₀ ⟨m, r₀ m⟩ - (d_in + j) = -degree ω c (q A) := by linarith [hT m A hA]
-  rw [hd]
-  exact (even_degree ω c (q A)).neg
+  exact hd ▸ (even_degree ω c (q A)).neg
 
 /-- **Intertwining of `seriesBoundary` and `seriesReadout` from the Fredholm index.** -/
 theorem seriesBoundary_seriesReadout_of_index [Fintype ι₀] (q : G →+ PeriodGroup ω c)
@@ -418,24 +355,17 @@ theorem seriesBoundary_seriesReadout_of_index [Fintype ι₀] (q : G →+ Period
   seriesBoundary_seriesReadout d_in j r₀ μ₀ n B_in D₀
     (even_cochain_sub_of_index q d_in j r₀ μ₀ n hT) l
 
-/-- **Pair coevaluation sewing of two input functionals into a binary count functional.** For a
-second input of cochain degree `d_in₂`, contracts `Φ₁` into the first input and `Φ₂` into the
-second input of `Ψ`, braiding the first intermediate output `(i, r₁ i)` past the second input and
-its dual with the Koszul sign `(-1)^((n - μ₁(r₁ i))(d_in₂ - (n - μ₂(r₂ j))))` alongside the two
-coevaluation signs `(-1)^(n - μ₁(r₁ i))` and `(-1)^(n - μ₂(r₂ j))` (matching
-`TauCeti.NovikovModule.functionalSewPair`). -/
+/-- **Pair coevaluation sewing of two input functionals into a binary count functional**, matching
+`TauCeti.NovikovModule.functionalSewPair` for a second input of cochain degree `d_in₂`. -/
 def seriesSewPair {ι₂ : Type*} {P₂ : ι₂ → Type*} [Fintype ι₁] [Fintype ι₂]
     (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (μ₁ : (Σ i, P₁ i) → ℤ) (μ₂ : (Σ j, P₂ j) → ℤ)
     (d_in₂ n : ℤ) (Φ₁ : ι₁ → NovikovSeries R G ωG) (Φ₂ : ι₂ → NovikovSeries R G ωG)
     (Ψ : ι₁ → ι₂ → ι₀ → NovikovSeries R G ωG) (k : ι₀) : NovikovSeries R G ωG :=
   ∑ i, ∑ j, negOnePowCast R
       ((n - μ₁ ⟨i, r₁ i⟩) * (d_in₂ - (n - μ₂ ⟨j, r₂ j⟩)) +
-        (n - μ₁ ⟨i, r₁ i⟩) + (n - μ₂ ⟨j, r₂ j⟩)) •
-    (Φ₁ i * Φ₂ j * Ψ i j k)
+        (n - μ₁ ⟨i, r₁ i⟩) + (n - μ₂ ⟨j, r₂ j⟩)) • (Φ₁ i * Φ₂ j * Ψ i j k)
 
-/-- **Operator readout of `seriesSewPair` under the Fredholm index of the second input.** When `Φ₂`
-has Fredholm index `0` relative to `d_in₂`, the Koszul braiding exponent is even on every nonzero
-summand and `seriesReadout` turns `seriesSewPair` into the double sum of readout products. -/
+/-- **Operator readout of `seriesSewPair`** when `Φ₂` has Fredholm index `0` relative to `d_in₂`. -/
 theorem seriesReadout_seriesSewPair_of_index {ι₂ : Type*} {P₂ : ι₂ → Type*}
     [Fintype ι₁] [Fintype ι₂]
     (q : G →+ PeriodGroup ω c) (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ : ∀ k, P₀ k)
@@ -453,19 +383,15 @@ theorem seriesReadout_seriesSewPair_of_index {ι₂ : Type*} {P₂ : ι₂ → T
   by_cases hj : Φ₂ j = 0
   · simp [seriesReadout_apply, hj]
   · have hev : Even (d_in₂ - (n - μ₂ ⟨j, r₂ j⟩)) := by
-      have hd : d_in₂ - (n - μ₂ ⟨j, r₂ j⟩) = -((n - μ₂ ⟨j, r₂ j⟩) - (d_in₂ + 0)) := by ring
-      rw [hd]
-      exact (even_cochain_sub_of_index q d_in₂ 0 r₂ μ₂ n
-        (fun m A hA => by rw [add_zero]; exact hΦ₂ m A hA) j hj).neg
+      convert (even_cochain_sub_of_index q d_in₂ 0 r₂ μ₂ n
+        (fun m A hA => by rw [add_zero]; exact hΦ₂ m A hA) j hj).neg using 1; ring
     rw [add_assoc, negOnePowCast_add, negOnePowCast_even (hev.mul_left _), one_mul,
       seriesReadout_apply, seriesReadout_apply, seriesReadout_apply]
     simp only [mul_smul_comm, smul_mul_assoc, smul_smul, negOnePowCast_add]
-    congr 1
-    ring
+    congr 1; ring
 
-/-- **Three-end PSS sewing readout.** Sewing `Φ₁`, `Φ₂` into the inputs of `Ψ` via `seriesSewPair`
-and sewing the output into `Ψ₀` via `seriesSew` reads out to the three-end matrix contraction
-`∑ᵢ ∑ⱼ Φ₁ᵢ Φ₂ⱼ ∑ₖ Qᵢⱼₖ Ψ₀ₖₗ`. -/
+/-- **Three-end PSS sewing readout:** sewing `Φ₁`, `Φ₂` via `seriesSewPair` and the output into `Ψ₀`
+via `seriesSew` reads out to `∑ᵢ ∑ⱼ Φ₁ᵢ Φ₂ⱼ ∑ₖ Qᵢⱼₖ Ψ₀ₖₗ`. -/
 theorem seriesReadout_seriesSew_seriesSewPair {ι₂ κ₀ : Type*} {P₂ : ι₂ → Type*} {T₀ : κ₀ → Type*}
     [Fintype ι₁] [Fintype ι₂] [Fintype ι₀]
     (q : G →+ PeriodGroup ω c) (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ : ∀ k, P₀ k)
@@ -484,12 +410,9 @@ theorem seriesReadout_seriesSew_seriesSewPair {ι₂ κ₀ : Type*} {P₂ : ι�
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun j _ => ?_
-  simp only [mul_assoc, ← Finset.mul_sum]
+  exact Finset.sum_congr rfl fun j _ => by simp only [mul_assoc, ← Finset.mul_sum]
 
-/-- **Chain-map equation from a closed degree-`0` count functional.** If `Φ` has Fredholm index
-`j = 0` and its `seriesBoundary` against `B_in` and `D₀` vanishes, then the operator readout
-`seriesReadout r₀ μ₀ n Φ` satisfies `∑ₘ seriesReadout r₀ μ₀ n Φ m * D₀ m l = B_in l`. -/
+/-- **Chain-map equation from a closed degree-`0` count functional.** -/
 theorem sum_mul_eq_of_seriesBoundary_eq_zero [Fintype ι₀]
     (q : G →+ PeriodGroup ω c) (d_in : ℤ) (r₀ : ∀ l, P₀ l) (μ₀ : (Σ l, P₀ l) → ℤ) (n : ℤ)
     (B_in : ι₀ → NovikovSeries R G ωG)
@@ -497,37 +420,41 @@ theorem sum_mul_eq_of_seriesBoundary_eq_zero [Fintype ι₀]
     (hΦ : ∀ m, ∀ A ∈ (Φ m).support, μ₀ ⟨m, r₀ m⟩ - degree ω c (q A) = n - d_in) (l : ι₀)
     (hB : seriesBoundary d_in r₀ μ₀ n (seriesReadout r₀ μ₀ n B_in) D₀ Φ l = 0) :
     ∑ m, seriesReadout r₀ μ₀ n Φ m * D₀ m l = B_in l := by
-  have hT : ∀ m, ∀ A ∈ (seriesReadout r₀ μ₀ n Φ m).support,
-      μ₀ ⟨m, r₀ m⟩ - degree ω c (q A) = n - (d_in + 0) := fun m A hA => by
-    rw [add_zero]
-    exact hΦ m A (support_seriesReadout_subset r₀ μ₀ n Φ m hA)
-  have hb := seriesBoundary_seriesReadout_of_index q d_in 0 r₀ μ₀ n B_in D₀ hT l
+  have hb := seriesBoundary_seriesReadout_of_index q d_in 0 r₀ μ₀ n B_in D₀
+    (fun m A hA => by rw [add_zero]; exact hΦ m A (support_seriesReadout_subset r₀ μ₀ n Φ m hA)) l
   simp only [seriesReadout_seriesReadout, hB, zero_add, negOnePowCast_one, negOnePowCast_zero,
     one_smul, neg_one_smul] at hb
-  have hinj := congrArg (negOnePowCast R (n - μ₀ ⟨l, r₀ l⟩) • ·) (neg_eq_zero.1 hb.symm)
+  have hinj := congrArg (negOnePowCast R (n - μ₀ ⟨l, r₀ l⟩) • ·) (neg_eq_zero.mp hb.symm)
   rw [seriesReadout_apply, negOnePowCast_smul_negOnePowCast_smul, smul_zero] at hinj
-  exact sub_eq_zero.1 hinj
+  exact sub_eq_zero.mp hinj
 
-/-- **Homotopy equation from a degree-`-1` functional boundary.** If `Κ` is a count functional with
-Fredholm index `j = -1` whose `seriesBoundary` equals the readout of `S`, then the operator readout
-`K = seriesReadout r₀ μ₀ n Κ` satisfies `∑ₘ K m * D₀ m l + B_in l = S l`. -/
+/-- **Homotopy equation from a degree-`-1` functional boundary.** -/
 theorem sum_mul_add_eq_of_seriesBoundary_eq_seriesReadout [Fintype ι₀]
     (q : G →+ PeriodGroup ω c) (d_in : ℤ) (r₀ : ∀ l, P₀ l) (μ₀ : (Σ l, P₀ l) → ℤ) (n : ℤ)
     (B_in S : ι₀ → NovikovSeries R G ωG)
     {Κ : ι₀ → NovikovSeries R G ωG} {D₀ : ι₀ → ι₀ → NovikovSeries R G ωG}
-    (hΚ : ∀ m, ∀ A ∈ (Κ m).support, μ₀ ⟨m, r₀ m⟩ - degree ω c (q A) = n - (d_in - 1))
-    (l : ι₀)
+    (hΚ : ∀ m, ∀ A ∈ (Κ m).support, μ₀ ⟨m, r₀ m⟩ - degree ω c (q A) = n - (d_in - 1)) (l : ι₀)
     (hB : seriesBoundary d_in r₀ μ₀ n (seriesReadout r₀ μ₀ n B_in) D₀ Κ l =
       seriesReadout r₀ μ₀ n S l) :
     ∑ m, seriesReadout r₀ μ₀ n Κ m * D₀ m l + B_in l = S l := by
-  have hK : ∀ m, ∀ A ∈ (seriesReadout r₀ μ₀ n Κ m).support,
-      μ₀ ⟨m, r₀ m⟩ - degree ω c (q A) = n - (d_in + -1) := fun m A hA => by
-    rw [← sub_eq_add_neg]
-    exact hΚ m A (support_seriesReadout_subset r₀ μ₀ n Κ m hA)
-  have hb := seriesBoundary_seriesReadout_of_index q d_in (-1) r₀ μ₀ n B_in D₀ hK l
+  have hb := seriesBoundary_seriesReadout_of_index q d_in (-1) r₀ μ₀ n B_in D₀
+    (fun m A hA => by
+      rw [← sub_eq_add_neg]; exact hΚ m A (support_seriesReadout_subset r₀ μ₀ n Κ m hA)) l
   rw [seriesReadout_seriesReadout, neg_add_cancel, negOnePowCast_zero, one_smul, hB] at hb
-  have hinj := congrArg (negOnePowCast R (n - μ₀ ⟨l, r₀ l⟩) • ·) hb.symm
-  simpa [seriesReadout_apply, sub_neg_eq_add] using hinj
+  simpa [seriesReadout_apply, sub_neg_eq_add] using
+    congrArg (negOnePowCast R (n - μ₀ ⟨l, r₀ l⟩) • ·) hb.symm
+
+private theorem seriesReadout_sum_mul [Fintype ι₁] (r₀ : ∀ l, P₀ l) (μ₀ : (Σ l, P₀ l) → ℤ)
+    (n : ℤ) (D : ι₁ → NovikovSeries R G ωG) (Φ : ι₁ → ι₀ → NovikovSeries R G ωG) (l : ι₀) :
+    seriesReadout r₀ μ₀ n (fun l => ∑ m, D m * Φ m l) l =
+      ∑ m, D m * seriesReadout r₀ μ₀ n (Φ m) l := by
+  simp only [seriesReadout_apply, Finset.smul_sum, mul_smul_comm]
+
+private theorem seriesReadout_negOnePowCast_smul_apply (r₀ : ∀ l, P₀ l) (μ₀ : (Σ l, P₀ l) → ℤ)
+    (n e : ℤ) (Φ : ι₀ → NovikovSeries R G ωG) (l : ι₀) :
+    seriesReadout r₀ μ₀ n (fun l => negOnePowCast R e • Φ l) l =
+      negOnePowCast R e • seriesReadout r₀ μ₀ n Φ l := by
+  rw [seriesReadout_apply, seriesReadout_apply, smul_comm]
 
 end SeriesSew
 
@@ -552,11 +479,8 @@ variable {ι₁ ι₂ ι₃ ι₀ ι₁₂ ι₂₃ : Type*}
   (hF₁₂ : ∀ t γ (D : P₁₂ t), F₁₂ ⟨t, γ +ᵥ D⟩ = F₁₂ ⟨t, D⟩ - (-area ω c) γ)
   (hF₂₃ : ∀ u γ (D : P₂₃ u), F₂₃ ⟨u, γ +ᵥ D⟩ = F₂₃ ⟨u, D⟩ - (-area ω c) γ)
 
-/-- **The capped Leibniz rule from a closed pair-of-pants count functional.** Let `Ψ` be a
-pair-of-pants count functional obeying the rigidity index `μ₀(r₀ k) - 2 c₁(q A) = μ₁(r₁ i) +
-μ₂(r₂ j) - n` and annihilated by `seriesBoundary` against the Koszul tensor differential of
-`(D₁, D₂)` and `D₀`. Then its operator readout `Q = seriesReadout r₀ μ₀ n (Ψ i j)` satisfies the
-capped Leibniz rule `d₀ (a ⋆ b) = d₁ a ⋆ b + (-1)^e a ⋆ d₂ b`. -/
+/-- **The capped Leibniz rule** `d₀ (a ⋆ b) = d₁ a ⋆ b + (-1)^e a ⋆ d₂ b` from a closed
+pair-of-pants count functional `Ψ`. -/
 theorem novikovMapOfMatrix_novikovProductOfMatrix_seriesReadout_eq_add
     {μ₁ : (Σ i, P₁ i) → ℤ} (hμ₁ : ∀ i γ (D : P₁ i), μ₁ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ₁ ⟨i, D⟩)
     {μ₂ : (Σ j, P₂ j) → ℤ} {μ₀ : (Σ l, P₀ l) → ℤ} (n : ℤ)
@@ -583,25 +507,16 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_seriesReadout_eq_add
           (novikovMapOfMatrix hF₂ hF₂ r₂ r₂ (fun j k => coefficientComparison q hq (D₂ j k))
             b) := by
   refine novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_eq_add r₁ r₂ r₀ q hq
-    hF₁ hF₂ hF₀ hμ₁ (fun i j k => seriesReadout r₀ μ₀ n (Ψ i j) k) D₁ D₂ D₀ n (fun i j l => ?_)
-    ha b
-  set B_in : ι₀ → NovikovSeries R G ωG := fun l =>
-    ∑ m, D₁ i m * seriesReadout r₀ μ₀ n (Ψ m j) l +
-      negOnePowCast R (n - μ₁ ⟨i, r₁ i⟩) • ∑ m, D₂ j m * seriesReadout r₀ μ₀ n (Ψ i m) l
-  have hBin : seriesReadout r₀ μ₀ n B_in = fun l =>
-      ∑ m, D₁ i m * Ψ m j l +
-        negOnePowCast R (n - μ₁ ⟨i, r₁ i⟩) • ∑ m, D₂ j m * Ψ i m l := by
-    funext l
-    simp only [B_in, seriesReadout_apply, smul_add, Finset.smul_sum, mul_smul_comm,
-      smul_comm (negOnePowCast R (n - μ₀ ⟨l, r₀ l⟩)) (negOnePowCast R (n - μ₁ ⟨i, r₁ i⟩)),
-      negOnePowCast_smul_negOnePowCast_smul]
-  exact sum_mul_eq_of_seriesBoundary_eq_zero q ((n - μ₁ ⟨i, r₁ i⟩) + (n - μ₂ ⟨j, r₂ j⟩)) r₀ μ₀ n
-    B_in (fun m A hA => by linarith [hΨ i j m A hA]) l (by rw [hBin, hclosed i j l])
+    hF₁ hF₂ hF₀ hμ₁ (fun i j k => seriesReadout r₀ μ₀ n (Ψ i j) k) D₁ D₂ D₀ n (fun i j l => ?_) ha b
+  have h := sum_mul_eq_of_seriesBoundary_eq_zero q ((n - μ₁ ⟨i, r₁ i⟩) + (n - μ₂ ⟨j, r₂ j⟩)) r₀
+    μ₀ n (seriesReadout r₀ μ₀ n ((fun l => ∑ m, D₁ i m * Ψ m j l) +
+      fun l => negOnePowCast R (n - μ₁ ⟨i, r₁ i⟩) • ∑ m, D₂ j m * Ψ i m l))
+    (fun m A hA => by linarith [hΨ i j m A hA]) l
+    (by rw [seriesReadout_seriesReadout]; exact hclosed i j l)
+  simpa only [seriesReadout_add, Pi.add_apply, seriesReadout_negOnePowCast_smul_apply,
+    seriesReadout_sum_mul] using h
 
-/-- **Left unit homotopy from a cap-gluing count functional.** Gluing a PSS unit cap functional
-`Ε` (with `μ₁(r₁ i) - 2 c₁(q A) = n`) into the first input of a pair-of-pants functional `Ψ` via
-`seriesSew` and comparing to a continuation cylinder functional `Φ_func` via a degree-`-1` gluing
-functional `Κ` gives `e ⋆ b - Φ b = d₀ K(b) + K(d₂ b)` on completed capped modules. -/
+/-- **Left unit homotopy** `e ⋆ b - Φ b = d₀ K(b) + K(d₂ b)` from a cap-gluing count functional. -/
 theorem novikovProductOfMatrix_seriesReadout_sub_novikovMapOfMatrix_right
     {μ₁ : (Σ i, P₁ i) → ℤ} {μ₂ : (Σ j, P₂ j) → ℤ} {μ₀ : (Σ l, P₀ l) → ℤ} (n : ℤ)
     (Ε : ι₁ → NovikovSeries R G ωG) (Ψ : ι₁ → ι₂ → ι₀ → NovikovSeries R G ωG)
@@ -630,29 +545,22 @@ theorem novikovProductOfMatrix_seriesReadout_sub_novikovMapOfMatrix_right
   rw [hΕ']
   refine novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_right r₁ r₂ r₀ q hq
     hF₁ hF₂ hF₀ (fun i j k => seriesReadout r₀ μ₀ n (Ψ i j) k) D₀ Ε
-    (fun j l => seriesReadout r₀ μ₀ n (Φ_func j) l)
-    (fun j m => seriesReadout r₀ μ₀ n (Κ j) m) D₂ (fun j l => ?_) b
-  set B_in : ι₀ → NovikovSeries R G ωG := fun l => ∑ m, D₂ j m * seriesReadout r₀ μ₀ n (Κ m) l
-  have hBin : seriesReadout r₀ μ₀ n B_in = fun l => ∑ m, D₂ j m * Κ m l := by
-    funext l
-    simp only [B_in, seriesReadout_apply, Finset.smul_sum, mul_smul_comm,
-      negOnePowCast_smul_negOnePowCast_smul]
+    (fun j l => seriesReadout r₀ μ₀ n (Φ_func j) l) (fun j m => seriesReadout r₀ μ₀ n (Κ j) m)
+    D₂ (fun j l => ?_) b
   have hsew : seriesSew r₁ μ₁ n Ε (fun i => Ψ i j) l =
       seriesReadout r₀ μ₀ n (fun l => ∑ i, Ε i * seriesReadout r₀ μ₀ n (Ψ i j) l) l := by
     conv_lhs => rw [← hΕ', ← funext fun i => seriesReadout_seriesReadout r₀ μ₀ n (Ψ i j)]
     rw [seriesSew_seriesReadout]
-  simpa only [Pi.sub_apply] using
-    (sum_mul_add_eq_of_seriesBoundary_eq_seriesReadout q (n - μ₂ ⟨j, r₂ j⟩) r₀ μ₀ n B_in
-      ((fun l => ∑ i, Ε i * seriesReadout r₀ μ₀ n (Ψ i j) l) -
-        seriesReadout r₀ μ₀ n (Φ_func j))
+  simpa only [Pi.sub_apply, seriesReadout_sum_mul] using
+    (sum_mul_add_eq_of_seriesBoundary_eq_seriesReadout q (n - μ₂ ⟨j, r₂ j⟩) r₀ μ₀ n
+      (seriesReadout r₀ μ₀ n fun l => ∑ m, D₂ j m * Κ m l)
+      ((fun l => ∑ i, Ε i * seriesReadout r₀ μ₀ n (Ψ i j) l) - seriesReadout r₀ μ₀ n (Φ_func j))
       (fun m A hA => by linarith [hΚ j m A hA]) l
-      (by rw [hBin, hB j l, hsew, seriesReadout_sub_apply, seriesReadout_seriesReadout])).symm
+      (by rw [seriesReadout_seriesReadout, hB j l, hsew, seriesReadout_sub_apply,
+        seriesReadout_seriesReadout])).symm
 
-/-- **Right unit homotopy from a cap-gluing count functional.** Gluing a PSS unit cap functional
-`Ε` (with `μ₂(r₂ t) - 2 c₁(q A) = n`) into the second input of a pair-of-pants functional `Ψ`
-involves the Koszul braiding sign `(-1)^((n - μ₁(r₁ i))(n - μ₂(r₂ t)))` alongside the coevaluation
-sign `(-1)^(n - μ₂(r₂ t))`. Under the unit index condition both signs are `+1`, and a degree-`-1`
-gluing functional `Κ` gives `a ⋆ e - Φ a = d₀ K(a) + K(d₁ a)`. -/
+/-- **Right unit homotopy** `a ⋆ e - Φ a = d₀ K(a) + K(d₁ a)` from a Koszul-braided cap-gluing
+count functional. -/
 theorem novikovProductOfMatrix_seriesReadout_sub_novikovMapOfMatrix_left
     {μ₁ : (Σ i, P₁ i) → ℤ} {μ₂ : (Σ j, P₂ j) → ℤ} {μ₀ : (Σ l, P₀ l) → ℤ} (n : ℤ)
     (Ε : ι₂ → NovikovSeries R G ωG) (Ψ : ι₁ → ι₂ → ι₀ → NovikovSeries R G ωG)
@@ -663,8 +571,7 @@ theorem novikovProductOfMatrix_seriesReadout_sub_novikovMapOfMatrix_left
     (hB : ∀ i l,
       seriesBoundary (n - μ₁ ⟨i, r₁ i⟩) r₀ μ₀ n (fun l => ∑ m, D₁ i m * Κ m l) D₀ (Κ i) l =
         (∑ t, negOnePowCast R ((n - μ₁ ⟨i, r₁ i⟩) * (n - μ₂ ⟨t, r₂ t⟩) + (n - μ₂ ⟨t, r₂ t⟩)) •
-            (Ε t * Ψ i t l)) -
-          Φ_func i l)
+            (Ε t * Ψ i t l)) - Φ_func i l)
     (a : NovikovModule R F₁) :
     novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀
           (fun i j k => coefficientComparison q hq (seriesReadout r₀ μ₀ n (Ψ i j) k)) a
@@ -682,13 +589,8 @@ theorem novikovProductOfMatrix_seriesReadout_sub_novikovMapOfMatrix_left
   rw [seriesReadout_eq_self_of_unit_index q r₂ μ₂ n hΕ]
   refine novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_left r₁ r₂ r₀ q hq
     hF₁ hF₂ hF₀ (fun i j k => seriesReadout r₀ μ₀ n (Ψ i j) k) D₀ Ε
-    (fun i l => seriesReadout r₀ μ₀ n (Φ_func i) l)
-    (fun i m => seriesReadout r₀ μ₀ n (Κ i) m) D₁ (fun i l => ?_) a
-  set B_in : ι₀ → NovikovSeries R G ωG := fun l => ∑ m, D₁ i m * seriesReadout r₀ μ₀ n (Κ m) l
-  have hBin : seriesReadout r₀ μ₀ n B_in = fun l => ∑ m, D₁ i m * Κ m l := by
-    funext l
-    simp only [B_in, seriesReadout_apply, Finset.smul_sum, mul_smul_comm,
-      negOnePowCast_smul_negOnePowCast_smul]
+    (fun i l => seriesReadout r₀ μ₀ n (Φ_func i) l) (fun i m => seriesReadout r₀ μ₀ n (Κ i) m)
+    D₁ (fun i l => ?_) a
   have hsew : (∑ t, negOnePowCast R
         ((n - μ₁ ⟨i, r₁ i⟩) * (n - μ₂ ⟨t, r₂ t⟩) + (n - μ₂ ⟨t, r₂ t⟩)) • (Ε t * Ψ i t l)) =
       seriesReadout r₀ μ₀ n (fun l => ∑ t, Ε t * seriesReadout r₀ μ₀ n (Ψ i t) l) l := by
@@ -696,28 +598,19 @@ theorem novikovProductOfMatrix_seriesReadout_sub_novikovMapOfMatrix_left
     refine Finset.sum_congr rfl fun t _ => ?_
     by_cases ht : Ε t = 0
     · simp [ht]
-    · obtain ⟨A, hA⟩ := exists_mem_support_of_ne_zero ht
-      have hev : Even (n - μ₂ ⟨t, r₂ t⟩) := by
-        have hd : n - μ₂ ⟨t, r₂ t⟩ = -degree ω c (q A) := by linarith [hΕ t A hA]
-        rw [hd]
-        exact (even_degree ω c (q A)).neg
-      have hev' : Even ((n - μ₁ ⟨i, r₁ i⟩) * (n - μ₂ ⟨t, r₂ t⟩) + (n - μ₂ ⟨t, r₂ t⟩)) :=
-        (hev.mul_left _).add hev
-      rw [negOnePowCast_even hev', one_smul, seriesReadout_apply, mul_smul_comm,
-        negOnePowCast_smul_negOnePowCast_smul]
-  simpa only [Pi.sub_apply] using
-    (sum_mul_add_eq_of_seriesBoundary_eq_seriesReadout q (n - μ₁ ⟨i, r₁ i⟩) r₀ μ₀ n B_in
-      ((fun l => ∑ t, Ε t * seriesReadout r₀ μ₀ n (Ψ i t) l) -
-        seriesReadout r₀ μ₀ n (Φ_func i))
+    · have hev : Even (n - μ₂ ⟨t, r₂ t⟩) := by
+        simpa using even_cochain_sub_of_index q 0 0 r₂ μ₂ n (by simpa using hΕ) t ht
+      rw [negOnePowCast_even ((hev.mul_left _).add hev), one_smul, seriesReadout_apply,
+        mul_smul_comm, negOnePowCast_smul_negOnePowCast_smul]
+  simpa only [Pi.sub_apply, seriesReadout_sum_mul] using
+    (sum_mul_add_eq_of_seriesBoundary_eq_seriesReadout q (n - μ₁ ⟨i, r₁ i⟩) r₀ μ₀ n
+      (seriesReadout r₀ μ₀ n fun l => ∑ m, D₁ i m * Κ m l)
+      ((fun l => ∑ t, Ε t * seriesReadout r₀ μ₀ n (Ψ i t) l) - seriesReadout r₀ μ₀ n (Φ_func i))
       (fun m A hA => by linarith [hΚ i m A hA]) l
-      (by rw [hBin, hB i l, hsew, seriesReadout_sub_apply, seriesReadout_seriesReadout])).symm
+      (by rw [seriesReadout_seriesReadout, hB i l, hsew, seriesReadout_sub_apply,
+        seriesReadout_seriesReadout])).symm
 
-/-- **Associativity homotopy from a four-punctured-sphere count functional.** Suppose `Θ` obeys the
-pair-of-pants index `μ₂₃(r₂₃ u) - 2 c₁(q A) = μ₂(r₂ j) + μ₃(r₃ k) - n`, so its Koszul braiding
-sign past the first input `(i, r₁ i)` is `+1`, and `Κ` has index
-`μ₀(r₀ m) - 2 c₁(q A) = μ₁(r₁ i) + μ₂(r₂ j) + μ₃(r₃ k) - 2n + 1` with `seriesBoundary` equal to
-the left `seriesSew` of `(Ψ, Ψ')` minus the Koszul-braided right `seriesSew` of `(Θ, Θ')`. Then the
-readout products and trilinear homotopy satisfy the capped associativity equation. -/
+/-- **Associativity homotopy** from a four-punctured-sphere count-functional boundary. -/
 theorem novikovProductOfMatrix_seriesReadout_assoc_sub_eq_add
     {μ₁ : (Σ i, P₁ i) → ℤ} (hμ₁ : ∀ i γ (D : P₁ i), μ₁ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ₁ ⟨i, D⟩)
     {μ₂ : (Σ j, P₂ j) → ℤ} (hμ₂ : ∀ j γ (D : P₂ j), μ₂ ⟨j, γ +ᵥ D⟩ = degree ω c γ + μ₂ ⟨j, D⟩)
@@ -741,8 +634,7 @@ theorem novikovProductOfMatrix_seriesReadout_assoc_sub_eq_add
       seriesSew r₁₂ μ₁₂ n (Ψ i j) (fun t => Ψ' t k) l -
         ∑ u, negOnePowCast R
             ((n - μ₁ ⟨i, r₁ i⟩) * ((n - μ₂ ⟨j, r₂ j⟩) + (n - μ₃ ⟨k, r₃ k⟩) - (n - μ₂₃ ⟨u, r₂₃ u⟩)) +
-              (n - μ₂₃ ⟨u, r₂₃ u⟩)) •
-          (Θ j k u * Θ' i u l))
+              (n - μ₂₃ ⟨u, r₂₃ u⟩)) • (Θ j k u * Θ' i u l))
     {e₁ e₂ : ℤ} {x₁ : NovikovModule R F₁} (ha : x₁ ∈ gradeBy R F₁ (fun p => n - μ₁ p) e₁)
     {x₂ : NovikovModule R F₂} (hb : x₂ ∈ gradeBy R F₂ (fun p => n - μ₂ p) e₂)
     (x₃ : NovikovModule R F₃) :
@@ -772,36 +664,16 @@ theorem novikovProductOfMatrix_seriesReadout_assoc_sub_eq_add
           (novikovMapOfMatrix hF₃ hF₃ r₃ r₃ (fun k m => coefficientComparison q hq (D₃ k m))
             x₃) := by
   refine novikovProductOfMatrix_coefficientComparison_assoc_sub_eq_add r₁ r₂ r₀ q hq r₃ r₁₂ r₂₃
-    hF₁ hF₂ hF₃ hF₀ hμ₁ hμ₂ hF₁₂ hF₂₃
-    (fun i j t => seriesReadout r₁₂ μ₁₂ n (Ψ i j) t)
+    hF₁ hF₂ hF₃ hF₀ hμ₁ hμ₂ hF₁₂ hF₂₃ (fun i j t => seriesReadout r₁₂ μ₁₂ n (Ψ i j) t)
     (fun t k l => seriesReadout r₀ μ₀ n (Ψ' t k) l)
     (fun j k u => seriesReadout r₂₃ μ₂₃ n (Θ j k) u)
     (fun i u l => seriesReadout r₀ μ₀ n (Θ' i u) l)
-    (fun i j k l => seriesReadout r₀ μ₀ n (Κ i j k) l)
-    D₁ D₂ D₃ D₀ n (fun i j k l => ?_) ha hb x₃
-  set d_in := (n - μ₁ ⟨i, r₁ i⟩) + (n - μ₂ ⟨j, r₂ j⟩) + (n - μ₃ ⟨k, r₃ k⟩)
-  set B_in : ι₀ → NovikovSeries R G ωG := fun l =>
-    ∑ m, D₁ i m * seriesReadout r₀ μ₀ n (Κ m j k) l +
-      negOnePowCast R (n - μ₁ ⟨i, r₁ i⟩) • ∑ m, D₂ j m * seriesReadout r₀ μ₀ n (Κ i m k) l +
-      negOnePowCast R ((n - μ₁ ⟨i, r₁ i⟩) + (n - μ₂ ⟨j, r₂ j⟩)) •
-        ∑ m, D₃ k m * seriesReadout r₀ μ₀ n (Κ i j m) l
-  have hBin : seriesReadout r₀ μ₀ n B_in = fun l =>
-      ∑ m, D₁ i m * Κ m j k l +
-        negOnePowCast R (n - μ₁ ⟨i, r₁ i⟩) • ∑ m, D₂ j m * Κ i m k l +
-        negOnePowCast R ((n - μ₁ ⟨i, r₁ i⟩) + (n - μ₂ ⟨j, r₂ j⟩)) • ∑ m, D₃ k m * Κ i j m l := by
-    funext l
-    simp only [B_in, seriesReadout_apply, smul_add, Finset.smul_sum, mul_smul_comm,
-      smul_comm (negOnePowCast R (n - μ₀ ⟨l, r₀ l⟩)) (negOnePowCast R (n - μ₁ ⟨i, r₁ i⟩)),
-      smul_comm (negOnePowCast R (n - μ₀ ⟨l, r₀ l⟩))
-        (negOnePowCast R ((n - μ₁ ⟨i, r₁ i⟩) + (n - μ₂ ⟨j, r₂ j⟩))),
-      negOnePowCast_smul_negOnePowCast_smul]
+    (fun i j k l => seriesReadout r₀ μ₀ n (Κ i j k) l) D₁ D₂ D₃ D₀ n (fun i j k l => ?_) ha hb x₃
   have hL : seriesSew r₁₂ μ₁₂ n (Ψ i j) (fun t => Ψ' t k) l =
       seriesReadout r₀ μ₀ n (fun l =>
         ∑ t, seriesReadout r₁₂ μ₁₂ n (Ψ i j) t * seriesReadout r₀ μ₀ n (Ψ' t k) l) l := by
     rw [← seriesSew_seriesReadout, seriesReadout_seriesReadout]
-    congr 1
-    funext t
-    exact (seriesReadout_seriesReadout r₀ μ₀ n (Ψ' t k)).symm
+    congr 1; funext t; exact (seriesReadout_seriesReadout r₀ μ₀ n (Ψ' t k)).symm
   have hR : (∑ u, negOnePowCast R
         ((n - μ₁ ⟨i, r₁ i⟩) * ((n - μ₂ ⟨j, r₂ j⟩) + (n - μ₃ ⟨k, r₃ k⟩) - (n - μ₂₃ ⟨u, r₂₃ u⟩)) +
           (n - μ₂₃ ⟨u, r₂₃ u⟩)) • (Θ j k u * Θ' i u l)) =
@@ -811,30 +683,29 @@ theorem novikovProductOfMatrix_seriesReadout_assoc_sub_eq_add
     refine Finset.sum_congr rfl fun u _ => ?_
     by_cases hu : Θ j k u = 0
     · simp [seriesReadout_apply, hu]
-    · obtain ⟨A, hA⟩ := exists_mem_support_of_ne_zero hu
-      have hev : Even ((n - μ₂ ⟨j, r₂ j⟩) + (n - μ₃ ⟨k, r₃ k⟩) - (n - μ₂₃ ⟨u, r₂₃ u⟩)) := by
-        have hd : (n - μ₂ ⟨j, r₂ j⟩) + (n - μ₃ ⟨k, r₃ k⟩) - (n - μ₂₃ ⟨u, r₂₃ u⟩) =
-            degree ω c (q A) := by linarith [hΘ j k u A hA]
-        rw [hd]
-        exact even_degree ω c (q A)
-      rw [negOnePowCast_add, negOnePowCast_even (hev.mul_left _), one_mul,
-        seriesReadout_apply, seriesReadout_apply, smul_mul_assoc, mul_smul_comm,
+    · have hev : Even ((n - μ₂ ⟨j, r₂ j⟩) + (n - μ₃ ⟨k, r₃ k⟩) - (n - μ₂₃ ⟨u, r₂₃ u⟩)) := by
+        convert (even_cochain_sub_of_index q ((n - μ₂ ⟨j, r₂ j⟩) + (n - μ₃ ⟨k, r₃ k⟩)) 0 r₂₃ μ₂₃ n
+          (fun m A hA => by linarith [hΘ j k m A hA]) u hu).neg using 1; ring
+      rw [negOnePowCast_add, negOnePowCast_even (hev.mul_left _), one_mul, seriesReadout_apply,
+        seriesReadout_apply, smul_mul_assoc, mul_smul_comm,
         smul_comm (negOnePowCast R (n - μ₀ ⟨l, r₀ l⟩)) (negOnePowCast R (n - μ₂₃ ⟨u, r₂₃ u⟩)),
         negOnePowCast_smul_negOnePowCast_smul]
-  have h := (sum_mul_add_eq_of_seriesBoundary_eq_seriesReadout q d_in r₀ μ₀ n B_in
+  have h := (sum_mul_add_eq_of_seriesBoundary_eq_seriesReadout q
+    ((n - μ₁ ⟨i, r₁ i⟩) + (n - μ₂ ⟨j, r₂ j⟩) + (n - μ₃ ⟨k, r₃ k⟩)) r₀ μ₀ n
+    (seriesReadout r₀ μ₀ n fun l => ∑ m, D₁ i m * Κ m j k l +
+      negOnePowCast R (n - μ₁ ⟨i, r₁ i⟩) • ∑ m, D₂ j m * Κ i m k l +
+      negOnePowCast R ((n - μ₁ ⟨i, r₁ i⟩) + (n - μ₂ ⟨j, r₂ j⟩)) • ∑ m, D₃ k m * Κ i j m l)
     ((fun l => ∑ t, seriesReadout r₁₂ μ₁₂ n (Ψ i j) t * seriesReadout r₀ μ₀ n (Ψ' t k) l) -
       fun l => ∑ u, seriesReadout r₂₃ μ₂₃ n (Θ j k) u * seriesReadout r₀ μ₀ n (Θ' i u) l)
-    (fun m A hA => by dsimp only [d_in]; linarith [hΚ i j k m A hA]) l
-    (by rw [hBin, hB i j k l, hL, hR, seriesReadout_sub_apply])).symm
-  dsimp only [B_in, Pi.sub_apply] at h
-  calc ∑ t, seriesReadout r₁₂ μ₁₂ n (Ψ i j) t * seriesReadout r₀ μ₀ n (Ψ' t k) l -
-        ∑ u, seriesReadout r₂₃ μ₂₃ n (Θ j k) u * seriesReadout r₀ μ₀ n (Θ' i u) l
-      = ∑ m, seriesReadout r₀ μ₀ n (Κ i j k) m * D₀ m l +
-          (∑ m, D₁ i m * seriesReadout r₀ μ₀ n (Κ m j k) l +
-            negOnePowCast R (n - μ₁ ⟨i, r₁ i⟩) • ∑ m, D₂ j m * seriesReadout r₀ μ₀ n (Κ i m k) l +
-            negOnePowCast R ((n - μ₁ ⟨i, r₁ i⟩) + (n - μ₂ ⟨j, r₂ j⟩)) •
-              ∑ m, D₃ k m * seriesReadout r₀ μ₀ n (Κ i j m) l) := h
-    _ = _ := by abel
+    (fun m A hA => by linarith [hΚ i j k m A hA]) l
+    (by rw [seriesReadout_seriesReadout, hB i j k l, hL, hR, seriesReadout_sub_apply])).symm
+  change _ = _ + seriesReadout r₀ μ₀ n (((fun l => ∑ m, D₁ i m * Κ m j k l) +
+      fun l => negOnePowCast R (n - μ₁ ⟨i, r₁ i⟩) • ∑ m, D₂ j m * Κ i m k l) +
+      fun l => negOnePowCast R ((n - μ₁ ⟨i, r₁ i⟩) + (n - μ₂ ⟨j, r₂ j⟩)) •
+        ∑ m, D₃ k m * Κ i j m l) l at h
+  simp only [Pi.sub_apply, seriesReadout_add, Pi.add_apply,
+    seriesReadout_negOnePowCast_smul_apply, seriesReadout_sum_mul] at h
+  exact h.trans (by abel)
 
 end CappedIdentities
 
@@ -865,8 +736,7 @@ private theorem comparison_readout_eq
           negOnePowCast R (n - ν₁ ⟨s, s₁ s⟩) • ∑ m, E₂ t m * Κ s m l)
         E₀ (Κ s t) l =
       seriesSew r₀ μ₀ n
-        (seriesSewPair r₁ r₂ μ₁ μ₂ (n - ν₂ ⟨t, s₂ t⟩) n (Φ₁ s) (Φ₂ t) Ψ) Ψ₀ l -
-        Μ s t l)
+        (seriesSewPair r₁ r₂ μ₁ μ₂ (n - ν₂ ⟨t, s₂ t⟩) n (Φ₁ s) (Φ₂ t) Ψ) Ψ₀ l - Μ s t l)
     (s : κ₁) (t : κ₂) (l : κ₀) :
     ∑ i, ∑ j, seriesReadout r₁ μ₁ n (Φ₁ s) i * seriesReadout r₂ μ₂ n (Φ₂ t) j *
           ∑ k, seriesReadout r₀ μ₀ n (Ψ i j) k * seriesReadout s₀ ν₀ n (Ψ₀ k) l -
@@ -874,32 +744,22 @@ private theorem comparison_readout_eq
       ∑ m, seriesReadout s₀ ν₀ n (Κ s t) m * E₀ m l +
         ∑ m, E₁ s m * seriesReadout s₀ ν₀ n (Κ m t) l +
         negOnePowCast R (n - ν₁ ⟨s, s₁ s⟩) • ∑ m, E₂ t m * seriesReadout s₀ ν₀ n (Κ s m) l := by
-  set B_in : κ₀ → NovikovSeries R G ωG := fun l =>
-    ∑ m, E₁ s m * seriesReadout s₀ ν₀ n (Κ m t) l +
-      negOnePowCast R (n - ν₁ ⟨s, s₁ s⟩) • ∑ m, E₂ t m * seriesReadout s₀ ν₀ n (Κ s m) l
-  have hBin : seriesReadout s₀ ν₀ n B_in = fun l =>
-      ∑ m, E₁ s m * Κ m t l +
-        negOnePowCast R (n - ν₁ ⟨s, s₁ s⟩) • ∑ m, E₂ t m * Κ s m l := by
-    funext l
-    simp only [B_in, seriesReadout_apply, smul_add, Finset.smul_sum, mul_smul_comm,
-      smul_comm (negOnePowCast R (n - ν₀ ⟨l, s₀ l⟩)) (negOnePowCast R (n - ν₁ ⟨s, s₁ s⟩)),
-      negOnePowCast_smul_negOnePowCast_smul]
-  set sew := seriesSew r₀ μ₀ n
-    (seriesSewPair r₁ r₂ μ₁ μ₂ (n - ν₂ ⟨t, s₂ t⟩) n (Φ₁ s) (Φ₂ t) Ψ) Ψ₀
+  set sew := seriesSew r₀ μ₀ n (seriesSewPair r₁ r₂ μ₁ μ₂ (n - ν₂ ⟨t, s₂ t⟩) n (Φ₁ s) (Φ₂ t) Ψ) Ψ₀
   have h := (sum_mul_add_eq_of_seriesBoundary_eq_seriesReadout q
-    ((n - ν₁ ⟨s, s₁ s⟩) + (n - ν₂ ⟨t, s₂ t⟩)) s₀ ν₀ n B_in
+    ((n - ν₁ ⟨s, s₁ s⟩) + (n - ν₂ ⟨t, s₂ t⟩)) s₀ ν₀ n
+    (seriesReadout s₀ ν₀ n fun l => ∑ m, E₁ s m * Κ m t l +
+      negOnePowCast R (n - ν₁ ⟨s, s₁ s⟩) • ∑ m, E₂ t m * Κ s m l)
     (seriesReadout s₀ ν₀ n sew - seriesReadout s₀ ν₀ n (Μ s t))
     (fun m A hA => by linarith [hΚ s t m A hA]) l
-    (by rw [hBin, hB s t l, seriesReadout_sub_apply, seriesReadout_seriesReadout,
-      seriesReadout_seriesReadout])).symm
+    (by rw [seriesReadout_seriesReadout, hB s t l, seriesReadout_sub_apply,
+      seriesReadout_seriesReadout, seriesReadout_seriesReadout])).symm
+  change _ = _ + seriesReadout s₀ ν₀ n ((fun l => ∑ m, E₁ s m * Κ m t l) +
+      fun l => negOnePowCast R (n - ν₁ ⟨s, s₁ s⟩) • ∑ m, E₂ t m * Κ s m l) l at h
   rw [Pi.sub_apply, seriesReadout_seriesSew_seriesSewPair q r₁ r₂ r₀ s₀ μ₁ μ₂ μ₀ ν₀
     (n - ν₂ ⟨t, s₂ t⟩) n (Φ₁ s) Ψ Ψ₀ (fun j A hA => by linarith [hΦ₂ t j A hA]) l] at h
-  dsimp only [B_in] at h
-  calc _ = ∑ m, seriesReadout s₀ ν₀ n (Κ s t) m * E₀ m l +
-            (∑ m, E₁ s m * seriesReadout s₀ ν₀ n (Κ m t) l +
-              negOnePowCast R (n - ν₁ ⟨s, s₁ s⟩) •
-                ∑ m, E₂ t m * seriesReadout s₀ ν₀ n (Κ s m) l) := h
-    _ = _ := by abel
+  simp only [seriesReadout_add, Pi.add_apply, seriesReadout_negOnePowCast_smul_apply,
+    seriesReadout_sum_mul] at h
+  exact h.trans (by abel)
 
 variable [∀ i, AddTorsor (PeriodGroup ω c) (P₁ i)] [∀ j, AddTorsor (PeriodGroup ω c) (P₂ j)]
   [∀ k, AddTorsor (PeriodGroup ω c) (P₀ k)] [∀ s, AddTorsor (PeriodGroup ω c) (T₁ s)]
@@ -916,12 +776,8 @@ variable [∀ i, AddTorsor (PeriodGroup ω c) (P₁ i)] [∀ j, AddTorsor (Perio
   (hG₂ : ∀ t γ (D : T₂ t), G₂ ⟨t, γ +ᵥ D⟩ = G₂ ⟨t, D⟩ - (-area ω c) γ)
   (hG₀ : ∀ l γ (D : T₀ l), G₀ ⟨l, γ +ᵥ D⟩ = G₀ ⟨l, D⟩ - (-area ω c) γ)
 
-/-- **Comparison of readout products through the inverse PSS functional.** Attaching PSS input
-functionals `Φ₁`, `Φ₂` to a pair-of-pants functional `Ψ` via `seriesSewPair`, sewing the output to
-an inverse PSS functional `Ψ₀` via `seriesSew`, and comparing to a Morse quantum functional `Μ` via
-a degree-`-1` comparison functional `Κ` gives
-`Ψ₀ (Φ₁ a ⋆ Φ₂ b) - a ⋆_M b = E₀ K(a, b) + K(E₁ a, b) + (-1)^e K(a, E₂ b)` on completed capped
-modules. -/
+/-- **Comparison of readout products through the inverse PSS functional**
+`Ψ₀ (Φ₁ a ⋆ Φ₂ b) - a ⋆_M b = E₀ K(a, b) + K(E₁ a, b) + (-1)^e K(a, E₂ b)`. -/
 theorem novikovMapOfMatrix_novikovProductOfMatrix_seriesReadout_sub_novikovProductOfMatrix
     {μ₁ : (Σ i, P₁ i) → ℤ} {μ₂ : (Σ j, P₂ j) → ℤ} {μ₀ : (Σ k, P₀ k) → ℤ}
     {ν₁ : (Σ s, T₁ s) → ℤ} (hν₁ : ∀ s γ (D : T₁ s), ν₁ ⟨s, γ +ᵥ D⟩ = degree ω c γ + ν₁ ⟨s, D⟩)
@@ -940,8 +796,7 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_seriesReadout_sub_novikovProdu
           negOnePowCast R (n - ν₁ ⟨s, s₁ s⟩) • ∑ m, E₂ t m * Κ s m l)
         E₀ (Κ s t) l =
       seriesSew r₀ μ₀ n
-        (seriesSewPair r₁ r₂ μ₁ μ₂ (n - ν₂ ⟨t, s₂ t⟩) n (Φ₁ s) (Φ₂ t) Ψ) Ψ₀ l -
-        Μ s t l)
+        (seriesSewPair r₁ r₂ μ₁ μ₂ (n - ν₂ ⟨t, s₂ t⟩) n (Φ₁ s) (Φ₂ t) Ψ) Ψ₀ l - Μ s t l)
     {e : ℤ} {a : NovikovModule R G₁} (ha : a ∈ gradeBy R G₁ (fun p => n - ν₁ p) e)
     (b : NovikovModule R G₂) :
     novikovMapOfMatrix hF₀ hG₀ r₀ s₀
@@ -967,19 +822,14 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_seriesReadout_sub_novikovProdu
             b) :=
   novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_novikovProductOfMatrix
     r₁ r₂ r₀ s₁ s₂ s₀ q hq hF₁ hF₂ hF₀ hG₁ hG₂ hG₀ hν₁
-    (fun i j k => seriesReadout r₀ μ₀ n (Ψ i j) k)
-    (fun s t l => seriesReadout s₀ ν₀ n (Μ s t) l)
-    (fun s i => seriesReadout r₁ μ₁ n (Φ₁ s) i)
-    (fun t j => seriesReadout r₂ μ₂ n (Φ₂ t) j)
-    (fun k l => seriesReadout s₀ ν₀ n (Ψ₀ k) l)
-    (fun s t l => seriesReadout s₀ ν₀ n (Κ s t) l)
+    (fun i j k => seriesReadout r₀ μ₀ n (Ψ i j) k) (fun s t l => seriesReadout s₀ ν₀ n (Μ s t) l)
+    (fun s i => seriesReadout r₁ μ₁ n (Φ₁ s) i) (fun t j => seriesReadout r₂ μ₂ n (Φ₂ t) j)
+    (fun k l => seriesReadout s₀ ν₀ n (Ψ₀ k) l) (fun s t l => seriesReadout s₀ ν₀ n (Κ s t) l)
     E₁ E₂ E₀ n (comparison_readout_eq r₁ r₂ r₀ s₂ s₀ q s₁ n Ψ Μ Φ₁ Φ₂ Ψ₀ Κ E₁ E₂ E₀ hΦ₂ hΚ hB)
     ha b
 
-/-- **Multiplicative PSS comparison from sewn count functionals.** Combining the three-end PSS
-comparison boundary of `Κ` with a closed output PSS functional `Φ₀` and a degree-`-1` module
-homotopy functional `Υ₀` between `seriesSew s₀ ν₀ n (Ψ₀ k) Φ₀` and `seriesEval r₀ μ₀ n k` yields the
-capped multiplicative PSS homotopy between `Φ₁ a ⋆ Φ₂ b` and `Φ₀ (a ⋆_M b)`. -/
+/-- **Multiplicative PSS comparison from sewn count functionals** between `Φ₁ a ⋆ Φ₂ b` and
+`Φ₀ (a ⋆_M b)`. -/
 theorem novikovProductOfMatrix_seriesReadout_sub_novikovMapOfMatrix_novikovProductOfMatrix
     [DecidableEq ι₀]
     {μ₁ : (Σ i, P₁ i) → ℤ} {μ₂ : (Σ j, P₂ j) → ℤ} {μ₀ : (Σ k, P₀ k) → ℤ}
@@ -990,8 +840,7 @@ theorem novikovProductOfMatrix_seriesReadout_sub_novikovMapOfMatrix_novikovProdu
     (Ψ₀ : ι₀ → κ₀ → NovikovSeries R G ωG) (Φ₀ : κ₀ → ι₀ → NovikovSeries R G ωG)
     (Κ : κ₁ → κ₂ → κ₀ → NovikovSeries R G ωG)
     (E₁ : κ₁ → κ₁ → NovikovSeries R G ωG) (E₂ : κ₂ → κ₂ → NovikovSeries R G ωG)
-    (E₀ : κ₀ → κ₀ → NovikovSeries R G ωG)
-    (D₀ Υ₀ : ι₀ → ι₀ → NovikovSeries R G ωG)
+    (E₀ : κ₀ → κ₀ → NovikovSeries R G ωG) (D₀ Υ₀ : ι₀ → ι₀ → NovikovSeries R G ωG)
     (hΦ₂ : ∀ t j, ∀ A ∈ (Φ₂ t j).support, μ₂ ⟨j, r₂ j⟩ - degree ω c (q A) = ν₂ ⟨t, s₂ t⟩)
     (hΦ₀_idx : ∀ l m, ∀ A ∈ (Φ₀ l m).support, μ₀ ⟨m, r₀ m⟩ - degree ω c (q A) = ν₀ ⟨l, s₀ l⟩)
     (hΚ : ∀ s t m, ∀ A ∈ (Κ s t m).support,
@@ -1003,11 +852,9 @@ theorem novikovProductOfMatrix_seriesReadout_sub_novikovMapOfMatrix_novikovProdu
           negOnePowCast R (n - ν₁ ⟨s, s₁ s⟩) • ∑ m, E₂ t m * Κ s m l)
         E₀ (Κ s t) l =
       seriesSew r₀ μ₀ n
-        (seriesSewPair r₁ r₂ μ₁ μ₂ (n - ν₂ ⟨t, s₂ t⟩) n (Φ₁ s) (Φ₂ t) Ψ) Ψ₀ l -
-        Μ s t l)
+        (seriesSewPair r₁ r₂ μ₁ μ₂ (n - ν₂ ⟨t, s₂ t⟩) n (Φ₁ s) (Φ₂ t) Ψ) Ψ₀ l - Μ s t l)
     (hΦ₀_closed : ∀ l k,
-      seriesBoundary (n - ν₀ ⟨l, s₀ l⟩) r₀ μ₀ n
-        (fun k => ∑ m, E₀ l m * Φ₀ m k) D₀ (Φ₀ l) k = 0)
+      seriesBoundary (n - ν₀ ⟨l, s₀ l⟩) r₀ μ₀ n (fun k => ∑ m, E₀ l m * Φ₀ m k) D₀ (Φ₀ l) k = 0)
     (hΥ₀_B : ∀ k k',
       seriesBoundary (n - μ₀ ⟨k, r₀ k⟩) r₀ μ₀ n
         (fun k' => ∑ m, D₀ k m * Υ₀ m k') D₀ (Υ₀ k) k' =
@@ -1059,56 +906,41 @@ theorem novikovProductOfMatrix_seriesReadout_sub_novikovMapOfMatrix_novikovProdu
                   b)))) := by
   refine novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_novikovProductOfMatrix
     r₁ r₂ r₀ s₁ s₂ s₀ q hq hF₁ hF₂ hF₀ hG₁ hG₂ hG₀ hν₁
-    (fun i j k => seriesReadout r₀ μ₀ n (Ψ i j) k)
-    (fun s t l => seriesReadout s₀ ν₀ n (Μ s t) l)
-    (fun s i => seriesReadout r₁ μ₁ n (Φ₁ s) i)
-    (fun t j => seriesReadout r₂ μ₂ n (Φ₂ t) j)
-    (fun k l => seriesReadout s₀ ν₀ n (Ψ₀ k) l)
-    (fun s t l => seriesReadout s₀ ν₀ n (Κ s t) l)
-    E₁ E₂ E₀ n
-    (fun l k => seriesReadout r₀ μ₀ n (Φ₀ l) k)
-    D₀ (fun k k' => seriesReadout r₀ μ₀ n (Υ₀ k) k')
+    (fun i j k => seriesReadout r₀ μ₀ n (Ψ i j) k) (fun s t l => seriesReadout s₀ ν₀ n (Μ s t) l)
+    (fun s i => seriesReadout r₁ μ₁ n (Φ₁ s) i) (fun t j => seriesReadout r₂ μ₂ n (Φ₂ t) j)
+    (fun k l => seriesReadout s₀ ν₀ n (Ψ₀ k) l) (fun s t l => seriesReadout s₀ ν₀ n (Κ s t) l)
+    E₁ E₂ E₀ n (fun l k => seriesReadout r₀ μ₀ n (Φ₀ l) k) D₀
+    (fun k k' => seriesReadout r₀ μ₀ n (Υ₀ k) k')
     (comparison_readout_eq r₁ r₂ r₀ s₂ s₀ q s₁ n Ψ Μ Φ₁ Φ₂ Ψ₀ Κ E₁ E₂ E₀ hΦ₂ hΚ hB)
     (fun l k => ?_) (fun k k' => ?_) ha b
-  · set B_in : ι₀ → NovikovSeries R G ωG := fun k => ∑ m, E₀ l m * seriesReadout r₀ μ₀ n (Φ₀ m) k
-    have hBin : seriesReadout r₀ μ₀ n B_in = fun k => ∑ m, E₀ l m * Φ₀ m k := by
-      funext k
-      simp only [B_in, seriesReadout_apply, Finset.smul_sum, mul_smul_comm,
-        negOnePowCast_smul_negOnePowCast_smul]
-    exact (sum_mul_eq_of_seriesBoundary_eq_zero q (n - ν₀ ⟨l, s₀ l⟩) r₀ μ₀ n B_in
-      (fun m A hA => by linarith [hΦ₀_idx l m A hA]) k
-      (by rw [hBin, hΦ₀_closed l k])).symm
-  · set B_in : ι₀ → NovikovSeries R G ωG := fun k' => ∑ m, D₀ k m * seriesReadout r₀ μ₀ n (Υ₀ m) k'
-    have hBin : seriesReadout r₀ μ₀ n B_in = fun k' => ∑ m, D₀ k m * Υ₀ m k' := by
-      funext k'
-      simp only [B_in, seriesReadout_apply, Finset.smul_sum, mul_smul_comm,
-        negOnePowCast_smul_negOnePowCast_smul]
-    have h := (sum_mul_add_eq_of_seriesBoundary_eq_seriesReadout q (n - μ₀ ⟨k, r₀ k⟩) r₀ μ₀ n B_in
+  · simpa only [seriesReadout_sum_mul] using
+      (sum_mul_eq_of_seriesBoundary_eq_zero q (n - ν₀ ⟨l, s₀ l⟩) r₀ μ₀ n
+        (seriesReadout r₀ μ₀ n fun k => ∑ m, E₀ l m * Φ₀ m k)
+        (fun m A hA => by linarith [hΦ₀_idx l m A hA]) k
+        (by rw [seriesReadout_seriesReadout, hΦ₀_closed l k])).symm
+  · have h := (sum_mul_add_eq_of_seriesBoundary_eq_seriesReadout q (n - μ₀ ⟨k, r₀ k⟩) r₀ μ₀ n
+      (seriesReadout r₀ μ₀ n fun k' => ∑ m, D₀ k m * Υ₀ m k')
       (seriesReadout r₀ μ₀ n (seriesSew s₀ ν₀ n (Ψ₀ k) Φ₀) -
         seriesReadout r₀ μ₀ n (seriesEval r₀ μ₀ n k))
       (fun m A hA => by linarith [hΥ₀_idx k m A hA]) k'
-      (by rw [hBin, hΥ₀_B k k', seriesReadout_sub_apply, seriesReadout_seriesReadout,
-        seriesReadout_seriesReadout])).symm
-    rw [Pi.sub_apply, seriesReadout_seriesSew, seriesReadout_seriesEval] at h
-    exact h
+      (by rw [seriesReadout_seriesReadout, hΥ₀_B k k', seriesReadout_sub_apply,
+        seriesReadout_seriesReadout, seriesReadout_seriesReadout])).symm
+    simpa only [Pi.sub_apply, seriesReadout_seriesSew, seriesReadout_seriesEval,
+      seriesReadout_sum_mul] using h
 
 end Comparison
 
 section ClassicalSignCheck
 
-/-- **Non-vacuous classical odd-degree sign check on a trivial period group.** Take two input
-generators (`Fin 2`) of odd cochain degree `1` (`n = 2`, `μ = 1`) and a single output generator
-(`Unit`) of even cochain degree `2` (`n = 2`, `μ = 0`). For any skew-symmetric count functional
-`Ψ` (`Ψ 1 0 = -Ψ 0 1`, `Ψ 0 0 = 0`, `Ψ 1 1 = 0`), the readout product on the two basis generators
-`e₀`, `e₁` satisfies `(e₀ ⋆ e₁)(r₀ ()) = ∑_A (Ψ 0 1 ()).coeff A` and `e₀ ⋆ e₁ = -(e₁ ⋆ e₀)`
-(`(-1)^(1 · 1) = -1`), with zero differential and zero exchange homotopy. -/
+/-- **Non-vacuous classical odd-degree sign check on a trivial period group.** For two degree-`1`
+input generators (`n = 2`, `μ = 1`) and a degree-`2` output generator (`n = 2`, `μ = 0`), any
+skew-symmetric count functional `Ψ` reads out to `e₀ ⋆ e₁ = -(e₁ ⋆ e₀)` with
+`(e₀ ⋆ e₁)(r₀ ()) = ∑_A (Ψ 0 1 ()).coeff A`. -/
 theorem novikovProductOfMatrix_seriesReadout_skew_of_subsingleton
     [Subsingleton (PeriodGroup ω c)] (q : G →+ PeriodGroup ω c)
-    (hq : ∀ A, area ω c (q A) = ωG A)
-    {P₁ : Fin 2 → Type*} {P₀ : Unit → Type*}
+    (hq : ∀ A, area ω c (q A) = ωG A) {P₁ : Fin 2 → Type*} {P₀ : Unit → Type*}
     [∀ i, AddTorsor (PeriodGroup ω c) (P₁ i)] [∀ k, AddTorsor (PeriodGroup ω c) (P₀ k)]
-    (r₁ : ∀ i, P₁ i) (r₀ : ∀ k, P₀ k)
-    {F₁ : (Σ i, P₁ i) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+    (r₁ : ∀ i, P₁ i) (r₀ : ∀ k, P₀ k) {F₁ : (Σ i, P₁ i) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
     (hF₁ : ∀ i γ (D : P₁ i), F₁ ⟨i, γ +ᵥ D⟩ = F₁ ⟨i, D⟩ - (-area ω c) γ)
     (hF₀ : ∀ k γ (D : P₀ k), F₀ ⟨k, γ +ᵥ D⟩ = F₀ ⟨k, D⟩ - (-area ω c) γ)
     (Ψ : Fin 2 → Fin 2 → Unit → NovikovSeries R G ωG)
@@ -1117,29 +949,23 @@ theorem novikovProductOfMatrix_seriesReadout_skew_of_subsingleton
     (he₀ : e₀.val ⟨0, r₁ 0⟩ = 1 ∧ e₀.val ⟨1, r₁ 1⟩ = 0)
     (he₁ : e₁.val ⟨0, r₁ 0⟩ = 0 ∧ e₁.val ⟨1, r₁ 1⟩ = 1) :
     let prod := novikovProductOfMatrix hF₁ hF₁ hF₀ r₁ r₁ r₀
-      (fun i j k => coefficientComparison q hq
-        (seriesReadout r₀ (fun _ => 0) 2 (Ψ i j) k))
-    (prod e₀ e₁).val ⟨(), r₀ ()⟩ = ∑ᶠ A, (Ψ 0 1 ()).coeff A ∧
-      prod e₀ e₁ = -prod e₁ e₀ := by
+      (fun i j k => coefficientComparison q hq (seriesReadout r₀ (fun _ => 0) 2 (Ψ i j) k))
+    (prod e₀ e₁).val ⟨(), r₀ ()⟩ = ∑ᶠ A, (Ψ 0 1 ()).coeff A ∧ prod e₀ e₁ = -prod e₁ e₀ := by
   intro prod
   have hread : ∀ i j, seriesReadout r₀ (fun _ => 0) 2 (Ψ i j) () = Ψ i j () := fun i j => by
     rw [seriesReadout_apply, sub_zero, negOnePowCast_even (⟨1, rfl⟩ : Even (2 : ℤ)), one_smul]
-  have hval : ∀ a b : NovikovModule R F₁, ∀ D₀ : P₀ (),
-      (prod a b).val ⟨(), D₀⟩ =
-        (a.val ⟨0, r₁ 0⟩ * b.val ⟨1, r₁ 1⟩ - a.val ⟨1, r₁ 1⟩ * b.val ⟨0, r₁ 0⟩) *
-          ∑ᶠ A, (Ψ 0 1 ()).coeff A := fun a b D₀ => by
+  have hval : ∀ a b : NovikovModule R F₁, ∀ D₀ : P₀ (), (prod a b).val ⟨(), D₀⟩ =
+      (a.val ⟨0, r₁ 0⟩ * b.val ⟨1, r₁ 1⟩ - a.val ⟨1, r₁ 1⟩ * b.val ⟨0, r₁ 0⟩) *
+        ∑ᶠ A, (Ψ 0 1 ()).coeff A := fun a b D₀ => by
     rw [novikovProductOfMatrix_coefficientComparison_apply_val_of_subsingleton q hq r₁ r₁ r₀
       hF₁ hF₁ hF₀ _ a b D₀]
     simp only [Fin.sum_univ_two, hread, h00, h11, hskew, coeff_zero, finsum_zero,
-      mul_zero, zero_add, add_zero, coeff_neg', Pi.neg_apply, finsum_neg_distrib]
-    ring
-  refine ⟨?_, Subtype.ext (funext fun ⟨k, D₀⟩ => ?_)⟩
-  · rw [hval e₀ e₁ (r₀ ()), he₀.1, he₁.2, he₀.2, he₁.1]
-    ring
-  · cases k
-    rw [Submodule.coe_neg, Pi.neg_apply, hval e₀ e₁ D₀, hval e₁ e₀ D₀,
-      he₀.1, he₀.2, he₁.1, he₁.2]
-    ring
+      mul_zero, zero_add, add_zero, coeff_neg', Pi.neg_apply, finsum_neg_distrib]; ring
+  refine ⟨by rw [hval e₀ e₁ (r₀ ()), he₀.left, he₁.right, he₀.right, he₁.left]; ring,
+    Subtype.ext (funext fun ⟨k, D₀⟩ => ?_)⟩
+  cases k
+  rw [Submodule.coe_neg, Pi.neg_apply, hval e₀ e₁ D₀, hval e₁ e₀ D₀,
+    he₀.left, he₀.right, he₁.left, he₁.right]; ring
 
 end ClassicalSignCheck
 
