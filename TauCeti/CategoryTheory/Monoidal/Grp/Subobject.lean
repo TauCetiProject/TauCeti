@@ -105,10 +105,17 @@ theorem grpObjOfMono_inv (i : H ⟶ G) [Mono i]
     (hj : j ≫ i = i ≫ ι[G]) :
     (grpObjOfMono i e m j he hm hj).inv = j := (rfl)
 
-omit [GrpObj G] in
+end TauCeti
+
+namespace CategoryTheory.Iso
+
+universe u v
+
+variable {C : Type u} [Category.{v} C] [CartesianMonoidalCategory C]
+
 /-- A group structure on the source of a morphism into a monoid object for which the morphism is a
 homomorphism transports along an isomorphism of sources compatible with the two morphisms. -/
-theorem exists_grpObj_isMonHom_iff_of_iso [MonObj G] {K : C} (e : H ≅ K) {i : H ⟶ G}
+theorem exists_grpObj_isMonHom_iff {H K G : C} [MonObj G] (e : H ≅ K) {i : H ⟶ G}
     {j : K ⟶ G} (h : e.hom ≫ j = i) :
     (∃ _ : GrpObj H, IsMonHom i) ↔ ∃ _ : GrpObj K, IsMonHom j := by
   constructor
@@ -124,4 +131,4 @@ theorem exists_grpObj_isMonHom_iff_of_iso [MonObj G] {K : C} (e : H ≅ K) {i : 
     rw [← h]
     infer_instance
 
-end TauCeti
+end CategoryTheory.Iso

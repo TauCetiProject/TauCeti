@@ -172,7 +172,7 @@ theorem exists_grpObj_isMonHom_comap_pullback_fst_iff [MonObj G] (f : S' ⟶ S) 
         IsMonHom ((Over.pullback f).map
           (Over.homMk D.subschemeι : Over.mk (D.subschemeι ≫ G.hom) ⟶ G)) := by
   have hD := D.isPullback_subschemeMap_comap G.hom (IsPullback.of_hasPullback G.hom f)
-  refine exists_grpObj_isMonHom_iff_of_iso
+  refine Iso.exists_grpObj_isMonHom_iff
     (Over.isoMk (f := Over.mk ((D.comap (pullback.fst G.hom f)).subschemeι ≫
       ((Over.pullback f).obj G).hom)) (g := (Over.pullback f).obj (Over.mk (D.subschemeι ≫ G.hom)))
       hD.isoPullback (by simp)) ?_
