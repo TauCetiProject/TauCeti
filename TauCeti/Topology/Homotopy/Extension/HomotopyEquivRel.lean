@@ -76,9 +76,6 @@ tail is removed by
   `h` with a homotopy `g ∘ h ≃ id` extending the given one.
 * `TauCeti.HasHomotopyExtensionProperty.exists_inverse_extending_homotopy_of_isEmbedding`: the
   same for a commutative square of homotopy equivalences along two embeddings.
-* `TauCeti.HasHomotopyExtensionProperty.homotopicRel_singleton_of_evalAt_homotopic_refl`: a
-  homotopy between maps agreeing at a closed base point with the homotopy extension property whose
-  trace loop is nullhomotopic can be replaced by a homotopy relative to that base point.
 
 ## References
 
@@ -96,7 +93,7 @@ namespace TauCeti
 
 open ContinuousMap unitInterval
 
-universe u v
+universe u
 
 variable {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] {A : Set X} {B : Set Y}
 
@@ -319,54 +316,5 @@ theorem HasHomotopyExtensionProperty.exists_inverse_extending_homotopy_of_isEmbe
     simp [g₀', eX, eY]
   · rw [hH₁ t ⟨i x, x, rfl⟩, hH₀']
     simp [eX]
-
-/-- **Making a homotopy stationary at a base point.** Let `{x₀}` be a closed singleton with the
-homotopy extension property, and let `F : f₀.Homotopy f₁` be a homotopy between maps into `Z` (in
-any universe) that agree at `x₀`. If the trace loop of `F` at `x₀` is homotopic relative to its
-endpoints to the constant loop, then `f₀` and `f₁` are homotopic relative to `{x₀}`. -/
-theorem HasHomotopyExtensionProperty.homotopicRel_singleton_of_evalAt_homotopic_refl
-    {Z : Type v} [TopologicalSpace Z] {x₀ : X}
-    (hx₀ : HasHomotopyExtensionProperty ({x₀} : Set X)) (hc : IsClosed ({x₀} : Set X))
-    {f₀ f₁ : C(X, Z)} (F : f₀.Homotopy f₁) (hf : f₀ x₀ = f₁ x₀)
-    (hF : ((F.evalAt x₀).cast rfl hf).Homotopic (Path.refl (f₀ x₀))) :
-    f₀.HomotopicRel f₁ {x₀} := by
-  obtain ⟨Φ⟩ := hF
-  -- Extend the path homotopy `Φ` from `{x₀}` to `X` as a homotopy of maps into the path space
-  -- `C(I, Z)` starting at `x ↦ (t ↦ F (t, x))`.
-  obtain ⟨E, hE₀, hE₁⟩ := hx₀.exists_extension_of_isClosed hc
-    (ContinuousMap.curry ⟨fun p : X × I => F (p.2, p.1), by fun_prop⟩)
-    (ContinuousMap.curry ⟨fun p : (I × ({x₀} : Set X)) × I => Φ (p.1.1, p.2), by fun_prop⟩)
-    fun a => ContinuousMap.ext fun t => by
-      obtain ⟨_, rfl⟩ := a
-      exact (Φ.apply_zero t).trans rfl
-  let g₀ : C(X, Z) := ⟨fun x => E (1, x) 0, by fun_prop⟩
-  let g₁ : C(X, Z) := ⟨fun x => E (1, x) 1, by fun_prop⟩
-  -- Follow the three sides `(0, x) 0 ⇝ (1, x) 0 ⇝ (1, x) 1 ⇝ (0, x) 1` of the cylinder of paths;
-  -- at `x₀` the endpoints of `Φ (u, ·)` and the top path `Φ (1, ·)` are all constant at `f₀ x₀`.
-  let H₁ : f₀.HomotopyRel g₀ {x₀} :=
-    { toFun := fun p => E p 0
-      continuous_toFun := by fun_prop
-      map_zero_left := fun x => by simp [hE₀]
-      map_one_left := fun _ => rfl
-      prop' := fun u x hx => by
-        rw [Set.mem_singleton_iff.1 hx]
-        simp [hE₁ u ⟨x₀, rfl⟩] }
-  let H₂ : g₀.HomotopyRel g₁ {x₀} :=
-    { toFun := fun p => E (1, p.2) p.1
-      continuous_toFun := by fun_prop
-      map_zero_left := fun _ => rfl
-      map_one_left := fun _ => rfl
-      prop' := fun t x hx => by
-        rw [Set.mem_singleton_iff.1 hx]
-        simp [g₀, hE₁ 1 ⟨x₀, rfl⟩] }
-  let H₃ : g₁.HomotopyRel f₁ {x₀} :=
-    { toFun := fun p => E (σ p.1, p.2) 1
-      continuous_toFun := by fun_prop
-      map_zero_left := fun _ => by simp [g₁]
-      map_one_left := fun x => by simp [hE₀]
-      prop' := fun u x hx => by
-        rw [Set.mem_singleton_iff.1 hx]
-        simp [g₁, hE₁ _ ⟨x₀, rfl⟩] }
-  exact ⟨H₁.trans (H₂.trans H₃)⟩
 
 end TauCeti

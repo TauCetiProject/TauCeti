@@ -13,7 +13,6 @@ public import TauCeti.Topology.Homotopy.Cube.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 public import TauCeti.Topology.Homotopy.Homotopic.Rel
-import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 import TauCeti.Geometry.Sphere.LinearIsometry
 
 /-!
@@ -90,13 +89,12 @@ kernel of the induced map on `πₙ` (`TopCat.Hom.nullhomotopic_comp_of_ker_le`)
   is a free homotopy of the corresponding maps out of the sphere.
 * `HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`: a class is trivial exactly when the
   corresponding map `Sⁿ → X` is freely null-homotopic.
+* `HomotopyGroup.nontrivial_of_not_nullhomotopic`: so a map `Sⁿ → X` that is not null-homotopic
+  makes `πₙ` nontrivial at the image of the north pole.
 * `GenLoop.exists_diskBoundaryMap_eq`: every map `TopCat.diskBoundary (n + 1) ⟶ X` is the
   attaching map of a generalized loop.
 * `TopCat.Hom.nullhomotopic_comp_of_ker_le`: if every class of `πₙ(X, x)` killed by `f` is killed
   by `g`, every map `Sⁿ → X` null-homotopic after `f` is null-homotopic after `g`.
-* `TauCeti.nullhomotopic_sphere_of_subsingleton_homotopyGroup`: every continuous map from the unit
-  sphere of an `(n + 1)`-dimensional real normed space into a path-connected space with trivial
-  `πₙ` is freely null-homotopic.
 
 ## References
 
@@ -821,6 +819,15 @@ theorem mk_eq_one_iff_nullhomotopic_toSphere (p : Ω^ (Fin n) X x) :
     rw [← hp, ← map_mk]
     exact map_eq_one_of_nullhomotopic h _ _
 
+/-- **A map out of the sphere that is not null-homotopic gives a nontrivial homotopy group** at the
+image of the north pole: its class there is not the identity. -/
+theorem nontrivial_of_not_nullhomotopic (f : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, X))
+    (hf : ¬f.Nullhomotopic) : Nontrivial (HomotopyGroup (Fin n) X (f (sphereNorthPole n))) := by
+  let p := (GenLoop.sphereEquiv n X _).symm ⟨f, rfl⟩
+  have hp : GenLoop.toSphere p = f := by
+    rw [← GenLoop.coe_sphereEquiv_apply, Equiv.apply_symm_apply]
+  exact ⟨⟦p⟧, 1, fun h ↦ hf (hp ▸ (mk_eq_one_iff_nullhomotopic_toSphere p).1 h)⟩
+
 /-- **A homotopy class is trivial exactly when its attaching map is null-homotopic.** The class of
 a generalized loop `p` is the identity of `πₙ(X, x)` if and only if the map
 `GenLoop.diskBoundaryMap p : ∂𝔻 (n + 1) ⟶ X`, along which a cell kills that class, is freely
@@ -887,65 +894,3 @@ theorem nullhomotopic_comp_of_ker_le (f : X ⟶ Y) (g : X ⟶ Z) (hf : f x = y) 
   exact (homotopyGroupMulEquivOfPath _).injective (h.trans (map_one _).symm)
 
 end TopCat.Hom
-
-namespace TauCeti
-
-/-- **Every continuous map from `Sⁿ` into a path-connected space with trivial `πₙ` is freely
-null-homotopic.** Here `Sⁿ` is the unit sphere of any `(n + 1)`-dimensional real normed space `E`,
-in every dimension `n ≥ 0`. -/
-theorem nullhomotopic_sphere_of_subsingleton_homotopyGroup
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {n : ℕ}
-    (hE : Module.finrank ℝ E = n + 1)
-    {X : Type*} [TopologicalSpace X] [PathConnectedSpace X] {x : X}
-    (hX : Subsingleton (π_ n X x)) (g : C(sphere (0 : E) 1, X)) :
-    g.Nullhomotopic := by
-  classical
-  have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
-  let F := EuclideanSpace ℝ (Fin (n + 1))
-  let e : sphere (0 : F) 1 ≃ₜ sphere (0 : E) 1 :=
-    sphereHomeomorphOfFinrankEq ((finrank_euclideanSpace_fin (n := n + 1)).trans hE.symm)
-  let g' : C(sphere (0 : F) 1, X) := g.comp (e : C(sphere (0 : F) 1, sphere (0 : E) 1))
-  suffices hg' : g'.Nullhomotopic by
-    obtain ⟨y, ⟨H⟩⟩ := hg'
-    refine ⟨y, ⟨(H.compContinuousMap (e.symm : C(sphere (0 : E) 1, sphere (0 : F) 1))).cast ?_
-      rfl⟩⟩
-    ext s
-    exact congrArg g (e.apply_symm_apply s)
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · let p₀ := sphereNorthPole 0
-    let q₀ : sphere (0 : F) 1 := ⟨-(p₀ : F), by simp⟩
-    have key (s : sphere (0 : F) 1) (hs : s ≠ p₀) : s = q₀ :=
-      Subtype.ext <| (eq_or_eq_neg_of_norm_eq_of_finrank_eq_one finrank_euclideanSpace_fin
-        (by rw [norm_eq_of_mem_sphere, norm_eq_of_mem_sphere])).resolve_left
-        fun h ↦ hs (Subtype.ext h)
-    have : Finite (sphere (0 : F) 1) :=
-      Finite.of_surjective (fun b : Bool ↦ cond b p₀ q₀) fun s ↦ by
-        by_cases hs : s = p₀
-        exacts [⟨true, hs.symm⟩, ⟨false, (key s hs).symm⟩]
-    have : DiscreteTopology (sphere (0 : F) 1) :=
-      discreteTopology_iff_forall_isClosed.mpr (·.toFinite.isClosed)
-    let γ : Path (g' q₀) (g' p₀) := PathConnectedSpace.somePath (g' q₀) (g' p₀)
-    let H₀ : C(I × sphere (0 : F) 1, X) :=
-      (ContinuousMap.uncurry
-        ⟨fun s : sphere (0 : F) 1 ↦
-          if s = p₀ then ContinuousMap.const I (g' p₀) else γ.toContinuousMap,
-          continuous_of_discreteTopology⟩).comp ContinuousMap.prodSwap
-    refine ⟨g' p₀, ⟨{
-      toContinuousMap := H₀
-      map_zero_left := fun s ↦ by
-        by_cases hs : s = p₀
-        · subst hs; simp [H₀]
-        · exact (by simp [H₀, hs] : H₀.toFun (0, s) = g' q₀).trans (congrArg g' (key s hs).symm)
-      map_one_left := fun s ↦ by
-        by_cases hs : s = p₀ <;> simp [H₀, hs] }⟩⟩
-  · have : NeZero n := ⟨hn.ne'⟩
-    let z : X := g' (sphereNorthPole n)
-    have : Subsingleton (π_ n X z) :=
-      (homotopyGroupEquivOfPath (PathConnectedSpace.somePath x z)).subsingleton_congr.mp hX
-    let p : Ω^ (Fin n) X z := (GenLoop.sphereEquiv n X z).symm ⟨g', rfl⟩
-    have hp : (GenLoop.toSphere p).Nullhomotopic :=
-      (HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere p).1
-        (Subsingleton.elim (α := π_ n X z) ⟦p⟧ 1)
-    rwa [← GenLoop.coe_sphereEquiv_apply, (GenLoop.sphereEquiv n X z).apply_symm_apply] at hp
-
-end TauCeti

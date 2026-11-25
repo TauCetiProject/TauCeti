@@ -7,7 +7,6 @@ module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
 public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
-import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 
 /-!
 # The fundamental group is a homotopy invariant
@@ -32,9 +31,8 @@ homeomorphism is what is available.
   identities and composition of homotopy equivalences.
 * `ContinuousMap.HomotopyEquiv.subsingleton_fundamentalGroup`: trivial fundamental groups pull
   back along a homotopy equivalence.
-* `ContinuousMap.HomotopyEquiv.fundamentalGroup_map_bijective`,
-  `ContinuousMap.HomotopyEquiv.fundamentalGroup_mapOfEq_bijective`: the homomorphism induced on
-  fundamental groups by the forward map itself is bijective.
+* `ContinuousMap.HomotopyEquiv.fundamentalGroup_map_bijective`: the homomorphism
+  `FundamentalGroup.map e.toFun x` induced by the forward map itself is bijective.
 * `ContinuousMap.HomotopyEquiv.nonempty_fundamentalGroupMulEquiv`: over a path connected
   space, the fundamental groups at *any* pair of base points are isomorphic.
 -/
@@ -133,13 +131,6 @@ theorem fundamentalGroup_map_bijective (e : X ≃ₕ Y) (x : X) :
     ((FundamentalGroupoidFunctor.equivOfHomotopyEquiv e).fullyFaithfulFunctor.map_bijective
       (FundamentalGroupoid.mk x) (FundamentalGroupoid.mk x))).comp
     CategoryTheory.End.homEquiv.bijective
-
-/-- **The forward map of a homotopy equivalence is bijective on fundamental groups**, with an
-explicit target basepoint equality. -/
-theorem fundamentalGroup_mapOfEq_bijective (e : X ≃ₕ Y) {x : X} {y : Y} (hx : e.toFun x = y) :
-    Function.Bijective (_root_.FundamentalGroup.mapOfEq e.toFun hx) := by
-  subst hx
-  simpa only [_root_.FundamentalGroup.mapOfEq_rfl] using e.fundamentalGroup_map_bijective x
 
 /-- Over a path connected space, homotopy equivalence identifies the fundamental groups at *any*
 pair of base points, by composing with base-point change. -/

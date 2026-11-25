@@ -8,8 +8,9 @@ module
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.EilenbergMacLane
 public import TauCeti.Topology.CWComplex.Classical.CWType
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
-import TauCeti.AlgebraicTopology.ClassifyingSpace.Classifier
 import TauCeti.AlgebraicTopology.ClassifyingSpace.Comparison
+import TauCeti.AlgebraicTopology.ClassifyingSpace.MapsToAspherical
+import TauCeti.AlgebraicTopology.EilenbergMacLane.Homotopic
 import TauCeti.AlgebraicTopology.EilenbergMacLane.WeakHomotopyEquivalence
 import TauCeti.AlgebraicTopology.Homotopy.CWApproximation.Basic
 

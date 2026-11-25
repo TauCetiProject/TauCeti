@@ -45,6 +45,9 @@ on the quotient by `I` (`MonoidHom.quotientRingAut`), assembled from Mathlib's
 If every class modulo a maximal ideal `m` comes from `f`, then `m.comap f` is maximal
 (`Ideal.isMaximal_comap_of_surjective_quotient_mk_comp`).
 
+For ideals `J ≤ I`, the image of `I` in `R ⧸ J` is a minimal nonzero ideal exactly when `I` covers
+`J` (`Ideal.isAtom_map_mk_iff_covBy`).
+
 For an element `p` of a commutative `R`-algebra `B`, the sequence `B → B → B ⧸ (p)`, whose first
 map is multiplication by `p`, is exact (`Ideal.exact_mulLeft_mkₐ_span_singleton`).
 
@@ -131,6 +134,18 @@ theorem isMaximal_comap_of_surjective_quotient_mk_comp {A S F : Type*} [Ring A] 
   let := Quotient.field m
   have := RingHom.ker_isMaximal_of_surjective ((Quotient.mk m).comp (f : A →+* S)) hf
   rwa [← RingHom.comap_ker, mk_ker, comap_coe] at this
+
+/-- For ideals `J ≤ I`, the image of `I` in `R ⧸ J` is a minimal nonzero ideal exactly when `I`
+covers `J`, that is, when no ideal lies strictly between `J` and `I`. -/
+theorem isAtom_map_mk_iff_covBy {I J : Ideal R} (h : J ≤ I) :
+    IsAtom (I.map (Quotient.mk J)) ↔ J ⋖ I := by
+  have hJ : comap (Quotient.mk J) ⊥ = J := by rw [← RingHom.ker_eq_comap_bot, mk_ker]
+  -- Transport atoms along the correspondence between ideals of `R ⧸ J` and ideals above `J`.
+  have key := ((relIsoOfSurjective (Quotient.mk J) Quotient.mk_surjective).symm.isAtom_iff
+    ⟨I, hJ.le.trans h⟩).trans (Set.Ici.isAtom_iff (a := comap (Quotient.mk J) ⊥))
+  simp only [hJ] at key
+  -- The inverse of the correspondence sends `I` to `I.map (Quotient.mk J)` by definition.
+  exact key
 
 /-- A linear endomorphism commuting with multiplication by each element of a set `s` preserves the
 ideal spanned by `s`, so it induces a compatible endomorphism of the quotient by that ideal. -/

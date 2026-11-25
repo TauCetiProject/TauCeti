@@ -24,7 +24,10 @@ pointed maps `(Y, y₀) → (X, x)`, whose classes are the pointed homotopy clas
 * `ContinuousMap.HomotopicRel.mono`: maps homotopic relative to `S` are homotopic relative to
   every `T ⊆ S`.
 * `ContinuousMap.HomotopyRel.precomp`, `ContinuousMap.HomotopicRel.precomp`: precomposing a
-  homotopy relative to `S` with `e` gives a homotopy relative to `e ⁻¹' S`.
+  homotopy relative to `S` with `e` gives a homotopy relative to `e ⁻¹' S`; for a homeomorphism
+  `e`, `ContinuousMap.Homotopic.comp_homeomorph_iff` and
+  `ContinuousMap.HomotopicRel.comp_homeomorph_iff` record that precomposing preserves and reflects
+  homotopy.
 * `ContinuousMap.HomotopicRel.comp`: relative homotopies compose.
 * `ContinuousMap.HomotopicRel.comp_id`: self-maps homotopic to the identity relative to `S` are
   closed under composition.
@@ -79,6 +82,27 @@ relative to `e ⁻¹' S`. -/
 theorem HomotopicRel.precomp (h : HomotopicRel f₀ f₁ S) (e : C(W, X)) :
     HomotopicRel (f₀.comp e) (f₁.comp e) (e ⁻¹' S) :=
   h.map (·.precomp e)
+
+/-- Precomposing with a homeomorphism preserves and reflects free homotopy. -/
+theorem Homotopic.comp_homeomorph_iff (e : W ≃ₜ X) :
+    Homotopic (f₀.comp (e : C(W, X))) (f₁.comp (e : C(W, X))) ↔ Homotopic f₀ f₁ := by
+  refine ⟨fun ⟨H⟩ ↦ ?_, fun ⟨H⟩ ↦ ⟨H.compContinuousMap (e : C(W, X))⟩⟩
+  have hf (g : C(X, Y)) : (g.comp (e : C(W, X))).comp (e.symm : C(X, W)) = g :=
+    ContinuousMap.ext fun x ↦ congrArg g (e.apply_symm_apply x)
+  exact ⟨(H.compContinuousMap (e.symm : C(X, W))).cast (hf f₀) (hf f₁)⟩
+
+/-- Precomposing with a homeomorphism preserves and reflects homotopy relative to a set. -/
+theorem HomotopicRel.comp_homeomorph_iff (e : W ≃ₜ X) :
+    HomotopicRel (f₀.comp (e : C(W, X))) (f₁.comp (e : C(W, X))) ((e : C(W, X)) ⁻¹' S) ↔
+      HomotopicRel f₀ f₁ S := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.precomp (e : C(W, X))⟩
+  have h' := h.precomp (e.symm : C(X, W))
+  have hf (g : C(X, Y)) : (g.comp (e : C(W, X))).comp (e.symm : C(X, W)) = g :=
+    ContinuousMap.ext fun x ↦ congrArg g (e.apply_symm_apply x)
+  have hpre : (e.symm : C(X, W)) ⁻¹' ((e : C(W, X)) ⁻¹' S) = S := by
+    ext x
+    simp
+  rwa [hf f₀, hf f₁, hpre] at h'
 
 /-- A self-map homotopic to the identity relative to `S` fixes `S` pointwise, so it maps `S` into
 itself. -/
