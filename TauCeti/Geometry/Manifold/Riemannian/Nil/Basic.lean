@@ -260,9 +260,8 @@ def toHeisenberg : Nil ≃* HeisenbergGroup ℝ where
 /-- **The centre of Nil is the `z`-axis** `{(0, 0, z)}`, transported from the centre of the
 Heisenberg group (`TauCeti.HeisenbergGroup.center_eq_zAxis`). -/
 theorem mem_center_iff {p : Nil} : p ∈ Subgroup.center Nil ↔ p.x = 0 ∧ p.y = 0 := by
-  rw [← SetLike.mem_coe, Subgroup.coe_center, ← MulEquivClass.apply_mem_center_iff toHeisenberg,
-    ← Subgroup.coe_center, SetLike.mem_coe, HeisenbergGroup.center_eq_zAxis,
-    HeisenbergGroup.mem_zAxis_iff, x_toHeisenberg, y_toHeisenberg]
+  simp [← Subgroup.mem_map_iff_mem (f := (toHeisenberg : Nil →* HeisenbergGroup ℝ))
+    toHeisenberg.injective, HeisenbergGroup.center_eq_zAxis]
 
 /-! ### The Lie group structure -/
 

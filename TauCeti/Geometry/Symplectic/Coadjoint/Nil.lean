@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.Heisenberg.Orbit
 public import TauCeti.Geometry.Manifold.Riemannian.Nil.Basic
 public import TauCeti.Geometry.Symplectic.Coadjoint.Orbit
-import all TauCeti.Geometry.Manifold.Riemannian.Nil.Basic
 
 /-!
 # Adjoint and coadjoint orbits of the Lie group Nil
@@ -85,13 +84,14 @@ local notation "R3" => ℝ × ℝ × ℝ
 
 /-- Conjugation by `p`, `(x, y, z) ↦ (x, y, z + p.x y - p.y x)`, read in the model space. -/
 private def conjL (p : Nil) : R3 →L[ℝ] R3 :=
-  xL.prod (yL.prod (zL + p.x • yL - p.y • xL))
+  .id ℝ R3 + (p.x • (ContinuousLinearMap.fst ℝ ℝ ℝ).comp (.snd ℝ ℝ (ℝ × ℝ)) -
+    p.y • ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ)).smulRight ((0, 0, 1) : R3)
 
 /-- Conjugation by `p` is the linear map `conjL p` in the global coordinates. -/
 private theorem toProd_comp_conjDiffeomorph_comp_toProd_symm (p : Nil) :
     toProd ∘ (Lie.conjDiffeomorph (I := 𝓘(ℝ, R3)) (n := 1) p) ∘ toProd.symm = conjL p := by
   funext r
-  ext <;> simp [conjL, xL, yL, zL]
+  ext <;> simp [conjL]
   ring
 
 /-- Reading a tangent vector of `Nil` in the model space does not depend on the base point. -/
@@ -111,7 +111,7 @@ theorem tangentSpaceCastModel_adjointContinuousLinearMap (p : Nil)
   have h1 : Lie.conjDiffeomorph (I := 𝓘(ℝ, R3)) (n := 1) p 1 = 1 := by simp
   rw [Lie.adjointContinuousLinearMap_apply, tangentSpaceCastModel_congr h1,
     ← fderiv_toProd_conj_apply, toProd_comp_conjDiffeomorph_comp_toProd_symm, (conjL p).fderiv]
-  simp [conjL, xL, yL, zL, u]
+  ext <;> simp [conjL, u, add_sub_assoc]
 
 /-- `Ad_(g⁻¹)` adds a multiple of the central generator `∂_z`. -/
 private theorem adjointContinuousLinearMap_inv_apply (g : Nil)
@@ -149,17 +149,18 @@ theorem tangentSpaceCastModel_lie (v w : GroupLieAlgebra 𝓘(ℝ, R3) Nil) :
   intro ν
   rw [map_sub, ← Lie.mvfderiv_coadjointRepresentation_apply_one, sub_eq_zero]
   -- In the global coordinates, `g ↦ (Ad*_g ν) v = ν (Ad_(g⁻¹) v)` is affine.
-  set L : R3 →L[ℝ] ℝ := (ν Z * u.1) • yL - (ν Z * u.2.1) • xL
+  set L : R3 →L[ℝ] ℝ := (ν Z * u.1) • (ContinuousLinearMap.fst ℝ ℝ ℝ).comp (.snd ℝ ℝ (ℝ × ℝ)) -
+    (ν Z * u.2.1) • ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ)
   have hfun : (fun g : Nil ↦ Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil g ν v) =
       (fun r : R3 ↦ ν v + L r) ∘ toProd := by
     funext g
     rw [Lie.coadjointRepresentation_apply, adjointContinuousLinearMap_inv_apply]
-    simp [L, u, xL, yL]
+    simp [L, u]
     ring
   rw [hfun, mvfderiv_comp_apply_of_differentiableAt (by fun_prop)
       (contMDiff_toProd.mdifferentiableAt one_ne_zero), mvfderiv_apply_eq_mfderiv_apply,
     mfderiv_toProd_apply, fderiv_const_add, L.fderiv]
-  simp [L, xL, yL, u']
+  simp [L, u']
   ring
 
 end Bracket
@@ -383,6 +384,22 @@ theorem finrank_quotientModelSpace_stabilizer_coadjointRepresentation_of_ne_zero
 
 /-! ### The Kirillov–Kostant–Souriau form -/
 
+/-- **Points of a coadjoint orbit of Nil on brackets.** At every point `μ` of the orbit
+`Nil ⧸ Nil_ν`, `μ ⁅ξ, ξ'⁆ = r (s t' - t s')` for `ξ = (s, t, u)` and `ξ' = (s', t', u')`, where
+`r = ν Z` is the constant value of the orbit on the central generator. -/
+theorem orbitMap_coadjointRepresentation_apply_lie (ν : Dual ℝ (GroupLieAlgebra 𝓘(ℝ, R3) Nil))
+    (x : Nil ⧸ (Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).stabilizer ν)
+    (ξ ξ' : GroupLieAlgebra 𝓘(ℝ, R3) Nil) :
+    (Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).orbitMap ν x ⁅ξ, ξ'⁆ =
+      ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)) *
+        ((tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) ξ).1 *
+            (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) ξ').2.1 -
+          (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) ξ).2.1 *
+            (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) ξ').1) := by
+  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
+  rw [Representation.orbitMap_mk, lie_eq_smul_lieAlgebraEquiv_symm_heisenbergZ, map_smul,
+    coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergZ, smul_eq_mul, mul_comm]
+
 /-- **The Kirillov–Kostant–Souriau form of a coadjoint orbit of Nil.** At every point of the
 orbit `Nil ⧸ Nil_ν`, the KKS form pairs the generators of `ξ = (s, t, u)` and `ξ' = (s', t', u')`
 to `r (s t' - t s')`, where `r = ν Z` is the constant value of the orbit on the central generator.
@@ -401,10 +418,8 @@ theorem eval₂_coadjointOrbitForm_fundamentalVectorField
             (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) ξ').2.1 -
           (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) ξ).2.1 *
             (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) ξ').1) := by
-  rw [Dual.eval₂_coadjointOrbitForm_fundamentalVectorField]
-  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
-  rw [Representation.orbitMap_mk, lie_eq_smul_lieAlgebraEquiv_symm_heisenbergZ, map_smul,
-    coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergZ, smul_eq_mul, mul_comm]
+  rw [Dual.eval₂_coadjointOrbitForm_fundamentalVectorField,
+    orbitMap_coadjointRepresentation_apply_lie]
 
 /-- **The generators of a coadjoint orbit of Nil.** Along the generator of `ξ = (s, t, u)` at a
 point `μ` of the orbit, with `r = μ Z`, the coordinate `⟨μ, ζ⟩` of the orbit map changes at the
@@ -424,9 +439,7 @@ theorem mvfderiv_orbitMap_coadjointRepresentation_apply_fundamentalVectorField
             (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) ξ).2.1 -
           (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) ζ).2.1 *
             (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) ξ).1) := by
-  rw [Dual.mvfderiv_orbitMap_coadjointRepresentation_apply_fundamentalVectorField]
-  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
-  rw [Representation.orbitMap_mk, lie_eq_smul_lieAlgebraEquiv_symm_heisenbergZ, map_smul,
-    coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergZ, smul_eq_mul, mul_comm]
+  rw [Dual.mvfderiv_orbitMap_coadjointRepresentation_apply_fundamentalVectorField,
+    orbitMap_coadjointRepresentation_apply_lie]
 
 end TauCeti.Nil
