@@ -166,8 +166,7 @@ theorem conjRepresentation_conjRepresentation (g h : G) (x : MonoidAlgebra R G) 
 @[simp]
 theorem augmentation_conjRepresentation (g : G) (x : MonoidAlgebra R G) :
     augmentation R G (conjRepresentation R G g x) = augmentation R G x := by
-  rw [conjRepresentation_apply_eq_mul, map_mul, map_mul, of_apply, of_apply, augmentation_single,
-    augmentation_single, one_mul, mul_one]
+  simp [conjRepresentation_apply_eq_mul, of_apply]
 
 variable (R) in
 /-- The subalgebra `R[G]^H` of elements of `R[G]` fixed by conjugation by `H`: the centralizer in

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.GroupAlgebra.Brauer.Projection
+import TauCeti.GroupTheory.PGroup
 
 /-!
 # The kernel of the Brauer homomorphism
@@ -51,18 +52,6 @@ variable {R G : Type*} [CommSemiring R] [Group G]
 
 /-! ### Traces from proper subgroups lie in the kernel -/
 
-/-- In characteristic `p`, the index `|P : Q|` of a proper subgroup `Q` of a `p`-group `P`
-vanishes, being a positive power of `p`. -/
-private theorem index_subgroupOf_cast_eq_zero {p : ℕ} [Fact p.Prime] [CharP R p]
-    {Q P : Subgroup G} [(Q.subgroupOf P).FiniteIndex] (hP : IsPGroup p P) (hQP : Q < P) :
-    ((Q.subgroupOf P).index : R) = 0 := by
-  obtain ⟨n, hn⟩ := hP.index (Q.subgroupOf P)
-  have hn0 : n ≠ 0 := by
-    rintro rfl
-    rw [pow_zero, Subgroup.index_eq_one, Subgroup.subgroupOf_eq_top] at hn
-    exact hQP.not_ge hn
-  rw [hn, Nat.cast_pow, CharP.cast_eq_zero, zero_pow hn0]
-
 /-- **The Brauer projection kills traces from proper subgroups.** For a `p`-subgroup `P` in
 characteristic `p` and `Q < P`, `Br_P(Tr_Q^P(a)) = 0`, since `|P : Q|` is a positive power of
 `p`. -/
@@ -71,7 +60,7 @@ theorem brauerProjection_relTrace_eq_zero {p : ℕ} [Fact p.Prime] [CharP R p] {
     brauerProjection P (relTrace R Q P a : MonoidAlgebra R G) = 0 := by
   ext c
   rw [coeff_brauerProjection, coeff_relTrace_of_mem_centralizer a c.property, nsmul_eq_mul,
-    index_subgroupOf_cast_eq_zero hP hQP, zero_mul, coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
+    hP.index_subgroupOf_cast_eq_zero hQP, zero_mul, coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
 
 /-! ### The kernel -/
 
@@ -187,13 +176,8 @@ theorem augmentation_brauerProjection [Finite G] {p : ℕ} [Fact p.Prime] [CharP
   set z : MonoidAlgebra R G := ofCoeff (x.coeff.filter (· ∉ C))
   have hy : augmentation R G y = augmentation R C (brauerProjection P x) :=
     RingHom.congr_fun (augmentation_comp_mapDomainRingHom R C.subtype) _
-  have hyc (g : G) : y.coeff g = if g ∈ C then x.coeff g else 0 := by
-    simp only [y, mapDomainRingHom_apply, coeff_mapDomain]
-    split_ifs with hg
-    · rw [show g = C.subtype ⟨g, hg⟩ from rfl,
-        Finsupp.mapDomain_apply_of_injective C.subtype_injective, coeff_brauerProjection,
-        Subgroup.coe_subtype]
-    · exact Finsupp.mapDomain_of_notMem_range _ _ (by simpa using hg)
+  have hyc (g : G) : y.coeff g = if g ∈ C then x.coeff g else 0 :=
+    coeff_mapDomainRingHom_brauerProjection P x g
   have hzc (g : G) : z.coeff g = if g ∈ C then 0 else x.coeff g := by
     rw [coeff_ofCoeff, Finsupp.filter_apply]
     split_ifs <;> rfl
@@ -201,14 +185,11 @@ theorem augmentation_brauerProjection [Finite G] {p : ℕ} [Fact p.Prime] [CharP
     ext g
     rw [coeff_add, Finsupp.add_apply, hyc, hzc]
     split_ifs <;> simp
-  -- `z` is `P`-invariant, since conjugation by `P` preserves `C`, and `Br_P(z) = 0`.
-  have hC {h : G} (hh : h ∈ P) {g : G} (hg : g ∈ C) : h * g * h⁻¹ = g := by
-    rw [Subgroup.mem_centralizer_iff.1 hg h hh, mul_inv_cancel_right]
-  have hCconj {h : G} (hh : h ∈ P) (g : G) : h * g * h⁻¹ ∈ C ↔ g ∈ C := by
-    refine ⟨fun hg => ?_, fun hg => (hC hh hg).symm ▸ hg⟩
-    have := hC (P.inv_mem hh) hg
-    rw [inv_inv, show h⁻¹ * (h * g * h⁻¹) * h = g by group] at this
-    exact this ▸ hg
+  -- `z` is `P`-invariant, since conjugation by `P` preserves `C`, and `Br_P(z) = 0`. Here `P`
+  -- centralizes `C`, hence normalizes it.
+  have hCconj {h : G} (hh : h ∈ P) (g : G) : h * g * h⁻¹ ∈ C ↔ g ∈ C :=
+    (Subgroup.mem_set_normalizer_iff.1
+      (Subgroup.centralizer_le_normalizer _ (Set.subset_centralizer_centralizer hh)) g).symm
   have hzmem : z ∈ conjInvariants R P := by
     rw [mem_conjInvariants_iff_coeff]
     intro h hh g
@@ -224,7 +205,7 @@ theorem augmentation_brauerProjection [Finite G] {p : ℕ} [Fact p.Prime] [CharP
       (fun w w' hw hw' => by rw [Subalgebra.coe_add, map_add, hw, hw', add_zero])
     obtain ⟨b, rfl⟩ := (mem_relTraceIdeal_iff _).1 hw
     rw [augmentation_relTrace, ← Nat.cast_smul_eq_nsmul R,
-      index_subgroupOf_cast_eq_zero hP Q.property, zero_smul]
+      hP.index_subgroupOf_cast_eq_zero Q.property, zero_smul]
   rw [← hy]
   conv_rhs => rw [hxyz]
   rw [map_add, h0, add_zero]

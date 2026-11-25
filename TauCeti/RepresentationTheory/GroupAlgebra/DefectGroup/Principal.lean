@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Principal
 public import TauCeti.RepresentationTheory.GroupAlgebra.Brauer.Kernel
-public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup
+public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.Basic
 
 /-!
 # Defect groups of the principal block

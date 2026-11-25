@@ -8,6 +8,7 @@ module
 import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
+public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.GroupTheory.PGroup
 
 /-!
@@ -39,6 +40,8 @@ that a homomorphism into a pro-`p` group kills their intersection.
   `p`-group.
 * `IsPGroup.sSup_of_directedOn`: the supremum of a directed family of `p`-subgroups is a
   `p`-subgroup.
+* `IsPGroup.dvd_index_subgroupOf`, `IsPGroup.index_subgroupOf_cast_eq_zero`: the index of a
+  proper subgroup of a `p`-subgroup is divisible by `p`, so vanishes in characteristic `p`.
 * `TauCeti.disjoint_of_not_dvd_natCard_of_isPGroup`: a `p`-group meets a subgroup of order prime
   to `p` trivially.
 * `IsPGroup.subsingleton_of_coprime`, `IsPGroup.subsingleton_of_ne`: a group that is a `p`-group
@@ -118,6 +121,26 @@ theorem _root_.IsPGroup.sSup_of_directedOn {K : Set (Subgroup G)} (hK : Directed
   obtain ⟨H, hH, hg⟩ := (Subgroup.mem_sSup_of_directedOn hne hK).1 g.property
   obtain ⟨k, hk⟩ := h H hH ⟨g, hg⟩
   exact ⟨k, Subtype.ext (by simpa using congrArg Subtype.val hk)⟩
+
+/-- The index `|P : Q|` of a proper subgroup `Q` of a `p`-subgroup `P` is divisible by `p`, being
+a positive power of `p`. -/
+theorem _root_.IsPGroup.dvd_index_subgroupOf [Fact p.Prime] {Q P : Subgroup G}
+    [(Q.subgroupOf P).FiniteIndex] (hP : IsPGroup p P) (hQP : Q < P) :
+    p ∣ (Q.subgroupOf P).index := by
+  obtain ⟨n, hn⟩ := hP.index (Q.subgroupOf P)
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    rw [pow_zero, Subgroup.index_eq_one, Subgroup.subgroupOf_eq_top] at hn
+    exact hQP.not_ge hn
+  rw [hn]
+  exact dvd_pow_self p hn0
+
+/-- In characteristic `p`, the index `|P : Q|` of a proper subgroup `Q` of a `p`-subgroup `P`
+vanishes. -/
+theorem _root_.IsPGroup.index_subgroupOf_cast_eq_zero [Fact p.Prime] {R : Type*}
+    [AddMonoidWithOne R] [CharP R p] {Q P : Subgroup G} [(Q.subgroupOf P).FiniteIndex]
+    (hP : IsPGroup p P) (hQP : Q < P) : ((Q.subgroupOf P).index : R) = 0 :=
+  (CharP.cast_eq_zero_iff R p _).2 (hP.dvd_index_subgroupOf hQP)
 
 /-- A `p`-group meets a subgroup of order prime to `p` trivially. -/
 theorem disjoint_of_not_dvd_natCard_of_isPGroup [Fact p.Prime] {C Q : Subgroup G}
