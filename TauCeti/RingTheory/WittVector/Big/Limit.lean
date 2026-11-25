@@ -13,7 +13,7 @@ public import TauCeti.RingTheory.WittVector.Big.NonUnital
 For every truncation set `S`, its big Witt ring is the inverse limit of the rings indexed by
 finite subtruncations of `S`. The universal property is expressed by `BigWittVector.liftEquiv`:
 compatible families of ring homomorphisms into the finite stages correspond to ring
-homomorphisms into `BigWittVector S R`. The nonunital version is `NonUnitalBigWitt.liftEquiv`.
+homomorphisms into `BigWittVector S R`. The nonunital version is `NonUnitalBigWittVector.liftEquiv`.
 
 The homomorphism formulation follows the p-typical analogue `WittVector.liftEquiv` in
 `Mathlib.RingTheory.WittVector.Truncated`. Both versions share the coordinate assembly: the
@@ -174,7 +174,7 @@ end Lift
 
 end TauCeti.BigWittVector
 
-namespace TauCeti.NonUnitalBigWitt
+namespace TauCeti.NonUnitalBigWittVector
 
 open BigWitt (TruncationSet)
 open BigWitt.TruncationSet (FiniteSubtruncation divisorStage apply_eq_of_finiteSubtruncations)
@@ -184,39 +184,39 @@ variable {S : TruncationSet} {R A : Type*}
 variable [NonUnitalCommRing R]
 
 /-- Finite restrictions determine a nonunital big Witt vector. -/
-theorem eq_of_restrict_eq {x y : NonUnitalBigWitt S R}
+theorem eq_of_restrict_eq {x y : NonUnitalBigWittVector S R}
     (h : ∀ T : FiniteSubtruncation S, restrict T.property.1 x = restrict T.property.1 y) :
     x = y := by
-  apply NonUnitalBigWitt.ext
+  apply NonUnitalBigWittVector.ext
   apply apply_eq_of_finiteSubtruncations
   intro T n
-  have he := congrArg (fun z : NonUnitalBigWitt T.val R ↦ z.coeff n) (h T)
+  have he := congrArg (fun z : NonUnitalBigWittVector T.val R ↦ z.coeff n) (h T)
   simpa only [coeff_restrict] using he
 
 section Lift
 
 variable [NonUnitalNonAssocSemiring A]
-variable (f : ∀ T : FiniteSubtruncation S, A →ₙ+* NonUnitalBigWitt T.val R)
+variable (f : ∀ T : FiniteSubtruncation S, A →ₙ+* NonUnitalBigWittVector T.val R)
 variable (hf : ∀ (T U : FiniteSubtruncation S) (h : T.val ≤ U.val),
   (restrict h).comp (f U) = f T)
 
-private noncomputable def liftFun (a : A) : NonUnitalBigWitt S R :=
+private noncomputable def liftFun (a : A) : NonUnitalBigWittVector S R :=
   mk (BigWittVector.finiteGlue (fun T a ↦ (f T a).coeff) a)
 
 include hf in
 private theorem liftFun_restrict (T : FiniteSubtruncation S) (a : A) :
     restrict T.property.1 (liftFun f a) = f T a := by
-  apply NonUnitalBigWitt.ext
+  apply NonUnitalBigWittVector.ext
   intro n
   rw [coeff_restrict, liftFun, coeff_mk]
   apply BigWittVector.finiteGlue_apply
   intro T U h a n
-  have he := congrArg (fun z : NonUnitalBigWitt T.val R ↦ z.coeff n)
+  have he := congrArg (fun z : NonUnitalBigWittVector T.val R ↦ z.coeff n)
     (DFunLike.congr_fun (hf T U h) a)
   simpa only [NonUnitalRingHom.comp_apply, coeff_restrict] using he
 
-/-- Lift a compatible family of nonunital ring homomorphisms to `NonUnitalBigWitt S R`. -/
-noncomputable def lift : A →ₙ+* NonUnitalBigWitt S R where
+/-- Lift a compatible family of nonunital ring homomorphisms to `NonUnitalBigWittVector S R`. -/
+noncomputable def lift : A →ₙ+* NonUnitalBigWittVector S R where
   toFun := liftFun f
   map_zero' := eq_of_restrict_eq fun T ↦ by
     rw [liftFun_restrict f hf, map_zero, map_zero]
@@ -249,7 +249,7 @@ theorem restrict_comp_lift (T : FiniteSubtruncation S) :
   exact restrict_lift f hf T a
 
 /-- A lift is determined by its finite restrictions. -/
-theorem lift_unique (g : A →ₙ+* NonUnitalBigWitt S R)
+theorem lift_unique (g : A →ₙ+* NonUnitalBigWittVector S R)
     (hg : ∀ T : FiniteSubtruncation S, (restrict T.property.1).comp g = f T) :
     lift f hf = g := by
   ext1 a
@@ -260,9 +260,9 @@ theorem lift_unique (g : A →ₙ+* NonUnitalBigWitt S R)
 
 /-- The nonunital big Witt vectors are the inverse limit of their finite subtruncations. -/
 noncomputable def liftEquiv :
-    {f : ∀ T : FiniteSubtruncation S, A →ₙ+* NonUnitalBigWitt T.val R //
+    {f : ∀ T : FiniteSubtruncation S, A →ₙ+* NonUnitalBigWittVector T.val R //
       ∀ (T U : FiniteSubtruncation S) (h : T.val ≤ U.val), (restrict h).comp (f U) = f T} ≃
-      (A →ₙ+* NonUnitalBigWitt S R) where
+      (A →ₙ+* NonUnitalBigWittVector S R) where
   toFun f := lift f.val f.property
   invFun g := ⟨fun T ↦ (restrict T.property.1).comp g, by
     intro T U h
@@ -277,20 +277,20 @@ noncomputable def liftEquiv :
 /-- The forward limit equivalence lifts a compatible family of homomorphisms. -/
 @[simp]
 theorem liftEquiv_apply
-    (f : {f : ∀ T : FiniteSubtruncation S, A →ₙ+* NonUnitalBigWitt T.val R //
+    (f : {f : ∀ T : FiniteSubtruncation S, A →ₙ+* NonUnitalBigWittVector T.val R //
       ∀ (T U : FiniteSubtruncation S) (h : T.val ≤ U.val), (restrict h).comp (f U) = f T}) :
     liftEquiv f = lift f.val f.property := by
   rfl
 
 /-- The inverse limit equivalence sends a homomorphism to its finite restrictions. -/
 @[simp]
-theorem liftEquiv_symm_apply (g : A →ₙ+* NonUnitalBigWitt S R) (T : FiniteSubtruncation S) :
+theorem liftEquiv_symm_apply (g : A →ₙ+* NonUnitalBigWittVector S R) (T : FiniteSubtruncation S) :
     (liftEquiv.symm g).val T = (restrict T.property.1).comp g := by
   rfl
 
-/-- Nonunital ring homomorphisms into `NonUnitalBigWitt S R` agree if their finite
+/-- Nonunital ring homomorphisms into `NonUnitalBigWittVector S R` agree if their finite
 restrictions agree. -/
-theorem hom_ext (g h : A →ₙ+* NonUnitalBigWitt S R)
+theorem hom_ext (g h : A →ₙ+* NonUnitalBigWittVector S R)
     (hgh : ∀ T : FiniteSubtruncation S,
       (restrict T.property.1).comp g = (restrict T.property.1).comp h) : g = h := by
   ext1 a
@@ -300,4 +300,4 @@ theorem hom_ext (g h : A →ₙ+* NonUnitalBigWitt S R)
 
 end Lift
 
-end TauCeti.NonUnitalBigWitt
+end TauCeti.NonUnitalBigWittVector
