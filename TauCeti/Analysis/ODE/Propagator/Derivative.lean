@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.Propagator
 import Mathlib.Analysis.Complex.Schwarz
-import TauCeti.Analysis.ODE.Propagator.ParameterContinuity
+import TauCeti.Analysis.ODE.Propagator.Holomorphic
 import TauCeti.Analysis.ODE.VariationOfConstants
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
@@ -27,12 +27,11 @@ derivative
 By Duhamel's formula (`TauCeti.propagator_sub_propagator_eq_integral`), the difference quotient
 of `w ↦ N_{P w}(t, s)` at `z` is
 `∫ r in s..t, N_{P z}(t, r) ((P w r - P z r) / (w - z)) N_{P w}(r, s)`. As `w → z` the middle
-factor tends to `∂_z P(z, r)` for almost every `r`, and `N_{P w}(r, s) → N_{P z}(r, s)` by the
-joint continuity of the propagator in the parameter
-(`TauCeti.continuousOn_propagator_parameter`). If `‖P w r‖ ≤ m r` on a disc of radius `ε` about
-`z`, the Schwarz lemma (`Complex.norm_dslope_le_div_of_mapsTo_ball`) bounds the middle factor
-by `2 m r / ε`, and the propagators are bounded by `exp (∫ ‖m‖)`, so dominated convergence gives
-the limit.
+factor tends to `∂_z P(z, r)` for almost every `r`, and `N_{P w}(r, s) → N_{P z}(r, s)` since
+the propagator is holomorphic in the parameter (`TauCeti.differentiableOn_propagator`). If
+`‖P w r‖ ≤ m r` on a disc of radius `ε` about `z`, the Schwarz lemma
+(`Complex.norm_dslope_le_div_of_mapsTo_ball`) bounds the middle factor by `2 m r / ε`, and the
+propagators are bounded by `exp (∫ ‖m‖)`, so dominated convergence gives the limit.
 
 ## Main results
 
@@ -67,23 +66,6 @@ private theorem norm_propagator_le_exp_of_forall_norm_le {K : Set ℂ} {m : ℝ 
     (hPm.mono fun _ hu hu' ↦ (hu (uIcc_subset_Icc hy hx (uIoc_subset_uIcc hu')) w hw).trans
       (Real.le_norm_self _))).trans
     (Real.exp_le_exp.2 (intervalIntegral.abs_integral_norm_le hmi hy hx))
-
-/-- Under the hypotheses of `TauCeti.hasDerivAt_propagator`, `w ↦ N_{P w}(r, s)` is continuous
-at every `z ∈ U`, for `r, s ∈ [a, b]`. -/
-private theorem continuousAt_propagator_of_differentiableOn (hU : IsOpen U)
-    (hP : ∀ z ∈ U, IntegrableOn (P z) (Icc a b))
-    (hPd : ∀ᵐ r, r ∈ Icc a b → DifferentiableOn ℂ (P · r) U)
-    (hm : ∀ K ⊆ U, IsCompact K → ∃ m : ℝ → ℝ, IntegrableOn m (Icc a b) ∧
-      ∀ᵐ r, r ∈ Icc a b → ∀ z ∈ K, ‖P z r‖ ≤ m r)
-    {r : ℝ} (hr : r ∈ Icc a b) (hs : s ∈ Icc a b) (hz : z ∈ U) :
-    ContinuousAt (fun w ↦ propagator (P w) r s) z := by
-  have hjoint := continuousOn_propagator_parameter (P := fun r w ↦ P w r) (U := U) (a := a)
-    (b := b) (fun w hw ↦ (hP w hw).aestronglyMeasurable)
-    (hPd.mono fun r h hr ↦ (h hr).continuousOn) fun K hKU hK ↦ by
-      obtain ⟨m', hm'i, hPm'⟩ := hm K hKU hK
-      exact ⟨m', hm'i, fun w hw ↦ hPm'.mono fun r h hr ↦ h hr w hw⟩
-  exact ((hjoint ((r, s), z) ⟨⟨hr, hs⟩, hz⟩).comp (f := fun w ↦ ((r, s), w))
-    (by fun_prop) fun w hw ↦ ⟨⟨hr, hs⟩, hw⟩).continuousAt (hU.mem_nhds hz)
 
 /-- **The derivative of the propagator in a holomorphic parameter.** Let `U ⊆ ℂ` be open and
 `P : ℂ → ℝ → E →L[ℂ] E` such that `P z` is integrable on `[a, b]` for `z ∈ U`, `z ↦ P z r` is
@@ -140,8 +122,8 @@ theorem hasDerivAt_propagator (hU : IsOpen U)
     have hrab := hst hrJ
     have h1 := (hasDerivAt_iff_tendsto_slope.1
       ((hrd hrab).differentiableAt (hU.mem_nhds hz)).hasDerivAt).congr (slope_def_module (P · r) z)
-    have h2 := (continuousAt_propagator_of_differentiableOn hU hP hPd hm hrab hs hz).tendsto
-      |>.mono_left (nhdsWithin_le_nhds (s := {z}ᶜ))
+    have h2 := ((differentiableOn_propagator hU hP hPd hm hs hrab).differentiableAt
+      (hU.mem_nhds hz)).continuousAt.tendsto.mono_left (nhdsWithin_le_nhds (s := {z}ᶜ))
     have := tendsto_const_nhds (x := propagator (P z) t r) |>.mul (h1.mul h2)
     simpa only [F, ContinuousLinearMap.mul_def] using this
   · -- the difference quotient is the integral, by Duhamel's formula
