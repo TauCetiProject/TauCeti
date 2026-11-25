@@ -221,6 +221,7 @@ theorem isoSetoid_unravelOrderCode {c d : RelationalConfiguration Language.graph
 variable {χ : List ℚ → ℕ}
 
 /-- Two points of the block of `x` compare by their positions in the block of colour `χ x`. -/
+@[simp]
 theorem unravelOrderRel_mk_mk_iff {x : List ℚ} {i j : ℕ} :
     unravelOrderRel χ (x, i) (x, j) ↔ blockKey (χ x) i ≤ blockKey (χ x) j := by
   simp [unravelOrderRel_iff]
@@ -316,13 +317,13 @@ theorem ncard_setOf_isNear_unravelOrderRel {p : List ℚ × ℕ} (hp : p.2 < χ 
     ncard_Iio_nat]
 
 /-- **Order isomorphisms of the unravelled orders give colour-preserving automorphisms.** A
-bijection `f` of `List ℚ × ℕ` carrying the order for `χ` to the order for `χ'` maps the finite
-condensation classes, the finite parts of the blocks, to finite condensation classes of the same
-size, in order; so it induces an order automorphism `Φ` of `List ℚ` with `χ' ∘ Φ = χ`. -/
-theorem exists_orderIso_of_unravelOrderRel {χ χ' : List ℚ → ℕ} (f : List ℚ × ℕ ≃ List ℚ × ℕ)
-    (hf : ∀ p q, unravelOrderRel χ' (f p) (f q) ↔ unravelOrderRel χ p q) :
+relation isomorphism `f` from the order for `χ` to the order for `χ'` on `List ℚ × ℕ` maps the
+finite condensation classes, the finite parts of the blocks, to finite condensation classes of the
+same size, in order; so it induces an order automorphism `Φ` of `List ℚ` with `χ' ∘ Φ = χ`. -/
+theorem exists_orderIso_of_unravelOrderRel {χ χ' : List ℚ → ℕ}
+    (f : unravelOrderRel χ ≃r unravelOrderRel χ') :
     ∃ Φ : List ℚ ≃o List ℚ, ∀ x, χ' (Φ x) = χ x := by
-  have hN := setOf_isNear_map f hf
+  have hN := setOf_isNear_map f
   have hfin (p : List ℚ × ℕ) : (f p).2 < χ' (f p).1 + 2 ↔ p.2 < χ p.1 + 2 := by
     rw [← finite_setOf_isNear_unravelOrderRel_iff, ← finite_setOf_isNear_unravelOrderRel_iff, hN,
       finite_image_iff f.injective.injOn]
@@ -336,15 +337,15 @@ theorem exists_orderIso_of_unravelOrderRel {χ χ' : List ℚ → ℕ} (f : List
   let Φ₀ : List ℚ → List ℚ := fun x => (f (x, 0)).1
   have hmono : StrictMono Φ₀ := fun x y hxy => by
     have hr : unravelOrderRel χ' (f (x, 0)) (f (y, 0)) :=
-      (hf _ _).2 (unravelOrderRel_iff.2 (Or.inl hxy))
+      f.map_rel_iff.2 (unravelOrderRel_iff.2 (Or.inl hxy))
     refine (fst_le_of_unravelOrderRel hr).lt_of_ne fun he => hxy.ne ?_
     have h := (isNear_unravelOrderRel_iff (h0 x)).2 ⟨he.symm, he ▸ h0 y⟩
-    rw [isNear_map f hf, isNear_unravelOrderRel_iff (by simp)] at h
+    rw [isNear_map f, isNear_unravelOrderRel_iff (by simp)] at h
     exact h.1.symm
   have hsurj : Function.Surjective Φ₀ := fun y => by
     obtain ⟨p, hpy⟩ := f.surjective (y, 0)
     have hp : p.2 < χ p.1 + 2 := (hfin p).1 (by rw [hpy]; simp)
-    have h := (isNear_map f hf p (p.1, 0)).2 ((isNear_unravelOrderRel_iff hp).2 ⟨rfl, by simp⟩)
+    have h := (isNear_map f p (p.1, 0)).2 ((isNear_unravelOrderRel_iff hp).2 ⟨rfl, by simp⟩)
     rw [hpy, isNear_unravelOrderRel_iff (by simp)] at h
     exact ⟨p.1, h.1⟩
   exact ⟨StrictMono.orderIsoOfSurjective Φ₀ hmono hsurj, hχ⟩
@@ -361,7 +362,7 @@ theorem isoSetoid_of_isoSetoid_unravelOrderCode {c d : RelationalConfiguration L
       (unravelOrderEquiv.symm q)
     rw [hσ, codeRel_unravelOrderCode, codeRel_unravelOrderCode] at this
     simpa [f] using this.symm
-  obtain ⟨Φ, hΦ⟩ := exists_orderIso_of_unravelOrderRel f hf
+  obtain ⟨Φ, hΦ⟩ := exists_orderIso_of_unravelOrderRel ⟨f, hf _ _⟩
   exact Setoid.symm' _ <| isoSetoid_iff_exists_orderIso_unravelColor.2 ⟨Φ, funext hΦ⟩
 
 /-- **`unravelOrderCode` reduces isomorphism of graph codes to isomorphism of coded linear

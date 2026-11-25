@@ -6,15 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Set.Finite.Basic
+public import Mathlib.Order.Interval.Set.UnorderedInterval
+public import Mathlib.Order.RelIso.Basic
 
 /-!
 # Nearness: finite intervals of a relation
 
 Two points `p` and `q` are near for a relation `r` (`TauCeti.IsNear r p q`) when the closed
 interval between them, in either direction, is finite. For a linear order, nearness is the
-relation whose classes are the finite condensation classes. Nearness is symmetric
-(`TauCeti.isNear_comm`), and a bijection carrying one relation to another preserves it
-(`TauCeti.isNear_map`, `TauCeti.setOf_isNear_map`).
+relation whose classes are the finite condensation classes: `IsNear (· ≤ ·) p q` says that
+`Set.uIcc p q` is finite (`TauCeti.isNear_le_iff`). Nearness is symmetric
+(`TauCeti.isNear_comm`), and a relation isomorphism preserves it (`TauCeti.isNear_map`,
+`TauCeti.setOf_isNear_map`).
 -/
 
 public section
@@ -40,22 +43,26 @@ theorem isNear_iff {r : α → α → Prop} {p q : α} :
 theorem isNear_comm {r : α → α → Prop} {p q : α} : IsNear r p q ↔ IsNear r q p := by
   simp only [isNear_iff, or_comm]
 
-/-- A bijection carrying `r` to `r'` preserves nearness. -/
-theorem isNear_map {r : α → α → Prop} {r' : β → β → Prop} (f : α ≃ β)
-    (hf : ∀ p q, r' (f p) (f q) ↔ r p q) (p q : α) : IsNear r' (f p) (f q) ↔ IsNear r p q := by
+/-- For a linear order, `p` and `q` are near exactly when the unordered closed interval
+`Set.uIcc p q` is finite. -/
+theorem isNear_le_iff [LinearOrder α] {p q : α} : IsNear (· ≤ ·) p q ↔ (uIcc p q).Finite := by
+  simp only [isNear_iff, ← mem_uIcc, ofPred_mem_eq]
+
+/-- A relation isomorphism `r ≃r r'` preserves nearness. -/
+theorem isNear_map {r : α → α → Prop} {r' : β → β → Prop} (f : r ≃r r') (p q : α) :
+    IsNear r' (f p) (f q) ↔ IsNear r p q := by
   have h : {z | r' (f p) z ∧ r' z (f q) ∨ r' (f q) z ∧ r' z (f p)} =
       f '' {z | r p z ∧ r z q ∨ r q z ∧ r z p} := by
     ext z
     obtain ⟨w, rfl⟩ := f.surjective z
-    simp only [mem_ofPred_eq, hf, f.injective.mem_set_image]
+    simp only [mem_ofPred_eq, f.map_rel_iff, f.injective.mem_set_image]
   rw [isNear_iff, isNear_iff, h, finite_image_iff f.injective.injOn]
 
-/-- A bijection carrying `r` to `r'` carries the points near `p` to the points near `f p`. -/
-theorem setOf_isNear_map {r : α → α → Prop} {r' : β → β → Prop} (f : α ≃ β)
-    (hf : ∀ p q, r' (f p) (f q) ↔ r p q) (p : α) :
+/-- A relation isomorphism `f : r ≃r r'` carries the points near `p` to the points near `f p`. -/
+theorem setOf_isNear_map {r : α → α → Prop} {r' : β → β → Prop} (f : r ≃r r') (p : α) :
     {q | IsNear r' (f p) q} = f '' {q | IsNear r p q} := by
   ext q
   obtain ⟨w, rfl⟩ := f.surjective q
-  simp only [mem_ofPred_eq, isNear_map f hf, f.injective.mem_set_image]
+  simp only [mem_ofPred_eq, isNear_map f, f.injective.mem_set_image]
 
 end TauCeti
