@@ -28,20 +28,24 @@ This file identifies these signs with the local indices for the canonical orient
 `X`: a positive zero has local index `1` and a negative zero local index `-1`
 (`TauCeti.sectionIndex_eq_one_of_norm_sub_smulRight_lt`,
 `TauCeti.sectionIndex_eq_neg_one_of_norm_sub_smulRight_conjCLE_lt`). Both follow from the local
-index being the sign of `det D` (`TauCeti.sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt`) and
+index being the sign of `det D`
+(`TauCeti.sectionIndex_eq_sign_det_of_hasFDerivAt_negPointTwistChartReading`) and
 the sign of `det D` under each condition (`TauCeti.det_pos_of_norm_sub_smulRight_lt`,
 `TauCeti.det_neg_of_norm_sub_smulRight_conjCLE_lt`).
 
-For a compact `X` and a line bundle whose underlying real bundle is smooth, a generic smooth
-section has finitely many zeros, each transverse, so `det D ≠ 0` and each zero is positive or
-negative; summing the local indices, the Euler number of `L`, that is `c₁(L)[X]`, is the number of
-positive zeros minus the number of negative ones
+For a compact `X` and a line bundle whose underlying real bundle is smooth, `L` has a smooth
+section with finitely many zeros, each transverse
+(`TauCeti.exists_contMDiffSection_regular_finite_zero_of_finrank_eq`), so `det D ≠ 0` and each
+zero is positive or negative; summing the local indices, the Euler number of `L`, that is
+`c₁(L)[X]`, is the number of positive zeros minus the number of negative ones
 (`TauCeti.exists_contMDiffSection_complexEulerClass_eq_sum_sign`). This is the input of step 5 of
 the proof of the Riemann–Roch formula for real Cauchy–Riemann operators (McDuff–Salamon,
 Theorem C.1.10), which twists `L` at these zeros.
 
 ## Main results
 
+* `TauCeti.sectionIndex_eq_sign_det_of_hasFDerivAt_negPointTwistChartReading`: the local index at
+  a zero is the sign of the Jacobian of its chart reading.
 * `TauCeti.sectionIndex_eq_one_of_norm_sub_smulRight_lt`: a positive zero has local index `1`.
 * `TauCeti.sectionIndex_eq_neg_one_of_norm_sub_smulRight_conjCLE_lt`: a negative zero has local
   index `-1`.
@@ -85,6 +89,20 @@ variable [IsManifold 𝓘(ℂ, ℂ) 1 X] (x : X) {σ : ∀ z, L z}
 
 include hσx hD
 
+/-- **The local index at a zero is the sign of the Jacobian of its chart reading.** Let `σ` be a
+continuous section of a complex line bundle `L` with fibre `ℂ` over a Riemann surface `X`,
+vanishing at `x`, whose chart reading has at `φ x` a real derivative `D` with `det D ≠ 0`. Then the
+local index of `σ` at `x` is the sign of `det D`. This is
+`TauCeti.sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt` for the reading
+`TauCeti.negPointTwistChartReading`. -/
+theorem sectionIndex_eq_sign_det_of_hasFDerivAt_negPointTwistChartReading (hdet : D.det ≠ 0) :
+    (VectorBundleOrientation.reindex (finCongr (by rw [finrank_self]))
+        (VectorBundleOrientation.complex ℂ L)).sectionIndex
+        Complex.finrank_real_complex (complexHomologicalOrientation X) hσ x =
+      SignType.sign D.det := by
+  rw [funext (negPointTwistChartReading_apply ℂ x σ)] at hD
+  exact sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt x hσ hσx hD hdet
+
 /-- **A positive zero has local index one.** Let `σ` be a continuous section of a complex line
 bundle `L` with fibre `ℂ` over a Riemann surface `X`, vanishing at `x`. If the real derivative `D`
 of the chart reading of `σ` at `φ x`, for the chart `φ` of `X` at `x`, satisfies
@@ -96,8 +114,7 @@ theorem sectionIndex_eq_one_of_norm_sub_smulRight_lt
         (VectorBundleOrientation.complex ℂ L)).sectionIndex
         Complex.finrank_real_complex (complexHomologicalOrientation X) hσ x = 1 := by
   have h := det_pos_of_norm_sub_smulRight_lt hDc
-  rw [funext (negPointTwistChartReading_apply ℂ x σ)] at hD
-  rw [sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt x hσ hσx hD h.ne',
+  rw [sectionIndex_eq_sign_det_of_hasFDerivAt_negPointTwistChartReading x hσ hσx hD h.ne',
     sign_pos h, SignType.coe_one]
 
 /-- **A negative zero has local index minus one.** Let `σ` be a continuous section of a complex
@@ -111,8 +128,7 @@ theorem sectionIndex_eq_neg_one_of_norm_sub_smulRight_conjCLE_lt
         (VectorBundleOrientation.complex ℂ L)).sectionIndex
         Complex.finrank_real_complex (complexHomologicalOrientation X) hσ x = -1 := by
   have h := det_neg_of_norm_sub_smulRight_conjCLE_lt hDc
-  rw [funext (negPointTwistChartReading_apply ℂ x σ)] at hD
-  rw [sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt x hσ hσx hD h.ne,
+  rw [sectionIndex_eq_sign_det_of_hasFDerivAt_negPointTwistChartReading x hσ hσx hD h.ne,
     sign_neg h, SignType.coe_neg_one]
 
 end Index
@@ -177,26 +193,27 @@ theorem exists_contMDiffSection_complexEulerClass_eq_sum_sign [CompactSpace X]
   obtain ⟨σ, hreg, hZ⟩ := exists_contMDiffSection_regular_finite_zero_of_finrank_eq
     (n := ∞) (X := ℂ) (F := ℂ) (V := L) rfl
   have hσ : Continuous fun z ↦ TotalSpace.mk' ℂ z (σ z) := σ.contMDiff.continuous
-  -- At each zero, the chart reading has a derivative of nonzero determinant; its sign is `ε`.
-  have hD : ∀ z, σ z = 0 → ∃ D : ℂ →L[ℝ] ℂ,
-      HasFDerivAt (negPointTwistChartReading ℂ z σ) D (chartAt ℂ z z) ∧ D.det ≠ 0 :=
-    fun z hz ↦ exists_hasFDerivAt_negPointTwistChartReading_det_ne_zero (hreg z hz)
-  choose! D hD hdet using hD
-  refine ⟨σ, hZ, fun z ↦ decide ((D z).det < 0), fun z hz ↦ ?_, ?_⟩
-  · rcases (hdet z hz).lt_or_gt with h | h
+  -- At each zero, the sign `ε` of the Jacobian of the chart reading and the matching estimate.
+  have hzero : ∀ z, σ z = 0 → ∃ (s : Bool) (D : ℂ →L[ℝ] ℂ) (c : ℂ),
+      HasFDerivAt (negPointTwistChartReading ℂ z σ) D (chartAt ℂ z z) ∧
+        ‖D - (if s then Complex.conjCLE.toContinuousLinearMap
+          else ContinuousLinearMap.id ℝ ℂ).smulRight c‖ < ‖c‖ := fun z hz ↦ by
+    obtain ⟨D, hD, hdet⟩ := exists_hasFDerivAt_negPointTwistChartReading_det_ne_zero (hreg z hz)
+    rcases hdet.lt_or_gt with h | h
     · obtain ⟨c, hc⟩ := exists_norm_sub_smulRight_conjCLE_lt_of_det_neg h
-      exact ⟨D z, c, hD z hz, by simpa [h] using hc⟩
+      exact ⟨true, D, c, hD, hc⟩
     · obtain ⟨c, hc⟩ := exists_norm_sub_smulRight_lt_of_det_pos h
-      exact ⟨D z, c, hD z hz, by simpa [h.not_gt] using hc⟩
+      exact ⟨false, D, c, hD, hc⟩
+  choose! ε D c hD hc using hzero
+  refine ⟨σ, hZ, ε, fun z hz ↦ ⟨D z, c z, hD z hz, hc z hz⟩, ?_⟩
   rw [complexEulerClass_def,
     VectorBundleOrientation.evalFundamentalClass_eulerClass_eq_sum_sectionIndex _ _ _ hσ _ hZ]
   refine Finset.sum_congr rfl fun z hz ↦ ?_
   have hz0 : σ z = 0 := hZ.mem_toFinset.1 hz
-  have hDz := hD z hz0
-  rw [funext (negPointTwistChartReading_apply ℂ z σ)] at hDz
-  rw [sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt z hσ hz0 hDz (hdet z hz0)]
-  rcases (hdet z hz0).lt_or_gt with h | h
-  · simp [h, sign_neg h]
-  · simp [h.not_gt, sign_pos h]
+  -- The estimate gives the local index `±1`.
+  have h := hc z hz0
+  cases hε : ε z <;> simp only [hε, Bool.false_eq_true, ite_true, ite_false] at h ⊢
+  · exact sectionIndex_eq_one_of_norm_sub_smulRight_lt z hσ hz0 (hD z hz0) h
+  · exact sectionIndex_eq_neg_one_of_norm_sub_smulRight_conjCLE_lt z hσ hz0 (hD z hz0) h
 
 end TauCeti
