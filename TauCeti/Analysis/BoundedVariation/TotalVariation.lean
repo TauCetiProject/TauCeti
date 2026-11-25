@@ -515,8 +515,9 @@ section Haar
 
 variable [BorelSpace E] [μ.IsAddHaarMeasure]
 
+omit [μ.IsAddHaarMeasure] in
 /-- **The total variation of a weakly differentiable function.** If `u` has weak derivative `U`
-on `Ω`, then against an additive Haar measure `|Du|(Ω) = ∫_Ω ‖U‖`. In particular a function in
+on `Ω`, then `|Du|(Ω) = ∫_Ω ‖U‖`, for any measure `μ`. In particular a function in
 `W^{1,1}(Ω)` has bounded variation on `Ω`, and its variation is the `L¹(Ω)` norm of its weak
 derivative. -/
 theorem HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm {U : E → E →L[ℝ] ℝ}
@@ -535,8 +536,9 @@ theorem HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm {U : E → E →L
   simpa using (Equiv.neg 𝓓(Ω, E)).iSup_comp (g := fun φ => ⨆ (_ : ∀ x, ‖φ x‖ ≤ 1),
     ENNReal.ofReal (∫ x, U x (φ x) ∂μ))
 
-/-- A weakly differentiable function has finite total variation on `Ω`, against an additive Haar
-measure, exactly when its weak derivative is integrable on `Ω`. -/
+omit [μ.IsAddHaarMeasure] in
+/-- A weakly differentiable function has finite total variation on `Ω`, for any measure `μ`,
+exactly when its weak derivative is integrable on `Ω`. -/
 theorem HasWeakFDerivOn.totalVariationOn_lt_top_iff_integrableOn {U : E → E →L[ℝ] ℝ}
     (h : HasWeakFDerivOn μ Ω u U) : totalVariationOn μ Ω u < ∞ ↔ IntegrableOn U Ω μ := by
   rw [h.totalVariationOn_eq_setLIntegral_enorm, ← hasFiniteIntegral_iff_eNorm]
