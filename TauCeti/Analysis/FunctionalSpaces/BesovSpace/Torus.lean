@@ -29,12 +29,18 @@ consists of the formal Fourier series `c` with
 
 `‖c‖_{B^s_{p,q}} = ‖(2^{js} ‖Δⱼ c‖_p)ⱼ‖_{ℓ^q} < ∞`.
 
-A formal Fourier series in some `B^s_{p,q}(𝕋ᵈ)` automatically has coefficients of polynomial growth
-(`TauCeti.UnitAddTorus.BesovSpace.norm_coeff_le`), so it is a periodic distribution; this is why the
-carrier can be all of `ℤᵈ → ℂ`, the model of periodic distributions by their Fourier coefficients.
-Each block is a trigonometric polynomial, so it lies in every `Lᵖ(𝕋ᵈ)`. On `L²(𝕋ᵈ)` the blocks are
-the periodic Littlewood–Paley blocks `TauCeti.UnitAddTorus.littlewoodPaleyBlock` of the function
-with these Fourier coefficients (`TauCeti.UnitAddTorus.littlewoodPaleyBlockLp_mFourierCoeff`).
+The ambient space is the space `ℤᵈ → ℂ` of all formal Fourier series. Not every formal series is a
+periodic distribution: the periodic distributions are the series whose coefficients have polynomial
+growth. Membership in `B^s_{p,q}(𝕋ᵈ)` forces this growth. By
+`TauCeti.UnitAddTorus.BesovSpace.norm_coeff_le`, `|c(n)|` is at most `∑_{j ≤ N} 2^{-js}` times the
+Besov norm of `c` whenever `‖n‖ ≤ 2^N φ.rIn`. For the least such `N`, `2^N` is at most a constant
+times `1 + ‖n‖`, so this factor, at most `(N + 1) max 1 2^{-Ns}`, is at most a constant times a
+power of `1 + ‖n‖`. So every element of a periodic Besov space is a periodic distribution: the Besov
+condition itself selects them inside the ambient space of formal series.
+Each block is a trigonometric polynomial, so it lies in every `Lᵖ(𝕋ᵈ)`. When `c = mFourierCoeff f`
+for some `f ∈ L²(𝕋ᵈ)`, the blocks in `L²(𝕋ᵈ)` are the periodic Littlewood–Paley blocks
+`TauCeti.UnitAddTorus.littlewoodPaleyBlock φ j f`
+(`TauCeti.UnitAddTorus.littlewoodPaleyBlockLp_mFourierCoeff`).
 
 This is the periodic counterpart of the Besov spaces `TauCeti.BesovSpace` of tempered distributions
 on `ℝᵈ`, with the Fourier transform replaced by Fourier series. As there, the norm is encoded
@@ -102,56 +108,7 @@ variable {d : Type*} [Fintype d]
 -- here so that the Besov spaces are built on that same space.
 attribute [local instance 2000] instMeasureSpaceUnitAddCircle
 
--- Mathlib records with a file-local instance that this measure is a probability measure; the
--- Fourier coefficients are then bounded by every `Lᵖ` norm, `1 ≤ p`.
-local instance : IsProbabilityMeasure (volume : Measure UnitAddCircle) :=
-  inferInstanceAs (IsProbabilityMeasure AddCircle.haarAddCircle)
-
 variable (φ : ContDiffBump (0 : EuclideanSpace ℝ d))
-
-/-! ### Fourier coefficients of `Lᵖ` functions -/
-
-/-- Every Fourier coefficient of `f ∈ Lᵖ(𝕋ᵈ)`, `1 ≤ p ≤ ∞`, is bounded by the `Lᵖ` norm of `f`: it
-is bounded by the `L¹` norm, and `𝕋ᵈ` has measure one. -/
-theorem norm_mFourierCoeff_le_norm_Lp {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    (f : Lp ℂ p (volume : Measure (UnitAddTorus d))) (n : d → ℤ) :
-    ‖mFourierCoeff f n‖ ≤ ‖f‖ := by
-  have h1 : ‖mFourierCoeff f n‖ ≤ (eLpNorm f 1 volume).toReal := by
-    refine (norm_integral_le_lintegral_norm _).trans_eq ?_
-    rw [eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable f)]
-    simp only [smul_eq_mul, norm_mul, norm_mFourier_apply, one_mul, ofReal_norm]
-  refine h1.trans ?_
-  rw [Lp.norm_def]
-  exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top f)
-    (eLpNorm_le_eLpNorm_of_exponent_le Fact.out)
-
-/-- The `n`-th Fourier coefficient on `Lᵖ(𝕋ᵈ)`, `1 ≤ p ≤ ∞`, as a continuous linear functional. -/
-def mFourierCoeffCLM (p : ℝ≥0∞) [Fact (1 ≤ p)] (n : d → ℤ) :
-    Lp ℂ p (volume : Measure (UnitAddTorus d)) →L[ℂ] ℂ :=
-  LinearMap.mkContinuous
-    { toFun f := mFourierCoeff f n
-      map_add' f g := by
-        have hint (h : Lp ℂ p (volume : Measure (UnitAddTorus d))) :
-            Integrable fun z ↦ mFourier (-n) z • h z :=
-          ((Lp.memLp h).integrable Fact.out).bdd_smul 1
-            (mFourier (-n)).continuous.aestronglyMeasurable
-            (Eventually.of_forall fun z ↦ (norm_mFourier_apply _ z).le)
-        simp only [mFourierCoeff]
-        rw [← integral_add (hint f) (hint g)]
-        refine integral_congr_ae ?_
-        filter_upwards [Lp.coeFn_add f g] with z hz
-        simp only [hz, Pi.add_apply, smul_add]
-      map_smul' c f := by
-        simp only [mFourierCoeff, RingHom.id_apply, ← integral_smul]
-        refine integral_congr_ae ?_
-        filter_upwards [Lp.coeFn_smul c f] with z hz
-        simp [hz, mul_left_comm] }
-    1 fun f ↦ by simpa using norm_mFourierCoeff_le_norm_Lp f n
-
-@[simp]
-theorem mFourierCoeffCLM_apply {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    (f : Lp ℂ p (volume : Measure (UnitAddTorus d))) (n : d → ℤ) :
-    mFourierCoeffCLM p n f = mFourierCoeff f n := (rfl)
 
 /-! ### The blocks of a formal Fourier series -/
 
@@ -159,8 +116,8 @@ theorem mFourierCoeffCLM_apply {p : ℝ≥0∞} [Fact (1 ≤ p)]
 `c : ℤᵈ → ℂ`: the trigonometric polynomial `Δⱼ c = ∑ₙ ψⱼ(n) c(n) eₙ`, as an element of
 `Lᵖ(𝕋ᵈ)`. Here `ψⱼ` is the `j`-th piece of the inhomogeneous Littlewood–Paley partition built
 from `φ`, which vanishes outside the ball of radius `2^j φ.rOut`, so the sum is finite whatever the
-growth of `c`. On `L²(𝕋ᵈ)` it is the block `TauCeti.UnitAddTorus.littlewoodPaleyBlock` applied
-to the function with Fourier coefficients `c`
+growth of `c`. When `c` is the coefficient sequence `mFourierCoeff f` of some `f ∈ L²(𝕋ᵈ)`, on
+`L²(𝕋ᵈ)` it is the block `TauCeti.UnitAddTorus.littlewoodPaleyBlock φ j f`
 (`TauCeti.UnitAddTorus.littlewoodPaleyBlockLp_mFourierCoeff`). -/
 def littlewoodPaleyBlockLp (p : ℝ≥0∞) [Fact (1 ≤ p)] (j : ℕ) :
     ((d → ℤ) → ℂ) →ₗ[ℂ] Lp ℂ p (volume : Measure (UnitAddTorus d)) where
@@ -295,18 +252,18 @@ theorem sum_mFourierCoeff_littlewoodPaleyBlockLp {p : ℝ≥0∞} [Fact (1 ≤ p
     inv_mul_le_iff₀ (by positivity)]
   exact hn
 
+omit [Fintype d] in
 variable (φ) in
-/-- Every frequency lies in a ball of radius `2^N φ.rIn`. -/
-private theorem exists_norm_latticePoint_le_two_pow_mul (n : d → ℤ) :
-    ∃ N : ℕ, ‖latticePoint n‖ ≤ 2 ^ N * φ.rIn := by
-  obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (‖latticePoint n‖ / φ.rIn) (one_lt_two (α := ℝ))
+/-- Every radius is at most `2^N φ.rIn` for some `N`. -/
+private theorem exists_le_two_pow_mul_rIn (r : ℝ) : ∃ N : ℕ, r ≤ 2 ^ N * φ.rIn := by
+  obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (r / φ.rIn) (one_lt_two (α := ℝ))
   exact ⟨N, ((div_lt_iff₀ φ.rIn_pos).1 hN).le⟩
 
 /-- A formal Fourier series is determined by its blocks in any `Lᵖ`. -/
 theorem eq_of_forall_littlewoodPaleyBlockLp_eq {p : ℝ≥0∞} [Fact (1 ≤ p)] {c c' : (d → ℤ) → ℂ}
     (h : ∀ j, littlewoodPaleyBlockLp φ p j c = littlewoodPaleyBlockLp φ p j c') : c = c' := by
   funext n
-  obtain ⟨N, hN⟩ := exists_norm_latticePoint_le_two_pow_mul φ n
+  obtain ⟨N, hN⟩ := exists_le_two_pow_mul_rIn φ ‖latticePoint n‖
   rw [← sum_mFourierCoeff_littlewoodPaleyBlockLp (p := p) hN c,
     ← sum_mFourierCoeff_littlewoodPaleyBlockLp (p := p) hN c']
   simp only [h]
@@ -424,8 +381,7 @@ finitely many nonzero coefficients has only finitely many nonzero blocks. -/
 theorem memBesov_of_finite_support {c : (d → ℤ) → ℂ} (hc : (Function.support c).Finite) :
     MemBesov φ s p q c := by
   obtain ⟨R, hR⟩ := (hc.image fun n ↦ ‖latticePoint n‖).bddAbove
-  obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (R / φ.rIn) (one_lt_two (α := ℝ))
-  have hN' : R < 2 ^ N * φ.rIn := (div_lt_iff₀ φ.rIn_pos).1 hN
+  obtain ⟨N, hN'⟩ := exists_le_two_pow_mul_rIn φ R
   refine (memℓp_zero ((Finset.range (N + 1)).finite_toSet.subset fun j hj ↦ ?_)).of_exponent_ge
     bot_le
   by_contra hjN
@@ -445,25 +401,14 @@ theorem memBesov_of_finite_support {c : (d → ℤ) → ℂ} (hc : (Function.sup
 /-- **Monotonicity of the Besov scale.** `B^s_{p,q}(𝕋ᵈ) ⊆ B^{s'}_{p,q'}(𝕋ᵈ)` for `s' ≤ s` and
 `q ≤ q'`. -/
 theorem MemBesov.mono {c : (d → ℤ) → ℂ} {s' : ℝ} {q' : ℝ≥0∞} (hc : MemBesov φ s p q c)
-    (hs : s' ≤ s) (hq : q ≤ q') : MemBesov φ s' p q' c := by
-  refine (Memℓp.of_exponent_ge hc hq).mono fun j ↦ ?_
-  rw [Real.norm_of_nonneg (by positivity)]
-  gcongr
-  exact one_le_two
+    (hs : s' ≤ s) (hq : q ≤ q') : MemBesov φ s' p q' c :=
+  Memℓp.two_rpow_mul_mono hc (fun _ ↦ norm_nonneg _) hs hq
 
 /-- **Strict monotonicity of the Besov scale.** `B^s_{p,q}(𝕋ᵈ) ⊆ B^{s'}_{p,q'}(𝕋ᵈ)` for `s' < s`,
 every `q` and every `q' ≠ 0`: the weighted blocks for `s'` decay geometrically. -/
 theorem MemBesov.of_lt {c : (d → ℤ) → ℂ} {s' : ℝ} {q' : ℝ≥0∞} (hc : MemBesov φ s p q c)
-    (hs : s' < s) (hq' : q' ≠ 0) : MemBesov φ s' p q' c := by
-  obtain ⟨C, hC⟩ := memℓp_infty_iff.1 (Memℓp.of_exponent_ge hc le_top)
-  refine Memℓp.of_norm_le_geometric (C := C) (by positivity)
-    (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hs)) (fun j ↦ ?_) hq'
-  have hj : ‖(2 : ℝ) ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j c‖‖ ≤ C := hC ⟨j, rfl⟩
-  rw [Real.norm_of_nonneg (by positivity)] at hj ⊢
-  have h2 : (2 : ℝ) ^ (s' * j) = (2 ^ (s' - s)) ^ j * 2 ^ (s * j) := by
-    rw [← Real.rpow_mul_natCast zero_le_two, ← Real.rpow_add two_pos, ← add_mul, sub_add_cancel]
-  rw [h2, mul_assoc, mul_comm C]
-  exact mul_le_mul_of_nonneg_left hj (by positivity)
+    (hs : s' < s) (hq' : q' ≠ 0) : MemBesov φ s' p q' c :=
+  Memℓp.two_rpow_mul_of_lt hc (fun _ ↦ norm_nonneg _) hs hq'
 
 /-- **The weighted blocks of another bump function.** There are `K ≥ 0` and `L`, depending only
 on `φ`, `φ'` and `s`, with
@@ -700,7 +645,7 @@ theorem norm_coeff_le (u : BesovSpace φ s p q) {N : ℕ} {n : d → ℤ}
     ‖u.coeff n‖ ≤ (∑ j ∈ Finset.range (N + 1), ((2 : ℝ) ^ (s * j))⁻¹) * ‖u‖ := by
   rw [← sum_mFourierCoeff_littlewoodPaleyBlockLp (p := p) hn u.coeff, Finset.sum_mul]
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
-  refine (norm_mFourierCoeff_le_norm_Lp _ n).trans ?_
+  refine (norm_mFourierCoeff_le_norm _ n).trans ?_
   rw [inv_mul_eq_div, le_div_iff₀' (by positivity)]
   exact rpow_mul_norm_littlewoodPaleyBlockLp_le u j
 
@@ -708,9 +653,9 @@ variable (φ s p q) in
 /-- The `n`-th Fourier coefficient on `B^s_{p,q}(𝕋ᵈ)`, as a continuous linear functional. -/
 def coeffCLM (n : d → ℤ) : BesovSpace φ s p q →L[ℂ] ℂ :=
   LinearMap.mkContinuous ((LinearMap.proj n).comp (coeffₗ φ s p q))
-    (∑ j ∈ Finset.range ((exists_norm_latticePoint_le_two_pow_mul φ n).choose + 1),
+    (∑ j ∈ Finset.range ((exists_le_two_pow_mul_rIn φ ‖latticePoint n‖).choose + 1),
       ((2 : ℝ) ^ (s * j))⁻¹)
-    fun u ↦ norm_coeff_le u (exists_norm_latticePoint_le_two_pow_mul φ n).choose_spec
+    fun u ↦ norm_coeff_le u (exists_le_two_pow_mul_rIn φ ‖latticePoint n‖).choose_spec
 
 @[simp]
 theorem coeffCLM_apply (n : d → ℤ) (u : BesovSpace φ s p q) :
@@ -722,7 +667,7 @@ theorem coeffCLM_apply (n : d → ℤ) (u : BesovSpace φ s p q) :
 `TauCeti.UnitAddTorus.sum_mFourierCoeff_littlewoodPaleyBlockLp`, a condition continuous in `G`. -/
 theorem isClosed_range_weightedBlocks :
     IsClosed (Set.range (weightedBlocks : BesovSpace φ s p q → _)) := by
-  choose N hN using exists_norm_latticePoint_le_two_pow_mul (d := d) φ
+  choose N hN using fun n : d → ℤ ↦ exists_le_two_pow_mul_rIn φ ‖latticePoint n‖
   -- The coefficients recovered from a sequence of `Lᵖ` functions.
   set Λ : lp (fun _ : ℕ ↦ Lp ℂ p (volume : Measure (UnitAddTorus d))) q → (d → ℤ) → ℂ :=
     fun G n ↦ ∑ j ∈ Finset.range (N n + 1),
