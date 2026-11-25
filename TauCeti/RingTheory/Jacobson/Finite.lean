@@ -24,7 +24,8 @@ injective. Hence `1 + y r` is a unit.
 ## Main results
 
 * `TauCeti.Ring.algebraMap_mem_jacobson`: the image of an element of the Jacobson radical of `R`
-  lies in the Jacobson radical of a module-finite `R`-algebra.
+  lies in the Jacobson radical of a module-finite `R`-algebra, and
+  `TauCeti.Ring.map_algebraMap_le_jacobson`: so does the extension of an ideal contained in it.
 * `TauCeti.span_algebraMap_le_jacobson`: if `R` is `ϖ`-adically complete then `ϖ A` lies in the
   Jacobson radical of `A`.
 
@@ -64,6 +65,13 @@ theorem algebraMap_mem_jacobson {r : R} (hr : r ∈ Ring.jacobson R) :
     ⟨OrzechProperty.injective_of_surjective_endomorphism _ hsurj, hsurj⟩
   exact Algebra.lmul_isUnit_iff.mp ((Module.End.isUnit_iff _).mpr hbij)
 
+/-- **An ideal in the radical of the base extends into the radical of a module-finite algebra.**
+If `A` is an `R`-algebra that is finitely generated as an `R`-module and `I` lies in the Jacobson
+radical of `R`, then the extended ideal `I A` lies in the Jacobson radical of `A`. -/
+theorem map_algebraMap_le_jacobson {I : Ideal R} (hI : I ≤ Ring.jacobson R) :
+    I.map (algebraMap R A) ≤ Ring.jacobson A :=
+  Ideal.map_le_iff_le_comap.mpr fun _ hr ↦ algebraMap_mem_jacobson (hI hr)
+
 end Ring
 
 variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] [Module.Finite R A]
@@ -71,8 +79,8 @@ variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] [Module.Finite R A]
 /-- **`ϖ A` lies in the Jacobson radical** of a module-finite algebra `A` over a ring that is
 `ϖ`-adically complete. -/
 theorem span_algebraMap_le_jacobson (ϖ : R) [IsAdicComplete (Ideal.span {ϖ}) R] :
-    Ideal.span {algebraMap R A ϖ} ≤ Ring.jacobson A :=
-  Ideal.span_le.mpr <| Set.singleton_subset_iff.mpr <| Ring.algebraMap_mem_jacobson <|
-    IsAdicComplete.le_jacobson _ (Ideal.mem_span_singleton_self ϖ)
+    Ideal.span {algebraMap R A ϖ} ≤ Ring.jacobson A := by
+  simpa [Ideal.map_span] using
+    Ring.map_algebraMap_le_jacobson (A := A) (IsAdicComplete.le_jacobson (Ideal.span {ϖ}))
 
 end TauCeti

@@ -16,6 +16,7 @@ public import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import TauCeti.Algebra.Module.Projective.Reduction.Lift
 import TauCeti.Algebra.MonoidAlgebra.Basic
+import TauCeti.RingTheory.Ideal.Extended
 import TauCeti.RingTheory.Jacobson.Finite
 
 /-!
@@ -33,7 +34,7 @@ a reduction (`TauCeti/Algebra/Module/Projective/Reduction/Lift.lean`) applies:
 * two finitely generated projective `O[G]`-modules with the same reduction are isomorphic
   (`TauCeti.nonempty_linearEquiv_of_reduction_residue`). This only needs `O` to be a local ring:
   the kernel of reduction lies in the Jacobson radical of `O[G]`
-  (`TauCeti.ker_mapRingHom_residue_le_jacobson`).
+  (`TauCeti.ker_mapRingHom_le_jacobson`).
 
 So the projective indecomposable `O[G]`-modules correspond to the projective indecomposable
 `k[G]`-modules, and hence, as `k[G]` is a finite-dimensional algebra, to the simple
@@ -44,8 +45,9 @@ reduction `𝔽₂[C₂]`, the projective cover of the trivial module.
 
 ## Main results
 
-* `TauCeti.ker_mapRingHom_residue_le_jacobson`: the kernel of `O[G] → k[G]` lies in the Jacobson
-  radical, for a local ring `O` and a finite monoid `G`.
+* `TauCeti.ker_mapRingHom_le_jacobson`: the kernel of a coefficient map `O[G] → k[G]` lies in the
+  Jacobson radical when the kernel of `O → k` does, for a finite monoid `G`; for instance when `O`
+  is a local ring and `k` its residue field.
 * `TauCeti.isIndecomposableModule_iff_of_reduction_residue`,
   `TauCeti.exists_projective_reduction_residue_of_projective` and
   `TauCeti.nonempty_linearEquiv_of_reduction_residue`: the reduction correspondence for
@@ -61,22 +63,24 @@ public section
 
 namespace TauCeti
 
+section Kernel
+
+variable {O k G : Type*} [CommRing O] [Semiring k] [Monoid G] [Finite G]
+
+/-- The kernel of the coefficient map `O[G] → k[G]` along `φ : O →+* k` lies in the Jacobson
+radical of `O[G]` whenever `ker φ` lies in the Jacobson radical of `O`, for a finite monoid `G`:
+that kernel is the extension of `ker φ` to `O[G]`, which is a finite `O`-module. -/
+theorem ker_mapRingHom_le_jacobson {φ : O →+* k} (hφ : RingHom.ker φ ≤ Ring.jacobson O) :
+    RingHom.ker (MonoidAlgebra.mapRingHom G φ) ≤ Ring.jacobson (MonoidAlgebra O G) := by
+  intro x hx
+  rw [RingHom.mem_ker, MonoidAlgebra.mapRingHom_eq_zero_iff, ← Ideal.mem_map_algebraMap_iff] at hx
+  exact Ring.map_algebraMap_le_jacobson hφ hx
+
+end Kernel
+
 section LocalRing
 
 variable {O G : Type*} [CommRing O] [IsLocalRing O] [Monoid G] [Finite G]
-
-/-- The kernel of reduction `O[G] → k[G]` lies in the Jacobson radical of `O[G]`, for a local ring
-`O` and a finite monoid `G`: its elements are sums of `r • x` with `r` in the maximal ideal, and
-`algebraMap O O[G] r` lies in the radical since `O[G]` is a finite `O`-module. -/
-theorem ker_mapRingHom_residue_le_jacobson :
-    RingHom.ker (MonoidAlgebra.mapRingHom G (IsLocalRing.residue O)) ≤
-      Ring.jacobson (MonoidAlgebra O G) := by
-  intro x hx
-  rw [RingHom.mem_ker, MonoidAlgebra.mapRingHom_eq_zero_iff, IsLocalRing.ker_residue] at hx
-  refine Submodule.smul_induction_on hx (fun r hr y _ ↦ ?_) fun _ _ ↦ add_mem
-  rw [Algebra.smul_def]
-  exact Ideal.mul_mem_right _ _ (Ring.algebraMap_mem_jacobson
-    ((IsLocalRing.ringJacobson_eq_maximalIdeal O).ge hr))
 
 variable {P : Type*} [AddCommGroup P] [Module (MonoidAlgebra O G) P]
   [Module.Finite (MonoidAlgebra O G) P] [Module.Projective (MonoidAlgebra O G) P]
@@ -95,7 +99,8 @@ theorem nonempty_linearEquiv_of_reduction_residue {Q : Type*} [AddCommGroup Q]
     (hgker : ∀ x, g x = 0 ↔ x ∈ RingHom.ker (MonoidAlgebra.mapRingHom G (IsLocalRing.residue O)) •
       (⊤ : Submodule (MonoidAlgebra O G) Q)) :
     Nonempty (P ≃ₗ[MonoidAlgebra O G] Q) :=
-  nonempty_linearEquiv_of_reduction hf hfker ker_mapRingHom_residue_le_jacobson hg hgker
+  nonempty_linearEquiv_of_reduction hf hfker (ker_mapRingHom_le_jacobson
+    (IsLocalRing.ker_residue.trans (IsLocalRing.ringJacobson_eq_maximalIdeal O).symm).le) hg hgker
 
 end LocalRing
 
