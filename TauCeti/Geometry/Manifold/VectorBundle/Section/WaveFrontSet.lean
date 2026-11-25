@@ -81,8 +81,8 @@ covectors read in two charts.
 * `Bundle.Trivialization.forall_isMicrolocallySmoothAt_chartComponent_iff_of_chart`: in one chart,
   it does not depend on the frame.
 * `TauCeti.BundleTest.IsMicrolocallySmoothAt`: microlocal smoothness of `T` at a covector of `M`,
-  and `TauCeti.BundleTest.isMicrolocallySmoothAt_iff`, its characterization in every chart and
-  frame.
+  with its defining property `TauCeti.BundleTest.isMicrolocallySmoothAt_def`, and
+  `TauCeti.BundleTest.isMicrolocallySmoothAt_iff`, its characterization in every chart and frame.
 * `TauCeti.BundleTest.waveFrontSet`: the wave front set of `T`, a subset of the cotangent bundle,
   empty for `T = 0` on a manifold without boundary (`TauCeti.BundleTest.waveFrontSet_zero`).
 * `TauCeti.BundleTest.mk_smul_mem_waveFrontSet_iff`: the wave front set is conic.
@@ -254,6 +254,18 @@ def IsMicrolocallySmoothAt (T : BundleTest I F V →L_c[ℝ] ℝ) (x : M)
     (hct : c.source ⊆ t.baseSet), x ∈ c.source ∧
     ∀ v, (t.chartComponent c hc hct T v).IsMicrolocallySmoothAt (c x)
       ((toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x)))
+
+/-- The defining property of `TauCeti.BundleTest.IsMicrolocallySmoothAt`: microlocal smoothness of
+all components in some smooth chart at `x` with smooth inverse and some frame over its source. -/
+theorem isMicrolocallySmoothAt_def {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
+    {ξ : TangentSpace I x →L[ℝ] ℝ} :
+    IsMicrolocallySmoothAt T x ξ ↔
+      ∃ (t : Trivialization F (π F V)) (_ : MemTrivializationAtlas t)
+        (c : OpenPartialHomeomorph M E) (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source)
+        (_ : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target) (hct : c.source ⊆ t.baseSet),
+        x ∈ c.source ∧ ∀ v, (t.chartComponent c hc hct T v).IsMicrolocallySmoothAt (c x)
+          ((toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x))) :=
+  Iff.rfl
 
 /-- **Microlocal smoothness in any chart and frame.** For a smooth chart `c` at `x` with smooth
 inverse and a frame `t` over its source, `T` is microlocally smooth at the covector `ξ` at `x`
