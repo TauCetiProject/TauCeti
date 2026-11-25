@@ -19,8 +19,7 @@ first-coordinate basepoint `TauCeti.sphereBasepoint`:
   representatives by `Fin.append x y`, together with its unit and associativity coherences.
 * `TauCeti.intervalQuotientSphereOneHomeomorph` (`I / {0, 1} ≃ₜ S¹`) and
   `TauCeti.reducedSuspensionSphereHomeomorph` (`ΣSⁿ ≃ₜ Sⁿ⁺¹` for all `n ≥ 0`), given on based cube
-  representatives by `Fin.snoc x t` and complementing the `n ≥ 1` north-pole unlifted homeomorphism
-  `TauCeti.sphereReducedSuspensionHomeomorph`.
+  representatives by `Fin.snoc x t`.
 
 ## References
 
@@ -147,12 +146,9 @@ lemma smashSphereHomeomorph_mk_basedCubeToSphere (m n : ℕ) (x : I^(Fin m)) (y 
   dsimp only [smashSphereHomeomorph, Homeomorph.trans_apply]
   rw [SmashProduct.congrHomeomorph_mk, cubeQuotientSphereHomeomorph_symm_basedCubeToSphere,
     cubeQuotientSphereHomeomorph_symm_basedCubeToSphere]
-  exact (congrArg (fun z ↦ cubeQuotientSphereHomeomorph.{u} (m + n)
-      (TopPair.ordinaryPairQuotientCongrHomeomorph (cubeBoundaryPairProdIso.{u} m n) z))
-    (TopPair.ordinaryPairQuotientProdHomeomorph_symm_mk_π _ _ _ _)).trans <|
-    (congrArg (cubeQuotientSphereHomeomorph.{u} (m + n))
-      (ordinaryPairQuotientCongrHomeomorph_cubeBoundaryPairProdIso_π m n x y)).trans
-      (cubeQuotientSphereHomeomorph_π (m + n) _)
+  simp only [TopPair.ordinaryPairQuotientProdHomeomorph_symm_mk_π _ _,
+    ordinaryPairQuotientCongrHomeomorph_cubeBoundaryPairProdIso_π m n x y,
+    cubeQuotientSphereHomeomorph_π]
 
 /-- Swapping factors on `Sᵐ ∧ Sⁿ` reverses the order of cube concatenation from `Fin.append x y` to
 `Fin.append y x`. -/

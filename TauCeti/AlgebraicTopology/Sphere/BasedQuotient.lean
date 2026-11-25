@@ -143,13 +143,19 @@ lemma det_spherePoleLinearIsometry (n : ℕ) [NeZero n] :
       by_cases hj : j = 0 <;> simp [b, M, spherePoleLinearIsometry, hn, hj,
         LinearMap.toMatrix_apply, EuclideanSpace.basisFun_apply]
     · have hij : (finRotate (n + 1)).symm i ≠ j := mt (finRotate (n + 1)).symm_apply_eq.mp hi
-      simp_all [b, M, spherePoleLinearIsometry, LinearMap.toMatrix_apply,
-        EuclideanSpace.basisFun_apply]
+      simp only [b, M, Matrix.diagonal_apply_ne _ hij, spherePoleLinearIsometry,
+        LinearMap.toMatrix_apply, OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply,
+        LinearIsometryEquiv.toLinearEquiv_trans, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
+        LinearIsometryEquiv.coe_toLinearEquiv, LinearIsometryEquiv.piLpCongrRight_single,
+        LinearIsometryEquiv.piLpCongrLeft_single, OrthonormalBasis.coe_toBasis_repr_apply,
+        EuclideanSpace.basisFun_repr, PiLp.single_apply, hi, ↓reduceIte]
   have hsign : Equiv.Perm.sign (finRotate (n + 1)).symm = (-1) ^ n := by
     rw [← Equiv.Perm.inv_def, map_inv, Int.units_inv_eq_self, sign_finRotate, Nat.add_sub_cancel]
   rw [← LinearMap.det_toMatrix b, hM, Matrix.det_permute, hsign, Matrix.det_diagonal,
     Fin.prod_univ_succ]
-  simp; ring
+  simp only [Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one, Int.reduceNeg, Int.cast_pow,
+    Int.cast_neg, Int.cast_one, ↓reduceIte, Fin.succ_ne_zero, Finset.prod_const_one, mul_one,
+    pow_succ]
 
 /-- The based cube-to-sphere collapse map `Iⁿ → TopCat.sphere n`, sending `∂Iⁿ` to
 `TauCeti.sphereBasepoint n` (`e₀`) and the centre of the cube to `TauCeti.sphereAntiBasepoint n`
@@ -252,18 +258,10 @@ lemma coe_basedDiskToSphere_down (n : ℕ) (z : TopCat.disk.{u} n) :
       spherePoleLinearIsometry n
         (closedBallToSphere n
           ((z : ULift.{u} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down)) := by
-  let z₀ : TopCat.disk.{0} n :=
-    (ULift.up ((z : ULift.{u} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down) :
-      ULift.{0} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1))
-  have hz₀ : (z₀ : ULift.{0} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down =
-      (z : ULift.{u} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down := ULift.down_up _
-  have hcb : diskHomeomorphClosedBall.{u} n z = diskHomeomorphClosedBall.{0} n z₀ :=
-    Subtype.ext ((coe_diskHomeomorphClosedBall_apply z).trans
-      (coe_diskHomeomorphClosedBall_apply z₀).symm)
-  have hcube : diskHomeomorphCube.{u} n z = diskHomeomorphCube.{0} n z₀ := by
-    rw [diskHomeomorphCube_apply, diskHomeomorphCube_apply, hcb]
-  rw [basedDiskToSphere_apply, coe_basedCubeToSphere_down, hcube, cubeToSphere_apply,
-    Homeomorph.symm_apply_apply, hz₀]
+  -- `TauCeti.cubeToSphere` is fixed at universe `0`, so `diskHomeomorphCube.{u}` is compared with
+  -- `diskHomeomorphCube.{0}` via `TauCeti.diskHomeomorphCube_symm_diskHomeomorphCube_down`.
+  rw [basedDiskToSphere_apply, coe_basedCubeToSphere_down, cubeToSphere_apply,
+    diskHomeomorphCube_symm_diskHomeomorphCube_down]
 
 @[simp]
 lemma basedDiskToSphere_eq_sphereBasepoint_iff {n : ℕ} {z : TopCat.disk.{u} n} :

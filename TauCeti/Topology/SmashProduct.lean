@@ -537,22 +537,14 @@ def ordinaryPairQuotientProdHomeomorph [LocallyCompactSpace X]
   toFun := ordinaryPairQuotientProdToSmash A B
   invFun := smashToOrdinaryPairQuotientProd A B
   left_inv := ordinaryPairQuotient_ind (P := qProd A B)
-    (fun ⟨(x : X), (y : Y)⟩ ↦ by
-      rw [ordinaryPairQuotientProdToSmash_π A B x y, smashToOrdinaryPairQuotientProd_mk,
-        prodQuotientFromBoth_π, prodQuotientFromRight_π])
-    (by rw [ordinaryPairQuotientProdToSmash_basepoint A B,
-      smashToOrdinaryPairQuotientProd_basepoint])
+    (fun ⟨(_ : X), (_ : Y)⟩ ↦ by simp [ordinaryPairQuotientProdToSmash_π A B])
+    (by simp [ordinaryPairQuotientProdToSmash_basepoint A B])
   right_inv := SmashProduct.ind <|
     ordinaryPairQuotient_ind (P := qLeft A)
-      (fun (x : X) ↦ ordinaryPairQuotient_ind (P := qRight B)
-        (fun (y : Y) ↦ by
-          rw [smashToOrdinaryPairQuotientProd_mk, prodQuotientFromBoth_π, prodQuotientFromRight_π,
-            ordinaryPairQuotientProdToSmash_π A B x y])
-        (by rw [SmashProduct.mk_basepoint_right, smashToOrdinaryPairQuotientProd_basepoint,
-          ordinaryPairQuotientProdToSmash_basepoint A B]))
-      (fun _ ↦ by
-        rw [SmashProduct.mk_basepoint_left, smashToOrdinaryPairQuotientProd_basepoint,
-          ordinaryPairQuotientProdToSmash_basepoint A B])
+      (fun (_ : X) ↦ ordinaryPairQuotient_ind (P := qRight B)
+        (fun (_ : Y) ↦ by simp [ordinaryPairQuotientProdToSmash_π A B])
+        (by simp [ordinaryPairQuotientProdToSmash_basepoint A B]))
+      (fun _ ↦ by simp [ordinaryPairQuotientProdToSmash_basepoint A B])
   continuous_toFun := (ordinaryPairQuotientProdToSmash A B).hom.continuous
   continuous_invFun := (smashToOrdinaryPairQuotientProd A B).continuous
 

@@ -665,6 +665,25 @@ lemma diskHomeomorphCube_apply (z : TopCat.disk.{u} n) :
   rw [diskHomeomorphCube, Homeomorph.trans_apply]
 
 variable {n} in
+/-- `TauCeti.diskHomeomorphCube` depends only on the underlying point of the closed Euclidean ball,
+so inverting it in another universe recovers that point; in particular this compares
+`TauCeti.diskHomeomorphCube.{u}` with `TauCeti.diskHomeomorphCube.{0}`, where
+`TauCeti.cubeToSphere` is fixed at universe `0`. -/
+lemma diskHomeomorphCube_symm_diskHomeomorphCube_down.{v} (z : TopCat.disk.{u} n) :
+    ((diskHomeomorphCube.{v} n).symm (diskHomeomorphCube.{u} n z) :
+        ULift.{v} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down =
+      (z : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down := by
+  let z' : TopCat.disk.{v} n :=
+    (ULift.up (z : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
+      ULift.{v} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1))
+  have hcb : diskHomeomorphClosedBall.{u} n z = diskHomeomorphClosedBall.{v} n z' :=
+    Subtype.ext ((coe_diskHomeomorphClosedBall_apply z).trans
+      (coe_diskHomeomorphClosedBall_apply z').symm)
+  have hcube : diskHomeomorphCube.{u} n z = diskHomeomorphCube.{v} n z' := by
+    rw [diskHomeomorphCube_apply, diskHomeomorphCube_apply, hcb]
+  rw [hcube, Homeomorph.symm_apply_apply]
+
+variable {n} in
 /-- `TauCeti.diskHomeomorphCube` carries the boundary sphere of the disk onto the boundary of the
 cube. -/
 theorem diskHomeomorphCube_mem_boundary_iff (z : TopCat.disk.{u} n) :
