@@ -62,7 +62,10 @@ theorem _root_.ModuleCat.finite_projective_end_op_matlisDual_of_additiveClosure 
       map_smul' g f := by
         -- The right action of `Γ` on `D_R M` is dualization of endomorphisms
         -- (`end_op_smul_eq_map`), which the inverse adjunction turns into precomposition
-        -- (`equivLinearMapDualRegular_symm_comp`).
+        -- (`equivLinearMapDualRegular_symm_comp`). The `change` unfolds `homAddEquiv` and
+        -- `arrowCongrAddEquiv`, writes the action of `g : (End M)ᵐᵒᵖ` on `f : M ⟶ X` as
+        -- precomposition with `g.unop`, and groups the composite as `(e ∘ f) ∘ g.unop`, the form
+        -- in which `equivLinearMapDualRegular_symm_comp` applies.
         change equivLinearMapDualRegular.symm
           ((e.toLinearMap ∘ₗ f.hom) ∘ₗ ModuleCat.endRingEquiv M g.unop) = _
         rw [end_op_smul_eq_map, equivLinearMapDualRegular_symm_comp]
