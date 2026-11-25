@@ -358,26 +358,27 @@ theorem sum_smul_ι_apply_eq_zero_iff_of_bivectorExterior_apply {ψ : W}
   rw [sum_smul_ι_apply_of_bivectorExterior_apply hQ h₀ h₂ hψ]
   refine ⟨fun h ↦ ?_, ?_⟩
   · -- Applying `c(e₀)` sends `c(e₀) ψ` to `-ψ` (eigenvalue `-2i`) and `c(e₂) ψ` to `c(e₀) c(e₂) ψ`
-    -- (eigenvalue `2i`), which separate under `c₂(ω)`.
+    -- (eigenvalue `2i`), which lie in disjoint eigenspaces of `c₂(ω)`.
     have h1 := congrArg (ρ (ι Q (e 0))) h
     simp only [map_add, map_smul, map_zero, e.map_ι_apply_map_ι_apply hQ ρ] at h1
-    have h2 := congrArg (ρ (bivectorExterior Q J.kahlerForm)) h1
     have h20 := bivectorExterior_kahlerForm_apply_ι_apply_ι_apply_of_bivectorExterior_apply
       hQ h₀ h₂ hψ
-    simp only [map_add, map_smul, map_neg, map_zero, hψ, h20] at h2
-    have hz0 : (-4 * Complex.I * (x 0 + Complex.I * x 1)) • ψ = 0 := by
-      linear_combination (norm := module) (2 * Complex.I) • h1 - h2
-    have hz2' : (4 * Complex.I * (x 2 + Complex.I * x 3)) •
-        ρ (ι Q (e 0)) (ρ (ι Q (e 2)) ψ) = 0 := by
-      linear_combination (norm := module) (2 * Complex.I) • h1 + h2
-    have hz2 : (4 * Complex.I * (x 2 + Complex.I * x 3)) • ψ = 0 := by
+    set T := ρ (bivectorExterior Q J.kahlerForm)
+    have hmem0 : (x 0 + Complex.I * x 1) • (-ψ) ∈ T.genEigenspace (-2 * Complex.I) 1 :=
+      Submodule.smul_mem _ _ (Submodule.neg_mem _ (Module.End.mem_genEigenspace_one.2 hψ))
+    have hmem2 : (x 2 + Complex.I * x 3) • ρ (ι Q (e 0)) (ρ (ι Q (e 2)) ψ) ∈
+        T.genEigenspace (2 * Complex.I) 1 :=
+      Submodule.smul_mem _ _ (Module.End.mem_genEigenspace_one.2 h20)
+    have hne : (-2 * Complex.I : ℂ) ≠ 2 * Complex.I := by norm_num [Complex.ext_iff]
+    obtain ⟨hz0, hz2'⟩ :=
+      (Submodule.disjoint_iff_add_eq_zero.1 (T.disjoint_genEigenspace hne 1 1))
+        hmem0 hmem2 h1
+    have hz2 : (x 2 + Complex.I * x 3) • ψ = 0 := by
       have := congrArg (fun w ↦ ρ (ι Q (e 2)) (ρ (ι Q (e 0)) w)) hz2'
       simpa only [map_smul, map_zero, e.map_ι_apply_map_ι_apply hQ ρ, map_neg, neg_neg] using this
-    rcases smul_eq_zero.1 hz0 with h0 | h0
-    · rcases smul_eq_zero.1 hz2 with h2' | h2'
-      · exact Or.inr ⟨by simpa [Complex.I_ne_zero] using h0, by simpa [Complex.I_ne_zero] using h2'⟩
-      · exact Or.inl h2'
-    · exact Or.inl h0
+    rw [smul_neg, neg_eq_zero, smul_eq_zero] at hz0
+    rw [smul_eq_zero] at hz2
+    tauto
   · rintro (h | ⟨h0, h2'⟩)
     · simp [h]
     · simp [h0, h2']
