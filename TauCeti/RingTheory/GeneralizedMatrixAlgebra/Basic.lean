@@ -279,6 +279,7 @@ theorem entry_def (i j : ι) :
     E.entry i j = TauCeti.cornerSubmodule A (E.primitiveIdempotent i) (E.primitiveIdempotent j) :=
   (rfl)
 
+@[simp]
 theorem mem_entry_iff {i j : ι} {x : R} :
     x ∈ E.entry i j ↔ E.primitiveIdempotent i * x * E.primitiveIdempotent j = x :=
   TauCeti.mem_cornerSubmodule_iff A (E.isIdempotentElem_primitiveIdempotent i)
