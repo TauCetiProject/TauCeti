@@ -27,6 +27,11 @@ this gives:
 * the section `z e₁` does not, since its value `i e₁` at `z = i` is not real;
 * the section `(z + conj z) e₁ = 2 (re z) e₁` does.
 
+## Main definitions
+
+* `TauCeti.BorderedSobolevSection.trivialSection`: a `Cᵐ` map from the closed disc to `ℂⁿ`, as a
+  `Cᵐ` section of the trivial bundle.
+
 ## Main results
 
 * `TauCeti.BorderedSobolevSection.exists_mem_withBoundaryIn_toSection_eq_iff_of_unitClosedDisc`:
@@ -53,11 +58,17 @@ variable {n : ℕ}
   {A : FiniteBundleAtlas ClosedUpperHalfPlane 𝕔𝔻 (Fin n → ℂ) (Bundle.Trivial 𝕔𝔻 (Fin n → ℂ))}
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- A `C¹` map from the closed disc to `ℂⁿ`, as a `C¹` section of the trivial bundle. -/
-private def trivialSection {f : 𝕔𝔻 → Fin n → ℂ}
-    (hf : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ, Fin n → ℂ) 1 f) :
-    Cₛ^(1 : ℕ)⟮closedUpperHalfPlaneModel; Fin n → ℂ, Bundle.Trivial 𝕔𝔻 (Fin n → ℂ)⟯ :=
+/-- A `Cᵐ` map from the closed disc to `ℂⁿ`, as a `Cᵐ` section of the trivial bundle. -/
+def trivialSection {m : ℕ} {f : 𝕔𝔻 → Fin n → ℂ}
+    (hf : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ, Fin n → ℂ) m f) :
+    Cₛ^m⟮closedUpperHalfPlaneModel; Fin n → ℂ, Bundle.Trivial 𝕔𝔻 (Fin n → ℂ)⟯ :=
   ⟨f, fun x ↦ (contMDiffAt_section_iff x).2 (by simpa using hf x)⟩
+
+@[simp]
+theorem coe_trivialSection {m : ℕ} {f : 𝕔𝔻 → Fin n → ℂ}
+    (hf : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ, Fin n → ℂ) m f) :
+    ⇑(trivialSection hf) = f :=
+  (rfl)
 
 /-- **Boundary conditions on the closed disc.** For `2 < p ≤ ∞`, a `C¹` map `f` from the closed
 unit disc to `ℂⁿ` is the continuous representative of an element of `W^{1,p}_L` of the trivial
@@ -68,7 +79,7 @@ theorem exists_mem_withBoundaryIn_toSection_eq_iff_of_unitClosedDisc (hp : 2 < p
     (∃ w ∈ withBoundaryIn A hp L, toSection hp w = f) ↔
       ∀ ζ : 𝕔𝔻, ‖(ζ : ℂ)‖ = 1 → f ζ ∈ L ζ := by
   have h := exists_mem_withBoundaryIn_toSection_eq_iff (A := A) (hp := hp) (L := L)
-    (s := trivialSection hf)
+    (s := trivialSection (m := 1) (by exact_mod_cast hf))
   refine h.trans (forall_congr' fun ζ ↦ ?_)
   rw [← SetLike.mem_coe, ← Set.mem_compl_iff, UnitClosedDisc.compl_borderedInterior]
   rfl

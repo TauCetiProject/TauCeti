@@ -43,7 +43,8 @@ order of Sobolev sections.
 * `TauCeti.BorderedSobolevSection.mem_higherWithBoundaryIn_succ_iff`: forgetting one derivative.
 * `TauCeti.BorderedSobolevSection.isClosed_higherWithBoundaryIn`: `W^{1+k,p}_L(V)` is closed, so it
   is a Banach space (`TauCeti.BorderedSobolevSection.instCompleteSpaceHigherWithBoundaryIn`).
-* `TauCeti.BorderedSobolevSection.ofContMDiffSection_mem_higherWithBoundaryIn_iff`: a `C^{1+k}`
+* `TauCeti.BorderedSobolevSection.ofContMDiffSection_mem_higherWithBoundaryIn_iff`,
+  `TauCeti.BorderedSobolevSection.exists_mem_higherWithBoundaryIn_toSection_eq_iff`: a `C^{1+k}`
   section lies in `W^{1+k,p}_L(V)` exactly when its boundary values lie in `L`.
 
 ## References
@@ -89,6 +90,7 @@ theorem mem_higherWithBoundaryIn_iff_lowerOrdersL {hp : 2 < p} {L : ∀ x, Submo
 
 /-- An element of `W^{1+k,p}(V)` lies in `W^{1+k,p}_L(V)` exactly when the continuous
 representative of its image in `W^{1,p}(V)` takes its boundary values in `L`. -/
+@[simp]
 theorem mem_higherWithBoundaryIn_iff {hp : 2 < p} {L : ∀ x, Submodule ℝ (V x)} {k : ℕ}
     {w : BorderedSobolevSection A p (1 + k)} :
     w ∈ higherWithBoundaryIn A hp L k ↔ ∀ x ∉ borderedInterior M,
@@ -127,6 +129,7 @@ instance instCompleteSpaceHigherWithBoundaryIn (hp : 2 < p) (L : ∀ x, Submodul
 
 /-- The continuous representative of the image in `W^{1,p}(V)` of the element of `W^{1+k,p}(V)`
 given by a `C^{1+k}` section is the section itself. -/
+@[simp]
 theorem toSection_lowerOrdersL_ofContMDiffSection {k : ℕ}
     [IsManifold closedUpperHalfPlaneModel (1 + k : ℕ) M]
     [ContMDiffVectorBundle (1 + k : ℕ) F V closedUpperHalfPlaneModel] (hp : 2 < p)
@@ -146,6 +149,20 @@ theorem ofContMDiffSection_mem_higherWithBoundaryIn_iff {k : ℕ}
     ofContMDiffSection A p (1 + k) s ∈ higherWithBoundaryIn A hp L k ↔
       ∀ x ∉ borderedInterior M, s x ∈ L x := by
   rw [mem_higherWithBoundaryIn_iff, toSection_lowerOrdersL_ofContMDiffSection]
+
+/-- A `C^{1+k}` section is the continuous representative of the image in `W^{1,p}(V)` of an
+element of `W^{1+k,p}_L(V)` exactly when its values at the boundary points lie in `L`. -/
+theorem exists_mem_higherWithBoundaryIn_toSection_eq_iff {k : ℕ}
+    [IsManifold closedUpperHalfPlaneModel (1 + k : ℕ) M]
+    [ContMDiffVectorBundle (1 + k : ℕ) F V closedUpperHalfPlaneModel] {hp : 2 < p}
+    {L : ∀ x, Submodule ℝ (V x)} {s : Cₛ^(1 + k : ℕ)⟮closedUpperHalfPlaneModel; F, V⟯} :
+    (∃ w ∈ higherWithBoundaryIn A hp L k,
+      toSection hp (A.halfSectionChartData.lowerOrdersL volume p 1 k w) = s) ↔
+      ∀ x ∉ borderedInterior M, s x ∈ L x := by
+  refine ⟨fun ⟨w, hw, hws⟩ ↦ ?_, fun h ↦ ⟨_, ofContMDiffSection_mem_higherWithBoundaryIn_iff.2 h,
+    toSection_lowerOrdersL_ofContMDiffSection hp s⟩⟩
+  rw [← hws]
+  exact mem_higherWithBoundaryIn_iff.1 hw
 
 end BorderedSobolevSection
 
