@@ -41,7 +41,7 @@ subgroup is transitive, a polynomial with a label is irreducible.
 
 Separability and the degree are part of the predicate, so an inseparable polynomial, or one of
 degree other than `n`, has no label in degree `n`; nor does a polynomial of degree zero or of
-degree above five, where there are no reference subgroups. In degree one the label is determined
+degree above six, where there are no reference subgroups. In degree one the label is determined
 by the degree alone, and in degree two by separability and irreducibility.
 
 ## Main definitions
@@ -58,17 +58,17 @@ by the degree alone, and in degree two by separability and irreducibility.
 * `TauCeti.HasGaloisLabel.range_le_alternatingGroup_iff` and
   `TauCeti.HasGaloisLabel.isSquare_discr_iff`: the parity of the Galois image.
 * `TauCeti.HasGaloisLabel.range_le_alternatingGroup_iff_label` and
-  `TauCeti.HasGaloisLabel.isSquare_discr_iff_label`: the complete parity column, read as
-  explicit conditions on the degree and label index.
+  `TauCeti.HasGaloisLabel.isSquare_discr_iff_label`: the complete parity column in degree at
+  most five, read as explicit conditions on the degree and label index.
 * `TauCeti.HasGaloisLabel.irreducible_map_discrField_iff`: irreducibility over the discriminant
   field, read on the even part of the reference subgroup.
 * `TauCeti.HasGaloisLabel.isPreprimitive_iff`, `TauCeti.HasGaloisLabel.isPreprimitive_gal_iff`:
   primitivity of the Galois image, respectively of the Galois group, on the roots, and
-  `TauCeti.HasGaloisLabel.isPreprimitive_gal_iff_ne_four_or_three_le`: the Galois group acts
-  primitively unless the label is `4T1`, `4T2` or `4T3`.
+  `TauCeti.HasGaloisLabel.isPreprimitive_gal_iff_ne_four_or_three_le`: in degree at most five,
+  the Galois group acts primitively unless the label is `4T1`, `4T2` or `4T3`.
 * `TauCeti.HasGaloisLabel.isSolvable_iff`: solvability of the Galois group.
 * `TauCeti.HasGaloisLabel.isSolvable_iff_ne_five_or_lt_three`: the Galois group of a polynomial
-  with a label is solvable unless the label is `5T4` or `5T5`.
+  with a label of degree at most five is solvable unless the label is `5T4` or `5T5`.
 * `TauCeti.isSolvable_gal_iff_exists_le_map_conj_referenceSubgroup_five_two`: the Galois group of
   an irreducible polynomial whose root set is numbered by `Fin 5` is solvable exactly when its
   permutation image lies in a conjugate of `F₂₀`.
