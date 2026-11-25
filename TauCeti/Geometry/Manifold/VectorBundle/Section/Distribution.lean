@@ -344,9 +344,8 @@ theorem continuous_map_of_inCoordinates_eq_const (ϕ : ∀ x, V₁ x →L[ℝ] V
     intro a s x
     have hx₁ := hU₁ a x.property
     have hx₂ := hU₂ a x.property
-    rw [← hc a x hx₁ hx₂]
-    simp [ϕ', e₁, e₂, ContinuousLinearMap.inCoordinates, Trivialization.frameCoordinates_apply,
-      Trivialization.linearMapAt_apply, Trivialization.symm_apply_apply_mk, hx₁, hx₂]
+    rw [← hc a x hx₁ hx₂, ContinuousLinearMap.inCoordinates_eq hx₁ hx₂]
+    simp [ϕ', e₁, e₂, Trivialization.frameCoordinates_apply, hx₁]
   let := frameTopology (I := I) (n := ∞) e₁ U hU₁
   let := frameTopology (I := I) (n := ∞) e₂ U hU₂
   let := compactlySupportedTopology (I := I) (n := ∞) e₂ U hU₂
