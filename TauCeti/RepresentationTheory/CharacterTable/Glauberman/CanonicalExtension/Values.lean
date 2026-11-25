@@ -155,8 +155,7 @@ theorem IsCanonicalExtension.exists_int_eq_apply_inr (hcop : (Nat.card Γ).Copri
   have hmem : ψ (inr s) ∈ adjoin ℚ (Set.range (ψ ∘ inr)) := subset_adjoin _ _ ⟨s, rfl⟩
   rw [hζ.adjoin_range_eq_map_fixedField_cyclotomicPowerStabilizer hS
       (comp_mem_virtualCharacters _ (irreducibleCharacters_subset_virtualCharacters hirr)),
-    hstab, ← fixingSubgroup_bot, IsGalois.fixedField_fixingSubgroup, IntermediateField.map_bot,
-    mem_bot] at hmem
+    hstab, IsGalois.fixedField_top, IntermediateField.map_bot, mem_bot] at hmem
   obtain ⟨q, hq⟩ := hmem
   obtain ⟨n, ρ, -, hρ⟩ := mem_irreducibleCharacters_iff.1 hirr
   have hint : IsIntegral ℤ (algebraMap ℚ k q) := by
