@@ -28,6 +28,8 @@ where every object is a summand of an object of the subcategory.
 
 ## Main results
 
+* `CategoryTheory.Pretriangulated.exists_iso_biprod_of_mono`: every monomorphism in a
+  pretriangulated category splits as a binary biproduct summand.
 * `CategoryTheory.Retract.exists_iso_biprod`: a retract of `Y` is a biproduct summand of `Y`.
 * `CategoryTheory.ObjectProperty.prop_retractClosure_iff_exists_biprod`: the retract closure of
   an isomorphism-closed property consists of the summands of its objects.
@@ -47,13 +49,20 @@ open Limits Pretriangulated
 variable {C : Type*} [Category* C] [Preadditive C] [HasZeroObject C] [HasShift C ℤ]
   [∀ n : ℤ, (shiftFunctor C n).Additive] [Pretriangulated C]
 
+/-- **Splitting of monomorphisms in a pretriangulated category**: every monomorphism `f : X ⟶ Y`
+identifies `Y` with a binary biproduct `X ⊞ Z` compatibly with `biprod.inl`. -/
+theorem Pretriangulated.exists_iso_biprod_of_mono {X Y : C} (f : X ⟶ Y) [Mono f] :
+    ∃ (Z : C) (e : Y ≅ X ⊞ Z), f ≫ e.hom = biprod.inl := by
+  obtain ⟨Z, g, h, hT⟩ := distinguished_cocone_triangle f
+  obtain ⟨e, he, -⟩ := exists_iso_binaryBiproduct_of_distTriang _ hT
+    (Triangle.mor₃_eq_zero_of_mono₁ _ hT ‹_›)
+  exact ⟨Z, e, he⟩
+
 /-- **A retract is a direct summand** in a pretriangulated category: if `X` is a retract of `Y`,
 then `Y` is isomorphic to `X ⊞ Z` for some object `Z`. -/
 theorem Retract.exists_iso_biprod {X Y : C} (h : Retract X Y) :
     ∃ Z : C, Nonempty (Y ≅ X ⊞ Z) := by
-  obtain ⟨Z, g, k, hT⟩ := distinguished_cocone_triangle h.i
-  obtain ⟨e, -⟩ := exists_iso_binaryBiproduct_of_distTriang _ hT
-    (Triangle.mor₃_eq_zero_of_mono₁ _ hT (inferInstanceAs (Mono h.i)))
+  obtain ⟨Z, e, -⟩ := Pretriangulated.exists_iso_biprod_of_mono h.i
   exact ⟨Z, ⟨e⟩⟩
 
 /-- In a pretriangulated category, an object lies in the retract closure of an

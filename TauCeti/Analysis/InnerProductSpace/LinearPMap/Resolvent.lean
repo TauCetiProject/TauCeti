@@ -13,7 +13,8 @@ public import TauCeti.Analysis.Normed.Operator.Resolvent.LowerBound
 
 A scalar `z` at which the shift `x ↦ z • x - A x` of a self-adjoint partial linear map is
 bounded below by `c‖x‖`, with `c > 0`, is a resolvent point, and `‖R(z)‖ ≤ c⁻¹`; at a real `z`
-this is the quantitative form of `z ∉ σ(A)`. Every nonreal scalar `z` is such a point with
+this is the quantitative form of `z ∉ σ(A)`; in particular, a real number strictly below a lower
+bound `γ ‖x‖ ^ 2 ≤ re ⟪A x, x⟫` is a resolvent point. Every nonreal scalar `z` is such a point with
 `c = |im z|`, which gives the sharp upper bound `‖R(z)‖ ≤ |im z|⁻¹`. The spectrum is therefore
 real. Taking the adjoint of a resolvent conjugates its scalar parameter; in particular, resolvents
 at real points are self-adjoint. These facts provide the bounded inverses used in Cayley
@@ -57,6 +58,22 @@ theorem _root_.IsSelfAdjoint.mem_resolventSet_of_norm_le (hA : IsSelfAdjoint A) 
     z ∈ A.resolventSet :=
   mem_resolventSet_of_surjective_of_norm_le (hA.smul_sub_surjective_of_norm_le hc hbound) hc
     hbound
+
+/-- **A real number below a lower bound is a resolvent point.** If a self-adjoint partial linear
+map `A` satisfies `γ ‖x‖ ^ 2 ≤ re ⟪A x, x⟫` on its domain and `t < γ`, then `t` lies in the
+resolvent set of `A`. -/
+theorem _root_.IsSelfAdjoint.ofReal_mem_resolventSet_of_lt (hA : IsSelfAdjoint A) {γ t : ℝ}
+    (hγ : ∀ x : A.domain, γ * ‖(x : E)‖ ^ 2 ≤ RCLike.re ⟪A x, (x : E)⟫_𝕜) (ht : t < γ) :
+    (t : 𝕜) ∈ A.resolventSet := by
+  refine hA.mem_resolventSet_of_norm_le (sub_pos.2 ht) fun x => ?_
+  have hle := re_inner_le_norm (𝕜 := 𝕜) (A x - (t : 𝕜) • (x : E)) (x : E)
+  rw [re_inner_apply_sub_smul_self, norm_sub_rev] at hle
+  have key : (γ - t) * ‖(x : E)‖ * ‖(x : E)‖ ≤ ‖(t : 𝕜) • (x : E) - A x‖ * ‖(x : E)‖ := by
+    nlinarith [hγ x]
+  rcases (norm_nonneg (x : E)).eq_or_lt with h0 | hpos
+  · rw [← h0, mul_zero]
+    exact norm_nonneg _
+  · exact le_of_mul_le_mul_right key hpos
 
 /-- **Resolvent bound from a lower bound.** If the shift `x ↦ z • x - A x` of a self-adjoint
 partial linear map dominates `c * ‖x‖` on the domain for some `c > 0`, then the resolvent at `z`

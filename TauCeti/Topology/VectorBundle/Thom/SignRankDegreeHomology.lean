@@ -464,20 +464,15 @@ include hι in
 private theorem signFiberClassOver_eq_of_path {W : Set B} {x y : W} (δ : Path x y) :
     signFiberClassOver (E := E) hι ω γ x.property =
       signFiberClassOver (E := E) hι ω γ y.property := by
-  have : LocallyPathConnectedSpace unitInterval :=
-    Convex.locallyPathConnectedSpace ℝ (convex_Icc (0 : ℝ) 1)
-  refine δ.eq_of_eventually_eq (f := fun z : W ↦ signFiberClassOver (E := E) hι ω γ z.property)
-    fun t ↦ ?_
-  have hδ : Continuous fun s ↦ ((δ s : W) : B) := continuous_subtypeVal.comp δ.continuous
-  have hc : ((δ t : W) : B) ∈ (trivializationAt F E (δ t : B)).baseSet :=
-    mem_baseSet_trivializationAt F E _
-  have hO : {s : unitInterval | ((δ s : W) : B) ∈ (trivializationAt F E (δ t : B)).baseSet} ∈
-      𝓝 t := (hδ.tendsto t).eventually ((trivializationAt F E (δ t : B)).open_baseSet.mem_nhds hc)
-  filter_upwards [pathComponentIn_mem_nhds hO] with s hs
-  refine (signFiberClassOver_eq_of_joinedIn hι ω γ (δ t : B) _ _ ?_).symm
-  refine (hs.map hδ.continuousOn).mono ?_
+  refine δ.eq_of_joinedIn_nhds (f := fun z : W ↦ signFiberClassOver (E := E) hι ω γ z.property)
+    fun z ↦ ⟨{z' : W | (z' : B) ∈ (trivializationAt F E z).baseSet},
+      continuous_subtypeVal.continuousAt.preimage_mem_nhds
+        ((trivializationAt F E z).open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E _)),
+      fun a b h ↦ ?_⟩
+  refine signFiberClassOver_eq_of_joinedIn hι ω γ (z : B) a.property b.property
+    ((h.map continuous_subtypeVal.continuousOn).mono ?_)
   rintro _ ⟨u, hu, rfl⟩
-  exact ⟨(δ u).property, hu⟩
+  exact ⟨u.property, hu⟩
 
 /-- The map `H₀(W; R) ⟶ Hᵣ(E|_W, E₀|_W; o)` sending the class of a point to the twisted fibre class
 over it. -/

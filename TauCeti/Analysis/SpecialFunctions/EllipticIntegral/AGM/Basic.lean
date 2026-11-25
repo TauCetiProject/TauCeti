@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.ArithmeticGeometricMean
 public import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 import Mathlib.MeasureTheory.Function.JacobianOneDim
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # An integral related to the arithmetic-geometric mean
@@ -147,7 +148,7 @@ theorem agmIntegral_eq_agmIntegral_gm_am (ha : 0 ≤ a) (hb : 0 ≤ b) :
   let f (t : ℝ) := t + √(t ^ 2 + a * b)
   let f' (t : ℝ) := f t / √(t ^ 2 + a * b)
   let g (x : ℝ) := (√((x ^ 2 + a ^ 2) * (x ^ 2 + b ^ 2)))⁻¹
-  have df (t) : HasDerivAt f (f' t) t := hasDerivAt_add_sqrt_sq_add (mul_pos ha hb) t
+  have df (t) : HasDerivAt f (f' t) t := hasDerivAt_add_sqrt_sq_add t (by positivity)
   have mf : StrictMono f := strictMono_of_hasDerivAt_pos df fun t ↦ by
     positivity [add_sqrt_sq_add_pos (mul_pos ha hb) t]
   have rf : f '' Set.univ = Set.Ioi 0 := image_add_sqrt_sq_add_eq_Ioi (mul_pos ha hb)
