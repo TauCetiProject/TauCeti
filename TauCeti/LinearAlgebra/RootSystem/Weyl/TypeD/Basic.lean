@@ -35,8 +35,6 @@ of Cartan type `Dₙ` has Weyl group of order `2ⁿ⁻¹ · n!`.
 
 * `TauCeti.DynkinType.typeDWeylSubgroup`: the signed permutations of `n` coordinates with an even
   number of sign changes.
-* `TauCeti.DynkinType.typeDRootSub`, `TauCeti.DynkinType.typeDRootAdd`: the classical roots
-  `eᵢ - eⱼ` and `eᵢ + eⱼ`.
 * `TauCeti.DynkinType.negSwap`: the signed permutation exchanging two coordinates and changing both
   their signs.
 * `TauCeti.DynkinType.typeDRootPermHom`: the action of signed permutations on the pinned root
@@ -158,26 +156,6 @@ theorem coe_smul_typeDRoot (w : WreathProduct ℤˣ (Fin n)) (x : TypeDRoot n) :
     ((w • x : TypeDRoot n) : Fin n → ℤ) = w • (x : Fin n → ℤ) :=
   (rfl)
 
-/-- The classical root `eᵢ - eⱼ`. -/
-def typeDRootSub {i j : Fin n} (hij : i ≠ j) : TypeDRoot n :=
-  ⟨Pi.single i 1 - Pi.single j 1, by simp [dotProduct_sub, hij, hij.symm]⟩
-
-/-- The coordinates of the classical root `eᵢ - eⱼ`. -/
-@[simp]
-theorem coe_typeDRootSub {i j : Fin n} (hij : i ≠ j) :
-    (typeDRootSub hij : Fin n → ℤ) = Pi.single i 1 - Pi.single j 1 :=
-  (rfl)
-
-/-- The classical root `eᵢ + eⱼ`. -/
-def typeDRootAdd {i j : Fin n} (hij : i ≠ j) : TypeDRoot n :=
-  ⟨Pi.single i 1 + Pi.single j 1, by simp [dotProduct_add, hij, hij.symm]⟩
-
-/-- The coordinates of the classical root `eᵢ + eⱼ`. -/
-@[simp]
-theorem coe_typeDRootAdd {i j : Fin n} (hij : i ≠ j) :
-    (typeDRootAdd hij : Fin n → ℤ) = Pi.single i 1 + Pi.single j 1 :=
-  (rfl)
-
 /-- A signed permutation fixing the roots `eᵢ + eⱼ` and `eᵢ - eⱼ` fixes the coordinate `i` with
 sign `1`. -/
 private theorem right_apply_eq_and_left_eq_one {w : WreathProduct ℤˣ (Fin n)} {i j : Fin n}
@@ -189,7 +167,7 @@ private theorem right_apply_eq_and_left_eq_one {w : WreathProduct ℤˣ (Fin n)}
   have hp := congrFun (congrArg Subtype.val hadd) (w.right i)
   have hm := congrFun (congrArg Subtype.val hsub) (w.right i)
   simp only [coe_smul_typeDRoot, WreathProduct.product_smul, Equiv.Perm.inv_def,
-    Equiv.symm_apply_apply, typeDRootAdd, typeDRootSub, Pi.add_apply, Pi.sub_apply,
+    Equiv.symm_apply_apply, coe_typeDRootAdd, coe_typeDRootSub, Pi.add_apply, Pi.sub_apply,
     Pi.single_eq_same, Units.smul_def] at hp hm
   rcases Int.units_eq_one_or (w.left (w.right i)) with hu | hu <;>
     by_cases hk : w.right i = i <;> by_cases hj : w.right i = j <;>
@@ -235,10 +213,10 @@ private theorem typeDRootReflectionEquiv_typeDRootSub {i j : Fin n} (hij : i ≠
       MulAction.toPerm (SemidirectProduct.inr (Equiv.swap i j) : WreathProduct ℤˣ (Fin n)) := by
   refine typeDRootReflectionEquiv_eq_toPerm fun v ↦ funext fun k ↦ ?_
   rcases eq_or_ne k i with rfl | hki
-  · simp [typeDRootSub, hij]
+  · simp [coe_typeDRootSub, hij]
   · rcases eq_or_ne k j with rfl | hkj
-    · simp [typeDRootSub, hki]
-    · simp [typeDRootSub, Equiv.swap_apply_of_ne_of_ne hki hkj, hki, hkj]
+    · simp [coe_typeDRootSub, hki]
+    · simp [coe_typeDRootSub, Equiv.swap_apply_of_ne_of_ne hki hkj, hki, hkj]
 
 /-- The reflection in a root `u` with `u = eᵢ + eⱼ` or `u = -(eᵢ + eⱼ)` exchanges the coordinates
 `i` and `j` and changes both their signs. -/
@@ -278,7 +256,7 @@ theorem closure_range_typeDRootReflectionEquiv :
     rw [Subgroup.closure_le]
     rintro _ ⟨u, rfl⟩
     obtain ⟨i, j, hij, hu | hu⟩ := u.exists_eq_single_sub_or_add_or_neg_add
-    · obtain rfl : u = typeDRootSub hij := Subtype.ext hu
+    · obtain rfl : u = typeDRootSub hij := Subtype.ext (hu.trans (coe_typeDRootSub hij).symm)
       exact ⟨_, inr_swap_mem_typeDWeylSubgroup i j,
         (typeDRootReflectionEquiv_typeDRootSub hij).symm⟩
     · exact ⟨_, negSwap_mem_typeDWeylSubgroup i j,
@@ -291,7 +269,7 @@ theorem closure_range_typeDRootReflectionEquiv :
       Subgroup.subset_closure ⟨typeDRootSub hij, typeDRootReflectionEquiv_typeDRootSub hij⟩
     have hnegSwap (i j : Fin n) (hij : i ≠ j) : negSwap i j ∈ H :=
       Subgroup.subset_closure ⟨typeDRootAdd hij,
-        typeDRootReflectionEquiv_eq_negSwap hij (Or.inl rfl)⟩
+        typeDRootReflectionEquiv_eq_negSwap hij (Or.inl (coe_typeDRootAdd hij))⟩
     -- A double sign change is a signed transposition followed by the transposition.
     refine typeDWeylSubgroup_le hswap fun i j hij ↦ ?_
     rw [show SemidirectProduct.inl (Pi.mulSingle i (-1) * Pi.mulSingle j (-1)) =
@@ -398,7 +376,8 @@ theorem coe_typeDWeylGroupEquiv_ofIdx_typeDRootAdd (hn : 4 ≤ n) {i j : Fin n} 
     (typeDWeylGroupEquiv n hn (weylGroup.ofIdx (typeDSimplyConnectedRootDatum n hn)
       ((typeDRootEquiv n hn).symm (typeDRootAdd hij))) : WreathProduct ℤˣ (Fin n)) =
       negSwap i j :=
-  coe_typeDWeylGroupEquiv_ofIdx_symm hn (typeDRootReflectionEquiv_eq_negSwap hij (Or.inl rfl))
+  coe_typeDWeylGroupEquiv_ofIdx_symm hn
+    (typeDRootReflectionEquiv_eq_negSwap hij (Or.inl (coe_typeDRootAdd hij)))
 
 section Realization
 
