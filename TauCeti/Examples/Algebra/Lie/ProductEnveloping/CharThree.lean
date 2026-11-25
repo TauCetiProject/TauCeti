@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Lie.Sl2.Associative
 public import TauCeti.Algebra.Lie.Sl2.Center
 public import TauCeti.Algebra.Lie.Sl2.Embedding
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Product.Center
-public import Mathlib.Algebra.Polynomial.Derivative
+public import TauCeti.Algebra.Polynomial.Derivative
 
 /-!
 # The product-centre Check in characteristic three
@@ -44,43 +44,6 @@ local notation "ιU" => _root_.UniversalEnvelopingAlgebra.ι K
 -- The coordinate `t` on the abelian Lie algebra `K`.
 local notation "t" => (LinearEquiv.symm (AbelianLieAlgebra.equiv K K) 1 : ZK)
 
-/-! ### The Weyl-algebra representation of `sl₂` on `K[x]` -/
-
-/-- The Weyl relation `d x = x d + 1` between `d/dx` and multiplication by `x` on `K[x]`. -/
-theorem derivative_mul_mulLeft_X :
-    (derivative : Module.End K K[X]) * LinearMap.mulLeft K X =
-      LinearMap.mulLeft K X * derivative + 1 := by
-  refine LinearMap.ext fun p ↦ ?_
-  simp [derivative_mul, add_comm]
-
-/-- The Weyl relation `d m = m d + 1`, multiplied on the right. -/
-private theorem mul_mul_of_weyl {A : Type*} [Ring A] {m d : A} (hdm : d * m = m * d + 1)
-    (x : A) : d * (m * x) = m * (d * x) + x := by
-  rw [← mul_assoc, hdm, add_mul, one_mul, mul_assoc]
-
-/-- `2 = 2 • 1` in `End(K[x])`, turning the ring numeral into a scalar. -/
-private theorem two_eq_smul_one : (2 : Module.End K K[X]) = (2 : K) • 1 := by
-  rw [two_smul, one_add_one_eq_two]
-
-/-- In a ring with `d m = m d + 1`, the elements `h = 2 m d`, `e = m`, `f = -m d²` satisfy the
-`sl₂` relations. -/
-private theorem weyl_sl2_relations {A : Type*} [Ring A] {m d : A} (hdm : d * m = m * d + 1) :
-    ⁅m, -(m * d * d)⁆ = 2 * (m * d) ∧ ⁅2 * (m * d), m⁆ = 2 • m ∧
-      ⁅2 * (m * d), -(m * d * d)⁆ = -(2 • -(m * d * d)) := by
-  refine ⟨?_, ?_, ?_⟩ <;>
-  · simp only [Ring.lie_def, mul_assoc, mul_mul_of_weyl hdm, hdm, mul_add, add_mul, mul_neg,
-      neg_mul, mul_one, two_mul, two_nsmul]
-    abel
-
-/-- The `sl₂` triple `h = 2x d/dx`, `e = x`, `f = -x d²/dx²` acting on `K[x]`. -/
-theorem isSl2Triple_weyl [NeZero (2 : K)] :
-    IsSl2Triple (2 * (LinearMap.mulLeft K X * derivative)) (LinearMap.mulLeft K X)
-      (-(LinearMap.mulLeft K X * derivative * derivative) : Module.End K K[X]) := by
-  obtain ⟨h1, h2, h3⟩ := weyl_sl2_relations (derivative_mul_mulLeft_X K)
-  refine ⟨fun h ↦ ?_, h1, h2, h3⟩
-  have := congrArg (fun φ : Module.End K K[X] ↦ φ X) h
-  simp [two_eq_smul_one, mul_apply_eq_comp, NeZero.ne] at this
-
 /-! ### `e³` is central in characteristic three -/
 
 local notation "E" => ιU (slFinTwoBasis K 0)
@@ -92,13 +55,9 @@ theorem pow_three_ι_mem_center [CharP K 3] : E ^ 3 ∈ Subalgebra.center K (U K
   have h3 : (3 : U K sl₂) = 0 := by
     have h : (3 : K) = 0 := by exact_mod_cast CharP.cast_eq_zero K 3
     rw [← map_ofNat (algebraMap K (U K sl₂)) 3, h, map_zero]
-  have hef : E * F - F * E = H := by
-    have := (ιU : sl₂ →ₗ⁅K⁆ U K sl₂).map_lie (slFinTwoBasis K 0) (slFinTwoBasis K 1)
-    rwa [lie_slFinTwoBasis_zero_one, LieRing.of_associative_ring_bracket, eq_comm] at this
-  have hhe : H * E - E * H = 2 • E := by
-    have := (ιU : sl₂ →ₗ⁅K⁆ U K sl₂).map_lie (slFinTwoBasis K 2) (slFinTwoBasis K 0)
-    rw [lie_slFinTwoBasis_two_zero, LieRing.of_associative_ring_bracket, map_smul] at this
-    rw [← this, ofNat_smul_eq_nsmul]
+  have hef : E * F - F * E = H := Sl2.ι_e_mul_ι_f_sub_mul K (lie_slFinTwoBasis_zero_one K)
+  have hhe : H * E - E * H = 2 • E :=
+    Sl2.ι_h_mul_ι_e_sub_mul K (by rw [lie_slFinTwoBasis_two_zero, ofNat_smul_eq_nsmul])
   have hF : F * E ^ 3 = E ^ 3 * F := by
     rw [Sl2.f_mul_e_pow_succ hef hhe 2]
     simp [nsmul_eq_mul, h3]
@@ -115,7 +74,8 @@ theorem pow_three_ι_mem_center [CharP K 3] : E ^ 3 ∈ Subalgebra.center K (U K
 
 /-- The representation of `U(sl₂)` on `K[x]` with `e = x`, `h = 2x d/dx`, `f = -x d²/dx²`. -/
 noncomputable def weylRep [NeZero (2 : K)] : U K sl₂ →ₐ[K] Module.End K K[X] :=
-  _root_.UniversalEnvelopingAlgebra.lift K ((isSl2Triple_weyl K).toLieHom K)
+  _root_.UniversalEnvelopingAlgebra.lift K
+    ((Sl2.isSl2Triple_of_weyl K (derivative_mul_mulLeft_X (R := K))).toLieHom K)
 
 /-- The values of `weylRep` on the standard basis `e, f, h`. -/
 theorem weylRep_ι [NeZero (2 : K)] (i : Fin 3) :
@@ -142,14 +102,10 @@ theorem weylRep_ι_two [NeZero (2 : K)] :
 
 /-- `Ω` acts by zero on `K[x]`. -/
 theorem weylRep_slTwoOmega [NeZero (2 : K)] : weylRep K (slTwoOmega K) = 0 := by
-  have hdm := derivative_mul_mulLeft_X K
   rw [slTwoOmega_def]
-  simp only [map_add, map_mul, map_smul, weylRep_ι_zero, weylRep_ι_one, weylRep_ι_two,
-    two_eq_smul_one, smul_mul_assoc, mul_smul_comm, one_mul, mul_assoc, smul_smul]
-  rw [← neg_one_smul K (LinearMap.mulLeft K X * (derivative * derivative)), smul_mul_assoc,
-    mul_assoc, mul_assoc, hdm]
-  simp only [mul_add, mul_mul_of_weyl hdm, mul_one, smul_add, smul_smul]
-  module
+  simp only [map_add, map_mul, weylRep_ι_zero, weylRep_ι_one, weylRep_ι_two,
+    Algebra.smul_def, map_ofNat]
+  exact Sl2.weyl_sq_add_two_mul_add_four_mul_eq_zero derivative_mul_mulLeft_X
 
 /-- `e³` acts on `K[x]` by multiplication by `x³`, which is not a scalar. -/
 theorem weylRep_pow_three_notMem_bot [NeZero (2 : K)] :
@@ -165,10 +121,14 @@ theorem weylRep_pow_three_notMem_bot [NeZero (2 : K)] :
   have := congrArg natDegree h1
   simp at this
 
+section CharThree
+
+variable [CharP K 3]
+
+local instance : NeZero (2 : K) := NeZero.of_not_dvd K (by decide : ¬3 ∣ 2)
+
 /-- In characteristic three, `e³` is not in the subalgebra generated by `Ω`. -/
-theorem pow_three_ι_notMem_adjoin_slTwoOmega [CharP K 3] :
-    E ^ 3 ∉ Algebra.adjoin K {slTwoOmega K} := by
-  have : NeZero (2 : K) := by simpa using NeZero.of_not_dvd K (p := 3) (n := 2) (by decide)
+theorem pow_three_ι_notMem_adjoin_slTwoOmega : E ^ 3 ∉ Algebra.adjoin K {slTwoOmega K} := by
   intro hmem
   have hle : Algebra.adjoin K {slTwoOmega K} ≤ (⊥ : Subalgebra K (Module.End K K[X])).comap
       (weylRep K) := by
@@ -179,7 +139,7 @@ theorem pow_three_ι_notMem_adjoin_slTwoOmega [CharP K 3] :
 /-! ### The centre of `U(K × sl₂)` in characteristic three -/
 
 /-- **In characteristic three, `1 ⊗ e³` is central in `U(K × sl₂)`.** -/
-theorem map_inr_pow_three_ι_mem_center [CharP K 3] :
+theorem map_inr_pow_three_ι_mem_center :
     map K (LieHom.inr K ZK sl₂) (E ^ 3) ∈ Subalgebra.center K (U K (ZK × sl₂)) := by
   have h := ((productCenterEquiv K ZK sl₂).symm
     (1 ⊗ₜ[K] ⟨E ^ 3, pow_three_ι_mem_center K⟩)).property
@@ -188,10 +148,9 @@ theorem map_inr_pow_three_ι_mem_center [CharP K 3] :
 /-- **In characteristic three, `1 ⊗ e³` is not in `K[t] ⊗ K[Ω]`**: it does not lie in the
 subalgebra of `U(K × sl₂)` generated by `t` and `1 ⊗ Ω`, which in characteristic zero is the
 whole centre. -/
-theorem map_inr_pow_three_ι_notMem_adjoin [CharP K 3] :
+theorem map_inr_pow_three_ι_notMem_adjoin :
     map K (LieHom.inr K ZK sl₂) (E ^ 3) ∉ Algebra.adjoin K
       {ιU ((t, 0) : ZK × sl₂), map K (LieHom.inr K ZK sl₂) (slTwoOmega K)} := by
-  have : NeZero (2 : K) := by simpa using NeZero.of_not_dvd K (p := 3) (n := 2) (by decide)
   let φ := (weylRep K).comp (map K (LieHom.snd K ZK sl₂))
   have hφ (x : U K sl₂) : φ (map K (LieHom.inr K ZK sl₂) x) = weylRep K x := by
     have : (map K (LieHom.snd K ZK sl₂)).comp (map K (LieHom.inr K ZK sl₂)) = AlgHom.id K _ := by
@@ -209,5 +168,7 @@ theorem map_inr_pow_three_ι_notMem_adjoin [CharP K 3] :
   have := hle hmem
   rw [Subalgebra.mem_comap, hφ] at this
   exact weylRep_pow_three_notMem_bot K this
+
+end CharThree
 
 end TauCeti.Examples.ProductEnvelopingCharThree
