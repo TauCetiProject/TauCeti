@@ -425,32 +425,14 @@ def compatibleAlgebraFamiliesMap (α : I.multispan ⟶ I'.multispan) :
     I.compatibleAlgebraFamilies →ₐ[R] I'.compatibleAlgebraFamilies where
   toFun x := by
     refine ⟨fun b => (α.app (.right b)).hom (x.val b), ?_⟩
-    apply I'.mem_compatibleAlgebraFamilies.mpr
-    intro a
-    obtain ⟨y, hy⟩ := (AlgHom.mem_range _).mp (I.mem_compatibleAlgebraFamilies.mp x.property a)
-    rw [AlgHom.prod_apply] at hy
-    let face : I.left a ⟶ I'.left a := α.app (.left a)
-    let left : I.right (J.fst a) ⟶ I'.right (J.fst a) := α.app (.right (J.fst a))
-    let right : I.right (J.snd a) ⟶ I'.right (J.snd a) := α.app (.right (J.snd a))
-    have hf : I.fst a ≫ left = face ≫ I'.fst a := by
-      have h := α.naturality (.fst a)
-      rw [I.multispan_map_fst, I'.multispan_map_fst] at h
-      exact h
-    have hg : I.snd a ≫ right = face ≫ I'.snd a := by
-      have h := α.naturality (.snd a)
-      rw [I.multispan_map_snd, I'.multispan_map_snd] at h
-      exact h
-    have hfst := congrArg (fun f : I.left a ⟶ I'.right (J.fst a) => f.hom y) hf
-    have hsnd := congrArg (fun f : I.left a ⟶ I'.right (J.snd a) => f.hom y) hg
-    simp only [AlgCat.hom_comp, AlgHom.comp_apply] at hfst hsnd
-    refine (AlgHom.mem_range _).mpr ⟨face.hom y, ?_⟩
-    have hvalue : ((I'.fst a).hom.prod (I'.snd a).hom) (face.hom y) =
-        (left.hom (x.val (J.fst a)), right.hom (x.val (J.snd a))) := by
-      rw [AlgHom.prod_apply]
-      obtain ⟨hyfst, hysnd⟩ := Prod.mk.inj hy
-      exact Prod.ext (hfst.symm.trans (congrArg left.hom hyfst))
-        (hsnd.symm.trans (congrArg right.hom hysnd))
-    exact hvalue
+    obtain ⟨s, rfl⟩ := I.restrictAlgebraSections_surjective x
+    have hvalues :
+        (fun b => (α.app (.right b)).hom ((I.restrictAlgebraSections s).val b)) =
+          (I'.restrictAlgebraSections (AlgCat.sectionsMap α s)).val := by
+      funext b
+      simp only [restrictAlgebraSections_apply, AlgCat.sectionsMap_apply]
+    rw [hvalues]
+    exact (I'.restrictAlgebraSections (AlgCat.sectionsMap α s)).property
   map_zero' := by ext b; exact map_zero (α.app (.right b)).hom
   map_one' := by ext b; exact map_one (α.app (.right b)).hom
   map_add' x y := by ext b; exact map_add (α.app (.right b)).hom _ _
