@@ -33,11 +33,10 @@ precomposed with multiplication by `c = a + b i`, tested in the Cauchy–Riemann
 operator `A`, is `D (c * 1) + A D (c * I) = a (D 1 + A D i) + b (D i - A D 1)`
 (`ContinuousLinearMap.apply_mul_one_add_apply_mul_I`).
 
-Two complex numbers `ω₁`, `ω₂` are linearly independent over `ℝ` exactly when the oriented area
-`Im (conj ω₁ ω₂)` of the parallelogram they span is nonzero
-(`TauCeti.linearIndependent_pair_iff_im_conj_mul_ne_zero`), and `2 i Im (conj ω₁ ω₂)` is
-`ω₂ conj ω₁ - ω₁ conj ω₂` (`TauCeti.two_mul_I_mul_im_conj_mul`). In that case the real
-coordinates `p ↦ p₀ ω₁ + p₁ ω₂` in the basis `ω₁`, `ω₂` are a real-linear equivalence
+If two complex numbers `ω₁`, `ω₂` span a parallelogram of nonzero oriented area
+`Im (conj ω₁ ω₂)`, so that they are linearly independent over `ℝ`
+(`TauCeti.linearIndependent_pair_iff_im_conj_mul_ne_zero`), the real coordinates
+`p ↦ p₀ ω₁ + p₁ ω₂` in the basis `ω₁`, `ω₂` are a real-linear equivalence
 `TauCeti.periodCoordEquiv` of `Fin 2 → ℝ` with `ℂ`.
 -/
 
@@ -158,42 +157,6 @@ section PeriodCoordinates
 open Complex ComplexConjugate
 
 variable {ω₁ ω₂ : ℂ}
-
-/-- `2 i Im (conj ω₁ ω₂) = ω₂ conj ω₁ - ω₁ conj ω₂`. -/
-theorem two_mul_I_mul_im_conj_mul :
-    (2 * I * (conj ω₁ * ω₂).im : ℂ) = ω₂ * conj ω₁ - ω₁ * conj ω₂ := by
-  have h := sub_conj (conj ω₁ * ω₂)
-  simp only [map_mul, conj_conj, ofReal_mul, ofReal_ofNat] at h
-  linear_combination -h
-
-/-- Two complex numbers `ω₁`, `ω₂` are linearly independent over `ℝ` exactly when the oriented
-area `Im (conj ω₁ ω₂)` of the parallelogram they span is nonzero. -/
-theorem linearIndependent_pair_iff_im_conj_mul_ne_zero :
-    LinearIndependent ℝ ![ω₁, ω₂] ↔ (conj ω₁ * ω₂).im ≠ 0 := by
-  have hD : (conj ω₁ * ω₂).im = ω₁.re * ω₂.im - ω₁.im * ω₂.re := by
-    simp only [mul_im, conj_re, conj_im]
-    ring
-  rw [LinearIndependent.pair_iff, hD]
-  constructor
-  · intro h hω
-    obtain ⟨-, ht⟩ := h (ω₁.re * ω₂.re + ω₁.im * ω₂.im) (-(ω₁.re * ω₁.re + ω₁.im * ω₁.im)) <| by
-      apply Complex.ext <;> simp only [add_re, add_im, real_smul, mul_re, mul_im, ofReal_re,
-        ofReal_im, zero_re, zero_im] <;> [linear_combination ω₁.im * hω;
-        linear_combination -ω₁.re * hω]
-    have hω₁ : ω₁ = 0 := by
-      rw [← normSq_eq_zero, normSq_apply]
-      linarith
-    simpa [hω₁] using h 1 0
-  · intro hω s t hst
-    have hre := congrArg re hst
-    have hi := congrArg im hst
-    simp only [add_re, add_im, real_smul, mul_re, mul_im, ofReal_re, ofReal_im, zero_mul,
-      sub_zero, zero_re, zero_im] at hre hi
-    have h0 : s * (ω₁.re * ω₂.im - ω₁.im * ω₂.re) = 0 := by
-      linear_combination ω₂.im * hre - ω₂.re * hi
-    have h1 : t * (ω₁.re * ω₂.im - ω₁.im * ω₂.re) = 0 := by
-      linear_combination ω₁.re * hi - ω₁.im * hre
-    exact ⟨by simpa [hω] using h0, by simpa [hω] using h1⟩
 
 /-- The real coordinates `p ↦ p₀ ω₁ + p₁ ω₂` in the basis `ω₁`, `ω₂` of `ℂ` over `ℝ`, a
 real-linear equivalence when `ω₁` and `ω₂` are linearly independent. -/

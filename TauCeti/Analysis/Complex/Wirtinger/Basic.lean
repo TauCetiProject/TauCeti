@@ -21,7 +21,7 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.Calculus.FDeriv.Pow
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
-import TauCeti.Analysis.Complex.Coordinates
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Normed.Module.RCLike.Basic
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars

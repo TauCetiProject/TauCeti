@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Wirtinger.FlatTorus.Basic
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import TauCeti.Algebra.Group.Action.Pow
 import TauCeti.Analysis.Complex.Coordinates
 import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.Analysis.Fourier.Torus.Smooth
@@ -230,18 +228,16 @@ private theorem phaseCLM_apply (p : Fin 2 → ℝ) :
     ContinuousLinearMap.proj_apply, ofRealCLM_apply, real_smul, smul_eq_mul]
   ring
 
+/-- The phase exponent of the `i`-th coordinate vector is `2πi θᵢ`. -/
+private theorem phaseCLM_single (i : Fin 2) :
+    phaseCLM θ₁ θ₂ (Pi.single i 1) = 2 * π * ![θ₁, θ₂] i * I := by
+  fin_cases i <;> simp [phaseCLM_apply] <;> ring
+
 /-- Translating by the `i`-th lattice vector multiplies the phase by the `i`-th holonomy. -/
 private theorem exp_phaseCLM_add_single (i : Fin 2) (p : Fin 2 → ℝ) :
     exp (phaseCLM θ₁ θ₂ (p + Pi.single i 1)) =
       exp (2 * π * ![θ₁, θ₂] i * I) * exp (phaseCLM θ₁ θ₂ p) := by
-  rw [map_add, Complex.exp_add, mul_comm]
-  congr 2
-  fin_cases i <;>
-    simp only [Fin.zero_eta, Fin.mk_one, Fin.isValue, phaseCLM_apply, Pi.single_eq_same,
-      Pi.single_eq_of_ne, ne_eq, one_ne_zero, zero_ne_one, not_false_eq_true, ofReal_one,
-      ofReal_zero, mul_one, mul_zero, add_zero, zero_add, Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.cons_val_fin_one] <;>
-    ring
+  rw [map_add, Complex.exp_add, mul_comm, phaseCLM_single]
 
 /-- The section of the flat line corresponding to a function on the torus: in lattice coordinates
 `p`, it is `exp (2πi (θ₁ p₀ + θ₂ p₁)) g p`. -/
@@ -279,59 +275,56 @@ operator applied to that function. -/
 private theorem conjWirtingerDeriv_ofTorus (hω : (conj ω₁ * ω₂).im ≠ 0)
     {g : UnitAddTorus (Fin 2) → ℂ} (hg : g ∈ smoothFunctions (Fin 2)) (z : ℂ) :
     conjWirtingerDeriv (ofTorus hω θ₁ θ₂ g) z 1 = ofTorus hω θ₁ θ₂ (torusOp ω₁ ω₂ θ₁ θ₂ g) z := by
-  set L := periodCoordEquiv hω
   set G : (Fin 2 → ℝ) → ℂ := fun p ↦ g fun i ↦ (p i : UnitAddCircle)
   have hG := mem_smoothFunctions.1 hg
-  obtain ⟨p, rfl⟩ := L.surjective z
+  obtain ⟨p, rfl⟩ := (periodCoordEquiv hω).surjective z
   -- The derivative of the section in lattice coordinates, by the product rule.
   have hv : HasFDerivAt (fun q ↦ exp (phaseCLM θ₁ θ₂ q) * G q)
       (exp (phaseCLM θ₁ θ₂ p) • fderiv ℝ G p + G p • (exp (phaseCLM θ₁ θ₂ p) • phaseCLM θ₁ θ₂))
       p :=
     ((phaseCLM θ₁ θ₂).hasFDerivAt.cexp).mul ((hG.differentiable (by simp)) p).hasFDerivAt
-  have hD (w : ℂ) : fderiv ℝ (ofTorus hω θ₁ θ₂ g) (L p) w =
-      exp (phaseCLM θ₁ θ₂ p) * fderiv ℝ G p (L.symm w) +
-        G p * (exp (phaseCLM θ₁ θ₂ p) * phaseCLM θ₁ θ₂ (L.symm w)) := by
-    rw [ofTorus, L.symm.comp_right_fderiv, L.symm_apply_apply, hv.fderiv]
+  have hD (w : ℂ) : fderiv ℝ (ofTorus hω θ₁ θ₂ g) (periodCoordEquiv hω p) w =
+      exp (phaseCLM θ₁ θ₂ p) * fderiv ℝ G p ((periodCoordEquiv hω).symm w) +
+        G p * (exp (phaseCLM θ₁ θ₂ p) * phaseCLM θ₁ θ₂ ((periodCoordEquiv hω).symm w)) := by
+    rw [ofTorus, (periodCoordEquiv hω).symm.comp_right_fderiv,
+      ContinuousLinearEquiv.symm_apply_apply, hv.fderiv]
     simp
   have hline (i : Fin 2) : fderiv ℝ G p (Pi.single i 1) =
       lineDeriv g (Pi.single i 1) fun j ↦ (p j : UnitAddCircle) :=
     (lineDeriv_coe p _ ((hG.differentiable (by simp)) p)).symm
-  rw [conjWirtingerDeriv_apply_one_eq_inv_smul_sub hω, hD, hD, periodCoordEquiv_symm_apply_ω₁,
-    periodCoordEquiv_symm_apply_ω₂, hline, hline, ofTorus_periodCoordEquiv]
-  simp only [torusOp, Pi.smul_apply, Pi.add_apply, smul_eq_mul, G, phaseCLM_apply]
-  simp only [Pi.single_apply, Fin.isValue, ↓reduceIte, one_ne_zero, zero_ne_one, ofReal_one,
-    ofReal_zero, mul_one, mul_zero, add_zero, zero_add]
+  rw [conjWirtingerDeriv_apply_one_eq_inv_smul_sub hω]
+  simp only [hD, periodCoordEquiv_symm_apply_ω₁, periodCoordEquiv_symm_apply_ω₂, hline,
+    phaseCLM_single, ofTorus_periodCoordEquiv]
+  simp only [torusOp, Pi.smul_apply, Pi.add_apply, smul_eq_mul, G, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one]
   ring
 
 /-- Every smooth section of the flat line comes from a smooth function on the torus. -/
 private theorem exists_ofTorus_eq (hω : (conj ω₁ * ω₂).im ≠ 0)
     (hu : u ∈ flatLineSections ∞ ω₁ ω₂ θ₁ θ₂) :
     ∃ g ∈ smoothFunctions (Fin 2), ofTorus hω θ₁ θ₂ g = u := by
-  obtain ⟨hu, hu₁, hu₂⟩ := mem_flatLineSections.1 hu
+  have hc := contDiff_of_mem_flatLineSections hu
   set L := periodCoordEquiv hω
   set G : (Fin 2 → ℝ) → ℂ := fun p ↦ exp (-phaseCLM θ₁ θ₂ p) * u (L p)
   have hGc : ContDiff ℝ ∞ G :=
-    (contDiff_exp.comp (phaseCLM θ₁ θ₂).contDiff.neg).mul (hu.comp L.contDiff)
-  -- The holonomy along `k w`, `k ∈ ℤ`, is the `k`-th power of the holonomy along `w`.
-  have htw {w e : ℂ} (he : e ≠ 0) (h : ∀ z, u (z + w) = e * u z) (k : ℤ) (z : ℂ) :
-      u (z + k * w) = e ^ k * u z := by
-    simpa [Units.smul_def, zsmul_eq_mul] using (TauCeti.zpow_smul_eq_add_zsmul
-      (g := Units.mk0 e he) (fun z ↦ (h z).symm) k z).symm
+    (contDiff_exp.comp (phaseCLM θ₁ θ₂).contDiff.neg).mul (hc.comp L.contDiff)
   have hper (m : Fin 2 → ℤ) : Function.Periodic G fun i ↦ (m i : ℝ) := fun p ↦ by
-    have hL : L (p + fun i ↦ (m i : ℝ)) = L p + (m 0 : ℂ) * ω₁ + (m 1 : ℂ) * ω₂ := by
-      rw [map_add, periodCoordEquiv_apply, periodCoordEquiv_apply]
-      push_cast
-      ring
-    have hexp : exp (phaseCLM θ₁ θ₂ fun i ↦ (m i : ℝ)) =
-        exp (2 * π * θ₁ * I) ^ m 0 * exp (2 * π * θ₂ * I) ^ m 1 := by
-      rw [← exp_intCast_mul, ← exp_intCast_mul, ← Complex.exp_add, phaseCLM_apply]
+    -- Translating by the integer vector `m` translates `L p` by the period `m₀ ω₁ + m₁ ω₂`.
+    have hL : L (p + fun i ↦ (m i : ℝ)) = L p + (m 0 * ω₁ + m 1 * ω₂) := by
+      simp only [L, map_add, periodCoordEquiv_apply, ofReal_intCast]
+    -- The section's translation law along that period.
+    have hu_m : u (L p + (m 0 * ω₁ + m 1 * ω₂)) =
+        exp (2 * π * (m 0 * θ₁ + m 1 * θ₂ : ℝ) * I) * u (L p) :=
+      (mem_flatLineSections.1 (flatLineSections_le_intCast_mul_add ∞ (m 0) (m 1) 0 1 hu)).2.1 _
+    -- The inverse phase law along the same period.
+    have hphase : exp (-phaseCLM θ₁ θ₂ (p + fun i ↦ (m i : ℝ))) =
+        exp (-(2 * π * (m 0 * θ₁ + m 1 * θ₂ : ℝ) * I)) * exp (-phaseCLM θ₁ θ₂ p) := by
+      rw [← Complex.exp_add, map_add, phaseCLM_apply, phaseCLM_apply]
       congr 1
       push_cast
       ring
     simp only [G]
-    rw [hL, htw (exp_ne_zero _) hu₂, htw (exp_ne_zero _) hu₁, map_add, neg_add,
-      Complex.exp_add, Complex.exp_neg (phaseCLM θ₁ θ₂ fun i ↦ (m i : ℝ)), hexp]
-    field_simp
+    rw [hL, hu_m, hphase, mul_mul_mul_comm, ← Complex.exp_add, neg_add_cancel, exp_zero, one_mul]
   obtain ⟨g, -, hgG⟩ := TauCeti.UnitAddTorus.exists_continuous_comp_coe_eq hGc.continuous hper
   have hlift : (fun x : Fin 2 → ℝ ↦ g fun i ↦ (x i : UnitAddCircle)) = G := funext hgG
   refine ⟨g, mem_smoothFunctions.2 (hlift ▸ hGc), funext fun z ↦ ?_⟩

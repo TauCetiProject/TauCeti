@@ -14,6 +14,7 @@ public import TauCeti.NumberTheory.Real.Irrational
 import Mathlib.Algebra.Order.Round
 import Mathlib.Analysis.Calculus.Deriv.Star
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import TauCeti.Algebra.Group.Action.Pow
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Fourier.TwistedWirtinger
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
@@ -52,7 +53,9 @@ If the holonomy has infinite image, that is if `θ₁` or `θ₂` is irrational,
 the line and every pullback to a finite cover of the torus is again a nontrivial flat line
 (`TauCeti.notMem_range_intCast_or_notMem_range_intCast_of_irrational`). A section of the `j`-th
 power pulled back to the cover with lattice basis `a ω₁ + b ω₂, c ω₁ + d ω₂`, `a d - b c ≠ 0`,
-is twisted by `j (a θ₁ + b θ₂)` and `j (c θ₁ + d θ₂)`. The new basis is again linearly
+is twisted by `j (a θ₁ + b θ₂)` and `j (c θ₁ + d θ₂)`
+(`TauCeti.flatLineSections_le_intCast_mul_add`,
+`TauCeti.flatLineSections_intCast_mul_le_intCast_mul_add`). The new basis is again linearly
 independent (`TauCeti.im_conj_intCast_mul_add_mul_intCast_mul_add`), and the constant of the
 estimate stays positive (`TauCeti.pi_sq_div_two_mul_sq_abs_sub_round_div_add_pos`). So the
 estimates for `∂bar` and for `∂` hold with a positive constant on every power and finite cover:
@@ -150,19 +153,64 @@ theorem mem_flatLineSections {n : WithTop ℕ∞} :
 /-- A `Cⁿ` section of a flat line is `Cⁿ`. -/
 theorem contDiff_of_mem_flatLineSections {n : WithTop ℕ∞}
     (hu : u ∈ flatLineSections n ω₁ ω₂ θ₁ θ₂) : ContDiff ℝ n u :=
-  hu.1
+  (mem_flatLineSections.1 hu).1
 
 /-- A `Cⁿ` section of a flat line is a `Cᵐ` section for every `m ≤ n`. -/
 theorem flatLineSections_antitone :
     Antitone fun n : WithTop ℕ∞ ↦ flatLineSections n ω₁ ω₂ θ₁ θ₂ :=
-  fun _ _ hmn _ hu ↦ ⟨hu.1.of_le hmn, hu.2⟩
+  fun _ _ hmn _ hu ↦
+    mem_flatLineSections.2 ⟨(contDiff_of_mem_flatLineSections hu).of_le hmn,
+      (mem_flatLineSections.1 hu).2⟩
+
+/-- If `u (z + w) = exp (2πiθ) u z`, then `u (z + k w) = exp (2πi kθ) u z` for every integer
+`k`. -/
+private theorem apply_add_intCast_mul_eq_exp_mul {w : ℂ} {θ : ℝ}
+    (h : ∀ z, u (z + w) = exp (2 * π * θ * I) * u z) (k : ℤ) (z : ℂ) :
+    u (z + k * w) = exp (2 * π * (k * θ) * I) * u z := by
+  have hk := zpow_smul_eq_add_zsmul (g := Units.mk0 _ (exp_ne_zero (2 * π * θ * I)))
+    (fun z ↦ (h z).symm) k z
+  rw [Units.smul_def, Units.val_zpow_eq_zpow_val, Units.val_mk0, smul_eq_mul, zsmul_eq_mul,
+    ← exp_intCast_mul] at hk
+  rw [← hk]
+  congr 2
+  ring
+
+/-- **Sections over a finite cover.** A section of a flat line over `ℂ / (ℤ ω₁ + ℤ ω₂)` is a
+section of its pullback to the torus of the sublattice spanned by `a ω₁ + b ω₂` and
+`c ω₁ + d ω₂`, whose holonomy along these periods is `exp (2πi (a θ₁ + b θ₂))` and
+`exp (2πi (c θ₁ + d θ₂))`. -/
+theorem flatLineSections_le_intCast_mul_add (n : WithTop ℕ∞) (a b c d : ℤ) :
+    flatLineSections n ω₁ ω₂ θ₁ θ₂ ≤ flatLineSections n (a * ω₁ + b * ω₂) (c * ω₁ + d * ω₂)
+      (a * θ₁ + b * θ₂) (c * θ₁ + d * θ₂) := by
+  intro u hu
+  obtain ⟨hc, hu₁, hu₂⟩ := mem_flatLineSections.1 hu
+  have h (k l : ℤ) (z : ℂ) :
+      u (z + (k * ω₁ + l * ω₂)) = exp (2 * π * (k * θ₁ + l * θ₂ : ℝ) * I) * u z := by
+    rw [← add_assoc, apply_add_intCast_mul_eq_exp_mul hu₂, apply_add_intCast_mul_eq_exp_mul hu₁,
+      ← mul_assoc, ← exp_add]
+    congr 2
+    push_cast
+    ring
+  exact mem_flatLineSections.2 ⟨hc, h a b, h c d⟩
+
+/-- **Sections of a power over a finite cover.** A section of the `j`-th power of a flat line
+over `ℂ / (ℤ ω₁ + ℤ ω₂)`, whose holonomy is `exp (2πi jθ₁)`, `exp (2πi jθ₂)`, is a section of
+the `j`-th power of its pullback to the torus of the sublattice spanned by `a ω₁ + b ω₂` and
+`c ω₁ + d ω₂`. These are the sections on which
+`TauCeti.bijective_flatLineConjWirtingerDerivₗ_of_irrational` inverts `∂bar`. -/
+theorem flatLineSections_intCast_mul_le_intCast_mul_add (n : WithTop ℕ∞) (j a b c d : ℤ) :
+    flatLineSections n ω₁ ω₂ (j * θ₁) (j * θ₂) ≤
+      flatLineSections n (a * ω₁ + b * ω₂) (c * ω₁ + d * ω₂) (j * (a * θ₁ + b * θ₂))
+        (j * (c * θ₁ + d * θ₂)) := by
+  convert flatLineSections_le_intCast_mul_add n a b c d using 2 <;> ring
 
 /-- `∂bar` maps smooth sections of a flat line to smooth sections of the same line. -/
 theorem conjWirtingerDeriv_mem_flatLineSections (hu : u ∈ flatLineSections ∞ ω₁ ω₂ θ₁ θ₂) :
-    (fun z ↦ conjWirtingerDeriv u z 1) ∈ flatLineSections ∞ ω₁ ω₂ θ₁ θ₂ :=
-  ⟨contDiff_iff_contDiffAt.2 fun z ↦ hu.1.contDiffAt.conjWirtingerDeriv_apply (by simp) 1,
-    conjWirtingerDeriv_add_apply_one_eq_mul hu.2.1,
-    conjWirtingerDeriv_add_apply_one_eq_mul hu.2.2⟩
+    (fun z ↦ conjWirtingerDeriv u z 1) ∈ flatLineSections ∞ ω₁ ω₂ θ₁ θ₂ := by
+  obtain ⟨hc, hu₁, hu₂⟩ := mem_flatLineSections.1 hu
+  exact mem_flatLineSections.2
+    ⟨contDiff_iff_contDiffAt.2 fun z ↦ hc.contDiffAt.conjWirtingerDeriv_apply (by simp) 1,
+      conjWirtingerDeriv_add_apply_one_eq_mul hu₁, conjWirtingerDeriv_add_apply_one_eq_mul hu₂⟩
 
 /-- The Cauchy–Riemann operator `∂bar` as a complex-linear map on the smooth sections of the flat
 line over `ℂ / (ℤ ω₁ + ℤ ω₂)` with holonomy `exp (2πiθ₁)`, `exp (2πiθ₂)`. -/
@@ -171,7 +219,7 @@ noncomputable def flatLineConjWirtingerDerivₗ (ω₁ ω₂ : ℂ) (θ₁ θ₂
   toFun u := ⟨fun z ↦ conjWirtingerDeriv u z 1, conjWirtingerDeriv_mem_flatLineSections u.property⟩
   map_add' u v := Subtype.ext <| funext fun z ↦ by
     have hd (w : flatLineSections ∞ ω₁ ω₂ θ₁ θ₂) : DifferentiableAt ℝ (w : ℂ → ℂ) z :=
-      (w.property.1.differentiable (by simp)) z
+      ((contDiff_of_mem_flatLineSections w.property).differentiable (by simp)) z
     simp [conjWirtingerDeriv_add (hd u) (hd v)]
   map_smul' c u := Subtype.ext <| funext fun z ↦ by simp [conjWirtingerDeriv_const_smul]
 
