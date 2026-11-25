@@ -17,7 +17,6 @@ import TauCeti.Algebra.Module.Projective.Reduction.Lift
 import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Reduction
 import TauCeti.NumberTheory.Padics.PadicIntegers
-import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Jacobson.Basic
 import TauCeti.RingTheory.Jacobson.Finite
 
