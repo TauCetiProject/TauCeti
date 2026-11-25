@@ -77,8 +77,12 @@ components `Yᵢ ⟶ X` is. -/
 instance locallyOfFinitePresentation_sigmaDesc {X : Scheme.{u}} {ι : Type v} [Small.{u} ι]
     {Y : ι → Scheme.{u}} {f : ∀ i, Y i ⟶ X} [∀ i, LocallyOfFinitePresentation (f i)] :
     LocallyOfFinitePresentation (CategoryTheory.Limits.Sigma.desc f) :=
+  -- Instance search cannot apply `HasRingHomProperty.instIsZariskiLocalAtSource` here: under
+  -- instance transparency it fails to unify `@LocallyOfFinitePresentation` with the metavariable
+  -- `?P : MorphismProperty Scheme`. Mathlib's `Flat (Sigma.desc f)` instance avoids this by
+  -- relaxing the transparency option, which is not allowed here, so we supply the instance.
   have : IsZariskiLocalAtSource @LocallyOfFinitePresentation.{u} :=
-    HasRingHomProperty.instIsZariskiLocalAtSource (Q := @RingHom.FinitePresentation)
+    HasRingHomProperty.instIsZariskiLocalAtSource
   IsZariskiLocalAtSource.sigmaDesc fun _ ↦ inferInstance
 
 end AlgebraicGeometry

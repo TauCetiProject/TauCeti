@@ -81,6 +81,16 @@ theorem quotientSheaf.π_kernelPairIso_hom (q : U ⟶ M) [Flat q]
       Scheme.fppfTopology.uliftYoneda.{u + 1}.map q :=
   TauCeti.CategoryTheory.quotientSheaf.π_desc _ _
 
+/-- The map `h_U ⟶ h_M` induced by `q`, followed by the inverse of
+`quotientSheaf.kernelPairIso q`, is the projection onto the quotient sheaf of the kernel pair. -/
+@[reassoc (attr := simp)]
+theorem quotientSheaf.uliftYoneda_map_kernelPairIso_inv (q : U ⟶ M) [Flat q]
+    [LocallyOfFinitePresentation q] [Surjective q] :
+    Scheme.fppfTopology.uliftYoneda.{u + 1}.map q ≫ (quotientSheaf.kernelPairIso q).inv =
+      TauCeti.CategoryTheory.quotientSheaf.π Scheme.fppfTopology (pullback.snd q q)
+        (pullback.fst q q) :=
+  (Iso.comp_inv_eq _).2 (quotientSheaf.π_kernelPairIso_hom q).symm
+
 section Fold
 
 variable (U) (ι : Type*) [Small.{u} ι] [Nonempty ι]
@@ -92,6 +102,30 @@ noncomputable def quotientSheaf.sigmaDescIdKernelPairIso :
         (pullback.fst (Sigma.desc fun _ : ι ↦ 𝟙 U) (Sigma.desc fun _ : ι ↦ 𝟙 U)) ≅
       Scheme.fppfTopology.uliftYoneda.{u + 1}.obj U :=
   quotientSheaf.kernelPairIso _
+
+/-- The projection onto the quotient sheaf of the kernel pair of the fold map, followed by
+`quotientSheaf.sigmaDescIdKernelPairIso U ι`, is the map `h_{∐ U} ⟶ h_U` induced by the fold
+map. -/
+@[reassoc (attr := simp)]
+theorem quotientSheaf.π_sigmaDescIdKernelPairIso_hom :
+    TauCeti.CategoryTheory.quotientSheaf.π Scheme.fppfTopology
+        (pullback.snd (Sigma.desc fun _ : ι ↦ 𝟙 U) (Sigma.desc fun _ : ι ↦ 𝟙 U))
+        (pullback.fst (Sigma.desc fun _ : ι ↦ 𝟙 U) (Sigma.desc fun _ : ι ↦ 𝟙 U)) ≫
+        (quotientSheaf.sigmaDescIdKernelPairIso U ι).hom =
+      Scheme.fppfTopology.uliftYoneda.{u + 1}.map (Sigma.desc fun _ : ι ↦ 𝟙 U) :=
+  quotientSheaf.π_kernelPairIso_hom _
+
+/-- The map `h_{∐ U} ⟶ h_U` induced by the fold map, followed by the inverse of
+`quotientSheaf.sigmaDescIdKernelPairIso U ι`, is the projection onto the quotient sheaf of the
+kernel pair of the fold map. -/
+@[reassoc (attr := simp)]
+theorem quotientSheaf.uliftYoneda_map_sigmaDescIdKernelPairIso_inv :
+    Scheme.fppfTopology.uliftYoneda.{u + 1}.map (Sigma.desc fun _ : ι ↦ 𝟙 U) ≫
+        (quotientSheaf.sigmaDescIdKernelPairIso U ι).inv =
+      TauCeti.CategoryTheory.quotientSheaf.π Scheme.fppfTopology
+        (pullback.snd (Sigma.desc fun _ : ι ↦ 𝟙 U) (Sigma.desc fun _ : ι ↦ 𝟙 U))
+        (pullback.fst (Sigma.desc fun _ : ι ↦ 𝟙 U) (Sigma.desc fun _ : ι ↦ 𝟙 U)) :=
+  (Iso.comp_inv_eq _).2 (quotientSheaf.π_sigmaDescIdKernelPairIso_hom U ι).symm
 
 end Fold
 

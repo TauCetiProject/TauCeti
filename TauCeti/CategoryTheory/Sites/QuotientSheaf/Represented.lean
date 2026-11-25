@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Sites.PreservesLimits
 public import Mathlib.CategoryTheory.Sites.RegularEpi
-public import TauCeti.CategoryTheory.Sites.EpiMono
+public import TauCeti.CategoryTheory.Sites.Canonical
 public import TauCeti.CategoryTheory.Sites.QuotientSheaf
 
 /-!
@@ -135,6 +135,16 @@ theorem quotientSheaf.π_isoOfIsLocallySurjective_hom (hq : t ≫ q = s ≫ q)
     quotientSheaf.π J s t ≫ (quotientSheaf.isoOfIsLocallySurjective hq hU hR).hom =
       J.uliftYoneda.{w}.map q :=
   quotientSheaf.π_desc _ _
+
+/-- The map `h q : h_U ⟶ h_M`, followed by the inverse of `U/R ≅ h_M`, is the projection onto the
+quotient sheaf. -/
+@[reassoc (attr := simp)]
+theorem quotientSheaf.uliftYoneda_map_isoOfIsLocallySurjective_inv (hq : t ≫ q = s ≫ q)
+    (hU : Sheaf.IsLocallySurjective (J.uliftYoneda.{w}.map q))
+    (hR : Sheaf.IsLocallySurjective (quotientSheaf.toKernelPair.{w} J hq)) :
+    J.uliftYoneda.{w}.map q ≫ (quotientSheaf.isoOfIsLocallySurjective hq hU hR).inv =
+      quotientSheaf.π J s t :=
+  (Iso.comp_inv_eq _).2 (quotientSheaf.π_isoOfIsLocallySurjective_hom hq hU hR).symm
 
 variable (q) in
 /-- The quotient sheaf of the kernel pair `U ×_M U ⇉ U` of a morphism `q : U ⟶ M` whose singleton
