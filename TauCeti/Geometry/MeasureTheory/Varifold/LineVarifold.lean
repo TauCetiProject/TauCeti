@@ -93,9 +93,9 @@ theorem coe_verticalField {ψ : E → ℝ} (hψ : ContDiff ℝ 1 ψ) (hψc : Has
 theorem norm_verticalField_le {ψ : E → ℝ} (hψ : ContDiff ℝ 1 ψ) (hψc : HasCompactSupport ψ)
     (a w : E) (n : ℝ) (y : E) :
     ‖verticalField hψ hψc a w n y‖ ≤ |n|⁻¹ * |ψ y| * ‖w‖ := by
-  rw [verticalField_apply, norm_smul, Real.norm_eq_abs, abs_mul, abs_mul, abs_inv]
-  exact mul_le_mul_of_nonneg_right
-    (mul_le_of_le_one_right (by positivity) (Real.abs_sin_le_one _)) (norm_nonneg w)
+  simp only [verticalField_apply, norm_smul, Real.norm_eq_abs, abs_mul, abs_inv]
+  gcongr ?_ * _
+  exact mul_le_of_le_one_right (by positivity) (Real.abs_sin_le_one _)
 
 /-- Along the line `a + ℝu` with `u ⊥ w`, the tangential divergence of the vertical field along
 the line spanned by `w` is `ψ`. -/
@@ -152,12 +152,28 @@ private theorem continuous_lineVarifold_param (a u : E) (P : grassmannian ℝ E 
   ((continuous_const.add (continuous_id.smul continuous_const)).subtype_mk fun _ => by
     simp).prodMk continuous_const
 
+/-- The line varifold of a measurable set `s` is the Lebesgue measure of the parameters
+`t` with `(a + t u, P) ∈ s`. -/
+theorem lineVarifold_apply (a u : E) (P : grassmannian ℝ E k)
+    {s : Set ((⊤ : Opens E) × grassmannian ℝ E k)} (hs : MeasurableSet s) :
+    lineVarifold a u P s =
+      volume ((fun t : ℝ => ((⟨a + t • u, by simp⟩ : (⊤ : Opens E)), P)) ⁻¹' s) := by
+  rw [lineVarifold_def, Measure.map_apply (continuous_lineVarifold_param a u P).measurable hs]
+
+/-- Integrating against the line varifold is integrating along the parametrization
+`t ↦ (a + t u, P)`. -/
+theorem integral_lineVarifold {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] (a u : E)
+    (P : grassmannian ℝ E k) {f : (⊤ : Opens E) × grassmannian ℝ E k → F}
+    (hf : AEStronglyMeasurable f (lineVarifold a u P)) :
+    ∫ z, f z ∂lineVarifold a u P = ∫ t : ℝ, f (⟨a + t • u, by simp⟩, P) := by
+  rw [lineVarifold_def] at hf ⊢
+  exact integral_map (continuous_lineVarifold_param a u P).aemeasurable hf
+
 /-- The line varifold is finite on compact sets. -/
 theorem isFiniteMeasureOnCompacts_lineVarifold {a u : E} (hu : u ≠ 0) (P : grassmannian ℝ E k) :
     IsFiniteMeasureOnCompacts (lineVarifold a u P) := by
   refine ⟨fun K hK => ?_⟩
-  rw [lineVarifold_def, Measure.map_apply (continuous_lineVarifold_param a u P).measurable
-    hK.isClosed.measurableSet]
+  rw [lineVarifold_apply a u P hK.isClosed.measurableSet]
   refine (measure_mono fun t ht => ?_).trans_lt
     ((TauCeti.isClosedEmbedding_add_smul_left a hu).isCompact_preimage
       ((hK.image continuous_fst).image continuous_subtypeVal)).measure_lt_top
@@ -168,9 +184,9 @@ theorem firstVariation_lineVarifold_apply {a u : E} (hu : u ≠ 0) (P : grassman
     (X : 𝓓^{1}((⊤ : Opens E), E)) :
     firstVariation (lineVarifold a u P) X = ∫ t : ℝ, tangentialDivergence X (a + t • u) P := by
   have := isFiniteMeasureOnCompacts_lineVarifold (a := a) hu P
-  rw [firstVariation_apply, lineVarifold_def,
-    integral_map (continuous_lineVarifold_param a u P).aemeasurable (by
-    simpa using (tangentialDivergenceCc (k := k) X).continuous.aestronglyMeasurable)]
+  rw [firstVariation_apply, integral_lineVarifold a u P (by
+    simpa only [coe_tangentialDivergenceCc] using
+      (map_continuous (tangentialDivergenceCc (k := k) X)).aestronglyMeasurable)]
 
 /-- The *vertical lift* of the line `a + ℝu` along `w ≠ 0`: the line varifold carrying the
 constant plane `span {w}` at every point. -/
@@ -229,14 +245,14 @@ theorem not_exists_abs_firstVariation_verticalLift_le {a u w : E} (hu : u ≠ 0)
   have h := hC (verticalField θ.contDiff θ.hasCompactSupport a w n)
     ((closure_mono fun y hy => ?_).trans θ.tsupport_eq.subset) n⁻¹ fun y =>
       (norm_verticalField_le θ.contDiff θ.hasCompactSupport a w n y).trans (by
-        rw [hw, mul_one, abs_of_pos hn, abs_of_nonneg θ.nonneg]
-        exact mul_le_of_le_one_right (by positivity) θ.le_one)
+        simpa [hw, abs_of_pos hn, abs_of_nonneg θ.nonneg] using
+          mul_le_of_le_one_right (inv_pos.2 hn).le θ.le_one)
   · rw [firstVariation_verticalLift_verticalField θ.contDiff θ.hasCompactSupport hu huw hw
-      hn.ne', abs_of_pos hI, ← div_eq_mul_inv, le_div_iff₀ hn] at h
-    have : C < I * n := by
-      rw [mul_add, mul_div_cancel₀ _ hI.ne', mul_one]
-      linarith [le_abs_self C]
-    linarith
+      hn.ne', abs_of_pos hI] at h
+    have hIn : I * n = |C| + I := by
+      simp only [n]
+      field_simp
+    linarith [(le_mul_inv_iff₀ hn).1 h, le_abs_self C]
   · by_contra hθ
     exact hy (by simp [Function.notMem_support.1 hθ])
 
