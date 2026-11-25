@@ -14,7 +14,7 @@ public import TauCeti.MeasureTheory.Covering.EssentialBoundary.Ball
 # Checks for Federer's theorem: the perimeter sees the essential boundary, not the frontier
 
 In `ℝⁿ`, `n ≥ 1`, let `s` be the unit ball together with the points of rational coordinates
-(`TauCeti.rationalPoints`), a null dense set. Then:
+(`TauCeti.EuclideanSpace.rationalPoints`), a null dense set. Then:
 
 * its perimeter is that of the ball, `P(s) = n ω_n` with `ω_n` the volume of the unit ball
   (`TauCeti.Examples.EssentialBoundaryBall.perimeter_ballUnionRational`);
@@ -45,14 +45,14 @@ variable {n : ℕ}
 
 /-- The unit ball together with the points of rational coordinates. -/
 abbrev ballUnionRational (n : ℕ) : Set (EuclideanSpace ℝ (Fin n)) :=
-  ball 0 1 ∪ rationalPoints n
+  ball 0 1 ∪ EuclideanSpace.rationalPoints n
 
 /-- **The perimeter of the ball with the rational points** is that of the ball, `n ω_n`. -/
 theorem perimeter_ballUnionRational [NeZero n] :
     perimeter volume ⊤ (ballUnionRational n) =
       n * volume (ball (0 : EuclideanSpace ℝ (Fin n)) 1) := by
   rw [perimeter_congr_ae (ae_restrict_of_ae (union_ae_eq_left_of_ae_eq_empty
-    (ae_eq_empty.2 volume_rationalPoints))), perimeter_ball one_pos]
+    (ae_eq_empty.2 EuclideanSpace.volume_rationalPoints))), perimeter_ball one_pos]
   simp
 
 /-- The essential boundary of the ball with the rational points is the unit sphere, of
@@ -67,14 +67,15 @@ theorem euclideanHausdorffMeasure_essentialBoundary_ballUnionRational [NeZero n]
 theorem interior_ballUnionRational [NeZero n] : interior (ballUnionRational n) = ball 0 1 :=
   ((interior_mono (union_subset_union_left _ ball_subset_closedBall)).trans_eq
     ((interior_union_isClosed_of_interior_empty isClosed_closedBall
-      (Measure.interior_eq_empty_of_null volume_rationalPoints)).trans
+      (Measure.interior_eq_empty_of_null EuclideanSpace.volume_rationalPoints)).trans
         (interior_closedBall 0 one_ne_zero))).antisymm
     (isOpen_ball.subset_interior_iff.2 subset_union_left)
 
 /-- **The frontier of the ball with the rational points** is the complement of the open ball. -/
 theorem frontier_ballUnionRational [NeZero n] : frontier (ballUnionRational n) = (ball 0 1)ᶜ := by
   rw [frontier, interior_ballUnionRational,
-    (dense_rationalPoints.mono subset_union_right).closure_eq, ← compl_eq_univ_sdiff]
+    (EuclideanSpace.dense_rationalPoints.mono subset_union_right).closure_eq,
+    ← compl_eq_univ_sdiff]
 
 /-- **The frontier of the ball with the rational points has infinite `Hⁿ⁻¹` measure**: it contains
 the disjoint spheres of radii `1, 2, 3, …`, each of measure at least `n ω_n`. -/

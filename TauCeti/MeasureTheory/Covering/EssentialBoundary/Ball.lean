@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Covering.EssentialBoundary.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+public import TauCeti.Analysis.InnerProductSpace.Euclidean.RationalPoints
 import TauCeti.Analysis.Normed.Affine.AddTorsor.TangentBall
 
 /-!
@@ -21,9 +22,9 @@ contain a ball of radius `ρ / 2` inside `ball x ρ`, so the density of the ball
 
 The essential boundary only depends on the set up to null sets, so the punctured ball
 `ball c r \ {c}` and, in `EuclideanSpace ℝ (Fin n)`, the union of `ball c r` with the countable set
-of points with rational coordinates (`TauCeti.rationalPoints`, a null dense set), also have
-essential boundary `sphere c r`, although their frontiers are larger: unlike the frontier, the
-essential boundary ignores null sets.
+of points with rational coordinates (`TauCeti.EuclideanSpace.rationalPoints`, a null dense set),
+also have essential boundary `sphere c r`, although their frontiers are larger: unlike the
+frontier, the essential boundary ignores null sets.
 -/
 
 public section
@@ -70,27 +71,17 @@ theorem essentialBoundary_ball_sdiff_singleton [Nontrivial E] {c : E} {r : ℝ} 
   rw [essentialBoundary_congr_ae (sdiff_null_ae_eq_self (measure_singleton c)),
     essentialBoundary_ball hr]
 
-/-- The points of rational coordinates in `EuclideanSpace ℝ (Fin n)`. -/
-abbrev rationalPoints (n : ℕ) : Set (EuclideanSpace ℝ (Fin n)) :=
-  range fun q : Fin n → ℚ ↦ WithLp.toLp 2 fun i ↦ (q i : ℝ)
-
 /-- The points of rational coordinates form a null set, for `n ≠ 0`. -/
-theorem volume_rationalPoints {n : ℕ} [NeZero n] : volume (rationalPoints n) = 0 :=
-  (countable_range _).measure_zero _
-
-/-- The points of rational coordinates are dense in `EuclideanSpace ℝ (Fin n)`. -/
-theorem dense_rationalPoints {n : ℕ} : Dense (rationalPoints n) := by
-  have h : DenseRange fun q : Fin n → ℚ ↦ fun i ↦ (q i : ℝ) :=
-    DenseRange.piMap fun _ ↦ Rat.denseRange_cast
-  exact ((PiLp.continuousLinearEquiv 2 ℝ fun _ : Fin n ↦ ℝ).symm.surjective.denseRange.comp h
-    (PiLp.continuousLinearEquiv 2 ℝ fun _ : Fin n ↦ ℝ).symm.continuous)
+theorem EuclideanSpace.volume_rationalPoints {n : ℕ} [NeZero n] :
+    volume (EuclideanSpace.rationalPoints n) = 0 :=
+  EuclideanSpace.countable_rationalPoints.measure_zero _
 
 /-- In `EuclideanSpace ℝ (Fin n)`, the union of the ball `ball c r`, `r ≠ 0`, with the points of
 rational coordinates has essential boundary `sphere c r`. -/
 theorem essentialBoundary_ball_union_rational {n : ℕ} [NeZero n]
     {c : EuclideanSpace ℝ (Fin n)} {r : ℝ} (hr : r ≠ 0) :
-    essentialBoundary volume (ball c r ∪ rationalPoints n) = sphere c r := by
+    essentialBoundary volume (ball c r ∪ EuclideanSpace.rationalPoints n) = sphere c r := by
   rw [essentialBoundary_congr_ae (union_ae_eq_left_of_ae_eq_empty
-    (ae_eq_empty.2 volume_rationalPoints)), essentialBoundary_ball hr]
+    (ae_eq_empty.2 EuclideanSpace.volume_rationalPoints)), essentialBoundary_ball hr]
 
 end TauCeti
