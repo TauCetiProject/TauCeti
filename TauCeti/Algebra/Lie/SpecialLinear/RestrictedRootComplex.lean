@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.CartanInvolution.RestrictScalars
 public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.Basic
+public import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
 
@@ -61,15 +62,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 namespace TauCeti
 
-/-- For a diagonal `H`, the commutator `H X - X H` has `(k, l)` entry `(H k k - H l l) X k l`. -/
-theorem mul_sub_mul_apply_of_isDiag {n R : Type*} [Fintype n] [CommRing R] {H : Matrix n n R}
-    (hH : H.IsDiag) (X : Matrix n n R) (k l : n) :
-    (H * X - X * H) k l = (H k k - H l l) * X k l := by
-  rw [Matrix.sub_apply, Matrix.mul_apply, Matrix.mul_apply,
-    Finset.sum_eq_single k (fun m _ hm ↦ by rw [hH (Ne.symm hm), zero_mul]) (by simp),
-    Finset.sum_eq_single l (fun m _ hm ↦ by rw [hH hm, mul_zero]) (by simp)]
-  ring
-
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
 variable (n) in
@@ -84,12 +76,6 @@ noncomputable abbrev slComplexNegConjTranspose : slComplexReal n ≃ₗ⁅ℝ⁆
   (slComplexReal n).restrictNegConjTranspose
     ((SpecialLinear.sl n ℂ).conjTranspose_mem_range_restrictScalarsIncl
       fun _ ↦ SpecialLinear.conjTranspose_mem_sl)
-
-variable (n) in
-/-- `X ↦ -Xᴴ` is a Cartan involution of `𝔰𝔩_n(ℂ)` viewed as a real Lie algebra. -/
-theorem isCartanInvolution_slComplexNegConjTranspose :
-    (slComplexNegConjTranspose n).IsCartanInvolution :=
-  isCartanInvolution_restrictNegConjTranspose_slComplex
 
 variable (n) in
 /-- The real trace-zero diagonal matrices, as a real subspace of `𝔰𝔩_n(ℂ)` viewed as a real Lie
@@ -120,7 +106,8 @@ theorem coe_lie_apply_of_mem_slComplexRealDiagonal
     ((⁅H, X⁆ : slComplexReal n) : Matrix n n ℂ) k l =
       ((((H : Matrix n n ℂ) k k).re - ((H : Matrix n n ℂ) l l).re : ℝ) : ℂ) *
         (X : Matrix n n ℂ) k l := by
-  rw [LieSubalgebra.coe_bracket, Ring.lie_def, mul_sub_mul_apply_of_isDiag hH.1, Complex.ofReal_sub,
+  rw [LieSubalgebra.coe_bracket,
+    lie_apply_of_mem_diagonalCartan (mem_diagonalCartan_iff_isDiag.mpr hH.1), Complex.ofReal_sub,
     ofReal_re_apply_self_of_mem_slComplexRealDiagonal hH,
     ofReal_re_apply_self_of_mem_slComplexRealDiagonal hH]
 
