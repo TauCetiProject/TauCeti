@@ -18,8 +18,7 @@ have sum and difference equal to that pair.
 
 Since `(1, 0)` is idempotent, a ring homomorphism from a product `E₁ × E₂` to a semiring without
 zero divisors sends it to `0` or `1`, so it factors through one of the two projections
-(`RingHom.exists_eq_comp_fst_or_snd`, from `AlgHom.prodFirst` applied to the homomorphism as an
-`ℕ`-algebra map), and through only one when the target is nontrivial
+(`RingHom.exists_eq_comp_fst_or_snd`), and through only one when the target is nontrivial
 (`RingHom.comp_fst_ne_comp_snd`, `RingHom.disjoint_image_comp_fst_image_comp_snd`,
 `RingHom.comp_fst_mem_union_iff`, `RingHom.comp_snd_mem_union_iff`). So finitely many
 homomorphisms out of each factor give finitely many out of the product
@@ -88,12 +87,13 @@ theorem comp_snd_mem_union_iff [Nontrivial K] {s₁ : Set (E₁ →+* K)} {s₂ 
   exact or_iff_right fun ⟨ψ₁, _, h⟩ ↦ comp_fst_ne_comp_snd ψ₁ ψ h
 
 /-- **A ring homomorphism from a product to a semiring without zero divisors factors through a
-projection.** The image of the idempotent `(1, 0)` is `0` or `1`; when it is `1`,
-`AlgHom.prodFirst` gives the factorization through `fst`, and when it is `0` the image of `(0, 1)`
-is `1` and the same applies after swapping the factors. -/
+projection.** -/
 theorem exists_eq_comp_fst_or_snd [IsLeftCancelMulZero K] (φ : E₁ × E₂ →+* K) :
     (∃ ψ : E₁ →+* K, φ = ψ.comp (RingHom.fst E₁ E₂)) ∨
       ∃ ψ : E₂ →+* K, φ = ψ.comp (RingHom.snd E₁ E₂) := by
+  -- The image of the idempotent `(1, 0)` is `0` or `1`. When it is `1`, `AlgHom.prodFirst` gives
+  -- the factorization through `fst`; when it is `0`, the image of `(0, 1)` is `1` and the same
+  -- applies after swapping the factors.
   have hidem : IsIdempotentElem (φ (1, 0)) := by
     rw [IsIdempotentElem, ← map_mul, Prod.mk_mul_mk, one_mul, zero_mul]
   rcases IsIdempotentElem.iff_eq_zero_or_one.mp hidem with h | h
@@ -103,7 +103,10 @@ theorem exists_eq_comp_fst_or_snd [IsLeftCancelMulZero K] (φ : E₁ × E₂ →
     let φ' := (φ.comp (RingEquiv.prodComm (R := E₂) (S := E₁)).toRingHom).toNatAlgHom
     have h1' : φ' (1, 0) = 1 := by simpa [φ'] using h1
     exact .inr ⟨(φ'.prodFirst h1').toRingHom,
-      RingHom.ext fun x ↦ (DFunLike.congr_fun (φ'.prodFirst_comp_fst h1') x.swap).symm⟩
+      RingHom.ext fun x ↦ by
+        -- `φ'` is `φ ∘ swap`, so `φ' x.swap = φ x.swap.swap = φ x`
+        have hx : φ' x.swap = φ x := congrArg φ x.swap_swap
+        exact hx ▸ (DFunLike.congr_fun (φ'.prodFirst_comp_fst h1') x.swap).symm⟩
   · exact .inl ⟨(φ.toNatAlgHom.prodFirst h).toRingHom,
       RingHom.ext fun x ↦ (DFunLike.congr_fun (φ.toNatAlgHom.prodFirst_comp_fst h) x).symm⟩
 

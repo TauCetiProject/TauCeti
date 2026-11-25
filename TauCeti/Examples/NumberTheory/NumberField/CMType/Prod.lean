@@ -15,7 +15,7 @@ public import TauCeti.NumberTheory.NumberField.CMType.Prod
 This file checks the product API of `TauCeti.CMType` on `ℚ(i) × ℚ(√-3)`, with `ℚ(i)` the fourth
 cyclotomic field `CyclotomicField 4 ℚ` and `ℚ(√-3)` the third cyclotomic field
 `CyclotomicField 3 ℚ` (`ζ₃ = (-1 + √-3) / 2`). Both are quadratic, so every CM type on the
-product has `(2 + 2) / 2 = 2` elements (`natCard_eq_two`), one from each factor.
+product has `(2 + 2) / 2 = 2` elements (`natCard_eq_two`).
 -/
 
 public section

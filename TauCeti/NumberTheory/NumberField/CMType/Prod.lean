@@ -57,10 +57,10 @@ def prod (Φ₁ : CMType E₁) (Φ₂ : CMType E₂) : CMType (E₁ × E₂) whe
     (fun ψ : E₂ →+* ℂ ↦ ψ.comp (RingHom.snd E₁ E₂)) '' Φ₂
   star_mem_iff' φ := by
     rcases φ.exists_eq_comp_fst_or_snd with ⟨ψ, rfl⟩ | ⟨ψ, rfl⟩
-    · rw [show star (ψ.comp (RingHom.fst E₁ E₂)) = (star ψ).comp (RingHom.fst E₁ E₂) from rfl,
+    · rw [RingHom.star_def, ← RingHom.comp_assoc, ← RingHom.star_def,
         RingHom.comp_fst_mem_union_iff, RingHom.comp_fst_mem_union_iff, SetLike.mem_coe,
         SetLike.mem_coe, star_mem_iff]
-    · rw [show star (ψ.comp (RingHom.snd E₁ E₂)) = (star ψ).comp (RingHom.snd E₁ E₂) from rfl,
+    · rw [RingHom.star_def, ← RingHom.comp_assoc, ← RingHom.star_def,
         RingHom.comp_snd_mem_union_iff, RingHom.comp_snd_mem_union_iff, SetLike.mem_coe,
         SetLike.mem_coe, star_mem_iff]
 
@@ -76,7 +76,7 @@ theorem mem_prod_iff {Φ₁ : CMType E₁} {Φ₂ : CMType E₂} {φ : E₁ × E
     φ ∈ prod Φ₁ Φ₂ ↔ (∃ φ₁ ∈ Φ₁, φ₁.comp (RingHom.fst E₁ E₂) = φ) ∨
       ∃ φ₂ ∈ Φ₂, φ₂.comp (RingHom.snd E₁ E₂) = φ := by
   rw [← SetLike.mem_coe, coe_prod]
-  rfl
+  simp only [Set.mem_union, Set.mem_image, SetLike.mem_coe]
 
 @[simp]
 theorem comp_fst_mem_prod {Φ₁ : CMType E₁} {Φ₂ : CMType E₂} {ψ : E₁ →+* ℂ} :
