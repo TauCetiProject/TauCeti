@@ -49,11 +49,11 @@ def halfSpaces {ν : E} (hν : ‖ν‖ = 1) (s : ℝ) : Cluster (gaussianWeight
     · exact (isOpen_lt hc continuous_const).measurableSet.nullMeasurableSet
     · exact (isOpen_lt continuous_const hc).measurableSet.nullMeasurableSet
   pairwise_disjoint i j hij := by
-    fin_cases i <;> fin_cases j
-    · exact (hij rfl).elim
-    · exact disjoint_left.2 fun x (h1 : ⟪x, ν⟫ < s) (h2 : s < ⟪x, ν⟫) => lt_asymm h1 h2
-    · exact disjoint_left.2 fun x (h1 : s < ⟪x, ν⟫) (h2 : ⟪x, ν⟫ < s) => lt_asymm h1 h2
-    · exact (hij rfl).elim
+    fin_cases i <;> fin_cases j <;> try exact (hij rfl).elim
+    all_goals
+      simp only [Fin.zero_eta, Fin.mk_one, Matrix.cons_val_zero, Matrix.cons_val_one,
+        Matrix.cons_val_fin_one, disjoint_left, mem_ofPred_eq, not_lt]
+      exact fun _ => le_of_lt
   volume_compl_iUnion := by
     refine measure_mono_null (fun x hx => ?_) (Measure.addHaar_setOf_inner_eq volume
       (norm_ne_zero_iff.1 (by rw [hν]; exact one_ne_zero)) s)
@@ -69,6 +69,12 @@ def halfSpaces {ν : E} (hν : ‖ν‖ = 1) (s : ℝ) : Cluster (gaussianWeight
         ext x
         simp [inner_neg_right]
       simp [h, gaussianPerimeter_setOf_inner_lt hν']
+
+/-- The cells of `halfSpaces hν s` are `{⟪x, ν⟫ < s}` and `{⟪x, ν⟫ > s}`. -/
+@[simp]
+theorem halfSpaces_cell {ν : E} (hν : ‖ν‖ = 1) (s : ℝ) (i : Fin 2) :
+    (halfSpaces hν s).cell i = ![{x | ⟪x, ν⟫ < s}, {x | s < ⟪x, ν⟫}] i :=
+  (rfl)
 
 /-- **The total perimeter of the two half-spaces** is `φ(s)`. -/
 theorem perimeter_halfSpaces {ν : E} (hν : ‖ν‖ = 1) (s : ℝ) :
@@ -98,6 +104,11 @@ def univEmpty : Cluster (gaussianWeight E) 2 where
     · simp [weightedPerimeter_univ contDiff_gaussianWeight]
     · simp [weightedPerimeter_empty]
 
+/-- The cells of `univEmpty` are `E` and `∅`. -/
+@[simp]
+theorem univEmpty_cell (i : Fin 2) : (univEmpty (E := E)).cell i = ![univ, ∅] i :=
+  (rfl)
+
 /-- The cluster `(E, ∅)` has total perimeter `0`. -/
 theorem perimeter_univEmpty : (univEmpty (E := E)).perimeter = 0 := by
   rw [Cluster.perimeter_eq_weightedPerimeter_cell_zero contDiff_gaussianWeight]
@@ -107,7 +118,7 @@ theorem perimeter_univEmpty : (univEmpty (E := E)).perimeter = 0 := by
 theorem weightedMeasure_univEmpty_cell :
     (fun i => weightedMeasure (gaussianWeight E) ((univEmpty (E := E)).cell i)) = ![1, 0] := by
   ext i
-  fin_cases i <;> simp [univEmpty, weightedMeasure_def, withDensity_exp_neg_gaussianWeight]
+  fin_cases i <;> simp [univEmpty_cell, weightedMeasure_def, withDensity_exp_neg_gaussianWeight]
 
 /-- The `1`-cluster `(E)` has total perimeter `0` and measure vector `(1)`. -/
 theorem perimeter_univ_and_weightedMeasure_cell :
@@ -130,11 +141,9 @@ theorem not_exists_cluster_one_halfSpace (ν : E) :
     · exact ((isOpen_lt continuous_const hc).measure_pos volume
         ⟨ν, show 0 < ⟪ν, ν⟫ from real_inner_self_pos.2 hν⟩).trans_le
           (measure_mono fun x (hx : 0 < ⟪x, ν⟫) => hx.le)
-  refine hpos.ne' (measure_mono_null (fun x (hx : 0 ≤ ⟪x, ν⟫) => ?_) Ω.volume_compl_iUnion)
-  simp only [mem_compl_iff, mem_iUnion, not_exists]
-  intro i
-  rw [Subsingleton.elim i 0, hΩ]
-  exact fun (h : ⟪x, ν⟫ < 0) => not_lt.2 hx h
+  have h0 : volume (Ω.cell 0)ᶜ = 0 := ae_eq_univ.1 (Ω.cell_ae_eq_univ 0)
+  rw [hΩ] at h0
+  exact hpos.ne' (measure_mono_null (fun x hx => by simpa using hx) h0)
 
 /-- **Overlapping cells are excluded.** No `2`-cluster on `ℝ` has the overlapping cells
 `(−∞, 1)` and `(0, ∞)`. -/
