@@ -8,11 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Locus
 public import TauCeti.RingTheory.Syntomic.FittingIdeal
 public import TauCeti.RingTheory.Kaehler.Hypersurface
-public import TauCeti.RingTheory.KrullDimension.Regular
 public import Mathlib.RingTheory.Kaehler.Polynomial
-public import Mathlib.RingTheory.KrullDimension.Polynomial
-public import Mathlib.RingTheory.KrullDimension.Field
-public import Mathlib.RingTheory.Smooth.Locus
 
 /-!
 # Check: the cusp is not smooth
@@ -24,10 +20,8 @@ exactly when `q` does not contain the first Fitting ideal of `Ω[A⁄k]`, which 
 partial derivatives `-3 x ^ 2` and `2 y`; both vanish at the origin.
 
 Over a perfect field `k`, the closed-point criterion
-`AlgebraicGeometry.Scheme.Hom.smooth_iff_isRegularLocalRing_closedPoints` then gives a closed point
-of `Spec A` whose local ring is not regular (`exists_not_isRegularLocalRing`): the Check of
-NashBlowups §0.5 that the cusp over a perfect field is not smooth, its local ring at the origin
-having embedding dimension `2 > 1`.
+`AlgebraicGeometry.Scheme.Hom.smooth_iff_isRegularLocalRing_closedPoints` then gives some closed
+point of `Spec A` whose local ring is not regular (`exists_not_isRegularLocalRing`).
 -/
 
 public section
@@ -49,65 +43,37 @@ abbrev cusp : MvPolynomial (Fin 2) k := X 1 ^ 2 - X 0 ^ 3
 abbrev CuspRing : Type u := MvPolynomial (Fin 2) k ⧸ Ideal.span {cusp k}
 
 /-- The cusp is a nonzero polynomial. -/
-lemma cusp_ne_zero : cusp k ≠ 0 := fun h ↦ by
+private lemma cusp_ne_zero : cusp k ≠ 0 := fun h ↦ by
   simpa using congrArg (eval ![1, 0]) h
 
 /-- Evaluation at the origin, a `k`-algebra map from the coordinate ring of the cusp. -/
-def evalOrigin : CuspRing k →ₐ[k] k :=
+private def evalOrigin : CuspRing k →ₐ[k] k :=
   Ideal.Quotient.liftₐ _ (aeval 0) fun a ha ↦ by
     obtain ⟨c, rfl⟩ := Ideal.mem_span_singleton'.mp ha
     simp
 
-lemma evalOrigin_mk (a : MvPolynomial (Fin 2) k) :
+private lemma evalOrigin_mk (a : MvPolynomial (Fin 2) k) :
     evalOrigin k (Ideal.Quotient.mk _ a) = aeval 0 a :=
   Ideal.Quotient.liftₐ_apply _ _ _ _
 
 /-- The maximal ideal of the origin. -/
-abbrev origin : Ideal (CuspRing k) := RingHom.ker (evalOrigin k)
+private abbrev origin : Ideal (CuspRing k) := RingHom.ker (evalOrigin k)
 
-instance origin.isMaximal : (origin k).IsMaximal :=
+private lemma origin_isMaximal : (origin k).IsMaximal :=
   RingHom.ker_isMaximal_of_surjective _ fun c ↦ ⟨algebraMap k _ c, by simp⟩
-
-instance : Nontrivial (CuspRing k) :=
-  (evalOrigin k).toRingHom.domain_nontrivial
-
-/-- The coordinate ring of the cusp has Krull dimension at most one. -/
-lemma ringKrullDim_le_one : ringKrullDim (CuspRing k) ≤ 1 := by
-  have h := ringKrullDim_quotient_span_singleton_succ_le_of_notMem_minimalPrimes
-    (R := MvPolynomial (Fin 2) k) (x := cusp k) fun p hp ↦ by
-      rw [IsDomain.minimalPrimes_eq_singleton_bot, Set.mem_singleton_iff] at hp
-      rw [hp, Ideal.mem_bot]
-      exact cusp_ne_zero k
-  rw [MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite, ringKrullDim_eq_zero_of_field,
-    Nat.card_eq_fintype_card, Fintype.card_fin, zero_add] at h
-  generalize ringKrullDim (CuspRing k) = n at h ⊢
-  induction n using WithBot.recBotCoe with
-  | bot => exact bot_le
-  | coe n =>
-    induction n using ENat.recTopCoe with
-    | top => exact absurd h (by decide)
-    | coe n =>
-      norm_cast at h ⊢
-      have h' : n + 1 ≤ 2 := by exact_mod_cast h
-      omega
 
 /-- The coordinate ring of the cusp is standard syntomic of relative dimension one over `k`. -/
 instance isStandardSyntomicOfRelativeDimension :
-    TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension 1 k (CuspRing k) := by
-  let P := (Algebra.Presentation.naive (v := ![cusp k])).ofAlgEquiv
-    (Ideal.quotientEquivAlgOfEq k (I := Ideal.span (Set.range ![cusp k]))
-      (J := Ideal.span {cusp k}) (by simp))
-  exact P.isStandardSyntomicOfRelativeDimension_of_ringKrullDim_le (by simp)
-    (ringKrullDim_le_one k)
+    TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension 1 k (CuspRing k) :=
+  .quotient_span_singleton (cusp_ne_zero k)
 
 /-- **Check.** The cusp `y ^ 2 = x ^ 3` is not smooth over any field: it is not smooth at the
 origin, where both partial derivatives of `y ^ 2 - x ^ 3` vanish. -/
 theorem not_smooth : ¬ Algebra.Smooth k (CuspRing k) := by
   intro hs
-  have hq : Algebra.IsSmoothAt k (origin k) := by
-    have := Algebra.smoothLocus_eq_univ (R := k) (A := CuspRing k) ▸
-      Set.mem_univ (⟨origin k, inferInstance⟩ : PrimeSpectrum (CuspRing k))
-    exact this
+  have := origin_isMaximal k
+  -- the localization of a smooth algebra is formally smooth
+  have hq : Algebra.IsSmoothAt k (origin k) := inferInstance
   refine (Ideal.fittingIdeal_kaehlerDifferential_le_iff_not_isSmoothAt (n := 1)
     (origin k)).mp ?_ hq
   have h := fittingIdeal_kaehlerDifferential_quotient_span_singleton (K := k) (cusp k)
