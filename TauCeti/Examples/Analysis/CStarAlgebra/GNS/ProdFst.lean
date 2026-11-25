@@ -34,14 +34,10 @@ noncomputable def pr₁ : ℂ × ℂ →ₚ[ℂ] ℂ :=
 theorem pr₁_apply (x : ℂ × ℂ) : pr₁ x = x.1 :=
   (rfl)
 
-/-- The first coordinate is tracial. -/
-theorem pr₁_mul_comm (a b : ℂ × ℂ) : pr₁ (a * b) = pr₁ (b * a) := by
-  rw [mul_comm]
-
 /-- The class of `x` in the GNS space of `pr₁` vanishes exactly when `x.1 = 0`. -/
 theorem toGNS_eq_zero_iff_fst_eq_zero (x : ℂ × ℂ) : pr₁.toGNS x = 0 ↔ x.1 = 0 := by
-  rw [toGNS_eq_zero_iff, pr₁_apply, Prod.fst_mul, Prod.fst_star, mul_eq_zero, star_eq_zero,
-    or_self]
+  rw [toGNS_eq_zero_iff]
+  simp
 
 /-- The class of `x` is `x.1` times the cyclic vector `Ω = [1]`. -/
 theorem toGNS_eq_smul_gnsVector (x : ℂ × ℂ) : pr₁.toGNS x = x.1 • pr₁.gnsVector := by
@@ -50,31 +46,24 @@ theorem toGNS_eq_smul_gnsVector (x : ℂ × ℂ) : pr₁.toGNS x = x.1 • pr₁
   simp
 
 /-- The cyclic vector is nonzero. -/
-theorem gnsVector_ne_zero : pr₁.gnsVector ≠ 0 := by
-  rw [gnsVector_def, ← toGNS_apply, Ne, toGNS_eq_zero_iff_fst_eq_zero]
-  simp
+theorem gnsVector_ne_zero : pr₁.gnsVector ≠ 0 :=
+  norm_ne_zero_iff.mp <| by simp [norm_gnsVector]
 
 /-- **`L²(ℂ ⊕ ℂ, pr₁) = ℂ·Ω`.** Every vector of the GNS space is a multiple of `Ω`. -/
 theorem exists_eq_smul_gnsVector (v : pr₁.GNS) : ∃ c : ℂ, v = c • pr₁.gnsVector := by
-  have hclosed : IsClosed ((ℂ ∙ pr₁.gnsVector : Submodule ℂ pr₁.GNS) : Set pr₁.GNS) :=
-    Submodule.isClosed_of_finiteDimensional _
-  have hrange : Set.range pr₁.toGNS ⊆ (ℂ ∙ pr₁.gnsVector : Submodule ℂ pr₁.GNS) := by
-    rintro _ ⟨x, rfl⟩
-    rw [toGNS_eq_smul_gnsVector]
-    exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
-  have hv : v ∈ (ℂ ∙ pr₁.gnsVector : Submodule ℂ pr₁.GNS) := by
-    have h := closure_minimal hrange hclosed
-    rw [pr₁.denseRange_toGNS.closure_range] at h
-    exact h (Set.mem_univ v)
+  have hv : v ∈ (ℂ ∙ pr₁.gnsVector : Submodule ℂ pr₁.GNS) :=
+    pr₁.denseRange_toGNS.induction_on (p := (· ∈ (ℂ ∙ pr₁.gnsVector : Submodule ℂ pr₁.GNS))) v
+      (Submodule.isClosed_of_finiteDimensional _) fun x ↦ by
+        rw [toGNS_eq_smul_gnsVector]
+        exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
   obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hv
   exact ⟨c, hc.symm⟩
 
 /-- **The GNS representation is `pr₁`.** `π(a) = a.1 • 1`. -/
 theorem gnsNonUnitalStarAlgHom_eq (a : ℂ × ℂ) : pr₁.gnsNonUnitalStarAlgHom a = a.1 • 1 := by
   refine pr₁.gns_continuousLinearMap_ext fun c ↦ ?_
-  obtain ⟨x, rfl⟩ : ∃ x, pr₁.toPreGNS x = c := ⟨pr₁.ofPreGNS c, toPreGNS_ofPreGNS pr₁ c⟩
-  rw [← toGNS_apply, gnsNonUnitalStarAlgHom_apply_toGNS, smul_apply, one_apply_eq_self,
-    toGNS_eq_smul_gnsVector, toGNS_eq_smul_gnsVector, smul_smul, Prod.fst_mul]
+  obtain ⟨x, rfl⟩ := pr₁.toPreGNS.surjective c
+  simp [← toGNS_apply, toGNS_eq_smul_gnsVector, smul_smul]
 
 /-- **The kernel of the GNS representation is `0 ⊕ ℂ`.** -/
 theorem gnsNonUnitalStarAlgHom_eq_zero_iff (a : ℂ × ℂ) :
@@ -85,7 +74,7 @@ theorem gnsNonUnitalStarAlgHom_eq_zero_iff (a : ℂ × ℂ) :
   simpa [gnsVector_ne_zero] using this
 
 /-- **`Ω` is separating for `π(ℂ ⊕ ℂ)`.** If `π(a)Ω = 0`, then `π(a) = 0`. -/
-theorem gnsNonUnitalStarAlgHom_eq_zero_of_apply_gnsVector {a : ℂ × ℂ}
+theorem gnsNonUnitalStarAlgHom_eq_zero_of_apply_gnsVector_eq_zero {a : ℂ × ℂ}
     (h : pr₁.gnsNonUnitalStarAlgHom a pr₁.gnsVector = 0) : pr₁.gnsNonUnitalStarAlgHom a = 0 := by
   rw [gnsNonUnitalStarAlgHom_eq_zero_iff]
   rw [gnsNonUnitalStarAlgHom_eq] at h
