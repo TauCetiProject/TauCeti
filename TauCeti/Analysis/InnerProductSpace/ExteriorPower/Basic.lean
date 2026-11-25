@@ -369,6 +369,12 @@ complex-valued covector `P = p₁ + i p₂`. On a finite-dimensional space it re
 noncomputable def gradientWedge [CompleteSpace E] (P : E →L[ℝ] ℂ) : ⋀[ℝ]^2 E :=
   ιMulti ℝ 2 ![P.reGradient, P.imGradient]
 
+/-- The gradient wedge of a complex-valued covector is the exterior product of its two real
+gradients. -/
+theorem gradientWedge_def [CompleteSpace E] (P : E →L[ℝ] ℂ) :
+    P.gradientWedge = ιMulti ℝ 2 ![P.reGradient, P.imGradient] :=
+  (rfl)
+
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ E]
@@ -378,7 +384,7 @@ gradients of the real and imaginary parts of `P`. -/
 @[simp]
 theorem inner_gradientWedge_ιMulti (P : E →L[ℝ] ℂ) (u w : E) :
     ⟪P.gradientWedge, ιMulti ℝ 2 ![u, w]⟫ = (conj (P u) * P w).im := by
-  rw [gradientWedge, inner_ιMulti_two, inner_reGradient, inner_reGradient, inner_imGradient,
+  rw [gradientWedge_def, inner_ιMulti_two, inner_reGradient, inner_reGradient, inner_imGradient,
     inner_imGradient, Complex.mul_im, Complex.conj_re, Complex.conj_im]
   ring
 
