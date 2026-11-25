@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Zero
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.ClassicalSolution
+import TauCeti.Analysis.PDE.EnergyForm.WeakDivergence
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -157,30 +158,6 @@ theorem energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn
   simp only [TestFunction.lineDerivOp_apply,
     TestFunction.lineDeriv_lineDerivOp_comm φ (b i) e] at h ⊢
   linear_combination h
-
-/-- The Leibniz rule for a coefficient field `B` with `C¹` entries on `Ω`. Let
-`eᵢ = EuclideanSpace.basisFun ι ℝ i`. If `u ∈ H¹(Ω)` and each `D j ∈ H¹(Ω)` is the weak
-derivative of `u` along `eⱼ`, then `Bⁱʲ ∂ⱼu` has the weak derivative
-`Bⁱʲ ⟪∇(D j), eᵢ⟫ + ∂ᵢBⁱʲ ∂ⱼu` along `eᵢ`, where `∂ⱼu = ⟪∇u, eⱼ⟫` and
-`∂ᵢBⁱʲ` is the derivative of the coefficient along `eᵢ`. -/
-theorem hasWeakLineDerivOn_smul_inner_gradient {B : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    (hB : ∀ i j, ContDiffOn ℝ 1 (fun x => B x i j) Omega) {u : W1p mu Omega 2}
-    {D : ι → W1p mu Omega 2}
-    (hD : ∀ j, HasWeakLineDerivOn mu Omega (W1p.value u) (W1p.value (D j))
-      (EuclideanSpace.basisFun ι ℝ j)) (i j : ι) :
-    HasWeakLineDerivOn mu Omega
-      (fun x => B x i j • innerSL ℝ (W1p.gradient u x) (EuclideanSpace.basisFun ι ℝ j))
-      (fun x => B x i j • innerSL ℝ (W1p.gradient (D j) x) (EuclideanSpace.basisFun ι ℝ i) +
-        fderiv ℝ (fun y => B y i j) x (EuclideanSpace.basisFun ι ℝ i) •
-          innerSL ℝ (W1p.gradient u x) (EuclideanSpace.basisFun ι ℝ j))
-      (EuclideanSpace.basisFun ι ℝ i) := by
-  -- `∂ⱼu` agrees with the value of `D j` almost everywhere on `Ω`, so it has the same weak
-  -- derivatives.
-  have hae : W1p.value (D j) =ᵐ[mu.restrict Omega]
-      fun x => innerSL ℝ (W1p.gradient u x) (EuclideanSpace.basisFun ι ℝ j) :=
-    (hD j).ae_eq ((W1p.hasWeakFDerivOn u).hasWeakLineDerivOn _)
-  exact (((W1p.hasWeakFDerivOn (D j)).hasWeakLineDerivOn _).congr_ae hae).contDiffOn_smul_of_ne_zero
-    (hB i j) one_ne_zero
 
 /-- The function `∂ᵢ(Bⁱʲ ∂ⱼu) = ∑ᵢⱼ (∂ᵢBⁱʲ ∂ⱼu + Bⁱʲ ∂ᵢ∂ⱼu)`, times a test function, is
 integrable. -/

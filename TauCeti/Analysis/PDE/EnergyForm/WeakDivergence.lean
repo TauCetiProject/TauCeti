@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.DirichletProblem
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 
-import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
+import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import TauCeti.MeasureTheory.Function.Lp.Basic
 
@@ -102,6 +102,30 @@ theorem energyFormH1_eq_setIntegral_neg_sum_of_hasWeakLineDerivOn
         refine integral_congr_ae ?_
         filter_upwards [hg] with x hx
         simp only [hx, smul_eq_mul, Finset.sum_neg_distrib, neg_mul, Finset.sum_mul, mul_comm]
+
+/-- The Leibniz rule for a coefficient field `B` with `C¹` entries on `Ω`. Let
+`eᵢ = EuclideanSpace.basisFun ι ℝ i`. If `u ∈ H¹(Ω)` and each `D j ∈ H¹(Ω)` is the weak
+derivative of `u` along `eⱼ`, then `Bⁱʲ ∂ⱼu` has the weak derivative
+`Bⁱʲ ⟪∇(D j), eᵢ⟫ + ∂ᵢBⁱʲ ∂ⱼu` along `eᵢ`, where `∂ⱼu = ⟪∇u, eⱼ⟫` and
+`∂ᵢBⁱʲ` is the derivative of the coefficient along `eᵢ`. -/
+theorem hasWeakLineDerivOn_smul_inner_gradient {B : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    (hB : ∀ i j, ContDiffOn ℝ 1 (fun x => B x i j) Omega) {u : W1p mu Omega 2}
+    {D : ι → W1p mu Omega 2}
+    (hD : ∀ j, HasWeakLineDerivOn mu Omega (W1p.value u) (W1p.value (D j))
+      (EuclideanSpace.basisFun ι ℝ j)) (i j : ι) :
+    HasWeakLineDerivOn mu Omega
+      (fun x => B x i j • innerSL ℝ (W1p.gradient u x) (EuclideanSpace.basisFun ι ℝ j))
+      (fun x => B x i j • innerSL ℝ (W1p.gradient (D j) x) (EuclideanSpace.basisFun ι ℝ i) +
+        fderiv ℝ (fun y => B y i j) x (EuclideanSpace.basisFun ι ℝ i) •
+          innerSL ℝ (W1p.gradient u x) (EuclideanSpace.basisFun ι ℝ j))
+      (EuclideanSpace.basisFun ι ℝ i) := by
+  -- `∂ⱼu` agrees with the value of `D j` almost everywhere on `Ω`, so it has the same weak
+  -- derivatives.
+  have hae : W1p.value (D j) =ᵐ[mu.restrict Omega]
+      fun x => innerSL ℝ (W1p.gradient u x) (EuclideanSpace.basisFun ι ℝ j) :=
+    (hD j).ae_eq ((W1p.hasWeakFDerivOn u).hasWeakLineDerivOn _)
+  exact (((W1p.hasWeakFDerivOn (D j)).hasWeakLineDerivOn _).congr_ae hae).contDiffOn_smul_of_ne_zero
+    (hB i j) one_ne_zero
 
 /-- **The weak divergence of an `H²` flux.**
 Let the entries of `a` be `C¹` on `Ω`, with values and gradients bounded by `M`, and let
