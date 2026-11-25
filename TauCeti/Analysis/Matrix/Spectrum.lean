@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Matrix.PosDef
 import Mathlib.Analysis.InnerProductSpace.Positive
+import TauCeti.Analysis.InnerProductSpace.CourantFischer
 
 /-!
 # Eigen-coordinates and eigenvalue multisets of a Hermitian matrix
@@ -41,8 +42,9 @@ for `0 ≤ A ≤ B`.
 
 ## Main results
 
-* `Matrix.IsHermitian.apply_eq_sum_eigenvalues` — the entrywise spectral expansion
-  `B i j = ∑ k, λ k * U i k * conj (U j k)`;
+* `Matrix.IsHermitian.apply_eq_sum_eigenvalues` and
+  `Matrix.IsHermitian.aeval_apply_eq_sum_eigenvalues` — the entrywise spectral expansions of `B`
+  and `aeval B p`;
 * `Matrix.IsHermitian.inner_toEuclideanLin_sum_smul_eigenvectorBasis` — the quadratic form of
   `B` at `∑ j, c j • b j` is `∑ j, hB.eigenvalues j * ‖c j‖ ^ 2`;
 * `Matrix.IsHermitian.posDef_one_sub_smul_iff` — `1 - c • B` is positive definite exactly when
@@ -54,6 +56,9 @@ for `0 ≤ A ≤ B`.
   determinant is `∏ j, (1 - c * hB.eigenvalues j)`;
 * `Matrix.IsHermitian.trace_pow_eq_sum_eigenvalues_pow` — the trace of `B ^ k` is
   `∑ j, hB.eigenvalues j ^ k` for every natural `k`;
+* `Matrix.IsHermitian.eigenvalues₀_eq_of_charpoly_eq` and `Matrix.IsHermitian.eigenvalues₀_smul` —
+  uniqueness of `eigenvalues₀` from a split characteristic polynomial with antitone roots, and
+  nonnegative real scaling of `eigenvalues₀`;
 * `Matrix.IsHermitian.map_eigenvalues_of_charpoly_eq_X_pow_mul` — if
   `A.charpoly = X ^ k * B.charpoly`, the eigenvalue multiset of `A` is that of `B` plus `k`
   zeros;
@@ -93,6 +98,35 @@ theorem apply_eq_sum_eigenvalues (i j : ι) :
   rw [conjStarAlgAut_apply, Matrix.mul_apply]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [mul_diagonal, star_apply, Function.comp_apply]
+  ring
+
+open Polynomial in
+/-- The entrywise spectral expansion of a polynomial in a Hermitian matrix: with
+`U = hB.eigenvectorUnitary` and `λ = hB.eigenvalues`,
+`aeval B p i j = ∑ k, p.eval (λ k) * U i k * conj (U j k)`. -/
+theorem aeval_apply_eq_sum_eigenvalues (p : Polynomial 𝕜) (i j : ι) :
+    aeval B p i j = ∑ k, p.eval (hB.eigenvalues k : 𝕜) *
+      (hB.eigenvectorUnitary : Matrix ι ι 𝕜) i k *
+      star ((hB.eigenvectorUnitary : Matrix ι ι 𝕜) j k) := by
+  have hpi : aeval (RCLike.ofReal (K := 𝕜) ∘ hB.eigenvalues) p =
+      fun k => p.eval (hB.eigenvalues k : 𝕜) := by
+    funext k
+    simp [Function.comp_apply]
+  -- `Matrix.diagonalAlgHom 𝕜` has underlying map `Matrix.diagonal` by definition.
+  have hdiag : aeval (diagonal (RCLike.ofReal (K := 𝕜) ∘ hB.eigenvalues) : Matrix ι ι 𝕜) p =
+      diagonal fun k => p.eval (hB.eigenvalues k : 𝕜) := by
+    have hd := aeval_algHom_apply (diagonalAlgHom (n := ι) (α := 𝕜) 𝕜)
+      (RCLike.ofReal (K := 𝕜) ∘ hB.eigenvalues) p
+    rw [hpi] at hd
+    exact hd
+  conv_lhs => rw [hB.spectral_theorem]
+  have hconj := aeval_algHom_apply
+    (conjStarAlgAut 𝕜 (Matrix ι ι 𝕜) hB.eigenvectorUnitary).toAlgEquiv.toAlgHom
+    (diagonal (RCLike.ofReal ∘ hB.eigenvalues)) p
+  simp only [AlgEquiv.coe_toAlgHom, StarAlgEquiv.coe_toAlgEquiv] at hconj
+  rw [hconj, hdiag, conjStarAlgAut_apply, Matrix.mul_apply]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [mul_diagonal, star_apply]
   ring
 
 /-- The eigenvectors of a Hermitian matrix are eigenvectors of the associated linear map on
@@ -307,5 +341,49 @@ theorem filter_map_eigenvalues_conjTranspose_mul_self (A : Matrix ι κ 𝕜) :
       (isHermitian_mul_conjTranspose_self A) (isHermitian_conjTranspose_mul_self A)
       (charpoly_mul_comm_of_le A Aᴴ hle)]
     simp +contextual [Multiset.mem_replicate]
+
+open Polynomial in
+/-- If the characteristic polynomial of a Hermitian matrix `A` splits along an antitone real tuple
+`lam`, then `hA.eigenvalues₀ = lam`. -/
+theorem IsHermitian.eigenvalues₀_eq_of_charpoly_eq {A : Matrix ι ι 𝕜} (hA : A.IsHermitian)
+    {lam : Fin (Fintype.card ι) → ℝ} (hlam : Antitone lam)
+    (hchar : A.charpoly = ∏ k, (X - C (lam k : 𝕜))) :
+    hA.eigenvalues₀ = lam := by
+  let m := Fintype.card ι
+  let D : Matrix (Fin m) (Fin m) 𝕜 := diagonal fun k => (lam k : 𝕜)
+  have hD : D.IsHermitian := by
+    rw [IsHermitian, diagonal_conjTranspose]
+    congr 1
+    funext k
+    exact RCLike.conj_ofReal _
+  have hD_eigs : hD.eigenvalues₀ = lam ∘ finCongr (Fintype.card_fin m) := by
+    refine (isSymmetric_toEuclideanLin_iff.mpr hD).eigenvalues_eq_of_eigenbasis
+      finrank_euclideanSpace
+      ((EuclideanSpace.basisFun (Fin m) 𝕜).reindex (finCongr (Fintype.card_fin m)).symm)
+      (fun _ _ hij => hlam (by simpa using hij)) fun i => ?_
+    ext r
+    simp only [D, OrthonormalBasis.reindex_apply, finCongr_symm, finCongr_apply,
+      Matrix.toLpLin_apply, mulVec_diagonal, EuclideanSpace.basisFun_apply,
+      EuclideanSpace.single, PiLp.single_apply, WithLp.ofLp_smul, Pi.smul_apply,
+      smul_eq_mul, Function.comp_apply]
+    split_ifs with h <;> simp [h]
+  have hlist : List.ofFn hA.eigenvalues₀ = List.ofFn lam := by
+    rw [← hA.sort_roots_charpoly_eq_eigenvalues₀, hchar, ← charpoly_diagonal,
+      hD.sort_roots_charpoly_eq_eigenvalues₀, hD_eigs]
+    exact List.ext_getElem (by simp [m]) fun i _ _ => by simp
+  exact List.ofFn_inj.mp hlist
+
+/-- Scaling a Hermitian matrix by a nonnegative real scalar scales its sorted eigenvalues. -/
+theorem IsHermitian.eigenvalues₀_smul {A : Matrix ι ι 𝕜} (hA : A.IsHermitian) {s : ℝ}
+    (hs : 0 ≤ s) :
+    (hA.smul (IsSelfAdjoint.all s)).eigenvalues₀ = s • hA.eigenvalues₀ := by
+  have hS := isSymmetric_toEuclideanLin_iff.mpr hA
+  refine (isSymmetric_toEuclideanLin_iff.mpr
+    (hA.smul (IsSelfAdjoint.all s))).eigenvalues_eq_of_eigenbasis finrank_euclideanSpace
+      (hS.eigenvectorBasis finrank_euclideanSpace)
+      (fun _ _ hij => mul_le_mul_of_nonneg_left (hA.eigenvalues₀_antitone hij) hs) fun i => ?_
+  rw [RCLike.real_smul_eq_coe_smul (K := 𝕜), map_smul, LinearMap.smul_apply,
+    hS.apply_eigenvectorBasis, smul_smul, Pi.smul_apply, smul_eq_mul, RCLike.ofReal_mul]
+  rfl
 
 end Matrix

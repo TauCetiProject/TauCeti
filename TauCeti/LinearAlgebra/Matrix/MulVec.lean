@@ -48,6 +48,10 @@ line.
 * `Matrix.submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero`: a right null vector with unit last
   coordinate lets the submatrix omitting the last column reproduce `A *ᵥ x`.
 * `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
+* `Matrix.mul_diagonal_mul_mulVec_col_of_mul_eq_one` and
+  `Matrix.transpose_mul_diagonal_mul_mulVec_apply_of_mul_transpose_eq_one`: if `Q * P = 1` (in
+  particular if `Q * Qᵀ = 1`), the columns of `P` (respectively rows of `Q`) are eigenvectors of
+  `P * diagonal d * Q` (respectively `Qᵀ * diagonal d * Q`).
 -/
 
 public section
@@ -111,6 +115,26 @@ theorem pow_mulVec_eq_pow_smul {A : Matrix n n R} {v : n → R} {μ : R} (h : A 
   | succ k ih => rw [pow_succ, ← mulVec_mulVec, h, mulVec_smul, ih, smul_smul, ← pow_succ']
 
 end CommSemiring
+
+/-- If `Q * P = 1`, then column `k` of `P` is an eigenvector of `P * diagonal d * Q` with
+eigenvalue `d k`. -/
+theorem mul_diagonal_mul_mulVec_col_of_mul_eq_one {m R : Type*} [Fintype m] [DecidableEq m]
+    [CommSemiring R] {Q : Matrix m n R} {P : Matrix n m R} (hQP : Q * P = 1) (d : m → R)
+    (k : m) : (P * diagonal d * Q) *ᵥ P.col k = d k • P.col k := by
+  have hcol : Q *ᵥ P.col k = Pi.single k 1 := by
+    ext r
+    simpa [mulVec, dotProduct, Matrix.mul_apply, Matrix.one_apply, Pi.single_apply,
+      eq_comm] using congrFun (congrFun hQP r) k
+  rw [← mulVec_mulVec, hcol, ← mulVec_mulVec, diagonal_mulVec_single, mul_one]
+  ext i
+  simp [mulVec, dotProduct, Pi.single_apply, mul_comm]
+
+/-- If the rows of `Q` are orthonormal for the dot product (`Q * Qᵀ = 1`), then row `k` of `Q` is
+an eigenvector of `Qᵀ * diagonal d * Q` with eigenvalue `d k`. -/
+theorem transpose_mul_diagonal_mul_mulVec_apply_of_mul_transpose_eq_one {m R : Type*} [Fintype m]
+    [DecidableEq m] [CommSemiring R] {Q : Matrix m n R} (hQ : Q * Qᵀ = 1) (d : m → R) (k : m) :
+    (Qᵀ * diagonal d * Q) *ᵥ Q k = d k • Q k :=
+  mul_diagonal_mul_mulVec_col_of_mul_eq_one hQ d k
 
 /-- Along a line the `σ`-sesquilinear form `h(x, y) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y)` scales by `σ c * c`:
 `h(c v, c v) = σ c * c * h(v, v)`. -/
