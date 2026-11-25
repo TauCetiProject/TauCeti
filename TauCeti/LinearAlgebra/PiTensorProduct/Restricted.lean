@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Colimit.Module
+public import Mathlib.Data.Finset.Update
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.Multilinear.TensorProduct
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
-public import TauCeti.Data.Finset.Pi
 
 /-!
 # Restricted tensor products of modules with reference vectors
@@ -83,8 +83,6 @@ public noncomputable section
 
 open scoped TensorProduct
 
-open Finset (extendFamily extendFamily_apply_of_mem extendFamily_apply_of_notMem)
-
 namespace TauCeti
 
 namespace RestrictedTensor
@@ -105,15 +103,16 @@ def stageMultilinear (w : ∀ i, W i) {S T : Finset ι} (h : S ⊆ T) :
 /-- Adjoining reference vectors to a family of vectors. -/
 @[simp]
 theorem stageMultilinear_apply (w : ∀ i, W i) {S T : Finset ι} (h : S ⊆ T) (f : ∀ i : S, W i) :
-    stageMultilinear R w h f = PiTensorProduct.tprod R (extendFamily w T f) := by
+    stageMultilinear R w h f =
+      PiTensorProduct.tprod R (T.restrict (Function.updateFinset w S f)) := by
   refine congrArg (PiTensorProduct.tprod R) (funext fun i ↦ ?_)
   by_cases hi : i.val ∈ S
-  · rw [extendFamily_apply_of_mem w T f i hi, dite_eq_left hi]
+  · simp only [Finset.restrict, Function.updateFinset, dite_eq_left hi]
     -- The inverse of `Equiv.subtypeSubtypeEquivSubtype` sends `⟨i, hi⟩` to `⟨i, hi⟩` by
     -- definition, so the reindexed entry is `f ⟨i, hi⟩`; the dependent type of the entry
     -- blocks rewriting with `Equiv.piCongrLeft'_symm_apply_apply`.
     rfl
-  · rw [extendFamily_apply_of_notMem w T f i hi, dite_eq_right hi]
+  · simp [Function.updateFinset, hi]
 
 /-- The transition map `⨂_{i ∈ S} W i → ⨂_{i ∈ T} W i` adjoining the reference vectors at the
 places of `T \ S`. -/
@@ -126,7 +125,8 @@ variable {R}
 /-- The transition map on pure tensors. -/
 @[simp]
 theorem stageMap_tprod (w : ∀ i, W i) {S T : Finset ι} (h : S ⊆ T) (f : ∀ i : S, W i) :
-    stageMap R w h (PiTensorProduct.tprod R f) = PiTensorProduct.tprod R (extendFamily w T f) := by
+    stageMap R w h (PiTensorProduct.tprod R f) =
+      PiTensorProduct.tprod R (T.restrict (Function.updateFinset w S f)) := by
   rw [stageMap, PiTensorProduct.lift.tprod, stageMultilinear_apply]
 
 /-- The transition map from a stage to itself is the identity. -/
@@ -134,7 +134,7 @@ theorem stageMap_tprod (w : ∀ i, W i) {S T : Finset ι} (h : S ⊆ T) (f : ∀
 theorem stageMap_self (w : ∀ i, W i) (S : Finset ι) (x : ⨂[R] i : S, W i) :
     stageMap R w (subset_refl S) x = x :=
   LinearMap.congr_fun (g := LinearMap.id) (PiTensorProduct.ext <| MultilinearMap.ext fun f ↦ by
-    simp [Finset.extendFamily_self]) x
+    simp [Function.restrict_updateFinset]) x
 
 /-- Transition maps compose. -/
 @[simp]
@@ -143,7 +143,7 @@ theorem stageMap_stageMap (w : ∀ i, W i) {S T U : Finset ι} (hST : S ⊆ T) (
     stageMap R w hTU (stageMap R w hST x) = stageMap R w (hST.trans hTU) x :=
   LinearMap.congr_fun (f := stageMap R w hTU ∘ₗ stageMap R w hST)
     (PiTensorProduct.ext <| MultilinearMap.ext fun f ↦ by
-      simp [Finset.extendFamily_extendFamily w U hST]) x
+      simp [← Function.updateFinset_updateFinset_of_subset hST w f]) x
 
 /-- The finite tensor products, with the transition maps adjoining references, form a directed
 system. -/
@@ -199,10 +199,15 @@ theorem stageMap_injective (w : ∀ i, W i) {S T : Finset ι} (h : S ⊆ T)
   have hinv : PiTensorProduct.lift (contractMultilinear R h φ) ∘ₗ stageMap R w h =
       LinearMap.id := by
     refine PiTensorProduct.ext <| MultilinearMap.ext fun f ↦ ?_
-    have hprod : ∏ i : {i : T // i.val ∉ S}, φ i (extendFamily w T f i) = 1 :=
+    have hprod : ∏ i : {i : T // i.val ∉ S}, φ i (Function.updateFinset w S f i) = 1 :=
       Fintype.prod_eq_one _ fun i ↦ by
-        rw [extendFamily_apply_of_notMem w T f i.val i.property, hφ i i.val.property i.property]
-    simp [contractMultilinear_apply, hprod, extendFamily_apply_of_mem]
+        simp [Function.updateFinset, i.property, hφ i i.val.property i.property]
+    simp only [LinearMap.compMultilinearMap_apply, LinearMap.coe_comp, Function.comp_apply,
+      stageMap_tprod, PiTensorProduct.lift.tprod, LinearMap.id_compMultilinearMap,
+      contractMultilinear_apply, Finset.restrict, hprod, one_smul]
+    -- The remaining family `fun i : S ↦ Function.updateFinset w S f i` is
+    -- `S.restrict (Function.updateFinset w S f)` by definition of `Finset.restrict`.
+    exact congrArg _ (Function.restrict_updateFinset w f)
   exact Function.LeftInverse.injective (LinearMap.congr_fun hinv)
 
 end RestrictedTensor
@@ -335,8 +340,8 @@ theorem tprod_eq_ofFinite (f : ∀ i, W i) (hf : {i | f i ≠ w i}.Finite) (S : 
     congr 1
     funext i
     by_cases hi : i.val ∈ U
-    · exact extendFamily_apply_of_mem w S _ i hi
-    · rw [extendFamily_apply_of_notMem w S _ i hi, hU i hi]
+    · simp [Function.updateFinset, hi]
+    · simp [Function.updateFinset, hi, hU i hi]
   rw [tprod, ← key hf.toFinset hsub fun i ↦ (notMem_toFinset_iff hf).mp, ofFinite_stageMap]
 
 /-- The pure tensor of the reference family is the image of the empty pure tensor at the empty
@@ -395,7 +400,11 @@ private theorem map_comp_stageMap (f : ∀ i, W i →ₗ[R] W' i) (hf : ∀ i, f
     PiTensorProduct.map (fun i : T ↦ f i) ∘ₗ stageMap R w h =
       stageMap R w' h ∘ₗ PiTensorProduct.map fun i : S ↦ f i :=
   PiTensorProduct.ext <| MultilinearMap.ext fun g ↦ by
-    simp [Finset.extendFamily_comp w w' (fun i ↦ f i) hf]
+    simp only [LinearMap.compMultilinearMap_apply, LinearMap.coe_comp, Function.comp_apply,
+      stageMap_tprod, PiTensorProduct.map_tprod]
+    congr 1
+    funext i
+    by_cases hi : i.val ∈ S <;> simp [Function.updateFinset, hi, hf]
 
 /-- Linear maps `f i : W i → W' i` sending the references to the references induce a linear map
 of restricted tensor products, `⨂ₜ g ↦ ⨂ₜ (f i (g i))`. -/
@@ -507,12 +516,13 @@ theorem finiteEquiv_symm_apply (x : ⨂[R] i, W i) :
 
 /-- For a finite index type, a pure tensor at a stage `S` corresponds to the pure tensor of the
 family extended by references. -/
-theorem finiteEquiv_ofFinite (S : Finset ι) (f : ∀ i : S, W i) :
+theorem finiteEquiv_ofFinite_tprod (S : Finset ι) (f : ∀ i : S, W i) :
     finiteEquiv R W w (ofFinite R W w S (PiTensorProduct.tprod R f)) =
-      PiTensorProduct.tprod R fun i ↦ extendFamily w Finset.univ f ⟨i, Finset.mem_univ i⟩ := by
+      PiTensorProduct.tprod R (Function.updateFinset w S f) := by
   rw [finiteEquiv_apply_ofFinite, stageMap_tprod, PiTensorProduct.reindex_tprod]
-  -- `(Equiv.subtypeUnivEquiv _).symm i` is `⟨i, _⟩` by definition; the dependent type of the
-  -- entry blocks rewriting with `Equiv.subtypeUnivEquiv_symm_apply` under the binder.
+  -- `(Equiv.subtypeUnivEquiv _).symm i` is `⟨i, _⟩` by definition, and `Finset.restrict` is
+  -- evaluation at the underlying index; the dependent type of the entry blocks rewriting with
+  -- `Equiv.subtypeUnivEquiv_symm_apply` under the binder.
   rfl
 
 /-- For a finite index type, a pure tensor of the restricted tensor product is the pure tensor
@@ -521,7 +531,7 @@ of the same family. -/
 theorem finiteEquiv_tprod (f : ∀ i, W i) (hf : {i | f i ≠ w i}.Finite) :
     finiteEquiv R W w (tprod R w f hf) = PiTensorProduct.tprod R f := by
   rw [tprod_eq_ofFinite f hf Finset.univ fun i hi ↦ absurd (Finset.mem_univ i) hi,
-    finiteEquiv_ofFinite, Finset.extendFamily_self]
+    finiteEquiv_ofFinite_tprod, Function.updateFinset_univ]
 
 /-- For a finite index type, the inverse of `finiteEquiv` sends a pure tensor to the pure tensor
 of the same family. -/
