@@ -1,0 +1,202 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Algebra.Unitization
+public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.KZero
+
+/-!
+# The projection `K₀`-group of a nonunital star algebra
+
+For a nonunital star algebra `A` over a commutative star ring `R`, let `A⁺ = Unitization R A` be
+its forced unitization and `ε : A⁺ → R` the augmentation `(r, a) ↦ r`
+(`Unitization.fstStarAlgHom`). The `K₀`-group of `A` is the kernel of the homomorphism
+`K₀(ε) : K₀(A⁺) → K₀(R)` induced on projection `K₀`-groups
+(`TauCeti.UnitizationKZero R A`). For a C⋆-algebra `A` and `R = ℂ` this is the operator
+`K₀`-group of `A`; matrix projections over `A` alone need not generate it.
+
+The scalar inclusion `R → A⁺` splits `K₀(ε)`, so `K₀(A⁺) ≃ K₀(A) × K₀(R)`
+(`TauCeti.UnitizationKZero.prodEquiv`). A star homomorphism `φ : A → B`, unital or not, induces a
+homomorphism `K₀(A) → K₀(B)` through the unitization `Unitization.starMap φ`
+(`TauCeti.UnitizationKZero.map`), functorially.
+
+## Main definitions
+
+* `Unitization.fstStarAlgHom R A`: the augmentation `A⁺ → R` as a star algebra homomorphism.
+* `TauCeti.UnitizationKZero R A`: `K₀(A) = ker (K₀(A⁺) → K₀(R))`.
+* `TauCeti.UnitizationKZero.map φ`: the homomorphism `K₀(A) →+ K₀(B)` induced by a star
+  homomorphism `φ : A →⋆ₙₐ[R] B`.
+* `TauCeti.UnitizationKZero.prodEquiv`: the split decomposition `K₀(A⁺) ≃+ K₀(A) × K₀(R)`.
+
+## Main statements
+
+* `TauCeti.UnitizationKZero.map_id` and `TauCeti.UnitizationKZero.map_comp`: functoriality.
+* `TauCeti.UnitizationKZero.augmentation_comp_inl`: the scalar inclusion splits `K₀(ε)`.
+
+## References
+
+* B. Blackadar, *K-Theory for Operator Algebras*, 2nd ed., Cambridge University Press (1998),
+  Definition 5.5.1 and Proposition 5.4.1.
+-/
+
+public section
+
+open Algebra
+
+namespace Unitization
+
+variable (R A : Type*) [CommSemiring R] [StarRing R] [NonUnitalSemiring A] [StarRing A]
+  [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
+
+/-- The augmentation `Unitization R A → R`, `(r, a) ↦ r`, as a star algebra homomorphism. -/
+def fstStarAlgHom : Unitization R A →⋆ₐ[R] R where
+  toAlgHom := fstHom R A
+  map_star' := fst_star
+
+/-- The augmentation sends `(r, a)` to `r`. -/
+@[simp]
+theorem fstStarAlgHom_apply (x : Unitization R A) : fstStarAlgHom R A x = x.fst :=
+  (rfl)
+
+end Unitization
+
+namespace TauCeti
+
+variable (R A : Type*) [CommRing R] [StarRing R] [NonUnitalRing A] [StarRing A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [StarModule R A]
+
+namespace UnitizationKZero
+
+/-- The homomorphism `K₀(ε) : K₀(A⁺) →+ K₀(R)` induced by the augmentation
+`ε : Unitization R A → R`. -/
+noncomputable def augmentation : ProjectionKZero (Unitization R A) →+ ProjectionKZero R :=
+  ProjectionKZero.map (NonUnitalStarRingHom.ofClass (Unitization.fstStarAlgHom R A))
+
+/-- The homomorphism `K₀(R) →+ K₀(A⁺)` induced by the scalar inclusion `R → Unitization R A`. -/
+noncomputable def inl : ProjectionKZero R →+ ProjectionKZero (Unitization R A) :=
+  ProjectionKZero.map (NonUnitalStarRingHom.ofClass (StarAlgHom.ofId R (Unitization R A)))
+
+/-- The scalar inclusion splits the augmentation: `K₀(ε) ∘ K₀(ι) = id`. -/
+theorem augmentation_comp_inl :
+    (augmentation R A).comp (inl R A) = AddMonoidHom.id (ProjectionKZero R) := by
+  rw [augmentation, inl, ← ProjectionKZero.map_comp]
+  convert ProjectionKZero.map_id (R := R)
+  ext r
+  simp [Algebra.algebraMap_self]
+
+/-- The scalar inclusion splits the augmentation: `K₀(ε) (K₀(ι) x) = x`. -/
+@[simp]
+theorem augmentation_inl (x : ProjectionKZero R) : augmentation R A (inl R A x) = x :=
+  DFunLike.congr_fun (augmentation_comp_inl R A) x
+
+end UnitizationKZero
+
+/-- The **`K₀`-group of a nonunital star algebra** `A`: the kernel of the homomorphism
+`K₀(A⁺) →+ K₀(R)` induced by the augmentation of the forced unitization `A⁺ = Unitization R A`.
+For a C⋆-algebra `A` and `R = ℂ` this is the operator `K₀`-group of `A`. -/
+noncomputable def UnitizationKZero : AddSubgroup (ProjectionKZero (Unitization R A)) :=
+  (UnitizationKZero.augmentation R A).ker
+
+namespace UnitizationKZero
+
+variable {R A}
+
+/-- An element of `K₀(A⁺)` lies in `K₀(A)` exactly when the augmentation kills it. -/
+theorem mem_iff (x : ProjectionKZero (Unitization R A)) :
+    x ∈ UnitizationKZero R A ↔ augmentation R A x = 0 :=
+  Iff.rfl
+
+variable (R A) in
+/-- **Split decomposition.** `K₀(A⁺) ≃+ K₀(A) × K₀(R)`: an element `x` is sent to
+`(x - K₀(ι) (K₀(ε) x), K₀(ε) x)`, with inverse `(y, z) ↦ y + K₀(ι) z`. -/
+noncomputable def prodEquiv :
+    ProjectionKZero (Unitization R A) ≃+ UnitizationKZero R A × ProjectionKZero R where
+  toFun x := (⟨x - inl R A (augmentation R A x), by
+    rw [mem_iff, map_sub, augmentation_inl, sub_self]⟩, augmentation R A x)
+  invFun y := y.1 + inl R A y.2
+  left_inv x := by simp
+  right_inv y := by
+    obtain ⟨⟨y, hy⟩, z⟩ := y
+    rw [mem_iff] at hy
+    ext <;> simp [hy]
+  map_add' x y := by
+    ext <;> simp only [map_add, Prod.fst_add, Prod.snd_add, AddSubgroup.coe_add]; abel
+
+/-- The second component of the split decomposition is the augmentation. -/
+@[simp]
+theorem prodEquiv_apply_snd (x : ProjectionKZero (Unitization R A)) :
+    (prodEquiv R A x).2 = augmentation R A x :=
+  (rfl)
+
+/-- The first component of the split decomposition is `x - K₀(ι) (K₀(ε) x)`. -/
+@[simp]
+theorem coe_prodEquiv_apply_fst (x : ProjectionKZero (Unitization R A)) :
+    ((prodEquiv R A x).1 : ProjectionKZero (Unitization R A)) = x - inl R A (augmentation R A x) :=
+  (rfl)
+
+/-- The inverse of the split decomposition is `(y, z) ↦ y + K₀(ι) z`. -/
+@[simp]
+theorem prodEquiv_symm_apply (y : UnitizationKZero R A × ProjectionKZero R) :
+    (prodEquiv R A).symm y = y.1 + inl R A y.2 :=
+  (rfl)
+
+section map
+
+variable {B C : Type*} [NonUnitalRing B] [StarRing B] [Module R B] [IsScalarTower R B B]
+  [SMulCommClass R B B] [StarModule R B] [NonUnitalRing C] [StarRing C] [Module R C]
+  [IsScalarTower R C C] [SMulCommClass R C C] [StarModule R C]
+
+/-- The homomorphism `K₀(A⁺) →+ K₀(B⁺)` induced by the unitization of a star homomorphism. -/
+private noncomputable def unitizationMap (φ : A →⋆ₙₐ[R] B) :
+    ProjectionKZero (Unitization R A) →+ ProjectionKZero (Unitization R B) :=
+  ProjectionKZero.map (NonUnitalStarRingHom.ofClass (Unitization.starMap φ))
+
+/-- The unitization of a star homomorphism commutes with the augmentations. -/
+private theorem augmentation_comp_unitizationMap (φ : A →⋆ₙₐ[R] B) :
+    (augmentation R B).comp (unitizationMap φ) = augmentation R A := by
+  rw [augmentation, augmentation, unitizationMap, ← ProjectionKZero.map_comp]
+  congr 1
+  ext x
+  exact Unitization.fst_starMap φ x
+
+/-- **Functoriality.** A star homomorphism `φ : A →⋆ₙₐ[R] B`, unital or not, induces a
+homomorphism `K₀(A) →+ K₀(B)` through its unitization `Unitization.starMap φ`. -/
+noncomputable def map (φ : A →⋆ₙₐ[R] B) : UnitizationKZero R A →+ UnitizationKZero R B :=
+  ((unitizationMap φ).comp (UnitizationKZero R A).subtype).codRestrict _ fun x ↦ by
+    rw [AddMonoidHom.comp_apply, mem_iff, ← AddMonoidHom.comp_apply,
+      augmentation_comp_unitizationMap]
+    exact x.property
+
+/-- On the underlying elements of `K₀(A⁺)`, `TauCeti.UnitizationKZero.map φ` is the homomorphism
+induced by `Unitization.starMap φ`. -/
+theorem coe_map (φ : A →⋆ₙₐ[R] B) (x : UnitizationKZero R A) :
+    (map φ x : ProjectionKZero (Unitization R B)) =
+      ProjectionKZero.map (NonUnitalStarRingHom.ofClass (Unitization.starMap φ)) x :=
+  (rfl)
+
+/-- The identity homomorphism induces the identity of `K₀(A)`. -/
+@[simp]
+theorem map_id : map (NonUnitalStarAlgHom.id R A) = AddMonoidHom.id (UnitizationKZero R A) := by
+  ext x
+  have h : NonUnitalStarRingHom.ofClass (StarAlgHom.id R (Unitization R A)) =
+      NonUnitalStarRingHom.id _ :=
+    NonUnitalStarRingHom.ext fun _ ↦ rfl
+  rw [coe_map, AddMonoidHom.id_apply, Unitization.starMap_id, h, ProjectionKZero.map_id,
+    AddMonoidHom.id_apply]
+
+/-- The homomorphism induced by a composite is the composite of the induced homomorphisms. -/
+theorem map_comp (ψ : B →⋆ₙₐ[R] C) (φ : A →⋆ₙₐ[R] B) :
+    map (ψ.comp φ) = (map ψ).comp (map φ) := by
+  ext x
+  rw [coe_map, AddMonoidHom.comp_apply, coe_map, coe_map, Unitization.starMap_comp,
+    ← AddMonoidHom.comp_apply, ← ProjectionKZero.map_comp]
+  rfl
+
+end map
+
+end UnitizationKZero
+
+end TauCeti
