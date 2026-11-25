@@ -9,7 +9,6 @@ public import TauCeti.RepresentationTheory.Compact.Character.BanachIsotypic.GFin
 import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.RepresentationTheory.AsModule
 import TauCeti.RepresentationTheory.Compact.Semisimple
-import TauCeti.RepresentationTheory.Compact.UnitaryModel
 import TauCeti.RepresentationTheory.Continuous.Intertwining
 import TauCeti.RepresentationTheory.Continuous.Transport
 import TauCeti.RepresentationTheory.Irreducible
@@ -19,8 +18,8 @@ import TauCeti.RepresentationTheory.Subrepresentation
 # The `G`-finite vectors are the algebraic sum of the isotypic parts
 
 Let `π` be a strongly continuous representation of a compact group `G` on a Banach space `V` over
-`k = ℝ` or `ℂ` with `k` algebraically closed, and fix a skeleton `models` of the unitary dual of
-`G`. The isotypic parts `V(σ)`, the ranges of the isotypic projectors `e_σ`
+an algebraically closed `RCLike` field `k` (so `k = ℂ`), and fix a skeleton `models` of the unitary
+dual of `G`. The isotypic parts `V(σ)`, the ranges of the isotypic projectors `e_σ`
 (`ContRepresentation.banachIsotypicRange`), are independent and consist of `G`-finite vectors
 (`ContRepresentation.iSupIndep_banachIsotypicRange_of_isIrrepSkeleton`,
 `ContRepresentation.iSup_banachIsotypicRange_le_gFiniteSubmodule`). This file proves the converse
@@ -34,8 +33,6 @@ subrepresentations `τ ≤ S`. Every such `τ` is equivalent to a member `σ` of
 
 ## Main results
 
-* `TauCeti.IsIrrepSkeleton.exists_nonempty_equiv`: every finite-dimensional irreducible continuous
-  representation is equivalent to a member of a skeleton.
 * `ContRepresentation.gFiniteSubmodule_le_iSup_banachIsotypicRange`: every `G`-finite vector lies
   in the sum of the isotypic parts.
 * `ContRepresentation.iSup_banachIsotypicRange_eq_gFiniteSubmodule`: the sum of the isotypic parts
@@ -54,27 +51,6 @@ noncomputable section
 
 open MeasureTheory TauCeti
 open scoped MonoidAlgebra
-
-namespace TauCeti.IsIrrepSkeleton
-
-variable {k G ι : Type*} [RCLike k] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] {models : ι → IrrepModel k G}
-
-/-- **A skeleton exhausts the irreducibles up to equivalence.** A finite-dimensional irreducible
-continuous representation on a normed space is equivalent to a member of the skeleton: it is
-conjugate to a unitary representation on a standard model space, which the skeleton carries onto
-one of its members. -/
-theorem exists_nonempty_equiv (h : IsIrrepSkeleton models) {W : Type*} [NormedAddCommGroup W]
-    [NormedSpace k W] [FiniteDimensional k W] (τ : ContRepresentation k G W) (hτ : Continuous τ)
-    (hirr : τ.toRepresentation.IsIrreducible) :
-    ∃ i, Nonempty (_root_.ContRepresentation.Equiv τ (models i).rep) := by
-  obtain ⟨e, hu⟩ := ContRepresentation.exists_isUnitary_congr_euclideanSpace τ hτ
-  obtain ⟨i, e', hi⟩ := h.exists_congr_eq _ _ (ContinuousLinearEquiv.continuous_congr e hτ) hu
-    (ContinuousLinearEquiv.isIrreducible_congr e hirr)
-  exact ⟨i, ⟨(τ.congrEquiv e).trans (hi ▸ ContRepresentation.congrEquiv _
-    e'.toContinuousLinearEquiv)⟩⟩
-
-end TauCeti.IsIrrepSkeleton
 
 namespace ContRepresentation
 
