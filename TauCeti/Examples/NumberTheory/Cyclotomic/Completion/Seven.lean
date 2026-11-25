@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Three
 public import TauCeti.NumberTheory.Cyclotomic.Completion
+public import TauCeti.NumberTheory.Padics.AdicCompletion
 
 /-!
 # Checks for the completions of `ℚ(ζ₃)` at the places over `7`
@@ -165,6 +166,6 @@ example (v : HeightOneSpectrum (𝓞 F))
 example (v : HeightOneSpectrum (𝓞 F)) (hv : ((7 : ℕ) : 𝓞 F) ∈ v.asIdeal) :
     Nonempty (v.adicCompletion F ≃A[ℚ] ℚ_[7]) :=
   have := (liesOver_asIdeal_primesEquiv_symm_iff (R := ℤ) v.asIdeal ⟨7, Fact.out⟩).2 hv
-  ⟨adicCompletionEquivPadic v 7 (by decide)⟩
+  ⟨adicCompletionEquivPadic v 7 (finrank_adicCompletion_eq_one v 7 (by decide))⟩
 
 end TauCeti.Examples.CyclotomicCompletionSeven
