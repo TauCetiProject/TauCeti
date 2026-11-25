@@ -137,20 +137,24 @@ private theorem hasCompactSpatialSupport_of_eq_complexChartCompression {m : ℝ}
     funext fun y ↦ by rw [hb, OpenPartialHomeomorph.complexChartCompression_apply]]
   exact tsupport_smul_subset_left _ _
 
-/-- The output `v` of a chart compression by `χ` and `ψ`, read as a Schwartz function and pulled
-back to `M` by a cutoff `χ₂` equal to `1` on the support of `χ`, is `(χ ∘ e) · P ((ψ u) ∘ e)` on the
-chart source. -/
-private theorem complexCutoffPullback_apply_of_eq_complexChartCompression
+/-- For the symbol `b` of the chart compression of `P` by `χ` and `ψ`, the Schwartz function
+`Op(b) u`, pulled back to `M` by a cutoff `χ₂` equal to `1` on the support of `χ`, is
+`(χ ∘ e) · P ((ψ u) ∘ e)` on the chart source. -/
+private theorem complexCutoffPullback_apply_of_eq_complexChartCompression {m : ℝ}
     {χ χ₂ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} (hχ₂ : ∀ y ∈ tsupport χ, χ₂ y = 1)
-    {u v : 𝓢(CoordinateSpace n, ℂ)}
-    (hv : ∀ y, v y =
-      e.complexChartCompression he χ ψ P (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y)
-    {q : M} (hq : q ∈ e.source) :
-    e.complexCutoffPullback he χ₂ (ContMDiffMap.ofContDiff v (v.smooth ⊤)) q =
+    {b : ClassicalSymbol n ℂ ℂ m}
+    (hb : ∀ (u : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n),
+      quantizeSchwartzValue b.toSymbol.coefficient u y =
+        e.complexChartCompression he χ ψ P (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y)
+    (u : 𝓢(CoordinateSpace n, ℂ)) {q : M} (hq : q ∈ e.source) :
+    e.complexCutoffPullback he χ₂ (ContMDiffMap.ofContDiff
+      (((hasCompactSpatialSupport_of_eq_complexChartCompression he
+        hb).hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
+          (b.toSymbol.contDiff_quantizeSchwartzValue u)) (SchwartzMap.smooth _ ⊤)) q =
       χ (e q) • P (e.complexCutoffPullback he ψ (ContMDiffMap.ofContDiff u (u.smooth ⊤))) q := by
   rw [OpenPartialHomeomorph.complexCutoffPullback_apply_of_mem he _ _ hq,
-    ContMDiffMap.coe_ofContDiff, hv, OpenPartialHomeomorph.complexChartCompression_apply,
-    e.left_inv hq]
+    ContMDiffMap.coe_ofContDiff, HasCompactSupport.toSchwartzMap_toFun, hb,
+    OpenPartialHomeomorph.complexChartCompression_apply, e.left_inv hq]
   by_cases hχ : χ (e q) = 0
   · simp [hχ]
   · rw [hχ₂ _ (subset_tsupport _ hχ), one_smul]
@@ -174,18 +178,12 @@ private theorem quantizeSchwartzValue_sharp_eq_complexChartCompression_comp_of_l
     quantizeSchwartzValue (a.sharp b
         (hasCompactSpatialSupport_of_eq_complexChartCompression he hb)).toSymbol.coefficient u x =
       e.complexChartCompression he φ ψ (L ∘ₗ P) (ContMDiffMap.ofContDiff u (u.smooth ⊤)) x := by
-  have hb' := hasCompactSpatialSupport_of_eq_complexChartCompression he hb
-  set v := (hb'.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
-    (b.toSymbol.contDiff_quantizeSchwartzValue u)
-  have hv (y : CoordinateSpace n) : v y =
-      e.complexChartCompression he χ ψ P (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y := by
-    rw [← hb, HasCompactSupport.toSchwartzMap_toFun]
   rw [ClassicalSymbol.toSymbol_sharp, Symbol.quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue,
     ha, OpenPartialHomeomorph.complexChartCompression_apply,
     OpenPartialHomeomorph.complexChartCompression_apply, LinearMap.comp_apply]
   by_cases hφ : φ x = 0
   · simp [hφ]
-  -- Near `q = e⁻¹ x`, the pullback of `v` is `P ((ψ u) ∘ e)`, since `χ = 1` near `x`.
+  -- Near `q = e⁻¹ x`, the pullback of `Op(b) u` is `P ((ψ u) ∘ e)`, since `χ = 1` near `x`.
   have hx : x ∈ e.target := φ.tsupport_subset (subset_tsupport _ hφ)
   have hq : e.symm x ∈ e.source := e.map_target hx
   congr 1
@@ -195,7 +193,7 @@ private theorem quantizeSchwartzValue_sharp_eq_complexChartCompression_comp_of_l
       rw [e.right_inv hx]
       exact hχ.filter_mono (nhds_le_nhdsSet (subset_tsupport _ hφ)))
   filter_upwards [hχx, e.open_source.mem_nhds hq] with q hχq hq'
-  rw [complexCutoffPullback_apply_of_eq_complexChartCompression he hχ₂ hv hq', hχq, one_smul]
+  rw [complexCutoffPullback_apply_of_eq_complexChartCompression he hχ₂ hb u hq', hχq, one_smul]
 
 /-- **The chart symbol of `P ∘ L` for a local `L`.** If `χ` equals `1` on the support of `ψ` and
 `χ₂` equals `1` on the support of `χ`, and `a`, `d` are the symbols of the compressions of `P` by
@@ -216,30 +214,24 @@ private theorem quantizeSchwartzValue_sharp_eq_complexChartCompression_comp_of_l
     quantizeSchwartzValue (a.sharp d
         (hasCompactSpatialSupport_of_eq_complexChartCompression he hd)).toSymbol.coefficient u x =
       e.complexChartCompression he φ ψ (P ∘ₗ L) (ContMDiffMap.ofContDiff u (u.smooth ⊤)) x := by
-  have hd' := hasCompactSpatialSupport_of_eq_complexChartCompression he hd
-  set v := (hd'.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
-    (d.toSymbol.contDiff_quantizeSchwartzValue u)
-  have hv (y : CoordinateSpace n) : v y =
-      e.complexChartCompression he χ ψ L (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y := by
-    rw [← hd, HasCompactSupport.toSchwartzMap_toFun]
-  set g := e.complexCutoffPullback he ψ (ContMDiffMap.ofContDiff u (u.smooth ⊤))
-  -- `L g` is the pullback of `v`: both vanish off the support of `g`, which lies in the chart
-  -- source where `χ ∘ e = 1`.
-  have hLg : e.complexCutoffPullback he χ₂ (ContMDiffMap.ofContDiff v (v.smooth ⊤)) = L g := by
-    ext q
-    by_cases hqg : q ∈ tsupport g
-    · obtain ⟨y, hy, rfl⟩ := e.tsupport_complexCutoffPullback_subset he ψ _ hqg
-      have hq : e.symm y ∈ e.source := e.map_target (ψ.tsupport_subset hy)
-      rw [complexCutoffPullback_apply_of_eq_complexChartCompression he hχ₂ hv hq,
-        e.right_inv (ψ.tsupport_subset hy), hχ y hy, one_smul]
-    · rw [apply_eq_zero_of_notMem_tsupport_of_local hL hqg]
-      by_cases hq : q ∈ e.source
-      · rw [complexCutoffPullback_apply_of_eq_complexChartCompression he hχ₂ hv hq,
-          apply_eq_zero_of_notMem_tsupport_of_local hL hqg, smul_zero]
-      · exact OpenPartialHomeomorph.complexCutoffPullback_apply_of_notMem he _ _ hq
   rw [ClassicalSymbol.toSymbol_sharp, Symbol.quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue,
     ha, OpenPartialHomeomorph.complexChartCompression_apply,
-    OpenPartialHomeomorph.complexChartCompression_apply, LinearMap.comp_apply, hLg]
+    OpenPartialHomeomorph.complexChartCompression_apply, LinearMap.comp_apply]
+  -- `L g` is the pullback of `Op(d) u`, for `g = (ψ u) ∘ e`: both vanish off the support of `g`,
+  -- which lies in the chart source where `χ ∘ e = 1`.
+  set g := e.complexCutoffPullback he ψ (ContMDiffMap.ofContDiff u (u.smooth ⊤))
+  congr 3
+  ext q
+  by_cases hqg : q ∈ tsupport g
+  · obtain ⟨y, hy, rfl⟩ := e.tsupport_complexCutoffPullback_subset he ψ _ hqg
+    have hq : e.symm y ∈ e.source := e.map_target (ψ.tsupport_subset hy)
+    rw [complexCutoffPullback_apply_of_eq_complexChartCompression he hχ₂ hd u hq,
+      e.right_inv (ψ.tsupport_subset hy), hχ y hy, one_smul]
+  · rw [apply_eq_zero_of_notMem_tsupport_of_local hL hqg]
+    by_cases hq : q ∈ e.source
+    · rw [complexCutoffPullback_apply_of_eq_complexChartCompression he hχ₂ hd u hq,
+        apply_eq_zero_of_notMem_tsupport_of_local hL hqg, smul_zero]
+    · exact OpenPartialHomeomorph.complexCutoffPullback_apply_of_notMem he _ _ hq
 
 end Chart
 
@@ -250,6 +242,18 @@ private theorem exists_cutoff_eventually_eq_one {e : OpenPartialHomeomorph M (Co
     ∃ χ : 𝓓(⟨e.target, e.open_target⟩, ℝ), ∀ᶠ y in 𝓝ˢ K, χ y = 1 :=
   (TestFunction.exists_eventually_eq_one (Ω := ⟨e.target, e.open_target⟩) (n := ⊤) hK
     hKe).imp fun _ h ↦ h.1
+
+omit [ChartedSpace (CoordinateSpace n) M] [T2Space M] in
+/-- Nested cutoffs in the target of the chart `e`: `χ` equal to `1` near a compact subset of the
+target, and `χ₂` equal to `1` on the support of `χ`. -/
+private theorem exists_nested_cutoffs {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (hKe : K ⊆ e.target) :
+    ∃ χ χ₂ : 𝓓(⟨e.target, e.open_target⟩, ℝ),
+      (∀ᶠ y in 𝓝ˢ K, χ y = 1) ∧ ∀ y ∈ tsupport χ, χ₂ y = 1 := by
+  obtain ⟨χ, hχ⟩ := exists_cutoff_eventually_eq_one hK hKe
+  obtain ⟨χ₂, hχ₂⟩ := exists_cutoff_eventually_eq_one χ.hasCompactSupport.isCompact
+    χ.tsupport_subset
+  exact ⟨χ, χ₂, hχ, hχ₂.self_of_nhdsSet⟩
 
 /-! ### Composition with a local operator -/
 
@@ -265,13 +269,11 @@ theorem comp_mem_classicalPseudodifferentialOperators_of_local_left {k m : ℝ}
   obtain ⟨hL₁, hL₂⟩ := mem_classicalPseudodifferentialOperators_iff.1 hL
   obtain ⟨hP₁, hP₂⟩ := mem_classicalPseudodifferentialOperators_iff.1 hP
   refine mem_classicalPseudodifferentialOperators_iff.2 ⟨hL₁.comp hP₁, fun e he φ ψ ↦ ?_⟩
-  obtain ⟨χ, hχ⟩ := exists_cutoff_eventually_eq_one φ.hasCompactSupport.isCompact φ.tsupport_subset
-  obtain ⟨χ₂, hχ₂⟩ := exists_cutoff_eventually_eq_one χ.hasCompactSupport.isCompact
-    χ.tsupport_subset
+  obtain ⟨χ, χ₂, hχ, hχ₂⟩ := exists_nested_cutoffs φ.hasCompactSupport.isCompact φ.tsupport_subset
   obtain ⟨a, ha⟩ := hL₂ e he φ χ₂
   obtain ⟨b, hb⟩ := hP₂ e he χ ψ
   exact ⟨_, quantizeSchwartzValue_sharp_eq_complexChartCompression_comp_of_local_left he hLloc hχ
-    hχ₂.self_of_nhdsSet ha hb⟩
+    hχ₂ ha hb⟩
 
 /-- **Composition on the right with a local operator.** If `L` is a local classical
 pseudodifferential operator of order `k`, such as a differential operator, and `P` a classical
@@ -285,21 +287,54 @@ theorem comp_mem_classicalPseudodifferentialOperators_of_local_right {k m : ℝ}
   obtain ⟨hL₁, hL₂⟩ := mem_classicalPseudodifferentialOperators_iff.1 hL
   obtain ⟨hP₁, hP₂⟩ := mem_classicalPseudodifferentialOperators_iff.1 hP
   refine mem_classicalPseudodifferentialOperators_iff.2 ⟨hP₁.comp hL₁, fun e he φ ψ ↦ ?_⟩
-  obtain ⟨χ, hχ⟩ := exists_cutoff_eventually_eq_one ψ.hasCompactSupport.isCompact ψ.tsupport_subset
-  obtain ⟨χ₂, hχ₂⟩ := exists_cutoff_eventually_eq_one χ.hasCompactSupport.isCompact
-    χ.tsupport_subset
+  obtain ⟨χ, χ₂, hχ, hχ₂⟩ := exists_nested_cutoffs ψ.hasCompactSupport.isCompact ψ.tsupport_subset
   obtain ⟨a, ha⟩ := hP₂ e he φ χ₂
   obtain ⟨d, hd⟩ := hL₂ e he χ ψ
   exact ⟨_, quantizeSchwartzValue_sharp_eq_complexChartCompression_comp_of_local_right he hLloc
-    hχ.self_of_nhdsSet hχ₂.self_of_nhdsSet ha hd⟩
+    hχ.self_of_nhdsSet hχ₂ ha hd⟩
 
 /-! ### Principal symbols -/
 
 variable [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
 
-/-- A complex-linear map `ℂ → ℂ` is multiplication by its value at `1`. -/
-private theorem apply_eq_mul_apply_one (f : ℂ →L[ℂ] ℂ) (w : ℂ) : f w = w * f 1 := by
-  simpa using f.map_smul w 1
+/-- **The principal symbol of a composition, read off in a chart.** Let `x` be a point of `M`
+with chart `e`, `φ` a cutoff equal to `1` at `e x`, `χ` equal to `1` on the support of `φ`, and
+`χ₂` equal to `1` on the support of `χ`. If `a` and `b` are the symbols of the compressions of
+`B ∈ Ψ^k` by `φ`, `χ₂` and of `C ∈ Ψ^m` by `χ`, `φ`, and `a # b` is the symbol of the compression
+of `A ∈ Ψ^{k+m}` by `φ`, `φ`, then `σ_{k+m}(A)(x, ξ) = σ_k(B)(x, ξ) σ_m(C)(x, ξ)`. -/
+private theorem classicalPrincipalSymbol_eq_mul_of_eq_sharp
+    {A B C : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {k m : ℝ}
+    (hA : A ∈ classicalPseudodifferentialOperators (k + m))
+    (hB : B ∈ classicalPseudodifferentialOperators k)
+    (hC : C ∈ classicalPseudodifferentialOperators m)
+    {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    {φ χ χ₂ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} (hχ : ∀ y ∈ tsupport φ, χ y = 1)
+    (hχ₂ : ∀ y ∈ tsupport χ, χ₂ y = 1) {a : ClassicalSymbol n ℂ ℂ k}
+    {b : ClassicalSymbol n ℂ ℂ m} (hb' : b.toSymbol.HasCompactSpatialSupport)
+    (ha : ∀ (u : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n),
+      quantizeSchwartzValue a.toSymbol.coefficient u y =
+        e.complexChartCompression he φ χ₂ B (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y)
+    (hb : ∀ (u : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n),
+      quantizeSchwartzValue b.toSymbol.coefficient u y =
+        e.complexChartCompression he χ φ C (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y)
+    (hab : ∀ (u : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n),
+      quantizeSchwartzValue (a.sharp b hb').toSymbol.coefficient u y =
+        e.complexChartCompression he φ φ A (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y)
+    {x : M} (hx : x ∈ e.source) (hφx : φ (e x) = 1)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol (k + m) A x ξ =
+      classicalPrincipalSymbol k B x ξ * classicalPrincipalSymbol m C x ξ := by
+  have hχx : χ (e x) = 1 := hχ _ (subset_tsupport _ (by simp [hφx]))
+  have hχ₂x : χ₂ (e x) = 1 := hχ₂ _ (subset_tsupport _ (by simp [hχx]))
+  have h := coefficient_principal_apply_eq_classicalPrincipalSymbol hA he φ φ hab hx ξ
+  rw [ClassicalSymbol.principal_sharp, HomogeneousSymbol.coefficient_comp,
+    ContinuousLinearMap.comp_apply, coefficient_principal_apply_eq_classicalPrincipalSymbol hC he
+      χ φ hb hx ξ, ← ContinuousLinearMap.coe_coe, ← Dual.apply_one_mul_eq,
+    ContinuousLinearMap.coe_coe,
+    coefficient_principal_apply_eq_classicalPrincipalSymbol hB he φ χ₂ ha hx ξ] at h
+  simpa [hφx, hχx, hχ₂x, mul_comm] using h.symm
 
 /-- **The principal symbol of a composition with a local operator on the left** is the product of
 the principal symbols: `σ_{k+m}(L ∘ P)(x, ξ) = σ_k(L)(x, ξ) σ_m(P)(x, ξ)`. -/
@@ -312,32 +347,17 @@ theorem classicalPrincipalSymbol_comp_of_local_left {k m : ℝ}
       classicalPrincipalSymbol k L x ξ * classicalPrincipalSymbol m P x ξ := by
   obtain ⟨-, hL₂⟩ := mem_classicalPseudodifferentialOperators_iff.1 hL
   obtain ⟨-, hP₂⟩ := mem_classicalPseudodifferentialOperators_iff.1 hP
-  set e := chartAt (CoordinateSpace n) x
-  have he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M :=
-    IsManifold.chart_mem_maximalAtlas x
-  have hx : x ∈ e.source := mem_chart_source _ x
-  -- Cutoffs `φ`, `χ`, `χ₂`, each equal to `1` near the support of the previous one and `φ`
-  -- equal to `1` at `e x`, as in the chart symbol of `L ∘ P`.
+  have he := IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℝ, CoordinateSpace n)) (n := ∞) x
   obtain ⟨φ, hφ⟩ := exists_cutoff_eventually_eq_one isCompact_singleton
-    (singleton_subset_iff.2 (e.map_source hx))
-  obtain ⟨χ, hχ⟩ := exists_cutoff_eventually_eq_one φ.hasCompactSupport.isCompact φ.tsupport_subset
-  obtain ⟨χ₂, hχ₂⟩ := exists_cutoff_eventually_eq_one χ.hasCompactSupport.isCompact
-    χ.tsupport_subset
-  have hφx : φ (e x) = 1 := hφ.self_of_nhdsSet _ rfl
-  have hχx : χ (e x) = 1 := hχ.self_of_nhdsSet _ (subset_tsupport _ (by simp [hφx]))
-  have hχ₂x : χ₂ (e x) = 1 := hχ₂.self_of_nhdsSet _ (subset_tsupport _ (by simp [hχx]))
-  obtain ⟨a, ha⟩ := hL₂ e he φ χ₂
-  obtain ⟨b, hb⟩ := hP₂ e he χ φ
-  have h := coefficient_principal_apply_eq_classicalPrincipalSymbol
-    (comp_mem_classicalPseudodifferentialOperators_of_local_left hL hLloc hP) he φ φ
-    (quantizeSchwartzValue_sharp_eq_complexChartCompression_comp_of_local_left he hLloc hχ
-      hχ₂.self_of_nhdsSet ha hb) hx ξ
-  rw [ClassicalSymbol.principal_sharp, HomogeneousSymbol.coefficient_comp,
-    ContinuousLinearMap.comp_apply, coefficient_principal_apply_eq_classicalPrincipalSymbol hP he
-      χ φ hb hx ξ, apply_eq_mul_apply_one,
-    coefficient_principal_apply_eq_classicalPrincipalSymbol hL he φ χ₂ ha hx ξ] at h
-  simp only [hφx, hχx, hχ₂x, mul_one, Complex.ofReal_one, one_mul] at h
-  rw [← h, mul_comm]
+    (singleton_subset_iff.2 (mem_chart_target (CoordinateSpace n) x))
+  obtain ⟨χ, χ₂, hχ, hχ₂⟩ := exists_nested_cutoffs φ.hasCompactSupport.isCompact φ.tsupport_subset
+  obtain ⟨a, ha⟩ := hL₂ _ he φ χ₂
+  obtain ⟨b, hb⟩ := hP₂ _ he χ φ
+  exact classicalPrincipalSymbol_eq_mul_of_eq_sharp
+    (comp_mem_classicalPseudodifferentialOperators_of_local_left hL hLloc hP) hL hP he
+    hχ.self_of_nhdsSet hχ₂ _ ha hb
+    (quantizeSchwartzValue_sharp_eq_complexChartCompression_comp_of_local_left he hLloc hχ hχ₂ ha
+      hb) (mem_chart_source _ x) (hφ.self_of_nhdsSet _ rfl) ξ
 
 /-- **The principal symbol of a composition with a local operator on the right** is the product of
 the principal symbols: `σ_{m+k}(P ∘ L)(x, ξ) = σ_m(P)(x, ξ) σ_k(L)(x, ξ)`. -/
@@ -350,32 +370,17 @@ theorem classicalPrincipalSymbol_comp_of_local_right {k m : ℝ}
       classicalPrincipalSymbol m P x ξ * classicalPrincipalSymbol k L x ξ := by
   obtain ⟨-, hL₂⟩ := mem_classicalPseudodifferentialOperators_iff.1 hL
   obtain ⟨-, hP₂⟩ := mem_classicalPseudodifferentialOperators_iff.1 hP
-  set e := chartAt (CoordinateSpace n) x
-  have he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M :=
-    IsManifold.chart_mem_maximalAtlas x
-  have hx : x ∈ e.source := mem_chart_source _ x
-  -- Cutoffs `ψ`, `χ`, `χ₂`, each equal to `1` near the support of the previous one and `ψ`
-  -- equal to `1` at `e x`, as in the chart symbol of `P ∘ L`.
+  have he := IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℝ, CoordinateSpace n)) (n := ∞) x
   obtain ⟨ψ, hψ⟩ := exists_cutoff_eventually_eq_one isCompact_singleton
-    (singleton_subset_iff.2 (e.map_source hx))
-  obtain ⟨χ, hχ⟩ := exists_cutoff_eventually_eq_one ψ.hasCompactSupport.isCompact ψ.tsupport_subset
-  obtain ⟨χ₂, hχ₂⟩ := exists_cutoff_eventually_eq_one χ.hasCompactSupport.isCompact
-    χ.tsupport_subset
-  have hψx : ψ (e x) = 1 := hψ.self_of_nhdsSet _ rfl
-  have hχx : χ (e x) = 1 := hχ.self_of_nhdsSet _ (subset_tsupport _ (by simp [hψx]))
-  have hχ₂x : χ₂ (e x) = 1 := hχ₂.self_of_nhdsSet _ (subset_tsupport _ (by simp [hχx]))
-  obtain ⟨a, ha⟩ := hP₂ e he ψ χ₂
-  obtain ⟨d, hd⟩ := hL₂ e he χ ψ
-  have h := coefficient_principal_apply_eq_classicalPrincipalSymbol
-    (comp_mem_classicalPseudodifferentialOperators_of_local_right hL hLloc hP) he ψ ψ
+    (singleton_subset_iff.2 (mem_chart_target (CoordinateSpace n) x))
+  obtain ⟨χ, χ₂, hχ, hχ₂⟩ := exists_nested_cutoffs ψ.hasCompactSupport.isCompact ψ.tsupport_subset
+  obtain ⟨a, ha⟩ := hP₂ _ he ψ χ₂
+  obtain ⟨d, hd⟩ := hL₂ _ he χ ψ
+  exact classicalPrincipalSymbol_eq_mul_of_eq_sharp
+    (comp_mem_classicalPseudodifferentialOperators_of_local_right hL hLloc hP) hP hL he
+    hχ.self_of_nhdsSet hχ₂ _ ha hd
     (quantizeSchwartzValue_sharp_eq_complexChartCompression_comp_of_local_right he hLloc
-      hχ.self_of_nhdsSet hχ₂.self_of_nhdsSet ha hd) hx ξ
-  rw [ClassicalSymbol.principal_sharp, HomogeneousSymbol.coefficient_comp,
-    ContinuousLinearMap.comp_apply, coefficient_principal_apply_eq_classicalPrincipalSymbol hL he
-      χ ψ hd hx ξ, apply_eq_mul_apply_one,
-    coefficient_principal_apply_eq_classicalPrincipalSymbol hP he ψ χ₂ ha hx ξ] at h
-  simp only [hψx, hχx, hχ₂x, mul_one, Complex.ofReal_one, one_mul] at h
-  rw [← h, mul_comm]
+      hχ.self_of_nhdsSet hχ₂ ha hd) (mem_chart_source _ x) (hψ.self_of_nhdsSet _ rfl) ξ
 
 /-- **Commutators with a local operator lose one order.** If `L` is a local classical
 pseudodifferential operator of order `k` and `P` a classical pseudodifferential operator of order
