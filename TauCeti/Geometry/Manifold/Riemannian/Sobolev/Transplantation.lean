@@ -203,7 +203,7 @@ theorem map_normalizedPullbackLp_map_toLp_weakEigenspace (hq : IsQuotientCoverin
   · rintro ⟨⟨u, hu, rfl⟩, f, hfu⟩
     -- `u` is deck invariant: `(g ·)^* u` and `u` are eigenfunctions with the same value in `L²`
     have hinv (g : G) : compRiemannianIsometry (hq.deckIsometry hf g) u = u :=
-      congrArg Subtype.val <| injective_toLp_domRestrict μ
+      congrArg Subtype.val <| toLp_domRestrict_weakEigenspace_injective μ
         (a₁ := ⟨_, (compRiemannianIsometry_mem_weakEigenspace_iff _).2 hu⟩) (a₂ := ⟨u, hu⟩) <| by
         simp only [LinearMap.domRestrict_apply, ContinuousLinearMap.coe_coe]
         rw [toLp_compRiemannianIsometry, ← hfu]
