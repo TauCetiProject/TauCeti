@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.GroupAction.ActionGroupoid.LieGroupoid
+public import TauCeti.Geometry.Manifold.GroupAction.ActionGroupoid.Lie.Discrete
 public import TauCeti.Geometry.Manifold.Groupoid.Examples
 public import TauCeti.Geometry.Manifold.Groupoid.Prod
 public import TauCeti.Topology.CategoryTheory.Etale

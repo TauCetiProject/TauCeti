@@ -19,8 +19,8 @@ both modelled on the model of `X`, Mathlib's native action category
 `CategoryTheory.ActionCategory G X` is a Lie groupoid
 (`TauCeti.ActionGroupoid.isLieGroupoid_of_discreteTopology`). Every label is retained, including
 labels acting trivially on `X`. This differs from the scoped instance
-`TauCeti.ActionGroupoid.isLieGroupoid` of `GroupAction/ActionGroupoid/Lie.lean`, whose arrows are
-modelled on the product of the group and base models.
+`TauCeti.ActionGroupoid.isLieGroupoid` of `GroupAction/ActionGroupoid/Lie/Basic.lean`, whose
+arrows are modelled on the product of the group and base models.
 
 The source map is a local diffeomorphism, hence a submersion. Composition is smooth on the
 transverse fibre product of target and source because composing smooth families of composable

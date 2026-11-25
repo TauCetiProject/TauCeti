@@ -62,7 +62,7 @@ From these axioms this file derives:
   the examples verify the composition axiom), or as soon as composing smooth families of
   composable arrows gives a smooth family (`TauCeti.contMDiff_composablePairs_comp_of_contMDiff`,
   which is how the product and action Lie groupoids `TauCeti.IsLieGroupoid.prod` and
-  `TauCeti.ActionGroupoid.isLieGroupoid` verify it);
+  `TauCeti.ActionGroupoid.isLieGroupoid_of_discreteTopology` verify it);
 * the left-shear diffeomorphism (`IsLieGroupoid.shearLeftDiffeomorph`) from composable pairs to
   same-source pairs `{q : Quiver.Total C × Quiver.Total C // q.1.left = q.2.left}`, from which
   groupoid composition is a smooth submersion (`IsLieGroupoid.isSubmersion_comp`);
