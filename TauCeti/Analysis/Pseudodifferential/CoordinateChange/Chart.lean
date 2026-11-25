@@ -90,7 +90,8 @@ variable {n : ℕ} {m : ℝ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace �
 the image of the support of `ψ`. -/
 private theorem support_subset_image_support
     {κ : OpenPartialHomeomorph (CoordinateSpace n) (CoordinateSpace n)}
-    {ψ : CoordinateSpace n → ℝ} {u v : CoordinateSpace n → V}
+    {ψ : CoordinateSpace n → ℝ} {M : Type*} [Zero M] [SMulWithZero ℝ M]
+    {u v : CoordinateSpace n → M}
     (hv : ∀ y ∈ κ.source, v (κ y) = ψ y • u y) (hv0 : ∀ z ∉ κ.target, v z = 0) :
     Function.support v ⊆ κ '' Function.support ψ := fun z hz ↦ by
   have hzt : z ∈ κ.target := by_contra fun h ↦ hz (hv0 z h)
@@ -102,8 +103,8 @@ image of the support of `ψ`. -/
 private theorem hasCompactSupport_and_tsupport_subset_image
     {κ : OpenPartialHomeomorph (CoordinateSpace n) (CoordinateSpace n)}
     {ψ : CoordinateSpace n → ℝ} (hψc : HasCompactSupport ψ) (hψs : tsupport ψ ⊆ κ.source)
-    {u v : CoordinateSpace n → V} (hv : ∀ y ∈ κ.source, v (κ y) = ψ y • u y)
-    (hv0 : ∀ z ∉ κ.target, v z = 0) :
+    {M : Type*} [Zero M] [SMulWithZero ℝ M] {u v : CoordinateSpace n → M}
+    (hv : ∀ y ∈ κ.source, v (κ y) = ψ y • u y) (hv0 : ∀ z ∉ κ.target, v z = 0) :
     HasCompactSupport v ∧ tsupport v ⊆ κ '' tsupport ψ := by
   have hK : IsCompact (κ '' tsupport ψ) :=
     hψc.isCompact.image_of_continuousOn (κ.continuousOn.mono hψs)
@@ -190,13 +191,8 @@ theorem exists_schwartzMap_apply_eq_smul
   have hψ'κ : ∀ y ∈ κ.source, ψ' (κ y) = ψ y := fun y hy ↦ by
     simp [ψ', indicator_of_mem (κ.map_source hy), κ.left_inv hy]
   have hψ'0 : ∀ z ∉ κ.target, ψ' z = 0 := fun z hz ↦ indicator_of_notMem hz _
-  -- Its support is controlled through its complex-valued copy, which has the same support.
   obtain ⟨hc, hsK⟩ := hasCompactSupport_and_tsupport_subset_image hψc hψs
-    (u := fun _ ↦ (1 : ℂ)) (v := ((↑) : ℝ → ℂ) ∘ ψ') (fun y hy ↦ by simp [hψ'κ y hy])
-    fun z hz ↦ by simp [hψ'0 z hz]
-  rw [tsupport_comp_eq (g := ((↑) : ℝ → ℂ)) Complex.ofReal_eq_zero] at hsK
-  replace hc : HasCompactSupport ψ' :=
-    (hasCompactSupport_comp_left (g := ((↑) : ℝ → ℂ)) Complex.ofReal_eq_zero).1 hc
+    (u := fun _ ↦ (1 : ℝ)) (v := ψ') (fun y hy ↦ by simp [hψ'κ y hy]) hψ'0
   have hst : tsupport ψ' ⊆ κ.target :=
     hsK.trans (image_subset_iff.2 fun y hy ↦ κ.map_source (hψs hy))
   have hψ'd : ContDiffOn ℝ ∞ ψ' κ.target :=
