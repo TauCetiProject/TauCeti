@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgeb
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.NotG2
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 public import TauCeti.Algebra.Group.Subgroup.OrderedProduct
+import TauCeti.LinearAlgebra.RootSystem.PairingInvariance
 
 /-!
 # Ordered positive-root products outside G₂
@@ -67,83 +68,54 @@ private theorem commutator_mem_higher_roots
           (t.rationalBase ht).height γ},
         (chevalleyRootSubgroup ρ M hM hnil γ A).range := by
   classical
-  have hne : t ≠ .G2 := isNotG2_rationalRootSystem_iff.mp inferInstance
   let P := t.rationalRootSystem ht
+  let Q := t.simplyConnectedRootDatum ht
   let b := t.rationalBase ht
-  let H := ⨆ γ ∈ {γ ∈ posRootsFinset P b |
-    max (b.height α) (b.height β) < b.height γ},
-      (chevalleyRootSubgroup ρ M hM hnil γ A).range
-  have hH (d : Fin t.numRoots) (hd : d ∈ posRoots P b)
-      (hheight : max (b.height α) (b.height β) < b.height d) :
-      ∀ w, chevalleyRootSubgroup ρ M hM hnil d A w ∈ H := by
-    intro w
-    exact (le_iSup₂ (f := fun γ _ => (chevalleyRootSubgroup ρ M hM hnil γ A).range)
+  let H := ⨆ γ ∈ {γ ∈ posRootsFinset P b | max (b.height α) (b.height β) < b.height γ},
+    (chevalleyRootSubgroup ρ M hM hnil γ A).range
+  have hmem {d : Fin t.numRoots} (hd : d ∈ posRoots P b)
+      (hheight : max (b.height α) (b.height β) < b.height d) (w : Multiplicative A) :
+      chevalleyRootSubgroup ρ M hM hnil d A w ∈ H :=
+    (le_iSup₂ (f := fun γ _ => (chevalleyRootSubgroup ρ M hM hnil γ A).range)
       d (Finset.mem_filter.mpr ⟨(mem_posRootsFinset P b d).mpr hd, hheight⟩)) ⟨w, rfl⟩
-  have hmem {a c d : Fin t.numRoots}
-      (ha : a ∈ posRoots P b) (hc : c ∈ posRoots P b)
-      (horder : max (b.height a) (b.height c) = max (b.height α) (b.height β))
-      (hd : P.root d = P.root a + P.root c) :
-      ∀ w, chevalleyRootSubgroup ρ M hM hnil d A w ∈ H := by
-    have hdpos := add_mem_posRoots P b ha hc hd
-    have hdheight := b.height_add hd
-    have hapos := one_le_height_of_mem_posRoots P b ha
-    have hcpos := one_le_height_of_mem_posRoots P b hc
-    exact hH d hdpos (by omega)
-  -- A root sum has either no double string or exactly one orientation of a double string.
+  have he := t.pairingIn_rationalRootSystem ht
+  have hadd := RootPairing.root_eq_add_iff_of_pairingIn (Equiv.refl _) he
   by_cases hsum : P.root α + P.root β ∈ Set.range P.root
   · obtain ⟨γ, hγ⟩ := hsum
-    have hγZ := (t.root_rationalRootSystem_eq_nsmul_add_iff ht α β γ 1).mp (by simpa using hγ)
-    simp only [one_nsmul] at hγZ
-    have hdouble {a c d : Fin t.numRoots}
-        (ha : a ∈ posRoots P b) (hc : c ∈ posRoots P b)
-        (horder : max (b.height a) (b.height c) = max (b.height α) (b.height β))
-        (hγ' : P.root γ = P.root a + P.root c)
-        (hd : P.root d = 2 • P.root a + P.root c) :
-        ∀ w, chevalleyRootSubgroup ρ M hM hnil d A w ∈ H := by
-      have hd' : P.root d = P.root a + P.root γ := by rw [hd, hγ']; module
-      have hγpos := add_mem_posRoots P b ha hc hγ'
-      have hdpos := add_mem_posRoots P b ha hγpos hd'
-      have hγheight := b.height_add hγ'
-      have hdheight := b.height_add hd'
-      have hapos := one_le_height_of_mem_posRoots P b ha
-      have hcpos := one_le_height_of_mem_posRoots P b hc
-      exact hH d hdpos (by omega)
-    by_cases ha : 2 • (t.simplyConnectedRootDatum ht).root α +
-        (t.simplyConnectedRootDatum ht).root β ∈ Set.range (t.simplyConnectedRootDatum ht).root
+    have hγZ : Q.root γ = Q.root α + Q.root β := (hadd γ α β).mp hγ
+    have hγpos := add_mem_posRoots P b hα hβ hγ
+    have hγlt : max (b.height α) (b.height β) < b.height γ := by
+      rw [b.height_add hγ, max_lt_iff]
+      exact ⟨lt_add_of_pos_right _ (b.isPos_iff.mp ((mem_posRoots P b β).mp hβ)),
+        lt_add_of_pos_left _ (b.isPos_iff.mp ((mem_posRoots P b α).mp hα))⟩
+    have hdouble {a d : Fin t.numRoots} (ha : a ∈ posRoots P b)
+        (hd : Q.root d = Q.root a + Q.root γ) (w : Multiplicative A) :
+        chevalleyRootSubgroup ρ M hM hnil d A w ∈ H := by
+      have hdQ := (hadd d a γ).mpr hd
+      refine hmem (add_mem_posRoots P b ha hγpos hdQ) ?_ w
+      rw [b.height_add hdQ]
+      exact hγlt.trans (lt_add_of_pos_left _ (b.isPos_iff.mp ((mem_posRoots P b a).mp ha)))
+    have hne : t ≠ .G2 := isNotG2_rationalRootSystem_iff.mp inferInstance
+    by_cases ha : Q.root α + Q.root γ ∈ Set.range Q.root
     · obtain ⟨δ, hδ⟩ := ha
-      have hδQ := (t.root_rationalRootSystem_eq_nsmul_add_iff ht α β δ 2).mpr hδ
       rw [commutatorElement_chevalleyRootSubgroup_of_ne_G2_of_root_eq_add_of_root_eq_add
-        ρ M hM hnil hne hγZ (by rw [hδ, hγZ]; module)]
-      exact H.mul_mem (hmem hα hβ rfl hγ _) (hdouble hα hβ rfl hγ hδQ _)
-    · by_cases hb : 2 • (t.simplyConnectedRootDatum ht).root β +
-          (t.simplyConnectedRootDatum ht).root α ∈ Set.range (t.simplyConnectedRootDatum ht).root
+        ρ M hM hnil hne hγZ hδ]
+      exact H.mul_mem (hmem hγpos hγlt _) (hdouble hα hδ _)
+    · by_cases hb : Q.root β + Q.root γ ∈ Set.range Q.root
       · obtain ⟨δ, hδ⟩ := hb
-        have hγ' := hγ.trans (add_comm _ _)
-        -- Reverse the commutator instead of introducing another coefficient/sign convention.
-        rw [← commutatorElement_inv]
-        apply H.inv_mem
-        rw [commutatorElement_chevalleyRootSubgroup_of_ne_G2_of_root_eq_add_of_root_eq_add
-          ρ M hM hnil hne (hγZ.trans (add_comm _ _)) (by rw [hδ, hγZ]; module)]
-        exact H.mul_mem (hmem hβ hα (max_comm _ _) hγ' _)
-          (hdouble hβ hα (max_comm _ _) hγ'
-            ((t.root_rationalRootSystem_eq_nsmul_add_iff ht β α δ 2).mpr hδ) _)
-      · rw [commutatorElement_chevalleyRootSubgroup_of_root_eq_add ρ M hM hnil hγZ ha
-          (by simpa only [add_comm] using hb)]
-        exact hmem hα hβ rfl hγ _
-  · -- Without a root sum the groups commute; positivity rules out opposite roots.
-    have hsumZ : (t.simplyConnectedRootDatum ht).root α +
-        (t.simplyConnectedRootDatum ht).root β ∉
-          Set.range (t.simplyConnectedRootDatum ht).root := by
-      rintro ⟨γ, hγ⟩
-      exact hsum ⟨γ, by
-        simpa only [one_nsmul] using (t.root_rationalRootSystem_eq_nsmul_add_iff ht α β γ 1).mpr
-          (by simpa only [one_nsmul] using hγ)⟩
-    have hzero : (t.simplyConnectedRootDatum ht).root α +
-        (t.simplyConnectedRootDatum ht).root β ≠ 0 := by
-      rw [posRoots_rationalRootSystem] at hα hβ
-      exact root_add_ne_zero_of_mem_posRoots_of_mem_posRootCone _ _ hα
-        (root_mem_posRootCone_of_mem_posRoots _ _ hβ)
-    rw [(commute_chevalleyRootSubgroup ρ M hM hnil hsumZ hzero A u v).commutator_eq]
+        rw [← commutatorElement_inv,
+          commutatorElement_chevalleyRootSubgroup_of_ne_G2_of_root_eq_add_of_root_eq_add
+            ρ M hM hnil hne (hγZ.trans (add_comm _ _)) hδ]
+        exact H.inv_mem (H.mul_mem (hmem hγpos hγlt _) (hdouble hβ hδ _))
+      · rw [commutatorElement_chevalleyRootSubgroup_of_root_eq_add ρ M hM hnil hγZ
+          (by simpa only [hγZ, two_nsmul, add_assoc] using ha)
+          (by simpa only [hγZ, two_nsmul, add_left_comm] using hb)]
+        exact hmem hγpos hγlt _
+  · have hsZ := mt (RootPairing.root_add_mem_range_iff_of_pairingIn (Equiv.refl _) he α β).mpr hsum
+    have hzero : Q.root α + Q.root β ≠ 0 := fun hz ↦
+      (add_pos (t.weightDegree_root_pos ht hα) (t.weightDegree_root_pos ht hβ)).ne' (by
+        simpa only [map_add, map_zero] using congrArg (t.weightDegree ht) hz)
+    rw [(commute_chevalleyRootSubgroup ρ M hM hnil hsZ hzero A u v).commutator_eq]
     exact H.one_mem
 
 /-- Outside G₂, commutators of positive root groups strictly raise root height over

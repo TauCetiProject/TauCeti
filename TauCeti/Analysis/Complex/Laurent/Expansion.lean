@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Laurent.Series
+import Mathlib.Analysis.Normed.Algebra.Spectrum
 import TauCeti.Analysis.Contour.Cauchy.Circle
 import TauCeti.Topology.MetricSpace.EBall
 
@@ -45,6 +46,8 @@ from `TauCeti.Analysis.Complex.Laurent.Series`, this file proves:
 * `TauCeti.HasLaurentSeriesOnAnnulus.circleLaurentCoeff_eq` and
   `TauCeti.HasLaurentSeriesOnAnnulus.coeff_unique`: circle-integral coefficient formula and
   uniqueness of Laurent expansions.
+* `TauCeti.circleLaurentCoeff_inv_sub_of_lt_norm`: the Laurent coefficients of a simple pole
+  `(a - z)⁻¹` on a circle about `c` of radius `ρ` with `0 < ρ < ‖a - c‖`.
 * `TauCeti.hasLaurentSeriesOnAnnulus_of_differentiable_off_countable`,
   `DifferentiableOn.hasLaurentSeriesOnAnnulus`, and
   `TauCeti.differentiableOn_iff_exists_hasLaurentSeriesOnAnnulus`: Laurent's theorem on concentric
@@ -245,6 +248,36 @@ theorem coeff_unique {f : ℂ → E} {a b : ℤ → E} {c : ℂ} {r : ℝ} {R : 
   exact (ha.circleLaurentCoeff_eq hrρ hρR n).symm.trans (hb.circleLaurentCoeff_eq hrρ hρR n)
 
 end HasLaurentSeriesOnAnnulus
+
+/-- The Laurent coefficients of the simple pole `z ↦ (a - z)⁻¹` on a circle about `c` of radius
+`ρ` with `0 < ρ < ‖a - c‖` (so `a` lies outside the disc) are those of its geometric expansion
+`∑_{n ≥ 0} (z - c) ^ n / (a - c) ^ (n + 1)`. -/
+theorem circleLaurentCoeff_inv_sub_of_lt_norm {a c : ℂ} {ρ : ℝ} (hρ : 0 < ρ) (hρa : ρ < ‖a - c‖)
+    (n : ℤ) :
+    circleLaurentCoeff (fun z => (a - z)⁻¹) c ρ n = if 0 ≤ n then (a - c) ^ (-n - 1) else 0 := by
+  have hd : a - c ≠ 0 := norm_pos_iff.1 (hρ.trans hρa)
+  -- `(a - z)⁻¹ = (a - c)⁻¹ (1 - (z - c) (a - c)⁻¹)⁻¹` is a geometric series in `z - c`.
+  have hp := (((hasFPowerSeriesOnBall_inverse_one_sub_smul ℂ (a - c)⁻¹).comp_sub c).const_smul
+    (c := (a - c)⁻¹)).hasLaurentSeriesOnAnnulus
+  rw [zero_add, eNorm_inv hd, inv_inv] at hp
+  have hfun : EqOn ((a - c)⁻¹ • fun z => Ring.inverse (1 - (z - c) • (a - c)⁻¹))
+      (fun z => (a - z)⁻¹) (eball c ‖a - c‖ₑ \ closedBall c 0) := fun z _ ↦ by
+    simp only [Pi.smul_apply, smul_eq_mul]
+    rw [Ring.inverse_eq_inv', ← mul_inv]
+    congr 1
+    field_simp
+    ring
+  have hρa' : ENNReal.ofReal ρ < ‖a - c‖ₑ := by
+    rwa [← ofReal_norm, ENNReal.ofReal_lt_ofReal_iff (norm_pos_iff.2 hd)]
+  rw [(hp.congr hfun).circleLaurentCoeff_eq hρ hρa' n]
+  split_ifs with hn
+  · lift n to ℕ using hn
+    -- `hasFPowerSeriesOnBall_inverse_one_sub_smul` states its series as a bare lambda, which
+    -- `FormalMultilinearSeries.smul_apply` cannot match, so unfold `coeff`, the scalar action on
+    -- the series and `(n : ℤ).toNat = n` by definition.
+    change (a - c)⁻¹ • ContinuousMultilinearMap.mkPiRing ℂ (Fin n) ((a - c)⁻¹ ^ n) 1 = _
+    simp [ContinuousMultilinearMap.mkPiRing_apply, zpow_sub_one₀ hd, mul_comm]
+  · rfl
 
 /-- **Pointwise Laurent expansion on a closed annulus.** If `f` is continuous on the closed annulus
 `Metric.closedBall c R \ Metric.ball c r` (`0 < r`) and complex-differentiable outside a countable
