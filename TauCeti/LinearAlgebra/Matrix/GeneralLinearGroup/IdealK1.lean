@@ -91,8 +91,8 @@ namespace TauCeti
 
 section Finite
 
-variable {n m k : Type*} [DecidableEq n] [Fintype n] [DecidableEq m] [Fintype m]
-  [DecidableEq k] [Fintype k] {R : Type*} [Ring R] {I : Ideal R}
+variable {n m : Type*} [DecidableEq n] [Fintype n] [DecidableEq m] [Fintype m] {R : Type*}
+  [Ring R] {I : Ideal R}
 
 variable (n I) in
 /-- The **congruence subgroup** `GLₙ(R, I)` of `GL n R` for a two-sided ideal `I`: the kernel of
@@ -100,12 +100,19 @@ reduction modulo `I`, that is the invertible matrices congruent to the identity 
 def congruenceSubgroupGL [I.IsTwoSided] : Subgroup (GL n R) :=
   (Units.map ((Ideal.Quotient.mk I).mapMatrix (m := n)).toMonoidHom).ker
 
+/-- An invertible matrix lies in the congruence subgroup of `I` exactly when its reduction
+modulo `I` is the identity. -/
+theorem mem_congruenceSubgroupGL_iff_map_eq_one [I.IsTwoSided] {u : GL n R} :
+    u ∈ congruenceSubgroupGL n I ↔
+      Units.map ((Ideal.Quotient.mk I).mapMatrix (m := n)).toMonoidHom u = 1 :=
+  MonoidHom.mem_ker
+
 /-- An invertible matrix lies in the congruence subgroup of `I` exactly when every entry of its
 difference with the identity matrix lies in `I`. -/
 theorem mem_congruenceSubgroupGL_iff [I.IsTwoSided] {u : GL n R} :
     u ∈ congruenceSubgroupGL n I ↔
       ∀ i j, (u : Matrix n n R) i j - (1 : Matrix n n R) i j ∈ I := by
-  simp only [congruenceSubgroupGL, MonoidHom.mem_ker, Units.ext_iff, Units.coe_map,
+  simp only [mem_congruenceSubgroupGL_iff_map_eq_one, Units.ext_iff, Units.coe_map,
     Units.val_one, ← Matrix.ext_iff, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
     RingHom.mapMatrix_apply, Matrix.map_apply, ← Ideal.Quotient.eq]
   refine forall₂_congr fun i j ↦ ?_
@@ -166,9 +173,9 @@ theorem relativeElementarySubgroup_le_elementarySubgroup :
 theorem relativeElementarySubgroup_le_congruenceSubgroupGL [I.IsTwoSided] :
     relativeElementarySubgroup n I ≤ congruenceSubgroupGL n I := by
   refine relativeElementarySubgroup_le_iff.2 fun e _ i j hij x hx ↦ ?_
-  refine (MonoidHom.normal_ker _).conj_mem _ ?_ e
-  rw [MonoidHom.mem_ker, RingHom.toMonoidHom_eq_coe, RingHom.unitsMap_mapMatrix_transvectionUnit,
-    Ideal.Quotient.eq_zero_iff_mem.2 hx, transvectionUnit_zero]
+  rw [mem_congruenceSubgroupGL_iff_map_eq_one, map_mul, map_mul, map_inv,
+    RingHom.toMonoidHom_eq_coe, RingHom.unitsMap_mapMatrix_transvectionUnit,
+    Ideal.Quotient.eq_zero_iff_mem.2 hx, transvectionUnit_zero, mul_one, mul_inv_cancel]
 
 /-- A homomorphism of general linear groups that maps elementary matrices to elementary matrices,
 and elementary matrices with parameter in `I` to relatively elementary matrices, maps the
@@ -183,17 +190,40 @@ theorem map_relativeElementarySubgroup_le_of_map_elementarySubgroup_le {φ : GL 
   rw [Subgroup.mem_comap, map_mul, map_mul, map_inv]
   exact conj_mem_relativeElementarySubgroup (hE ⟨e, he, rfl⟩) (ht i j hij x hx)
 
+end Finite
+
+end TauCeti
+
+namespace Function.Embedding
+
+open TauCeti
+
+variable {n m : Type*} [DecidableEq n] [Fintype n] [DecidableEq m] [Fintype m] {R : Type*}
+  [Ring R] {I : Ideal R}
+
+/-- Extension by the identity along an embedding of index types maps the relative elementary
+subgroup into the relative elementary subgroup. -/
+theorem map_extendGL_relativeElementarySubgroup_le (e : n ↪ m) :
+    (relativeElementarySubgroup n I).map (e.extendGL R) ≤ relativeElementarySubgroup m I :=
+  map_relativeElementarySubgroup_le_of_map_elementarySubgroup_le
+    (map_extendGL_elementarySubgroup_le e R) fun i j hij x hx ↦ by
+      rw [extendGL_transvectionUnit]
+      exact transvectionUnit_mem_relativeElementarySubgroup _ hx
+
+end Function.Embedding
+
+namespace TauCeti
+
+variable {m k : Type*} [DecidableEq m] [Fintype m] [DecidableEq k] [Fintype k] {R : Type*}
+  [Ring R] {I : Ideal R}
+
 /-- Placing a relatively elementary matrix in the upper left block, with the identity in the lower
 right block, gives a relatively elementary matrix. -/
 theorem map_relativeElementarySubgroup_le_relativeElementarySubgroup :
     (relativeElementarySubgroup m I).map (fromBlocksGL.comp (MonoidHom.inl (GL m R) (GL k R))) ≤
-      relativeElementarySubgroup (m ⊕ k) I :=
-  map_relativeElementarySubgroup_le_of_map_elementarySubgroup_le
-    map_elementarySubgroup_le_elementarySubgroup fun i j hij x hx ↦ by
-      rw [MonoidHom.comp_apply, MonoidHom.inl_apply, fromBlocksGL_transvectionUnit_one]
-      exact transvectionUnit_mem_relativeElementarySubgroup _ hx
-
-end Finite
+      relativeElementarySubgroup (m ⊕ k) I := by
+  rw [← Function.Embedding.extendGL_inl]
+  exact Function.Embedding.map_extendGL_relativeElementarySubgroup_le _
 
 end TauCeti
 
@@ -208,11 +238,9 @@ variable {n m : Type*} [DecidableEq n] [Fintype n] [DecidableEq m] [Fintype m] {
 relative elementary subgroup. -/
 theorem map_reindexGL_relativeElementarySubgroup_le (e : n ≃ m) :
     (relativeElementarySubgroup n I).map (e.reindexGL R).toMonoidHom ≤
-      relativeElementarySubgroup m I :=
-  map_relativeElementarySubgroup_le_of_map_elementarySubgroup_le
-    (e.map_reindexGL_elementarySubgroup (A := R)).le fun i j hij x hx ↦ by
-      rw [MulEquiv.coe_toMonoidHom, reindexGL_transvectionUnit]
-      exact transvectionUnit_mem_relativeElementarySubgroup _ hx
+      relativeElementarySubgroup m I := by
+  rw [← Function.Embedding.extendGL_toEmbedding]
+  exact Function.Embedding.map_extendGL_relativeElementarySubgroup_le _
 
 end Equiv
 
@@ -300,17 +328,15 @@ variable {R : Type*} [Ring R] {I : Ideal R}
 theorem stabilizeGL_mem_congruenceSubgroupGL_iff [I.IsTwoSided] {m n : ℕ} (h : m ≤ n)
     {u : GL (Fin m) R} :
     stabilizeGL R h u ∈ congruenceSubgroupGL (Fin n) I ↔ u ∈ congruenceSubgroupGL (Fin m) I := by
-  simp only [congruenceSubgroupGL, MonoidHom.mem_ker, ← stabilizeGL_map,
+  simp only [mem_congruenceSubgroupGL_iff_map_eq_one, ← stabilizeGL_map,
     map_eq_one_iff _ (stabilizeGL_injective h)]
 
 /-- Stabilization maps the relative elementary subgroup into the relative elementary subgroup. -/
 theorem map_stabilizeGL_relativeElementarySubgroup_le {m n : ℕ} (h : m ≤ n) :
     (relativeElementarySubgroup (Fin m) I).map (stabilizeGL R h) ≤
-      relativeElementarySubgroup (Fin n) I :=
-  map_relativeElementarySubgroup_le_of_map_elementarySubgroup_le
-    (map_stabilizeGL_elementarySubgroup_le h) fun i j hij x hx ↦ by
-      rw [stabilizeGL_transvectionUnit]
-      exact transvectionUnit_mem_relativeElementarySubgroup _ hx
+      relativeElementarySubgroup (Fin n) I := by
+  rw [← Function.Embedding.extendGL_castLEEmb]
+  exact Function.Embedding.map_extendGL_relativeElementarySubgroup_le _
 
 end Stabilization
 
@@ -330,14 +356,10 @@ congruent to the identity modulo `I`. -/
 def congruenceSubgroup : Subgroup (StableGeneralLinearGroup R) :=
   ⨆ n, (congruenceSubgroupGL (Fin n) I).map (of R n)
 
-/-- The images of the congruence subgroups increase with the size. -/
-private theorem monotone_map_congruenceSubgroupGL :
-    Monotone fun n ↦ (congruenceSubgroupGL (Fin n) I).map (of R n) := by
-  intro m n h
-  dsimp only
-  rw [← of_comp_stabilizeGL h, ← Subgroup.map_map]
-  exact Subgroup.map_mono fun _ ⟨u, hu, hv⟩ ↦
-    hv ▸ (stabilizeGL_mem_congruenceSubgroupGL_iff h).2 hu
+/-- Stabilization maps the congruence subgroups into each other. -/
+private theorem map_stabilizeGL_congruenceSubgroupGL_le (m n : ℕ) (h : m ≤ n) :
+    (congruenceSubgroupGL (Fin m) I).map (stabilizeGL R h) ≤ congruenceSubgroupGL (Fin n) I :=
+  Subgroup.map_le_iff_le_comap.2 fun _ hu ↦ (stabilizeGL_mem_congruenceSubgroupGL_iff h).2 hu
 
 variable {I}
 
@@ -345,21 +367,17 @@ variable {I}
 by an invertible matrix congruent to the identity modulo `I`. -/
 theorem mem_congruenceSubgroup_iff {x : StableGeneralLinearGroup R} :
     x ∈ congruenceSubgroup I ↔ ∃ n, ∃ u ∈ congruenceSubgroupGL (Fin n) I, of R n u = x := by
-  rw [congruenceSubgroup,
-    Subgroup.mem_iSup_of_directed (monotone_map_congruenceSubgroupGL I).directed_le]
-  simp only [Subgroup.mem_map]
+  rw [congruenceSubgroup]
+  exact mem_iSup_map_of_iff (map_stabilizeGL_congruenceSubgroupGL_le I)
 
 /-- The image in `GL_∞(R)` of an invertible matrix lies in the stable congruence subgroup exactly
 when the matrix is congruent to the identity modulo `I`. -/
 @[simp]
 theorem of_mem_congruenceSubgroup_iff {n : ℕ} {u : GL (Fin n) R} :
     of R n u ∈ congruenceSubgroup I ↔ u ∈ congruenceSubgroupGL (Fin n) I := by
-  refine ⟨fun hu ↦ ?_, fun hu ↦ mem_congruenceSubgroup_iff.2 ⟨n, u, hu, rfl⟩⟩
-  obtain ⟨m, v, hv, hvu⟩ := mem_congruenceSubgroup_iff.1 hu
-  obtain ⟨k, hmk, hnk⟩ := exists_ge_ge m n
-  rw [← of_stabilizeGL hmk, ← of_stabilizeGL hnk] at hvu
-  rw [← stabilizeGL_mem_congruenceSubgroupGL_iff hnk, ← of_injective k hvu]
-  exact (stabilizeGL_mem_congruenceSubgroupGL_iff hmk).2 hv
+  rw [congruenceSubgroup, of_mem_iSup_map_of_iff (map_stabilizeGL_congruenceSubgroupGL_le I)]
+  exact ⟨fun ⟨_, h, hu⟩ ↦ (stabilizeGL_mem_congruenceSubgroupGL_iff h).1 hu,
+    fun hu ↦ ⟨n, le_rfl, (stabilizeGL_mem_congruenceSubgroupGL_iff le_rfl).2 hu⟩⟩
 
 end Congruence
 
@@ -370,14 +388,6 @@ in `E_∞(R)` of the stable elementary matrices with parameter in `I`. -/
 def relativeElementarySubgroup : Subgroup (StableGeneralLinearGroup R) :=
   ⨆ n, (TauCeti.relativeElementarySubgroup (Fin n) I).map (of R n)
 
-/-- The images of the relative elementary subgroups increase with the size. -/
-private theorem monotone_map_relativeElementarySubgroup :
-    Monotone fun n ↦ (TauCeti.relativeElementarySubgroup (Fin n) I).map (of R n) := by
-  intro m n h
-  dsimp only
-  rw [← of_comp_stabilizeGL h, ← Subgroup.map_map]
-  exact Subgroup.map_mono (map_stabilizeGL_relativeElementarySubgroup_le h)
-
 variable {I}
 
 /-- An element of `GL_∞(R)` is stably relatively elementary exactly when it comes from a
@@ -385,9 +395,8 @@ relatively elementary matrix of some size. -/
 theorem mem_relativeElementarySubgroup_iff {x : StableGeneralLinearGroup R} :
     x ∈ relativeElementarySubgroup I ↔
       ∃ n, ∃ u ∈ TauCeti.relativeElementarySubgroup (Fin n) I, of R n u = x := by
-  rw [relativeElementarySubgroup,
-    Subgroup.mem_iSup_of_directed (monotone_map_relativeElementarySubgroup I).directed_le]
-  simp only [Subgroup.mem_map]
+  rw [relativeElementarySubgroup]
+  exact mem_iSup_map_of_iff fun _ _ ↦ map_stabilizeGL_relativeElementarySubgroup_le
 
 /-- Relatively elementary matrices are stably relatively elementary. -/
 theorem of_mem_relativeElementarySubgroup {n : ℕ} {u : GL (Fin n) R}
@@ -401,15 +410,6 @@ theorem stableTransvection_mem_relativeElementarySubgroup (p : {p : ℕ × ℕ /
   rw [stableTransvection_eq_of p x (Nat.lt_succ_of_le (le_max_left _ _))
     (Nat.lt_succ_of_le (le_max_right _ _))]
   exact of_mem_relativeElementarySubgroup (transvectionUnit_mem_relativeElementarySubgroup _ hx)
-
-/-- An invertible matrix `u` whose block diagonal stabilization `u ⊕ 1` of size `n + n` is
-relatively elementary is stably relatively elementary. -/
-private theorem of_mem_relativeElementarySubgroup_of_fromBlocksGL {n : ℕ} {u : GL (Fin n) R}
-    (hu : fromBlocksGL (u, 1) ∈ TauCeti.relativeElementarySubgroup (Fin n ⊕ Fin n) I) :
-    of R n u ∈ relativeElementarySubgroup I := by
-  rw [← of_stabilizeGL (Nat.le_add_right n n), stabilizeGL_eq_reindexGL_fromBlocksGL]
-  exact of_mem_relativeElementarySubgroup
-    (finSumFinEquiv.map_reindexGL_relativeElementarySubgroup_le ⟨_, hu, rfl⟩)
 
 /-- Stably relatively elementary elements are stably elementary. -/
 theorem relativeElementarySubgroup_le_elementarySubgroup :
@@ -426,16 +426,13 @@ theorem relativeElementarySubgroup_le_congruenceSubgroup [I.IsTwoSided] :
 /-- **The stable relative elementary subgroup is normal** in `GL_∞(R)`: a conjugate `g e g⁻¹`
 of a relatively elementary matrix by any invertible matrix becomes relatively elementary after
 stabilization. -/
-instance relativeElementarySubgroup_normal : (relativeElementarySubgroup I).Normal where
-  conj_mem x hx g := by
-    obtain ⟨m, e, he, rfl⟩ := mem_relativeElementarySubgroup_iff.1 hx
-    obtain ⟨n, g, rfl⟩ := exists_of g
-    -- Move `g` and `e` to a common size `k`.
-    obtain ⟨k, hmk, hnk⟩ := exists_ge_ge m n
-    rw [← of_stabilizeGL hmk e, ← of_stabilizeGL hnk g, ← map_inv, ← map_mul, ← map_mul]
-    exact of_mem_relativeElementarySubgroup_of_fromBlocksGL
-      (fromBlocksGL_conj_mem_relativeElementarySubgroup _
-        (map_stabilizeGL_relativeElementarySubgroup_le hmk ⟨e, he, rfl⟩))
+instance relativeElementarySubgroup_normal : (relativeElementarySubgroup I).Normal := by
+  rw [relativeElementarySubgroup]
+  refine normal_iSup_map_of (fun _ _ ↦ map_stabilizeGL_relativeElementarySubgroup_le)
+    fun n g e he ↦ ?_
+  rw [stabilizeGL_eq_reindexGL_fromBlocksGL]
+  exact finSumFinEquiv.map_reindexGL_relativeElementarySubgroup_le
+    ⟨_, fromBlocksGL_conj_mem_relativeElementarySubgroup g he, rfl⟩
 
 /-- The stable relative elementary subgroup is the **normal closure in `E_∞(R)`** of the stable
 elementary matrices with parameter in `I`: the subgroup generated by their conjugates by stably
@@ -620,7 +617,8 @@ theorem range_toAlgebraicK1_eq_ker_map :
   constructor
   · rintro ⟨y, rfl⟩
     obtain ⟨n, u, hu, rfl⟩ := exists_mk_of y
-    rw [MonoidHom.mem_ker, toAlgebraicK1_mk_of hu, AlgebraicK1.map_mk, hu, map_one]
+    rw [MonoidHom.mem_ker, toAlgebraicK1_mk_of hu, AlgebraicK1.map_mk,
+      mem_congruenceSubgroupGL_iff_map_eq_one.1 hu, map_one]
   · intro hz
     obtain ⟨n, u, rfl⟩ := AlgebraicK1.exists_mk z
     rw [MonoidHom.mem_ker, AlgebraicK1.map_mk, AlgebraicK1.mk_eq_one_iff] at hz
@@ -630,7 +628,7 @@ theorem range_toAlgebraicK1_eq_ker_map :
     obtain ⟨e, he, hee⟩ := (Ideal.Quotient.mk I).exists_mem_elementarySubgroup_unitsMap_mapMatrix_eq
       Ideal.Quotient.mk_surjective hk
     have hg : stabilizeGL R h u * e⁻¹ ∈ congruenceSubgroupGL (Fin k) I := by
-      rw [congruenceSubgroupGL, MonoidHom.mem_ker, map_mul, map_inv, hee, mul_inv_cancel]
+      rw [mem_congruenceSubgroupGL_iff_map_eq_one, map_mul, map_inv, hee, mul_inv_cancel]
     refine ⟨mk I ⟨of R k _, of_mem_congruenceSubgroup_iff.2 hg⟩, ?_⟩
     rw [toAlgebraicK1_mk_of hg, map_mul, map_inv, AlgebraicK1.mk_stabilizeGL,
       AlgebraicK1.elementarySubgroup_le_ker_mk k he, inv_one, mul_one]

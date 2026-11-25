@@ -238,14 +238,6 @@ theorem coe_fromBlocksGL (u : GL m A × GL k A) :
     (fromBlocksGL u : Matrix (m ⊕ k) (m ⊕ k) A) = fromBlocks u.1 0 0 u.2 :=
   (rfl)
 
-/-- Placing an elementary matrix in the upper left block, with the identity in the lower right
-block, gives the elementary matrix with the same parameter at the corresponding indices. -/
-theorem fromBlocksGL_transvectionUnit_one {i j : m} (hij : i ≠ j) (a : A) :
-    fromBlocksGL (transvectionUnit hij a, (1 : GL k A)) =
-      transvectionUnit (Sum.inl_injective.ne hij) a := by
-  ext (p | p) (q | q) <;>
-    simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
-
 /-- The block diagonal homomorphism is injective. -/
 theorem fromBlocksGL_injective :
     Function.Injective (fromBlocksGL : GL m A × GL k A →* GL (m ⊕ k) A) := by
