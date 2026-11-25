@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
+public import TauCeti.Data.List.MonomialWord
 public import TauCeti.RepresentationTheory.Continuous.LieSmoothVector
 
 /-!
@@ -33,7 +34,6 @@ Every ordered monomial is a word, so `Q_k ≤ P_k`
 ## Main definitions
 
 * `TauCeti.BoundedWord ι k`: the words in `ι` of length at most `k`.
-* `TauCeti.monomialWord α`: the word `1^{α₁} ⋯ m^{α_m}` of an exponent vector.
 * `TauCeti.SobolevIndex m k`: the exponent vectors `α : Fin m → ℕ` with `|α| ≤ k`.
 * `ContRepresentation.wordAction I π X w`: the operator `dπ(X_w)` of a word `w`, for a
   representation over any ring.
@@ -46,6 +46,8 @@ Every ordered monomial is a word, so `Q_k ≤ P_k`
   seminorms as explicit sums.
 * `ContRepresentation.wordSeminorm_zero`: `P_0` is the norm.
 * `ContRepresentation.sobolevSeminorm_le_wordSeminorm`: `Q_k ≤ P_k`.
+* `TauCeti.exists_sobolevIndex_monomialWord_eq`: a sorted word of length at most `k` is the
+  ordered monomial word `TauCeti.monomialWord α` of an index `α` in `SobolevIndex m k`.
 
 ## References
 
@@ -69,23 +71,6 @@ abbrev BoundedWord (ι : Type*) (k : ℕ) : Type _ :=
   Σ n : Fin (k + 1), Fin n → ι
 
 variable {m : ℕ}
-
-/-- The ordered monomial word `1^{α₁} 2^{α₂} ⋯ m^{α_m}` of an exponent vector `α`. -/
-def monomialWord (α : Fin m → ℕ) : List (Fin m) :=
-  (List.finRange m).flatMap fun i ↦ List.replicate (α i) i
-
-/-- The ordered monomial word of `α` has length `|α|`. -/
-theorem length_monomialWord (α : Fin m → ℕ) : (monomialWord α).length = ∑ i, α i := by
-  simp [monomialWord, List.length_flatMap, Fin.sum_univ_def]
-
-/-- The letter `i` occurs `α i` times in the ordered monomial word of `α`. -/
-theorem count_monomialWord (α : Fin m → ℕ) (i : Fin m) : (monomialWord α).count i = α i := by
-  rw [monomialWord, List.count_flatMap, ← Fin.sum_univ_def]
-  simp [List.count_replicate]
-
-/-- An ordered monomial word determines its exponent vector. -/
-theorem monomialWord_injective : Function.Injective (monomialWord (m := m)) := fun α β h ↦
-  funext fun i ↦ by rw [← count_monomialWord α i, ← count_monomialWord β i, h]
 
 /-- The exponent vectors `α : Fin m → ℕ` of total degree `|α| = ∑ i, α i ≤ k`, with entries
 recorded in `Fin (k + 1)` so that they form a finite type. -/
@@ -126,6 +111,18 @@ theorem SobolevIndex.toBoundedWord_injective {k : ℕ} :
   have := congrArg (fun w : BoundedWord (Fin m) k ↦ List.ofFn w.2) h
   simp only [SobolevIndex.ofFn_toBoundedWord] at this
   exact SobolevIndex.exponent_injective (monomialWord_injective this)
+
+/-- A sorted word of length at most `k` is the ordered monomial word of an index in
+`SobolevIndex m k`. -/
+theorem exists_sobolevIndex_monomialWord_eq {k : ℕ} {w : List (Fin m)}
+    (hw : w.Pairwise (· ≤ ·)) (hk : w.length ≤ k) :
+    ∃ α : SobolevIndex m k, monomialWord α.exponent = w := by
+  have hsum : ∑ i, w.count i = w.length := by
+    rw [← length_monomialWord, monomialWord_count hw]
+  refine ⟨⟨fun i ↦ ⟨w.count i, Nat.lt_succ_of_le (List.count_le_length.trans hk)⟩, ?_⟩, ?_⟩
+  · simpa [hsum] using hk
+  · refine (congrArg monomialWord (funext fun i ↦ ?_)).trans (monomialWord_count hw)
+    simp only [SobolevIndex.exponent_apply]
 
 end TauCeti
 
