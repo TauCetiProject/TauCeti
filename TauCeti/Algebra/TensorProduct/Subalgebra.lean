@@ -92,8 +92,10 @@ noncomputable def tensorCubeMap (A : Subalgebra R H) : A ⊗[R] (A ⊗[R] A) →
 /-- The canonical map `A ⊗[R] (A ⊗[R] A) → H ⊗[K] (H ⊗[K] H)` on pure tensors. -/
 @[simp]
 theorem tensorCubeMap_tmul (A : Subalgebra R H) (x : A) (t : A ⊗[R] A) :
-    tensorCubeMap K A (x ⊗ₜ t) = (x : H) ⊗ₜ[K] tensorSquareMap K A t :=
-  (rfl)
+    tensorCubeMap K A (x ⊗ₜ t) = (x : H) ⊗ₜ[K] tensorSquareMap K A t := by
+  rw [tensorCubeMap, LinearMap.comp_apply, TensorProduct.map_tmul,
+    TensorProduct.mapOfCompatibleSMul_tmul, AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply,
+    Subalgebra.coe_val]
 
 /-- The canonical map `A ⊗[R] (A ⊗[R] A) → H ⊗[K] (H ⊗[K] H)` intertwines the associators. -/
 theorem tensorCubeMap_assoc_tmul (A : Subalgebra R H) (t : A ⊗[R] A) (z : A) :
