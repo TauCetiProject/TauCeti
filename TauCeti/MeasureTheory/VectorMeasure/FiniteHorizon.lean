@@ -261,7 +261,7 @@ theorem stronglyMeasurable_vectorMeasureIcc_apply {Ω : Type*} [MeasurableSpace 
   · simp only [vectorMeasureIcc_def,
       VectorMeasure.restrict_apply _ measurableSet_Ioc hs]
     exact stronglyMeasurable_vectorMeasure_apply
-      (fun t => hX (projIcc a b hab t) (projIcc a b hab t).2)
+      (fun t => hX (projIcc a b hab t) (projIcc a b hab t).property)
       (fun ω => (hv ω).IccExtend hab) (s ∩ Ioc a b)
   · simp only [VectorMeasure.not_measurable _ hs]
     exact stronglyMeasurable_const
