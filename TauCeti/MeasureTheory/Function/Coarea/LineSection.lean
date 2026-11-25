@@ -81,12 +81,7 @@ private theorem hausdorffMeasure_zero_inter_preimage_eq_encard [MeasurableSpace 
       exact ⟨ht, t, rfl⟩
   have hinj : Function.Injective fun t : ℝ => (y : E) + t • e :=
     (add_right_injective _).comp (smul_left_injective ℝ he)
-  rw [himage, hausdorffMeasure_zero_eq_count, ← hinj.encard_image]
-  rcases ((fun t : ℝ => (y : E) + t • e) '' {t : ℝ | (y : E) + t • e ∈ A}).finite_or_infinite
-    with hfin | hinf
-  · exact count_apply hfin.measurableSet
-  · rw [count_apply_infinite hinf, hinf.encard_eq]
-    simp
+  rw [himage, hausdorffMeasure_zero_apply, hinj.encard_image]
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
