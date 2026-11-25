@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.MulAction
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Coefficients
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Coefficients
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Rescale
-import TauCeti.Analysis.Normed.MulAction
 
 /-!
 # Rescaling module-valued restricted series
@@ -244,7 +244,7 @@ theorem ofAddSubgroup_subringLinearEquiv_restrictedRescaleEquiv [∀ i, Fact (0 
     IsRestrictedFamily.Gauss.ofAddSubgroup
         (IsRestrictedFamily.subringLinearEquiv (restrictedRescaleEquiv u hu hrs f)) =
       IsRestrictedFamily.Gauss.rescaleLinearIsometryEquiv u
-        (norm_smul_mul_of_isNormMulUnit (fun i ↦ (u i : R)) hu hrs)
+        (fun i ↦ norm_smul_mul_of_norm_mul (hu i).norm_mul (hrs i))
         (IsRestrictedFamily.Gauss.ofAddSubgroup (IsRestrictedFamily.subringLinearEquiv f)) := by
   ext t
   simp

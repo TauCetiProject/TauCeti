@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.FieldTheory.Finite.Basic
-import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.NumberTheory.Padics.Complex.Basic
+import TauCeti.NumberTheory.Padics.FermatLittle
 import TauCeti.RingTheory.Perfectoid.Padic
 
 /-!
@@ -46,13 +45,8 @@ example : ¬ ∀ ε : ℝ, 1 < ε → ∃ x : ℚ_[p], 1 < ‖x‖ ∧ ‖x‖ <
   intro hacc
   have hs (x : powerBoundedSubring ℚ_[p]) : ∃ y, (p : powerBoundedSubring ℚ_[p]) ∣ x - y ^ p := by
     refine ⟨x, powerBoundedSubring.dvd_iff_norm_le.mpr ?_⟩
-    let z : ℤ_[p] := ⟨x, isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp x.property)⟩
-    have hz : z - z ^ p ∈ Ideal.span {(p : ℤ_[p]) ^ 1} := by
-      rw [pow_one, ← PadicInt.maximalIdeal_eq_span_p, ← PadicInt.ker_toZMod, RingHom.mem_ker,
-        map_sub, map_pow, ZMod.pow_card, sub_self]
-    have h := (PadicInt.norm_le_pow_iff_mem_span_pow _ 1).mpr hz
-    rw [PadicInt.norm_def, PadicInt.coe_sub, PadicInt.coe_pow] at h
-    simpa [Padic.norm_p] using h
+    simpa [norm_sub_rev, Padic.norm_p] using Padic.norm_pow_sub_self_le
+      (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp x.property))
   exact not_isPerfectoidTateRing_padic p (isPerfectoidField_iff_isPerfectoidTateRing.mp
     (isPerfectoidField_iff.mpr ⟨hacc, Padic.norm_p_lt_one, (surjective_pow_modP_iff _).mpr hs⟩))
 

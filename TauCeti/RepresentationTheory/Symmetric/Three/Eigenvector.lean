@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.RepresentationTheory.Symmetric.Standard
+import TauCeti.RingTheory.RootsOfUnity.Basic
 -- Non-public: eigenvectors for distinct eigenvalues are linearly independent.
 import Mathlib.LinearAlgebra.Eigenspace.Basic
 
@@ -52,9 +53,7 @@ noncomputable def symmetricGroupThreeEigenvector (hζ : IsPrimitiveRoot ζ 3) :
     rw [toSubmodule_augmentationSubrepresentation, LinearMap.mem_ker]
     simp only [← MonoidAlgebra.basis_apply, map_add, map_smul, Module.Basis.sumCoords_self_apply,
       smul_eq_mul, mul_one]
-    have h : 1 + ζ + ζ ^ 2 = 0 := by
-      simpa [Finset.sum_range_succ] using hζ.geom_sum_eq_zero (by norm_num)
-    linear_combination h⟩
+    linear_combination hζ.one_add_add_sq⟩
 
 /-- The coordinates of `v_ζ`. -/
 @[simp]
