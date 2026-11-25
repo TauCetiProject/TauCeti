@@ -25,6 +25,8 @@ field it is a reductive model, so its integral points satisfy
 * `TauCeti.IntegralModel.SmoothModel.generalLinear`: the standard model of `GL_n`.
 * `TauCeti.IntegralModel.mem_integralPoints_generalLinear_iff`: its integral points are
   `GL_n(O)`.
+* `TauCeti.IntegralModel.SmoothModel.specialFiberGeneralLinearIso`: its special fiber over a local
+  ring is `GL_n` over the residue field.
 * `TauCeti.IntegralModel.SmoothModel.isReductive_generalLinear`: it is reductive over a local
   ring with a field `K`.
 * `TauCeti.IntegralModel.SmoothModel.isHyperspecialSubgroup_generalLinear`: its integral points
@@ -68,6 +70,13 @@ theorem generalLinear_genericFiberIso (n : ℕ) :
   -- `generalLinear_coord` holds by `rfl`, so the transport `eqToHom` is the identity.
   ext1
   exact (Category.id_comp _).symm
+
+/-- **The special fiber of the standard model is `GL_n` over the residue field**: for a local
+ring `O` with residue field `κ`, `κ ⊗[O] O[GL_n] ≅ κ[GL_n]`. -/
+noncomputable def specialFiberGeneralLinearIso [IsLocalRing O] (n : ℕ) :
+    (generalLinear O K n).specialFiber ≅
+      GeneralLinear.finiteTypeCoordinateHopfAlgebra (IsLocalRing.ResidueField O) n :=
+  GeneralLinear.finiteTypeCoordinateHopfAlgebraBaseChangeIso O (IsLocalRing.ResidueField O) n
 
 end CommRing
 
