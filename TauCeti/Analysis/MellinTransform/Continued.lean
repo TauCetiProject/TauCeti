@@ -96,15 +96,20 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
-/-- The function `t ↦ ∑_{k<n} t^{w_k} c_k` is locally integrable on `(0, ∞)`. -/
-private theorem locallyIntegrableOn_sum_cpow_smul (w : ℕ → ℂ) (c : ℕ → E) (n : ℕ) :
-    LocallyIntegrableOn (fun t : ℝ ↦ ∑ k ∈ Finset.range n, (t : ℂ) ^ w k • c k) (Ioi 0) :=
-  ContinuousOn.locallyIntegrableOn (continuousOn_finsetSum _ fun _ _ _ ht ↦
+/-- The function `t ↦ ∑_{k<n} t^{w_k} c_k` is continuous on `(0, ∞)`. -/
+theorem continuousOn_sum_cpow_smul (w : ℕ → ℂ) (c : ℕ → E) (n : ℕ) :
+    ContinuousOn (fun t : ℝ ↦ ∑ k ∈ Finset.range n, (t : ℂ) ^ w k • c k) (Ioi 0) :=
+  continuousOn_finsetSum _ fun _ _ _ ht ↦
     ((continuousAt_ofReal_cpow_const _ _ (Or.inr (ne_of_gt ht))).smul
-      continuousAt_const).continuousWithinAt) measurableSet_Ioi
+      continuousAt_const).continuousWithinAt
+
+/-- The function `t ↦ ∑_{k<n} t^{w_k} c_k` is locally integrable on `(0, ∞)`. -/
+theorem locallyIntegrableOn_sum_cpow_smul (w : ℕ → ℂ) (c : ℕ → E) (n : ℕ) :
+    LocallyIntegrableOn (fun t : ℝ ↦ ∑ k ∈ Finset.range n, (t : ℂ) ^ w k • c k) (Ioi 0) :=
+  (continuousOn_sum_cpow_smul w c n).locallyIntegrableOn measurableSet_Ioi
 
 /-- The function `t ↦ t^z • g t` is locally integrable on `(0, ∞)` when `g` is. -/
-private theorem locallyIntegrableOn_cpow_smul {g : ℝ → E} (hg : LocallyIntegrableOn g (Ioi 0))
+theorem locallyIntegrableOn_cpow_smul {g : ℝ → E} (hg : LocallyIntegrableOn g (Ioi 0))
     (z : ℂ) : LocallyIntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ z • g t) (Ioi 0) :=
   hg.continuousOn_smul isOpen_Ioi.isLocallyClosed fun _ ht ↦
     (continuousAt_ofReal_cpow_const _ _ (Or.inr (ne_of_gt ht))).continuousWithinAt
@@ -133,10 +138,6 @@ private theorem integral_Ioc_add_integral_Ioi_eq {F G : ℝ → E}
     intervalIntegral.integral_sub hFi hGc.intervalIntegrable]
   abel
 
-/-- For `R > 0`, the segment between `1` and `R` avoids `0`. -/
-private theorem zero_notMem_uIcc_one {R : ℝ} (hR : 0 < R) : (0 : ℝ) ∉ uIcc 1 R := fun h ↦
-  (lt_min one_pos hR).not_ge (by simpa only [uIcc, mem_Icc] using h.1)
-
 /-- `∫_1^R t^{z-1} t^w c dt = (R^{z+w} - 1)/(z + w) c` for `R > 0` and `z + w ≠ 0`. -/
 private theorem integral_one_cpow_smul_cpow_smul [CompleteSpace E] {z w : ℂ} (hzw : z + w ≠ 0)
     {R : ℝ} (hR : 0 < R) (c : E) :
@@ -144,11 +145,12 @@ private theorem integral_one_cpow_smul_cpow_smul [CompleteSpace E] {z w : ℂ} (
       ((z + w)⁻¹ * ((R : ℂ) ^ (z + w) - 1)) • c := by
   have hcongr : EqOn (fun t : ℝ ↦ (t : ℂ) ^ (z - 1) • ((t : ℂ) ^ w • c))
       (fun t : ℝ ↦ (t : ℂ) ^ (z + w - 1) • c) (uIcc 1 R) := fun t ht ↦ by
-    have ht0 : (t : ℂ) ≠ 0 := ofReal_ne_zero.mpr (ne_of_mem_of_not_mem ht (zero_notMem_uIcc_one hR))
+    have ht0 : (t : ℂ) ≠ 0 :=
+      ofReal_ne_zero.mpr (ne_of_mem_of_not_mem ht (notMem_uIcc_of_lt one_pos hR))
     simp only [smul_smul, ← cpow_add _ _ ht0]
     ring_nf
   rw [intervalIntegral.integral_congr hcongr, intervalIntegral.integral_smul_const,
-    integral_cpow (Or.inr ⟨fun h ↦ hzw (by linear_combination h), zero_notMem_uIcc_one hR⟩)]
+    integral_cpow (Or.inr ⟨fun h ↦ hzw (by linear_combination h), notMem_uIcc_of_lt one_pos hR⟩)]
   simp only [sub_add_cancel, ofReal_one, one_cpow]
   rw [div_eq_inv_mul]
 
@@ -161,11 +163,10 @@ private theorem integral_one_cpow_smul_sum [CompleteSpace E] {z : ℂ} {w : ℕ 
   rw [intervalIntegral.integral_finsetSum fun k _ ↦ ?_]
   · exact Finset.sum_congr rfl fun k hk ↦
       integral_one_cpow_smul_cpow_smul (hzw k (Finset.mem_range.mp hk)) hR (c k)
-  · refine ContinuousOn.intervalIntegrable fun t ht ↦ ?_
-    have ht0 : t ≠ 0 := ne_of_mem_of_not_mem ht (zero_notMem_uIcc_one hR)
-    exact ((continuousAt_ofReal_cpow_const _ _ (Or.inr ht0)).smul
-      ((continuousAt_ofReal_cpow_const _ _ (Or.inr ht0)).smul
-        continuousAt_const)).continuousWithinAt
+  · refine ((locallyIntegrableOn_cpow_smul (locallyIntegrableOn_cpow_smul
+      (locallyIntegrableOn_const (c k)) (w k)) (z - 1)).integrableOn_compact_subset
+      (fun t (ht : t ∈ uIcc 1 R) ↦ ?_) isCompact_uIcc).intervalIntegrable
+    exact (lt_min one_pos hR).trans_le ht.1
 
 /-! ### Continuation through an expansion at `0+` -/
 
@@ -185,17 +186,18 @@ theorem mellinContAtZero_def (f : ℝ → E) (a : ℕ → E) (α : ℕ → ℂ) 
         ∑ k ∈ Finset.range n, (z + α k)⁻¹ • a k + ∫ t : ℝ in Ioi 1, (t : ℂ) ^ (z - 1) • f t :=
   (rfl)
 
+/-- The remainder of an expansion in the powers `t ↦ t^{w_k}` after `n` terms, along a filter
+of positive reals, is `O(t ^ Re w_n)`. -/
+theorem isBigO_sub_sum_rpow {l : Filter ℝ} (hl : ∀ᶠ t in l, 0 < t) {g : ℝ → E} {w : ℕ → ℂ}
+    {c : ℕ → E} {n : ℕ}
+    (hn : (fun t : ℝ ↦ g t - ∑ k ∈ Finset.range n, (t : ℂ) ^ w k • c k) =O[l]
+      fun t ↦ (t : ℂ) ^ w n) :
+    (fun t : ℝ ↦ g t - ∑ k ∈ Finset.range n, (t : ℂ) ^ w k • c k) =O[l] (· ^ (w n).re) :=
+  hn.trans (isBigO_ofReal_cpow_rpow hl (w n))
+
 section AtZero
 
 variable {f : ℝ → E} {a : ℕ → E} {α : ℕ → ℂ} {n : ℕ} {z : ℂ}
-
-/-- The remainder of an expansion at `0+` after `n` terms is `O(t ^ Re α_n)`. -/
-private theorem isBigO_sub_sum_rpow
-    (hn : (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ α k • a k) =O[𝓝[>] 0]
-      fun t ↦ (t : ℂ) ^ α n) :
-    (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ α k • a k) =O[𝓝[>] 0]
-      (· ^ (-(-(α n).re))) := by
-  simpa only [neg_neg] using hn.trans (isBigO_ofReal_cpow_rpow self_mem_nhdsWithin (α n))
 
 /-- With no terms subtracted, the continued transform is the Mellin integral split at `1`. -/
 theorem mellinContAtZero_zero_eq_mellin (hf : MellinConvergent f z) :
@@ -235,9 +237,11 @@ theorem mellinContAtZero_eq_of_le [CompleteSpace E] (hf : LocallyIntegrableOn f 
   | base => rfl
   | succ m hnm ih =>
     have hzm : -(α m).re < z.re := (neg_le_neg (hα hnm)).trans_lt hz
+    have hm := isBigO_sub_sum_rpow eventually_mem_nhdsWithin (hexp.isBigO m)
+    rw [← neg_neg (α m).re] at hm
     rw [mellinContAtZero_succ (integrableOn_Ioc_cpow_smul_of_isBigO
-      ((hf.sub (locallyIntegrableOn_sum_cpow_smul α a m))) (isBigO_sub_sum_rpow (hexp.isBigO m))
-      hzm) (Or.inr (by rw [add_re]; linarith)), ih]
+      ((hf.sub (locallyIntegrableOn_sum_cpow_smul α a m))) hm hzm)
+      (Or.inr (by rw [add_re]; linarith)), ih]
 
 /-- Removing the principal parts `a_k/(z + α_k)` leaves a function holomorphic on the whole strip
 `-Re α_n < Re z < b`, for `f = O(t^{-b})` at `+∞` (DLMF 2.5.25). The bound at `0+` is the `n`th
@@ -250,8 +254,10 @@ theorem differentiableOn_mellinContAtZero_sub_sum (hf : LocallyIntegrableOn f (I
       (fun z ↦ mellinContAtZero f a α n z - ∑ k ∈ Finset.range n, (z + α k)⁻¹ • a k)
       {z | -(α n).re < z.re ∧ z.re < b} := by
   intro z hz
+  have hn' := isBigO_sub_sum_rpow eventually_mem_nhdsWithin hn
+  rw [← neg_neg (α n).re] at hn'
   have h := (differentiableAt_integral_Ioc_cpow_smul_of_isBigO
-    (hf.sub (locallyIntegrableOn_sum_cpow_smul α a n)) (isBigO_sub_sum_rpow hn) hz.1).add
+    (hf.sub (locallyIntegrableOn_sum_cpow_smul α a n)) hn' hz.1).add
     (differentiableAt_integral_Ioi_cpow_smul_of_isBigO hf hb hz.2)
   refine (h.congr_of_eventuallyEq (Eventually.of_forall fun w ↦ ?_)).differentiableWithinAt
   simp only [mellinContAtZero_def, Pi.add_apply, Pi.sub_apply]
@@ -396,8 +402,8 @@ theorem mellinContAtZero_spec [CompleteSpace E] (hf : LocallyIntegrableOn f (Ioi
         (by rwa [min_eq_left hnm] at hz)).symm
     · exact mellinContAtZero_eq_of_le hf hexp hα.monotone hmn (by rwa [min_eq_right hmn] at hz)
   · have hbot : f =O[𝓝[>] 0] (· ^ (-(-(α 0).re))) := by
-      simpa only [Finset.range_zero, Finset.sum_empty, sub_zero] using
-        isBigO_sub_sum_rpow (hexp.isBigO 0)
+      simpa only [Finset.range_zero, Finset.sum_empty, sub_zero, neg_neg] using
+        isBigO_sub_sum_rpow eventually_mem_nhdsWithin (hexp.isBigO 0)
     exact mellinContAtZero_eq_mellin hexp hα
       (mellinConvergent_of_isBigO_rpow hf hb hz.2 hbot hz.1) n
 
@@ -507,14 +513,6 @@ theorem mellinContAtTop_eq_mellinContAtZero (f : ℝ → E) (b : ℕ → E) (β 
     integral_Ioc_cpow_smul_eq_integral_Ioi_comp_inv f z]
   abel
 
-/-- The remainder of an expansion at `+∞` after `n` terms is `O(t ^ (-Re β_n))`. -/
-private theorem isBigO_sub_sum_rpow_atTop
-    (hn : (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-β k) • b k) =O[atTop]
-      fun t ↦ (t : ℂ) ^ (-β n)) :
-    (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-β k) • b k) =O[atTop]
-      (· ^ (-(β n).re)) := by
-  simpa only [neg_re] using hn.trans (isBigO_ofReal_cpow_rpow (eventually_gt_atTop 0) (-β n))
-
 /-- With no terms subtracted, the continuation at `+∞` is the Mellin integral split at `1`. -/
 theorem mellinContAtTop_zero_eq_mellin (hf : MellinConvergent f z) :
     mellinContAtTop f b β 0 z = mellin f z := by
@@ -546,7 +544,7 @@ theorem mellinContAtTop_eq_of_le [CompleteSpace E] (hf : LocallyIntegrableOn f (
     have hzm : z.re < (β m).re := hz.trans_le (hβ hnm)
     rw [mellinContAtTop_succ (integrableOn_Ioi_cpow_smul_of_isBigO
       (hf.sub (locallyIntegrableOn_sum_cpow_smul (fun k ↦ -β k) b m))
-      (isBigO_sub_sum_rpow_atTop (hexp.isBigO m)) hzm) (Or.inr hzm), ih]
+      (isBigO_sub_sum_rpow (eventually_gt_atTop 0) (hexp.isBigO m)) hzm) (Or.inr hzm), ih]
 
 /-- Removing the principal parts `-b_k/(z - β_k)`, i.e. adding `∑ b_k/(z - β_k)`, leaves a function
 holomorphic on the whole strip `-c < Re z < Re β_n`, for `f = O(t^c)` at `0+` (DLMF 2.5.27). The
@@ -564,7 +562,7 @@ theorem differentiableOn_mellinContAtTop_add_sum (hf : LocallyIntegrableOn f (Io
     (by simpa only [neg_neg] using hc) hz.1).add
     (differentiableAt_integral_Ioi_cpow_smul_of_isBigO
       (hf.sub (locallyIntegrableOn_sum_cpow_smul (fun k ↦ -β k) b n))
-      (isBigO_sub_sum_rpow_atTop hn) hz.2)
+      (isBigO_sub_sum_rpow (eventually_gt_atTop 0) hn) hz.2)
   refine (h.congr_of_eventuallyEq (Eventually.of_forall fun w ↦ ?_)).differentiableWithinAt
   simp only [mellinContAtTop_def, Pi.add_apply, Pi.sub_apply]
   abel
@@ -633,8 +631,8 @@ theorem mellinContAtTop_spec [CompleteSpace E] (hf : LocallyIntegrableOn f (Ioi 
         (by rwa [min_eq_left hnm] at hz)).symm
     · exact mellinContAtTop_eq_of_le hf hexp hβ.monotone hmn (by rwa [min_eq_right hmn] at hz)
   · have htop : f =O[atTop] (· ^ (-(β 0).re)) := by
-      simpa only [Finset.range_zero, Finset.sum_empty, sub_zero] using
-        isBigO_sub_sum_rpow_atTop (hexp.isBigO 0)
+      simpa only [Finset.range_zero, Finset.sum_empty, sub_zero, neg_re] using
+        isBigO_sub_sum_rpow (eventually_gt_atTop 0) (hexp.isBigO 0)
     exact mellinContAtTop_eq_mellin hexp hβ
       (mellinConvergent_of_isBigO_rpow hf htop hz.2 (by simpa only [neg_neg] using hc) hz.1) n
 
