@@ -109,6 +109,9 @@ theorem stageMultilinear_apply (w : ∀ i, W i) {S T : Finset ι} (h : S ⊆ T) 
   refine congrArg (PiTensorProduct.tprod R) (funext fun i ↦ ?_)
   by_cases hi : i.val ∈ S
   · rw [extendFamily_apply_of_mem w T f i hi, dite_eq_left hi]
+    -- The inverse of `Equiv.subtypeSubtypeEquivSubtype` sends `⟨i, hi⟩` to `⟨i, hi⟩` by
+    -- definition, so the reindexed entry is `f ⟨i, hi⟩`; the dependent type of the entry
+    -- blocks rewriting with `Equiv.piCongrLeft'_symm_apply_apply`.
     rfl
   · rw [extendFamily_apply_of_notMem w T f i hi, dite_eq_right hi]
 
@@ -189,13 +192,10 @@ theorem stageMap_injective (w : ∀ i, W i) {S T : Finset ι} (h : S ⊆ T)
   have hinv : PiTensorProduct.lift (contractMultilinear R h φ) ∘ₗ stageMap R w h =
       LinearMap.id := by
     refine PiTensorProduct.ext <| MultilinearMap.ext fun f ↦ ?_
-    rw [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, stageMap_tprod,
-      PiTensorProduct.lift.tprod, contractMultilinear_apply, Fintype.prod_eq_one _ fun i ↦ ?_,
-      one_smul, LinearMap.compMultilinearMap_apply, LinearMap.id_apply]
-    · congr 1
-      funext i
-      exact extendFamily_apply_of_mem w T f ⟨i.val, h i.property⟩ i.property
-    · rw [extendFamily_apply_of_notMem w T f i.val i.property, hφ i i.val.property i.property]
+    have hprod : ∏ i : {i : T // i.val ∉ S}, φ i (extendFamily w T f i) = 1 :=
+      Fintype.prod_eq_one _ fun i ↦ by
+        rw [extendFamily_apply_of_notMem w T f i.val i.property, hφ i i.val.property i.property]
+    simp [contractMultilinear_apply, hprod, extendFamily_apply_of_mem]
   exact Function.LeftInverse.injective (LinearMap.congr_fun hinv)
 
 end RestrictedTensor
@@ -301,6 +301,12 @@ theorem ofFinite_injective {K : Type*} [Field K] {V : ι → Type*} [∀ i, AddC
     Function.Injective (ofFinite K V v S) :=
   ofFinite_injective' S fun i hi ↦ Module.Projective.exists_dual_eq_one K (hv i hi)
 
+omit [DecidableEq ι] [∀ i, AddCommMonoid (W i)] in
+/-- A family equals the references off the finite set of places where it differs from them. -/
+private theorem notMem_toFinset_iff {f : ∀ i, W i} (hf : {i | f i ≠ w i}.Finite) {i : ι} :
+    i ∉ hf.toFinset ↔ f i = w i := by
+  simp
+
 variable (R w) in
 /-- The pure tensor `⨂ₜ f` of a family `f` equal to the references at all but finitely many
 places, computed at the finite stage of the places where `f` differs from the references. -/
@@ -312,9 +318,8 @@ the places where the family differs from the references. -/
 theorem tprod_eq_ofFinite (f : ∀ i, W i) (hf : {i | f i ≠ w i}.Finite) (S : Finset ι)
     (hS : ∀ i ∉ S, f i = w i) :
     tprod R w f hf = ofFinite R W w S (PiTensorProduct.tprod R fun i ↦ f i) := by
-  have hsub : hf.toFinset ⊆ S := fun i hi ↦ by
-    by_contra h
-    exact (hf.mem_toFinset.mp hi) (hS i h)
+  have hsub : hf.toFinset ⊆ S := fun i hi ↦
+    by_contra fun h ↦ (notMem_toFinset_iff hf).mpr (hS i h) hi
   have key : ∀ U (h : U ⊆ S), (∀ i ∉ U, f i = w i) →
       stageMap R w h (PiTensorProduct.tprod R fun i : U ↦ f i) =
         PiTensorProduct.tprod R fun i : S ↦ f i := by
@@ -325,9 +330,7 @@ theorem tprod_eq_ofFinite (f : ∀ i, W i) (hf : {i | f i ≠ w i}.Finite) (S : 
     by_cases hi : i.val ∈ U
     · exact extendFamily_apply_of_mem w S _ i hi
     · rw [extendFamily_apply_of_notMem w S _ i hi, hU i hi]
-  rw [tprod, ← key hf.toFinset hsub fun i hi ↦ ?_, ofFinite_stageMap]
-  by_contra h
-  exact hi (hf.mem_toFinset.mpr h)
+  rw [tprod, ← key hf.toFinset hsub fun i ↦ (notMem_toFinset_iff hf).mp, ofFinite_stageMap]
 
 /-- The pure tensor of the reference family is the image of the empty pure tensor at the empty
 stage. -/
@@ -345,9 +348,9 @@ private theorem exists_tprod_update (f : ∀ i, W i) (j : ι) {z₀ : W j}
   refine ⟨insert j h₀.toFinset, Finset.mem_insert_self j _, fun z hz ↦ ?_⟩
   rw [tprod_eq_ofFinite _ hz _ fun i hi ↦ ?_,
     ← Function.update_comp_eq_of_injective' f Subtype.val_injective]
-  rw [Finset.mem_insert, not_or, Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_not] at hi
-  rw [Function.update_of_ne hi.1] at hi ⊢
-  exact hi.2
+  obtain ⟨hij, hi⟩ := not_or.mp (Finset.mem_insert.not.mp hi)
+  rw [Function.update_of_ne hij, ← Function.update_of_ne hij z₀ f]
+  exact (notMem_toFinset_iff h₀).mp hi
 
 /-- A pure tensor is additive in each entry. -/
 theorem tprod_update_add (f : ∀ i, W i) (j : ι) (x y : W j)
@@ -372,8 +375,7 @@ theorem tprod_coord_zero (f : ∀ i, W i) (hf : {i | f i ≠ w i}.Finite) (j : �
     tprod R w f hf = 0 := by
   rw [tprod_eq_ofFinite f hf (insert j hf.toFinset) fun i hi ↦ ?_,
     MultilinearMap.map_coord_zero _ ⟨j, Finset.mem_insert_self j _⟩ hj, map_zero]
-  rw [Finset.mem_insert, not_or, Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_not] at hi
-  exact hi.2
+  exact (notMem_toFinset_iff hf).mp (not_or.mp (Finset.mem_insert.not.mp hi)).2
 
 section map
 
@@ -412,8 +414,7 @@ theorem map_tprod (f : ∀ i, W i →ₗ[R] W' i) (hf : ∀ i, f i (w i) = w' i)
       (hg.subset fun i hi h ↦ hi (by rw [h, hf])) := by
   rw [tprod, map_ofFinite, PiTensorProduct.map_tprod,
     tprod_eq_ofFinite _ _ hg.toFinset fun i hi ↦ ?_]
-  rw [Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_not] at hi
-  rw [hi, hf]
+  rw [(notMem_toFinset_iff hg).mp hi, hf]
 
 variable (w) in
 /-- The identity maps of the factors induce the identity. -/
@@ -503,6 +504,8 @@ theorem finiteEquiv_ofFinite (S : Finset ι) (f : ∀ i : S, W i) :
     finiteEquiv R W w (ofFinite R W w S (PiTensorProduct.tprod R f)) =
       PiTensorProduct.tprod R fun i ↦ extendFamily w Finset.univ f ⟨i, Finset.mem_univ i⟩ := by
   rw [finiteEquiv_apply_ofFinite, stageMap_tprod, PiTensorProduct.reindex_tprod]
+  -- `(Equiv.subtypeUnivEquiv _).symm i` is `⟨i, _⟩` by definition; the dependent type of the
+  -- entry blocks rewriting with `Equiv.subtypeUnivEquiv_symm_apply` under the binder.
   rfl
 
 /-- For a finite index type, a pure tensor of the restricted tensor product is the pure tensor
