@@ -15,7 +15,9 @@ public import Mathlib.Algebra.CharP.Invertible
 
 A diagonal matrix with real entries is Hermitian after scalar inclusion into any `RCLike`
 field. This supplies Hermiticity witnesses for real diagonal perturbations. The self-adjoint part
-`(X + Xᴴ) / 2` of a matrix is Hermitian (`Matrix.isHermitian_selfAdjointPart`).
+`(X + Xᴴ) / 2` of a matrix is Hermitian (`Matrix.isHermitian_selfAdjointPart`). A Hermitian
+matrix over a singleton index type, such as a `1 × 1` matrix, is the real scalar given by the real
+part of its unique entry (`Matrix.IsHermitian.eq_algebraMap_re`).
 -/
 
 public section
@@ -32,5 +34,14 @@ theorem isHermitian_diagonal_ofReal {n 𝕜 : Type*} [DecidableEq n] [RCLike �
 theorem isHermitian_selfAdjointPart {n 𝕜 : Type*} [RCLike 𝕜] (X : Matrix n n 𝕜) :
     (selfAdjointPart ℝ X : Matrix n n 𝕜).IsHermitian :=
   (selfAdjoint.isSelfAdjoint (x := selfAdjointPart ℝ X)).isHermitian
+
+/-- A Hermitian matrix over a singleton index type, such as a `1 × 1` matrix, is the real scalar
+given by the real part of its unique entry. -/
+theorem IsHermitian.eq_algebraMap_re {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [Unique n]
+    [RCLike 𝕜] {A : Matrix n n 𝕜} (hA : A.IsHermitian) :
+    A = algebraMap ℝ (Matrix n n 𝕜) (RCLike.re (A default default)) := by
+  ext i j
+  rw [Subsingleton.elim i default, Subsingleton.elim j default]
+  simpa [algebraMap_matrix_apply] using (RCLike.conj_eq_iff_re.1 (hA.apply default default)).symm
 
 end Matrix
