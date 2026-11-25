@@ -23,6 +23,12 @@ integration-by-parts arguments:
   an integrable function. This supplies the integrability needed to split integrals in weak
   integration-by-parts formulas. It specializes Mathlib's bilinear Hölder estimate
   `ContinuousLinearMap.memLp_of_bilin` to evaluation.
+* `MeasureTheory.eLpNorm_clm_apply_le`: Hölder's inequality
+  `‖x ↦ f x (g x)‖_{Lᶜ} ≤ ‖f‖_{Lᵃ} ‖g‖_{Lᵇ}` for evaluation, and
+  `MeasureTheory.eLpNorm_clm_apply_const_le`, evaluation at a fixed vector.
+* `MeasureTheory.MemLp.clm_comp`: the pointwise composition of fields of continuous linear maps in
+  `Lᵖ` and `L^q` lies in `L^r` for a Hölder triple `(p, q, r)`; in particular two `L^∞` fields
+  compose to an `L^∞` field.
 * `MeasureTheory.MemLp.integrable_bilinear_apply`: more generally, an essentially bounded field of
   continuous bilinear maps applied to an `L^p` function and an `L^q` function is integrable.
 * `MeasureTheory.MemLp.integrable_inner_of_holderConjugate`: Hölder's inequality makes the
@@ -77,7 +83,49 @@ theorem integrable_apply (hf : MemLp f p μ) (hg : MemLp g q μ) :
   memLp_one_iff_integrable.1
     ((ContinuousLinearMap.id 𝕜 (V →L[𝕜] W)).memLp_of_bilin 1 hf hg)
 
+omit [p.HolderConjugate q] in
+/-- Hölder's inequality for evaluation: `‖x ↦ f x (g x)‖_{Lᶜ} ≤ ‖f‖_{Lᵃ} ‖g‖_{Lᵇ}` for a Hölder
+triple `1/a + 1/b = 1/c`. -/
+theorem _root_.MeasureTheory.eLpNorm_clm_apply_le {a b c : ℝ≥0∞} [ENNReal.HolderTriple a b c]
+    (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g μ) :
+    eLpNorm (fun x ↦ f x (g x)) c μ ≤ eLpNorm f a μ * eLpNorm g b μ := by
+  simpa using eLpNorm_le_eLpNorm_mul_eLpNorm_of_norm (p := a) (q := b)
+    (fun (A : V →L[𝕜] W) (v : V) ↦ A v) 1 isBoundedBilinearMap_apply.continuous hf hg
+    (.of_forall fun x ↦ by simpa using (f x).le_opNorm (g x))
+
+omit [p.HolderConjugate q] in
+/-- Evaluating a field of continuous linear maps at a fixed vector `v`:
+`‖x ↦ f x v‖_{Lᵖ} ≤ ‖v‖ ‖f‖_{Lᵖ}`. -/
+theorem _root_.MeasureTheory.eLpNorm_clm_apply_const_le (v : V) :
+    eLpNorm (fun x ↦ f x v) p μ ≤ ‖v‖₊ * eLpNorm f p μ := by
+  by_cases hf : AEStronglyMeasurable f μ
+  · have h := eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul (f := fun x ↦ f x v) (g := f)
+      (c := ‖v‖₊) ((ContinuousLinearMap.apply 𝕜 W v).continuous.comp_aestronglyMeasurable hf)
+      (.of_forall fun x ↦ by simpa [mul_comm] using (f x).le_opNNNorm v) p
+    simpa [ENNReal.smul_def] using h
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp
+  · rw [eLpNorm_of_not_aestronglyMeasurable hf, ENNReal.mul_top (by simpa using hv)]
+    exact le_top
+
 end Evaluation
+
+section Composition
+
+variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
+  [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+omit [p.HolderConjugate q] in
+/-- **Hölder's inequality for composition of operator fields.** If `A ∈ Lᵖ(μ)` and `B ∈ L^q(μ)`
+are fields of continuous linear maps and `(p, q, r)` is a Hölder triple, then the pointwise
+composition `x ↦ A x ∘L B x` lies in `L^r(μ)`; in particular two `L^∞` fields compose to an `L^∞`
+field. -/
+theorem clm_comp (r : ℝ≥0∞) [ENNReal.HolderTriple p q r] {A : α → F →L[𝕜] G}
+    {B : α → E →L[𝕜] F} (hA : MemLp A p μ) (hB : MemLp B q μ) :
+    MemLp (fun x ↦ (A x).comp (B x)) r μ :=
+  (ContinuousLinearMap.compL 𝕜 E F G).memLp_of_bilin r hA hB
+
+end Composition
 
 section Bilinear
 

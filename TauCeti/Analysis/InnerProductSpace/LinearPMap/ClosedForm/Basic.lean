@@ -65,6 +65,8 @@ of all pairs `(x, h) ∈ H × H` for which some `u : V` satisfies `j u = x` and
   `ContinuousLinearMap.shiftedForm_eq_star`,
   `ContinuousLinearMap.closedFormDomain_shiftedForm`, and
   `ContinuousLinearMap.closedFormOperator_shiftedForm`.
+* `ContinuousLinearMap.closedFormOperator_smul_id_smul_innerSL`: along `j = a • id`, the scalar
+  form `b ⟪·, ·⟫_𝕜` represents the everywhere defined operator `(conj b / ‖a‖ ^ 2) • id`.
 * `ContinuousLinearMap.isUnit_continuousLinearMapOfBilin_shiftedForm`: shifted coercivity gives
   invertibility of the Fréchet--Riesz operator of `shiftedForm j q α` for all `α ≥ ω`.
 * `ContinuousLinearMap.range_formSolutionOperator_shiftedForm`,
@@ -395,6 +397,46 @@ theorem closedFormOperator_shiftedForm (j : V →L[𝕜] H) (hj : Function.Injec
     inner_smul_left, RCLike.conj_ofReal, hu]
 
 end ShiftedOperator
+
+/-! ### Scalar forms -/
+
+section ScalarForm
+
+variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
+
+/-- **The represented operator of a scalar form.** Along `j = a • id` with `a ≠ 0`, the form
+`q(u, v) = b ⟪u, v⟫_𝕜` represents the everywhere defined operator `(conj b / ‖a‖ ^ 2) • id`: for
+`x = a u` the representative `h` must satisfy `b ⟪u, v⟫ = ⟪h, a v⟫` for all `v`, so
+`h = conj (b / a) • u = (conj b / ‖a‖ ^ 2) • x`. -/
+theorem closedFormOperator_smul_id_smul_innerSL {a : 𝕜} (ha : a ≠ 0) (b : 𝕜)
+    (hj : Function.Injective (a • ContinuousLinearMap.id 𝕜 H))
+    (hdense : DenseRange (a • ContinuousLinearMap.id 𝕜 H)) :
+    closedFormOperator (a • ContinuousLinearMap.id 𝕜 H) hj hdense (b • innerSL 𝕜) =
+      ((starRingEnd 𝕜 b / ((‖a‖ ^ 2 : ℝ) : 𝕜)) • LinearMap.id).toPMap ⊤ := by
+  have ha' : starRingEnd 𝕜 a ≠ 0 := (map_ne_zero _).2 ha
+  have hnorm : ((‖a‖ ^ 2 : ℝ) : 𝕜) = starRingEnd 𝕜 a * a := by
+    rw [RCLike.conj_mul, RCLike.ofReal_pow]
+  rw [hnorm]
+  symm
+  refine eq_closedFormOperator_of_mem_graph_iff _ _ _ _ fun x h => ?_
+  simp only [LinearPMap.mem_graph_iff, LinearMap.toPMap_domain, LinearMap.toPMap_apply,
+    LinearMap.smul_apply, LinearMap.id_coe, id_eq, Subtype.exists, Submodule.mem_top,
+    exists_true_left, exists_eq_left, coe_id', smul_apply, innerSL_apply_apply]
+  constructor
+  · rintro rfl
+    refine ⟨a⁻¹ • x, by simp [smul_smul, ha], fun v => ?_⟩
+    simp only [inner_smul_left, inner_smul_right, map_inv₀, map_div₀, map_mul,
+      RCLike.conj_conj, smul_eq_mul]
+    field_simp
+  · rintro ⟨u, rfl, hu⟩
+    refine ext_inner_right 𝕜 fun v => ?_
+    have := hu v
+    simp only [inner_smul_left, inner_smul_right, map_div₀, map_mul, RCLike.conj_conj,
+      smul_eq_mul] at this ⊢
+    field_simp
+    linear_combination this
+
+end ScalarForm
 
 /-! ### Resolvent, closedness, density, and self-adjointness -/
 

@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.LocallyFree
+public import TauCeti.AlgebraicGeometry.Modules.Differentials.Stalk
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 public import TauCeti.AlgebraicGeometry.VectorBundle.FixedRank
 public import TauCeti.AlgebraicGeometry.VectorBundle.Rank
 public import Mathlib.RingTheory.Smooth.StandardSmoothCotangent
+import TauCeti.AlgebraicGeometry.Restrict
+import TauCeti.AlgebraicGeometry.VectorBundle.Stalk
 
 /-!
 # The rank of the sheaf of relative differentials
@@ -37,7 +40,11 @@ When `X` is smooth of relative dimension one over `Spec R`, as a smooth curve ov
   rank `d` is smooth of relative dimension `d`;
 * `TauCeti.AlgebraicGeometry.isInvertible_relativeDifferentials` and
   `TauCeti.AlgebraicGeometry.InvertibleSheaf.relativeDifferentials`: in relative dimension one
-  it is an invertible sheaf.
+  it is an invertible sheaf;
+* `TauCeti.AlgebraicGeometry.free_kaehlerDifferential_stalk`,
+  `TauCeti.AlgebraicGeometry.finite_kaehlerDifferential_stalk` and
+  `TauCeti.AlgebraicGeometry.finrank_kaehlerDifferential_stalk`: on a scheme smooth of relative
+  dimension `n`, the Kähler differentials `Ω[𝒪_{X,x}⁄R]` of each local ring are free of rank `n`.
 
 ## References
 
@@ -135,30 +142,19 @@ theorem smoothOfRelativeDimension_of_forall_rank_relativeDifferentials_eq {X : S
     [X.Over (Spec (.of R))] [Smooth (X ↘ Spec (.of R))] {d : ℕ}
     (h : ∀ x, (FiniteLocallyFreeSheaf.relativeDifferentials R X).rank x = d) :
     SmoothOfRelativeDimension d (X ↘ Spec (.of R)) := by
-  refine ⟨fun x ↦ ?_⟩
-  -- The standard smooth chart around `x` has some relative dimension `m`.
-  obtain ⟨m, U, hU, V, hV, hx, e, hm⟩ :=
-    (X ↘ Spec (.of R)).exists_isStandardSmoothOfRelativeDimension_of_smooth x
-  refine ⟨U, hU, V, hV, hx, e, ?_⟩
-  have : SmoothOfRelativeDimension m (Spec.map ((X ↘ Spec (.of R)).appLE U V e)) := by
-    rw [HasRingHomProperty.Spec_iff (P := @SmoothOfRelativeDimension m)]
-    exact RingHom.locally_of RingHom.isStandardSmoothOfRelativeDimension_respectsIso _ hm
-  -- Regard the chart `Spec Γ(X, V)` as a scheme over `Spec R`; it is smooth of relative
-  -- dimension `m`, so `Ω` has rank `m` on it, and rank `d` because the chart is open in `X`.
-  let : (Spec Γ(X, V)).Over (Spec (.of R)) := ⟨hV.fromSpec ≫ X ↘ Spec (.of R)⟩
-  have : hV.fromSpec.IsOver (Spec (.of R)) := ⟨rfl⟩
-  have : SmoothOfRelativeDimension m (Spec Γ(X, V) ↘ Spec (.of R)) := by
-    -- The structure morphism `Spec Γ(X, V) ↘ Spec R` is the local `Over` instance above, so it is
-    -- `hV.fromSpec ≫ X ↘ Spec R` by definition; unfold it to rewrite with `SpecMap_appLE_fromSpec`.
-    change SmoothOfRelativeDimension m (hV.fromSpec ≫ X ↘ Spec (.of R))
-    rw [← IsAffineOpen.SpecMap_appLE_fromSpec _ hU hV e]
-    exact inferInstanceAs (SmoothOfRelativeDimension (m + 0) _)
-  have := SmoothOfRelativeDimension.smooth m (Spec Γ(X, V) ↘ Spec (.of R))
-  obtain ⟨y, rfl⟩ : x ∈ Set.range hV.fromSpec := by rwa [IsAffineOpen.range_fromSpec]
-  have hy := FiniteLocallyFreeSheaf.rank_relativeDifferentials_apply R m y
-  rw [FiniteLocallyFreeSheaf.rank_relativeDifferentials_of_isOpenImmersion R hV.fromSpec,
-    h] at hy
-  exact hy ▸ hm
+  refine IsZariskiLocalAtSource.of_forall_exists_ι_comp fun x ↦ ?_
+  -- Around `x`, the structure morphism is smooth of some relative dimension `m`.
+  obtain ⟨V, m, hx, hm⟩ := (X ↘ Spec (.of R)).exists_smoothOfRelativeDimension_ι_comp_of_smooth x
+  -- Regard `V` as a scheme over `Spec R`; it is smooth of relative dimension `m`, so `Ω` has rank
+  -- `m` on it, and rank `d` because `V` is open in `X`.
+  let : (V : Scheme).Over (Spec (.of R)) := ⟨V.ι ≫ X ↘ Spec (.of R)⟩
+  have : V.ι.IsOver (Spec (.of R)) := ⟨rfl⟩
+  have : SmoothOfRelativeDimension m ((V : Scheme) ↘ Spec (.of R)) := hm
+  have := SmoothOfRelativeDimension.smooth m ((V : Scheme) ↘ Spec (.of R))
+  have hy := (FiniteLocallyFreeSheaf.rank_relativeDifferentials_of_isOpenImmersion R V.ι
+    ⟨x, hx⟩).symm.trans (FiniteLocallyFreeSheaf.rank_relativeDifferentials_apply R m _)
+  rw [h] at hy
+  exact ⟨V, hx, hy ▸ hm⟩
 
 variable (X)
 
@@ -174,6 +170,22 @@ lemma InvertibleSheaf.relativeDifferentials_obj
     [SmoothOfRelativeDimension 1 (X ↘ Spec (.of R))] :
     (InvertibleSheaf.relativeDifferentials R X).obj = X.relativeDifferentials R :=
   (rfl)
+
+/-- On a scheme smooth over `Spec R`, the Kähler differentials `Ω[𝒪_{X,x}⁄R]` of each local ring
+form a free `𝒪_{X,x}`-module. -/
+instance free_kaehlerDifferential_stalk [Smooth (X ↘ Spec (.of R))] (x : X) :
+    Module.Free (X.presheaf.stalk x) Ω[X.presheaf.stalk x⁄R] := by
+  have := FiniteLocallyFreeSheaf.free_stalk (FiniteLocallyFreeSheaf.relativeDifferentials R X) x
+  rw [FiniteLocallyFreeSheaf.relativeDifferentials_obj] at this
+  exact Module.Free.of_equiv (X.relativeDifferentialsStalkEquiv R x)
+
+/-- On a scheme smooth over `Spec R`, the Kähler differentials `Ω[𝒪_{X,x}⁄R]` of each local ring
+form a finitely generated `𝒪_{X,x}`-module. -/
+instance finite_kaehlerDifferential_stalk [Smooth (X ↘ Spec (.of R))] (x : X) :
+    Module.Finite (X.presheaf.stalk x) Ω[X.presheaf.stalk x⁄R] := by
+  have := FiniteLocallyFreeSheaf.finite_stalk (FiniteLocallyFreeSheaf.relativeDifferentials R X) x
+  rw [FiniteLocallyFreeSheaf.relativeDifferentials_obj] at this
+  exact Module.Finite.equiv (X.relativeDifferentialsStalkEquiv R x)
 
 variable (n : ℕ) [SmoothOfRelativeDimension n (X ↘ Spec (.of R))]
 
@@ -193,6 +205,14 @@ lemma FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials_obj_obj :
       X.relativeDifferentials R :=
   haveI := SmoothOfRelativeDimension.smooth n (X ↘ Spec (.of R))
   FiniteLocallyFreeSheaf.relativeDifferentials_obj R X
+
+/-- On a scheme smooth of relative dimension `n` over `Spec R`, the Kähler differentials
+`Ω[𝒪_{X,x}⁄R]` of each local ring have rank `n` over `𝒪_{X,x}`. -/
+theorem finrank_kaehlerDifferential_stalk (x : X) :
+    Module.finrank (X.presheaf.stalk x) Ω[X.presheaf.stalk x⁄R] = n := by
+  rw [← (X.relativeDifferentialsStalkEquiv R x).finrank_eq,
+    ← FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials_obj_obj R X n,
+    FiniteLocallyFreeSheaf.finrank_stalk, FiniteLocallyFreeSheaf.FixedRank.rank_apply]
 
 end
 
