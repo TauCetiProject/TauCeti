@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Topology.MetricSpace.Holder
-import Mathlib.Topology.Order.ProjIcc
 import TauCeti.Analysis.Normed.Module.Ball.Retraction
 import TauCeti.Analysis.Normed.Operator.Holder
+import TauCeti.Topology.MetricSpace.BallCutoff
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -22,8 +22,8 @@ there with a bounded, globally `α`-Hölder map supported in the doubled ball
 The extension is `x ↦ χ x • f (ρ x)`. Here `ρ = TauCeti.centeredRadialRetraction x₀ r` pulls each
 point back to the ball, which makes `f ∘ ρ` globally Hölder
 (`HolderOnWith.comp_centeredRadialRetraction`), and the cutoff
-`χ = TauCeti.ballCutoff x₀ r`, `χ x = projIcc 0 1 (2 - dist x x₀ / r)`, is Lipschitz
-(`TauCeti.lipschitzWith_ballCutoff`), equal to `1` on the ball and `0` off the doubled ball. The
+`χ = TauCeti.ballCutoff x₀ r`, `χ x = projIcc 0 1 (2 - dist x x₀ / r)`, is Hölder
+(`TauCeti.holderWith_ballCutoff`), equal to `1` on the ball and `0` off the doubled ball. The
 product of the two bounded Hölder maps is Hölder (`HolderWith.smul_of_eq_zero`).
 
 Integral operators such as the planar Cauchy transform act on compactly supported Hölder sources,
@@ -34,71 +34,6 @@ public section
 
 open Function Metric Set
 open scoped NNReal
-
-namespace TauCeti
-
-section Cutoff
-
-variable {X : Type*} [PseudoMetricSpace X] {x₀ x : X} {r : ℝ}
-
-/-- The cutoff of the closed ball `closedBall x₀ r`, `x ↦ projIcc 0 1 (2 - dist x x₀ / r)`: for
-`r > 0` it is `1` on the ball, `0` off the doubled ball and `r⁻¹`-Lipschitz, with values in
-`[0, 1]`. -/
-noncomputable def ballCutoff (x₀ : X) (r : ℝ) (x : X) : ℝ :=
-  (projIcc (0 : ℝ) 1 zero_le_one (2 - dist x x₀ / r) : ℝ)
-
-theorem ballCutoff_apply (x₀ : X) (r : ℝ) (x : X) :
-    ballCutoff x₀ r x = projIcc (0 : ℝ) 1 zero_le_one (2 - dist x x₀ / r) := by
-  rw [ballCutoff]
-
-/-- The ball cutoff is `1` on its closed ball. -/
-theorem ballCutoff_eq_one_of_mem_closedBall (hr : 0 < r) (hx : x ∈ closedBall x₀ r) :
-    ballCutoff x₀ r x = 1 := by
-  have hone : 1 ≤ 2 - dist x x₀ / r := by
-    rw [le_sub_comm, div_le_iff₀ hr]
-    linarith [mem_closedBall.mp hx]
-  rw [ballCutoff, projIcc_of_right_le _ hone]
-
-/-- The ball cutoff vanishes off the doubled ball. -/
-theorem ballCutoff_eq_zero_of_two_mul_le_dist (hr : 0 < r) (hx : 2 * r ≤ dist x x₀) :
-    ballCutoff x₀ r x = 0 := by
-  have hneg : 2 - dist x x₀ / r ≤ 0 := by
-    rw [sub_nonpos, le_div_iff₀ hr]
-    linarith
-  rw [ballCutoff, projIcc_of_le_left _ hneg]
-
-/-- The ball cutoff takes values in `[0, 1]`. -/
-theorem ballCutoff_mem_Icc (x₀ : X) (r : ℝ) (x : X) : ballCutoff x₀ r x ∈ Icc 0 1 :=
-  ballCutoff_apply x₀ r x ▸ Subtype.prop _
-
-/-- The ball cutoff is nonnegative. -/
-theorem ballCutoff_nonneg (x₀ : X) (r : ℝ) (x : X) : 0 ≤ ballCutoff x₀ r x :=
-  (ballCutoff_mem_Icc x₀ r x).1
-
-/-- The ball cutoff is at most `1`. -/
-theorem ballCutoff_le_one (x₀ : X) (r : ℝ) (x : X) : ballCutoff x₀ r x ≤ 1 :=
-  (ballCutoff_mem_Icc x₀ r x).2
-
-/-- The norm of the ball cutoff is at most `1`. -/
-theorem norm_ballCutoff_le (x₀ : X) (r : ℝ) (x : X) : ‖ballCutoff x₀ r x‖ ≤ 1 := by
-  rw [Real.norm_of_nonneg (ballCutoff_nonneg x₀ r x)]
-  exact ballCutoff_le_one x₀ r x
-
-/-- The ball cutoff of radius `r` is `|r|⁻¹`-Lipschitz. -/
-theorem lipschitzWith_ballCutoff (x₀ : X) (r : ℝ) : LipschitzWith ‖r‖₊⁻¹ (ballCutoff x₀ r) := by
-  have hlin : LipschitzWith ‖r‖₊⁻¹ fun x : X ↦ 2 - dist x x₀ / r :=
-    LipschitzWith.of_dist_le_mul fun x y ↦ by
-      rw [Real.dist_eq, NNReal.coe_inv, coe_nnNorm, Real.norm_eq_abs,
-        show 2 - dist x x₀ / r - (2 - dist y x₀ / r) = r⁻¹ * (dist y x₀ - dist x x₀) by ring,
-        abs_mul, abs_inv, abs_sub_comm]
-      exact mul_le_mul_of_nonneg_left (abs_dist_sub_le x y x₀) (inv_nonneg.2 (abs_nonneg r))
-  have h := (LipschitzWith.subtypeVal _).comp ((LipschitzWith.projIcc (zero_le_one' ℝ)).comp hlin)
-  rw [one_mul, one_mul] at h
-  exact h
-
-end Cutoff
-
-end TauCeti
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [SeminormedAddCommGroup F]
   [NormedSpace ℝ F]
@@ -117,11 +52,10 @@ theorem HolderOnWith.exists_holderWith_eqOn_closedBall {f : E → F} {C α : ℝ
   have hfρM (x : E) : ‖f (ρ x)‖ ≤ M.toNNReal :=
     (hM _ (mem_image_of_mem f (TauCeti.centeredRadialRetraction_mem_closedBall hr.le x))).trans
       (Real.le_coe_toNNReal M)
-  -- The cutoff `χ` is Lipschitz with values in `[0, 1]`, hence Hölder.
+  -- The cutoff `χ` is Hölder with values in `[0, 1]`.
   set χ := TauCeti.ballCutoff x₀ r
   have hχb (x : E) : ‖χ x‖ ≤ (1 : ℝ≥0) := TauCeti.norm_ballCutoff_le x₀ r x
-  have hχ := holderOnWith_univ.mp ((TauCeti.lipschitzWith_ballCutoff x₀ r).lipschitzOnWith
-    |>.holderOnWith_of_norm_le (fun x _ ↦ hχb x) hα)
+  have hχ := TauCeti.holderWith_ballCutoff x₀ r hα
   refine ⟨fun x ↦ χ x • f (ρ x), _, 1 * M.toNNReal,
     HolderWith.smul_of_eq_zero hχ (hfρ.holderOnWith univ) hχb (fun x _ ↦ hfρM x)
       (fun x hx ↦ (hx (mem_univ x)).elim), fun x ↦ ?_, ?_, fun x hx ↦ ?_⟩

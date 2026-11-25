@@ -20,9 +20,9 @@ import TauCeti.Analysis.Complex.Pompeiu.Basic
 import TauCeti.Analysis.Complex.Pompeiu.Holder.Operator
 import TauCeti.Analysis.Complex.Pompeiu.Rotation
 import TauCeti.Analysis.Holder.Bilinear
-import TauCeti.Analysis.Normed.Module.Ball.HolderExtension
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
+import TauCeti.Topology.MetricSpace.BallCutoff
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -165,10 +165,7 @@ private theorem coe_cutoffBCF : ⇑cutoffBCF = discCutoff :=
 private def cutoffHolder : supportedHolderSubmodule (Y := ℝ) (2⁻¹ : ℝ≥0) (closedBall (0 : ℂ) 1) :=
   ⟨HolderSpace.ofBoundedContinuousFunction cutoffBCF (by
       rw [coe_cutoffBCF]
-      exact ⟨_, holderOnWith_univ.mp <|
-        (lipschitzWith_ballCutoff 0 2⁻¹).lipschitzOnWith.holderOnWith_of_norm_le
-          (M := 1) (fun z _ ↦ (norm_ballCutoff_le 0 2⁻¹ z).trans_eq NNReal.coe_one.symm)
-          two_inv_lt_one.le⟩),
+      exact ⟨_, holderWith_ballCutoff 0 2⁻¹ two_inv_lt_one.le⟩),
     mem_supportedHolderSubmodule_iff.mpr fun z hz ↦ by
       simp only [mem_closedBall, dist_zero_right, not_le] at hz
       rw [HolderSpace.ofBoundedContinuousFunction_apply, coe_cutoffBCF]
