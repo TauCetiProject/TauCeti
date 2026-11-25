@@ -22,6 +22,7 @@ the diagonal it is the square of the Frobenius seminorm
 ## Main definitions
 
 * `ContinuousLinearMap.hilbertSchmidtInner`: the Hilbert–Schmidt inner product `⟪A, B⟫_HS`.
+* `ContinuousLinearMap.hilbertSchmidtInnerL`: the continuous linear functional `B ↦ ⟪A, B⟫_HS`.
 
 ## Main statements
 
@@ -31,6 +32,7 @@ the diagonal it is the square of the Frobenius seminorm
   matrix coefficients in independently chosen source and target orthonormal bases.
 * `ContinuousLinearMap.hilbertSchmidtInner_comm`: symmetry.
 * `ContinuousLinearMap.hilbertSchmidtInner_add_left`,
+  `ContinuousLinearMap.hilbertSchmidtInner_sub_left`,
   `ContinuousLinearMap.hilbertSchmidtInner_smul_left` and their right-hand versions: bilinearity.
 * `ContinuousLinearMap.hilbertSchmidtInner_self_eq_sq_frobenius` and
   `ContinuousLinearMap.hilbertSchmidtInner_self_eq_sq_hilbertSchmidtNorm`: `⟪A, A⟫_HS = ‖A‖_F²`
@@ -118,6 +120,28 @@ theorem hilbertSchmidtInner_smul_right (c : ℝ) (A B : W →L[ℝ] V) :
     A.hilbertSchmidtInner (c • B) = c * A.hilbertSchmidtInner B := by
   simp only [hilbertSchmidtInner_eq_sum _ _ (stdOrthonormalBasis ℝ W), smul_apply,
     real_inner_smul_right, Finset.mul_sum]
+
+/-- The Hilbert–Schmidt inner product is subtractive in its left argument. -/
+theorem hilbertSchmidtInner_sub_left (A₁ A₂ B : W →L[ℝ] V) :
+    (A₁ - A₂).hilbertSchmidtInner B = A₁.hilbertSchmidtInner B - A₂.hilbertSchmidtInner B := by
+  simp only [hilbertSchmidtInner_eq_sum _ _ (stdOrthonormalBasis ℝ W), sub_apply, inner_sub_left,
+    Finset.sum_sub_distrib]
+
+/-- The Hilbert–Schmidt inner product is subtractive in its right argument. -/
+theorem hilbertSchmidtInner_sub_right (A B₁ B₂ : W →L[ℝ] V) :
+    A.hilbertSchmidtInner (B₁ - B₂) = A.hilbertSchmidtInner B₁ - A.hilbertSchmidtInner B₂ := by
+  simp only [hilbertSchmidtInner_eq_sum _ _ (stdOrthonormalBasis ℝ W), sub_apply, inner_sub_right,
+    Finset.sum_sub_distrib]
+
+/-- The Hilbert–Schmidt inner product `B ↦ ⟪A, B⟫_HS` with a fixed left argument, as a continuous
+linear functional. -/
+noncomputable def hilbertSchmidtInnerL (A : W →L[ℝ] V) : (W →L[ℝ] V) →L[ℝ] ℝ :=
+  ∑ i, (innerSL ℝ (A (stdOrthonormalBasis ℝ W i))).comp (apply ℝ V (stdOrthonormalBasis ℝ W i))
+
+@[simp]
+theorem hilbertSchmidtInnerL_apply (A B : W →L[ℝ] V) :
+    A.hilbertSchmidtInnerL B = A.hilbertSchmidtInner B := by
+  simp [hilbertSchmidtInnerL, hilbertSchmidtInner_eq_sum A B (stdOrthonormalBasis ℝ W)]
 
 /-- On the diagonal, the Hilbert–Schmidt inner product is the square of the Frobenius seminorm:
 `⟪A, A⟫_HS = ‖A‖_F²`. -/
