@@ -37,6 +37,8 @@ It is the basic tool for the asymptotics of sums `∑_{j<n} f(j)` as `n → ∞`
 * `TauCeti.abs_bernoulliFun_one_fract_le`, `TauCeti.norm_bernoulliFun_one_fract_le` and
   `TauCeti.isBigO_bernoulliFun_one_fract`: the sawtooth `B₁({x}) = {x} - 1/2` is bounded by `1/2`,
   also viewed in `ℂ`, hence `O(1)` along every filter.
+* `TauCeti.exists_norm_bernoulliFun_fract_le`: every periodic Bernoulli function `Bₖ({x})` is
+  bounded.
 * `IntervalIntegrable.bernoulliFun_fract_smul`: the remainder integrands
   `Bₖ({x}) g(x)` are interval integrable whenever `g` is.
 * `TauCeti.sum_Icc_eq_eulerMaclaurin_of_hasDerivAt`: the formula of any order `k ≥ 1`, for a
@@ -74,6 +76,14 @@ open scoped Nat
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
+/-- The periodic Bernoulli function `Bₖ({x})`, where `{x} = x - ⌊x⌋`, is bounded: `Bₖ` is
+continuous on the compact interval `[0, 1]`, which contains every fractional part. -/
+theorem TauCeti.exists_norm_bernoulliFun_fract_le (k : ℕ) :
+    ∃ M, ∀ x : ℝ, ‖bernoulliFun k (Int.fract x)‖ ≤ M := by
+  obtain ⟨M, hM⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn
+    (continuous_bernoulliFun k).continuousOn
+  exact ⟨M, fun x => hM _ ⟨Int.fract_nonneg x, (Int.fract_lt_one x).le⟩⟩
+
 omit [CompleteSpace E] in
 /-- The product of an interval integrable function with the periodic Bernoulli function
 `Bₖ({x})`, where `{x} = x - ⌊x⌋`, is interval integrable, so the remainder integrals of the
@@ -81,13 +91,11 @@ Euler–Maclaurin formula exist. -/
 theorem IntervalIntegrable.bernoulliFun_fract_smul {u : ℝ → E} {a b : ℝ}
     (hu : IntervalIntegrable u volume a b) (k : ℕ) :
     IntervalIntegrable (fun x => bernoulliFun k (Int.fract x) • u x) volume a b := by
-  obtain ⟨C, hC⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn
-    (continuous_bernoulliFun k).continuousOn
+  obtain ⟨C, hC⟩ := TauCeti.exists_norm_bernoulliFun_fract_le k
   rw [intervalIntegrable_iff] at hu ⊢
   exact hu.bdd_smul C
     ((continuous_bernoulliFun k).measurable.comp measurable_fract).aestronglyMeasurable
-    (Filter.Eventually.of_forall fun x =>
-      hC _ ⟨Int.fract_nonneg x, (Int.fract_lt_one x).le⟩)
+    (Filter.Eventually.of_forall hC)
 
 namespace TauCeti
 
