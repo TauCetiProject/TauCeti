@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.OrientedJacobian
 public import TauCeti.Analysis.InnerProductSpace.SingularValues.Least
+import TauCeti.Algebra.Module.LinearMap.Defs
 import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 
 /-!
@@ -327,10 +328,9 @@ no outer distortion. -/
 theorem outerDistortion_linearIsometry_comp (U : W →ₗᵢ[ℝ] X)
     (hU : oW.orientedJacobian oX U.toLinearMap = 1) (A : V →ₗ[ℝ] W) :
     oV.outerDistortion oX (U.toLinearMap ∘ₗ A) = oV.outerDistortion oW A := by
-  have hzero : U.toLinearMap ∘ₗ A = 0 ↔ A = 0 := by
-    simp [LinearMap.ext_iff, map_eq_zero_iff U U.injective]
   rw [outerDistortion_def, outerDistortion_def, oV.orientedJacobian_comp_of_left_eq_one oW oX hU,
-    LinearMap.norm_toContinuousLinearMap_linearIsometry_comp, hzero]
+    LinearMap.norm_toContinuousLinearMap_linearIsometry_comp,
+    LinearMap.comp_eq_zero_iff_of_injective U.injective]
 
 omit [FiniteDimensional ℝ W] in
 /-- Precomposing with an isometric isomorphism of oriented Jacobian `1` (orientation-preserving)
@@ -338,10 +338,9 @@ changes no outer distortion. -/
 theorem outerDistortion_comp_linearIsometryEquiv (U : X ≃ₗᵢ[ℝ] V)
     (hU : oX.orientedJacobian oV (U : X →ₗ[ℝ] V) = 1) (A : V →ₗ[ℝ] W) :
     oX.outerDistortion oW (A ∘ₗ (U : X →ₗ[ℝ] V)) = oV.outerDistortion oW A := by
-  have hzero : A ∘ₗ (U : X →ₗ[ℝ] V) = 0 ↔ A = 0 := by
-    simp [LinearMap.ext_iff, U.surjective.forall]
   rw [outerDistortion_def, outerDistortion_def, oX.orientedJacobian_comp_of_right_eq_one oV oW hU,
-    LinearMap.norm_toContinuousLinearMap_comp_linearIsometryEquiv, hzero]
+    LinearMap.norm_toContinuousLinearMap_comp_linearIsometryEquiv,
+    LinearMap.comp_eq_zero_iff_of_surjective (f := (U : X →ₗ[ℝ] V)) U.surjective]
 
 /-- Postcomposing with a linear isometry of oriented Jacobian `1` (orientation-preserving) changes
 no inner distortion. -/
