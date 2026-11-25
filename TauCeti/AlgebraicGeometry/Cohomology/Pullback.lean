@@ -27,7 +27,7 @@ the underlying abelian sheaf of the module pullback
 (`AlgebraicGeometry.Scheme.Hom.toSheafPullbackComparison`).
 
 The pullback map is natural in `M`, commutes with the connecting maps of a short exact sequence
-whose pullback is still short exact (for instance for flat `g` and quasi-coherent terms), is
+whose pullback is still short exact (for instance for flat `g`), is
 semilinear for the action of global functions along `g^♯ : Γ(X, 𝒪_X) ⟶ Γ(Y, 𝒪_Y)`, and is the
 pullback of global sections in degree zero. For the base change `Y = X ×_R R'` along a ring map
 `R → R'`, its `R'`-linear extension is the flat base change map
@@ -101,8 +101,7 @@ theorem cohomologyPullback_cohomologyMap {M N : X.Modules} (α : M ⟶ N) (n : �
 
 /-- The pullback map on cohomology commutes with the connecting maps of a short exact sequence
 `S` of sheaves of modules on `X` whose pullback to `Y` is short exact, for instance when `g` is flat
-and the first two terms of `S` are quasi-coherent
-(`AlgebraicGeometry.Scheme.Hom.shortExact_map_pullback_of_flat`). -/
+(`AlgebraicGeometry.Scheme.Modules.preservesHomology_pullback_of_flat`). -/
 theorem cohomologyPullback_cohomologyδ {S : ShortComplex X.Modules} (hS : S.ShortExact)
     (hS' : (S.map (Scheme.Modules.pullback g)).ShortExact) {n₀ n₁ : ℕ} (h : n₀ + 1 = n₁)
     (x : Cohomology S.X₃ n₀) :

@@ -36,7 +36,13 @@ This file gives the basic structure of `V`.
   mutually local. The nonnegative modes kill the vacuum
   (`TauCeti.CurrentAlgebra.ncoeff_currentField_vacuum_eq_zero`): `J^x(z)|0⟩` is a power series in
   `z`, whose constant term is the coefficient `J^x[[-1]]|0⟩ = x₋₁|0⟩`. This is the creation
-  property of the generating fields of the affine vertex algebra.
+  property of the generating fields of the affine vertex algebra. The modes generate `V` from the
+  vacuum: an `R`-submodule containing `|0⟩` and stable under every mode `xₙ` is all of `V`
+  (`TauCeti.CurrentAlgebra.eq_top_of_vacuum_mem_of_forall_ncoeff_currentField_apply_mem`). The
+  commutator relations of `ĝ` compute the nonnegative modes on the states `y₋₁|0⟩`:
+  `x₀ y₋₁|0⟩ = [x, y]₋₁|0⟩`, `x₁ y₋₁|0⟩ = -a Φ(x, y) |0⟩` and `xₙ y₋₁|0⟩ = 0` for `n ≥ 2`. With
+  `Φ = -κ` and `a = 1` these are the operator product expansion
+  `J^x(z) J^y(w) ∼ κ(x, y) / (z - w)² + J^{[x, y]}(w) / (z - w)` of the affine vertex algebra.
 * **Coordinate changes.** Over a field, an algebra automorphism `σ` of `K⟦X⟧` lifts to an algebra
   automorphism `σ̂` of `U` which substitutes `σ X` in the currents and preserves `I₀`
   (`TauCeti.CurrentAlgebra.coordinateEnvelopingAut`). It therefore descends to `V`, giving a group
@@ -75,6 +81,12 @@ base ring is an arbitrary commutative ring.
   on the vacuum.
 * `TauCeti.CurrentAlgebra.ncoeff_currentField_vacuum_eq_zero`: the nonnegative modes of the current
   fields kill the vacuum.
+* `TauCeti.CurrentAlgebra.eq_top_of_vacuum_mem_of_forall_ncoeff_currentField_apply_mem`: the
+  vacuum generates the vacuum module under the modes of the current fields.
+* `TauCeti.CurrentAlgebra.ncoeff_zero_currentField_ncoeff_currentField_vacuum`,
+  `TauCeti.CurrentAlgebra.ncoeff_one_currentField_ncoeff_currentField_vacuum` and
+  `TauCeti.CurrentAlgebra.ncoeff_currentField_ncoeff_currentField_vacuum_eq_zero_of_two_le`: the
+  nonnegative modes on the states `y₋₁|0⟩`.
 * `TauCeti.CurrentAlgebra.vacuumCoordinateAction_smul`: the coordinate action is semilinear along
   the lift to `U`.
 * `TauCeti.CurrentAlgebra.eq_vacuumCoordinateAction`: it is the unique such map fixing the vacuum.
@@ -219,6 +231,67 @@ theorem ncoeff_currentField_vacuum_eq_zero (x : L) {n : ℤ} (hn : 0 ≤ n) :
         (vacuum Φ hΦ hΦs a) = 0 := by
   rw [ncoeff_currentField, envelopingAction_apply]
   exact envelopingι_smul_vacuum (single_tmul_mem_orderSubmodule R L hn 1 x)
+
+variable (Φ hΦ hΦs a)
+
+local notation "J" => currentField (envelopingAction (M := VacuumModule Φ hΦ hΦs a) Φ hΦ hΦs a)
+  (Iff.mpr (isSmooth_envelopingAction_iff Φ hΦ hΦs a)
+    (smoothModules_quotient_orderLeftIdeal Φ hΦ hΦs a 0))
+
+/-! ### Generation by the current fields -/
+
+variable {Φ hΦ hΦs a} in
+/-- **The vacuum generates the vacuum module under the current modes.** An `R`-submodule of the
+vacuum module containing `|0⟩` and stable under every mode `xₙ = J^x[[n]]` is everything. -/
+theorem eq_top_of_vacuum_mem_of_forall_ncoeff_currentField_apply_mem
+    {W : Submodule R (VacuumModule Φ hΦ hΦs a)} (hvac : vacuum Φ hΦ hΦs a ∈ W)
+    (hW : ∀ (x : L) (n : ℤ), ∀ v ∈ W, ((J x)[[n]]) v ∈ W) : W = ⊤ := by
+  refine eq_top_iff.2 fun v _ ↦ ?_
+  obtain ⟨u, rfl⟩ := exists_smul_vacuum_eq v
+  exact smul_mem_of_forall_ncoeff_currentField_apply_mem
+    (smoothModules_quotient_orderLeftIdeal Φ hΦ hΦs a 0) hW u hvac
+
+/-! ### Products of the generating states -/
+
+/-- A nonnegative mode on a generating state is its commutator with `y₋₁` on the vacuum:
+`xₙ y₋₁|0⟩ = [x, y]ₙ₋₁|0⟩ + δ_{n, 1} (-a Φ(x, y)) |0⟩` for `n ≥ 0`. -/
+private theorem ncoeff_currentField_ncoeff_currentField_vacuum_of_nonneg (x y : L) {n : ℤ}
+    (hn : 0 ≤ n) :
+    ((J x)[[n]]) (((J y)[[-1]]) (vacuum Φ hΦ hΦs a)) =
+      ((J ⁅x, y⁆)[[n - 1]]) (vacuum Φ hΦ hΦs a) +
+        (if n - 1 = 0 then -(a * Φ x y) else 0) • vacuum Φ hΦ hΦs a := by
+  have h := LinearMap.congr_fun (ncoeff_currentField_mul_sub_mul Φ a
+    ((isSmooth_envelopingAction_iff Φ hΦ hΦs a).2
+      (smoothModules_quotient_orderLeftIdeal Φ hΦ hΦs a 0))
+    (envelopingAction_mul_sub_mul Φ hΦ hΦs a) x y n (-1)) (vacuum Φ hΦ hΦs a)
+  -- The commutator applied to the vacuum, where `xₙ|0⟩ = 0`.
+  simp only [LinearMap.sub_apply, mul_apply_eq_comp, ncoeff_currentField_vacuum_eq_zero x hn,
+    map_zero, sub_zero, LinearMap.add_apply, Module.algebraMap_end_apply, ← sub_eq_add_neg] at h
+  rw [h]
+  split_ifs <;> simp
+
+-- Not a simp lemma: the simp normal form of a mode `J^x[[n]]` is the action of its current
+-- (`ncoeff_currentField`).
+/-- **The zeroth product of generating states is the bracket:** `x₀ y₋₁|0⟩ = [x, y]₋₁|0⟩`. -/
+theorem ncoeff_zero_currentField_ncoeff_currentField_vacuum (x y : L) :
+    ((J x)[[0]]) (((J y)[[-1]]) (vacuum Φ hΦ hΦs a)) =
+      ((J ⁅x, y⁆)[[-1]]) (vacuum Φ hΦ hΦs a) := by
+  simp [ncoeff_currentField_ncoeff_currentField_vacuum_of_nonneg Φ hΦ hΦs a x y le_rfl,
+    -ncoeff_currentField]
+
+/-- **The first product of generating states is the level:** `x₁ y₋₁|0⟩ = -a Φ(x, y) |0⟩`.
+For `Φ = -κ` and `a = 1` this is `κ(x, y) |0⟩`. -/
+theorem ncoeff_one_currentField_ncoeff_currentField_vacuum (x y : L) :
+    ((J x)[[1]]) (((J y)[[-1]]) (vacuum Φ hΦ hΦs a)) = -(a * Φ x y) • vacuum Φ hΦ hΦs a := by
+  simp [ncoeff_currentField_ncoeff_currentField_vacuum_of_nonneg Φ hΦ hΦs a x y zero_le_one,
+    ncoeff_currentField_vacuum_eq_zero _ le_rfl, -ncoeff_currentField]
+
+/-- **The higher products of generating states vanish:** `xₙ y₋₁|0⟩ = 0` for `n ≥ 2`. -/
+theorem ncoeff_currentField_ncoeff_currentField_vacuum_eq_zero_of_two_le (x y : L) {n : ℤ}
+    (hn : 2 ≤ n) : ((J x)[[n]]) (((J y)[[-1]]) (vacuum Φ hΦ hΦs a)) = 0 := by
+  simp [ncoeff_currentField_ncoeff_currentField_vacuum_of_nonneg Φ hΦ hΦs a x y (by omega : 0 ≤ n),
+    ncoeff_currentField_vacuum_eq_zero _ (by omega : 0 ≤ n - 1), show n - 1 ≠ 0 by omega,
+    -ncoeff_currentField]
 
 end Vacuum
 

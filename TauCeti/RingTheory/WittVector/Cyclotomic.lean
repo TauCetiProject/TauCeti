@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.WittVector.Frobenius
 public import TauCeti.RingTheory.WittVector.Primitive.Basic
+-- Proof-only: `ε ^ (1 / p) - 1` is a `p`-th root of `ε - 1`.
+import TauCeti.RingTheory.Perfect.Basic
 
 /-!
 # Cyclotomic period elements of Witt vectors
@@ -26,6 +28,13 @@ of primitive `p`-power roots of unity; then `ξ` generates the kernel of Fontain
 `θ : A_inf → O_C` and `ξ'` the kernel of `θ ∘ φ⁻¹`
 (`TauCeti.WittVector.ker_fontaineTheta_eq_span_cyclotomicXi`).
 
+The three elements are natural in `S`: a ring homomorphism `f : S →+* T` sends them, under
+`WittVector.map f`, to the elements formed from `f ε` (for `ξ` and `ξ'` when `T` is perfect too).
+At `ε = 1` they are `0`, `p` and `p`. Hence if `f ε = 1`, then `W(f)` kills `μ` and sends `ξ'` to
+`p`, and also `ξ` when `T` is reduced. In the main example `f` is the residue map `O_C^♭ → k` to the
+residue field and `W(f) : A_inf → W(k)` is the specialization to the crystalline special fibre;
+unlike Fontaine's map, it sends `ξ` to `p` rather than to `0`.
+
 The geometric sum identity gives the factorisations `μ = ξ · φ⁻¹(μ)` and `φ(μ) = ξ' · μ` in `W(S)`,
 without any division. If `ε - 1` lies in the Jacobson radical of `S`, then modulo the Jacobson
 radical `ξ` becomes `p`, so `ξ` and `ξ'` are distinguished: their first Witt coordinates are units.
@@ -37,6 +46,11 @@ radical `ξ` becomes `p`, so `ξ` and `ξ'` are distinguished: their first Witt 
 
 ## Main results
 
+* `TauCeti.WittVector.map_cyclotomicMu`, `TauCeti.WittVector.map_cyclotomicXi`,
+  `TauCeti.WittVector.map_cyclotomicXiTilde`: naturality of `μ`, `ξ` and `ξ'`.
+* `TauCeti.WittVector.map_cyclotomicXi_eq_natCast`,
+  `TauCeti.WittVector.map_cyclotomicXiTilde_eq_natCast`: if `f ε = 1`, then `W(f)` sends `ξ` (for
+  reduced `T`) and `ξ'` to `p`.
 * `TauCeti.WittVector.cyclotomicMu_eq_cyclotomicXi_mul`: `μ = ξ · φ⁻¹(μ)`.
 * `TauCeti.WittVector.frobenius_cyclotomicMu_eq_cyclotomicXiTilde_mul`: `φ(μ) = ξ' · μ`.
 * `TauCeti.WittVector.cyclotomicXiTilde_eq_sum`: `ξ' = ∑_{j < p} [ε] ^ j`.
@@ -60,7 +74,7 @@ open _root_.WittVector
 
 namespace TauCeti.WittVector
 
-variable (p : ℕ) [hp : Fact p.Prime] {S : Type*} [CommRing S]
+variable (p : ℕ) [hp : Fact p.Prime] {S T : Type*} [CommRing S] [CommRing T]
 
 local notation "𝕎" => _root_.WittVector p
 
@@ -74,6 +88,12 @@ theorem cyclotomicMu_def (ε : S) : cyclotomicMu p ε = teichmuller p ε - 1 := 
 @[simp]
 theorem cyclotomicMu_one : cyclotomicMu p (1 : S) = 0 := by
   simp [cyclotomicMu_def]
+
+/-- The period element `μ` is natural: `W(f)` sends `μ(ε) = [ε] - 1` to `μ(f ε) = [f ε] - 1`. -/
+@[simp]
+theorem map_cyclotomicMu (f : S →+* T) (ε : S) :
+    map f (cyclotomicMu p ε) = cyclotomicMu p (f ε) := by
+  simp [cyclotomicMu_def, map_teichmuller]
 
 /-- In characteristic `p`, the Frobenius of `μ(ε) = [ε] - 1` is `μ(ε ^ p) = [ε ^ p] - 1`. -/
 @[simp]
@@ -121,6 +141,55 @@ theorem cyclotomicXiTilde_eq_cyclotomicXi_pow (ε : S) :
     cyclotomicXiTilde p ε = cyclotomicXi p (ε ^ p) := by
   rw [cyclotomicXiTilde_eq_sum, cyclotomicXi_def, frobeniusEquiv_symm_pow]
 
+/-- For `ε = 1`, the period element `ξ = ∑_{j < p} [1] ^ j` is `p`. -/
+@[simp]
+theorem cyclotomicXi_one : cyclotomicXi p (1 : S) = p := by
+  simp [cyclotomicXi_def]
+
+/-- For `ε = 1`, the period element `ξ' = ∑_{j < p} [1] ^ j` is `p`. -/
+@[simp]
+theorem cyclotomicXiTilde_one : cyclotomicXiTilde p (1 : S) = p := by
+  simp [cyclotomicXiTilde_eq_sum]
+
+/-- If a ring homomorphism `f` sends `ε` to `1`, then `W(f)` sends `ξ' = ∑_{j < p} [ε] ^ j` to
+`p`. -/
+theorem map_cyclotomicXiTilde_eq_natCast {f : S →+* T} {ε : S} (hε : f ε = 1) :
+    map f (cyclotomicXiTilde p ε) = p := by
+  simp [cyclotomicXiTilde_eq_sum, map_sum, map_teichmuller, hε]
+
+/-- If a ring homomorphism `f` to a reduced ring sends `ε` to `1`, then `W(f)` sends
+`ξ = ∑_{j < p} [ε ^ (1 / p)] ^ j` to `p`: `f (ε ^ (1 / p))` is then `1` too. Reducedness is needed:
+otherwise `f (ε ^ (1 / p)) - 1` may be a nonzero element with vanishing `p`-th power. -/
+theorem map_cyclotomicXi_eq_natCast [IsReduced T] {f : S →+* T} {ε : S} (hε : f ε = 1) :
+    map f (cyclotomicXi p ε) = p := by
+  -- `f (ε ^ (1 / p)) - 1` is a `p`-th root of `f (ε - 1) = 0`, so it vanishes
+  have h : f ((_root_.frobeniusEquiv S p).symm ε) = 1 := by
+    rw [← sub_eq_zero]
+    refine IsReduced.eq_zero _ ⟨p, ?_⟩
+    rw [← map_one f, ← map_sub, ← map_pow, frobeniusEquiv_symm_sub_one_pow]
+    simp [hε]
+  simp [cyclotomicXi_def, map_sum, map_teichmuller, h]
+
+section Natural
+
+variable [CharP T p] [PerfectRing T p]
+
+/-- The period element `ξ` is natural for ring homomorphisms between perfect rings of
+characteristic `p`: `W(f)` sends `ξ(ε)` to `ξ(f ε)`. -/
+@[simp]
+theorem map_cyclotomicXi (f : S →+* T) (ε : S) :
+    map f (cyclotomicXi p ε) = cyclotomicXi p (f ε) := by
+  simp [cyclotomicXi_def, map_sum, map_teichmuller, RingHom.map_frobeniusEquiv_symm]
+
+/-- The period element `ξ'` is natural for ring homomorphisms between perfect rings of
+characteristic `p`: `W(f)` sends `ξ'(ε)` to `ξ'(f ε)`. -/
+@[simp]
+theorem map_cyclotomicXiTilde (f : S →+* T) (ε : S) :
+    map f (cyclotomicXiTilde p ε) = cyclotomicXiTilde p (f ε) := by
+  simp [cyclotomicXiTilde_eq_sum, map_sum, map_teichmuller]
+
+end Natural
+
 /-- The inverse Frobenius of `μ(ε) = [ε] - 1` is `μ(ε ^ (1 / p)) = [ε ^ (1 / p)] - 1`. -/
 @[simp]
 theorem frobeniusEquiv_symm_cyclotomicMu (ε : S) :
@@ -164,7 +233,7 @@ theorem isDistinguished_cyclotomicXi {ε : S} (hε : ε - 1 ∈ Ring.jacobson S)
   -- `x - 1` is a `p`-th root of `ε - 1`, and the Jacobson radical is a radical ideal
   have hx : x - 1 ∈ Ring.jacobson S := by
     rw [← Ideal.jacobson_bot] at hε ⊢
-    exact Ideal.isRadical_jacobson ⊥ ⟨p, by rwa [sub_pow_char, one_pow, frobeniusEquiv_symm_pow_p]⟩
+    exact Ideal.isRadical_jacobson ⊥ ⟨p, by rwa [frobeniusEquiv_symm_sub_one_pow]⟩
   let q := Ideal.Quotient.mk (Ring.jacobson S)
   have : IsLocalHom q := isLocalHom_of_le_jacobson le_rfl
   have hq : map q (cyclotomicXi p ε) = p := by

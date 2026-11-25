@@ -10,6 +10,7 @@ public import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import Mathlib.Analysis.Normed.Module.WeakDual
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 
 /-!
 # Norms of positive functionals on C⋆-algebras
@@ -24,11 +25,18 @@ approximate units, so pulling a positive functional back along it does not chang
 to states along quotient maps; without surjectivity the norm can drop, for instance to `0`.
 For the same reason the norm is additive on positive functionals,
 `PositiveContinuousLinearMap.opNorm_add`.
+Along a star isomorphism `e`, pulling back along `e` and then along `e.symm` (or the other way
+round) recovers the functional,
+`PositiveContinuousLinearMap.comp_ofClass_comp_ofClass_symm` and
+`PositiveContinuousLinearMap.comp_ofClass_symm_comp_ofClass`.
 
 The bound `‖ω a‖ ^ 2 ≤ ‖ω‖ ‖ω (star a * a)‖` of Mathlib's
 `PositiveContinuousLinearMap.norm_map_sq_le_opNorm_mul` shows that a positive functional vanishes
 at every `a` with `ω (star a * a) = 0`
-(`PositiveContinuousLinearMap.map_eq_zero_of_map_star_mul_self_eq_zero`).
+(`PositiveContinuousLinearMap.map_eq_zero_of_map_star_mul_self_eq_zero`). More generally, by the
+Cauchy–Schwarz inequality a positive linear functional `f` vanishing at `b⋆ b` kills every product
+`a b` (`PositiveLinearMap.map_mul_eq_zero_of_map_star_mul_eq_zero`), and one vanishing at `b b⋆`
+kills every product `b a` (`PositiveLinearMap.map_mul_eq_zero_of_map_mul_star_eq_zero`).
 
 ## Positive functionals in the weak-* dual
 
@@ -68,6 +76,22 @@ theorem opNorm_comp_ofClass_of_surjective (ω : B →P[ℂ] ℂ) (f : F) (hf : F
     ((ω.comp (.ofClass f)).tendsto_nhds_opNorm hl)
     (Filter.tendsto_map'_iff.mp (ω.tendsto_nhds_opNorm (hl.map f hf)))
 
+/-- Pulling a positive functional back along a star isomorphism and then along its inverse
+recovers the functional. -/
+@[simp]
+theorem comp_ofClass_comp_ofClass_symm (e : A ≃⋆ₐ[ℂ] B) (ω : B →P[ℂ] ℂ) :
+    (ω.comp (.ofClass e)).comp (.ofClass e.symm) = ω := by
+  ext b
+  simp
+
+/-- Pulling a positive functional back along the inverse of a star isomorphism and then along
+the isomorphism recovers the functional. -/
+@[simp]
+theorem comp_ofClass_symm_comp_ofClass (e : A ≃⋆ₐ[ℂ] B) (ω : A →P[ℂ] ℂ) :
+    (ω.comp (.ofClass e.symm)).comp (.ofClass e) = ω := by
+  ext a
+  simp
+
 /-- The norm of a sum of positive functionals on a C⋆-algebra is the sum of their norms. -/
 theorem opNorm_add (τ σ : A →P[ℂ] ℂ) :
     ‖((τ + σ : A →P[ℂ] ℂ) : A →L[ℂ] ℂ)‖ = ‖(τ : A →L[ℂ] ℂ)‖ + ‖(σ : A →L[ℂ] ℂ)‖ := by
@@ -83,6 +107,30 @@ theorem map_eq_zero_of_map_star_mul_self_eq_zero (ω : A →P[ℂ] ℂ) {a : A}
   simpa [ha] using ω.norm_map_sq_le_opNorm_mul a
 
 end PositiveContinuousLinearMap
+
+namespace PositiveLinearMap
+
+variable {A F : Type*} [NonUnitalRing A] [PartialOrder A] [StarRing A] [StarOrderedRing A]
+  [Module ℂ A] [SelfAdjointDecompose A] [StarModule ℂ A] [IsScalarTower ℂ A A]
+  [FunLike F A ℂ] [LinearMapClass F ℂ A ℂ] [OrderHomClass F A ℂ]
+
+/-- A positive linear functional that vanishes at `b⋆ b` kills every product `a * b`, by the
+Cauchy–Schwarz inequality. -/
+theorem map_mul_eq_zero_of_map_star_mul_eq_zero (f : F) {b : A} (hb : f (star b * b) = 0)
+    (a : A) : f (a * b) = 0 := by
+  have h := norm_map_star_mul_le f (star a) b
+  simp only [star_star, hb, norm_zero, Real.sqrt_zero, mul_zero, norm_le_zero_iff] at h
+  exact h
+
+/-- A positive linear functional that vanishes at `b b⋆` kills every product `b * a`, by the
+Cauchy–Schwarz inequality. -/
+theorem map_mul_eq_zero_of_map_mul_star_eq_zero (f : F) {b : A} (hb : f (b * star b) = 0)
+    (a : A) : f (b * a) = 0 := by
+  have h := norm_map_mul_star_le f b (star a)
+  simp only [star_star, hb, norm_zero, Real.sqrt_zero, zero_mul, norm_le_zero_iff] at h
+  exact h
+
+end PositiveLinearMap
 
 namespace WeakDual
 
