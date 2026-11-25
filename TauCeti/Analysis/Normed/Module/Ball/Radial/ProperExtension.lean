@@ -39,12 +39,40 @@ theorem only says that `g` agrees with `f` at the points at distance zero from `
 
 ## Main results
 
+* `ContinuousOn.exists_closedBall_subset_and_le_norm_sub`: inside a neighbourhood of an isolated
+  point of a fibre on which `f` is continuous, a closed ball isolating the point with a positive
+  lower bound on its boundary sphere.
 * `ContinuousOn.exists_isProperMap_eqOn_closedBall_and_le_norm_sub`: the proper radial extension.
 -/
 
 public section
 
-open Metric Set TauCeti
+open Filter Metric Set TauCeti
+open scoped Topology
+
+/-- Inside any neighbourhood `U` of an isolated point `x` of `f⁻¹(f x)` on which `f` is
+continuous, there is a closed ball about `x` contained in `U` whose only solution of `f z = f x`
+is `x`, and a positive lower bound for `‖f - f x‖` on its boundary sphere. -/
+theorem ContinuousOn.exists_closedBall_subset_and_le_norm_sub {E F : Type*} [PseudoMetricSpace E]
+    [ProperSpace E] [NormedAddCommGroup F] {f : E → F} {x : E} {U : Set E} (hf : ContinuousOn f U)
+    (hU : U ∈ 𝓝 x) (hiso : ∀ᶠ z in 𝓝[≠] x, f z ≠ f x) :
+    ∃ r > 0, ∃ δ > 0, closedBall x r ⊆ U ∧ (∀ z ∈ sphere x r, δ ≤ ‖f z - f x‖) ∧
+      (∀ z ∈ closedBall x r, f z = f x → z = x) := by
+  obtain ⟨R, hR, hRU⟩ := Metric.eventually_nhds_iff_ball.1
+    (Filter.Eventually.and hU (eventually_nhdsWithin_iff.1 hiso))
+  have hr : 0 < R / 2 := half_pos hR
+  have hrR : closedBall x (R / 2) ⊆ ball x R := closedBall_subset_ball (half_lt_self hR)
+  have hU' : closedBall x (R / 2) ⊆ U := fun z hz ↦ (hRU z (hrR hz)).1
+  have hiso' (z : E) (hz : z ∈ closedBall x (R / 2)) (hfz : f z = f x) : z = x :=
+    by_contra fun hzx ↦ (hRU z (hrR hz)).2 hzx hfz
+  have hcont : ContinuousOn (fun z ↦ ‖f z - f x‖) (sphere x (R / 2)) :=
+    ((continuous_id.dist (continuous_const (y := f x))).comp_continuousOn
+      (hf.mono (sphere_subset_closedBall.trans hU'))).congr fun z _ ↦
+        (dist_eq_norm (f z) (f x)).symm
+  obtain ⟨δ, hδ, hfδ⟩ := (isCompact_sphere x (R / 2)).exists_forall_le' hcont
+    fun z hz ↦ norm_pos_iff.2 (sub_ne_zero.2 fun h ↦
+      hr.ne' (by rw [← mem_sphere.1 hz, hiso' z (sphere_subset_closedBall hz) h, dist_self]))
+  exact ⟨R / 2, hr, δ, hδ, hU', hfδ, hiso'⟩
 
 variable {E F : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
