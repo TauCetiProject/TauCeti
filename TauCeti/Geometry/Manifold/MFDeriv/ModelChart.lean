@@ -66,6 +66,8 @@ open set.
   transformation law of covectors; and
   `TauCeti.innerSL_toDual_symm_comp_inverse_mvfderiv`: a covector `ξ ∈ T*ₓM` is `⟪η, ·⟫ ∘ de_x`
   for the frequency `η` dual to `ξ ∘ (de_x)⁻¹`.
+* `TauCeti.adjoint_ringInverse_fderiv_comp_symm_eq_one`: the inverse adjoint of the derivative of
+  the transition from a chart to itself is the identity on the chart target.
 -/
 
 public section
@@ -429,6 +431,26 @@ theorem toDual_symm_comp_inverse_mvfderiv {e₁ e₂ : OpenPartialHomeomorph M E
   congr 1
   refine A.injective ?_
   simpa using (hD _).trans ((isInvertible_mvfderiv_chart he₂ hx₂).self_apply_inverse v)
+
+omit [ChartedSpace E M] in
+/-- The inverse adjoint of the derivative of the transition `e ∘ e⁻¹` from a chart to itself is the
+identity at every point of the chart target. -/
+theorem adjoint_ringInverse_fderiv_comp_symm_eq_one {e : OpenPartialHomeomorph M E} {y : E}
+    (hy : y ∈ e.target) :
+    ContinuousLinearMap.adjoint (Ring.inverse (fderiv ℝ (e ∘ e.symm) y)) = 1 := by
+  have hid : (e ∘ e.symm : E → E) =ᶠ[𝓝 y] id := e.eventually_right_inverse hy
+  rw [hid.fderiv_eq, fderiv_id, ← ContinuousLinearMap.one_def, Ring.inverse_one,
+    ContinuousLinearMap.adjoint_one]
+
+omit [CompleteSpace E] in
+/-- The covector `⟪η, ·⟫ ∘ de_x` read through a chart `e` at `x` vanishes exactly when `η = 0`,
+since `de_x` is invertible. -/
+theorem innerSL_comp_mvfderiv_eq_zero_iff {e : OpenPartialHomeomorph M E}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M) {x : M} (hx : x ∈ e.source) {η : E} :
+    (innerSL ℝ η).comp (mvfderiv 𝓘(ℝ, E) e x) = 0 ↔ η = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  have h' := DFunLike.congr_fun h ((mvfderiv 𝓘(ℝ, E) e x).inverse η)
+  simpa [(isInvertible_mvfderiv_chart he hx).self_apply_inverse] using h'
 
 /-- A covector `ξ ∈ T*ₓM` is `⟪η, ·⟫ ∘ de_x` for the frequency `η` dual to `ξ ∘ (de_x)⁻¹`. -/
 theorem innerSL_toDual_symm_comp_inverse_mvfderiv {e : OpenPartialHomeomorph M E}
