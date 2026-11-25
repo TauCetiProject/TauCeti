@@ -204,8 +204,6 @@ theorem test_gaussian_two (hv : (2 : ℤ) ∈ v.asIdeal) {i : L} (hi : i ^ 2 = -
     hdeg ▸ hf.ramificationIdx_eq_natDegree hx hadj P
   refine ⟨inferInstance, inferInstance, he, fun h ↦ ?_⟩
   -- The ramification index `2` is the uniformizer of `A`, so it vanishes in the residue field.
-  have : (maximalIdeal B).LiesOver (maximalIdeal A) :=
-    ⟨(IsLocalRing.eq_maximalIdeal (Ideal.IsMaximal.under A (maximalIdeal B))).symm⟩
   have := ((Algebra.isTamelyRamifiedWRT_iff_of_isIntegralClosure B).mp h (maximalIdeal B)).2
   rw [he, ← map_natCast (Ideal.Quotient.mk _), Nat.cast_ofNat,
     Ideal.Quotient.eq_zero_iff_mem.mpr ((mem_maximalIdeal _).mpr h2.not_isUnit)] at this

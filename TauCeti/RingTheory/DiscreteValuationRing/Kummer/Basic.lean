@@ -15,6 +15,7 @@ import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.IntermediateField.ScalarTower
 import TauCeti.FieldTheory.Kummer.Extension
 import TauCeti.RingTheory.DiscreteValuationRing.Eisenstein
+import TauCeti.RingTheory.Ideal.LiesOver
 import TauCeti.RingTheory.LocalRing.Roots
 import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
@@ -348,12 +349,6 @@ private theorem surjective_algebraMap_quotient_of_pow_eq_of_irreducible (hπ : I
   rw [Ideal.inertiaDeg_eq_of_isMaximal (maximalIdeal A) P] at h
   exact (Algebra.finrank_eq_one_iff_bijective_algebraMap.mp h).2
 
-/-- If the integral closure of `A` in `L` is local, its maximal ideal lies over that of `A`. -/
-private theorem liesOver_maximalIdeal_integralClosure (A L : Type*) [CommRing A] [IsLocalRing A]
-    [Field L] [Algebra A L] [IsLocalRing (integralClosure A L)] :
-    (maximalIdeal (integralClosure A L)).LiesOver (maximalIdeal A) :=
-  ⟨(IsLocalRing.eq_maximalIdeal (Ideal.IsMaximal.under A _)).symm⟩
-
 /-- **A Kummer extension of a discrete valuation ring has no new roots of unity of order prime to
 the residue characteristic.** If `L` is generated over the fraction field `K` of a discrete
 valuation ring `A` by an `n`-th root of a uniformizer of `A`, and `m` is invertible in the residue
@@ -374,7 +369,6 @@ theorem mem_range_algebraMap_of_pow_eq_one_of_pow_eq_of_irreducible (hπ : Irred
     have := Algebra.finite_adjoin_simple_of_isIntegral hint
     .equiv (Subalgebra.equivOfEq _ _
       (integralClosure_eq_adjoin_of_pow_eq_of_irreducible hπ hα hgen)).symm.toLinearEquiv
-  have := liesOver_maximalIdeal_integralClosure A L
   -- The residue field extension is trivial, so roots of units descend from `A[α]` to `A`.
   have hres : Function.Surjective
       (algebraMap (ResidueField A) (ResidueField (integralClosure A L))) :=
@@ -400,8 +394,7 @@ theorem isTamelyRamifiedWRT_iff_of_pow_eq_of_irreducible (hπ : Irreducible π)
   have he := ramificationIdx_eq_of_pow_eq_of_irreducible hπ hα hgen
   rw [Algebra.isTamelyRamifiedWRT_def]
   refine ⟨fun h ↦ ?_, fun hu P _ _ ↦ ⟨⟨fun x ↦ ?_⟩, by rwa [he P]⟩⟩
-  · have := liesOver_maximalIdeal_integralClosure A L
-    simpa [he] using (h (maximalIdeal _)).2
+  · simpa [he] using (h (maximalIdeal _)).2
   -- The residue field extension is trivial, hence separable.
   let := Ideal.Quotient.field (maximalIdeal A)
   obtain ⟨y, rfl⟩ := surjective_algebraMap_quotient_of_pow_eq_of_irreducible hπ hα hgen P x
@@ -419,7 +412,6 @@ theorem isUnramifiedWRT_iff_of_pow_eq_of_irreducible (hπ : Irreducible π)
   refine ⟨fun h ↦ ?_, fun hn P _ _ ↦ ⟨(he P).trans hn,
     (Algebra.isTamelyRamifiedWRT_def.mp
       ((isTamelyRamifiedWRT_iff_of_pow_eq_of_irreducible hπ hα hgen).mpr (by simp [hn])) P).1⟩⟩
-  have := liesOver_maximalIdeal_integralClosure A L
   simpa [he] using (h (maximalIdeal _)).1
 
 /-- **When an adjoined Kummer subfield is tamely ramified.** For an `n`-th root `α` of a

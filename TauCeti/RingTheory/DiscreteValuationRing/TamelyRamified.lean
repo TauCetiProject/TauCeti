@@ -407,8 +407,6 @@ theorem IsTamelyRamifiedWRT.trans [IsLocalRing A] [IsDiscreteValuationRing (inte
   have hQ : P.under (integralClosure A M) = maximalIdeal (integralClosure A M) :=
     eq_maximalIdeal (Ideal.IsMaximal.under _ P)
   have : P.LiesOver (maximalIdeal (integralClosure A M)) := ⟨hQ.symm⟩
-  have : (maximalIdeal (integralClosure A M)).LiesOver (maximalIdeal A) :=
-    ⟨(eq_maximalIdeal (Ideal.IsMaximal.under A _)).symm⟩
   obtain ⟨hsepM, heM⟩ := hM (maximalIdeal (integralClosure A M))
   obtain ⟨hsepL, heL⟩ := hL P
   let := Ideal.Quotient.field (maximalIdeal A)
@@ -439,8 +437,6 @@ theorem IsUnramifiedWRT.trans [IsLocalRing A] [IsDiscreteValuationRing (integral
   intro P _ _
   have : P.LiesOver (maximalIdeal (integralClosure A M)) :=
     ⟨(eq_maximalIdeal (Ideal.IsMaximal.under _ P)).symm⟩
-  have : (maximalIdeal (integralClosure A M)).LiesOver (maximalIdeal A) :=
-    ⟨(eq_maximalIdeal (Ideal.IsMaximal.under A _)).symm⟩
   obtain ⟨heM, hsepM⟩ := hM (maximalIdeal (integralClosure A M))
   obtain ⟨heL, hsepL⟩ := hL P
   let := Ideal.Quotient.field (maximalIdeal A)
