@@ -10,6 +10,7 @@ public import Mathlib.Probability.Independence.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
+import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 
 /-!
 # Entropy of countable measurable partitions
@@ -35,8 +36,6 @@ of two labels `a`, `b` is the pair label `x ↦ (a x, b x)`.
   embedding a countable alphabet into `ℕ`, does not change the entropy.
 * `TauCeti.countablePartitionEntropy_eq_ofReal_sum`: on a finite alphabet, under a probability
   (or zero) measure, the entropy is the finite sum `∑ i, negMulLog p_i`.
-* `Real.mul_negMulLog_div`, `Real.mul_log_div_nonneg`: the real identity and nonnegativity of
-  the terms `p * log (q / p)` of the conditional entropy.
 
 ## References
 
@@ -49,24 +48,6 @@ public section
 
 open MeasureTheory ProbabilityTheory Real
 open scoped ENNReal
-
-namespace Real
-
-/-- `q * negMulLog (p / q) = p * log (q / p)`: the `negMulLog` of a ratio, rescaled, as a term of
-the conditional entropy. Both sides vanish when `q = 0`. -/
-theorem mul_negMulLog_div (p q : ℝ) : q * negMulLog (p / q) = p * log (q / p) := by
-  rcases eq_or_ne q 0 with rfl | hq
-  · simp
-  · rw [negMulLog, show q / p = (p / q)⁻¹ from (inv_div p q).symm, log_inv]
-    field_simp
-
-/-- The term `p * log (q / p)` of the conditional entropy is nonnegative for `0 ≤ p ≤ q`. -/
-theorem mul_log_div_nonneg {p q : ℝ} (hp : 0 ≤ p) (hpq : p ≤ q) : 0 ≤ p * log (q / p) := by
-  rcases hp.eq_or_lt with rfl | hp
-  · simp
-  · exact mul_nonneg hp.le (log_nonneg ((one_le_div hp).mpr hpq))
-
-end Real
 
 namespace TauCeti
 

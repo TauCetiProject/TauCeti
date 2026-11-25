@@ -9,6 +9,7 @@ public import TauCeti.InformationTheory.CondExpPartitionEntropy
 public import TauCeti.InformationTheory.PartitionEntropy
 import Mathlib.MeasureTheory.Function.FactorsThrough
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
+import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 import TauCeti.MeasureTheory.Measure.Real
 
 /-!
