@@ -45,14 +45,25 @@ namespace WeierstrassCurve
 
 namespace Affine
 
-variable {K : Type*} [Field K] (W : Affine K) [W.IsCharNeTwoNF] [W.IsElliptic] [DecidableEq K]
+variable {K : Type*} [Field K] (W : Affine K) [W.IsCharNeTwoNF] [W.IsElliptic]
+
+/-- The affine point `(x, 0)` at a root `x` of the Weierstrass cubic in characteristic
+different from two normal form. -/
+def pointOfRoot (x : {x : K // W.f.eval x = 0}) : W.Point :=
+  .some x 0 (W.nonsingular_of_eval_f_eq_zero x.property)
+
+/-- The point at a root of the Weierstrass cubic has that root as its `x`-coordinate and
+zero as its `y`-coordinate. -/
+theorem pointOfRoot_eq_some (x : {x : K // W.f.eval x = 0}) :
+    W.pointOfRoot x = .some x 0 (W.nonsingular_of_eval_f_eq_zero x.property) := (rfl)
+
+variable [DecidableEq K]
 
 /-- In characteristic different from two normal form, the doubling kernel consists of the
 origin and the points `(x, 0)` at the roots of the Weierstrass cubic. -/
 theorem ker_nsmul_two_eq_insert_range :
     ((nsmulAddMonoidHom (α := W.Point) 2).ker : Set W.Point) =
-      insert 0 (Set.range fun x : {x : K // W.f.eval x = 0} ↦
-        Point.some _ _ (W.nonsingular_of_eval_f_eq_zero x.property)) := by
+      insert 0 (Set.range W.pointOfRoot) := by
   have h2F : (2 : K) ≠ 0 := Ring.two_ne_zero (ringChar_ne_two W)
   ext P
   constructor
@@ -76,19 +87,20 @@ theorem card_ker_nsmul_two : Nat.card (nsmulAddMonoidHom (α := W.Point) 2).ker 
     Nat.card {x : K // W.f.eval x = 0} + 1 := by
   have hfin : Finite {x : K | W.f.eval x = 0} :=
     Set.Finite.to_subtype (Polynomial.finite_setOfPred_isRoot W.f_ne_zero)
-  set pt : {x : K | W.f.eval x = 0} → W.Point :=
-    fun x ↦ Point.some _ _ (W.nonsingular_of_eval_f_eq_zero x.property)
-  have hinj : Function.Injective pt := by
+  have hinj : Function.Injective W.pointOfRoot := by
     intro a b hab
-    exact Subtype.ext ((Point.some.injEq _ _ _ _ _ _).mp hab).1
+    rw [pointOfRoot_eq_some, pointOfRoot_eq_some, Point.some.injEq] at hab
+    exact Subtype.ext hab.1
   calc Nat.card (nsmulAddMonoidHom (α := W.Point) 2).ker
       = ((nsmulAddMonoidHom (α := W.Point) 2).ker : Set W.Point).ncard := Nat.card_coe_set_eq _
-    _ = (insert 0 (Set.range pt)).ncard := congrArg Set.ncard (ker_nsmul_two_eq_insert_range W)
-    _ = (Set.range pt).ncard + 1 :=
-        Set.ncard_insert_of_notMem (by intro ⟨x, hx⟩; exact Point.some_ne_zero _ hx)
+    _ = (insert 0 (Set.range W.pointOfRoot)).ncard :=
+        congrArg Set.ncard (ker_nsmul_two_eq_insert_range W)
+    _ = (Set.range W.pointOfRoot).ncard + 1 := Set.ncard_insert_of_notMem (by
+      intro ⟨x, hx⟩
+      rw [pointOfRoot_eq_some] at hx
+      exact Point.some_ne_zero _ hx)
     _ = Nat.card {x : K // W.f.eval x = 0} + 1 := by
         rw [← Nat.card_coe_set_eq, Nat.card_range_of_injective hinj]
-        rfl
 
 end Affine
 

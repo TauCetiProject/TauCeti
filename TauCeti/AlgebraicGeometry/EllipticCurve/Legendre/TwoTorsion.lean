@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Legendre.Equation
+public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.XSubT
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Line
 import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.TwoTorsion
 
@@ -39,13 +40,25 @@ section CommRing
 
 variable {R : Type*} [CommRing R] (d l : R)
 
+private theorem eval_f_scaledLegendre (x : R) :
+    (scaledLegendre d l).toAffine.f.eval x = x * (x - d) * (x - d * l) := by
+  rw [Affine.eval_f, scaledLegendre_a₂, scaledLegendre_a₄, scaledLegendre_a₆]
+  ring
+
+/-- Every labelled coordinate is a root of the native Weierstrass cubic. The simp rule fires
+before simplification expands the cubic or evaluates a literal label. -/
+@[simp↓]
+theorem eval_f_scaledLegendreRoots (i : Fin 3) :
+    (scaledLegendre d l).toAffine.f.eval (scaledLegendreRoots d l i) = 0 := by
+  rw [eval_f_scaledLegendre]
+  fin_cases i <;> simp
+
 /-- The labelled roots of a scaled Legendre equation with nonzero discriminant
 give nonsingular affine points. -/
 theorem nonsingular_scaledLegendreRoots (hΔ : (scaledLegendre d l).Δ ≠ 0) (i : Fin 3) :
     (scaledLegendre d l).toAffine.Nonsingular (scaledLegendreRoots d l i) 0 := by
   apply (Affine.equation_iff_nonsingular_of_Δ_ne_zero hΔ).mp
-  rw [equation_scaledLegendre_iff, scaledLegendreRoots_def]
-  fin_cases i <;> simp
+  rw [Affine.equation_iff_eval_f_eq_sq, eval_f_scaledLegendreRoots, zero_pow two_ne_zero]
 
 variable (hΔ : (scaledLegendre d l).Δ ≠ 0)
 
@@ -89,9 +102,10 @@ theorem neg_scaledLegendreTwoTorsionPoint (i : Fin 3) :
 theorem scaledLegendreTwoTorsionPoint_injective :
     Function.Injective (scaledLegendreTwoTorsionPoint d l hΔ) := by
   intro i j hij
-  have hx := congrFun (congrArg Affine.Point.xRep hij) 0
-  simp only [xRep_scaledLegendreTwoTorsionPoint, Matrix.cons_val_zero] at hx
-  exact scaledLegendreRoots_injective d l hΔ hx
+  rw [scaledLegendreTwoTorsionPoint_eq_some d l hΔ i (nonsingular_scaledLegendreRoots d l hΔ i),
+    scaledLegendreTwoTorsionPoint_eq_some d l hΔ j (nonsingular_scaledLegendreRoots d l hΔ j),
+    Affine.Point.some.injEq] at hij
+  exact scaledLegendreRoots_injective d l hΔ hij.1
 
 /-- Two labelled points are equal exactly when their labels are equal. -/
 @[simp]
@@ -101,6 +115,21 @@ theorem scaledLegendreTwoTorsionPoint_inj {i j : Fin 3} :
 
 end CommRing
 
+section NoZeroDivisors
+
+variable {R : Type*} [CommRing R] [NoZeroDivisors R] (d l : R)
+
+/-- Over a ring without zero divisors, the native Weierstrass cubic vanishes exactly at the
+labelled roots. -/
+theorem eval_f_scaledLegendre_eq_zero_iff (x : R) :
+    (scaledLegendre d l).toAffine.f.eval x = 0 ↔ x ∈ Set.range (scaledLegendreRoots d l) := by
+  rw [eval_f_scaledLegendre, scaledLegendreRoots_def, Matrix.range_cons,
+    Matrix.range_cons_cons_empty]
+  simp only [mul_eq_zero, sub_eq_zero, or_assoc, Set.mem_union, Set.mem_singleton_iff,
+    Set.mem_insert_iff]
+
+end NoZeroDivisors
+
 section Field
 
 variable {K : Type*} [Field K] (d l : K)
@@ -108,15 +137,7 @@ variable {K : Type*} [Field K] (d l : K)
 private noncomputable def scaledLegendreRootEquiv (hΔ : (scaledLegendre d l).Δ ≠ 0) :
     Fin 3 ≃ {x : K // (scaledLegendre d l).toAffine.f.eval x = 0} :=
   (Equiv.ofInjective _ (scaledLegendreRoots_injective d l hΔ)).trans
-    (Equiv.subtypeEquivRight fun x ↦ by
-      have hf : (scaledLegendre d l).toAffine.f.eval x = 0 ↔
-          x = 0 ∨ x = d ∨ x = d * l := by
-        have h := ((scaledLegendre d l).toAffine.equation_iff_eval_f_eq_sq x 0).symm.trans
-          (equation_scaledLegendre_iff d l x 0)
-        simpa only [zero_pow two_ne_zero, eq_comm (a := (0 : K)), mul_eq_zero, sub_eq_zero,
-          or_assoc] using h
-      rw [hf, scaledLegendreRoots_def, Matrix.range_cons, Matrix.range_cons_cons_empty]
-      simp only [Set.mem_union, Set.mem_singleton_iff, Set.mem_insert_iff])
+    (Equiv.subtypeEquivRight fun x ↦ (eval_f_scaledLegendre_eq_zero_iff d l x).symm)
 
 @[simp]
 private theorem scaledLegendreRootEquiv_apply_coe (hΔ : (scaledLegendre d l).Δ ≠ 0) (i : Fin 3) :
@@ -138,14 +159,13 @@ theorem ker_nsmul_two_scaledLegendre :
       insert 0 (Set.range (scaledLegendreTwoTorsionPoint d l hΔ)) := by
   have : (scaledLegendre d l).IsElliptic := ⟨isUnit_iff_ne_zero.mpr hΔ⟩
   rw [Affine.ker_nsmul_two_eq_insert_range]
-  let rootPoint (x : {x : K // (scaledLegendre d l).toAffine.f.eval x = 0}) :
-      (scaledLegendre d l).toAffine.Point :=
-    .some x 0 ((scaledLegendre d l).toAffine.nonsingular_of_eval_f_eq_zero x.property)
-  have hcomp : rootPoint ∘ scaledLegendreRootEquiv d l hΔ =
+  have hcomp : (scaledLegendre d l).toAffine.pointOfRoot ∘ scaledLegendreRootEquiv d l hΔ =
       scaledLegendreTwoTorsionPoint d l hΔ := by
     funext i
-    rw [scaledLegendreTwoTorsionPoint_eq_some d l hΔ i (nonsingular_scaledLegendreRoots d l hΔ i)]
-    exact (Affine.Point.some.injEq ..).mpr ⟨scaledLegendreRootEquiv_apply_coe d l hΔ i, rfl⟩
+    rw [Function.comp_apply, Affine.pointOfRoot_eq_some,
+      scaledLegendreTwoTorsionPoint_eq_some d l hΔ i (nonsingular_scaledLegendreRoots d l hΔ i),
+      Affine.Point.some.injEq]
+    exact ⟨scaledLegendreRootEquiv_apply_coe d l hΔ i, rfl⟩
   rw [← hcomp, EquivLike.range_comp]
 
 /-- The origin and the three labelled points exhaust the points killed by two. -/
@@ -169,8 +189,7 @@ theorem card_ker_nsmul_two_scaledLegendre (hΔ : (scaledLegendre d l).Δ ≠ 0) 
 @[simp]
 theorem sum_scaledLegendreTwoTorsionPoint_eq_zero :
     ∑ i : Fin 3, scaledLegendreTwoTorsionPoint d l hΔ i = 0 := by
-  obtain ⟨_, hd, hdl, hdd⟩ :=
-    two_ne_zero_and_ne_zero_and_mul_ne_zero_and_ne_mul_of_scaledLegendre_Δ_ne_zero d l hΔ
+  have hinj := scaledLegendreRoots_injective d l hΔ
   rw [Fin.sum_univ_three,
     scaledLegendreTwoTorsionPoint_eq_some d l hΔ 0
       (nonsingular_scaledLegendreRoots d l hΔ 0),
@@ -182,9 +201,8 @@ theorem sum_scaledLegendreTwoTorsionPoint_eq_zero :
     (nonsingular_scaledLegendreRoots d l hΔ 0)
     (nonsingular_scaledLegendreRoots d l hΔ 1)
     (nonsingular_scaledLegendreRoots d l hΔ 2)
-    (by simpa [scaledLegendreRoots_def] using hd.symm)
-    (by simpa [scaledLegendreRoots_def] using hdl.symm)
-    (by simpa [scaledLegendreRoots_def] using hdd) (by simp) (by simp) (by simp)
+    (hinj.ne (by decide)) (hinj.ne (by decide)) (hinj.ne (by decide))
+    (by simp) (by simp) (by simp)
 
 end Field
 
