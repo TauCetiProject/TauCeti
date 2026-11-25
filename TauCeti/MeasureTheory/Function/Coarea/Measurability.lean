@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Function.Coarea.Eilenberg
 import TauCeti.MeasureTheory.Integral.Measurable
 import TauCeti.MeasureTheory.Measure.Hausdorff
 import TauCeti.MeasureTheory.Measure.Regular
+import TauCeti.MeasureTheory.Measure.Restrict
 import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
@@ -252,11 +253,7 @@ private theorem aemeasurable_restrict_euclideanHausdorffMeasure_inter_preimage
     (hf : LocallyLipschitzOn A f) (hA : NullMeasurableSet A) (hk : finrank ℝ E ≤ finrank ℝ Y + k)
     (t : Set E) (ht : MeasurableSet t) :
     AEMeasurable (fun y ↦ (μHE[k].restrict (A ∩ f ⁻¹' {y})) t) μ := by
-  have hset (y : Y) : (μHE[k].restrict (A ∩ f ⁻¹' {y})) t = μHE[k] ((A ∩ t) ∩ f ⁻¹' {y}) := by
-    rw [Measure.restrict_apply ht]
-    congr 1
-    ac_rfl
-  simp_rw [hset]
+  simp_rw [Measure.restrict_inter_apply _ _ _ ht]
   exact (hf.mono inter_subset_left).aemeasurable_euclideanHausdorffMeasure_inter_preimage μ
     (hA.inter ht.nullMeasurableSet) hk
 
@@ -567,10 +564,7 @@ theorem aemeasurable_setLIntegral_fiber_of_hasFDerivWithinAt
           rw [Measure.restrict_restrict (MeasurableSet.iUnion htm), hset]
       _ = ∑' n, ∫⁻ x in (s ∩ t n) ∩ f ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F] := by
           rw [lintegral_iUnion htm hdisj]
-          refine tsum_congr fun n ↦ ?_
-          rw [Measure.restrict_restrict (htm n)]
-          congr 2
-          ac_rfl
+          exact tsum_congr fun n ↦ by rw [Measure.restrict_inter_restrict _ _ _ (htm n)]
   exact (AEMeasurable.tsum hmeas).congr (Eventually.of_forall fun y ↦ (heq y).symm)
 
 /-- Fiber measures of a map with a within-set derivative on a Lebesgue-measurable set are
@@ -582,6 +576,17 @@ theorem aemeasurable_euclideanHausdorffMeasure_inter_preimage_of_hasFDerivWithin
   simpa only [lintegral_one, Measure.restrict_apply_univ] using
     aemeasurable_setLIntegral_fiber_of_hasFDerivWithinAt μ hs hd aemeasurable_one
 
+private theorem
+    aemeasurable_restrict_euclideanHausdorffMeasure_inter_preimage_of_hasFDerivWithinAt
+    (hs : NullMeasurableSet s volume) {f' : E → E →L[ℝ] F}
+    (hd : ∀ x ∈ s, HasFDerivWithinAt f (f' x) s x)
+    (t : Set E) (ht : MeasurableSet t) :
+    AEMeasurable
+      (fun y ↦ (μHE[finrank ℝ E - finrank ℝ F].restrict (s ∩ f ⁻¹' {y})) t) μ := by
+  simp_rw [Measure.restrict_inter_apply _ _ _ ht]
+  exact aemeasurable_euclideanHausdorffMeasure_inter_preimage_of_hasFDerivWithinAt μ
+    (hs.inter ht.nullMeasurableSet) fun x hx ↦ (hd x hx.1).mono inter_subset_left
+
 /-- Bochner fiber integrals of an almost-everywhere strongly measurable function along a map with a
 within-set derivative on a Lebesgue-measurable set are almost everywhere strongly measurable.
 Neither surjectivity of the derivative nor integrability of `g` is required. -/
@@ -592,19 +597,9 @@ theorem aestronglyMeasurable_setIntegral_fiber_of_hasFDerivWithinAt
     {g : E → V} (hg : AEStronglyMeasurable g (volume.restrict s)) :
     AEStronglyMeasurable (fun y ↦ ∫ x in s ∩ f ⁻¹' {y}, g x
       ∂μHE[finrank ℝ E - finrank ℝ F]) μ := by
-  have hκ (t : Set E) (ht : MeasurableSet t) :
-      AEMeasurable
-        (fun y ↦ (μHE[finrank ℝ E - finrank ℝ F].restrict (s ∩ f ⁻¹' {y})) t) μ := by
-    have hset (y : F) : (μHE[finrank ℝ E - finrank ℝ F].restrict (s ∩ f ⁻¹' {y})) t =
-        μHE[finrank ℝ E - finrank ℝ F] ((s ∩ t) ∩ f ⁻¹' {y}) := by
-      rw [Measure.restrict_apply ht]
-      congr 1
-      ac_rfl
-    simp_rw [hset]
-    exact aemeasurable_euclideanHausdorffMeasure_inter_preimage_of_hasFDerivWithinAt μ
-      (hs.inter ht.nullMeasurableSet) fun x hx ↦ (hd x hx.1).mono inter_subset_left
-  refine (hg.stronglyMeasurable_mk.aestronglyMeasurable_integral_of_aemeasurable_measure hκ).congr
-    ?_
+  refine (hg.stronglyMeasurable_mk.aestronglyMeasurable_integral_of_aemeasurable_measure
+    (aemeasurable_restrict_euclideanHausdorffMeasure_inter_preimage_of_hasFDerivWithinAt μ hs
+      hd)).congr ?_
   filter_upwards [ae_ae_eq_restrict_preimage_of_hasFDerivWithinAt μ hd hg.ae_eq_mk] with y hy
   exact (integral_congr_ae hy).symm
 

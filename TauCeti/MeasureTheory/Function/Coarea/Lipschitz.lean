@@ -520,6 +520,20 @@ private theorem aemeasurable_of_aemeasurable_normDet_adjoint_fderiv_mul
     (ENNReal.ofReal_pos.2 (ContinuousLinearMap.normDet_adjoint_pos_iff.2 (hsurj x hx))).ne'
     ENNReal.ofReal_ne_top
 
+omit [MeasurableSpace F] [BorelSpace F] in
+/-- On a Lebesgue-measurable set `s`, almost-everywhere measurability of
+`x ↦ ENNReal.ofReal (fderiv ℝ f x)†.normDet * w x` implies almost-everywhere measurability of `w`
+on the regular part of `s`. -/
+private theorem aemeasurable_restrict_inter_setOf_regular_of_aemeasurable_mul
+    (hs : NullMeasurableSet s volume) {w : E → ℝ≥0∞}
+    (hw : AEMeasurable (fun x ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * w x)
+      (volume.restrict s)) :
+    AEMeasurable w (volume.restrict
+      (s ∩ {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)})) :=
+  aemeasurable_of_aemeasurable_normDet_adjoint_fderiv_mul
+    (hs.inter (measurableSet_setOf_differentiableAt_surjective_fderiv f).nullMeasurableSet)
+    (fun _ hx ↦ hx.2.2) (hw.mono_measure (Measure.restrict_mono inter_subset_left le_rfl))
+
 /-- **Weighted `ℝ≥0∞` coarea formula for locally Lipschitz maps on open sets (product-measurability
 form).** Only `volume.restrict s`-almost-everywhere measurability of the product
 `x ↦ ENNReal.ofReal (fderiv ℝ f x)†.normDet * w x` is needed: `w` need not be measurable on the
@@ -532,10 +546,6 @@ theorem lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber_of_
     ∫⁻ x in s, ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * w x =
       ∫⁻ y : F, ∫⁻ x in s ∩ f ⁻¹' {y}, w x ∂μHE[finrank ℝ E - finrank ℝ F] := by
   have hGm := measurableSet_setOf_differentiableAt_surjective_fderiv f
-  have hwG : AEMeasurable w
-      (volume.restrict (s ∩ {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)})) :=
-    aemeasurable_of_aemeasurable_normDet_adjoint_fderiv_mul (hs.inter hGm.nullMeasurableSet)
-      (fun _ hx ↦ hx.2.2) (hw.mono_measure (Measure.restrict_mono inter_subset_left le_rfl))
   have hzero : ∫⁻ x in s \ {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)},
       ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * w x = 0 :=
     (lintegral_congr_ae
@@ -544,7 +554,8 @@ theorem lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber_of_
   rw [← lintegral_inter_add_sdiff _ s hGm, hzero, add_zero,
     lintegral_congr_ae (hf.ae_setLIntegral_fiber_eq_inter_setOf_regular hU hsU w)]
   exact MeasureTheory.lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber
-    (hs.inter hGm.nullMeasurableSet) (fun _ hx ↦ hx.2.1) (fun _ hx ↦ hx.2.2) hwG
+    (hs.inter hGm.nullMeasurableSet) (fun _ hx ↦ hx.2.1) (fun _ hx ↦ hx.2.2)
+    (aemeasurable_restrict_inter_setOf_regular_of_aemeasurable_mul hs hw)
 
 /-- **Weighted `ℝ≥0∞` coarea formula for locally Lipschitz maps on open sets.** If `f` is locally
 Lipschitz on an open set `U` containing a Lebesgue-measurable set `s` and `w : E → ℝ≥0∞` is
@@ -587,10 +598,6 @@ theorem
       volume.withDensity fun y ↦
         ∫⁻ x in s ∩ f ⁻¹' {y}, w x ∂μHE[finrank ℝ E - finrank ℝ F] := by
   have hGm := measurableSet_setOf_differentiableAt_surjective_fderiv f
-  have hwG : AEMeasurable w
-      (volume.restrict (s ∩ {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)})) :=
-    aemeasurable_of_aemeasurable_normDet_adjoint_fderiv_mul (hs.inter hGm.nullMeasurableSet)
-      (fun _ hx ↦ hx.2.2) (hw.mono_measure (Measure.restrict_mono inter_subset_left le_rfl))
   have hsdiff : (volume.restrict
       (s \ {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)})).withDensity
       (fun x ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * w x) = 0 :=
@@ -600,7 +607,8 @@ theorem
   rw [← Measure.restrict_inter_add_sdiff s hGm, withDensity_add_measure, hsdiff, add_zero,
     withDensity_congr_ae (hf.ae_setLIntegral_fiber_eq_inter_setOf_regular hU hsU w)]
   exact MeasureTheory.map_withDensity_normDet_adjoint_fderiv_mul_eq_withDensity_setLIntegral_fiber
-    (hs.inter hGm.nullMeasurableSet) (fun _ hx ↦ hx.2.1) (fun _ hx ↦ hx.2.2) hwG
+    (hs.inter hGm.nullMeasurableSet) (fun _ hx ↦ hx.2.1) (fun _ hx ↦ hx.2.2)
+    (aemeasurable_restrict_inter_setOf_regular_of_aemeasurable_mul hs hw)
 
 /-- **Measure-disintegration form of the coarea formula** for a locally Lipschitz map on an open
 set `U ⊇ s`: pushing forward `(volume.restrict s).withDensity (ENNReal.ofReal (J f ·) * w ·)` along

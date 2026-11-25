@@ -41,6 +41,12 @@ is computed by `LinearMap.euclideanHausdorffMeasure_image_eq_normDet_mul_volume`
 
 ## Main statements
 
+* `LinearMap.restrict_preimage_singleton_eq_map_ker`,
+  `LinearMap.setLIntegral_preimage_singleton_eq_lintegral_ker`,
+  `LinearMap.integrableOn_preimage_singleton_iff_integrable_ker`,
+  `LinearMap.setIntegral_preimage_singleton_eq_integral_ker`: restricted Hausdorff measure and
+  Lebesgue and Bochner integrals on an affine fibre `L ⁻¹' {L w}` as translations of Lebesgue
+  measure on `ker L`.
 * `LinearMap.lintegral_setLIntegral_preimage_singleton`: the linear coarea formula.
 * `LinearMap.lintegral_euclideanHausdorffMeasure_inter_preimage_singleton`: its form for
   measurable sets.
@@ -92,7 +98,7 @@ private theorem isometry_add_ker (L : E →ₗ[ℝ] F) (w : E) :
 
 /-- The normalized Hausdorff measure of dimension `dim (ker L)` restricted to the affine fibre
 `L ⁻¹' {L w}` is the pushforward of Lebesgue measure on `ker L` by translation by `w`. -/
-private theorem restrict_preimage_singleton_eq_map_ker (L : E →ₗ[ℝ] F)
+theorem restrict_preimage_singleton_eq_map_ker (L : E →ₗ[ℝ] F)
     [FiniteDimensional ℝ (ker L)] (w : E) :
     μHE[finrank ℝ (ker L)].restrict (L ⁻¹' {L w}) =
       (volume : Measure (ker L)).map (fun a : ker L ↦ w + a) := by
@@ -113,15 +119,22 @@ theorem setLIntegral_preimage_singleton_eq_lintegral_ker (L : E →ₗ[ℝ] F)
   rw [L.restrict_preimage_singleton_eq_map_ker w,
     (L.isometry_add_ker w).isClosedEmbedding.measurableEmbedding.lintegral_map]
 
-private theorem integrableOn_preimage_singleton_iff_integrable_ker (L : E →ₗ[ℝ] F)
+/-- A function `g` is integrable on the affine fibre `L ⁻¹' {L w}` with respect to Hausdorff
+measure of dimension `dim (ker L)` if and only if `a ↦ g (w + a)` is Lebesgue integrable on
+`ker L`. Only the kernel needs to be finite-dimensional; the codomain is an arbitrary real
+module. -/
+theorem integrableOn_preimage_singleton_iff_integrable_ker (L : E →ₗ[ℝ] F)
     [FiniteDimensional ℝ (ker L)] (w : E) {V : Type*} [NormedAddCommGroup V] (g : E → V) :
     IntegrableOn g (L ⁻¹' {L w}) μHE[finrank ℝ (ker L)] ↔
-      Integrable (fun a : ker L ↦ g (w + a)) volume := by
+      Integrable fun a : ker L ↦ g (w + a) := by
   rw [IntegrableOn, L.restrict_preimage_singleton_eq_map_ker w,
     (L.isometry_add_ker w).isClosedEmbedding.measurableEmbedding.integrable_map_iff,
     Function.comp_def]
 
-private theorem setIntegral_preimage_singleton_eq_integral_ker (L : E →ₗ[ℝ] F)
+/-- The Bochner integral of `g` over the affine fibre `L ⁻¹' {L w}`, with Hausdorff measure of
+dimension `dim (ker L)`, equals the Lebesgue Bochner integral over `ker L` of `a ↦ g (w + a)`.
+Only the kernel needs to be finite-dimensional; the codomain is an arbitrary real module. -/
+theorem setIntegral_preimage_singleton_eq_integral_ker (L : E →ₗ[ℝ] F)
     [FiniteDimensional ℝ (ker L)] (w : E) {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (g : E → V) :
     ∫ x in L ⁻¹' {L w}, g x ∂μHE[finrank ℝ (ker L)] = ∫ a : ker L, g (w + a) := by
