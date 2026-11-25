@@ -101,6 +101,9 @@ finitely many vectors.
   polynomial `(ρ g).charpoly` is an isomorphism invariant, and it is `X - χ g` on the line of `χ`.
 * `TauCeti.ContinuousRep.charpoly_prod_apply`: on finite free carriers the characteristic
   polynomial is multiplicative on products.
+* `TauCeti.ContinuousRep.charpoly_apply_eq_subrepresentation_mul_quotient`: when an invariant
+  submodule and its quotient are free of finite rank, the characteristic polynomial is the product
+  of those on the submodule and on the quotient.
 * `TauCeti.ContinuousRep.charpoly_baseChange_apply` and
   `TauCeti.ContinuousRep.linearMap_det_baseChange_apply`: on finite free carriers the
   characteristic polynomial and the determinant of `g` on a base change are the images of those
@@ -1078,6 +1081,16 @@ theorem charpoly_prod_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A
 theorem charpoly_ofCharacter_apply [TopologicalSpace A] [ContinuousMul A] (χ : Γ →ₜ* Aˣ)
     (g : Γ) : (ofCharacter χ g).charpoly = X - C (χ g : A) :=
   Representation.charpoly_ofLinearCharacter_apply (χ : Γ →* Aˣ) g
+
+/-- **The characteristic polynomial on an invariant submodule and its quotient.** If `W` and
+`M ⧸ W` are free of finite rank, `g` acts on `M` with characteristic polynomial the product of
+those of its actions on `W` and on `M ⧸ W`. No complement of `W` is needed. -/
+theorem charpoly_apply_eq_subrepresentation_mul_quotient [ContinuousAdd M]
+    (ρ : ContinuousRep Γ A M) (W : Submodule A M) (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W)
+    [Module.Free A W] [Module.Finite A W] [Module.Free A (M ⧸ W)] [Module.Finite A (M ⧸ W)]
+    (g : Γ) :
+    (ρ g).charpoly = (ρ.subrepresentation W hW g).charpoly * (ρ.quotient W hW g).charpoly :=
+  Representation.charpoly_apply_eq_subrepresentation_mul_quotient ρ.toRepresentation W hW g
 
 section BaseChange
 
