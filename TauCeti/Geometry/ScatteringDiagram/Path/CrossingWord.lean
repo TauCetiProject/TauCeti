@@ -139,8 +139,6 @@ theorem orderedCrossings_eq_iff (e : x ⟶ y) (l : List (C.walls × ℝ)) :
 crossings. -/
 theorem orderedCrossingTimes_eq_map_snd (e : x ⟶ y) :
     orderedCrossingTimes e = (C.orderedCrossings e).map Prod.snd := by
-  have : Std.Antisymm (fun s t : ℝ => s < t) := ⟨fun _ _ hab hba => (lt_asymm hab hba).elim⟩
-  have : Std.Irrefl (fun s t : ℝ => s < t) := ⟨lt_irrefl⟩
   refine (pairwise_orderedCrossingTimes e).eq_of_mem_iff
     (List.pairwise_map.mpr (C.pairwise_orderedCrossings e)) fun t => ?_
   simp only [mem_orderedCrossingTimes, List.mem_map, mem_orderedCrossings, Prod.exists,
