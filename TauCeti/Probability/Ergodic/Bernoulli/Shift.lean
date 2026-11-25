@@ -69,7 +69,7 @@ theorem ergodic_shift_infinitePi_const (μ : Measure α) [IsProbabilityMeasure �
   have hmp : MeasurePreserving (shift α) (Measure.infinitePi fun _ : ℕ => μ)
       (Measure.infinitePi fun _ : ℕ => μ) := by
     rw [hshift]
-    exact measurePreserving_infinitePi_comp_of_injective μ (add_left_injective 1)
+    exact measurePreserving_infinitePi_comp_of_injective (fun _ => μ) (add_left_injective 1)
   exact ergodic_shift_of_iIndepFun (Measure.infinitePi fun _ : ℕ => μ)
     (iIndepFun_infinitePi (X := fun _ => id) fun _ => measurable_id) hmp
 

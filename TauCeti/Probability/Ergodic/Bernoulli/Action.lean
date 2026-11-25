@@ -56,14 +56,7 @@ permutes the coordinates, so `ω ↦ (i ↦ ω (g⁻¹ • i))` preserves `ν^{�
 theorem measurePreserving_infinitePi_comp_inv_smul (g : Γ) :
     MeasurePreserving (fun (ω : ι → S) i => ω (g⁻¹ • i)) (Measure.infinitePi fun _ => ν)
       (Measure.infinitePi fun _ => ν) :=
-  measurePreserving_infinitePi_comp_of_injective ν (MulAction.injective g⁻¹)
-
-omit [MeasurableSpace S] in
-/-- Mathlib's `arrowAction` acts on configurations by `(g • ω) i = ω (g⁻¹ • i)`. -/
-theorem arrowAction_smul_apply (g : Γ) (ω : ι → S) (i : ι) :
-    letI := arrowAction (G := Γ) (A := ι) (B := S)
-    (g • ω) i = ω (g⁻¹ • i) :=
-  rfl
+  measurePreserving_infinitePi_comp_of_injective (fun _ => ν) (MulAction.injective g⁻¹)
 
 /-- **Bernoulli product measures are ergodic**, stated with almost invariant events. Let a group
 `Γ` act on a countable set `ι` so that every finite set can be moved off every finite set, and on
@@ -91,9 +84,9 @@ theorem ergodicSMul_arrowAction_infinitePi_const [Countable ι]
     letI := arrowAction (G := Γ) (A := ι) (B := S)
     ErgodicSMul Γ (ι → S) (Measure.infinitePi fun _ => ν) := by
   let := arrowAction (G := Γ) (A := ι) (B := S)
-  -- Under `arrowAction`, `(g • ·)` is `fun ω i => ω (g⁻¹ • i)` (`arrowAction_smul_apply`).
-  have hsmul (g : Γ) : (g • · : (ι → S) → ι → S) = fun ω i => ω (g⁻¹ • i) :=
-    funext fun ω => funext fun i => arrowAction_smul_apply g ω i
+  -- Under `arrowAction`, `(g • ·)` is `fun ω i => ω (g⁻¹ • i)` by the defining equation of the
+  -- action; Mathlib's simps lemma `arrowAction_smul` is stated with a bare `SMul.smul`.
+  have hsmul (g : Γ) : (g • · : (ι → S) → ι → S) = fun ω i => ω (g⁻¹ • i) := rfl
   exact
     { measure_preimage_smul g s hs := by
         rw [hsmul]

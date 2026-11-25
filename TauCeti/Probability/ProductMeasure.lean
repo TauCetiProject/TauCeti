@@ -42,7 +42,7 @@ The finite-cylinder formula gives positivity on nonempty open sets and the Haar 
 * `TauCeti.measurePreserving_piEquivPiSubtypeProd_infinitePi`: splitting along a predicate `p`.
 * `TauCeti.infinitePi_pi'`: unconditional finite-cylinder formula for `Measure.infinitePi`.
 * `TauCeti.measurePreserving_infinitePi_comp_of_injective`: reindexing along an injective map
-  preserves `Measure.infinitePi fun _ => ν`.
+  sends `Measure.infinitePi P` to the product of the reindexed family.
 -/
 
 public section
@@ -146,13 +146,14 @@ theorem infinitePi_pi' (μ : ∀ i, Measure (X i)) [∀ i, IsProbabilityMeasure 
 
 end SplitAndCylinder
 
-/-- **Reindexing along an injective map preserves a constant-marginal product measure.** For a
-probability measure `ν` on `S` and an injective `σ : ι → ι`, the map `ω ↦ (i ↦ ω (σ i))` preserves
-`ν^{⊗ι}`. -/
-theorem measurePreserving_infinitePi_comp_of_injective {ι S : Type*} [MeasurableSpace S]
-    (ν : Measure S) [IsProbabilityMeasure ν] {σ : ι → ι} (hσ : Function.Injective σ) :
-    MeasurePreserving (fun (ω : ι → S) i => ω (σ i)) (Measure.infinitePi fun _ => ν)
-      (Measure.infinitePi fun _ => ν) :=
-  ⟨by fun_prop, Measure.map_infinitePi_infinitePi_of_inj hσ⟩
+/-- **Reindexing along an injective map preserves product measures.** For probability measures
+`P i` and an injective `f : α → ι`, the map `ω ↦ (a ↦ ω (f a))` sends `∏ i, P i` to
+`∏ a, P (f a)`. -/
+theorem measurePreserving_infinitePi_comp_of_injective {α ι : Type*} {X : ι → Type*}
+    [∀ i, MeasurableSpace (X i)] (P : ∀ i, Measure (X i)) [∀ i, IsProbabilityMeasure (P i)]
+    {f : α → ι} (hf : Function.Injective f) :
+    MeasurePreserving (fun (ω : ∀ i, X i) a => ω (f a)) (Measure.infinitePi P)
+      (Measure.infinitePi fun a => P (f a)) :=
+  ⟨by fun_prop, Measure.map_infinitePi_infinitePi_of_inj hf⟩
 
 end TauCeti
