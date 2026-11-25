@@ -49,10 +49,11 @@ def toStalkAlgHom (x : Spec R) : R →ₐ[k] (Spec R).presheaf.stalk x where
   commutes' c := by
     -- `Scheme.fromSpecStalk_comp_over` identifies the stalk's algebra map `k → 𝒪_{Spec R, x}`
     -- with the ring map underlying `Spec 𝒪_{Spec R, x} ⟶ Spec R ⟶ Spec k`, which by
-    -- `Spec.fromSpecStalk_eq'` is `toStalk R x` composed with `algebraMap k R`.
+    -- `Spec.fromSpecStalk_eq'` and `specOverSpec_over` is `toStalk R x` composed with
+    -- `algebraMap k R`.
     have h := Scheme.fromSpecStalk_comp_over k (Spec R) x
-    rw [Spec.fromSpecStalk_eq'] at h
-    exact congr($(Spec.map_injective (h.symm.trans (Spec.map_comp _ _).symm)) c).symm
+    rw [Spec.fromSpecStalk_eq', specOverSpec_over] at h
+    exact congr($(Spec.map_injective ((Spec.map_comp _ _).trans h)) c)
 
 /-- The `k`-algebra map `toStalkAlgHom k R x` is `StructureSheaf.toStalk R x`. -/
 @[simp]
