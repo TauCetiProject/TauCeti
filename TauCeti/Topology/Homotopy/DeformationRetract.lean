@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Homotopy.Equiv
 public import Mathlib.Topology.LocalAtTarget
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
+public import TauCeti.Topology.ContinuousMap.CodRestrict
 public import TauCeti.Topology.Homeomorph.Extend
 import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
@@ -153,14 +154,13 @@ variable {X : Type*} [TopologicalSpace X] {g : C(X, X)} {K S : Set X}
 /-- The end map of a homotopy from the identity that maps a set `S` into itself at all times, as a
 self-map of `S`. -/
 def restrictInvariantEnd (H : (ContinuousMap.id X).HomotopyRel g K)
-    (hS : ∀ t, ∀ x ∈ S, H (t, x) ∈ S) : C(S, S) where
-  toFun := MapsTo.restrict g S S fun x hx ↦ H.apply_one x ▸ hS 1 x hx
-  continuous_toFun := g.continuous.restrict _
+    (hS : ∀ t, ∀ x ∈ S, H (t, x) ∈ S) : C(S, S) :=
+  (g.restrict S).codRestrict S fun x ↦ H.apply_one x ▸ hS 1 x x.property
 
 @[simp]
 theorem coe_restrictInvariantEnd_apply (H : (ContinuousMap.id X).HomotopyRel g K)
     (hS : ∀ t, ∀ x ∈ S, H (t, x) ∈ S) (x : S) : (H.restrictInvariantEnd hS x : X) = g x :=
-  (rfl)
+  coe_codRestrict_apply _ _ _ x
 
 /-- **The restriction of a deformation to an invariant set.** A homotopy from the identity to `g`,
 relative to `K`, that maps a set `S` into itself at all times restricts to a homotopy from the
@@ -169,18 +169,19 @@ identity of `S` to `g` read on `S`, relative to the points of `S` in `K`. If `g`
 def restrictInvariant (H : (ContinuousMap.id X).HomotopyRel g K)
     (hS : ∀ t, ∀ x ∈ S, H (t, x) ∈ S) :
     (ContinuousMap.id S).HomotopyRel (H.restrictInvariantEnd hS) {x | (x : X) ∈ K} where
-  toFun p := ⟨H (p.1, p.2), hS p.1 p.2 p.2.property⟩
-  continuous_toFun := (H.continuous.comp
-    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))).subtype_mk _
-  map_zero_left x := Subtype.ext (H.apply_zero x)
-  map_one_left x := Subtype.ext (H.apply_one x)
-  prop' t _ hx := Subtype.ext (H.eq_fst t hx)
+  toContinuousMap := (H.toContinuousMap.comp
+    ((ContinuousMap.id _).prodMap (ContinuousMap.subtypeVal S))).codRestrict S
+    fun p ↦ hS p.1 p.2 p.2.property
+  map_zero_left x := Subtype.ext <| (coe_codRestrict_apply _ _ _ _).trans (H.apply_zero x)
+  map_one_left x := Subtype.ext <| (coe_codRestrict_apply _ _ _ _).trans
+    ((H.apply_one x).trans (coe_restrictInvariantEnd_apply H hS x).symm)
+  prop' t _ hx := Subtype.ext <| (coe_codRestrict_apply _ _ _ _).trans (H.eq_fst t hx)
 
 @[simp]
 theorem coe_restrictInvariant_apply (H : (ContinuousMap.id X).HomotopyRel g K)
     (hS : ∀ t, ∀ x ∈ S, H (t, x) ∈ S) (p : unitInterval × S) :
     (H.restrictInvariant hS p : X) = H (p.1, p.2) :=
-  (rfl)
+  coe_codRestrict_apply _ _ _ p
 
 end ContinuousMap.HomotopyRel
 
