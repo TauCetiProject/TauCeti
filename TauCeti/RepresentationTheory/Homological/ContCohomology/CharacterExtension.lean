@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 
 /-!
