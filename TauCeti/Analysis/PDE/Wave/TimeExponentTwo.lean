@@ -131,7 +131,8 @@ theorem exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_lt_endpo
 `(2, r)`**, for the Littlewood–Paley blocks. Let `E` have dimension `n ≥ 4`, let `Pⱼ` be the `L²`
 Fourier multiplier with the Littlewood–Paley symbol `ψⱼ` built from `φ`, and let
 `1 + (n - 1) / r < (n - 1) / 2`, with Hölder conjugate `r'`. Put `γ = n / 2 - n / r - 1 / 2`. There
-is `C` such that for every `j ∈ ℤ` and every integrable `F : ℝ → L²(E)`,
+is `C` such that for every `j ∈ ℤ` and every almost everywhere strongly measurable
+`F : ℝ → L²(E)`,
 
 `‖∫ W₊(-s) Pⱼ F(s) ds‖₂ ≤ C 2^{jγ} ‖F‖_{L²_t L^{r'}_x}`. -/
 theorem exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le_of_lt_endpoint
@@ -139,7 +140,7 @@ theorem exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le_of_lt_en
     (hr : 1 + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal < ((Module.finrank ℝ E : ℝ) - 1) / 2) :
     ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
       m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
-      ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), Integrable F →
+      ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), AEStronglyMeasurable F →
         ‖∫ s, halfWavePropagator ℂ (-s) (Lp.fourierMultiplierCLM ℂ m (F s))‖ₑ ≤
           C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
             Module.finrank ℝ E * (r⁻¹).toReal - 2⁻¹)) *
@@ -166,11 +167,11 @@ theorem exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le_of_lt_en
     ring
   refine ⟨C * B.toNNReal, fun j m hm F hF ↦ ?_⟩
   -- `Pⱼ F(s) = Pⱼ Qⱼ F(s)`, and the endpoint estimate applies to `Qⱼ F`.
-  have h := hC j m hm _ ((φ.dyadicMultiplier ℂ σ j).integrable_comp hF)
+  have h := hC j m hm _ ((φ.dyadicMultiplier ℂ σ j).continuous.comp_aestronglyMeasurable hF)
   simp only [hσ j m hm] at h
   have hB := eLpNorm_eLpNorm_apply_le (φ.dyadicMultiplier ℂ σ j).continuous
     (fun g ↦ φ.eLpNorm_dyadicMultiplier_le_of_le σ j g (ENNReal.HolderConjugate.one_le r' r)
-      hr'r₀') hF.aestronglyMeasurable (q := 2)
+      hr'r₀') hF (q := 2)
   refine h.trans ?_
   calc _ ≤ C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
           Module.finrank ℝ E * (r₀⁻¹).toReal - 2⁻¹)) *
@@ -224,7 +225,7 @@ theorem exists_enorm_integral_inner_halfWavePropagator_littlewoodPaley_le_of_lt_
           Module.finrank ℝ E * (r⁻¹).toReal - 2⁻¹)) *
           eLpNorm (fun t ↦ eLpNorm (G t) r' volume) 2 volume) := by
         gcongr
-        exact hC j m hm G hG
+        exact hC j m hm G hG.aestronglyMeasurable
     _ = _ := by ring
 
 /-! ### Data in homogeneous Besov and Sobolev spaces -/
