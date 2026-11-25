@@ -33,6 +33,7 @@ variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
 /-- **A coordinate square gives a group-scheme square.** If `(S ⊗ f) ≫ b = b' ≫ g`, then base
 change of `Spec f` followed by the comparison of `Spec (S ⊗ H')` with `Spec A'` is the comparison
 of `Spec (S ⊗ H)` with `Spec A` followed by `Spec g`. -/
+@[reassoc]
 theorem baseChange_map_hopfSpec_comp_baseChangeIso_hom {H H' : CommHopfAlgCat.{u} R}
     {A A' : CommHopfAlgCat.{u} S} (f : H' ⟶ H) (g : A' ⟶ A)
     (b : CommHopfAlgCat.baseChange (K := S) H ≅ A) (b' : CommHopfAlgCat.baseChange (K := S) H' ≅ A')
