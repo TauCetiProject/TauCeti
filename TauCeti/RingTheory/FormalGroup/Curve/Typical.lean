@@ -444,6 +444,13 @@ theorem pTypicalCurveSubgroup_eq_iInf_ker (F : FormalGroup R) [F.IsComm] (p : �
   ext γ
   simp [mem_pTypicalCurveSubgroup, Curve.isPTypical_def]
 
+/-- A finite formal-group sum of `p`-typical curves is `p`-typical. -/
+theorem Curve.IsPTypical.sum {F : FormalGroup R} [F.IsComm] {ι : Type*} {p : ℕ}
+    (s : Finset ι) {f : ι → F.Curve} (h : ∀ i ∈ s, (f i).IsPTypical p) :
+    (∑ i ∈ s, f i).IsPTypical p :=
+  (F.mem_pTypicalCurveSubgroup p _).mp <| AddSubgroup.sum_mem _ fun i hi ↦
+    (F.mem_pTypicalCurveSubgroup p _).mpr (h i hi)
+
 section Iso
 
 variable {F G : FormalGroup R} [F.IsComm] [G.IsComm]
