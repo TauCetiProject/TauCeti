@@ -50,8 +50,8 @@ The results below other than `TauCeti.IsSmoothCharacter.comp`, `TauCeti.IsSmooth
   (`TauCeti.isSmoothCharacter_of_discreteTopology`).
 * `TauCeti.IsSmoothCharacter.comp`, `TauCeti.IsSmoothCharacter.unitsMap`: smooth characters pull
   back along continuous homomorphisms and push forward along maps of coefficients.
-* `TauCeti.IsSmoothCharacter.isOpen_singleton_one_of_injective`: a group with an injective smooth
-  character is discrete, that is `{1}` is open.
+* `TauCeti.IsSmoothCharacter.isOpen_singleton_one_of_injective`: an injective smooth character
+  forces `{1}` to be open.
 
 ## References
 
