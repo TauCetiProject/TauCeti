@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors, Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 module
 
 public import Mathlib.AlgebraicGeometry.Noetherian
+public import Mathlib.FieldTheory.TranscendentalSeparable
+public import Mathlib.RingTheory.EssentialFiniteness
 public import TauCeti.AlgebraicGeometry.Scheme.IntegrallyClosed
 public import TauCeti.RingTheory.DiscreteValuationRing.IntegrallyClosed
 import Mathlib.RingTheory.Polynomial.RationalRoot
+import TauCeti.RingTheory.Normal.SeparablyGenerated
 
 /-!
 # Normal schemes
@@ -56,6 +59,9 @@ use `IsNormalScheme (Spec R)` for it.
 * `TauCeti.AlgebraicGeometry.isNormalScheme_pullback_of_forall_tensorProduct`: if `K ⊗[k] B` is
   a normal ring for every normal `k`-algebra `B`, then base change along `Spec K → Spec k`
   preserves normality of schemes (the scheme half of Stacks, Lemma 33.10.6 (0C3M)).
+* `TauCeti.AlgebraicGeometry.isNormalScheme_pullback_of_isSeparablyGenerated`: base change of a
+  normal scheme over a field `k` along a finitely generated separably generated field extension
+  `K / k` is normal (Stacks, Lemma 33.10.6 (0C3M), for `K` finitely generated over `k`).
 
 ## References
 
@@ -260,6 +266,22 @@ theorem isNormalScheme_pullback_of_forall_tensorProduct {k K : Type u} [CommRing
       (pullback (𝒰.f i ≫ f) (Spec.map (CommRingCat.ofHom (algebraMap k K)))) :=
     .of_isOpenImmersion e.hom
   exact hU
+
+open Limits in
+/-- **Separably generated base change of a normal scheme is normal.** Let `k` be a field and
+`K / k` a finitely generated field extension that is separably generated (for instance any
+finitely generated extension of a perfect field, or any finite separable extension). Then for
+every normal scheme `X` over `Spec k` the base change `X ×_{Spec k} Spec K` is normal. Neither `X`
+nor its rings of sections need be Noetherian. Stacks, Lemma 33.10.6 (0C3M), for `K` finitely
+generated over `k`. -/
+@[stacks 0C3M "`K` a finitely generated separably generated field extension"]
+theorem isNormalScheme_pullback_of_isSeparablyGenerated {k K : Type u} [Field k] [Field K]
+    [Algebra k K] [Algebra.EssFiniteType k K] [Algebra.IsSeparablyGenerated k K]
+    (f : X ⟶ Spec (.of k)) [IsNormalScheme X] :
+    IsNormalScheme (pullback f (Spec.map (CommRingCat.ofHom (algebraMap k K)))) :=
+  isNormalScheme_pullback_of_forall_tensorProduct
+    (fun _ _ _ hB q _ ↦
+      forall_isDomain_and_isIntegrallyClosed_tensorProduct_of_isSeparablyGenerated hB q) f
 
 end AlgebraicGeometry
 
