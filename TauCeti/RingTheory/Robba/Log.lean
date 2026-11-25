@@ -35,7 +35,7 @@ coefficients: it is not in the bounded Robba ring, although it converges on the 
 Over a normed `ℚ_p`-algebra `K`, `log (1 + t)` is the limit of the polynomials
 `((1 + t) ^ (p ^ m) - 1) / p ^ m` in every Gauss norm `|·|_ρ` with `0 ≤ ρ < 1`. The coefficient of
 `t ^ (j + 1)` in `((1 + t) ^ N - 1) / N` is `C(N, j + 1) / N = C(N - 1, j) / (j + 1)`, and the
-binomial congruence `‖C(N - 1, j) - (-1)ʲ‖ ≤ (j + 1) ‖N‖`
+binomial estimate `‖C(N - 1, j) - (-1)ʲ‖ ≤ (j + 1) ‖N‖`
 (`TauCeti.norm_natCast_choose_pred_sub_neg_one_pow_le`) bounds its distance to the coefficient
 `(-1)ʲ / (j + 1)` of `log (1 + t)` by `(j + 1)² ‖N‖`.
 
@@ -50,7 +50,7 @@ binomial congruence `‖C(N - 1, j) - (-1)ʲ‖ ≤ (j + 1) ‖N‖`
 * `TauCeti.RobbaRing.log_mem_annulus`: it lies in every annular subalgebra.
 * `TauCeti.RobbaRing.log_notMem_bounded`: it is not in the bounded Robba ring when some positive
   integer has norm less than `1`.
-* `TauCeti.norm_natCast_choose_pred_sub_neg_one_pow_le`: the binomial congruence
+* `TauCeti.norm_natCast_choose_pred_sub_neg_one_pow_le`: the binomial estimate
   `‖C(N - 1, j) - (-1)ʲ‖ ≤ (j + 1) ‖N‖` in a normed `ℚ_p`-algebra.
 * `TauCeti.RobbaRing.tendsto_laurentGaussNorm_one_add_pow_sub_log`: over a normed `ℚ_p`-algebra,
   `((1 + t) ^ (p ^ m) - 1) / p ^ m → log (1 + t)` in every Gauss norm `|·|_ρ`, `0 ≤ ρ < 1`.
@@ -69,7 +69,7 @@ open scoped PowerSeries
 
 namespace TauCeti
 
-/-! ### A binomial congruence -/
+/-! ### A binomial estimate -/
 
 section Binomial
 
@@ -94,9 +94,9 @@ private theorem norm_inv_natCast_le (p : ℕ) [Fact p.Prime] [NormedAlgebra ℚ_
   rw [norm_inv, norm_natCast_eq_padic p]
   exact inv_le_of_inv_le₀ (by positivity) (Padic.inv_natCast_le_norm_natCast n)
 
-/-- **`C(N - 1, j) ≡ (-1)ʲ` modulo `(j + 1) N`.** In a normed `ℚ_p`-algebra the binomial
-coefficient `C(N - 1, j) = ∏_{1 ≤ i ≤ j} (N - i) / i` is close to `(-1)ʲ`:
-`‖C(N - 1, j) - (-1)ʲ‖ ≤ (j + 1) ‖N‖`. -/
+/-- **`C(N - 1, j)` is `p`-adically close to `(-1)ʲ`.** In a normed `ℚ_p`-algebra the binomial
+coefficient `C(N - 1, j) = ∏_{1 ≤ i ≤ j} (N - i) / i` satisfies the norm bound
+`‖C(N - 1, j) - (-1)ʲ‖ ≤ (j + 1) ‖N‖`, where the factor `j + 1` is a real number, not a norm. -/
 theorem norm_natCast_choose_pred_sub_neg_one_pow_le (p : ℕ) [Fact p.Prime]
     [NormedAlgebra ℚ_[p] K] {N : ℕ} (hN : N ≠ 0) (j : ℕ) :
     ‖((N - 1).choose j : K) - (-1) ^ j‖ ≤ (j + 1) * ‖(N : K)‖ := by
