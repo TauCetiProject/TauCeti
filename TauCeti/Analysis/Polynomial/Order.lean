@@ -35,6 +35,8 @@ open Filter Topology
 
 namespace Polynomial
 
+section NontriviallyNormedField
+
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- The analytic order at zero of a polynomial function is its trailing degree. -/
@@ -114,8 +116,11 @@ theorem analyticAt_pow_div_eval_reverse (p : Polynomial 𝕜) (n : ℕ) :
   · exact ((analyticAt_id (𝕜 := 𝕜)).pow _).div ((AnalyticOnNhd.eval_polynomial _) 0
       (Set.mem_univ _)) (eval_zero_reverse_ne_zero hp)
 
+end NontriviallyNormedField
+
 /-- A polynomial divisible by `X ^ n` is `O(tⁿ)` as `t → 0`. -/
-theorem isBigO_eval_of_X_pow_dvd {n : ℕ} {p : Polynomial 𝕜} (hp : X ^ n ∣ p) :
+theorem isBigO_eval_of_X_pow_dvd {𝕜 : Type*} [NormedField 𝕜] {n : ℕ} {p : Polynomial 𝕜}
+    (hp : X ^ n ∣ p) :
     (fun t ↦ p.eval t) =O[𝓝 0] fun t ↦ t ^ n := by
   obtain ⟨q, rfl⟩ := hp
   simpa using (Asymptotics.isBigO_refl (fun t : 𝕜 ↦ t ^ n) _).mul

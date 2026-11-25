@@ -12,6 +12,7 @@ import Mathlib.RingTheory.PowerSeries.Exp
 import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.Analysis.Polynomial.Order
 import TauCeti.Analysis.SpecialFunctions.Complex.Exp.Limits
+import TauCeti.RingTheory.PowerSeries.Basic
 import TauCeti.RingTheory.PowerSeries.Derivative
 import TauCeti.RingTheory.PowerSeries.Trunc
 
@@ -153,25 +154,17 @@ private lemma X_pow_succ_dvd_rankOneOperator_sub (F G : R⟦X⟧) (κ μ : R) {n
   · rw [pow_succ', mul_assoc]
     exact mul_dvd_mul_left X (dvd_mul_of_dvd_right h₁ _)
 
-/-- The coefficient of `Xⁿ⁺¹` in a product, with the term of the constant coefficient of the
-first factor split off. -/
-private lemma coeff_succ_mul_eq_add_sum (F A : R⟦X⟧) (n : ℕ) :
-    coeff (n + 1) (F * A) =
-      coeff 0 F * coeff (n + 1) A + ∑ j ∈ range (n + 1), coeff (n + 1 - j) F * coeff j A := by
-  rw [mul_comm, coeff_mul, Nat.sum_antidiagonal_eq_sum_range_succ_mk, sum_range_succ,
-    Nat.sub_self, add_comm]
-  simp only [mul_comm (coeff _ A)]
-
-/-- The constant coefficient of the operator is `(κ² + κ f₀ + g₀) a₀`: it vanishes for `a₀ ≠ 0`
-exactly when `κ` is a root of the characteristic equation `κ² + f₀ κ + g₀ = 0` (DLMF 2.7.9). -/
+/-- The constant coefficient of the operator is `(κ² + κ f₀ + g₀) a₀`. Over a field, for `a₀ ≠ 0`
+it vanishes exactly when `κ` is a root of the characteristic equation `κ² + f₀ κ + g₀ = 0`
+(DLMF 2.7.9). -/
 theorem coeff_zero_rankOneOperator (F G : R⟦X⟧) (κ μ : R) (A : R⟦X⟧) :
     coeff 0 (rankOneOperator F G κ μ A) =
       (κ ^ 2 + κ * coeff 0 F + coeff 0 G) * coeff 0 A := by
   simp [rankOneOperator_apply, coeff_zero_eq_constantCoeff]
 
 /-- The coefficient of `X` in the operator. When `κ² + κ f₀ + g₀ = 0` it is
-`(μ (f₀ + 2κ) + κ f₁ + g₁) a₀`, so for `a₀ ≠ 0` and a simple root `κ`, `f₀ + 2κ ≠ 0`, it vanishes
-exactly when `μ` is given by DLMF 2.7.10. -/
+`(μ (f₀ + 2κ) + κ f₁ + g₁) a₀`, so over a field, for `a₀ ≠ 0` and a simple root `κ`,
+`f₀ + 2κ ≠ 0`, it vanishes exactly when `μ` is given by DLMF 2.7.10. -/
 theorem coeff_one_rankOneOperator (F G : R⟦X⟧) (κ μ : R) (A : R⟦X⟧) :
     coeff 1 (rankOneOperator F G κ μ A) =
       (μ * (coeff 0 F + 2 * κ) + κ * coeff 1 F + coeff 1 G) * coeff 0 A +
@@ -190,22 +183,38 @@ theorem coeff_add_two_rankOneOperator (F G : R⟦X⟧) (κ μ : R) (A : R⟦X⟧
         (s + 1 - μ) * (s - μ) * coeff s A +
         ∑ j ∈ range (s + 1), (κ * coeff (s + 2 - j) F + coeff (s + 2 - j) G -
           (j - μ) * coeff (s + 1 - j) F) * coeff j A := by
-  have h₂ : s + 2 = s + 1 + 1 := rfl
-  have h₁ : s + 1 + 1 - (s + 1) = 1 := by omega
-  -- split off the constant factors, then the endpoint terms of the convolutions
-  rw [rankOneOperator_apply, map_add, map_sub, coeff_X_pow_mul, h₂, mul_assoc, coeff_succ_X_mul,
-    add_mul, add_mul, add_mul, mul_assoc (C κ), map_add, map_add, map_add, coeff_C_mul,
-    coeff_C_mul, coeff_C_mul, coeff_succ_mul_eq_add_sum, coeff_succ_mul_eq_add_sum,
-    coeff_succ_mul_eq_add_sum, sum_range_succ (n := s + 1), sum_range_succ (n := s + 1), h₁]
-  simp only [coeff_X_mul_derivative_sub_C_mul]
-  have hsum : κ * ∑ j ∈ range (s + 1), coeff (s + 1 + 1 - j) F * coeff j A +
-      ∑ j ∈ range (s + 1), coeff (s + 1 + 1 - j) G * coeff j A -
+  set B := X * d⁄dX A - C μ * A
+  have hB (n : ℕ) : coeff n B = (n - μ) * coeff n A := coeff_X_mul_derivative_sub_C_mul μ A n
+  -- the coefficients of the three summands of the operator
+  have h₁ : coeff (s + 2) (X ^ 2 * (X * d⁄dX B - C (μ - 1) * B)) =
+      (s + 1 - μ) * (s - μ) * coeff s A := by
+    rw [coeff_X_pow_mul, coeff_X_mul_derivative_sub_C_mul, hB]
+    ring
+  have h₂ : coeff (s + 2) (X * (C (2 * κ) + F) * B) =
+      (coeff 0 F + 2 * κ) * (s + 1 - μ) * coeff (s + 1) A +
+        ∑ j ∈ range (s + 1), coeff (s + 1 - j) F * ((j - μ) * coeff j A) := by
+    rw [mul_assoc, coeff_succ_X_mul, add_mul, map_add, coeff_C_mul, coeff_succ_mul_eq_add_sum]
+    simp only [hB]
+    push_cast
+    ring
+  have h₃ : coeff (s + 2) ((C (κ ^ 2) + C κ * F + G) * A) =
+      (κ ^ 2 + κ * coeff 0 F + coeff 0 G) * coeff (s + 2) A +
+        (κ * coeff 1 F + coeff 1 G) * coeff (s + 1) A +
+        κ * ∑ j ∈ range (s + 1), coeff (s + 2 - j) F * coeff j A +
+        ∑ j ∈ range (s + 1), coeff (s + 2 - j) G * coeff j A := by
+    rw [show s + 2 = s + 1 + 1 from rfl]
+    simp only [add_mul, mul_assoc, map_add, coeff_C_mul]
+    rw [coeff_succ_mul_eq_add_sum, coeff_succ_mul_eq_add_sum, sum_range_succ _ (s + 1),
+      sum_range_succ _ (s + 1), Nat.add_sub_cancel_left]
+    ring
+  have hsum : κ * ∑ j ∈ range (s + 1), coeff (s + 2 - j) F * coeff j A +
+      ∑ j ∈ range (s + 1), coeff (s + 2 - j) G * coeff j A -
       ∑ j ∈ range (s + 1), coeff (s + 1 - j) F * ((j - μ) * coeff j A) =
-      ∑ j ∈ range (s + 1), (κ * coeff (s + 1 + 1 - j) F + coeff (s + 1 + 1 - j) G -
+      ∑ j ∈ range (s + 1), (κ * coeff (s + 2 - j) F + coeff (s + 2 - j) G -
         (j - μ) * coeff (s + 1 - j) F) * coeff j A := by
     rw [mul_sum, ← sum_add_distrib, ← sum_sub_distrib]
     exact sum_congr rfl fun j _ ↦ by ring
-  push_cast
+  rw [rankOneOperator_apply, map_add, map_sub, h₁, h₂, h₃]
   linear_combination hsum
 
 end Formal
@@ -222,11 +231,12 @@ variable {K : Type*} [Field K]
 
 `(f₀ + 2κ) s aₛ = (s - μ) (s - 1 - μ) aₛ₋₁ + ∑_{k=1}^{s} (κ fₖ₊₁ + gₖ₊₁ - (s - k - μ) fₖ) aₛ₋ₖ`,
 
-for `aₛ`. The sequence is defined for all parameters. When `f₀ + 2κ ≠ 0` it satisfies this
-recursion (`TauCeti.mul_rankOneCoeff`); for a root `κ` of the characteristic equation
-`κ² + f₀ κ + g₀ = 0` this says that `κ` differs from the other root `-f₀ - κ`. It gives a formal
-solution when moreover `κ` is a root of the characteristic equation and `μ` is given by
-DLMF 2.7.10 (`TauCeti.rankOneOperator_mk_rankOneCoeff`). -/
+for `aₛ`. The sequence is defined for all parameters. When `K` has characteristic zero and
+`f₀ + 2κ ≠ 0` it satisfies this recursion (`TauCeti.mul_rankOneCoeff`); for a root `κ` of the
+characteristic equation `κ² + f₀ κ + g₀ = 0` this says that `κ` differs from the other root
+`-f₀ - κ`. In characteristic zero it gives a formal solution when moreover `κ` is a root of the
+characteristic equation and `μ` is given by DLMF 2.7.10
+(`TauCeti.rankOneOperator_mk_rankOneCoeff`). -/
 noncomputable def rankOneCoeff (F G : K⟦X⟧) (κ μ : K) : ℕ → K
   | 0 => 1
   | s + 1 => ((coeff 0 F + 2 * κ) * (s + 1))⁻¹ *
@@ -371,15 +381,6 @@ theorem rankOneFormalSolutionTrunc_succ (κ μ : ℂ) (a : ℕ → ℂ) (N : ℕ
 
 section Analytic
 
-/-- `ζ ↦ p(e^{-ζ})` has derivative `-(θ p)(e^{-ζ})`, with `θ = X d/dX`. -/
-private lemma hasDerivAt_eval_exp_neg (p : Polynomial ℂ) (ζ : ℂ) :
-    HasDerivAt (fun ζ ↦ p.eval (cexp (-ζ)))
-      (-(Polynomial.X * Polynomial.derivative p).eval (cexp (-ζ))) ζ := by
-  have h := (p.hasDerivAt (cexp (-ζ))).comp ζ ((hasDerivAt_neg ζ).cexp)
-  refine h.congr_deriv ?_
-  rw [Polynomial.eval_mul, Polynomial.eval_X]
-  ring
-
 /-- The function `exp(κ e^ζ + μ ζ) p(e^{-ζ})` for a polynomial `p`. -/
 private noncomputable def expEval (κ μ : ℂ) (p : Polynomial ℂ) (ζ : ℂ) : ℂ :=
   cexp (κ * cexp ζ + μ * ζ) * p.eval (cexp (-ζ))
@@ -392,18 +393,28 @@ private lemma rankOneFormalSolutionTrunc_eq_expEval (κ μ : ℂ) (a : ℕ → �
   refine sum_congr rfl fun s _ ↦ ?_
   rw [coeff_mk, ← Complex.exp_natCast_mul, mul_neg]
 
-private lemma hasDerivAt_cexp_mul_cexp_add (κ μ ζ : ℂ) :
-    HasDerivAt (fun ζ ↦ cexp (κ * cexp ζ + μ * ζ))
-      (cexp (κ * cexp ζ + μ * ζ) * (κ * cexp ζ + μ)) ζ := by
-  have h := (((Complex.hasDerivAt_exp ζ).const_mul κ).add ((hasDerivAt_id ζ).const_mul μ)).cexp
-  simpa using h
-
-/-- The first derivative of `exp(κ e^ζ + μ ζ) p(e^{-ζ})`. -/
+/-- The first derivative of `exp(κ e^ζ + μ ζ) p(e^{-ζ})`: `d/dζ` acts on `p(e^{-ζ})` as `-θ`,
+with `θ = X d/dX`. -/
 private lemma hasDerivAt_expEval (κ μ : ℂ) (p : Polynomial ℂ) (ζ : ℂ) :
     HasDerivAt (expEval κ μ p) (cexp (κ * cexp ζ + μ * ζ) *
       ((κ * cexp ζ + μ) * p.eval (cexp (-ζ)) -
-        (Polynomial.X * Polynomial.derivative p).eval (cexp (-ζ)))) ζ :=
-  ((hasDerivAt_cexp_mul_cexp_add κ μ ζ).mul (hasDerivAt_eval_exp_neg p ζ)).congr_deriv (by ring)
+        (Polynomial.X * Polynomial.derivative p).eval (cexp (-ζ)))) ζ := by
+  have hE := (((Complex.hasDerivAt_exp ζ).const_mul κ).add ((hasDerivAt_id ζ).const_mul μ)).cexp
+  have hp := (p.hasDerivAt (cexp (-ζ))).comp ζ (hasDerivAt_neg ζ).cexp
+  refine (hE.mul hp).congr_deriv ?_
+  simp only [Pi.add_apply, id, Function.comp_apply, Polynomial.eval_mul, Polynomial.eval_X]
+  ring
+
+/-- The derivative of `exp(κ e^ζ + μ ζ) p(e^{-ζ})` is a combination of functions of the same
+form. -/
+private lemma deriv_expEval (κ μ : ℂ) (p : Polynomial ℂ) :
+    deriv (expEval κ μ p) = fun ζ ↦ κ * expEval κ (μ + 1) p ζ + μ * expEval κ μ p ζ -
+      expEval κ μ (Polynomial.X * Polynomial.derivative p) ζ := by
+  funext ζ
+  rw [(hasDerivAt_expEval κ μ p ζ).deriv, expEval, expEval, expEval,
+    show κ * cexp ζ + (μ + 1) * ζ = κ * cexp ζ + μ * ζ + ζ by ring,
+    Complex.exp_add (κ * cexp ζ + μ * ζ) ζ]
+  ring
 
 /-- The second derivative of `exp(κ e^ζ + μ ζ) p(e^{-ζ})`. -/
 private lemma hasDerivAt_deriv_expEval (κ μ : ℂ) (p : Polynomial ℂ) (ζ : ℂ) :
@@ -412,29 +423,13 @@ private lemma hasDerivAt_deriv_expEval (κ μ : ℂ) (p : Polynomial ℂ) (ζ : 
         2 * (κ * cexp ζ + μ) * (Polynomial.X * Polynomial.derivative p).eval (cexp (-ζ)) +
         (Polynomial.X * Polynomial.derivative (Polynomial.X * Polynomial.derivative p)).eval
           (cexp (-ζ)))) ζ := by
-  have hd : deriv (expEval κ μ p) = fun ζ ↦ cexp (κ * cexp ζ + μ * ζ) *
-      ((κ * cexp ζ + μ) * p.eval (cexp (-ζ)) -
-        (Polynomial.X * Polynomial.derivative p).eval (cexp (-ζ))) :=
-    funext fun ζ ↦ (hasDerivAt_expEval κ μ p ζ).deriv
-  rw [hd]
-  exact ((hasDerivAt_cexp_mul_cexp_add κ μ ζ).mul
-    (((((Complex.hasDerivAt_exp ζ).const_mul κ).add_const μ).mul
-      (hasDerivAt_eval_exp_neg p ζ)).sub
-        (hasDerivAt_eval_exp_neg (Polynomial.X * Polynomial.derivative p) ζ))).congr_deriv
-    (by simp only [Pi.mul_apply, Pi.sub_apply]; ring)
-
-/-- The value at `e^{-ζ}` of the truncation of `θ^j A`, for `θ = X d/dX` and `A = ∑ aₛ Xˢ`, is
-`∑_{s<N} sʲ aₛ e^{-sζ}`. -/
-private lemma eval_trunc_X_mul_derivative_mk (j : ℕ) (a : ℕ → ℂ) (N : ℕ) (ζ : ℂ) :
-    (trunc N ((fun A ↦ X * d⁄dX A)^[j] (mk a))).eval (cexp (-ζ)) =
-      ∑ s ∈ range N, (s : ℂ) ^ j * a s * cexp (-(s * ζ)) := by
-  rw [eval_trunc]
-  refine sum_congr rfl fun s _ ↦ ?_
-  rw [← Complex.exp_natCast_mul, mul_neg]
-  congr 1
-  induction j with
-  | zero => simp
-  | succ j ih => rw [Function.iterate_succ_apply', coeff_X_mul_derivative, ih, pow_succ]; ring
+  rw [deriv_expEval]
+  refine ((((hasDerivAt_expEval κ (μ + 1) p ζ).const_mul κ).add
+    ((hasDerivAt_expEval κ μ p ζ).const_mul μ)).sub
+      (hasDerivAt_expEval κ μ _ ζ)).congr_deriv ?_
+  rw [show κ * cexp ζ + (μ + 1) * ζ = κ * cexp ζ + μ * ζ + ζ by ring,
+    Complex.exp_add (κ * cexp ζ + μ * ζ) ζ]
+  ring
 
 /-- The derivative of the truncated formal solution: `d/dζ` multiplies the term
 `aₛ exp(κ e^ζ + (μ - s) ζ)` by `κ e^ζ + μ - s`. -/
@@ -443,12 +438,12 @@ theorem hasDerivAt_rankOneFormalSolutionTrunc (κ μ : ℂ) (a : ℕ → ℂ) (N
       ∑ s ∈ range N, (κ * cexp ζ + μ - s) * a s * cexp (-(s * ζ))) ζ := by
   rw [rankOneFormalSolutionTrunc_eq_expEval]
   refine (hasDerivAt_expEval κ μ _ ζ).congr_deriv ?_
-  have h₀ := eval_trunc_X_mul_derivative_mk 0 a N ζ
-  have h₁ := eval_trunc_X_mul_derivative_mk 1 a N ζ
-  simp only [Function.iterate_zero_apply, Function.iterate_one] at h₀ h₁
-  rw [X_mul_derivative_trunc, h₀, h₁, mul_sum, ← sum_sub_distrib]
+  simp only [X_mul_derivative_trunc, eval_trunc, coeff_X_mul_derivative, coeff_mk]
+  rw [mul_sum, ← sum_sub_distrib]
   congr 1
-  exact sum_congr rfl fun s _ ↦ by ring
+  refine sum_congr rfl fun s _ ↦ ?_
+  rw [← Complex.exp_natCast_mul, mul_neg]
+  ring
 
 /-- The second derivative of the truncated formal solution: it multiplies the term
 `aₛ exp(κ e^ζ + (μ - s) ζ)` by `(κ e^ζ + μ - s)² + κ e^ζ`. -/
@@ -457,14 +452,12 @@ theorem hasDerivAt_deriv_rankOneFormalSolutionTrunc (κ μ : ℂ) (a : ℕ → �
       ∑ s ∈ range N, ((κ * cexp ζ + μ - s) ^ 2 + κ * cexp ζ) * a s * cexp (-(s * ζ))) ζ := by
   rw [rankOneFormalSolutionTrunc_eq_expEval]
   refine (hasDerivAt_deriv_expEval κ μ _ ζ).congr_deriv ?_
-  have h₀ := eval_trunc_X_mul_derivative_mk 0 a N ζ
-  have h₁ := eval_trunc_X_mul_derivative_mk 1 a N ζ
-  have h₂ := eval_trunc_X_mul_derivative_mk 2 a N ζ
-  simp only [Function.iterate_zero_apply, Function.iterate_succ_apply'] at h₀ h₁ h₂
-  rw [X_mul_derivative_trunc, X_mul_derivative_trunc, h₀, h₁, h₂, mul_sum, mul_sum,
-    ← sum_sub_distrib, ← sum_add_distrib]
+  simp only [X_mul_derivative_trunc, eval_trunc, coeff_X_mul_derivative, coeff_mk]
+  rw [mul_sum, mul_sum, ← sum_sub_distrib, ← sum_add_distrib]
   congr 1
-  exact sum_congr rfl fun s _ ↦ by ring
+  refine sum_congr rfl fun s _ ↦ ?_
+  rw [← Complex.exp_natCast_mul, mul_neg]
+  ring
 
 /-- The truncated formal solution is entire. -/
 theorem differentiable_rankOneFormalSolutionTrunc (κ μ : ℂ) (a : ℕ → ℂ) (N : ℕ) :
