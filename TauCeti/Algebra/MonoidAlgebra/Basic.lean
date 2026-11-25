@@ -62,6 +62,8 @@ none of the further theory built on it.
   exactly when it acts injectively on `R`.
 * `MonoidAlgebra.smul_single_one`: an element `single g r` supported at a single point is the
   scalar multiple `r • single g 1` of the basis element there.
+* `MonoidAlgebra.eq_single_of_subsingleton`: the monoid algebra of a one-point monoid is
+  one-dimensional, each element being the monomial at any point with its coefficient there.
 * `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by the monomial `single u 1` at a
   unit `u` of `M` conjugates the indices of the coefficients.
 * `MonoidAlgebra.lift_apply_eq_sum`: over a finite monoid, `lift F x` is the finite sum
@@ -392,6 +394,17 @@ theorem mrange_of_le_nonZeroDivisors {R M : Type*} [Semiring R] [Monoid M] [IsCa
 theorem smul_single_one {k G : Type*} [Semiring k] (g : G) (r : k) :
     r • single g (1 : k) = single g r := by
   rw [smul_single', mul_one]
+
+/-- The monoid algebra of a one-point monoid is one-dimensional: each element is the monomial at
+any point `m` with its coefficient there. Mathlib's `MonoidAlgebra.uniqueLinearEquiv` gives this
+only at an index `1` found by instance search. -/
+@[to_additive (dont_translate := R)
+/-- The additive monoid algebra of a one-point monoid is one-dimensional: each element is the
+monomial at any point `m` with its coefficient there. -/]
+theorem eq_single_of_subsingleton {R M : Type*} [Semiring R] [Subsingleton M]
+    (x : MonoidAlgebra R M) (m : M) : x = single m (x.coeff m) := by
+  ext n
+  simp [Subsingleton.elim n m]
 
 /-- Conjugating by the monomial at a unit `u` of `M` conjugates the indices of the coefficients:
 `(u x u⁻¹)_h = x_{u⁻¹ h u}`. For a group element `g`, take `u = toUnits g`. -/
