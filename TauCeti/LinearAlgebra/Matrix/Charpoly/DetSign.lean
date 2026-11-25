@@ -139,8 +139,9 @@ theorem sign_det_one_sub_pow_succ (A : Matrix n n ℝ) (k : ℕ) (h : (1 - A ^ (
       SignType.sign (1 - A).det * ((-1) ^ (A.charpoly.roots.filter (· < -1)).card) ^ k := by
   have h₁ : (1 - A).det ≠ 0 :=
     left_ne_zero_of_mul (by rwa [← det_mul, mul_neg_geom_sum])
-  rw [A.sign_det_one_sub_pow _ h, A.sign_det_one_sub h₁, add_assoc, one_add_one_eq_two, add_mul,
-    TauCeti.neg_one_pow_add_two_mul, mul_comm k, pow_mul]
+  rw [A.sign_det_one_sub_pow _ h, A.sign_det_one_sub h₁, ← pow_mul,
+    ← TauCeti.neg_one_pow_add_two_mul (_ * k) (A.charpoly.roots.filter (· < -1)).card]
+  ring_nf
 
 /-- The number of real characteristic roots of a real square matrix, counted with algebraic
 multiplicity, has the parity of its size: the nonreal roots come in conjugate pairs. -/
@@ -267,8 +268,9 @@ theorem sign_det_one_sub_pow_succ (f : Module.End ℝ V) (k : ℕ) (h : (1 - f ^
       SignType.sign (1 - f).det * ((-1) ^ (f.charpoly.roots.filter (· < -1)).card) ^ k := by
   have h₁ : (1 - f).det ≠ 0 :=
     left_ne_zero_of_mul (by rwa [← map_mul, mul_neg_geom_sum])
-  rw [f.sign_det_one_sub_pow _ h, f.sign_det_one_sub h₁, add_assoc, one_add_one_eq_two, add_mul,
-    TauCeti.neg_one_pow_add_two_mul, mul_comm k, pow_mul]
+  rw [f.sign_det_one_sub_pow _ h, f.sign_det_one_sub h₁, ← pow_mul,
+    ← TauCeti.neg_one_pow_add_two_mul (_ * k) (f.charpoly.roots.filter (· < -1)).card]
+  ring_nf
 
 /-- If `1 - f ^ 2` is invertible for an endomorphism `f` of a finite-dimensional real vector space
 `V`, so that no eigenvalue is `± 1`, then `(-1) ^ (i₊ + i₋) = (-1) ^ (dim V + i₀)`, where `i₊`,
