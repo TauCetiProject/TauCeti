@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.Tensor.Induction.Resolution
 public import TauCeti.RepresentationTheory.Tensor.Induction.TrivialF2.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Cochain
 import TauCeti.RepresentationTheory.Tensor.Induction.ChangeTransversal.Resolution
-import Mathlib.RingTheory.Ideal.Int
+import TauCeti.RepresentationTheory.Tensor.Induction.Cochain
 
 /-!
 # The tensor norm on canonical homogeneous cocycles
@@ -26,7 +26,8 @@ with value `a` has norm the degree-zero class of `a ^ |G ⧸ U| = a`
 The construction uses `TauCeti.smoothTensorInducedDiagonalClass` and its change-of-coboundary
 theorem. These operate on the total graded resolution; `TopRep.cochainToGradedResolution`
 transfers the canonical differential and invariance to that presentation. In degree zero there
-are no coboundaries, so cocycles with equal classes are equal. Transversal independence is
+are no coboundaries, so cocycles with equal classes are equal; independence of the representative
+is `TauCeti.smoothTensorInducedDiagonalClass_eq_of_cochainClass_eq`. Transversal independence is
 `TauCeti.smoothTensorInducedDiagonalClass_trivialF2_changeTransversal`. No choice of a
 representative of a cohomology class is made here.
 
@@ -100,55 +101,23 @@ theorem tensorNormCocycleClass_eq_of_cochainClass_eq {n : ℕ}
     (hz' : ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).d n (n + 1)).hom z' = 0)
     (h : (trivialF2 U.toSubgroup).cochainClass n z hz =
       (trivialF2 U.toSubgroup).cochainClass n z' hz') :
-    tensorNormCocycleClass U t z hz = tensorNormCocycleClass U t z' hz' := by
-  cases n with
-  | zero =>
-    -- In degree zero there are no coboundaries: the class map is injective.
-    rw [TopRep.cochainClass_def, TopRep.cochainClass_def] at h
-    have hc := (CategoryTheory.ConcreteCategory.bijective_of_isIso
-      ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).homologyπ 0)).1 h
-    obtain rfl : z = z' := by
-      simpa only [HomologicalComplex.iCycles_cyclesMkOfEq] using
-        congrArg ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).iCycles 0).hom hc
-    rfl
-  | succ n =>
-    let : (Ideal.span {(2 : ℤ)}).IsMaximal :=
-      @Int.ideal_span_isMaximal_of_prime 2 ⟨Nat.prime_two⟩
-    obtain ⟨y, hy⟩ := ((trivialF2 U.toSubgroup).cochainClass_eq_cochainClass_iff rfl hz hz').1 h
-    rw [tensorNormCocycleClass_def, tensorNormCocycleClass_def]
-    congr 1
-    apply smoothTensorInducedDiagonalClass_eq_of_sub_eq_d
-      U.toSubgroup U.isOpen' t
+    tensorNormCocycleClass U t z hz = tensorNormCocycleClass U t z' hz' :=
+  congrArg (ContinuousCohomology.coeffMap
+      (smoothTensorInducedTrivialF2Iso G U.toSubgroup U.isOpen' t).hom.hom _)
+    (smoothTensorInducedDiagonalClass_eq_of_cochainClass_eq U.toSubgroup U.isOpen' t
       ⟨trivialF2 U.toSubgroup, isSmoothDiscrete_trivialF2 U.toSubgroup⟩
-      (trivialF2_add_self U.toSubgroup)
-      _ _ _ _ _ _
-      ((trivialF2 U.toSubgroup).cochainToGradedResolution_mem n y)
-      ((trivialF2 U.toSubgroup).cochainToGradedResolution_invariant n y)
-    rw [← map_sub, hy, TopRep.gradedResolutionDifferential_cochainToGradedResolution]
+      (trivialF2_add_self U.toSubgroup) z z' hz hz' h)
 
 /-- The zero cocycle has zero tensor norm, including in degree zero. -/
 @[simp]
 theorem tensorNormCocycleClass_zero (n : ℕ) :
     tensorNormCocycleClass U t (0 : (TopRep.homogeneousCochains
-      (trivialF2 U.toSubgroup)).X n) (map_zero _) = 0 := by
-  have hten : PiTensorProduct.tprod ℤ (fun _ : G ⧸ U.toSubgroup ↦
-      (0 : (trivialF2 U.toSubgroup).gradedResolutionModule)) = 0 :=
-    (PiTensorProduct.tprod ℤ).map_coord_zero (QuotientGroup.mk 1) rfl
-  let : LinearOrder (G ⧸ U.toSubgroup) :=
-    LinearOrder.lift' _ (Fintype.equivFin (G ⧸ U.toSubgroup)).injective
-  rw [tensorNormCocycleClass_def, smoothTensorInducedDiagonalClass_eq]
-  let c := smoothTensorInducedGradedResolutionContraction U.toSubgroup U.isOpen' t
-    ⟨trivialF2 U.toSubgroup, isSmoothDiscrete_trivialF2 U.toSubgroup⟩
-    (trivialF2_add_self U.toSubgroup)
-  have hzero := TopRep.ResolutionContraction.gradedCohomologyClass_zero.{0, u, u}
-    c (n := Fintype.card (G ⧸ U.toSubgroup) * n)
-  apply Eq.trans (congrArg
-    (ContinuousCohomology.coeffMap
-      (smoothTensorInducedTrivialF2Iso G U.toSubgroup U.isOpen' t).hom.hom
-      (Fintype.card (G ⧸ U.toSubgroup) * n)) _) (map_zero _)
-  convert hzero using 1
-  simp only [map_zero, hten]
-  rfl
+      (trivialF2 U.toSubgroup)).X n) (map_zero _) = 0 :=
+  (congrArg (ContinuousCohomology.coeffMap
+      (smoothTensorInducedTrivialF2Iso G U.toSubgroup U.isOpen' t).hom.hom _)
+    (smoothTensorInducedDiagonalClass_cochainToGradedResolution_zero U.toSubgroup U.isOpen' t
+      ⟨trivialF2 U.toSubgroup, isSmoothDiscrete_trivialF2 U.toSubgroup⟩
+      (trivialF2_add_self U.toSubgroup) n)).trans (map_zero _)
 
 /-- A cocycle representing zero has zero tensor norm. -/
 theorem tensorNormCocycleClass_eq_zero_of_cochainClass_eq_zero {n : ℕ}

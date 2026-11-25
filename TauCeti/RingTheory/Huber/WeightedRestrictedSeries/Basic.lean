@@ -1037,14 +1037,22 @@ theorem weightedPolynomialHom_X [NonarchimedeanRing A] {T : Fin k → Set A}
     weightedPolynomialHom T hT (MvPolynomial.X i) = weightedX T hT i :=
   Subtype.ext (by simp)
 
+/-- A polynomial lies in `U⟨X⟩` exactly when each of its coefficients `aν` lies in `Tν · U`, for any
+additive subgroup `U`. -/
+theorem weightedPolynomialHom_mem_weightedNhd [NonarchimedeanRing A] {T : Fin k → Set A}
+    {hT : IsWeightFamily T} {U : AddSubgroup A} {p : MvPolynomial (Fin k) A} :
+    weightedPolynomialHom T hT p ∈ weightedNhd T hT U ↔ ∀ ν, p.coeff ν ∈ weightMul T ν U := by
+  simp only [mem_weightedNhd, coe_weightedPolynomialHom, MvPolynomial.coeff_coe]
+
 /-- A monomial `a Xν` lies in `U⟨X⟩` exactly when `a ∈ Tν · U`. -/
 @[simp 1100] theorem weightedPolynomialHom_monomial_mem_weightedNhd [NonarchimedeanRing A]
     {T : Fin k → Set A} {hT : IsWeightFamily T} {U : AddSubgroup A} {ν : Fin k →₀ ℕ} {a : A} :
     weightedPolynomialHom T hT (MvPolynomial.monomial ν a) ∈ weightedNhd T hT U ↔
       a ∈ weightMul T ν U := by
-  simp only [mem_weightedNhd, coe_weightedPolynomialHom, MvPolynomial.coe_monomial,
-    MvPowerSeries.coeff_monomial]
+  classical
+  rw [weightedPolynomialHom_mem_weightedNhd]
   refine ⟨fun h ↦ by simpa using h ν, fun h μ ↦ ?_⟩
+  rw [MvPolynomial.coeff_monomial]
   split_ifs with hμ
   · exact hμ ▸ h
   · exact zero_mem _

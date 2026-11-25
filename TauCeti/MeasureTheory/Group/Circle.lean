@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Group.Circle
 public import Mathlib.MeasureTheory.Integral.CircleAverage
-import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.MeasureTheory.Function.L1Space.HasFiniteIntegral
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
@@ -18,6 +18,8 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 This file defines the measure on `Circle` obtained from a nonnegative density on the unit circle
 with respect to normalized arc length. For a circle-integrable density it is finite, and for a
 measurable nonnegative density its integral is identified with Mathlib's `Real.circleAverage`.
+The file also defines the unnormalized arclength measure `circleArcLength`, the image of `volume`
+on `AddCircle (2π)` under `AddCircle.homeomorphCircle'`, of total mass `2π`.
 
 ## Main definitions and results
 
@@ -28,6 +30,8 @@ measurable nonnegative density its integral is identified with Mathlib's `Real.c
   `Circle.exp` of a measure concentrated on `(a, a + 2π]`, for an arbitrary integrand.
 * `TauCeti.integral_circleDensityMeasure`: for a nonnegative measurable density, integration
   against the weighted measure is a circle average.
+* `TauCeti.circleArcLength`: the arclength measure `dθ` on `Circle`, of total mass `2π`.
+* `TauCeti.circleArcLength_univ`: the arclength measure has total mass `2π`, so it is finite.
 * `TauCeti.circleAverage_sub_zpow`: the circle average of `(z - c) ^ n` is `1` for `n = 0` and
   `0` otherwise, the orthogonality relation of the characters of the circle.
 -/
@@ -110,6 +114,28 @@ theorem integral_circleDensityMeasure {E : Type*} [NormedAddCommGroup E] [Normed
     mul_nonneg (by positivity) (hφ₀ _ (circleMap_mem_sphere 0 zero_le_one θ))
   simp only [ENNReal.toReal_ofReal h₀, smul_smul]
   simp [Circle.coe_exp, circleMap]
+
+/-- `2π` is positive, so that `AddCircle (2π)` carries its Haar measure. -/
+local instance instFactZeroLtTwoPi : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
+
+/-- **The arclength measure on `Circle`.** The image of the Haar measure `volume` of
+`AddCircle (2π)`, of total mass `2π`, under the homeomorphism `θ ↦ exp(iθ)`. -/
+def circleArcLength : Measure Circle :=
+  Measure.map AddCircle.homeomorphCircle' volume
+
+theorem circleArcLength_def :
+    circleArcLength =
+      Measure.map AddCircle.homeomorphCircle' (volume : Measure (AddCircle (2 * π))) :=
+  (rfl)
+
+/-- The arclength measure on `Circle` has total mass `2π`. -/
+@[simp]
+theorem circleArcLength_univ : circleArcLength univ = ENNReal.ofReal (2 * π) := by
+  rw [circleArcLength, Measure.map_apply AddCircle.homeomorphCircle'.continuous.measurable
+    MeasurableSet.univ, preimage_univ, AddCircle.measure_univ]
+
+instance isFiniteMeasure_circleArcLength : IsFiniteMeasure circleArcLength :=
+  ⟨circleArcLength_univ ▸ ENNReal.ofReal_lt_top⟩
 
 /-- **Orthogonality of the characters of the circle.** The normalized circle average of an
 integer power `(z - c) ^ n` over a circle centred at `c` is `1` for `n = 0` and `0` otherwise. -/

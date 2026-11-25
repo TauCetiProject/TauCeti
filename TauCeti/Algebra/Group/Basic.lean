@@ -15,6 +15,8 @@ public import Mathlib.Algebra.Group.Basic
 * `TauCeti.inv_mul_eq_inv_mul_iff_mul_inv_eq_mul_inv`: in a group, `b⁻¹ * a = d⁻¹ * c` if and only
   if `a * c⁻¹ = b * d⁻¹`. In a commutative group, Mathlib's
   `inv_mul_eq_inv_mul_iff_mul_eq_mul` gives the equivalent `a * d = c * b`.
+* `TauCeti.apply_iterate_eq_pow_mul`: a monoid-valued function that scales by `a` along a self-map
+  `φ` scales by `a ^ n` along `φ^[n]`.
 -/
 
 public section
@@ -29,5 +31,11 @@ variable {G : Type*} [Group G] {a b c d : G}
 differences `a + -c` and `b + -d` are. -/]
 theorem inv_mul_eq_inv_mul_iff_mul_inv_eq_mul_inv : b⁻¹ * a = d⁻¹ * c ↔ a * c⁻¹ = b * d⁻¹ := by
   rw [inv_mul_eq_iff_eq_mul, mul_inv_eq_iff_eq_mul, mul_assoc]
+
+/-- A function that scales by `a` along `φ` scales by `a ^ n` along `φ^[n]`. -/
+@[to_additive /-- A function that shifts by `a` along `φ` shifts by `n • a` along `φ^[n]`. -/]
+theorem apply_iterate_eq_pow_mul {S M : Type*} [Monoid M] {φ : S → S} {a : M} {h : S → M}
+    (hh : ∀ s, h (φ s) = a * h s) (n : ℕ) (s : S) : h (φ^[n] s) = a ^ n * h s :=
+  (Function.Semiconj.iterate_right (gb := (a * ·)) hh n s).trans (mul_left_iterate_apply a _)
 
 end TauCeti

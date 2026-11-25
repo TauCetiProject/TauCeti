@@ -31,7 +31,8 @@ goes to `e ⊗ f + f ⊗ e`, with no factor `1/2`.
 
 * `DividedPowerAlgebra.toTensorPower_mem_symmetricTensors`: its values are symmetric tensors.
 * `DividedPowerAlgebra.symmetricTensorMap R M d`: the corestriction
-  `Γ^d_R(M) → TensorPower.symmetricTensors R M d`.
+  `Γ^d_R(M) → TensorPower.symmetricTensors R M d`, natural in `M`
+  (`DividedPowerAlgebra.symmetricTensorMap_comp_mapHomogeneousSubmodule`).
 * `DividedPowerAlgebra.symmetricTensorMap_bijective`: for a free module it is bijective, and
   `DividedPowerAlgebra.symmetricTensorEquiv R M d` is the resulting linear equivalence.
 
@@ -104,6 +105,15 @@ def symmetricTensorMap (d : ℕ) :
 theorem coe_symmetricTensorMap_apply (d : ℕ) (x : homogeneousSubmodule (R := R) (M := M) d) :
     (symmetricTensorMap R M d x : ⨂[R]^d M) = toTensorPower d x :=
   (rfl)
+
+/-- The comparison with symmetric tensors is natural: it intertwines the map induced by a linear
+map `f` on homogeneous divided powers with the map `f` induces on symmetric tensors. -/
+theorem symmetricTensorMap_comp_mapHomogeneousSubmodule {N : Type*} [AddCommMonoid N]
+    [Module R N] (d : ℕ) (f : M →ₗ[R] N) :
+    symmetricTensorMap R N d ∘ₗ mapHomogeneousSubmodule f d =
+      TensorPower.mapSymmetricTensors f d ∘ₗ symmetricTensorMap R M d := by
+  ext x
+  simpa using congr($(toTensorPower_comp_mapHomogeneousSubmodule d f) x)
 
 /-! ### Free modules -/
 

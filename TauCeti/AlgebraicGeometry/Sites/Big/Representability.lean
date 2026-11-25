@@ -11,7 +11,7 @@ public import Mathlib.AlgebraicGeometry.Sites.BigZariski
 public import TauCeti.AlgebraicGeometry.Cover.Directed
 public import TauCeti.CategoryTheory.Adjunction.Representable
 public import TauCeti.CategoryTheory.Comma.Over
-public import TauCeti.CategoryTheory.Sites.Over
+public import TauCeti.CategoryTheory.Sites.Over.Basic
 
 /-!
 # Representability on the big Zariski site is local on the base
