@@ -35,18 +35,10 @@ def rat : PositiveInvolution ℚ :=
   PositiveInvolution.ofStarRing fun x hx ↦ by
     simpa [Algebra.trace_self_apply] using mul_self_pos.2 hx
 
-example (x : ℚ) : rat.star x = x := rfl
+example (x : ℚ) : rat.star x = x := by
+  simp [rat]
 
 /-! ### The transpose on `M_n(ℚ)` -/
-
-/-- The reduced trace of `x xᵀ` in `M_n(ℚ)` is the sum of the squares of the entries of `x`. -/
-theorem semisimpleReducedTrace_mul_transpose {n : Type*} [Fintype n] [DecidableEq n]
-    (x : Matrix n n ℚ) :
-    semisimpleReducedTrace ℚ (Matrix n n ℚ) (x * xᵀ) = ∑ i, ∑ j, x i j * x i j := by
-  cases isEmpty_or_nonempty n
-  · simp [Subsingleton.elim (x * xᵀ) 0]
-  rw [semisimpleReducedTrace_eq_reducedTrace, reducedTrace_matrix]
-  simp [Matrix.trace, Matrix.mul_apply]
 
 /-- The transpose (the conjugate transpose of `ℚ`-matrices) is a positive involution of
 `M_n(ℚ)`. -/
@@ -69,12 +61,11 @@ example {n : Type*} [Fintype n] [DecidableEq n] (x : Matrix n n ℚ) :
 /-! ### The canonical involution of `M_2(ℚ)` is not positive -/
 
 /-- At `x = diag(1, -1)`, the reduced trace of `x adj x = det x · 1` is `2 det x = -2`. -/
-theorem semisimpleReducedTrace_mul_adjugate :
+theorem semisimpleReducedTrace_diag_one_neg_one_mul_adjugate :
     semisimpleReducedTrace ℚ (Matrix (Fin 2) (Fin 2) ℚ)
       (!![1, 0; 0, -1] * adjugate !![1, 0; 0, -1]) = -2 := by
   rw [semisimpleReducedTrace_eq_reducedTrace, reducedTrace_matrix, adjugate_fin_two]
-  simp [Matrix.trace]
-  norm_num
+  norm_num [Matrix.trace]
 
 /-- The canonical involution `x ↦ adj x` of `M_2(ℚ)` is not positive. -/
 theorem not_positiveInvolution_adjugate :
@@ -82,7 +73,7 @@ theorem not_positiveInvolution_adjugate :
   rintro ⟨P, hP⟩
   have h := P.trd_mul_star_pos !![1, 0; 0, -1] fun h ↦ by
     simpa using congrFun (congrFun h 0) 0
-  rw [hP, semisimpleReducedTrace_mul_adjugate] at h
+  rw [hP, semisimpleReducedTrace_diag_one_neg_one_mul_adjugate] at h
   norm_num at h
 
 /-! ### Involutions of `ℚ(i)` -/
@@ -97,8 +88,8 @@ abbrev GaussianRat := QuadraticAlgebra ℚ (-1) 0
 /-- The reduced trace of a rational number in `ℚ(i)` is twice that number. -/
 theorem semisimpleReducedTrace_algebraMap (q : ℚ) :
     semisimpleReducedTrace ℚ GaussianRat (algebraMap ℚ GaussianRat q) = 2 * q := by
-  rw [semisimpleReducedTrace_eq_trace, Algebra.trace_algebraMap, QuadraticAlgebra.finrank_eq_two,
-    nsmul_eq_mul, Nat.cast_ofNat]
+  rw [semisimpleReducedTrace_eq_trace, Algebra.trace_algebraMap]
+  simp [QuadraticAlgebra.finrank_eq_two]
 
 /-- The identity of `ℚ(i)` is not positive: `Trd(i · i) = -2`. -/
 theorem not_positiveInvolution_id :

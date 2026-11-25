@@ -108,13 +108,18 @@ theorem star_toStarRing (x : B) : (P.toStarRing).star x = P.star x :=
   rfl
 
 /-- The involution as an additive equivalence. -/
-@[expose] def toAddEquiv : B ≃+ B :=
+def toAddEquiv : B ≃+ B :=
   letI := P.toStarRing
   starAddEquiv
 
 @[simp]
 theorem toAddEquiv_apply (x : B) : P.toAddEquiv x = P.star x :=
-  rfl
+  (rfl)
+
+/-- An involution is its own inverse. -/
+@[simp]
+theorem toAddEquiv_symm : P.toAddEquiv.symm = P.toAddEquiv :=
+  AddEquiv.ext fun x ↦ P.toAddEquiv.symm_apply_eq.2 (by simp)
 
 @[simp]
 theorem star_zero : P.star 0 = 0 :=
@@ -149,12 +154,17 @@ theorem star_algebraMap (q : ℚ) : P.star (algebraMap ℚ B q) = algebraMap ℚ
   rw [Algebra.algebraMap_eq_smul_one, star_smul, star_one]
 
 /-- A positive involution as a `ℚ`-linear equivalence. -/
-@[expose] def toLinearEquiv : B ≃ₗ[ℚ] B :=
+def toLinearEquiv : B ≃ₗ[ℚ] B :=
   { P.toAddEquiv with map_smul' := P.star_smul }
 
 @[simp]
 theorem toLinearEquiv_apply (x : B) : P.toLinearEquiv x = P.star x :=
-  rfl
+  (rfl)
+
+/-- An involution is its own inverse. -/
+@[simp]
+theorem toLinearEquiv_symm : P.toLinearEquiv.symm = P.toLinearEquiv :=
+  LinearEquiv.ext fun x ↦ P.toLinearEquiv.symm_apply_eq.2 (by simp)
 
 /-- **Positivity of `x* x`.** For a positive involution, also `Trd_{B/ℚ}(x* x) > 0` for every
 nonzero `x`. -/
@@ -175,7 +185,7 @@ theorem trd_mul_star_eq_zero {x : B} :
   ⟨fun h ↦ by_contra fun hx ↦ (P.trd_mul_star_pos x hx).ne' h, fun h ↦ by simp [h]⟩
 
 /-- **A `StarRing` structure satisfying the positivity inequality is a positive involution.** -/
-@[expose] def ofStarRing [StarRing B]
+def ofStarRing [StarRing B]
     (h : ∀ x : B, x ≠ 0 → 0 < Algebra.semisimpleReducedTrace ℚ B (x * Star.star x)) :
     PositiveInvolution B where
   star := Star.star
@@ -188,14 +198,14 @@ theorem trd_mul_star_eq_zero {x : B} :
 theorem star_ofStarRing [StarRing B]
     (h : ∀ x : B, x ≠ 0 → 0 < Algebra.semisimpleReducedTrace ℚ B (x * Star.star x)) (x : B) :
     (ofStarRing h).star x = Star.star x :=
-  rfl
+  (rfl)
 
 /-- A positive involution is recovered from its `StarRing` structure. -/
 @[simp]
 theorem ofStarRing_toStarRing :
     letI := P.toStarRing
     ofStarRing P.trd_mul_star_pos = P :=
-  rfl
+  (rfl)
 
 end PositiveInvolution
 
