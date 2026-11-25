@@ -66,7 +66,7 @@ of all pairs `(x, h) ∈ H × H` for which some `u : V` satisfies `j u = x` and
   `ContinuousLinearMap.closedFormDomain_shiftedForm`, and
   `ContinuousLinearMap.closedFormOperator_shiftedForm`.
 * `ContinuousLinearMap.closedFormOperator_smul_id_smul_innerSL`: along `j = a • id`, the scalar
-  form `b ⟪·, ·⟫_𝕜` represents the everywhere defined operator `(b / a ^ 2) • id`.
+  form `b ⟪·, ·⟫_𝕜` represents the everywhere defined operator `(conj b / ‖a‖ ^ 2) • id`.
 * `ContinuousLinearMap.isUnit_continuousLinearMapOfBilin_shiftedForm`: shifted coercivity gives
   invertibility of the Fréchet--Riesz operator of `shiftedForm j q α` for all `α ≥ ω`.
 * `ContinuousLinearMap.range_formSolutionOperator_shiftedForm`,
@@ -415,7 +415,7 @@ theorem closedFormOperator_smul_id_smul_innerSL {a : 𝕜} (ha : a ≠ 0) (b : �
       ((starRingEnd 𝕜 b / ((‖a‖ ^ 2 : ℝ) : 𝕜)) • LinearMap.id).toPMap ⊤ := by
   have ha' : starRingEnd 𝕜 a ≠ 0 := (map_ne_zero _).2 ha
   have hnorm : ((‖a‖ ^ 2 : ℝ) : 𝕜) = starRingEnd 𝕜 a * a := by
-    rw [RCLike.conj_mul]; push_cast; rfl
+    rw [RCLike.conj_mul, RCLike.ofReal_pow]
   rw [hnorm]
   symm
   refine eq_closedFormOperator_of_mem_graph_iff _ _ _ _ fun x h => ?_
