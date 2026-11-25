@@ -188,6 +188,10 @@ theorem scalar_mem_iff (u : Rˣ) :
   simp only [mem_iff, GeneralLinearGroup.coe_scalar, Matrix.scalar_apply]
   simp [Units.val_eq_one]
 
+/-- `-1` is mirabolic exactly when `-1 = 1` in `R`. -/
+theorem neg_one_mem_iff : (-1 : GL (Fin 2) R) ∈ GL2Mirabolic R ↔ (-1 : R) = 1 := by
+  simp [mem_iff]
+
 end GL2Mirabolic
 
 end Ring
@@ -263,10 +267,6 @@ variable (R) in
 determinant `u`. -/
 theorem map_det : (GL2Mirabolic R).map Matrix.GeneralLinearGroup.det = ⊤ :=
   eq_top_iff.mpr fun u _ ↦ ⟨GL2Borel.mk u 1 0, (mk_mem_iff u 1 0).mpr rfl, by simp⟩
-
-/-- `-1` is mirabolic exactly when `-1 = 1` in `R`. -/
-theorem neg_one_mem_iff : (-1 : GL (Fin 2) R) ∈ GL2Mirabolic R ↔ (-1 : R) = 1 := by
-  simp [mem_iff]
 
 end GL2Mirabolic
 
