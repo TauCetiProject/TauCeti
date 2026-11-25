@@ -14,6 +14,7 @@ public import TauCeti.NumberTheory.LocalField.RealAddValuation
 import Mathlib.FieldTheory.Separable
 import Mathlib.RingTheory.PowerBasis
 import Mathlib.RingTheory.Valuation.Integral
+import TauCeti.Algebra.Order.Monoid.Unbundled.WithTop
 import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
 import TauCeti.RingTheory.Polynomial.Eisenstein.ValuativeRel
 import TauCeti.RingTheory.Valuation.Orthogonality
@@ -443,7 +444,7 @@ theorem realAddValuation_coeff_ramificationPolynomial_add_natDegree {φ : 𝒪[K
       | top => exact ht₂ (by simp [ha₂])
       | coe m₂ =>
         rw [ha₁, ha₂] at heq
-        simp only [ENat.recTopCoe_natCast, WithTop.map_coe, ← WithTop.coe_natCast,
+        simp only [ENat.map_natCast, WithTop.map_coe, ← WithTop.coe_natCast,
           ← WithTop.coe_add, WithTop.coe_eq_coe] at heq
         have hnat : n * m₁ + h₁ = n * m₂ + h₂ := by exact_mod_cast heq
         obtain ⟨_, h₁n⟩ := Finset.mem_Icc.mp hh₁; obtain ⟨_, h₂n⟩ := Finset.mem_Icc.mp hh₂
@@ -499,13 +500,11 @@ private theorem addVal_coeff_ramificationPolynomial_add_natDegree_eq {φ : 𝒪[
         (φ.natDegree • IsDiscreteValuationRing.addVal 𝒪[K]
           ((h.choose i : 𝒪[K]) * φ.coeff h) + (h : ℕ∞)) := by
   obtain ⟨hi1, hin⟩ := Finset.mem_Icc.mp hi
-  have hn0 : (φ.natDegree : ℕ∞) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
+  have hn0 : φ.natDegree ≠ 0 := by omega
   let Hne : (Finset.Icc i φ.natDegree).Nonempty := ⟨φ.natDegree, Finset.right_mem_Icc.mpr hin⟩
   let term : ℕ → ℕ∞ := fun h ↦
     φ.natDegree • IsDiscreteValuationRing.addVal 𝒪[K] ((h.choose i : 𝒪[K]) * φ.coeff h) +
       (h : ℕ∞)
-  have hinj : Function.Injective (ENat.map ((↑) : ℕ → ℝ)) :=
-    (ENat.strictMono_map_iff.mpr fun _ _ h ↦ Nat.cast_lt.mpr h).injective
   have hLHS : ENat.map ((↑) : ℕ → ℝ)
       (IsDiscreteValuationRing.addVal 𝒪[L]
           ⟨(ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α).coeff i,
@@ -513,37 +512,29 @@ private theorem addVal_coeff_ramificationPolynomial_add_natDegree_eq {φ : 𝒪[
         (φ.natDegree : ℕ∞)) =
       realAddValuation L ((ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α).coeff i) +
         (φ.natDegree : WithTop ℝ) := by
-    have hval := realAddValuation_coe_integer_eq_map
-      (⟨(ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α).coeff i,
-        coeff_ramificationPolynomial_mem_integer hφ hroot hgen i⟩ : 𝒪[L])
-    dsimp only at hval
-    rw [hval]
-    generalize IsDiscreteValuationRing.addVal 𝒪[L]
-      ⟨(ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α).coeff i,
-        coeff_ramificationPolynomial_mem_integer hφ hroot hgen i⟩ = v
-    induction v using ENat.recTopCoe with
-    | top => simp
-    | coe k =>
-      rw [← ENat.natCast_add, ENat.map_natCast, ENat.map_natCast, ← WithTop.coe_natCast,
-        ← WithTop.coe_add, Nat.cast_add]
+    simpa [← realAddValuation_coe_integer] using
+      ENat.map_add (Nat.castAddMonoidHom ℝ)
+        (IsDiscreteValuationRing.addVal 𝒪[L]
+          ⟨(ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α).coeff i,
+            coeff_ramificationPolynomial_mem_integer hφ hroot hgen i⟩)
+        (φ.natDegree : ℕ∞)
   have hterm (h : ℕ) : ENat.map ((↑) : ℕ → ℝ) (term h) =
       (realAddValuation K (((h.choose i : 𝒪[K]) * φ.coeff h : 𝒪[K]) : K)).map
         ((φ.natDegree : ℝ) * ·) + (h : WithTop ℝ) := by
-    rw [realAddValuation_coe_integer_eq_map]
-    dsimp only [term]
-    generalize IsDiscreteValuationRing.addVal 𝒪[K] ((h.choose i : 𝒪[K]) * φ.coeff h) = vK
-    induction vK using ENat.recTopCoe with
-    | top => simp [ENat.mul_top hn0]
-    | coe k =>
-      rw [nsmul_eq_mul, ← ENat.natCast_mul, ← ENat.natCast_add, ENat.map_natCast,
-        ENat.map_natCast, WithTop.map_coe, ← WithTop.coe_natCast, ← WithTop.coe_add,
-        Nat.cast_add, Nat.cast_mul]
+    rw [realAddValuation_coe_integer]
+    have hmul := (Nat.castAddMonoidHom ℝ).ENatMap.map_nsmul φ.natDegree
+      (IsDiscreteValuationRing.addVal 𝒪[K] ((h.choose i : 𝒪[K]) * φ.coeff h))
+    simpa only [term, AddMonoidHom.ENatMap_apply, Nat.coe_castAddMonoidHom, ENat.map_natCast,
+      WithTop.coe_natCast, WithTop.nsmul_eq_map hn0, nsmul_eq_mul] using
+      (ENat.map_add (Nat.castAddMonoidHom ℝ)
+        (φ.natDegree • IsDiscreteValuationRing.addVal 𝒪[K] ((h.choose i : 𝒪[K]) * φ.coeff h))
+        (h : ℕ∞)).trans (congrArg (· + _) hmul)
   rw [← Finset.inf_eq_iInf, ← Finset.inf'_eq_inf Hne]
-  refine hinj ?_
+  refine ENat.map_natCast_injective (α := ℝ) ?_
   rw [hLHS, realAddValuation_coeff_ramificationPolynomial_add_natDegree hφ hroot hgen hi1,
     ← Finset.inf'_eq_inf Hne,
     Finset.apply_inf'_eq_inf'_comp Hne (ENat.map ((↑) : ℕ → ℝ)) fun _ _ ↦
-      (ENat.monotone_map_iff.mpr Nat.mono_cast).map_min]
+      (ENat.map_natCast_strictMono (α := ℝ)).monotone.map_min]
   exact Finset.inf'_congr Hne rfl fun h _ ↦ (hterm h).symm
 
 /-- **Exact DVR valuation formula for the coefficients of `ramificationPolynomial`**: for
@@ -559,13 +550,8 @@ theorem addVal_coeff_ramificationPolynomial {φ : 𝒪[K][X]}
       (⨅ h ∈ Finset.Icc i φ.natDegree,
         (φ.natDegree • IsDiscreteValuationRing.addVal 𝒪[K]
           ((h.choose i : 𝒪[K]) * φ.coeff h) + (h : ℕ∞))) - φ.natDegree := by
-  rw [← addVal_coeff_ramificationPolynomial_add_natDegree_eq hφ hroot hgen hi]
-  generalize IsDiscreteValuationRing.addVal 𝒪[L]
-    ⟨(ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α).coeff i,
-      coeff_ramificationPolynomial_mem_integer hφ hroot hgen i⟩ = v
-  induction v using ENat.recTopCoe with
-  | top => simp
-  | coe k => norm_cast; omega
+  rw [← addVal_coeff_ramificationPolynomial_add_natDegree_eq hφ hroot hgen hi,
+    (ENat.addLECancellable_natCast φ.natDegree).add_tsub_cancel_right]
 
 /-- **Exact subtractive `WithTop ℝ` valuation formula** for the coefficients of
 `ramificationPolynomial`: for `1 ≤ i ≤ φ.natDegree`,
@@ -579,23 +565,9 @@ theorem realAddValuation_coeff_ramificationPolynomial {φ : 𝒪[K][X]}
         (realAddValuation K (((h.choose i : 𝒪[K]) * φ.coeff h : 𝒪[K]) : K)).map
           ((φ.natDegree : ℝ) * ·) + (h : WithTop ℝ)) -
         ((φ.natDegree : ℝ) : WithTop ℝ) := by
-  have hadd :=
-    realAddValuation_coeff_ramificationPolynomial_add_natDegree hφ hroot hgen
-      (Finset.mem_Icc.mp hi).1
-  have hval := realAddValuation_coe_integer_eq_map
-    (⟨(ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α).coeff i,
-      coeff_ramificationPolynomial_mem_integer hφ hroot hgen i⟩ : 𝒪[L])
-  dsimp only at hval
-  rw [← hadd, hval]
-  generalize IsDiscreteValuationRing.addVal 𝒪[L]
-    ⟨(ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α).coeff i,
-      coeff_ramificationPolynomial_mem_integer hφ hroot hgen i⟩ = v
-  induction v using ENat.recTopCoe with
-  | top => simp
-  | coe k =>
-    rw [ENat.map_natCast, ← WithTop.coe_natCast, ← WithTop.coe_add,
-      ← WithTop.LinearOrderedAddCommGroup.coe_sub]
-    congr 1; ring
+  rw [← realAddValuation_coeff_ramificationPolynomial_add_natDegree hφ hroot hgen
+      (Finset.mem_Icc.mp hi).1, ← WithTop.coe_natCast,
+    (LinearOrderedAddCommGroupWithTop.isAddUnit_iff.mpr WithTop.coe_ne_top).add_sub_cancel_right]
 
 section Separable
 
@@ -628,7 +600,7 @@ theorem realAddValuation_coeff_one_ramificationPolynomial {φ : 𝒪[K][X]}
       inv_mul_cancel₀ (pow_ne_zero _ hα0), one_mul]
   have hval := congrArg (realAddValuation L) hmul
   rw [(realAddValuation L).map_mul, (realAddValuation L).map_pow, hvα, nsmul_one,
-    (realAddValuation L).map_mul, realAddValuation_coe_integer, ← hdiff, ENat.recTopCoe_natCast,
+    (realAddValuation L).map_mul, realAddValuation_coe_integer, ← hdiff, ENat.map_natCast,
     hvα] at hval
   refine (WithTop.add_right_inj (WithTop.natCast_ne_top φ.natDegree)).mp ?_
   rw [hval, ← WithTop.coe_natCast, ← WithTop.coe_one, ← WithTop.coe_add, ← WithTop.coe_add]
@@ -654,16 +626,11 @@ theorem addVal_coeff_one_ramificationPolynomial {φ : 𝒪[K][X]}
     IsDiscreteValuationRing.addVal 𝒪[L]
         ⟨(ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α).coeff 1,
           coeff_ramificationPolynomial_mem_integer hφ hroot hgen 1⟩ =
-      (height K L : ℕ∞) := by
-  have hinj : Function.Injective (ENat.map ((↑) : ℕ → ℝ)) :=
-    (ENat.strictMono_map_iff.mpr fun _ _ h ↦ Nat.cast_lt.mpr h).injective
-  refine hinj ?_
-  have hval := realAddValuation_coe_integer_eq_map
-    (⟨(ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α).coeff 1,
-      coeff_ramificationPolynomial_mem_integer hφ hroot hgen 1⟩ : 𝒪[L])
-  dsimp only at hval
-  rw [← hval, realAddValuation_coeff_one_ramificationPolynomial_eq_height hφ hroot hgen,
-    ENat.map_natCast, WithTop.coe_natCast]
+      (height K L : ℕ∞) :=
+  ENat.map_natCast_injective (α := ℝ) <|
+    (realAddValuation_coe_integer _).symm.trans <| by
+      rw [realAddValuation_coeff_one_ramificationPolynomial_eq_height hφ hroot hgen,
+        ENat.map_natCast, WithTop.coe_natCast]
 
 /-- **The linear-term integer valuation of `ramificationPolynomial` is `height K L`.** -/
 theorem addValInt_coeff_one_ramificationPolynomial {φ : 𝒪[K][X]}

@@ -31,9 +31,8 @@ have valuation `1` and units of `𝒪[K]` have valuation `0`.
   `TauCeti.eq_realAddValuation_of_addValInt`: values on nonzero elements, comparison with
   `addValInt` and `normalizedIntAddValuation`, `untop₀` decoding, integer powers, and uniqueness.
 * `TauCeti.realAddValuation_irreducible`, `TauCeti.realAddValuation_coe_integer`,
-  `TauCeti.realAddValuation_coe_integer_eq_map`, `TauCeti.realAddValuation_natCast` and
-  `TauCeti.realAddValuation_natCast_eq_nsmul`: values at uniformizers, integers and natural-number
-  casts.
+  `TauCeti.realAddValuation_natCast` and `TauCeti.realAddValuation_natCast_eq_nsmul`: values at
+  uniformizers, integers and natural-number casts.
 * `TauCeti.realAddValuation_algebraMap`, `AlgHom.realAddValuation_apply` and
   `AlgEquiv.realAddValuation_apply`: ramification-index scaling along `algebraMap`, `K`-embeddings,
   and invariance under `K`-isomorphisms.
@@ -177,35 +176,18 @@ theorem mem_integer_iff_realAddValuation_nonneg {x : K} :
 /-- On `𝒪[K]`, `realAddValuation` agrees with `IsDiscreteValuationRing.addVal` cast to `ℝ`. -/
 theorem realAddValuation_coe_integer (a : 𝒪[K]) :
     realAddValuation K (a : K) =
-      (IsDiscreteValuationRing.addVal 𝒪[K] a).recTopCoe ⊤ fun n : ℕ ↦ ((n : ℝ) : WithTop ℝ) := by
-  rcases eq_or_ne a 0 with rfl | ha
-  · simp
-  · obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-    obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible ha hπ
-    simp [IsDiscreteValuationRing.addVal_def' u hπ n, (realAddValuation K).map_mul,
-      (realAddValuation K).map_pow, realAddValuation_irreducible hπ]
-
-/-- On `𝒪[K]`, `realAddValuation` agrees with `IsDiscreteValuationRing.addVal` via `ENat.map`. -/
-theorem realAddValuation_coe_integer_eq_map (a : 𝒪[K]) :
-    realAddValuation K (a : K) =
       (IsDiscreteValuationRing.addVal 𝒪[K] a).map ((↑) : ℕ → ℝ) := by
   rw [realAddValuation_eq_map_normalizedIntAddValuation, normalizedIntAddValuation_coe_integer]
-  generalize IsDiscreteValuationRing.addVal 𝒪[K] a = v
-  induction v using ENat.recTopCoe with
-  | top => simp
-  | coe k => simp [ENat.map_natCast]
+  induction IsDiscreteValuationRing.addVal 𝒪[K] a using ENat.recTopCoe <;> simp
 
 /-- An element of `𝒪[K]` lies in `𝓂[K]` if and only if its `realAddValuation` is at least `1`. -/
 theorem mem_maximalIdeal_iff_one_le_realAddValuation {a : 𝒪[K]} :
     a ∈ 𝓂[K] ↔ 1 ≤ realAddValuation K (a : K) := by
   have hmem : a ∈ 𝓂[K] ↔ 1 ≤ IsDiscreteValuationRing.addVal 𝒪[K] a := by
     simpa using IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal (x := a) (n := 1)
-  rw [hmem, realAddValuation_coe_integer]
-  cases IsDiscreteValuationRing.addVal 𝒪[K] a using ENat.recTopCoe with
-  | top => simp
-  | coe n =>
-    simp only [ENat.recTopCoe_natCast, ← ENat.natCast_one, ENat.natCast_le_natCast,
-      ← WithTop.coe_one, WithTop.coe_le_coe, Nat.one_le_cast]
+  rw [hmem, realAddValuation_coe_integer,
+    ← (ENat.map_natCast_strictMono (α := ℝ)).le_iff_le, ENat.map_one, Nat.cast_one,
+    WithTop.coe_one]
 
 /-- An element of `𝒪[K]` lies in `𝓂[K]` if and only if its `realAddValuation` is positive. -/
 theorem mem_maximalIdeal_iff_realAddValuation_pos {a : 𝒪[K]} :
