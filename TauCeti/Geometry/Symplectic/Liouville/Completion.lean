@@ -52,6 +52,10 @@ point-set description of the end; the identification of the primitive on it with
   interior of a Liouville domain stays outside the domain.
 * `TauCeti.IsLiouvilleDomain.injOn_flowOf`: for a complete Liouville field, the trajectories
   through the boundary are disjoint.
+* `TauCeti.IsLiouvilleDomain.flowOf_neg_mem_interior`: for a complete Liouville field, the
+  backward Liouville flow carries the Liouville domain into its interior.
+* `TauCeti.IsLiouvilleDomain.flowOf_mem_iff_of_mem_frontier`: for a complete Liouville field, the
+  trajectory of a boundary point lies in the domain exactly at nonpositive times.
 * `TauCeti.IsLiouvilleDomain.preimage_flowOf`: for a complete Liouville field, the images of a
   Liouville domain under the Liouville flow are Liouville domains.
 * `TauCeti.IsLiouvilleCompletion.existsUnique_flowOf_eq`: the cylindrical end of a completion,
@@ -66,8 +70,6 @@ point-set description of the end; the identification of the primitive on it with
   diffeomorphism.
 * `TauCeti.IsLiouvilleCompletion.mpullback_globalFlowDiffeomorph_eq_exp_smul`: this
   diffeomorphism `ψₜ` is conformally symplectic, `ψₜ^* ω = e^t ω`.
-* `TauCeti.IsLiouvilleCompletion.flowOf_neg_mem_interior`: the backward Liouville flow carries
-  the Liouville domain into its interior.
 
 ## References
 
@@ -145,6 +147,37 @@ theorem injOn_flowOf (h : IsLiouvilleDomain ω α W)
     le_antisymm (not_lt.1 (hlt hq hp hpq'.symm)) (not_lt.1 (hlt hp hq hpq'))
   refine Prod.ext ?_ h₂
   rw [← flowOf_zero Z p.1, ← flowOf_zero Z q.1, ← neg_add_cancel p.2, hgrp, hgrp, hpq', h₂]
+
+/-- **The backward Liouville flow carries a Liouville domain into its interior.** If the Liouville
+field `Z` of a Liouville domain `W` is complete, with flow `ψ`, then `ψ_{-t}(x)` lies in the
+interior of `W` for every `x ∈ W` and every time `t > 0`. -/
+theorem flowOf_neg_mem_interior (h : IsLiouvilleDomain ω α W)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hc : IsCompleteVectorField Z) {x : M} (hx : x ∈ W)
+    {t : ℝ} (ht : 0 < t) : flowOf Z (-t) x ∈ interior W := by
+  have hZs : ContMDiff I I.tangent 1 (T% Z) := (h.contMDiff_of_interior_eq hZ).of_le (by simp)
+  by_contra hn
+  refine h.flowOf_notMem hZ hn ht (hc.mem_flowDomain _ _) ?_
+  rwa [flowOf_flowOf_neg hZs hc]
+
+/-- **The backward Liouville flow preserves a Liouville domain.** If the Liouville field `Z` of a
+Liouville domain `W` is complete, with flow `ψ`, then `ψ_{-t}(x) ∈ W` for every `x ∈ W` and every
+time `t ≥ 0`. -/
+theorem flowOf_neg_mem (h : IsLiouvilleDomain ω α W) (hZ : RoughForm.interior Z ω.val = α.val)
+    (hc : IsCompleteVectorField Z) {x : M} (hx : x ∈ W) {t : ℝ} (ht : 0 ≤ t) :
+    flowOf Z (-t) x ∈ W := by
+  rcases ht.lt_or_eq with ht | rfl
+  · exact interior_subset (h.flowOf_neg_mem_interior hZ hc hx ht)
+  · rwa [neg_zero, flowOf_zero Z]
+
+/-- **The Liouville trajectory of a boundary point lies in the domain exactly at nonpositive
+times.** If the Liouville field `Z` of a Liouville domain `W` is complete, with flow `ψ`, and `y`
+is a boundary point of `W`, then `ψ_t(y) ∈ W` exactly when `t ≤ 0`. -/
+theorem flowOf_mem_iff_of_mem_frontier (h : IsLiouvilleDomain ω α W)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hc : IsCompleteVectorField Z) {y : M}
+    (hy : y ∈ frontier W) {t : ℝ} : flowOf Z t y ∈ W ↔ t ≤ 0 := by
+  refine ⟨fun ht ↦ not_lt.1 fun ht' ↦ h.flowOf_notMem hZ hy.2 ht' (hc.mem_flowDomain _ _) ht,
+    fun ht ↦ ?_⟩
+  simpa using h.flowOf_neg_mem hZ hc (h.isClosed.frontier_subset hy) (neg_nonneg.2 ht)
 
 /-- **The Liouville flow carries Liouville domains to Liouville domains.** If the Liouville field
 `Z` of a Liouville domain `W` is complete, then for every time `t` the preimage of `W` under the
@@ -293,32 +326,12 @@ theorem flowOf_flowOf (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interi
     (hc.mem_flowDomain t x) (hc.mem_flowDomain s _)).2]
 
 omit [FiniteDimensional ℝ E] in
-/-- The backward Liouville flow of a completion carries the Liouville domain into its
-interior. -/
-theorem flowOf_neg_mem_interior (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.val = α.val) {x : M} (hx : x ∈ W) {t : ℝ} (ht : 0 < t) :
-    flowOf Z (-t) x ∈ interior W := by
-  by_contra hn
-  refine h.flowOf_notMem hZ hn ht ((h.isCompleteVectorField hZ).mem_flowDomain _ _) ?_
-  rwa [h.flowOf_flowOf hZ, add_neg_cancel, flowOf_zero Z]
-
-omit [FiniteDimensional ℝ E] in
-/-- The backward Liouville flow of a completion preserves the Liouville domain. -/
-theorem flowOf_neg_mem (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.val = α.val)
-    {x : M} (hx : x ∈ W) {t : ℝ} (ht : 0 ≤ t) : flowOf Z (-t) x ∈ W := by
-  rcases ht.lt_or_eq with ht | rfl
-  · exact interior_subset (h.flowOf_neg_mem_interior hZ hx ht)
-  · rwa [neg_zero, flowOf_zero Z]
-
-omit [FiniteDimensional ℝ E] in
 /-- On a completion, the Liouville trajectory of a boundary point lies in the Liouville domain
 exactly at nonpositive times. -/
 theorem flowOf_mem_iff_of_mem_frontier (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.val = α.val) {y : M} (hy : y ∈ frontier W) {t : ℝ} :
-    flowOf Z t y ∈ W ↔ t ≤ 0 := by
-  refine ⟨fun ht ↦ not_lt.1 fun ht' ↦ h.flowOf_notMem hZ hy.2 ht'
-    ((h.isCompleteVectorField hZ).mem_flowDomain _ _) ht, fun ht ↦ ?_⟩
-  simpa using h.flowOf_neg_mem hZ (h.isClosed.frontier_subset hy) (neg_nonneg.2 ht)
+    flowOf Z t y ∈ W ↔ t ≤ 0 :=
+  h.toIsLiouvilleDomain.flowOf_mem_iff_of_mem_frontier hZ (h.isCompleteVectorField hZ) hy
 
 /-- Every point of a completion outside the interior of the Liouville domain is reached from the
 boundary by the forward Liouville flow, at a nonnegative time. -/

@@ -51,7 +51,9 @@ half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`). For
 with `J ∘ J = -1`, the map `a + b i ↦ a - b J` from `ℂ` is multiplicative
 (`TauCeti.re_smul_sub_im_smul_apply_mul`). Multiplication by `-I` is a real linear equivalence
 from the skew-adjoint onto the self-adjoint elements, with inverse multiplication by `I`
-(`skewAdjoint.negISMulEquiv`), extending Mathlib's `skewAdjoint.negISMul`.
+(`skewAdjoint.negISMulEquiv`), extending Mathlib's `skewAdjoint.negISMul`. The self-adjoint
+complex numbers are the real ones (`Complex.mem_range_algebraMap_of_isSelfAdjoint`), and `I`, as a
+unit, is skew-adjoint (`Complex.val_mk0_I_mem_skewAdjoint`).
 
 A vector lies in the real span of a complex basis exactly when its coordinates are real
 (`Module.Basis.mem_span_real_range_iff`). In particular, the real span of the standard basis of
@@ -258,6 +260,21 @@ theorem coe_negISMulEquiv_symm_apply (a : selfAdjoint A) :
   (rfl)
 
 end skewAdjoint
+
+/-- **The self-adjoint complex numbers are the real ones**: `ℝ` is the fixed ring of complex
+conjugation. Together with `Complex.val_mk0_I_mem_skewAdjoint`, this supplies the hypotheses of
+the quadratic-algebra results of `TauCeti.Algebra.Star.SelfAdjoint.BaseChange` for `ℂ / ℝ`. -/
+theorem Complex.mem_range_algebraMap_of_isSelfAdjoint (c : ℂ) (hc : IsSelfAdjoint c) :
+    c ∈ Set.range (algebraMap ℝ ℂ) :=
+  ⟨c.re, by rw [Complex.coe_algebraMap, ← Complex.conj_eq_iff_re, ← Complex.star_def, hc.star_eq]⟩
+
+/-- **`I` is a skew-adjoint unit of `ℂ`**: the unit `Units.mk0 I I_ne_zero` has value `I`, which is
+skew-adjoint by Mathlib's `Complex.I_mem_skewAdjoint`. This is the skew-adjoint unit `t` of the
+quadratic-algebra results of `TauCeti.Algebra.Star.SelfAdjoint.BaseChange` for `ℂ / ℝ`. -/
+theorem Complex.val_mk0_I_mem_skewAdjoint :
+    ((Units.mk0 Complex.I Complex.I_ne_zero : ℂˣ) : ℂ) ∈ skewAdjoint ℂ := by
+  rw [Units.val_mk0]
+  exact Complex.I_mem_skewAdjoint
 
 section ComplexOfMapISmul
 

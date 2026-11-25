@@ -65,6 +65,7 @@ the half-wave phases are with `k = 1`, the propagator intertwines the normalized
 * `TauCeti.continuous_phasePropagator_apply`, `TauCeti.continuous_phasePropagator_uncurry`: strong
   continuity and joint continuity.
 * `TauCeti.aestronglyMeasurable_phasePropagator_apply`, `TauCeti.integrable_phasePropagator_apply`,
+  `TauCeti.integrable_phasePropagator_apply_iff`,
   `TauCeti.aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub`: measurability and
   integrability of `a ↦ exp(iτ(a)ω(D)) G(a)` and of retarded integrals.
 * `TauCeti.inner_setIntegral_Iio_phasePropagator_sub`,
@@ -372,6 +373,16 @@ theorem integrable_phasePropagator_apply (hτ : AEStronglyMeasurable τ μ) (hG 
     Integrable (fun a ↦ phasePropagator F ω (τ a) (G a)) μ :=
   hG.norm.mono' (aestronglyMeasurable_phasePropagator_apply ω hτ hG.aestronglyMeasurable)
     (ae_of_all _ fun _ ↦ (norm_phasePropagator_apply _ _ _).le)
+
+/-- If the times `τ` are almost everywhere strongly measurable, then `a ↦ exp(iτ(a)ω(D)) G(a)`
+is integrable exactly when the `L²`-valued function `G` is, since
+`G(a) = exp(-iτ(a)ω(D)) exp(iτ(a)ω(D)) G(a)`. -/
+theorem integrable_phasePropagator_apply_iff (hτ : AEStronglyMeasurable τ μ) :
+    Integrable (fun a ↦ phasePropagator F ω (τ a) (G a)) μ ↔ Integrable G μ :=
+  ⟨fun h ↦ by
+    simpa only [Pi.neg_apply, phasePropagator_neg_apply_phasePropagator_apply] using
+      integrable_phasePropagator_apply ω hτ.neg h,
+    integrable_phasePropagator_apply ω hτ⟩
 
 end Measurability
 

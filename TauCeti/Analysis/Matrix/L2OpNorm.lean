@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
+import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Analysis.Matrix.Frobenius
 
 /-!
@@ -30,7 +31,16 @@ rather than restricting scalars, so that no algebra diamond arises.
 * `Matrix.norm_trace_le_card_mul_l2_opNorm` and `Matrix.norm_normalized_trace_le_l2_opNorm`:
   trace and normalized trace bounds.
 * `Matrix.l2_opNorm_mul_conjTranspose_self`: the operator norm of `A * Aᴴ` is `‖A‖ * ‖A‖`.
-* `Matrix.sum_sum_norm_sq_le_card_mul_l2_opNorm_sq`: a Frobenius bound by the operator norm.
+* `Matrix.l2_opNorm_diagonal_le` and `Matrix.l2_opNorm_pow_le`: bounds for diagonal matrices and
+  for powers, also for empty index types.
+* `Matrix.l2_opNorm_submatrix_le`: restricting rows and columns along injective maps does not
+  increase the operator norm.
+* `Matrix.l2_opNorm_fromBlocks_zero₁₁_zero₂₂_le`: a block matrix with zero diagonal blocks has
+  operator norm at most the sum of the norms of its off-diagonal blocks.
+* `Matrix.eventually_l2_opNorm_le_of_forall_pow`: along a filter, growth bounds on the norms of
+  the powers of Hermitian matrices bound their norms.
+* `Matrix.sum_sum_norm_sq_le_card_mul_l2_opNorm_sq`: a Frobenius bound by the operator norm, and
+  `Matrix.sum_norm_sq_le_l2_opNorm_sq`: a bound on the squared norm of each row.
 * `Matrix.l2_opNorm_sub_diagonal_diag_le`: zeroing the diagonal of a square matrix at most doubles
   its `ℓ²` operator norm.
 * `Matrix.l2_opNorm_map_ofReal`: a real, possibly rectangular, matrix has the same `ℓ²` operator
@@ -57,19 +67,31 @@ theorem norm_apply_le_l2_opNorm {m : Type*} [Fintype m] (A : Matrix m n 𝕜)
   rw [hi] at h
   exact h.trans (by simpa [v, he] using A.l2_opNorm_mulVec e)
 
+/-- A diagonal matrix whose entries have norm at most `r ≥ 0` has operator norm at most `r`. -/
+theorem l2_opNorm_diagonal_le {v : n → 𝕜} {r : ℝ} (hr : 0 ≤ r) (hv : ∀ i, ‖v i‖ ≤ r) :
+    ‖diagonal v‖ ≤ r := by
+  rw [l2_opNorm_diagonal]
+  exact (pi_norm_le_iff_of_nonneg hr).2 hv
+
 /-- The norm of the identity is at most one, also when the index type is empty. -/
 theorem l2_opNorm_one_le : ‖(1 : Matrix n n 𝕜)‖ ≤ 1 := by
-  rw [← Matrix.diagonal_one, Matrix.l2_opNorm_diagonal]
-  exact (pi_norm_le_iff_of_nonneg zero_le_one).2 (fun i => by simp)
+  rw [← Matrix.diagonal_one]
+  exact l2_opNorm_diagonal_le zero_le_one fun _ => by simp
+
+/-- The norm of a power is at most the power of the norm, also for the zeroth power and empty
+index types. -/
+theorem l2_opNorm_pow_le (M : Matrix n n 𝕜) (k : ℕ) : ‖M ^ k‖ ≤ ‖M‖ ^ k := by
+  rcases k.eq_zero_or_pos with rfl | hk
+  · simpa using l2_opNorm_one_le
+  · exact norm_pow_le' M hk
 
 /-- The trace is bounded by the dimension times the Euclidean operator norm. -/
 theorem norm_trace_le_card_mul_l2_opNorm (M : Matrix n n 𝕜) :
     ‖M.trace‖ ≤ (Fintype.card n : ℝ) * ‖M‖ := by
   have h := ContinuousLinearMap.norm_traceCLM_le
     (Matrix.toEuclideanCLM (n := n) (𝕜 := 𝕜) M)
-  simpa only [TauCeti.traceCLM_apply, Matrix.coe_toEuclideanCLM_eq_toEuclideanLin,
-    Matrix.toEuclideanLin_eq_toLin_orthonormal, LinearEquiv.coe_coe,
-    Matrix.trace_toLin_eq, finrank_euclideanSpace, Matrix.l2_opNorm_toEuclideanCLM] using h
+  simpa only [TauCeti.traceCLM_apply, trace_toEuclideanCLM, finrank_euclideanSpace,
+    l2_opNorm_toEuclideanCLM] using h
 
 /-- The Euclidean operator norm of `A * Aᴴ` is `‖A‖ * ‖A‖`, for a possibly rectangular `A`.
 Mathlib's `Matrix.l2_opNorm_conjTranspose_mul_self` is the form for `Aᴴ * A`. -/
@@ -77,6 +99,101 @@ theorem l2_opNorm_mul_conjTranspose_self {m : Type*} [Fintype m] [DecidableEq m]
     (A : Matrix m n 𝕜) : ‖A * Aᴴ‖ = ‖A‖ * ‖A‖ := by
   simpa only [conjTranspose_conjTranspose, l2_opNorm_conjTranspose] using
     l2_opNorm_conjTranspose_mul_self Aᴴ
+
+/-- Selecting the rows of the identity along an injective map gives a matrix of `ℓ²` operator norm
+at most one: its rows are orthonormal. -/
+private theorem l2_opNorm_one_submatrix_id_le {m : Type*} [Fintype m]
+    {e : m → n} (he : Function.Injective e) : ‖(1 : Matrix n n 𝕜).submatrix e id‖ ≤ 1 := by
+  classical
+  have h1 : (1 : Matrix n n 𝕜).submatrix e id * ((1 : Matrix n n 𝕜).submatrix e id)ᴴ = 1 := by
+    rw [conjTranspose_submatrix, conjTranspose_one,
+      ← submatrix_mul _ _ _ _ _ Function.bijective_id, Matrix.mul_one, submatrix_one _ he]
+  have h := l2_opNorm_mul_conjTranspose_self ((1 : Matrix n n 𝕜).submatrix e id)
+  rw [h1] at h
+  nlinarith [l2_opNorm_one_le (n := m) (𝕜 := 𝕜), norm_nonneg ((1 : Matrix n n 𝕜).submatrix e id)]
+
+/-- Restricting the rows and columns of a matrix along injective maps does not increase its `ℓ²`
+operator norm. In particular every block of a block matrix has norm at most that of the whole
+matrix. -/
+theorem l2_opNorm_submatrix_le {l m o : Type*} [Fintype l] [Fintype m] [Fintype o]
+    [DecidableEq o] (A : Matrix m n 𝕜) {e : l → m} {f : o → n} (he : Function.Injective e)
+    (hf : Function.Injective f) : ‖A.submatrix e f‖ ≤ ‖A‖ := by
+  classical
+  -- The restriction is `A` between a row selection and the adjoint of a column selection.
+  have hA : A.submatrix e f =
+      (1 : Matrix m m 𝕜).submatrix e id * A * ((1 : Matrix n n 𝕜).submatrix f id)ᴴ := by
+    ext i j
+    simp [Matrix.mul_apply, Matrix.one_apply]
+  rw [hA]
+  calc _ ≤ ‖(1 : Matrix m m 𝕜).submatrix e id‖ * ‖A‖ *
+        ‖((1 : Matrix n n 𝕜).submatrix f id)ᴴ‖ :=
+        (l2_opNorm_mul _ _).trans (mul_le_mul_of_nonneg_right (l2_opNorm_mul _ _) (norm_nonneg _))
+    _ ≤ 1 * ‖A‖ * 1 := by
+      rw [l2_opNorm_conjTranspose]
+      gcongr
+      exacts [l2_opNorm_one_submatrix_id_le he, l2_opNorm_one_submatrix_id_le hf]
+    _ = ‖A‖ := by ring
+
+/-- A square block matrix with zero diagonal blocks has operator norm at most the sum of the
+norms of its off-diagonal blocks: it is the sum of the two blocks, each placed by partial
+isometries. -/
+theorem l2_opNorm_fromBlocks_zero₁₁_zero₂₂_le {m : Type*} [Fintype m] [DecidableEq m]
+    (B : Matrix m n 𝕜) (C : Matrix n m 𝕜) : ‖fromBlocks 0 B C 0‖ ≤ ‖B‖ + ‖C‖ := by
+  set E₁ : Matrix m (m ⊕ n) 𝕜 := (1 : Matrix (m ⊕ n) (m ⊕ n) 𝕜).submatrix Sum.inl id
+  set E₂ : Matrix n (m ⊕ n) 𝕜 := (1 : Matrix (m ⊕ n) (m ⊕ n) 𝕜).submatrix Sum.inr id
+  have hE₁ : ‖E₁‖ ≤ 1 :=
+    (l2_opNorm_submatrix_le _ Sum.inl_injective Function.injective_id).trans l2_opNorm_one_le
+  have hE₂ : ‖E₂‖ ≤ 1 :=
+    (l2_opNorm_submatrix_le _ Sum.inr_injective Function.injective_id).trans l2_opNorm_one_le
+  have hsplit : fromBlocks 0 B C 0 = E₁ᴴ * B * E₂ + E₂ᴴ * C * E₁ := by
+    ext (x | x) (y | y) <;> simp [E₁, E₂, Matrix.mul_apply, Matrix.one_apply]
+  rw [hsplit]
+  calc _ ≤ ‖E₁ᴴ * B * E₂‖ + ‖E₂ᴴ * C * E₁‖ := norm_add_le _ _
+    _ ≤ ‖E₁ᴴ‖ * ‖B‖ * ‖E₂‖ + ‖E₂ᴴ‖ * ‖C‖ * ‖E₁‖ := by
+      gcongr <;> exact (l2_opNorm_mul _ _).trans (by gcongr; exact l2_opNorm_mul _ _)
+    _ ≤ 1 * ‖B‖ * 1 + 1 * ‖C‖ * 1 := by
+      rw [l2_opNorm_conjTranspose, l2_opNorm_conjTranspose]
+      gcongr
+    _ = ‖B‖ + ‖C‖ := by ring
+
+/-- **Norms from powers.** If Hermitian matrices satisfy `‖M ^ k‖ ≤ C * (k + 1) ^ d * s ^ k + δ`
+eventually along a filter, for every `k` and `δ > 0`, then `‖M‖ ≤ t` eventually for every `t > s`,
+since `‖M ^ (2 ^ m)‖ = ‖M‖ ^ (2 ^ m)` and polynomial factors are negligible against
+`(t / s) ^ k`. -/
+theorem eventually_l2_opNorm_le_of_forall_pow {ι : Type*} {F : Filter ι} {m : ι → Type*}
+    [∀ i, Fintype (m i)] [∀ i, DecidableEq (m i)] {M : (i : ι) → Matrix (m i) (m i) 𝕜}
+    (hM : ∀ i, (M i).IsHermitian) {C s t : ℝ} {d : ℕ} (hs : 0 < s) (hst : s < t)
+    (h : ∀ k : ℕ, ∀ δ > 0, ∀ᶠ i in F, ‖M i ^ k‖ ≤ C * ((k : ℝ) + 1) ^ d * s ^ k + δ) :
+    ∀ᶠ i in F, ‖M i‖ ≤ t := by
+  -- Enlarging `C` to `max C 0` keeps the hypothesis.
+  obtain ⟨C, hC, h⟩ : ∃ C' ≥ 0, ∀ k : ℕ, ∀ δ > 0,
+      ∀ᶠ i in F, ‖M i ^ k‖ ≤ C' * ((k : ℝ) + 1) ^ d * s ^ k + δ :=
+    ⟨max C 0, le_max_right _ _, fun k δ hδ ↦ (h k δ hδ).mono fun i hi ↦
+      hi.trans (by gcongr; exact le_max_left _ _)⟩
+  have hq : 1 < t / s := (one_lt_div hs).2 hst
+  -- Polynomial factors are negligible against `(t / s) ^ k`.
+  have hlim := (tendsto_pow_const_div_const_pow_of_one_lt d hq).const_mul (C * 2 ^ d + 1)
+  rw [mul_zero] at hlim
+  obtain ⟨N, hN⟩ := Filter.eventually_atTop.1 (hlim.eventually (gt_mem_nhds one_pos))
+  set k := 2 ^ (N + 1)
+  have hk₁ : 1 ≤ k := Nat.one_le_two_pow
+  have hkN : N ≤ k := (Nat.lt_two_pow_self).le.trans (Nat.pow_le_pow_right two_pos (by omega))
+  have hkey : (C * ((k : ℝ) + 1) ^ d + 1) * s ^ k ≤ t ^ k := by
+    have hk : (1 : ℝ) ≤ k := by exact_mod_cast hk₁
+    have hpoly : C * ((k : ℝ) + 1) ^ d + 1 ≤ (C * 2 ^ d + 1) * (k : ℝ) ^ d := by
+      have h2k : ((k : ℝ) + 1) ^ d ≤ 2 ^ d * (k : ℝ) ^ d := by
+        rw [← mul_pow]; gcongr; linarith
+      have h1 : (1 : ℝ) ≤ (k : ℝ) ^ d := one_le_pow₀ hk
+      nlinarith
+    have hratio := hN k hkN
+    rw [mul_div_assoc', div_lt_one (by positivity), div_pow] at hratio
+    rw [lt_div_iff₀ (by positivity)] at hratio
+    nlinarith [pow_pos hs k]
+  filter_upwards [h k (s ^ k) (by positivity)] with i hi
+  have hpow : ‖M i‖ ^ k = ‖M i ^ k‖ := ((hM i).isSelfAdjoint.norm_pow_two_pow (N + 1)).symm
+  refine le_of_pow_le_pow_left₀ (n := k) (pow_ne_zero (N + 1) two_ne_zero) (hs.trans hst).le ?_
+  rw [hpow]
+  linarith
 
 /-- The squared Frobenius norm of a rectangular matrix is at most its number of rows times
 its squared Euclidean operator norm. Empty row and column types are allowed. -/
@@ -102,6 +219,16 @@ theorem sum_norm_sq_le_card_mul_l2_opNorm_sq {m : Type*} [Fintype m]
       Finset.sum_le_sum_of_subset_of_nonneg (fun _ _ ↦ by simp) (fun _ _ _ ↦ sq_nonneg _)
     _ = ∑ i, ∑ j, ‖A i j‖ ^ 2 := Finset.sum_product _ _ _
     _ ≤ _ := A.sum_sum_norm_sq_le_card_mul_l2_opNorm_sq
+
+/-- The squared norm of a row is at most the squared Euclidean operator norm. -/
+theorem sum_norm_sq_le_l2_opNorm_sq {m : Type*} [Fintype m] (A : Matrix m n 𝕜) (i : m) :
+    ∑ j, ‖A i j‖ ^ 2 ≤ ‖A‖ ^ 2 := by
+  have h := (A.submatrix (fun _ : Unit ↦ i) id).sum_sum_norm_sq_le_card_mul_l2_opNorm_sq
+  have hA := l2_opNorm_submatrix_le A (e := fun _ : Unit ↦ i) (fun _ _ _ ↦ Subsingleton.elim _ _)
+    Function.injective_id
+  simp only [submatrix_apply, id_eq, Fintype.univ_unit, Finset.sum_singleton, Fintype.card_unit,
+    Nat.cast_one, one_mul] at h
+  exact h.trans (pow_le_pow_left₀ (norm_nonneg _) hA 2)
 
 /-- The absolute normalized trace is at most the Euclidean operator norm, including in dimension
 zero. -/
