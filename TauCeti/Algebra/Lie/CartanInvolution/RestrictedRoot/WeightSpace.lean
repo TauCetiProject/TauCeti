@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.CartanInvolution.Basic
 public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot
+public import TauCeti.Algebra.Lie.Subalgebra.Abelian
 public import Mathlib.Algebra.Lie.Weights.Linear
 import TauCeti.Algebra.Lie.Weights.SelfAdjoint
 
@@ -20,19 +21,17 @@ and `𝔞` lies in the `-1`-eigenspace `𝔭` of `θ`, `𝔞` is abelian, and ev
 self-adjoint for the inner product `B_θ`, so it is semisimple and the generalized weight spaces
 `LieModule.genWeightSpace L λ` are the weight spaces. Hence `𝔤_λ` is the generalized weight space
 of `λ`, and the restricted roots `Σ` are the nonzero weights `LieModule.Weight` of `𝔞` on `L`.
-An abelian submodule, such as a maximal abelian subspace of `𝔭`
-(`LieEquiv.IsMaximalAbelianInP`), is a Lie subalgebra by `Submodule.toLieSubalgebraOfAbelian`.
+These apply to a maximal abelian subspace of `𝔭` (`LieEquiv.IsMaximalAbelianInP`) through
+`Submodule.toLieSubalgebraOfAbelian`.
 
 ## Main definitions
 
-* `Submodule.toLieSubalgebraOfAbelian`: an abelian submodule as a Lie subalgebra.
 * `LieEquiv.IsCartanInvolution.restrictedRootsEquivWeight`: for `𝔞 ⊆ 𝔭`, the restricted roots
   are the nonzero weights of `𝔞` acting on `L`.
 
 ## Main results
 
 * `LieSubalgebra.toSubmodule_weightSpace_eq_restrictedRootSpace`: `𝔤_λ` is a weight space.
-* `LieEquiv.IsCartanInvolution.isLieAbelian_of_le_cartanP`: a Lie subalgebra of `𝔭` is abelian.
 * `LieEquiv.IsCartanInvolution.genWeightSpace_eq_weightSpace`: for `𝔞 ⊆ 𝔭`, generalized weight
   spaces are weight spaces.
 * `LieEquiv.IsCartanInvolution.toSubmodule_genWeightSpace_eq_restrictedRootSpace`: for `𝔞 ⊆ 𝔭`,
@@ -46,31 +45,6 @@ An abelian submodule, such as a maximal abelian subspace of `𝔭`
 public section
 
 open LieAlgebra LieModule Module
-
-/-! ### Abelian submodules as Lie subalgebras -/
-
-namespace Submodule
-
-variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
-
-/-- An abelian submodule `𝔞` of a Lie algebra, `[x, y] = 0` for `x, y ∈ 𝔞`, as a Lie
-subalgebra. -/
-@[expose] def toLieSubalgebraOfAbelian (𝔞 : Submodule R L) (h𝔞 : ∀ x ∈ 𝔞, ∀ y ∈ 𝔞, ⁅x, y⁆ = 0) :
-    LieSubalgebra R L where
-  toSubmodule := 𝔞
-  lie_mem' hx hy := by rw [h𝔞 _ hx _ hy]; exact 𝔞.zero_mem
-
-@[simp]
-theorem toSubmodule_toLieSubalgebraOfAbelian (𝔞 : Submodule R L)
-    (h𝔞 : ∀ x ∈ 𝔞, ∀ y ∈ 𝔞, ⁅x, y⁆ = 0) : (𝔞.toLieSubalgebraOfAbelian h𝔞).toSubmodule = 𝔞 :=
-  rfl
-
-/-- An abelian submodule is an abelian Lie subalgebra. -/
-theorem isLieAbelian_toLieSubalgebraOfAbelian (𝔞 : Submodule R L)
-    (h𝔞 : ∀ x ∈ 𝔞, ∀ y ∈ 𝔞, ⁅x, y⁆ = 0) : IsLieAbelian (𝔞.toLieSubalgebraOfAbelian h𝔞) :=
-  ⟨fun x y ↦ Subtype.ext (h𝔞 _ x.property _ y.property)⟩
-
-end Submodule
 
 /-! ### Restricted root spaces are weight spaces -/
 
@@ -98,16 +72,6 @@ namespace LieEquiv.IsCartanInvolution
 variable {K L : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [LieRing L]
   [LieAlgebra K L] {θ : L ≃ₗ⁅K⁆ L} (hθ : θ.IsCartanInvolution)
   {𝔞 : LieSubalgebra K L} (h𝔞 : 𝔞.toSubmodule ≤ θ.cartanP)
-
-/-- A Lie subalgebra contained in `𝔭` is abelian: `[𝔭, 𝔭] ⊆ 𝔨` and `𝔨 ∩ 𝔭 = 0`. -/
-theorem isLieAbelian_of_le_cartanP (h𝔞 : 𝔞.toSubmodule ≤ θ.cartanP) : IsLieAbelian 𝔞 := by
-  refine ⟨fun x y ↦ Subtype.ext ?_⟩
-  have hk := lie_mem_fixedSubalgebra_of_mem_cartanP (h𝔞 x.property) (h𝔞 y.property)
-  have hp := mem_cartanP.mp (h𝔞 (⁅x, y⁆ : 𝔞).property)
-  rw [LieHom.mem_fixedSubalgebra, coe_toLieHom] at hk
-  rw [LieSubalgebra.coe_bracket] at hp ⊢
-  rw [hk, eq_neg_iff_add_eq_zero, ← two_smul K] at hp
-  exact (smul_eq_zero.mp hp).resolve_left two_ne_zero
 
 include hθ h𝔞
 
@@ -150,9 +114,9 @@ private def weightOfRestrictedRoot [LieRing.IsNilpotent 𝔞] (μ : 𝔞.toSubmo
 /-- A nonzero weight of `𝔞` on `L` is linear and so a restricted root. -/
 private def restrictedRootOfWeight [LieRing.IsNilpotent 𝔞]
     (α : {α : Weight K 𝔞 L // α.IsNonZero}) : 𝔞.toSubmodule.restrictedRoots :=
-  have := isLieAbelian_of_le_cartanP h𝔞
+  have := isLieAbelian_of_le_cartanP (IsUnit.mk0 _ two_ne_zero) h𝔞
   ⟨α.val.toLinear, Submodule.mem_restrictedRoots.mpr
-    ⟨fun h ↦ α.property (funext fun H ↦ LinearMap.congr_fun h H), by
+    ⟨Weight.coe_toLinear_ne_zero_iff.mpr α.property, by
       have h := α.val.genWeightSpace_ne_bot
       rw [ne_eq, ← LieSubmodule.toSubmodule_eq_bot] at h
       rwa [← toSubmodule_genWeightSpace_eq_restrictedRootSpace hθ h𝔞]⟩⟩
@@ -163,16 +127,24 @@ acting on `L` by `ad`, and every nonzero weight arises in this way. -/
 noncomputable def restrictedRootsEquivWeight [LieRing.IsNilpotent 𝔞] :
     𝔞.toSubmodule.restrictedRoots ≃ {α : Weight K 𝔞 L // α.IsNonZero} where
   toFun μ := ⟨weightOfRestrictedRoot hθ h𝔞 μ, fun h ↦
-    (Submodule.mem_restrictedRoots.mp μ.property).1 (LinearMap.ext fun H ↦
-      congr_fun h (⟨H, H.property⟩ : 𝔞))⟩
+    have := isLieAbelian_of_le_cartanP (IsUnit.mk0 _ two_ne_zero) h𝔞
+    (Submodule.mem_restrictedRoots.mp μ.property).1 (Weight.coe_toLinear_eq_zero_iff.mpr h)⟩
   invFun α := restrictedRootOfWeight hθ h𝔞 α
-  left_inv _ := rfl
-  right_inv _ := rfl
+  left_inv _ := Subtype.ext (LinearMap.ext fun _ ↦ rfl)
+  right_inv _ := Subtype.ext (Weight.ext fun _ ↦ rfl)
 
 /-- The weight attached to a restricted root `λ` is `H ↦ λ(H)`. -/
+@[simp]
 theorem restrictedRootsEquivWeight_apply_apply [LieRing.IsNilpotent 𝔞]
     (μ : 𝔞.toSubmodule.restrictedRoots) (H : 𝔞) :
     (restrictedRootsEquivWeight hθ h𝔞 μ).val H = μ.val ⟨H, H.property⟩ :=
+  (rfl)
+
+/-- The restricted root attached to a nonzero weight `α` is `H ↦ α(H)`. -/
+@[simp]
+theorem restrictedRootsEquivWeight_symm_apply_apply [LieRing.IsNilpotent 𝔞]
+    (α : {α : Weight K 𝔞 L // α.IsNonZero}) (H : 𝔞.toSubmodule) :
+    ((restrictedRootsEquivWeight hθ h𝔞).symm α).val H = α.val ⟨H, H.property⟩ :=
   (rfl)
 
 end LieEquiv.IsCartanInvolution
