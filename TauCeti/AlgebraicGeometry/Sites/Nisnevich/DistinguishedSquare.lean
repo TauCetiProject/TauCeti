@@ -54,11 +54,6 @@ universe u
 
 namespace TauCeti.AlgebraicGeometry.Scheme
 
-/-- The closed complement `X ∖ U` of the image of an open immersion `j : U ⟶ X`. -/
-abbrev closedComplement {X U : AlgebraicGeometry.Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j] :
-    Closeds X :=
-  ⟨(j.opensRange : Set X)ᶜ, j.opensRange.isOpen.isClosed_compl⟩
-
 /-- An **elementary distinguished square** over `X` (Morel–Voevodsky, §3.1, Definition 1.3): an
 open immersion `j : U ⟶ X` and an étale morphism `p : V ⟶ X` such that the base change of `p` to
 the reduced closed complement `Z = (X ∖ U)_red` of `U` is an isomorphism `p⁻¹(Z) ⟶ Z`. -/
@@ -75,8 +70,8 @@ structure ElementaryDistinguishedSquare (X : AlgebraicGeometry.Scheme.{u}) where
   [etale_p : Etale p]
   /-- `p` is an isomorphism over the reduced closed complement of `U`. -/
   isIso_pullback_snd :
-    IsIso (pullback.snd p (AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal
-      (@closedComplement _ _ j isOpenImmersion_j)).subschemeι)
+    IsIso (pullback.snd p
+      (AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal j.opensRange.compl).subschemeι)
 
 namespace ElementaryDistinguishedSquare
 
@@ -93,7 +88,7 @@ abbrev arrows : ∀ b : Bool, (Bool.rec Q.V Q.U b : AlgebraicGeometry.Scheme.{u}
 isomorphism of residue fields. -/
 theorem exists_isIso_residueFieldMap_p (x : X) (hx : x ∉ Set.range Q.j) :
     ∃ v : Q.V, Q.p v = x ∧ IsIso (Q.p.residueFieldMap v) := by
-  set I := AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal (closedComplement Q.j)
+  set I := AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal Q.j.opensRange.compl
   have hxI : x ∈ Set.range I.subschemeι := by
     rw [AlgebraicGeometry.Scheme.IdealSheafData.range_subschemeι,
       AlgebraicGeometry.Scheme.IdealSheafData.coe_support_vanishingIdeal]
@@ -137,7 +132,7 @@ noncomputable def ofZariski (U V : X.Opens) (h : U ⊔ V = ⊤) : ElementaryDist
   j := U.ι
   p := V.ι
   isIso_pullback_snd := by
-    set I := AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal (closedComplement U.ι)
+    set I := AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal U.ι.opensRange.compl
     refine (isIso_iff_isOpenImmersion_and_surjective _).2 ⟨inferInstance, ⟨fun z ↦ ?_⟩⟩
     have hz : I.subschemeι z ∈ V := by
       have hzU : I.subschemeι z ∉ U := by
