@@ -12,11 +12,11 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
 /-!
 # Rank-one integral lattices
 
-The lattice `rankOne a` is `ℤ ⊂ ℚ` with bilinear form `B(x,y) = axy`, for any integer `a`.
-Integer representatives evaluate the integral form as `akl` and the integral norm as `ak²`.
-Its rank is one, its signed determinant is `a`, and it is even exactly when `a` is even.
-It is unimodular exactly when `a` is a unit. The sign of `a` determines definiteness and
-signature, including the degenerate zero form.
+The lattice `rankOne a` is `ℤ ⊂ ℚ` with distinguished generator `rankOneGen a` (`1 : ℚ`) and
+bilinear form `B(x,y) = axy`, for any integer `a`. Integer representatives evaluate the integral
+form as `akl` and the integral norm as `ak²`. Its rank is one, its signed determinant is `a`, and
+it is even exactly when `a` is even. It is unimodular exactly when `a` is a unit. The sign of `a`
+determines definiteness and signature, including the degenerate zero form.
 
 This family includes odd lattices as well as the root lattices `A₁ = ⟨2⟩` and `⟨-2⟩`.
 Duality, the cyclic discriminant group, and the level are computed in
@@ -82,6 +82,36 @@ theorem integralForm_rankOne_eq {a : ℤ} (w x : rankOne a) {k l : ℤ}
 theorem integralNorm_rankOne_eq {a : ℤ} (w : rankOne a) {k : ℤ}
     (hw : (w : ℚ) = k) : (rankOne a).integralNorm w = a * k ^ 2 := by
   rw [integralNorm_apply, integralForm_rankOne_eq w w hw hw, pow_two, mul_assoc]
+
+/-- The distinguished generator `1` of the rank-one lattice `⟨a⟩`. -/
+def rankOneGen (a : ℤ) : rankOne a :=
+  ⟨1, (mem_rankOne_carrier_iff a 1).mpr ⟨1, Int.cast_one⟩⟩
+
+/-- The rational value of the distinguished generator of `⟨a⟩` is `1`. -/
+@[simp]
+theorem coe_rankOneGen (a : ℤ) : ((rankOneGen a : rankOne a) : ℚ) = 1 :=
+  (rfl)
+
+/-- Integer multiples of the generator of `⟨a⟩` have rational value `k`. -/
+theorem coe_zsmul_rankOneGen (a k : ℤ) : ((k • rankOneGen a : rankOne a) : ℚ) = k := by
+  rw [SetLike.val_smul, coe_rankOneGen, zsmul_eq_mul, mul_one]
+
+/-- Every vector of `⟨a⟩` is an integer multiple of `rankOneGen a`. -/
+theorem exists_zsmul_rankOneGen {a : ℤ} (x : rankOne a) : ∃ k : ℤ, x = k • rankOneGen a := by
+  obtain ⟨k, hk⟩ := (mem_rankOne_carrier_iff a (x : ℚ)).mp x.property
+  exact ⟨k, Subtype.ext (by rw [hk.symm, coe_zsmul_rankOneGen])⟩
+
+/-- The integral self-pairing of the generator of `⟨a⟩` is `a`. -/
+@[simp]
+theorem integralForm_rankOneGen (a : ℤ) :
+    (rankOne a).integralForm (rankOneGen a) (rankOneGen a) = a := by
+  simpa using integralForm_rankOne_eq (rankOneGen a) (rankOneGen a)
+    (coe_rankOneGen a) (coe_rankOneGen a)
+
+/-- The integral norm of the generator of `⟨a⟩` is `a`. -/
+@[simp]
+theorem integralNorm_rankOneGen (a : ℤ) : (rankOne a).integralNorm (rankOneGen a) = a := by
+  simpa using integralNorm_rankOne_eq (rankOneGen a) (coe_rankOneGen a)
 
 /-- Every member of the family has rank one, including the zero form. -/
 @[simp]

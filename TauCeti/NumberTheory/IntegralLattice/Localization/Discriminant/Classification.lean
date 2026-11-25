@@ -243,6 +243,17 @@ theorem localIntegralForm_equivalent_iff_nonempty_isometry_primaryComponent_of_i
     L.discriminantQuadraticModule_toFiniteBilinearModule hL,
     M.discriminantQuadraticModule_toFiniteBilinearModule hM]
 
+/-- Nondegenerate integral lattices with equal signatures and isometric discriminant bilinear
+modules have equal signed determinants. -/
+theorem determinant_eq_of_signature_eq_of_isometry_discriminantBilinearModule
+    (hsig : L.signature = M.signature)
+    (f : FiniteBilinearModule.Isometry L.discriminantBilinearModule M.discriminantBilinearModule) :
+    L.determinant = M.determinant := by
+  have hneg : L.sigNeg = M.sigNeg := congrArg (fun s ↦ s.2.2) hsig
+  rw [L.determinant_eq_neg_one_pow_sigNeg_mul_discriminant,
+    M.determinant_eq_neg_one_pow_sigNeg_mul_discriminant,
+    discriminant_eq_of_isometry_discriminantBilinearModule f, hneg]
+
 /-- **The genus away from `2`.** Two nondegenerate lattices lie in one genus exactly when their
 signatures agree, their discriminant bilinear modules are isometric, and their localizations at
 `2` are isometric. So away from `2` the genus is determined by the signature and the discriminant
@@ -259,13 +270,7 @@ theorem sameGenus_iff_nonempty_isometry_and_localIntegralForm_two_equivalent :
   · exact h2
   -- At an odd prime the signature supplies the rank, the signature together with the order of the
   -- discriminant group supplies the determinant, and `f` supplies the `p`-primary component.
-  have hdet : L.determinant = M.determinant := by
-    have hcard : L.discriminant = M.discriminant := by
-      rw [← natCard_discriminantGroup, ← natCard_discriminantGroup]
-      exact Nat.card_congr f.toAddEquiv.toEquiv
-    have hneg : L.sigNeg = M.sigNeg := congrArg (fun s ↦ s.2.2) hsig
-    rw [L.determinant_eq_neg_one_pow_sigNeg_mul_discriminant,
-      M.determinant_eq_neg_one_pow_sigNeg_mul_discriminant, hcard, hneg]
+  have hdet := determinant_eq_of_signature_eq_of_isometry_discriminantBilinearModule hsig f
   exact (localIntegralForm_equivalent_iff_nonempty_isometry_primaryComponent hp).mpr
     ⟨L.finrank_eq_of_signature_eq hsig, ⟨L.determinant, by rw [hdet]⟩,
       ⟨f.restrictPrimaryComponent p⟩⟩

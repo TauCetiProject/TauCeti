@@ -14,6 +14,7 @@ import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.OddDiscriminant
 import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.VanDerBlij
 import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Operations
 import TauCeti.LinearAlgebra.IntegralLattice.Milgram
+import TauCeti.LinearAlgebra.IntegralLattice.RankOne.Characteristic
 import TauCeti.LinearAlgebra.IntegralLattice.RankOne.Discriminant
 import TauCeti.NumberTheory.IntegralLattice.Dyadic.Unimodular
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Classification
@@ -122,18 +123,6 @@ theorem sameGenus_iff_localIntegralForm_two_and_discriminantQuadraticModule
 
 /-! ### Classification of genera of odd discriminant -/
 
-private theorem discriminant_and_determinant_eq_of_isometry_discriminantBilinearModule
-    [L.IsNondegenerate] [M.IsNondegenerate] (hsig : L.signature = M.signature)
-    (f : FiniteBilinearModule.Isometry L.discriminantBilinearModule M.discriminantBilinearModule) :
-    L.discriminant = M.discriminant ∧ L.determinant = M.determinant := by
-  have hdisc : L.discriminant = M.discriminant := by
-    rw [← L.natCard_discriminantGroup, ← M.natCard_discriminantGroup]
-    exact Nat.card_congr f.toAddEquiv.toEquiv
-  have hneg : L.sigNeg = M.sigNeg := congrArg (fun s ↦ s.2.2) hsig
-  refine ⟨hdisc, ?_⟩
-  rw [L.determinant_eq_neg_one_pow_sigNeg_mul_discriminant,
-    M.determinant_eq_neg_one_pow_sigNeg_mul_discriminant, hneg, hdisc]
-
 private theorem isUnit_determinant_padicInt_two_of_odd_discriminant
     (hodd : Odd L.discriminant) : IsUnit (L.determinant : ℤ_[2]) := by
   rw [L.determinant_eq_neg_one_pow_sigNeg_mul_discriminant, Int.cast_mul, Int.cast_pow,
@@ -154,9 +143,9 @@ theorem sameGenus_iff_of_odd_discriminant [L.IsNondegenerate] [M.IsNondegenerate
         L.discriminantBilinearModule M.discriminantBilinearModule) := by
   refine ⟨fun h ↦ ⟨h.signature_eq, h.isEven_iff, h.nonempty_isometry_discriminantBilinearModule⟩,
     fun ⟨hsig, heven, ⟨f⟩⟩ ↦ ?_⟩
-  obtain ⟨hdisc, hdet⟩ :=
-    discriminant_and_determinant_eq_of_isometry_discriminantBilinearModule hsig f
-  have hoddM : Odd M.discriminant := hdisc ▸ hodd
+  have hoddM : Odd M.discriminant :=
+    discriminant_eq_of_isometry_discriminantBilinearModule f ▸ hodd
+  have hdet := determinant_eq_of_signature_eq_of_isometry_discriminantBilinearModule hsig f
   obtain ⟨w, hw⟩ := L.exists_isCharacteristicVector_of_odd_discriminant hodd
   obtain ⟨w', hw'⟩ := M.exists_isCharacteristicVector_of_odd_discriminant hoddM
   have hmod := L.integralNorm_characteristicVector_modEq_of_odd_discriminant hodd hsig hw hw' f
@@ -186,19 +175,6 @@ theorem sameGenus_iff_of_isEven_of_odd_discriminant [L.IsNondegenerate] [M.IsNon
 
 /-! ### Sharpness: `⟨1⟩ ⊕ ⟨15⟩` and `⟨3⟩ ⊕ ⟨5⟩` -/
 
-private def rankOneUnit (a : ℤ) : rankOne a :=
-  ⟨1, (mem_rankOne_carrier_iff a 1).mpr ⟨1, Int.cast_one⟩⟩
-
-private theorem isCharacteristicVector_rankOneUnit (a : ℤ) :
-    (rankOne a).IsCharacteristicVector (rankOneUnit a) := by
-  rw [(rankOne a).isCharacteristicVector_iff]
-  intro x
-  obtain ⟨z, hz⟩ := (mem_rankOne_carrier_iff a (x : ℚ)).mp x.property
-  rw [integralForm_rankOne_eq _ x (k := 1) rfl hz.symm, integralNorm_rankOne_eq x hz.symm,
-    Int.modEq_iff_dvd]
-  obtain ⟨m, hm⟩ := Int.two_dvd_mul_add_one z
-  exact ⟨a * (m - z), by linear_combination a * hm⟩
-
 /-- The positive definite odd rank-two lattices `⟨1⟩ ⊕ ⟨15⟩` and `⟨3⟩ ⊕ ⟨5⟩` have isometric
 `2`-adic integral localizations: both are odd unimodular over `ℤ_2` of determinant `15`, and their
 characteristic vectors `(1, 1)` have norms `16` and `8`, both divisible by `8`. -/
@@ -208,15 +184,15 @@ theorem localIntegralForm_two_equivalent_rankOne_one_fifteen_three_five :
   let L₁ := (rankOne 1).orthogonalSum (rankOne 15)
   let L₂ := (rankOne 3).orthogonalSum (rankOne 5)
   let w₁ : L₁ := (orthogonalSumCarrierEquiv (rankOne 1) (rankOne 15)).symm
-    (rankOneUnit 1, rankOneUnit 15)
+    (rankOneGen 1, rankOneGen 15)
   let w₂ : L₂ := (orthogonalSumCarrierEquiv (rankOne 3) (rankOne 5)).symm
-    (rankOneUnit 3, rankOneUnit 5)
+    (rankOneGen 3, rankOneGen 5)
   have hw₁ : L₁.IsCharacteristicVector w₁ := by
     rw [isCharacteristicVector_orthogonalSum_iff]
-    simp [w₁, orthogonalSumFst_apply, orthogonalSumSnd_apply, isCharacteristicVector_rankOneUnit]
+    simp [w₁, orthogonalSumFst_apply, orthogonalSumSnd_apply]
   have hw₂ : L₂.IsCharacteristicVector w₂ := by
     rw [isCharacteristicVector_orthogonalSum_iff]
-    simp [w₂, orthogonalSumFst_apply, orthogonalSumSnd_apply, isCharacteristicVector_rankOneUnit]
+    simp [w₂, orthogonalSumFst_apply, orthogonalSumSnd_apply]
   have hdet₁ : L₁.determinant = 15 := by simp [L₁]
   have hdet₂ : L₂.determinant = 15 := by simp [L₂]
   have hu₁ : IsUnit (L₁.determinant : ℤ_[2]) := by
@@ -229,17 +205,9 @@ theorem localIntegralForm_two_equivalent_rankOne_one_fifteen_three_five :
   · rw [hdet₁, hdet₂]
     exact IsSquare.mul_self _
   · have hn₁ : L₁.integralNorm w₁ = 16 := by
-      simp only [L₁, w₁, integralNorm_orthogonalSum, orthogonalSumFst_apply,
-        orthogonalSumSnd_apply, LinearEquiv.apply_symm_apply,
-        integralNorm_rankOne_eq (rankOneUnit 1) (k := 1) rfl,
-        integralNorm_rankOne_eq (rankOneUnit 15) (k := 1) rfl]
-      norm_num
+      simp [L₁, w₁, integralNorm_orthogonalSum, orthogonalSumFst_apply, orthogonalSumSnd_apply]
     have hn₂ : L₂.integralNorm w₂ = 8 := by
-      simp only [L₂, w₂, integralNorm_orthogonalSum, orthogonalSumFst_apply,
-        orthogonalSumSnd_apply, LinearEquiv.apply_symm_apply,
-        integralNorm_rankOne_eq (rankOneUnit 3) (k := 1) rfl,
-        integralNorm_rankOne_eq (rankOneUnit 5) (k := 1) rfl]
-      norm_num
+      simp [L₂, w₂, integralNorm_orthogonalSum, orthogonalSumFst_apply, orthogonalSumSnd_apply]
     rw [hn₁, hn₂]
     decide
 
@@ -295,8 +263,7 @@ theorem isEmpty_isometry_discriminantBilinearModule_rankOne_one_fifteen_three_fi
   have hgc3 : 3 • g c = 0 :=
     (map_nsmul g.toAddEquiv 3 c).symm.trans (by rw [hc3, map_zero])
   have hsub1 : Subsingleton (rankOne 1).discriminantBilinearModule :=
-    ((rankOne 1).isUnimodular_iff_subsingleton_discriminantGroup).mp
-      ((isUnimodular_rankOne_iff 1).mpr isUnit_one)
+    Finite.card_le_one_iff_subsingleton.mp (by simp)
   have hy1 : (g c).1 = 0 := hsub1.elim _ _
   have hpair := g.map_pairing c c
   rw [FiniteBilinearModule.prod_pairing, FiniteBilinearModule.prod_pairing,

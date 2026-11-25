@@ -10,13 +10,14 @@ public import TauCeti.LinearAlgebra.IntegralLattice.RankOne.Basic
 import Mathlib.Algebra.Ring.Int.Parity
 
 /-!
-# Characteristic vectors of two rank-one lattices
+# Characteristic vectors of rank-one lattices
 
-In the odd unimodular lattice `⟨1⟩`, characteristic vectors are exactly the odd integers
-in its actual carrier, and their integral norms are one modulo eight. In `⟨2⟩`, every
-vector is characteristic but every integral norm is even, so the characteristic-norm
-congruence with the signature fails for every vector. The latter example shows why
-unimodularity is required in van der Blij's theorem.
+The distinguished generator `1` (`rankOneGen a`) of `⟨a⟩` is a characteristic vector for every
+integer `a`, since `az ≡ az² (mod 2)`. In the odd unimodular lattice `⟨1⟩`, characteristic vectors
+are exactly the odd integers in its actual carrier, and their integral norms are one modulo eight.
+In `⟨2⟩`, every vector is characteristic but every integral norm is even, so the characteristic-norm
+congruence with the signature fails for every vector. The latter example shows why unimodularity is
+required in van der Blij's theorem.
 
 ## References
 
@@ -26,6 +27,22 @@ unimodularity is required in van der Blij's theorem.
 public section
 
 namespace TauCeti.IntegralLattice
+
+/-- The generator `1` of `⟨a⟩` is a characteristic vector for every integer `a`, since
+`B(1, z) = az ≡ az² = B(z, z) (mod 2)`. -/
+@[simp]
+theorem isCharacteristicVector_rankOneGen (a : ℤ) :
+    (rankOne a).IsCharacteristicVector (rankOneGen a) := by
+  rw [(rankOne a).isCharacteristicVector_iff]
+  intro x
+  obtain ⟨z, hz⟩ := (mem_rankOne_carrier_iff a (x : ℚ)).mp x.property
+  rw [integralForm_rankOne_eq (rankOneGen a) x ((coe_rankOneGen a).trans Int.cast_one.symm)
+    hz.symm, integralNorm_rankOne_eq x hz.symm, Int.modEq_iff_dvd]
+  obtain ⟨m, hm⟩ := Int.two_dvd_mul_add_one z
+  have hzz : z ^ 2 - z = 2 * (m - z) := by nlinarith
+  exact ⟨a * (m - z), by calc
+    a * z ^ 2 - a * 1 * z = a * (z ^ 2 - z) := by ring
+    _ = 2 * (a * (m - z)) := by rw [hzz]; ring⟩
 
 /-- The characteristic vectors of `⟨1⟩` are exactly its odd integer vectors. -/
 theorem isCharacteristicVector_rankOne_one_iff (w : rankOne 1) :
