@@ -27,7 +27,7 @@ normal vector `ξ x` only sees its normal part.
 ## References
 
 * J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapter 8
-  (the convention reference of the RiemannianGeometry roadmap).
+  (the normal connection and its compatibility with the metric).
 -/
 
 public section
