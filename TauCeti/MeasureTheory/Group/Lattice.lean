@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.MeasureTheory.Group.FundamentalDomain
 public import TauCeti.MeasureTheory.Group.ProperlyDiscontinuous
-public import TauCeti.Topology.Algebra.Group.Quotient.Basic
+public import TauCeti.Topology.Algebra.GroupAction.Quotient
 
 /-!
 # Lattices in locally compact groups

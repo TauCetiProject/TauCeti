@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Haar.Quotient
+public import Mathlib.MeasureTheory.Group.FundamentalDomain
 public import TauCeti.Topology.Algebra.InfiniteSum.Automorphize
 
 /-!
