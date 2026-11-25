@@ -33,6 +33,7 @@ the diagonal it is the square of the Frobenius seminorm
 * `ContinuousLinearMap.hilbertSchmidtInner_comm`: symmetry.
 * `ContinuousLinearMap.hilbertSchmidtInner_add_left`,
   `ContinuousLinearMap.hilbertSchmidtInner_sub_left`,
+  `ContinuousLinearMap.hilbertSchmidtInner_neg_left`,
   `ContinuousLinearMap.hilbertSchmidtInner_smul_left` and their right-hand versions: bilinearity.
 * `ContinuousLinearMap.hilbertSchmidtInner_self_eq_sq_frobenius` and
   `ContinuousLinearMap.hilbertSchmidtInner_self_eq_sq_hilbertSchmidtNorm`: `⟪A, A⟫_HS = ‖A‖_F²`
@@ -132,6 +133,11 @@ theorem hilbertSchmidtInner_sub_right (A B₁ B₂ : W →L[ℝ] V) :
     A.hilbertSchmidtInner (B₁ - B₂) = A.hilbertSchmidtInner B₁ - A.hilbertSchmidtInner B₂ := by
   simp only [hilbertSchmidtInner_eq_sum _ _ (stdOrthonormalBasis ℝ W), sub_apply, inner_sub_right,
     Finset.sum_sub_distrib]
+
+/-- The Hilbert–Schmidt inner product changes sign with its left argument. -/
+theorem hilbertSchmidtInner_neg_left (A B : W →L[ℝ] V) :
+    (-A).hilbertSchmidtInner B = -A.hilbertSchmidtInner B := by
+  simpa using hilbertSchmidtInner_smul_left (-1) A B
 
 /-- The Hilbert–Schmidt inner product `B ↦ ⟪A, B⟫_HS` with a fixed left argument, as a continuous
 linear functional. -/

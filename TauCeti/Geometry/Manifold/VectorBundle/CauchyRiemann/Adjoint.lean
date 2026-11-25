@@ -50,10 +50,12 @@ compatible metrics
 Green's formula follows from integration by parts for `∇`
 (`CovariantDerivative.IsMetricCompatible.integral_inner_formalAdjoint`).
 
-The adjoint `D*` sends smooth one-forms to smooth sections, it is characterized among smooth
-sections by Green's formula, and so it does not depend on the metric connection. It is a first
-order operator of `∂`-type: `D* (f η) = f D* η - η (grad f)`, and for a `(0,1)`-form `η` the term
-`η (grad f)` only involves the complex linear part `∂f` of `df`.
+For compatible metrics, the adjoint `D*` sends smooth `(0,1)`-forms to smooth sections, it is
+characterized among smooth sections by Green's formula, and so it does not depend on the metric
+connection. It is real linear and satisfies the Leibniz rule `D* (f η) = f D* η - η (grad f)`. In
+real dimension two, for a `(0,1)`-form `η` the term `η (grad f)` only involves the complex linear
+part `∂f` of `df` (`TauCeti.SmoothAlmostComplexStructure.IsZeroOneForm.apply_mgradient`), so `D*`
+is of `∂`-type.
 
 ## Main definitions
 
@@ -62,8 +64,10 @@ order operator of `∂`-type: `D* (f η) = f D* η - η (grad f)`, and for a `(0
 ## Main results
 
 * `TauCeti.IsRealCauchyRiemannOperator.inner_formalAdjoint`: `⟪D* η, e⟫ = ⟪∇* η, e⟫ + ⟪η, a e⟫_HS`.
-* `TauCeti.IsRealCauchyRiemannOperator.contMDiff_formalAdjoint`: `D*` sends smooth one-forms to
-  smooth sections.
+* `TauCeti.IsRealCauchyRiemannOperator.formalAdjoint_add`, `formalAdjoint_const_smul` and
+  their variants: linearity of `D*`.
+* `TauCeti.IsRealCauchyRiemannOperator.contMDiff_formalAdjoint`: for compatible metrics, `D*`
+  sends smooth `(0,1)`-forms to smooth sections.
 * `TauCeti.IsRealCauchyRiemannOperator.integral_inner_formalAdjoint`: Green's formula
   `∫ ⟪D* η, ξ⟫ dV = ∫ ⟪η, D ξ⟫_HS dV` for compactly supported `ξ`, and
   `TauCeti.IsRealCauchyRiemannOperator.integral_inner_formalAdjoint_of_compactSpace` on a closed
@@ -74,6 +78,9 @@ order operator of `∂`-type: `D* (f η) = f D* η - η (grad f)`, and for a `(0
   depend on the metric connection.
 * `TauCeti.IsRealCauchyRiemannOperator.formalAdjoint_smul`: the Leibniz rule
   `D* (f η) = f D* η - η (grad f)`.
+* `TauCeti.SmoothAlmostComplexStructure.IsZeroOneForm.apply_mgradient`: in real dimension two,
+  `η (grad f) = df v • η v - df (j v) • i • η v` for a `(0,1)`-form `η` and a unit vector `v`, so
+  the symbol of `D*` involves `∂f` and not `∂bar f`.
 
 ## References
 
@@ -147,9 +154,11 @@ theorem SmoothAlmostComplexStructure.IsZeroOneForm.apply_mgradient {x : M}
   let b := OrthonormalBasis.mk hon hspan.ge
   have hb0 : b 0 = v := by simp [b]
   have hb1 : b 1 = j x v := by simp [b]
-  rw [← b.sum_repr' (TauCeti.Manifold.mgradient I f x), Fin.sum_univ_two, hb0, hb1, map_add,
-    map_smul, map_smul, isZeroOneForm_iff.1 hθ v, TauCeti.Manifold.inner_mgradient_right,
-    TauCeti.Manifold.inner_mgradient_right, smul_neg, sub_eq_add_neg]
+  -- Expand `grad f` in the orthonormal basis `(v, j v)`; its coefficients are `df v`, `df (j v)`.
+  rw [← b.sum_repr' (TauCeti.Manifold.mgradient I f x), Fin.sum_univ_two, map_add, map_smul,
+    map_smul, hb0, hb1, isZeroOneForm_iff.1 hθ v]
+  simp only [TauCeti.Manifold.inner_mgradient_right]
+  rw [smul_neg, sub_eq_add_neg]
 
 namespace IsRealCauchyRiemannOperator
 
@@ -183,17 +192,70 @@ theorem inner_formalAdjoint (η : Π x : M, TangentSpace I x →L[ℝ] V x) (x :
 omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ F V] in
 /-- **Leibniz rule for the formal adjoint.** For a function `f` and a one-form `η` differentiable
 at `x`, `D* (f η) = f D* η - η (grad f)`. So `D*` is a first-order operator whose symbol is
-`-η (grad f)`; on a `(0,1)`-form `η` this only involves the complex linear part `∂f` of `df`. -/
+`-η (grad f)`. In real dimension two, on a `(0,1)`-form `η` this only involves the complex linear
+part `∂f` of `df` (`TauCeti.SmoothAlmostComplexStructure.IsZeroOneForm.apply_mgradient`). -/
 theorem formalAdjoint_smul {f : M → ℝ} {x : M} (hf : MDiffAt f x)
     (hη : MDiffAt
       (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η y)) x) :
     hD.formalAdjoint cov (f • η) x =
       f x • hD.formalAdjoint cov η x - η x (TauCeti.Manifold.mgradient I f x) := by
   refine ext_inner_right ℝ fun e ↦ ?_
-  rw [inner_formalAdjoint, inner_sub_left, real_inner_smul_left, inner_formalAdjoint,
-    CovariantDerivative.formalAdjoint_smul _ _ hf hη, inner_sub_left, real_inner_smul_left,
-    Pi.smul_apply', ContinuousLinearMap.hilbertSchmidtInner_smul_left]
+  simp only [inner_formalAdjoint, CovariantDerivative.formalAdjoint_smul _ _ hf hη, inner_sub_left,
+    real_inner_smul_left, Pi.smul_apply', ContinuousLinearMap.hilbertSchmidtInner_smul_left]
   ring
+
+omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ F V] in
+/-- The formal adjoint of the zero one-form is zero. -/
+@[simp]
+theorem formalAdjoint_zero (x : M) :
+    hD.formalAdjoint cov (0 : Π x : M, TangentSpace I x →L[ℝ] V x) x = 0 :=
+  ext_inner_right ℝ fun e ↦ by simp [inner_formalAdjoint]
+
+omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ F V] in
+/-- The formal adjoint commutes with multiplication of the one-form by a constant. -/
+@[simp]
+theorem formalAdjoint_const_smul (c : ℝ) (η : Π x : M, TangentSpace I x →L[ℝ] V x) (x : M) :
+    hD.formalAdjoint cov (c • η) x = c • hD.formalAdjoint cov η x :=
+  ext_inner_right ℝ fun e ↦ by
+    simp only [inner_formalAdjoint, CovariantDerivative.formalAdjoint_const_smul, Pi.smul_apply,
+      ContinuousLinearMap.hilbertSchmidtInner_smul_left, real_inner_smul_left]
+    ring
+
+omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ F V] in
+/-- The formal adjoint commutes with negation of the one-form. -/
+@[simp]
+theorem formalAdjoint_neg (η : Π x : M, TangentSpace I x →L[ℝ] V x) (x : M) :
+    hD.formalAdjoint cov (-η) x = -hD.formalAdjoint cov η x :=
+  ext_inner_right ℝ fun e ↦ by
+    simp only [inner_formalAdjoint, CovariantDerivative.formalAdjoint_neg, Pi.neg_apply,
+      ContinuousLinearMap.hilbertSchmidtInner_neg_left, inner_neg_left]
+    ring
+
+omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ F V] in
+/-- The formal adjoint is additive on one-forms differentiable at the point. -/
+theorem formalAdjoint_add {η η' : Π x : M, TangentSpace I x →L[ℝ] V x} {x : M}
+    (hη : MDiffAt
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η y)) x)
+    (hη' : MDiffAt
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η' y)) x) :
+    hD.formalAdjoint cov (η + η') x = hD.formalAdjoint cov η x + hD.formalAdjoint cov η' x :=
+  ext_inner_right ℝ fun e ↦ by
+    simp only [inner_formalAdjoint, CovariantDerivative.formalAdjoint_add _ _ hη hη',
+      Pi.add_apply, ContinuousLinearMap.hilbertSchmidtInner_add_left, inner_add_left]
+    ring
+
+omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ F V] in
+/-- The formal adjoint commutes with differences of one-forms differentiable at the point. -/
+theorem formalAdjoint_sub {η η' : Π x : M, TangentSpace I x →L[ℝ] V x} {x : M}
+    (hη : MDiffAt
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η y)) x)
+    (hη' : MDiffAt
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η' y)) x) :
+    hD.formalAdjoint cov (η - η') x = hD.formalAdjoint cov η x - hD.formalAdjoint cov η' x :=
+  ext_inner_right ℝ fun e ↦ by
+    simp only [inner_formalAdjoint, CovariantDerivative.formalAdjoint_sub _ _ hη hη',
+      Pi.sub_apply, ContinuousLinearMap.hilbertSchmidtInner_sub_left, inner_sub_left]
+    ring
 
 include hD in
 omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
@@ -212,18 +274,6 @@ private theorem hilbertSchmidtInner_difference {x : M} (hηx : j.IsZeroOneForm (
 
 variable [ContMDiffCovariantDerivative cov ∞]
 
-omit [∀ x, Module ℂ (V x)] [FiniteDimensional ℝ E] [T2Space M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] [FiniteDimensional ℝ F]
-  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] [ContMDiffVectorBundle ∞ F V I]
-  [IsContMDiffRiemannianBundle I ∞ F V] in
-/-- A smooth real Cauchy–Riemann operator sends smooth sections to smooth one-forms. -/
-private theorem contMDiff_apply (hDs : ContMDiffCovariantDerivativeOn F ∞ D univ)
-    {σ : Π x : M, V x} (hσ : CMDiff ∞ (T% σ)) :
-    ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) ∞
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun y ↦ TangentSpace I y →L[ℝ] V y) x (D σ x)) :=
-  contMDiffOn_univ.mp (hDs.contMDiff (by simpa using hσ.contMDiffOn))
-
 /-- The formal adjoint of a smooth real Cauchy–Riemann operator sends smooth `(0,1)`-forms to
 smooth sections, for compatible metrics and a smooth connection. -/
 theorem contMDiff_formalAdjoint (hDs : ContMDiffCovariantDerivativeOn F ∞ D univ)
@@ -241,7 +291,7 @@ theorem contMDiff_formalAdjoint (hDs : ContMDiffCovariantDerivativeOn F ∞ D un
       (fun x ↦ TotalSpace.mk' (F →L[ℝ] ℝ) (E := fun y ↦ V y →L[ℝ] Trivial M ℝ y) x (ψ x)) := by
     refine (TauCeti.Manifold.contMDiff_hom_iff ψ).2 fun s hs ↦ ?_
     refine Bundle.Trivial.contMDiff_mk_iff.2 ⟨contMDiff_id, ?_⟩
-    refine ((hη.hilbertSchmidtInner_bundle (contMDiff_apply hDs hs)).sub
+    refine ((hη.hilbertSchmidtInner_bundle (hDs.contMDiff_univ (by simpa using hs))).sub
       (hη.hilbertSchmidtInner_bundle (cov.contMDiff_covariantDerivative (by simpa using hs)))).congr
       fun x ↦ ?_
     simp only [ψ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.hilbertSchmidtInnerL_apply]
@@ -258,6 +308,16 @@ local instance : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)
   IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
     (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
 
+omit [T2Space M] [∀ x, InnerProductSpace ℝ (V x)] [∀ x, Module ℂ (V x)]
+  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)]
+  [I.Boundaryless] in
+/-- A continuous function vanishing wherever a section `ξ` with compact closed support vanishes
+nearby is integrable for the Riemannian volume. -/
+private theorem integrable_of_eq_zero_off {ξ : Π x : M, V x}
+    (hξc : IsCompact (closure {x | ξ x ≠ 0})) {g : M → ℝ} (hg : Continuous g)
+    (hg0 : ∀ y ∉ closure {x | ξ x ≠ 0}, g y = 0) : Integrable g (riemannianVolume I M) :=
+  hg.integrable_of_hasCompactSupport (.intro' hξc isClosed_closure hg0)
+
 /-- **Green's formula for a real Cauchy–Riemann operator** (McDuff–Salamon, Lemma C.1.9, without
 boundary). For compatible metrics, a smooth metric connection `∇`, a smooth `(0,1)`-form `η` and
 a smooth compactly supported section `ξ`, `∫ ⟪D* η, ξ⟫ dV = ∫ ⟪η, D ξ⟫_HS dV`. -/
@@ -271,22 +331,19 @@ theorem integral_inner_formalAdjoint (hcov : cov.IsMetricCompatible)
     (hξc : IsCompact (closure {x | ξ x ≠ 0})) :
     ∫ x, ⟪hD.formalAdjoint cov η x, ξ x⟫ ∂riemannianVolume I M =
       ∫ x, (η x).hilbertSchmidtInner (D ξ x) ∂riemannianVolume I M := by
-  have hoff {y : M} (hy : y ∉ closure {x | ξ x ≠ 0}) : ξ y = 0 := by
-    by_contra h
-    exact hy (subset_closure h)
   have h1 : Integrable (fun x ↦ ⟪cov.formalAdjoint (leviCivitaConnection I M) η x, ξ x⟫)
       (riemannianVolume I M) :=
-    ((cov.contMDiff_formalAdjoint _ hη).inner_bundle hξ).continuous.integrable_of_hasCompactSupport
-      (.intro' hξc isClosed_closure fun y hy ↦ by simp [hoff hy])
+    integrable_of_eq_zero_off hξc ((cov.contMDiff_formalAdjoint _ hη).inner_bundle hξ).continuous
+      fun y hy ↦ by simp [Bundle.apply_eq_zero_of_notMem_closure hy]
   have h2 : Integrable (fun x ↦ (η x).hilbertSchmidtInner (D ξ x)) (riemannianVolume I M) :=
-    (hη.hilbertSchmidtInner_bundle (contMDiff_apply hDs hξ)).continuous
-      |>.integrable_of_hasCompactSupport
-      (.intro' hξc isClosed_closure fun y hy ↦ by simp [hD.apply_eq_zero_of_notMem_closure hy])
+    integrable_of_eq_zero_off hξc
+      (hη.hilbertSchmidtInner_bundle (hDs.contMDiff_univ (by simpa using hξ))).continuous
+      fun y hy ↦ by simp [hD.apply_eq_zero_of_notMem_closure hy]
   have h3 : Integrable (fun x ↦ (η x).hilbertSchmidtInner (cov ξ x)) (riemannianVolume I M) :=
-    (hη.hilbertSchmidtInner_bundle
-      (cov.contMDiff_covariantDerivative (by simpa using hξ))).continuous
-      |>.integrable_of_hasCompactSupport
-      (.intro' hξc isClosed_closure fun y hy ↦ by simp [cov.apply_eq_zero_of_notMem_closure hy])
+    integrable_of_eq_zero_off hξc
+      (hη.hilbertSchmidtInner_bundle
+        (cov.contMDiff_covariantDerivative (by simpa using hξ))).continuous
+      fun y hy ↦ by simp [cov.apply_eq_zero_of_notMem_closure hy]
   have hpt : (fun x ↦ ⟪hD.formalAdjoint cov η x, ξ x⟫) = fun x ↦
       ⟪cov.formalAdjoint (leviCivitaConnection I M) η x, ξ x⟫ +
         ((η x).hilbertSchmidtInner (D ξ x) - (η x).hilbertSchmidtInner (cov ξ x)) := by
@@ -333,13 +390,10 @@ theorem eq_formalAdjoint_of_forall_integral_inner_eq (hcov : cov.IsMetricCompati
     refine ContMDiffSection.eq_zero_of_forall_integral_inner_eq_zero
       (μ := riemannianVolume I M) fun t ht ↦ ?_
     rw [ContMDiffSection.tsupport_def] at ht
-    have hoff {y : M} (hy : y ∉ closure {x | t x ≠ 0}) : t y = 0 := by
-      by_contra h
-      exact hy (subset_closure h)
     have hint {f : Π x : M, V x} (hf : CMDiff ∞ (T% f)) :
         Integrable (fun x ↦ ⟪f x, t x⟫) (riemannianVolume I M) :=
-      (hf.inner_bundle t.contMDiff).continuous.integrable_of_hasCompactSupport
-        (.intro' ht isClosed_closure fun y hy ↦ by simp [hoff hy])
+      integrable_of_eq_zero_off ht (hf.inner_bundle t.contMDiff).continuous
+        fun y hy ↦ by simp [Bundle.apply_eq_zero_of_notMem_closure hy]
     have hut (x : M) : ⟪t x, u x⟫ = ⟪s x, t x⟫ - ⟪hD.formalAdjoint cov η x, t x⟫ := by
       simp only [u, ContMDiffSection.coeFn_mk, Pi.sub_apply, inner_sub_right, real_inner_comm]
     simp only [hut]
