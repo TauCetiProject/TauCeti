@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
+public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Homotopy
 public import TauCeti.Geometry.Manifold.DeRham.Map
 public import TauCeti.Geometry.Manifold.DifferentialForm.HomotopyOperator
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Stabilizer
 
 /-!
 # The flux of a diffeotopy
@@ -29,14 +31,21 @@ Hence the flux form is closed whenever the final diffeomorphism `φ₁` preserve
 class is the **flux** `Flux(φ) ∈ H¹_dR(M)`. Only the endpoint condition is needed for this; the
 intermediate diffeomorphisms of a symplectic isotopy also preserve `σ`, but that is not used here.
 
-For an exact form `σ = dθ` the flux depends only on the final diffeomorphism: it is the class of
-the closed form `φ₁^* θ - θ` (`TauCeti.Diffeotopy.flux_mextDerivₗ`). In particular a
+For an exact form `σ = dθ` the flux form is `φ₁^* θ - θ - d g` for some smooth function `g`
+which vanishes at the points that the diffeotopy never moves
+(`TauCeti.Diffeotopy.exists_fluxForm_mextDerivₗ_eq`); the proof constructs `g` as
+`x ↦ ∫₀¹ θ(∂ₜ φ_t x) dt`. So the flux depends only on the final
+diffeomorphism: it is the class of the closed form `φ₁^* θ - θ`
+(`TauCeti.Diffeotopy.flux_mextDerivₗ`). In particular a
 diffeotopy whose final diffeomorphism is the identity has zero flux for an exact form
 (`TauCeti.Diffeotopy.flux_eq_zero_of_final_eq_refl`).
 
 Conjugating a diffeotopy by a diffeomorphism `f` transports its flux along `f`
 (`TauCeti.Diffeotopy.flux_transDiffeomorph`); the corresponding naturality of the homotopy
-operator is `TauCeti.homotopyOperator_mpullback_prodMap_id`.
+operator is `TauCeti.homotopyOperator_mpullback_prodMap_id`. More generally, if a smooth map
+`g : M' → M`, not necessarily a diffeomorphism, intertwines diffeotopies `φ'_t` of `M'` and `φ_t`
+of `M`, `g ∘ φ'_t = φ_t ∘ g`, then the flux of `φ'_t` for `g^* σ` is the pullback along `g` of the
+flux of `φ_t` for `σ` (`TauCeti.Diffeotopy.flux_mpullback_of_semiconj`).
 
 The flux depends only on the homotopy class of the motion relative to both time ends: if a smooth
 map `G : (M × [0, 1]) × [0, 1] → M` joins the motions of two diffeotopies and satisfies
@@ -58,6 +67,8 @@ whose terms at the time ends vanish because `G` is stationary in `s` there.
   vectors.
 * `TauCeti.Diffeotopy.mextDerivₗ_fluxForm`: `d (Flux φ) = φ₁^* σ - σ` for closed `σ`.
 * `TauCeti.Diffeotopy.flux_refl`: the constant diffeotopy has zero flux.
+* `TauCeti.Diffeotopy.exists_fluxForm_mextDerivₗ_eq`: for `σ = dθ`, the flux form is
+  `φ₁^* θ - θ - d g` for a function `g` vanishing where the diffeotopy is stationary.
 * `TauCeti.Diffeotopy.flux_mextDerivₗ`: for `σ = dθ`, the flux is the class of `φ₁^* θ - θ`.
 * `TauCeti.Diffeotopy.flux_eq_of_final_eq`: for exact `σ`, diffeotopies with the same final
   diffeomorphism have the same flux.
@@ -65,10 +76,15 @@ whose terms at the time ends vanish because `G` is stationary in `s` there.
   diffeomorphism.
 * `TauCeti.Diffeotopy.flux_transDiffeomorph_of_mem_diffeomorphStabilizer`: its specialization
   to a self-diffeomorphism preserving `σ`.
+* `TauCeti.Diffeotopy.fluxForm_mpullback_of_semiconj`,
+  `TauCeti.Diffeotopy.flux_mpullback_of_semiconj`: naturality of the flux form and of the flux
+  under smooth maps intertwining two diffeotopies.
 * `TauCeti.Diffeotopy.fluxForm_sub_fluxForm_mem_exactForms`: homotopy invariance of the flux
   form relative to both time ends.
 * `TauCeti.Diffeotopy.flux_eq_of_homotopy`: diffeotopies whose motions are homotopic relative to
   both time ends have the same flux.
+* `TauCeti.Diffeotopy.Homotopic.flux_eq`: the same for homotopic diffeotopies
+  (`TauCeti.Diffeotopy.Homotopic`).
 * `TauCeti.Diffeotopy.flux_eq_zero_of_homotopy_refl`: a diffeotopy homotopic relative to both time
   ends to the constant one has zero flux.
 
@@ -103,14 +119,14 @@ the motion `(x, t) ↦ φ_t x`. It is `∫₀¹ φ_t^* (ι_{X_t} σ) dt` for the
 diffeotopy. -/
 def fluxForm (σ : SmoothForm J M ℝ 2) : SmoothForm J M ℝ 1 :=
   have : IsManifold J ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) M := IsManifold.of_le (n := ∞) (by simp)
-  ⟨homotopyOperator (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap σ).1,
+  ⟨homotopyOperator (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap σ).val,
     (IsSmoothForm.homotopyOperator (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap
       σ).isSmoothForm).mem_smoothBundleForms⟩
 
 /-- The flux form is the homotopy operator of the pullback of `σ` to the cylinder. -/
 theorem coe_fluxForm (σ : SmoothForm J M ℝ 2) :
-    (Φ.fluxForm σ).1 =
-      homotopyOperator (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap σ).1 :=
+    (Φ.fluxForm σ).val =
+      homotopyOperator (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap σ).val :=
   (rfl)
 
 /-- The flux form of the zero form vanishes. -/
@@ -140,9 +156,9 @@ theorem fluxForm_smul (c : ℝ) (σ : SmoothForm J M ℝ 2) :
 of the contraction of `σ` with the time derivative `∂ₜ φ_t x` of the motion, composed with the
 spatial derivative of the motion. -/
 theorem fluxForm_apply (σ : SmoothForm J M ℝ 2) (x : M) :
-    (Φ.fluxForm σ).1 x = intervalIntegral (E := E [⋀^Fin 1]→L[ℝ] ℝ) (fun t ↦
+    (Φ.fluxForm σ).val x = intervalIntegral (E := E [⋀^Fin 1]→L[ℝ] ℝ) (fun t ↦
       (ContinuousAlternatingMap.curryLeft (E := E)
-        (σ.1 (Φ.cylinderMap (x, projIcc 0 1 zero_le_one t)) : E [⋀^Fin 2]→L[ℝ] ℝ)
+        (σ.val (Φ.cylinderMap (x, projIcc 0 1 zero_le_one t)) : E [⋀^Fin 2]→L[ℝ] ℝ)
         (mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap (x, projIcc 0 1 zero_le_one t)
           ((0 : E), (1 : TangentSpace (𝓡∂ 1) (projIcc 0 1 zero_le_one t))))).compContinuousLinearMap
         ((mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap (x, projIcc 0 1 zero_le_one t) :
@@ -164,12 +180,12 @@ time derivative `∂ₜ φ_t x` of the motion followed by the spatial derivative
 theorem curryLeft_mfderiv_cylinderMap_apply (σ : SmoothForm J M ℝ 2) (p : M × unitInterval)
     (v : Fin 1 → E) :
     (ContinuousAlternatingMap.curryLeft (E := E)
-        (σ.1 (Φ.cylinderMap p) : E [⋀^Fin 2]→L[ℝ] ℝ)
+        (σ.val (Φ.cylinderMap p) : E [⋀^Fin 2]→L[ℝ] ℝ)
         (mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p
           ((0 : E), (1 : TangentSpace (𝓡∂ 1) p.2)))).compContinuousLinearMap
         ((mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p :
           E × EuclideanSpace ℝ (Fin 1) →L[ℝ] E).comp (.inl ℝ E (EuclideanSpace ℝ (Fin 1)))) v =
-      σ.1 (Φ.cylinderMap p) (Matrix.vecCons
+      σ.val (Φ.cylinderMap p) (Matrix.vecCons
         (mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p ((0 : E), (1 : TangentSpace (𝓡∂ 1) p.2)))
         fun i ↦ mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p
           ((v i : E), (0 : EuclideanSpace ℝ (Fin 1)))) :=
@@ -207,10 +223,10 @@ gives the pullback by the final diffeomorphism and the form itself. -/
 private theorem mpullback_slice_one_sub_mpullback_slice_zero {k : ℕ} (ψ : SmoothForm J M ℝ k)
     (x : M) :
     mpullback J (J.prod (𝓡∂ 1)) (fun y ↦ (y, 1))
-        (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap ψ).1 x -
+        (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap ψ).val x -
       mpullback J (J.prod (𝓡∂ 1)) (fun y ↦ (y, 0))
-        (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap ψ).1 x =
-      (SmoothForm.mpullback Φ.final Φ.final.contMDiff ψ).1 x - ψ.1 x := by
+        (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap ψ).val x =
+      (SmoothForm.mpullback Φ.final Φ.final.contMDiff ψ).val x - ψ.val x := by
   rw [← SmoothForm.coe_mpullback (fun y ↦ (y, 1)) (contMDiff_id.prodMk contMDiff_const),
     ← SmoothForm.coe_mpullback (fun y ↦ (y, 0)) (contMDiff_id.prodMk contMDiff_const),
     mpullback_slice_one_mpullback_cylinderMap, mpullback_slice_zero_mpullback_cylinderMap]
@@ -221,8 +237,8 @@ diffeomorphism and `σ`: `d (Flux φ) = φ₁^* σ - σ`. -/
 theorem mextDerivₗ_fluxForm {σ : SmoothForm J M ℝ 2} (hσ : SmoothForm.IsClosed σ) :
     mextDerivₗ J 1 (Φ.fluxForm σ) = SmoothForm.mpullback Φ.final Φ.final.contMDiff σ - σ := by
   set φ := SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap σ
-  have hφ : IsSmoothForm (J.prod (𝓡∂ 1)) 1 φ.1 := φ.isSmoothForm.of_le (by simp)
-  have hclosed : mextDeriv φ.1 = 0 :=
+  have hφ : IsSmoothForm (J.prod (𝓡∂ 1)) 1 φ.val := φ.isSmoothForm.of_le (by simp)
+  have hclosed : mextDeriv φ.val = 0 :=
     (SmoothForm.isClosed_def _).mp (hσ.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap)
   apply Subtype.ext
   funext x
@@ -240,18 +256,18 @@ theorem fluxForm_mem_closedForms {σ : SmoothForm J M ℝ 2} (hσ : SmoothForm.I
 /-- The **flux** of a diffeotopy `φ` with respect to a closed two-form `σ` preserved by its final
 diffeomorphism: the de Rham class of the closed flux form `∫₀¹ φ_t^* (ι_{X_t} σ) dt`. For a
 symplectic form `σ` and a symplectic isotopy this is the flux of the isotopy. -/
-def flux (σ : closedForms J M 2) (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1) :
+def flux (σ : closedForms J M 2) (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.val) :
     deRhamCohomology J M 1 :=
   deRhamCohomology.mk J 1
-    ⟨Φ.fluxForm σ.1, Φ.fluxForm_mem_closedForms
-      ((SmoothForm.isClosed_def _).mpr ((mem_closedForms J σ.1).mp σ.2)) hΦ⟩
+    ⟨Φ.fluxForm σ.val, Φ.fluxForm_mem_closedForms
+      ((SmoothForm.isClosed_def _).mpr ((mem_closedForms J σ.val).mp σ.property)) hΦ⟩
 
 /-- The flux is the de Rham class of the flux form. -/
 theorem flux_def (σ : closedForms J M 2)
-    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1) :
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.val) :
     Φ.flux σ hΦ = deRhamCohomology.mk J 1
-      ⟨Φ.fluxForm σ.1, Φ.fluxForm_mem_closedForms
-      ((SmoothForm.isClosed_def _).mpr ((mem_closedForms J σ.1).mp σ.2)) hΦ⟩ :=
+      ⟨Φ.fluxForm σ.val, Φ.fluxForm_mem_closedForms
+      ((SmoothForm.isClosed_def _).mpr ((mem_closedForms J σ.val).mp σ.property)) hΦ⟩ :=
   (rfl)
 
 /-! ### The constant diffeotopy -/
@@ -268,34 +284,52 @@ theorem fluxForm_refl (σ : SmoothForm J M ℝ 2) : (refl J ∞ M).fluxForm σ =
 /-- The constant diffeotopy has zero flux. -/
 @[simp]
 theorem flux_refl (σ : closedForms J M 2)
-    (h : (refl J ∞ M).final ∈ SmoothForm.diffeomorphStabilizer σ.1) :
+    (h : (refl J ∞ M).final ∈ SmoothForm.diffeomorphStabilizer σ.val) :
     (refl J ∞ M).flux σ h = 0 := by
   rw [flux_def, deRhamCohomology.mk_eq_zero_iff]
   simp only [fluxForm_refl, zero_mem]
 
 /-! ### Exact forms -/
 
+/-- **The flux form of an exact form.** For an exact two-form `dθ`, the flux form is
+`φ₁^* θ - θ - d g` for some smooth function `g` vanishing at every point which no map of the
+diffeotopy moves. The proof takes `g x = ∫₀¹ θ(∂ₜ φ_t x) dt`, the homotopy operator of the
+pullback of `θ` along the motion. -/
+theorem exists_fluxForm_mextDerivₗ_eq (θ : SmoothForm J M ℝ 1) :
+    ∃ g : SmoothForm J M ℝ 0, (∀ x, (∀ t, Φ (t, x) = x) → g.val x = 0) ∧
+      Φ.fluxForm (mextDerivₗ J 1 θ) =
+        SmoothForm.mpullback Φ.final Φ.final.contMDiff θ - θ - mextDerivₗ J 0 g := by
+  have : IsManifold J ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) M := IsManifold.of_le (n := ∞) (by simp)
+  set φ := SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap θ with hφ_def
+  refine ⟨⟨homotopyOperator φ.val,
+    (IsSmoothForm.homotopyOperator φ.isSmoothForm).mem_smoothBundleForms⟩, fun x hx ↦ ?_,
+    Subtype.ext (funext fun x ↦ ?_)⟩
+  · -- Over a point which is never moved, the motion is stationary in time.
+    have h0 := homotopyOperator_mpullback_apply_eq_zero (I := J) (f := Φ.cylinderMap)
+      (fun t ↦ (Φ.cylinderMap_apply (x, t)).trans (hx t)) θ.val
+    rwa [← SmoothForm.coe_mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap, ← hφ_def] at h0
+  -- The homotopy formula for the motion, whose ends are `φ₁` and the identity.
+  have key := congrFun
+    (mextDeriv_homotopyOperator_mpullback_add_homotopyOperator_mpullback_mextDeriv
+      (Φ.contMDiff_cylinderMap.of_le (by simp)) (θ.isSmoothForm.of_le (by simp))) x
+  have h₁ : (fun y ↦ Φ.cylinderMap (y, 1)) = Φ.final := Φ.cylinderMap_comp_one
+  have h₀ : (fun y ↦ Φ.cylinderMap (y, 0)) = id := Φ.cylinderMap_comp_zero
+  rw [Pi.add_apply, Pi.sub_apply, h₁, h₀, mpullback_id, ← mextDerivₗ_apply,
+    ← SmoothForm.coe_mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap,
+    ← SmoothForm.coe_mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap, ← hφ_def,
+    ← SmoothForm.coe_mpullback Φ.final Φ.final.contMDiff] at key
+  rw [Submodule.coe_sub, Pi.sub_apply, Submodule.coe_sub, Pi.sub_apply, mextDerivₗ_apply, ← key,
+    coe_fluxForm]
+  abel
+
 /-- For an exact two-form `dθ`, the flux form differs from `φ₁^* θ - θ` by an exact form, namely
-`-d g` for the function `g x = ∫₀¹ θ(∂ₜ φ_t x) dt`. -/
+`-d g` for a smooth function `g` (`TauCeti.Diffeotopy.exists_fluxForm_mextDerivₗ_eq`). -/
 theorem fluxForm_mextDerivₗ_sub_mem_exactForms (θ : SmoothForm J M ℝ 1) :
     Φ.fluxForm (mextDerivₗ J 1 θ) - (SmoothForm.mpullback Φ.final Φ.final.contMDiff θ - θ) ∈
       exactForms J M 1 := by
-  have : IsManifold J ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) M := IsManifold.of_le (n := ∞) (by simp)
-  set φ := SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap θ
-  have hφ : IsSmoothForm (J.prod (𝓡∂ 1)) 1 φ.1 := φ.isSmoothForm.of_le (by simp)
-  have hd : mextDeriv φ.1 =
-      (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap (mextDerivₗ J 1 θ)).1 := by
-    rw [← SmoothForm.mextDerivₗ_mpullback, mextDerivₗ_apply]
+  obtain ⟨g, -, hg⟩ := Φ.exists_fluxForm_mextDerivₗ_eq θ
   rw [exactForms_succ]
-  refine ⟨-⟨homotopyOperator φ.1,
-    (IsSmoothForm.homotopyOperator φ.isSmoothForm).mem_smoothBundleForms⟩,
-    Subtype.ext (funext fun x ↦ ?_)⟩
-  -- The cochain-homotopy identity for `φ = Φ^* θ` on the cylinder, with `d φ = Φ^* (d θ)`.
-  have key := mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv hφ x
-  rw [hd, mpullback_slice_one_sub_mpullback_slice_zero] at key
-  rw [map_neg, Submodule.coe_neg, Pi.neg_apply, mextDerivₗ_apply, Submodule.coe_sub, Pi.sub_apply,
-    Submodule.coe_sub, Pi.sub_apply, ← key, coe_fluxForm]
-  abel
+  exact ⟨-g, by rw [map_neg, hg, sub_sub_cancel_left]⟩
 
 /-- **The flux of an exact form.** For `σ = dθ`, the flux of a diffeotopy whose final
 diffeomorphism `φ₁` preserves `σ` is the class of the closed form `φ₁^* θ - θ`. In particular it
@@ -312,9 +346,9 @@ theorem flux_mextDerivₗ (θ : SmoothForm J M ℝ 1)
 /-- For an exact two-form, two diffeotopies with the same final diffeomorphism have the same
 flux. -/
 theorem flux_eq_of_final_eq {Ψ : Diffeotopy J ∞ M} (σ : closedForms J M 2)
-    (hσ : σ.1 ∈ exactForms J M 2) (h : Φ.final = Ψ.final)
-    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1)
-    (hΨ : Ψ.final ∈ SmoothForm.diffeomorphStabilizer σ.1) :
+    (hσ : σ.val ∈ exactForms J M 2) (h : Φ.final = Ψ.final)
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (hΨ : Ψ.final ∈ SmoothForm.diffeomorphStabilizer σ.val) :
     Φ.flux σ hΦ = Ψ.flux σ hΨ := by
   obtain ⟨σ, hσc⟩ := σ
   rw [exactForms_succ] at hσ
@@ -325,11 +359,62 @@ theorem flux_eq_of_final_eq {Ψ : Diffeotopy J ∞ M} (σ : closedForms J M 2)
 
 /-- For an exact two-form, a diffeotopy whose final diffeomorphism is the identity has zero
 flux. -/
-theorem flux_eq_zero_of_final_eq_refl (σ : closedForms J M 2) (hσ : σ.1 ∈ exactForms J M 2)
+theorem flux_eq_zero_of_final_eq_refl (σ : closedForms J M 2) (hσ : σ.val ∈ exactForms J M 2)
     (h : Φ.final = Diffeomorph.refl J M ∞)
-    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1) : Φ.flux σ hΦ = 0 := by
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.val) : Φ.flux σ hΦ = 0 := by
   have h' : Φ.final = (refl J ∞ M).final := h.trans final_refl.symm
   rw [Φ.flux_eq_of_final_eq σ hσ h' hΦ (h' ▸ hΦ), flux_refl]
+
+/-! ### Naturality under intertwining maps -/
+
+section Semiconj
+
+variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J' : ModelWithCorners ℝ E' H'} {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
+  [IsManifold J' ∞ M'] {Φ' : Diffeotopy J' ∞ M'} {g : M' → M}
+
+/-- **Naturality of the flux form under intertwining maps.** If a smooth map `g : M' → M`
+intertwines a diffeotopy `φ'_t` of `M'` with the diffeotopy `φ_t` of `M`, `g ∘ φ'_t = φ_t ∘ g` for
+every `t`, then the flux form of `φ'_t` for the pullback `g^* σ` is the pullback along `g` of the
+flux form of `φ_t` for `σ`. The map `g` need not be a diffeomorphism; the projections of a product
+onto its factors are the main examples. -/
+theorem fluxForm_mpullback_of_semiconj (hg : ContMDiff J' J ∞ g)
+    (h : ∀ t, Function.Semiconj g (Φ'.timeSlice t) (Φ.timeSlice t)) (σ : SmoothForm J M ℝ 2) :
+    Φ'.fluxForm (SmoothForm.mpullback g hg σ) = SmoothForm.mpullback g hg (Φ.fluxForm σ) := by
+  have hg' : MDifferentiable J' J g := hg.mdifferentiable (by simp)
+  have hcyl' : MDifferentiable (J'.prod (𝓡∂ 1)) J' Φ'.cylinderMap :=
+    Φ'.contMDiff_cylinderMap.mdifferentiable (by simp)
+  have hcyl : MDifferentiable (J.prod (𝓡∂ 1)) J Φ.cylinderMap :=
+    Φ.contMDiff_cylinderMap.mdifferentiable (by simp)
+  have hprod : MDifferentiable (J'.prod (𝓡∂ 1)) (J.prod (𝓡∂ 1))
+      (Prod.map g (id : unitInterval → unitInterval)) :=
+    (hg.prodMap contMDiff_id).mdifferentiable (by simp)
+  apply Subtype.ext
+  rw [coe_fluxForm, SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
+    ← TauCeti.mpullback_comp hcyl' hg', Φ.comp_cylinderMap_of_semiconj h,
+    TauCeti.mpullback_comp hprod hcyl,
+    ← SmoothForm.coe_mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap σ,
+    homotopyOperator_mpullback_prodMap_id_of_isSmoothForm hg'
+      ((SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap σ).isSmoothForm.of_le
+        (by simp)),
+    SmoothForm.coe_mpullback g hg, coe_fluxForm]
+
+/-- **Naturality of the flux under intertwining maps.** If a smooth map `g : M' → M` intertwines
+a diffeotopy `φ'_t` of `M'` with the diffeotopy `φ_t` of `M` at every time, then the flux of `φ'_t`
+for the closed form `g^* σ` is the pullback along `g` of the flux of `φ_t` for `σ`. -/
+theorem flux_mpullback_of_semiconj (hg : ContMDiff J' J ∞ g)
+    (h : ∀ t, Function.Semiconj g (Φ'.timeSlice t) (Φ.timeSlice t)) (σ : closedForms J M 2)
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (hΦ' : Φ'.final ∈ SmoothForm.diffeomorphStabilizer (closedForms.mpullback g hg 2 σ).val) :
+    Φ'.flux (closedForms.mpullback g hg 2 σ) hΦ' =
+      deRhamCohomology.map g hg 1 (Φ.flux σ hΦ) := by
+  rw [flux_def, flux_def, deRhamCohomology.map_mk]
+  congr 1
+  apply Subtype.ext
+  simp only [closedForms.coe_mpullback]
+  exact Φ.fluxForm_mpullback_of_semiconj hg h σ.val
+
+end Semiconj
 
 /-! ### Naturality -/
 
@@ -343,14 +428,8 @@ theorem final_transDiffeomorph_mem_diffeomorphStabilizer_iff (f : M ≃ₘ⟮J, 
     (σ : SmoothForm J P ℝ 2) :
     (Φ.transDiffeomorph f).final ∈ SmoothForm.diffeomorphStabilizer σ ↔
       Φ.final ∈ SmoothForm.diffeomorphStabilizer (SmoothForm.mpullback f f.contMDiff σ) := by
-  rw [SmoothForm.mem_diffeomorphStabilizer, SmoothForm.mem_diffeomorphStabilizer,
-    final_transDiffeomorph, SmoothForm.mpullback_trans, SmoothForm.mpullback_trans]
-  constructor
-  · intro h
-    have h' := congrArg (SmoothForm.mpullback f f.contMDiff) h
-    rwa [SmoothForm.mpullback_mpullback_symm] at h'
-  · intro h
-    rw [h, SmoothForm.mpullback_symm_mpullback]
+  rw [final_transDiffeomorph, ← Diffeomorph.diffCongr_apply]
+  exact Diffeomorph.diffCongr_mem_diffeomorphStabilizer_iff f rfl
 
 /-- **Naturality of the flux form.** Conjugating a diffeotopy by a diffeomorphism `f` transports
 its flux form: the flux form of `f ∘ φ_t ∘ f⁻¹` for `σ` is the pullback along `f⁻¹` of the flux
@@ -358,24 +437,16 @@ form of `φ_t` for `f^* σ`. -/
 theorem fluxForm_transDiffeomorph (f : M ≃ₘ⟮J, J⟯ P) (σ : SmoothForm J P ℝ 2) :
     (Φ.transDiffeomorph f).fluxForm σ = SmoothForm.mpullback f.symm f.symm.contMDiff
       (Φ.fluxForm (SmoothForm.mpullback f f.contMDiff σ)) := by
-  have hf : MDifferentiable J J f := f.mdifferentiable (by simp)
-  have hcyl : MDifferentiable (J.prod (𝓡∂ 1)) J Φ.cylinderMap :=
-    Φ.contMDiff_cylinderMap.mdifferentiable (by simp)
-  have hprod : MDifferentiable (J.prod (𝓡∂ 1)) (J.prod (𝓡∂ 1))
-      (Prod.map f.symm (id : unitInterval → unitInterval)) :=
-    (f.symm.contMDiff.prodMap contMDiff_id).mdifferentiable (by simp)
-  apply Subtype.ext
-  rw [coe_fluxForm, SmoothForm.coe_mpullback, cylinderMap_transDiffeomorph,
-    TauCeti.mpullback_comp (hcyl.comp hprod) hf, TauCeti.mpullback_comp hprod hcyl,
-    homotopyOperator_mpullback_prodMap_id (f.symm.mdifferentiable (by simp))
-      fun _ ↦ f.symm.isInvertible_mfderiv (by simp),
-    SmoothForm.coe_mpullback, coe_fluxForm, SmoothForm.coe_mpullback, SmoothForm.coe_mpullback]
+  rw [← Φ.fluxForm_mpullback_of_semiconj f.symm.contMDiff
+      (Φ.semiconj_symm_timeSlice_transDiffeomorph f), SmoothForm.mpullback_symm_mpullback]
 
 /-- **Naturality of the flux.** The flux of a diffeotopy conjugated by a diffeomorphism `f` is
 the pullback along `f⁻¹` of the flux of the original diffeotopy for `f^* σ`. -/
 theorem flux_transDiffeomorph (f : M ≃ₘ⟮J, J⟯ P) (σ : closedForms J P 2)
-    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer (closedForms.mpullback f f.contMDiff 2 σ).1) :
-    (Φ.transDiffeomorph f).flux σ ((Φ.final_transDiffeomorph_mem_diffeomorphStabilizer_iff f σ.1).2
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer (closedForms.mpullback f f.contMDiff 2 σ).val)
+        :
+    (Φ.transDiffeomorph f).flux σ ((Φ.final_transDiffeomorph_mem_diffeomorphStabilizer_iff f
+        σ.val).2
         (by rwa [← closedForms.coe_mpullback])) =
       deRhamCohomology.map f.symm f.symm.contMDiff 1
         (Φ.flux (closedForms.mpullback f f.contMDiff 2 σ) hΦ) := by
@@ -383,21 +454,21 @@ theorem flux_transDiffeomorph (f : M ≃ₘ⟮J, J⟯ P) (σ : closedForms J P 2
   congr 1
   apply Subtype.ext
   simp only [closedForms.coe_mpullback]
-  exact Φ.fluxForm_transDiffeomorph f σ.1
+  exact Φ.fluxForm_transDiffeomorph f σ.val
 
 /-- **Naturality of the flux under diffeomorphisms preserving `σ`.** Conjugating a diffeotopy by
 a diffeomorphism `f` preserving `σ` transports its flux by the pullback along `f⁻¹`. -/
 theorem flux_transDiffeomorph_of_mem_diffeomorphStabilizer {σ : closedForms J M 2}
-    {f : M ≃ₘ⟮J, J⟯ M} (hf : f ∈ SmoothForm.diffeomorphStabilizer σ.1)
-    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1)
-    (h : (Φ.transDiffeomorph f).final ∈ SmoothForm.diffeomorphStabilizer σ.1) :
+    {f : M ≃ₘ⟮J, J⟯ M} (hf : f ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (h : (Φ.transDiffeomorph f).final ∈ SmoothForm.diffeomorphStabilizer σ.val) :
     (Φ.transDiffeomorph f).flux σ h =
       deRhamCohomology.map f.symm f.symm.contMDiff 1 (Φ.flux σ hΦ) := by
   have hpull : closedForms.mpullback f f.contMDiff 2 σ = σ :=
     Subtype.ext ((closedForms.coe_mpullback f f.contMDiff 2 σ).trans
       (SmoothForm.mem_diffeomorphStabilizer.1 hf))
   -- The flux only depends on the form, not on the proof that `Φ.final` preserves it.
-  have key : ∀ (τ : closedForms J M 2) (h' : Φ.final ∈ SmoothForm.diffeomorphStabilizer τ.1),
+  have key : ∀ (τ : closedForms J M 2) (h' : Φ.final ∈ SmoothForm.diffeomorphStabilizer τ.val),
       τ = σ → Φ.flux τ h' = Φ.flux σ hΦ := by
     rintro _ _ rfl
     rfl
@@ -430,26 +501,26 @@ theorem fluxForm_sub_fluxForm_mem_exactForms {σ : SmoothForm J M ℝ 2}
       fun p : M × unitInterval ↦ (p, s) :=
     (contMDiff_id.prodMk contMDiff_const).mdifferentiable (n := 1) one_ne_zero
   have hG' : MDifferentiable ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) J G := hG.mdifferentiable (by simp)
-  have hτ₀ : mpullback (J.prod (𝓡∂ 1)) ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) (fun p ↦ (p, 0)) τ.1 =
-      (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap σ).1 := by
+  have hτ₀ : mpullback (J.prod (𝓡∂ 1)) ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) (fun p ↦ (p, 0)) τ.val =
+      (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap σ).val := by
     rw [SmoothForm.coe_mpullback, ← TauCeti.mpullback_comp (hslice 0) hG',
       show G ∘ (fun p ↦ (p, 0)) = Φ.cylinderMap from funext hG₀, SmoothForm.coe_mpullback]
-  have hτ₁ : mpullback (J.prod (𝓡∂ 1)) ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) (fun p ↦ (p, 1)) τ.1 =
-      (SmoothForm.mpullback Ψ.cylinderMap Ψ.contMDiff_cylinderMap σ).1 := by
+  have hτ₁ : mpullback (J.prod (𝓡∂ 1)) ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) (fun p ↦ (p, 1)) τ.val =
+      (SmoothForm.mpullback Ψ.cylinderMap Ψ.contMDiff_cylinderMap σ).val := by
     rw [SmoothForm.coe_mpullback, ← TauCeti.mpullback_comp (hslice 1) hG',
       show G ∘ (fun p ↦ (p, 1)) = Ψ.cylinderMap from funext hG₁, SmoothForm.coe_mpullback]
   -- Over both ends of the inner cylinder `G` is stationary in `s`, so `h_s τ` vanishes there.
   have hend {c : unitInterval} {g : M → M} (hc : ∀ x s, G ((x, c), s) = g x) :
-      mpullback J (J.prod (𝓡∂ 1)) (fun x ↦ (x, c)) (homotopyOperator τ.1) = 0 :=
+      mpullback J (J.prod (𝓡∂ 1)) (fun x ↦ (x, c)) (homotopyOperator τ.val) = 0 :=
     funext fun x ↦ mpullback_apply_eq_zero <| by
       rw [SmoothForm.coe_mpullback]
-      exact homotopyOperator_mpullback_apply_eq_zero (hc x) σ.1
+      exact homotopyOperator_mpullback_apply_eq_zero (hc x) σ.val
   -- So the homotopy operators of the two slices of `τ` differ by `-d (h (h τ))`.
   have key := mextDeriv_homotopyOperator_homotopyOperator (I := J) (k := 0)
     (τ.isSmoothForm.of_le (by simp)) ((SmoothForm.isClosed_def _).mp (hσ.mpullback G hG))
   rw [hτ₀, hτ₁, hend h₀, hend h₁, sub_self, zero_sub] at key
   rw [exactForms_succ]
-  refine ⟨-⟨homotopyOperator (homotopyOperator τ.1), (IsSmoothForm.homotopyOperator
+  refine ⟨-⟨homotopyOperator (homotopyOperator τ.val), (IsSmoothForm.homotopyOperator
     (IsSmoothForm.homotopyOperator τ.isSmoothForm)).mem_smoothBundleForms⟩,
     Subtype.ext ?_⟩
   -- The flux forms are `h (Ψ^* σ)` and `h (Φ^* σ)`.
@@ -460,21 +531,30 @@ theorem fluxForm_sub_fluxForm_mem_exactForms {σ : SmoothForm J M ℝ 2}
 fixing both time ends have the same flux with respect to every closed two-form preserved by their
 common final diffeomorphism. -/
 theorem flux_eq_of_homotopy (σ : closedForms J M 2)
-    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1)
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.val)
     (hG : ContMDiff ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) J ∞ G)
     (hG₀ : ∀ p, G (p, 0) = Φ.cylinderMap p) (hG₁ : ∀ p, G (p, 1) = Ψ.cylinderMap p)
     (h₀ : ∀ x s, G ((x, 0), s) = x) (h₁ : ∀ x s, G ((x, 1), s) = Φ.final x) :
     Ψ.flux σ (Φ.final_eq_of_homotopy hG₁ h₁ ▸ hΦ) = Φ.flux σ hΦ := by
   rw [flux_def, flux_def, ← sub_eq_zero, ← map_sub, deRhamCohomology.mk_eq_zero_iff]
   exact Φ.fluxForm_sub_fluxForm_mem_exactForms
-    ((SmoothForm.isClosed_def _).mpr ((mem_closedForms J σ.1).mp σ.2)) hG hG₀ hG₁ h₀ h₁
+    ((SmoothForm.isClosed_def _).mpr ((mem_closedForms J σ.val).mp σ.property)) hG hG₀ hG₁ h₀ h₁
+
+variable {Φ} in
+/-- **Homotopic diffeotopies have the same flux** (`TauCeti.Diffeotopy.Homotopic`) with respect to
+every closed two-form preserved by their common final diffeomorphism. -/
+theorem Homotopic.flux_eq (σ : closedForms J M 2) (h : Φ.Homotopic Ψ)
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (hΨ : Ψ.final ∈ SmoothForm.diffeomorphStabilizer σ.val) : Φ.flux σ hΦ = Ψ.flux σ hΨ := by
+  obtain ⟨G, -, hG, hG₀, hG₁, h₀, h₁, -⟩ := homotopic_iff.mp h
+  exact (Φ.flux_eq_of_homotopy σ hΦ hG hG₀ hG₁ h₀ h₁).symm
 
 /-- A diffeotopy whose motion is homotopic, through a smooth homotopy fixing both time ends, to the
 constant motion has zero flux with respect to every closed two-form. Its final diffeomorphism is
 then the identity, so this applies to the loops of diffeomorphisms that are contractible relative
 to their ends. -/
 theorem flux_eq_zero_of_homotopy_refl (σ : closedForms J M 2)
-    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1)
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.val)
     (hG : ContMDiff ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) J ∞ G)
     (hG₀ : ∀ p, G (p, 0) = Φ.cylinderMap p) (hG₁ : ∀ p, G (p, 1) = p.1)
     (h₀ : ∀ x s, G ((x, 0), s) = x) (h₁ : ∀ x s, G ((x, 1), s) = x) :

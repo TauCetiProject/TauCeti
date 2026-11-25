@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Interpolation
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.FrameCover
+import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Cone
 
 /-!
 # The section-space topology on Riemannian metrics
@@ -17,12 +18,16 @@ positive-definite cone in the `C^n` sections of the bundle of symmetric bilinear
 `ContMDiffSection.frameTopology` on the section space. For smooth metrics this controls
 all finite derivatives on compact coordinate sets. Covering smooth frames give the same
 topology, and the algebraic identification with positive-definite sections is a homeomorphism.
+On a compact base modelled on a locally compact space, the positive-definite cone is open, so
+`toSymmetricSection` is an open embedding
+(`Bundle.ContMDiffRiemannianMetric.isOpenEmbedding_toSymmetricSection_frameTopology`).
 
 Convex interpolation is jointly continuous in the two metrics and the interval parameter.
 This concerns positive definiteness, not positivity of scalar curvature. All results allow
-models with corners; neither compactness of the base nor a choice of background metric is
-needed. No completeness assertion for the section space, or comparison with the separate
-tangent-metric chart C² topology, is made here.
+models with corners and require no choice of background metric; compactness of the base is
+assumed only for `isOpenEmbedding_toSymmetricSection_frameTopology`. No completeness assertion
+for the section space, or comparison with the separate tangent-metric chart C² topology, is
+made here.
 
 ## References
 
@@ -58,6 +63,13 @@ sections of the symmetric bilinear bundle, in the specified smooth frames. -/
 @[instance_reducible]
 def frameTopology : TopologicalSpace (ContMDiffRiemannianMetric IB n F V) :=
   .induced toSymmetricSection (ContMDiffSection.frameTopology (I := IB) (n := n) e U hU)
+
+/-- `frameTopology` is induced from `ContMDiffSection.frameTopology` along
+`toSymmetricSection`. -/
+theorem frameTopology_eq_induced_toSymmetricSection :
+    frameTopology IB n e U hU =
+      .induced toSymmetricSection (ContMDiffSection.frameTopology (I := IB) (n := n) e U hU) :=
+  (rfl)
 
 /-- The section representation is an embedding for the section-space topology on metrics. -/
 theorem isEmbedding_toSymmetricSection_frameTopology :
@@ -108,13 +120,13 @@ def positiveDefiniteSymmetricSectionHomeomorph :
       e U hU).continuous.subtype_mk fun g ↦ g.toSymmetricSection_mem).congr
         fun g ↦ Subtype.ext (positiveDefiniteSymmetricSectionEquiv_apply g).symm
   · apply (continuous_frameTopology_iff (IB := IB) (n := n) e U hU).mpr
-    simpa using (continuous_subtype_val : Continuous
-      (fun σ : TauCeti.Manifold.positiveDefiniteSymmetricSections IB n F V ↦ σ.1))
+    simpa using (continuous_subtypeVal : Continuous
+      (fun σ : TauCeti.Manifold.positiveDefiniteSymmetricSections IB n F V ↦ σ.val))
 
 @[simp]
 theorem positiveDefiniteSymmetricSectionHomeomorph_apply
     (g : ContMDiffRiemannianMetric IB n F V) :
-    (positiveDefiniteSymmetricSectionHomeomorph e U hU g).1 = g.toSymmetricSection :=
+    (positiveDefiniteSymmetricSectionHomeomorph e U hU g).val = g.toSymmetricSection :=
   positiveDefiniteSymmetricSectionEquiv_apply g
 
 @[simp]
@@ -123,7 +135,7 @@ theorem positiveDefiniteSymmetricSectionHomeomorph_symm_apply
     let _ := ContMDiffSection.frameTopology (I := IB) (n := n) e U hU
     let _ := frameTopology IB n e U hU
     (positiveDefiniteSymmetricSectionHomeomorph (IB := IB) (n := n) e U hU).symm σ =
-      ofPositiveDefiniteSymmetricSection σ.1 σ.2 := by
+      ofPositiveDefiniteSymmetricSection σ.val σ.property := by
   let _ := ContMDiffSection.frameTopology (I := IB) (n := n) e U hU
   let _ := frameTopology IB n e U hU
   exact positiveDefiniteSymmetricSectionEquiv_symm_apply σ
@@ -167,9 +179,24 @@ theorem continuous_convexCombination_frameTopology :
   have hs := (isEmbedding_toSymmetricSection_frameTopology (IB := IB) (n := n) e U hU).continuous
   apply (continuous_frameTopology_iff (IB := IB) (n := n) e U hU).mpr
   simp only [toSymmetricSection_convexCombination]
-  exact ((continuous_const.sub (continuous_subtype_val.comp continuous_snd)).smul
+  exact ((continuous_const.sub (continuous_subtypeVal.comp continuous_snd)).smul
     (hs.comp (continuous_fst.comp continuous_fst))).add
-      ((continuous_subtype_val.comp continuous_snd).smul
+      ((continuous_subtypeVal.comp continuous_snd).smul
         (hs.comp (continuous_snd.comp continuous_fst)))
+
+/-- On a compact base (possibly with boundary or corners) modelled on a locally compact space,
+`toSymmetricSection` is an open embedding of `C^n` metrics with `frameTopology` into `C^n`
+symmetric sections with `ContMDiffSection.frameTopology`, for every regularity `n` (in particular
+`n = 2` and `n = ∞`). -/
+theorem isOpenEmbedding_toSymmetricSection_frameTopology [LocallyCompactSpace EB] [CompactSpace B]
+    (hcover : ∀ x, ∃ i, x ∈ U i) :
+    let _ := ContMDiffSection.frameTopology (I := IB) (n := n) e U hU
+    let _ := frameTopology IB n e U hU
+    IsOpenEmbedding (toSymmetricSection (IB := IB) (n := n) (F := F) (V := V)) := by
+  let _ := ContMDiffSection.frameTopology (I := IB) (n := n) e U hU
+  let _ := frameTopology IB n e U hU
+  refine ⟨isEmbedding_toSymmetricSection_frameTopology (IB := IB) (n := n) e U hU, ?_⟩
+  rw [range_toSymmetricSection]
+  exact TauCeti.Manifold.isOpen_positiveDefiniteSymmetricSections_frameTopology e U hU hcover
 
 end Bundle.ContMDiffRiemannianMetric

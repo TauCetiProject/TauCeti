@@ -67,12 +67,12 @@ variable {ι : Type v} {G : DualGraph.{u} ι} (S : Finset G.Edge) (D D' : G.Degr
 /-- The degree decoration of the piece `x` of the partial normalization of `G` at `S`, with the
 same component degrees as `D`. -/
 def cutComponent (x : (G.smoothing Sᶜ).Vertex) : (G.cutComponent S x).DegreeDecoration :=
-  ⟨fun v ↦ D.componentDegree v.1⟩
+  ⟨fun v ↦ D.componentDegree v.val⟩
 
 @[simp]
 lemma componentDegree_cutComponent (x : (G.smoothing Sᶜ).Vertex)
     (v : (G.cutComponent S x).Vertex) :
-    (D.cutComponent S x).componentDegree v = D.componentDegree v.1 :=
+    (D.cutComponent S x).componentDegree v = D.componentDegree v.val :=
   (rfl)
 
 /-- A decoration is determined by its restrictions to the pieces of a partial normalization. -/
@@ -137,7 +137,7 @@ variable [Fintype ι]
 @[simp]
 theorem weightedLogCanonicalDegree_cutComponent (x : (G.smoothing Sᶜ).Vertex)
     (v : (G.cutComponent S x).Vertex) :
-    (D.cutComponent S x).weightedLogCanonicalDegree v = D.weightedLogCanonicalDegree v.1 := by
+    (D.cutComponent S x).weightedLogCanonicalDegree v = D.weightedLogCanonicalDegree v.val := by
   rw [weightedLogCanonicalDegree_def, weightedLogCanonicalDegree_def,
     logCanonicalDegree_cutComponent, componentDegree_cutComponent]
 
@@ -147,7 +147,7 @@ decorated graph is. -/
 theorem forall_isStable_cutComponent_iff :
     (∀ x : (G.smoothing Sᶜ).Vertex, (D.cutComponent S x).IsStable) ↔ D.IsStable := by
   simp only [isStable_iff_weightedLogCanonicalDegree_pos, weightedLogCanonicalDegree_cutComponent]
-  exact ⟨fun h v ↦ h (G.smoothingVertex Sᶜ v) ⟨v, rfl⟩, fun h _ v ↦ h v.1⟩
+  exact ⟨fun h v ↦ h (G.smoothingVertex Sᶜ v) ⟨v, rfl⟩, fun h _ v ↦ h v.val⟩
 
 /-- **The numerical types of the pieces.** If the piece `x` of the partial normalization at `S`
 has genus `gₓ`, `nₓ` markings (the original ones on it and the branches of the cut nodes) and total

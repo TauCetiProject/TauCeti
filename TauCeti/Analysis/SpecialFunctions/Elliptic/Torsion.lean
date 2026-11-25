@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.AdditionTheorem
 public import TauCeti.Algebra.Module.Torsion.Snake
 public import TauCeti.LinearAlgebra.FreeModule.ModN
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TwoTorsion
 
 /-!
 # Division points under complex uniformization
@@ -17,6 +18,9 @@ For a period lattice `Λ` and a positive integer `N`, the Weierstrass point map 
 `l / N`. In the basis of the two periods this gives explicit coordinates in `(ℤ/Nℤ)²`.
 These coordinates retain the actual division points, including the point of `1/N` for
 the period pair `(τ, 1)`, rather than just an abstract classification of the torsion group.
+In particular the zeros of `℘'` are the half-periods (`PeriodPair.derivWeierstrassP_eq_zero_iff`).
+A division point `(m ω₁ + n ω₂) / N` of exact order `N` has `gcd(m, n)` prime to `N`
+(`PeriodPair.coprime_gcd_of_addOrderOf_weierstrassPoint_div`).
 
 The lattice-quotient identification uses `TauCeti.torsionByδEquiv`, the connecting
 isomorphism for multiplication by `N` on the exact sequence
@@ -41,6 +45,15 @@ This includes `n = 0`. -/
 theorem nsmul_weierstrassPoint_eq_zero_iff (n : ℕ) (z : ℂ) :
     n • L.weierstrassPoint z = 0 ↔ n • z ∈ L.lattice := by
   rw [← L.weierstrassPoint_nsmul, L.weierstrassPoint_eq_zero_iff]
+
+/-- **The zeros of `℘'` are the half-periods**: `℘'(z) = 0` exactly when `2 z ∈ Λ`. This includes
+the periods themselves, where Mathlib's `℘'` takes the value `0`. -/
+theorem derivWeierstrassP_eq_zero_iff (z : ℂ) : ℘'[L] z = 0 ↔ 2 * z ∈ L.lattice := by
+  rw [two_mul, ← two_nsmul, ← L.nsmul_weierstrassPoint_eq_zero_iff, two_nsmul]
+  by_cases hz : z ∈ L.lattice
+  · simp [L.weierstrassPoint_of_mem hz, L.derivWeierstrassP_coe ⟨z, hz⟩]
+  · rw [L.weierstrassPoint_of_notMem hz, WeierstrassCurve.Affine.Point.some_add_self_eq_zero_iff]
+    simp [WeierstrassCurve.Affine.evalEval_polynomialY]
 
 private theorem exact_lattice_weierstrassPoint :
     Function.Exact L.lattice.subtype L.weierstrassPointHom.toIntLinearMap := by
@@ -78,7 +91,7 @@ theorem coe_torsionEquivLatticeQuotient_symm_mk (l : L.lattice) :
     ⟨L.weierstrassPoint ((l : ℂ) / N), AddSubgroup.torsionBy.nsmul_iff.mpr <| by
       rw [L.nsmul_weierstrassPoint_eq_zero_iff]
       rw [← natCast_zsmul, hmul]
-      exact l.2⟩
+      exact l.property⟩
   have hP : L.torsionEquivLatticeQuotient N P = Submodule.Quotient.mk l := by
     rw [torsionEquivLatticeQuotient, TauCeti.torsionByδEquiv_apply]
     exact TauCeti.torsionByδ_eq L.exact_lattice_weierstrassPoint L.lattice.injective_subtype
@@ -154,5 +167,33 @@ theorem addOrderOf_weierstrassPoint_latticeBasis_div (i : Fin 2) :
       exact (addOrderOf_injective (LinearMap.single ℤ (fun _ : Fin 2 ↦ ZMod N) i).toAddMonoidHom
         (fun x y h ↦ by simpa [LinearMap.single_apply] using congrFun h i) 1).trans
         (ZMod.addOrderOf_one N)
+
+omit [NeZero N] in
+/-- If the division point `(m ω₁ + n ω₂) / N` has exact order `N`, then `gcd(m, n)` is prime to
+`N`: for `d = gcd(m, n, N)` the multiple `(N / d) • P` is the point of the period
+`(m ω₁ + n ω₂) / d`. At `N = 0` the hypothesis fails, since the division point is `0`. -/
+theorem coprime_gcd_of_addOrderOf_weierstrassPoint_div {m n : ℤ}
+    (h : addOrderOf (L.weierstrassPoint ((m * L.ω₁ + n * L.ω₂) / N)) = N) :
+    Nat.Coprime (Int.gcd m n) N := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · rw [Nat.cast_zero, div_zero, L.weierstrassPoint_of_mem (zero_mem _), addOrderOf_zero] at h
+    exact absurd h one_ne_zero
+  have : NeZero N := ⟨hN⟩
+  set d := Nat.gcd (Int.gcd m n) N
+  have hdN : d ∣ N := Nat.gcd_dvd_right _ N
+  have hd₀ : (d : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.gcd_pos_of_pos_right _
+    (Nat.pos_of_neZero N)).ne'
+  have hm : (m : ZMod d) = 0 := (ZMod.intCast_zmod_eq_zero_iff_dvd m d).mpr <|
+    Int.natCast_dvd.mpr ((Nat.gcd_dvd_left _ N).trans (Int.gcd_dvd_natAbs_left m n))
+  have hn : (n : ZMod d) = 0 := (ZMod.intCast_zmod_eq_zero_iff_dvd n d).mpr <|
+    Int.natCast_dvd.mpr ((Nat.gcd_dvd_left _ N).trans (Int.gcd_dvd_natAbs_right m n))
+  have hzero : (N / d) • L.weierstrassPoint ((m * L.ω₁ + n * L.ω₂) / N) = 0 := by
+    rw [L.nsmul_weierstrassPoint_eq_zero_iff, nsmul_eq_mul, Nat.cast_div hdN hd₀]
+    convert L.div_mem_lattice_of_intCast_eq_zero hm hn using 1
+    field_simp [Nat.cast_ne_zero.mpr (NeZero.ne N)]
+  have hdvd := addOrderOf_dvd_of_nsmul_eq_zero hzero
+  rw [h] at hdvd
+  exact (Nat.div_eq_self.mp (Nat.dvd_antisymm (Nat.div_dvd_of_dvd hdN) hdvd)).resolve_left
+    (NeZero.ne N)
 
 end PeriodPair

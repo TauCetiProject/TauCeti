@@ -7,11 +7,11 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.KoszulBraiding
 public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.Basic
-public import TauCeti.AlgebraicTopology.Singular.EilenbergZilber
+public import TauCeti.AlgebraicTopology.Singular.Shuffle
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.Basic
 
 /-!
-# The singular Alexander–Whitney map and the interchange of factors
+# The singular Alexander–Whitney and shuffle maps and the interchange of factors
 
 For spaces `X` and `Y`, the Alexander–Whitney map `C(X × Y; R ⊗ S) ⟶ C(X; R) ⊗ C(Y; S)` on
 singular chains, followed by the Koszul braiding `x ⊗ y ↦ (-1)^(p * q) y ⊗ x`, is chain homotopic
@@ -30,15 +30,18 @@ Both homotopies are transported from the simplicial statement
 `Sing (X × Y) ⟶ Sing X × Sing Y`, which commutes with the swaps
 (`CategoryTheory.Functor.map_braiding_hom_comp_prodComparison`).
 
-Since the shuffle map is a homotopy inverse of the Alexander–Whitney map (the Eilenberg–Zilber
-theorem), the Koszul braiding followed by the shuffle map of `Y × X` is chain homotopic to the
-shuffle map of `X × Y` followed by the coefficient braiding and the swap
-(`TopCat.koszulBraidingShuffleHomotopy`).  This is the chain-level form of the graded
-commutativity of the homology cross product.
+The shuffle map commutes with the interchange of factors on the nose: the Koszul braiding followed
+by the shuffle map of `Y × X` is the shuffle map of `X × Y` followed by the coefficient braiding
+and the swap (`TopCat.tensorBraiding_hom_comp_shuffle`), transported from the simplicial
+statement `SSet.tensorBraiding_hom_comp_shuffle` along the comparison map
+`Sing X × Sing Y ⟶ Sing (X × Y)`.  This is the chain-level form of the graded commutativity of the
+homology cross product.
 
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Section 3.2, Theorem 3.11.
+* S. Eilenberg and S. Mac Lane, *On the groups `H(Π, n)`, I*, Ann. of Math. 58 (1953), on the
+  commutativity of the shuffle product.
 -/
 
 public section
@@ -65,8 +68,8 @@ braiding, `x ⊗ y ↦ (-1)^(p * q) y ⊗ x` in bidegree `(p, q)`, is chain homo
 braiding `R ⊗ S ⟶ S ⊗ R` followed by the map induced by the swap `X × Y ⟶ Y × X` and the
 Alexander–Whitney map of `Y × X`. -/
 def alexanderWhitneyKoszulBraidingHomotopy (X Y : TopCat.{w}) (R S : C) :
-    Homotopy (alexanderWhitney X Y R S ≫ TauCeti.NatChainComplex.koszulBraidingHom
-        ((toSSet.obj X).chainComplex R) ((toSSet.obj Y).chainComplex S))
+    Homotopy (alexanderWhitney X Y R S ≫ (HomologicalComplex.tensorBraiding
+        ((toSSet.obj X).chainComplex R) ((toSSet.obj Y).chainComplex S)).hom)
       (((SSet.chainComplexFunctor C).map (β_ R S).hom).app (toSSet.obj (X ⊗ Y)) ≫
         SSet.chainComplexMap (toSSet.map (β_ X Y).hom) (S ⊗ R) ≫ alexanderWhitney Y X S R) :=
   (Homotopy.ofEq (by rw [alexanderWhitney_def, Category.assoc])).trans <|
@@ -94,24 +97,25 @@ lemma alexanderWhitneyKoszulBraidingHomotopy_hom_naturality {X X' Y Y' : TopCat.
     ← SSet.chainComplexMap_f_comp_assoc,
     SSet.alexanderWhitneyKoszulBraidingHomotopy_hom_naturality]
 
-/-- **The shuffle map commutes with the interchange of factors up to homotopy**: the Koszul
-braiding `C(X; R) ⊗ C(Y; S) ⟶ C(Y; S) ⊗ C(X; R)`, `x ⊗ y ↦ (-1)^(p * q) y ⊗ x` in bidegree
-`(p, q)`, followed by the shuffle map of `Y × X`, is chain homotopic to the shuffle map of `X × Y`
-followed by the maps induced by the coefficient braiding `R ⊗ S ⟶ S ⊗ R` and the swap
-`X × Y ⟶ Y × X`. -/
-def koszulBraidingShuffleHomotopy (X Y : TopCat.{w}) (R S : C) :
-    Homotopy (TauCeti.NatChainComplex.koszulBraidingHom ((toSSet.obj X).chainComplex R)
-        ((toSSet.obj Y).chainComplex S) ≫ shuffle Y X S R)
-      (shuffle X Y R S ≫ ((SSet.chainComplexFunctor C).map (β_ R S).hom).app (toSSet.obj (X ⊗ Y)) ≫
-        SSet.chainComplexMap (toSSet.map (β_ X Y).hom) (S ⊗ R)) := by
-  -- the shuffle map is a homotopy inverse of the Alexander–Whitney map on both sides, and the
-  -- Alexander–Whitney map commutes with the interchange up to homotopy
-  refine ((shuffleAlexanderWhitneyHomotopy X Y R S).compRightId _).symm.trans ?_
-  refine (Homotopy.ofEq ?_).trans ((((alexanderWhitneyKoszulBraidingHomotopy X Y R S).compLeft
-    (shuffle X Y R S)).compRight (shuffle Y X S R)).trans ?_)
-  · simp only [Category.assoc]
-  refine (Homotopy.ofEq ?_).trans ((alexanderWhitneyShuffleHomotopy Y X S R).compLeftId _)
-  simp only [Category.assoc]
+/-- **The singular shuffle map is graded commutative**: the Koszul braiding
+`C(X; R) ⊗ C(Y; S) ⟶ C(Y; S) ⊗ C(X; R)`, `x ⊗ y ↦ (-1)^(p * q) y ⊗ x` in bidegree `(p, q)`,
+followed by the shuffle map of `Y × X`, is the shuffle map of `X × Y` followed by the maps induced
+by the coefficient braiding `R ⊗ S ⟶ S ⊗ R` and the swap `X × Y ⟶ Y × X`. This is an equality of
+chain maps, transported from `SSet.tensorBraiding_hom_comp_shuffle`. -/
+@[reassoc]
+lemma tensorBraiding_hom_comp_shuffle (X Y : TopCat.{w}) (R S : C) :
+    (HomologicalComplex.tensorBraiding ((toSSet.obj X).chainComplex R)
+        ((toSSet.obj Y).chainComplex S)).hom ≫ shuffle Y X S R =
+      shuffle X Y R S ≫ ((SSet.chainComplexFunctor C).map (β_ R S).hom).app (toSSet.obj (X ⊗ Y)) ≫
+        SSet.chainComplexMap (toSSet.map (β_ X Y).hom) (S ⊗ R) := by
+  -- the comparison `Sing X × Sing Y ⟶ Sing (X × Y)` commutes with the swaps
+  have hμ : (β_ (toSSet.obj X) (toSSet.obj Y)).hom ≫ Functor.LaxMonoidal.μ toSSet Y X =
+      Functor.LaxMonoidal.μ toSSet X Y ≫ toSSet.map (β_ X Y).hom := by
+    let := Functor.Braided.ofChosenFiniteProducts toSSet
+    exact (Functor.LaxBraided.braided X Y).symm
+  rw [shuffle_def, shuffle_def, SSet.tensorBraiding_hom_comp_shuffle_assoc, Category.assoc,
+    ← Functor.map_comp, hμ, Functor.map_comp]
+  simp only [NatTrans.naturality_assoc]
 
 variable {R S T : C}
 
@@ -119,8 +123,8 @@ variable {R S T : C}
 the Alexander–Whitney diagonal `C(X; T) ⟶ C(X; R) ⊗ C(X; S)` of `u : T ⟶ R ⊗ S` followed by the
 Koszul braiding is chain homotopic to the Alexander–Whitney diagonal of `u ≫ (β_ R S).hom`. -/
 def alexanderWhitneyDiagonalKoszulBraidingHomotopy (X : TopCat.{w}) (u : T ⟶ R ⊗ S) :
-    Homotopy (X.alexanderWhitneyDiagonal u ≫ TauCeti.NatChainComplex.koszulBraidingHom
-        ((toSSet.obj X).chainComplex R) ((toSSet.obj X).chainComplex S))
+    Homotopy (X.alexanderWhitneyDiagonal u ≫ (HomologicalComplex.tensorBraiding
+        ((toSSet.obj X).chainComplex R) ((toSSet.obj X).chainComplex S)).hom)
       (X.alexanderWhitneyDiagonal (u ≫ (β_ R S).hom)) :=
   (Homotopy.ofEq (by simp only [TauCeti.alexanderWhitneyDiagonal_def, Category.assoc])).trans <|
     ((alexanderWhitneyKoszulBraidingHomotopy X X R S).compLeft

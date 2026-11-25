@@ -29,7 +29,7 @@ example :
   intro z
   let L : Language.{0, 0} := ⟨fun _ => Empty, fun n => {_k : ℕ // n = 0}⟩
   -- the structure on `ℕ` in which the `k`-th nullary symbol holds exactly when `z k` does
-  let S : L.Structure ℕ := ⟨fun f => isEmptyElim f, fun R _ => z R.1 = true⟩
+  let S : L.Structure ℕ := ⟨fun f => isEmptyElim f, fun R _ => z R.val = true⟩
   refine ⟨@ofStructure L ℕ S, funext fun n => Bool.eq_iff_iff.2 ?_⟩
   simp only [sentenceTheory_eq_true_iff, mem_modelsOf, SentenceInf.realize_def,
     FormulaInf.realize_def, BoundedFormulaInf.realize_rel, toStructure_relMap]

@@ -55,7 +55,7 @@ theorem mem_abelianizationProPExtensionKernel_iff (g : G) :
   simp only [abelianizationProPExtensionKernel, Subgroup.mem_map, MonoidHom.mem_ker]
   constructor
   · rintro ⟨v, hv, rfl⟩
-    exact ⟨v.2, hv⟩
+    exact ⟨v.property, hv⟩
   · rintro ⟨hg, h⟩
     exact ⟨⟨g, hg⟩, h, rfl⟩
 
@@ -115,7 +115,7 @@ theorem range_abelianizationProPExtensionInl :
   constructor
   · rintro ⟨a, rfl⟩
     obtain ⟨v, rfl⟩ := abelianizationProPMk_surjective p G V a
-    exact Subgroup.mem_map.mpr ⟨v, v.2, (abelianizationProPExtensionInl_mk p G V v).symm⟩
+    exact Subgroup.mem_map.mpr ⟨v, v.property, (abelianizationProPExtensionInl_mk p G V v).symm⟩
   · rintro ⟨g, hg, rfl⟩
     exact ⟨abelianizationProPMk p G V ⟨g, hg⟩, abelianizationProPExtensionInl_mk p G V _⟩
 
@@ -169,7 +169,7 @@ theorem factorSetFun_abelianizationProPExtensionSection (q r : G ⧸ V) :
 
 /-- Conjugation in the extension induces the canonical quotient action on `Vᵃᵇ(p)`. -/
 theorem abelianizationProPExtension_inducesAction :
-    TauCeti.GroupExtension.InducesAction (abelianizationProPExtension p G V) := by
+    GroupExtension.InducesAction (abelianizationProPExtension p G V) := by
   let S := abelianizationProPExtension p G V
   apply (GroupExtension.inducesAction_iff_conjActOfSection_eq
     (abelianizationProPExtensionSection p G V)).mpr
@@ -195,7 +195,7 @@ omit [CompactSpace G] in
 instance isClosed_abelianizationProPExtensionKernel :
     IsClosed (abelianizationProPExtensionKernel p G V : Set G) := by
   rw [abelianizationProPExtensionKernel, Subgroup.coe_map]
-  exact ‹IsClosed (V : Set G)›.isClosedMap_subtype_val _
+  exact ‹IsClosed (V : Set G)›.isClosedMap_subtypeVal _
     (isClosed_singleton.preimage (continuous_abelianizationProPMk p G V))
 
 omit [CompactSpace G] [IsClosed (V : Set G)] in
@@ -209,7 +209,7 @@ theorem continuous_abelianizationProPExtensionInl :
     rw [heq]
     exact (QuotientGroup.isQuotientMap_mk _).comp (QuotientGroup.isQuotientMap_mk _)
   apply hq.continuous_iff.mpr
-  exact (QuotientGroup.continuous_mk.comp continuous_subtype_val).congr fun v ↦
+  exact (QuotientGroup.continuous_mk.comp continuous_subtypeVal).congr fun v ↦
     (abelianizationProPExtensionInl_mk p G V v).symm
 
 variable [TotallyDisconnectedSpace G]

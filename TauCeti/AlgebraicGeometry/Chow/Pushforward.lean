@@ -65,7 +65,7 @@ pushforward of cycles with height weights, `[V] ↦ [κ(V) : κ(f(V))] [f(V)]`. 
 noncomputable def cyclesMap (f : X ⟶ Y) [f.IsOver (Spec (.of k))] [QuasiCompact f] {n : ℤ} :
     cyclesOfDimension X n →+ cyclesOfDimension Y n :=
   AddMonoidHom.mk' (fun α ↦ ⟨AlgebraicCycle.map f height height (α : AlgebraicCycle X ℤ),
-      map_height_mem_cyclesOfDimension k f α.2⟩)
+      map_height_mem_cyclesOfDimension k f α.property⟩)
     fun _ _ ↦ Subtype.ext (AlgebraicCycle.map_add _ _ _ _ _)
 
 variable {k}
@@ -127,6 +127,13 @@ lemma cyclesDegree_apply (α : cyclesOfDimension X 0) :
     cyclesDegree k X α =
       ∑ᶠ x, (X ↘ Spec (.of k)).residueDegree x • (α : AlgebraicCycle X ℤ) x :=
   AlgebraicCycle.degree_apply _ _
+
+omit [LocallyOfFiniteType (X ↘ Spec (.of k))] in
+/-- The degree of a zero-cycle is Mathlib's degree of its underlying cycle along the structure
+morphism. -/
+lemma cyclesDegree_eq_degree (α : cyclesOfDimension X 0) :
+    cyclesDegree k X α = AlgebraicCycle.degree (X ↘ Spec (.of k)) (α : AlgebraicCycle X ℤ) :=
+  (rfl)
 
 /-- Pushforward along a morphism over `k` of quasi-compact schemes preserves the degree of
 zero-cycles. -/

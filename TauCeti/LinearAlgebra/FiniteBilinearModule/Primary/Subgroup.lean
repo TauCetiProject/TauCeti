@@ -47,7 +47,7 @@ variable (A : FiniteBilinearModule)
 private theorem coe_mem_primaryComponent_of_mem_primaryComponent
     (H : AddSubgroup A) (p : ℕ) (x : AddCommGroup.primaryComponent H p) :
     ((x : H) : A) ∈ AddCommGroup.primaryComponent A p := by
-  obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp x.2
+  obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp x.property
   exact AddCommGroup.mem_primaryComponent.mpr ⟨k, congrArg Subtype.val hk⟩
 
 private theorem coe_primaryDecomposition_sum (H : AddSubgroup A) (x : H) :
@@ -70,8 +70,8 @@ theorem isIsotropic_iff_primaryPart (H : AddSubgroup A) :
     rw [(A.restrict (AddCommGroup.primaryComponent A p)).isIsotropic_def]
     rw [A.isIsotropic_def] at hH
     intro x hx y hy
-    exact hH x.1 (AddSubgroup.mem_primaryPart_iff H p x |>.mp hx)
-      y.1 (AddSubgroup.mem_primaryPart_iff H p y |>.mp hy)
+    exact hH x.val (AddSubgroup.mem_primaryPart_iff H p x |>.mp hx)
+      y.val (AddSubgroup.mem_primaryPart_iff H p y |>.mp hy)
   · intro hprimary
     rw [A.isIsotropic_def]
     intro x hx y hy
@@ -85,21 +85,21 @@ theorem isIsotropic_iff_primaryPart (H : AddSubgroup A) :
         rw [← A.coe_primaryDecomposition_sum H xH, ← A.coe_primaryDecomposition_sum H yH]
       _ = ∑ p, A.pairing ((xd p : H) : A) ((yd p : H) : A) := by
         apply A.pairing_sum_eq_sum_pairing_of_mem_primaryComponent Finset.univ Subtype.val
-        · exact fun p _ ↦ Nat.prime_of_mem_primeFactors p.2
+        · exact fun p _ ↦ Nat.prime_of_mem_primeFactors p.property
         · exact fun p _ q _ hpq ↦ by simpa using hpq
         · exact fun p _ ↦ A.coe_mem_primaryComponent_of_mem_primaryComponent H p (xd p)
         · exact fun p _ ↦ A.coe_mem_primaryComponent_of_mem_primaryComponent H p (yd p)
       _ = 0 := by
         apply Finset.sum_eq_zero
         intro p _
-        let xp : AddCommGroup.primaryComponent A p.1 :=
+        let xp : AddCommGroup.primaryComponent A p.val :=
           ⟨((xd p : H) : A), A.coe_mem_primaryComponent_of_mem_primaryComponent H p (xd p)⟩
-        let yp : AddCommGroup.primaryComponent A p.1 :=
+        let yp : AddCommGroup.primaryComponent A p.val :=
           ⟨((yd p : H) : A), A.coe_mem_primaryComponent_of_mem_primaryComponent H p (yd p)⟩
-        exact (A.restrict (AddCommGroup.primaryComponent A p.1)).isIsotropic_def.mp
-          (hprimary p.1 (Nat.prime_of_mem_primeFactors p.2))
-          xp (AddSubgroup.mem_primaryPart_iff H p.1 xp |>.mpr (xd p).1.2)
-          yp (AddSubgroup.mem_primaryPart_iff H p.1 yp |>.mpr (yd p).1.2)
+        exact (A.restrict (AddCommGroup.primaryComponent A p.val)).isIsotropic_def.mp
+          (hprimary p.val (Nat.prime_of_mem_primeFactors p.property))
+          xp (AddSubgroup.mem_primaryPart_iff H p.val xp |>.mpr (xd p).val.property)
+          yp (AddSubgroup.mem_primaryPart_iff H p.val yp |>.mpr (yd p).val.property)
 
 /-- Orthogonal complementation commutes with passage to a prime-primary component. -/
 @[simp]
@@ -113,7 +113,7 @@ theorem primaryPart_orthogonalComplement (H : AddSubgroup A) {p : ℕ} (hp : p.P
   · intro hx
     rw [(A.restrict (AddCommGroup.primaryComponent A p)).mem_orthogonalComplement_iff]
     intro y hy
-    exact A.mem_orthogonalComplement_iff H x.1 |>.mp hx y.1
+    exact A.mem_orthogonalComplement_iff H x.val |>.mp hx y.val
       (AddSubgroup.mem_primaryPart_iff H p y |>.mp hy)
   · intro hx
     rw [A.mem_orthogonalComplement_iff]
@@ -125,17 +125,17 @@ theorem primaryPart_orthogonalComplement (H : AddSubgroup A) {p : ℕ} (hp : p.P
     rw [hydecomp, map_sum]
     apply Finset.sum_eq_zero
     intro q _
-    have hq : q.1.Prime := Nat.prime_of_mem_primeFactors q.2
-    have hyq : ((yd q : H) : A) ∈ AddCommGroup.primaryComponent A q.1 :=
+    have hq : q.val.Prime := Nat.prime_of_mem_primeFactors q.property
+    have hyq : ((yd q : H) : A) ∈ AddCommGroup.primaryComponent A q.val :=
       A.coe_mem_primaryComponent_of_mem_primaryComponent H q (yd q)
-    by_cases hqp : q.1 = p
+    by_cases hqp : q.val = p
     · let yq : AddCommGroup.primaryComponent A p :=
         ⟨((yd q : H) : A), hqp ▸ hyq⟩
       have hyqH : yq ∈ AddSubgroup.primaryPart H p :=
-        AddSubgroup.mem_primaryPart_iff H p yq |>.mpr (yd q).1.2
+        AddSubgroup.mem_primaryPart_iff H p yq |>.mpr (yd q).val.property
       exact (A.restrict (AddCommGroup.primaryComponent A p)).mem_orthogonalComplement_iff
         (AddSubgroup.primaryPart H p) x |>.mp hx yq hyqH
-    · exact A.pairing_eq_zero_of_mem_primaryComponent hp hq (Ne.symm hqp) x.2 hyq
+    · exact A.pairing_eq_zero_of_mem_primaryComponent hp hq (Ne.symm hqp) x.property hyq
 
 end FiniteBilinearModule
 
@@ -155,7 +155,7 @@ theorem isIsotropic_iff_primaryPart (H : AddSubgroup A) :
     apply (A.restrict (AddCommGroup.primaryComponent A p)).isIsotropic_def.mpr
     rw [A.isIsotropic_def] at hH
     intro x hx
-    exact hH x.1 (AddSubgroup.mem_primaryPart_iff H p x |>.mp hx)
+    exact hH x.val (AddSubgroup.mem_primaryPart_iff H p x |>.mp hx)
   · intro hprimary
     rw [A.isIsotropic_def]
     intro x hx
@@ -166,19 +166,19 @@ theorem isIsotropic_iff_primaryPart (H : AddSubgroup A) :
         rw [← A.toFiniteBilinearModule.coe_primaryDecomposition_sum H xH]
       _ = ∑ p, A.quadratic ((xd p : H) : A) := by
         apply A.quadratic_sum_of_mem_primaryComponent Finset.univ Subtype.val
-        · exact fun p _ ↦ Nat.prime_of_mem_primeFactors p.2
+        · exact fun p _ ↦ Nat.prime_of_mem_primeFactors p.property
         · exact fun p _ q _ hpq ↦ by simpa using hpq
         · exact fun p _ ↦
             A.toFiniteBilinearModule.coe_mem_primaryComponent_of_mem_primaryComponent H p (xd p)
       _ = 0 := by
         apply Finset.sum_eq_zero
         intro p _
-        let xp : AddCommGroup.primaryComponent A p.1 :=
+        let xp : AddCommGroup.primaryComponent A p.val :=
           ⟨((xd p : H) : A),
             A.toFiniteBilinearModule.coe_mem_primaryComponent_of_mem_primaryComponent H p (xd p)⟩
-        exact (A.restrict (AddCommGroup.primaryComponent A p.1)).isIsotropic_def.mp
-          (hprimary p.1 (Nat.prime_of_mem_primeFactors p.2)) xp
-          (AddSubgroup.mem_primaryPart_iff H p.1 xp |>.mpr (xd p).1.2)
+        exact (A.restrict (AddCommGroup.primaryComponent A p.val)).isIsotropic_def.mp
+          (hprimary p.val (Nat.prime_of_mem_primeFactors p.property)) xp
+          (AddSubgroup.mem_primaryPart_iff H p.val xp |>.mpr (xd p).val.property)
 
 end FiniteQuadraticModule
 

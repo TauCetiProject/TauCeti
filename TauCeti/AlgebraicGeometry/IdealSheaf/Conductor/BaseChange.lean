@@ -42,21 +42,22 @@ variable {X X' Y Y' : Scheme.{u}} {f : X ⟶ Y} {f' : X' ⟶ Y'}
 
 /-- The affine conductor calculation in a cartesian square. -/
 private theorem conductor_ideal_eq_map_of_isPullback (H : IsPullback g' f' f g)
-    (U : Y.affineOpens) (V : Y'.affineOpens) (hVU : V.1 ≤ g ⁻¹ᵁ U.1) :
+    (U : Y.affineOpens) (V : Y'.affineOpens) (hVU : V.val ≤ g ⁻¹ᵁ U.val) :
     f'.conductor.ideal V = (f.conductor.ideal U).map (g.appLE U V hVU).hom := by
-  have hpre : f' ⁻¹ᵁ V.1 = g' ⁻¹ᵁ (f ⁻¹ᵁ U.1) ⊓ f' ⁻¹ᵁ V.1 := by
+  have hpre : f' ⁻¹ᵁ V.val = g' ⁻¹ᵁ (f ⁻¹ᵁ U.val) ⊓ f' ⁻¹ᵁ V.val := by
     apply (inf_eq_right.mpr ?_).symm
     exact (f'.preimage_mono hVU).trans_eq (by simp only [← Scheme.Hom.comp_preimage, H.w])
   have hpush := (isIso_pushoutSection_iff H hVU le_rfl hpre).mp
-    (isIso_pushoutSection_of_isAffineOpen H hVU le_rfl hpre U.2 V.2 (U.2.preimage f))
+    (isIso_pushoutSection_of_isAffineOpen H hVU le_rfl hpre U.property V.property
+        (U.property.preimage f))
   let A := Γ(Y, U)
-  let B := Γ(X, f ⁻¹ᵁ U.1)
+  let B := Γ(X, f ⁻¹ᵁ U.val)
   let A' := Γ(Y', V)
-  let B' := Γ(X', f' ⁻¹ᵁ V.1)
+  let B' := Γ(X', f' ⁻¹ᵁ V.val)
   let : Algebra A B := (f.app U).hom.toAlgebra
   let : Algebra A A' := (g.appLE U V hVU).hom.toAlgebra
   let : Algebra A' B' := (f'.app V).hom.toAlgebra
-  let : Algebra B B' := (g'.appLE (f ⁻¹ᵁ U.1) (f' ⁻¹ᵁ V.1)
+  let : Algebra B B' := (g'.appLE (f ⁻¹ᵁ U.val) (f' ⁻¹ᵁ V.val)
     (hpre ▸ inf_le_left)).hom.toAlgebra
   let : Algebra A B' := ((f'.app V).hom.comp (g.appLE U V hVU).hom).toAlgebra
   have : IsScalarTower A A' B' := .of_algebraMap_eq' rfl
@@ -67,8 +68,8 @@ private theorem conductor_ideal_eq_map_of_isPullback (H : IsPullback g' f' f g)
     CommRingCat.isPushout_iff_isPushout.mp (by
       simpa only [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
         Scheme.Hom.appLE_eq_app] using hpush.flip)
-  have : Module.Flat A A' := g.flat_appLE U.2 V.2 hVU
-  have : Module.Finite A B := IsFinite.finite_app f U U.2
+  have : Module.Flat A A' := g.flat_appLE U.property V.property hVU
+  have : Module.Finite A B := IsFinite.finite_app f U U.property
   rw [conductor_ideal, conductor_ideal]
   exact TauCeti.Algebra.conductor_eq_map_of_flat A (B := B) A' B'
 
@@ -77,8 +78,8 @@ The square may be any chosen pullback square. -/
 theorem conductor_eq_comap_of_isPullback (H : IsPullback g' f' f g) :
     f'.conductor = f.conductor.comap g := by
   refine Scheme.IdealSheafData.ext_of_comap_fromSpec_over g fun U V e ↦ ?_
-  rw [Scheme.IdealSheafData.comap_fromSpec_eq_ofIdealTop f'.conductor V.2,
-    Scheme.IdealSheafData.comap_comap_fromSpec_eq_ofIdealTop _ g U.2 V.2 e,
+  rw [Scheme.IdealSheafData.comap_fromSpec_eq_ofIdealTop f'.conductor V.property,
+    Scheme.IdealSheafData.comap_comap_fromSpec_eq_ofIdealTop _ g U.property V.property e,
     conductor_ideal_eq_map_of_isPullback H U V e]
 
 /-- The conductor of the base change of a finite morphism is the pullback of its

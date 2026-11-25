@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Commutative
 public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The period lattice and the real weights of circle characters
@@ -42,7 +43,9 @@ For connected `G` these weights are exactly the integral functionals: a characte
 by its weight, and every real-linear functional taking integer values on `Λ_ℤ` is the weight of a
 character (`ContinuousMonoidHom.range_lieWeight`). So the character group of a torus is the
 lattice dual to `Λ_ℤ`. For the circle itself `Λ_ℤ` corresponds to `ℤ ⊆ ℝ` and the identity
-character has weight one, which fixes the normalization.
+character has weight one, which fixes the normalization. More generally the character `z ↦ z ^ n`
+of the circle has weight `n` at the generator of `Circle.exp`
+(`ContinuousMonoidHom.lieWeight_circleExpGenerator_eq_intCast_iff`).
 
 This is the normalization of weights of torus actions: a commutative group acting on `ℂ` through
 a character `χ` acts by `exp(ξ) · z = e^{i α_χ(ξ)} z`.
@@ -70,7 +73,10 @@ a character `χ` acts by `exp(ξ) · z = e^{i α_χ(ξ)} z`.
   weights on the kernel of the exponential and on the period lattice.
 * `ContinuousMonoidHom.lieWeight_injective`, `ContinuousMonoidHom.range_lieWeight`: for connected
   `G`, characters correspond exactly to functionals taking integer values on `Λ_ℤ`.
-* `TauCeti.mem_periodLattice_circle`, `ContinuousMonoidHom.lieWeight_id_circle`: the circle case.
+* `TauCeti.mem_periodLattice_circle`, `TauCeti.circleExpGenerator_mem_periodLattice`,
+  `ContinuousMonoidHom.lieWeight_id_circle`,
+  `ContinuousMonoidHom.lieWeight_circleExpGenerator_eq_intCast_iff`: the circle case; a
+  continuous endomorphism of the circle is the power `z ↦ z ^ n` exactly when its weight is `n`.
 
 ## References
 
@@ -133,7 +139,7 @@ instance discreteTopology_periodLattice : DiscreteTopology (periodLattice I G) :
   DiscreteTopology.of_continuous_injective
     (f := fun X : periodLattice I G ↦
       (⟨(2 * π) • (X : LeftInvariantDerivation I G),
-        mem_ker_lieExpAddMonoidHom.2 (mem_periodLattice.1 X.2)⟩ :
+        mem_ker_lieExpAddMonoidHom.2 (mem_periodLattice.1 X.property)⟩ :
         (lieExpAddMonoidHom (I := I) (G := G)).ker))
     (by fun_prop)
     (fun X Y h ↦ Subtype.ext (smul_right_injective _ two_pi_pos.ne' (congrArg Subtype.val h)))
@@ -178,6 +184,10 @@ theorem mem_periodLattice_circle {X : LeftInvariantDerivation (𝓡 1) Circle} :
     LinearEquiv.apply_symm_apply, smul_eq_mul, Circle.exp_eq_one]
   refine exists_congr fun n ↦ ?_
   constructor <;> intro h <;> nlinarith [two_pi_pos]
+
+/-- The generator of `Circle.exp` lies in the period lattice of the circle. -/
+theorem circleExpGenerator_mem_periodLattice : circleExpGenerator ∈ periodLattice (𝓡 1) Circle :=
+  mem_periodLattice_circle.2 ⟨1, by rw [circleLieAlgebraEquiv_apply_generator, Int.cast_one]⟩
 
 end TauCeti
 
@@ -328,6 +338,27 @@ theorem lieWeight_id_circle :
   (eq_lieWeight fun X ↦ by
     rw [coe_id, id_eq, LinearEquiv.coe_coe, ← lieExp_circle, LinearEquiv.symm_apply_apply]).symm
 
+/-- **The degree of a circle endomorphism is its weight at the generator**: a continuous
+endomorphism `f` of the circle is `z ↦ z ^ n` exactly when its weight at the generator of
+`Circle.exp` is `n`. -/
+theorem lieWeight_circleExpGenerator_eq_intCast_iff (f : Circle →ₜ* Circle) (n : ℤ) :
+    lieWeight (I := 𝓡 1) f circleExpGenerator = n ↔ ∀ z, f z = z ^ n := by
+  constructor
+  · intro hf z
+    obtain ⟨t, rfl⟩ := Circle.exp_surjective z
+    -- The circle Lie algebra is spanned by the generator, so `α_f(X) = c(X) α_f(∂_θ)`.
+    have hX : lieWeight (I := 𝓡 1) f (circleLieAlgebraEquiv.symm t) = t * n := by
+      conv_lhs => rw [← circleLieAlgebraEquiv_smul_circleExpGenerator
+        (circleLieAlgebraEquiv.symm t)]
+      rw [map_smul, smul_eq_mul, hf, LinearEquiv.apply_symm_apply]
+    rw [← lieExp_circle, apply_lieExp_eq_circleExp_lieWeight, hX, lieExp_circle,
+      ← Circle.exp_zsmul, zsmul_eq_mul, mul_comm]
+  · intro hf
+    have h : f = ContinuousMonoidHom.id Circle ^ n := ext fun z ↦ by
+      rw [hf, ContinuousMonoidHom.zpow_apply, coe_id, id_eq]
+    rw [h, lieWeight_zpow, lieWeight_id_circle, LinearMap.smul_apply, LinearEquiv.coe_coe,
+      circleLieAlgebraEquiv_apply_generator, zsmul_one]
+
 /-! ### Integrality of weights -/
 
 section Integral
@@ -365,10 +396,9 @@ theorem exists_lieWeight_eq {α : Module.Dual ℝ (LeftInvariantDerivation I G)}
     ∃ χ : G →ₜ* Circle, lieWeight χ = α := by
   -- `X ↦ Circle.exp (α X)` kills the kernel of the exponential, so it factors through
   -- `𝔤 ⧸ ker(exp) ≃ G`.
-  let N := (lieExpAddMonoidHom (I := I) (G := G)).ker
   let φ : LeftInvariantDerivation I G →+ Additive Circle :=
     Circle.expHom.comp α.toAddMonoidHom
-  have hN : N ≤ φ.ker := by
+  have hN : (lieExpAddMonoidHom (I := I) (G := G)).ker ≤ φ.ker := by
     intro X hX
     obtain ⟨n, hn⟩ := hα _ (inv_two_pi_smul_mem_periodLattice_iff.2 hX)
     rw [map_smul, smul_eq_mul] at hn
@@ -377,25 +407,10 @@ theorem exists_lieWeight_eq {α : Module.Dual ℝ (LeftInvariantDerivation I G)}
       linarith
     rw [AddMonoidHom.mem_ker, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, hαX]
     exact Circle.exp_int_mul_two_pi n
-  let ψ := QuotientAddGroup.lift N φ hN
-  have hψmk : ⇑ψ ∘ QuotientAddGroup.mk = Additive.ofMul ∘ Circle.exp ∘ α := by
-    funext X
-    simp only [ψ, φ, Function.comp_apply, QuotientAddGroup.lift_mk, AddMonoidHom.comp_apply,
-      Circle.expHom_apply, LinearMap.toAddMonoidHom_coe]
-  have hψ : Continuous ψ := by
-    rw [(QuotientAddGroup.isQuotientMap_mk N).continuous_iff, hψmk]
-    exact continuous_ofMul.comp (Circle.exp.continuous.comp α.continuous_of_finiteDimensional)
-  let e := lieExpQuotientKerContinuousAddEquiv (I := I) (G := G)
-  let χ : G →ₜ* Circle :=
-    { toFun := fun g ↦ Additive.toMul (ψ (e.symm (Additive.ofMul g)))
-      map_one' := by rw [ofMul_one, map_zero, map_zero, toMul_zero]
-      map_mul' := fun g h ↦ by rw [ofMul_mul, map_add, map_add, toMul_add]
-      continuous_toFun := continuous_toMul.comp
-        (hψ.comp (e.symm.continuous.comp continuous_ofMul)) }
-  have hχ (g : G) : χ g = Additive.toMul (ψ (e.symm (Additive.ofMul g))) := rfl
-  refine ⟨χ, (eq_lieWeight fun X ↦ ?_).symm⟩
-  rw [hχ, lieExpQuotientKerContinuousAddEquiv_symm_apply, ← Function.comp_apply (f := ⇑ψ), hψmk,
-    Function.comp_apply, Function.comp_apply, toMul_ofMul]
+  have hφ : Continuous φ :=
+    continuous_ofMul.comp (Circle.exp.continuous.comp α.continuous_of_finiteDimensional)
+  refine ⟨lieExpLift φ hφ hN, (eq_lieWeight fun X ↦ ?_).symm⟩
+  simp [φ]
 
 /-- **The character lattice is dual to the period lattice.** On a connected commutative Lie group,
 the weights of continuous characters are exactly the real-linear functionals taking integer values

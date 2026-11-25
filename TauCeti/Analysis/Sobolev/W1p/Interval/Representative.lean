@@ -180,12 +180,10 @@ theorem intervalRepresentativeL_injective (hab : a < b) :
 theorem intervalRepresentativeL_const (hab : a < b) (c : ℝ) :
     intervalRepresentativeL (p := p) hab (const c) = ContinuousMap.const (Icc a b) c := by
   apply (intervalRepresentativeL_eq_iff hab _ _).2
-  rw [value_const]
-  have h := Lp.coeFn_const p
-    (volume.restrict ((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ)) c
+  have h := value_const_ae (mu := volume) (Omega := ⟨Ioo a b, isOpen_Ioo⟩) (p := p) c
   simp only [Opens.coe_mk] at h ⊢
   filter_upwards [h] with t ht
-  simpa only [ContinuousMap.const_apply, Function.const_apply] using ht
+  simpa only [ContinuousMap.const_apply] using ht
 
 /-- An explicit bound for the supremum norm of the interval representative. At `p = ∞`,
 `1 / p.toReal` is interpreted as zero. -/
@@ -235,6 +233,15 @@ theorem integral_gradient_eq_intervalRepresentativeL_sub (hab : a < b)
     hw.integral_eq_sub ((Lp.memLp _).integrable (by exact Fact.out))
       (continuous_intervalRepresentativeL_projIcc hab u).continuousOn
       (value_ae_eq_intervalRepresentativeL hab u) s.property t.property
+
+/-- The fundamental theorem of calculus for the interval representative, as a set integral over
+`(s, t)` for `s ≤ t`. -/
+theorem setIntegral_Ioo_gradient_eq_intervalRepresentativeL_sub (hab : a < b)
+    (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) {s t : Icc a b} (hst : (s : ℝ) ≤ t) :
+    ∫ r in Ioo (s : ℝ) t, gradient u r =
+      intervalRepresentativeL hab u t - intervalRepresentativeL hab u s := by
+  rw [← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le hst,
+    integral_gradient_eq_intervalRepresentativeL_sub]
 
 /-- The weak gradient is interval integrable between any two points of `[a,b]`. -/
 theorem intervalIntegrable_gradient (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) {s t : ℝ}

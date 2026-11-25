@@ -21,8 +21,10 @@ The comparison API first identifies punctured germs everywhere, then reads value
 representatives are analytic. Multiplying by a function that is analytic without zeros on the
 initial half-plane commutes with continuation (`TauCeti.meromorphicContinuation_smul`), whether
 or not a continuation exists; this compares Dirichlet series differing by finitely many Euler
-factors. The construction uses Mathlib's `toMeromorphicNFOn` and its
-local normal-form identity principle. The results allow values in a complex normed space.
+factors. Real horizontal translation likewise commutes with continuation
+(`TauCeti.meromorphicContinuation_comp_sub_ofReal`). The construction uses Mathlib's
+`toMeromorphicNFOn` and its local normal-form identity principle. The results allow values in a
+complex normed space.
 -/
 
 public section
@@ -161,6 +163,32 @@ theorem meromorphicContinuation_congr (hfg : EqOn f g {s | σ < s.re}) :
       ((meromorphicContinuation_eqOn h).trans hfg.symm)
   · rw [meromorphicContinuation_of_not_exists h, meromorphicContinuation_of_not_exists]
     exact fun ⟨h', hh', hh'f⟩ ↦ h ⟨h', hh', hh'f.trans hfg⟩
+
+/-- **Continuation commutes with real horizontal translation.** Translating the argument of `f`
+right by `τ : ℝ` translates its initial half-plane from `σ < re s` to `σ + τ < re s` and
+translates its canonical meromorphic continuation by the same amount, whether or not a
+continuation exists. -/
+theorem meromorphicContinuation_comp_sub_ofReal (σ : ℝ) (f : ℂ → E) (τ : ℝ) :
+    meromorphicContinuation (σ + τ) (fun z ↦ f (z - τ)) =
+      fun z ↦ meromorphicContinuation σ f (z - τ) := by
+  by_cases h : ∃ g : ℂ → E, MeromorphicNFOn g univ ∧ EqOn g f {z | σ < z.re}
+  · refine meromorphicContinuation_eq (fun z _ ↦ ?_) fun z hz ↦ ?_
+    · exact (meromorphicNFAt_fun_comp_sub_const_iff_meromorphicNFAt (c := (τ : ℂ))).mpr
+        (meromorphicNFOn_meromorphicContinuation σ f (mem_univ (z - τ)))
+    · refine meromorphicContinuation_eqOn h ?_
+      simpa only [mem_ofPred_eq, Complex.sub_re, Complex.ofReal_re] using lt_sub_iff_add_lt.mpr hz
+  · have h0 : (fun z : ℂ ↦ meromorphicContinuation σ f (z - τ)) = 0 := by
+      rw [meromorphicContinuation_of_not_exists h]
+      rfl
+    rw [h0]
+    refine meromorphicContinuation_of_not_exists ?_
+    rintro ⟨g, hg, hgf⟩
+    refine h ⟨fun z ↦ g (z + τ), fun z _ ↦ ?_, fun z hz ↦ ?_⟩
+    · exact (meromorphicNFAt_fun_comp_add_const_iff_meromorphicNFAt (c := (τ : ℂ))).mpr
+        (hg (mem_univ (z + τ)))
+    · have hz' : σ + τ < (z + (τ : ℂ)).re := by
+        simpa only [mem_ofPred_eq, Complex.add_re, Complex.ofReal_re] using add_lt_add_left hz τ
+      simpa using hgf hz'
 
 /-- If `f` is analytic on the initial half-plane, so is its canonical continuation. -/
 theorem analyticOnNhd_meromorphicContinuation (hf : AnalyticOnNhd ℂ f {s | σ < s.re}) :

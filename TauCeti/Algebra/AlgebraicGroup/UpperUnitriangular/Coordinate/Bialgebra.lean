@@ -97,7 +97,7 @@ matrix recovers that matrix. -/
 theorem map_aeval_genericMatrix {A : Type w} [CommSemiring A] [Algebra R A]
     (M : Matrix m m A) (hM : M.IsUpperUnitriangular) :
     (genericMatrix R m).map
-        (MvPolynomial.aeval fun ij : Index m => M ij.1.1 ij.1.2) = M := by
+        (MvPolynomial.aeval fun ij : Index m => M ij.val.1 ij.val.2) = M := by
   apply ((isUpperUnitriangular_genericMatrix R m).map _).ext hM
   intro i j hij
   simp [Matrix.map_apply, genericMatrix_apply_of_lt R m hij]
@@ -113,12 +113,12 @@ noncomputable def comul :
           CoordinateRing R m ⊗[R] CoordinateRing R m) *
       (genericMatrix R m).map
         (includeRight : CoordinateRing R m →ₐ[R]
-          CoordinateRing R m ⊗[R] CoordinateRing R m)) ij.1.1 ij.1.2
+          CoordinateRing R m ⊗[R] CoordinateRing R m)) ij.val.1 ij.val.2
 
 omit [Fintype m] in
 /-- Identity-matrix counit on the coordinate ring of `U_m`. -/
 noncomputable def counit : CoordinateRing R m →ₐ[R] R :=
-  MvPolynomial.aeval fun ij : Index m => (1 : Matrix m m R) ij.1.1 ij.1.2
+  MvPolynomial.aeval fun ij : Index m => (1 : Matrix m m R) ij.val.1 ij.val.2
 
 /-- Comultiplication evaluates the generic matrix at the product of its two tensor-factor
 copies. -/
@@ -163,16 +163,16 @@ the two generic matrices. -/
 theorem comul_X (ij : Index m) :
     comul R m (MvPolynomial.X ij) =
       ∑ k : m,
-        genericMatrix R m ij.1.1 k ⊗ₜ[R]
-          genericMatrix R m k ij.1.2 := by
-  rw [← genericMatrix_apply_of_lt R m ij.2]
-  exact comul_genericMatrix_apply R m ij.1.1 ij.1.2
+        genericMatrix R m ij.val.1 k ⊗ₜ[R]
+          genericMatrix R m k ij.val.2 := by
+  rw [← genericMatrix_apply_of_lt R m ij.property]
+  exact comul_genericMatrix_apply R m ij.val.1 ij.val.2
 
 omit [Fintype m] in
 /-- The counit vanishes on every strict-upper coordinate. -/
 @[simp]
 theorem counit_X (ij : Index m) : counit R m (MvPolynomial.X ij) = 0 := by
-  simp [counit, Matrix.one_apply_ne ij.2.ne]
+  simp [counit, Matrix.one_apply_ne ij.property.ne]
 
 /-- Matrix-multiplication comultiplication is coassociative. -/
 theorem comul_coassoc :
@@ -230,13 +230,13 @@ theorem map_aeval_genericMatrix_sub_one (R : Type u) [CommRing R]
     (m : Type v) [LinearOrder m] {A : Type w} [CommRing A] [Algebra R A]
     (M : Matrix m m A) (hM : M.IsUpperTriangular) (hdiag : ∀ i, M i i = 0) :
     (genericMatrix R m - 1).map
-        (MvPolynomial.aeval fun ij : Index m ↦ M ij.1.1 ij.1.2) = M := by
+        (MvPolynomial.aeval fun ij : Index m ↦ M ij.val.1 ij.val.2) = M := by
   have hU : (M + 1).IsUpperUnitriangular := (Matrix.isUpperUnitriangular_def _).mpr
     ⟨hM.add Matrix.blockTriangular_one, by intro i; simp [hdiag]⟩
-  have hf : (fun ij : Index m ↦ (M + 1) ij.1.1 ij.1.2) =
-      (fun ij : Index m ↦ M ij.1.1 ij.1.2) := by
+  have hf : (fun ij : Index m ↦ (M + 1) ij.val.1 ij.val.2) =
+      (fun ij : Index m ↦ M ij.val.1 ij.val.2) := by
     funext ij
-    simp [Matrix.one_apply_ne ij.2.ne]
+    simp [Matrix.one_apply_ne ij.property.ne]
   have h := map_aeval_genericMatrix R m (M + 1) hU
   rw [hf] at h
   simp [Matrix.map_sub, Matrix.map_one, h]

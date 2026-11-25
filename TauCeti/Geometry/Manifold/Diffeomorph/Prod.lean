@@ -17,11 +17,16 @@ This lets one promote separation of a smooth map into separation by bundled equi
 
 `Diffeomorph.prodAssocOfModels` reassociates three manifold factors with independent model
 vector spaces, generalizing Mathlib's `Diffeomorph.prodAssoc`, where the last two coincide.
+`Diffeomorph.prodAssocSymmSelf` regroups a triple product of normed spaces `E × F × E'`, carrying
+its own model, as the product manifold `(E × F) × E'`.
 
 The four-way exchange `((a, b), (c, d)) ↦ ((a, c), (b, d))` of a product of two products is
 the diffeomorphism `Diffeomorph.prodProdProdComm`, the smooth counterpart of
 `Equiv.prodProdProdComm`. It regroups a product of relations `M₁ ⇝ N₁` and `M₂ ⇝ N₂` as a
 relation `M₁ × M₂ ⇝ N₁ × N₂`.
+
+The homeomorphism underlying Mathlib's factor swap `Diffeomorph.prodComm` is
+`Homeomorph.prodComm` (`Diffeomorph.toHomeomorph_prodComm`).
 -/
 
 public section
@@ -92,6 +97,32 @@ theorem prodAssocOfModels_symm_apply (p : M × (N × M')) :
 
 end prodAssocOfModels
 
+section prodAssocSymmSelf
+
+variable (𝕜 E F E' n)
+
+/-- The regrouping `(x, y, z) ↦ ((x, y), z)` from the normed space `E × F × E'`, with its own model,
+to the product manifold `(E × F) × E'`. -/
+def prodAssocSymmSelf :
+    (E × F × E') ≃ₘ^n⟮𝓘(𝕜, E × F × E'), 𝓘(𝕜, E × F).prod 𝓘(𝕜, E')⟯ ((E × F) × E') where
+  toEquiv := (Equiv.prodAssoc E F E').symm
+  contMDiff_toFun := (contDiff_fst.prodMk (contDiff_fst.comp contDiff_snd)).contMDiff.prodMk
+    (contDiff_snd.comp contDiff_snd).contMDiff
+  contMDiff_invFun := (contDiff_fst.contMDiff.comp contMDiff_fst).prodMk_space
+    ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk_space contMDiff_snd)
+
+/-- The regrouping sends `(x, y, z)` to `((x, y), z)`. -/
+@[simp]
+theorem prodAssocSymmSelf_apply (p : E × F × E') :
+    prodAssocSymmSelf 𝕜 E F E' n p = ((p.1, p.2.1), p.2.2) := (rfl)
+
+/-- The inverse regrouping sends `((x, y), z)` to `(x, y, z)`. -/
+@[simp]
+theorem prodAssocSymmSelf_symm_apply (p : (E × F) × E') :
+    (prodAssocSymmSelf 𝕜 E F E' n).symm p = (p.1.1, p.1.2, p.2) := (rfl)
+
+end prodAssocSymmSelf
+
 section prodProdProdComm
 
 variable (I J I' J' M N M' N' n)
@@ -120,5 +151,11 @@ theorem coe_prodProdProdComm :
   (rfl)
 
 end prodProdProdComm
+
+/-- The homeomorphism underlying the factor swap `M × N ≃ N × M` is the factor swap. -/
+@[simp]
+theorem toHomeomorph_prodComm :
+    (Diffeomorph.prodComm I J M N n).toHomeomorph = Homeomorph.prodComm M N :=
+  Homeomorph.ext fun _ ↦ rfl
 
 end Diffeomorph

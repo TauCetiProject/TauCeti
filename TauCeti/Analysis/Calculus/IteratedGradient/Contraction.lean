@@ -167,41 +167,31 @@ theorem norm_fullContractL_le (j : ℕ) (h : E) :
 
 /-- `fullContractL j` depends smoothly (`C^n` for every `n : ℕ∞ω`) on the direction vector. -/
 theorem contDiff_fullContractL {n : ℕ∞ω} : ∀ j : ℕ, ContDiff ℝ n (fullContractL (E := E) j)
-  | 0 => by
-      rw [funext fullContractL_zero]
-      exact (innerSL ℝ (E := E)).contDiff
+  | 0 => by rw [funext fullContractL_zero]; exact (innerSL ℝ (E := E)).contDiff
   | j + 1 => by
       rw [funext (fullContractL_succ j)]
-      exact (contDiff_fullContractL j).clm_comp <|
-        @ContinuousLinearMap.contDiff ℝ E
-          ((E →L[ℝ] IteratedGradient E j) →L[ℝ] IteratedGradient E j) _ _ _ _ _ n
-          (ContinuousLinearMap.apply ℝ (E' := E) (IteratedGradient E j))
+      exact (contDiff_fullContractL j).clm_comp <| @ContinuousLinearMap.contDiff ℝ E
+        ((E →L[ℝ] IteratedGradient E j) →L[ℝ] IteratedGradient E j) _ _ _ _ _ n
+        (ContinuousLinearMap.apply ℝ (E' := E) (IteratedGradient E j))
 
 /-- On any Hilbert space, full contraction of `iteratedGradientChain f j x` along `h` agrees with
-the `(j + 1)`-fold directional derivative `iteratedFDerivAlong ℝ (List.replicate (j + 1) h) f x`
-whenever `f` is `C^{j+1}` at `x`. -/
+`iteratedFDerivAlong ℝ (List.replicate (j + 1) h) f x` whenever `f` is `C^{j+1}` at `x`. -/
 theorem fullContractL_iteratedGradientChain_eq_iteratedFDerivAlong [CompleteSpace E] :
     ∀ (j : ℕ) {f : E → ℝ} {x : E}, ContDiffAt ℝ (j + 1) f x → ∀ h : E,
       fullContractL j h (iteratedGradientChain f j x) =
         iteratedFDerivAlong ℝ (List.replicate (j + 1) h) f x
-  | 0, f, x, _, h => by
-      simpa [gradient] using real_inner_comm (gradient f x) h
+  | 0, f, x, _, h => by simpa [gradient] using real_inner_comm (gradient f x) h
   | j + 1, f, x, hf, h => by
-      have hd : DifferentiableAt ℝ (iteratedGradientChain f j) x :=
-        (contDiffAt_iteratedGradientChain (m := 1) hf j
-          (by push_cast; ring_nf; exact le_rfl)).differentiableAt one_ne_zero
-      have hcomp : HasFDerivAt
-          (fun y => fullContractL j h (iteratedGradientChain f j y))
-          ((fullContractL j h).comp (fderiv ℝ (iteratedGradientChain f j) x)) x :=
-        (fullContractL j h).hasFDerivAt.comp x hd.hasFDerivAt
-      have heq : (fun y => fullContractL j h (iteratedGradientChain f j y)) =ᶠ[𝓝 x]
+      have hd := (contDiffAt_iteratedGradientChain (m := 1) hf j
+        (by push_cast; ring_nf; exact le_rfl)).differentiableAt one_ne_zero
+      have hcomp := (fullContractL j h).hasFDerivAt.comp x hd.hasFDerivAt
+      have heq : fullContractL j h ∘ iteratedGradientChain f j =ᶠ[𝓝 x]
           iteratedFDerivAlong ℝ (List.replicate (j + 1) h) f :=
-        (hf.eventually (by simp)).mono fun y hy =>
+        (hf.eventually (by simp)).mono fun _ hy =>
           fullContractL_iteratedGradientChain_eq_iteratedFDerivAlong j
             (hy.of_le (by norm_cast; omega)) h
       rw [fullContractL_succ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply,
-        List.replicate_succ, iteratedFDerivAlong_cons_apply, ← heq.fderiv_eq, hcomp.fderiv]
-      simp
+        List.replicate_succ, iteratedFDerivAlong_cons_apply, ← heq.fderiv_eq, hcomp.fderiv]; simp
 
 end InnerProductSpace
 

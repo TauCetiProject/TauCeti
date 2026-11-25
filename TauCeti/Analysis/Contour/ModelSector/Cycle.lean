@@ -52,7 +52,7 @@ def modelSectorCurve (z₀ : ℂ) (r φ α : ℝ) (hr : 0 ≤ r) (hα : 0 ≤ α
 
 /-- The model sector as a one-generator contour cycle. -/
 def modelSectorCycle (z₀ : ℂ) (r φ α : ℝ) (hr : 0 ≤ r) (hα : 0 ≤ α) : Cycle :=
-  FreeAbelianGroup.of (modelSectorCurve z₀ r φ α hr hα)
+  FreeAddCommGroup.of (modelSectorCurve z₀ r φ α hr hα)
 
 /-- The bundled model sector starts at `-r`. -/
 @[simp]

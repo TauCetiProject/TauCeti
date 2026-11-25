@@ -142,7 +142,7 @@ theorem transitiveGroupLabel_four_zero_iff (G : Subgroup (Perm (Fin 4))) :
   · rintro ⟨hcard, hcyc⟩
     obtain ⟨g, hg⟩ := exists_pow_ne_one_of_isCyclic (G := G) (k := 2) (by decide) (by omega)
     exact G.transitiveGroupLabel_four_zero_of_exists_sq_ne_one hcard
-      ⟨g, g.2, fun h => hg (Subtype.ext (by rw [Subgroup.coe_pow]; exact h))⟩
+      ⟨g, g.property, fun h => hg (Subtype.ext (by rw [Subgroup.coe_pow]; exact h))⟩
 
 /-- **`4T2` is recognized by its order and non-cyclicity.** A transitive subgroup of `S₄` is
 labelled `4T2` exactly when it has order four and is not cyclic, that is, exactly when it is a

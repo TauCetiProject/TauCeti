@@ -34,6 +34,8 @@ property of the enveloping algebra is used here.
   antipode, again a subring.
 * `UniversalEnvelopingAlgebra.antipodeEquiv`: the resulting algebra equivalence with the
   opposite algebra.
+* `UniversalEnvelopingAlgebra.centerAntipode`: the antipode restricted to the centre, an
+  involutive algebra automorphism of the commutative centre.
 
 ## Main results
 
@@ -42,6 +44,7 @@ property of the enveloping algebra is used here.
 * `UniversalEnvelopingAlgebra.antipode_mul_antidistrib`: the antipode reverses
   multiplication.
 * `UniversalEnvelopingAlgebra.antipode_antipode`: the antipode is involutive.
+* `UniversalEnvelopingAlgebra.antipode_mem_center`: the antipode maps the centre into itself.
 * `UniversalEnvelopingAlgebra.antipode_dividedPower` and
   `UniversalEnvelopingAlgebra.antipode_ringChoose`: over `ℚ`, the antipode passes through a
   divided power and through a generalized binomial coefficient.
@@ -262,6 +265,47 @@ theorem mem_antipodeComap {S : Subring (UniversalEnvelopingAlgebra R L)}
 /-- The antipode is bijective. -/
 theorem antipode_bijective : Function.Bijective (antipode (L := L) R) :=
   Function.Involutive.bijective (fun a => antipode_antipode R a)
+
+/-- The antipode maps the centre of `U(L)` into itself. -/
+theorem antipode_mem_center {z : UniversalEnvelopingAlgebra R L}
+    (hz : z ∈ Subalgebra.center R (UniversalEnvelopingAlgebra R L)) :
+    antipode R z ∈ Subalgebra.center R (UniversalEnvelopingAlgebra R L) := by
+  rw [Subalgebra.mem_center_iff]
+  intro a
+  obtain ⟨b, rfl⟩ := (antipode_bijective (L := L) R).2 a
+  rw [← antipode_mul_antidistrib, ← antipode_mul_antidistrib, Subalgebra.mem_center_iff.mp hz b]
+
+/-- The antipode restricted to the centre of `U(L)`, an involutive algebra automorphism: the
+antipode reverses products, which on the commutative centre is no change. -/
+noncomputable def centerAntipode :
+    Subalgebra.center R (UniversalEnvelopingAlgebra R L) ≃ₐ[R]
+      Subalgebra.center R (UniversalEnvelopingAlgebra R L) where
+  toFun z := ⟨antipode R (z : UniversalEnvelopingAlgebra R L), antipode_mem_center R z.property⟩
+  invFun z := ⟨antipode R (z : UniversalEnvelopingAlgebra R L), antipode_mem_center R z.property⟩
+  left_inv z := Subtype.ext (antipode_antipode R _)
+  right_inv z := Subtype.ext (antipode_antipode R _)
+  map_mul' z w := Subtype.ext <| by
+    simp only [Subalgebra.coe_mul]
+    rw [antipode_mul_antidistrib]
+    exact Subalgebra.mem_center_iff.mp (antipode_mem_center R z.property) _
+  map_add' z w := Subtype.ext (map_add _ _ _)
+  commutes' r := Subtype.ext (antipode_algebraMap R r)
+
+@[simp]
+theorem coe_centerAntipode (z : Subalgebra.center R (UniversalEnvelopingAlgebra R L)) :
+    (centerAntipode R z : UniversalEnvelopingAlgebra R L) = antipode R (z : _) :=
+  (rfl)
+
+/-- The antipode of the centre is its own inverse. -/
+@[simp]
+theorem centerAntipode_symm : (centerAntipode (L := L) R).symm = centerAntipode R :=
+  (rfl)
+
+/-- The antipode of the centre is an involution. -/
+@[simp]
+theorem centerAntipode_centerAntipode (z : Subalgebra.center R (UniversalEnvelopingAlgebra R L)) :
+    centerAntipode R (centerAntipode R z) = z :=
+  Subtype.ext (antipode_antipode R _)
 
 section DividedPowers
 
