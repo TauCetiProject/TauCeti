@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Basis.Bilinear
+public import Mathlib.LinearAlgebra.ExteriorPower.BilinForm
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.AlgebraMapInv
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.DegreeScaling
@@ -19,7 +20,8 @@ Let `M` be a module over a commutative ring `R`, `σ : R →+* R` a ring endomor
 `h : M →ₛₗ[σ] M →ₗ[R] R` a `σ`-sesquilinear form on `M`, `σ`-semilinear in its first argument and
 `R`-linear in its second. This file constructs the basis-free exterior Gram form
 `h.exteriorAlgebraGram` on `ExteriorAlgebra R M` and its degree-`p` restriction
-`h.exteriorPowerGram p` on `⋀[R]^p M`, without assuming `M` is free or finitely generated, and
+`h.exteriorPowerGram p` on `⋀[R]^p M` (the `σ`-sesquilinear generalization of
+`LinearMap.BilinForm.exteriorPower`), without assuming `M` is free or finitely generated, and
 identifies them with the wedge-basis forms attached to any finite ordered basis of `M`.
 
 The form `h.exteriorAlgebraGram` is characterized by two properties:
@@ -67,7 +69,9 @@ and evaluates on pure wedges as the Gram determinant of `h`.
 
 * `LinearMap.exteriorAlgebraGram`: the `σ`-sesquilinear exterior Gram form on
   `ExteriorAlgebra R M` induced by `h : M →ₛₗ[σ] M →ₗ[R] R`.
-* `LinearMap.exteriorPowerGram`: its restriction to the `p`-th exterior power `⋀[R]^p M`.
+* `LinearMap.exteriorPowerGram`: its restriction to the `p`-th exterior power `⋀[R]^p M`,
+  generalizing `LinearMap.BilinForm.exteriorPower`
+  (`LinearMap.exteriorPowerGram_eq_bilinForm_exteriorPower`).
 
 ## Main results
 
@@ -94,15 +98,6 @@ and evaluates on pure wedges as the Gram determinant of `h`.
 * `Module.Basis.toLinearMapₛₗ₂_exteriorAlgebra_eq_exteriorAlgebraGram` and
   `Module.Basis.toLinearMapₛₗ₂_exteriorPower_eq_exteriorPowerGram`: the wedge-basis forms on
   `b.ExteriorAlgebra` and `b.exteriorPower p` agree with the Gram forms of the basis form of `b`.
-* `Module.Basis.toLinearMapₛₗ₂_exteriorAlgebra_ι_mul_left`,
-  `Module.Basis.toLinearMapₛₗ₂_exteriorAlgebra_ι_mul_right` (for involutive `σ`),
-  `Module.Basis.toLinearMapₛₗ₂_exteriorAlgebra_ιMulti_ιMulti`,
-  `Module.Basis.toLinearMapₛₗ₂_exteriorAlgebra_eq_zero_of_mem_exteriorPower`,
-  `Module.Basis.eq_toLinearMapₛₗ₂_exteriorAlgebra_of_ιMulti`,
-  `Module.Basis.toLinearMapₛₗ₂_exteriorAlgebra_degreeScaling_left`, and
-  `Module.Basis.toLinearMapₛₗ₂_exteriorAlgebra_degreeScaling_degreeScaling_of_mem_exteriorPower`:
-  creation–contraction adjointness, Gram-determinant formula, degree orthogonality,
-  characterization, and degree scaling for the wedge-basis form.
 
 ## References
 
@@ -297,7 +292,7 @@ theorem eq_exteriorAlgebraGram_iff (h : M →ₛₗ[σ] M →ₗ[R] R)
 /-! ### Degree orthogonality and the Gram-determinant formula -/
 
 /-- Pure wedges of distinct degrees are orthogonal for `h.exteriorAlgebraGram`. -/
-theorem exteriorAlgebraGram_ιMulti_of_ne (h : M →ₛₗ[σ] M →ₗ[R] R) {p q : ℕ} (hpq : p ≠ q)
+theorem exteriorAlgebraGram_ιMulti_eq_zero_of_ne (h : M →ₛₗ[σ] M →ₗ[R] R) {p q : ℕ} (hpq : p ≠ q)
     (x : Fin p → M) (y : Fin q → M) :
     h.exteriorAlgebraGram (_root_.ExteriorAlgebra.ιMulti R p x)
         (_root_.ExteriorAlgebra.ιMulti R q y) = 0 := by
@@ -326,7 +321,7 @@ theorem exteriorAlgebraGram_eq_zero_of_mem_exteriorPower (h : M →ₛₗ[σ] M 
     induction ht using Submodule.span_induction with
     | mem t ht =>
       obtain ⟨y, rfl⟩ := ht
-      exact h.exteriorAlgebraGram_ιMulti_of_ne hpq x y
+      exact h.exteriorAlgebraGram_ιMulti_eq_zero_of_ne hpq x y
     | zero => simp
     | add t₁ t₂ _ _ ht₁ ht₂ => rw [map_add, ht₁, ht₂, add_zero]
     | smul r t _ ht => rw [map_smul, ht, smul_zero]
@@ -437,7 +432,7 @@ theorem eq_exteriorAlgebraGram_of_ιMulti (h : M →ₛₗ[σ] M →ₗ[R] R)
           rw [← exteriorPower.ιMulti_apply_coe]; exact SetLike.coe_mem _
         have hy : _root_.ExteriorAlgebra.ιMulti R q y ∈ ⋀[R]^q M := by
           rw [← exteriorPower.ιMulti_apply_coe]; exact SetLike.coe_mem _
-        rw [horth hpq hx hy, h.exteriorAlgebraGram_ιMulti_of_ne hpq x y]
+        rw [horth hpq hx hy, h.exteriorAlgebraGram_ιMulti_eq_zero_of_ne hpq x y]
     | zero => simp
     | add t₁ t₂ _ _ ht₁ ht₂ => rw [map_add, map_add, ht₁, ht₂]
     | smul r t _ ht => rw [map_smul, map_smul, ht]
@@ -521,8 +516,8 @@ theorem map_exteriorAlgebraGram_swap (h : M →ₛₗ[σ] M →ₗ[R] R) (hσ : 
         congr 1
         ext i j
         simp [RingHom.mapMatrix_apply, hh (x i) (y j)]
-      · rw [exteriorAlgebraGram_ιMulti_of_ne h hpq,
-          exteriorAlgebraGram_ιMulti_of_ne h (Ne.symm hpq), map_zero]
+      · rw [exteriorAlgebraGram_ιMulti_eq_zero_of_ne h hpq,
+          exteriorAlgebraGram_ιMulti_eq_zero_of_ne h (Ne.symm hpq), map_zero]
     | zero => simp
     | add t₁ t₂ _ _ ht₁ ht₂ => rw [map_add, map_add, map_add, LinearMap.add_apply, ht₁, ht₂]
     | smul r t _ ht =>
@@ -636,7 +631,8 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {σ : R →+* 
 
 /-- **The basis-free Gram form on the `p`-th exterior power `⋀[R]^p M`** induced by a
 `σ`-sesquilinear form `h : M →ₛₗ[σ] M →ₗ[R] R`: the restriction of `h.exteriorAlgebraGram` to the
-homogeneous submodule `⋀[R]^p M`. -/
+homogeneous submodule `⋀[R]^p M`. For `σ = RingHom.id R`, this is the `σ`-twisted generalization of
+`LinearMap.BilinForm.exteriorPower` (`LinearMap.exteriorPowerGram_eq_bilinForm_exteriorPower`). -/
 def exteriorPowerGram (h : M →ₛₗ[σ] M →ₗ[R] R) (p : ℕ) :
     (⋀[R]^p M) →ₛₗ[σ] (⋀[R]^p M) →ₗ[R] R :=
   h.exteriorAlgebraGram.domRestrict₁₂ (⋀[R]^p M) (⋀[R]^p M)
@@ -667,6 +663,16 @@ theorem eq_exteriorPowerGram_iff (h : M →ₛₗ[σ] M →ₗ[R] R) (p : ℕ)
   rintro _ ⟨x, rfl⟩
   refine exteriorPower.linearMap_ext (AlternatingMap.ext fun y ↦ ?_)
   simpa using hB x y
+
+/-- For an `R`-bilinear form (`σ = RingHom.id R`), `LinearMap.exteriorPowerGram` agrees with
+`LinearMap.BilinForm.exteriorPower`. -/
+theorem exteriorPowerGram_eq_bilinForm_exteriorPower (h : LinearMap.BilinForm R M) (p : ℕ) :
+    h.exteriorPowerGram p = LinearMap.BilinForm.exteriorPower h p := by
+  symm
+  refine (h.eq_exteriorPowerGram_iff p _).mpr fun x y ↦ ?_
+  rw [LinearMap.BilinForm.bilinForm_ιMulti_ιMulti, ← Matrix.det_transpose]
+  refine congrArg Matrix.det (Matrix.ext fun i j ↦ ?_)
+  rw [Matrix.transpose_apply, Matrix.of_apply, Matrix.of_apply]
 
 /-- **The exterior-power Gram form of a `σ`-symmetric sesquilinear form is `σ`-symmetric.** -/
 theorem IsSymm.exteriorPowerGram [RingHomInvPair σ σ] {h : M →ₛₗ[σ] M →ₗ[R] R}
@@ -735,128 +741,6 @@ theorem toLinearMapₛₗ₂_exteriorAlgebra_eq_exteriorAlgebraGram (σ : R →+
   simp only [map_sum, map_smul, map_smulₛₗ, Finset.sum_mul, smul_mul_assoc,
     LinearMap.sum_apply, LinearMap.smul_apply, toLinearMapₛₗ₂_one_basis_eq_coord,
     toLinearMapₛₗ₂_exteriorAlgebra_ι_basis_mul]
-
-/-- **The vacuum is a unit vector**: `H 1 1 = 1` for the `σ`-sesquilinear form making the wedge
-basis orthonormal.
-
-Not `@[simp]`: `Matrix.toLinearMapₛₗ₂_apply` already expands the left-hand side. -/
-theorem toLinearMapₛₗ₂_exteriorAlgebra_apply_one_one (σ : R →+* R) :
-    toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
-      (1 : Matrix (Finset I) (Finset I) R) 1 1 = 1 := by
-  rw [b.toLinearMapₛₗ₂_exteriorAlgebra_eq_exteriorAlgebraGram,
-    LinearMap.exteriorAlgebraGram_one_left, map_one]
-
-/-- **Exterior multiplication is left-adjoint to contraction**: for the `σ`-sesquilinear form `h`
-making `b` orthonormal and the form `H` making the wedge basis orthonormal,
-`H (x ∧ s) t = H s (h(x, ·) ⌋ t)`. -/
-theorem toLinearMapₛₗ₂_exteriorAlgebra_ι_mul_left (σ : R →+* R) (x : M)
-    (s t : _root_.ExteriorAlgebra R M) :
-    toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R) (_root_.ExteriorAlgebra.ι R x * s) t =
-      toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R) s
-        (contractLeft (Q := (0 : QuadraticForm R M))
-          (toLinearMapₛₗ₂ σ b b (1 : Matrix I I R) x) t) := by
-  rw [b.toLinearMapₛₗ₂_exteriorAlgebra_eq_exteriorAlgebraGram,
-    LinearMap.exteriorAlgebraGram_ι_mul_left]
-
-/-- **Contraction is left-adjoint to exterior multiplication** for any involutive `σ`: for the
-`σ`-sesquilinear form `h` making `b` orthonormal and the form `H` making the wedge basis
-orthonormal, `H s (x ∧ t) = H (h(x, ·) ⌋ s) t`. -/
-theorem toLinearMapₛₗ₂_exteriorAlgebra_ι_mul_right (σ : R →+* R) [RingHomInvPair σ σ] (x : M)
-    (s t : _root_.ExteriorAlgebra R M) :
-    toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R) s (_root_.ExteriorAlgebra.ι R x * t) =
-      toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R)
-        (contractLeft (Q := (0 : QuadraticForm R M))
-          (toLinearMapₛₗ₂ σ b b (1 : Matrix I I R) x) s) t := by
-  rw [b.toLinearMapₛₗ₂_exteriorAlgebra_eq_exteriorAlgebraGram]
-  refine LinearMap.exteriorAlgebraGram_ι_mul_right _ (fun y ↦ ?_) s t
-  simp only [toLinearMapₛₗ₂_one_apply, map_sum, map_mul, RingHomInvPair.comp_apply_eq₂, mul_comm]
-
-/-- **The `σ`-sesquilinear form of `⋀ M` depends only on the `σ`-sesquilinear form of `M`**: if two
-finite ordered bases `b` and `b'` of `M` induce the same `σ`-sesquilinear form on `M`, then their
-wedge bases induce the same `σ`-sesquilinear form on `⋀ M`. -/
-theorem toLinearMapₛₗ₂_exteriorAlgebra_eq_of_toLinearMapₛₗ₂_eq (σ : R →+* R) {I' : Type*}
-    [Fintype I'] [LinearOrder I'] (b' : Module.Basis I' R M)
-    (h : toLinearMapₛₗ₂ σ b b (1 : Matrix I I R) =
-      toLinearMapₛₗ₂ σ b' b' (1 : Matrix I' I' R)) :
-    toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R) =
-      toLinearMapₛₗ₂ σ b'.ExteriorAlgebra b'.ExteriorAlgebra
-        (1 : Matrix (Finset I') (Finset I') R) := by
-  rw [b.toLinearMapₛₗ₂_exteriorAlgebra_eq_exteriorAlgebraGram,
-    b'.toLinearMapₛₗ₂_exteriorAlgebra_eq_exteriorAlgebraGram, h]
-
-/-- **The adjoint of the degree scaling by `r` is the degree scaling by `σ r`**: for the form `H`
-making the wedge basis orthonormal, `H (T_r s) t = H s (T_{σ r} t)`. -/
-theorem toLinearMapₛₗ₂_exteriorAlgebra_degreeScaling_left (σ : R →+* R) (r : Rˣ)
-    (s t : _root_.ExteriorAlgebra R M) :
-    toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R) (degreeScaling r s) t =
-      toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R) s
-        (degreeScaling (Units.map σ.toMonoidHom r) t) := by
-  rw [b.toLinearMapₛₗ₂_exteriorAlgebra_eq_exteriorAlgebraGram,
-    LinearMap.exteriorAlgebraGram_degreeScaling_left]
-
-/-- **The degree scaling rescales the metric on each exterior power**: for the form `H` making the
-wedge basis orthonormal and `s` in the `p`-th exterior power, `H (T_r s) (T_r t)` is
-`(σ r * r) ^ p` times `H s t`. -/
-theorem toLinearMapₛₗ₂_exteriorAlgebra_degreeScaling_degreeScaling_of_mem_exteriorPower
-    (σ : R →+* R) (r : Rˣ) {p : ℕ} {s : _root_.ExteriorAlgebra R M} (hs : s ∈ ⋀[R]^p M)
-    (t : _root_.ExteriorAlgebra R M) :
-    toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R) (degreeScaling r s) (degreeScaling r t) =
-      (σ (r : R) * r) ^ p * toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R) s t := by
-  rw [b.toLinearMapₛₗ₂_exteriorAlgebra_eq_exteriorAlgebraGram,
-    LinearMap.exteriorAlgebraGram_degreeScaling_degreeScaling_of_mem_exteriorPower _ r hs]
-
-/-- **Distinct exterior degrees are orthogonal** for the wedge-basis `σ`-sesquilinear form. -/
-theorem toLinearMapₛₗ₂_exteriorAlgebra_eq_zero_of_mem_exteriorPower (σ : R →+* R) {p q : ℕ}
-    (hpq : p ≠ q) {s t : _root_.ExteriorAlgebra R M} (hs : s ∈ ⋀[R]^p M) (ht : t ∈ ⋀[R]^q M) :
-    toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R) s t = 0 := by
-  rw [b.toLinearMapₛₗ₂_exteriorAlgebra_eq_exteriorAlgebraGram]
-  exact (toLinearMapₛₗ₂ σ b b (1 : Matrix I I R)).exteriorAlgebraGram_eq_zero_of_mem_exteriorPower
-    hpq hs ht
-
-/-- **In degree one, the wedge-basis `σ`-sesquilinear form restricts to the `σ`-sesquilinear form
-on `M`.** -/
-theorem toLinearMapₛₗ₂_exteriorAlgebra_ι_ι (σ : R →+* R) (x y : M) :
-    toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R)
-        (_root_.ExteriorAlgebra.ι R x) (_root_.ExteriorAlgebra.ι R y) =
-      toLinearMapₛₗ₂ σ b b (1 : Matrix I I R) x y := by
-  rw [b.toLinearMapₛₗ₂_exteriorAlgebra_eq_exteriorAlgebraGram, LinearMap.exteriorAlgebraGram_ι_ι]
-
-/-- **The Gram-determinant formula for the wedge-basis form** in every degree `p`:
-`H (x₀ ∧ ⋯ ∧ x_{p-1}) (y₀ ∧ ⋯ ∧ y_{p-1}) = det (h (xᵢ, yⱼ))`. -/
-theorem toLinearMapₛₗ₂_exteriorAlgebra_ιMulti_ιMulti (σ : R →+* R) (p : ℕ) (x y : Fin p → M) :
-    toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R)
-        (_root_.ExteriorAlgebra.ιMulti R p x) (_root_.ExteriorAlgebra.ιMulti R p y) =
-      (Matrix.of fun i j ↦ toLinearMapₛₗ₂ σ b b (1 : Matrix I I R) (x i) (y j)).det := by
-  rw [b.toLinearMapₛₗ₂_exteriorAlgebra_eq_exteriorAlgebraGram,
-    LinearMap.exteriorAlgebraGram_ιMulti]
-
-/-- **Characterization of the wedge-basis Gram form**: the form making `b.ExteriorAlgebra`
-orthonormal is the unique `σ`-sesquilinear form on `⋀ M` for which distinct exterior powers are
-orthogonal and pure wedges pair by the `p × p` Gram determinant of `toLinearMapₛₗ₂ σ b b 1`. -/
-theorem eq_toLinearMapₛₗ₂_exteriorAlgebra_of_ιMulti (σ : R →+* R)
-    (B : _root_.ExteriorAlgebra R M →ₛₗ[σ] _root_.ExteriorAlgebra R M →ₗ[R] R)
-    (horth : ∀ {p q : ℕ}, p ≠ q → ∀ {s : _root_.ExteriorAlgebra R M}, s ∈ ⋀[R]^p M →
-      ∀ {t : _root_.ExteriorAlgebra R M}, t ∈ ⋀[R]^q M → B s t = 0)
-    (hdet : ∀ (p : ℕ) (x y : Fin p → M),
-      B (_root_.ExteriorAlgebra.ιMulti R p x) (_root_.ExteriorAlgebra.ιMulti R p y) =
-        (Matrix.of fun i j ↦
-          toLinearMapₛₗ₂ σ b b (1 : Matrix I I R) (x i) (y j)).det) :
-    B = toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra
-      (1 : Matrix (Finset I) (Finset I) R) := by
-  rw [b.toLinearMapₛₗ₂_exteriorAlgebra_eq_exteriorAlgebraGram]
-  exact LinearMap.eq_exteriorAlgebraGram_of_ιMulti _ B horth hdet
 
 /-- On `⋀[R]^p M`, the form making `b.exteriorPower p` orthonormal is `(toLinearMapₛₗ₂ σ b b 1)`'s
 exterior-power Gram form. -/

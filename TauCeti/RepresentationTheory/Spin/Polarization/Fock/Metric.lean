@@ -261,14 +261,6 @@ theorem fockGramForm_ιMulti_eq_det_sesqComplexification {g : LinearMap.BilinFor
   ext i j
   exact J.fockPolarForm_eq_sesqComplexification hQJ hQ hg hQg (x i) (y j)
 
-/-- Explicit `2 × 2` Gram-determinant formula for `J.fockGramForm` in degree two. -/
-theorem fockGramForm_ι_mul_ι (x₁ x₂ y₁ y₂ : (J.spinPolarizationData hQJ hQ).W) :
-    J.fockGramForm hQJ hQ (_root_.ExteriorAlgebra.ι ℂ x₁ * _root_.ExteriorAlgebra.ι ℂ x₂)
-        (_root_.ExteriorAlgebra.ι ℂ y₁ * _root_.ExteriorAlgebra.ι ℂ y₂) =
-      J.fockPolarForm hQJ hQ x₁ y₁ * J.fockPolarForm hQJ hQ x₂ y₂ -
-        J.fockPolarForm hQJ hQ x₁ y₂ * J.fockPolarForm hQJ hQ x₂ y₁ :=
-  (J.fockPolarForm hQJ hQ).exteriorAlgebraGram_ι_mul_ι x₁ x₂ y₁ y₂
-
 /-! ### Basis-free `*`-representation and skew-Hermitian real-vector action -/
 
 /-- The polarization pairing with `conj x ∈ W'` is `-2` times `J.fockPolarForm x`. -/

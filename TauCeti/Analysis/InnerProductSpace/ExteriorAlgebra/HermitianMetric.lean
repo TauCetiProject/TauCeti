@@ -13,33 +13,36 @@ public import TauCeti.LinearAlgebra.ExteriorPower.BaseChange
 /-!
 # The Gram metric of a Euclidean exterior algebra and its complexification
 
-Let `V` be a finite-dimensional real inner product space. Mathlib puts a Gram-determinant inner
-product on each homogeneous exterior power `⋀[ℝ]^k V`. On the full exterior algebra
-`ExteriorAlgebra ℝ V`, the bilinear form `ExteriorAlgebra.gramForm V` makes the increasing wedge
-basis `e.toBasis.ExteriorAlgebra` orthonormal for every orthonormal basis `e` of `V`
-(`ExteriorAlgebra.gramForm_eq_toLinearMapₛₗ₂`). It does not
-depend on `e`, makes distinct exterior powers orthogonal
-(`ExteriorAlgebra.gramForm_eq_zero_of_mem_exteriorPower`), evaluates on decomposable wedges by the
-Gram determinant (`ExteriorAlgebra.gramForm_ιMulti_ιMulti`), and restricts on each `⋀[ℝ]^k V` to
-Mathlib's inner product (`ExteriorAlgebra.gramForm_coe_exteriorPower`). No global `Norm` or
+Let `V` be a real inner product space. Mathlib puts a Gram-determinant inner product on each
+homogeneous exterior power `⋀[ℝ]^k V` when `V` is finite-dimensional. On the full exterior algebra
+`ExteriorAlgebra ℝ V`, the bilinear form `ExteriorAlgebra.gramForm V` (defined as
+`(innerₗ V).exteriorAlgebraGram`) makes the increasing wedge basis `e.toBasis.ExteriorAlgebra`
+orthonormal for every finite ordered orthonormal basis `e` of `V`
+(`ExteriorAlgebra.gramForm_eq_toLinearMapₛₗ₂`). It makes distinct
+exterior powers orthogonal (`ExteriorAlgebra.gramForm_eq_zero_of_mem_exteriorPower`), evaluates on
+decomposable wedges by the Gram determinant (`ExteriorAlgebra.gramForm_ιMulti_ιMulti`), and, when
+`V` is finite-dimensional, restricts on each `⋀[ℝ]^k V` to Mathlib's inner product
+(`ExteriorAlgebra.gramForm_coe_exteriorPower`) and is positive definite. No global `Norm` or
 `InnerProductSpace` instance on `ExteriorAlgebra ℝ V` is introduced, so the algebra norm is left
 unconstrained.
 
-After complexification, `ℂ ⊗[ℝ] ExteriorAlgebra ℝ V` carries the positive definite Hermitian form
-`(ExteriorAlgebra.gramForm V).sesqComplexification`, while `ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)` carries
-the Hermitian form making the wedge basis `(e.toBasis.baseChange ℂ).ExteriorAlgebra` orthonormal.
+After complexification, `ℂ ⊗[ℝ] ExteriorAlgebra ℝ V` carries the Hermitian form
+`(ExteriorAlgebra.gramForm V).sesqComplexification`, positive definite when `V` is
+finite-dimensional, while for a finite ordered orthonormal basis `e` of `V`,
+`ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)` carries the Hermitian form making the wedge basis
+`(e.toBasis.baseChange ℂ).ExteriorAlgebra` orthonormal.
 Because `e.toBasis.baseChange ℂ` is orthonormal for `(innerₗ V).sesqComplexification`
 (`OrthonormalBasis.toLinearMapₛₗ₂_baseChange_complex`), the two exterior Hermitian forms match
 under `ExteriorAlgebra.baseChangeEquiv`
 (`OrthonormalBasis.toLinearMapₛₗ₂_baseChange_exteriorAlgebra_baseChangeEquiv`), and on homogeneous
-`k`-forms both agree with `(innerₗ (⋀[ℝ]^k V)).sesqComplexification`
+`k`-forms both agree with `(innerₗ (⋀[ℝ]^k V)).sesqComplexification` when `V` is finite-dimensional
 (`ExteriorAlgebra.sesqComplexification_gramForm_subtype_baseChange`,
 `OrthonormalBasis.toLinearMapₛₗ₂_baseChange_exteriorAlgebra_coe_exteriorPower`).
 
 ## Main definitions
 
-* `ExteriorAlgebra.gramForm V`: the symmetric positive definite Gram bilinear form on
-  `ExteriorAlgebra ℝ V`.
+* `ExteriorAlgebra.gramForm V`: the symmetric Gram bilinear form `(innerₗ V).exteriorAlgebraGram`
+  on `ExteriorAlgebra ℝ V` (positive definite when `V` is finite-dimensional).
 
 ## Main results
 
@@ -86,10 +89,10 @@ theorem toLinearMapₛₗ₂_baseChange_exteriorAlgebra_eq {I' : Type*} [Fintype
         (1 : Matrix (Finset I) (Finset I) ℂ) =
       Matrix.toLinearMapₛₗ₂ (starRingEnd ℂ)
         (e'.toBasis.baseChange ℂ).ExteriorAlgebra (e'.toBasis.baseChange ℂ).ExteriorAlgebra
-        (1 : Matrix (Finset I') (Finset I') ℂ) :=
-  (e.toBasis.baseChange ℂ).toLinearMapₛₗ₂_exteriorAlgebra_eq_of_toLinearMapₛₗ₂_eq (starRingEnd ℂ)
-    (e'.toBasis.baseChange ℂ)
-    (e.toLinearMapₛₗ₂_baseChange_complex.trans e'.toLinearMapₛₗ₂_baseChange_complex.symm)
+        (1 : Matrix (Finset I') (Finset I') ℂ) := by
+  rw [(e.toBasis.baseChange ℂ).toLinearMapₛₗ₂_exteriorAlgebra_eq_exteriorAlgebraGram,
+    (e'.toBasis.baseChange ℂ).toLinearMapₛₗ₂_exteriorAlgebra_eq_exteriorAlgebraGram,
+    e.toLinearMapₛₗ₂_baseChange_complex, e'.toLinearMapₛₗ₂_baseChange_complex]
 
 /-- **The Gram-determinant formula on `ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)`**: in every degree `k`,
 the wedge-basis Hermitian form evaluates on decomposable wedges as the determinant of
@@ -102,24 +105,28 @@ theorem toLinearMapₛₗ₂_baseChange_exteriorAlgebra_ιMulti_ιMulti (k : ℕ
         (ExteriorAlgebra.ιMulti ℂ k u) (ExteriorAlgebra.ιMulti ℂ k v) =
       (Matrix.of fun i j ↦
         LinearMap.BilinForm.sesqComplexification (innerₗ V) (u i) (v j)).det := by
-  rw [(e.toBasis.baseChange ℂ).toLinearMapₛₗ₂_exteriorAlgebra_ιMulti_ιMulti,
-    e.toLinearMapₛₗ₂_baseChange_complex]
+  rw [(e.toBasis.baseChange ℂ).toLinearMapₛₗ₂_exteriorAlgebra_eq_exteriorAlgebraGram,
+    e.toLinearMapₛₗ₂_baseChange_complex, LinearMap.exteriorAlgebraGram_ιMulti]
 
 end OrthonormalBasis
 
 namespace ExteriorAlgebra
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 variable (V) in
-/-- **The Gram bilinear form on the exterior algebra** of a finite-dimensional real inner product
-space `V`: the symmetric positive definite bilinear form for which the increasing wedge basis of
-every orthonormal basis of `V` is orthonormal (`ExteriorAlgebra.gramForm_eq_toLinearMapₛₗ₂`). On
-each homogeneous exterior power `⋀[ℝ]^k V` it agrees with Mathlib's Gram-determinant inner product
-(`ExteriorAlgebra.gramForm_coe_exteriorPower`), and distinct exterior powers are orthogonal. -/
+/-- **The Gram bilinear form on the exterior algebra** of a real inner product space `V`: the
+symmetric bilinear form `(innerₗ V).exteriorAlgebraGram`, for which the increasing wedge basis of
+every finite ordered orthonormal basis of `V` is orthonormal
+(`ExteriorAlgebra.gramForm_eq_toLinearMapₛₗ₂`). Distinct exterior powers are orthogonal, and when
+`V` is finite-dimensional, `gramForm V` is positive definite and agrees on each homogeneous exterior
+power `⋀[ℝ]^k V` with Mathlib's Gram-determinant inner product
+(`ExteriorAlgebra.gramForm_coe_exteriorPower`). -/
 def gramForm : LinearMap.BilinForm ℝ (ExteriorAlgebra ℝ V) :=
-  let b := (stdOrthonormalBasis ℝ V).toBasis.ExteriorAlgebra
-  Matrix.toLinearMapₛₗ₂ (starRingEnd ℝ) b b 1
+  (innerₗ V).exteriorAlgebraGram
+
+/-- `ExteriorAlgebra.gramForm V` is the exterior Gram form of `innerₗ V`. -/
+theorem gramForm_def : gramForm V = (innerₗ V).exteriorAlgebraGram := (rfl)
 
 /-- **In any orthonormal frame, `gramForm V` is the wedge-basis sesquilinear form**
 `Matrix.toLinearMapₛₗ₂ (starRingEnd ℝ) e.toBasis.ExteriorAlgebra e.toBasis.ExteriorAlgebra 1`. -/
@@ -127,10 +134,9 @@ theorem gramForm_eq_toLinearMapₛₗ₂ {I : Type*} [Fintype I] [LinearOrder I]
     (e : OrthonormalBasis I ℝ V) :
     gramForm V =
       Matrix.toLinearMapₛₗ₂ (starRingEnd ℝ) e.toBasis.ExteriorAlgebra e.toBasis.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) ℝ) :=
-  (stdOrthonormalBasis ℝ V).toBasis.toLinearMapₛₗ₂_exteriorAlgebra_eq_of_toLinearMapₛₗ₂_eq
-    (starRingEnd ℝ) e.toBasis
-    ((stdOrthonormalBasis ℝ V).toLinearMapₛₗ₂_real.trans e.toLinearMapₛₗ₂_real.symm)
+        (1 : Matrix (Finset I) (Finset I) ℝ) := by
+  rw [e.toBasis.toLinearMapₛₗ₂_exteriorAlgebra_eq_exteriorAlgebraGram, e.toLinearMapₛₗ₂_real,
+    gramForm_def]
 
 /-- Increasing wedge-basis elements of an orthonormal basis are orthonormal for `gramForm V`. -/
 @[simp]
@@ -143,48 +149,37 @@ theorem gramForm_basis_basis {I : Type*} [Fintype I] [LinearOrder I]
 /-- The vacuum `1` is a unit vector for `gramForm V`. -/
 @[simp]
 theorem gramForm_one_one : gramForm V 1 1 = 1 := by
-  rw [gramForm_eq_toLinearMapₛₗ₂ (stdOrthonormalBasis ℝ V),
-    (stdOrthonormalBasis ℝ V).toBasis.toLinearMapₛₗ₂_exteriorAlgebra_apply_one_one]
+  simp [gramForm_def]
 
 /-- **Exterior multiplication by `v` is adjoint to contraction by `⟪v, ·⟫`** for `gramForm V`. -/
 theorem gramForm_ι_mul_left (v : V) (s t : ExteriorAlgebra ℝ V) :
     gramForm V (ι ℝ v * s) t =
       gramForm V s (CliffordAlgebra.contractLeft (Q := 0) (innerₗ V v) t) := by
-  let e := stdOrthonormalBasis ℝ V
-  rw [gramForm_eq_toLinearMapₛₗ₂ e, e.toBasis.toLinearMapₛₗ₂_exteriorAlgebra_ι_mul_left,
-    e.toLinearMapₛₗ₂_real]
+  rw [gramForm_def, LinearMap.exteriorAlgebraGram_ι_mul_left]
 
 /-- **Contraction by `⟪v, ·⟫` is adjoint to exterior multiplication by `v`** for `gramForm V`. -/
 theorem gramForm_ι_mul_right (v : V) (s t : ExteriorAlgebra ℝ V) :
     gramForm V s (ι ℝ v * t) =
       gramForm V (CliffordAlgebra.contractLeft (Q := 0) (innerₗ V v) s) t := by
-  let e := stdOrthonormalBasis ℝ V
-  rw [gramForm_eq_toLinearMapₛₗ₂ e, e.toBasis.toLinearMapₛₗ₂_exteriorAlgebra_ι_mul_right,
-    e.toLinearMapₛₗ₂_real]
+  rw [gramForm_def]
+  exact (innerₗ V).exteriorAlgebraGram_ι_mul_right (fun y ↦ real_inner_comm y v) s t
 
 /-- **Distinct exterior powers are orthogonal** for `gramForm V`. -/
 theorem gramForm_eq_zero_of_mem_exteriorPower {k l : ℕ} (hkl : k ≠ l)
     {s t : ExteriorAlgebra ℝ V} (hs : s ∈ ⋀[ℝ]^k V) (ht : t ∈ ⋀[ℝ]^l V) :
     gramForm V s t = 0 := by
-  let e := stdOrthonormalBasis ℝ V
-  rw [gramForm_eq_toLinearMapₛₗ₂ e]
-  exact e.toBasis.toLinearMapₛₗ₂_exteriorAlgebra_eq_zero_of_mem_exteriorPower
-    (starRingEnd ℝ) hkl hs ht
+  rw [gramForm_def]
+  exact (innerₗ V).exteriorAlgebraGram_eq_zero_of_mem_exteriorPower hkl hs ht
 
 /-- **The Gram-determinant formula for `gramForm V`**: in every degree `k` (including `k = 0` and
 `k > finrank ℝ V`), `gramForm V (u₁ ∧ ⋯ ∧ uₖ) (v₁ ∧ ⋯ ∧ vₖ) = det (⟪uᵢ, vⱼ⟫)`. -/
 theorem gramForm_ιMulti_ιMulti (k : ℕ) (u v : Fin k → V) :
     gramForm V (ιMulti ℝ k u) (ιMulti ℝ k v) = (Matrix.of fun i j ↦ ⟪u i, v j⟫).det := by
-  let e := stdOrthonormalBasis ℝ V
-  rw [gramForm_eq_toLinearMapₛₗ₂ e, e.toBasis.toLinearMapₛₗ₂_exteriorAlgebra_ιMulti_ιMulti,
-    e.toLinearMapₛₗ₂_real]
-  refine congrArg Matrix.det (Matrix.ext fun i j ↦ ?_)
-  rw [Matrix.of_apply, Matrix.of_apply]
-  exact innerₗ_apply_apply (u i) (v j)
+  simp [gramForm_def]
 
 /-- **On each exterior power `⋀[ℝ]^k V`, `gramForm V` agrees with Mathlib's inner product.** -/
 @[simp]
-theorem gramForm_coe_exteriorPower {k : ℕ} (x y : ⋀[ℝ]^k V) :
+theorem gramForm_coe_exteriorPower [FiniteDimensional ℝ V] {k : ℕ} (x y : ⋀[ℝ]^k V) :
     gramForm V (x : ExteriorAlgebra ℝ V) (y : ExteriorAlgebra ℝ V) = ⟪x, y⟫ := by
   have key : (gramForm V).compl₁₂ (⋀[ℝ]^k V).subtype (⋀[ℝ]^k V).subtype = innerₗ (⋀[ℝ]^k V) := by
     refine exteriorPower.linearMap_ext (AlternatingMap.ext fun u ↦ ?_)
@@ -200,25 +195,22 @@ theorem gramForm_coe_exteriorPower {k : ℕ} (x y : ⋀[ℝ]^k V) :
 /-- **The restriction of `gramForm V` to `⋀[ℝ]^k V` is Mathlib's inner product
 `innerₗ (⋀[ℝ]^k V)`.** -/
 @[simp]
-theorem gramForm_restrict (k : ℕ) : (gramForm V).restrict (⋀[ℝ]^k V) = innerₗ (⋀[ℝ]^k V) :=
+theorem gramForm_restrict [FiniteDimensional ℝ V] (k : ℕ) :
+    (gramForm V).restrict (⋀[ℝ]^k V) = innerₗ (⋀[ℝ]^k V) :=
   LinearMap.ext₂ fun x y ↦ gramForm_coe_exteriorPower x y
 
 /-- **In degree one, `gramForm V` restricts to the inner product on `V`.** -/
 @[simp]
 theorem gramForm_ι_ι (x y : V) : gramForm V (ι ℝ x) (ι ℝ y) = ⟪x, y⟫ := by
-  have hx : ι ℝ x = ιMulti ℝ 1 ![x] := by simp [ιMulti_succ_apply, ιMulti_zero_apply]
-  have hy : ι ℝ y = ιMulti ℝ 1 ![y] := by simp [ιMulti_succ_apply, ιMulti_zero_apply]
-  rw [hx, hy, gramForm_ιMulti_ιMulti, Matrix.det_fin_one]
-  simp
+  simp [gramForm_def]
 
 /-- `gramForm V` is symmetric. -/
 theorem isSymm_gramForm : (gramForm V).IsSymm := by
-  refine ⟨fun x y ↦ ?_⟩
-  rw [gramForm_eq_toLinearMapₛₗ₂ (stdOrthonormalBasis ℝ V),
-    ← Matrix.star_toLinearMapₛₗ₂_one_apply, star_trivial]
+  rw [gramForm_def]
+  exact LinearMap.BilinForm.isSymm_iff.mpr (isSymm_inner (E := V)).exteriorAlgebraGram
 
 /-- `gramForm V` is positive semidefinite. -/
-theorem isPosSemidef_gramForm : (gramForm V).IsPosSemidef where
+theorem isPosSemidef_gramForm [FiniteDimensional ℝ V] : (gramForm V).IsPosSemidef where
   isSymm := isSymm_gramForm
   isNonneg := ⟨fun x ↦ by
     rw [gramForm_eq_toLinearMapₛₗ₂ (stdOrthonormalBasis ℝ V)]
@@ -226,12 +218,14 @@ theorem isPosSemidef_gramForm : (gramForm V).IsPosSemidef where
 
 /-- `gramForm V` is definite: `gramForm V x x = 0` only for `x = 0`. -/
 @[simp]
-theorem gramForm_self_eq_zero_iff {x : ExteriorAlgebra ℝ V} : gramForm V x x = 0 ↔ x = 0 := by
+theorem gramForm_self_eq_zero_iff [FiniteDimensional ℝ V] {x : ExteriorAlgebra ℝ V} :
+    gramForm V x x = 0 ↔ x = 0 := by
   rw [gramForm_eq_toLinearMapₛₗ₂ (stdOrthonormalBasis ℝ V)]
   exact Matrix.toLinearMapₛₗ₂_one_self_eq_zero_iff _
 
 /-- The quadratic map of `gramForm V` is positive definite. -/
-theorem posDef_toQuadraticMap_gramForm : (gramForm V).toQuadraticMap.PosDef := by
+theorem posDef_toQuadraticMap_gramForm [FiniteDimensional ℝ V] :
+    (gramForm V).toQuadraticMap.PosDef := by
   intro x hx
   exact lt_of_le_of_ne (isPosSemidef_gramForm.isNonneg.nonneg x)
     (Ne.symm (gramForm_self_eq_zero_iff.not.mpr hx))
@@ -241,7 +235,8 @@ theorem posDef_toQuadraticMap_gramForm : (gramForm V).toQuadraticMap.PosDef := b
 /-- **On complexified homogeneous `k`-forms, `(gramForm V).sesqComplexification` agrees with
 `(innerₗ (⋀[ℝ]^k V)).sesqComplexification`.** -/
 @[simp]
-theorem sesqComplexification_gramForm_subtype_baseChange {k : ℕ} (x y : ℂ ⊗[ℝ] ⋀[ℝ]^k V) :
+theorem sesqComplexification_gramForm_subtype_baseChange [FiniteDimensional ℝ V] {k : ℕ}
+    (x y : ℂ ⊗[ℝ] ⋀[ℝ]^k V) :
     LinearMap.BilinForm.sesqComplexification (gramForm V)
         ((⋀[ℝ]^k V).subtype.baseChange ℂ x) ((⋀[ℝ]^k V).subtype.baseChange ℂ y) =
       LinearMap.BilinForm.sesqComplexification (innerₗ (⋀[ℝ]^k V)) x y :=
@@ -268,7 +263,8 @@ theorem isSymm_sesqComplexification_gramForm :
   isSymm_gramForm.sesqComplexification
 
 /-- `(gramForm V).sesqComplexification` is strictly positive on nonzero complexified forms. -/
-theorem sesqComplexification_gramForm_self_pos {x : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V} (hx : x ≠ 0) :
+theorem sesqComplexification_gramForm_self_pos [FiniteDimensional ℝ V]
+    {x : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V} (hx : x ≠ 0) :
     0 < LinearMap.BilinForm.sesqComplexification (gramForm V) x x :=
   LinearMap.BilinForm.sesqComplexification_self_pos isSymm_gramForm posDef_toQuadraticMap_gramForm
     hx
@@ -276,8 +272,8 @@ theorem sesqComplexification_gramForm_self_pos {x : ℂ ⊗[ℝ] ExteriorAlgebra
 /-- **On `⋀[ℂ]^k (ℂ ⊗[ℝ] V)`, the pullback of `(gramForm V).sesqComplexification` along
 `(ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm` is `(innerₗ (⋀[ℝ]^k V)).sesqComplexification`**
 along `TauCeti.exteriorPower.equivBaseChange`, with no choice of basis. -/
-theorem sesqComplexification_gramForm_baseChangeEquiv_symm_coe_exteriorPower {k : ℕ}
-    (a b : ⋀[ℂ]^k (ℂ ⊗[ℝ] V)) :
+theorem sesqComplexification_gramForm_baseChangeEquiv_symm_coe_exteriorPower
+    [FiniteDimensional ℝ V] {k : ℕ} (a b : ⋀[ℂ]^k (ℂ ⊗[ℝ] V)) :
     LinearMap.BilinForm.sesqComplexification (gramForm V)
         ((baseChangeEquiv ℝ V ℂ).symm (a : ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)))
         ((baseChangeEquiv ℝ V ℂ).symm (b : ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V))) =
@@ -304,7 +300,7 @@ end ExteriorAlgebra
 
 namespace OrthonormalBasis
 
-variable {V I : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+variable {V I : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [Fintype I] [LinearOrder I] (e : OrthonormalBasis I ℝ V)
 
 /-- **Under `ExteriorAlgebra.baseChangeEquiv`, the wedge-basis Hermitian form on
@@ -349,7 +345,7 @@ theorem toLinearMapₛₗ₂_baseChange_exteriorAlgebra_baseChangeEquiv
 
 /-- **On each complex exterior power `⋀[ℂ]^k (ℂ ⊗[ℝ] V)`, the wedge-basis Hermitian form agrees
 with `(innerₗ (⋀[ℝ]^k V)).sesqComplexification` along `TauCeti.exteriorPower.equivBaseChange`.** -/
-theorem toLinearMapₛₗ₂_baseChange_exteriorAlgebra_coe_exteriorPower {k : ℕ}
+theorem toLinearMapₛₗ₂_baseChange_exteriorAlgebra_coe_exteriorPower [FiniteDimensional ℝ V] {k : ℕ}
     (x y : ⋀[ℂ]^k (ℂ ⊗[ℝ] V)) :
     Matrix.toLinearMapₛₗ₂ (starRingEnd ℂ)
         (e.toBasis.baseChange ℂ).ExteriorAlgebra (e.toBasis.baseChange ℂ).ExteriorAlgebra
