@@ -368,6 +368,12 @@ theorem chart_image_closure_dom_subset (i : Fin A.n) :
   rw [mem_preimage, (A.chart i).left_inv hs]
   exact A.closure_dom_subset_baseSet i hx
 
+/-- The image of chart `i` consists of points of the chart target whose preimage lies in the base
+set of the bundle chart. -/
+theorem image_subset_chart_target_inter_symm_preimage_baseSet (i : Fin A.n) :
+    (A.image i : Set E) ⊆ (A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet :=
+  (A.image_subset_chart_image_closure_dom i).trans (A.chart_image_closure_dom_subset i)
+
 /-- The points of the domain of chart `i` read in chart `i` inside an open set form an open set. -/
 theorem isOpen_dom_inter_preimage (i : Fin A.n) {W : Set E} (hW : IsOpen W) :
     IsOpen (A.dom i ∩ A.chart i ⁻¹' W) :=
@@ -752,8 +758,7 @@ theorem contDiffOn_coord {s : ∀ x, V x}
 theorem contDiffOn_coord_image {s : ∀ x, V x}
     (hs : ContMDiff 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F)) k fun x ↦ TotalSpace.mk' F x (s x))
     (i : Fin A.n) : ContDiffOn ℝ k (A.coord i s) (A.image i) :=
-  (A.contDiffOn_coord hs i).mono
-    ((A.image_subset_chart_image_closure_dom i).trans (A.chart_image_closure_dom_subset i))
+  (A.contDiffOn_coord hs i).mono (A.image_subset_chart_target_inter_symm_preimage_baseSet i)
 
 end FiniteBundleAtlas
 

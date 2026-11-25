@@ -114,8 +114,7 @@ private theorem coord_equation (i : Fin A.n) :
     exact_mod_cast A.contDiffOn_coord_image (k := 1) (by exact_mod_cast hs) i
   have hsub : (A.image i : Set ℂ) ⊆
       (A.chart i).target ∩ (A.chart i).symm ⁻¹' ((A.triv i).baseSet ∩ univ) := by
-    simpa only [inter_univ] using
-      (A.image_subset_chart_image_closure_dom i).trans (A.chart_image_closure_dom_subset i)
+    simpa only [inter_univ] using A.image_subset_chart_target_inter_symm_preimage_baseSet i
   have hC : ContinuousOn (coeff A (D := D) i) (A.image i) :=
     (ContinuousLinearMap.continuous _).comp_continuousOn
       ((A.contDiffOn_chartZeroOrder hD hDs isOpen_univ i).continuousOn.mono hsub)
