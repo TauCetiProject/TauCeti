@@ -72,8 +72,11 @@ sign needed for degree formulas and pullback of top-degree differential forms.
 * `Orientation.abs_orientedJacobian`, `Orientation.orientedJacobian_sq_eq_det_gram`,
   `Orientation.orientedJacobian_sq`, `Orientation.orientedJacobian_adjoint`: agreement of
   `|oV.orientedJacobian oW A|` with `LinearMap.normDet A`, Gram-determinant square formula, and
-  invariance under taking the adjoint; `Orientation.orientedJacobian_eq_prod_singularValues_of_pos`
-  writes a positive oriented Jacobian as the product of the singular values.
+  invariance under taking the adjoint; `Orientation.orientedJacobian_le_normDet`,
+  `Orientation.orientedJacobian_eq_normDet_of_nonneg`,
+  `Orientation.normDet_ne_zero_of_orientedJacobian_ne_zero` and
+  `Orientation.orientedJacobian_eq_prod_singularValues_of_pos` compare the oriented Jacobian
+  with `LinearMap.normDet A` and write a positive one as the product of the singular values.
 * `Orientation.abs_orientedJacobian_toLinearMap_le`, `Orientation.abs_orientedJacobian_le`,
   `Orientation.norm_apply_eq_of_abs_orientedJacobian_eq_norm_pow`,
   `Orientation.abs_orientedJacobian_toLinearMap_eq_norm_pow_iff`: Hadamard's inequality
@@ -718,12 +721,29 @@ theorem abs_orientedJacobian [FiniteDimensional ℝ V] (oV : Orientation ℝ V (
     rw [oV.orientedJacobian_eq_volumeForm_of_orthonormal oW A b hb,
       oW.abs_volumeForm_apply_eq_sqrt_det_gram, ← hsq, Real.sqrt_sq A.normDet_nonneg]
 
+/-- The oriented Jacobian is at most `LinearMap.normDet A`. -/
+theorem orientedJacobian_le_normDet [FiniteDimensional ℝ V] (oV : Orientation ℝ V (Fin n))
+    (oW : Orientation ℝ W (Fin n)) (A : V →ₗ[ℝ] W) : oV.orientedJacobian oW A ≤ A.normDet :=
+  (le_abs_self _).trans_eq (oV.abs_orientedJacobian oW A)
+
+/-- When `J(A) ≥ 0`, the oriented Jacobian is `LinearMap.normDet A`. -/
+theorem orientedJacobian_eq_normDet_of_nonneg [FiniteDimensional ℝ V]
+    (oV : Orientation ℝ V (Fin n)) (oW : Orientation ℝ W (Fin n)) {A : V →ₗ[ℝ] W}
+    (h : 0 ≤ oV.orientedJacobian oW A) : oV.orientedJacobian oW A = A.normDet :=
+  (abs_of_nonneg h).symm.trans (oV.abs_orientedJacobian oW A)
+
+/-- When `J(A) ≠ 0`, `LinearMap.normDet A` is nonzero. -/
+theorem normDet_ne_zero_of_orientedJacobian_ne_zero [FiniteDimensional ℝ V]
+    (oV : Orientation ℝ V (Fin n)) (oW : Orientation ℝ W (Fin n)) {A : V →ₗ[ℝ] W}
+    (h : oV.orientedJacobian oW A ≠ 0) : A.normDet ≠ 0 :=
+  oV.abs_orientedJacobian oW A ▸ abs_ne_zero.mpr h
+
 /-- When `J(A) > 0`, the oriented Jacobian is the product `σ₁ ⋯ σₙ` of the singular values. -/
 theorem orientedJacobian_eq_prod_singularValues_of_pos [FiniteDimensional ℝ V]
     [FiniteDimensional ℝ W] (oV : Orientation ℝ V (Fin n)) (oW : Orientation ℝ W (Fin n))
     {A : V →ₗ[ℝ] W} (h : 0 < oV.orientedJacobian oW A) :
     oV.orientedJacobian oW A = ∏ i ∈ Finset.range n, A.singularValues i := by
-  rw [← abs_of_pos h, oV.abs_orientedJacobian oW A, A.normDet_eq_prod_singularValues,
+  rw [oV.orientedJacobian_eq_normDet_of_nonneg oW h.le, A.normDet_eq_prod_singularValues,
     (Fact.out : finrank ℝ V = n)]
 
 /-- On any orthonormal basis `b` of `V`, the square of `oV.orientedJacobian oW A` is the Gram

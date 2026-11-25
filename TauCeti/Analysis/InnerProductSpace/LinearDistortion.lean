@@ -229,7 +229,7 @@ theorem innerDistortion_eq_prod_singularValues {A : V →ₗ[ℝ] W}
 theorem minimalStretch_pos_of_orientedJacobian_ne_zero (hn : 0 < n) {A : V →ₗ[ℝ] W}
     (h : oV.orientedJacobian oW A ≠ 0) : 0 < A.minimalStretch :=
   A.minimalStretch_pos_of_normDet_ne_zero ((Fact.out : finrank ℝ V = n) ▸ hn)
-    (oV.abs_orientedJacobian oW A ▸ abs_ne_zero.mpr h)
+    (oV.normDet_ne_zero_of_orientedJacobian_ne_zero oW h)
 
 /-- When `J(A) ≠ 0`, the power `ℓ(A)ⁿ` is positive (in dimension `0` it is `1`). -/
 theorem minimalStretch_pow_pos_of_orientedJacobian_ne_zero {A : V →ₗ[ℝ] W}
@@ -245,8 +245,8 @@ theorem orientedJacobian_le_norm_pow_mul_minimalStretch (hn : 0 < n) (A : V →�
     oV.orientedJacobian oW A ≤
       ‖LinearMap.toContinuousLinearMap A‖ ^ (n - 1) * A.minimalStretch := by
   have hA := A.normDet_le_norm_pow_mul_minimalStretch ((Fact.out : finrank ℝ V = n) ▸ hn)
-  rw [(Fact.out : finrank ℝ V = n), ← oV.abs_orientedJacobian oW A] at hA
-  exact (le_abs_self _).trans hA
+  rw [(Fact.out : finrank ℝ V = n)] at hA
+  exact (oV.orientedJacobian_le_normDet oW A).trans hA
 
 /-- When `J(A) ≥ 0`, `‖A‖ * ℓ(A) ^ (n - 1)` bounds the oriented Jacobian from below:
 `σ₁ σₙⁿ⁻¹ ≤ σ₁ ⋯ σₙ` (`LinearMap.norm_mul_minimalStretch_pow_le_normDet`). -/
@@ -255,7 +255,7 @@ theorem norm_mul_minimalStretch_pow_le_orientedJacobian {A : V →ₗ[ℝ] W}
     ‖LinearMap.toContinuousLinearMap A‖ * A.minimalStretch ^ (n - 1) ≤
       oV.orientedJacobian oW A := by
   have hA := A.norm_mul_minimalStretch_pow_le_normDet
-  rwa [(Fact.out : finrank ℝ V = n), ← oV.abs_orientedJacobian oW A, abs_of_nonneg h] at hA
+  rwa [(Fact.out : finrank ℝ V = n), ← oV.orientedJacobian_eq_normDet_of_nonneg oW h] at hA
 
 /-- When `J(A) > 0`, the outer distortion is at least `‖A‖ / ℓ(A) = σ₁ / σₙ`. -/
 theorem ofReal_norm_div_minimalStretch_le_outerDistortion {A : V →ₗ[ℝ] W}
@@ -296,7 +296,7 @@ theorem one_le_innerDistortion {A : V →ₗ[ℝ] W} (h : 0 < oV.orientedJacobia
   rw [oV.innerDistortion_of_pos oW h,
     one_le_div (oV.minimalStretch_pow_pos_of_orientedJacobian_ne_zero oW h.ne')]
   have := A.minimalStretch_pow_le_normDet
-  rwa [(Fact.out : finrank ℝ V = n), ← oV.abs_orientedJacobian oW A, abs_of_pos h] at this
+  rwa [(Fact.out : finrank ℝ V = n), ← oV.orientedJacobian_eq_normDet_of_nonneg oW h.le] at this
 
 /-- The inner distortion vanishes exactly when `J(A) ≤ 0`. -/
 theorem innerDistortion_eq_zero_iff {A : V →ₗ[ℝ] W} :
@@ -320,8 +320,11 @@ theorem outerDistortion_linearIsometryEquiv_comp (U : W ≃ₗᵢ[ℝ] X)
     oV.outerDistortion oX ((U : W →ₗ[ℝ] X) ∘ₗ A) = oV.outerDistortion oW A := by
   have hzero : (U : W →ₗ[ℝ] X) ∘ₗ A = 0 ↔ A = 0 := by
     simp [LinearMap.ext_iff]
+  have hnorm : ‖LinearMap.toContinuousLinearMap ((U : W →ₗ[ℝ] X) ∘ₗ A)‖ =
+      ‖LinearMap.toContinuousLinearMap A‖ :=
+    LinearMap.norm_toContinuousLinearMap_linearIsometry_comp U.toLinearIsometry A
   rw [outerDistortion_def, outerDistortion_def, oV.orientedJacobian_comp_of_left_eq_one oW oX hU,
-    LinearMap.norm_toContinuousLinearMap_linearIsometryEquiv_comp, hzero]
+    hnorm, hzero]
 
 /-- Precomposing with an isometric isomorphism of oriented Jacobian `1` (orientation-preserving)
 changes no outer distortion. -/
