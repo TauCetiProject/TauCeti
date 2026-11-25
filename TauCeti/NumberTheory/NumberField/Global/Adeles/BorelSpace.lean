@@ -20,11 +20,11 @@ Let `K` be a number field. Its infinite adele ring `K_∞ = ∏_{w | ∞} K_w` i
 finite-dimensional real mixed space, so it is second countable, and being locally compact and
 Hausdorff it is Polish. It carries its Borel σ-algebra.
 
-Let `R` be a Dedekind domain with fraction field `K`, countably many places and finite residue
-fields, such as the ring of integers of `K` (`NumberField.RingOfIntegers.instCountable`). The
-adele ring `AdeleRing R K = K_∞ × 𝔸_{K,f}` carries the product of the Borel σ-algebras of its two
-factors, which by second countability is its own Borel σ-algebra, and it is second countable and
-Polish.
+Let `R` be a Dedekind domain with fraction field `K`. The adele ring
+`AdeleRing R K = K_∞ × 𝔸_{K,f}` carries the product of the Borel σ-algebras of its two factors,
+which by second countability of `K_∞` is its own Borel σ-algebra. If moreover `R` has countably
+many places and finite residue fields, such as the ring of integers of `K`
+(`NumberField.RingOfIntegers.instCountable`), the adele ring is second countable and Polish.
 
 For the unit groups the coordinate σ-algebra `Units.instMeasurableSpace` is the Borel σ-algebra of
 the native topology of the units, induced by `u ↦ (u, u⁻¹)`, even though for the ideles this
@@ -83,14 +83,14 @@ variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
 instance AdeleRing.instMeasurableSpace : MeasurableSpace (AdeleRing R K) :=
   inferInstanceAs <| MeasurableSpace (InfiniteAdeleRing K × FiniteAdeleRing R K)
 
-variable [Countable (HeightOneSpectrum R)] [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.asIdeal)]
+variable [NumberField K]
 
-/-- The adele ring is a Borel space: since the finite adele ring is second countable, the product
-σ-algebra is the Borel σ-algebra of the product topology. -/
+/-- The adele ring of a number field is a Borel space: since the infinite adele ring is second
+countable, the product σ-algebra is the Borel σ-algebra of the product topology. -/
 instance AdeleRing.instBorelSpace : BorelSpace (AdeleRing R K) :=
   inferInstanceAs <| BorelSpace (InfiniteAdeleRing K × FiniteAdeleRing R K)
 
-variable [NumberField K]
+variable [Countable (HeightOneSpectrum R)] [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.asIdeal)]
 
 /-- The adele ring of a number field is Polish. -/
 instance AdeleRing.instPolishSpace : PolishSpace (AdeleRing R K) :=
