@@ -10,8 +10,8 @@ public import Mathlib.Geometry.Manifold.VectorField.Pullback
 public import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
-import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # The derivative of a vector field in a chart
@@ -210,10 +210,19 @@ theorem det_fderiv_mpullback_extChartAt_symm_of_eq_zero
       LinearMap.det (vectorFieldChartDerivative I V x) := by
   rw [fderiv_mpullback_extChartAt_symm_of_eq_zero hV hV₀ hx, vectorFieldChartDerivative_def]
   -- The derivatives of the two transition maps at `x` are mutually inverse.
-  set e := tangentCoordChangeEquiv (mem_extChartAt_source x) hx
-  refine (congrArg LinearMap.det ?_).trans (LinearMap.det_conj _ e.toLinearEquiv)
-  ext v
-  simp [e]
+  -- They are the coordinate changes between the tangent trivializations at `x` and `x'`.
+  have hb : x ∈ (trivializationAt E (TangentSpace I) x).baseSet ∩
+      (trivializationAt E (TangentSpace I) x').baseSet :=
+    ⟨by simp, by simpa using hx⟩
+  set e := (trivializationAt E (TangentSpace I) x).coordChangeL 𝕜
+    (trivializationAt E (TangentSpace I) x') x
+  have he : (e : E →L[𝕜] E) = tangentCoordChange I x x' x :=
+    (tangentBundleCore I M).trivializationAt_coordChangeL hb
+  have he' : (e.symm : E →L[𝕜] E) = tangentCoordChange I x' x x := by
+    rw [Bundle.Trivialization.symm_coordChangeL _ _ hb.symm]
+    exact (tangentBundleCore I M).trivializationAt_coordChangeL hb.symm
+  rw [← he, ← he']
+  exact LinearMap.det_conj _ e.toLinearEquiv
 
 end Boundaryless
 

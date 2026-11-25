@@ -11,8 +11,8 @@ import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues.Continuity
 import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues.LinearEquiv
 import TauCeti.Geometry.Manifold.Complex.LeviForm
 import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Tangent.CoordChange
-import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.CoordChange
+import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # Continuity of the eigenvalue function on a Hermitian manifold
@@ -109,14 +109,15 @@ theorem Compatible.continuousAt_relEigenvalueFunction {κ : SmoothTwoForm 𝓘(�
   have heq : ∀ᶠ x in 𝓝 x₀, relEigenvalueVector (H x · ·) (A x · ·) =
       relEigenvalueFunction E κ α φ x := by
     filter_upwards [hsrc] with x hx
-    simp only [hH, hA]
-    rw [relEigenvalueFunction_def]
-    have h := relEigenvalueVector_comp_linearEquiv
-        (tangentCoordChangeEquiv (I := 𝓘(ℂ, E)) (by simpa using hx)
-          (mem_extChartAt_source x)).toLinearEquiv
-        (twoFormHermitianForm E κ.val x) (ddbarHermitianForm E α φ x)
-    simp only [ContinuousLinearEquiv.coe_toLinearEquiv, tangentCoordChangeEquiv_apply] at h
-    exact h
+    simp only [hH, hA, relEigenvalueFunction_def]
+    -- `B x` is the coordinate change between the complex tangent trivializations.
+    set e := (trivializationAt E (TangentSpace 𝓘(ℂ, E)) x₀).coordChangeL ℂ
+      (trivializationAt E (TangentSpace 𝓘(ℂ, E)) x) x
+    have hB : (e : E →L[ℂ] E) = B x :=
+      (tangentBundleCore 𝓘(ℂ, E) X).trivializationAt_coordChangeL ⟨hx, mem_chart_source E x⟩
+    simpa only [ContinuousLinearEquiv.coe_toLinearEquiv, ← ContinuousLinearEquiv.coe_coe, hB] using
+      relEigenvalueVector_comp_linearEquiv e.toLinearEquiv (twoFormHermitianForm E κ.val x)
+        (ddbarHermitianForm E α φ x)
   have hlim : Tendsto (fun x ↦ relEigenvalueVector (H x · ·) (A x · ·)) (𝓝 x₀)
       (𝓝 (relEigenvalueVector (twoFormSesqForm E κ.val x₀ (hκx x₀) · ·)
         (ddbarSesqForm E φ (hα x₀) · ·))) := by
