@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.CStarAlgebra.State.IdealExtension
 public import TauCeti.Analysis.CStarAlgebra.State.AmenableTrace
 public import TauCeti.Analysis.CStarAlgebra.Matrix.VectorState
-import TauCeti.Analysis.CStarAlgebra.State.Extension
 
 /-!
 # Checks for the extension of tracial states from closed ideals
@@ -89,19 +88,17 @@ theorem traceFst_zero_one : traceFst ((0, 1) : A) = 0 := by
 def unit : I :=
   ⟨(1, 0), (mem_I_iff _).mpr rfl⟩
 
+/-- Every element of `I` has the form `(x, 0)`. -/
+theorem coe_eq_mk (c : I) : (c : A) = ((c : A).1, 0) :=
+  Prod.ext rfl ((mem_I_iff _).mp c.property)
+
 /-- `e` is a left unit of `I`. -/
-theorem unit_mul (c : I) : unit * c = c := by
-  obtain ⟨⟨x, y⟩, hc⟩ := c
-  have hy : y = 0 := (mem_I_iff _).mp hc
-  subst hy
-  exact Subtype.ext (Prod.ext (one_mul x) (zero_mul 0))
+theorem unit_mul (c : I) : unit * c = c :=
+  Subtype.ext <| by rw [MulMemClass.coe_mul, coe_eq_mk c]; simp [unit]
 
 /-- `e` is a right unit of `I`. -/
-theorem mul_unit (c : I) : c * unit = c := by
-  obtain ⟨⟨x, y⟩, hc⟩ := c
-  have hy : y = 0 := (mem_I_iff _).mp hc
-  subst hy
-  exact Subtype.ext (Prod.ext (mul_one x) (mul_zero 0))
+theorem mul_unit (c : I) : c * unit = c :=
+  Subtype.ext <| by rw [MulMemClass.coe_mul, coe_eq_mk c]; simp [unit]
 
 /-- `τ(e) = 1`. -/
 theorem trace_unit : trace unit = 1 := by
@@ -138,12 +135,13 @@ theorem isIncreasingApproximateUnit_pure_unit : (pure unit : Filter I).IsIncreas
     where
   tendsto_mul_left c := by simpa [mul_unit] using tendsto_pure_nhds (c * ·) unit
   tendsto_mul_right c := by simpa [unit_mul] using tendsto_pure_nhds (· * c) unit
-  eventually_nonneg := by
-    refine Filter.eventually_pure.mpr (Subtype.coe_le_coe.mp ?_)
-    exact Prod.mk_le_mk.mpr ⟨zero_le_one, le_rfl⟩
+  eventually_nonneg := Filter.eventually_pure.mpr <| Subtype.coe_le_coe.mp <| by
+    simp [unit, Prod.le_def]
   eventually_norm := Filter.eventually_pure.mpr norm_unit.le
 
-/-- **The extension formula.** `τ(e (x, λ) e) = tr₂(x) = γ(x, λ)`. -/
+/-- **The extension formula.** `τ(e (x, λ) e) = tr₂(x) = γ(x, λ)`. The element `e (x, λ) e` of `I`
+is written as the anonymous constructor used by
+`PositiveContinuousLinearMap.tendsto_apply_mul_mul_of_apply_coe_eq'`. -/
 theorem trace_unit_mul_mul_unit (a : A) :
     trace ⟨(unit : A) * a * unit, I.mul_mem_left _ _ unit.property⟩ = traceFst a := by
   simp [unit]
