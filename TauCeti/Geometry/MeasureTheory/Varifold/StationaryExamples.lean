@@ -10,6 +10,7 @@ import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 import TauCeti.MeasureTheory.Measure.Subtype
 import TauCeti.Topology.Algebra.Module.Trace
+import TauCeti.Topology.Maps.Proper.Basic
 
 /-!
 # Stationary varifolds: planes and constant plane fields
@@ -89,12 +90,8 @@ theorem firstVariation_map_affinePlane_eq_zero (S : Submodule ℝ E) (a : E) (ν
     (Homeomorph.addLeft a).isClosedEmbedding.comp
       S.isClosed_of_finiteDimensional.isClosedEmbedding_subtypeVal
   have := Measure.isFiniteMeasureOnCompacts_map_of_isProperMap ν hg.isProperMap
-  -- `x ↦ (x, P)` is proper since its first component is the identity.
-  have hf : IsProperMap fun x : W => ((x, P) : W × grassmannian ℝ E k) :=
-    isProperMap_of_comp_of_t2 (continuous_id.prodMk continuous_const) continuous_fst
-      isProperMap_id
   ext X
-  rw [firstVariation_map_apply _ hf, zero_apply]
+  rw [firstVariation_map_apply _ (TauCeti.isProperMap_prodMk_right P), zero_apply]
   refine (integral_subtype_comap W.isOpen.measurableSet
     (fun x => tangentialDivergence X x P)).trans ?_
   rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx =>
