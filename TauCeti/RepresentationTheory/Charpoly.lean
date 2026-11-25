@@ -16,7 +16,8 @@ import TauCeti.LinearAlgebra.Charpoly.Quotient
 
 For a representation `ρ` of a monoid on a finite free module and an element `g`, the
 characteristic polynomial of `ρ g` is invariant under isomorphism of representations,
-multiplicative on products, and equal to `(X - 1) ^ dim V` for the trivial representation.
+multiplicative on products, and equal to `(X - 1) ^ dim V` for the trivial representation. The
+determinant of `ρ g` is invariant under isomorphism too, on any module.
 
 For a representation of a group, `g⁻¹` acts with the reverse of the characteristic polynomial of
 `g`, up to a unit, and so does `g` in the contragredient representation `ρ.dual`. Hence in any
@@ -26,7 +27,8 @@ eigenvalues of arithmetic and geometric Frobenius.
 
 ## Main results
 
-* `Representation.Equiv.charpoly_apply_eq`: invariance under isomorphism.
+* `Representation.Equiv.charpoly_apply_eq`, `Representation.Equiv.det_apply_eq`: invariance of
+  the characteristic polynomial and of the determinant under isomorphism.
 * `Representation.charpoly_prod_apply`: multiplicativity on products.
 * `Representation.charpoly_trivial_apply`: the characteristic polynomial of the trivial
   representation.
@@ -44,6 +46,12 @@ public section
 open Module Polynomial
 
 namespace Representation
+
+/-- Isomorphic representations have the same determinants. -/
+theorem Equiv.det_apply_eq {R G V W : Type*} [CommRing R] [Monoid G] [AddCommGroup V] [Module R V]
+    [AddCommGroup W] [Module R W] {ρ : Representation R G V} {σ : Representation R G W}
+    (φ : ρ.Equiv σ) (g : G) : (ρ g).det = (σ g).det := by
+  rw [← φ.conj_apply_self g, LinearEquiv.conj_apply, LinearMap.comp_assoc, LinearMap.det_conj]
 
 variable {R G V W : Type*} [CommRing R] [AddCommGroup V] [Module R V] [Module.Free R V]
   [Module.Finite R V] [AddCommGroup W] [Module R W] [Module.Free R W] [Module.Finite R W]
