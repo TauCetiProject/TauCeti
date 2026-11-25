@@ -91,14 +91,6 @@ private theorem hasCompactSupport_crApply (φ : 𝓓(Ω, V)) :
 
 variable {q : ℝ≥0∞} [Fact (1 ≤ q)] {ι : Type*} (b : Basis ι ℝ V)
 
-omit [FiniteDimensional ℝ V] [Fact (1 ≤ q)] in
-/-- A covector is the sum of its values on a basis weighted by the coordinates, Mathlib's
-`Basis.sum_dual_apply_smul_coord` evaluated at a vector. -/
-private theorem apply_eq_sum_coord_mul [Fintype ι] (f : V →L[ℝ] ℝ) (x : V) :
-    f x = ∑ c, b.coord c x * f (b c) := by
-  simpa [LinearMap.sum_apply, smul_eq_mul, mul_comm] using
-    (LinearMap.congr_fun (b.sum_dual_apply_smul_coord (f : V →ₗ[ℝ] ℝ)) x).symm
-
 /-- The coordinates of the real Cauchy–Riemann operator applied to a test function are in every
 `Lᵖ` space over `Ω`. -/
 private theorem memLp_coord_crApply (hJ : ContinuousOn J Ω) (hS : ContinuousOn S Ω) (c : ι)
@@ -123,9 +115,9 @@ private theorem integral_apply_crApply_eq_sum [Fintype ι] (hJ : ContinuousOn J 
       (memLp_coord_crApply b hJ hS c φ q.conjExponent))
   refine integral_congr_ae (.of_forall fun z ↦ ?_)
   -- The expansion of a covector in the coordinate functionals of `b`.
-  beta_reduce
-  rw [apply_eq_sum_coord_mul b (η z) (crApply J S φ z)]
-  exact Finset.sum_congr rfl fun c _ ↦ mul_comm _ _
+  -- `η z` expanded in the coordinate functionals of `b`.
+  simpa [LinearMap.sum_apply, smul_eq_mul] using (LinearMap.congr_fun
+    (b.sum_dual_apply_smul_coord ((η z : V →L[ℝ] ℝ) : V →ₗ[ℝ] ℝ)) (crApply J S φ z)).symm
 
 /-- **Regularity of a tuple of components.** A tuple `θ` of `L^q` functions on `Ω` that satisfies
 the weak equation in components, `∑_c ∫ θ_c (D φ)_c = 0`, is the tuple of components of a weak
@@ -188,28 +180,6 @@ private theorem mem_weakSolutions (hJ : ContinuousOn J Ω) (hS : ContinuousOn S 
   filter_upwards [MemLp.coeFn_toLp (memLp_coord_crApply b hJ hS c φ q.conjExponent)] with z hz
   rw [hz]
 
-omit [FiniteDimensional ℝ V] in
-/-- The tuple of components of an `L^q` covector field has norm at most `∑_c ‖b c‖ ‖η‖_{L^q}`. -/
-private theorem norm_toLp_apply_le [Fintype ι] {μ : Measure ℂ} {η : ℂ → V →L[ℝ] ℝ}
-    (hη : MemLp η q μ) :
-    ‖fun c ↦ (hη.continuousLinearMap_comp (ContinuousLinearMap.apply ℝ ℝ (b c))).toLp _‖ ≤
-      (∑ c, ‖b c‖) * (eLpNorm η q μ).toReal := by
-  have hE := ENNReal.toReal_nonneg (a := eLpNorm η q μ)
-  refine (pi_norm_le_iff_of_nonneg (mul_nonneg (Finset.sum_nonneg fun c _ ↦ norm_nonneg _) hE)).2
-    fun c ↦ ?_
-  refine le_trans ?_ (mul_le_mul_of_nonneg_right
-    (Finset.single_le_sum (fun c _ ↦ norm_nonneg (b c)) (Finset.mem_univ c)) hE)
-  -- Postcomposition with evaluation at `b c`, of norm at most `‖b c‖`.
-  set L := ContinuousLinearMap.apply ℝ ℝ (b c)
-  have hL : (hη.continuousLinearMap_comp L).toLp _ = L.compLp (hη.toLp η) :=
-    Lp.ext ((MemLp.coeFn_toLp _).trans
-      ((hη.coeFn_toLp.fun_comp L).symm.trans (L.coeFn_compLp' _).symm))
-  rw [hL]
-  refine (L.norm_compLp_le _).trans ?_
-  rw [Lp.norm_toLp]
-  exact mul_le_mul_of_nonneg_right (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _)
-    fun f ↦ by simpa [L, mul_comm] using f.le_opNorm (b c)) hE
-
 /-- **The interior estimate in components.** Let `Ω ⊆ ℂ` be
 open, `V` a finite-dimensional real normed space with a basis `b`, `J` a `C^{k+1}` field of
 complex structures and `S` a `C^k` field of endomorphisms over `Ω`, `1 < q < ∞`, and `W` open with
@@ -261,15 +231,24 @@ private theorem exists_norm_wkp_le_components [Finite ι] {k : ℕ}
   -- The tuple of components has norm at most `∑_c ‖b c‖ ‖η‖`.
   set E := (eLpNorm η q (volume.restrict (Ω : Set ℂ))).toReal
   have hθ : ‖(⟨θ, hθN⟩ : N)‖ ≤ (∑ c, ‖b c‖) * E := by
-    rw [← Submodule.norm_coe]
-    exact norm_toLp_apply_le b hη
+    rw [← Submodule.norm_coe, Submodule.coe_mk]
+    have hE : 0 ≤ E := ENNReal.toReal_nonneg
+    refine (pi_norm_le_iff_of_nonneg (mul_nonneg (Finset.sum_nonneg fun c _ ↦ norm_nonneg _) hE)).2
+      fun c' ↦ le_trans ?_ (mul_le_mul_of_nonneg_right
+        (Finset.single_le_sum (fun c _ ↦ norm_nonneg (b c)) (Finset.mem_univ c')) hE)
+    -- `θ c'` is `η` composed with evaluation at `b c'`, of norm at most `‖b c'‖`.
+    have hL : θ c' = (ContinuousLinearMap.apply ℝ ℝ (b c')).compLp (hη.toLp η) :=
+      Lp.ext ((MemLp.coeFn_toLp _).trans ((hη.coeFn_toLp.fun_comp _).symm.trans
+        ((ContinuousLinearMap.apply ℝ ℝ (b c')).coeFn_compLp' _).symm))
+    rw [hL]
+    refine ((ContinuousLinearMap.apply ℝ ℝ (b c')).norm_compLp_le _).trans ?_
+    rw [Lp.norm_toLp]
+    exact mul_le_mul_of_nonneg_right (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _)
+      fun f ↦ by simpa [mul_comm] using f.le_opNorm (b c')) hE
   have hCc : C c ≤ ∑ c, max (C c) 0 := (le_max_left _ _).trans
     (Finset.single_le_sum (fun c _ ↦ le_max_right (C c) 0) (Finset.mem_univ c))
-  calc C c * ‖(⟨θ, hθN⟩ : N)‖ ≤ (∑ c, max (C c) 0) * ‖(⟨θ, hθN⟩ : N)‖ :=
-        mul_le_mul_of_nonneg_right hCc (norm_nonneg _)
-    _ ≤ (∑ c, max (C c) 0) * ((∑ c, ‖b c‖) * E) :=
-        mul_le_mul_of_nonneg_left hθ (Finset.sum_nonneg fun c _ ↦ le_max_right _ _)
-    _ = _ := by ring
+  exact (mul_le_mul hCc hθ (norm_nonneg _) (Finset.sum_nonneg fun c _ ↦ le_max_right _ _)).trans_eq
+    (mul_assoc _ _ _).symm
 
 /-- **The interior estimate for annihilators of a real Cauchy–Riemann operator.** Let `Ω ⊆ ℂ` be
 open, `V` a finite-dimensional real normed space, `k ∈ ℕ`, `J` a `C^{k+1}` field of complex
@@ -305,7 +284,11 @@ theorem exists_norm_wkp_le_of_forall_integral_apply_cauchyRiemann_eq_zero {k : �
     filter_upwards [hsum,
       ae_all_iff.2 fun c ↦ Lp.coeFn_smul (b.coord c v) (Wkp.value (k + 1) (u c)),
       ae_all_iff.2 hu] with z h₁ h₂ h₃
-    rw [h₁, Finset.sum_apply, apply_eq_sum_coord_mul b (η z) v]
+    -- `η z` expanded in the coordinate functionals of `b`.
+    have he : η z v = ∑ c, b.coord c v * η z (b c) := by
+      simpa [LinearMap.sum_apply, smul_eq_mul, mul_comm] using (LinearMap.congr_fun
+        (b.sum_dual_apply_smul_coord ((η z : V →L[ℝ] ℝ) : V →ₗ[ℝ] ℝ)) v).symm
+    rw [h₁, Finset.sum_apply, he]
     refine Finset.sum_congr rfl fun c _ ↦ ?_
     rw [h₂ c, Pi.smul_apply, h₃ c, smul_eq_mul]
   · -- `|vᶜ| ≤ ‖b.coord c‖ ‖v‖` and `‖u c‖ ≤ max C₀ 0 ‖η‖`.
