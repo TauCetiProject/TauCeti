@@ -45,6 +45,12 @@ the strip is empty.
   lift twists negatively, and `TauCeti.isTwistLift_symm_iff`: for `ℓ ≠ 0`, a homeomorphism is a
   negative twist lift exactly when its inverse is a positive one.
 * `TauCeti.IsTwistLift.trans_stripDeck`: composing with a deck translation keeps the twist property.
+* `TauCeti.isTwistLift_symm_stripFibreConj_iff`, `TauCeti.isTwistLift_stripFibreConj_iff`: for
+  `ℓ ≠ 0` and a strictly decreasing homeomorphism `r` of `[a, b]`, conjugating by
+  `I_r(x, y) = (x, r(y))` (`TauCeti.stripFibreConj`) exchanges positive and negative twist lifts;
+  for finite endpoints one may take `r(y) = a + b - y` (`TauCeti.iccReflect`).
+* `TauCeti.IsTwistLift.deviates_verticals`: a positive twist lift deviates the verticals (Herman,
+  Appendice, §2): the image of a vertical crosses every vertical it meets from left to right.
 
 ## Implementation notes
 
@@ -252,5 +258,154 @@ theorem isTwistLift_symm_iff (hℓ : ℓ ≠ 0) :
       snd_symm_apply_of_forall_eq hℓ hd hr, fun x => ?_⟩
     · have := (hG.strictAnti_fst_symm_apply hℓ (-x)).neg
       simpa [G, stripReflect_symm_apply, Function.comp_def] using this
+
+/-! ### Conjugation by a fibre reversal -/
+
+/-- The *fibre map* `I_r(x, y) = (x, r(y))` of the strip `ℝ × Y` induced by a homeomorphism `r` of
+the fibre `Y`. -/
+def stripFibreMap (r : Y ≃ₜ Y) : ℝ × Y ≃ₜ ℝ × Y :=
+  (Homeomorph.refl ℝ).prodCongr r
+
+@[simp]
+theorem stripFibreMap_apply (r : Y ≃ₜ Y) (p : ℝ × Y) : stripFibreMap r p = (p.1, r p.2) :=
+  (rfl)
+
+@[simp]
+theorem stripFibreMap_symm (r : Y ≃ₜ Y) : (stripFibreMap r).symm = stripFibreMap r.symm :=
+  (rfl)
+
+/-- The conjugate `I_r ∘ F ∘ I_r⁻¹` of a homeomorphism `F` of the strip `ℝ × Y` by the fibre map
+`I_r(x, y) = (x, r(y))`. -/
+def stripFibreConj (r : Y ≃ₜ Y) (F : ℝ × Y ≃ₜ ℝ × Y) : ℝ × Y ≃ₜ ℝ × Y :=
+  (stripFibreMap r.symm).trans (F.trans (stripFibreMap r))
+
+theorem stripFibreConj_apply (r : Y ≃ₜ Y) (F : ℝ × Y ≃ₜ ℝ × Y) (p : ℝ × Y) :
+    stripFibreConj r F p = ((F (p.1, r.symm p.2)).1, r (F (p.1, r.symm p.2)).2) :=
+  (rfl)
+
+/-- Conjugating the inverse is inverting the conjugate. -/
+theorem stripFibreConj_symm (r : Y ≃ₜ Y) (F : ℝ × Y ≃ₜ ℝ × Y) :
+    stripFibreConj r F.symm = (stripFibreConj r F).symm :=
+  (rfl)
+
+/-- Conjugating back by the inverse fibre map recovers `F`. -/
+@[simp]
+theorem stripFibreConj_symm_stripFibreConj (r : Y ≃ₜ Y) (F : ℝ × Y ≃ₜ ℝ × Y) :
+    stripFibreConj r.symm (stripFibreConj r F) = F := by
+  ext p <;> simp [stripFibreConj_apply]
+
+/-- A strictly decreasing homeomorphism of `[a, b]` sends `b` to `a`. -/
+private theorem coe_apply_eq_left_of_strictAnti {r : Icc a b ≃ₜ Icc a b} (hr : StrictAnti r)
+    {y : Icc a b} (hy : (y : ℝ) = b) : (r y : ℝ) = a := by
+  obtain ⟨z, hz⟩ := r.surjective ⟨a, left_mem_Icc.2 (y.property.1.trans y.property.2)⟩
+  have hzy : z ≤ y := Subtype.coe_le_coe.1 (by rw [hy]; exact z.property.2)
+  exact le_antisymm (by simpa [hz] using Subtype.coe_le_coe.2 (hr.antitone hzy))
+    (r y).property.1
+
+/-- A strictly decreasing homeomorphism of `[a, b]` sends `a` to `b`. -/
+private theorem coe_apply_eq_right_of_strictAnti {r : Icc a b ≃ₜ Icc a b} (hr : StrictAnti r)
+    {y : Icc a b} (hy : (y : ℝ) = a) : (r y : ℝ) = b := by
+  obtain ⟨z, hz⟩ := r.surjective ⟨b, right_mem_Icc.2 (y.property.1.trans y.property.2)⟩
+  have hzy : y ≤ z := Subtype.coe_le_coe.1 (by rw [hy]; exact z.property.1)
+  exact le_antisymm (r y).property.2
+    (by simpa [hz] using Subtype.coe_le_coe.2 (hr.antitone hzy))
+
+/-- The inverse of a strictly decreasing homeomorphism is strictly decreasing. -/
+private theorem strictAnti_symm {r : Icc a b ≃ₜ Icc a b} (hr : StrictAnti r) :
+    StrictAnti r.symm := by
+  intro y z hyz
+  by_contra h
+  have := hr.antitone (not_lt.1 h)
+  simp only [Homeomorph.apply_symm_apply] at this
+  exact (not_le.2 hyz) this
+
+/-- Conjugation by a fibre reversal keeps the deck condition and the invariance of the two
+boundary lines: the reversal exchanges the two lines, and so does its inverse. -/
+private theorem stripFibreConj_data {r : Icc a b ≃ₜ Icc a b} (hr : StrictAnti r)
+    (hd : ∀ p : ℝ × Icc a b, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2))
+    (hl : ∀ p : ℝ × Icc a b, (p.2 : ℝ) = a → ((F p).2 : ℝ) = a)
+    (hr' : ∀ p : ℝ × Icc a b, (p.2 : ℝ) = b → ((F p).2 : ℝ) = b) :
+    (∀ p : ℝ × Icc a b, stripFibreConj r F (p.1 + ℓ, p.2) =
+        ((stripFibreConj r F p).1 + ℓ, (stripFibreConj r F p).2)) ∧
+      (∀ p : ℝ × Icc a b, (p.2 : ℝ) = a → ((stripFibreConj r F p).2 : ℝ) = a) ∧
+      (∀ p : ℝ × Icc a b, (p.2 : ℝ) = b → ((stripFibreConj r F p).2 : ℝ) = b) := by
+  refine ⟨fun p => ?_, fun p hp => ?_, fun p hp => ?_⟩
+  · simp only [stripFibreConj_apply, hd (p.1, r.symm p.2)]
+  · rw [stripFibreConj_apply]
+    exact coe_apply_eq_left_of_strictAnti hr
+      (hr' _ (coe_apply_eq_right_of_strictAnti (strictAnti_symm hr) hp))
+  · rw [stripFibreConj_apply]
+    exact coe_apply_eq_right_of_strictAnti hr
+      (hl _ (coe_apply_eq_left_of_strictAnti (strictAnti_symm hr) hp))
+
+/-- **Conjugation by a fibre reversal turns a positive twist into a negative one.** If `F` is a
+positive twist lift and `r` is a strictly decreasing homeomorphism of `[a, b]`, then the conjugate
+`I_r ∘ F ∘ I_r⁻¹` by `I_r(x, y) = (x, r(y))` commutes with the deck translation, maps each
+boundary line into itself, and twists negatively. -/
+theorem IsTwistLift.stripFibreConj (hF : IsTwistLift ℓ F) {r : Icc a b ≃ₜ Icc a b}
+    (hr : StrictAnti r) :
+    (∀ p : ℝ × Icc a b, stripFibreConj r F (p.1 + ℓ, p.2) =
+        ((stripFibreConj r F p).1 + ℓ, (stripFibreConj r F p).2)) ∧
+      (∀ p : ℝ × Icc a b, (p.2 : ℝ) = a → ((stripFibreConj r F p).2 : ℝ) = a) ∧
+      (∀ p : ℝ × Icc a b, (p.2 : ℝ) = b → ((stripFibreConj r F p).2 : ℝ) = b) ∧
+      ∀ x : ℝ, StrictAnti fun y : Icc a b => (stripFibreConj r F (x, y)).1 := by
+  obtain ⟨hd, hl, hr'⟩ :=
+    stripFibreConj_data hr hF.apply_add_period hF.snd_apply_of_eq_left hF.snd_apply_of_eq_right
+  refine ⟨hd, hl, hr', fun x => ?_⟩
+  simpa [stripFibreConj_apply, Function.comp_def] using
+    StrictMono.comp_strictAnti (hF.strictMono_fst_apply x) (strictAnti_symm hr)
+
+/-- **Conjugation by a fibre reversal exchanges positive and negative twist lifts.** For a nonzero
+period and a strictly decreasing homeomorphism `r` of `[a, b]`, the conjugate of `F` by
+`I_r(x, y) = (x, r(y))` is a negative twist lift (its inverse is a positive one) exactly when `F`
+is a positive twist lift. -/
+theorem isTwistLift_symm_stripFibreConj_iff (hℓ : ℓ ≠ 0) {r : Icc a b ≃ₜ Icc a b}
+    (hr : StrictAnti r) : IsTwistLift ℓ (stripFibreConj r F).symm ↔ IsTwistLift ℓ F := by
+  refine ⟨fun h => ?_, fun h => (isTwistLift_symm_iff hℓ).2 (h.stripFibreConj hr)⟩
+  obtain ⟨hd, hl, hr', hanti⟩ := (isTwistLift_symm_iff hℓ).1 h
+  obtain ⟨hd', hl', hr''⟩ := stripFibreConj_data (strictAnti_symm hr) hd hl hr'
+  rw [stripFibreConj_symm_stripFibreConj] at hd' hl' hr''
+  refine ⟨hd', hl', hr'', fun x => ?_⟩
+  simpa [stripFibreConj_apply, Function.comp_def] using StrictAnti.comp (hanti x) hr
+
+/-- For a nonzero period and a strictly decreasing homeomorphism `r` of `[a, b]`, the conjugate of
+`F` by `I_r(x, y) = (x, r(y))` is a positive twist lift exactly when `F` is a negative one. -/
+theorem isTwistLift_stripFibreConj_iff (hℓ : ℓ ≠ 0) {r : Icc a b ≃ₜ Icc a b}
+    (hr : StrictAnti r) : IsTwistLift ℓ (stripFibreConj r F) ↔ IsTwistLift ℓ F.symm := by
+  simpa [stripFibreConj_symm] using isTwistLift_symm_stripFibreConj_iff (F := F.symm) hℓ hr
+
+/-- The reflection `y ↦ a + b − y` of `[a, b]`, a strictly decreasing involutive homeomorphism. -/
+def iccReflect (a b : ℝ) : Icc a b ≃ₜ Icc a b where
+  toFun y := ⟨a + b - y, by constructor <;> linarith [y.property.1, y.property.2]⟩
+  invFun y := ⟨a + b - y, by constructor <;> linarith [y.property.1, y.property.2]⟩
+  left_inv y := Subtype.ext (by simp)
+  right_inv y := Subtype.ext (by simp)
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
+
+@[simp]
+theorem coe_iccReflect_apply (y : Icc a b) : (iccReflect a b y : ℝ) = a + b - y :=
+  (rfl)
+
+@[simp]
+theorem iccReflect_symm : (iccReflect a b).symm = iccReflect a b :=
+  (rfl)
+
+theorem strictAnti_iccReflect : StrictAnti (iccReflect a b) := by
+  intro y z h
+  change a + b - (z : ℝ) < a + b - y
+  linarith [Subtype.coe_lt_coe.2 h]
+
+/-! ### Deviation of the verticals -/
+
+/-- **A positive twist lift deviates the verticals** (Herman's condition). Suppose that the image
+of the vertical through `x` meets the vertical through `X` at a point `F(x, y₀)`. Then the image
+crosses that vertical there from left to right: the points `F(x, y)` lie strictly to the left of
+the vertical through `X` for `y < y₀`, and strictly to its right for `y > y₀`. In particular the
+image of a vertical meets every vertical at most once. -/
+theorem IsTwistLift.deviates_verticals (hF : IsTwistLift ℓ F) {x X : ℝ} {y₀ : Icc a b}
+    (h : (F (x, y₀)).1 = X) :
+    (∀ y, y < y₀ → (F (x, y)).1 < X) ∧ (∀ y, y₀ < y → X < (F (x, y)).1) :=
+  ⟨fun _ hy => h ▸ hF.strictMono_fst_apply x hy, fun _ hy => h ▸ hF.strictMono_fst_apply x hy⟩
 
 end TauCeti
