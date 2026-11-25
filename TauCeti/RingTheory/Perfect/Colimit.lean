@@ -288,6 +288,18 @@ theorem liftAlgEquiv_apply (g : ColimitPerfection A p hA →ₐ[ZMod p] M) :
     liftAlgEquiv hA g = g.comp (ofAlgHom A p hA) :=
   (rfl)
 
+/-- The algebra extension has the underlying ring map given by `lift`. -/
+@[simp]
+theorem coe_liftAlgEquiv_symm (f : A →ₐ[ZMod p] M) :
+    ((liftAlgEquiv hA).symm f : ColimitPerfection A p hA →+* M) = lift hA f :=
+  (rfl)
+
+/-- The algebra extension agrees with the original map on elements of the original algebra. -/
+@[simp]
+theorem liftAlgEquiv_symm_apply_of (f : A →ₐ[ZMod p] M) (x : A) :
+    (liftAlgEquiv hA).symm f (of A p hA x) = f x := by
+  exact (RingHom.congr_fun (coe_liftAlgEquiv_symm hA f) (of A p hA x)).trans (lift_of _ x)
+
 /-- The extension of an algebra map restricts to the original map. -/
 @[simp]
 theorem liftAlgEquiv_symm_comp_ofAlgHom (f : A →ₐ[ZMod p] M) :
