@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Topology.Order.Sierpinski
 import TauCeti.Topology.Spectral.InverseTopology
 
 /-!
@@ -21,13 +22,8 @@ open Set Topology
 namespace TauCeti
 
 /-- In the inverse topology of the Sierpiński space the closed point `False` becomes open. -/
-example : IsOpen[inverseTopology Prop] {False} := by
-  have h : ({False} : Set Prop)ᶜ = {True} := by rw [Prop.compl_singleton, not_false_eq_true]
-  refine isOpen_inverseTopology_of_isClosed ?_ ?_
-  · rw [← isOpen_compl_iff, h]
-    exact isOpen_singleton_true
-  · rw [h]
-    exact isCompact_singleton
+example : IsOpen[inverseTopology Prop] {False} :=
+  isOpen_inverseTopology_of_isClosed isClosed_singleton_false (Set.toFinite _).isCompact
 
 /-- In the inverse topology of the Sierpiński space the open point `True` is no longer open: open
 subsets of the inverse topology are stable under specialization, and `True ⤳ False`. -/
