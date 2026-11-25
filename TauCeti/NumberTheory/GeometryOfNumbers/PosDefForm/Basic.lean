@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.Algebra.GCDMonoid.Nat
+import TauCeti.LinearAlgebra.Matrix.Divisibility
 
 /-!
 # Positive definite real forms and their similarity classes
@@ -84,6 +85,7 @@ theorem pairing_apply (A : PosDefForm n) (x y : Fin n → ℝ) :
 theorem eval_apply (A : PosDefForm n) (x : Fin n → ℝ) : A.eval x = x ⬝ᵥ (A.val *ᵥ x) :=
   Matrix.toLinearMap₂'_apply' A.val x x
 
+@[simp]
 theorem pairing_self (A : PosDefForm n) (x : Fin n → ℝ) : A.pairing x x = A.eval x := by
   rw [pairing_apply, eval_apply]
 
@@ -219,6 +221,10 @@ theorem actGL_smulPos (U : GL (Fin n) ℤ) (c : ℝ) (hc : 0 < c) (A : PosDefFor
 def Similar (A B : PosDefForm n) : Prop :=
   ∃ (c : ℝ) (hc : 0 < c) (U : GL (Fin n) ℤ), B = smulPos c hc (actGL U A)
 
+theorem similar_def {A B : PosDefForm n} :
+    Similar A B ↔ ∃ (c : ℝ) (hc : 0 < c) (U : GL (Fin n) ℤ), B = smulPos c hc (actGL U A) :=
+  Iff.rfl
+
 @[refl]
 theorem Similar.refl (A : PosDefForm n) : Similar A A :=
   ⟨1, one_pos, 1, by simp⟩
@@ -259,6 +265,11 @@ def IsPrimitiveForm (A : PosDefForm n) : Prop :=
   ∃ M : Matrix (Fin n) (Fin n) ℤ, M.map ((↑) : ℤ → ℝ) = A.val ∧
     Finset.univ.gcd (fun p : Fin n × Fin n => M p.fst p.snd) = 1
 
+theorem isPrimitiveForm_iff {A : PosDefForm n} :
+    A.IsPrimitiveForm ↔ ∃ M : Matrix (Fin n) (Fin n) ℤ, M.map ((↑) : ℤ → ℝ) = A.val ∧
+      Finset.univ.gcd (fun p : Fin n × Fin n => M p.fst p.snd) = 1 :=
+  Iff.rfl
+
 theorem isIntegralForm_iff (A : PosDefForm n) :
     A.IsIntegralForm ↔ ∀ i j, ∃ m : ℤ, A.val i j = m := by
   refine ⟨fun ⟨M, hM⟩ i j => ⟨M i j, by simp [← hM]⟩, fun h => ?_⟩
@@ -290,25 +301,17 @@ theorem IsPrimitiveForm.actGL {A : PosDefForm n} (h : A.IsPrimitiveForm) (U : GL
   obtain ⟨M, hM, hM1⟩ := h
   refine ⟨_, map_transpose_mul_mul U hM, ?_⟩
   -- The gcd `d` of the entries of `K = UᵀMU` divides the entries of `M = U⁻ᵀKU⁻¹`, hence
-  -- divides `1`. The divisibility is checked by reducing the entries modulo `d`.
+  -- divides `1`.
   have hMK : M = (↑U⁻¹ : Matrix (Fin n) (Fin n) ℤ)ᵀ *
       ((U : Matrix (Fin n) (Fin n) ℤ)ᵀ * M * U) * (↑U⁻¹ : Matrix (Fin n) (Fin n) ℤ) := by
-    rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, ← transpose_mul, ← Units.val_mul,
-      mul_inv_cancel, Units.val_one, transpose_one, Matrix.one_mul, Matrix.mul_assoc,
-      ← Units.val_mul, mul_inv_cancel, Units.val_one, Matrix.mul_one]
+    simp [← Matrix.mul_assoc, ← transpose_mul]
   set K := (U : Matrix (Fin n) (Fin n) ℤ)ᵀ * M * U
-  set d := Finset.univ.gcd fun p : Fin n × Fin n => K p.fst p.snd
-  have hK : K.map (Ideal.Quotient.mk (Ideal.span {d})) = 0 := by
-    ext i j
-    exact Ideal.Quotient.eq_zero_iff_mem.mpr <| Ideal.mem_span_singleton.mpr <|
-      Finset.gcd_dvd (f := fun p : Fin n × Fin n => K p.fst p.snd) (b := (i, j)) (Finset.mem_univ _)
-  have hM0 : M.map (Ideal.Quotient.mk (Ideal.span {d})) = 0 := by
-    rw [hMK, Matrix.map_mul, Matrix.map_mul, hK, Matrix.mul_zero, Matrix.zero_mul]
   refine Int.eq_one_of_dvd_one (Int.nonneg_of_normalize_eq_self Finset.normalize_gcd) ?_
   rw [← hM1, Finset.dvd_gcd_iff]
   rintro ⟨i, j⟩ -
-  exact Ideal.mem_span_singleton.mp <| Ideal.Quotient.eq_zero_iff_mem.mp <|
-    congrFun (congrFun hM0 i) j
+  rw [hMK]
+  exact dvd_mul_mul_apply (fun i j => Finset.gcd_dvd (f := fun p : Fin n × Fin n => K p.fst p.snd)
+    (b := (i, j)) (Finset.mem_univ _)) _ _ i j
 
 /-- Integrality is invariant under the action of `GL_n(ℤ)`. -/
 theorem IsIntegralForm.actGL {A : PosDefForm n} (h : A.IsIntegralForm) (U : GL (Fin n) ℤ) :
@@ -374,8 +377,10 @@ theorem IsPrimitiveForm.exists_actGL_eq_of_similar {P Q : PosDefForm n}
   simp only [Finset.gcd_mul_left, hM1, hN1, mul_one] at hgcd
   have hpos : (0 : ℤ) ≤ M i₀ i₀ := by exact_mod_cast hb.le
   have hpos' : (0 : ℤ) ≤ N i₀ i₀ := by
-    have := hNM i₀ i₀
-    exact_mod_cast (show (0 : ℝ) ≤ N i₀ i₀ by rw [this]; positivity)
+    have hN₀ : (0 : ℝ) ≤ N i₀ i₀ := by
+      rw [hNM]
+      positivity
+    exact_mod_cast hN₀
   rw [Int.normalize_of_nonneg hpos, Int.normalize_of_nonneg hpos'] at hgcd
   have hc1 : c = 1 := by
     have h₀ := hNM i₀ i₀
