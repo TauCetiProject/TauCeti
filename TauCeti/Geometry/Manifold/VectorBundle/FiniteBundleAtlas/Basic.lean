@@ -87,6 +87,8 @@ closed upper half-plane are read in `ℂ` in
   domain (`TauCeti.FiniteBundleAtlas.chart_image_closure_dom_subset`). More generally, the
   expression of such a section in any chart of the maximal atlas and any trivialization of the
   trivialization atlas is `Cᵏ` (`TauCeti.contDiffOn_trivialization_comp_chart_symm_of_contMDiff`).
+* `TauCeti.FiniteBundleAtlas.contMDiff_of_forall_contDiffOn_coord`: conversely, a section whose
+  chart expressions are `Cⁿ` on the chart images is `Cⁿ`.
 -/
 
 public section
@@ -768,6 +770,24 @@ theorem contMDiff_smul_chartSection {i : Fin A.n} {ψ : M → ℝ}
     ((A.triv i).contMDiffOn_section_iff (A.isOpen_dom i) (A.dom_subset_baseSet i)).2 <|
       (hG.contMDiffOn.comp (contMDiffOn_chart.mono (A.dom_subset_chart_source i))
         fun x hx ↦ A.mem_image.2 ⟨x, hx, rfl⟩).congr fun _ hx ↦ triv_chartSection G hx
+
+/-- **A section with `Cⁿ` chart expressions is `Cⁿ`.** If the chart expression `A.coord i s` of a
+section `s` is `Cⁿ` on the chart image `A.image i` for every chart `i`, then `s` is a `Cⁿ` section.
+This is the converse of `TauCeti.FiniteBundleAtlas.contDiffOn_coord`. -/
+theorem contMDiff_of_forall_contDiffOn_coord {s : ∀ x, V x}
+    (hs : ∀ i, ContDiffOn ℝ n (A.coord i s) (A.image i)) :
+    ContMDiff 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F)) n fun x ↦ TotalSpace.mk' F x (s x) := by
+  intro x
+  obtain ⟨i, hx⟩ := A.exists_mem_dom x
+  rw [(A.triv i).contMDiffAt_section_iff (A.dom_subset_baseSet i hx)]
+  have hc : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) n (A.chart i) x :=
+    contMDiffOn_chart.contMDiffAt
+      ((A.chart i).open_source.mem_nhds (A.dom_subset_chart_source i hx))
+  have hg : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, F) n (A.coord i s) (A.chart i x) :=
+    ((hs i).contDiffAt ((A.image i).isOpen.mem_nhds (A.mem_image.2 ⟨x, hx, rfl⟩))).contMDiffAt
+  refine (hg.comp x hc).congr_of_eventuallyEq ?_
+  filter_upwards [(A.isOpen_dom i).mem_nhds hx] with y hy
+  exact (A.coord_chart s hy).symm
 
 end FiniteBundleAtlas
 
