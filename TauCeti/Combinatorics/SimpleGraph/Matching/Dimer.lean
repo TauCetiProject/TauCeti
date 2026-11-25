@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Matching
 public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import TauCeti.Combinatorics.SimpleGraph.Maps
+public import TauCeti.Data.Finset.Update
 public import TauCeti.Dynamics.SymbolicDynamics.Subshift
 
 /-!
@@ -36,10 +37,11 @@ For a finite set `F` of edges and a configuration `ω`, the *completion set*
 It is finite (`SimpleGraph.finite_dimerCompletionSet`) and contains `ω` when `ω` is a dimer
 configuration. When `ω` is a dimer configuration, the members of its completion set are the
 gluings `Function.updateFinset ω F η` of a configuration `η` on `F` to `ω` off `F` that cover
-every endpoint of an edge of `F` exactly once (`SimpleGraph.dimerCompletionSet_eq_image`). So for
-two dimer configurations `ω₁` and `ω₂` that agree on the edges outside `F` sharing a vertex with
-an edge of `F`, the restrictions to `F` of their completion sets coincide
-(`SimpleGraph.restrict_dimerCompletionSet_eq`).
+every endpoint of an edge of `F` exactly once (`SimpleGraph.dimerCompletionSet_eq_image`), and
+the restrictions to `F` of its members are exactly those configurations `η`
+(`SimpleGraph.mem_image_restrict_dimerCompletionSet`). So for two dimer configurations `ω₁` and
+`ω₂` that agree on the edges outside `F` sharing a vertex with an edge of `F`, the restrictions to
+`F` of their completion sets coincide (`SimpleGraph.image_restrict_dimerCompletionSet_eq`).
 
 ## References
 
@@ -83,8 +85,7 @@ theorem IsDimerConfiguration.comp_mapEdgeSet (φ : G ≃g G') {ω : G'.edgeSet �
   refine (existsUnique_congr fun e => ?_).1 (hω (φ v))
   simp only [comp_apply, Equiv.apply_symm_apply]
   refine and_congr_right fun _ => ?_
-  simp only [Iso.mapEdgeSet_symm_apply, Hom.mapEdgeSet_coe, RelEmbedding.coe_toRelHom,
-    RelIso.coe_toRelEmbedding, Sym2.mem_map]
+  rw [Iso.coe_mapEdgeSet_symm, Sym2.mem_map]
   exact ⟨fun h => ⟨φ v, h, φ.symm_apply_apply v⟩, fun ⟨a, ha, hav⟩ => by
     rw [← hav, φ.apply_symm_apply]; exact ha⟩
 
@@ -250,16 +251,6 @@ theorem finite_dimerCompletionSet (F : Finset G.edgeSet) (ω : G.edgeSet → Boo
   · exact congrFun h ⟨e, he⟩
   · rw [h₁.2 e he, h₂.2 e he]
 
-private theorem updateFinset_apply_of_mem [DecidableEq G.edgeSet] {F : Finset G.edgeSet}
-    {ω : G.edgeSet → Bool} {η : F → Bool} {e : G.edgeSet} (he : e ∈ F) :
-    updateFinset ω F η e = η ⟨e, he⟩ := by
-  simp [updateFinset_def, he]
-
-private theorem updateFinset_apply_of_notMem [DecidableEq G.edgeSet] {F : Finset G.edgeSet}
-    {ω : G.edgeSet → Bool} {η : F → Bool} {e : G.edgeSet} (he : e ∉ F) :
-    updateFinset ω F η e = ω e := by
-  simp [updateFinset_def, he]
-
 open scoped Classical in
 /-- The members of the completion set of a dimer configuration `ω` at `F` are the gluings of
 configurations `η` on `F` to `ω` that cover every endpoint of an edge of `F` exactly once. -/
@@ -286,9 +277,21 @@ theorem dimerCompletionSet_eq_image {F : Finset G.edgeSet} {ω : G.edgeSet → B
       exact updateFinset_apply_of_notMem fun heF => hv e heF he
 
 open scoped Classical in
+/-- The restrictions to `F` of the members of the completion set of a dimer configuration `ω` at
+`F` are the configurations `η` on `F` whose gluing to `ω` off `F` covers every endpoint of an edge
+of `F` exactly once. -/
+theorem mem_image_restrict_dimerCompletionSet {F : Finset G.edgeSet} {ω : G.edgeSet → Bool}
+    (hω : G.IsDimerConfiguration ω) {η : F → Bool} :
+    η ∈ F.restrict '' G.dimerCompletionSet F ω ↔ ∀ v : V, (∃ e ∈ F, v ∈ (e : Sym2 V)) →
+      ∃! e : G.edgeSet, updateFinset ω F η e = true ∧ v ∈ (e : Sym2 V) := by
+  rw [dimerCompletionSet_eq_image hω, image_image]
+  simp only [restrict_updateFinset, image_id']
+  exact Iff.rfl
+
+open scoped Classical in
 /-- For two dimer configurations that agree on the edges outside `F` sharing a vertex with an edge
 of `F`, the restrictions to `F` of their completion sets coincide. -/
-theorem restrict_dimerCompletionSet_eq {F : Finset G.edgeSet} {ω₁ ω₂ : G.edgeSet → Bool}
+theorem image_restrict_dimerCompletionSet_eq {F : Finset G.edgeSet} {ω₁ ω₂ : G.edgeSet → Bool}
     (h₁ : G.IsDimerConfiguration ω₁) (h₂ : G.IsDimerConfiguration ω₂)
     (h : ∀ e ∉ F, (∃ f ∈ F, ∃ v, v ∈ (e : Sym2 V) ∧ v ∈ (f : Sym2 V)) → ω₁ e = ω₂ e) :
     F.restrict '' G.dimerCompletionSet F ω₁ = F.restrict '' G.dimerCompletionSet F ω₂ := by
@@ -301,9 +304,8 @@ theorem restrict_dimerCompletionSet_eq {F : Finset G.edgeSet} {ω₁ ω₂ : G.e
     · rw [updateFinset_apply_of_mem he, updateFinset_apply_of_mem he]
     · rw [updateFinset_apply_of_notMem he, updateFinset_apply_of_notMem he]
       exact h e he ⟨f, hf, v, hve, hvf⟩
-  rw [dimerCompletionSet_eq_image h₁, dimerCompletionSet_eq_image h₂, image_image, image_image]
-  simp only [restrict_updateFinset, image_id']
   ext η
+  rw [mem_image_restrict_dimerCompletionSet h₁, mem_image_restrict_dimerCompletionSet h₂]
   exact forall_congr' fun v => forall_congr' fun hv => key η v hv
 
 end SimpleGraph

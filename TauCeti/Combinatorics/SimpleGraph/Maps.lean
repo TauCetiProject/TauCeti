@@ -29,7 +29,7 @@ its Boolean adjacency array. The automorphism group `G ≃g G` acts on the edges
 * `SimpleGraph.restrictFin` — the initial `n`-label window of a graph on `ℕ`;
 * `SimpleGraph.adjArray` — the Boolean adjacency array of a graph;
 * `SimpleGraph.Iso.instMulActionEdgeSet` — the action of `G ≃g G` on `G.edgeSet`, with
-  `SimpleGraph.Iso.smul_edgeSet` evaluating it.
+  `SimpleGraph.Iso.smul_eq_mapEdgeSet` evaluating it.
 
 ## Main results
 
@@ -135,6 +135,17 @@ end Embedding
 
 namespace Iso
 
+/-- The underlying unordered pair of the image of an edge under a graph isomorphism. -/
+theorem coe_mapEdgeSet {G : SimpleGraph V} {G' : SimpleGraph W} (φ : G ≃g G') (e : G.edgeSet) :
+    ((φ.mapEdgeSet e : G'.edgeSet) : Sym2 W) = Sym2.map φ e :=
+  (rfl)
+
+/-- The underlying unordered pair of the image of an edge under the inverse of a graph
+isomorphism. -/
+theorem coe_mapEdgeSet_symm {G : SimpleGraph V} {G' : SimpleGraph W} (φ : G ≃g G')
+    (e : G'.edgeSet) : ((φ.mapEdgeSet.symm e : G.edgeSet) : Sym2 V) = Sym2.map φ.symm e :=
+  (rfl)
+
 variable {G : SimpleGraph V}
 
 /-- An automorphism of `G` moves its edges by `SimpleGraph.Iso.mapEdgeSet`. -/
@@ -143,22 +154,18 @@ instance instSMulEdgeSet : SMul (G ≃g G) G.edgeSet :=
 
 /-- An automorphism acts on an edge by `SimpleGraph.Iso.mapEdgeSet`. -/
 @[simp]
-theorem smul_edgeSet (φ : G ≃g G) (e : G.edgeSet) : φ • e = φ.mapEdgeSet e :=
+theorem smul_eq_mapEdgeSet (φ : G ≃g G) (e : G.edgeSet) : φ • e = φ.mapEdgeSet e :=
   (rfl)
-
-/-- The automorphism group of `G` acts on its edges by `SimpleGraph.Iso.mapEdgeSet`. -/
-instance instMulActionEdgeSet : MulAction (G ≃g G) G.edgeSet where
-  one_smul e := Subtype.ext <| by
-    simp only [smul_edgeSet, mapEdgeSet_apply, Hom.mapEdgeSet_coe, RelEmbedding.coe_toRelHom,
-      RelIso.coe_toRelEmbedding, RelIso.coe_one, Sym2.map_id, id]
-  mul_smul φ ψ e := Subtype.ext <| by
-    simp only [smul_edgeSet, mapEdgeSet_apply, Hom.mapEdgeSet_coe, RelEmbedding.coe_toRelHom,
-      RelIso.coe_toRelEmbedding, RelIso.coe_mul, Sym2.map_map]
 
 /-- The underlying unordered pair of the image of an edge under an automorphism. -/
 theorem coe_smul_edgeSet (φ : G ≃g G) (e : G.edgeSet) :
     ((φ • e : G.edgeSet) : Sym2 V) = Sym2.map φ e :=
   (rfl)
+
+/-- The automorphism group of `G` acts on its edges by `SimpleGraph.Iso.mapEdgeSet`. -/
+instance instMulActionEdgeSet : MulAction (G ≃g G) G.edgeSet where
+  one_smul e := Subtype.ext <| by simp only [coe_smul_edgeSet, RelIso.coe_one, Sym2.map_id, id]
+  mul_smul φ ψ e := Subtype.ext <| by simp only [coe_smul_edgeSet, RelIso.coe_mul, Sym2.map_map]
 
 /-- The action of the automorphism group on the edges is through graph automorphisms. -/
 theorem exists_smul_eq_mapEdgeSet (φ : G ≃g G) : ∃ ψ : G ≃g G, ∀ e, φ • e = ψ.mapEdgeSet e :=
