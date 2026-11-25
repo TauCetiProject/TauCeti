@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.AntidiagonalSpecialOrthogonal.Congruence
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Basic
-import Mathlib.RingTheory.Etale.Descent
-import TauCeti.Algebra.AlgebraicGroup.Smooth.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Reductive
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Basic
 
@@ -65,32 +63,22 @@ theorem finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal_def (hi : i * i = -1
         eqToIso (SpecialOrthogonal.finiteTypeCoordinateHopfAlgebra_obj R l).symm) :=
   (rfl)
 
-/-- **`SO_l^J` is reductive** over every field of characteristic different from two.
-
-An algebraic closure `K` of `k` contains a square root of `-1`, so the geometric fibre of `SO_l^J`
-is isomorphic to `SO_l` over `K`, which is reductive. Smoothness, geometric connectedness and
-triviality of the geometric unipotent radical then descend from `K` to `k`. -/
+/-- **`SO_l^J` is reductive** over every field of characteristic different from two, whether or
+not that field contains a square root of `-1`. -/
 theorem reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra (k : Type u) [Field k]
     [NeZero (2 : k)] (l : ℕ) :
     reductiveCommHopfAlgProperty k (finiteTypeCoordinateHopfAlgebra k l) := by
+  -- The algebraic closure `K` contains a square root of `-1`, so the geometric fibre of `SO_l^J`
+  -- is isomorphic to `SO_l` over `K`, which is reductive; reductivity then descends to `k`.
   let K := AlgebraicClosure k
   let _ : NeZero (2 : K) := ⟨by
     simpa only [map_ofNat] using (map_ne_zero (algebraMap k K)).2 (NeZero.ne (2 : k))⟩
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne _)
   obtain ⟨i, hi⟩ := IsAlgClosed.exists_pow_nat_eq (-1 : K) two_pos
-  have hK : reductiveCommHopfAlgProperty K
-      (FiniteTypeCommHopfAlgCat.baseChange (K := K) (finiteTypeCoordinateHopfAlgebra k l)) :=
+  exact reductiveCommHopfAlgProperty.of_baseChange_algebraicClosure <|
     (reductiveCommHopfAlgProperty K).prop_of_iso
       ((finiteTypeCoordinateHopfAlgebraIsoSpecialOrthogonal l (by rw [← hi, sq])).symm ≪≫
         (finiteTypeCoordinateHopfAlgebraBaseChangeIso k l K).symm)
       (SpecialOrthogonal.reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra K l)
-  let _ : Algebra.Smooth K (K ⊗[k] (finiteTypeCoordinateHopfAlgebra k l).obj) :=
-    FiniteTypeCommHopfAlgCat.smooth_baseChange_obj hK.smooth
-  exact (reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_baseChange_eq_augmentation
-      k _).2
-    ⟨Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat (R := k)
-        (S := (finiteTypeCoordinateHopfAlgebra k l).obj) K,
-      geometricallyConnectedCommHopfAlgProperty.of_baseChange k K _ hK.geometricallyConnected,
-      hK.unipotentRadicalDefiningIdeal_eq_augmentation⟩
 
 end TauCeti.AntidiagonalSpecialOrthogonal
