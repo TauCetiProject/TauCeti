@@ -11,7 +11,7 @@ public import TauCeti.FieldTheory.Galois.Hilbert90
 public import TauCeti.RingTheory.Norm.Quadratic
 
 /-!
-# CM fields: a criterion, norms from `K⁺` and Hilbert's Theorem 90
+# CM fields: a Galois-free criterion, Hilbert's Theorem 90 and compatible conjugations
 
 This file collects basic facts about a CM field `K`, with maximal real subfield `K⁺` and complex
 conjugation `IsCMField.complexConj K`, that do not depend on any particular construction.

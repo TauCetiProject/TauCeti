@@ -54,7 +54,8 @@ theorem mem_rootSet_X_pow_sub_C {n : ℕ} (hn : n ≠ 0) {x : E} :
     sub_eq_zero]
 
 /-- A root of `X ^ n - C a` in a domain algebra forces `n ≠ 0`: for `n = 0` the binomial is the
-constant `1 - a`, which has no roots. -/
+constant `C (1 - a)`, whose root set is empty (`Polynomial.rootSet_C`, which covers the zero
+polynomial by the convention `rootSet 0 = ∅`). -/
 theorem ne_zero_of_mem_rootSet_X_pow_sub_C {n : ℕ} {x : E}
     (hx : x ∈ ((X : F[X]) ^ n - C a).rootSet E) : n ≠ 0 := by
   rintro rfl
