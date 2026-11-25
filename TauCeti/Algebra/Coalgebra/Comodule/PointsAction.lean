@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
+public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
 public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
 public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
 import TauCeti.LinearAlgebra.TensorProduct.Tower
@@ -31,6 +32,18 @@ multiplication by `g x`.
 This is the comodule-to-representation direction of the "representations = comodules" dictionary: it
 realizes a comodule as an action of the functor of points on scalar extensions of `V`.
 
+A point fixes `1 ⊗ v` whenever `v` is fixed by the coaction, that is, whenever `v` lies in
+`TauCeti.Comodule.fixedSubcomodule`. The converse holds with no hypothesis on `R`, `H` or `V`
+for one point `g` for which `V ⊗[R] H → V ⊗[R] A` is injective. When `H` is commutative the
+identity of `H` is such a point, the universal point: the fixed vectors of the comodule are
+exactly the vectors fixed by the universal point, hence exactly the vectors fixed by every point
+with values in every commutative `R`-algebra. The universal point is needed here. For the group
+`μ_p` over `𝔽_p` and its weight-one line, every point with values in a field acts trivially, and
+no nonzero vector is fixed by the coaction. Detection on the geometric points of a reduced
+bialgebra of finite type over a field is in `TauCeti.Algebra.Coalgebra.Comodule.PointAction`, and
+the criterion is restated for natural point representations in
+`TauCeti.Algebra.AlgebraicGroup.Representation.Comodule.Invariants`.
+
 A regular one-cochain `b : V ⊗[R] H` can likewise be evaluated at any point by pushing its
 `H`-factor through the point. Evaluation at the universal tensor-factor points recovers the
 tensor expressions in the regular cocycle identity.
@@ -44,7 +57,18 @@ tensor expressions in the regular cocycle identity.
   universal pair of points.
 
 * `TauCeti.Comodule.endOfPoint`: the endomorphism of `A ⊗[R] V` attached to a point.
+* `TauCeti.Comodule.endOfPoint_one_tmul_eq_iff`: a point fixes `1 ⊗ v` exactly when it sends the
+  coefficients of `coact v` to those of `v ⊗ 1`.
+* `TauCeti.Comodule.mem_fixedSubcomodule_iff_endOfPoint_of_injective`: a point at which
+  `V ⊗[R] H → V ⊗[R] A` is injective detects the fixed vectors.
+* `TauCeti.Comodule.mem_fixedSubcomodule_iff_endOfPoint_algEquiv` and
+  `TauCeti.Comodule.mem_fixedSubcomodule_iff_endOfPoint_id`: the universal point, and every point
+  that is an isomorphism, detects the fixed vectors.
+* `TauCeti.Comodule.mem_fixedSubcomodule_iff_forall_endOfPoint`: the fixed vectors are the
+  vectors fixed by every point with values in every commutative algebra.
 * `TauCeti.Comodule.endOfPoint_corestrict`: compatibility with corestriction in the coalgebra.
+* `TauCeti.Comodule.baseChange_comp_endOfPoint_of_coact`: a linear map carrying one coaction to
+  another pushed forward along an algebra map intertwines the corresponding point actions.
 * `TauCeti.Comodule.endOfPoint_tensor`: point actions preserve the diagonal tensor product.
 * `TauCeti.Comodule.endOfPoint_groupLike`: on a group-like comodule a point acts by the scalar
   given by its value on the group-like element.
@@ -56,11 +80,17 @@ tensor expressions in the regular cocycle identity.
 * `TauCeti.Comodule.Hom.map_endOfPoint_baseChange_eq_iff`: injective comodule morphisms
   preserve and reflect subspace stabilizers after flat scalar extension.
 * `BialgHom.baseChange_comp_endOfPoint_regular`: bialgebra morphisms intertwine regular actions.
+* `TauCeti.Comodule.endOfPoint_regular_mul`, `TauCeti.Comodule.endOfPoint_regular_one`: a point
+  acts on the regular comodule by an algebra endomorphism.
+* `TauCeti.Comodule.regularEndOfPoint`: right translation by a point, as an algebra
+  endomorphism.
 * `TauCeti.Comodule.map_endOfPoint_eq_of_mapsTo`: inverse points preserving a submodule
   carry it onto itself.
 
 ## References
 
+* J. C. Jantzen, *Representations of Algebraic Groups*, I.2.8 and I.2.10, for the fixed vectors
+  of a comodule as the vectors fixed by all points.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §3.1–3.2.
 * J. S. Milne, *Algebraic Groups* (2017), §§4.5 and 9.4, for the tensor and unit
   compatibility of point actions.
@@ -150,6 +180,14 @@ lemma endOfPoint_tmul_of_coact_eq_tmul_one {v : V}
     endOfPoint V g (a ⊗ₜ[R] v) = a ⊗ₜ[R] v := by
   simp [endOfPoint_tmul, hv, TensorProduct.smul_tmul']
 
+/-- A point `g` fixes the scalar extension `1 ⊗ v` of a vector exactly when pushing the
+coefficients of `coact v` through `g` gives `v ⊗ 1`. -/
+theorem endOfPoint_one_tmul_eq_iff (g : H →ₐ[R] A) (v : V) :
+    endOfPoint V g (1 ⊗ₜ[R] v) = 1 ⊗ₜ[R] v ↔
+      g.toLinearMap.lTensor V (coact (R := R) (C := H) v) = v ⊗ₜ[R] (1 : A) := by
+  rw [endOfPoint_tmul, one_smul, ← TensorProduct.comm_tmul R V A v 1,
+    (TensorProduct.comm R V A).injective.eq_iff]
+
 section BaseChange
 
 variable {A' : Type*} [CommSemiring A'] [Algebra R A']
@@ -221,6 +259,71 @@ end Functorial
 
 end Coalgebra
 
+section Fixed
+
+universe u v w x y
+
+variable {R : Type u} {H : Type v} {V : Type w}
+variable [CommSemiring R] [AddCommMonoid V] [Module R V]
+
+section Semiring
+
+variable {A : Type x} [Semiring H] [Algebra R H] [Coalgebra R H] [Comodule R H V]
+variable [CommSemiring A] [Algebra R A]
+
+/-- A point `g : H →ₐ[R] A` for which `V ⊗[R] H → V ⊗[R] A` is injective detects the fixed
+vectors of the comodule `V`: a vector is fixed by the coaction exactly when `g` fixes its scalar
+extension.
+
+The injectivity holds for the universal point, and for every injective `g` when `V` is flat. -/
+theorem mem_fixedSubcomodule_iff_endOfPoint_of_injective (g : H →ₐ[R] A)
+    (hg : Function.Injective (g.toLinearMap.lTensor V)) {v : V} :
+    v ∈ fixedSubcomodule R H V ↔ endOfPoint V g (1 ⊗ₜ[R] v) = 1 ⊗ₜ[R] v := by
+  rw [endOfPoint_one_tmul_eq_iff, mem_fixedSubcomodule, ← hg.eq_iff]
+  simp
+
+/-- A point that is an isomorphism of algebras detects the fixed vectors of a comodule. Examples
+are the universal point and its universe lifts. -/
+theorem mem_fixedSubcomodule_iff_endOfPoint_algEquiv (e : H ≃ₐ[R] A) {v : V} :
+    v ∈ fixedSubcomodule R H V ↔ endOfPoint V (e : H →ₐ[R] A) (1 ⊗ₜ[R] v) = 1 ⊗ₜ[R] v :=
+  mem_fixedSubcomodule_iff_endOfPoint_of_injective _ <| by
+    rw [AlgEquiv.toAlgHom_toLinearMap, ← LinearEquiv.coe_lTensor, LinearEquiv.coe_coe]
+    exact (e.toLinearEquiv.lTensor V).injective
+
+end Semiring
+
+section CommSemiring
+
+variable [CommSemiring H] [Algebra R H] [Coalgebra R H] [Comodule R H V]
+
+/-- The universal point of a commutative `H`, the identity of `H`, detects the fixed vectors of a
+comodule: a vector is fixed by the coaction exactly when the universal point fixes its scalar
+extension. -/
+theorem mem_fixedSubcomodule_iff_endOfPoint_id {v : V} :
+    v ∈ fixedSubcomodule R H V ↔
+      endOfPoint V (AlgHom.id R H) (1 ⊗ₜ[R] v) = 1 ⊗ₜ[R] v :=
+  mem_fixedSubcomodule_iff_endOfPoint_of_injective _ <| by
+    simpa using Function.injective_id
+
+/-- The fixed vectors of a comodule are the vectors whose scalar extension is fixed by every
+point with values in every commutative algebra: for an affine group, the invariants of the
+comodule are the vectors fixed by the functor of points.
+
+The value algebras range over a universe containing that of `H`, so that a universe lift of `H`,
+with its universal point, is among them. -/
+theorem mem_fixedSubcomodule_iff_forall_endOfPoint {v : V} :
+    v ∈ fixedSubcomodule R H V ↔
+      ∀ (A : Type max v y) [CommSemiring A] [Algebra R A] (g : H →ₐ[R] A),
+        endOfPoint V g (1 ⊗ₜ[R] v) = 1 ⊗ₜ[R] v := by
+  refine ⟨fun hv A _ _ g ↦ endOfPoint_tmul_of_coact_eq_tmul_one (mem_fixedSubcomodule.mp hv) g 1,
+    fun h ↦ ?_⟩
+  exact (mem_fixedSubcomodule_iff_endOfPoint_algEquiv
+    (ULift.algEquiv (R := R) (A := H)).symm).mpr (h (ULift.{y} H) _)
+
+end CommSemiring
+
+end Fixed
+
 section Universal
 
 variable {R H V : Type*} [CommSemiring R]
@@ -287,6 +390,41 @@ theorem endOfPoint_corestrict (φ : H₁ →ₐc[R] H₂) (g : H₂ →ₐ[R] A)
   simp only [LinearMap.lTensor_def, hφ]
 
 end Corestrict
+
+section Pushforward
+
+variable {R H₁ H₂ V W A : Type*} [CommSemiring R]
+variable [Semiring H₁] [Algebra R H₁] [Coalgebra R H₁]
+variable [Semiring H₂] [Algebra R H₂] [Coalgebra R H₂]
+variable [AddCommMonoid V] [Module R V] [Comodule R H₂ V]
+variable [AddCommMonoid W] [Module R W] [Comodule R H₁ W]
+variable [CommSemiring A] [Algebra R A]
+
+/-- If a linear map `f : V → W` carries the coaction of `V` to the coaction of `W` pushed forward
+along an algebra map `ψ : H₁ → H₂`, then it intertwines the action of a point `g` on `V` with the
+action of `g ∘ ψ` on `W`. For a bialgebra map `ψ` the hypothesis says that `f` is a comodule map
+to the corestriction of `W` along `ψ`. -/
+theorem baseChange_comp_endOfPoint_of_coact (f : V →ₗ[R] W) (ψ : H₁ →ₐ[R] H₂)
+    (hψ : ∀ x : V, f.rTensor H₂ (coact (R := R) (C := H₂) x) =
+      ψ.toLinearMap.lTensor W (coact (R := R) (C := H₁) (f x)))
+    (g : H₂ →ₐ[R] A) :
+    f.baseChange A ∘ₗ endOfPoint V g = endOfPoint W (g.comp ψ) ∘ₗ f.baseChange A := by
+  have hcol : (f.baseChange A).restrictScalars R ∘ₗ
+      (TensorProduct.comm R V A).toLinearMap ∘ₗ LinearMap.lTensor V g.toLinearMap =
+      (TensorProduct.comm R W A).toLinearMap ∘ₗ LinearMap.lTensor W g.toLinearMap ∘ₗ
+        f.rTensor H₂ := by
+    refine TensorProduct.ext' fun w x => ?_
+    simp
+  apply LinearMap.restrictScalars_injective R
+  refine TensorProduct.ext' fun a v => ?_
+  have hc := DFunLike.congr_fun hcol (coact (R := R) (C := H₂) v)
+  simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.restrictScalars_apply,
+    LinearEquiv.coe_toLinearMap] at hc
+  simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.restrictScalars_apply,
+    endOfPoint_tmul, map_smul, LinearMap.baseChange_tmul, hc, hψ, AlgHom.comp_toLinearMap,
+    LinearMap.lTensor_comp]
+
+end Pushforward
 
 section GroupLike
 
@@ -582,6 +720,56 @@ theorem _root_.BialgHom.baseChange_comp_endOfPoint_regular (f : H →ₐc[R] K) 
   rw [ht]
   exact congrArg (fun t ↦ TensorProduct.comm R K A (LinearMap.lTensor K g.toLinearMap t))
     (CoalgHomClass.map_comp_comul_apply f.toCoalgHom h)
+
+/-- The point action on the regular comodule, on a pure tensor: the comultiplication pushed
+through the point, read as an algebra map `H → A ⊗ H`. -/
+private theorem endOfPoint_regular_tmul (g : H →ₐ[R] A) (a : A) (h : H) :
+    endOfPoint H g (a ⊗ₜ[R] h) =
+      a • ((Algebra.TensorProduct.comm R H A).toAlgHom.comp
+        ((Algebra.TensorProduct.map (AlgHom.id R H) g).comp (Bialgebra.comulAlgHom R H))) h := by
+  rw [endOfPoint_tmul, instSelf_coact]
+  refine congrArg (a • ·) ?_
+  simp only [AlgHom.comp_apply, Bialgebra.comulAlgHom_apply]
+  induction Coalgebra.comul (R := R) h using TensorProduct.inductionOn with
+  | tmul x y => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- **A point acts on the regular comodule by an algebra endomorphism.** Right translation by
+an `A`-point on the scalar extension `A ⊗ H` of the coordinate algebra is multiplicative. -/
+theorem endOfPoint_regular_mul (g : H →ₐ[R] A) (x y : A ⊗[R] H) :
+    endOfPoint H g (x * y) = endOfPoint H g x * endOfPoint H g y := by
+  induction x using TensorProduct.inductionOn with
+  | add x x' hx hx' => simp only [add_mul, map_add, hx, hx']
+  | tmul a h =>
+    induction y using TensorProduct.inductionOn with
+    | add y y' hy hy' => simp only [mul_add, map_add, hy, hy']
+    | tmul b h' =>
+      rw [Algebra.TensorProduct.tmul_mul_tmul, endOfPoint_regular_tmul, endOfPoint_regular_tmul,
+        endOfPoint_regular_tmul, map_mul, smul_mul_smul_comm]
+
+/-- Right translation by a point fixes the unit of the coordinate algebra. -/
+@[simp]
+theorem endOfPoint_regular_one (g : H →ₐ[R] A) : endOfPoint H g 1 = 1 := by
+  rw [Algebra.TensorProduct.one_def, endOfPoint_regular_tmul, map_one, one_smul,
+    Algebra.TensorProduct.one_def]
+
+/-- Right translation by an `A`-point, as an `A`-algebra endomorphism of the scalar extension
+`A ⊗ H` of the regular comodule. Its underlying linear map is `endOfPoint H g`. -/
+noncomputable def regularEndOfPoint (g : H →ₐ[R] A) : A ⊗[R] H →ₐ[A] A ⊗[R] H :=
+  AlgHom.ofLinearMap (endOfPoint H g) (endOfPoint_regular_one g) (endOfPoint_regular_mul g)
+
+/-- The underlying linear map of `regularEndOfPoint g` is the point action on the regular
+comodule. -/
+@[simp]
+theorem regularEndOfPoint_toLinearMap (g : H →ₐ[R] A) :
+    (regularEndOfPoint g).toLinearMap = endOfPoint H g :=
+  (rfl)
+
+/-- `regularEndOfPoint g` acts as the point action on the regular comodule. -/
+@[simp]
+theorem regularEndOfPoint_apply (g : H →ₐ[R] A) (x : A ⊗[R] H) :
+    regularEndOfPoint g x = endOfPoint H g x :=
+  (rfl)
 
 end Regular
 

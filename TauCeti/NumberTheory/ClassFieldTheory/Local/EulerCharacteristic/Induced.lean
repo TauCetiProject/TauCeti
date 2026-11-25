@@ -106,7 +106,7 @@ theorem shapiroGalRepLinearEquiv_ρ_apply (g : Field.absoluteGaloisGroup L)
 
 /-- `shapiroGalRep` carries the discrete topology. -/
 instance : DiscreteTopology (shapiroGalRep σ n hσ B).V :=
-  (ContinuousCohomology.comapInflation V C B).2.discreteTopology
+  (ContinuousCohomology.comapInflation V C B).property.discreteTopology
 
 /-- `shapiroGalRep` of a finite representation is finite. -/
 instance [Finite B] : Finite (shapiroGalRep σ n hσ B).V :=
@@ -115,7 +115,7 @@ instance [Finite B] : Finite (shapiroGalRep σ n hσ B).V :=
 /-- `shapiroGalRep` is smooth: it is the restriction of a smooth representation along a continuous
 homomorphism. -/
 instance : Fact (IsSmoothDiscrete (ZMod n) (shapiroGalRep σ n hσ B)) :=
-  ⟨(ContinuousCohomology.comapInflation V C B).2.res
+  ⟨(ContinuousCohomology.comapInflation V C B).property.res
     (absoluteGaloisGroupExtendEquiv K L σ hσ).continuous_toFun⟩
 
 /-! ### Shapiro's lemma for the two invariants -/

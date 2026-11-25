@@ -37,6 +37,8 @@ supplies the positive roots underlying a Borel subgroup and the Bruhat theory of
 * `TauCeti.Symplectic.hasCartanType_diagonalRootDatum`: this base has Cartan type `Cₘ`.
 * `TauCeti.Symplectic.diagonalRootBase_isPos_positiveLong` and its companions: the positive roots
   of this base.
+* `TauCeti.soOddBase`: the dual base of the root datum `TauCeti.soOddRootDatum` of `SO_{2m+1}`,
+  on the same support.
 
 ## References
 
@@ -310,16 +312,6 @@ theorem hasCartanType_diagonalRootDatum (m : ℕ) :
 
 /-! ### The positive roots -/
 
-private lemma isPos_of_root_mem {p : RootSubgroupIndex m}
-    (h : (diagonalRootDatum.{u} m).root p ∈ AddSubmonoid.closure
-      ((diagonalRootDatum.{u} m).root '' (diagonalSimpleSupport m : Set _))) :
-    (diagonalRootBase.{u} m).IsPos p :=
-  (mem_posRoots _ _ _).1 ((mem_posRoots_iff_root_mem_posRootCone _ _).2 <|
-    AddSubmonoid.closure_le.2 (by
-      rintro _ ⟨q, hq, rfl⟩
-      exact root_mem_posRootCone_of_mem_posRoots _ _
-        ((mem_posRoots _ _ _).2 ((diagonalRootBase.{u} m).isPos_of_mem_support hq))) h)
-
 private lemma not_isPos_of_root_eq_neg {p q : RootSubgroupIndex m}
     (hq : (diagonalRootBase.{u} m).IsPos q)
     (h : (diagonalRootDatum.{u} m).root p = -(diagonalRootDatum.{u} m).root q) :
@@ -335,7 +327,7 @@ private lemma not_isPos_of_root_eq_neg {p q : RootSubgroupIndex m}
 @[simp]
 theorem diagonalRootBase_isPos_positiveLong (i : Fin m) :
     (diagonalRootBase.{u} m).IsPos (.positiveLong i) :=
-  isPos_of_root_mem (by
+  (diagonalRootBase.{u} m).isPos_iff_root_mem_closure.2 (by
     rw [diagonalRootDatum_root_positiveLong, ← one_add_one_eq_two, Finsupp.single_add]
     exact character_add_mem i i)
 
@@ -350,7 +342,7 @@ theorem not_diagonalRootBase_isPos_negativeLong (i : Fin m) :
 @[simp]
 theorem diagonalRootBase_isPos_positiveSum {i j : Fin m} (hij : i < j) :
     (diagonalRootBase.{u} m).IsPos (.positiveSum i j hij) :=
-  isPos_of_root_mem (by
+  (diagonalRootBase.{u} m).isPos_iff_root_mem_closure.2 (by
     rw [diagonalRootDatum_root_positiveSum]
     exact character_add_mem i j)
 
@@ -366,13 +358,52 @@ theorem not_diagonalRootBase_isPos_negativeSum {i j : Fin m} (hij : i < j) :
 theorem diagonalRootBase_isPos_difference_iff {i j : Fin m} (hij : i ≠ j) :
     (diagonalRootBase.{u} m).IsPos (.difference i j hij) ↔ i < j := by
   rcases lt_or_gt_of_ne hij with h | h
-  · refine iff_of_true (isPos_of_root_mem ?_) h
+  · refine iff_of_true ((diagonalRootBase.{u} m).isPos_iff_root_mem_closure.2 ?_) h
     rw [diagonalRootDatum_root_difference]
     exact character_sub_mem h.le
   · refine iff_of_false (not_isPos_of_root_eq_neg (q := .difference j i hij.symm)
-      (isPos_of_root_mem ?_) ?_) (not_lt_of_gt h)
+      ((diagonalRootBase.{u} m).isPos_iff_root_mem_closure.2 ?_) ?_) (not_lt_of_gt h)
     · rw [diagonalRootDatum_root_difference]
       exact character_sub_mem h.le
     · rw [diagonalRootDatum_root_difference, diagonalRootDatum_root_difference, neg_sub]
 
 end TauCeti.Symplectic
+
+/-! ### The dual base of `SO_{2m+1}` -/
+
+namespace TauCeti
+
+universe u
+
+variable (m : ℕ)
+
+/-- **The base of `SO_{2m+1}`**: the dual of `TauCeti.Symplectic.diagonalRootBase`, with simple
+roots `e_i - e_(i+1)` and `e_(m-1)` and simple coroots `e_i - e_(i+1)` and `2 e_(m-1)`. -/
+noncomputable def soOddBase : (soOddRootDatum.{u} m).Base where
+  support := (Symplectic.diagonalRootBase.{u} m).support
+  linearIndepOn_root := by
+    rw [← Symplectic.flip_diagonalRootDatum]
+    exact (Symplectic.diagonalRootBase.{u} m).flip.linearIndepOn_root
+  linearIndepOn_coroot := by
+    rw [← Symplectic.flip_diagonalRootDatum]
+    exact (Symplectic.diagonalRootBase.{u} m).flip.linearIndepOn_coroot
+  root_mem_or_neg_mem := by
+    rw [← Symplectic.flip_diagonalRootDatum]
+    exact (Symplectic.diagonalRootBase.{u} m).flip.root_mem_or_neg_mem
+  coroot_mem_or_neg_mem := by
+    rw [← Symplectic.flip_diagonalRootDatum]
+    exact (Symplectic.diagonalRootBase.{u} m).flip.coroot_mem_or_neg_mem
+
+/-- The base of `SO_{2m+1}` has the support of `TauCeti.Symplectic.diagonalRootBase`. -/
+theorem soOddBase_support :
+    (soOddBase.{u} m).support = (Symplectic.diagonalRootBase.{u} m).support :=
+  (rfl)
+
+/-- The simple roots of `SO_{2m+1}` are indexed by `TauCeti.Symplectic.diagonalSimpleRootIndex`.
+-/
+@[simp]
+theorem mem_soOddBase_support {m : ℕ} (p : GLSymplecticFin.RootSubgroupIndex m) :
+    p ∈ (soOddBase.{u} m).support ↔ ∃ i, Symplectic.diagonalSimpleRootIndex m i = p := by
+  rw [soOddBase_support, Symplectic.mem_diagonalRootBase_support]
+
+end TauCeti

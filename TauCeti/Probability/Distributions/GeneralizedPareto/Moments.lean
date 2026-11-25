@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.GeneralizedPareto.Basic
+import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Probability.Distributions.Affine
 
 /-!
@@ -136,11 +137,9 @@ private lemma integral_pow_generalizedParetoMeasure_succ (hs : 0 < s)
       ring
   have hint := (hin.const_mul ((n + 1 : ℝ) * s)).sub
     (hin1.const_mul (1 - (n + 1 : ℝ) * ξ))
-  have ht := tendsto_zero_of_hasDerivAt_of_integrableOn_Ioi
-    (fun e _ => hderiv e) hint hin1
-  have heq := integral_Ioi_of_hasDerivAt_of_tendsto'
-    (fun e _ => hderiv e) hint ht
-  simp only [y, mul_zero, exp_zero, sub_self, mul_zero, zero_div, zero_pow
+  have heq := integral_Ioi_of_hasDerivAt_of_integrableOn
+    (hderiv 0).continuousAt.continuousWithinAt (fun e _ => hderiv e) hint hin1
+  simp only [y, mul_zero, exp_zero, sub_self, mul_zero, zero_div, neg_zero, zero_pow
     (Nat.succ_ne_zero n)] at heq
   rw [integral_sub (hin.const_mul _) (hin1.const_mul _), integral_const_mul,
     integral_const_mul] at heq
@@ -206,10 +205,10 @@ theorem variance_id_generalizedParetoMeasure (hs : 0 < s) (hξ : 2 * ξ < 1) :
     (integrable_exp_mul_expMeasure_iff one_pos).2 hξ
   have hLp : MemLp (fun e => exp (ξ * e)) 2 (expMeasure 1) := by
     apply (memLp_two_iff_integrable_sq (by fun_prop)).2
-    simpa only [← exp_nat_mul, Nat.cast_ofNat, ← mul_assoc] using he2
+    simpa only [← exp_natCast_mul, Nat.cast_ofNat, ← mul_assoc] using he2
   rw [generalizedParetoMeasure_eq_map_affine hs hξ0, variance_id_map_affine,
     variance_id_map (by fun_prop), variance_eq_sub hLp]
-  simp only [Pi.pow_apply, ← exp_nat_mul, Nat.cast_ofNat, ← mul_assoc]
+  simp only [Pi.pow_apply, ← exp_natCast_mul, Nat.cast_ofNat, ← mul_assoc]
   have hm1 : (∫ e, exp (ξ * e) ∂expMeasure 1) = 1 / (1 - ξ) := by
     simpa only [mgf, id_eq] using mgf_id_expMeasure one_pos hξ1
   have hm2 : (∫ e, exp ((2 * ξ) * e) ∂expMeasure 1) = 1 / (1 - 2 * ξ) := by

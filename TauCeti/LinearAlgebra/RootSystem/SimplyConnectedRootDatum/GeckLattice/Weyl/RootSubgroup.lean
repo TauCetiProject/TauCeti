@@ -92,20 +92,22 @@ variable (t : DynkinType) (ht : t.Valid)
 Weyl-group element spelled by `l` and `α_i` the simple root at the Bourbaki node `i` of the pinned
 simply connected root datum. -/
 def geckWeylRootIndex (l : List (Fin t.rank)) (i : Fin t.rank) : Fin t.numRoots :=
-  (t.simplyConnectedRootDatum ht).weylGroupToPerm (t.geckWeylWordProd ht l) (t.simpleIndex ht i)
+  (t.simplyConnectedRootDatum ht).weylGroupToPerm (t.simplyConnectedWeylWordProd ht l)
+    (t.simpleIndex ht i)
 
 /-- The root at `geckWeylRootIndex l i` is the image of the simple root `α_i` under the Weyl-group
 element spelled by `l`. -/
 theorem root_geckWeylRootIndex (l : List (Fin t.rank)) (i : Fin t.rank) :
     (t.simplyConnectedRootDatum ht).root (t.geckWeylRootIndex ht l i) =
-      t.geckWeylWordProd ht l • (t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i) :=
+      t.simplyConnectedWeylWordProd ht l •
+        (t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i) :=
   (RootPairing.weylGroup_apply_root _ _ _).symm
 
 /-- The simple root at `i`, evaluated on the inverse Weyl translate of `s`, is the root at
 `geckWeylRootIndex l i` evaluated on `s`. -/
 theorem torusCharacter_geckWeylTorusAction_inv_root_simpleIndex (l : List (Fin t.rank))
     (i : Fin t.rank) (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
-    torusCharacter (t.geckWeylTorusAction ht A (t.geckWeylWordProd ht l)⁻¹ s)
+    torusCharacter (t.geckWeylTorusAction ht A (t.simplyConnectedWeylWordProd ht l)⁻¹ s)
         ((t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i)) =
       torusCharacter s ((t.simplyConnectedRootDatum ht).root (t.geckWeylRootIndex ht l i)) := by
   rw [torusCharacter_geckWeylTorusAction, inv_inv, root_geckWeylRootIndex]
@@ -118,7 +120,7 @@ theorem geckWeylWordTorusAction_mulSingle (l : List (Fin t.rank)) (i : Fin t.ran
     t.geckWeylWordTorusAction ht l A (Pi.mulSingle i u) =
       fun k ↦ u ^ ((t.simplyConnectedRootDatum ht).coroot (t.geckWeylRootIndex ht l i) k) := by
   rw [← t.geckWeylTorusAction_apply_eq_word ht rfl, geckWeylRootIndex]
-  exact t.geckWeylTorusAction_mulSingle ht (t.geckWeylWordProd ht l) i A u
+  exact t.geckWeylTorusAction_mulSingle ht (t.simplyConnectedWeylWordProd ht l) i A u
 
 /-- The empty word attaches the simple root itself. -/
 @[simp]
@@ -131,16 +133,16 @@ theorem geckWeylRootIndex_cons (j : Fin t.rank) (l : List (Fin t.rank)) (i : Fin
     t.geckWeylRootIndex ht (j :: l) i =
       (t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht j)
         (t.geckWeylRootIndex ht l i) := by
-  rw [geckWeylRootIndex, geckWeylWordProd_cons, RootPairing.weylGroupToPerm_ofIdx_mul_apply,
-    geckWeylRootIndex]
+  rw [geckWeylRootIndex, simplyConnectedWeylWordProd_cons,
+    RootPairing.weylGroupToPerm_ofIdx_mul_apply, geckWeylRootIndex]
 
 /-- The one-letter word `[i]` attaches to the node `i` the negative of the simple root `α_i`. -/
 @[simp]
 theorem root_geckWeylRootIndex_singleton_self (i : Fin t.rank) :
     (t.simplyConnectedRootDatum ht).root (t.geckWeylRootIndex ht [i] i) =
       -(t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i) := by
-  rw [root_geckWeylRootIndex, geckWeylWordProd_cons, geckWeylWordProd_nil, mul_one,
-    RootPairing.weylGroup.ofIdx_smul, RootPairing.Equiv.reflection_smul,
+  rw [root_geckWeylRootIndex, simplyConnectedWeylWordProd_cons, simplyConnectedWeylWordProd_nil,
+    mul_one, RootPairing.weylGroup.ofIdx_smul, RootPairing.Equiv.reflection_smul,
     RootPairing.reflection_apply_self]
 
 /-- Appending `[i]` to a Weyl word `l` negates the root attached at node `i`. -/
@@ -148,8 +150,9 @@ theorem root_geckWeylRootIndex_singleton_self (i : Fin t.rank) :
 theorem root_geckWeylRootIndex_append_singleton_self (l : List (Fin t.rank)) (i : Fin t.rank) :
     (t.simplyConnectedRootDatum ht).root (t.geckWeylRootIndex ht (l ++ [i]) i) =
       -(t.simplyConnectedRootDatum ht).root (t.geckWeylRootIndex ht l i) := by
-  rw [root_geckWeylRootIndex, geckWeylWordProd_append, mul_smul, ← root_geckWeylRootIndex,
-    root_geckWeylRootIndex_singleton_self, smul_neg, ← root_geckWeylRootIndex]
+  rw [root_geckWeylRootIndex, simplyConnectedWeylWordProd_append, mul_smul,
+    ← root_geckWeylRootIndex, root_geckWeylRootIndex_singleton_self, smul_neg,
+    ← root_geckWeylRootIndex]
 
 /-- **Every root is attached to some word and node**: each root index of the pinned simply
 connected root datum is `w α_i` for a Weyl word spelling `w` and a Bourbaki node `i`. -/
@@ -157,9 +160,9 @@ theorem exists_geckWeylRootIndex_eq (k : Fin t.numRoots) :
     ∃ (l : List (Fin t.rank)) (i : Fin t.rank), t.geckWeylRootIndex ht l i = k := by
   let _ := t.isReduced_simplyConnectedRootDatum ht
   obtain ⟨j, hj, w, hw⟩ := exists_mem_support_weylGroupToPerm_eq (t.simplyConnectedBase ht) k
-  obtain ⟨l, rfl⟩ := t.geckWeylWordProd_surjective ht w
+  obtain ⟨l, rfl⟩ := t.simplyConnectedWeylWordProd_surjective ht w
   refine ⟨l, (t.simpleSupportEquivSimplyConnectedBase ht).symm ⟨j, hj⟩, ?_⟩
-  rw [geckWeylRootIndex, ← coe_simpleSupportEquivSimplyConnectedBase, Equiv.apply_symm_apply]
+  rw [geckWeylRootIndex, ← coe_simpleSupportEquivSimplyConnectedBase_apply, Equiv.apply_symm_apply]
   exact hw
 
 /-- The map sending a Weyl word and a node to their root index is surjective. -/
@@ -195,7 +198,7 @@ theorem geckWeylRootIndex_geckRootSubgroupPresentation (k : Fin t.numRoots) :
   split_ifs with hk
   · rw [geckWeylRootIndex_nil]
     apply Fin.ext
-    exact t.simpleIndex_val ht ⟨k, hk⟩
+    exact t.val_simpleIndex ht ⟨k, hk⟩
   · exact Function.surjInv_eq (t.geckWeylRootIndex_surjective ht) k
 
 /-! ## The root subgroup attached to a word and a node -/
@@ -303,7 +306,7 @@ theorem conj_conj_eq_torusCharacter_root_geckWeylRootIndex {G : Type*} [Group G]
           Multiplicative.toAdd u)) * W⁻¹ := by
   -- Write `s` as the word's action on `s' = w⁻¹ • s`, so that `T s` is the conjugate of `T s'`
   -- by `W`.
-  set s' := t.geckWeylTorusAction ht A (t.geckWeylWordProd ht l)⁻¹ s
+  set s' := t.geckWeylTorusAction ht A (t.simplyConnectedWeylWordProd ht l)⁻¹ s
   have hT : W * T s' * W⁻¹ = T s :=
     (hW s').trans (congrArg T (t.geckWeylWordTorusAction_geckWeylTorusAction_inv ht l A s))
   rw [← t.torusCharacter_geckWeylTorusAction_inv_root_simpleIndex ht l i A s, ← hx s' u, ← hT]

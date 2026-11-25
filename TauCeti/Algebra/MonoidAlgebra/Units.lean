@@ -52,6 +52,12 @@ theorem coe_unitsSingle (p : Rˣ × Mˣ) :
     (unitsSingle p : MonoidAlgebra R M) = single (p.2 : M) (p.1 : R) :=
   (rfl)
 
+@[simp]
+theorem coe_inv_unitsSingle (p : Rˣ × Mˣ) :
+    (((unitsSingle p)⁻¹ : (MonoidAlgebra R M)ˣ) : MonoidAlgebra R M) =
+      single ((p.2⁻¹ : Mˣ) : M) ((p.1⁻¹ : Rˣ) : R) := by
+  rw [← map_inv, coe_unitsSingle, Prod.snd_inv, Prod.fst_inv]
+
 /-- A monomial is a unit exactly when its exponent and coefficient are units. This does not
 require a domain or a unique-products hypothesis. -/
 @[to_additive (dont_translate := R) (attr := simp) isUnit_single_iff
@@ -189,6 +195,19 @@ end MonoidAlgebra
 
 namespace AddMonoidAlgebra
 
+/-- Monomials with coefficient one at opposite exponents multiply to one. The priority lets
+`simp` cancel them before `single_mul_single` rewrites the product to a single monomial. -/
+@[simp high]
+theorem single_mul_single_neg {R G : Type*} [Semiring R] [AddGroup G] (g : G) :
+    (single g (1 : R) : AddMonoidAlgebra R G) * single (-g) 1 = 1 := by
+  simp [single_mul_single, one_def]
+
+/-- The monomial at `-g` is also a left inverse to the monomial at `g`. -/
+@[simp high]
+theorem single_neg_mul_single {R G : Type*} [Semiring R] [AddGroup G] (g : G) :
+    (single (-g) (1 : R) : AddMonoidAlgebra R G) * single g 1 = 1 := by
+  simpa only [neg_neg] using single_mul_single_neg (R := R) (-g)
+
 variable {R M : Type*} [Semiring R] [AddMonoid M]
 
 -- The bundled maps are stated separately: to_additive does not insert Multiplicative
@@ -207,6 +226,12 @@ noncomputable def unitsSingle : Rˣ × Multiplicative (AddUnits M) →* (AddMono
 theorem coe_unitsSingle (p : Rˣ × Multiplicative (AddUnits M)) :
     (unitsSingle p : AddMonoidAlgebra R M) = single (p.2.toAdd : M) (p.1 : R) :=
   (rfl)
+
+@[simp]
+theorem coe_inv_unitsSingle (p : Rˣ × Multiplicative (AddUnits M)) :
+    (((unitsSingle p)⁻¹ : (AddMonoidAlgebra R M)ˣ) : AddMonoidAlgebra R M) =
+      single ((-p.2.toAdd : AddUnits M) : M) ((p.1⁻¹ : Rˣ) : R) := by
+  rw [← map_inv, coe_unitsSingle, Prod.snd_inv, Prod.fst_inv, toAdd_inv]
 
 /-- The coefficient unit and the additive unit exponent of a monomial unit are unique. -/
 theorem unitsSingle_injective [Nontrivial R] :

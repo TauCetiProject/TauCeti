@@ -247,7 +247,7 @@ private theorem ι_mul_ι_mem_span_spinGroup_of_ne_zero
   let g := spinReflectionPairLift Q v w h
   have hg : (g : CliffordAlgebra Q) ∈
       Submodule.span K (spinGroup Q : Set (CliffordAlgebra Q)) :=
-    Submodule.subset_span g.2
+    Submodule.subset_span g.property
   have hcoe : (g : CliffordAlgebra Q) = a • (ι Q v * ι Q w) := by
     simp only [g, spinReflectionPairLift, a, map_smul, smul_mul_assoc]
   have := Submodule.smul_mem _ (⅟a) hg

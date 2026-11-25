@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.Orientation.Cover
 public import TauCeti.Topology.Homotopy.Monodromy.Basic
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # Orientability of vector bundles from the fundamental group
@@ -15,8 +15,10 @@ public import TauCeti.Topology.IsLocalHomeomorph
 A finite-dimensional real vector bundle over a connected, locally path-connected base is
 orientable if the fundamental group of the base has no subgroup of index two. Otherwise the
 orientation double cover is connected, and the image of its fundamental group has index equal
-to the number of sheets, namely two. In particular, every such bundle over a simply connected
-base is orientable.
+to the number of sheets, namely two
+(`TauCeti.VectorBundleOrientationCover.pathConnectedSpace_of_isEmpty` gives the path-connectedness
+of the double cover of a non-orientable bundle). In particular, every such bundle over a simply
+connected base is orientable.
 
 ## References
 
@@ -40,20 +42,29 @@ variable {B : Type*} [TopologicalSpace B] [LocallyPathConnectedSpace B]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
   [VectorBundle ℝ F E] {ι : Type*} [Fintype ι]
 
+/-- The orientation double cover of a non-orientable real vector bundle over a connected, locally
+path-connected base is path connected, provided `ι` has cardinality the rank of the bundle. -/
+theorem _root_.TauCeti.VectorBundleOrientationCover.pathConnectedSpace_of_isEmpty [ConnectedSpace B]
+    (hι : Fintype.card ι = finrank ℝ F) [IsEmpty (VectorBundleOrientation F E ι)] :
+    PathConnectedSpace (VectorBundleOrientationCover F E ι) := by
+  have : ConnectedSpace (VectorBundleOrientationCover F E ι) := by
+    by_contra hc
+    obtain ⟨o⟩ := (nonempty_iff_not_connectedSpace hι).2 hc
+    exact isEmptyElim o
+  have : LocallyPathConnectedSpace (VectorBundleOrientationCover F E ι) :=
+    (VectorBundleOrientationCover.isCoveringMap_proj hι).isLocalHomeomorph.locallyPathConnectedSpace
+  exact PathConnectedSpace.of_locallyPathConnectedSpace
+
 /-- A real vector bundle over a connected, locally path-connected base whose fundamental group
 has no subgroup of index two is orientable, provided `ι` has cardinality the rank of the bundle. -/
 theorem nonempty_of_forall_index_ne_two [ConnectedSpace B]
     (hι : Fintype.card ι = finrank ℝ F) (b : B)
     (hπ : ∀ G : Subgroup (FundamentalGroup B b), G.index ≠ 2) :
     Nonempty (VectorBundleOrientation F E ι) := by
-  apply (nonempty_iff_not_connectedSpace hι).mpr
-  intro hc
-  have : ConnectedSpace (VectorBundleOrientationCover F E ι) := hc
+  by_contra hno
+  have := not_nonempty_iff.1 hno
+  have := VectorBundleOrientationCover.pathConnectedSpace_of_isEmpty (F := F) (E := E) hι
   have hp := VectorBundleOrientationCover.isCoveringMap_proj (F := F) (E := E) hι
-  have : LocallyPathConnectedSpace (VectorBundleOrientationCover F E ι) :=
-    hp.isLocalHomeomorph.locallyPathConnectedSpace
-  have : PathConnectedSpace (VectorBundleOrientationCover F E ι) :=
-    PathConnectedSpace.of_locallyPathConnectedSpace
   obtain ⟨p, hp₀⟩ := VectorBundleOrientationCover.surjective_proj (F := F) (E := E) hι b
   have hcard := hp.card_fiber_eq_index ⟨p, hp₀⟩
   rw [Nat.card_coe_set_eq, VectorBundleOrientationCover.ncard_fiber hι] at hcard

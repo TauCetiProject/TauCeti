@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Cluster.CoefficientSemifield.Tropical
-public import TauCeti.Algebra.Cluster.YSeed.Basic
+public import TauCeti.Algebra.Cluster.YSeed.Word
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.FrozenSupport
 
 import TauCeti.Algebra.Order.Ring.PosPart.Mul
@@ -163,6 +163,16 @@ theorem toExtendedMatrix_mutation [DecidableEq K] [DecidableEq J]
         linarith
   · simp [toExtendedMatrix_symmetrizer]
 
+/-- Reading tropical exponents transports a whole normalized mutation word to the extended
+exchange-matrix word in the same order. -/
+@[simp]
+theorem toExtendedMatrix_mutationWord [DecidableEq K] [DecidableEq J]
+    (s : YSeed K (Trop J)) (w : List K) :
+    (s.mutationWord w).toExtendedMatrix = s.toExtendedMatrix.mutationWord w := by
+  rw [mutationWord_eq_foldl, ExchangeMatrix.mutationWord_eq_foldl]
+  exact (List.foldl_hom (fun s : YSeed K (Trop J) ↦ s.toExtendedMatrix)
+    (fun s k ↦ (s.toExtendedMatrix_mutation k).symm)).symm
+
 /-- Mutable reindexing commutes with the extended-matrix presentation. -/
 @[simp]
 theorem toExtendedMatrix_reindex (eK : K ≃ K') (s : YSeed K (Trop J)) :
@@ -209,9 +219,9 @@ noncomputable def tropicalYSeedEquiv :
       {B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J) //
         B.HasFiniteFrozenColumnSupport} where
   toFun s := ⟨s.toExtendedMatrix, s.hasFiniteFrozenColumnSupport_toExtendedMatrix⟩
-  invFun B := B.1.toTropicalYSeed B.2
+  invFun B := B.val.toTropicalYSeed B.property
   left_inv s := s.toTropicalYSeed_toExtendedMatrix _
-  right_inv B := Subtype.ext (B.1.toExtendedMatrix_toTropicalYSeed B.2)
+  right_inv B := Subtype.ext (B.val.toExtendedMatrix_toTropicalYSeed B.property)
 
 @[simp]
 theorem tropicalYSeedEquiv_apply_val (s : YSeed K (Trop J)) :

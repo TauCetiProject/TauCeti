@@ -5,15 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.SelfAdjoint
 public import Mathlib.Basic.Complex.Basic
+import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 
 /-!
-# Imaginary parts of complex affine expressions
+# Complex expressions with real coefficients
 
 The imaginary part of a complex affine expression with real coefficients factors
 as a real coefficient times the imaginary part of its argument. This reduces imaginary-part
 estimates at division points to real inequalities.
+
+For real `t`, the complex number `1 + t ^ 2` is nonzero (`Complex.one_add_ofReal_sq_ne_zero`), as
+needed to clear the denominator of kernels such as `t / (1 + t ^ 2)`.
+
+Every real number cast to `ℂ` is self-adjoint, registered as the instance
+`TauCeti.instFactIsSelfAdjointComplexOfReal : Fact (IsSelfAdjoint (r : ℂ))`. It supplies the
+self-adjointness hypotheses of star structures with a real parameter.
 -/
 
 public section
@@ -26,4 +35,18 @@ lemma im_ofReal_mul_add_ofReal_div_sub_ofReal_mul (a b d c : ℝ) (z : ℂ) :
   simp only [sub_im, div_ofReal_im, add_im, mul_im, ofReal_re, ofReal_im, zero_mul, add_zero]
   ring
 
+/-- For real `t`, the complex number `1 + t ^ 2` is nonzero. -/
+theorem one_add_ofReal_sq_ne_zero (t : ℝ) : 1 + (t : ℂ) ^ 2 ≠ 0 := by
+  exact_mod_cast (by positivity : (1 + t ^ 2 : ℝ) ≠ 0)
+
 end Complex
+
+namespace TauCeti
+
+/-- A real number cast to `ℂ` is self-adjoint. This supplies the `Fact (IsSelfAdjoint _)`
+hypothesis of star structures with a parameter, such as the analytic adjoint on Temperley–Lieb
+algebras with a real loop value. -/
+instance instFactIsSelfAdjointComplexOfReal (r : ℝ) : Fact (IsSelfAdjoint (r : ℂ)) :=
+  ⟨Complex.conj_ofReal r⟩
+
+end TauCeti

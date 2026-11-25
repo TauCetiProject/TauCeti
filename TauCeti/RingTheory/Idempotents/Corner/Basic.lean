@@ -41,10 +41,14 @@ can be compared with `A` as `R`-algebras, for instance through Mathlib's `Morita
   product of the corners of its components.
 * `IsIdempotentElem.isNoetherian_corner`: the corner of a Noetherian algebra is Noetherian, so the
   corner of a finite-dimensional algebra is finite-dimensional.
+* `CompleteOrthogonalIdempotents.algEquivOfIsMulCentral`: a complete family of orthogonal central
+  idempotents `eᵢ` of an `R`-algebra `A` splits it as `A ≃ₐ[R] ∏ᵢ eᵢ A eᵢ`, by `x ↦ (eᵢ x eᵢ)ᵢ`;
+  this is Mathlib's `CompleteOrthogonalIdempotents.ringEquivOfIsMulCentral`, which is `R`-linear.
 
 ## Main results
 
 * `TauCeti.mem_cornerSubmodule_iff`: the fixed-point characterization of an idempotent corner.
+* `TauCeti.mul_mem_cornerSubmodule`: the Peirce multiplication rule `(eAf)(fAg) ⊆ eAg`.
 * `TauCeti.mem_span_singleton_of_mem_cornerSubmodule`: the corner `eAf` lies in the left ideal
   `Af` without idempotency assumptions.
 * `IsIdempotentElem.mul_corner_val` and `IsIdempotentElem.corner_val_mul`: an element of the
@@ -53,6 +57,11 @@ can be compared with `A` as `R`-algebras, for instance through Mathlib's `Morita
   `e (x₁ e) ⋯ (xₙ e)` in `A`.
 * `Pi.isIdempotentElem_iff`: an element of a product is idempotent exactly when each component
   is.
+* `IsIdempotentElem.Corner.nontrivial`: the corner of a nonzero idempotent is nontrivial.
+* `CompleteOrthogonalIdempotents.val_algEquivOfIsMulCentral_apply`: the component of `x` in the
+  corner `eᵢ A eᵢ` is `eᵢ x`.
+* `CompleteOrthogonalIdempotents.val_center`: a complete orthogonal family of idempotents of the
+  centre of an algebra is one of the algebra.
 
 ## References
 
@@ -82,6 +91,18 @@ theorem cornerSubmodule_def (e f : A) :
 /-- Cutting an element down by `e` on the left and `f` on the right lands in the corner `eAf`. -/
 theorem mul_mul_mem_cornerSubmodule (e f x : A) : e * x * f ∈ cornerSubmodule k e f :=
   ⟨x, by simp only [LinearMap.mulLeftRight_apply]⟩
+
+variable {k} in
+/-- **The Peirce multiplication rule** `(eAf)(fAg) ⊆ eAg`. No idempotency is needed. -/
+theorem mul_mem_cornerSubmodule {e f g x y : A} (hx : x ∈ cornerSubmodule k e f)
+    (hy : y ∈ cornerSubmodule k f g) : x * y ∈ cornerSubmodule k e g := by
+  rw [cornerSubmodule_def, LinearMap.mem_range] at hx hy
+  obtain ⟨a, rfl⟩ := hx
+  obtain ⟨b, rfl⟩ := hy
+  simp only [LinearMap.mulLeftRight_apply]
+  have h : e * a * f * (f * b * g) = e * (a * f * (f * b)) * g := by simp only [mul_assoc]
+  rw [h]
+  exact mul_mul_mem_cornerSubmodule k e g _
 
 /-- For idempotents `e` and `f`, an element belongs to the corner `eAf` exactly when multiplying it
 by `e` on the left and by `f` on the right fixes it. -/
@@ -142,13 +163,13 @@ variable {A : Type u} [Semigroup A] {e : A} (he : IsIdempotentElem e)
 
 /-- An element of the corner `eAe` is fixed by `e` on the left. -/
 @[simp]
-theorem mul_corner_val (b : he.Corner) : e * b.1 = b.1 :=
-  ((Subsemigroup.mem_corner_iff he).1 b.2).1
+theorem mul_corner_val (b : he.Corner) : e * b.val = b.val :=
+  ((Subsemigroup.mem_corner_iff he).1 b.property).1
 
 /-- An element of the corner `eAe` is fixed by `e` on the right. -/
 @[simp]
-theorem corner_val_mul (b : he.Corner) : b.1 * e = b.1 :=
-  ((Subsemigroup.mem_corner_iff he).1 b.2).2
+theorem corner_val_mul (b : he.Corner) : b.val * e = b.val :=
+  ((Subsemigroup.mem_corner_iff he).1 b.property).2
 
 /-- The *compression* `x ↦ e * x * e` of `A` onto the corner `eAe`. -/
 def compress (x : A) : he.Corner :=
@@ -156,12 +177,16 @@ def compress (x : A) : he.Corner :=
     ⟨by rw [← mul_assoc, ← mul_assoc, he.eq], by rw [mul_assoc, he.eq]⟩⟩
 
 @[simp]
-theorem val_compress (x : A) : (he.compress x).1 = e * x * e := (rfl)
+theorem val_compress (x : A) : (he.compress x).val = e * x * e := (rfl)
 
 /-- The compression fixes the elements of the corner. -/
 @[simp]
-theorem compress_val (b : he.Corner) : he.compress b.1 = b :=
+theorem compress_val (b : he.Corner) : he.compress b.val = b :=
   Subtype.ext <| by rw [val_compress, he.mul_corner_val, he.corner_val_mul]
+
+/-- The compression of an element commuting with `e` is `e * x`. -/
+theorem val_compress_of_commute {x : A} (hx : Commute e x) : (he.compress x).val = e * x := by
+  rw [val_compress, mul_assoc, ← hx.eq, ← mul_assoc, he.eq]
 
 namespace Corner
 
@@ -169,11 +194,11 @@ variable {he} {R : Type v} [SMul R A] [SMulCommClass R A A] [IsScalarTower R A A
 
 /-- A scalar action compatible with multiplication restricts to the corner. -/
 instance instSMul : SMul R he.Corner where
-  smul r b := ⟨r • b.1, (Subsemigroup.mem_corner_iff he).2
+  smul r b := ⟨r • b.val, (Subsemigroup.mem_corner_iff he).2
     ⟨by rw [mul_smul_comm, he.mul_corner_val], by rw [smul_mul_assoc, he.corner_val_mul]⟩⟩
 
 @[simp]
-theorem val_smul (r : R) (b : he.Corner) : (r • b).1 = r • b.1 := (rfl)
+theorem val_smul (r : R) (b : he.Corner) : (r • b).val = r • b.val := (rfl)
 
 end Corner
 
@@ -192,22 +217,26 @@ variable {A : Type u} [NonUnitalSemiring A] {e : A} {he : IsIdempotentElem e}
 
 /-- The unit of the corner ring `eAe` is `e`. -/
 @[simp]
-theorem val_one : (1 : he.Corner).1 = e := (rfl)
+theorem val_one : (1 : he.Corner).val = e := (rfl)
 
 @[simp]
-theorem val_mul (b c : he.Corner) : (b * c).1 = b.1 * c.1 := (rfl)
+theorem val_mul (b c : he.Corner) : (b * c).val = b.val * c.val := (rfl)
 
 @[simp]
-theorem val_zero : (0 : he.Corner).1 = 0 := (rfl)
+theorem val_zero : (0 : he.Corner).val = 0 := (rfl)
 
 @[simp]
-theorem val_add (b c : he.Corner) : (b + c).1 = b.1 + c.1 := (rfl)
+theorem val_add (b c : he.Corner) : (b + c).val = b.val + c.val := (rfl)
+
+/-- The corner `eAe` of a nonzero idempotent `e` is nontrivial, since its unit `e` is nonzero. -/
+theorem nontrivial (he : IsIdempotentElem e) (hne : e ≠ 0) : Nontrivial he.Corner :=
+  ⟨1, 0, fun h ↦ hne <| by simpa only [val_one, val_zero] using congrArg Subtype.val h⟩
 
 variable {R : Type v} [Semiring R] [Module R A] [SMulCommClass R A A] [IsScalarTower R A A]
 
 /-- The corner inherits the module structure of the ambient nonunital algebra. -/
 instance instModule : Module R he.Corner :=
-  Function.Injective.module R ⟨⟨fun b : he.Corner ↦ b.1, rfl⟩, fun _ _ ↦ rfl⟩
+  Function.Injective.module R ⟨⟨fun b : he.Corner ↦ b.val, rfl⟩, fun _ _ ↦ rfl⟩
     Subtype.val_injective fun _ _ ↦ rfl
 
 end NonUnitalSemiring
@@ -217,10 +246,10 @@ section NonUnitalRing
 variable {A : Type u} [NonUnitalRing A] {e : A} {he : IsIdempotentElem e}
 
 @[simp]
-theorem val_neg (b : he.Corner) : (-b).1 = -b.1 := (rfl)
+theorem val_neg (b : he.Corner) : (-b).val = -b.val := (rfl)
 
 @[simp]
-theorem val_sub (b c : he.Corner) : (b - c).1 = b.1 - c.1 := (rfl)
+theorem val_sub (b c : he.Corner) : (b - c).val = b.val - c.val := (rfl)
 
 end NonUnitalRing
 
@@ -234,12 +263,12 @@ variable {A : Type u} [NonUnitalSemiring A] {e : A} {he : IsIdempotentElem e}
 instance instAlgebra : Algebra R he.Corner :=
   Algebra.ofModule'
     (fun r b ↦ Subtype.ext <|
-      (smul_mul_assoc r e b.1).trans (congrArg (r • ·) (he.mul_corner_val b)))
+      (smul_mul_assoc r e b.val).trans (congrArg (r • ·) (he.mul_corner_val b)))
     (fun r b ↦ Subtype.ext <|
-      (mul_smul_comm r b.1 e).trans (congrArg (r • ·) (he.corner_val_mul b)))
+      (mul_smul_comm r b.val e).trans (congrArg (r • ·) (he.corner_val_mul b)))
 
 @[simp]
-theorem val_algebraMap (r : R) : (algebraMap R he.Corner r).1 = r • e := (rfl)
+theorem val_algebraMap (r : R) : (algebraMap R he.Corner r).val = r • e := (rfl)
 
 end Algebra
 
@@ -259,14 +288,30 @@ theorem compress_add (x y : A) : he.compress (x + y) = he.compress x + he.compre
 
 end NonUnitalSemiring
 
+@[simp]
+theorem compress_sub {A : Type u} [NonUnitalRing A] {e : A} (he : IsIdempotentElem e) (x y : A) :
+    he.compress (x - y) = he.compress x - he.compress y :=
+  Subtype.ext <| by simp [mul_sub, sub_mul]
+
 section Semiring
 
 variable {A : Type u} [Semiring A] {e : A} (he : IsIdempotentElem e)
 
+/-- The compression of `1` is the unit `e` of the corner `eAe`. -/
+@[simp]
+theorem compress_one : he.compress 1 = 1 :=
+  Subtype.ext <| by simp [he.eq]
+
+/-- The compression of a scalar `r` is the scalar `r` of the corner `eAe`. -/
+@[simp]
+theorem compress_algebraMap {R : Type v} [CommSemiring R] [Algebra R A] (r : R) :
+    he.compress (algebraMap R A r) = algebraMap R he.Corner r :=
+  Subtype.ext <| by simp [Algebra.algebraMap_eq_smul_one]
+
 /-- The product in the corner `eAe` of the compressions `e xᵢ e` of a list `x₁, …, xₙ` is
 `e (x₁ e) ⋯ (xₙ e)`. -/
 theorem val_list_prod_map_compress (l : List A) :
-    (l.map he.compress).prod.1 = e * (l.map (· * e)).prod := by
+    (l.map he.compress).prod.val = e * (l.map (· * e)).prod := by
   induction l with
   | nil => simp
   | cons x l ih => simp [ih, mul_assoc, he.mul_self_mul]
@@ -282,14 +327,14 @@ variable {A : Type u} [NonUnitalSemiring A] {e : A} (he : IsIdempotentElem e)
 normalised at the unit `e` of the corner: `x ↦ φ x / φ e`. When `φ e ≠ 0` it takes the value `1`
 at the unit (`IsIdempotentElem.cornerFunctional_one`). -/
 def cornerFunctional (φ : A →ₗ[R] R) : he.Corner →ₗ[R] R where
-  toFun x := (φ e)⁻¹ * φ x.1
+  toFun x := (φ e)⁻¹ * φ x.val
   map_add' x y := by rw [Corner.val_add, map_add, mul_add]
   map_smul' c x := by
     rw [Corner.val_smul, map_smul, smul_eq_mul, smul_eq_mul, RingHom.id_apply, mul_left_comm]
 
 @[simp]
 theorem cornerFunctional_apply (φ : A →ₗ[R] R) (x : he.Corner) :
-    he.cornerFunctional φ x = (φ e)⁻¹ * φ x.1 :=
+    he.cornerFunctional φ x = (φ e)⁻¹ * φ x.val :=
   (rfl)
 
 /-- The compression of `φ` to the corner `eAe` is normalised when `φ e ≠ 0`. -/
@@ -307,22 +352,22 @@ variable {A B : Type*} [NonUnitalSemiring A] [NonUnitalSemiring B]
 /-- A nonunital homomorphism restricts to a unital homomorphism between idempotent corners.
 The unit in the source is `e`, and the unit in the target is its image. -/
 def cornerMap (f : A →ₙ+* B) : he.Corner →+* (he.map f).Corner where
-  toFun x := ⟨f x.1, (Subsemigroup.mem_corner_iff (he.map f)).mpr
+  toFun x := ⟨f x.val, (Subsemigroup.mem_corner_iff (he.map f)).mpr
     ⟨by rw [← map_mul, he.mul_corner_val], by rw [← map_mul, he.corner_val_mul]⟩⟩
   map_one' := Subtype.ext (by simp)
-  map_mul' x y := Subtype.ext (map_mul f x.1 y.1)
+  map_mul' x y := Subtype.ext (map_mul f x.val y.val)
   map_zero' := Subtype.ext (by simp)
-  map_add' x y := Subtype.ext (map_add f x.1 y.1)
+  map_add' x y := Subtype.ext (map_add f x.val y.val)
 
 @[simp]
-theorem val_cornerMap (f : A →ₙ+* B) (x : he.Corner) : (he.cornerMap f x).1 = f x.1 :=
+theorem val_cornerMap (f : A →ₙ+* B) (x : he.Corner) : (he.cornerMap f x).val = f x.val :=
   (rfl)
 
 /-- A surjective homomorphism is surjective on every idempotent corner. -/
 theorem cornerMap_surjective (f : A →ₙ+* B) (hf : Function.Surjective f) :
     Function.Surjective (he.cornerMap f) := by
   intro y
-  obtain ⟨x, hx⟩ := hf y.1
+  obtain ⟨x, hx⟩ := hf y.val
   refine ⟨he.compress x, ?_⟩
   apply Subtype.ext
   exact (map_mul f (e * x) e).trans (by
@@ -332,21 +377,21 @@ theorem cornerMap_surjective (f : A →ₙ+* B) (hf : Function.Surjective f) :
 image of `e`. -/
 def cornerEquiv (f : A ≃+* B) : he.Corner ≃+* (he.map f).Corner where
   toFun := he.cornerMap f.toNonUnitalRingHom
-  invFun y := ⟨f.symm y.1, (Subsemigroup.mem_corner_iff he).mpr
+  invFun y := ⟨f.symm y.val, (Subsemigroup.mem_corner_iff he).mpr
     ⟨f.injective (by rw [map_mul, f.apply_symm_apply, (he.map f).mul_corner_val]),
       f.injective (by rw [map_mul, f.apply_symm_apply, (he.map f).corner_val_mul])⟩⟩
-  left_inv x := Subtype.ext (f.symm_apply_apply x.1)
-  right_inv y := Subtype.ext (f.apply_symm_apply y.1)
+  left_inv x := Subtype.ext (f.symm_apply_apply x.val)
+  right_inv y := Subtype.ext (f.apply_symm_apply y.val)
   map_mul' := map_mul (he.cornerMap f.toNonUnitalRingHom)
   map_add' := map_add (he.cornerMap f.toNonUnitalRingHom)
 
 @[simp]
-theorem val_cornerEquiv_apply (f : A ≃+* B) (x : he.Corner) : (he.cornerEquiv f x).1 = f x.1 :=
+theorem val_cornerEquiv_apply (f : A ≃+* B) (x : he.Corner) : (he.cornerEquiv f x).val = f x.val :=
   (rfl)
 
 @[simp]
 theorem val_cornerEquiv_symm_apply (f : A ≃+* B) (y : (he.map f).Corner) :
-    ((he.cornerEquiv f).symm y).1 = f.symm y.1 :=
+    ((he.cornerEquiv f).symm y).val = f.symm y.val :=
   (rfl)
 
 end Map
@@ -366,9 +411,9 @@ variable [∀ i, NonUnitalSemiring (A i)] {e : ∀ i, A i} (he : IsIdempotentEle
 /-- **The corner of an idempotent in a product is the product of the corners** of its
 components. -/
 def cornerPiEquiv : he.Corner ≃+* ∀ i, (Pi.isIdempotentElem_iff.mp he i).Corner where
-  toFun x i := ⟨x.1 i, (Subsemigroup.mem_corner_iff (Pi.isIdempotentElem_iff.mp he i)).mpr
+  toFun x i := ⟨x.val i, (Subsemigroup.mem_corner_iff (Pi.isIdempotentElem_iff.mp he i)).mpr
     ⟨congrFun (he.mul_corner_val x) i, congrFun (he.corner_val_mul x) i⟩⟩
-  invFun y := ⟨fun i ↦ (y i).1, (Subsemigroup.mem_corner_iff he).mpr
+  invFun y := ⟨fun i ↦ (y i).val, (Subsemigroup.mem_corner_iff he).mpr
     ⟨funext fun i ↦ (Pi.isIdempotentElem_iff.mp he i).mul_corner_val (y i),
       funext fun i ↦ (Pi.isIdempotentElem_iff.mp he i).corner_val_mul (y i)⟩⟩
   left_inv _ := rfl
@@ -377,12 +422,12 @@ def cornerPiEquiv : he.Corner ≃+* ∀ i, (Pi.isIdempotentElem_iff.mp he i).Cor
   map_add' _ _ := rfl
 
 @[simp]
-theorem val_cornerPiEquiv_apply (x : he.Corner) (i : ι) : (he.cornerPiEquiv x i).1 = x.1 i :=
+theorem val_cornerPiEquiv_apply (x : he.Corner) (i : ι) : (he.cornerPiEquiv x i).val = x.val i :=
   (rfl)
 
 @[simp]
 theorem val_cornerPiEquiv_symm_apply (y : ∀ i, (Pi.isIdempotentElem_iff.mp he i).Corner) :
-    (he.cornerPiEquiv.symm y).1 = fun i ↦ (y i).1 :=
+    (he.cornerPiEquiv.symm y).val = fun i ↦ (y i).val :=
   (rfl)
 
 end Pi
@@ -402,8 +447,8 @@ theorem coe_corner_eq_cornerSubmodule (e : A) :
 /-- The corner ring `eAe`, as an `R`-module, is the corner submodule
 `TauCeti.cornerSubmodule R e e`. -/
 def cornerLinearEquivCornerSubmodule : he.Corner ≃ₗ[R] TauCeti.cornerSubmodule R e e where
-  toFun b := ⟨b.1, (Set.ext_iff.1 (coe_corner_eq_cornerSubmodule (R := R) e) b.1).1 b.2⟩
-  invFun x := ⟨x.1, (Set.ext_iff.1 (coe_corner_eq_cornerSubmodule (R := R) e) x.1).2 x.2⟩
+  toFun b := ⟨b.val, (Set.ext_iff.1 (coe_corner_eq_cornerSubmodule (R := R) e) b.val).1 b.property⟩
+  invFun x := ⟨x.val, (Set.ext_iff.1 (coe_corner_eq_cornerSubmodule (R := R) e) x.val).2 x.property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl
@@ -411,11 +456,11 @@ def cornerLinearEquivCornerSubmodule : he.Corner ≃ₗ[R] TauCeti.cornerSubmodu
 
 @[simp]
 theorem coe_cornerLinearEquivCornerSubmodule_apply (b : he.Corner) :
-    (he.cornerLinearEquivCornerSubmodule (R := R) b : A) = b.1 := (rfl)
+    (he.cornerLinearEquivCornerSubmodule (R := R) b : A) = b.val := (rfl)
 
 @[simp]
 theorem val_cornerLinearEquivCornerSubmodule_symm_apply (x : TauCeti.cornerSubmodule R e e) :
-    ((he.cornerLinearEquivCornerSubmodule (R := R)).symm x).1 = x := (rfl)
+    ((he.cornerLinearEquivCornerSubmodule (R := R)).symm x).val = x := (rfl)
 
 /-- **The corner of a Noetherian algebra is Noetherian**: if `A` is a Noetherian `R`-module, so is
 `eAe`, a submodule of `A`. In particular the corner of a finite-dimensional algebra is
@@ -424,3 +469,80 @@ instance isNoetherian_corner [IsNoetherian R A] : IsNoetherian R he.Corner :=
   isNoetherian_of_linearEquiv (he.cornerLinearEquivCornerSubmodule (R := R)).symm
 
 end IsIdempotentElem
+
+namespace CompleteOrthogonalIdempotents
+
+variable {R A ι : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [Fintype ι] {e : ι → A}
+
+/-- The component of `x` in the corner `eᵢ A eᵢ` under Mathlib's
+`CompleteOrthogonalIdempotents.ringEquivOfIsMulCentral` is the compression `eᵢ x eᵢ`. This holds
+by unfolding the definition, whose forward map is `x ↦ (eᵢ x eᵢ)ᵢ`. -/
+theorem ringEquivOfIsMulCentral_apply (he : CompleteOrthogonalIdempotents e)
+    (hc : ∀ i, IsMulCentral (e i)) (x : A) (i : ι) :
+    he.ringEquivOfIsMulCentral hc x i = (he.idem i).compress x :=
+  (rfl)
+
+/-- The inverse of Mathlib's `CompleteOrthogonalIdempotents.ringEquivOfIsMulCentral` sends a
+family of corner elements to their sum. This holds by unfolding the definition, whose inverse is
+`(yᵢ)ᵢ ↦ ∑ᵢ yᵢ`. -/
+@[simp]
+theorem ringEquivOfIsMulCentral_symm_apply (he : CompleteOrthogonalIdempotents e)
+    (hc : ∀ i, IsMulCentral (e i)) (y : ∀ i, (he.idem i).Corner) :
+    (he.ringEquivOfIsMulCentral hc).symm y = ∑ i, (y i).val :=
+  (rfl)
+
+/-- The component of `x` in the corner `eᵢ A eᵢ` under Mathlib's
+`CompleteOrthogonalIdempotents.ringEquivOfIsMulCentral` is `eᵢ x`, since `eᵢ` is central. -/
+@[simp]
+theorem val_ringEquivOfIsMulCentral_apply (he : CompleteOrthogonalIdempotents e)
+    (hc : ∀ i, IsMulCentral (e i)) (x : A) (i : ι) :
+    (he.ringEquivOfIsMulCentral hc x i).val = e i * x := by
+  rw [ringEquivOfIsMulCentral_apply, (he.idem i).val_compress_of_commute ((hc i).comm x)]
+
+/-- **The product decomposition along central idempotents, as algebras.** A complete family of
+orthogonal central idempotents `eᵢ` of an `R`-algebra `A` splits it as the product
+`A ≃ₐ[R] ∏ᵢ eᵢ A eᵢ` of its corner algebras, by `x ↦ (eᵢ x eᵢ)ᵢ`. This is Mathlib's
+`CompleteOrthogonalIdempotents.ringEquivOfIsMulCentral`, which is `R`-linear. -/
+def algEquivOfIsMulCentral (he : CompleteOrthogonalIdempotents e)
+    (hc : ∀ i, IsMulCentral (e i)) : A ≃ₐ[R] ∀ i, (he.idem i).Corner :=
+  AlgEquiv.ofRingEquiv (f := he.ringEquivOfIsMulCentral hc) fun r ↦ funext fun i ↦ by
+    rw [ringEquivOfIsMulCentral_apply, IsIdempotentElem.compress_algebraMap,
+      Pi.algebraMap_apply]
+
+/-- The underlying ring isomorphism of `algEquivOfIsMulCentral` is Mathlib's
+`CompleteOrthogonalIdempotents.ringEquivOfIsMulCentral`. -/
+@[simp]
+theorem toRingEquiv_algEquivOfIsMulCentral (he : CompleteOrthogonalIdempotents e)
+    (hc : ∀ i, IsMulCentral (e i)) :
+    (he.algEquivOfIsMulCentral (R := R) hc).toRingEquiv = he.ringEquivOfIsMulCentral hc :=
+  RingEquiv.ext fun x ↦ by
+    rw [AlgEquiv.coe_toRingEquiv (e := he.algEquivOfIsMulCentral (R := R) hc),
+      algEquivOfIsMulCentral, AlgEquiv.ofRingEquiv_apply]
+
+/-- The component of `x` in the corner `eᵢ A eᵢ` is the compression `eᵢ x eᵢ`. -/
+theorem algEquivOfIsMulCentral_apply (he : CompleteOrthogonalIdempotents e)
+    (hc : ∀ i, IsMulCentral (e i)) (x : A) (i : ι) :
+    he.algEquivOfIsMulCentral (R := R) hc x i = (he.idem i).compress x := by
+  rw [algEquivOfIsMulCentral, AlgEquiv.ofRingEquiv_apply, ringEquivOfIsMulCentral_apply]
+
+/-- The component of `x` in the corner `eᵢ A eᵢ` is `eᵢ x`, since `eᵢ` is central. -/
+@[simp]
+theorem val_algEquivOfIsMulCentral_apply (he : CompleteOrthogonalIdempotents e)
+    (hc : ∀ i, IsMulCentral (e i)) (x : A) (i : ι) :
+    (he.algEquivOfIsMulCentral (R := R) hc x i).val = e i * x := by
+  rw [algEquivOfIsMulCentral_apply, (he.idem i).val_compress_of_commute ((hc i).comm x)]
+
+/-- A family of corner elements corresponds to their sum in `A`. -/
+@[simp]
+theorem algEquivOfIsMulCentral_symm_apply (he : CompleteOrthogonalIdempotents e)
+    (hc : ∀ i, IsMulCentral (e i)) (y : ∀ i, (he.idem i).Corner) :
+    (he.algEquivOfIsMulCentral (R := R) hc).symm y = ∑ i, (y i).val := by
+  rw [algEquivOfIsMulCentral, AlgEquiv.ofRingEquiv_symm_apply, ringEquivOfIsMulCentral_symm_apply]
+
+/-- A complete orthogonal family of idempotents of the centre of an `R`-algebra `A` is a complete
+orthogonal family of idempotents of `A`. -/
+theorem val_center {b : ι → Subalgebra.center R A} (hb : CompleteOrthogonalIdempotents b) :
+    CompleteOrthogonalIdempotents fun i ↦ (b i : A) :=
+  hb.map (Subalgebra.center R A).val.toRingHom
+
+end CompleteOrthogonalIdempotents
