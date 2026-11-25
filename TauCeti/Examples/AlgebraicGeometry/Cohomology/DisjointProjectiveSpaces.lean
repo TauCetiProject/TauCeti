@@ -110,7 +110,7 @@ abbrev twistOn (n : ULift.{u} ℕ) : (toSigma R ⁻¹ᵁ component R n).toScheme
 abbrev twist : (∐ projSpace R).Modules :=
   disjointGlue _ (twistOn R)
 
-/-- The cohomology of `twistOn R n` is that of `𝒪(-n-1)` on `ℙⁿ_R`. -/
+/-- Over a nonzero ring, `Hⁿ` of `twistOn R n` is nonzero, as `Hⁿ(ℙⁿ_R, 𝒪(-n-1))` is. -/
 lemma nontrivial_cohomology_twistOn [Nontrivial R] (n : ULift.{u} ℕ) :
     Nontrivial (Cohomology (twistOn R n) n.down) := by
   have := (Pi.basisFun R (Fin (n.down + 1))).nontrivial_cohomology_top_twistingSheaf_of_le_neg_card
