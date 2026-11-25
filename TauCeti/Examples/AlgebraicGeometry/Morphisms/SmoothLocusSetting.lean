@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus.Dense
 public import Mathlib.RingTheory.DualNumber
+public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
 public import TauCeti.Topology.PureDimension
 import TauCeti.RingTheory.Smooth.SeparablePoint
 
@@ -38,11 +39,9 @@ variable (k K : Type u) [Field k] [Field K] [Algebra k K]
 
 variable [Module.Finite k K]
 
-/-- `Spec K ⟶ Spec k` is locally of finite presentation for a finite extension `K / k`. -/
-local instance locallyOfFinitePresentation_specMap :
-    LocallyOfFinitePresentation (Spec.map (CommRingCat.ofHom (algebraMap k K))) :=
-  HasRingHomProperty.Spec_iff.mpr (RingHom.finitePresentation_algebraMap.mpr
-    (Algebra.FinitePresentation.of_finiteType.mp inferInstance))
+/-- A finite extension of fields is finitely presented. -/
+local instance : Algebra.FinitePresentation k K :=
+  Algebra.FinitePresentation.of_finiteType.mp inferInstance
 
 /-- **Check.** For an inseparable finite field extension `K / k`, the smooth locus of `Spec K` over
 `k` is empty. -/
