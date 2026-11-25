@@ -75,21 +75,21 @@ private def coords : (Fin 3 → ℝ) →ₗ[ℝ] 𝔰𝔲₂ :=
     skewPauli).codRestrict (𝔰𝔲₂).toSubmodule skewPauli_mem
 
 private theorem coords_apply (x : Fin 3 → ℝ) :
-    unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ) (coords x).1 = skewPauli x :=
+    unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ) (coords x).val = skewPauli x :=
   (unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)).apply_symm_apply _
 
 private theorem coords_injective : Function.Injective coords := by
   intro x y h
   have h' := congrArg (fun X : 𝔰𝔲₂ ↦
-    unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ) X.1) h
+    unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ) X.val) h
   simp only [coords_apply, skewPauli_apply] at h'
   exact pauli_injective ((smul_right_injective _ Complex.I_ne_zero) h')
 
 private theorem coords_surjective : Function.Surjective coords := by
   intro X
-  let A := unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ) X.1
+  let A := unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ) X.val
   have hm : (unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)).symm A ∈ 𝔰𝔲₂ := by
-    simpa only [A, LieEquiv.symm_apply_apply] using X.2
+    simpa only [A, LieEquiv.symm_apply_apply] using X.property
   obtain ⟨hA, ht⟩ :=
     (unitsLieAlgebraLieEquiv_symm_mem_GLSpecialUnitary_lieSubalgebra_iff A).mp hm
   have hH : (-I • A).IsHermitian := by
@@ -97,7 +97,7 @@ private theorem coords_surjective : Function.Surjective coords := by
   have hT : (-I • A).trace = 0 := by simp [ht]
   obtain ⟨x, hx⟩ := exists_pauli_eq_iff.mpr ⟨hH, hT⟩
   refine ⟨x, Subtype.ext ?_⟩
-  have he : unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ) (coords x).1 = A := by
+  have he : unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ) (coords x).val = A := by
     rw [coords_apply, skewPauli_apply, hx, smul_smul]
     simp
   exact (unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)).injective he
@@ -118,7 +118,7 @@ matrix. -/
 -- Normalize the Pauli image before the generic units equivalence expands to evaluation.
 @[simp↓]
 theorem unitsLieAlgebraLieEquiv_pauliLieAlgebraEquiv (x : Fin 3 → ℝ) :
-    unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ) (pauliLieAlgebraEquiv x).1 =
+    unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ) (pauliLieAlgebraEquiv x).val =
       I • pauli x := coords_apply x
 
 /-- The native SU(2) Lie bracket corresponds to minus twice the coordinate cross product. -/
@@ -128,12 +128,12 @@ theorem lie_pauliLieAlgebraEquiv (x y : Fin 3 → ℝ) :
       pauliLieAlgebraEquiv ((-2 : ℝ) • (x ⨯₃ y)) := by
   apply Subtype.ext
   have he : unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)
-      (⁅pauliLieAlgebraEquiv x, pauliLieAlgebraEquiv y⁆ : 𝔰𝔲₂).1 =
+      (⁅pauliLieAlgebraEquiv x, pauliLieAlgebraEquiv y⁆ : 𝔰𝔲₂).val =
       unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)
-        (pauliLieAlgebraEquiv ((-2 : ℝ) • (x ⨯₃ y))).1 := by
+        (pauliLieAlgebraEquiv ((-2 : ℝ) • (x ⨯₃ y))).val := by
     calc
-      _ = ⁅unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ) (pauliLieAlgebraEquiv x).1,
-          unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ) (pauliLieAlgebraEquiv y).1⁆ :=
+      _ = ⁅unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ) (pauliLieAlgebraEquiv x).val,
+          unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ) (pauliLieAlgebraEquiv y).val⁆ :=
         (unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)).map_lie _ _
       _ = _ := by
         simpa only [unitsLieAlgebraLieEquiv_pauliLieAlgebraEquiv, skewPauli_apply] using
@@ -145,14 +145,14 @@ theorem lie_pauliLieAlgebraEquiv (x y : Fin 3 → ℝ) :
 theorem Ad_pauliLieAlgebraEquiv (g : SU2) (x : Fin 3 → ℝ) :
     Ad (I := 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ))
       (Unitary.toUnits (Submonoid.inclusion Matrix.specialUnitaryGroup_le_unitaryGroup g))
-      (pauliLieAlgebraEquiv x).1 =
-      (pauliLieAlgebraEquiv ((toSO3 g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ x)).1 := by
+      (pauliLieAlgebraEquiv x).val =
+      (pauliLieAlgebraEquiv ((toSO3 g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ x)).val := by
   have he : unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)
       (Ad (I := 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ))
         (Unitary.toUnits (Submonoid.inclusion Matrix.specialUnitaryGroup_le_unitaryGroup g))
-        (pauliLieAlgebraEquiv x).1) =
+        (pauliLieAlgebraEquiv x).val) =
       unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)
-        (pauliLieAlgebraEquiv ((SU2.toSO3 g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ x)).1 := by
+        (pauliLieAlgebraEquiv ((SU2.toSO3 g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ x)).val := by
     rw [unitsLieAlgebraLieEquiv_pauliLieAlgebraEquiv, unitsLieAlgebraLieEquiv_apply,
       unitsLieAlgebraEquiv_Ad,
       ← unitsLieAlgebraLieEquiv_apply, unitsLieAlgebraLieEquiv_pauliLieAlgebraEquiv]
@@ -161,23 +161,23 @@ theorem Ad_pauliLieAlgebraEquiv (g : SU2) (x : Fin 3 → ℝ) :
   exact (unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)).injective he
 
 
+/-- The inclusion of `SU(2)` into `GL(2, ℂ)`, through
+`TauCeti.GLSpecialUnitary.continuousMulEquiv`. -/
 private def unitsHom : SU2 →* (Matrix (Fin 2) (Fin 2) ℂ)ˣ :=
-  Unitary.toUnits.comp (Submonoid.inclusion Matrix.specialUnitaryGroup_le_unitaryGroup)
+  (GLSpecialUnitary (Fin 2) ℂ).subtype.comp
+    (GLSpecialUnitary.continuousMulEquiv (Fin 2) ℂ).symm.toMonoidHom
 
 private theorem unitsHom_apply (g : SU2) :
-    unitsHom g = Unitary.toUnits
-      (Submonoid.inclusion Matrix.specialUnitaryGroup_le_unitaryGroup g) := by
+    unitsHom g = ((GLSpecialUnitary.continuousMulEquiv (Fin 2) ℂ).symm g : GL (Fin 2) ℂ) :=
   rfl
-
-private theorem unitsHom_mem (g : SU2) : unitsHom g ∈ GLSpecialUnitary (Fin 2) ℂ :=
-  GLSpecialUnitary.mem_iff_mem_specialUnitaryGroup.mpr g.2
 
 private theorem stable (g : SU2) (X : LeftInvariantDerivation
     𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ) (Matrix (Fin 2) (Fin 2) ℂ)ˣ) (hX : X ∈ 𝔰𝔲₂) :
     ((continuousAdjointRepresentation (I := 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ))
       (G := (Matrix (Fin 2) (Fin 2) ℂ)ˣ)).restrict unitsHom) g X ∈ 𝔰𝔲₂ := by
-  simpa only [ContRepresentation.restrict_apply_apply, continuousAdjointRepresentation_apply]
-    using Ad_mem_lieSubalgebraOfSubgroup (Subgroup.le_normalizer (unitsHom_mem g)) hX
+  simpa only [ContRepresentation.restrict_apply_apply, continuousAdjointRepresentation_apply,
+    unitsHom_apply] using Ad_mem_lieSubalgebraOfSubgroup
+      (Subgroup.le_normalizer ((GLSpecialUnitary.continuousMulEquiv _ _).symm g).property) hX
 
 /-- The adjoint representation of SU(2) restricted to its native Lie subalgebra. -/
 def adjointRepresentation : ContRepresentation ℝ SU2 𝔰𝔲₂ :=
@@ -196,13 +196,15 @@ theorem coe_adjointRepresentation_apply (g : SU2) (X : 𝔰𝔲₂) :
   rw [adjointRepresentation, ContRepresentation.coe_subrepresentation_apply,
     ContRepresentation.restrict_apply_apply, continuousAdjointRepresentation_apply,
     unitsHom_apply]
+  congr 2
+  exact Units.ext (GLSpecialUnitary.coe_continuousMulEquiv_symm_apply g)
 
 /-- The native SU(2) adjoint representation is continuous in its group argument. -/
 @[fun_prop]
 theorem continuous_adjointRepresentation : Continuous adjointRepresentation := by
   apply ContRepresentation.continuous_subrepresentation
-  have hu : Continuous unitsHom := Unitary.continuous_toUnits.comp
-    (continuous_inclusion Matrix.specialUnitaryGroup_le_unitaryGroup)
+  have hu : Continuous unitsHom :=
+    continuous_subtypeVal.comp (GLSpecialUnitary.continuousMulEquiv _ _).symm.continuous
   exact (contMDiff_continuousAdjointRepresentation
     (I := 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ))
     (G := (Matrix (Fin 2) (Fin 2) ℂ)ˣ)).continuous.comp hu

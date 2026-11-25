@@ -8,6 +8,7 @@ module
 import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
+public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.GroupTheory.PGroup
 
 /-!
@@ -17,8 +18,8 @@ Mathlib's `IsPGroup.to_quotient` says that every quotient of a `p`-group is agai
 This file records the complementary behaviour, in which the group is fixed and the normal
 subgroup varies: how the property `IsPGroup p (G ⧸ N)` of *the quotient* behaves under
 intersection of normal subgroups and under preimage along a group homomorphism. It also records
-closure of `p`-groups under binary and finite products and under extensions, and their
-disjointness from subgroups of order prime to `p`.
+closure of `p`-groups under binary and finite products, under extensions and under directed
+suprema of subgroups, and their disjointness from subgroups of order prime to `p`.
 
 The two quotient statements are group-theoretic, with no topology. They are what makes the family of
 normal subgroups with `p`-group quotient usable: `IsPGroup.quotient_inf` says the family is
@@ -31,10 +32,17 @@ that a homomorphism into a pro-`p` group kills their intersection.
 
 * `IsPGroup.exists_pow_pow_eq_one_map`: every element in the image of a `p`-group under a monoid
   homomorphism has `p`-power order.
-* `IsPGroup.prod`: a product of two `p`-groups is a `p`-group.
-* `IsPGroup.pi`: a finite product of `p`-groups is a `p`-group.
+* `TauCeti.isAddPGroup_additive_iff`: `Additive G` is an additive `p`-group if and only if `G` is a
+  `p`-group.
+* `IsPGroup.prod`, `IsAddPGroup.prod`: a product of two (additive) `p`-groups is a `p`-group.
+* `IsPGroup.pi`, `IsAddPGroup.pi`: a finite product of (additive) `p`-groups is a `p`-group.
 * `IsPGroup.of_subgroup_of_quotient`: an extension of a `p`-group by a `p`-group is a
   `p`-group.
+* `IsPGroup.sSup_of_directedOn`: the supremum of a directed family of `p`-subgroups is a
+  `p`-subgroup.
+* `IsPGroup.dvd_index_subgroupOf`, `IsPGroup.natCast_index_subgroupOf_eq_zero`: the index
+  `|P : Q ∩ P|` for a `p`-subgroup `P` not contained in `Q` is divisible by `p`, so vanishes in
+  characteristic `p`.
 * `TauCeti.disjoint_of_not_dvd_natCard_of_isPGroup`: a `p`-group meets a subgroup of order prime
   to `p` trivially.
 * `IsPGroup.subsingleton_of_coprime`, `IsPGroup.subsingleton_of_ne`: a group that is a `p`-group
@@ -66,7 +74,14 @@ theorem _root_.IsPGroup.exists_pow_pow_eq_one_map {M : Type*} [Monoid M] (hG : I
     (f : G →* M) (g : G) : ∃ n : ℕ, f g ^ p ^ n = 1 :=
   (hG g).elim fun n hn => ⟨n, by rw [← map_pow, hn, map_one]⟩
 
+/-- `Additive G` is an additive `p`-group if and only if `G` is a `p`-group. -/
+@[simp]
+theorem isAddPGroup_additive_iff : IsAddPGroup p (Additive G) ↔ IsPGroup p G := by
+  simp [isAddPGroup_iff_pow_nsmul_eq_zero, isPGroup_iff_pow_pow_eq_one, ← ofMul_pow]
+
 /-- A product of two `p`-groups is a `p`-group. -/
+@[to_additive _root_.IsAddPGroup.prod
+  /-- A product of two additive `p`-groups is an additive `p`-group. -/]
 theorem _root_.IsPGroup.prod (hG : IsPGroup p G) (hH : IsPGroup p H) :
     IsPGroup p (G × H) := by
   rintro ⟨g, h⟩
@@ -75,6 +90,7 @@ theorem _root_.IsPGroup.prod (hG : IsPGroup p G) (hH : IsPGroup p H) :
   exact ⟨m + n, Prod.ext (by simp [pow_add, pow_mul, hm]) (by simp [pow_add, pow_mul', hn])⟩
 
 /-- A product of finitely many `p`-groups is a `p`-group. -/
+@[to_additive /-- A product of finitely many additive `p`-groups is an additive `p`-group. -/]
 theorem _root_.IsPGroup.pi {ι : Type*} [Finite ι] {G : ι → Type*} [∀ i, Group (G i)]
     (hG : ∀ i, IsPGroup p (G i)) : IsPGroup p (∀ i, G i) := by
   cases nonempty_fintype ι
@@ -94,6 +110,38 @@ theorem _root_.IsPGroup.of_subgroup_of_quotient {N : Subgroup G} [N.Normal]
     (by rwa [QuotientGroup.ker_mk'])
   rw [Subgroup.comap_top] at this
   exact this.of_equiv Subgroup.topEquiv
+
+/-- The supremum of a directed family of `p`-subgroups, for instance of a chain, is a
+`p`-subgroup. -/
+theorem _root_.IsPGroup.sSup_of_directedOn {K : Set (Subgroup G)} (hK : DirectedOn (· ≤ ·) K)
+    (h : ∀ H ∈ K, IsPGroup p H) : IsPGroup p (sSup K : Subgroup G) := by
+  rcases K.eq_empty_or_nonempty with rfl | hne
+  · rw [sSup_empty]
+    exact IsPGroup.of_bot
+  intro g
+  obtain ⟨H, hH, hg⟩ := (Subgroup.mem_sSup_of_directedOn hne hK).1 g.property
+  obtain ⟨k, hk⟩ := h H hH ⟨g, hg⟩
+  exact ⟨k, Subtype.ext (by simpa using congrArg Subtype.val hk)⟩
+
+/-- For a `p`-subgroup `P` not contained in `Q`, the index `|P : Q ∩ P|` is divisible by `p`, being
+a positive power of `p`. -/
+theorem _root_.IsPGroup.dvd_index_subgroupOf [Fact p.Prime] {Q P : Subgroup G}
+    [(Q.subgroupOf P).FiniteIndex] (hP : IsPGroup p P) (hPQ : ¬ P ≤ Q) :
+    p ∣ (Q.subgroupOf P).index := by
+  obtain ⟨n, hn⟩ := hP.index (Q.subgroupOf P)
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    rw [pow_zero, Subgroup.index_eq_one, Subgroup.subgroupOf_eq_top] at hn
+    exact hPQ hn
+  rw [hn]
+  exact dvd_pow_self p hn0
+
+/-- In characteristic `p`, the index `|P : Q ∩ P|` vanishes for a `p`-subgroup `P` not contained
+in `Q`. -/
+theorem _root_.IsPGroup.natCast_index_subgroupOf_eq_zero [Fact p.Prime] {R : Type*}
+    [AddMonoidWithOne R] [CharP R p] {Q P : Subgroup G} [(Q.subgroupOf P).FiniteIndex]
+    (hP : IsPGroup p P) (hPQ : ¬ P ≤ Q) : ((Q.subgroupOf P).index : R) = 0 :=
+  (CharP.cast_eq_zero_iff R p _).2 (hP.dvd_index_subgroupOf hPQ)
 
 /-- A `p`-group meets a subgroup of order prime to `p` trivially. -/
 theorem disjoint_of_not_dvd_natCard_of_isPGroup [Fact p.Prime] {C Q : Subgroup G}
@@ -194,7 +242,7 @@ theorem _root_.IsPGroup.exists_mem_center_orderOf_eq_prime [Fact p.Prime] [Finit
   have := hG.center_nontrivial
   obtain ⟨z, hz⟩ := exists_prime_orderOf_dvd_card' (G := Subgroup.center G) p
     ((hG.to_subgroup _).card_eq_or_dvd.resolve_left Finite.one_lt_card.ne')
-  exact ⟨z, z.2, (Subgroup.orderOf_coe z).trans hz⟩
+  exact ⟨z, z.property, (Subgroup.orderOf_coe z).trans hz⟩
 
 /-- A nontrivial finite `p`-subgroup `P` of `G` lies in the centralizer of one of its nontrivial
 elements, namely of any nontrivial element of the centre of `P`. -/
@@ -202,9 +250,9 @@ theorem _root_.IsPGroup.exists_ne_one_le_centralizer [Fact p.Prime] {P : Subgrou
     (hP : IsPGroup p P) (hne : P ≠ ⊥) : ∃ g ∈ P, g ≠ 1 ∧ P ≤ Subgroup.centralizer {g} := by
   have : Nontrivial P := (Subgroup.nontrivial_iff_ne_bot P).2 hne
   obtain ⟨z, hz1⟩ := Subgroup.ne_bot_iff_exists_ne_one.1 hP.bot_lt_center.ne'
-  refine ⟨z.1, z.1.2, fun h ↦ hz1 (Subtype.ext (Subtype.ext h)), fun y hy ↦ ?_⟩
+  refine ⟨z.val, z.val.property, fun h ↦ hz1 (Subtype.ext (Subtype.ext h)), fun y hy ↦ ?_⟩
   rw [Subgroup.mem_centralizer_singleton_iff]
-  exact congrArg Subtype.val (Subgroup.mem_center_iff.1 z.2 ⟨y, hy⟩)
+  exact congrArg Subtype.val (Subgroup.mem_center_iff.1 z.property ⟨y, hy⟩)
 
 /-- The normal subgroups of `G` with `p`-group quotient are closed under binary intersection. -/
 theorem _root_.IsPGroup.quotient_inf {M N : Subgroup G} [M.Normal] [N.Normal]

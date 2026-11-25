@@ -38,13 +38,18 @@ determines the sign of the tail remainder integral.
 * `TauCeti.sum_Ioc_floor_eq_eulerMaclaurin_one`: the first-order formula for nonnegative real
   endpoints and a real Banach-valued function with pointwise derivative and integrable derivative.
   The finite sum is over the natural indices between the endpoint floors.
+* `TauCeti.abs_bernoulliFun_one_fract_le`, `TauCeti.norm_bernoulliFun_one_fract_le` and
+  `TauCeti.isBigO_bernoulliFun_one_fract`: the sawtooth `B₁({x}) = {x} - 1/2` is bounded by `1/2`,
+  also viewed in `ℂ`, hence `O(1)` along every filter.
+* `TauCeti.exists_norm_bernoulliFun_fract_le`: every periodic Bernoulli function `Bₖ({x})` is
+  bounded.
 * `MeasureTheory.IntegrableOn.bernoulliFun_fract_smul`,
   `MeasureTheory.IntegrableOn.bernoulli_sub_bernoulliFun_fract_smul`, and
   `IntervalIntegrable.bernoulliFun_fract_smul`: the remainder integrands `Bₖ({x}) • u(x)` and
   `(Bₖ - Bₖ({x})) • u(x)` inherit integrability from `u`.
-* `TauCeti.neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_pos`,
-  `TauCeti.neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_rpow_pos`, and
-  `TauCeti.neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_zpow_pos`: for
+* `TauCeti.neg_one_pow_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_pos`,
+  `TauCeti.neg_one_pow_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_rpow_pos`, and
+  `TauCeti.neg_one_pow_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_zpow_pos`: for
   `k ≠ 0` and positive continuous integrable `w` on `(a, ∞)` (in particular `x ↦ x ^ r` for
   `r < -1` or `x ↦ x ^ m` for `m < -1` on `(a, ∞)` with `a > 0`),
   `(-1)^(k + 1) * ∫ x in Ioi a, (B_{2k} - B_{2k}({x})) * w x > 0`.
@@ -85,18 +90,24 @@ open scoped Nat
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
+/-- The periodic Bernoulli function `Bₖ({x})`, where `{x} = x - ⌊x⌋`, is bounded: `Bₖ` is
+continuous on the compact interval `[0, 1]`, which contains every fractional part. -/
+theorem TauCeti.exists_norm_bernoulliFun_fract_le (k : ℕ) :
+    ∃ M, ∀ x : ℝ, ‖bernoulliFun k (Int.fract x)‖ ≤ M := by
+  obtain ⟨M, hM⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn
+    (continuous_bernoulliFun k).continuousOn
+  exact ⟨M, fun x => hM _ ⟨Int.fract_nonneg x, (Int.fract_lt_one x).le⟩⟩
+
 omit [CompleteSpace E] in
 /-- Multiplying an integrable function on `s` by the bounded periodic Bernoulli function
 `Bₖ({x})` preserves `IntegrableOn`. -/
 theorem MeasureTheory.IntegrableOn.bernoulliFun_fract_smul {u : ℝ → E} {s : Set ℝ}
     {μ : Measure ℝ} (hu : IntegrableOn u s μ) (k : ℕ) :
     IntegrableOn (fun x => bernoulliFun k (Int.fract x) • u x) s μ := by
-  obtain ⟨C, hC⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn
-    (continuous_bernoulliFun k).continuousOn
+  obtain ⟨C, hC⟩ := TauCeti.exists_norm_bernoulliFun_fract_le k
   exact Integrable.bdd_smul hu C
     ((continuous_bernoulliFun k).measurable.comp measurable_fract).aestronglyMeasurable
-    (Filter.Eventually.of_forall fun x =>
-      hC _ ⟨Int.fract_nonneg x, (Int.fract_lt_one x).le⟩)
+    (Filter.Eventually.of_forall hC)
 
 omit [CompleteSpace E] in
 /-- Multiplying an integrable function on `s` by the Euler–Maclaurin kernel
@@ -122,21 +133,37 @@ theorem IntervalIntegrable.bernoulliFun_fract_smul {u : ℝ → E} {a b : ℝ}
 
 namespace TauCeti
 
-/-- If `w` is integrable and nonnegative on `(a, ∞)`, the Euler–Maclaurin tail integral against
-`B_{2k} - B_{2k}({x})` (`k ≠ 0`) has sign `(-1)^(k + 1)`. -/
-theorem neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_nonneg {k : ℕ}
-    (hk : k ≠ 0) {a : ℝ} {w : ℝ → ℝ}
-    (hw : ∀ x ∈ Set.Ioi a, 0 ≤ w x) :
+/-- The sawtooth `B₁({x}) = {x} - 1/2`, the periodic Bernoulli function of order one, has absolute
+value at most `1/2`. -/
+theorem abs_bernoulliFun_one_fract_le (x : ℝ) : |bernoulliFun 1 (Int.fract x)| ≤ 1 / 2 := by
+  rw [bernoulliFun_one, abs_le]
+  constructor <;> linarith [Int.fract_nonneg x, Int.fract_lt_one x]
+
+/-- The sawtooth `B₁({x})`, viewed in `ℂ`, has norm at most `1/2`. -/
+theorem norm_bernoulliFun_one_fract_le (x : ℝ) : ‖(bernoulliFun 1 (Int.fract x) : ℂ)‖ ≤ 1 / 2 := by
+  rw [Complex.norm_real, Real.norm_eq_abs]
+  exact abs_bernoulliFun_one_fract_le x
+
+/-- The sawtooth `B₁({x}) = {x} - 1/2` is bounded, so it is `O(1)` along every filter. -/
+theorem isBigO_bernoulliFun_one_fract (l : Filter ℝ) :
+    (fun x ↦ bernoulliFun 1 (Int.fract x)) =O[l] fun _ ↦ (1 : ℝ) :=
+  Asymptotics.IsBigO.of_bound (1 / 2) (Filter.Eventually.of_forall fun x ↦ by
+    simpa only [Real.norm_eq_abs, norm_one, mul_one] using abs_bernoulliFun_one_fract_le x)
+
+/-- If `w` is nonnegative on `(a, ∞)`, the Euler–Maclaurin tail integral against
+`B_{2k} - B_{2k}({x})` has sign `(-1)^(k + 1)`. -/
+theorem neg_one_pow_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_nonneg (k : ℕ)
+    {a : ℝ} {w : ℝ → ℝ} (hw : ∀ x ∈ Set.Ioi a, 0 ≤ w x) :
     0 ≤ (-1 : ℝ) ^ (k + 1) *
       ∫ x in Set.Ioi a, ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) (Int.fract x)) * w x := by
   rw [← MeasureTheory.integral_const_mul]
   refine setIntegral_nonneg measurableSet_Ioi fun x hx => ?_
   rw [← mul_assoc]
-  exact mul_nonneg (neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_fract_nonneg hk x) (hw x hx)
+  exact mul_nonneg (neg_one_pow_mul_bernoulli_sub_bernoulliFun_fract_nonneg k x) (hw x hx)
 
 /-- If `w` is integrable, continuous, and strictly positive on `(a, ∞)`, the Euler–Maclaurin tail
 integral against `B_{2k} - B_{2k}({x})` (`k ≠ 0`) has strict sign `(-1)^(k + 1)`. -/
-theorem neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_pos {k : ℕ}
+theorem neg_one_pow_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_pos {k : ℕ}
     (hk : k ≠ 0) {a : ℝ} {w : ℝ → ℝ} (hw : IntegrableOn w (Set.Ioi a))
     (hcont : ContinuousOn w (Set.Ioi a)) (hpos : ∀ x ∈ Set.Ioi a, 0 < w x) :
     0 < (-1 : ℝ) ^ (k + 1) *
@@ -173,7 +200,7 @@ theorem neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_po
       dsimp [p, q] at hx; constructor <;> linarith [hx.1, hx.2]
     rw [show G x = ((-1 : ℝ) ^ (k + 1) *
         ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) (x - m))) * w x by ring]
-    exact mul_pos (neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_pos hk hx')
+    exact mul_pos (neg_one_pow_mul_bernoulli_sub_bernoulliFun_pos hk hx')
       (hpos x (hsub_Ioi (Set.Ioo_subset_Icc_self hx)))
   have hFG : ∫ x in p..q, G x = ∫ x in Set.Ioc p q, F x := by
     rw [integral_of_le hpq.le]
@@ -184,19 +211,19 @@ theorem neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_po
     (ae_restrict_of_forall_mem measurableSet_Ioi fun x hx => by
       dsimp [F]
       rw [← mul_assoc]
-      exact mul_nonneg (neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_fract_nonneg hk x)
+      exact mul_nonneg (neg_one_pow_mul_bernoulli_sub_bernoulliFun_fract_nonneg k x)
         (hpos x hx).le)
     ((Set.Ioc_subset_Icc_self.trans hsub_Ioi).eventuallySubset))
 
 /-- For `k ≠ 0`, `a > 0`, and real exponent `r < -1`, the Euler–Maclaurin tail integral against
 `x ↦ x ^ r` has strict sign `(-1) ^ (k + 1)`. The kernel index `k` and exponent `r` are
 independent. -/
-theorem neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_rpow_pos
+theorem neg_one_pow_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_rpow_pos
     {k : ℕ} (hk : k ≠ 0) {a r : ℝ} (ha : 0 < a) (hr : r < -1) :
     0 < (-1 : ℝ) ^ (k + 1) *
       ∫ x in Set.Ioi a,
         ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) (Int.fract x)) * x ^ r :=
-  neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_pos hk
+  neg_one_pow_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_pos hk
     (integrableOn_Ioi_rpow_of_lt hr ha)
     (fun x hx => (Real.continuousAt_rpow_const x r (Or.inl (ha.trans hx).ne')).continuousWithinAt)
     (fun _ hx => Real.rpow_pos_of_pos (ha.trans hx) r)
@@ -204,13 +231,13 @@ theorem neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_rp
 /-- For `k ≠ 0`, `a > 0`, and integer exponent `m < -1`, the Euler–Maclaurin tail integral against
 `x ↦ x ^ m` has strict sign `(-1) ^ (k + 1)`. The kernel index `k` and exponent `m` are
 independent. -/
-theorem neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_zpow_pos
+theorem neg_one_pow_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_zpow_pos
     {k : ℕ} (hk : k ≠ 0) {a : ℝ} {m : ℤ} (ha : 0 < a) (hm : m < -1) :
     0 < (-1 : ℝ) ^ (k + 1) *
       ∫ x in Set.Ioi a,
         ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) (Int.fract x)) * x ^ m := by
   simpa [Real.rpow_intCast] using
-    neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_rpow_pos hk ha
+    neg_one_pow_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_rpow_pos hk ha
       (by exact_mod_cast hm : (m : ℝ) < -1)
 
 /-- One integration by parts against a shifted Bernoulli polynomial on `[t, t + 1]`. -/

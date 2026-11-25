@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Fourier.Hardy.Basic
 public import TauCeti.MeasureTheory.Function.Lp.ContinuousFunctions
+import TauCeti.Analysis.InnerProductSpace.Compression
 
 /-!
 # Toeplitz operators on boundary Hardy space
@@ -40,6 +41,9 @@ space `H²`, where `P` is the orthogonal projection onto `H²`. This file bundle
   `TauCeti.ker_toeplitz_fourierLp_neg_one`: the backward shift `S† = T_(e_{-1})` annihilates `e₀`,
   sends `eₙ₊₁` to `eₙ`, satisfies `S† ∘L S = id` and `S ∘L S† = id - P_{e₀}`, and is surjective with
   kernel `ℂ ∙ e₀`, while `S` has trivial kernel;
+* `TauCeti.toeplitz_fourierLp_neg_natCast`, `TauCeti.toeplitz_fourierLp_neg_natCast_hardyBasis`,
+  `TauCeti.toeplitz_fourierLp_neg_natCast_comp_natCast`: more generally, `(S†)ᵐ = T_(e_{-m})`
+  sends `eₙ` to `eₙ₋ₘ` when `m ≤ n` and to `0` otherwise, and `(S†)ᵐ ∘L Sᵐ = id`;
 * `TauCeti.norm_toeplitz`: the operator norm of `T_a` is exactly `‖a‖∞`, so the symbol map is an
   isometry (`TauCeti.isometry_toeplitz`) and in particular injective
   (`TauCeti.toeplitz_injective`).
@@ -129,14 +133,15 @@ theorem inner_toeplitz_apply (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1)))
     Submodule.inner_orthogonalProjectionOnto_eq_of_mem_left, Submodule.subtypeL_apply,
     Lp.multiplicationOperator_apply]
 
-/-- The Hardy coordinates of `T_a f` are the nonnegative Fourier coefficients of `a f`. -/
-@[simp]
+/-- The Hardy coordinates of `T_a f` are the nonnegative Fourier coefficients of `a f`.
+
+Not a `simp` lemma: on the right-hand side, `simp` tries `SetLike.val_smul`, whose search for an
+`SMul` of `L^∞` on almost-everywhere-equal functions times out in large environments. -/
 theorem hardyBasis_repr_toeplitz_apply (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1)))
     (f : HardySpace) (i : ℕ) :
     hardyBasis.repr (toeplitz a f) i =
       fourierCoeff (a • (f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))) (i : ℤ) := by
-  rw [HilbertBasis.repr_apply_apply, inner_toeplitz_apply, coe_hardyBasis,
-    ← HilbertBasis.repr_apply_apply, fourierBasis_repr]
+  rw [HilbertBasis.repr_apply_apply, inner_toeplitz_apply, coe_hardyBasis, inner_fourierBasis_left]
 
 /-- **Matrix formula.** In the Hardy basis `e₀, e₁, …`, the `(i, j)` entry of the Toeplitz
 operator `T_a` is the Fourier coefficient `â(i - j)`. -/
@@ -257,39 +262,57 @@ theorem toeplitz_fourierLp_neg (k : ℤ) :
       ContinuousLinearMap.adjoint (toeplitz (fourierLp (T := 1) ∞ k)) := by
   rw [adjoint_toeplitz, star_fourierLp]
 
+/-- The Toeplitz operator of the Fourier monomial `e_(-m)`, `m ≥ 0`, is the `m`th power of the
+backward shift `S† = T_{e_{-1}}`. -/
+theorem toeplitz_fourierLp_neg_natCast (m : ℕ) :
+    toeplitz (fourierLp (T := 1) ∞ (-(m : ℤ))) = toeplitz (fourierLp (T := 1) ∞ (-1)) ^ m := by
+  rw [toeplitz_fourierLp_neg, toeplitz_fourierLp_neg, toeplitz_fourierLp_natCast,
+    ← ContinuousLinearMap.star_eq_adjoint, ← ContinuousLinearMap.star_eq_adjoint, star_pow]
+
+/-- For `m ≥ 0`, the Toeplitz operator of `e_(-m)`, the `m`th power of the backward shift, lowers
+the Hardy basis vector `eₙ` to `eₙ₋ₘ` when `m ≤ n` and annihilates it otherwise. -/
+@[simp]
+theorem toeplitz_fourierLp_neg_natCast_hardyBasis (m n : ℕ) :
+    toeplitz (fourierLp (T := 1) ∞ (-(m : ℤ))) (hardyBasis n) =
+      if m ≤ n then hardyBasis (n - m) else 0 := by
+  apply hardyBasis.repr.injective
+  apply lp.ext
+  funext i
+  rw [hardyBasis_repr_toeplitz_apply, coe_hardyBasis, fourierLp_smul_fourierBasis,
+    coe_fourierBasis, fourierCoeff_fourierLp]
+  rcases le_or_gt m n with h | h
+  · simp only [h, ite_true, HilbertBasis.repr_self, lp.single_apply, Pi.single_apply]
+    split_ifs <;> first | rfl | (exfalso; omega)
+  · simp only [h.not_ge, ite_false, map_zero, lp.coeFn_zero, Pi.zero_apply]
+    split_ifs <;> first | rfl | (exfalso; omega)
+
+/-- For `m ≥ 0`, the Toeplitz operator of `e_(-m)` is a left inverse to that of `e_m`:
+`(S†)ᵐ ∘L Sᵐ = id`. -/
+@[simp]
+theorem toeplitz_fourierLp_neg_natCast_comp_natCast (m : ℕ) :
+    toeplitz (fourierLp (T := 1) ∞ (-(m : ℤ))) ∘L toeplitz (fourierLp (T := 1) ∞ (m : ℤ)) =
+      ContinuousLinearMap.id ℂ HardySpace := by
+  rw [toeplitz_fourierLp_neg]
+  exact (ContinuousLinearMap.norm_map_iff_adjoint_comp_self _).1 fun f ↦ by simp
+
 /-- The backward shift `T_(e_{-1})` annihilates the constant Hardy mode `hardyBasis 0`. -/
 @[simp]
 theorem toeplitz_fourierLp_neg_one_hardyBasis_zero :
     toeplitz (fourierLp (T := 1) ∞ (-1)) (hardyBasis 0) = 0 := by
-  apply hardyBasis.repr.injective
-  rw [hardyBasis.repr.map_zero]
-  apply lp.ext
-  funext i
-  rw [lp.coeFn_zero, Pi.zero_apply, hardyBasis_repr_toeplitz_apply, coe_hardyBasis,
-    fourierLp_smul_fourierBasis, Nat.cast_zero, add_zero, coe_fourierBasis,
-    fourierCoeff_fourierLp, ite_eq_right (by omega)]
+  simpa using toeplitz_fourierLp_neg_natCast_hardyBasis 1 0
 
 /-- The backward shift `T_(e_{-1})` lowers every positive Hardy basis mode by `1`. -/
 @[simp]
 theorem toeplitz_fourierLp_neg_one_hardyBasis_succ (n : ℕ) :
     toeplitz (fourierLp (T := 1) ∞ (-1)) (hardyBasis (n + 1)) = hardyBasis n := by
-  apply hardyBasis.repr.injective
-  apply lp.ext
-  funext i
-  have hidx : (-1 : ℤ) + ((n + 1 : ℕ) : ℤ) = (n : ℤ) := by omega
-  rw [hardyBasis_repr_toeplitz_apply, coe_hardyBasis, fourierLp_smul_fourierBasis, hidx,
-    ← coe_hardyBasis, ← hardyBasis_repr]
+  simpa using toeplitz_fourierLp_neg_natCast_hardyBasis 1 (n + 1)
 
 /-- The backward shift is a left inverse to the forward shift: `S† ∘L S = id`. -/
 @[simp]
 theorem toeplitz_fourierLp_neg_one_comp_one :
     toeplitz (fourierLp (T := 1) ∞ (-1)) ∘L toeplitz (fourierLp (T := 1) ∞ 1) =
       ContinuousLinearMap.id ℂ HardySpace := by
-  apply ContinuousLinearMap.ext_on (s := Set.range hardyBasis) (by
-    rw [dense_iff_closure_eq, ← Submodule.topologicalClosure_coe, hardyBasis.dense_span]
-    rfl)
-  rintro _ ⟨n, rfl⟩
-  simp
+  simpa using toeplitz_fourierLp_neg_natCast_comp_natCast 1
 
 /-- **Shift defect identity.** Composing the forward shift after the backward shift differs from
 the identity by the rank-one orthogonal projection onto `ℂ ∙ hardyBasis 0`. -/
@@ -334,6 +357,23 @@ theorem norm_toeplitz_le (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
     ‖toeplitz a‖ ≤ ‖a‖ :=
   norm_compress_multiplicationOperator_le a
 
+/-- Multiplication by `a` on circle `L²` has norm at most the norm of `T_a`. -/
+private theorem norm_multiplicationOperator_le_norm_toeplitz
+    (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
+    ‖Lp.multiplicationOperator (E := ℂ) (p := 2) a‖ ≤ ‖toeplitz a‖ := by
+  rw [toeplitz_apply]
+  refine hardySubmodule.norm_le_norm_orthogonalProjectionOnto_comp_comp_subtypeL
+    (Lp.multiplicationOperator a) (l := Filter.atTop)
+    (fun N : ℤ ↦ ⟨(Lp.multiplicationOperator (fourierLp (T := 1) ∞ N)).toLinearMap,
+      Lp.norm_multiplicationOperator_apply_of_ae_norm_eq_one
+        (ae_norm_fourierLp_eq_one (T := 1) ∞ N)⟩)
+    (Submodule.dense_iff_topologicalClosure_eq_top.2 (fourierBasis (T := 1)).dense_span)
+    (fun _ hg ↦ ?_) fun N g ↦ ?_
+  · simpa only [LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe, Lp.multiplicationOperator_apply]
+      using eventually_fourierLp_smul_mem_hardySubmodule hg
+  · simpa only [LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe, mul_apply_eq_comp] using
+      congrArg (· g) (Lp.commute_multiplicationOperator (E := ℂ) (fourierLp (T := 1) ∞ N) a).eq.symm
+
 /-- On trigonometric polynomials, the matrix coefficients of multiplication by `a` are bounded by
 the norm of `T_a`: multiplying by a high Fourier mode is unitary, commutes with multiplication by
 `a`, and moves both vectors into Hardy space, where `M_a` is compressed to `T_a`. -/
@@ -352,7 +392,7 @@ private theorem norm_inner_smul_le_of_mem_span (a : Lp ℂ ∞ (AddCircle.haarAd
     rw [inner_toeplitz_apply, Submodule.coe_mk, Submodule.coe_mk, ← hcomm]
     simp only [← Lp.multiplicationOperator_apply]
     exact ((LinearMap.norm_map_iff_inner_map_map
-      (Lp.multiplicationOperator (E := ℂ) (fourierLp (T := 1) ∞ N))).1
+      (Lp.multiplicationOperator (E := ℂ) (p := 2) (fourierLp (T := 1) ∞ N)).toLinearMap).1
         (Lp.norm_multiplicationOperator_apply_of_ae_norm_eq_one hu) f
           (Lp.multiplicationOperator a g)).symm
   have hnorm (h : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) :
@@ -367,36 +407,13 @@ private theorem norm_inner_smul_le_of_mem_span (a : Lp ℂ ∞ (AddCircle.haarAd
           hnorm, hnorm]
         ring
 
-/-- Multiplication by `a` on circle `L²` has norm at most the norm of `T_a`. -/
-private theorem norm_multiplicationOperator_le_norm_toeplitz
-    (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
-    ‖Lp.multiplicationOperator (E := ℂ) a‖ ≤ ‖toeplitz a‖ := by
-  have hD : Dense (Submodule.span ℂ (Set.range (fourierBasis (T := 1))) :
-      Set (Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))) :=
-    Submodule.dense_iff_topologicalClosure_eq_top.2 (fourierBasis (T := 1)).dense_span
-  -- The bound on matrix coefficients is a closed condition, so it extends from trigonometric
-  -- polynomials to all pairs of `L²` functions.
-  have hbound : ∀ p : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)) ×
-      Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)),
-      ‖⟪p.1, Lp.multiplicationOperator a p.2⟫_ℂ‖ ≤ ‖toeplitz a‖ * ‖p.1‖ * ‖p.2‖ := by
-    refine (hD.prod hD).induction (fun p hp ↦ ?_) (isClosed_le (by fun_prop) (by fun_prop))
-    rw [Lp.multiplicationOperator_apply]
-    exact norm_inner_smul_le_of_mem_span a hp.1 hp.2
-  refine ContinuousLinearMap.opNorm_le_of_re_inner_le (norm_nonneg (toeplitz a)) ?_
-  intro x y hx hy
-  calc
-    RCLike.re ⟪Lp.multiplicationOperator a x, y⟫_ℂ ≤
-        ‖⟪Lp.multiplicationOperator a x, y⟫_ℂ‖ := RCLike.re_le_norm _
-    _ = ‖⟪y, Lp.multiplicationOperator a x⟫_ℂ‖ := norm_inner_symm _ _
-    _ ≤ ‖toeplitz a‖ := by simpa only [hx, hy, mul_one] using hbound (y, x)
-
 /-- **Symbol norm.** The operator norm of the Toeplitz operator `T_a` is the `L∞` norm of its
 symbol. -/
 @[simp]
 theorem norm_toeplitz (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
     ‖toeplitz a‖ = ‖a‖ := by
   refine le_antisymm (norm_toeplitz_le a) ?_
-  rw [← Lp.norm_multiplicationOperator (E := ℂ) a]
+  rw [← Lp.norm_multiplicationOperator (E := ℂ) (p := 2) a]
   exact norm_multiplicationOperator_le_norm_toeplitz a
 
 /-- The Toeplitz symbol map `a ↦ T_a` is an isometry. -/

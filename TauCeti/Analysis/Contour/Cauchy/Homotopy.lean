@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.NullHomologous
 public import TauCeti.Analysis.Contour.Winding.Number.Homotopy
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.HomologyCauchy
 
 /-!
@@ -18,8 +19,9 @@ integral of every holomorphic function vanish along such a path. This is the nul
 case of the homology Cauchy theorem.
 
 The homotopy is represented by Mathlib's `Path.Homotopy`; no differentiability of it is required.
-The source path itself is assumed piecewise `C¹`, matching the raw-curve interface expected by
-`homologyCauchyTheorem`.
+The source path itself is assumed piecewise `C¹`, the regularity under which homotopy invariance
+of the winding number is proved; `homologyCauchyTheorem` itself needs only its absolute
+continuity.
 
 ## Main results
 
@@ -81,16 +83,13 @@ theorem isNullHomologous_of_pathHomotopy_refl {x : ℂ} {p : Path x x} {Ω : Set
 
 /-- **Cauchy's theorem for a null-homotopic contour.** Let `p` be a piecewise-`C¹` loop admitting
 a continuous path homotopy to its constant path inside an open set `Ω`. If `f` is holomorphic on
-`Ω`, then the contour integral of `f` along `p` vanishes.
-
-The path regularity is exactly what `homologyCauchyTheorem` expects; the homotopy supplies
-containment of the source path in `Ω` and its null-homology there. -/
+`Ω`, then the contour integral of `f` along `p` vanishes. -/
 theorem cauchyTheorem_of_pathHomotopy_refl {f : ℂ → ℂ} {Ω : Set ℂ} (hΩ : IsOpen Ω)
     {x : ℂ} (p : Path x x) (hp : IsPiecewiseC1On p.extend 0 1)
     (φ : p.Homotopy (Path.refl x)) (hφΩ : ∀ st : I × I, φ st ∈ Ω)
     (hf : DifferentiableOn ℂ f Ω) :
     ∫ t in (0 : ℝ)..1, deriv p.extend t • f (p.extend t) = 0 := by
-  apply homologyCauchyTheorem hΩ p.extend 0 1 hp
+  apply homologyCauchyTheorem hΩ p.extend 0 1 hp.absolutelyContinuousOnInterval
   · intro t ht
     rw [uIcc_of_le zero_le_one] at ht
     rw [Path.extend_apply p ht]

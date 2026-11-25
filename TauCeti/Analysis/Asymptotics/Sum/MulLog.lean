@@ -10,12 +10,13 @@ public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import Mathlib.NumberTheory.ZetaValues
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
-import Mathlib.Data.Nat.Cast.SetInterval
+import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
 import TauCeti.Analysis.Calculus.Deriv.ZPow
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
-import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Integrals.LogPower
+import TauCeti.NumberTheory.Bernoulli.Values
 import TauCeti.NumberTheory.LSeries.RiemannZeta.EulerMaclaurin
 import TauCeti.NumberTheory.ZetaValues
 
@@ -145,10 +146,7 @@ private theorem sum_Icc_mul_log_eq_finite_eulerMaclaurin {m n : ℕ} (hm : 1 ≤
       (by exact_mod_cast hn))
   have hsum : ∑ j ∈ Icc 1 n, (j : ℝ) * Real.log j =
       ∑ j ∈ Icc (1 : ℤ) n, mulLogIteratedDeriv 0 j := by
-    have himg : (Icc 1 n).image (Nat.cast : ℕ → ℤ) = Icc (1 : ℤ) n :=
-      Finset.coe_injective (by simpa using Nat.image_cast_int_Icc 1 n)
-    rw [← himg, Finset.sum_image (f := fun j : ℤ => mulLogIteratedDeriv 0 (j : ℝ))
-      Nat.cast_injective.injOn]
+    rw [show (1 : ℤ) = ((1 : ℕ) : ℤ) from rfl, Finset.sum_Icc_intCast]
     exact sum_congr rfl fun j _ => by simp [mulLogIteratedDeriv]
   have hrem : ∫ x in (1 : ℝ)..n,
         ((bernoulli (2 * (m + 1)) - bernoulliFun (2 * (m + 1)) (Int.fract x)) /
@@ -292,7 +290,7 @@ private theorem neg_one_pow_succ_mul_mulLog_rem_pos {k n : ℕ} (hk : 1 ≤ k) (
       ∫ x in Set.Ioi (n : ℝ),
         ((bernoulli (2 * k + 2) : ℝ) - bernoulliFun (2 * k + 2) (Int.fract x)) *
           x ^ (-(2 * k + 1 : ℤ))) := by
-  have hI := neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_zpow_pos
+  have hI := neg_one_pow_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_zpow_pos
     (k := k + 1) (by omega) (by positivity : (0 : ℝ) < n)
     (m := -(2 * k + 1 : ℤ)) (by omega)
   have heq : (-1 : ℝ) ^ (k + 1) * (-1 / ((2 * k + 1 : ℝ) * (2 * k + 2)) *
@@ -376,7 +374,7 @@ theorem abs_sum_Icc_mul_log_sub_eulerMaclaurin_lt {m n : ℕ} (hm : 1 ≤ m) (hn
   obtain ⟨θ, hθ, heq⟩ := exists_Ioo_sum_Icc_mul_log_sub_eulerMaclaurin hm hn
   have hB : 0 < |(bernoulli (2 * m + 2) : ℝ)| := by
     rw [show 2 * m + 2 = 2 * (m + 1) by ring]
-    exact abs_pos.mpr (Rat.cast_ne_zero.mpr (bernoulli_two_mul_ne_zero (by omega)))
+    exact abs_pos.mpr (Rat.cast_ne_zero.mpr (bernoulli_two_mul_ne_zero (m + 1)))
   have hden : (0 : ℝ) < 2 * m * (2 * m + 1) * (2 * m + 2) := by positivity
   have hn_pos : (0 : ℝ) < n := by positivity
   have hterm_pos : 0 < |(bernoulli (2 * m + 2) : ℝ)| / (2 * m * (2 * m + 1) * (2 * m + 2)) *

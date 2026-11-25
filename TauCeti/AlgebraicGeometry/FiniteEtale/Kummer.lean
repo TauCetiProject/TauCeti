@@ -25,8 +25,9 @@ Tate module of `𝔾_m` over `K`; for `K` of characteristic `p > 0` only the pri
 reached, since `𝔾_m` then also has covers, such as Artin–Schreier covers, which are not Kummer
 covers.
 
-This file constructs the Kummer covers as finite étale `Spec R`-schemes, the maps between them
-and their deck transformations, and computes them on geometric fibres:
+This file constructs the Kummer covers as finite étale `Spec R`-schemes, surjective onto
+`Spec R`, on which `t` acquires an `n`-th root, together with the maps between them and their deck
+transformations, and computes them on geometric fibres:
 
 * for `n ∣ m`, the map `kummerCoverMap` from the cover of degree `m` to the cover of degree `n`
   sends the root `x_n` to `x_m ^ (m / n)`; these maps are compatible with composition;
@@ -55,6 +56,10 @@ and their deck transformations, and computes them on geometric fibres:
 
 ## Main results
 
+* `TauCeti.FiniteEtaleScheme.surjective_kummerCover_hom`: the Kummer cover is surjective, so it is
+  a finite étale covering of `Spec R`.
+* `TauCeti.FiniteEtaleScheme.exists_pow_eq_kummerCover_appTop`: on the Kummer cover, `t` becomes
+  the `n`-th power of a unit.
 * `TauCeti.FiniteEtaleScheme.kummerCoverMap_comp`: the maps between Kummer covers are compatible
   with composition.
 * `TauCeti.FiniteEtaleScheme.kummerCoverFiberEquiv_map_kummerCoverMap`: on fibres, the map from
@@ -116,6 +121,56 @@ finite étale `Spec R`-scheme. It is étale because `n` and `t` are invertible i
 /-- The Kummer cover is the spectrum of the Kummer algebra. -/
 theorem kummerCover_def : kummerCover t n hn = (spec R).obj (op (kummerAlgebra t n hn)) :=
   (rfl)
+
+/-- The Kummer cover over `Spec R` is Mathlib's algebraic spectrum of the Kummer algebra. -/
+theorem kummerCover_obj :
+    (kummerCover t n hn).obj = (algSpec R).obj (op (kummerAlgebra t n hn).obj) :=
+  spec_obj_obj R (op (kummerAlgebra t n hn))
+
+/-- The Kummer cover is surjective. For `R ≠ 0` its coordinate algebra is free of rank `n ≥ 1`,
+hence faithfully flat; for `R = 0` the base `Spec R` is empty. -/
+instance surjective_kummerCover_hom : Surjective (kummerCover t n hn).obj.hom := by
+  rw [kummerCover_obj, algSpec_obj_hom]
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · have : IsEmpty (Spec R) := inferInstanceAs (IsEmpty (PrimeSpectrum R))
+    exact ⟨fun x ↦ isEmptyElim x⟩
+  · have hn₀ : n ≠ 0 := by
+      rintro rfl
+      simp at hn
+    obtain ⟨_, hrank⟩ := standardTameCover_free R (t : R) n (Nat.one_le_iff_ne_zero.2 hn₀)
+    have : Nontrivial (standardTameCover R (t : R) n) :=
+      Module.nontrivial_of_finrank_pos (hrank ▸ Nat.pos_of_ne_zero hn₀)
+    exact ((flat_and_surjective_SpecMap_iff _).2
+      (RingHom.faithfullyFlat_algebraMap_iff.2 inferInstance)).2
+
+/-- **The Kummer cover extracts an `n`-th root of `t`.** On the Kummer cover, the pullback of `t`,
+viewed as a global section of `Spec R`, is the `n`-th power of a unit: the root `x` of
+`x ^ n - t`. -/
+theorem exists_pow_eq_kummerCover_appTop :
+    ∃ v : Γ((kummerCover t n hn).obj.left, ⊤)ˣ,
+      v ^ n = Units.map (kummerCover t n hn).obj.hom.appTop.hom.toMonoidHom
+        (Units.map (Scheme.ΓSpecIso R).inv.hom.toMonoidHom t) := by
+  let A := CommRingCat.of (standardTameCover R (t : R) n)
+  -- The root `x` is a unit: its `n`-th power is the unit `t`, and for `n = 0` the ring `R`, in
+  -- which `0` is invertible, is the zero ring.
+  have hx : IsUnit (AdjoinRoot.root (X ^ n - C (t : R))) := by
+    rcases eq_or_ne n 0 with rfl | hn₀
+    · have : Subsingleton R := subsingleton_of_zero_eq_one (by simpa using hn)
+      have : Subsingleton (standardTameCover R (t : R) 0) := Module.subsingleton R _
+      exact isUnit_of_subsingleton _
+    · exact AdjoinRoot.isUnit_root_X_pow_sub_C t.isUnit hn₀
+  have key : ∃ v : Γ(Spec A, ⊤)ˣ, v ^ n =
+      Units.map (Spec.map (CommRingCat.ofHom (algebraMap R A))).appTop.hom.toMonoidHom
+        (Units.map (Scheme.ΓSpecIso R).inv.hom.toMonoidHom t) := by
+    refine ⟨(hx.map (Scheme.ΓSpecIso A).inv.hom).unit, Units.ext ?_⟩
+    have h := congr($(Scheme.ΓSpecIso_inv_naturality (CommRingCat.ofHom (algebraMap R A)))
+      (t : R))
+    rw [Units.val_pow_eq_pow_val, IsUnit.unit_spec, ← map_pow, AdjoinRoot.root_X_pow_sub_C_pow,
+      ← AdjoinRoot.algebraMap_eq]
+    exact h
+  rw [kummerCover_obj]
+  -- `(algSpec R).obj (op A)` is by definition `Spec A` over `Spec R` (`algSpec_obj_hom`).
+  exact key
 
 end Cover
 

@@ -12,7 +12,7 @@ public import Mathlib.RingTheory.Binomial
 import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-import Mathlib.Data.Nat.Cast.SetInterval
+import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
 import TauCeti.Analysis.SpecialFunctions.Pow.Deriv
@@ -74,8 +74,8 @@ private theorem eulerMaclaurin_rpow_poly_eq_sum_range {α : ℝ} (hα : α ≠ -
   | base =>
     simp only [Finset.Ico_self, sum_empty, add_zero, show 2 * 1 = 2 from rfl, sum_range_succ,
       sum_range_zero, zero_add, Ring.choose_zero_right, bernoulli_zero, Rat.cast_one, Nat.cast_zero,
-      neg_zero, zpow_zero, mul_one, Ring.choose_one_right, bernoulli_one, Rat.cast_div,
-      Rat.cast_neg, Rat.cast_ofNat, Nat.cast_one, zpow_neg_one]
+      neg_zero, zpow_zero, mul_one, Ring.choose_one_right, bernoulli_one,
+      Rat.cast_neg, Nat.cast_one, zpow_neg_one]
     have hpow : (n : ℝ) ^ (α + 1) * (n : ℝ)⁻¹ = (n : ℝ) ^ α := by
       rw [← Real.rpow_neg_one, ← Real.rpow_add hn_pos]; ring_nf
     rw [← hpow]
@@ -128,10 +128,8 @@ theorem sum_Ico_rpow_eq_eulerMaclaurin {α : ℝ} (hα : α ≠ -1) {m n : ℕ} 
       (Or.inl (zero_lt_one.trans (by simpa using hx.1)).ne'))
     ((hcont (2 * m)).intervalIntegrable_of_Icc (by exact_mod_cast hn))
   have hsum : ∑ j ∈ Ico 1 n, (j : ℝ) ^ α + (n : ℝ) ^ α = ∑ j ∈ Icc (1 : ℤ) n, g 0 j := by
-    rw [← sum_Ico_succ_top hn, Finset.Ico_add_one_right_eq_Icc]
-    have himg : (Icc 1 n).image (Nat.cast : ℕ → ℤ) = Icc (1 : ℤ) n :=
-      Finset.coe_injective (by simpa using Nat.image_cast_int_Icc 1 n)
-    rw [← himg, Finset.sum_image (f := fun j : ℤ => g 0 (j : ℝ)) Nat.cast_injective.injOn]
+    rw [← sum_Ico_succ_top hn, Finset.Ico_add_one_right_eq_Icc,
+      show (1 : ℤ) = ((1 : ℕ) : ℤ) from rfl, Finset.sum_Icc_intCast]
     exact sum_congr rfl fun j _ => by simp [g]
   have hint0 : ∫ x in (1 : ℝ)..n, g 0 x = (n : ℝ) ^ (α + 1) / (α + 1) + -1 / (α + 1) := by
     rw [show (fun x : ℝ => g 0 x) = fun x : ℝ => x ^ α by ext x; simp [g],
@@ -173,7 +171,7 @@ private theorem neg_one_pow_succ_mul_setIntegral_rpow_tail_pos {α : ℝ} {k n :
     exact setIntegral_congr_fun measurableSet_Ioi fun x _ => by ring
   rw [heq, mul_left_comm]
   exact mul_pos (by positivity)
-    (neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_rpow_pos
+    (neg_one_pow_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_rpow_pos
       (k := k) (by omega) (by positivity) (by linarith))
 
 /-- Factorizations of `-(descPochhammer ℝ (2 * m)).eval α` and

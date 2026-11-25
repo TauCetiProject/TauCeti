@@ -8,7 +8,7 @@ module
 public import Mathlib.CategoryTheory.Groupoid
 public import Mathlib.Combinatorics.Quiver.Subquiver
 public import Mathlib.Topology.Maps.Proper.Basic
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # Products of topological groupoids
@@ -72,6 +72,18 @@ theorem totalProdHomeomorph_symm_apply (p : Quiver.Total C × Quiver.Total D) :
     (totalProdHomeomorph C D).symm p =
       ⟨(p.1.left, p.2.left), (p.1.right, p.2.right), (p.1.hom, p.2.hom)⟩ := (rfl)
 
+/-- Pairing the sources of the component arrows gives the source in the product category. -/
+@[simp]
+theorem prodMap_left_comp_totalProdHomeomorph :
+    Prod.map Quiver.Total.left Quiver.Total.left ∘ totalProdHomeomorph C D = Quiver.Total.left :=
+  (rfl)
+
+/-- Pairing the targets of the component arrows gives the target in the product category. -/
+@[simp]
+theorem prodMap_right_comp_totalProdHomeomorph :
+    Prod.map Quiver.Total.right Quiver.Total.right ∘ totalProdHomeomorph C D = Quiver.Total.right :=
+  (rfl)
+
 /-- The total arrows of a product of categories with Hausdorff total arrows are Hausdorff. -/
 instance instT2SpaceTotalProd [T2Space (Quiver.Total C)] [T2Space (Quiver.Total D)] :
     T2Space (Quiver.Total (C × D)) :=
@@ -88,26 +100,28 @@ instance instSecondCountableTopologyTotalProd [SecondCountableTopology (Quiver.T
 factors is. -/
 theorem continuous_comp_prod
     (hC : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
-      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total C))
+      (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ : Quiver.Total
+          C))
     (hD : Continuous fun p : {p : Quiver.Total D × Quiver.Total D // p.1.right = p.2.left} ↦
-      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total D)) :
+      (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ : Quiver.Total
+          D)) :
     Continuous fun p : {p : Quiver.Total (C × D) × Quiver.Total (C × D) //
         p.1.right = p.2.left} ↦
-      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ :
+      (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ :
         Quiver.Total (C × D)) := by
   let e := totalProdHomeomorph C D
   let gC := fun p : {p : Quiver.Total (C × D) × Quiver.Total (C × D) // p.1.right = p.2.left} ↦
-    (⟨((e p.1.1).1, (e p.1.2).1), congrArg Prod.fst p.2⟩ :
+    (⟨((e p.val.1).1, (e p.val.2).1), congrArg Prod.fst p.property⟩ :
       {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left})
   let gD := fun p : {p : Quiver.Total (C × D) × Quiver.Total (C × D) // p.1.right = p.2.left} ↦
-    (⟨((e p.1.1).2, (e p.1.2).2), congrArg Prod.snd p.2⟩ :
+    (⟨((e p.val.1).2, (e p.val.2).2), congrArg Prod.snd p.property⟩ :
       {p : Quiver.Total D × Quiver.Total D // p.1.right = p.2.left})
   have h₁ : Continuous fun p : {p : Quiver.Total (C × D) × Quiver.Total (C × D) //
-      p.1.right = p.2.left} ↦ e p.1.1 := e.continuous.comp (continuous_fst.comp
-    continuous_subtype_val)
+      p.1.right = p.2.left} ↦ e p.val.1 := e.continuous.comp (continuous_fst.comp
+    continuous_subtypeVal)
   have h₂ : Continuous fun p : {p : Quiver.Total (C × D) × Quiver.Total (C × D) //
-      p.1.right = p.2.left} ↦ e p.1.2 := e.continuous.comp (continuous_snd.comp
-    continuous_subtype_val)
+      p.1.right = p.2.left} ↦ e p.val.2 := e.continuous.comp (continuous_snd.comp
+    continuous_subtypeVal)
   have hgC : Continuous gC :=
     ((continuous_fst.comp h₁).prodMk (continuous_fst.comp h₂)).subtype_mk _
   have hgD : Continuous gD :=
@@ -138,31 +152,34 @@ variable [TopologicalSpace C] [TopologicalSpace D]
 /-- The source of a product category is continuous when the sources of both factors are. -/
 theorem continuous_source_prod (hC : Continuous (Quiver.Total.left : Quiver.Total C → C))
     (hD : Continuous (Quiver.Total.left : Quiver.Total D → D)) :
-    Continuous (Quiver.Total.left : Quiver.Total (C × D) → C × D) :=
-  -- The source of a product is `Prod.map` of the sources, read through `totalProdHomeomorph`.
-  (hC.prodMap hD).comp (totalProdHomeomorph C D).continuous
+    Continuous (Quiver.Total.left : Quiver.Total (C × D) → C × D) := by
+  simpa only [prodMap_left_comp_totalProdHomeomorph] using
+    (hC.prodMap hD).comp (totalProdHomeomorph C D).continuous
 
 /-- The target of a product category is continuous when the targets of both factors are. -/
 theorem continuous_target_prod (hC : Continuous (Quiver.Total.right : Quiver.Total C → C))
     (hD : Continuous (Quiver.Total.right : Quiver.Total D → D)) :
-    Continuous (Quiver.Total.right : Quiver.Total (C × D) → C × D) :=
-  (hC.prodMap hD).comp (totalProdHomeomorph C D).continuous
+    Continuous (Quiver.Total.right : Quiver.Total (C × D) → C × D) := by
+  simpa only [prodMap_right_comp_totalProdHomeomorph] using
+    (hC.prodMap hD).comp (totalProdHomeomorph C D).continuous
 
 /-- The source of a product category is a local homeomorphism when the sources of both factors
 are. -/
 theorem isLocalHomeomorph_source_prod
     (hC : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C))
     (hD : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total D → D)) :
-    IsLocalHomeomorph (Quiver.Total.left : Quiver.Total (C × D) → C × D) :=
-  (hC.prodMap hD).comp (totalProdHomeomorph C D).isLocalHomeomorph
+    IsLocalHomeomorph (Quiver.Total.left : Quiver.Total (C × D) → C × D) := by
+  simpa only [prodMap_left_comp_totalProdHomeomorph] using
+    (hC.prodMap hD).comp (totalProdHomeomorph C D).isLocalHomeomorph
 
 /-- The target of a product category is a local homeomorphism when the targets of both factors
 are. -/
 theorem isLocalHomeomorph_target_prod
     (hC : IsLocalHomeomorph (Quiver.Total.right : Quiver.Total C → C))
     (hD : IsLocalHomeomorph (Quiver.Total.right : Quiver.Total D → D)) :
-    IsLocalHomeomorph (Quiver.Total.right : Quiver.Total (C × D) → C × D) :=
-  (hC.prodMap hD).comp (totalProdHomeomorph C D).isLocalHomeomorph
+    IsLocalHomeomorph (Quiver.Total.right : Quiver.Total (C × D) → C × D) := by
+  simpa only [prodMap_right_comp_totalProdHomeomorph] using
+    (hC.prodMap hD).comp (totalProdHomeomorph C D).isLocalHomeomorph
 
 /-- The source-target map of a product category is proper when those of both factors are. -/
 theorem isProperMap_source_target_prod
