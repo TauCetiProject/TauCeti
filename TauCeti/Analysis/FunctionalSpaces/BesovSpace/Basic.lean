@@ -145,7 +145,7 @@ theorem TauCeti.two_rpow_mul_norm_sum_Ico_le {G H : Type*} [SeminormedAddCommGro
 
 /-- Lowering the order from `s` to `s'` multiplies the `j`-th weight `2^{js}` by
 `(2^{s' - s})^j`. -/
-private theorem two_rpow_mul_natCast_eq (s s' : ℝ) (j : ℕ) :
+theorem TauCeti.two_rpow_mul_natCast_eq (s s' : ℝ) (j : ℕ) :
     (2 : ℝ) ^ (s' * j) = (2 ^ (s' - s)) ^ j * 2 ^ (s * j) := by
   rw [← Real.rpow_mul_natCast zero_le_two, ← Real.rpow_add two_pos, ← add_mul, sub_add_cancel]
 
@@ -171,8 +171,8 @@ theorem Memℓp.two_rpow_mul_of_lt {a : ℕ → ℝ} {s s' : ℝ} {q q' : ℝ≥
     (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hs)) (fun j ↦ ?_) hq'
   have hj : ‖(2 : ℝ) ^ (s * j) * a j‖ ≤ C := hC ⟨j, rfl⟩
   rw [Real.norm_of_nonneg (mul_nonneg (by positivity) (ha j))] at hj
-  rw [Real.norm_of_nonneg (mul_nonneg (by positivity) (ha j)), two_rpow_mul_natCast_eq s s' j,
-    mul_assoc, mul_comm C]
+  rw [Real.norm_of_nonneg (mul_nonneg (by positivity) (ha j)),
+    TauCeti.two_rpow_mul_natCast_eq s s' j, mul_assoc, mul_comm C]
   exact mul_le_mul_of_nonneg_left hj (by positivity)
 
 /-- **Weighted tail sums.** Let `gⱼ` be vectors that vanish for `j + N ≤ k`, with `‖gⱼ‖ ≤ K xⱼ`

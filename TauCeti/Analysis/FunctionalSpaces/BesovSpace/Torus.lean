@@ -373,7 +373,10 @@ theorem exists_norm_littlewoodPaleyBlockLp_le_of_le :
   set a : ℝ := Fintype.card d * (p.toReal⁻¹ - r.toReal⁻¹)
   set f := littlewoodPaleyBlockLp φ p j c
   -- Nikol'skii's inequality at the radius `R = 2^j M ≥ 1`, beyond which `f̂` vanishes. It is
-  -- stated for the global volume on the torus, which is the volume used here.
+  -- stated for the global volume on the torus; `volume_eq_pi_haarAddCircle` rewrites that to
+  -- `Measure.pi fun _ ↦ haarAddCircle`, which is by definition the file-local `volume` given by
+  -- `instMeasureSpaceUnitAddCircle`. The instance, the integrability side goal and `h` below
+  -- use this definitional identification.
   have hR : 1 ≤ 2 ^ j * M := one_le_mul_of_one_le_of_one_le (one_le_pow₀ one_le_two) hM
   have : IsFiniteMeasure (volume : Measure (UnitAddTorus d)) :=
     inferInstanceAs (IsFiniteMeasure (Measure.pi fun _ ↦ AddCircle.haarAddCircle))
@@ -876,10 +879,7 @@ private theorem norm_le_of_coeff_eq_of_lt (hs : s' < s) {u : BesovSpace φ s p q
   rw [← norm_weightedBlocks, mul_comm]
   refine lp.norm_le_of_norm_le_geometric (by positivity)
     (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hs)) fun j ↦ ?_
-  -- Lowering the order from `s` to `s'` multiplies the `j`-th weight by `(2^{s' - s})^j`.
-  have hw : (2 : ℝ) ^ (s' * j) = (2 ^ (s' - s)) ^ j * 2 ^ (s * j) := by
-    rw [← Real.rpow_mul_natCast zero_le_two, ← Real.rpow_add two_pos, ← add_mul, sub_add_cancel]
-  rw [norm_weightedBlocks_apply, ← h, hw, mul_assoc, mul_comm ‖u‖]
+  rw [norm_weightedBlocks_apply, ← h, two_rpow_mul_natCast_eq s s' j, mul_assoc, mul_comm ‖u‖]
   exact mul_le_mul_of_nonneg_left (rpow_mul_norm_littlewoodPaleyBlockLp_le u j) (by positivity)
 
 variable (φ p) in
