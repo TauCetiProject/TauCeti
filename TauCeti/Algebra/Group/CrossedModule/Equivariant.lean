@@ -10,8 +10,9 @@ public import TauCeti.Algebra.Group.CrossedModule.Basic
 /-!
 # Group actions on crossed modules
 
-A monoid `G` acting on groups `T` and `H` by group automorphisms acts **compatibly** on a crossed
-module `∂ : T → H` when `∂` is `G`-equivariant and the action of `H` on `T` is `G`-equivariant:
+A monoid `G` acting on groups `T` and `H` by group endomorphisms (`MulDistribMulAction`; by
+automorphisms when `G` is a group) acts **compatibly** on a crossed module `∂ : T → H` when `∂`
+is `G`-equivariant and the action of `H` on `T` is `G`-equivariant:
 
 `∂ (g • x) = g • ∂ x` and `g • (h • x) = (g • h) • (g • x)`.
 
@@ -41,7 +42,7 @@ namespace CrossedModule
 
 variable {T H : Type*} [Group T] [Group H]
 
-/-- The actions of `G` on `T` and on `H` by group automorphisms are **compatible** with the crossed
+/-- The actions of `G` on `T` and on `H` by group endomorphisms are **compatible** with the crossed
 module `M : T → H`: the boundary is `G`-equivariant, and so is the action of `H` on `T`. -/
 class IsEquivariant (G : Type*) [Monoid G] [MulDistribMulAction G T] [MulDistribMulAction G H]
     (M : CrossedModule T H) : Prop where
