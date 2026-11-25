@@ -73,29 +73,18 @@ example : countablePartitionEntropy unitLebesgue leftOpen =
 theorem countablePartitionEntropy_leftOpen :
     countablePartitionEntropy unitLebesgue leftOpen = ENNReal.ofReal (log 2) := by
   have h : ∀ b, unitLebesgue.real (leftOpen ⁻¹' {b}) = 1 / 2 := by
-    have hl : Measurable leftOpen := by
-      unfold leftOpen
-      refine measurable_to_bool ?_
-      change MeasurableSet {x : ℝ | decide (x < 1 / 2) = true}
-      simp only [decide_eq_true_eq]
-      exact measurableSet_Iio
+    have hl : Measurable leftOpen := measurable_to_bool (by
+      rw [show leftOpen ⁻¹' {true} = Set.Iio (1 / 2) by ext x; grind [leftOpen]]
+      exact measurableSet_Iio)
     have hm : ∀ b, MeasurableSet (leftOpen ⁻¹' {b}) := fun b ↦ hl (measurableSet_singleton b)
     intro b
     rw [measureReal_restrict_apply (hm b)]
     cases b
     · rw [show leftOpen ⁻¹' {false} ∩ Set.Icc 0 1 = Set.Icc (1 / 2) 1 by
-        ext x; simp only [leftOpen, Set.mem_inter_iff, Set.mem_preimage, Set.mem_singleton_iff,
-          decide_eq_false_iff_not, not_lt, Set.mem_Icc]
-        constructor
-        · rintro ⟨h1, -, h3⟩; exact ⟨h1, h3⟩
-        · rintro ⟨h1, h3⟩; exact ⟨h1, by linarith, h3⟩]
+        ext x; grind [leftOpen]]
       norm_num
     · rw [show leftOpen ⁻¹' {true} ∩ Set.Icc 0 1 = Set.Ico 0 (1 / 2) by
-        ext x; simp only [leftOpen, Set.mem_inter_iff, Set.mem_preimage, Set.mem_singleton_iff,
-          decide_eq_true_eq, Set.mem_Icc, Set.mem_Ico]
-        constructor
-        · rintro ⟨h1, h2, -⟩; exact ⟨h2, h1⟩
-        · rintro ⟨h1, h2⟩; exact ⟨h2, h1, by linarith⟩]
+        ext x; grind [leftOpen]]
       simp
   rw [countablePartitionEntropy_eq_ofReal_sum]
   simp only [h, Fintype.sum_bool, negMulLog, one_div, log_inv]

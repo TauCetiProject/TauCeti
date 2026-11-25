@@ -12,26 +12,25 @@ public import Mathlib.MeasureTheory.Measure.QuasiMeasurePreserving
 # Almost-everywhere equal labels and relabeling of itineraries
 
 A finite or countable measurable partition is given by a label `a : X → ι`, and its entropy
-`TauCeti.countablePartitionEntropy μ a` only sees the masses of the atoms `a ⁻¹' {i}`. This file
-records that these masses, and hence the entropies of labels, joins, itineraries and entropy
-rates, depend only on the label up to `μ`-almost-everywhere equality, and that relabeling a label
-by an injection, for instance a finite alphabet into `ℕ`, changes neither its itinerary entropies
-nor its entropy rate. Consequently the entropy rate of a measurable countable label of finite
-entropy, in particular of a finite label under a probability measure, is at most the
-Kolmogorov–Sinai entropy `TauCeti.measureEntropy μ T`, which is defined with labels into `ℕ`.
+`TauCeti.countablePartitionEntropy μ a` only sees the masses of the atoms `a ⁻¹' {i}`, so the
+entropies of labels and joins depend only on the label up to `μ`-almost-everywhere equality
+(`TauCeti.countablePartitionEntropy_congr_ae`). This file records that, when `T` is
+quasi-measure-preserving, the entropies of itineraries and the entropy rate depend only on the
+label up to `μ`-almost-everywhere equality as well, and that relabeling a label by an injection,
+for instance a finite alphabet into `ℕ`, changes neither its itinerary entropies nor its entropy
+rate. Consequently the entropy rate of a measurable countable label of finite entropy, in
+particular of a measurable finite label, is at most the Kolmogorov–Sinai entropy
+`TauCeti.measureEntropy μ T`, which is defined with labels into `ℕ`.
 
 ## Main results
 
-* `TauCeti.countablePartitionEntropy_congr_ae`, `TauCeti.conditionalPartitionEntropy_congr_ae`:
-  almost-everywhere equal labels have equal entropy and conditional entropy.
 * `TauCeti.iteratedPartitionLabel_ae_eq`: almost-everywhere equality passes to itineraries under
   a quasi-measure-preserving map, hence `TauCeti.partitionEntropyRate_congr_ae`.
 * `TauCeti.partitionEntropyRate_comp_of_injective`: relabeling by an injection does not change
   the entropy rate.
 * `TauCeti.partitionEntropyRate_le_measureEntropy_of_countable` and
   `TauCeti.partitionEntropyRate_le_measureEntropy_of_finite`: the rate of a measurable countable
-  label of finite entropy, or of a measurable finite label under a probability measure, is at
-  most the measure entropy.
+  label of finite entropy, or of a measurable finite label, is at most the measure entropy.
 -/
 
 public section
@@ -41,30 +40,7 @@ open scoped ENNReal
 
 namespace TauCeti
 
-variable {X ι κ ι' : Type*} {mX : MeasurableSpace X} {μ : Measure X}
-
-/-- Almost-everywhere equal labels have equal entropy. No measurability is needed: the atoms
-differ by null sets. -/
-theorem countablePartitionEntropy_congr_ae {a a' : X → ι} (h : a =ᵐ[μ] a') :
-    countablePartitionEntropy μ a = countablePartitionEntropy μ a' := by
-  simp only [countablePartitionEntropy_def, measureReal_def,
-    measure_congr (h.preimage _)]
-
-/-- Almost-everywhere equal labels have equal conditional entropy. -/
-theorem conditionalPartitionEntropy_congr_ae {a a' : X → ι} {b b' : X → κ} (ha : a =ᵐ[μ] a')
-    (hb : b =ᵐ[μ] b') :
-    conditionalPartitionEntropy μ a b = conditionalPartitionEntropy μ a' b' := by
-  simp only [conditionalPartitionEntropy_def, measureReal_def,
-    measure_congr ((ha.preimage _).inter (hb.preimage _)),
-    measure_congr (hb.preimage _)]
-
-/-- Almost-everywhere equality passes to joins, so joins of almost-everywhere equal labels have
-equal entropy. -/
-theorem countablePartitionEntropy_pair_congr_ae {a a' : X → ι} {b b' : X → κ}
-    (ha : a =ᵐ[μ] a') (hb : b =ᵐ[μ] b') :
-    countablePartitionEntropy μ (fun x ↦ (a x, b x)) =
-      countablePartitionEntropy μ (fun x ↦ (a' x, b' x)) :=
-  countablePartitionEntropy_congr_ae (ha.prodMk hb)
+variable {X ι ι' : Type*} {mX : MeasurableSpace X} {μ : Measure X}
 
 /-- Under a quasi-measure-preserving map, for instance a measure-preserving one, almost-everywhere
 equal labels have almost-everywhere equal itineraries: preimages of null sets are null. -/
@@ -91,11 +67,6 @@ theorem partitionEntropyRate_congr_ae {T : X → X} (hT : QuasiMeasurePreserving
     partitionEntropyRate μ T a = partitionEntropyRate μ T a' := by
   simp only [partitionEntropyRate_def,
     countablePartitionEntropy_iteratedPartitionLabel_congr_ae hT h]
-
-/-- The itinerary of a relabeled label is the relabeled itinerary. -/
-theorem iteratedPartitionLabel_comp (T : X → X) (a : X → ι) (e : ι → ι') (n : ℕ) :
-    iteratedPartitionLabel T (e ∘ a) n = (e ∘ ·) ∘ iteratedPartitionLabel T a n :=
-  funext fun _ ↦ funext fun _ ↦ by simp
 
 /-- Relabeling by an injection does not change the itinerary entropies. -/
 theorem countablePartitionEntropy_iteratedPartitionLabel_comp_of_injective (T : X → X)
@@ -124,14 +95,12 @@ theorem partitionEntropyRate_le_measureEntropy_of_countable [Countable ι] [Meas
   refine partitionEntropyRate_le_measureEntropy ((measurable_of_countable e).comp ha) ?_
   rwa [countablePartitionEntropy_comp_of_injective a he]
 
-/-- Under a probability measure (or the zero measure), the entropy rate of a measurable label
-into a finite alphabet is at most the Kolmogorov–Sinai entropy. -/
+/-- The entropy rate of a measurable label into a finite alphabet is at most the
+Kolmogorov–Sinai entropy. -/
 theorem partitionEntropyRate_le_measureEntropy_of_finite [Finite ι] [MeasurableSpace ι]
-    [MeasurableSingletonClass ι] [IsZeroOrProbabilityMeasure μ] (T : X → X) {a : X → ι}
-    (ha : Measurable a) : partitionEntropyRate μ T a ≤ measureEntropy μ T :=
-  partitionEntropyRate_le_measureEntropy_of_countable T ha <| by
-    have := Fintype.ofFinite ι
-    rw [countablePartitionEntropy_eq_ofReal_sum]
-    exact ENNReal.ofReal_ne_top
+    [MeasurableSingletonClass ι] (T : X → X) {a : X → ι} (ha : Measurable a) :
+    partitionEntropyRate μ T a ≤ measureEntropy μ T :=
+  partitionEntropyRate_le_measureEntropy_of_countable T ha
+    (countablePartitionEntropy_ne_top μ a)
 
 end TauCeti
