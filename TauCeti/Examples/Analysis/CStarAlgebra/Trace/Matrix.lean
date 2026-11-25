@@ -10,8 +10,8 @@ public import TauCeti.Analysis.CStarAlgebra.Trace.Matrix
 /-!
 # Checks for the matrix amplification of a trace
 
-TracesOnCStarAlgebras Tr1.3, first Check: for `x = [[a, b], [0, 0]]` over a C⋆-algebra `B` with a
-trace `τ`, `x⋆x` has diagonal entries `a⋆a` and `b⋆b`, so `x ∈ 𝔫_{τ₂}` iff `a, b ∈ 𝔫_τ`
+For `x = [[a, b], [0, 0]]` over a C⋆-algebra `B` with a trace `τ`, `x⋆x` has diagonal entries
+`a⋆a` and `b⋆b`, so `x ∈ 𝔫_{τ₂}` iff `a, b ∈ 𝔫_τ`
 (`TauCeti.TraceExamples.mem_sqIntegrable_matrixTrace_topRow_iff`), while `xx⋆` has the single
 nonzero entry `aa⋆ + bb⋆` (`TauCeti.TraceExamples.topRow_mul_star_topRow`).
 -/

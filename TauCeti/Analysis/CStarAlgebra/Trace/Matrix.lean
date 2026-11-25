@@ -14,18 +14,18 @@ public import TauCeti.Analysis.CStarAlgebra.Trace.Basic
 
 For a trace `τ : B → ℝ≥0∞` on a C⋆-algebra `B` (`TauCeti.IsTrace`) and a finite type `n`, the
 **matrix amplification** `τ_n(x) = Σᵢ τ(xᵢᵢ)` on `M_n(B) = CStarMatrix n n B`
-(`TauCeti.matrixTrace`) is again a trace (`TauCeti.IsTrace.isTrace_matrixTrace`,
-TracesOnCStarAlgebras Tr1.3). The diagonal entries of a positive matrix are positive, which gives
+(`TauCeti.matrixTrace`) is again a trace (`TauCeti.IsTrace.isTrace_matrixTrace`, Thomsen [WTK],
+Lemma 3.1). The diagonal entries of a positive matrix are positive, which gives
 additivity and homogeneity on `M_n(B)₊`; for the trace identity, the diagonal entries of `x⋆x` and
 `xx⋆` are `Σₖ xₖᵢ⋆xₖᵢ` and `Σₖ xᵢₖxᵢₖ⋆`, and summing over `i` both give
 `Σᵢ,ₖ τ(xₖᵢ⋆xₖᵢ)` by the trace identity of `τ`.
 
 The same computation identifies the square-integrable elements: `𝔫_{τ_n} = M_n(𝔫_τ)`
-(`TauCeti.IsTrace.mem_sqIntegrable_matrixTrace_iff`). The amplification is faithful when `τ` is
-(`TauCeti.IsFaithful.matrixTrace`): a positive matrix `R⋆R` whose diagonal entries
-`Σₖ Rₖᵢ⋆Rₖᵢ` vanish has `R = 0`. It is lower semicontinuous when `τ` is
-(`TauCeti.IsTrace.lowerSemicontinuousOn_matrixTrace`), and it is additive on block-diagonal
-matrices (`TauCeti.matrixTrace_fromBlocks_zero`).
+(`TauCeti.IsTrace.mem_sqIntegrable_matrixTrace_iff`, Thomsen [WTK], Lemma 3.1 (e)). The
+amplification is faithful when `τ` is (`TauCeti.IsFaithful.matrixTrace`): a positive matrix `R⋆R`
+whose diagonal entries `Σₖ Rₖᵢ⋆Rₖᵢ` vanish has `R = 0`. It is lower semicontinuous when `τ` is
+(`LowerSemicontinuousOn.matrixTrace`), and it is additive over the diagonal blocks of a block
+matrix (`TauCeti.matrixTrace_fromBlocks`).
 
 ## Main definitions
 
@@ -36,8 +36,13 @@ matrices (`TauCeti.matrixTrace_fromBlocks_zero`).
 * `TauCeti.IsTrace.isTrace_matrixTrace`: `τ_n` is a trace.
 * `TauCeti.IsTrace.mem_sqIntegrable_matrixTrace_iff`: `𝔫_{τ_n} = M_n(𝔫_τ)`.
 * `TauCeti.IsFaithful.matrixTrace`: `τ_n` is faithful when `τ` is.
-* `TauCeti.IsTrace.lowerSemicontinuousOn_matrixTrace`: `τ_n` is lower semicontinuous when `τ` is.
-* `TauCeti.matrixTrace_fromBlocks_zero`: `τ_{n ⊕ m}(diag(x, y)) = τ_n(x) + τ_m(y)`.
+* `LowerSemicontinuousOn.matrixTrace`: `τ_n` is lower semicontinuous when `τ` is.
+* `TauCeti.matrixTrace_fromBlocks`: `τ_{n ⊕ m}([[x, b], [c, y]]) = τ_n(x) + τ_m(y)`.
+
+## References
+
+* Klaus Thomsen, *On weights, traces and K-theory*, arXiv:2211.03172, version of 15 March 2024:
+  Lemma 3.1.
 -/
 
 public section
@@ -51,7 +56,7 @@ variable {B : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing
 
 variable (τ n) in
 /-- The **matrix amplification** `τ_n(x) = Σᵢ τ(xᵢᵢ)` of a map `τ : B → ℝ≥0∞` to
-`M_n(B) = CStarMatrix n n B` (TracesOnCStarAlgebras Tr1.3). -/
+`M_n(B) = CStarMatrix n n B`. -/
 noncomputable def matrixTrace (x : CStarMatrix n n B) : ℝ≥0∞ :=
   ∑ i, τ (x i i)
 
@@ -61,18 +66,6 @@ theorem matrixTrace_apply (x : CStarMatrix n n B) : matrixTrace τ n x = ∑ i, 
   (rfl)
 
 namespace IsTrace
-
-/-- A trace is additive on finite sums of positive elements. -/
-theorem map_sum_of_nonneg (hτ : IsTrace τ) {ι : Type*} (s : Finset ι) {f : ι → B}
-    (hf : ∀ i ∈ s, 0 ≤ f i) : τ (∑ i ∈ s, f i) = ∑ i ∈ s, τ (f i) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp [hτ.map_zero]
-  | insert a s ha ih =>
-    rw [Finset.sum_insert ha, Finset.sum_insert ha,
-      hτ.map_add_of_nonneg (hf a (Finset.mem_insert_self a s))
-        (Finset.sum_nonneg fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)),
-      ih fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)]
 
 /-- `τ_n(x⋆x) = Σᵢ,ₖ τ(xₖᵢ⋆xₖᵢ)`. -/
 theorem matrixTrace_star_mul_self (hτ : IsTrace τ) (x : CStarMatrix n n B) :
@@ -88,7 +81,7 @@ theorem matrixTrace_mul_star_self (hτ : IsTrace τ) (x : CStarMatrix n n B) :
   exact Finset.sum_congr rfl fun i _ ↦
     hτ.map_sum_of_nonneg _ fun k _ ↦ mul_star_self_nonneg _
 
-/-- **The matrix amplification of a trace is a trace** (TracesOnCStarAlgebras Tr1.3). -/
+/-- **The matrix amplification of a trace is a trace** (Thomsen [WTK], Lemma 3.1). -/
 theorem isTrace_matrixTrace (hτ : IsTrace τ) : IsTrace (matrixTrace τ n) where
   map_add_of_nonneg x y hx hy := by
     simp only [matrixTrace_apply, CStarMatrix.add_apply, ← Finset.sum_add_distrib]
@@ -104,21 +97,22 @@ theorem isTrace_matrixTrace (hτ : IsTrace τ) : IsTrace (matrixTrace τ n) wher
       hτ.map_star_mul_self _
 
 /-- **`𝔫_{τ_n} = M_n(𝔫_τ)`**: a matrix is square-integrable for the amplification exactly when
-all its entries are square-integrable for `τ`. -/
+all its entries are square-integrable for `τ` (Thomsen [WTK], Lemma 3.1 (e)). -/
 theorem mem_sqIntegrable_matrixTrace_iff (hτ : IsTrace τ) {x : CStarMatrix n n B} :
     x ∈ sqIntegrable (matrixTrace τ n) ↔ ∀ i j, x i j ∈ sqIntegrable τ := by
   simp only [mem_sqIntegrable, hτ.matrixTrace_star_mul_self, ENNReal.sum_lt_top,
     Finset.mem_univ, forall_const]
   exact forall_comm
 
-/-- The amplification of a lower semicontinuous trace is lower semicontinuous on `M_n(B)₊`. -/
-theorem lowerSemicontinuousOn_matrixTrace (hlsc : LowerSemicontinuousOn τ {x | 0 ≤ x}) :
+end IsTrace
+
+/-- The amplification of a map that is lower semicontinuous on `B₊` is lower semicontinuous on
+`M_n(B)₊`. -/
+theorem _root_.LowerSemicontinuousOn.matrixTrace (hlsc : LowerSemicontinuousOn τ {x | 0 ≤ x}) :
     LowerSemicontinuousOn (matrixTrace τ n) {x | 0 ≤ x} :=
   lowerSemicontinuousOn_sum fun i _ ↦ hlsc.comp
-    ((continuous_apply i).comp (continuous_apply i)).continuousOn
+    (CStarMatrix.ofMatrixL.symm.continuous.matrix_elem i i).continuousOn
     fun _ hx ↦ CStarMatrix.diag_nonneg_of_nonneg hx i
-
-end IsTrace
 
 /-- **The amplification of a faithful trace is faithful.** -/
 theorem IsFaithful.matrixTrace (hτ : IsFaithful τ) : IsFaithful (matrixTrace τ n) := by
@@ -138,11 +132,14 @@ theorem IsFaithful.matrixTrace (hτ : IsFaithful τ) : IsFaithful (matrixTrace �
     · simp [CStarMatrix.star_apply]
   rw [hR, mul_zero]
 
-omit [PartialOrder B] [StarOrderedRing B] in
-/-- **Block additivity**: `τ_{n ⊕ m}(diag(x, y)) = τ_n(x) + τ_m(y)`. -/
-theorem matrixTrace_fromBlocks_zero (x : CStarMatrix n n B) (y : CStarMatrix m m B) :
+omit [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B] in
+/-- **Block additivity**: `τ_{n ⊕ m}([[x, b], [c, y]]) = τ_n(x) + τ_m(y)`; in particular
+`τ_{n ⊕ m}(diag(x, y)) = τ_n(x) + τ_m(y)`. -/
+theorem matrixTrace_fromBlocks (x : CStarMatrix n n B) (b : CStarMatrix n m B)
+    (c : CStarMatrix m n B) (y : CStarMatrix m m B) :
     matrixTrace τ (n ⊕ m)
-        (CStarMatrix.ofMatrix (Matrix.fromBlocks (CStarMatrix.ofMatrix.symm x) 0 0
+        (CStarMatrix.ofMatrix (Matrix.fromBlocks (CStarMatrix.ofMatrix.symm x)
+          (CStarMatrix.ofMatrix.symm b) (CStarMatrix.ofMatrix.symm c)
           (CStarMatrix.ofMatrix.symm y))) =
       matrixTrace τ n x + matrixTrace τ m y := by
   simp [matrixTrace_apply, Fintype.sum_sum_type, CStarMatrix.ofMatrix_apply,
