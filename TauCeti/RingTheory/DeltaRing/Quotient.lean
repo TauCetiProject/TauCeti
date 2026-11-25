@@ -109,11 +109,6 @@ variable (p) in
 def deltaStabilization (I : Ideal A) : Ideal A :=
   Ideal.span {x | ∃ a ∈ I, ∃ n : ℕ, (delta p)^[n] a = x}
 
-/-- The generators of `deltaStabilization p I`. -/
-theorem deltaStabilization_def (I : Ideal A) :
-    deltaStabilization p I = Ideal.span {x | ∃ a ∈ I, ∃ n : ℕ, (delta p)^[n] a = x} :=
-  (rfl)
-
 /-- Every iterate of `δ` maps `I` into `deltaStabilization p I`. -/
 theorem iterate_delta_mem_deltaStabilization {a : A} (ha : a ∈ I) (n : ℕ) :
     (delta p)^[n] a ∈ deltaStabilization p I :=
