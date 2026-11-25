@@ -57,32 +57,28 @@ section Matrices
 
 variable {A : Type w} [CommRing A] {l : ℕ} (r : RootSubgroupIndex l)
 
-/-- **Conjugating a root matrix by a diagonal matrix of the torus shape.** If `d_{k'} = d_k⁻¹`
-for every `k`, then `d x_ij(a) d⁻¹ = x_ij(d_i d_j⁻¹ a)`. -/
-theorem diagonal_mul_rootMatrix_mul_diagonal_inv (d : Fin l → Aˣ)
-    (hd : ∀ k, d (Fin.rev k) = (d k)⁻¹) (a : A) :
-    diagonal (fun k ↦ (d k : A)) * rootMatrix r a * diagonal (fun k ↦ (((d k)⁻¹ : Aˣ) : A)) =
-      rootMatrix r ((d r.i : A) * (((d r.j)⁻¹ : Aˣ) : A) * a) := by
-  have hv : ∀ k, (d k : A) * (((d k)⁻¹ : Aˣ) : A) = 1 := fun k ↦ Units.mul_inv (d k)
-  have h1 : diagonal (fun k ↦ (((d k)⁻¹ : Aˣ) : A)) * diagonal (fun k ↦ (d k : A)) = 1 := by
-    rw [diagonal_mul_diagonal]
-    exact diagonal_eq_one.2 (funext fun k ↦ Units.inv_mul (d k))
-  rw [rootMatrix_eq_transvection_mul_transvection, rootMatrix_eq_transvection_mul_transvection,
-    ← Matrix.mul_one (transvection r.i r.j a), ← h1]
-  simp only [← Matrix.mul_assoc]
-  rw [diagonal_mul_transvection_mul_diagonal hv, Matrix.mul_assoc _ (diagonal _),
-    Matrix.mul_assoc _ _ (diagonal _), diagonal_mul_transvection_mul_diagonal hv, hd r.i, hd r.j,
-    inv_inv]
-  congr 2 <;> ring
-
-/-- The invertible-matrix form of `diagonal_mul_rootMatrix_mul_diagonal_inv`. -/
+/-- **Conjugating a root subgroup element by an invertible diagonal matrix of the torus
+shape.** If `d_{k'} = d_k⁻¹` for every `k`, then `d x_ij(a) d⁻¹ = x_ij(d_i d_j⁻¹ a)`: conjugation
+distributes over the two commuting transvections making up `x_ij(a)`, and rescales each of them. -/
 theorem diagGL_mul_rootHom_mul_inv (d : Fin l → Aˣ) (hd : ∀ k, d (Fin.rev k) = (d k)⁻¹)
     (a : Multiplicative A) :
     diagGL d * rootHom r A a * (diagGL d)⁻¹ =
       rootHom r A
         (Multiplicative.ofAdd ((d r.i : A) * (((d r.j)⁻¹ : Aˣ) : A) * a.toAdd)) := by
-  apply Units.ext
-  simpa [← map_inv] using diagonal_mul_rootMatrix_mul_diagonal_inv r d hd a.toAdd
+  have hrev : Fin.rev r.j ≠ Fin.rev r.i := fun h ↦ r.ne (Fin.rev_injective h).symm
+  have hx (b : Multiplicative A) :
+      rootHom r A b = transvectionUnit r.ne b.toAdd * transvectionUnit hrev (-b.toAdd) :=
+    Units.ext <| by simp [rootMatrix_eq_transvection_mul_transvection]
+  rw [hx, hx, ← conj_mul, diagGL_mul_transvectionUnit_mul_inv,
+    diagGL_mul_transvectionUnit_mul_inv, hd r.i, hd r.j, inv_inv]
+  congr 2 <;> simp only [toAdd_ofAdd] <;> ring
+
+/-- The matrix form of `diagGL_mul_rootHom_mul_inv`. -/
+theorem diagonal_mul_rootMatrix_mul_diagonal_inv (d : Fin l → Aˣ)
+    (hd : ∀ k, d (Fin.rev k) = (d k)⁻¹) (a : A) :
+    diagonal (fun k ↦ (d k : A)) * rootMatrix r a * diagonal (fun k ↦ (((d k)⁻¹ : Aˣ) : A)) =
+      rootMatrix r ((d r.i : A) * (((d r.j)⁻¹ : Aˣ) : A) * a) := by
+  simpa [← map_inv] using congrArg Units.val (diagGL_mul_rootHom_mul_inv r d hd (.ofAdd a))
 
 end Matrices
 
