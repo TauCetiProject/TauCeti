@@ -42,7 +42,7 @@ covers, and the first computations.
   refinement form of the predicate.
 * `TauCeti.HasCoveringDimensionLE.mono`: the predicate is monotone in `d`.
 * `TauCeti.coveringDimension_le_iff`, `TauCeti.coveringDimension_lt_add_one_iff`,
-  `TauCeti.coveringDimension_eq_bot_iff`, `TauCeti.coveringDimension_lt_zero_iff`,
+  `TauCeti.coveringDimension_eq_bot_iff`, `TauCeti.coveringDimension_neg_iff`,
   `TauCeti.coveringDimension_eq_top_iff`, `TauCeti.coveringDimension_lt_top_iff`,
   `TauCeti.coveringDimension_eq_zero_iff`, `TauCeti.coveringDimension_eq_add_one_iff`: the order
   characterization of the dimension value.
@@ -246,7 +246,7 @@ theorem coveringDimension_eq_bot_iff : coveringDimension X = ⊥ ↔ IsEmpty X :
     exact le_iInf₂ fun e _ ↦ by exact_mod_cast Nat.zero_le e
 
 /-- The covering dimension is negative exactly for the empty space. -/
-theorem coveringDimension_lt_zero_iff : coveringDimension X < 0 ↔ IsEmpty X := by
+theorem coveringDimension_neg_iff : coveringDimension X < 0 ↔ IsEmpty X := by
   rw [← coveringDimension_eq_bot_iff]
   generalize coveringDimension X = n
   induction n using WithBot.recBotCoe with
@@ -269,7 +269,7 @@ theorem coveringDimension_lt_top_iff :
 theorem coveringDimension_eq_zero_iff :
     coveringDimension X = 0 ↔ Nonempty X ∧ HasCoveringDimensionLE X 0 := by
   rw [← coveringDimension_le_iff, Nat.cast_zero, ← not_isEmpty_iff,
-    ← coveringDimension_lt_zero_iff, not_lt, and_comm, le_antisymm_iff]
+    ← coveringDimension_neg_iff, not_lt, and_comm, le_antisymm_iff]
 
 /-- The covering dimension is `d + 1` exactly when `X` has covering dimension at most `d + 1` but
 not at most `d`. -/
