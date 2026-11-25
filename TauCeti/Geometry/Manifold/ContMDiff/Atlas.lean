@@ -53,9 +53,8 @@ inverse is `C^n` on its target when `Ψ.symm` is `C^n`.
   and `OpenPartialHomeomorph.contMDiffOn_extendTrans_symm`,
   `OpenPartialHomeomorph.contMDiffAt_extendTrans_symm`: `C^n` regularity of a maximal-atlas chart
   transported by `OpenPartialHomeomorph.extendTrans` and of its inverse;
-  `OpenPartialHomeomorph.mdifferentiableAt_extendTrans_refl` and
-  `OpenPartialHomeomorph.mdifferentiableAt_extendTrans_refl_symm`: their differentiability when the
-  chart is read in the model vector space.
+  `OpenPartialHomeomorph.mdifferentiableAt_extendTrans` and
+  `OpenPartialHomeomorph.mdifferentiableAt_extendTrans_symm`: their differentiability.
 -/
 
 public section
@@ -201,20 +200,20 @@ theorem contMDiffAt_extendTrans_symm (c : OpenPartialHomeomorph M H)
   (c.contMDiffOn_extendTrans_symm hc hΨ).contMDiffAt
     ((c.extendTrans I Ψ).open_target.mem_nhds hv)
 
-/-- A chart of the maximal `C^n` atlas, for `n ≠ 0`, read in the model vector space `E`, is
-differentiable at each point of its source. -/
-theorem mdifferentiableAt_extendTrans_refl (c : OpenPartialHomeomorph M H)
-    (hc : c ∈ IsManifold.maximalAtlas I n M) (hn : n ≠ 0) {x : M} (hx : x ∈ c.source) :
-    MDifferentiableAt I 𝓘(𝕜, E) (c.extendTrans I (Homeomorph.refl E)) x :=
-  (c.contMDiffAt_extendTrans hc (Ψ := Homeomorph.refl E) contDiff_id hx).mdifferentiableAt hn
+/-- A chart `c` of the maximal `C^n` atlas, for `n ≠ 0`, read in `E` and moved to `F` by a `C^n`
+homeomorphism `Ψ`, is differentiable at each point of the source of `c`. -/
+theorem mdifferentiableAt_extendTrans (c : OpenPartialHomeomorph M H)
+    (hc : c ∈ IsManifold.maximalAtlas I n M) {Ψ : E ≃ₜ F} (hΨ : ContDiff 𝕜 n Ψ) (hn : n ≠ 0)
+    {x : M} (hx : x ∈ c.source) : MDifferentiableAt I 𝓘(𝕜, F) (c.extendTrans I Ψ) x :=
+  (c.contMDiffAt_extendTrans hc hΨ hx).mdifferentiableAt hn
 
-/-- The inverse of a chart of the maximal `C^n` atlas, for `n ≠ 0`, read in the model vector space
-`E`, is differentiable at each point of its target. -/
-theorem mdifferentiableAt_extendTrans_refl_symm (c : OpenPartialHomeomorph M H)
-    (hc : c ∈ IsManifold.maximalAtlas I n M) (hn : n ≠ 0) {v : E}
-    (hv : v ∈ (c.extendTrans I (Homeomorph.refl E)).target) :
-    MDifferentiableAt 𝓘(𝕜, E) I (c.extendTrans I (Homeomorph.refl E)).symm v :=
-  (c.contMDiffAt_extendTrans_symm hc (Ψ := Homeomorph.refl E) contDiff_id hv).mdifferentiableAt hn
+/-- The inverse of `c.extendTrans I Ψ`, for `c` in the maximal `C^n` atlas with `n ≠ 0` and
+`Ψ.symm` of class `C^n`, is differentiable at each point of its target. -/
+theorem mdifferentiableAt_extendTrans_symm (c : OpenPartialHomeomorph M H)
+    (hc : c ∈ IsManifold.maximalAtlas I n M) {Ψ : E ≃ₜ F} (hΨ : ContDiff 𝕜 n Ψ.symm) (hn : n ≠ 0)
+    {v : F} (hv : v ∈ (c.extendTrans I Ψ).target) :
+    MDifferentiableAt 𝓘(𝕜, F) I (c.extendTrans I Ψ).symm v :=
+  (c.contMDiffAt_extendTrans_symm hc hΨ hv).mdifferentiableAt hn
 
 end OpenPartialHomeomorph
 

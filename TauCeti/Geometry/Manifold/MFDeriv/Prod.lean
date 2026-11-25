@@ -471,8 +471,7 @@ theorem mfderiv_extChartAt_prod_apply [IsManifold I 1 M] [IsManifold J 1 N] {p q
     rwa [extChartAt_prod, PartialEquiv.prod_source, mem_prod] at hq
   have hfun : (extChartAt (I.prod J) p : M × N → E × E') =
       Prod.map (extChartAt I p.1) (extChartAt J p.2) := by
-    rw [extChartAt_prod]
-    rfl
+    rw [extChartAt_prod, PartialEquiv.prod_coe, Prod.map_def]
   rw [hfun, modelWithCornersSelf_prod, ← chartedSpaceSelf_prod,
     mfderiv_prodMap (mdifferentiableAt_extChartAt (by simpa using hq'.1))
       (mdifferentiableAt_extChartAt (by simpa using hq'.2))]

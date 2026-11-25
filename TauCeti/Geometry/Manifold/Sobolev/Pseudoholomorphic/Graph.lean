@@ -105,15 +105,16 @@ private theorem add_tangentEndomorphism_eq_iff (φ : OpenPartialHomeomorph X ℂ
         ν.chartTerm φ ((chartAt H y₀).extendTrans I (Homeomorph.refl E)) z w := by
   set ψ := (chartAt H y₀).extendTrans I (Homeomorph.refl E)
   have hψm : chartAt H y₀ ∈ IsManifold.maximalAtlas I ∞ M := IsManifold.chart_mem_maximalAtlas _
-  have hψ := (chartAt H y₀).mdifferentiableAt_extendTrans_refl hψm (by simp)
+  have hψ := (chartAt H y₀).mdifferentiableAt_extendTrans hψm (Ψ := .refl E) contDiff_id (by simp)
     (by simpa only [ψ, OpenPartialHomeomorph.extendTrans_source] using ψ.map_target hw)
-  have hψs := (chartAt H y₀).mdifferentiableAt_extendTrans_refl_symm hψm (by simp) hw
+  have hψs := (chartAt H y₀).mdifferentiableAt_extendTrans_symm hψm (Ψ := .refl E) contDiff_id
+    (by simp) hw
   -- Push the equation forward along `ψ`, whose derivative at `ψ⁻¹ w` is injective.
   have hl := ψ.mfderiv_symm_apply_mfderiv_apply (ψ.map_target hw) hψ
-    ((chartAt H y₀).mdifferentiableAt_extendTrans_refl_symm hψm (by simp)
+    ((chartAt H y₀).mdifferentiableAt_extendTrans_symm hψm (Ψ := .refl E) contDiff_id (by simp)
       (ψ.map_source (ψ.map_target hw)))
   have hinj : Function.Injective (mfderiv I 𝓘(ℝ, E) ψ (ψ.symm w)) :=
-    fun t t' h ↦ (hl t).symm.trans ((congrArg _ h).trans (hl t'))
+    Function.LeftInverse.injective hl
   have hF : J.chartField φ ψ z w (D Complex.I) = mfderiv I 𝓘(ℝ, E) ψ (ψ.symm w)
       (J.tangentEndomorphism (φ.symm z, ψ.symm w) (mfderiv 𝓘(ℝ, E) I ψ.symm w (D Complex.I))) := by
     rw [ContMDiffAlmostComplexStructureFamily.chartField_apply,
@@ -123,6 +124,9 @@ private theorem add_tangentEndomorphism_eq_iff (φ : OpenPartialHomeomorph X ℂ
     ψ.mfderiv_apply_mfderiv_symm_apply hw hψ hψs _
   rw [← hinj.eq_iff, map_add, map_smul, hc, hF,
     InhomogeneousTerm.chartTerm_apply, mvfderiv_apply_eq_mfderiv_apply]
+  -- The two sides differ only in their additions and scalar multiplications: on the left those
+  -- of the tangent space `TangentSpace 𝓘(ℝ, E) w`, on the right those of `E`, which are the same
+  -- by the definition of `TangentSpace`.
   exact Iff.rfl
 
 omit [I.Boundaryless] in
@@ -180,21 +184,21 @@ private theorem add_chartPushforward_graphStructure_eq_zero_iff_add (x₀ : X) (
   have hΨq₀ : Ψ (φ.symm z, ψ.symm w) = (z, w) := by
     rw [extendTrans_prod_apply]
     exact Prod.ext (φ.right_inv hz) (ψ.right_inv hw)
-  have hΨ := (chartAt _ (x₀, y₀)).mdifferentiableAt_extendTrans_refl hΨm (by simp) hq₀
-  have hΨs := (chartAt _ (x₀, y₀)).mdifferentiableAt_extendTrans_refl_symm hΨm (by simp)
-    (Ψ.map_source hq₀')
+  have hΨ := (chartAt _ (x₀, y₀)).mdifferentiableAt_extendTrans hΨm (Ψ := .refl _) contDiff_id
+    (by simp) hq₀
+  have hΨs := (chartAt _ (x₀, y₀)).mdifferentiableAt_extendTrans_symm hΨm (Ψ := .refl _)
+    contDiff_id (by simp) (Ψ.map_source hq₀')
   have hφr := φ.mfderiv_apply_mfderiv_symm_apply hz
     (mdifferentiableAt_of_mem_maximalAtlas hφm' (φ.map_target hz))
     (mdifferentiableAt_symm_of_mem_maximalAtlas hφm' hz)
   have hψr := ψ.mfderiv_apply_mfderiv_symm_apply hw
-    ((chartAt H y₀).mdifferentiableAt_extendTrans_refl hψm (by simp) hψw)
-    ((chartAt H y₀).mdifferentiableAt_extendTrans_refl_symm hψm (by simp) hw)
+    ((chartAt H y₀).mdifferentiableAt_extendTrans hψm (Ψ := .refl E) contDiff_id (by simp) hψw)
+    ((chartAt H y₀).mdifferentiableAt_extendTrans_symm hψm (Ψ := .refl E) contDiff_id (by simp) hw)
   -- The derivative of `Ψ` intertwines the graph structure with its pushforward.
   have hint := ν.graphStructure.mfderiv_comp_toEndomorphism Ψ hq₀' hΨ hΨs
   rw [hΨq₀] at hint
   have hl := Ψ.mfderiv_symm_apply_mfderiv_apply hq₀' hΨ hΨs
-  refine Iff.trans ?_ (map_eq_zero_iff _
-    fun t t' h ↦ (hl t).symm.trans ((congrArg _ h).trans (hl t')))
+  refine Iff.trans ?_ (map_eq_zero_iff _ (Function.LeftInverse.injective hl))
   refine Iff.of_eq (congrArg (· = 0) ?_)
   have hint' : ∀ v, ν.graphStructure.chartPushforward Ψ (z, w)
       (mfderiv (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ × E) Ψ (φ.symm z, ψ.symm w) v) =
