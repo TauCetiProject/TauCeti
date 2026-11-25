@@ -39,7 +39,7 @@ If `2 = 0` in `R`, as for `R = 𝔽₂`, the system itself is constant without a
 (`TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfTwoEqZero`): evaluation at either
 orientation of a fibre gives the same value, since `-1 = 1` in `R`.
 
-Over the base set of a trivialization of the atlas the system is trivialized without a global
+Over the base set of a linear trivialization the system is trivialized without a global
 orientation: transport along a path in the base set carries the element with value `r` at the
 orientation read as a fixed orientation `ω` of the model fibre to the element with value `r` at the
 orientation read as `ω` at the end of the path
@@ -79,8 +79,8 @@ two orientations of a fibre, and it projects to a loop whose monodromy exchanges
 * `TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise`: the isomorphism of
   orientation local systems induced by a fibrewise isomorphism of bundles.
 * `TauCeti.VectorBundleOrientationCover.pullbackSignLocalSystemIso`: the trivialization of the
-  orientation system pulled back along a map into the base set of a trivialization, by evaluation
-  at the orientations which it reads as a fixed orientation of the model fibre.
+  orientation system pulled back along a map into the base set of a linear trivialization, by
+  evaluation at the orientations which it reads as a fixed orientation of the model fibre.
 * `TauCeti.VectorBundleOrientationCover.pullbackSignLocalSystemIsoOfLift`: the trivialization of
   the orientation system pulled back along a map with a continuous lift to the orientation double
   cover, by evaluation at the lifted orientations.
@@ -352,7 +352,7 @@ instance projective_signLocalSystem_obj (x : FundamentalGroupoid (TopCat.of B)) 
       refine ⟨fun f g ↦ (signLocalSystemObjEquiv hι (FundamentalGroupoid.mk b)).injective ?_⟩
       ext ⟨p, hp⟩
       exact (ho ⟨fiberEquiv F E ι b ⟨p, hp⟩⟩).elim
-    exact ModuleCat.projective_of_free (Basis.empty (ι := Empty) _)
+    exact (ModuleCat.isZero_of_subsingleton _).projective
 
 variable [FiniteDimensional ℝ F]
 
@@ -810,16 +810,10 @@ theorem pullbackSignLocalSystemIso_neg_hom (e : Trivialization F (π F E))
     [e.IsLinear ℝ] (ω : Orientation ℝ F ι) {Y : TopCat.{uB}} (g : C(Y, TopCat.of B))
     (hg : ∀ y, g y ∈ e.baseSet) :
     (pullbackSignLocalSystemIso R hι e (-ω) g hg).hom =
-      -(pullbackSignLocalSystemIso R hι e ω g hg).hom := by
-  refine NatTrans.ext (funext fun ⟨y⟩ ↦ ModuleCat.hom_ext (LinearMap.ext fun
-    (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk (g y))) ↦ ?_))
-  have h : (e.mapOrientation ι (hg y)).symm (-ω) = -(e.mapOrientation ι (hg y)).symm ω :=
-    (e.mapOrientation ι (hg y)).symm_apply_eq.2 (by
-      rw [Trivialization.mapOrientation_neg, Equiv.apply_symm_apply])
-  rw [NatTrans.app_neg, ModuleCat.hom_neg]
-  refine (pullbackSignLocalSystemIso_hom_app_apply hι e (-ω) g hg y f).trans ?_
-  rw [h, signLocalSystemFiberEquiv_neg]
-  exact congrArg Neg.neg (pullbackSignLocalSystemIso_hom_app_apply hι e ω g hg y f).symm
+      -(pullbackSignLocalSystemIso R hι e ω g hg).hom :=
+  pullbackSignLocalSystemIsoOfLift_hom_of_eq_deck hι g (fun _ ↦ rfl) (fun _ ↦ rfl) fun y ↦
+    (congrArg (mk (g y)) (e.mapOrientation_symm_neg (hg y) ω)).trans
+      (deck_apply ⟨g y, (e.mapOrientation ι (hg y)).symm ω⟩).symm
 
 /-- Reversing the orientation of the model fibre negates the inverse of the trivialization of the
 pulled-back orientation local system. -/
@@ -829,6 +823,8 @@ theorem pullbackSignLocalSystemIso_neg_inv (e : Trivialization F (π F E))
     (hg : ∀ y, g y ∈ e.baseSet) :
     (pullbackSignLocalSystemIso R hι e (-ω) g hg).inv =
       -(pullbackSignLocalSystemIso R hι e ω g hg).inv :=
-  Iso.inv_ext (by rw [pullbackSignLocalSystemIso_neg_hom, Preadditive.neg_comp_neg, Iso.hom_inv_id])
+  pullbackSignLocalSystemIsoOfLift_inv_of_eq_deck hι g (fun _ ↦ rfl) (fun _ ↦ rfl) fun y ↦
+    (congrArg (mk (g y)) (e.mapOrientation_symm_neg (hg y) ω)).trans
+      (deck_apply ⟨g y, (e.mapOrientation ι (hg y)).symm ω⟩).symm
 
 end TauCeti.VectorBundleOrientationCover

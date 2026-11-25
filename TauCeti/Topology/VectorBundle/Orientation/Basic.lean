@@ -10,6 +10,7 @@ public import TauCeti.Topology.VectorBundle.Pullback
 public import TauCeti.LinearAlgebra.Orientation.Basic
 
 import Mathlib.Topology.LocallyConstant.Basic
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Orientations of real vector bundles
@@ -22,11 +23,11 @@ space `F` (`Bundle.Trivialization.mapOrientation`), and the family is continuous
 readings are locally constant.
 
 A `TauCeti.VectorBundleOrientation F E ι` asks for this in the preferred trivialization at every
-point. When `ι` has cardinality the rank of the bundle, the coordinate changes between
-trivializations of the atlas have continuous, nowhere-vanishing determinants, so local constancy
-in one trivialization of the atlas implies it in every other
-(`Bundle.Trivialization.eventually_mapOrientation_eq_of_eventually`): an orientation is locally
-constant in every trivialization of the atlas
+point. When `ι` has cardinality the rank of the bundle, the coordinate changes between arbitrary
+linear trivializations have continuous, nowhere-vanishing determinants, so local constancy in one
+linear trivialization implies it in every other
+(`Bundle.Trivialization.eventually_mapOrientation_eq_of_eventually`): in particular, an orientation
+is locally constant in every trivialization of the atlas
 (`TauCeti.VectorBundleOrientation.eventually_mapOrientation_eq`), and conversely it suffices to
 check local constancy in any chosen trivializations of the atlas
 (`TauCeti.VectorBundleOrientation.ofEventually`).
@@ -177,46 +178,40 @@ end AddCommGroup
 
 variable [Fintype ι]
 
-/-- In finite dimension, the determinant of the coordinate change between any two linear
-trivializations is continuous on the overlap of their base sets, and hence keeps the same sign near
-any point of the overlap. -/
-private theorem eventually_det_coordChangeL_mul_pos [FiniteDimensional ℝ F]
-    (e e' : Trivialization F (π F E)) [e.IsLinear ℝ] [e'.IsLinear ℝ] {b : B}
-    (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet) :
-    ∀ᶠ x in 𝓝 b, 0 < (e.coordChangeL ℝ e' x : F →L[ℝ] F).det *
-      (e.coordChangeL ℝ e' b : F →L[ℝ] F).det := by
+/-- The fibre orientations read as a fixed orientation `o` of the model fibre in one linear
+trivialization `e` are locally constant when read in any other linear trivialization `e'`, provided
+`ι` has cardinality the rank of the bundle. -/
+theorem eventually_mapOrientation_symm_eq (hι : Fintype.card ι = finrank ℝ F)
+    (e e' : Trivialization F (π F E)) [e.IsLinear ℝ] [e'.IsLinear ℝ]
+    {b : B} (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet) (o : Orientation ℝ F ι) :
+    ∀ᶠ x in 𝓝 b, ∀ (hx : x ∈ e.baseSet) (hx' : x ∈ e'.baseSet),
+      e'.mapOrientation ι hx' ((e.mapOrientation ι hx).symm o) =
+        e'.mapOrientation ι hb' ((e.mapOrientation ι hb).symm o) := by
+  -- With `ι` empty, transport along any self-equivalence of `F` fixes every orientation.
+  rcases isEmpty_or_nonempty ι with hι₀ | hι₀
+  · exact Eventually.of_forall fun x hx hx' ↦ by
+      rw [mapOrientation_eq_map_coordChangeL e e' hx hx', Equiv.apply_symm_apply,
+        mapOrientation_eq_map_coordChangeL e e' hb hb', Equiv.apply_symm_apply,
+        Orientation.map_of_isEmpty, Orientation.map_of_isEmpty]
+  -- Otherwise `F` has positive, hence finite, dimension, so the coordinate-change determinant is
+  -- continuous and nonzero at `b`, hence keeps the same sign near `b`.
+  have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (hι ▸ Fintype.card_pos)
   have hmem : e.baseSet ∩ e'.baseSet ∈ 𝓝 b :=
     (e.open_baseSet.inter e'.open_baseSet).mem_nhds ⟨hb, hb'⟩
-  -- Evaluating the coordinate change at any fixed vector `v` is continuous on the overlap.
-  have hcv (v : F) : ContinuousOn (fun x ↦ e.coordChangeL ℝ e' x v) (e.baseSet ∩ e'.baseSet) := by
-    have hcomp : ContinuousOn (fun x ↦ (e' (e.toOpenPartialHomeomorph.symm (x, v))).2)
-        (e.baseSet ∩ e'.baseSet) := by
-      refine continuous_snd.comp_continuousOn
-        (e'.continuousOn.comp (e.toOpenPartialHomeomorph.symm.continuousOn.comp
-          (continuous_id.prodMk continuous_const).continuousOn
-          fun x hx ↦ e.mem_target.2 hx.1) fun x hx ↦ ?_)
-      rw [e'.mem_source, e.proj_symm_apply' hx.1]
-      exact hx.2
-    exact hcomp.congr fun x hx ↦ e.coordChangeL_apply' e' hx v
-  -- In a finite basis, each matrix entry of the coordinate change is continuous on the overlap, so
-  -- its determinant is continuous at `b` and nonzero there.
-  let β := Module.finBasis ℝ F
-  have hmat : ContinuousOn
-      (fun x ↦ LinearMap.toMatrix β β (e.coordChangeL ℝ e' x : F →ₗ[ℝ] F))
-      (e.baseSet ∩ e'.baseSet) :=
-    continuousOn_pi.2 fun i ↦ continuousOn_pi.2 fun j ↦
-      ((β.coord i).continuous_of_finiteDimensional.comp_continuousOn (hcv (β j))).congr fun _ _ ↦
-        LinearMap.toMatrix_apply β β _ i j
-  have hdc : ContinuousAt (fun x ↦ (e.coordChangeL ℝ e' x : F →L[ℝ] F).det) b := by
-    have hdet : ContinuousOn (fun x ↦ (e.coordChangeL ℝ e' x : F →L[ℝ] F).det)
-        (e.baseSet ∩ e'.baseSet) :=
-      (continuous_id.matrix_det.comp_continuousOn hmat).congr fun x _ ↦
-        (LinearMap.det_toMatrix β _).symm
-    exact hdet.continuousAt hmem
-  have hdb : (e.coordChangeL ℝ e' b : F →L[ℝ] F).det ≠ 0 := by
+  set d : B → ℝ := fun x ↦ (e.coordChangeL ℝ e' x : F →L[ℝ] F).det
+  have hdc : ContinuousAt d b :=
+    ContinuousLinearMap.continuous_det.continuousAt.comp
+      ((e.continuousOn_coordChangeL ℝ e').continuousAt hmem)
+  have hdb : d b ≠ 0 := by
     have := (LinearEquiv.det (e.coordChangeL ℝ e' b).toLinearEquiv).ne_zero
     rwa [LinearEquiv.coe_det] at this
-  exact (hdc.mul continuousAt_const).eventually (lt_mem_nhds (mul_self_pos.2 hdb))
+  have hpos : ∀ᶠ x in 𝓝 b, 0 < d x * d b :=
+    (hdc.mul continuousAt_const).eventually (lt_mem_nhds (mul_self_pos.2 hdb))
+  filter_upwards [hpos] with x hxpos hx hx'
+  rw [mapOrientation_eq_map_coordChangeL e e' hx hx', Equiv.apply_symm_apply,
+    mapOrientation_eq_map_coordChangeL e e' hb hb', Equiv.apply_symm_apply,
+    Orientation.map_eq_map_iff_det_mul_pos _ _ _ hι]
+  exact hxpos
 
 /-- If a family of fibre orientations is locally constant near `b` when read in one linear
 trivialization, then it is locally constant near `b` when read in any other, provided `ι` has
@@ -229,41 +224,12 @@ theorem eventually_mapOrientation_eq_of_eventually (hι : Fintype.card ι = finr
       e.mapOrientation ι hx (o x) = e.mapOrientation ι hb (o b)) :
     ∀ᶠ x in 𝓝 b, ∀ hx : x ∈ e'.baseSet,
       e'.mapOrientation ι hx (o x) = e'.mapOrientation ι hb' (o b) := by
-  have hmem : e.baseSet ∩ e'.baseSet ∈ 𝓝 b :=
-    (e.open_baseSet.inter e'.open_baseSet).mem_nhds ⟨hb, hb'⟩
-  -- With `ι` empty, transport along any self-equivalence of `F` fixes every orientation.
-  rcases isEmpty_or_nonempty ι with hι₀ | hι₀
-  · filter_upwards [h, hmem] with x hx hxs hx'
-    rw [mapOrientation_eq_map_coordChangeL e e' hxs.1 hx', hx hxs.1,
-      mapOrientation_eq_map_coordChangeL e e' hb hb', Orientation.map_of_isEmpty,
-      Orientation.map_of_isEmpty]
-  -- Otherwise `F` has positive, hence finite, dimension.
-  have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (hι ▸ Fintype.card_pos)
-  filter_upwards [h, hmem, eventually_det_coordChangeL_mul_pos e e' hb hb'] with x hx hxs hxpos hx'
-  rw [mapOrientation_eq_map_coordChangeL e e' hxs.1 hx', hx hxs.1,
-    mapOrientation_eq_map_coordChangeL e e' hb hb', Orientation.map_eq_map_iff_det_mul_pos _ _ _ hι]
-  exact hxpos
-
-/-- The fibre orientations read as a fixed orientation `o` of the model fibre in one linear
-trivialization `e` are locally constant when read in any other linear trivialization `e'`, provided
-`ι` has cardinality the rank of the bundle. -/
-theorem eventually_mapOrientation_symm_eq (hι : Fintype.card ι = finrank ℝ F)
-    (e e' : Trivialization F (π F E)) [e.IsLinear ℝ] [e'.IsLinear ℝ]
-    {b : B} (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet) (o : Orientation ℝ F ι) :
-    ∀ᶠ x in 𝓝 b, ∀ (hx : x ∈ e.baseSet) (hx' : x ∈ e'.baseSet),
-      e'.mapOrientation ι hx' ((e.mapOrientation ι hx).symm o) =
-        e'.mapOrientation ι hb' ((e.mapOrientation ι hb).symm o) := by
-  rcases isEmpty_or_nonempty ι with hι₀ | hι₀
-  · exact Eventually.of_forall fun x hx hx' ↦ by
-      rw [mapOrientation_eq_map_coordChangeL e e' hx hx', Equiv.apply_symm_apply,
-        mapOrientation_eq_map_coordChangeL e e' hb hb', Equiv.apply_symm_apply,
-        Orientation.map_of_isEmpty, Orientation.map_of_isEmpty]
-  have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (hι ▸ Fintype.card_pos)
-  filter_upwards [eventually_det_coordChangeL_mul_pos e e' hb hb'] with x hxpos hx hx'
-  rw [mapOrientation_eq_map_coordChangeL e e' hx hx', Equiv.apply_symm_apply,
-    mapOrientation_eq_map_coordChangeL e e' hb hb', Equiv.apply_symm_apply,
-    Orientation.map_eq_map_iff_det_mul_pos _ _ _ hι]
-  exact hxpos
+  have hmem : e.baseSet ∈ 𝓝 b := e.open_baseSet.mem_nhds hb
+  filter_upwards [h, hmem, e.eventually_mapOrientation_symm_eq hι e' hb hb'
+    (e.mapOrientation ι hb (o b))] with x hx hxe hsymm hx'
+  have hsymm' := hsymm hxe hx'
+  rw [Equiv.symm_apply_apply, ← hx hxe, Equiv.symm_apply_apply] at hsymm'
+  exact hsymm'
 
 end Bundle.Trivialization
 

@@ -365,33 +365,49 @@ private theorem thomPairSignChainMap_fiber_coefficients (q : VectorBundleOrienta
         (TopPair.Hom.fst g).hom).obj (thomPairSignLocalSystem F E R hι))
         (fiberThomPairMap_comp_coverThomPairMap q)) =
     (fiberThomPairSignLocalSystemIso F E R hι q.proj q.orientation).inv := by
-  refine (cancel_mono ((LocalCoefficientSystem.pullback
-    (TopPair.Hom.fst (fiberThomPairMap F E q.proj)).hom).mapIso
-      (eqToIso (thomPairSignLocalSystem_def (F := F) (E := E) (R := R) hι))).hom).1 ?_
+  refine (Iso.comp_hom_eq_id _).1 ?_
   ext v : 2
   refine ModuleCat.hom_ext (LinearMap.ext fun r ↦ ?_)
-  -- Both sides evaluate at the orientation `q` to `r` after transporting along
-  -- `thomPairSignLocalSystem_def`.
-  apply (liftFiberEquiv hι q
-    (congrArg TotalSpace.proj (fiberThomPairMap_fst_apply F E q.proj v.as)).symm).injective
-  refine Eq.trans ?_
-    (liftFiberEquiv_fiberThomPairSignLocalSystemIso_inv_app_apply (R := R) hι q.proj q.orientation
-      v r).symm
-  generalize hα : (pullbackThomPairSignLocalSystemIso F E hι R).inv = α
-  -- `erw`: the components act on fibres of local systems across `TopPair.fst` and `pullback`.
-  erw [NatTrans.comp_app, NatTrans.comp_app, NatTrans.comp_app, NatTrans.comp_app,
-    NatTrans.comp_app, LocalCoefficientSystem.pullbackConstantIso_inv_app,
-    TopPair.fstPullbackCompIso_inv_app, Category.id_comp, Category.id_comp,
-    Functor.mapIso_hom, eqToIso.hom, LocalCoefficientSystem.pullback_map_app,
-    LocalCoefficientSystem.pullback_map_app, LocalCoefficientSystem.pullback_map_app,
-    eqToHom_app, eqToHom_app, eqToHom_app, Category.assoc, Category.assoc,
-    eqToHom_trans, eqToHom_trans, ModuleCat.hom_comp, LinearMap.comp_apply]
-  subst hα
+  have hfst : (LocalCoefficientSystem.pullbackConstantIso
+      (TopPair.Hom.fst (fiberThomPairMap F
+        ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) q)).hom
+      (ModuleCat.of R R)).inv.app v r = r := by
+    -- `erw`: `pullbackConstantIso_inv_app` acts as the identity on the constant fibre `R`.
+    erw [LocalCoefficientSystem.pullbackConstantIso_inv_app, ModuleCat.id_apply]
+  have hsnd (y) : (TopPair.fstPullbackCompIso (fiberThomPairMap F
+      ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) q)
+      (coverThomPairMap F E ι) (signSystem F E hι R)).inv.app v y = y := by
+    -- `erw`: `TopPair.fstPullbackCompIso_inv_app` identifies the iterated pullback on fibres.
+    erw [TopPair.fstPullbackCompIso_inv_app, ModuleCat.id_apply]
+  have htr (y) :
+      ((LocalCoefficientSystem.pullback (TopPair.Hom.fst (fiberThomPairMap F E q.proj)).hom).map
+          (eqToHom (thomPairSignLocalSystem_def (F := F) (E := E) (R := R) hι))).app v
+        ((eqToHom (congrArg (fun g : _ ⟶ thomPair F E ↦ (LocalCoefficientSystem.pullback
+            (TopPair.Hom.fst g).hom).obj (thomPairSignLocalSystem F E R hι))
+            (fiberThomPairMap_comp_coverThomPairMap q))).app v
+          (((LocalCoefficientSystem.pullback (TopPair.Hom.fst
+            (fiberThomPairMap F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) q ≫
+              coverThomPairMap F E ι)).hom).map
+            (eqToHom (thomPairSignLocalSystem_def (F := F) (E := E) (R := R) hι).symm)).app v y)) =
+      eqToHom (congrArg (fun g : _ ⟶ thomPair F E ↦
+        (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk (π F E (TopPair.Hom.fst g v.as))))
+        (fiberThomPairMap_comp_coverThomPairMap q)) y := by
+    -- `erw`: collapse the three `eqToHom` transports into one transport between fibres of `o(E)`.
+    erw [LocalCoefficientSystem.pullback_map_app, LocalCoefficientSystem.pullback_map_app,
+      eqToHom_app, eqToHom_app, eqToHom_app, ← ConcreteCategory.comp_apply,
+      ← ConcreteCategory.comp_apply, eqToHom_trans, eqToHom_trans]
+    -- Both sides apply the same `eqToHom` transport between fibres of `o(E)`.
+    rfl
   have hw : (TopPair.Hom.fst (fiberThomPairMap F
       ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) q) v.as).proj = q := by
-    -- `erw`: the fibre inclusion of `E'` is stated with the zero of its fibres read through their
-    -- module structure, and the fibre pairs are reached through `TopCat.of`.
+    -- `erw`: the fibre inclusion of `E'` reads the zero of fibres through their module structure.
     erw [fiberThomPairMap_fst_apply]
+  -- Evaluate the composite step by step using `fiberThomPairSignLocalSystemIso_hom_app_apply`.
+  erw [NatTrans.comp_app, NatTrans.comp_app, NatTrans.comp_app, NatTrans.comp_app,
+    NatTrans.comp_app, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
+    ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
+    hfst, LocalCoefficientSystem.pullback_map_app, hsnd,
+    fiberThomPairSignLocalSystemIso_hom_app_apply, htr]
   refine (liftFiberEquiv_eqToHom_apply (R := R) hι
     (congrArg (fun g ↦ π F E (TopPair.Hom.fst g v.as)) (fiberThomPairMap_comp_coverThomPairMap q))
     _ hw (proj_proj_eq_proj_coverThomPairMap_fst _) _ _).trans ?_
@@ -687,11 +703,11 @@ theorem exists_isThomClass_homologyπ_and_deckThomPairMap_eq_neg :
 
 variable (R) in
 include hι in
-/-- **An anti-invariant Thom cocycle of the orientation cover.** Over a compact base, the pull-back
-`E'` of a real vector bundle to its orientation double cover has a Thom class, with coefficients in
-any commutative ring, represented by a cocycle which the lift of the deck involution negates at the
-level of cochains: the lift of a cocycle representing the Thom class with coefficients in the
-orientation system. -/
+/-- **An anti-invariant Thom cocycle of the orientation cover.** Over an arbitrary base, the
+pull-back `E'` of a real vector bundle to its orientation double cover has a Thom class, with
+coefficients in any commutative ring, represented by a cocycle which the lift of the deck
+involution negates at the level of cochains: the lift of a cocycle representing the Thom class with
+coefficients in the orientation system. -/
 theorem exists_isThomClass_homologyπ_and_cyclesMap_deckThomPairMap_eq_neg :
     ∃ φ : ((thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
         ).singularCochainComplex (ModuleCat.of R R) R (ModuleCat.of R R)).cycles (finrank ℝ F),
