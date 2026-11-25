@@ -11,6 +11,8 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.ExponentialDecay
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.MeasureTheory.Integral.Exp.Decay
+import TauCeti.Analysis.SpecialFunctions.Log.MulLog
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Exponential decay of the curvature of a plane vortex
@@ -45,6 +47,14 @@ zeros. So, deep inside a region where `|α|` stays away from zero, for instance 
 separated clusters of zeros, a vortex is exponentially close to the vacuum, and so is its
 curvature.
 
+Two solutions `ℓ₁`, `ℓ₂` of the scalar equation `Δ ℓ = (exp ℓ - 1) / 4` outside a disc, tending to
+`0` at infinity, approach each other at the same rates: their difference solves `Δ u = V u` with
+`V` the difference quotient of `exp / 4`, which is at least `c²` where both `exp ℓᵢ ≥ 4 c²`, so
+`|u|` is at most its supremum on the boundary circle times `exp (-c (|z| - R))`
+(`TauCeti.Vortex.abs_sub_le_mul_exp_of_laplacian_eq`). Applied to the logarithmic moduli of a
+vortex and of its translate, or of two vortices, it controls the dependence of `log |α|²` on the
+point and on the vortex far from the zeros.
+
 ## Main results
 
 * `TauCeti.Vortex.one_sub_normSq_le_neg_log_mul_exp`: if `|α|² ≥ σ ≥ 4 c²` outside the disc of
@@ -65,6 +75,9 @@ curvature.
   radius `R`, the logarithmic defect, the modulus defect and the curvature at its centre are at
   most constant multiples of `exp (-k R)` for every `k < c`, with constants depending only on `c`
   and `k`.
+* `TauCeti.Vortex.abs_sub_le_mul_exp_of_laplacian_eq`: two solutions of the scalar equation with
+  `exp ℓᵢ ≥ 4 c²` outside the disc of radius `R`, within `M` of each other on its boundary, are
+  within `M exp (-c (|z| - R))` of each other outside it.
 
 ## References
 
@@ -357,5 +370,80 @@ theorem integrable_curvature
   refine ((integrable_one_sub_normSq μ hp hq hsol hlim).div_const 8).neg.congr
     (.of_forall fun z ↦ ?_)
   exact (curvature_eq_of_equation_eq_zero (hsol z)).symm
+
+/-! ### Comparison of two solutions of the scalar equation -/
+
+/-- Where two `C²` functions solve the scalar vortex equation `Δ ℓ = (exp ℓ - 1) / 4`, their
+difference satisfies `Δ (ℓ₁ - ℓ₂) = (exp ℓ₁ - exp ℓ₂) / 4`. -/
+theorem laplacian_sub_eq_of_laplacian_eq {ℓ₁ ℓ₂ : ℂ → ℝ} {z : ℂ} (h₁ : ContDiffAt ℝ 2 ℓ₁ z)
+    (h₂ : ContDiffAt ℝ 2 ℓ₂ z) (hΔ₁ : Δ ℓ₁ z = (Real.exp (ℓ₁ z) - 1) / 4)
+    (hΔ₂ : Δ ℓ₂ z = (Real.exp (ℓ₂ z) - 1) / 4) :
+    Δ (ℓ₁ - ℓ₂) z = (Real.exp (ℓ₁ z) - Real.exp (ℓ₂ z)) / 4 := by
+  rw [h₁.laplacian_sub h₂, hΔ₁, hΔ₂]
+  ring
+
+/-- One side of `TauCeti.Vortex.abs_sub_le_mul_exp_of_laplacian_eq`. -/
+private theorem sub_le_mul_exp_of_laplacian_eq {ℓ₁ ℓ₂ : ℂ → ℝ} {R c M : ℝ} (hR : 0 < R)
+    (hc : 0 ≤ c) (hM : 0 ≤ M) (h₁ : ∀ z, R ≤ ‖z‖ → ContDiffAt ℝ 2 ℓ₁ z)
+    (h₂ : ∀ z, R ≤ ‖z‖ → ContDiffAt ℝ 2 ℓ₂ z)
+    (hΔ₁ : ∀ z, R ≤ ‖z‖ → Δ ℓ₁ z = (Real.exp (ℓ₁ z) - 1) / 4)
+    (hΔ₂ : ∀ z, R ≤ ‖z‖ → Δ ℓ₂ z = (Real.exp (ℓ₂ z) - 1) / 4)
+    (hc₁ : ∀ z, R ≤ ‖z‖ → 4 * c ^ 2 ≤ Real.exp (ℓ₁ z))
+    (hc₂ : ∀ z, R ≤ ‖z‖ → 4 * c ^ 2 ≤ Real.exp (ℓ₂ z))
+    (hlim₁ : Tendsto ℓ₁ (cocompact ℂ) (𝓝 0)) (hlim₂ : Tendsto ℓ₂ (cocompact ℂ) (𝓝 0))
+    (hbd : ∀ z, ‖z‖ = R → ℓ₁ z - ℓ₂ z ≤ M) {z : ℂ} (hz : R ≤ ‖z‖) :
+    ℓ₁ z - ℓ₂ z ≤ M * Real.exp (-(c * (‖z‖ - R))) := by
+  have hΔ (w : ℂ) (hw : R ≤ ‖w‖) :
+      Δ (ℓ₁ - ℓ₂) w = (Real.exp (ℓ₁ w) - Real.exp (ℓ₂ w)) / 4 :=
+    laplacian_sub_eq_of_laplacian_eq (h₁ w hw) (h₂ w hw) (hΔ₁ w hw) (hΔ₂ w hw)
+  -- `Δ (ℓ₁ - ℓ₂) = V (ℓ₁ - ℓ₂)` for the difference quotient `V` of `exp / 4`, and `V ≥ c²`.
+  set V : ℂ → ℝ := fun w ↦ if ℓ₁ w = ℓ₂ w then c ^ 2 else
+    (Real.exp (ℓ₁ w) - Real.exp (ℓ₂ w)) / (ℓ₁ w - ℓ₂ w) / 4
+  have hV (w : ℂ) (hw : R < ‖w‖) : c ^ 2 ≤ V w := by
+    by_cases h : ℓ₁ w = ℓ₂ w
+    · simp [V, h]
+    · simp only [V, h, ↓reduceIte]
+      have hq := Real.le_sub_div_log_sub_log (Real.exp_pos _) (Real.exp_pos _) (hc₁ w hw.le)
+        (hc₂ w hw.le) (by rwa [Real.log_exp, Real.log_exp, sub_ne_zero])
+      rw [Real.log_exp, Real.log_exp] at hq
+      linarith
+  have hsub (w : ℂ) (hw : R < ‖w‖) : V w * (ℓ₁ - ℓ₂) w ≤ Δ (ℓ₁ - ℓ₂) w := by
+    rw [hΔ w hw.le, Pi.sub_apply]
+    by_cases h : ℓ₁ w = ℓ₂ w
+    · simp [V, h]
+    · simp only [V, h, ↓reduceIte]
+      exact le_of_eq (by field_simp [sub_ne_zero.2 h])
+  exact le_mul_exp_of_mul_le_laplacian hR hc hM
+    (fun w hw ↦ ((h₁ w hw).sub (h₂ w hw)).continuousAt.continuousWithinAt)
+    (fun w hw ↦ (h₁ w hw.le).sub (h₂ w hw.le)) hV hsub hbd (by simpa using hlim₁.sub hlim₂) hz
+
+/-- **Comparison of two solutions of the scalar vortex equation outside a disc.** Let `ℓ₁` and
+`ℓ₂` be `C²` solutions of `Δ ℓ = (exp ℓ - 1) / 4` outside the disc of radius `R > 0`, tending to
+`0` at infinity, with `exp ℓᵢ ≥ 4 c²` there for a rate `c ≥ 0`. If `|ℓ₁ - ℓ₂| ≤ M` on the boundary
+circle, then for `|z| ≥ R`,
+
+`|ℓ₁ z - ℓ₂ z| ≤ M exp (-c (|z| - R))`.
+
+The difference solves `Δ u = V u` for the difference quotient `V` of `exp / 4`, which is at least
+`c²`, so `u` and `-u` are subsolutions of `-Δ + V`. Off the zeros of its section, the logarithmic
+modulus `ℓ = log |α|²` of a vortex solves the scalar equation
+(`TauCeti.Vortex.laplacian_log_normSq_of_equation_eq_zero`), so this compares two vortices, or a
+vortex and its translate, far from their zeros. -/
+theorem abs_sub_le_mul_exp_of_laplacian_eq {ℓ₁ ℓ₂ : ℂ → ℝ} {R c M : ℝ} (hR : 0 < R)
+    (hc : 0 ≤ c) (h₁ : ∀ z, R ≤ ‖z‖ → ContDiffAt ℝ 2 ℓ₁ z)
+    (h₂ : ∀ z, R ≤ ‖z‖ → ContDiffAt ℝ 2 ℓ₂ z)
+    (hΔ₁ : ∀ z, R ≤ ‖z‖ → Δ ℓ₁ z = (Real.exp (ℓ₁ z) - 1) / 4)
+    (hΔ₂ : ∀ z, R ≤ ‖z‖ → Δ ℓ₂ z = (Real.exp (ℓ₂ z) - 1) / 4)
+    (hc₁ : ∀ z, R ≤ ‖z‖ → 4 * c ^ 2 ≤ Real.exp (ℓ₁ z))
+    (hc₂ : ∀ z, R ≤ ‖z‖ → 4 * c ^ 2 ≤ Real.exp (ℓ₂ z))
+    (hlim₁ : Tendsto ℓ₁ (cocompact ℂ) (𝓝 0)) (hlim₂ : Tendsto ℓ₂ (cocompact ℂ) (𝓝 0))
+    (hbd : ∀ z, ‖z‖ = R → |ℓ₁ z - ℓ₂ z| ≤ M) {z : ℂ} (hz : R ≤ ‖z‖) :
+    |ℓ₁ z - ℓ₂ z| ≤ M * Real.exp (-(c * (‖z‖ - R))) := by
+  have hM : 0 ≤ M := TauCeti.nonneg_of_forall_norm_eq_abs_le hR.le hbd
+  refine abs_le.2 ⟨?_, sub_le_mul_exp_of_laplacian_eq hR hc hM h₁ h₂ hΔ₁ hΔ₂ hc₁ hc₂ hlim₁ hlim₂
+    (fun w hw ↦ (le_abs_self _).trans (hbd w hw)) hz⟩
+  have h := sub_le_mul_exp_of_laplacian_eq hR hc hM h₂ h₁ hΔ₂ hΔ₁ hc₂ hc₁ hlim₂ hlim₁
+    (fun w hw ↦ (le_abs_self _).trans ((abs_sub_comm _ _).trans_le (hbd w hw))) hz
+  linarith
 
 end TauCeti.Vortex
