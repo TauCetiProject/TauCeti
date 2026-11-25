@@ -23,17 +23,22 @@ These four properties are what the point topology on the rational points of an a
 
 Second countability is proved through the normalized absolute value
 (`TauCeti.normalizedNontriviallyNormedField`): a locally compact nontrivially normed field is a
-proper metric space, and proper metric spaces are second countable.
+proper metric space, and proper metric spaces are second countable. The same transport shows that
+no point of `K` is isolated, as in every nontrivially normed field; through Mathlib's
+`MeasureTheory.Measure.IsAddHaarMeasure.nullSingletonClass`, an additive Haar measure on `K` then
+gives every singleton mass zero.
 
 ## Main declarations
 
 * `TauCeti.instSecondCountableTopologyOfIsNonarchimedeanLocalField`: a nonarchimedean local field
   is second countable.
+* `TauCeti.instNeBotNhdsNEOfIsNonarchimedeanLocalField`: no point of a nonarchimedean local field
+  is isolated.
 -/
 
 public section
 
-open ValuativeRel
+open ValuativeRel Filter Topology
 
 namespace TauCeti
 
@@ -51,6 +56,14 @@ instance instSecondCountableTopologyOfIsNonarchimedeanLocalField : SecondCountab
   have : ProperSpace K := .of_nontriviallyNormedField_of_weaklyLocallyCompactSpace K
   have h : @SecondCountableTopology K (normalizedNormedFieldTopology K) :=
     secondCountable_of_proper
+  rwa [normalizedNormedField_topology_eq] at h
+
+/-- No point of a nonarchimedean local field is isolated: the punctured neighbourhood filter
+`𝓝[≠] x` is nontrivial, as in every nontrivially normed field. -/
+instance instNeBotNhdsNEOfIsNonarchimedeanLocalField (x : K) : (𝓝[≠] x).NeBot := by
+  let _ := normalizedNontriviallyNormedField K
+  have h : @NeBot K (@nhdsWithin K (normalizedNormedFieldTopology K) x {x}ᶜ) :=
+    NormedField.nhdsNE_neBot x
   rwa [normalizedNormedField_topology_eq] at h
 
 /- A nonarchimedean local field is totally disconnected, by
