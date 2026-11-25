@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Continuous.Determinant.Basic
+public import TauCeti.RepresentationTheory.OfGL
 public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.Topology.Algebra.Group.Matrix
 
@@ -29,8 +30,6 @@ functorially in `f`.
 
 ## Main definitions
 
-* `Representation.ofGL ρ`: the linear representation on `n → A` of a homomorphism
-  `ρ : Γ →* GL_n(A)`.
 * `TauCeti.ContinuousRep.ofFramed ρ`: the continuous representation on `n → A` of a framed
   representation `ρ : Γ →ₜ* GL_n(A)`, with underlying linear representation `Representation.ofGL ρ`.
 * `TauCeti.ContinuousRep.frame b ρ`: the frame of a continuous representation in a basis `b`.
@@ -61,21 +60,6 @@ noncomputable section
 
 open Matrix
 
-namespace Representation
-
-variable {Γ A : Type*} [Monoid Γ] [CommRing A] {n : Type*} [Fintype n] [DecidableEq n]
-
-/-- The linear representation on `n → A` of a homomorphism `Γ →* GL_n(A)`, by matrix
-multiplication. -/
-def ofGL (ρ : Γ →* GL n A) : Representation A Γ (n → A) :=
-  (Matrix.toLinAlgEquiv'.toMonoidHom.comp (Units.coeHom (Matrix n n A))).comp ρ
-
-@[simp]
-theorem ofGL_apply (ρ : Γ →* GL n A) (g : Γ) : ofGL ρ g = Matrix.toLin' (ρ g : Matrix n n A) :=
-  (rfl)
-
-end Representation
-
 namespace TauCeti.ContinuousRep
 
 variable {Γ A : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommRing A] [TopologicalSpace A]
@@ -97,10 +81,16 @@ def ofFramed (ρ : Γ →ₜ* GL n A) : ContinuousRep Γ A (n → A) where
 @[simp]
 theorem ofFramed_apply (ρ : Γ →ₜ* GL n A) (g : Γ) (v : n → A) :
     ofFramed ρ g v = (ρ g : Matrix n n A) *ᵥ v :=
-  Matrix.toLin'_apply _ v
+  (LinearMap.congr_fun (Representation.ofGL_apply (ρ : Γ →* GL n A) g) v).trans
+    (Matrix.toLin'_apply _ v)
 
 theorem ofFramed_apply_eq_toLin' (ρ : Γ →ₜ* GL n A) (g : Γ) :
     ofFramed ρ g = Matrix.toLin' (ρ g : Matrix n n A) :=
+  Representation.ofGL_apply (ρ : Γ →* GL n A) g
+
+@[simp]
+theorem toRepresentation_ofFramed (ρ : Γ →ₜ* GL n A) :
+    (ofFramed ρ).toRepresentation = Representation.ofGL (ρ : Γ →* GL n A) :=
   (rfl)
 
 end ofFramed
