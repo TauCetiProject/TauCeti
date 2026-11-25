@@ -52,8 +52,8 @@ between the localizations are faithfully flat, so the ideal does not change.
 * `TauCeti.NodeAlgebra.comap_map_fittingIdeal_localization_eq_span_of_etale`: the same ideal for
   an algebra with an étale local node chart.
 * `TauCeti.NodeAlgebra.comap_map_fittingIdeal_localization_eq_span_pow_iff`: for an étale local
-  chart `uv = πⁿ` with `π` irreducible, `n` is the unique `m` for which the ideal is `(πᵐ)`; so
-  all such charts at the same point have the same exponent.
+  chart `uv = πⁿ` with `π` a nonzero nonunit, `n` is the unique `m` for which the ideal is
+  `(πᵐ)`; so all such charts at the same point have the same exponent.
 
 ## References
 
@@ -87,8 +87,9 @@ theorem comap_map_fittingIdeal_localization_eq_span [IsLocalRing R] (a : R)
     have hcx : x - algebraMap R _ c ∈ P := hP <| by
       rw [jacobianIdeal_eq_ker_evalZero, RingHom.mem_ker]
       simp [← hc, Ideal.Quotient.algebraMap_eq]
-    have hc' : c ∉ maximalIdeal R := fun h ↦
-      hx <| by simpa using P.add_mem hcx (show algebraMap R _ c ∈ P by rwa [← hPR] at h)
+    have hc' : c ∉ maximalIdeal R := fun h ↦ by
+      have hcP : algebraMap R _ c ∈ P := by rwa [← Ideal.mem_comap, hPR]
+      exact hx <| by simpa using P.add_mem hcx hcP
     rw [← hc]
     exact (IsLocalRing.notMem_maximalIdeal.mp hc').map _
   apply le_antisymm
@@ -164,15 +165,16 @@ theorem comap_map_fittingIdeal_localization_eq_span_of_etale {R' S T : Type*} [C
     comap_map_fittingIdeal_localization_eq_span _ _ hP hPR,
     ← Set.image_singleton, ← Ideal.map_span, Ideal.comap_map_eq_self_of_faithfullyFlat]
 
-/-- **The exponent of an étale local node chart is an invariant of the point.** Let `π` be an
-irreducible element of a domain `R`. Suppose that `S` has at the prime `q = Q ∩ S` an étale local
+/-- **The exponent of an étale local node chart is an invariant of the point.** Let `π` be a
+nonzero nonunit of a domain `R`. Suppose that `S` has at the prime `q = Q ∩ S` an étale local
 chart `uv = πⁿ` over `R'`, as in `comap_map_fittingIdeal_localization_eq_span_of_etale`. Then `n`
 is the unique `m` such that the singular locus of `S` cuts out the ideal `(πᵐ)` of `R` at `q`. In
 particular, any two such charts of `S` at `q`, over possibly different extensions `R'`, have the
 same exponent. -/
 theorem comap_map_fittingIdeal_localization_eq_span_pow_iff [IsDomain R] {π : R}
-    (hπ : Irreducible π) {R' S T : Type*} [CommRing R'] [CommRing S] [CommRing T] [Algebra R R']
-    [Algebra.FormallyUnramified R R'] [Module.FaithfullyFlat R R'] [IsLocalRing R'] [Algebra R S]
+    (hπ₀ : π ≠ 0) (hπ : ¬IsUnit π) {R' S T : Type*} [CommRing R'] [CommRing S] [CommRing T]
+    [Algebra R R'] [Algebra.FormallyUnramified R R'] [Module.FaithfullyFlat R R'] [IsLocalRing R']
+    [Algebra R S]
     [Module.Finite S Ω[S⁄R]] [Algebra S T] [Algebra.FormallyEtale S T] [Module.Flat S T]
     [Algebra R' T] [Algebra R T] [IsScalarTower R S T] [IsScalarTower R R' T] (n : ℕ)
     (φ : NodeAlgebra R' (algebraMap R R' π ^ n) →ₐ[R'] T) (hφ : φ.toRingHom.FormallyEtale)
@@ -188,9 +190,9 @@ theorem comap_map_fittingIdeal_localization_eq_span_pow_iff [IsDomain R] {π : R
   subst hb
   rw [comap_map_fittingIdeal_localization_eq_span_of_etale (π ^ n) φ hφ hφ' Q hQ h₀ h₁ q hqQ]
   refine ⟨fun h ↦ le_antisymm ?_ ?_, fun h ↦ h ▸ rfl⟩
-  · rw [← pow_dvd_pow_iff hπ.ne_zero hπ.not_isUnit, ← Ideal.span_singleton_le_span_singleton]
+  · rw [← pow_dvd_pow_iff hπ₀ hπ, ← Ideal.span_singleton_le_span_singleton]
     exact h.ge
-  · rw [← pow_dvd_pow_iff hπ.ne_zero hπ.not_isUnit, ← Ideal.span_singleton_le_span_singleton]
+  · rw [← pow_dvd_pow_iff hπ₀ hπ, ← Ideal.span_singleton_le_span_singleton]
     exact h.le
 
 end TauCeti.NodeAlgebra

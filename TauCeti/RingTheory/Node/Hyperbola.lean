@@ -39,10 +39,6 @@ open MvPolynomial
 
 variable {R : Type*} [CommRing R] (a : R) [Invertible (2 : R)]
 
-private lemma algebraMap_invOf_two_mul_two {A : Type*} [CommRing A] [Algebra R A] :
-    algebraMap R A ⅟2 * 2 = 1 := by
-  rw [← map_ofNat (algebraMap R A) 2, ← map_mul, invOf_mul_self, map_one]
-
 /-- The coordinate change `x = (u + v) / 2`, `y = (v - u) / 2` from the hyperbola
 `x² - y² = a` to the node chart `uv = a`. -/
 private def ofQuotientSqSubSq :
@@ -53,7 +49,8 @@ private def ofQuotientSqSubSq :
     (by
       intro p hp
       obtain ⟨c, rfl⟩ := Ideal.mem_span_singleton'.mp hp
-      have h₂ := algebraMap_invOf_two_mul_two (R := R) (A := NodeAlgebra R a)
+      have h₂ := congrArg (algebraMap R (NodeAlgebra R a)) (invOf_mul_self (2 : R))
+      rw [map_mul, map_ofNat, map_one] at h₂
       have huv := coord_zero_mul_coord_one a
       simp only [map_mul, map_sub, map_pow, aeval_X, aeval_C, Matrix.cons_val_zero,
         Matrix.cons_val_one]
@@ -80,8 +77,10 @@ def equivQuotientSqSubSq :
     (ofQuotientSqSubSq a)
     (by
       refine Ideal.Quotient.algHom_ext R (MvPolynomial.algHom_ext fun i ↦ ?_)
-      have h₂ := algebraMap_invOf_two_mul_two (R := R)
-        (A := MvPolynomial (Fin 2) R ⧸ Ideal.span {X 0 ^ 2 - X 1 ^ 2 - C a})
+      have h₂ := congrArg
+        (algebraMap R (MvPolynomial (Fin 2) R ⧸ Ideal.span {X 0 ^ 2 - X 1 ^ 2 - C a}))
+        (invOf_mul_self (2 : R))
+      rw [map_mul, map_ofNat, map_one] at h₂
       fin_cases i <;>
         simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, ofQuotientSqSubSq_mk, aeval_X,
           map_mul, map_add, map_sub, AlgHom.commutes, lift_coord_zero, lift_coord_one,
@@ -90,7 +89,8 @@ def equivQuotientSqSubSq :
       · linear_combination Ideal.Quotient.mk _ (X 0) * h₂
       · linear_combination Ideal.Quotient.mk _ (X 1) * h₂)
     (by
-      have h₂ := algebraMap_invOf_two_mul_two (R := R) (A := NodeAlgebra R a)
+      have h₂ := congrArg (algebraMap R (NodeAlgebra R a)) (invOf_mul_self (2 : R))
+      rw [map_mul, map_ofNat, map_one] at h₂
       ext
       · simp only [AlgHom.comp_apply, lift_coord_zero, map_sub, ofQuotientSqSubSq_mk, aeval_X,
           Matrix.cons_val_zero, Matrix.cons_val_one, AlgHom.coe_id, id_eq]
