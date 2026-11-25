@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 import Mathlib.Tactic.Module
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Annihilator
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap
-import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Local
 
 /-!
@@ -33,9 +32,10 @@ planar theory.
   representative of `w` (Morrey's embedding,
   `TauCeti.SobolevSection.HasContinuousRepresentatives.of_two_lt_mul`) solves in every chart the
   weak Cauchy–Riemann equation with smooth coefficients
-  (`TauCeti.IsRealCauchyRiemannOperator.isWeakCauchyRiemannOn_coord_toSection`), so it is smooth
-  in every chart by interior bootstrapping (`TauCeti.contDiffOn_of_isWeakCauchyRiemannOn`), hence a
-  smooth section (`TauCeti.FiniteBundleAtlas.contMDiff_of_forall_contDiffOn_coord`).
+  (`TauCeti.IsRealCauchyRiemannOperator.isWeakCauchyRiemannOn_coord_toSection_of_sobolevL_eq_zero`),
+  so it is smooth in every chart by interior bootstrapping
+  (`TauCeti.contDiffOn_of_isWeakCauchyRiemannOn`), hence a smooth section
+  (`TauCeti.FiniteBundleAtlas.contMDiff_of_forall_contDiffOn_coord`).
 * **The adjoint equation, in a chart.** A locally `L^q` covector field `ηᵢ : ℂ → (F →L[ℝ] ℝ)`,
   `q > 1`, that annihilates the value on `1` of `∂bar φ + Zᵢ φ` for every test function `φ` on the
   image of chart `i` agrees almost everywhere with a smooth field
@@ -49,8 +49,8 @@ planar theory.
 
 ## Main results
 
-* `TauCeti.IsRealCauchyRiemannOperator.isWeakCauchyRiemannOn_coord_toSection`: in chart `i`, the
-  continuous representative of a kernel element solves
+* `TauCeti.IsRealCauchyRiemannOperator.isWeakCauchyRiemannOn_coord_toSection_of_sobolevL_eq_zero`:
+  in chart `i`, the continuous representative of a kernel element solves
   `∂ₛu + i ∂ₜu = -2 Zᵢ(u)(1)` weakly.
 * `TauCeti.IsRealCauchyRiemannOperator.contDiffOn_coord_toSection_of_sobolevL_eq_zero`: it is
   smooth on every chart image.
@@ -122,7 +122,8 @@ include hD hDs in
 `2 < p ≤ ∞`, let `w ∈ W^{1,p}(Σ, V)` with `D w = 0`. In chart `i`, the reading `u` of the continuous
 representative of `w` is a weak solution of `∂ₛu + i ∂ₜu = -2 Zᵢ(u)(1)` on the chart image, where
 `Zᵢ` is the zeroth-order term of `D` in chart `i`. -/
-theorem isWeakCauchyRiemannOn_coord_toSection (hp : 2 < p) {w : SobolevSection A volume p 1}
+theorem isWeakCauchyRiemannOn_coord_toSection_of_sobolevL_eq_zero (hp : 2 < p)
+    {w : SobolevSection A volume p 1}
     (hw : hD.sobolevL A hDs volume p w = 0) (i : Fin A.n) :
     IsWeakCauchyRiemannOn p (A.image i) (fun _ _ ↦ ContinuousLinearMap.lsmul ℝ ℂ Complex.I)
       (fun z x ↦ -(2 : ℝ) • A.chartZeroOrder D i z x 1)
@@ -159,8 +160,7 @@ theorem contDiffOn_coord_toSection_of_sobolevL_eq_zero (hp : 2 < p)
     ContDiffOn ℝ ∞ (A.coord i (SobolevSection.toSection w)) (A.image i) := by
   -- The zeroth-order term is smooth on an open set containing the chart image.
   set U := (A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet
-  have hZ : ContDiffOn ℝ ∞ (A.chartZeroOrder D i) U := by
-    simpa only [inter_univ] using A.contDiffOn_chartZeroOrder hD hDs isOpen_univ i
+  have hZ : ContDiffOn ℝ ∞ (A.chartZeroOrder D i) U := A.contDiffOn_chartZeroOrder_univ hD hDs i
   have hη : ContDiffOn ℝ (⊤ : ℕ∞) (fun x : ℂ × F ↦ -(2 : ℝ) • A.chartZeroOrder D i x.1 x.2 1)
       (U ×ˢ univ) :=
     (((hZ.comp contDiffOn_fst fun x (hx : x ∈ U ×ˢ (univ : Set F)) ↦ hx.1).clm_apply
@@ -172,7 +172,7 @@ theorem contDiffOn_coord_toSection_of_sobolevL_eq_zero (hp : 2 < p)
     (fun z hz ↦ ⟨(A.image_subset_chart_image_closure_dom i).trans
       (A.chart_image_closure_dom_subset i) hz, mem_univ _⟩)
     (.of_forall fun _ ↦ lsmul_I_mul_lsmul_I)
-    (isWeakCauchyRiemannOn_coord_toSection A hD hDs hp hw i)
+    (isWeakCauchyRiemannOn_coord_toSection_of_sobolevL_eq_zero A hD hDs hp hw i)
 
 include hD hDs in
 /-- **Kernel regularity on closed surfaces** (McDuff–Salamon, Theorem C.1.10 (iii), for smooth
@@ -228,11 +228,7 @@ theorem exists_contDiffOn_ae_eq_of_forall_integral_eq_zero {i : Fin A.n}
     (h : ∀ φ : 𝓓(A.image i, F), ∫ z, η z ((complexAntilinearPartL (fderiv ℝ (φ : ℂ → F) z) +
       A.chartZeroOrder D i z ((φ : ℂ → F) z)) 1) = 0) :
     ∃ g : ℂ → F →L[ℝ] ℝ, ContDiffOn ℝ ∞ g (A.image i) ∧ η =ᵐ[volume.restrict (A.image i)] g := by
-  have hZ' : ContDiffOn ℝ ∞ (A.chartZeroOrder D i)
-      ((A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet) := by
-    simpa only [inter_univ] using A.contDiffOn_chartZeroOrder hD hDs isOpen_univ i
-  have hZ := hZ'.mono
-    ((A.image_subset_chart_image_closure_dom i).trans (A.chart_image_closure_dom_subset i))
+  have hZ := A.contDiffOn_chartZeroOrder_image hD hDs i
   -- The planar form of the equation: `J = i` and `S = 2 Zᵢ(·)(1)`.
   refine exists_contDiffOn_ae_eq_of_forall_integral_apply_cauchyRiemann_eq_zero
     (J := fun _ ↦ lsmul ℝ ℂ Complex.I) (S := fun z ↦ (2 : ℝ) •
