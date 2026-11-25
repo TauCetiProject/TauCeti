@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import Mathlib.GroupTheory.OrderOfElement
+import TauCeti.Algebra.Polynomial.Monic
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Companion
 
 /-!
@@ -14,8 +15,8 @@ import TauCeti.LinearAlgebra.Matrix.Charpoly.Companion
 
 The negacyclic shift `Matrix.negaShift R n` on `Rⁿ` sends `eᵢ ↦ eᵢ₊₁` for `i + 1 < n` and
 `e_{n-1} ↦ -e₀`. Over any ring its `n`-th power is `-1` (`Matrix.negaShift_pow_eq_neg_one`), so
-for `n ≥ 1` it has order `2n` as soon as `-1 ≠ 1` (`Matrix.orderOf_negaShift`). Up to relabelling it
-is the companion matrix of `Xⁿ + 1`, which is therefore its characteristic polynomial
+for `n ≥ 1` it has order `2n` as soon as `-1 ≠ 1` (`Matrix.orderOf_negaShift`). Its entries are
+those of the companion matrix of `Xⁿ + 1`, which is therefore its characteristic polynomial
 (`Matrix.charpoly_negaShift`).
 
 Over `ℤ` the negacyclic shift is the Coxeter element of type `Bₙ` in the `ε`-model.
@@ -97,33 +98,28 @@ theorem orderOf_negaShift {n : ℕ} (hn : 1 ≤ n) (hR : (-1 : R) ≠ 1) :
     · have := congrFun (congrFun h ⟨k, by omega⟩) 0
       rw [negaShift_pow_apply hkn] at this
       simp only [Fin.val_zero, Matrix.one_apply, Fin.ext_iff] at this
-      rw [ite_eq_right (show k ≠ 0 by omega)] at this
+      have hk0' : k ≠ 0 := by omega
+      rw [ite_eq_right hk0'] at this
       split_ifs at this <;> first | omega | exact absurd this (by simp)
   · obtain ⟨j, rfl⟩ : ∃ j, k = (m + 1) + j := ⟨k - (m + 1), by omega⟩
     have := congrFun (congrFun h ⟨j, by omega⟩) 0
     rw [pow_add, negaShift_pow_eq_neg_one, neg_one_mul, Matrix.neg_apply,
       negaShift_pow_apply (by omega)] at this
     simp only [Fin.val_zero, Matrix.one_apply, Fin.ext_iff] at this
-    rw [ite_eq_right (show j ≠ 0 by omega)] at this
+    have hj : j ≠ 0 := by omega
+    rw [ite_eq_right hj] at this
     split_ifs at this <;> first | omega | exact absurd this (by simp)
 
 end Ring
 
-/-- **The negacyclic shift on `Rⁿ` has characteristic polynomial `Xⁿ + 1`** for `n ≥ 1`: up to
-relabelling, it is the companion matrix of `Xⁿ + 1`. -/
+/-- **The negacyclic shift on `Rⁿ` has characteristic polynomial `Xⁿ + 1`** for `n ≥ 1`: it has
+the entries of the companion matrix of `Xⁿ + 1`. -/
 theorem charpoly_negaShift {R : Type*} [CommRing R] [Nontrivial R] {n : ℕ} (hn : 1 ≤ n) :
     (negaShift R n).charpoly = X ^ n + 1 := by
-  have hdeg : (X ^ n + 1 : R[X]).natDegree = n := by
-    rw [natDegree_add_eq_left_of_natDegree_lt (by simp; omega), natDegree_X_pow]
-  have hmon : (X ^ n + 1 : R[X]).Monic := by
-    simpa using monic_X_pow_add_C (1 : R) (n := n) (by omega)
-  have h : negaShift R n =
-      reindex (finCongr hdeg) (finCongr hdeg) (X ^ n + 1 : R[X]).companion := by
-    ext a b
-    simp only [reindex_apply, submatrix_apply, finCongr_symm, finCongr_apply, companion_apply,
-      Fin.val_cast, negaShift_apply, hdeg, coeff_add, coeff_X_pow, coeff_one]
-    split_ifs <;> first | omega | simp
-  rw [h, charpoly_reindex, charpoly_companion hmon]
+  refine charpoly_eq_of_apply_eq_companion (monic_X_pow_add_one (by omega))
+    (by rw [← C_1, natDegree_X_pow_add_C]) fun a b => ?_
+  simp only [negaShift_apply, coeff_add, coeff_X_pow, coeff_one]
+  split_ifs <;> first | omega | simp
 
 end Matrix
 

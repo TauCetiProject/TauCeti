@@ -60,9 +60,8 @@ private theorem flipPair_mul_apply {k : Type*} (M : Matrix (Fin (m + 3)) k ℤ) 
   · simp [h1, sum_ite_val_eq]
   · by_cases h2 : a.val = m + 2
     · simp [h2, sum_ite_val_eq]
-    · have := a.isLt
-      simp [h1, h2, show a.val < m + 1 by omega]
-
+    · have h3 : a.val < m + 1 := by have := a.isLt; omega
+      simp [h1, h2, h3]
 
 /-- The fork reflection `s_{n-1}` of type `Dₙ` is the signed swap of the last two coordinates. -/
 private theorem epsD_mul_reflMatrix_last (i : Fin (m + 3)) (hi : i.val = m + 2) :
@@ -82,64 +81,48 @@ theorem epsD_mul_reflMatrix_last_apply (i : Fin (m + 3)) (hi : i.val = m + 2) (a
       else if a.val = m + 2 then -epsD m ⟨m + 1, by omega⟩ j else epsD m a j := by
   rw [epsD_mul_reflMatrix_last i hi, flipPair_mul_apply]
 
-/-! The simple reflections `sᵢ`, `i < n - 1`, are the transpositions `(i i+1)` in the `ε`-model.
-We treat separately the chain nodes `i < n - 3`, the branch node `i = n - 3` and the node
-`i = n - 2` before the fork. -/
+/-- The simple roots of type `D_{m+3}` other than the last are the simple roots of type
+`A_{m+2}`. -/
+private theorem epsD_castSucc (a : Fin (m + 3)) (j : Fin (m + 2)) :
+    epsD m a j.castSucc = epsA (m + 2) a j := by
+  rw [epsD_apply, epsA_apply, Fin.val_castSucc, ite_eq_left j.isLt]
 
--- Splitting by node lets `simp` settle the branches of `CartanMatrix.D` before `split_ifs`; the
--- three cases are separate declarations because together they exceed the default heartbeat budget.
+/-- The Cartan matrix of type `D_{m+3}` without its last row and column is that of type
+`A_{m+2}`. -/
+private theorem cartanMatrix_D_castSucc (i j : Fin (m + 2)) :
+    CartanMatrix.D (m + 3) i.castSucc j.castSucc = CartanMatrix.A (m + 2) i j := by
+  simp only [CartanMatrix.D, CartanMatrix.A, Matrix.of_apply, Fin.ext_iff, Fin.val_castSucc]
+  split_ifs <;> omega
 
-private theorem epsD_mul_reflMatrix_chain (i : Fin (m + 3)) (hi : i.val < m) :
-    epsD m * reflMatrix (CartanMatrix.D (m + 3)) i =
-      permMatrixHom (R := ℤ) (Equiv.swap i ⟨i.val + 1, by omega⟩) * epsD m := by
-  ext a j
-  rw [mul_reflMatrix_apply, permMatrixHom_mul_apply, Equiv.symm_swap]
-  have h2 : ¬ (m + 3 ≤ 2) := by omega
-  have h3 : i.val + 2 < m + 3 := by omega
-  have h4 : ¬ (i.val + 3 = m + 3) := by omega
-  have h5 : ¬ (i.val + 2 = m + 3 ∨ i.val + 1 = m + 3) := by omega
-  have h6 : i.val < m + 2 := by omega
-  simp only [epsD_apply, CartanMatrix.D, Matrix.of_apply, Equiv.swap_apply_def, Fin.ext_iff, h2, h3,
-    h4, h5, h6, ite_false, and_true, and_false, false_and]
-  split_ifs <;> (try simp only at *) <;> omega
+/-- The last simple root of type `D_{m+3}` is joined to the branch node `m` only. -/
+private theorem cartanMatrix_D_last_castSucc (i : Fin (m + 2)) :
+    CartanMatrix.D (m + 3) (Fin.last (m + 2)) i.castSucc = if i.val = m then -1 else 0 := by
+  simp only [CartanMatrix.D, Matrix.of_apply, Fin.ext_iff, Fin.val_castSucc, Fin.val_last,
+    or_true, and_true]
+  split_ifs <;> omega
 
-private theorem epsD_mul_reflMatrix_branch (i : Fin (m + 3)) (hi : i.val = m) :
-    epsD m * reflMatrix (CartanMatrix.D (m + 3)) i =
-      permMatrixHom (R := ℤ) (Equiv.swap i ⟨i.val + 1, by omega⟩) * epsD m := by
-  ext a j
-  rw [mul_reflMatrix_apply, permMatrixHom_mul_apply, Equiv.symm_swap]
-  have h2 : ¬ (m + 3 ≤ 2) := by omega
-  have h3 : m + 2 < m + 3 := by omega
-  have h5 : ¬ (m + 2 = m + 3 ∨ m + 1 = m + 3) := by omega
-  have h6 : m < m + 2 := by omega
-  simp only [epsD_apply, CartanMatrix.D, Matrix.of_apply, Equiv.swap_apply_def, Fin.ext_iff, hi,
-    h2, h3, h5, h6, ite_false, ite_true, and_true, and_false, true_and]
-  split_ifs <;> (try simp only [not_true_eq_false] at *) <;>
-    omega
-
-private theorem epsD_mul_reflMatrix_pre (i : Fin (m + 3)) (hi : i.val = m + 1) :
-    epsD m * reflMatrix (CartanMatrix.D (m + 3)) i =
-      permMatrixHom (R := ℤ) (Equiv.swap i ⟨i.val + 1, by omega⟩) * epsD m := by
-  ext a j
-  rw [mul_reflMatrix_apply, permMatrixHom_mul_apply, Equiv.symm_swap]
-  have h2 : ¬ (m + 3 ≤ 2) := by omega
-  have h3 : ¬ (m + 1 + 2 < m + 3) := by omega
-  have h4 : ¬ (m + 1 + 3 = m + 3) := by omega
-  have h6 : m + 1 < m + 2 := by omega
-  simp only [epsD_apply, CartanMatrix.D, Matrix.of_apply, Equiv.swap_apply_def, Fin.ext_iff, hi,
-    h2, h3, h4, h6, ite_false, ite_true, and_false, false_and]
-  split_ifs <;> (try simp only [not_true_eq_false, and_true, true_or] at *) <;>
-    omega
-
-/-- The simple reflections `s₀, …, s_{n-2}` of type `Dₙ` are transpositions in the `ε`-model. -/
+/-- The simple reflections `s₀, …, s_{n-2}` of type `Dₙ` are transpositions in the `ε`-model: on
+the first `n - 1` columns this is the type-`A_{n-1}` calculation `epsA_mul_reflMatrix`, and the
+last column is checked directly. -/
 theorem epsD_mul_reflMatrix_of_lt (i : Fin (m + 3)) (hi : i.val + 1 < m + 3) :
     epsD m * reflMatrix (CartanMatrix.D (m + 3)) i =
       permMatrixHom (R := ℤ) (Equiv.swap i ⟨i.val + 1, hi⟩) * epsD m := by
-  rcases Nat.lt_or_ge i.val m with h | h
-  · exact epsD_mul_reflMatrix_chain i h
-  · rcases Nat.eq_or_lt_of_le h with h' | h'
-    · exact epsD_mul_reflMatrix_branch i h'.symm
-    · exact epsD_mul_reflMatrix_pre i (by omega)
+  obtain ⟨i, rfl⟩ : ∃ k : Fin (m + 2), k.castSucc = i := ⟨⟨i.val, by omega⟩, Fin.ext (by simp)⟩
+  have hs : (⟨i.castSucc.val + 1, hi⟩ : Fin (m + 3)) = i.succ := Fin.ext (by simp)
+  rw [hs]
+  ext a j
+  rw [mul_reflMatrix_apply, permMatrixHom_mul_apply, Equiv.symm_swap]
+  induction j using Fin.lastCases with
+  | last =>
+    rw [cartanMatrix_D_last_castSucc]
+    simp only [epsD_apply, Equiv.swap_apply_def, Fin.ext_iff, apply_ite Fin.val, Fin.val_castSucc,
+      Fin.val_succ, Fin.val_last, lt_irrefl, ite_false]
+    split_ifs <;> omega
+  | cast j =>
+    have h := congrFun (congrFun (epsA_mul_reflMatrix i) a) j
+    rw [mul_reflMatrix_apply, permMatrixHom_mul_apply,
+      BraidGroup.transposition_eq_swap_castSucc_succ, Equiv.symm_swap] at h
+    simpa only [epsD_castSucc, cartanMatrix_D_castSucc] using h
 
 /-- The Coxeter element of type `D_{m+3}` in the `ε`-model: block diagonal, with the negacyclic
 shift on the first `m + 2` coordinates and `-1` on the last. -/

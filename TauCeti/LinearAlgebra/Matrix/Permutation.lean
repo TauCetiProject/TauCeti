@@ -12,8 +12,9 @@ public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 # Permutation matrices and nonnegative sums of them
 
 Left multiplication by the permutation matrix `Matrix.permMatrixHom σ` permutes rows
-(`Equiv.Perm.permMatrixHom_mul_apply`), and over a nontrivial semiring `Matrix.permMatrixHom σ` has
-the order of `σ` (`Equiv.Perm.orderOf_permMatrixHom`).
+(`Equiv.Perm.permMatrixHom_mul_apply`). Over a nontrivial semiring `Matrix.permMatrixHom` is
+injective (`Equiv.Perm.permMatrixHom_injective`), so `Matrix.permMatrixHom σ` has the order of `σ`
+(`Equiv.Perm.orderOf_permMatrixHom`).
 
 Each permutation's weight bounds the entries on its diagonal in a nonnegative weighted
 sum of permutation matrices. This lets support arguments recover a whole permutation
@@ -39,14 +40,18 @@ theorem permMatrixHom_mul_apply {n k R : Type*} [Fintype n] [DecidableEq n] [Non
   rw [Matrix.permMatrixHom_apply, Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul,
     Matrix.submatrix_apply, id, Equiv.Perm.inv_def]
 
-/-- **A permutation matrix has the order of its permutation**, over a nontrivial semiring:
-`Matrix.permMatrixHom` is injective. -/
+/-- **`Matrix.permMatrixHom` is injective** over a nontrivial semiring. -/
+theorem permMatrixHom_injective {n R : Type*} [Fintype n] [DecidableEq n] [NonAssocSemiring R]
+    [Nontrivial R] : Function.Injective (Matrix.permMatrixHom : Perm n →* Matrix n n R) :=
+  fun σ τ h => by
+    simp only [Matrix.permMatrixHom_apply, Equiv.Perm.permMatrix] at h
+    refine inv_injective <| Equiv.ext fun x => Option.some_injective _ ?_
+    rw [← Equiv.toPEquiv_apply, ← Equiv.toPEquiv_apply, PEquiv.toMatrix_injective h]
+
+/-- **A permutation matrix has the order of its permutation**, over a nontrivial semiring. -/
 theorem orderOf_permMatrixHom {n R : Type*} [Fintype n] [DecidableEq n] [Semiring R]
-    [Nontrivial R] (σ : Perm n) : orderOf (Matrix.permMatrixHom (R := R) σ) = orderOf σ := by
-  refine orderOf_injective (Matrix.permMatrixHom : Perm n →* Matrix n n R) (fun σ τ h => ?_) σ
-  simp only [Matrix.permMatrixHom_apply, Equiv.Perm.permMatrix] at h
-  refine inv_injective <| Equiv.ext fun x => Option.some_injective _ ?_
-  rw [← Equiv.toPEquiv_apply, ← Equiv.toPEquiv_apply, PEquiv.toMatrix_injective h]
+    [Nontrivial R] (σ : Perm n) : orderOf (Matrix.permMatrixHom (R := R) σ) = orderOf σ :=
+  orderOf_injective _ permMatrixHom_injective σ
 
 end Equiv.Perm
 

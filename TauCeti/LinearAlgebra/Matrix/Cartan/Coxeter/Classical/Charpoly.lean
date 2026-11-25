@@ -21,9 +21,9 @@ In the simple-root basis, the Coxeter element `s₀ s₁ ⋯ s_{n-1}` has charac
 * `Xⁿ + 1` for `Bₙ` and `Cₙ` (`n ≥ 1`),
 * `(X^{n-1} + 1)(X + 1)` for `Dₙ` (`n ≥ 3`).
 
-For `Aₙ` the Coxeter element is, up to relabelling the indices, the companion matrix of
-`1 + X + ⋯ + Xⁿ` (`TauCeti.Coxeter.coxeterElement_A_apply`), and `Polynomial.charpoly_companion`
-gives its characteristic polynomial; the negacyclic shift has characteristic polynomial `Xⁿ + 1`
+For `Aₙ` the Coxeter element has the entries of the companion matrix of `1 + X + ⋯ + Xⁿ`
+(`TauCeti.Coxeter.coxeterElement_A_apply`), and `Polynomial.charpoly_eq_of_apply_eq_companion` gives
+its characteristic polynomial; the negacyclic shift has characteristic polynomial `Xⁿ + 1`
 (`Matrix.charpoly_negaShift`). The `ε`-models of
 `TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical.B` and
 `TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical.D` intertwine the Coxeter element with the
@@ -68,19 +68,15 @@ theorem charpoly_coxeterElement_D {n : ℕ} (hn : 3 ≤ n) :
     (.of_leftRegular isLeftRegular_epsD)) epsD_mul_coxeterElement.symm).symm.trans
     (charpoly_negaD m)
 
-/-- **The Coxeter element of type `Aₙ` has characteristic polynomial `1 + X + ⋯ + Xⁿ`**: up to
-relabelling, it is the companion matrix of that polynomial. -/
+/-- **The Coxeter element of type `Aₙ` has characteristic polynomial `1 + X + ⋯ + Xⁿ`**: it has
+the entries of the companion matrix of that polynomial. -/
 theorem charpoly_coxeterElement_A (n : ℕ) :
     (coxeterElement (CartanMatrix.A n)).charpoly = ∑ i ∈ Finset.range (n + 1), X ^ i := by
-  have hdeg : (∑ i ∈ Finset.range (n + 1), (X : ℤ[X]) ^ i).natDegree = n := natDegree_geom_sum_X n
-  have h : coxeterElement (CartanMatrix.A n) = reindex (finCongr hdeg) (finCongr hdeg)
-      (∑ i ∈ Finset.range (n + 1), (X : ℤ[X]) ^ i).companion := by
-    ext a k
-    simp only [coxeterElement_A_apply, reindex_apply, submatrix_apply, finCongr_symm,
-      finCongr_apply, companion_apply, Fin.val_cast, hdeg, finsetSum_coeff, coeff_X_pow,
-      Finset.sum_ite_eq, Finset.mem_range]
-    split_ifs <;> omega
-  rw [h, charpoly_reindex, charpoly_companion (monic_geom_sum_X (Nat.succ_ne_zero n))]
+  refine charpoly_eq_of_apply_eq_companion (monic_geom_sum_X (Nat.succ_ne_zero n))
+    (natDegree_geom_sum_X n) fun a k => ?_
+  simp only [coxeterElement_A_apply, finsetSum_coeff, coeff_X_pow, Finset.sum_ite_eq,
+    Finset.mem_range]
+  split_ifs <;> omega
 
 end TauCeti.Coxeter
 

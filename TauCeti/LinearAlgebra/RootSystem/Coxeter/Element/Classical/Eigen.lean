@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Classical.Basic
 public import TauCeti.RingTheory.Polynomial.ComplexRoots
+import TauCeti.Algebra.Polynomial.Monic
 
 /-!
 # Eigenvalues of the classical Coxeter elements
@@ -120,8 +121,7 @@ theorem roots_X_pow_add_one_mul_X_add_one {n : ℕ} (hn : 2 ≤ n) :
         Multiset ℂ) := by
   obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
   simp only [Nat.add_sub_cancel]
-  have hmon : (X ^ k + 1 : ℂ[X]).Monic := by
-    simpa using monic_X_pow_add_C (1 : ℂ) (n := k) (by omega)
+  have hmon : (X ^ k + 1 : ℂ[X]).Monic := monic_X_pow_add_one (by omega)
   have h1 : (X + 1 : ℂ[X]) = X + C 1 := by simp
   rw [roots_mul (mul_ne_zero hmon.ne_zero (h1 ▸ X_add_C_ne_zero 1)),
     roots_X_pow_add_one, h1, roots_X_add_C, dExponents_succ, List.map_append,

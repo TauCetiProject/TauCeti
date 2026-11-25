@@ -58,8 +58,8 @@ theorem mul_prod_map_finRange_succ_eq_permMatrixHom_finRotate_mul_mul
       (permMatrixHom (R := R) (finRotate (n + 1)) * L) * E := by
   have hswap : ∀ i : Fin n, E * f i.castSucc =
       permMatrixHom (R := R) (TauCeti.BraidGroup.transposition (n := n + 1) i) * E := fun i => by
-    rw [h i.castSucc (by simp), TauCeti.BraidGroup.transposition_eq_swap_castSucc_succ,
-      show (⟨i.castSucc.val + 1, by simp⟩ : Fin (n + 1)) = i.succ from Fin.ext (by simp)]
+    have hi : (⟨i.castSucc.val + 1, by simp⟩ : Fin (n + 1)) = i.succ := Fin.ext (by simp)
+    rw [h i.castSucc (by simp), TauCeti.BraidGroup.transposition_eq_swap_castSucc_succ, hi]
   rw [List.finRange_succ_last]
   simp only [List.map_append, List.prod_append, List.map_map, Function.comp_def, List.map_cons,
     List.map_nil, List.prod_cons, List.prod_nil, Matrix.mul_one, ← Matrix.mul_assoc,

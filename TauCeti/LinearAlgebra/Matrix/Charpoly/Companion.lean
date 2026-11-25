@@ -58,7 +58,8 @@ monodromies `h_∞` and `h_0⁻¹` of a hypergeometric differential equation are
 * `Polynomial.leftMulMatrix_root_eq_companion`: for monic `p`, the matrix of multiplication by the
   root of `AdjoinRoot p` in the power basis `1, root p, …` is the companion matrix.
 * `Polynomial.charpoly_companion`: for monic `p` over any commutative ring, the characteristic
-  polynomial of the companion matrix is `p`.
+  polynomial of the companion matrix is `p`; `Polynomial.charpoly_eq_of_apply_eq_companion` states
+  it for any matrix with the entries of the companion matrix.
 * `Polynomial.det_companion`: its determinant is `(-1) ^ d * p.coeff 0`.
 * `Polynomial.minpoly_companion`: its minimal polynomial is `p`, so a companion matrix is
   non-derogatory.
@@ -129,6 +130,18 @@ theorem charpoly_companion (hp : p.Monic) : p.companion.charpoly = p := by
   rw [← leftMulMatrix_root_eq_companion hp]
   exact (charpoly_leftMulMatrix (AdjoinRoot.powerBasis' hp)).trans
     (AdjoinRoot.minpoly_root_of_monic hp)
+
+/-- **Recognizing a companion matrix**: if `p` is monic of natural degree `n` and the entries of the
+`n × n` matrix `M` are those of `p.companion`, then `M` has characteristic polynomial `p`. The
+entries are stated over `Fin n`, so `M` need not be reindexed along `p.natDegree = n`. -/
+theorem charpoly_eq_of_apply_eq_companion (hp : p.Monic) {n : ℕ} (hn : p.natDegree = n)
+    {M : Matrix (Fin n) (Fin n) R}
+    (hM : ∀ i j : Fin n,
+      M i j = if (i : ℕ) = j + 1 then 1 else if (j : ℕ) + 1 = n then -p.coeff i else 0) :
+    M.charpoly = p := by
+  subst hn
+  have h : M = p.companion := Matrix.ext fun i j => by rw [hM, companion_apply]
+  rw [h, charpoly_companion hp]
 
 /-- The determinant of the companion matrix of a monic polynomial `p` of natural degree `d` is
 `(-1) ^ d * p.coeff 0`. -/
