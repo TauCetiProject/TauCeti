@@ -374,13 +374,13 @@ ideal sheaf is a composite of first-order thickenings. -/
 theorem factor_firstOrder (i : Z ⟶ X) [IsClosedImmersion i] {n : ℕ} (h : i.ker ^ (n + 2) = ⊥) :
     IsFirstOrderThickening (i.ker ^ (n + 1)).subschemeι ∧
       IsThickening (IsClosedImmersion.lift (i.ker ^ (n + 1)).subschemeι i
-        (by simpa using i.ker.pow_le_self n.succ_ne_zero)) ∧
+        (i.ker.ker_subschemeι_pow_le n.succ_ne_zero)) ∧
       (IsClosedImmersion.lift (i.ker ^ (n + 1)).subschemeι i
-        (by simpa using i.ker.pow_le_self n.succ_ne_zero)).ker ^ (n + 1) = ⊥ := by
+        (i.ker.ker_subschemeι_pow_le n.succ_ne_zero)).ker ^ (n + 1) = ⊥ := by
   -- The `(n + 1)`-st power of the ideal sheaf of `Z ⟶ X'` is the inverse image of `I ^ (n + 1)`,
   -- which vanishes on `X'`.
   have hker : (IsClosedImmersion.lift (i.ker ^ (n + 1)).subschemeι i
-      (by simpa using i.ker.pow_le_self n.succ_ne_zero)).ker ^ (n + 1) = ⊥ :=
+      (i.ker.ker_subschemeι_pow_le n.succ_ne_zero)).ker ^ (n + 1) = ⊥ :=
     Scheme.Hom.ker_pow_eq_bot_of_ker_comp_pow_le _ (i.ker ^ (n + 1)).subschemeι
       (by rw [IsClosedImmersion.lift_fac, Scheme.IdealSheafData.ker_subschemeι])
   refine ⟨⟨?_⟩, isThickening_of_ker_pow_eq_bot _ (Nat.succ_ne_zero n) hker, hker⟩
