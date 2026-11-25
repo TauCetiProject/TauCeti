@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 public import TauCeti.NumberTheory.NumberField.Global.AdelicPoints.Basic
 public import TauCeti.Topology.Algebra.PointTopology.HopfIdeal
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
+import TauCeti.NumberTheory.NumberField.Global.AdelicPoints.HopfIdeal
 
 /-!
 # The centre on adelic points
@@ -24,18 +25,15 @@ on that ideal, and proves that
 * `Z(𝔸_K)` is closed in `G(𝔸_K)`, because `𝔸_K` is Hausdorff and the point topology makes every
   evaluation continuous;
 * `Z(𝔸_K)` lies in the centre of the group `G(𝔸_K)`, because its points are universally central;
-* `Z(K) = Z(𝔸_K) ∩ G(K)` along the rational diagonal: a rational point kills the defining ideal
-  after extending its coefficients to `𝔸_K` exactly when it kills it over `K`, since `K → 𝔸_K` is
-  injective. This needs `𝔸_K` nontrivial, which holds for number fields; for `R = K = 𝔽_p` there
-  are no places and `𝔸_K` is the zero ring.
+* `Z(K) = Z(𝔸_K) ∩ G(K)` along the rational diagonal, the case of the centre of the statement for
+  any Hopf ideal in `TauCeti.NumberTheory.NumberField.Global.AdelicPoints.HopfIdeal`. This needs
+  `𝔸_K` nontrivial, which holds for number fields; for `R = K = 𝔽_p` there are no places and
+  `𝔸_K` is the zero ring.
 
 ## Main declarations
 
 * `TauCeti.AdelicPoints.centerPoints`: the adelic points `Z(𝔸_K)` of the centre.
 * `TauCeti.AdelicPoints.isClosed_centerPoints`, `TauCeti.AdelicPoints.centerPoints_le_center`.
-* `TauCeti.AdelicPoints.comap_diagonal_quotientPointsSubgroup`,
-  `TauCeti.AdelicPoints.map_diagonal_quotientPointsSubgroup`: for the closed subgroup scheme cut
-  out by any Hopf ideal, the rational points are the adelic points meeting `G(K)`.
 * `TauCeti.AdelicPoints.comap_diagonal_centerPoints`,
   `TauCeti.AdelicPoints.centerPoints_inf_range_diagonal`: `Z(K) = Z(𝔸_K) ∩ G(K)`.
 * `TauCeti.AdelicPoints.centerPoints_eq_top`: for a commutative group, such as `𝔾ₘ`, every adelic
@@ -85,42 +83,9 @@ theorem centerPoints_eq_top [Coalgebra.IsCocomm K H] : centerPoints R K H = ⊤ 
   rw [centerPoints, (centerDefiningIdeal_eq_bot_iff_isCocomm H).2 inferInstance,
     quotientPointsSubgroup_bot]
 
-/-! ### Rational points of closed subgroups -/
-
-variable {R K H} [Nontrivial (AdeleRing R K)]
-
-/-- A rational point lies in the adelic points of the closed subgroup scheme cut out by a Hopf
-ideal `I` exactly when it lies in its rational points. -/
-@[simp]
-theorem diagonal_mem_quotientPointsSubgroup_iff (I : HopfIdeal K H) (g : WithConv (H →ₐ[K] K)) :
-    diagonal R K H g ∈ quotientPointsSubgroup H I (CommAlgCat.of K (AdeleRing R K)) ↔
-      g ∈ quotientPointsSubgroup H I (CommAlgCat.of K K) := by
-  have hg : diagonal R K H g = AlgHom.mapValue (Algebra.ofId K (AdeleRing R K)) g := by
-    ext h
-    rw [diagonal_apply_apply, AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
-      Algebra.ofId_apply]
-  rw [hg]
-  exact mapValue_mem_quotientPointsSubgroup_iff H I (algebraMap K (AdeleRing R K)).injective g
-
-variable (R K H)
-
-/-- The rational points of the closed subgroup scheme cut out by `I` are the preimage of its
-adelic points under the rational diagonal. -/
-theorem comap_diagonal_quotientPointsSubgroup (I : HopfIdeal K H) :
-    (quotientPointsSubgroup H I (CommAlgCat.of K (AdeleRing R K))).comap (diagonal R K H) =
-      quotientPointsSubgroup H I (CommAlgCat.of K K) :=
-  Subgroup.ext (diagonal_mem_quotientPointsSubgroup_iff I)
-
-/-- The image under the rational diagonal of the rational points of the closed subgroup scheme
-cut out by `I` is the intersection of its adelic points with the image of `G(K)`. -/
-theorem map_diagonal_quotientPointsSubgroup (I : HopfIdeal K H) :
-    (quotientPointsSubgroup H I (CommAlgCat.of K K)).map (diagonal R K H) =
-      quotientPointsSubgroup H I (CommAlgCat.of K (AdeleRing R K)) ⊓ (diagonal R K H).range := by
-  rw [← comap_diagonal_quotientPointsSubgroup R K H I, Subgroup.map_comap_eq, inf_comm]
-
 /-! ### Rational points of the centre -/
 
-variable {R K H}
+variable {R K H} [Nontrivial (AdeleRing R K)]
 
 /-- A rational point lies in `Z(𝔸_K)` exactly when it lies in `Z(K)`. -/
 @[simp]
