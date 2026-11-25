@@ -46,6 +46,8 @@ the homology of a space exhausted by subspaces whose successive relative homolog
 
 * `TauCeti.ModuleCat.iSup_range_eq_top_of_isColimit`: the ranges of the legs of a colimit cocone
   span its point.
+* `TauCeti.ModuleCat.colimit_linearMap_ext`: two linear maps out of a colimit of modules agree as
+  soon as they agree on the image of every member of the diagram.
 * `TauCeti.ModuleCat.finite_coproduct_of_finite_support`: a coproduct of finite modules is finite if
   only finitely many summands are nonzero.
 * `TauCeti.ModuleCat.isIso_of_isIso_app_self`: a natural transformation between
@@ -95,6 +97,20 @@ theorem iSup_range_eq_top_of_isColimit {J : Type*} [Category* J] {F : J ⥤ Modu
     simpa [Submodule.Quotient.mk_eq_zero] using
       Submodule.mem_iSup_of_mem j (LinearMap.mem_range_self (c.ι.app j).hom x)
   rw [← Submodule.ker_mkQ T, show T.mkQ = 0 from congr_arg Hom.hom h, LinearMap.ker_zero]
+
+/-- **Linear maps out of a colimit of modules are determined on the legs.** Two linear maps out of
+the colimit of a diagram of modules are equal as soon as they agree on the image of every member of
+the diagram. -/
+theorem colimit_linearMap_ext {J : Type*} [Category* J] {F : J ⥤ ModuleCat.{v} R} [HasColimit F]
+    {Q : Type v} [AddCommGroup Q] [Module R Q] {φ ψ : ↑(colimit F) →ₗ[R] Q}
+    (h : ∀ (j : J) (y : F.obj j), φ ((colimit.ι F j).hom y) = ψ ((colimit.ι F j).hom y)) :
+    φ = ψ := by
+  have hφψ : (_root_.ModuleCat.ofHom φ : colimit F ⟶ _root_.ModuleCat.of R Q) =
+      _root_.ModuleCat.ofHom ψ :=
+    colimit.hom_ext fun j ↦ _root_.ModuleCat.hom_ext (LinearMap.ext fun y ↦ by
+      simpa only [_root_.ModuleCat.hom_comp, _root_.ModuleCat.hom_ofHom, LinearMap.comp_apply]
+        using h j y)
+  simpa only [_root_.ModuleCat.hom_ofHom] using congrArg _root_.ModuleCat.Hom.hom hφψ
 
 /-- A natural transformation between colimit-preserving functors out of `ModuleCat R` is an
 isomorphism as soon as its component at `R` is. -/

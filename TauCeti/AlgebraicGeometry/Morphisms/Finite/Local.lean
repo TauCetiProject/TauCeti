@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
 
-import Mathlib.Tactic.Observe
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.TargetLocal
 
 /-!
 # Zariski locality of finite morphisms
@@ -32,10 +32,6 @@ theorem isFinite_morphismRestrict_of_cover
     {B : Type*} (U : B → Y.Opens)
     (hcover : V ≤ ⨆ b, U b) (hfin : ∀ b, IsFinite (f ∣_ U b)) :
     IsFinite (f ∣_ V) := by
-  observe hFinite : HasAffineProperty (@IsFinite : MorphismProperty Scheme.{u})
-    (fun X _ f _ ↦ IsAffine X ∧ RingHom.Finite (f.appTop).hom)
-  have : IsZariskiLocalAtTarget (@IsFinite : MorphismProperty Scheme.{u}) :=
-    @HasAffineProperty.instIsZariskiLocalAtTarget _ _ hFinite
   have : MorphismProperty.RespectsIso (@IsFinite : MorphismProperty Scheme.{u}) :=
     MorphismProperty.IsStableUnderBaseChange.respectsIso
   apply IsZariskiLocalAtTarget.of_iSup_eq_top (P := @IsFinite)

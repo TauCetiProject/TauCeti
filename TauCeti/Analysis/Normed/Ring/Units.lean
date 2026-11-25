@@ -8,11 +8,13 @@ module
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.RingTheory.Ideal.Nonunits
 public import Mathlib.RingTheory.Jacobson.Radical
+public import Mathlib.Topology.Algebra.IsOpenUnits
 
 /-!
 # Units and the Jacobson radical of normed rings
 
-In a normed ring with summable geometric series, `Ring.inverse` is continuous at every unit
+In a normed ring with summable geometric series, the units form an open subspace with continuous
+inversion (`NormedRing.instIsOpenUnits`), so `Ring.inverse` is continuous at every unit
 (`NormedRing.inverse_continuousAt`), but it jumps to `0` at the boundary of the open set of units.
 When the nonunits also form an open set, as in a complete discretely valued ring such as `ℤ_p`,
 there is no such boundary and `Ring.inverse` is continuous everywhere.
@@ -36,6 +38,11 @@ public section
 namespace NormedRing
 
 variable {R : Type*} [NormedRing R] [HasSummableGeomSeries R]
+
+/-- In a normed ring with summable geometric series, the units form an open subspace with
+continuous inversion. -/
+instance (priority := 100) instIsOpenUnits : IsOpenUnits R where
+  isOpenEmbedding_unitsVal := Units.isOpenEmbedding_val
 
 /-- If the nonunits of a normed ring with summable geometric series form an open set, then
 `Ring.inverse` is continuous: it is continuous at every unit, and locally zero at every nonunit. -/

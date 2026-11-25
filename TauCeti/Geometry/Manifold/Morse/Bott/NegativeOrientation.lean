@@ -94,7 +94,7 @@ def negativeNormalSpaceSignLocalSystemIso
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
     (hr : ∀ s, manifoldMorseIndex I f (i s) = r) :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
@@ -145,7 +145,7 @@ theorem negativeNormalSpaceSignLocalSystemIso_def
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
     (hr : ∀ s, manifoldMorseIndex I f (i s) = r) :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
@@ -178,7 +178,7 @@ theorem nonempty_vectorBundleOrientation_negativeNormalSpace_iff
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
     (hr : ∀ s, manifoldMorseIndex I f (i s) = r) :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)

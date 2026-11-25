@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.PowerSeries.Derivative
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.RingTheory.PowerSeries.Exp
 import Mathlib.Topology.Algebra.Polynomial
-import TauCeti.Analysis.Polynomial.Order
+import TauCeti.Analysis.Asymptotics.TruncatedPowerSeries
 import TauCeti.Analysis.SpecialFunctions.Complex.Exp.Limits
 import TauCeti.RingTheory.PowerSeries.Basic
 import TauCeti.RingTheory.PowerSeries.Derivative
@@ -565,8 +565,7 @@ theorem isBigO_rankOneFormalSolutionTrunc_residual_sub {f g : ℂ → ℂ} {F G 
   have hTR : (fun ζ ↦ (residualPoly κ μ (trunc (N + 1) F) (trunc (N + 1) G) p -
       trunc (N + 1) (rankOneOperator F G κ μ p)).eval (cexp (-ζ))) =O[l]
         fun ζ ↦ cexp (-ζ) ^ (N + 1) :=
-    (Polynomial.isBigO_eval_of_X_pow_dvd
-      (X_pow_dvd_residualPoly_sub_trunc F G κ μ p N)).comp_tendsto hw
+    Polynomial.isBigO_eval_of_X_pow_dvd hw (X_pow_dvd_residualPoly_sub_trunc F G κ μ p N)
   have hf' : (fun ζ ↦ f (cexp ζ) - (trunc (N + 1) F).eval (cexp (-ζ))) =O[l]
       fun ζ ↦ cexp (-ζ) ^ (N + 1) := by simpa only [eval_trunc, Complex.exp_neg] using hf
   have hg' : (fun ζ ↦ g (cexp ζ) - (trunc (N + 1) G).eval (cexp (-ζ))) =O[l]

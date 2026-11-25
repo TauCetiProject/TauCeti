@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Adjunction.Limits
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.Pasting
 
@@ -32,6 +33,11 @@ The canonical identifications of an iterated fibre product with a direct fibre p
 with maps in the first factor
 (`CategoryTheory.Limits.pullbackLeftPullbackSndIso_inv_naturality`) and in the second factor
 (`CategoryTheory.Limits.pullbackRightPullbackFstIso_hom_naturality`).
+
+Pullback squares are transported along an equivalence of categories `e : D ≌ D'`: a square in
+`D` with a side `F.map snd` is a pullback square exactly when its image under `e.functor` is,
+with `F ⋙ e.functor` replaced by an isomorphic functor `F'`
+(`CategoryTheory.isPullback_equivalence_map_iff`).
 -/
 
 public section
@@ -213,3 +219,35 @@ theorem pullbackRightPullbackFstIso_hom_naturality
   ext <;> simp
 
 end CategoryTheory.Limits
+
+namespace CategoryTheory
+
+section Equivalence
+
+variable {C : Type*} [Category* C] {D : Type*} [Category* D] {D' : Type*} [Category* D']
+  {F : C ⥤ D} {F' : C ⥤ D'} {e : D ≌ D'}
+  (i : F ⋙ e.functor ≅ F')
+
+/-- A square with a side `F.map snd` is a pullback square exactly when its image under the
+equivalence `e`, with `F ⋙ e.functor` replaced by `F'` through `i`, is a pullback square. -/
+lemma isPullback_equivalence_map_iff {X Y : D} {f : X ⟶ Y} {a b : C} {g : F.obj a ⟶ Y}
+    {fst : F.obj b ⟶ X} {snd : b ⟶ a} :
+    IsPullback (i.inv.app b ≫ e.functor.map fst) (F'.map snd) (e.functor.map f)
+      (i.inv.app a ≫ e.functor.map g) ↔ IsPullback fst (F.map snd) f g := by
+  have hsnd : F'.map snd ≫ i.inv.app a = i.inv.app b ≫ e.functor.map (F.map snd) :=
+    i.inv.naturality snd
+  constructor
+  · intro h
+    refine IsPullback.of_map e.functor (e.functor.map_injective ?_) ?_
+    · have := h.w
+      simp only [Category.assoc, reassoc_of% hsnd, cancel_epi] at this
+      simpa only [Functor.map_comp] using this
+    · exact h.of_iso (i.app b).symm (Iso.refl _) (i.app a).symm (Iso.refl _) (by simp) hsnd
+        (by simp) (by simp)
+  · intro h
+    exact (h.map e.functor).of_iso (i.app b) (Iso.refl _) (i.app a) (Iso.refl _)
+      (by simp) (i.hom.naturality snd) (by simp) (by simp)
+
+end Equivalence
+
+end CategoryTheory
