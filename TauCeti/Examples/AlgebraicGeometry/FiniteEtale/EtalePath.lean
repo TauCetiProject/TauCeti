@@ -24,7 +24,7 @@ geometric point `y : Spec Ω ⟶ Spec 𝔽_p`, with `Ω` an algebraic closure of
 isomorphic fields: `Ω` contains the transcendental element `t`.
 -/
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory AlgebraicGeometry PreGaloisCategory
 
 namespace TauCeti.FiniteEtaleScheme
 
@@ -34,11 +34,11 @@ variable (p : ℕ) [Fact p.Prime]
 itself are the elements of `Gal(𝔽_p^alg/𝔽_p)`, through the identification of the étale fundamental
 group with the absolute Galois group. -/
 example : Function.Bijective fun σ : Gal(AlgebraicClosure (ZMod p)/ZMod p) ↦
-    ((galContinuousMulEquivAutFiber (ZMod p) (AlgebraicClosure (ZMod p)) σ).asIso :
+    ((toAutContinuousMulEquiv _ Gal(AlgebraicClosure (ZMod p)/ZMod p) σ).asIso :
       EtalePath (Spec.map (CommRingCat.ofHom (algebraMap (ZMod p) (AlgebraicClosure (ZMod p)))))
         (Spec.map (CommRingCat.ofHom (algebraMap (ZMod p) (AlgebraicClosure (ZMod p)))))) :=
   Aut.isoEquiv.bijective.comp
-    (galContinuousMulEquivAutFiber (ZMod p) (AlgebraicClosure (ZMod p))).bijective
+    (toAutContinuousMulEquiv _ Gal(AlgebraicClosure (ZMod p)/ZMod p)).bijective
 
 /-- *test_postcomposition_simply_transitive*: `Gal(𝔽_p^alg/𝔽_p)` acts simply transitively on the
 étale paths from `Spec 𝔽_p^alg` to itself by postcomposition. -/
@@ -46,8 +46,10 @@ example (e₁ e₂ : EtalePath
       (Spec.map (CommRingCat.ofHom (algebraMap (ZMod p) (AlgebraicClosure (ZMod p)))))
       (Spec.map (CommRingCat.ofHom (algebraMap (ZMod p) (AlgebraicClosure (ZMod p)))))) :
     ∃! σ : Gal(AlgebraicClosure (ZMod p)/ZMod p),
-      galContinuousMulEquivAutFiber (ZMod p) (AlgebraicClosure (ZMod p)) σ • e₁ = e₂ :=
-  (galContinuousMulEquivAutFiber (ZMod p) (AlgebraicClosure (ZMod p))).toEquiv.existsUnique_congr
+      toAutContinuousMulEquiv
+          (fiber (Spec.map (CommRingCat.ofHom (algebraMap (ZMod p) (AlgebraicClosure (ZMod p))))))
+          Gal(AlgebraicClosure (ZMod p)/ZMod p) σ • e₁ = e₂ :=
+  (toAutContinuousMulEquiv _ Gal(AlgebraicClosure (ZMod p)/ZMod p)).toEquiv.existsUnique_congr
     (fun _ ↦ Iff.rfl) |>.mpr (Iso.existsUnique_smul_eq e₁ e₂)
 
 /-- *test_precomposition_simply_transitive*: `Gal(𝔽_p^alg/𝔽_p)` acts simply transitively on the
@@ -56,9 +58,10 @@ example (e₁ e₂ : EtalePath
       (Spec.map (CommRingCat.ofHom (algebraMap (ZMod p) (AlgebraicClosure (ZMod p)))))
       (Spec.map (CommRingCat.ofHom (algebraMap (ZMod p) (AlgebraicClosure (ZMod p)))))) :
     ∃! σ : Gal(AlgebraicClosure (ZMod p)/ZMod p),
-      MulOpposite.op (galContinuousMulEquivAutFiber (ZMod p) (AlgebraicClosure (ZMod p)) σ) • e₁ =
-        e₂ :=
-  (galContinuousMulEquivAutFiber (ZMod p) (AlgebraicClosure (ZMod p))).toEquiv.existsUnique_congr
+      MulOpposite.op (toAutContinuousMulEquiv
+          (fiber (Spec.map (CommRingCat.ofHom (algebraMap (ZMod p) (AlgebraicClosure (ZMod p))))))
+          Gal(AlgebraicClosure (ZMod p)/ZMod p) σ) • e₁ = e₂ :=
+  (toAutContinuousMulEquiv _ Gal(AlgebraicClosure (ZMod p)/ZMod p)).toEquiv.existsUnique_congr
     (fun _ ↦ Iff.rfl) |>.mpr (Iso.existsUnique_op_smul_eq e₁ e₂)
 
 /-- *test_path_between_different_fields*: every geometric point of `Spec 𝔽_p`, for instance at

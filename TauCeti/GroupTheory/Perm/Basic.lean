@@ -67,8 +67,9 @@ finite type sends as many points into a set as out of it
 preserves the total product or sum across both summands
 (`Equiv.Perm.prod_comp_inl_mul_prod_comp_inr`, `Equiv.Perm.sum_comp_inl_add_sum_comp_inr`), the
 total decrease of a natural-number valued function along a permutation equals the total increase
-(`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`), and a permutation fixing every point except
-possibly one is the identity (`Equiv.Perm.eq_one_of_forall_ne_apply_eq_self`).
+(`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`), a permutation fixing every point except possibly one
+is the identity (`Equiv.Perm.eq_one_of_forall_ne_apply_eq_self`), and a type admitting a
+transposition is nontrivial (`Equiv.Perm.IsSwap.nontrivial`, `Equiv.Perm.IsSwap.two_le_card`).
 -/
 
 public section
@@ -834,3 +835,19 @@ theorem swap_mul_mul_swap (hσ : Function.Involutive σ) (a : α) :
   rw [mul_assoc, Equiv.mul_swap_eq_swap_mul, hσ a, Equiv.swap_comm, Equiv.swap_mul_self_mul]
 
 end Function.Involutive
+
+namespace Equiv.Perm
+
+/-- If a type admits a transposition, it has at least two distinct elements. -/
+theorem IsSwap.nontrivial {α : Type*} [DecidableEq α] {τ : Perm α} (hτ : τ.IsSwap) :
+    Nontrivial α := by
+  obtain ⟨x, y, hxy, -⟩ := hτ
+  exact ⟨⟨x, y, hxy⟩⟩
+
+/-- On a finite type admitting a transposition, the cardinality is at least `2`. -/
+theorem IsSwap.two_le_card {α : Type*} [Fintype α] [DecidableEq α] {τ : Perm α} (hτ : τ.IsSwap) :
+    2 ≤ Fintype.card α := by
+  have := hτ.nontrivial
+  exact Fintype.one_lt_card
+
+end Equiv.Perm
