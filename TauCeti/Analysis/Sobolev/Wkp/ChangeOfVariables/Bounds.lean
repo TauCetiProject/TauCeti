@@ -39,6 +39,8 @@ and weak Hessian of `u ∘ Φ`, and the transfer of local `W^{k,p}` regularity o
   `‖D²(u ∘ Φ)‖ ≤ L² ‖D²u(Φ ·)‖ + L ‖∇u(Φ ·)‖` for the weak Hessian.
 * `TauCeti.Wkp.exists_value_eq_value_restrictL_of_w1pCompL`: if `u ∘ Φ` is `W^{k,p}` near a
   point, then so is `u` near its image.
+* `TauCeti.Wkp.IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_compL`: zero boundary values
+  of `u ∈ W^{2,p}(Ω)` on a boundary portion carry over to `u ∘ Φ`.
 -/
 
 public section
@@ -46,7 +48,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set TopologicalSpace
-open scoped InnerProductSpace ENNReal
+open scoped InnerProductSpace ENNReal ContDiff
 
 namespace TauCeti.Wkp
 
@@ -251,5 +253,33 @@ theorem exists_value_eq_value_restrictL_of_w1pCompL {Omega D V Ω' V'' : Opens E
     W1p.value_restrictL_ae (inf_le_left : Omega ⊓ V ≤ Omega) u,
     ae_restrict_mem (Omega ⊓ V).isOpen.measurableSet] with x h1 h2 h3 h4 h5 hx
   rw [h1, hw, h2, h3, hΦΨ hx, h4, h5]
+
+/-- **Zero boundary values along a straightening chart.** Let `Φ` be a change of variables of order
+two from `Ω'` into `Ω ∩ O`, with continuous left inverse `Ψ` mapping `Ω ∩ O` into `Ω'`, and let
+`Φ` be continuous on an open `U''` that it maps into `O`. If `χ u ∈ W₀^{1,p}(Ω)` for every smooth
+`χ` compactly supported in `O`, then `ψ (u ∘ Φ) ∈ W₀^{1,p}(Ω')` for every smooth `ψ` compactly
+supported in `U''`. This is
+`TauCeti.Wkp.IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_w1pCompL` for the first-order
+part of `u ∈ W^{2,p}(Ω)`. -/
+theorem IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_compL {Omega O Ω' U'' : Opens E}
+    {Ψ : E → E} (hΦ : IsChangeOfVariables 2 Ω' (Omega ⊓ O) Φ L c) (hp : p ≠ ⊤)
+    (hΦc : ContinuousOn Φ U'') (hΦU'' : MapsTo Φ U'' O) (hΨc : ContinuousOn Ψ (Omega ⊓ O : Opens E))
+    (hΨmaps : MapsTo Ψ (Omega ⊓ O : Opens E) Ω') (hΨΦ : LeftInvOn Ψ Φ Ω') {u : Wkp mu Omega p 2}
+    (hu0 : ∀ χ : E → ℝ, ContDiff ℝ ∞ χ → HasCompactSupport χ → tsupport χ ⊆ O →
+      ∃ w : W1p0 mu Omega p,
+        W1p.value (w : W1p mu Omega p) =ᵐ[mu.restrict Omega] fun x => χ x * value 2 u x)
+    (ψ : E → ℝ) (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψs : tsupport ψ ⊆ U'') :
+    ∃ w : W1p0 mu Ω' p, W1p.value (w : W1p mu Ω' p) =ᵐ[mu.restrict Ω']
+      fun x => ψ x * value 2 (compL hΦ (restrictL inf_le_left 2 u)) x := by
+  have hΦ1 : IsChangeOfVariables 1 Ω' (Omega ⊓ O) Φ L c := hΦ.mono one_le_two
+  obtain ⟨w, hw⟩ := hΦ1.exists_w1p0_value_ae_eq_mul_value_w1pCompL hp hΦc hΨc hΨmaps hΨΦ hΦU''
+    (u := lowerOrder 1 u) (fun χ hχ hχc hχs => by
+      simpa only [value_lowerOrder_one] using hu0 χ hχ hχc hχs) ψ hψ hψc hψs
+  refine ⟨w, hw.trans ?_⟩
+  filter_upwards [hΦ1.value_w1pCompL_ae hp (W1p.restrictL inf_le_left (lowerOrder 1 u)),
+    hΦ.ae_comp (W1p.value_restrictL_ae inf_le_left (lowerOrder 1 u)),
+    value_compL_ae hΦ (restrictL inf_le_left 2 u),
+    hΦ.ae_comp (value_restrictL_ae inf_le_left 2 u)] with x h1 h2 h3 h4
+  rw [h1, h2, h3, h4, value_lowerOrder_one]
 
 end TauCeti.Wkp
