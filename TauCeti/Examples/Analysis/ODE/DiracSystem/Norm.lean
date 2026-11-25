@@ -12,7 +12,8 @@ public import Mathlib.Analysis.Matrix.Normed
 # Checks for constant potentials of the Dirac system
 
 * **A purely imaginary constant potential.** For `q = ic` with `c` real, at `z = 0`,
-  `Θ = (cosh ct, -sinh ct)` and `Φ = (-sinh ct, cosh ct)`
+  the Neumann column is `(A, C) = (cosh ct, -sinh ct)` and the Dirichlet column is
+  `(B, D) = (-sinh ct, cosh ct)`
   (`TauCeti.Examples.DiracSystem.diracFundamentalMatrix_I_mul_const_zero`), and
   `det M = cosh² ct - sinh² ct = 1`
   (`TauCeti.Examples.DiracSystem.det_diracFundamentalMatrix_I_mul_const_zero`).
@@ -110,7 +111,8 @@ theorem exp_sqrt_two_lt_linfty_opNorm_diracFundamentalMatrix_one_add_I :
       simp [s]
     refine le_of_eq_of_le ?_ h'
     have hpos : 0 < Real.cosh √2 + s := by positivity
-    simp [Fin.sum_univ_two, e00, e01, -ofReal_add, abs_of_pos hpos, abs_of_pos hs]
+    simp only [Fin.sum_univ_two, NNReal.coe_add, coe_nnNorm, e00, e01, norm_neg, norm_real,
+      Real.norm_of_nonneg hpos.le, Real.norm_of_nonneg hs.le]
     ring
   have h2 : s * 2 = √2 * Real.sinh √2 := by
     simp only [s]

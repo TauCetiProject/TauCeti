@@ -65,13 +65,12 @@ theorem diracCoeff_const_zero (c : ℂ) (s : ℝ) :
 
 /-- `(Ω Q_c)² = |c|²`. -/
 private theorem diracCoeff_const_zero_mul_self (c : ℂ) :
-    (!![(c.re : ℂ), -(c.im : ℂ); -(c.im : ℂ), -(c.re : ℂ)] *
-      !![(c.re : ℂ), -(c.im : ℂ); -(c.im : ℂ), -(c.re : ℂ)]) = (‖c‖ : ℂ) ^ 2 • 1 := by
+    diracCoeff (fun _ ↦ c) 0 0 * diracCoeff (fun _ ↦ c) 0 0 = (‖c‖ : ℂ) ^ 2 • 1 := by
   have h : (‖c‖ : ℂ) ^ 2 = (c.re : ℂ) ^ 2 + (c.im : ℂ) ^ 2 := by
     rw [← Complex.ofReal_pow, Complex.sq_norm, Complex.normSq_apply]
     push_cast
     ring
-  rw [h]
+  rw [h, diracCoeff_const_zero]
   ext i j
   fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two] <;> ring
 
@@ -83,38 +82,37 @@ theorem diracFundamentalMatrix_const_zero (c : ℂ) (t : ℝ) :
       (Real.cosh (t * ‖c‖) : ℂ) • 1 + ((Real.sinh (t * ‖c‖) / ‖c‖ : ℝ) : ℂ) •
         !![(c.re : ℂ), -(c.im : ℂ); -(c.im : ℂ), -(c.re : ℂ)] := by
   rcases eq_or_ne c 0 with rfl | hc
-  · have h0 : (fun _ : ℝ ↦ (0 : ℂ)) = 0 := rfl
-    simp [h0, diracFundamentalMatrix_zero_potential, ← Matrix.one_fin_two]
-  set K : Matrix (Fin 2) (Fin 2) ℂ := !![(c.re : ℂ), -(c.im : ℂ); -(c.im : ℂ), -(c.re : ℂ)]
+  · simp [← Pi.zero_def, diracFundamentalMatrix_zero_potential, ← Matrix.one_fin_two]
   have hP : (fun s ↦ toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracCoeff (fun _ ↦ c) 0 s)) =
-      fun _ ↦ toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) K := by
-    ext1 s
-    rw [diracCoeff_const_zero]
-  have hKK : toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) K * toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) K =
-      (‖c‖ : ℂ) ^ 2 • 1 := by
+      fun _ ↦ toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracCoeff (fun _ ↦ c) 0 0) := by
+    simp only [diracCoeff_const_zero]
+  have hKK : toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracCoeff (fun _ ↦ c) 0 0) *
+      toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracCoeff (fun _ ↦ c) 0 0) = (‖c‖ : ℂ) ^ 2 • 1 := by
     rw [← map_mul, diracCoeff_const_zero_mul_self, map_smul, map_one]
   apply EquivLike.injective (toEuclideanCLM (n := Fin 2) (𝕜 := ℂ))
   rw [toEuclideanCLM_diracFundamentalMatrix, hP,
-    propagator_const_eq_cosh_add_sinh (norm_ne_zero_iff.2 hc) hKK]
-  simp
+    propagator_const_eq_cosh_add_sinh (norm_ne_zero_iff.2 hc) hKK, diracCoeff_const_zero]
+  simp only [map_add, map_smul, map_one, sub_zero]
+  norm_cast
 
 /-- An eigenvector of `Ω Q_c` for the eigenvalue `|c|`. -/
 private theorem exists_mulVec_eq_norm_smul (c : ℂ) :
-    ∃ v : Fin 2 → ℂ, v ≠ 0 ∧
-      !![(c.re : ℂ), -(c.im : ℂ); -(c.im : ℂ), -(c.re : ℂ)] *ᵥ v = (‖c‖ : ℂ) • v := by
+    ∃ v : Fin 2 → ℂ, v ≠ 0 ∧ diracCoeff (fun _ ↦ c) 0 0 *ᵥ v = (‖c‖ : ℂ) • v := by
   rcases eq_or_ne c 0 with rfl | hc
-  · exact ⟨Pi.single 0 1, by simp, by ext i; fin_cases i <;> simp⟩
-  set K : Matrix (Fin 2) (Fin 2) ℂ := !![(c.re : ℂ), -(c.im : ℂ); -(c.im : ℂ), -(c.re : ℂ)]
-  -- The columns of `|c| + K` lie in the `|c|`-eigenspace, since `K² = |c|²`; one is nonzero,
-  -- since `|c| + K` has trace `2|c| ≠ 0`.
-  have hK : K * ((‖c‖ : ℂ) • 1 + K) = (‖c‖ : ℂ) • ((‖c‖ : ℂ) • 1 + K) := by
+  · exact ⟨Pi.single 0 1, by simp, by ext i; fin_cases i <;> simp [diracCoeff_const_zero]⟩
+  -- The columns of `|c| + Ω Q_c` lie in the `|c|`-eigenspace, since `(Ω Q_c)² = |c|²`; one is
+  -- nonzero, since `|c| + Ω Q_c` has trace `2|c| ≠ 0`.
+  have hK : diracCoeff (fun _ ↦ c) 0 0 * ((‖c‖ : ℂ) • 1 + diracCoeff (fun _ ↦ c) 0 0) =
+      (‖c‖ : ℂ) • ((‖c‖ : ℂ) • 1 + diracCoeff (fun _ ↦ c) 0 0) := by
     rw [Matrix.mul_add, Matrix.mul_smul, Matrix.mul_one, diracCoeff_const_zero_mul_self]
     module
-  obtain ⟨j, hj⟩ : ∃ j, ((‖c‖ : ℂ) • 1 + K) *ᵥ Pi.single j 1 ≠ 0 := by
+  obtain ⟨j, hj⟩ : ∃ j, ((‖c‖ : ℂ) • 1 + diracCoeff (fun _ ↦ c) 0 0) *ᵥ Pi.single j 1 ≠ 0 := by
     by_contra! h
-    -- The diagonal entries of `|c| + K` are `|c| + Re c` and `|c| - Re c`.
-    have h0 : (‖c‖ : ℂ) + c.re = 0 := by simpa [K, mulVec_single] using congrFun (h 0) 0
-    have h1 : (‖c‖ : ℂ) + -c.re = 0 := by simpa [K, mulVec_single] using congrFun (h 1) 1
+    -- The diagonal entries of `|c| + Ω Q_c` are `|c| + Re c` and `|c| - Re c`.
+    have h0 : (‖c‖ : ℂ) + c.re = 0 := by
+      simpa [diracCoeff_const_zero, mulVec_single] using congrFun (h 0) 0
+    have h1 : (‖c‖ : ℂ) + -c.re = 0 := by
+      simpa [diracCoeff_const_zero, mulVec_single] using congrFun (h 1) 1
     exact hc (norm_eq_zero.1 (by exact_mod_cast (by linear_combination (h0 + h1) / 2 :
       (‖c‖ : ℂ) = 0)))
   refine ⟨_, hj, ?_⟩
@@ -132,11 +130,9 @@ theorem norm_toEuclideanCLM_diracFundamentalMatrix_const_zero (c : ℂ) (ht : 0 
   have hMv : diracFundamentalMatrix (fun _ ↦ c) t 0 *ᵥ v = (Real.exp (t * ‖c‖) : ℂ) • v := by
     have h : Real.sinh (t * ‖c‖) / ‖c‖ * ‖c‖ = Real.sinh (t * ‖c‖) :=
       div_mul_cancel_of_imp fun h ↦ by simp [h]
-    rw [← Real.cosh_add_sinh, ← h]
-    simp only [diracFundamentalMatrix_const_zero, add_mulVec, smul_mulVec, hKv, one_mulVec,
-      smul_smul, ← add_smul]
-    push_cast
-    rfl
+    rw [← Real.cosh_add_sinh, ← h, diracFundamentalMatrix_const_zero, ← diracCoeff_const_zero c 0,
+      add_mulVec, smul_mulVec, smul_mulVec, hKv, one_mulVec, smul_smul, ← add_smul]
+    norm_cast
   have hvn : 0 < ‖(WithLp.toLp 2 v : EuclideanSpace ℂ (Fin 2))‖ :=
     norm_pos_iff.2 fun h ↦ hv (by simpa using congrArg WithLp.ofLp h)
   have hle := (toEuclideanCLM (n := Fin 2) (𝕜 := ℂ)
