@@ -161,15 +161,12 @@ theorem re_trace_spectralGradient_mul_self (hA : A.IsHermitian)
     RCLike.re (hA.spectralGradient f * A).trace = fderiv ℝ f hA.eigenvalues₀ hA.eigenvalues₀ := by
   rw [re_trace_spectralGradient_mul,
     ← Equiv.sum_comp (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)))]
-  rw [show fderiv ℝ f hA.eigenvalues₀ hA.eigenvalues₀ =
-      ∑ k, fderiv ℝ f hA.eigenvalues₀ (Pi.single k (hA.eigenvalues₀ k)) by
-    rw [← map_sum, univ_sum_single]]
+  -- Expand the direction `λ(A)` in the standard basis of `ℝⁿ`.
+  conv_rhs => arg 2; rw [← (Pi.basisFun ℝ _).sum_repr hA.eigenvalues₀]
+  simp only [map_sum, map_smul, Pi.basisFun_repr, Pi.basisFun_apply, smul_eq_mul]
   refine sum_congr rfl fun k _ ↦ ?_
   rw [spectralGradientWeights_equivOfCardEq, ← hA.eigenvalues_eq,
-    hA.eigenvalues_apply_equivOfCardEq,
-    show (Pi.single k (hA.eigenvalues₀ k) : Fin (Fintype.card ι) → ℝ) =
-      hA.eigenvalues₀ k • Pi.single k 1 by ext j; simp [Pi.single_apply],
-    map_smul, smul_eq_mul, mul_comm]
+    hA.eigenvalues_apply_equivOfCardEq, mul_comm]
 
 /-- **Euler's identity for spectral functions.** If `f` is differentiable at `λ(A)` and positively
 homogeneous of degree one along `λ(A)`, that is `f(t • λ(A)) = t f(λ(A))` for `t > 0`, then
@@ -180,8 +177,7 @@ theorem re_trace_spectralGradient_mul_self_of_homogeneous (hA : A.IsHermitian)
     RCLike.re (hA.spectralGradient f * A).trace = f hA.eigenvalues₀ := by
   rw [re_trace_spectralGradient_mul_self]
   simpa using HasFDerivAt.apply_self_eq_smul_of_eventuallyEq hfd.hasFDerivAt (hasDerivAt_id (1 : ℝ))
-    (Filter.mem_of_superset (Ioi_mem_nhds one_pos) fun t ht ↦ by
-      simpa [smul_eq_mul] using hhom t ht)
+    ((eventually_gt_nhds one_pos).mono fun t ht ↦ by simpa [smul_eq_mul] using hhom t ht)
 
 end IsHermitian
 
