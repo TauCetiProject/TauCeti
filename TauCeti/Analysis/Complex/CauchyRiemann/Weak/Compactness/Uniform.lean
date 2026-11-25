@@ -22,7 +22,7 @@ import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 
 Let `Ω ⊆ ℂ` be open, write `z = s + i t`, and let `V` be a finite-dimensional real normed space.
 This file proves the planar interior case of McDuff–Salamon, Theorem B.4.2 with Remark B.4.3, for
-domain-dependent structures and inhomogeneous terms. Let `2 < p < ∞` and `ℓ : ℕ`, and let
+domain-dependent structures and inhomogeneous terms. Let `p > 2` and `ℓ : ℕ`, and let
 `u n : ℂ → V` be weak solutions `TauCeti.IsWeakCauchyRiemannOn p Ω (J n) (η n) (u n)` of
 
 `∂ₛu + J n (z, u) ∂ₜu = η n (z, u)`,
@@ -31,13 +31,14 @@ where `J n` and `η n` are of class `C^ℓ` jointly in `(z, x)`, with `J n (z, u
 Suppose that the images under the `u n` of every compact `K ⊆ Ω` lie in one compact set, and that
 their weak derivatives are bounded in `Lᵖ(W)` on every open `W` with compact closure in `Ω`.
 
-* *Uniform estimates.* If the derivatives of orders at most `ℓ` of the data are bounded on compact
-  sets uniformly in `n`, then the `u n` are bounded in `W^{ℓ+1,p}(U)` for every `U` with compact
-  closure in `Ω` (`TauCeti.exists_eLpNormWkp_le_of_isWeakCauchyRiemannOn`).
+* *Uniform estimates.* If `p < ∞` and the derivatives of orders at most `ℓ` of the data are
+  bounded on compact sets uniformly in `n`, then the `u n` are bounded in `W^{ℓ+1,p}(U)` for
+  every `U` with compact closure in `Ω` (`TauCeti.exists_eLpNormWkp_le_of_isWeakCauchyRiemannOn`).
 * *Compactness.* If `ℓ ≥ 1` and the data converge in `C^ℓ` on compact sets to `J` and `η`, a
   subsequence of the `u n` converges in `C^ℓ` on compact subsets of `Ω` to a solution `v` of the
   limiting equation `TauCeti.IsWeakCauchyRiemannOn p Ω J η v`
-  (`TauCeti.exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn`).
+  (`TauCeti.exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn`). Here `p = ∞` is
+  allowed: the hypotheses for `p` give those for the finite exponent `min p 3`.
 
 ## The argument
 
@@ -131,7 +132,7 @@ theorem exists_eLpNormWkp_succ_le_of_isWeakCauchyRiemannOn {p : ℝ≥0} (hp : 2
     filter_upwards [hA2] with z hz
     change e.conjContinuousAlgEquiv (A z) * e.conjContinuousAlgEquiv (A z) = -1
     rw [← map_mul, hz, map_neg, map_one]
-  have hest := hC _ 0 DA _ _ (h'.isWeakCRSolution hp hc (hf.clm_comp (e : V →L[ℝ] E)).memLpLoc)
+  have hest := hC _ 0 DA _ _ (h'.isWeakCRSolution hp.le hc (hf.clm_comp (e : V →L[ℝ] E)).memLpLoc)
     hc hA2' hA' (by rw [show (0 : ℂ → E →L[ℝ] E) = 0 from rfl, eLpNormWkp_zero_fun]; exact zero_le)
     (hf.clm_comp (e : V →L[ℝ] E))
   -- Transport the estimate back to `V`.
@@ -370,18 +371,64 @@ private theorem isWeakCauchyRiemannOn_of_tendsto {p : ℝ≥0∞} {J : ℕ → �
     _).comp ((hJ z hz).prodMk_nhds (hD z hz I)))).congr fun n => ?_) (hη z hz)
   exact heq n
 
+omit [FiniteDimensional ℝ V] in
+/-- Bounds for weak derivatives in `Lᵖ(W)` give bounds in `L^q(W)` for `0 < q ≤ p` with `q` finite,
+on an open set `W` of finite measure. -/
+private theorem exists_eLpNorm_le_of_le_exponent {p q : ℝ≥0∞} (hq : 0 < q) (hq' : q ≠ ⊤)
+    (hqp : q ≤ p) {u : ℕ → ℂ → V} {W : Opens ℂ} (hW : volume (W : Set ℂ) ≠ ∞) {c : ℝ≥0}
+    (hc : ∀ n, ∃ D, HasWeakFDerivOn volume W (u n) D ∧ eLpNorm D p (volume.restrict W) ≤ c) :
+    ∃ c' : ℝ≥0, ∀ n, ∃ D, HasWeakFDerivOn volume W (u n) D ∧
+      eLpNorm D q (volume.restrict W) ≤ c' := by
+  have hr : 0 ≤ 1 / q.toReal - 1 / p.toReal := by
+    rcases eq_or_ne p ⊤ with rfl | hp
+    · simp only [ENNReal.toReal_top, div_zero, sub_zero]; positivity
+    · exact sub_nonneg.2 (one_div_le_one_div_of_le (ENNReal.toReal_pos hq.ne' hq')
+        (ENNReal.toReal_mono hp hqp))
+  have hV := ENNReal.rpow_ne_top_of_nonneg hr hW
+  refine ⟨c * (volume (W : Set ℂ) ^ (1 / q.toReal - 1 / p.toReal)).toNNReal, fun n => ?_⟩
+  obtain ⟨D, hD, hDc⟩ := hc n
+  refine ⟨D, hD, (eLpNorm_le_eLpNorm_mul_rpow_measure_univ hqp
+    hD.locallyIntegrableOn_deriv.aestronglyMeasurable).trans ?_⟩
+  rw [Measure.restrict_apply_univ, ENNReal.coe_mul, ENNReal.coe_toNNReal hV]
+  gcongr
+
+/-- The compactness part for a finite exponent: under the hypotheses of the uniform estimates,
+with data bounded in `C^ℓ` on compact sets, a subsequence of the `u n` converges in `C^ℓ` on
+compact subsets of `Ω` to a map of class `C^ℓ` on `Ω`, by Rellich's theorem. -/
+private theorem exists_subseq_tendstoLocallyUniformlyOn_iteratedFDeriv {p : ℝ≥0∞} (hp : 2 < p)
+    (hp' : p ≠ ⊤) {ℓ : ℕ} {J : ℕ → ℂ → V → V →L[ℝ] V} {η : ℕ → ℂ → V → V} {u : ℕ → ℂ → V}
+    (hJ : ∀ n, ContDiff ℝ ℓ (fun x : ℂ × V => J n x.1 x.2))
+    (hη : ∀ n, ContDiff ℝ ℓ (fun x : ℂ × V => η n x.1 x.2))
+    (hB : ∀ L : Set (ℂ × V), IsCompact L → ∃ B : ℝ, ∀ n, ∀ i ≤ ℓ, ∀ x ∈ L,
+      ‖iteratedFDeriv ℝ i (fun x : ℂ × V => J n x.1 x.2) x‖ ≤ B ∧
+        ‖iteratedFDeriv ℝ i (fun x : ℂ × V => η n x.1 x.2) x‖ ≤ B)
+    (hJ2 : ∀ n, ∀ᵐ z ∂volume.restrict Ω, J n z (u n z) * J n z (u n z) = -1)
+    (hu : ∀ n, IsWeakCauchyRiemannOn p Ω (J n) (η n) (u n))
+    (hK : ∀ K ⊆ (Ω : Set ℂ), IsCompact K → ∃ K' : Set V, IsCompact K' ∧ ∀ n, MapsTo (u n) K K')
+    (hd : ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
+      ∃ c : ℝ≥0, ∀ n, ∃ D, HasWeakFDerivOn volume W (u n) D ∧ eLpNorm D p (volume.restrict W) ≤ c) :
+    ∃ (φ : ℕ → ℕ) (v : ℂ → V), StrictMono φ ∧ ContDiffOn ℝ ℓ v Ω ∧ ∀ i ≤ ℓ,
+      TendstoLocallyUniformlyOn (fun n => iteratedFDeriv ℝ i (u (φ n))) (iteratedFDeriv ℝ i v)
+        atTop Ω := by
+  have : Fact (1 ≤ p) := ⟨one_le_two.trans hp.le⟩
+  obtain ⟨φ, hφ, v, -, hv, hconv⟩ :=
+    (Module.finBasis ℝ V).exists_subseq_memWkpLoc_tendstoLocallyUniformlyOn_iteratedFDeriv hp
+      fun W hWc hWΩ i => (exists_eLpNormWkp_le_of_isWeakCauchyRiemannOn hp hp' hJ hη hB hJ2 hu
+        hK hd hWc hWΩ).elim fun _ hR => exists_forall_wkp_repr_le _ i hR
+  exact ⟨φ, v, hφ, hv, hconv u (fun n => (hu n).continuousOn) fun n => .rfl⟩
+
 /-- **Compactness for the nonlinear Cauchy–Riemann equation** (McDuff–Salamon, Theorem B.4.2
-and Remark B.4.3, planar interior case). Let `2 < p < ∞` and `ℓ ≥ 1`. Let `J n` and `η n` be of
-class `C^ℓ` jointly in `(z, x)`, converging to `J₀` and `η₀` in `C^ℓ` on compact subsets of
-`ℂ × V`: their derivatives of orders at most `ℓ` converge locally uniformly. Let `u n` be weak
-solutions on `Ω` of `∂ₛu + J n (z, u) ∂ₜu = η n (z, u)` with `J n (z, u n z)² = -1` almost
-everywhere, such that the images under the `u n` of each compact `K ⊆ Ω` lie in one compact set
-and, on each open `W` with compact closure in `Ω`, their weak derivatives are bounded in `Lᵖ(W)`.
-Then a subsequence `u (φ n)` converges in `C^ℓ` on
-compact subsets of `Ω` to a map `v`, of class `C^ℓ` on `Ω`, that solves the limiting equation
-`∂ₛv + J₀ (z, v) ∂ₜv = η₀ (z, v)`. -/
+and Remark B.4.3, planar interior case). Let `p > 2`, possibly `p = ∞`, and `ℓ ≥ 1`. Let `J n`
+and `η n` be of class `C^ℓ` jointly in `(z, x)`, converging to `J₀` and `η₀` in `C^ℓ` on compact
+subsets of `ℂ × V`: their derivatives of orders at most `ℓ` converge locally uniformly. Let `u n`
+be weak solutions on `Ω` of `∂ₛu + J n (z, u) ∂ₜu = η n (z, u)` with `J n (z, u n z)² = -1`
+almost everywhere, such that the images under the `u n` of each compact `K ⊆ Ω` lie in one
+compact set and, on each open `W` with compact closure in `Ω`, their weak derivatives are bounded
+in `Lᵖ(W)`. Then a subsequence `u (φ n)` converges in `C^ℓ` on compact subsets of `Ω` to a map
+`v`, of class `C^ℓ` on `Ω`, that solves the limiting equation `∂ₛv + J₀ (z, v) ∂ₜv = η₀ (z, v)`.
+-/
 theorem exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn {p : ℝ≥0∞}
-    (hp : 2 < p) (hp' : p ≠ ⊤) {ℓ : ℕ} (hℓ : 1 ≤ ℓ) {J : ℕ → ℂ → V → V →L[ℝ] V}
+    (hp : 2 < p) {ℓ : ℕ} (hℓ : 1 ≤ ℓ) {J : ℕ → ℂ → V → V →L[ℝ] V}
     {η : ℕ → ℂ → V → V} {J₀ : ℂ → V → V →L[ℝ] V} {η₀ : ℂ → V → V} {u : ℕ → ℂ → V}
     (hJ : ∀ n, ContDiff ℝ ℓ (fun x : ℂ × V => J n x.1 x.2))
     (hη : ∀ n, ContDiff ℝ ℓ (fun x : ℂ × V => η n x.1 x.2))
@@ -399,7 +446,9 @@ theorem exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn {p : �
     ∃ (φ : ℕ → ℕ) (v : ℂ → V), StrictMono φ ∧ ContDiffOn ℝ ℓ v Ω ∧
       IsWeakCauchyRiemannOn p Ω J₀ η₀ v ∧ ∀ i ≤ ℓ, TendstoLocallyUniformlyOn
         (fun n => iteratedFDeriv ℝ i (u (φ n))) (iteratedFDeriv ℝ i v) atTop Ω := by
-  have : Fact (1 ≤ p) := ⟨one_le_two.trans hp.le⟩
+  -- Pass to the finite exponent `q = min p 3 > 2` for the estimates.
+  have hq : 2 < min p 3 := lt_min hp (by norm_num)
+  have hq' : min p 3 ≠ ⊤ := ((min_le_right _ _).trans_lt (by norm_num)).ne
   -- The data are bounded in `C^ℓ` on compact sets, so the uniform estimates apply; read in the
   -- coordinates of a basis, they are bounds in the spaces `Wkp`.
   have hB (L : Set (ℂ × V)) (hL : IsCompact L) : ∃ B : ℝ, ∀ n, ∀ i ≤ ℓ, ∀ x ∈ L,
@@ -409,12 +458,11 @@ theorem exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn {p : �
     obtain ⟨B₂, hB₂⟩ := exists_forall_norm_iteratedFDeriv_le hη hηt hL
     exact ⟨max B₁ B₂, fun n i hi x hx =>
       ⟨(hB₁ n i hi x hx).trans (le_max_left _ _), (hB₂ n i hi x hx).trans (le_max_right _ _)⟩⟩
-  obtain ⟨φ, hφ, v, -, hv, hconv⟩ :=
-    (Module.finBasis ℝ V).exists_subseq_memWkpLoc_tendstoLocallyUniformlyOn_iteratedFDeriv hp
-      fun W hWc hWΩ i => (exists_eLpNormWkp_le_of_isWeakCauchyRiemannOn hp hp' hJ hη hB hJ2 hu
-        hK hd hWc hWΩ).elim fun _ hR => exists_forall_wkp_repr_le _ i hR
-  have hconv' := hconv u (fun n => (hu n).continuousOn) fun n => .rfl
-  refine ⟨φ, v, hφ, hv, ?_, hconv'⟩
+  obtain ⟨φ, v, hφ, hv, hconv⟩ := exists_subseq_tendstoLocallyUniformlyOn_iteratedFDeriv hq hq'
+    hJ hη hB hJ2 (fun n => (hu n).mono_exponent (min_le_left _ _)) hK fun W hWc hWΩ =>
+      (hd W hWc hWΩ).elim fun _ hc => exists_eLpNorm_le_of_le_exponent (zero_lt_two.trans hq) hq'
+        (min_le_left _ _) ((measure_mono subset_closure).trans_lt hWc.measure_lt_top).ne hc
+  refine ⟨φ, v, hφ, hv, ?_, hconv⟩
   -- Each `u n` is `C^ℓ`, and its pointwise equation passes to the limit.
   have hℓ1 : (1 : WithTop ℕ∞) ≤ ℓ := by exact_mod_cast hℓ
   have hun (n : ℕ) : ContDiffOn ℝ 1 (u n) Ω :=
@@ -424,7 +472,7 @@ theorem exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn {p : �
     continuousOn_id.prodMk (hu n).continuousOn
   have hval (z : ℂ) (hz : z ∈ Ω) : Tendsto (fun n => u (φ n) z) atTop (𝓝 (v z)) := by
     simpa [Function.comp_def] using ((continuous_eval_const (Fin.elim0 : Fin 0 → ℂ)).tendsto _).comp
-      ((hconv' 0 (Nat.zero_le ℓ)).tendsto_at hz)
+      ((hconv 0 (Nat.zero_le ℓ)).tendsto_at hz)
   have hvg : ContinuousOn (fun z => ((z, v z) : ℂ × V)) Ω := continuousOn_id.prodMk hv.continuousOn
   -- The data converge locally uniformly along the subsequence, to continuous limits.
   have hJ0 := tendstoLocallyUniformly_of_iteratedFDeriv_zero (hJt 0 (Nat.zero_le ℓ))
@@ -445,6 +493,6 @@ theorem exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn {p : �
     (fun z hz => hφη.tendsto_comp hηc.continuousAt (tendsto_const_nhds.prodMk_nhds (hval z hz)))
     fun z hz w => ?_
   simpa [Function.comp_def, iteratedFDeriv_one_apply] using
-    ((continuous_eval_const (fun _ : Fin 1 => w)).tendsto _).comp ((hconv' 1 hℓ).tendsto_at hz)
+    ((continuous_eval_const (fun _ : Fin 1 => w)).tendsto _).comp ((hconv 1 hℓ).tendsto_at hz)
 
 end TauCeti

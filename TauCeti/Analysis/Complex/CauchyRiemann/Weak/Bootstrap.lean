@@ -68,21 +68,24 @@ namespace TauCeti
 
 /-! ### The linear step -/
 
-/-- **The frozen equation as a real Cauchy–Riemann equation.** Let `p > 2`. If `u` solves
+/-- **The frozen equation as a real Cauchy–Riemann equation.** Let `p ≥ 2` be finite. If `u` solves
 `∂ₛu + A ∂ₜu = f` weakly on `Ω`, with `A ∈ W^{1,p}_loc` of weak derivative `DA` and `f` locally
 `Lᵖ`, then `u` is a weak solution of the real Cauchy–Riemann equation with coefficients
 `(A, DA, 0)` and right side `f`, in the sense of `TauCeti.IsWeakCRSolution`. -/
 theorem IsWeakCauchyRiemannOn.isWeakCRSolution {V : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] {Ω : Opens ℂ} {p : ℝ≥0} (hp : 2 < p)
+    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] {Ω : Opens ℂ} {p : ℝ≥0} (hp : 2 ≤ p)
     {A : ℂ → V →L[ℝ] V} {DA : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {f u : ℂ → V}
     (h : IsWeakCauchyRiemannOn p Ω (fun z _ => A z) (fun z _ => f z) u)
     (hc : IsSobolevCRCoefficients p Ω A DA 0) (hf : MemLpLoc p Ω f) :
     IsWeakCRSolution p Ω A DA 0 u f := by
   have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   obtain ⟨-, hu, D, hD, hDp, hae⟩ := isWeakCauchyRiemannOn_iff_of_isOpen.1 h
-  have hpp := ENNReal.inv_add_inv_lt_one_of_two_lt (p := (p : ℝ≥0∞)) (by exact_mod_cast hp)
-  exact (hc.isWeakCRSolution_iff_ae hpp.le ENNReal.coe_ne_top ENNReal.coe_ne_top hD hu hDp
-    (hf.locallyIntegrableOn (by exact_mod_cast (one_lt_two.trans hp).le)
+  have hp' : (2 : ℝ≥0∞) ≤ p := by exact_mod_cast hp
+  have hpp : (p : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ ≤ 1 := by
+    rw [← ENNReal.inv_two_add_inv_two]
+    exact add_le_add (ENNReal.inv_le_inv.2 hp') (ENNReal.inv_le_inv.2 hp')
+  exact (hc.isWeakCRSolution_iff_ae hpp ENNReal.coe_ne_top ENNReal.coe_ne_top hD hu hDp
+    (hf.locallyIntegrableOn (by exact_mod_cast one_le_two.trans hp)
       Ω.isOpen.isLocallyClosed)).2 (by simpa using hae)
 
 /-- **The linear step on an inner product space.** If `u` solves `∂ₛu + A ∂ₜu = f` weakly on `Ω`
@@ -96,7 +99,7 @@ private theorem memWkpLoc_add_two_of_inner {V : Type*} [NormedAddCommGroup V]
   obtain ⟨DA, hDA, hDAk⟩ := hA.exists_weakFDeriv_of_isOpen
   have hc : IsSobolevCRCoefficients p Ω A DA 0 :=
     ⟨hDA, hA.memLpLoc, hDAk.memLpLoc, memLpLoc_zero⟩
-  exact (h.isWeakCRSolution hp hc hf.memLpLoc).memWkpLoc_succ hc hp hA2
+  exact (h.isWeakCRSolution hp.le hc hf.memLpLoc).memWkpLoc_succ hc hp hA2
     (ENNReal.inv_add_inv_lt_one_of_two_lt (by exact_mod_cast hp)) le_rfl hA memWkpLoc_zero_fun hf
 
 /-- **The linear step.** If `u` solves `∂ₛu + A ∂ₜu = f` weakly on `Ω` for `p > 2`, with
