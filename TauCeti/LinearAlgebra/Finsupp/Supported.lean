@@ -39,6 +39,11 @@ A finitely generated submodule of `ℕ →₀ M` consists of functions supported
   function supported on a prescribed set.
 * `Finsupp.map_mem_supported_of_forall_single_mem`: a linear map that sends the basis vectors
   over `s` into `supported N R t` maps `supported M R s` into it.
+* `Finsupp.map_eq_self_of_forall_single_eq`: a linear map fixing the basis vectors over `s` fixes
+  `supported M R s`.
+* `Finsupp.op_smul_single_one`, `Finsupp.map_single_eq_op_smul`: in the right `A`-module
+  `α →₀ A`, `single k b` is `single k 1` scaled on the right by `b`, so a right-linear map is
+  determined by its values on the basis vectors `single k 1`.
 * `Submodule.FG.exists_le_supported_Iio`: a finitely generated submodule of `ℕ →₀ M` is
   supported on some initial segment.
 * `Finsupp.exists_support_map_subset_range`: a linear map `(ℕ →₀ M) →ₗ[R] (ℕ →₀ N)` from a
@@ -150,6 +155,35 @@ theorem map_mem_supported_of_forall_single_mem [AddCommMonoid M] [Module R M] [A
     (hv : v ∈ supported M R s) : f v ∈ supported N R t := by
   rw [← sum_single v, map_finsuppSum]
   exact Submodule.sum_mem _ fun j hj ↦ hf j ((mem_supported R v).1 hv hj) _
+
+/-- A linear map fixing every basis vector `single j x` with `j ∈ s` fixes every function
+supported on `s`. -/
+theorem map_eq_self_of_forall_single_eq [AddCommMonoid M] [Module R M] {s : Set α}
+    (f : (α →₀ M) →ₗ[R] (α →₀ M)) (hf : ∀ j ∈ s, ∀ x, f (single j x) = single j x)
+    {v : α →₀ M} (hv : v ∈ supported M R s) : f v = v := by
+  calc f v = f (v.sum single) := by rw [sum_single]
+    _ = v.sum fun j x ↦ f (single j x) := map_finsuppSum f _ _
+    _ = v.sum single := sum_congr fun j hj ↦ hf j ((mem_supported R v).1 hv hj) _
+    _ = v := sum_single v
+
+end Finsupp
+
+namespace Finsupp
+
+open MulOpposite
+
+variable {α A N : Type*} [Semiring A]
+
+/-- In the right `A`-module `α →₀ A`, the vector `single k b` is the basis vector `single k 1`
+scaled on the right by `b`. -/
+theorem op_smul_single_one (k : α) (b : A) : op b • single k (1 : A) = single k b := by
+  rw [smul_single, op_smul_eq_mul, one_mul]
+
+/-- A right-linear map on `α →₀ A` is determined on `single k b` by its value on the basis vector
+`single k 1`. -/
+theorem map_single_eq_op_smul [AddCommMonoid N] [Module Aᵐᵒᵖ N] (f : (α →₀ A) →ₗ[Aᵐᵒᵖ] N)
+    (k : α) (b : A) : f (single k b) = op b • f (single k 1) := by
+  rw [← map_smul, op_smul_single_one]
 
 end Finsupp
 

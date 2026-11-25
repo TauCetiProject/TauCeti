@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Finsupp.Supported
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
+public import TauCeti.LinearAlgebra.Finsupp.Supported
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
 public import TauCeti.LinearAlgebra.Matrix.ToLin
 
@@ -80,38 +80,6 @@ section FreeModule
 
 variable {A}
 
-/-- A finitely supported vector `single k a` is the basis vector `eₖ` scaled on the right by
-`a`. -/
-private theorem single_eq_op_smul_single_one (k : ℕ) (a : A) :
-    single k a = op a • single k (1 : A) := by
-  rw [Finsupp.smul_single, op_smul_eq_mul, one_mul]
-
-/-- A right-linear map is determined on `single k a` by its value on the basis vector `eₖ`. -/
-private theorem map_single_eq_op_smul (f : (ℕ →₀ A) →ₗ[Aᵐᵒᵖ] (ℕ →₀ A)) (k : ℕ) (a : A) :
-    f (single k a) = op a • f (single k 1) := by
-  rw [single_eq_op_smul_single_one, map_smul]
-
-/-- A right-linear map which sends the basis vectors indexed by `s` into the coordinate
-submodule of `s` preserves that submodule. -/
-private theorem map_mem_supported {f : (ℕ →₀ A) →ₗ[Aᵐᵒᵖ] (ℕ →₀ A)} {s : Set ℕ}
-    (hf : ∀ k ∈ s, f (single k 1) ∈ supported A Aᵐᵒᵖ s) {x : ℕ →₀ A}
-    (hx : x ∈ supported A Aᵐᵒᵖ s) : f x ∈ supported A Aᵐᵒᵖ s := by
-  rw [← sum_single x, map_finsuppSum]
-  refine Submodule.finsuppSum_mem _ _ _ _ fun k hk ↦ ?_
-  rw [map_single_eq_op_smul]
-  exact Submodule.smul_mem _ _ (hf k (hx (mem_support_iff.2 hk)))
-
-/-- A right-linear map which fixes the basis vectors outside `s` fixes every vector supported
-outside `s`. -/
-private theorem map_eq_self_of_mem_supported_compl {f : (ℕ →₀ A) →ₗ[Aᵐᵒᵖ] (ℕ →₀ A)}
-    {s : Set ℕ} (hf : ∀ k ∉ s, f (single k 1) = single k 1) {x : ℕ →₀ A}
-    (hx : x ∈ supported A Aᵐᵒᵖ sᶜ) : f x = x := by
-  calc f x = f (x.sum single) := by rw [sum_single]
-    _ = x.sum fun k a ↦ f (single k a) := map_finsuppSum f _ _
-    _ = x.sum single := Finsupp.sum_congr fun k hk ↦ by
-      rw [map_single_eq_op_smul, hf k (hx hk), ← single_eq_op_smul_single_one]
-    _ = x := sum_single x
-
 /-- `f` fixes the basis vectors `eₖ` with `k ∉ s` and maps those with `k ∈ s` into the
 coordinate submodule of `s`. -/
 private def IsFinitaryOn (f : (ℕ →₀ A) →ₗ[Aᵐᵒᵖ] (ℕ →₀ A)) (s : Set ℕ) : Prop :=
@@ -125,10 +93,23 @@ private theorem IsFinitaryOn.mono {f : (ℕ →₀ A) →ₗ[Aᵐᵒᵖ] (ℕ �
   · rw [hf.1 k hks]
     exact single_mem_supported _ _ hk
 
+/-- A map finitary for `s` preserves the coordinate submodule of `s`. -/
+private theorem IsFinitaryOn.map_mem_supported {f : (ℕ →₀ A) →ₗ[Aᵐᵒᵖ] (ℕ →₀ A)} {s : Set ℕ}
+    (hf : IsFinitaryOn f s) {x : ℕ →₀ A} (hx : x ∈ supported A Aᵐᵒᵖ s) :
+    f x ∈ supported A Aᵐᵒᵖ s :=
+  map_mem_supported_of_forall_single_mem Aᵐᵒᵖ f
+    (fun k hk a ↦ map_single_eq_op_smul f k a ▸ Submodule.smul_mem _ _ (hf.2 k hk)) hx
+
+/-- A map finitary for `s` fixes every vector supported outside `s`. -/
+private theorem IsFinitaryOn.map_eq_self {f : (ℕ →₀ A) →ₗ[Aᵐᵒᵖ] (ℕ →₀ A)} {s : Set ℕ}
+    (hf : IsFinitaryOn f s) {x : ℕ →₀ A} (hx : x ∈ supported A Aᵐᵒᵖ sᶜ) : f x = x :=
+  map_eq_self_of_forall_single_eq Aᵐᵒᵖ f
+    (fun k hk a ↦ by rw [map_single_eq_op_smul, hf.1 k hk, op_smul_single_one]) hx
+
 private theorem IsFinitaryOn.comp {f g : (ℕ →₀ A) →ₗ[Aᵐᵒᵖ] (ℕ →₀ A)} {s : Set ℕ}
     (hf : IsFinitaryOn f s) (hg : IsFinitaryOn g s) : IsFinitaryOn (f ∘ₗ g) s :=
   ⟨fun k hk ↦ by rw [LinearMap.comp_apply, hg.1 k hk, hf.1 k hk],
-    fun k hk ↦ map_mem_supported hf.2 (hg.2 k hk)⟩
+    fun k hk ↦ hf.map_mem_supported (hg.2 k hk)⟩
 
 /-- The inverse of a finitary automorphism is finitary for the same set: an automorphism fixing
 the vectors supported outside `s` and preserving the coordinate submodule of `s` restricts to a
@@ -144,13 +125,13 @@ private theorem IsFinitaryOn.symm {g : (ℕ →₀ A) ≃ₗ[Aᵐᵒᵖ] (ℕ �
     Submodule.mem_sup.1 (hsup ▸ Submodule.mem_top : g.symm (single k 1) ∈ _)
   -- `g` fixes `y₂`, so `g y₁ + y₂ = eₖ`; off `s` both `g y₁` and `eₖ` vanish, so `y₂ = 0`.
   have hgy : g y₁ + y₂ = single k 1 := by
-    rw [← map_eq_self_of_mem_supported_compl hg.1 hy₂, ← LinearEquiv.coe_coe, ← map_add,
+    rw [← hg.map_eq_self hy₂, ← LinearEquiv.coe_coe, ← map_add,
       LinearEquiv.coe_coe, hy, LinearEquiv.apply_symm_apply]
   have hy₂0 : y₂ = 0 := by
     ext i
     by_cases hi : i ∈ s
     · exact (mem_supported' _ _).1 hy₂ i fun hi' ↦ hi' hi
-    · have hgy₁ : g y₁ i = 0 := (mem_supported' _ _).1 (map_mem_supported hg.2 hy₁) i hi
+    · have hgy₁ : g y₁ i = 0 := (mem_supported' _ _).1 (hg.map_mem_supported hy₁) i hi
       have := congr($hgy i)
       rwa [Finsupp.add_apply, hgy₁, zero_add,
         single_eq_of_ne fun (hik : i = k) ↦ hi (hik ▸ hk)] at this
@@ -192,27 +173,26 @@ variable {A}
 
 /-- The embedding of `Fin n → A` into `ℕ →₀ A` as the first `n` coordinates. -/
 private def finEmbed (n : ℕ) : (Fin n → A) →ₗ[Aᵐᵒᵖ] (ℕ →₀ A) :=
-  ∑ i : Fin n, lsingle (i : ℕ) ∘ₗ LinearMap.proj i
+  lmapDomain A Aᵐᵒᵖ Fin.val ∘ₗ (linearEquivFunOnFinite Aᵐᵒᵖ A (Fin n)).symm.toLinearMap
 
 /-- The restriction of `ℕ →₀ A` to its first `n` coordinates. -/
 private def finRestrict (n : ℕ) : (ℕ →₀ A) →ₗ[Aᵐᵒᵖ] (Fin n → A) :=
-  LinearMap.pi fun i : Fin n ↦ lapply (i : ℕ)
+  (linearEquivFunOnFinite Aᵐᵒᵖ A (Fin n)).toLinearMap ∘ₗ lcomapDomain Fin.val Fin.val_injective
 
 private theorem finEmbed_apply (n : ℕ) (w : Fin n → A) :
     finEmbed n w = ∑ i : Fin n, single (i : ℕ) (w i) := by
-  simp [finEmbed]
+  simp [finEmbed, mapDomain, sum_fintype]
 
-private theorem finRestrict_apply (n : ℕ) (x : ℕ →₀ A) (i : Fin n) : finRestrict n x i = x i :=
-  rfl
+private theorem finRestrict_apply (n : ℕ) (x : ℕ →₀ A) (i : Fin n) : finRestrict n x i = x i := by
+  simp [finRestrict]
 
 /-- The coordinates of a sum of basis vectors indexed by `Fin n`. -/
 private theorem sum_single_apply (n : ℕ) (w : Fin n → A) (j : ℕ) :
     (∑ i : Fin n, single (i : ℕ) (w i)) j = if h : j < n then w ⟨j, h⟩ else 0 := by
-  rw [finsetSum_apply]
+  rw [← finEmbed_apply]
   split_ifs with h
-  · refine (Fintype.sum_eq_single ⟨j, h⟩ fun i hi ↦ ?_).trans single_eq_same
-    exact single_eq_of_ne fun hij ↦ hi (Fin.ext hij.symm)
-  · exact Finset.sum_eq_zero fun i _ ↦ single_eq_of_ne fun hij ↦ h (by have := i.isLt; omega)
+  · exact mapDomain_apply_of_injective Fin.val_injective _ (⟨j, h⟩ : Fin n)
+  · exact mapDomain_of_notMem_range _ _ (by simpa [Fin.range_val] using h)
 
 /-- A sum `∑ j, w j * x j` over `Fin n` against a single basis vector. -/
 private theorem sum_mul_single_apply (n : ℕ) (w : Fin n → A) (k : ℕ) (a : A) :
@@ -225,18 +205,14 @@ private theorem sum_mul_single_apply (n : ℕ) (w : Fin n → A) (k : ℕ) (a : 
       rw [single_eq_of_ne fun hjk ↦ h (by have := j.isLt; omega), mul_zero]
 
 private theorem finRestrict_comp_finEmbed (n : ℕ) :
-    finRestrict (A := A) n ∘ₗ finEmbed n = LinearMap.id := by
-  ext w i
-  simp [finRestrict_apply, finEmbed_apply, sum_single_apply]
+    finRestrict (A := A) n ∘ₗ finEmbed n = LinearMap.id :=
+  LinearMap.ext fun w ↦ by simp [finRestrict, finEmbed, comapDomain_mapDomain _ Fin.val_injective]
 
 /-- A vector supported on the first `n` coordinates is recovered from them. -/
 private theorem finEmbed_finRestrict {n : ℕ} {x : ℕ →₀ A}
     (hx : x ∈ supported A Aᵐᵒᵖ (Finset.range n : Set ℕ)) : finEmbed n (finRestrict n x) = x := by
-  ext j
-  rw [finEmbed_apply, sum_single_apply]
-  split_ifs with h
-  · exact finRestrict_apply _ _ _
-  · exact ((mem_supported' _ _).1 hx j (by simpa using h)).symm
+  simpa [finEmbed, finRestrict] using mapDomain_comapDomain _ Fin.val_injective x
+    (hx.trans (by simp [Fin.range_val]))
 
 /-- On a vector supported on the first `n` coordinates, a right-linear map is the matrix of its
 values on the basis vectors `e₀, …, e_{n-1}`. -/
@@ -435,7 +411,7 @@ private theorem exists_toFreeModuleAut_of_eq {g : (ℕ →₀ A) ≃ₗ[Aᵐᵒ�
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [finRestrict_apply, ← LinearEquiv.coe_coe, map_single_eq_op_smul, Finsupp.smul_apply,
       op_smul_eq_mul, coordMatrix, Matrix.of_apply]
-  · rw [map_single_eq_op_smul, hg.1 k (by simpa using hk), ← single_eq_op_smul_single_one]
+  · rw [map_single_eq_op_smul, hg.1 k (by simpa using hk), op_smul_single_one]
 
 /-- The image of `GL_∞(A)` in the automorphisms of `ℕ →₀ A` is the subgroup of finitary
 automorphisms. -/
@@ -444,13 +420,15 @@ theorem range_toFreeModuleAut : (toFreeModuleAut A).range = finitaryAutomorphism
   constructor
   · rintro ⟨x, rfl⟩
     obtain ⟨n, u, rfl⟩ := exists_of x
-    refine ⟨Finset.range n, fun k hk ↦ ?_, fun k hk ↦ ?_⟩
-    · rw [Finset.mem_coe, Finset.mem_range] at hk
-      rw [LinearEquiv.coe_coe, toFreeModuleAut_of_apply_single, dite_eq_right hk]
-    · rw [Finset.mem_coe, Finset.mem_range] at hk
-      rw [LinearEquiv.coe_coe, toFreeModuleAut_of_apply_single, dite_eq_left hk]
+    refine mem_finitaryAutomorphisms_iff.2 ⟨Finset.range n, fun k hk ↦ ?_, fun k hk ↦ ?_⟩
+    · rw [Finset.mem_range] at hk
+      rw [toFreeModuleAut_of_apply_single, dite_eq_right hk]
+    · rw [Finset.mem_range] at hk
+      rw [toFreeModuleAut_of_apply_single, dite_eq_left hk]
       exact Submodule.sum_mem _ fun i _ ↦ single_mem_supported _ _ (by simp)
-  · rintro ⟨s, hs⟩
+  · rw [mem_finitaryAutomorphisms_iff]
+    rintro ⟨s, hs₁, hs₂⟩
+    have hs : IsFinitaryOn (g : (ℕ →₀ A) →ₗ[Aᵐᵒᵖ] (ℕ →₀ A)) s := ⟨hs₁, hs₂⟩
     obtain ⟨n, hn⟩ := Finset.exists_nat_subset_range s
     obtain ⟨u, hu⟩ := exists_toFreeModuleAut_of_eq (hs.mono (Finset.coe_subset.2 hn))
     exact ⟨of A n u, hu⟩
@@ -466,8 +444,8 @@ def finitaryAutomorphismsEquiv : StableGeneralLinearGroup A ≃* finitaryAutomor
 `TauCeti.StableGeneralLinearGroup.toFreeModuleAut A`. -/
 @[simp]
 theorem coe_finitaryAutomorphismsEquiv_apply (x : StableGeneralLinearGroup A) :
-    (finitaryAutomorphismsEquiv A x : (ℕ →₀ A) ≃ₗ[Aᵐᵒᵖ] (ℕ →₀ A)) = toFreeModuleAut A x :=
-  (rfl)
+    (finitaryAutomorphismsEquiv A x : (ℕ →₀ A) ≃ₗ[Aᵐᵒᵖ] (ℕ →₀ A)) = toFreeModuleAut A x := by
+  simp [finitaryAutomorphismsEquiv, MonoidHom.ofInjective_apply]
 
 end StableGeneralLinearGroup
 
