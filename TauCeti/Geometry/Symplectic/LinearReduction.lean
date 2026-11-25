@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import TauCeti.Geometry.Symplectic.ExistsCompatible
 public import TauCeti.Geometry.Symplectic.Lagrangian.Constructions
+public import TauCeti.RepresentationTheory.InvariantForm
 public import TauCeti.RepresentationTheory.Subrepresentation.Semisimple
 
 import TauCeti.Algebra.Lie.SkewAdjoint
@@ -40,7 +41,12 @@ reduced space (`TauCeti.SymplecticForm.reducedSpaceSkewAdjoint`).
 
 For a semisimple representation preserving `ω` and `U`, the quotient map `U → U_red` has an
 equivariant linear right inverse (`TauCeti.SymplecticForm.exists_equivariant_lift_reducedSpace`):
-an equivariant projection onto the radical `U ∩ U^ω` splits it off.
+an equivariant projection onto the radical `U ∩ U^ω` splits it off. Even without
+semisimplicity, a representation acting on `U_red` by `[u] ↦ [g u]` preserves the reduced form
+(`TauCeti.SymplecticForm.isInvariantForm_reduction`). Any lift `s` of the reduced space of `U^ω`
+embeds it into `V` beside `U`
+(`TauCeti.SymplecticForm.injective_coprod_subtype_comp`), with coisotropic sum
+`U + s(U^ω ⧸ (U ∩ U^ω))` (`TauCeti.SymplecticForm.isCoisotropic_sup_range_subtype_comp`).
 
 Reduction also acts on subspaces: the image of `L ∩ U` in the reduced space is isotropic when `L`
 is, and for coisotropic `U` it is Lagrangian when `L` is
@@ -88,6 +94,12 @@ form on `V ⧸ ker B` (`LinearMap.BilinForm.IsAlt.symplecticFormQuotKer`).
   reduced spaces intertwines the two induced quadratic forms.
 * `TauCeti.SymplecticForm.exists_equivariant_lift_reducedSpace`: an equivariant lift of the
   reduced space for a semisimple representation.
+* `TauCeti.SymplecticForm.isInvariantForm_reduction`: an action induced on the reduced space
+  preserves the reduced form.
+* `TauCeti.SymplecticForm.injective_coprod_subtype_comp`,
+  `TauCeti.SymplecticForm.isCoisotropic_sup_range_subtype_comp`: for a lift `s` of the reduced
+  space of `U^ω`, `(w, v) ↦ ι w + s v` is injective for injective `ι` with image in `U`, and
+  `U + s(U^ω ⧸ (U ∩ U^ω))` is coisotropic.
 * `TauCeti.SymplecticForm.IsIsotropic.reduction_map`,
   `TauCeti.SymplecticForm.IsLagrangian.reduction_map`: reduction of isotropic and Lagrangian
   subspaces.
@@ -270,6 +282,16 @@ theorem reducedQuadraticForm_mk (Q : QuadraticForm ℝ V)
     (hQ : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar Q w u = 0) (u : U) :
     ω.reducedQuadraticForm U Q hQ (Submodule.Quotient.mk u) = Q u :=
   QuadraticMap.lift_mk _ u
+
+/-- The induced quadratic form on the reduced space only depends on the values of `Q` on `U`. -/
+theorem reducedQuadraticForm_congr {Q Q' : QuadraticForm ℝ V}
+    (hQ : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar Q w u = 0)
+    (hQ' : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar Q' w u = 0)
+    (h : ∀ u ∈ U, Q u = Q' u) :
+    ω.reducedQuadraticForm U Q hQ = ω.reducedQuadraticForm U Q' hQ' := by
+  ext x
+  induction x using Submodule.Quotient.induction_on with
+  | H u => simpa using h u u.property
 
 end QuadraticForm
 
@@ -509,6 +531,22 @@ theorem exists_equivariant_lift_reducedSpace {K : Type*} [Group K] {πT : Repres
         Submodule.subtype_apply, Submodule.coe_sub, map_sub] at h ⊢
       exact congrArg (fun t ↦ πT k u - t) h
 
+/-- **An induced action preserves the reduced form.** If `πT` preserves `ω` and `U`, a
+representation `πV` on the reduced space `U ⧸ (U ∩ U^ω)` acting by `[u] ↦ [πT k u]` preserves the
+reduced form. -/
+theorem isInvariantForm_reduction {K : Type*} [Group K] {πT : Representation ℝ K V}
+    (hπT : ∀ k u v, ω (πT k u) (πT k v) = ω u v) {U : Submodule ℝ V}
+    (hU : ∀ k, ∀ u ∈ U, πT k u ∈ U) {πV : Representation ℝ K (ω.ReducedSpace U)}
+    (hπV : ∀ k (u u' : U), (u' : V) = πT k u →
+      πV k (Submodule.Quotient.mk u) = Submodule.Quotient.mk u') :
+    Representation.IsInvariantForm πV (ω.reduction U).toBilinForm := by
+  refine Representation.isInvariantForm_iff.2 fun k v v' ↦ ?_
+  induction v using Submodule.Quotient.induction_on with | H u => ?_
+  induction v' using Submodule.Quotient.induction_on with | H u' => ?_
+  have h := hπV k u ⟨_, hU k u u.property⟩ rfl
+  have h' := hπV k u' ⟨_, hU k u' u'.property⟩ rfl
+  simpa [h, h'] using hπT k u u'
+
 end Functoriality
 
 section SkewAdjoint
@@ -631,6 +669,41 @@ theorem IsLagrangian.reduction_map [FiniteDimensional ℝ V] (hL : ω.IsLagrangi
   refine ⟨⟨l, hlU⟩, hl, ReducedSpace.mk_eq_mk_iff.2 ?_⟩
   have : l - (u : V) = -c := by rw [← hlc]; abel
   exact this ▸ (ω.orthogonal U).neg_mem hc
+
+/-- For an injective `ι : V' → V` with image in `U` and a lift `s` of the reduced space
+`V_U = U^ω ⧸ (U ∩ U^ω)` to `U^ω`, the map `V' × V_U → V`, `(w, v) ↦ ι w + s v` is injective: if
+`ι w + s v = 0`, then `s v` lies in `U^ω ∩ U`, so `v = 0`, and then `w = 0`. -/
+theorem injective_coprod_subtype_comp [FiniteDimensional ℝ V] {ι : V' →ₗ[ℝ] V}
+    (hι : Function.Injective ι) (hιU : LinearMap.range ι ≤ U)
+    {s : ω.ReducedSpace (ω.orthogonal U) →ₗ[ℝ] ω.orthogonal U}
+    (hs : ∀ v, Submodule.Quotient.mk (s v) = v) :
+    Function.Injective (ι.coprod ((ω.orthogonal U).subtype ∘ₗ s)) := by
+  rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
+  rintro ⟨w, v⟩ h
+  simp only [LinearMap.mem_ker, LinearMap.coprod_apply, LinearMap.comp_apply,
+    Submodule.subtype_apply] at h
+  obtain rfl : v = 0 := by
+    rw [← hs v, ReducedSpace.mk_eq_zero_iff, ω.orthogonal_orthogonal,
+      eq_neg_of_add_eq_zero_right h, neg_mem_iff]
+    exact hιU ⟨w, rfl⟩
+  rw [map_zero, Submodule.coe_zero, add_zero] at h
+  exact Prod.ext (hι (h.trans (map_zero ι).symm)) rfl
+
+/-- For a lift `s` of the reduced space `U^ω ⧸ (U ∩ U^ω)` to `U^ω`, the sum of `U` and the image of
+`s` is coisotropic: a vector `ω`-orthogonal to it lies in `U^ω` with zero class in the reduced
+space, so in `(U^ω)^ω = U`. -/
+theorem isCoisotropic_sup_range_subtype_comp [FiniteDimensional ℝ V]
+    {s : ω.ReducedSpace (ω.orthogonal U) →ₗ[ℝ] ω.orthogonal U}
+    (hs : ∀ v, Submodule.Quotient.mk (s v) = v) :
+    ω.IsCoisotropic (U ⊔ LinearMap.range ((ω.orthogonal U).subtype ∘ₗ s)) := by
+  refine isCoisotropic_iff.2 fun y hy ↦ Submodule.mem_sup_left ?_
+  have hyU : y ∈ ω.orthogonal U := ω.orthogonal_le le_sup_left hy
+  have h0 : (Submodule.Quotient.mk ⟨y, hyU⟩ : ω.ReducedSpace (ω.orthogonal U)) = 0 :=
+    (ω.reduction (ω.orthogonal U)).separatingLeft _ fun v ↦ by
+      rw [← hs v]
+      exact (reduction_mk ω _ _ _).trans
+        (ω.isRefl.eq_zero (hy _ (Submodule.mem_sup_right ⟨v, rfl⟩)))
+  rwa [ReducedSpace.mk_eq_zero_iff, ω.orthogonal_orthogonal] at h0
 
 end Subspaces
 

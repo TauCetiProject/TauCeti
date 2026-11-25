@@ -179,8 +179,8 @@ theorem WeightedWalk.sum_excessAt_sum_map_assignment [DecidableEq V]
   induction l with
   | nil => simp
   | cons p l ih =>
-    simp only [List.map_cons, List.sum_cons, excessAt_add, sum_add_distrib, ih, assignment_def,
-      excessAt_walkAssignment, sum_sub_distrib, sum_ite_eq']
+    simp only [List.map_cons, List.sum_cons, excessAt_add_apply, sum_add_distrib, ih,
+      assignment_def, excessAt_walkAssignment, sum_sub_distrib, sum_ite_eq']
     by_cases hs : p.source ∈ S <;> by_cases ht : p.target ∈ S <;> simp [hs, ht] <;> abel
 
 /-- The excess at `v` of a sum of weighted walks is the total weight of the walks ending at `v`
@@ -259,7 +259,7 @@ theorem isCirculation_cycleAssignment : IsCirculation D.cycleAssignment :=
 @[simp]
 theorem excessAt_pathAssignment (v : V) : excessAt D.pathAssignment v = excessAt f v := by
   conv_rhs => rw [← D.pathAssignment_add_cycleAssignment]
-  rw [excessAt_add, (isCirculation_iff _).1 D.isCirculation_cycleAssignment, add_zero]
+  rw [excessAt_add_apply, (isCirculation_iff _).1 D.isCirculation_cycleAssignment, add_zero]
 
 /-- The excess of the decomposed assignment at `v` is the total weight of the paths ending at `v`
 minus the total weight of the paths starting at `v`. -/
@@ -479,11 +479,11 @@ private def PathCycleDecomposition.consCycle {g : Assignment Q K} (D : PathCycle
   weight_pos_of_mem_paths := D.weight_pos_of_mem_paths
   weight_pos_of_mem_cycles := List.forall_mem_cons.2 ⟨hpos, D.weight_pos_of_mem_cycles⟩
   excessAt_source_neg p hp := by
-    rw [hfg, excessAt_add, WeightedClosedWalk.assignment_def,
+    rw [hfg, excessAt_add_apply, WeightedClosedWalk.assignment_def,
       (isCirculation_iff _).1 (isCirculation_walkAssignment _ _), add_zero]
     exact D.excessAt_source_neg p hp
   excessAt_target_pos p hp := by
-    rw [hfg, excessAt_add, WeightedClosedWalk.assignment_def,
+    rw [hfg, excessAt_add_apply, WeightedClosedWalk.assignment_def,
       (isCirculation_iff _).1 (isCirculation_walkAssignment _ _), add_zero]
     exact D.excessAt_target_pos p hp
   sum_paths_add_sum_cycles := by

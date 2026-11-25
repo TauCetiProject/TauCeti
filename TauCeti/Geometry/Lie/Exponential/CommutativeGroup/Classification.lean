@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
 public import TauCeti.Algebra.Module.ZLattice.Quotient
 public import TauCeti.Topology.Circle.AddCircle
 
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # Compact connected commutative Lie groups are products of circles
@@ -57,7 +57,7 @@ noncomputable local instance : FiniteDimensional ℝ (LeftInvariantDerivation I 
 namespace Module.Basis
 
 variable {ι : Type*} [Fintype ι]
-  (b : Module.Basis ι ℤ (lieExpAddMonoidHom (I := I) (G := G)).ker.toIntSubmodule)
+  (b : Module.Basis ι ℤ (lieExpLattice (I := I) (G := G)))
 
 /-- Additive circle coordinates of a compact connected commutative Lie group, specified by a
 basis of its exponential kernel. -/
@@ -135,11 +135,11 @@ theorem nonempty_continuousMulEquiv_pi_circle :
     Nonempty (G ≃ₜ* (Fin (Module.finrank ℝ E) → Circle)) := by
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  let L := (lieExpAddMonoidHom (I := I) (G := G)).ker.toIntSubmodule
+  let L := lieExpLattice (I := I) (G := G)
   let _ : Module.Free ℤ L := ZLattice.module_free ℝ L
   let _ : Module.Finite ℤ L := ZLattice.module_finite ℝ L
   have hdim : Module.finrank ℤ L = Module.finrank ℝ E :=
-    (finrank_ker_lieExpAddMonoidHom (I := I) (G := G)).trans
+    (finrank_lieExpLattice (I := I) (G := G)).trans
       (finrank_leftInvariantDerivation_eq_modelVectorSpace
         (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)))
   exact ⟨Module.Basis.lieGroupPiCircleEquiv (Module.finBasisOfFinrankEq ℤ L hdim)⟩

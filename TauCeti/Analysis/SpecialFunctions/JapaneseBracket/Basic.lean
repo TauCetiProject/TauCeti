@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Group.Integral
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
@@ -49,16 +50,6 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
 
 ## Main declarations
 
-* `TauCeti.one_add_norm_sq_rpow_mul_norm_le`: one power of `‖x‖` costs one order of the
-  Japanese bracket, `⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)`.
-* `TauCeti.one_add_norm_sq_rpow_neg_le_inv_norm_pow`: away from the origin,
-  `⟨x⟩ ^ (-k) ≤ ‖x‖ ^ (-k)`.
-* `TauCeti.one_add_mul_norm_pow_le`: the linear weight `(1 + c ‖x‖) ^ i` is at most
-  `(1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`.
-* `TauCeti.norm_pow_two_mul_succ_mul_eq_sum`: expanding one factor `‖v‖²` of `‖v‖ ^ (2 (N + 1))`
-  in the coordinates of `EuclideanSpace`.
-* `TauCeti.le_mul_one_add_norm_sq_pow_inv`: bounds on `F` and on `‖v‖ ^ (2N) F` combine to a
-  bound on `F` with the weight `(1 + ‖v‖²) ^ (-N)`.
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
 * `TauCeti.integrable_add_norm_rpow_neg`, `TauCeti.integral_add_norm_rpow_neg`: integrability
@@ -98,62 +89,6 @@ public section
 namespace TauCeti
 
 open Filter MeasureTheory Metric Module ProbabilityTheory Real Set Topology
-
-/-- One power of `‖x‖` costs one order of the Japanese bracket `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`:
-`⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)` for every real `m`. -/
-theorem one_add_norm_sq_rpow_mul_norm_le {E : Type*} [NormedAddCommGroup E] (x : E) (m : ℝ) :
-    (1 + ‖x‖ ^ 2) ^ (m / 2) * ‖x‖ ≤ (1 + ‖x‖ ^ 2) ^ ((m + 1) / 2) := by
-  rw [add_div, Real.rpow_add (by positivity), ← Real.sqrt_eq_rpow]
-  gcongr
-  exact Real.le_sqrt_of_sq_le (by linarith)
-
-/-- Away from the origin, a negative bracket power is bounded by the corresponding power of the
-norm: `⟨x⟩ ^ (-k) ≤ ‖x‖ ^ (-k)` for `x ≠ 0`. This turns symbol estimates of order `0` into
-Mihlin's condition `‖D^k m ξ‖ ≤ A / ‖ξ‖ ^ k`. -/
-theorem one_add_norm_sq_rpow_neg_le_inv_norm_pow {E : Type*} [NormedAddCommGroup E] {x : E}
-    (hx : x ≠ 0) (k : ℕ) : (1 + ‖x‖ ^ 2) ^ (-(k : ℝ) / 2) ≤ (‖x‖ ^ k)⁻¹ := by
-  have hk : ‖x‖ ^ k ≤ (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2) := by
-    calc ‖x‖ ^ k ≤ ((1 + ‖x‖ ^ 2) ^ ((1 : ℝ) / 2)) ^ k := by
-          gcongr
-          rw [← Real.sqrt_eq_rpow]
-          exact Real.le_sqrt_of_sq_le (by linarith)
-      _ = _ := by rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]; ring_nf
-  rw [neg_div, Real.rpow_neg (by positivity)]
-  exact inv_anti₀ (pow_pos (norm_pos_iff.2 hx) k) hk
-
-/-- A linear weight is dominated by the Japanese bracket `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`:
-`(1 + c ‖x‖) ^ i ≤ (1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`. -/
-theorem one_add_mul_norm_pow_le {E : Type*} [NormedAddCommGroup E] {c : ℝ} (hc : 0 ≤ c) (x : E)
-    (i : ℕ) : (1 + c * ‖x‖) ^ i ≤ (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) := by
-  have hle : 1 + c * ‖x‖ ≤ (1 + c) * √(1 + ‖x‖ ^ 2) := by
-    have h1 : 1 ≤ √(1 + ‖x‖ ^ 2) := Real.one_le_sqrt.2 (by nlinarith [sq_nonneg ‖x‖])
-    have h2 : ‖x‖ ≤ √(1 + ‖x‖ ^ 2) := Real.le_sqrt_of_sq_le (by linarith)
-    nlinarith
-  have hsqrt : (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) = √(1 + ‖x‖ ^ 2) ^ i := by
-    rw [Real.sqrt_eq_rpow, ← Real.rpow_mul_natCast (by positivity)]
-    ring_nf
-  rw [hsqrt, ← mul_pow]
-  exact pow_le_pow_left₀ (by positivity) hle i
-
-/-- Expanding one factor `‖v‖²` in coordinates:
-`‖v‖ ^ (2 (N + 1)) F = ∑ⱼ ‖v‖ ^ (2N) (vⱼ² F)`. -/
-theorem norm_pow_two_mul_succ_mul_eq_sum {n : ℕ} (v : EuclideanSpace ℝ (Fin n)) (N : ℕ) (F : ℝ) :
-    ‖v‖ ^ (2 * (N + 1)) * F = ∑ j, ‖v‖ ^ (2 * N) * (v j ^ 2 * F) := by
-  rw [← Finset.mul_sum, ← Finset.sum_mul, ← EuclideanSpace.real_norm_sq_eq]
-  ring
-
-/-- Bounds `F ≤ C₀ w` and `‖v‖ ^ (2N) F ≤ C₁ w` combine to the weighted bound
-`F ≤ 2 ^ (N - 1) (C₀ + C₁) w ((1 + ‖v‖²) ^ N)⁻¹`. -/
-theorem le_mul_one_add_norm_sq_pow_inv {E : Type*} [SeminormedAddCommGroup E] {v : E} {N : ℕ}
-    {F C₀ C₁ w : ℝ} (hF : 0 ≤ F) (h₀ : F ≤ C₀ * w) (h₁ : ‖v‖ ^ (2 * N) * F ≤ C₁ * w) :
-    F ≤ 2 ^ (N - 1) * (C₀ + C₁) * w * ((1 + ‖v‖ ^ 2) ^ N)⁻¹ := by
-  rw [← div_eq_mul_inv, le_div_iff₀ (by positivity), mul_comm F]
-  calc (1 + ‖v‖ ^ 2) ^ N * F ≤ 2 ^ (N - 1) * (1 ^ N + (‖v‖ ^ 2) ^ N) * F :=
-        mul_le_mul_of_nonneg_right (add_pow_le zero_le_one (by positivity) N) hF
-    _ = 2 ^ (N - 1) * (F + ‖v‖ ^ (2 * N) * F) := by rw [one_pow, ← pow_mul]; ring
-    _ ≤ 2 ^ (N - 1) * (C₀ * w + C₁ * w) :=
-        mul_le_mul_of_nonneg_left (add_le_add h₀ h₁) (by positivity)
-    _ = 2 ^ (N - 1) * (C₀ + C₁) * w := by ring
 
 variable {V : Type*} [NormedAddCommGroup V] [MeasurableSpace V] [BorelSpace V]
 
@@ -401,7 +336,8 @@ theorem integrable_one_add_mul_norm_pow_mul_rpow_neg_one_add_norm_sq (μ : Measu
     (1 + c * ‖x‖) ^ i * (1 + ‖x‖ ^ 2) ^ (-r / 2)
         ≤ (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖x‖ ^ 2) ^ (-r / 2) := by
           gcongr
-          exact one_add_mul_norm_pow_le hc x i
+          simpa only [abs_norm, Real.rpow_natCast] using
+            Real.one_add_mul_abs_rpow_le ‖x‖ hc i.cast_nonneg
     _ = (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ (-(r - i) / 2) := by
           rw [mul_assoc, ← Real.rpow_add hA]
           ring_nf

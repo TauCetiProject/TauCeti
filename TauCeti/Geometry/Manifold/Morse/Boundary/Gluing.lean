@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Compactification
-public import TauCeti.Geometry.Manifold.Morse.Gluing.Broken
+public import TauCeti.Geometry.Manifold.Morse.Gluing.Transverse
+import TauCeti.Topology.Closure
 
 /-!
 # Broken index-two trajectories are limits of unbroken ones
@@ -123,7 +124,6 @@ theorem exists_homeomorph_Ico_of_mem_morseBrokenTrajectoryPairs {p r : M}
       ∃ (δ : ℝ) (hδ : 0 < δ) (e : Ico (0 : ℝ) δ ≃ₜ N),
         (e ⟨0, left_mem_Ico.2 hδ⟩ : closure (hX.morseTrajectoryPairs p r c₁ c₂)) = ⟨w, hw⟩ := by
   set S := hX.morseTrajectoryPairs p r c₁ c₂ with hSdef
-  set B := hX.morseBrokenTrajectoryPairs p r c₁ c₂
   obtain ⟨a₁, a₂⟩ := w
   obtain ⟨q, -, hpq, hqr, ha₁, hc₁, ha₂, hc₂⟩ := hX.mem_morseBrokenTrajectoryPairs.1 hwB
   simp only at ha₁ hc₁ ha₂ hc₂
@@ -136,15 +136,9 @@ theorem exists_homeomorph_Ico_of_mem_morseBrokenTrajectoryPairs {p r : M}
     rw [hSdef, mem_morseTrajectoryPairs, mem_ofPred_eq, hc₁, hc₂]
   rw [hS] at hN hNw
   -- Near `(a₁, a₂)`, the compactified space adds no broken pair other than `(a₁, a₂)`.
-  have hloc : 𝓝[closure S] (a₁, a₂) ≤ 𝓝[insert (a₁, a₂) S] (a₁, a₂) := by
-    have hfar : (B \ {(a₁, a₂)})ᶜ ∈ 𝓝 (a₁, a₂) :=
-      ((h.finite_morseBrokenTrajectoryPairs hf c₁ c₂).sdiff.isClosed.isOpen_compl).mem_nhds
-        (by simp)
-    refine nhdsWithin_le_of_mem (mem_nhdsWithin_iff_exists_mem_nhds_inter.2
-      ⟨_, hfar, fun x ⟨hxB, hxK⟩ ↦ ?_⟩)
-    rcases h.closure_morseTrajectoryPairs_subset hf hind hr₂ h₂₁ h₁p hgap hxK with hx | hx
-    · exact Or.inr hx
-    · exact Or.inl (not_not.1 fun hne ↦ hxB ⟨hx, hne⟩)
+  have hloc : 𝓝[closure S] (a₁, a₂) ≤ 𝓝[insert (a₁, a₂) S] (a₁, a₂) :=
+    nhdsWithin_closure_le_nhdsWithin_insert
+      (h.finite_closure_diff_morseTrajectoryPairs hf hind hr₂ h₂₁ h₁p hgap) _
   -- The half-open arc, viewed in the compactified space.
   let g : Ico (0 : ℝ) δ → closure S := codRestrict (Subtype.val ∘ e) (closure S) fun s ↦
     insert_subset hw subset_closure (hN (e s).property)

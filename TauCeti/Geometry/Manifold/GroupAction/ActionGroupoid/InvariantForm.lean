@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.GroupAction.ActionGroupoid
+public import TauCeti.Geometry.Manifold.GroupAction.ActionGroupoid.Basic
 public import TauCeti.Geometry.Manifold.Category.InvariantForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.Quotient
 

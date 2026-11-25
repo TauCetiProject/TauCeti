@@ -19,8 +19,9 @@ For a trivial value bundle, `mpullbackWithin` and `mpullback` retain the fixed c
 space. On model spaces they agree with precomposition by the Fréchet derivative.
 Pullback at `x` only depends on the germ of `f` at `x`, within-set pullback at `x` only on the
 value at `x` and the germ within the set, and when the derivative of `f` at `x`
-is surjective it determines the form at `f x`. On a normed space, the pullback along a translate
-`w ↦ u (w + c)` is the pullback along `u` at the translated point
+is surjective it determines the form at `f x`. Pullback along a constant map sends every form
+of positive degree to zero (`TauCeti.mpullback_const`). On a normed space, the pullback along a
+translate `w ↦ u (w + c)` is the pullback along `u` at the translated point
 (`TauCeti.mpullback_comp_add_right`).
 
 This construction follows Lee, *Introduction to Smooth Manifolds*, second edition,
@@ -259,6 +260,16 @@ theorem mpullback_apply_pair (f : M → M') (ω : RoughForm I' M' F 2) (x : M)
   funext i
   fin_cases i <;> rfl
 
+/-- Evaluation of the pullback of a one-form on a tangent vector. -/
+theorem mpullback_apply_one (f : M → M') (ω : RoughForm I' M' F 1) (x : M)
+    (v : TangentSpace I x) :
+    mpullback I I' f ω x ![v] = ω (f x) ![mfderiv I I' f x v] := by
+  rw [mpullback_apply]
+  congr 1
+  funext i
+  fin_cases i
+  rfl
+
 /-- Pullback within the whole manifold is ordinary pullback. -/
 @[simp]
 theorem mpullbackWithin_univ (f : M → M') (ω : RoughForm I' M' F k) :
@@ -326,6 +337,15 @@ theorem mpullback_apply_eq_zero {f : M → M'} {ω : RoughForm I' M' F k} {x : M
   ext v
   simp [mpullback_apply, h]
 
+/-- The pullback of a form of positive degree along a constant map vanishes: the derivative of a
+constant map is zero, and a form of positive degree vanishes on zero vectors. -/
+@[simp]
+theorem mpullback_const (hk : k ≠ 0) (y : M') (ω : RoughForm I' M' F k) :
+    mpullback I I' (fun _ : M ↦ y) ω = 0 := by
+  ext x v
+  rw [mpullback_apply, mfderiv_const]
+  exact (ω y).map_coord_zero ⟨0, Nat.pos_of_ne_zero hk⟩ (zero_apply _)
+
 /-- Pullback along a surjective map whose derivatives are all surjective is injective. -/
 theorem mpullback_injective_of_surjective {f : M → M'} (hsurj : Function.Surjective f)
     (hf : ∀ x, Function.Surjective (mfderiv I I' f x)) :
@@ -367,6 +387,14 @@ theorem mpullback_sub [IsTopologicalAddGroup F] (f : M → M') (ω η : RoughFor
   funext x
   ext v
   simp only [mpullback_apply, Pi.sub_apply, ContinuousAlternatingMap.sub_apply]
+
+/-- Pullback commutes with finite sums. -/
+@[simp]
+theorem mpullback_sum [ContinuousAdd F] (f : M → M') {ι : Type*} (s : Finset ι)
+    (ω : ι → RoughForm I' M' F k) :
+    mpullback I I' f (∑ i ∈ s, ω i) = ∑ i ∈ s, mpullback I I' f (ω i) :=
+  map_sum (⟨⟨mpullback I I' f, mpullback_zero f⟩, mpullback_add f⟩ :
+    RoughForm I' M' F k →+ RoughForm I M F k) ω s
 
 /-- Within-set pullback respects scalar multiplication of the coefficients, by any scalars
 acting continuously on the coefficient space and commuting with the real action. -/

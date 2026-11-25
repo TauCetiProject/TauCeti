@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.Basic
+public import TauCeti.Analysis.PDE.Regularity.Hessian.DivergenceForm
+import TauCeti.Analysis.Holder.Superposition
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
+import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 import TauCeti.Analysis.Sobolev.W1p.Convex
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
@@ -14,7 +17,7 @@ import TauCeti.Topology.Instances.Matrix
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
-# Interior regularity of the gradient for quasilinear divergence-form equations
+# Interior regularity for quasilinear divergence-form equations
 
 Let `Ω ⊆ ℝⁿ⁺¹` be open and consider the quasilinear divergence-form equation
 
@@ -32,6 +35,14 @@ These are the exponents of the linear theory with `α`-Hölder coefficients, so 
 coefficients on `u` costs nothing. Weak solutions exist on every bounded open set
 (`TauCeti.PDE.exists_sub_mem_w1p0Submodule_forall_energyFormH1_quasilinear_eq`).
 
+One more derivative of the coefficient buys one more derivative of the solution. If `G = 0`, if
+`0 < α < 1`, if `f ∈ L²(Ω)` is `α`-Hölder near every point of `Ω`, and if every entry of `A` is
+`C¹` as a function of `(x, s)` with derivative `α`-Hölder near every point of `Ω × ℝ`, then every
+weak solution agrees almost everywhere with a function that is `C²` on `Ω` and whose second
+derivative is `α`-Hölder on every compact subset of `Ω`
+(`exists_contDiffOn_two_ae_eq_and_holderOnWith_iteratedFDeriv_two_of_energyFormH1_quasilinear_eq`).
+This is interior `C^{2,α}` regularity.
+
 ## The bootstrap
 
 A weak solution `u` solves the linear equation with the frozen coefficient `a(x) = A(x, u(x))`.
@@ -43,9 +54,17 @@ A weak solution `u` solves the linear equation with the frozen coefficient `a(x)
   Schauder estimate for divergence-form equations with Hölder coefficients makes `∇u` Hölder
   continuous with a small positive exponent.
 * **Lipschitz.** A Hölder gradient is locally bounded, so `ū` is locally Lipschitz, hence
-  `β`-Hölder (`TauCeti.W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le`), and the
-  frozen coefficient is `β`-Hölder.
+  `β`-Hölder (`TauCeti.W1p.exists_holderOnWith_preciseRepresentative_of_ae_norm_gradient_le`), and
+  the frozen coefficient is `β`-Hölder.
 * **Schauder again.** A second application of the Schauder estimate gives the exponents above.
+* **Differentiating the equation.** For the `C^{2,α}` statement, the data are bounded near each
+  point, so `∇u` is `α`-Hölder near each point, and `u` has a `C¹` representative `g₁`
+  (`TauCeti.W1p.exists_contDiffOn_one_ae_eq_of_continuousOn_preciseRepresentative`). The frozen
+  coefficient `x ↦ A(x, g₁(x))` is then `C^{1,α}` near each point
+  (`TauCeti.exists_mem_nhds_holderOnWith_fderiv_superposition`), and the linear theorem for
+  `C^{1,α}` coefficients
+  (`TauCeti.PDE.exists_contDiffOn_two_ae_eq_and_holderOnWith_iteratedFDeriv_two_of_contDiffOn`)
+  applies to `u`.
 
 ## References
 
@@ -60,7 +79,7 @@ public section
 noncomputable section
 
 open InnerProductSpace MeasureTheory Metric Set TopologicalSpace TauCeti.MeasureTheory
-open scoped Distributions ENNReal Gradient InnerProductSpace NNReal
+open scoped Distributions ENNReal Gradient InnerProductSpace NNReal Topology
 
 namespace TauCeti
 
@@ -286,17 +305,150 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_forall_energyFormH
     ((NNReal.coe_le_coe.2 (min_le_right γ₀ β)).trans hβq) hU (by positivity)
     (hUU.trans ((thickening_mono (by linarith) S).trans hRS)) (h₀.mono hUU)
   -- The Lipschitz step: `ū` is `β`-Hölder on `S_{R/8}`.
-  obtain ⟨M₁, hM₁⟩ :=
-    ((h₀.mono (thickening_mono (by linarith) S)).isBounded_image hU).exists_norm_le
   obtain ⟨M₂, hM₂⟩ := (h₁.isBounded_image hU).exists_norm_le
-  obtain ⟨C₂, h₂⟩ := W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le u
-    (by positivity) hUΩ (forall_mem_image.1 hM₁) (forall_mem_image.1 hM₂) hβ1.le
+  have hgrad : ∀ᵐ x ∂volume.restrict (thickening (R / 4) S),
+      ‖W1p.gradient u x‖ ≤ (M₂.toNNReal : ℝ) := by
+    have hpr := ae_eq_restrict_preciseRepresentative Omega.isOpen
+      (W1p.hasWeakFDerivOn u).locallyIntegrableOn_gradient
+    filter_upwards [ae_restrict_mem isOpen_thickening.measurableSet,
+      ae_restrict_of_ae_restrict_of_subset hUΩ hpr] with x hx hx'
+    rw [hx']
+    exact (forall_mem_image.1 hM₂ hx).trans (Real.le_coe_toNNReal _)
+  obtain ⟨C₂, h₂⟩ := W1p.exists_holderOnWith_preciseRepresentative_of_ae_norm_gradient_le u
+    hUΩ hgrad hβ1.le
   -- Second Schauder pass, on `S`, with the exponent `β`.
   have hR8 : R / 4 / 2 = R / 8 := by ring
   rw [hR8] at h₂
   exact exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_value hq2 hA hAx
     hAs hG hf hu le_rfl hβα hβ hβ1 le_rfl hβq hS (by positivity)
     ((thickening_mono (by linarith) S).trans hRS) h₂
+
+/-- **The `C^{1,α}` step, near a point.** If the data `f` of the quasilinear equation is
+`α`-Hölder near every point of `Ω`, the precise representative of `∇u` is `α`-Hölder near every
+point of `Ω`. The equation is restricted to a ball on which `f` is bounded, where the interior
+`C^{1,β}` theorem applies with `q = ∞`. -/
+private theorem exists_mem_nhds_holderOnWith_preciseRepresentative_gradient (hα : 0 < α)
+    (hα1 : α < 1)
+    (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
+      (fun x => A x s) lam Lam)
+    (hAx : ∀ s, HolderOnWith Kx α (fun x => matrixBilinearForm (A x s)) Omega)
+    (hAs : ∀ x ∈ Omega, LipschitzWith L fun s => matrixBilinearForm (A x s))
+    (hfH : ∀ x ∈ Omega, ∃ r > 0, ∃ C : ℝ≥0, HolderOnWith C α f (ball x r))
+    (hu : ∀ v : W1p0 volume Omega 2, energyFormH1 (fun x => A x (W1p.value u x)) 0 0 u
+        (v : W1p volume Omega 2) =
+      ∫ x in Omega, f x * W1p.value (v : W1p volume Omega 2) x)
+    {x : EuclideanSpace ℝ (Fin (n + 1))} (hx : x ∈ Omega) :
+    ∃ T ∈ 𝓝 x, ∃ C : ℝ≥0, HolderOnWith C α
+      (preciseRepresentative volume (W1p.gradient u)) T := by
+  obtain ⟨rf, hrf, Cf, hCf⟩ := hfH x hx
+  obtain ⟨ρ, hρ, hρΩ⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
+  set R := min rf ρ
+  have hR : 0 < R := lt_min hrf hρ
+  let B : Opens (EuclideanSpace ℝ (Fin (n + 1))) := ⟨ball x R, isOpen_ball⟩
+  have hBΩ : B ≤ Omega := (ball_subset_ball (min_le_right _ _)).trans hρΩ
+  -- The datum is Hölder, hence bounded, on `B`.
+  have hfB : HolderOnWith Cf α f B := hCf.mono (ball_subset_ball (min_le_left _ _))
+  obtain ⟨M, hM⟩ := (hfB.isBounded_image isBounded_ball).exists_norm_le
+  have hftop : MemLp f ⊤ (volume.restrict B) :=
+    memLp_top_of_bound ((hfB.continuousOn hα).aestronglyMeasurable
+      B.isOpen.measurableSet) M (ae_restrict_of_forall_mem B.isOpen.measurableSet
+        (forall_mem_image.1 hM))
+  -- The restriction of `u` to `B` solves the restricted equation against test functions.
+  have huB : ∀ φ : 𝓓(B, ℝ), energyFormH1 (fun y => A y (W1p.value (W1p.restrictL hBΩ u) y)) 0 0
+      (W1p.restrictL hBΩ u) (W1p.ofTestFunctionₗ volume B 2 φ) =
+      (∫ y in B, ⟪(0 : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) y,
+        ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) y⟫_ℝ) + ∫ y in B, f y * φ y := by
+    intro φ
+    rw [energyFormH1_congr_ae (a' := fun y => A y (W1p.value u y))
+      ((W1p.value_restrictL_ae hBΩ u).mono fun y hy => by rw [hy]) .rfl .rfl,
+      energyFormH1_restrictL_eq_setIntegral hBΩ hu ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩]
+    simp only [Pi.zero_apply, inner_zero_left, integral_zero, zero_add]
+    exact integral_congr_ae ((W1p.value_ofTestFunctionₗ_ae (p := 2) φ).mono fun y hy =>
+      congrArg (f y * ·) hy)
+  obtain ⟨C, hC⟩ :=
+    exists_holderOnWith_preciseRepresentative_gradient_of_forall_energyFormH1_quasilinear_eq
+      (Omega := B) (q := ⊤) (G := 0) (KG := 0) le_top (fun s => (hA s).mono_set hBΩ)
+      (fun s => (hAx s).mono hBΩ) (fun y hy => hAs y (hBΩ hy)) (HolderWith.zero.holderOnWith _)
+      hftop huB (β := α) hα hα1 le_rfl (by simpa using hα1.le) isBounded_ball (half_pos hR)
+      (S := ball x (R / 2)) ((thickening_ball x _ _).trans_eq (by rw [add_halves, Opens.coe_mk]))
+  refine ⟨ball x (R / 2), ball_mem_nhds x (half_pos hR), C, hC.congr fun y hy => ?_⟩
+  exact preciseRepresentative_congr_ae_nhds
+    (B.isOpen.mem_nhds (ball_subset_ball (half_le_self hR.le) hy)) (W1p.gradient_restrictL_ae hBΩ u)
+
+/-- **Interior `C^{2,α}` regularity for quasilinear divergence-form equations.** Let `Ω ⊆ ℝⁿ⁺¹` be
+open, let `0 < α < 1`, and let `A(x, s)` be a field of matrices satisfying the hypotheses of the
+interior `C^{1,β}` theorem
+(`exists_holderOnWith_preciseRepresentative_gradient_of_forall_energyFormH1_quasilinear_eq`):
+uniformly elliptic with constants `λ, Λ` in `x` for every `s`, `α`-Hölder in `x` with a constant
+independent of `s`, and Lipschitz in `s` with a constant independent of `x`. Suppose moreover that
+every entry of `A`, as a function of `(x, s)`, is `C¹` on `Ω × ℝ` with derivative `α`-Hölder near
+every point of `Ω × ℝ`, and that `f ∈ L²(Ω)` is `α`-Hölder near every point of `Ω`. If
+`u ∈ H¹(Ω)` is a weak solution of
+
+`-∂ᵢ(Aⁱʲ(x, u) ∂ⱼu) = f` in `Ω`,
+
+that is `∫_Ω ⟨A(x, u) ∇u, ∇v⟩ = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, then `u` agrees almost everywhere
+on `Ω` with a function `g` that is `C²` on `Ω` and whose second derivative is `α`-Hölder on every
+compact subset of `Ω`. No boundary condition is imposed on `u` and nothing is assumed about `∂Ω`.
+-/
+theorem
+    exists_contDiffOn_two_ae_eq_and_holderOnWith_iteratedFDeriv_two_of_energyFormH1_quasilinear_eq
+    (hα : 0 < α) (hα1 : α < 1)
+    (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
+      (fun x => A x s) lam Lam)
+    (hAx : ∀ s, HolderOnWith Kx α (fun x => matrixBilinearForm (A x s)) Omega)
+    (hAs : ∀ x ∈ Omega, LipschitzWith L fun s => matrixBilinearForm (A x s))
+    (hA1 : ∀ i j, ContDiffOn ℝ 1 (fun p : EuclideanSpace ℝ (Fin (n + 1)) × ℝ => A p.1 p.2 i j)
+      ((Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ×ˢ univ))
+    (hdA : ∀ p ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ×ˢ univ, ∃ r > 0, ∃ C : ℝ≥0,
+      ∀ i j, HolderOnWith C α
+        (fderiv ℝ fun q : EuclideanSpace ℝ (Fin (n + 1)) × ℝ => A q.1 q.2 i j) (ball p r))
+    (hf : MemLp f 2 (volume.restrict Omega))
+    (hfH : ∀ x ∈ Omega, ∃ r > 0, ∃ C : ℝ≥0, HolderOnWith C α f (ball x r))
+    (hu : ∀ v : W1p0 volume Omega 2, energyFormH1 (fun x => A x (W1p.value u x)) 0 0 u
+        (v : W1p volume Omega 2) =
+      ∫ x in Omega, f x * W1p.value (v : W1p volume Omega 2) x) :
+    ∃ g : EuclideanSpace ℝ (Fin (n + 1)) → ℝ, ContDiffOn ℝ 2 g Omega ∧
+      W1p.value u =ᵐ[volume.restrict Omega] g ∧
+      ∀ K ⊆ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), IsCompact K →
+        ∃ C : ℝ≥0, HolderOnWith C α (iteratedFDeriv ℝ 2 g) K := by
+  -- The `C^{1,α}` step: `u` has a `C¹` representative `g₁` with locally `α`-Hölder derivative.
+  have hloc := fun x (hx : x ∈ Omega) =>
+    exists_mem_nhds_holderOnWith_preciseRepresentative_gradient hα hα1 hA hAx hAs hfH hu hx
+  have hP : ContinuousOn (preciseRepresentative volume (W1p.gradient u)) Omega := fun x hx => by
+    obtain ⟨T, hT, C, hC⟩ := hloc x hx
+    exact ((hC.continuousOn hα).continuousAt hT).continuousWithinAt
+  obtain ⟨g₁, hg₁, hug₁, hdg₁⟩ :=
+    W1p.exists_contDiffOn_one_ae_eq_of_continuousOn_preciseRepresentative u le_rfl hP
+  have hdg₁H : ∀ x ∈ Omega, ∃ T ∈ 𝓝 x, ∃ C : ℝ≥0, HolderOnWith C α (fderiv ℝ g₁) T :=
+    fun x hx => by
+      obtain ⟨T, hT, C, hC⟩ := hloc x hx
+      exact ⟨T ∩ Omega, Filter.inter_mem hT (Omega.isOpen.mem_nhds hx), _,
+        ((innerSL ℝ).lipschitzWith.comp_holderOnWith (hC.mono inter_subset_left)).congr
+          fun y hy => (hdg₁ y hy.2).fderiv.symm⟩
+  -- The frozen coefficient `A(·, g₁)` is `C^{1,α}`, by the superposition rule.
+  have ha : ∀ i j, ContDiffOn ℝ 1 (fun x => A x (g₁ x) i j) Omega := fun i j =>
+    (hA1 i j).comp (contDiffOn_id.prodMk hg₁) fun x hx => ⟨hx, mem_univ _⟩
+  have hda : ∀ x ∈ Omega, ∃ r > 0, ∃ C : ℝ≥0, ∀ i j,
+      HolderOnWith C α (fderiv ℝ (fun y => A y (g₁ y) i j)) (ball x r) := by
+    intro x hx
+    choose T hT C hC using fun i j =>
+      exists_mem_nhds_holderOnWith_fderiv_superposition (A := fun y s => A y s i j)
+        Omega.isOpen (hA1 i j) (fun p hp => by
+          obtain ⟨r, hr, C, hC⟩ := hdA p hp
+          exact ⟨ball p r, ball_mem_nhds p hr, C, hC i j⟩) hg₁ hdg₁H le_rfl le_rfl hx
+    obtain ⟨r, hr, hrT⟩ := nhds_basis_ball.mem_iff.1
+      (Filter.iInter_mem.2 fun i => Filter.iInter_mem.2 fun j => hT i j)
+    refine ⟨r, hr, ∑ i, ∑ j, C i j, fun i j => ((hC i j).mono
+      (hrT.trans ((iInter_subset _ i).trans (iInter_subset _ j)))).mono_const ?_⟩
+    exact (Finset.single_le_sum (fun _ _ => zero_le) (Finset.mem_univ j)).trans
+      (Finset.single_le_sum (f := fun i => ∑ j, C i j) (fun _ _ => zero_le)
+        (Finset.mem_univ i))
+  -- `u` solves the linear equation with this coefficient, and the linear theorem applies.
+  refine exists_contDiffOn_two_ae_eq_and_holderOnWith_iteratedFDeriv_two_of_contDiffOn hα hα1
+    (UniformlyEllipticOn.apply_of_forall hA g₁) ha hda hf hfH fun v => ?_
+  rw [← hu v]
+  exact energyFormH1_congr_ae (hug₁.mono fun x hx => by simp only [hx]) .rfl .rfl _ _
 
 end PDE
 

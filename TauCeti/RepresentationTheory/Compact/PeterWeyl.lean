@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Parseval
+public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.RepresentationTheory.Compact.Orthonormal
 public import TauCeti.RepresentationTheory.Compact.RepresentativeDensity
 public import TauCeti.RepresentationTheory.Continuous.Conjugate
 public import TauCeti.RepresentationTheory.Continuous.OrthogonalDecomposition
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Equivalence
+import TauCeti.RepresentationTheory.Compact.UnitaryModel
 
 /-!
 # The Peter-Weyl theorem: the matrix coefficients are a Hilbert basis of `L²(G)`
@@ -97,6 +98,8 @@ the span `TauCeti.modelSubmodule` of the matrix coefficients of the models insid
   unitary continuous representation is a linear combination of the models' matrix coefficients.
 * `TauCeti.IsIrrepSkeleton.dense_modelSubmodule`: those coefficients are uniformly dense in
   `C(G, 𝕜)`.
+* `TauCeti.IsIrrepSkeleton.exists_nonempty_equiv`: every finite-dimensional irreducible continuous
+  representation is equivalent to a member of a skeleton.
 * `TauCeti.IsIrrepSkeleton.orthogonal_span_peterWeylFamily_eq_bot`: the completeness of the
   orthonormal system.
 * `TauCeti.coe_peterWeylBasis`, `TauCeti.coe_stdPeterWeylBasis`: the basis is the normalized
@@ -248,6 +251,20 @@ theorem matrixCoeff_mem_of_isIrreducible (h : IsIrrepSkeleton models) {V : Type*
       (ContinuousLinearEquiv.congr e.toContinuousLinearEquiv π) g := by rw [hi]
   rw [ContRepresentation.matrixCoeff_apply, ContRepresentation.matrixCoeff_apply, hg]
   simp
+
+omit [MeasurableSpace G] [BorelSpace G] in
+/-- **A skeleton exhausts the irreducibles up to equivalence.** Every finite-dimensional
+irreducible continuous representation on a normed space is equivalent to a member of the
+skeleton. -/
+theorem exists_nonempty_equiv (h : IsIrrepSkeleton models) {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace 𝕜 W] [FiniteDimensional 𝕜 W] (τ : ContRepresentation 𝕜 G W) (hτ : Continuous τ)
+    (hirr : τ.toRepresentation.IsIrreducible) :
+    ∃ i, Nonempty (_root_.ContRepresentation.Equiv τ (models i).rep) := by
+  obtain ⟨e, hu⟩ := ContRepresentation.exists_isUnitary_congr_euclideanSpace τ hτ
+  obtain ⟨i, e', hi⟩ := h.exists_congr_eq _ _ (ContinuousLinearEquiv.continuous_congr e hτ) hu
+    (ContinuousLinearEquiv.isIrreducible_congr e hirr)
+  exact ⟨i, ⟨(τ.congrEquiv e).trans (hi ▸ ContRepresentation.congrEquiv _
+    e'.toContinuousLinearEquiv)⟩⟩
 
 omit [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G] [BorelSpace G] in
 /-- **A matrix coefficient of a vector in an irreducible invariant subspace is accounted for.**
@@ -618,7 +635,7 @@ theorem hasSum_norm_sq_peterWeylCoeff [IsAlgClosed 𝕜]
     (f : Lp 𝕜 2 (haarProb G)) :
     HasSum (fun x ↦ ‖peterWeylCoeff models f x‖ ^ 2) (‖f‖ ^ 2) := by
   simpa only [← (peterWeylBasis h).repr_apply_apply, peterWeylBasis_repr_apply] using
-    (peterWeylBasis h).hasSum_norm_sq_inner f
+    (peterWeylBasis h).hasSum_norm_inner_sq f
 
 /-- **Norm-square Parseval for the Peter-Weyl basis** (`tsum` form). -/
 theorem tsum_norm_sq_peterWeylCoeff [IsAlgClosed 𝕜]

@@ -43,15 +43,22 @@ apply to complex manifolds. Two properties tie it to the complex structure:
 * `TauCeti.SmoothAlmostComplexStructure.ofComplexManifold_apply`,
   `TauCeti.SmoothAlmostComplexStructure.toEndomorphism_ofComplexManifold`: it acts on each tangent
   space as multiplication by `i`.
+* `SmoothAlmostComplexStructure.orientation_eq_orientationAt_of_apply_one_eq_ofComplexManifold`:
+  on a Riemann surface with its canonical orientation, every frame `(e, i e)` is positive.
 * `TauCeti.SmoothAlmostComplexStructure.inTangentCoordinates_ofComplexManifold`: it is
   multiplication by `i` in the tangent coordinates of any chart.
 * `TauCeti.SmoothAlmostComplexStructure.inChart_ofComplexManifold_self`: on a complex normed
   space, its chart expression is constantly multiplication by `i`.
+* `TauCeti.SmoothAlmostComplexStructure.ofComplexManifold_self_eq_constSmooth`: on a
+  finite-dimensional complex normed space, it is the constant structure made from
+  `AlmostComplexStructure.ofComplexModule`.
 * `TauCeti.isPseudoholomorphicAt_ofComplexManifold_iff` and its variants within a set, on a set
   and everywhere: pseudoholomorphic maps between complex manifolds are the holomorphic maps.
 * `TauCeti.isPseudoholomorphic_ofComplexManifold_subtype_val`,
   `TauCeti.isPseudoholomorphic_ofComplexManifold_inclusion`: inclusions of open subsets are
   pseudoholomorphic.
+* `TauCeti.mfderiv_symm_apply_I_of_mem_maximalAtlas`: for a holomorphic chart of a complex curve,
+  the coordinate vector `∂ₜ` is `j ∂ₛ`.
 * `MDifferentiableAt.mfderiv_ofComplexManifold_apply`: the real differential of a holomorphic map
   commutes with the almost complex structures.
 * `TauCeti.mdifferentiableAt_iff_mvfderiv_ofComplexManifold_apply`: a real differentiable complex
@@ -104,6 +111,26 @@ space. -/
 theorem ofComplexManifold_apply (x : M) (v : E) : ofComplexManifold E M x v = Complex.I • v :=
   ofTangentCoordChangeISMul_apply tangentCoordChange_I_smul x v
 
+open Module in
+/-- **A Riemann surface is oriented by its complex frames.** For the canonical orientation of a
+Riemann surface `N`, reindexed from `Fin (2 * finrank ℂ ℂ)` to `Fin 2`, every frame `(e, i e)` of
+a tangent plane is positive: in the basis `(1, i)` of the tangent plane `ℂ`, which induces the
+canonical orientation, it has determinant `|e|² > 0`. -/
+theorem orientation_eq_orientationAt_of_apply_one_eq_ofComplexManifold {N : Type*}
+    [TopologicalSpace N] [ChartedSpace ℂ N] [IsManifold 𝓘(ℂ, ℂ) ∞ N] (h : 2 * finrank ℂ ℂ = 2)
+    (c : N) (b : Basis (Fin 2) ℝ (TangentSpace 𝓘(ℝ, ℂ) c))
+    (hb : b 1 = ofComplexManifold ℂ N c (b 0)) :
+    b.orientation = ((complexManifoldOrientation ℂ N).reindex (finCongr h)).orientationAt c := by
+  rw [orientationAt_reindex_complexManifoldOrientation_complex]
+  -- The tangent plane `TangentSpace 𝓘(ℝ, ℂ) c` is `ℂ` itself.
+  let b' : Basis (Fin 2) ℝ ℂ := b
+  have hb' : b' 1 = Complex.I * b' 0 := hb.trans (ofComplexManifold_apply (M := N) c (b' 0))
+  change b'.orientation = Complex.orientation
+  rw [Complex.orientation, eq_comm, Basis.orientation_eq_iff_det_pos, Basis.det_apply,
+    Matrix.det_fin_two]
+  simp only [Basis.toMatrix_apply, Complex.coe_basisOneI_repr, hb']
+  simpa [Complex.normSq_apply] using Complex.normSq_pos.2 (b'.ne_zero 0)
+
 /-- The real differential of an inverse complex chart intertwines multiplication by `i` with
 its induced almost complex structure. -/
 theorem ofComplexManifold_apply_mfderivWithin_extChartAt_symm {x₀ : M} {z v : E}
@@ -153,6 +180,15 @@ theorem ofComplexManifold_self_eq_const
     ofComplexManifold E E = const (Complex.I • ContinuousLinearMap.id ℝ E) hI := by
   ext x v
   exact (ofComplexManifold_apply (E := E) x v).trans (const_apply _ hI x v).symm
+
+/-- On a finite-dimensional complex normed space `E` viewed as a manifold over itself,
+`ofComplexManifold E E` is the constant structure made from the pointwise almost complex structure
+`AlmostComplexStructure.ofComplexModule E` of multiplication by `i`. -/
+theorem ofComplexManifold_self_eq_constSmooth [FiniteDimensional ℂ E] :
+    ofComplexManifold E E = (AlmostComplexStructure.ofComplexModule E).constSmooth := by
+  refine ext fun x (v : E) ↦ ?_
+  rw [AlmostComplexStructure.constSmooth_apply, AlmostComplexStructure.ofComplexModule_apply]
+  exact ofComplexManifold_apply x v
 
 /-- On a complex normed space `E`, for example `ℂⁿ`, the chart expression of multiplication
 by `i` is constantly multiplication by `i`. Via `toContMDiff`, this is a structure of every
@@ -265,6 +301,18 @@ theorem _root_.MDifferentiableAt.mfderiv_ofComplexManifold_apply
   (isPseudoholomorphicAt_ofComplexManifold_iff.2 hf).mfderiv_apply_commute v
 
 end Pseudoholomorphic
+
+/-- **Coordinate vectors of a holomorphic chart.** For a holomorphic chart `φ` of a complex curve
+`X` and a point `z` of its target, the coordinate vector `∂ₜ = dφ⁻¹ i` is `j ∂ₛ`, where
+`∂ₛ = dφ⁻¹ 1` and `j` is the almost complex structure of `X`. -/
+theorem mfderiv_symm_apply_I_of_mem_maximalAtlas {X : Type*} [TopologicalSpace X]
+    [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) ∞ X] {φ : OpenPartialHomeomorph X ℂ}
+    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X) {z : ℂ} (hz : z ∈ φ.target) :
+    mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm z Complex.I =
+      ofComplexManifold ℂ X (φ.symm z) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm z (1 : ℂ)) := by
+  have h := (mdifferentiableAt_symm_of_mem_maximalAtlas hφ hz).mfderiv_ofComplexManifold_apply
+    (1 : ℂ)
+  rwa [ofComplexManifold_apply (M := ℂ), smul_eq_mul, mul_one] at h
 
 /-- A real differentiable complex valued function on a complex manifold is holomorphic at a point
 exactly when its real differential there is complex linear: it takes `j v` to `i` times its value

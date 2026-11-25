@@ -12,6 +12,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.SpecificLimits.ZPow
 
@@ -83,6 +84,10 @@ inequalities on annuli apply.
   inequality `‖Pⱼ u‖_r ≤ C 2^{jn(1/p - 1/r)} ‖Pⱼ u‖_p` for `p ≤ r`, and
   `TemperedDistribution.exists_fourierMultiplierCLM_inv_smul_eq_and_norm_le_mul_rpow`: the
   truncation at scale `R` of an `Lᵖ` function is `O(R ^ (n / p))` in `L^∞`.
+* `TemperedDistribution.homogeneousLittlewoodPaleyBlock_sum_littlewoodPaleyBlock_range`: a block
+  `Pⱼ` with `2^j φ.rOut ≤ 2^N φ.rIn` only sees the inhomogeneous blocks `Δₖ`, `k ≤ N`, and
+  `TemperedDistribution.exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le_of_nonpos`: if the
+  inhomogeneous blocks of `u` are `Lᵖ` functions, its blocks `Pⱼ u`, `j ≤ 0`, are bounded in `Lᵖ`.
 * `TemperedDistribution.tendsto_fourierMultiplierCLM_two_zpow_atTop`: `Sᵦ u → u` as `b → ∞`.
 * `TemperedDistribution.tendsto_sum_homogeneousLittlewoodPaleyBlock_iff`: the homogeneous
   reconstruction holds exactly when `Sₐ u → 0` as `a → -∞`, and
@@ -240,6 +245,26 @@ theorem exists_homogeneousLittlewoodPaleyBlock_compL_eq_zero (φ' : ContDiffBump
   · simp_rw [homogeneousLittlewoodPaleyBlock_compL_homogeneousLittlewoodPaleyBlock,
       mul_comm _ (φ.littlewoodPaley j _), hL j k hjk, Complex.ofReal_zero,
       fourierMultiplierCLM_const, zero_smul]
+
+/-- **The low-frequency blocks see only the low frequencies.** If the cutoff `ψⱼ` is carried by
+the ball where `φ (2^{-N} ·) = 1`, which is guaranteed by `2^j φ.rOut ≤ 2^N φ.rIn`, then `Pⱼ` does
+not see the inhomogeneous blocks `Δₖ`, `k > N`: `Pⱼ (∑_{k ≤ N} Δₖ u) = Pⱼ u`. -/
+theorem homogeneousLittlewoodPaleyBlock_sum_littlewoodPaleyBlock_range {j : ℤ} {N : ℕ}
+    (hjN : 2 ^ j * φ.rOut ≤ 2 ^ N * φ.rIn) (u : 𝓢'(E, F)) :
+    homogeneousLittlewoodPaleyBlock F φ j
+        (∑ k ∈ Finset.range (N + 1), littlewoodPaleyBlock F φ k u) =
+      homogeneousLittlewoodPaleyBlock F φ j u := by
+  have hN : (0 : ℝ) < 2 ^ N := by positivity
+  rw [← _root_.sum_apply, ← littlewoodPaleyLowPass_def,
+    littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM, homogeneousLittlewoodPaleyBlock_apply,
+    homogeneousLittlewoodPaleyBlock_apply,
+    ← φ.coe_lowPassSchwartz hN.ne', fourierMultiplierCLM_fourierMultiplierCLM_apply
+      (φ.lowPassSchwartz hN.ne').hasTemperateGrowth (φ.hasTemperateGrowth_ofReal_littlewoodPaley j),
+    mul_comm, φ.mul_lowPassSchwartz_of_support_subset hN]
+  -- On the support of `ψⱼ`, `‖ξ‖ ≤ 2^j φ.rOut ≤ 2^N φ.rIn`.
+  refine (subset_tsupport _).trans <| (tsupport_comp_subset Complex.ofReal_zero _).trans
+    fun ξ hξ ↦ mem_closedBall_zero_iff.2 ?_
+  exact (φ.tsupport_littlewoodPaley_subset j hξ).2.trans hjN
 
 /-! ### Reconstruction -/
 
@@ -426,6 +451,29 @@ theorem exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le_of_le {p r : ℝ�
   rw [Real.mul_rpow (by positivity) φ.rOut_pos.le, ← Real.rpow_intCast,
     ← Real.rpow_mul zero_le_two, mul_comm (j : ℝ) a]
   ring
+
+variable {φ} in
+/-- **The low-frequency homogeneous blocks are bounded in `Lᵖ`.** If the inhomogeneous blocks
+`Δₖ u` are `Lᵖ` functions `fₖ`, then there are `B` and `Lᵖ` functions `G j` with `Pⱼ u = G j`
+and `‖G j‖_p ≤ B` for every `j ≤ 0`. They are blocks of the `Lᵖ` function `∑_{k ≤ N} Δₖ u`, for `N`
+with `φ.rOut ≤ 2^N φ.rIn`. -/
+theorem exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le_of_nonpos
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] {u : 𝓢'(E, F)} {f : ℕ → Lp F p (volume : Measure E)}
+    (hf : ∀ k, littlewoodPaleyBlock F φ k u = f k) :
+    ∃ B : ℝ, ∃ G : ℤ → Lp F p (volume : Measure E), ∀ j ≤ 0,
+      homogeneousLittlewoodPaleyBlock F φ j u = G j ∧ ‖G j‖ ≤ B := by
+  obtain ⟨C, hC⟩ := exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le (F := F) φ
+  obtain ⟨N, hN⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
+  set S : Lp F p (volume : Measure E) := ∑ k ∈ Finset.range (N + 1), f k
+  choose G hG hGC using fun j : ℤ ↦ hC (p := p) j S
+  refine ⟨C * ‖S‖, G, fun j hj ↦ ⟨?_, hGC j⟩⟩
+  have hjN : (2 : ℝ) ^ j * φ.rOut ≤ 2 ^ N * φ.rIn :=
+    calc (2 : ℝ) ^ j * φ.rOut ≤ 1 * φ.rOut :=
+          mul_le_mul_of_nonneg_right (zpow_le_one_of_nonpos₀ (one_le_two (α := ℝ)) hj)
+            φ.rOut_pos.le
+      _ ≤ 2 ^ N * φ.rIn := by rw [one_mul]; exact hN.le
+  rw [← homogeneousLittlewoodPaleyBlock_sum_littlewoodPaleyBlock_range φ hjN, ← hG j,
+    Lp.toTemperedDistribution_sum, Finset.sum_congr rfl fun k _ ↦ hf k]
 
 /-- **Low-pass truncations of `Lᵖ` functions are small in `L^∞`.** There is `C`, depending only on
 `φ` and `p`, such that for every `R > 0` and every `f ∈ Lᵖ`, the truncation
