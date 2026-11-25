@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder.Parity
 public import TauCeti.Geometry.Symplectic.ConleyZehnder
 
-import TauCeti.LinearAlgebra.Eigenspace.Det
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
 /-!
@@ -31,7 +30,9 @@ first kind, so its index is an integer; this is what makes the Conley–Zehnder 
 generators of a Floer complex integer valued. The statements are those of the matrix index
 (`TauCeti.GLSymplectic.exists_int_conleyZehnderIndex_eq_of_one`,
 `TauCeti.GLSymplectic.exists_int_conleyZehnderIndex_eq`), read in a symplectic basis: the matrix of
-`1 - B` in a basis has the determinant of `1 - B`, and its eigenvalue `1` is that of `B`.
+`1 - B` in a basis has the determinant of `1 - B`, and its eigenvalue `1` is that of `B`
+(`TauCeti.SymplecticForm.det_one_sub_toGLSymplectic`,
+`TauCeti.SymplecticForm.det_one_sub_toGLSymplectic_ne_zero_iff`).
 
 ## References
 
@@ -67,18 +68,13 @@ theorem exists_int_conleyZehnderIndex_eq_of_one {B : V →L[ℝ] V} (Ψ : Path 1
   have h₁ : (1 : GLSymplectic (Fin m) ℝ) =
       ω.toGLSymplectic hb ((1 : V →L[ℝ] V) : V →ₗ[ℝ] V) (by simp) :=
     (ω.toGLSymplectic_id hb fun _ _ ↦ rfl).symm
-  -- and the matrix `1 - [B]_b` has the determinant of `1 - B`.
-  have hdet : (1 - ((ω.toGLSymplectic hb (B : V →ₗ[ℝ] V) (by simpa using hΨ 1) :
-      GL (Fin m ⊕ Fin m) ℝ) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) ℝ)).det =
-      LinearMap.det (1 - (B : V →ₗ[ℝ] V)) := by
-    rw [coe_toGLSymplectic, ← LinearMap.det_toMatrix b, map_sub, LinearMap.toMatrix_one]
+  have hB' : ∀ u v, ω (B u) (B v) = ω u v := by simpa using hΨ 1
   obtain ⟨k, hk, hsign⟩ := GLSymplectic.exists_int_conleyZehnderIndex_eq_of_one
-    ((ω.matrixPath hb Ψ hΨ).cast h₁ rfl)
-    (hdet ▸ by simpa using (End.det_smul_one_sub_ne_zero_iff _ 1).2 hB)
+    ((ω.matrixPath hb Ψ hΨ).cast h₁ rfl) ((ω.det_one_sub_toGLSymplectic_ne_zero_iff hb _ hB').2 hB)
   refine ⟨k, ?_, ?_⟩
   · rw [ω.conleyZehnderIndex_eq hb, ← hk]
     exact GLSymplectic.conleyZehnderIndex_congr _ _ fun _ ↦ rfl
-  · rw [← hm, ← hdet, ← hsign, Fintype.card_fin]
+  · rw [← hm, ← ω.det_one_sub_toGLSymplectic hb _ hB', ← hsign, Fintype.card_fin]
 
 /-- **The parity of the Conley–Zehnder index.** For a path `Ψ` of linear maps of a symplectic
 vector space `(V, ω)` preserving `ω`, between two maps `A` and `B` without the eigenvalue `1`, the
@@ -90,14 +86,12 @@ theorem exists_int_conleyZehnderIndex_eq {A B : V →L[ℝ] V} (Ψ : Path A B)
       (k.negOnePow : ℤ) = SignType.sign (LinearMap.det (1 - (A : V →ₗ[ℝ] V)) *
         LinearMap.det (1 - (B : V →ₗ[ℝ] V))) := by
   obtain ⟨m, b, hb⟩ := ω.isAlt.exists_basis_toMatrix_eq_J ω.nondegenerate
-  -- In the basis `b` the matrix `1 - [C]_b` has the determinant of `1 - C`.
-  have hdet {C : V →L[ℝ] V} (hC : ∀ u v, ω (C u) (C v) = ω u v) :
-      (1 - ((ω.toGLSymplectic hb (C : V →ₗ[ℝ] V) hC : GL (Fin m ⊕ Fin m) ℝ) :
-        Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) ℝ)).det = LinearMap.det (1 - (C : V →ₗ[ℝ] V)) := by
-    rw [coe_toGLSymplectic, ← LinearMap.det_toMatrix b, map_sub, LinearMap.toMatrix_one]
-  rw [ω.conleyZehnderIndex_eq hb, ← hdet (by simpa using hΨ 0), ← hdet (by simpa using hΨ 1)]
+  have hA' : ∀ u v, ω (A u) (A v) = ω u v := by simpa using hΨ 0
+  have hB' : ∀ u v, ω (B u) (B v) = ω u v := by simpa using hΨ 1
+  rw [ω.conleyZehnderIndex_eq hb, ← ω.det_one_sub_toGLSymplectic hb _ hA',
+    ← ω.det_one_sub_toGLSymplectic hb _ hB']
   exact GLSymplectic.exists_int_conleyZehnderIndex_eq _
-    ((hdet _).symm ▸ by simpa using (End.det_smul_one_sub_ne_zero_iff _ 1).2 hA)
-    ((hdet _).symm ▸ by simpa using (End.det_smul_one_sub_ne_zero_iff _ 1).2 hB)
+    ((ω.det_one_sub_toGLSymplectic_ne_zero_iff hb _ hA').2 hA)
+    ((ω.det_one_sub_toGLSymplectic_ne_zero_iff hb _ hB').2 hB)
 
 end TauCeti.SymplecticForm
