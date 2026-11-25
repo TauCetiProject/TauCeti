@@ -9,7 +9,6 @@ public import TauCeti.LinearAlgebra.BilinearForm.Prod
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
-public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
 
 /-!
 # Orthogonal sums of integral lattices
@@ -17,13 +16,13 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
 The orthogonal sum has product carrier and block-diagonal form, the product
 `LinearMap.BilinForm.prod` of the two ambient forms. This file constructs the lattice,
 its canonical carrier maps and product bases, and proves several invariant laws: rank is additive,
-Gram matrices are block diagonal, determinant and discriminant are multiplicative, and evenness,
-unimodularity, and nondegeneracy are componentwise. Orthogonal sums are functorial under lattice
-isometries and are associative and commutative up to canonical lattice isometry, and the product of
-the isometry groups `O(L) × O(M)` embeds in `O(L ⊕ M)`, acting componentwise. This embedding need
-not be onto: when the ambient space of `L` is nonzero, the factor swap of `L ⊕ L` is a
-self-isometry of `L ⊕ L` outside the range of `O(L) × O(L) → O(L ⊕ L)`. The radical is the product
-of the component radicals, and the signature is componentwise additive.
+Gram matrices are block diagonal, determinant and discriminant are multiplicative, and evenness
+and nondegeneracy are componentwise. Orthogonal sums are functorial under lattice isometries and
+are associative and commutative up to canonical lattice isometry, and the product of the isometry
+groups `O(L) × O(M)` embeds in `O(L ⊕ M)`, acting componentwise. This embedding need not be onto:
+when the ambient space of `L` is nonzero, the factor swap of `L ⊕ L` is a self-isometry of `L ⊕ L`
+outside the range of `O(L) × O(L) → O(L ⊕ L)`. The radical is the product of the component
+radicals, and the signature is componentwise additive.
 
 ## Main definitions
 
@@ -45,10 +44,9 @@ of the component radicals, and the signature is componentwise additive.
 
 ## Main statements
 
-* `TauCeti.IntegralLattice.isUnimodular_orthogonalSum_iff`,
-  `TauCeti.IntegralLattice.isEven_orthogonalSum_iff`,
-  `TauCeti.IntegralLattice.nondegenerate_orthogonalSum_iff`: unimodularity, evenness, and
-  nondegeneracy of an orthogonal sum are componentwise.
+* `TauCeti.IntegralLattice.isEven_orthogonalSum_iff`,
+  `TauCeti.IntegralLattice.nondegenerate_orthogonalSum_iff`: evenness and nondegeneracy of an
+  orthogonal sum are componentwise.
 * `TauCeti.IntegralLattice.orthogonalSum_transport_prodComm`: transporting an orthogonal sum along
   `LinearEquiv.prodComm` swaps the summands.
 * `TauCeti.IntegralLattice.radical_orthogonalSum`: the radical is the product of the radicals.
@@ -325,11 +323,6 @@ theorem discriminant_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice 
     (L.orthogonalSum M).discriminant = L.discriminant * M.discriminant := by
   rw [discriminant_def, determinant_orthogonalSum, Int.natAbs_mul, discriminant_def,
     discriminant_def]
-
-/-- An orthogonal sum is unimodular if and only if both summands are unimodular. -/
-theorem isUnimodular_orthogonalSum_iff (L : IntegralLattice V) (M : IntegralLattice W) :
-    (L.orthogonalSum M).IsUnimodular ↔ L.IsUnimodular ∧ M.IsUnimodular := by
-  simp only [isUnimodular_iff_discriminant_eq_one, discriminant_orthogonalSum, mul_eq_one]
 
 /-- An orthogonal sum is even exactly when both summands are even. -/
 @[simp]

@@ -127,9 +127,9 @@ theorem halfCharacteristicClass_add_two_smul {w : L} (hw : L.IsCharacteristicVec
 /-- Every lattice vector defines a two-torsion class in `A_(L_even)`. -/
 @[simp] theorem two_nsmul_latticeVectorClass (x : L) : 2 • L.latticeVectorClass x = 0 := by
   rw [latticeVectorClass_def, ← Nat.cast_smul_eq_nsmul ℤ, ← Submodule.Quotient.mk_smul,
-    Nat.cast_smul_eq_nsmul ℤ, L.evenSublattice.discriminantGroup_mk_eq_zero_iff,
-    show ((2 • L.latticeVectorDual x : L.evenSublattice.dualCarrier) : V) = (((2 : ℤ) • x : L) : V)
-      by simp [two_smul], L.mem_evenSublattice_carrier_iff]
+    L.evenSublattice.discriminantGroup_mk_eq_zero_iff, Submodule.coe_smul_of_tower,
+    coe_latticeVectorDual, Nat.cast_ofNat, ← Submodule.coe_smul_of_tower,
+    L.mem_evenSublattice_carrier_iff]
   exact (L.mem_evenSubmodule_iff _).mp (L.two_smul_mem_evenSubmodule x)
 
 /-- Integer scalar multiplication by `2` annihilates every `latticeVectorClass`. -/
@@ -140,10 +140,11 @@ theorem halfCharacteristicClass_add_two_smul {w : L} (hw : L.IsCharacteristicVec
 theorem two_nsmul_halfCharacteristicClass_eq_zero_iff_even_integralNorm {w : L}
     (hw : L.IsCharacteristicVector w) :
     2 • L.halfCharacteristicClass hw = 0 ↔ Even (L.integralNorm w) := by
+  have h2w : (2 : ℚ) • ((1 / 2 : ℚ) • (w : V)) = (w : V) := by rw [smul_smul]; norm_num
   rw [halfCharacteristicClass_def, ← Nat.cast_smul_eq_nsmul ℤ, ← Submodule.Quotient.mk_smul,
-    Nat.cast_smul_eq_nsmul ℤ, L.evenSublattice.discriminantGroup_mk_eq_zero_iff,
-    show ((2 • L.halfCharacteristicDual hw : L.evenSublattice.dualCarrier) : V) = (w : V) by
-      simp [← Nat.cast_smul_eq_nsmul ℚ, smul_smul], L.mem_evenSublattice_carrier_iff]
+    L.evenSublattice.discriminantGroup_mk_eq_zero_iff, Submodule.coe_smul_of_tower,
+    coe_halfCharacteristicDual, ← Int.cast_smul_eq_zsmul ℚ, Int.cast_natCast, Nat.cast_ofNat,
+    h2w, L.mem_evenSublattice_carrier_iff]
 
 /-- The discriminant quadratic map evaluates `[w / 2]` to `w² / 8` modulo `1`. -/
 theorem discriminantQuadraticMap_halfCharacteristicClass {w : L} (hw : L.IsCharacteristicVector w) :

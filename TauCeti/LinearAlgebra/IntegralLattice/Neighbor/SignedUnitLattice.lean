@@ -175,12 +175,9 @@ noncomputable def evenSignedUnitNeighborIsometryShiftedHalfCharacteristicOverlat
       ((signedUnitLattice r s).mem_evenSublattice_carrier_iff _).mpr
         (((signedUnitLattice r s).mem_evenSubmodule_iff _).mp
           ((signedUnitLattice r s).two_smul_mem_evenSubmodule _))
-    rw [show signedUnitSignFlipIsometry r s k x -
-          signedUnitSignFlipIsometry r s k (e + (1 / 2 : ℚ) • w) =
-        (signedUnitSignFlipIsometry r s k x - (1 / 2 : ℚ) • w) -
-          (signedUnitSignFlipIsometry r s k (e + (1 / 2 : ℚ) • w) - (1 / 2 : ℚ) • w) by abel,
-      hdiff, Submodule.sub_mem_iff_left _ ((signedUnitLattice r s).evenSublattice.carrier.neg_mem
-        he2)]
+    rw [← sub_sub_sub_cancel_right (signedUnitSignFlipIsometry r s k x)
+        (signedUnitSignFlipIsometry r s k (e + (1 / 2 : ℚ) • w)) ((1 / 2 : ℚ) • w), hdiff,
+      Submodule.sub_mem_iff_left _ ((signedUnitLattice r s).evenSublattice.carrier.neg_mem he2)]
 
 /-- `evenSignedUnitNeighborIsometryShiftedHalfCharacteristicOverlattice` negates coordinate `k`. -/
 @[simp] theorem evenSignedUnitNeighborIsometryShiftedHalfCharacteristicOverlattice_apply

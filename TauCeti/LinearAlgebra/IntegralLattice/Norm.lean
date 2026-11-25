@@ -8,7 +8,6 @@ module
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
-public import TauCeti.Algebra.Module.Primitive
 public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Radical
@@ -38,8 +37,6 @@ the integral norm on the carrier.
   nondegenerate.
 * `TauCeti.IntegralLattice.isNondegenerate_of_anisotropic`: a lattice with anisotropic rational
   norm form is nondegenerate.
-* `TauCeti.IntegralLattice.not_anisotropic_norm_iff_exists_isPrimitive`: rational isotropy is
-  equivalent to the existence of a primitive isotropic lattice vector.
 * `TauCeti.IntegralLattice.integralNorm_apply`: evaluating the integral norm yields
   integral self-pairing.
 * `TauCeti.IntegralLattice.integralNorm_cast`: the integral norm recovers the rational norm in `ℚ`.
@@ -145,25 +142,6 @@ end Isometry
 theorem integralNorm_cast (L : IntegralLattice V) (x : L) :
     (L.integralNorm x : ℚ) = L.norm x := by
   simpa only [integralNorm_apply, norm_apply] using L.integralForm_cast x x
-
-/-- **Rational isotropy ↔ primitive carrier isotropic vector.** A lattice has a nontrivial
-rational isotropic vector if and only if its carrier contains a primitive isotropic vector. -/
-theorem not_anisotropic_norm_iff_exists_isPrimitive (L : IntegralLattice V) :
-    ¬ L.norm.Anisotropic ↔ ∃ v : L, IsPrimitive v ∧ L.integralNorm v = 0 := by
-  rw [QuadraticMap.not_anisotropic_iff_exists]
-  refine ⟨fun ⟨x, hx0, hxn⟩ ↦ ?_, fun ⟨v, hv, hvn⟩ ↦
-    ⟨v, fun hv0 ↦ hv.ne_zero (Subtype.ext hv0), by rw [← L.integralNorm_cast, hvn, Int.cast_zero]⟩⟩
-  obtain ⟨r, hr, hrx⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier
-    Submodule.IsLattice.span_eq_top x
-  set y : L := ⟨r • x, hrx⟩
-  have hrx' : (r : ℚ) • x = (y : V) := Int.cast_smul_eq_zsmul ℚ r x
-  have hy0 : y ≠ 0 := fun hy ↦ hx0 ((smul_eq_zero.mp
-    (hrx'.trans (congrArg Subtype.val hy))).resolve_left (Int.cast_ne_zero.mpr hr))
-  have hyn : L.integralNorm y = 0 := Int.cast_injective (α := ℚ) (by
-    rw [L.integralNorm_cast, Int.cast_zero, ← hrx', QuadraticMap.map_smul, hxn, smul_zero])
-  obtain ⟨d, v, hd, hv, hyv⟩ := exists_eq_zsmul_isPrimitive hy0
-  rw [hyv, QuadraticMap.map_smul, smul_eq_mul] at hyn
-  exact ⟨v, hv, (mul_eq_zero.mp hyn).resolve_left (mul_ne_zero hd.ne' hd.ne')⟩
 
 /-- The rational norm of zero is zero. -/
 @[simp]

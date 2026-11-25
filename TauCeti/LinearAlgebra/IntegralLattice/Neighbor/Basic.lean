@@ -162,13 +162,13 @@ theorem IsNeighbor.orthogonalSum_left {W : Type*} [AddCommGroup W] [Module ℚ W
       (Y.carrier.prod B).toAddSubgroup =
       (L.carrier ⊓ M.carrier).toAddSubgroup.relIndex B.toAddSubgroup := by
     let proj : (Y.carrier.prod B).toAddSubgroup →+ B.toAddSubgroup :=
-      ⟨⟨fun q ↦ ⟨q.1.2, q.2.2⟩, rfl⟩, fun _ _ ↦ rfl⟩
+      ⟨⟨fun q ↦ ⟨q.val.2, q.property.2⟩, rfl⟩, fun _ _ ↦ rfl⟩
     have hcomap : ((L.carrier ⊓ M.carrier).toAddSubgroup.addSubgroupOf B.toAddSubgroup).comap proj =
         (Y.carrier.prod (L.carrier ⊓ M.carrier)).toAddSubgroup.addSubgroupOf
           (Y.carrier.prod B).toAddSubgroup :=
-      AddSubgroup.ext fun q ↦ ⟨fun hq ↦ ⟨q.2.1, hq⟩, fun hq ↦ hq.2⟩
+      AddSubgroup.ext fun q ↦ ⟨fun hq ↦ ⟨q.property.1, hq⟩, fun hq ↦ hq.2⟩
     rw [AddSubgroup.relIndex, ← hcomap, AddSubgroup.index_comap_of_surjective _
-      (fun b ↦ ⟨⟨(0, b.1), ⟨Y.carrier.zero_mem, b.2⟩⟩, rfl⟩), ← AddSubgroup.relIndex]
+      (fun b ↦ ⟨⟨(0, b.val), ⟨Y.carrier.zero_mem, b.property⟩⟩, rfl⟩), ← AddSubgroup.relIndex]
   have hinf : (Y.orthogonalSum L).carrier ⊓ (Y.orthogonalSum M).carrier =
       Y.carrier.prod (L.carrier ⊓ M.carrier) := Submodule.ext fun x ↦ by
     simp only [Submodule.mem_inf, orthogonalSum_carrier, Submodule.mem_prod]; tauto

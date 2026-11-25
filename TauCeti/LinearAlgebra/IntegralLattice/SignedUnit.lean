@@ -174,7 +174,7 @@ theorem mem_evenSublattice_signedUnitLattice_carrier_iff (r s : ℕ) (x : Fin r 
         ∃ m : ℤ, (∑ i : Fin r, x (.inl i)) + ∑ j : Fin s, x (.inr j) = 2 * m := by
   have hev (a : ℤ) : (∃ k : ℤ, (a : ℚ) = 2 * k) ↔ Even a :=
     ⟨fun ⟨k, hk⟩ ↦ ⟨k, Int.cast_injective (α := ℚ) (by push_cast; linarith)⟩,
-      fun ⟨k, hk⟩ ↦ ⟨k, by exact_mod_cast (by omega : a = 2 * k)⟩⟩
+      fun ⟨k, hk⟩ ↦ ⟨k, by rw [hk]; push_cast; ring⟩⟩
   rw [(signedUnitLattice r s).mem_evenSublattice_carrier_iff_exists_norm,
     mem_signedUnitLattice_carrier_iff]
   refine and_congr_right fun hxZ ↦ ?_
@@ -260,7 +260,7 @@ def signedUnitCharacteristicVector (r s : ℕ) : signedUnitLattice r s :=
 theorem isCharacteristicVector_signedUnitCharacteristicVector (r s : ℕ) :
     (signedUnitLattice r s).IsCharacteristicVector (signedUnitCharacteristicVector r s) := by
   rw [(signedUnitLattice r s).isCharacteristicVector_iff]; intro y
-  choose z hz using (mem_signedUnitLattice_carrier_iff r s y).mp y.2
+  choose z hz using (mem_signedUnitLattice_carrier_iff r s y).mp y.property
   have hsub : (signedUnitLattice r s).integralNorm y -
       (signedUnitLattice r s).integralForm (signedUnitCharacteristicVector r s) y =
       (∑ i : Fin r, (z (.inl i) ^ 2 - z (.inl i))) -
