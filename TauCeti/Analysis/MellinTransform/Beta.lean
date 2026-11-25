@@ -20,7 +20,7 @@ where `B = Complex.betaIntegral` is Euler's Beta integral of the first kind (DLM
 
 ## Main results
 
-* `Complex.hasMellin_indicator_cpow_mul_one_sub_cpow`: the Mellin transform of the Beta weight
+* `Complex.hasMellin_cpow_mul_one_sub_cpow_Ioc`: the Mellin transform of the Beta weight
   `t^a (1 - t)^b` on `(0, 1]` is `B(s + a, b + 1)`.
 
 ## References
@@ -37,7 +37,7 @@ namespace Complex
 /-- **The Mellin transform of the Beta weight.** For `0 < Re (s + a)` and `-1 < Re b`, the
 function `t ↦ t^a (1 - t)^b` on `(0, 1]`, extended by zero, has Mellin transform `B(s + a, b + 1)`
 at `s`. -/
-theorem hasMellin_indicator_cpow_mul_one_sub_cpow {a b s : ℂ} (hsa : 0 < (s + a).re)
+theorem hasMellin_cpow_mul_one_sub_cpow_Ioc {a b s : ℂ} (hsa : 0 < (s + a).re)
     (hb : -1 < b.re) :
     HasMellin ((Ioc 0 1).indicator fun t : ℝ ↦ (t : ℂ) ^ a * (1 - (t : ℂ)) ^ b) s
       (betaIntegral (s + a) (b + 1)) := by
