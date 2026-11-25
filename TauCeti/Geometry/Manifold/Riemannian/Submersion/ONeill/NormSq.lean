@@ -5,8 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Bilinear
+public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Inner
+public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Integrability
 import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
+import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
+import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.HilbertSchmidt
 
 /-!
 # The squared norm of O'Neill's horizontal tensor
@@ -18,10 +23,17 @@ horizontal orthonormal frame, vanishes exactly where `A` does, and is bounded on
 Since `A_X` is skew-adjoint and exchanges horizontal and vertical vectors, also
 `∑ i a, ‖A_(X_i) V_a‖² = |A|²` for any orthonormal basis `V_a` of the vertical space `ker (df_x)`.
 
+Hence `2 |A|²` is the Hilbert–Schmidt energy `∑ i j, ‖A_(e_i) e_j‖²` of `A` in any orthonormal basis
+`e_i` of the whole tangent space, which is also the metric trace of the frame-free bilinear form
+`(u, u') ↦ ⟪A_u, A_(u')⟫_HS` (`IsRiemannianSubmersion.oneillAInnerForm`). In the chart-local frame
+this trace contracts against the inverse Gram matrix, so `|A|²` is a smooth function.
+
 ## Main definitions
 
 * `TauCeti.IsRiemannianSubmersion.oneillANormSq`: the squared norm `|A|²` of O'Neill's horizontal
   tensor.
+* `TauCeti.IsRiemannianSubmersion.oneillAInnerForm`: the bilinear form
+  `(u, u') ↦ ⟪A_u, A_(u')⟫_HS` on `T_x M`.
 
 ## Main results
 
@@ -33,6 +45,11 @@ Since `A_X` is skew-adjoint and exchanges horizontal and vertical vectors, also
   compact sets.
 * `TauCeti.IsRiemannianSubmersion.sum_sum_norm_oneillA_horizontalLift_vertical`:
   `∑ i a, ‖A_(X_i) V_a‖² = |A|²`.
+* `TauCeti.IsRiemannianSubmersion.two_mul_oneillANormSq_eq_bilinearHilbertSchmidtEnergy`:
+  `2 |A|²` is the Hilbert–Schmidt energy of `A` on `T_x M`.
+* `TauCeti.IsRiemannianSubmersion.metricTrace_oneillAInnerForm`: `2 |A|²` is the metric trace of
+  `oneillAInnerForm`.
+* `TauCeti.IsRiemannianSubmersion.contMDiff_oneillANormSq`: `|A|²` is smooth.
 
 ## References
 
@@ -43,7 +60,8 @@ Since `A_X` is skew-adjoint and exchanges horizontal and vertical vectors, also
 
 public section
 
-open Bundle Manifold
+open Bundle Manifold Riemannian.Tensor
+open LinearMap (BilinForm)
 open scoped ContDiff InnerProductSpace Manifold
 
 noncomputable section
@@ -151,5 +169,113 @@ theorem sum_sum_norm_oneillA_horizontalLift_vertical
         refine Finset.sum_congr rfl fun j _ ↦ ?_
         exact c.sum_sq_inner_right
           ⟨_, h.oneillA_apply_mem_ker X (h.horizontalLift_mem_orthogonal_ker x (b j))⟩
+
+/-- `2 |A|²` is the Hilbert–Schmidt energy `∑ i j, ‖A_(e_i) e_j‖²` of `A` on `T_x M`, computed in
+any orthonormal basis `e_i` of the whole tangent space. In a basis adapted to the splitting into
+horizontal and vertical spaces, the pairs with a vertical first entry contribute nothing, and the
+horizontal-vertical pairs contribute `|A|²` by
+`TauCeti.IsRiemannianSubmersion.sum_sum_norm_oneillA_horizontalLift_vertical`. -/
+theorem two_mul_oneillANormSq_eq_bilinearHilbertSchmidtEnergy (x : M) :
+    2 * h.oneillANormSq x = (h.oneillA x).bilinearHilbertSchmidtEnergy := by
+  let b := stdOrthonormalBasis ℝ (TangentSpace J (f x))
+  let c := stdOrthonormalBasis ℝ (mfderiv I J f x).ker
+  have hc (a) : h.oneillA x (c a) = 0 := by
+    rw [← Submodule.starProjection_eq_self_iff.mpr (c a).property, h.oneillA_starProjection_ker]
+  rw [ContinuousLinearMap.bilinearHilbertSchmidtEnergy_eq_sum (h.horizontalVerticalBasis x b c)
+    (h.horizontalVerticalBasis x b c)]
+  simp only [Fintype.sum_sum_type, horizontalVerticalBasis_inl, horizontalVerticalBasis_inr, hc,
+    zero_apply, norm_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true,
+    zero_pow, Finset.sum_const_zero, add_zero, Finset.sum_add_distrib,
+    h.sum_sum_norm_oneillA_horizontalLift_vertical b c, ← h.oneillANormSq_eq_sum x b, two_mul]
+
+/-- The bilinear form `(u, u') ↦ ⟪A_u, A_(u')⟫_HS` on `T_x M`: the Hilbert–Schmidt inner product
+of `A_u` and `A_(u')`, the metric trace of `(w, w') ↦ ⟪A_u w, A_(u') w'⟫`. Its metric trace is
+`2 |A|²` (`TauCeti.IsRiemannianSubmersion.metricTrace_oneillAInnerForm`). -/
+def oneillAInnerForm (x : M) : BilinForm ℝ (TangentSpace I x) :=
+  LinearMap.mk₂ ℝ (fun u u' ↦ (h.oneillA x u).hilbertSchmidtInner (h.oneillA x u'))
+    (fun u₁ u₂ u' ↦ by rw [map_add, ContinuousLinearMap.hilbertSchmidtInner_add_left])
+    (fun a u u' ↦ by rw [map_smul, ContinuousLinearMap.hilbertSchmidtInner_smul_left, smul_eq_mul])
+    (fun u u₁ u₂ ↦ by rw [map_add, ContinuousLinearMap.hilbertSchmidtInner_add_right])
+    (fun a u u' ↦ by
+      rw [map_smul, ContinuousLinearMap.hilbertSchmidtInner_smul_right, smul_eq_mul])
+
+omit [IsManifold J ∞ N] [IsContMDiffRiemannianBundle J ∞ F fun y : N ↦ TangentSpace J y] in
+/-- The defining formula for `oneillAInnerForm`. -/
+@[simp]
+theorem oneillAInnerForm_apply (u u' : TangentSpace I x) :
+    h.oneillAInnerForm x u u' = (h.oneillA x u).hilbertSchmidtInner (h.oneillA x u') :=
+  (rfl)
+
+omit [IsManifold J ∞ N] [IsContMDiffRiemannianBundle J ∞ F fun y : N ↦ TangentSpace J y] in
+/-- `oneillAInnerForm` is symmetric. -/
+theorem oneillAInnerForm_comm (u u' : TangentSpace I x) :
+    h.oneillAInnerForm x u u' = h.oneillAInnerForm x u' u := by
+  simp only [oneillAInnerForm_apply, ContinuousLinearMap.hilbertSchmidtInner_comm]
+
+omit [IsManifold J ∞ N] [IsContMDiffRiemannianBundle J ∞ F fun y : N ↦ TangentSpace J y] in
+/-- `oneillAInnerForm` is nonnegative on the diagonal. -/
+theorem oneillAInnerForm_self_nonneg (u : TangentSpace I x) : 0 ≤ h.oneillAInnerForm x u u :=
+  (h.oneillA x u).hilbertSchmidtInner_self_nonneg
+
+omit [IsManifold J ∞ N] [IsContMDiffRiemannianBundle J ∞ F fun y : N ↦ TangentSpace J y] in
+/-- `oneillAInnerForm` vanishes on the diagonal at `u` exactly when `A_u = 0`. -/
+theorem oneillAInnerForm_self_eq_zero_iff (u : TangentSpace I x) :
+    h.oneillAInnerForm x u u = 0 ↔ h.oneillA x u = 0 :=
+  (h.oneillA x u).hilbertSchmidtInner_self_eq_zero_iff
+
+omit [IsManifold J ∞ N] [IsContMDiffRiemannianBundle J ∞ F fun y : N ↦ TangentSpace J y] in
+/-- `oneillAInnerForm` is positive semidefinite. -/
+theorem isPosSemidef_oneillAInnerForm (x : M) : (h.oneillAInnerForm x).IsPosSemidef where
+  isSymm := ⟨h.oneillAInnerForm_comm⟩
+  isNonneg := ⟨h.oneillAInnerForm_self_nonneg⟩
+
+omit [IsManifold J ∞ N] [IsContMDiffRiemannianBundle J ∞ F fun y : N ↦ TangentSpace J y] in
+/-- In an orthonormal basis `e_j` of `T_x M`, `oneillAInnerForm` is `∑ j, ⟪A_u e_j, A_(u') e_j⟫`. -/
+theorem oneillAInnerForm_eq_sum (e : OrthonormalBasis ι ℝ (TangentSpace I x))
+    (u u' : TangentSpace I x) :
+    h.oneillAInnerForm x u u' = ∑ j, ⟪h.oneillA x u (e j), h.oneillA x u' (e j)⟫_ℝ := by
+  rw [oneillAInnerForm_apply, ContinuousLinearMap.hilbertSchmidtInner_eq_sum _ _ e]
+
+/-- The metric trace of `oneillAInnerForm` is `2 |A|²`. -/
+theorem metricTrace_oneillAInnerForm (x : M) :
+    LinearMap.BilinMap.metricTrace (h.oneillAInnerForm x) = 2 * h.oneillANormSq x := by
+  let e := stdOrthonormalBasis ℝ (TangentSpace I x)
+  rw [LinearMap.BilinMap.metricTrace_eq_sum _ e,
+    h.two_mul_oneillANormSq_eq_bilinearHilbertSchmidtEnergy x,
+    ContinuousLinearMap.bilinearHilbertSchmidtEnergy_eq_sum e e]
+  simp only [h.oneillAInnerForm_eq_sum e, real_inner_self_eq_norm_sq]
+
+/-- In the chart-local frame `e_i` at `a`, `|A|²` is half the contraction
+`gⁱʲ ⟪A_(e_i), A_(e_j)⟫_HS` against the inverse Gram matrix of the frame. -/
+private theorem oneillANormSq_eq_sum_chartInvGramMatrix (a : M) (hx : x ∈ (chartAt H a).source) :
+    h.oneillANormSq x = (∑ i, ∑ j, chartInvGramMatrix (I := I) a x i j *
+      (h.oneillA x (chartLocalFrame (I := I) a i x)).hilbertSchmidtInner
+        (h.oneillA x (chartLocalFrame (I := I) a j x))) / 2 := by
+  rw [eq_div_iff two_ne_zero, mul_comm, ← h.metricTrace_oneillAInnerForm x,
+    metricTrace_eq_sum_chartInvGramMatrix a hx]
+  simp only [oneillAInnerForm_apply, smul_eq_mul]
+
+variable [T2Space M]
+
+/-- **`|A|²` is smooth.** -/
+theorem contMDiff_oneillANormSq : ContMDiff I 𝓘(ℝ) ∞ h.oneillANormSq := by
+  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  intro a
+  have hAe (i : Fin (Module.finrank ℝ E)) := (h.contMDiff_oneillA a).clm_bundle_apply
+    (contMDiffAt_chartLocalFrame (I := I) (n := ∞) a i)
+  have hsum : ContMDiffAt I 𝓘(ℝ) ∞ (fun x ↦ (∑ i, ∑ j, chartInvGramMatrix (I := I) a x i j *
+      (h.oneillA x (chartLocalFrame (I := I) a i x)).hilbertSchmidtInner
+        (h.oneillA x (chartLocalFrame (I := I) a j x))) / 2) a :=
+    (contMDiffAt_finsetSum fun i _ ↦ contMDiffAt_finsetSum fun j _ ↦
+      ((contMDiffOn_chartInvGramMatrix_entry (I := I) (n := ∞) a i j).contMDiffAt
+        ((trivializationAt E (TangentSpace I) a).open_baseSet.mem_nhds (by simp))).mul
+        ((hAe i).hilbertSchmidtInner_bundle (hAe j))).div_const 2
+  refine hsum.congr_of_eventuallyEq ?_
+  filter_upwards [(chartAt H a).open_source.mem_nhds (mem_chart_source H a)] with x hx
+  exact h.oneillANormSq_eq_sum_chartInvGramMatrix a hx
+
+/-- `|A|²` is continuous. -/
+theorem continuous_oneillANormSq : Continuous h.oneillANormSq :=
+  h.contMDiff_oneillANormSq.continuous
 
 end TauCeti.IsRiemannianSubmersion

@@ -39,6 +39,8 @@ developed in `TauCeti/Topology/Algebra/GroupAction/FixedPoints.lean`.
 * `TauCeti.coe_quotient_smul_fixedPoints_subgroup`: the multiplicative counterpart of the last
   coercion lemma, for the `G ⧸ H`-action on the fixed-point subgroup of a distributive action on
   a group.
+* `FixedPoints.subgroup_range_toMulAut`: the fixed-point subgroup of a distributive action on a
+  group only depends on the image of the acting group in `MulAut α`.
 * `TauCeti.fixedPointsInclusion`, `TauCeti.fixedPointsDistribMulActionInclusion`, and
   `Subgroup.fixedPointsDistribMulActionSubtype`: the additive and equivariant inclusions between
   fixed points and into the ambient additive monoid, with their functoriality laws.
@@ -195,6 +197,16 @@ so does not fire on `FixedPoints.subgroup`. -/
 theorem coe_quotient_smul_fixedPoints_subgroup (g : G) (a : FixedPoints.subgroup H α) :
     (((g : G ⧸ H) • a : FixedPoints.subgroup H α) : α) = g • (a : α) :=
   rfl
+
+variable (G α) in
+/-- **Only the image of `G` in `MulAut α` matters** for the fixed-point subgroup: `C_α(G)` is the
+fixed-point subgroup of the range of `MulDistribMulAction.toMulAut G α`, so the kernel of the
+action can be divided out. -/
+@[simp]
+theorem _root_.FixedPoints.subgroup_range_toMulAut :
+    FixedPoints.subgroup (MulDistribMulAction.toMulAut G α).range α = FixedPoints.subgroup G α := by
+  ext g
+  simp [FixedPoints.mem_subgroup, Subgroup.smul_def]
 
 end Group
 
