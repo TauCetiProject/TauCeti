@@ -79,7 +79,7 @@ variable {K a}
 lemma quotSMulTop_d_toQuotSMulTop_f_apply {i j : ι} (x : K.X i) :
     ((K.quotSMulTop a).d i j).hom (((K.toQuotSMulTop a).f i).hom x) =
       ((K.toQuotSMulTop a).f j).hom ((K.d i j).hom x) :=
-  (rfl)
+  QuotSMulTop.map_apply_mk _ _ x
 
 variable (K a) in
 /-- The projection `K.X i → (K / a K).X i` is surjective. -/
@@ -127,12 +127,20 @@ section Desc
 variable {L : HomologicalComplex AddCommGrpCat.{u} c} (g : K ⟶ L)
   (hg : ∀ i (x : K.X i), (g.f i).hom (a • x) = 0)
 
+include hg in
+open Pointwise in
+/-- A chain map killing `a K` kills the submodule `a K.X i` termwise. -/
+private lemma smul_top_le_ker (i : ι) :
+    (a : ℤ) • (⊤ : Submodule ℤ (K.X i)) ≤ LinearMap.ker (g.f i).hom.toIntLinearMap :=
+  fun x hx ↦ by
+    obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hx
+    rw [LinearMap.mem_ker, natCast_zsmul]
+    exact hg i y
+
 /-- The chain map `K / a K ⟶ L` induced by a chain map `g : K ⟶ L` that kills `a K`. -/
 noncomputable def quotSMulTopDesc : K.quotSMulTop a ⟶ L where
-  f i := AddCommGrpCat.ofHom <| QuotientAddGroup.lift _ (g.f i).hom fun x hx ↦ by
-    obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hx
-    rw [natCast_zsmul]
-    exact hg i y
+  f i := AddCommGrpCat.ofHom
+    (Submodule.liftQ _ (g.f i).hom.toIntLinearMap (smul_top_le_ker g hg i)).toAddMonoidHom
   comm' i j _ := by
     ext y
     obtain ⟨x, rfl⟩ := K.toQuotSMulTop_f_surjective a i y
@@ -141,11 +149,12 @@ noncomputable def quotSMulTopDesc : K.quotSMulTop a ⟶ L where
 @[simp]
 lemma quotSMulTopDesc_f_apply {i : ι} (x : K.X i) :
     ((quotSMulTopDesc g hg).f i).hom (((K.toQuotSMulTop a).f i).hom x) = (g.f i).hom x :=
-  (rfl)
+  Submodule.liftQ_apply (h := smul_top_le_ker g hg i) _ _ x
 
 @[reassoc (attr := simp)]
-lemma toQuotSMulTop_comp_quotSMulTopDesc : K.toQuotSMulTop a ≫ quotSMulTopDesc g hg = g :=
-  (rfl)
+lemma toQuotSMulTop_comp_quotSMulTopDesc : K.toQuotSMulTop a ≫ quotSMulTopDesc g hg = g := by
+  ext i x
+  exact quotSMulTopDesc_f_apply g hg x
 
 end Desc
 
@@ -162,22 +171,22 @@ noncomputable def quotSMulTopMap (φ : K ⟶ L) : K.quotSMulTop a ⟶ L.quotSMul
 lemma quotSMulTopMap_f_apply (φ : K ⟶ L) {i : ι} (x : K.X i) :
     ((quotSMulTopMap a φ).f i).hom (((K.toQuotSMulTop a).f i).hom x) =
       ((L.toQuotSMulTop a).f i).hom ((φ.f i).hom x) :=
-  (rfl)
+  quotSMulTopDesc_f_apply _ _ x
 
 @[reassoc (attr := simp)]
 lemma toQuotSMulTop_comp_quotSMulTopMap (φ : K ⟶ L) :
     K.toQuotSMulTop a ≫ quotSMulTopMap a φ = φ ≫ L.toQuotSMulTop a :=
-  (rfl)
+  toQuotSMulTop_comp_quotSMulTopDesc _ _
 
 variable (K a) in
 @[simp]
 lemma quotSMulTopMap_id : quotSMulTopMap a (𝟙 K) = 𝟙 _ :=
-  quotSMulTop_hom_ext rfl
+  quotSMulTop_hom_ext (by simp)
 
 @[simp, reassoc]
 lemma quotSMulTopMap_comp (φ : K ⟶ L) (ψ : L ⟶ M) :
     quotSMulTopMap a (φ ≫ ψ) = quotSMulTopMap a φ ≫ quotSMulTopMap a ψ :=
-  quotSMulTop_hom_ext rfl
+  quotSMulTop_hom_ext (by simp)
 
 end Map
 

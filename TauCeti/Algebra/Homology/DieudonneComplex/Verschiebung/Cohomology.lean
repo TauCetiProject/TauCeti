@@ -129,17 +129,12 @@ private lemma verschiebungFiltration_le_ker (r : ℕ) (n : ℤ) :
       (M.frobeniusIterateCycles r n ≫ (M.quotSMulTop (p ^ r)).homologyπ n).hom.ker := by
   intro x hx
   obtain ⟨a, b, rfl⟩ := (hM.mem_verschiebungFiltration_iff (sub_add_cancel n 1)).1 hx
-  have : M.frobeniusIterateCycles r n ((⇑(hM.V n).hom)^[r] a +
-      (M.d (n - 1) n).hom ((⇑(hM.V (n - 1)).hom)^[r] b)) =
-      ((M.quotSMulTop (p ^ r)).toCycles (n - 1) n).hom
-        (((M.toQuotSMulTop (p ^ r)).f (n - 1)).hom b) := by
-    refine addCommGrpCat_iCycles_injective _ n ?_
-    rw [iCycles_frobeniusIterateCycles_apply, addCommGrpCat_iCycles_toCycles_apply,
-      quotSMulTop_d_toQuotSMulTop_f_apply, iterate_map_add, hM.F_iterate_V_iterate_apply,
-      hM.F_iterate_d_V_iterate_apply, map_add, map_nsmul, smul_toQuotSMulTop_f_apply,
-      zero_add]
-  rw [AddMonoidHom.mem_ker, AddCommGrpCat.comp_apply, this, ← AddCommGrpCat.comp_apply,
-    toCycles_comp_homologyπ, AddCommGrpCat.zero_apply]
+  rw [AddMonoidHom.mem_ker, AddCommGrpCat.comp_apply]
+  refine (addCommGrpCat_homologyπ_eq_zero_iff _ (CochainComplex.prev ℤ n) _).2
+    ⟨((M.toQuotSMulTop (p ^ r)).f (n - 1)).hom b, ?_⟩
+  rw [quotSMulTop_d_toQuotSMulTop_f_apply, iCycles_frobeniusIterateCycles_apply, iterate_map_add,
+    hM.F_iterate_V_iterate_apply, hM.F_iterate_d_V_iterate_apply, map_add, map_nsmul,
+    smul_toQuotSMulTop_f_apply, zero_add]
 
 /-- The map `W_r(M)ⁿ → Hⁿ(M / pʳ M)` sending the class of `x` to the class of `Fʳ x`. -/
 private noncomputable def verschiebungQuotientToHomology (r : ℕ) (n : ℤ) :
@@ -258,13 +253,10 @@ private lemma injective_homologyMap_quotSMulTopToVerschiebungQuotient :
   obtain ⟨u, v, huv⟩ := h
   obtain ⟨u', hu'⟩ := hM.exists_pow_smul_eq_V_iterate_iff.2
     ⟨t, by rw [ht, ← sub_eq_iff_eq_add.2 huv.symm]; simp⟩
-  have hz : z = (Q.toCycles (n - 1) n).hom (((M.toQuotSMulTop (p ^ r)).f (n - 1)).hom
-      (w' + (⇑(hM.V (n - 1)).hom)^[r] v)) := by
-    refine Q.addCommGrpCat_iCycles_injective n ?_
-    rw [addCommGrpCat_iCycles_toCycles_apply, quotSMulTop_d_toQuotSMulTop_f_apply, ← hw,
-      toQuotSMulTop_f_apply_eq_iff, map_add]
-    exact ⟨u', by rw [hu', ← sub_eq_iff_eq_add'.2 huv.symm]; abel⟩
-  rw [hz, ← AddCommGrpCat.comp_apply, toCycles_comp_homologyπ, AddCommGrpCat.zero_apply]
+  refine (Q.addCommGrpCat_homologyπ_eq_zero_iff (CochainComplex.prev ℤ n) _).2
+    ⟨((M.toQuotSMulTop (p ^ r)).f (n - 1)).hom (w' + (⇑(hM.V (n - 1)).hom)^[r] v), ?_⟩
+  rw [eq_comm, quotSMulTop_d_toQuotSMulTop_f_apply, ← hw, toQuotSMulTop_f_apply_eq_iff, map_add]
+  exact ⟨u', by rw [hu', ← sub_eq_iff_eq_add'.2 huv.symm]; abel⟩
 
 /-- `M / pʳ M ⟶ W_r(M)` is surjective on cohomology. A cocycle of `W_r(M)` is the class of `x`
 with `d x = Vʳ y + d (Vʳ w)`. Then `d (Vʳ y) = 0`, so `Vʳ y ∈ pʳ M`, and `x - Vʳ w` is a cocycle
