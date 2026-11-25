@@ -137,6 +137,15 @@ theorem RationalMap.ofFunctionFieldAlgHom_functionFieldAlgHom (f : X ⤏ Y) [f.I
     ofFunctionFieldAlgHom k (f.functionFieldAlgHom k) = f :=
   eq_of_functionFieldAlgHom_eq k (functionFieldAlgHom_ofFunctionFieldAlgHom k _)
 
+/-- A dominant `k`-morphism `g : X ⟶ Y` is induced by its pullback of rational functions:
+`RationalMap.ofFunctionFieldAlgHom` of `g^* : k(Y) → k(X)` is the rational map of `g`. -/
+@[simp]
+theorem Hom.ofFunctionFieldAlgHom_functionFieldAlgHom (g : X ⟶ Y) [IsDominant g]
+    [g.IsOver (Spec (.of k))] :
+    RationalMap.ofFunctionFieldAlgHom k (g.functionFieldAlgHom k) = g.toRationalMap := by
+  rw [← Hom.functionFieldAlgHom_toRationalMap,
+    RationalMap.ofFunctionFieldAlgHom_functionFieldAlgHom]
+
 /-- **Characterization of `RationalMap.ofFunctionFieldAlgHom`**: a dominant `k`-rational map
 `f : X ⤏ Y` is `RationalMap.ofFunctionFieldAlgHom k φ` exactly when `f^* = φ`. -/
 theorem RationalMap.eq_ofFunctionFieldAlgHom_iff (f : X ⤏ Y) [f.IsDominant]
