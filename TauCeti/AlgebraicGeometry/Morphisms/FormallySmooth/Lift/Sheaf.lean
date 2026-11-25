@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 public import TauCeti.AlgebraicGeometry.Morphisms.FormallySmooth.Lift.Torsor
 import Mathlib.AlgebraicGeometry.Gluing
+import TauCeti.AlgebraicGeometry.Restrict
 
 /-!
 # The sheaf of lifts along a first-order thickening
@@ -79,6 +80,7 @@ theorem restrictLE_rfl {U : T'.Opens}
   simp
 
 /-- Restricting a lift twice is restricting it once. -/
+@[simp]
 theorem restrictLE_restrictLE {U V W : T'.Opens} (hVU : V ≤ U) (hWV : W ≤ V)
     (b : ThickeningLift (i ∣_ U) ((i ⁻¹ᵁ U).ι ≫ a) f (U.ι ≫ h)) :
     restrictLE hWV (restrictLE hVU b) = restrictLE (hWV.trans hVU) b := by
@@ -125,20 +127,21 @@ theorem isSheaf_liftPresheaf : (liftPresheaf i a f h).IsSheaf := by
     have e := congrArg ThickeningLift.hom (hsf k l)
     rw [liftPresheaf_map_hom, liftPresheaf_map_hom] at e
     dsimp only [𝒰, Scheme.Opens.iSupOpenCover]
-    rw [← hP.isoPullback_inv_fst, ← hP.isoPullback_inv_snd, Category.assoc, Category.assoc, e]
+    simp only [← hP.isoPullback_inv_fst, ← hP.isoPullback_inv_snd, Category.assoc, e]
   -- Gluing the lifts on the members of the cover gives a lift on `⨆ U`.
   let g := 𝒰.glueMorphisms (fun k ↦ (sf k).hom) compat
   have hg : ∀ k, T'.homOfLE (le_iSup U k) ≫ g = (sf k).hom := 𝒰.ι_glueMorphisms _ compat
   have comp_hom : i ∣_ (⨆ k, U k) ≫ g = (i ⁻¹ᵁ ⨆ k, U k).ι ≫ a := by
-    refine Scheme.Cover.hom_ext (𝒰.pullback₁ (i ∣_ (⨆ k, U k))) _ _ fun (k : ι) ↦ ?_
-    -- Pasting onto `isPullback_morphismRestrict i (⨆ U)`: `i⁻¹(U k)` is the pullback of
-    -- `i ∣_ ⨆ U` along `U k ⟶ ⨆ U`.
-    have hP := (IsPullback.of_bot (by simpa using isPullback_morphismRestrict i (U k))
-      (morphismRestrict_homOfLE i (U k) _ (le_iSup U k)) (isPullback_morphismRestrict i _)).flip
-    dsimp only [𝒰, Scheme.Opens.iSupOpenCover, Precoverage.ZeroHypercover.pullback₁,
-      PreZeroHypercover.pullback₁]
-    rw [← hP.isoPullback_inv_fst, Category.assoc, reassoc_of% hP.w, hg, (sf k).comp_hom,
-      Category.assoc, Scheme.homOfLE_ι_assoc]
+    have H (k : ι) : pullback.fst (i ∣_ ⨆ k, U k) (T'.homOfLE (le_iSup U k)) ≫ i ∣_ (⨆ k, U k) ≫ g =
+        pullback.fst (i ∣_ ⨆ k, U k) (T'.homOfLE (le_iSup U k)) ≫ (i ⁻¹ᵁ ⨆ k, U k).ι ≫ a := by
+      -- `i⁻¹(U k)` is the pullback of `i ∣_ ⨆ U` along `U k ⟶ ⨆ U`.
+      have hP := i.isPullback_morphismRestrict_homOfLE (le_iSup U k)
+      simp only [← hP.isoPullback_inv_fst, Category.assoc, reassoc_of% hP.w, hg, (sf k).comp_hom,
+        Scheme.homOfLE_ι_assoc]
+    -- The cover maps of `𝒰.pullback₁ (i ∣_ ⨆ U)` are the projections `pullback.fst` of `H` by
+    -- definition. The `simps` lemmas of `pullback₁` cannot rewrite them, since the index type of
+    -- the pulled-back cover is not reducibly `ι`.
+    exact Scheme.Cover.hom_ext (𝒰.pullback₁ (i ∣_ (⨆ k, U k))) _ _ H
   have hom_comp : g ≫ f = Scheme.Opens.ι (⨆ k, U k) ≫ h :=
     𝒰.hom_ext _ _ fun (k : ι) ↦ by
       dsimp only [𝒰, Scheme.Opens.iSupOpenCover]
