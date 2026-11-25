@@ -286,6 +286,7 @@ theorem rawCubicalChainComplex_map_f_rawCubicalChainOfCube {X Y : TopCat.{u}} (f
   (rawCubicalChainComplex_map_f_apply f n _).trans mapDomain_single
 
 /-- The boundary of the raw chain of a cube is the signed sum of the raw chains of its faces. -/
+@[simp]
 theorem rawCubicalChainComplex_d_rawCubicalChainOfCube {X : TopCat.{u}} {n : ℕ}
     (c : SingularCube X (n + 1)) :
     ((rawCubicalChainComplex k).obj X).d (n + 1) n (rawCubicalChainOfCube c) =
