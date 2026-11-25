@@ -83,7 +83,8 @@ theorem ext_algebraMap [Finite ι] {Q₁ Q₂ : QuadraticForm A (ι → A)}
   have key : Q₁.comp (piScalarRight R A A ι).toLinearMap =
       Q₂.comp (piScalarRight R A A ι).toLinearMap :=
     _root_.baseChange_ext fun v ↦ by
-      simpa [Algebra.algebraMap_eq_smul_one] using h v
+      rw [comp_apply, comp_apply, LinearEquiv.coe_coe, piScalarRight_tmul_eq_smul, one_smul]
+      exact h v
   ext x
   simpa using congr($key ((piScalarRight R A A ι).symm x))
 
@@ -314,15 +315,16 @@ def extendScalars (f : Q₁.IsometryEquiv Q₂) (A : Type*) [CommRing A] [Algebr
     (Q₁.extendScalars A).IsometryEquiv (Q₂.extendScalars A) where
   toLinearEquiv := (piScalarRight R A A ι).symm ≪≫ₗ
     f.toLinearEquiv.baseChange R A _ _ ≪≫ₗ piScalarRight R A A κ
-  map_app' x := by
-    have h : Q₂.comp f.toLinearEquiv.toLinearMap = Q₁ := QuadraticMap.ext f.map_app
-    have key := congr($(extendScalars_comp (A := A) Q₂ f.toLinearEquiv.toLinearMap) x)
-    rw [h] at key
-    rw [key, comp_apply, LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-      LinearEquiv.coe_coe, LinearMap.toFun_eq_coe, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
-      LinearEquiv.trans_apply,
-      ← LinearEquiv.coe_coe (e := f.toLinearEquiv.baseChange R A _ _),
-      LinearEquiv.coe_baseChange]
+  map_app' := by
+    -- The extended equivalence pulls `Q₂.extendScalars A` back to `Q₁.extendScalars A`.
+    have key : (Q₂.extendScalars A).comp ((piScalarRight R A A ι).symm ≪≫ₗ
+        f.toLinearEquiv.baseChange R A _ _ ≪≫ₗ piScalarRight R A A κ).toLinearMap =
+        Q₁.extendScalars A := by
+      have h : Q₂.comp f.toLinearEquiv.toLinearMap = Q₁ := QuadraticMap.ext f.map_app
+      rw [LinearEquiv.coe_trans, LinearEquiv.coe_trans, LinearEquiv.coe_baseChange,
+        ← extendScalars_comp, h]
+    intro x
+    simpa using congr($key x)
 
 /-- The linear equivalence underlying the extension of an isometric equivalence is the base change
 of the original linear equivalence, read in coordinates. -/
