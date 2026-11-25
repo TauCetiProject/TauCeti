@@ -38,7 +38,7 @@ outside `B`, and no nontrivial element of `U` lies in every conjugate of `B`. To
 `TauCeti.TitsSystem.ofRankOne` this gives an irreducible Tits system on `G`, and supplies the
 hypotheses on `U` of Tits's simplicity criterion
 `TauCeti.TitsSystem.isSimpleGroup_derivedCentralQuotient`: `U` is solvable, normalized by `B`,
-`B = U (B ∩ N)`, and `U` meets the normal core of `B` trivially. That criterion additionally needs
+`B ≤ U (B ∩ N)`, and `U` meets the normal core of `B` trivially. That criterion additionally needs
 the normal closure of `U` to be the derived subgroup of `G` and perfect, which is not proved here.
 
 Everything holds over every field with an involution, including in characteristic two.
@@ -57,7 +57,7 @@ Everything holds over every field with an involution, including in characteristi
   `U w B`.
 * `TauCeti.UnitaryRankOne.mem_borel_or_mem_doubleCoset`: the Bruhat decomposition `G = B ∪ BwB`.
 * `TauCeti.UnitaryRankOne.borel_inf_monomial`: `B ∩ N = T`.
-* `TauCeti.UnitaryRankOne.borel_le_unipotent_sup_borel_inf_monomial`: `B = U (B ∩ N)`.
+* `TauCeti.UnitaryRankOne.borel_le_unipotent_sup_borel_inf_monomial`: `B ≤ U (B ∩ N)`.
 * `TauCeti.UnitaryRankOne.normalCore_borel_inf_unipotent`: `U` meets the normal core of `B`
   trivially.
 * `TauCeti.UnitaryRankOne.isIrreducible_titsSystem`: the Tits system is irreducible.
@@ -375,8 +375,8 @@ theorem borel_inf_monomial : borel K σ ⊓ monomial K σ = torus K σ := by
   refine (mem_monomial_iff.mp hgN).resolve_right fun h ↦ weyl_notMem_borel K σ ?_
   simpa using mul_mem (torus_le_borel K σ h) (inv_mem hgB)
 
-/-- The Borel subgroup is the product of the unipotent subgroup and its intersection with the
-monomial subgroup: the splitting hypothesis of
+/-- The Borel subgroup is contained in the product of the unipotent subgroup and its intersection
+with the monomial subgroup: the splitting hypothesis of
 `TauCeti.TitsSystem.isSimpleGroup_derivedCentralQuotient`. -/
 theorem borel_le_unipotent_sup_borel_inf_monomial (hσ : Function.Involutive σ) :
     borel K σ ≤ unipotent K σ ⊔ borel K σ ⊓ monomial K σ := by
