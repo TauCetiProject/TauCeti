@@ -271,7 +271,7 @@ theorem MemWkpLoc.planarReflection_higherReflectionCoeff_reflectionCore_bound {p
         (higherReflectionBound k p) k (TauCeti.planarReflection (higherReflectionCoeff k) u) u := by
   simpa only [Opens.coe_reflectionCore_inter_setOf_im_nonneg] using
     MemWkpLoc.planarReflection_higherReflectionCoeff_bound (Ω := Ω.reflectionCore) hp
-      (fun _ hz him j => Opens.imDilation_higherReflectionNode_mem_reflectionCore j hz him.le)
+      Opens.imDilation_higherReflectionNode_mem_reflectionCore_of_im_neg
       (by rwa [Opens.coe_reflectionCore_inter_setOf_im_nonneg])
 
 /-- **The `W^{k,p}` norm of the reflection.** For `u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) k`, the

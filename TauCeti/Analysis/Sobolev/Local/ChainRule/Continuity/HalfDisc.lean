@@ -67,12 +67,6 @@ universe uF uG
 variable {F : Type uF} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {Ω : Opens ℂ} {p : ℝ≥0}
 
-/-- The node dilations map the lower part of a reflection core into it. -/
-private theorem imDilation_mem_reflectionCore {V : Opens ℂ} {k : ℕ} :
-    ∀ z ∈ (V.reflectionCore : Set ℂ), z.im < 0 → ∀ j : Fin k,
-      imDilation (higherReflectionNode j) z ∈ (V.reflectionCore : Set ℂ) :=
-  fun _ hz him j => Opens.imDilation_higherReflectionNode_mem_reflectionCore j hz him.le
-
 omit [FiniteDimensional ℝ F] in
 /-- Let `L` contain the closed upper half of `V`. If `uₙ` are eventually continuous on `L` and
 converge to `u₀` uniformly on `L`, then on the reflection core of `V` the order-`(k + 1)`
@@ -89,11 +83,11 @@ private theorem continuousOn_and_tendstoUniformlyOn_planarReflection {k : ℕ} {
         (planarReflection (higherReflectionCoeff (k + 1)) u₀) l V.reflectionCore := by
   rw [← Opens.coe_reflectionCore_inter_setOf_im_nonneg] at hVL
   have hsum : ∑ j, higherReflectionCoeff (k + 1) j = 1 := sum_higherReflectionCoeff k.succ_pos
-  exact ⟨continuousOn_planarReflection hsum imDilation_mem_reflectionCore
-      ((hunif.continuousOn huc.frequently).mono hVL),
-    huc.mono fun n hn => continuousOn_planarReflection hsum imDilation_mem_reflectionCore
-      (hn.mono hVL),
-    (hunif.mono hVL).planarReflection imDilation_mem_reflectionCore _⟩
+  have hV :=
+    Opens.imDilation_higherReflectionNode_mem_reflectionCore_of_im_neg (V := V) (n := k + 1)
+  exact ⟨continuousOn_planarReflection hsum hV ((hunif.continuousOn huc.frequently).mono hVL),
+    huc.mono fun n hn => continuousOn_planarReflection hsum hV (hn.mono hVL),
+    (hunif.mono hVL).planarReflection hV _⟩
 
 omit [FiniteDimensional ℝ F] in
 /-- Let `L` be a set containing the closed upper half of `V`. If `uₙ → u₀` in `W^{k+1,p}(L)`, then

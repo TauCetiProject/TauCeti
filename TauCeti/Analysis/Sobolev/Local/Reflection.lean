@@ -896,6 +896,14 @@ theorem _root_.TopologicalSpace.Opens.imDilation_higherReflectionNode_mem_reflec
     imDilation (higherReflectionNode j) z ∈ V.reflectionCore :=
   Opens.imDilation_mem_reflectionCore (abs_le.1 (abs_higherReflectionNode_le_one j)) hz him
 
+/-- The node dilations map the open lower part of a reflection core into the core: the form of the
+stability hypothesis taken by `TauCeti.planarReflection` lemmas such as
+`TauCeti.continuousOn_planarReflection`. -/
+theorem _root_.TopologicalSpace.Opens.imDilation_higherReflectionNode_mem_reflectionCore_of_im_neg
+    {V : Opens ℂ} {n : ℕ} : ∀ z ∈ (V.reflectionCore : Set ℂ), z.im < 0 → ∀ j : Fin n,
+      imDilation (higherReflectionNode j) z ∈ (V.reflectionCore : Set ℂ) :=
+  fun _ hz him j => Opens.imDilation_higherReflectionNode_mem_reflectionCore j hz him.le
+
 /-! ### Reflection near a relatively open subset of the closed upper half-plane -/
 
 /-- **Reflection near a relatively open subset of the closed upper half-plane.** The order-`k`
@@ -906,7 +914,7 @@ theorem MemWkpLoc.planarReflection_higherReflectionCoeff_reflectionCore {p : ℝ
     (hp : 1 ≤ p) {Ω : Opens ℂ} {u : ℂ → F} (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u) :
     MemWkpLoc p Ω.reflectionCore k (TauCeti.planarReflection (higherReflectionCoeff k) u) :=
   MemWkpLoc.planarReflection_higherReflectionCoeff hp
-    (fun _ hz him j => Opens.imDilation_higherReflectionNode_mem_reflectionCore j hz him.le)
+    Opens.imDilation_higherReflectionNode_mem_reflectionCore_of_im_neg
     (by rwa [Opens.coe_reflectionCore_inter_setOf_im_nonneg])
 
 /-- At order one the reflection node is `-1`, so the node dilation is complex conjugation. -/
