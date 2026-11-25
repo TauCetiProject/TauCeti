@@ -165,7 +165,7 @@ theorem integralTopForm_le_integralTopForm_mpullback_prod_torusSymplecticForm
   obtain ⟨m, hm⟩ :=
     exists_integralTopForm_mpullback_prod_torusSymplecticForm_eq_intCast_mul o o' hσ hu
   rw [hm] at hpos ⊢
-  exact le_intCast_mul_of_pos hpos
+  exact le_intCast_mul_of_mul_pos hpos
 
 end TauCeti
 

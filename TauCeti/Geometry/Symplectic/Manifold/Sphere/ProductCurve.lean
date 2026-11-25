@@ -31,9 +31,9 @@ therefore `deg(pr₁ ∘ u) a + deg(pr₂ ∘ u) b`
 (`TauCeti.integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_degree_mul_add_degree_mul`). In
 the equal-area case `a = b` every area is an integer multiple of `a`, so a positive area is at
 least `a`
-(`TauCeti.le_integralTopForm_mpullback_prod_smul_fubiniStudyForm`): the ruling classes have the
-minimum positive area. This is the area gap which prevents the spheres of the ruling classes
-from bubbling.
+(`TauCeti.le_integralTopForm_mpullback_prod_smul_fubiniStudyForm`). For `a > 0` the ruling
+classes, of area `a`, therefore have the minimum positive area. This is the area gap which
+prevents the spheres of the ruling classes from bubbling.
 
 **Pseudoholomorphic spheres.** A `J₀`-holomorphic sphere `u : S² → S² × S²` has holomorphic
 components, so both degrees are nonnegative, and each vanishes exactly when its component is
@@ -125,10 +125,14 @@ theorem exists_integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_intCast_mu
     ← add_mul, ← Int.cast_add]
   exact ⟨_, rfl⟩
 
-/-- **The minimum positive area of equal-area `S² × S²`.** For a smooth map `u` from a compact
-oriented boundaryless surface to `S² × S²` with the split form
-`pr₁^*(a • ω_FS) + pr₂^*(a • ω_FS)`, a positive area is at least `a`: it is a positive integer
-multiple of `a`. The two ruling classes `[S² × pt]` and `[pt × S²]` attain it. -/
+/-- **A positive area of equal-area `S² × S²` is at least `a`.** For a smooth map `u` from a
+compact oriented boundaryless surface to `S² × S²` with the split form
+`pr₁^*(a • ω_FS) + pr₂^*(a • ω_FS)`, a positive area is at least `a`, whatever the sign of `a`:
+it is a positive integer multiple of `a`. For `a > 0` the bound is attained by the spheres of the
+ruling classes `[S² × pt]` and `[pt × S²]`
+(`integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_iff`, with
+`isPseudoholomorphic_smul_prodMk_const` and `isPseudoholomorphic_const_prodMk_smul`), so it is
+then the minimum positive area. -/
 theorem le_integralTopForm_mpullback_prod_smul_fubiniStudyForm {a : ℝ}
     (hpos : 0 < integralTopForm o (SmoothForm.mpullback u hu
         ((a • OnePoint.fubiniStudyForm).prod (a • OnePoint.fubiniStudyForm))).val) :
@@ -137,7 +141,7 @@ theorem le_integralTopForm_mpullback_prod_smul_fubiniStudyForm {a : ℝ}
   obtain ⟨m, hm⟩ :=
     exists_integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_intCast_mul o hu a
   rw [hm] at hpos ⊢
-  exact le_intCast_mul_of_pos hpos
+  exact le_intCast_mul_of_mul_pos hpos
 
 end Area
 

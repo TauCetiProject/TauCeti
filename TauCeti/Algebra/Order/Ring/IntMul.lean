@@ -15,7 +15,7 @@ import Mathlib.Algebra.Order.Ring.Cast
 In a linearly ordered ring, the least positive integer multiple of a positive element `c` is `c`
 itself. This reads off least periods from a description of all periods as the multiples `n c`,
 `n ∈ ℤ`. Whatever the sign of `c`, a positive integer multiple of `c` is at least `c`
-(`TauCeti.le_intCast_mul_of_pos`); this gives area gaps from areas that are integer multiples of
+(`TauCeti.le_intCast_mul_of_mul_pos`); this gives area gaps from areas that are integer multiples of
 a fixed area.
 -/
 
@@ -35,7 +35,7 @@ theorem isLeast_pos_int_mul {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrdere
 
 /-- A positive integer multiple `m c` of an element `c` of a linearly ordered ring is at least
 `c`, whatever the sign of `c`. -/
-theorem le_intCast_mul_of_pos {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+theorem le_intCast_mul_of_mul_pos {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
     {m : ℤ} {c : R} (h : 0 < m * c) : c ≤ m * c := by
   rcases le_or_gt c 0 with hc | hc
   · exact hc.trans h.le
