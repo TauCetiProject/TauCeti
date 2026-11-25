@@ -39,6 +39,8 @@ the big fppf site of `Scheme.{u}`, where Mathlib's sheafification lands in `Type
 * `TauCeti.CategoryTheory.quotientSheaf.isColimit`: `π` is the coequaliser of `h_R ⇉ h_U` in
   `J`-sheaves.
 * `TauCeti.CategoryTheory.quotientSheaf.isLocallySurjective_π`: `π` is `J`-locally surjective.
+* `TauCeti.CategoryTheory.quotientSheaf.isIso_π_self`: for the pre-relation `(s, s)`, `π` is an
+  isomorphism.
 * `TauCeti.CategoryTheory.quotientSheaf.kernelPair`: for an equivalence relation, `h_R ⇉ h_U` is
   the kernel pair of `π`, that is, `h_R = h_U ×_{U/R} h_U`.
 
@@ -150,6 +152,12 @@ noncomputable def quotientSheaf.isColimit :
 /-- The projection onto the quotient sheaf is an epimorphism of `J`-sheaves. -/
 instance quotientSheaf.epi_π : Epi (quotientSheaf.π.{w} J s t) :=
   ⟨fun _ _ h ↦ quotientSheaf.hom_ext h⟩
+
+/-- For the pre-relation `(s, s)`, which relates each point only to itself, the projection
+`h_U ⟶ U/R` is an isomorphism: the quotient sheaf is `h_U`. -/
+instance quotientSheaf.isIso_π_self : IsIso (quotientSheaf.π.{w} J s s) :=
+  ⟨quotientSheaf.desc (𝟙 _) rfl, quotientSheaf.π_desc _ _,
+    quotientSheaf.hom_ext (by rw [quotientSheaf.π_desc_assoc, Category.id_comp, Category.comp_id])⟩
 
 /-- The projection onto the quotient sheaf is `J`-locally surjective: every section of `U/R` is,
 `J`-locally, the class of a point of `U`. -/
