@@ -22,12 +22,12 @@ bundle atlases.
 
 * `TauCeti.CenteredClosedDisc.fiveChartAtlas`: one interior chart, the Cayley chart centered at `1`
   on the disc of radius `1/2` about `0`, whose image lies in the open upper half-plane
-  (`TauCeti.CenteredClosedDisc.image_fiveChartAtlas_zero_subset`), and four half-disc charts, the
+  (`TauCeti.CenteredClosedDisc.fiveChartAtlas_image_zero_subset`), and four half-disc charts, the
   Cayley charts centered at `1`, `i`, `-1`, `-i`, each with image the half-disc
-  `D⁺_1 = {w : ‖w‖ < 1, 0 ≤ im w}` (`TauCeti.CenteredClosedDisc.image_fiveChartAtlas_of_ne_zero`).
+  `D⁺_1 = {w : ‖w‖ < 1, 0 ≤ im w}` (`TauCeti.CenteredClosedDisc.fiveChartAtlas_image_of_ne_zero`).
 * `TauCeti.CenteredClosedDisc.eightChartAtlas`: eight half-disc charts, the Cayley charts centered
   at `1`, `i`, `-1`, `-i` and `(±3 ± 4i)/5`, each with image the half-disc `D⁺_2`
-  (`TauCeti.CenteredClosedDisc.image_eightChartAtlas`).
+  (`TauCeti.CenteredClosedDisc.eightChartAtlas_image`).
 
 The chart centered at `ζ` maps `{z : ‖ζ - z‖ < r ‖ζ + z‖}` onto `D⁺_r`
 (`TauCeti.CenteredClosedDisc.cayleyChart_image_halfDiscDom`). For `r = 1` this is the half of the
@@ -52,9 +52,9 @@ weighted by a partition of unity.
 
 ## Main results
 
-* `TauCeti.CenteredClosedDisc.image_fiveChartAtlas_zero_subset`,
-  `TauCeti.CenteredClosedDisc.image_fiveChartAtlas_of_ne_zero`,
-  `TauCeti.CenteredClosedDisc.image_eightChartAtlas`: the chart images, an interior one and
+* `TauCeti.CenteredClosedDisc.fiveChartAtlas_image_zero_subset`,
+  `TauCeti.CenteredClosedDisc.fiveChartAtlas_image_of_ne_zero`,
+  `TauCeti.CenteredClosedDisc.eightChartAtlas_image`: the chart images, an interior one and
   half-discs.
 * `TauCeti.CenteredClosedDisc.exists_norm_fiveEightAtlasEquiv_le`: the norms of the two atlases
   are equivalent.
@@ -75,10 +75,10 @@ variable (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- The finite bundle atlas of the trivial bundle over the closed disc with `k`th chart the
 preferred chart at `c k`, on the open domain `D k`. The closure of each domain must avoid the point
-`-center (c k)` missing from the source of the chart, and the domains must cover the disc. -/
+`-chartCenter (c k)` missing from the source of the chart, and the domains must cover the disc. -/
 @[expose, simps n center dom]
 def discAtlas (m : ℕ) (c : Fin m → CenteredClosedDisc) (D : Fin m → Set CenteredClosedDisc)
-    (hD : ∀ k, IsOpen (D k)) (hsrc : ∀ k, closure (D k) ⊆ {z | (z : ℂ) ≠ -center (c k)})
+    (hD : ∀ k, IsOpen (D k)) (hsrc : ∀ k, closure (D k) ⊆ {z | (z : ℂ) ≠ -chartCenter (c k)})
     (hcov : ∀ z, ∃ k, z ∈ D k) :
     FiniteBundleAtlas ClosedUpperHalfPlane CenteredClosedDisc F
       (Bundle.Trivial CenteredClosedDisc F) where
@@ -117,9 +117,14 @@ theorem norm_circlePt (k : Fin 8) : ‖circlePt k‖ = 1 := by
 def circlePtDisc (k : Fin 8) : CenteredClosedDisc :=
   mk (circlePt k) (norm_circlePt k).le
 
+@[simp]
+theorem coe_circlePtDisc (k : Fin 8) : (circlePtDisc k : ℂ) = circlePt k :=
+  coe_mk _ _
+
 /-- The preferred chart at `circlePt k` is centered there. -/
-theorem center_circlePtDisc (k : Fin 8) : center (circlePtDisc k) = circlePt k := by
-  rw [center_of_norm_eq_one (by rw [circlePtDisc, coe_mk, norm_circlePt]), circlePtDisc, coe_mk]
+@[simp]
+theorem chartCenter_circlePtDisc (k : Fin 8) : chartCenter (circlePtDisc k) = circlePt k := by
+  rw [chartCenter_of_norm_eq_one (by rw [coe_circlePtDisc, norm_circlePt]), coe_circlePtDisc]
 
 /-- The domain `{‖z‖ < 1/2}` of the interior chart. -/
 def innerDom : Set CenteredClosedDisc := {z | ‖(z : ℂ)‖ < 1 / 2}
@@ -166,13 +171,13 @@ theorem fiveDom_succ (j : Fin 4) : fiveDom j.succ = halfDiscDom (circlePt (Fin.c
       (fun j ↦ by simpa using isOpen_halfDiscDom _ _) k)
     (fun k ↦ by
       refine Fin.cases ?_ (fun j ↦ ?_) k
-      · simp only [fiveDom_zero, fiveCenter_zero, center_mk_zero]
+      · simp only [fiveDom_zero, fiveCenter_zero, chartCenter_mk_zero]
         refine (closure_lt_subset_le (continuous_norm.comp continuous_coe)
           continuous_const).trans fun z hz hz1 ↦ ?_
         -- `hz` is `‖z‖ ≤ 1/2`, stated with the composition `‖·‖ ∘ coe`.
         simp only [Function.comp_apply, mem_ofPred_eq, hz1, norm_neg, norm_one] at hz
         norm_num at hz
-      · simpa [center_circlePtDisc] using
+      · simpa [chartCenter_circlePtDisc] using
           closure_halfDiscDom_subset (ne_zero_of_norm_ne_zero (norm_circlePt (Fin.castAdd 4 j)
             ▸ one_ne_zero)) 1)
     fun z ↦ by
@@ -219,7 +224,7 @@ theorem fiveChartAtlas_dom (k : Fin 5) : (fiveChartAtlas F).dom k = fiveDom k :=
   discAtlas F 8 circlePtDisc (fun k ↦ halfDiscDom (circlePt k) 2)
     (fun _ ↦ isOpen_halfDiscDom _ _)
     (fun k ↦ by
-      simpa [center_circlePtDisc] using
+      simpa [chartCenter_circlePtDisc] using
         closure_halfDiscDom_subset (ne_zero_of_norm_ne_zero (norm_circlePt k ▸ one_ne_zero)) 2)
     fun z ↦ by
       rcases le_or_gt 0 (z : ℂ).re with hx | hx
@@ -238,14 +243,15 @@ theorem eightChartAtlas_dom (k : Fin 8) :
   (rfl)
 
 /-- The preferred chart at `circlePt k` is the Cayley chart centered there. -/
+@[simp]
 theorem chartAt_circlePtDisc (k : Fin 8) :
     chartAt ClosedUpperHalfPlane (circlePtDisc k) = cayleyChart (circlePt k) (norm_circlePt k) :=
-  chartAt_eq_cayleyChart _ (center_circlePtDisc k)
+  chartAt_eq_cayleyChart _ (chartCenter_circlePtDisc k)
 
 omit [NormedSpace ℝ F] in
 /-- **The half-disc charts of the eight-chart atlas.** Each chart maps its domain onto the
 half-disc `D⁺_2 = {w : ‖w‖ < 2}` of the closed upper half-plane. -/
-theorem image_eightChartAtlas (k : Fin 8) :
+theorem eightChartAtlas_image (k : Fin 8) :
     ((eightChartAtlas F).image k : Set ClosedUpperHalfPlane) =
       {w : ClosedUpperHalfPlane | ‖(w : ℂ)‖ < 2} := by
   ext w
@@ -257,7 +263,7 @@ omit [NormedSpace ℝ F] in
 /-- **The half-disc charts of the five-chart atlas.** The charts other than the first, centered at
 `1`, `i`, `-1`, `-i`, map their domains onto the half-disc `D⁺_1 = {w : ‖w‖ < 1}` of the closed
 upper half-plane. -/
-theorem image_fiveChartAtlas_of_ne_zero (k : Fin 5) (hk : k ≠ 0) :
+theorem fiveChartAtlas_image_of_ne_zero (k : Fin 5) (hk : k ≠ 0) :
     ((fiveChartAtlas F).image k : Set ClosedUpperHalfPlane) =
       {w : ClosedUpperHalfPlane | ‖(w : ℂ)‖ < 1} := by
   obtain ⟨j, hj⟩ := Fin.exists_succ_eq.2 hk
@@ -269,7 +275,7 @@ theorem image_fiveChartAtlas_of_ne_zero (k : Fin 5) (hk : k ≠ 0) :
 omit [NormedSpace ℝ F] in
 /-- **The interior chart of the five-chart atlas.** The first chart, the preferred chart at `0`,
 maps its domain into the open upper half-plane, away from the boundary. -/
-theorem image_fiveChartAtlas_zero_subset :
+theorem fiveChartAtlas_image_zero_subset :
     ((fiveChartAtlas F).image (0 : Fin 5) : Set ClosedUpperHalfPlane) ⊆
       {w : ClosedUpperHalfPlane | 0 < (w : ℂ).im} := by
   intro w hw
@@ -278,7 +284,7 @@ theorem image_fiveChartAtlas_zero_subset :
   simp only [fiveChartAtlas_dom, fiveDom_zero, mem_innerDom] at hz
   have hz1 : ‖(z : ℂ)‖ < 1 := hz.trans (by norm_num)
   have hc : chartAt ClosedUpperHalfPlane (mk 0 (by simp)) = cayleyChart 1 norm_one :=
-    chartAt_eq_cayleyChart _ center_mk_zero
+    chartAt_eq_cayleyChart _ chartCenter_mk_zero
   simp only [FiniteBundleAtlas.chart, fiveChartAtlas_center, fiveCenter_zero, hc]
   exact im_cayleyChart_pos_iff.2 hz1
 
