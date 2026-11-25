@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.InfinitesimalCharacter.Basic
 public import Mathlib.LinearAlgebra.Matrix.ToLin
+public import TauCeti.Algebra.Lie.Abelian
 
 /-!
 # Generalized infinitesimal characters of square-zero deformations
@@ -174,9 +175,7 @@ section Jordan
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-- A commutative ring is an abelian Lie algebra under the commutator bracket. -/
-local instance instIsLieAbelianSelf : IsLieAbelian R :=
-  isMulCommutative_iff_isLieAbelian.mp inferInstance
+attribute [local instance] isLieAbelian_of_commRing
 
 variable (R M) in
 /-- The **Jordan action** of the one-dimensional abelian Lie algebra `R` on `M`: the scalar `t`
@@ -244,7 +243,8 @@ noncomputable def jordanNilpotent (R : Type u) [CommRing R] : End R (Fin 2 → R
 /-- The nilpotent part of the Jordan block sends `v` to `(v 1, 0)`. -/
 @[simp]
 theorem jordanNilpotent_apply (v : Fin 2 → R) : jordanNilpotent R v = Pi.single 0 (v 1) := by
-  rw [jordanNilpotent, Matrix.toLin'_apply, Matrix.single_mulVec, one_mul, Pi.single]
+  ext i
+  fin_cases i <;> simp [jordanNilpotent, Matrix.single_mulVec_eq]
 
 /-- The nilpotent part of the Jordan block squares to zero. -/
 theorem jordanNilpotent_mul_self : jordanNilpotent R * jordanNilpotent R = 0 :=
