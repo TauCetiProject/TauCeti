@@ -43,6 +43,8 @@ Section 3.3.
   `TopCat.singularCap_naturality` its naturality.
 * `TopCat.singularCapLinearMap`: capping with a fixed class `μ ∈ Hₙ(X; k)`, as a `k`-linear map
   `Hᵖ(X; k) → H_q(X; k)`, with `TopCat.singularCapLinearMap_naturality` its naturality.
+* `TopCat.singularCap_eqToHom`: the cap product does not depend on how the `k`-linear structure
+  of `C` is presented.
 * `TopCat.singularCap_coefficient_naturality`: compatible changes of every coefficient object
   commute with the native cap product on homology and cohomology.
 * `TopCat.singularCap_coefficient_naturality_map`: the same square combined with a map of spaces.
@@ -145,6 +147,20 @@ lemma singularCap_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (k : Type*) [Ring 
   TauCeti.ChainComplex.cap_naturality _ _ _ _ _ _ _ _
     (alexanderWhitneyDiagonal_naturality f u)
     (SSet.chainComplexPairing_naturality (toSSet.map f) μ).symm p q n h α
+
+/-- The singular cap product does not depend on how the `k`-linear structure of `C` is presented:
+along an equality `L₁ = L₂` of `k`-linear structures, capping with the image of a class under the
+identification `eqToHom` of the two cohomology modules is capping with the class. -/
+lemma singularCap_eqToHom {k : Type*} [Ring k] (L₁ L₂ : Linear k C) (h : L₁ = L₂)
+    [@MonoidalLinear k _ C _ _ L₁ _ _] [@MonoidalLinear k _ C _ _ L₂ _ _] (X : TopCat.{w})
+    (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ P) (p q n : ℕ) (hpq : p + q = n)
+    (a : @TopCat.singularCohomology _ _ _ _ R k _ L₁ M X p) :
+    @TopCat.singularCap _ _ _ _ _ _ _ _ _ _ _ _ X k _ L₂ _ u μ p q n hpq
+        (eqToHom (congrArg (fun L : Linear k C ↦
+          @TopCat.singularCohomology _ _ _ _ R k _ L M X p) h) a) =
+      @TopCat.singularCap _ _ _ _ _ _ _ _ _ _ _ _ X k _ L₁ _ u μ p q n hpq a := by
+  subst h
+  simp
 
 section Coefficients
 
