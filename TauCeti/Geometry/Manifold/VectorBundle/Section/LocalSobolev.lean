@@ -109,6 +109,12 @@ there. -/
 def IsLocallySobolevAt (s : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) (x : M) : Prop :=
   IsLocallyAt (fun _ S y ↦ S.IsLocallySobolevAt s y) T x
 
+/-- Being `H^s` near `x` is `TauCeti.BundleTest.IsLocallyAt` for
+`Distribution.IsLocallySobolevAt`. -/
+theorem isLocallySobolevAt_def {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M} :
+    IsLocallySobolevAt s T x ↔ IsLocallyAt (fun _ S y ↦ S.IsLocallySobolevAt s y) T x :=
+  Iff.rfl
+
 /-- **Local Sobolev regularity in any chart and frame.** For a smooth chart `c` at `x` with smooth
 inverse and a frame `t` over its source, `T` is `H^s` near `x` exactly when every component of
 its local representative in `(t, c)` is `H^s` near `c x`. -/
@@ -184,6 +190,12 @@ there. -/
 def IsLocallyMemSobolevAt (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] (T : BundleTest I F V →L_c[ℝ] ℝ)
     (x : M) : Prop :=
   IsLocallyAt (fun _ S y ↦ S.IsLocallyMemSobolevAt s p y) T x
+
+/-- Being `H^{s,p}` near `x` is `TauCeti.BundleTest.IsLocallyAt` for
+`Distribution.IsLocallyMemSobolevAt`, for every `p`. -/
+theorem isLocallyMemSobolevAt_def {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M} :
+    IsLocallyMemSobolevAt s p T x ↔ IsLocallyAt (fun _ S y ↦ S.IsLocallyMemSobolevAt s p y) T x :=
+  Iff.rfl
 
 /-- **Local `H^{s,p}` regularity in any chart and frame.** Let `1 < p < ∞`. For a smooth chart `c`
 at `x` with smooth inverse and a frame `t` over its source, `T` is `H^{s,p}` near `x` exactly when

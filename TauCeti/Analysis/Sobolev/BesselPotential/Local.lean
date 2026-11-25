@@ -376,8 +376,7 @@ theorem IsLocallyMemSobolevAt.compCLMOfOpenPartialHomeomorph (hp : 1 < p) (hp_to
   obtain ⟨W, hW, -, hWT⟩ := hT
   -- On a neighbourhood `N` of `x`, `e^* T` is a tempered pullback `Φ^* (χ T)` with `χ` in `W`.
   obtain ⟨Φ, hΦ, hΨ, N, hNU, χ, hΦb, hΨb, hxN, hχW, hT⟩ :=
-    exists_restrictCLM_compCLMOfOpenPartialHomeomorph_eq_toDistribution (he := he) (he' := he')
-      (hUΩ := hUΩ) hx hW T
+    exists_restrictCLM_compCLMOfOpenPartialHomeomorph_eq_toDistribution he he' hU hUΩ hx hW T
   rw [← isLocallyMemSobolevAt_restrictCLM_iff hNU hxN, hT]
   exact ((hWT χ hχW).compCLM_of_norm_iteratedFDeriv_le_natCeil hp hp_top hΦ hΨ
     (fun n hn _ ↦ hΦb n hn) (fun n hn _ ↦ hΨb n hn)).isLocallyMemSobolevAt_toDistribution hp

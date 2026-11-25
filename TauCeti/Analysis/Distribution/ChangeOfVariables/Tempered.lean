@@ -55,6 +55,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   {he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source} {he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target}
   {hU : (U : Set E) ⊆ e.source} {hUΩ : MapsTo e U Ω}
 
+variable (he he' hU hUΩ) in
 /-- **Localization of a pullback.** Near a point `x ∈ U`, the pullback `e^* T` is the tempered
 pullback `Φ^* (χ T)` of a cut-off of `T`: there are a bijection `Φ` of `E` such that `Φ` and `Φ⁻¹`
 are smooth with bounded derivatives of every positive order, an open neighbourhood `N ⊆ U` of `x`

@@ -92,8 +92,7 @@ theorem IsLocallyMemBesovAt.compCLMOfOpenPartialHomeomorph {s : ℝ} {T : 𝓓'(
   -- `ψ T ∈ B^s_{p,q}` for every test function `ψ` supported in a neighbourhood `W` of `e x`.
   obtain ⟨W, hW, -, hWT⟩ := isLocallyMemBesovAt_iff.1 hT
   obtain ⟨Φ, hΦ, hΨ, N, hNU, χ, hΦb, hΨb, hxN, hχW, hT⟩ :=
-    exists_restrictCLM_compCLMOfOpenPartialHomeomorph_eq_toDistribution (he := he) (he' := he')
-      (hUΩ := hUΩ) hx hW T
+    exists_restrictCLM_compCLMOfOpenPartialHomeomorph_eq_toDistribution he he' hU hUΩ hx hW T
   rw [← isLocallyMemBesovAt_restrictCLM_iff hNU hxN, hT]
   exact ((hWT χ hχW).compCLM hΦ hΨ (fun n hn _ ↦ hΦb n hn) (fun n hn _ ↦ hΨb n hn))
     |>.isLocallyMemBesovAt_toDistribution hxN

@@ -93,6 +93,13 @@ def IsLocallyMemBesovAt (φ : ContDiffBump (0 : E)) (s : ℝ) (p q : ℝ≥0∞)
 variable {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)]
   {T T' : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
 
+/-- Being `B^s_{p,q}` near `x` is `TauCeti.BundleTest.IsLocallyAt` for
+`Distribution.IsLocallyMemBesovAt`, for every `q`. -/
+theorem isLocallyMemBesovAt_def :
+    IsLocallyMemBesovAt φ s p q T x ↔
+      IsLocallyAt (fun _ S y ↦ S.IsLocallyMemBesovAt φ s p q y) T x :=
+  Iff.rfl
+
 /-- **Local Besov regularity in any chart and frame.** For a smooth chart `c` at `x` with smooth
 inverse and a frame `t` over its source, `T` is `B^s_{p,q}` near `x` exactly when every component
 of its local representative in `(t, c)` is `B^s_{p,q}` near `c x`. -/

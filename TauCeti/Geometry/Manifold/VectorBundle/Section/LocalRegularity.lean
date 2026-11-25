@@ -185,6 +185,26 @@ def IsLocallyAt (P : (Ω : Opens E) → 𝓓'(Ω, ℂ) → E → Prop) (T : Bund
 variable {P Q : (Ω : Opens E) → 𝓓'(Ω, ℂ) → E → Prop} {T T' : BundleTest I F V →L_c[ℝ] ℝ}
   {x : M}
 
+/-- Unfolding `TauCeti.BundleTest.IsLocallyAt`: `T` satisfies `P` near `x` exactly when, in some
+smooth chart `c` at `x` with smooth inverse and some frame `t` over its source, every component of
+the local representative of `T` satisfies `P` near `c x`. No property of `P` is needed. -/
+theorem isLocallyAt_def :
+    IsLocallyAt P T x ↔ ∃ (t : Trivialization F (π F V)) (_ : MemTrivializationAtlas t)
+      (c : OpenPartialHomeomorph M E) (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source)
+      (_ : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target) (hct : c.source ⊆ t.baseSet),
+      x ∈ c.source ∧ ∀ v, P _ (t.chartComponent c hc hct T v) (c x) :=
+  Iff.rfl
+
+/-- **Introduction rule.** If, in a smooth chart `c` at `x` with smooth inverse and a frame `t`
+over its source, every component of the local representative of `T` satisfies `P` near `c x`, then
+`T` satisfies `P` near `x`. No property of `P` is needed. -/
+theorem IsLocallyAt.intro (T : BundleTest I F V →L_c[ℝ] ℝ) {t : Trivialization F (π F V)}
+    [MemTrivializationAtlas t] {c : OpenPartialHomeomorph M E}
+    (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target)
+    (hct : c.source ⊆ t.baseSet) (hx : x ∈ c.source)
+    (h : ∀ v, P _ (t.chartComponent c hc hct T v) (c x)) : IsLocallyAt P T x :=
+  ⟨t, inferInstance, c, hc, hcs, hct, hx, h⟩
+
 /-- **Local regularity in any chart and frame.** Let `P` be an invariant notion of local
 regularity. For a smooth chart `c` at `x` with smooth inverse and a frame `t` over its source, `T`
 satisfies `P` near `x` exactly when every component of its local representative in `(t, c)`
@@ -197,7 +217,7 @@ theorem isLocallyAt_iff (hP : IsInvariantLocalRegularity P) (T : BundleTest I F 
   ⟨fun ⟨t₀, _, _, hc₀, hcs₀, hct₀, hx₀, h⟩ ↦
     (forall_chartComponent_iff (t' := t₀) (hc' := hc₀) (hct' := hct₀) (hc := hc) (hct := hct) hP
       hcs hcs₀ T hx hx₀).1 h,
-    fun h ↦ ⟨t, inferInstance, c, hc, hcs, hct, hx, h⟩⟩
+    IsLocallyAt.intro T hc hcs hct hx⟩
 
 /-- **Monotonicity in the notion.** If `P` implies `Q`, then satisfying `P` near `x` implies
 satisfying `Q` near `x`. -/
