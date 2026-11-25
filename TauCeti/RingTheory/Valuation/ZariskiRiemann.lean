@@ -40,6 +40,7 @@ field `κ(W)` has no proper valuation subring containing the image of `A`.
 
 ## Main results
 
+* `ValuationSubring.sInfOfIsChain`: the intersection of a chain of valuation subrings.
 * `ValuationSubring.exists_le_minimal`: below a valuation subring containing a set `s` there is a
   valuation subring minimal among those containing `s`.
 * `Algebra.IsIntegral.of_forall_valuationSubring_eq_top`: a field with no proper valuation subring
@@ -67,24 +68,32 @@ namespace ValuationSubring
 
 variable {K : Type*} [Field K]
 
-/-- Below a valuation subring `V₀` containing a set `s` there is a valuation subring which is
-minimal among the valuation subrings containing `s`. -/
-theorem exists_le_minimal (V₀ : ValuationSubring K) {s : Set K} (hs : s ⊆ V₀) :
-    ∃ W ≤ V₀, Minimal (fun W : ValuationSubring K ↦ s ⊆ W) W := by
-  refine zorn_ge_nonempty₀ {W : ValuationSubring K | s ⊆ W} (fun c hcs hc _ _ ↦ ?_) V₀ hs
-  -- the intersection of a nonempty chain of valuation subrings is a valuation subring
-  refine ⟨ofSubring (⨅ W : c, W.val.toSubring) fun x ↦ ?_, ?_, fun W hW ↦ ?_⟩
-  · simp only [Subring.mem_iInf, Subtype.forall, mem_toSubring]
+/-- The intersection of a chain `c` of valuation subrings of `K`, as a valuation subring. (For the
+empty chain it is `K` itself.) -/
+def sInfOfIsChain (c : Set (ValuationSubring K)) (hc : IsChain (· ≤ ·) c) : ValuationSubring K :=
+  ofSubring (⨅ W : c, W.val.toSubring) fun x ↦ by
+    simp only [Subring.mem_iInf, Subtype.forall, mem_toSubring]
     by_cases hx : ∀ W ∈ c, x ∈ W
     · exact .inl hx
     push Not at hx
     obtain ⟨W₁, hW₁, hxW₁⟩ := hx
     refine .inr fun W hW ↦ ?_
     rcases hc.total hW₁ hW with h | h
-    · exact (W.mem_or_inv_mem x).resolve_left fun hxW ↦ hxW₁ (h hxW)
     · exact h ((W₁.mem_or_inv_mem x).resolve_left hxW₁)
-  · exact fun x hx ↦ (mem_ofSubring _ _ _).mpr (Subring.mem_iInf.mpr fun W ↦ hcs W.property hx)
-  · exact fun x hx ↦ Subring.mem_iInf.mp ((mem_ofSubring _ _ _).mp hx) ⟨W, hW⟩
+    · exact (W.mem_or_inv_mem x).resolve_left fun hxW ↦ hxW₁ (h hxW)
+
+/-- The elements of the intersection of a chain are those lying in every member. -/
+theorem mem_sInfOfIsChain_iff {c : Set (ValuationSubring K)} {hc : IsChain (· ≤ ·) c} {x : K} :
+    x ∈ sInfOfIsChain c hc ↔ ∀ W ∈ c, x ∈ W := by
+  simp [sInfOfIsChain, mem_ofSubring, Subring.mem_iInf]
+
+/-- Below a valuation subring `V₀` containing a set `s` there is a valuation subring which is
+minimal among the valuation subrings containing `s`. -/
+theorem exists_le_minimal (V₀ : ValuationSubring K) {s : Set K} (hs : s ⊆ V₀) :
+    ∃ W ≤ V₀, Minimal (fun W : ValuationSubring K ↦ s ⊆ W) W :=
+  zorn_ge_nonempty₀ {W : ValuationSubring K | s ⊆ W} (fun c hcs hc _ _ ↦
+    ⟨sInfOfIsChain c hc.symm, fun _ hx ↦ mem_sInfOfIsChain_iff.mpr fun _ hW ↦ hcs hW hx,
+      fun _ hW _ hx ↦ mem_sInfOfIsChain_iff.mp hx _ hW⟩) V₀ hs
 
 end ValuationSubring
 

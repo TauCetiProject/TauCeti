@@ -33,8 +33,11 @@ of `A`.
 * `ValuationSubring.nonunits_subset_comapResidue`, `ValuationSubring.comapResidue_le`: it lies
   between the nonunits of `A` and `A`.
 * `ValuationSubring.comapResidue_eq_self_iff`: it equals `A` exactly when `U = ⊤`.
+* `ValuationSubring.mapResidue`: the image in `κ(A)` of a valuation subring contained in `A`.
+* `ValuationSubring.comapResidue_mapResidue`: every valuation subring contained in `A` is the
+  composite of `A` with its image in `κ(A)`.
 * `ValuationSubring.comapResidueOrderIso`: the order isomorphism between valuation subrings of
-  `κ(A)` and valuation subrings of `K` contained in `A`.
+  `κ(A)` and valuation subrings of `K` contained in `A`, with inverse `mapResidue`.
 -/
 
 public section
@@ -62,7 +65,7 @@ private theorem mem_comapResidueSubring_iff {U : ValuationSubring (ResidueField 
 theorem residue_inv {x : K} (hx : x ∈ A) (hx' : x⁻¹ ∈ A) :
     residue A ⟨x⁻¹, hx'⟩ = (residue A ⟨x, hx⟩)⁻¹ := by
   rcases eq_or_ne x 0 with rfl | h0
-  · simp [show (⟨0, hx⟩ : A) = 0 from rfl]
+  · simp [(Subtype.ext (ZeroMemClass.coe_zero A).symm : (⟨0, hx⟩ : A) = 0)]
   refine (eq_inv_of_mul_eq_one_left ?_)
   rw [← map_mul, ← map_one (residue A)]
   congr 1
@@ -148,35 +151,67 @@ theorem comapResidue_top : A.comapResidue ⊤ = A :=
 theorem comapResidue_eq_self_iff : A.comapResidue U = A ↔ U = ⊤ :=
   comapResidue_injective.eq_iff' comapResidue_top
 
+variable (A) in
+/-- The image in `κ(A)` of a valuation subring `B` contained in `A`, as a valuation subring of
+`κ(A)`. Its composite with `A` is `B` again (`ValuationSubring.comapResidue_mapResidue`). -/
+noncomputable def mapResidue {B : ValuationSubring K} (hBA : B ≤ A) :
+    ValuationSubring (ResidueField A) :=
+  ofSubring ((B.toSubring.comap A.subtype).map (residue A)) fun y ↦ by
+    obtain ⟨a, rfl⟩ := residue_surjective y
+    simp only [Subring.mem_map, Subring.mem_comap, mem_toSubring]
+    rcases B.mem_or_inv_mem (a : K) with h | h
+    · exact .inl ⟨a, h, rfl⟩
+    · exact .inr ⟨⟨_, hBA h⟩, h, residue_inv A a.property (hBA h)⟩
+
+/-- The elements of the image of `B` in `κ(A)` are the residues of elements of `B`. -/
+theorem mem_mapResidue_iff {B : ValuationSubring K} {hBA : B ≤ A} {y : ResidueField A} :
+    y ∈ A.mapResidue hBA ↔ ∃ (b : K) (hb : b ∈ B), residue A ⟨b, hBA hb⟩ = y := by
+  simp only [mapResidue, mem_ofSubring, Subring.mem_map, Subring.mem_comap, mem_toSubring]
+  exact ⟨fun ⟨a, ha, hy⟩ ↦ ⟨a, ha, hy⟩, fun ⟨b, hb, hy⟩ ↦ ⟨⟨b, hBA hb⟩, hb, hy⟩⟩
+
+/-- Every valuation subring `B` contained in `A` is the composite of `A` with its image in
+`κ(A)`. -/
+@[simp]
+theorem comapResidue_mapResidue {B : ValuationSubring K} (hBA : B ≤ A) :
+    A.comapResidue (A.mapResidue hBA) = B := by
+  refine ext _ _ fun x ↦ ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
+  · obtain ⟨hxA, hU⟩ := mem_comapResidue_iff.mp hx
+    obtain ⟨b, hb, hbx⟩ := mem_mapResidue_iff.mp hU
+    exact A.mem_of_le_of_residue_eq hBA hxA hb hbx.symm
+  · exact mem_comapResidue_iff.mpr ⟨hBA hx, mem_mapResidue_iff.mpr ⟨x, hx, rfl⟩⟩
+
+/-- The image in `κ(A)` of the composite of `A` with `U` is `U`. -/
+@[simp]
+theorem mapResidue_comapResidue (U : ValuationSubring (ResidueField A)) :
+    A.mapResidue (comapResidue_le (U := U)) = U :=
+  comapResidue_injective (comapResidue_mapResidue _)
+
 /-- Every valuation subring `B` contained in `A` is the composite of `A` with a valuation subring
 of `κ(A)`, namely the image of `B` in `κ(A)`. -/
 theorem exists_comapResidue_eq {B : ValuationSubring K} (hBA : B ≤ A) :
-    ∃ U : ValuationSubring (ResidueField A), A.comapResidue U = B := by
-  let U : ValuationSubring (ResidueField A) :=
-    ofSubring ((B.toSubring.comap A.subtype).map (residue A)) fun y ↦ by
-      obtain ⟨a, rfl⟩ := residue_surjective y
-      simp only [Subring.mem_map, Subring.mem_comap, mem_toSubring]
-      rcases B.mem_or_inv_mem (a : K) with h | h
-      · exact .inl ⟨a, h, rfl⟩
-      · exact .inr ⟨⟨_, hBA h⟩, h, residue_inv A a.property (hBA h)⟩
-  refine ⟨U, ext _ _ fun x ↦ ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩⟩
-  · obtain ⟨hxA, hU⟩ := mem_comapResidue_iff.mp hx
-    obtain ⟨b, hb, hbx⟩ := (mem_ofSubring _ _ _).mp hU
-    exact A.mem_of_le_of_residue_eq hBA hxA hb hbx.symm
-  · exact mem_comapResidue_iff.mpr ⟨hBA hx, (mem_ofSubring _ _ _).mpr ⟨⟨x, hBA hx⟩, hx, rfl⟩⟩
+    ∃ U : ValuationSubring (ResidueField A), A.comapResidue U = B :=
+  ⟨_, comapResidue_mapResidue hBA⟩
 
 variable (A) in
 /-- The valuation subrings of `K` contained in a valuation subring `A` correspond, preserving
-order, to the valuation subrings of the residue field `κ(A)`. -/
-noncomputable def comapResidueOrderIso : ValuationSubring (ResidueField A) ≃o Set.Iic A :=
-  RelIso.ofSurjective
-    (OrderEmbedding.ofMapLEIff (fun U ↦ ⟨A.comapResidue U, comapResidue_le⟩) fun _ _ ↦
-      comapResidue_le_comapResidue_iff)
-    fun ⟨_, hB⟩ ↦ (exists_comapResidue_eq hB).imp fun _ h ↦ Subtype.ext h
+order, to the valuation subrings of the residue field `κ(A)`: a valuation subring `U` of `κ(A)`
+goes to the composite `A.comapResidue U`, and a valuation subring `B ⊆ A` to its image
+`A.mapResidue _` in `κ(A)`. -/
+noncomputable def comapResidueOrderIso : ValuationSubring (ResidueField A) ≃o Set.Iic A where
+  toFun U := ⟨A.comapResidue U, comapResidue_le⟩
+  invFun B := A.mapResidue B.property
+  left_inv := mapResidue_comapResidue
+  right_inv B := Subtype.ext (comapResidue_mapResidue B.property)
+  map_rel_iff' := comapResidue_le_comapResidue_iff
 
 @[simp]
 theorem coe_comapResidueOrderIso_apply (U : ValuationSubring (ResidueField A)) :
     (comapResidueOrderIso A U : ValuationSubring K) = A.comapResidue U :=
+  (rfl)
+
+@[simp]
+theorem comapResidueOrderIso_symm_apply (B : Set.Iic A) :
+    (comapResidueOrderIso A).symm B = A.mapResidue B.property :=
   (rfl)
 
 end ValuationSubring
