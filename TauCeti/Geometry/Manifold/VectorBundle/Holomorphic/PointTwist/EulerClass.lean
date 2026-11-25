@@ -291,24 +291,10 @@ theorem sectionIndex_eq_one_of_hasFDerivAt_smulRight (x : X) {σ : ∀ z, L z}
     simp [ContinuousLinearMap.det, LinearMap.det_complex, Complex.normSq_apply]
   rw [VectorBundleOrientation.sectionIndex_eq_sign_det_of_hasFDerivAt _ _ _ _
     (trivializationAt ℂ L x) φ hU hxU hUz hσx hUe hUφ
-    (fun y hy ↦ (VectorBundleOrientation.mapOrientation_reindex_complex ℂ L _ _
-      (hUe hy)).trans reindex_complexOrientation_complex)
-    (by
-      rw [complexHomologicalOrientation_apply x]
-      have hσ : (((ContinuousLinearEquiv.refl ℝ ℂ : ℂ →L[ℝ] ℂ) : C(ℂ, ℂ)).comp
-          ((⟨fun y ↦ y - φ x, by fun_prop⟩ : C(ℂ, ℂ)).comp φ.sourceRestrict)) =
-          (⟨fun y : φ.source ↦ φ y - φ x,
-            φ.continuousOn.domRestrict.sub continuous_const⟩ : C(φ.source, ℂ)) :=
-        ContinuousMap.ext fun y ↦ congrArg (fun z ↦ z - φ x) (φ.sourceRestrict_apply y)
-      have hφ := φ.localHomologyMap_chart_localOrientationOfOrientedChart (hUφ hxU)
-        (ContinuousLinearEquiv.refl ℝ ℂ) Complex.orientation
-        Complex.finrank_real_complex Complex.finrank_real_complex (by
-          rw [hσ]
-          exact fun y hy ↦ Subtype.ext (φ.injOn y.property (hUφ hxU) (sub_eq_zero.1 hy)))
-      simp only [hσ] at hφ
-      -- Orientation.map uses the underlying linear identity, rather than the continuous structure.
-      have hid : (ContinuousLinearEquiv.refl ℝ ℂ).toLinearEquiv = LinearEquiv.refl ℝ ℂ := rfl
-      simpa only [hid, Orientation.map_refl, Equiv.refl_apply] using hφ)
+    (fun y hy ↦ VectorBundleOrientation.mapOrientation_reindex_complex_eq_orientation _ _
+      (hUe hy))
+    (localHomologyMap_complexHomologicalOrientation_of_mem_maximalAtlas
+      (IsManifold.chart_mem_maximalAtlas (n := 1) x) (hUφ hxU))
     hA (hdet.trans_ne (Complex.normSq_pos.2 hc).ne'), hdet, sign_pos (Complex.normSq_pos.2 hc),
     SignType.coe_one]
 
