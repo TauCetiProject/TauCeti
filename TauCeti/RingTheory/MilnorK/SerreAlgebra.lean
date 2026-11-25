@@ -239,7 +239,7 @@ theorem X_mul_C_of_mem_degree {n : ℕ} {a : MilnorK k} (ha : a ∈ degree k n) 
 
 section Lift
 
-variable {A : Type*} [Ring A]
+variable {A : Type*} [Semiring A]
 
 /-- The ring homomorphism `L(k) → A` sending `a + b Π` to `φ a + φ b p`, for a ring homomorphism
 `φ : K_*ᴹ(k) → A` and an element `p` satisfying the relations `p φ(x) = φ(σ x) p` and
@@ -286,7 +286,7 @@ theorem ringHom_ext {A : Type*} [Semiring A] {f g : SerreAlgebra k →+* A}
   simp [hX, hC']
 
 /-- `lift φ p hp hpp` is the unique ring homomorphism restricting to `φ` and sending `Π` to `p`. -/
-theorem eq_lift_iff {A : Type*} [Ring A] (φ : MilnorK k →+* A) (p : A)
+theorem eq_lift_iff {A : Type*} [Semiring A] (φ : MilnorK k →+* A) (p : A)
     (hp : ∀ x, p * φ x = φ (involute x) * p) (hpp : p * p = φ (ofUnit (-1)) * p)
     (f : SerreAlgebra k →+* A) : f = lift φ p hp hpp ↔ f.comp C = φ ∧ f X = p :=
   ⟨fun h ↦ h ▸ ⟨lift_comp_C .., lift_X ..⟩, fun h ↦ ringHom_ext (by simp [h.1]) (by simp [h.2])⟩
