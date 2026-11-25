@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.RowCompact.CompletelyContinuous
-public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Diagonal.Basic
+public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Diagonal
 
 /-!
 # Row compactness of diagonal operators

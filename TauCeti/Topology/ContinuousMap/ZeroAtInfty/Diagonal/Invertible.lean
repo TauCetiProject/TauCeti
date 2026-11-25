@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Diagonal.Basic
+public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Diagonal
 
 /-!
 # Range and invertibility of diagonal operators on `c₀`
