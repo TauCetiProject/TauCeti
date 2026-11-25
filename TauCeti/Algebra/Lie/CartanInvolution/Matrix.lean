@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.CartanInvolution.Basic
 public import TauCeti.Algebra.Lie.Matrix.NegConjTranspose
 public import TauCeti.Analysis.Matrix.Frobenius
 import TauCeti.Algebra.Lie.AdjointAction.Basic
+import TauCeti.Algebra.Lie.Submodule.Atom
 import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
 import TauCeti.LinearAlgebra.BilinearForm.SkewAdjoint
 
@@ -204,19 +205,9 @@ theorem exists_twistedKillingForm_eq_mul_reTraceForm {I : LieIdeal ℝ L} (hI : 
   have hθ := L.isCartanInvolution_restrictNegConjTranspose hL
   set A := traceFormRatio L hL
   -- `⁅L, I⁆ = I`, since `L` has trivial centre; so `A I ⊆ I`, as `A ⁅x, y⁆ = ⁅x, A y⁆`.
-  have hlie : ⁅I, (⊤ : LieIdeal ℝ L)⁆ = I := by
-    rw [LieSubmodule.lie_comm]
-    refine lie_eq_self_of_isAtom_of_ne_bot hI fun h ↦ hI.1 ?_
-    refine (LieSubmodule.eq_bot_iff _).2 fun x hx ↦ ?_
-    have hx' : x ∈ center ℝ L := (LieModule.mem_maxTrivSubmodule ℝ L L x).2 fun m ↦
-      (LieSubmodule.lie_eq_bot_iff _ _).1 h m trivial x hx
-    rwa [center_eq_bot ℝ L] at hx'
-  have hA (x : L) (hx : x ∈ I) : A x ∈ I := by
-    have hle : ⁅I, (⊤ : LieIdeal ℝ L)⁆ ≤ LieSubmodule.comap (traceFormRatioHom L hL) I :=
-      (LieSubmodule.lie_le_iff _ _ _).2 fun u hu v _ ↦ by
-        rw [LieSubmodule.mem_comap, LieModuleHom.map_lie]
-        exact lie_mem_left ℝ L I u _ hu
-    simpa only [LieSubmodule.mem_comap, traceFormRatioHom_apply] using hle (hlie.symm ▸ hx)
+  have hA (x : L) (hx : x ∈ I) : A x ∈ I :=
+    map_le_of_top_lie_eq (top_lie_eq_self_of_isAtom (center_eq_bot ℝ L) hI)
+      (traceFormRatioHom L hL) (LieSubmodule.mem_map_of_mem hx)
   -- `A` is diagonalizable, so `I` is the sum of its intersections with the eigenspaces of `A`;
   -- these are ideals, so one of them is `I`.
   have htop : ⨆ μ : ℝ, A.eigenspace μ = ⊤ :=
