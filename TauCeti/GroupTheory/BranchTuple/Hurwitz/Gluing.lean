@@ -7,8 +7,6 @@ module
 
 public import TauCeti.GroupTheory.BranchTuple.Hurwitz.Fiber
 public import TauCeti.GroupTheory.SpecificGroups.Braid.Block
-import Mathlib.Data.List.OfFn
-import Mathlib.Tactic.Group
 import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
@@ -37,6 +35,14 @@ variable {G : Type*} [Group G] {m n : ℕ}
 
 namespace BranchTuple
 
+/-- The update formula used to move a Hurwitz move through tuple concatenation. -/
+private theorem hurwitzMove_eq_update {r : ℕ} (i : Fin (r - 1)) (t : BranchTuple r G) :
+    hurwitzMove i t = Function.update
+      (Function.update t (strand i) (t (strand i) * t (strandSucc i) * (t (strand i))⁻¹))
+      (strandSucc i) (t (strand i)) := by
+  funext k
+  simp only [hurwitzMove_apply, Function.update_apply]
+
 /-- A Hurwitz move in the right block leaves the prefix unchanged. -/
 private theorem hurwitzMove_append (t : BranchTuple m G) (s : BranchTuple n G) (i : Fin (n - 1)) :
     hurwitzMove (⟨m + i, by have := i.isLt; omega⟩ : Fin (m + n - 1)) (Fin.append t s) =
@@ -45,23 +51,7 @@ private theorem hurwitzMove_append (t : BranchTuple m G) (s : BranchTuple n G) (
       Fin.natAdd m (strand i) := Fin.ext (by simp)
   have h₁ : strandSucc (⟨m + i, by have := i.isLt; omega⟩ : Fin (m + n - 1)) =
       Fin.natAdd m (strandSucc i) := Fin.ext (by simp; omega)
-  funext k
-  induction k using Fin.addCases with
-  | left k =>
-    rw [hurwitzMove_apply_of_ne]
-    · simp
-    · intro h
-      have hv := congrArg Fin.val h
-      simp only [val_strand, Fin.val_castAdd] at hv
-      have := k.isLt
-      omega
-    · intro h
-      have hv := congrArg Fin.val h
-      simp only [val_strandSucc, Fin.val_castAdd] at hv
-      have := k.isLt
-      omega
-  | right k =>
-    simp only [hurwitzMove_apply, h₀, h₁, Fin.append_right, Fin.natAdd_inj]
+  simp only [hurwitzMove_eq_update, h₀, h₁, Fin.append_right, Fin.update_append_natAdd]
 
 /-- Concatenation with an arbitrary fixed prefix intertwines the suffix braid action with the
 block inclusion. -/
@@ -81,23 +71,7 @@ private theorem hurwitzMove_append_left (t : BranchTuple m G) (s : BranchTuple n
       Fin.castAdd n (strand i) := Fin.ext (by simp)
   have h₁ : strandSucc (⟨i, by have := i.isLt; omega⟩ : Fin (m + n - 1)) =
       Fin.castAdd n (strandSucc i) := Fin.ext (by simp)
-  funext k
-  induction k using Fin.addCases with
-  | left k =>
-    simp only [hurwitzMove_apply, h₀, h₁, Fin.append_left, Fin.castAdd_inj]
-  | right k =>
-    rw [hurwitzMove_apply_of_ne]
-    · simp
-    · intro h
-      have hv := congrArg Fin.val h
-      simp only [val_strand, Fin.val_natAdd] at hv
-      have := i.isLt
-      omega
-    · intro h
-      have hv := congrArg Fin.val h
-      simp only [val_strandSucc, Fin.val_natAdd] at hv
-      have := i.isLt
-      omega
+  simp only [hurwitzMove_eq_update, h₀, h₁, Fin.append_left, Fin.update_append_castAdd]
 
 /-- Acting on the prefix uses the inclusion on the first block of strands. -/
 theorem hurwitzAction_appendHom (t : BranchTuple m G) (s : BranchTuple n G)
@@ -181,7 +155,7 @@ theorem glue_conjAct_smul (h : G) (g : c.carrier) (s : HurwitzFiber c full n) :
   funext i
   simp only [Function.comp_apply, MulEquiv.coe_toMonoidHom, MulAut.conj_apply,
     ConjAct.ofConjAct_toConjAct]
-  group
+  simp [← mul_assoc]
 
 /-- A constant block multiplies the boundary on the left by the corresponding power. -/
 @[simp↓]

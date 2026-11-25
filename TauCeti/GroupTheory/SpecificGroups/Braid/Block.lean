@@ -41,13 +41,6 @@ theorem shiftHom_sigma (m n : ℕ) (i : Fin (n - 1)) :
   | zero => exact i.elim0
   | succ n => rw [shiftHom_succ, natAdd_sigma]; rfl
 
-/-- Transport along an equality of strand counts sends each generator to the same crossing. -/
-theorem cast_sigma {n k : ℕ} (h : n = k) (i : Fin (n - 1)) :
-    MulEquiv.cast (M := BraidGroup) h (sigma i) =
-      sigma (Fin.cast (congrArg (· - 1) h) i) := by
-  subst k
-  simp [MulEquiv.cast_apply]
-
 /-- Adding no strands gives the identity homomorphism after identifying the strand counts. -/
 theorem shiftHom_zero_left (n : ℕ) :
     shiftHom 0 n = (MulEquiv.cast (M := BraidGroup) (Nat.zero_add n).symm).toMonoidHom := by
