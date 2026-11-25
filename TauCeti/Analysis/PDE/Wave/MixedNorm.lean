@@ -11,6 +11,8 @@ import TauCeti.Analysis.Fourier.Bernstein
 import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.PDE.Strichartz.Retarded
 import TauCeti.Analysis.PDE.Wave.Endpoint
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm.Bounded
@@ -1268,7 +1270,7 @@ private theorem
     simp_rw [ContDiffBump.fourierMultiplierCLM_littlewoodPaley_eq_zero hm, zero_apply,
       map_zero, integral_zero]
   obtain ⟨hn, hr2⟩ :=
-    two_le_finrank_of_waveAdmissible_of_two_le hq hq_top hr0 hqr (fun h ↦ (hq2 h).1) hE
+    two_le_finrank_of_waveAdmissible_of_two_le hq hq_top hr0 hqr hE
   -- In dimension `n ≥ 2` admissibility of `(q₁, r₁)` forces `r₁ ≥ 2`, also for `q₁ = ∞`.
   have hr₁ := two_le_of_waveAdmissible (ENNReal.HolderConjugate.ne_zero r₁ r₁') hqr₁ hn
   -- Test against `L^{p}_t L^{r'}_x` with `p` and `r'` the Hölder conjugates of `q` and `r`.
@@ -1315,9 +1317,8 @@ private theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_
   have h2 : ((2 : ℝ≥0∞)⁻¹).toReal = 2⁻¹ := by simp
   rw [h2] at hqr₁
   -- The endpoint exponent `r₀ ≤ r₁`, with Hölder conjugate `r₀' ≥ r₁'`.
-  obtain ⟨r₀, hr₀, hr₀r₁⟩ := (le_of_eq_of_le (by ring) hqr₁).lt_or_eq.elim
-    (exists_waveEndpoint_le (by exact_mod_cast hn) (ENNReal.HolderConjugate.ne_zero r₁ r₁'))
-    fun h ↦ ⟨r₁, h, le_rfl⟩
+  obtain ⟨r₀, hr₀, hr₀r₁⟩ := exists_waveEndpoint_le_of_le (by exact_mod_cast hn)
+    (ENNReal.HolderConjugate.ne_zero r₁ r₁') (le_of_eq_of_le (by ring) hqr₁)
   have hr₀2 := (two_le_and_ne_top_of_waveEndpoint (by exact_mod_cast hn) hr₀).1
   have := ENNReal.HolderConjugate.inv_one_sub_inv' (one_le_two.trans hr₀2)
   obtain ⟨C, hC⟩ :=
@@ -1327,16 +1328,11 @@ private theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_
   obtain ⟨σ, hσ⟩ := φ.exists_fourierMultiplierCLM_dyadicMultiplier_eq (F := ℂ)
   have hB := ENNReal.coe_toNNReal
     (φ.memLp_fourierInv_dyadicDilate σ 0 (1 + (1 - r₀⁻¹)⁻¹⁻¹ - r₁'⁻¹)⁻¹).eLpNorm_ne_top
-  have hr₁1 : r₁⁻¹ ≤ 1 := ENNReal.inv_le_one.2 (ENNReal.HolderConjugate.one_le r₁ r₁')
-  have hr₁'r₀' : r₁' ≤ (1 - r₀⁻¹)⁻¹ := by
-    rw [← ENNReal.inv_le_inv, inv_inv, ← ENNReal.HolderConjugate.one_sub_inv r₁ r₁']
-    exact tsub_le_tsub_left (ENNReal.inv_le_inv.2 hr₀r₁) 1
-  have hexp : r₁'.toReal⁻¹ - ((1 - r₀⁻¹)⁻¹).toReal⁻¹ = (r₀⁻¹).toReal - (r₁⁻¹).toReal := by
-    rw [← ENNReal.toReal_inv, ← ENNReal.toReal_inv, inv_inv,
-      ← ENNReal.HolderConjugate.one_sub_inv r₁ r₁',
-      ENNReal.toReal_sub_of_le hr₁1 ENNReal.one_ne_top,
-      ENNReal.toReal_sub_of_le (ENNReal.inv_le_one.2 (one_le_two.trans hr₀2)) ENNReal.one_ne_top]
-    ring
+  -- Passing from `L^{r₁'}` to `L^{r₀'}` moves the forcing's scaling exponent from `r₀` to `r₁`.
+  have hγ (x c : ℝ) :
+      x + ((Module.finrank ℝ E : ℝ) / 2 - Module.finrank ℝ E * (r₁⁻¹).toReal - c) - 1 =
+        x + ((Module.finrank ℝ E : ℝ) / 2 - Module.finrank ℝ E * (r₀⁻¹).toReal - c) - 1 +
+          Module.finrank ℝ E * ((r₀⁻¹).toReal - (r₁⁻¹).toReal) := by ring
   refine ⟨C * (eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate σ 0)) (1 + (1 - r₀⁻¹)⁻¹⁻¹ - r₁'⁻¹)⁻¹ volume).toNNReal,
     fun j m hm F hF ↦ ?_⟩
   -- `Pⱼ Pⱼ Qⱼ F(s) = Pⱼ Pⱼ F(s)`: the estimate along `(2, r₀)` applies to `Qⱼ F`, and Bernstein's
@@ -1345,11 +1341,12 @@ private theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_
   simp only [hσ j m hm] at h
   refine h.trans ((mul_le_mul_right (eLpNorm_eLpNorm_apply_le (φ.dyadicMultiplier ℂ σ j).continuous
     (fun g ↦ φ.eLpNorm_dyadicMultiplier_le_of_le σ j g (ENNReal.HolderConjugate.one_le r₁' r₁)
-      hr₁'r₀') hF.aestronglyMeasurable) _).trans_eq ?_)
-  rw [hexp, ENNReal.coe_mul, hB, show ∀ c a b k x : ℝ≥0∞, c * a * (b * k * x) = c * k * (a * b) * x
-    from fun _ _ _ _ _ ↦ by ring, ← ENNReal.ofReal_mul (by positivity),
-    ← Real.rpow_add (zpow_pos two_pos j), h2]
-  ring_nf
+      (ENNReal.HolderConjugate.le_inv_one_sub_inv (q' := r₁') hr₀r₁))
+    hF.aestronglyMeasurable) _).trans_eq ?_)
+  rw [ENNReal.HolderConjugate.inv_toReal_sub_inv_toReal_inv_one_sub_inv (q := r₁) (q' := r₁')
+      (one_le_two.trans hr₀2),
+    ENNReal.coe_mul, hB, hγ, ENNReal.ofReal_rpow_add (zpow_pos two_pos j)]
+  ring
 
 /-- **The retarded Strichartz estimate for the frequency-localized wave Duhamel operator** in
 mixed norm, with the forcing measured along a second admissible pair. Let `E` have dimension `n`,
@@ -1394,8 +1391,8 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodP
   have h2 : ((2 : ℝ≥0∞)⁻¹).toReal = 2⁻¹ := by simp
   rw [h2] at hqr
   -- The endpoint exponent `r₀ ≤ r`.
-  obtain ⟨r₀, hr₀, hr₀r⟩ := (le_of_eq_of_le (by ring) hqr).lt_or_eq.elim
-    (exists_waveEndpoint_le (by exact_mod_cast hn) hr0) fun h ↦ ⟨r, h, le_rfl⟩
+  obtain ⟨r₀, hr₀, hr₀r⟩ :=
+    exists_waveEndpoint_le_of_le (by exact_mod_cast hn) hr0 (le_of_eq_of_le (by ring) hqr)
   have hr₀2 := (two_le_and_ne_top_of_waveEndpoint (by exact_mod_cast hn) hr₀).1
   obtain ⟨C, hC⟩ :=
     φ.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_of_sharp_output (p₁ := p₁)
@@ -1403,6 +1400,11 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodP
   obtain ⟨σ, hσ⟩ := φ.exists_fourierMultiplierCLM_dyadicMultiplier_eq (F := ℂ)
   have hB := ENNReal.coe_toNNReal
     (φ.memLp_fourierInv_dyadicDilate σ 0 (1 + r⁻¹ - r₀⁻¹)⁻¹).eLpNorm_ne_top
+  -- Passing from `L^{r₀}` to `L^r` moves the scaling exponent of the solution from `r₀` to `r`.
+  have hγ (x c : ℝ) :
+      (Module.finrank ℝ E : ℝ) / 2 - Module.finrank ℝ E * (r⁻¹).toReal - c + x - 1 =
+        Module.finrank ℝ E * ((r₀⁻¹).toReal - (r⁻¹).toReal) +
+        ((Module.finrank ℝ E : ℝ) / 2 - Module.finrank ℝ E * (r₀⁻¹).toReal - c + x - 1) := by ring
   refine ⟨(eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate σ 0)) (1 + r⁻¹ - r₀⁻¹)⁻¹ volume).toNNReal * C,
     fun j m hm F hF ↦ ?_⟩
   -- `Qⱼ` fixes the retarded integral, whose integrand lies in the range of `Pⱼ`.
@@ -1424,11 +1426,9 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodP
         ((Lp.fourierMultiplierCLM ℂ m).integrable_comp hF)).aestronglyMeasurable) (q := 2)
   simp only [hQ] at h
   refine h.trans ((mul_le_mul_right (hC j m hm F hF) _).trans_eq ?_)
-  rw [ENNReal.coe_mul, hB, ← ENNReal.toReal_inv, ← ENNReal.toReal_inv,
-    show ∀ a k c b x : ℝ≥0∞, a * k * (c * b * x) = k * c * (a * b) * x
-      from fun _ _ _ _ _ ↦ by ring, ← ENNReal.ofReal_mul (by positivity),
-    ← Real.rpow_add (zpow_pos two_pos j), h2]
-  ring_nf
+  rw [ENNReal.coe_mul, hB, ← ENNReal.toReal_inv, ← ENNReal.toReal_inv, hγ,
+    ENNReal.ofReal_rpow_add (zpow_pos two_pos j)]
+  ring
 
 end ContDiffBump
 

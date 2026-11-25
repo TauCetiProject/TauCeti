@@ -162,7 +162,7 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum
   rcases eq_or_ne r 0 with rfl | hr0
   · exact ⟨0, fun _ _ _ _ ↦ by simp [eLpNorm_exponent_zero, Lp.aestronglyMeasurable]⟩
   obtain ⟨-, hr2⟩ :=
-    two_le_finrank_of_waveAdmissible_of_two_le hq hq_top hr0 hqr hq2 Module.finrank_pos
+    two_le_finrank_of_waveAdmissible_of_two_le hq hq_top hr0 hqr Module.finrank_pos
   obtain ⟨L, hL⟩ := φ.exists_littlewoodPaley_mul_eq_zero φ
   obtain ⟨C, hC⟩ :=
     φ.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le
