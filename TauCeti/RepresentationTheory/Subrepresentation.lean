@@ -86,6 +86,8 @@ along a monoid homomorphism whose image spans the algebra keeps the invariant su
 * `Subrepresentation.instNontrivial`
 * `Subrepresentation.spanSingleton`
 * `Subrepresentation.toSubmodule_spanSingleton`
+* `Subrepresentation.mem_spanSingleton`
+* `Subrepresentation.self_mem_spanSingleton`
 * `Subrepresentation.toSubmodule_le_toSubmodule`
 * `Subrepresentation.toSubmodule_lt_toSubmodule`
 * `Subrepresentation.isCompl_toSubmodule`
@@ -173,6 +175,18 @@ def spanSingleton (v : W) (h : ∀ g, ∃ t : A, ρ g v = t • v) : Subrepresen
 lemma toSubmodule_spanSingleton (v : W) (h : ∀ g, ∃ t : A, ρ g v = t • v) :
     (spanSingleton v h).toSubmodule = A ∙ v :=
   (rfl)
+
+/-- A vector lies in the line through a common eigenvector `v` exactly when it is a multiple
+of `v`. -/
+@[simp]
+lemma mem_spanSingleton {v x : W} {h : ∀ g, ∃ t : A, ρ g v = t • v} :
+    x ∈ spanSingleton v h ↔ ∃ a : A, a • v = x :=
+  Submodule.mem_span_singleton
+
+/-- A common eigenvector lies in the line it spans. -/
+lemma self_mem_spanSingleton (v : W) (h : ∀ g, ∃ t : A, ρ g v = t • v) :
+    v ∈ spanSingleton v h :=
+  Submodule.mem_span_singleton_self v
 
 /-- One subrepresentation is contained in another exactly when the subspace it carries is. -/
 @[simp]

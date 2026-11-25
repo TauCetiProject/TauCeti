@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.RepresentationTheory.Irreducible
 public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Archimedean.Induction.Basic
-public import TauCeti.RepresentationTheory.ClassicalGroups.Standard
 public import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
@@ -24,11 +23,6 @@ is `p - q ≠ 0`. When `χ = χ ∘ conj`, `ℂˣ` acts by the scalar `χ z`, an
 `j` is a proper nonzero subrepresentation. When `χ z₀ ≠ χ (conj z₀)`, a nonzero subrepresentation
 contains a basis vector, since the action of `z₀` has distinct eigenvalues on the two coordinates,
 and the image of `j` interchanges the two coordinate lines.
-
-## Main definitions
-
-* `TauCeti.ClassFieldTheory.WeilGroupReal.induceRepresentation`: the representation of `W_ℝ` on
-  `ℂ²` given by `WeilGroupReal.induceCharacter χ` and the standard representation `TauCeti.stdRep`.
 
 ## Main results
 
@@ -55,31 +49,6 @@ namespace WeilGroupReal
 
 variable (χ : WeilGroupComplex →* ℂˣ)
 
-/-- The representation of `W_ℝ` on `ℂ²` given by the induction `induceCharacter χ` of a character
-`χ` of `W_ℂ`. -/
-def induceRepresentation : Representation ℂ WeilGroupReal (Fin 2 → ℂ) :=
-  (stdRep ℂ 2).comp (induceCharacter χ)
-
-/-- An element `w` of `W_ℝ` acts on `ℂ²` in the induction of `χ` by the matrix
-`induceCharacter χ w`. -/
-theorem induceRepresentation_apply (w : WeilGroupReal) (v : Fin 2 → ℂ) :
-    induceRepresentation χ w v = (induceCharacter χ w : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ v :=
-  stdRep_apply_apply _ _ _ _
-
-/-- `z ∈ ℂˣ` acts on `ℂ²` in the induction of `χ` by `diag(χ z, χ (conj z))`. -/
-@[simp]
-theorem induceRepresentation_includeComplex (z : WeilGroupComplex) (v : Fin 2 → ℂ) :
-    induceRepresentation χ (includeComplex z) v = ![(χ z : ℂ) * v 0, (χ (star z) : ℂ) * v 1] := by
-  ext i
-  fin_cases i <;> simp [induceRepresentation_apply, mulVec_diagonal]
-
-/-- `j` acts on `ℂ²` in the induction of `χ` by `[[0, χ (-1)], [1, 0]]`. -/
-@[simp]
-theorem induceRepresentation_j (v : Fin 2 → ℂ) :
-    induceRepresentation χ j v = ![(χ (-1) : ℂ) * v 1, v 0] := by
-  ext i
-  fin_cases i <;> simp [induceRepresentation_apply, mulVec, dotProduct, Fin.sum_univ_two]
-
 /-- **The induction of a conjugation-invariant character is reducible.** If `χ ∘ conj = χ`, then
 `ℂˣ` acts on `ℂ²` by the scalar `χ z`, and the line through an eigenvector `(s, 1)` of the image
 `[[0, χ (-1)], [1, 0]]` of `j`, where `s² = χ (-1)`, is a proper nonzero subrepresentation. -/
@@ -104,16 +73,11 @@ theorem not_isIrreducible_induceRepresentation_of_comp_star_eq
         ring
   let σ := Subrepresentation.spanSingleton v hinv
   rcases hirr.eq_bot_or_eq_top σ with hσ | hσ
-  · have hmem : v ∈ σ.toSubmodule := by
-      rw [Subrepresentation.toSubmodule_spanSingleton]
-      exact Submodule.mem_span_singleton_self v
-    rw [hσ, Subrepresentation.toSubmodule_bot, Submodule.mem_bot] at hmem
+  · have hmem : v ∈ σ := Subrepresentation.self_mem_spanSingleton v hinv
+    rw [hσ, Subrepresentation.mem_bot] at hmem
     simpa [hv] using congr_fun hmem 1
-  · have hmem : (![1, 0] : Fin 2 → ℂ) ∈ σ.toSubmodule := by
-      rw [hσ, Subrepresentation.toSubmodule_top]
-      exact Submodule.mem_top
-    rw [Subrepresentation.toSubmodule_spanSingleton] at hmem
-    obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp hmem
+  · have hmem : (![1, 0] : Fin 2 → ℂ) ∈ σ := hσ ▸ Subrepresentation.mem_top
+    obtain ⟨a, ha⟩ := Subrepresentation.mem_spanSingleton.mp hmem
     -- the second coordinate forces `a = 0`, and then the first coordinate reads `0 = 1`
     have ha0 : a = 0 := by simpa [hv] using congr_fun ha 1
     simpa [hv, ha0] using congr_fun ha 0
