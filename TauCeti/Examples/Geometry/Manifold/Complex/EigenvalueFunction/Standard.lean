@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Complex.EigenvalueFunction.Standard
 public import TauCeti.Analysis.Complex.QuadraticLeviForm
+public import Mathlib.Analysis.Calculus.ContDiff.WithLp
 
 /-!
 # Examples: eigenvalue functions and the complex Laplacian of the standard metric
@@ -18,7 +19,7 @@ metric on the complex manifold modelled on itself:
   `λ_{2ω}[i∂∂bar |z|²] = e`: doubling the metric halves the eigenvalues;
 * on `ℂⁿ⁺¹`, `λ_ω[i∂∂bar |z₁|²] = (2, 0, …, 0)`;
 * on `ℂⁿ⁺¹`, `Δ_ω (x₁²) = 1` for `x₁ = Re z₁`, half the Euclidean Laplacian `2`;
-* the pluriharmonic `Re z₁²` has `λ_ω[i∂∂bar (Re z₁²)] = 0` and `Δ_ω (Re z₁²) = 0`.
+* the pluriharmonic `Re z₁²` has `Δ_ω (Re z₁²) = 0`.
 -/
 
 public section
@@ -35,13 +36,15 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [FiniteDim
 /-- `λ_ω[i∂∂bar |z|²] = 2e`. -/
 theorem relEigenvalueFunction_norm_sq (x : V) :
     relEigenvalueFunction V (standardHermitianMetric V) 0 (fun z ↦ ‖z‖ ^ 2) x = fun _ ↦ 2 := by
-  have hh : (innerₛₗ ℂ : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ).IsSymm := ⟨fun u v ↦ inner_conj_symm v u⟩
-  refine compatible_standardHermitianMetric.relEigenvalueFunction_eq_of_isRelEigenvalueVector
-    (fun _ _ ↦ by simp) ?_ antitone_const
-  rw [funext₂ (twoFormHermitianForm_standardHermitianMetric x),
-    funext₂ (ddbarHermitianForm_zero_form_norm_sq x)]
-  exact (isRelEigenvalueVector_smul_self_iff hh
-    (fun v hv ↦ by simpa using (re_inner_self_pos (𝕜 := ℂ)).2 hv) 2).2 rfl
+  have h : ((2 : ℂ) • leviForm (fun z : V ↦ ‖z‖ ^ 2) x).IsSymm := by
+    rw [leviForm_norm_sq]
+    exact ⟨fun u v ↦ by simp [Complex.conj_ofNat]⟩
+  rw [relEigenvalueFunction_standardHermitianMetric h]
+  refine h.relEigenvalues_eq_of_orthonormalBasis rfl (stdOrthonormalBasis ℂ V) antitone_const
+    fun i j ↦ ?_
+  simp only [leviForm_norm_sq, LinearMap.smul_apply, innerₛₗ_apply_apply,
+    OrthonormalBasis.inner_eq_ite, smul_eq_mul]
+  split_ifs <;> simp
 
 /-- `Δ_ω |z|² = 2n`. -/
 example (x : V) :
@@ -70,16 +73,6 @@ variable {n : ℕ}
 
 local notation "ℂⁿ⁺¹" => EuclideanSpace ℂ (Fin (n + 1))
 
-/-- The Levi form of `|z₁|²` on `ℂⁿ⁺¹` is `L(v, w) = conj(v₁)·w₁`. -/
-theorem leviForm_norm_sq_coord (x v w : ℂⁿ⁺¹) :
-    leviForm (fun z : ℂⁿ⁺¹ ↦ ‖z 0‖ ^ 2) x v w = starRingEnd ℂ (v 0) * w 0 := by
-  have hg : ContDiffAt ℝ 2 (fun w : ℂ ↦ ‖w‖ ^ 2) (x 0) := (contDiff_norm_sq ℝ).contDiffAt
-  have hp : ContDiffAt ℂ 2 (EuclideanSpace.proj (𝕜 := ℂ) (0 : Fin (n + 1))) x := by fun_prop
-  have := leviForm_comp_apply (g := EuclideanSpace.proj (𝕜 := ℂ) (0 : Fin (n + 1))) hg hp v w
-  refine this.trans ?_
-  rw [ContinuousLinearMap.fderiv, leviForm_norm_sq]
-  simp [mul_comm]
-
 /-- `λ_ω[i∂∂bar |z₁|²] = (2, 0, …, 0)` on `ℂⁿ⁺¹`. -/
 example (x : ℂⁿ⁺¹) :
     relEigenvalueFunction ℂⁿ⁺¹ (standardHermitianMetric ℂⁿ⁺¹) 0 (fun z ↦ ‖z 0‖ ^ 2) x =
@@ -88,14 +81,17 @@ example (x : ℂⁿ⁺¹) :
   refine compatible_standardHermitianMetric.relEigenvalueFunction_eq_of_isRelEigenvalueVector
     ?_ ((isRelEigenvalueVector_def _ _ _).2
       ⟨fun i ↦ EuclideanSpace.single (Fin.cast hn i) 1, fun i j ↦ ?_⟩) fun i j hij ↦ ?_
-  · intro u v
-    rfl
+  · exact fun _ _ ↦ by simp
   · have hij : Fin.cast hn i = Fin.cast hn j ↔ i = j := (Fin.cast_injective hn).eq_iff
     refine ⟨?_, ?_⟩
     · simp only [twoFormHermitianForm_standardHermitianMetric, EuclideanSpace.inner_single_left,
         PiLp.single_apply, map_one, one_mul]
       simp [hij]
-    · rw [ddbarHermitianForm_zero_form, manifoldLeviForm_eq_leviForm, leviForm_norm_sq_coord]
+    · have hL (v w : ℂⁿ⁺¹) :
+          leviForm (fun z : ℂⁿ⁺¹ ↦ ‖z 0‖ ^ 2) x v w = starRingEnd ℂ (v 0) * w 0 := by
+        simpa [mul_comm] using
+          leviForm_norm_sq_comp_apply (EuclideanSpace.proj (𝕜 := ℂ) (0 : Fin (n + 1))) x v w
+      rw [ddbarHermitianForm_zero_form, manifoldLeviForm_eq_leviForm, hL]
       simp only [PiLp.single_apply]
       by_cases h : i = j
       · subst h
@@ -115,30 +111,12 @@ example (x : ℂⁿ⁺¹) :
 Euclidean Laplacian `2` of `x₁²`. -/
 example (x : ℂⁿ⁺¹) :
     complexLaplacian ℂⁿ⁺¹ (standardHermitianMetric ℂⁿ⁺¹) (fun z ↦ (z 0).re ^ 2) x = 1 := by
-  have hg : ContDiffAt ℝ 2 (fun w : ℂ ↦ w.re ^ 2) (x 0) := (reCLM.contDiff.pow 2).contDiffAt
-  have hp : ContDiffAt ℂ 2 (EuclideanSpace.proj (𝕜 := ℂ) (0 : Fin (n + 1))) x := by fun_prop
-  -- `(Re w)² = (1/2) |w|² + Re ((1/2) w²)`, a Hermitian plus holomorphic quadratic function.
-  have hre : (fun w : ℂ ↦ w.re ^ 2) = fun w ↦
-      (1 / 2 : ℝ) * ‖w‖ ^ 2 + (∑ _ : Unit, (1 / 2 : ℂ) * ContinuousLinearMap.id ℂ ℂ w ^ 2).re := by
-    funext w
-    rw [Complex.sq_norm, normSq_apply]
-    simp only [Finset.univ_unique, Finset.sum_singleton, ContinuousLinearMap.id_apply, sq, mul_re]
-    norm_num
-    ring
-  have h2 : leviForm (fun w : ℂ ↦ w.re ^ 2) (EuclideanSpace.proj (𝕜 := ℂ) (0 : Fin (n + 1)) x) =
-      ((1 / 2 : ℝ) : ℂ) • innerₛₗ ℂ := by
-    rw [hre]
-    exact leviForm_mul_norm_sq_add_re_sum_mul_sq _ _ _ _
   have hL (v w : ℂⁿ⁺¹) : leviForm (fun z : ℂⁿ⁺¹ ↦ (z 0).re ^ 2) x v w =
       (1 / 2 : ℂ) * (starRingEnd ℂ (v 0) * w 0) := by
-    have := leviForm_comp_apply (g := EuclideanSpace.proj (𝕜 := ℂ) (0 : Fin (n + 1))) hg hp v w
-    rw [h2] at this
-    refine this.trans ?_
-    rw [ContinuousLinearMap.fderiv]
-    simp [mul_comm]
+    simpa [mul_comm, div_eq_inv_mul] using
+      leviForm_re_sq_comp_apply (EuclideanSpace.proj (𝕜 := ℂ) (0 : Fin (n + 1))) x v w
   have hφ : ContDiffAt ℝ 2 (fun z : ℂⁿ⁺¹ ↦ (z 0).re ^ 2) x :=
-    show ContDiffAt ℝ 2 ((fun w : ℂ ↦ w.re ^ 2) ∘ EuclideanSpace.proj 0) x from
-      hg.comp x (hp.restrict_scalars ℝ)
+    ((reCLM.contDiff.comp (contDiff_piLp_apply 2)).pow 2).contDiffAt
   have hn : finrank ℂ ℂⁿ⁺¹ = n + 1 := finrank_euclideanSpace_fin
   rw [compatible_standardHermitianMetric.complexLaplacian_eq_two_mul_sum
     (contMDiffAt_iff_contDiffAt.2 hφ) ((EuclideanSpace.basisFun _ ℂ).reindex (finCongr hn.symm))

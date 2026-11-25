@@ -58,23 +58,18 @@ def standardHermitianMetric : SmoothTwoForm 𝓘(ℝ, V) V :=
   (imInnerSymplecticForm V).constSmooth
 
 /-- The standard Hermitian metric evaluates as `ω(u, v) = Im ⟪u, v⟫`. -/
-theorem standardHermitianMetric_apply (x : V) (v : Fin 2 → V) :
-    (standardHermitianMetric V).val x v = (⟪v 0, v 1⟫_ℂ).im := by
-  have h : (standardHermitianMetric V).val x ![v 0, v 1] = imInnerSymplecticForm V (v 0) (v 1) :=
-    (SmoothBundleForm.eval₂_apply _ x (v 0) (v 1)).symm.trans
-      ((imInnerSymplecticForm V).constSmooth_apply x (v 0) (v 1))
-  rw [← imInnerSymplecticForm_apply, ← h]
-  congr 1
-  ext i
-  fin_cases i <;> rfl
+@[simp]
+theorem standardHermitianMetric_apply (x u v : V) :
+    (standardHermitianMetric V).val x ![u, v] = (⟪u, v⟫_ℂ).im :=
+  ((SmoothBundleForm.eval₂_apply _ x u v).symm.trans
+    ((imInnerSymplecticForm V).constSmooth_apply x u v)).trans (imInnerSymplecticForm_apply u v)
 
 /-- **The Hermitian form of the standard metric is the inner product**:
 `H_ω(u, v) = ω(u, i v) + i·ω(u, v) = ⟪u, v⟫`. -/
 @[simp]
 theorem twoFormHermitianForm_standardHermitianMetric (x u v : V) :
     twoFormHermitianForm V (standardHermitianMetric V).val x u v = ⟪u, v⟫_ℂ := by
-  rw [twoFormHermitianForm_def]
-  erw [standardHermitianMetric_apply, standardHermitianMetric_apply]
+  rw [twoFormHermitianForm_def, standardHermitianMetric_apply, standardHermitianMetric_apply]
   apply Complex.ext <;> simp [inner_smul_right]
 
 /-- **The standard metric is a Hermitian metric**: it is invariant under, and tames,
