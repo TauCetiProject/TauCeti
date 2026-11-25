@@ -27,8 +27,8 @@ determines the measure outright.
 
 * `MeasureTheory.Measure.measureReal_le_sum_div_of_le` — a bound by a finite sum divided by a
   nonzero constant passes to real-valued measures when each summand is finite;
-* `MeasureTheory.sum_measureReal_preimage_singleton_inter` — under a finite measure, the fibres of
-  a measurable map into a finite type split the mass of every set;
+* `MeasureTheory.sum_measureReal_preimage_singleton_inter` — the fibres of a measurable map into
+  a finite type split the mass of every set of finite measure;
 * `TauCeti.volume_Ioc_inter_Ioo_of_le_of_le` — the portion of an interval inside a larger open
   interval keeps its full length;
 * `MeasureTheory.Measure.map_abs_eq_restrict_add_restrict` — decomposition of the image under
@@ -197,11 +197,12 @@ namespace MeasureTheory
 variable {Ω A : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [Fintype A] [MeasurableSpace A]
   [MeasurableSingletonClass A]
 
-/-- The fibres of a measurable map `X` into a finite type partition every set additively: for
-finite `μ`, the masses of `X ⁻¹' {a} ∩ S` sum to the mass of `S`, for an arbitrary set `S`. -/
-theorem sum_measureReal_preimage_singleton_inter [IsFiniteMeasure μ] {X : Ω → A}
-    (hX : Measurable X) (S : Set Ω) :
+/-- The fibres of a measurable map `X` into a finite type partition every set additively: for an
+arbitrary set `S` of finite measure, the masses of `X ⁻¹' {a} ∩ S` sum to the mass of `S`. -/
+theorem sum_measureReal_preimage_singleton_inter {X : Ω → A} (hX : Measurable X) (S : Set Ω)
+    (hS : μ S ≠ ∞ := by finiteness) :
     ∑ a, μ.real (X ⁻¹' {a} ∩ S) = μ.real S := by
+  have := isFiniteMeasure_restrict.mpr hS
   simp only [← measureReal_restrict_apply (hX (measurableSet_singleton _))]
   rw [sum_measureReal_preimage_singleton _ fun a _ ↦ hX (measurableSet_singleton a)]
   simp [measureReal_def]

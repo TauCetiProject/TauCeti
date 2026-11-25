@@ -174,7 +174,7 @@ theorem labelEntropy_pair_eq_add [IsFiniteMeasure μ] {X : Ω → A} (hX : Measu
   -- Summing the cells over `a` recovers the mass of `Y ⁻¹' {b}`.
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun b _ ↦ ?_
-  rw [← Finset.sum_mul, sum_measureReal_preimage_singleton_inter hX, negMulLog]
+  rw [← Finset.sum_mul, sum_measureReal_preimage_singleton_inter hX (Y ⁻¹' {b}), negMulLog]
   ring
 
 /-- **Alphabet bound.** For a probability measure and a measurable label,
