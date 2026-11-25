@@ -213,10 +213,15 @@ theorem isCompletelyFaithfullyFlat_single_iff (M : ModuleCat.{u} A) [Module.Flat
     IsCompletelyFaithfullyFlat I ((singleFunctor _ 0).obj M) ↔
       IsCompletelyFaithfullyFlatModule A I M := by
   rw [isCompletelyFaithfullyFlatModule_iff]
+  -- `Ideal.Quotient.mk I` is `algebraMap A (A ⧸ I)` by definition, so `c` identifies the extension
+  -- of scalars of `M` along it with `(A ⧸ I) ⊗[A] M` and its algebra module structure.
+  let c := extendScalarsAlgebraMapIso (S := A ⧸ I) M
   refine ⟨fun ⟨F, hF, ⟨e⟩⟩ ↦ ⟨isCompletelyFlatModule_of_flat M, ?_⟩, fun ⟨_, h⟩ ↦
-    ⟨(ModuleCat.extendScalars (Ideal.Quotient.mk I)).obj M, h, ⟨derivedExtendScalarsSingleIso _ M⟩⟩⟩
+    ⟨(ModuleCat.extendScalars (Ideal.Quotient.mk I)).obj M,
+      Module.FaithfullyFlat.of_linearEquiv _ _ c.toLinearEquiv,
+      ⟨derivedExtendScalarsSingleIso _ M⟩⟩⟩
   let e' := (singleFunctor (ModuleCat.{u} (A ⧸ I)) 0).preimageIso
     (e.symm ≪≫ derivedExtendScalarsSingleIso _ M)
-  exact Module.FaithfullyFlat.of_linearEquiv _ _ e'.toLinearEquiv.symm
+  exact Module.FaithfullyFlat.of_linearEquiv _ _ (c.symm ≪≫ e'.symm).toLinearEquiv
 
 end ModuleCat
