@@ -100,6 +100,13 @@ theorem smulVecHom_mul [Fintype κ] (B : Matrix μ κ R) :
 
 end Module
 
+/-- The map induced by a difference of matrices is the difference of the maps they induce. -/
+theorem smulVecHom_sub_apply [Ring R] (A B : Matrix κ ι R) (M : Type*) [AddCommGroup M]
+    [Module R M] [TopologicalSpace M] [ContinuousAdd M] [ContinuousConstSMul R M] (x : ι → M) :
+    (A - B).smulVecHom M x = A.smulVecHom M x - B.smulVecHom M x := by
+  ext k
+  simp [sub_smul, Finset.sum_sub_distrib]
+
 noncomputable section Blocks
 
 variable {𝕜 R m n l o : Type*} [Semiring 𝕜]

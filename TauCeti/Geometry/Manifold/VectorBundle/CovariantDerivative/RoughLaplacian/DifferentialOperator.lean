@@ -13,8 +13,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLa
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian.Commutator
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.SecondCovariantDerivative.Hom
-import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
@@ -25,8 +23,7 @@ Riemannian metric, and `∇ᵀ` a smooth connection on the tangent bundle. Both 
 `∇* η = -tr_g ∇η` (`CovariantDerivative.formalAdjoint`) on smooth `V`-valued one-forms and the
 rough Laplacian `∇*∇ σ = -tr_g ∇²σ` (`CovariantDerivative.roughLaplacian`) on smooth sections of
 `V` preserve smoothness (`CovariantDerivative.contMDiff_formalAdjoint`,
-`CovariantDerivative.contMDiff_roughLaplacian`): near a point `x` they are finite sums over the
-chart frame `Fᵢ` and its metric-dual frame `Dᵢ`. Hence they bundle as real-linear operators
+`CovariantDerivative.contMDiff_roughLaplacian`), so they bundle as real-linear operators
 `CovariantDerivative.smoothFormalAdjoint` and `CovariantDerivative.smoothRoughLaplacian` on
 `ContMDiffSection`, related by the operator factorization
 
@@ -49,8 +46,7 @@ is formally self-adjoint for the Riemannian volume.
 
 ## Main definitions and results
 
-* `CovariantDerivative.contMDiff_formalAdjoint` and `CovariantDerivative.contMDiff_roughLaplacian`:
-  smoothness of `∇*` and `∇*∇`.
+* `CovariantDerivative.contMDiff_roughLaplacian`: smoothness of `∇*∇`.
 * `CovariantDerivative.smoothFormalAdjoint` and `CovariantDerivative.smoothRoughLaplacian`: `∇*`
   and `∇*∇` as real-linear maps on smooth sections, with
   `CovariantDerivative.smoothFormalAdjoint_comp_smoothCovariantDerivative` (`∇* ∘ ∇ = ∇*∇`) and
@@ -80,7 +76,7 @@ is formally self-adjoint for the Riemannian volume.
 
 public section
 
-open Bundle FiberBundle MeasureTheory Riemannian.Tensor Set TauCeti
+open Bundle FiberBundle MeasureTheory Set TauCeti
 open scoped ContDiff Manifold RealInnerProductSpace Topology
 
 noncomputable section
@@ -104,30 +100,6 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   (cov : _root_.CovariantDerivative I F V) [ContMDiffCovariantDerivative cov ∞]
   (covT : _root_.CovariantDerivative I E (TangentSpace I : M → Type _))
   [ContMDiffCovariantDerivative covT ∞]
-
-/-- **The formal adjoint of a smooth connection is smooth.** For smooth connections `∇` on `V` and
-`∇ᵀ` on `TM` and a smooth metric, `∇* η` is smooth for every smooth `V`-valued one-form `η`. -/
-theorem contMDiff_formalAdjoint {η : Π x : M, TangentSpace I x →L[ℝ] V x}
-    (hη : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) ∞
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun y ↦ TangentSpace I y →L[ℝ] V y) x (η x))) :
-    CMDiff ∞ (T% (cov.formalAdjoint covT η)) := by
-  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have hhom := contMDiff_hom covT cov hη
-  intro x
-  set Fr := chartLocalFrame (I := I) x
-  set D := chartDualFrame (I := I) x
-  have hx : x ∈ (trivializationAt E (TangentSpace I) x).baseSet :=
-    mem_baseSet_trivializationAt E _ x
-  have hF (i : Fin (Module.finrank ℝ E)) : CMDiffAt ∞ (T% (Fr i)) x :=
-    contMDiffAt_chartLocalFrame (n := ∞) x i
-  have hD (i : Fin (Module.finrank ℝ E)) : CMDiffAt ∞ (T% (D i)) x :=
-    contMDiffAt_chartDualFrame (n := ∞) x hx i
-  have hsum : CMDiffAt ∞ (T% (-fun y ↦ ∑ i, covT.hom cov η y (Fr i y) (D i y))) x :=
-    (ContMDiffAt.sum_section fun i _ ↦
-      ((hhom x).clm_bundle_apply (hF i)).clm_bundle_apply (hD i)).neg_section
-  refine hsum.congr_of_eventuallyEq ?_
-  filter_upwards [(trivializationAt E (TangentSpace I) x).open_baseSet.mem_nhds hx] with y hy
-  simp [formalAdjoint_eq_neg_sum_chartDualFrame cov covT x (by simpa using hy), Fr, D]
 
 /-- **The rough Laplacian is smooth.** For a smooth connection `∇` on `V`, a smooth connection
 `∇ᵀ` on the tangent bundle and a smooth metric, the rough Laplacian `∇*∇ σ` of every section `σ`

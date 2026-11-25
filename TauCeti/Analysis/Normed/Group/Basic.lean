@@ -39,6 +39,8 @@ Near `0`, the product `‖x‖ * R` is eventually less than any positive bound. 
 
 A sum `z + a` with `‖a‖ < ‖z‖` is nonzero.
 
+The sum of the squared norms of a nonzero finite family is positive.
+
 The terms of a sequence whose norms decrease strictly are nonzero.
 
 A constant bound on `‖f x‖` over a ball of positive radius is nonnegative, since the ball
@@ -83,6 +85,7 @@ A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` and `γ < 1` 
 * `Filter.Tendsto.eventually_norm_lt_of_eventually_norm_lt` -- eventual bounds `‖g i‖ < r` for
   all `r > s` pass to `f` when `‖f i - g i‖ → 0`.
 * `TauCeti.add_ne_zero_of_norm_lt` -- `z + a ≠ 0` when `‖a‖ < ‖z‖`.
+* `TauCeti.sum_norm_sq_pos` -- `0 < ∑ i, ‖v i‖ ^ 2` for a nonzero finite family `v`.
 * `TauCeti.ne_zero_of_strictAnti_norm` -- the terms of a family with strictly decreasing norms,
   indexed without a maximum, are nonzero.
 * `TauCeti.nonneg_of_forall_norm_lt` -- a constant bound on `‖f x‖` over a ball of positive radius
@@ -191,6 +194,13 @@ theorem _root_.Filter.Tendsto.eventually_norm_lt_of_eventually_norm_lt {ι : Typ
 theorem add_ne_zero_of_norm_lt {E : Type*} [SeminormedAddGroup E] {a z : E} (h : ‖a‖ < ‖z‖) :
     z + a ≠ 0 :=
   fun h' ↦ h.ne' (by rw [eq_neg_of_add_eq_zero_left h', norm_neg])
+
+/-- The sum `∑ i, ‖v i‖ ^ 2` of the squared norms of a nonzero finite family `v` is positive. -/
+theorem sum_norm_sq_pos {ι E : Type*} [Fintype ι] [NormedAddGroup E] {v : ι → E} (hv : v ≠ 0) :
+    0 < ∑ i, ‖v i‖ ^ 2 := by
+  obtain ⟨i, hi⟩ := Function.ne_iff.1 hv
+  exact Finset.sum_pos' (fun j _ ↦ by positivity)
+    ⟨i, Finset.mem_univ _, pow_pos (norm_pos_iff.2 hi) 2⟩
 
 /-- If the norms of a family `d` indexed by an order without maximum decrease strictly, every
 term of `d` is nonzero: its norm exceeds the nonnegative norm of a later term. -/

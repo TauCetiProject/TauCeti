@@ -25,7 +25,8 @@ for `X ∈ 𝔤₀` the adjoint of `ad X` for this inner product is `ad Xᴴ`, s
 `-B(X, θ Y) = tr(ad X ∘ ad Yᴴ)` and `-B(X, θ X) = tr(ad X ∘ (ad X)*)`, which is nonnegative and
 vanishes only when `ad X = 0`, that is, when `X` is central.
 
-The applications to `𝔰𝔬(p, q)` and `𝔰𝔭(2n, ℝ)` are in `TauCeti.Algebra.Lie.Orthogonal.Cartan` and
+The applications to `𝔰𝔬(p, q)`, `𝔰𝔲(p, q)` and `𝔰𝔭(2n, ℝ)` are in
+`TauCeti.Algebra.Lie.Orthogonal.Cartan`, `TauCeti.Algebra.Lie.IndefiniteUnitary.Cartan` and
 `TauCeti.Algebra.Lie.Symplectic.Cartan`.
 
 ## Main results

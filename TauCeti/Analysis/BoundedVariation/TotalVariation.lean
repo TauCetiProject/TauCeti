@@ -40,7 +40,9 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
 
 * `TauCeti.totalVariationOn μ Ω u`: the total variation of `u` on `Ω`.
 * `TauCeti.ofReal_abs_integral_le_totalVariationOn`: every admissible pairing is bounded by the
-  total variation, and `TauCeti.totalVariationOn_le_iff` characterises upper bounds.
+  total variation, and `TauCeti.totalVariationOn_le_iff` characterises upper bounds; a finite
+  total variation is approached by admissible pairings
+  (`TauCeti.exists_toReal_totalVariationOn_sub_lt_integral`).
 * `TauCeti.ofReal_abs_integral_le_ofReal_mul_totalVariationOn`: a test vector field bounded by `c`
   pairs to at most `c |Du|(Ω)`.
 * `TauCeti.totalVariationOn_congr_ae`: the total variation only sees `u` almost everywhere on
@@ -122,6 +124,17 @@ theorem ofReal_integral_le_totalVariationOn (φ : 𝓓(Ω, E)) (hφ : ∀ x, ‖
 theorem totalVariationOn_le_iff {c : ℝ≥0∞} : totalVariationOn μ Ω u ≤ c ↔
     ∀ φ : 𝓓(Ω, E), (∀ x, ‖φ x‖ ≤ 1) → ENNReal.ofReal (∫ x, divergenceCLM φ x * u x ∂μ) ≤ c :=
   iSup₂_le_iff
+
+/-- A finite total variation is approached by admissible pairings: for every `δ > 0`, some test
+vector field of norm at most one pairs with `u` to more than `|Du|(Ω) - δ`. -/
+theorem exists_toReal_totalVariationOn_sub_lt_integral (h : totalVariationOn μ Ω u ≠ ∞) {δ : ℝ}
+    (hδ : 0 < δ) : ∃ φ : 𝓓(Ω, E), (∀ x, ‖φ x‖ ≤ 1) ∧
+      (totalVariationOn μ Ω u).toReal - δ < ∫ x, divergenceCLM φ x * u x ∂μ := by
+  by_contra! hφ
+  have h0 : 0 ≤ (totalVariationOn μ Ω u).toReal - δ := by simpa using hφ 0 (by simp)
+  have := (ENNReal.ofReal_toReal h).le.trans
+    (totalVariationOn_le_iff.2 fun φ hφ' => ENNReal.ofReal_le_ofReal (hφ φ hφ'))
+  linarith [(ENNReal.ofReal_le_ofReal_iff h0).1 this]
 
 /-- Every admissible pairing is bounded in absolute value by the total variation. -/
 theorem ofReal_abs_integral_le_totalVariationOn (φ : 𝓓(Ω, E)) (hφ : ∀ x, ‖φ x‖ ≤ 1) :

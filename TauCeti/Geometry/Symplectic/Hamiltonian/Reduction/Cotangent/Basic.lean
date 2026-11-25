@@ -5,13 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Geometry.Manifold.GroupAction.Quotient
 public import TauCeti.Geometry.Manifold.Submersion.Basic
+public import TauCeti.Geometry.Lie.Subgroup.Embedded
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Relation
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.MomentMap
 
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Stabilizer
+import TauCeti.Geometry.Lie.Subgroup.Differential
 
 /-!
 # Cotangent reduction at zero
@@ -62,7 +66,9 @@ For the orbit projection of a free proper action, all these hypotheses hold
 (`ProperSMul.reductionMap_eq_reductionMap_iff_quotientMk`,
 `ProperSMul.exists_momentMap_eq_zero_and_reductionMap_eq_quotientMk`,
 `ProperSMul.mpullback_reductionMap_comp_symplecticForm_quotientMk`). The model space of
-`T*(Q ⧸ G)` has dimension `2 (dim Q - dim G)`.
+`T*(Q ⧸ G)` has dimension `2 (dim Q - dim G)`, and so does the model space of the
+Marsden–Weinstein–Meyer reduced space of `T*Q` at any value `ν` fixed by `𝔤`, in particular at zero
+(`TauCeti.CotangentBundle.finrank_quotientModelSpace_level`).
 
 ## References
 
@@ -474,3 +480,42 @@ theorem mpullback_reductionMap_comp_symplecticForm_quotientMk {f : X → Cotange
     fun x ↦ (momentMap_eq_zero_iff_of_ker_eq (ker_mfderiv_quotientMk _)).1 (hz x)
 
 end ProperSMul
+
+/-! ### The dimension of the reduced space at a coadjoint-fixed value -/
+
+namespace TauCeti.CotangentBundle
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+attribute [local instance] ContMDiffMul.boundarylessManifold
+
+variable {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG] [FiniteDimensional ℝ EG]
+  [TopologicalSpace HG] {IG : ModelWithCorners ℝ EG HG} {G : Type*} [TopologicalSpace G]
+  [ChartedSpace HG G] [Group G] [LieGroup IG ∞ G]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] {n : ℕ}
+  {ν : Module.Dual ℝ (GroupLieAlgebra IG G)}
+
+/-- **The dimension of the reduced space at an infinitesimally coadjoint-fixed value.** If every
+element of `𝔤` annihilates `ν`, `ν ⁅ξ, ·⁆ = 0`, as for a coadjoint-fixed `ν` such as `0`, the model
+space `ℝ^(n - dim G_ν)` of the reduced space `μ⁻¹(ν) / G_ν` of `T*Q`, where `n = 2 dim Q - dim G`
+is the dimension of the level `μ⁻¹(ν)` and `G_ν` carries the Lie group structure `d`, has dimension
+`2 (dim Q - dim G)`, that of `T*(Q ⧸ G)`: the coadjoint stabilizer of `ν` has the dimension of `G`.
+-/
+theorem finrank_quotientModelSpace_level
+    (hν : lieAnnihilator ℝ (GroupLieAlgebra IG G) ν = ⊤)
+    (hn : finrank ℝ (E × (E →L[ℝ] ℝ)) - finrank ℝ (GroupLieAlgebra IG G) = n)
+    (d : Lie.EmbeddedLieSubgroupData IG ((Lie.coadjointRepresentation ℝ IG G).stabilizer ν) F) :
+    finrank ℝ (ProperSMul.QuotientModelSpace F (Fin n → ℝ)) = 2 * (finrank ℝ E - finrank ℝ EG) := by
+  have : T2Space G := IG.t2Space_of_lieGroup ∞
+  have hF : finrank ℝ F = finrank ℝ EG := by
+    rw [d.finrank_eq_finrank_lieSubalgebraOfSubgroup,
+      Lie.finrank_lieSubalgebraOfSubgroup_stabilizer_coadjointRepresentation
+        BoundarylessManifold.isInteriorPoint, hν]
+    exact LieSubalgebra.topEquiv.toLinearEquiv.finrank_eq
+  -- The Lie algebra `GroupLieAlgebra IG G` is by definition the tangent space `EG` at `1`.
+  have hG : finrank ℝ (GroupLieAlgebra IG G) = finrank ℝ EG := rfl
+  rw [ProperSMul.finrank_quotientModelSpace, Module.finrank_fin_fun, hF, ← hn, finrank_prod,
+    ContinuousLinearMap.dual_finrank_eq, hG]
+  omega
+
+end TauCeti.CotangentBundle
