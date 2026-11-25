@@ -104,19 +104,29 @@ vertex. -/
 theorem notMem_of_singleton_notMem (hv : ({v} : Finset ι) ∉ K) (hσ : σ ∈ K) : v ∉ σ :=
   fun h => hv (singleton_mem_of_mem hσ h)
 
+/-- A vertex map injective on the vertices of two precomplexes is injective on the union of their
+face collections, acting by images of faces. -/
+theorem injOn_image_faces {κ : Type*} [DecidableEq κ] (f : ι → κ)
+    (hf : Set.InjOn f ({v | ({v} : Finset ι) ∈ K} ∪ {v | ({v} : Finset ι) ∈ L})) :
+    Set.InjOn (fun ρ : Finset ι => ρ.image f) (K.faces ∪ L.faces) := by
+  classical
+  have hsub {ρ : Finset ι} (hρ : ρ ∈ K.faces ∪ L.faces) :
+      (ρ : Set ι) ⊆ {v | ({v} : Finset ι) ∈ K} ∪ {v | ({v} : Finset ι) ∈ L} :=
+    fun _ hv => hρ.elim (fun h => Or.inl (singleton_mem_of_mem h hv))
+      (fun h => Or.inr (singleton_mem_of_mem h hv))
+  intro σ hσ τ hτ hστ
+  exact (Finset.image_eq_image_iff_of_injOn
+    (hf.mono (by simpa only [Finset.coe_union] using Set.union_subset (hsub hσ) (hsub hτ)))
+    Finset.subset_union_left Finset.subset_union_right).1 hστ
+
 /-- A relabeling injective on the vertices preserves and reflects finiteness of the face
 collection. -/
 theorem finite_faces_map_iff_of_injOn {κ : Type*} [DecidableEq κ]
     (f : ι → κ) (hf : Set.InjOn f {v | ({v} : Finset ι) ∈ K}) :
     (K.map f).faces.Finite ↔ K.faces.Finite := by
   rw [faces_map]
-  refine Set.finite_image_iff fun σ hσ τ hτ hστ => ?_
-  have hsub {ρ : Finset ι} (hρ : ρ ∈ K) : (ρ : Set ι) ⊆ {v | ({v} : Finset ι) ∈ K} :=
-    fun _ hv => singleton_mem_of_mem hρ hv
-  classical
-  exact (Finset.image_eq_image_iff_of_injOn
-    (hf.mono (by simpa only [Finset.coe_union] using Set.union_subset (hsub hσ) (hsub hτ)))
-    Finset.subset_union_left Finset.subset_union_right).1 hστ
+  exact Set.finite_image_iff
+    ((injOn_image_faces (L := K) f (by rwa [Set.union_self])).mono Set.subset_union_left)
 
 /-- The image of a complex depends only on the values of the vertex map at its vertices. -/
 theorem map_congr {κ : Type*} [DecidableEq κ] {f g : ι → κ}
@@ -169,18 +179,8 @@ injective on the union of their supported vertex sets. -/
 theorem map_inj_of_injOn {κ : Type*} [DecidableEq κ] (f : ι → κ)
     (hf : Set.InjOn f ({v | ({v} : Finset ι) ∈ K} ∪ {v | ({v} : Finset ι) ∈ L})) :
     K.map f = L.map f ↔ K = L := by
-  classical
-  have hsub {ρ : Finset ι} (hρ : ρ ∈ K.faces ∪ L.faces) :
-      (ρ : Set ι) ⊆ {v | ({v} : Finset ι) ∈ K} ∪ {v | ({v} : Finset ι) ∈ L} :=
-    fun _ hv => hρ.elim (fun h => Or.inl (singleton_mem_of_mem h hv))
-      (fun h => Or.inr (singleton_mem_of_mem h hv))
-  have hinj : Set.InjOn (fun ρ : Finset ι => ρ.image f) (K.faces ∪ L.faces) := by
-    intro σ hσ τ hτ hστ
-    exact (Finset.image_eq_image_iff_of_injOn
-      (hf.mono (by simpa only [Finset.coe_union] using Set.union_subset (hsub hσ) (hsub hτ)))
-      Finset.subset_union_left Finset.subset_union_right).1 hστ
   refine ⟨fun h => PreAbstractSimplicialComplex.ext ?_, fun h => congrArg (·.map f) h⟩
-  apply (hinj.image_eq_image_iff Set.subset_union_left Set.subset_union_right).1
+  apply ((injOn_image_faces f hf).image_eq_image_iff Set.subset_union_left Set.subset_union_right).1
   simpa only [faces_map] using congrArg PreAbstractSimplicialComplex.faces h
 
 /-- The image of a precomplex under any vertex map is void if and only if the source precomplex is
