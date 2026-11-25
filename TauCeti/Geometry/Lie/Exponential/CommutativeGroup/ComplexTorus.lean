@@ -20,8 +20,11 @@ Let `G` be a compact connected commutative complex Lie group modelled on a finit
 complex space `E`. Its exponential `exp : E → G` (the tangent-space exponential of the underlying
 real Lie group) is a holomorphic surjective homomorphism, and its kernel `Λ` is a discrete full
 `ℤ`-lattice in `E` (`TauCeti.isZLattice_ker_mulInvariantExpAddMonoidHom`). This file shows that
-`exp` is a local biholomorphism, so that for connected `G` it induces a biholomorphism `E ⧸ Λ ≃ G`
-(`TauCeti.mulInvariantExpQuotientKerDiffeomorph`): `G` is the complex torus of the lattice `Λ`.
+the derivative of `exp` is invertible everywhere
+(`TauCeti.isInvertible_mfderiv_mulInvariantExp_complex`), so that for connected `G` it induces a
+`C^n` diffeomorphism `E ⧸ Λ ≃ G` for every `n` (`TauCeti.mulInvariantExpQuotientKerDiffeomorph`),
+which is a biholomorphism for `n ≥ 1` (for example `n = ω`): `G` is the complex torus of the
+lattice `Λ`.
 
 The derivative of `exp` at `v` is invertible: near `v`, `exp` followed by translation by
 `(exp v)⁻¹` is `w ↦ exp (w - v)`, whose derivative at `v`, read in the chart at the identity, is the
@@ -33,9 +36,9 @@ function theorem then applies to the map `E ⧸ Λ → G` through the covering p
 
 * `TauCeti.isInvertible_mfderiv_mulInvariantExp_complex`: the derivative of the exponential of a
   commutative complex Lie group is invertible everywhere.
-* `TauCeti.mulInvariantExpQuotientKerDiffeomorph`: for connected `G`, the biholomorphism
-  `E ⧸ ker exp ≃ G`, of class `C^n` for every `n`; for compact `G` this exhibits `G` as a complex
-  torus.
+* `TauCeti.mulInvariantExpQuotientKerDiffeomorph`: for connected `G`, the `C^n` diffeomorphism
+  `E ⧸ ker exp ≃ G`, which is a biholomorphism for `n ≥ 1`; for compact `G` this exhibits `G` as
+  a complex torus.
 
 ## References
 
@@ -130,8 +133,8 @@ theorem contMDiff_mulInvariantExpQuotientKerContinuousAddEquiv (n : ℕ∞ω) :
   exact contMDiff_mulInvariantExp_complex n
 
 /-- **A connected commutative complex Lie group is the quotient of its tangent space by the kernel
-of the exponential**: the exponential induces a biholomorphism `E ⧸ ker exp ≃ G`, of class `C^n`
-for every `n`, including `n = ω`. When `G` is compact, `ker exp` is a full lattice
+of the exponential**: the exponential induces a `C^n` diffeomorphism `E ⧸ ker exp ≃ G`, which is a
+biholomorphism for `n ≥ 1` (for example `n = ω`). When `G` is compact, `ker exp` is a full lattice
 (`TauCeti.isZLattice_ker_mulInvariantExpAddMonoidHom`), so `G` is a complex torus. -/
 def mulInvariantExpQuotientKerDiffeomorph (n : ℕ∞ω) :
     (E ⧸ (mulInvariantExpAddMonoidHom 𝓘(ℝ, E) G).ker) ≃ₘ^n⟮𝓘(ℂ, E), 𝓘(ℂ, E)⟯ G :=
@@ -147,7 +150,7 @@ def mulInvariantExpQuotientKerDiffeomorph (n : ℕ∞ω) :
     (Additive.toMul.bijective.comp
       (mulInvariantExpQuotientKerContinuousAddEquiv (I := 𝓘(ℝ, E)) (G := G)).bijective)
 
-/-- The biholomorphism `E ⧸ ker exp ≃ G` sends the class of `v` to `exp v`. -/
+/-- The diffeomorphism `E ⧸ ker exp ≃ G` sends the class of `v` to `exp v`. -/
 @[simp]
 theorem mulInvariantExpQuotientKerDiffeomorph_mk (n : ℕ∞ω) (v : E) :
     mulInvariantExpQuotientKerDiffeomorph (G := G) n (QuotientAddGroup.mk v) =
@@ -155,5 +158,13 @@ theorem mulInvariantExpQuotientKerDiffeomorph_mk (n : ℕ∞ω) (v : E) :
   by
     rw [mulInvariantExpQuotientKerDiffeomorph, IsLocalDiffeomorph.coe_diffeomorphOfBijective]
     exact congrFun psi_comp_mk v
+
+/-- The inverse of the diffeomorphism `E ⧸ ker exp ≃ G` sends `exp v` to the class of `v`. -/
+@[simp]
+theorem mulInvariantExpQuotientKerDiffeomorph_symm_apply (n : ℕ∞ω) (v : E) :
+    (mulInvariantExpQuotientKerDiffeomorph (G := G) n).symm
+      (mulInvariantExp (I := 𝓘(ℝ, E)) (G := G) (v : GroupLieAlgebra 𝓘(ℝ, E) G)) =
+      QuotientAddGroup.mk v := by
+  rw [← mulInvariantExpQuotientKerDiffeomorph_mk, Diffeomorph.symm_apply_apply]
 
 end TauCeti

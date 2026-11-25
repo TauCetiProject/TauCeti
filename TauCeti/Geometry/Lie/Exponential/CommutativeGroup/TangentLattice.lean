@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
+import TauCeti.Topology.Algebra.Module.CompactQuotient
 
 /-!
 # The period lattice in the tangent space of a compact commutative Lie group
@@ -16,8 +17,8 @@ tangent-space exponential `mulInvariantExp : E → G` is a homomorphism
 (`TauCeti.mulInvariantExpAddMonoidHom`). It is the exponential `lieExpAddMonoidHom` of
 left-invariant derivations, read through the identification of left-invariant derivations with the
 tangent space at the identity. So its kernel `Λ` is discrete, and when `G` is compact `Λ` is a full
-`ℤ`-lattice in `E` (`TauCeti.isZLattice_ker_mulInvariantExpAddMonoidHom`); when `G` is moreover
-connected, `E ⧸ Λ ≃ G` as topological groups
+`ℤ`-lattice in `E` (`TauCeti.isZLattice_ker_mulInvariantExpAddMonoidHom`). When `G` is connected
+(compact or not), `E ⧸ Λ ≃ G` as topological groups
 (`TauCeti.mulInvariantExpQuotientKerContinuousAddEquiv`).
 
 Stated on `E` rather than on left-invariant derivations, this is the form in which the lattice of
@@ -29,7 +30,7 @@ a complex torus `E ⧸ Λ` is attached to a compact connected commutative comple
 * `TauCeti.discreteTopology_ker_mulInvariantExpAddMonoidHom`: its kernel is discrete.
 * `TauCeti.isZLattice_ker_mulInvariantExpAddMonoidHom`: for compact `G` its kernel is a full
   lattice.
-* `TauCeti.mulInvariantExpQuotientKerContinuousAddEquiv`: for compact connected `G`,
+* `TauCeti.mulInvariantExpQuotientKerContinuousAddEquiv`: for preconnected `G`,
   `E ⧸ ker ≃ₜ+ Additive G`.
 
 ## References
@@ -67,22 +68,12 @@ def mulInvariantExpAddMonoidHom : E →+ Additive G :=
 theorem mulInvariantExpAddMonoidHom_apply (v : E) :
     mulInvariantExpAddMonoidHom I G v =
       Additive.ofMul (mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G)) := by
-  change lieExpAddMonoidHom
-    ((leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I) (G := G)).symm v) = _
-  rw [lieExpAddMonoidHom_apply, lieExp_eq_mulInvariantExp]
+  rw [mulInvariantExpAddMonoidHom, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe,
+    LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv, lieExpAddMonoidHom_apply,
+    lieExp_eq_mulInvariantExp]
   congr 2
   exact (leftInvariantDerivationLinearIsometryEquivModelVectorSpace_apply (I := I) (G := G)
     _).symm.trans (LinearIsometryEquiv.apply_symm_apply _ v)
-
-/-- The kernel of `mulInvariantExp` is the image of the kernel of `lieExp`. -/
-theorem coe_ker_mulInvariantExpAddMonoidHom :
-    ((mulInvariantExpAddMonoidHom I G).ker : Set E) =
-      (leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I) (G := G)) ''
-        ((lieExpAddMonoidHom (I := I) (G := G)).ker : Set _) := by
-  ext v
-  rw [(leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I)
-    (G := G)).image_eq_preimage_symm]
-  rfl
 
 /-- `mulInvariantExp` is continuous. -/
 theorem continuous_mulInvariantExpAddMonoidHom :
@@ -94,10 +85,11 @@ theorem continuous_mulInvariantExpAddMonoidHom :
 instance discreteTopology_ker_mulInvariantExpAddMonoidHom :
     DiscreteTopology (mulInvariantExpAddMonoidHom I G).ker := by
   refine SetLike.isDiscrete_iff_discreteTopology.mp ?_
-  rw [coe_ker_mulInvariantExpAddMonoidHom]
-  exact (SetLike.isDiscrete_iff_discreteTopology.mpr inferInstance).image
+  rw [mulInvariantExpAddMonoidHom, ← AddMonoidHom.comap_ker, AddSubgroup.coe_comap]
+  exact (SetLike.isDiscrete_iff_discreteTopology.mpr inferInstance).preimage
     (leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I)
-      (G := G)).toHomeomorph.isInducing
+      (G := G)).symm.continuous.continuousOn
+    (leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I) (G := G)).symm.injective
 
 variable [IsTopologicalGroup G]
 
@@ -116,14 +108,11 @@ tangent space at the identity.** -/
 instance isZLattice_ker_mulInvariantExpAddMonoidHom :
     IsZLattice ℝ (mulInvariantExpAddMonoidHom I G).ker.toIntSubmodule where
   span_top := by
-    rw [AddSubgroup.coe_toIntSubmodule, coe_ker_mulInvariantExpAddMonoidHom]
-    have := Submodule.span_image (R := ℝ)
-      ((leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I)
-        (G := G)).toLinearEquiv.toLinearMap)
-      (s := ((lieExpAddMonoidHom (I := I) (G := G)).ker : Set _))
-    rw [LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv] at this
-    rw [this, span_ker_lieExpAddMonoidHom_eq_top, Submodule.map_top, LinearMap.range_eq_top]
-    exact (leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I) (G := G)).surjective
+    have := AddMonoidHom.compactSpace_quotient_ker_of_isOpenMap _
+      (continuous_mulInvariantExpAddMonoidHom (I := I) (G := G))
+      (isOpenMap_mulInvariantExpAddMonoidHom (I := I) (G := G))
+    rw [AddSubgroup.coe_toIntSubmodule]
+    exact AddSubgroup.span_eq_top_of_compactSpace_quotient _
 
 end Compact
 
@@ -153,6 +142,13 @@ theorem mulInvariantExpQuotientKerContinuousAddEquiv_mk (v : E) :
       Additive.ofMul (mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G)) := by
   rw [mulInvariantExpQuotientKerContinuousAddEquiv,
     ContinuousAddEquiv.quotientKerEquivOfSurjective_apply_mk, mulInvariantExpAddMonoidHom_apply]
+
+@[simp]
+theorem mulInvariantExpQuotientKerContinuousAddEquiv_symm_apply (v : E) :
+    (mulInvariantExpQuotientKerContinuousAddEquiv (I := I) (G := G)).symm
+      (Additive.ofMul (mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G))) =
+      QuotientAddGroup.mk v := by
+  rw [← mulInvariantExpQuotientKerContinuousAddEquiv_mk, ContinuousAddEquiv.symm_apply_apply]
 
 end Connected
 
