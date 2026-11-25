@@ -54,21 +54,9 @@ ring is integral over the image of `C⁺`, and `C⁺` is integrally closed in `C
 theorem algebraMap_mem_plus_of_isFinite_inl (h : (inl A T U).IsFinite)
     (hinj : Function.Injective (CompletedTensor.inl A C B)) {a : A}
     (ha : algebraMap A B a ∈ U.plus) : algebraMap A C a ∈ T.plus := by
-  have hmem : CompletedTensor.inl A C B (algebraMap A C a) ∈ (T.completedTensor A U).plus := by
-    rw [CompletedTensor.inl_algebraMap, ← CompletedTensor.inr_algebraMap]
-    exact T.inr_mem_completedTensor_plus U ha
-  obtain ⟨q, hqm, hq⟩ := h.isIntegral_restrict ⟨_, hmem⟩
-  refine Subring.isIntegrallyClosedIn_iff.mp T.isRingOfIntegralElements.isIntegrallyClosedIn
-    ⟨q, hqm, hinj ?_⟩
-  have hcomp : (T.completedTensor A U).plus.subtype.comp
-      ((inl A T U).toRingHom.restrict T.plus _ (inl A T U).map_mem_plus) =
-      (CompletedTensor.inl A C B).comp T.plus.subtype := by
-    ext; simp
-  have := congrArg Subtype.val hq
-  rw [← Subring.coe_subtype, Polynomial.hom_eval₂, hcomp] at this
-  simp only [Subring.coe_subtype, ZeroMemClass.coe_zero] at this
-  rw [Polynomial.hom_eval₂, map_zero]
-  exact this
+  refine h.mem_plus_of_injective (by rwa [toRingHom_inl]) ?_
+  rw [toRingHom_inl, CompletedTensor.inl_algebraMap, ← CompletedTensor.inr_algebraMap]
+  exact T.inr_mem_completedTensor_plus U ha
 
 end General
 

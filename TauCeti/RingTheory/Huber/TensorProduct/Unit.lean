@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.TensorProduct.FiniteAlgebra
+public import TauCeti.RingTheory.Huber.TensorProduct.Finite.Algebra
 
 /-!
 # The unit of the completed tensor product

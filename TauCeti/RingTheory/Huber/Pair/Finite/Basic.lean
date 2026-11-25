@@ -53,6 +53,8 @@ target is a finite projective module, hence complete and Hausdorff for its natur
   morphism is integral.
 * `TauCeti.Huber.Pair.Hom.IsFinite.plus_eq_of_toRingHom_eq_id`: a finite morphism whose ring map
   is the identity does not enlarge the plus ring.
+* `TauCeti.Huber.Pair.Hom.IsFinite.mem_plus_of_injective`: a finite morphism with injective ring
+  map reflects membership in the plus ring.
 * `TauCeti.Huber.Pair.Hom.IsQuotientMapping.isFinite`, `TauCeti.Huber.Pair.Hom.isFinite_id` and
   `TauCeti.Huber.Pair.Hom.isFinite_quotientHom`: quotient mappings out of a complete Hausdorff pair,
   in particular the identity and quotient maps, are finite.
@@ -138,6 +140,20 @@ theorem IsFinite.plus_eq_of_toRingHom_eq_id {S' : Pair A} {φ : Hom S S'} (hφ :
   have hint := hφ.isIntegral_plus a ha
   rw [h, Subring.map_id] at hint
   exact Subring.isIntegrallyClosedIn_iff.mp S.isRingOfIntegralElements.isIntegrallyClosedIn hint
+
+/-- **A finite morphism with injective ring map reflects the plus ring**: if `φ a ∈ B⁺` then
+`a ∈ A⁺`, since `a` is then integral over `A⁺` and `A⁺` is integrally closed in `A`. -/
+theorem IsFinite.mem_plus_of_injective {φ : Hom S U} (hφ : φ.IsFinite)
+    (hinj : Function.Injective φ.toRingHom) {a : A} (ha : φ.toRingHom a ∈ U.plus) :
+    a ∈ S.plus := by
+  obtain ⟨q, hqm, hq⟩ := hφ.isIntegral_restrict ⟨_, ha⟩
+  refine Subring.isIntegrallyClosedIn_iff.mp S.isRingOfIntegralElements.isIntegrallyClosedIn
+    ⟨q, hqm, hinj ?_⟩
+  have hcomp : U.plus.subtype.comp (φ.toRingHom.restrict S.plus U.plus φ.map_mem_plus) =
+      φ.toRingHom.comp (algebraMap S.plus A) := RingHom.ext fun _ ↦ rfl
+  rw [Polynomial.hom_eval₂, ← hcomp, map_zero]
+  simpa only [Polynomial.hom_eval₂, map_zero, Subring.subtype_apply] using
+    congrArg U.plus.subtype hq
 
 end Hom
 

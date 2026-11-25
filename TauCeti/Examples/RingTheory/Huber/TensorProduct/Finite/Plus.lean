@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.TensorProduct.FinitePlus
-public import TauCeti.RingTheory.Huber.TensorProduct.FiniteEtale
+public import TauCeti.RingTheory.Huber.TensorProduct.Finite.Plus
+public import TauCeti.RingTheory.Huber.TensorProduct.Finite.Etale
 
 /-!
 # The plus-ring hypothesis of finite étale base change
