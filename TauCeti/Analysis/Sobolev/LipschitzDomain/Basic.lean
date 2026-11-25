@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Lp.GraphDomain
 public import TauCeti.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.MetricSpace.Lipschitz
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Topology.MetricSpace.Bounded
 
 /-!
 # Domains with Lipschitz boundary
@@ -53,6 +54,8 @@ support-containment lemmas provide the shared geometry for chart trace and exten
   Lipschitz graph is a Lipschitz boundary chart.
 * `Set.IsLipschitzChart.compl_closure`: a Lipschitz chart of `Ω`, with its normal coordinate
   reflected, is a Lipschitz chart of `(closure Ω)ᶜ`, with the negated graph.
+* `Set.IsLipschitzChart.exists_preimage_normalCylinder_subset`: a chart centred at `x`
+  restricts to a cylinder whose preimage lies in any given neighbourhood of `x`.
 * `Set.IsLipschitzDomain.compl_closure`: the exterior of a Lipschitz domain is a Lipschitz domain.
 * `Set.IsLipschitzDomain.interior_closure`: a Lipschitz domain is regular open.
 * `Set.IsLipschitzDomain.frontier_closure`: the closure of a Lipschitz domain has the same
@@ -82,6 +85,9 @@ support-containment lemmas provide the shared geometry for chart trace and exten
   a bounded Lipschitz domain is covered by finitely many shortened chart cylinders.
 * `Set.IsLipschitzDomain.exists_isLipschitzDomainWith`: a Lipschitz domain with compact frontier
   has a uniform Lipschitz bound.
+* `Set.IsLipschitzDomain.exists_isLipschitzDomainWith_image`: a bounded Lipschitz domain with
+  nonempty frontier in a proper space is carried by one of its boundary charts onto a Lipschitz
+  domain of the model space with a uniform Lipschitz bound.
 
 ## References
 
@@ -267,6 +273,28 @@ theorem mono (hc : IsLipschitzChart Ω e γ K h r) {h' r' : ℝ} (hh' : 0 < h') 
   image_inter_normalCylinder := by
     have hsub := normalCylinder_mono (E := E) hh hr
     rw [← inter_eq_right.2 hsub, ← inter_assoc, hc.image_inter_normalCylinder, inter_assoc]
+
+/-- A Lipschitz chart centred at `x` restricts to a cylinder whose preimage lies in any given
+neighbourhood of `x`. -/
+theorem exists_preimage_normalCylinder_subset (hc : IsLipschitzChart Ω e γ K h r) {x : F}
+    (hex : e x = 0) {V : Set F} (hV : V ∈ 𝓝 x) :
+    ∃ ρ : ℝ, IsLipschitzChart Ω e γ K ρ ρ ∧ e ⁻¹' normalCylinder ρ ρ ⊆ V := by
+  have hW : e.symm ⁻¹' V ∈ 𝓝 (0 : WithLp 2 (ℝ × E)) :=
+    e.symm.continuous.continuousAt.preimage_mem_nhds (by rwa [← hex, e.symm_apply_apply])
+  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 hW
+  have hρ : 0 < min (ε / 2) (min h r) :=
+    lt_min (half_pos hε) (lt_min hc.height_pos hc.radius_pos)
+  refine ⟨_, hc.mono hρ hρ ((min_le_right _ _).trans (min_le_left _ _))
+    ((min_le_right _ _).trans (min_le_right _ _)), fun y hy => ?_⟩
+  rw [mem_preimage, mem_normalCylinder] at hy
+  have h1 : ‖(e y).fst‖ < ε / 2 := by
+    rw [Real.norm_eq_abs, abs_lt]
+    exact ⟨by linarith [min_le_left (ε / 2) (min h r)], hy.2.1.trans_le (min_le_left _ _)⟩
+  have h2 : ‖(e y).snd‖ < ε / 2 := hy.2.2.trans_le (min_le_left _ _)
+  have hy' : e y ∈ ball 0 ε := by
+    rw [mem_ball_zero_iff, WithLp.prod_norm_eq_of_L2, Real.sqrt_lt' hε]
+    nlinarith [norm_nonneg (e y).fst, norm_nonneg (e y).snd]
+  simpa using hball hy'
 
 /-- A `K`-Lipschitz chart is a `K'`-Lipschitz chart for every `K' ≥ K`. -/
 theorem weaken (hc : IsLipschitzChart Ω e γ K h r) {K' : ℝ≥0} (hK : K ≤ K') :
@@ -913,6 +941,21 @@ theorem IsLipschitzDomain.exists_isLipschitzDomainWith {Omega : Set (WithLp 2 (�
   have heq := hc'.fst_apply_eq_of_mem_frontier hx
     (hex ▸ zero_mem_normalCylinder hc'.height_pos hc'.radius_pos)
   simpa [hex] using heq.symm
+
+/-- A bounded Lipschitz domain with nonempty frontier in a proper space is carried by an affine
+isometry onto the model space (any of its boundary charts) to a Lipschitz domain of the model space
+with a uniform Lipschitz bound. -/
+theorem IsLipschitzDomain.exists_isLipschitzDomainWith_image [ProperSpace F] {Omega : Set F}
+    (h : Omega.IsLipschitzDomain E) (hb : Bornology.IsBounded Omega)
+    (hne : (frontier Omega).Nonempty) :
+    ∃ (g : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (L : ℝ≥0), (g '' Omega).IsLipschitzDomainWith L := by
+  obtain ⟨x₀, hx₀⟩ := hne
+  obtain ⟨g, -, -, -, -, -, -⟩ := h x₀ hx₀
+  have hfr : IsCompact (frontier (g '' Omega)) := by
+    rw [← g.coe_toHomeomorph, ← g.toHomeomorph.image_frontier]
+    exact hb.isCompact_frontier.image g.continuous
+  obtain ⟨L, hL⟩ := (h.image g).exists_isLipschitzDomainWith hfr
+  exact ⟨g, L, hL⟩
 
 end Set
 

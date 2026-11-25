@@ -14,7 +14,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.ExteriorSquare
 public import Mathlib.LinearAlgebra.UnitaryGroup
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
-import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
+import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Ortho
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
@@ -55,6 +55,8 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 * `exteriorPower.inner_ιMulti_two`: `⟪a ∧ b, u ∧ w⟫ = ⟪a, u⟫ ⟪b, w⟫ - ⟪a, w⟫ ⟪b, u⟫`, and
   `exteriorPower.orthonormal_ιMulti_two_of_orthonormal`: for an orthonormal triple `e, x, y`, the
   wedges `e ∧ x` and `e ∧ y` are orthonormal.
+* `Orthonormal.orthonormal_ιMulti_two_add_one_add_two`: for an orthonormal triple `v`, the wedges
+  `v 1 ∧ v 2`, `v 2 ∧ v 0`, `v 0 ∧ v 1` are orthonormal.
 * `exteriorPower.ext_inner_ιMulti`: elements of `⋀ⁿ E` with the same inner products against all
   wedges of vectors are equal, and `exteriorPower.linearMap_ext_inner_ιMulti` is the
   corresponding extensionality principle for linear maps between exterior powers;
@@ -148,6 +150,18 @@ theorem orthonormal_ιMulti_two_of_orthonormal {e x y : E} (h : Orthonormal ℝ 
     simp only [Fin.zero_eta, Fin.mk_one, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one] <;>
     rw [inner_ιMulti_two] <;>
     simp [he, hx, hy, hex, hey, hxy, hyx]
+
+/-- For an orthonormal family `v` indexed by `Fin 3`, the wedges `v (k + 1) ∧ v (k + 2)` of
+cyclically consecutive vectors, namely `v 1 ∧ v 2`, `v 2 ∧ v 0` and `v 0 ∧ v 1`, are
+orthonormal. -/
+theorem _root_.Orthonormal.orthonormal_ιMulti_two_add_one_add_two {v : Fin 3 → E}
+    (hv : Orthonormal ℝ v) :
+    Orthonormal ℝ fun k : Fin 3 ↦ ιMulti ℝ 2 ![v (k + 1), v (k + 2)] := by
+  have hv' := orthonormal_iff_ite.mp hv
+  rw [orthonormal_iff_ite]
+  intro i j
+  rw [inner_ιMulti_two]
+  fin_cases i <;> fin_cases j <;> simp [hv', hv.1]
 
 /-- Elements of `⋀ⁿ E` are determined by their inner products with wedges of vectors, since these
 wedges span `⋀ⁿ E`. -/
