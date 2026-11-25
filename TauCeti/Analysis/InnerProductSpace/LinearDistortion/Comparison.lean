@@ -177,7 +177,7 @@ theorem outerDistortion_le_one_iff {A : V →ₗ[ℝ] W} :
         · simp [oV.outerDistortion_of_pos oW h, oV.orientedJacobian_eq_one_of_fin_zero oW h]
         · simp [oV.outerDistortion_zero_of_nonpos oW h]
       · simp [oV.outerDistortion_zero oW hn]
-    · exact (oV.outerDistortion_smul_linearIsometry oW hc U hU).le
+    · exact (oV.outerDistortion_smul_linearIsometry oW (pow_pos hc n) U hU).le
 
 omit [FiniteDimensional ℝ W] [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
 /-- `q_O(A) = 1` exactly when `A` is a positive multiple of a linear
@@ -187,7 +187,7 @@ theorem outerDistortion_eq_one_iff {A : V →ₗ[ℝ] W} :
       ∃ c : ℝ, 0 < c ∧ ∃ U : V →ₗᵢ[ℝ] W,
         oV.orientedJacobian oW U.toLinearMap = 1 ∧ A = c • U.toLinearMap := by
   refine ⟨fun h ↦ ?_, fun ⟨c, hc, U, hU, hA⟩ ↦
-    hA ▸ oV.outerDistortion_smul_linearIsometry oW hc U hU⟩
+    hA ▸ oV.outerDistortion_smul_linearIsometry oW (pow_pos hc n) U hU⟩
   rcases (oV.outerDistortion_le_one_iff oW).mp h.le with rfl | hA
   · rcases n.eq_zero_or_pos with rfl | hn
     · -- In dimension `0`, `q_O(0) = 1` forces `J(0) = 1`, and `0 = 1 • 0` with `0` an isometry.
