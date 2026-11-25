@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Algebra.Algebra.Opposite
 public import TauCeti.RepresentationTheory.OfMulAction.CosetLift
-public import TauCeti.RepresentationTheory.OfMulAction.Hecke
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+public import TauCeti.RepresentationTheory.OfMulAction.Hecke.Basic
 
 /-!
 # The Hecke algebra of a level and its right action on invariants
@@ -16,7 +17,8 @@ For a subgroup `U` of a group `G` (in practice a compact open subgroup of a loca
 group) and a commutative ring `A`, the **Hecke algebra of level `U`** is
 `H(G, U; A) := Fun_G(G/U × G/U, A)`, the permutation Hecke algebra
 (`TauCeti.permutationHeckeModule`) of the coset space `G ⧸ U`. Since `G` permutes `G ⧸ U`
-transitively, it is a unital `A`-algebra as soon as the stabilizer orbits are finite
+transitively, there is a single orbit (`TauCeti.MulAction.subsingleton_orbitRelQuotient`), so it is
+a unital `A`-algebra as soon as the stabilizer orbits are finite
 (`TauCeti.FiniteStabilizerOrbits`), for instance for `U` compact open
 (`TauCeti.FiniteStabilizerOrbits.of_isCompact_of_isOpen`), and it is isomorphic to
 `End_G(A[G/U])` (`TauCeti.PermutationHecke.toIntertwiningMapAlgEquiv`). No measure is used, so it
@@ -25,8 +27,9 @@ is defined over every coefficient ring.
 For a representation `ρ` of `G` on `V`, the `U`-invariants are the intertwining maps
 `A[G/U] → V` (`Representation.ofMulActionQuotientMapEquiv`), and precomposition with the action of
 `H(G, U; A)` on `A[G/U]` makes `V^U` a right `H(G, U; A)`-module: an algebra homomorphism
-`H(G, U; A)ᵐᵒᵖ →ₐ[A] End_A(V^U)` (`TauCeti.HeckeAlgebraLevel.rightAction`). Explicitly, `v * h` is
-`∑_t h(t, U) ρ(g_t) v` over the cosets `t = g_t U`
+`H(G, U; A)ᵐᵒᵖ →ₐ[A] End_A(V^U)` (`TauCeti.HeckeAlgebraLevel.rightAction`, described as
+precomposition by `TauCeti.HeckeAlgebraLevel.ofMulActionQuotientMapEquiv_symm_rightAction_apply`).
+Explicitly, `v * h` is `∑_t h(t, U) ρ(g_t) v` over the cosets `t = g_t U`
 (`TauCeti.HeckeAlgebraLevel.coe_rightAction_apply`).
 
 ## Main definitions
@@ -54,11 +57,6 @@ algebra of the coset space `G ⧸ U`. -/
 abbrev HeckeAlgebraLevel : Type _ :=
   permutationHeckeModule G (G ⧸ U) A
 
-/-- `G` permutes the cosets `G ⧸ U` transitively, so there is a single orbit. -/
-instance finite_orbitRel_quotient_quotient : Finite (orbitRel.Quotient G (G ⧸ U)) :=
-  haveI := (pretransitive_iff_subsingleton_quotient G (G ⧸ U)).1 inferInstance
-  inferInstance
-
 namespace HeckeAlgebraLevel
 
 variable {G U A} [FiniteStabilizerOrbits G (G ⧸ U)]
@@ -66,18 +64,14 @@ variable {G U A} [FiniteStabilizerOrbits G (G ⧸ U)]
 
 /-- Precomposition with the action of `h` on `A[G ⧸ U]`, on intertwining maps `A[G ⧸ U] → V`. -/
 private def precomp :
-    HeckeAlgebraLevel G U A →ₗ[A] Module.End A (IntertwiningMap (ofMulAction A G (G ⧸ U)) ρ) where
-  toFun h :=
-    { toFun φ := φ.comp (PermutationHecke.toIntertwiningMap G (G ⧸ U) A h)
-      map_add' _ _ := IntertwiningMap.ext (LinearMap.ext fun _ ↦ rfl)
-      map_smul' _ _ := IntertwiningMap.ext (LinearMap.ext fun _ ↦ rfl) }
-  map_add' _ _ := LinearMap.ext fun φ ↦ IntertwiningMap.ext (LinearMap.ext fun _ ↦ by simp)
-  map_smul' _ _ := LinearMap.ext fun φ ↦ IntertwiningMap.ext (LinearMap.ext fun _ ↦ by simp)
+    HeckeAlgebraLevel G U A →ₗ[A] Module.End A (IntertwiningMap (ofMulAction A G (G ⧸ U)) ρ) :=
+  (IntertwiningMap.llcomp (ofMulAction A G (G ⧸ U)) (ofMulAction A G (G ⧸ U)) ρ).flip ∘ₗ
+    PermutationHecke.toIntertwiningMap G (G ⧸ U) A
 
 private theorem precomp_apply (h : HeckeAlgebraLevel G U A)
     (φ : IntertwiningMap (ofMulAction A G (G ⧸ U)) ρ) :
     precomp ρ h φ = φ.comp (PermutationHecke.toIntertwiningMap G (G ⧸ U) A h) :=
-  rfl
+  (IntertwiningMap.comp_def ..).symm
 
 private theorem precomp_one : precomp ρ (1 : HeckeAlgebraLevel G U A) = 1 :=
   LinearMap.ext fun φ ↦ IntertwiningMap.ext (LinearMap.ext fun x ↦ by
@@ -98,6 +92,16 @@ def rightAction : (HeckeAlgebraLevel G U A)ᵐᵒᵖ →ₐ[A] Module.End A (inv
     fun h₁ h₂ ↦ LinearMap.ext fun v ↦ by
       simp [LinearEquiv.conj_apply_apply, precomp_mul]
 
+/-- **The right action is precomposition**: the intertwining map `A[G ⧸ U] → V` attached to
+`v * h` is the one attached to `v`, precomposed with the action of `h` on `A[G ⧸ U]`. -/
+@[simp]
+theorem ofMulActionQuotientMapEquiv_symm_rightAction_apply (h : HeckeAlgebraLevel G U A)
+    (v : invariants (ρ.comp U.subtype)) :
+    (ρ.ofMulActionQuotientMapEquiv U).symm (rightAction ρ (MulOpposite.op h) v) =
+      ((ρ.ofMulActionQuotientMapEquiv U).symm v).comp
+        (PermutationHecke.toIntertwiningMap G (G ⧸ U) A h) := by
+  simp [rightAction, LinearEquiv.conj_apply_apply, precomp_apply]
+
 /-- `v * h` is `φ_v (h * [U])`, where `φ_v : A[G ⧸ U] → V` is the intertwining map sending the
 coset `g U` to `ρ g v`. -/
 theorem coe_rightAction_apply_eq (h : HeckeAlgebraLevel G U A)
@@ -112,19 +116,9 @@ theorem coe_rightAction_apply_eq (h : HeckeAlgebraLevel G U A)
 theorem coe_rightAction_apply (h : HeckeAlgebraLevel G U A) (v : invariants (ρ.comp U.subtype)) :
     (rightAction ρ (MulOpposite.op h) v : V) =
       (PermutationHecke.column h ((1 : G) : G ⧸ U)).sum fun t c ↦ c • ρ t.out v := by
-  have hcol : PermutationHecke.toIntertwiningMap G (G ⧸ U) A h
-      (MonoidAlgebra.single ((1 : G) : G ⧸ U) 1) =
-        (PermutationHecke.column h ((1 : G) : G ⧸ U)).sum fun t c ↦ MonoidAlgebra.single t c := by
-    apply MonoidAlgebra.coeff_injective
-    ext t
-    simp only [PermutationHecke.coeff_toIntertwiningMap_apply, MonoidAlgebra.coeff_single,
-      PermutationHecke.toEnd_single, one_mul, Finsupp.sum, MonoidAlgebra.coeff_sum]
-    rw [Finsupp.finsetSum_apply, Finset.sum_eq_single t
-      (fun x _ hx ↦ by simp [hx])
-      (fun ht ↦ by simpa using Finsupp.notMem_support_iff.1 ht)]
-    simp
-  rw [coe_rightAction_apply_eq, hcol, map_finsuppSum]
+  rw [coe_rightAction_apply_eq, PermutationHecke.toIntertwiningMap_single, map_finsuppSum]
   refine Finsupp.sum_congr fun t _ ↦ ?_
+  rw [one_mul]
   have := ofMulActionQuotientMapEquiv_symm_apply_single ρ U v t.out
     (PermutationHecke.column h ((1 : G) : G ⧸ U) t)
   rwa [QuotientGroup.out_eq'] at this
