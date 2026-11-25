@@ -75,7 +75,7 @@ universe u v
 
 variable {R : Type u} [CommRing R] {H : Type v} [Ring H] [Bialgebra R H]
 
-/-! ### Additivity and degreewise exactness of the cochain maps -/
+/-! ### Degreewise exactness of the cochain maps -/
 
 section Degreewise
 
@@ -107,29 +107,6 @@ theorem cochainsMap_exact {f : Hom R H M₁ M₂} {g : Hom R H M₂ M₃} (hfg :
   | succ n ih =>
     rw [cochainsMap_succ, cochainsMap_succ]
     exact rTensor_exact H ih (cochainsMap_surjective hg n)
-
-/-- The map induced on cochains by a sum of comodule morphisms is the sum of the induced maps. -/
-@[simp]
-theorem cochainsMap_add (f f' : Hom R H M₁ M₂) (n : ℕ) :
-    cochainsMap (f + f') n = cochainsMap f n + cochainsMap f' n := by
-  induction n with
-  | zero =>
-    rw [cochainsMap_zero, cochainsMap_zero, cochainsMap_zero]
-    exact Hom.add_toLinearMap f f'
-  | succ n ih =>
-    rw [cochainsMap_succ, cochainsMap_succ, cochainsMap_succ, ih, LinearMap.rTensor_add]
-
-/-- The cochain map induced by a sum of comodule morphisms is the sum of the induced cochain
-maps. -/
-@[simp]
-theorem cochainComplexMap_add (f f' : Hom R H M₁ M₂) :
-    cochainComplexMap (f + f') = cochainComplexMap f + cochainComplexMap f' := by
-  ext n : 1
-  rw [cochainComplexMap_f, cochainsMap_add, HomologicalComplex.add_f_apply, cochainComplexMap_f,
-    cochainComplexMap_f]
-  -- As in `cochainComplexMap_id`, the objects are the modules `ModuleCat.of R (cochains _ n)` only
-  -- by unfolding `CochainComplex.of` (`cochainComplex_X`).
-  exact ModuleCat.ofHom_add _ _
 
 /-- For an injective comodule morphism `f : M₁ → M₂` over a flat `H`, an `(i + 1)`-cochain `x` of
 `M₁` whose image in `M₂` is the differential of an `i`-cochain is a cocycle. -/

@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.RingTheory.Bialgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
+public import TauCeti.Algebra.Coalgebra.Comodule.Hom
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -502,6 +503,17 @@ theorem cochainsMap_comp (g : Hom R H N P) (f : Hom R H M N) (n : ℕ) :
   | succ n ih =>
     rw [cochainsMap_succ, cochainsMap_succ, cochainsMap_succ, ih, LinearMap.rTensor_comp]
 
+/-- The map induced on cochains by a sum of comodule morphisms is the sum of the induced maps. -/
+@[simp]
+theorem cochainsMap_add (f f' : Hom R H M N) (n : ℕ) :
+    cochainsMap (f + f') n = cochainsMap f n + cochainsMap f' n := by
+  induction n with
+  | zero =>
+    rw [cochainsMap_zero, cochainsMap_zero, cochainsMap_zero]
+    exact Hom.add_toLinearMap f f'
+  | succ n ih =>
+    rw [cochainsMap_succ, cochainsMap_succ, cochainsMap_succ, ih, LinearMap.rTensor_add]
+
 /-- The map induced by a comodule morphism commutes with the Hochschild differential. -/
 theorem d_comp_cochainsMap (f : Hom R H M N) (n : ℕ) :
     d R H N n ∘ₗ cochainsMap f n = cochainsMap f (n + 1) ∘ₗ d R H M n := by
@@ -556,6 +568,18 @@ theorem cochainComplexMap_comp (g : Hom R H N P) (f : Hom R H M N) :
   -- As in `cochainComplexMap_id`, the objects of the composite are the modules
   -- `ModuleCat.of R (cochains _ n)` only by unfolding `CochainComplex.of` (`cochainComplex_X`).
   exact ModuleCat.ofHom_comp _ _
+
+/-- The cochain map induced by a sum of comodule morphisms is the sum of the induced cochain
+maps. -/
+@[simp]
+theorem cochainComplexMap_add (f f' : Hom R H M N) :
+    cochainComplexMap (f + f') = cochainComplexMap f + cochainComplexMap f' := by
+  ext n : 1
+  rw [cochainComplexMap_f, cochainsMap_add, HomologicalComplex.add_f_apply, cochainComplexMap_f,
+    cochainComplexMap_f]
+  -- As in `cochainComplexMap_id`, the objects are the modules `ModuleCat.of R (cochains _ n)` only
+  -- by unfolding `CochainComplex.of` (`cochainComplex_X`).
+  exact ModuleCat.ofHom_add _ _
 
 /-- The identification of degree-zero cohomology with the invariants is natural in the
 coefficients: a comodule morphism acts on invariant vectors by restriction. -/
