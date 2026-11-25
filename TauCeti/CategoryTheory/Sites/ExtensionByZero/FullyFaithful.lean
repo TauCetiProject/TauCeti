@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Functor.KanExtension.Adjunction
 public import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Zero
 public import Mathlib.CategoryTheory.Sites.Limits
 public import Mathlib.CategoryTheory.Sites.Pullback
+public import TauCeti.CategoryTheory.Functor.KanExtension.Adjunction
 
 /-!
 # Extension by zero along a fully faithful functor with downward closed image
@@ -31,8 +31,9 @@ exact on the left. The extension by zero on a lower interval of a preorder,
 
 * `CategoryTheory.Functor.hasPointwiseLeftKanExtension_op_of_fullyFaithful`: existence of the
   pointwise extension by zero.
-* `CategoryTheory.Functor.lanCompEvaluationIsoOfIso` and
-  `CategoryTheory.Functor.isZero_lan_obj_obj_of_not_essImage`: its values.
+* `CategoryTheory.Functor.isZero_lan_obj_obj_of_not_essImage`: its values off the essential
+  image; on the essential image they are given by `CategoryTheory.Functor.lanCompEvaluationIsoOfIso`
+  from `TauCeti.CategoryTheory.Functor.KanExtension.Adjunction`.
 * `CategoryTheory.Functor.preservesFiniteLimits_lan_op_of_fullyFaithful` and
   `CategoryTheory.Functor.preservesFiniteLimits_sheafPullback_of_fullyFaithful`: exactness.
 
@@ -77,32 +78,6 @@ lemma hasLeftKanExtension_op_of_fullyFaithful [HasInitial A] (F : Cᵒᵖ ⥤ A)
     G.op.HasLeftKanExtension F :=
   have := hasPointwiseLeftKanExtension_op_of_fullyFaithful hG hG' F
   inferInstance
-
-/-- For a fully faithful `G` along which pointwise left Kan extensions exist, evaluating the left
-Kan extension along `G.op` at an object isomorphic to `G.obj c` is evaluation at `c`. -/
-noncomputable def lanCompEvaluationIsoOfIso [G.Full] [G.Faithful]
-    [∀ F : Cᵒᵖ ⥤ A, G.op.HasPointwiseLeftKanExtension F] {c : C} {d : D} (e : G.obj c ≅ d) :
-    G.op.lan ⋙ (evaluation Dᵒᵖ A).obj (op d) ≅ (evaluation Cᵒᵖ A).obj (op c) :=
-  isoWhiskerLeft G.op.lan ((evaluation Dᵒᵖ A).mapIso e.op) ≪≫
-    isoWhiskerRight (asIso G.op.lanUnit).symm ((evaluation Cᵒᵖ A).obj (op c))
-
-/-- The components of `lanCompEvaluationIsoOfIso` are `e` followed by the inverse of the unit. -/
-@[simp]
-lemma lanCompEvaluationIsoOfIso_hom_app [G.Full] [G.Faithful]
-    [∀ F : Cᵒᵖ ⥤ A, G.op.HasPointwiseLeftKanExtension F] {c : C} {d : D} (e : G.obj c ≅ d)
-    (F : Cᵒᵖ ⥤ A) :
-    (lanCompEvaluationIsoOfIso e).hom.app F =
-      (G.op.lan.obj F).map e.hom.op ≫ CategoryTheory.inv ((G.op.lanUnit.app F).app (op c)) := by
-  simp [lanCompEvaluationIsoOfIso]
-
-/-- The inverse of `lanCompEvaluationIsoOfIso` is the unit followed by `e.inv`. -/
-@[simp]
-lemma lanCompEvaluationIsoOfIso_inv_app [G.Full] [G.Faithful]
-    [∀ F : Cᵒᵖ ⥤ A, G.op.HasPointwiseLeftKanExtension F] {c : C} {d : D} (e : G.obj c ≅ d)
-    (F : Cᵒᵖ ⥤ A) :
-    (lanCompEvaluationIsoOfIso e).inv.app F =
-      (G.op.lanUnit.app F).app (op c) ≫ (G.op.lan.obj F).map e.inv.op := by
-  simp [lanCompEvaluationIsoOfIso]
 
 variable [∀ F : Cᵒᵖ ⥤ A, G.op.HasLeftKanExtension F]
 
