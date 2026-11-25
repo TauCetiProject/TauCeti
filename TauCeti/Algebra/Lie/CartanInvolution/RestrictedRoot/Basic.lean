@@ -143,8 +143,7 @@ theorem iSupIndep_restrictedRootSpace [IsDomain R] [IsTorsionFree R L] :
   exact (TauCeti.iSupIndep_iInf_eigenspace fun H : 𝔞 ↦ ad R L H).comp DFunLike.coe_injective
 
 /-- **Eigenvalue functions of `ad 𝔞` are linear.** If the joint eigenspace of the operators
-`ad H`, `H ∈ 𝔞`, for eigenvalues `χ H` is nonzero, then `χ` is a linear functional on `𝔞`, and the
-joint eigenspace is its restricted root space. -/
+`ad H`, `H ∈ 𝔞`, for eigenvalues `χ H` is nonzero, then `χ` is a linear functional on `𝔞`. -/
 theorem exists_dual_eq_of_iInf_eigenspace_ne_bot [IsDomain R] [IsTorsionFree R L] {χ : 𝔞 → R}
     (hχ : ⨅ H : 𝔞, End.eigenspace (ad R L H) (χ H) ≠ ⊥) : ∃ μ : Dual R 𝔞, ⇑μ = χ := by
   obtain ⟨x, hx, hx0⟩ := (Submodule.ne_bot_iff _).mp hχ
