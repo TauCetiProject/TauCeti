@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.OpenPos
+public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
 # Locally almost everywhere constant functions on preconnected sets
@@ -23,16 +24,35 @@ sharing a local constant is an equivalence relation on the set whose classes are
 Connectedness then forces a single constant, and since the set is Lindelöf, countably many of the
 local neighbourhoods cover it.
 
+Without connectedness the same argument gives a locally constant function: on an open Lindelöf
+set, choosing the local constant at each point defines a function that is locally constant on the
+set and almost everywhere equal to `f` there.
+
 ## Main results
 
 * `IsPreconnected.exists_ae_eq_const_of_forall_nhds`: a locally almost everywhere constant
   function on a preconnected Lindelöf set is almost everywhere constant on it.
+* `IsOpen.exists_isLocallyConstant_ae_eq_of_forall_nhds`: a locally almost everywhere constant
+  function on an open Lindelöf set agrees almost everywhere on it with a function that is locally
+  constant on it.
 -/
 
 public section
 
 open MeasureTheory Set
 open scoped Topology
+
+/-- Since `μ` charges every neighbourhood, a function has at most one almost everywhere value
+near each point. -/
+private theorem eq_of_ae_eq_of_mem_nhds {X β : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → β} {x : X} {c d : β} {U V : Set X}
+    (hU : U ∈ 𝓝 x) (hV : V ∈ 𝓝 x) (hcU : ∀ᵐ y ∂μ.restrict U, f y = c)
+    (hdV : ∀ᵐ y ∂μ.restrict V, f y = d) : c = d := by
+  have : (ae (μ.restrict (U ∩ V))).NeBot :=
+    ae_restrict_neBot.2 (Measure.measure_pos_of_mem_nhds μ (Filter.inter_mem hU hV)).ne'
+  obtain ⟨y, hyc, hyd⟩ := ((ae_restrict_of_ae_restrict_of_subset inter_subset_left hcU).and
+    (ae_restrict_of_ae_restrict_of_subset inter_subset_right hdV)).exists
+  rw [← hyc, hyd]
 
 namespace IsPreconnected
 
@@ -53,11 +73,7 @@ theorem exists_ae_eq_const_of_forall_nhds {X β : Type*}
   have hunique {c d : β} {x : X} (hc : P c x) (hd : P d x) : c = d := by
     obtain ⟨U, hU, hcU⟩ := hc
     obtain ⟨V, hV, hdV⟩ := hd
-    have : (ae (μ.restrict (U ∩ V))).NeBot :=
-      ae_restrict_neBot.2 (Measure.measure_pos_of_mem_nhds μ (Filter.inter_mem hU hV)).ne'
-    obtain ⟨y, hyc, hyd⟩ := ((ae_restrict_of_ae_restrict_of_subset inter_subset_left hcU).and
-      (ae_restrict_of_ae_restrict_of_subset inter_subset_right hdV)).exists
-    rw [← hyc, hyd]
+    exact eq_of_ae_eq_of_mem_nhds hU hV hcU hdV
   rcases s.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
   · exact ⟨Classical.arbitrary β, by simp⟩
   obtain ⟨c₀, hc₀⟩ := hf x₀ hx₀
@@ -79,5 +95,43 @@ theorem exists_ae_eq_const_of_forall_nhds {X β : Type*}
     (ae_restrict_biUnion_iff _ hTc _).2 fun x hx => hUc x (hTs x hx)⟩
 
 end IsPreconnected
+
+namespace IsOpen
+
+/-- **A locally almost everywhere constant function agrees almost everywhere with a locally
+constant function.** Let `μ` be positive on nonempty open sets, and let `s` be an open Lindelöf
+set. If every point of `s` has a neighbourhood on which `f` is `μ`-almost everywhere equal to a
+constant, then `f` is `μ`-almost everywhere equal on `s` to a function `g` that is locally constant
+on `s`. -/
+theorem exists_isLocallyConstant_ae_eq_of_forall_nhds {X β : Type*}
+    [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X}
+    [μ.IsOpenPosMeasure] [Nonempty β] {s : Set X} (hso : IsOpen s) (hsL : IsLindelof s)
+    {f : X → β} (hf : ∀ x ∈ s, ∃ c, ∃ U ∈ 𝓝 x, ∀ᵐ y ∂μ.restrict U, f y = c) :
+    ∃ g : X → β, IsLocallyConstant (s.domRestrict g) ∧ ∀ᵐ y ∂μ.restrict s, f y = g y := by
+  -- Shrink each neighbourhood to an open subset of `s`.
+  have hf' : ∀ x ∈ s, ∃ c, ∃ U, IsOpen U ∧ x ∈ U ∧ U ⊆ s ∧ ∀ᵐ y ∂μ.restrict U, f y = c :=
+    fun x hx => by
+      obtain ⟨c, U, hU, hcU⟩ := hf x hx
+      exact ⟨c, interior U ∩ s, isOpen_interior.inter hso,
+        ⟨mem_interior_iff_mem_nhds.2 hU, hx⟩, inter_subset_right,
+        ae_restrict_of_ae_restrict_of_subset (inter_subset_left.trans interior_subset) hcU⟩
+  choose! g U hUo hxU hUs hgU using hf'
+  -- The chosen constant is constant on each of the chosen open sets.
+  have hconst : ∀ x ∈ s, ∀ y ∈ U x, g y = g x := fun x hx y hy =>
+    eq_of_ae_eq_of_mem_nhds ((hUo y (hUs x hx hy)).mem_nhds (hxU y (hUs x hx hy)))
+      ((hUo x hx).mem_nhds hy) (hgU y (hUs x hx hy)) (hgU x hx)
+  refine ⟨g, (IsLocallyConstant.iff_eventually_eq _).2 fun x => ?_, ?_⟩
+  · filter_upwards [((hUo x x.property).preimage continuous_subtypeVal).mem_nhds
+      (hxU x x.property)] with y hy
+    exact hconst x x.property y hy
+  · obtain ⟨T, hTc, hTs, hcover⟩ := hsL.elim_nhds_subcover U fun x hx =>
+      (hUo x hx).mem_nhds (hxU x hx)
+    refine ae_restrict_of_ae_restrict_of_subset hcover <|
+      (ae_restrict_biUnion_iff _ hTc _).2 fun x hx => ?_
+    filter_upwards [hgU x (hTs x hx), ae_restrict_mem (hUo x (hTs x hx)).measurableSet]
+      with y hfy hy
+    rw [hfy, hconst x (hTs x hx) y hy]
+
+end IsOpen
 
 end
