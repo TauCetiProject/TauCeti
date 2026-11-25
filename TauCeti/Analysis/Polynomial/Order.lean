@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Analytic.Polynomial
 public import Mathlib.Algebra.Polynomial.Div
 public import Mathlib.Algebra.Polynomial.Degree.TrailingDegree
 public import TauCeti.Algebra.Polynomial.Reverse
+import Mathlib.Topology.Algebra.Polynomial
 
 /-!
 # Analytic order of polynomial evaluation
@@ -24,6 +25,8 @@ polynomial.
 Dividing a power by the evaluation of the reversal of a nonzero polynomial gives a function
 analytic at zero, since the reversal takes the nonzero leading coefficient there. This is the
 reciprocal-coordinate form of a polynomial near infinity.
+
+A polynomial divisible by `X ^ n` is `O(tⁿ)` at zero (`Polynomial.isBigO_eval_of_X_pow_dvd`).
 -/
 
 public section
@@ -110,5 +113,12 @@ theorem analyticAt_pow_div_eval_reverse (p : Polynomial 𝕜) (n : ℕ) :
     simpa using analyticAt_const (v := (0 : 𝕜))
   · exact ((analyticAt_id (𝕜 := 𝕜)).pow _).div ((AnalyticOnNhd.eval_polynomial _) 0
       (Set.mem_univ _)) (eval_zero_reverse_ne_zero hp)
+
+/-- A polynomial divisible by `X ^ n` is `O(tⁿ)` as `t → 0`. -/
+theorem isBigO_eval_of_X_pow_dvd {n : ℕ} {p : Polynomial 𝕜} (hp : X ^ n ∣ p) :
+    (fun t ↦ p.eval t) =O[𝓝 0] fun t ↦ t ^ n := by
+  obtain ⟨q, rfl⟩ := hp
+  simpa using (Asymptotics.isBigO_refl (fun t : 𝕜 ↦ t ^ n) _).mul
+    ((q.continuous.tendsto 0).isBigO_one 𝕜)
 
 end Polynomial

@@ -16,7 +16,8 @@ public import TauCeti.RingTheory.MvPowerSeries.Inverse
 This file collects facts used to compare power series to a finite order `m`:
 * the truncation `trunc m φ` vanishes exactly when `φ` has order at least `m`,
 * two power series have equal `m`-truncations if and only if their coefficients agree below `m`,
-  and they are equal once they agree modulo every power of `X`,
+  and they are equal once they agree modulo every power of `X`; a series is congruent to its
+  `m`-truncation modulo `X ^ m`, and truncation commutes with the Euler operator `X * d⁄dX`,
 * the `m`-truncations of `inv.aux a φ`, `invOfUnit φ u`, `φ⁻¹`, integer powers `u ^ k`,
   and products `(u ^ k) * d⁄dX u` of a unit `u : R⟦X⟧ˣ` depend only on a finite truncation of the
   input,
@@ -38,6 +39,9 @@ This file collects facts used to compare power series to a finite order `m`:
   truncation of an inverse power series depends only on `trunc m`.
 * `PowerSeries.eq_of_forall_X_pow_dvd_sub`: two power series that agree modulo every `X ^ (n + 1)`
   are equal.
+* `PowerSeries.X_pow_dvd_sub_trunc`: a power series is congruent to its `n`-truncation modulo
+  `X ^ n`.
+* `PowerSeries.X_mul_derivative_trunc`: truncation commutes with the Euler operator `X * d⁄dX`.
 * `PowerSeries.constantCoeff_val_zpow`: the constant coefficient of `u ^ k` for a unit
   `u : R⟦X⟧ˣ` and `k : ℤ` is the `k`-th power of the constant coefficient of `u`.
 * `PowerSeries.trunc_val_zpow_eq_of_trunc_eq` and
@@ -228,6 +232,10 @@ theorem eq_of_forall_X_pow_dvd_sub {a b : R⟦X⟧} (h : ∀ n : ℕ, X ^ (n + 1
   rw [← sub_eq_zero, ← map_sub]
   exact X_pow_dvd_iff.1 (h n) n (Nat.lt_succ_self n)
 
+/-- A power series is congruent to its truncation below degree `n` modulo `X ^ n`. -/
+theorem X_pow_dvd_sub_trunc (n : ℕ) (φ : R⟦X⟧) : X ^ n ∣ φ - (trunc n φ : R⟦X⟧) :=
+  ⟨_, sub_eq_iff_eq_add.2 (eq_X_pow_mul_shift_add_trunc n φ)⟩
+
 end Ring
 
 section CommSemiring
@@ -252,6 +260,15 @@ theorem aeval_trunc_eq_aeval_of_pow_eq_zero {A : Type*} [Semiring A] [Algebra R 
   exact Finset.sum_congr rfl fun d hd => by
     rw [Finset.mem_range] at hd
     simp [coeff_trunc, hd, h d hd]
+
+/-- Truncation commutes with the Euler operator `θ = X d/dX`. -/
+theorem X_mul_derivative_trunc (n : ℕ) (φ : R⟦X⟧) :
+    Polynomial.X * Polynomial.derivative (trunc n φ) = trunc n (X * d⁄dX φ) := by
+  ext (_ | m)
+  · simp [coeff_trunc]
+  · rw [Polynomial.coeff_X_mul, Polynomial.coeff_derivative, coeff_trunc, coeff_trunc,
+      coeff_succ_X_mul, coeff_derivative]
+    split_ifs <;> simp
 
 end CommSemiring
 
