@@ -48,6 +48,14 @@ lemma extendScalars_map_hom {A A' : CommAlgCat.{w} R} (f : A ⟶ A') :
     ((extendScalars R S).map f).hom = Algebra.TensorProduct.map (AlgHom.id S S) f.hom :=
   (rfl)
 
+/-- As a map of rings, the base change of `f` along `R → S` is the `R`-algebra map
+`S ⊗[R] A → S ⊗[R] A'` tensoring `f` with the identity on `S`. -/
+lemma forget₂_commRingCat_map_extendScalars_map {A A' : CommAlgCat.{w} R} (f : A ⟶ A') :
+    (forget₂ (CommAlgCat.{max v w} S) CommRingCat.{max v w}).map ((extendScalars R S).map f) =
+      CommRingCat.ofHom (Algebra.TensorProduct.map (AlgHom.id R S) f.hom).toRingHom := by
+  rw [forget₂_commRingCat_map, extendScalars_map_hom]
+  ext <;> simp
+
 /-- The Hom equivalence for extension and restriction of scalars. -/
 noncomputable def extendScalarsHomEquiv (A : CommAlgCat.{max v w} R)
     (B : CommAlgCat.{max v w} S) :

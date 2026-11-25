@@ -91,6 +91,19 @@ theorem soTwoOneMatrix_transpose (x y z : ℝ) :
     (soTwoOneMatrix x y z)ᵀ = soTwoOneMatrix x z y := by
   simp [soTwoOneMatrix, fromBlocks_transpose, ← Matrix.ext_iff, Fin.forall_fin_two, add_comm]
 
+/-- The coordinates `(x, y, z)` are determined by `TauCeti.soTwoOneMatrix x y z`. -/
+@[simp]
+theorem soTwoOneMatrix_inj {x y z x' y' z' : ℝ} :
+    soTwoOneMatrix x y z = soTwoOneMatrix x' y' z' ↔ x = x' ∧ y = y' ∧ z = z' := by
+  refine ⟨fun h ↦ ?_, by rintro ⟨rfl, rfl, rfl⟩; rfl⟩
+  have h₁ : 2 * x = 2 * x' := by
+    simpa [soTwoOneMatrix] using congrFun (congrFun h (.inl 0)) (.inr 0)
+  have h₂ : y - z = y' - z' := by
+    simpa [soTwoOneMatrix] using congrFun (congrFun h (.inl 0)) (.inl 1)
+  have h₃ : y + z = y' + z' := by
+    simpa [soTwoOneMatrix] using congrFun (congrFun h (.inl 1)) (.inr 0)
+  refine ⟨by linarith, by linarith, by linarith⟩
+
 /-- `soTwoOneMatrix x y z` lies in `𝔰𝔬(2, 1)`. -/
 theorem soTwoOneMatrix_mem_so' (x y z : ℝ) : soTwoOneMatrix x y z ∈ so' (Fin 2) (Fin 1) ℝ := by
   simp [mem_so'_iff_forall, Sum.forall, Fin.forall_fin_two, soTwoOneMatrix, indefiniteDiagonal]
@@ -135,6 +148,11 @@ theorem coe_slTwoLieEquivSoTwoOne_apply (X : sl (Fin 2) ℝ) :
     (slTwoLieEquivSoTwoOne X : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℝ) =
       soTwoOneMatrix (X.val 0 0) (X.val 0 1) (X.val 1 0) :=
   (rfl)
+
+/-- Every element of `𝔰𝔬(2, 1)` is `TauCeti.soTwoOneMatrix x y z` for some `x`, `y`, `z`. -/
+theorem exists_eq_soTwoOneMatrix (X : so' (Fin 2) (Fin 1) ℝ) :
+    ∃ x y z, (X : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℝ) = soTwoOneMatrix x y z :=
+  ⟨_, _, _, by rw [← slTwoLieEquivSoTwoOne.apply_symm_apply X, coe_slTwoLieEquivSoTwoOne_apply]⟩
 
 /-- The inverse isomorphism `𝔰𝔬(2, 1) ≃ 𝔰𝔩₂(ℝ)` reads `x`, `y`, `z` off the entries of
 `TauCeti.soTwoOneMatrix x y z`. -/

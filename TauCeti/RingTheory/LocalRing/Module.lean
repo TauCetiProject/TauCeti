@@ -55,6 +55,9 @@ Splitting off these summands one at a time shows that `M` is free.
   `𝔪 • M` is sent to `1` by a linear map `M → R ⧸ 𝔪`.
 * `Module.isUnimodular_iff_notMem_jacobson_smul_top`: over a possibly noncommutative local ring,
   an element of a projective module `M` is unimodular exactly when it lies outside `J • M`.
+* `Module.isUnimodular_iff_notMem_maximalIdeal_smul_top`: over a commutative local semiring with
+  maximal ideal `𝔪`, an element of a projective module `M` is unimodular exactly when it lies
+  outside `𝔪 • M`.
 * `TauCeti.IsLocalRing.free_ker_of_apply_eq_one` and
   `TauCeti.IsLocalRing.finrank_ker_add_one_of_apply_eq_one`: the kernel of a linear form taking the
   value `1` on a finite projective module is free of rank one less.
@@ -298,5 +301,24 @@ theorem free_of_projective_of_isLocalRing {M : Type*} [AddCommMonoid M] [Module 
   free_of_span_finset_eq_top s.card s le_rfl hs
 
 end Noncommutative
+
+section Commutative
+
+variable {R M : Type*} [CommSemiring R] [IsLocalRing R] [AddCommMonoid M] [Module R M]
+
+/-- In a projective module over a commutative local semiring with maximal ideal `𝔪`, an element
+is unimodular, that is some linear functional takes the value `1` at it, exactly when it lies
+outside `𝔪 • M`. Over a ring this is `Module.isUnimodular_iff_notMem_jacobson_smul_top`. -/
+theorem isUnimodular_iff_notMem_maximalIdeal_smul_top [Module.Projective R M] {m : M} :
+    IsUnimodular R m ↔ m ∉ IsLocalRing.maximalIdeal R • (⊤ : Submodule R M) := by
+  refine ⟨fun hm ↦ hm.notMem_smul_top (IsLocalRing.maximalIdeal.isMaximal R).ne_top,
+    fun hm ↦ ?_⟩
+  rw [← forall_dual_apply_mem_iff, not_forall] at hm
+  -- `φ m` is a unit `u`; rescaling `φ` by `u⁻¹` gives the value `1`.
+  obtain ⟨φ, hφ⟩ := hm
+  obtain ⟨u, hu⟩ := IsLocalRing.notMem_maximalIdeal.mp hφ
+  exact isUnimodular_iff.2 ⟨(↑u⁻¹ : R) • φ, by simp [← hu]⟩
+
+end Commutative
 
 end Module
