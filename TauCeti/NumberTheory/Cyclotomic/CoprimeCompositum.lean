@@ -29,8 +29,9 @@ For the cyclotomic fields `ℚ(ζ_m) = TauCeti.Cyclotomic.complexField m` of `�
 
 * `IsCyclotomicExtension.linearDisjoint_of_coprime`, `IsCyclotomicExtension.inf_eq_bot_of_coprime`:
   cyclotomic fields of coprime orders are linearly disjoint and meet in `ℚ`.
-* `IntermediateField.isCyclotomicExtension_sup_of_coprime`: their compositum is cyclotomic of
-  order `mn`.
+* `IntermediateField.isCyclotomicExtension_sup_of_coprime` (in
+  `TauCeti.NumberTheory.Cyclotomic.Basic`, over any base field): their compositum is cyclotomic
+  of order `mn`.
 * `IsCyclotomicExtension.restrictNormalHomSupProd_bijective_of_coprime`: automorphisms of the two
   factors extend uniquely to the compositum.
 * `TauCeti.Cyclotomic.complexField_inf_eq_bot`, `TauCeti.Cyclotomic.complexField_sup_eq`: the
@@ -50,21 +51,6 @@ namespace IsCyclotomicExtension
 
 variable {K : Type*} [Field K] [CharZero K] {F₁ F₂ : IntermediateField ℚ K} {m n : ℕ}
   [IsCyclotomicExtension {m} ℚ F₁] [IsCyclotomicExtension {n} ℚ F₂]
-
-/-- The compositum of an `m`-th and an `n`-th cyclotomic extension of `ℚ`, for coprime `m` and
-`n`, is an `mn`-th cyclotomic extension. -/
-theorem _root_.IntermediateField.isCyclotomicExtension_sup_of_coprime (h : m.Coprime n) :
-    IsCyclotomicExtension {m * n} ℚ (F₁ ⊔ F₂ : IntermediateField ℚ K) := by
-  rcases eq_or_ne m 0 with rfl | hm
-  · obtain rfl := (Nat.coprime_zero_left n).mp h
-    rwa [eq_bot_of_isCyclotomicExtension_one F₂, sup_bot_eq, zero_mul]
-  rcases eq_or_ne n 0 with rfl | hn
-  · obtain rfl := (Nat.coprime_zero_right m).mp h
-    rwa [eq_bot_of_isCyclotomicExtension_one F₁, bot_sup_eq, mul_zero]
-  have : NeZero m := ⟨hm⟩
-  have : NeZero n := ⟨hn⟩
-  rw [← h.lcm_eq_mul]
-  exact isCyclotomicExtension_lcm_sup ℚ K m n F₁ F₂
 
 /-- **Cyclotomic fields of coprime orders are linearly disjoint**: the compositum has degree
 `φ(mn) = φ(m) φ(n)`. -/
