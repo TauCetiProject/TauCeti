@@ -9,6 +9,7 @@ public import Mathlib.Dynamics.Ergodic.MeasurePreserving
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Topology.Instances.AddCircle.Torus
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.MeasureTheory.Measure.Haar.Unique
@@ -21,13 +22,14 @@ continuous additive map `TauCeti.toralEndomorphism A = Matrix.smulVecHom A UnitA
 induced by the linear map `A : ℝ^ι → ℝ^ι` (`TauCeti.toralEndomorphism_coe_pi`). It is functorial in
 the matrix (`TauCeti.toralEndomorphism_one`, `TauCeti.toralEndomorphism_mul`).
 
-When `det A ≠ 0` the map is surjective (`Matrix.smulVecHom_addCircle_surjective`, for a circle of
-any real period), since every `t : ℝ^ι` is `A (A⁻¹ t)` over `ℝ`. A continuous surjective additive
-homomorphism of compact groups carries a Haar measure to the Haar measure of the same total mass
-(Mathlib's `AddMonoidHom.measurePreserving`), so the toral endomorphism preserves the volume
-(`TauCeti.measurePreserving_toralEndomorphism`). When `det A = ±1` the inverse matrix is again an
-integer matrix, and `TauCeti.toralAutomorphism A hA` is the toral endomorphism as a measurable
-automorphism of the torus, preserving volume (`TauCeti.measurePreserving_toralAutomorphism`).
+When `det A ≠ 0` the map is surjective (`TauCeti.toralEndomorphism_surjective`, from
+`Matrix.smulVecHom_addCircle_surjective`), since every `t : ℝ^ι` is `A (A⁻¹ t)` over `ℝ`. A
+continuous surjective additive homomorphism of compact groups carries a Haar measure to the Haar
+measure of the same total mass (Mathlib's `AddMonoidHom.measurePreserving`), so the toral
+endomorphism preserves the volume (`TauCeti.measurePreserving_toralEndomorphism`). When
+`det A = ±1` the inverse matrix is again an integer matrix, and `TauCeti.toralAutomorphism A hA` is
+the toral endomorphism as a continuous additive automorphism of the torus, hence a measurable one,
+preserving volume (`TauCeti.measurePreserving_toralAutomorphism`).
 
 The matrix `!![2, 0; 0, 1]` gives a volume-preserving endomorphism of the two-torus that is not
 injective (`TauCeti.not_injective_toralEndomorphism_two_zero_zero_one`).
@@ -36,13 +38,12 @@ injective (`TauCeti.not_injective_toralEndomorphism_two_zero_zero_one`).
 
 * `TauCeti.toralEndomorphism A`: the continuous additive endomorphism of `UnitAddTorus ι` induced
   by the integer matrix `A`.
-* `TauCeti.toralAutomorphism A hA`: for `IsUnit A.det`, the toral endomorphism as a measurable
-  automorphism, with inverse `toralEndomorphism A⁻¹`.
+* `TauCeti.toralAutomorphism A hA`: for `IsUnit A.det`, the toral endomorphism as a continuous
+  additive automorphism, with inverse `toralEndomorphism A⁻¹`.
 
 ## Main results
 
-* `Matrix.smulVecHom_addCircle_surjective`: an integer matrix of nonzero determinant induces a
-  surjective map of the torus `ι → AddCircle p`.
+* `TauCeti.toralEndomorphism_surjective`: for `det A ≠ 0`, the toral endomorphism is surjective.
 * `TauCeti.measurePreserving_toralEndomorphism`: for `det A ≠ 0`, the toral endomorphism preserves
   the volume.
 * `TauCeti.measurePreserving_toralAutomorphism`: the toral automorphism preserves the volume.
@@ -51,27 +52,6 @@ injective (`TauCeti.not_injective_toralEndomorphism_two_zero_zero_one`).
 public section
 
 open MeasureTheory Matrix
-
-namespace Matrix
-
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-- An integer matrix of nonzero determinant induces a surjective map of the torus
-`ι → AddCircle p`: the point `[t]` is the image of `[A⁻¹ t]`, the inverse taken over `ℝ`. -/
-theorem smulVecHom_addCircle_surjective {A : Matrix ι ι ℤ} (hA : A.det ≠ 0) (p : ℝ) :
-    Function.Surjective (A.smulVecHom (AddCircle p)) := by
-  intro y
-  choose t ht using fun i ↦ QuotientAddGroup.mk_surjective (y i)
-  set B : Matrix ι ι ℝ := A.map ((↑) : ℤ → ℝ)
-  have hB : IsUnit B.det := by
-    rw [isUnit_iff_ne_zero, show B.det = ((A.det : ℤ) : ℝ) from
-      ((Int.castRingHom ℝ).map_det A).symm]
-    exact_mod_cast hA
-  refine ⟨fun i ↦ ((B⁻¹ *ᵥ t) i : AddCircle p), ?_⟩
-  rw [smulVecHom_coe_pi, mulVec_mulVec, mul_nonsing_inv B hB, one_mulVec]
-  exact funext ht
-
-end Matrix
 
 namespace TauCeti
 
@@ -83,6 +63,13 @@ noncomputable def toralEndomorphism (A : Matrix ι ι ℤ) :
     UnitAddTorus ι →ₜ+ UnitAddTorus ι :=
   A.smulVecHom UnitAddCircle
 
+/-- The toral endomorphism of `A` is the map `Matrix.smulVecHom A UnitAddCircle`, so the API of
+`Matrix.smulVecHom` (its kernel, for instance) applies to it. -/
+theorem toralEndomorphism_def (A : Matrix ι ι ℤ) :
+    toralEndomorphism A = A.smulVecHom UnitAddCircle :=
+  (rfl)
+
+@[simp]
 theorem toralEndomorphism_apply (A : Matrix ι ι ℤ) (x : UnitAddTorus ι) (k : ι) :
     toralEndomorphism A x k = ∑ i, A k i • x i :=
   A.smulVecHom_apply _ x k
@@ -109,7 +96,7 @@ theorem toralEndomorphism_one : toralEndomorphism (1 : Matrix ι ι ℤ) = .id _
 /-- A toral endomorphism of nonzero determinant is surjective. -/
 theorem toralEndomorphism_surjective {A : Matrix ι ι ℤ} (hA : A.det ≠ 0) :
     Function.Surjective (toralEndomorphism A) :=
-  Matrix.smulVecHom_addCircle_surjective hA 1
+  Matrix.smulVecHom_addCircle_surjective (1 : ℝ) hA
 
 /-- **Toral endomorphisms preserve volume.** For an integer matrix of nonzero determinant, the
 toral endomorphism preserves the volume (Haar probability) of the torus. -/
@@ -119,9 +106,10 @@ theorem measurePreserving_toralEndomorphism {A : Matrix ι ι ℤ} (hA : A.det �
     (toralEndomorphism A).continuous (toralEndomorphism_surjective hA) rfl
 
 /-- The toral endomorphism of an integer matrix of determinant `±1` (a unit of `ℤ`), as a
-measurable automorphism of the torus with inverse the toral endomorphism of `A⁻¹`. -/
+continuous additive automorphism of the torus with inverse the toral endomorphism of `A⁻¹`. Its
+measurable automorphism is `(toralAutomorphism A hA).toHomeomorph.toMeasurableEquiv`. -/
 noncomputable def toralAutomorphism (A : Matrix ι ι ℤ) (hA : IsUnit A.det) :
-    UnitAddTorus ι ≃ᵐ UnitAddTorus ι where
+    UnitAddTorus ι ≃ₜ+ UnitAddTorus ι where
   toFun := toralEndomorphism A
   invFun := toralEndomorphism A⁻¹
   left_inv x := by
@@ -132,8 +120,9 @@ noncomputable def toralAutomorphism (A : Matrix ι ι ℤ) (hA : IsUnit A.det) :
     have h := DFunLike.congr_fun (toralEndomorphism_mul A A⁻¹) x
     rw [Matrix.mul_nonsing_inv A hA, toralEndomorphism_one] at h
     simpa using h.symm
-  measurable_toFun := (toralEndomorphism A).continuous.measurable
-  measurable_invFun := (toralEndomorphism A⁻¹).continuous.measurable
+  map_add' := map_add _
+  continuous_toFun := (toralEndomorphism A).continuous
+  continuous_invFun := (toralEndomorphism A⁻¹).continuous
 
 @[simp]
 theorem coe_toralAutomorphism (A : Matrix ι ι ℤ) (hA : IsUnit A.det) :
@@ -164,21 +153,12 @@ theorem not_injective_toralEndomorphism_two_zero_zero_one :
   have hx : toralEndomorphism !![(2 : ℤ), 0; 0, 1] ![((1 / 2 : ℝ) : UnitAddCircle), 0] =
       toralEndomorphism !![(2 : ℤ), 0; 0, 1] 0 := by
     ext k
-    fin_cases k
-    · simp only [toralEndomorphism_apply, Fin.sum_univ_two, Pi.zero_apply, smul_zero, add_zero,
-        Fin.zero_eta, Fin.isValue, of_apply, cons_val', cons_val_zero, empty_val',
-        cons_val_fin_one, cons_val_one]
-      rw [← AddCircle.coe_zsmul, zsmul_eq_mul]
-      norm_num
-    · simp [toralEndomorphism_apply, Fin.sum_univ_two]
-  have := congr_fun (h hx) 0
-  simp only [Fin.isValue, cons_val_zero, Pi.zero_apply, AddCircle.coe_eq_zero_iff, zsmul_eq_mul,
-    mul_one] at this
-  obtain ⟨n, hn⟩ := this
-  rcases le_or_gt n 0 with h0 | h0
-  · have : (n : ℝ) ≤ 0 := by exact_mod_cast h0
-    linarith
-  · have : (1 : ℝ) ≤ n := by exact_mod_cast h0
-    linarith
+    fin_cases k <;> norm_num [Fin.sum_univ_two, ← AddCircle.coe_zsmul]
+  -- `[1/2] = 0` would give an integer `n` with `n = 1/2`, so `2 * n = 1`.
+  obtain ⟨n, hn⟩ := (AddCircle.coe_eq_zero_iff _).1 (congr_fun (h hx) 0)
+  have h2 : 2 * n = 1 := by
+    rw [zsmul_one] at hn
+    exact_mod_cast show (2 * n : ℝ) = 1 by rw [hn]; norm_num
+  omega
 
 end TauCeti
