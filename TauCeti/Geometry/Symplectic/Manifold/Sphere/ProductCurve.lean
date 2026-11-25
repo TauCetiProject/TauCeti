@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.RiemannSurface.MappingDegree
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.RiemannSphere
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Prod
-public import TauCeti.Geometry.Symplectic.Manifold.Torus.SphericalArea
+public import TauCeti.Geometry.Symplectic.Manifold.Prod.Area
 import TauCeti.Algebra.Order.Ring.IntMul
 
 /-!
@@ -25,8 +25,9 @@ the product `J₀ = i × i` of the complex structures of the factors.
 product of two connected oriented boundaryless surfaces, and compactly supported two-forms `σ`
 and `τ`, the degree formula applied to each component gives
 `∫_C u^*(pr₁^*σ + pr₂^*τ) = deg(pr₁ ∘ u) ∫_S σ + deg(pr₂ ∘ u) ∫_N τ`
-(`TauCeti.integralTopForm_mpullback_prod_eq_degree_mul_add_degree_mul`). On `S² × S²` the area of
-`u` is therefore `deg(pr₁ ∘ u) a + deg(pr₂ ∘ u) b`
+(`TauCeti.integralTopForm_mpullback_prod_eq_degree_mul_add_degree_mul`, in
+`TauCeti.Geometry.Symplectic.Manifold.Prod.Area`). On `S² × S²` the area of `u` is
+therefore `deg(pr₁ ∘ u) a + deg(pr₂ ∘ u) b`
 (`TauCeti.integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_degree_mul_add_degree_mul`). In
 the equal-area case `a = b` every area is an integer multiple of `a`, so a positive area is at
 least `a`
@@ -82,44 +83,6 @@ open scoped Manifold ContDiff TauCeti.ComplexManifold
 namespace TauCeti
 
 attribute [local instance] Complex.finrank_real_complex_fact
-
-/-! ### The area of a surface in a product of surfaces -/
-
-section Surface
-
-variable {E H C : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace C] [ChartedSpace H C]
-  [IsManifold I ∞ C] [BoundarylessManifold I C] [CompactSpace C] [T2Space C]
-  {E₁ H₁ S : Type*} [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁]
-  [TopologicalSpace H₁] {J : ModelWithCorners ℝ E₁ H₁} [TopologicalSpace S] [ChartedSpace H₁ S]
-  [IsManifold J ∞ S] [BoundarylessManifold J S] [T2Space S] [SigmaCompactSpace S]
-  [ConnectedSpace S]
-  {E₂ H₂ N : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [FiniteDimensional ℝ E₂]
-  [TopologicalSpace H₂] {K : ModelWithCorners ℝ E₂ H₂} [TopologicalSpace N] [ChartedSpace H₂ N]
-  [IsManifold K ∞ N] [BoundarylessManifold K N] [T2Space N] [SigmaCompactSpace N]
-  [ConnectedSpace N]
-
-/-- **The area of a surface in a product of two surfaces.** For a smooth map `u : C → S × N` from
-a compact oriented boundaryless surface to a product of two connected oriented boundaryless
-surfaces, and compactly supported two-forms `σ` on `S` and `τ` on `N`,
-`∫_C u^*(pr₁^*σ + pr₂^*τ) = deg(pr₁ ∘ u) ∫_S σ + deg(pr₂ ∘ u) ∫_N τ`. -/
-theorem integralTopForm_mpullback_prod_eq_degree_mul_add_degree_mul
-    (o : Manifold.Orientation I C (Fin 2)) (o₁ : Manifold.Orientation J S (Fin 2))
-    (o₂ : Manifold.Orientation K N (Fin 2)) {σ : SmoothTwoForm J S} {τ : SmoothTwoForm K N}
-    (hσ : IsCompact (_root_.tsupport (α := E₁ [⋀^Fin 2]→L[ℝ] ℝ) σ.val))
-    (hτ : IsCompact (_root_.tsupport (α := E₂ [⋀^Fin 2]→L[ℝ] ℝ) τ.val))
-    {u : C → S × N} (hu : ContMDiff I (J.prod K) ∞ u) :
-    integralTopForm o (SmoothForm.mpullback u hu (σ.prod τ)).val =
-      degree o o₁ (Prod.fst ∘ u) * integralTopForm o₁ σ.val +
-        degree o o₂ (Prod.snd ∘ u) * integralTopForm o₂ τ.val := by
-  rw [integralTopForm_mpullback_prod, SmoothForm.coe_mpullback, SmoothForm.coe_mpullback]
-  congr 1
-  · exact integralTopForm_mpullback_eq_degree_mul o o₁ (contMDiff_fst.comp hu)
-      (contMDiff_fst.comp hu).continuous.isProperMap (SmoothForm.isSmoothForm _) hσ
-  · exact integralTopForm_mpullback_eq_degree_mul o o₂ (contMDiff_snd.comp hu)
-      (contMDiff_snd.comp hu).continuous.isProperMap (SmoothForm.isSmoothForm _) hτ
-
-end Surface
 
 /-! ### Areas in `S² × S²` -/
 

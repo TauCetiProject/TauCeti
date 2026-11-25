@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 public import TauCeti.Analysis.Complex.RiemannSurface.MappingDegree
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.RiemannSphere
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Prod
-public import TauCeti.Geometry.Symplectic.Manifold.Sphere.ProductCurve
 public import TauCeti.Geometry.Symplectic.Manifold.Torus.AlmostComplex
 
 /-!
