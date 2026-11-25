@@ -163,6 +163,7 @@ theorem _root_.FDRep.character_mem_irreducibleCharacters (X : FDRep k G)
 
 /-- **A linear character is an irreducible character**: `g ↦ χ g`, read in `k`, is the character
 of the line `Representation.ofLinearCharacter χ`. -/
+@[simp]
 theorem _root_.MonoidHom.coe_mem_irreducibleCharacters (χ : G →* kˣ) :
     (fun g => (χ g : k)) ∈ irreducibleCharacters k G := by
   rw [← funext (Representation.char_ofLinearCharacter χ)]

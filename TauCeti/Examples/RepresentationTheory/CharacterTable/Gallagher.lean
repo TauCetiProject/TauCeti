@@ -19,8 +19,8 @@ degenerate cases `N = G` and `N = 1`, and in the explicit case `G = C₂`, `χ̂
   correspondence says that `χ` is the only irreducible character of `G` lying over its own
   restriction to `G`.
 * `N = 1`: every irreducible character lies over the trivial character of the trivial subgroup,
-  and for a linear character `χ` the correspondence says that multiplication by `χ` permutes the
-  irreducible characters of `G`, read through `G ⧸ ⊥`.
+  and for a linear character `χ` the correspondence `TauCeti.gallagher_bijOn_bot` says that
+  multiplication by `χ` permutes the irreducible characters of `G`, read through `G ⧸ ⊥`.
 * `N = 1`, `G = C₂` (as `Equiv.Perm (Fin 2)`) and `χ̂ = sgn` (`TauCeti.signLinearCharacter` read
   in `k`): the bijection exchanges `1` and `sgn`, so it is not the identity, although `χ̂` restricts
   to the trivial character of `1`.
@@ -50,19 +50,6 @@ example {χ : G → k} (hχ : χ ∈ irreducibleCharacters k G) :
 example : irreducibleCharactersOver k (⊥ : Subgroup G) (fun _ => 1) = irreducibleCharacters k G :=
   irreducibleCharactersOver_bot one_ne_zero
 
-omit [Fintype G] in
-/-- **`N = 1`** with a linear character `χ`: multiplication by `χ`, read through `G ⧸ ⊥`, maps
-the irreducible characters of `G ⧸ ⊥` bijectively onto those of `G`. -/
-theorem bijOn_bot [Finite G] {χ : G → k} (hχ : χ ∈ irreducibleCharacters k G)
-    (h1 : χ 1 = 1) :
-    Set.BijOn (fun (β : G ⧸ (⊥ : Subgroup G) → k) (g : G) => χ g * β g)
-      (irreducibleCharacters k (G ⧸ (⊥ : Subgroup G))) (irreducibleCharacters k G) := by
-  have hθ : (fun _ => 1 : (⊥ : Subgroup G) → k) ∈ irreducibleCharacters k (⊥ : Subgroup G) := by
-    simp
-  have h := gallagher_bijOn hχ hθ fun n => by
-    rw [Subgroup.mem_bot.mp n.property, h1]
-  rwa [irreducibleCharactersOver_bot one_ne_zero] at h
-
 /-! ### `G = C₂`, `χ̂ = sgn` -/
 
 section Sign
@@ -84,13 +71,13 @@ example : (fun g => (signLinearCharacter k (Fin 2) g : k)) ≠ fun _ => 1 := fun
   rw [signLinearCharacter_swap (by decide)] at this
   norm_num at this
 
-/-- The correspondence of `gallagher_bijOn` at `N = 1` with `χ̂ = sgn`. -/
+/-- The correspondence of `gallagher_bijOn_bot` with `χ̂ = sgn`. -/
 example : Set.BijOn
     (fun (β : Equiv.Perm (Fin 2) ⧸ (⊥ : Subgroup (Equiv.Perm (Fin 2))) → k) g =>
       (signLinearCharacter k (Fin 2) g : k) * β g)
     (irreducibleCharacters k (Equiv.Perm (Fin 2) ⧸ (⊥ : Subgroup (Equiv.Perm (Fin 2)))))
     (irreducibleCharacters k (Equiv.Perm (Fin 2))) :=
-  bijOn_bot (signLinearCharacter k (Fin 2)).coe_mem_irreducibleCharacters (by simp)
+  gallagher_bijOn_bot (signLinearCharacter k (Fin 2)).coe_mem_irreducibleCharacters (by simp)
 
 end Sign
 
