@@ -28,7 +28,7 @@ series `∑ₙ e_{h,n} • dₙ` of Amice's vectors, with `dₙ → 0`, and its 
 value `⌊n / pʰ⌋! dₙ bₙ` on `e_{h,n} • dₙ` (`TauCeti.LocallyAnalyticDistribution.stage_amiceTerm`),
 and its restriction to `LA_h(K)` is continuous, so the value of `μ` is the convergent sum
 `∑ₙ bₙ aₙ`. The Mahler coefficients of `χ_z` are the powers `zⁿ`
-(`TauCeti.mahlerEquiv_eq_pow_of_coe_eq_addChar`). No `ℚ_p`-structure on `K` is needed for this.
+(`PadicInt.mahlerEquiv_eq_pow_of_coe_eq_addChar`). No `ℚ_p`-structure on `K` is needed for this.
 
 When `K` is moreover a normed `ℚ_p`-module, the character `χ_z` is locally analytic for every `z`
 with `‖z‖ < 1`: for `‖z‖ < r_h`, with `r_h = p ^ (-1 / ((p - 1) pʰ))`, it is the evaluation of the
@@ -91,7 +91,7 @@ theorem hasSum_coeff_amiceTransform_smul_pow (μ : LocallyAnalyticDistribution p
     (hf : ⇑(LocallyAnalytic.eval K f) = PadicInt.addChar_of_value_at_one z hr) :
     HasSum (fun n ↦ (amiceTransform μ).coeff n • z ^ n)
       ((μ : Module.Dual K (LocallyAnalytic p K K)) f) := by
-  simpa only [mahlerEquiv_eq_pow_of_coe_eq_addChar hr hf] using
+  simpa only [PadicInt.mahlerEquiv_eq_pow_of_coe_eq_addChar hr hf] using
     hasSum_coeff_amiceTransform_smul_mahlerEquiv μ f
 
 /-- **Integration of characters.** On every locally analytic function `f` whose evaluation is
