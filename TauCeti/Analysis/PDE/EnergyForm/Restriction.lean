@@ -68,9 +68,9 @@ integrability hypotheses on `Ω`.
   `a(u, v) = ⟪G - c, ∇v⟫_{L²(B)} + ⟪f, v⟫_{L²(B)}`.
 * `TauCeti.PDE.energyFormH1_restrictL_ofTestFunctionₗ_eq_setIntegral_inner_add_setIntegral`: the
   same equation for the restriction of `u` to `B`, tested against test functions on `B`.
-* `TauCeti.PDE.energyFormH1_restrictL_extendByZeroL_eq`: the zero extension of a weak solution
-  `u ∈ H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` to an open `W ⊇ Ω`, restricted to `W ∩ Ω`, solves the
-  same equation there, tested against test functions.
+* `energyFormH1_restrictL_extendByZeroL_ofTestFunctionₗ_eq_setIntegral_inner_add_setIntegral`:
+  the zero extension of a weak solution `u ∈ H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` to an open
+  `W ⊇ Ω`, restricted to `W ∩ Ω`, solves the same equation there, tested against test functions.
 * `TauCeti.PDE.forall_energyFormH1_restrictL_eq_setIntegral`: if `u` solves `-∂ᵢ(aⁱʲ ∂ⱼu) = f`
   weakly on `Ω`, tested against test functions, then on every open `B ⊆ Ω` on which `a` is
   essentially bounded and `f` is square integrable it satisfies `a(u, v) = ∫_B f v` for every
@@ -610,8 +610,9 @@ there, tested against test functions: it is the restriction of `u` itself. Only 
 of the coefficients, of `G - c` (for some constant `c`) and of `f` on `W ∩ Ω` is assumed. This is
 the form of a zero boundary condition, a function vanishing off `Ω` and solving the equation on
 `Ω`, that boundary regularity estimates take. -/
-theorem energyFormH1_restrictL_extendByZeroL_eq {W : Opens (EuclideanSpace ℝ ι)} (hΩW : Omega ≤ W)
-    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+theorem energyFormH1_restrictL_extendByZeroL_ofTestFunctionₗ_eq_setIntegral_inner_add_setIntegral
+    {W : Opens (EuclideanSpace ℝ ι)} (hΩW : Omega ≤ W) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
     {f : EuclideanSpace ℝ ι → ℝ}
     (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict (W ⊓ Omega)))
     {c : EuclideanSpace ℝ ι} (hGc : MemLp (fun x => G x - c) 2 (mu.restrict (W ⊓ Omega)))

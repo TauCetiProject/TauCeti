@@ -45,9 +45,9 @@ The estimate is assembled from local estimates by a covering argument.
   multiple of `‖u‖_{L²(B(x, 2r))} + ‖f‖_{L^q(B(x, 2r))} + K_G`, the multiple depending on `r`.
 * **Boundary pieces.** Around a frontier point `x`, the zero extension of `u` to the whole space
   vanishes off `Ω` and solves the equation on `Ω`
-  (`TauCeti.PDE.energyFormH1_restrictL_extendByZeroL_eq`), so the curved-boundary estimate
-  `TauCeti.PDE.exists_holderOnWith_gradient_of_graph` gives a function, `β`-Hölder on
-  `closure Ω` near `x`, which agrees with `∇u` almost everywhere there.
+  (`energyFormH1_restrictL_extendByZeroL_ofTestFunctionₗ_eq_setIntegral_inner_add_setIntegral`),
+  so the curved-boundary estimate `TauCeti.PDE.exists_holderOnWith_gradient_of_graph` gives a
+  function, `β`-Hölder on `closure Ω` near `x`, which agrees with `∇u` almost everywhere there.
 * **Gluing.** The pieces agree with `∇u` almost everywhere, so any two agree where both are
   defined, by continuity; compactness of `closure Ω` and a Lebesgue number of the cover by the
   balls of the pieces turn the local bounds into global ones
@@ -209,7 +209,8 @@ private theorem exists_boundary_piece {E : Type*} [NormedAddCommGroup E] [InnerP
     (hell.mono_set inter_subset_left) (hKa.mono inter_subset_left) hKaM
     (hKG.mono inter_subset_left) (hf.mono_measure (Measure.restrict_mono inter_subset_left le_rfl))
     (ae_restrict_of_ae (W1p0.value_extendByZeroL_ae_eq_zero_compl u))
-    (energyFormH1_restrictL_extendByZeroL_eq le_top (ha.mono_measure hsub) (c := 0)
+    (energyFormH1_restrictL_extendByZeroL_ofTestFunctionₗ_eq_setIntegral_inner_add_setIntegral
+      le_top (ha.mono_measure hsub) (c := 0)
       (by simp only [sub_zero]; exact hG.mono_measure hsub)
       ((hf.mono_exponent hq).mono_measure hsub) hu)
   -- The data of the local estimate are bounded by those of `Ω`.
