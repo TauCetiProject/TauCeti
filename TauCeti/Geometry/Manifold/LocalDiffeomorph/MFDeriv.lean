@@ -45,6 +45,8 @@ at `f x`.
 * `OpenPartialHomeomorph.mfderiv_symm_apply_mfderiv_apply`,
   `OpenPartialHomeomorph.mfderiv_apply_mfderiv_symm_apply`: where an open partial homeomorphism
   and its inverse are differentiable, their differentials are mutually inverse.
+* `OpenPartialHomeomorph.comp_mfderiv_symm_comp_mfderiv`: a covector `ξ` at `x` is recovered from
+  its reading `ξ ∘ dΦ⁻¹` at `Φ x`.
 * `OpenPartialHomeomorph.mvfderiv_eq_fderiv_symm_trans_comp`: for open partial homeomorphisms
   `ψ₁`, `ψ₂` into a normed space, the differential of `ψ₂` is that of `ψ₁` followed by the
   derivative of the transition `ψ₂ ∘ ψ₁⁻¹`.
@@ -148,6 +150,17 @@ theorem mfderiv_apply_mfderiv_symm_apply (Φ : OpenPartialHomeomorph M N) {y : N
     (hΦs : MDifferentiableAt J I Φ.symm y) (v : TangentSpace J y) :
     mfderiv I J Φ (Φ.symm y) (mfderiv J I Φ.symm y v) = v :=
   Φ.symm.mfderiv_symm_apply_mfderiv_apply hy hΦs hΦ v
+
+/-- A linear map `ξ` on the tangent space at a point of the source of an open partial
+homeomorphism `Φ`, where `Φ` and its inverse are differentiable, is recovered from its pullback
+`ξ ∘ dΦ⁻¹` to the tangent space at `Φ x`: `(ξ ∘ dΦ⁻¹_{Φ x}) ∘ dΦ_x = ξ`. For a chart and a covector
+`ξ ∈ T*ₓM`, this says that `ξ` is the pullback along the chart of its reading `ξ ∘ dΦ⁻¹` in the
+chart. -/
+theorem comp_mfderiv_symm_comp_mfderiv {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    (Φ : OpenPartialHomeomorph M N) {x : M} (hx : x ∈ Φ.source) (hΦ : MDifferentiableAt I J Φ x)
+    (hΦs : MDifferentiableAt J I Φ.symm (Φ x)) (ξ : TangentSpace I x →L[𝕜] G) :
+    (ξ.comp (mfderiv J I Φ.symm (Φ x))).comp (mfderiv I J Φ x) = ξ :=
+  ContinuousLinearMap.ext fun v ↦ congrArg ξ (Φ.mfderiv_symm_apply_mfderiv_apply hx hΦ hΦs v)
 
 section Transition
 

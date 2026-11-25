@@ -60,7 +60,9 @@ carries the frequency read in `e` to the one read in the chart at `p`.
   pseudodifferential operator, a function on the cotangent bundle.
 * `TauCeti.coefficient_principal_eq_pseudodifferentialPrincipalSymbol`: in every chart and for all
   cutoffs, the principal symbol of the local symbol is the principal symbol of `P` read in the
-  chart, times the cutoffs.
+  chart, times the cutoffs; conversely, the principal symbol of `P` at any covector is read off
+  the local symbol in any chart
+  (`TauCeti.smul_pseudodifferentialPrincipalSymbol_eq_coefficient_principal`).
 * `TauCeti.pseudodifferentialPrincipalSymbol_smul_covector`: homogeneity of degree `m`.
 * `TauCeti.pseudodifferentialPrincipalSymbol_add`, `TauCeti.pseudodifferentialPrincipalSymbol_smul`
   (and `_zero`, `_neg`, `_sub`): linearity in the operator.
@@ -226,34 +228,14 @@ end Comparison
 
 section PrincipalSymbol
 
-/-- The frequency `η` at `e p` and the covector `ξ = ⟪η, de_p ·⟫` at `p` determine each other:
-`η = ((de_p)⁻¹)* ξ`. -/
-private theorem innerSL_toDual_symm_comp_mfderiv {e : OpenPartialHomeomorph M (CoordinateSpace n)}
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M) {p : M} (hp : p ∈ e.source)
-    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) p →L[ℝ] ℝ) :
-    (innerSL ℝ ((InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
-      (ξ.comp (mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) e.symm (e p))))).comp
-        (mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) e p) = ξ := by
-  have he1 : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) 1 M :=
-    IsManifold.maximalAtlas_subset_of_le (by simp) he
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  have h := e.mfderiv_symm_apply_mfderiv_apply hp (mdifferentiableAt_of_mem_maximalAtlas he1 hp)
-    (mdifferentiableAt_symm_of_mem_maximalAtlas he1 (e.map_source hp)) v
-  -- The tangent spaces at `p` and at `e⁻¹ (e p)` are both the model space but are not
-  -- syntactically equal, so the composites are not rewritten: `exact` compares them by
-  -- unfolding `ContinuousLinearMap.comp_apply` and `innerSL_apply_apply`.
-  exact (InnerProductSpace.toDual_symm_apply (𝕜 := ℝ) (E := CoordinateSpace n)).trans
-    (congrArg ξ h)
-
 /-- A cutoff in the target of the chart at `p` equal to `1` near the image of `p`. -/
 private theorem exists_cutoff_chartAt (p : M) :
     ∃ θ : 𝓓(⟨(chartAt (CoordinateSpace n) p).target,
       (chartAt (CoordinateSpace n) p).open_target⟩, ℝ),
         ∀ᶠ z in 𝓝 (chartAt (CoordinateSpace n) p p), θ z = 1 := by
-  obtain ⟨θ, -, hθ, -⟩ := TestFunction.exists_cutoff_tsupport_subset (n := ⊤)
+  obtain ⟨θ, hθ, -⟩ := TestFunction.exists_eventually_eq_one (n := ⊤)
     (Ω := ⟨(chartAt (CoordinateSpace n) p).target, (chartAt (CoordinateSpace n) p).open_target⟩)
-    isCompact_singleton (chartAt (CoordinateSpace n) p).open_target
-    (singleton_subset_iff.2 (mem_chart_target _ p)) fun _ h ↦ h
+    isCompact_singleton (singleton_subset_iff.2 (mem_chart_target _ p))
   exact ⟨θ, by simpa using hθ⟩
 
 /-- The cutoff in the target of the chart at `p`, equal to `1` near the image of `p`, through which
@@ -369,6 +351,31 @@ theorem coefficient_principal_eq_pseudodifferentialPrincipalSymbol
     pseudodifferentialPrincipalSymbol_eq_of_chartAt P p hspec]
   congr 3
   exact (InnerProductSpace.toDual_symm_innerSL_comp η _).symm
+
+/-- **The principal symbol read in a chart.** Let `P`, the chart `e`, the cutoffs `φ`, `ψ` and the
+local symbol `a` be as in `TauCeti.coefficient_principal_eq_pseudodifferentialPrincipalSymbol`. At
+a point `p` of the chart source and a covector `ξ ∈ T*ₚM`, the principal symbol of `P` times the
+cutoffs is the principal symbol of `a` at `e p` and at the frequency `η` with `⟪η, ·⟫ = ξ ∘ de⁻¹`:
+
+`φ(e p) ψ(e p) σ(P)(p, ξ) = σ(a)(e p, η)`. -/
+theorem smul_pseudodifferentialPrincipalSymbol_eq_coefficient_principal
+    (P : classicalPseudodifferentialOperators (n := n) (M := M) m)
+    {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) {a : ClassicalSymbol n ℂ ℂ m}
+    (ha : ∀ u x, quantizeSchwartzValue a.toSymbol.coefficient u x =
+      e.complexChartCompression he φ ψ P (ContMDiffMap.ofContDiff u (u.smooth ⊤)) x)
+    {p : M} (hp : p ∈ e.source) (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) p →L[ℝ] ℝ) :
+    (φ (e p) * ψ (e p)) • pseudodifferentialPrincipalSymbol P p ξ =
+      a.principal.coefficient (e p, (InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
+        (ξ.comp (mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) e.symm (e p)))) := by
+  have he1 : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) 1 M :=
+    IsManifold.maximalAtlas_subset_of_le (by simp) he
+  rw [coefficient_principal_eq_pseudodifferentialPrincipalSymbol P he φ ψ ha hp,
+    InnerProductSpace.innerSL_toDual_symm]
+  congr 2
+  exact (e.comp_mfderiv_symm_comp_mfderiv hp (mdifferentiableAt_of_mem_maximalAtlas he1 hp)
+    (mdifferentiableAt_symm_of_mem_maximalAtlas he1 (e.map_source hp)) ξ).symm
 
 /-- The principal symbol vanishes at the zero covector. -/
 @[simp]
@@ -520,8 +527,13 @@ theorem pseudodifferentialPrincipalSymbol_complexifyLinearMap {m : ℕ}
   set e₀ := chartAt (CoordinateSpace n) p
   have he₀ := IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℝ, CoordinateSpace n)) (n := ∞) p
   have hξη : (innerSL ℝ (chartFrequency p ξ)).comp
-      (mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) e₀ p) = ξ :=
-    innerSL_toDual_symm_comp_mfderiv he₀ (mem_chart_source _ p) ξ
+      (mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) e₀ p) = ξ := by
+    have he₀1 : e₀ ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) 1 M :=
+      IsManifold.maximalAtlas_subset_of_le (by simp) he₀
+    rw [chartFrequency, LinearMap.coe_mk, AddHom.coe_mk, InnerProductSpace.innerSL_toDual_symm]
+    exact e₀.comp_mfderiv_symm_comp_mfderiv (mem_chart_source _ p)
+      (mdifferentiableAt_of_mem_maximalAtlas he₀1 (mem_chart_source _ p))
+      (mdifferentiableAt_symm_of_mem_maximalAtlas he₀1 (mem_chart_target _ p)) ξ
   have hη : chartFrequency p ξ ≠ 0 := by
     intro hη
     rw [hη, map_zero] at hξη
