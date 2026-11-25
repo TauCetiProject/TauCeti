@@ -50,6 +50,11 @@ The real action on `H^s(E)` is restricted from the complex one
 (`BesselPotentialSpace.isScalarTower_real_complex`), so `ℂ`-bilinear maps of `H^s(E)` restrict
 to real ones.
 
+Applied in each coordinate, the inclusion of the real subspace and the real part give bounded
+real-linear maps `BesselPotentialSpace.coordInclusion` and `BesselPotentialSpace.realPartPi`
+between `(realSubmodule E h)^ι` and `H^s(E)^ι`, the second a left inverse of the first
+(`BesselPotentialSpace.realPartPi_coordInclusion`).
+
 The inclusions `H^s(E) ⊆ H^r(E)`, `r ≤ s`, preserve real elements
 (`BesselPotentialSpace.inclusion_mem_realSubmodule`). For equal orders `s = t` written differently
 they identify the two real subspaces (`BesselPotentialSpace.realSubmoduleCongr`).
@@ -339,6 +344,36 @@ from `ℂ` only up to definitional unfolding. With it, `ℂ`-linear and `ℂ`-bi
 restrict to real ones (`ContinuousLinearMap.bilinearRestrictScalars`). -/
 instance isScalarTower_real_complex : IsScalarTower ℝ ℂ H^{s}(E) :=
   ⟨fun r c v ↦ by rw [Complex.real_smul, mul_smul, Complex.coe_smul]; rfl⟩
+
+/-! ### Coordinatewise inclusion and real part -/
+
+variable (E h) in
+/-- **The inclusion of real coordinates**: the bounded real-linear map
+`(ι → realSubmodule E h) → (ι → H^s(E))` including each coordinate into `H^s(E)`. -/
+@[expose] def coordInclusion {ι : Type*} : (ι → realSubmodule E h) →L[ℝ] (ι → H^{s}(E)) :=
+  ContinuousLinearMap.piMap fun _ ↦ (realSubmodule E h).subtypeL
+
+@[simp]
+theorem coordInclusion_apply {ι : Type*} (u : ι → realSubmodule E h) (i : ι) :
+    coordInclusion E h u i = u i :=
+  (rfl)
+
+variable (E h) in
+/-- **The real part, coordinatewise**: the bounded real-linear projection
+`(ι → H^s(E)) → (ι → realSubmodule E h)` applying `realPartCLM` in each coordinate. -/
+@[expose] def realPartPi {ι : Type*} : (ι → H^{s}(E)) →L[ℝ] (ι → realSubmodule E h) :=
+  ContinuousLinearMap.piMap fun _ ↦ realPartCLM E h
+
+@[simp]
+theorem realPartPi_apply {ι : Type*} (v : ι → H^{s}(E)) (i : ι) :
+    realPartPi E h v i = realPartCLM E h (v i) :=
+  (rfl)
+
+/-- The coordinatewise real part is a left inverse of the inclusion of real coordinates. -/
+@[simp]
+theorem realPartPi_coordInclusion {ι : Type*} (u : ι → realSubmodule E h) :
+    realPartPi E h (coordInclusion E h u) = u :=
+  funext fun i ↦ by rw [realPartPi_apply, coordInclusion_apply, realPartCLM_coe]
 
 /-! ### Inclusions between orders -/
 

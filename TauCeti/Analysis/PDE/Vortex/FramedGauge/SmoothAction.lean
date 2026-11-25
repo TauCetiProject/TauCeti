@@ -34,7 +34,9 @@ the coordinates `y` (`TauCeti.Vortex.SobolevFieldSpace.contDiff_smulCoord_expGau
 coordinates `realSubRef` of the fields, the action is jointly smooth in the gauge and the field
 (`TauCeti.Vortex.SobolevFieldSpace.contMDiff_realSubRef_smul_ofRealSubRef`), in particular in
 exponential coordinates
-(`TauCeti.Vortex.SobolevFieldSpace.contDiff_realSubRef_expGauge_smul_ofRealSubRef`).
+(`TauCeti.Vortex.SobolevFieldSpace.contDiff_realSubRef_expGauge_smul_ofRealSubRef`). On a
+continuous field, `exp (i F)` acts as the classical phase gauge of the continuous representative
+of `F` (`TauCeti.Vortex.SobolevFieldSpace.coe_expGauge_smul`).
 
 **The differential.** In the exponential chart at the identity, `R = cos F - 1` has derivative `0`
 and `J = sin F` has derivative `G ↦ G` at `F = 0`. Differentiating `smulCoord` there gives the
@@ -71,6 +73,8 @@ makes the slices charts of `A_m^k / G_(k+1)`; that slice theorem is not proved h
 * `TauCeti.Vortex.SobolevFieldSpace.contMDiff_realSubRef_smul_ofRealSubRef`,
   `TauCeti.Vortex.SobolevFieldSpace.contDiff_realSubRef_expGauge_smul_ofRealSubRef`: the action is
   smooth in the real coordinates of the fields, jointly with the gauge or its exponential phase.
+* `TauCeti.Vortex.SobolevFieldSpace.coe_expGauge_smul`: `exp (i F)` acts as the phase gauge of the
+  continuous representative of `F`.
 * `TauCeti.Vortex.SobolevFieldSpace.gaugeDirectionCoord`: the infinitesimal gauge action `d₀` in
   these coordinates, a bounded complex-linear map `H^(k+1)(ℂ) → H^k(ℂ)⁴`.
 * `TauCeti.Vortex.SobolevFieldSpace.hasFDerivAt_smulCoord_expGauge_zero`,
@@ -167,14 +171,15 @@ theorem contMDiff_realSubRef_smul_ofRealSubRef :
         (Fin 4 → realSubmodule ℂ (k.cast_nonneg : (0 : ℝ) ≤ k)) ↦
       realSubRef k.cast_nonneg
         (p.1 • ofRealSubRef (f := f) (m := m) (Nat.one_lt_cast.2 Fact.out) p.2)) =
-      fun p ↦ realPartPi k.cast_nonneg
-        (smulCoord f m (reSubOne p.1) (imPart p.1) (coordInclusion k.cast_nonneg p.2)) := by
+      fun p ↦ realPartPi ℂ k.cast_nonneg
+        (smulCoord f m (reSubOne p.1) (imPart p.1) (coordInclusion ℂ k.cast_nonneg p.2)) := by
     funext p j
     rw [realPartPi_apply, ← subRef_ofRealSubRef (Nat.one_lt_cast.2 Fact.out), ← subRef_smul,
       ← coe_realSubRef k.cast_nonneg, realPartCLM_coe]
   rw [hfun]
-  exact (realPartPi _).contDiff.contMDiff.comp ((contMDiff_smulCoord_reSubOne_imPart f m hs).comp
-    (contMDiff_fst.prodMk ((coordInclusion _).contDiff.contMDiff.comp contMDiff_snd)))
+  exact (realPartPi ℂ _).contDiff.contMDiff.comp
+    ((contMDiff_smulCoord_reSubOne_imPart f m hs).comp
+      (contMDiff_fst.prodMk ((coordInclusion ℂ _).contDiff.contMDiff.comp contMDiff_snd)))
 
 /-- **The action in exponential and real coordinates is smooth**: the real coordinates of
 `exp (i F) · x` depend smoothly on the real phase `F ∈ H^(k+1)` and on the real coordinates `u` of
@@ -187,6 +192,17 @@ theorem contDiff_realSubRef_expGauge_smul_ofRealSubRef :
   contMDiff_iff_contDiff.1 ((contMDiff_realSubRef_smul_ofRealSubRef f m hs).comp
     (((contMDiff_expGauge (hs := hs) ∞).comp contDiff_fst.contMDiff).prodMk
       contDiff_snd.contMDiff))
+
+/-- **A phase acts through its continuous representative.** The gauge `exp (i F)` of `G_(k+1)`
+acts on a continuous field `y` of `A_m^k` as the phase gauge `phaseGauge y φ` of the continuous
+representative `φ` of `F`. -/
+theorem coe_expGauge_smul (F : realSubmodule ℂ (zero_le_one.trans hs.le))
+    (y : SobolevFieldSpace f m k) : ⇑(expGauge hs F • y) = phaseGauge y (continuousRep F) := by
+  have hk : (1 : ℝ) < k := Nat.one_lt_cast.2 Fact.out
+  have hφ : ContDiff ℝ 1 (continuousRep F) :=
+    contDiff_continuousRep (finrank_real_complex_add_two_mul_lt_two_mul (by push_cast; linarith)) F
+  rw [coe_smul, toSubgroup_expGauge]
+  exact gaugeTransform_exp (hφ.differentiable one_ne_zero) y
 
 variable (f m) in
 /-- **The infinitesimal gauge action in the coordinates of `A_m^k`.** At the field `x_m + y`, with

@@ -11,6 +11,7 @@ public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Quotient
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Slice
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.PDE.Vortex.FramedGauge.Proper
+import TauCeti.Analysis.PDE.Vortex.FramedGauge.SmoothAction
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Topology.Algebra.GroupAction.SliceChart
 

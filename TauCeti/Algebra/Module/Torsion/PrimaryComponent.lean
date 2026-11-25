@@ -181,12 +181,12 @@ open scoped DirectSum
 
 variable {R : Type*} [CommRing R]
 
-/-- A module annihilated by `I` is `I`-power torsion. -/
+/-- A module annihilated by a power of `I` is `I`-power torsion. -/
 theorem primaryComponent_eq_top_of_le_annihilator {M : Type*} [AddCommMonoid M]
-    [Module R M] (I : Ideal R) (hI : I ≤ Module.annihilator R M) :
+    [Module R M] (I : Ideal R) {n : ℕ} (hI : I ^ n ≤ Module.annihilator R M) :
     I.primaryComponent M = ⊤ := by
-  refine eq_top_iff'.mpr fun m ↦ (I.primaryComponent_mem _ _).mpr ⟨1, ?_⟩
-  rw [pow_one, mem_torsionBySet_iff]
+  refine eq_top_iff'.mpr fun m ↦ (I.primaryComponent_mem _ _).mpr ⟨n, ?_⟩
+  rw [mem_torsionBySet_iff]
   exact fun r ↦ Module.mem_annihilator.mp (hI r.property) m
 
 /-- The primary component of a submodule is the preimage of the ambient primary component. -/
@@ -271,6 +271,22 @@ theorem mem_primaryComponent_span_iff {N : Type*} [AddCommMonoid N] [Module R N]
     (r : R) {x : N} : x ∈ (span {r}).primaryComponent N ↔ ∃ n : ℕ, r ^ n • x = 0 := by
   simpa only [Finset.coe_singleton, Finset.mem_singleton, forall_eq] using
     (mem_primaryComponent_span_iff (N := N) {r} (y := x))
+
+/-- The primary component of `(r)` is `r`-saturated: `r • x` lies in it exactly when `x` does. -/
+theorem smul_mem_primaryComponent_span_singleton_iff {N : Type*} [AddCommMonoid N]
+    [Module R N] (r : R) {x : N} :
+    r • x ∈ (span {r}).primaryComponent N ↔ x ∈ (span {r}).primaryComponent N := by
+  simp only [mem_primaryComponent_span_singleton_iff, smul_smul, ← pow_succ]
+  exact ⟨fun ⟨n, hn⟩ ↦ ⟨n + 1, hn⟩, fun ⟨n, hn⟩ ↦ ⟨n, by rw [pow_succ', mul_smul, hn, smul_zero]⟩⟩
+
+/-- The primary component of `(r)` is `r`-saturated: `r ^ k • x` lies in it exactly when `x`
+does. -/
+theorem pow_smul_mem_primaryComponent_span_singleton_iff {N : Type*} [AddCommMonoid N]
+    [Module R N] (r : R) (k : ℕ) {x : N} :
+    r ^ k • x ∈ (span {r}).primaryComponent N ↔ x ∈ (span {r}).primaryComponent N := by
+  induction k with
+  | zero => rw [pow_zero, one_smul]
+  | succ k ih => rw [pow_succ', mul_smul, smul_mem_primaryComponent_span_singleton_iff, ih]
 
 /-- The primary component of `(r)` vanishes exactly when `r` acts regularly. -/
 theorem primaryComponent_span_singleton_eq_bot_iff {N : Type*} [AddCommGroup N] [Module R N]
