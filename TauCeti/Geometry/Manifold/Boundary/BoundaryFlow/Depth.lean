@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Boundary.BoundaryFlow
+public import TauCeti.Geometry.Manifold.Boundary.BoundaryFlow.Basic
 public import TauCeti.Geometry.Manifold.Boundary.Charts
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Radius
 
