@@ -6,12 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Algebra.Homology.ModuleCat.CompletelyFlat
+import Mathlib.Data.ZMod.QuotientRing
+import Mathlib.NumberTheory.Padics.RingHoms
+import Mathlib.RingTheory.Flat.TorsionFree
 
 /-!
 # Checks for complete flatness in the derived category
 
 For every integer `p`, the ring `ℤ` placed in degree zero of `D(ℤ)` is `p`-completely flat, being a
-flat `ℤ`-module, and so has `p`-complete Tor-amplitude `[0, 0]`.
+flat `ℤ`-module, and so has `p`-complete Tor-amplitude `[0, 0]`. For a prime `p`, the `p`-adic
+integers `ℤ_p` placed in degree zero are `p`-completely faithfully flat: `ℤ_p` is flat over `ℤ`, so
+this is the module statement, and `F_p ⊗ ℤ_p` is a nonzero `F_p`-vector space.
 -/
 
 universe w w'
@@ -31,5 +36,27 @@ example : IsCompletelyFlat (Ideal.span {p}) ((singleFunctor (ModuleCat ℤ) 0).o
 example : HasCompleteTorAmplitude (Ideal.span {p}) 0 0
     ((singleFunctor (ModuleCat ℤ) 0).obj (.of ℤ ℤ)) :=
   (ModuleCat.isCompletelyFlat_single _).hasCompleteTorAmplitude
+
+section Padic
+
+open scoped TensorProduct
+
+variable (p : ℕ) [hp : Fact p.Prime]
+  [HasDerivedCategory.{w'} (ModuleCat.{0} (ℤ ⧸ Ideal.span {(p : ℤ)}))]
+
+-- `ℤ_p[0]` is `p`-completely faithfully flat in `D(ℤ)`.
+example : IsCompletelyFaithfullyFlat (Ideal.span {(p : ℤ)})
+    ((singleFunctor (ModuleCat ℤ) 0).obj (.of ℤ ℤ_[p])) := by
+  rw [ModuleCat.isCompletelyFaithfullyFlat_single_iff]
+  have : (Ideal.span {(p : ℤ)}).IsMaximal :=
+    PrincipalIdealRing.isMaximal_of_irreducible (Nat.prime_iff_prime_int.mp hp.out).irreducible
+  have : Nontrivial ((ℤ ⧸ Ideal.span {(p : ℤ)}) ⊗[ℤ] ℤ_[p]) :=
+    (Algebra.TensorProduct.lift (Int.quotientSpanNatEquivZMod p).toRingHom.toIntAlgHom
+      PadicInt.toZMod.toIntAlgHom fun _ _ ↦ Commute.all _ _).toRingHom.domain_nontrivial
+  let := Ideal.Quotient.field (Ideal.span {(p : ℤ)})
+  exact isCompletelyFaithfullyFlatModule_iff.mpr
+    ⟨isCompletelyFlatModule_of_flat _, inferInstanceAs (Module.FaithfullyFlat _ (_ ⊗[ℤ] ℤ_[p]))⟩
+
+end Padic
 
 end TauCeti.Examples
