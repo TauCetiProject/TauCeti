@@ -8,6 +8,7 @@ module
 public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
 public import TauCeti.ModelTheory.Infinitary.GraphTranslation.Language
 public import Mathlib.Topology.LocallyConstant.Basic
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
 # The functional coding space
@@ -18,7 +19,7 @@ tuple of arguments in `V`, together with a relational configuration recording wh
 relations hold. The table space carries the product topology induced from `V`, and the functional
 coding space the product of that with the topology of relational configurations. It is Polish when
 `V` is Polish and there are countably many table and atom coordinates, for instance on a countable
-discrete carrier with countably many symbols.
+discrete carrier with countably many symbols. It carries the Borel σ-algebra of this topology.
 
 Permutations of `V` act by transporting the decoded structure: `σ` sends a table `F` to
 `(f, v) ↦ σ (F (f, σ⁻¹ ∘ v))`, and acts on relational configurations by the logic action. For
@@ -47,7 +48,8 @@ is invariant under permutations and, with countably many symbols on a countable 
   and a relational configuration.
 * `TauCeti.FunctionalConfiguration.toStructure`: the decoded `L`-structure, and
   `TauCeti.FunctionalConfiguration.ofStructure`: the configuration of an `L`-structure.
-* `TauCeti.FunctionalConfiguration.isoSetoid`: isomorphism of decoded structures.
+* `TauCeti.FunctionalConfiguration.isoSetoid`: isomorphism of decoded structures, and
+  `TauCeti.FunctionalConfiguration.IsomorphismInvariant`: closure of a set under it.
 * `TauCeti.FunctionalConfiguration.graphCode`: the graph code.
 * `TauCeti.FunctionalConfiguration.IsGraphCode`: every graph relation is the graph of a total
   function.
@@ -333,6 +335,16 @@ theorem isoSetoid_eq_orbitRel :
   rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff, ← (isoSetoid L V).comm',
     isoSetoid_iff_exists_perm_smul_eq]
 
+/-- A set of functional configurations is **isomorphism-invariant** when it is closed under
+isomorphism of decoded structures. -/
+def IsomorphismInvariant (K : Set (FunctionalConfiguration L V)) : Prop :=
+  ∀ ⦃F G⦄, isoSetoid L V F G → F ∈ K → G ∈ K
+
+/-- Unfolding lemma for `IsomorphismInvariant`. -/
+theorem isomorphismInvariant_iff {K : Set (FunctionalConfiguration L V)} :
+    IsomorphismInvariant K ↔ ∀ ⦃F G⦄, isoSetoid L V F G → F ∈ K → G ∈ K :=
+  Iff.rfl
+
 /-! ### The graph code -/
 
 /-- The **graph code** of a functional configuration: the relational configuration, in the graph
@@ -611,6 +623,13 @@ theorem continuous_mk {X : Type*} [TopologicalSpace X] {T : X → Arg L V → V}
     {c : X → RelationalConfiguration L V} (hT : Continuous T) (hc : Continuous c) :
     Continuous fun x => mk (T x) (c x) :=
   hT.prodMk hc
+
+/-- The Borel σ-algebra of the functional coding space. -/
+instance instMeasurableSpace : MeasurableSpace (FunctionalConfiguration L V) :=
+  borel _
+
+instance instBorelSpace : BorelSpace (FunctionalConfiguration L V) :=
+  ⟨rfl⟩
 
 instance [T2Space V] : T2Space (FunctionalConfiguration L V) :=
   inferInstanceAs (T2Space ((Arg L V → V) × RelationalConfiguration L V))
