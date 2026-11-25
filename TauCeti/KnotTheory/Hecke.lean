@@ -19,18 +19,15 @@ normalization.
 After importing `TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Basic`, the canonical
 specialization is obtained by taking `τ = ocneanuTrace R q z` and
 `hτ = isMarkovTrace_ocneanuTrace z`. In this case the invariant is the braid-closure invariant
-Jones constructs from the Ocneanu trace; its base-change naturality and character specializations
-are proved in `TauCeti.KnotTheory.Hecke.Ocneanu`, its comparison with the finite-colour Jimbo traces
-and the HOMFLY polynomial is proved in `TauCeti.KnotTheory.Hecke.Homfly`, its regular extensions
-across zero-factor specializations are constructed in `TauCeti.KnotTheory.Hecke.Regular`, and its
-hyperbolic `(α, θ)` specialization is proved in `TauCeti.KnotTheory.Hecke.Hyperbolic`. The skein
-relation itself needs only linearity of `τ`.
+Jones constructs from the Ocneanu trace; its comparison with the finite-colour Jimbo traces and the
+HOMFLY polynomial is proved in `TauCeti.KnotTheory.Hecke.Homfly`, its regular Laurent
+polynomial extension across the zero-factor specializations is constructed in
+`TauCeti.KnotTheory.Hecke.Regular`, and its hyperbolic `(α, θ)` specialization is proved in
+`TauCeti.KnotTheory.Hecke.Hyperbolic`. The skein relation itself needs only linearity of `τ`.
 
 ## Main results
 
 * `TauCeti.MarkovBraid.eq_heckeTrace_of_skein`: the skein characterization.
-* `TauCeti.MarkovBraid.heckeTrace_eq_one`: when both Markov normalization equations hold with
-  `C = 1`, `heckeTrace` is identically `1`.
 * `TauCeti.MarkovBraid.heckeTrace_eq_pow_componentCount_of_sub_inv_eq_zero`: closed-form evaluation
   of any normalized Hecke Markov trace at `(q : R) - ↑q⁻¹ = 0` as `C ^ (β.componentCount - 1)`.
 
@@ -97,19 +94,5 @@ theorem MarkovBraid.heckeTrace_eq_pow_componentCount_of_sub_inv_eq_zero (β : Ma
     have he : componentCount ⟨n, b⟩ + 1 - 1 = (componentCount ⟨n, b⟩ - 1) + 1 := by omega
     rw [componentCount_strandIncl, he, pow_succ']
   · simp
-
-/-- When both Markov normalization equations hold with unlink factor `C = 1`, the normalized Hecke
-trace of any Markov trace is identically `1`. -/
-theorem MarkovBraid.heckeTrace_eq_one (hτ : IsMarkovTrace z τ)
-    (hpos : (l : R) * z = 1) (hneg : (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) = 1)
-    (β : MarkovBraid) :
-    β.heckeTrace τ 1 l = 1 := by
-  have hpos' : (1 : R) * (l : R) * z = 1 := by rwa [one_mul]
-  have hneg' : (1 : R) * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) = 1 := by rwa [one_mul]
-  have hd := (IsHeckeNormalization.mk hpos' hneg').mul_sub_inv_eq_inv_sub
-  have heq := eq_heckeTrace_of_skein hτ hpos' hneg' (F := fun _ ↦ (1 : R))
-    (fun _ _ _ ↦ rfl) (fun _ _ _ ↦ by simpa only [mul_one, one_mul] using hd.symm)
-    (fun _ _ ↦ (one_mul 1).symm) rfl
-  exact (congrFun heq β).symm
 
 end TauCeti

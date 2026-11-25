@@ -61,9 +61,6 @@ map is injective, so that the finite presentation is isomorphic to the stage, is
   `TauCeti.TypeAHeckeAlgebra.commute_T`: the defining relations.
 * `TauCeti.TypeAHeckeAlgebra.lift_T` and `TauCeti.TypeAHeckeAlgebra.hom_ext`: the universal
   property.
-* `TauCeti.TypeAHeckeAlgebra.commute_of_forall_T` and
-  `TauCeti.TypeAHeckeAlgebra.comp_eq_of_forall_T`: commutation and linear intertwining criteria on
-  generators.
 * `TauCeti.TypeAHeckeAlgebra.span_range_braidHom`: the images of the braids span the algebra.
 * `TauCeti.TypeAHeckeAlgebra.braidHom_strandIncl`: the braid homomorphisms are compatible with the
   tower maps.
@@ -267,40 +264,6 @@ theorem adjoin_range_T : Algebra.adjoin R (Set.range (T (n := n) q)) = ⊤ := by
     simp only [← Set.range_comp, Function.comp_def, mkAlgHom_ι]
   rw [hrange, Algebra.adjoin_image_eq_range _ (FreeAlgebra.adjoin_range_ι R _)]
   exact (AlgHom.range_eq_top _).2 mkAlgHom_surjective
-
-/-- An element of an `R`-algebra commuting with the image of every Hecke generator under an
-algebra homomorphism commutes with the image of every element of the Hecke algebra. -/
-theorem commute_of_forall_T {A : Type*} [Semiring A] [Algebra R A]
-    (ρ : TypeAHeckeAlgebra R q n →ₐ[R] A) {d : A} (h : ∀ i, Commute d (ρ (T q i)))
-    (x : TypeAHeckeAlgebra R q n) : Commute d (ρ x) := by
-  have hx : ρ x ∈ Algebra.adjoin R (Set.range (ρ ∘ T (n := n) q)) := by
-    rw [Set.range_comp, ← AlgHom.map_adjoin, adjoin_range_T]
-    exact ⟨x, trivial, rfl⟩
-  refine Algebra.commute_of_mem_adjoin_of_forall_mem_commute hx ?_
-  rintro _ ⟨i, rfl⟩
-  exact h i
-
-/-- A linear map intertwining two representations of the type-A Hecke algebra on every generator
-intertwines them on every element. -/
-theorem comp_eq_of_forall_T {M N : Type*} [AddCommMonoid M] [AddCommMonoid N]
-    [Module R M] [Module R N] (ρ₁ : TypeAHeckeAlgebra R q n →ₐ[R] Module.End R M)
-    (ρ₂ : TypeAHeckeAlgebra R q n →ₐ[R] Module.End R N) (L : M →ₗ[R] N)
-    (h : ∀ i, (ρ₂ (T q i)).comp L = L.comp (ρ₁ (T q i))) (x : TypeAHeckeAlgebra R q n) :
-    (ρ₂ x).comp L = L.comp (ρ₁ x) := by
-  have hx : x ∈ Algebra.adjoin R (Set.range (T (n := n) q)) := by
-    rw [adjoin_range_T]
-    trivial
-  induction hx using Algebra.adjoin_induction with
-  | mem y hy =>
-    obtain ⟨i, rfl⟩ := hy
-    exact h i
-  | algebraMap r =>
-    rw [AlgHom.commutes, AlgHom.commutes]
-    exact LinearMap.ext fun v ↦ by simp [Module.algebraMap_end_apply]
-  | add x y _ _ hx hy => simp only [map_add, LinearMap.add_comp, LinearMap.comp_add, hx, hy]
-  | mul x y _ _ hx hy =>
-    rw [map_mul, map_mul, Module.End.mul_eq_comp, Module.End.mul_eq_comp, LinearMap.comp_assoc,
-      hy, ← LinearMap.comp_assoc, hx, LinearMap.comp_assoc]
 
 section Braid
 

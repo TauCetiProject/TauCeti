@@ -80,8 +80,10 @@ theorem isHeckeNormalization_hyperbolic {α θ z η : ℂ}
     (hη : η = (1 - tanh α * tanh θ) / 2) :
     IsHeckeNormalization (hyperbolicHeckeParam θ) z
       (I * cosh α / sinh θ) (hyperbolicWritheUnit α) :=
-  let h := hyperbolicHeckeNormalization hz hα hθ hθ' hη
-  ⟨h.left, h.right⟩
+  ⟨by rw [mul_assoc, hyperbolicWritheUnit_mul_eq_hyperbolicStabilization hz]
+      exact (hyperbolicStabilization_normalization hα hθ hθ' hη).1,
+    by rw [mul_assoc, inv_hyperbolicWritheUnit_mul_sub_eq_hyperbolicStabilizationInv hz]
+       exact (hyperbolicStabilization_normalization hα hθ hθ' hη).2⟩
 
 namespace MarkovBraid
 

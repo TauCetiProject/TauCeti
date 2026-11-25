@@ -53,12 +53,9 @@ or geometric Markov theorem is used.
 * `LinearMap.heckeTrace_skein_of_eq_zero`: the skein relation attached to a linear
   relation between a generator and its inverse.
 * `TauCeti.IsHeckeNormalization.mul_sub_inv_eq_inv_sub`,
-  `TauCeti.IsHeckeNormalization.of_mul_eq_inv_sub`,
-  `TauCeti.IsHeckeNormalization.sq_mul_eq_sub`, `TauCeti.isHeckeNormalization_iff`,
-  `TauCeti.exists_isHeckeNormalization_iff_isSquare`, and
-  `TauCeti.injective_algebraMap_and_exists_isHeckeNormalization`: consequences and square-root
-  characterizations of the normalization equations, plus the quadratic coefficient extension
-  supplying the root `l`.
+  `TauCeti.IsHeckeNormalization.sq_mul_eq_sub`, `TauCeti.isHeckeNormalization_iff`, and
+  `TauCeti.injective_algebraMap_and_exists_isHeckeNormalization`: consequences of the
+  normalization equations and the quadratic coefficient extension supplying the root `l`.
 * `TauCeti.MarkovBraid.heckeTrace_stabilize_eq_mul` and
   `TauCeti.MarkovBraid.heckeTrace_stabilizeInv_eq_mul`: general positive and negative stabilization
   formulas before imposing the normalization equations.
@@ -313,16 +310,6 @@ theorem IsHeckeNormalization.mul_sub_inv_eq_inv_sub {C : R} {l : Rˣ}
   linear_combination (↑l⁻¹ : R) * h.stabilize - (l : R) * h.stabilizeInv -
     C * ((q : R) - ↑q⁻¹) * l.inv_mul
 
-/-- Converse of `IsHeckeNormalization.mul_sub_inv_eq_inv_sub`: when `c * C = 1`,
-`C * (q - q⁻¹) = l⁻¹ - l`, and `z = c * l⁻¹`, the pair `(C, l)` satisfies both Markov
-normalization equations. -/
-theorem IsHeckeNormalization.of_mul_eq_inv_sub {C c : R} {l : Rˣ}
-    (hc : c * C = 1) (hd : C * ((q : R) - ↑q⁻¹) = (↑l⁻¹ : R) - (l : R)) (hz : z = c * ↑l⁻¹) :
-    IsHeckeNormalization q z C l := by
-  subst hz
-  exact ⟨by linear_combination hc + c * C * l.mul_inv,
-    by linear_combination ((↑l⁻¹ : R) ^ 2) * hc - (↑l⁻¹ : R) * hd + l.inv_mul⟩
-
 /-- Under the two Markov normalization equations, `l ^ 2 * z = z - (q - q⁻¹)`. -/
 theorem IsHeckeNormalization.sq_mul_eq_sub {C : R} {l : Rˣ}
     (h : IsHeckeNormalization q z C l) :
@@ -338,49 +325,6 @@ theorem isHeckeNormalization_iff {C : R} {l : Rˣ} :
   refine ⟨fun h ↦ ⟨h.stabilize, h.sq_mul_eq_sub⟩, fun ⟨hpos, hsq⟩ ↦ ⟨hpos, ?_⟩⟩
   rw [← hsq]
   linear_combination (C * z * (l : R)) * l.inv_mul + hpos
-
-/-- When the positive and negative stabilization constants `a = z` and `b = z - (q - q⁻¹)` are
-units of `R` and `l ^ 2 = b * a⁻¹`, setting `C = (l * a)⁻¹` satisfies `IsHeckeNormalization`. -/
-theorem IsHeckeNormalization.of_sq_eq {a b l : Rˣ} (ha : (a : R) = z)
-    (hb : (b : R) = z - ((q : R) - ↑q⁻¹)) (hl : l ^ 2 = b * a⁻¹) :
-    IsHeckeNormalization q z ↑((l * a)⁻¹) l := by
-  have hlz : (l : R) ^ 2 * z = z - ((q : R) - ↑q⁻¹) := by
-    have hmul : l ^ 2 * a = b := by rw [hl, mul_assoc, inv_mul_cancel, mul_one]
-    simpa only [Units.val_mul, Units.val_pow_eq_pow_val, ha, hb] using
-      congrArg (fun u : Rˣ ↦ (u : R)) hmul
-  exact ⟨Units.val_inv_mul_mul_mul_eq_one a l ha,
-    Units.val_inv_mul_mul_inv_mul_eq_one a l ha hlz⟩
-
-/-- When the positive and negative stabilization constants `a = z` and `b = z - (q - q⁻¹)` are
-units of `R`, any solution `(C, l)` of `IsHeckeNormalization q z C l` satisfies
-`C = (l * a)⁻¹` and `l ^ 2 = b * a⁻¹`. -/
-theorem IsHeckeNormalization.eq_and_sq_eq {a b l : Rˣ} {C : R}
-    (h : IsHeckeNormalization q z C l) (ha : (a : R) = z)
-    (hb : (b : R) = z - ((q : R) - ↑q⁻¹)) :
-    C = ↑((l * a)⁻¹) ∧ l ^ 2 = b * a⁻¹ := by
-  have hpos : C * (l : R) * (a : R) = 1 := ha ▸ h.stabilize
-  have hC : C = ↑((l * a)⁻¹) := by
-    have hmul : ↑(l * a) * (↑((l * a)⁻¹) : R) = 1 := Units.mul_inv (l * a)
-    rw [Units.val_mul] at hmul
-    linear_combination (↑((l * a)⁻¹) : R) * hpos - C * hmul
-  refine ⟨hC, Units.ext ?_⟩
-  have hsq := h.sq_mul_eq_sub
-  rw [← hb, ← ha] at hsq
-  rw [Units.val_pow_eq_pow_val, Units.val_mul]
-  linear_combination (↑a⁻¹ : R) * hsq - ((l : R) ^ 2) * a.mul_inv
-
-/-- **Root-choice criterion for Hecke Markov normalization.** When the positive and negative
-stabilization constants `a = z` and `b = z - (q - q⁻¹)` are units of `R`, normalization
-parameters `(C, l)` solving `IsHeckeNormalization q z C l` exist in `R` if and only if
-`b * a⁻¹` is a square in `Rˣ`. -/
-theorem exists_isHeckeNormalization_iff_isSquare {a b : Rˣ} (ha : (a : R) = z)
-    (hb : (b : R) = z - ((q : R) - ↑q⁻¹)) :
-    (∃ (C : R) (l : Rˣ), IsHeckeNormalization q z C l) ↔ IsSquare (b * a⁻¹) := by
-  refine ⟨?_, ?_⟩
-  · rintro ⟨C, l, h⟩
-    exact ⟨l, by rw [← sq, (h.eq_and_sq_eq ha hb).right]⟩
-  · rintro ⟨l, hl⟩
-    exact ⟨↑((l * a)⁻¹), l, .of_sq_eq ha hb (by rw [sq, hl])⟩
 
 /-- **Quadratic coefficient extension for choosing the normalization root.** When the positive and
 negative stabilization constants `a = z` and `b = z - (q - q⁻¹)` are units of `R`, the monic

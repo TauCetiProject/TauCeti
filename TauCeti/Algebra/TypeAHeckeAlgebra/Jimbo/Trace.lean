@@ -12,6 +12,7 @@ public import TauCeti.KnotTheory.Jimbo.Trace
 
 import Mathlib.Tactic.LinearCombination
 import TauCeti.KnotTheory.Jimbo.Stabilization
+import TauCeti.Algebra.Algebra.Subalgebra.Lattice
 
 /-!
 # The Turaev–Jimbo weighted trace on the type-A Hecke algebra
@@ -142,11 +143,16 @@ end Intertwining
 /-- Turaev's tensor-power enhancement commutes with every element of the Hecke algebra in the
 `N`-colour Jimbo representation. -/
 theorem commute_jimboEnhancement_jimbo (N : ℕ) (q : Rˣ) {n : ℕ} (x : TypeAHeckeAlgebra R q n) :
-    Commute (KnotTheory.jimboEnhancement (N := N) q) (jimbo (Fin N) q x) :=
-  commute_of_forall_T (jimbo (Fin N) q)
-    (fun i ↦ by
-      simpa only [jimbo_T] using KnotTheory.jimboEnhancement_commute_generator (N := N) q
-        (BraidGroup.strand i) (BraidGroup.strandSucc i)) x
+    Commute (KnotTheory.jimboEnhancement (N := N) q) (jimbo (Fin N) q x) := by
+  have hx : jimbo (Fin N) q x ∈
+      Algebra.adjoin R (Set.range (jimbo (Fin N) q ∘ T (n := n) q)) := by
+    rw [Set.range_comp, Algebra.adjoin_image_eq_range _ adjoin_range_T]
+    exact AlgHom.mem_range_self _ x
+  refine Algebra.commute_of_mem_adjoin_of_forall_mem_commute hx ?_
+  rintro _ ⟨i, rfl⟩
+  simpa only [Function.comp_apply, jimbo_T] using
+    KnotTheory.jimboEnhancement_commute_generator (N := N) q
+      (BraidGroup.strand i) (BraidGroup.strandSucc i)
 
 /-- **The Turaev–Jimbo weighted trace** on the finite type-A Hecke algebra on `n` strands with `N`
 colours: `x ↦ tr (ρ_N(x) * μ^{⊗ n})`. Defined over any commutative ring with no division by the

@@ -58,13 +58,11 @@ and HOMFLY braid invariants:
   satisfy `TauCeti.IsHeckeNormalization`, and the descended invariant is `c * jimboTrace` over
   any commutative ring and `jimboReducedTrace` over a field.
 * `TauCeti.MarkovBraid.heckeTrace_ocneanuTrace_eq_eval₂_jimboReducedLaurent`,
-  `TauCeti.MarkovBraid.heckeTrace_ocneanuTrace_one_eq_pow_componentCount`,
-  `TauCeti.MarkovBraid.heckeTrace_ocneanuTrace_one_parameter`, and
+  `TauCeti.MarkovBraid.heckeTrace_ocneanuTrace_one_eq_pow_componentCount`, and
   `TauCeti.MarkovBraid.heckeTrace_ocneanuTrace_neg_one_eq_pow_componentCount`: regular comparison
-  with `jimboReducedLaurent` and explicit evaluations at `q = ±1`.
+  with `jimboReducedLaurent` and closed-form evaluations at `q = ±1`.
 * `TauCeti.MarkovBraid.eval₂_reducedHomfly_eq_heckeTrace_of_isMarkovTrace`,
-  `TauCeti.MarkovBraid.eval₂_homfly_eq_mul_heckeTrace_of_isMarkovTrace`,
-  `TauCeti.heckeBraidInvariant_eq_eval₂_reducedHomfly`, and
+  `TauCeti.MarkovBraid.eval₂_homfly_eq_mul_heckeTrace_of_isMarkovTrace`, and
   `TauCeti.MarkovBraid.reducedHomfly_eq_of_heckeTrace_ocneanuTrace`: comparison of `reducedHomfly`
   and `homfly` with arbitrary normalized Hecke Markov traces and determination by positive-rank
   Ocneanu traces.
@@ -382,20 +380,6 @@ theorem heckeTrace_ocneanuTrace_neg_one_eq_pow_componentCount {R : Type*} [CommR
   exact β.heckeTrace_eq_pow_componentCount_of_sub_inv_eq_zero
     (isMarkovTrace_ocneanuTrace (c * (-1 : R) ^ N)) hpos (by simpa [hε] using hpos) (by simp)
 
-/-- At the classical specialization `q = 1` (`q - q⁻¹ = 0`), when `c * N = 1` in `R`, the
-normalized Ocneanu trace at `(q, z, C, l) = (1, c, N, 1)` counts `N`-colourings fixed by the
-underlying strand permutation of `β`, scaled by `c`. -/
-theorem heckeTrace_ocneanuTrace_one_parameter {R : Type*} [CommRing R] (β : MarkovBraid)
-    {N : ℕ} {c : R} (hc : c * (N : R) = 1) :
-    β.heckeTrace (ocneanuTrace R (1 : Rˣ) c) (N : R) (1 : Rˣ) =
-      c * ((Finset.univ.filter fun w : Fin (β.predStrands + 1) → Fin N ↦
-        w ∘ ⇑(BraidGroup.permHom (β.predStrands + 1) β.braid)⁻¹ = w).card : R) := by
-  have hsum : (∑ a : Fin N, jimboWeight (1 : Rˣ) a) = (N : R) := by simp
-  have hc' : c * ∑ a : Fin N, jimboWeight (1 : Rˣ) a = 1 := hsum ▸ hc
-  have h := (β.mul_jimboTrace_eq_heckeTrace (q := (1 : Rˣ)) hc').symm
-  simpa only [hsum, one_pow, inv_one, Units.val_one, mul_one, jimboTrace_def, one_zpow, one_mul,
-    jimboWeightedTrace_one_parameter] using h
-
 end MarkovBraid
 
 end ZeroFactorSpecializations
@@ -502,20 +486,6 @@ theorem reducedHomfly_eq_of_heckeTrace_ocneanuTrace (K : Type*) [Field K] {β : 
   exact h N
 
 end MarkovBraid
-
-/-- On `Quot MarkovEquiv`, `heckeBraidInvariant` equals the descended specialization of
-`reducedHomfly K` whenever `u = q - q⁻¹` is a unit. -/
-theorem heckeBraidInvariant_eq_eval₂_reducedHomfly (K : Type*) [Field K]
-    {R : Type*} [CommRing R] (φ : K →+* R) {q u l : Rˣ} {C z : R}
-    {τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R} (hτ : IsMarkovTrace z τ)
-    (hu : (u : R) = (q : R) - ↑q⁻¹) (hpos : C * (l : R) * z = 1)
-    (hneg : C * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) = 1) (x : Quot MarkovEquiv) :
-    heckeBraidInvariant hτ C l hpos hneg x =
-      Quot.lift (fun β : MarkovBraid ↦ eval₂ (eval₂ φ u) l⁻¹ (β.reducedHomfly K))
-        (fun _ _ h ↦ congrArg _ (h.reducedHomfly_eq K)) x := by
-  rcases Quot.exists_rep x with ⟨β, rfl⟩
-  rw [heckeBraidInvariant_mk]
-  exact (β.eval₂_reducedHomfly_eq_heckeTrace_of_isMarkovTrace K φ hτ hpos hneg hu).symm
 
 end HeckeNormalizationComparison
 
