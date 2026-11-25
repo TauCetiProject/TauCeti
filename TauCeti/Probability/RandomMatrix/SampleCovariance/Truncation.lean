@@ -79,8 +79,8 @@ variable {Ω E : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 
 section Count
 
-variable [SeminormedAddGroup E] [MeasurableSpace E] [OpensMeasurableSpace E]
-  {x : ℕ × ℕ → Ω → E} {ν : Measure E} {p : ℕ → ℕ}
+variable [SeminormedAddGroup E] [MeasurableSpace E] {x : ℕ × ℕ → Ω → E} {ν : Measure E}
+  {p : ℕ → ℕ}
 
 /-- The real inequality behind the summable bound for row counts: if `0 ≤ R ≤ K N` and
 `0 ≤ L ≤ K N` with `N > 0`, then `R L^q (C / N^(a m))^q ≤ K^(q + 1) C^q N^(q + 1 - a m q)`. -/
@@ -105,17 +105,31 @@ theorem ae_eventually_forall_card_filter_lt_norm_lt (hx : ∀ ij, HasLaw (x ij) 
     (hℓ : ∀ᶠ n in atTop, (ℓ n : ℝ) ≤ K * n) {a : ℝ} {q : ℕ} (hq : 2 < q * (m * a - 1)) :
     ∀ᵐ ω ∂P, ∀ᶠ n in atTop, ∀ i : Fin (r n),
       (Finset.univ.filter fun j : Fin (ℓ n) ↦ (n : ℝ) ^ a < ‖x (i, j) ω‖).card < q := by
-  let C := ∫ z, ‖z‖ ^ m ∂ν
+  -- Count in the real array of norms; the norm is a.e. measurable as the `m`-th root of `‖·‖ ^ m`.
+  have hm₀ : m ≠ 0 := by
+    rintro rfl
+    push_cast at hq
+    nlinarith [(q.cast_nonneg : (0 : ℝ) ≤ q)]
+  have hnorm : AEMeasurable (fun z : E ↦ ‖z‖) ν :=
+    (hm.aemeasurable.pow_const (m⁻¹ : ℝ)).congr
+      (.of_forall fun z ↦ Real.pow_rpow_inv_natCast (norm_nonneg z) hm₀)
+  have hm' : Integrable (fun t : ℝ ↦ ‖t‖ ^ m) (ν.map fun z ↦ ‖z‖) := by
+    rw [integrable_map_measure (by fun_prop) hnorm]
+    simpa only [Function.comp_def, Real.norm_eq_abs, abs_norm] using hm
+  have hrow' (i : ℕ) : iIndepFun (fun j ω ↦ ‖x (i, j) ω‖) P :=
+    (hrow i).comp₀ (fun _ z ↦ ‖z‖) (fun _ ↦ (hx _).aemeasurable) fun _ ↦ by rwa [(hx _).map_eq]
+  let C := ∫ t, ‖t‖ ^ m ∂(ν.map fun z ↦ ‖z‖)
   have hC : 0 ≤ C := integral_nonneg fun _ ↦ by positivity
   have hb : ∑' n : ℕ, ENNReal.ofReal (K ^ (q + 1) * C ^ q * (n : ℝ) ^ ((q : ℝ) + 1 - a * m * q))
       < ∞ :=
     ((Real.summable_nat_rpow.2 (by nlinarith)).mul_left _).tsum_ofReal_lt_top
-  -- Each entry exceeds a positive cutoff `R` with probability at most the Markov bound for `ν`.
+  -- Each entry exceeds a positive cutoff `R` with probability at most the Markov bound for the
+  -- law of its norm.
   have htail (ij : ℕ × ℕ) {R : ℝ} (hR : 0 < R) :
-      P {ω | R < ‖x ij ω‖} ≤ ENNReal.ofReal (C / R ^ m) := by
-    rw [(hx ij).measure_eq (p := fun z ↦ R < ‖z‖)
+      P {ω | R < ‖‖x ij ω‖‖} ≤ ENNReal.ofReal (C / R ^ m) := by
+    rw [((hasLaw_map hnorm).fun_comp (hx ij)).measure_eq (p := fun t ↦ R < ‖t‖)
       (measurableSet_lt measurable_const continuous_norm.measurable)]
-    exact meas_norm_gt_le_integral_norm_pow_div_pow (Z := fun z ↦ z) m hm hR
+    exact meas_norm_gt_le_integral_norm_pow_div_pow (Z := fun t ↦ t) m hm' hR
   have hbound : ∀ᶠ n in atTop,
       P {ω | ∃ i : Fin (r n), q ≤ (Finset.univ.filter fun j : Fin (ℓ n) ↦
           (n : ℝ) ^ a < ‖x (i, j) ω‖).card} ≤
@@ -123,10 +137,10 @@ theorem ae_eventually_forall_card_filter_lt_norm_lt (hx : ∀ ij, HasLaw (x ij) 
     filter_upwards [hr, hℓ, eventually_gt_atTop 0] with n hrn hℓn hn
     have hN : (0 : ℝ) < n := by exact_mod_cast hn
     have hcount := measure_exists_le_card_filter_lt_norm_le
-      (Y := fun (i : Fin (r n)) (j : Fin (ℓ n)) ↦ x (i, j))
-      (fun i ↦ (hrow i).precomp Fin.val_injective) _
+      (Y := fun (i : Fin (r n)) (j : Fin (ℓ n)) ω ↦ ‖x (i, j) ω‖)
+      (fun i ↦ (hrow' i).precomp Fin.val_injective) _
       (fun _ _ ↦ htail _ (Real.rpow_pos_of_pos hN a)) (fun _ ↦ (Fintype.card_fin (ℓ n)).le) q
-    simp only [Fintype.card_fin] at hcount
+    simp only [Fintype.card_fin, Real.norm_eq_abs, abs_norm] at hcount
     refine hcount.trans ?_
     calc
       _ = ENNReal.ofReal (r n * ℓ n ^ q * (C / ((n : ℝ) ^ a) ^ m) ^ q) := by
@@ -205,6 +219,13 @@ theorem ae_eventually_norm_le_mul_sqrt (hx : ∀ ij, HasLaw (x ij) ν P) (h4 : M
   rw [Real.sqrt_mul hL.le]
   field_simp
 
+end Maximum
+
+section SecondMoment
+
+variable [SeminormedAddGroup E] [MeasurableSpace E] {x : ℕ × ℕ → Ω → E} {ν : Measure E}
+  {p : ℕ → ℕ}
+
 /-- **Largest entry of the corners under a second moment.** If the entries of the array share a
 law `ν` with finite second moment and `p(n) ≤ K n` eventually, then almost surely, for every
 `ε > 0`, every entry of the `p(n) × n` corner eventually has norm at most `ε n`. Independence is
@@ -214,18 +235,21 @@ theorem ae_eventually_norm_le_mul (hx : ∀ ij, HasLaw (x ij) ν P) (h2 : MemLp 
     ∀ᵐ ω ∂P, ∀ ε > (0 : ℝ), ∀ᶠ n in atTop, ∀ (i : Fin (p n)) (j : Fin n),
       ‖x (i, j) ω‖ ≤ ε * n := by
   -- The square roots `‖x‖ ^ (1 / 2)` of the norms have a finite fourth moment.
+  have hnorm : AEStronglyMeasurable (fun z : E ↦ ‖z‖) ν :=
+    continuous_norm.comp_aestronglyMeasurable h2.aestronglyMeasurable
   let f : E → ℝ := fun z ↦ ‖z‖ ^ (2⁻¹ : ℝ)
-  have hf : Measurable f := by fun_prop
+  have hf : AEMeasurable f ν := hnorm.aemeasurable.pow_const _
   have h4 : MemLp id 4 (ν.map f) := by
-    rw [memLp_map_measure_iff aestronglyMeasurable_id hf.aemeasurable]
-    have h := h2.norm_rpow_div 2⁻¹
+    rw [memLp_map_measure_iff aestronglyMeasurable_id hf]
+    have h := (h2.of_eNorm_le_mul (c := 1) hnorm
+      (.of_forall fun z ↦ by simp [Real.eNorm_eq_ofReal_abs])).norm_rpow_div 2⁻¹
     have h4 : (2 : ℝ≥0∞) / 2⁻¹ = 4 := by
       rw [div_eq_mul_inv, inv_inv]
       norm_num
     rw [h4] at h
     simpa [f] using h
   filter_upwards [ae_eventually_norm_le_mul_sqrt
-    (fun ij ↦ (hasLaw_map hf.aemeasurable).fun_comp (hx ij)) h4 hp] with ω hω ε hε
+    (fun ij ↦ (hasLaw_map hf).fun_comp (hx ij)) h4 hp] with ω hω ε hε
   filter_upwards [hω (√ε) (Real.sqrt_pos.2 hε)] with n hn i j
   have hle : ‖x (i, j) ω‖ ^ (2⁻¹ : ℝ) ≤ √ε * √n := by
     simpa [f, abs_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _)] using hn i j
@@ -236,7 +260,7 @@ theorem ae_eventually_norm_le_mul (hx : ∀ ij, HasLaw (x ij) ν P) (h2 : MemLp 
     _ ≤ (√ε * √n) ^ 2 := pow_le_pow_left₀ (by positivity) hle 2
     _ = ε * n := by rw [mul_pow, Real.sq_sqrt hε.le, Real.sq_sqrt n.cast_nonneg]
 
-end Maximum
+end SecondMoment
 
 section OperatorNorm
 

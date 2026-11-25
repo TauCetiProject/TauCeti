@@ -324,8 +324,8 @@ end StrongLaw
 
 section Norms
 
-variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E]
-  {x : ℕ × ℕ → Ω → E} {ν : Measure E}
+variable {E : Type*} [SeminormedAddGroup E] [MeasurableSpace E] {x : ℕ × ℕ → Ω → E}
+  {ν : Measure E}
 
 /-- **Squared row norms.** Let the array have entries with a common law `ν` of finite fourth
 moment, independent within each row, and let `ℓ(n) → ∞` and `r(n) ≤ K ℓ(n)` eventually. Then
@@ -337,18 +337,24 @@ theorem ae_eventually_forall_abs_sum_norm_sq_div_sub_integral_le (hx : ∀ ij, H
     (hℓ : Tendsto ℓ atTop atTop) (hr : ∀ᶠ n in atTop, (r n : ℝ) ≤ K * ℓ n) :
     ∀ᵐ ω ∂P, ∀ ε > (0 : ℝ), ∀ᶠ n in atTop, ∀ i : Fin (r n),
       |(∑ j : Fin (ℓ n), ‖x (i, j) ω‖ ^ 2) / ℓ n - ∫ z, ‖z‖ ^ 2 ∂ν| ≤ ε := by
-  have hf : Measurable fun z : E ↦ ‖z‖ ^ 2 := continuous_norm.measurable.pow_const 2
+  have hnorm : AEStronglyMeasurable (fun z : E ↦ ‖z‖) ν :=
+    continuous_norm.comp_aestronglyMeasurable h4.aestronglyMeasurable
+  have hs : AEStronglyMeasurable (fun z : E ↦ ‖z‖ ^ 2) ν := hnorm.pow 2
+  have hf : AEMeasurable (fun z : E ↦ ‖z‖ ^ 2) ν := hs.aemeasurable
   -- The squared norms have the law `ν.map (‖·‖ ^ 2)`, with finite second moment.
   have h2 : MemLp id 2 (ν.map fun z ↦ ‖z‖ ^ 2) := by
-    rw [memLp_map_measure_iff aestronglyMeasurable_id hf.aemeasurable, Function.id_comp,
-      memLp_two_iff_integrable_sq hf.aestronglyMeasurable]
-    simpa only [id, ← pow_mul] using h4.integrable_norm_pow four_ne_zero
+    rw [memLp_map_measure_iff aestronglyMeasurable_id hf, Function.id_comp,
+      memLp_two_iff_integrable_sq hs]
+    simpa only [Real.norm_eq_abs, abs_norm, ← pow_mul] using
+      (h4.of_eNorm_le_mul (c := 1) hnorm (.of_forall fun z ↦ by
+        simp [Real.eNorm_eq_ofReal_abs])).integrable_norm_pow four_ne_zero
   have hmean : ∫ z, z ∂(ν.map fun z ↦ ‖z‖ ^ 2) = ∫ z, ‖z‖ ^ 2 ∂ν :=
-    integral_map hf.aemeasurable (by fun_prop)
+    integral_map hf (by fun_prop)
   rw [← hmean]
   exact ae_eventually_forall_abs_sum_div_sub_integral_le (ξ := fun ij ω ↦ ‖x ij ω‖ ^ 2)
-    (fun ij ↦ (hasLaw_map hf.aemeasurable).fun_comp (hx ij))
-    (fun i ↦ (hrow i).comp (fun _ z ↦ ‖z‖ ^ 2) fun _ ↦ hf) h2 hℓ hr
+    (fun ij ↦ (hasLaw_map hf).fun_comp (hx ij))
+    (fun i ↦ (hrow i).comp₀ (fun _ z ↦ ‖z‖ ^ 2) (fun _ ↦ (hx _).aemeasurable) fun _ ↦ by
+      rwa [(hx _).map_eq]) h2 hℓ hr
 
 /-- **Squared column norms of the corners.** Let the array have entries with a common law `ν` of
 finite fourth moment, independent within each column, and let `p(n) / n → y > 0`. Then almost
