@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Norm
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Connected.PathConnected
@@ -27,7 +29,9 @@ surjection onto the general linear group.
 
 Its realification, the subgroup of `GL (n ⊕ n) ℝ` of invertible real matrices commuting with
 `J` (`Matrix.GeneralLinearGroup.mem_range_realify_iff`), is then path connected as well, being
-the image of `GL n ℂ` under the continuous realification map.
+the image of `GL n ℂ` under the continuous realification map. So is the group of invertible
+continuous linear endomorphisms `(F →L[ℂ] F)ˣ` of a finite-dimensional complex normed space `F`,
+which a basis of `F` identifies with `GL n ℂ`.
 
 ## References
 
@@ -72,5 +76,28 @@ instance instPathConnectedSpaceRangeRealify :
   isPathConnected_iff_pathConnectedSpace.mp <| by
     rw [MonoidHom.coe_range]
     exact isPathConnected_range (GeneralLinearGroup.isClosedEmbedding_realify n ℂ).continuous
+
+/-- The group of invertible continuous linear endomorphisms of a finite-dimensional complex
+normed space is path connected, including in dimension zero: a basis identifies it with the
+complex general linear group. -/
+instance instPathConnectedSpaceUnitsContinuousLinearMap (F : Type*) [NormedAddCommGroup F]
+    [NormedSpace ℂ F] [FiniteDimensional ℂ F] : PathConnectedSpace (F →L[ℂ] F)ˣ := by
+  let b := Module.finBasis ℂ F
+  -- Matrices act on `F` through the basis `b`, multiplicatively.
+  let φ : Matrix (Fin (Module.finrank ℂ F)) (Fin (Module.finrank ℂ F)) ℂ →* (F →L[ℂ] F) :=
+    { toFun A := LinearMap.toContinuousLinearMap (Matrix.toLin b b A)
+      map_one' := ContinuousLinearMap.ext fun v ↦ by simp
+      map_mul' A B := ContinuousLinearMap.ext fun v ↦ by simp [Matrix.toLin_mul b b b] }
+  -- Conversely, an endomorphism of `F` has a matrix in the basis `b`.
+  let ψ : (F →L[ℂ] F) →* Matrix (Fin (Module.finrank ℂ F)) (Fin (Module.finrank ℂ F)) ℂ :=
+    { toFun f := LinearMap.toMatrix b b f
+      map_one' := by simp
+      map_mul' f g := by simp [LinearMap.toMatrix_mul] }
+  have hφ : Continuous φ :=
+    (LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ
+      (Matrix.toLin b b).toLinearMap).continuous_of_finiteDimensional
+  refine Function.Surjective.pathConnectedSpace (f := Units.map φ) (fun g ↦ ⟨Units.map ψ g,
+    Units.ext (ContinuousLinearMap.ext fun v ↦ ?_)⟩) (hφ.units_map φ)
+  simp [φ, ψ]
 
 end TauCeti

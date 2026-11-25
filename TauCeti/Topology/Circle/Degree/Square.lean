@@ -70,6 +70,8 @@ quarter turn, as the arguments of the corners `(±1 ± i) / 2` show.
   along the four edges.
 * `TauCeti.squareBoundaryDegree_mul_two_pi_eq_of_edges`: a map constant on three edges and
   equal to `g` on the fourth has the winding of `g` as its degree.
+* `TauCeti.squareBoundaryDegree_eq_zero_of_periodic`: a map that agrees on opposite edges, so
+  that it factors through the torus, has degree `0`.
 * `TauCeti.squareBoundaryDegree_squareCenterDirection`: the direction from the centre has
   degree `1`.
 
@@ -389,6 +391,23 @@ private theorem squareBoundaryDegree_eq_of_mul_two_pi {n : ℤ}
     (h : (squareBoundaryDegree Γ : ℝ) * (2 * Real.pi) = n * (2 * Real.pi)) :
     squareBoundaryDegree Γ = n := by
   exact_mod_cast mul_right_cancel₀ (by positivity : (2 * Real.pi : ℝ) ≠ 0) h
+
+/-- **Maps that agree on opposite edges.** If `Γ` is continuous on the boundary of the square and
+takes the same values on opposite edges, `Γ (1, t) = Γ (0, t)` and `Γ (s, 1) = Γ (s, 0)`, so that
+it factors through the torus obtained by identifying them, then its degree around the boundary is
+`0`: the boundary loop runs along each of the two circles of the torus once in each direction. -/
+theorem squareBoundaryDegree_eq_zero_of_periodic (h : ContinuousOn Γ (Cube.boundary (Fin 2)))
+    (hR : ∀ t, Γ ![1, t] = Γ ![0, t]) (hT : ∀ s, Γ ![s, 1] = Γ ![s, 0]) :
+    squareBoundaryDegree Γ = 0 := by
+  -- Lift `Γ` along the bottom and left edges, and reuse these lifts on the opposite edges.
+  obtain ⟨θB, hθB⟩ := Circle.exists_lift (squareBottom.map' (h.mono range_squareBottom))
+  obtain ⟨θL, hθL⟩ := Circle.exists_lift (squareLeft.map' (h.mono range_squareLeft))
+  have hdeg := squareBoundaryDegree_mul_two_pi_eq h θB.continuous θL.continuous θB.continuous
+    θL.continuous hθB (fun t ↦ (hθL t).trans (hR t).symm) (fun s ↦ (hθB s).trans (hT s).symm) hθL
+  refine squareBoundaryDegree_eq_of_mul_two_pi (n := 0) ?_
+  rw [hdeg]
+  push_cast
+  ring
 
 /-- **Subdivision.** If `Γ` is continuous on the boundary of the square and on the vertical
 segment `s = 1/2`, its degree around the boundary is the sum of the degrees of its restrictions
