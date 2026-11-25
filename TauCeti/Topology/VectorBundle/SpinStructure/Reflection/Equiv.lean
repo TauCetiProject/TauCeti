@@ -266,7 +266,7 @@ theorem reverseReverseEquiv_toEquiv_mk (s : SpinCStructure F V n) (x : X) (p : s
             ((realCliffordCoordReflection 0).symm.toIsometry.continuous_spinCGroupMap hQ hQ) p h)
           k) =
       op (precompIsometryHom (realCliffordCoordReflection 0) h * k) • p := by
-  rw [reverseReverseEquiv, Equiv.trans_toEquiv]
+  rw [reverseReverseEquiv, OrthonormalFrameLift.Equiv.trans_toEquiv]
   exact (congrArg ((precompIsometryEquivOfEqRefl _ _ s).toEquiv x)
     (precompIsometryPrecompIsometryEquiv_toEquiv_mk _ _ s x p h k)).trans
       (precompIsometryEquivOfEqRefl_toEquiv_mk _ _ s x p _)
