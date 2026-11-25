@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Defs
-public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 public import Mathlib.Topology.Homotopy.Basic
-public import TauCeti.Topology.Algebra.GroupWithZero.Inversion
-import TauCeti.Analysis.SpecialFunctions.Complex.Arctan
+public import TauCeti.Topology.Circle.Cayley
+import TauCeti.Topology.ContinuousMap.CodRestrict
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
 # An affine representative of the circle index symbol
@@ -18,6 +16,7 @@ import TauCeti.Analysis.SpecialFunctions.Complex.Arctan
 The affine interpolation between the two circle symbol branches vanishes only at the
 zero covector over `-1`. In oriented local coordinates, real displacement runs in the
 direction of increasing angle and imaginary displacement is the covector coordinate.
+The angular displacement from `-1` is twice the arctangent of half the real coordinate.
 On the punctured coordinate plane, `circleIndexAffineLocalHomotopy` is a homotopy from
 `circleIndexAffineLocalScalar` to the inversion homeomorphism `Homeomorph.inv₀ ℂ`.
 
@@ -35,32 +34,45 @@ noncomputable section
 
 open scoped ContDiff
 open Topology
+open Complex (boundaryCayleyParametrization boundaryCayleyParametrization_apply
+  boundaryCayleyParametrization_zero isOpenEmbedding_boundaryCayleyParametrization)
+open Real (coe_boundaryCayley)
 
 namespace TauCeti
 
 /-- The affine scalar joining the constant lower branch to the circle character on the upper
 edge. The real argument is the normalized covector. -/
 def circleIndexAffineScalar : C(Circle × ℝ, ℂ) where
-  toFun p := AffineMap.lineMap (1 : ℂ) (p.1 : ℂ) ((1 + (p.2 : ℂ)) / 2)
-  continuous_toFun := by simp only [AffineMap.lineMap_apply_ring]; fun_prop
+  toFun p := AffineMap.lineMap (1 : ℂ) (p.1 : ℂ) ((1 + p.2) / 2)
+  continuous_toFun := by simp only [AffineMap.lineMap_apply_module]; fun_prop
+
+/-- The affine representative is the real line map at normalized time `(1 + s) / 2`. -/
+theorem circleIndexAffineScalar_eq_lineMap (z : Circle) (s : ℝ) :
+    circleIndexAffineScalar (z, s) = AffineMap.lineMap (1 : ℂ) (z : ℂ) ((1 + s) / 2) :=
+  (rfl)
 
 /-- The scalar is affine in the covector, with values `1` at `-1` and `z` at `1`. -/
 theorem circleIndexAffineScalar_apply (z : Circle) (s : ℝ) :
     circleIndexAffineScalar (z, s) = (1 - (s : ℂ)) / 2 + (1 + (s : ℂ)) / 2 * z := by
-  simp only [circleIndexAffineScalar, ContinuousMap.coe_mk, AffineMap.lineMap_apply_ring]
+  rw [circleIndexAffineScalar_eq_lineMap, AffineMap.lineMap_apply_module]
+  simp only [Complex.real_smul, Complex.ofReal_sub, Complex.ofReal_div, Complex.ofReal_add,
+    Complex.ofReal_one, Complex.ofReal_ofNat]
   ring
 
 /-- At the lower edge the affine scalar is constant. -/
 @[simp] theorem circleIndexAffineScalar_neg_one (z : Circle) :
-    circleIndexAffineScalar (z, -1) = 1 := by rw [circleIndexAffineScalar_apply]; norm_num
+    circleIndexAffineScalar (z, -1) = 1 := by
+  norm_num [circleIndexAffineScalar_eq_lineMap]
 
 /-- At the upper edge the affine scalar is the circle coordinate. -/
 @[simp] theorem circleIndexAffineScalar_one (z : Circle) :
-    circleIndexAffineScalar (z, 1) = z := by rw [circleIndexAffineScalar_apply]; norm_num
+    circleIndexAffineScalar (z, 1) = z := by
+  norm_num [circleIndexAffineScalar_eq_lineMap]
 
 /-- The affine scalar is constant above the identity of the circle. -/
 @[simp] theorem circleIndexAffineScalar_one_left (s : ℝ) :
-    circleIndexAffineScalar (1, s) = 1 := by rw [circleIndexAffineScalar_apply]; simp; ring
+    circleIndexAffineScalar (1, s) = 1 := by
+  simp [circleIndexAffineScalar_eq_lineMap]
 
 /-- The affine representative is smooth in the period-one position and the real covector. -/
 theorem contDiff_circleIndexAffineScalar_comp_circleExp :
@@ -87,66 +99,36 @@ theorem contDiff_circleIndexAffineScalar_comp_circleExp :
   · rintro ⟨⟩
     norm_num
 
-/-- Oriented coordinates centred at the zero of the affine scalar. -/
-def circleIndexAffineChart (w : ℂ) : Circle × ℝ :=
-  (-Circle.exp (2 * Real.arctan (w.re / 2)), w.im)
-
-/-- The real part is the angular displacement coordinate and the imaginary part is the covector. -/
-theorem circleIndexAffineChart_apply (w : ℂ) :
-    circleIndexAffineChart w = (-Circle.exp (2 * Real.arctan (w.re / 2)), w.im) := (rfl)
-
-/-- The origin maps to the zero covector over `-1`. -/
-@[simp] theorem circleIndexAffineChart_zero : circleIndexAffineChart 0 = (-1, 0) := by
-  simp [circleIndexAffineChart]
-
-/-- The affine chart embeds the complex plane as an open subset of the cylinder. -/
-theorem isOpenEmbedding_circleIndexAffineChart : IsOpenEmbedding circleIndexAffineChart := by
-  let θ (u : ℝ) := 2 * Real.arctan (u / 2)
-  have hd : IsOpenEmbedding (fun u : ℝ ↦ u / 2) :=
-    (OrderIso.divRight₀ (2 : ℝ) zero_lt_two).toHomeomorph.isOpenEmbedding
-  have ha : IsOpenEmbedding Real.arctan := Real.tanPartialHomeomorph.symm.isOpenEmbedding rfl
-  have hθ : IsOpenEmbedding θ :=
-    (Homeomorph.mulLeft₀ (2 : ℝ) (by norm_num)).isOpenEmbedding.comp (ha.comp hd)
-  have hr (u : ℝ) : θ u ∈ Set.Ico (-Real.pi) Real.pi := by
-    obtain ⟨hl, hu⟩ := Real.arctan_mem_Ioo (u / 2)
-    constructor <;> dsimp [θ] <;> linarith
-  have he : IsOpenEmbedding (fun u ↦ Circle.exp (θ u)) :=
-    (isLocalHomeomorph_circleExp.comp hθ.isLocalHomeomorph).isOpenEmbedding_of_injective
-      fun u v h ↦ hθ.injective (Circle.exp_injOn_Ico (by linarith) (hr u) (hr v) h)
-  have hn := (Homeomorph.mulLeft (-1 : Circle)).isOpenEmbedding.comp he
-  unfold circleIndexAffineChart
-  simpa [Function.comp_def, θ] using (hn.prodMap (IsOpenEmbedding.id (X := ℝ))).comp
-    Complex.equivRealProdCLM.toHomeomorph.isOpenEmbedding
-
 /-- In the oriented chart twice the affine scalar has the Cayley denominator. -/
-theorem two_mul_circleIndexAffineScalar_chart (w : ℂ) :
-    2 * circleIndexAffineScalar (circleIndexAffineChart w) =
+theorem two_mul_circleIndexAffineScalar_boundaryCayleyParametrization (w : ℂ) :
+    2 * circleIndexAffineScalar (boundaryCayleyParametrization w) =
       (-Complex.I * w.re - 2 * w.im) / (1 - (w.re / 2 : ℂ) * Complex.I) := by
-  have hd : 1 - (w.re / 2 : ℂ) * Complex.I ≠ 0 := by
-    apply Complex.ne_zero_of_re_pos
-    simp
-  have hc := Complex.one_add_mul_I_div_one_sub_mul_I_eq_exp (w.re / 2)
-  rw [← Circle.coe_exp] at hc
-  simp only [Complex.ofReal_div, Complex.ofReal_ofNat] at hc
-  have h := (div_eq_iff hd).mp hc
-  rw [circleIndexAffineChart, circleIndexAffineScalar_apply, Circle.coe_neg]
-  apply (eq_div_iff hd).mpr
-  linear_combination (1 + (w.im : ℂ)) * h
+  rw [boundaryCayleyParametrization_apply, circleIndexAffineScalar_apply, coe_boundaryCayley]
+  push_cast
+  have hd : (w.re : ℂ) / 2 + Complex.I ≠ 0 := add_I_ne_zero_of_im_nonneg (by simp)
+  have hc : 1 - (w.re : ℂ) / 2 * Complex.I ≠ 0 := Complex.ne_zero_of_re_pos (by simp)
+  apply (eq_div_iff hc).mpr
+  have h := div_mul_cancel₀ ((w.re : ℂ) / 2 - Complex.I) hd
+  linear_combination (norm := (ring_nf; simp [Complex.I_sq]; ring))
+    -(1 + (w.im : ℂ)) * Complex.I * h
 
 local notation "U" => {w : ℂ // w ≠ 0}
 
 /-- The affine scalar in chart coordinates, restricted to the punctured complex plane. -/
-def circleIndexAffineLocalScalar : C(U, U) where
-  toFun w := ⟨circleIndexAffineScalar (circleIndexAffineChart w), fun h ↦ w.property <|
-    isOpenEmbedding_circleIndexAffineChart.injective <|
-      ((circleIndexAffineScalar_eq_zero_iff _).mp h).trans circleIndexAffineChart_zero.symm⟩
-  continuous_toFun := continuous_induced_rng.mpr <| circleIndexAffineScalar.continuous.comp
-    (isOpenEmbedding_circleIndexAffineChart.continuous.comp continuous_subtypeVal)
+def circleIndexAffineLocalScalar : C(U, U) :=
+  let s := {w : ℂ | w ≠ 0}
+  let f := circleIndexAffineScalar.comp
+    ⟨boundaryCayleyParametrization, isOpenEmbedding_boundaryCayleyParametrization.continuous⟩
+  have h : Set.MapsTo f s s := fun _ hw h₀ ↦ hw <|
+    isOpenEmbedding_boundaryCayleyParametrization.injective <|
+      ((circleIndexAffineScalar_eq_zero_iff _).mp h₀).trans boundaryCayleyParametrization_zero.symm
+  (f.restrict s).codRestrict s fun w ↦ h w.property
 
-/-- In complex coordinates the punctured chart map evaluates the original affine scalar. -/
+/-- In the ambient complex plane the restricted scalar has its original value. -/
 @[simp] theorem coe_circleIndexAffineLocalScalar (w : U) :
-    (circleIndexAffineLocalScalar w : ℂ) = circleIndexAffineScalar (circleIndexAffineChart w) :=
-  (rfl)
+    (circleIndexAffineLocalScalar w : ℂ) =
+      circleIndexAffineScalar (boundaryCayleyParametrization w) :=
+  ContinuousMap.coe_codRestrict_apply _ _ _ _
 
 private def localPhase (t : unitInterval) : ℂ :=
   Complex.exp ((-(1 - (t : ℝ)) * Real.pi / 2 : ℝ) * Complex.I)
@@ -157,6 +139,7 @@ private def localDenominator (t : unitInterval) (w : ℂ) : ℂ :=
 
 private theorem localDenominator_ne_zero (t : unitInterval) (w : U) :
     localDenominator t w ≠ 0 := by
+  unfold localDenominator
   apply mul_ne_zero (Complex.ne_zero_of_re_pos (by simp))
   apply Complex.ofReal_ne_zero.mpr
   apply ne_of_gt
@@ -172,6 +155,7 @@ private theorem localNumerator_ne_zero (t : unitInterval) (w : U) :
   intro h
   have hr := congrArg Complex.re h
   have hi := congrArg Complex.im h
+  simp only [localNumerator, Complex.zero_re] at hr
   simp only [localNumerator, Complex.zero_im, neg_eq_zero, mul_eq_zero] at hi
   have ht : 2 - (t : ℝ) ≠ 0 := by linarith [t.property.2]
   exact w.property (Complex.ext hr (hi.resolve_left ht))
@@ -187,16 +171,18 @@ private theorem continuous_localValue : Continuous localValue := by
       ((1 + (p.1 : ℝ)) / 2 : ℝ) * localPhase p.1 * localNumerator p.1 p.2) := by
     simp only [localPhase, localNumerator, Complex.mk_eq_add_mul_I]
     fun_prop
-  exact hN.div hD fun p ↦ localDenominator_ne_zero p.1 p.2
+  unfold localValue
+  simpa only [Pi.div_def] using hN.div hD fun p ↦ localDenominator_ne_zero p.1 p.2
 
 private theorem localValue_ne_zero (p : unitInterval × U) : localValue p ≠ 0 := by
   have ht : 0 < (1 + (p.1 : ℝ)) / 2 := by linarith [p.1.property.1]
-  exact div_ne_zero (mul_ne_zero (mul_ne_zero (Complex.ofReal_ne_zero.mpr ht.ne')
-    (Complex.exp_ne_zero _)) (localNumerator_ne_zero p.1 p.2)) (localDenominator_ne_zero p.1 p.2)
+  simpa only [localValue, localPhase] using div_ne_zero
+    (mul_ne_zero (mul_ne_zero (Complex.ofReal_ne_zero.mpr ht.ne') (Complex.exp_ne_zero _))
+      (localNumerator_ne_zero p.1 p.2)) (localDenominator_ne_zero p.1 p.2)
 
 private theorem localValue_zero (w : U) :
-    localValue (0, w) = circleIndexAffineScalar (circleIndexAffineChart w) := by
-  have h := two_mul_circleIndexAffineScalar_chart w
+    localValue (0, w) = circleIndexAffineScalar (boundaryCayleyParametrization w) := by
+  have h := two_mul_circleIndexAffineScalar_boundaryCayleyParametrization w
   rw [localValue]
   have hphase : localPhase 0 = -Complex.I := by simp [localPhase]
   rw [hphase]
@@ -223,12 +209,11 @@ def circleIndexAffineLocalHomotopy :
   map_zero_left w := by
     apply Subtype.ext
     simpa only [coe_circleIndexAffineLocalScalar] using localValue_zero w
-  map_one_left w := by
-    apply Subtype.ext
-    simpa only [ContinuousMap.coe_apply, Homeomorph.coe_inv₀_apply] using localValue_one w
+  map_one_left w := Subtype.ext (localValue_one w)
 
-/-- In complex coordinates the deformation rotates and rescales the real and imaginary
-components, with a positive radial weight in the denominator. -/
+/-- The numerator reflects across the real axis, stretches the imaginary component and rotates
+by a phase. The denominator multiplies a complex Cayley factor by the positive real radial
+weight `(1 - t) + t * ‖w‖ ^ 2`. At time one the reflected point divided by `‖w‖ ^ 2` is `w⁻¹`. -/
 theorem circleIndexAffineLocalHomotopy_apply (t : unitInterval) (w : U) :
     (circleIndexAffineLocalHomotopy (t, w) : ℂ) =
       ((1 + (t : ℝ)) / 2 : ℝ) * Complex.exp ((-(1 - (t : ℝ)) * Real.pi / 2 : ℝ) * Complex.I) *

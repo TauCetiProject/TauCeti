@@ -34,6 +34,8 @@ public section
 open Bornology Complex Filter Function Metric Set Topology UpperHalfPlane
 open scoped OnePoint
 
+open Real (boundaryCayley)
+
 namespace TauCeti
 
 /-- **The disc Schwarz--Christoffel theorem for an unbounded polygonal Jordan domain.**

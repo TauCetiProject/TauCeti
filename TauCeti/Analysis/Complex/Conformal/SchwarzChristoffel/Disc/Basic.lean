@@ -9,7 +9,7 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.Affine
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Complex.Conformal.PreSchwarzian
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
+public import TauCeti.Topology.Circle.Cayley
 import TauCeti.Analysis.SpecialFunctions.Pow.LogDeriv
 
 /-!
@@ -66,6 +66,8 @@ unbounded polygons as well, including divergence at their vertex at infinity.
 public section
 
 noncomputable section
+
+open Real (boundaryCayley coe_boundaryCayley boundaryCayley_ne_one)
 
 namespace TauCeti
 

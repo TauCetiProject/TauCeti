@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5, OpenAI gpt-6.1-sol
 module
 
 public import TauCeti.Analysis.Complex.Pick.Basic
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
+public import TauCeti.Topology.Circle.Cayley
 public import TauCeti.MeasureTheory.Measure.ResolventTransform.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.DiscCoordinate
 import TauCeti.Basic.Complex.OfRealSub
@@ -24,14 +24,13 @@ of the Cayley coordinate from the upper half-plane to the unit disc.  A finite m
 circle consequently splits into its atom at `1`, which produces the linear term in a Nevanlinna
 representation, and a finite measure on the real line.
 
-This file gives the explicit boundary homeomorphism and packages the measure transport.  The
+This file uses the boundary Cayley homeomorphism to transport measures.  The
 integral decomposition is stated for arbitrary continuous functions on the circle, so it can be
 applied directly to the Herglotz kernel.  Under the boundary coordinate that kernel becomes the
 Nevanlinna kernel `(1 + x * z) / (x - z)`.
 
 ## Main declarations
 
-* `TauCeti.boundaryCayleyHomeomorph`: the homeomorphism from `ℝ` to `Circle \ {1}`.
 * `MeasureTheory.Measure.cayleyPushforward`: the finite real-line measure obtained from the
   non-atomic-at-`1` part of a circle measure.
 * `TauCeti.integral_circle_eq_atom_add_integral_cayleyPushforward`: decomposition of an integral
@@ -61,103 +60,10 @@ noncomputable section
 
 open Complex MeasureTheory Metric Set
 
+open Real (boundaryCayley coe_boundaryCayley continuous_boundaryCayley
+  boundaryCayley_inverseCayleyCoord)
+
 namespace TauCeti
-
-/-- The real part of a boundary Cayley point. -/
-@[simp]
-theorem boundaryCayley_re (x : ℝ) :
-    (((x : ℂ) - I) / ((x : ℂ) + I)).re = (x ^ 2 - 1) / (x ^ 2 + 1) := by
-  rw [div_re]
-  simp only [sub_re, sub_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im,
-    normSq_apply]
-  ring
-
-/-- The imaginary part of a boundary Cayley point. -/
-@[simp]
-theorem boundaryCayley_im (x : ℝ) :
-    (((x : ℂ) - I) / ((x : ℂ) + I)).im = -(2 * x) / (x ^ 2 + 1) := by
-  rw [div_im]
-  simp only [sub_re, sub_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im,
-    normSq_apply]
-  ring
-
-private theorem one_sub_re_ne_zero_of_ne_one {z : Circle} (hz : z ≠ 1) :
-    1 - (z : ℂ).re ≠ 0 := by
-  intro h
-  have hre : (z : ℂ).re = 1 := by linarith
-  have him : (z : ℂ).im = 0 := by
-    have hs := Circle.normSq_coe z
-    rw [normSq_apply, hre] at hs
-    nlinarith [sq_nonneg (z : ℂ).im]
-  apply hz
-  apply Circle.ext
-  apply Complex.ext <;> simp [hre, him]
-
-/-- A non-`1` point of the circle is recovered from its real boundary coordinate
-`Complex.inverseCayleyCoord`, which inverts the boundary Cayley map
-(`Complex.inverseCayleyCoord_cayley`). At the omitted point `1` that coordinate takes the harmless
-value `0`; the measure transport below first restricts away from that point. -/
-theorem boundaryCayley_inverseCayleyCoord {z : Circle} (hz : z ≠ 1) :
-    boundaryCayley (inverseCayleyCoord z) = z := by
-  rw [inverseCayleyCoord_eq_neg_im_div (Circle.norm_coe z)]
-  apply Circle.ext
-  have hden := one_sub_re_ne_zero_of_ne_one hz
-  have hcircle := Circle.normSq_coe z
-  rw [normSq_apply] at hcircle
-  have hquad : (z : ℂ).im ^ 2 + (1 - (z : ℂ).re) ^ 2 =
-      2 * (1 - (z : ℂ).re) := by
-    nlinarith [hcircle]
-  have hquadpos : 0 < (z : ℂ).im ^ 2 + (1 - (z : ℂ).re) ^ 2 :=
-    add_pos_of_nonneg_of_pos (sq_nonneg _) (sq_pos_of_ne_zero hden)
-  apply Complex.ext
-  · rw [coe_boundaryCayley, boundaryCayley_re]
-    have hdenom : 0 < (-(z : ℂ).im / (1 - (z : ℂ).re)) ^ 2 + 1 := by positivity
-    rw [div_eq_iff hdenom.ne']
-    field_simp [hden, hquadpos.ne']
-    nlinarith [hquad]
-  · rw [coe_boundaryCayley, boundaryCayley_im]
-    have hdenom : 0 < (-(z : ℂ).im / (1 - (z : ℂ).re)) ^ 2 + 1 := by positivity
-    rw [div_eq_iff hdenom.ne']
-    field_simp [hden, hquadpos.ne']
-    rw [hquad]
-    ring
-
-/-- The boundary Cayley map is continuous. -/
-@[fun_prop]
-theorem continuous_boundaryCayley : Continuous boundaryCayley := by
-  apply continuous_induced_rng.mpr
-  -- The circle's topology is induced by its coercion to `ℂ`, so expose that coercion here.
-  change Continuous (fun x : ℝ => (boundaryCayley x : ℂ))
-  simp_rw [coe_boundaryCayley]
-  exact Continuous.div (by fun_prop) (by fun_prop) fun x h ↦ by
-    have := congrArg im h
-    norm_num at this
-
-/-- The inverse boundary coordinate is continuous away from the omitted point `1`. -/
-theorem continuous_inverseCayleyCoord_restrict :
-    Continuous fun z : {z : Circle // z ≠ 1} ↦ inverseCayleyCoord (z : Circle) := by
-  simp_rw [inverseCayleyCoord_eq_neg_im_div (Circle.norm_coe _)]
-  exact Continuous.div₀ (by fun_prop) (by fun_prop) fun z ↦
-    one_sub_re_ne_zero_of_ne_one z.property
-
-/-- The boundary Cayley homeomorphism from the real line onto the circle punctured at `1`. -/
-def boundaryCayleyHomeomorph : ℝ ≃ₜ {z : Circle // z ≠ 1} where
-  toFun x := ⟨boundaryCayley x, boundaryCayley_ne_one x⟩
-  invFun z := inverseCayleyCoord (z : Circle)
-  left_inv x := by simp
-  right_inv z := Subtype.ext (boundaryCayley_inverseCayleyCoord z.property)
-  continuous_toFun := continuous_boundaryCayley.subtype_mk _
-  continuous_invFun := continuous_inverseCayleyCoord_restrict
-
-@[simp]
-theorem boundaryCayleyHomeomorph_apply (x : ℝ) :
-    (boundaryCayleyHomeomorph x : Circle) = boundaryCayley x :=
-  by simp [boundaryCayleyHomeomorph]
-
-@[simp]
-theorem boundaryCayleyHomeomorph_symm_apply (z : {z : Circle // z ≠ 1}) :
-    boundaryCayleyHomeomorph.symm z = inverseCayleyCoord (z : Circle) :=
-  by simp [boundaryCayleyHomeomorph]
 
 /-- The real-line measure obtained by deleting the atom at `1` from a circle measure and pushing
 the remainder forward through the inverse boundary Cayley coordinate. -/

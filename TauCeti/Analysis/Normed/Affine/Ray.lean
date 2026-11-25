@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Affine.AddTorsor
 public import Mathlib.Analysis.Convex.Between
+import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
 # Rays from a point of a seminormed affine space
@@ -52,13 +53,10 @@ theorem mem_affineSegment_iff_of_dist_le {c y z : P} (hc : 0 < dist c z)
 point of norm at least `‖b‖`. -/
 theorem norm_le_norm_lineMap_of_one_le {a b : V} {t : ℝ} (hab : ‖a‖ ≤ ‖b‖) (ht : 1 ≤ t) :
     ‖b‖ ≤ ‖AffineMap.lineMap a b t‖ := by
-  calc
-    ‖b‖ = t * ‖b‖ - (t - 1) * ‖b‖ := by ring
-    _ ≤ t * ‖b‖ - (t - 1) * ‖a‖ :=
-      sub_le_sub_left (mul_le_mul_of_nonneg_left hab (sub_nonneg.mpr ht)) _
-    _ ≤ ‖AffineMap.lineMap a b t‖ := by
-      rw [AffineMap.lineMap_apply_module, ← neg_sub t 1, neg_smul, add_comm, ← sub_eq_add_neg]
-      simpa only [norm_smul, Real.norm_of_nonneg (zero_le_one.trans ht),
-        Real.norm_of_nonneg (sub_nonneg.mpr ht)] using norm_sub_norm_le (t • b) ((t - 1) • a)
+  have hc := convexOn_univ_norm.comp_affineMap (AffineMap.lineMap a b)
+  simpa only [Function.comp_apply, AffineMap.lineMap_apply_one] using
+    hc.le_right_of_left_le'' (Set.mem_univ _) (Set.mem_univ _) zero_lt_one ht
+      (by simpa only [Function.comp_apply, AffineMap.lineMap_apply_zero,
+        AffineMap.lineMap_apply_one] using hab)
 
 end TauCeti

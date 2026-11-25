@@ -8,10 +8,10 @@ module
 public import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
+public import TauCeti.Topology.Circle.Normalize
 import Mathlib.Analysis.Complex.OperatorNorm
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import TauCeti.Analysis.Calculus.SecondDerivative
-import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 
@@ -108,6 +108,7 @@ noncomputable section
 namespace TauCeti.Vortex
 
 open Complex ComplexConjugate Filter Metric
+open Circle (homeomorphSphere)
 open scoped Topology ContDiff
 
 /-! ### The winding phase -/
@@ -115,7 +116,7 @@ open scoped Topology ContDiff
 /-- The winding phase `(z / |z|)^m` as a circle-valued map on the plane. At the origin, where it
 has no continuous extension for `m ≠ 0`, its value is `1`. -/
 def windingPhase (m : ℕ) (z : ℂ) : Circle :=
-  Circle.exp (m * arg z)
+  homeomorphSphere.symm (sphereDirection (homeomorphSphere 1) z) ^ m
 
 /-- The winding phase of degree zero is `1`. -/
 @[simp]
@@ -130,7 +131,8 @@ theorem windingPhase_zero_right (m : ℕ) : windingPhase m 0 = 1 := by
 /-- Off the origin, the winding phase is `(z / |z|)^m`. -/
 theorem coe_windingPhase (m : ℕ) {z : ℂ} (hz : z ≠ 0) :
     (windingPhase m z : ℂ) = (z / (‖z‖ : ℂ)) ^ m := by
-  rw [windingPhase, Circle.exp_natCast_mul, Circle.coe_pow, Circle.coe_exp, exp_arg_mul_I hz]
+  rw [windingPhase, Circle.coe_pow, Circle.coe_homeomorphSphere_symm_apply,
+    coe_sphereDirection_eq_div_norm _ hz]
 
 /-- The winding phase is smooth off the origin. -/
 theorem contDiffAt_windingPhase (m : ℕ) {z : ℂ} (hz : z ≠ 0) {n : WithTop ℕ∞} :
@@ -149,14 +151,9 @@ theorem differentiableAt_windingPhase (m : ℕ) {z : ℂ} (hz : z ≠ 0) :
 phase `m Im (log (w / z))`, which is smooth near `w = z`. -/
 private theorem windingPhase_eq_mul_exp (m : ℕ) {z w : ℂ} (hz : z ≠ 0) (hw : w ≠ 0) :
     windingPhase m w = windingPhase m z * Circle.exp (m * (log (w / z)).im) := by
-  apply Circle.ext
-  rw [Circle.exp_natCast_mul, Circle.coe_mul, Circle.coe_pow, Circle.coe_exp, log_im,
-    exp_arg_mul_I (div_ne_zero hw hz), coe_windingPhase m hw, coe_windingPhase m hz, ← mul_pow,
-    norm_div, ofReal_div]
-  have hz' : (‖z‖ : ℂ) ≠ 0 := ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)
-  have hw' : (‖w‖ : ℂ) ≠ 0 := ofReal_ne_zero.2 (norm_ne_zero_iff.2 hw)
-  congr 1
-  field_simp
+  simp only [windingPhase, log_im, Circle.exp_natCast_mul, ← mul_pow]
+  rw [← Complex.sphereDirection_one_eq_exp_arg,
+    ← Circle.sphereDirection_mul_of_ne_zero 1 hz (div_ne_zero hw hz), mul_div_cancel₀ w hz]
 
 /-- The logarithmic derivative of the winding phase is `m dθ`, where `dθ_z(v) = Im (v / z)`. -/
 theorem gaugeForm_windingPhase (m : ℕ) {z : ℂ} (hz : z ≠ 0) (v : ℂ) :
