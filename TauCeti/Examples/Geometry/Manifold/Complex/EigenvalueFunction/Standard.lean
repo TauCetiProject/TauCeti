@@ -33,16 +33,13 @@ section NormSq
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [FiniteDimensional ℂ V]
 
 /-- `λ_ω[i∂∂bar |z|²] = 2e`. -/
-example (x : V) :
+theorem relEigenvalueFunction_norm_sq (x : V) :
     relEigenvalueFunction V (standardHermitianMetric V) 0 (fun z ↦ ‖z‖ ^ 2) x = fun _ ↦ 2 := by
   have hh : (innerₛₗ ℂ : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ).IsSymm := ⟨fun u v ↦ inner_conj_symm v u⟩
   refine compatible_standardHermitianMetric.relEigenvalueFunction_eq_of_isRelEigenvalueVector
     (fun _ _ ↦ by simp) ?_ antitone_const
-  have hH : twoFormHermitianForm V (standardHermitianMetric V).val x =
-      fun u v ↦ innerₛₗ ℂ u v := by
-    ext u v
-    simp
-  rw [hH, funext₂ (ddbarHermitianForm_zero_form_norm_sq x)]
+  rw [funext₂ (twoFormHermitianForm_standardHermitianMetric x),
+    funext₂ (ddbarHermitianForm_zero_form_norm_sq x)]
   exact (isRelEigenvalueVector_smul_self_iff hh
     (fun v hv ↦ by simpa using (re_inner_self_pos (𝕜 := ℂ)).2 hv) 2).2 rfl
 
@@ -60,21 +57,8 @@ example (x : V) :
 /-- Doubling the metric halves the eigenvalues: `λ_{2ω}[i∂∂bar |z|²] = e`. -/
 example (x : V) :
     relEigenvalueFunction V ((2 : ℝ) • standardHermitianMetric V) 0 (fun z ↦ ‖z‖ ^ 2) x = 1 := by
-  have hh : (innerₛₗ ℂ : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ).IsSymm := ⟨fun u v ↦ inner_conj_symm v u⟩
   rw [compatible_standardHermitianMetric.relEigenvalueFunction_smul_left (fun _ _ ↦ by simp)
-    two_pos]
-  have h2 : relEigenvalueFunction V (standardHermitianMetric V) 0 (fun z ↦ ‖z‖ ^ 2) x =
-      fun _ ↦ 2 := by
-    refine compatible_standardHermitianMetric.relEigenvalueFunction_eq_of_isRelEigenvalueVector
-      (fun _ _ ↦ by simp) ?_ antitone_const
-    have hH : twoFormHermitianForm V (standardHermitianMetric V).val x =
-        fun u v ↦ innerₛₗ ℂ u v := by
-      ext u v
-      simp
-    rw [hH, funext₂ (ddbarHermitianForm_zero_form_norm_sq x)]
-    exact (isRelEigenvalueVector_smul_self_iff hh
-      (fun v hv ↦ by simpa using (re_inner_self_pos (𝕜 := ℂ)).2 hv) 2).2 rfl
-  rw [h2]
+    two_pos, relEigenvalueFunction_norm_sq]
   ext
   simp
 
