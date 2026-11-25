@@ -37,6 +37,9 @@ global functions of the base change.
   restricts to an isomorphism over every open contained in its range.
 * `AlgebraicGeometry.Scheme.Hom.isPullback_resLE_of_eq`: the restriction of `f` to an open `U`
   of the target and an open `V` of the source equal to `f ⁻¹ᵁ U` is a pullback of `f`.
+* `AlgebraicGeometry.Scheme.Hom.exists_dense_open_of_comp_iso`: a property respecting isomorphisms
+  that holds for the restriction of `f ≫ e.hom` over a dense open, for an isomorphism `e`, holds for
+  the restriction of `f` over a dense open.
 * `AlgebraicGeometry.Scheme.Hom.isIso_morphismRestrict_of_isIso_comp`: if an open immersion `ι`
   contains `f ⁻¹ᵁ V` in its range and `(ι ≫ f) ∣_ V` is an isomorphism, so is `f ∣_ V`.
 * `AlgebraicGeometry.Scheme.Hom.isIso_pullbackFst_morphismRestrict`: being an isomorphism over an
@@ -108,6 +111,18 @@ theorem Scheme.Hom.isPullback_resLE_of_eq (U : Y.Opens) {V : X.Opens} (h : V = f
     IsPullback (f.resLE U V h.le) V.ι U.ι f := by
   subst h
   simpa [Scheme.Hom.resLE_eq_morphismRestrict] using isPullback_morphismRestrict f U
+
+/-- A property respecting isomorphisms that holds for the restriction of `f ≫ e.hom` over a
+dense open, for an isomorphism of targets `e`, holds for the restriction of `f` over the preimage
+of that open, which is dense. -/
+theorem Scheme.Hom.exists_dense_open_of_comp_iso (P : MorphismProperty Scheme.{u})
+    [P.RespectsIso] {Z : Scheme.{u}} (e : Y ≅ Z)
+    (h : ∃ U : Z.Opens, Dense (U : Set Z) ∧ P ((f ≫ e.hom) ∣_ U)) :
+    ∃ U : Y.Opens, Dense (U : Set Y) ∧ P (f ∣_ U) := by
+  obtain ⟨U, hU, hP⟩ := h
+  refine ⟨e.hom ⁻¹ᵁ U, hU.preimage e.hom.homeomorph.isOpenMap, ?_⟩
+  rw [morphismRestrict_comp] at hP
+  exact (P.cancel_right_of_respectsIso _ _).mp hP
 
 /-- If the range of an open immersion `ι` contains `f ⁻¹ᵁ V` and `(ι ≫ f) ∣_ V` is an
 isomorphism, then so is `f ∣_ V`: over `V`, the morphism `f` is `ι ≫ f` up to an isomorphism. -/
