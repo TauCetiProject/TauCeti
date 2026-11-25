@@ -45,7 +45,9 @@ sections by restriction to basic opens. On an affine scheme, a map of abelian pr
 sheaf of modules that is linear over global functions is linear over all functions
 (`Scheme.Modules.app_smul_of_isAffine`). For `Spec R` over `Spec k`, the `k`-algebra structure
 `Scheme.algebraOfOver` on sections factors through `R` (`Scheme.algebraMap_spec_eq`) and acts
-pointwise on the localizations of `R` (`Scheme.spec_sections_smul_apply`).
+pointwise on the localizations of `R` (`Scheme.spec_sections_smul_apply`); for a localization `R`
+of `k`, the global sections are a localization of `k` at the same submonoid
+(`Scheme.isLocalization_Spec_top`).
 -/
 
 public section
@@ -397,6 +399,19 @@ theorem spec_sections_smul_apply (V : (Spec R).Opens) (c : k) (s : Γ(Spec R, V)
   rw [Algebra.smul_def, Algebra.smul_def, algebraMap_spec_eq,
     IsScalarTower.algebraMap_apply k R (StructureSheaf.Localizations R x.val)]
   rfl
+
+/-- For a localization `R` of `k`, the global sections of `Spec R` over `Spec k` are a
+localization of `k` at the same submonoid. -/
+instance isLocalization_Spec_top (M : Submonoid k) [IsLocalization M R] :
+    IsLocalization M Γ(Spec R, ⊤) :=
+  IsLocalization.isLocalization_of_algEquiv M
+    (AlgEquiv.ofBijective (IsScalarTower.toAlgHom k R Γ(Spec R, ⊤)) bijective_algebraMap_Spec_top)
+
+/-- The global sections of `Spec k` over itself are `k`, the localization of `k` at the trivial
+submonoid. -/
+instance isLocalization_bot_Spec_top : IsLocalization (⊥ : Submonoid k) Γ(Spec (.of k), ⊤) :=
+  have : IsLocalization (⊥ : Submonoid k) (CommRingCat.of k) := IsLocalization.self bot_le
+  isLocalization_Spec_top (R := .of k) ⊥
 
 end SectionsAlgebra
 

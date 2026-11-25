@@ -31,7 +31,7 @@ ring `k`, whose global sections are `k`, have order one and not zero.
 
 * `Scheme.mem_differentialOperators_zero_of_isLocalization`: every `k`-linear endomorphism of
   the structure sheaf over an open `U` has order zero.
-* `Scheme.bijective_toStructureEnd_of_isLocalization`: every such endomorphism is multiplication
+* `Scheme.toStructureEnd_bijective_of_isLocalization`: every such endomorphism is multiplication
   by a unique section of `O_X` over `U`.
 * `Scheme.differentialOperators_eq_differentialOperators_zero_of_isLocalization`:
   `F_m D_X = F_0 D_X` for every `m`.
@@ -39,10 +39,11 @@ ring `k`, whose global sections are `k`, have order one and not zero.
   differential operator.
 * `Scheme.isIso_toPresheafOfDifferentialOperators_of_isLocalization`: `O_X → D_X` is an
   isomorphism of presheaves of rings; for `X = Spec k` this is the instance
-  `Scheme.isIso_toPresheafOfDifferentialOperators_spec`.
+  `Scheme.isIso_toPresheafOfDifferentialOperators_Spec`.
 
 The `k`-algebra structure on sections is `Scheme.algebraOfOver`, activated locally in this file
-as in `TauCeti.AlgebraicGeometry.DifferentialOperator.Basic`.
+as in `TauCeti.AlgebraicGeometry.DifferentialOperator.Basic`. The general results apply to
+`Spec k` at the trivial submonoid through the instance `Scheme.isLocalization_bot_Spec_top`.
 
 ## References
 
@@ -103,7 +104,7 @@ theorem mem_differentialOperators_zero_of_isLocalization {U : X.Opens} (D : X.St
 /-- On an affine scheme over `Spec k` whose global sections are a localization of `k`, every
 `k`-linear endomorphism of the structure sheaf over an open `U` is multiplication by a unique
 section over `U`. -/
-theorem bijective_toStructureEnd_of_isLocalization (U : X.Opens) :
+theorem toStructureEnd_bijective_of_isLocalization (U : X.Opens) :
     Function.Bijective (X.toStructureEnd k U) :=
   ⟨toStructureEnd_injective U, fun D ↦
     mem_differentialOperators_zero_iff.1 (mem_differentialOperators_zero_of_isLocalization M D)⟩
@@ -135,36 +136,16 @@ theorem isIso_toPresheafOfDifferentialOperators_of_isLocalization :
     · have h' := congrArg Subtype.val h
       rw [coe_toPresheafOfDifferentialOperators_app_apply,
         coe_toPresheafOfDifferentialOperators_app_apply] at h'
-      exact (bijective_toStructureEnd_of_isLocalization M U.unop).1 h'
-    · obtain ⟨f, hf⟩ := (bijective_toStructureEnd_of_isLocalization M U.unop).2 D.val
+      exact (toStructureEnd_bijective_of_isLocalization M U.unop).1 h'
+    · obtain ⟨f, hf⟩ := (toStructureEnd_bijective_of_isLocalization M U.unop).2 D.val
       exact ⟨f, Subtype.ext ((coe_toPresheafOfDifferentialOperators_app_apply U f).trans hf)⟩
   exact NatIso.isIso_of_isIso_app _
 
 end Affine
 
-variable (M : Submonoid k)
-
-/-! ### Spectra of localizations of the base ring -/
-
-/-- For a localization `R` of `k`, the global sections of `Spec R` over `Spec k` are a
-localization of `k` at the same submonoid. -/
-instance isLocalization_spec_top (R : CommRingCat.{u}) [Algebra k R] [IsLocalization M R] :
-    IsLocalization M Γ(Spec R, ⊤) :=
-  -- `algebraMap R Γ(Spec R, ⊤)` is the inverse of `Scheme.ΓSpecIso R`, followed by the
-  -- restriction from `⊤` to itself (`algebraMap_Spec_obj`)
-  IsLocalization.isLocalization_of_algEquiv M (AlgEquiv.ofBijective
-    (IsScalarTower.toAlgHom k R Γ(Spec R, ⊤))
-    (Scheme.ΓSpecIso R).commRingCatIsoToRingEquiv.symm.bijective)
-
-/-- The global sections of `Spec k` over itself are `k`, the localization of `k` at the trivial
-submonoid. -/
-instance isLocalization_bot_spec_top : IsLocalization (⊥ : Submonoid k) Γ(Spec (.of k), ⊤) :=
-  have : IsLocalization (⊥ : Submonoid k) (CommRingCat.of k) := IsLocalization.self bot_le
-  isLocalization_spec_top ⊥ (.of k)
-
 /-- `D_X = O_X` for `X = Spec k`: the ring map from the structure sheaf to the sheaf of
 differential operators is an isomorphism of presheaves of rings. -/
-instance isIso_toPresheafOfDifferentialOperators_spec :
+instance isIso_toPresheafOfDifferentialOperators_Spec :
     IsIso ((Spec (.of k)).toPresheafOfDifferentialOperators k) :=
   isIso_toPresheafOfDifferentialOperators_of_isLocalization _ ⊥
 
