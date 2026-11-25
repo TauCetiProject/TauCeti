@@ -12,7 +12,6 @@ public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.LocalDegree
 
 import Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal
-import TauCeti.RingTheory.DedekindDomain.AdicValuation.Norm
 
 /-!
 # Completions of a cyclotomic field at a place over `p`

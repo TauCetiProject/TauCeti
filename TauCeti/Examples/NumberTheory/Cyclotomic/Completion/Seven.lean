@@ -165,7 +165,7 @@ example (v : HeightOneSpectrum (𝓞 F))
 /-- At each place over `7` the completion `F_v` is `ℚ₇`. -/
 example (v : HeightOneSpectrum (𝓞 F)) (hv : ((7 : ℕ) : 𝓞 F) ∈ v.asIdeal) :
     Nonempty (v.adicCompletion F ≃A[ℚ] ℚ_[7]) :=
-  have := (liesOver_asIdeal_primesEquiv_symm_iff (R := ℤ) v.asIdeal ⟨7, Fact.out⟩).2 hv
+  have := (liesOver_asIdeal_primesEquiv_symm_iff (R := ℤ) v.isPrime.ne_top ⟨7, Fact.out⟩).2 hv
   ⟨adicCompletionEquivPadic v 7 (finrank_adicCompletion_eq_one v 7 (by decide))⟩
 
 end TauCeti.Examples.CyclotomicCompletionSeven

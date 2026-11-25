@@ -24,7 +24,7 @@ corresponding to a rational prime `p` with the ideal `(p)`.
   a unit at `v` exactly when its `p`-adic valuation vanishes.
 * `Rat.HeightOneSpectrum.asIdeal_primesEquiv_symm`: the height-one prime of `R` corresponding to
   the prime `p` is `(p)`.
-* `Rat.HeightOneSpectrum.liesOver_asIdeal_primesEquiv_symm_iff`: a prime ideal lies over it exactly
+* `Rat.HeightOneSpectrum.liesOver_asIdeal_primesEquiv_symm_iff`: a proper ideal lies over it exactly
   when it contains `p`.
 -/
 
@@ -64,15 +64,15 @@ theorem asIdeal_primesEquiv_symm (p : Nat.Primes) :
   rw [Ideal.map_span, Set.image_singleton, map_natCast]
 
 omit [IsFractionRing R ℚ] in
-/-- A prime ideal `P` of an `R`-algebra lies over the height-one prime of `R` corresponding to
+/-- A proper ideal `P` of an `R`-algebra lies over the height-one prime of `R` corresponding to
 the prime `p` exactly when `p ∈ P`. -/
-theorem liesOver_asIdeal_primesEquiv_symm_iff {S : Type*} [CommRing S] [Algebra R S] (P : Ideal S)
-    [P.IsPrime] (p : Nat.Primes) :
+theorem liesOver_asIdeal_primesEquiv_symm_iff {S : Type*} [CommRing S] [Algebra R S] {P : Ideal S}
+    (hP : P ≠ ⊤) (p : Nat.Primes) :
     P.LiesOver ((primesEquiv (R := R)).symm p).asIdeal ↔ ((p : ℕ) : S) ∈ P := by
   have hp : Prime ((p : ℕ) : R) := by
     rw [← map_natCast (IsIntegralClosure.intEquiv R).symm, MulEquiv.prime_iff]
     exact Nat.prime_iff_prime_int.1 p.property
-  rw [asIdeal_primesEquiv_symm, Ideal.liesOver_span_iff Ideal.IsPrime.ne_top' hp]
+  rw [asIdeal_primesEquiv_symm, Ideal.liesOver_span_iff hP hp]
   simp
 
 end Rat.HeightOneSpectrum
