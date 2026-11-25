@@ -212,18 +212,16 @@ theorem IsNuclear.comp_left {φ : A →CP B} (h : φ.IsNuclear) (ψ : B →CP C)
     (ψ.comp φ).IsNuclear := by
   obtain ⟨c, θ, hθ, rfl⟩ := h
   obtain ⟨K, ψ', hψ', rfl⟩ := exists_norm_apply_le_and_eq_smul ψ
-  refine ⟨K * c, ψ'.comp θ, hθ.comp_left ψ' hψ', ext fun a ↦ ?_⟩
-  rw [comp_apply, smul_apply, smul_apply, smul_apply, comp_apply, mul_smul,
-    LinearMapClass.map_smul_of_tower ψ' c (θ a)]
+  refine ⟨K * c, ψ'.comp θ, hθ.comp_left ψ' hψ', ?_⟩
+  rw [smul_comp, comp_smul, mul_smul]
 
 /-- Composing a nuclear map with a completely positive map on the right gives a nuclear map. -/
 theorem IsNuclear.comp_right {φ : A →CP B} (h : φ.IsNuclear) (θ : D →CP A) :
     (φ.comp θ).IsNuclear := by
   obtain ⟨c, ψ, hψ, rfl⟩ := h
   obtain ⟨K, θ', hθ', rfl⟩ := exists_norm_apply_le_and_eq_smul θ
-  refine ⟨c * K, ψ.comp θ', hψ.comp_right θ' hθ', ext fun d ↦ ?_⟩
-  rw [comp_apply, smul_apply, smul_apply, smul_apply, comp_apply, mul_smul,
-    LinearMapClass.map_smul_of_tower ψ K (θ' d)]
+  refine ⟨c * K, ψ.comp θ', hψ.comp_right θ' hθ', ?_⟩
+  rw [smul_comp, comp_smul, mul_smul]
 
 end CompletelyPositiveMap
 

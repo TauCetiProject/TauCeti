@@ -168,6 +168,16 @@ def comp (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) : A₁ →CP A₃ :=
 @[simp] theorem toLinearMap_comp (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) :
     (ψ.comp φ).toLinearMap = ψ.toLinearMap.comp φ.toLinearMap := (rfl)
 
+/-- Composition is compatible with `ℝ≥0`-scaling on the left factor. -/
+@[simp] theorem smul_comp (c : ℝ≥0) (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) :
+    (c • ψ).comp φ = c • ψ.comp φ :=
+  ext fun _ ↦ rfl
+
+/-- Composition is compatible with `ℝ≥0`-scaling on the right factor. -/
+@[simp] theorem comp_smul (c : ℝ≥0) (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) :
+    ψ.comp (c • φ) = c • ψ.comp φ :=
+  ext fun a ↦ LinearMapClass.map_smul_of_tower ψ c (φ a)
+
 /-- The *completely positive order* on `A₁ →CP A₂`: `ψ ≤ φ` means `φ = ψ + θ` for some
 `θ : A₁ →CP A₂`. -/
 instance instPartialOrder : PartialOrder (A₁ →CP A₂) where
