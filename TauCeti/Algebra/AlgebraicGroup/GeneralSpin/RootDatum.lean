@@ -444,10 +444,10 @@ theorem gspinEvenRootDatum_coroot_typeDClassicalSimpleIndex_last :
     (gspinEvenRootDatum n).coroot (typeDClassicalSimpleIndex hn ⟨n - 1, by omega⟩) =
       (Pi.single ⟨n - 2, by omega⟩ 1 + Pi.single ⟨n - 1, by omega⟩ 1, -1) := by
   rw [gspinEvenRootDatum_coroot, typeDClassicalSimpleIndex_val,
-    typeDClassicalSimpleRoot_of_not_add_one_lt hn (by simp; omega)]
+    typeDSimpleRoot_of_not_add_one_lt hn (by simp; omega)]
   congr 1
   rw [halfNegCoordinateSum, typeDClassicalSimpleIndex_val,
-    typeDClassicalSimpleRoot_of_not_add_one_lt hn (by simp; omega)]
+    typeDSimpleRoot_of_not_add_one_lt hn (by simp; omega)]
   simp [Finset.sum_add_distrib]
 
 end Even
