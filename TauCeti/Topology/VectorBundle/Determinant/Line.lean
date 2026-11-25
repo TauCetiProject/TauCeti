@@ -166,10 +166,19 @@ trivial. -/
 def rankZeroSection (hF : finrank 𝕜 F = 0) (x : B) : DetBundle 𝕜 F E x :=
   (zeroEquiv 𝕜 F E hF x).symm 1
 
+/-- The empty exterior product is the vector with coordinate `1` under
+`TauCeti.DetBundle.zeroEquiv`. -/
+@[simp]
+theorem zeroEquiv_rankZeroSection (hF : finrank 𝕜 F = 0) (x : B) :
+    zeroEquiv 𝕜 F E hF x (rankZeroSection hF x) = 1 :=
+  (zeroEquiv 𝕜 F E hF x).apply_symm_apply 1
+
 /-- The empty exterior product vanishes nowhere: it is `1 ∈ ⋀⁰ (E x) ≃ 𝕜`. -/
 theorem rankZeroSection_ne_zero (hF : finrank 𝕜 F = 0) (x : B) :
     rankZeroSection (E := E) hF x ≠ 0 :=
-  (zeroEquiv 𝕜 F E hF x).symm.map_ne_zero_iff.2 one_ne_zero
+  ne_of_apply_ne (zeroEquiv 𝕜 F E hF x) <| by
+    rw [zeroEquiv_rankZeroSection, map_zero]
+    exact one_ne_zero
 
 variable [FiniteDimensional 𝕜 F] [TopologicalSpace B] [TopologicalSpace (TotalSpace F E)]
 
@@ -184,7 +193,7 @@ theorem chartCoord_rankZeroSection (hF : finrank 𝕜 F = 0) (e : Trivialization
       fun i ↦ (Fin.cast hF i).elim0)
     simp only [LinearEquiv.coe_ofEq_apply, exteriorPower.ιMulti_apply_coe,
       ExteriorAlgebra.ιMulti_zero_apply] at h₁
-    rw [rankZeroSection, ContinuousLinearEquiv.symm_apply_eq, eq_comm,
+    rw [← (zeroEquiv 𝕜 F E hF x).injective.eq_iff, zeroEquiv_rankZeroSection, eq_comm,
       ← ExteriorAlgebra.algebraMap_inj (M := E x), ← coe_linearEquiv_zeroEquiv,
       LinearEquiv.apply_symm_apply, map_one, exteriorPower.ιMulti_apply_coe, h₁]
   rw [h, chartCoord_ιMulti, Module.Basis.det_isEmpty, AlternatingMap.constOfIsEmpty_apply,
