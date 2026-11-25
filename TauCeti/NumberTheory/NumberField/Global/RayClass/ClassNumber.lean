@@ -154,7 +154,6 @@ theorem nonempty_rayClassGroup_equiv_prod_iff (𝔪 : Modulus K) :
     Nonempty (RayClassGroup 𝔪 ≃
         ((𝓞 K ⧸ 𝔪.finitePart)ˣ × (𝔪.infinitePart → ℤˣ)) × ClassGroup (𝓞 K)) ↔
       unitsCongruenceSubgroup 𝔪 = ⊤ := by
-  have : Finite (𝓞 K ⧸ 𝔪.finitePart) := Ring.HasFiniteQuotients.finiteQuotient 𝔪.finitePart_ne_bot
   rw [← Finite.card_eq, ← card_rayClassGroup_eq_iff]
   simp [Nat.card_fun, mul_comm]
 
