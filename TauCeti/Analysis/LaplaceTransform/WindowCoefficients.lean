@@ -118,7 +118,7 @@ theorem norm_add_re_laplace_coeff_le_window {g : ℝ → ℝ} {F : ℂ → ℂ} 
     exact ((hc.mono_set (Ioc_subset_Ioc hU (le_max_right U V))).re.congr
       (.of_forall fun u ↦ by simp only [RCLike.re_to_complex, ofReal_re]))
   have hwin : IntegrableOn (fun u ↦ max (g u) 0 * Real.exp (-θ * u)) (Ioc U V) :=
-    IntegrableOn.mul_continuousOn_of_subset (hgwin.sup (integrable_zero _ _ _)) (by fun_prop)
+    IntegrableOn.mul_continuousOn_of_subset hgwin.pos_part (by fun_prop)
       measurableSet_Ioc isCompact_Icc Ioc_subset_Icc_self
   have ht : IntegrableOn (w (z.re - A)) (Ioi 0) := by
     refine ((integrableOn_pow_mul_exp_neg_mul_Ioi n (sub_pos.mpr hA)).mul_const
