@@ -176,18 +176,6 @@ theorem enorm_apply_le_mul_mass_of_forall_mem_dsupport (hT : HasLocallyFiniteMas
         exact hφ x (not_not.1 hx)
     _ = c * mass T := by rw [lintegral_const, massMeasure_univ hT]
 
-/-- **The mass bound on the support**, for a functional of finite mass: a test bounded by `c ≥ 0`
-at the points of the support of `T` has evaluation at most `c` times the mass of `T`. -/
-theorem norm_apply_le_mul_toReal_mass_of_forall_mem_dsupport (hT : mass T ≠ ⊤)
-    {φ : 𝓓^{n}(Ω, F)} {c : ℝ} (hc : 0 ≤ c) (hφ : ∀ x ∈ dsupport T, ‖φ x‖ ≤ c) :
-    ‖T φ‖ ≤ c * (mass T).toReal := by
-  have hb := enorm_apply_le_mul_mass_of_forall_mem_dsupport
-    (hasLocallyFiniteMass_of_mass_ne_top T hT) (c := ENNReal.ofReal c) fun x hx => by
-      rw [← ofReal_norm]
-      exact ENNReal.ofReal_le_ofReal (hφ x hx)
-  have h := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hT) hb
-  rwa [toReal_eNorm, ENNReal.toReal_mul, ENNReal.toReal_ofReal hc] at h
-
 end Measure
 
 section Locality

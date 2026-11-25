@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Normed.Module.Alternating.Curry
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
-import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
 # Comparing normed and topological interior products
@@ -49,22 +48,6 @@ theorem curryLeft_eq_curryLeftTopological {n : ℕ}
   ext v
   simp only [ContinuousAlternatingMap.curryLeft_apply_apply,
     ContinuousAlternatingMap.curryLeftTopological_apply_apply]
-
-/-- The interior product of a pullback `A^* α` with `v`, restricted along `B`, is bounded by
-`‖α‖ ‖A v‖ ‖A ∘ B‖ ^ n`: only the contracted slot sees `A v`. -/
-theorem norm_curryLeft_compContinuousLinearMap_compContinuousLinearMap_le {𝕜 X Y G F : Type*}
-    [NontriviallyNormedField 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y]
-    [NormedSpace 𝕜 Y] [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedAddCommGroup F]
-    [NormedSpace 𝕜 F] {n : ℕ} (α : G [⋀^Fin (n + 1)]→L[𝕜] F) (A : X →L[𝕜] G) (v : X)
-    (B : Y →L[𝕜] X) :
-    ‖((α.compContinuousLinearMap A).curryLeft v).compContinuousLinearMap B‖ ≤
-      ‖α‖ * ‖A v‖ * ‖A.comp B‖ ^ n := by
-  rw [curryLeft_compContinuousLinearMap, compContinuousLinearMap_compContinuousLinearMap]
-  calc _ ≤ ‖α.curryLeft (A v)‖ * ‖A.comp B‖ ^ n :=
-        (norm_compContinuousLinearMap_le _ _).trans_eq (by simp)
-    _ ≤ ‖α‖ * ‖A v‖ * ‖A.comp B‖ ^ n := by
-        gcongr
-        exact (α.curryLeft.le_opNorm _).trans_eq (by rw [norm_curryLeft])
 
 section Lipschitz
 
