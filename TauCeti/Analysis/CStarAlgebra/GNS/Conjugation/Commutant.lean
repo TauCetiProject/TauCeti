@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.GNS.Conjugation
+public import TauCeti.Analysis.CStarAlgebra.GNS.Conjugation.Basic
 public import TauCeti.Analysis.CStarAlgebra.GNS.VonNeumannAlgebra
 
 /-!
@@ -13,9 +13,10 @@ public import TauCeti.Analysis.CStarAlgebra.GNS.VonNeumannAlgebra
 
 Let `f` be a tracial positive functional on a possibly nonunital C⋆-algebra `A`, with GNS
 representation `π`, right representation `πᵒᵖ`, `πᵒᵖ(bᵒᵖ)[c] = [c b]`, and modular conjugation
-`J`, `J [a] = [a⋆]`. Since `J` is conjugate linear, `x ↦ J x J` is a map of complex linear
-operators of the GNS space, `PositiveLinearMap.gnsConjOperator`. It is multiplicative and
-involutive, and it exchanges the two representations: `J π(b) J = πᵒᵖ(b⋆ᵒᵖ)` and
+`J`, `J [a] = [a⋆]`. Since `J` is conjugate linear, `x ↦ J x J` maps complex linear operators of
+the GNS space to complex linear operators; it is a conjugate-linear continuous equivalence of the
+operator algebra, `PositiveLinearMap.gnsConjOperator`. It is involutive, unital, multiplicative
+and compatible with adjoints, and it exchanges the two representations: `J π(b) J = πᵒᵖ(b⋆ᵒᵖ)` and
 `J πᵒᵖ(bᵒᵖ) J = π(b⋆)`, so `πᵒᵖ(bᵒᵖ) = J π(b⋆) J`. Consequently `J M_f J ⊆ M_f'` for the GNS von
 Neumann algebra `M_f = π(A)''`: for `x ∈ M_f`, the operator `J x J` commutes with `π(a)` because
 `x` commutes with `J π(a) J = πᵒᵖ(a⋆ᵒᵖ)`, which lies in `M_f'`. For unital `A`, with GNS vector
@@ -24,7 +25,7 @@ Neumann algebra `M_f = π(A)''`: for `x ∈ M_f`, the operator `J x J` commutes 
 
 ## Main definitions
 
-* `PositiveLinearMap.gnsConjOperator f hf x`: the operator `J x J`.
+* `PositiveLinearMap.gnsConjOperator f hf`: the conjugate-linear equivalence `x ↦ J x J`.
 
 ## Main results
 
@@ -50,32 +51,58 @@ namespace PositiveLinearMap
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   (f : A →ₚ[ℂ] ℂ) (hf : ∀ a b, f (a * b) = f (b * a))
 
-/-- The operator `J x J` obtained by conjugating an operator `x` of the GNS space of a tracial
-functional by the modular conjugation `J`. It is complex linear, `J` being conjugate linear. -/
-noncomputable def gnsConjOperator (x : f.GNS →L[ℂ] f.GNS) : f.GNS →L[ℂ] f.GNS :=
-  ((gnsConj f hf).toContinuousLinearEquiv : f.GNS →SL[starRingEnd ℂ] f.GNS).comp
-    (x.comp ((gnsConj f hf).toContinuousLinearEquiv : f.GNS →SL[starRingEnd ℂ] f.GNS))
+/-- The conjugation `x ↦ J x J` of operators of the GNS space of a tracial functional by the
+modular conjugation `J`, a conjugate-linear continuous equivalence of the operator algebra; each
+`J x J` is complex linear, `J` being conjugate linear. -/
+noncomputable def gnsConjOperator :
+    (f.GNS →L[ℂ] f.GNS) ≃SL[starRingEnd ℂ] (f.GNS →L[ℂ] f.GNS) :=
+  (gnsConj f hf).toContinuousLinearEquiv.arrowCongrSL (gnsConj f hf).toContinuousLinearEquiv
 
+/-- The operator `J x J` acts by `y ↦ J (x (J y))`. -/
 @[simp]
 theorem gnsConjOperator_apply (x : f.GNS →L[ℂ] f.GNS) (y : f.GNS) :
-    gnsConjOperator f hf x y = gnsConj f hf (x (gnsConj f hf y)) :=
-  (rfl)
+    gnsConjOperator f hf x y = gnsConj f hf (x (gnsConj f hf y)) := by
+  simp [gnsConjOperator]
+
+/-- Conjugation by `J` is its own inverse. -/
+@[simp]
+theorem gnsConjOperator_symm : (gnsConjOperator f hf).symm = gnsConjOperator f hf := by
+  ext x y
+  simp [gnsConjOperator]
 
 /-- Conjugation by `J` is an involution. -/
 @[simp]
 theorem gnsConjOperator_gnsConjOperator (x : f.GNS →L[ℂ] f.GNS) :
     gnsConjOperator f hf (gnsConjOperator f hf x) = x := by
+  simpa only [gnsConjOperator_symm] using (gnsConjOperator f hf).symm_apply_apply x
+
+/-- Conjugation by `J` fixes the identity operator. -/
+@[simp]
+theorem gnsConjOperator_one : gnsConjOperator f hf 1 = 1 := by
   ext y
   simp
 
 /-- Conjugation by `J` is multiplicative. -/
+@[simp]
 theorem gnsConjOperator_mul (x y : f.GNS →L[ℂ] f.GNS) :
     gnsConjOperator f hf (x * y) = gnsConjOperator f hf x * gnsConjOperator f hf y := by
   ext z
   simp
 
+/-- Conjugation by `J` commutes with adjoints: `J x⋆ J = (J x J)⋆`. -/
+@[simp]
+theorem gnsConjOperator_star (x : f.GNS →L[ℂ] f.GNS) :
+    gnsConjOperator f hf (star x) = star (gnsConjOperator f hf x) := by
+  rw [ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.star_eq_adjoint,
+    ContinuousLinearMap.eq_adjoint_iff]
+  intro u v
+  rw [gnsConjOperator_apply, gnsConjOperator_apply]
+  conv_lhs => rw [← gnsConj_gnsConj f hf v, inner_gnsConj_gnsConj,
+    ContinuousLinearMap.adjoint_inner_right, ← inner_gnsConj_gnsConj f hf, gnsConj_gnsConj]
+
 /-- Conjugating the GNS representation by the modular conjugation gives the right
 representation: `J π(b) J = πᵒᵖ(b⋆ᵒᵖ)`. -/
+@[simp]
 theorem gnsConjOperator_gnsNonUnitalStarAlgHom (b : A) :
     gnsConjOperator f hf (f.gnsNonUnitalStarAlgHom b) =
       f.gnsRightNonUnitalStarAlgHom hf (op (star b)) := by
@@ -87,6 +114,7 @@ theorem gnsConjOperator_gnsNonUnitalStarAlgHom (b : A) :
 
 /-- Conjugating the right representation by the modular conjugation gives the GNS
 representation: `J πᵒᵖ(bᵒᵖ) J = π(b⋆)`. -/
+@[simp]
 theorem gnsConjOperator_gnsRightNonUnitalStarAlgHom (b : Aᵐᵒᵖ) :
     gnsConjOperator f hf (f.gnsRightNonUnitalStarAlgHom hf b) =
       f.gnsNonUnitalStarAlgHom (star b.unop) := by
@@ -131,13 +159,19 @@ theorem gnsConj_apply_gnsVector_of_mem {x : g.GNS →L[ℂ] g.GNS} (hx : x ∈ g
     gnsConj g hg (x g.gnsVector) = star x g.gnsVector := by
   -- The vector functionals `x ↦ ⟪J u, x Ω⟫` and `x ↦ ⟪Ω, x u⟫` agree on `π(B)`, by traciality
   -- on classes `u = [b]` and by continuity in `u`, hence on `M_g`.
-  have hπ (u : g.GNS) (c : B) : inner ℂ (gnsConj g hg u) (g.gnsStarAlgHom c g.gnsVector) =
-      inner ℂ g.gnsVector (g.gnsStarAlgHom c u) := by
+  have hπ (u : g.GNS) (c : B) : inner ℂ (gnsConj g hg u) (g.gnsNonUnitalStarAlgHom c g.gnsVector) =
+      inner ℂ g.gnsVector (g.gnsNonUnitalStarAlgHom c u) := by
     induction u using UniformSpace.Completion.induction_on with
     | hp => apply isClosed_eq <;> fun_prop
     | ih u =>
-      rw [← g.toPreGNS_ofPreGNS u, gnsConj_apply_coe]
-      simp [gnsVector_def, gnsStarAlgHom, preGNS_inner_def, hg]
+      rw [← g.toPreGNS_ofPreGNS u]
+      generalize g.ofPreGNS u = b
+      rw [gnsConj_apply_coe, gnsNonUnitalStarAlgHom_apply_gnsVector, ← toGNS_apply g b,
+        gnsNonUnitalStarAlgHom_apply_toGNS, toGNS_apply, inner_gnsVector_coe,
+        UniformSpace.Completion.inner_coe, preGNS_inner_def, ofPreGNS_toPreGNS,
+        ofPreGNS_toPreGNS, star_star]
+      -- traciality: `g (b c) = g (c b)`
+      exact hg b c
   refine ext_inner_left ℂ fun u ↦ ?_
   have h := g.inner_apply_eq_of_mem_gnsVonNeumannAlgebra (u₁ := gnsConj g hg u)
     (v₁ := g.gnsVector) (u₂ := g.gnsVector) (v₂ := u) (hπ u) hx
