@@ -36,11 +36,11 @@ involves rectifiability:
 * combining the two, every subset of a bi-Lipschitz image of a subset of a `k`-plane has its
   densities between `(a b) ^ (-k)` and `(a b) ^ k` almost everywhere;
 * removing a part of density zero from a set does not lower its upper density;
-* along an antilipschitz map out of a finite-dimensional real inner product space, source volume is
-  controlled by target `μHE[dim U]` measure, transferring vanishing density quotients back to the
-  source, while at a Lebesgue density-one point shifted sub-balls cannot have density tending to
-  zero (yielding directional derivative bounds under `LipschitzOnWith`), and a set of positive upper
-  ambient density cannot have density zero outside every cone around a proper subspace.
+* along an antilipschitz map out of a finite-dimensional real inner product space, vanishing target
+  `μHE[dim U]` density quotients pull back to vanishing source volume quotients, while at a
+  Lebesgue density-one point shifted sub-balls cannot have density tending to zero (yielding
+  directional derivative bounds under `LipschitzOnWith`), and a set of positive upper ambient
+  density cannot have density zero outside every cone around a proper subspace.
 
 Together with the zero-density theorem
 `TauCeti.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div`, these are the ingredients of
@@ -57,14 +57,13 @@ the density theorem for rectifiable sets.
   bounds almost everywhere on a bi-Lipschitz image of a subset of a `k`-plane.
 * `TauCeti.limsup_measure_inter_div_le_of_tendsto_diff`: a part of a set with density zero does not
   contribute to the upper density.
-* `TauCeti.volume_le_mul_euclideanHausdorffMeasure_image_of_antilipschitzWith`,
-  `TauCeti.tendsto_volume_inter_closedBall_div_of_mem_nhds`,
+* `TauCeti.tendsto_volume_inter_closedBall_div_of_mem_nhds`,
   `TauCeti.tendsto_volume_div_zero_of_antilipschitzWith`,
   `TauCeti.not_tendsto_volume_inter_shifted_closedBall_div_zero`,
   `TauCeti.not_tendsto_outside_cone_top_of_lt_top`, and
-  `HasFDerivWithinAt.norm_comp_le_of_lipschitzOnWith`: antilipschitz volume comparison,
-  neighborhood density one, density-zero pullback, non-vanishing shifted-ball density,
-  proper-subspace cone obstruction, and the resulting density-one directional derivative bound.
+  `HasFDerivWithinAt.norm_comp_le_of_lipschitzOnWith`: neighborhood density one, density-zero
+  pullback, non-vanishing shifted-ball density, proper-subspace cone obstruction, and the resulting
+  density-one directional derivative bound.
 
 ## References
 
@@ -111,19 +110,6 @@ theorem limsup_measure_inter_div_le_of_tendsto_diff {α X : Type*} [MeasurableSp
         by_cases hzS : z ∈ S
         exacts [Or.inl ⟨⟨hz.1, hzS⟩, hz.2⟩, Or.inr ⟨⟨hz.1, hzS⟩, hz.2⟩]
     _ = _ := ENNReal.limsup_add_of_right_tendsto_zero h _
-
-/-- Along an `L`-antilipschitz restriction `s.domRestrict f`,
-`volume t ≤ L ^ dim U * μHE[dim U] (f '' t)` for any `t ⊆ s`. -/
-theorem volume_le_mul_euclideanHausdorffMeasure_image_of_antilipschitzWith {U V : Type*}
-    [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U] [MeasurableSpace U]
-    [BorelSpace U] [MetricSpace V] [MeasurableSpace V] [BorelSpace V] {f : U → V} {s t : Set U}
-    {L : ℝ≥0} (hi : AntilipschitzWith L (s.domRestrict f)) (hts : t ⊆ s) :
-    volume t ≤ (L : ℝ≥0∞) ^ finrank ℝ U * μHE[finrank ℝ U] (f '' t) := by
-  rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume]
-  exact (AntilipschitzWith.of_le_mul_dist fun x y => by
-    simpa only [Subtype.dist_eq, domRestrict_apply] using
-      hi.le_mul_dist ⟨x, hts x.property⟩ ⟨y, hts y.property⟩ :
-    AntilipschitzWith L (t.domRestrict f)).le_euclideanHausdorffMeasure_image_of_domRestrict _
 
 /-- Every neighborhood `s ∈ 𝓝 x` has density one at `x` with respect to a locally finite additive
 Haar volume measure. -/

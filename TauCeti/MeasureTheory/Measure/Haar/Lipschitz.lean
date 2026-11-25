@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Measure.Hausdorff
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Topology.EMetricSpace.Lipschitz
+import TauCeti.Topology.MetricSpace.Antilipschitz
 
 /-!
 # Hausdorff measure and null-set transport under Lipschitz maps
@@ -41,7 +42,9 @@ uses only Lipschitz control in the forward direction and inverse-Lipschitz contr
   parameters in a thin cone `{v | |ψ v| ≤ t ‖v‖}` within the ball of radius `c r`, divided by the
   volume of the ball of radius `r`, is at most `K ^ k c ^ k` times the share of the cone in the
   unit ball.
-* `AntilipschitzWith.le_euclideanHausdorffMeasure_image_of_domRestrict` — localized lower bound.
+* `AntilipschitzWith.le_euclideanHausdorffMeasure_image_of_domRestrict` and
+  `TauCeti.volume_le_mul_euclideanHausdorffMeasure_image_of_antilipschitzWith` — localized lower
+  bounds for `μHE[d]` and Euclidean source `volume`.
 * `LipschitzOnWith.euclideanHausdorffMeasure_image_eq_zero_iff` — bi-Lipschitz null-set transport.
 * `LipschitzOnWith.ae_euclideanHausdorffMeasure_image_iff` — bi-Lipschitz a.e. transport.
 * `LipschitzOnWith.euclideanHausdorffMeasure_image_eq_zero_iff_addHaar`,
@@ -174,6 +177,16 @@ theorem ae_euclideanHausdorffMeasure_of_image
   exact hi.ae_hausdorffMeasure_of_image d.cast_nonneg h
 
 end AntilipschitzWith
+
+/-- Along an `L`-antilipschitz restriction `s.domRestrict f`,
+`volume t ≤ L ^ dim U * μHE[dim U] (f '' t)` for any `t ⊆ s`. -/
+theorem TauCeti.volume_le_mul_euclideanHausdorffMeasure_image_of_antilipschitzWith {U V : Type*}
+    [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U] [MeasurableSpace U]
+    [BorelSpace U] [EMetricSpace V] [MeasurableSpace V] [BorelSpace V] {f : U → V} {s t : Set U}
+    {L : ℝ≥0} (hi : AntilipschitzWith L (s.domRestrict f)) (hts : t ⊆ s) :
+    volume t ≤ (L : ℝ≥0∞) ^ finrank ℝ U * μHE[finrank ℝ U] (f '' t) := by
+  rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume]
+  exact (hi.domRestrict_mono hts).le_euclideanHausdorffMeasure_image_of_domRestrict _
 
 namespace LipschitzOnWith
 

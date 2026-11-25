@@ -26,8 +26,9 @@ first-order error exceeds `ε * dist z x` on a subset of `E` with `k`-dimensiona
 zero on `Pᗮ`, making `L` unconditionally unique (`HasTangentialFDerivAt.unique`).
 
 From uniqueness we define the canonical tangential derivative `tangentialFDeriv k E g x` (with
-fallback `0` where none exists, commuting unconditionally with scalar multiplication and negation
-and additively at tangentially differentiable points) and the `k`-dimensional tangential Jacobian
+fallback `0` where none exists, vanishing unconditionally on constant and zero maps, commuting
+unconditionally with scalar multiplication and negation, and acting additively at tangentially
+differentiable points) and the `k`-dimensional tangential Jacobian
 `tangentialJacobian k E g x` (`normDet` of its restriction to `P`, also defaulting to `0`). Both
 are invariant under `μHE[k]`-null changes and local germs of `E` as well as a.e. modifications of
 `g`. On an inverse-Lipschitz patch `f '' s ⊆ E` at a regular density-one point with
@@ -247,20 +248,17 @@ theorem add (h₁ : HasTangentialFDerivAt k E g₁ L₁ x) (h₂ : HasTangential
 /-- Scalar multiplication rule for approximate tangential derivatives. -/
 theorem const_smul (c : ℝ) (h : HasTangentialFDerivAt k E g L x) :
     HasTangentialFDerivAt k E (fun z => c • g z) (c • L) x := by
+  obtain rfl | hc := eq_or_ne c 0
+  · simpa using of_hasFDerivWithinAt h.existsUnique_plane (hasFDerivWithinAt_const (0 : W) x E)
   refine ⟨h.existsUnique_plane, by rw [ContinuousLinearMap.smul_comp, h.comp_projection],
-    fun ε hε => ?_⟩
-  by_cases hc : c = 0
-  · subst hc; refine tendsto_const_nhds.congr' (.of_forall fun r => ?_)
-    refine (ENNReal.div_eq_zero_iff.mpr (.inl (measure_mono_null ?_ measure_empty))).symm
-    rintro _ ⟨_, hlt⟩; simp [not_lt.mpr (mul_nonneg hε.le dist_nonneg)] at hlt
-  · refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    fun ε hε => tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
       (h.tendsto_outside_error (ε / |c|) (div_pos hε (abs_pos.mpr hc)))
       (.of_forall fun _ => zero_le) (.of_forall fun r => ENNReal.div_le_div_right
-        (measure_mono ?_) _)
-    rintro z ⟨hzB, hz⟩; refine ⟨hzB, ?_⟩
-    rw [(by simp [smul_sub] : c • g z - c • g x - (c • L) (z - x) = c • (g z - g x - L (z - x))),
-      norm_smul, Real.norm_eq_abs] at hz
-    rwa [div_mul_eq_mul_div, div_lt_iff₀' (abs_pos.mpr hc)]
+        (measure_mono ?_) _)⟩
+  rintro z ⟨hzB, hz⟩; refine ⟨hzB, ?_⟩
+  rw [(by simp [smul_sub] : c • g z - c • g x - (c • L) (z - x) = c • (g z - g x - L (z - x))),
+    norm_smul, Real.norm_eq_abs] at hz
+  rwa [div_mul_eq_mul_div, div_lt_iff₀' (abs_pos.mpr hc)]
 
 /-- Negation rule for approximate tangential derivatives. -/
 theorem neg (h : HasTangentialFDerivAt k E g L x) :
@@ -272,6 +270,20 @@ theorem sub (h₁ : HasTangentialFDerivAt k E g₁ L₁ x) (h₂ : HasTangential
   simpa [sub_eq_add_neg] using h₁.add h₂.neg
 
 end HasTangentialFDerivAt
+
+/-- A constant map has approximate tangential derivative `0` at any point where `E` has a unique
+approximate tangent `k`-plane. -/
+theorem hasTangentialFDerivAt_const
+    (hu : ∃! P : Submodule ℝ V, IsApproximateTangentPlane k E x P) (c : W) :
+    HasTangentialFDerivAt k E (fun _ => c) 0 x := by
+  simpa using HasTangentialFDerivAt.of_hasFDerivWithinAt hu (hasFDerivWithinAt_const c x E)
+
+/-- The zero map has approximate tangential derivative `0` at any point where `E` has a unique
+approximate tangent `k`-plane. -/
+theorem hasTangentialFDerivAt_zero
+    (hu : ∃! P : Submodule ℝ V, IsApproximateTangentPlane k E x P) :
+    HasTangentialFDerivAt k E (0 : V → W) 0 x :=
+  hasTangentialFDerivAt_const hu 0
 
 open Classical in
 /-- Canonical approximate tangential derivative of `g` along `E` at `x` (`0` if none exists). -/
@@ -309,6 +321,27 @@ theorem hasTangentialFDerivAt_tangentialFDeriv
   rw [← tangentialFDeriv_comp_approximateTangentProjection 0 E g x,
     approximateTangentProjection_zero, ContinuousLinearMap.comp_zero]
 
+/-- The canonical tangential derivative of a constant map at `x` is `0` unconditionally. -/
+theorem tangentialFDeriv_const_apply (c : W) (x : V) : TFD[k, E, fun _ => c, x] = 0 := by
+  by_cases h : ∃! P : Submodule ℝ V, IsApproximateTangentPlane k E x P
+  · exact (hasTangentialFDerivAt_const h c).tangentialFDeriv_eq
+  · exact tangentialFDeriv_eq_zero_of_not_exists fun ⟨_, hL⟩ => h hL.existsUnique_plane
+
+/-- Unconditional simplification of `tangentialFDeriv` on a constant lambda `fun _ => c`. -/
+@[simp]
+theorem tangentialFDeriv_fun_const (c : W) : tangentialFDeriv k E (fun _ => c) = 0 :=
+  funext (tangentialFDeriv_const_apply c)
+
+/-- Unconditional simplification of `tangentialFDeriv` on `Function.const V c`. -/
+@[simp]
+theorem tangentialFDeriv_const (c : W) : tangentialFDeriv k E (Function.const V c) = 0 :=
+  tangentialFDeriv_fun_const c
+
+/-- Unconditional simplification of `tangentialFDeriv` on the zero map. -/
+@[simp]
+theorem tangentialFDeriv_zero_fun : tangentialFDeriv k E (0 : V → W) = 0 :=
+  tangentialFDeriv_fun_const 0
+
 /-- Sum rule for `tangentialFDeriv` when both functions are tangentially differentiable at `x`. -/
 theorem tangentialFDeriv_add (h₁ : ∃ L, HasTangentialFDerivAt k E g₁ L x)
     (h₂ : ∃ L, HasTangentialFDerivAt k E g₂ L x) :
@@ -322,13 +355,7 @@ defaults to `0`, no differentiability hypothesis is needed. -/
 theorem tangentialFDeriv_const_smul (c : ℝ) (g : V → W) (x : V) :
     TFD[k, E, c • g, x] = c • TFD[k, E, g, x] := by
   obtain rfl | hc := eq_or_ne c 0
-  · rw [zero_smul, zero_smul]
-    by_cases h : ∃ L : V →L[ℝ] W, HasTangentialFDerivAt k E 0 L x
-    · refine HasTangentialFDerivAt.tangentialFDeriv_eq ⟨h.choose_spec.existsUnique_plane,
-        ContinuousLinearMap.zero_comp _, fun ε hε => tendsto_const_nhds.congr' (.of_forall fun _ =>
-          (ENNReal.div_eq_zero_iff.mpr (.inl (measure_mono_null ?_ measure_empty))).symm)⟩
-      rintro _ ⟨_, hlt⟩; simp [not_lt.mpr (mul_nonneg hε.le dist_nonneg)] at hlt
-    · exact tangentialFDeriv_eq_zero_of_not_exists h
+  · simp
   · by_cases h : ∃ L : V →L[ℝ] W, HasTangentialFDerivAt k E g L x
     · exact ((hasTangentialFDerivAt_tangentialFDeriv h).const_smul c).tangentialFDeriv_eq
     · rw [tangentialFDeriv_eq_zero_of_not_exists h, smul_zero]
