@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Basic.ExistsUnique
 public import TauCeti.Combinatorics.SimpleGraph.Matching.Dimer
 public import Mathlib.Algebra.Group.Int.Even
 public import Mathlib.Data.ZMod.Basic
@@ -17,21 +18,23 @@ public import Mathlib.Data.ZMod.Basic
   (`setOf_isDimerConfiguration_int`); with `2ℤ` acting by translations they form the subshift
   `dimerSubshiftInt`. For `F = ∅` the two completion sets are the two different singletons, while
   their sets of restrictions to `F` agree: the completion set itself is not determined by `ω` near
-  `F`, only its restrictions to `F` are (`dimerCompletionSet_empty_evenConfig_ne`,
+  `F`, only its restrictions to `F` are (`dimerCompletionSet_empty_evenConfig_ne_oddConfig`,
   `image_restrict_dimerCompletionSet_empty_eq`).
 * **Local finiteness is needed for closedness.** On the vertices `c, d, x_n, y_n` (`n : ℕ`) with
   edges `c x_n`, `d y_n`, `x_n y_n`, the perfect matchings
   `M_k = {c x_k, d y_k} ∪ {x_n y_n : n ≠ k}` converge coordinatewise to the rungs
-  `{x_n y_n}`, which leave `c` and `d` uncovered (`tendsto_combMatching`,
+  `{x_n y_n}`, which leave `c` uncovered (`tendsto_combMatching`,
   `not_isDimerConfiguration_combRungs`), so the dimer configurations of this graph, in which `c`
-  and `d` have infinite degree, do not form a closed set (`not_isClosed_combGraph`).
+  and `d` have infinite degree, do not form a closed set
+  (`not_isClosed_setOf_isDimerConfiguration_combGraph`).
 * **The hexagon.** The `6`-cycle, the nearest-neighbour graph of `ZMod 6`, has exactly two dimer
   configurations (`setOf_isDimerConfiguration_zmod_six`), the two lozenge tilings of the unit
   hexagon.
 
 On the nearest-neighbour graph of a ring `R` with `2 ≠ 0`, every vertex `v` lies in exactly the
 two edges `{v − 1, v}` and `{v, v + 1}`, so a configuration is a dimer configuration exactly when
-consecutive edges have different values (`isDimerConfiguration_nnGraph_iff`).
+consecutive edges have different values (`isDimerConfiguration_nnGraph_iff`), and then the value
+at `{n, n + 1}` is the value at `{0, 1}`, flipped when `n` is odd (`apply_edge_intCast`).
 -/
 
 public section
@@ -84,7 +87,7 @@ theorem edge_surjective : Surjective (edge (R := R)) :=
   exists_edge_eq
 
 /-- The edges at `v` are `{v − 1, v}` and `{v, v + 1}`. -/
-theorem mem_edge_iff {v : R} {e : (nnGraph R).edgeSet} :
+theorem mem_iff_eq_edge_sub_one_or_eq_edge {v : R} {e : (nnGraph R).edgeSet} :
     v ∈ (e : Sym2 R) ↔ e = edge (v - 1) ∨ e = edge v := by
   obtain ⟨a, rfl⟩ := exists_edge_eq e
   rw [coe_edge, Sym2.mem_iff]
@@ -110,39 +113,37 @@ theorem edge_injective (h2 : (2 : R) ≠ 0) : Injective (edge (R := R)) := by
   · exact h
   · exact absurd (by simpa [add_assoc, one_add_one_eq_two] using congrArg (· - b) h) h2
 
-/-- A Boolean function is `true` at exactly one of two distinct points exactly when it takes
-different values there. -/
-private theorem existsUnique_eq_true_and_or_iff {α : Type*} {x y : α} (hxy : x ≠ y)
-    (f : α → Bool) : (∃! e, f e = true ∧ (e = x ∨ e = y)) ↔ f y = !f x := by
-  constructor
-  · rintro ⟨e, ⟨he, hex⟩, huniq⟩
-    cases hx : f x <;> cases hy : f y
-    · rcases hex with rfl | rfl <;> simp_all
-    · rfl
-    · rfl
-    · exact absurd ((huniq x ⟨hx, Or.inl rfl⟩).trans (huniq y ⟨hy, Or.inr rfl⟩).symm) hxy
-  · intro h
-    cases hx : f x
-    · refine ⟨y, ⟨by simp [h, hx], Or.inr rfl⟩, fun e ⟨he, hex⟩ => ?_⟩
-      rcases hex with rfl | rfl
-      · simp [hx] at he
-      · rfl
-    · refine ⟨x, ⟨hx, Or.inl rfl⟩, fun e ⟨he, hex⟩ => ?_⟩
-      rcases hex with rfl | rfl
-      · rfl
-      · simp [h, hx] at he
+/-- When `2 ≠ 0`, the point chosen for the edge `{a, a + 1}` is `a`. -/
+theorem choose_exists_edge_eq (h2 : (2 : R) ≠ 0) (a : R) :
+    Classical.choose (exists_edge_eq (edge a)) = a :=
+  edge_injective h2 (Classical.choose_spec (exists_edge_eq (edge a)))
 
 /-- **Dimer configurations of a nearest-neighbour graph.** When `2 ≠ 0`, a configuration is a
 dimer configuration exactly when consecutive edges have different values. -/
 theorem isDimerConfiguration_nnGraph_iff (h2 : (2 : R) ≠ 0) {ω : (nnGraph R).edgeSet → Bool} :
     (nnGraph R).IsDimerConfiguration ω ↔ ∀ a, ω (edge (a + 1)) = !ω (edge a) := by
-  have hne (v : R) : edge (v - 1) ≠ edge v := fun h => by
-    simpa using edge_injective h2 h
-  simp only [isDimerConfiguration_iff, mem_edge_iff]
-  refine ⟨fun h a => ?_, fun h v => ?_⟩
-  · simpa using (existsUnique_eq_true_and_or_iff (hne (a + 1)) ω).1 (h (a + 1))
-  · refine (existsUnique_eq_true_and_or_iff (hne v) ω).2 ?_
-    simpa using h (v - 1)
+  have hv (v : R) : (∃! e, ω e = true ∧ (e = edge (v - 1) ∨ e = edge v)) ↔
+      ω (edge v) = !ω (edge (v - 1)) := by
+    rw [TauCeti.existsUnique_and_eq_or_eq_iff_xor fun h => by simpa using edge_injective h2 h]
+    cases ω (edge v) <;> cases ω (edge (v - 1)) <;> simp [Xor]
+  simp only [isDimerConfiguration_iff, mem_iff_eq_edge_sub_one_or_eq_edge, hv]
+  exact ⟨fun h a => by simpa using h (a + 1), fun h v => by simpa using h (v - 1)⟩
+
+/-- When consecutive edges have different values, the value at the edge `{n, n + 1}` is the value
+at `{0, 1}`, flipped when `n` is odd. -/
+theorem apply_edge_intCast {ω : (nnGraph R).edgeSet → Bool}
+    (h : ∀ a, ω (edge (a + 1)) = !ω (edge a)) (n : ℤ) :
+    ω (edge (n : R)) = (ω (edge 0) ^^ decide (Odd n)) := by
+  induction n using Int.induction_on with
+  | zero => simp
+  | succ n ih =>
+    rw [Int.cast_add, Int.cast_one, h, ih]
+    cases ω (edge 0) <;> simp [← Nat.not_even_iff_odd]
+  | pred n ih =>
+    have h' := h ((-(n : ℤ) - 1 : ℤ) : R)
+    rw [show ((-(n : ℤ) - 1 : ℤ) : R) + 1 = ((-(n : ℤ) : ℤ) : R) by simp, ih] at h'
+    rw [← Bool.not_not (ω (edge _)), ← h']
+    cases ω (edge 0) <;> simp [← Nat.not_even_iff_odd]
 
 end Ring
 
@@ -156,49 +157,40 @@ def evenConfig (e : (nnGraph ℤ).edgeSet) : Bool :=
 def oddConfig (e : (nnGraph ℤ).edgeSet) : Bool :=
   decide (Odd (Classical.choose (exists_edge_eq e)))
 
-private theorem choose_exists_edge_eq_int (a : ℤ) :
-    Classical.choose (exists_edge_eq (edge a)) = a :=
-  edge_injective (by decide) (Classical.choose_spec (exists_edge_eq (edge a)))
-
 @[simp]
 theorem evenConfig_edge (a : ℤ) : evenConfig (edge a) = decide (Even a) := by
-  rw [evenConfig, choose_exists_edge_eq_int]
+  rw [evenConfig, choose_exists_edge_eq (by decide)]
 
 @[simp]
 theorem oddConfig_edge (a : ℤ) : oddConfig (edge a) = decide (Odd a) := by
-  rw [oddConfig, choose_exists_edge_eq_int]
+  rw [oddConfig, choose_exists_edge_eq (by decide)]
 
 theorem evenConfig_ne_oddConfig : evenConfig ≠ oddConfig := fun h => by
   simpa using congrFun h (edge 0)
+
+theorem isDimerConfiguration_evenConfig : (nnGraph ℤ).IsDimerConfiguration evenConfig :=
+  (isDimerConfiguration_nnGraph_iff (by decide)).2 fun a => by simp [← Int.not_even_iff_odd]
+
+theorem isDimerConfiguration_oddConfig : (nnGraph ℤ).IsDimerConfiguration oddConfig :=
+  (isDimerConfiguration_nnGraph_iff (by decide)).2 fun a => by simp [← Int.not_even_iff_odd]
 
 /-- **The two dimer configurations of the line**: the even and the odd edges. -/
 theorem setOf_isDimerConfiguration_int :
     {ω | (nnGraph ℤ).IsDimerConfiguration ω} = {evenConfig, oddConfig} := by
   ext ω
-  simp only [mem_ofPred_eq, mem_insert_iff, mem_singleton_iff,
-    isDimerConfiguration_nnGraph_iff (R := ℤ) (by decide)]
-  constructor
-  · intro h
-    have key : ∀ a : ℤ, ω (edge a) = (ω (edge 0) ^^ decide (Odd a)) := by
-      intro a
-      induction a using Int.induction_on with
-      | zero => simp
-      | succ n ih => rw [h, ih]; cases ω (edge 0) <;> simp [← Nat.not_even_iff_odd]
-      | pred n ih =>
-        have h' := h (-(n : ℤ) - 1)
-        rw [sub_add_cancel, ih] at h'
-        rw [← Bool.not_not (ω (edge _)), ← h']
-        cases ω (edge 0) <;> simp [← Nat.not_even_iff_odd]
-    cases h0 : ω (edge 0)
-    · refine Or.inr (funext fun e => ?_)
-      obtain ⟨a, rfl⟩ := exists_edge_eq e
-      simp [key a, h0]
-    · refine Or.inl (funext fun e => ?_)
-      obtain ⟨a, rfl⟩ := exists_edge_eq e
-      simp [key a, h0, ← Int.not_odd_iff_even]
-  · rintro (rfl | rfl) a
-    · simp [← Int.not_even_iff_odd]
-    · simp [← Int.not_even_iff_odd]
+  simp only [mem_ofPred_eq, mem_insert_iff, mem_singleton_iff]
+  refine ⟨fun hω => ?_, by
+    rintro (rfl | rfl)
+    exacts [isDimerConfiguration_evenConfig, isDimerConfiguration_oddConfig]⟩
+  have key (a : ℤ) : ω (edge a) = (ω (edge 0) ^^ decide (Odd a)) := by
+    simpa using apply_edge_intCast ((isDimerConfiguration_nnGraph_iff (by decide)).1 hω) a
+  cases h0 : ω (edge 0)
+  · refine Or.inr (funext fun e => ?_)
+    obtain ⟨a, rfl⟩ := exists_edge_eq e
+    simp [key a, h0]
+  · refine Or.inl (funext fun e => ?_)
+    obtain ⟨a, rfl⟩ := exists_edge_eq e
+    simp [key a, h0, ← Int.not_odd_iff_even]
 
 instance : (nnGraph ℤ).LocallyFinite := fun v =>
   ((toFinite {v - 1, v + 1}).subset fun w hw => by
@@ -230,35 +222,21 @@ theorem coe_dimerSubshiftInt :
   ext ω
   simp only [dimerSubshiftInt, SetLike.mem_coe, mem_dimerSubshift, mem_ofPred_eq]
 
-theorem isDimerConfiguration_evenConfig : (nnGraph ℤ).IsDimerConfiguration evenConfig := by
-  have : evenConfig ∈ {ω | (nnGraph ℤ).IsDimerConfiguration ω} := by
-    rw [setOf_isDimerConfiguration_int]; exact Or.inl rfl
-  exact this
+/-- At `F = ∅` the completion set of the even edges is the singleton of it. -/
+theorem dimerCompletionSet_empty_evenConfig :
+    (nnGraph ℤ).dimerCompletionSet ∅ evenConfig = {evenConfig} :=
+  dimerCompletionSet_empty isDimerConfiguration_evenConfig
 
-theorem isDimerConfiguration_oddConfig : (nnGraph ℤ).IsDimerConfiguration oddConfig := by
-  have : oddConfig ∈ {ω | (nnGraph ℤ).IsDimerConfiguration ω} := by
-    rw [setOf_isDimerConfiguration_int]; exact Or.inr rfl
-  exact this
+/-- At `F = ∅` the completion set of the odd edges is the singleton of it. -/
+theorem dimerCompletionSet_empty_oddConfig :
+    (nnGraph ℤ).dimerCompletionSet ∅ oddConfig = {oddConfig} :=
+  dimerCompletionSet_empty isDimerConfiguration_oddConfig
 
-/-- The completion set of a dimer configuration at `F = ∅` is the singleton of it. -/
-private theorem dimerCompletionSet_empty {V : Type*} {G : SimpleGraph V}
-    {ω : G.edgeSet → Bool} (hω : G.IsDimerConfiguration ω) :
-    G.dimerCompletionSet ∅ ω = {ω} := by
-  ext ω'
-  simp only [mem_dimerCompletionSet, Finset.notMem_empty, not_false_eq_true, forall_const,
-    mem_singleton_iff]
-  exact ⟨fun ⟨_, h⟩ => funext h, by rintro rfl; exact ⟨hω, fun _ => rfl⟩⟩
-
-/-- At `F = ∅` the completion sets of the two dimer configurations of the line are different
-singletons. -/
-theorem dimerCompletionSet_empty_evenConfig_ne :
-    (nnGraph ℤ).dimerCompletionSet ∅ evenConfig = {evenConfig} ∧
-      (nnGraph ℤ).dimerCompletionSet ∅ oddConfig = {oddConfig} ∧
-      (nnGraph ℤ).dimerCompletionSet ∅ evenConfig ≠
-        (nnGraph ℤ).dimerCompletionSet ∅ oddConfig := by
-  rw [dimerCompletionSet_empty isDimerConfiguration_evenConfig,
-    dimerCompletionSet_empty isDimerConfiguration_oddConfig]
-  exact ⟨rfl, rfl, fun h => evenConfig_ne_oddConfig (singleton_eq_singleton_iff.1 h)⟩
+/-- At `F = ∅` the completion sets of the two dimer configurations of the line are different. -/
+theorem dimerCompletionSet_empty_evenConfig_ne_oddConfig :
+    (nnGraph ℤ).dimerCompletionSet ∅ evenConfig ≠ (nnGraph ℤ).dimerCompletionSet ∅ oddConfig := by
+  rw [dimerCompletionSet_empty_evenConfig, dimerCompletionSet_empty_oddConfig]
+  exact fun h => evenConfig_ne_oddConfig (singleton_eq_singleton_iff.1 h)
 
 /-- At `F = ∅` the restriction sets of the two dimer configurations of the line are both the
 singleton of the empty configuration. -/
@@ -267,8 +245,8 @@ theorem image_restrict_dimerCompletionSet_empty_eq :
         {isEmptyElim} ∧
       (∅ : Finset (nnGraph ℤ).edgeSet).restrict ''
         (nnGraph ℤ).dimerCompletionSet ∅ oddConfig = {isEmptyElim} := by
-  rw [dimerCompletionSet_empty isDimerConfiguration_evenConfig,
-    dimerCompletionSet_empty isDimerConfiguration_oddConfig, image_singleton, image_singleton]
+  rw [dimerCompletionSet_empty_evenConfig, dimerCompletionSet_empty_oddConfig, image_singleton,
+    image_singleton]
   exact ⟨congrArg _ (funext fun e => isEmptyElim e), congrArg _ (funext fun e => isEmptyElim e)⟩
 
 /-! ### Local finiteness is needed for closedness -/
@@ -345,7 +323,7 @@ theorem not_isDimerConfiguration_combRungs : ¬ combGraph.IsDimerConfiguration c
   obtain ⟨n, rfl⟩ := hω'
   simp at hc
 
-/-- An index of a vertex, larger than every `n` with `x_n` or `y_n` equal to it. -/
+/-- The index `n` of `x_n` and `y_n`, and `0` for `c` and `d`. -/
 private def combIndex : CombVertex → ℕ
   | c => 0
   | d => 0
@@ -365,7 +343,8 @@ theorem tendsto_combMatching : Tendsto combMatching atTop (𝓝 combRungsConfig)
 
 /-- **Local finiteness is needed for closedness**: the dimer configurations of the comb graph do
 not form a closed set. -/
-theorem not_isClosed_combGraph : ¬ IsClosed {ω | combGraph.IsDimerConfiguration ω} := fun h =>
+theorem not_isClosed_setOf_isDimerConfiguration_combGraph :
+    ¬ IsClosed {ω | combGraph.IsDimerConfiguration ω} := fun h =>
   not_isDimerConfiguration_combRungs <|
     h.mem_of_tendsto tendsto_combMatching (Eventually.of_forall isDimerConfiguration_combMatching)
 
@@ -385,8 +364,7 @@ private theorem two_ne_zero_zmod_six : (2 : ZMod 6) ≠ 0 := by decide
 @[simp]
 theorem hexConfig_edge (b : Bool) (a : ZMod 6) :
     hexConfig b (edge a) = (b ^^ decide (a.val % 2 = 1)) := by
-  rw [hexConfig,
-    edge_injective two_ne_zero_zmod_six (Classical.choose_spec (exists_edge_eq (edge a)))]
+  rw [hexConfig, choose_exists_edge_eq two_ne_zero_zmod_six]
 
 theorem hexConfig_injective : Injective hexConfig := fun b b' h => by
   simpa using congrFun h (edge 0)
@@ -400,16 +378,9 @@ theorem setOf_isDimerConfiguration_zmod_six :
     isDimerConfiguration_nnGraph_iff two_ne_zero_zmod_six]
   constructor
   · intro h
-    have key : ∀ n : ℕ, ω (edge (n : ZMod 6)) = (ω (edge 0) ^^ decide (n % 2 = 1)) := by
-      intro n
-      induction n with
-      | zero => simp
-      | succ n ih =>
-        rw [Nat.cast_succ, h, ih]
-        cases ω (edge 0) <;> rcases Nat.mod_two_eq_zero_or_one n with hn | hn <;>
-          simp [Nat.succ_mod_two_eq_one_iff, hn]
     have key' (a : ZMod 6) : ω (edge a) = hexConfig (ω (edge 0)) (edge a) := by
-      rw [hexConfig_edge, ← key, ZMod.natCast_zmod_val]
+      simpa only [hexConfig_edge, Int.cast_natCast, ZMod.natCast_zmod_val, Int.odd_natCast,
+        Nat.odd_iff] using apply_edge_intCast h (a.val : ℤ)
     cases h0 : ω (edge 0)
     · refine Or.inr (funext fun e => ?_)
       obtain ⟨a, rfl⟩ := exists_edge_eq e
