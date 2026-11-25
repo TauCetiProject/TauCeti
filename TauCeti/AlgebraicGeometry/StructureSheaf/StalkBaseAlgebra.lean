@@ -44,7 +44,7 @@ variable (k : Type u) [CommRing k] (R : CommRingCat.{u}) [Algebra k R]
 /-- For a `k`-algebra `R`, the map `StructureSheaf.toStalk R x` from `R` to the stalk of `Spec R`
 at `x`, as a `k`-algebra map for the base-ring algebra structure `Scheme.stalkBaseAlgebra` of the
 stalk of `Spec R` over `Spec k`. -/
-@[expose] def toStalkAlgHom (x : Spec R) : R →ₐ[k] (Spec R).presheaf.stalk x where
+def toStalkAlgHom (x : Spec R) : R →ₐ[k] (Spec R).presheaf.stalk x where
   __ := (StructureSheaf.toStalk R x).hom
   commutes' c := by
     -- `Scheme.fromSpecStalk_comp_over` identifies the stalk's algebra map `k → 𝒪_{Spec R, x}`
@@ -58,7 +58,7 @@ stalk of `Spec R` over `Spec k`. -/
 @[simp]
 lemma coe_toStalkAlgHom (x : Spec R) :
     ⇑(toStalkAlgHom k R x) = StructureSheaf.toStalk R x :=
-  rfl
+  (rfl)
 
 /-- For a local `k`-algebra `R`, the map from `R` to the stalk of `Spec R` at its closed point is
 bijective. -/
