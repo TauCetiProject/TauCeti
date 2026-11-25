@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.Rescale
 import Mathlib.Algebra.MvPolynomial.Coeff
 import TauCeti.Algebra.MvPolynomial.Monomial
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
 # Linear changes of variables in multivariate polynomials
@@ -67,6 +68,8 @@ degree `d` it is the representation `TauCeti.polynomialRep` of the general linea
 * `MvPolynomial.IsHomogeneous.linearSubst`: the substitution preserves homogeneity.
 * `MvPolynomial.IsHomogeneous.linearSubst_smul`: rescaling the matrix by `c` rescales a form
   of degree `n` by `cⁿ`.
+* `MvPolynomial.homogeneousComponent_linearSubst`: the substitution commutes with taking
+  homogeneous components.
 * `MvPolynomial.eq_zero_of_add_self_eq_zero`: a polynomial is zero if adding it to itself is
   zero and multiplication by `2` is injective on coefficients.
 * `TauCeti.polynomialAction_mul`: the substitution of standard vectors is a left action.
@@ -253,6 +256,12 @@ theorem IsHomogeneous.linearSubst_neg {R : Type*} [CommRing R] {p : MvPolynomial
     MvPolynomial.linearSubst (-M) p = (-1 : R) ^ n • MvPolynomial.linearSubst M p := by
   rw [← neg_one_smul R M, hp.linearSubst_smul]
 
+/-- A linear change of variables commutes with taking homogeneous components. -/
+theorem homogeneousComponent_linearSubst (M : Matrix σ σ R) (n : ℕ) (p : MvPolynomial σ R) :
+    homogeneousComponent n (linearSubst M p) = linearSubst M (homogeneousComponent n p) :=
+  weightedHomogeneousComponent_aeval (w := 1)
+    (fun i ↦ IsHomogeneous.sum _ _ _ fun j _ ↦ isHomogeneous_C_mul_X (M i j) j) p n
+
 variable (σ R) in
 /-- The linear changes of variables restricted to the forms of degree `n`, as a representation
 of the opposite matrix monoid: `op M` acts by `p ↦ linearSubst M p`. -/
@@ -330,6 +339,16 @@ theorem _root_.MvPolynomial.IsHomogeneous.polynomialAction {p : MvPolynomial σ 
     (hp : p.IsHomogeneous n) (g : Matrix σ σ R) :
     (TauCeti.polynomialAction g p).IsHomogeneous n :=
   hp.linearSubst gᵀ
+
+/-- The substitution of standard vectors commutes with taking homogeneous components. -/
+theorem homogeneousComponent_polynomialAction (g : Matrix σ σ R) (n : ℕ) (p : MvPolynomial σ R) :
+    homogeneousComponent n (polynomialAction g p) = polynomialAction g (homogeneousComponent n p) :=
+  homogeneousComponent_linearSubst gᵀ n p
+
+/-- Evaluating `polynomialAction g p` at `x` is evaluating `p` at `gᵀ *ᵥ x`. -/
+theorem eval_polynomialAction (g : Matrix σ σ R) (x : σ → R) (p : MvPolynomial σ R) :
+    eval x (polynomialAction g p) = eval (gᵀ *ᵥ x) p :=
+  eval_linearSubst gᵀ x p
 
 variable (σ R) in
 /-- The substitution of standard vectors restricted to the forms of degree `d`, as a

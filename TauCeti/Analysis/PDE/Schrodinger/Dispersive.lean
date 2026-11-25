@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 public import TauCeti.Analysis.PDE.Schrodinger.Basic
 import TauCeti.MeasureTheory.Integral.RieszThorin

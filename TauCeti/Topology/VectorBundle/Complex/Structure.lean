@@ -10,9 +10,12 @@ public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.VectorBundle.Hom
 public import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
 public import TauCeti.Geometry.Symplectic.Finrank
+public import TauCeti.Geometry.Symplectic.Transport
 public import TauCeti.LinearAlgebra.Complex.Module
 public import TauCeti.Topology.VectorBundle.Hom
 public import TauCeti.Topology.VectorBundle.RestrictScalars
+
+import TauCeti.Topology.VectorBundle.Section
 
 /-!
 # Complex vector bundles from fibrewise complex structures
@@ -52,6 +55,16 @@ linear part of the identity of `F`, from `J' b₀` to `J' b`,
 two of them are continuous, since inversion is continuous on the invertible operators, so these
 local trivializations form a `VectorPrebundle` over `ℂ`.
 
+## Changing the complex structure
+
+If two continuous complex structures `J₀` and `J₁` on `V` are nowhere opposite, that is,
+`J₀ b + J₁ b` is injective on every fibre, then `J₀ b + J₁ b` is a complex linear isomorphism
+from `J₀.Fiber b` to `J₁.Fiber b`, because `(J₀ + J₁) ∘ J₀ = J₁ ∘ J₀ - 1 = J₁ ∘ (J₀ + J₁)`
+(`TauCeti.Bundle.ContinuousComplexStructure.fiberCongr`), and these isomorphisms are continuous on
+total spaces (`TauCeti.Bundle.ContinuousComplexStructure.continuous_fiberCongr`): the two complex
+vector bundles are isomorphic. Two almost complex structures tamed by a common symplectic form are
+nowhere opposite.
+
 ## Main definitions
 
 * `TauCeti.Bundle.ContinuousComplexStructure F V`: a continuous section of the endomorphism bundle
@@ -63,6 +76,8 @@ local trivializations form a `VectorPrebundle` over `ℂ`.
   `FiberBundle G J.Fiber` and `VectorBundle ℂ G J.Fiber`.
 * `TauCeti.Bundle.ContinuousComplexStructure.totalSpaceHomeomorph`: the total space of `J.Fiber`
   is homeomorphic to that of `V`, by the identity on fibres.
+* `TauCeti.Bundle.ContinuousComplexStructure.fiberCongr`: the complex linear isomorphisms
+  `J₀ b + J₁ b` between the fibres of nowhere opposite complex structures.
 
 ## References
 
@@ -205,6 +220,19 @@ theorem coord_coord_apply {b₀ b : B} (hb : b ∈ (trivializationAt F V b₀).b
       Trivialization.continuousLinearMapAt_symmL _ hb w⟩
   rw [coord_apply J hb, coord_apply J hb, apply_apply, map_neg]
 
+/-- Read in the trivialization of `V` at `b₀`, the complex structure `J b` is `J.coord b₀ b`. -/
+theorem transport_almostComplexStructureAt_apply {b₀ b : B}
+    (hb : b ∈ (trivializationAt F V b₀).baseSet) (w : F) :
+    (J.almostComplexStructureAt b).transport ((trivializationAt F V b₀).linearEquivAt ℝ b hb) w =
+      J.coord b₀ b w := by
+  -- On the base set, the trivialization's linear equivalence is its continuous linear map.
+  have he (v : V b) : (trivializationAt F V b₀).linearEquivAt ℝ b hb v =
+      (trivializationAt F V b₀).continuousLinearMapAt ℝ b v :=
+    ((trivializationAt F V b₀).continuousLinearMapAt_apply_of_mem (R := ℝ) hb v).symm
+  obtain ⟨v, rfl⟩ := ((trivializationAt F V b₀).linearEquivAt ℝ b hb).surjective w
+  rw [AlmostComplexStructure.transport_apply, LinearEquiv.symm_apply_apply,
+    almostComplexStructureAt_apply, he, he, coord_apply J hb]
+
 /-- The complex linear part `(1 - J' b ∘ J' b₀) / 2` of the identity of `F`, from the complex
 structure `J' b₀ = J.coord b₀ b₀` to the complex structure `J' b = J.coord b₀ b`: as a linear
 map, it is `TauCeti.complexLinearPart (J' b₀) (J' b) LinearMap.id`. -/
@@ -307,6 +335,57 @@ private def coordAt (b₀ : B) : TauCeti.AlmostComplexStructure F where
   toLinearMap := (J.coord b₀ b₀).toLinearMap
   square_neg := LinearMap.ext fun w ↦ by
     simp [J.coord_coord_apply (mem_baseSet_trivializationAt F V b₀)]
+
+/-! ### Nowhere opposite complex structures -/
+
+section FiberCongr
+
+variable [FiniteDimensional ℝ F] (J₀ J₁ : ContinuousComplexStructure F V)
+  (h : ∀ b, Function.Injective (J₀ b + J₁ b))
+
+/-- The automorphism `J₀ b + J₁ b` of the fibre `V b`: it is injective, hence bijective since the
+fibre is finite-dimensional. -/
+private def addEquiv (b : B) : V b ≃L[ℝ] V b :=
+  haveI := VectorBundle.finiteDimensional ℝ F V b
+  haveI := FiberBundle.t2Space F V b
+  (LinearEquiv.ofInjectiveEndo ((J₀ b + J₁ b : V b →L[ℝ] V b) : V b →ₗ[ℝ] V b)
+    (h b)).toContinuousLinearEquiv
+
+private theorem addEquiv_apply (b : B) (v : V b) : addEquiv J₀ J₁ h b v = J₀ b v + J₁ b v :=
+  (rfl)
+
+/-- **Nowhere opposite complex structures give isomorphic complex vector bundles.** If
+`J₀ b + J₁ b` is injective on every fibre, that is, `J₁ b v ≠ -J₀ b v` for every `v ≠ 0`, then
+`J₀ b + J₁ b` is a complex linear isomorphism from `V b` with the complex structure `J₀ b` to `V b`
+with the complex structure `J₁ b`, since `(J₀ + J₁) J₀ = J₁ J₀ - 1 = J₁ (J₀ + J₁)`. This holds for
+any two almost complex structures tamed by a common symplectic form
+(`TauCeti.SymplecticForm.Tames.injective_add`). -/
+def fiberCongr (b : B) : J₀.Fiber b ≃L[ℂ] J₁.Fiber b where
+  toFun v := (J₁.fiberEquiv b).symm (addEquiv J₀ J₁ h b (J₀.fiberEquiv b v))
+  invFun v := (J₀.fiberEquiv b).symm ((addEquiv J₀ J₁ h b).symm (J₁.fiberEquiv b v))
+  map_add' v w := by simp
+  map_smul' z v := by
+    apply (J₁.fiberEquiv b).injective
+    simp only [RingHom.id_apply, fiberEquiv_smul, ContinuousLinearEquiv.apply_symm_apply,
+      addEquiv_apply, map_add, map_smul, apply_apply]
+    module
+  left_inv v := by simp
+  right_inv v := by simp
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
+
+theorem fiberCongr_apply (b : B) (v : J₀.Fiber b) :
+    J₀.fiberCongr J₁ h b v =
+      (J₁.fiberEquiv b).symm (J₀ b (J₀.fiberEquiv b v) + J₁ b (J₀.fiberEquiv b v)) :=
+  (rfl)
+
+@[simp]
+theorem fiberEquiv_fiberCongr (b : B) (v : J₀.Fiber b) :
+    J₁.fiberEquiv b (J₀.fiberCongr J₁ h b v) =
+      J₀ b (J₀.fiberEquiv b v) + J₁ b (J₀.fiberEquiv b v) :=
+  (rfl)
+
+end FiberCongr
 
 /-! ### The model fibre -/
 
@@ -555,6 +634,26 @@ theorem totalSpaceHomeomorph_apply (p : TotalSpace G J.Fiber) :
 theorem totalSpaceHomeomorph_symm_apply (p : TotalSpace F V) :
     (J.totalSpaceHomeomorph G).symm p = ⟨p.proj, (J.fiberEquiv p.proj).symm p.snd⟩ :=
   bundleHomeomorph_apply _ _ p
+
+section FiberCongr
+
+variable (J₀ J₁ : ContinuousComplexStructure F V) (h : ∀ b, Function.Injective (J₀ b + J₁ b))
+
+/-- The isomorphism `J₀.fiberCongr J₁ h` of the complex vector bundles of `J₀` and `J₁` is
+continuous on total spaces. -/
+theorem continuous_fiberCongr :
+    Continuous fun v : TotalSpace G J₀.Fiber ↦
+      TotalSpace.mk' G v.proj (J₀.fiberCongr J₁ h v.proj v.snd) := by
+  -- On the total space of `V`, the map is `v ↦ J₀ v + J₁ v`.
+  have hS : Continuous fun w : TotalSpace F V ↦
+      TotalSpace.mk' F w.proj (J₀ w.proj w.snd + J₁ w.proj w.snd) :=
+    ((continuous_hom_bundle_iff _).1 J₀.continuous).add_totalSpace ℝ
+      ((continuous_hom_bundle_iff _).1 J₁.continuous)
+  refine (((J₁.totalSpaceHomeomorph G).symm.continuous.comp hS).comp
+    (J₀.totalSpaceHomeomorph G).continuous).congr fun v ↦ ?_
+  simp [fiberCongr_apply]
+
+end FiberCongr
 
 end Model
 

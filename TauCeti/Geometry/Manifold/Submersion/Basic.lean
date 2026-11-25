@@ -49,6 +49,9 @@ constant on the fibres factors through a unique `C^m` map
 ## Main results
 
 * `Manifold.isSubmersionOfComplement_iff`: a submersion with complement `F` is one at every point.
+* `Manifold.IsSubmersion.of_le`, together with its `Manifold.IsSubmersionAt`,
+  `Manifold.IsSubmersionOfComplement` and `Manifold.IsSubmersionAtOfComplement` forms: lowering the
+  regularity order preserves submersions.
 * `Manifold.IsSubmersionAtOfComplement.mfderiv_extend_comp_mfderiv`: the derivative of a
   submersion in its normal-form charts.
 * `Manifold.IsSubmersionAtOfComplement.surjective_mfderiv`,
@@ -68,8 +71,11 @@ constant on the fibres factors through a unique `C^m` map
   `Manifold.IsSubmersionAt.exists_contMDiffOn_uncurry_section`: local sections through every
   nearby point of the source, depending smoothly on that point.
 * `Manifold.IsSubmersion.isOpenMap`: a submersion from a boundaryless manifold is an open map.
-* `Manifold.IsSubmersionAt.contMDiffAt_comp_iff`, `Manifold.IsSubmersion.contMDiff_comp_iff`:
-  smoothness descends along a submersion.
+* `Manifold.IsSubmersion.finrank_le`: a submersion out of a nonempty manifold does not raise
+  dimension.
+* `Manifold.IsSubmersionAt.contMDiffAt_comp_iff`, `Manifold.IsSubmersion.contMDiff_comp_iff`,
+  `Manifold.IsSubmersionAt.mdifferentiableAt_comp_iff`: smoothness and differentiability descend
+  along a submersion.
 * `Manifold.IsSubmersion.existsUnique_contMDiff_comp_eq`: smooth maps constant on the fibres of a
   surjective submersion descend to smooth maps.
 
@@ -119,6 +125,41 @@ theorem isSubmersionOfComplement_fst [IsManifold I n M] [IsManifold J n N] :
 theorem isSubmersion_fst [IsManifold I n M] [IsManifold J n N] :
     IsSubmersion (I.prod J) I n (@Prod.fst M N) :=
   isSubmersionOfComplement_fst.isSubmersion
+
+section OfLe
+
+variable {m : WithTop ℕ∞}
+
+/-- Lowering the regularity order preserves the submersion normal form at a point, with the same
+complement. -/
+theorem IsSubmersionAtOfComplement.of_le {x : M}
+    (h : IsSubmersionAtOfComplement F I J m f x) (hnm : n ≤ m) :
+    IsSubmersionAtOfComplement F I J n f x :=
+  IsSubmersionAtOfComplement.mk_of_charts h.equiv h.domChart h.codChart
+    h.mem_domChart_source h.mem_codChart_source
+    (IsManifold.maximalAtlas_subset_of_le hnm h.domChart_mem_maximalAtlas)
+    (IsManifold.maximalAtlas_subset_of_le hnm h.codChart_mem_maximalAtlas)
+    h.source_subset_preimage_source h.writtenInCharts
+
+/-- Lowering the regularity order preserves being a submersion at a point. -/
+theorem IsSubmersionAt.of_le {x : M}
+    (h : IsSubmersionAt I J m f x) (hnm : n ≤ m) :
+    IsSubmersionAt I J n f x :=
+  (h.isSubmersionAtOfComplement_complement.of_le hnm).isSubmersionAt
+
+/-- Lowering the regularity order preserves submersions with a fixed complement. -/
+theorem IsSubmersionOfComplement.of_le
+    (h : IsSubmersionOfComplement F I J m f) (hnm : n ≤ m) :
+    IsSubmersionOfComplement F I J n f :=
+  fun x ↦ (h x).of_le hnm
+
+/-- Lowering the regularity order preserves submersions. -/
+theorem IsSubmersion.of_le
+    (h : IsSubmersion I J m f) (hnm : n ≤ m) :
+    IsSubmersion I J n f :=
+  (h.isSubmersionOfComplement_complement.of_le hnm).isSubmersion
+
+end OfLe
 
 end Pointwise
 
@@ -260,6 +301,15 @@ theorem IsSubmersionAt.hasRightInverse_mfderiv (h : IsSubmersionAt I J n f x) (h
 theorem IsSubmersion.hasRightInverse_mfderiv (h : IsSubmersion I J n f) (hn : n ≠ 0) (x : M) :
     (mfderiv I J f x).HasRightInverse :=
   (h.isSubmersionAt x).hasRightInverse_mfderiv hn
+
+/-- **A submersion does not raise dimension**: a `C^n` submersion, `n ≠ 0`, out of a nonempty
+manifold with finite-dimensional model has target model of dimension at most that of the source
+model. -/
+theorem IsSubmersion.finrank_le [FiniteDimensional 𝕜 E] [Nonempty M] (h : IsSubmersion I J n f)
+    (hn : n ≠ 0) : Module.finrank 𝕜 E'' ≤ Module.finrank 𝕜 E := by
+  obtain ⟨x⟩ := ‹Nonempty M›
+  exact LinearMap.finrank_le_finrank_of_surjective (f := (mfderiv I J f x).toLinearMap)
+    (h.surjective_mfderiv hn x)
 
 end Derivative
 
@@ -404,6 +454,18 @@ theorem IsSubmersionAt.contMDiffAt_comp_iff [I.Boundaryless] (h : IsSubmersionAt
   obtain ⟨U, hU, hxU, s, hsx, hs, hfs⟩ := h.exists_contMDiffOn_section
   have hgs : ContMDiffAt J K m ((g ∘ f) ∘ s) (f x) :=
     (hsx ▸ hg).comp (f x) ((hs.of_le hm).contMDiffAt (hU.mem_nhds hxU))
+  exact hgs.congr_of_eventuallyEq <| eventually_of_mem (hU.mem_nhds hxU) fun y hy ↦ by
+    rw [comp_apply, comp_apply, hfs y hy]
+
+/-- **Differentiability descends along a submersion.** If `f` is a `C^n` submersion at `x` with
+boundaryless source and `n ≠ 0`, a map `g` is differentiable at `f x` exactly when `g ∘ f` is
+differentiable at `x`. Near `f x`, `g` is `g ∘ f` composed with a local section of `f`. -/
+theorem IsSubmersionAt.mdifferentiableAt_comp_iff [I.Boundaryless] (h : IsSubmersionAt I J n f x)
+    (hn : n ≠ 0) : MDifferentiableAt I K (g ∘ f) x ↔ MDifferentiableAt J K g (f x) := by
+  refine ⟨fun hg ↦ ?_, fun hg ↦ hg.comp x (h.contMDiffAt.mdifferentiableAt hn)⟩
+  obtain ⟨U, hU, hxU, s, hsx, hs, hfs⟩ := h.exists_contMDiffOn_section
+  have hgs : MDifferentiableAt J K ((g ∘ f) ∘ s) (f x) :=
+    (hsx ▸ hg).comp (f x) ((hs.contMDiffAt (hU.mem_nhds hxU)).mdifferentiableAt hn)
   exact hgs.congr_of_eventuallyEq <| eventually_of_mem (hU.mem_nhds hxU) fun y hy ↦ by
     rw [comp_apply, comp_apply, hfs y hy]
 

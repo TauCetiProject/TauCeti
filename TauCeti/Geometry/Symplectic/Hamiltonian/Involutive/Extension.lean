@@ -131,7 +131,7 @@ theorem exists_poissonBracket_eventuallyEq_zero_mvfderiv_eq_one {ι : Type*} [Fi
       ((e.contMDiffAt_extend he hye).mdifferentiableAt (by simp))]
   refine ⟨g, g.contMDiff, fun i ↦ ?_, ?_⟩
   · filter_upwards [hdg, e.open_source.mem_nhds hxe] with y hy hye
-    rw [hn.poissonBracket_eq_neg_mvfderiv, hy, mvfderiv_apply_eq_mfderiv_apply, heu y hye i,
+    rw [poissonBracket_eq_neg_mvfderiv, hy, mvfderiv_apply_eq_mfderiv_apply, heu y hye i,
       hℓu i, neg_zero]
   · rw [hdg.self_of_nhds, hℓ_apply, inv_mul_cancel₀ hfw]
 

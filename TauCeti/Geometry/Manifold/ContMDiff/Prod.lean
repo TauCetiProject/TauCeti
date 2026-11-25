@@ -42,15 +42,19 @@ slice.
   `C^n` along a compact slice.
 * `TauCeti.contMDiffAt_uncurry_iterate`: the iterates of a family of self-maps which is jointly
   `C^n` along a slice `{p₀} × M` are jointly `C^n` along it.
+* `TauCeti.eventually_mdifferentiableAt_slice`: a jointly `C¹` family along a compact slice
+  has differentiable slices uniformly on that compact set for all nearby parameters.
 * `TauCeti.contMDiff_prodMap_id_prodMap_equivRealProdCLM_symm`: reading the complex factor of
   `ℝ × ℂ × V` in real coordinates is `C^n` from the self-model of `ℝ × (ℝ × ℝ) × V`.
+* `TauCeti.contMDiff_uncurry_const_mul_comp_const_mul`: `(t, x) ↦ ε * H (ε * t) x` is `C^n`
+  when `H` is.
 
 -/
 
 public section
 
 open Set
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 variable {𝕜 E₁ E₂ E' H' M : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E₁] [NormedSpace 𝕜 E₁]
@@ -156,6 +160,22 @@ theorem exists_isOpen_prod_contMDiffOn [IsManifold I' n (X × Y)] [IsManifold J 
     generalized_tube_lemma isCompact_singleton hK (isOpen_setOfPred_contMDiffAt hn) hsub
   exact ⟨U, V, hUo, hVo, hU (mem_singleton x), hV, fun z hz ↦ (hUV hz).contMDiffWithinAt⟩
 
+/-- A jointly `C¹` family along a compact slice has differentiable nearby slices,
+uniformly at every point of the compact set. -/
+theorem eventually_mdifferentiableAt_slice [IsManifold I' 1 M]
+    {F : E₁ → E₂ → M} {x : E₁} {K : Set E₂} (hK : IsCompact K)
+    (hF : ∀ y ∈ K,
+      ContMDiffAt 𝓘(𝕜, E₁ × E₂) I' 1 (fun z : E₁ × E₂ ↦ F z.1 z.2) (x, y)) :
+    ∀ᶠ u in 𝓝 x, ∀ y ∈ K, MDifferentiableAt 𝓘(𝕜, E₂) I' (F u) y := by
+  obtain ⟨U, O, hUo, hOo, hxU, hO, hFUO⟩ :=
+    exists_isOpen_prod_contMDiffOn hK (by simp) hF
+  filter_upwards [hUo.mem_nhds hxU] with u hu y hy
+  have hpt : ContMDiffAt 𝓘(𝕜, E₁ × E₂) I' 1
+      (fun z : E₁ × E₂ ↦ F z.1 z.2) (u, y) :=
+    hFUO.contMDiffAt ((hUo.prod hOo).mem_nhds ⟨hu, hO hy⟩)
+  exact (hpt.comp y (contDiff_prodMk_right u).contMDiff.contMDiffAt).mdifferentiableAt
+    one_ne_zero
+
 /-- A jointly `C^n` family in the model space, fixing the base point of an extended chart at time
 zero, gives a family on the manifold, jointly `C^n` at the base point and time zero, by
 conjugating with the extended chart. -/
@@ -213,6 +233,17 @@ theorem contMDiff_prodMap_id_prodMap_equivRealProdCLM_symm :
   contDiff_fst.contMDiff.prodMk
     ((Complex.equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff.prodMk
       (contDiff_snd.comp contDiff_snd).contMDiff)
+
+/-- Reflecting and rescaling a time-dependent function by a real constant preserves smoothness:
+if `(t, x) ↦ H t x` is `C^n` on `ℝ × M`, then so is `(t, x) ↦ ε * H (ε * t) x`. With `ε = ±1`,
+this is the Hamiltonian of a cylindrical end read in its positive end coordinate. -/
+theorem contMDiff_uncurry_const_mul_comp_const_mul {E H₀ : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace H₀] {I : ModelWithCorners ℝ E H₀} {X : Type*}
+    [TopologicalSpace X] [ChartedSpace H₀ X] {Ham : ℝ → X → ℝ} (ε : ℝ)
+    (hHam : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (Function.uncurry Ham)) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (Function.uncurry fun t x ↦ ε * Ham (ε * t) x) :=
+  (contDiff_const.mul contDiff_id).contMDiff.comp (hHam.comp
+    (((contDiff_const.mul contDiff_id).contMDiff.comp contMDiff_fst).prodMk contMDiff_snd))
 
 end RealCoords
 

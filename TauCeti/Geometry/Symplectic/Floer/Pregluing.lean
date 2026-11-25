@@ -7,9 +7,12 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
+import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 
 /-!
 # Pre-gluing Floer cylinders broken at an orbit
@@ -37,13 +40,19 @@ which needs the error `F(w_R)` to be small. This file proves that it is.
   `‖X_{H_t}(w) - X_{H_t}(x)‖ ≤ L ‖ξ‖` (`TauCeti.SymplecticForm.norm_floerOperator_le`). So a map
   `C¹`-close to the stationary cylinder over `x` is an approximate solution.
 * **The pre-glued map.** It is `Cⁿ` where `x`, `u` and `v` are
-  (`TauCeti.Floer.contDiffAt_preglue`), and of period one in `t` when they are
-  (`TauCeti.Floer.periodic_preglue`).
+  (`TauCeti.Floer.contDiffAt_preglue`), differentiable where they are
+  (`TauCeti.Floer.differentiableAt_preglue`), and of period one in `t` when they are
+  (`TauCeti.Floer.periodic_preglue`). Its distance from `x` and the distance of its derivative from
+  that of the stationary cylinder are controlled by those of `u` and `v`
+  (`TauCeti.Floer.norm_preglue_sub_le`, `TauCeti.Floer.norm_fderiv_preglue_sub_le`); for the
+  `t`-derivative no derivative of the cutoff enters
+  (`TauCeti.Floer.norm_fderiv_preglue_apply_sub_le`).
 * **Locality.** For `s < -1` the Floer operator of `w_R` is that of `u` at `(s + R, t)`, and for
   `s > 1` that of `v` at `(s - R, t)`
   (`TauCeti.SymplecticForm.floerOperator_preglue_of_lt_neg_one`,
   `TauCeti.SymplecticForm.floerOperator_preglue_of_one_lt`). If `u` and `v` are solutions, the
-  error is supported in the neck, so a bound on the neck bounds it everywhere
+  error is supported in the neck (`TauCeti.SymplecticForm.floerOperator_preglue_eq_zero`), so a
+  bound on the neck bounds it everywhere
   (`TauCeti.SymplecticForm.norm_floerOperator_preglue_le_of_floerOperator_eq_zero`).
 * **The error on the neck.** On the neck, `‖F(w_R)‖` is bounded by a constant times the
   `C¹` distances of `u` from `x` at `s + R` and of `v` from `x` at `s - R`
@@ -58,6 +67,13 @@ which needs the error `F(w_R)` to be small. This file proves that it is.
   points of a half-cylinder on which `u` is a solution; for solutions `u` and `v` on the whole
   cylinder it bounds the error on all of `ℝ × [0, 1]` (`TauCeti.SymplecticForm.`
   `exists_eventually_norm_floerOperator_preglue_le_of_floerOperator_eq_zero`).
+* **The error in `Lᵖ`.** Since the error of two solutions is supported in the neck, which has
+  area `2`, its `Lᵖ` norm on `ℝ × [0, 1]` is also `O(e^{-κ R})`, uniformly in `1 ≤ p ≤ ∞`
+  (`TauCeti.SymplecticForm.`
+  `exists_eventually_eLpNorm_floerOperator_preglue_le_of_floerOperator_eq_zero`). This is the
+  form of the error that the Newton iteration in `W^{1,p}` consumes. The error is measurable
+  because the Floer operator of a continuous map is
+  (`TauCeti.SymplecticForm.aestronglyMeasurable_floerOperator`).
 
 Estimates are stated on the fundamental domain `t ∈ [0, 1]` of the cylinder, so they assume no
 periodicity. The construction is local in the cylindrical coordinates, so it applies equally at a
@@ -75,7 +91,8 @@ inverse of the linearized operator and the Newton iteration are not treated here
 
 public section
 
-open Filter Set Topology Function ContinuousLinearMap
+open Filter Set Topology Function ContinuousLinearMap MeasureTheory
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -252,13 +269,35 @@ theorem contDiff_preglue {n : ℕ∞} (hx : ContDiff ℝ n x) (hu : ContDiff ℝ
   contDiff_iff_contDiffAt.2 fun _ ↦
     contDiffAt_preglue hx.contDiffAt hu.contDiffAt hv.contDiffAt
 
+/-- The pre-glued map is differentiable at `z = (s, t)` when `x` is differentiable at `t`, `u` at
+`z + (R, 0)` and `v` at `z - (R, 0)`. -/
+theorem differentiableAt_preglue (hx : DifferentiableAt ℝ x z.2)
+    (hu : DifferentiableAt ℝ u (z + (R, 0))) (hv : DifferentiableAt ℝ v (z - (R, 0))) :
+    DifferentiableAt ℝ (preglue x u v R) z := by
+  have hρ : Differentiable ℝ pregluingCutoff :=
+    (contDiff_pregluingCutoff (n := 1)).differentiable one_ne_zero
+  have hx' : DifferentiableAt ℝ (fun p : ℝ × ℝ ↦ x p.2) z := hx.comp z differentiableAt_snd
+  exact (hx'.add ((hρ.comp differentiable_fst).differentiableAt.smul
+    ((hu.comp z (differentiableAt_id.add_const _)).sub hx'))).add
+    ((hρ.comp differentiable_fst.neg).differentiableAt.smul
+      ((hv.comp z (differentiableAt_id.sub_const _)).sub hx'))
+
+/-- The pre-glued map of differentiable maps is differentiable. -/
+theorem differentiable_preglue (hx : Differentiable ℝ x) (hu : Differentiable ℝ u)
+    (hv : Differentiable ℝ v) : Differentiable ℝ (preglue x u v R) := fun _ ↦
+  differentiableAt_preglue (hx _) (hu _) (hv _)
+
+/-- Scaling by a value of the cutoff does not increase norms. -/
+private theorem norm_pregluingCutoff_smul_le {E : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] (s : ℝ) (y : E) : ‖pregluingCutoff s • y‖ ≤ ‖y‖ := by
+  rw [norm_smul, Real.norm_of_nonneg (pregluingCutoff_nonneg s)]
+  exact mul_le_of_le_one_left (norm_nonneg _) (pregluingCutoff_le_one s)
+
 /-- The pre-glued map is within `‖u(s + R, t) - x(t)‖ + ‖v(s - R, t) - x(t)‖` of the loop `x`. -/
 theorem norm_preglue_sub_le :
     ‖preglue x u v R z - x z.2‖ ≤ ‖u (z + (R, 0)) - x z.2‖ + ‖v (z - (R, 0)) - x z.2‖ := by
   rw [preglue_sub]
-  refine norm_add_le_of_le ?_ ?_ <;> rw [norm_smul, Real.norm_of_nonneg (pregluingCutoff_nonneg _)]
-  · exact mul_le_of_le_one_left (norm_nonneg _) (pregluingCutoff_le_one _)
-  · exact mul_le_of_le_one_left (norm_nonneg _) (pregluingCutoff_le_one _)
+  exact norm_add_le_of_le (norm_pregluingCutoff_smul_le _ _) (norm_pregluingCutoff_smul_le _ _)
 
 /-- The derivative of `p ↦ f(p + (c, 0)) - x(p.2)` at `z`, for `f` differentiable at `z + (c, 0)`
 and `x` with derivative `x'` at `z.2`. -/
@@ -277,11 +316,29 @@ private theorem hasFDerivAt_pregluingCutoff_comp (a : ℝ) :
   refine (hρ.hasFDerivAt.comp z ((hasFDerivAt_fst (p := z)).const_mul a)).congr_fderiv ?_
   ext <;> simp [mul_comm]
 
-/-- Scaling by a value of the cutoff does not increase norms. -/
-private theorem norm_pregluingCutoff_smul_le (s : ℝ) (A : ℝ × ℝ →L[ℝ] V) :
-    ‖pregluingCutoff s • A‖ ≤ ‖A‖ := by
-  rw [norm_smul, Real.norm_of_nonneg (pregluingCutoff_nonneg s)]
-  exact mul_le_of_le_one_left (norm_nonneg _) (pregluingCutoff_le_one s)
+/-- The derivative of the pre-glued map at `z = (s, t)`, for `x` with derivative `x'` at `t`,
+`u` differentiable at `z + (R, 0)` and `v` at `z - (R, 0)`. -/
+private theorem hasFDerivAt_preglue {x' : V} (hx : HasDerivAt x x' z.2)
+    (hu : DifferentiableAt ℝ u (z + (R, 0))) (hv : DifferentiableAt ℝ v (z - (R, 0))) :
+    HasFDerivAt (preglue x u v R) ((snd ℝ ℝ ℝ).smulRight x' +
+      (pregluingCutoff z.1 • (fderiv ℝ u (z + (R, 0)) - (snd ℝ ℝ ℝ).smulRight x') +
+        (deriv pregluingCutoff z.1 • fst ℝ ℝ ℝ).smulRight (u (z + (R, 0)) - x z.2)) +
+      (pregluingCutoff (-z.1) • (fderiv ℝ v (z - (R, 0)) - (snd ℝ ℝ ℝ).smulRight x') +
+        (-deriv pregluingCutoff (-z.1) • fst ℝ ℝ ℝ).smulRight (v (z - (R, 0)) - x z.2))) z := by
+  have hzR : z + (-R, 0) = z - (R, 0) := by ext <;> simp [sub_eq_add_neg]
+  have hw := (hx.hasFDerivAt_comp_snd.add ((hasFDerivAt_pregluingCutoff_comp 1).smul
+    (hasFDerivAt_comp_add_sub (c := R) hx hu))).add
+    ((hasFDerivAt_pregluingCutoff_comp (-1)).smul
+      (hasFDerivAt_comp_add_sub (c := -R) hx (hzR ▸ hv)))
+  have hpre : preglue x u v R = (fun p : ℝ × ℝ ↦ x p.2) +
+      (fun p : ℝ × ℝ ↦ pregluingCutoff (1 * p.1)) • (fun p : ℝ × ℝ ↦ u (p + (R, 0)) - x p.2) +
+      (fun p : ℝ × ℝ ↦ pregluingCutoff (-1 * p.1)) •
+        (fun p : ℝ × ℝ ↦ v (p + (-R, 0)) - x p.2) := by
+    funext p
+    simp [preglue, sub_eq_add_neg]
+  rw [hpre]
+  refine hw.congr_fderiv ?_
+  simp [hzR]
 
 /-- **The derivative of the pre-glued map.** Measured against the derivative
 `(σ, τ) ↦ τ x'(t)` of the stationary cylinder over `x`, the derivative of the pre-glued map is
@@ -294,26 +351,32 @@ theorem norm_fderiv_preglue_sub_le {x' : V} (hx : HasDerivAt x x' z.2)
         ‖fderiv ℝ u (z + (R, 0)) - (snd ℝ ℝ ℝ).smulRight x'‖ +
       (|deriv pregluingCutoff (-z.1)| * ‖v (z - (R, 0)) - x z.2‖ +
         ‖fderiv ℝ v (z - (R, 0)) - (snd ℝ ℝ ℝ).smulRight x'‖) := by
-  have hzR : z + (-R, 0) = z - (R, 0) := by ext <;> simp [sub_eq_add_neg]
   have hfst (c : ℝ) (y : V) : ‖(c • fst ℝ ℝ ℝ).smulRight y‖ ≤ |c| * ‖y‖ := by
     rw [norm_smulRight_apply, norm_smul, Real.norm_eq_abs]
     exact mul_le_mul_of_nonneg_right (mul_le_of_le_one_right (abs_nonneg _) (norm_fst_le ℝ ℝ ℝ))
       (norm_nonneg _)
-  have hw := (hx.hasFDerivAt_comp_snd.add ((hasFDerivAt_pregluingCutoff_comp 1).smul
-    (hasFDerivAt_comp_add_sub (c := R) hx hu))).add
-    ((hasFDerivAt_pregluingCutoff_comp (-1)).smul
-      (hasFDerivAt_comp_add_sub (c := -R) hx (hzR ▸ hv)))
-  have hpre : preglue x u v R = (fun p : ℝ × ℝ ↦ x p.2) +
-      (fun p : ℝ × ℝ ↦ pregluingCutoff (1 * p.1)) • (fun p : ℝ × ℝ ↦ u (p + (R, 0)) - x p.2) +
-      (fun p : ℝ × ℝ ↦ pregluingCutoff (-1 * p.1)) •
-        (fun p : ℝ × ℝ ↦ v (p + (-R, 0)) - x p.2) := by
-    funext p
-    simp [preglue, sub_eq_add_neg]
-  rw [hpre, hw.fderiv, add_assoc, add_sub_cancel_left, hzR]
-  refine (norm_add_le_of_le (norm_add_le_of_le (norm_pregluingCutoff_smul_le _ _)
-    (hfst _ _)) (norm_add_le_of_le (norm_pregluingCutoff_smul_le _ _) (hfst _ _))).trans_eq ?_
-  simp only [one_mul, neg_mul, abs_neg]
+  have hρ := norm_pregluingCutoff_smul_le (E := ℝ × ℝ →L[ℝ] V)
+  rw [(hasFDerivAt_preglue hx hu hv).fderiv, add_assoc, add_sub_cancel_left]
+  refine (norm_add_le_of_le (norm_add_le_of_le (hρ _ _) (hfst _ _))
+    (norm_add_le_of_le (hρ _ _) (hfst _ _))).trans_eq ?_
+  simp only [abs_neg]
   ring
+
+/-- **The `t`-derivative of the pre-glued map.** Measured against the derivative `x'(t)` of the
+loop, the `t`-derivative of the pre-glued map is bounded by the corresponding distances of the
+`t`-derivatives of `u` at `(s + R, t)` and of `v` at `(s - R, t)`. Unlike the full derivative
+(`norm_fderiv_preglue_sub_le`), it involves no derivative of the cutoff, which depends on `s`
+alone. -/
+theorem norm_fderiv_preglue_apply_sub_le {x' : V} (hx : HasDerivAt x x' z.2)
+    (hu : DifferentiableAt ℝ u (z + (R, 0))) (hv : DifferentiableAt ℝ v (z - (R, 0))) :
+    ‖fderiv ℝ (preglue x u v R) z stdComplexLineImag - x'‖ ≤
+      ‖fderiv ℝ u (z + (R, 0)) stdComplexLineImag - x'‖ +
+        ‖fderiv ℝ v (z - (R, 0)) stdComplexLineImag - x'‖ := by
+  rw [(hasFDerivAt_preglue hx hu hv).fderiv]
+  simp only [add_apply, smul_apply, smulRight_apply, sub_apply, coe_snd', coe_fst',
+    stdComplexLineImag_fst, stdComplexLineImag_snd, one_smul, smul_zero, zero_smul, add_zero]
+  rw [add_assoc, add_sub_cancel_left]
+  exact norm_add_le_of_le (norm_pregluingCutoff_smul_le _ _) (norm_pregluingCutoff_smul_le _ _)
 
 end Floer
 
@@ -342,6 +405,23 @@ theorem floerOperator_preglue_of_one_lt (ω : SymplecticForm V) (J : ℝ → V �
       ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v (z - (R, 0)) := by
   simp only [floerOperator_def, fderiv_preglue_of_one_lt hz, preglue_of_one_le hz.le,
     Prod.snd_sub, sub_zero]
+
+/-- **The pre-gluing error vanishes off the neck.** Let `z = (s, t)` with `s ∉ [-1, 1]`. If `u`
+solves the Floer equation at `(s + R, t)` when `s < -1`, and `v` solves it at `(s - R, t)` when
+`s > 1`, then the Floer operator of the pre-glued map vanishes at `z`. -/
+theorem floerOperator_preglue_eq_zero (ω : SymplecticForm V) (J : ℝ → V → V →L[ℝ] V)
+    (H : ℝ → V → ℝ) (x : ℝ → V) {u v : ℝ × ℝ → V} (R : ℝ) {z : ℝ × ℝ}
+    (huF : z.1 < -1 →
+      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u (z + (R, 0)) = 0)
+    (hvF : 1 < z.1 →
+      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v (z - (R, 0)) = 0)
+    (hzN : z.1 ∉ Icc (-1 : ℝ) 1) :
+    ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R) z = 0 := by
+  rcases lt_or_ge z.1 (-1) with h₁ | h₁
+  · rw [ω.floerOperator_preglue_of_lt_neg_one J H x u v R h₁, huF h₁]
+  rcases lt_or_ge 1 z.1 with h₂ | h₂
+  · rw [ω.floerOperator_preglue_of_one_lt J H x u v R h₂, hvF h₂]
+  exact absurd ⟨h₁, h₂⟩ hzN
 
 /-- **The pointwise pre-gluing error.** Let `x` be an orbit of `X_{H_t}` at `t = z.2`, and write
 `Du = du - (σ, τ) ↦ τ X_{H_t}(x(t))`, and similarly `Dv`. If `‖J_z(w_R z)‖ ≤ M`, `X_{H_t}` is
@@ -500,12 +580,10 @@ theorem norm_floerOperator_preglue_le_of_floerOperator_eq_zero (ω : SymplecticF
     (hvF : 1 < z.1 →
       ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v (z - (R, 0)) = 0) :
     ‖ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R) z‖ ≤ c := by
-  have hpos : 0 ≤ c := (norm_nonneg _).trans (hc 0 ⟨by norm_num, by norm_num⟩)
-  rcases lt_or_ge z.1 (-1) with h₁ | h₁
-  · rwa [ω.floerOperator_preglue_of_lt_neg_one J H x u v R h₁, huF h₁, norm_zero]
-  rcases lt_or_ge 1 z.1 with h₂ | h₂
-  · rwa [ω.floerOperator_preglue_of_one_lt J H x u v R h₂, hvF h₂, norm_zero]
-  exact hc z.1 ⟨h₁, h₂⟩
+  by_cases hzN : z.1 ∈ Icc (-1 : ℝ) 1
+  · exact hc z.1 hzN
+  rw [ω.floerOperator_preglue_eq_zero J H x R huF hvF hzN, norm_zero]
+  exact (norm_nonneg _).trans (hc 0 ⟨by norm_num, by norm_num⟩)
 
 /-- **The pre-gluing error away from the neck.** Under the hypotheses of
 `TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglue_le`, suppose moreover that `u`
@@ -570,6 +648,87 @@ theorem exists_eventually_norm_floerOperator_preglue_le_of_floerOperator_eq_zero
     hdu hvd hv hdv (fun z hz ↦ huF z hz) fun z hz ↦ hvF z hz
   exact ⟨C', hC'.mono fun R hR z hz ↦ hR z hz.2 (fun _ ↦ ⟨mem_univ _, by simpa using hz.2⟩)
     fun _ ↦ ⟨mem_univ _, by simpa using hz.2⟩⟩
+
+/-- **The pre-gluing error in `Lᵖ`.** Under the hypotheses of
+`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglue_le_of_floerOperator_eq_zero`,
+with `u` and `v` moreover continuous, for every large gluing parameter `R` the Floer operator of the
+pre-glued map `w_R` has `Lᵖ` norm at most `C' e^{-κ R}` on the strip `ℝ × [0, 1]`, for every
+`1 ≤ p ≤ ∞` with the same constant. Indeed the error is supported in the neck
+`[-1, 1] × [0, 1]`, which has area `2`. -/
+theorem exists_eventually_eLpNorm_floerOperator_preglue_le_of_floerOperator_eq_zero
+    (ω : SymplecticForm V)
+    {J : ℝ → V → V →L[ℝ] V} {H : ℝ → V → ℝ} {x : ℝ → V} {u v : ℝ × ℝ → V} {C κ : ℝ}
+    (hH : ContDiff ℝ 2 (uncurry H)) (hJ : Continuous (uncurry J))
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hκ : 0 < κ)
+    (huc : Continuous u) (hvc : Continuous v)
+    (hud : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ u (s, t))
+    (hu : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1, ‖u (s, t) - x t‖ ≤ C * Real.exp (-(κ * s)))
+    (hdu : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖fderiv ℝ u (s, t) - (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))‖ ≤
+        C * Real.exp (-(κ * s)))
+    (hvd : ∀ᶠ s in atBot, ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ v (s, t))
+    (hv : ∀ᶠ s in atBot, ∀ t ∈ Icc (0 : ℝ) 1, ‖v (s, t) - x t‖ ≤ C * Real.exp (κ * s))
+    (hdv : ∀ᶠ s in atBot, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖fderiv ℝ v (s, t) - (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))‖ ≤
+        C * Real.exp (κ * s))
+    (huF : ∀ z ∈ univ ×ˢ Icc (0 : ℝ) 1,
+      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u z = 0)
+    (hvF : ∀ z ∈ univ ×ˢ Icc (0 : ℝ) 1,
+      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v z = 0) :
+    ∃ C', ∀ᶠ R in atTop, ∀ p : ℝ≥0∞, 1 ≤ p →
+      eLpNorm (ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R)) p
+          (volume.restrict (univ ×ˢ Icc (0 : ℝ) 1)) ≤
+        ENNReal.ofReal (C' * Real.exp (-(κ * R))) := by
+  obtain ⟨C', hC'⟩ :=
+    ω.exists_eventually_norm_floerOperator_preglue_le hH hJ hx hκ hud hu hdu hvd hv hdv
+  refine ⟨2 * C', hC'.mono fun R hR p hp ↦ ?_⟩
+  set F := ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R)
+  set S : Set (ℝ × ℝ) := univ ×ˢ Icc (0 : ℝ) 1
+  set N : Set (ℝ × ℝ) := Icc (-1 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1
+  have hN : MeasurableSet N := measurableSet_Icc.prod measurableSet_Icc
+  have hSm : MeasurableSet S := MeasurableSet.univ.prod measurableSet_Icc
+  have hFm : AEStronglyMeasurable F (volume.restrict S) := by
+    have hxc : ContDiff ℝ 0 x :=
+      contDiff_zero.2 (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt)
+    have hpt : ContDiff ℝ ⊤ fun q : (ℝ × ℝ) × V ↦ (q.1.2, q.2) :=
+      contDiff_fst.snd.prodMk contDiff_snd
+    exact ω.aestronglyMeasurable_floerOperator (J := fun p ↦ J p.2) (Ks := fun _ _ ↦ 0)
+      (Kt := fun p ↦ H p.2) (hJ.comp hpt.continuous) contDiff_const
+      ((hH.of_le (by norm_num)).comp (hpt.of_le le_top))
+      (contDiff_zero.1 (contDiff_preglue hxc (contDiff_zero.2 huc)
+        (contDiff_zero.2 hvc))).aestronglyMeasurable
+  -- The error vanishes off the neck, so on the strip it is its indicator on the neck, of area `2`.
+  have hFN : F =ᵐ[volume.restrict S] N.indicator F := by
+    refine ae_restrict_of_forall_mem hSm fun z hz ↦ ?_
+    by_cases hzN : z ∈ N
+    · rw [indicator_of_mem hzN]
+    · rw [indicator_of_notMem hzN]
+      exact ω.floerOperator_preglue_eq_zero J H x R (fun _ ↦ huF _ (by simpa [S] using hz))
+        (fun _ ↦ hvF _ (by simpa [S] using hz)) fun h ↦ hzN ⟨h, hz.2⟩
+  have hvol : volume.restrict S N = 2 := by
+    rw [Measure.restrict_apply hN, inter_eq_left.2 (prod_mono (subset_univ _) le_rfl),
+      Measure.volume_eq_prod, Measure.prod_prod, Real.volume_Icc, Real.volume_Icc]
+    norm_num
+  have hpos : 0 ≤ C' * Real.exp (-(κ * R)) :=
+    (norm_nonneg _).trans (hR (0, 0) ⟨⟨by norm_num, by norm_num⟩, by norm_num, by norm_num⟩)
+  -- The exponent `1 / p` is at most `1`, so `2 ^ (1 / p) ≤ 2`.
+  have hexp : p.toReal⁻¹ ≤ 1 := by
+    rcases eq_or_ne p ⊤ with rfl | hpt
+    · simp
+    exact inv_le_one_of_one_le₀ (by simpa using ENNReal.toReal_mono hpt hp)
+  rw [eLpNorm_congr_ae hFN]
+  calc eLpNorm (N.indicator F) p (volume.restrict S) ≤
+        volume.restrict S N ^ p.toReal⁻¹ * ENNReal.ofReal (C' * Real.exp (-(κ * R))) := by
+        refine eLpNorm_le_of_ae_bound_of_support_subset (hFm.indicator hN)
+          support_indicator_subset (Eventually.of_forall fun z ↦ ?_)
+        rw [norm_indicator_eq_indicator_norm]
+        exact indicator_le' hR (fun _ _ ↦ hpos) z
+    _ ≤ 2 * ENNReal.ofReal (C' * Real.exp (-(κ * R))) := by
+        rw [hvol]
+        gcongr
+        simpa using ENNReal.rpow_le_rpow_of_exponent_le (x := 2) (by norm_num) hexp
+    _ = ENNReal.ofReal (2 * C' * Real.exp (-(κ * R))) := by
+        conv_rhs => rw [mul_assoc, ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat]
 
 end SymplecticForm
 

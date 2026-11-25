@@ -42,6 +42,9 @@ smooth functions.
   `C^n⟮I, M; 𝓘(𝕜, A), A⟯ →ₐ[𝕜] A`.
 * `ContMDiffMap.eq_zero_of_forall_mem_ker_evalAlgHom_smul_top`: the points of `M` separate the
   scalar `C^n` functions.
+* `ContMDiffMap.instIsReduced`, `ContMDiffMap.instHasUniqueDiv`: the `C^n` maps into a reduced
+  monoid with zero are reduced, and those into an additive monoid with unique division by
+  positive integers inherit this property.
 * `Diffeomorph.compRightAlgEquiv`: precomposition with a diffeomorphism, as an algebra
   isomorphism.
 * `TauCeti.sub_algebraMap_eq_sum_mul_sub_algebraMap`: the bundled form of a pointwise
@@ -187,6 +190,31 @@ theorem eq_zero_of_forall_mem_ker_evalAlgHom_smul_top {𝕜 : Type*} [Nontrivial
   have := hf x
   rw [Ideal.smul_eq_mul, Ideal.mul_top] at this
   simpa using this
+
+/-- The `C^n` maps with values in a reduced monoid with zero form a reduced monoid with zero: a
+nilpotent map is pointwise nilpotent. -/
+instance instIsReduced {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} {n : ℕ∞ω}
+    {R : Type*} [MonoidWithZero R] [TopologicalSpace R] [ChartedSpace H' R] [ContMDiffMul I' n R]
+    [IsReduced R] : IsReduced C^n⟮I, M; I', R⟯ where
+  eq_zero f := fun ⟨k, hk⟩ ↦ ext fun x ↦ IsNilpotent.eq_zero ⟨k, by simpa using congr($hk x)⟩
+
+/-- If division by positive integers is unique in the target, it is unique for `C^n` maps, since an
+equation `k • f = k • g` holds pointwise. -/
+instance instHasUniqueDiv {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} {n : ℕ∞ω}
+    {G : Type*} [AddMonoid G] [TopologicalSpace G] [ChartedSpace H' G] [ContMDiffAdd I' n G]
+    [HasUniqueDiv G] : HasUniqueDiv C^n⟮I, M; I', G⟯ where
+  nsmul_right_injective k hk f g h :=
+    ext fun x ↦ nsmul_right_injective hk (by simpa using congr($h x))
 
 end ContMDiffMap
 

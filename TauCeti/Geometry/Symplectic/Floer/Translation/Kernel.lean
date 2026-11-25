@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.UniqueContinuation
+import Mathlib.Analysis.Calculus.LineDeriv.Basic
 
 /-!
 # Infinitesimal translations of Floer solutions and the zeros of `∂ₛu`
@@ -27,7 +28,14 @@ variation formula `TauCeti.SymplecticForm.fderiv_floerOperator_apply`, in which 
 The main case is the Floer equation `∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0` for a time-dependent
 Hamiltonian `H` and almost complex structures `J_t`, that is `K_s = 0` and `K_t(s, t) = H_t`,
 whose data do not depend on `s`, with `v = (1, 0)`: the derivative `∂ₛu` of a Floer trajectory
-solves the linearized equation along `u`.
+solves the linearized equation along `u`
+(`TauCeti.SymplecticForm.floerLinearization_fderiv_stdComplexLineReal_eq_zero`). It is the
+infinitesimal generator of the translation action of `ℝ` on Floer cylinders, along which their
+moduli spaces are divided out.
+
+The kernel element `∂ₛu` is not zero away from the stationary cylinders: a map differentiable at
+every point of the strip `ℝ × [0, 1]` has `∂ₛu = 0` there exactly when `u(s, t) = u(0, t)`
+(`TauCeti.fderiv_fst_eqOn_zero_iff`, since `∂ₛu` is `du` applied to `(1, 0)`).
 
 Unique continuation for the linearized operator
 (`TauCeti.SymplecticForm.setOf_ne_zero_mem_codiscreteWithin_of_floerLinearization_eq_zero`)
@@ -44,6 +52,8 @@ moduli spaces of Floer trajectories.
 
 * `TauCeti.SymplecticForm.floerLinearization_fderiv_apply_eq_zero`: the infinitesimal translation
   `du(v)` of a solution solves the linearized equation.
+* `TauCeti.SymplecticForm.floerLinearization_fderiv_stdComplexLineReal_eq_zero`: for data that do
+  not depend on `s`, the derivative `∂ₛu` of a solution solves the linearized equation.
 * `TauCeti.SymplecticForm.setOf_fderiv_apply_ne_zero_mem_codiscreteWithin_of_floerOperator_eq_zero`:
   the zeros of `du(v)` are isolated in a connected domain unless `du(v)` vanishes identically.
 * `TauCeti.SymplecticForm.finite_inter_setOf_fderiv_apply_eq_zero_of_floerOperator_eq_zero`: a
@@ -54,6 +64,10 @@ moduli spaces of Floer trajectories.
 * A. Floer, H. Hofer and D. Salamon, *Transversality in elliptic Morse theory for the symplectic
   action*, Duke Math. J. **80** (1995), 251–292 (the regular points of a Floer trajectory, and the
   zeros of `∂ₛu` through unique continuation for the linearized equation it solves).
+* A. Floer, *Symplectic fixed points and holomorphic spheres*, Comm. Math. Phys. **120** (1989),
+  575–611, on the translation action on connecting trajectories.
+* D. Salamon, *Lectures on Floer homology*, in *Symplectic geometry and topology*, IAS/Park City
+  Math. Ser. 7 (1999), Lectures 1 and 2, on the translation action and the linearized operator.
 -/
 
 public section
@@ -112,6 +126,22 @@ theorem floerLinearization_fderiv_apply_eq_zero {z : ℝ × ℝ}
     hamiltonianVectorField_const, sub_zero, map_zero] at h
   rw [← ω.floerLinearization_congr_of_eventuallyEq J Ks Kt u hdir]
   exact h.symm
+
+/-- **The translation generator is in the kernel of the linearized operator.** For data
+`J_t(y)` and `K = K_{s,t} ds + K_{t,t} dt` that do not depend on `s`, as for Floer cylinders, the
+`s`-derivative `∂ₛu` of a solution of the Floer equation near `z` that is `C²` at `z` solves the
+linearized equation `D_u (∂ₛu) = 0` at `z`. -/
+theorem floerLinearization_fderiv_stdComplexLineReal_eq_zero {J : ℝ → V → V →L[ℝ] V}
+    {Ks Kt : ℝ → V → ℝ} {z : ℝ × ℝ} (hJ : DifferentiableAt ℝ (J z.2) (u z))
+    (hKs : ContDiffAt ℝ 2 (Ks z.2) (u z)) (hKt : ContDiffAt ℝ 2 (Kt z.2) (u z))
+    (hu : ContDiffAt ℝ 2 u z)
+    (hF : ∀ᶠ y in 𝓝 z,
+      ω.floerOperator (fun y ↦ J y.2) (fun y ↦ Ks y.2) (fun y ↦ Kt y.2) u y = 0) :
+    ω.floerLinearization (fun y ↦ J y.2) (fun y ↦ Ks y.2) (fun y ↦ Kt y.2) u
+      (fun y ↦ fderiv ℝ u y stdComplexLineReal) z = 0 :=
+  floerLinearization_fderiv_apply_eq_zero (.of_forall fun c ↦ by simp [stdComplexLineReal_eq])
+    (.of_forall fun c ↦ by simp [stdComplexLineReal_eq])
+    (.of_forall fun c ↦ by simp [stdComplexLineReal_eq]) hJ hKs hKt hu hF
 
 /-- Under the hypotheses of the unique continuation theorems for the linearized Floer operator,
 with `u` of class `C²` on `Ω`, the infinitesimal translation `du(v)` solves the linearized

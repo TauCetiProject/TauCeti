@@ -121,7 +121,7 @@ theorem companionPencil_eq_mul {p : A[X]} (hp : p.natDegree ≤ d) (z : A) :
   induction j using Fin.cases with
   | zero =>
     rw [vecMul_smul_superdiagonalShift_zero, sub_zero, Fin.val_rev, Fin.val_zero,
-      Nat.add_sub_cancel, iterate_divX_eq_C_of_natDegree_le hp, eval_C]
+      Nat.add_sub_cancel, iterate_divX_eq_C_iff.2 hp, eval_C]
   | succ j =>
     have hrev : (j.castSucc.rev : ℕ) = (j.succ.rev : ℕ) + 1 := by
       simp only [Fin.val_rev, Fin.val_castSucc, Fin.val_succ]
@@ -205,12 +205,9 @@ theorem continuous_companionHomotopy [TopologicalSpace A] [IsTopologicalRing A]
 theorem companionHomotopy_map [Ring B] [Algebra R B] (f : A →ₐ[R] B) (p : A[X]) (z : A)
     (t : R) :
     (companionHomotopy d p z t).map f = companionHomotopy d (p.map (f : A →+* B)) (f z) t := by
-  have hdivX (m : ℕ) : divX^[m] (p.map (f : A →+* B)) = (divX^[m] p).map (f : A →+* B) := by
-    ext n
-    simp
   have heval (q : A[X]) : (q.map (f : A →+* B)).eval (f z) = f (q.eval z) :=
     eval_map_apply (f : A →+* B) z
-  simp only [companionHomotopy, Matrix.map_mul, hdivX, heval]
+  simp only [companionHomotopy, Matrix.map_mul, iterate_divX_map, heval]
   congr 2
   · rw [lastRowTransvection_def, lastRowTransvection_def, map_updateRow,
       Matrix.map_one _ (map_zero f) (map_one f), Fin.comp_snoc, map_one]

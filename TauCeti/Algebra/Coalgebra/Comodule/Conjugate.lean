@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.FromMatrix
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Isotypic
 public import TauCeti.Algebra.Coalgebra.Star
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 public import TauCeti.LinearAlgebra.Basis.Semilinear
+import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 
 /-!
 # Conjugate comodules over star bialgebras
@@ -23,7 +25,9 @@ submodule is the `star`-preimage of that of `M`
 Coordinatewise conjugation (`Module.Basis.conjEquivFun`) intertwines the coaction of `M` with that
 of `b.conjugateMatrixComodule` via `star` on `A`, inducing an order isomorphism between their
 subcomodule lattices (`Module.Basis.conjugateSubcomoduleOrderIso`) and preserving simplicity
-(`Module.Basis.isSimpleOrder_conjugateMatrixComodule`).
+(`Module.Basis.isSimpleOrder_conjugateMatrixComodule`). Over a field, the `star`-preimage of a
+simple coefficient space is therefore again a simple coefficient space
+(`TauCeti.Comodule.comap_starLinearEquiv_mem_simpleCoefficientSubmodules`).
 
 ## References
 
@@ -213,3 +217,25 @@ theorem isSimpleOrder_conjugateMatrixComodule [IsSimpleOrder (Subcomodule R A M)
 end ConjugateMatrixComodule
 
 end Module.Basis
+
+namespace TauCeti.Comodule
+
+variable {k A : Type*} [Field k] [StarRing k]
+  [Ring A] [StarRing A] [Bialgebra k A] [StarModule k A] [StarCoalgebra k A]
+
+/-- The conjugate of a simple coefficient space: its `star`-preimage is again a simple coefficient
+space. -/
+theorem comap_starLinearEquiv_mem_simpleCoefficientSubmodules {P : Submodule k A}
+    (hP : P ∈ simpleCoefficientSubmodules k A) :
+    P.comap (starLinearEquiv k (A := A)).toLinearMap ∈ simpleCoefficientSubmodules k A := by
+  obtain ⟨M, hM, rfl⟩ := mem_simpleCoefficientSubmodules.mp hP
+  have := hM
+  have : Module.Finite k M := finite_of_isSimpleOrder (C := A)
+  let b := Module.finBasis k M
+  let _ : Comodule k A (Fin (finrank k M) → k) := b.conjugateMatrixComodule (A := A)
+  have := b.isSimpleOrder_conjugateMatrixComodule (A := A)
+  convert matrixCoefficientSubmodule_mem_simpleCoefficientSubmodules (k := k) (C := A)
+    (M := Fin (finrank k M) → k) using 1
+  exact Submodule.ext fun _ ↦ b.mem_matrixCoefficientSubmodule_conjugateMatrixComodule_iff.symm
+
+end TauCeti.Comodule
