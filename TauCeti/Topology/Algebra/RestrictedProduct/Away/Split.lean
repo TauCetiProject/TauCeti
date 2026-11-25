@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.RestrictedProduct.Box
+public import TauCeti.Topology.Algebra.RestrictedProduct.ContinuousRng
 
 /-!
 # Splitting a restricted product of groups at a finite set of indices
@@ -21,6 +22,8 @@ stated with `RestrictedProductGroup`.
 ## Main definitions and results
 
 * `TauCeti.restrictedProductSplit`: the splitting at a finite set `T`, with its coordinate lemmas.
+* `TauCeti.continuous_restrictedProductSplit`, `TauCeti.continuous_restrictedProductSplit_symm`:
+  the splitting is continuous, and so is its inverse when the reference sets outside `T` are open.
 * `TauCeti.preimage_restrictedProductSplit_symm_box`: a box pulls back to the product of the box
   over `T` with the box over the complement.
 -/
@@ -131,5 +134,35 @@ theorem preimage_restrictedProductSplit_symm_box (C : ∀ i, Set (G i)) :
   · by_cases hi : i ∈ T
     · simpa [restrictedProductSplit_symm_apply_of_mem B T y hi] using h₁ ⟨i, hi⟩
     · simpa [restrictedProductSplit_symm_apply_of_notMem B T y hi] using h₂ ⟨i, hi⟩
+
+section Topology
+
+variable [∀ i, TopologicalSpace (G i)]
+
+/-- The splitting `restrictedProductSplit B T` is continuous for every reference family: its
+finite component consists of coordinate evaluations, and its restricted component is a map out of
+a single restricted product whose coordinate maps are identities. -/
+@[to_additive continuous_addRestrictedProductSplit /-- The splitting
+`addRestrictedProductSplit B T` is continuous for every reference family: its finite component
+consists of coordinate evaluations, and its restricted component is a map out of a single
+restricted product whose coordinate maps are identities. -/]
+theorem continuous_restrictedProductSplit : Continuous (restrictedProductSplit B T) :=
+  (continuous_pi fun i : T ↦ RestrictedProduct.continuous_eval i.val).prodMk <|
+    RestrictedProduct.mapAlong_continuous G (fun i : {i // i ∉ T} ↦ G i.val) Subtype.val
+      Subtype.val_injective.tendsto_cofinite (fun _ ↦ id) (.of_forall fun _ _ hx ↦ hx)
+      fun _ ↦ continuous_id
+
+/-- The inverse of `restrictedProductSplit B T` is continuous when the reference sets outside `T`
+are open; the reference sets in `T` play no role. -/
+@[to_additive continuous_addRestrictedProductSplit_symm /-- The inverse of
+`addRestrictedProductSplit B T` is continuous when the reference sets outside `T` are open; the
+reference sets in `T` play no role. -/]
+theorem continuous_restrictedProductSplit_symm (hB : ∀ i ∉ T, IsOpen (B i : Set (G i))) :
+    Continuous (restrictedProductSplit B T).symm :=
+  continuous_restrictedProduct_of_apply_eq_of_isOpen T.finite_toSet hB
+    (fun y i ↦ restrictedProductSplit_symm_apply_of_mem B T y i.property)
+    fun y i ↦ restrictedProductSplit_symm_apply_of_notMem B T y i.property
+
+end Topology
 
 end TauCeti

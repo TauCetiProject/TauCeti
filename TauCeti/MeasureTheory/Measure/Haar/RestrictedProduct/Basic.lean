@@ -706,7 +706,7 @@ theorem eventually_map_mulEquiv_apply_eq_one
     (μ : ∀ i, Measure (G i)) (hμU : ∀ᶠ i in cofinite, μ i (U i) = 1) :
     ∀ᶠ i in cofinite, (μ i).map (φ i) (U' i) = 1 := by
   filter_upwards [hφ, hμU] with i hbij hi
-  rw [map_apply (show Measurable (φ i) from (φ i).continuous.measurable)
+  rw [map_apply (f := φ i) (φ i).measurable
     (Fact.out (p := ∀ i, IsOpen (U' i : Set (H i))) i).measurableSet, ← hbij.image_eq,
     (φ i).injective.preimage_image, hi]
 
