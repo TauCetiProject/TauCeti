@@ -9,6 +9,7 @@ public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Algebra.Star.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Archimedean.Basic
+public import TauCeti.RepresentationTheory.ClassicalGroups.Standard
 
 /-!
 # Two-dimensional inductions of characters of `W_ℂ` to `W_ℝ`
@@ -24,12 +25,15 @@ as follows from `j² = -1` and `j z j⁻¹ = conj z`. This file constructs it as
 `WeilGroupReal.lift`, proves that it is continuous when `χ` is, and proves that the induction of
 the conjugate character `χ ∘ conj` is the conjugate of the induction of `χ` by the matrix of `j`
 (`WeilGroupReal.induceCharacter_comp_star`): interchanging the two exponents of a character
-does not change its induction up to isomorphism.
+does not change its induction up to isomorphism. Through the standard representation of `GL₂(ℂ)`,
+the induction becomes a representation `WeilGroupReal.induceRepresentation χ` of `W_ℝ` on `ℂ²`.
 
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.WeilGroupReal.induceCharacter`: the induced representation
   `W_ℝ →* GL₂(ℂ)` of a character of `W_ℂ`.
+* `TauCeti.ClassFieldTheory.WeilGroupReal.induceRepresentation`: the representation of `W_ℝ` on
+  `ℂ²` given by `WeilGroupReal.induceCharacter χ` and the standard representation `TauCeti.stdRep`.
 
 ## Main results
 
@@ -39,6 +43,9 @@ does not change its induction up to isomorphism.
   continuous character is continuous.
 * `TauCeti.ClassFieldTheory.WeilGroupReal.induceCharacter_comp_star`: the induction of `χ ∘ conj`
   is the conjugate of the induction of `χ` by the image of `j`.
+* `TauCeti.ClassFieldTheory.WeilGroupReal.induceRepresentation_includeComplex`,
+  `TauCeti.ClassFieldTheory.WeilGroupReal.induceRepresentation_j`: the actions of `ℂˣ` and of `j`
+  on `ℂ²`.
 
 ## References
 
@@ -150,6 +157,31 @@ theorem induceCharacter_comp_star (w : WeilGroupReal) :
       fin_cases i <;> fin_cases k <;> simp
   rw [h]
   simp
+
+/-- The representation of `W_ℝ` on `ℂ²` given by the induction `induceCharacter χ` of a character
+`χ` of `W_ℂ`. -/
+def induceRepresentation : Representation ℂ WeilGroupReal (Fin 2 → ℂ) :=
+  (stdRep ℂ 2).comp (induceCharacter χ)
+
+/-- An element `w` of `W_ℝ` acts on `ℂ²` in the induction of `χ` by the matrix
+`induceCharacter χ w`. -/
+theorem induceRepresentation_apply (w : WeilGroupReal) (v : Fin 2 → ℂ) :
+    induceRepresentation χ w v = (induceCharacter χ w : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ v :=
+  stdRep_apply_apply _ _ _ _
+
+/-- `z ∈ ℂˣ` acts on `ℂ²` in the induction of `χ` by `diag(χ z, χ (conj z))`. -/
+@[simp]
+theorem induceRepresentation_includeComplex (z : WeilGroupComplex) (v : Fin 2 → ℂ) :
+    induceRepresentation χ (includeComplex z) v = ![(χ z : ℂ) * v 0, (χ (star z) : ℂ) * v 1] := by
+  ext i
+  fin_cases i <;> simp [induceRepresentation_apply, mulVec_diagonal]
+
+/-- `j` acts on `ℂ²` in the induction of `χ` by `[[0, χ (-1)], [1, 0]]`. -/
+@[simp]
+theorem induceRepresentation_j (v : Fin 2 → ℂ) :
+    induceRepresentation χ j v = ![(χ (-1) : ℂ) * v 1, v 0] := by
+  ext i
+  fin_cases i <;> simp [induceRepresentation_apply, mulVec, dotProduct, Fin.sum_univ_two]
 
 end WeilGroupReal
 

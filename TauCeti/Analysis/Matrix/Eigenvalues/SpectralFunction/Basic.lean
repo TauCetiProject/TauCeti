@@ -75,10 +75,15 @@ for a unitary `U` diagonalizing `A`, so `f` is the spectral function composed wi
   `Matrix.IsHermitian.apply_eigenvalues₀_diagonal`: the value of a symmetric function at the
   sorted eigenvalues may be computed from any listing of the eigenvalues, and at `diag μ` it is
   `f μ`.
+* `Matrix.IsHermitian.eigenvalues₀_lt_of_extend_sub_ne_zero`: weights constant on eigenvalue
+  clusters, extended by zero, jump only at spectral gaps.
 * `Matrix.hasFDerivAt_sum_mul_eigenvalues₀`: a weighted sum of sorted eigenvalues whose weights
   are constant on eigenvalue clusters is differentiable.
 * `Matrix.hasFDerivAt_spectralFunction`, `Matrix.fderiv_spectralFunction_apply`: the derivative of
   `x ↦ f(λ(M x))` for a symmetric `f` differentiable at `λ(M x₀)`.
+* `Matrix.conjDiagonalSelfAdjoint`, `Matrix.eigenvalues₀_conjDiagonalSelfAdjoint`: the real-linear
+  map `μ ↦ U diag(μ) U*` into the Hermitian matrices, whose sorted eigenvalues for a unitary `U`
+  are a rearrangement of `μ`.
 * `Matrix.differentiableAt_spectralFunction_iff`: Lewis's differentiability criterion on Hermitian
   matrices.
 * `Matrix.fderiv_spectralFunction_selfAdjoint_apply`: the gradient formula on Hermitian matrices.
@@ -147,6 +152,26 @@ section Derivative
 variable {𝕜 n E : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
   [NormedAddCommGroup E] [NormedSpace ℝ E] {M : E → Matrix n n 𝕜} {x₀ : E}
 
+/-- **Weights constant on eigenvalue clusters jump only at spectral gaps.** Let the weights `y`
+satisfy `yᵢ = yⱼ` whenever `λᵢ(A) = λⱼ(A)`, and extend them by zero to `ℕ`. If the extended
+weights differ at `k` and `k + 1`, then `A` has a spectral gap after its `k + 1` largest
+eigenvalues. -/
+theorem IsHermitian.eigenvalues₀_lt_of_extend_sub_ne_zero {A : Matrix n n 𝕜} (hA : A.IsHermitian)
+    {y : Fin (Fintype.card n) → ℝ} (hy : ∀ i j, hA.eigenvalues₀ i = hA.eigenvalues₀ j → y i = y j)
+    {k : Fin (Fintype.card n)}
+    (hc : Function.extend Fin.val y 0 k - Function.extend Fin.val y 0 (k + 1) ≠ 0)
+    (i j : Fin (Fintype.card n)) (hi : i.val < k + 1) (hj : k + 1 ≤ j.val) :
+    hA.eigenvalues₀ j < hA.eigenvalues₀ i := by
+  have hk : k.val + 1 < Fintype.card n := lt_of_le_of_lt hj j.isLt
+  have hne : hA.eigenvalues₀ ⟨k + 1, hk⟩ ≠ hA.eigenvalues₀ k := fun heq ↦ hc <| by
+    rw [sub_eq_zero, Fin.val_injective.extend_apply,
+      Fin.val_injective.extend_apply y 0 ⟨k + 1, hk⟩]
+    exact hy _ _ heq.symm
+  have hanti := hA.eigenvalues₀_antitone
+  calc hA.eigenvalues₀ j ≤ hA.eigenvalues₀ ⟨k + 1, hk⟩ := hanti (Fin.le_def.2 hj)
+    _ < hA.eigenvalues₀ k := lt_of_le_of_ne (hanti (Fin.le_def.2 (Nat.le_succ _))) hne
+    _ ≤ hA.eigenvalues₀ i := hanti (Fin.le_def.2 (by omega))
+
 /-- **Weighted sums of sorted eigenvalues are differentiable when the weights are constant on
 eigenvalue clusters** (Lewis 1996, Lemma 2.2). Let `M` be a family of Hermitian matrices whose
 entries are differentiable at `x₀`, and let the weights satisfy `yᵢ = yⱼ` whenever
@@ -164,34 +189,22 @@ theorem hasFDerivAt_sum_mul_eigenvalues₀ (hM : ∀ x, (M x).IsHermitian)
   set D : Fin (Fintype.card n) → E →L[ℝ] ℝ := fun j ↦ RCLike.reCLM.comp
     (∑ a, ∑ b, (star (u j a) * u j b) • fderiv ℝ (fun x ↦ M x a b) x₀)
   -- Extend the weights by zero to `ℕ` and sum by parts into Ky Fan sums.
-  set Y : ℕ → ℝ := fun m ↦ if h : m < Fintype.card n then y ⟨m, h⟩ else 0
-  have hY (j : Fin (Fintype.card n)) : Y j = y j := by simp [Y]
-  have hYN : Y (Fintype.card n) = 0 := by simp [Y]
+  set Y : ℕ → ℝ := Function.extend Fin.val y 0
   have hsum (x : E) : ∑ j, y j * (hM x).eigenvalues₀ j =
-      ∑ k : Fin (Fintype.card n), (Y k - Y (k + 1)) * prefixSum (k + 1) (hM x).eigenvalues₀ := by
-    simpa [hY, hYN] using sum_smul_by_parts_prefixSum Y (hM x).eigenvalues₀
+      ∑ k : Fin (Fintype.card n), (Y k - Y (k + 1)) * prefixSum (k + 1) (hM x).eigenvalues₀ :=
+    sum_smul_by_parts_prefixSum_extend y (hM x).eigenvalues₀
   have hsumD : ∑ j, y j • D j =
-      ∑ k : Fin (Fintype.card n), (Y k - Y (k + 1)) • prefixSum (k + 1) D := by
-    simpa [hY, hYN] using sum_smul_by_parts_prefixSum Y D
+      ∑ k : Fin (Fintype.card n), (Y k - Y (k + 1)) • prefixSum (k + 1) D :=
+    sum_smul_by_parts_prefixSum_extend y D
   rw [hsumD, funext hsum]
   refine HasFDerivAt.fun_sum fun k _ ↦ ?_
   by_cases hc : Y k - Y (k + 1) = 0
   · simp only [hc, zero_mul, zero_smul]
     exact hasFDerivAt_const 0 x₀
   -- A nonzero coefficient `Yₖ - Yₖ₊₁` forces a spectral gap after the `k + 1` largest eigenvalues.
-  set μ₀ := (hM x₀).eigenvalues₀
-  have hgap (i j : Fin (Fintype.card n)) (hi : i.val < k + 1) (hj : k + 1 ≤ j.val) :
-      μ₀ j < μ₀ i := by
-    have hk : k.val + 1 < Fintype.card n := lt_of_le_of_lt hj j.isLt
-    have hne : μ₀ ⟨k + 1, hk⟩ ≠ μ₀ k := fun heq ↦ hc <| by
-      rw [sub_eq_zero, hY k, show Y (k + 1) = y ⟨k + 1, hk⟩ by simp [Y, hk]]
-      exact hy _ _ heq.symm
-    have hanti := (hM x₀).eigenvalues₀_antitone
-    calc μ₀ j ≤ μ₀ ⟨k + 1, hk⟩ := hanti (Fin.le_def.2 hj)
-      _ < μ₀ k := lt_of_le_of_ne (hanti (Fin.le_def.2 (Nat.le_succ _))) hne
-      _ ≤ μ₀ i := hanti (Fin.le_def.2 (by omega))
-  convert (hasFDerivAt_prefixSum_eigenvalues₀ hM hMd (k := k + 1) (by omega) hgap u
-    hu).const_mul (Y k - Y (k + 1)) using 2
+  convert (hasFDerivAt_prefixSum_eigenvalues₀ hM hMd (k := k + 1) (by omega)
+    ((hM x₀).eigenvalues₀_lt_of_extend_sub_ne_zero hy hc) u hu).const_mul (Y k - Y (k + 1))
+    using 2
   rw [prefixSum_def, ← ContinuousLinearMap.comp_finsetSum]
 
 /-- **Lewis's theorem**, the derivative of a spectral function (Lewis 1996, Theorem 1.1). Let `M`
@@ -258,6 +271,43 @@ open scoped Matrix.Norms.Frobenius
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {f : (Fin (Fintype.card ι) → ℝ) → ℝ}
 
+/-- The real-linear map `μ ↦ U diag(μ) U*` from `ℝⁿ` to the Hermitian matrices, for a square
+matrix `U`. The entries of `μ` are transported to the index type `ι` along the equivalence used by
+`Matrix.IsHermitian.eigenvalues`. For a unitary `U` the sorted eigenvalues of `U diag(μ) U*` are a
+rearrangement of `μ` (`Matrix.eigenvalues₀_conjDiagonalSelfAdjoint`), so a symmetric function `f`
+equals its spectral function composed with this map. -/
+def conjDiagonalSelfAdjoint (U : Matrix ι ι 𝕜) :
+    (Fin (Fintype.card ι) → ℝ) →ₗ[ℝ] selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) where
+  toFun μ := ⟨U * diagonal (fun k ↦
+      (μ ((Fintype.equivOfCardEq (Fintype.card_fin _)).symm k) : 𝕜)) * star U,
+    (isHermitian_diagonal_of_self_adjoint _
+      (funext fun _ ↦ RCLike.conj_ofReal _)).isSelfAdjoint.conjugate U⟩
+  map_add' μ ν := Subtype.ext <| by
+    rw [Submodule.coe_add, ← Matrix.add_mul, ← Matrix.mul_add, diagonal_add]
+    simp only [Pi.add_apply, RCLike.ofReal_add]
+  map_smul' c μ := Subtype.ext <| by
+    rw [RingHom.id_apply, Submodule.coe_smul, ← Matrix.smul_mul, ← Matrix.mul_smul,
+      ← diagonal_smul,
+      show (c • fun k ↦ (μ ((Fintype.equivOfCardEq (Fintype.card_fin _)).symm k) : 𝕜)) =
+        fun k ↦ ((c • μ) ((Fintype.equivOfCardEq (Fintype.card_fin _)).symm k) : 𝕜) from
+        funext fun k ↦ by simp [RCLike.real_smul_eq_coe_mul]]
+
+/-- The matrix `U diag(μ) U*` underlying `Matrix.conjDiagonalSelfAdjoint U μ`. -/
+@[simp]
+theorem coe_conjDiagonalSelfAdjoint_apply (U : Matrix ι ι 𝕜) (μ : Fin (Fintype.card ι) → ℝ) :
+    (conjDiagonalSelfAdjoint U μ : Matrix ι ι 𝕜) = U * diagonal (fun k ↦
+      (μ ((Fintype.equivOfCardEq (Fintype.card_fin _)).symm k) : 𝕜)) * star U :=
+  (rfl)
+
+/-- **The sorted eigenvalues of `U diag(μ) U*`** for a unitary `U` are the entries of `μ`, sorted
+decreasingly by `Tuple.sortDesc`. -/
+theorem eigenvalues₀_conjDiagonalSelfAdjoint {U : Matrix ι ι 𝕜} (hU : U ∈ unitaryGroup ι 𝕜)
+    (μ : Fin (Fintype.card ι) → ℝ) :
+    (conjDiagonalSelfAdjoint U μ).property.isHermitian.eigenvalues₀ = μ ∘ Tuple.sortDesc μ :=
+  (IsHermitian.eigenvalues₀_mul_mul_star
+    (isHermitian_diagonal_of_self_adjoint _ (funext fun _ ↦ RCLike.conj_ofReal _)) hU _).trans
+    (IsHermitian.eigenvalues₀_diagonal_eq_comp_sortDesc μ _)
+
 /-- **Lewis's theorem**, differentiability (Lewis 1996, Theorem 1.1). For a symmetric function `f`
 on `ℝⁿ`, the spectral function `A ↦ f(λ(A))` on the real vector space of Hermitian matrices is
 differentiable at `A` if and only if `f` is differentiable at the sorted eigenvalue vector
@@ -271,30 +321,15 @@ theorem differentiableAt_spectralFunction_iff
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · -- `f` is the spectral function along the linear map `μ ↦ U diag(μ) U*`, for a unitary `U`
     -- diagonalizing `A`.
-    set e := Fintype.equivOfCardEq (α := Fin (Fintype.card ι)) (β := ι) (Fintype.card_fin _)
     set U : Matrix ι ι 𝕜 := (A.property.isHermitian.eigenvectorUnitary : Matrix ι ι 𝕜)
-    have hD (μ : Fin (Fintype.card ι) → ℝ) :
-        (diagonal fun k ↦ (μ (e.symm k) : 𝕜)).IsHermitian :=
-      isHermitian_diagonal_of_self_adjoint _ (funext fun _ ↦ RCLike.conj_ofReal _)
-    let Φ : (Fin (Fintype.card ι) → ℝ) →ₗ[ℝ] selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) :=
-      { toFun μ := ⟨U * diagonal (fun k ↦ (μ (e.symm k) : 𝕜)) * star U,
-          (hD μ).isSelfAdjoint.conjugate U⟩
-        map_add' μ ν := Subtype.ext <| by
-          rw [Submodule.coe_add, ← Matrix.add_mul, ← Matrix.mul_add, diagonal_add]
-          simp only [Pi.add_apply, RCLike.ofReal_add]
-        map_smul' c μ := Subtype.ext <| by
-          rw [RingHom.id_apply, Submodule.coe_smul, ← Matrix.smul_mul, ← Matrix.mul_smul,
-            ← diagonal_smul]
-          rw [show (c • fun k ↦ (μ (e.symm k) : 𝕜)) = fun k ↦ ((c • μ) (e.symm k) : 𝕜) from
-            funext fun k ↦ by simp [RCLike.real_smul_eq_coe_mul]] }
+    set Φ := conjDiagonalSelfAdjoint U
     have hΦ (μ : Fin (Fintype.card ι) → ℝ) : f (Φ μ).property.isHermitian.eigenvalues₀ = f μ := by
-      have hU : U ∈ unitaryGroup ι 𝕜 := A.property.isHermitian.eigenvectorUnitary.property
-      rw [(hD μ).eigenvalues₀_mul_mul_star hU (Φ μ).property.isHermitian,
-        IsHermitian.eigenvalues₀_diagonal_eq_comp_sortDesc, hf]
+      rw [eigenvalues₀_conjDiagonalSelfAdjoint
+        A.property.isHermitian.eigenvectorUnitary.property, hf]
     have hΦA : Φ A.property.isHermitian.eigenvalues₀ = A := by
       refine Subtype.ext ?_
       conv_rhs => rw [A.property.isHermitian.spectral_theorem]
-      simp [Φ, U, e, Unitary.conjStarAlgAut_apply,
+      simp [Φ, U, Unitary.conjStarAlgAut_apply,
         A.property.isHermitian.eigenvalues₀_equivOfCardEq_symm, Function.comp_def]
     have hc := (hΦA ▸ h).comp _ (LinearMap.toContinuousLinearMap Φ).differentiableAt
     simpa [Function.comp_def, hΦ] using hc
@@ -322,15 +357,9 @@ theorem fderiv_spectralFunction_selfAdjoint_apply
         RCLike.re (star ⇑(u j) ⬝ᵥ ((H : Matrix ι ι 𝕜) *ᵥ ⇑(u j))) := by
   -- The matrix of entrywise derivatives in the direction `H` is `H`. The goal carries the
   -- Frobenius-norm topology, which agrees with the entrywise topology of
-  -- `Matrix.hasFDerivAt_selfAdjoint_apply` only after unfolding instances, so `rw` and `simp` do
-  -- not match it; cast along `hH` with `▸`, which checks the match by unfolding.
-  have hH : (of fun a b ↦ fderiv ℝ (fun B : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) ↦
-      (B : Matrix ι ι 𝕜) a b) A H) = H :=
-    ext fun a b ↦ by
-      simp only [of_apply, (hasFDerivAt_selfAdjoint_apply a b A).fderiv,
-        LinearMap.coe_toContinuousLinearMap', LinearMap.coe_comp, Submodule.coe_subtype,
-        Function.comp_apply, entryLinearMap_apply]
-  exact hH ▸ fderiv_spectralFunction_apply
+  -- `Matrix.of_fderiv_selfAdjoint_apply_eq` only after unfolding instances, so `rw` and `simp` do
+  -- not match it; cast along it with `▸`, which checks the match by unfolding.
+  exact of_fderiv_selfAdjoint_apply_eq A H ▸ fderiv_spectralFunction_apply
     (M := fun B : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) ↦ (B : Matrix ι ι 𝕜))
     (fun B ↦ B.property.isHermitian)
     (fun a b ↦ (hasFDerivAt_selfAdjoint_apply a b A).differentiableAt) hf hfA u hu H
