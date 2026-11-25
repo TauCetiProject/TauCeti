@@ -18,16 +18,20 @@ on `K`. It is invariant under multiplication by every nonzero scalar
 (`MeasureTheory.Measure.map_smul_withDensity_inv_normalizedAbsoluteValue`): multiplication by `c`
 scales `μ` by `|c|_K⁻¹` and the density by `|c|_K`. Its restriction to `Kˣ` through `Units.val`,
 `TauCeti.unitsFormMeasure K μ`, is therefore a σ-finite left-invariant measure on `Kˣ`, giving
-the units `𝒪[K]ˣ` mass `(1 - q⁻¹) μ 𝒪[K]`. By uniqueness of Haar measure, the normalized Haar
-measure `d^×x = TauCeti.unitsHaar K` with `d^×x(𝒪[K]ˣ) = 1` is `(1 - q⁻¹)⁻¹ |dx/x|_K` when
-`μ 𝒪[K] = 1` (`TauCeti.unitsHaar_eq_smul_unitsFormMeasure`).
+the units `𝒪[K]ˣ` mass `(1 - q⁻¹) μ 𝒪[K]`, which is positive and finite since `𝒪[K]` is compact
+and open. It is thus a Haar measure on `Kˣ`, and by uniqueness of Haar measure it is
+`(1 - q⁻¹) μ(𝒪[K]) d^×x`, where `d^×x = TauCeti.unitsHaar K` is the normalized Haar measure with
+`d^×x(𝒪[K]ˣ) = 1` (`TauCeti.unitsFormMeasure_eq_smul_unitsHaar`). In particular
+`d^×x = (1 - q⁻¹)⁻¹ |dx/x|_K` when `μ 𝒪[K] = 1` (`TauCeti.unitsHaar_eq_smul_unitsFormMeasure`).
 
 ## Main declarations
 
-* `TauCeti.unitsFormMeasure K μ`: the form measure on `Kˣ`, left-invariant and σ-finite.
+* `TauCeti.unitsFormMeasure K μ`: the form measure on `Kˣ`, a σ-finite Haar measure.
 * `TauCeti.map_val_unitsFormMeasure`: its pushforward to `K` is `|x|_K⁻¹ μ`.
 * `TauCeti.unitsFormMeasure_unitFiltration_zero`: its mass on `𝒪[K]ˣ` is `(1 - q⁻¹) μ 𝒪[K]`.
-* `TauCeti.unitsHaar_eq_smul_unitsFormMeasure`: `d^×x = (1 - q⁻¹)⁻¹ |dx/x|_K`.
+* `TauCeti.unitsFormMeasure_eq_smul_unitsHaar`: `|dx/x|_K = (1 - q⁻¹) μ(𝒪[K]) d^×x`.
+* `TauCeti.unitsHaar_eq_smul_unitsFormMeasure`: `d^×x = (1 - q⁻¹)⁻¹ |dx/x|_K` when
+  `μ 𝒪[K] = 1`.
 -/
 
 public section
@@ -97,6 +101,35 @@ theorem unitsFormMeasure_unitFiltration_zero :
   rw [unitsFormMeasure_apply, image_unitFiltration_zero,
     withDensity_inv_normalizedAbsoluteValue_setOf_valuation_eq_one]
 
+/-- The form measure is a Haar measure on `Kˣ`: it is left-invariant and gives the compact open
+subgroup `𝒪[K]ˣ` the positive finite mass `(1 - q⁻¹) μ 𝒪[K]`. -/
+instance isHaarMeasure_unitsFormMeasure : (unitsFormMeasure K μ).IsHaarMeasure := by
+  have hq : (1 : ℝ≥0∞) < Nat.card 𝓀[K] := by exact_mod_cast Finite.one_lt_card
+  have hO : IsCompact (𝒪[K] : Set K) := IsNonarchimedeanLocalField.isCompact_closedBall K 1
+  refine isHaarMeasure_of_isCompact_nonempty_interior _ _
+    (unitsIntegerPositiveCompacts K).isCompact (unitsIntegerPositiveCompacts K).interior_nonempty
+    ?_ ?_ <;> rw [coe_unitsIntegerPositiveCompacts, unitsFormMeasure_unitFiltration_zero]
+  · exact mul_ne_zero (tsub_pos_iff_lt.2 (ENNReal.inv_lt_one.2 hq)).ne'
+      (Valuation.isOpen_integer.measure_ne_zero μ ⟨0, zero_mem _⟩)
+  · exact ENNReal.mul_ne_top (ne_top_of_le_ne_top ENNReal.one_ne_top tsub_le_self)
+      hO.measure_lt_top.ne
+
+/-- **The form measure is a multiple of the normalized Haar measure.** For every additive Haar
+measure `μ` on `K`, the form measure `|dx/x|_K` is `(1 - q⁻¹) μ(𝒪[K]) d^×x`. -/
+theorem unitsFormMeasure_eq_smul_unitsHaar :
+    unitsFormMeasure K μ = ((1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹) * μ 𝒪[K]) • unitsHaar K := by
+  have h0 := (isOpen_unitFiltration 0).measure_ne_zero (unitsFormMeasure K μ) ⟨1, one_mem _⟩
+  have htop := ((isCompact_unitFiltration (K := K) 0).measure_lt_top
+    (μ := unitsFormMeasure K μ)).ne
+  have : SigmaFinite ((unitsFormMeasure K μ (unitFiltration K 0))⁻¹ • unitsFormMeasure K μ) := by
+    rw [← ENNReal.coe_toNNReal (ENNReal.inv_ne_top.2 h0), ← ENNReal.smul_def]
+    infer_instance
+  have h := (unitsHaar_eq_iff K
+    ((unitsFormMeasure K μ (unitFiltration K 0))⁻¹ • unitsFormMeasure K μ)).2 (by
+      rw [smul_apply, smul_eq_mul, ENNReal.inv_mul_cancel h0 htop])
+  rw [← unitsFormMeasure_unitFiltration_zero, h, smul_smul, ENNReal.mul_inv_cancel h0 htop,
+    one_smul]
+
 /-- **The normalized Haar measure of `Kˣ` is the form measure with its convergence factor.**
 For the additive Haar measure `μ` on `K` with `μ 𝒪[K] = 1`, the Haar measure `d^×x` of `Kˣ`
 normalized by `d^×x(𝒪[K]ˣ) = 1` is `(1 - q⁻¹)⁻¹ |dx/x|_K`. -/
@@ -107,10 +140,7 @@ theorem unitsHaar_eq_smul_unitsFormMeasure (hμ : μ 𝒪[K] = 1) :
     (tsub_pos_iff_lt.2 (ENNReal.inv_lt_one.2 hq)).ne'
   have htop : 1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ ≠ ⊤ :=
     ne_top_of_le_ne_top ENNReal.one_ne_top tsub_le_self
-  have : SigmaFinite ((1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹)⁻¹ • unitsFormMeasure K μ) := by
-    rw [← ENNReal.coe_toNNReal (ENNReal.inv_ne_top.2 h0), ← ENNReal.smul_def]
-    infer_instance
-  rw [unitsHaar_eq_iff, smul_apply, unitsFormMeasure_unitFiltration_zero, hμ, mul_one,
-    smul_eq_mul, ENNReal.inv_mul_cancel h0 htop]
+  rw [unitsFormMeasure_eq_smul_unitsHaar, hμ, mul_one, smul_smul, ENNReal.inv_mul_cancel h0 htop,
+    one_smul]
 
 end TauCeti
