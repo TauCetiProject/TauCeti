@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Hodge.WeightOne.Lattice
 public import TauCeti.Geometry.Hodge.WeightOne.Polarization
+import Mathlib.RingTheory.Flat.TorsionFree
 
 /-!
 # Riemann forms polarize the weight-one Hodge structure of a lattice
@@ -50,6 +51,18 @@ compatibility predicate `TauCeti.SymplecticForm.Compatible` uses the opposite si
   the Riemann forms are exactly the polarizing forms.
 * `TauCeti.AlmostComplexStructure.IsRiemannForm.polarization`: the polarized effective weight-one
   Hodge structure of a lattice with a complex structure and a Riemann form.
+* `TauCeti.AlmostComplexStructure.IsRiemannForm.neg`: `-E` is a Riemann form for `-J`, while
+  `TauCeti.AlmostComplexStructure.IsRiemannForm.not_isRiemannForm_neg`: when the realification is
+  nonzero (for instance for a nonzero free lattice), `-E` is not a Riemann form for `J`.
+* `TauCeti.AlmostComplexStructure.IsRiemannForm.scale`: a positive integer multiple of a Riemann
+  form is a Riemann form.
+* `TauCeti.AlmostComplexStructure.IsRiemannForm.pullback_of_injective_baseChange`: the pullback of
+  a Riemann form along an integral map whose real extension is injective and complex linear is a
+  Riemann form. `TauCeti.AlmostComplexStructure.IsRiemannForm.pullback`: the real extension of an
+  injective integral map is injective, so it suffices that the integral map is injective and its
+  real extension intertwines the two complex structures.
+* `TauCeti.AlmostComplexStructure.IsRiemannForm.baseChange_apply_left_symm`: the real extension of
+  a Riemann form satisfies `E_ℝ (J v) w = E_ℝ (J w) v`.
 * `TauCeti.Hodge.HodgeStructureOn.isRiemannForm_latticeAlmostComplexStructure_iff`: read from the
   Hodge-structure side, when `V` is flat over `ℤ` the forms polarizing an effective weight-one
   Hodge structure are exactly the Riemann forms of its complex structure on the realification.
@@ -153,6 +166,68 @@ that form. -/
 theorem polarization_Q [Module.Flat ℤ V] (h : IsRiemannForm J E) (hℂ : IsBaseChange ℂ ιℂ) :
     (h.polarization hℂ).Q = IsBaseChange.bilinForm hℂ E := by
   rw [Hodge.Polarization.Q_def, polarization_Qint]
+
+/-- Negating both the form and the complex structure preserves the Riemann form condition: if `E`
+is a Riemann form for `J`, then `-E` is a Riemann form for `-J`, since
+`(-E)_ℝ ((-J) v) v = E_ℝ (J v) v`. -/
+theorem neg (h : J.IsRiemannForm E) : (-J).IsRiemannForm (-E) := by
+  refine ⟨h.isAlt.neg, fun x y ↦ ?_, fun x hx ↦ ?_⟩
+  · simp [h.invariant]
+  · simpa using h.positive x hx
+
+/-- When the realification is nonzero (for instance for a nonzero free lattice), the negative of a
+Riemann form for `J` is not a Riemann form for `J`: it fails positivity. -/
+theorem not_isRiemannForm_neg [Nontrivial (Hodge.Realification V)] (h : J.IsRiemannForm E) :
+    ¬ J.IsRiemannForm (-E) := by
+  intro h'
+  obtain ⟨x, hx⟩ := exists_ne (0 : Hodge.Realification V)
+  have := h'.positive x hx
+  rw [LinearMap.BilinForm.baseChange_neg, LinearMap.neg_apply, LinearMap.neg_apply] at this
+  linarith [h.positive x hx]
+
+/-- **A positive integer multiple of a Riemann form is a Riemann form.** -/
+theorem scale (h : J.IsRiemannForm E) {n : ℕ} (hn : 0 < n) : J.IsRiemannForm (n • E) := by
+  have hn' (x y : Hodge.Realification V) :
+      (n • E).baseChange ℝ x y = n * E.baseChange ℝ x y := by
+    rw [← Nat.cast_smul_eq_nsmul ℤ, LinearMap.BilinForm.baseChange_smul]
+    simp
+  refine ⟨h.isAlt.smul n, fun x y ↦ ?_, fun x hx ↦ ?_⟩
+  · simp [hn', h.invariant]
+  · simpa [hn'] using mul_pos (Nat.cast_pos.mpr hn) (h.positive x hx)
+
+variable {W : Type*} [AddCommGroup W] {J' : AlmostComplexStructure (Hodge.Realification W)}
+
+/-- **The pullback of a Riemann form along an integral map whose real extension is injective and
+complex linear is a Riemann form.** For complex tori this is pulling back a polarization along an
+injective complex-linear map carrying lattice into lattice. -/
+theorem pullback_of_injective_baseChange (h : J.IsRiemannForm E) {f : W →ₗ[ℤ] V}
+    (hfℝ : Function.Injective (f.baseChange ℝ)) (hJ : IsComplexLinearMap J' J (f.baseChange ℝ)) :
+    J'.IsRiemannForm (E.compl₁₂ f f) := by
+  have hJ' := (isComplexLinearMap_iff_apply J' J (f.baseChange ℝ)).mp hJ
+  have hbc (x y : Hodge.Realification W) :
+      LinearMap.BilinForm.baseChange ℝ (E.compl₁₂ f f) x y =
+        E.baseChange ℝ (f.baseChange ℝ x) (f.baseChange ℝ y) :=
+    (LinearMap.BilinForm.baseChange_baseChange_baseChange (B := E.compl₁₂ f f)
+      (fun _ _ ↦ rfl) x y).symm
+  refine ⟨fun x ↦ h.isAlt (f x), fun x y ↦ ?_, fun x hx ↦ ?_⟩
+  · simp only [hbc, hJ', h.invariant]
+  · rw [hbc, hJ']
+    exact h.positive _ ((injective_iff_map_eq_zero' _).mp hfℝ x |>.not.mpr hx)
+
+/-- **The pullback of a Riemann form along an injective integral map whose real extension is
+complex linear is a Riemann form**: `ℝ` is flat over `ℤ`, so the real extension of `f` is
+injective. -/
+theorem pullback (h : J.IsRiemannForm E) {f : W →ₗ[ℤ] V} (hf : Function.Injective f)
+    (hJ : IsComplexLinearMap J' J (f.baseChange ℝ)) :
+    J'.IsRiemannForm (E.compl₁₂ f f) := by
+  refine h.pullback_of_injective_baseChange ?_ hJ
+  rw [LinearMap.baseChange_eq_lTensor]
+  exact Module.Flat.lTensor_preserves_injective_linearMap f hf
+
+/-- The real extension of a Riemann form satisfies `E_ℝ (J v) w = E_ℝ (J w) v`. -/
+theorem baseChange_apply_left_symm (h : J.IsRiemannForm E) (v w : Hodge.Realification V) :
+    E.baseChange ℝ (J v) w = E.baseChange ℝ (J w) v :=
+  J.bilinForm_apply_left_symm h.isAlt.baseChange h.invariant v w
 
 end IsRiemannForm
 
