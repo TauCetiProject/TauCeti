@@ -34,12 +34,17 @@ equations, from a bilinear estimate on the Duhamel term.
   (`ContinuousLinearMap.norm_bilinearFixedPoint_le`). For `η > 0` the right-hand side is the
   smaller root `(1 - √(1 - 4 η ‖a‖)) / (2 η)` of `η ρ² - ρ + ‖a‖ = 0`; written as above it also
   covers `η = 0`. In particular `‖x‖ ≤ 2 ‖a‖`
-  (`ContinuousLinearMap.norm_bilinearFixedPoint_le_two_mul`), and `2 η ‖x‖ < 1`
-  (`ContinuousLinearMap.two_mul_mul_norm_bilinearFixedPoint_lt_one`).
+  (`ContinuousLinearMap.norm_bilinearFixedPoint_le_two_mul`), and
+  `2 η ‖x‖ ≤ 1 - √(1 - 4 η ‖a‖) < 1`
+  (`ContinuousLinearMap.two_mul_mul_norm_bilinearFixedPoint_le`,
+  `ContinuousLinearMap.two_mul_mul_norm_bilinearFixedPoint_lt_one`).
 * **Uniqueness.** Any solution `x` with `2 η ‖x‖ < 1`, that is `‖x‖ < 1 / (2 η)`, is the one
   constructed (`ContinuousLinearMap.eq_bilinearFixedPoint`). This rests on the comparison
   `(1 - ‖B‖ (‖x‖ + ‖y‖)) ‖x - y‖ ≤ ‖a - b‖` of a solution `x` for `a` with a solution `y` for `b`
   (`ContinuousLinearMap.one_sub_mul_norm_sub_le_norm_sub`).
+* **The lemma in its usual form.** Under the pointwise bound `‖B x y‖ ≤ η ‖x‖ ‖y‖` and
+  `4 η ‖a‖ < 1`, there is a solution with `‖x‖ ≤ 2 ‖a‖`, and it is the only solution with
+  `2 η ‖x‖ < 1` (`ContinuousLinearMap.exists_add_apply_apply_eq`).
 * **Lipschitz dependence.** For `4 η r < 1` the solution map is Lipschitz on the closed ball of
   radius `r` with constant `(1 - 4 η r)^(-1/2)`
   (`ContinuousLinearMap.lipschitzOnWith_bilinearFixedPoint`).
@@ -61,7 +66,11 @@ constant above use the exact quadratic structure.
 ## References
 
 * H. Bahouri, J.-Y. Chemin and R. Danchin, *Fourier Analysis and Nonlinear Partial Differential
-  Equations*, Grundlehren der mathematischen Wissenschaften 343, Springer (2011), Chapter 5.
+  Equations*, Grundlehren der mathematischen Wissenschaften 343, Springer (2011), Chapter 5,
+  Lemma 5.5.
+* C. Wang, *Introduction of the Navier–Stokes equations*, lecture notes of a mini-course at
+  Beijing Normal University (2013), Lemma 7.2, p. 56.
+* R. Danchin, *Fourier Analysis Methods for PDE's*, lecture notes (2005), Lemma 2.3.2.
 -/
 
 public section
@@ -194,15 +203,21 @@ theorem norm_bilinearFixedPoint_le_two_mul (hB : ‖B‖ ≤ η) (ha : 4 * η * 
   (B.norm_bilinearFixedPoint_le hB ha).trans <|
     div_le_self (by positivity) (le_add_of_nonneg_right (Real.sqrt_nonneg _))
 
+/-- If `‖B‖ ≤ η` and `4 η ‖a‖ < 1`, the solution `x` of `x = a + B x x` satisfies
+`2 η ‖x‖ ≤ 1 - √(1 - 4 η ‖a‖)`. -/
+theorem two_mul_mul_norm_bilinearFixedPoint_le (hB : ‖B‖ ≤ η) (ha : 4 * η * ‖a‖ < 1) :
+    2 * η * ‖B.bilinearFixedPoint a‖ ≤ 1 - √(1 - 4 * η * ‖a‖) := by
+  have hη : 0 ≤ η := (norm_nonneg B).trans hB
+  calc 2 * η * ‖B.bilinearFixedPoint a‖ ≤ 2 * η * (2 * ‖a‖ / (1 + √(1 - 4 * η * ‖a‖))) := by
+        gcongr; exact B.norm_bilinearFixedPoint_le hB ha
+    _ = 1 - √(1 - 4 * η * ‖a‖) := two_mul_mul_radius ha
+
 /-- If `‖B‖ ≤ η` and `4 η ‖a‖ < 1`, the solution `x` of `x = a + B x x` satisfies `2 η ‖x‖ < 1`,
 that is, it lies in the ball of radius `1 / (2 η)` where solutions are unique. -/
 theorem two_mul_mul_norm_bilinearFixedPoint_lt_one (hB : ‖B‖ ≤ η) (ha : 4 * η * ‖a‖ < 1) :
     2 * η * ‖B.bilinearFixedPoint a‖ < 1 := by
-  have hη : 0 ≤ η := (norm_nonneg B).trans hB
   have hs : 0 < √(1 - 4 * η * ‖a‖) := Real.sqrt_pos.2 (by linarith)
-  calc 2 * η * ‖B.bilinearFixedPoint a‖ ≤ 2 * η * (2 * ‖a‖ / (1 + √(1 - 4 * η * ‖a‖))) := by
-        gcongr; exact B.norm_bilinearFixedPoint_le hB ha
-    _ < 1 := by rw [two_mul_mul_radius ha]; linarith
+  linarith [B.two_mul_mul_norm_bilinearFixedPoint_le hB ha]
 
 variable {B} in
 /-- **Uniqueness.** If `‖B‖ ≤ η` and `4 η ‖a‖ < 1`, every solution of `x = a + B x x` with
@@ -214,6 +229,16 @@ theorem eq_bilinearFixedPoint (hB : ‖B‖ ≤ η) (ha : 4 * η * ‖a‖ < 1) 
   calc ‖B‖ * (‖x‖ + ‖B.bilinearFixedPoint a‖)
         ≤ η * (‖x‖ + ‖B.bilinearFixedPoint a‖) := by gcongr
     _ < 1 := by linarith
+
+/-- **The bilinear fixed-point lemma.** If `‖B x y‖ ≤ η ‖x‖ ‖y‖` for all `x y`, with `0 ≤ η`, and
+`4 η ‖a‖ < 1`, then `x = a + B x x` has a solution with `‖x‖ ≤ 2 ‖a‖`, and it is the only solution
+with `2 η ‖x‖ < 1`, that is with `‖x‖ < 1 / (2 η)`. -/
+theorem exists_add_apply_apply_eq (hη : 0 ≤ η) (hB : ∀ x y, ‖B x y‖ ≤ η * ‖x‖ * ‖y‖)
+    (ha : 4 * η * ‖a‖ < 1) :
+    ∃ x, a + B x x = x ∧ ‖x‖ ≤ 2 * ‖a‖ ∧ ∀ y, a + B y y = y → 2 * η * ‖y‖ < 1 → y = x := by
+  have hB' : ‖B‖ ≤ η := opNorm_le_bound₂ B hη hB
+  exact ⟨B.bilinearFixedPoint a, B.isFixedPt_bilinearFixedPoint hB' ha,
+    B.norm_bilinearFixedPoint_le_two_mul hB' ha, fun _ hy hyη ↦ eq_bilinearFixedPoint hB' ha hy hyη⟩
 
 /-- **Lipschitz dependence on the data.** If `‖B‖ ≤ η` and `4 η r < 1`, the solution map
 `a ↦ B.bilinearFixedPoint a` is Lipschitz on the closed ball of radius `r`, with constant
@@ -227,9 +252,8 @@ theorem lipschitzOnWith_bilinearFixedPoint (hB : ‖B‖ ≤ η) {r : ℝ} (hr :
   have hsol {a : X} (ha : ‖a‖ ≤ r) :
       2 * η * ‖B.bilinearFixedPoint a‖ ≤ 1 - √(1 - 4 * η * r) := by
     have ha' : 4 * η * ‖a‖ < 1 := lt_of_le_of_lt (by gcongr) hr
-    calc 2 * η * ‖B.bilinearFixedPoint a‖ ≤ 2 * η * (2 * ‖a‖ / (1 + √(1 - 4 * η * ‖a‖))) := by
-          gcongr; exact B.norm_bilinearFixedPoint_le hB ha'
-      _ = 1 - √(1 - 4 * η * ‖a‖) := two_mul_mul_radius ha'
+    calc 2 * η * ‖B.bilinearFixedPoint a‖ ≤ 1 - √(1 - 4 * η * ‖a‖) :=
+          B.two_mul_mul_norm_bilinearFixedPoint_le hB ha'
       _ ≤ 1 - √(1 - 4 * η * r) := by gcongr
   refine LipschitzOnWith.of_dist_le_mul fun a ha b hb ↦ ?_
   rw [mem_closedBall_zero_iff] at ha hb
@@ -282,8 +306,8 @@ theorem bilinearFixedPoint_smul_mul (hη : 0 < η) (ha : 4 * η * |a| < 1) :
     generalize √(1 - 4 * η * a) = s at *
     field_simp
     linear_combination hs
-  · rw [Real.norm_eq_abs, ← abs_of_pos (by positivity : 0 < 2 * η), ← abs_mul,
-      abs_of_pos (by positivity : 0 < 2 * η), mul_div_cancel₀ _ (by positivity), abs_lt]
+  · have h2η : 0 < 2 * η := by positivity
+    rw [Real.norm_eq_abs, abs_div, abs_of_pos h2η, mul_div_cancel₀ _ h2η.ne', abs_lt]
     constructor <;> linarith
 
 /-- For the scalar equation `η x² - x + a = 0` with `η > 0` and `4 η |a| < 1`, the derivative of
