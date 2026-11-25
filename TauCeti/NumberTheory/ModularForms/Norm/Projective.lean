@@ -240,7 +240,8 @@ private lemma doubleWidthOrder_TSL_zpow_smul (f : F)
 private lemma coe_rangeRestrict_neg_one_mul (x : 𝒮ℒ) :
     (((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict (-1) * x : 𝒮ℒ) : GL (Fin 2) ℝ) =
       -(x : GL (Fin 2) ℝ) := by
-  rw [Subgroup.coe_mul, Matrix.SpecialLinearGroup.coe_rangeRestrict_mapGL_neg_one, neg_one_mul]
+  rw [Subgroup.coe_mul, MonoidHom.coe_rangeRestrict, Matrix.SpecialLinearGroup.mapGL_neg_one,
+    neg_one_mul]
 
 /-- `doubleWidthOrder` is unchanged by replacing the representative `x` by `-x`: the coset factor
 changes by `(-1) ^ k`. -/

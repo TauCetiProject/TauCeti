@@ -134,7 +134,7 @@ theorem map_mapGL_adjoinNegOne {n R S : Type*} [Fintype n] [DecidableEq n] [Comm
     [CommRing S] [Algebra R S] [Fact (Even (Fintype.card n))]
     (H : Subgroup (SpecialLinearGroup n R)) :
     H.adjoinNegOne.map (mapGL S) = (H.map (mapGL S)).adjoinNegOne :=
-  map_adjoinNegOne H _ fun g ↦ by rw [← neg_one_mul g, map_mul, mapGL_neg_one, neg_one_mul]
+  map_adjoinNegOne H _ mapGL_neg
 
 end SpecialLinearGroup
 

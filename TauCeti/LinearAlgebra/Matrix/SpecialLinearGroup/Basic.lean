@@ -66,8 +66,7 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.map_injective` and `Matrix.SpecialLinearGroup.mem_range_map_iff`:
   along an injective ring hom, base change is injective and its range is described entrywise.
 * `Matrix.SpecialLinearGroup.mapGL_neg` and `Matrix.SpecialLinearGroup.mapGL_neg_one`:
-  `mapGL S (-g) = -mapGL S g`, in particular `mapGL S (-1) = -1`, and
-  `Matrix.SpecialLinearGroup.coe_rangeRestrict_mapGL_neg_one` for its range restriction.
+  `mapGL S (-g) = -mapGL S g`, in particular `mapGL S (-1) = -1`.
 * `Matrix.SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv`: right multiplication of row vectors
   by `g` is inverted by `g⁻¹`.
 * `Matrix.SpecialLinearGroup.sum_comp_vecMul`: over a finite ring, this right multiplication
@@ -355,13 +354,6 @@ lemma mapGL_neg_one {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [Co
     [Algebra R S] [Fact (Even (Fintype.card n))] :
     mapGL S (-1 : SpecialLinearGroup n R) = -1 := by
   rw [mapGL_neg, map_one]
-
-/-- `-I`, restricted into the range of `SL(n, R) → GL(n, S)` and read back in `GL(n, S)`, is
-`-I`. -/
-lemma coe_rangeRestrict_mapGL_neg_one {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R]
-    [CommRing S] [Algebra R S] [Fact (Even (Fintype.card n))] :
-    ((mapGL S).rangeRestrict (-1 : SpecialLinearGroup n R) : GL n S) = -1 := by
-  rw [MonoidHom.coe_rangeRestrict, mapGL_neg_one]
 
 variable {R : Type*} [CommRing R]
 
