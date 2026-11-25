@@ -21,8 +21,9 @@ import TauCeti.RingTheory.RegularLocalRing.PowerSeries
 
 For a module `M` over `O⟦X⟧`, its delta submodule is the increasing union of the kernels of
 `ωₙ = (1 + X) ^ (p ^ n) - 1`. Linear maps preserve this submodule, injective maps reflect it, and
-linear maps with finite kernel and cokernel (in particular pseudo-isomorphisms when `O⟦X⟧` has
-Krull dimension `2`) preserve the finiteness of scalar multiples `a • M_δ`.
+linear maps with finite kernel and cokernel (in particular pseudo-isomorphisms over a local
+noetherian `O` with finite residue field when `O⟦X⟧` has Krull dimension `2`) preserve the
+finiteness of scalar multiples `a • M_δ`.
 On a vertical block `O⟦X⟧ ⧸ (ϖ ^ m)` over a local domain with prime `ϖ` and `p ≠ 0`, the delta
 submodule vanishes.
 
@@ -220,12 +221,15 @@ private theorem finite_smul_deltaSubmodule_of_surjective_of_finite_ker {p : ℕ}
   have : Infinite ↥(a • deltaSubmodule p O P) := not_finite_iff_infinite.mp hinf
   cases nonempty_fintype ↥(a • deltaSubmodule p O M)
   cases nonempty_fintype (LinearMap.ker g)
+  -- Suppose `a • P_δ` is infinite, and pick `B = #(a • M_δ) · #(ker g) + 1` distinct elements
+  -- `e i = a • z i` with `z i ∈ P_δ`.
   let B := Fintype.card ↥(a • deltaSubmodule p O M) * Fintype.card (LinearMap.ker g) + 1
   let e : Fin B → ↥(a • deltaSubmodule p O P) :=
     fun i ↦ Infinite.natEmbedding ↥(a • deltaSubmodule p O P) i
   have hz : ∀ i : Fin B, ∃ z ∈ deltaSubmodule p O P, a • z = (e i).val := fun i ↦
     (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp (e i).property
   choose z hz_mem hz_smul using hz
+  -- All `B` witnesses `z i` are killed by a common cyclotomic element `ω = (1 + X) ^ p ^ m₀ - 1`.
   choose m hm using fun i ↦ (mem_deltaSubmodule p O P (z i)).mp (hz_mem i)
   let m₀ := Finset.univ.sup m
   let ω : O⟦X⟧ := (1 + X) ^ p ^ m₀ - 1
@@ -233,6 +237,9 @@ private theorem finite_smul_deltaSubmodule_of_surjective_of_finite_ker {p : ℕ}
     (mem_torsionBy_iff _ _).mp <|
       monotone_torsionBy_one_add_X_pow_sub_one p O P (Finset.le_sup (Finset.mem_univ i))
         ((mem_torsionBy_iff _ _).mpr (hm i))
+  -- Lift each `z i` along `g` to `x i ∈ M`; then `κ i = ω • x i` lies in `ker g`. Subtracting a
+  -- single reference lift `x₀ k` per kernel class `k = κ j` kills the `ω`-multiple, so
+  -- `x i - x₀ (κ i) ∈ M_δ`.
   choose x hgx using fun i ↦ hg (z i)
   let κ : Fin B → LinearMap.ker g := fun i ↦
     ⟨ω • x i, by rw [LinearMap.mem_ker, map_smul, hgx, hωz]⟩
@@ -244,6 +251,9 @@ private theorem finite_smul_deltaSubmodule_of_surjective_of_finite_ker {p : ℕ}
     · have hκ : (κ h.choose).val = (κ i).val := congrArg Subtype.val h.choose_spec
       simpa only [smul_sub, sub_eq_zero, ω] using hκ.symm
     · exact absurd ⟨i, rfl⟩ h
+  -- Map `Fin B` into `(a • M_δ) × ker g` via `Φ i = (a • (x i - x₀ (κ i)), κ i)`. Equal second
+  -- components fix `x₀ (κ i)`, so equal first components give `a • x i₁ = a • x i₂`, hence
+  -- `e i₁ = e i₂` after applying `g`, making `Φ` injective and contradicting the choice of `B`.
   let Φ : Fin B → ↥(a • deltaSubmodule p O M) × LinearMap.ker g := fun i ↦
     (⟨a • (x i - x₀ (κ i)), Submodule.smul_mem_pointwise_smul _ _ _ (hdiff_mem i)⟩, κ i)
   have hΦ : Function.Injective Φ := fun i₁ i₂ h ↦ by
@@ -297,7 +307,7 @@ end Transport
 
 /-- The cyclotomic delta submodule of a vertical block `O⟦X⟧ ⧸ (ϖ ^ m)` vanishes. -/
 @[simp]
-theorem deltaSubmodule_quotient_span_C_pow {p : ℕ} [NeZero p] {O : Type*} [CommRing O]
+theorem deltaSubmodule_quotient_span_C_pow_eq_bot {p : ℕ} [NeZero p] {O : Type*} [CommRing O]
     [IsDomain O] [IsLocalRing O] {ϖ : O} (hϖ : Prime ϖ) (m : ℕ) :
     deltaSubmodule p O (O⟦X⟧ ⧸ Ideal.span {C (ϖ ^ m)}) = ⊥ := by
   refine eq_bot_iff.mpr ((deltaSubmodule_le_iff p O _).mpr fun k ↦ ?_)

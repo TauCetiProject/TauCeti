@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.Iwasawa.GrowthFormula
 
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Algebra.Field.ZMod
+import Mathlib.RingTheory.OrderOfVanishing.Basic
 import Mathlib.RingTheory.PowerSeries.Inverse
 import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
@@ -150,7 +151,11 @@ private theorem infinite_smul_deltaSubmodule_quotient_span_pow_of_dvd [CharZero 
     Infinite ↥(((∏ j ∈ Finset.range n₀, growthTransition p O j j : O[X]) : O⟦X⟧) •
       deltaSubmodule p O (O⟦X⟧ ⧸ Ideal.span {((F ^ n : O[X]) : O⟦X⟧)})) := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-  rw [Polynomial.coe_pow, pow_succ]
+  have hspan : Ideal.span {((F ^ (m + 1) : O[X]) : O⟦X⟧)} =
+      ((F : O⟦X⟧) ^ m) • Ideal.span {(F : O⟦X⟧)} := by
+    rw [Polynomial.coe_pow, pow_succ, ← Ideal.span_singleton_mul_span_singleton,
+      ← smul_eq_mul, Submodule.ideal_span_singleton_smul]
+  rw [hspan]
   set W : O[X] := ∏ j ∈ Finset.range n₀, growthTransition p O j j
   have hWres : F.resultant W ≠ 0 := by
     rw [hF.monic.resultant_prod_right, Finset.prod_ne_zero_iff]
@@ -164,10 +169,10 @@ private theorem infinite_smul_deltaSubmodule_quotient_span_pow_of_dvd [CharZero 
       (hF.isWeierstrassFactorizationAt.norm_mk_coe_eq_resultant _ ▸ hWres)
   have hFm_ne : (F : O⟦X⟧) ^ m ≠ 0 :=
     pow_ne_zero m ((Polynomial.coe_eq_zero_iff).not.mpr hF.monic.ne_zero)
-  let ι := Ideal.mulLeftQuotientSpanSingleton ((F : O⟦X⟧) ^ m) (F : O⟦X⟧)
+  let ι := Ideal.mulQuot ((F : O⟦X⟧) ^ m) (Ideal.span {(F : O⟦X⟧)})
   let ψ := ι ∘ₗ LinearMap.lsmul O⟦X⟧ _ (W : O⟦X⟧)
   have hψ_inj : Function.Injective ψ :=
-    (Ideal.mulLeftQuotientSpanSingleton_injective (isRegular_iff_ne_zero.mpr hFm_ne).left _).comp
+    (Ideal.mulQuot_injective _ (mem_nonZeroDivisors_of_ne_zero hFm_ne)).comp
       ((isSMulRegular_iff_torsionBy_eq_bot _ _).mpr hQtor)
   obtain ⟨u, hu⟩ : F ∣ (1 + Polynomial.X) ^ p ^ j₀ - 1 := by
     rw [← growthTransition_zero_left (p := p) (O := O) j₀, growthTransition_def]
@@ -177,8 +182,12 @@ private theorem infinite_smul_deltaSubmodule_quotient_span_pow_of_dvd [CharZero 
   have hι_delta (q : O⟦X⟧ ⧸ Ideal.span {(F : O⟦X⟧)}) : ι q ∈ deltaSubmodule p O _ := by
     obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective q
     refine (mem_deltaSubmodule p O _ _).mpr ⟨j₀, ?_⟩
-    rw [Ideal.mulLeftQuotientSpanSingleton_mk, Ideal.Quotient.smul_mk,
-      Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton, hcoe]
+    -- `Ideal.mulQuot` in Mathlib has no `@[simp]` evaluation lemma, and reduces to `Quotient.mk`
+    -- by definition (`Submodule.mapQ_apply`).
+    have hι_mk : ι (Ideal.Quotient.mk (Ideal.span {(F : O⟦X⟧)}) s) =
+        Ideal.Quotient.mk (((F : O⟦X⟧) ^ m) • Ideal.span {(F : O⟦X⟧)}) (((F : O⟦X⟧) ^ m) * s) := rfl
+    rw [hι_mk, Ideal.Quotient.smul_mk, Ideal.Quotient.eq_zero_iff_mem, ← hspan,
+      Polynomial.coe_pow, pow_succ, Ideal.mem_span_singleton, hcoe]
     exact ⟨(u : O⟦X⟧) * s, by ring⟩
   have hψ_mem (q : O⟦X⟧ ⧸ Ideal.span {(F : O⟦X⟧)}) :
       ψ q ∈ (W : O⟦X⟧) • deltaSubmodule p O _ := by
@@ -214,7 +223,7 @@ private theorem smul_deltaSubmodule_elementary_eq_bot {ϖ : O} (hϖ : Irreducibl
       (LinearMap.proj i).comp ((LinearMap.fst O⟦X⟧ _ _).comp (LinearMap.snd O⟦X⟧ _ _))
     have hx₁ : x₁ i ∈ deltaSubmodule p O (O⟦X⟧ ⧸ Ideal.span {C (ϖ ^ m i)}) :=
       π₁.map_deltaSubmodule_le p ⟨(x₀, x₁, x₂), hx, rfl⟩
-    rw [deltaSubmodule_quotient_span_C_pow hϖ.prime (m i), mem_bot] at hx₁
+    rw [deltaSubmodule_quotient_span_C_pow_eq_bot hϖ.prime (m i), mem_bot] at hx₁
     simp [hx₁]
   · let π₂ : Elementary O ϖ r m F n →ₗ[O⟦X⟧] O⟦X⟧ ⧸ Ideal.span {((F i ^ n i : O[X]) : O⟦X⟧)} :=
       (LinearMap.proj i).comp ((LinearMap.snd O⟦X⟧ _ _).comp (LinearMap.snd O⟦X⟧ _ _))
@@ -413,27 +422,7 @@ theorem exists_eventually_natCard_quotSMulTop_growthTransition_eq_of_isTorsion {
       (Nat.card (QuotSMulTop (growthTransition p O n₀ k : O⟦X⟧) M) : ℚ) =
         (Nat.card (ResidueField O) : ℚ) ^
           (((muInvariant O M * p ^ k + e * lambdaInvariant O M * k : ℕ) : ℤ) + ν) := by
-  have : CharZero O := by
-    rcases CharP.char_is_prime_or_zero O (ringChar O) with hq | h0
-    · exfalso
-      by_cases hdvd : ringChar O ∣ p
-      · have hp0 : (p : O) = 0 := (ringChar.spec O p).mpr hdvd
-        obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
-        have hϖ_mem : ϖ ∈ maximalIdeal O :=
-          (mem_maximalIdeal ϖ).mpr (mem_nonunits_iff.mpr hϖ.not_isUnit)
-        have hmem : ϖ ^ e ∈ Ideal.span {(p : O)} := hpe ▸ Ideal.pow_mem_pow hϖ_mem e
-        obtain ⟨c, hc⟩ := Ideal.mem_span_singleton.mp (hp0 ▸ hmem)
-        rw [zero_mul] at hc
-        exact pow_ne_zero e hϖ.ne_zero hc
-      · have : Fact (ringChar O).Prime := ⟨hq⟩
-        have hu : IsUnit (p : O) := by
-          simpa using ((isUnit_iff_ne_zero.mpr
-            ((ZMod.natCast_eq_zero_iff p (ringChar O)).not.mpr hdvd)).map
-              (ZMod.castHom dvd_rfl O))
-        exact notMem_maximalIdeal.mpr hu
-          (Ideal.pow_le_self he.ne' (hpe ▸ Ideal.mem_span_singleton_self _))
-    · have := ringChar.of_eq h0
-      exact CharP.charP_to_charZero O
+  have := TauCeti.IsDiscreteValuationRing.charZero_of_span_natCast_eq_maximalIdeal_pow he hpe
   obtain ⟨n₀, hn₀⟩ := exists_finite_quotSMulTop_growthTransition p hM
   exact ⟨n₀, exists_eventually_natCard_quotSMulTop_growthTransition_eq he hpe n₀
     (Filter.eventually_atTop.mpr ⟨n₀, hn₀⟩)⟩

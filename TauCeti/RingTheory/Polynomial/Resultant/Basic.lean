@@ -384,14 +384,8 @@ if a monic irreducible `g` does not divide `f`, then `Res(f, g) ≠ 0`: by Gauss
 irreducible over the fraction field, where it is therefore coprime to `f`. -/
 theorem Monic.resultant_ne_zero_of_not_dvd [IsDomain R] [IsIntegrallyClosed R] {f g : R[X]}
     (hg : g.Monic) (hirr : Irreducible g) (hdvd : ¬g ∣ f) : f.resultant g ≠ 0 := by
-  let K := FractionRing R
-  have hinj := IsFractionRing.injective R K
-  have hcop : IsCoprime (f.map (algebraMap R K)) (g.map (algebraMap R K)) :=
-    (((hg.irreducible_iff_irreducible_map_fraction_map (K := K)).mp hirr).coprime_iff_not_dvd.mpr
-      fun h ↦ hdvd ((map_dvd_map _ hinj hg).mp h)).symm
-  intro h0
-  apply resultant_ne_zero _ _ hcop
-  rw [resultant_map_of_natDegree_eq _ (natDegree_map_eq_of_injective hinj _)
-    (natDegree_map_eq_of_injective hinj _), h0, map_zero]
+  rw [resultant_comm, mul_ne_zero_iff]
+  exact ⟨pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero),
+    (hg.resultant_eq_zero_iff_dvd hirr).not.mpr hdvd⟩
 
 end Polynomial

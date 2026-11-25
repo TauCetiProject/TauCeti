@@ -69,13 +69,9 @@ section Torsion
 torsion, its free rank `r` vanishes. -/
 theorem eq_zero_of_isTorsion_elementary {O : Type*} [CommRing O] [Nontrivial O] {ϖ : O}
     {r a b : ℕ} {m : Fin a → ℕ} {F : Fin b → O[X]} {n : Fin b → ℕ}
-    (hE : Module.IsTorsion O⟦X⟧ (Elementary O ϖ r m F n)) : r = 0 := by
-  by_contra hr
-  let i₀ : Fin r := ⟨0, Nat.pos_of_ne_zero hr⟩
-  obtain ⟨s, hs⟩ := @hE (Pi.single i₀ 1, 0)
-  have h0 : (s : O⟦X⟧) = 0 := by
-    simpa [Submonoid.smul_def] using congr_fun (congr_arg Prod.fst hs) i₀
-  exact nonZeroDivisors.ne_zero s.property h0
+    (hE : Module.IsTorsion O⟦X⟧ (Elementary O ϖ r m F n)) : r = 0 :=
+  Fin.isEmpty_iff.mp <| isTorsion_pi_self_iff.mp <|
+    hE.of_injective (f := LinearMap.inl _ _ _) LinearMap.inl_injective
 
 /-- A rank-zero elementary module `Elementary O ϖ 0 m F n` over a domain `O` with `ϖ ≠ 0` and
 nonzero horizontal factors is torsion over `O⟦X⟧`. -/
