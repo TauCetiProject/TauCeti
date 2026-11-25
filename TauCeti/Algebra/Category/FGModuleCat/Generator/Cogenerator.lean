@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Category.FGModuleCat.Generator.Basic
 public import TauCeti.Algebra.Category.FGModuleCat.KrullSchmidt
 public import TauCeti.Algebra.Category.FGModuleCat.MatlisDuality.Basic
 public import TauCeti.Algebra.Category.FGModuleCat.Projective
-public import TauCeti.CategoryTheory.Preadditive.AdditiveGenerator
 public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.AdditiveClosure
 
 import TauCeti.Algebra.Subalgebra.Center
@@ -63,10 +62,6 @@ monomorphisms `2 : ℤ ⟶ ℤ` and `ℤ/pᵏℤ ⟶ ℤ/p²ᵏℤ` do not split
 and every indecomposable injective object of `mod ℤ` is a direct summand of `ℤ`, which is not a
 generator-cogenerator. (This last part is a remark and is not formalized here.)
 
-An additive generator `M` of `mod A` (`TauCeti.IsAdditiveGenerator`, `add M = mod A`) contains every
-indecomposable object as a direct summand, so over an Artin algebra it is a generator-cogenerator
-(`TauCeti.IsAdditiveGenerator.isGeneratorCogenerator`).
-
 ## Main results
 
 * `FGModuleCat.isSeparator_iff_forall_indecomposable`: over a left Artinian ring, `M` is a
@@ -80,8 +75,6 @@ indecomposable object as a direct summand, so over an Artin algebra it is a gene
 * `TauCeti.isGeneratorCogenerator_iff_forall_indecomposable`: `M` is a generator-cogenerator exactly
   when every indecomposable projective and every indecomposable injective is a direct summand of
   `M`.
-* `TauCeti.IsAdditiveGenerator.isGeneratorCogenerator`: over an Artin algebra, an additive generator
-  of `mod A` is a generator-cogenerator.
 * `TauCeti.IsInjectiveEnvelope.isGeneratorCogenerator_regular_biprod_fgModuleCatMatlisDualRegular`:
   `A ⊕ D A` is a generator-cogenerator.
 * `FGModuleCat.not_isCoseparator_int`: `ℤ` is not a coseparator of `mod ℤ`.
@@ -212,21 +205,6 @@ theorem isGeneratorCogenerator_iff_forall_indecomposable (R : Type u) [CommRing 
   exact isGeneratorCogenerator_iff.trans <| and_congr
     (FGModuleCat.isSeparator_iff_forall_indecomposable M)
       (FGModuleCat.isCoseparator_iff_forall_indecomposable R M)
-
-/-- **An additive generator is a generator-cogenerator**: over an Artin algebra, an additive
-generator `M` of `mod A` (`add M = mod A`) is a generator-cogenerator, since every indecomposable
-object, in particular every indecomposable projective and injective one, is a direct summand of `M`.
-The modules may live in any universe in which `A` is small. -/
-theorem IsAdditiveGenerator.isGeneratorCogenerator (R : Type u) [CommRing R] [IsArtinianRing R]
-    {A : Type v} [Ring A] [Algebra R A] [Module.Finite R A] [Small.{w} A]
-    {M : FGModuleCat.{w} A} (hM : IsAdditiveGenerator M) : IsGeneratorCogenerator M := by
-  have := IsArtinianRing.of_finite R A
-  refine (isGeneratorCogenerator_iff_forall_indecomposable R M).2
-    ⟨fun P _ hP ↦ ?_, fun I _ hI ↦ ?_⟩
-  · have := FGModuleCat.isLocalRing_end_of_indecomposable hP
-    exact additiveClosure_iff_nonempty_retract.1 (hM.additiveClosure P)
-  · have := FGModuleCat.isLocalRing_end_of_indecomposable hI
-    exact additiveClosure_iff_nonempty_retract.1 (hM.additiveClosure I)
 
 /-- **`ℤ` is not a coseparator of `mod ℤ`.** -/
 theorem _root_.FGModuleCat.not_isCoseparator_int : ¬ IsCoseparator (FGModuleCat.of ℤ ℤ) := by
