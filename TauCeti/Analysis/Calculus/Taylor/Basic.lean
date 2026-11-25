@@ -26,7 +26,8 @@ The file provides:
   sufficiently small, uniformly over expansion points in the set.
 * **Size of the remainder.** From the Lagrange form of the remainder, if `|f⁽ⁿ⁺¹⁾| ≤ M` between
   `x₀` and `x`, then `|f x - T(x)| ≤ M |x - x₀|ⁿ⁺¹ / (n+1)!`, where `T` is the Taylor polynomial
-  of order `n` expanded at `x₀`.
+  of order `n` expanded at `x₀`. For `f` of class `C^(n+1)` on a convex set, the remainder is
+  `O((x - x₀)ⁿ⁺¹)` as `x → x₀` within the set.
 * **Sign of the remainder.** As a function of the expansion point, the derivative of
   `x₀ ↦ taylorWithinEval f n s x₀ x` is `(x - x₀)ⁿ / n! · f⁽ⁿ⁺¹⁾(x₀)`. If `(-1)ⁿ f⁽ⁿ⁺¹⁾ ≥ 0`
   on `(x, y)`, this derivative is nonnegative there, so the Taylor polynomial of order `n`
@@ -56,6 +57,8 @@ function divided by its parameter is completely monotone.
   an entire interval containing it.
 * `TauCeti.abs_sub_taylorWithinEval_le`: a bound on the Taylor remainder when the next derivative
   is bounded, with the error proportional to `|x - x₀|^(n+1)`.
+* `TauCeti.taylor_isBigO`: for `f` of class `C^(n+1)` on a convex set, the Taylor remainder of
+  order `n` is `O((x - x₀)^(n+1))` within the set.
 * `TauCeti.le_taylorWithinEval_of_neg_one_pow_mul_iteratedDerivWithin_nonneg`: if
   `(-1)ⁿ f⁽ⁿ⁺¹⁾ ≥ 0` on `(x, y)`, then `f x` is at most the Taylor polynomial of order `n` at `y`,
   evaluated at `x`.
@@ -102,6 +105,26 @@ theorem abs_sub_taylorWithinEval_le {f : ℝ → ℝ} {n : ℕ} {M x₀ x : ℝ}
   rw [hfy, abs_div, abs_mul, abs_pow, Nat.abs_cast]
   gcongr
   exact hM y hy
+
+/-- **Taylor's theorem with a big-O remainder.** If `f` is `C^(n+1)` on a convex set `s`
+containing `x₀`, then `f x - taylorWithinEval f n s x₀ x = O((x - x₀)^(n+1))` as `x → x₀` within
+`s`. Mathlib's `taylor_isLittleO` gives `o((x - x₀)^n)` for `C^n`. -/
+theorem taylor_isBigO {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E}
+    {x₀ : ℝ} {n : ℕ} {s : Set ℝ} (hs : Convex ℝ s) (hx₀s : x₀ ∈ s)
+    (hf : ContDiffOn ℝ (n + 1) f s) :
+    (fun x ↦ f x - taylorWithinEval f n s x₀ x) =O[𝓝[s] x₀] fun x ↦ (x - x₀) ^ (n + 1) := by
+  set c : ℝ := ((n + 1 : ℝ) * n !)⁻¹
+  set d : E := iteratedDerivWithin (n + 1) f s x₀
+  -- the term of order `n + 1` of the Taylor polynomial is `O((x - x₀)^(n+1))`
+  have hterm : (fun x ↦ (c * (x - x₀) ^ (n + 1)) • d) =O[𝓝[s] x₀]
+      fun x ↦ (x - x₀) ^ (n + 1) :=
+    Asymptotics.IsBigO.of_bound (|c| * ‖d‖) (Eventually.of_forall fun x ↦ by
+      rw [norm_smul, norm_mul, Real.norm_eq_abs, Real.norm_eq_abs]
+      exact le_of_eq (by ring))
+  refine ((taylor_isLittleO hs hx₀s (n := n + 1) (mod_cast hf)).isBigO.add hterm).congr_left
+    fun x ↦ ?_
+  rw [taylorWithinEval_succ]
+  abel
 
 /-- The quadratic Taylor polynomial on the whole line, written using ordinary derivatives.
 No regularity hypothesis is needed for this algebraic identity. -/
