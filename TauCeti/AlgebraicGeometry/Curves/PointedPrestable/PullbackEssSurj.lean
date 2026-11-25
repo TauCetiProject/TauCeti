@@ -23,7 +23,8 @@ of categories.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.pullbackInvIso`:
   `(Q.pullback g⁻¹).pullback g ≅ Q` for an isomorphism `g`.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.pullbackEquivalence`: base change along an
-  isomorphism `g`, as an equivalence of categories.
+  isomorphism `g`, as an equivalence of categories with inverse the base change along `g⁻¹` and
+  counit `pullbackInvIso`.
 
 ## Main results
 
@@ -83,6 +84,19 @@ theorem pullbackInvIso_inv_hom :
     (IsIso.eq_inv_of_inv_hom_id ?_).symm
   simp
 
+/-- The isomorphism `pullbackInvIso` is natural in the family. -/
+@[reassoc]
+theorem pullbackInvIso_hom_naturality {Q Q' : PointedPrestableFamily T n} (f : Q ⟶ Q') :
+    pullbackMap g (pullbackMap (inv g) f) ≫ (pullbackInvIso g Q').hom =
+      (pullbackInvIso g Q).hom ≫ f := by
+  refine hom_ext ?_
+  simp only [comp_hom, pullbackInvIso_hom_hom]
+  -- Paste the commutative squares of the two base changes of `f`; they are applied as terms since
+  -- the total space of a base change is only definitionally the chosen pullback.
+  exact ((isPullback_pullbackMap_hom g _).w_assoc _).symm.trans
+    (congrArg (_ ≫ ·) (isPullback_pullbackMap_hom (inv g) f).w.symm) |>.trans
+    (Category.assoc _ _ _).symm
+
 /-- **Base change along an isomorphism of bases is essentially surjective** on pointed prestable
 families. -/
 instance essSurj_pullbackFunctor : (pullbackFunctor (n := n) g).EssSurj where
@@ -93,13 +107,30 @@ prestable families: it is full, faithful and essentially surjective. -/
 instance isEquivalence_pullbackFunctor : (pullbackFunctor (n := n) g).IsEquivalence where
 
 /-- Base change along an isomorphism of bases `g : T ⟶ S`, as an equivalence between pointed
-prestable families over `S` and over `T`. -/
+prestable families over `S` and over `T`. Its inverse is base change along `g⁻¹` and its counit
+is `pullbackInvIso`. -/
+@[expose]
 def pullbackEquivalence : PointedPrestableFamily S n ≌ PointedPrestableFamily T n :=
-  (pullbackFunctor g).asEquivalence
+  -- The counit is `pullbackInvIso`; the unit is its preimage under the fully faithful base change.
+  let ε : pullbackFunctor (inv g) ⋙ pullbackFunctor g ≅ 𝟭 (PointedPrestableFamily T n) :=
+    NatIso.ofComponents (pullbackInvIso g) (pullbackInvIso_hom_naturality g)
+  .mk (pullbackFunctor g) (pullbackFunctor (inv g))
+    (Functor.fullyFaithfulCancelRight (pullbackFunctor g)
+      (Functor.isoWhiskerLeft (pullbackFunctor g) ε.symm)) ε
 
 @[simp]
 theorem pullbackEquivalence_functor :
     (pullbackEquivalence (n := n) g).functor = pullbackFunctor g :=
+  (rfl)
+
+@[simp]
+theorem pullbackEquivalence_inverse :
+    (pullbackEquivalence (n := n) g).inverse = pullbackFunctor (inv g) :=
+  (rfl)
+
+@[simp]
+theorem pullbackEquivalence_counitIso_app :
+    (pullbackEquivalence g).counitIso.app Q = pullbackInvIso g Q :=
   (rfl)
 
 end PointedPrestableFamily
