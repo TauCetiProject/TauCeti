@@ -349,23 +349,14 @@ theorem finrank_maximalRealSubfield_maximalRealOrCMSubfield_eq_one_or_eq_two :
     exact .inl (Algebra.finrank_eq_one_iff_bijective_algebraMap.mpr
       ⟨(algebraMap (maximalRealSubfield K) E).injective, hsurj⟩)
   · -- `K⁺` is identified with the maximal real subfield of `E_K`, over which `E_K` is quadratic.
-    have hmem (x : maximalRealSubfield K) :
-        algebraMap (maximalRealSubfield K) E x ∈ maximalRealSubfield E := by
-      rw [← fieldRange_algebraMap_maximalRealSubfield (K := K)]
-      exact RingHom.mem_fieldRange_self _ x
-    let j := (algebraMap (maximalRealSubfield K) E).codRestrict _ hmem
-    have hj : Function.Bijective j := by
-      refine ⟨RingHom.injective_codRestrict.mpr (RingHom.injective _), fun ⟨y, hy⟩ ↦ ?_⟩
-      rw [← fieldRange_algebraMap_maximalRealSubfield (K := K)] at hy
-      obtain ⟨x, hx⟩ := RingHom.mem_fieldRange.mp hy
-      exact ⟨x, Subtype.ext (by rw [RingHom.codRestrict_apply, hx])⟩
-    let i : maximalRealSubfield K ≃+* maximalRealSubfield E := .ofBijective j hj
+    let i : maximalRealSubfield K ≃+* maximalRealSubfield E :=
+      (algebraMap (maximalRealSubfield K) E).rangeRestrictFieldEquiv.trans
+        (RingEquiv.subfieldCongr fieldRange_algebraMap_maximalRealSubfield)
     have hc : (algebraMap (maximalRealSubfield E) E).comp i.toRingHom =
         (RingEquiv.refl E).toRingHom.comp (algebraMap (maximalRealSubfield K) E) :=
-      RingHom.ext fun x ↦ by
-        simp only [i, j, RingHom.comp_apply, Algebra.algebraMap_ofSubsemiring_apply,
-          RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, RingEquiv.ofBijective_apply,
-          RingHom.codRestrict_apply, RingEquiv.refl_apply]
+      -- `RingEquiv.subfieldCongr` keeps the underlying element, so the composite is evaluated
+      -- by `rangeRestrictFieldEquiv_apply_coe`.
+      RingHom.ext fun x ↦ RingHom.rangeRestrictFieldEquiv_apply_coe _ x
     rw [Algebra.finrank_eq_of_equiv_equiv i (RingEquiv.refl E) hc]
     exact .inr (Algebra.IsQuadraticExtension.finrank_eq_two (maximalRealSubfield E) E)
 

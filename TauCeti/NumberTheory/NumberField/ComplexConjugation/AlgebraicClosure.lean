@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.Galois.Infinite
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.NumberTheory.NumberField.CMField
+public import TauCeti.FieldTheory.IntermediateField.FieldRange
 
 /-!
 # CM or totally real fields via the complex conjugations of a normal extension of `ℚ`
@@ -219,13 +220,11 @@ omit [Normal ℚ Ω] in
 private theorem apply_restrictOfApplyMem (τ : F →+* Ω) {c : Gal(Ω/ℚ)}
     (hc : c ∈ complexConjugations Ω) (hmem : ∀ x, c (τ x) ∈ τ.toRatAlgHom.fieldRange) (x : F) :
     τ (restrictOfApplyMem τ hc hmem x) = c (τ x) := by
-  have h (z : τ.toRatAlgHom.fieldRange) : τ (τ.toRatAlgHom.equivFieldRange.symm z) = z := by
-    have := AlgHom.equivFieldRange_apply_coe τ.toRatAlgHom (τ.toRatAlgHom.equivFieldRange.symm z)
-    rw [AlgEquiv.apply_symm_apply] at this
-    exact this.symm
-  simp only [restrictOfApplyMem, AlgEquiv.trans_apply, h, IntermediateField.equivOfEq_apply,
+  -- read `τ` as the `ℚ`-algebra map `τ.toRatAlgHom`, to which the `equivFieldRange` lemmas apply
+  simp only [restrictOfApplyMem, AlgEquiv.trans_apply, ← RingHom.toRatAlgHom_apply τ,
+    AlgHom.apply_equivFieldRange_symm_apply, IntermediateField.equivOfEq_apply,
     IntermediateField.coe_equivMap_apply, AlgHom.equivFieldRange_apply_coe,
-    AlgEquiv.coe_toAlgHom, RingHom.toRatAlgHom_apply]
+    AlgEquiv.coe_toAlgHom]
 
 /-- **Milne's criterion (Milne, *Complex Multiplication*, I, Proposition 1.4).** A field `F`
 embedded in `Ω` by `τ` (hence algebraic over `ℚ`) is totally real or CM if and only if every
