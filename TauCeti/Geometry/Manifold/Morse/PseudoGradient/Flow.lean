@@ -419,12 +419,9 @@ theorem unstableSet_eq_compl_of_critical_eq_or_eq (hf : IsMorse 𝓘(ℝ, E) f) 
 theorem neg_flow (hf : IsMorse 𝓘(ℝ, E) f) :
     (hX.neg hf).flow = hX.flow.reverse := by
   ext t y
-  have hγ : IsMIntegralCurve ((fun s ↦ hX.flow s y) ∘ (· * (-1 : ℝ))) (-X) := by
-    have := (hX.isMIntegralCurve_flow y).comp_mul (-1)
-    rwa [neg_one_smul] at this
   have h := globalFlow_eq_of_isMIntegralCurve ((hX.neg hf).contMDiff.of_le (by simp))
-    (hX.neg hf).isCompleteVectorField hγ t
-  simp only [comp_apply, mul_neg_one, neg_zero, Flow.map_zero_apply] at h
+    (hX.neg hf).isCompleteVectorField (hX.isMIntegralCurve_flow y).comp_neg t
+  simp only [neg_zero, Flow.map_zero_apply] at h
   rw [Flow.reverse_apply, ← h, (hX.neg hf).flow_apply, globalFlow_apply]
 
 /-- The unstable set of a critical point is its stable set for the reversed pseudo-gradient. -/

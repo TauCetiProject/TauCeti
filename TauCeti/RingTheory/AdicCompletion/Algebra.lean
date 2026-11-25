@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.RingTheory.AdicCompletion.Completeness
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
+import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # The powers of the extended ideal in the adic completion of a ring
@@ -32,6 +33,8 @@ exponential characteristic of `R`.
   only if `x ∈ I ^ n`.
 * `AdicCompletion.exists_sub_algebraMap_mem_map_pow`: every element of `R̂` is congruent
   modulo `I ^ n R̂` to the image of an element of `R`.
+* `AdicCompletion.ringHom_ext`: two ring homomorphisms out of `R̂` into a ring that is Hausdorff
+  for an ideal `J`, which carry `I R̂` into `J` and agree on the image of `R`, are equal.
 * `AdicCompletion.quotientMap_algebraMap_bijective`: the map `R ⧸ I ^ n → R̂ ⧸ (I R̂) ^ n` induced
   by `R → R̂` is bijective; `AdicCompletion.quotientMap_algebraMap_bijective_one` is the case
   `n = 1`.
@@ -98,6 +101,24 @@ theorem exists_sub_algebraMap_mem_map_pow (fg : I.FG) (n : ℕ) (x : AdicComplet
   refine ⟨y, ?_⟩
   rw [← ker_evalₐ_eq_map_pow fg, RingHom.mem_ker, map_sub, ← hy]
   exact sub_eq_zero.mpr (evalₐ_of I n y).symm
+
+/-- **Ring homomorphisms out of the adic completion are determined on `R`.** For a finitely
+generated ideal `I`, two ring homomorphisms `R̂ → T` into a ring that is Hausdorff for an ideal `J`,
+which both carry `I R̂` into `J` and agree on the image of `R`, are equal. -/
+theorem ringHom_ext {T : Type*} [CommRing T] {J : Ideal T} [IsHausdorff J T] (fg : I.FG)
+    {g h : AdicCompletion I R →+* T}
+    (hg : I.map (algebraMap R (AdicCompletion I R)) ≤ J.comap g)
+    (hh : I.map (algebraMap R (AdicCompletion I R)) ≤ J.comap h)
+    (H : g.comp (algebraMap R (AdicCompletion I R)) = h.comp (algebraMap R (AdicCompletion I R))) :
+    g = h := by
+  refine RingHom.ext (congrFun (IsHausdorff.funext' J fun n x ↦ ?_))
+  obtain ⟨y, hy⟩ := exists_sub_algebraMap_mem_map_pow fg n x
+  rw [Ideal.map_pow] at hy
+  have hy' := RingHom.congr_fun H y
+  simp only [RingHom.comp_apply] at hy'
+  rw [Ideal.Quotient.eq, ← sub_add_cancel x (algebraMap R _ y), map_add, map_add, hy',
+    add_sub_add_right_eq_sub]
+  exact sub_mem (Ideal.map_mem_pow_of_le_comap g hg hy) (Ideal.map_mem_pow_of_le_comap h hh hy)
 
 /-- For a finitely generated ideal `I`, the map `R ⧸ I ^ n → R̂ ⧸ (I R̂) ^ n` induced by the
 canonical map `R → R̂` is bijective: `R` and its `I`-adic completion have the same reductions. -/

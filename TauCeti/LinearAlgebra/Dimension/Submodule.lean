@@ -22,7 +22,8 @@ nontrivially. Dually, the preimage of a subspace `W` under a linear map out of a
 codimension (the rank of the quotient) of a preimage is at most that of the submodule, and the
 codimension of an intersection is at most the sum of the codimensions. A set spans a subspace of
 dimension at least `n` exactly when it contains `n` linearly independent vectors, and a subspace
-of rank at least `k` contains a subspace of rank exactly `k`. Two disjoint subspaces of a
+of rank at least `k` contains a subspace of rank exactly `k`; for `1 ≤ k ≤ rank E`, every
+vector lies in a subspace of rank exactly `k`. Two disjoint subspaces of a
 finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
 A subspace of dimension at least three contains `x` outside `𝕜 ∙ a` and `z` outside
 `span 𝕜 {a, x}`.
@@ -167,6 +168,25 @@ theorem exists_le_rank_eq {M : Submodule 𝕜 E} {k : ℕ} (hk : (k : Cardinal) 
   refine ⟨span 𝕜 (Set.range (M.subtype ∘ v)),
     span_le.mpr (Set.range_subset_iff.mpr fun i ↦ (v i).property), ?_⟩
   rw [← Module.finrank_eq_rank, finrank_span_eq_card hv', Fintype.card_fin]
+
+/-- Every vector `v` of `E` lies in a subspace of rank exactly `k`, for each `1 ≤ k ≤ rank E`;
+the rank of `E` may be an infinite cardinal. -/
+theorem exists_mem_rank_eq (v : E) {k : ℕ} (hk : k ≠ 0)
+    (hkE : (k : Cardinal) ≤ Module.rank 𝕜 E) :
+    ∃ N : Submodule 𝕜 E, v ∈ N ∧ Module.rank 𝕜 N = k := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · obtain ⟨N, -, hN⟩ := exists_le_rank_eq (M := ⊤) (by rwa [rank_top 𝕜 E])
+    exact ⟨N, N.zero_mem, hN⟩
+  -- Extend `{v}` to an independent set `t` of cardinality `rank E`, then take the span of a
+  -- `k`-element subset of `t` containing `v`.
+  obtain ⟨t, hvt, ht, hti⟩ :=
+    exists_linearIndepOn_of_lt_rank ((linearIndepOn_singleton_iff 𝕜 (v := id)).2 hv)
+  obtain ⟨r, hvr, hrt, hr⟩ := Set.exists_superset_subset_encard_eq hvt
+    (s := {v}) (k := k) (by simpa using Nat.one_le_iff_ne_zero.2 hk) <| by
+      rw [← Set.toENat_cardinalMk, ht]
+      simpa using Cardinal.toENat.monotone' hkE
+  refine ⟨span 𝕜 r, subset_span (hvr rfl), ?_⟩
+  rw [rank_span_set (hti.mono hrt), ← Cardinal.toENat_eq_natCast, Set.toENat_cardinalMk, hr]
 
 /-- The linear-algebra core of the transverse level disc, kernel part. If `T` has dimension
 `dim G + 1`, `T` and the kernel of a surjection `π` span the space, and some `v ∈ T` with
