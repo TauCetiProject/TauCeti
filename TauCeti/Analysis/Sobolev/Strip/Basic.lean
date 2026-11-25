@@ -16,6 +16,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.MeasureTheory.Function.Lp.AeMem
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.EndpointEstimates
+import TauCeti.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
@@ -91,6 +92,31 @@ open MeasureTheory Set Filter Topology
 open scoped ENNReal
 
 namespace TauCeti.StripSobolev
+
+/-- An almost everywhere statement about the first coordinate `s` holds almost everywhere on the
+strip. -/
+theorem ae_stripMeasure_of_ae_fst {p : ℝ → Prop} (h : ∀ᵐ s, p s) :
+    ∀ᵐ z ∂stripMeasure, p z.1 := by
+  rw [stripMeasure_eq_prod]
+  exact ae_of_ae_fst h
+
+/-- Almost every slice `t ↦ f (s, t)` of a square integrable section on the strip is integrable
+on `[0, 1]`. -/
+theorem ae_integrable_slice {E : Type*} [NormedAddCommGroup E] {f : ℝ × ℝ → E}
+    (hf : MemLp f 2 stripMeasure) :
+    ∀ᵐ s, Integrable (fun t ↦ f (s, t)) (volume.restrict (Icc (0 : ℝ) 1)) := by
+  rw [stripMeasure_eq_prod] at hf
+  filter_upwards [((memLp_two_iff_integrable_sq_norm hf.aestronglyMeasurable).1 hf).prod_right_ae,
+    hf.aestronglyMeasurable.prodMk_left] with s hs hm
+  exact ((memLp_two_iff_integrable_sq_norm hm).2 hs).integrable one_le_two
+
+/-- Almost every slice `t ↦ f (s, t)` of a square integrable section on the strip is interval
+integrable on `[0, 1]`. -/
+theorem ae_intervalIntegrable_slice {E : Type*} [NormedAddCommGroup E] {f : ℝ × ℝ → E}
+    (hf : MemLp f 2 stripMeasure) :
+    ∀ᵐ s, IntervalIntegrable (fun t ↦ f (s, t)) volume 0 1 := by
+  filter_upwards [ae_integrable_slice hf] with s hs
+  exact (intervalIntegrable_iff_integrableOn_Icc_of_le zero_le_one).2 hs
 
 section NormedSpace
 
@@ -282,7 +308,7 @@ theorem derivTL_jetH1 (ξ : testSection F₀ F₁) :
 section Value
 
 /-- The open strip `ℝ × (0, 1)`, of full measure in the closed strip. -/
-private theorem ae_mem_openStrip : ∀ᵐ z ∂stripMeasure, z ∈ (univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1 := by
+theorem ae_mem_openStrip : ∀ᵐ z ∂stripMeasure, z ∈ (univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1 := by
   rw [ae_restrict_iff' (MeasurableSet.univ.prod measurableSet_Icc)]
   have h : (volume : Measure (ℝ × ℝ)) ((univ : Set ℝ) ×ˢ ({0, 1} : Set ℝ)) = 0 := by
     rw [Measure.volume_eq_prod, Measure.prod_prod]

@@ -9,6 +9,9 @@ public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Spherical
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.FreeLoop
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Cross
 public import TauCeti.AlgebraicTopology.Singular.Cubical.CrossProduct.Complex
+public import TauCeti.Topology.PathSpace.Moore.Comparison.FreeLoop
+
+import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Cubical.Sign
 
 /-!
 # Torus classes of loops of free loops
@@ -36,10 +39,26 @@ torus of a loop of constant loops is degenerate, so its class vanishes
 constant loop are exactly the Hurewicz classes of `π₂(Q, x)`
 (`TauCeti.range_cubicalFreeLoopTorusClassHom_const`), and the same holds in singular homology
 (`TauCeti.range_freeLoopTorusClassHom_const`): the torus classes at a constant loop are spherical
-(`TauCeti.freeLoopTorusClassHom_const_mem_sphericalClasses`).
+(`TauCeti.freeLoopTorusClassHom_const_mem_sphericalClasses`). More precisely, the loop of based
+loops of a class `a ∈ π₂(Q, x)` (`TauCeti.freeLoopHomotopyGroupHom`) has torus class exactly the
+Hurewicz class of `a` (`TauCeti.freeLoopTorusClassHom_freeLoopHomotopyGroupHom`), and likewise a
+double loop at the constant loop of `Ω Q x`, read as a loop of free loops, has torus class the
+Hurewicz class of the element of `π₂(Q, x)` it represents
+(`TauCeti.freeLoopTorusClassHom_eq_hurewiczIntHom`). The torus is the transpose of the double loop,
+which negates the cubical Hurewicz class, and the Hurewicz map is minus the cubical Hurewicz map on
+`π₂`; the two signs cancel.
 
 This is the transgression from loops of contractible free loops to spherical classes through which
 the period and first Chern number of capped loops are read in Floer theory.
+
+On the free Moore loop space, the torus class of a loop of free Moore loops is the torus class of
+the loop of circle maps obtained by reparametrizing every free loop to a circle map
+(`TauCeti.MooreFreeLoopSpace.torusClassHom`). Since this reparametrization is a homotopy
+equivalence, the torus classes are the same (`TauCeti.MooreFreeLoopSpace.range_torusClassHom`), so
+at a constant loop they are again the Hurewicz classes of `π₂(Q, x)`
+(`TauCeti.MooreFreeLoopSpace.range_torusClassHom_const`). Loops of constant loops have zero torus
+class (`TauCeti.cubicalFreeLoopTorusClassHom_map_eq_zero_of_forall_const`,
+`TauCeti.MooreFreeLoopSpace.torusClassHom_mapOfEq_constMap`).
 
 ## Main definitions
 
@@ -47,6 +66,8 @@ the period and first Chern number of capped loops are read in Floer theory.
 * `TauCeti.freeLoopTorusHomology`: the torus map `H^□ₖ(𝓛Q; R) ⟶ H^□ₖ₊₁(Q; R)`.
 * `TauCeti.cubicalFreeLoopTorusClassHom`: the torus class `π₁(𝓛Q, γ) → H^□₂(Q; R)`.
 * `TauCeti.freeLoopTorusClassHom`: the torus class `π₁(𝓛Q, γ) → H₂(Q; ℤ)` in singular homology.
+* `TauCeti.MooreFreeLoopSpace.torusClassHom`: the torus class `π₁(𝓛Q, γ) → H₂(Q; ℤ)` of loops of
+  free Moore loops.
 
 ## Main results
 
@@ -54,6 +75,15 @@ the period and first Chern number of capped loops are read in Floer theory.
   at the constant loop at `x`, the torus classes are the Hurewicz classes of `π₂(Q, x)`.
 * `TauCeti.freeLoopTorusClassHom_const_mem_sphericalClasses`: the torus classes of loops of free
   loops at a constant loop are spherical.
+* `TauCeti.freeLoopTorusClassHom_freeLoopHomotopyGroupHom`: the torus class of the loop of based
+  loops of `a ∈ π₂(Q, x)` is the Hurewicz class of `a`.
+* `TauCeti.freeLoopTorusClassHom_eq_hurewiczIntHom`: the torus class of a double loop read as a
+  loop of free loops is its Hurewicz class.
+* `TauCeti.cubicalFreeLoopTorusClassHom_map_eq_zero_of_forall_const`,
+  `TauCeti.MooreFreeLoopSpace.torusClassHom_mapOfEq_constMap`: loops of constant loops have zero
+  torus class.
+* `TauCeti.MooreFreeLoopSpace.range_torusClassHom_const`: at a constant free Moore loop, the torus
+  classes are the Hurewicz classes of `π₂(Q, x)`.
 
 ## References
 
@@ -388,6 +418,18 @@ theorem cubicalFreeLoopTorusClassHom_eq_zero_of_forall_const {γ : C(Circle, Q)}
       (NormalizedCubicalChain.ofCube Q R _), NormalizedCubicalChain.ofCube_eq_zero R hdeg,
       map_zero]), map_zero]
 
+/-- **A family of constant loops traces loops of zero torus class**: if `f` sends every point of
+`X` to a constant loop, the image under `f` of every loop of `X` sweeps out a degenerate torus, so
+its torus class vanishes. -/
+theorem cubicalFreeLoopTorusClassHom_map_eq_zero_of_forall_const {X : Type*} [TopologicalSpace X]
+    {x : X} {f : C(X, C(Circle, Q))} {γ : C(Circle, Q)} (hf : f x = γ)
+    (hconst : ∀ y z, f y z = f y 1) (h : HomotopyGroup (Fin 1) X x) :
+    cubicalFreeLoopTorusClassHom Q R γ (Additive.ofMul (HomotopyGroup.map f hf h)) = 0 :=
+  Quotient.inductionOn h fun η ↦ by
+    rw [HomotopyGroup.map_mk]
+    exact cubicalFreeLoopTorusClassHom_eq_zero_of_forall_const R _ fun t z ↦ by
+      simp only [GenLoop.map_apply, hconst]
+
 /-- Every generalized loop `p` of `Q` at `x` is the torus swept out by a loop of based loops: the
 loop `t ↦ (s ↦ p (s, t))` of loops at `x`, read as circle maps. -/
 private theorem exists_freeLoopTorus_eq {x : Q} (p : Ω^ (Fin 2) Q x) :
@@ -435,18 +477,6 @@ private theorem cubicalFreeLoopTorusClassHom_map_val_mem_range {x : Q}
     rw [GenLoop.map_apply]; exact (β t).property]
   exact ⟨_, HomotopyGroup.cubicalHurewiczHom_ofMul_mk R 1 _⟩
 
-/-- The torus class of a loop of constant loops vanishes. -/
-private theorem cubicalFreeLoopTorusClassHom_map_const' {x : Q}
-    (hc : (ContinuousMap.const' : C(Q, C(Circle, Q))) x = ContinuousMap.const Circle x)
-    (h : HomotopyGroup (Fin 1) Q x) :
-    cubicalFreeLoopTorusClassHom Q R (ContinuousMap.const Circle x)
-      (Additive.ofMul (HomotopyGroup.map ContinuousMap.const' hc h)) = 0 :=
-  Quotient.inductionOn h fun η ↦ by
-    rw [HomotopyGroup.map_mk]
-    -- Every loop of the family is constant.
-    exact cubicalFreeLoopTorusClassHom_eq_zero_of_forall_const R _ fun t z ↦ by
-      simp only [GenLoop.map_apply, ContinuousMap.coe_const', ContinuousMap.const_apply]
-
 /-- **The torus classes at a constant loop are the cubical Hurewicz classes of `π₂`.** At the
 constant loop at `x`, the image of the torus class `π₁(𝓛Q, x) → H^□₂(Q; R)` is the image of the
 cubical Hurewicz map `π₂(Q, x) → H^□₂(Q; R)`. -/
@@ -476,7 +506,9 @@ theorem range_cubicalFreeLoopTorusClassHom_const (x : Q) :
     rw [freeLoopHomotopyGroupHom_basedMapCircleHomotopyGroupMulEquiv] at hn
     have ha : a = Additive.ofMul (a.toMul * s⁻¹) + Additive.ofMul s := by
       rw [← ofMul_mul, inv_mul_cancel_right, ofMul_toMul]
-    rw [ha, map_add, hs, cubicalFreeLoopTorusClassHom_map_const' R hc, add_zero, ← hn]
+    rw [ha, map_add, hs,
+      cubicalFreeLoopTorusClassHom_map_eq_zero_of_forall_const R hc (fun _ _ ↦ rfl), add_zero,
+      ← hn]
     induction b using Quotient.inductionOn with
     | h β => exact cubicalFreeLoopTorusClassHom_map_val_mem_range R β
   · rintro _ ⟨a, rfl⟩
@@ -547,6 +579,149 @@ theorem freeLoopTorusClassHom_const_mem_sphericalClasses (x : Q)
     range_freeLoopTorusClassHom_const x ▸ ⟨a, rfl⟩
   exact hb ▸ hurewiczIntHom_mem_sphericalClasses x b
 
+/-- **The torus class of a double loop read as a loop of free loops is its Hurewicz class.** A
+double loop `β` at the constant loop of `Ω Q x`, read as the loop `Λ` of free loops `t ↦ β t`, has
+torus class the Hurewicz class of the element of `π₂(Q, x)` it represents
+(`HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv`). The torus of `Λ` is the square of `β` with its
+two directions exchanged, and the sign of the transposition cancels the sign between the Hurewicz
+and cubical Hurewicz maps on `π₂`. -/
+theorem freeLoopTorusClassHom_eq_hurewiczIntHom {x : Q} (β : Ω (Ω Q x) (Path.refl x))
+    (Λ : Ω^ (Fin 1) C(Circle, Q) (ContinuousMap.const Circle x))
+    (hβ : ∀ t, Λ t = (β (t 0)).toCircle) :
+    freeLoopTorusClassHom Q _ (Additive.ofMul ⟦Λ⟧) =
+      hurewiczIntHom Q x 1 (Additive.ofMul (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk β)))) := by
+  have hΛ (t : Fin 1 → I) : Λ t 1 = x := by rw [hβ, Path.toCircle_one]
+  -- The torus swept out by `Λ` is the transposed square of `β`.
+  have htorus : GenLoop.freeLoopTorus Λ hΛ =
+      _root_.GenLoop.congr x (Equiv.swap 0 1) (GenLoop.fromDoubleLoop β) :=
+    GenLoop.ext _ _ fun z ↦ by
+      rw [GenLoop.freeLoopTorus_apply, hβ, Path.toCircle_unitToCircle, GenLoop.congr_apply,
+        GenLoop.fromDoubleLoop_apply]
+      simp
+  rw [HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk, hurewiczIntHom_mk]
+  refine (congrArg (singularCubicalHomologyIso ℤ (TopCat.of Q) 2).inv.hom
+    (cubicalFreeLoopTorusClassHom_eq_cubicalHurewicz ℤ Λ hΛ)).trans
+      (Eq.trans ?_ (GenLoop.hurewicz_hom_one_eq_neg_one_pow_smul_cubicalHurewicz ℤ
+        (GenLoop.fromDoubleLoop β)).symm)
+  rw [htorus, GenLoop.cubicalHurewicz_congr_swap, map_neg,
+    show (-1 : ℤ) ^ (1 * (1 + 1) / 2) = -1 by norm_num, neg_one_smul]
+
+/-- **The torus class of a sphere read as a loop of based loops is its Hurewicz class.** A class
+`a ∈ π₂(Q, x)` is a loop at the constant loop of based loops at `x`
+(`TauCeti.freeLoopHomotopyGroupHom`); the torus that loop sweeps out has the Hurewicz class of
+`a`. This is `TauCeti.freeLoopTorusClassHom_eq_hurewiczIntHom` for the double loop of `a`. -/
+@[simp]
+theorem freeLoopTorusClassHom_freeLoopHomotopyGroupHom (x : Q) (a : HomotopyGroup (Fin 2) Q x) :
+    freeLoopTorusClassHom Q (ContinuousMap.const Circle x)
+        (Additive.ofMul (freeLoopHomotopyGroupHom x 0 a)) =
+      hurewiczIntHom Q x 1 (Additive.ofMul a) := by
+  obtain ⟨b, rfl⟩ := (basedMapCircleHomotopyGroupMulEquiv x 0).surjective a
+  rw [freeLoopHomotopyGroupHom_basedMapCircleHomotopyGroupMulEquiv,
+    basedMapCircleHomotopyGroupMulEquiv_apply]
+  induction b using Quotient.inductionOn with | h β => ?_
+  -- `β`, read in the loops at `x`, is a double loop `β'` at the constant loop
+  let β' : Ω (Ω Q x) (Path.refl x) := genLoopEquivOfUnique (Fin 1)
+    (GenLoop.map ⟨basedMapCircleOneHomeomorphPath x, (basedMapCircleOneHomeomorphPath x).continuous⟩
+      ((Homeomorph.symm_apply_eq _).1 (basedMapCircleOneHomeomorphPath_symm_refl x)).symm β)
+  have h : HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv
+      (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk β')) =
+        HomotopyGroup.pathLoopSpaceMulEquiv 0 ⟦(genLoopEquivOfUnique (Fin 1)).symm β'⟧ := by
+    rw [HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_apply,
+      HomotopyGroup.pi1MulEquivFundamentalGroup_symm_fromPath_mk]
+  rw [Equiv.symm_apply_apply] at h
+  rw [HomotopyGroup.map_mk, HomotopyGroup.map_mk, ← h]
+  refine freeLoopTorusClassHom_eq_hurewiczIntHom β' _ fun t ↦ ?_
+  have ht : (fun _ : Fin 1 ↦ t 0) = t := funext fun i ↦ by rw [Subsingleton.elim i 0]
+  ext z
+  obtain ⟨s, rfl⟩ := unitToCircle_surjective z
+  rw [Path.toCircle_unitToCircle]
+  simp [β', basedMapCircleOneHomeomorphPath_apply, ht]
+
 end Singular
+
+/-! ### Torus classes of loops of free Moore loops -/
+
+namespace MooreFreeLoopSpace
+
+variable {Q : Type} [TopologicalSpace Q]
+
+/-- **The torus class of a loop of free Moore loops**: the homomorphism `π₁(𝓛Q, γ) → H₂(Q; ℤ)` on
+the free Moore loop space sending a loop of free Moore loops to the class of the torus swept out by
+their reparametrizations to circle maps (`TauCeti.MooreFreeLoopSpace.toCircleMap`). It is the torus
+class `TauCeti.freeLoopTorusClassHom` of loops of circle maps, after the map that `toCircleMap`
+induces on fundamental groups. -/
+def torusClassHom (γ : MooreFreeLoopSpace Q) :
+    Additive (FundamentalGroup (MooreFreeLoopSpace Q) γ) →+
+      ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj (TopCat.of Q) :=
+  (freeLoopTorusClassHom Q (toCircleMap γ)).comp (MonoidHom.toAdditive
+    ((HomotopyGroup.mapHom toCircleMap rfl).comp
+      HomotopyGroup.pi1MulEquivFundamentalGroup.symm.toMonoidHom))
+
+theorem torusClassHom_apply (γ : MooreFreeLoopSpace Q)
+    (g : FundamentalGroup (MooreFreeLoopSpace Q) γ) :
+    γ.torusClassHom (Additive.ofMul g) =
+      freeLoopTorusClassHom Q (toCircleMap γ) (Additive.ofMul
+        (HomotopyGroup.map toCircleMap rfl (HomotopyGroup.pi1MulEquivFundamentalGroup.symm g))) :=
+  (rfl)
+
+/-- **The torus class of a Moore loop of free Moore loops**: for a Moore loop `Λ` of free Moore
+loops at `γ`, it is minus the torus class of the loop of circle maps `t ↦ toCircleMap (Λ t)`. The
+sign comes from the convention of `TauCeti.MooreLoopSpace.fundamentalGroupHom`, which sends a Moore
+loop to the inverse of the class of its path. -/
+theorem torusClassHom_fundamentalGroupHom (γ : MooreFreeLoopSpace Q)
+    (Λ : MooreLoopSpace (MooreFreeLoopSpace Q) γ) :
+    γ.torusClassHom (Additive.ofMul (MooreLoopSpace.fundamentalGroupHom γ Λ)) =
+      -freeLoopTorusClassHom Q (toCircleMap γ) (Additive.ofMul
+        ⟦(genLoopEquivOfUnique (Fin 1)).symm (Λ.toPath.map toCircleMap.continuous)⟧) := by
+  rw [MooreLoopSpace.fundamentalGroupHom_apply, ofMul_inv, map_neg, torusClassHom_apply,
+    HomotopyGroup.pi1MulEquivFundamentalGroup_symm_fromPath_mk, HomotopyGroup.map_mk]
+  congr 4
+  ext t
+  simp [GenLoop.map_apply]
+
+/-- **Loops of constant loops have zero torus class**: the torus class vanishes on the image of
+`π₁(Q, x)` under the inclusion `Q → 𝓛Q` of the constant loops, since a loop of constant loops
+sweeps out a degenerate torus. -/
+@[simp]
+theorem torusClassHom_mapOfEq_constMap (x : Q) (g : FundamentalGroup Q x) :
+    (const x).torusClassHom
+        (Additive.ofMul (FundamentalGroup.mapOfEq (constMap Q) (constMap_apply x) g)) = 0 := by
+  obtain ⟨a, rfl⟩ := HomotopyGroup.pi1MulEquivFundamentalGroup.surjective g
+  have h : FundamentalGroup.mapOfEq (constMap Q) (constMap_apply x)
+      (HomotopyGroup.pi1MulEquivFundamentalGroup a) =
+        HomotopyGroup.pi1MulEquivFundamentalGroup
+          (HomotopyGroup.map (constMap Q) (constMap_apply x) a) :=
+    (HomotopyGroup.pi1EquivFundamentalGroup_map _ _ a).symm
+  rw [torusClassHom_apply, h, MulEquiv.symm_apply_apply, HomotopyGroup.map_comp_apply,
+    freeLoopTorusClassHom_apply,
+    cubicalFreeLoopTorusClassHom_map_eq_zero_of_forall_const ℤ _ fun y z ↦ by simp]
+  exact map_zero _
+
+/-- **The torus classes of loops of free Moore loops are those of loops of circle maps**: at a free
+Moore loop `γ`, the torus classes are the torus classes of loops of circle maps at the circle map
+`toCircleMap γ`, since `toCircleMap` is a homotopy equivalence
+(`TauCeti.MooreFreeLoopSpace.homotopyEquivCircleMap`). -/
+theorem range_torusClassHom (γ : MooreFreeLoopSpace Q) :
+    γ.torusClassHom.range = (freeLoopTorusClassHom Q (toCircleMap γ)).range := by
+  refine le_antisymm (fun _ ⟨g, hg⟩ ↦ ⟨_, (torusClassHom_apply γ g.toMul).symm.trans hg⟩) ?_
+  rintro _ ⟨a, rfl⟩
+  have he : (homotopyEquivCircleMap Q).toFun = toCircleMap :=
+    ContinuousMap.ext homotopyEquivCircleMap_apply
+  obtain ⟨b, hb⟩ := (HomotopyGroup.surjective_map_congr he rfl rfl).1
+    (HomotopyGroup.map_bijective_of_homotopyEquiv (N := Fin 1) (homotopyEquivCircleMap Q)
+      γ).surjective a.toMul
+  refine ⟨Additive.ofMul (HomotopyGroup.pi1MulEquivFundamentalGroup b), ?_⟩
+  rw [torusClassHom_apply, MulEquiv.symm_apply_apply]
+  exact congrArg (freeLoopTorusClassHom Q (toCircleMap γ) ∘ Additive.ofMul) hb
+
+/-- **The torus classes at a constant loop are the Hurewicz classes of `π₂`.** At the constant free
+Moore loop at `x`, the image of the torus class `π₁(𝓛Q, x) → H₂(Q; ℤ)` is the image of the
+Hurewicz map `π₂(Q, x) → H₂(Q; ℤ)`. -/
+theorem range_torusClassHom_const (x : Q) :
+    (const x).torusClassHom.range = (hurewiczIntHom Q x 1).range := by
+  rw [range_torusClassHom, toCircleMap_const, range_freeLoopTorusClassHom_const]
+
+end MooreFreeLoopSpace
 
 end TauCeti

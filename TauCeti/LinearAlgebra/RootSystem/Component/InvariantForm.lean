@@ -374,7 +374,7 @@ omit [NeZero (2 : K)] in
 restriction to the corresponding component along the equivalence of component pairings. -/
 theorem restrictComponent_comap (e : P.Equiv Q) (B : Q.InvariantForm) (C : P.Component) :
     (comap e.toHom B).restrictComponent C =
-      comap (e.componentPairingEquiv C).toHom (B.restrictComponent (e.componentEquiv C)) := by
+      comap (e.componentPairingEquiv C rfl).toHom (B.restrictComponent (e.componentEquiv C)) := by
   ext x y
   simp
 
@@ -384,7 +384,7 @@ of a family of component forms is the orthogonal sum of their pullbacks along th
 component pairings, reindexed along the bijection of components. -/
 theorem comap_ofComponent (e : P.Equiv Q) (G : ∀ D, (Q.componentPairing D).InvariantForm) :
     comap e.toHom (ofComponent G) =
-      ofComponent fun C ↦ comap (e.componentPairingEquiv C).toHom (G (e.componentEquiv C)) := by
+      ofComponent fun C ↦ comap (e.componentPairingEquiv C rfl).toHom (G (e.componentEquiv C)) := by
   have := Fintype.ofFinite P.Component
   have := Fintype.ofFinite Q.Component
   ext x y

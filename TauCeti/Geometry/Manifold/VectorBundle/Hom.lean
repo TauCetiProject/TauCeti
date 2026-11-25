@@ -631,6 +631,35 @@ theorem contMDiff_hom_bundle_iff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F�
   ⟨fun hϕ p ↦ (contMDiffAt_hom_bundle_iff ϕ p.proj).1 (hϕ p.proj) p.snd,
     fun hϕ x ↦ (contMDiffAt_hom_bundle_iff ϕ x).2 fun v ↦ hϕ ⟨x, v⟩⟩
 
+omit [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)] in
+/-- For a finite-dimensional model source, post-composition with a `C^n` family of fibrewise
+linear maps `ϕ x : E₁ x →L E₂ x` is `C^n` on the total spaces of the Hom bundles out of any
+vector bundle `W`. -/
+theorem contMDiff_clm_bundle_postcomp [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₁]
+    [∀ x, IsTopologicalAddGroup (E₁ x)] [∀ x, ContinuousSMul 𝕜 (E₁ x)]
+    [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {W : B → Type*} [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)]
+    [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace G W)]
+    [FiberBundle G W] [VectorBundle 𝕜 G W]
+    (ϕ : ∀ x, E₁ x →L[𝕜] E₂ x)
+    (hϕ : ContMDiff (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n
+      (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (ϕ p.proj p.snd))) :
+    ContMDiff (IB.prod 𝓘(𝕜, G →L[𝕜] F₁)) (IB.prod 𝓘(𝕜, G →L[𝕜] F₂)) n
+      (fun p : TotalSpace (G →L[𝕜] F₁) (fun x ↦ W x →L[𝕜] E₁ x) ↦
+        TotalSpace.mk' (G →L[𝕜] F₂) (E := fun x ↦ W x →L[𝕜] E₂ x)
+          p.proj ((ϕ p.proj).comp p.snd)) := by
+  have hA : ContMDiff (IB.prod 𝓘(𝕜, G →L[𝕜] F₁)) (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun p : TotalSpace (G →L[𝕜] F₁) (fun x ↦ W x →L[𝕜] E₁ x) ↦
+        TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun x ↦ E₁ x →L[𝕜] E₂ x) p.proj (ϕ p.proj)) :=
+    -- The Hom field of `ϕ`, read along the projection.
+    ((contMDiff_hom_bundle_iff ϕ).2 hϕ).comp (contMDiff_proj _)
+  have hC : ContMDiff (IB.prod 𝓘(𝕜, G →L[𝕜] F₁)) (IB.prod 𝓘(𝕜, G →L[𝕜] F₁)) n
+      (fun p : TotalSpace (G →L[𝕜] F₁) (fun x ↦ W x →L[𝕜] E₁ x) ↦
+        TotalSpace.mk' (G →L[𝕜] F₁) (E := fun x ↦ W x →L[𝕜] E₁ x) p.proj p.snd) :=
+    contMDiff_id
+  exact hA.clm_bundle_comp (V₃ := E₂) hC
+
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₁]
 
 section
