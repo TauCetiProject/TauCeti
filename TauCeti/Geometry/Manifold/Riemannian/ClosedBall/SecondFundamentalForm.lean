@@ -27,9 +27,9 @@ field of `E`. The inclusion is a local Riemannian isometry
 radial field in the direction `v` is `v`, and `II_q(u, w) = ⟨∇_{dι u} N, dι w⟩` is the induced
 metric.
 
-With the outward-normal convention, the unit sphere therefore has `II = h`. Using the inward
-normal in the first description instead gives `⟨∇_{dι u} N, dι w⟩ = -h(u, w)` for every extension
-`N` of the inward unit normal
+With the outward-normal convention, the unit sphere therefore has `II = h`. Replacing the outward
+normal by the inward normal in `II_q(u, w) = ⟨∇_{dι u} N, dι w⟩` instead gives
+`⟨∇_{dι u} N, dι w⟩ = -h(u, w)` for every extension `N` of the inward unit normal
 (`TauCeti.inner_leviCivitaConnection_closedBall_of_eq_inwardUnitNormal`): that convention would
 give the unit ball `II = -h`.
 -/
@@ -85,8 +85,9 @@ theorem boundarySecondFundamentalForm_closedBall
 
 /-- **The inward-normal convention gives the wrong sign on the unit ball.** For every vector
 field `N` on the closed unit ball, differentiable at `q` and equal to the inward unit normal at
-the boundary points near `q`, `⟨∇_{dι u} N, dι w⟩ = -⟨dι u, dι w⟩`: with the inward normal in the
-first description of the second fundamental form, the unit sphere would have `II = -h`. -/
+the boundary points near `q`, `⟨∇_{dι u} N, dι w⟩ = -⟨dι u, dι w⟩`: with the inward normal in place
+of the outward normal in `II_q(u, w) = ⟨∇_{dι u} N, dι w⟩`, the unit sphere would have
+`II = -h`. -/
 theorem inner_leviCivitaConnection_closedBall_of_eq_inwardUnitNormal
     (q : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1))
     (u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q)
