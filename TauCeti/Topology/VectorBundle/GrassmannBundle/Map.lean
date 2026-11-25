@@ -23,18 +23,21 @@ of Grassmann bundles (`TauCeti.grassmannBundle.map`). Over each point it is the 
 `LinearIsometryEquiv.grassmannianCongr` of the Grassmannians of the fibres
 (`TauCeti.grassmannBundle.map_fiberIncl`), and it is functorial: the identity covered by identities
 induces the identity (`TauCeti.grassmannBundle.map_id`), and composites induce composites
-(`TauCeti.grassmannBundle.map_comp`).
+(`TauCeti.grassmannBundle.map_comp`). It depends only on the values of `f` and of the `U_x`
+(`TauCeti.grassmannBundle.map_congr`), so mutually inverse maps of bundles induce mutually inverse
+maps (`TauCeti.grassmannBundle.map_comp_map_eq_id`).
 
 When `f` is continuous and `U` is continuous in the coordinates of the bundles, that is,
 `x ↦ e'_{f x} ∘ U_x ∘ e_x⁻¹` is continuous at each point for the local trivializations `e`, `e'`
 there (`ContinuousLinearMap.inCoordinates`), the map is continuous
 (`TauCeti.grassmannBundle.continuous_map`): in coordinates it is the product
 `(e' U e⁻¹) (e P e⁻¹) (e U⁻¹ e'⁻¹)` of continuous families of operators, the inverses being
-continuous in coordinates because `U` is. When moreover `f` is a homeomorphism, `B'` is Hausdorff
-and `E` has finite rank and continuous fibre norm, the map is a homeomorphism `G_k(E) ≃ₜ G_k(E')`
-(`TauCeti.grassmannBundle.mapHomeomorph`): it is a continuous bijection, and it is proper since its
-composite with the continuous projection of `G_k(E')` is `f ∘ π`, proper because `f` is a
-homeomorphism and the projection `π` of `G_k(E)` is proper.
+continuous in coordinates because `U` is. Two mutually inverse such maps therefore give a
+homeomorphism `G_k(E) ≃ₜ G_k(E')` (`TauCeti.grassmannBundle.mapHomeomorphOfInverse`). When `f`
+is a homeomorphism, `B'` is Hausdorff and `E` has finite rank and continuous fibre norm, the map
+alone is a homeomorphism (`TauCeti.grassmannBundle.mapHomeomorph`): it is a continuous bijection,
+and it is proper since its composite with the continuous projection of `G_k(E')` is `f ∘ π`, proper
+because `f` is a homeomorphism and the projection `π` of `G_k(E)` is proper.
 
 For the tangent bundles of Riemannian manifolds and an isometry `f`, `U_x` is the differential
 `df_x`, a linear isometry `T_xM ≃ₗᵢ[ℝ] T_{f x}M'`, and the map is
@@ -44,7 +47,12 @@ For the tangent bundles of Riemannian manifolds and an isometry `f`, `U_x` is th
 
 * `TauCeti.grassmannBundle.map`: the map `(x, P) ↦ (f x, U_x P U_x⁻¹)`.
 * `TauCeti.grassmannBundle.map_id`, `TauCeti.grassmannBundle.map_comp`: functoriality.
+* `TauCeti.grassmannBundle.map_congr`: the induced map depends only on the values of `f` and `U`.
+* `TauCeti.grassmannBundle.map_comp_map_eq_id`: mutually inverse maps of bundles induce mutually
+  inverse maps.
 * `TauCeti.grassmannBundle.continuous_map`: continuity.
+* `TauCeti.grassmannBundle.mapHomeomorphOfInverse`: the homeomorphism induced by mutually inverse
+  maps of bundles that are continuous in coordinates.
 * `TauCeti.grassmannBundle.mapHomeomorph`: the homeomorphism induced by a homeomorphism of the
   bases covered by fibrewise linear isometries.
 
@@ -109,6 +117,31 @@ theorem map_comp (g : B' → B'') (U' : ∀ y, E' y ≃ₗᵢ[ℝ] E'' (g y)) :
       grassmannBundle F E k → grassmannBundle F'' E'' k) =
       (map g U' : grassmannBundle F' E' k → grassmannBundle F'' E'' k) ∘ map f U :=
   funext fun _ ↦ rfl
+
+variable {f U} in
+/-- **Congruence.** The induced map depends only on the values of `f` and of the fibre maps `U_x`,
+compared as maps into the total space of `E'`. -/
+theorem map_congr {f' : B → B'} {U' : ∀ x, E x ≃ₗᵢ[ℝ] E' (f' x)}
+    (h : ∀ x v, (⟨f x, U x v⟩ : TotalSpace F' E') = ⟨f' x, U' x v⟩) :
+    (map f U : grassmannBundle F E k → grassmannBundle F' E' k) = map f' U' := by
+  funext ⟨⟨x, P⟩, hP⟩
+  refine Subtype.ext ?_
+  rw [coe_map_apply, coe_map_apply]
+  replace h := h x
+  generalize f x = y, U x = V at h ⊢
+  generalize f' x = y', U' x = V' at h ⊢
+  obtain rfl : y = y' := congrArg TotalSpace.proj (h 0)
+  obtain rfl : V = V' := LinearIsometryEquiv.ext fun v ↦ TotalSpace.mk_inj.1 (h v)
+  rfl
+
+variable {f U} in
+/-- The map induced by `(g, V)` is a left inverse of the map induced by `(f, U)` when `(g, V)`
+undoes `(f, U)` on the total space of `E`. -/
+theorem map_comp_map_eq_id {g : B' → B} {V : ∀ y, E' y ≃ₗᵢ[ℝ] E (g y)}
+    (h : ∀ x v, (⟨g (f x), V (f x) (U x v)⟩ : TotalSpace F E) = ⟨x, v⟩) :
+    (map g V : grassmannBundle F' E' k → grassmannBundle F E k) ∘ map f U = id := by
+  rw [← map_comp, ← map_id]
+  exact map_congr h
 
 /-- The induced map is injective when `f` is. -/
 theorem map_injective (hf : Function.Injective f) :
@@ -222,6 +255,55 @@ theorem coe_mapHomeomorph [T2Space B'] [FiniteDimensional ℝ F] [ContinuousFibe
       ((U x).toContinuousLinearEquiv : E x →L[ℝ] E' (f x))) x₀) :
     (mapHomeomorph k f U hU : grassmannBundle F E k → grassmannBundle F' E' k) = map f U :=
   (rfl)
+
+variable (k) in
+/-- **The homeomorphism of Grassmann bundles induced by mutually inverse maps** `(f, U)` and
+`(g, V)` of bundles, covered by linear isometry equivalences of the fibres, when `f`, `g` are
+continuous and `U`, `V` are continuous in coordinates: `(x, P) ↦ (f x, U_x P U_x⁻¹)`, with inverse
+induced by `(g, V)`. Unlike `TauCeti.grassmannBundle.mapHomeomorph`, this needs no separation,
+finite rank or fibre-norm assumptions. -/
+def mapHomeomorphOfInverse (f : B → B') (U : ∀ x, E x ≃ₗᵢ[ℝ] E' (f x)) (g : B' → B)
+    (V : ∀ y, E' y ≃ₗᵢ[ℝ] E (g y))
+    (hgf : ∀ x v, (⟨g (f x), V (f x) (U x v)⟩ : TotalSpace F E) = ⟨x, v⟩)
+    (hfg : ∀ y v, (⟨f (g y), U (g y) (V y v)⟩ : TotalSpace F' E') = ⟨y, v⟩)
+    (hf : Continuous f) (hg : Continuous g)
+    (hU : ∀ x₀, ContinuousAt (fun x ↦ inCoordinates F E F' E' x₀ x (f x₀) (f x)
+      ((U x).toContinuousLinearEquiv : E x →L[ℝ] E' (f x))) x₀)
+    (hV : ∀ y₀, ContinuousAt (fun y ↦ inCoordinates F' E' F E y₀ y (g y₀) (g y)
+      ((V y).toContinuousLinearEquiv : E' y →L[ℝ] E (g y))) y₀) :
+    grassmannBundle F E k ≃ₜ grassmannBundle F' E' k where
+  toFun := map f U
+  invFun := map g V
+  left_inv := congrFun (map_comp_map_eq_id hgf)
+  right_inv := congrFun (map_comp_map_eq_id hfg)
+  continuous_toFun := continuous_map hf hU
+  continuous_invFun := continuous_map hg hV
+
+section MapHomeomorphOfInverse
+
+variable (f : B → B') (U : ∀ x, E x ≃ₗᵢ[ℝ] E' (f x)) (g : B' → B)
+  (V : ∀ y, E' y ≃ₗᵢ[ℝ] E (g y))
+  (hgf : ∀ x v, (⟨g (f x), V (f x) (U x v)⟩ : TotalSpace F E) = ⟨x, v⟩)
+  (hfg : ∀ y v, (⟨f (g y), U (g y) (V y v)⟩ : TotalSpace F' E') = ⟨y, v⟩)
+  (hf : Continuous f) (hg : Continuous g)
+  (hU : ∀ x₀, ContinuousAt (fun x ↦ inCoordinates F E F' E' x₀ x (f x₀) (f x)
+    ((U x).toContinuousLinearEquiv : E x →L[ℝ] E' (f x))) x₀)
+  (hV : ∀ y₀, ContinuousAt (fun y ↦ inCoordinates F' E' F E y₀ y (g y₀) (g y)
+    ((V y).toContinuousLinearEquiv : E' y →L[ℝ] E (g y))) y₀)
+
+@[simp]
+theorem coe_mapHomeomorphOfInverse :
+    (mapHomeomorphOfInverse k f U g V hgf hfg hf hg hU hV :
+      grassmannBundle F E k → grassmannBundle F' E' k) = map f U :=
+  (rfl)
+
+@[simp]
+theorem coe_mapHomeomorphOfInverse_symm :
+    ((mapHomeomorphOfInverse k f U g V hgf hfg hf hg hU hV).symm :
+      grassmannBundle F' E' k → grassmannBundle F E k) = map g V :=
+  (rfl)
+
+end MapHomeomorphOfInverse
 
 end Continuity
 
