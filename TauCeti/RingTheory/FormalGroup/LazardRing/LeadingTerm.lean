@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.MvPowerSeries.Order
 public import TauCeti.RingTheory.FormalGroup.LazardRing.Polynomial
-public import TauCeti.RingTheory.MvPowerSeries.Order
 
 /-!
 # Leading terms of the Lazard coordinates
