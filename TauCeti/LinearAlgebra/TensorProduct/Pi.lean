@@ -121,8 +121,9 @@ theorem piScalarRight_symm_algebraMap_comp {S N : Type*} [CommSemiring S] [Algeb
   piScalarRight_symm_algebraMap R S ι v
 
 /-- `TensorProduct.piScalarRight` is natural in the module: a linear map `φ : N → N'` acting on
-the left factor of `N ⊗ (ι → R)` acts coordinatewise on `ι → N`. -/
-theorem piScalarRight_rTensor {S S' N N' : Type*} [CommSemiring S] [Algebra R S]
+the left factor of `N ⊗ (ι → R)` acts coordinatewise on `ι → N`. The scalar ring `S` of the
+right-hand side does not occur on the left, so it is explicit. -/
+theorem piScalarRight_rTensor (S : Type*) {S' N N' : Type*} [CommSemiring S] [Algebra R S]
     [CommSemiring S'] [Algebra R S'] [AddCommMonoid N] [Module R N] [Module S N]
     [IsScalarTower R S N] [AddCommMonoid N'] [Module R N'] [Module S' N'] [IsScalarTower R S' N']
     (φ : N →ₗ[R] N') (x : N ⊗[R] (ι → R)) :

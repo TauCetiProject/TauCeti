@@ -68,11 +68,9 @@ theorem tensorPiEquiv_symm_mem_hodgeComponent (he : ∀ i, ω.toEquiv (e i) = e 
   have h := LinearMap.congr_fun (piScalarRight_comp_endOfPoint_corestrictStandardComodule ℝ d
     (hs.realCoordinateBialgHom he) splittingPoint.ofConv)
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at h
-  rw [h, LinearEquiv.map_smul, Matrix.GeneralLinearGroup.toLin_apply,
-    hs.coe_pointToGeneralLinear_splittingPoint_comp_realCoordinateBialgHom he,
-    TensorProduct.piScalarRight_rTensor (S := ℂ), Module.Basis.tensorPiEquiv_symm_apply,
-    LinearEquiv.apply_symm_apply, neg_sub]
-  exact hs.splitCoordinateMatrix_mulVec_of_mem e hv
+  rw [h]
+  simpa [hs.coe_pointToGeneralLinear_splittingPoint_comp_realCoordinateBialgHom he,
+    TensorProduct.piScalarRight_rTensor ℂ] using hs.splitCoordinateMatrix_mulVec_of_mem e hv
 
 /-- **The Hodge components of the representation of `S` of a Hodge structure.** In a basis `e`
 fixed by the conjugation, `h : S → GL_{d,ℝ}` makes `ℝ^d` a representation of `S` whose Hodge

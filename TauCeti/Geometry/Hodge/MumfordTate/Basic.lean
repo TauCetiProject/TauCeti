@@ -134,9 +134,9 @@ theorem splitCoordinateMatrix_apply (i j : Fin d) :
 vector of `H^{p,n-p}`, multiplies them by the character `X^{(-p,p-n)}`. -/
 theorem splitCoordinateMatrix_mulVec_of_mem {p : ℤ} {v : W} (hv : v ∈ hs.piece p) :
     hs.splitCoordinateMatrix e *ᵥ
-        (fun j ↦ algebraMap ℂ (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) (e.repr v j)) =
+        (algebraMap ℂ (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) ∘ e.repr v) =
       MonoidAlgebra.single (Multiplicative.ofAdd (-p, p - n)) (1 : ℂ) •
-        fun j ↦ algebraMap ℂ (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) (e.repr v j) := by
+        (algebraMap ℂ (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) ∘ e.repr v) := by
   funext i
   simp only [Matrix.mulVec, dotProduct, splitCoordinateMatrix_apply, Finset.sum_mul,
     Pi.smul_apply, smul_eq_mul, MonoidAlgebra.coe_algebraMap, Function.comp_apply,
@@ -321,9 +321,8 @@ theorem coe_pointToGeneralLinear_splittingPoint_comp_realCoordinateBialgHom
       hs.splitCoordinateMatrix e := by
   rw [← map_genericMatrix_eq_coe_pointToGeneralLinear]
   refine Matrix.ext fun i j ↦ ?_
-  rw [Matrix.map_apply, AlgHom.comp_apply, BialgHom.coe_toAlgHom, ← splittingBialgEquiv_one_tmul,
-    one_tmul_realCoordinateBialgHom, genericMatrix_apply, complexCoordinateBialgHom_one_tmul_X,
-    BialgEquiv.apply_symm_apply]
+  simp [← splittingBialgEquiv_one_tmul, one_tmul_realCoordinateBialgHom, genericMatrix_apply,
+    complexCoordinateBialgHom_one_tmul_X]
 
 end Real
 
