@@ -18,9 +18,6 @@ If a predicate `p` holds of an entry whenever it holds of a later one (for insta
 weakly increasing list), the entries satisfying `p` form a prefix of the list: the first
 `l.countP p` entries are `l.filter p` (`List.take_countP_eq_filter`), and the remaining ones are
 those failing `p` (`List.drop_countP_eq_filter`).
-
-A list `l` with `l.dropLast = p` and one entry longer than `p` is `p ++ [a]` for some `a`
-(`List.exists_eq_append_singleton_of_dropLast_eq`).
 -/
 
 public section
@@ -60,13 +57,5 @@ theorem drop_countP_eq_filter {l : List α} {p : α → Bool}
   conv_rhs => rw [← hl, take_countP_eq_filter h, filter_append, filter_filter]
   rw [filter_eq_nil_iff.2 fun _ _ ↦ by simp, nil_append,
     filter_eq_self.2 fun b hb ↦ by simpa using countP_eq_zero.1 hdrop b hb]
-
-/-- A list `l` with parent `l.dropLast = p` and one entry longer than `p` is `p ++ [a]` for some
-`a`. -/
-theorem exists_eq_append_singleton_of_dropLast_eq {l p : List α} (hl : l.dropLast = p)
-    (hlen : l.length = p.length + 1) : ∃ a, l = p ++ [a] :=
-  ⟨l.getLast (by rintro rfl; simp at hlen), by
-    conv_lhs => rw [← dropLast_concat_getLast (l := l) (by rintro rfl; simp at hlen)]
-    rw [hl]⟩
 
 end List

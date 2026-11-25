@@ -14,7 +14,6 @@ public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
 public import TauCeti.NumberTheory.Padics.DenominatorColouring
 import Mathlib.Data.List.GetD
 import Mathlib.Tactic.FinCases
-import TauCeti.Data.List.TakeDrop
 
 /-!
 # Unravelling a graph into a coloured order on `List ℚ`
@@ -194,13 +193,16 @@ private theorem isoSetoid_of_perm_dropLast {c d : RelationalConfiguration Langua
   have hχ' (x : List ℚ) : unravelColor d (Ψ x) = unravelColor c x := congrFun hχ x
   have hlen (x : List ℚ) : (Ψ x).length = x.length := length_eq_of_unravelColor_eq (hχ' x)
   -- a node and its image have children of every colour, matched by `Ψ`
-  have hchild (x : List ℚ) (r : ℚ) : ∃ s, Ψ (x ++ [r]) = Ψ x ++ [s] :=
-    List.exists_eq_append_singleton_of_dropLast_eq (by simp [← hΨ]) (by simp [hlen])
+  have hchild (x : List ℚ) (r : ℚ) : ∃ s, Ψ (x ++ [r]) = Ψ x ++ [s] := by
+    have hne : Ψ (x ++ [r]) ≠ [] := List.ne_nil_of_length_pos (by simp [hlen])
+    have hd : (Ψ (x ++ [r])).dropLast = Ψ x := by simp [← hΨ]
+    exact ⟨_, hd ▸ (List.dropLast_append_getLast hne).symm⟩
   have hchild' (x : List ℚ) (s : ℚ) : ∃ r, Ψ (x ++ [r]) = Ψ x ++ [s] := by
-    obtain ⟨r, hr⟩ := List.exists_eq_append_singleton_of_dropLast_eq (p := x)
-      (l := Ψ.symm (Ψ x ++ [s]))
-      (Ψ.injective (by simp [hΨ])) (by rw [← hlen]; simp [hlen])
-    exact ⟨r, by rw [← hr, Equiv.apply_symm_apply]⟩
+    obtain ⟨l, hl⟩ := Ψ.surjective (Ψ x ++ [s])
+    have hne : l ≠ [] := List.ne_nil_of_length_pos (by simp [← hlen l, hl])
+    have hd : l.dropLast = x := Ψ.injective (by simp [hΨ, hl])
+    refine ⟨l.getLast hne, ?_⟩
+    rw [← hl, ← hd, List.dropLast_append_getLast]
   have hS : @IsTupleBFSystem Language.graph _ ℕ ℕ c.toStructure d.toStructure
       (unravelSystem Ψ) := by
     refine @IsTupleBFSystem.mk Language.graph _ ℕ ℕ c.toStructure d.toStructure _
