@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import Mathlib.RingTheory.Noetherian.Nilpotent
 public import Mathlib.RingTheory.Spectrum.Prime.Basic
 public import TauCeti.Algebra.Homology.LocalCohomology.DegreeZero
+import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 
 /-!
 # Examples: local cohomology in degree zero
@@ -44,7 +45,7 @@ example (R : Type u) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R] :
 variable (k : Type u) [CommRing k]
 
 /-- The exponents of the relations `x_j ^ (j + 2) = 0`. -/
-def relationExponents : Set (ℕ →₀ ℕ) := Set.range fun j ↦ Finsupp.single j (j + 2)
+abbrev relationExponents : Set (ℕ →₀ ℕ) := Set.range fun j ↦ Finsupp.single j (j + 2)
 
 /-- The monomial ideal `(x_j ^ (j + 2))` of `k[x₀, x₁, …]`. -/
 abbrev relations : Ideal (MvPolynomial ℕ k) :=
@@ -95,14 +96,9 @@ theorem exists_pow_mul_ne_zero {a : Ring k} (ha : a ≠ 0) (n : ℕ) :
   exact Ideal.Quotient.eq_zero_iff_mem.mpr (mem_relations_of_X_pow_mul_mem hj (by omega) h)
 
 /-- No nonzero element of `A` is killed by a power of `I`. -/
-theorem primaryComponent_ideal_eq_bot : Ideal.primaryComponent (Ring k) (ideal k) = ⊥ := by
-  rw [eq_bot_iff]
-  intro a ha
-  rw [Ideal.primaryComponent_mem] at ha
-  obtain ⟨n, hn⟩ := ha
-  by_contra ha0
-  obtain ⟨x, hx, hxa⟩ := exists_pow_mul_ne_zero ha0 n
-  exact hxa ((Submodule.mem_torsionBySet_iff _ _).mp hn ⟨x ^ n, Ideal.pow_mem_pow hx n⟩)
+theorem primaryComponent_ideal_eq_bot : Ideal.primaryComponent (Ring k) (ideal k) = ⊥ :=
+  Ideal.primaryComponent_eq_bot_of_forall_exists_pow_smul_ne_zero fun _ ha n ↦ by
+    simpa only [smul_eq_mul] using exists_pow_mul_ne_zero ha n
 
 /-- **`H⁰_I(A) = 0`** for the native local cohomology of `A = k[x₀, x₁, …] ⧸ (x_j ^ (j + 2))`
 along `I = (x₀, x₁, …)`. -/
@@ -134,7 +130,8 @@ for every `m`, although every `x_j` is nilpotent. -/
 theorem not_isNoetherianRing [Nontrivial k] : ¬ IsNoetherianRing (Ring k) := by
   intro _
   obtain ⟨m, hm⟩ := IsNoetherianRing.isNilpotent_nilradical (Ring k)
-  have hx : Ideal.Quotient.mk (relations k) (X m) ∈ nilradical (Ring k) := ⟨_, X_pow_eq_zero m⟩
+  have hx : Ideal.Quotient.mk (relations k) (X m) ∈ nilradical (Ring k) :=
+    mem_nilradical.mpr ⟨_, X_pow_eq_zero m⟩
   have h := Ideal.pow_mem_pow hx m
   rw [hm, Ideal.zero_eq_bot, Ideal.mem_bot, ← map_pow, Ideal.Quotient.eq_zero_iff_mem,
     ← mul_one (X m ^ m)] at h

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 public import Mathlib.Algebra.Homology.LocalCohomology
 public import Mathlib.Algebra.Module.Torsion.PrimaryComponent
 public import TauCeti.CategoryTheory.Abelian.Ext
+import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 import TauCeti.Algebra.Module.Torsion.QuotientLinearMap
 
 /-!
@@ -262,20 +263,14 @@ theorem isZero_obj_zero_iff :
 /-- Local cohomology in degree zero vanishes when `J` contains an `M`-regular element `a`: then
 `aⁿ ∈ Jⁿ` kills no nonzero element of `M`. -/
 theorem isZero_obj_zero_of_isSMulRegular {a : R} (ha : a ∈ J) (hreg : IsSMulRegular M a) :
-    IsZero ((localCohomology J 0).obj M) := by
-  rw [isZero_obj_zero_iff, eq_bot_iff]
-  intro x hx
-  rw [Ideal.primaryComponent_mem] at hx
-  obtain ⟨n, hn⟩ := hx
-  have := (Submodule.mem_torsionBySet_iff _ _).mp hn ⟨a ^ n, Ideal.pow_mem_pow ha n⟩
-  exact hreg.pow n (this.trans (smul_zero _).symm)
+    IsZero ((localCohomology J 0).obj M) :=
+  (isZero_obj_zero_iff J M).mpr (Ideal.primaryComponent_eq_bot_of_isSMulRegular ha hreg)
 
 /-- Over a domain, local cohomology in degree zero along a nonzero ideal vanishes for a
 torsion-free module: a nonzero element of `J` is `M`-regular. For instance `H⁰_𝔪(R) = 0` for a
 discrete valuation ring `R` with maximal ideal `𝔪`. -/
 theorem isZero_obj_zero_of_ne_bot [IsDomain R] [Module.IsTorsionFree R M] (hJ : J ≠ ⊥) :
-    IsZero ((localCohomology J 0).obj M) := by
-  obtain ⟨a, ha, ha0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hJ
-  exact isZero_obj_zero_of_isSMulRegular J M ha (IsSMulRegular.of_ne_zero ha0)
+    IsZero ((localCohomology J 0).obj M) :=
+  (isZero_obj_zero_iff J M).mpr (Ideal.primaryComponent_eq_bot_of_ne_bot hJ)
 
 end localCohomology
