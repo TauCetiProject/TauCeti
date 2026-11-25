@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.DiscreteValuationRing.TamelyRamified
 
 import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
 import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
+import TauCeti.RingTheory.Ideal.GoingUp
 
 /-!
 # Comparing tame ramification for local fields and discrete valuation rings
@@ -53,8 +54,6 @@ theorem isTamelyRamifiedWRT_iff_isTamelyRamified :
     IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing e
   have : Finite (ResidueField B) :=
     Finite.of_equiv 𝓀[L] (ResidueField.mapEquiv e.toRingEquiv).toEquiv
-  have : (maximalIdeal B).LiesOver 𝓂[K] :=
-    ⟨(IsLocalRing.eq_maximalIdeal (Ideal.IsMaximal.under 𝒪[K] (maximalIdeal B))).symm⟩
   have htame : IsTamelyRamified K L ↔
       IsUnit ((maximalIdeal B).ramificationIdx 𝒪[K] : 𝓀[K]) := by
     rw [← ramificationIndex_eq_ramificationIdx_integralClosure K L,
@@ -62,6 +61,8 @@ theorem isTamelyRamifiedWRT_iff_isTamelyRamified :
   rw [Algebra.isTamelyRamifiedWRT_def]
   constructor
   · intro h
+    -- Supplied directly: instance search tries Mathlib's `IsLocalHom` route first and times out.
+    have := Ideal.liesOver_maximalIdeal_of_isIntegral (R := 𝒪[K]) (maximalIdeal B)
     exact htame.mpr (h (maximalIdeal B)).2
   · intro h P _ _
     have hP : P = maximalIdeal B := IsLocalRing.eq_maximalIdeal inferInstance
