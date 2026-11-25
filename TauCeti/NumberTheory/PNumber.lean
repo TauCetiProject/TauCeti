@@ -137,8 +137,9 @@ theorem isPNumber_singleton_iff {p : ℕ} (hp : p.Prime) : IsPNumber {p} n ↔ �
 /-- For a prime `p`, the `{p}ᶜ`-numbers are exactly the positive numbers not divisible by `p`. -/
 theorem isPNumber_compl_singleton_iff {p : ℕ} (hp : p.Prime) :
     IsPNumber {p}ᶜ n ↔ 0 < n ∧ ¬p ∣ n :=
-  ⟨fun h ↦ ⟨h.pos, fun hpn ↦ h.mem_of_prime_of_dvd hp hpn rfl⟩,
-    fun ⟨hn, hpn⟩ ↦ ⟨hn, fun _ _ hqn (hqp : _ = p) ↦ hpn (hqp ▸ hqn)⟩⟩
+  ⟨fun h ↦ ⟨h.pos, fun hpn ↦ h.mem_of_prime_of_dvd hp hpn (Set.mem_singleton p)⟩,
+    fun ⟨hn, hpn⟩ ↦ ⟨hn, fun _ _ hqn ↦
+      Set.mem_compl_singleton_iff.2 fun hqp ↦ hpn (hqp ▸ hqn)⟩⟩
 
 /-- For a finite set `s`, the `s`-numbers are Mathlib's `s`-factored numbers. -/
 theorem isPNumber_coe_finset_iff {s : Finset ℕ} : IsPNumber ↑s n ↔ n ∈ Nat.factoredNumbers s := by

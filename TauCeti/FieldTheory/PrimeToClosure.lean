@@ -33,16 +33,16 @@ subextension of a prime-to-`p` closure has degree prime to `p` over `F`.
 
 ## Main results
 
-* `IntermediateField.exists_le_maximal_isPExtension`,
-  `IntermediateField.exists_maximal_isPExtension`: every `P`-subextension lies in a maximal one;
+* `TauCeti.exists_le_maximal_isPExtension`,
+  `TauCeti.exists_maximal_isPExtension`: every `P`-subextension lies in a maximal one;
   in particular maximal `P`-subextensions, and prime-to-`p` closures, exist.
-* `IntermediateField.eq_bot_of_maximal_isPExtension`: a maximal `P`-subextension `K` has no
+* `TauCeti.eq_bot_of_maximal_isPExtension`: a maximal `P`-subextension `K` has no
   proper `P`-extension inside `E`.
-* `IntermediateField.exists_finrank_eq_pow_of_maximal_isPExtension`: if `E / F` is normal, every
+* `TauCeti.exists_finrank_eq_pow_of_maximal_isPExtension`: if `E / F` is normal, every
   finite extension of a prime-to-`p` closure inside `E` has `p`-power degree.
-* `IntermediateField.maximal_isPExtension_compl_singleton_iff`: the prime-to-`p` closures are
+* `TauCeti.maximal_isPExtension_compl_singleton_iff`: the prime-to-`p` closures are
   exactly the `{p}ᶜ`-subextensions all of whose finite extensions in `E` have `p`-power degree.
-* `IntermediateField.exists_finrank_eq_pow_of_maximal_isPExtension_of_isAlgClosure`: inside an
+* `TauCeti.exists_finrank_eq_pow_of_maximal_isPExtension_of_isAlgClosure`: inside an
   algebraic closure, every finite field extension of a prime-to-`p` closure has `p`-power degree.
 
 ## References
@@ -53,9 +53,9 @@ subextension of a prime-to-`p` closure has degree prime to `p` over `F`.
 
 public section
 
-open Module TauCeti
+open Module IntermediateField
 
-namespace IntermediateField
+namespace TauCeti
 
 variable {F E : Type*} [Field F] [Field E] [Algebra F E]
 
@@ -140,12 +140,12 @@ private theorem isSeparable_of_maximal_isPExtension
   have : Normal K E := Normal.tower_top_of_normal F K E
   let M := normalClosure K L E
   let I := fixedField (⊤ : Subgroup Gal(M/K))
-  have := TauCeti.IntermediateField.isPurelyInseparable_fixedField_top K M
+  have := IntermediateField.isPurelyInseparable_fixedField_top K M
   obtain ⟨n, hn⟩ := IsPurelyInseparable.finrank_eq_pow K I q
   have hq : IsPNumber {p}ᶜ q := (expChar_is_prime_or_one K q).elim
     (fun hq ↦ (isPNumber_prime_iff hq).2 hqp) fun hq ↦ hq ▸ isPNumber_one
   have hI : I = ⊥ := by
-    rw [← finrank_eq_one_iff]
+    rw [← IntermediateField.finrank_eq_one_iff]
     exact finrank_eq_one_of_maximal_isPExtension hK I (hn ▸ hq.pow n)
   have := IsGalois.of_fixedField_eq_bot K M hI
   exact Algebra.IsSeparable.of_algHom K M (inclusion (le_normalClosure L))
@@ -162,7 +162,8 @@ theorem exists_finrank_eq_pow_of_maximal_isPExtension
   · -- Every prime lies in `{p}ᶜ`, so `L` is a `{p}ᶜ`-extension of `K`, hence trivial.
     obtain rfl := eq_bot_of_maximal_isPExtension hK (N := L) <|
       isPExtension_iff_isPNumber_finrank.2 <|
-        isPNumber_iff.2 ⟨finrank_pos, fun q hq _ (hqp : q = p) ↦ hp (hqp ▸ hq)⟩
+        isPNumber_iff.2 ⟨finrank_pos, fun q hq _ ↦
+          Set.mem_compl_singleton_iff.2 fun hqp ↦ hp (hqp ▸ hq)⟩
     exact ⟨0, by simp⟩
   obtain ⟨q, _⟩ : ∃ q, ExpChar K q := ⟨ringExpChar K, inferInstance⟩
   by_cases hqp : q = p
@@ -199,7 +200,8 @@ theorem maximal_isPExtension_compl_singleton_iff (hp : p.Prime) :
   obtain ⟨n, hn⟩ := hpow K⟮x⟯ inferInstance
   have hP := isPExtension_iff_isPNumber_finrank.1 hKx
   rw [hn, isPNumber_pow_iff, isPNumber_prime_iff hp] at hP
-  rw [hP.resolve_right (· rfl), pow_zero, finrank_eq_one_iff, adjoin_simple_eq_bot_iff] at hn
+  rw [hP.resolve_right (Set.notMem_compl_iff.2 (Set.mem_singleton p)), pow_zero,
+    IntermediateField.finrank_eq_one_iff, adjoin_simple_eq_bot_iff] at hn
   obtain ⟨y, rfl⟩ := mem_bot.1 hn
   exact y.property
 
@@ -220,4 +222,4 @@ theorem exists_finrank_eq_pow_of_maximal_isPExtension_of_isAlgClosure [IsAlgClos
   obtain ⟨n, hn⟩ := exists_finrank_eq_pow_of_maximal_isPExtension hK φ.fieldRange
   exact ⟨n, e.toLinearEquiv.finrank_eq.trans hn⟩
 
-end IntermediateField
+end TauCeti
