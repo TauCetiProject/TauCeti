@@ -122,6 +122,7 @@ theorem labelEntropy_pair (μ : Measure Ω) (X : Ω → A) (Y : Ω → B) :
     Fintype.sum_prod_type]
 
 /-- A label joined with itself has the same entropy: `H((X, X)) = H(X)`. -/
+@[simp]
 theorem labelEntropy_pair_self (μ : Measure Ω) (X : Ω → A) :
     labelEntropy μ (fun ω ↦ (X ω, X ω)) = labelEntropy μ X := by
   rw [labelEntropy_pair, labelEntropy_def]
