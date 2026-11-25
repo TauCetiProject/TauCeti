@@ -33,8 +33,12 @@ by the image of `q` (`TauCeti.AdelicExamples.GL2.conjAct_smul_componentGroupPSL`
 
 ## Main results
 
+* `TauCeti.AdelicExamples.GL2.componentGroupPSL_mono`: `U' ≤ U` gives an inclusion of images.
 * `TauCeti.AdelicExamples.GL2.conjAct_smul_componentGroupPSL`: the image of `Γ_{qgu,U}` in
   `PSL₂(ℝ)` is the conjugate of that of `Γ_{g,U}` by the image of `q`.
+* `TauCeti.AdelicExamples.GL2.componentQuotientConjHomeomorph_mk` and
+  `TauCeti.AdelicExamples.GL2.componentQuotientConjHomeomorph_symm_mk`: the homeomorphism and
+  its inverse act on orbits through `q` and `q⁻¹`.
 * `TauCeti.AdelicExamples.GL2.mdifferentiable_componentQuotientConjHomeomorph`: the homeomorphism
   is holomorphic when `Γ_{g,U}` acts properly discontinuously.
 
@@ -60,11 +64,17 @@ def componentGroupPSL (U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ)))
   ((componentGroup U g).subgroupOf (GLPos (Fin 2) ℚ)).map ratPosToPSL2R
 
 /-- Membership in the image of `Γ_{g,U}` in `PSL₂(ℝ)`. -/
+@[simp]
 theorem mem_componentGroupPSL_iff {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))}
     {g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)} {x : PSL(2, ℝ)} :
     x ∈ componentGroupPSL U g ↔
       ∃ γ : GL(2, ℚ)⁺, (γ : GL (Fin 2) ℚ) ∈ componentGroup U g ∧ ratPosToPSL2R γ = x := by
   simp [componentGroupPSL, Subgroup.mem_map, Subgroup.mem_subgroupOf]
+
+/-- Shrinking `U` shrinks the image of `Γ_{g,U}` in `PSL₂(ℝ)`. -/
+theorem componentGroupPSL_mono {U U' : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))} (h : U' ≤ U)
+    (g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)) : componentGroupPSL U' g ≤ componentGroupPSL U g :=
+  Subgroup.map_mono (Subgroup.subgroupOf_mono _ (componentGroup_mono h g))
 
 /-- **The images of `Γ_{qgu,U}` and `Γ_{g,U}` in `PSL₂(ℝ)` are conjugate by the image of `q`**,
 for `q ∈ GL₂(ℚ)^+` and `u ∈ U`. -/
@@ -111,9 +121,20 @@ theorem componentQuotientConjHomeomorph_mk {U : Subgroup (GL (Fin 2) (FiniteAdel
       Quotient.mk _ (GeneralLinearGroup.map (algebraMap ℚ ℝ) (q : GL (Fin 2) ℚ) • z) := by
   rw [componentQuotientConjHomeomorph, Subgroup.quotientConjHomeomorph_mk, ratPosToPSL2R_smul]
 
+/-- The inverse of the homeomorphism `Γ_{g,U}\ℍ ≃ₜ Γ_{qgu,U}\ℍ` sends the orbit of `z` to the
+orbit of `q⁻¹ • z`, for the action of the real matrix `q⁻¹`. -/
+@[simp]
+theorem componentQuotientConjHomeomorph_symm_mk
+    {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))} (g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ))
+    (q : GL(2, ℚ)⁺) {u : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)} (hu : u ∈ U) (z : ℍ) :
+    (componentQuotientConjHomeomorph g q hu).symm (Quotient.mk _ z) =
+      Quotient.mk _ (GeneralLinearGroup.map (algebraMap ℚ ℝ) (q : GL (Fin 2) ℚ)⁻¹ • z) := by
+  rw [componentQuotientConjHomeomorph, Subgroup.quotientConjHomeomorph_symm,
+    Subgroup.quotientConjHomeomorph_mk, ← map_inv, ratPosToPSL2R_smul, Subgroup.coe_inv]
+
 /-- **The homeomorphism `Γ_{g,U}\ℍ ≃ₜ Γ_{qgu,U}\ℍ` is holomorphic** when `Γ_{g,U}` acts properly
-discontinuously on `ℍ`; its inverse is the homeomorphism induced by `q⁻¹`, so it is a
-biholomorphism. -/
+discontinuously on `ℍ`. Its inverse is induced by `q⁻¹`
+(`TauCeti.AdelicExamples.GL2.componentQuotientConjHomeomorph_symm_mk`). -/
 theorem mdifferentiable_componentQuotientConjHomeomorph
     {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))} (g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ))
     [ProperlyDiscontinuousSMul (componentGroupPSL U g) ℍ] (q : GL(2, ℚ)⁺)
