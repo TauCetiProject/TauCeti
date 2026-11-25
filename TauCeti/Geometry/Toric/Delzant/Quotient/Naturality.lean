@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Delzant.Equiv
+public import TauCeti.Geometry.Symplectic.Manifold.SymplecticMap
 public import TauCeti.Geometry.Toric.Delzant.Quotient.Symplectic
 public import TauCeti.Analysis.Normed.Lp.PiLp
 
@@ -90,6 +91,12 @@ manifolds obtained from the presentations of a Delzant polytope related by these
   `mpullback_delzantQuotientLatticeCongrDiffeomorph_delzantQuotientSymplecticForm`, in
   `TauCeti.Toric.IsDelzant`: these diffeomorphisms are symplectomorphisms for the symplectic forms
   of the Delzant quotients.
+* `isSymplectomorphism_delzantQuotientCongrDiffeomorph` (with its inverse
+  `isSymplectomorphism_delzantQuotientCongrDiffeomorph_symm`),
+  `isSymplectomorphism_delzantQuotientRelabelDiffeomorph`,
+  `isSymplectomorphism_delzantQuotientTranslateDiffeomorph` and
+  `isSymplectomorphism_delzantQuotientLatticeCongrDiffeomorph`, in `TauCeti.Toric.IsDelzant`: the
+  same statements with the predicate `TauCeti.SmoothTwoForm.IsSymplectomorphism`.
 
 ## References
 
@@ -508,6 +515,41 @@ theorem mpullback_delzantQuotientCongrDiffeomorph_delzantQuotientSymplecticForm 
     hΔ.mpullback_delzantQuotientMk_delzantQuotientSymplecticForm hi,
     hΔ.mpullback_delzantLevelCongrDiffeomorph_mpullback_coe_delzantLevel hΔ' hi hi' e hZ]
 
+/-- **Changing the presentation of a Delzant quotient is a symplectomorphism**, stated with the
+predicate `TauCeti.SmoothTwoForm.IsSymplectomorphism`: `delzantQuotientCongrDiffeomorph` is a
+symplectomorphism from the symplectic form of the Delzant quotient of `(u', c')` to that of
+`(u, c)`. -/
+theorem isSymplectomorphism_delzantQuotientCongrDiffeomorph :
+    letI := hΔ.delzantQuotientChartedSpace hi
+    letI := hΔ'.delzantQuotientChartedSpace hi'
+    haveI := hΔ.isManifold_delzantQuotient hi
+    haveI := hΔ'.isManifold_delzantQuotient hi'
+    SmoothTwoForm.IsSymplectomorphism (hΔ'.delzantQuotientSymplecticForm hi')
+      (hΔ.delzantQuotientSymplecticForm hi)
+      (hΔ.delzantQuotientCongrDiffeomorph hΔ' hi hi' e hZ hN) :=
+  letI := hΔ.delzantQuotientChartedSpace hi
+  letI := hΔ'.delzantQuotientChartedSpace hi'
+  haveI := hΔ.isManifold_delzantQuotient hi
+  haveI := hΔ'.isManifold_delzantQuotient hi'
+  SmoothTwoForm.isSymplectomorphism_iff_mpullback_eq.2
+    (hΔ.mpullback_delzantQuotientCongrDiffeomorph_delzantQuotientSymplecticForm hΔ' hi hi' e hZ hN)
+
+/-- The inverse of `delzantQuotientCongrDiffeomorph` is a symplectomorphism from the symplectic
+form of the Delzant quotient of `(u, c)` to that of `(u', c')`. -/
+theorem isSymplectomorphism_delzantQuotientCongrDiffeomorph_symm :
+    letI := hΔ.delzantQuotientChartedSpace hi
+    letI := hΔ'.delzantQuotientChartedSpace hi'
+    haveI := hΔ.isManifold_delzantQuotient hi
+    haveI := hΔ'.isManifold_delzantQuotient hi'
+    SmoothTwoForm.IsSymplectomorphism (hΔ.delzantQuotientSymplecticForm hi)
+      (hΔ'.delzantQuotientSymplecticForm hi')
+      (hΔ.delzantQuotientCongrDiffeomorph hΔ' hi hi' e hZ hN).symm :=
+  letI := hΔ.delzantQuotientChartedSpace hi
+  letI := hΔ'.delzantQuotientChartedSpace hi'
+  haveI := hΔ.isManifold_delzantQuotient hi
+  haveI := hΔ'.isManifold_delzantQuotient hi'
+  (hΔ.isSymplectomorphism_delzantQuotientCongrDiffeomorph hΔ' hi hi' e hZ hN).symm (by simp)
+
 end Congr
 
 /-! #### Relabelling, translation and changes of lattice -/
@@ -562,6 +604,17 @@ theorem mpullback_delzantQuotientRelabelDiffeomorph_delzantQuotientSymplecticFor
       (hΔ.comp_equiv e).delzantQuotientSymplecticForm hi :=
   hΔ.mpullback_delzantQuotientCongrDiffeomorph_delzantQuotientSymplecticForm _ hi hi e _ _
 
+/-- Relabelling the facets is a symplectomorphism from the symplectic form of the Delzant quotient
+of the relabelled presentation to the symplectic form of the Delzant quotient of `(u, c)`. -/
+theorem isSymplectomorphism_delzantQuotientRelabelDiffeomorph :
+    letI := hΔ.delzantQuotientChartedSpace hi
+    letI := (hΔ.comp_equiv e).delzantQuotientChartedSpace hi
+    haveI := hΔ.isManifold_delzantQuotient hi
+    haveI := (hΔ.comp_equiv e).isManifold_delzantQuotient hi
+    SmoothTwoForm.IsSymplectomorphism ((hΔ.comp_equiv e).delzantQuotientSymplecticForm hi)
+      (hΔ.delzantQuotientSymplecticForm hi) (hΔ.delzantQuotientRelabelDiffeomorph hi e) :=
+  hΔ.isSymplectomorphism_delzantQuotientCongrDiffeomorph _ hi hi e _ _
+
 end Relabel
 
 section Translate
@@ -615,6 +668,18 @@ theorem mpullback_delzantQuotientTranslateDiffeomorph_delzantQuotientSymplecticF
       hΔ.delzantQuotientSymplecticForm hi :=
   mpullback_delzantQuotientCongrDiffeomorph_delzantQuotientSymplecticForm
     ((isDelzant_add_iff y).2 hΔ) hΔ hi hi _ _ _
+
+/-- Shifting the moment map is a symplectomorphism from the symplectic form of the Delzant
+quotient of `(u, c)` to the symplectic form of the Delzant quotient of the translated polytope. -/
+theorem isSymplectomorphism_delzantQuotientTranslateDiffeomorph :
+    letI := hΔ.delzantQuotientChartedSpace hi
+    letI := ((isDelzant_add_iff y).2 hΔ).delzantQuotientChartedSpace hi
+    haveI := hΔ.isManifold_delzantQuotient hi
+    haveI := ((isDelzant_add_iff y).2 hΔ).isManifold_delzantQuotient hi
+    SmoothTwoForm.IsSymplectomorphism (hΔ.delzantQuotientSymplecticForm hi)
+      (((isDelzant_add_iff y).2 hΔ).delzantQuotientSymplecticForm hi)
+      (hΔ.delzantQuotientTranslateDiffeomorph hi y) :=
+  isSymplectomorphism_delzantQuotientCongrDiffeomorph ((isDelzant_add_iff y).2 hΔ) hΔ hi hi _ _ _
 
 end Translate
 
@@ -674,6 +739,18 @@ theorem mpullback_delzantQuotientLatticeCongrDiffeomorph_delzantQuotientSymplect
         (hΔf.delzantQuotientSymplecticForm hi') =
       hΔ.delzantQuotientSymplecticForm hi :=
   hΔf.mpullback_delzantQuotientCongrDiffeomorph_delzantQuotientSymplecticForm hΔ hi' hi _ _ _
+
+/-- Changing the lattice is a symplectomorphism from the symplectic form of the Delzant quotient of
+`(u, c)` to the symplectic form of the Delzant quotient of `(f ∘ u, c)`. -/
+theorem isSymplectomorphism_delzantQuotientLatticeCongrDiffeomorph :
+    letI := hΔ.delzantQuotientChartedSpace hi
+    letI := hΔf.delzantQuotientChartedSpace hi'
+    haveI := hΔ.isManifold_delzantQuotient hi
+    haveI := hΔf.isManifold_delzantQuotient hi'
+    SmoothTwoForm.IsSymplectomorphism (hΔ.delzantQuotientSymplecticForm hi)
+      (hΔf.delzantQuotientSymplecticForm hi')
+      (hΔ.delzantQuotientLatticeCongrDiffeomorph hi hi' hf hg hfg hΔf) :=
+  hΔf.isSymplectomorphism_delzantQuotientCongrDiffeomorph hΔ hi' hi _ _ _
 
 end Lattice
 
