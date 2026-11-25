@@ -217,19 +217,19 @@ def onePointProdHomologyIso (n m : ℕ) (h : n + finrank ℝ V = m + 1) :
     singularHomologyComplRangeIso isFramedTube_onePoint_coe M
       isFramedTube_onePoint_coe.isClosed_range one_pos n (m + 1) h
 
-private lemma onePointProdHomologyIso_hom_eq (n m : ℕ) (h : n + finrank ℝ V = m + 1) :
+/-- The forward morphism of `TauCeti.TopCat.onePointProdHomologyIso` is the quotient map onto
+the homology relative to the complement of the zero section, followed by the Thom isomorphism
+along the zero section (`TauCeti.TopCat.singularHomologyComplRangeIso`). -/
+@[reassoc]
+lemma onePointProdHomologyIso_hom (n m : ℕ) (h : n + finrank ℝ V = m + 1) :
     (onePointProdHomologyIso M n m h).hom =
       (TopPair.ofSubset ((𝟙 (_root_.TopCat.of (OnePoint (S × V)))) ⁻¹'
           range fun x : S ↦ ((x, (0 : V)) : OnePoint (S × V)))ᶜ).singularHomologyπ M (m + 1) ≫
-        (singularHomologyComplPreimageCoreIso isFramedTube_onePoint_coe M
-          isFramedTube_onePoint_coe.isClosed_range one_pos (serreFibrations.of_isIso _) n (m + 1)
-          h).hom ≫
-        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
-          (_root_.TopCat.isoOfHomeo isFramedTube_onePoint_coe.coreHomeomorph).inv :=
-  congrArg ((TopPair.ofSubset ((𝟙 (_root_.TopCat.of (OnePoint (S × V)))) ⁻¹'
-      range fun x : S ↦ ((x, (0 : V)) : OnePoint (S × V)))ᶜ).singularHomologyπ M (m + 1) ≫ ·)
-    (singularHomologyComplRangeIso_hom isFramedTube_onePoint_coe M
-      isFramedTube_onePoint_coe.isClosed_range one_pos n (m + 1) h)
+        (singularHomologyComplRangeIso isFramedTube_onePoint_coe M
+          isFramedTube_onePoint_coe.isClosed_range one_pos n (m + 1) h).hom :=
+  -- By definition, `(asIso π ≪≫ e).hom = π ≫ e.hom`, identifying the `TopPair.ofSubset` carrier
+  -- of `π` with `OnePoint (S × V)`.
+  (rfl)
 
 /-- `TauCeti.TopCat.onePointProdHomologyIso`, read in the zero section of the Thom space, is the
 quotient map onto the homology relative to the complement of the zero section followed by the
@@ -244,8 +244,10 @@ lemma onePointProdHomologyIso_hom_comp_map_coreHom (n m : ℕ) (h : n + finrank 
         (singularHomologyComplPreimageCoreIso isFramedTube_onePoint_coe M
           isFramedTube_onePoint_coe.isClosed_range one_pos (serreFibrations.of_isIso _) n (m + 1)
           h).hom := by
-  -- The source of the quotient map is the homology of the Thom space only up to unfolding, which
-  -- `rw` does not see through, so the reassociation is applied as a term.
+  rw [onePointProdHomologyIso_hom]
+  -- `singularHomologyComplRangeIso` is stated on `(range _)ᶜ` whereas `singularHomologyπ` lands
+  -- in `((𝟙 _) ⁻¹' range _)ᶜ`, which `rw` does not unfold, so `Category.assoc` is applied as a
+  -- term.
   refine (Category.assoc _ _ _).trans ?_
   exact congrArg _ (singularHomologyComplRangeIso_hom_comp_map_coreHom
     isFramedTube_onePoint_coe M isFramedTube_onePoint_coe.isClosed_range one_pos n (m + 1) h)
@@ -310,18 +312,15 @@ theorem singularHomologyπ_comp_singularHomologyComplPreimageCoreIso_hom (n m : 
     thomCollapse_apply hτ.isOpenEmbedding.injective (x, v)
   have hsf : ∀ b, hτ.thomCollapseHom b ∈ range (fun x : S ↦ ((x, (0 : V)) : OnePoint (S × V))) →
       b ∈ range f := fun _ hx ↦ hτ.thomCollapse_mem_range_iff.1 hx
-  have hmap : MapsTo hτ.thomCollapseHom ((𝟙 B) ⁻¹' range f)ᶜ
-      ((𝟙 (_root_.TopCat.of (OnePoint (S × V)))) ⁻¹'
-        range fun x : S ↦ ((x, (0 : V)) : OnePoint (S × V)))ᶜ :=
-    hτ.thomCollapseHom.mapsTo_preimage_of_comp_eq_comp (T := (range f)ᶜ)
-      (U := (range fun x : S ↦ ((x, (0 : V)) : OnePoint (S × V)))ᶜ) hg fun x hx hxf ↦
-      hx (hsf x hxf)
   have hπ := TopPair.singularHomologyπ_naturality
-    (TopPair.ofSubsetMap hτ.thomCollapseHom hmap) M (m + 1)
+    (TopPair.ofSubsetMap hτ.thomCollapseHom
+      (hτ.thomCollapseHom.mapsTo_compl_preimage_of_comp_eq_comp hg hsf)) M (m + 1)
   rw [TopPair.ofSubsetMap_fst] at hπ
   -- The collapse sends the point `f x` of the core to the point `(x, 0)` of the zero section, so
   -- the composite of the three maps of cores is the identity.
-  have key : TopPair.singularHomologyMap (TopPair.ofSubsetMap hτ.thomCollapseHom hmap) M (m + 1) ≫
+  have key : TopPair.singularHomologyMap
+        (TopPair.ofSubsetMap hτ.thomCollapseHom
+          (hτ.thomCollapseHom.mapsTo_compl_preimage_of_comp_eq_comp hg hsf)) M (m + 1) ≫
         (singularHomologyComplPreimageCoreIso isFramedTube_onePoint_coe M
           isFramedTube_onePoint_coe.isClosed_range one_pos (serreFibrations.of_isIso _) n (m + 1)
           h).hom ≫
@@ -335,7 +334,7 @@ theorem singularHomologyπ_comp_singularHomologyComplPreimageCoreIso_hom (n m : 
       isFramedTube_onePoint_coe hτ hg hs hsf, ← Functor.map_comp, ← Functor.map_comp,
       preimageMapOver_thomCollapseHom_comp_coreHom hτ hg hs,
       CategoryTheory.Functor.map_id, Category.comp_id]
-  rw [← key, ← Category.assoc, ← hπ, onePointProdHomologyIso_hom_eq]
+  rw [← key, ← Category.assoc, ← hπ, onePointProdHomologyIso_hom, singularHomologyComplRangeIso_hom]
   -- The two sides differ by associativity, across the identification of the source of the
   -- quotient map with the homology of the Thom space, which `rw` does not see through.
   exact (Category.assoc _ _ _).trans

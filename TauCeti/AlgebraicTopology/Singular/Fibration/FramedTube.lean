@@ -160,16 +160,6 @@ lemma isoOfHomeo_coreHomeomorph_hom {S : Type u} {V : Type*} [TopologicalSpace S
   -- The morphism `(TopCat.isoOfHomeo h).hom` applies `h` itself.
   exact hτ.coe_coreHomeomorph_apply x
 
-/-- A map of the bases carrying the tube `τ'` to the tube `τ` fibrewise carries the core of `τ'`
-into the core of `τ`. -/
-lemma mapsTo_range_of_apply_eq {B B' S S' V : Type*} [TopologicalSpace B] [TopologicalSpace B']
-    [TopologicalSpace S] [TopologicalSpace S'] [TopologicalSpace V] [Zero V] {f : S → B}
-    {τ : S × V → B} {f' : S' → B'} {τ' : S' × V → B'} (hτ : IsFramedTube f τ)
-    (hτ' : IsFramedTube f' τ') {s : B' → B} {φ : S' → S}
-    (hs : ∀ x v, s (τ' (x, v)) = τ (φ x, v)) : MapsTo s (range f') (range f) := by
-  rintro _ ⟨x, rfl⟩
-  exact ⟨φ x, by rw [← hτ.apply_zero, ← hs, hτ'.apply_zero]⟩
-
 /-- If near `b'` the normal coordinate of `s` is a chart at `b'`, then `s b'` lies on the core. -/
 lemma apply_mem_range_of_chartBall {V B B' S : Type*} [SeminormedAddCommGroup V]
     [TopologicalSpace B] [TopologicalSpace B'] [TopologicalSpace S] {f : S → B} {τ : S × V → B}
@@ -278,9 +268,7 @@ theorem singularHomologyComplPreimageCoreIso_hom_naturality_of_apply_eq [NormedS
     (hfc : IsClosed (range f)) (hfc' : IsClosed (range f')) {ε : ℝ} (hε₀ : 0 < ε)
     (hp : serreFibrations p) (hp' : serreFibrations p') (n m : ℕ) (h : n + finrank ℝ V = m) :
     TopPair.singularHomologyMap
-        (TopPair.ofSubsetMap g
-          (g.mapsTo_preimage_of_comp_eq_comp (T := (range f')ᶜ) (U := (range f)ᶜ) hg
-            fun x hx hxf ↦ hx (hsf x hxf))) M m ≫
+        (TopPair.ofSubsetMap g (g.mapsTo_compl_preimage_of_comp_eq_comp hg hsf)) M m ≫
         (singularHomologyComplPreimageCoreIso hτ M hfc hε₀ hp n m h).hom =
       (singularHomologyComplPreimageCoreIso hτ' M hfc' hε₀ hp' n m h).hom ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
@@ -288,11 +276,10 @@ theorem singularHomologyComplPreimageCoreIso_hom_naturality_of_apply_eq [NormedS
   refine (singularHomologyComplPreimageIso_hom_naturality hτ.normalCoordinate_eq_zero_iff
     hτ'.normalCoordinate_eq_zero_iff (hτ'.range_subset_tubeBall hε₀)
     (mapsTo_tubeBall_tubeBall hg hs) (normalCoordinate_apply_comp_of_apply_eq hτ hτ' hg hs)
-    (g.mapsTo_preimage_of_comp_eq_comp (T := (range f')ᶜ) (U := (range f)ᶜ) hg
-      fun x hx hxf ↦ hx (hsf x hxf)) M (hτ.isOpen_tubeBall ε) hfc (hτ.range_subset_tubeBall hε₀)
-    (hτ'.isOpen_tubeBall ε) hfc' hp hp' (mem_serreFibrations_normalCoordinate hτ ε)
-    (mem_serreFibrations_normalCoordinate hτ' ε) (convex_ball 0 ε) (ball_mem_nhds 0 hε₀)
-    n m h).trans ?_
+    (g.mapsTo_compl_preimage_of_comp_eq_comp hg hsf) M (hτ.isOpen_tubeBall ε) hfc
+    (hτ.range_subset_tubeBall hε₀) (hτ'.isOpen_tubeBall ε) hfc' hp hp'
+    (mem_serreFibrations_normalCoordinate hτ ε) (mem_serreFibrations_normalCoordinate hτ' ε)
+    (convex_ball 0 ε) (ball_mem_nhds 0 hε₀) n m h).trans ?_
   -- Both restrictions of `g` send a point `x` of `p'⁻¹(f'(S'))` to `g x`.
   congr 2
   ext x
@@ -415,9 +402,7 @@ theorem singularHomologyComplPreimageCoreIso_hom_naturality (hτ : IsFramedTube 
     (hfc : IsClosed (range f)) (hε₀ : 0 < ε) (hp : serreFibrations p) (hp' : serreFibrations p')
     (n m : ℕ) (h : n + finrank ℝ V = m) :
     TopPair.singularHomologyMap
-        (TopPair.ofSubsetMap g
-          (g.mapsTo_preimage_of_comp_eq_comp (T := {b'}ᶜ) (U := (range f)ᶜ) hg
-            fun x hx hxf ↦ hx (hsf x hxf))) M m ≫
+        (TopPair.ofSubsetMap g (g.mapsTo_compl_preimage_of_comp_eq_comp hg hsf)) M m ≫
         (singularHomologyComplPreimageCoreIso hτ M hfc hε₀ hp n m h).hom =
       (singularHomologyComplFiberIso M e hb hε hε₀ hp' n m h).hom ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
@@ -427,12 +412,10 @@ theorem singularHomologyComplPreimageCoreIso_hom_naturality (hτ : IsFramedTube 
   refine (singularHomologyComplPreimageIso_hom_naturality hτ.normalCoordinate_eq_zero_iff
     (e.isoOfHomeo_chartBallHomeomorph_hom_eq_zero_iff hε hb)
     (singleton_subset_iff.2 (e.mem_chartBall_self hb hε₀)) (mapsTo_chartBall_tubeBall hg e hs)
-    (normalCoordinate_apply_comp hτ hg e hε hs)
-    (g.mapsTo_preimage_of_comp_eq_comp (T := {b'}ᶜ) (U := (range f)ᶜ) hg
-      fun x hx hxf ↦ hx (hsf x hxf)) M (hτ.isOpen_tubeBall ε) hfc (hτ.range_subset_tubeBall hε₀)
-    (e.isOpen_chartBall b' ε) isClosed_singleton hp hp'
-    (mem_serreFibrations_normalCoordinate hτ ε) (serreFibrations.of_isIso _) (convex_ball 0 ε)
-    (ball_mem_nhds 0 hε₀) n m h).trans ?_
+    (normalCoordinate_apply_comp hτ hg e hε hs) (g.mapsTo_compl_preimage_of_comp_eq_comp hg hsf) M
+    (hτ.isOpen_tubeBall ε) hfc (hτ.range_subset_tubeBall hε₀) (e.isOpen_chartBall b' ε)
+    isClosed_singleton hp hp' (mem_serreFibrations_normalCoordinate hτ ε)
+    (serreFibrations.of_isIso _) (convex_ball 0 ε) (ball_mem_nhds 0 hε₀) n m h).trans ?_
   -- Both restrictions of `g` send a point `x` of `p'⁻¹(b')` to `g x`.
   congr 2
   ext x
@@ -462,14 +445,12 @@ theorem singularHomologyComplPreimageCoreIso_singularHomologyπ_homologyMap (hτ
         (TopPair.ofSubset (p ⁻¹' range f)ᶜ).singularHomologyπ M m =
       fiberLocalization M p' b' m ≫
         TopPair.singularHomologyMap
-          (TopPair.ofSubsetMap g
-            (g.mapsTo_preimage_of_comp_eq_comp (T := {b'}ᶜ) (U := (range f)ᶜ) hg
-              fun x hx hxf ↦ hx (hsf x hxf))) M m := by
+          (TopPair.ofSubsetMap g (g.mapsTo_compl_preimage_of_comp_eq_comp hg hsf)) M m := by
     have hnat := TopPair.singularHomologyπ_naturality
-      (TopPair.ofSubsetMap g
-        (g.mapsTo_preimage_of_comp_eq_comp (T := {b'}ᶜ) (U := (range f)ᶜ) hg
-          fun x hx hxf ↦ hx (hsf x hxf))) M m
+      (TopPair.ofSubsetMap g (g.mapsTo_compl_preimage_of_comp_eq_comp (T := {b'}) hg hsf)) M m
     rw [TopPair.ofSubsetMap_fst] at hnat
+    -- `hnat` is stated on the `TopPair.ofSubset` carriers, which are definitionally equal to `E`,
+    -- `E'` and `fiberLocalization`.
     exact hnat
   have hcomp : (SSet.homologyMap (_root_.TopCat.toSSet.map g) M m ≫
         (TopPair.ofSubset (p ⁻¹' range f)ᶜ).singularHomologyπ M m) ≫
@@ -483,6 +464,9 @@ theorem singularHomologyComplPreimageCoreIso_singularHomologyπ_homologyMap (hτ
       singularHomologyComplPreimageCoreIso_hom_naturality hτ hg e hb hε hs hsf]
   have hval := congrArg (fun φ ↦ φ.hom α) hcomp
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hval
+  -- `simp` does not rewrite the inner `SSet.homologyMap ... ≫ singularHomologyπ` via
+  -- `ModuleCat.hom_comp` because `singularHomologyπ` has domain `(TopPair.ofSubset _).right`;
+  -- `ModuleCat.comp_apply` unifies the definitional equality.
   exact (congrArg _ (ModuleCat.comp_apply
     (SSet.homologyMap (_root_.TopCat.toSSet.map g) M m)
     ((TopPair.ofSubset (p ⁻¹' range f)ᶜ).singularHomologyπ M m) α)).symm.trans hval
