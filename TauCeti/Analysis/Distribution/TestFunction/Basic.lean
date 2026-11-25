@@ -47,7 +47,7 @@ infinite-dimensional space every test function is zero (Riesz).
 * `TestFunction.compOfIsClosedEmbedding`: the pullback of a test function along a smooth closed
   embedding, with its support bound and linearity, and `TestFunction.lineTestFunction`: its
   restriction `t ↦ ψ (y + t • e)` to an affine line, the pullback along the closed embedding
-  `isClosedEmbedding_add_smul_left`.
+  `TauCeti.isClosedEmbedding_add_smul_left`.
 -/
 
 public section
@@ -208,9 +208,9 @@ nonzero direction `e`, as a test function on the open set of parameters of the l
 `Ω`: the pullback along the closed embedding `t ↦ y + t • e`. -/
 noncomputable def lineTestFunction (ψ : 𝓓^{n}(Ω, F)) (y e : E) (he : e ≠ 0) :
     𝓓^{n}(Opens.comap ⟨fun t : ℝ => y + t • e,
-      (isClosedEmbedding_add_smul_left y he).continuous⟩ Ω, F) :=
+      (TauCeti.isClosedEmbedding_add_smul_left y he).continuous⟩ Ω, F) :=
   ψ.compOfIsClosedEmbedding (contDiff_const.add (contDiff_id.smul contDiff_const))
-    (isClosedEmbedding_add_smul_left y he)
+    (TauCeti.isClosedEmbedding_add_smul_left y he)
 
 /-- Evaluating the restriction of a test function to a line. -/
 @[simp]

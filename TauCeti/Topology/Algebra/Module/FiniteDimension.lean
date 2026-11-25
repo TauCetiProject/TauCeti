@@ -583,7 +583,7 @@ end ContinuousAffineMap
 
 /-- The affine line `t ↦ y + t • e` through `y` in a nonzero direction `e` of a Hausdorff
 topological vector space is a closed embedding of the scalars. -/
-theorem isClosedEmbedding_add_smul_left {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+theorem TauCeti.isClosedEmbedding_add_smul_left {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
     [CompleteSpace 𝕜] [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E] [Module 𝕜 E]
     [ContinuousSMul 𝕜 E] [T2Space E] (y : E) {e : E} (he : e ≠ 0) :
     Topology.IsClosedEmbedding fun t : 𝕜 => y + t • e :=
