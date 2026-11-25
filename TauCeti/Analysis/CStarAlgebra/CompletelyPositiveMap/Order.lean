@@ -244,10 +244,6 @@ noncomputable def conjAdjoint (V : H →L[ℂ] K) : (K →L[ℂ] K) →CP (H →
 @[simp] theorem conjAdjoint_apply (V : H →L[ℂ] K) (T : K →L[ℂ] K) :
     V.conjAdjoint T = V.adjoint.comp (T.comp V) := (rfl)
 
-/-- The compression by an isometry `V` (`V† ∘L V = 1`) is unital. -/
-theorem conjAdjoint_one {V : H →L[ℂ] K} (hV : V.adjoint ∘L V = 1) : V.conjAdjoint 1 = 1 := by
-  rw [conjAdjoint_apply, one_def, id_comp, hV]
-
 end ContinuousLinearMap
 
 namespace PositiveLinearMap
