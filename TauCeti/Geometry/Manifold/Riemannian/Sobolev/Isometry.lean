@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.H1
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Isometry
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.Isometry
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # The Sobolev space `H¹` under Riemannian isometries
@@ -186,9 +187,7 @@ theorem inner_toLp_compRiemannianIsometry (Φ : RiemannianIsometry I I' M N)
     (w v : SobolevH1 I' N) :
     ⟪toLp (compRiemannianIsometry Φ w), toLp (compRiemannianIsometry Φ v)⟫_ℝ =
       ⟪toLp w, toLp v⟫_ℝ := by
-  rw [toLp_compRiemannianIsometry, toLp_compRiemannianIsometry]
-  exact LinearIsometry.inner_map_map (𝕜 := ℝ)
-    (Lp.compMeasurePreservingₗᵢ (E := ℝ) (p := 2) ℝ Φ Φ.measurePreserving_riemannianVolume) _ _
+  rw [toLp_compRiemannianIsometry, toLp_compRiemannianIsometry, Lp.inner_compMeasurePreserving]
 
 /-- **Isometry invariance of the Dirichlet form.** Pullback along a Riemannian isometry
 preserves the Dirichlet form, the extension of `∫ ⟪∇u, ∇v⟫ dV` to `H¹`. -/

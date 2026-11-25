@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Covering
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Eigenbasis
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Resolvent
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # Transplantation of eigenfunctions along finite Riemannian coverings
@@ -138,8 +139,7 @@ private theorem inner_normalizedPullbackLp_eq_of_eq_smul_sum [Fintype G]
   simp only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply, innerSL_apply_apply,
     toLp_compRiemannianIsometry]
   conv_lhs => rw [← hq.compMeasurePreserving_normalizedPullbackLp hf g F]
-  exact LinearIsometry.inner_map_map (𝕜 := ℝ) (Lp.compMeasurePreservingₗᵢ (E := ℝ) (p := 2) ℝ _
-    (hq.deckIsometry hf g).measurePreserving_riemannianVolume) _ _
+  exact Lp.inner_compMeasurePreserving _ _ _
 
 /-- **Transplantation of the weak equation of `Δ⁺ + c`.** For `w ∈ H¹(N)` and `F ∈ L²(N)`, the
 normalized pullbacks `J w` and `J F` along the finite quotient covering `q : M → N` satisfy the
