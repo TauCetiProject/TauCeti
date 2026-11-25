@@ -118,26 +118,6 @@ def pullbackHomeomorph (f : X → B) :
     (p : TotalSpace (Conjugate F) (ConjugateBundle (f *ᵖ E))) :
     (pullbackHomeomorph F E f).symm p = ⟨p.proj, p.snd⟩ := by rfl
 
-theorem pullbackHomeomorph_proj (f : X → B)
-    (p : TotalSpace (Conjugate F) (f *ᵖ (ConjugateBundle E))) :
-    (pullbackHomeomorph F E f p).proj = p.proj := by rfl
-
-theorem pullbackHomeomorph_symm_proj (f : X → B)
-    (p : TotalSpace (Conjugate F) (ConjugateBundle (f *ᵖ E))) :
-    ((pullbackHomeomorph F E f).symm p).proj = p.proj := by rfl
-
-/-- The fibre entry is unchanged after transport along the projection formula. -/
-theorem pullbackHomeomorph_snd (f : X → B)
-    (p : TotalSpace (Conjugate F) (f *ᵖ (ConjugateBundle E))) :
-    cast (congrArg (ConjugateBundle (f *ᵖ E)) (pullbackHomeomorph_proj f p))
-      (pullbackHomeomorph F E f p).snd = p.snd := by rfl
-
-/-- The inverse preserves the fibre entry after transport along the projection formula. -/
-theorem pullbackHomeomorph_symm_snd (f : X → B)
-    (p : TotalSpace (Conjugate F) (ConjugateBundle (f *ᵖ E))) :
-    cast (congrArg (f *ᵖ (ConjugateBundle E)) (pullbackHomeomorph_symm_proj f p))
-      ((pullbackHomeomorph F E f).symm p).snd = p.snd := by rfl
-
 end Pullback
 
 end ConjugateBundle
@@ -315,13 +295,8 @@ theorem _root_.Bundle.Trivialization.linearEquivAt_conjugate_pullback
         Trivialization.baseSet_conjugate] using hy)).toLinearMap =
       ((e.pullback f).conjugate.linearEquivAt ℂ y
         ((e.pullback f).baseSet_conjugate.symm ▸ hy)).toLinearMap := by
-  let : ∀ x, AddCommGroup (((f : X → B) *ᵖ E) x) := fun x =>
-    inferInstanceAs (AddCommGroup (E (f x)))
-  let : ∀ x, Module ℂ (((f : X → B) *ᵖ E) x) := fun x =>
-    inferInstanceAs (Module ℂ (E (f x)))
-  dsimp only
-  apply LinearMap.ext
-  intro v
+  intro _ _ _ _
+  refine LinearMap.ext fun v => ?_
   simp only [LinearEquiv.coe_toLinearMap]
   calc
     _ = (e.conjugate.pullback f ⟨y, v⟩).2 := by
