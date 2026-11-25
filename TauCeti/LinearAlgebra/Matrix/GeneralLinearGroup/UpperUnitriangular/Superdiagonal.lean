@@ -41,6 +41,15 @@ identity only on the second and higher superdiagonals.
   superdiagonal of an upper-unitriangular matrix.
 * `TauCeti.UpperUnitriangularGroup.ker_superdiagonalHom`: the kernel is `superdiagonalSubgroup 2`.
 
+## Implementation notes
+
+`superdiagonalHom` and `mul_apply_castSucc_succ` follow
+`TauCeti.BlockUpperUnitriangularGroup.adjacentTraceHom` and
+`TauCeti.BlockUpperUnitriangularGroup.submatrix_coe_mul_of_covBy` in
+`TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/UpperUnitriangular/Block.lean`, the template for
+their statements and proofs: there the blocks just above the block diagonal of a block
+upper-unitriangular matrix add up under multiplication for the same reason.
+
 ## References
 
 * R. W. Carter, *Finite Groups of Lie Type*, Chapter 5.

@@ -25,6 +25,8 @@ import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.Data.Nat.GCD.BigOperators
 -- Non-public: `CharP.char_is_prime` is the primality of the characteristic of `F`.
 import Mathlib.Algebra.CharP.Lemmas
+-- Non-public: `Nat.coprime_pow_sub_one` shows that each factor of the index is prime to `p`.
+import TauCeti.Data.Nat.GCD
 
 /-!
 # The Gelfand–Graev representation of `GLₙ₊₁(F)`
@@ -104,19 +106,12 @@ theorem finrank_gelfandGraev_eq_ordCompl (p : ℕ) [CharP F p]
   have hF := Fintype.ofFinite F
   obtain ⟨f, -, hf⟩ := FiniteField.card F p
   have hfq : Nat.card F = p ^ (f : ℕ) := by rw [Nat.card_eq_fintype_card, hf]
-  -- The index is prime to `p`: `(p ^ f) ^ (i + 1)` is divisible by `p`, so `(p ^ f) ^ (i + 1) - 1`
-  -- is not.
+  -- The index is prime to `p`, as `p` is prime to `(p ^ f) ^ (i + 1) - 1`.
   have hindex : ¬ p ∣ ∏ i ∈ Finset.range (n + 1), ((p ^ (f : ℕ)) ^ (i + 1) - 1) := by
     rw [← Nat.Prime.coprime_iff_not_dvd hp, Nat.coprime_prod_right_iff]
     intro i _
-    rw [Nat.Prime.coprime_iff_not_dvd hp]
-    rintro ⟨c, hc⟩
-    have hpos : 0 < (p ^ (f : ℕ)) ^ (i + 1) := Nat.pow_pos (Nat.pow_pos hp.pos)
-    have hdvd : p ∣ (p ^ (f : ℕ)) ^ (i + 1) := by
-      rw [← Nat.pow_mul]
-      exact dvd_pow_self p (Nat.mul_ne_zero f.pos.ne' (Nat.succ_ne_zero i))
-    rw [← Nat.sub_add_cancel hpos, hc] at hdvd
-    exact hp.ne_one (Nat.dvd_one.mp ((Nat.dvd_add_right (dvd_mul_right p c)).mp hdvd))
+    rw [← Nat.pow_mul]
+    exact Nat.coprime_pow_sub_one hp.ne_zero (Nat.mul_ne_zero f.pos.ne' (Nat.succ_ne_zero i))
   rw [finrank_gelfandGraev χ, natCard_GL_fin F (n + 1), hfq,
     ← Nat.pow_mul p (f : ℕ) ((n + 1).choose 2), Nat.ordCompl_pow_mul_of_not_dvd _ hp hindex]
 

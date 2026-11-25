@@ -15,9 +15,9 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular
 -- `AddChar.apply_eq_prod_single` decomposes the additive characters of `Fin n → R` in the proof of
 -- `existsUnique_eq_superdiagonalChar`.
 import TauCeti.Algebra.Group.AddChar.Basic
--- Non-public: `commutator_eq_superdiagonalSubgroup_two` shows that `U²` is the commutator
--- subgroup, so that every character is trivial on it, in the proof of
--- `map_superdiagonalSubgroup_two_eq_one`.
+-- Non-public: `map_superdiagonalSubgroup_two_eq_one` (every character is trivial on `U²`, the
+-- commutator subgroup) in the proofs of `existsUnique_eq_superdiagonalChar` and
+-- `exists_comp_diagGLConj_eq_of_isRegularChar`.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.Commutator
 
 /-!
@@ -35,10 +35,12 @@ to be trivial on `U²`; this holds for every character, because `U²` is the com
 `Uₙ₊₁(R)` (`TauCeti.UpperUnitriangularGroup.commutator_eq_superdiagonalSubgroup_two`), and is
 recorded in `TauCeti.UpperUnitriangularGroup.map_superdiagonalSubgroup_two_eq_one`.
 For a primitive `ψ`, the character `superdiagonalChar ψ a` is regular exactly when no coefficient
-`aᵢ` vanishes, and `ψ` separates the coefficients. Over a finite commutative ring, every character
-with values in an `RCLike` field is a `superdiagonalChar ψ a` for a primitive `ψ`, with unique
-coefficients: read through `superdiagonalHom`, this is the parametrization of the
-additive characters of a finite ring by the shifts of a primitive one. Regularity is unchanged
+`aᵢ` vanishes, and `ψ` separates the coefficients. Over a finite commutative ring, given a
+primitive additive character `ψ` with values in an `RCLike` field (which has to be supplied: it
+need not exist, as `𝔽₃` has no nontrivial additive character with values in `ℝ`), every character
+with values in that field is `superdiagonalChar ψ a` for coefficients `a` that are unique for this
+fixed `ψ`: read through `superdiagonalHom`, this is the parametrization of the additive
+characters of a finite ring by the shifts of a primitive one. Regularity is unchanged
 under composition with an injective homomorphism of commutative monoids
 (`TauCeti.UpperUnitriangularGroup.isRegularChar_comp_iff_of_injective`), so the classification of
 the regular characters also covers characters with values in the units of a commutative ring.
@@ -58,19 +60,17 @@ yields a primitive additive character when `n ≥ 1`, and `U₁(F)` is trivial.
 * `TauCeti.UpperUnitriangularGroup.superdiagonalChar`: the character
   `u ↦ ψ (∑ᵢ aᵢ uᵢ,ᵢ₊₁)` with coefficients `a`, defined for values in any monoid.
 * `TauCeti.UpperUnitriangularGroup.IsRegularChar`: characters (homomorphisms to a commutative
-  monoid) nontrivial on every simple root subgroup.
+  monoid) nontrivial on every simple root subgroup; `isRegularChar_def` unfolds it.
 * `TauCeti.UpperUnitriangularGroup.isRegularChar_comp_iff_of_injective`: regularity is unchanged
   under composition with an injective homomorphism of commutative monoids.
 * `TauCeti.UpperUnitriangularGroup.isRegularChar_superdiagonalChar_iff`: for primitive `ψ`,
   regularity means that no coefficient vanishes.
-* `TauCeti.UpperUnitriangularGroup.map_superdiagonalSubgroup_two_eq_one`: every character with
-  values in a commutative monoid is trivial on `U²`.
 * `TauCeti.UpperUnitriangularGroup.existsUnique_eq_superdiagonalChar`: over a finite commutative
-  ring with values in an `RCLike` field, every character is a `superdiagonalChar ψ a`, with
-  unique coefficients.
-* `TauCeti.UpperUnitriangularGroup.isRegularChar_iff`: over a finite commutative ring with
-  values in an `RCLike` field, the regular characters are the `superdiagonalChar ψ a` with no
-  vanishing coefficient.
+  ring, for a given primitive `ψ` with values in an `RCLike` field, every character is a
+  `superdiagonalChar ψ a`, with coefficients unique for this `ψ`.
+* `TauCeti.UpperUnitriangularGroup.isRegularChar_iff`: over a finite commutative ring, for a
+  given primitive `ψ` with values in an `RCLike` field, the regular characters are the
+  `superdiagonalChar ψ a` with no vanishing coefficient.
 * `TauCeti.UpperUnitriangularGroup.superdiagonalChar_comp_diagGLConj`: conjugation multiplies
   the `i`-th coefficient by `tᵢ tᵢ₊₁⁻¹`.
 * `TauCeti.UpperUnitriangularGroup.exists_comp_diagGLConj_eq`: the diagonal torus acts transitively
@@ -78,6 +78,15 @@ yields a primitive additive character when `n ≥ 1`, and `U₁(F)` is trivial.
 * `TauCeti.UpperUnitriangularGroup.exists_comp_diagGLConj_eq_of_isRegularChar`: over a finite
   field with values in an `RCLike` field, the diagonal torus permutes the regular characters
   transitively.
+
+## Implementation notes
+
+`superdiagonalChar` follows `TauCeti.BlockUpperUnitriangularGroup.adjacentTraceChar` in
+`TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/UpperUnitriangular/Block.lean`, the template for
+its construction as an additive character read through a homomorphism to `Multiplicative R`, and
+`superdiagonalChar_comp_diagGLConj` follows the computation
+`TauCeti.BlockUpperUnitriangularGroup.adjacentBlockTrace_blockDiagonalConj` of a conjugate under
+`TauCeti.BlockUpperUnitriangularGroup.blockDiagonalConj` there.
 
 ## References
 
@@ -96,11 +105,9 @@ universe u v w
 
 /-! ### The characters with prescribed coefficients -/
 
-section Ring
+section Semiring
 
-variable {R : Type u} [Ring R] {n : ℕ}
-
-variable {M : Type v} [Monoid M]
+variable {R : Type u} [Semiring R] {n : ℕ}
 
 /-- The linear form `b ↦ ∑ᵢ aᵢ bᵢ` on the first superdiagonal `Fin n → R`, with coefficients
 `a`. -/
@@ -111,6 +118,12 @@ def superdiagonalLinearForm (a : Fin n → R) : (Fin n → R) →+ R :=
 theorem superdiagonalLinearForm_apply (a : Fin n → R) (b : Fin n → R) :
     superdiagonalLinearForm a b = ∑ i, a i * b i := by
   simp [superdiagonalLinearForm]
+
+end Semiring
+
+section Ring
+
+variable {R : Type u} [Ring R] {n : ℕ} {M : Type v} [Monoid M]
 
 /-- The character of `Uₙ₊₁(R)` attached to an additive character `ψ` of `R` and coefficients
 `a : Fin n → R`: it sends `u` to `ψ (∑ᵢ aᵢ uᵢ,ᵢ₊₁)`, the additive character `ψ` read through
@@ -157,25 +170,18 @@ condition. -/
 def IsRegularChar (χ : upperUnitriangularGroup (Fin (n + 1)) R →* M) : Prop :=
   ∀ i : Fin n, ∃ c : R, χ (transvection i.castSucc_lt_succ c) ≠ 1
 
+/-- A character is regular when, for every simple positive root, some element of its root
+subgroup is sent to a value other than `1`. -/
+theorem isRegularChar_def {χ : upperUnitriangularGroup (Fin (n + 1)) R →* M} :
+    IsRegularChar χ ↔ ∀ i : Fin n, ∃ c : R, χ (transvection i.castSucc_lt_succ c) ≠ 1 :=
+  Iff.rfl
+
 /-- Composing a character with an injective homomorphism of commutative monoids, such as the
 inclusion of the units of a commutative ring, preserves regularity. -/
 theorem isRegularChar_comp_iff_of_injective {N : Type w} [CommMonoid N] {f : M →* N}
     (hf : Function.Injective f) (χ : upperUnitriangularGroup (Fin (n + 1)) R →* M) :
     IsRegularChar (f.comp χ) ↔ IsRegularChar χ := by
   simp only [IsRegularChar, MonoidHom.comp_apply, map_ne_one_iff f hf]
-
-/-- Every character of `Uₙ₊₁(R)` is trivial on `U²`: `U²` is the commutator subgroup of
-`Uₙ₊₁(R)`, and through its units a character is a homomorphism to a commutative group. -/
-theorem map_superdiagonalSubgroup_two_eq_one
-    (χ : upperUnitriangularGroup (Fin (n + 1)) R →* M)
-    {g : upperUnitriangularGroup (Fin (n + 1)) R} (hg : g ∈ superdiagonalSubgroup 2) : χ g = 1 := by
-  -- `U²` is the commutator subgroup of `Uₙ₊₁(R)`, which lies in the kernel of `χ.toHomUnits`
-  have hmem : g ∈ commutator (upperUnitriangularGroup (Fin (n + 1)) R) := by
-    rw [commutator_eq_superdiagonalSubgroup_two]
-    exact hg
-  simpa only [MonoidHom.coe_toHomUnits, Units.val_one] using
-    congrArg Units.val
-      (MonoidHom.mem_ker.1 (Group.Abelianization.commutator_le_ker χ.toHomUnits hmem))
 
 end
 
@@ -216,9 +222,10 @@ section RCLike
 
 variable {R : Type u} [CommRing R] [Finite R] {n : ℕ} {M : Type v} [RCLike M]
 
-/-- **Every character is a character with coefficients.** Over a finite commutative ring, with
-values in an `RCLike` field, a character of `Uₙ₊₁(R)` equals `superdiagonalChar ψ a` for a
-primitive additive character `ψ` and a unique tuple of coefficients `a`. -/
+/-- **Every character is a character with coefficients.** Over a finite commutative ring, let `ψ`
+be a given primitive additive character with values in an `RCLike` field. Then every character of
+`Uₙ₊₁(R)` with values in that field equals `superdiagonalChar ψ a` for a tuple of coefficients `a`
+that is unique for this fixed `ψ`. -/
 theorem existsUnique_eq_superdiagonalChar {ψ : AddChar R M} (hψ : ψ.IsPrimitive)
     (χ : upperUnitriangularGroup (Fin (n + 1)) R →* M) :
     ∃! a : Fin n → R, χ = superdiagonalChar ψ a := by
