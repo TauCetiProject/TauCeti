@@ -663,6 +663,12 @@ theorem toMoorePath_lengthLevelHomeomorph_symm_apply {L : ℝ≥0} (hL : 0 < L) 
     ((lengthLevelHomeomorph x hL).symm c).val.toMoorePath = c.toMoorePath.rescale L :=
   toMoorePath_posLengthHomeomorph_symm_apply (⟨L, hL⟩, c)
 
+/-- The inverse of `lengthLevelHomeomorph` at `c` has underlying path `c`. -/
+@[simp]
+theorem toPath_lengthLevelHomeomorph_symm_apply {L : ℝ≥0} (hL : 0 < L) (c : Path x x) :
+    ((lengthLevelHomeomorph x hL).symm c).val.toPath = c :=
+  toPath_posLengthHomeomorph_symm_apply _
+
 /-- Reparametrizing to the unit interval commutes with the Moore loop map of a continuous map. -/
 @[simp]
 theorem toPath_map {Y : Type*} [TopologicalSpace Y] (f : C(X, Y)) (γ : MooreLoopSpace X x) :

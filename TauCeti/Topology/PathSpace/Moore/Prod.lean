@@ -262,6 +262,7 @@ theorem prodContinuousMulEquiv_symm_apply (p : lengthEqLocus x y) :
 
 /-- The product of Moore loops is multiplicative: concatenating products of loops of equal length
 concatenates their components. -/
+@[simp]
 theorem prod_mul_prod (γ γ' : MooreLoopSpace X x) (δ δ' : MooreLoopSpace Y y)
     (h : γ.length = δ.length) (h' : γ'.length = δ'.length) :
     γ.prod δ h * γ'.prod δ' h' =
