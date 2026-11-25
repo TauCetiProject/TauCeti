@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.WrappedCauchy.Density
+public import TauCeti.Probability.Moments.IntegrableExpMul
 public import TauCeti.Probability.Quantile
 public import TauCeti.Probability.Distributions.Dirac
 import TauCeti.MeasureTheory.Measure.AddCircle
@@ -100,16 +101,12 @@ theorem ae_mem_Ico_wrappedCauchyAngleMeasure (m : AddCircle (2 * π)) (γ : ℝ�
 
 /-- Every exponential moment of the fixed-chart wrapped Cauchy angle exists. -/
 @[simp]
-theorem integrableExpSet_id_wrappedCauchyAngleMeasure (m : AddCircle (2 * π)) (γ : ℝ≥0) :
+theorem _root_.AddCircle.integrableExpSet_id_wrappedCauchyAngleMeasure
+    (m : AddCircle (2 * π)) (γ : ℝ≥0) :
     integrableExpSet id (wrappedCauchyAngleMeasure m γ) = univ := by
-  apply eq_univ_of_forall
-  intro t
-  simp only [integrableExpSet, mem_ofPred_eq, id_eq]
-  have hbound : ∀ᵐ x ∂wrappedCauchyAngleMeasure m γ, x ∈ Icc (-π) π := by
-    filter_upwards [ae_mem_Ico_wrappedCauchyAngleMeasure m γ] with x hx
-    exact ⟨hx.1, hx.2.le⟩
-  exact integrable_exp_mul_of_mem_Icc measurable_id.aemeasurable
-    hbound
+  apply TauCeti.integrableExpSet_eq_univ_of_mem_Icc measurable_id.aemeasurable
+  exact (ae_mem_Ico_wrappedCauchyAngleMeasure m γ).mono
+    fun _ hx ↦ Set.Ico_subset_Icc_self hx
 
 /-- At positive scale the angle law has no atoms. -/
 theorem nullSingletonClass_wrappedCauchyAngleMeasure (hγ : 0 < γ) :

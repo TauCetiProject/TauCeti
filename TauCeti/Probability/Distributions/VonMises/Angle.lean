@@ -6,9 +6,8 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.VonMises.Basic
+public import TauCeti.Probability.Moments.IntegrableExpMul
 public import TauCeti.Probability.Quantile
-public import Mathlib.Probability.Moments.IntegrableExpMul
-import Mathlib.Probability.Moments.Basic
 import TauCeti.MeasureTheory.Measure.AddCircle
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
@@ -94,17 +93,14 @@ theorem ae_mem_Ico_vonMisesAngleMeasure (m : AddCircle (2 * π)) (κ : ℝ) :
 
 /-- Every exponential moment of the fixed-chart von Mises angle exists. -/
 @[simp]
-theorem integrableExpSet_id_vonMisesAngleMeasure (m : AddCircle (2 * π)) (κ : ℝ) :
+theorem _root_.AddCircle.integrableExpSet_id_vonMisesAngleMeasure
+    (m : AddCircle (2 * π)) (κ : ℝ) :
     integrableExpSet id (vonMisesAngleMeasure m κ) = univ := by
   by_cases hκ : 0 ≤ κ
   · let _ := isProbabilityMeasure_vonMisesAngleMeasure m hκ
-    apply eq_univ_of_forall
-    intro t
-    simp only [integrableExpSet, mem_ofPred_eq, id_eq]
-    have hbound : ∀ᵐ x ∂vonMisesAngleMeasure m κ, x ∈ Icc (-π) π := by
-      filter_upwards [ae_mem_Ico_vonMisesAngleMeasure m κ] with x hx
-      exact ⟨hx.1, hx.2.le⟩
-    exact integrable_exp_mul_of_mem_Icc measurable_id.aemeasurable hbound
+    apply TauCeti.integrableExpSet_eq_univ_of_mem_Icc measurable_id.aemeasurable
+    exact (ae_mem_Ico_vonMisesAngleMeasure m κ).mono
+      fun _ hx ↦ Set.Ico_subset_Icc_self hx
   · rw [vonMisesAngleMeasure_of_neg (lt_of_not_ge hκ)]
     simp [integrableExpSet]
 
