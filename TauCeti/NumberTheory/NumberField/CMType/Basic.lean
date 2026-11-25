@@ -130,6 +130,11 @@ theorem coe_ofPair (φ : E →+* ℂ) (hφ : star φ ≠ φ) (h : ∀ ψ : E →
     (ofPair φ hφ h : Set (E →+* ℂ)) = {φ} :=
   (rfl)
 
+@[simp]
+theorem mem_ofPair {φ : E →+* ℂ} {hφ : star φ ≠ φ} {h : ∀ ψ : E →+* ℂ, ψ = φ ∨ ψ = star φ}
+    {ψ : E →+* ℂ} : ψ ∈ ofPair φ hφ h ↔ ψ = φ :=
+  Iff.rfl
+
 /-- **Existence of CM types.** A commutative ring carries a CM type exactly when no complex
 embedding is its own conjugate: choose one embedding from each conjugate pair. -/
 theorem nonempty_iff : Nonempty (CMType E) ↔ ∀ φ : E →+* ℂ, star φ ≠ φ := by
