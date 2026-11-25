@@ -111,16 +111,8 @@ theorem tensorStalkComparison_bijective :
     R x).symm.bijective.comp
   -- The linear stalk map is the underlying additive stalk map of the defining tensor
   -- isomorphism, so it is bijective because the stalk functor preserves isomorphisms.
-  have h : (PresheafOfModules.stalkMapCommRing (S := R.obj) x
-      (tensorProductIso R M N).hom.val : _ → _) =
-      (TopCat.Presheaf.stalkFunctor AddCommGrpCat x).map
-        ((PresheafOfModules.toPresheaf _).map (tensorProductIso R M N).hom.val) := by
-    funext t
-    obtain ⟨U, hx, t, rfl⟩ :=
-      TopCat.Presheaf.exists_germ_eq (tensorProduct R M N).val.presheaf t
-    erw [PresheafOfModules.stalkMapCommRing_germ,
-      TopCat.Presheaf.stalkFunctor_map_germ_apply]
-    rfl
+  have h := PresheafOfModules.coe_stalkMapCommRing (S := R.obj) x
+    (tensorProductIso R M N).hom.val
   have : IsIso (tensorProductIso R M N).hom.val :=
     inferInstanceAs (IsIso ((_root_.SheafOfModules.forget _).map
       (tensorProductIso R M N).hom))

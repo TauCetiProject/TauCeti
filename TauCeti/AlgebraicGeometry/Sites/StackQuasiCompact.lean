@@ -87,14 +87,12 @@ private lemma exists_finite_affine_refinement {P : MorphismProperty Scheme.{u}}
     ∃ (𝒱 : Scheme.AffineCover.{u} P (Spec R)) (_ : 𝒱.cover ⟶ 𝒰.forgetQc)
       (_ : Finite 𝒱.I₀),
       (∀ i, IsAffine ((Cover.ofQuasiCompactCover 𝒱.cover).X i)) ∧
-        Finite (Cover.ofQuasiCompactCover 𝒱.cover).I₀ ∧ Finite 𝒱.cover.I₀ := by
+        Finite (Cover.ofQuasiCompactCover 𝒱.cover).I₀ := by
   obtain ⟨𝒱, f, hfin, _⟩ := QuasiCompactCover.exists_hom 𝒰.forgetQc
-  refine ⟨𝒱, f, hfin, ?_, ?_, ?_⟩
+  refine ⟨𝒱, f, hfin, ?_, ?_⟩
   · rw [Cover.ofQuasiCompactCover_toPreZeroHypercover]
     exact fun _ ↦ inferInstanceAs (IsAffine (Spec _))
   · rw [Cover.ofQuasiCompactCover_toPreZeroHypercover, AffineCover.cover_I₀]
-    exact hfin
-  · rw [AffineCover.cover_I₀]
     exact hfin
 
 variable {P : MorphismProperty Scheme.{u}} [P.IsStableUnderBaseChange]
@@ -125,11 +123,12 @@ theorem isPrestack_propQCTopology_iff (F : LocallyDiscrete Scheme.{u}ᵒᵖ ⥤�
         (T.exists_spec_affineOneHypercover_Y k)).hom_ext h
   obtain ⟨R, rfl⟩ := hT
   wlog h𝒰 : (∀ i, IsAffine (𝒰.X i)) ∧ Finite 𝒰.I₀ generalizing R 𝒰
-  · obtain ⟨𝒱, f, _, haff', hfin', hfin⟩ := exists_finite_affine_refinement 𝒰
+  · obtain ⟨𝒱, f, _, haff', hfin'⟩ := exists_finite_affine_refinement 𝒰
     have hpull {V : Scheme.{u}} (h : V ⟶ Spec R) (hV : ∃ A : CommRingCat.{u}, V = Spec A) :
         F.IsPrestackFor ((Sieve.ofArrows 𝒱.cover.X 𝒱.cover.f).pullback h).arrows := by
       obtain ⟨A, rfl⟩ := hV
-      have _ := hfin
+      -- `isPrestackFor_pullback₂_of_isAffine` requires `Finite 𝒱.cover.I₀` as an instance.
+      have hfin : Finite 𝒱.cover.I₀ := by rw [AffineCover.cover_I₀]; infer_instance
       have hs : (Sieve.ofArrows 𝒱.cover.X 𝒱.cover.f).pullback h =
           Sieve.generate (𝒱.cover.pullback₂ h).presieve₀ := by
         simpa only [Sieve.ofArrows, PreZeroHypercover.presieve₀] using
@@ -150,10 +149,9 @@ theorem isPrestack_propQCTopology_iff (F : LocallyDiscrete Scheme.{u}ᵒᵖ ⥤�
   obtain ⟨S, φ, hP, hsurj, hsieve⟩ := 𝒰.forgetQc.exists_specMap_sigma_sieve
     (by simpa only [Cover.forgetQc_toPreZeroHypercover] using h𝒰.1)
     (by simpa only [Cover.forgetQc_toPreZeroHypercover] using h𝒰.2)
+  simp only [Cover.forgetQc_toPreZeroHypercover] at hsieve
   have hp : F.IsPrestackFor (.ofArrows (fun _ : PUnit.{1} ↦ ∐ 𝒰.X) (fun _ ↦ Sigma.desc 𝒰.f)) := by
-    rw [Presieve.ofArrows_pUnit, ← IsPrestackFor_generate_iff]
-    change F.IsPrestackFor (Sieve.generate (.singleton (Sigma.desc 𝒰.forgetQc.f))).arrows
-    rw [hsieve, IsPrestackFor_generate_iff]
+    rw [Presieve.ofArrows_pUnit, ← IsPrestackFor_generate_iff, hsieve, IsPrestackFor_generate_iff]
     exact hff φ hP hsurj
   have hcomp := hp.comp (fun _ i ↦ Sigma.ι 𝒰.X i)
     (fun _ ↦ (sigmaOpenCover 𝒰.X).mem_grothendieckTopology)
@@ -184,17 +182,16 @@ theorem isStack_propQCTopology_iff (F : LocallyDiscrete Scheme.{u}ᵒᵖ ⥤ᵖ 
     exact this _ (𝒰.pullback₂ (T.affineCover.f a)) (T.exists_spec_affineCover_X a)
   obtain ⟨R, rfl⟩ := hT
   wlog h𝒰 : (∀ i, IsAffine (𝒰.X i)) ∧ Finite 𝒰.I₀ generalizing R 𝒰
-  · obtain ⟨𝒱, f, _, haff', hfin', -⟩ := exists_finite_affine_refinement 𝒰
+  · obtain ⟨𝒱, f, _, haff', hfin'⟩ := exists_finite_affine_refinement 𝒰
     have h𝒱 := this R (.ofQuasiCompactCover 𝒱.cover) ⟨haff', hfin'⟩
     rw [← IsStackFor_generate_iff] at h𝒱 ⊢
     exact h𝒱.of_le' F 𝒱.cover.mem_propQCTopology f.sieve₀_le_sieve₀
   obtain ⟨S, φ, hP, hsurj, hsieve⟩ := 𝒰.forgetQc.exists_specMap_sigma_sieve
     (by simpa only [Cover.forgetQc_toPreZeroHypercover] using h𝒰.1)
     (by simpa only [Cover.forgetQc_toPreZeroHypercover] using h𝒰.2)
+  simp only [Cover.forgetQc_toPreZeroHypercover] at hsieve
   have hp : F.IsStackFor (.ofArrows (fun _ : PUnit.{1} ↦ ∐ 𝒰.X) (fun _ ↦ Sigma.desc 𝒰.f)) := by
-    rw [Presieve.ofArrows_pUnit, ← IsStackFor_generate_iff]
-    change F.IsStackFor (Sieve.generate (.singleton (Sigma.desc 𝒰.forgetQc.f))).arrows
-    rw [hsieve, IsStackFor_generate_iff]
+    rw [Presieve.ofArrows_pUnit, ← IsStackFor_generate_iff, hsieve, IsStackFor_generate_iff]
     exact hff φ hP hsurj
   have hcomp := hp.comp (J := Scheme.zariskiTopology) (fun _ i ↦ Sigma.ι 𝒰.X i)
     (fun _ ↦ (sigmaOpenCover 𝒰.X).mem_grothendieckTopology)

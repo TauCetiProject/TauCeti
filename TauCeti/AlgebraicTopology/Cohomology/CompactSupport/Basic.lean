@@ -41,7 +41,8 @@ along proper maps (`TopCat.compactSupportCohomologyMap`).
   `TopCat.compactSupportCohomologyDesc`.
 * `TopCat.exists_compactSupportCohomologyι_eq` and `TopCat.compactSupportCohomologyι_eq_zero_iff`:
   the description of the elements of the filtered colimit.
-* `TopCat.compactSupportCohomologyIsoOfCompactSpace`: `Hⁿ_c(X) ≅ Hⁿ(X)` for compact `X`.
+* `TopCat.compactSupportCohomologyIsoOfCompactSpace`: `Hⁿ_c(X) ≅ Hⁿ(X)` for compact `X`, and
+  `TopCat.isZero_compactSupportCohomology_of_isEmpty`: `Hⁿ_c(∅) = 0`.
 * `TopCat.compactSupportCohomologyMap`: the pullback `f^* : Hⁿ_c(Y) ⟶ Hⁿ_c(X)` along a proper map,
   with `TopCat.compactSupportCohomologyMap_id` and `TopCat.compactSupportCohomologyMap_comp`.
 
@@ -233,6 +234,13 @@ lemma compactSupportCohomologyι_compactSupportCohomologyIsoOfCompactSpace_hom [
   -- because the target of `singularCohomologyπ` is the cohomology of `(TopPair.ofSubset _).fst`,
   -- which is `X` only after unfolding, so instance search does not find it.
   rfl
+
+variable (R k M) in
+/-- The empty space has no cohomology with compact supports: `Hⁿ_c(∅) ≅ Hⁿ(∅, ∅) = 0`. -/
+lemma isZero_compactSupportCohomology_of_isEmpty [IsEmpty X] (n : ℕ) :
+    IsZero (X.compactSupportCohomology R k M n) :=
+  (TopPair.isZero_singularCohomology_of_surjective_map _ R k M (fun x ↦ isEmptyElim (α := X) x)
+    n).of_iso (asIso (compactSupportCohomologyι n ⊤)).symm
 
 /-! ### Pullback along proper maps -/
 

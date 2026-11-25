@@ -39,7 +39,9 @@ base-change arguments to open affinoid charts.
   `TauCeti.AdicSpace.isOpenImmersion_fst_of_isPullback`,
   `TauCeti.AdicSpace.isOpenImmersion_pullback_snd_of_left`,
   `TauCeti.AdicSpace.isOpenImmersion_pullback_fst_of_right`: open immersions are stable under base
-  change in `AdicSpace`.
+  change in `AdicSpace`, with images
+  `TauCeti.AdicSpace.range_pullback_snd_of_isOpenImmersion_left` and
+  `TauCeti.AdicSpace.range_pullback_fst_of_isOpenImmersion_right`.
 
 ## References
 
@@ -62,26 +64,8 @@ and `Y.ofRestrict (g⁻¹(V))`. -/
 theorem isPullback_restrictPreimage (g : Y ⟶ S) (V : Opens S.obj) :
     IsPullback (restrictPreimage g V) (Y.ofRestrict ((Opens.map g.hom.base).obj V))
       (S.ofRestrict V) g := by
-  refine { w := restrictPreimage_ofRestrict g V
-           isLimit' := ⟨PullbackCone.isLimitAux' _ fun s ↦ ?_⟩ }
-  have hrange : Set.range s.snd.hom.base ⊆
-      Set.range (Y.obj.ofRestrict ((Opens.map g.hom.base).obj V).isOpenEmbedding).base := by
-    rintro _ ⟨w, rfl⟩
-    have hw : (s.fst ≫ S.ofRestrict V).hom.base w = (s.snd ≫ g).hom.base w :=
-      congrArg (fun k : s.pt ⟶ S ↦ k.hom.base w) s.condition
-    simp only [ObjectProperty.FullSubcategory.comp_hom, PreAdicSpace.comp_base, ofRestrict_base,
-      TopCat.coe_comp, Function.comp_apply] at hw
-    exact ⟨⟨s.snd.hom.base w, Opens.mem_map.mpr (hw ▸ (s.fst.hom.base w).property)⟩, rfl⟩
-  let m : s.pt ⟶ Y.restrict ((Opens.map g.hom.base).obj V) :=
-    ObjectProperty.homMk (PreAdicSpace.IsOpenImmersion.lift _ s.snd.hom hrange)
-  have hm₂ : m ≫ Y.ofRestrict ((Opens.map g.hom.base).obj V) = s.snd := by
-    ext1
-    rw [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom, ofRestrict_hom]
-    exact PreAdicSpace.IsOpenImmersion.lift_fac _ _ _
-  have hm₁ : m ≫ restrictPreimage g V = s.fst := by
-    rw [← cancel_mono (S.ofRestrict V), Category.assoc, restrictPreimage_ofRestrict,
-      ← Category.assoc, hm₂, s.condition]
-  exact ⟨m, hm₁, hm₂, fun {m'} _ h₂ ↦ (cancel_mono (Y.ofRestrict _)).mp (h₂.trans hm₂.symm)⟩
+  refine isPullback_of_isOpenImmersion _ _ _ _ (restrictPreimage_ofRestrict g V) ?_
+  rw [range_ofRestrict, range_ofRestrict, Opens.map_coe]
 
 /-- **Restricting a pullback square in `AdicSpace` to a product of open subspaces**: the open
 subspace `Z|_{p⁻¹(U) ∩ q⁻¹(W)}` of the vertex `Z` of a pullback square `IsPullback p q f g` is a
@@ -108,7 +92,7 @@ theorem isPullback_restrict_inf_of_isPullback
   let l : s.pt ⟶ Z := hs.lift (s.fst ≫ X.ofRestrict U) (s.snd ≫ Y.ofRestrict W) hcond
   have hl₁ : l ≫ p = s.fst ≫ X.ofRestrict U := hs.lift_fst _ _ hcond
   have hl₂ : l ≫ q = s.snd ≫ Y.ofRestrict W := hs.lift_snd _ _ hcond
-  have hrange : Set.range l.hom.base ⊆ Set.range (Z.obj.ofRestrict O.isOpenEmbedding).base := by
+  have hrange : Set.range l.hom.base ⊆ Set.range (Z.ofRestrict O).hom.base := by
     rintro _ ⟨w, rfl⟩
     have hw₁ := congrArg (fun k : s.pt ⟶ X ↦ k.hom.base w) hl₁
     have hw₂ := congrArg (fun k : s.pt ⟶ Y ↦ k.hom.base w) hl₂
@@ -117,13 +101,10 @@ theorem isPullback_restrict_inf_of_isPullback
     have hmem : l.hom.base w ∈ O :=
       ⟨Opens.mem_map.mpr (hw₁.symm ▸ (s.fst.hom.base w).property),
         Opens.mem_map.mpr (hw₂.symm ▸ (s.snd.hom.base w).property)⟩
-    exact ⟨⟨l.hom.base w, hmem⟩, rfl⟩
-  let m : s.pt ⟶ Z.restrict O :=
-    ObjectProperty.homMk (PreAdicSpace.IsOpenImmersion.lift _ l.hom hrange)
-  have hmZ : m ≫ Z.ofRestrict O = l := by
-    ext1
-    rw [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom, ofRestrict_hom]
-    exact PreAdicSpace.IsOpenImmersion.lift_fac _ _ _
+    rw [range_ofRestrict]
+    exact hmem
+  let m : s.pt ⟶ Z.restrict O := liftOfIsOpenImmersion (Z.ofRestrict O) l hrange
+  have hmZ : m ≫ Z.ofRestrict O = l := liftOfIsOpenImmersion_fac _ _ _
   have hm₁ : m ≫ p_O = s.fst := by
     rw [← cancel_mono (X.ofRestrict U), Category.assoc, liftRestrict_ofRestrict,
       ← Category.assoc, hmZ, hl₁]
@@ -216,5 +197,28 @@ instance isOpenImmersion_pullback_snd_of_left (i : X ⟶ S) [PreAdicSpace.IsOpen
 instance isOpenImmersion_pullback_fst_of_right (f : X ⟶ S) (i : Y ⟶ S)
     [PreAdicSpace.IsOpenImmersion i.hom] : PreAdicSpace.IsOpenImmersion (pullback.fst f i).hom :=
   isOpenImmersion_fst_of_isPullback (.of_hasPullback f i)
+
+/-- The image of the base change of an open immersion `i` along `f` is the preimage under `f` of
+the image of `i`. -/
+theorem range_pullback_snd_of_isOpenImmersion_left (i : X ⟶ S) [PreAdicSpace.IsOpenImmersion i.hom]
+    (f : Y ⟶ S) :
+    Set.range (pullback.snd i f).hom.base = f.hom.base ⁻¹' Set.range i.hom.base := by
+  have h : IsPullback (pullback.fst i f).hom (pullback.snd i f).hom i.hom f.hom :=
+    (IsPullback.of_hasPullback i f).map (ObjectProperty.ι PreAdicSpace.isAdic)
+  rw [← h.isoPullback_hom_snd, PreAdicSpace.comp_base, TopCat.coe_comp,
+    Function.Surjective.range_comp ?_,
+    PreAdicSpace.IsOpenImmersion.range_pullback_snd_of_left]
+  exact (TopCat.homeoOfIso (PreAdicSpace.forgetToTop.mapIso _)).surjective
+
+/-- The image of the base change of an open immersion `i` along `f` is the preimage under `f` of
+the image of `i`. -/
+theorem range_pullback_fst_of_isOpenImmersion_right (f : X ⟶ S) (i : Y ⟶ S)
+    [PreAdicSpace.IsOpenImmersion i.hom] :
+    Set.range (pullback.fst f i).hom.base = f.hom.base ⁻¹' Set.range i.hom.base := by
+  rw [← pullbackSymmetry_hom_comp_snd, ObjectProperty.FullSubcategory.comp_hom,
+    PreAdicSpace.comp_base, TopCat.coe_comp, Function.Surjective.range_comp ?_,
+    range_pullback_snd_of_isOpenImmersion_left]
+  exact (TopCat.homeoOfIso (PreAdicSpace.forgetToTop.mapIso
+    ((ObjectProperty.ι PreAdicSpace.isAdic).mapIso (pullbackSymmetry f i)))).surjective
 
 end TauCeti.AdicSpace

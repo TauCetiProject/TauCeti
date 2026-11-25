@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Operator.Prod
 public import Mathlib.Analysis.RCLike.Basic
+import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.Normed.Operator.NNNorm
+import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Analysis.Normed.Operator.Prod
 
 /-!
@@ -21,6 +23,11 @@ bound on a ball into a bound on the norm of the separating functional. Similarly
 the real part of `f` exceeds `r * ‖x‖` at some point `x` if and only if `r < ‖f‖`. Applying
 `re_apply_add_mul_norm_le_iff` on unit balls of two factors gives the `ℓ¹` norm identity
 `‖Ψ ∘ inl‖ + ‖Ψ ∘ inr‖ = ‖Ψ‖` on `ℓ^∞` products `E × F`.
+
+Rotating a vector by a unit scalar turns `f x` into the nonnegative real `‖f x‖`. So a
+functional attains its norm on the closed unit ball exactly when its real part takes the value
+`‖f‖` there, and exactly when its real part has a maximum there. Real parts of functionals also
+commute with real-weighted series of a bounded family.
 
 For `0 < c`, the scaled Fenchel–Young inequality `2 re (f x) ≤ ‖f‖ ^ 2 / c + c ‖x‖ ^ 2` bounds the
 real part of `f` at every point, and it determines the dual norm: `‖f‖ ^ 2 / c` is the supremum of
@@ -36,6 +43,11 @@ real part of `f` at every point, and it determines the dual norm: `‖f‖ ^ 2 /
 * `StrongDual.norm_comp_inl_add_norm_comp_inr`: on `E × F` over `RCLike` scalars, the operator
   norm of `Ψ` equals the sum of the norms of its restrictions `Ψ.comp (.inl 𝕜 E F)` and
   `Ψ.comp (.inr 𝕜 E F)`.
+* `StrongDual.exists_norm_le_one_re_apply_eq_norm_iff`,
+  `StrongDual.exists_isMaxOn_re_apply_closedBall_iff`: a functional attains its norm on the
+  closed unit ball exactly when its real part takes the value `‖f‖`, or has a maximum, there.
+* `StrongDual.hasSum_mul_re_apply`: the real part of a functional applied to a real-weighted
+  series of a bounded family.
 * `StrongDual.two_mul_re_apply_le`: the scaled Fenchel–Young inequality.
 * `StrongDual.sq_norm_div_le_of_forall`: an upper bound on `2 re (f x) - c ‖x‖ ^ 2` for all `x`
   bounds `‖f‖ ^ 2 / c`.
@@ -116,6 +128,49 @@ theorem norm_comp_inl_add_norm_comp_inr [SeminormedAddCommGroup F] [NormedSpace 
     rw [map_zero, map_zero, zero_add, one_mul] at h0; linarith
   have h0 := (re_apply_add_mul_norm_le_iff (f := f₁) (x := 0) zero_le_one).2 h₁
   rw [map_zero, map_zero, zero_add, one_mul] at h0; linarith
+
+/-- A rotation `y` of `x`, of the same norm, on which `f` takes the nonnegative real value
+`‖f x‖`. -/
+theorem exists_norm_eq_apply_eq_norm_apply (f : StrongDual 𝕜 E) (x : E) :
+    ∃ y : E, ‖y‖ = ‖x‖ ∧ f y = ‖f x‖ := by
+  obtain ⟨a, ha, hax⟩ := exists_norm_eq_mul_self (f x)
+  exact ⟨a • x, by rw [norm_smul, ha, one_mul], by rw [map_smul, smul_eq_mul, hax]⟩
+
+/-- A functional attains its norm on the closed unit ball exactly when its real part takes the
+value `‖f‖` there. -/
+theorem exists_norm_le_one_re_apply_eq_norm_iff {f : StrongDual 𝕜 E} :
+    (∃ x : E, ‖x‖ ≤ 1 ∧ re (f x) = ‖f‖) ↔ ∃ x : E, ‖x‖ ≤ 1 ∧ ‖f x‖ = ‖f‖ := by
+  refine ⟨fun ⟨x, hx, h⟩ ↦ ⟨x, hx, (f.unit_le_opNorm x hx).antisymm
+    (h.symm.trans_le (re_le_norm _))⟩, fun ⟨x, hx, h⟩ ↦ ?_⟩
+  obtain ⟨y, hy, hfy⟩ := f.exists_norm_eq_apply_eq_norm_apply x
+  exact ⟨y, hy ▸ hx, by rw [hfy, ofReal_re, h]⟩
+
+/-- A functional attains its norm on the closed unit ball exactly when its real part has a maximum
+there. -/
+theorem exists_isMaxOn_re_apply_closedBall_iff {f : StrongDual 𝕜 E} :
+    (∃ x ∈ closedBall (0 : E) 1, IsMaxOn (fun y ↦ re (f y)) (closedBall 0 1) x) ↔
+      ∃ x : E, ‖x‖ ≤ 1 ∧ ‖f x‖ = ‖f‖ := by
+  rw [← exists_norm_le_one_re_apply_eq_norm_iff]
+  refine ⟨fun ⟨x, hx, hmax⟩ ↦ ⟨x, mem_closedBall_zero_iff.1 hx, ?_⟩, fun ⟨x, hx, h⟩ ↦
+    ⟨x, mem_closedBall_zero_iff.2 hx, isMaxOn_iff.2 fun y hy ↦ h ▸ (re_le_norm _).trans
+      (f.unit_le_opNorm y (mem_closedBall_zero_iff.1 hy))⟩⟩
+  -- `re (f x)` bounds `re ∘ f` on the closed unit ball, so it is at least `‖f‖`.
+  refine ((re_le_norm _).trans (f.unit_le_opNorm x (mem_closedBall_zero_iff.1 hx))).antisymm ?_
+  simpa using (re_apply_add_mul_norm_le_iff (f := f) (x := 0) zero_le_one).2
+    fun y hy ↦ isMaxOn_iff.1 hmax y hy
+
+/-- The real part of a functional `L` commutes with a real-weighted series `∑' i, w i • h i` of a
+bounded family `h`. -/
+theorem hasSum_mul_re_apply {ι : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [CompleteSpace F] (L : StrongDual 𝕜 F) {w : ι → ℝ} (hw : Summable w) {h : ι → F} {C : ℝ}
+    (hC : ∀ i, ‖h i‖ ≤ C) :
+    HasSum (fun i ↦ w i * re (L (h i))) (re (L (∑' i, (w i : 𝕜) • h i))) := by
+  have hs : Summable fun i ↦ (w i : 𝕜) • h i :=
+    Summable.of_norm_bounded (hw.abs.mul_right C) fun i ↦ by
+      rw [norm_smul, norm_ofReal]
+      exact mul_le_mul_of_nonneg_left (hC i) (abs_nonneg _)
+  simpa only [map_smul, smul_eq_mul, reCLM_apply, re_ofReal_mul] using
+    reCLM.hasSum (L.hasSum hs.hasSum)
 
 /-- The scaled Fenchel–Young inequality `2 re (f x) ≤ ‖f‖ ^ 2 / c + c ‖x‖ ^ 2` for `0 < c`. -/
 theorem two_mul_re_apply_le (f : StrongDual 𝕜 E) (x : E) {c : ℝ} (hc : 0 < c) :

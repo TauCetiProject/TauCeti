@@ -78,6 +78,8 @@ there.
   `ℓ² / (m κ + ‖A‖) ≤ ‖q‖` along a Kepler motion.
 * `TauCeti.norm_rungeLenz_sq`: `‖A‖² = (m κ)² + 2 m H (‖q‖² ‖p‖² - ⟪q, p⟫²)`.
 * `TauCeti.norm_rungeLenz_sq_of_orthonormalBasis`: in the plane, `‖A‖² = (m κ)² + 2 m H L²`.
+* `TauCeti.rungeLenz_ne_zero_iff_lt_centralForceHamiltonian`: in the plane, for `m > 0` and
+  `L ≠ 0`, `A ≠ 0` exactly when `H > -m κ² / (2 L²)`.
 * `TauCeti.norm_fst_mul_add_norm_rungeLenz_mul_cos_angle`: the orbit equation
   `‖q‖ (m κ + ‖A‖ cos φ) = ℓ²`.
 * `TauCeti.norm_rungeLenz_eq_abs_mul_sqrt`: `‖A‖ = |m κ| √(1 + 2 H ℓ² / (m κ²))`.
@@ -270,6 +272,25 @@ theorem norm_rungeLenz_sq_of_orthonormalBasis {m : ℝ} (hm : m ≠ 0) (κ : ℝ
     ‖rungeLenz m κ x‖ ^ 2 = (m * κ) ^ 2 + 2 * m * centralForceHamiltonian m (fun r ↦ -κ / r) x *
       angularMomentum (b 0) (b 1) x ^ 2 := by
   rw [norm_rungeLenz_sq hm κ hq, sq_angularMomentum]
+
+/-- **Where the Runge–Lenz vector vanishes.** Off the collision set, for `m > 0` and nonzero
+angular momentum `L`, the Runge–Lenz vector is nonzero exactly when the energy exceeds
+`-m κ² / (2 L²)`. For `κ > 0` this threshold is the energy of the circular orbit with angular
+momentum `L`. -/
+theorem rungeLenz_ne_zero_iff_lt_centralForceHamiltonian {m κ : ℝ} (hm : 0 < m) {x : V × V}
+    (hq : x.1 ≠ 0) (hL : angularMomentum (b 0) (b 1) x ≠ 0) :
+    rungeLenz m κ x ≠ 0 ↔ -(m * κ ^ 2) / (2 * angularMomentum (b 0) (b 1) x ^ 2) <
+      centralForceHamiltonian m (fun r ↦ -κ / r) x := by
+  have hn := norm_rungeLenz_sq_of_orthonormalBasis b hm.ne' κ hq
+  set H := centralForceHamiltonian m (fun r ↦ -κ / r) x
+  set L := angularMomentum (b 0) (b 1) x
+  -- Both sides say that `‖A‖² = m (m κ² + 2 H L²)` is positive.
+  have hprod : ‖rungeLenz m κ x‖ ^ 2 = m * (m * κ ^ 2 + H * (2 * L ^ 2)) := by
+    rw [hn]
+    ring
+  rw [div_lt_iff₀ (by positivity), ← norm_ne_zero_iff, ← sq_pos_iff, hprod,
+    mul_pos_iff_of_pos_left hm]
+  constructor <;> intro h <;> linarith
 
 /-- The first planar component of the Runge–Lenz vector is `p₂ L - m κ q₁ / ‖q‖`. -/
 theorem inner_rungeLenz_orthonormalBasis_zero (m κ : ℝ) (x : V × V) :

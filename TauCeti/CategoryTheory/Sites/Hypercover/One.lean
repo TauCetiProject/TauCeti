@@ -8,15 +8,18 @@ module
 public import Mathlib.CategoryTheory.Sites.Hypercover.One
 
 /-!
-# Basic extensionality for `PreOneHypercover`
+# Basic extensionality for `PreOneHypercover` and `OneHypercover`
 
 This file complements `Mathlib.CategoryTheory.Sites.Hypercover.One` by providing a pointwise
-extensionality lemma for pre-`1`-hypercovers sharing the same index types.
+extensionality lemma for pre-`1`-hypercovers sharing the same index types and injectivity of
+`OneHypercover.toPreOneHypercover`.
 
 ## Main results
 
 * `CategoryTheory.PreOneHypercover.ext_sameIndex`: pointwise extensionality for two
   `PreOneHypercover`s with equal index types `I₀` and `I₁`.
+* `CategoryTheory.GrothendieckTopology.OneHypercover.toPreOneHypercover_injective`: two
+  `J`-`1`-hypercovers with equal underlying pre-`1`-hypercovers are equal.
 -/
 
 public section
@@ -52,3 +55,13 @@ lemma ext_sameIndex {C : Type u} [Category.{v} C] {S : C}
   rfl
 
 end CategoryTheory.PreOneHypercover
+
+namespace CategoryTheory.GrothendieckTopology.OneHypercover
+
+/-- Two `J`-`1`-hypercovers of `S` with equal underlying pre-`1`-hypercovers are equal. -/
+lemma toPreOneHypercover_injective {C : Type u} [Category.{v} C]
+    {J : GrothendieckTopology C} {S : C} :
+    Function.Injective (toPreOneHypercover : J.OneHypercover.{w} S → PreOneHypercover.{w} S) :=
+  fun ⟨_, _, _⟩ ⟨_, _, _⟩ h ↦ by cases h; rfl
+
+end CategoryTheory.GrothendieckTopology.OneHypercover

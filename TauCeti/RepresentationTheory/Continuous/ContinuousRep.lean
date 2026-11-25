@@ -59,6 +59,8 @@ finitely many vectors.
 * `TauCeti.ContinuousRep.quotient`: descent to the quotient by an invariant submodule with the
   quotient topology.
 * `TauCeti.ContinuousRep.prod`: the componentwise action on a product.
+* `TauCeti.ContinuousRep.ofDistribMulAction`: the representation given by a jointly continuous
+  distributive action commuting with the scalars.
 * `TauCeti.ContinuousRep.Hom`: equivariant continuous linear maps, with `id` and `comp`;
   `TauCeti.ContinuousRep.Hom.ofIntertwiningMap` builds one from an intertwining map.
 * `TauCeti.ContinuousRep.Iso`: equivariant continuous linear equivalences, with `refl`, `symm`
@@ -95,6 +97,8 @@ finitely many vectors.
 * `TauCeti.ContinuousRep.Iso.charpoly_apply_eq` and
   `TauCeti.ContinuousRep.charpoly_ofCharacter_apply`: on finite free carriers the characteristic
   polynomial `(ρ g).charpoly` is an isomorphism invariant, and it is `X - χ g` on the line of `χ`.
+* `TauCeti.ContinuousRep.charpoly_prod_apply`: on finite free carriers the characteristic
+  polynomial is multiplicative on products.
 * `TauCeti.ContinuousRep.charpoly_baseChange_apply` and
   `TauCeti.ContinuousRep.linearMap_det_baseChange_apply`: on finite free carriers the
   characteristic polynomial and the determinant of `g` on a base change are the images of those
@@ -276,6 +280,20 @@ end Subquotient
 
 section Constructions
 
+/-- **The continuous representation of a jointly continuous action**: a distributive action of
+`Γ` on `M` commuting with the scalars `A` and continuous as a map `Γ × M → M` is a continuous
+representation, with underlying representation `Representation.ofDistribMulAction`. -/
+def ofDistribMulAction (Γ A M : Type*) [Monoid Γ] [TopologicalSpace Γ] [Semiring A]
+    [AddCommMonoid M] [Module A M] [TopologicalSpace M] [DistribMulAction Γ M]
+    [SMulCommClass Γ A M] [ContinuousSMul Γ M] : ContinuousRep Γ A M where
+  toRepresentation := Representation.ofDistribMulAction A Γ M
+  continuous_action := continuous_smul
+
+@[simp]
+theorem ofDistribMulAction_apply [DistribMulAction Γ M] [SMulCommClass Γ A M]
+    [ContinuousSMul Γ M] (g : Γ) (x : M) : ofDistribMulAction Γ A M g x = g • x :=
+  (rfl)
+
 /-- **The product of two continuous representations**: `Γ` acts componentwise on `M × N`, with
 the product topology. -/
 noncomputable def prod (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
@@ -285,6 +303,11 @@ noncomputable def prod (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
   -- `LinearMap.prodMap`, which `fun_prop` does not unfold.
   continuous_action := show Continuous fun p : Γ × (M × N) => (ρ p.1 p.2.1, σ p.1 p.2.2) by
     fun_prop
+
+@[simp]
+theorem toRepresentation_prod (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
+    (ρ.prod σ).toRepresentation = ρ.toRepresentation.prod σ.toRepresentation :=
+  (rfl)
 
 @[simp]
 theorem prod_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (g : Γ) (x : M × N) :
@@ -1029,6 +1052,12 @@ variable (Γ A M) in
 theorem charpoly_trivial_apply (g : Γ) :
     (trivial Γ A M g).charpoly = (X - 1) ^ Module.finrank A M :=
   Representation.charpoly_trivial_apply A Γ M g
+
+/-- The characteristic polynomial is multiplicative on products of continuous representations. -/
+@[simp]
+theorem charpoly_prod_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (g : Γ) :
+    (ρ.prod σ g).charpoly = (ρ g).charpoly * (σ g).charpoly :=
+  Representation.charpoly_prod_apply ρ.toRepresentation σ.toRepresentation g
 
 /-- **The characteristic polynomial of a character line.** The element `g` acts on
 `ofCharacter χ` with characteristic polynomial `X - χ g`; the contragredient action would give

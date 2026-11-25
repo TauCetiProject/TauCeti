@@ -12,7 +12,7 @@ public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 
 import Mathlib.CategoryTheory.Sites.Coverage
 import Mathlib.CategoryTheory.Sites.Hypercover.SheafOfTypes
-import TauCeti.CategoryTheory.Sites.Over
+import TauCeti.CategoryTheory.Sites.Over.Basic
 
 /-!
 # Prestack restriction, gluing, and closure properties
