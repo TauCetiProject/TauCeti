@@ -65,10 +65,7 @@ of `ιΦ`, which has the same reflex field. -/
 theorem conj_mem_reflexField (Φ : CMType E) {x : ℂ} (hx : x ∈ Φ.reflexField) :
     conj x ∈ Φ.reflexField := by
   have : Φ.reflexField ≤ Φ.reflexField.comap (Complex.conjAe.restrictScalars ℚ : ℂ →ₐ[ℚ] ℂ) :=
-    reflexField_le_iff.mpr fun a ↦ by
-      rw [IntermediateField.mem_comap, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_restrictScalars,
-        Complex.conjAe_coe, ← typeTrace_star, ← reflexField_star Φ]
-      exact typeTrace_mem_reflexField _ a
+    reflexField_le_iff.mpr fun a ↦ by simpa using (star Φ).typeTrace_mem_reflexField a
   exact this hx
 
 /-- **Complex conjugation on the reflex field**, the automorphism `x ↦ conj x` of `E*`. -/
@@ -102,11 +99,7 @@ theorem apply_conj_eq_conj_apply [StarCompCommute E] (Φ : CMType E) (σ : RingA
   have h : (f.comp c).comp Φ.reflexField.val = (c.comp f).comp Φ.reflexField.val :=
     IntermediateField.algHom_ext_of_eq_adjoin ℚ Φ.reflexField_def <| by
       rintro _ ⟨a, rfl⟩
-      simp only [f, c, AlgHom.comp_apply, IntermediateField.coe_val, AlgEquiv.coe_toAlgHom,
-        AlgEquiv.coe_restrictScalars, Complex.conjAe_coe, RingHom.toRatAlgHom_apply,
-        RingEquiv.coe_toRingHom]
-      rw [← typeTrace_star, ← typeTrace_smul_ringAut, ← typeTrace_smul_ringAut, ← star_smul,
-        typeTrace_star]
+      simpa [f, c] using (congrArg (typeTrace · a) (star_smul σ Φ)).symm
   simpa [f, c] using AlgHom.congr_fun h ⟨x, hx⟩
 
 /-- Complex conjugation on the reflex field is the conjugation of every complex embedding `ρ` of
