@@ -7,16 +7,19 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Bounded
 public import Mathlib.Algebra.Order.Group.Pointwise.Bounds
+public import Mathlib.Analysis.Normed.Operator.NormedSpace
+public import Mathlib.Topology.MetricSpace.Antilipschitz
 
 /-!
 # Bounded sublevels of an energy
 
 `HasBoundedSublevelsOn E S` is the boundedness condition used to obtain compactness in the
 direct method: every sublevel of the ordered-valued energy `E`, relative to the admissible set `S`,
-is bounded. It is stable under restriction, increasing the energy, positive scaling, and
-addition of an energy bounded below. In a pseudometric space it is equivalent to boundedness of
-every admissible sequence whose energies are bounded above; in particular, admissible sequences
-with convergent energies are bounded.
+is bounded. It is stable under restriction and intersection, increasing the energy, positive
+scaling, addition of an energy bounded below, and changes of variable by antilipschitz maps,
+among them translations and continuous linear equivalences. In a pseudometric space it is
+equivalent to boundedness of every admissible sequence whose energies are bounded above; in
+particular, admissible sequences with convergent energies are bounded.
 -/
 
 public section
@@ -109,6 +112,11 @@ theorem div_const [Semifield β] [LinearOrder β] [IsStrictOrderedRing β]
     HasBoundedSublevelsOn (fun x ↦ E x / c) S := by
   simpa only [div_eq_mul_inv] using h.mul_const (inv_pos.2 hc)
 
+/-- Bounded sublevels are inherited by the intersection with any set. -/
+theorem inter [LE β] (h : HasBoundedSublevelsOn E S) (T : Set X) :
+    HasBoundedSublevelsOn E (S ∩ T) :=
+  h.mono inter_subset_left
+
 /-- Bounded sublevels on two admissible sets give bounded sublevels on their union. -/
 theorem union [LE β] (hS : HasBoundedSublevelsOn E S) (hT : HasBoundedSublevelsOn E T) :
     HasBoundedSublevelsOn E (S ∪ T) := by
@@ -149,6 +157,32 @@ theorem isBounded_minimizers [Preorder β] (h : HasBoundedSublevelsOn E S) :
   · obtain ⟨u, hu⟩ := hne
     exact (h (E u)).subset fun x hx ↦ ⟨hx.1, hx.2 hu⟩
   · simp [Set.not_nonempty_iff_eq_empty.1 hne]
+
+section ChangeOfVariables
+
+/-- **Change of variables.** If `f` is antilipschitz and `E` has bounded sublevels on `S`, then
+`E ∘ f` has bounded sublevels on `f ⁻¹' S`. -/
+theorem comp_antilipschitzWith {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y] [LE β]
+    {E : Y → β} {S : Set Y} (h : HasBoundedSublevelsOn E S) {f : X → Y} {K : NNReal}
+    (hf : AntilipschitzWith K f) : HasBoundedSublevelsOn (E ∘ f) (f ⁻¹' S) :=
+  fun b ↦ hf.isBounded_preimage (h b)
+
+/-- **Affine translation.** If `E` has bounded sublevels on `S`, then `u ↦ E (u + a)` has bounded
+sublevels on the translate `{u | u + a ∈ S}`. -/
+theorem comp_add_right {V : Type*} [SeminormedAddCommGroup V] [LE β] {E : V → β} {S : Set V}
+    (h : HasBoundedSublevelsOn E S) (a : V) :
+    HasBoundedSublevelsOn (fun u ↦ E (u + a)) ((· + a) ⁻¹' S) :=
+  h.comp_antilipschitzWith (isometry_add_right a).antilipschitzWith
+
+/-- **Change of variables by a continuous linear equivalence.** If `E` has bounded sublevels on
+`S ⊆ W` and `L : V ≃L[𝕜] W`, then `E ∘ L` has bounded sublevels on `L ⁻¹' S`. -/
+theorem comp_continuousLinearEquiv {𝕜 V W : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W] [NormedSpace 𝕜 W]
+    [LE β] {E : W → β} {S : Set W} (h : HasBoundedSublevelsOn E S) (L : V ≃L[𝕜] W) :
+    HasBoundedSublevelsOn (E ∘ L) (L ⁻¹' S) :=
+  h.comp_antilipschitzWith (ContinuousLinearEquiv.antilipschitzWith L)
+
+end ChangeOfVariables
 
 end HasBoundedSublevelsOn
 
