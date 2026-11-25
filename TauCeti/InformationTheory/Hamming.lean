@@ -162,6 +162,12 @@ theorem hammingNorm_add_le {β : ι → Type*} [Fintype ι] [∀ i, AddZeroClass
   simp only [Finset.mem_union, Finset.mem_filter_univ, Pi.add_apply]
   grind [add_zero]
 
+/-- The Hamming weight of a difference is at most the sum of the weights. -/
+theorem hammingNorm_sub_le {β : ι → Type*} [Fintype ι] [∀ i, SubtractionMonoid (β i)]
+    [∀ i, DecidableEq (β i)] (x y : ∀ i, β i) :
+    hammingNorm (x - y) ≤ hammingNorm x + hammingNorm y := by
+  simpa only [sub_eq_add_neg, hammingNorm_neg] using hammingNorm_add_le x (-y)
+
 section AddZeroClass
 
 variable [Fintype ι] [AddZeroClass A] [DecidableEq A]
@@ -315,22 +321,18 @@ theorem exists_finset_pairwise_lt_hammingDist_forall_exists {ι : Type*} {β : �
       (C : Set (∀ i, β i)).Pairwise (fun x y ↦ D < hammingDist x y) ∧
       ∀ y, ∃ x ∈ C, hammingDist y x ≤ D := by
   classical
-  have (i : ι) : Fintype (β i) := Fintype.ofFinite _
-  let valid : Finset (∀ i, β i) → Prop := fun C ↦
-    a ∈ C ∧ (C : Set (∀ i, β i)).Pairwise fun x y ↦ D < hammingDist x y
-  obtain ⟨C, hC, hmax⟩ := exists_max_image (univ.filter valid) card
-    ⟨{a}, mem_filter.mpr ⟨mem_univ _, mem_singleton_self a, by simp⟩⟩
-  obtain ⟨ha, hsep⟩ := (mem_filter.mp hC).2
-  refine ⟨C, ha, hsep, fun y ↦ ?_⟩
-  by_contra! hy
-  have hyC : y ∉ C := fun h ↦ by simpa using hy y h
-  have hval : valid (insert y C) := by
-    refine ⟨mem_insert_of_mem ha, ?_⟩
-    rw [coe_insert, Set.pairwise_insert]
-    exact ⟨hsep, fun x hx _ ↦ ⟨hy x hx, hammingDist_comm y x ▸ hy x hx⟩⟩
-  have := hmax _ (mem_filter.mpr ⟨mem_univ _, hval⟩)
-  rw [card_insert_of_notMem hyC] at this
-  omega
+  -- A maximal `D`-separated set through `a` is a `D`-cover of the whole space.
+  let R : SetRel (∀ i, β i) (∀ i, β i) := {p | hammingDist p.1 p.2 ≤ D}
+  have : R.IsRefl := ⟨fun x ↦ by simp [R]⟩
+  have : R.IsSymm := ⟨fun x y h ↦ by simpa [R, hammingDist_comm] using h⟩
+  obtain ⟨N, haN, hN⟩ := Finite.exists_le_maximal
+    (p := fun N : Set (∀ i, β i) ↦ N ⊆ Set.univ ∧ R.IsSeparated N) (a := {a})
+    ⟨Set.subset_univ _, .singleton⟩
+  have hcover := SetRel.IsCover.of_maximal_isSeparated hN
+  refine ⟨N.toFinite.toFinset, by simpa using haN rfl, ?_, fun y ↦ ?_⟩
+  · simpa [SetRel.IsSeparated, R] using hN.1.2
+  · obtain ⟨x, hx, hxy⟩ := hcover (Set.mem_univ y)
+    exact ⟨x, by simpa using hx, hxy⟩
 
 end Codes
 

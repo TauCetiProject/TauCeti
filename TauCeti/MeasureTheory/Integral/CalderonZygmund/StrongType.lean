@@ -169,7 +169,7 @@ theorem eLpNorm_le_of_setLIntegral_compl_closedBall_adjoint_le
     refine ENNReal.HolderConjugate.of_toReal ?_
     rw [ENNReal.toReal_ofReal (by positivity)]
     exact Real.HolderConjugate.conjExponent (by linarith)
-  have h := eLpNorm_le_of_eLpNorm_adjoint_le T (p := p) (q := p) hp_top (fun g =>
+  have h := eLpNorm_le_of_eLpNorm_adjoint_le T (p := p) (q := p) (fun g =>
     eLpNorm_le_of_setLIntegral_compl_closedBall_le (adjoint T) hT
       (ENNReal.one_lt_ofReal.2 hP'1) ((ENNReal.ofReal_lt_ofReal_iff two_pos).2 hP'2 |>.trans_eq
         (ENNReal.ofReal_ofNat 2)) g) f

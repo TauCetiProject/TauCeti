@@ -67,6 +67,8 @@ are those of its summands, so its tangent coordinate changes are those of the su
   inverse act as the identity on the fibre over `x`.
 * `TauCeti.Manifold.extChartAt_tangent_self_snd`: in the tangent-bundle chart at `v`, the fibre
   coordinate of `v` is `v` itself.
+* `TangentBundle.extChartAt_modelSpace_apply` and `TangentBundle.extChartAt_modelSpace_symm_apply`:
+  the charts of the tangent bundle of a model space `E` identify `w ∈ T_q E` with `(q, w)`.
 * `TauCeti.Manifold.extChartAt_tangent_symm_mem_baseSet_and_snd`: a point with coordinates `y` in
   the tangent-bundle chart at `v` lies over the base set of the trivialization at `v.proj`, with
   fibre coordinate `y.2` there.
@@ -217,6 +219,11 @@ abbrev chartFrame [IsManifold I 1 M] (x : M) :=
   trivializationAt E (TangentSpace I : TauCeti.chartSource (H := H) x → Type _)
     (⟨x, mem_chart_source H x⟩ : TauCeti.chartSource (H := H) x)
 
+/-- Every point of an intrinsic chart source lies in the base set of its tangent frame. -/
+theorem mem_chartFrame_baseSet [IsManifold I 1 M] (x : M) (y : TauCeti.chartSource (H := H) x) :
+    y ∈ (chartFrame (I := I) x).baseSet :=
+  (trivializationAt_chartSource_baseSet (I := I) x).symm ▸ Set.mem_univ _
+
 /-- The second component of the chart of a tangent bundle at `q`, read at any point `p`: it is the
 tangent coordinate change from the chart at the base point of `p` to the chart at the base point
 of `q`, applied to the fibre component of `p`.  Together with `TangentBundle.coe_chartAt_fst`
@@ -297,6 +304,25 @@ theorem extChartAt_tangent_self_snd (v : TangentBundle I M) :
   simp only [extChartAt_coe, Function.comp_apply, modelWithCorners_prod_coe, Prod.map_snd,
     modelWithCornersSelf_coe, id_eq, TangentBundle.coe_chartAt_snd]
   exact tangentCoordChange_self (mem_extChartAt_source v.proj)
+
+/-- Every chart of the tangent bundle of the model space `E` reads a tangent vector `w ∈ T_q E` as
+the pair `(q, w)`. -/
+theorem _root_.TangentBundle.extChartAt_modelSpace_apply (v w : TangentBundle 𝓘(𝕜, E) E) :
+    extChartAt 𝓘(𝕜, E).tangent v w = ((w.proj, w.snd) : E × E) := by
+  rw [extChartAt_coe, tangentBundle_model_space_coe_chartAt, modelWithCorners_prod_coe,
+    modelWithCornersSelf_coe, Prod.map_id]
+  -- The left side is `(id ∘ TotalSpace.toProd E E) w`, definitionally `TotalSpace.toProd E E w`.
+  exact TotalSpace.toProd_apply E E w
+
+/-- The inverse of every chart of the tangent bundle of the model space `E` sends the pair
+`(q, w)` to the tangent vector `w ∈ T_q E`. -/
+theorem _root_.TangentBundle.extChartAt_modelSpace_symm_apply (v : TangentBundle 𝓘(𝕜, E) E)
+    (y : E × E) :
+    (extChartAt 𝓘(𝕜, E).tangent v).symm y = (⟨y.1, y.2⟩ : TangentBundle 𝓘(𝕜, E) E) := by
+  rw [extChartAt_coe_symm, tangentBundle_model_space_coe_chartAt_symm,
+    modelWithCorners_prod_coe_symm, modelWithCornersSelf_coe_symm, Prod.map_id]
+  exact TotalSpace.ext (TotalSpace.toProd_symm_apply_proj E E y)
+    (heq_of_eq (TotalSpace.toProd_symm_apply_snd E E y))
 
 /-- A point with coordinates `y` in the tangent-bundle chart at `v` lies over the base set of the
 trivialization at `v.proj`, and its fibre coordinate there is `y.2`. -/
@@ -824,6 +850,15 @@ theorem tangentSpaceOpenEquiv_symm_apply {U : Opens M} (x : U)
     (v : TangentSpace I (x : M)) :
     (tangentSpaceOpenEquiv (I := I) x).symm v = v := by
   exact (rfl)
+
+/-- A continuous linear map on the tangent space of an open submanifold factors through the
+canonical identification `tangentSpaceOpenEquiv` with the ambient tangent space. -/
+theorem comp_tangentSpaceOpenEquiv_symm_comp {U : Opens M} (x : U) {G : Type*} [AddCommMonoid G]
+    [Module 𝕜 G] [TopologicalSpace G] (ξ : TangentSpace I x →L[𝕜] G) :
+    (ξ.comp ((tangentSpaceOpenEquiv (I := I) x).symm : TangentSpace I (x : M) →L[𝕜] _)).comp
+      (tangentSpaceOpenEquiv (I := I) x).toContinuousLinearMap = ξ := by
+  rw [ContinuousLinearMap.comp_assoc, ContinuousLinearEquiv.coe_symm_comp_coe,
+    ContinuousLinearMap.comp_id]
 
 /-- In inherited charts, the tangent-bundle coordinate changes of an open submanifold and its
 ambient manifold agree locally. -/

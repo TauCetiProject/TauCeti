@@ -242,6 +242,7 @@ theorem trace_D (x : L) :
 
 variable (K L) in
 /-- When `L` carries the `K⸨X⸩`-module topology, the differential trace is continuous. -/
+@[fun_prop]
 theorem continuous_trace [TopologicalSpace L] [IsModuleTopology K⸨X⸩ L] :
     Continuous (trace K L) := by
   by_cases h : Module.Finite K⸨X⸩ L

@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.Darboux
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.LinearAlgebra.Determinant.Prod
 
@@ -57,13 +58,16 @@ band, and when `F` preserves area and the line `y = 0`:
   `a = 1`, the band is invariant under the simultaneous translation `(x, X) ↦ (x + a, X + a)`
   (`TauCeti.add_mem_image_stripTwistCoord_iff`), and the band generating function is periodic
   with period `(a, a)` on all of `ℝ × ℝ` (`TauCeti.periodic_stripBandGeneratingFunction`);
-* its mixed second derivative is `∂₁ ∂₂ S' = -1 / ∂_y X`
-  (`TauCeti.fderiv_fderiv_stripBandGeneratingFunction_apply`), so its sign is opposite to that of
-  the twist.
+* its second derivative is `d²S'(v, w) = (X_x v₁ w₁ - v₁ w₂ - v₂ w₁ + Y_y v₂ w₂) / X_y`
+  (`TauCeti.fderiv_fderiv_stripBandGeneratingFunction_apply`), so its mixed derivative
+  `∂₁ ∂₂ S' = -1 / ∂_y X` has the sign opposite to that of the twist.
 
 These are the global generating functions of the twist factors in the generating-function proof of
 the Poincaré–Birkhoff theorem. With the convention `y = -∂₁ S'`, `Y = ∂₂ S'`, a positive twist
 `(x, y) ↦ (x + c y, y)`, `c > 0`, has the generator `(X - x)² / (2c)`, with `∂₁ ∂₂ S' = -1 / c`.
+More generally, the band generating function of the affine shear
+`(x, y) ↦ (x + a + c y, y)` over the whole plane is `(X - x - a)² / (2c)`
+(`TauCeti.stripBandGeneratingFunction_affineShear`).
 
 ## References
 
@@ -302,59 +306,70 @@ theorem contDiffAt_stripBandGeneratingFunction {n : ℕ∞} (hJ : IsOpen J) (hJc
   rw [← hinj.leftInvOn_invFunOn hq] at hS
   exact hS.comp _ ((contDiffAt_invFunOn_stripTwistCoord hn hJ hJc hF htwist hq).of_le (by simp))
 
-/-- If `e (u, v) = (u, (A (u, v)).1)` for a linear map `A` of the plane of determinant one with
-`(A (0, 1)).1 ≠ 0`, then `(A (e⁻¹ (1, 0))).2 = -1 / (A (0, 1)).1`: in the notation
-`A = d(X, Y)`, `Y_x - Y_y X_x / X_y = -det A / X_y`. -/
-private theorem snd_apply_symm_one_zero {A : (ℝ × ℝ) →L[ℝ] ℝ × ℝ} {e : (ℝ × ℝ) ≃L[ℝ] ℝ × ℝ}
+/-- If `e (u, v) = (u, (A (u, v)).1)` for a linear map `A` of the plane with
+`(A (0, 1)).1 ≠ 0`, then `e⁻¹ (a, b) = (a, (b - X_x a) / X_y)` in the notation `A = d(X, Y)`. -/
+private theorem symm_apply_of_coe_eq_prod {A : (ℝ × ℝ) →L[ℝ] ℝ × ℝ} {e : (ℝ × ℝ) ≃L[ℝ] ℝ × ℝ}
     (he : (e : (ℝ × ℝ) →L[ℝ] ℝ × ℝ) =
       (ContinuousLinearMap.fst ℝ ℝ ℝ).prod ((ContinuousLinearMap.fst ℝ ℝ ℝ).comp A))
-    (hdet : A.det = 1) (htw : (A (0, 1)).1 ≠ 0) :
-    (A (e.symm (1, 0))).2 = -((A (0, 1)).1)⁻¹ := by
-  -- `e⁻¹ (1, 0) = w` for `w = (1, 0) - (X_x / X_y) • (0, 1)`.
-  set w : ℝ × ℝ := (1, 0) - ((A (1, 0)).1 / (A (0, 1)).1) • ((0 : ℝ), (1 : ℝ))
-  have hAw : A w = A (1, 0) - ((A (1, 0)).1 / (A (0, 1)).1) • A (0, 1) := by
-    rw [map_sub, map_smul]
-  have hw : e.symm (1, 0) = w := by
-    rw [e.symm_apply_eq, ← ContinuousLinearEquiv.coe_coe, he]
-    simp only [ContinuousLinearMap.prod_apply, ContinuousLinearMap.coe_fst',
-      ContinuousLinearMap.comp_apply, hAw, Prod.fst_sub, Prod.smul_fst, smul_eq_mul]
-    simp [w, div_mul_cancel₀ _ htw]
-  have hdetq : (A (1, 0)).1 * (A (0, 1)).2 - (A (1, 0)).2 * (A (0, 1)).1 = 1 := by
-    rwa [ContinuousLinearMap.det, LinearMap.det_finTwoProd] at hdet
-  rw [hw, hAw, Prod.snd_sub, Prod.smul_snd, smul_eq_mul]
-  field_simp
-  linear_combination -hdetq
+    (htw : (A (0, 1)).1 ≠ 0) (v : ℝ × ℝ) :
+    e.symm v = (v.1, (v.2 - (A (1, 0)).1 * v.1) / (A (0, 1)).1) := by
+  set t := (v.2 - (A (1, 0)).1 * v.1) / (A (0, 1)).1
+  have hA := A.apply_mk_eq_smul_add_smul v.1 t
+  rw [e.symm_apply_eq, ← ContinuousLinearEquiv.coe_coe, he]
+  ext
+  · simp
+  · simp only [ContinuousLinearMap.prod_apply, ContinuousLinearMap.coe_fst',
+      ContinuousLinearMap.comp_apply, hA, Prod.fst_add, Prod.smul_fst, smul_eq_mul, t]
+    field_simp
+    ring
 
-/-- **The mixed derivative of the band generating function.** On a strip `ℝ × J` over an open
-interval `J` containing `0`, let `F = (X, Y)` be `C²`, twist, preserve area and map the line
-`y = 0` into itself. Then at every point `(x, X(x, y))` of the band, the `x`-derivative of
-`∂₂ S'` is `-1 / ∂_y X(x, y)`. In particular `∂₁ ∂₂ S'` has the sign opposite to the twist. -/
+/-- On the open band the derivative of the band generating function is `Y dX - y dx`, read through
+the inverse `k` of the twist coordinates: `dS'(z) = Y(k z) dX - (k z).2 dx` near every point of
+the band. -/
+private theorem fderiv_stripBandGeneratingFunction_eventuallyEq (hJ : IsOpen J)
+    (hJc : J.OrdConnected) (h0 : 0 ∈ J) (hF : ∀ q ∈ Prod.snd ⁻¹' J, ContDiffAt ℝ 2 F q)
+    (hY : ∀ x, (F (x, 0)).2 = 0) (hdet : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q).det = 1)
+    (htwist : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q (0, 1)).1 ≠ 0) {q : ℝ × ℝ}
+    (hq : q ∈ Prod.snd ⁻¹' J) :
+    fderiv ℝ (stripBandGeneratingFunction F J) =ᶠ[𝓝 (stripTwistCoord F q)]
+      fun z ↦ (F (invFunOn (stripTwistCoord F) (Prod.snd ⁻¹' J) z)).2 •
+          ContinuousLinearMap.snd ℝ ℝ ℝ -
+        (invFunOn (stripTwistCoord F) (Prod.snd ⁻¹' J) z).2 • ContinuousLinearMap.fst ℝ ℝ ℝ := by
+  have hS : IsOpen (Prod.snd ⁻¹' J : Set (ℝ × ℝ)) := hJ.preimage continuous_snd
+  have hinj := injOn_stripTwistCoord hJc htwist
+  have hband := ((isLocalDiffeomorphOn_stripTwistCoord one_le_two hJ hF
+    htwist).isLocalHomeomorphOn.isOpen_image hS).mem_nhds (mem_image_of_mem _ hq)
+  filter_upwards [hband]
+  rintro _ ⟨r, hr, rfl⟩
+  have hseg : [[0, r.2]] ⊆ J := hJc.uIcc_subset h0 (mem_preimage.1 hr)
+  have hd := hasFDerivAt_stripBandGeneratingFunction hJ hinj hr
+    (fun t ht ↦ hF _ (mem_preimage.2 (hseg ht))) (hY r.1)
+    (fun t ht ↦ hdet _ (mem_preimage.2 (hseg (uIoo_subset_uIcc_self ht)))) (htwist r hr)
+  rw [hd.fderiv, hinj.leftInvOn_invFunOn hr]
+
+/-- **The Hessian of the band generating function.** On a strip `ℝ × J` over an open interval `J`
+containing `0`, let `F = (X, Y)` be `C²`, twist, preserve area and map the line `y = 0` into
+itself. Then at every point `(x, X(x, y))` of the band the second derivative of the band
+generating function `S'` is
+
+`d²S'(v, w) = (X_x v₁ w₁ - v₁ w₂ - v₂ w₁ + Y_y v₂ w₂) / X_y`,
+
+the derivatives of `F` being taken at `(x, y)`. In particular `∂₁ ∂₁ S' = X_x / X_y`, the mixed
+derivative `∂₁ ∂₂ S' = -1 / X_y` has the sign opposite to the twist, and `∂₂ ∂₂ S' = Y_y / X_y`. -/
 theorem fderiv_fderiv_stripBandGeneratingFunction_apply (hJ : IsOpen J) (hJc : J.OrdConnected)
     (h0 : 0 ∈ J) (hF : ∀ q ∈ Prod.snd ⁻¹' J, ContDiffAt ℝ 2 F q) (hY : ∀ x, (F (x, 0)).2 = 0)
     (hdet : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q).det = 1)
     (htwist : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q (0, 1)).1 ≠ 0) {q : ℝ × ℝ}
-    (hq : q ∈ Prod.snd ⁻¹' J) :
-    fderiv ℝ (fun z ↦ fderiv ℝ (stripBandGeneratingFunction F J) z (0, 1))
-      (stripTwistCoord F q) (1, 0) = -((fderiv ℝ F q (0, 1)).1)⁻¹ := by
+    (hq : q ∈ Prod.snd ⁻¹' J) (v w : ℝ × ℝ) :
+    fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction F J)) (stripTwistCoord F q) v w =
+      ((fderiv ℝ F q (1, 0)).1 * v.1 * w.1 - v.1 * w.2 - v.2 * w.1 +
+        (fderiv ℝ F q (0, 1)).2 * v.2 * w.2) / (fderiv ℝ F q (0, 1)).1 := by
   set S := Prod.snd ⁻¹' J
   set G := stripTwistCoord F
   set k := invFunOn G S
   have hS : IsOpen S := hJ.preimage continuous_snd
   have hinj := injOn_stripTwistCoord hJc htwist
-  have hseg (r : ℝ × ℝ) (hr : r ∈ S) : [[0, r.2]] ⊆ J := hJc.uIcc_subset h0 (mem_preimage.1 hr)
-  -- On the open band, `∂₂ S'` is `Y ∘ k`, by the generating equations.
-  have heq : (fun z ↦ fderiv ℝ (stripBandGeneratingFunction F J) z (0, 1)) =ᶠ[𝓝 (G q)]
-      fun z ↦ (F (k z)).2 := by
-    have hband := ((isLocalDiffeomorphOn_stripTwistCoord one_le_two hJ hF
-      htwist).isLocalHomeomorphOn.isOpen_image hS).mem_nhds (mem_image_of_mem G hq)
-    filter_upwards [hband]
-    rintro _ ⟨r, hr, rfl⟩
-    have hd := hasFDerivAt_stripBandGeneratingFunction hJ hinj hr
-      (fun t ht ↦ hF _ (mem_preimage.2 (hseg r hr ht))) (hY r.1)
-      (fun t ht ↦ hdet _ (mem_preimage.2 (hseg r hr (uIoo_subset_uIcc_self ht)))) (htwist r hr)
-    have hkr : k (G r) = r := hinj.leftInvOn_invFunOn hr
-    rw [hd.fderiv, hkr]
-    simp
+  have heq := fderiv_stripBandGeneratingFunction_eventuallyEq hJ hJc h0 hF hY hdet htwist hq
   -- The inverse `k` has derivative `e⁻¹` at `G q`, where `e` is the derivative of `G` at `q`.
   obtain ⟨e, he, hG⟩ := exists_hasStrictFDerivAt_stripTwistCoord (hF q hq) two_ne_zero (htwist q hq)
   have hk : HasFDerivAt k (e.symm : (ℝ × ℝ) →L[ℝ] ℝ × ℝ) (G q) :=
@@ -368,7 +383,67 @@ theorem fderiv_fderiv_stripBandGeneratingFunction_apply (hJ : IsOpen J) (hJc : J
       (((ContinuousLinearMap.snd ℝ ℝ ℝ).comp (fderiv ℝ F q)).comp
         (e.symm : (ℝ × ℝ) →L[ℝ] ℝ × ℝ)) (G q) :=
     (hasFDerivAt_snd.comp _ hFq).comp _ hk
-  rw [heq.fderiv_eq, hYk.fderiv]
-  simpa using snd_apply_symm_one_zero he (hdet q hq) (htwist q hq)
+  have hyk : HasFDerivAt (fun z ↦ (k z).2)
+      ((ContinuousLinearMap.snd ℝ ℝ ℝ).comp (e.symm : (ℝ × ℝ) →L[ℝ] ℝ × ℝ)) (G q) :=
+    hasFDerivAt_snd.comp _ hk
+  have hD : HasFDerivAt (fun z ↦ (F (k z)).2 • ContinuousLinearMap.snd ℝ ℝ ℝ -
+      (k z).2 • ContinuousLinearMap.fst ℝ ℝ ℝ)
+      ((((ContinuousLinearMap.snd ℝ ℝ ℝ).comp (fderiv ℝ F q)).comp
+        (e.symm : (ℝ × ℝ) →L[ℝ] ℝ × ℝ)).smulRight (ContinuousLinearMap.snd ℝ ℝ ℝ) -
+        ((ContinuousLinearMap.snd ℝ ℝ ℝ).comp
+          (e.symm : (ℝ × ℝ) →L[ℝ] ℝ × ℝ)).smulRight (ContinuousLinearMap.fst ℝ ℝ ℝ)) (G q) :=
+    (hYk.smul_const (ContinuousLinearMap.snd ℝ ℝ ℝ)).sub
+      (hyk.smul_const (ContinuousLinearMap.fst ℝ ℝ ℝ))
+  rw [heq.fderiv_eq, hD.fderiv]
+  -- Evaluate with `e⁻¹ v = (v₁, (v₂ - X_x v₁) / X_y)` and `X_x Y_y - X_y Y_x = 1`.
+  have hdetq : (fderiv ℝ F q (1, 0)).1 * (fderiv ℝ F q (0, 1)).2 -
+      (fderiv ℝ F q (1, 0)).2 * (fderiv ℝ F q (0, 1)).1 = 1 := by
+    have h := hdet q hq
+    rwa [ContinuousLinearMap.det, LinearMap.det_finTwoProd] at h
+  have htw := htwist q hq
+  simp only [sub_apply, ContinuousLinearMap.smulRight_apply,
+    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    symm_apply_of_coe_eq_prod he htw, ContinuousLinearMap.coe_snd']
+  rw [(fderiv ℝ F q).apply_mk_eq_smul_add_smul v.1]
+  simp only [Prod.snd_add, Prod.smul_snd, smul_eq_mul, smul_apply,
+    ContinuousLinearMap.coe_snd', ContinuousLinearMap.coe_fst']
+  field_simp
+  linear_combination (-(v.1 * w.2)) * hdetq
+
+
+/-! ### Affine shears -/
+
+/-- **The band generating function of an affine shear.** The band generating function of the
+affine shear `(x, y) ↦ (x + a + c y, y)` over the whole plane is
+`S'(x, X) = (X - x - a)² / (2c)`. For `c ≠ 0` the shear twists everywhere; for `c = 0` both sides
+are `0`, since the strip generating function `c y² / 2` vanishes and `x / 0 = 0`. For instance the
+negative twist `(x, y) ↦ (x - (6y + 1) / 8, y)` (`a = -1 / 8`, `c = -3 / 4`) has the generator
+`-(2/3) (x - X)² + (x - X) / 6 - 1 / 96`. -/
+theorem stripBandGeneratingFunction_affineShear (a c : ℝ) (z : ℝ × ℝ) :
+    stripBandGeneratingFunction (fun q : ℝ × ℝ ↦ (q.1 + a + c * q.2, q.2)) univ z =
+      (z.2 - z.1 - a) ^ 2 / (2 * c) := by
+  obtain rfl | hc := eq_or_ne c 0
+  · rw [stripBandGeneratingFunction_def, stripGeneratingFunction_affineShear]
+    simp
+  set F : ℝ × ℝ → ℝ × ℝ := fun q ↦ (q.1 + a + c * q.2, q.2)
+  have hinj : InjOn (stripTwistCoord F) (Prod.snd ⁻¹' univ) := by
+    rintro ⟨x, y⟩ - ⟨x', y'⟩ - h
+    simp only [stripTwistCoord_apply, F, Prod.mk.injEq] at h
+    obtain ⟨rfl, h⟩ := h
+    simpa [hc] using h
+  -- The point of the plane over `z` is `(z.1, (z.2 - z.1 - a) / c)`.
+  have hz : stripTwistCoord F (z.1, (z.2 - z.1 - a) / c) = z := by
+    ext
+    · simp
+    · simp only [stripTwistCoord_apply, F]
+      field_simp
+      ring
+  calc stripBandGeneratingFunction F univ z
+      = stripBandGeneratingFunction F univ (stripTwistCoord F (z.1, (z.2 - z.1 - a) / c)) := by
+        rw [hz]
+    _ = (z.2 - z.1 - a) ^ 2 / (2 * c) := by
+        rw [stripBandGeneratingFunction_stripTwistCoord hinj (mem_preimage.2 (mem_univ _)),
+          stripGeneratingFunction_affineShear]
+        field_simp
 
 end TauCeti

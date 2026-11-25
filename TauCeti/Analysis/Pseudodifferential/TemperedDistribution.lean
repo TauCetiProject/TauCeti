@@ -7,8 +7,11 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Adjoint.Transpose
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
+public import TauCeti.Analysis.Pseudodifferential.Symbol.LineSpatialDeriv
 public import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
+import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
+import TauCeti.Analysis.Pseudodifferential.Frequency.Multiplier
 import TauCeti.Analysis.Pseudodifferential.Recovery
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
@@ -49,7 +52,16 @@ transposes is detected by testing against Schwartz functions:
   (`TauCeti.Symbol.quantizeTempered_sharp`), from the same identity on Schwartz space
   (`TauCeti.Symbol.quantizeUniformCLM_sharp`);
 * the symbol `φ(x)` acts as multiplication by `φ`
-  (`TauCeti.Symbol.quantizeTempered_ofSpatial_smul_id`).
+  (`TauCeti.Symbol.quantizeTempered_ofSpatial_smul_id`);
+* for a Fourier multiplier `g(D)` in the frequency `ζ = ξ / 2π`, `Op(a) ∘ g(D) = Op(g(ξ / 2π) a)`
+  (`TauCeti.Symbol.IsUniform.quantizeTempered_fourierMultiplierCLM`); with the Bessel potential
+  `J^m` this reduces a symbol of order `m` to one of order `0`,
+  `Op(a) = Op(a ⟨ξ / 2π⟩ ^ (-m)) ∘ J^m`
+  (`TauCeti.Symbol.IsUniform.quantizeTempered_eq_comp_besselPotential`);
+* `∂_v (Op(a) T) = Op(a) (∂_v T) + Op(∂_{x, v} a) T` in every direction `v`
+  (`TauCeti.Symbol.lineDerivOp_quantizeTempered_eq_add`), and `Op(a)` is additive in the symbol
+  (`TauCeti.Symbol.quantizeTempered_zero`, `TauCeti.Symbol.quantizeTempered_add`,
+  `TauCeti.Symbol.quantizeTempered_sum`).
 
 In particular, for a symbol of order `m` with compact spatial support, `Op(a)` maps tempered
 distributions of Sobolev order `s` to tempered distributions of Sobolev order `s - m`
@@ -75,7 +87,9 @@ on one side they tend to `e_ξ` as tempered distributions
 
 A spatial cutoff `ψ` equal to `1` wherever the symbol `r` does not vanish identically leaves
 `Op(r) T` unchanged: `ψ Op(r) T = Op(r) T`
-(`TauCeti.Symbol.smulLeftCLM_quantizeTempered_of_eq_one`).
+(`TauCeti.Symbol.smulLeftCLM_quantizeTempered_of_eq_one`). For a symbol with compact spatial
+support, `ψ` can be chosen to be a compactly supported Schwartz function
+(`TauCeti.Symbol.HasCompactSpatialSupport.exists_smulLeftCLM_quantizeTempered_eq`).
 
 ## References
 
@@ -161,6 +175,26 @@ theorem quantizeTempered_congr {a : Symbol n ℂ ℂ m} {b : Symbol n ℂ ℂ m'
   ext T φ
   simp [transposeUniformCLM_congr ha hb h]
 
+/-- `Op(0) = 0` on tempered distributions. -/
+@[simp]
+theorem quantizeTempered_zero : quantizeTempered F (0 : Symbol n ℂ ℂ m) isUniform_zero = 0 := by
+  have h := quantizeTempered_smul (F := F) (isUniform_zero (n := n) (m := m) (V := ℂ) (W := ℂ)) 0
+  exact (quantizeTempered_congr _ _ (by simp)).trans (h.trans (zero_smul _ _))
+
+/-- `Op(a)` on tempered distributions is additive in the symbol, for finite sums. -/
+theorem quantizeTempered_sum {ι : Type*} {a : ι → Symbol n ℂ ℂ m} (ha : ∀ i, (a i).IsUniform)
+    (s : Finset ι) :
+    quantizeTempered F (∑ i ∈ s, a i) (IsUniform.sum fun i _ ↦ ha i) =
+      ∑ i ∈ s, quantizeTempered F (a i) (ha i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+    exact (quantizeTempered_congr _ (isUniform_zero (m := m)) (by simp)).trans
+      (by rw [quantizeTempered_zero, Finset.sum_empty])
+  | insert i s hi ih =>
+    conv_rhs => rw [Finset.sum_insert hi, ← ih, ← quantizeTempered_add]
+    exact quantizeTempered_congr _ _ (by rw [Finset.sum_insert hi])
+
 /-- A constant symbol `T` acts on tempered distributions as multiplication by `T 1`; in particular
 the symbol `1` acts as the identity. -/
 theorem quantizeTempered_const (T : ℂ →L[ℂ] ℂ) :
@@ -180,6 +214,32 @@ theorem lineDerivOp_quantizeTempered (a : Symbol n ℂ ℂ m) (ha : a.IsUniform)
   simp only [TemperedDistribution.lineDerivOp_apply_apply, quantizeTempered_apply_apply, map_neg,
     transposeUniformCLM_lineDerivOp, neg_sub, map_sub, add_apply]
   abel
+
+/-- **Commutator with a directional derivative.** `∂_v (Op(a) T) = Op(a) (∂_v T) + Op(∂_{x, v} a) T`
+for every tempered distribution `T` and every direction `v`. -/
+theorem lineDerivOp_quantizeTempered_eq_add {a : Symbol n ℂ ℂ m} (ha : a.IsUniform)
+    (v : CoordinateSpace n) (T : 𝓢'(CoordinateSpace n, F)) :
+    ∂_{v} (quantizeTempered F a ha T) =
+      quantizeTempered F a ha (∂_{v} T) +
+        quantizeTempered F (lineSpatialDeriv v a) (ha.lineSpatialDeriv v) T := by
+  have hv : v = ∑ j, v j • EuclideanSpace.single j (1 : ℝ) := by
+    ext i
+    simp [Pi.single_apply]
+  have hd (S : 𝓢'(CoordinateSpace n, F)) :
+      ∂_{v} S = ∑ j, ((v j : ℝ) : ℂ) • ∂_{EuclideanSpace.single j (1 : ℝ)} S := by
+    ext φ
+    conv_lhs => rw [hv]
+    simp only [TemperedDistribution.lineDerivOp_apply_apply, LineDeriv.lineDerivOp_left_sum,
+      LineDeriv.lineDerivOp_left_smul, ← smul_neg, sum_apply, smul_apply, ← Complex.coe_smul,
+      map_smul]
+  have hq : quantizeTempered F (lineSpatialDeriv v a) (ha.lineSpatialDeriv v) =
+      ∑ j, ((v j : ℝ) : ℂ) • quantizeTempered F (spatialDeriv j a) (ha.spatialDeriv j) := by
+    rw [← Finset.sum_congr rfl fun j _ ↦ quantizeTempered_smul (ha.spatialDeriv j) _,
+      ← quantizeTempered_sum (fun j ↦ (ha.spatialDeriv j).smul _) Finset.univ]
+    exact quantizeTempered_congr _ _ (by rw [lineSpatialDeriv_apply])
+  rw [hd, hd, hq, map_sum]
+  simp only [map_smul, lineDerivOp_quantizeTempered, smul_add, Finset.sum_add_distrib, sum_apply,
+    smul_apply]
 
 /-- **Composition with a derivative on the right.** `Op(a) (∂_v T) = i Op(a ⟪ξ, v⟫) T` for every
 tempered distribution `T`. -/
@@ -233,6 +293,70 @@ theorem quantizeTempered_ofSpatial_smul_id (φ : 𝓢(CoordinateSpace n, ℂ))
   simp only [quantizeTempered_apply_apply, TemperedDistribution.smulLeftCLM_apply_apply, key]
 
 end Tempered
+
+/-! ### Composition with Fourier multipliers -/
+
+section Multiplier
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+
+/-- **Composition with a Fourier multiplier on the right.** For Mathlib's Fourier multiplier
+`g(D)` in the frequency `ζ`, `Op(a) ∘ g(D) = Op(b)` on tempered distributions, where
+`b(x, ξ) = g(ξ / 2π) a(x, ξ)` in the angular frequency `ξ`. -/
+theorem IsUniform.quantizeTempered_fourierMultiplierCLM {a : Symbol n ℂ ℂ m}
+    (ha : a.IsUniform) {b : Symbol n ℂ ℂ m'} (hb : b.IsUniform) {g : CoordinateSpace n → ℂ}
+    (hg : g.HasTemperateGrowth)
+    (hab : ∀ x ξ, b.coefficient (x, ξ) = g ((2 * Real.pi)⁻¹ • ξ) • a.coefficient (x, ξ))
+    (T : 𝓢'(CoordinateSpace n, F)) :
+    quantizeTempered F a ha (TemperedDistribution.fourierMultiplierCLM F g T) =
+      quantizeTempered F b hb T := by
+  -- On Schwartz space, `g(-D) ∘ Op(a)ᵗ = Op(b)ᵗ`.
+  have hS : SchwartzMap.fourierMultiplierCLM ℂ (fun ξ ↦ g (-ξ)) ∘L transposeUniformCLM a ha =
+      transposeUniformCLM b hb := by
+    refine eq_transposeUniformCLM fun u φ ↦ ?_
+    have h := congrArg (fun T : 𝓢'(CoordinateSpace n, ℂ) ↦ T (transposeUniformCLM a ha φ))
+      (TemperedDistribution.fourierMultiplierCLM_toTemperedDistributionCLM_eq hg u)
+    simp only [TemperedDistribution.fourierMultiplierCLM_apply_apply_transpose,
+      SchwartzMap.toTemperedDistributionCLM_apply_apply, smul_eq_mul] at h
+    rw [ContinuousLinearMap.comp_apply, h, ← integral_mul_quantizeUniformCLM]
+    refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
+    dsimp only
+    rw [quantizeUniformCLM_apply, quantizeUniformCLM_apply,
+      quantizeSchwartzValue_fourierMultiplierCLM hg]
+    congr 2
+    ext p : 1
+    exact hab p.1 p.2
+  ext φ
+  rw [quantizeTempered_apply_apply, quantizeTempered_apply_apply,
+    TemperedDistribution.fourierMultiplierCLM_apply_apply_transpose, ← hS,
+    ContinuousLinearMap.comp_apply]
+
+/-- **Reduction to order zero.** For a uniform symbol `a` of order `m`,
+`Op(a) = Op(a ⟨ξ / 2π⟩ ^ (-m)) ∘ J^m` on tempered distributions, where `J^m` is the Bessel
+potential of order `m` and the first factor is a uniform symbol of order `0`. -/
+theorem IsUniform.quantizeTempered_eq_comp_besselPotential {a : Symbol n ℂ ℂ m}
+    (ha : a.IsUniform) (T : 𝓢'(CoordinateSpace n, F)) :
+    quantizeTempered F a ha T = quantizeTempered F
+      (Symbol.inclusion (add_neg_cancel m).le (a.comp (Symbol.besselPotential (-m))))
+      ((ha.comp (isUniform_besselPotential _)).inclusion _)
+      (TemperedDistribution.besselPotential (CoordinateSpace n) F m T) := by
+  have hg : (fun ζ : CoordinateSpace n ↦
+      (((1 + ‖ζ‖ ^ 2) ^ (m / 2) : ℝ) : ℂ)).HasTemperateGrowth :=
+    Complex.ofRealCLM.hasTemperateGrowth.comp
+      (Function.hasTemperateGrowth_one_add_norm_sq_rpow _ (m / 2))
+  have hab (x ξ : CoordinateSpace n) :
+      a.coefficient (x, ξ) = (((1 + ‖(2 * Real.pi)⁻¹ • ξ‖ ^ 2) ^ (m / 2) : ℝ) : ℂ) •
+        (Symbol.inclusion (add_neg_cancel m).le
+          (a.comp (Symbol.besselPotential (-m)))).coefficient (x, ξ) := by
+    have h := congrFun (coefficient_comp_besselPotential_comp_besselPotential a (-m) m) (x, ξ)
+    rw [neg_add_cancel, coefficient_comp_besselPotential_zero] at h
+    rw [← h, coefficient_comp, coefficient_besselPotential, ContinuousLinearMap.comp_smul,
+      ContinuousLinearMap.comp_id, coefficient_inclusion]
+  rw [TemperedDistribution.besselPotential]
+  exact (IsUniform.quantizeTempered_fourierMultiplierCLM (F := F)
+    ((ha.comp (isUniform_besselPotential _)).inclusion _) ha hg hab T).symm
+
+end Multiplier
 
 /-! ### Comparison with the Sobolev mappings -/
 
@@ -368,6 +492,21 @@ theorem smulLeftCLM_quantizeTempered_of_eq_one (hr : r.IsUniform)
   ext φ
   rw [TemperedDistribution.smulLeftCLM_apply_apply, quantizeTempered_apply_apply,
     quantizeTempered_apply_apply, ← ContinuousLinearMap.comp_apply, key]
+
+/-- **Compactly supported spatial cutoffs.** For a symbol `r` with compact spatial support there is
+a compactly supported Schwartz function `ψ` with `ψ Op(r) T = Op(r) T` for every tempered
+distribution `T`. -/
+theorem HasCompactSpatialSupport.exists_smulLeftCLM_quantizeTempered_eq
+    (hr : r.HasCompactSpatialSupport) :
+    ∃ ψ : 𝓢(CoordinateSpace n, ℂ), HasCompactSupport ψ ∧ ∀ T : 𝓢'(CoordinateSpace n, F),
+      TemperedDistribution.smulLeftCLM F ψ (quantizeTempered F r hr.isUniform T) =
+        quantizeTempered F r hr.isUniform T := by
+  obtain ⟨K, hK, hKr⟩ := hasCompactSpatialSupport_iff.1 hr
+  obtain ⟨ψ, hψc, -, hψ⟩ := hK.exists_schwartzMap_cutoff isOpen_univ (Set.subset_univ K)
+  refine ⟨ψ, hψc, smulLeftCLM_quantizeTempered_of_eq_one hr.isUniform ψ.hasTemperateGrowth
+    fun x ξ hx ↦ ?_⟩
+  by_contra hψx
+  exact hx (hKr x (fun hxK ↦ hψx (hψ.self_of_nhdsSet x hxK)) ξ)
 
 end Cutoff
 

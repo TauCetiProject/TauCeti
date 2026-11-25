@@ -50,11 +50,14 @@ basis. It reduces statements about `A u` to the scalar multiplication and to con
   particular a constant `A` acts on the values (`TemperedDistribution.mulLeftCLM_const`), and
   `A x = g x • id` is the scalar multiplication `TemperedDistribution.smulLeftCLM`
   (`TemperedDistribution.mulLeftCLM_smul_id`).
-* `TemperedDistribution.mulLeftCLM_add`: additivity in `A`.
-* `TemperedDistribution.mulLeftCLM_compL_mulLeftCLM`: `B (A u) = (B A) u`, so that a pointwise
-  invertible `A` whose inverse is again of temperate growth acts invertibly.
+* `TemperedDistribution.mulLeftCLM_add`, `TemperedDistribution.mulLeftCLM_sum`,
+  `TemperedDistribution.mulLeftCLM_smul`: linearity in multipliers of temperate growth.
+* `TemperedDistribution.mulLeftCLM_compL_mulLeftCLM`,
+  `TemperedDistribution.mulLeftCLM_mulLeftCLM_apply`: `B (A u) = (B A) u`, so that a pointwise
+  invertible `A` whose inverse is again of temperate growth acts invertibly; the identity acts as
+  the identity (`TemperedDistribution.mulLeftCLM_id_apply`).
 * `TemperedDistribution.mulLeftCLM_toTemperedDistributionCLM_eq`: on Schwartz functions `A u` is
-  the pointwise product.
+  the pointwise product, for the embedding against any measure of temperate growth.
 -/
 
 public section
@@ -86,6 +89,14 @@ def mulLeftCLM (A : E → F →L[ℂ] G) : 𝓢'(E, F) →L[ℂ] 𝓢'(E, G) :=
   ∑ k, PointwiseConvergenceCLM.postcomp _ (Module.finBasis ℂ (F →L[ℂ] G) k) ∘L
     smulLeftCLM F
       (LinearMap.toContinuousLinearMap ((Module.finBasis ℂ (F →L[ℂ] G)).coord k) ∘ A)
+
+/-- The product `A u` is `∑ k, L k (c k u)`, for the basis `L k` of
+`Module.finBasis ℂ (F →L[ℂ] G)` and the coordinates `c k` of `A` in it. -/
+theorem mulLeftCLM_def (A : E → F →L[ℂ] G) :
+    mulLeftCLM A = ∑ k, PointwiseConvergenceCLM.postcomp _ (Module.finBasis ℂ (F →L[ℂ] G) k) ∘L
+      smulLeftCLM F
+        (LinearMap.toContinuousLinearMap ((Module.finBasis ℂ (F →L[ℂ] G)).coord k) ∘ A) := by
+  rw [mulLeftCLM]
 
 /-- The action of the product `A u` on a test function, through the coordinates of `A` in the
 basis `Module.finBasis ℂ (F →L[ℂ] G)`. -/
@@ -152,6 +163,13 @@ theorem mulLeftCLM_const (L : F →L[ℂ] G) :
   ext u φ
   simp only [ContinuousLinearMap.comp_apply, smulLeftCLM_const, one_smul]
 
+/-- **The identity.** Multiplication by the constant identity is the identity. -/
+theorem mulLeftCLM_id_apply (u : 𝓢'(E, F)) :
+    mulLeftCLM (fun _ : E ↦ ContinuousLinearMap.id ℂ F) u = u := by
+  ext φ
+  rw [mulLeftCLM_const, PointwiseConvergenceCLM.postcomp_apply_apply,
+    ContinuousLinearMap.id_apply]
+
 /-- **Scalar functions.** Multiplication by `x ↦ g x • id` is the multiplication by the scalar
 function `g`. -/
 theorem mulLeftCLM_smul_id {g : E → ℂ} (hg : g.HasTemperateGrowth) :
@@ -174,6 +192,35 @@ theorem mulLeftCLM_add {A B : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth)
     simp
   rw [hcomp, smulLeftCLM_add (hA.continuousLinearMap_comp c) (hB.continuousLinearMap_comp c),
     ContinuousLinearMap.comp_add]
+
+/-- **Finite sums.** For `A i` of temperate growth, `(∑ i ∈ s, A i) u = ∑ i ∈ s, A i u`. -/
+theorem mulLeftCLM_sum {ι : Type*} {A : ι → E → F →L[ℂ] G} {s : Finset ι}
+    (hA : ∀ i ∈ s, (A i).HasTemperateGrowth) :
+    mulLeftCLM (fun x ↦ ∑ i ∈ s, A i x) = ∑ i ∈ s, mulLeftCLM (A i) := by
+  simp only [mulLeftCLM_def]
+  set b := Module.finBasis ℂ (F →L[ℂ] G)
+  have h (k) : smulLeftCLM F
+      (LinearMap.toContinuousLinearMap (b.coord k) ∘ fun x ↦ ∑ i ∈ s, A i x) =
+      ∑ i ∈ s, smulLeftCLM F (LinearMap.toContinuousLinearMap (b.coord k) ∘ A i) := by
+    have hk : (LinearMap.toContinuousLinearMap (b.coord k) ∘ fun x ↦ ∑ i ∈ s, A i x) =
+        fun x ↦ ∑ i ∈ s, (LinearMap.toContinuousLinearMap (b.coord k) ∘ A i) x := by
+      funext x
+      simp [map_sum]
+    rw [hk]
+    exact smulLeftCLM_sum fun i hi ↦ (hA i hi).continuousLinearMap_comp _
+  simp only [h, ContinuousLinearMap.comp_finsetSum]
+  exact Finset.sum_comm
+
+/-- **Scalar multiples.** For `A` of temperate growth, `(c • A) u = c • A u`. -/
+theorem mulLeftCLM_smul {A : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth) (c : ℂ) :
+    mulLeftCLM (c • A) = c • mulLeftCLM A := by
+  simp only [mulLeftCLM_def, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  set ℓ := LinearMap.toContinuousLinearMap ((Module.finBasis ℂ (F →L[ℂ] G)).coord k)
+  have hk : ℓ ∘ (c • A) = c • (ℓ ∘ A) := by
+    ext x
+    simp
+  rw [hk, smulLeftCLM_smul (hA.continuousLinearMap_comp ℓ), ContinuousLinearMap.comp_smul]
 
 /-- **Composition.** For `A : E → (F →L[ℂ] G)` and `B : E → (G →L[ℂ] H)` of temperate growth,
 `B (A u) = (B A) u`, where `B A` is the pointwise composition `x ↦ B x ∘ A x`. -/
@@ -204,30 +251,39 @@ theorem mulLeftCLM_compL_mulLeftCLM [FiniteDimensional ℂ H] {A : E → F →L[
     ring
   rw [hφ, ContinuousLinearMap.comp_apply]
 
+/-- **Composition**, applied to a distribution: `B (A u) = (B A) u` for `A` and `B` of temperate
+growth. -/
+@[simp]
+theorem mulLeftCLM_mulLeftCLM_apply [FiniteDimensional ℂ H] {A : E → F →L[ℂ] G}
+    {B : E → G →L[ℂ] H} (hA : A.HasTemperateGrowth) (hB : B.HasTemperateGrowth) (u : 𝓢'(E, F)) :
+    mulLeftCLM B (mulLeftCLM A u) = mulLeftCLM (fun x ↦ (B x).comp (A x)) u := by
+  rw [← mulLeftCLM_compL_mulLeftCLM hA hB, ContinuousLinearMap.comp_apply]
+
 section InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] [CompleteSpace G]
 
 /-- **Products of Schwartz functions.** On the tempered distribution of a Schwartz function `f`,
-multiplication by `A` is the tempered distribution of the pointwise product `x ↦ A x (f x)`. -/
-theorem mulLeftCLM_toTemperedDistributionCLM_eq {A : E → F →L[ℂ] G}
-    (hA : A.HasTemperateGrowth) (f : 𝓢(E, F)) :
-    mulLeftCLM A (f : 𝓢'(E, F)) =
-      ((SchwartzMap.bilinLeftCLM (ContinuousLinearMap.apply ℂ G) hA f : 𝓢(E, G)) : 𝓢'(E, G)) := by
-  ext φ
-  rw [mulLeftCLM_apply_apply]
+embedded against any measure `μ` of temperate growth, multiplication by `A` is the tempered
+distribution of the pointwise product `x ↦ A x (f x)`. -/
+theorem mulLeftCLM_toTemperedDistributionCLM_eq {μ : Measure E} [μ.HasTemperateGrowth]
+    {A : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth) (f : 𝓢(E, F)) :
+    mulLeftCLM A (SchwartzMap.toTemperedDistributionCLM E F μ f) =
+      SchwartzMap.toTemperedDistributionCLM E G μ
+        (SchwartzMap.bilinLeftCLM (ContinuousLinearMap.apply ℂ G) hA f) := by
+  -- Expand `A` in the basis `Module.finBasis ℂ (F →L[ℂ] G)` on both sides.
   set b := Module.finBasis ℂ (F →L[ℂ] G)
-  have hφ (k) : (f : 𝓢'(E, F))
-      (SchwartzMap.smulLeftCLM ℂ (LinearMap.toContinuousLinearMap (b.coord k) ∘ A) φ) =
-      ((SchwartzMap.smulLeftCLM F (LinearMap.toContinuousLinearMap (b.coord k) ∘ A) f :
-        𝓢(E, F)) : 𝓢'(E, F)) φ := by
-    rw [← smulLeftCLM_apply_apply, smulLeftCLM_toTemperedDistributionCLM_eq]
-  simp_rw [hφ, ← SchwartzMap.toTemperedDistributionCLM_postcompCLM_apply]
-  rw [← sum_apply, ← map_sum, SchwartzMap.bilinLeftCLM_apply_eq_sum Finset.univ
-    (fun k _ ↦ hA.continuousLinearMap_comp (LinearMap.toContinuousLinearMap (b.coord k))) b hA
-    fun x ↦ by simp]
-  simp only [sum_apply, ContinuousLinearMap.comp_apply]
+  have hc (k) := hA.continuousLinearMap_comp (LinearMap.toContinuousLinearMap (b.coord k))
+  have hexp (x) : A x = ∑ k, (LinearMap.toContinuousLinearMap (b.coord k) ∘ A) x • b k := by
+    simp
+  rw [mulLeftCLM_eq_sum Finset.univ (fun k _ ↦ hc k) b hexp,
+    SchwartzMap.bilinLeftCLM_apply_eq_sum Finset.univ (fun k _ ↦ hc k) b hA hexp]
+  ext φ
+  simp only [sum_apply, ContinuousLinearMap.comp_apply, map_sum,
+    smulLeftCLM_toTemperedDistributionCLM_eq, PointwiseConvergenceCLM.postcomp_apply_apply]
+  exact Finset.sum_congr rfl fun k _ ↦
+    (SchwartzMap.toTemperedDistributionCLM_postcompCLM_apply _ _ _).symm
 
 end InnerProductSpace
 

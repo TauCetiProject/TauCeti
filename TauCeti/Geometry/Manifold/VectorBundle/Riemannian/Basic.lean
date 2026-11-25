@@ -82,6 +82,10 @@ theorem toContinuousRiemannianMetric_ofLE (g : ContMDiffRiemannianMetric IB n F 
 theorem ofLE_refl (g : ContMDiffRiemannianMetric IB n F E) (h : n ≤ n) :
     g.ofLE h = g := (rfl)
 
+/-- On an empty base manifold, `C^n` Riemannian metrics form a subsingleton. -/
+instance subsingleton_of_isEmpty [IsEmpty B] : Subsingleton (ContMDiffRiemannianMetric IB n F E) :=
+  ⟨fun g₁ g₂ ↦ by cases g₁; cases g₂; congr; exact funext isEmptyElim⟩
+
 /-- The native fibre inner product installed from a metric evaluates to that metric. -/
 theorem inner_eq [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousConstSMul ℝ (E x)]
     (g : ContMDiffRiemannianMetric IB n F E) (x : B) (v w : E x) :

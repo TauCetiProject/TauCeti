@@ -49,6 +49,8 @@ instance; install it with `letI := TauCeti.subbundleTopology F V`.
 
 * `TauCeti.subbundleTopology`: the subspace topology on the total space of a family of subspaces
   of the fibres of a bundle.
+* `TauCeti.subbundleTotalSpaceHomeomorph`: a set of vectors of `V` is homeomorphic to the set of
+  vectors of `E` it consists of.
 * `TauCeti.IsSubbundleFrameOn F V X U`: the sections `X i` form a continuous local frame of `V` on
   `U`.
 * `TauCeti.IsSubbundleFrameOn.basis`: the basis of a fibre of `V` given by a local frame.
@@ -62,6 +64,8 @@ instance; install it with `letI := TauCeti.subbundleTopology F V`.
 
 * `TauCeti.isEmbedding_totalSpace_subbundle`: the total space of `V` is a subspace of the total
   space of `E`.
+* `TauCeti.continuous_norm_subbundle`: the fibre norm of a normed bundle stays continuous on the
+  total space of a family of subspaces of its fibres.
 * `TauCeti.isInducing_totalSpaceMk_subbundle`: each fibre `V x` carries the topology induced from
   the total space of `V`.
 * `TauCeti.IsSubbundleFrameOn.continuousOn_coordChangeL`: the coordinate changes between the
@@ -126,6 +130,49 @@ theorem isEmbedding_totalSpace_subbundle (F' : Type*) (V : Π x, Submodule 𝕜 
     IsEmbedding fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.snd⟩ : TotalSpace F E) :=
   let := subbundleTopology F (F' := F') V
   ⟨⟨rfl⟩, injective_totalSpace_subbundle F F' V⟩
+
+omit [TopologicalSpace B] in
+/-- A set `A` of vectors of the total space of a family `V` of subspaces of the fibres of `E`, with
+the topology of a subspace of the total space of `E`, is homeomorphic to the set `A'` of vectors of
+`E` it consists of. -/
+def subbundleTotalSpaceHomeomorph {F' : Type*} (V : Π x, Submodule 𝕜 (E x))
+    (A : Set (TotalSpace F' fun x ↦ V x)) (A' : Set (TotalSpace F E))
+    (hA : ∀ v, v ∈ A ↔ (⟨v.proj, v.snd⟩ : TotalSpace F E) ∈ A')
+    (hA' : ∀ x ∈ A', x.snd ∈ V x.proj) :
+    letI := subbundleTopology F (F' := F') V
+    A ≃ₜ A' :=
+  letI := subbundleTopology F (F' := F') V
+  have hι := isEmbedding_totalSpace_subbundle F F' V
+  -- Unlike `Topology.IsEmbedding.homeomorphImage`, the inverse is explicit, so that both
+  -- directions keep the underlying vector by `rfl`.
+  { toFun v := ⟨⟨v.val.proj, v.val.snd⟩, (hA v.val).1 v.property⟩
+    invFun x := ⟨⟨x.val.proj, ⟨x.val.snd, hA' x.val x.property⟩⟩, (hA _).2 x.property⟩
+    left_inv _ := rfl
+    right_inv _ := rfl
+    continuous_toFun := (hι.continuous.comp continuous_subtypeVal).subtype_mk _
+    continuous_invFun := (hι.continuous_iff.2 continuous_subtypeVal).subtype_mk _ }
+
+omit [TopologicalSpace B] in
+@[simp]
+theorem coe_subbundleTotalSpaceHomeomorph_apply {F' : Type*} (V : Π x, Submodule 𝕜 (E x))
+    (A : Set (TotalSpace F' fun x ↦ V x)) (A' : Set (TotalSpace F E))
+    (hA : ∀ v, v ∈ A ↔ (⟨v.proj, v.snd⟩ : TotalSpace F E) ∈ A')
+    (hA' : ∀ x ∈ A', x.snd ∈ V x.proj) (v : A) :
+    letI := subbundleTopology F (F' := F') V
+    (subbundleTotalSpaceHomeomorph F V A A' hA hA' v : TotalSpace F E) =
+      ⟨v.val.proj, v.val.snd⟩ :=
+  (rfl)
+
+omit [TopologicalSpace B] in
+@[simp]
+theorem coe_subbundleTotalSpaceHomeomorph_symm_apply {F' : Type*} (V : Π x, Submodule 𝕜 (E x))
+    (A : Set (TotalSpace F' fun x ↦ V x)) (A' : Set (TotalSpace F E))
+    (hA : ∀ v, v ∈ A ↔ (⟨v.proj, v.snd⟩ : TotalSpace F E) ∈ A')
+    (hA' : ∀ x ∈ A', x.snd ∈ V x.proj) (x : A') :
+    letI := subbundleTopology F (F' := F') V
+    ((subbundleTotalSpaceHomeomorph F V A A' hA hA').symm x : TotalSpace F' fun x ↦ V x) =
+      ⟨x.val.proj, ⟨x.val.snd, hA' x.val x.property⟩⟩ :=
+  (rfl)
 
 variable [TopologicalSpace F] [∀ x, TopologicalSpace (E x)] [FiberBundle F E]
 
@@ -261,6 +308,22 @@ theorem HasLocalSubbundleFrames.finrank_eq [StrongRankCondition 𝕜] [Fintype �
 end Frame
 
 end Semiring
+
+section Norm
+
+omit [TopologicalSpace B] in
+variable {F} in
+/-- On a family `S` of subspaces of the fibres of a normed bundle `E`, with the subspace topology
+of the total space of `E` (`TauCeti.subbundleTopology`), the fibre norm is continuous whenever it
+is continuous on the total space of `E`, for any model fibre `P`. -/
+theorem continuous_norm_subbundle [∀ b, SeminormedAddCommGroup (E b)] [∀ b, NormedSpace ℝ (E b)]
+    (hE : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖) (P : Type*) (S : ∀ b, Submodule ℝ (E b)) :
+    letI := subbundleTopology F (F' := P) S
+    Continuous fun v : TotalSpace P (fun b ↦ S b) ↦ ‖v.snd‖ :=
+  letI := subbundleTopology F (F' := P) S
+  hE.comp (isEmbedding_totalSpace_subbundle F P S).continuous
+
+end Norm
 
 section Normed
 
