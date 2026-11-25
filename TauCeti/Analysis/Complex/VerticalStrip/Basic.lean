@@ -16,8 +16,10 @@ import TauCeti.Analysis.Complex.HasPrimitives.Basic
 Mathlib's three-lines theorem is stated on the open strip `verticalStrip a b` and the closed
 strip `verticalClosedStrip a b`, the preimages of `Ioo a b` and `Icc a b` under `Complex.re`.
 This file records their membership criteria, behavior under reflection, convexity, closure, the
-exponential gauge multiplier `scaleFactor` normalizing strip boundary bounds, and holomorphic
-primitives `Complex.wedgeIntegral` for functions satisfying `DiffContOnCl` on a vertical strip
+bound `‖exp ((z - θ) a)‖ ≤ exp |a|` on the closed unit strip for `0 ≤ θ ≤ 1`
+(`norm_exp_sub_mul_le`), the exponential gauge multiplier `scaleFactor` normalizing strip
+boundary bounds, and holomorphic primitives `Complex.wedgeIntegral` for functions satisfying
+`DiffContOnCl` on a vertical strip
 (specializing `TauCeti.Analysis.Complex.HasPrimitives.Basic` to
 `verticalClosedStrip a b = Icc a b ×ℂ univ`), and the Cauchy rectangle contour-shift identity
 `DiffContOnCl.intervalIntegral_add_mul_I_eq` equating vertical line integrals of vertically
@@ -84,6 +86,16 @@ theorem closure_verticalStrip_subset (a b : ℝ) :
 theorem closure_verticalStrip (hab : a < b) :
     closure (verticalStrip a b) = verticalClosedStrip a b := by
   rw [verticalStrip, closure_preimage_re, closure_Ioo hab.ne, verticalClosedStrip]
+
+/-- For `0 ≤ θ ≤ 1` and `z` in the closed unit strip, `|re z - θ| ≤ 1`, so the exponential
+`exp ((z - θ) a)` with real slope `a` has modulus at most `exp |a|`. -/
+theorem norm_exp_sub_mul_le {θ : ℝ} (hθ : θ ∈ Icc 0 1) (a : ℝ)
+    (hz : z ∈ verticalClosedStrip 0 1) : ‖exp ((z - θ) * a)‖ ≤ Real.exp |a| := by
+  rw [norm_exp]
+  refine Real.exp_le_exp.2 ((le_abs_self _).trans ?_)
+  simp only [mul_re, sub_re, ofReal_re, sub_im, ofReal_im, mul_zero, sub_zero, abs_mul]
+  exact mul_le_of_le_one_left (abs_nonneg _)
+    (abs_le.2 ⟨by linarith [hz.1, hθ.2], by linarith [hz.2, hθ.1]⟩)
 
 section ScaleFactor
 

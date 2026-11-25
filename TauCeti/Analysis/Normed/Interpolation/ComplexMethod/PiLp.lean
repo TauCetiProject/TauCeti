@@ -14,7 +14,8 @@ import TauCeti.Data.ENNReal.InterpolatedExponent
 # Complex interpolation of finite `ℓ^q` sums: `ℓ^q([X₀, X₁]_θ) ⊆ [ℓ^{q₀}(X₀), ℓ^{q₁}(X₁)]_θ`
 
 Let `(X₀, X₁)` be a compatible couple of complex normed spaces, `ι` a finite index type,
-`1 ≤ q₀, q₁ ≤ ∞`, `0 ≤ θ ≤ 1` and `1 / q = (1 - θ) / q₀ + θ / q₁`. Every finite family `u` of
+`1 ≤ q₀, q₁ ≤ ∞`, `0 ≤ θ ≤ 1` and `1 / q = (1 - θ) / q₀ + θ / q₁`, with `q < ∞` unless
+`q₀ = q₁ = ∞`. Every finite family `u` of
 elements of `[X₀, X₁]_θ` is an element of the complex interpolation space of the couple
 `(ℓ^{q₀}(ι; X₀), ℓ^{q₁}(ι; X₁))` (`TauCeti.CompatibleCouple.piLp`), with
 
@@ -77,12 +78,10 @@ section Coefficient
 private theorem norm_cpow_le {b : ℝ} (hb : 0 < b) (hθ : θ ∈ Icc 0 1) (s : ℝ) {z : ℂ}
     (hz : z ∈ verticalClosedStrip 0 1) :
     ‖(b : ℂ) ^ ((z - θ) * s)‖ ≤ Real.exp |s * Real.log b| := by
-  rw [norm_cpow_eq_rpow_re_of_pos hb, Real.rpow_def_of_pos hb]
-  refine Real.exp_le_exp.2 ?_
-  have hre : |z.re - θ| ≤ 1 := abs_sub_le_iff.2 ⟨by linarith [hz.2, hθ.1], by linarith [hz.1, hθ.2]⟩
-  calc Real.log b * ((z - θ) * s).re = (z.re - θ) * (s * Real.log b) := by simp; ring
-    _ ≤ |z.re - θ| * |s * Real.log b| := (le_abs_self _).trans (abs_mul _ _).le
-    _ ≤ |s * Real.log b| := mul_le_of_le_one_left (abs_nonneg _) hre
+  rw [cpow_def_of_ne_zero (ofReal_ne_zero.2 hb.ne'), ← ofReal_log hb.le,
+    show (Real.log b : ℂ) * ((z - θ) * s) = (z - θ) * ((s * Real.log b : ℝ) : ℂ) by
+      push_cast; ring]
+  exact Complex.HadamardThreeLines.norm_exp_sub_mul_le hθ _ hz
 
 /-- On a boundary line, the multiplier turns a bound `c` with `c = N b` into `N b ^ r` for the
 exponent `r = a + 1`. -/
@@ -92,38 +91,6 @@ private theorem rpow_mul_le_mul_rpow {b N c : ℝ} (hb : 0 < b) (hc : c = N * b)
     _ = N * b ^ r := by rw [← har, Real.rpow_add_one hb.ne', hc]; ring
 
 end Coefficient
-
-/-! ### The norm of the boundary bounds -/
-
-/-- For `N = ‖c‖_{ℓ^q}` with `q < ∞` and `c > 0`, the family `(N (c k / N) ^ (q / p))_k` has
-`ℓ^p` norm at most `N`. -/
-private theorem norm_toLp_mul_div_rpow_le [Fact (1 ≤ q)] [Nonempty ι] (hq : q ≠ ∞) (p : ℝ≥0∞)
-    [Fact (1 ≤ p)] {c : ι → ℝ} (hc : ∀ k, 0 < c k) :
-    ‖WithLp.toLp p fun k => ‖WithLp.toLp q c‖ * (c k / ‖WithLp.toLp q c‖) ^ (q.toReal / p.toReal)‖
-      ≤ ‖WithLp.toLp q c‖ := by
-  set N := ‖WithLp.toLp q c‖
-  have hN : 0 < N := (hc (Classical.arbitrary ι)).trans_le
-    ((Real.le_norm_self _).trans (PiLp.norm_apply_le (WithLp.toLp q c) _))
-  have hq₀ : 0 < q.toReal :=
-    ENNReal.toReal_pos (one_pos.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ q)).ne' hq
-  rcases eq_or_ne p ∞ with rfl | hp
-  · simp [abs_of_pos hN]
-  have hp₀ : 0 < p.toReal :=
-    ENNReal.toReal_pos (one_pos.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne' hp
-  -- `∑ₖ (c k / N) ^ q = 1`
-  have hsum : ∑ k, (c k / N) ^ q.toReal = 1 := by
-    have h := PiLp.norm_rpow_eq_sum hq₀ (WithLp.toLp q c)
-    simp only [Real.norm_eq_abs, abs_of_pos (hc _)] at h
-    simp_rw [Real.div_rpow (hc _).le hN.le, ← Finset.sum_div, ← h]
-    exact div_self (by positivity)
-  refine (Real.rpow_le_rpow_iff (PiLp.norm_nonneg' _) hN.le hp₀).1 (le_of_eq ?_)
-  rw [PiLp.norm_rpow_eq_sum hp₀]
-  have hterm (k : ι) : ‖(WithLp.toLp p fun k => N * (c k / N) ^ (q.toReal / p.toReal)) k‖ ^
-      p.toReal = N ^ p.toReal * (c k / N) ^ q.toReal := by
-    have hb : 0 ≤ c k / N := (div_pos (hc k) hN).le
-    rw [PiLp.toLp_apply, Real.norm_of_nonneg (by positivity), Real.mul_rpow hN.le (by positivity),
-      ← Real.rpow_mul hb, div_mul_cancel₀ _ hp₀.ne']
-  simp_rw [hterm, ← Finset.mul_sum, hsum, mul_one]
 
 /-! ### The inclusion `ℓ^q([X₀, X₁]_θ) ⊆ [ℓ^{q₀}(X₀), ℓ^{q₁}(X₁)]_θ` -/
 
@@ -231,8 +198,7 @@ private theorem exists_sumSpaceEmbed_toSum_eq_and_norm_le_norm_toLp [Nonempty ι
         (fun k => C.sumSpaceEmbed (ComplexMethodSpace.toSum (u k))) ∧
         ‖v‖ ≤ ‖WithLp.toLp q c‖ := by
   have hc₀ (k : ι) : 0 < c k := (norm_nonneg _).trans_lt (hc k)
-  have hN : 0 < ‖WithLp.toLp q c‖ := (hc₀ (Classical.arbitrary ι)).trans_le
-    ((Real.le_norm_self _).trans (PiLp.norm_apply_le (WithLp.toLp q c) _))
+  have hN : 0 < ‖WithLp.toLp q c‖ := PiLp.norm_toLp_pos (hc₀ (Classical.arbitrary ι))
   by_cases hqt : q = ∞
   · -- all exponents are infinite: take `r₀ = r₁ = 1`
     obtain ⟨rfl, rfl⟩ := hq_top hqt
@@ -244,12 +210,12 @@ private theorem exists_sumSpaceEmbed_toSum_eq_and_norm_le_norm_toLp [Nonempty ι
     exact exists_sumSpaceEmbed_toSum_eq_and_norm_le_of_lt hθ (r₀ := 1) (r₁ := 1) (by ring) u hc
       hN (by rw [hcN]) (by rw [hcN])
   -- `q < ∞`: take `r_j = q / q_j`
-  have hq₀ : q.toReal ≠ 0 :=
-    (ENNReal.toReal_pos (one_pos.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ q)).ne' hqt).ne'
-  have hθq := inv_toReal_eq_of_inv_eq (one_pos.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ q₀)).ne'
-    (one_pos.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ q₁)).ne' hθ hq
+  have hne (p : ℝ≥0∞) [Fact (1 ≤ p)] : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
+  have hq₀ : q.toReal ≠ 0 := ((ENNReal.toReal_pos_iff_ne_top q).2 hqt).ne'
+  have hθq := inv_toReal_eq_of_inv_eq (hne q₀) (hne q₁) hθ hq
   refine exists_sumSpaceEmbed_toSum_eq_and_norm_le_of_lt hθ ?_ u hc hN
-    (norm_toLp_mul_div_rpow_le hqt q₀ hc₀) (norm_toLp_mul_div_rpow_le hqt q₁ hc₀)
+    (PiLp.norm_toLp_mul_div_rpow hqt (hne q₀) hc₀).le
+    (PiLp.norm_toLp_mul_div_rpow hqt (hne q₁) hc₀).le
   calc (1 - θ) * (q.toReal / q₀.toReal) + θ * (q.toReal / q₁.toReal)
       = q.toReal * ((1 - θ) * q₀.toReal⁻¹ + θ * q₁.toReal⁻¹) := by ring
     _ = 1 := by rw [← hθq, mul_inv_cancel₀ hq₀]
