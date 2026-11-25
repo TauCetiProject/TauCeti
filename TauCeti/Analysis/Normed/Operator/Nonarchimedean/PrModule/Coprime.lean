@@ -70,7 +70,7 @@ for the reversal `Q* = Q.reverse`, is invertible exactly when `Q` and the Fredho
 theorem IsPrCompact.isUnit_aeval_reverse_iff {u : M →L[R] M} (hu : u.IsPrCompact) {Q : R[X]}
     (hQ : IsUnit Q.leadingCoeff) :
     IsUnit (Polynomial.aeval u Q.reverse) ↔
-      IsCoprime (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ : IsEntire.subring R)
+      IsCoprime (IsEntire.polynomialHom Q)
         ⟨u.charPowerSeries, IsEntire.mem_subring.mpr hu.isEntire_charPowerSeries⟩ := by
   obtain ⟨c, hc⟩ := hQ.exists_left_inv
   have hB0 := coeff_zero_one_sub_C_mul_reverse hc
@@ -98,7 +98,7 @@ theorem IsRowCompact.isUnit_aeval_reverse_iff {I : Type*} [TopologicalSpace I] [
     [DecidableEq I] {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact) {Q : R[X]}
     (hQ : IsUnit Q.leadingCoeff) :
     IsUnit (Polynomial.aeval u Q.reverse) ↔
-      IsCoprime (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ : IsEntire.subring R)
+      IsCoprime (IsEntire.polynomialHom Q)
         ⟨u.matrixCoeff.charPowerSeries, IsEntire.mem_subring.mpr hu.isEntire_charPowerSeries⟩ := by
   have hu' := isPrCompact_iff_isRowCompact.2 hu
   convert hu'.isUnit_aeval_reverse_iff hQ using 3
@@ -113,8 +113,7 @@ series. The unit hypothesis on `P(0)` is essential: for `P = X` and `u = 0` on a
 theorem IsPrCompact.isUnit_aeval_iff {u : M →L[R] M} (hu : u.IsPrCompact) {P : R[X]}
     (hP0 : IsUnit (P.coeff 0)) :
     IsUnit (Polynomial.aeval u P) ↔
-      IsCoprime (⟨P.reverse, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe P.reverse)⟩ :
-          IsEntire.subring R)
+      IsCoprime (IsEntire.polynomialHom P.reverse)
         ⟨u.charPowerSeries, IsEntire.mem_subring.mpr hu.isEntire_charPowerSeries⟩ := by
   have : Nontrivial R := NormOneClass.nontrivial
   have htrail : P.natTrailingDegree = 0 := natTrailingDegree_eq_zero.2 (Or.inr hP0.ne_zero)
@@ -133,8 +132,7 @@ theorem IsRowCompact.isUnit_aeval_iff {I : Type*} [TopologicalSpace I] [Discrete
     [DecidableEq I] {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact) {P : R[X]}
     (hP0 : IsUnit (P.coeff 0)) :
     IsUnit (Polynomial.aeval u P) ↔
-      IsCoprime (⟨P.reverse, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe P.reverse)⟩ :
-          IsEntire.subring R)
+      IsCoprime (IsEntire.polynomialHom P.reverse)
         ⟨u.matrixCoeff.charPowerSeries, IsEntire.mem_subring.mpr hu.isEntire_charPowerSeries⟩ := by
   have hu' := isPrCompact_iff_isRowCompact.2 hu
   convert hu'.isUnit_aeval_iff hP0 using 3

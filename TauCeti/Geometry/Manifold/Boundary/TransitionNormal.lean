@@ -18,8 +18,8 @@ on the coordinate hyperplane and nonnegative in the inward direction. The invers
 transition makes the inward coefficient strictly positive. Thus outward signs are independent
 of the preferred chart, including at boundary points. The minimum of the normal coordinate at a
 boundary point is `normal_le_of_mem_boundary`, and the Fermat step,
-`hasFDerivWithinAt_normal_nonneg`, holds for the normal coordinate of any half-space chart read
-in a preferred chart.
+`hasFDerivWithinAt_nonneg_of_isLocalMin`, holds for any function with a local minimum at a
+boundary point, read in a preferred chart.
 -/
 
 public section
@@ -43,16 +43,15 @@ theorem normal_le_of_mem_boundary {e : OpenPartialHomeomorph M (EuclideanHalfSpa
   ((ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hxe).mp hx).trans_le (e y).property
 
 omit [IsManifold (𝓡∂ (n + 1)) 1 M] in
-/-- Fermat's theorem on the half-space at a boundary point. The normal coordinate `(e ·).1 0` of a
-half-space chart `e` is nonnegative and vanishes at a boundary point `x` of its source, so, read in
-an extended chart at `α`, it has a minimum at `x`. Hence its derivative within the model
-half-space is nonnegative on the closed inward half-space `0 ≤ v 0`. -/
-theorem hasFDerivWithinAt_normal_nonneg
-    {e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))} {α x : M}
+/-- **Fermat's theorem at a boundary point**, read in a chart. If `f : M → ℝ` has a local minimum
+at a boundary point `x`, then, read in an extended chart at `α` whose source contains `x`, its
+derivative within the model half-space is nonnegative on the closed inward half-space
+`0 ≤ v 0`. -/
+theorem hasFDerivWithinAt_nonneg_of_isLocalMin {f : M → ℝ} {α x : M}
     (hx : x ∈ (𝓡∂ (n + 1)).boundary M)
-    (hα : x ∈ (extChartAt (𝓡∂ (n + 1)) α).source) (hxe : x ∈ e.source)
+    (hα : x ∈ (extChartAt (𝓡∂ (n + 1)) α).source) (hmin : IsLocalMin f x)
     {f' : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ}
-    (hf : HasFDerivWithinAt (fun z ↦ (e ((extChartAt (𝓡∂ (n + 1)) α).symm z)).val 0) f'
+    (hf : HasFDerivWithinAt (f ∘ (extChartAt (𝓡∂ (n + 1)) α).symm) f'
       (range (𝓡∂ (n + 1))) (extChartAt (𝓡∂ (n + 1)) α x))
     {v : EuclideanSpace ℝ (Fin (n + 1))} (hv : 0 ≤ v 0) : 0 ≤ f' v := by
   let I := 𝓡∂ (n + 1)
@@ -62,18 +61,16 @@ theorem hasFDerivWithinAt_normal_nonneg
     simpa only [I, extChartAt, OpenPartialHomeomorph.extend_coe, Function.comp_apply,
       modelWithCornersEuclideanHalfSpace_toFun] using
       (ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hc).mp hx
-  have hmin : IsLocalMinOn (fun z ↦ (e ((extChartAt I α).symm z)).val 0) (range I)
-      (extChartAt I α x) :=
-    Filter.Eventually.of_forall fun z ↦ by
-      simpa only [(extChartAt I α).left_inv hα] using
-        normal_le_of_mem_boundary hx hxe ((extChartAt I α).symm z)
+  have hmin' : IsLocalMinOn (f ∘ (extChartAt I α).symm) (range I) (extChartAt I α x) := by
+    refine IsMinFilter.comp_of_tendsto ?_ (map_extChartAt_symm_nhdsWithin_range' (I := I) hα).le
+    rwa [(extChartAt I α).left_inv hα]
   have hcone : v ∈ posTangentConeAt (range I) (extChartAt I α x) := by
     apply mem_posTangentConeAt_of_segment_subset
     apply I.convex_range.segment_subset (mem_range_self (chartAt _ α x))
     rw [range_modelWithCornersEuclideanHalfSpace]
     simp only [mem_ofPred_eq, PiLp.add_apply, hy0, zero_add]
     exact hv
-  exact hmin.hasFDerivWithinAt_nonneg hf hcone
+  exact hmin'.hasFDerivWithinAt_nonneg hf hcone
 
 /-- At a boundary point an actual coordinate transition maps the closed inward half-space
 `0 ≤ v 0` into itself: the normal coordinate of the image of an inward vector is nonnegative. -/
@@ -85,8 +82,11 @@ theorem tangentCoordChange_normal_nonneg {α β x : M}
     0 ≤ (tangentCoordChange (𝓡∂ (n + 1)) α β x v) 0 := by
   have hD := (PiLp.proj 2 (fun _ : Fin (n + 1) ↦ ℝ) 0).hasFDerivAt.comp_hasFDerivWithinAt _
     (hasFDerivWithinAt_tangentCoordChange (I := 𝓡∂ (n + 1)) ⟨hα, hβ⟩)
-  exact hasFDerivWithinAt_normal_nonneg (e := chartAt _ β) hx hα
-    (by simpa only [extChartAt_source] using hβ) hD hv
+  have hβ' : x ∈ (chartAt (EuclideanHalfSpace (n + 1)) β).source := by
+    simpa only [extChartAt_source] using hβ
+  exact hasFDerivWithinAt_nonneg_of_isLocalMin
+    (f := fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) β y).val 0) hx hα
+    (Eventually.of_forall (normal_le_of_mem_boundary hx hβ')) hD hv
 
 /-- At a boundary point an actual coordinate transition scales the normal coordinate by a
 strictly positive number. No block structure or orientation identity is assumed. -/

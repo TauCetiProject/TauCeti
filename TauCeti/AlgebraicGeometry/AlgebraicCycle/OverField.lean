@@ -24,6 +24,8 @@ degrees ([Stacks, Sections 42.12 and 42.41](https://stacks.math.columbia.edu/tag
 
 * `AlgebraicCycle.mapCoeff_height_eq_residueDegree` and `AlgebraicCycle.map_height_apply`: the
   multiplicities of the pushforward with height weights are the residue degrees.
+* `AlgebraicCycle.map_height_single`: the pushforward of a point cycle `r [x]` is
+  `r [κ(x) : κ(f x)] [f x]`.
 * `AlgebraicCycle.map_height_comp`: the pushforward with height weights is functorial.
 * `AlgebraicCycle.degree_eq_map_height_apply` and `AlgebraicCycle.degree_map_height`: on
   quasi-compact schemes, Mathlib's degree along the structure morphism is the pushforward to
@@ -61,6 +63,20 @@ lemma map_height_apply (f : X ⟶ Y) [f.IsOver (Spec (.of k))] [QuasiCompact f]
     (α : AlgebraicCycle X R) (y : Y) :
     map f height height α y = ∑ᶠ x ∈ f ⁻¹' {y}, α x * (f.residueDegree x : R) := by
   simp only [map, Function.locallyFinsupp.map_apply, mapCoeff_height_eq_residueDegree k]
+
+/-- Over a field, Mathlib's pushforward of cycles with height weights sends the point cycle
+`r [x]` to `r [κ(x) : κ(f x)] [f x]`. -/
+lemma map_height_single [DecidableEq X] [DecidableEq Y] (f : X ⟶ Y) [f.IsOver (Spec (.of k))]
+    [QuasiCompact f] (x : X) (r : R) :
+    map f height height (Function.locallyFinsuppWithin.single x r) =
+      Function.locallyFinsuppWithin.single (f x) (r * f.residueDegree x) := by
+  ext y
+  rw [map_height_apply k, Function.locallyFinsuppWithin.single_apply]
+  rw [finsum_eq_single _ x fun z hz => by
+    simp [Function.locallyFinsuppWithin.single_apply, hz]]
+  by_cases h : y = f x
+  · simp [h, Function.locallyFinsuppWithin.single_apply]
+  · simp [Function.locallyFinsuppWithin.single_apply, h, Ne.symm h]
 
 /-- Over a field, Mathlib's pushforward of cycles with height weights is functorial:
 `(g ∘ f)_* = g_* f_*`, by the tower law for residue degrees. -/

@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Tactic.Linarith
-public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
-public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.KnotTheory.Grid.Grading.Parity
-public import TauCeti.KnotTheory.Grid.Unblocked
+public import TauCeti.KnotTheory.Grid.Grading.Unblocked.MonomialDegree
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 
 /-!
@@ -48,7 +46,10 @@ an internal direct sum (`OddComponentGridDiagram.isInternal_bigradedChainMinusPi
 the decomposition of `Grading/Chain.lean`, which regroups the basis of grid states of the blocked
 chain module `GridChain R n` by bidegree over an arbitrary coefficient ring: over the polynomial
 ring a basis element is a monomial *times* a grid state, and its bidegree depends on both, so what
-is graded here is `GC⁻` itself and the pieces are submodules of it.
+is graded here is `GC⁻` itself and the pieces are submodules of it. The pieces, the internal
+grading and the closure of the pieces under `∂⁻` and the variables are the instance
+`deg = monomialBidegree` of the grading of `GC⁻` by monomial degrees,
+`GridChainMinus.monomialDegreeGrading` of `Grading/Unblocked/MonomialDegree.lean`.
 
 Forgetting the `O`-Maslov component gives the Alexander grading of `GC⁻`
 (`OddComponentGridDiagram.alexanderChainMinusGrading`), an internal grading over `R` which `∂⁻`
@@ -308,35 +309,14 @@ theorem monomialBidegree_add_of_mem_unblockedRectangles
 
 /-! ### The homogeneous pieces of `GC⁻` -/
 
-/-- The chains of `GC⁻` all of whose monomials have bidegree in a prescribed set of bidegrees.
-Only the singleton and complement-of-singleton cases are used: a homogeneous piece is the first,
-and comparing it against the second is what makes the pieces independent. -/
-private def bigradedChainMinusSupported (R : Type*) [CommSemiring R] (S : Set (ℤ × ℤ)) :
-    Submodule R (GridChainMinus R n) where
-  carrier := {c | ∀ x : GridState n, ∀ e ∈ (c x).support, G.monomialBidegree x e ∈ S}
-  add_mem' {a b} ha hb x e he := by
-    classical
-    rw [Finsupp.add_apply] at he
-    rcases Finset.mem_union.mp (MvPolynomial.support_add he) with h | h
-    · exact ha x e h
-    · exact hb x e h
-  zero_mem' x e he := by simp at he
-  smul_mem' a b hb x e he := by
-    rw [Finsupp.smul_apply] at he
-    exact hb x e (MvPolynomial.support_smul he)
-
-private theorem bigradedChainMinusSupported_mono {R : Type*} [CommSemiring R] {S T : Set (ℤ × ℤ)}
-    (h : S ⊆ T) : G.bigradedChainMinusSupported R S ≤ G.bigradedChainMinusSupported R T :=
-  fun _ hc x e he => h (hc x e he)
-
 /-- The homogeneous piece of the unblocked grid chain module `GC⁻` in bidegree `g`: the chains all
 of whose monomials `V^e · x` have bidegree `g`.
 
 The variables move the bidegree, so this is a submodule over the coefficient ring `R` only, not
 over `R[V₀, …, V_{n-1}]`. -/
-def bigradedChainMinusPiece (R : Type*) [CommSemiring R] (g : ℤ × ℤ) :
+noncomputable def bigradedChainMinusPiece (R : Type*) [CommSemiring R] (g : ℤ × ℤ) :
     Submodule R (GridChainMinus R n) :=
-  G.bigradedChainMinusSupported R {g}
+  GridChainMinus.monomialDegreePiece R G.monomialBidegree g
 
 /-- A chain of `GC⁻` is homogeneous of bidegree `g` exactly when every monomial occurring in it
 has bidegree `g`. -/
@@ -345,20 +325,14 @@ theorem mem_bigradedChainMinusPiece {R : Type*} [CommSemiring R] {g : ℤ × ℤ
     {c : GridChainMinus R n} :
     c ∈ G.bigradedChainMinusPiece R g ↔
       ∀ x : GridState n, ∀ e ∈ (c x).support, G.monomialBidegree x e = g :=
-  Iff.rfl
+  GridChainMinus.mem_monomialDegreePiece
 
 /-- A monomial multiple of a single grid-state generator is homogeneous of its own bidegree. -/
 theorem single_monomial_mem_bigradedChainMinusPiece (R : Type*) [CommSemiring R]
     (x : GridState n) (e : Fin n →₀ ℕ) (a : R) :
     (Finsupp.single x (monomial e a) : GridChainMinus R n) ∈
-      G.bigradedChainMinusPiece R (G.monomialBidegree x e) := by
-  rw [mem_bigradedChainMinusPiece]
-  intro z f hf
-  rcases eq_or_ne z x with rfl | hzx
-  · rw [Finsupp.single_eq_same] at hf
-    rw [Finset.mem_singleton.mp (MvPolynomial.support_monomial_subset hf)]
-  · rw [Finsupp.single_eq_of_ne hzx] at hf
-    simp at hf
+      G.bigradedChainMinusPiece R (G.monomialBidegree x e) :=
+  GridChainMinus.single_monomial_mem_monomialDegreePiece R G.monomialBidegree x e a
 
 /-- A grid-state generator of `GC⁻` is homogeneous of the bidegree of its state. -/
 theorem single_one_mem_bigradedChainMinusPiece (R : Type*) [CommSemiring R] (x : GridState n) :
@@ -368,27 +342,13 @@ theorem single_one_mem_bigradedChainMinusPiece (R : Type*) [CommSemiring R] (x :
     simp
   rwa [monomialBidegree_zero, hone] at h
 
-/-- The unblocked grid differential lowers the bidegree of every monomial of a chain by `(1, 0)`. -/
-private theorem unblockedDifferential_mem_bigradedChainMinusSupported {R : Type*}
-    [CommSemiring R] {S T : Set (ℤ × ℤ)} (hST : ∀ g ∈ S, g - (1, 0) ∈ T)
-    {c : GridChainMinus R n} (hc : c ∈ G.bigradedChainMinusSupported R S) :
-    G.val.unblockedDifferential R c ∈ G.bigradedChainMinusSupported R T := by
-  classical
-  intro z f hf
-  rw [GridDiagram.unblockedDifferential_apply_apply, Finsupp.sum] at hf
-  obtain ⟨w, -, hfw⟩ := Finset.mem_biUnion.mp (MvPolynomial.support_sum hf)
-  obtain ⟨e, he, d, hd, rfl⟩ := Finset.mem_add.mp (MvPolynomial.support_mul _ _ hfw)
-  obtain ⟨r, hr, rfl⟩ :=
-    G.val.exists_mem_unblockedRectangles_of_mem_support_unblockedCoefficient R hd
-  rw [G.monomialBidegree_add_of_mem_unblockedRectangles hr e]
-  exact hST _ (hc w e he)
-
 /-- **The unblocked grid differential has bidegree `(-1, 0)`**: it drops the `O`-Maslov grading by
 one and preserves the Alexander grading. -/
 theorem unblockedDifferential_mem_bigradedChainMinusPiece {R : Type*} [CommSemiring R]
     {g : ℤ × ℤ} {c : GridChainMinus R n} (hc : c ∈ G.bigradedChainMinusPiece R g) :
     G.val.unblockedDifferential R c ∈ G.bigradedChainMinusPiece R (g - (1, 0)) :=
-  G.unblockedDifferential_mem_bigradedChainMinusSupported (by rintro _ rfl; rfl) hc
+  G.val.unblockedDifferential_mem_monomialDegreePiece (φ := (· - (1, 0)))
+    (fun _ _ _ hr e ↦ G.monomialBidegree_add_of_mem_unblockedRectangles hr e) hc
 
 /-- The unblocked grid differential maps each homogeneous piece of `GC⁻` into the piece one lower
 in the `O`-Maslov grading. -/
@@ -414,21 +374,6 @@ private theorem monomialBidegree_add_left (x : GridState n) (d e : Fin n →₀ 
   · simp only [Prod.snd_sub, monomialBidegree_snd, hdeg]
     ring
 
-/-- Multiplying by the monomial `V^d` lowers the bidegree of every monomial of a chain by `|d|`
-times `(2, 1)`. -/
-private theorem monomial_smul_mem_bigradedChainMinusSupported {R : Type*} [CommSemiring R]
-    (d : Fin n →₀ ℕ) (a : R) {S T : Set (ℤ × ℤ)}
-    (hST : ∀ g ∈ S, g - (2 * (d.degree : ℤ), (d.degree : ℤ)) ∈ T) {c : GridChainMinus R n}
-    (hc : c ∈ G.bigradedChainMinusSupported R S) :
-    (monomial d a : MvPolynomial (Fin n) R) • c ∈ G.bigradedChainMinusSupported R T := by
-  classical
-  intro z f hf
-  rw [Finsupp.smul_apply, smul_eq_mul] at hf
-  obtain ⟨b, hb, e, he, rfl⟩ := Finset.mem_add.mp (MvPolynomial.support_mul _ _ hf)
-  rw [Finset.mem_singleton.mp (MvPolynomial.support_monomial_subset hb),
-    G.monomialBidegree_add_left]
-  exact hST _ (hc z e he)
-
 /-- **A monomial of the polynomial ring has bidegree `-|d|` times `(2, 1)`**: multiplying a
 homogeneous chain of `GC⁻` by `V^d` lowers its `O`-Maslov grading by `2 |d|` and its Alexander
 grading by `|d|`. -/
@@ -437,7 +382,9 @@ theorem monomial_smul_mem_bigradedChainMinusPiece {R : Type*} [CommSemiring R]
     (hc : c ∈ G.bigradedChainMinusPiece R g) :
     (monomial d a : MvPolynomial (Fin n) R) • c ∈
       G.bigradedChainMinusPiece R (g - (2 * (d.degree : ℤ), (d.degree : ℤ))) :=
-  G.monomial_smul_mem_bigradedChainMinusSupported d a (by rintro _ rfl; rfl) hc
+  GridChainMinus.monomial_smul_mem_monomialDegreePiece d a
+    (φ := (· - (2 * (d.degree : ℤ), (d.degree : ℤ))))
+    (fun x e ↦ G.monomialBidegree_add_left x d e) hc
 
 /-- **The variable `V_c` has bidegree `(-2, -1)`**: multiplying a homogeneous chain of `GC⁻` by a
 polynomial variable lowers its `O`-Maslov grading by two and its Alexander grading by one. -/
@@ -478,37 +425,14 @@ theorem X_smul_mem_bigradedChainMinusPiece_iff {R : Type*} [CommSemiring R]
 /-- The homogeneous pieces of `GC⁻` span it: every chain is a finite sum of monomial multiples of
 grid-state generators. -/
 theorem iSup_bigradedChainMinusPiece_eq_top (R : Type*) [CommSemiring R] :
-    ⨆ g : ℤ × ℤ, G.bigradedChainMinusPiece R g = ⊤ := by
-  classical
-  rw [eq_top_iff]
-  rintro c -
-  induction c using Finsupp.induction with
-  | zero => exact Submodule.zero_mem _
-  | single_add x p c _ _ ih =>
-    refine Submodule.add_mem _ ?_ ih
-    have hp : (Finsupp.single x p : GridChainMinus R n) =
-        ∑ e ∈ p.support, Finsupp.single x (monomial e (p.coeff e)) := by
-      conv_lhs => rw [MvPolynomial.as_sum p]
-      exact map_sum (Finsupp.singleAddHom x) _ _
-    rw [hp]
-    exact Submodule.sum_mem _ fun e _ =>
-      Submodule.mem_iSup_of_mem (G.monomialBidegree x e)
-        (G.single_monomial_mem_bigradedChainMinusPiece R x e _)
+    ⨆ g : ℤ × ℤ, G.bigradedChainMinusPiece R g = ⊤ :=
+  GridChainMinus.iSup_monomialDegreePiece_eq_top R G.monomialBidegree
 
 /-- The homogeneous pieces of `GC⁻` are independent: every monomial of a chain has exactly one
 bidegree. -/
 theorem iSupIndep_bigradedChainMinusPiece (R : Type*) [CommSemiring R] :
-    iSupIndep (G.bigradedChainMinusPiece R) := by
-  intro g
-  rw [Submodule.disjoint_def]
-  intro c hc hc'
-  rw [mem_bigradedChainMinusPiece] at hc
-  have hcompl : c ∈ G.bigradedChainMinusSupported R {g}ᶜ :=
-    iSup₂_le (fun _ hg => G.bigradedChainMinusSupported_mono
-      (Set.singleton_subset_iff.mpr hg)) hc'
-  refine Finsupp.ext fun z => ?_
-  rw [Finsupp.zero_apply, ← MvPolynomial.support_eq_empty, Finset.eq_empty_iff_forall_notMem]
-  exact fun e he => hcompl z e he (hc z e he)
+    iSupIndep (G.bigradedChainMinusPiece R) :=
+  GridChainMinus.iSupIndep_monomialDegreePiece R G.monomialBidegree
 
 /-- **The unblocked grid chain module is bigraded**: `GC⁻` is the internal direct sum of its
 homogeneous pieces.
@@ -519,19 +443,18 @@ file, because independence plus spanning gives an internal direct sum only over 
 interest, `ZMod 2` first among them, are rings. -/
 theorem isInternal_bigradedChainMinusPiece (R : Type*) [CommRing R] :
     DirectSum.IsInternal (G.bigradedChainMinusPiece R) :=
-  DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-    (G.iSupIndep_bigradedChainMinusPiece R) (G.iSup_bigradedChainMinusPiece_eq_top R)
+  GridChainMinus.isInternal_monomialDegreePiece R G.monomialBidegree
 
 /-- The internal `(O-Maslov, Alexander)` grading of the unblocked chain module `GC⁻`. -/
 noncomputable def bigradedChainMinusGrading (R : Type*) [CommRing R] :
     InternalGrading R (GridChainMinus R n) (ℤ × ℤ) :=
-  ⟨G.bigradedChainMinusPiece R, G.isInternal_bigradedChainMinusPiece R⟩
+  GridChainMinus.monomialDegreeGrading R G.monomialBidegree
 
 /-- The pieces of the bundled chain grading are the bigraded chain pieces. -/
 @[simp]
 theorem bigradedChainMinusGrading_piece (R : Type*) [CommRing R] (g : ℤ × ℤ) :
-    (G.bigradedChainMinusGrading R).piece g = G.bigradedChainMinusPiece R g := by
-  rw [bigradedChainMinusGrading]
+    (G.bigradedChainMinusGrading R).piece g = G.bigradedChainMinusPiece R g :=
+  GridChainMinus.monomialDegreeGrading_piece R _ g
 
 /-- Every monomial of a homogeneous component of a chain of `GC⁻` is a monomial of the chain. -/
 theorem support_decompose_bigradedChainMinusGrading_subset (R : Type*) [CommRing R]
@@ -566,7 +489,7 @@ theorem isHomogeneous_unblockedDifferential_bigradedChainMinusGrading
       (G.bigradedChainMinusGrading R).piece (G.bigradedChainMinusGrading R).piece (-(1, 0)) := by
   rw [LinearMap.isHomogeneous_def]
   intro g c hc
-  simp only [bigradedChainMinusGrading] at hc ⊢
+  rw [bigradedChainMinusGrading_piece] at hc ⊢
   simpa only [sub_eq_add_neg] using G.unblockedDifferential_mem_bigradedChainMinusPiece hc
 
 /-! ### The Alexander grading of `GC⁻` -/
@@ -575,9 +498,9 @@ theorem isHomogeneous_unblockedDifferential_bigradedChainMinusGrading
 chains all of whose monomials `V^e · x` have Alexander grading `A(x) - |e| = a`, whatever their
 `O`-Maslov grading. Like the bigraded pieces, it is a submodule over the coefficient ring `R`
 only. -/
-def alexanderChainMinusPiece (R : Type*) [CommSemiring R] (a : ℤ) :
+noncomputable def alexanderChainMinusPiece (R : Type*) [CommSemiring R] (a : ℤ) :
     Submodule R (GridChainMinus R n) :=
-  G.bigradedChainMinusSupported R {g | g.2 = a}
+  GridChainMinus.monomialDegreePiece R (fun x e ↦ G.alexanderℤ x - (e.degree : ℤ)) a
 
 /-- A chain of `GC⁻` is Alexander-homogeneous of degree `a` exactly when every monomial `V^e · x`
 occurring in it has Alexander grading `A(x) - |e| = a`. -/
@@ -585,64 +508,55 @@ occurring in it has Alexander grading `A(x) - |e| = a`. -/
 theorem mem_alexanderChainMinusPiece {R : Type*} [CommSemiring R] {a : ℤ}
     {c : GridChainMinus R n} :
     c ∈ G.alexanderChainMinusPiece R a ↔
-      ∀ x : GridState n, ∀ e ∈ (c x).support, G.alexanderℤ x - (e.degree : ℤ) = a := by
-  simp only [← monomialBidegree_snd]
-  rfl
+      ∀ x : GridState n, ∀ e ∈ (c x).support, G.alexanderℤ x - (e.degree : ℤ) = a :=
+  GridChainMinus.mem_monomialDegreePiece
 
 /-- A bigraded piece of `GC⁻` lies in the Alexander piece of its Alexander degree. -/
 theorem bigradedChainMinusPiece_le_alexanderChainMinusPiece (R : Type*) [CommSemiring R]
     (m a : ℤ) : G.bigradedChainMinusPiece R (m, a) ≤ G.alexanderChainMinusPiece R a :=
-  G.bigradedChainMinusSupported_mono (Set.singleton_subset_iff.mpr rfl)
+  fun _ hc ↦ G.mem_alexanderChainMinusPiece.mpr fun x e he ↦ by
+    rw [← monomialBidegree_snd, G.mem_bigradedChainMinusPiece.mp hc x e he]
 
 /-- The unblocked grid differential preserves the Alexander grading. -/
 theorem unblockedDifferential_mem_alexanderChainMinusPiece {R : Type*} [CommSemiring R]
     {a : ℤ} {c : GridChainMinus R n} (hc : c ∈ G.alexanderChainMinusPiece R a) :
     G.val.unblockedDifferential R c ∈ G.alexanderChainMinusPiece R a :=
-  G.unblockedDifferential_mem_bigradedChainMinusSupported
-    (fun g (hg : g.2 = a) ↦ by simpa using hg) hc
+  G.val.unblockedDifferential_mem_monomialDegreePiece (φ := id) (fun _ _ _ hr e ↦ by
+    simpa using congrArg Prod.snd (G.monomialBidegree_add_of_mem_unblockedRectangles hr e)) hc
 
 /-- **The variable `V_c` has Alexander degree `-1`**: multiplying an Alexander-homogeneous chain
 of `GC⁻` by a polynomial variable lowers its Alexander grading by one. -/
 theorem X_smul_mem_alexanderChainMinusPiece {R : Type*} [CommSemiring R] (i : Fin n) {a : ℤ}
     {c : GridChainMinus R n} (hc : c ∈ G.alexanderChainMinusPiece R a) :
     (X i : MvPolynomial (Fin n) R) • c ∈ G.alexanderChainMinusPiece R (a - 1) := by
-  have h := G.monomial_smul_mem_bigradedChainMinusSupported (Finsupp.single i 1) (1 : R)
-    (T := {g | g.2 = a - 1}) (fun g (hg : g.2 = a) ↦ by simp [hg]) hc
+  have h := GridChainMinus.monomial_smul_mem_monomialDegreePiece (Finsupp.single i 1) (1 : R)
+    (φ := (· - 1)) (fun x e ↦ by
+      simp only [map_add, Finsupp.degree_single, Nat.cast_add, Nat.cast_one]
+      ring) hc
   rwa [← X] at h
 
 /-- The Alexander pieces of `GC⁻` span it. -/
 theorem iSup_alexanderChainMinusPiece_eq_top (R : Type*) [CommSemiring R] :
     ⨆ a : ℤ, G.alexanderChainMinusPiece R a = ⊤ :=
-  eq_top_iff.mpr <| (G.iSup_bigradedChainMinusPiece_eq_top R).ge.trans <| iSup_le fun g ↦
-    (G.bigradedChainMinusPiece_le_alexanderChainMinusPiece R g.1 g.2).trans (le_iSup _ g.2)
+  GridChainMinus.iSup_monomialDegreePiece_eq_top R _
 
 /-- The Alexander pieces of `GC⁻` are independent: every monomial of a chain has exactly one
 Alexander grading. -/
 theorem iSupIndep_alexanderChainMinusPiece (R : Type*) [CommSemiring R] :
-    iSupIndep (G.alexanderChainMinusPiece R) := by
-  intro a
-  rw [Submodule.disjoint_def]
-  intro c hc hc'
-  have hcompl : c ∈ G.bigradedChainMinusSupported R {g | g.2 ≠ a} :=
-    iSup₂_le (fun b hb ↦ G.bigradedChainMinusSupported_mono
-      (S := {g | g.2 = b}) (T := {g | g.2 ≠ a}) fun g (hg : g.2 = b) ↦ by simpa [hg] using hb) hc'
-  refine Finsupp.ext fun z ↦ ?_
-  rw [Finsupp.zero_apply, ← MvPolynomial.support_eq_empty, Finset.eq_empty_iff_forall_notMem]
-  exact fun e he ↦ hcompl z e he (hc z e he)
+    iSupIndep (G.alexanderChainMinusPiece R) :=
+  GridChainMinus.iSupIndep_monomialDegreePiece R _
 
 /-- **The Alexander grading of `GC⁻`**: the unblocked grid chain module is the internal direct sum
 of its Alexander pieces, as a module over the coefficient ring `R`. -/
-def alexanderChainMinusGrading (R : Type*) [CommRing R] :
-    InternalGrading R (GridChainMinus R n) ℤ where
-  piece := G.alexanderChainMinusPiece R
-  isInternal := DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-    (G.iSupIndep_alexanderChainMinusPiece R) (G.iSup_alexanderChainMinusPiece_eq_top R)
+noncomputable def alexanderChainMinusGrading (R : Type*) [CommRing R] :
+    InternalGrading R (GridChainMinus R n) ℤ :=
+  GridChainMinus.monomialDegreeGrading R fun x e ↦ G.alexanderℤ x - (e.degree : ℤ)
 
 /-- The degree-`a` piece of the Alexander grading of `GC⁻` is its Alexander piece. -/
 @[simp]
 theorem alexanderChainMinusGrading_piece (R : Type*) [CommRing R] (a : ℤ) :
     (G.alexanderChainMinusGrading R).piece a = G.alexanderChainMinusPiece R a :=
-  (rfl)
+  GridChainMinus.monomialDegreeGrading_piece R _ a
 
 /-- The degree-`a` component of the Alexander grading retains exactly the monomials of
 Alexander degree `a`. -/
@@ -681,6 +595,7 @@ theorem isHomogeneous_unblockedDifferential_alexanderChainMinusGrading (R : Type
     LinearMap.IsHomogeneous (G.val.unblockedDifferential R) (G.alexanderChainMinusGrading R).piece
       (G.alexanderChainMinusGrading R).piece 0 :=
   LinearMap.isHomogeneous_def.mpr fun a _ hc ↦ by
+    rw [alexanderChainMinusGrading_piece] at hc
     simpa using G.unblockedDifferential_mem_alexanderChainMinusPiece hc
 
 /-! ### Grading preservation by renamed matrix maps -/

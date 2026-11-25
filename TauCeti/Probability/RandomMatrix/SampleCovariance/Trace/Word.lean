@@ -50,6 +50,10 @@ with `p / n` bounded.
 * `TauCeti.Probability.norm_integral_prod_mul_star_le` and
   `TauCeti.Probability.norm_sum_integral_prod_mul_star_le`: moment bounds for one bipartite word
   and for a family of bipartite words with a bounded number of rows and columns.
+* `TauCeti.Probability.norm_integral_prod_mul_star_le_of_no_singleton_edge`: for independent
+  entries, a bipartite word of half-length `k` reading each of its `e` positions at least twice,
+  whose entries read `d` times have `d`-th absolute moments at most `b ^ (d - 2) * c`, has
+  expected product of norm at most `c ^ e * b ^ (2 * k - 2 * e)`.
 * `TauCeti.Probability.norm_inv_mul_integral_trace_pow_sampleCovariance_sub_sum_le`: for
   independent centred entries whose `2k`th absolute moments are bounded by `B`, the normalized
   moment `(card p)⁻¹ E tr Sᵏ` minus the contribution of the words with `k + 1` row and column
@@ -218,6 +222,29 @@ theorem norm_integral_prod_mul_star_le (hk : k ≠ 0) {B : ℝ}
     _ = B := by
       rw [sum_const, card_univ_sum_fin, nsmul_eq_mul]
       field_simp
+
+/-- **Expected bipartite words reading each position at least twice.** Let the entries of `X` be
+independent, and let the bipartite word `u, v` of half-length `k` read each of its positions at
+least twice, the entries read being almost everywhere measurable. If the entry at each position
+read `d` times has `d`-th absolute moment at most `b ^ (d - 2) * c`, then the expected product
+along the word has norm at most `c ^ e * b ^ (2 * k - 2 * e)`, where `e` is the number of distinct
+positions read. -/
+theorem norm_integral_prod_mul_star_le_of_no_singleton_edge [DecidableEq p] [DecidableEq n]
+    {b c : ℝ} (hindep : iIndepFun (fun ij : p × n ↦ fun ω ↦ X ω ij.1 ij.2) P) {u : Fin k → p}
+    {v : Fin k → n}
+    (hXm : ∀ a, AEMeasurable (fun ω ↦ X ω (bipartiteEdge u v a).1 (bipartiteEdge u v a).2) P)
+    (huv : ∀ a, ∃ a' ≠ a, bipartiteEdge u v a' = bipartiteEdge u v a)
+    (hmom : ∀ a, ∫ ω, ‖X ω (bipartiteEdge u v a).1 (bipartiteEdge u v a).2‖ ^
+        #{a' | bipartiteEdge u v a' = bipartiteEdge u v a} ∂P ≤
+      b ^ (#{a' | bipartiteEdge u v a' = bipartiteEdge u v a} - 2) * c) :
+    ‖∫ ω, ∏ t, X ω (u t) (v t) * star (X ω (u (finRotate k t)) (v t)) ∂P‖ ≤
+      c ^ #(univ.image (bipartiteEdge u v)) *
+        b ^ (2 * k - 2 * #(univ.image (bipartiteEdge u v))) := by
+  simp_rw [prod_mul_star_eq_prod_readFactor]
+  have h := hindep.norm_integral_fun_prod_comp_le_of_no_singleton_fiber
+    hXm huv (fun a ↦ (measurable_readFactor a).aestronglyMeasurable)
+    fun a ↦ by simpa only [norm_readFactor, prod_const] using hmom a
+  rwa [← card_univ, card_univ_sum_fin] at h
 
 /-- Under a bound `B` on the `2k`th absolute moments of the entries of `X`, a family `S` of
 bipartite words of half-length `k ≠ 0`, each using at most `a` rows and at most `b` columns, has

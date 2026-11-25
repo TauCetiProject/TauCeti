@@ -13,8 +13,8 @@ public import TauCeti.AlgebraicGeometry.Sites.Etale.BaseChange
 
 For a morphism `f : X ⟶ Y`, base change along `f` gives a functor
 `f.smallEtaleBaseChange : Y.Etale ⥤ X.Etale` between the categories of étale schemes
-(`TauCeti/AlgebraicGeometry/Sites/Etale/Over.lean`), which is faithful whenever `f` is surjective
-(`AlgebraicGeometry.Scheme.Hom.faithful_smallEtaleBaseChange`, in
+(`TauCeti/AlgebraicGeometry/Sites/Etale/Over/Basic.lean`), which is faithful whenever `f` is
+surjective (`AlgebraicGeometry.Scheme.Hom.faithful_smallEtaleBaseChange`, in
 `TauCeti/AlgebraicGeometry/Sites/Etale/BaseChange.lean`). When `f` is a universal
 homeomorphism, `f.smallEtaleBaseChange` is also full: base change along `f` is bijective on
 morphisms into an étale `Y`-scheme
