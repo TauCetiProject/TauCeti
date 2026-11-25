@@ -9,7 +9,7 @@ public import TauCeti.Topology.Algebra.Group.Quotient.LocalSection
 public import TauCeti.Topology.Grassmannian.FrameQuotient
 public import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
 import Mathlib.Analysis.Normed.Module.FiniteDimension
-import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
+import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Ortho
 
 /-!
 # The unitary Stiefel fibration `U(m) → U(r + m) → V_r(𝕜^(r + m))`

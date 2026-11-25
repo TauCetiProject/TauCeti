@@ -76,6 +76,8 @@ supported in `S` glues with zero on `W ∖ S` to a unique section over `W` suppo
   `H_Sⁿ(-, F₃) ⟶ H_Sⁿ⁺¹(-, F₁)` of presheaves attached to a short exact sequence
   `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0`, an isomorphism in positive degrees when `F₂` is flasque
   (`CategoryTheory.Sheaf.isIso_supportedHPresheafδ_succ`);
+* `CategoryTheory.Sheaf.supportedHEquivOfSubset`: cohomology with supports in `S` on an open
+  `W ⊆ S` is cohomology, `H_Sⁿ(W, F) ≃+ Hⁿ(W, F)`, for instance for `S = X`;
 * `CategoryTheory.Sheaf.existsUnique_mem_supportedSections_map_eq`: excision for sections
   supported in `S`;
 * `TopologicalSpace.Closeds.isIso_relativeFreeYonedaSheafMap_complInclusion`: excision for the
@@ -238,6 +240,23 @@ theorem subsingleton_supportedH_of_le_compl (S : Closeds X) {W : Opens X} (hW : 
   haveI : IsIso (S.complInclusion W) :=
     ⟨homOfLE (le_inf le_rfl hW), Subsingleton.elim _ _, Subsingleton.elim _ _⟩
   relativeH'.subsingleton_of_isIso F _ n
+
+/-- Cohomology with supports in `S` on an open `W` contained in `S` is cohomology: the map
+`H_Sⁿ(W, F) ⟶ Hⁿ(W, F)` of the support sequence is bijective, since its third term is the
+cohomology of the empty open `W ∖ S`. For `S = ⊤` this says `H_Xⁿ(W, F) ≃+ Hⁿ(W, F)`. -/
+noncomputable def supportedHEquivOfSubset (S : Closeds X) {W : Opens X} (hW : (W : Set X) ⊆ S)
+    (n : ℕ) : F.supportedH S W n ≃+ F.H' n W :=
+  relativeH'.toH'AddEquiv F _
+    -- `W ∖ S` is empty, so the empty sieve covers it: a point of `W ⊓ S.compl` lies in `W`,
+    -- hence in `S`, and not in `S`.
+    (TauCeti.CategoryTheory.isZero_freeYonedaSheaf_of_bot_mem _
+      fun _ hx ↦ (hx.2 (hW hx.1)).elim) n
+
+@[simp]
+lemma supportedHEquivOfSubset_apply (S : Closeds X) {W : Opens X} (hW : (W : Set X) ⊆ S) {n : ℕ}
+    (x : F.supportedH S W n) :
+    F.supportedHEquivOfSubset S hW n x = relativeH'.toH' F (S.complInclusion W) n x :=
+  relativeH'.toH'AddEquiv_apply _ _ _ x
 
 /-- Excision for sections with supports: if `W' ≤ W` and `S ∩ W ⊆ W'` (that is,
 `W ≤ W' ⊔ (X ∖ S)`), then every section over `W'` supported in `S` is the restriction of a unique
