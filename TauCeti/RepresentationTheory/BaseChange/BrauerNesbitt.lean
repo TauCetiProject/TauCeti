@@ -37,6 +37,13 @@ statement then needs the semisimplifications of the base changes.
 * `Representation.nonempty_equiv_iff_charpoly_eq_of_perfectField`: over a perfect field, two
   finite-dimensional semisimple representations are equivalent if and only if they have the same
   characteristic polynomial at every element.
+
+## References
+
+* H. Darmon, F. Diamond and R. Taylor, *Fermat's Last Theorem*, proof of Proposition 2.6, which
+  extends scalars to an algebraic closure and descends by Noether–Deuring as here.
+* C. W. Curtis and I. Reiner, *Representation theory of finite groups and associative algebras*,
+  Theorem 30.16 (Brauer–Nesbitt) and Theorem 29.7 (Noether–Deuring).
 -/
 
 public section
