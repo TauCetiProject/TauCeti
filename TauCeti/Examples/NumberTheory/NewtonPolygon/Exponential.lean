@@ -188,9 +188,8 @@ theorem not_isEntire_exp : ¬(exp ℚ_[p]).IsEntire := by
 `|r| < p ^ (-1 / (p - 1))`. -/
 theorem isRestricted_exp_iff {r : ℝ} :
     (exp ℚ_[p]).IsRestricted r ↔ |r| < amiceRadius p 0 := by
-  have h := isRestricted_rescale_exp_iff (p := p) (K := ℚ_[p]) (x := 1) (abs_nonneg r)
-  rw [rescale_one, RingHom.id_apply, norm_one, one_mul] at h
-  rw [← isRestricted_abs_iff, h, amiceRadius_def, pow_zero, mul_one, one_div]
+  rw [← isRestricted_abs_iff, PowerSeries.isRestricted_exp_iff (p := p) (abs_nonneg r),
+    amiceRadius_def, pow_zero, mul_one, one_div]
 
 /-- **No restrictedness at the boundary.** The `p`-adic exponential is not restricted at its
 radius `p ^ (-1 / (p - 1))`: its terms of degree `pᵏ` all have weighted norm

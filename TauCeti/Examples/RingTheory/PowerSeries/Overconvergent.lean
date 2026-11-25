@@ -198,10 +198,8 @@ example :
   have hR₀_pos : 0 < R₀ := Real.rpow_pos_of_pos hp_pos _
   have hR₀_lt : R₀ < 1 := Real.rpow_lt_one_of_one_lt_of_neg hp1
     (neg_neg_of_pos (one_div_pos.mpr hp_sub))
-  have hnot : ¬(PowerSeries.exp ℚ_[p]).IsRestricted R₀ := by
-    have h := PowerSeries.isRestricted_rescale_exp_iff (p := p) (K := ℚ_[p]) (x := 1) hR₀_pos.le
-    rw [rescale_one, RingHom.id_apply, norm_one, one_mul] at h
-    exact fun hf ↦ (h.mp hf).ne (by simp only [R₀, one_div])
+  have hnot : ¬(PowerSeries.exp ℚ_[p]).IsRestricted R₀ := fun hf ↦
+    ((PowerSeries.isRestricted_exp_iff (p := p) hR₀_pos.le).mp hf).ne (by simp only [R₀, one_div])
   have hnot_open : ¬(PowerSeries.exp ℚ_[p]).OnOpenDisc 1 := fun h ↦
     hnot ((onOpenDisc_iff.mp h) R₀ hR₀_pos hR₀_lt)
   exact ⟨hnot, hnot_open,

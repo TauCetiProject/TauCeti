@@ -126,6 +126,13 @@ theorem isRestricted_rescale_exp_iff {x : K} {c : ℝ} (hc : 0 ≤ c) :
   obtain ⟨k, hk⟩ := (hlim.eventually (gt_mem_nhds hρ)).exists
   exact (not_lt_of_ge (hbound k)) hk
 
+/-- The exact criterion for the p-adic exponential to be restricted at a nonnegative real radius:
+the case `x = 1` of `isRestricted_rescale_exp_iff`. The boundary is excluded. -/
+theorem isRestricted_exp_iff {c : ℝ} (hc : 0 ≤ c) :
+    (exp K).IsRestricted c ↔ c < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹) := by
+  have h := isRestricted_rescale_exp_iff (p := p) (x := (1 : K)) hc
+  rwa [rescale_one, RingHom.id_apply, norm_one, one_mul] at h
+
 omit [Algebra ℚ K] [NormedAlgebra ℚ_[p] K] in
 /-- The closed p-adic exponential disc condition, rewritten as a geometric ratio at most one. -/
 private theorem rpow_inv_mul_norm_mul_le_one {x : K} {c : ℝ}
