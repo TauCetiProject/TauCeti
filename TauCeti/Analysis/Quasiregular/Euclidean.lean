@@ -205,7 +205,8 @@ theorem not_isQuasiregularOn_fold {u : E} (hu : ‖u‖ = 1)
     ¬ IsQuasiregularOn K Ω (fun x ↦ x + (|⟪u, x⟫| - ⟪u, x⟫) • u) := by
   have hu0 : u ≠ 0 := norm_ne_zero_iff.1 (hu ▸ one_ne_zero)
   refine not_isQuasiregularOn_of_eqOn_of_det_neg
-    (U := Ω ⊓ ⟨{x | ⟪u, x⟫ < 0}, isOpen_lt (by fun_prop) continuous_const⟩) inf_le_left hΩ
+    (U := Ω ⊓ ⟨{x | ⟪u, x⟫ < 0}, isOpen_lt (by fun_prop) continuous_const⟩) inf_le_left
+    (by simpa only [Opens.coe_inf, Opens.coe_mk] using hΩ)
     (A := ((ℝ ∙ u)ᗮ.reflection.toContinuousLinearEquiv : E →L[ℝ] E)) ?_ fun x hx ↦ ?_
   · have hdet := (ℝ ∙ u)ᗮ.det_reflection
     rw [Submodule.orthogonal_orthogonal, finrank_span_singleton hu0, pow_one] at hdet
@@ -213,10 +214,11 @@ theorem not_isQuasiregularOn_fold {u : E} (hu : ‖u‖ = 1)
         (ℝ ∙ u)ᗮ.reflection.toLinearMap := LinearMap.ext fun x ↦ by simp
     rw [hR, hdet]
     norm_num
-  · have hx0 : ⟪u, x⟫ < 0 := hx.2
+  · simp only [Opens.coe_inf, Opens.coe_mk, Set.mem_inter_iff, Set.mem_ofPred_eq] at hx
+    have hx0 : ⟪u, x⟫ < 0 := hx.2
     rw [ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
       Submodule.reflection_orthogonal_apply, Submodule.reflection_singleton_apply]
-    simp [hu, abs_of_neg hx0]
+    simp only [abs_of_neg hx0, hu, RCLike.ofReal_real_eq_id, id_eq, one_pow, div_one, neg_sub]
     module
 
 end TauCeti
