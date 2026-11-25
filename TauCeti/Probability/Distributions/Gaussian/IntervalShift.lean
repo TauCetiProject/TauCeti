@@ -61,10 +61,6 @@ private theorem strictAntiOn_shift {a b : ℝ} (hab : a ≤ b) (hsum : 0 ≤ a +
   have hmono := strictMono_cdf_gaussianReal 0 (one_ne_zero : (1 : NNReal) ≠ 0)
   have hm : 0 ≤ m := sub_nonneg.2 (hmono.monotone hab)
   have ha0 := cdf_gaussianReal_pos 0 (one_ne_zero : (1 : NNReal) ≠ 0) a
-  -- Below the quantile of `u` the cdf stays below `u`.
-  have hlt {x u : ℝ} (hu : u ∈ Ioo 0 1) (hx : cdf (gaussianReal 0 1) x < u) :
-      x < (gaussianReal 0 1).quantile u := by
-    rwa [← hmono.lt_iff_lt, cdf_quantile_gaussianReal 0 one_ne_zero hu]
   refine strictAntiOn_of_deriv_neg (convex_Icc _ _)
     (continuous_gaussianIsoperimetricProfile.add
       (continuous_gaussianIsoperimetricProfile.comp
@@ -79,8 +75,10 @@ private theorem strictAntiOn_shift {a b : ℝ} (hab : a ≤ b) (hsum : 0 ≤ a +
     (hasDerivAt_gaussianIsoperimetricProfile hu1).add
       ((hasDerivAt_gaussianIsoperimetricProfile hu2).comp_add_const u m)
   rw [hd.deriv]
-  have h1 : a < (gaussianReal 0 1).quantile u := hlt hu1 hu.1
-  have h2 : b < (gaussianReal 0 1).quantile (u + m) := hlt hu2 (by linarith [hu.1])
+  have h1 : a < (gaussianReal 0 1).quantile u :=
+    ((gaussianReal 0 1).lt_quantile_iff hu1.1 hu1.2).2 hu.1
+  have h2 : b < (gaussianReal 0 1).quantile (u + m) :=
+    ((gaussianReal 0 1).lt_quantile_iff hu2.1 hu2.2).2 (by linarith [hu.1])
   linarith
 
 /-- The finite case of `TauCeti.Probability.gaussianPDFReal_add_lt_of_shift_right` for
