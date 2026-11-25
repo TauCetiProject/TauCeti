@@ -120,6 +120,9 @@ to absorb a right-hand side in the presence of a drift: on balls small enough th
 * `TauCeti.PDE.exists_forall_eLpNorm_value_le_toNNReal_mul_measureReal_rpow` and
   `TauCeti.PDE.exists_sobolev_exponent`: the Sobolev inequality and exponents behind the
   scale-invariant bounds.
+* `TauCeti.PDE.exists_inv_add_inv_eq_and_forall_eLpNorm_value_le_of_measure_ne_top`: for
+  `max(2, n) < r`, the Sobolev inequality `‖v‖_{L^q} ≤ S ‖∇v‖₂` on `W^{1,2}_0(Ω)` at the exponent
+  `q` with `1/r + 1/q = 1/2`.
 
 The case of an operator with a drift that need not be small is
 `TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness.LowerOrder`.
@@ -469,6 +472,31 @@ theorem exists_forall_eLpNorm_value_le_toNNReal_mul_measureReal_rpow [Nonempty �
   rw [ENNReal.ofNNReal_toNNReal, ← ENNReal.ofReal_toReal hOmega,
     ENNReal.ofReal_rpow_of_nonneg ENNReal.toReal_nonneg (by linarith), ← ENNReal.ofReal_mul hK.le,
     ← measureReal_def]
+
+omit [DecidableEq ι] in
+/-- **The Sobolev inequality on `W^{1,2}_0(Ω)` dual to an exponent `r > max(2, n)`.** If `Ω` has
+finite measure and `max(2, n) < r`, then the exponent `q` with `1/r + 1/q = 1/2` admits a
+constant `S` with `‖v‖_{L^q} ≤ S ‖∇v‖₂` for every `v ∈ W^{1,2}_0(Ω)`. The hypothesis
+`n < r.toReal` already forces `r < ∞`. Hölder's inequality with the exponents `r`, `2` and `q`
+then bounds `∫ |b| |∇w| |v|` for `b ∈ Lʳ(Ω)`, `w ∈ W^{1,2}(Ω)` and `v ∈ W^{1,2}_0(Ω)`. This is
+the case `δ = 1/r` of `TauCeti.PDE.exists_forall_eLpNorm_value_le_toNNReal_mul_measureReal_rpow`. -/
+theorem exists_inv_add_inv_eq_and_forall_eLpNorm_value_le_of_measure_ne_top [Nonempty ι]
+    {Omega : Opens (EuclideanSpace ℝ ι)} (hOmega : mu Omega ≠ ∞) {r : ℝ≥0∞} (hr2 : 2 < r)
+    (hn : (Fintype.card ι : ℝ) < r.toReal) :
+    ∃ q : ℝ≥0∞, r⁻¹ + q⁻¹ = 2⁻¹ ∧ ∃ S : ℝ≥0, ∀ v ∈ w1p0Submodule mu Omega 2,
+      eLpNorm (W1p.value v) q (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ := by
+  have hr : r ≠ ∞ := (ENNReal.toReal_pos_iff.1 ((Nat.cast_nonneg _).trans_lt hn)).2.ne
+  have hr2' : 2 < r.toReal := by
+    simpa using (ENNReal.toReal_lt_toReal ENNReal.ofNat_ne_top hr).2 hr2
+  have hδ2 : r.toReal⁻¹ < 2⁻¹ := inv_strictAnti₀ two_pos hr2'
+  obtain ⟨K, -, hK⟩ := exists_forall_eLpNorm_value_le_toNNReal_mul_measureReal_rpow (mu := mu)
+    (inv_pos.2 (by linarith)) (inv_strictAnti₀ (by exact_mod_cast Fintype.card_pos) hn) hδ2
+  refine ⟨_, ?_, _, fun v hv ↦ hK hOmega v hv⟩
+  -- With `δ = 1/r`, the exponent `q = (1/2 - δ)⁻¹` has `1/q = 1/2 - 1/r`; check it in `ℝ`.
+  have hr0 : r ≠ 0 := by rintro rfl; norm_num at hr2'
+  rw [← ENNReal.toReal_eq_toReal_iff' (by simp [hr0, hδ2]) (by simp),
+    ENNReal.toReal_add (by simpa) (by simpa)]
+  simp [Real.coe_toNNReal _ (inv_nonneg.2 (sub_pos.2 hδ2).le)]
 
 /-- The Sobolev exponents used in the scale-invariant bounds: for `0 ≤ θ < min (1/n) (1/2)` there
 are `δ` with `θ < δ < min (1/n) (1/2)`, and then `s = (1/2 - δ)⁻¹` satisfies `1/s = 1/2 - δ` and

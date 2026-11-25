@@ -42,6 +42,8 @@ algebra already acts on itself, and the wrapper keeps the two actions apart.
 * `TauCeti.cubicalChainModule Y G R`: the DG right module `⨁ n, C^□_n(Y; R)`.
 * `TauCeti.cubicalChainModuleDG Y G R`: it, as an object of `DGRightModuleCat`.
 * `TauCeti.cubicalChainModuleMap R f hf`: the morphism induced by an equivariant map.
+* `TauCeti.cubicalChainModulePhantomEquiv Y G G' R`: the change of phantom monoid, induced by the
+  identity of `Y`.
 
 ## Main results
 
@@ -736,6 +738,41 @@ theorem cubicalChainModuleLinearMap_linearMap (f : C(Y, Y')) (g : C(Y', Y''))
     cubicalChainModuleLinearMap (G := G') (G' := G'') R g (cubicalChainModuleLinearMap R f x) =
       cubicalChainModuleLinearMap R (g.comp f) x :=
   (LinearMap.congr_fun (cubicalChainModuleLinearMap_comp f g) x).symm
+
+variable (Y G G' R) in
+/-- The change of phantom monoid: the map induced by the identity of `Y` is a linear equivalence
+between the modules with phantom monoids `G` and `G'`, its own inverse. -/
+def cubicalChainModulePhantomEquiv : cubicalChainModule Y G R ≃ₗ[R] cubicalChainModule Y G' R :=
+  .ofLinearMap (cubicalChainModuleLinearMap R (ContinuousMap.id Y))
+    (cubicalChainModuleLinearMap R (ContinuousMap.id Y))
+    (by rw [← cubicalChainModuleLinearMap_comp, ContinuousMap.id_comp,
+      cubicalChainModuleLinearMap_id])
+    (by rw [← cubicalChainModuleLinearMap_comp, ContinuousMap.id_comp,
+      cubicalChainModuleLinearMap_id])
+
+/-- The change of phantom monoid is the map induced by the identity. -/
+theorem cubicalChainModulePhantomEquiv_apply (x : cubicalChainModule Y G R) :
+    cubicalChainModulePhantomEquiv Y G G' R x =
+      cubicalChainModuleLinearMap R (ContinuousMap.id Y) x :=
+  (rfl)
+
+/-- The inverse of the change of phantom monoid is the change back. -/
+@[simp]
+theorem cubicalChainModulePhantomEquiv_symm :
+    (cubicalChainModulePhantomEquiv Y G G' R).symm = cubicalChainModulePhantomEquiv Y G' G R :=
+  (rfl)
+
+/-- The change of phantom monoid commutes with the differentials. -/
+theorem cubicalChainModuleDifferential_phantomEquiv (x : cubicalChainModule Y G R) :
+    cubicalChainModuleDifferential Y G' R (cubicalChainModulePhantomEquiv Y G G' R x) =
+      cubicalChainModulePhantomEquiv Y G G' R (cubicalChainModuleDifferential Y G R x) :=
+  cubicalChainModuleDifferential_linearMap _ x
+
+/-- The change of phantom monoid preserves the grading. -/
+theorem cubicalChainModulePhantomEquiv_mem {i : ℤ} {x : cubicalChainModule Y G R}
+    (hx : x ∈ cubicalChainModuleGrading Y G R i) :
+    cubicalChainModulePhantomEquiv Y G G' R x ∈ cubicalChainModuleGrading Y G' R i :=
+  cubicalChainModuleLinearMap_mem _ hx
 
 /-- The induced map of a map `f` that intertwines the actions through a map `g` of the acting
 monoids is semilinear for the action, through the push-forward along `g`. -/

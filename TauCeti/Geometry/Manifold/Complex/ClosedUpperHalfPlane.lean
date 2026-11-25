@@ -154,6 +154,16 @@ theorem _root_.OpenPartialHomeomorph.exists_isOpen_extend_target_inter_preimage 
     range_closedUpperHalfPlaneModel, mem_inter_iff, mem_preimage, mem_ofPred_eq]
   tauto
 
+/-- The part of the target of the extended chart at `x` of a manifold modelled on the closed upper
+half-plane lying over an open set is relatively open in the closed upper half-plane: it is
+`Ω ∩ {z | 0 ≤ z.im}` for an open `Ω ⊆ ℂ`. This is
+`OpenPartialHomeomorph.exists_isOpen_extend_target_inter_preimage` for the chart at `x`. -/
+theorem exists_isOpen_extChartAt_target_inter_preimage {M : Type*} [TopologicalSpace M]
+    [ChartedSpace ClosedUpperHalfPlane M] (x : M) {W : Set M} (hW : IsOpen W) :
+    ∃ Ω : Set ℂ, IsOpen Ω ∧ (extChartAt closedUpperHalfPlaneModel x).target ∩
+      (extChartAt closedUpperHalfPlaneModel x).symm ⁻¹' W = Ω ∩ {z | 0 ≤ z.im} :=
+  (chartAt ClosedUpperHalfPlane x).exists_isOpen_extend_target_inter_preimage hW
+
 /-- The manifold interior of the model consists exactly of points with positive imaginary part. -/
 @[simp]
 theorem closedUpperHalfPlaneModel_isInteriorPoint_iff (z : ClosedUpperHalfPlane) :

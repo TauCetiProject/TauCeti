@@ -420,7 +420,7 @@ theorem poincarePairing_const_left (o : Manifold.Orientation I M (Fin (0 + l))) 
   rw [deRhamCohomology.const_eq_mk, poincarePairing_mk,
     compactlySupportedDeRhamCohomology.integral_mk, ← integralTopForm_smul]
   refine integralTopForm_congr_cast (zero_add l) o _ _ fun x v ↦ ?_
-  rw [coe_closedFormsZeroEquiv_symm_apply, RoughForm.ofFunction_wedge_apply]; rfl
+  simp [coe_closedFormsZeroEquiv_symm_apply, RoughForm.ofFunction_wedge_apply, Function.comp_def]
 
 /-- Pairing `[1] ∈ H⁰_dR(M)` with `y ∈ H^l_c(M)` evaluates `∫_M y`. -/
 theorem poincarePairing_const_one_left (o : Manifold.Orientation I M (Fin (0 + l)))

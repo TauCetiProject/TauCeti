@@ -43,6 +43,8 @@ finite basis it is identified with its dual (`Module.Basis.toDualEquiv`), and ot
 * `Module.Basis.dualBasis_dualBasis`: the double dual basis is the evaluation image of the basis.
 * `TauCeti.Module.dual_finrank_eq`: `finrank R (Dual R M) = finrank R M` for a free module
   `M`.
+* `TauCeti.Module.natCard_dual`: a finite free module and its dual have the same number of
+  elements.
 -/
 
 public section
@@ -104,5 +106,11 @@ theorem dual_finrank_eq (R M : Type*) [CommRing R] [AddCommGroup M] [Module R M]
         not_finite_iff_infinite.1 fun _ ↦ hM (Module.Finite.of_basis (Module.Free.chooseBasis R M))
       rw [(Module.Free.chooseBasis R M).linearIndependent_coord.finrank_eq_zero_of_infinite,
         _root_.Module.finrank_of_not_finite hM]
+
+/-- A finite free module and its linear dual have the same number of elements. -/
+theorem natCard_dual (R M : Type*) [CommSemiring R] [AddCommMonoid M] [Module R M]
+    [Module.Free R M] [Module.Finite R M] :
+    Nat.card (Module.Dual R M) = Nat.card M :=
+  Nat.card_congr (Module.Free.chooseBasis R M).toDualEquiv.toEquiv.symm
 
 end TauCeti.Module

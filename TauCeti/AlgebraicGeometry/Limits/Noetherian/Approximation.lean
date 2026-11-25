@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import TauCeti.Algebra.Category.Ring.AdjoinFinset
-public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
 public import TauCeti.AlgebraicGeometry.Noetherian
 
 /-!

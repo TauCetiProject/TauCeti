@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomologicalComplexBiprod
-public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.Basis.Prod
 public import TauCeti.Algebra.Category.ModuleCat.Biproducts
@@ -21,12 +20,6 @@ A short complex `K ⟶ L₁ ⊞ L₂ ⟶ N` of homological complexes of modules 
 given identifications of the terms with modules, the linear maps `(a₁, a₂) : K → L₁ × L₂` and
 `b₁ + b₂ : L₁ × L₂ → N` form a short exact sequence of modules
 (`HomologicalComplex.moduleCat_shortExact_biprod`). Mayer–Vietoris sequences have this shape.
-When such a short complex is short exact, identifying `Hᵢ(L₁ ⊞ L₂)` with `Hᵢ(L₁) × Hᵢ(L₂)` turns
-its long exact homology sequence into unbundled `Function.Exact` statements for `LinearMap.prod` and
-`LinearMap.coprod` (`HomologicalComplex.moduleCat_biprod_homology_exact₁`,
-`HomologicalComplex.moduleCat_biprod_homology_exact₂`,
-`HomologicalComplex.moduleCat_biprod_homology_exact₃`, and
-`HomologicalComplex.moduleCat_biprod_homology_injective_of_not_rel`).
 
 The comparison uses `ModuleCat.inl_comp_biprodIsoProd_hom` and
 `ModuleCat.inr_comp_biprodIsoProd_hom` from `TauCeti.Algebra.Category.ModuleCat.Biproducts`:
@@ -42,6 +35,16 @@ On elements, `biprod.lift` and `biprod.desc` act componentwise
 (`HomologicalComplex.biprod_desc_f_apply`, `HomologicalComplex.biprod_lift_f_apply`),
 which is how elements of the middle term of a Mayer–Vietoris sequence are handled.
 
+Along `ModuleCat.biprodIsoProd`, exactness of a short complex of modules through a biproduct
+`A ⊞ B`, with maps `biprod.lift f₁ f₂` into or `biprod.desc g₁ g₂` out of it, is exactness
+(`Function.Exact`) of the pair map `f₁.hom.prod f₂.hom` into or the sum map
+`g₁.hom.coprod g₂.hom` out of the product module `A × B`
+(`CategoryTheory.ShortComplex.moduleCat_exact_biprod_lift_desc_iff`,
+`CategoryTheory.ShortComplex.moduleCat_exact_biprod_lift_iff`,
+`CategoryTheory.ShortComplex.moduleCat_exact_biprod_desc_iff`). This turns the homology sequences
+of `TauCeti.Algebra.Homology.HomologySequenceBiprod`, such as the Mayer–Vietoris sequences, into
+exact sequences of linear maps through `A × B`.
+
 ## References
 
 * Charles A. Weibel, *An Introduction to Homological Algebra*, Section 1.3.
@@ -52,6 +55,46 @@ public section
 open CategoryTheory Limits
 
 universe u v
+
+namespace CategoryTheory.ShortComplex
+
+variable {R : Type u} [Ring R] {X A B Z Y : ModuleCat.{v} R}
+
+/-- A short complex `X ⟶ A ⊞ B ⟶ Z` of modules with maps `biprod.lift f₁ f₂` and
+`biprod.desc g₁ g₂` is exact if and only if the pair map `X → A × B` and the sum map
+`A × B → Z` are exact. -/
+lemma moduleCat_exact_biprod_lift_desc_iff {f₁ : X ⟶ A} {f₂ : X ⟶ B} {g₁ : A ⟶ Z}
+    {g₂ : B ⟶ Z} (w : biprod.lift f₁ f₂ ≫ biprod.desc g₁ g₂ = 0) :
+    (ShortComplex.mk _ _ w).Exact ↔
+      Function.Exact (f₁.hom.prod f₂.hom) (g₁.hom.coprod g₂.hom) := by
+  rw [ShortExact.moduleCat_exact_iff_function_exact]
+  exact (Function.Exact.iff_of_ladder_linearEquiv (e₁ := LinearEquiv.refl R X)
+    (e₂ := (ModuleCat.biprodIsoProd A B).toLinearEquiv) (e₃ := LinearEquiv.refl R Z)
+    congr(ModuleCat.Hom.hom $(ModuleCat.biprod_lift_comp_biprodIsoProd_hom f₁ f₂)).symm
+    congr(ModuleCat.Hom.hom $(ModuleCat.biprodIsoProd_hom_comp_ofHom_coprod g₁ g₂))).symm
+
+/-- A short complex `Y ⟶ X ⟶ A ⊞ B` of modules whose second map is `biprod.lift f₁ f₂` is exact
+if and only if its first map and the pair map `X → A × B` are exact. -/
+lemma moduleCat_exact_biprod_lift_iff {δ : Y ⟶ X} {f₁ : X ⟶ A} {f₂ : X ⟶ B}
+    (w : δ ≫ biprod.lift f₁ f₂ = 0) :
+    (ShortComplex.mk _ _ w).Exact ↔ Function.Exact δ.hom (f₁.hom.prod f₂.hom) := by
+  rw [ShortExact.moduleCat_exact_iff_function_exact]
+  exact (Function.Exact.iff_of_ladder_linearEquiv (e₁ := LinearEquiv.refl R Y)
+    (e₂ := LinearEquiv.refl R X) (e₃ := (ModuleCat.biprodIsoProd A B).toLinearEquiv) rfl
+    congr(ModuleCat.Hom.hom $(ModuleCat.biprod_lift_comp_biprodIsoProd_hom f₁ f₂)).symm).symm
+
+/-- A short complex `A ⊞ B ⟶ Z ⟶ Y` of modules whose first map is `biprod.desc g₁ g₂` is exact
+if and only if the sum map `A × B → Z` and its second map are exact. -/
+lemma moduleCat_exact_biprod_desc_iff {g₁ : A ⟶ Z} {g₂ : B ⟶ Z} {δ : Z ⟶ Y}
+    (w : biprod.desc g₁ g₂ ≫ δ = 0) :
+    (ShortComplex.mk _ _ w).Exact ↔ Function.Exact (g₁.hom.coprod g₂.hom) δ.hom := by
+  rw [ShortExact.moduleCat_exact_iff_function_exact]
+  exact (Function.Exact.iff_of_ladder_linearEquiv
+    (e₁ := (ModuleCat.biprodIsoProd A B).toLinearEquiv) (e₂ := LinearEquiv.refl R Z)
+    (e₃ := LinearEquiv.refl R Y)
+    congr(ModuleCat.Hom.hom $(ModuleCat.biprodIsoProd_hom_comp_ofHom_coprod g₁ g₂)) rfl).symm
+
+end CategoryTheory.ShortComplex
 
 namespace HomologicalComplex
 
@@ -236,97 +279,5 @@ theorem biprod_lift_f_apply (x : K.X i) :
   simp [biprod.lift_eq]
 
 end Elements
-
-/-! ### Homology exactness for biproduct short exact sequences -/
-
-section HomologySequence
-
-variable {a₁ : K ⟶ L₁} {a₂ : K ⟶ L₂} {b₁ : L₁ ⟶ N} {b₂ : L₂ ⟶ N}
-  {w : biprod.lift a₁ a₂ ≫ biprod.desc b₁ b₂ = 0}
-
-private noncomputable def homologyBiprodProdIso (L₁ L₂ : HomologicalComplex (ModuleCat.{v} R) c)
-    (i : ι) : (L₁ ⊞ L₂).homology i ≅ ModuleCat.of R (L₁.homology i × L₂.homology i) :=
-  homologyBiprodIso L₁ L₂ i ≪≫ ModuleCat.biprodIsoProd (L₁.homology i) (L₂.homology i)
-
-private theorem prodIso_comp_homologyMap_biprod_lift (a₁ : K ⟶ L₁) (a₂ : K ⟶ L₂) (i : ι) :
-    (homologyBiprodProdIso L₁ L₂ i).hom.hom ∘ₗ (homologyMap (biprod.lift a₁ a₂) i).hom =
-      (homologyMap a₁ i).hom.prod (homologyMap a₂ i).hom := by
-  have h : homologyMap (biprod.lift a₁ a₂) i ≫ (homologyBiprodProdIso L₁ L₂ i).hom =
-      ModuleCat.ofHom ((homologyMap a₁ i).hom.prod (homologyMap a₂ i).hom) := by
-    rw [homologyBiprodProdIso, Iso.trans_hom, ← Category.assoc,
-      homologyMap_biprod_lift_comp_homologyBiprodIso_hom]
-    ext x
-    · rw [ModuleCat.comp_apply, ModuleCat.biprodIsoProd_hom_apply]
-      simp only [← ModuleCat.comp_apply, biprod.lift_fst]; rfl
-    · rw [ModuleCat.comp_apply, ModuleCat.biprodIsoProd_hom_apply]
-      simp only [← ModuleCat.comp_apply, biprod.lift_snd]; rfl
-  simpa only [ModuleCat.hom_comp, ModuleCat.hom_ofHom] using congrArg ModuleCat.Hom.hom h
-
-private theorem homologyMap_biprod_desc_comp_prodIso_inv (b₁ : L₁ ⟶ N) (b₂ : L₂ ⟶ N) (i : ι) :
-    (homologyMap (biprod.desc b₁ b₂) i).hom ∘ₗ (homologyBiprodProdIso L₁ L₂ i).inv.hom =
-      (homologyMap b₁ i).hom.coprod (homologyMap b₂ i).hom := by
-  have h : (homologyBiprodProdIso L₁ L₂ i).inv ≫ homologyMap (biprod.desc b₁ b₂) i =
-      ModuleCat.ofHom ((homologyMap b₁ i).hom.coprod (homologyMap b₂ i).hom) := by
-    rw [Iso.inv_comp_eq, ← homologyBiprodIso_hom_comp_biprod_desc_homologyMap,
-      homologyBiprodProdIso, Iso.trans_hom, Category.assoc]
-    refine (cancel_epi (homologyBiprodIso L₁ L₂ i).hom).mpr ?_
-    apply biprod.hom_ext'
-    · rw [biprod.inl_desc, ← Category.assoc, ModuleCat.inl_comp_biprodIsoProd_hom]; ext x; simp
-    · rw [biprod.inr_desc, ← Category.assoc, ModuleCat.inr_comp_biprodIsoProd_hom]; ext x; simp
-  simpa only [ModuleCat.hom_comp, ModuleCat.hom_ofHom] using congrArg ModuleCat.Hom.hom h
-
-/-- Exactness at `Hⱼ(K)` of the homology sequence of a short exact `K ⟶ L₁ ⊞ L₂ ⟶ N`. -/
-theorem moduleCat_biprod_homology_exact₁
-    (hS : (ShortComplex.mk (biprod.lift a₁ a₂) (biprod.desc b₁ b₂) w).ShortExact)
-    (i j : ι) (hij : c.Rel i j) :
-    Function.Exact (hS.δ i j hij).hom ((homologyMap a₁ j).hom.prod (homologyMap a₂ j).hom) := by
-  intro x
-  rw [← prodIso_comp_homologyMap_biprod_lift, LinearMap.comp_apply,
-    (ConcreteCategory.bijective_of_isIso (homologyBiprodProdIso L₁ L₂ j).hom).injective.eq_iff'
-      (map_zero _)]
-  exact (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp
-    (hS.homology_exact₁ i j hij) x
-
-/-- Exactness at `Hᵢ(L₁) × Hᵢ(L₂)` of the homology sequence of a short exact `K ⟶ L₁ ⊞ L₂ ⟶ N`. -/
-theorem moduleCat_biprod_homology_exact₂
-    (hS : (ShortComplex.mk (biprod.lift a₁ a₂) (biprod.desc b₁ b₂) w).ShortExact) (i : ι) :
-    Function.Exact ((homologyMap a₁ i).hom.prod (homologyMap a₂ i).hom)
-      ((homologyMap b₁ i).hom.coprod (homologyMap b₂ i).hom) := by
-  have he := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp
-    (hS.homology_exact₂ i)
-  let e := homologyBiprodProdIso L₁ L₂ i
-  intro y
-  rw [← homologyMap_biprod_desc_comp_prodIso_inv, LinearMap.comp_apply, he (e.inv.hom y),
-    ← prodIso_comp_homologyMap_biprod_lift, Set.mem_range, Set.mem_range]
-  refine ⟨fun ⟨x, hx⟩ ↦ ⟨x, ?_⟩, fun ⟨x, hx⟩ ↦ ⟨x, ?_⟩⟩
-  · rw [LinearMap.comp_apply, hx, ← ModuleCat.comp_apply, e.inv_hom_id, ModuleCat.id_apply]
-  · have hx' := congrArg e.inv.hom hx
-    rwa [LinearMap.comp_apply, ← ModuleCat.comp_apply, e.hom_inv_id, ModuleCat.id_apply] at hx'
-
-/-- Exactness at `Hᵢ(N)` of the homology sequence of a short exact `K ⟶ L₁ ⊞ L₂ ⟶ N`. -/
-theorem moduleCat_biprod_homology_exact₃
-    (hS : (ShortComplex.mk (biprod.lift a₁ a₂) (biprod.desc b₁ b₂) w).ShortExact)
-    (i j : ι) (hij : c.Rel i j) :
-    Function.Exact ((homologyMap b₁ i).hom.coprod (homologyMap b₂ i).hom) (hS.δ i j hij).hom := by
-  intro z
-  rw [(ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp
-      (hS.homology_exact₃ i j hij) z,
-    ← homologyMap_biprod_desc_comp_prodIso_inv, Set.mem_range, Set.mem_range]
-  simpa only [LinearMap.comp_apply] using
-    (ConcreteCategory.bijective_of_isIso (homologyBiprodProdIso L₁ L₂ i).inv).surjective.exists
-
-/-- Injectivity of `Hⱼ(K) → Hⱼ(L₁) × Hⱼ(L₂)` for a short exact `K ⟶ L₁ ⊞ L₂ ⟶ N` when `j` has no
-predecessor in `c`. -/
-theorem moduleCat_biprod_homology_injective_of_not_rel
-    (hS : (ShortComplex.mk (biprod.lift a₁ a₂) (biprod.desc b₁ b₂) w).ShortExact)
-    (j : ι) (hj : ∀ i, ¬ c.Rel i j) :
-    Function.Injective ((homologyMap a₁ j).hom.prod (homologyMap a₂ j).hom) := by
-  have := hS.mono_f
-  have := mono_homologyMap_of_mono_of_not_rel (biprod.lift a₁ a₂) j hj
-  rw [← prodIso_comp_homologyMap_biprod_lift, LinearMap.coe_comp]
-  exact (ConcreteCategory.bijective_of_isIso (homologyBiprodProdIso L₁ L₂ j).hom).injective.comp
-    ((ModuleCat.mono_iff_injective _).mp inferInstance)
-
-end HomologySequence
 
 end HomologicalComplex

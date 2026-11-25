@@ -284,52 +284,53 @@ theorem isBasis_openBoxes (ι : Type*) [Fintype ι] :
   have hyU : L.symm (L y) ∈ (U : Set (EuclideanSpace ℝ ι)) := hball hyb
   rwa [ContinuousLinearEquiv.symm_apply_apply] at hyU
 
+private theorem univBall_openBox_target {a b : ℝ} (hab : a < b) :
+    (OpenPartialHomeomorph.univBall ((a + b) / 2) ((b - a) / 2)).target = Ioo a b := by
+  have hr : 0 < (b - a) / 2 := by linarith
+  rw [OpenPartialHomeomorph.univBall_target _ hr, Real.ball_eq_Ioo]
+  congr <;> ring
+
 /-- A `C^n`-diffeomorphism from `EuclideanSpace ℝ ι` onto a nonempty open coordinate box
 `openBox a b`, obtained by applying `OpenPartialHomeomorph.univBall` coordinatewise. -/
 def diffeomorphOpenBox {n : ℕ∞} {ι : Type*} [Fintype ι] {a b : ι → ℝ} (hab : ∀ i, a i < b i) :
-    EuclideanSpace ℝ ι ≃ₘ^n⟮𝓘(ℝ, EuclideanSpace ℝ ι), 𝓘(ℝ, EuclideanSpace ℝ ι)⟯ openBox a b := by
-  let L := EuclideanSpace.equiv ι ℝ
-  let c (i : ι) : ℝ := (a i + b i) / 2
-  let r (i : ι) : ℝ := (b i - a i) / 2
-  have hr (i : ι) : 0 < r i := by dsimp [r]; linarith [hab i]
-  let e (i : ι) := OpenPartialHomeomorph.univBall (c i) (r i)
-  have htarget (i : ι) : (e i).target = Ioo (a i) (b i) := by
-    rw [OpenPartialHomeomorph.univBall_target _ (hr i), Real.ball_eq_Ioo]
-    congr <;> dsimp [c, r] <;> ring
-  have hmem (v : EuclideanSpace ℝ ι) : L.symm (fun i ↦ e i (v i)) ∈ openBox a b :=
-    mem_openBox.mpr fun i ↦ by
-      rw [← htarget i]
-      exact (e i).map_source (by simp [e])
-  refine
-    { toEquiv :=
-        { toFun := fun v ↦ ⟨L.symm (fun i ↦ e i (v i)), hmem v⟩
-          invFun := fun u ↦ L.symm (fun i ↦ (e i).symm (u.val i))
-          left_inv := fun v ↦ L.injective <| funext fun i ↦ by
-            simp only [L.apply_symm_apply]
-            exact (e i).left_inv (by simp [e])
-          right_inv := fun u ↦ Subtype.ext <| L.injective <| funext fun i ↦ by
-            simp only [L.apply_symm_apply]
-            exact (e i).right_inv (htarget i ▸ (mem_openBox.mp u.property) i) }
-      contMDiff_toFun := (ContMDiff.subtypeVal_comp_iff _ _).mp <|
-        L.symm.contDiff.contMDiff.comp <| contMDiff_pi_module_iff.mpr fun i ↦
-          OpenPartialHomeomorph.contDiff_univBall.contMDiff.comp
-            (EuclideanSpace.proj (𝕜 := ℝ) i).contMDiff
-      contMDiff_invFun := L.symm.contDiff.contMDiff.comp <| contMDiff_pi_module_iff.mpr fun i ↦ by
-        have hcd : ContMDiffOn 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) n (e i).symm (Ioo (a i) (b i)) := by
-          rw [← htarget i, OpenPartialHomeomorph.univBall_target _ (hr i)]
+    EuclideanSpace ℝ ι ≃ₘ^n⟮𝓘(ℝ, EuclideanSpace ℝ ι), 𝓘(ℝ, EuclideanSpace ℝ ι)⟯ openBox a b where
+  toFun v := ⟨(EuclideanSpace.equiv ι ℝ).symm
+      (fun i ↦ OpenPartialHomeomorph.univBall ((a i + b i) / 2) ((b i - a i) / 2) (v i)),
+    mem_openBox.mpr fun i ↦ univBall_openBox_target (hab i) ▸
+      (OpenPartialHomeomorph.univBall _ _).map_source (by simp)⟩
+  invFun u := (EuclideanSpace.equiv ι ℝ).symm
+    (fun i ↦ (OpenPartialHomeomorph.univBall ((a i + b i) / 2) ((b i - a i) / 2)).symm (u.val i))
+  left_inv v := (EuclideanSpace.equiv ι ℝ).injective <| funext fun i ↦ by
+    simp only [(EuclideanSpace.equiv ι ℝ).apply_symm_apply]
+    exact (OpenPartialHomeomorph.univBall _ _).left_inv (by simp)
+  right_inv u := Subtype.ext <| (EuclideanSpace.equiv ι ℝ).injective <| funext fun i ↦ by
+    simp only [(EuclideanSpace.equiv ι ℝ).apply_symm_apply]
+    exact (OpenPartialHomeomorph.univBall _ _).right_inv
+      ((univBall_openBox_target (hab i)).symm ▸ (mem_openBox.mp u.property) i)
+  contMDiff_toFun := (ContMDiff.subtypeVal_comp_iff _ _).mp <|
+    (EuclideanSpace.equiv ι ℝ).symm.contDiff.contMDiff.comp <| contMDiff_pi_module_iff.mpr fun i ↦
+      OpenPartialHomeomorph.contDiff_univBall.contMDiff.comp
+        (EuclideanSpace.proj (𝕜 := ℝ) i).contMDiff
+  contMDiff_invFun :=
+    (EuclideanSpace.equiv ι ℝ).symm.contDiff.contMDiff.comp <|
+      contMDiff_pi_module_iff.mpr fun i ↦ by
+        have hr : 0 < (b i - a i) / 2 := by linarith [hab i]
+        have hcd : ContMDiffOn 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) n
+            (OpenPartialHomeomorph.univBall ((a i + b i) / 2) ((b i - a i) / 2)).symm
+            (Ioo (a i) (b i)) := by
+          rw [← univBall_openBox_target (hab i), OpenPartialHomeomorph.univBall_target _ hr]
           exact (OpenPartialHomeomorph.contDiffOn_univBall_symm (n := n)).contMDiffOn
         exact hcd.comp_contMDiff
           ((EuclideanSpace.proj (𝕜 := ℝ) i).contMDiff.comp contMDiff_subtypeVal)
-          fun u ↦ (mem_openBox.mp u.property) i }
+          fun u ↦ (mem_openBox.mp u.property) i
 
 /-- The `i`-th coordinate of `diffeomorphOpenBox hab v` is `univBall` applied to `v i`. -/
 @[simp]
 theorem coe_diffeomorphOpenBox_apply {n : ℕ∞} {ι : Type*} [Fintype ι] {a b : ι → ℝ}
     (hab : ∀ i, a i < b i) (v : EuclideanSpace ℝ ι) (i : ι) :
     (diffeomorphOpenBox (n := n) hab v : EuclideanSpace ℝ ι) i =
-      OpenPartialHomeomorph.univBall ((a i + b i) / 2) ((b i - a i) / 2) (v i) := by
-  rw [diffeomorphOpenBox]
-  rfl
+      OpenPartialHomeomorph.univBall ((a i + b i) / 2) ((b i - a i) / 2) (v i) :=
+  (rfl)
 
 /-- The `i`-th coordinate of `(diffeomorphOpenBox hab).symm u` is `univBall.symm` applied to
 `u.val i`. -/
@@ -337,9 +338,8 @@ theorem coe_diffeomorphOpenBox_apply {n : ℕ∞} {ι : Type*} [Fintype ι] {a b
 theorem diffeomorphOpenBox_symm_apply {n : ℕ∞} {ι : Type*} [Fintype ι] {a b : ι → ℝ}
     (hab : ∀ i, a i < b i) (u : openBox a b) (i : ι) :
     (diffeomorphOpenBox (n := n) hab).symm u i =
-      (OpenPartialHomeomorph.univBall ((a i + b i) / 2) ((b i - a i) / 2)).symm (u.val i) := by
-  rw [diffeomorphOpenBox]
-  rfl
+      (OpenPartialHomeomorph.univBall ((a i + b i) / 2) ((b i - a i) / 2)).symm (u.val i) :=
+  (rfl)
 
 end OpenBox
 

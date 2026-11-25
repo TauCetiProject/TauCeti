@@ -172,25 +172,56 @@ section Forms
 
 variable [IsManifold I 1 M]
 
+omit [DecidableEq ι] [T2Space M] [IsManifold I 1 M] in
+/-- Pulling back a rough form extended by zero from `U i` to a disjoint `U j` gives `0`. -/
+private theorem mpullback_inclusion_extendByZero_of_disjoint {i j : ι}
+    (hd : Disjoint (U i) (U j)) {k : ℕ} (η : RoughForm I (U i) ℝ k) :
+    TauCeti.mpullback I I (Opens.inclusion (le_iSup U j))
+      (RoughForm.extendByZero (⨆ l, U l : Opens M) η) = 0 := by
+  rw [RoughForm.mpullback_inclusion_extendByZero_eq_extendByZero]
+  exact funext fun y ↦ RoughForm.extendByZero_apply_of_notMem _
+    fun hy ↦ (hd.le_bot ⟨hy, y.property⟩).elim
+
 private theorem mpullback_inclusion_lsum_extendByZero (hdisj : Pairwise (Disjoint on U)) (k : ℕ)
     (f : Π₀ i, compactlySupportedForms I (U i) k) (j : ι) :
     TauCeti.mpullback I I (Opens.inclusion (le_iSup U j))
       ((DFinsupp.lsum ℝ (fun i ↦ extendByZero (le_iSup U i) k) f :
         SmoothForm I (⨆ i, U i : Opens M) ℝ k).val) = (f j : SmoothForm I (U j) ℝ k).val := by
   induction f using DFinsupp.induction with
-  | h0 => funext y; simp only [map_zero, Submodule.coe_zero, mpullback_inclusion_apply]; rfl
+  | h0 => simp [mpullback_zero]
   | ha i ψ f _ _ ih =>
     simp only [map_add, DFinsupp.lsum_single, Submodule.coe_add, mpullback_add, ih,
       DFinsupp.add_apply]
     by_cases hij : i = j
     · subst hij; rw [DFinsupp.single_eq_same, coe_extendByZero,
         RoughForm.mpullback_inclusion_extendByZero]
-    · have hzero : TauCeti.mpullback I I (Opens.inclusion (le_iSup U j))
-          ((extendByZero (le_iSup U i) k ψ : SmoothForm I (⨆ i, U i : Opens M) ℝ k).val) = 0 := by
-        rw [coe_extendByZero, RoughForm.mpullback_inclusion_extendByZero_eq_extendByZero]
-        exact funext fun y ↦ RoughForm.extendByZero_apply_of_notMem _
-          fun hy ↦ ((hdisj hij).le_bot ⟨hy, y.property⟩).elim
-      rw [hzero, DFinsupp.single_eq_of_ne (Ne.symm hij), Submodule.coe_zero, Submodule.coe_zero]
+    · rw [coe_extendByZero, mpullback_inclusion_extendByZero_of_disjoint (hdisj hij),
+        DFinsupp.single_eq_of_ne (Ne.symm hij), Submodule.coe_zero, Submodule.coe_zero]
+
+omit [DecidableEq ι] [T2Space M] [IsManifold I 1 M] in
+/-- In a pairwise disjoint union `W = ⨆ j, U j`, extending `φ|_{U i}` by zero to `W` has closed
+support contained in `tsupport φ ∩ U i`, since `U i` is clopen in `W`. -/
+private theorem tsupport_extendByZero_mpullback_subset (hdisj : Pairwise (Disjoint on U)) {k : ℕ}
+    (φ : RoughForm I (⨆ j, U j : Opens M) ℝ k) (i : ι) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ)
+        (RoughForm.extendByZero (⨆ j, U j : Opens M)
+          (TauCeti.mpullback I I (Opens.inclusion (le_iSup U i)) φ)) ⊆
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ∩
+        (((↑) : (⨆ j, U j : Opens M) → M) ⁻¹' (U i : Set M)) :=
+  closure_minimal
+    (fun x hx0 ↦ by
+      have hxi : (x : M) ∈ U i :=
+        by_contra fun hni ↦ hx0 (RoughForm.extendByZero_apply_of_notMem _ hni)
+      refine ⟨subset_tsupport _ fun hφ0 ↦ hx0 ?_, hxi⟩
+      rw [RoughForm.extendByZero_apply_of_mem _ hxi, mpullback_inclusion_apply]
+      exact hφ0)
+    ((_root_.isClosed_tsupport _).inter
+      (TauCeti.TopologicalSpace.Opens.isClopen_of_pairwiseDisjoint_iSup_eq_top
+        (fun j ↦ (U j).comap ⟨Subtype.val, continuous_subtypeVal⟩)
+        (eq_top_iff.mpr fun x _ ↦ let ⟨j, hj⟩ := Opens.mem_iSup.mp x.property;
+          Opens.mem_iSup.mpr ⟨j, hj⟩)
+        (fun _ _ hjk ↦ disjoint_iff_inf_le.mpr fun _ ⟨hj, hk⟩ ↦
+          (hdisj hjk).le_bot ⟨hj, hk⟩) i).isClosed)
 
 omit [DecidableEq ι] in
 private theorem exists_extendByZero_eq_restrict (hdisj : Pairwise (Disjoint on U)) {k : ℕ}
@@ -202,6 +233,7 @@ private theorem exists_extendByZero_eq_restrict (hdisj : Pairwise (Disjoint on U
   let W : Opens M := ⨆ j, U j
   let θ : RoughForm I W ℝ k :=
     RoughForm.extendByZero W (TauCeti.mpullback I I (Opens.inclusion (le_iSup U i)) φ.val.val)
+  -- `θ` agrees with `φ` on `U i` and vanishes on every other `U j`, so it is smooth on `W`.
   have hθ_smooth : IsSmoothForm I ∞ θ :=
     IsSmoothForm.of_mpullback_inclusion (le_iSup U) (fun x ↦ Opens.mem_iSup.mp x.property)
       fun j ↦ by
@@ -211,28 +243,10 @@ private theorem exists_extendByZero_eq_restrict (hdisj : Pairwise (Disjoint on U
           ← SmoothForm.coe_mpullback (Opens.inclusion (le_iSup U i)) (contMDiff_inclusion _) φ.val]
         exact (SmoothForm.mpullback (Opens.inclusion (le_iSup U i))
           (contMDiff_inclusion _) φ.val).isSmoothForm
-      · have hzero : TauCeti.mpullback I I (Opens.inclusion (le_iSup U j)) θ = 0 := by
-          dsimp only [θ]; rw [RoughForm.mpullback_inclusion_extendByZero_eq_extendByZero]
-          exact funext fun y ↦ RoughForm.extendByZero_apply_of_notMem _
-            fun hy ↦ ((hdisj hij).le_bot ⟨hy, y.property⟩).elim
-        exact hzero ▸ IsSmoothForm.zero ∞
-  have hθ_supp : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) θ ⊆
-      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ.val.val ∩
-        (((↑) : W → M) ⁻¹' (U i : Set M)) :=
-    closure_minimal
-      (fun x (hx0 : θ x ≠ 0) ↦ by
-        have hxi : (x : M) ∈ U i :=
-          by_contra fun hni ↦ hx0 (RoughForm.extendByZero_apply_of_notMem _ hni)
-        refine ⟨subset_tsupport _ fun hφ0 ↦ hx0 ?_, hxi⟩
-        dsimp only [θ]; rw [RoughForm.extendByZero_apply_of_mem _ hxi, mpullback_inclusion_apply]
-        exact hφ0)
-      ((_root_.isClosed_tsupport _).inter
-        (TauCeti.TopologicalSpace.Opens.isClopen_of_pairwiseDisjoint_iSup_eq_top
-          (fun j ↦ (U j).comap ⟨Subtype.val, continuous_subtypeVal⟩)
-          (eq_top_iff.mpr fun x _ ↦ let ⟨j, hj⟩ := Opens.mem_iSup.mp x.property;
-            Opens.mem_iSup.mpr ⟨j, hj⟩)
-          (fun _ _ hjk ↦ disjoint_iff_inf_le.mpr fun _ ⟨hj, hk⟩ ↦
-            (hdisj hjk).le_bot ⟨hj, hk⟩) i).isClosed)
+      · exact (mpullback_inclusion_extendByZero_of_disjoint (I := I) (hdisj hij) _) ▸
+          IsSmoothForm.zero ∞
+  -- From `tsupport θ ⊆ tsupport φ ∩ U i`, `θ` has compact support inside `U i`.
+  have hθ_supp := tsupport_extendByZero_mpullback_subset hdisj φ.val.val i
   let Θ : compactlySupportedForms I W k :=
     ⟨⟨θ, hθ_smooth.mem_smoothBundleForms⟩, (mem_compactlySupportedForms I).mpr <|
       ((mem_compactlySupportedForms I).mp φ.property).of_isClosed_subset

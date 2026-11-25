@@ -61,7 +61,13 @@ is bounded on `x ≥ 0`.
   `((y ^ m)⁻¹ + y ^ m) exp (-a ((y - 1)² / y)) ≤ 2 max (m! / (a / 4) ^ m) (2 ^ m)` for `0 < a`,
   `0 < y`.
 * `TauCeti.exp_neg_mul_mul_le`: `x exp (-r x) ≤ (2 / δ) exp (-(δ / 2) x)` for `0 < δ ≤ r`.
+* `TauCeti.exp_neg_sub_mul_le_of_le`: `exp (-(x - σ) t) ≤ exp (-(x - σ) δ)` for `σ ≤ x` and
+  `δ ≤ t`.
 * `Real.pow_le_exp_mul`: `x ^ k ≤ exp (k x)` for `0 ≤ x` and every natural `k`.
+* `TauCeti.one_add_mul_le_one_add_mul_exp_mul_sub_one`:
+  `1 + a x ≤ (1 + a) exp (a (x - 1))` for every real `a` and `x ≥ 1`.
+* `TauCeti.inv_one_sub_le_one_add_mul_exp_sq_div_one_sub_sq`:
+  `(1 - x)⁻¹ ≤ (1 + x) exp (t² / (1 - t²))` for `0 ≤ x ≤ t < 1`.
 -/
 
 public section
@@ -367,10 +373,39 @@ theorem exp_neg_mul_mul_le {r δ : ℝ} (hδ : 0 < δ) (hr : δ ≤ r) (x : ℝ)
   calc _ ≤ exp (-(δ / 2 * x)) * exp (-(δ / 2 * x)) * x := by gcongr
     _ ≤ _ := by rw [mul_assoc, mul_comm]; gcongr
 
+/-- Raising the damping rate from `σ` to `x ≥ σ` multiplies by `e^{-(x-σ)t}`, which is at most
+`e^{-(x-σ)δ}` for `t ≥ δ`. -/
+theorem exp_neg_sub_mul_le_of_le {σ x δ t : ℝ} (hx : σ ≤ x) (ht : δ ≤ t) :
+    exp (-(x - σ) * t) ≤ exp (-(x - σ) * δ) :=
+  exp_le_exp.mpr (mul_le_mul_of_nonpos_left ht (by linarith))
+
 /-- A natural power of a nonnegative real number is at most the exponential of the exponent
 times the base: `x ^ k ≤ exp (k x)` for `0 ≤ x`, since `x ≤ x + 1 ≤ exp x`. -/
 theorem _root_.Real.pow_le_exp_mul {x : ℝ} (hx : 0 ≤ x) (k : ℕ) : x ^ k ≤ exp (k * x) := by
   rw [exp_natCast_mul]
   exact pow_le_pow_left₀ hx (by linarith [add_one_le_exp x]) k
+
+/-- `1 + a x ≤ (1 + a) exp (a (x - 1))` for every real `a` and `x ≥ 1`. -/
+theorem one_add_mul_le_one_add_mul_exp_mul_sub_one {a x : ℝ} (hx : 1 ≤ x) :
+    1 + a * x ≤ (1 + a) * Real.exp (a * (x - 1)) := by
+  rcases le_or_gt (-1) a with ha | ha
+  · have h := Real.add_one_le_exp (a * (x - 1))
+    nlinarith [mul_le_mul_of_nonneg_left h (neg_le_iff_add_nonneg'.1 ha),
+      mul_nonneg (sq_nonneg a) (sub_nonneg.2 hx)]
+  · have h : Real.exp (a * (x - 1)) ≤ 1 :=
+      Real.exp_le_one_iff.2 (mul_nonpos_of_nonpos_of_nonneg (by linarith) (sub_nonneg.2 hx))
+    nlinarith [mul_nonneg_of_nonpos_of_nonpos (by linarith : 1 + a ≤ 0) (sub_nonpos.2 h)]
+
+/-- `(1 - x)⁻¹ ≤ (1 + x) exp (t² / (1 - t²))` for `0 ≤ x ≤ t < 1`. -/
+theorem inv_one_sub_le_one_add_mul_exp_sq_div_one_sub_sq {x t : ℝ} (hx : 0 ≤ x) (hxt : x ≤ t)
+    (ht : t < 1) : (1 - x)⁻¹ ≤ (1 + x) * Real.exp (t ^ 2 / (1 - t ^ 2)) := by
+  have ht2 : 0 < 1 - t ^ 2 := by nlinarith
+  have hx2 : 0 < 1 - x ^ 2 := by nlinarith
+  have hexp := Real.add_one_le_exp (t ^ 2 / (1 - t ^ 2))
+  have hfrac : t ^ 2 / (1 - t ^ 2) + 1 = (1 - t ^ 2)⁻¹ := by field_simp; ring
+  rw [hfrac] at hexp
+  calc (1 - x)⁻¹ = (1 + x) * (1 - x ^ 2)⁻¹ := by field_simp [(by linarith : (1 : ℝ) - x ≠ 0)]; ring
+    _ ≤ (1 + x) * (1 - t ^ 2)⁻¹ := by gcongr
+    _ ≤ (1 + x) * Real.exp (t ^ 2 / (1 - t ^ 2)) := by gcongr
 
 end TauCeti
