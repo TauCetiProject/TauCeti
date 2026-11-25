@@ -70,6 +70,8 @@ to torsion modules and do not require the coefficient algebra to be flat.
 ## Main declarations
 
 * `Representation.baseChange`: scalar extension of a representation.
+* `Representation.ker_baseChange`: scalar extension to a faithful algebra keeps the kernel of a
+  representation on a flat module.
 * `Representation.invariantsBaseChangeEquiv`: flat scalar extension commutes with taking the
   invariants of a finite group.
 * `Representation.invariantsBaseChangeMap`: the comparison map `A ⊗_R V^G → (A ⊗_R V)^G`,
@@ -156,6 +158,19 @@ theorem ker_le_ker_baseChange {G : Type*} [Group G] (A : Type v) [Semiring A] [A
     (ρ : Representation R G V) : ρ.ker ≤ (baseChange A ρ).ker := fun g hg ↦ by
   rw [MonoidHom.mem_ker] at hg ⊢
   simp [baseChange_apply, hg, Module.End.one_eq_id]
+
+/-- Extension of scalars to a faithful algebra does not change the kernel of a representation on a
+flat module, since `v ↦ 1 ⊗ v` is then injective. -/
+@[simp]
+theorem ker_baseChange {G : Type*} [Group G] (A : Type v) [Semiring A] [Algebra R A]
+    [FaithfulSMul R A] [Module.Flat R V] (ρ : Representation R G V) :
+    (baseChange A ρ).ker = ρ.ker := by
+  refine le_antisymm (fun g hg ↦ ?_) (ker_le_ker_baseChange A ρ)
+  rw [MonoidHom.mem_ker, baseChange_apply] at hg
+  rw [MonoidHom.mem_ker]
+  ext v
+  exact Module.Flat.tensorProduct_mk_injective R V A
+    (by simpa using LinearMap.congr_fun hg (1 ⊗ₜ v))
 
 end BaseChange
 
