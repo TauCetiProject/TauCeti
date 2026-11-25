@@ -123,9 +123,8 @@ theorem eq_traceFst_of_apply_coe_eq {γ : A →P[ℂ] ℂ} (hγ : ‖(γ : A →
     (isTracialState_traceFst.norm_eq_one.trans isTracialState_trace.norm_eq_one.symm).le
     h traceFst_apply_coe
 
-/-- `τ` has a unique tracial extension to `A`, by
-`PositiveContinuousLinearMap.IsTracialState.existsUnique_isTracialState_apply_coe_eq`; it is `γ`
-by `eq_traceFst_of_apply_coe_eq`. -/
+/-- `τ` has exactly one tracial extension to `A` (it is `traceFst`, see
+`eq_traceFst_of_apply_coe_eq`). -/
 theorem existsUnique_isTracialState_apply_coe_eq :
     ∃! γ : A →P[ℂ] ℂ, γ.IsTracialState ∧ ∀ c : I, γ c = trace c :=
   isTracialState_trace.existsUnique_isTracialState_apply_coe_eq
