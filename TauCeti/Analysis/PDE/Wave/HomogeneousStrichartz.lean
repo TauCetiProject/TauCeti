@@ -35,8 +35,9 @@ through the blocks of the data:
 
 The same estimates hold in mixed norm at the pairs `(∞, r)` with `2 ≤ r ≤ ∞`, which are all
 wave-admissible, with `γ = n / 2 - n / r`; at `(∞, ∞)` this is `γ = n / 2`.
-In dimension `n ≥ 4` they also hold in mixed norm at the pairs `(2, r)`, with
-`γ = n / 2 - n / r - 1 / 2`; these are proved in `TauCeti.Analysis.PDE.Wave.TimeExponentTwo`.
+In dimension `n ≥ 4` they also hold in mixed norm at the wave-admissible pairs `(2, r)`, that is
+`2 (n - 1) / (n - 3) ≤ r ≤ ∞`, with `γ = n / 2 - n / r - 1 / 2`; these are proved in
+`TauCeti.Analysis.PDE.Wave.TimeExponentTwo`.
 
 The right-hand sides are the norms of the data in `\dot B^γ_{2,1}` and `\dot B^{γ - 1}_{2,1}`.
 Since these are `ℓ¹` sums over the blocks rather than square functions, the pairs with `r = ∞` are
