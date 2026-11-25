@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 public import Mathlib.Analysis.Calculus.LineDeriv.Basic
-import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import Mathlib.Analysis.Calculus.LineDeriv.Measurable
 import Mathlib.Analysis.Calculus.Rademacher
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution

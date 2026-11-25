@@ -7,9 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 public import TauCeti.Analysis.Calculus.GraphFlattening.Basic
-import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
-import TauCeti.Analysis.Sobolev.Mollification.Lipschitz
 
 /-!
 # Mollified Lipschitz shears
