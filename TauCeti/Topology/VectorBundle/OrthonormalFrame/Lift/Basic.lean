@@ -53,7 +53,8 @@ main instance.
 
 Precomposing every frame of a lift along `ρ` with a fixed linear isometry `r` of the model gives
 a lift along any `ρ'` with `ρ g ∘ r = r ∘ ρ' g`, on the same principal bundle
-(`TauCeti.OrthonormalFrameLift.precomp`).
+(`TauCeti.OrthonormalFrameLift.precomp`). Equivalences of lifts are equivalences of the lifts with
+precomposed frames (`TauCeti.OrthonormalFrameLift.Equiv.precomp`).
 
 ## Main definitions
 
@@ -67,6 +68,8 @@ a lift along any `ρ'` with `ρ g ∘ r = r ∘ ρ' g`, on the same principal bu
   lift and of an equivalence along fibrewise isometries.
 * `TauCeti.OrthonormalFrameLift.precomp`: the lift whose frames are those of a lift precomposed
   with a fixed isometry of the model.
+* `TauCeti.OrthonormalFrameLift.Equiv.precomp`: the equivalence of lifts with precomposed frames
+  induced by an equivalence of lifts.
 
 ## Main results
 
@@ -857,6 +860,31 @@ theorem toFrame_precomp (s : OrthonormalFrameLift F E n G ρ)
     (hr : ∀ g v, ρ g (r (WithLp.toLp 2 v)).ofLp = (r (WithLp.toLp 2 (ρ' g v))).ofLp)
     (p : TotalSpace G s.P) :
     (s.precomp r ρ' hr).toFrame p = ⟨(s.toFrame p).proj, r.trans (s.toFrame p).frame⟩ :=
+  (rfl)
+
+/-- **Precomposing frames is functorial**: an equivalence `s ≃ t` of lifts is an equivalence of
+the lifts with frames precomposed with `r`. -/
+noncomputable def Equiv.precomp {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
+    (r : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+    (ρ' : G →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ))
+    (hr : ∀ g v, ρ g (r (WithLp.toLp 2 v)).ofLp = (r (WithLp.toLp 2 (ρ' g v))).ofLp) :
+    (s.precomp r ρ' hr).Equiv (t.precomp r ρ' hr) where
+  toEquiv := φ.toEquiv
+  continuous_toFun := φ.continuous_toFun
+  continuous_invFun := φ.continuous_invFun
+  map_smul := φ.map_smul
+  -- `rw` and `simp` cannot see through the fibre `(s.precomp …).P x = s.P x`, so the frame
+  -- equation of `φ` is pushed through the precomposition `q ↦ ⟨q.proj, r.trans q.frame⟩` of the
+  -- frame map (`toFrame_precomp`) by `congrArg`.
+  toFrame_map x p := congrArg (fun q ↦ (⟨q.proj, r.trans q.frame⟩ :
+    OrthonormalFrameBundle ℝ F E (EuclideanSpace ℝ (Fin n)))) (φ.toFrame_map x p)
+
+@[simp]
+theorem Equiv.precomp_toEquiv {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
+    (r : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+    (ρ' : G →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ))
+    (hr : ∀ g v, ρ g (r (WithLp.toLp 2 v)).ofLp = (r (WithLp.toLp 2 (ρ' g v))).ofLp) (x : X) :
+    (φ.precomp r ρ' hr).toEquiv x = φ.toEquiv x :=
   (rfl)
 
 end OrthonormalFrameLift
