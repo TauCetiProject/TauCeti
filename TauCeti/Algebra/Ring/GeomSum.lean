@@ -40,6 +40,9 @@ exactly when `x ^ d ≠ 1` for each of its indices `d`.
   `x ^ n = 1`; in particular a root of `T² + T + 1` is a cube root of unity.
 * `TauCeti.prod_geom_sum_ne_zero_iff`: a product of `x`-integers is nonzero exactly when no index
   `d` has `x ^ d = 1`.
+* `TauCeti.geom_sum_range_mul`: `[m n]_x = [m]_x [n]_{x ^ m}` in any semiring.
+* `TauCeti.sq_geom_sum_dvd_geom_sum_range_mul_sub`: `[m]_x ^ 2` divides `[m n]_x - n [m]_x` in
+  any commutative ring.
 -/
 
 public section
@@ -133,5 +136,29 @@ theorem prod_geom_sum_ne_zero_iff {R : Type*} [CommRing R] [NoZeroDivisors R] {x
     ∏ d ∈ s, ∑ i ∈ range d, x ^ i ≠ 0 ↔ ∀ d ∈ s, x ^ d ≠ 1 := by
   have : Nontrivial R := ⟨⟨x, 1, hx⟩⟩
   simp only [Finset.prod_ne_zero_iff, ne_eq, geom_sum_eq_zero_iff_pow_eq_one hx]
+
+/-- The `x`-integer of a product factors as `[m n]_x = [m]_x [n]_{x ^ m}`, in any semiring:
+`∑_{i < m n} x ^ i = (∑_{i < m} x ^ i) (∑_{j < n} (x ^ m) ^ j)`. -/
+theorem geom_sum_range_mul {R : Type*} [Semiring R] (x : R) (m n : ℕ) :
+    ∑ i ∈ range (m * n), x ^ i = (∑ i ∈ range m, x ^ i) * ∑ j ∈ range n, (x ^ m) ^ j := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Nat.mul_add_one, sum_range_add, ih, sum_range_succ, mul_add, ← pow_mul, sum_mul _ _ (x ^ _)]
+    simp only [add_comm (m * n), pow_add]
+
+/-- The `x`-integer `[m]_x` divides `[n]_{x ^ m} - n`, in any commutative ring. -/
+theorem geom_sum_dvd_geom_sum_pow_sub {R : Type*} [CommRing R] (x : R) (m n : ℕ) :
+    ∑ i ∈ range m, x ^ i ∣ ∑ j ∈ range n, (x ^ m) ^ j - n := by
+  -- `x ^ m ≡ 1` modulo `[m]_x` because `[m]_x * (x - 1) = x ^ m - 1`.
+  have h : ∑ j ∈ range n, (x ^ m) ^ j - n = ∑ j ∈ range n, ((x ^ m) ^ j - 1) := by simp
+  rw [h]
+  exact dvd_sum fun j _ => (Dvd.intro _ (geom_sum_mul x m)).trans (sub_one_dvd_pow_sub_one _ j)
+
+/-- The `x`-integers satisfy `[m n]_x ≡ n [m]_x` modulo `[m]_x ^ 2`, in any commutative ring. -/
+theorem sq_geom_sum_dvd_geom_sum_range_mul_sub {R : Type*} [CommRing R] (x : R) (m n : ℕ) :
+    (∑ i ∈ range m, x ^ i) ^ 2 ∣ ∑ i ∈ range (m * n), x ^ i - n * ∑ i ∈ range m, x ^ i := by
+  rw [geom_sum_range_mul, sq, mul_comm (n : R), ← mul_sub]
+  exact mul_dvd_mul_left _ (geom_sum_dvd_geom_sum_pow_sub x m n)
 
 end TauCeti

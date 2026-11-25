@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Topology.Homotopy.HomotopyGroup
 public import TauCeti.Topology.Homotopy.Cube.Basic
 import TauCeti.Topology.Homotopy.GenLoop.Homotopic
@@ -14,6 +15,9 @@ import TauCeti.Topology.Homotopy.GenLoop.Homotopic
 
 A pointed space is path connected if and only if its zeroth homotopy set is a subsingleton.
 This follows from Mathlib's equivalence between the zeroth homotopy set and path components.
+So a simply connected space has trivial homotopy groups below degree two
+(`TauCeti.subsingleton_homotopyGroup_of_lt_two`), the connectivity hypothesis of the Hurewicz
+theorem in degree two.
 
 For an infinite index set the boundary of the cube is dense (`Cube.dense_boundary`). Hence a
 generalized loop into a `T1` space is constant, so there is only one generalized loop
@@ -23,7 +27,9 @@ so the homotopy set is trivial (the instance `HomotopyGroup.subsingleton_of_infi
 
 On classes of generalized loops, Mathlib's identification of `π_0` with the path components and
 of a homotopy group indexed by a singleton with the fundamental group are computed by
-`HomotopyGroup.pi0EquivZerothHomotopy_mk` and `homotopyGroupEquivFundamentalGroupOfUnique_mk_asHom`.
+`HomotopyGroup.pi0EquivZerothHomotopy_mk` and `homotopyGroupEquivFundamentalGroupOfUnique_mk_asHom`,
+and the inverse of the identification `π_1 ≃* FundamentalGroup` by
+`HomotopyGroup.pi1MulEquivFundamentalGroup_symm_fromPath_mk`.
 -/
 
 public section
@@ -43,6 +49,14 @@ theorem pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (x : X) :
   have hne : Nonempty (ZerothHomotopy X) := ⟨ZerothHomotopy.mk x⟩
   simp only [hne, true_and]
   exact (homotopyGroupEquivZerothHomotopyOfIsEmpty (Fin 0) x).symm.subsingleton_congr
+
+/-- **A simply connected space has trivial homotopy groups below degree two**, at every base
+point. -/
+theorem subsingleton_homotopyGroup_of_lt_two [SimplyConnectedSpace X] (x : X) {k : ℕ}
+    (hk : k < 2) : Subsingleton (π_ k X x) := by
+  obtain rfl | rfl : k = 0 ∨ k = 1 := by omega
+  · exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero x).1 inferInstance
+  · exact HomotopyGroup.pi1MulEquivFundamentalGroup.toEquiv.subsingleton
 
 end TauCeti
 
@@ -94,3 +108,13 @@ theorem homotopyGroupEquivFundamentalGroupOfUnique_mk_asHom {M X : Type*} [Uniqu
     (homotopyGroupEquivFundamentalGroupOfUnique M ⟦γ⟧).asHom =
       Path.Homotopic.Quotient.mk (genLoopEquivOfUnique M γ) :=
   (rfl)
+
+/-- The inverse of `pi1MulEquivFundamentalGroup` sends the class of a loop `γ` to the class of the
+corresponding cube loop `(genLoopEquivOfUnique (Fin 1)).symm γ`. -/
+theorem HomotopyGroup.pi1MulEquivFundamentalGroup_symm_fromPath_mk {X : Type*}
+    [TopologicalSpace X] {x : X} (γ : Path x x) :
+    pi1MulEquivFundamentalGroup.symm (FundamentalGroup.fromPath (.mk γ)) =
+      ⟦(genLoopEquivOfUnique (Fin 1)).symm γ⟧ :=
+  -- Mathlib defines `pi1MulEquivFundamentalGroup` as the quotient of
+  -- `genLoopEquivOfUnique (Fin 1)`, so its inverse is computed on representatives
+  rfl

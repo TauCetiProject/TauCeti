@@ -29,6 +29,8 @@ as those of noncrossing partitions, into sums over `Finset.range`.
 
 ## Main results
 
+* `Finset.prod_range_ite_even`, `Finset.sum_range_ite_even`: keeping only the even-indexed factors
+  among the first `N` gives the first `(N + 1) / 2` values `g k` at the halved indices.
 * `sum_Ioo_eq_sum_range`: a sum over `Ioo 0 n` equals the sum over `range n` when the summand at
   `0` vanishes.
 * `Finset.sum_range_min_diag_flip`: reindex a three-variable truncated triangle as a slice of
@@ -69,8 +71,15 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   adjacent contributions, retaining the final boundary term.
 * `Finset.prod_range_two_mul_add_one`, `Finset.sum_range_two_mul_add_one`: split a product or sum
   over `range (2 * k + 1)` into its even and odd indices.
+* `Finset.prod_range_add_sub_eq`, `Finset.sum_range_add_sub_eq`: reverse the order of `k`
+  consecutive factors or terms, `∏_{i<k} f(a+k-i) = ∏_{i<k} f(a+i+1)`.
 * `Finset.prod_range_ite_lt`, `Finset.sum_range_ite_lt`: a product or sum over `range n` whose
   factors past `x ≤ n` are replaced by `1` or `0` is the product or sum over `range x`.
+* `Finset.prod_range_ite_add_eq`, `Finset.sum_range_ite_add_eq`: a product or sum over `r ≤ n`
+  supported on `r + d = k` is the factor or term at `r = k - d`, if those beyond `n` are trivial.
+* `Finset.prod_range_eq_mul_prod_range_succ`, `Finset.sum_range_eq_add_sum_range_succ`: shift
+  the index of a product or sum over `range n` whose factor or term at the top index `n` is
+  trivial.
 * `Finset.four_dvd_sum_range_two_mul_add_one`: a sum over `range (2 * k + 1)` of even terms,
   symmetric under `i ↦ 2 * k - i` and vanishing at the middle index `k`, is divisible by `4`.
 * `Finset.prod_card_filter_lt_card_filter_gt`, `Finset.sum_card_filter_lt_card_filter_gt`: reindex
@@ -84,6 +93,9 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   with common difference `2` is `J (D + J)`.
 * `Finset.sum_range_min_add_one_sub_two_mul`: the Clebsch–Gordan dimension count
   `∑_{k ≤ min m n} (m + n - 2k + 1) = (m + 1)(n + 1)`.
+* `Finset.sum_range_sum_range_split_gap`: split a double sum over `range n × range n` by the gap
+  `N` between the indices into the pairs with `k < l - N`, those with `l < k - N` and those with
+  `|k - l| ≤ N`, as in Bony's decomposition of a product of two Littlewood–Paley partial sums.
 -/
 
 public section
@@ -115,6 +127,32 @@ theorem prod_range_two_mul_add_one {M : Type*} [CommMonoid M] (g : ℕ → M) (k
       show 2 * k + 1 + 1 = 2 * (k + 1) by ring]
     ac_rfl
 
+/-- Reversing the order of `k` consecutive factors: `∏_{i<k} f(a+k-i) = ∏_{i<k} f(a+i+1)`. -/
+@[to_additive /-- Reversing the order of `k` consecutive terms:
+`∑_{i<k} f(a+k-i) = ∑_{i<k} f(a+i+1)`. -/]
+theorem prod_range_add_sub_eq {M : Type*} [CommMonoid M] (f : ℕ → M) (a k : ℕ) :
+    ∏ i ∈ range k, f (a + k - i) = ∏ i ∈ range k, f (a + i + 1) := by
+  rw [← prod_range_reflect (fun i ↦ f (a + i + 1))]
+  refine prod_congr rfl fun i hi ↦ ?_
+  rw [mem_range] at hi
+  congr 1
+  omega
+
+/-- The product of the factors of even index `2k`, `k < (N + 1) / 2`, among the first `N`. -/
+@[to_additive /-- The sum of the terms of even index `2k`, `k < (N + 1) / 2`, among the first
+`N`. -/]
+theorem prod_range_ite_even {M : Type*} [CommMonoid M] (g : ℕ → M) (N : ℕ) :
+    ∏ j ∈ range N, (if Even j then g (j / 2) else 1) = ∏ k ∈ range ((N + 1) / 2), g k := by
+  induction N with
+  | zero => simp
+  | succ N ih =>
+    rw [prod_range_succ, ih]
+    rcases Nat.even_or_odd N with ⟨k, rfl⟩ | ⟨k, rfl⟩
+    · rw [ite_eq_left ⟨k, rfl⟩, show (k + k + 1 + 1) / 2 = (k + k + 1) / 2 + 1 by omega,
+        prod_range_succ, show (k + k) / 2 = (k + k + 1) / 2 by omega]
+    · rw [ite_eq_right (Nat.not_even_iff_odd.2 ⟨k, rfl⟩), mul_one,
+        show (2 * k + 1 + 1 + 1) / 2 = (2 * k + 1 + 1) / 2 by omega]
+
 /-- Restricting a product over `range n` to the indices below `x ≤ n`, by replacing the other
 factors with `1`, gives the product over `range x`. -/
 @[to_additive /-- Restricting a sum over `range n` to the indices below `x ≤ n`, by replacing the
@@ -126,6 +164,30 @@ theorem prod_range_ite_lt {M : Type*} [CommMonoid M] (f : ℕ → M) {x n : ℕ}
   ext r
   simp only [mem_filter, mem_range]
   omega
+
+/-- A product over `r ≤ n` of factors supported on `r + d = k` picks out the factor at `r = k - d`,
+provided the factors are `1` beyond `n`. -/
+@[to_additive /-- A sum over `r ≤ n` of terms supported on `r + d = k` picks out the term at
+`r = k - d`, provided the terms vanish beyond `n`. -/]
+theorem prod_range_ite_add_eq {M : Type*} [CommMonoid M] (n d k : ℕ) (f : ℕ → M)
+    (hf : ∀ t, n < t → f t = 1) :
+    ∏ r ∈ range (n + 1), (if k = r + d then f r else 1) = if d ≤ k then f (k - d) else 1 := by
+  split_ifs with hdk
+  · simp_rw [show ∀ r, (k = r + d) ↔ (k - d = r) by omega, prod_ite_eq, mem_range]
+    split_ifs with h
+    · rfl
+    · exact (hf _ (by omega)).symm
+  · exact prod_eq_one fun r _ => ite_eq_right_iff.mpr fun h => absurd h (by omega)
+
+/-- Shifting the index of a product over `range n` whose factor at the top index `n` is `1`. -/
+@[to_additive /-- Shifting the index of a sum over `range n` whose term at the top index `n`
+vanishes. -/]
+theorem prod_range_eq_mul_prod_range_succ {M : Type*} [CommMonoid M] (f : ℕ → M) {n : ℕ}
+    (hf : f n = 1) :
+    ∏ l ∈ range n, f l = f 0 * ∏ l ∈ range n, f (l + 1) := by
+  have h := prod_range_succ f n
+  rw [prod_range_succ', hf, mul_one] at h
+  rw [← h, mul_comm]
 
 
 /-- A sum over `range (2 * k + 1)` of a family that is symmetric under `i ↦ 2 * k - i`, vanishes
@@ -649,6 +711,37 @@ theorem sum_range_sum_range_tsub_eq_sum_ite {M : Type*} [AddCommMonoid M] (F : �
   refine sum_congr rfl fun i hi ↦ ?_
   simp only [mem_range] at hp hi
   rw [ite_eq_left (by omega), Nat.add_sub_cancel' (by omega)]
+
+/-- **Splitting a double sum by the gap between the indices.** For every gap `N`, the double sum
+`∑_{k, l < n} c k l` is the sum of the terms with `k + N < l`, those with `l + N < k`, and those
+with `|k - l| ≤ N`. -/
+theorem sum_range_sum_range_split_gap {M : Type*} [AddCommMonoid M] (N n : ℕ)
+    (c : ℕ → ℕ → M) :
+    ∑ k ∈ range n, ∑ l ∈ range n, c k l =
+      ∑ l ∈ range n, ∑ k ∈ range (l - N), c k l + ∑ k ∈ range n, ∑ l ∈ range (k - N), c k l +
+        ∑ k ∈ range n, ∑ l ∈ (range n).filter (fun l ↦ l ≤ k + N ∧ k ≤ l + N), c k l := by
+  have hsplit : ∀ k ∈ range n, ∑ l ∈ range n, c k l =
+      ∑ l ∈ (range n).filter (fun l ↦ k + N < l), c k l + ∑ l ∈ range (k - N), c k l +
+        ∑ l ∈ (range n).filter (fun l ↦ l ≤ k + N ∧ k ≤ l + N), c k l := fun k hk ↦ by
+    rw [mem_range] at hk
+    rw [← sum_filter_add_sum_filter_not (range n) (fun l ↦ k + N < l),
+      ← sum_filter_add_sum_filter_not ((range n).filter fun l ↦ ¬k + N < l) (fun l ↦ l + N < k),
+      ← add_assoc]
+    congr 1
+    · congr 1
+      refine sum_congr ?_ fun _ _ ↦ rfl
+      ext l
+      simp only [mem_filter, mem_range]
+      omega
+    · refine sum_congr ?_ fun _ _ ↦ rfl
+      ext l
+      simp only [mem_filter, mem_range]
+      omega
+  rw [sum_congr rfl hsplit, sum_add_distrib, sum_add_distrib]
+  congr 2
+  refine sum_comm' fun k l ↦ ?_
+  simp only [mem_range, mem_filter]
+  omega
 
 /-- **Exchanging the order of a triangular double sum.** Summing over `s ≤ n` and `k ≤ s` gives
 the same as summing over `k ≤ n` and `j ≤ n - k`, with `s = k + j`. -/

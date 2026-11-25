@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.FDeriv.Basic
-public import Mathlib.Analysis.Normed.Ring.Basic
-import Mathlib.Analysis.Calculus.FDeriv.Mul
+public import Mathlib.Analysis.Calculus.FDeriv.Mul
 
 /-!
 # Derivatives of families with locally constant square
@@ -17,6 +15,11 @@ differentiating the square shows that every derivative of `f` anticommutes with 
 `f x * df(x) v + df(x) v * f x = 0` (`TauCeti.mul_fderiv_add_fderiv_mul_eq_zero`). For a family of
 almost complex structures, `J(y)² = -1`, this says that `dJ(y) v` anticommutes with `J(y)`, that
 is, the derivatives of `J` are tangent to the space of almost complex structures.
+
+The file also records the chain rule for `Ring.inverse` along a family: where `f x` is a unit,
+`y ↦ (f y)⁻¹ʳ` has derivative `v ↦ -(f x)⁻¹ʳ * df(x) v * (f x)⁻¹ʳ`
+(`HasFDerivAt.ringInverse`). Mathlib has the derivative of `Ring.inverse` itself and the
+differentiability of the composite, but not the composite's derivative.
 -/
 
 public section
@@ -44,3 +47,18 @@ theorem mul_fderiv_add_fderiv_mul_eq_zero {f : E → 𝔸} {x : E} {c : 𝔸}
   · simp [fderiv_zero_of_not_differentiableAt hf]
 
 end TauCeti
+
+open scoped Ring
+
+/-- **The derivative of the inverse along a family.** If `f` has derivative `f'` at `x` and
+`f x` is a unit, then `y ↦ (f y)⁻¹ʳ` has derivative `v ↦ -(f x)⁻¹ʳ * f' v * (f x)⁻¹ʳ` at `x`. -/
+theorem HasFDerivAt.ringInverse {𝕜 E 𝔸 : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedRing 𝔸] [NormedAlgebra 𝕜 𝔸]
+    [HasSummableGeomSeries 𝔸] {f : E → 𝔸} {f' : E →L[𝕜] 𝔸} {x : E} (hf : HasFDerivAt f f' x)
+    (hx : IsUnit (f x)) :
+    HasFDerivAt (fun y ↦ (f y)⁻¹ʳ)
+      (-(ContinuousLinearMap.mulLeftRight 𝕜 𝔸 (f x)⁻¹ʳ (f x)⁻¹ʳ ∘L f')) x := by
+  obtain ⟨u, hu⟩ := hx
+  have hinv := hasFDerivAt_ringInverse (𝕜 := 𝕜) u
+  rw [hu] at hinv
+  simpa [← hu, Ring.inverse_unit, Function.comp_def] using hinv.comp x hf

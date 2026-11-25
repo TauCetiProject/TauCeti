@@ -10,6 +10,7 @@ public import Mathlib.RepresentationTheory.Irreducible
 public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 public import TauCeti.RepresentationTheory.Dual
+public import TauCeti.RepresentationTheory.Intertwining
 public import TauCeti.RepresentationTheory.Irreducible
 
 /-!
@@ -70,8 +71,16 @@ representation, makes `G` a group, as does averaging over `G`
 * `TauCeti.Representation.IsInvariantForm.comp` and
   `TauCeti.Representation.IsInvariantForm.restrict`: invariance survives restriction along a monoid
   homomorphism and to a subrepresentation.
+* `TauCeti.Representation.IsInvariantForm.comp_equiv_symm`: invariant forms transport along an
+  equivalence of `ρ` with the restriction of a representation along a surjective homomorphism.
+* `TauCeti.Representation.IsInvariantForm.invariantForms_eq_span_of_forall_exists_eq_smul`: an
+  invariant form of which every invariant form is a multiple spans the invariant forms.
 * `TauCeti.Representation.isInvariantForm_iff_isIntertwiningMap`: a form is invariant exactly when
   it intertwines `ρ` with `ρ.dual`.
+* `TauCeti.Representation.IsInvariantForm.dual_apply`: the dual representation acts on a covector
+  `B v` through `ρ`.
+* `TauCeti.Representation.IsInvariantForm.stabilizer_dual_apply_eq_stabilizer`: for an injective
+  invariant form, the stabilizer of the covector `B v` is the stabilizer of `v`.
 * `TauCeti.Representation.invariantForms_eq_invariants_linHom_dual`: the invariant forms are the
   invariants of `linHom ρ ρ.dual`.
 * `TauCeti.Representation.symmetricInvariantForms_inf_alternatingInvariantForms`: away from
@@ -251,6 +260,33 @@ theorem isInvariantForm_trivial (B : BilinForm k V) :
     IsInvariantForm (Representation.trivial k G V) B :=
   fun _ => BilinForm.isIsometry_iff.mpr fun _ _ => rfl
 
+/-- **Invariant forms transport along an equivalence of representations.** If `E` identifies `ρ`
+with the restriction of `σ` along a surjective monoid homomorphism `f`, then the transported form
+`(x, y) ↦ B (E⁻¹ x) (E⁻¹ y)` of a `ρ`-invariant form `B` is `σ`-invariant. -/
+theorem IsInvariantForm.comp_equiv_symm {H W : Type*} [Monoid H] [AddCommMonoid W] [Module k W]
+    {σ : Representation k H W} {f : G →* H} (hB : IsInvariantForm ρ B) (E : ρ.Equiv (σ.comp f))
+    (hf : Function.Surjective f) :
+    IsInvariantForm σ (B.comp E.toLinearEquiv.symm.toLinearMap E.toLinearEquiv.symm.toLinearMap) :=
+  isInvariantForm_iff.mpr fun h x y => by
+    obtain ⟨g, rfl⟩ := hf h
+    obtain ⟨s, rfl⟩ := E.toLinearEquiv.surjective x
+    obtain ⟨t, rfl⟩ := E.toLinearEquiv.surjective y
+    have hE (v : V) : σ (f g) (E.toLinearEquiv v) = E.toLinearEquiv (ρ g v) := by
+      rw [Representation.Equiv.toLinearEquiv_apply, Representation.Equiv.toLinearEquiv_apply]
+      exact (Representation.IntertwiningMap.isIntertwining _ _ E.toIntertwiningMap g v).symm
+    simp only [BilinForm.comp_apply, LinearEquiv.coe_coe, hE, LinearEquiv.symm_apply_apply]
+    exact hB.apply g s t
+
+/-- **An invariant form that every invariant form is a multiple of spans them all**: if each
+invariant form of `ρ` is a scalar multiple of the invariant form `B`, then the invariant forms are
+the span of `B`. -/
+theorem IsInvariantForm.invariantForms_eq_span_of_forall_exists_eq_smul
+    (hB : IsInvariantForm ρ B) (h : ∀ C, IsInvariantForm ρ C → ∃ c : k, C = c • B) :
+    invariantForms ρ = Submodule.span k {B} := by
+  refine le_antisymm (fun C hC => ?_) (Submodule.span_le.mpr (Set.singleton_subset_iff.mpr hB))
+  obtain ⟨c, rfl⟩ := h C hC
+  exact Submodule.smul_mem _ c (Submodule.mem_span_singleton_self B)
+
 end Monoid
 
 /-! ### The symmetric and the alternating invariant forms -/
@@ -343,6 +379,13 @@ theorem isInvariantForm_iff_isIntertwiningMap (ρ : Representation k G V) (B : B
     have h := DFunLike.congr_fun (hB.isIntertwining g x) (ρ g y)
     simpa [Module.Dual.transpose_apply] using h
 
+/-- **The dual action on covectors given by an invariant form.** For an invariant form `B`, the
+dual representation acts on the covector `B v` through `ρ`: `ρ.dual g (B v) = B (ρ g v)`. This is
+`TauCeti.Representation.isInvariantForm_iff_isIntertwiningMap` evaluated at `v`. -/
+theorem IsInvariantForm.dual_apply (hB : IsInvariantForm ρ B) (g : G) (v : V) :
+    ρ.dual g (B v) = B (ρ g v) :=
+  (((isInvariantForm_iff_isIntertwiningMap ρ B).mp hB).isIntertwining g v).symm
+
 /-- The left radical `ker B = {x | B x = 0}` of an invariant form is invariant. -/
 theorem IsInvariantForm.apply_mem_ker (hB : IsInvariantForm ρ B) (g : G) {x : V}
     (hx : x ∈ LinearMap.ker B) : ρ g x ∈ LinearMap.ker B := by
@@ -364,6 +407,17 @@ def IsInvariantForm.kerRepresentation (hB : IsInvariantForm ρ B) :
 theorem IsInvariantForm.coe_kerRepresentation_apply (hB : IsInvariantForm ρ B) (g : G)
     (x : LinearMap.ker B) : (hB.kerRepresentation g x : V) = ρ g x :=
   (Subrepresentation.toRepresentation_apply_coe.1 rfl).symm
+
+/-- **Stabilizers of covectors given by an invariant form.** An injective invariant form `B`
+identifies `V` with a subrepresentation of the dual, so `g` fixes the covector `B v` under the
+dual representation exactly when it fixes `v`. This is
+`Representation.IntertwiningMap.stabilizer_apply_eq_of_injective` for the intertwiner `B`. -/
+theorem IsInvariantForm.stabilizer_dual_apply_eq_stabilizer (hB : IsInvariantForm ρ B)
+    (hB' : Function.Injective B) (v : V) :
+    _root_.Representation.stabilizer ρ.dual (B v) = _root_.Representation.stabilizer ρ v :=
+  _root_.Representation.IntertwiningMap.stabilizer_apply_eq_of_injective
+    (LinearMap.intertwiningMap_of_isIntertwiningMap ρ ρ.dual B
+      ((isInvariantForm_iff_isIntertwiningMap ρ B).mp hB).isIntertwining) hB' v
 
 end Group
 
@@ -501,10 +555,8 @@ theorem IsInvariantForm.exists_eq_smul (hB : IsInvariantForm ρ B) (hB0 : B ≠ 
 /-- **A nonzero invariant form on an irreducible representation spans all of them**: the invariant
 forms are a line. -/
 theorem IsInvariantForm.invariantForms_eq_span (hB : IsInvariantForm ρ B) (hB0 : B ≠ 0) :
-    invariantForms ρ = Submodule.span k {B} := by
-  refine le_antisymm (fun C hC => ?_) (Submodule.span_le.mpr (Set.singleton_subset_iff.mpr hB))
-  obtain ⟨c, rfl⟩ := hB.exists_eq_smul hB0 hC
-  exact Submodule.smul_mem _ c (Submodule.mem_span_singleton_self B)
+    invariantForms ρ = Submodule.span k {B} :=
+  hB.invariantForms_eq_span_of_forall_exists_eq_smul fun _ hC => hB.exists_eq_smul hB0 hC
 
 /-- **A nonzero invariant form on an irreducible representation is its own flip up to sign**: its
 flip is either the form itself or its negative.  This holds in every characteristic. -/

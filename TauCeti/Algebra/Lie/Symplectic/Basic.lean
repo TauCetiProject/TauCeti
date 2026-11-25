@@ -35,6 +35,7 @@ matrix past `J`.
 * `LieAlgebra.Symplectic.transpose_mem_sp` and `LieAlgebra.Symplectic.conjTranspose_mem_sp`: the
   symplectic Lie algebra is stable under transpose, and under conjugate transpose over a star
   ring.
+* `LieAlgebra.Symplectic.J_mul_mem_sp`: `J` times a symmetric matrix lies in `sp l R`.
 * `LieAlgebra.Symplectic.J_conj_eq_neg_transpose`: on symplectic Lie matrices, conjugation by `J`
   is negative transpose.
 * `LieAlgebra.Symplectic.jConj` and `LieAlgebra.Symplectic.symmetrize`: the linear involution
@@ -46,7 +47,8 @@ matrix past `J`.
 * `Matrix.mem_symplecticLieAlgebra_iff`: the entrywise block criterion, with symmetric
   off-diagonal blocks and opposite transposed diagonal blocks.
 * `Matrix.mem_range_scalar_of_commute_sp`: a matrix commuting with every element of `sp l R` is
-  scalar, over every commutative ring.
+  scalar, over every commutative ring, and `Matrix.scalar_mem_sp_iff`: a scalar symplectic Lie
+  matrix is zero over a ring without zero divisors in which `2 ≠ 0`.
 * `Matrix.J_mulVec`: the action of the standard symplectic matrix on a vector.
 * `LieAlgebra.Symplectic.trace_eq_zero_of_mem_sp`: symplectic Lie matrices have trace zero.
 -/
@@ -128,6 +130,12 @@ theorem conjTranspose_mem_sp [StarRing R] {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX
     star_J, conjTranspose_zero, conjTranspose_transpose_eq_transpose_conjTranspose] at h
   rw [mem_sp, eq_neg_iff_add_eq_zero, ← neg_eq_zero, ← h]
   noncomm_ring
+
+/-- **`J` times a symmetric matrix is a symplectic Lie matrix**: `(J S)ᵀ J = S (-J) J = S` and
+`-(J (J S)) = S`, both since `J * J = -1`. These are the Hamiltonian matrices of quadratic
+Hamiltonians. -/
+theorem J_mul_mem_sp {S : Matrix (l ⊕ l) (l ⊕ l) R} (hS : S.IsSymm) : J l R * S ∈ sp l R := by
+  simp [transpose_mul, hS.eq, Matrix.mul_assoc, ← Matrix.mul_assoc (J l R) (J l R), J_squared]
 
 /-- On the symplectic Lie algebra, conjugation by `J` is negative transpose. -/
 theorem J_conj_eq_neg_transpose {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX : X ∈ sp l R) :
@@ -263,6 +271,21 @@ theorem mem_range_scalar_of_commute_sp (M : Matrix (l ⊕ l) (l ⊕ l) R)
     | inl i => exact (hd i).symm
     | inr i => exact ((diag_eq_of_commute_single (hp i)).symm.trans (hd i)).symm
   · simp [scalar_apply, diagonal_apply_ne _ hab, hoff a b hab]
+
+/-- **A scalar matrix lies in `sp l R` iff it is zero**, over a ring without zero divisors in
+which `2 ≠ 0`. -/
+theorem scalar_mem_sp_iff [NoZeroDivisors R] [NeZero (2 : R)] (c : R) :
+    scalar (l ⊕ l) c ∈ LieAlgebra.Symplectic.sp l R ↔ scalar (l ⊕ l) c = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ zero_mem _⟩
+  cases isEmpty_or_nonempty l with
+  | inl _ => exact Subsingleton.elim _ _
+  | inr hl =>
+  obtain ⟨i⟩ := hl
+  -- The entry `c` at `n + i` is minus the entry `c` at `i`.
+  have hi := ((mem_symplecticLieAlgebra_iff _).mp h).2.2 i i
+  simp only [scalar_apply, diagonal_apply_eq] at hi
+  have hc : (2 : R) * c = 0 := by rw [two_mul, ← neg_eq_iff_add_eq_zero, ← hi]
+  rw [(mul_eq_zero.mp hc).resolve_left two_ne_zero, map_zero]
 
 end Matrix
 

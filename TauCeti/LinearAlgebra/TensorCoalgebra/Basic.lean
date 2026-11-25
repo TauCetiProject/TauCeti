@@ -41,6 +41,9 @@ with `TensorPower.splitAt`.  It is the coalgebra-side input for the suspended ba
 * `TauCeti.ReducedTensorWords.subword_congr`: equal-length blocks in different ambient tuples or
   at different offsets agree when their letters agree.
 * `TauCeti.ReducedTensorWords.subword_tail`: blocks of the tail of a tuple.
+* `TauCeti.ReducedTensorWords.subword_shift_zero_eq`,
+  `TauCeti.ReducedTensorWords.subword_shift_right_eq`: complementary cut blocks of a cyclically
+  shifted tuple.
 * `TauCeti.ReducedTensorWords.prepend_subword`: prepending the preceding letter extends a block.
 * `TauCeti.ReducedTensorWords.map_subword`: mapping a block applies the map to each of its letters.
 * `TauCeti.ReducedTensorWords.deconcatenation_subword`: deconcatenation of a block.
@@ -254,6 +257,26 @@ theorem subword_tail {n : ℕ} (z : Fin (n + 1) → M) (a b : ℕ) :
     subword_congr R _ z hab (by omega) fun j _ ↦ congrArg z (Fin.ext (by simp; omega))
   else by
     rw [subword_eq_zero_of_lt_add R _ (by omega), subword_eq_zero_of_lt_add R z (by omega)]
+
+/-- In a tuple cyclically shifted by `d` steps, the initial block of length `n - d` is the trailing
+block of `x` starting at `d`. -/
+theorem subword_shift_zero_eq {n : ℕ} (x : Fin n → M) (d : Fin n) :
+    subword R (fun i : Fin n ↦ x (i + d)) 0 (n - d) = subword R x d (n - d) :=
+  subword_congr R _ x (by omega) (by omega) fun j hj ↦ congrArg x <| Fin.ext <| by
+    rw [Fin.val_add]
+    dsimp only
+    rw [Nat.zero_add, Nat.mod_eq_of_lt (by omega)]
+    omega
+
+/-- In a tuple cyclically shifted by `d` steps, the trailing block of length `d` starting at `n - d`
+is the initial block of `x` of length `d`. -/
+theorem subword_shift_right_eq {n : ℕ} (x : Fin n → M) (d : Fin n) :
+    subword R (fun i : Fin n ↦ x (i + d)) (n - d) d = subword R x 0 d :=
+  subword_congr R _ x (by omega) (by omega) fun j hj ↦ congrArg x <| Fin.ext <| by
+    have hsum : n - (d : ℕ) + j + d = j + n := by omega
+    rw [Fin.val_add]
+    dsimp only
+    rw [hsum, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega), Nat.zero_add]
 
 /-- Deconcatenating a block cuts it at each of its nontrivial internal positions. -/
 theorem deconcatenation_subword {n : ℕ} (x : Fin n → M) {a b : ℕ} :

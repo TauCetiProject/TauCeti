@@ -38,9 +38,10 @@ satisfying `J Φ = Φ i`, and `σ` holomorphic
 factorization at every point of `Ω`
 (`TauCeti.hasSimilarityFactorizationAt_of_isWeakLinearCauchyRiemannOn`) and inherits the zero
 structure of a holomorphic map: unique continuation from a zero of infinite order
-(`TauCeti.eqOn_zero_of_isWeakLinearCauchyRiemannOn_of_forall_isBigO`) and isolated zeros
+(`TauCeti.eqOn_zero_of_isWeakLinearCauchyRiemannOn_of_forall_isBigO`) or from a nonempty open
+subset (`TauCeti.eqOn_zero_of_isWeakLinearCauchyRiemannOn_of_eqOn_zero`), and isolated zeros
 (`TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_isWeakLinearCauchyRiemannOn`). These consequences
-allow `p = ∞`, and the last two need only a finite-dimensional real normed space `V`, read in a
+allow `p = ∞`, and the last three need only a finite-dimensional real normed space `V`, read in a
 complex Euclidean model. This extends `TauCeti.exists_similarity_of_hasWeakConjWirtingerDerivOn`,
 for the constant structure `J = i`, to a variable `J`, and adds the `W^{1,p}_loc` regularity of
 the factor `Φ`.
@@ -69,7 +70,11 @@ The proof has two steps.
   form consumed by `TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation`.
 * `TauCeti.eqOn_zero_of_isWeakLinearCauchyRiemannOn_of_forall_isBigO`: unique continuation from a
   zero of infinite order.
+* `TauCeti.eqOn_zero_of_isWeakLinearCauchyRiemannOn_of_eqOn_zero`: unique continuation from a
+  nonempty open subset.
 * `TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_isWeakLinearCauchyRiemannOn`: isolated zeros.
+* `TauCeti.exists_isTheta_pow_of_isWeakLinearCauchyRiemannOn`: each zero has a finite positive
+  order `m`, with `‖ξ z‖` comparable to `‖z - z₀‖ ^ m`.
 
 ## References
 
@@ -134,8 +139,8 @@ private theorem differentiableOn_one_add_cauchyTransform_apply {p : ℝ≥0} (hp
       (hgp.restrict _) (hgs.trans (closedBall_subset_closedBall (Real.le_coe_toNNReal r))) U)
   -- the weak Leibniz rule for `ξ + T g ξ`
   let B : (V →L[ℂ] V) →L[ℝ] V →L[ℝ] V := ContinuousLinearMap.restrictScalarsL ℂ V V ℝ ℝ
-  have hleib := hDξ.add (hDT.bilin_of_memLpLoc B hp hp1 le_rfl hTg.continuousOn.memLpLoc hDTp
-    hDξ hξp hDξp)
+  have hleib := hDξ.add (hDT.bilin_of_finrank_lt B (by simpa using hp) hp1 le_rfl
+    hTg.continuousOn.memLpLoc hDTp hDξ hξp hDξp)
   have hσ : (ξ + fun z ↦ B (cauchyTransform g z) (ξ z)) =
       fun z ↦ (1 + cauchyTransform g z) (ξ z) := by
     ext1 z
@@ -350,6 +355,23 @@ theorem eqOn_zero_of_isWeakLinearCauchyRiemannOn_of_forall_isBigO (hp : 2 < p)
   intro z hz
   simpa using h hz
 
+/-- **Unique continuation** for weak solutions. On a connected open set `Ω`, a weak solution of
+`∂ₛξ + J ∂ₜξ + C ξ = 0` with values in a finite-dimensional real normed space, with
+`2 < p ≤ ∞`, `J ∈ W^{1,p}_loc` continuous with `J² = -1` on `Ω` and `C ∈ Lᵖ_loc`, that vanishes
+on a nonempty open subset of `Ω` vanishes on `Ω`. -/
+theorem eqOn_zero_of_isWeakLinearCauchyRiemannOn_of_eqOn_zero (hp : 2 < p)
+    (hΩc : IsPreconnected (Ω : Set ℂ)) (hJ : MemWkpLoc p Ω 1 J)
+    (hJc : ContinuousOn J Ω) (hJ2 : ∀ z ∈ Ω, J z ∘L J z = -ContinuousLinearMap.id ℝ V)
+    (hC : MemLpLoc p Ω C) (hξ : IsWeakLinearCauchyRiemannOn p Ω J C ξ) {U : Set ℂ}
+    (hU : IsOpen U) (hUne : U.Nonempty) (hUΩ : U ⊆ Ω) (h₀ : EqOn ξ 0 U) : EqOn ξ 0 Ω := by
+  obtain ⟨n, e, he⟩ :=
+    exists_continuousLinearEquiv_hasSimilarityFactorizationAt hp hJ hJc hJ2 hC hξ (hUne.mono hUΩ)
+  have h := eqOn_zero_of_hasSimilarityFactorizationAt_of_eqOn_zero Ω.isOpen hΩc
+    (e.continuous.comp_continuousOn hξ.continuousOn) (fun z hz _ ↦ he z hz) hU hUne hUΩ
+    fun z hz ↦ by simp [h₀ hz]
+  intro z hz
+  simpa using h hz
+
 /-- **Isolated zeros** of weak solutions. On a connected open set `Ω`, the zeros of a weak
 solution of `∂ₛξ + J ∂ₜξ + C ξ = 0` with values in a finite-dimensional real normed space, with
 `2 < p ≤ ∞`, `J ∈ W^{1,p}_loc` continuous with `J² = -1` on `Ω` and `C ∈ Lᵖ_loc`, that is not
@@ -364,6 +386,22 @@ theorem setOf_ne_zero_mem_codiscreteWithin_of_isWeakLinearCauchyRiemannOn (hp : 
   have h := setOf_ne_zero_mem_codiscreteWithin_of_hasSimilarityFactorizationAt Ω.isOpen hΩc
     (e.continuous.comp_continuousOn hξ.continuousOn) (fun z hz _ ↦ he z hz) (by simpa using hne)
   simpa using h
+
+/-- **Positive orders** for weak solutions. On a connected open set `Ω`, let `ξ` be a weak solution
+of `∂ₛξ + J ∂ₜξ + C ξ = 0` with values in a finite-dimensional real normed space, with
+`2 < p ≤ ∞`, `J ∈ W^{1,p}_loc` continuous with `J² = -1` on `Ω` and `C ∈ Lᵖ_loc`, that is not
+identically zero on `Ω`. Then each zero `z₀ ∈ Ω` of `ξ` has a finite positive order `m`: `‖ξ z‖`
+is comparable to `‖z - z₀‖ ^ m` near `z₀`. -/
+theorem exists_isTheta_pow_of_isWeakLinearCauchyRiemannOn (hp : 2 < p)
+    (hΩc : IsPreconnected (Ω : Set ℂ)) (hJ : MemWkpLoc p Ω 1 J)
+    (hJc : ContinuousOn J Ω) (hJ2 : ∀ z ∈ Ω, J z ∘L J z = -ContinuousLinearMap.id ℝ V)
+    (hC : MemLpLoc p Ω C) (hξ : IsWeakLinearCauchyRiemannOn p Ω J C ξ)
+    (hne : ∃ z ∈ Ω, ξ z ≠ 0) (hz₀ : z₀ ∈ Ω) (hξ₀ : ξ z₀ = 0) :
+    ∃ m : ℕ, 0 < m ∧ ξ =Θ[𝓝 z₀] fun z ↦ (z - z₀) ^ m := by
+  obtain ⟨n, e, he⟩ := exists_continuousLinearEquiv_hasSimilarityFactorizationAt hp hJ hJc hJ2
+    hC hξ (hne.imp fun _ h ↦ h.1)
+  exact exists_isTheta_pow_of_continuousLinearEquiv_of_hasSimilarityFactorizationAt e Ω.isOpen hΩc
+    (e.continuous.comp_continuousOn hξ.continuousOn) (fun z hz _ ↦ he z hz) hne hz₀ hξ₀
 
 end RealTarget
 

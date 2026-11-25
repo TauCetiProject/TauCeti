@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.Filtered.Basic
 public import Mathlib.CategoryTheory.Limits.EssentiallySmall
 public import Mathlib.CategoryTheory.Limits.Final
 public import TauCeti.Algebra.Category.CommAlgCat.FilteredColimits
+public import TauCeti.CategoryTheory.Limits.ConcreteCategory.Basic
 import Mathlib.Algebra.Algebra.Shrink
 import Mathlib.RingTheory.Finiteness.Small
 
@@ -107,30 +108,27 @@ theorem algebraIsoColimitDiagram_inv_comp_ι (smallObject : SmallModel.{u} Index
   rw [CommAlgCat.hom_comp] at hleg
   exact hleg
 
+/-- The forgetful functor preserves colimits indexed by an essentially small filtered category. -/
+private theorem preservesColimitsOfShape_forget [IsFiltered Index] :
+    PreservesColimitsOfShape Index (forget (CommAlgCat.{u} Base)) :=
+  let equivalence := equivSmallModel.{u} Index
+  let _ : IsFiltered (SmallModel.{u} Index) := IsFiltered.of_equivalence equivalence
+  preservesColimitsOfShape_of_equiv equivalence.symm _
+
 /-- Each colimit element is represented by an element of a stage. -/
 theorem exists_stage_eq [IsFiltered Index] (element : algebra functor) :
     ∃ (object : Index) (value : functor.obj object),
-      stage functor object value = element := by
-  let equivalence := equivSmallModel.{u} Index
-  let _ : IsFiltered (SmallModel.{u} Index) := IsFiltered.of_equivalence equivalence
-  have _ : PreservesColimitsOfShape Index (forget (CommAlgCat.{u} Base)) :=
-    preservesColimitsOfShape_of_equiv equivalence.symm _
-  exact Concrete.colimit_exists_rep functor element
+      stage functor object value = element :=
+  have := preservesColimitsOfShape_forget (Base := Base) (Index := Index)
+  Concrete.colimit_exists_rep functor element
 
 /-- Finitely many elements of a filtered colimit of algebras come from one stage. -/
 theorem exists_stage_family [IsFiltered Index] {ι : Type*} [Finite ι]
     (elements : ι → algebra functor) :
     ∃ (object : Index) (values : ι → functor.obj object),
-      ∀ i, stage functor object (values i) = elements i := by
-  classical
-  choose objects values hvalues using fun i ↦ exists_stage_eq functor (elements i)
-  cases nonempty_fintype ι
-  let objects' := Finset.univ.image objects
-  have hmem (i : ι) : objects i ∈ objects' :=
-    Finset.mem_image_of_mem objects (Finset.mem_univ i)
-  refine ⟨IsFiltered.sup objects' ∅,
-    fun i ↦ functor.map (IsFiltered.toSup objects' ∅ (hmem i)) (values i), fun i ↦ ?_⟩
-  rw [stage_map_apply, hvalues]
+      ∀ i, stage functor object (values i) = elements i :=
+  have := preservesColimitsOfShape_forget (Base := Base) (Index := Index)
+  Concrete.isColimit_exists_rep_fin functor (colimit.isColimit functor) elements
 
 /-- The stage maps generate the colimit algebra. -/
 theorem adjoin_range_stage_eq_top :

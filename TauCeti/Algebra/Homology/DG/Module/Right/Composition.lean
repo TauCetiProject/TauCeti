@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Colimits
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import TauCeti.Algebra.Homology.DG.Module.Right.Hom.Complex
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 
@@ -364,14 +367,12 @@ private theorem dgRightModuleCochainCompTensor_d (p q j : ℤ) (hpq : p + q = j)
           (dgRightModuleCochainCompTensor (hM := hM) (hN := hN) (hP := hP) · · (j + 1) ·) =
       dgRightModuleCochainCompTensor (hM := hM) (hN := hN) (hP := hP) p q j hpq ≫
         (dgRightModuleHomComplex hM hP).d j (j + 1) := by
-  rw [← Category.assoc, HomologicalComplex.ι_tensorObj_d _ _ p q j hpq]
-  rw [Preadditive.add_comp, Linear.units_smul_comp]
-  rw [Category.assoc, HomologicalComplex.ι_mapBifunctorDesc]
-  rw [Category.assoc, HomologicalComplex.ι_mapBifunctorDesc]
+  rw [HomologicalComplex.ιTensorObj_tensor_d_assoc]
+  simp only [Preadditive.add_comp, Linear.units_smul_comp, Category.assoc,
+    HomologicalComplex.ι_mapBifunctorDesc]
   apply ModuleCat.MonoidalCategory.tensor_ext
   intro g f
-  simp only [curriedTensor_obj_obj, ModuleCat.hom_comp, LinearMap.coe_comp,
-    Function.comp_apply, curriedTensor_map_app, curriedTensor_obj_map, ModuleCat.hom_add,
+  simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply, ModuleCat.hom_add,
     ModuleCat.hom_smul, LinearMap.add_apply, ModuleCat.MonoidalCategory.whiskerRight_apply,
     LinearMap.smul_apply, ModuleCat.MonoidalCategory.whiskerLeft_apply]
   exact dgRightModuleCochainCompTensor_d_apply p q j hpq g f

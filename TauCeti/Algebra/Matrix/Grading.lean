@@ -9,7 +9,9 @@ public import Mathlib.Data.Matrix.Block
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.Data.Matrix.Mul
 public import Mathlib.GroupTheory.Subgroup.Center
+public import Mathlib.LinearAlgebra.Multilinear.Basic
 public import Mathlib.LinearAlgebra.Span.Basic
+import TauCeti.LinearAlgebra.Multilinear.Span
 
 /-!
 # Matrices homogeneous with respect to a grading by a `G`-set
@@ -40,6 +42,11 @@ span `A` independently is never needed.
 * `TauCeti.mem_homogeneousMatrices_smul_smul_iff` and
   `TauCeti.mem_homogeneousMatrices_smul_right_iff`: translating both gradings by a central
   element `k` keeps the degree, and translating the column grading alone multiplies it by `k`.
+* `TauCeti.homogeneousMatrices_mul_left_eq`: when the parts are invariant under left
+  multiplication by `z`, the degrees `z * c` and `c` have the same homogeneous matrices.
+* `MultilinearMap.map_mem_of_mem_homogeneousMatrices`: to bound a multilinear expression in the
+  coefficients of homogeneous matrices along a path of indices, it suffices to treat homogeneous
+  inputs.
 * `TauCeti.fromBlocks_mem_homogeneousMatrices_iff` and
   `TauCeti.fromCols_mem_homogeneousMatrices_iff`: block matrices on sums of graded index types
   are homogeneous exactly when their blocks are.
@@ -138,6 +145,21 @@ theorem mem_homogeneousMatrices_smul_right_iff {k : G} (hk : k ∈ Subgroup.cent
   rw [(Equiv.subtypeEquivRight (h x x')).iSup_congr (f := fun g ↦ Ag g.val) (g := fun g ↦ Ag g.val)
     fun _ ↦ rfl]
 
+/-- **Degrees modulo an element fixing the grading.** If the parts of `A` are invariant under left
+multiplication of the degree by `z`, a matrix is homogeneous of degree `z * c` exactly when it is
+homogeneous of degree `c`. -/
+theorem homogeneousMatrices_mul_left_eq {z : G} (hz : ∀ g, Ag (z * g) = Ag g) (gr : X → T)
+    (gr' : X' → T) (c : G) :
+    homogeneousMatrices Ag gr gr' (z * c) = homogeneousMatrices Ag gr gr' c := by
+  ext F
+  simp only [mem_homogeneousMatrices_iff]
+  refine forall₂_congr fun x x' ↦ ?_
+  -- Multiplying the degree by `z` matches the two index sets of the suprema.
+  let e := (Equiv.mulLeft z).subtypeEquiv (p := fun g : G ↦ g • gr' x' = c • gr x)
+    (q := fun g ↦ g • gr' x' = (z * c) • gr x) fun g ↦ by
+      simp only [Equiv.coe_mulLeft, mul_smul, smul_left_cancel_iff]
+  rw [e.iSup_congr (f := fun g ↦ Ag g.val) (g := fun g ↦ Ag g.val) fun g ↦ hz g.val]
+
 /-- A **block matrix** is homogeneous of degree `c` for the gradings of the sums of the index
 types exactly when its four blocks are. -/
 theorem fromBlocks_mem_homogeneousMatrices_iff {Y Y' : Type*} {gr : X → T} {grY : Y → T}
@@ -161,5 +183,31 @@ theorem fromCols_mem_homogeneousMatrices_iff {Y' : Type*} {gr : X → T} {gr' : 
   simp only [mem_homogeneousMatrices_iff, Sum.forall, Matrix.fromCols_apply_inl,
     Matrix.fromCols_apply_inr, Sum.elim_inl, Sum.elim_inr, forall_and]
 
-
 end TauCeti
+
+open TauCeti
+
+/-- **Multilinear expressions in homogeneous coefficients along a path.** Let `F₀, …, Fₙ₋₁` be
+matrices homogeneous of degree `c` and `x 0, …, x n` a path of indices. A multilinear map `f`
+sends the coefficients `Fᵢ (x i) (x (i + 1))` along the path into a submodule `p` as soon as it
+sends there every family of homogeneous inputs `aᵢ ∈ Ag gᵢ` of the degrees allowed along the path,
+`gᵢ • gr (x (i + 1)) = c • gr (x i)`. -/
+theorem MultilinearMap.map_mem_of_mem_homogeneousMatrices {R A : Type*} [CommSemiring R]
+    [Semiring A] [Module R A] {G : Type*} [Group G] {Ag : G → Submodule R A} {T : Type*}
+    [MulAction G T] {X N : Type*} [AddCommMonoid N] [Module R N] {n : ℕ}
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) N) {p : Submodule R N}
+    {gr : X → T} {c : G} {F : Fin n → Matrix X X A} (hF : ∀ i, F i ∈ homogeneousMatrices Ag gr gr c)
+    (x : Fin (n + 1) → X)
+    (h : ∀ (g : Fin n → G) (a : Fin n → A), (∀ i, g i • gr (x i.succ) = c • gr (x i.castSucc)) →
+      (∀ i, a i ∈ Ag (g i)) → f a ∈ p) :
+    f (fun i ↦ F i (x i.castSucc) (x i.succ)) ∈ p := by
+  let D (i : Fin n) : Set A :=
+    ⋃ g : {g : G // g • gr (x i.succ) = c • gr (x i.castSucc)}, (Ag g : Set A)
+  have hspan (i : Fin n) : F i (x i.castSucc) (x i.succ) ∈ Submodule.span R (D i) := by
+    rw [← Submodule.iSup_eq_span]
+    exact mem_homogeneousMatrices_iff.mp (hF i) _ _
+  refine Submodule.span_le.mpr ?_ (f.map_mem_span_image_pi D hspan)
+  rintro _ ⟨a, ha, rfl⟩
+  simp only [Set.mem_pi, Set.mem_univ, true_implies, D, Set.mem_iUnion, SetLike.mem_coe] at ha
+  choose g hg using ha
+  exact h (fun i ↦ g i) a (fun i ↦ (g i).property) hg

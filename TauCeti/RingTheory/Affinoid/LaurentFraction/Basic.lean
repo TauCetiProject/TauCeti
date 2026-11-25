@@ -52,6 +52,8 @@ fraction `A⟨g⁻¹⟩`.
 * `TauCeti.LaurentFraction.isAffinoidAlgebra`: `A⟨f, g⁻¹⟩` is affinoid when `A` is.
 * `TauCeti.LaurentFraction.algHom_ext`: maps out of `A⟨f, g⁻¹⟩` are determined on `A`.
 * `TauCeti.LaurentFraction.existsUnique_algHom`: the universal property.
+* `TauCeti.LaurentFraction.restrictedLift_eq_comp_mkₐ`: the extension `A⟨X⟩ → B` of a map
+  `A → B` factors through the quotient map onto the Weierstrass fraction algebra `A⟨f⟩`.
 
 ## References
 
@@ -184,6 +186,26 @@ noncomputable def lift (φ : A →ₐ[K] B) (hf : ∀ i, IsPowerBounded (φ (f i
     fun _ hx ↦ RingHom.mem_ker.mp <| (laurentFractionIdeal_def f g).trans_le
       (sup_le (Ideal.span_le.mpr (by rintro _ ⟨i, rfl⟩; simp))
         (Ideal.span_le.mpr (by rintro _ ⟨j, rfl⟩; simp [hφ]))) hx
+
+/-- **The extension `A⟨X⟩ → B` factors through the Weierstrass fraction algebra.** Let `A` and `B`
+be affinoid algebras with complete ultrametric algebra norms, and let `φ : A → B` send each `fᵢ`
+to a power-bounded element. For every `K`-algebra map `π : A⟨f⟩ → B` extending `φ`, the extension
+`A⟨X₁, …, X_r⟩ → B` of `φ` sending `Xᵢ` to `φ fᵢ` is the quotient map
+`A⟨X⟩ → A⟨f⟩ = A⟨X⟩ ⧸ (Xᵢ - fᵢ)` followed by `π`. -/
+theorem restrictedLift_eq_comp_mkₐ {φ : A →ₐ[K] B} (hf : ∀ i, IsPowerBounded (φ (f i)))
+    (π : LaurentFraction f (![] : Fin 0 → A) →ₐ[K] B) (hπ : ∀ a, π (algebraMap A _ a) = φ a) :
+    hA.restrictedLift hB φ hf =
+      π.comp (Ideal.Quotient.mkₐ K (laurentFractionIdeal f (![] : Fin 0 → A))) := by
+  -- The indexing type `Fin (r + 0)` of the variables of `A⟨f⟩` is `Fin r`.
+  have hX (i : Fin r) : Ideal.Quotient.mk (laurentFractionIdeal f (![] : Fin 0 → A))
+      ⟨MvPowerSeries.X i, MvPowerSeries.isRestricted_X _ i⟩ = algebraMap A _ (f i) :=
+    mk_X_castAdd i
+  refine hA.algHom_ext_isRestricted_subring hB (fun a ↦ ?_) fun i ↦ ?_
+  · rw [IsAffinoidAlgebra.restrictedLift_algebraMap, AlgHom.comp_apply,
+      Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.mk_algebraMap]
+    exact (hπ a).symm
+  · rw [IsAffinoidAlgebra.restrictedLift_X, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, hX]
+    exact (hπ (f i)).symm
 
 variable (φ : A →ₐ[K] B) (hf : ∀ i, IsPowerBounded (φ (f i))) {b : Fin s → B}
   (hb : ∀ j, IsPowerBounded (b j)) (hφ : ∀ j, φ (g j) * b j = 1)
