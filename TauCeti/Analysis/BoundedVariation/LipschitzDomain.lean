@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.BoundedVariation.Compactness
 import TauCeti.Analysis.BoundedVariation.Isometry
 import TauCeti.Analysis.BoundedVariation.W1p
+import TauCeti.Analysis.InnerProductSpace.OfLinearIsometry
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.Basic
 import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
@@ -114,17 +115,9 @@ theorem BV.isCompactOperator_toL1CLM_of_isLipschitzDomainWith_image {L : ℝ≥0
     (hΩ : (f '' (Ω : Set F)).IsLipschitzDomainWith L) (hb : IsBounded (Ω : Set F)) :
     IsCompactOperator (BV.toL1CLM (μ := μ) (Ω := Ω)) := by
   let e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E) := f.linearIsometryEquiv
-  let ι : E →ₗᵢ[ℝ] F :=
-    { toLinearMap := e.symm.toLinearEquiv.toLinearMap.comp
-        ((WithLp.linearEquiv 2 ℝ (ℝ × E)).symm.toLinearMap.comp (LinearMap.inr ℝ ℝ E))
-      norm_map' y := by simp }
-  let _ : InnerProductSpace ℝ E :=
-    { inner x y := inner ℝ (ι x) (ι y)
-      norm_sq_eq_re_inner x := by simp
-      conj_inner_symm x y := by simp [real_inner_comm]
-      add_left x y z := by simp [inner_add_left]
-      smul_left x y r := by simp [inner_smul_left] }
-  have _ : FiniteDimensional ℝ E := Module.Finite.of_injective ι.toLinearMap ι.injective
+  let _ : InnerProductSpace ℝ E := .ofLinearIsometry e.sndLinearIsometry
+  have _ : FiniteDimensional ℝ E :=
+    Module.Finite.of_injective e.sndLinearIsometry.toLinearMap e.sndLinearIsometry.injective
   let _ : MeasurableSpace E := borel E
   have _ : BorelSpace E := ⟨rfl⟩
   have heΩ : (e '' (Ω : Set F)).IsLipschitzDomainWith L := by
