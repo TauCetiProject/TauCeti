@@ -35,6 +35,8 @@ with the markings, is canonically isomorphic to the chosen base change.
 
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.Hom`: morphisms of pointed prestable families.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.toOver`: the functor forgetting the markings.
+* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.totalIso`: the isomorphism of total spaces
+  induced by an isomorphism of pointed families.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.isoMk`: an isomorphism of pointed families
   from an isomorphism of total spaces over `S` preserving the markings.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.autToOver`: the injective homomorphism from
@@ -149,6 +151,38 @@ def toOver : PointedPrestableFamily S n ⥤ Over S where
 instance : (toOver (S := S) (n := n)).Faithful where
   map_injective h := hom_ext congr(($h).left)
 
+/-- The isomorphism of total spaces induced by an isomorphism of pointed prestable families. -/
+def totalIso (e : P ≅ Q) : P.total ≅ Q.total :=
+  (toOver ⋙ Over.forget S).mapIso e
+
+@[simp]
+theorem totalIso_hom (e : P ≅ Q) : (totalIso e).hom = e.hom.hom :=
+  (rfl)
+
+@[simp]
+theorem totalIso_inv (e : P ≅ Q) : (totalIso e).inv = e.inv.hom :=
+  (rfl)
+
+@[simp]
+theorem totalIso_refl (P : PointedPrestableFamily S n) :
+    totalIso (Iso.refl P) = Iso.refl P.total :=
+  (toOver ⋙ Over.forget S).mapIso_refl P
+
+@[simp]
+theorem totalIso_symm (e : P ≅ Q) : totalIso e.symm = (totalIso e).symm :=
+  (toOver ⋙ Over.forget S).mapIso_symm e
+
+@[simp]
+theorem totalIso_trans (e : P ≅ Q) (e' : Q ≅ R) :
+    totalIso (e ≪≫ e') = totalIso e ≪≫ totalIso e' :=
+  (toOver ⋙ Over.forget S).mapIso_trans e e'
+
+/-- `totalIso e` lies over the base `S`. -/
+@[reassoc]
+theorem totalIso_hom_comp_over (e : P ≅ Q) :
+    (totalIso e).hom ≫ Q.total ↘ S = P.total ↘ S := by
+  rw [totalIso_hom, Q.over_eq_toBase, P.over_eq_toBase, e.hom.hom_comp_toBase]
+
 /-- An isomorphism of pointed prestable families from an isomorphism of total spaces over `S`
 carrying each marking to the corresponding marking. -/
 def isoMk (e : P.total ≅ Q.total) (he : e.hom ≫ Q.toBase = P.toBase)
@@ -165,6 +199,12 @@ theorem isoMk_hom_hom (e : P.total ≅ Q.total) (he : e.hom ≫ Q.toBase = P.toB
 theorem isoMk_inv_hom (e : P.total ≅ Q.total) (he : e.hom ≫ Q.toBase = P.toBase)
     (hm : ∀ i, P.marking i ≫ e.hom = Q.marking i) : (isoMk e he hm).inv.hom = e.inv :=
   (rfl)
+
+@[simp]
+theorem totalIso_isoMk (e : P.total ≅ Q.total) (he : e.hom ≫ Q.toBase = P.toBase)
+    (hm : ∀ i, P.marking i ≫ e.hom = Q.marking i) : totalIso (isoMk e he hm) = e := by
+  ext1
+  rfl
 
 /-- A morphism of pointed prestable families is an isomorphism exactly when its map of total
 spaces is an isomorphism. -/

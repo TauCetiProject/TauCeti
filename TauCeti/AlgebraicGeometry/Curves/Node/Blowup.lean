@@ -14,6 +14,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 public import TauCeti.RingTheory.Node.TangentCone
 
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
+import TauCeti.AlgebraicGeometry.FiniteEtale.Splitting
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
 import TauCeti.AlgebraicGeometry.ResidueField
@@ -65,9 +66,8 @@ identification is not used here.
   `AlgebraicGeometry.Scheme.range_branchSchemeToBlowup` and
   `AlgebraicGeometry.Scheme.image_branchSchemeToBlowup_preimage_singleton`: the branch scheme embeds
   as a closed subscheme of `Bl X` onto the preimage of `Sing(X/R)`, fibrewise over each node.
-* `AlgebraicGeometry.Scheme.isPullback_branchSchemeBaseChangeMap` and
-  `AlgebraicGeometry.Scheme.exists_isPullback_branchSchemeToSingularLocus`: the branch scheme
-  commutes with flat base change of the base ring.
+* `AlgebraicGeometry.Scheme.isPullback_branchSchemeBaseChangeMap`: the branch scheme commutes with
+  flat base change of the base ring.
 * `AlgebraicGeometry.Scheme.etale_branchSchemeToSingularLocus`: the branch scheme of a nodal curve
   over a field is étale over its singular subscheme.
 * `AlgebraicGeometry.Scheme.isFinite_branchSchemeToSingularLocus`: it is finite over the singular
@@ -76,6 +76,10 @@ identification is not used here.
   `AlgebraicGeometry.Scheme.natCard_preimage_branchSchemeToSingularLocus`: it has rank two over
   every point of the singular subscheme, hence two points over every node when `K` is separably
   closed.
+* `AlgebraicGeometry.Scheme.bijective_singularLocus_subschemeMap` and
+  `AlgebraicGeometry.Scheme.bijective_branchSchemeBaseChangeMap`: over a separably closed field `K`,
+  base change along a `K`-algebra with a unique prime ideal (in particular any field extension)
+  induces bijections on the points of the singular subscheme and the branch scheme.
 
 ## References
 
@@ -336,15 +340,6 @@ theorem isPullback_branchSchemeBaseChangeMap [Module.Flat R R'] :
   rw [branchSchemeBaseChangeMap_toBlowup H, Scheme.IdealSheafData.subschemeMap_subschemeι]
   exact (X'.isPullback_branchScheme R').flip.paste_horiz (isPullback_singularLocusBlowupMap H).flip
 
-/-- **The branch scheme commutes with flat base change** (existential form). -/
-theorem exists_isPullback_branchSchemeToSingularLocus [Module.Flat R R'] :
-    ∃ f : X'.branchScheme R' ⟶ X.branchScheme R,
-      IsPullback f (X'.branchSchemeToSingularLocus R') (X.branchSchemeToSingularLocus R)
-        ((X'.singularLocus R').subschemeMap (X.singularLocus R) g
-          (Scheme.IdealSheafData.le_map_iff_comap_le.mpr
-            (Scheme.singularLocus_eq_comap_of_isPullback H).ge)) :=
-  ⟨branchSchemeBaseChangeMap H, isPullback_branchSchemeBaseChangeMap H⟩
-
 end BaseChange
 
 variable {K : Type u} [Field K] (X : Scheme.{u}) [X.Over (Spec (.of K))]
@@ -446,5 +441,48 @@ theorem natCard_preimage_branchSchemeToSingularLocus [IsSepClosed K]
       X ↘ Spec (.of K)).isSepClosed_residueField_of_formallyUnramified s
   rw [Scheme.Hom.natCard_preimage_singleton_eq_finrank,
     X.finrank_branchSchemeToSingularLocus hnodal s]
+
+section SepClosedBaseChange
+
+variable [IsSepClosed K] {R' : Type u} [CommRing R'] [Algebra K R']
+  [Subsingleton (PrimeSpectrum R')] [Nonempty (PrimeSpectrum R')]
+  {X X' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of R'))]
+  [IsProper (X ↘ Spec (.of K))]
+  [Flat (X ↘ Spec (.of K))] [LocallyOfFinitePresentation (X ↘ Spec (.of K))]
+  [PureRelativeDimension 1 (X ↘ Spec (.of K))]
+  [Flat (X' ↘ Spec (.of R'))] [LocallyOfFinitePresentation (X' ↘ Spec (.of R'))]
+  [PureRelativeDimension 1 (X' ↘ Spec (.of R'))]
+  {g : X' ⟶ X}
+  (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
+  (H : IsPullback g (X' ↘ Spec (.of R')) (X ↘ Spec (.of K))
+    (Spec.map (CommRingCat.ofHom (algebraMap K R'))))
+
+include hnodal in
+/-- Over a separably closed field `K`, the base-change morphism of singular subschemes of a proper
+nodal curve along a `K`-algebra `R'` with a unique prime ideal (in particular any field extension
+`L / K`) is bijective on underlying points. -/
+theorem bijective_singularLocus_subschemeMap :
+    Function.Bijective ((X'.singularLocus R').subschemeMap (X.singularLocus K) g
+      (IdealSheafData.le_map_iff_comap_le.mpr (singularLocus_eq_comap_of_isPullback H).ge)) := by
+  have := X.isFinite_singularLocus_subschemeι_comp hnodal
+  have := X.etale_singularLocus_subschemeι_comp hnodal
+  exact bijective_of_isPullback_of_isFinite_of_etale
+    ((isPullback_singularLocus_subschemeι H).flip.paste_vert H)
+
+include hnodal in
+/-- Over a separably closed field `K`, the base-change morphism of branch schemes of a proper nodal
+curve along a `K`-algebra `R'` with a unique prime ideal (in particular any field extension
+`L / K`) is bijective on underlying points. -/
+theorem bijective_branchSchemeBaseChangeMap :
+    Function.Bijective (branchSchemeBaseChangeMap H) := by
+  have := X.isFinite_singularLocus_subschemeι_comp hnodal
+  have := X.etale_singularLocus_subschemeι_comp hnodal
+  have := X.isFinite_branchSchemeToSingularLocus hnodal
+  have := X.etale_branchSchemeToSingularLocus hnodal
+  exact bijective_of_isPullback_of_isFinite_of_etale
+    ((isPullback_branchSchemeBaseChangeMap H).paste_vert
+      ((isPullback_singularLocus_subschemeι H).flip.paste_vert H))
+
+end SepClosedBaseChange
 
 end AlgebraicGeometry.Scheme

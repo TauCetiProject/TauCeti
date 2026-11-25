@@ -18,7 +18,9 @@ singular subscheme is empty exactly when the morphism is smooth. This connects t
 scheme-theoretic singular subscheme used for nodal curves with pointwise smoothness.
 
 The statement holds over arbitrary affine bases, without reducedness or Noetherian
-hypotheses on the base.
+hypotheses on the base. Thus `(X.singularLocus R).subschemeι` identifies the underlying points of
+the singular subscheme with the complement of the smooth locus
+(`AlgebraicGeometry.Scheme.singularLocusSubschemeEquiv`).
 
 ## References
 
@@ -95,5 +97,34 @@ theorem singularLocus_eq_top_iff_smooth :
     apply SetLike.coe_injective
     rw [X.support_singularLocus_eq_compl_smoothLocus, h]
     simp
+
+variable (R) in
+/-- The closed immersion `(X.singularLocus R).subschemeι` identifies the points of the singular
+subscheme with the complement of the smooth locus. -/
+noncomputable def singularLocusSubschemeEquiv :
+    (X.singularLocus R).subscheme ≃ ↥(((X ↘ Spec (.of R)).smoothLocus : Set X)ᶜ) :=
+  Equiv.ofBijective
+    (fun s ↦ ⟨(X.singularLocus R).subschemeι s,
+      (X.mem_support_singularLocus_iff_notMem_smoothLocus _).mp
+        ((IdealSheafData.range_subschemeι _).subset ⟨s, rfl⟩)⟩)
+    ⟨fun _ _ h ↦ (X.singularLocus R).subschemeι.isClosedEmbedding.injective congr(($h).val),
+      fun ⟨x, hx⟩ ↦ by
+        obtain ⟨s, rfl⟩ := (IdealSheafData.range_subschemeι (X.singularLocus R)).ge
+          ((X.mem_support_singularLocus_iff_notMem_smoothLocus x).mpr hx)
+        exact ⟨s, rfl⟩⟩
+
+/-- Applying `singularLocusSubschemeEquiv` agrees with `subschemeι` on underlying points. -/
+@[simp]
+theorem coe_singularLocusSubschemeEquiv (s : (X.singularLocus R).subscheme) :
+    (X.singularLocusSubschemeEquiv R s : X) = (X.singularLocus R).subschemeι s :=
+  (rfl)
+
+/-- `subschemeι` sends `(X.singularLocusSubschemeEquiv R).symm x` back to `x`. -/
+@[simp]
+theorem subschemeι_singularLocusSubschemeEquiv_symm
+    (x : ↥(((X ↘ Spec (.of R)).smoothLocus : Set X)ᶜ)) :
+    (X.singularLocus R).subschemeι ((X.singularLocusSubschemeEquiv R).symm x) = (x : X) :=
+  (X.coe_singularLocusSubschemeEquiv _).symm.trans
+    congr(($((X.singularLocusSubschemeEquiv R).apply_symm_apply x)).val)
 
 end AlgebraicGeometry.Scheme

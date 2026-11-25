@@ -39,15 +39,21 @@ This file develops the geometric and functorial API of `P.dualGraph`:
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.dualGraph_reindex`: reindexing the markings
-  of the curve reindexes the markings of its dual graph.
-* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.ncard_specialPoints_eq_valence_add_numMarkings`
-  and `TauCeti.AlgebraicGeometry.PointedPrestableFamily.logCanonicalDegree_dualGraph`: geometric
+In the namespace `TauCeti.AlgebraicGeometry.PointedPrestableFamily`:
+
+* `dualGraph_reindex`: reindexing the markings of the curve reindexes the markings of its dual
+  graph.
+* `coe_dualGraphVertexEquiv_dualGraphIso_vertexEquiv`,
+  `dualGraphEdgeEquiv_dualGraphIso_edgeEquiv`,
+  `coe_dualGraphVertexEquiv_dualGraphPullbackIso_vertexEquiv` and
+  `dualGraphEdgeEquiv_dualGraphPullbackIso_edgeEquiv`: action of `dualGraphIso` and
+  `dualGraphPullbackIso` on vertices and edges.
+* `ncard_specialPoints_eq_valence_add_numMarkings` and `logCanonicalDegree_dualGraph`: geometric
   formulas for special flags and `logCanonicalDegree`.
-* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.logCanonicalDegree_ofSmooth`: on a smooth
-  `n`-pointed curve of genus `g`, `logCanonicalDegree v = 2g - 2 + n`.
-* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.dualGraph_logCanonicalDegree_nonpos_iff`:
-  geometric classification of components of nonpositive log-canonical degree on a reducible curve.
+* `logCanonicalDegree_ofSmooth`: on a smooth `n`-pointed curve of genus `g`,
+  `logCanonicalDegree v = 2g - 2 + n`.
+* `dualGraph_logCanonicalDegree_nonpos_iff`: geometric classification of components of nonpositive
+  log-canonical degree on a reducible curve.
 
 ## References
 
@@ -202,29 +208,56 @@ variable {P} {Q R : PointedPrestableFamily (Spec (.of K)) n}
 /-- An isomorphism `e : P ≅ Q` of pointed prestable curves induces an isomorphism of their dual
 graphs. -/
 def dualGraphIso (e : P ≅ Q) : P.dualGraph.Iso Q.dualGraph :=
-  Scheme.dualGraphIsoOfIso (K := K)
-    { hom := e.hom.hom, inv := e.inv.hom,
-      hom_inv_id := congr(($e.hom_inv_id).hom), inv_hom_id := congr(($e.inv_hom_id).hom) }
-    (by rw [Q.over_eq_toBase, P.over_eq_toBase]; exact e.hom.hom_comp_toBase)
+  Scheme.dualGraphIsoOfIso (K := K) (totalIso e) (totalIso_hom_comp_over e)
     P.markingPoint Q.markingPoint fun i ↦ by
-      dsimp only
-      rw [coe_markingPoint, coe_markingPoint, ← Scheme.Hom.comp_apply, e.hom.marking_comp_hom]
+      rw [totalIso_hom, coe_markingPoint, coe_markingPoint, ← Scheme.Hom.comp_apply,
+        e.hom.marking_comp_hom]
+
+/-- `dualGraphIso e` maps each vertex to its image under `singularLocusBlowupIso (totalIso e)`. -/
+@[simp]
+theorem coe_dualGraphVertexEquiv_dualGraphIso_vertexEquiv (e : P ≅ Q)
+    (v : P.dualGraph.Vertex) :
+    (Q.total.dualGraphVertexEquiv Q.markingPoint ((dualGraphIso e).vertexEquiv v) :
+        Set (Q.total.singularLocus K).blowup) =
+      (Scheme.singularLocusBlowupIso (totalIso e) (totalIso_hom_comp_over e)).hom ''
+        (P.total.dualGraphVertexEquiv P.markingPoint v :
+          Set (P.total.singularLocus K).blowup) := by
+  rw [dualGraphIso]
+  exact Scheme.coe_dualGraphVertexEquiv_dualGraphIsoOfIso_vertexEquiv ..
+
+/-- `dualGraphIso e` maps each node of `P` to its image under `e.hom.hom`. -/
+@[simp]
+theorem dualGraphEdgeEquiv_dualGraphIso_edgeEquiv (e : P ≅ Q) (x : P.dualGraph.Edge) :
+    (Q.total.dualGraphEdgeEquiv Q.markingPoint ((dualGraphIso e).edgeEquiv x) : Q.total) =
+      e.hom.hom (P.total.dualGraphEdgeEquiv P.markingPoint x) := by
+  rw [dualGraphIso, Scheme.dualGraphEdgeEquiv_dualGraphIsoOfIso_edgeEquiv, totalIso_hom]
+
+private theorem dualGraphIsoOfIso_congr {X Y : Scheme.{u}} [X.Over (Spec (.of K))]
+    [Y.Over (Spec (.of K))] [PrestableFamily (X ↘ Spec (.of K))]
+    [PrestableFamily (Y ↘ Spec (.of K))] {e₁ e₂ : X ≅ Y} (heq : e₁ = e₂)
+    (he₁ : e₁.hom ≫ Y ↘ Spec (.of K) = X ↘ Spec (.of K))
+    (he₂ : e₂.hom ≫ Y ↘ Spec (.of K) = X ↘ Spec (.of K))
+    (p : Fin n → (X ↘ Spec (.of K)).smoothLocus) (q : Fin n → (Y ↘ Spec (.of K)).smoothLocus)
+    (hpq₁ : ∀ i, e₁.hom (p i : X) = q i) (hpq₂ : ∀ i, e₂.hom (p i : X) = q i) :
+    Scheme.dualGraphIsoOfIso e₁ he₁ p q hpq₁ = Scheme.dualGraphIsoOfIso e₂ he₂ p q hpq₂ := by
+  subst heq
+  rfl
 
 @[simp]
 theorem dualGraphIso_refl :
     dualGraphIso (CategoryTheory.Iso.refl P) = DualGraph.Iso.refl P.dualGraph := by
-  rw [dualGraphIso]
-  exact Scheme.dualGraphIsoOfIso_refl P.markingPoint
+  rw [dualGraphIso, ← Scheme.dualGraphIsoOfIso_refl P.markingPoint]
+  exact dualGraphIsoOfIso_congr (totalIso_refl P) ..
 
 theorem dualGraphIso_symm (e : P ≅ Q) :
     dualGraphIso e.symm = (dualGraphIso e).symm := by
-  simp only [dualGraphIso, ← Scheme.dualGraphIsoOfIso_symm]
-  rfl
+  rw [dualGraphIso, dualGraphIso, ← Scheme.dualGraphIsoOfIso_symm]
+  exact dualGraphIsoOfIso_congr (totalIso_symm e) ..
 
 theorem dualGraphIso_trans (e : P ≅ Q) (e' : Q ≅ R) :
     dualGraphIso (e ≪≫ e') = (dualGraphIso e).trans (dualGraphIso e') := by
-  simp only [dualGraphIso, ← Scheme.dualGraphIsoOfIso_trans]
-  rfl
+  rw [dualGraphIso, dualGraphIso, dualGraphIso, ← Scheme.dualGraphIsoOfIso_trans]
+  exact dualGraphIsoOfIso_congr (totalIso_trans e e') ..
 
 theorem dualGraph_isSemistable_iff_of_iso (e : P ≅ Q) :
     P.dualGraph.IsSemistable ↔ Q.dualGraph.IsSemistable := (dualGraphIso e).isSemistable_iff
@@ -238,40 +271,72 @@ theorem dualGraph_arithmeticGenus_eq_of_iso (e : P ≅ Q) :
 theorem dualGraph_firstBetti_eq_of_iso (e : P ≅ Q) :
     P.dualGraph.firstBetti = Q.dualGraph.firstBetti := (dualGraphIso e).firstBetti_eq
 
+section Pullback
+
+variable (L : Type u) [Field L] [IsSepClosed L] [Algebra K L]
+
 variable (P) in
 /-- Invariance of `P.dualGraph` under extension of a separably closed base field. -/
-def dualGraphPullbackIso (L : Type u) [Field L] [IsSepClosed L] [Algebra K L] :
-    P.dualGraph.Iso (P.pullback (Spec.algebraMap K L)).dualGraph := by
-  let g := Spec.algebraMap K L
-  let : (Limits.pullback P.toBase g).Over (Spec (.of L)) := (P.pullback g).instOverTotal
-  let : PrestableFamily ((Limits.pullback P.toBase g) ↘ Spec (.of L)) :=
-    (P.pullback g).prestableFamily_over
-  have H : IsPullback (Limits.pullback.fst P.toBase g) ((P.pullback g).total ↘ Spec (.of L))
-      (P.total ↘ Spec (.of K)) g := by
-    rw [(P.pullback g).over_eq_toBase, P.over_eq_toBase, pullback_toBase]
-    exact IsPullback.of_hasPullback P.toBase g
-  exact Scheme.dualGraphBaseChangeIso H P.markingPoint (P.pullback g).markingPoint fun i ↦ by
-    rw [coe_markingPoint, P.coe_markingPoint_eq_apply i (g default)]
-    exact (Scheme.Hom.comp_apply ((P.pullback g).marking i) _ default).symm.trans
-      (congr($(P.pullback_marking_fst g i) default).trans (Scheme.Hom.comp_apply _ _ default))
+def dualGraphPullbackIso :
+    P.dualGraph.Iso (P.pullback (Spec.algebraMap K L)).dualGraph :=
+  Scheme.dualGraphBaseChangeIso (X' := (P.pullback (Spec.algebraMap K L)).total)
+    (P.isPullback_pullback_over (Spec.algebraMap K L))
+    P.markingPoint (P.pullback (Spec.algebraMap K L)).markingPoint fun i ↦ by
+      let g := Spec.algebraMap K L
+      rw [coe_markingPoint, P.coe_markingPoint_eq_apply i (g default)]
+      exact (Scheme.Hom.comp_apply ((P.pullback g).marking i) _ default).symm.trans
+        (congr($(P.pullback_marking_fst g i) default).trans (Scheme.Hom.comp_apply _ _ default))
 
-theorem dualGraph_pullback_isSemistable_iff (L : Type u) [Field L] [IsSepClosed L] [Algebra K L] :
+/-- `dualGraphPullbackIso` maps each vertex to its preimage under `singularLocusBlowupMap`. -/
+@[simp]
+theorem coe_dualGraphVertexEquiv_dualGraphPullbackIso_vertexEquiv (v : P.dualGraph.Vertex) :
+    ((P.pullback (Spec.algebraMap K L)).total.dualGraphVertexEquiv
+        (P.pullback (Spec.algebraMap K L)).markingPoint
+        ((P.dualGraphPullbackIso L).vertexEquiv v) :
+      Set ((P.pullback (Spec.algebraMap K L)).total.singularLocus L).blowup) =
+      Scheme.singularLocusBlowupMap (X' := (P.pullback (Spec.algebraMap K L)).total)
+          (P.isPullback_pullback_over (Spec.algebraMap K L)) ⁻¹'
+        (P.total.dualGraphVertexEquiv P.markingPoint v :
+          Set (P.total.singularLocus K).blowup) := by
+  rw [dualGraphPullbackIso]
+  exact Scheme.coe_dualGraphVertexEquiv_dualGraphBaseChangeIso_vertexEquiv
+    (X' := (P.pullback (Spec.algebraMap K L)).total)
+    (P.isPullback_pullback_over (Spec.algebraMap K L)) ..
+
+/-- The first projection sends each base-changed node `(P.dualGraphPullbackIso L).edgeEquiv x`
+back to `x`. -/
+@[simp]
+theorem dualGraphEdgeEquiv_dualGraphPullbackIso_edgeEquiv (x : P.dualGraph.Edge) :
+    Limits.pullback.fst P.toBase (Spec.algebraMap K L)
+      ((P.pullback (Spec.algebraMap K L)).total.dualGraphEdgeEquiv
+        (P.pullback (Spec.algebraMap K L)).markingPoint
+        ((P.dualGraphPullbackIso L).edgeEquiv x) :
+          (P.pullback (Spec.algebraMap K L)).total) =
+      (P.total.dualGraphEdgeEquiv P.markingPoint x : P.total) := by
+  rw [dualGraphPullbackIso]
+  exact Scheme.dualGraphEdgeEquiv_dualGraphBaseChangeIso_edgeEquiv
+    (X' := (P.pullback (Spec.algebraMap K L)).total)
+    (P.isPullback_pullback_over (Spec.algebraMap K L)) ..
+
+theorem dualGraph_pullback_isSemistable_iff :
     (P.pullback (Spec.algebraMap K L)).dualGraph.IsSemistable ↔ P.dualGraph.IsSemistable :=
   (P.dualGraphPullbackIso L).isSemistable_iff.symm
 
-theorem dualGraph_pullback_isStable_iff (L : Type u) [Field L] [IsSepClosed L] [Algebra K L] :
+theorem dualGraph_pullback_isStable_iff :
     (P.pullback (Spec.algebraMap K L)).dualGraph.IsStable ↔ P.dualGraph.IsStable :=
   (P.dualGraphPullbackIso L).isStable_iff.symm
 
 @[simp]
-theorem dualGraph_pullback_arithmeticGenus (L : Type u) [Field L] [IsSepClosed L] [Algebra K L] :
+theorem dualGraph_pullback_arithmeticGenus :
     (P.pullback (Spec.algebraMap K L)).dualGraph.arithmeticGenus = P.dualGraph.arithmeticGenus :=
   (P.dualGraphPullbackIso L).arithmeticGenus_eq.symm
 
 @[simp]
-theorem dualGraph_pullback_firstBetti (L : Type u) [Field L] [IsSepClosed L] [Algebra K L] :
+theorem dualGraph_pullback_firstBetti :
     (P.pullback (Spec.algebraMap K L)).dualGraph.firstBetti = P.dualGraph.firstBetti :=
   (P.dualGraphPullbackIso L).firstBetti_eq.symm
+
+end Pullback
 
 /-- Log-canonical degree on the unique vertex of a smooth `n`-pointed prestable curve. -/
 theorem logCanonicalDegree_ofSmooth {X : Scheme.{u}} (f : X ⟶ Spec (.of K)) [IsProper f]

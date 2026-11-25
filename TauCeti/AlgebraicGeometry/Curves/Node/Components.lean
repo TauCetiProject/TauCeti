@@ -9,9 +9,11 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Genus
 public import TauCeti.AlgebraicGeometry.Curves.Node.Normalization
 public import TauCeti.AlgebraicGeometry.Curves.Normalization
 public import TauCeti.AlgebraicGeometry.Scheme.IrreducibleComponent
+import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.AlgebraicGeometry.Cohomology.FlatBaseChange
+import TauCeti.AlgebraicGeometry.Curves.Smooth
 import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.SchematicDensity
 import TauCeti.AlgebraicGeometry.Geometrically.Irreducible
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.PureRelativeDimension
@@ -306,10 +308,6 @@ theorem smooth_blowup_singularLocus
     MorphismProperty.of_isPullback H hnodal
   have := hnodal'.syntomic
   have := X'.isRegular_blowup_singularLocus hnodal'
-  have := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of K))
-  have := LocallyOfFiniteType.isLocallyNoetherian (X' ↘ Spec (.of L))
-  have : IsLocallyNoetherian (X'.singularLocus L).blowup :=
-    LocallyOfFiniteType.isLocallyNoetherian (X'.singularLocus L).blowupToBase
   have hsm' : Smooth ((X'.singularLocus L).blowupToBase ≫ X' ↘ Spec (.of L)) :=
     ((X'.singularLocus L).blowupToBase ≫ X' ↘ Spec (.of L)).smooth_of_isRegularLocalRing_stalk
   have Hpb := ((isPullback_singularLocusBlowupMap H).flip.paste_vert H).flip
@@ -331,18 +329,12 @@ variable [SyntomicOfRelativeDimension 1 (X ↘ Spec (.of K))]
 clopen integral subscheme of `(X.singularLocus K).blowup`. -/
 def blowupComponent (v : irreducibleComponents (X.singularLocus K).blowup) :
     (X.singularLocus K).blowup.Opens :=
-  have := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of K))
-  have : IsLocallyNoetherian (X.singularLocus K).blowup :=
-    LocallyOfFiniteType.isLocallyNoetherian (X.singularLocus K).blowupToBase
   (X.singularLocus K).blowup.componentOpens v
 
 @[simp]
 theorem coe_blowupComponent (v : irreducibleComponents (X.singularLocus K).blowup) :
-    (X.blowupComponent v : Set (X.singularLocus K).blowup) = v := by
-  have := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of K))
-  have : IsLocallyNoetherian (X.singularLocus K).blowup :=
-    LocallyOfFiniteType.isLocallyNoetherian (X.singularLocus K).blowupToBase
-  exact (X.singularLocus K).blowup.coe_componentOpens v
+    (X.blowupComponent v : Set (X.singularLocus K).blowup) = v :=
+  (X.singularLocus K).blowup.coe_componentOpens v
 
 @[simp]
 theorem mem_blowupComponent {v : irreducibleComponents (X.singularLocus K).blowup}
@@ -352,11 +344,8 @@ theorem mem_blowupComponent {v : irreducibleComponents (X.singularLocus K).blowu
 /-- The inclusion of a component of the blowup is also a closed immersion. -/
 instance isClosedImmersion_blowupComponent_ι
     (v : irreducibleComponents (X.singularLocus K).blowup) :
-    IsClosedImmersion (X.blowupComponent v).ι := by
-  have := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of K))
-  have : IsLocallyNoetherian (X.singularLocus K).blowup :=
-    LocallyOfFiniteType.isLocallyNoetherian (X.singularLocus K).blowupToBase
-  exact inferInstanceAs (IsClosedImmersion ((X.singularLocus K).blowup.componentOpens v).ι)
+    IsClosedImmersion (X.blowupComponent v).ι :=
+  inferInstanceAs (IsClosedImmersion ((X.singularLocus K).blowup.componentOpens v).ι)
 
 /-- A component of the blowup is a scheme over `K` through the blowup morphism to the curve. -/
 instance blowupComponentOver (v : irreducibleComponents (X.singularLocus K).blowup) :
@@ -379,11 +368,8 @@ instance locallyOfFiniteType_blowupComponent_over
 
 /-- Each component of the blowup is an integral scheme. -/
 instance isIntegral_blowupComponent (v : irreducibleComponents (X.singularLocus K).blowup) :
-    IsIntegral (X.blowupComponent v).toScheme := by
-  have := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of K))
-  have : IsLocallyNoetherian (X.singularLocus K).blowup :=
-    LocallyOfFiniteType.isLocallyNoetherian (X.singularLocus K).blowupToBase
-  exact inferInstanceAs (IsIntegral ((X.singularLocus K).blowup.componentOpens v).toScheme)
+    IsIntegral (X.blowupComponent v).toScheme :=
+  inferInstanceAs (IsIntegral ((X.singularLocus K).blowup.componentOpens v).toScheme)
 
 /-- Each component of the blowup is a regular scheme. -/
 instance isRegular_blowupComponent (v : irreducibleComponents (X.singularLocus K).blowup) :
@@ -482,14 +468,34 @@ instance isProper_blowupComponent :
     IsProper ((X.blowupComponent v).toScheme ↘ Spec (.of K)) :=
   X.isProper_blowupComponent_of_atWorstNodal PrestableFamily.atWorstNodalOfRelativeDimensionOne v
 
-/-- Each component of the blowup of a prestable curve has dimension at most one. -/
-theorem topologicalKrullDim_blowupComponent_le_one :
-    topologicalKrullDim (X.blowupComponent v) ≤ 1 :=
-  (X.topologicalKrullDim_blowupComponent PrestableFamily.atWorstNodalOfRelativeDimensionOne v).le
-
 /-- Each component of the blowup of a prestable curve is a curve over `K`. -/
 instance isCurveOver_blowupComponent : (X.blowupComponent v).toScheme.IsCurveOver K :=
   X.isCurveOver_blowupComponent_of_atWorstNodal PrestableFamily.atWorstNodalOfRelativeDimensionOne v
+
+/-- A smooth prestable curve over a field `K` is an integral curve over `K`. -/
+instance isCurveOver_of_smooth_of_prestableFamily [SmoothOfRelativeDimension 1 (X ↘ Spec (.of K))] :
+    X.IsCurveOver K := by
+  have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of K))
+  have : ConnectedSpace X :=
+    GeometricallyConnected.connectedSpace_of_subsingleton (f := X ↘ Spec (.of K))
+  have := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of K))
+  have : ∀ x : X, IsRegularLocalRing (X.presheaf.stalk x) :=
+    isRegularLocalRing_stalk_of_smooth (X ↘ Spec (.of K))
+  have : IsIntegral X := isIntegral_of_connected_of_isRegularLocalRing_stalk X
+  exact IsCurveOver.of_smooth K X
+
+/-- On a smooth prestable curve, the inclusion of its unique blowup component is an isomorphism. -/
+theorem isIso_blowupComponent_ι_of_smooth [SmoothOfRelativeDimension 1 (X ↘ Spec (.of K))] :
+    IsIso (X.blowupComponent v).ι := by
+  have : ConnectedSpace X :=
+    GeometricallyConnected.connectedSpace_of_subsingleton (f := X ↘ Spec (.of K))
+  have : ConnectedSpace (X.singularLocus K).blowup :=
+    (X.singularLocus K).blowupToBase.homeomorph.connectedSpace_iff.mpr inferInstance
+  have hv_univ : (v : Set (X.singularLocus K).blowup) = Set.univ :=
+    IsClopen.eq_univ (isClopen_of_mem_irreducibleComponents v.property) v.property.1.nonempty
+  have : Surjective (X.blowupComponent v).ι :=
+    ⟨Set.range_eq_univ.mp ((Opens.range_ι _).trans ((X.coe_blowupComponent v).trans hv_univ))⟩
+  exact (isIso_iff_isOpenImmersion_and_surjective _).mpr ⟨inferInstance, inferInstance⟩
 
 end PrestableInstances
 
@@ -545,9 +551,6 @@ theorem preimageSingularLocusBlowupEquiv_irreducibleComponentOf
       irreducibleComponentOf b' := by
   have := hnodal.syntomic; have hnodal' := MorphismProperty.of_isPullback H hnodal
   have := hnodal'.syntomic; have := X'.isRegular_blowup_singularLocus hnodal'
-  have := LocallyOfFiniteType.isLocallyNoetherian (X' ↘ Spec (.of L))
-  have : IsLocallyNoetherian (X'.singularLocus L).blowup :=
-    LocallyOfFiniteType.isLocallyNoetherian (X'.singularLocus L).blowupToBase
   refine (irreducibleComponentOf_eq_iff.mpr ?_).symm
   rw [coe_preimageSingularLocusBlowupEquiv, mem_preimage]
   exact mem_irreducibleComponentOf _

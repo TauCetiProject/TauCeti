@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.Curves.SingularLocus.Smooth
 public import TauCeti.AlgebraicGeometry.Blowup.Restriction
 public import TauCeti.AlgebraicGeometry.Blowup.Pullback
@@ -258,5 +259,15 @@ theorem isPullback_singularLocusBlowupMap [Module.Flat R R'] :
   exact (X.singularLocus R).isPullback_blowupMap_of_flat g
 
 end BaseChange
+
+/-- The blowup of a relative curve over a Noetherian ring along its singular subscheme is locally
+Noetherian. -/
+instance isLocallyNoetherian_blowup_singularLocus {R : Type u} [CommRing R] [IsNoetherianRing R]
+    (X : Scheme.{u}) [X.Over (Spec (.of R))] [Flat (X ↘ Spec (.of R))]
+    [LocallyOfFinitePresentation (X ↘ Spec (.of R))]
+    [PureRelativeDimension 1 (X ↘ Spec (.of R))] :
+    IsLocallyNoetherian (X.singularLocus R).blowup :=
+  have := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of R))
+  LocallyOfFiniteType.isLocallyNoetherian (X.singularLocus R).blowupToBase
 
 end AlgebraicGeometry.Scheme

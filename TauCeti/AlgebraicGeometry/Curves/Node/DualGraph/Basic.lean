@@ -7,10 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.DualGraph.Basic
 public import TauCeti.AlgebraicGeometry.Curves.Node.Components
-import Mathlib.AlgebraicGeometry.Morphisms.IsIso
-import TauCeti.AlgebraicGeometry.Curves.Smooth
 import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
-import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Regular
 
 /-!
 # The dual graph of a prestable curve
@@ -176,9 +173,6 @@ private theorem reflTransGen_adj (v w : irreducibleComponents (X.singularLocus K
     Relation.ReflTransGen (Adj X) v w := by
   let ν := (X.singularLocus K).blowupToBase
   have := X.isFinite_blowupToBase_singularLocus (atWorstNodal K X)
-  have := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of K))
-  have : IsLocallyNoetherian (X.singularLocus K).blowup :=
-    LocallyOfFiniteType.isLocallyNoetherian ν
   have : ConnectedSpace X :=
     GeometricallyConnected.connectedSpace_of_subsingleton (f := X ↘ Spec (.of K))
   let R := Relation.ReflTransGen (Adj X) v
@@ -294,11 +288,8 @@ theorem dualGraphVertexEquiv_endpoint_eq_iff (e : (X.dualGraph p).Edge) (i : Fin
     (v : irreducibleComponents (X.singularLocus K).blowup) :
     X.dualGraphVertexEquiv p ((X.dualGraph p).endpoint e i) = v ↔
       (X.branchPointEquiv (X.dualGraphEdgeEquiv p e) i : (X.singularLocus K).blowup) ∈
-        (v : Set (X.singularLocus K).blowup) := by
-  have := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of K))
-  have : IsLocallyNoetherian (X.singularLocus K).blowup :=
-    LocallyOfFiniteType.isLocallyNoetherian (X.singularLocus K).blowupToBase
-  exact irreducibleComponentOf_eq_iff
+        (v : Set (X.singularLocus K).blowup) :=
+  irreducibleComponentOf_eq_iff
 
 /-- A marking is attached to the component of the blowup carrying the point over it. -/
 theorem mem_dualGraph_marking (i : ι) {b : (X.singularLocus K).blowup}
@@ -312,11 +303,8 @@ theorem mem_dualGraph_marking (i : ι) {b : (X.singularLocus K).blowup}
 /-- The `i`-th marking is the component of the blowup through any point over `p i`. -/
 theorem dualGraphVertexEquiv_marking (i : ι) {b : (X.singularLocus K).blowup}
     (hb : (X.singularLocus K).blowupToBase b = p i) :
-    X.dualGraphVertexEquiv p ((X.dualGraph p).marking i) = irreducibleComponentOf b := by
-  have := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of K))
-  have : IsLocallyNoetherian (X.singularLocus K).blowup :=
-    LocallyOfFiniteType.isLocallyNoetherian (X.singularLocus K).blowupToBase
-  exact (irreducibleComponentOf_eq_iff.mpr (X.mem_dualGraph_marking p i hb)).symm
+    X.dualGraphVertexEquiv p ((X.dualGraph p).marking i) = irreducibleComponentOf b :=
+  (irreducibleComponentOf_eq_iff.mpr (X.mem_dualGraph_marking p i hb)).symm
 
 /-- The `i`-th marking is the component of the blowup carrying the point over `p i`: this
 determines it, as every point lies on exactly one component. -/
@@ -324,11 +312,8 @@ theorem dualGraphVertexEquiv_marking_eq_iff (i : ι) {b : (X.singularLocus K).bl
     (hb : (X.singularLocus K).blowupToBase b = p i)
     (v : irreducibleComponents (X.singularLocus K).blowup) :
     X.dualGraphVertexEquiv p ((X.dualGraph p).marking i) = v ↔
-      b ∈ (v : Set (X.singularLocus K).blowup) := by
-  have := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of K))
-  have : IsLocallyNoetherian (X.singularLocus K).blowup :=
-    LocallyOfFiniteType.isLocallyNoetherian (X.singularLocus K).blowupToBase
-  exact X.dualGraphVertexEquiv_marking p i hb ▸ irreducibleComponentOf_eq_iff
+      b ∈ (v : Set (X.singularLocus K).blowup) :=
+  X.dualGraphVertexEquiv_marking p i hb ▸ irreducibleComponentOf_eq_iff
 
 /-- The genus of a vertex of the dual graph is the genus of its component of the blowup. -/
 @[simp]
@@ -444,36 +429,6 @@ section Smooth
 
 variable [SmoothOfRelativeDimension 1 (X ↘ Spec (.of K))]
 
-omit [IsSepClosed K] in
-/-- A smooth prestable curve over a field `K` is an integral curve over `K`. -/
-instance isCurveOver_of_smooth_of_prestableFamily : X.IsCurveOver K := by
-  have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of K))
-  have : ConnectedSpace X :=
-    GeometricallyConnected.connectedSpace_of_subsingleton (f := X ↘ Spec (.of K))
-  have := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of K))
-  have : ∀ x : X, IsRegularLocalRing (X.presheaf.stalk x) :=
-    isRegularLocalRing_stalk_of_smooth (X ↘ Spec (.of K))
-  have : IsIntegral X := isIntegral_of_connected_of_isRegularLocalRing_stalk X
-  exact IsCurveOver.of_smooth K X
-
-omit [IsSepClosed K] in
-/-- On a smooth prestable curve, the inclusion of its unique blowup component is an isomorphism. -/
-theorem isIso_blowupComponent_ι_of_smooth
-    (v : irreducibleComponents (X.singularLocus K).blowup) :
-    IsIso (X.blowupComponent v).ι := by
-  have := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of K))
-  have : IsLocallyNoetherian (X.singularLocus K).blowup :=
-    LocallyOfFiniteType.isLocallyNoetherian (X.singularLocus K).blowupToBase
-  have : ConnectedSpace X :=
-    GeometricallyConnected.connectedSpace_of_subsingleton (f := X ↘ Spec (.of K))
-  have : ConnectedSpace (X.singularLocus K).blowup :=
-    (X.singularLocus K).blowupToBase.homeomorph.connectedSpace_iff.mpr inferInstance
-  have hv_univ : (v : Set (X.singularLocus K).blowup) = Set.univ :=
-    IsClopen.eq_univ (isClopen_of_mem_irreducibleComponents v.property) v.property.1.nonempty
-  have : Surjective (X.blowupComponent v).ι :=
-    ⟨Set.range_eq_univ.mp ((Opens.range_ι _).trans ((X.coe_blowupComponent v).trans hv_univ))⟩
-  exact (isIso_iff_isOpenImmersion_and_surjective _).mpr ⟨inferInstance, inferInstance⟩
-
 /-- The dual graph of a smooth prestable curve has no edges. -/
 theorem isEmpty_edge_dualGraph_of_smooth : IsEmpty (X.dualGraph p).Edge := by
   have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of K))
@@ -544,6 +499,22 @@ def IsRationalTail (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of
     Set.InjOn (X.singularLocus K).blowupToBase (v : Set (X.singularLocus K).blowup) ∧
     ((E : Set X) ∩ ⋃ E' ∈ irreducibleComponents X \ {(E : Set X)}, E').ncard = 1
 
+variable {K} in
+/-- Restatement of the definition of a geometric rational tail. -/
+theorem isRationalTail_iff (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
+    (v : letI := hnodal.syntomic; irreducibleComponents (X.singularLocus K).blowup) :
+    letI := hnodal.syntomic
+    letI := X.isRegular_blowup_singularLocus hnodal
+    letI := X.isCurveOver_blowupComponent_of_atWorstNodal hnodal v
+    X.IsRationalTail K hnodal v ↔
+      (X.blowupComponent v).toScheme.genus K = 0 ∧
+        Set.InjOn (X.singularLocus K).blowupToBase (v : Set (X.singularLocus K).blowup) ∧
+        (((X.blowupComponentEquiv K hnodal v : irreducibleComponents X) : Set X) ∩
+          ⋃ E' ∈ irreducibleComponents X \
+            {((X.blowupComponentEquiv K hnodal v : irreducibleComponents X) : Set X)}, E').ncard =
+          1 :=
+  Iff.rfl
+
 /-- A component `v` of `Bl X` is a **geometric rational bridge** if it has genus `0`, no self-nodes
 (`blowupToBase` is injective on `v`), and its image in `X` meets the union of the remaining
 irreducible components of `X` in two points. -/
@@ -555,6 +526,22 @@ def IsRationalBridge (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.
   (X.blowupComponent v).toScheme.genus K = 0 ∧
     Set.InjOn (X.singularLocus K).blowupToBase (v : Set (X.singularLocus K).blowup) ∧
     ((E : Set X) ∩ ⋃ E' ∈ irreducibleComponents X \ {(E : Set X)}, E').ncard = 2
+
+variable {K} in
+/-- Restatement of the definition of a geometric rational bridge. -/
+theorem isRationalBridge_iff (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
+    (v : letI := hnodal.syntomic; irreducibleComponents (X.singularLocus K).blowup) :
+    letI := hnodal.syntomic
+    letI := X.isRegular_blowup_singularLocus hnodal
+    letI := X.isCurveOver_blowupComponent_of_atWorstNodal hnodal v
+    X.IsRationalBridge K hnodal v ↔
+      (X.blowupComponent v).toScheme.genus K = 0 ∧
+        Set.InjOn (X.singularLocus K).blowupToBase (v : Set (X.singularLocus K).blowup) ∧
+        (((X.blowupComponentEquiv K hnodal v : irreducibleComponents X) : Set X) ∩
+          ⋃ E' ∈ irreducibleComponents X \
+            {((X.blowupComponentEquiv K hnodal v : irreducibleComponents X) : Set X)}, E').ncard =
+          2 :=
+  Iff.rfl
 
 end RationalTailsBridgesDef
 
@@ -575,9 +562,6 @@ theorem image_blowupToBase_inter_preimage_singularLocus_of_injOn
           (X.singularLocus K).blowupToBase ⁻¹' (X.singularLocus K).support) =
       (E : Set X) ∩ ⋃ E' ∈ irreducibleComponents X \ {(E : Set X)}, E' := by
   have := hnodal.syntomic; have := X.isRegular_blowup_singularLocus hnodal
-  have := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of K))
-  have : IsLocallyNoetherian (X.singularLocus K).blowup :=
-    LocallyOfFiniteType.isLocallyNoetherian (X.singularLocus K).blowupToBase
   let ν := (X.singularLocus K).blowupToBase
   let E := X.blowupComponentEquiv K hnodal v; ext x
   simp only [mem_image, mem_inter_iff, mem_preimage, mem_iUnion, mem_sdiff, mem_singleton_iff]
@@ -657,7 +641,7 @@ theorem dualGraph_isRationalTail_iff (v : (X.dualGraph p).Vertex) :
         (X.dualGraphVertexEquiv p v) := by
   let G := X.dualGraph p
   let := G.edgeFintype; let := G.edgeDecidableEq; let := G.vertexDecidableEq
-  rw [G.isRationalTail_iff, IsRationalTail, dualGraph_genus]
+  rw [G.isRationalTail_iff, X.isRationalTail_iff, dualGraph_genus]
   refine and_congr_right fun _ ↦ ⟨fun hval ↦ ?_, fun ⟨hinj, hcard⟩ ↦
     (X.valence_dualGraph_eq_ncard_inter_other_components_of_injOn p hinj).trans hcard⟩
   have hinj : Set.InjOn (X.singularLocus K).blowupToBase
@@ -679,7 +663,7 @@ theorem dualGraph_isRationalBridge_iff (v : (X.dualGraph p).Vertex) :
         (X.dualGraphVertexEquiv p v) := by
   let G := X.dualGraph p
   rw [G.isRationalBridge_iff, G.forall_endpoint_one_ne_iff,
-    ← X.injOn_blowupToBase_iff_forall_ends_ne_self p v, IsRationalBridge, dualGraph_genus]
+    ← X.injOn_blowupToBase_iff_forall_ends_ne_self p v, X.isRationalBridge_iff, dualGraph_genus]
   refine and_congr_right fun _ ↦ ⟨fun ⟨hval, hinj⟩ ↦ ⟨hinj, ?_⟩, fun ⟨hinj, hcard⟩ ↦ ⟨?_, hinj⟩⟩
   · rwa [← X.valence_dualGraph_eq_ncard_inter_other_components_of_injOn p hinj]
   · rwa [X.valence_dualGraph_eq_ncard_inter_other_components_of_injOn p hinj]

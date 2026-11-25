@@ -185,6 +185,12 @@ theorem isPullback_pullback_marking (g : T ⟶ S) (i : Fin n) :
   .of_right (by simpa only [pullback_marking_snd, marking_comp_toBase] using IsPullback.id_horiz g)
     (P.pullback_marking_fst g i) (IsPullback.of_hasPullback P.toBase g).flip
 
+/-- The base-changed total space forms a pullback square over `g : T ⟶ S`. -/
+theorem isPullback_pullback_over (g : T ⟶ S) :
+    IsPullback (Limits.pullback.fst P.toBase g) ((P.pullback g).total ↘ T) (P.total ↘ S) g := by
+  rw [(P.pullback g).over_eq_toBase, P.over_eq_toBase, pullback_toBase]
+  exact IsPullback.of_hasPullback P.toBase g
+
 /-- Reindex the markings of a pointed prestable family along an injection `e : Fin m ↪ Fin n`:
 the `i`th marking of the result is the `e i`th marking of `P`. Reindexing along an equivalence
 reorders the markings, and reindexing along `Fin.castSuccEmb` forgets the last marking. -/
