@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.LocalField.Teichmuller
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Uniformizer
 public import TauCeti.RingTheory.Invariant.Basic
+public import TauCeti.RingTheory.LocalRing.FixedPoints
 public import TauCeti.RingTheory.LocalRing.RamificationGroup.Graded
 import TauCeti.NumberTheory.LocalField.Units.Decomposition
 import TauCeti.RingTheory.Valuation.ValuativeRel.Action
