@@ -20,7 +20,7 @@ import Mathlib.Order.Atoms.Finite
 A group composition series is a finite strictly increasing chain from the trivial subgroup to
 the whole group, with each term normal in the next and each successive quotient simple.
 
-`exists_groupCompositionSeries_between` refines any normal inclusion into a finite subgroup.
+`exists_relSeries_isCompositionStep_between` refines any normal inclusion into a finite subgroup.
 In particular, every finite group has a composition series. Every term of a composition series is
 subnormal in the ambient group.
 -/
@@ -52,7 +52,7 @@ structure GroupCompositionSeries extends
 variable {G}
 
 /-- A finite normal interval admits a series of composition steps. -/
-theorem exists_groupCompositionSeries_between {A B : Subgroup G} [Finite B]
+theorem exists_relSeries_isCompositionStep_between {A B : Subgroup G} [Finite B]
     (hAB : A ≤ B) (hN : (A.subgroupOf B).Normal) :
     ∃ s : RelSeries {p : Subgroup G × Subgroup G | p.1.IsCompositionStep p.2},
       s.head = A ∧ s.last = B := by
@@ -68,8 +68,8 @@ theorem exists_groupCompositionSeries_between {A B : Subgroup G} [Finite B]
     obtain ⟨M, hM, hAM⟩ := (eq_top_or_exists_le_coatom NA).resolve_left hNA
     let C : Subgroup G := (M : Subgroup B).map B.subtype
     have hCB : C ≤ B := Subgroup.map_subtype_le _
-    have hCM : C.subgroupOf B = (M : Subgroup B) :=
-      Subgroup.comap_map_eq_self_of_injective B.subtype_injective _
+    have hCM : C.subgroupOf B = (M : Subgroup B) := by
+      rw [← Subgroup.comap_subtype, Subgroup.comap_map_eq_self_of_injective B.subtype_injective]
     have hCBlt : C < B := lt_of_le_of_ne hCB fun he ↦ hM.1 (Subtype.ext (by
       rw [← hCM, he, Subgroup.subgroupOf_self, CompleteSublattice.coe_top]))
     have hAC : A ≤ C := by
@@ -89,7 +89,7 @@ theorem exists_groupCompositionSeries_between {A B : Subgroup G} [Finite B]
 
 /-- Every finite group has a composition series. -/
 theorem nonempty_groupCompositionSeries [Finite G] : Nonempty (GroupCompositionSeries G) := by
-  obtain ⟨s, h0, h1⟩ := exists_groupCompositionSeries_between (G := G) bot_le
+  obtain ⟨s, h0, h1⟩ := exists_relSeries_isCompositionStep_between (G := G) bot_le
     (inferInstance : ((⊥ : Subgroup G).subgroupOf ⊤).Normal)
   exact ⟨⟨s, h0, h1⟩⟩
 
@@ -98,6 +98,22 @@ namespace GroupCompositionSeries
 instance : CoeFun (GroupCompositionSeries G)
     (fun s ↦ Fin (s.toRelSeries.length + 1) → Subgroup G) :=
   ⟨fun s ↦ s.toRelSeries⟩
+
+/-- A bundled composition series has the same indexed terms as the series used to construct it. -/
+@[simp]
+theorem coe_mk (s : RelSeries {p : Subgroup G × Subgroup G | p.1.IsCompositionStep p.2})
+    (h0 : s.head = ⊥) (h1 : s.last = ⊤) : ⇑(GroupCompositionSeries.mk s h0 h1) = ⇑s :=
+  (rfl)
+
+/-- A composition series is determined by its length and its indexed terms. -/
+@[ext (iff := false)]
+theorem ext {s t : GroupCompositionSeries G} (hl : s.length = t.length)
+    (hf : ∀ i, s i = t (i.cast (by rw [hl]))) : s = t := by
+  have h : s.toRelSeries = t.toRelSeries := RelSeries.ext hl (funext hf)
+  cases s
+  cases t
+  cases h
+  rfl
 
 /-- The first indexed term is the trivial subgroup. -/
 @[simp]
