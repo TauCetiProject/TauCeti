@@ -32,7 +32,7 @@ conditional probability given `b x` is integrated over `x`.
 * `TauCeti.conditionalLabelEntropy_comp_self`, `TauCeti.conditionalLabelEntropy_self`: a
   measurable function of a label, in particular the label itself, conditioned on that label gives
   zero.
-* `TauCeti.conditionalLabelEntropy_const`: conditioning on a constant label integrates the
+* `TauCeti.conditionalLabelEntropy_const_right`: conditioning on a constant label integrates the
   information of the atoms of `a` under `μ`.
 
 ## References
@@ -125,13 +125,14 @@ theorem conditionalLabelEntropy_self {a : X → Y} (ha : AEMeasurable a μ) :
     conditionalLabelEntropy μ a a = 0 :=
   conditionalLabelEntropy_comp_self (f := id) ha measurable_id
 
-/-- **Conditioning on a constant.** Under a probability measure, conditioning a measurable label
-on a constant label integrates the information of its atoms under `μ`. -/
-theorem conditionalLabelEntropy_const [IsProbabilityMeasure μ] [MeasurableSingletonClass Z]
-    {a : X → Y} (ha : Measurable a) (z : Z) :
+/-- **Conditioning on a constant.** Under a probability measure, conditioning an almost
+everywhere measurable label on a constant label integrates the information of its atoms under
+`μ`. -/
+theorem conditionalLabelEntropy_const_right [IsProbabilityMeasure μ] [MeasurableSingletonClass Z]
+    {a : X → Y} (ha : AEMeasurable a μ) (z : Z) :
     conditionalLabelEntropy μ a (fun _ ↦ z) = ∫⁻ x, atomInformation (μ (a ⁻¹' {a x})) ∂μ := by
   refine lintegral_congr fun x ↦ ?_
-  rw [condDistrib_apply_const_of_isProbabilityMeasure ha z,
-    Measure.map_apply ha (measurableSet_singleton _)]
+  simp [condDistrib_const_right_apply ha z,
+    Measure.map_apply_of_aemeasurable ha (measurableSet_singleton _)]
 
 end TauCeti

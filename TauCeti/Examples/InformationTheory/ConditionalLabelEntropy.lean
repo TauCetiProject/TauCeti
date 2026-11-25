@@ -40,7 +40,7 @@ instance instIsProbabilityMeasureUnitUniform : IsProbabilityMeasure unitUniform 
 /-- The point label of `[0, 1)` conditioned on a constant has conditional entropy `∞`: every atom
 is null. -/
 example : conditionalLabelEntropy unitUniform id (fun _ ↦ ()) = ∞ := by
-  rw [conditionalLabelEntropy_const measurable_id ()]
+  rw [conditionalLabelEntropy_const_right aemeasurable_id ()]
   simp
 
 /-- The point label of `[0, 1)` conditioned on itself has conditional entropy `0`. -/
@@ -50,7 +50,7 @@ example : conditionalLabelEntropy unitUniform id id = 0 :=
 /-- Under the Dirac probability on a point, conditioning on a constant gives `0`. -/
 example :
     conditionalLabelEntropy (Measure.dirac ()) (fun _ : Unit ↦ (0 : ℝ)) (fun _ ↦ ()) = 0 := by
-  rw [conditionalLabelEntropy_const measurable_const ()]
+  rw [conditionalLabelEntropy_const_right aemeasurable_const ()]
   simp
 
 /-- Under the Dirac probability on a point, conditioning on itself gives `0`. -/

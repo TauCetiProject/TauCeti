@@ -26,13 +26,13 @@ missing data, this says that the observed-data posterior is the complete-data po
 over the posterior predictive distribution of the missing data, the identity behind multiple
 imputation.
 
-Under a probability measure, conditioning on a constant random variable gives the law of `Z`.
+Conditioning on a constant random variable gives the law of `Z`, normalised by the total mass.
 
 ## Main statements
 
 * `ProbabilityTheory.condDistrib_ae_eq_comp` — the identity above.
-* `ProbabilityTheory.condDistrib_apply_const_of_isProbabilityMeasure` — the conditional
-  distribution given a constant is the law.
+* `ProbabilityTheory.condDistrib_const_right_apply` — the conditional distribution given a
+  constant is the normalised law.
 -/
 
 public section
@@ -68,15 +68,17 @@ theorem condDistrib_ae_eq_comp {μ : Measure Ω} [IsFiniteMeasure μ] {Z : Ω �
   rw [Kernel.snd_compProd_eq_comp_id_prod] at hZX
   exact condDistrib_ae_eq_of_measure_eq_compProd hX hZ hZX.map_eq
 
-/-- Under a probability measure, the conditional distribution of `Z` given a constant random
-variable is the law of `Z`. -/
-theorem condDistrib_apply_const_of_isProbabilityMeasure {μ : Measure Ω} [IsProbabilityMeasure μ]
-    [MeasurableSingletonClass β] {Z : Ω → δ} (hZ : Measurable Z) (b : β) :
-    condDistrib Z (fun _ ↦ b) μ b = μ.map Z := by
+/-- The conditional distribution of `Z` given a constant random variable is the law of `Z`,
+normalised by the total mass of the nonzero finite measure `μ`. -/
+theorem condDistrib_const_right_apply {μ : Measure Ω} [IsFiniteMeasure μ] [NeZero μ]
+    [MeasurableSingletonClass β] {Z : Ω → δ} (hZ : AEMeasurable Z μ) (b : β) :
+    condDistrib Z (fun _ ↦ b) μ b = (μ Set.univ)⁻¹ • μ.map Z := by
+  rw [condDistrib_congr_left hZ.ae_eq_mk, Measure.map_congr hZ.ae_eq_mk]
+  have hZ' := hZ.measurable_mk
   ext s hs
-  rw [condDistrib_apply_of_ne_zero measurable_const hZ b (by simp [Measure.map_const]),
-    Measure.map_apply (measurable_const.prodMk hZ) ((measurableSet_singleton b).prod hs),
-    Measure.map_apply hZ hs]
-  simp [Measure.map_const, Set.mk_preimage_prod]
+  rw [condDistrib_apply_of_ne_zero measurable_const hZ' b
+      (by simp [Measure.map_const, NeZero.ne μ]),
+    Measure.map_apply (measurable_const.prodMk hZ') ((measurableSet_singleton b).prod hs)]
+  simp [Measure.map_const, Set.mk_preimage_prod, Measure.map_apply hZ' hs]
 
 end ProbabilityTheory
