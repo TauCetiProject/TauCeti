@@ -55,7 +55,10 @@ into maps and homotopies of the whole space.
 
 If a continuous motion of the space lowers `f` at unit speed through the band `a ≤ f ≤ b`, then
 following it until the level `a` is reached retracts the sublevel `{f ≤ b}` onto `{f ≤ a}`, by a
-homotopy fixing `{f ≤ a}` pointwise (`TauCeti.exists_sublevelDeformation_of_apply_eq_sub`); here
+homotopy fixing `{f ≤ a}` pointwise (`TauCeti.exists_sublevelDeformation_of_apply_eq_sub`). For a
+family of such motions, continuous in a parameter `s ∈ [0, 1]`, the retractions along them form a
+homotopy relative to `{f ≤ a}` from the retraction along the first motion to the retraction along
+the last (`TauCeti.exists_homotopyRel_sublevelRetraction_of_apply_eq_sub`). Here
 `TauCeti.sublevelInclusion` is the inclusion of `{f ≤ a}` into `{f ≤ b}`, a closed embedding when
 `f` is continuous (`TauCeti.isClosedEmbedding_sublevelInclusion`), and when `f ≤ b` everywhere the
 sublevel `{f ≤ b}` is homeomorphic to the whole space (`TauCeti.sublevelHomeomorphUniv`), so
@@ -516,6 +519,50 @@ theorem exists_sublevelDeformation_of_apply_eq_sub {X : Type*} [TopologicalSpace
       map_zero_left := fun x ↦ Subtype.ext <| by simp [hr]
       map_one_left := fun x ↦ Subtype.ext <| by simp [hφ0]
       prop' := fun t x hx ↦ Subtype.ext <| by simp [hr, hτ0 x.val hx, hφ0] }
+
+/-- **Homotopy of sublevel retractions along a family of unit-speed descents.** Let `φ s t`,
+`s ∈ [0, 1]`, be a family of motions of `X`, continuous in `(s, t, x)`, with each `φ s 0` the
+identity, each of which lowers `f` at unit speed through the band `a ≤ f ≤ b`: if `f x ≤ b` and
+`f x - t ≥ a` with `t ≥ 0`, then `f (φ s t x) = f x - t`. Moving each point `x` of `{f ≤ b}` along
+`φ s` for the time `max (f x - a) 0` is a retraction of `{f ≤ b}` onto `{f ≤ a}` for every `s`, and
+these retractions form a homotopy, relative to `{f ≤ a}`, from the retraction `r₀` along `φ 0` to
+the retraction `r₁` along `φ 1`. -/
+theorem exists_homotopyRel_sublevelRetraction_of_apply_eq_sub {X : Type*} [TopologicalSpace X]
+    {f : X → ℝ} (hf : Continuous f) {a b : ℝ} (hab : a ≤ b) (φ : unitInterval → ℝ → X → X)
+    (hφ : Continuous fun p : unitInterval × ℝ × X ↦ φ p.1 p.2.1 p.2.2) (hφ0 : ∀ s x, φ s 0 x = x)
+    (hφf : ∀ s x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ s t x) = f x - t) :
+    ∃ r₀ r₁ : C({x | f x ≤ b}, {x | f x ≤ a}),
+      (∀ x, (r₀ x : X) = φ 0 (max (f x - a) 0) x) ∧
+      (∀ x, (r₁ x : X) = φ 1 (max (f x - a) 0) x) ∧
+      (∀ x, r₀ (sublevelInclusion f a b hab x) = x) ∧
+      (∀ x, r₁ (sublevelInclusion f a b hab x) = x) ∧
+      ∃ F : ContinuousMap.HomotopyRel r₀ r₁ {x | f x ≤ a},
+        ∀ s x, (F (s, x) : X) = φ s (max (f x - a) 0) x := by
+  -- A point with `f x ≤ a` does not move, and one with `a ≤ f x ≤ b` reaches the level `a`.
+  have hfix : ∀ s x, f x ≤ a → φ s (max (f x - a) 0) x = x := fun s x hxa ↦ by
+    rw [max_eq_right (sub_nonpos.2 hxa), hφ0]
+  have hlevel : ∀ s x, f x ≤ b → f (φ s (max (f x - a) 0) x) ≤ a := fun s x hxb ↦ by
+    rcases le_total (f x) a with hxa | hxa
+    · rwa [hfix s x hxa]
+    · rw [max_eq_left (sub_nonneg.2 hxa), hφf s x _ (sub_nonneg.2 hxa) (by linarith) hxb]
+      linarith
+  have hx : Continuous fun p : unitInterval × {x | f x ≤ b} ↦ (p.2 : X) :=
+    continuous_subtypeVal.comp continuous_snd
+  let F : C(unitInterval × {x | f x ≤ b}, {x | f x ≤ a}) :=
+    { toFun p := ⟨φ p.1 (max (f p.2 - a) 0) p.2, hlevel p.1 p.2 p.2.property⟩
+      continuous_toFun := (hφ.comp (continuous_fst.prodMk
+        ((((hf.comp hx).sub continuous_const).max continuous_const).prodMk hx))).subtype_mk _ }
+  have hFfix : ∀ s (x : {x | f x ≤ b}) (hxa : f x ≤ a), F (s, x) = ⟨x, hxa⟩ := fun s x hxa ↦
+    Subtype.ext (hfix s x hxa)
+  have hincl : ∀ s x, F (s, sublevelInclusion f a b hab x) = x := fun s x ↦
+    Subtype.ext ((hfix s _ (by rw [coe_sublevelInclusion_apply]; exact x.property)).trans
+      (coe_sublevelInclusion_apply f hab x))
+  exact ⟨F.curry 0, F.curry 1, fun _ ↦ rfl, fun _ ↦ rfl, hincl 0, hincl 1,
+    ⟨{ toFun := F
+       continuous_toFun := F.continuous
+       map_zero_left _ := rfl
+       map_one_left _ := rfl
+       prop' s x hx := (hFfix s x hx).trans (hFfix 0 x hx).symm }, fun _ _ ↦ rfl⟩⟩
 
 end TauCeti
 
