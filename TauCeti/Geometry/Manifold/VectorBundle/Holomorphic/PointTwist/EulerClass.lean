@@ -203,7 +203,7 @@ theorem sectionIndex_pointTwistMul_self (x : X) {s : ∀ z, L z}
         Complex.finrank_real_complex (complexHomologicalOrientation X)
         (continuous_pointTwistMul_section (x := x) hs) x = 1 := by
   classical
-  set φ := chartAt ℂ x with hφ_chart
+  set φ := chartAt ℂ x
   set eL := trivializationAt ℂ L x
   -- The preferred chart of the point twist at `x`, its chart `(x, true)`.
   set e := trivializationAt ℂ (pointTwistCore ℂ L x).Fiber x with he
@@ -230,25 +230,10 @@ theorem sectionIndex_pointTwistMul_self (x : X) {s : ∀ z, L z}
   rw [VectorBundleOrientation.sectionIndex_eq_sign_det_of_hasFDerivAt _ _ _ _ e φ hU hxU hUz
     (congrArg (fun f : L x →L[ℂ] ℂ ↦ f (s x)) (pointTwistMul_self ℂ L x))
     inter_subset_left hUφ
-    (fun y hy ↦ (VectorBundleOrientation.mapOrientation_reindex_complex ℂ
-      (pointTwistCore ℂ L x).Fiber _ e (inter_subset_left hy)).trans
-        reindex_complexOrientation_complex)
-    (by
-      rw [complexHomologicalOrientation_apply x]
-      have hσ : (((ContinuousLinearEquiv.refl ℝ ℂ : ℂ →L[ℝ] ℂ) : C(ℂ, ℂ)).comp
-          ((⟨fun y ↦ y - φ x, by fun_prop⟩ : C(ℂ, ℂ)).comp φ.sourceRestrict)) =
-          (⟨fun y : φ.source ↦ φ y - φ x,
-            φ.continuousOn.domRestrict.sub continuous_const⟩ : C(φ.source, ℂ)) :=
-        ContinuousMap.ext fun y ↦ congrArg (fun z ↦ z - φ x) (φ.sourceRestrict_apply y)
-      have hφ := φ.localHomologyMap_chart_localOrientationOfOrientedChart (hUφ hxU)
-        (ContinuousLinearEquiv.refl ℝ ℂ) Complex.orientation
-        Complex.finrank_real_complex Complex.finrank_real_complex (by
-          rw [hσ]
-          exact fun y hy ↦ Subtype.ext (φ.injOn y.property (hUφ hxU) (sub_eq_zero.1 hy)))
-      simp only [hσ] at hφ
-      -- Orientation.map uses the underlying linear identity, rather than the continuous structure.
-      have hid : (ContinuousLinearEquiv.refl ℝ ℂ).toLinearEquiv = LinearEquiv.refl ℝ ℂ := rfl
-      simpa only [hid, hφ_chart, Orientation.map_refl, Equiv.refl_apply] using hφ)
+    (fun y hy ↦ VectorBundleOrientation.mapOrientation_reindex_complex_eq_orientation _ e
+      (inter_subset_left hy))
+    (localHomologyMap_complexHomologicalOrientation_of_mem_maximalAtlas
+      (IsManifold.chart_mem_maximalAtlas (n := 1) x) (hUφ hxU))
     hA (hdet'.trans_ne (Complex.normSq_pos.2 hgx).ne'), hdet',
     sign_pos (Complex.normSq_pos.2 hgx), SignType.coe_one]
 
