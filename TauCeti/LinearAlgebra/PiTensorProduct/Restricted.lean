@@ -179,6 +179,13 @@ theorem contractMultilinear_apply (φ : ∀ i, Module.Dual R (W i)) (g : ∀ i :
       PiTensorProduct.tprod R (fun i : S ↦ g ⟨i.val, h i.property⟩) := by
   rw [contractMultilinear, LinearMap.compMultilinearMap_apply,
     MultilinearMap.domDomCongrLinearEquiv'_symm_apply]
+  -- The reindexed entries are `g` at the corresponding places by definition of
+  -- `Equiv.piCongrLeft'`, `Equiv.sumCompl` and `Equiv.subtypeSubtypeEquivSubtype`, so
+  -- `domCoprodDep` evaluates to this tensor. Rewriting with
+  -- `MultilinearMap.domCoprodDep_apply` instead fails: the reindexed `tprod` has the type
+  -- expected there only up to unfolding these equivalences.
+  change TensorProduct.rid R _ (PiTensorProduct.tprod R (fun i : S ↦ g ⟨i.val, h i.property⟩) ⊗ₜ
+    ∏ i : {i : T // i.val ∉ S}, φ i (g i)) = _
   exact TensorProduct.rid_tmul _ _
 
 end contract
