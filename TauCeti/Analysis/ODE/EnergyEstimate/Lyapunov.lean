@@ -175,17 +175,12 @@ theorem finiteDimensional_coker_trajectoryOperator_of_hasLyapunovForm
       (trajectoryOperator (p := 2) AL).range) := by
   have := (isClosed_range_trajectoryOperator_of_hasLyapunovForm hA hminus hplus hbot htop AL
     hAL).completeSpace_coe
-  obtain ⟨BL, hBL⟩ := exists_ae_eq_adjoint AL hAL
   -- The coefficient `-A†` of `D_{-A†}` is continuous and represented a.e. by `-BL`.
-  have hnegBL : ⇑(-BL) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ -ContinuousLinearMap.adjoint (A s) := by
-    filter_upwards [Lp.coeFn_neg BL, hBL] with s hs hBs
-    rw [hs, Pi.neg_apply, hBs]
+  obtain ⟨BL, hadj, hnegBL⟩ := exists_ae_eq_adjoint_and_neg_ae_eq_neg_adjoint AL hAL
   have := finiteDimensional_ker_trajectoryOperator hA.clm_adjoint.neg (-BL) hnegBL
   -- The orthogonal complement of the range lies in the image of the kernel of `D_{-A†}`.
   have : FiniteDimensional ℝ (trajectoryOperator (p := 2) AL).rangeᗮ :=
-    Submodule.finiteDimensional_of_le
-      (orthogonal_range_trajectoryOperator_le_map_ker (ae_eq_adjoint_of_ae_eq hAL hBL))
+    Submodule.finiteDimensional_of_le (orthogonal_range_trajectoryOperator_le_map_ker hadj)
   exact (trajectoryOperator (p := 2) AL).range.quotientEquivOrthogonal.toLinearEquiv.symm
     |>.finiteDimensional
 

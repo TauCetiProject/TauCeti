@@ -13,7 +13,7 @@ public import Mathlib.Topology.Metrizable.Uniformity
 public import Mathlib.Topology.Sets.Compacts
 public import Mathlib.Topology.Sets.Opens
 public import TauCeti.Analysis.Holder.Normed
-public import TauCeti.Analysis.Holder.OpenSet
+public import TauCeti.Analysis.Holder.OpenSet.Basic
 import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Holder.Jet.Bounds

@@ -21,6 +21,13 @@ The nilpotence calculation is valid over every ring: if `N` is a strictly upper-
 is unipotent. This is the matrix-group input for the upper-unitriangular embedding
 characterization of unipotent groups.
 
+The group also carries coordinates: an upper-unitriangular matrix is determined by its entries
+strictly above the diagonal, so `Uₙ(R)` is in bijection with the functions on the pairs `i < j`.
+These coordinates, and those on the Bruhat subgroups of
+`TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.BruhatCell`, are instances of
+`TauCeti.unitriangularGroupEquivFunOfSupported`, the coordinates of a group of upper-unitriangular
+matrices whose entries above the diagonal are supported on a prescribed set of pairs.
+
 ## Main declarations
 
 * `TauCeti.upperUnitriangularGroup`: the subgroup `Uₙ(R)` of `GLₙ(R)`.
@@ -32,6 +39,10 @@ characterization of unipotent groups.
 * `OrderIso.reindexUpperUnitriangularGroup`: order-preserving reindexing as a group isomorphism.
 * `TauCeti.UpperUnitriangularGroup.isUnipotent_toLin`: the natural representation of every
   element of `Uₙ(R)` is unipotent.
+* `TauCeti.unitriangularGroupEquivFunOfSupported`: the coordinates of a group of
+  upper-unitriangular matrices supported on a set of pairs `i < j`.
+* `TauCeti.upperUnitriangularGroupEquivFun`: `Uₙ(R)` in bijection with the functions on the pairs
+  `i < j`, through `TauCeti.upperUnitriangularEntries` and `TauCeti.upperUnitriangularOfEntries`.
 
 ## References
 
@@ -238,6 +249,134 @@ theorem isUnipotent_toLin (g : upperUnitriangularGroup m R) :
 end CommRing
 
 end UpperUnitriangularGroup
+
+/-! ### Coordinates on the upper-unitriangular group -/
+
+section Coordinates
+
+variable {ι : Type*} [Fintype ι] [LinearOrder ι] {R : Type*} [Ring R]
+
+/-- **Coordinates on a group of upper-unitriangular matrices supported on a set of pairs.**
+Let `P` be a predicate on pairs of indices, satisfied only by pairs `i < j`, and `H` a subgroup of
+`GL ι R` whose elements are exactly the upper-unitriangular matrices whose entries at the pairs
+`i < j` not satisfying `P` vanish. Then an element of `H` is determined by its entries at the
+pairs satisfying `P`, and these entries are arbitrary: the map sending `g` to its entries at the
+pairs satisfying `P` is a bijection from `H` onto the functions `{p : ι × ι // P p} → R`. -/
+noncomputable def unitriangularGroupEquivFunOfSupported (H : Subgroup (GL ι R)) (P : ι × ι → Prop)
+    (hP : ∀ p, P p → p.1 < p.2)
+    (hH : ∀ g : GL ι R, g ∈ H ↔ (g : Matrix ι ι R).IsUpperUnitriangular ∧
+      ∀ i j, i < j → ¬ P (i, j) → (g : Matrix ι ι R) i j = 0) :
+    H ≃ ({p : ι × ι // P p} → R) where
+  toFun g p := ((g : GL ι R) : Matrix ι ι R) p.val.1 p.val.2
+  invFun c :=
+    ⟨(isUpperUnitriangular_unitDiagonalMatrixOfEntries P hP c).toGL,
+      (hH _).mpr ⟨by
+        rw [IsUpperUnitriangular.coe_toGL]
+        exact isUpperUnitriangular_unitDiagonalMatrixOfEntries P hP c, fun i j hij hijP => by
+        rw [IsUpperUnitriangular.coe_toGL]
+        exact unitDiagonalMatrixOfEntries_apply_of_notMem P c (ne_of_lt hij) hijP⟩⟩
+  left_inv g := by
+    obtain ⟨hg, hgv⟩ := (hH _).mp g.property
+    have hM := isUpperUnitriangular_unitDiagonalMatrixOfEntries P hP
+      (fun p => ((g : GL ι R) : Matrix ι ι R) p.val.1 p.val.2)
+    have hN : ((hM.toGL : GL ι R) : Matrix ι ι R).IsUpperUnitriangular := by
+      rw [IsUpperUnitriangular.coe_toGL]; exact hM
+    apply Subtype.ext
+    apply Units.ext
+    refine hN.ext hg fun i j hij => ?_
+    by_cases hPij : P (i, j)
+    · rw [IsUpperUnitriangular.coe_toGL,
+        unitDiagonalMatrixOfEntries_apply_of_mem P _ (ne_of_lt hij) hPij]
+    · rw [IsUpperUnitriangular.coe_toGL,
+        unitDiagonalMatrixOfEntries_apply_of_notMem P _ (ne_of_lt hij) hPij, hgv i j hij hPij]
+  right_inv c := by
+    funext p
+    simp only [IsUpperUnitriangular.coe_toGL,
+      unitDiagonalMatrixOfEntries_apply_of_mem P _ (ne_of_lt (hP _ p.property)) p.property]
+
+/-- The coordinates of `g` are its entries at the pairs satisfying `P`. -/
+@[simp]
+theorem unitriangularGroupEquivFunOfSupported_apply (H : Subgroup (GL ι R)) (P : ι × ι → Prop)
+    (hP : ∀ p, P p → p.1 < p.2)
+    (hH : ∀ g : GL ι R, g ∈ H ↔ (g : Matrix ι ι R).IsUpperUnitriangular ∧
+      ∀ i j, i < j → ¬ P (i, j) → (g : Matrix ι ι R) i j = 0) (g : ↥H)
+    (p : {p : ι × ι // P p}) :
+    unitriangularGroupEquivFunOfSupported H P hP hH g p =
+      ((g : GL ι R) : Matrix ι ι R) p.val.1 p.val.2 :=
+  (rfl)
+
+/-- The entries of the element with coordinates `c` are those of the matrix
+`TauCeti.unitDiagonalMatrixOfEntries P c`. -/
+@[simp]
+theorem unitriangularGroupEquivFunOfSupported_symm_apply_coe (H : Subgroup (GL ι R))
+    (P : ι × ι → Prop) (hP : ∀ p, P p → p.1 < p.2)
+    (hH : ∀ g : GL ι R, g ∈ H ↔ (g : Matrix ι ι R).IsUpperUnitriangular ∧
+      ∀ i j, i < j → ¬ P (i, j) → (g : Matrix ι ι R) i j = 0)
+    (c : {p : ι × ι // P p} → R) (i j : ι) :
+    ((unitriangularGroupEquivFunOfSupported H P hP hH).symm c : GL ι R) i j =
+      unitDiagonalMatrixOfEntries P c i j := by
+  have h : ((unitriangularGroupEquivFunOfSupported H P hP hH).symm c : GL ι R) =
+      (isUpperUnitriangular_unitDiagonalMatrixOfEntries P hP c).toGL := (rfl)
+  rw [h, IsUpperUnitriangular.coe_toGL]
+
+/-- `Uₙ(R)` is in bijection with the functions on the pairs `i < j` of indices: an
+upper-unitriangular matrix is determined by its entries strictly above the diagonal, which are
+arbitrary (`TauCeti.upperUnitriangularEntries` and `TauCeti.upperUnitriangularOfEntries`). -/
+noncomputable def upperUnitriangularGroupEquivFun (ι : Type*) [Fintype ι] [LinearOrder ι]
+    (R : Type*) [Ring R] :
+    upperUnitriangularGroup ι R ≃ ({p : ι × ι // p.1 < p.2} → R) :=
+  unitriangularGroupEquivFunOfSupported _ (fun p => p.1 < p.2) (fun _ hp => hp)
+    (fun _ => (UpperUnitriangularGroup.mem_iff).trans
+      ⟨fun hg => ⟨hg, fun _ _ hij hijP => absurd hij hijP⟩, fun hg => hg.1⟩)
+
+/-- The entries strictly above the diagonal of an upper-unitriangular matrix. -/
+noncomputable def upperUnitriangularEntries (g : upperUnitriangularGroup ι R) :
+    {p : ι × ι // p.1 < p.2} → R :=
+  upperUnitriangularGroupEquivFun ι R g
+
+/-- The element of `Uₙ(R)` with prescribed entries strictly above the diagonal. -/
+noncomputable def upperUnitriangularOfEntries (f : {p : ι × ι // p.1 < p.2} → R) :
+    upperUnitriangularGroup ι R :=
+  (upperUnitriangularGroupEquivFun ι R).symm f
+
+@[simp]
+theorem upperUnitriangularGroupEquivFun_apply (g : upperUnitriangularGroup ι R) :
+    upperUnitriangularGroupEquivFun ι R g = upperUnitriangularEntries g := (rfl)
+
+@[simp]
+theorem upperUnitriangularGroupEquivFun_symm_apply (f : {p : ι × ι // p.1 < p.2} → R) :
+    (upperUnitriangularGroupEquivFun ι R).symm f = upperUnitriangularOfEntries f := (rfl)
+
+/-- The entries above the diagonal of an upper-unitriangular matrix, read off the matrix. This is
+deliberately not a `simp` lemma: on `upperUnitriangularOfEntries f`, `simp` evaluates
+`upperUnitriangularEntries` with `upperUnitriangularEntries_upperUnitriangularOfEntries`. -/
+theorem upperUnitriangularEntries_apply (g : upperUnitriangularGroup ι R)
+    (p : {p : ι × ι // p.1 < p.2}) :
+    upperUnitriangularEntries g p = ((g : GL ι R) : Matrix ι ι R) p.val.1 p.val.2 := (rfl)
+
+/-- The matrix of `upperUnitriangularOfEntries f` is
+`TauCeti.unitDiagonalMatrixOfEntries` of `f`. -/
+@[simp]
+theorem coe_upperUnitriangularOfEntries_apply (f : {p : ι × ι // p.1 < p.2} → R) (i j : ι) :
+    ((upperUnitriangularOfEntries f : GL ι R) : Matrix ι ι R) i j =
+      unitDiagonalMatrixOfEntries (fun p : ι × ι => p.1 < p.2) f i j := by
+  rw [upperUnitriangularOfEntries, upperUnitriangularGroupEquivFun,
+    unitriangularGroupEquivFunOfSupported_symm_apply_coe]
+
+/-- The entries above the diagonal of `upperUnitriangularOfEntries f` are `f`. -/
+@[simp]
+theorem upperUnitriangularEntries_upperUnitriangularOfEntries
+    (f : {p : ι × ι // p.1 < p.2} → R) (p : {p : ι × ι // p.1 < p.2}) :
+    upperUnitriangularEntries (upperUnitriangularOfEntries f) p = f p :=
+  congrFun (Equiv.apply_symm_apply (upperUnitriangularGroupEquivFun ι R) f) p
+
+/-- An upper-unitriangular matrix is recovered from its entries above the diagonal. -/
+@[simp]
+theorem upperUnitriangularOfEntries_upperUnitriangularEntries (g : upperUnitriangularGroup ι R) :
+    upperUnitriangularOfEntries (upperUnitriangularEntries g) = g :=
+  Equiv.symm_apply_apply _ g
+
+end Coordinates
 
 end TauCeti
 

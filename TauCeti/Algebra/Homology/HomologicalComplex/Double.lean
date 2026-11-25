@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.Additive
 public import Mathlib.Algebra.Homology.Double
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
+public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 
 /-!
 # Maps of two-term complexes
@@ -17,8 +18,9 @@ For a morphism `g : X₀ ⟶ X₁` and adjacent degrees `i₀ ≠ i₁` of a com
 inclusion of `X₁` in degree `i₁`, the projection onto `X₀` in degree `i₀`, the degreewise
 splitting of the short complex `X₁[i₁] ⟶ (X₀ ⟶ X₁) ⟶ X₀[i₀]` they form, and the map of two-term
 complexes induced by a commutative square. It also compares the two-term complex of `F.map g`
-with the termwise image under a functor `F` of the two-term complex of `g`. Nothing depends on
-the shape `c`.
+with the termwise image under a functor `F` of the two-term complex of `g`, and computes the
+homology of the two-term complex: it is a kernel of `g` in degree `i₀`, a cokernel of `g` in
+degree `i₁`, and zero in every other degree. Nothing depends on the shape `c`.
 
 The structural maps and `HomologicalComplex.doubleMap` need zero morphisms and a zero object; the
 degreewise splitting needs a preadditive category with a zero object.
@@ -35,6 +37,12 @@ degreewise splitting needs a preadditive category with a zero object.
 * `HomologicalComplex.doubleToMapHomologicalComplex`: the comparison `(F X₀ ⟶ F X₁) ⟶ F (X₀ ⟶ X₁)`
   for a functor `F`, compatible with `doubleι₁` and Mathlib's `singleMapHomologicalComplex`
   (`HomologicalComplex.doubleι₁_comp_doubleToMapHomologicalComplex`).
+* `HomologicalComplex.doubleHomologyIso₀` and `HomologicalComplex.doubleHomologyIso₁`: the
+  homology of `X₀ ⟶ X₁` in degree `i₀` is the point of any limit kernel fork of `g`, and in degree
+  `i₁` the point of any colimit cokernel cofork of `g`, compatibly with the inclusion into `X₀`
+  and the projection from `X₁` (`HomologicalComplex.homologyπ_doubleHomologyIso₀_hom_ι` and
+  `HomologicalComplex.π_doubleHomologyIso₁_inv_homologyι`).
+* `HomologicalComplex.isZero_double_homology`: the homology vanishes in every other degree.
 -/
 
 public section
@@ -133,6 +141,101 @@ theorem doubleι₁_doubleMap : doubleι₁ g hi₀₁ h ≫ doubleMap hi₀₁ 
   simp [doubleι₁_f₁, single_map_f_self]
 
 end ZeroMorphisms
+
+section Homology
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasZeroObject C]
+  {X₀ X₁ : C} (g : X₀ ⟶ X₁) {ι : Type*} {c : ComplexShape ι} {i₀ i₁ : ι}
+  (hi₀₁ : c.Rel i₀ i₁) (h : i₀ ≠ i₁)
+
+include h
+
+/-- Every differential of the two-term complex `X₀ ⟶ X₁` into degree `i₀` vanishes. -/
+theorem double_d_to₀_eq_zero (k : ι) : (double g hi₀₁).d k i₀ = 0 := by
+  by_cases hk : k = i₀
+  · subst hk
+    exact double_d_eq_zero₁ g hi₀₁ _ _ h
+  · exact double_d_eq_zero₀ g hi₀₁ _ _ hk
+
+/-- Every differential of the two-term complex `X₀ ⟶ X₁` out of degree `i₁` vanishes. -/
+theorem double_d_from₁_eq_zero (k : ι) : (double g hi₀₁).d i₁ k = 0 :=
+  double_d_eq_zero₀ g hi₀₁ _ _ h.symm
+
+/-- The cycles of the two-term complex `X₀ ⟶ X₁` in degree `i₀`, with their inclusion into `X₀`,
+are a kernel of `g`. -/
+noncomputable def doubleCyclesIsKernel [(double g hi₀₁).HasHomology i₀] :
+    IsLimit (KernelFork.ofι (f := g) ((double g hi₀₁).iCycles i₀ ≫ (doubleXIso₀ g hi₀₁).hom)
+      (by simpa [double_d g hi₀₁ h] using
+        (double g hi₀₁).iCycles_d i₀ i₁ =≫ (doubleXIso₁ g hi₀₁ h).hom)) :=
+  KernelFork.isLimitOfIsLimitOfIff ((double g hi₀₁).cyclesIsKernel i₀ i₁ (c.next_eq' hi₀₁)) g
+    (doubleXIso₀ g hi₀₁) fun W φ ↦ by
+      rw [double_d g hi₀₁ h]
+      refine ⟨fun H ↦ by simpa using H =≫ (doubleXIso₁ g hi₀₁ h).hom, fun H ↦ ?_⟩
+      simp [reassoc_of% H]
+
+/-- The opcycles of the two-term complex `X₀ ⟶ X₁` in degree `i₁`, with their projection from
+`X₁`, are a cokernel of `g`. -/
+noncomputable def doubleOpcyclesIsCokernel [(double g hi₀₁).HasHomology i₁] :
+    IsColimit (CokernelCofork.ofπ (f := g)
+      ((doubleXIso₁ g hi₀₁ h).inv ≫ (double g hi₀₁).pOpcycles i₁)
+      (by simpa [double_d g hi₀₁ h] using
+        (doubleXIso₀ g hi₀₁).inv ≫= (double g hi₀₁).d_pOpcycles i₀ i₁)) :=
+  -- `HomologicalComplex.opcyclesIsCokernel` also asks for homology in degree `i₀`, so this uses
+  -- the cokernel property of the short complex in degree `i₁`, whose source is `c.prev i₁ = i₀`.
+  CokernelCofork.isColimitOfIsColimitOfIff ((double g hi₀₁).sc i₁).opcyclesIsCokernel g
+    (doubleXIso₁ g hi₀₁ h).symm fun W φ ↦ by
+      obtain rfl := c.prev_eq' hi₀₁
+      dsimp
+      rw [double_d g hi₀₁ h]
+      refine ⟨fun H ↦ by simpa using (doubleXIso₀ g hi₀₁).inv ≫= H, fun H ↦ ?_⟩
+      rw [Category.assoc, Category.assoc, H, comp_zero]
+
+omit h
+
+variable {g hi₀₁}
+
+/-- The homology in degree `i₀` of the two-term complex `X₀ ⟶ X₁` is the kernel of `g`. -/
+noncomputable def doubleHomologyIso₀ [(double g hi₀₁).HasHomology i₀] (h : i₀ ≠ i₁)
+    {kf : KernelFork g} (hkf : IsLimit kf) : (double g hi₀₁).homology i₀ ≅ kf.pt :=
+  ((double g hi₀₁).isoHomologyπ (c.prev i₀) i₀ rfl (double_d_to₀_eq_zero g hi₀₁ h _)).symm ≪≫
+    IsLimit.conePointUniqueUpToIso (doubleCyclesIsKernel g hi₀₁ h) hkf
+
+/-- The homology in degree `i₁` of the two-term complex `X₀ ⟶ X₁` is the cokernel of `g`. -/
+noncomputable def doubleHomologyIso₁ [(double g hi₀₁).HasHomology i₁] (h : i₀ ≠ i₁)
+    {cc : CokernelCofork g} (hcc : IsColimit cc) : (double g hi₀₁).homology i₁ ≅ cc.pt :=
+  (double g hi₀₁).isoHomologyι i₁ (c.next i₁) rfl (double_d_from₁_eq_zero g hi₀₁ h _) ≪≫
+    IsColimit.coconePointUniqueUpToIso (doubleOpcyclesIsCokernel g hi₀₁ h) hcc
+
+/-- Under `doubleHomologyIso₀`, the inclusion of the kernel of `g` into `X₀` is the inclusion of
+the cycles in degree `i₀`. -/
+@[reassoc (attr := simp)]
+theorem homologyπ_doubleHomologyIso₀_hom_ι [(double g hi₀₁).HasHomology i₀] (h : i₀ ≠ i₁)
+    {kf : KernelFork g} (hkf : IsLimit kf) :
+    (double g hi₀₁).homologyπ i₀ ≫ (doubleHomologyIso₀ h hkf).hom ≫ kf.ι =
+      (double g hi₀₁).iCycles i₀ ≫ (doubleXIso₀ g hi₀₁).hom := by
+  rw [doubleHomologyIso₀, Iso.trans_hom, Iso.symm_hom, Category.assoc,
+    isoHomologyπ_hom_inv_id_assoc]
+  exact IsLimit.conePointUniqueUpToIso_hom_comp _ _ WalkingParallelPair.zero
+
+/-- Under `doubleHomologyIso₁`, the projection of `X₁` onto the cokernel of `g` is the projection
+onto the opcycles in degree `i₁`. -/
+@[reassoc (attr := simp)]
+theorem π_doubleHomologyIso₁_inv_homologyι [(double g hi₀₁).HasHomology i₁] (h : i₀ ≠ i₁)
+    {cc : CokernelCofork g} (hcc : IsColimit cc) :
+    cc.π ≫ (doubleHomologyIso₁ h hcc).inv ≫ (double g hi₀₁).homologyι i₁ =
+      (doubleXIso₁ g hi₀₁ h).inv ≫ (double g hi₀₁).pOpcycles i₁ := by
+  rw [doubleHomologyIso₁, Iso.trans_inv, Category.assoc, isoHomologyι_inv_hom_id,
+    Category.comp_id]
+  exact IsColimit.comp_coconePointUniqueUpToIso_inv _ _ WalkingParallelPair.one
+
+variable (g hi₀₁) in
+/-- The homology of the two-term complex `X₀ ⟶ X₁` vanishes outside degrees `i₀` and `i₁`. -/
+theorem isZero_double_homology (k : ι) [(double g hi₀₁).HasHomology k] (h₀ : k ≠ i₀)
+    (h₁ : k ≠ i₁) : IsZero ((double g hi₀₁).homology k) :=
+  ((double g hi₀₁).exactAt_iff_isZero_homology k).mp
+    (ExactAt.of_isZero (isZero_double_X g hi₀₁ k h₀ h₁))
+
+end Homology
 
 section Functor
 
