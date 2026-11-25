@@ -16,8 +16,8 @@ For a preconnected commutative Lie group `G` the exponential gives a short exact
 nonzero integer is bijective on the real vector space `𝔤`, so the Tate module of a cokernel
 (`TauCeti.tateModuleδEquiv`) identifies the `p`-adic Tate module of `G` with the `p`-adic
 completion `lim Λ ⧸ pⁿΛ` of `Λ`. A compatible family of points `exp(λₙ / pⁿ)` goes to the family
-of classes of the `λₙ`. The lattice `Λ` is discrete in `𝔤`, hence finitely generated, so for prime
-`p` the Tate module is `ℤ_[p] ⊗ Λ` as a `ℤ_[p]`-module (`TauCeti.tateModuleδPadicEquiv`).
+of classes of the `λₙ`. The lattice `Λ` is finitely generated (`TauCeti.finite_lieExpLattice`), so
+for prime `p` the Tate module is `ℤ_[p] ⊗ Λ` as a `ℤ_[p]`-module (`TauCeti.tateModuleδPadicEquiv`).
 
 These are the inverse limits of the level-`n` torsion isomorphisms `TauCeti.lieExpTorsionEquiv`.
 
@@ -52,29 +52,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G]
-  [IsMulCommutative G]
-
-/-- The sequence `0 → Λ → 𝔤 → G` of the exponential is exact at `𝔤`. -/
-theorem exact_subtype_lieExpLattice :
-    Function.Exact (lieExpLattice (I := I) (G := G)).subtype
-      (lieExpAddMonoidHom (I := I) (G := G)).toIntLinearMap :=
-  LinearMap.exact_subtype_ker_map _
-
-omit [FiniteDimensional ℝ E] [T2Space G] [BoundarylessManifold I G] [IsMulCommutative G] in
-/-- Multiplication by a nonzero integer is bijective on the Lie algebra. -/
-theorem bijective_zsmul_leftInvariantDerivation {n : ℤ} (hn : n ≠ 0) :
-    Function.Bijective fun X : LeftInvariantDerivation I G ↦ n • X := by
-  simpa only [← Int.cast_smul_eq_zsmul ℝ] using
-    (Int.cast_ne_zero.mpr hn).isUnit.smul_bijective (β := LeftInvariantDerivation I G)
-
-variable [PreconnectedSpace G] (p : ℕ)
-
-/-- The exponential homomorphism of a preconnected commutative Lie group is surjective, as a
-`ℤ`-linear map. -/
-theorem surjective_toIntLinearMap_lieExpAddMonoidHom :
-    Function.Surjective (lieExpAddMonoidHom (I := I) (G := G)).toIntLinearMap := by
-  simpa only [Function.Surjective, AddMonoidHom.coe_toIntLinearMap] using
-    lieExpAddMonoidHom_surjective_of_preconnectedSpace (I := I) (G := G)
+  [IsMulCommutative G] [PreconnectedSpace G] (p : ℕ)
 
 variable (I G) in
 /-- **The Tate module of a preconnected commutative Lie group is the `p`-adic completion of its
@@ -84,7 +62,7 @@ def lieExpTateModuleEquiv (hp : p ≠ 0) :
       AdicCompletion (Ideal.span {(p : ℤ)}) (lieExpLattice (I := I) (G := G)) :=
   tateModuleδEquiv p exact_subtype_lieExpLattice (lieExpLattice (I := I) (G := G)).injective_subtype
     surjective_toIntLinearMap_lieExpAddMonoidHom
-    (bijective_zsmul_leftInvariantDerivation (Int.natCast_ne_zero.mpr hp))
+    (bijective_zsmul_of_ne_zero ℝ (Int.natCast_ne_zero.mpr hp))
 
 /-- **The components of the Tate-module isomorphism**: if `exp X` is the `n`-th level of `x` and
 `pⁿ X = λ ∈ Λ`, then the `n`-th component of the image of `x` is the class of `λ`. -/
@@ -118,7 +96,7 @@ theorem proj_lieExpTateModuleEquiv_symm (hp : p ≠ 0)
       (by rw [AddMonoidHom.coe_toIntLinearMap, lieExpAddMonoidHom_apply]) hl
   have hinj := (bijective_tateModuleLevelδ p exact_subtype_lieExpLattice
     (lieExpLattice (I := I) (G := G)).injective_subtype surjective_toIntLinearMap_lieExpAddMonoidHom
-    (bijective_zsmul_leftInvariantDerivation (Int.natCast_ne_zero.mpr hp)) n).1
+    (bijective_zsmul_of_ne_zero ℝ (Int.natCast_ne_zero.mpr hp)) n).1
   rw [← hc] at hy
   rw [lieExpTateModuleEquiv, hinj ((tateModuleLevelδ_proj_tateModuleδEquiv_symm p _ _ _ _ c n).trans
     hy.symm)]
@@ -132,23 +110,7 @@ variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G]
-  [IsMulCommutative G]
-
-/-- The exponential lattice is discrete in the Lie algebra. -/
-local instance : DiscreteTopology (lieExpLattice (I := I) (G := G)) :=
-  inferInstanceAs (DiscreteTopology (lieExpAddMonoidHom (I := I) (G := G)).ker)
-
-/-- The Lie algebra is finite-dimensional. -/
-local instance : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
-  finiteDimensional_leftInvariantDerivation
-    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
-
-/-- The exponential lattice of a commutative Lie group is finitely generated, being discrete in
-the finite-dimensional Lie algebra. -/
-instance finite_lieExpLattice : Module.Finite ℤ (lieExpLattice (I := I) (G := G)) :=
-  instModuleFinite_of_discrete_submodule _
-
-variable [PreconnectedSpace G] (p : ℕ) [Fact p.Prime]
+  [IsMulCommutative G] [PreconnectedSpace G] (p : ℕ) [Fact p.Prime]
 
 variable (I G) in
 /-- **The Tate module of a preconnected commutative Lie group is `ℤ_[p] ⊗ Λ`**, as a
@@ -158,7 +120,7 @@ def lieExpTateModulePadicEquiv :
   tateModuleδPadicEquiv p exact_subtype_lieExpLattice
     (lieExpLattice (I := I) (G := G)).injective_subtype
     surjective_toIntLinearMap_lieExpAddMonoidHom
-    (bijective_zsmul_leftInvariantDerivation (Int.natCast_ne_zero.mpr (Fact.out : p.Prime).ne_zero))
+    (bijective_zsmul_of_ne_zero ℝ (Int.natCast_ne_zero.mpr (Fact.out : p.Prime).ne_zero))
 
 /-- `PadicInt.tensorAdicCompletionEquiv` turns the `ℤ_[p] ⊗ Λ` form into the `p`-adic completion
 form `TauCeti.lieExpTateModuleEquiv`. -/

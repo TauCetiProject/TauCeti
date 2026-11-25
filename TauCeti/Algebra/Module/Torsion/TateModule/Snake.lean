@@ -219,7 +219,7 @@ theorem tateModuleδ_smul (a : ℤ_[p]) (x : TateModule p M₃) :
   obtain ⟨z, hz⟩ := Submodule.Quotient.mk_surjective _
     (tateModuleLevelδ p hfg hf hg n (TateModule.proj n x))
   rw [← hz, ← map_intCast (Ideal.Quotient.mk (Ideal.span {(p : ℤ)} ^ n))]
-  rfl
+  exact AdicCompletion.mk_smul_mk _ _ _
 
 end Padic
 

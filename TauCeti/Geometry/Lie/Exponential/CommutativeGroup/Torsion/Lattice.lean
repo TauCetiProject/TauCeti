@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
 public import TauCeti.Algebra.Module.Torsion.Snake
+public import TauCeti.Algebra.Module.Rat
 
 /-!
 # Torsion of a commutative Lie group and its exponential lattice
@@ -23,6 +24,8 @@ torsion corresponds to reduction of lattice classes from `Λ ⧸ mkΛ` to `Λ �
 
 ## Main results
 
+* `TauCeti.exact_subtype_lieExpLattice`, `TauCeti.surjective_toIntLinearMap_lieExpAddMonoidHom`:
+  `0 → Λ → 𝔤 → G → 0` is exact.
 * `TauCeti.lieExpTorsionEquiv`: the elements of `G` killed by `n ≠ 0` are `Λ ⧸ nΛ`.
 * `TauCeti.lieExpTorsionEquiv_symm_mk`: the inverse sends `[λ]` to `exp(λ / n)`.
 * `TauCeti.lieExpTorsionEquiv_apply_eq_factor_of_eq_smul`: multiplication by `m` on torsion is
@@ -49,6 +52,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
+/-- The sequence `0 → Λ → 𝔤 → G` of the exponential is exact at `𝔤`. -/
+theorem exact_subtype_lieExpLattice :
+    Function.Exact (lieExpLattice (I := I) (G := G)).subtype
+      (lieExpAddMonoidHom (I := I) (G := G)).toIntLinearMap :=
+  LinearMap.exact_subtype_ker_map _
+
 /-- The element `exp(λ / n)` is killed by `n`, for `λ ∈ Λ`. -/
 theorem lieExp_inv_smul_mem_torsionBy (n : ℤ) (hn : n ≠ 0) (l : lieExpLattice (I := I) (G := G)) :
     Additive.ofMul (lieExp ((n : ℝ)⁻¹ • (l : LeftInvariantDerivation I G))) ∈
@@ -59,6 +68,13 @@ theorem lieExp_inv_smul_mem_torsionBy (n : ℤ) (hn : n ≠ 0) (l : lieExpLattic
 
 variable [PreconnectedSpace G]
 
+/-- The exponential homomorphism of a preconnected commutative Lie group is surjective, as a
+`ℤ`-linear map. -/
+theorem surjective_toIntLinearMap_lieExpAddMonoidHom :
+    Function.Surjective (lieExpAddMonoidHom (I := I) (G := G)).toIntLinearMap := by
+  simpa only [Function.Surjective, AddMonoidHom.coe_toIntLinearMap] using
+    lieExpAddMonoidHom_surjective_of_preconnectedSpace (I := I) (G := G)
+
 variable (I G) in
 /-- **The `n`-torsion of a preconnected commutative Lie group is `Λ ⧸ nΛ`**, for `n ≠ 0`,
 where `Λ` is the kernel of the exponential. It is the connecting isomorphism of multiplication by
@@ -66,14 +82,8 @@ where `Λ` is the kernel of the exponential. It is the connecting isomorphism of
 (`TauCeti.lieExpTorsionEquiv_symm_mk`). -/
 def lieExpTorsionEquiv (n : ℤ) (hn : n ≠ 0) :
     Submodule.torsionBy ℤ (Additive G) n ≃ₗ[ℤ] QuotSMulTop n (lieExpLattice (I := I) (G := G)) :=
-  -- `show` states the exactness with `Λ` itself, rather than `LinearMap.ker`, as the kernel
-  torsionByδEquiv n (show Function.Exact (lieExpLattice (I := I) (G := G)).subtype
-      (lieExpAddMonoidHom (I := I) (G := G)).toIntLinearMap from LinearMap.exact_subtype_ker_map _)
-    (lieExpLattice (I := I) (G := G)).injective_subtype
-    (by simpa only [Function.Surjective, AddMonoidHom.coe_toIntLinearMap] using
-      lieExpAddMonoidHom_surjective_of_preconnectedSpace (I := I) (G := G)) <| by
-      simpa only [← Int.cast_smul_eq_zsmul ℝ] using
-        (Int.cast_ne_zero.mpr hn).isUnit.smul_bijective (β := LeftInvariantDerivation I G)
+  torsionByδEquiv n exact_subtype_lieExpLattice (lieExpLattice (I := I) (G := G)).injective_subtype
+    surjective_toIntLinearMap_lieExpAddMonoidHom (bijective_zsmul_of_ne_zero ℝ hn)
 
 /-- **The characterization of the torsion isomorphism**: if `exp X = x` and `n • X = λ ∈ Λ`, then
 `x` corresponds to the class of `λ`. -/
