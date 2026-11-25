@@ -17,7 +17,8 @@ This is the existence statement behind such constructions, with the recursion it
 runs along the transitive closure of `r`, so `r` need not be transitive.
 
 Dually, a nonempty finite set has an element that is `r`-related to no element of the set, the
-starting point of a descent that removes such elements one at a time.
+starting point of a descent that removes such elements one at a time. For a transitive `r`, every
+element is minimal or lies above a minimal element.
 
 ## Main results
 
@@ -26,6 +27,8 @@ starting point of a descent that removes such elements one at a time.
   values everywhere.
 * `WellFounded.exists_mem_forall_not_rel`: a nonempty finite set has an element `a` with `r a b`
   for no `b` in the set.
+* `WellFounded.exists_minimal_eq_or_rel`: for a transitive `r`, every element is `r`-minimal or
+  lies above an `r`-minimal element.
 -/
 
 public section
@@ -81,5 +84,17 @@ theorem exists_mem_forall_not_rel {α : Type u} {r : α → α → Prop} (hr : W
   obtain ⟨a, -, ha⟩ := (Finite.wellFounded_of_trans_of_irrefl rel).has_min Set.univ
     ⟨⟨hne.some, hne.some_mem⟩, Set.mem_univ _⟩
   exact ⟨a.val, a.property, fun b hb hab ↦ ha ⟨b, hb⟩ (Set.mem_univ _) (.single hab)⟩
+
+/-- **Minimal elements below a given one.** For a transitive well-founded relation `r`, every
+element `a` is `r`-minimal or lies above an `r`-minimal element `b`, that is `r b a`.
+Transitivity is needed: if `r` relates only `0` to `1` and `1` to `2`, the only `r`-minimal
+element `0` is neither `2` nor related to `2`. -/
+theorem exists_minimal_eq_or_rel {α : Type u} {r : α → α → Prop} (hr : WellFounded r)
+    (htrans : ∀ {a b c}, r a b → r b c → r a c) (a : α) :
+    ∃ b, (∀ c, ¬r c b) ∧ (b = a ∨ r b a) := by
+  obtain ⟨b, hb, hmin⟩ := hr.has_min {b | b = a ∨ r b a} ⟨a, .inl rfl⟩
+  refine ⟨b, fun c h ↦ hmin c ?_ h, hb⟩
+  rcases hb with rfl | hb
+  exacts [.inr h, .inr (htrans h hb)]
 
 end WellFounded
