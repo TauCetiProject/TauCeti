@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Module.Completion
 public import TauCeti.Analysis.CStarAlgebra.Module.TensorProduct.Basic
-public import TauCeti.Analysis.CStarAlgebra.Module.Unitary
+
+import TauCeti.Topology.Algebra.Module.Span
 
 /-!
 # The Hilbert C⋆-module tensor product of a Hilbert space with a C⋆-algebra
@@ -15,9 +16,10 @@ public import TauCeti.Analysis.CStarAlgebra.Module.Unitary
 `HilbertModuleTensorProduct H A` completes the complex algebraic tensor product of an inner
 product space `H` and a possibly nonunital C⋆-algebra `A` in the `A`-valued inner-product norm.
 The right action and inner product on pure tensors compute on the coefficient factor. The pure
-tensors span a dense subspace, and bounded linear maps out of the completion are determined by
-their values on these tensors. A finite orthonormal basis of `H` identifies the completed tensor
-product unitarily with the corresponding finite orthogonal sum of copies of `A`.
+tensors span a dense subspace, and continuous complex-linear maps into a Hausdorff codomain are
+determined by their values on these tensors. Bounded bilinear data extend to continuous linear
+maps, and
+isometries of the Hilbert-space factor induce inner-product-preserving linear isometries.
 
 ## References
 
@@ -45,10 +47,14 @@ namespace HilbertModuleTensorProduct
 private noncomputable def toCompletionLinear : H ⊗[ℂ] A →ₗ[ℂ] HilbertModuleTensorProduct H A :=
   Completion.toComplL.toLinearMap ∘ₗ (WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ _).symm.toLinearMap
 
-private theorem denseRange_toCompletionLinear : DenseRange (toCompletionLinear H A) :=
-  Completion.denseRange_coe.comp
-    (WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ _).symm.surjective.denseRange
-    (Completion.continuous_coe _)
+private theorem toCompletionLinear_tmul (ξ : H) (a : A) :
+    toCompletionLinear H A (ξ ⊗ₜ[ℂ] a) =
+      (WithCStarModule.tensorTmul A ξ a : HilbertModuleTensorProduct H A) := by
+  simp only [toCompletionLinear, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
+    Completion.coe_toComplL]
+  congr 1
+  apply (WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ _).injective
+  simp
 
 /-- The canonical complex bilinear map into the completed Hilbert module tensor product. -/
 noncomputable def mk : H →ₗ[ℂ] A →ₗ[ℂ] HilbertModuleTensorProduct H A :=
@@ -59,8 +65,8 @@ variable {H A}
 /-- A pure tensor in the completed module is the image of the corresponding algebraic tensor. -/
 theorem mk_apply (ξ : H) (a : A) : mk H A ξ a =
     (WithCStarModule.tensorTmul A ξ a : HilbertModuleTensorProduct H A) := by
-  rw [WithCStarModule.tensorTmul_eq]
-  rfl
+  simpa only [mk, LinearMap.compr₂_apply, TensorProduct.mk_apply] using
+    toCompletionLinear_tmul H A ξ a
 
 /-- The inner product of two completed pure tensors in the opposite-algebra convention. -/
 @[simp] theorem inner_mk (ξ η : H) (a b : A) :
@@ -75,83 +81,119 @@ theorem mk_apply (ξ : H) (a : A) : mk H A ξ a =
 
 /-- The norm of a pure tensor is the product of the norms of its two factors. -/
 @[simp] theorem norm_mk (ξ : H) (a : A) : ‖mk H A ξ a‖ = ‖ξ‖ * ‖a‖ := by
-  apply (sq_eq_sq₀ (norm_nonneg _) (mul_nonneg (norm_nonneg _) (norm_nonneg _))).mp
-  have hξ : ‖inner ℂ ξ ξ‖ = ‖ξ‖ ^ 2 := by
-    rw [inner_self_eq_norm_sq_to_K, norm_pow, RCLike.norm_ofReal, abs_of_nonneg (norm_nonneg ξ)]
-  rw [CStarModule.norm_sq_eq Aᵐᵒᵖ, inner_mk, norm_op, norm_smul, hξ,
-    CStarRing.norm_star_mul_self, ← sq, mul_pow]
+  rw [mk_apply, Completion.norm_coe, WithCStarModule.norm_tensorTmul]
 
 /-- The complex span of the pure tensors is dense in the completed module. -/
 theorem dense_span_range_mk :
     Dense (Submodule.span ℂ (Set.range fun p : H × A ↦ mk H A p.1 p.2) :
       Set (HilbertModuleTensorProduct H A)) := by
-  have hspan : Submodule.span ℂ (Set.range fun p : H × A ↦ mk H A p.1 p.2) =
-      (toCompletionLinear H A).range := by
-    rw [← Submodule.map_top, ← TensorProduct.span_tmul_eq_top ℂ H A, Submodule.map_span]
-    congr 1
-    ext z
-    simp [mk]
-  rw [hspan, LinearMap.coe_range]
-  exact denseRange_toCompletionLinear H A
+  let e := (WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ (H ⊗[ℂ] A)).symm
+  have hspan : Submodule.span ℂ
+      (Set.range fun p : H × A ↦ e (p.1 ⊗ₜ[ℂ] p.2)) = ⊤ := by
+    have hraw : Submodule.span ℂ
+        (Set.range fun p : H × A ↦ p.1 ⊗ₜ[ℂ] p.2) = ⊤ := by
+      have hset : (Set.range fun p : H × A ↦ p.1 ⊗ₜ[ℂ] p.2) =
+          {t : H ⊗[ℂ] A | ∃ ξ a, ξ ⊗ₜ[ℂ] a = t} := by
+        ext z
+        simp only [Set.mem_range, Set.mem_ofPred_eq, Prod.exists]
+      rw [hset, TensorProduct.span_tmul_eq_top]
+    rw [show (fun p : H × A ↦ e (p.1 ⊗ₜ[ℂ] p.2)) =
+      e.toLinearMap ∘ (fun p : H × A ↦ p.1 ⊗ₜ[ℂ] p.2) from rfl,
+      Set.range_comp, ← Submodule.map_span, hraw, Submodule.map_top, LinearEquiv.range]
+  have hd : DenseRange
+      (Completion.toComplL : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A) →L[ℂ]
+        HilbertModuleTensorProduct H A).toLinearMap := Completion.denseRange_coe
+  have hv : Dense (Submodule.span ℂ
+      (Set.range fun p : H × A ↦ e (p.1 ⊗ₜ[ℂ] p.2)) :
+        Set C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A)) := by
+    rw [hspan]
+    exact dense_univ
+  exact hd.dense_span_range_comp (Completion.continuous_coe _) hv
 
 /-- Continuous linear maps from the completed module agree if they agree on pure tensors. -/
 @[ext] theorem ext {F : Type*} [AddCommMonoid F] [Module ℂ F] [TopologicalSpace F] [T2Space F]
     {f g : HilbertModuleTensorProduct H A →L[ℂ] F}
     (h : ∀ (ξ : H) (a : A), f (mk H A ξ a) = g (mk H A ξ a)) : f = g := by
-  have heq : f.toLinearMap ∘ₗ toCompletionLinear H A = g.toLinearMap ∘ₗ toCompletionLinear H A :=
-    TensorProduct.ext' h
-  exact DFunLike.coe_injective <| (denseRange_toCompletionLinear H A).equalizer
-    f.continuous g.continuous (funext (LinearMap.congr_fun heq))
+  apply ContinuousLinearMap.ext_on dense_span_range_mk
+  rintro _ ⟨⟨ξ, a⟩, rfl⟩
+  exact h ξ a
 
-section Finite
+section Lift
 
-variable {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι ℂ H)
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+  (f : H →ₗ[ℂ] A →ₗ[ℂ] F) (C : ℝ)
+  (hbound : ∀ x : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A),
+    ‖TensorProduct.lift f (WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ _ x)‖ ≤ C * ‖x‖)
 
-private noncomputable def finiteCoordinates :
-    C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A) ≃ₗ[ℂ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) :=
-  (WithCStarModule.tensorCoordinates e).trans (WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ _).symm
+/-- A bilinear map whose algebraic linearization is bounded for the tensor-module norm extends
+uniquely to the completed tensor product. -/
+noncomputable def lift : HilbertModuleTensorProduct H A →L[ℂ] F :=
+  ((TensorProduct.lift f ∘ₗ (WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ _).toLinearMap).mkContinuous
+    C hbound).fromCompletion
 
-private theorem finiteCoordinates_inner (x y : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A)) :
-    inner Aᵐᵒᵖ (finiteCoordinates e x) (finiteCoordinates e y) = inner Aᵐᵒᵖ x y := by
-  apply unop_injective
-  rw [WithCStarModule.pi_inner, WithCStarModule.unop_inner_tensor_eq_sum e]
-  simp [finiteCoordinates, CStarModule.inner_mulOpposite]
-
-/-- A finite orthonormal basis identifies `H ⊗ A` unitarily with the orthogonal sum of copies
-of the right self-module `A`, with one copy for each basis vector. -/
-noncomputable def unitaryOfOrthonormalBasis :
-    CStarModuleUnitary Aᵐᵒᵖ (HilbertModuleTensorProduct H A) C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) := by
-  let f := (finiteCoordinates (A := A) e).toLinearMap
-  have h := finiteCoordinates_inner (A := A) e
-  have hd : DenseRange f := (finiteCoordinates (A := A) e).surjective.denseRange
-  exact ⟨IsPosSemidefCStarModuleAlong.equivOfInner (.id ℂ Aᵐᵒᵖ) f h hd,
-    IsPosSemidefCStarModuleAlong.inner_equivOfInner_id f h hd⟩
-
-/-- On a pure tensor, the coordinate unitary multiplies its coefficient by each Fourier
-coordinate of its Hilbert-space factor. -/
-@[simp] theorem unitaryOfOrthonormalBasis_mk (ξ : H) (a : A) (i : ι) :
-    unitaryOfOrthonormalBasis (A := A) e (mk H A ξ a) i = e.repr ξ i • a := by
+/-- The extension of bounded bilinear data computes on pure tensors. -/
+@[simp] theorem lift_mk (ξ : H) (a : A) : lift f C hbound (mk H A ξ a) = f ξ a := by
   rw [mk_apply]
-  simp [unitaryOfOrthonormalBasis, finiteCoordinates]
+  simp only [lift, ContinuousLinearMap.fromCompletion_apply_coe, LinearMap.mkContinuous_apply,
+    LinearMap.comp_apply, LinearEquiv.coe_coe, WithCStarModule.linearEquiv_tensorTmul,
+    TensorProduct.lift.tmul]
 
-/-- The inverse coordinate unitary sums the pure tensors of basis vectors with their
-corresponding coefficients. -/
-theorem unitaryOfOrthonormalBasis_symm_apply (a : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) :
-    (unitaryOfOrthonormalBasis (A := A) e).symm a = ∑ i, mk H A (e i) (a i) := by
-  have h : (unitaryOfOrthonormalBasis (A := A) e).symm a =
-      ((finiteCoordinates (A := A) e).symm a : HilbertModuleTensorProduct H A) := by
-    apply EquivLike.injective (unitaryOfOrthonormalBasis (A := A) e)
-    simp [unitaryOfOrthonormalBasis]
-  have hc : (finiteCoordinates (A := A) e).symm a =
-      ∑ i, WithCStarModule.tensorTmul A (e i) (a i) := by
-    simpa [finiteCoordinates] using WithCStarModule.tensorCoordinates_symm_apply e
-      (WithCStarModule.equiv Aᵐᵒᵖ (ι → A) a)
-  rw [h, hc]
-  simpa only [Completion.coe_toComplL, mk_apply] using
-    map_sum (Completion.toComplL : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A) →L[ℂ] HilbertModuleTensorProduct H A)
-      (fun i ↦ WithCStarModule.tensorTmul A (e i) (a i)) Finset.univ
+/-- Agreement with the bilinear data on pure tensors characterizes the extension. -/
+theorem lift_unique (g : HilbertModuleTensorProduct H A →L[ℂ] F)
+    (h : ∀ ξ a, g (mk H A ξ a) = f ξ a) : g = lift f C hbound := by
+  apply ext
+  intro ξ a
+  rw [h, lift_mk]
 
-end Finite
+end Lift
+
+section MapIsometry
+
+variable {K : Type*} [NormedAddCommGroup K] [InnerProductSpace ℂ K]
+  (f : H →ₗᵢ[ℂ] K)
+
+private noncomputable def mapToCompletion :
+    C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A) →ₗ[ℂ] HilbertModuleTensorProduct K A :=
+  toCompletionLinear K A ∘ₗ TensorProduct.map f.toLinearMap LinearMap.id ∘ₗ
+    (WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ _).toLinearMap
+
+private theorem inner_mapToCompletion (x y : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A)) :
+    inner Aᵐᵒᵖ (mapToCompletion (A := A) f x) (mapToCompletion (A := A) f y) =
+      inner Aᵐᵒᵖ x y := by
+  simp only [mapToCompletion, toCompletionLinear, LinearMap.comp_apply,
+    ContinuousLinearMap.coe_coe, Completion.coe_toComplL,
+    PosSemidefCStarModule.inner_coe]
+  apply unop_injective
+  rw [WithCStarModule.unop_inner_tensor_eq_tensorPairing,
+    WithCStarModule.unop_inner_tensor_eq_tensorPairing]
+  simpa only [LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using
+    tensorPairing_map_map f (WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ _ x)
+      (WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ _ y)
+
+/-- An isometry of the Hilbert-space factor induces a linear isometry of completed tensor
+products. It also preserves their coefficient-algebra-valued inner product. -/
+noncomputable def mapIsometry :
+    HilbertModuleTensorProduct H A →ₗᵢ[ℂ] HilbertModuleTensorProduct K A :=
+  IsPosSemidefCStarModuleAlong.liftOfInner (.id ℂ Aᵐᵒᵖ)
+    (mapToCompletion f) (inner_mapToCompletion f)
+
+/-- Tensoring an isometry acts on the Hilbert-space factor of pure tensors. -/
+@[simp] theorem mapIsometry_mk (ξ : H) (a : A) :
+    mapIsometry (A := A) f (mk H A ξ a) = mk K A (f ξ) a := by
+  rw [mk_apply]
+  simp only [mapIsometry, IsPosSemidefCStarModuleAlong.liftOfInner_coe,
+    mapToCompletion, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    WithCStarModule.linearEquiv_tensorTmul, TensorProduct.map_tmul, LinearMap.id_apply,
+    LinearIsometry.coe_toLinearMap]
+  exact (toCompletionLinear_tmul K A (f ξ) a).trans (mk_apply (f ξ) a).symm
+
+/-- Tensoring an isometry preserves the coefficient-algebra-valued inner product. -/
+@[simp] theorem inner_mapIsometry (x y : HilbertModuleTensorProduct H A) :
+    inner Aᵐᵒᵖ (mapIsometry (A := A) f x) (mapIsometry (A := A) f y) = inner Aᵐᵒᵖ x y :=
+  IsPosSemidefCStarModuleAlong.inner_liftOfInner_id
+    (mapToCompletion f) (inner_mapToCompletion f) x y
+
+end MapIsometry
 
 end HilbertModuleTensorProduct
 
