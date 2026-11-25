@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Idempote
 public import TauCeti.RingTheory.GrothendieckRing
 
 /-!
-# Projective `K₀` of a product of rings and of the zero ring
+# Projective `K₀` of a product of rings
 
 Projective `K₀` turns finite products of rings into products of groups:
 
@@ -30,8 +30,8 @@ module `e.map Prod.fst` presents is the extension of scalars of `eRⁿ` along th
 and similarly for the second. In particular the free module of rank one goes to the pair of free
 modules of rank one.
 
-Over the zero ring every matrix is zero, so the idempotent monoid is trivial and `K₀(0) = 0`; this
-is the empty case of the product formula.
+The zero-ring value `K₀(0) = 0`, the empty case of the product formula, is the instance
+`TauCeti.FiniteProjectiveModules.subsingleton_splitK0` applied to `Rᵐᵒᵖ`.
 
 ## Main definitions
 
@@ -46,13 +46,11 @@ is the empty case of the product formula.
 * `TauCeti.KZero.prodEquiv_kZeroEquiv_of_mk`, `TauCeti.KZero.prodEquiv_symm_kZeroEquiv_of_mk`:
   the same formulas on the classes `[eRⁿ]` in `K₀`.
 * `TauCeti.KZero.prodEquiv_of_finiteProjectiveModulesRegular`: `[R × S] ↦ ([R], [S])`.
-* `TauCeti.KZero.instSubsingleton`: the projective `K₀` of the zero ring is trivial, from the
-  instance `Unique (TauCeti.IdempotentMonoid A)` for a trivial `A`.
 
 ## References
 
 * C. Weibel, *The K-book: An Introduction to Algebraic K-theory*, Chapter II, §2: `K₀` of a finite
-  product of rings is the product of the `K₀` groups, and `K₀` of the zero ring vanishes.
+  product of rings is the product of the `K₀` groups.
 * J. Rosenberg, *Algebraic K-Theory and Its Applications*, §1.2, for the idempotent description.
 -/
 
@@ -215,13 +213,6 @@ theorem prodEquiv_of_finiteProjectiveModulesRegular :
   congr <;> exact Matrix.map_one _ rfl rfl
 
 end Prod
-
-/-! ### The zero ring -/
-
-/-- **`K₀` of the zero ring vanishes.** Over the zero ring every idempotent matrix is zero, so
-the idempotent monoid and its group completion `K₀` are trivial. -/
-instance instSubsingleton (R : Type u) [Ring R] [Subsingleton R] : Subsingleton (KZero R) :=
-  (IdempotentMonoid.kZeroEquiv R).symm.injective.subsingleton
 
 end KZero
 
