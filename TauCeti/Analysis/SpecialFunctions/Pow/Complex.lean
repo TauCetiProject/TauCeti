@@ -96,6 +96,7 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_eq_cpow_half`,
   `Complex.neg_cpow_half_eq_or_eq_neg` -- algebraic identities for principal `±1/2` powers,
   including at `w = 0`, and the sign dichotomy `(-w) ^ (1/2) = ±(I * w ^ (1/2))`.
+* `Complex.ofReal_cpow_neg_one_half` -- for `x ≥ 0`, `x ^ (-1 / 2) = (√x)⁻¹`.
 * `HasDerivAt.cpow_half` -- derivative of `w ↦ f w ^ (1/2)` in the slit plane over any
   nontrivially normed field `𝕜` with `[NormedAlgebra 𝕜 ℂ]`.
 * `Complex.tendsto_ofReal_add_cpow_neg` -- for any complex `x` and real `s > 0`,
@@ -647,6 +648,12 @@ theorem cpow_neg_half_mul_self (w : ℂ) : w ^ (-(1 / 2) : ℂ) * w ^ (-(1 / 2) 
   · simp
   · rw [← cpow_add _ _ hw]
     norm_num [cpow_neg_one]
+
+/-- For `x ≥ 0`, `x ^ (-1 / 2) = (√x)⁻¹` as complex numbers. -/
+theorem ofReal_cpow_neg_one_half {x : ℝ} (hx : 0 ≤ x) :
+    (x : ℂ) ^ (-1 / 2 : ℂ) = ((√x : ℝ) : ℂ)⁻¹ := by
+  rw [Real.sqrt_eq_rpow, ← ofReal_inv, ← Real.rpow_neg hx, ofReal_cpow hx]
+  norm_num
 
 /-- Multiplying the principal power `w ^ (-1/2)` by `w` gives `w ^ (1/2)`, including at
 `w = 0`. -/
