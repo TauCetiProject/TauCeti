@@ -14,13 +14,14 @@ public import Mathlib.RingTheory.DedekindDomain.Dvr
 Mathlib's `Localization.subalgebra.ofField K S hS` is the localization of a ring `A` at a
 submonoid `S` of non-zero-divisors, realized as the `A`-subalgebra of the fraction field `K` of
 `A` consisting of the quotients `a / s` with `a ∈ A` and `s ∈ S`. This file adds the membership
-tests that make it usable as a subring of `K`: an element `z : K` lies in it exactly when some
-`s ∈ S` clears its denominator, `s * z ∈ A`, and for `S = powers x` exactly when some power of
-`x` does so. It also records that the localization of a Dedekind domain, so realized, is again a
-Dedekind domain.
+tests that make it usable as a subring of `K`: an element `z : K` lies in it exactly when it is
+a quotient `a / s` with `s ∈ S`, exactly when some `s ∈ S` clears its denominator, `s * z ∈ A`,
+and for `S = powers x` exactly when some power of `x` does so. It also records that the
+localization of a Dedekind domain, so realized, is again a Dedekind domain.
 
 ## Main results
 
+* `Localization.subalgebra.mem_ofField_iff`: membership in `A[S⁻¹] ⊆ K` as a quotient `a / s`.
 * `Localization.subalgebra.mem_ofField_iff_exists_mul_mem_range` and
   `Localization.subalgebra.mem_ofField_powers_iff`: membership in `A[S⁻¹] ⊆ K`, respectively in
   `A[1/x] ⊆ K`, by clearing denominators.
@@ -36,6 +37,13 @@ open scoped nonZeroDivisors
 
 variable {A K : Type*} [CommRing A] [Field K] [Algebra A K] [IsFractionRing A K]
   (S : Submonoid A) (hS : S ≤ A⁰)
+
+/-- **Membership in `A[S⁻¹] ⊆ K` as a fraction**: `z` lies in the localization exactly when it is
+a quotient `a / s` with `a ∈ A` and `s ∈ S`. -/
+theorem mem_ofField_iff {z : K} :
+    z ∈ ofField K S hS ↔ ∃ a, ∃ s ∈ S, z = algebraMap A K a * (algebraMap A K s)⁻¹ := by
+  rw [ofField, ← SetLike.mem_coe, Subalgebra.coe_copy, Set.mem_ofPred_eq]
+  simp only [exists_prop]
 
 /-- **Membership in `A[S⁻¹] ⊆ K` by clearing denominators**: `z` lies in the localization exactly
 when some `s ∈ S` has `s * z ∈ A`. -/
