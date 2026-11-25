@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.Group.Matrix
 public import Mathlib.RepresentationTheory.Semisimple
 public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Archimedean.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.Standard
-public import TauCeti.RepresentationTheory.Subrepresentation
+import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # Bounded archimedean parameters
