@@ -34,8 +34,6 @@ locally free quotients along a cover needs.
 * `TauCeti.AlgebraicGeometry.existsUnique_iso_comp_eq_of_dense_smoothLocusOfDim`: on a reduced
   scheme with dense `X_sm^{(d)}`, two locally free quotients of rank `d` of `Ω_{X/k}` differ by a
   unique isomorphism of their targets.
-* `TauCeti.AlgebraicGeometry.dense_smoothLocusOfDim_of_isOpenImmersion`: density of
-  `X_sm^{(d)}` passes to open subschemes.
 * `TauCeti.AlgebraicGeometry.existsUnique_iso_comp_eq_of_isOpenImmersion`: on a reduced scheme
   with dense `X_sm^{(d)}`, uniqueness holds on every open subscheme.
 
@@ -81,16 +79,6 @@ theorem existsUnique_iso_comp_eq_of_dense_smoothLocusOfDim [IsReduced X]
   FiniteLocallyFreeSheaf.existsUnique_iso_comp_eq hX hX q₁ q₂
     (fun _ hx ↦ (stalkₗ_bijective_of_mem_smoothLocusOfDim E₁ q₁ hx).injective)
     (fun _ hx ↦ (stalkₗ_bijective_of_mem_smoothLocusOfDim E₂ q₂ hx).injective)
-
-/-- **Density of the smooth locus passes to open subschemes.** For an open immersion
-`f : U ⟶ X` over `Spec k`, the smooth locus of dimension `d` of `U` is the preimage of that of
-`X`, so it is dense in `U` when `X_sm^{(d)}` is dense in `X`. -/
-theorem dense_smoothLocusOfDim_of_isOpenImmersion {U : Scheme.{u}} [U.Over (Spec (.of k))]
-    [LocallyOfFinitePresentation (U ↘ Spec (.of k))] (f : U ⟶ X) [IsOpenImmersion f]
-    [f.IsOver (Spec (.of k))] (hX : Dense (smoothLocusOfDim k X d : Set X)) :
-    Dense (smoothLocusOfDim k U d : Set U) := by
-  rw [← preimage_smoothLocusOfDim_eq k X f d]
-  exact hX.preimage f.isOpenEmbedding.isOpenMap
 
 /-- **Uniqueness of locally free quotients on open subschemes.** On a reduced scheme `X` whose
 smooth locus of dimension `d` is dense, two locally free quotients of rank `d` of `Ω_{U/k}`, for
