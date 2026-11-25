@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.SelfDualSplitting
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Kahler
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
+import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
@@ -268,13 +268,15 @@ theorem sum_apply_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self
     (hψ : cliffordProjection o ρ J.kahlerForm ψ = ψ) (L : V →ₗ[ℝ] ℂ) :
     ∑ k, L (e k) • ρ (ι Q (e k)) ψ = 0 ↔ (ψ : W) = 0 ∨ ∀ v, L (J v) = Complex.I * L v := by
   obtain ⟨b, h₀, h₂⟩ := AlmostComplexStructure.exists_unitary_orthonormalBasis hJ
-  -- The contraction `∑ₖ L(eₖ) c(eₖ) ψ` is independent of the orthonormal basis `e`.
+  -- The contraction `∑ₖ L(eₖ) c(eₖ) ψ` is the metric trace of `(u, v) ↦ L u • c(v) ψ`,
+  -- hence independent of the orthonormal basis `e`.
+  let B : LinearMap.BilinMap ℝ V W := LinearMap.mk₂ ℝ (fun u v ↦ L u • ρ (ι Q v) ψ)
+    (fun _ _ _ ↦ by rw [map_add, add_smul])
+    (fun _ _ _ ↦ by rw [map_smul, smul_assoc])
+    (fun _ _ _ ↦ by rw [map_add, map_add, LinearMap.add_apply, smul_add])
+    (fun _ _ _ ↦ by rw [map_smul, map_smul, LinearMap.smul_apply, smul_comm])
   have hsum : ∑ k, L (e k) • ρ (ι Q (e k)) ψ = ∑ j, L (b j) • ρ (ι Q (b j)) ψ :=
-    e.sum_bilin_eq b (LinearMap.mk₂ ℝ (fun u v ↦ L u • ρ (ι Q v) ψ)
-      (fun _ _ _ ↦ by rw [map_add, add_smul])
-      (fun _ _ _ ↦ by rw [map_smul, smul_assoc])
-      (fun _ _ _ ↦ by rw [map_add, map_add, LinearMap.add_apply, smul_add])
-      (fun _ _ _ ↦ by rw [map_smul, map_smul, LinearMap.smul_apply, smul_comm]))
+    (B.metricTrace_eq_sum e).symm.trans (B.metricTrace_eq_sum b)
   have h₁ : J (b 1) = -b 0 := by rw [← h₀, J.apply_apply]
   have h₃ : J (b 3) = -b 2 := by rw [← h₂, J.apply_apply]
   rw [hsum, sum_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hψ
