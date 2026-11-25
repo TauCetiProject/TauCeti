@@ -106,6 +106,20 @@ theorem baseChange_flip (B : LinearMap.BilinForm R M) :
   ext x y
   simp
 
+/-- Scalar extension commutes with scalar multiples from the original semiring. -/
+@[simp]
+theorem baseChange_smul (r : R) (B : LinearMap.BilinForm R M) :
+    (r • B).baseChange A = algebraMap R A r • B.baseChange A := by
+  ext x y
+  simp [Algebra.smul_def]
+
+/-- Scalar extension commutes with addition of bilinear forms. -/
+@[simp]
+theorem baseChange_add (B B' : LinearMap.BilinForm R M) :
+    (B + B').baseChange A = B.baseChange A + B'.baseChange A := by
+  ext x y
+  simp [add_smul]
+
 /-- **Scalar extension of a bilinear form is natural in the scalars.** Along an `R`-algebra map
 `f : A → A'`, the base change of `B` to `A'`, evaluated on the images of `x y : A ⊗[R] M`, is the
 image under `f` of its base change to `A`, evaluated on `x` and `y`. -/
@@ -213,6 +227,26 @@ theorem Nondegenerate.baseChange_of_isLocalization (S : Submonoid R)
   ⟨hB.1.baseChange_of_isLocalization A S, hB.2.baseChange_of_isLocalization A S⟩
 
 end Preservation
+
+section Ring
+
+variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A] [AddCommMonoid M] [Module R M]
+
+/-- Scalar extension commutes with negation of bilinear forms. -/
+@[simp]
+theorem baseChange_neg (B : LinearMap.BilinForm R M) :
+    (-B).baseChange A = -B.baseChange A := by
+  ext x y
+  simp
+
+/-- Scalar extension commutes with subtraction of bilinear forms. -/
+@[simp]
+theorem baseChange_sub (B B' : LinearMap.BilinForm R M) :
+    (B - B').baseChange A = B.baseChange A - B'.baseChange A := by
+  ext x y
+  simp [sub_smul]
+
+end Ring
 
 end LinearMap.BilinForm
 
@@ -609,8 +643,7 @@ theorem posDef_toQuadraticMap_baseChange_iff (B : LinearMap.BilinForm F V) :
       intro x y
       simp [add_comm]
     have hbase : (B + B.flip).baseChange K = B.baseChange K + (B.baseChange K).flip := by
-      ext
-      simp [add_smul]
+      simp
     simpa only [hbase, posDef_toQuadraticMap_add_flip_iff] using this (B + B.flip) hsym
   constructor
   · -- Reflection: evaluate on the nonzero vector `1 ⊗ x`.
