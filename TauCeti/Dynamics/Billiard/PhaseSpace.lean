@@ -35,9 +35,9 @@ quotient σ-algebra.
   `(2π area P)⁻¹ Leb_P ⊗ dθ` (`TauCeti.circleArcLength`).
 * `TauCeti.PolygonalTable.liouville_setOf_position_mem_eq_zero`: the states whose position lies
   in a Lebesgue-null set form a `μ_P`-null set.
-* `TauCeti.PolygonalTable.liouville_setOf_position_mem_frontier`: the states whose position lies
-  on the frontier of the table form a `μ_P`-null set, since the frontier is Lebesgue-null
-  (`TauCeti.PolygonalTable.volume_frontier_carrier`).
+* `TauCeti.PolygonalTable.liouville_setOf_position_mem_frontier_eq_zero`: the states whose
+  position lies on the frontier of the table form a `μ_P`-null set, since the frontier is
+  Lebesgue-null (`TauCeti.PolygonalTable.volume_frontier_carrier`).
 
 ## References
 
@@ -322,7 +322,7 @@ theorem liouville_setOf_position_mem_eq_zero {s : Set ℂ} (hs : volume s = 0) :
 
 /-- **The frontier states are null**: the states of the phase space whose position lies on the
 frontier of the table form a `μ_P`-null set, because the frontier is Lebesgue-null. -/
-theorem liouville_setOf_position_mem_frontier :
+theorem liouville_setOf_position_mem_frontier_eq_zero :
     T.liouville {z | (PhaseSpace.position z : ℂ) ∈ frontier T.carrier} = 0 :=
   T.liouville_setOf_position_mem_eq_zero T.volume_frontier_carrier
 
