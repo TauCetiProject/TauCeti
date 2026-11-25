@@ -313,77 +313,71 @@ end Edge
 
 /-! ## Invariance under the generators
 
-The finite checks behind the invariance under a raising or lowering matrix are stated for one
-simple root `i` at a time and proved by one kernel computation per simple root. A single kernel
-computation over all four simple roots at once needs several times the memory of the four
-separate ones together. -/
+The finite checks for a raising or lowering matrix are stated for one simple root at a time, so
+that the kernel checks each in its own declaration: one check over all four simple roots holds too
+many intermediate terms in memory at once. -/
 
-/-- The entrywise derivation equation, as required by `edge_derivation`, for the raising (`s = -1`)
-or lowering (`s = 1`) matrix of the simple root `i`. -/
-private def DerivationCheck (s : ℤ) (i : Fin 4) : Prop :=
-  ∀ c a b : Fin 24,
+/-- The entrywise derivation equation, and the vanishing of the entrywise second-order terms, for
+the raising (`s = -1`) or lowering (`s = 1`) matrix of the simple root `i`. -/
+private def EdgeChecks (s : ℤ) (i : Fin 4) : Prop :=
+  (∀ c a b : Fin 24,
     (if d4TripledWeight (d4TripledReflection i a) i = s then
         trialityProductMatrix c (d4TripledReflection i a) b else 0) =
       (if d4TripledWeight b i = s then
           trialityProductMatrix c a (d4TripledReflection i b) else 0) +
         if d4TripledWeight c i = s then
-          trialityProductMatrix (d4TripledReflection i c) a b else 0
+          trialityProductMatrix (d4TripledReflection i c) a b else 0) ∧
+    ∀ c a b : Fin 24, d4TripledWeight b i = s → d4TripledWeight c i = s →
+      trialityProductMatrix (d4TripledReflection i c) a (d4TripledReflection i b) = 0
 
-/-- The vanishing of the second-order terms, as required by `edge_secondOrder`, for the raising
-(`s = -1`) or lowering (`s = 1`) matrix of the simple root `i`. -/
-private def SecondOrderCheck (s : ℤ) (i : Fin 4) : Prop :=
-  ∀ c a b : Fin 24, d4TripledWeight b i = s → d4TripledWeight c i = s →
-    trialityProductMatrix (d4TripledReflection i c) a (d4TripledReflection i b) = 0
-
-private theorem raising_checks_zero : DerivationCheck (-1) 0 ∧ SecondOrderCheck (-1) 0 := by
-  simp only [DerivationCheck, SecondOrderCheck, trialityProductMatrix_apply,
-    symmetricTrialityCoefficient, blockTrialityCoefficient, trialityCoefficient_apply]
+private theorem edgeChecks_neg_one_zero : EdgeChecks (-1) 0 := by
+  simp only [EdgeChecks, trialityProductMatrix_apply, symmetricTrialityCoefficient,
+    blockTrialityCoefficient, trialityCoefficient_apply]
   decide +kernel
 
-private theorem raising_checks_one : DerivationCheck (-1) 1 ∧ SecondOrderCheck (-1) 1 := by
-  simp only [DerivationCheck, SecondOrderCheck, trialityProductMatrix_apply,
-    symmetricTrialityCoefficient, blockTrialityCoefficient, trialityCoefficient_apply]
+private theorem edgeChecks_neg_one_one : EdgeChecks (-1) 1 := by
+  simp only [EdgeChecks, trialityProductMatrix_apply, symmetricTrialityCoefficient,
+    blockTrialityCoefficient, trialityCoefficient_apply]
   decide +kernel
 
-private theorem raising_checks_two : DerivationCheck (-1) 2 ∧ SecondOrderCheck (-1) 2 := by
-  simp only [DerivationCheck, SecondOrderCheck, trialityProductMatrix_apply,
-    symmetricTrialityCoefficient, blockTrialityCoefficient, trialityCoefficient_apply]
+private theorem edgeChecks_neg_one_two : EdgeChecks (-1) 2 := by
+  simp only [EdgeChecks, trialityProductMatrix_apply, symmetricTrialityCoefficient,
+    blockTrialityCoefficient, trialityCoefficient_apply]
   decide +kernel
 
-private theorem raising_checks_three : DerivationCheck (-1) 3 ∧ SecondOrderCheck (-1) 3 := by
-  simp only [DerivationCheck, SecondOrderCheck, trialityProductMatrix_apply,
-    symmetricTrialityCoefficient, blockTrialityCoefficient, trialityCoefficient_apply]
+private theorem edgeChecks_neg_one_three : EdgeChecks (-1) 3 := by
+  simp only [EdgeChecks, trialityProductMatrix_apply, symmetricTrialityCoefficient,
+    blockTrialityCoefficient, trialityCoefficient_apply]
   decide +kernel
 
-private theorem lowering_checks_zero : DerivationCheck 1 0 ∧ SecondOrderCheck 1 0 := by
-  simp only [DerivationCheck, SecondOrderCheck, trialityProductMatrix_apply,
-    symmetricTrialityCoefficient, blockTrialityCoefficient, trialityCoefficient_apply]
+private theorem edgeChecks_one_zero : EdgeChecks 1 0 := by
+  simp only [EdgeChecks, trialityProductMatrix_apply, symmetricTrialityCoefficient,
+    blockTrialityCoefficient, trialityCoefficient_apply]
   decide +kernel
 
-private theorem lowering_checks_one : DerivationCheck 1 1 ∧ SecondOrderCheck 1 1 := by
-  simp only [DerivationCheck, SecondOrderCheck, trialityProductMatrix_apply,
-    symmetricTrialityCoefficient, blockTrialityCoefficient, trialityCoefficient_apply]
+private theorem edgeChecks_one_one : EdgeChecks 1 1 := by
+  simp only [EdgeChecks, trialityProductMatrix_apply, symmetricTrialityCoefficient,
+    blockTrialityCoefficient, trialityCoefficient_apply]
   decide +kernel
 
-private theorem lowering_checks_two : DerivationCheck 1 2 ∧ SecondOrderCheck 1 2 := by
-  simp only [DerivationCheck, SecondOrderCheck, trialityProductMatrix_apply,
-    symmetricTrialityCoefficient, blockTrialityCoefficient, trialityCoefficient_apply]
+private theorem edgeChecks_one_two : EdgeChecks 1 2 := by
+  simp only [EdgeChecks, trialityProductMatrix_apply, symmetricTrialityCoefficient,
+    blockTrialityCoefficient, trialityCoefficient_apply]
   decide +kernel
 
-private theorem lowering_checks_three : DerivationCheck 1 3 ∧ SecondOrderCheck 1 3 := by
-  simp only [DerivationCheck, SecondOrderCheck, trialityProductMatrix_apply,
-    symmetricTrialityCoefficient, blockTrialityCoefficient, trialityCoefficient_apply]
+private theorem edgeChecks_one_three : EdgeChecks 1 3 := by
+  simp only [EdgeChecks, trialityProductMatrix_apply, symmetricTrialityCoefficient,
+    blockTrialityCoefficient, trialityCoefficient_apply]
   decide +kernel
 
-/-- The finite checks for the raising matrix of every simple root. -/
-private theorem raising_checks (i : Fin 4) : DerivationCheck (-1) i ∧ SecondOrderCheck (-1) i := by
+private theorem edgeChecks_neg_one (i : Fin 4) : EdgeChecks (-1) i := by
   fin_cases i
-  exacts [raising_checks_zero, raising_checks_one, raising_checks_two, raising_checks_three]
+  exacts [edgeChecks_neg_one_zero, edgeChecks_neg_one_one, edgeChecks_neg_one_two,
+    edgeChecks_neg_one_three]
 
-/-- The finite checks for the lowering matrix of every simple root. -/
-private theorem lowering_checks (i : Fin 4) : DerivationCheck 1 i ∧ SecondOrderCheck 1 i := by
+private theorem edgeChecks_one (i : Fin 4) : EdgeChecks 1 i := by
   fin_cases i
-  exacts [lowering_checks_zero, lowering_checks_one, lowering_checks_two, lowering_checks_three]
+  exacts [edgeChecks_one_zero, edgeChecks_one_one, edgeChecks_one_two, edgeChecks_one_three]
 
 /-- Every numbered root generator matrix is a derivation of the triality product. -/
 private theorem rootMatrix_mul_trialityProductMatrix (k : Fin 4 ⊕ Fin 4) (c : Fin 24) :
@@ -392,21 +386,19 @@ private theorem rootMatrix_mul_trialityProductMatrix (k : Fin 4 ⊕ Fin 4) (c : 
   rcases k with i | i
   · rw [rootMatrix_inl]
     exact edge_derivation (d4TripledReflection_apply_apply i) (raisingMatrix_apply i)
-      (raising_checks i).1 c
+      (edgeChecks_neg_one i).1 c
   · rw [rootMatrix_inr]
     exact edge_derivation (d4TripledReflection_apply_apply i) (loweringMatrix_apply i)
-      (lowering_checks i).1 c
+      (edgeChecks_one i).1 c
 
 /-- The second-order terms of a numbered root generator matrix on the triality product vanish. -/
 private theorem sum_smul_trialityProductMatrix_mul_rootMatrix (k : Fin 4 ⊕ Fin 4) (c : Fin 24) :
     (∑ d, rootMatrix k d c • trialityProductMatrix d) * rootMatrix k = 0 := by
   rcases k with i | i
   · rw [rootMatrix_inl]
-    exact edge_secondOrder (raisingMatrix_apply i)
-      (raising_checks i).2 c
+    exact edge_secondOrder (raisingMatrix_apply i) (edgeChecks_neg_one i).2 c
   · rw [rootMatrix_inr]
-    exact edge_secondOrder (loweringMatrix_apply i)
-      (lowering_checks i).2 c
+    exact edge_secondOrder (loweringMatrix_apply i) (edgeChecks_one i).2 c
 
 /-- **A numbered root-subgroup point preserves the triality product.** -/
 theorem preserves_trialityProductMatrix_rootSubgroupPoints (k : Fin 4 ⊕ Fin 4) (A : Type v)
