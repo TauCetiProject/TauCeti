@@ -47,7 +47,8 @@ theorem coe_iterate_sqMap_snd (n : ℕ) (p : AddCircle (1 : ℝ) × I) :
   induction n generalizing p with
   | zero => simp
   | succ n ih =>
-    rw [iterate_succ_apply', sqMap, Set.Icc.coe_mul, ih, ← pow_add, pow_succ, mul_two]
+    rw [iterate_succ_apply', sqMap, Set.Icc.coe_mul, ih]
+    ring
 
 /-- **The non-wandering set of `(x, y) ↦ (x, y²)`** on `AddCircle 1 × [0, 1]` is the union of the
 two boundary circles `y = 0` and `y = 1`. -/

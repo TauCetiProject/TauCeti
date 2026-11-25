@@ -517,13 +517,6 @@ theorem semiconj_cylinderInclusion :
     Semiconj χ.cylinderInclusion χ.billiardMap χ.closedBilliardMap :=
   fun x ↦ (χ.closedBilliardMap_cylinderInclusion x).symm
 
-/-- The extended billiard map restricts to the billiard map on the open cylinder, for every
-number of iterations. -/
-theorem iterate_closedBilliardMap_cylinderInclusion (n : ℕ)
-    (x : AddCircle χ.period × Ioo (-1 : ℝ) 1) :
-    χ.closedBilliardMap^[n] (χ.cylinderInclusion x) = χ.cylinderInclusion (χ.billiardMap^[n] x) :=
-  (χ.semiconj_cylinderInclusion.iterate_right n x).symm
-
 /-- **The closed cylinder.** The billiard map extends to a homeomorphism `T'` of
 the closed cylinder `AddCircle L × [-1, 1]` that fixes both boundary circles pointwise
 (`TauCeti.StrictConvexBilliardTable.closedBilliardMap_one`,
