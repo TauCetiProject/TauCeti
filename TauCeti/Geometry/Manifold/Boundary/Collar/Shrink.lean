@@ -167,8 +167,7 @@ theorem shrink_apply (p : ↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens 1)
 /-- The image of the shrunk collar is the image of `∂M × [0, ε)` under the collar. -/
 theorem range_shrink :
     range (c.shrink hε hε1) = c '' {p | (p.2 : EuclideanHalfSpace 1).val 0 < ε} := by
-  rw [shrink, range_reparam, range_normalIioOpensScale, univ_prod]
-  rfl
+  rw [shrink, range_reparam, range_normalIioOpensScale, univ_prod, preimage_ofPred_eq]
 
 /-- The image of the shrunk collar is contained in the image of the collar. -/
 theorem opensRange_shrink_le : (c.shrink hε hε1).opensRange ≤ c.opensRange :=

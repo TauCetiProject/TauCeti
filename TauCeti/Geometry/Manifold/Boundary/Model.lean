@@ -331,18 +331,22 @@ section Scaling
 variable {m : ℕ} [NeZero m] {k : WithTop ℕ∞} {ε : ℝ}
 
 /-- The half-space is closed under multiplication by a positive scalar. -/
-theorem smul_mem (hε : 0 < ε) (x : EuclideanHalfSpace m) : 0 ≤ (ε • x.val) 0 := by
+private theorem smul_val_zero_nonneg (hε : 0 < ε) (x : EuclideanHalfSpace m) :
+    0 ≤ (ε • x.val) 0 := by
   simpa using mul_nonneg hε.le x.property
 
 private theorem smul_mem_range (hε : 0 < ε) (x : EuclideanHalfSpace m) :
     ε • (𝓡∂ m) x ∈ range (𝓡∂ m) := by
   rw [range_modelWithCornersEuclideanHalfSpace]
-  exact smul_mem hε x
+  exact smul_val_zero_nonneg hε x
 
 /-- Multiplication by `ε` on the half-space model, the map underlying `smulDiffeomorph`. -/
 private noncomputable def smulMap (hε : 0 < ε) (x : EuclideanHalfSpace m) :
     EuclideanHalfSpace m :=
-  ⟨ε • x.val, smul_mem hε x⟩
+  ⟨ε • x.val, smul_val_zero_nonneg hε x⟩
+
+private theorem smulMap_val (hε : 0 < ε) (x : EuclideanHalfSpace m) :
+    (smulMap hε x).val = ε • x.val := rfl
 
 private theorem contMDiff_smulMap (hε : 0 < ε) :
     ContMDiff (𝓡∂ m) (𝓡∂ m) k (smulMap (m := m) hε) := by
@@ -350,9 +354,8 @@ private theorem contMDiff_smulMap (hε : 0 < ε) :
     (contDiff_const_smul ε).contMDiff.comp (𝓡∂ m).contMDiff
   refine ((𝓡∂ m).contMDiffOn_symm.comp_contMDiff hcoord (smul_mem_range hε)).congr fun x ↦ ?_
   apply Subtype.ext
-  -- `smulMap hε x` is `ε • x.val` by definition, and `(𝓡∂ m) x` is `x.val`.
-  change ε • x.val = ((𝓡∂ m).symm (ε • x.val)).val
-  rw [modelWithCornersEuclideanHalfSpace_symm_apply_of_le (smul_mem hε x)]
+  rw [smulMap_val, comp_apply, modelWithCornersEuclideanHalfSpace_apply,
+    modelWithCornersEuclideanHalfSpace_symm_apply_of_le (smul_val_zero_nonneg hε x)]
 
 variable (m k) in
 /-- **Scaling the half-space model.** Multiplication by a positive scalar `ε` is a `C^k`
