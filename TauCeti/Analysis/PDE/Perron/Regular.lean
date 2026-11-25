@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Perron.Barrier
 import Mathlib.Analysis.Normed.Module.Convex
-import TauCeti.Analysis.InnerProductSpace.Harmonic.RemovableSingularity.Basic
+import TauCeti.Analysis.InnerProductSpace.Harmonic.RemovableSingularity
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Topology.Closure
 

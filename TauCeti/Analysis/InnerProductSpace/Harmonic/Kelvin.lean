@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Geometry.Euclidean.Inversion.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Geometry.Euclidean.Inversion.Calculus
-import TauCeti.Analysis.InnerProductSpace.Harmonic.RemovableSingularity.Basic
+import TauCeti.Analysis.InnerProductSpace.Harmonic.RemovableSingularity
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Comp
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Geometry.Euclidean.Inversion

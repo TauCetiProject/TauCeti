@@ -12,7 +12,6 @@ public import TauCeti.Analysis.Calculus.ContDiff.Homogeneous
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
-import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
@@ -53,8 +52,6 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
 * `norm_fderiv_norm_rpow_of_ne`: that derivative has norm `|p| ‖x‖ ^ (p - 1)`.
 * `isBigO_fderiv_norm_rpow_cobounded`: that derivative is `O(‖x‖ ^ (p - 1))` at infinity.
 * `gradient_norm_rpow_of_ne`: the corresponding gradient `p ‖x‖ ^ (p - 2) x`.
-* `tendsto_norm_sub_rpow_nhdsNE_atTop`: for `p < 0`, `‖x - c‖ ^ p` tends to infinity at `c`.
-* `isLittleO_one_norm_sub_rpow_nhdsNE`: for `p < 0`, constants are `o(‖x - c‖ ^ p)` at `c`.
 * `hasFDerivAt_norm_rpow_smul_self`: for `r ≥ 0` the map `y ↦ ‖y‖ ^ r • y` is differentiable
   everywhere, including at the origin.
 * `hasFDerivAt_norm_of_ne`: the derivative of the norm itself away from zero.
@@ -173,19 +170,6 @@ theorem hasFDerivAt_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
 theorem fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
     fderiv ℝ (fun y : E ↦ ‖y‖ ^ p) x = (p * ‖x‖ ^ (p - 2)) • innerSL ℝ x :=
   (hasFDerivAt_norm_rpow_of_ne p hx).fderiv
-
-omit [InnerProductSpace ℝ E] in
-/-- For a negative exponent `p`, `‖x - c‖ ^ p` tends to infinity as `x` tends to `c`. -/
-theorem tendsto_norm_sub_rpow_nhdsNE_atTop {p : ℝ} (hp : p < 0) (c : E) :
-    Tendsto (fun y : E ↦ ‖y - c‖ ^ p) (𝓝[≠] c) atTop :=
-  (tendsto_rpow_neg_nhdsGT_zero hp).comp (tendsto_norm_sub_self_nhdsNE c)
-
-omit [InnerProductSpace ℝ E] in
-/-- For a negative exponent `p`, constants are `o(‖x - c‖ ^ p)` as `x` tends to `c`. -/
-theorem isLittleO_one_norm_sub_rpow_nhdsNE {p : ℝ} (hp : p < 0) (c : E) :
-    (fun _ ↦ (1 : ℝ)) =o[𝓝[≠] c] fun y : E ↦ ‖y - c‖ ^ p :=
-  (Asymptotics.isLittleO_one_left_iff ℝ).2
-    (tendsto_norm_atTop_atTop.comp (tendsto_norm_sub_rpow_nhdsNE_atTop hp c))
 
 /-- Away from the origin, the gradient of `x ↦ ‖x‖ ^ p` is `p ‖x‖ ^ (p - 2) x`. -/
 theorem gradient_norm_rpow_of_ne [CompleteSpace E] (p : ℝ) {x : E} (hx : x ≠ 0) :
