@@ -226,6 +226,7 @@ theorem coe_moebiusDenom (i : Fin k) (g : Matrix (Fin 2) (Fin 2) R) :
   rw [moebiusDenom_def, coe_smul_X_add_algebraMap]
 
 /-- The constant term of the denominator `c Xᵢ + d` is `d`. -/
+@[simp]
 theorem constantCoeff_moebiusDenom (i : Fin k) (g : Matrix (Fin 2) (Fin 2) R) :
     constantCoeff (moebiusDenom i g : _root_.MvPowerSeries (Fin k) R) = g 1 1 := by
   rw [← coeff_zero_eq_constantCoeff_apply, coe_moebiusDenom, map_add]
