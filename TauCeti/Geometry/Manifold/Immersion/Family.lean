@@ -71,6 +71,16 @@ theorem ContMDiffAt.eventually_injective_mfderiv
   filter_upwards [hAn, hxn, hyn] with p hp hx hy
   exact (hcoord p hx hy).mp hp
 
+/-- For a source with finite-dimensional model space, injectivity of the differential of a single
+`Cⁿ` map, with `1 ≤ n`, persists near the point. This is the constant-family case of
+`ContMDiffAt.eventually_injective_mfderiv`. -/
+theorem ContMDiffAt.eventually_injective_mfderiv_of_injective {f : M → N}
+    (hf : ContMDiffAt I J n f x) (hn : 1 ≤ n) (hinj : Injective (mfderiv I J f x)) :
+    ∀ᶠ y in 𝓝 x, Injective (mfderiv I J f y) :=
+  ((continuous_id.prodMk continuous_id).tendsto x).eventually
+    (ContMDiffAt.eventually_injective_mfderiv (IP := I) (F := fun _ ↦ f)
+      (hf.comp (x, x) contMDiffAt_snd) hn hinj)
+
 namespace TauCeti
 
 /-- For a source with finite-dimensional model space, injectivity of the source differentials

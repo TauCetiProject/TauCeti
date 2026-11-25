@@ -53,6 +53,7 @@ extension used in the Alexander trick.
   `TauCeti.sphereDirection`.
 * `LipschitzWith.sphereCone`: the cone over an `L`-Lipschitz map bounded by `M` is
   `(M + 2L)`-Lipschitz.
+* `TauCeti.lipschitzWith_sphereCone`: the cone over a bounded Lipschitz map is Lipschitz.
 * `TauCeti.norm_sphereCone`: the cone over a map into the unit sphere preserves norms.
 * `TauCeti.sphereCone_sphereCone`, `Homeomorph.sphereCone_trans`: the cone over a composite is the
   composite of the cones.
@@ -138,6 +139,58 @@ theorem norm_sphereCone (hf : ∀ u, ‖f u‖ = 1) (x : E) : ‖sphereCone f x�
   · simp
   rw [sphereCone_smul_coe hr.le, norm_smul, norm_smul, hf, norm_eq_of_mem_sphere u]
 
+/-- If the values of `f` are bounded in norm by `c`, the cone over `f` grows at most like `c`
+times the norm. -/
+theorem norm_sphereCone_le {c : ℝ} (hc : ∀ u, ‖f u‖ ≤ c) (x : E) :
+    ‖sphereCone f x‖ ≤ c * ‖x‖ := by
+  rcases eq_zero_or_exists_eq_smul_coe_sphere x with rfl | ⟨r, hr, u, rfl⟩
+  · simp
+  rw [sphereCone_smul_coe hr.le, norm_smul, norm_smul, norm_eq_of_mem_sphere u, mul_one, mul_comm]
+  exact mul_le_mul_of_nonneg_right (hc u) (norm_nonneg _)
+
+/-- **The cone over a bounded Lipschitz map is Lipschitz.** If `‖f u‖ ≤ a` for every unit vector
+`u` and `f` is `b`-Lipschitz for the distance the unit sphere inherits from `E`, then the cone over
+`f` is `(a + 2 b)`-Lipschitz on `E`. -/
+theorem lipschitzWith_sphereCone {a b : ℝ≥0} (ha : ∀ u, ‖f u‖ ≤ a) (hb : LipschitzWith b f) :
+    LipschitzWith (a + 2 * b) (sphereCone f) := by
+  refine LipschitzWith.of_dist_le_mul fun x y ↦ ?_
+  rw [dist_eq_norm, dist_eq_norm, NNReal.coe_add, NNReal.coe_mul, NNReal.coe_ofNat]
+  have hab : (a : ℝ) ≤ a + 2 * b := le_add_of_nonneg_right (by positivity)
+  -- If one of the points is the origin, the bound `‖sphereCone f z‖ ≤ a ‖z‖` suffices.
+  rcases eq_zero_or_exists_eq_smul_coe_sphere y with rfl | ⟨s, hs, q, rfl⟩
+  · rw [sphereCone_zero, sub_zero, sub_zero]
+    exact (norm_sphereCone_le ha x).trans (mul_le_mul_of_nonneg_right hab (norm_nonneg _))
+  rcases eq_zero_or_exists_eq_smul_coe_sphere x with rfl | ⟨r, hr, p, rfl⟩
+  · rw [sphereCone_zero, zero_sub, norm_neg, zero_sub, norm_neg]
+    exact (norm_sphereCone_le ha _).trans (mul_le_mul_of_nonneg_right hab (norm_nonneg _))
+  -- Otherwise write `r • f p - s • f q = (r - s) • f p + s • (f p - f q)`, and bound `|r - s|`
+  -- and `s ‖p - q‖` by `d = ‖r • p - s • q‖` and `2 d`.
+  rw [sphereCone_smul_coe hr.le, sphereCone_smul_coe hs.le]
+  have hp : ‖(p : E)‖ = 1 := norm_eq_of_mem_sphere p
+  have hq : ‖(q : E)‖ = 1 := norm_eq_of_mem_sphere q
+  set d := ‖r • (p : E) - s • (q : E)‖
+  have hrs : |r - s| ≤ d := by
+    simpa only [norm_smul, hp, hq, mul_one, Real.norm_of_nonneg hr.le,
+      Real.norm_of_nonneg hs.le] using abs_norm_sub_norm_le (r • (p : E)) (s • (q : E))
+  have hpq : s * ‖(p : E) - q‖ ≤ 2 * d := by
+    have h : s • ((p : E) - q) = (s - r) • (p : E) + (r • (p : E) - s • (q : E)) := by
+      rw [smul_sub, sub_smul]
+      abel
+    have h' := norm_add_le ((s - r) • (p : E)) (r • (p : E) - s • (q : E))
+    rw [← h, norm_smul, norm_smul, Real.norm_of_nonneg hs.le, hp, mul_one, Real.norm_eq_abs,
+      abs_sub_comm] at h'
+    linarith
+  have hfpq : ‖f p - f q‖ ≤ b * ‖(p : E) - q‖ := by
+    simpa only [dist_eq_norm, Subtype.dist_eq] using hb.dist_le_mul p q
+  have h : r • f p - s • f q = (r - s) • f p + s • (f p - f q) := by
+    rw [smul_sub, sub_smul]
+    abel
+  rw [h]
+  refine (norm_add_le _ _).trans ?_
+  rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_of_nonneg hs.le]
+  nlinarith [mul_le_mul hrs (ha p) (norm_nonneg _) (norm_nonneg _),
+    mul_le_mul_of_nonneg_left hfpq hs.le, mul_le_mul_of_nonneg_left hpq b.property]
+
 /-- The cone over a continuous map whose values are bounded in norm is continuous. -/
 theorem continuous_sphereCone (hf : Continuous f) {c : ℝ} (hc : ∀ u, ‖f u‖ ≤ c) :
     Continuous (sphereCone f) := by
@@ -145,12 +198,7 @@ theorem continuous_sphereCone (hf : Continuous f) {c : ℝ} (hc : ∀ u, ‖f u�
   intro x
   rcases eq_or_ne x 0 with rfl | hx
   · rw [ContinuousAt, sphereCone_zero, tendsto_zero_iff_norm_tendsto_zero]
-    have hle : ∀ y : E, ‖sphereCone f y‖ ≤ c * ‖y‖ := fun y => by
-      rcases eq_zero_or_exists_eq_smul_coe_sphere y with rfl | ⟨r, hr, u, rfl⟩
-      · simp
-      rw [sphereCone_smul_coe hr.le, norm_smul, norm_smul, norm_eq_of_mem_sphere u, mul_one,
-        mul_comm]
-      exact mul_le_mul_of_nonneg_right (hc u) (norm_nonneg _)
+    have hle : ∀ y : E, ‖sphereCone f y‖ ≤ c * ‖y‖ := norm_sphereCone_le hc
     have h0 : Tendsto (fun y : E => c * ‖y‖) (𝓝 0) (𝓝 0) :=
       (continuous_const.mul continuous_norm).tendsto' 0 0 (by simp)
     exact squeeze_zero (fun y => norm_nonneg _) hle h0

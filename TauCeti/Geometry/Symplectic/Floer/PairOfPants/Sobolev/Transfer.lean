@@ -60,10 +60,10 @@ by multiplication by the **conformal scale** `r(ζ) = 2π |φ'_q(ζ) - c_q|`
   after the first-order operator on the strip with coefficient field
   `ζ ↦ M(φ'_q(ζ)) ∘ endTransferCoeff q β ζ` (`TauCeti.Floer.jetOperator_endTransfer`). This holds
   for every `L²` jet, so the operator on `S` read along an end chart is a first-order operator on
-  the strip with an essentially bounded coefficient field. Applying the cylinder theory (invertible
-  models, compactness of zeroth-order terms vanishing at the ends) to it still needs that this
-  coefficient field converges to a stationary model along the end, with a zeroth-order remainder
-  vanishing at the end; this file does not prove that.
+  the strip with an essentially bounded coefficient field. For the linearized Floer operator of a
+  pair of pants, this coefficient field and its convergence to a model built from the stationary
+  cylinder operator at the asymptotic orbit are in
+  `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.EndModel`.
 
 ## References
 

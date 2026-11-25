@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+public import Mathlib.Topology.MetricSpace.Holder
 import TauCeti.LinearAlgebra.Prod
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Flattening a graph boundary
@@ -266,6 +268,30 @@ theorem norm_fderiv_graphFlattening_le_one_add {γ : E → ℝ} {L : ℝ}
     ‖fderiv ℝ (graphFlattening γ hγ.continuous) x‖ ≤ 1 + L :=
   (norm_fderiv_graphFlattening_le hγ.continuous
     (hγ x.snd)).trans (add_le_add le_rfl (hL x.snd))
+
+/-- **Hölder continuity of the derivative of graph flattening.** If `Dγ` is `α`-Hölder with
+constant `K`, so is the derivative of graph flattening: two linear shears differ by the difference
+of their height functionals placed in the normal coordinate. -/
+theorem holderWith_fderiv_graphFlattening {γ : E → ℝ} (hγ : Differentiable ℝ γ) {K α : ℝ≥0}
+    (hK : HolderWith K α (fderiv ℝ γ)) :
+    HolderWith K α (fderiv ℝ (graphFlattening γ hγ.continuous)) := by
+  have hdist (L₁ L₂ : E →L[ℝ] ℝ) : dist (graphFlatteningL L₁).toContinuousLinearMap
+      (graphFlatteningL L₂).toContinuousLinearMap ≤ dist L₁ L₂ := by
+    rw [dist_eq_norm, dist_eq_norm]
+    refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun x => ?_
+    have hx : ((graphFlatteningL L₁).toContinuousLinearMap -
+        (graphFlatteningL L₂).toContinuousLinearMap) x = WithLp.toLp 2 ((L₂ - L₁) x.snd, 0) := by
+      apply (WithLp.ext_iff 2).2
+      apply Prod.ext <;> simp
+    rw [hx, WithLp.norm_toLp_fst, norm_sub_rev L₁]
+    exact ((L₂ - L₁).le_opNorm _).trans
+      (mul_le_mul_of_nonneg_left (WithLp.norm_snd_le (x := x)) (norm_nonneg _))
+  refine holderOnWith_univ.1 (HolderOnWith.of_dist_le fun x _ y _ => ?_)
+  rw [fderiv_graphFlattening hγ.continuous (hγ _), fderiv_graphFlattening hγ.continuous (hγ _)]
+  refine (hdist _ _).trans ((hK.dist_le _ _).trans ?_)
+  gcongr
+  rw [dist_eq_norm, dist_eq_norm]
+  exact WithLp.norm_snd_le (x := x - y)
 
 /-- The derivative of inverse graph flattening has norm at most `1 + ‖Dγ(y)‖` at a
 differentiability point of the height. -/
