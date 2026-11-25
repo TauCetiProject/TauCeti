@@ -58,7 +58,10 @@ families `P × D^{k i} → M_{c+ε}` and `P × ∂D^{k i} → M_{c-ε}` over `P`
 fiberwise adjunction space `(P × M_{c-ε}) ∪_α ⨆ᵢ (P × D^{k i})` (`TauCeti.fiberwiseCellAttachment`)
 and of its comparison map to `P × M_{c+ε}` (`TauCeti.fiberwiseCellComparison`). Restricting the
 charts along a map `P' → P` restricts these families, so the fiberwise constructions over `P`
-restrict to the same constructions over `P'` (`TauCeti.fiberwiseCellAttachmentMap`).
+restrict to the same constructions over `P'` (`TauCeti.fiberwiseCellAttachmentMap`). A family of
+charts `φ i` not depending on `p` has jointly continuous inverses
+(`TauCeti.continuousOn_symm_const`), and its attaching maps over each `p` are those of `φ`
+(`TauCeti.morseFamilyAttachingMap_const_apply`).
 
 ## Main definitions
 
@@ -582,6 +585,37 @@ theorem mapsTo_range_diskBoundaryInclusion_of_homotopy_morseFamilyCharacteristic
   simpa using hK 1 s
 
 end CellFamily
+
+section ConstFamily
+
+variable {M : Type u} [TopologicalSpace M] {n : ℕ} {ι : Type*} {f : M → ℝ} {c ε : ℝ}
+  {P : Type*} [TopologicalSpace P]
+  (φ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (k : ι → ℕ)
+  (hk : ∀ i, k i ≤ n) (hε : 0 ≤ ε) (hball : ∀ i, closedBall 0 √ε ⊆ (φ i).target)
+  (hf : ∀ i, ∀ y ∈ (φ i).source, f y = c + ∑ j, (if j.val < k i then -1 else 1) * φ i y j ^ 2)
+
+include hball in
+/-- The inverses of a family of charts `φ i` not depending on a parameter in `P` are jointly
+continuous in the parameter and the point of the closed ball of radius `√ε`. This is the joint
+continuity hypothesis of `TauCeti.morseFamilyCharacteristicMap` for the constant family
+`fun _ : P ↦ φ`. -/
+theorem continuousOn_symm_const (i : ι) :
+    ContinuousOn (fun q : P × EuclideanSpace ℝ (Fin n) ↦ (φ i).symm q.2)
+      (univ ×ˢ closedBall 0 √ε) :=
+  ((φ i).continuousOn_symm.mono (hball i)).comp continuousOn_snd fun _ hq ↦ hq.2
+
+/-- Over each `p`, the attaching maps of the constant family `fun _ : P ↦ φ` are the attaching maps
+of `φ`, with the lower sublevel `M_{c-ε}` viewed inside `M_{c+ε}`. -/
+theorem morseFamilyAttachingMap_const_apply (i : ι) (p : P) (s : TopCat.diskBoundary.{u} (k i)) :
+    morseFamilyAttachingMap (fun _ : P ↦ φ) k hk hε (fun _ ↦ hball) (fun _ ↦ hf)
+        (continuousOn_symm_const φ hball) i (p, s) =
+      sublevelInclusionHomeomorph f (c - ε) (c + ε) (by linarith)
+        ((φ i).morseAttachingMap (hk i) hε (hball i) (hf i) s) :=
+  Subtype.ext (Subtype.ext ((coe_morseFamilyAttachingMap_apply (fun _ : P ↦ φ) k hk hε
+    (fun _ ↦ hball) (fun _ ↦ hf) (continuousOn_symm_const φ hball) i (p, s)).trans
+      (coe_coe_sublevelInclusionHomeomorph_apply f _ _).symm))
+
+end ConstFamily
 
 section Orientation
 
