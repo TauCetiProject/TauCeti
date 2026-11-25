@@ -53,7 +53,7 @@ For `G = U(n)` this is the cover `S¹ × SU(n) → U(n)`, `(z, A) ↦ zA`, with 
 ## Main definitions
 
 * `TauCeti.UniversalCover.centerProdDerivedProjHom`: the covering homomorphism `𝔷 × K → G`.
-* `TauCeti.UniversalCover.quotientKerCenterProdDerivedProjHom`: `G ≃ₜ* (𝔷 × K) ⧸ Γ`.
+* `TauCeti.UniversalCover.quotientKerCenterProdDerivedProjHom`: `(𝔷 × K) ⧸ Γ ≃ₜ* G`.
 * `TauCeti.UniversalCover.deckLattice`: the lattice `Λ ⊆ 𝔷`.
 * `TauCeti.UniversalCover.torusProdDerivedCover`: the finite covering `(𝔷 ⧸ Λ) × K → G`.
 
