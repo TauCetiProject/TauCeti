@@ -31,7 +31,7 @@ instance sheafCongr_functor_additive : (e.sheafCongr J K A).functor.Additive := 
 
 /-- Inverse site transport, as the functor of the inverse equivalence, is additive. -/
 instance sheafCongr_symm_functor_additive : (e.sheafCongr J K A).symm.functor.Additive := by
-  change (e.sheafCongr J K A).inverse.Additive
-  exact Equivalence.inverse_additive _
+  -- The functor of the inverse equivalence is its inverse functor.
+  exact (Equivalence.inverse_additive _ : (e.sheafCongr J K A).inverse.Additive)
 
 end CategoryTheory.Equivalence

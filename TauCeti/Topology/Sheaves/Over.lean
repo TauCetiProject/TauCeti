@@ -234,6 +234,27 @@ def restrictAlongInclusion (h : V ≤ U) :
   (inclusionSites h).sheafPushforwardContinuous A
     (Opens.grothendieckTopology V) (Opens.grothendieckTopology U)
 
+/-- Sections of a restricted sheaf on an open `D` of `V` are sections on `D` viewed in `U`. -/
+@[simp]
+lemma restrictAlongInclusion_obj_obj (h : V ≤ U) (F : (TopCat.of U).Sheaf A) (D : Opens V) :
+    ((restrictAlongInclusion h).obj F).obj.obj (op D) = F.obj.obj (op ((inclusionSites h).obj D)) :=
+  (rfl)
+
+/-- Restriction maps of a restricted sheaf are those of the opens viewed in `U`. -/
+@[simp]
+lemma restrictAlongInclusion_obj_map (h : V ≤ U) (F : (TopCat.of U).Sheaf A) {D D' : Opens V}
+    (f : D ⟶ D') :
+    ((restrictAlongInclusion h).obj F).obj.map f.op = F.obj.map ((inclusionSites h).map f).op :=
+  (rfl)
+
+/-- A morphism of restricted sheaves has the components of the original morphism on the opens
+viewed in `U`. -/
+@[simp]
+lemma restrictAlongInclusion_map_hom_app (h : V ≤ U) {F G : (TopCat.of U).Sheaf A} (φ : F ⟶ G)
+    (D : Opens V) :
+    ((restrictAlongInclusion h).map φ).hom.app (op D) = φ.hom.app (op ((inclusionSites h).obj D)) :=
+  (rfl)
+
 /-- For `V ≤ U`, restricting a sheaf on `X` to `U` and then to `V` is restricting it to `V`. -/
 def sheafRestrictionCompositionIso (h : V ≤ U) :
     U.sheafRestrict ⋙ restrictAlongInclusion (A := A) h ≅

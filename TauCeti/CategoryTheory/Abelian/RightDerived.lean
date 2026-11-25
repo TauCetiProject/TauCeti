@@ -314,29 +314,6 @@ private lemma mapHomotopyCategoryCompHomologyFunctorIso_app_quotient (L : Cochai
         (G.mapIso ((HomotopyCategory.homologyFunctorFactors D (ComplexShape.up ℕ) n).app L)).symm :=
   Iso.ext (G.mapHomotopyCategoryCompHomologyFunctorIso_hom_app (ComplexShape.up ℕ) n L)
 
-/-- On the class of a complex, `mapHomotopyCategoryCompIso` is the class of the
-homological-complex comparison `mapHomologicalComplexCompIso`. -/
-private lemma mapHomotopyCategoryCompIso_hom_app_quotient {V W W' : Type*} [Category* V]
-    [Category* W] [Category* W'] [Preadditive V] [Preadditive W] [Preadditive W']
-    {F₁ : V ⥤ W} {G₁ : W ⥤ W'} {H₁ : V ⥤ W'} (e₁ : F₁ ⋙ G₁ ≅ H₁)
-    [F₁.Additive] [G₁.Additive] [H₁.Additive] (K : CochainComplex V ℕ) :
-    (Functor.mapHomotopyCategoryCompIso e₁ (ComplexShape.up ℕ)).hom.app
-        ((HomotopyCategory.quotient V (ComplexShape.up ℕ)).obj K) =
-      (HomotopyCategory.quotient W' (ComplexShape.up ℕ)).map
-        ((Functor.mapHomologicalComplexCompIso e₁ (ComplexShape.up ℕ)).hom.app K) :=
-  Quotient.natTransLift_app _ _ _ _ K
-
-/-- The inverse form of `mapHomotopyCategoryCompIso_hom_app_quotient`. -/
-private lemma mapHomotopyCategoryCompIso_inv_app_quotient {V W W' : Type*} [Category* V]
-    [Category* W] [Category* W'] [Preadditive V] [Preadditive W] [Preadditive W']
-    {F₁ : V ⥤ W} {G₁ : W ⥤ W'} {H₁ : V ⥤ W'} (e₁ : F₁ ⋙ G₁ ≅ H₁)
-    [F₁.Additive] [G₁.Additive] [H₁.Additive] (K : CochainComplex V ℕ) :
-    (Functor.mapHomotopyCategoryCompIso e₁ (ComplexShape.up ℕ)).inv.app
-        ((HomotopyCategory.quotient V (ComplexShape.up ℕ)).obj K) =
-      (HomotopyCategory.quotient W' (ComplexShape.up ℕ)).map
-        ((Functor.mapHomologicalComplexCompIso e₁ (ComplexShape.up ℕ)).inv.app K) :=
-  Quotient.natTransLift_app _ _ _ _ K
-
 omit [HasInjectiveResolutions C]
   [HasInjectiveResolutions C'] [H'.PreservesInjectiveObjects] [H'.PreservesHomology] in
 private theorem comparisonHomotopy_complex_component (K : CochainComplex C ℕ) (n : ℕ) :
@@ -366,7 +343,8 @@ private theorem comparisonHomotopy_complex_component (K : CochainComplex C ℕ) 
     ((Functor.mapHomologicalComplexCompIso e (ComplexShape.up ℕ)).hom.app K ≫
       (Functor.mapHomologicalComplexCompIso (Iso.refl (H' ⋙ F')) (ComplexShape.up ℕ)).inv.app K)
   simp only [Functor.comp_map, Functor.comp_obj] at hn
-  rw [hG, mapHomotopyCategoryCompIso_hom_app_quotient, mapHomotopyCategoryCompIso_inv_app_quotient,
+  rw [hG, mapHomotopyCategoryCompIso_hom_app_quotient_obj,
+    mapHomotopyCategoryCompIso_inv_app_quotient_obj,
     ← Functor.map_comp]
   simp only [Iso.trans_inv, Iso.symm_inv, Iso.app_inv, Iso.app_hom, Functor.mapIso_hom,
     Category.assoc]
