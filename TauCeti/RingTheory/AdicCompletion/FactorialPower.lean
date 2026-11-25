@@ -278,6 +278,7 @@ theorem factorialIdempotent_eq_zero_of_isNilpotent [IsHausdorff I S] {t : S}
 /-- **Naturality of the factorial idempotent.** An algebra homomorphism out of an `I`-adically
 precomplete algebra with finite quotients `S ⧸ I ^ k • S`, into an `I`-adically separated
 algebra, carries the factorial idempotent of `t` to that of its image. -/
+@[simp]
 theorem _root_.AlgHom.map_factorialIdempotent {S' : Type*} [Ring S'] [Algebra R S']
     [∀ k, Finite (S ⧸ (I ^ k • ⊤ : Submodule R S))] [IsPrecomplete I S] [IsHausdorff I S']
     (f : S →ₐ[R] S') (t : S) : f (I.factorialIdempotent t) = I.factorialIdempotent (f t) := by
