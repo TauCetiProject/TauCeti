@@ -139,37 +139,6 @@ section UnitSummand
 
 variable {R : C} [P : ExactPairing Rᘁ R] (φ : R ≅ 𝟙_ C)
 
-/-- For `φ : R ≅ 𝟙_ C` and a pairing of `Rᘁ` and `R` normalized by `η_ Rᘁ R ≫ ε_ R Rᘁ = 𝟙`,
-contracting `R` with the right adjoint mate `φ.homᘁ : 𝟙_ C ⟶ Rᘁ` through the pairing is `φ`. -/
-private theorem whiskerLeft_rightAdjointMate_comp_evaluation
-    (hP : η_ (Rᘁ : C) R ≫ ε_ R Rᘁ = 𝟙 (𝟙_ C)) :
-    R ◁ φ.homᘁ ≫ ε_ (Rᘁ : C) R = (ρ_ R).hom ≫ φ.hom := by
-  -- By the normalization, the mate of `φ.hom` is `φ` applied after the coevaluation.
-  have hm : (φ.homᘁ : 𝟙_ C ⟶ Rᘁ) = η_ (Rᘁ : C) R ≫ (Rᘁ : C) ◁ φ.hom ≫ (ρ_ _).hom := by
-    apply (ExactPairing.homUnitEquiv R Rᘁ).symm.injective
-    rw [← cancel_epi φ.inv, ExactPairing.homUnitEquiv_symm_apply,
-      ExactPairing.homUnitEquiv_symm_apply, rightAdjointMate_comp_evaluation]
-    trans 𝟙 (𝟙_ C)
-    · -- The evaluation of the unit object is its right unitor.
-      change φ.inv ≫ (λ_ R).inv ≫ 𝟙_ C ◁ φ.hom ≫ (ρ_ (𝟙_ C)).hom = _
-      rw [← leftUnitor_inv_naturality_assoc, Iso.inv_hom_id_assoc, unitors_inv_equal,
-        Iso.inv_hom_id]
-    · rw [leftUnitor_inv_naturality_assoc, whisker_exchange_assoc, unitors_inv_equal,
-        ← rightUnitor_inv_naturality_assoc]
-      simp only [Category.assoc, Iso.hom_inv_id_assoc, ← whiskerLeft_comp_assoc, Iso.hom_inv_id,
-        whiskerLeft_id, Category.id_comp, hP]
-  rw [hm]
-  calc
-    _ = 𝟙 _ ⊗≫ R ◁ η_ (Rᘁ : C) R ⊗≫ ((R ⊗ Rᘁ) ◁ φ.hom ≫ ε_ (Rᘁ : C) R ▷ 𝟙_ C) ⊗≫ 𝟙 _ := by
-      simp only [whiskerLeft_comp]
-      monoidal
-    _ = 𝟙 _ ⊗≫ (R ◁ η_ (Rᘁ : C) R ⊗≫ ε_ (Rᘁ : C) R ▷ R) ⊗≫ φ.hom := by
-      rw [whisker_exchange]
-      monoidal
-    _ = _ := by
-      rw [ExactPairing.coevaluation_evaluation'']
-      monoidal
-
 /-- The inclusion `X ⟶ R ⊗ X ⊗ Rᘁ` through `φ⁻¹ : 𝟙_ C ⟶ R` and `φ.homᘁ : 𝟙_ C ⟶ Rᘁ` (the inverse
 of `Center.inductionUnitSummandIso` when `R` represents the class of the unit), followed by the
 contraction of `R ⊗ Rᘁ` past a half-braiding through a normalized pairing, is the identity. -/
