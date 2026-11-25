@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.GaloisRepresentation.GlobalRamification
-public import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.Inertia
-import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.InertiaImage
+public import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.Inertia.Basic
+import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.Inertia.Image
 
 /-!
 # Galois representations with open kernel have finite ramification set
