@@ -162,6 +162,9 @@ theorem ramificationIndex_eq_ramificationIdx_integralClosure
   let e := integerRingEquivIntegralClosure K L
   have : IsDiscreteValuationRing (integralClosure 𝒪[K] L) :=
     IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing e
+  -- Supplied directly: instance search tries Mathlib's `IsLocalHom` route first and times out.
+  have := Ideal.liesOver_maximalIdeal_of_isIntegral (A := 𝒪[K])
+    (maximalIdeal (integralClosure 𝒪[K] L))
   rw [ramificationIndex_eq_ramificationIdx,
     ← Ideal.ramificationIdx'_eq_ramificationIdx 𝓂[K]
       (maximalIdeal (integralClosure 𝒪[K] L)) (IsDiscreteValuationRing.not_a_field 𝒪[K]),

@@ -61,6 +61,8 @@ theorem isTamelyRamifiedWRT_iff_isTamelyRamified :
   rw [Algebra.isTamelyRamifiedWRT_def]
   constructor
   · intro h
+    -- Supplied directly: instance search tries Mathlib's `IsLocalHom` route first and times out.
+    have := Ideal.liesOver_maximalIdeal_of_isIntegral (A := 𝒪[K]) (maximalIdeal B)
     exact htame.mpr (h (maximalIdeal B)).2
   · intro h P _ _
     have hP : P = maximalIdeal B := IsLocalRing.eq_maximalIdeal inferInstance
