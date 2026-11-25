@@ -17,7 +17,7 @@ import Mathlib.RingTheory.Finiteness.Prod
 # Dimensions of products of modules
 
 Mathlib's `Module.finrank_prod` and `Module.finrank_pi_fintype` compute the `finrank` of binary
-and finite dependent products of finite free modules. This file records four results:
+and finite dependent products of finite free modules. This file records five results:
 
 * For the square `M × M` of a free module over a semiring with the strong rank condition, no
   finiteness is needed: if `M` is not finite then neither is `M × M`, and both dimensions are `0`
@@ -26,11 +26,14 @@ and finite dependent products of finite free modules. This file records four res
   `m + 1` and `n + 1` add without a separate finiteness hypothesis
   (`Module.finrank_prod_eq_succ`). The sum is written `d + 1` together with a proof of
   `(m + 1) + (n + 1) = d + 1`, the form used for products of local orientations.
-* Over a ring satisfying the strong rank condition and rank--nullity (`HasRankNullity`), such as a
-  division ring or a commutative domain, no freeness is needed: the `finrank` of a binary product
-  (`Module.finrank_prod_of_hasRankNullity`) or a finite dependent product
-  (`Module.finrank_pi_fintype_of_hasRankNullity`) of finitely generated modules is the sum of their
-  `finrank`s, covering finitely generated modules with torsion (such as finite abelian groups).
+* Without freeness, rank is still additive on products over any ring with the rank-nullity
+  property, for instance any domain: the first projection `M × N → M` is onto with kernel `N`
+  (`Module.rank_prod_of_hasRankNullity`). For modules of finite rank this gives the same formula
+  for `finrank` (`Module.finrank_prod_of_hasRankNullity`).
+* Over a ring satisfying the strong rank condition and rank--nullity (`HasRankNullity`), the
+  `finrank` of a finite dependent product of finitely generated modules is the sum of their
+  `finrank`s (`Module.finrank_pi_fintype_of_hasRankNullity`), covering finitely generated modules
+  with torsion (such as finite abelian groups).
 * For a finite-dimensional vector space `V` over a field `K`, the space `V × V^* × K`, the linear
   model of the one-jet space of `V`, has dimension `2 * finrank K V + 1`
   (`Module.finrank_prod_dual_prod_self`).
@@ -67,19 +70,29 @@ theorem finrank_prod_eq_succ (hM : finrank R M = m + 1) (hM' : finrank R M' = n 
 
 end Free
 
-section HasRankNullity
+section RankNullity
 
-/-- Over a ring satisfying the strong rank condition and rank--nullity, the `finrank` of a product
-of two finitely generated modules is the sum of their `finrank`s (without assuming freeness). -/
-theorem finrank_prod_of_hasRankNullity {R : Type u} {M : Type v} {N : Type w}
-    [Ring R] [StrongRankCondition R] [HasRankNullity.{max v w} R]
-    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-    [Module.Finite R M] [Module.Finite R N] :
+variable {R : Type*} [Ring R] (M N : Type u) [AddCommGroup M] [Module R M] [AddCommGroup N]
+  [Module R N] [HasRankNullity.{u} R]
+
+/-- Over a ring with the rank-nullity property, rank is additive on products: the first
+projection `M × N → M` is onto with kernel `N`. No freeness or finiteness is needed. -/
+theorem rank_prod_of_hasRankNullity :
+    Module.rank R (M × N) = Module.rank R M + Module.rank R N := by
+  rw [← (LinearMap.fst R M N).rank_range_add_rank_ker, LinearMap.range_eq_top.2 Prod.fst_surjective,
+    rank_top, LinearMap.ker_fst, rank_range_of_injective _ LinearMap.inr_injective]
+
+variable {M N} in
+/-- Over a ring with the rank-nullity property, `finrank` is additive on products of modules of
+finite rank. -/
+theorem finrank_prod_of_hasRankNullity (hM : Module.rank R M < Cardinal.aleph0)
+    (hN : Module.rank R N < Cardinal.aleph0) :
     finrank R (M × N) = finrank R M + finrank R N := by
-  have h := (LinearMap.ker (LinearMap.fst R M N)).finrank_quotient_add_finrank
-  rw [((LinearMap.fst R M N).quotKerEquivOfSurjective Prod.fst_surjective).finrank_eq,
-    LinearMap.ker_fst, ← (LinearEquiv.ofInjective _ LinearMap.inr_injective).finrank_eq] at h
-  exact h.symm
+  simp only [finrank, rank_prod_of_hasRankNullity, Cardinal.toNat_add hM hN]
+
+end RankNullity
+
+section HasRankNullity
 
 /-- Over a ring satisfying the strong rank condition and rank--nullity, the `finrank` of a finite
 dependent product of finitely generated modules is the sum of their `finrank`s (without assuming
@@ -104,7 +117,8 @@ theorem finrank_pi_fintype_of_hasRankNullity {R : Type u} {ι : Type w} [Fintype
   | succ n ih =>
     intro N _ _ _
     have : Module.Finite R (∀ i : Fin n, N i.succ) := Module.Finite.pi
-    rw [(Fin.consLinearEquiv R N).symm.finrank_eq, finrank_prod_of_hasRankNullity,
+    rw [(Fin.consLinearEquiv R N).symm.finrank_eq,
+      finrank_prod_of_hasRankNullity (Module.rank_lt_aleph0 R _) (Module.rank_lt_aleph0 R _),
       ih (fun i ↦ N i.succ), Fin.sum_univ_succ]
 
 end HasRankNullity

@@ -38,15 +38,21 @@ A map of Serre fibrations, that is, a commutative square from `p` to `p'` over `
 the local system of fibre homology of `p` to the pullback along `g` of that of `p'`, acting on the
 fibres by the maps it induces (`CategoryTheory.CommSq.serreFiberLocalSystemMap`). This is an
 isomorphism when the maps of fibres are weak homotopy equivalences, as for the base change of a
-Serre fibration.
+Serre fibration. A linear map of coefficient modules likewise maps the local system of fibre
+homology with coefficients in one to that with coefficients in the other
+(`TauCeti.TopCat.serreFiberLocalSystemMapCoeff`).
 
 ## Main definitions
 
 * `TauCeti.TopCat.serreFiberLocalSystem`: the local system `b ↦ Hₙ(p⁻¹(b); M)`.
 * `TauCeti.TopCat.serreFiberLocalSystemObjIso`: the identification of the fibre of
   `serreFiberLocalSystem` at `b` with `Hₙ(p⁻¹(b); M)`.
+* `TauCeti.TopCat.serreFiberLocalSystemOn`: its restriction, with coefficients `R`, to a subspace
+  of the base.
 * `CategoryTheory.CommSq.serreFiberLocalSystemMap`: the morphism of local systems induced by a map
   of Serre fibrations.
+* `TauCeti.TopCat.serreFiberLocalSystemMapCoeff`: the morphism of local systems induced by a map of
+  coefficient modules.
 
 ## Main results
 
@@ -123,6 +129,49 @@ theorem serreFiberLocalSystem_map_mk {b₀ b₁ : FundamentalGroupoid B}
   -- `Quotient.lift` evaluates on the class of a path by definition.
   rfl
 
+/-- **Functoriality of the local system of fibre homology in the coefficients.** A linear map
+`ψ : M ⟶ M'` of coefficient modules induces a morphism of local systems of fibre homology, acting
+on the fibre over each point by the map induced on homology by `ψ`. -/
+def serreFiberLocalSystemMapCoeff {M' : ModuleCat.{u} R} (ψ : M ⟶ M') :
+    serreFiberLocalSystem hp M n ⟶ serreFiberLocalSystem hp M' n where
+  app b := (serreFiberLocalSystemObjIso hp M n b).hom ≫
+    ((singularHomologyFunctor (ModuleCat.{u} R) n).map ψ).app (p.fiber b.as) ≫
+      (serreFiberLocalSystemObjIso hp M' n b).inv
+  naturality {b₀ b₁} q := by
+    induction q using Path.Homotopic.Quotient.ind with | mk γ =>
+    simp only [serreFiberLocalSystem_map_mk, Category.assoc, Iso.inv_hom_id_assoc]
+    rw [fiberIsoOfPath_hom_comp_app_assoc
+      (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp
+      (weakEquivalences_isInvertedBy_singularHomologyFunctor M' n)
+      ((singularHomologyFunctor (ModuleCat.{u} R) n).map ψ) γ]
+
+/-- On the fibre over `b`, the morphism of local systems induced by a map of coefficient modules is
+the map it induces on the homology of the fibre. -/
+@[simp]
+theorem serreFiberLocalSystemMapCoeff_app {M' : ModuleCat.{u} R} (ψ : M ⟶ M')
+    (b : FundamentalGroupoid B) :
+    (serreFiberLocalSystemMapCoeff hp M n ψ).app b =
+      (serreFiberLocalSystemObjIso hp M n b).hom ≫
+        ((singularHomologyFunctor (ModuleCat.{u} R) n).map ψ).app (p.fiber b.as) ≫
+          (serreFiberLocalSystemObjIso hp M' n b).inv :=
+  (rfl)
+
+/-- Changing coefficients along the identity is the identity morphism of local systems. -/
+@[simp]
+theorem serreFiberLocalSystemMapCoeff_id :
+    serreFiberLocalSystemMapCoeff hp M n (𝟙 M) = 𝟙 _ := by
+  ext b : 2
+  simp
+
+/-- Changing coefficients along a composite is the composite of the coefficient changes. -/
+@[simp, reassoc]
+theorem serreFiberLocalSystemMapCoeff_comp {M' M'' : ModuleCat.{u} R} (ψ : M ⟶ M')
+    (ψ' : M' ⟶ M'') :
+    serreFiberLocalSystemMapCoeff hp M n (ψ ≫ ψ') =
+      serreFiberLocalSystemMapCoeff hp M n ψ ≫ serreFiberLocalSystemMapCoeff hp M' n ψ' := by
+  ext b : 2
+  simp
+
 /-! ### Comparison with the transport of a lifting function -/
 
 /-- **The local system of fibre homology agrees with the one of a lifting function.** For a Serre
@@ -163,6 +212,18 @@ theorem serreFiberLocalSystemIsoFiberLocalSystem_hom_app
   (rfl)
 
 end LocalSystem
+
+section Restriction
+
+variable (C : Set B) (R : Type u) [Ring R] (hp : serreFibrations p)
+
+/-- The local system of fibre homology `b ↦ Hq(p⁻¹(b); R)` of a Serre fibration `p`, restricted to
+a subspace `C ⊆ B`. -/
+abbrev serreFiberLocalSystemOn (q : ℕ) : LocalCoefficientSystem.{u, u, u} R (TopCat.of C) :=
+  (LocalCoefficientSystem.pullback ⟨Subtype.val, continuous_subtypeVal⟩).obj
+    (serreFiberLocalSystem hp (ModuleCat.of R R) q)
+
+end Restriction
 
 end TauCeti.TopCat
 

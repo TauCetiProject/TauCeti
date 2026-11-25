@@ -10,6 +10,9 @@ public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.Dimension.RankNullity
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dimension.Finite
+import Mathlib.RingTheory.Finiteness.Prod
+import TauCeti.Algebra.Category.ModuleCat.Biproducts
+import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 import TauCeti.LinearAlgebra.Dimension.Prod
 
 /-!
@@ -112,7 +115,8 @@ biproduct of finitely generated modules is the sum of their finranks, without as
 theorem finrank_biprod_of_hasRankNullity (M N : ModuleCat.{v} R)
     [Module.Finite R M] [Module.Finite R N] :
     Module.finrank R ↑(M ⊞ N) = Module.finrank R M + Module.finrank R N :=
-  (biprodIsoProd M N).toLinearEquiv.finrank_eq.trans Module.finrank_prod_of_hasRankNullity
+  (biprodIsoProd M N).toLinearEquiv.finrank_eq.trans
+    (Module.finrank_prod_of_hasRankNullity (Module.rank_lt_aleph0 R M) (Module.rank_lt_aleph0 R N))
 
 /-- Over a ring satisfying the strong rank condition and the rank-nullity property
 (`HasRankNullity`), such as a division ring or a commutative domain, the finrank of a finite

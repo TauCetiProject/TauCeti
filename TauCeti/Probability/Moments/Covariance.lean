@@ -13,9 +13,12 @@ import TauCeti.MeasureTheory.Integral.OddSymmetric
 /-!
 # Covariances and covariance matrices
 
-Covariance is unchanged by almost-everywhere changes to either observable. This file also
-packages the coordinate covariances of a measure on a finite-dimensional Euclidean space as a
-matrix and connects that matrix to Mathlib's basis-free `covarianceBilin`.
+Covariance is unchanged by almost-everywhere changes to either observable. For integrable
+observables with integrable product, for instance two square-integrable ones, under a finite
+measure of mass `m` it is `∫ XY + (m - 2) (∫ X) (∫ Y)`, which for a probability measure is
+Mathlib's `covariance_eq_sub`. This file also packages the coordinate
+covariances of a measure on a finite-dimensional Euclidean space as a matrix and connects that
+matrix to Mathlib's basis-free `covarianceBilin`.
 
 The `MemLp id 2 μ` hypothesis in the comparison theorem is essential. Mathlib deliberately sets
 `covarianceBilin μ` to zero when this hypothesis fails, whereas its scalar `covariance` is
@@ -58,6 +61,27 @@ theorem covariance_congr_ae {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
   apply integral_congr_ae
   filter_upwards [hX, hY] with x hx hy
   rw [hx, hy]
+
+/-- Mathlib's covariance of two integrable observables with integrable product under a finite
+measure, expanded in terms of the total mass: it is the integral of the product plus the mass
+minus `2`, times the product of the integrals. This covers two square-integrable observables, and
+an integrable observable paired with an essentially bounded one. For a probability measure this is
+`covariance_eq_sub`. -/
+theorem covariance_eq_integral_mul_add {Ω : Type*} [MeasurableSpace Ω] {ν : Measure Ω}
+    [IsFiniteMeasure ν] {X Y : Ω → ℝ} (hX : Integrable X ν) (hY : Integrable Y ν)
+    (hXY : Integrable (X * Y) ν) :
+    covariance X Y ν = ν[X * Y] + (ν.real Set.univ - 2) * (ν[X] * ν[Y]) := by
+  have hXY' : Integrable (fun ω ↦ X ω * Y ω) ν := hXY
+  have hXc : Integrable (fun ω ↦ X ω * ν[Y]) ν := hX.mul_const _
+  have hcY : Integrable (fun ω ↦ ν[X] * Y ω) ν := hY.const_mul _
+  have hc : Integrable (fun _ ↦ ν[X] * ν[Y]) ν := integrable_const _
+  have hl : Integrable (fun ω ↦ X ω * Y ω - X ω * ν[Y]) ν := hXY'.sub hXc
+  have hr : Integrable (fun ω ↦ ν[X] * Y ω - ν[X] * ν[Y]) ν := hcY.sub hc
+  simp_rw [covariance, sub_mul, mul_sub]
+  rw [integral_sub hl hr, integral_sub hXY' hXc, integral_sub hcY hc]
+  simp_rw [integral_mul_const, integral_const_mul, integral_const, smul_eq_mul]
+  simp only [Pi.mul_apply]
+  ring
 
 variable {ι : Type*}
 
@@ -238,7 +262,7 @@ theorem covarianceBilin_eq_smul_innerSL [IsFiniteMeasure μ]
   -- Invariance under `-1` makes the mean vanish, so covariance is the second-moment form.
   have hm : ∫ x, x ∂μ = 0 := by
     have : μ.IsNegInvariant := ⟨hμ (LinearIsometryEquiv.neg ℝ)⟩
-    exact integral_eq_zero_of_odd fun x ↦ rfl
+    exact integral_eq_zero_of_odd (Filter.Eventually.of_forall fun _ ↦ rfl)
   set Q : E → ℝ := fun x ↦ covarianceBilin μ x x
   set d := Module.finrank ℝ E
   have hd : (d : ℝ) ≠ 0 := by exact_mod_cast Module.finrank_pos.ne'
