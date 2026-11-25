@@ -51,9 +51,12 @@ example : objectCover (constPoint (Discrete Bool)) pt = ⊤ :=
 /-- **Not locally connected.** For the constant fibre `Discrete Bool`, the isomorphism cover of
 `false` and `true` is the empty sieve. -/
 example : isomCover (constPoint (Discrete Bool)) (boolObj false) (boolObj true) = ⊥ :=
-  eq_bot_iff.2 fun _ f hf ↦
-    let ⟨e⟩ := (mem_isomCover_iff _ _ f).1 hf
-    Bool.false_ne_true (Discrete.eq_of_hom e.hom)
+  eq_bot_iff.2 fun _ f hf ↦ by
+    obtain ⟨e⟩ := (mem_isomCover_iff _ _ f).1 hf
+    -- The constant pseudofunctor maps every arrow to the identity functor of the fibre.
+    simp only [Functor.toPseudofunctor'_map, Quiver.Hom.toLoc, Functor.const_obj_map,
+      Cat.Hom.id_toFunctor, Functor.id_obj] at e
+    exact Bool.false_ne_true (Discrete.eq_of_hom e.hom)
 
 /-- For the constant fibre `Discrete Bool`, the isomorphism cover of `false` with itself is the
 maximal sieve. -/
