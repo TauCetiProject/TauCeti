@@ -234,6 +234,18 @@ the hypothesis needed to turn `EMetricSpace.ofRiemannianMetric` into a genuine m
 theorem riemannianEDist_ne_top [PreconnectedSpace M] (x y : M) : riemannianEDist I x y ≠ ⊤ :=
   (riemannianEDist_lt_top I x y).ne
 
+/-- On a regular `T₀` manifold, the Riemannian distance between two points vanishes exactly when
+they are equal: it is the distance of the emetric space `EMetricSpace.ofRiemannianMetric`. -/
+theorem riemannianEDist_eq_zero_iff [T3Space M] {x y : M} :
+    riemannianEDist I x y = 0 ↔ x = y := by
+  let : EMetricSpace M := .ofRiemannianMetric I M
+  rw [← IsRiemannianManifold.out (I := I), edist_eq_zero]
+
+/-- On a regular `T₀` manifold, the Riemannian distance between two points is positive exactly
+when they are distinct. -/
+theorem riemannianEDist_pos_iff_ne [T3Space M] {x y : M} : 0 < riemannianEDist I x y ↔ x ≠ y :=
+  pos_iff_ne_zero.trans riemannianEDist_eq_zero_iff.not
+
 end Finiteness
 
 section TailLength

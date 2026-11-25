@@ -249,7 +249,7 @@ theorem IsMIntegralCurveOn.strictAntiOn_comp_neg_mgradient
   have hcrit : γ t ∉ criticalPoints I f := fun h ↦ h0 <| by
     rwa [hγ.apply_eq_of_mem_criticalPoints_neg_mgradient hf (interior_subset ht) h le_rfl]
   rw [mem_criticalPoints, ← mgradient_eq_zero_iff] at hcrit
-  rw [Pi.neg_apply, map_neg, mvfderiv_apply_mgradient, real_inner_self_eq_norm_sq, neg_lt_zero]
+  rw [Pi.neg_apply, mvfderiv_apply_neg_mgradient, neg_lt_zero]
   positivity
 
 /-- **The equilibrium has length zero.** A prescribed forward negative-gradient curve starting at a
@@ -292,15 +292,11 @@ theorem IsMIntegralCurveOn.forall_eq_or_forall_pos_of_tendsto_neg_mgradient
     have hlt : f (γ (t + 1)) < f (γ t) := hanti ht ht1 (by linarith)
     have hE : 0 < f (γ t) - f p := by linarith
     refine ⟨hE, ?_⟩
-    -- The Riemannian distance is that of an emetric space structure on `M`, so it is positive
-    -- between the distinct points `γ t` and `p`.
-    have hne : γ t ≠ p := fun h ↦ by rw [h, sub_self] at hE; exact hE.false
+    -- The Riemannian distance is positive between the distinct points `γ t` and `p`.
     have : IsManifold I 1 M := IsManifold.of_le one_le_two
     have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
       IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1)
     have : LocallyCompactSpace M := Manifold.locallyCompact_of_finiteDimensional I
-    let : EMetricSpace M := .ofRiemannianMetric I M
-    rw [← IsRiemannianManifold.out (I := I)]
-    exact edist_pos.2 hne
+    exact Manifold.riemannianEDist_pos_iff_ne.2 fun h ↦ by rw [h, sub_self] at hE; exact hE.false
 
 end Equilibrium
