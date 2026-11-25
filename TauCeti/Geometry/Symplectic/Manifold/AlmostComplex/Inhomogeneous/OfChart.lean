@@ -82,10 +82,8 @@ private theorem contMDiff_ofChartField (q : P × M) (A : EP × E → EP →L[ℝ
   set V := chartSource (H := H) q.2
   refine (TauCeti.contMDiff_hom_bundle_iff (E₁ := horizontalTangentBundle I V IP U)
     (E₂ := verticalTangentBundle I V IP U) (ofChartField q A)).2 ?_
-  have hbP := TangentBundle.trivializationAt_chartSource_baseSet (I := IP) q.1
-  have hbM := TangentBundle.trivializationAt_chartSource_baseSet (I := I) q.2
-  have hmP (r : U) : r ∈ (chartFrame (I := IP) q.1).baseSet := hbP.symm ▸ Set.mem_univ _
-  have hmM (r : V) : r ∈ (chartFrame (I := I) q.2).baseSet := hbM.symm ▸ Set.mem_univ _
+  have hmP := TangentBundle.mem_chartFrame_baseSet (I := IP) q.1
+  have hmM := TangentBundle.mem_chartFrame_baseSet (I := I) q.2
   have hbase : ContMDiff ((IP.prod I).prod 𝓘(ℝ, EP)) (IP.prod I) n
       (fun w : TotalSpace EP (horizontalTangentBundle I V IP U) ↦ w.proj) :=
     contMDiff_proj _
@@ -155,9 +153,9 @@ theorem inCoordinates_ofChart_tangentHom (q : P × M) (A : EP × E → EP →L[�
         (chartSourceCentre (H := HP) (H' := H) q).2 r.2 ((ofChart q A hA).tangentHom r) =
       A (extChartAt (IP.prod I) q ((r.1 : P), (r.2 : M))) := by
   have hP : r.1 ∈ (chartFrame (I := IP) q.1).baseSet :=
-    (TangentBundle.trivializationAt_chartSource_baseSet (I := IP) q.1).symm ▸ Set.mem_univ _
+    TangentBundle.mem_chartFrame_baseSet (I := IP) q.1 _
   have hM : r.2 ∈ (chartFrame (I := I) q.2).baseSet :=
-    (TangentBundle.trivializationAt_chartSource_baseSet (I := I) q.2).symm ▸ Set.mem_univ _
+    TangentBundle.mem_chartFrame_baseSet (I := I) q.2 _
   ext v
   simp only [ContinuousLinearMap.inCoordinates, ofChart_tangentHom,
     ContinuousLinearMap.comp_apply]
@@ -188,9 +186,9 @@ theorem _root_.TauCeti.DomainDependentHomSection.ofChart_mem_inhomogeneousTerms 
     DomainDependentHomSection.ofChart q A hA ∈ inhomogeneousTerms j J := by
   refine (mem_inhomogeneousTerms_iff_tangentHom _ _ _).2 fun r v ↦ ?_
   have hP : r.1 ∈ (chartFrame (I := IP) q.1).baseSet :=
-    (TangentBundle.trivializationAt_chartSource_baseSet (I := IP) q.1).symm ▸ Set.mem_univ _
+    TangentBundle.mem_chartFrame_baseSet (I := IP) q.1 _
   have hM : r.2 ∈ (chartFrame (I := I) q.2).baseSet :=
-    (TangentBundle.trivializationAt_chartSource_baseSet (I := I) q.2).symm ▸ Set.mem_univ _
+    TangentBundle.mem_chartFrame_baseSet (I := I) q.2 _
   have h := hAj r ((chartFrame (I := IP) q.1).continuousLinearMapAt ℝ r.1 v)
   rw [ContMDiffAlmostComplexStructure.inChart_chartSource,
     ContMDiffAlmostComplexStructureFamily.inChart_chartSourceCentre] at h
