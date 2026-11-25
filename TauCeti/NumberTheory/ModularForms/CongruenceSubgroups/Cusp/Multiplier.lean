@@ -15,9 +15,9 @@ import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 # Cusp multipliers of `Γ₀(N)` with a Dirichlet character
 
 Let `χ` be a Dirichlet character modulo `N` and `γ = [a,b;c,d] ∈ SL₂(ℤ)`. The stabilizer of the
-cusp `γ ∞` in `Γ₀(N)` is generated, up to sign, by `TauCeti.cuspGenerator N γ = γ T^w γ⁻¹`, whose
-lower-right entry is `1 + wac` for `w = TauCeti.cuspWidth N γ`. Its value under `χ` is the
-*multiplier* `ζ = χ(1 + wac)` of the cusp: a function `f` with `f (δ z) = χ(d_δ) f z` for
+cusp `γ ∞` in `Γ₀(N)` is generated, up to sign, by `TauCeti.cuspGeneratorGamma0 N γ = γ T^w γ⁻¹`,
+whose lower-right entry is `1 + wac` for `w = TauCeti.cuspWidthGamma0 N γ`. Its value under `χ`
+is the *multiplier* `ζ = χ(1 + wac)` of the cusp: a function `f` with `f (δ z) = χ(d_δ) f z` for
 `δ ∈ Γ₀(N)` satisfies `f (γ (z + w)) = ζ f (γ z)`. The cusp is *regular* for `χ` when `ζ = 1`, so
 that `z ↦ f (γ z)` is periodic, and *irregular* otherwise.
 
@@ -31,7 +31,7 @@ character with `χ(4) ≠ 1`, such as the even characters of order `3`, and such
 
 * `TauCeti.cuspMultiplier`: the multiplier `χ(1 + wac)` of the cusp `γ ∞`.
 * `TauCeti.IsRegularCusp`: the multiplier is `1`.
-* `TauCeti.cuspMultiplier_pow_div_cuspWidth`: the multiplier is an `N / w`-th root of unity.
+* `TauCeti.cuspMultiplier_pow_div_cuspWidthGamma0`: the multiplier is an `N / w`-th root of unity.
 * `TauCeti.cuspMultiplier_eq_of_cuspOrbitOfSL2Z_eq`: it depends only on the cusp orbit.
 * `TauCeti.exists_not_isRegularCusp_nine`: some character modulo `9` has an irregular cusp.
 
@@ -52,38 +52,39 @@ namespace TauCeti
 variable {R : Type*} [CommMonoidWithZero R] {N : ℕ}
 
 /-- **The multiplier of the cusp `γ ∞` for the character `χ`**: the value `χ(1 + wac)` of `χ` at
-the lower-right entry of the generator `cuspGenerator N γ = γ T^w γ⁻¹` of the stabilizer, where
-`γ = [a,b;c,d]` and `w = cuspWidth N γ`. -/
+the lower-right entry of the generator `cuspGeneratorGamma0 N γ = γ T^w γ⁻¹` of the stabilizer,
+where `γ = [a,b;c,d]` and `w = cuspWidthGamma0 N γ`. -/
 def cuspMultiplier (χ : DirichletCharacter R N) (γ : SL(2, ℤ)) : R :=
-  χ (Gamma0Map N (cuspGenerator N γ))
+  χ (Gamma0Map N (cuspGeneratorGamma0 N γ))
 
 theorem cuspMultiplier_def (χ : DirichletCharacter R N) (γ : SL(2, ℤ)) :
-    cuspMultiplier χ γ = χ (Gamma0Map N (cuspGenerator N γ)) := (rfl)
+    cuspMultiplier χ γ = χ (Gamma0Map N (cuspGeneratorGamma0 N γ)) := (rfl)
 
-/-- The multiplier of `γ ∞ = a / c` is `χ(1 + wac)` for `w = cuspWidth N γ`. -/
+/-- The multiplier of `γ ∞ = a / c` is `χ(1 + wac)` for `w = cuspWidthGamma0 N γ`. -/
 theorem cuspMultiplier_eq (χ : DirichletCharacter R N) (γ : SL(2, ℤ)) :
-    cuspMultiplier χ γ = χ ((1 + cuspWidth N γ * γ 0 0 * γ 1 0 : ℤ) : ZMod N) := by
-  rw [cuspMultiplier, Gamma0Map_cuspGenerator]
+    cuspMultiplier χ γ = χ ((1 + cuspWidthGamma0 N γ * γ 0 0 * γ 1 0 : ℤ) : ZMod N) := by
+  rw [cuspMultiplier, Gamma0Map_cuspGeneratorGamma0]
 
 /-- The multiplier of the cusp `∞` is `1`. -/
 @[simp]
 theorem cuspMultiplier_one_right (χ : DirichletCharacter R N) : cuspMultiplier χ 1 = 1 := by
-  rw [cuspMultiplier, Gamma0Map_cuspGenerator_one, map_one]
+  rw [cuspMultiplier, Gamma0Map_cuspGeneratorGamma0_one, map_one]
 
 /-- For the trivial character every multiplier is `1`, since `1 + wac` is a unit modulo `N`. -/
 @[simp]
 theorem cuspMultiplier_one_left (γ : SL(2, ℤ)) :
     cuspMultiplier (1 : DirichletCharacter R N) γ = 1 := by
+  -- the trivial character is `1` on units, and `Gamma0Map` lands in units via `toHomUnits`
   rw [cuspMultiplier, ← MonoidHom.coe_toHomUnits, MulChar.one_apply_coe]
 
-/-- **The multiplier is an `N / w`-th root of unity**, for `w = cuspWidth N γ`: the `N / w`-th
+/-- **The multiplier is an `N / w`-th root of unity**, for `w = cuspWidthGamma0 N γ`: the `N / w`-th
 power of the generator is `γ T^N γ⁻¹`, whose lower-right entry `1 + Nac` is `1` modulo `N`. -/
-theorem cuspMultiplier_pow_div_cuspWidth (χ : DirichletCharacter R N) (γ : SL(2, ℤ)) :
-    cuspMultiplier χ γ ^ (N / cuspWidth N γ) = 1 := by
-  have hpow : ((cuspGenerator N γ ^ (N / cuspWidth N γ) : Gamma0 N) : SL(2, ℤ)) =
+theorem cuspMultiplier_pow_div_cuspWidthGamma0 (χ : DirichletCharacter R N) (γ : SL(2, ℤ)) :
+    cuspMultiplier χ γ ^ (N / cuspWidthGamma0 N γ) = 1 := by
+  have hpow : ((cuspGeneratorGamma0 N γ ^ (N / cuspWidthGamma0 N γ) : Gamma0 N) : SL(2, ℤ)) =
       γ * ModularGroup.T ^ (N : ℤ) * γ⁻¹ := by
-    rw [Subgroup.coe_pow, coe_cuspGenerator, conj_pow, ← zpow_natCast, ← _root_.zpow_mul,
-      ← Nat.cast_mul, Nat.mul_div_cancel' (cuspWidth_dvd N γ)]
+    rw [Subgroup.coe_pow, coe_cuspGeneratorGamma0, conj_pow, ← zpow_natCast, ← _root_.zpow_mul,
+      ← Nat.cast_mul, Nat.mul_div_cancel' (cuspWidthGamma0_dvd N γ)]
   rw [cuspMultiplier, ← map_pow, ← map_pow, Gamma0Map_apply, hpow, γ.coe_conj_T_zpow]
   simp
 
@@ -91,7 +92,7 @@ theorem cuspMultiplier_pow_div_cuspWidth (χ : DirichletCharacter R N) (γ : SL(
 theorem cuspMultiplier_eq_of_cuspOrbitOfSL2Z_eq [NeZero N] (χ : DirichletCharacter R N)
     {γ γ' : SL(2, ℤ)} (h : (Gamma0 N).cuspOrbitOfSL2Z γ = (Gamma0 N).cuspOrbitOfSL2Z γ') :
     cuspMultiplier χ γ' = cuspMultiplier χ γ := by
-  rw [cuspMultiplier, Gamma0Map_cuspGenerator_eq_of_cuspOrbitOfSL2Z_eq N h, cuspMultiplier]
+  rw [cuspMultiplier, Gamma0Map_cuspGeneratorGamma0_eq_of_cuspOrbitOfSL2Z_eq N h, cuspMultiplier]
 
 /-- **A regular cusp for `χ`**: the cusp `γ ∞` whose multiplier `χ(1 + wac)` is `1`, so that
 `z ↦ f (γ z)` is `w`-periodic for every `f` transforming under `Γ₀(N)` by `χ`. -/
@@ -121,9 +122,9 @@ theorem isRegularCusp_iff_of_cuspOrbitOfSL2Z_eq [NeZero N] (χ : DirichletCharac
 `χ(1 + 1 · 1 · 3) = χ(4)`. -/
 theorem cuspMultiplier_nine (χ : DirichletCharacter R 9) {γ : SL(2, ℤ)} (h₀₀ : γ 0 0 = 1)
     (h₁₀ : γ 1 0 = 3) : cuspMultiplier χ γ = χ 4 := by
-  have hw : cuspWidth 9 γ = 1 := by
-    rw [cuspWidth_def, h₁₀]
-    rfl
+  have hw : cuspWidthGamma0 9 γ = 1 := by
+    rw [cuspWidthGamma0_def, h₁₀]
+    norm_num
   rw [cuspMultiplier_eq, hw, h₀₀, h₁₀]
   norm_num
 
