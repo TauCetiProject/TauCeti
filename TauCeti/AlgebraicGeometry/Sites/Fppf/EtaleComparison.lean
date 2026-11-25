@@ -85,11 +85,10 @@ abbrev epsilonFppfEtalePushforward :
     Sheaf (fppfTopology.over X) A ⥤ Sheaf (etaleTopology.over X) A :=
   (𝟭 (Over X)).sheafPushforwardContinuous A (etaleTopology.over X) (fppfTopology.over X)
 
-/-- The direct image of `ε` is fully faithful: a morphism of fppf sheaves is the same as a
+/- The direct image of `ε` is fully faithful: a morphism of fppf sheaves is the same as a
 morphism of the underlying étale sheaves. -/
-def fullyFaithfulEpsilonFppfEtalePushforward :
-    (epsilonFppfEtalePushforward X A).FullyFaithful :=
-  fullyFaithfulSheafPushforwardContinuousId _ _ A
+example : (epsilonFppfEtalePushforward X A).FullyFaithful :=
+  fullyFaithfulSheafPushforwardContinuousId (etaleTopology.over X) (fppfTopology.over X) A
 
 section Pullback
 
@@ -149,12 +148,17 @@ noncomputable def aXPushforwardIsoComp :
 @[simp]
 theorem aXPushforwardIsoComp_hom_app_hom (F : Sheaf (fppfTopology.over X) A) :
     ((aXPushforwardIsoComp X A).hom.app F).hom = 𝟙 _ := by
+  -- `simp` leaves `𝟙 (F.obj.obj (op ((Etale.forget X).obj x.unop))) = 𝟙 (((aXPushforward X A).obj
+  -- F).obj.obj x)`. The two objects agree by unfolding `sheafPushforwardContinuous`
+  -- (`Functor.sheafPushforwardContinuous_obj_obj_obj`), but `simp` cannot rewrite an object inside
+  -- the dependent type of an identity morphism, so `rfl` closes the goal.
   ext; simp [aXPushforwardIsoComp]; rfl
 
 /-- The components of the inverse of `aXPushforwardIsoComp` are identities. -/
 @[simp]
 theorem aXPushforwardIsoComp_inv_app_hom (F : Sheaf (fppfTopology.over X) A) :
     ((aXPushforwardIsoComp X A).inv.app F).hom = 𝟙 _ := by
+  -- As in `aXPushforwardIsoComp_hom_app_hom`, `rfl` closes an equation of two identities.
   ext; simp [aXPushforwardIsoComp]; rfl
 
 /- The inverse image of `a_X` exists when the left Kan extensions along the inclusion of étale
