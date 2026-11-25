@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 import TauCeti.LinearAlgebra.Complex.Module
 
@@ -62,14 +63,15 @@ theorem exists_continuousLinearEquiv_comp_eq_comp_I_smul (A : V →L[ℝ] V)
     ∃ Φ₁ : V ≃L[ℝ] V,
       A ∘L (Φ₁ : V →L[ℝ] V) = (Φ₁ : V →L[ℝ] V) ∘L (I • ContinuousLinearMap.id ℝ V) := by
   have hA' (v : V) : A (A v) = -v := congr($hA v)
-  let JA : AlmostComplexStructure V := ⟨A.toLinearMap, by ext v; exact hA' v⟩
+  let JA : AlmostComplexStructure V := AlmostComplexStructure.ofContinuousLinearMap A hA'
   obtain ⟨n, bA, hbA⟩ := JA.exists_basis_apply_one_eq
   obtain ⟨m, bI, hbI⟩ := (AlmostComplexStructure.ofComplexModule V).exists_basis_apply_one_eq
   obtain rfl : n = m := by
     have h := (Module.finrank_eq_card_basis bA).symm.trans (Module.finrank_eq_card_basis bI)
     simp only [Fintype.card_prod, Fintype.card_fin] at h
     omega
-  have hbA' (i : Fin n) : bA (i, 1) = A (bA (i, 0)) := hbA i
+  have hbA' (i : Fin n) : bA (i, 1) = A (bA (i, 0)) :=
+    (hbA i).trans (AlmostComplexStructure.ofContinuousLinearMap_apply ..)
   have hbI₀ (i : Fin n) : I • bI (i, 0) = bI (i, 1) := by
     rw [hbI i]
     exact (AlmostComplexStructure.ofComplexModule_apply _).symm

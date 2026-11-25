@@ -63,7 +63,12 @@ complex determinant (`OrthonormalBasis.centralizerSpinCLift`). On `ℝ⁴` the s
 it to the coordinate group `Spinᶜ(4)` of the positive-definite form `realCliffordForm 4 0`
 (`TauCeti.unitarySpinCLift`), the structure-group homomorphism of the `Spinᶜ` structure that
 `TauCeti.OrthonormalFrameBundle.canonicalSpinCStructure` builds from an almost complex rank-four
-bundle and the chosen frame `e`. Continuity of these lifts is in
+bundle and the chosen frame `e`. This lift does not depend on the frame
+(`TauCeti.unitarySpinCLift_eq_unitarySpinCLift`): two frames give lifts with the same rotations and
+the same determinant character, the complex determinant
+(`OrthonormalBasis.detCircle_centralizerToUnitaryGroup_eq_detCircle_centralizerToUnitaryGroup`),
+and every element of `U(ℝ⁴, J₀)` is a square (`TauCeti.isSquare_centralizer`), so
+`CliffordAlgebra.spinCGroup.hom_ext_of_isSquare` applies. Continuity of these lifts is in
 `TauCeti.Topology.Algebra.CliffordAlgebra.Spin.UnitaryLift`.
 
 ## Construction
@@ -465,6 +470,24 @@ theorem toSpecialOrthogonal_comp_unitarySpinCLift :
   MonoidHom.ext fun g ↦ LinearEquiv.ext fun v ↦ by
     simp only [MonoidHom.comp_apply, Subgroup.coe_subtype, euclideanLinearEquivHom_apply]
     exact toSpecialOrthogonal_unitarySpinCLift_apply hJ₀ e h₀ h₂ g v
+
+/-- **The `Spinᶜ` lift of `U(ℝ⁴, J₀)` does not depend on the unitary frame.** For two unitary frames
+`e` and `e'` of `J₀`, the lifts `unitarySpinCLift` built from them are equal. -/
+theorem unitarySpinCLift_eq_unitarySpinCLift
+    (e' : OrthonormalBasis (Fin 4) ℝ (EuclideanSpace ℝ (Fin 4)))
+    (h₀' : (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) (e' 0) = e' 1)
+    (h₂' : (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) (e' 2) = e' 3) :
+    unitarySpinCLift hJ₀ e h₀ h₂ = unitarySpinCLift hJ₀ e' h₀' h₂' := by
+  have : Fact (Module.finrank ℝ (EuclideanSpace ℝ (Fin 4)) = 4) := ⟨finrank_euclideanSpace_fin⟩
+  refine spinCGroup.hom_ext_of_isSquare _ _ (nondegenerate_realCliffordForm 4 0)
+    (isSquare_centralizer hJ₀) (MonoidHom.ext fun g ↦ Prod.ext ?_ ?_)
+  · have h := DFunLike.congr_fun ((toSpecialOrthogonal_comp_unitarySpinCLift hJ₀ e h₀ h₂).trans
+      (toSpecialOrthogonal_comp_unitarySpinCLift hJ₀ e' h₀' h₂').symm) g
+    simp only [MonoidHom.comp_apply, MonoidHom.prod_apply, Subgroup.coe_subtype] at h ⊢
+    exact Subtype.ext h
+  · simp only [MonoidHom.comp_apply, MonoidHom.prod_apply, det_unitarySpinCLift]
+    exact e.detCircle_centralizerToUnitaryGroup_eq_detCircle_centralizerToUnitaryGroup hJ₀ h₀ h₂
+      e' h₀' h₂' g
 
 end Lift
 

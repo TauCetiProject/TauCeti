@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Inhomogeneous.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Comp
+import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.JHolomorphic.Line
 
 /-!
@@ -110,24 +111,26 @@ theorem complexAntilinearPart_eq_floer_iff
         (show (ℝ × ℝ) →L[ℝ] V from (floer J X hX).val.tangentHom q).toLinearMap ↔
       L (1, 0) + (show V →L[ℝ] V from J.toEndomorphism q) (L (0, 1)) =
         (show V →L[ℝ] V from J.toEndomorphism q) (X q) := by
-  let K : AlmostComplexStructure V :=
-    { toLinearMap := (show V →L[ℝ] V from J.toEndomorphism q).toLinearMap
-      square_neg := by ext v; exact J.apply_apply q v }
+  let K : AlmostComplexStructure V := AlmostComplexStructure.ofContinuousLinearMap
+    (show V →L[ℝ] V from J.toEndomorphism q) (J.apply_apply q)
+  have hK (v : V) : K v = (show V →L[ℝ] V from J.toEndomorphism q) v :=
+    AlmostComplexStructure.ofContinuousLinearMap_apply ..
   let R := complexAntilinearPart (AlmostComplexStructure.product ℝ).toLinearMap
     K.toLinearMap L.toLinearMap
   let T : (ℝ × ℝ) →L[ℝ] V := (floer J X hX).val.tangentHom q
-  -- R and T abbreviate the exact maps in the statement. K packages the same target
-  -- endomorphism with its square proof; its function coercion evaluates its toLinearMap.
-  -- There is no rewrite rule for these local abbreviations: fold only these wrappers
-  -- before applying the public projection and Floer evaluation formulas below.
+  -- R and T abbreviate the exact maps in the statement, once the target endomorphism is
+  -- replaced by K, which packages it with its square proof.
+  rw [← hK, ← hK, show (show V →L[ℝ] V from J.toEndomorphism q).toLinearMap = K.toLinearMap from
+    (AlmostComplexStructure.toLinearMap_ofContinuousLinearMap ..).symm]
   change R = T.toLinearMap ↔ L (1, 0) + K (L (0, 1)) = K (X q)
   have hR : R stdComplexLineReal = (2⁻¹ : ℝ) •
       (L (1, 0) + K (L (0, 1))) := by
     simp only [R, complexAntilinearPart_apply]
     rw [AlmostComplexStructure.product_apply_stdComplexLineReal]
     rfl
-  have hfR : T stdComplexLineReal =
-      (2⁻¹ : ℝ) • K (X q) := floer_apply_real J X hX q
+  have hfR : T stdComplexLineReal = (2⁻¹ : ℝ) • K (X q) := by
+    rw [hK]
+    exact floer_apply_real J X hX q
   have hfI : T stdComplexLineImag =
       (2⁻¹ : ℝ) • X q := floer_apply_imag J X hX q
   constructor

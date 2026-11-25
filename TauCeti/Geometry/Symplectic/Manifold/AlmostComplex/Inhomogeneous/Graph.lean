@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Graph.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Prod
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
+import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 
 /-!
 # The native skew graph construction for finite-regularity forcing data
@@ -458,11 +459,13 @@ theorem toLp_graphStructureAt_eq_graphStructure (ν : InhomogeneousTerm jC JC)
       Floer.graphStructure (fun q ↦ (show V →L[ℝ] V from JC.toEndomorphism q))
         (fun q ↦ (show ℂ →L[ℝ] V from ν.val.tangentHom q)) (WithLp.toLp 2 q)
           (WithLp.toLp 2 (show ℂ × V from v)) := by
-  let K : AlmostComplexStructure V :=
-    { toLinearMap := (show V →L[ℝ] V from JC.toEndomorphism q).toLinearMap
-      square_neg := by ext w; exact JC.apply_apply q w }
-  rw [graphStructureAt_apply, Floer.graphStructure_toLp_eq_skewProd _ _ q
-    (show ℂ × V from v) K (fun _ ↦ rfl), AlmostComplexStructure.skewProd_apply]
+  let K : AlmostComplexStructure V := AlmostComplexStructure.ofContinuousLinearMap
+    (show V →L[ℝ] V from JC.toEndomorphism q) (JC.apply_apply q)
+  have hK (w : V) : K w = (show V →L[ℝ] V from JC.toEndomorphism q) w :=
+    AlmostComplexStructure.ofContinuousLinearMap_apply ..
+  rw [graphStructureAt_apply, Floer.graphStructure_toLp_eq_skewProd
+    (fun q ↦ (show V →L[ℝ] V from JC.toEndomorphism q)) _ q (show ℂ × V from v) K
+    (fun w ↦ (hK w).symm), AlmostComplexStructure.skewProd_apply]
   simp only [AlmostComplexStructure.ofComplexModule_apply, smul_eq_mul]
   apply congrArg (WithLp.toLp 2)
   apply Prod.ext
@@ -480,6 +483,7 @@ theorem toLp_graphStructureAt_eq_graphStructure (ν : InhomogeneousTerm jC JC)
       Manifold.tangentSpaceProdEquiv_symm_apply, hJ]
     -- Canonical model tangents and the ambient normed spaces have the same vectors; after
     -- the public tangent getter the remaining distinction is their inherited module instances.
+    rw [hK]
     change A v.2 - (2 : ℝ) • A (N v.1) = A (v.2 - N v.1) + N (Complex.I * v.1)
     rw [hn, map_sub]
     simp only [two_smul]

@@ -245,16 +245,8 @@ theorem exists_trivialization_unitaryFrames {B : Type*} [TopologicalSpace B] {F 
   have : FiniteDimensional ℝ V := Module.finite_of_finrank_pos (by omega)
   have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
   -- An orthonormal basis `β` of `V` adapted to `J₀`, `β 1 = J₀ (β 0)` and `β 3 = J₀ (β 2)`.
-  let J₀' : AlmostComplexStructure V :=
-    ⟨(J₀ : V →L[ℝ] V).toLinearMap, LinearMap.ext fun v ↦ by simpa using hJ₀ v⟩
-  -- `J₀'` is built from `(J₀ : V →L[ℝ] V).toLinearMap`, so `J₀' v` unfolds to `J₀ v`: this lets
-  -- `Unitary.norm_map J₀` say that `J₀'` preserves norms, and lets `hβ₁`, `hβ₃` state the frame
-  -- relations directly for `(J₀ : V →L[ℝ] V)`.
-  obtain ⟨β₀, hβ₀⟩ := J₀'.exists_adapted_orthonormalBasis (Unitary.norm_map J₀) 2
-    (hV.trans (by norm_num))
-  let β : OrthonormalBasis (Fin 4) ℝ V := β₀.reindex (finCongr (by norm_num))
-  have hβ₁ : β 1 = (J₀ : V →L[ℝ] V) (β 0) := by simpa [β, J₀'] using hβ₀ 0
-  have hβ₃ : β 3 = (J₀ : V →L[ℝ] V) (β 2) := by simpa [β, J₀'] using hβ₀ 1
+  obtain ⟨β, hβ₁, hβ₃⟩ := exists_adapted_orthonormalBasis_finFour_of_unitary hJ₀
+  rw [eq_comm] at hβ₁ hβ₃
   let e := trivializationAt F E x
   let cF := Module.finBasisOfFinrankEq ℝ F hF
   -- Some vector of `β` lies outside the complex line of `β 0` for `J` read at `x`.

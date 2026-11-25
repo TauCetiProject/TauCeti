@@ -20,7 +20,10 @@ an orthogonal complex structure on the model `ℝ⁴`. The canonical `Spinᶜ` s
 `TauCeti.OrthonormalFrameBundle.canonicalSpinCStructure`, is the extension of this lift along a
 continuous homomorphism `U(ℝ⁴, J₀) → Spinᶜ(4)` lifting the inclusion along the rotation
 homomorphism `Spinᶜ(4) → SO(4)`. It is defined relative to the chosen model complex structure `J₀`
-and a chosen unitary frame `e` of `J₀`; independence of these choices is not established here.
+and a chosen unitary frame `e` of `J₀`. It does not depend on `e`
+(`TauCeti.OrthonormalFrameBundle.canonicalSpinCStructure_eq_canonicalSpinCStructure`), because the
+lift `U(ℝ⁴, J₀) → Spinᶜ(4)` does not (`TauCeti.unitarySpinCLift_eq_unitarySpinCLift`);
+independence of `J₀` is not established here.
 
 The homomorphism is `TauCeti.unitarySpinCLift`, built in
 `TauCeti.LinearAlgebra.CliffordAlgebra.Spin.UnitaryLift` and shown continuous in
@@ -45,6 +48,8 @@ determinant line with the anticanonical line `Λ²_ℂ (E, J)` as line bundles i
 
 ## Main results
 
+* `TauCeti.OrthonormalFrameBundle.canonicalSpinCStructure_eq_canonicalSpinCStructure`: the
+  canonical `Spinᶜ` structure does not depend on the unitary frame `e` of `J₀`.
 * `TauCeti.OrthonormalFrameBundle.toFrame_canonicalSpinCStructureInl`: the frame of the point
   `[p, 1]` (`TauCeti.OrthonormalFrameBundle.canonicalSpinCStructureInl`) in the canonical `Spinᶜ`
   structure is the unitary frame `p`.
@@ -86,8 +91,9 @@ variable {X : Type*} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [No
 continuous fibrewise orthogonal complex structure `J`, the `Spinᶜ` structure induced from the
 unitary frame bundle `unitaryFrameLift` by the lift `TauCeti.unitarySpinCLift` of
 `U(ℝ⁴, J₀) ⊆ SO(4)` to `Spinᶜ(4)`, for a unitary frame `e` of the model complex structure `J₀`. Its
-principal bundle is `P ×_σ Spinᶜ(4)` for the unitary frames `P`. The construction depends on the
-chosen `J₀` and `e`; its independence of these choices is not proved here. -/
+principal bundle is `P ×_σ Spinᶜ(4)` for the unitary frames `P`. It does not depend on the frame
+`e` (`TauCeti.OrthonormalFrameBundle.canonicalSpinCStructure_eq_canonicalSpinCStructure`); its
+independence of the model complex structure `J₀` is not established here. -/
 noncomputable def canonicalSpinCStructure : SpinCStructure F E 4 :=
   (unitaryFrameLift hJ hJ₂ hJ₀ hF).extendSpinC (unitarySpinCLift hJ₀ e h₀ h₂)
     (continuous_unitarySpinCLift hJ₀ e h₀ h₂)
@@ -140,6 +146,19 @@ theorem division_canonicalSpinCStructureInl {x : X} (p q : (unitaryFrameLift hJ 
       unitarySpinCLift hJ₀ e h₀ h₂
         (PrincipalBundle.division (Subgroup.centralizer {J₀}) p q) :=
   PrincipalBundle.Extend.division_inl _ (continuous_unitarySpinCLift hJ₀ e h₀ h₂) p q
+
+/-- **The canonical `Spinᶜ` structure does not depend on the unitary frame** `e` of the model
+complex structure `J₀`: the lift `TauCeti.unitarySpinCLift` along which it extends the unitary
+frame bundle does not (`TauCeti.unitarySpinCLift_eq_unitarySpinCLift`). -/
+theorem canonicalSpinCStructure_eq_canonicalSpinCStructure
+    (e' : OrthonormalBasis (Fin 4) ℝ (EuclideanSpace ℝ (Fin 4)))
+    (h₀' : (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) (e' 0) = e' 1)
+    (h₂' : (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) (e' 2) = e' 3) :
+    canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂ =
+      canonicalSpinCStructure hJ hJ₂ hJ₀ hF e' h₀' h₂' := by
+  simp only [canonicalSpinCStructure]
+  congr 1
+  exact unitarySpinCLift_eq_unitarySpinCLift hJ₀ e h₀ h₂ e' h₀' h₂'
 
 end OrthonormalFrameBundle
 
