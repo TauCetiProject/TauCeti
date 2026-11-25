@@ -370,7 +370,7 @@ theorem limBaseChangeEquiv_one_tmul (n : ℕ) (x : F.lim) :
 
 /-- The inverse scalar-change equivalence sends a projected element to `1 ⊗ x`. -/
 @[simp↓]
-theorem limBaseChangeEquiv_symm_apply (n : ℕ) (x : F.lim) :
+theorem limBaseChangeEquiv_symm_limπ (n : ℕ) (x : F.lim) :
     (hF.limBaseChangeEquiv n).symm (F.limπ n x) = 1 ⊗ₜ[A] x := by
   apply (hF.limBaseChangeEquiv n).injective
   rw [LinearEquiv.apply_symm_apply, hF.limBaseChangeEquiv_one_tmul]

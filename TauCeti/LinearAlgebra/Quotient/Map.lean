@@ -24,7 +24,7 @@ For an ideal `I`, the class `[x]` lies in `I (M ⧸ p)` exactly when `x ∈ p + 
 
 For an `R ⧸ K`-module, membership in the image ideal times the module can be checked over `R`
 (`Submodule.mem_map_quotient_mk_smul_top_iff`). In `M ⧸ K • M`, this also gives a criterion on
-representatives when `K ≤ J` (`Submodule.Quotient.mk_mem_map_ideal_smul_top_iff`).
+representatives when `K ≤ J` (`Submodule.Quotient.mk_mem_map_quotient_mk_smul_top_iff`).
 -/
 
 public section
@@ -58,7 +58,7 @@ theorem mem_map_quotient_mk_smul_top_iff {S P : Type*} [CommRing S] [AddCommMono
 
 /-- If `K ≤ J`, a class in `P ⧸ K • P` is a multiple of the image ideal of `J` exactly when
 its representative belongs to `J • P`. -/
-theorem Quotient.mk_mem_map_ideal_smul_top_iff {S P : Type*} [CommRing S] [AddCommGroup P]
+theorem Quotient.mk_mem_map_quotient_mk_smul_top_iff {S P : Type*} [CommRing S] [AddCommGroup P]
     [Module S P] {J K : Ideal S} (h : K ≤ J) (x : P) :
     Quotient.mk (p := (K • ⊤ : Submodule S P)) x ∈
       J.map (Ideal.Quotient.mk K) • (⊤ : Submodule (S ⧸ K) (P ⧸ (K • ⊤ : Submodule S P))) ↔

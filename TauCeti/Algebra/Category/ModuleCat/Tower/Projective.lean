@@ -69,7 +69,7 @@ private theorem ker_stage (n : ℕ)
       rintro ⟨x⟩ hx
       obtain ⟨p, rfl⟩ := Submodule.mkQ_surjective K x
       apply (Submodule.Quotient.mk_eq_zero _).mpr
-      apply (Submodule.Quotient.mk_mem_map_ideal_smul_top_iff
+      apply (Submodule.Quotient.mk_mem_map_quotient_mk_smul_top_iff
         (Ideal.pow_le_pow_right (by omega)) p).mpr
       rw [← hgk, LinearMap.mem_ker]
       have hx' : hb (Submodule.Quotient.mk p) ∈ J • ⊤ :=
