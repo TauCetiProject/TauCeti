@@ -66,6 +66,7 @@ none of the further theory built on it.
   one-dimensional, each element being the monomial at any point with its coefficient there.
 * `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by the monomial `single u 1` at a
   unit `u` of `M` conjugates the indices of the coefficients.
+* `MonoidAlgebra.ne_zero_of_coeff_ne_zero`: an element with a nonzero coefficient is nonzero.
 * `MonoidAlgebra.lift_apply_eq_sum`: over a finite monoid, `lift F x` is the finite sum
   `∑ m, x_m • F m`.
 * `MonoidAlgebra.coeff_mul_eq_sum`: the coefficients of a product in the group algebra of a finite
@@ -414,6 +415,11 @@ theorem coeff_single_mul_mul_single_inv {R M : Type*} [Semiring R] [Monoid M]
   rw [coeff_mul_single_eq_coeff_mul (h * u) fun _ _ ↦ Units.mul_inv_eq_iff_eq_mul u,
     coeff_single_mul_eq_mul_coeff (↑u⁻¹ * (h * u)) fun _ _ ↦ (Units.eq_inv_mul_iff_mul_eq u).symm,
     one_mul, mul_one, mul_assoc]
+
+/-- An element of a monoid algebra with a nonzero coefficient is nonzero. -/
+theorem ne_zero_of_coeff_ne_zero {k G : Type*} [Semiring k] {x : MonoidAlgebra k G} (g : G)
+    (h : x.coeff g ≠ 0) : x ≠ 0 :=
+  ne_of_apply_ne (·.coeff g) (by simpa using h)
 
 /-- Over a finite monoid, the algebra map `lift F` out of `R[M]` sends `x` to the finite sum
 `∑ m, x_m • F m`. -/
