@@ -18,7 +18,7 @@ import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
 # Restriction and extension of states
 
 Every state of a C⋆-subalgebra extends to a state of the ambient C⋆-algebra, with or without
-units. The functoriality and norm bounds of restriction used here are in
+units. Functoriality and norm bounds of restriction are in
 `TauCeti.Analysis.CStarAlgebra.State.Space`.
 
 * `TauCeti.mem_extremePoints_stateSpace_of_pullbackFunctional_inr`: a state of the unitization
