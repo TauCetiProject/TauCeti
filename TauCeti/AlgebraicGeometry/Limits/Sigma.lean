@@ -70,9 +70,12 @@ lemma IsZariskiLocalAtTarget.sigmaMap_iff (P : MorphismProperty Scheme.{u})
     [IsZariskiLocalAtTarget P] : P (Limits.Sigma.map f) ↔ ∀ i, P (f i) := by
   refine ⟨fun h i ↦
       IsZariskiLocalAtTarget.of_isPullback (isPullback_sigmaι_sigmaι_sigmaMap f i).flip h,
-    fun h ↦ IsZariskiLocalAtTarget.of_openCover (sigmaOpenCover Y) fun i ↦ ?_⟩
+    fun h ↦ IsZariskiLocalAtTarget.of_openCover (sigmaOpenCover Y) fun (i : σ) ↦ ?_⟩
   have hi := (isPullback_sigmaι_sigmaι_sigmaMap f i).flip
-  refine (P.arrow_mk_iso_iff (Arrow.isoMk hi.isoPullback (Iso.refl _) ?_)).mp (h i)
+  refine (P.cancel_left_of_respectsIso hi.isoPullback.hom _).mp ?_
+  convert! h i
+  simp only [Scheme.Cover.pullbackHom]
+  -- `(sigmaOpenCover Y).f i` is `Sigma.ι Y i` by definition (`sigmaOpenCover_f` is `rfl`).
   exact hi.isoPullback_hom_snd
 
 end AlgebraicGeometry
