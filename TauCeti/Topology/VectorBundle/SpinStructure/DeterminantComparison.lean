@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.SpinStructure.FirstChernClass
 public import TauCeti.Topology.VectorBundle.SpinStructure.OfSpin
-public import TauCeti.Topology.VectorBundle.SpinStructure.Reflection
+public import TauCeti.Topology.VectorBundle.SpinStructure.Reflection.Basic
 import TauCeti.Topology.VectorBundle.Orientation.Complex.FiberwiseEquiv
 
 /-!

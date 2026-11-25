@@ -56,6 +56,9 @@ bundles with fibres in `Type`, as for `TauCeti.OrthonormalFrameLift.extendSpinC`
 
 ## Main results
 
+* `TauCeti.SpinCStructure.precompIsometryHom_refl`,
+  `TauCeti.SpinCStructure.precompIsometryHom_comp`: the automorphism of `Spinᶜ(n)` induced by an
+  isometry of `ℝⁿ` is functorial.
 * `TauCeti.SpinCStructure.toFrame_precompIsometry_inl`: the frame of `[p, 1]` in
   `s.precompIsometry f` is the frame of `p` precomposed with `f`.
 * `TauCeti.SpinCStructure.toOrientationCover_toFrame_reverse_inl`: the orientation reversal
@@ -106,6 +109,19 @@ theorem toSpecialOrthogonal_precompIsometryHom_apply
   simp only [QuadraticMap.IsometryEquiv.toIsometry_apply,
     QuadraticMap.IsometryEquiv.symm_apply_apply] at h
   rw [h, QuadraticMap.IsometryEquiv.apply_symm_apply]
+
+/-- The automorphism of `Spinᶜ(n)` induced by the identity of `ℝⁿ` is the identity. -/
+theorem precompIsometryHom_refl :
+    precompIsometryHom (QuadraticMap.IsometryEquiv.refl (realCliffordForm n 0)) =
+      MonoidHom.id _ :=
+  QuadraticMap.Isometry.spinCGroupMap_id hQ
+
+/-- The automorphisms of `Spinᶜ(n)` induced by isometries `f` and `g` of `ℝⁿ` compose to the one
+induced by `f ∘ g`: `σ_g ∘ σ_f = σ_{f ∘ g}`. -/
+theorem precompIsometryHom_comp
+    (f g : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0)) :
+    (precompIsometryHom g).comp (precompIsometryHom f) = precompIsometryHom (g.trans f) :=
+  QuadraticMap.Isometry.spinCGroupMap_comp _ hQ hQ _ hQ
 
 /-- The **precomposition of a `Spinᶜ` structure** `s` with an isometry `f` of `ℝⁿ`: the `Spinᶜ`
 structure whose principal bundle is `P ×_σ Spinᶜ(n)`, for the automorphism
