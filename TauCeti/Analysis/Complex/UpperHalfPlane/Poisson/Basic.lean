@@ -404,6 +404,12 @@ theorem upperHalfPlanePoissonIntegral_volume {z : ℂ} (hz : 0 < z.im) :
     upperHalfPlanePoissonIntegral volume z = 1 :=
   integral_upperHalfPlanePoissonKernel hz
 
+/-- The Poisson integral of the Dirac mass at `a` is the Poisson kernel `P(z, a)`. -/
+@[simp]
+theorem upperHalfPlanePoissonIntegral_dirac (a : ℝ) (z : ℂ) :
+    upperHalfPlanePoissonIntegral (Measure.dirac a) z = upperHalfPlanePoissonKernel z a := by
+  rw [upperHalfPlanePoissonIntegral_def, integral_dirac]
+
 /-- The **extended Poisson integral** `P[ν](z) = ∫⁻ P(z, x) dν(x) ∈ [0, ∞]` of a measure `ν` on
 `ℝ`. On the upper half-plane it is finite exactly for Poisson-finite `ν`
 (`TauCeti.upperHalfPlanePoissonLIntegral_eq_top_iff`), where it agrees with the real-valued

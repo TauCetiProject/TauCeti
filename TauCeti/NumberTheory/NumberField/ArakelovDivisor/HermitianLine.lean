@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.ArakelovDivisor.Basic
-public import TauCeti.NumberTheory.NumberField.HermitianBundle.Degree
+public import TauCeti.NumberTheory.NumberField.HermitianBundle.Degree.Basic
 
 /-!
 # The hermitian line of an Arakelov divisor
