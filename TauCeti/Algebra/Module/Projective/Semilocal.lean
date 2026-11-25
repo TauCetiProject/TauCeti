@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Algebra.Module.StableEquivalent
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
-import Mathlib.RingTheory.Ideal.Quotient.ChineseRemainder
 import Mathlib.RingTheory.LocalRing.Module
 import TauCeti.Algebra.Module.Projective.Reduction
+import TauCeti.RingTheory.Ideal.Quotient.ChineseRemainder
 
 /-!
 # Finitely generated projective modules over semilocal rings
@@ -21,6 +21,8 @@ radical `J` of `R` is the product of the fibres `(R ⧸ P) ⊗[R] M` over the ma
 each fibre is a vector space over the field `R ⧸ P` whose dimension is the rank of `M` at `P`.
 Equal ranks therefore give isomorphic reductions `M ⧸ J M ≃ N ⧸ J N`, and projective modules with
 isomorphic radical reductions are isomorphic (`Ideal.nonempty_linearEquiv_of_quotient_smul_top`).
+
+The Chinese remainder step uses `Ideal.quotientSMulTopEquivPiTensorProduct`.
 
 Consequences: stably equivalent finitely generated projective modules over a semilocal ring are
 isomorphic (cancellation of free summands), and if the spectrum of `R` is connected, so that the
@@ -73,21 +75,16 @@ theorem nonempty_linearEquiv_of_finrank_quotient_tensorProduct_eq
     Ideal.isCoprime_of_isMaximal (MaximalSpectrum.ext_iff.ne.mp hPQ)
   -- The intersection of the maximal ideals lies in the Jacobson radical.
   have hJ : ⨅ P, I P ≤ Ring.jacobson R := by
-    rw [← Ideal.jacobson_bot]
-    exact le_sInf fun P hP ↦ iInf_le I ⟨P, hP.2⟩
+    rw [Ring.jacobson_eq_sInf_isMaximal]
+    exact le_sInf fun P hP ↦ iInf_le I ⟨P, hP⟩
   refine Ideal.nonempty_linearEquiv_of_quotient_smul_top (⨅ P, I P) M N hJ ⟨?_⟩
-  -- By Chinese remainder, `M ⧸ (⋂ P) M` is the product of the fibres `(R ⧸ P) ⊗[R] M`.
-  let crtM : (M ⧸ (⨅ P, I P) • (⊤ : Submodule R M)) ≃ₗ[R] Π P, (R ⧸ I P) ⊗[R] M :=
-    (Submodule.quotEquivOfEq _ _ (Ideal.ker_tensorProductMk_quotient M I hI)).symm.trans
-      (LinearMap.quotKerEquivOfSurjective _ (Ideal.pi_tensorProductMk_quotient_surjective M I hI))
-  let crtN : (N ⧸ (⨅ P, I P) • (⊤ : Submodule R N)) ≃ₗ[R] Π P, (R ⧸ I P) ⊗[R] N :=
-    (Submodule.quotEquivOfEq _ _ (Ideal.ker_tensorProductMk_quotient N I hI)).symm.trans
-      (LinearMap.quotKerEquivOfSurjective _ (Ideal.pi_tensorProductMk_quotient_surjective N I hI))
   -- Fibres of equal dimension over the field `R ⧸ P` are isomorphic.
   have fibre (P : MaximalSpectrum R) : ((R ⧸ I P) ⊗[R] M) ≃ₗ[R] (R ⧸ I P) ⊗[R] N :=
     let _ := Ideal.Quotient.field P.asIdeal
     (LinearEquiv.ofFinrankEq _ _ (h P)).restrictScalars R
-  exact crtM.trans ((LinearEquiv.piCongrRight fibre).trans crtN.symm)
+  -- By Chinese remainder, `M ⧸ (⋂ P) M` is the product of the fibres `(R ⧸ P) ⊗[R] M`.
+  exact (Ideal.quotientSMulTopEquivPiTensorProduct M I hI).trans
+    ((LinearEquiv.piCongrRight fibre).trans (Ideal.quotientSMulTopEquivPiTensorProduct N I hI).symm)
 
 /-- **Projective modules over a semilocal ring are classified by rank.** If `R` has finitely many
 maximal ideals, two finitely generated projective `R`-modules are isomorphic if and only if they
