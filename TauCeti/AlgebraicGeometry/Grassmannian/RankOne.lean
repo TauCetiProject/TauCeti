@@ -49,9 +49,10 @@ Inside the chart at `y`, both the chart at `x` and the preimage of `D₊(x)` are
 of `u_y(x)` (`Module.Grassmannian.chartι_preimage_opensRange_chartι` with
 `Module.Grassmannian.transitionDet_rankOne`, and
 `Module.Grassmannian.chartToProj_preimage_basicOpen`). So the preimage of `D₊(x)` under `toProj R`
-is the chart at `x` (`Module.Grassmannian.toProj_preimage_basicOpen`), over `D₊(x)` the morphism
-`toProj R` is the chart at `x` (`Module.Grassmannian.isPullback_chartι_toProj`), and since the
-`D₊(x)` cover `Proj (Sym M)`, `toProj R` is an isomorphism
+is the chart at `x` (`Module.Grassmannian.toProj_preimage_basicOpen`), the base change of `toProj R`
+along `chartToProj R x` is the identity of the chart at `x`
+(`Module.Grassmannian.isPullback_chartι_toProj`), and since the `D₊(x)` cover `Proj (Sym M)`,
+`toProj R` is an isomorphism
 (`Module.Grassmannian.isIso_toProj`, `Module.Grassmannian.toProjIso`).
 -/
 
@@ -208,7 +209,10 @@ theorem chartToProj_preimage_basicOpen (y x : M) :
     Proj.awayι_preimage_basicOpen (homogeneousSubmodule R M) (ι_mem_homogeneousSubmodule R M y)
       one_pos (ι_mem_homogeneousSubmodule R M x) one_pos, SpecMap_preimage_basicOpen]
   congr 1
-  exact ((awayEquiv_symm_mk R y _ _ _).trans (by simp))
+  -- The degree-zero fraction `x / y` is sent back to `u_y(x)`.
+  simp only [RingEquiv.toCommRingCatIso_inv, CommRingCat.hom_ofHom, RingEquiv.coe_toRingHom,
+    AlgEquiv.toRingEquiv_symm, AlgEquiv.coe_toRingEquiv, Away.isLocalizationElem, pow_one,
+    awayEquiv_symm_mk, evalUniversal_ι]
 
 /-- **The preimage of a standard open under `toProj`.** The preimage of `D₊(x)` under
 `toProj R : G(1, M) ⟶ Proj (Sym M)` is the chart of `G(1, M)` at `x`. -/
@@ -218,20 +222,26 @@ theorem toProj_preimage_basicOpen (x : M) :
   ext z
   obtain ⟨y, p, rfl⟩ := chartι_jointly_surjective (R := R) z
   obtain ⟨b, rfl⟩ : ∃ b, y = fun _ ↦ b := ⟨_, eq_const_of_unique y⟩
-  rw [SetLike.mem_coe, SetLike.mem_coe, Scheme.Hom.mem_preimage, ← Scheme.Hom.comp_apply,
-    chartι_toProj, ← Scheme.Hom.mem_preimage, ← Scheme.Hom.mem_preimage,
-    chartToProj_preimage_basicOpen, chartι_preimage_opensRange_chartι, transitionDet_rankOne]
+  -- Inside the chart at `b`, both opens are the basic open set of `u_b(x)`.
+  have h : chartι R (fun _ : Fin 1 ↦ b) ⁻¹ᵁ
+      (toProj R ⁻¹ᵁ Proj.basicOpen (homogeneousSubmodule R M) (SymmetricAlgebra.ι R M x)) =
+        chartι R (fun _ : Fin 1 ↦ b) ⁻¹ᵁ (chartι R (fun _ : Fin 1 ↦ x)).opensRange := by
+    rw [← Scheme.Hom.comp_preimage, chartι_toProj, chartToProj_preimage_basicOpen,
+      chartι_preimage_opensRange_chartι, transitionDet_rankOne]
+  simpa only [SetLike.mem_coe, Scheme.Hom.mem_preimage] using SetLike.ext_iff.1 h p
 
-/-- The chart of `G(1, M)` at `x` is the base change of `toProj R` along the chart `D₊(x)` of
-`Proj (Sym M)`. -/
+/-- Over the standard open `D₊(x)` of `Proj (Sym M)`, `toProj R` is the identity of the chart: the
+base change of `toProj R` along `chartToProj R x` is `𝟙`, with the projection to `G(1, M)` being
+`chartι R x`. -/
 theorem isPullback_chartι_toProj (x : M) :
     IsPullback (chartι R (fun _ : Fin 1 ↦ x)) (𝟙 _) (toProj R) (chartToProj R x) :=
   (IsOpenImmersion.isPullback (𝟙 _) _ _ _ (by rw [chartι_toProj, Category.id_comp])
     (by rw [opensRange_chartToProj, toProj_preimage_basicOpen])).flip
 
 /-- **The rank-one Grassmannian is `Proj (Sym M)`.** The morphism
-`toProj R : G(1, M) ⟶ Proj (Sym M)` is an isomorphism: over the standard open `D₊(x)` it is the
-chart of `G(1, M)` at `x` (`Module.Grassmannian.isPullback_chartι_toProj`). -/
+`toProj R : G(1, M) ⟶ Proj (Sym M)` is an isomorphism: its base change along the chart
+`chartToProj R x` of the standard open `D₊(x)` is `𝟙`
+(`Module.Grassmannian.isPullback_chartι_toProj`). -/
 instance isIso_toProj : IsIso (toProj R : scheme R M 1 ⟶ _) := by
   refine IsZariskiLocalAtTarget.of_iSup_eq_top (P := MorphismProperty.isomorphisms Scheme) _
     (iSup_opensRange_chartToProj R) fun x ↦ ?_
