@@ -77,8 +77,7 @@ private theorem linearIndependent_pair_and_span_eq_top (ρ : Representation ℂ 
 
 /-- **The two-dimensional irreducible representations of `W_ℝ` are inductions.** An irreducible
 two-dimensional complex representation of `W_ℝ` is isomorphic to the induction
-`induceRepresentation χ` of a character `χ` of `W_ℂ = ℂˣ` with `χ ∘ conj ≠ χ`: in the basis
-`(v, j v)` of a common eigenvector `v` of `ℂˣ`, it has the matrices of the induction. -/
+`induceRepresentation χ` of a character `χ` of `W_ℂ = ℂˣ` with `χ ∘ conj ≠ χ`. -/
 theorem exists_equiv_induceRepresentation (ρ : Representation ℂ WeilGroupReal V)
     (hρ : ρ.IsIrreducible) (h2 : finrank ℂ V = 2) :
     ∃ χ : WeilGroupComplex →* ℂˣ,
