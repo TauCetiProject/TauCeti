@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Trace
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Basic
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Map
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.RealAlgebra
 
 /-!
@@ -59,6 +60,8 @@ theorem positiveTrace_of_not_nonneg {T : E →L[𝕜] E} (hT : ¬ 0 ≤ T) :
     T.positiveTrace = 0 := by
   simp [positiveTrace, CFC.sqrt_of_not_nonneg hT]
 
+-- Hide the local real algebra instance in the witness, so `CFC.sqrt_unique` can identify
+-- this operator with the square root computed in any compatible real algebra structure.
 private theorem positiveTrace_exists_sq_eq {T : E →L[𝕜] E} (hT : 0 ≤ T)
     (b : HilbertBasis ι 𝕜 E) :
     ∃ S : E →L[𝕜] E, 0 ≤ S ∧ S * S = T ∧ T.positiveTrace = S.hilbertSchmidtEnergy b :=
@@ -91,7 +94,7 @@ theorem positiveTrace_eq_tsum (T : E →L[𝕜] E) (hT : 0 ≤ T)
     rw [hs]
     exact CFC.sqrt_mul_sqrt_self T hT
   rw [← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _),
-    @norm_sq_eq_re_inner 𝕜, ← adjoint_inner_right, ← comp_apply, hsq]
+    (CFC.sqrt T).apply_norm_sq_eq_inner_adjoint_right, hsq]
 
 /-- The zero operator has zero positive trace. -/
 @[simp]
@@ -190,8 +193,7 @@ theorem positiveTrace_adjoint_comp_self (T : E →L[𝕜] F) (b : HilbertBasis �
   rw [positiveTrace_eq_tsum _ (nonneg_iff_isPositive.mpr T.isPositive_adjoint_comp_self) b,
     hilbertSchmidtEnergy_def]
   refine tsum_congr fun i => ?_
-  rw [comp_apply, adjoint_inner_right, inner_self_eq_norm_sq,
-    ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+  rw [← T.apply_norm_sq_eq_inner_adjoint_right, ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
 
 /-- **The rectangular trace identity.** Source and target may have different dimensions and
 cardinalities; the two traces are equal even when infinite. -/
@@ -218,20 +220,12 @@ theorem positiveTrace_conjStarAlgEquiv (T : E →L[𝕜] E) (U : E ≃ₗᵢ[�
       apply hT
       simpa only [StarAlgEquiv.symm_apply_apply] using map_nonneg U.conjStarAlgEquiv.symm h
     rw [positiveTrace_of_not_nonneg hT, positiveTrace_of_not_nonneg hconj]
-  let A := (U : E →L[𝕜] F) ∘L CFC.sqrt T
-  have hs := (nonneg_iff_isPositive.mp (CFC.sqrt_nonneg T)).isSelfAdjoint.adjoint_eq
-  have hsource : A† ∘L A = T := by
-    ext x
-    simp only [A, adjoint_comp, U.adjoint_eq_symm, comp_apply,
-      LinearIsometryEquiv.coe_coe'', U.symm_apply_apply, hs]
-    exact congr($(CFC.sqrt_mul_sqrt_self T hT) x)
-  have htarget : A ∘L A† = U.conjStarAlgEquiv T := by
-    ext x
-    simp only [A, adjoint_comp, U.adjoint_eq_symm, comp_apply,
-      LinearIsometryEquiv.coe_coe'', hs,
-      LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
-    exact congr(U ($(CFC.sqrt_mul_sqrt_self T hT) (U.symm x)))
-  rw [← htarget, ← positiveTrace_adjoint_comp_self_eq_positiveTrace_self_comp_adjoint A, hsource]
+  obtain ⟨ι, b, -⟩ := exists_hilbertBasis 𝕜 E
+  rw [positiveTrace_eq_tsum _ (map_nonneg U.conjStarAlgEquiv hT) (b.mapₗᵢ U),
+    positiveTrace_eq_tsum _ hT b]
+  refine tsum_congr fun i => ?_
+  rw [HilbertBasis.mapₗᵢ_apply, LinearIsometryEquiv.conjStarAlgEquiv_apply_apply,
+    U.symm_apply_apply, U.inner_map_map]
 
 attribute [local instance] realAlgebra realIsScalarTower in
 /-- The positive trace dominates the operator norm. -/
@@ -270,7 +264,7 @@ theorem positiveTrace_rankOne_self (v : E) :
     (rankOne 𝕜 v v).positiveTrace = ‖v‖ₑ ^ 2 := by
   obtain ⟨ι, b, -⟩ := exists_hilbertBasis 𝕜 E
   rw [positiveTrace_eq_tsum _ (nonneg_iff_isPositive.mpr (isPositive_rankOne_self v)) b,
-    ← b.tsum_enorm_sq_inner v]
+    ← b.tsum_eNorm_inner_sq v]
   refine tsum_congr fun i => ?_
   rw [inner_right_rankOne_apply, ← inner_conj_symm (b i) v, RCLike.conj_mul,
     ← RCLike.ofReal_pow, RCLike.ofReal_re]
