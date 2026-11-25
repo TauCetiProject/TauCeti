@@ -47,15 +47,18 @@ sending the calibrated ground-ring class `[m! (a₀ ⋯ a_(2m)) • x]` in `HC^(
   `S^(j-i) : H^(n+2i)(Tot) → H^(n+2j)(Tot)` of the direct system.
 * `TauCeti.periodicCyclicCohomology`: periodic cyclic cohomology `HP^n(A; M)`, its direct limit.
 * `TauCeti.periodicCyclicCohomology.ι`: the canonical map `H^(n+2k)(Tot) → HP^n`.
-* `TauCeti.periodicCyclicCohomology.desc`: the universal property of the direct limit.
+* `TauCeti.periodicCyclicCohomology.desc`, `TauCeti.periodicCyclicCohomology.liftLinearMap`,
+  `TauCeti.periodicCyclicCohomology.mapStages`, `TauCeti.periodicCyclicCohomology.congrStages`:
+  universal properties and functoriality of `HP^n`.
 * `TauCeti.periodicCyclicCohomology.shiftIso`: the `2`-periodicity `HP^(n+2) ≅ HP^n`.
 * `TauCeti.cyclicCohomology.periodicTransition`: the transition maps
   `S^(j-i) : HC^(n+2i)(A; M) → HC^(n+2j)(A; M)` under Connes' operator `S`.
 * `TauCeti.periodicComparisonScalar`: the rational normalization factor comparing the `k`-th cyclic
   cohomology stage with the bicomplex direct system (`(-1)^m / (2m)!` at `n = 0`).
 * `TauCeti.periodicCyclicCohomology.fromCyclicCohomology`,
-  `TauCeti.periodicCyclicCohomology.descCyclicCohomology`: the normalized stage maps
-  `HC^(n+2k)(A; M) → HP^n(A; M)` and the colimit universal property along Connes' `S`.
+  `TauCeti.periodicCyclicCohomology.descCyclicCohomology`,
+  `TauCeti.periodicCyclicCohomology.liftLinearMapCyclicCohomology`: the normalized stage maps
+  `HC^(n+2k)(A; M) → HP^n(A; M)` and the colimit universal properties along Connes' `S`.
 
 ## Main results
 
@@ -93,7 +96,7 @@ open CategoryTheory
 
 namespace TauCeti
 
-universe u v
+universe u v u' v' w
 
 section NonUnital
 
@@ -185,32 +188,47 @@ theorem ι_eq_zero_iff {n k : ℕ} (y : (cyclicTotalComplex R A M).homology (n +
     rw [← cyclicTotalHomologyPeriodicTransition_ι_apply h, hy]
     exact map_zero _⟩
 
+section LiftLinearMap
+variable {n : ℕ} {N : Type w} [AddCommMonoid N] [Module R N]
+
+/-- Two `R`-linear maps out of `HP^n` into an arbitrary `R`-module agree once they agree on all
+stages. -/
+@[ext] theorem linearMap_ext {f g : periodicCyclicCohomology R A M n →ₗ[R] N}
+    (h : ∀ k y, f (ι R A M n k y) = g (ι R A M n k y)) : f = g :=
+  Module.DirectLimit.hom_ext fun k ↦ LinearMap.ext (h k)
+
+variable (g : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) →ₗ[R] N)
+  (hg : ∀ k x, g (k + 1) (cyclicTotalHomologyPeriodicity R A M (n + 2 * k) x) = g k x)
+include g hg
+
+/-- Universe-polymorphic `LinearMap` universal property of `HP^n` into an arbitrary `R`-module. -/
+def liftLinearMap : periodicCyclicCohomology R A M n →ₗ[R] N :=
+  Module.DirectLimit.lift R ℕ _ _ g fun _ _ h x ↦
+    congrArg (fun f ↦ (f (ULift.up x)).down) <| NatTrans.naturality (NatTrans.ofSequence
+      (F := Functor.ofSequence (cyclicTotalHomologyPeriodicity R A M <| n + 2 * ·) ⋙
+        forget (ModuleCat R) ⋙ uliftFunctor.{w}) (G := (Functor.const ℕ).obj (ULift.{max u v} N))
+      (fun k ↦ TypeCat.ofHom fun u ↦ ULift.up (g k u.down)) fun k ↦
+        ConcreteCategory.hom_ext _ _ fun u ↦ by
+          simp only [Functor.comp_map, Functor.ofSequence_map_homOfLE_succ]
+          exact congrArg ULift.up (hg k u.down)) (homOfLE h)
+/-- `liftLinearMap` restricts to the given family on each stage. -/
+@[simp] theorem liftLinearMap_ι (k : ℕ) (x : (cyclicTotalComplex R A M).homology (n + 2 * k)) :
+    liftLinearMap g hg (ι R A M n k x) = g k x :=
+  Module.DirectLimit.lift_of (ι := ℕ) g _ x
+end LiftLinearMap
+
 /-- Two maps out of periodic cyclic cohomology agree when they agree on every stage. -/
 @[ext]
 theorem hom_ext {n : ℕ} {P : ModuleCat R} {f g : periodicCyclicCohomology R A M n ⟶ P}
     (h : ∀ k, ι R A M n k ≫ f = ι R A M n k ≫ g) : f = g :=
-  ModuleCat.hom_ext (Module.DirectLimit.hom_ext fun k ↦ congrArg ModuleCat.Hom.hom (h k))
-
-/-- A family of maps out of the stages compatible with the periodicity maps is compatible with
-every transition map of the periodic system. -/
-private theorem map_comp_of_periodicity_comp {n : ℕ} {P : ModuleCat R}
-    (g : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) ⟶ P)
-    (hg : ∀ k, cyclicTotalHomologyPeriodicity R A M (n + 2 * k) ≫ g (k + 1) = g k)
-    {i j : ℕ} (h : i ≤ j) :
-    cyclicTotalHomologyPeriodicTransition R A M n h ≫ g j = g i := by
-  induction j, h using Nat.le_induction with
-  | base => rw [cyclicTotalHomologyPeriodicTransition_self, Category.id_comp]
-  | succ j hij ih =>
-    rw [← cyclicTotalHomologyPeriodicTransition_comp_assoc R A M n hij (Nat.le_add_right j 1),
-      cyclicTotalHomologyPeriodicTransition_succ, hg, ih]
+  ModuleCat.hom_ext (linearMap_ext fun k y ↦ congrArg (fun u ↦ u.hom y) (h k))
 
 /-- The universal property of periodic cyclic cohomology: a family of maps out of the stages
 `H^(n+2k)(Tot)` compatible with the periodicity maps factors through `HP^n`. -/
 def desc {n : ℕ} {P : ModuleCat R} (g : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) ⟶ P)
     (hg : ∀ k, cyclicTotalHomologyPeriodicity R A M (n + 2 * k) ≫ g (k + 1) = g k) :
     periodicCyclicCohomology R A M n ⟶ P :=
-  ModuleCat.ofHom (Module.DirectLimit.lift R ℕ _ _ (fun k ↦ (g k).hom) fun _ _ h x ↦
-    congrArg (fun f ↦ f.hom x) (map_comp_of_periodicity_comp g hg h))
+  ModuleCat.ofHom (liftLinearMap (fun k ↦ (g k).hom) fun k x ↦ congrArg (fun u ↦ u.hom x) (hg k))
 
 /-- The map out of periodic cyclic cohomology induced by a compatible family restricts to the
 family on each stage. -/
@@ -218,12 +236,9 @@ family on each stage. -/
 theorem ι_desc {n : ℕ} {P : ModuleCat R}
     (g : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) ⟶ P)
     (hg : ∀ k, cyclicTotalHomologyPeriodicity R A M (n + 2 * k) ≫ g (k + 1) = g k) (k : ℕ) :
-    ι R A M n k ≫ desc g hg = g k := by
-  ext x
-  exact Module.DirectLimit.lift_of
-    (f := fun _ _ h ↦ (cyclicTotalHomologyPeriodicTransition R A M n h).hom)
-    (fun k ↦ (g k).hom)
-    (fun _ _ h y ↦ congrArg (fun f ↦ f.hom y) (map_comp_of_periodicity_comp g hg h)) x
+    ι R A M n k ≫ desc g hg = g k :=
+  ModuleCat.hom_ext (LinearMap.ext fun x ↦
+    liftLinearMap_ι (fun k ↦ (g k).hom) (fun k x ↦ congrArg (fun u ↦ u.hom x) (hg k)) k x)
 
 /-- The canonical map `H^m(Tot) → HP^n` from a degree `m` equal to `n + 2k`, through the
 identification of `H^m(Tot)` with the `k`-th stage. -/
@@ -292,6 +307,93 @@ theorem ι_shiftIso_hom (n k : ℕ) :
     ι R A M (n + 2) k ≫ (shiftIso R A M n).hom =
       eqToHom (by rw [show n + 2 + 2 * k = n + 2 * (k + 1) by omega]) ≫ ι R A M n (k + 1) :=
   ι_desc _ (fun _ ↦ cyclicTotalHomologyPeriodicity_ιOfEq (by omega) _) k
+
+section StageMaps
+variable {B : Type u'} {N : Type v'} [NonUnitalSemiring B] [Module R B] [IsScalarTower R B B]
+  [SMulCommClass R B B] [AddCommGroup N] [Module R N]
+
+section Maps
+variable {n : ℕ} (g : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) →ₗ[R]
+    (cyclicTotalComplex R B N).homology (n + 2 * k))
+  (hg : ∀ k x, g (k + 1) (cyclicTotalHomologyPeriodicity R A M (n + 2 * k) x) =
+    cyclicTotalHomologyPeriodicity R B N (n + 2 * k) (g k x))
+include g hg
+
+/-- Stage maps commuting with `S` commute with every iterated transition map `S^(j - i)`. -/
+theorem stage_comp_transition_of_periodicity (i j : ℕ) (h : i ≤ j) :
+    g j ∘ₗ (cyclicTotalHomologyPeriodicTransition R A M n h).hom =
+      (cyclicTotalHomologyPeriodicTransition R B N n h).hom ∘ₗ g i :=
+  LinearMap.ext fun x ↦ congrArg (fun f ↦ (f (ULift.up x)).down) <| NatTrans.naturality
+    (NatTrans.ofSequence (F := Functor.ofSequence (cyclicTotalHomologyPeriodicity R A M <|
+        n + 2 * ·) ⋙ forget (ModuleCat R) ⋙ uliftFunctor.{max u' v'})
+      (G := Functor.ofSequence (cyclicTotalHomologyPeriodicity R B N <| n + 2 * ·) ⋙
+        forget (ModuleCat R) ⋙ uliftFunctor.{max u v})
+      (fun k ↦ TypeCat.ofHom fun u ↦ ULift.up (g k u.down)) fun k ↦
+        ConcreteCategory.hom_ext _ _ fun u ↦ by
+          simp only [Functor.comp_map, Functor.ofSequence_map_homOfLE_succ]
+          exact congrArg ULift.up (hg k u.down)) (homOfLE h)
+/-- Universe-polymorphic functoriality of `HP^n` along stage maps commuting with `S`. -/
+def mapStages : periodicCyclicCohomology R A M n →ₗ[R] periodicCyclicCohomology R B N n :=
+  Module.DirectLimit.map g (stage_comp_transition_of_periodicity g hg)
+/-- `mapStages` acts on the `k`-th stage via `g k`. -/
+@[simp] theorem mapStages_ι (k : ℕ) (x : (cyclicTotalComplex R A M).homology (n + 2 * k)) :
+    mapStages g hg (ι R A M n k x) = ι R B N n k (g k x) :=
+  Module.DirectLimit.map_apply_of g (stage_comp_transition_of_periodicity g hg) x
+end Maps
+
+section Congr
+variable {n : ℕ} (e : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) ≃ₗ[R]
+    (cyclicTotalComplex R B N).homology (n + 2 * k))
+  (he : ∀ k x, e (k + 1) (cyclicTotalHomologyPeriodicity R A M (n + 2 * k) x) =
+    cyclicTotalHomologyPeriodicity R B N (n + 2 * k) (e k x))
+include e he
+
+/-- Universe-polymorphic `R`-linear equivalence on `HP^n` from stage equivalences. -/
+def congrStages : periodicCyclicCohomology R A M n ≃ₗ[R] periodicCyclicCohomology R B N n :=
+  Module.DirectLimit.congr e (stage_comp_transition_of_periodicity (fun k ↦ (e k).toLinearMap) he)
+/-- The underlying `R`-linear map of `congrStages` is `mapStages`. -/
+@[simp] theorem coe_congrStages :
+    (congrStages e he : periodicCyclicCohomology R A M n →ₗ[R] periodicCyclicCohomology R B N n) =
+      mapStages (fun k ↦ (e k).toLinearMap) he := (rfl)
+/-- `congrStages` acts on the `k`-th stage via `e k`. -/
+@[simp] theorem congrStages_ι (k : ℕ) (x : (cyclicTotalComplex R A M).homology (n + 2 * k)) :
+    congrStages e he (ι R A M n k x) = ι R B N n k (e k x) :=
+  Module.DirectLimit.congr_apply_of e _ x
+/-- The inverse of `congrStages` acts on the `k`-th stage via `(e k).symm`. -/
+@[simp] theorem congrStages_symm_ι (k : ℕ) (y : (cyclicTotalComplex R B N).homology (n + 2 * k)) :
+    (congrStages e he).symm (ι R B N n k y) = ι R A M n k ((e k).symm y) :=
+  Module.DirectLimit.congr_symm_apply_of e _ y
+end Congr
+
+section Shift
+variable (g : ∀ m, (cyclicTotalComplex R A M).homology m →ₗ[R]
+    (cyclicTotalComplex R B N).homology m)
+  (hg : ∀ m x, g (m + 2) (cyclicTotalHomologyPeriodicity R A M m x) =
+    cyclicTotalHomologyPeriodicity R B N m (g m x))
+
+/-- Graded stage maps on `HP^n` commute with `(shiftIso R A M n).hom`. -/
+theorem mapStages_shiftIso_hom (n : ℕ) (z : periodicCyclicCohomology R A M (n + 2)) :
+    mapStages (fun k ↦ g (n + 2 * k)) (fun k ↦ hg (n + 2 * k)) ((shiftIso R A M n).hom z) =
+      (shiftIso R B N n).hom
+        (mapStages (fun k ↦ g (n + 2 + 2 * k)) (fun k ↦ hg (n + 2 + 2 * k)) z) := by
+  obtain ⟨k, x, rfl⟩ := exists_ι_eq z
+  have hA := congrArg (fun f ↦ f x) (ι_shiftIso_hom R A M n k)
+  have hB := congrArg (fun f ↦ f (g (n + 2 + 2 * k) x)) (ι_shiftIso_hom R B N n k)
+  simp only [ModuleCat.comp_apply] at hA hB
+  have heq {m₁ m₂ : ℕ} (e : m₁ = m₂) (y : (cyclicTotalComplex R A M).homology m₁) :
+      g m₂ (eqToHom (congrArg (fun m ↦ (cyclicTotalComplex R A M).homology m) e) y) =
+        eqToHom (congrArg (fun m ↦ (cyclicTotalComplex R B N).homology m) e) (g m₁ y) := by
+    subst e; simp
+  rw [hA, mapStages_ι, mapStages_ι, hB, heq (by omega)]
+/-- Graded stage maps on `HP^n` commute with `(shiftIso R A M n).inv`. -/
+theorem mapStages_shiftIso_inv (n : ℕ) (z : periodicCyclicCohomology R A M n) :
+    mapStages (fun k ↦ g (n + 2 + 2 * k)) (fun k ↦ hg (n + 2 + 2 * k)) ((shiftIso R A M n).inv z) =
+      (shiftIso R B N n).inv (mapStages (fun k ↦ g (n + 2 * k)) (fun k ↦ hg (n + 2 * k)) z) := by
+  apply (ConcreteCategory.bijective_of_isIso (shiftIso R B N n).hom).1
+  rw [← ModuleCat.comp_apply, Iso.inv_hom_id, ModuleCat.id_apply,
+    ← mapStages_shiftIso_hom g hg n, ← ModuleCat.comp_apply, Iso.inv_hom_id, ModuleCat.id_apply]
+end Shift
+end StageMaps
 
 end periodicCyclicCohomology
 
@@ -365,7 +467,7 @@ theorem isZero_periodicCyclicCohomology_self_one :
   have := ModuleCat.isZero_iff_subsingleton.1 (isZero_hochschildCohomology_self R M one_ne_zero)
   have h : Limits.IsZero ((cyclicTotalComplex R R M).homology 1) :=
     ModuleCat.isZero_iff_subsingleton.2
-      injective_homologyMap_cyclicTotalComplexToHochschild_one.subsingleton
+      (injective_homologyMap_cyclicTotalComplexToHochschild_one R R M).subsingleton
   exact h.of_iso (asIso (periodicCyclicCohomology.ι R R M 1 0)).symm
 
 end GroundRing
@@ -507,6 +609,26 @@ theorem cyclicCohomology.periodicTransition_comp (n : ℕ) {i j k : ℕ} (hij : 
       cyclicCohomology.periodicTransition R A M n (hij.trans hjk) :=
   (Functor.OfSequence.map_comp _ i j k hij hjk).symm
 
+variable {R A M} in
+/-- Stage maps on cyclic cohomology commuting with Connes' `S` commute with every iterated
+transition map `S^(j - i)`. -/
+theorem cyclicCohomology.stage_comp_periodicTransition_of_periodicity {B : Type u'} {N : Type v'}
+    [Ring B] [Algebra R B] [AddCommGroup N] [Module R N] {n : ℕ}
+    (g : ∀ k, cyclicCohomology R A M (n + 2 * k) →ₗ[R] cyclicCohomology R B N (n + 2 * k))
+    (hg : ∀ k x, g (k + 1) (cyclicCohomology.periodicity R A M (n + 2 * k) x) =
+      cyclicCohomology.periodicity R B N (n + 2 * k) (g k x)) (i j : ℕ) (h : i ≤ j) :
+    g j ∘ₗ (cyclicCohomology.periodicTransition R A M n h).hom =
+      (cyclicCohomology.periodicTransition R B N n h).hom ∘ₗ g i :=
+  LinearMap.ext fun x ↦ congrArg (fun f ↦ (f (ULift.up x)).down) <| NatTrans.naturality
+    (NatTrans.ofSequence (F := Functor.ofSequence (cyclicCohomology.periodicity R A M <|
+        n + 2 * ·) ⋙ forget (ModuleCat R) ⋙ uliftFunctor.{max u' v'})
+      (G := Functor.ofSequence (cyclicCohomology.periodicity R B N <| n + 2 * ·) ⋙
+        forget (ModuleCat R) ⋙ uliftFunctor.{max u v})
+      (fun k ↦ TypeCat.ofHom fun u ↦ ULift.up (g k u.down)) fun k ↦
+        ConcreteCategory.hom_ext _ _ fun u ↦ by
+          simp only [Functor.comp_map, Functor.ofSequence_map_homOfLE_succ]
+          exact congrArg ULift.up (hg k u.down)) (homOfLE h)
+
 /-- Compatibility between `cyclicCohomology.periodicTransition` and
 `cyclicTotalHomologyPeriodicTransition` after rescaling by `periodicComparisonScalar`. -/
 theorem cyclicCohomology.smul_periodicTransition_comp_homologyMap (n : ℕ) {i j : ℕ} (h : i ≤ j) :
@@ -540,6 +662,13 @@ def fromCyclicCohomology (n k : ℕ) :
   algebraMap ℚ R (periodicComparisonScalar n k) •
     (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * k) ≫
       ι R A M n k)
+
+/-- Defining formula for `fromCyclicCohomology`. -/
+theorem fromCyclicCohomology_def (n k : ℕ) :
+    fromCyclicCohomology R A M n k =
+      algebraMap ℚ R (periodicComparisonScalar n k) •
+        (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * k) ≫
+          ι R A M n k) := (rfl)
 
 /-- At stage zero (`k = 0`), `fromCyclicCohomology` is the unscaled inclusion into `HP^n`. -/
 @[simp]
@@ -603,16 +732,62 @@ theorem fromCyclicCohomology_eq_zero_iff {n k : ℕ} (y : cyclicCohomology R A M
   · rintro ⟨j, hkj, hj⟩
     rw [← periodicTransition_fromCyclicCohomology_apply hkj, hj, map_zero]
 
+section LiftLinearMapCyclic
+variable {n : ℕ} {N : Type*} [AddCommMonoid N] [Module R N]
+
+/-- Two `R`-linear maps out of `HP^n(A; M)` into an arbitrary `R`-module agree once they agree on
+all stages `fromCyclicCohomology`. -/
+theorem linearMap_ext_fromCyclicCohomology {f g : periodicCyclicCohomology R A M n →ₗ[R] N}
+    (h : ∀ k y, f (fromCyclicCohomology R A M n k y) = g (fromCyclicCohomology R A M n k y)) :
+    f = g := by
+  refine linearMap_ext fun k z ↦ ?_
+  obtain ⟨y, rfl⟩ := (bijective_homologyMap_cyclicCochainComplexToTotal R A M (n + 2 * k)).2 z
+  exact (isUnit_algebraMap_periodicComparisonScalar (R := R) n k).smul_left_cancel.1 <| by
+    simpa only [fromCyclicCohomology, ModuleCat.hom_smul, ModuleCat.hom_comp,
+      LinearMap.smul_apply, LinearMap.comp_apply, map_smul] using h k y
+
+variable (g : ∀ k, cyclicCohomology R A M (n + 2 * k) →ₗ[R] N)
+  (hg : ∀ k y, g (k + 1) (cyclicCohomology.periodicity R A M (n + 2 * k) y) = g k y)
+include g hg
+
+/-- Universe-polymorphic `LinearMap` universal property of `HP^n(A; M)` along Connes' `S`. -/
+def liftLinearMapCyclicCohomology : periodicCyclicCohomology R A M n →ₗ[R] N :=
+  let e k := LinearEquiv.ofBijective
+    (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * k)).hom
+    (bijective_homologyMap_cyclicCochainComplexToTotal R A M (n + 2 * k))
+  liftLinearMap (fun k ↦ algebraMap ℚ R (periodicComparisonScalar n k)⁻¹ •
+    (g k ∘ₗ (e k).symm.toLinearMap)) fun k x ↦ by
+    obtain ⟨y, rfl⟩ := (e k).surjective x
+    have hcomp := congrArg (fun u ↦ u.hom y)
+      (cyclicCohomology.periodicity_comp_homologyMap_cyclicCochainComplexToTotal R A M (n + 2 * k))
+    simp only [ModuleCat.hom_comp, ModuleCat.hom_smul, LinearMap.comp_apply,
+      LinearMap.smul_apply] at hcomp
+    simp only [LinearMap.smul_apply, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+      LinearEquiv.symm_apply_apply, algebraMap_periodicComparisonScalar_succ_inv, mul_smul]
+    rw [← map_smul (g (k + 1)), ← map_smul (e (k + 1)).symm]
+    -- `(n + 2 * k) + 2` is definitionally `n + 2 * (k + 1)` (`Nat.mul_succ`).
+    erw [← hcomp, (e (k + 1)).symm_apply_apply]; rw [hg]
+/-- `liftLinearMapCyclicCohomology` restricts to the given family on each cyclic stage. -/
+@[simp] theorem liftLinearMapCyclicCohomology_fromCyclicCohomology (k : ℕ)
+    (y : cyclicCohomology R A M (n + 2 * k)) :
+    liftLinearMapCyclicCohomology g hg (fromCyclicCohomology R A M n k y) = g k y := by
+  have hmul : algebraMap ℚ R (periodicComparisonScalar n k) *
+      algebraMap ℚ R (periodicComparisonScalar n k)⁻¹ = 1 := by
+    rw [← map_mul, mul_inv_cancel₀ (periodicComparisonScalar_ne_zero n k), map_one]
+  simp only [fromCyclicCohomology, liftLinearMapCyclicCohomology, ModuleCat.hom_smul,
+    ModuleCat.hom_comp, LinearMap.smul_apply, LinearMap.comp_apply, map_smul, liftLinearMap_ι,
+    LinearEquiv.coe_toLinearMap, smul_smul, hmul, one_smul]
+  exact congrArg (g k) ((LinearEquiv.ofBijective _
+    (bijective_homologyMap_cyclicCochainComplexToTotal R A M (n + 2 * k))).symm_apply_apply y)
+end LiftLinearMapCyclic
+
 /-- Two morphisms out of `HP^n(A; M)` agree once they agree on all stages `fromCyclicCohomology`. -/
 theorem hom_ext_fromCyclicCohomology {n : ℕ} {P : ModuleCat R}
     {f g : periodicCyclicCohomology R A M n ⟶ P}
     (h : ∀ k, fromCyclicCohomology R A M n k ≫ f = fromCyclicCohomology R A M n k ≫ g) :
-    f = g := by
-  refine hom_ext fun k ↦ ?_
-  have := quasiIso_cyclicCochainComplexToTotal R A M
-  rw [← cancel_epi (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * k))]
-  exact (isUnit_algebraMap_periodicComparisonScalar (R := R) n k).smul_left_cancel.1
-    (by simpa only [fromCyclicCohomology, Linear.smul_comp, Category.assoc] using h k)
+    f = g :=
+  ModuleCat.hom_ext
+    (linearMap_ext_fromCyclicCohomology fun k y ↦ congrArg (fun u ↦ u.hom y) (h k))
 
 /-- **Universal property of `HP^n(A; M)` along Connes' operator `S`:** a family of morphisms out of
 `HC^(n+2k)(A; M)` compatible with `cyclicCohomology.periodicity` factors uniquely through
@@ -620,20 +795,9 @@ theorem hom_ext_fromCyclicCohomology {n : ℕ} {P : ModuleCat R}
 def descCyclicCohomology {n : ℕ} {P : ModuleCat R}
     (g : ∀ k, cyclicCohomology R A M (n + 2 * k) ⟶ P)
     (hg : ∀ k, cyclicCohomology.periodicity R A M (n + 2 * k) ≫ g (k + 1) = g k) :
-    periodicCyclicCohomology R A M n ⟶ P := by
-  have := quasiIso_cyclicCochainComplexToTotal R A M
-  refine desc
-    (fun k ↦ algebraMap ℚ R (periodicComparisonScalar n k)⁻¹ •
-      (inv (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * k)) ≫ g k))
-    fun k ↦ ?_
-  rw [← cancel_epi (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * k)),
-    Linear.comp_smul, Linear.comp_smul, algebraMap_periodicComparisonScalar_succ_inv, mul_smul,
-    ← Category.assoc, ← Linear.smul_comp,
-    ← cyclicCohomology.periodicity_comp_homologyMap_cyclicCochainComplexToTotal R A M (n + 2 * k),
-    Category.assoc]
-  -- `(n + 2 * k) + 2` is definitionally `n + 2 * (k + 1)` (`Nat.mul_succ`).
-  erw [IsIso.hom_inv_id_assoc]
-  rw [hg, Linear.comp_smul, IsIso.hom_inv_id_assoc]
+    periodicCyclicCohomology R A M n ⟶ P :=
+  ModuleCat.ofHom
+    (liftLinearMapCyclicCohomology (fun k ↦ (g k).hom) fun k y ↦ congrArg (fun u ↦ u.hom y) (hg k))
 
 /-- The map out of `HP^n(A; M)` induced by a compatible family restricts to the given family on each
 cyclic cohomology stage. -/
@@ -641,14 +805,10 @@ cyclic cohomology stage. -/
 theorem fromCyclicCohomology_descCyclicCohomology {n : ℕ} {P : ModuleCat R}
     (g : ∀ k, cyclicCohomology R A M (n + 2 * k) ⟶ P)
     (hg : ∀ k, cyclicCohomology.periodicity R A M (n + 2 * k) ≫ g (k + 1) = g k) (k : ℕ) :
-    fromCyclicCohomology R A M n k ≫ descCyclicCohomology g hg = g k := by
-  have := quasiIso_cyclicCochainComplexToTotal R A M
-  have hmul : algebraMap ℚ R (periodicComparisonScalar n k) *
-      algebraMap ℚ R (periodicComparisonScalar n k)⁻¹ = 1 := by
-    rw [← map_mul, mul_inv_cancel₀ (periodicComparisonScalar_ne_zero n k), map_one]
-  dsimp only [fromCyclicCohomology, descCyclicCohomology]
-  rw [Linear.smul_comp, Category.assoc, ι_desc, Linear.comp_smul, smul_smul, hmul, one_smul,
-    IsIso.hom_inv_id_assoc]
+    fromCyclicCohomology R A M n k ≫ descCyclicCohomology g hg = g k :=
+  ModuleCat.hom_ext (LinearMap.ext fun y ↦
+    liftLinearMapCyclicCohomology_fromCyclicCohomology (fun k ↦ (g k).hom)
+      (fun k y ↦ congrArg (fun u ↦ u.hom y) (hg k)) k y)
 
 end periodicCyclicCohomology
 

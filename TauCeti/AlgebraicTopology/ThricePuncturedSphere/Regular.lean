@@ -137,7 +137,7 @@ theorem isPretransitive_deck_iff_isRegular :
     MulAction.IsPretransitive (deck ⇑c.cover.proj) (⇑c.cover.proj ⁻¹' {basePt}) ↔
       (c.connectedTriple : PermutationTriple n).IsRegular := by
   rw [← isPretransitive_range_deckPerm_iff, range_deckPerm_eq_automorphismGroup, isRegular_iff,
-    and_iff_right c.connectedTriple.2]
+    and_iff_right c.connectedTriple.property]
 
 /-- **A numbered cover of `ℂ ∖ {0, 1}` is regular exactly when its triple is regular**: the deck
 group acts transitively on every fibre exactly when the triple is regular. -/
@@ -151,7 +151,7 @@ theorem isRegular_proj_iff :
 degree.** -/
 theorem isRegular_iff_card_deck :
     (c.connectedTriple : PermutationTriple n).IsRegular ↔ Nat.card (deck ⇑c.cover.proj) = n := by
-  rw [isRegular_iff_card_automorphismGroup, and_iff_right c.connectedTriple.2,
+  rw [isRegular_iff_card_automorphismGroup, and_iff_right c.connectedTriple.property,
     Nat.card_congr c.deckMulEquiv.toEquiv]
 
 /-- **A numbered cover of `ℂ ∖ {0, 1}` is regular exactly when its monodromy group, the image of
@@ -159,7 +159,8 @@ theorem isRegular_iff_card_deck :
 theorem isRegular_iff_card_range_monodromyPerm :
     (c.connectedTriple : PermutationTriple n).IsRegular ↔
       Nat.card (c.cover.isCoveringMap_proj.monodromyPerm basePt).range = n := by
-  rw [isRegular_iff_card_monodromyGroup, and_iff_right c.connectedTriple.2, coe_connectedTriple,
+  rw [isRegular_iff_card_monodromyGroup, and_iff_right c.connectedTriple.property,
+      coe_connectedTriple,
     IsCoveringMap.monodromyGroup_monodromyTriple,
     Subgroup.card_map_of_injective c.ν.permCongrHom.injective]
 
@@ -170,7 +171,7 @@ normal exactly when the triple of the cover is regular.** Through the isomorphis
 `TauCeti.ThricePuncturedSphere.fundamentalGroupMulEquivFreeGroup` this is normality of the
 corresponding subgroup of `FreeGroup (Fin 2)`. -/
 theorem normal_range_mapOfEq_iff (e : ⇑c.cover.proj ⁻¹' {basePt}) :
-    (mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ e.2).range.Normal ↔
+    (mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ e.property).range.Normal ↔
       (c.connectedTriple : PermutationTriple n).IsRegular := by
   have := c.cover.isCoveringMap_proj.isLocalHomeomorph.locallyPathConnectedSpace
   have : PathConnectedSpace (c.cover : TopCat) := PathConnectedSpace.of_locallyPathConnectedSpace
@@ -237,7 +238,7 @@ theorem toPerm_comp_toTriangleGroup :
 /-- **The subgroup recovered from the point labelled `i` is the preimage of the stabiliser of `i`
 under the action of the triangle group** `Δ(a, b, k)` on the labels. -/
 theorem range_mapOfEq_eq_comap_comap_stabilizer (i : Fin n) :
-    (mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ (c.ν.symm i).2).range =
+    (mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ (c.ν.symm i).property).range =
       ((MulAction.stabilizer (Perm (Fin n)) i).comap (toPerm _ ha hb hk)).comap
         (toTriangleGroup a b k) := by
   rw [Subgroup.comap_comap, toPerm_comp_toTriangleGroup, ← Subgroup.comap_comap,
@@ -250,7 +251,7 @@ theorem range_mapOfEq_eq_comap_comap_stabilizer (i : Fin n) :
 kernel of the action of the triangle group** `Δ(a, b, k)` on the labels. -/
 theorem range_mapOfEq_eq_comap_ker (h : (c.connectedTriple : PermutationTriple n).IsRegular)
     (e : ⇑c.cover.proj ⁻¹' {basePt}) :
-    (mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ e.2).range =
+    (mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ e.property).range =
       (toPerm _ ha hb hk).ker.comap (toTriangleGroup a b k) := by
   rw [← c.ν.symm_apply_apply e, range_mapOfEq_eq_comap_comap_stabilizer c ha hb hk,
     comap_stabilizer_toPerm_eq_ker _ _ _ _ _
@@ -263,7 +264,7 @@ its triple.** The subgroup recovered from any point of the fibre is the preimage
 triple. -/
 theorem range_mapOfEq_eq_comap_regularIsoClassEquiv [NeZero n]
     (h : (c.connectedTriple : PermutationTriple n).IsRegular) (e : ⇑c.cover.proj ⁻¹' {basePt}) :
-    (mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ e.2).range =
+    (mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ e.property).range =
       (regularIsoClassEquiv ⟨IsoClass.mk (c.connectedTriple : PermutationTriple n),
         mk_mem_regularIsoClasses_iff.mpr ⟨h, (hasDividingOrders_iff _).mpr ⟨ha, hb, hk⟩⟩⟩ :
           Subgroup (TriangleGroup a b k)).comap (toTriangleGroup a b k) := by

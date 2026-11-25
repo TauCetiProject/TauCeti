@@ -31,6 +31,9 @@ compatibility lets local properties of modules, expressed on open covers, be tra
 scheme morphisms. Being an isomorphism is such a local property: a morphism of modules is an
 isomorphism exactly when its pullbacks to the members of an open cover are.
 
+Along an isomorphism of schemes, pullback is direct image along the inverse, both being left
+adjoint to direct image, and it is an equivalence of categories of modules.
+
 Identifying modules on the slice site at an open `U` with modules on the open subscheme `U`, and
 pulling back along an isomorphism of schemes, preserve free modules, so trivializations of a
 module by free modules can be moved between slices, open subschemes and open immersions.
@@ -51,6 +54,19 @@ local data on the preimage cover.
   `AlgebraicGeometry.Scheme.Modules.pseudofunctor_left_unitality_app` and
   `AlgebraicGeometry.Scheme.Modules.pseudofunctor_right_unitality_app`: the coherence conditions
   of the pullback pseudofunctor, on components;
+* `AlgebraicGeometry.Scheme.Modules.pullbackCompIsoOfCommSq`: the comparison `t^* r^* ≅ l^* b^*`
+  of composite pullbacks around a commutative square, and
+  `AlgebraicGeometry.Scheme.Modules.pullbackCompIsoId`: `f^* g^* ≅ 𝟭` for a section `f` of `g`;
+* `AlgebraicGeometry.Scheme.Hom.pullbackIsoPushforwardInv`: along an isomorphism of schemes,
+  pullback is direct image along the inverse, and
+  `AlgebraicGeometry.Scheme.Modules.isEquivalence_pullback` shows it is an equivalence;
+* `AlgebraicGeometry.Scheme.Modules.unit_comp_pushforward_map_pullbackComp_inv_app`: the unit of
+  `(f ≫ g)^* ⊣ (f ≫ g)_*` through the units of `g` and `f`, and
+  `AlgebraicGeometry.Scheme.Modules.unit_comp_pushforwardCongr_hom_app_pushforwardId_hom_app` the
+  unit along a morphism equal to the identity;
+* `AlgebraicGeometry.Scheme.Modules.pushforwardToPullback`: for a section `s` of `p`, the morphism
+  `p_* ⟶ s^*`, with `AlgebraicGeometry.Scheme.Modules.unit_comp_pushforwardToPullback_app`
+  computing it on the unit of `p^* ⊣ p_*`;
 * `AlgebraicGeometry.Scheme.Modules.pullbackObjUnitIso`: the isomorphism `f^* 𝒪_Y ≅ 𝒪_X`, with
   `pullbackObjUnitIso_id`, `pullbackObjUnitIso_comp` (with its inverse form
   `pullbackObjUnitIso_inv_comp`), and `pullbackObjUnitIso_congr` comparing it with identity,
@@ -140,6 +156,16 @@ lemma pseudofunctor_left_unitality_app (f : X ⟶ Y) (M : Y.Modules) :
       eqToHom (by simp) := by
   simpa using NatTrans.congr_app (pseudofunctor_left_unitality f) M
 
+/-- The composition comparison for `a ≫ 𝟙 B` identifies the pullback identity comparison. -/
+@[reassoc]
+lemma pullbackComp_id_hom {A B : Scheme.{u}} (a : A ⟶ B) (M : B.Modules) :
+    (pullbackComp a (𝟙 B)).hom.app M ≫
+      (pullbackCongr (Category.comp_id a)).hom.app M =
+    (pullback a).map ((pullbackId B).hom.app M) := by
+  apply (cancel_epi ((pullbackComp a (𝟙 B)).inv.app M)).1
+  simpa only [Iso.inv_hom_id_app_assoc, pullbackCongr, eqToIso.hom, eqToHom_app]
+    using (pseudofunctor_left_unitality_app a M).symm
+
 /-- The right unitality condition of the pullback pseudofunctor, on the component at a module. -/
 @[reassoc]
 lemma pseudofunctor_right_unitality_app (f : X ⟶ Y) (M : Y.Modules) :
@@ -204,7 +230,71 @@ lemma pullbackComp_inv_app_comp_pullback_map_pullbackCongr_hom_app (f : X ⟶ Y)
   subst p
   simp [pullbackCongr]
 
+/-- The comparison `t^* r^* ≅ l^* b^*` of composite pullbacks around a commutative square
+`t ≫ r = l ≫ b` of schemes, through `(t ≫ r)^* = (l ≫ b)^*`. -/
+def pullbackCompIsoOfCommSq {t : X ⟶ Y} {l : X ⟶ W} {r : Y ⟶ Z} {b : W ⟶ Z}
+    (sq : CommSq t l r b) : pullback r ⋙ pullback t ≅ pullback b ⋙ pullback l :=
+  pullbackComp t r ≪≫ pullbackCongr sq.w ≪≫ (pullbackComp l b).symm
+
+@[simp]
+lemma pullbackCompIsoOfCommSq_hom_app {t : X ⟶ Y} {l : X ⟶ W} {r : Y ⟶ Z} {b : W ⟶ Z}
+    (sq : CommSq t l r b) (M : Z.Modules) :
+    (pullbackCompIsoOfCommSq sq).hom.app M =
+      (pullbackComp t r).hom.app M ≫ (pullbackCongr sq.w).hom.app M ≫
+        (pullbackComp l b).inv.app M :=
+  (rfl)
+
+@[simp]
+lemma pullbackCompIsoOfCommSq_inv_app {t : X ⟶ Y} {l : X ⟶ W} {r : Y ⟶ Z} {b : W ⟶ Z}
+    (sq : CommSq t l r b) (M : Z.Modules) :
+    (pullbackCompIsoOfCommSq sq).inv.app M =
+      (pullbackComp l b).hom.app M ≫ (pullbackCongr sq.w).inv.app M ≫
+        (pullbackComp t r).inv.app M :=
+  (rfl)
+
+/-- For a section `f` of `g`, i.e. `f ≫ g = 𝟙 X`, pulling back along `g` and then along `f` is
+the identity: `f^* g^* ≅ (f ≫ g)^* = (𝟙 X)^* ≅ 𝟭`. Along an isomorphism `g`, with `f = inv g`,
+this identifies `(inv g)^* g^*` with the identity. -/
+def pullbackCompIsoId {f : X ⟶ Y} {g : Y ⟶ X} (h : f ≫ g = 𝟙 X) :
+    pullback g ⋙ pullback f ≅ 𝟭 X.Modules :=
+  pullbackComp f g ≪≫ pullbackCongr h ≪≫ pullbackId X
+
+@[simp]
+lemma pullbackCompIsoId_hom_app {f : X ⟶ Y} {g : Y ⟶ X} (h : f ≫ g = 𝟙 X) (M : X.Modules) :
+    (pullbackCompIsoId h).hom.app M =
+      (pullbackComp f g).hom.app M ≫ (pullbackCongr h).hom.app M ≫ (pullbackId X).hom.app M :=
+  (rfl)
+
+@[simp]
+lemma pullbackCompIsoId_inv_app {f : X ⟶ Y} {g : Y ⟶ X} (h : f ≫ g = 𝟙 X) (M : X.Modules) :
+    (pullbackCompIsoId h).inv.app M =
+      (pullbackId X).inv.app M ≫ (pullbackCongr h).inv.app M ≫ (pullbackComp f g).inv.app M :=
+  (rfl)
+
 end Coherence
+
+section IsIso
+
+/-- Along an isomorphism of schemes `g`, pullback is direct image along the inverse, both being
+left adjoint to direct image along `g`. -/
+def _root_.AlgebraicGeometry.Scheme.Hom.pullbackIsoPushforwardInv (g : X ⟶ Y) [IsIso g] :
+    pullback g ≅ pushforward (inv g) :=
+  (pullbackPushforwardAdjunction g).leftAdjointUniq
+    (CategoryTheory.Equivalence.mk (pushforward (inv g)) (pushforward g)
+      ((pushforwardId Y).symm ≪≫ pushforwardCongr (IsIso.inv_hom_id g).symm ≪≫
+        (pushforwardComp (inv g) g).symm)
+      (pushforwardComp g (inv g) ≪≫ pushforwardCongr (IsIso.hom_inv_id g) ≪≫
+        pushforwardId X)).toAdjunction
+
+/-- Along an isomorphism of schemes `g`, pullback of modules is an equivalence of categories, being
+restriction along the open immersion `g` (`restrictEquivalence`). -/
+instance isEquivalence_pullback (g : X ⟶ Y) [IsIso g] : (pullback g).IsEquivalence := by
+  have := (restrictEquivalence (asIso g)).isEquivalence_functor
+  rw [restrictEquivalence_functor] at this
+  have := Functor.isEquivalence_of_iso (restrictFunctorIsoPullback (asIso g).hom)
+  rwa [asIso_hom] at this
+
+end IsIso
 
 section Unit
 
@@ -292,6 +382,86 @@ lemma pullbackObjUnitIso_congr {f g : X ⟶ Y} (hf : f = g) :
   subst g
   simp only [pullbackCongr, eqToIso_refl, Iso.refl_hom, NatTrans.id_app,
     Category.id_comp]
+
+/-- The unit of `(f ≫ g)^* ⊣ (f ≫ g)_*`, read through `(f ≫ g)^* ≅ f^* g^*`, is the unit of
+`g^* ⊣ g_*` followed by `g_*` of the unit of `f^* ⊣ f_*` and `g_* f_* = (f ≫ g)_*`. -/
+@[reassoc]
+lemma unit_comp_pushforward_map_pullbackComp_inv_app (f : X ⟶ Y) (g : Y ⟶ Z) (M : Z.Modules) :
+    (pullbackPushforwardAdjunction (f ≫ g)).unit.app M ≫
+        (pushforward (f ≫ g)).map ((pullbackComp f g).inv.app M) =
+      (pullbackPushforwardAdjunction g).unit.app M ≫
+        (pushforward g).map ((pullbackPushforwardAdjunction f).unit.app ((pullback g).obj M)) ≫
+          (pushforwardComp f g).hom.app _ := by
+  have h := CategoryTheory.unit_conjugateEquiv
+    ((pullbackPushforwardAdjunction g).comp (pullbackPushforwardAdjunction f))
+    (pullbackPushforwardAdjunction (f ≫ g)) (pullbackComp f g).inv M
+  rw [conjugateEquiv_pullbackComp_inv] at h
+  rw [← h, Adjunction.comp_unit_app, Category.assoc]
+  rfl
+
+/-- The unit of the pullback-pushforward adjunction of a morphism `e` equal to the identity is the
+identification `M ≅ (𝟙 X)^* M = e^* M`, read through `e_* = (𝟙 X)_* = 𝟭`. -/
+lemma unit_comp_pushforwardCongr_hom_app_pushforwardId_hom_app {e : X ⟶ X} (he : e = 𝟙 X)
+    (M : X.Modules) :
+    (pullbackPushforwardAdjunction e).unit.app M ≫ (pushforwardCongr he).hom.app _ ≫
+        (pushforwardId X).hom.app _ =
+      (pullbackId X).inv.app M ≫ (pullbackCongr he.symm).hom.app M := by
+  subst he
+  have h := CategoryTheory.unit_conjugateEquiv Adjunction.id
+    (pullbackPushforwardAdjunction (𝟙 X)) (pullbackId X).hom M
+  rw [conjugateEquiv_pullbackId_hom, Adjunction.id_unit, NatTrans.id_app, Category.id_comp] at h
+  simp only [pullbackCongr, eqToIso_refl, Iso.refl_hom, NatTrans.id_app, Category.comp_id]
+  have hi := (pushforwardId X).hom.naturality ((pullbackId X).hom.app M)
+  have hc := (pushforwardCongr (rfl : 𝟙 X = 𝟙 X)).hom.naturality ((pullbackId X).hom.app M)
+  dsimp only [Functor.id_map] at hi hc
+  rw [← cancel_mono ((pullbackId X).hom.app M), Iso.inv_hom_id_app, Category.assoc,
+    Category.assoc, ← hi, ← reassoc_of% hc, ← reassoc_of% h]
+  refine hom_ext _ _ fun U ↦ ?_
+  simp only [Hom.comp_app, pushforwardId_inv_app_app, pushforwardCongr_hom_app_app,
+    pushforwardId_hom_app_app]
+  exact (Category.id_comp _).trans ((Category.comp_id _).trans (M.presheaf.map_id _))
+
+/-- For a section `s` of `p` (`s ≫ p = 𝟙 X`), the morphism `p_* T ⟶ s^* T` obtained by applying
+`p_*` to the unit `T ⟶ s_* s^* T` and identifying `p_* s_* = (s ≫ p)_* = 𝟭`. -/
+def pushforwardToPullback {p : Y ⟶ X} {s : X ⟶ Y} (hs : s ≫ p = 𝟙 X) :
+    pushforward p ⟶ pullback s where
+  app T := (pushforward p).map ((pullbackPushforwardAdjunction s).unit.app T) ≫
+    (pushforwardComp s p).hom.app _ ≫ (pushforwardCongr hs).hom.app _ ≫
+      (pushforwardId X).hom.app _
+  naturality T T' φ := by
+    have hu := (pullbackPushforwardAdjunction s).unit.naturality φ
+    have hc := (pushforwardComp s p).hom.naturality ((pullback s).map φ)
+    have hc' := (pushforwardCongr hs).hom.naturality ((pullback s).map φ)
+    have hi := (pushforwardId X).hom.naturality ((pullback s).map φ)
+    dsimp only [Functor.comp_map, Functor.id_map, Functor.comp_obj, Functor.id_obj]
+      at hu hc hc' hi ⊢
+    simp only [Category.assoc]
+    rw [← (pushforward p).map_comp_assoc, hu, Functor.map_comp_assoc, reassoc_of% hc,
+      reassoc_of% hc', hi]
+
+/-- The components of `pushforwardToPullback`. -/
+lemma pushforwardToPullback_app {p : Y ⟶ X} {s : X ⟶ Y} (hs : s ≫ p = 𝟙 X) (T : Y.Modules) :
+    (pushforwardToPullback hs).app T =
+      (pushforward p).map ((pullbackPushforwardAdjunction s).unit.app T) ≫
+        (pushforwardComp s p).hom.app _ ≫ (pushforwardCongr hs).hom.app _ ≫
+          (pushforwardId X).hom.app _ :=
+  (rfl)
+
+/-- If `s` is a section of `p` (`s ≫ p = 𝟙 X`), the unit `M ⟶ p_* p^* M` followed by
+`pushforwardToPullback : p_* p^* M ⟶ s^* p^* M` is the identification
+`M ≅ (𝟙 X)^* M = (s ≫ p)^* M ≅ s^* p^* M`. -/
+@[reassoc]
+lemma unit_comp_pushforwardToPullback_app {p : Y ⟶ X} {s : X ⟶ Y} (hs : s ≫ p = 𝟙 X)
+    (M : X.Modules) :
+    (pullbackPushforwardAdjunction p).unit.app M ≫ (pushforwardToPullback hs).app _ =
+      (pullbackId X).inv.app M ≫ (pullbackCongr hs.symm).hom.app M ≫
+        (pullbackComp s p).inv.app M := by
+  have hc := (pushforwardCongr hs).hom.naturality ((pullbackComp s p).inv.app M)
+  have hi := (pushforwardId X).hom.naturality ((pullbackComp s p).inv.app M)
+  have hu := unit_comp_pushforward_map_pullbackComp_inv_app s p M
+  dsimp only [Functor.id_map, Functor.comp_obj] at hi hc hu
+  rw [pushforwardToPullback_app, ← reassoc_of% hu, reassoc_of% hc, hi,
+    reassoc_of% unit_comp_pushforwardCongr_hom_app_pushforwardId_hom_app hs M]
 
 end Unit
 

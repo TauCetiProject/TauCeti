@@ -40,6 +40,8 @@ the narrow class group finite (see `NarrowClassGroup.Finite`).
   including that nonzero squares are totally positive.
 * `NumberField.isTotallyPositive_ratCast`: a positive rational number is totally positive, with
   `NumberField.isTotallyPositive_intCast` its integer special case.
+* `NumberField.not_isTotallyPositive_iff_exists_lt_zero`: a nonzero element is not totally
+  positive exactly when it is negative at some real place.
 * `NumberField.totallyPositiveUnits`: the subgroup of totally positive units of `Kˣ` (the
   kernel of the unit signature map), with `sq_mem_totallyPositiveUnits`. For a totally complex field
   it is everything (`totallyPositiveUnits_eq_top`), since total positivity is then vacuous
@@ -121,6 +123,15 @@ theorem isTotallyPositive_intCast {n : ℤ} (hn : 0 < n) :
     IsTotallyPositive ((n : ℤ) : K) := by
   rw [← Rat.cast_intCast (α := K) n]
   exact isTotallyPositive_ratCast (by exact_mod_cast hn)
+
+/-- A nonzero element fails to be totally positive exactly when it is negative at some real
+place. The hypothesis `x ≠ 0` is needed: `0` is not totally positive, yet no real embedding
+sends it to a negative number. -/
+theorem not_isTotallyPositive_iff_exists_lt_zero {x : K} (hx : x ≠ 0) :
+    ¬IsTotallyPositive x ↔
+      ∃ (w : InfinitePlace K) (hw : w.IsReal), embedding_of_isReal hw x < 0 := by
+  simp only [isTotallyPositive_iff, not_forall, not_lt]
+  exact exists_congr fun w ↦ exists_congr fun hw ↦ ((map_ne_zero _).mpr hx).le_iff_lt
 
 /-- The subgroup of **totally positive units** of `Kˣ`: the intersection, over the real infinite
 places `w`, of the preimages of the positive units of `ℝ` under the real embedding `w`. It is the
@@ -205,7 +216,8 @@ theorem exists_isTotallyPositive_sub_mem {H : Ideal (𝓞 K)} (hH : H ≠ ⊥) (
     simpa only [map_pow] using
       isTotallyPositive_sq (K := K) (RingOfIntegers.coe_ne_zero_iff.mpr hq0)
   set B : ℝ := ∑ w : {w : InfinitePlace K // w.IsReal},
-    |embedding_of_isReal w.2 (a : K)| / embedding_of_isReal w.2 ((q ^ 2 : 𝓞 K) : K) with hB
+    |embedding_of_isReal w.property (a : K)| / embedding_of_isReal w.property
+        ((q ^ 2 : 𝓞 K) : K) with hB
   -- Any natural number exceeding `B` clears the negative values of `a` at every real place.
   have key : ∀ m : ℕ, B < m → IsTotallyPositive ((a + (m : 𝓞 K) * q ^ 2 : 𝓞 K) : K) := by
     intro m hm w hw
@@ -214,8 +226,9 @@ theorem exists_isTotallyPositive_sub_mem {H : Ideal (𝓞 K)} (hH : H ≠ ⊥) (
         embedding_of_isReal hw ((q ^ 2 : 𝓞 K) : K) ≤ B := by
       rw [hB]
       exact Finset.single_le_sum (f := fun v : {w : InfinitePlace K // w.IsReal} =>
-          |embedding_of_isReal v.2 (a : K)| / embedding_of_isReal v.2 ((q ^ 2 : 𝓞 K) : K))
-        (fun v _ => div_nonneg (abs_nonneg _) (hppos v.1 v.2).le)
+          |embedding_of_isReal v.property (a : K)| / embedding_of_isReal v.property
+              ((q ^ 2 : 𝓞 K) : K))
+        (fun v _ => div_nonneg (abs_nonneg _) (hppos v.val v.property).le)
         (a := (⟨w, hw⟩ : {w : InfinitePlace K // w.IsReal})) (Finset.mem_univ _)
     have hlt : |embedding_of_isReal hw (a : K)| <
         m * embedding_of_isReal hw ((q ^ 2 : 𝓞 K) : K) :=

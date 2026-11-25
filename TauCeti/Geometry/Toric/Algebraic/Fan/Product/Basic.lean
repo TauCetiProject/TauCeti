@@ -101,11 +101,11 @@ theorem mem_prod_cones {ξ : PointedCone ℝ (V × V')} :
 
 /-- A pair of cones determines a cone of the product fan. -/
 abbrev prodCone (σ : Φ.cones) (τ : Ψ.cones) : (Φ.prod Ψ).cones :=
-  ⟨σ.1.prod τ.1, (Φ.mem_prod_cones Ψ).2 ⟨σ.1, σ.2, τ.1, τ.2, rfl⟩⟩
+  ⟨σ.val.prod τ.val, (Φ.mem_prod_cones Ψ).2 ⟨σ.val, σ.property, τ.val, τ.property, rfl⟩⟩
 
 @[simp]
 theorem coe_prodCone (σ : Φ.cones) (τ : Ψ.cones) :
-    (Φ.prodCone Ψ σ τ : PointedCone ℝ (V × V')) = σ.1.prod τ.1 :=
+    (Φ.prodCone Ψ σ τ : PointedCone ℝ (V × V')) = σ.val.prod τ.val :=
   rfl
 
 /-- Intersections of product cones are computed componentwise. -/
@@ -118,7 +118,7 @@ theorem prodCone_inf_prodCone (σ σ' : Φ.cones) (τ τ' : Ψ.cones) :
 /-- Every cone of a product fan is the product cone of a pair of factor cones. -/
 theorem exists_prodCone_eq (ξ : (Φ.prod Ψ).cones) :
     ∃ (σ : Φ.cones) (τ : Ψ.cones), Φ.prodCone Ψ σ τ = ξ := by
-  obtain ⟨σ, hσ, τ, hτ, hξ⟩ := (Φ.mem_prod_cones Ψ).1 ξ.2
+  obtain ⟨σ, hσ, τ, hτ, hξ⟩ := (Φ.mem_prod_cones Ψ).1 ξ.property
   exact ⟨⟨σ, hσ⟩, ⟨τ, hτ⟩, Subtype.ext hξ.symm⟩
 
 /-- The support of a product fan is the product of the supports of its factors. -/
@@ -176,11 +176,11 @@ restrictions to the two lattice factors are nonnegative on every cone of the cor
 factor fans. The converse needs both fans to be nonempty: a product with an empty fan has no
 cones. -/
 theorem mem_dualSemigroup_prod_of_comp_inl_of_comp_inr {m : N × N' →+ ℤ}
-    (h₁ : ∀ σ : Φ.cones, m.comp (AddMonoidHom.inl N N') ∈ dualSemigroup Φ.lattice σ.1)
-    (h₂ : ∀ τ : Ψ.cones, m.comp (AddMonoidHom.inr N N') ∈ dualSemigroup Ψ.lattice τ.1)
-    (ξ : (Φ.prod Ψ).cones) : m ∈ dualSemigroup (Φ.prod Ψ).lattice ξ.1 := by
+    (h₁ : ∀ σ : Φ.cones, m.comp (AddMonoidHom.inl N N') ∈ dualSemigroup Φ.lattice σ.val)
+    (h₂ : ∀ τ : Ψ.cones, m.comp (AddMonoidHom.inr N N') ∈ dualSemigroup Ψ.lattice τ.val)
+    (ξ : (Φ.prod Ψ).cones) : m ∈ dualSemigroup (Φ.prod Ψ).lattice ξ.val := by
   obtain ⟨σ, τ, rfl⟩ := Φ.exists_prodCone_eq Ψ ξ
-  exact (mem_dualSemigroup_prod Φ.lattice Ψ.lattice σ.1 τ.1 m).2 ⟨h₁ σ, h₂ τ⟩
+  exact (mem_dualSemigroup_prod Φ.lattice Ψ.lattice σ.val τ.val m).2 ⟨h₁ σ, h₂ τ⟩
 
 end Fan
 
@@ -244,27 +244,27 @@ theorem snd_realMap (Φ₁ : Fan i₁) (Φ₂ : Fan i₂) :
 /-- The least cone containing the first projection of a product cone is its first factor. -/
 @[simp]
 theorem fst_leastCone_prodCone (σ : Φ₁.cones) (τ : Φ₂.cones) :
-    (FanHom.fst Φ₁ Φ₂).leastCone (Φ₁.prodCone Φ₂ σ τ).2 = σ.1 := by
+    (FanHom.fst Φ₁ Φ₂).leastCone (Φ₁.prodCone Φ₂ σ τ).property = σ.val := by
   apply le_antisymm
-  · apply (FanHom.fst Φ₁ Φ₂).leastCone_le _ σ.2
+  · apply (FanHom.fst Φ₁ Φ₂).leastCone_le _ σ.property
     rintro x ⟨y, hy, rfl⟩
     simpa [FanHom.fst_realMap] using hy.1
   · intro x hx
-    apply (FanHom.fst Φ₁ Φ₂).map_le_leastCone (Φ₁.prodCone Φ₂ σ τ).2
-    refine ⟨(x, 0), ⟨hx, τ.1.zero_mem⟩, ?_⟩
+    apply (FanHom.fst Φ₁ Φ₂).map_le_leastCone (Φ₁.prodCone Φ₂ σ τ).property
+    refine ⟨(x, 0), ⟨hx, τ.val.zero_mem⟩, ?_⟩
     simp [FanHom.fst_realMap]
 
 /-- The least cone containing the second projection of a product cone is its second factor. -/
 @[simp]
 theorem snd_leastCone_prodCone (σ : Φ₁.cones) (τ : Φ₂.cones) :
-    (FanHom.snd Φ₁ Φ₂).leastCone (Φ₁.prodCone Φ₂ σ τ).2 = τ.1 := by
+    (FanHom.snd Φ₁ Φ₂).leastCone (Φ₁.prodCone Φ₂ σ τ).property = τ.val := by
   apply le_antisymm
-  · apply (FanHom.snd Φ₁ Φ₂).leastCone_le _ τ.2
+  · apply (FanHom.snd Φ₁ Φ₂).leastCone_le _ τ.property
     rintro x ⟨y, hy, rfl⟩
     simpa [FanHom.snd_realMap] using hy.2
   · intro x hx
-    apply (FanHom.snd Φ₁ Φ₂).map_le_leastCone (Φ₁.prodCone Φ₂ σ τ).2
-    refine ⟨(0, x), ⟨σ.1.zero_mem, hx⟩, ?_⟩
+    apply (FanHom.snd Φ₁ Φ₂).map_le_leastCone (Φ₁.prodCone Φ₂ σ τ).property
+    refine ⟨(0, x), ⟨σ.val.zero_mem, hx⟩, ?_⟩
     simp [FanHom.snd_realMap]
 
 section Prod
