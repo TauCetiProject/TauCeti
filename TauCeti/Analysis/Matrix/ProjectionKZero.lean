@@ -30,8 +30,9 @@ matrix of size `n` is `n`.
 
 * `TauCeti.ProjectionMonoid.rankAddEquiv_mk` and `TauCeti.ProjectionKZero.rankAddEquiv_of_mk`: the
   isomorphisms send the class of `p` to the rank of `p`.
-* `TauCeti.ProjectionKZero.rankAddEquiv_of_mk_one`: the class of the identity matrix of size `n`
-  is sent to `n`.
+* `TauCeti.ProjectionKZero.rankAddEquiv_of_mk_one` and
+  `TauCeti.ProjectionKZero.rankAddEquiv_symm_natCast`: the class of the identity matrix of size `n`
+  corresponds to `n`.
 
 ## References
 
@@ -75,8 +76,8 @@ noncomputable def rankAddEquiv : ProjectionMonoid 𝕜 ≃+ ℕ where
     induction y using ind with | mk l q hq => ?_
     rw [← mk_fromBlocks, rankFun_mk, rankFun_mk, rankFun_mk,
       ((hp.isMurrayVonNeumannEquivalent_one rfl).fromBlocks
-        (hq.isMurrayVonNeumannEquivalent_one rfl)).rank_eq, fromBlocks_one, rank_one,
-      Fintype.card_sum, Fintype.card_fin, Fintype.card_fin]
+        (hq.isMurrayVonNeumannEquivalent_one rfl)).rank_eq]
+    simp [fromBlocks_one, rank_one]
 
 /-- The isomorphism `V(𝕜) ≃+ ℕ` sends the class of a matrix projection to its rank. -/
 @[simp]
@@ -97,24 +98,27 @@ namespace ProjectionKZero
 /-- **The projection `K₀`-group of `ℝ` or `ℂ` is `ℤ`.** The Grothendieck group of
 `TauCeti.ProjectionMonoid.rankAddEquiv`, sending `[p] - [q]` to `rank p - rank q`. -/
 noncomputable def rankAddEquiv : ProjectionKZero 𝕜 ≃+ ℤ :=
-  (AddLocalization.addMonoidOf (⊤ : AddSubmonoid (ProjectionMonoid 𝕜))).addEquivOfAddEquiv
-    GrothendieckAddGroup.natIntLocalizationMap
-    (AddSubmonoid.map_equiv_top (ProjectionMonoid.rankAddEquiv 𝕜))
+  GrothendieckAddGroup.addEquivInt (ProjectionMonoid.rankAddEquiv 𝕜)
 
+-- Not `@[simp]`: the simp normal form of `GrothendieckAddGroup.of x` is
+-- `AddLocalization.addMonoidOf ⊤ x`, so the left-hand side is not in simp normal form.
 /-- The isomorphism `K₀(𝕜) ≃+ ℤ` sends the class of a matrix projection to its rank. -/
 theorem rankAddEquiv_of_mk {p : Matrix m m 𝕜} (hp : IsStarProjection p) :
-    rankAddEquiv 𝕜 (GrothendieckAddGroup.of (ProjectionMonoid.mk p hp)) = p.rank :=
-  ((AddLocalization.addMonoidOf (⊤ : AddSubmonoid (ProjectionMonoid 𝕜))).addEquivOfAddEquiv_eq
-    (k := GrothendieckAddGroup.natIntLocalizationMap)
-    (AddSubmonoid.map_equiv_top (ProjectionMonoid.rankAddEquiv 𝕜)) _).trans
-    ((GrothendieckAddGroup.natIntLocalizationMap_apply _).trans
-      (congrArg Nat.cast (ProjectionMonoid.rankAddEquiv_mk 𝕜 hp)))
+    rankAddEquiv 𝕜 (GrothendieckAddGroup.of (ProjectionMonoid.mk p hp)) = p.rank := by
+  rw [rankAddEquiv, GrothendieckAddGroup.addEquivInt_of, ProjectionMonoid.rankAddEquiv_mk]
 
 /-- The isomorphism `K₀(𝕜) ≃+ ℤ` sends the class of the identity matrix of size `n` to `n`. -/
 theorem rankAddEquiv_of_mk_one (n : ℕ) :
     rankAddEquiv 𝕜 (GrothendieckAddGroup.of
       (ProjectionMonoid.mk (1 : Matrix (Fin n) (Fin n) 𝕜) (.one _))) = n := by
   rw [rankAddEquiv_of_mk, rank_one, Fintype.card_fin]
+
+/-- The inverse of `K₀(𝕜) ≃+ ℤ` sends `n` to the class of the identity matrix of size `n`. -/
+@[simp]
+theorem rankAddEquiv_symm_natCast (n : ℕ) :
+    (rankAddEquiv 𝕜).symm n =
+      GrothendieckAddGroup.of (ProjectionMonoid.mk (1 : Matrix (Fin n) (Fin n) 𝕜) (.one _)) :=
+  GrothendieckAddGroup.addEquivInt_symm_natCast _ n
 
 end ProjectionKZero
 

@@ -57,14 +57,14 @@ theorem mk_diagOneZero :
       ProjectionMonoid.mk (1 : Matrix (Fin 1) (Fin 1) ℂ) (.one _) :=
   ProjectionMonoid.mk_eq_mk isMurrayVonNeumannEquivalent_diagOneZero_one
 
-/-- **`V(ℂ) ≅ ℕ` by rank**: the rank of `diag(1, 0)` is `1`. -/
+/-- Under the rank isomorphism `V(ℂ) ≃+ ℕ`, the class of `diag(1, 0)` maps to `1`. -/
 theorem rankAddEquiv_mk_diagOneZero :
     ProjectionMonoid.rankAddEquiv ℂ
       (ProjectionMonoid.mk diagOneZero isStarProjection_diagOneZero) = 1 := by
   rw [mk_diagOneZero, ProjectionMonoid.rankAddEquiv_mk, rank_one, Fintype.card_fin]
 
-/-- **`K₀(ℂ) ≅ ℤ` with `[1ₙ] ↦ n`.** -/
-theorem rankAddEquiv_of_mk_one (n : ℕ) :
+/-- Under the rank isomorphism `K₀(ℂ) ≃+ ℤ`, the class `[1ₙ]` maps to `n`. -/
+example (n : ℕ) :
     ProjectionKZero.rankAddEquiv ℂ (GrothendieckAddGroup.of
       (ProjectionMonoid.mk (1 : Matrix (Fin n) (Fin n) ℂ) (.one _))) = n :=
   ProjectionKZero.rankAddEquiv_of_mk_one ℂ n

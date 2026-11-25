@@ -30,6 +30,8 @@ cancellativity hypothesis is used.
 * `Algebra.GrothendieckAddGroup.natIntLocalizationMap` and
   `Algebra.GrothendieckAddGroup.natIntLocalizationMap_apply`: the localization map witnessing `ℤ`
   as the Grothendieck group of `ℕ`.
+* `Algebra.GrothendieckAddGroup.addEquivInt`: an isomorphism `M ≃+ ℕ` induces
+  `GrothendieckAddGroup M ≃+ ℤ`.
 * `Algebra.GrothendieckAddGroup.instRing` and `Algebra.GrothendieckAddGroup.instCommRing`: the
   ring structure, commutative when the semiring is.
 * `Algebra.GrothendieckAddGroup.ofRingHom`: the canonical semiring map into the completion.
@@ -58,6 +60,22 @@ def natIntLocalizationMap : (⊤ : AddSubmonoid ℕ).LocalizationMap ℤ where
 @[simp]
 theorem natIntLocalizationMap_apply (n : ℕ) : natIntLocalizationMap n = (n : ℤ) :=
   (rfl)
+
+/-- An additive isomorphism `M ≃+ ℕ` induces an isomorphism `GrothendieckAddGroup M ≃+ ℤ` of
+group completions. -/
+noncomputable def addEquivInt (e : M ≃+ ℕ) : GrothendieckAddGroup M ≃+ ℤ :=
+  (AddLocalization.addMonoidOf (⊤ : AddSubmonoid M)).addEquivOfAddEquiv natIntLocalizationMap
+    (AddSubmonoid.map_equiv_top e)
+
+/-- The isomorphism `addEquivInt e` sends `of a` to `e a`. -/
+theorem addEquivInt_of (e : M ≃+ ℕ) (a : M) : addEquivInt e (of a) = e a :=
+  (AddLocalization.addMonoidOf (⊤ : AddSubmonoid M)).addEquivOfAddEquiv_eq
+    (k := natIntLocalizationMap) (AddSubmonoid.map_equiv_top e) a
+
+/-- The inverse of `addEquivInt e` sends a natural number `n` to `of (e.symm n)`. -/
+theorem addEquivInt_symm_natCast (e : M ≃+ ℕ) (n : ℕ) :
+    (addEquivInt e).symm n = of (e.symm n) :=
+  (addEquivInt e).symm_apply_eq.2 <| by rw [addEquivInt_of, AddEquiv.apply_symm_apply]
 
 /-- Restricting the extension of `f` along `of` recovers `f`. -/
 theorem lift_comp_of (f : M →+ G) : (lift f).comp (of : M →+ _) = f :=
