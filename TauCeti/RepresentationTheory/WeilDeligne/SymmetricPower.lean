@@ -217,6 +217,7 @@ theorem sym_twist (χ : W →* Eˣ) (hχ : IsOpen (χ.ker : Set W)) :
 /-! ### Inertial types -/
 
 /-- **The inertial type of a symmetric power** is the symmetric power of the inertial type. -/
+@[simp]
 theorem inertialType_sym : (D.sym m).inertialType = D.inertialType.symmetricPower m := by
   ext w : 1
   simp [Representation.symmetricPower_apply]
@@ -225,11 +226,7 @@ theorem inertialType_sym : (D.sym m).inertialType = D.inertialType.symmetricPowe
 type, read through `TauCeti.WeilDeligneParameter.inertialType_sym`. -/
 theorem Hom.inertialType_sym (f : Hom D₁ D₂) (x : Sym[E]^m V₁) :
     (f.sym m).inertialType x = f.inertialType.symmetricPower m x := by
-  rw [Hom.inertialType_apply, ← Representation.IntertwiningMap.toLinearMap_apply,
-    Representation.IntertwiningMap.symmetricPower_toLinearMap,
-    show f.inertialType.toLinearMap = f.toLinearMap from LinearMap.ext (Hom.inertialType_apply f),
-    ← Hom.sym_toLinearMap]
-  rfl
+  simp [← Representation.IntertwiningMap.toLinearMap_apply]
 
 end WeilDeligneParameter
 
