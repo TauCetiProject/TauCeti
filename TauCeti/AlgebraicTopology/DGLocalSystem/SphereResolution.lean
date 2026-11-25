@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.CellResolution
-public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Sphere
+public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Sphere.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Relative.Basic
