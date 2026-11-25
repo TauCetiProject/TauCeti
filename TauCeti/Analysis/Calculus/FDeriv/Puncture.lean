@@ -17,14 +17,17 @@ import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 A continuous map on a punctured ball extends continuously across its centre if its sphere
 images shrink and the derivative along one radius is integrable. The radial derivative is
 assumed integrable on the entire open radial interval, rather than merely locally integrable;
-the latter would not force a limit. Completeness is needed only for the target.
+the latter would not force a limit. Completeness is needed only for the target. More generally,
+the same holds within a closed set `s` containing the radius, using only the parts of the spheres
+inside `s` (`TauCeti.exists_continuousOn_update_inter_of_integrableOn_radial_deriv`); the
+whole-space statement is its case `s = univ`.
 
 For a map from the complex plane, the angular hypothesis follows from sublinear derivative
 blow-up: `‖z - a‖ * ‖du(z)‖ → 0`. The original value of `u` at the puncture is unrestricted;
 the extension replaces it with the limiting value `q` using `Function.update`. The same holds at a
 point `a` of the real axis for a map on the punctured closed upper half-disc, differentiable
-within the closed upper half-plane: there the half-circles about `a` replace the circles, and the
-radius is the one along the real axis
+within the closed upper half-plane: this is the case where `s` is that half-plane, so the
+half-circles about `a` replace the circles, and the radius is the one along the real axis
 (`TauCeti.exists_continuousOn_update_inter_of_integrableOn_radial_deriv_of_tendsto`).
 
 The finite radial length itself follows from a power bound `‖du(z)‖ ≤ C ‖z - a‖ ^ (β - 1)` with
@@ -34,9 +37,8 @@ The finite radial length itself follows from a power bound `‖du(z)‖ ≤ C �
 These are the metric and one-dimensional calculus ingredients of continuous removal of
 singularities. They do not assert differentiability of the extension. The central inputs are
 `TauCeti.exists_tendsto_nhdsGT_of_hasDerivAt_of_integrableOn_Ioo`,
-`TauCeti.tendsto_nhdsNE_of_tendsto_radial_of_tendsto_diam_image_sphere`, and
-`TauCeti.tendsto_diam_image_sphere_nhdsGT_zero_of_tendsto`, together with their half-plane forms
-`TauCeti.tendsto_nhdsWithin_diff_of_tendsto_comp_of_tendsto_diam_image_inter_sphere` and
+`TauCeti.tendsto_nhdsWithin_diff_of_tendsto_radial_of_tendsto_diam_image_inter_sphere`, and
+`TauCeti.tendsto_diam_image_sphere_nhdsGT_zero_of_tendsto`, together with its half-plane form
 `TauCeti.tendsto_diam_image_inter_sphere_nhdsGT_zero_of_tendsto`.
 
 ## References
@@ -55,6 +57,37 @@ variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
 
 open Classical in
+/-- A map continuous on the part of a punctured ball inside a closed set `s` has a continuous
+extension at the centre within `s` if the images of the parts of small spheres inside `s` shrink
+and the derivative along one ray in `s`, in any nonzero direction, is integrable. Compactness of
+spheres is used to ensure boundedness of their images. -/
+theorem exists_continuousOn_update_inter_of_integrableOn_radial_deriv [ProperSpace E]
+    {s : Set E} {u : E → V} {a v : E} {R : ℝ} (hs : IsClosed s) (hv : v ≠ 0) (hR : 0 < R)
+    (hray : MapsTo (fun t : ℝ ↦ a + t • v) (Ioo 0 R) s)
+    (hu : ContinuousOn u (s ∩ (ball a R \ {a})))
+    (hr : DifferentiableOn ℝ (fun t : ℝ ↦ u (a + t • v)) (Ioo 0 R))
+    (hint : IntegrableOn (deriv (fun t : ℝ ↦ u (a + t • v))) (Ioo 0 R))
+    (hd : Tendsto (fun t ↦ diam (u '' (s ∩ sphere a t))) (𝓝[>] 0) (𝓝 0)) :
+    ∃ q, Tendsto u (𝓝[s \ {a}] a) (𝓝 q) ∧
+      ContinuousOn (Function.update u a q) (s ∩ ball a R) := by
+  obtain ⟨q, hq⟩ := exists_tendsto_nhdsGT_of_hasDerivAt_of_integrableOn_Ioo hR
+    (fun t ht ↦ (hr.differentiableAt (isOpen_Ioo.mem_nhds ht)).hasDerivAt) hint
+  have hb : ∀ᶠ t in 𝓝[>] (0 : ℝ), IsBounded (u '' (s ∩ sphere a t)) := by
+    filter_upwards [Ioo_mem_nhdsGT hR] with t ht
+    have hsub : s ∩ sphere a t ⊆ s ∩ (ball a R \ {a}) := fun z hz ↦
+      ⟨hz.1, sphere_subset_ball ht.2 hz.2, fun hza ↦ by
+        have h := mem_sphere.1 hz.2
+        rw [mem_singleton_iff.1 hza, dist_self] at h
+        exact ht.1.ne h⟩
+    exact (((isCompact_sphere a t).inter_left hs).image_of_continuousOn
+      (hu.mono hsub)).isBounded
+  have hlim := tendsto_nhdsWithin_diff_of_tendsto_radial_of_tendsto_diam_image_inter_sphere hv
+    (eventually_of_mem (Ioo_mem_nhdsGT hR) fun _ ht ↦ hray ht) hq hb hd
+  refine ⟨q, hlim, continuousOn_update_iff.2 ⟨?_, fun _ ↦ ?_⟩⟩
+  · rwa [inter_sdiff_assoc]
+  · exact hlim.mono_left (nhdsWithin_mono _ fun z hz ↦ ⟨hz.1.1, hz.2⟩)
+
+open Classical in
 /-- A continuous map on a punctured ball has a continuous extension at the centre if its
 sphere images shrink and the derivative along one ray, in any nonzero direction, is integrable.
 Compactness of spheres is used to ensure boundedness of their images. -/
@@ -66,21 +99,9 @@ theorem exists_continuousOn_update_of_integrableOn_radial_deriv [ProperSpace E]
     (hd : Tendsto (fun t ↦ diam (u '' sphere a t)) (𝓝[>] 0) (𝓝 0)) :
     ∃ q, Tendsto u (𝓝[≠] a) (𝓝 q) ∧
       ContinuousOn (Function.update u a q) (ball a R) := by
-  obtain ⟨q, hq⟩ := exists_tendsto_nhdsGT_of_hasDerivAt_of_integrableOn_Ioo hR
-    (fun t ht ↦ (hr.differentiableAt (isOpen_Ioo.mem_nhds ht)).hasDerivAt) hint
-  have hb : ∀ᶠ t in 𝓝[>] (0 : ℝ), IsBounded (u '' sphere a t) := by
-    filter_upwards [Ioo_mem_nhdsGT hR] with t ht
-    have hsub : sphere a t ⊆ ball a R \ {a} := by
-      intro x hx
-      refine ⟨sphere_subset_ball ht.2 hx, ?_⟩
-      rintro rfl
-      have := mem_sphere.mp hx
-      simp only [dist_self] at this
-      exact ht.1.ne this
-    exact ((isCompact_sphere a t).image_of_continuousOn (hu.mono hsub)).isBounded
-  have hlim := tendsto_nhdsNE_of_tendsto_radial_of_tendsto_diam_image_sphere hv hq hb hd
-  refine ⟨q, hlim, continuousOn_update_iff.mpr ⟨hu, fun _ ↦ ?_⟩⟩
-  exact hlim.mono_left (nhdsWithin_mono _ (sdiff_subset_compl _ _))
+  simpa [compl_eq_univ_sdiff] using
+    exists_continuousOn_update_inter_of_integrableOn_radial_deriv isClosed_univ hv hR
+      (mapsTo_univ _ _) (by simpa using hu) hr hint (by simpa using hd)
 
 open Classical in
 /-- A differentiable map on a punctured complex disc extends continuously if its differential
@@ -148,7 +169,6 @@ theorem integrableOn_deriv_radial_of_norm_fderivWithin_le_rpow
       simpa only [hv, mul_one] using (fderivWithin ℝ u s (a + t • v)).le_opNorm v
     _ ≤ C * t ^ (β - 1) := by simpa only [hnorm t ht.1] using hC _ (hmem t ht)
 
-
 open Classical in
 /-- **Continuous extension across a boundary puncture.** Let `a` be a point of the real axis and
 let `u` be differentiable within the closed upper half-plane at the points of the punctured
@@ -167,42 +187,26 @@ theorem exists_continuousOn_update_inter_of_integrableOn_radial_deriv_of_tendsto
     ∃ q, Tendsto u (𝓝[{z | 0 ≤ z.im} \ {a}] a) (𝓝 q) ∧
       ContinuousOn (Function.update u a q) ({z : ℂ | 0 ≤ z.im} ∩ ball a R) := by
   set H : Set ℂ := {z | 0 ≤ z.im}
-  have hH : IsClosed H := isClosed_le continuous_const Complex.continuous_im
-  have hcont : ContinuousOn u (H ∩ (ball a R \ {a})) := fun z hz ↦
-    (hu z hz).continuousWithinAt.mono inter_subset_left
   -- The real radius `t ↦ a + t` stays on the real axis, hence in the closed upper half-plane.
   have hray : MapsTo (fun t : ℝ ↦ a + (t : ℂ)) univ H := fun t _ ↦ by simp [H, ha]
-  have hmem (t : ℝ) (ht : t ∈ Ioo 0 R) : a + (t : ℂ) ∈ H ∩ (ball a R \ {a}) :=
+  have hmem : MapsTo (fun t : ℝ ↦ a + (t : ℂ)) (Ioo 0 R) (H ∩ (ball a R \ {a})) := fun t ht ↦
     ⟨hray (mem_univ t), by simpa [mem_ball, dist_eq_norm, abs_of_pos ht.1] using ht.2,
       by simpa using ht.1.ne'⟩
-  have hderiv (t : ℝ) (ht : t ∈ Ioo 0 R) : HasDerivAt (fun t : ℝ ↦ u (a + (t : ℂ)))
-      (deriv (fun t : ℝ ↦ u (a + (t : ℂ))) t) t := by
-    have hline : HasDerivAt (fun t : ℝ ↦ a + (t : ℂ)) 1 t := by
-      simpa using (Complex.ofRealCLM.hasFDerivAt (x := t)).hasDerivAt.const_add a
-    have h := (hu _ (hmem t ht)).hasFDerivWithinAt.comp_hasDerivWithinAt t
-      hline.hasDerivWithinAt hray
-    exact (hasDerivWithinAt_univ.1 h).differentiableAt.hasDerivAt
-  -- The limit along the real radius, and shrinking images of the half-circles.
-  obtain ⟨q, hq⟩ := exists_tendsto_nhdsGT_of_hasDerivAt_of_integrableOn_Ioo hR hderiv hint
+  have hline : Differentiable ℝ fun t : ℝ ↦ a + (t : ℂ) :=
+    Complex.ofRealCLM.differentiable.const_add a
+  -- Along the real radius, `u` is differentiable within the half-plane, hence differentiable.
+  have hr : DifferentiableOn ℝ (fun t : ℝ ↦ u (a + (t : ℂ))) (Ioo 0 R) := fun t ht ↦
+    (((hu _ (hmem ht)).comp t (hline t).differentiableWithinAt hray).differentiableAt
+      univ_mem).differentiableWithinAt
   have hdiam := tendsto_diam_image_inter_sphere_nhdsGT_zero_of_tendsto ha (by
     filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (ball_mem_nhds a hR)] with z hz hzR
     exact hu z ⟨hz.1, hzR, hz.2⟩) hd
-  have hb : ∀ᶠ t in 𝓝[>] (0 : ℝ), IsBounded (u '' (H ∩ sphere a t)) := by
-    filter_upwards [Ioo_mem_nhdsGT hR] with t ht
-    have hsub : H ∩ sphere a t ⊆ H ∩ (ball a R \ {a}) := fun z hz ↦
-      ⟨hz.1, sphere_subset_ball ht.2 hz.2, fun hza ↦ by
-        have h := mem_sphere.1 hz.2
-        rw [mem_singleton_iff.1 hza, dist_self] at h
-        exact ht.1.ne h⟩
-    exact (((isCompact_sphere a t).inter_left hH).image_of_continuousOn
-      (hcont.mono hsub)).isBounded
-  have hc : ∀ᶠ t in 𝓝[>] (0 : ℝ), a + (t : ℂ) ∈ H ∩ sphere a t := by
-    filter_upwards [self_mem_nhdsWithin] with t ht
-    exact ⟨hray (mem_univ t), by simp [abs_of_pos (mem_Ioi.1 ht)]⟩
-  have hlim := tendsto_nhdsWithin_diff_of_tendsto_comp_of_tendsto_diam_image_inter_sphere hc hq hb
-    hdiam
-  refine ⟨q, hlim, continuousOn_update_iff.2 ⟨?_, fun _ ↦ ?_⟩⟩
-  · rwa [inter_sdiff_assoc]
-  · exact hlim.mono_left (nhdsWithin_mono _ fun z hz ↦ ⟨hz.1.1, hz.2⟩)
+  simpa only [Complex.real_smul, mul_one] using
+    exists_continuousOn_update_inter_of_integrableOn_radial_deriv (v := (1 : ℂ))
+      (isClosed_le continuous_const Complex.continuous_im) one_ne_zero hR
+      (by simpa only [Complex.real_smul, mul_one] using hray.mono_left (subset_univ _))
+      (fun z hz ↦ (hu z hz).continuousWithinAt.mono inter_subset_left)
+      (by simpa only [Complex.real_smul, mul_one] using hr)
+      (by simpa only [Complex.real_smul, mul_one] using hint) hdiam
 
 end TauCeti
