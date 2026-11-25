@@ -232,7 +232,8 @@ theorem sectionIndex_pointTwistMul_self (x : X) {s : ∀ z, L z}
     inter_subset_left hUφ
     (fun y hy ↦ VectorBundleOrientation.mapOrientation_reindex_complex_eq_orientation _ e
       (inter_subset_left hy))
-    (localHomologyMap_chartAt_complexHomologicalOrientation x (hUφ hxU))
+    (localHomologyMap_complexHomologicalOrientation_of_mem_maximalAtlas
+      (IsManifold.chart_mem_maximalAtlas (n := 1) x) (hUφ hxU))
     hA (hdet'.trans_ne (Complex.normSq_pos.2 hgx).ne'), hdet',
     sign_pos (Complex.normSq_pos.2 hgx), SignType.coe_one]
 

@@ -14,7 +14,8 @@ public import TauCeti.Topology.VectorBundle.Orientation.SectionIndex.CauchyRiema
 # The zero count for the kernel of a real Cauchy–Riemann operator on a line bundle
 
 Let `L` be a complex line bundle over a compact connected Riemann surface `X`, smooth as a real
-vector bundle, and let `D` be a smooth real Cauchy–Riemann operator on `L`. A `C¹` section `s` with
+vector bundle, and let `D` be a real Cauchy–Riemann operator on `L` of class `C^n` for some
+`n`, which may be `0`. A `C¹` section `s` with
 `D s = 0` which is not identically zero has finitely many zeros
 (`TauCeti.IsRealCauchyRiemannOperator.finite_setOf_eq_zero`). For a section in the kernel with
 finitely many zeros, their number is at most the first Chern number `c₁(L)[X]`, the Euler class of
@@ -35,8 +36,8 @@ with a bounded zeroth-order term `Zᵢ`
 Cauchy–Riemann inequality `‖\bar∂ sᵢ‖ ≤ C ‖sᵢ‖`
 (`TauCeti.IsRealCauchyRiemannOperator.exists_norm_conjWirtingerDeriv_coord_le`). The holomorphic
 charts carry the canonical local orientation of `X` to that of `ℂ`
-(`TauCeti.localHomologyMap_chartAt_complexHomologicalOrientation`), and the complex-linear
-trivializations read the complex orientation of `L` as that of `ℂ`
+(`TauCeti.localHomologyMap_complexHomologicalOrientation_of_mem_maximalAtlas`), and the
+complex-linear trivializations read the complex orientation of `L` as that of `ℂ`
 (`TauCeti.VectorBundleOrientation.mapOrientation_reindex_complex_eq_orientation`), so the zero
 count for sections solving a Cauchy–Riemann inequality
 (`ncard_le_evalFundamentalClass_eulerClass_of_norm_conjWirtingerDeriv_le` in the namespace
@@ -169,7 +170,7 @@ variable [CompactSpace X]
 
 include hD hDs in
 /-- **The zeros of a nonzero section in the kernel are finite in number.** On a compact connected
-Riemann surface, a `C¹` section of a complex line bundle in the kernel of a smooth real
+Riemann surface, a `C¹` section of a complex line bundle in the kernel of a `C^n` real
 Cauchy–Riemann operator, not identically zero, has finitely many zeros. -/
 theorem finite_setOf_eq_zero [ConnectedSpace X] {s : Π x, L x}
     (hs : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) 1 fun x ↦ TotalSpace.mk' ℂ x (s x))
@@ -183,7 +184,7 @@ theorem finite_setOf_eq_zero [ConnectedSpace X] {s : Π x, L x}
 
 include hD hDs in
 /-- **The zero count.** On a compact Riemann surface, a `C¹` section of a complex line bundle `L`
-in the kernel of a smooth real Cauchy–Riemann operator, with finitely many zeros, has at most
+in the kernel of a `C^n` real Cauchy–Riemann operator, with finitely many zeros, has at most
 `c₁(L)[X]` zeros: the Euler class of `L` with its complex orientation, evaluated on the
 fundamental class of `X`. -/
 theorem ncard_le_evalFundamentalClass_complexEulerClass {s : Π x, L x}
@@ -203,14 +204,15 @@ theorem ncard_le_evalFundamentalClass_complexEulerClass {s : Π x, L x}
     (fun z _ ↦ (d z).mem_baseSet)
     (fun z _ ↦ Eventually.of_forall fun _ hx ↦
       VectorBundleOrientation.mapOrientation_reindex_complex_eq_orientation _ _ hx)
-    (fun z _ ↦ localHomologyMap_chartAt_complexHomologicalOrientation (d z).c (d z).mem_source)
+    (fun z _ ↦ localHomologyMap_complexHomologicalOrientation_of_mem_maximalAtlas
+      (IsManifold.chart_mem_maximalAtlas (n := 1) (d z).c) (d z).mem_source)
     (fun z _ ↦ (d z).isOpen) (fun z _ ↦ (d z).mem) (fun z _ ↦ (d z).contDiffOn)
     (fun z _ _ _ ↦ ⟨(d z).C, Eventually.of_forall fun _ ↦ le_rfl⟩) (fun z _ ↦ (d z).norm_le)
 
 include hD hDs in
 /-- **A section in the kernel vanishing at more than `c₁(L)[X]` points vanishes identically.** On
 a compact connected Riemann surface, a `C¹` section of a complex line bundle `L` in the kernel of a
-smooth real Cauchy–Riemann operator which vanishes on a set with more than `c₁(L)[X]` points is
+`C^n` real Cauchy–Riemann operator which vanishes on a set with more than `c₁(L)[X]` points is
 zero. -/
 theorem eq_zero_of_evalFundamentalClass_complexEulerClass_lt_ncard [ConnectedSpace X]
     {s : Π x, L x}
@@ -228,14 +230,15 @@ theorem eq_zero_of_evalFundamentalClass_complexEulerClass_lt_ncard [ConnectedSpa
     (fun z ↦ (d z).mem_source) (fun z ↦ (d z).Ω) (fun z _ ↦ (d z).C) (fun z ↦ (d z).mem_baseSet)
     (fun z ↦ Eventually.of_forall fun _ hx ↦
       VectorBundleOrientation.mapOrientation_reindex_complex_eq_orientation _ _ hx)
-    (fun z ↦ localHomologyMap_chartAt_complexHomologicalOrientation (d z).c (d z).mem_source)
+    (fun z ↦ localHomologyMap_complexHomologicalOrientation_of_mem_maximalAtlas
+      (IsManifold.chart_mem_maximalAtlas (n := 1) (d z).c) (d z).mem_source)
     (fun z ↦ (d z).isOpen) (fun z ↦ (d z).mem) (fun z ↦ (d z).contDiffOn)
     (fun z _ _ ↦ ⟨(d z).C, Eventually.of_forall fun _ ↦ le_rfl⟩) (fun z ↦ (d z).norm_le) hS hlt
 
 include hD hDs in
 /-- **Vanishing of the kernel in negative degree.** On a compact connected Riemann surface, if the
 first Chern number `c₁(L)[X]` of a complex line bundle `L` is negative, every `C¹` section of `L` in
-the kernel of a smooth real Cauchy–Riemann operator is zero. -/
+the kernel of a `C^n` real Cauchy–Riemann operator is zero. -/
 theorem eq_zero_of_evalFundamentalClass_complexEulerClass_neg [ConnectedSpace X]
     (hneg : ((complexHomologicalOrientation X).evalFundamentalClass Complex.finrank_real_complex
         (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id X)
