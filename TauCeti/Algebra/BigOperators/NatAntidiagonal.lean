@@ -34,8 +34,8 @@ The sum over all antidiagonals `i + j = k` with `k < N` is the sum over the tria
 
 * `Finset.Nat.prod_antidiagonal_prod_antidiagonal_fst`: associativity of the antidiagonal
   convolution.
-* `Finset.Nat.sum_antidiagonal_sum_antidiagonal_cycle` and
-  `Finset.Nat.sum_antidiagonal_sum_antidiagonal_swap`: permuting the indices of a sum over
+* `Finset.Nat.prod_antidiagonal_prod_antidiagonal_cycle` and
+  `Finset.Nat.prod_antidiagonal_prod_antidiagonal_swap`: permuting the indices of a product over
   `a + b + c = n`.
 * `Finset.Nat.natCast_add_one_smul_sum_antidiagonal_succ`: the weighted split of a sum over
   `i + j = k + 1`.
@@ -62,18 +62,23 @@ theorem prod_antidiagonal_prod_antidiagonal_fst {M : Type*} [CommMonoid M] (n : 
 
 variable {M : Type*}
 
-/-- Cyclically permuting the indices of a sum over `a + b + c = n`, split as `a + (b + c)`. -/
-theorem sum_antidiagonal_sum_antidiagonal_cycle [AddCommMonoid M] (n : ℕ) (f : ℕ → ℕ → ℕ → M) :
-    ∑ p ∈ antidiagonal n, ∑ q ∈ antidiagonal p.2, f q.1 q.2 p.1 =
-      ∑ p ∈ antidiagonal n, ∑ q ∈ antidiagonal p.2, f p.1 q.1 q.2 := by
-  rw [← sum_antidiagonal_sum_antidiagonal_fst, ← sum_antidiagonal_swap]
+/-- Cyclically permuting the indices of a product over `a + b + c = n`, split as
+`a + (b + c)`. -/
+@[to_additive /-- Cyclically permuting the indices of a sum over `a + b + c = n`, split as
+`a + (b + c)`. -/]
+theorem prod_antidiagonal_prod_antidiagonal_cycle [CommMonoid M] (n : ℕ) (f : ℕ → ℕ → ℕ → M) :
+    ∏ p ∈ antidiagonal n, ∏ q ∈ antidiagonal p.2, f q.1 q.2 p.1 =
+      ∏ p ∈ antidiagonal n, ∏ q ∈ antidiagonal p.2, f p.1 q.1 q.2 := by
+  rw [← prod_antidiagonal_prod_antidiagonal_fst, ← prod_antidiagonal_swap]
   rfl
 
-/-- Swapping the last two indices of a sum over `a + b + c = n`, split as `a + (b + c)`. -/
-theorem sum_antidiagonal_sum_antidiagonal_swap [AddCommMonoid M] (n : ℕ) (f : ℕ → ℕ → ℕ → M) :
-    ∑ p ∈ antidiagonal n, ∑ q ∈ antidiagonal p.2, f p.1 q.2 q.1 =
-      ∑ p ∈ antidiagonal n, ∑ q ∈ antidiagonal p.2, f p.1 q.1 q.2 :=
-  sum_congr rfl fun p _ ↦ sum_antidiagonal_swap (f := fun q ↦ f p.1 q.1 q.2)
+/-- Swapping the last two indices of a product over `a + b + c = n`, split as `a + (b + c)`. -/
+@[to_additive /-- Swapping the last two indices of a sum over `a + b + c = n`, split as
+`a + (b + c)`. -/]
+theorem prod_antidiagonal_prod_antidiagonal_swap [CommMonoid M] (n : ℕ) (f : ℕ → ℕ → ℕ → M) :
+    ∏ p ∈ antidiagonal n, ∏ q ∈ antidiagonal p.2, f p.1 q.2 q.1 =
+      ∏ p ∈ antidiagonal n, ∏ q ∈ antidiagonal p.2, f p.1 q.1 q.2 :=
+  prod_congr rfl fun p _ ↦ prod_antidiagonal_swap (f := fun q ↦ f p.1 q.1 q.2)
 
 /-- Weighting the terms `f (i, j)` with `i + j = k + 1` by `k + 1 = i + j` splits their sum into
 the parts weighted by `i` and by `j`, reindexed over `i + j = k`:

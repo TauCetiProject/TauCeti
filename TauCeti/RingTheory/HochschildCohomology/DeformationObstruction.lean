@@ -247,7 +247,8 @@ theorem algebraDeformationObstruction_congr {φ ψ : ℕ → (Fin 2 → A) →�
   simp only [h₁', h₂', ite_true]
   rw [h x.1 (by omega) h₁', h x.2 (by omega) h₂']
 
-/-- There is no obstruction to deformations of order one. -/
+/-- The obstruction `O₀` vanishes: a deformation of order zero meets no obstruction to extending
+to order one. -/
 @[simp]
 theorem algebraDeformationObstruction_zero (φ : ℕ → (Fin 2 → A) →ₘₗ[R] A) :
     algebraDeformationObstruction φ 0 = 0 := by
