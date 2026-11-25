@@ -300,6 +300,7 @@ theorem killingHermitianForm_self_nonneg (x : L) : 0 ≤ τ.killingHermitianForm
   · exact (hτ.pos x hx).le
 
 /-- The Hermitian Killing form of a compact conjugation vanishes at `(x, x)` only for `x = 0`. -/
+@[simp]
 theorem killingHermitianForm_self_eq_zero {x : L} : τ.killingHermitianForm x x = 0 ↔ x = 0 :=
   ⟨fun h ↦ by_contra fun hx ↦ (hτ.pos x hx).ne' h, fun h ↦ by simp [h]⟩
 
