@@ -40,7 +40,7 @@ block algebra `b K[G]` is the line `K b`, so it is isomorphic to `K = M₁(K)`.
 
 * `TauCeti.val_algEquivPiBlockAlgebra_apply`: the component of `x` in the block `B` is `e_B x`.
 * `TauCeti.algebraMap_surjective_blockAlgebra_of_mul_of_eq_smul`: the block algebra of a block
-  idempotent on which `G` acts by scalars is spanned by its identity.
+  idempotent of `R[G]` on which `G` acts by scalars is spanned by its identity.
 * `TauCeti.blockAlgebraAlgEquivMatrixOfMulOfEqSmul_apply`,
   `TauCeti.val_blockAlgebraAlgEquivMatrixOfMulOfEqSmul_symm_apply`: the isomorphism with `M₁(K)`
   sends `a b` to the matrix with entry `a`.
@@ -112,19 +112,22 @@ theorem algEquivPiBlockAlgebra_symm_apply (hb : CompleteOrthogonalIdempotents b)
 
 section Scalar
 
-variable {K : Type*} [Field K] [Finite G]
-  {b : Subalgebra.center K (MonoidAlgebra K G)} (hb : IsBlockIdempotent b)
+variable [Finite G]
 
 /-- If every `g ∈ G` acts on the block idempotent `b` by a scalar, `b g = c(g) b`, then every
-element of the block algebra `b K[G]` is a scalar multiple of its identity `b`. -/
-theorem algebraMap_surjective_blockAlgebra_of_mul_of_eq_smul {c : G → K}
-    (hc : ∀ g, (b : MonoidAlgebra K G) * MonoidAlgebra.of K G g = c g • (b : MonoidAlgebra K G)) :
-    Function.Surjective (algebraMap K hb.BlockAlgebra) := by
+element of the block algebra `b R[G]` is a scalar multiple of its identity `b`. -/
+theorem algebraMap_surjective_blockAlgebra_of_mul_of_eq_smul
+    {b : Subalgebra.center R (MonoidAlgebra R G)} (hb : IsBlockIdempotent b) {c : G → R}
+    (hc : ∀ g, (b : MonoidAlgebra R G) * MonoidAlgebra.of R G g = c g • (b : MonoidAlgebra R G)) :
+    Function.Surjective (algebraMap R hb.BlockAlgebra) := by
   have := Fintype.ofFinite G
   intro x
-  have hx : x.val = (b : MonoidAlgebra K G) * x.val := (IsIdempotentElem.mul_corner_val _ x).symm
+  have hx : x.val = (b : MonoidAlgebra R G) * x.val := (IsIdempotentElem.mul_corner_val _ x).symm
   rw [mul_eq_smul_of_mul_of_eq_smul hc] at hx
   exact ⟨_, Subtype.ext (by rw [IsIdempotentElem.Corner.val_algebraMap, ← hx])⟩
+
+variable {K : Type*} [Field K]
+  {b : Subalgebra.center K (MonoidAlgebra K G)} (hb : IsBlockIdempotent b)
 
 /-- If every `g ∈ G` acts on the block idempotent `b` by a scalar, then the block algebra
 `b K[G]` is isomorphic to `K = M₁(K)`. -/
