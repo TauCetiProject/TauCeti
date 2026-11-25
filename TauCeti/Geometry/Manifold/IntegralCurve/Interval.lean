@@ -182,10 +182,11 @@ theorem apply_sub_min_eq_of_apply_eq [T2Space M]
     (by simpa only [comp_apply, add_sub_cancel] using h) (left_mem_Icc.2 hm)
   simpa only [comp_apply, zero_add] using heq
 
-/-- **Forward integral curves from the boundary do not meet.** Let `γ` and `δ` be integral curves
-of `v` on `[0, a]` and `[0, b]`, with `a, b ≥ 0`, starting on the boundary of `M` and lying in its
-interior at every positive time. If `γ a = δ b`, then `a = b` and the two curves start at the same
-point. The vector field is C¹ along the first curve. -/
+/-- **Forward integral curves from the boundary meet only at equal times and from the same
+start.** Let `γ` and `δ` be integral curves of `v` on `[0, a]` and `[0, b]`, with `a, b ≥ 0`,
+starting on the boundary of `M` and lying in its interior at every positive time. If `γ a = δ b`,
+then `a = b` and the two curves start at the same point. The vector field is C¹ along the first
+curve. -/
 theorem eq_and_apply_zero_eq_of_apply_eq [T2Space M]
     (hγ : IsMIntegralCurveOn γ v (Icc 0 a)) (hδ : IsMIntegralCurveOn δ v (Icc 0 b))
     (ha : 0 ≤ a) (hb : 0 ≤ b) (hγ0 : γ 0 ∈ I.boundary M) (hδ0 : δ 0 ∈ I.boundary M)
