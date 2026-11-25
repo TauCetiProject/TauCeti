@@ -9,6 +9,7 @@ public import TauCeti.Analysis.BoundedVariation.Approximation
 public import TauCeti.Analysis.BoundedVariation.RegularLevel
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.LayerCake
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # Relative smooth approximation of sets in perimeter
@@ -104,48 +105,30 @@ theorem _root_.MeasureTheory.NullMeasurableSet.exists_contDiffOn_perimeter_appro
   have hχ : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ :=
     locallyIntegrableOn_indicator_const hsΩ 1
   obtain ⟨w, hw, hL, hV⟩ := hχ.exists_contDiffOn_strict_approximation
-  let δ : ℕ → ℝ := fun k ↦ 1 / (k + 3)
-  let ε : ℕ → ℝ := fun k ↦ 1 / (k + 1)
-  have hδ (k : ℕ) : 0 < δ k := by positivity
-  have hε (k : ℕ) : 0 < ε k := by positivity
-  have hδ' (k : ℕ) : δ k < 1 - δ k := by
-    have : δ k ≤ 1 / 3 := by
-      dsimp [δ]
-      gcongr
-      linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
-    linarith
+  obtain ⟨δ, -, hδ, hδconv⟩ := exists_seq_strictAnti_tendsto' (show (0 : ℝ) < 1 / 2 by norm_num)
+  obtain ⟨ε, -, hε, hεconv⟩ := exists_seq_strictAnti_tendsto (0 : ℝ)
+  have hδ' (k : ℕ) : δ k < 1 - δ k := by linarith [(hδ k).2]
   -- Choose an approximant whose `L¹(Ω)` error is below `ε k * δ k`, along a sequence of indices
   -- tending to infinity.
   have hidx (k : ℕ) : ∃ m, k ≤ m ∧
       ∫⁻ x in Ω, ‖w m x - s.indicator 1 x‖ₑ ∂μ < ENNReal.ofReal (ε k * δ k) :=
     ((eventually_ge_atTop k).and
-      (hL.eventually (gt_mem_nhds (ENNReal.ofReal_pos.2 (mul_pos (hε k) (hδ k)))))).exists
+      (hL.eventually (gt_mem_nhds (ENNReal.ofReal_pos.2 (mul_pos (hε k) (hδ k).1))))).exists
   choose m hkm hm using hidx
   have hmT : Tendsto m atTop atTop := tendsto_atTop_mono hkm tendsto_id
   choose t ht hreg hP using fun k ↦
     (hw (m k)).exists_mem_Ioo_surjective_fderiv_perimeter_le (μ := μ) Ω.isOpen subset_rfl (hδ' k)
   have hvol (k : ℕ) : μ (({x | t k < w (m k) x} ∆ s) ∩ Ω) ≤ ENNReal.ofReal (ε k) :=
-    measure_symmDiff_inter_le (hw (m k)).continuousOn hs (hδ k) (hε k) (ht k) (hm k)
+    measure_symmDiff_inter_le (hw (m k)).continuousOn hs (hδ k).1 (hε k) (ht k) (hm k)
   have hvolconv : Tendsto (fun k ↦ μ (({x | t k < w (m k) x} ∆ s) ∩ Ω)) atTop (𝓝 0) :=
     tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-      (by simpa [ε] using (ENNReal.tendsto_ofReal
-        (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))))
-      (fun _ ↦ zero_le) hvol
-  refine ⟨fun k ↦ w (m k), t, fun k ↦ ⟨hw (m k), ⟨(hδ k).trans (ht k).1,
-    (ht k).2.trans (by linarith [hδ k])⟩, hreg k⟩, hvolconv, ?_⟩
-  refine tendsto_of_le_liminf_of_limsup_le ?_ ?_
-  · exact perimeter_le_liminf_setOf_lt (fun k ↦ (hw (m k)).continuousOn) hs hvolconv
-  · have hδconv : Tendsto δ atTop (𝓝 0) := by
-      simpa [δ, Function.comp_def, Nat.cast_add] using
-        ((tendsto_one_div_atTop_nhds_zero_nat (𝕜 := ℝ)).comp (tendsto_add_atTop_nat 3))
-    have hdenom : Tendsto (fun k ↦ ENNReal.ofReal (1 - δ k - δ k)) atTop (𝓝 1) := by
-      simpa using ENNReal.tendsto_ofReal
-        (((tendsto_const_nhds (x := (1 : ℝ))).sub hδconv).sub hδconv)
-    have hVm : Tendsto (fun k ↦ totalVariationOn μ Ω (w (m k))) atTop (𝓝 (perimeter μ Ω s)) := by
-      rw [perimeter_def]
-      exact hV.comp hmT
-    have hbound := ENNReal.Tendsto.div hVm (Or.inr one_ne_zero) hdenom (Or.inl ENNReal.one_ne_top)
-    rw [div_one] at hbound
-    exact (limsup_le_limsup (.of_forall hP)).trans_eq hbound.limsup_eq
+      (by simpa using ENNReal.tendsto_ofReal hεconv) (fun _ ↦ zero_le) hvol
+  refine ⟨fun k ↦ w (m k), t, fun k ↦ ⟨hw (m k), ⟨(hδ k).1.trans (ht k).1,
+    (ht k).2.trans (by linarith [(hδ k).1])⟩, hreg k⟩, hvolconv, ?_⟩
+  refine ENNReal.tendsto_of_le_liminf_of_le_div ?_ ?_
+    (perimeter_le_liminf_setOf_lt (fun k ↦ (hw (m k)).continuousOn) hs hvolconv) (.of_forall hP)
+  · rw [perimeter_def]
+    exact hV.comp hmT
+  · simpa using ENNReal.tendsto_ofReal (((tendsto_const_nhds (x := (1 : ℝ))).sub hδconv).sub hδconv)
 
 end TauCeti

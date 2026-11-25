@@ -77,8 +77,8 @@ gives a set of measure one.
   set in a nontrivial space.
 * `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero`: the same agreement at nonzero
   radius, including trivial spaces.
-* `MeasureTheory.Measure.addHaar_compl_closedBall`: the complement of a closed ball has infinite
-  measure in a nontrivial space.
+* `MeasureTheory.Measure.addHaar_compl_eq_top_of_isBounded`: the complement of a bounded set has
+  infinite measure in a nontrivial space.
 * `MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball`,
   `MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball_of_ne_zero`: restricting to a closed
   ball or to the open ball of the same radius gives the same measure.
@@ -437,16 +437,16 @@ theorem addHaar_closedBall_ae_eq_ball_of_ne_zero
     simp [mem_closedBall, mem_ball, Subsingleton.elim y x, le_iff_lt_or_eq, Ne.symm hr]
   · exact mu.addHaar_closedBall_ae_eq_ball x r
 
-/-- In a nontrivial finite-dimensional space, the complement of a closed ball has infinite
+/-- In a nontrivial finite-dimensional space, the complement of a bounded set has infinite
 measure. -/
-theorem addHaar_compl_closedBall
+theorem addHaar_compl_eq_top_of_isBounded
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
-    (mu : Measure E) [mu.IsAddHaarMeasure] (x : E) (r : ℝ) :
-    mu (closedBall x r)ᶜ = ⊤ := by
-  rw [measure_compl measurableSet_closedBall measure_closedBall_lt_top.ne,
-    measure_univ_of_isAddLeftInvariant mu]
-  exact ENNReal.top_sub measure_closedBall_lt_top.ne
+    (mu : Measure E) [mu.IsAddHaarMeasure] {s : Set E} (hs : Bornology.IsBounded s) :
+    mu sᶜ = ⊤ := by
+  have h := measure_univ_le_add_compl (μ := mu) s
+  rw [measure_univ_of_isAddLeftInvariant mu, top_le_iff, ENNReal.add_eq_top] at h
+  exact h.resolve_left hs.measure_lt_top.ne
 
 /-- In a nontrivial finite-dimensional space, restricting an additive Haar measure to a closed
 ball or to the open ball of the same radius gives the same measure. -/
