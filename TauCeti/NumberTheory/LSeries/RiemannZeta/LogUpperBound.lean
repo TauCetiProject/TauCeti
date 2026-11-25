@@ -66,11 +66,13 @@ private lemma one_le_norm_sub_one {s : ℂ} (ht : 1 ≤ |s.im|) : 1 ≤ ‖s - 1
   simp only [sub_im, one_im, sub_zero] at h
   exact ht.trans h
 
-private lemma ne_one_of_one_le_abs_im {s : ℂ} (ht : 1 ≤ |s.im|) : s ≠ 1 := by
+/-- A point at height `1 ≤ |Im s|` is not `1`. -/
+theorem ne_one_of_one_le_abs_im {s : ℂ} (ht : 1 ≤ |s.im|) : s ≠ 1 := by
   rintro rfl
   norm_num at ht
 
-private lemma norm_inv_sub_one_le_one {s : ℂ} (ht : 1 ≤ |s.im|) : ‖(s - 1)⁻¹‖ ≤ 1 := by
+/-- At height `1 ≤ |Im s|`, the pole term of `ζ` at `1` is at most `1`: `‖(s - 1)⁻¹‖ ≤ 1`. -/
+theorem norm_inv_sub_one_le_one {s : ℂ} (ht : 1 ≤ |s.im|) : ‖(s - 1)⁻¹‖ ≤ 1 := by
   rw [norm_inv]
   exact inv_le_one_of_one_le₀ (one_le_norm_sub_one ht)
 
