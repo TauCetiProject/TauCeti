@@ -28,7 +28,9 @@ the second fundamental form and the normal connection of an immersion take value
 The normal spaces are closed (`TauCeti.isClosed_orthogonalNormalSpace`). When the range of the
 differential admits an orthogonal projection, for instance for a finite-dimensional source, so do
 the normal spaces, and their orthogonal complements are the tangent ranges
-(`TauCeti.orthogonal_orthogonalNormalSpace`). For a finite-dimensional source, the orthogonal
+(`TauCeti.orthogonal_orthogonalNormalSpace`). The normal space is then isometric to the quotient
+`T_{f x} N ⧸ range df_x` by `w ↦ [w]` (`TauCeti.orthogonalNormalSpaceEquivQuotient`, the inverse of
+Mathlib's `Submodule.quotientEquivOrthogonal`). For a finite-dimensional source, the orthogonal
 projection onto the normal space is `v ↦ v - df ((df* df)⁻¹ (df* v))`, where `df* df` is the
 pullback metric on `T_x M` (`TauCeti.starProjection_orthogonalNormalSpace_eq_sub_mfderiv_inverse`).
 It is a `C^m` self-map of `f *ᵖ TN` near every point where `f` is `C^n` with injective
@@ -207,6 +209,44 @@ theorem starProjection_orthogonalNormalSpace :
   (rfl)
 
 end OrthogonalProjection
+
+section QuotientComparison
+
+variable (f : M → N) (x : M)
+  [(LinearMap.range (mfderiv I J f x).toLinearMap).HasOrthogonalProjection]
+
+/-- The normal space `(range df_x)ᗮ` of a map at `x` is isometric to the quotient
+`T_{f x} N ⧸ range df_x` by `w ↦ [w]`, whenever the range of the differential admits an orthogonal
+projection, for instance for a finite-dimensional source. It is the inverse of Mathlib's isometry
+`Submodule.quotientEquivOrthogonal` between a quotient and the orthogonal complement of the
+subspace. The inverse is the orthogonal projection onto the normal space
+(`TauCeti.orthogonalNormalSpaceEquivQuotient_symm_mk`). -/
+def orthogonalNormalSpaceEquivQuotient :
+    orthogonalNormalSpace I J f x ≃ₗᵢ[ℝ]
+      TangentSpace J (f x) ⧸ LinearMap.range (mfderiv I J f x).toLinearMap :=
+  (LinearMap.range (mfderiv I J f x).toLinearMap).quotientEquivOrthogonal.symm
+
+/-- The comparison takes a normal vector to its class. -/
+@[simp]
+theorem orthogonalNormalSpaceEquivQuotient_apply (w : orthogonalNormalSpace I J f x) :
+    orthogonalNormalSpaceEquivQuotient f x w =
+      Submodule.Quotient.mk (w : TangentSpace J (f x)) := by
+  rw [orthogonalNormalSpaceEquivQuotient]
+  exact (LinearMap.range (mfderiv I J f x).toLinearMap).quotientEquivOrthogonal_symm_eq_mk _
+    w.property
+
+/-- The inverse comparison takes the class of an ambient vector to its orthogonal projection onto
+the normal space; in particular this projection depends only on the class. -/
+@[simp]
+theorem orthogonalNormalSpaceEquivQuotient_symm_mk (v : TangentSpace J (f x)) :
+    (orthogonalNormalSpaceEquivQuotient f x).symm (Submodule.Quotient.mk v) =
+      (orthogonalNormalSpace I J f x).orthogonalProjectionOnto v := by
+  rw [LinearIsometryEquiv.symm_apply_eq, orthogonalNormalSpaceEquivQuotient_apply,
+    Submodule.Quotient.eq, Submodule.coe_orthogonalProjectionOnto_apply]
+  have h := (orthogonalNormalSpace I J f x).sub_starProjection_mem_orthogonal v
+  rwa [orthogonal_orthogonalNormalSpace] at h
+
+end QuotientComparison
 
 section FiniteDimensionalSource
 

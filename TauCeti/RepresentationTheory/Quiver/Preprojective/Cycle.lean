@@ -88,30 +88,21 @@ private theorem cycleMatrix_mul_cycleMatrix {m : ℕ} [NeZero m] (hm : 3 ≤ m) 
   · exact zero_mul _
   · exact zero_mul _
 
-private theorem extendByZero_cycleMatrix_mul {V : Type u} [DecidableEq V] {G : SimpleGraph V}
+private theorem extendByZero_cycleMatrix_mul {V : Type u} {G : SimpleGraph V}
     {m : ℕ} [NeZero m] (hm : 3 ≤ m) (c : (cycleGraph m).Copy G) (v w : V) :
     c.extendByZero (cycleMatrix k m) w v * c.extendByZero (cycleMatrix k m) v w = 0 := by
-  by_cases hv : v ∈ Set.range c
-  swap
-  · rw [c.extendByZero_eq_zero_of_notMem_range_right (cycleMatrix k m) w hv, zero_mul]
-  by_cases hw : w ∈ Set.range c
-  swap
-  · rw [c.extendByZero_eq_zero_of_notMem_range_left (cycleMatrix k m) hw v, zero_mul]
-  obtain ⟨i, rfl⟩ := hv
-  obtain ⟨j, rfl⟩ := hw
-  rw [c.extendByZero_apply_apply, c.extendByZero_apply_apply]
-  split_ifs
-  · exact cycleMatrix_mul_cycleMatrix k hm i j
-  · exact mul_zero _
-  · exact zero_mul _
-  · exact zero_mul _
+  rw [c.extendByZero_mul_extendByZero _ (mul_zero 0)]
+  have h : (fun i j => cycleMatrix k m j i * cycleMatrix k m i j) = 0 := by
+    funext i j
+    exact cycleMatrix_mul_cycleMatrix k hm i j
+  simp only [h, c.extendByZero_zero, Pi.zero_apply]
 
-private theorem sum_extendByZero_cycleMatrix_mul {V : Type u} [Fintype V] [DecidableEq V]
-    {G : SimpleGraph V} [DecidableRel G.Adj] {m : ℕ} [NeZero m] (hm : 3 ≤ m)
-    (c : (cycleGraph m).Copy G) (v : V) :
-    ∑ w ∈ G.neighborFinset v,
-      c.extendByZero (cycleMatrix k m) w v * c.extendByZero (cycleMatrix k m) v w = 0 :=
-  Finset.sum_eq_zero fun w _ => extendByZero_cycleMatrix_mul k hm c v w
+private theorem sum_extendByZero_cycleMatrix_mul {V : Type u} {G : SimpleGraph V} [G.LocallyFinite]
+    {m : ℕ} [NeZero m] (hm : 3 ≤ m) (c : (cycleGraph m).Copy G) :
+    ∀ v, ∑ w ∈ G.neighborFinset v,
+      c.extendByZero (cycleMatrix k m) w v * c.extendByZero (cycleMatrix k m) v w = 0 := fun v =>
+  c.sum_extendByZero_mul_extendByZero _ (mul_zero 0)
+    (fun i => Finset.sum_eq_zero fun j _ => cycleMatrix_mul_cycleMatrix k hm i j) v
 
 /-- The `r`-step forward walk `c 0 → c 1 → ⋯ → c r` in the doubled path algebra of `G`, written in
 later-factor-first multiplication order. -/

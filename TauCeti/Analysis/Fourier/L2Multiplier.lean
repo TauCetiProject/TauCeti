@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Fourier.LpSpace
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 public import TauCeti.MeasureTheory.Function.Lp.Convolution
+public import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Fourier.Convolution
 import TauCeti.Analysis.Fourier.LpSpace
@@ -81,6 +82,8 @@ defined, it agrees with Mathlib's multipliers.
   `L²` whenever `𝓕 h = a • 𝓕 f`. With `a = 1` this differentiates multiplier families
   applied to arbitrary `f ∈ L²`; with `a` the symbol of a differential operator `P`, it
   differentiates them applied to `f` with `P f = h ∈ L²`.
+* `MeasureTheory.Lp.fourierMultiplierCLM_dilateLp`: `T_m D_r = D_r T_{m (r⁻¹ • ·)}` for the
+  normalized dilation `D_r` of `L²`: conjugating a multiplier by a dilation dilates its symbol.
 
 ## Kernels of multipliers
 
@@ -398,6 +401,26 @@ theorem _root_.SchwartzMap.coeFn_fourierMultiplierCLM_toLp (σ : 𝓢(E, ℂ))
   exact ((((lsmul ℂ ℂ).lpPairing volume 2 2 ((hK x).toLp _)).continuous.tendsto f).comp hu).comp
     hns.tendsto_atTop
 
+/-- **Young's inequality for an `L²` multiplier with Schwartz symbol.** For a Schwartz symbol `σ`,
+exponents `1 ≤ c, p` with `1/c + 1/p = 1 + 1/q` and every `f ∈ L²`,
+`‖T_σ f‖_q ≤ ‖𝓕⁻ σ‖_c ‖f‖_p`: `T_σ f` is the convolution of `f` with `𝓕⁻ σ`. Neither side is
+assumed finite, so `T_σ` maps `L² ∩ Lᵖ` into `L^q`. For `c = 1` this is
+`SchwartzMap.eLpNorm_fourierMultiplierCLM_toLp_le`. -/
+theorem _root_.SchwartzMap.eLpNorm_fourierMultiplierCLM_toLp_le_of_inv_add_inv_eq (σ : 𝓢(E, ℂ))
+    (f : Lp F 2 (volume : Measure E)) {c p q : ℝ≥0∞} (hc : 1 ≤ c) (hp : 1 ≤ p)
+    (hcpq : c⁻¹ + p⁻¹ = 1 + q⁻¹) :
+    eLpNorm (fourierMultiplierCLM F (σ.toLp ∞) f) q volume ≤
+      eLpNorm (𝓕⁻ (σ : E → ℂ)) c volume * eLpNorm f p volume := by
+  have hconv : fourierMultiplierCLM F (σ.toLp ∞) f =ᵐ[volume]
+      (𝓕⁻ (σ : E → ℂ) ⋆[lsmul ℂ ℂ, volume] (f : E → F)) := by
+    filter_upwards [σ.coeFn_fourierMultiplierCLM_toLp f] with x hx
+    rw [hx, convolution_lsmul, ← integral_sub_left_eq_self _ volume x]
+    simp_rw [sub_sub_cancel, SchwartzMap.fourierInv_coe]
+  rw [eLpNorm_congr_ae hconv, ← SchwartzMap.fourierInv_coe]
+  refine (eLpNorm_convolution_le_of_inv_add_inv_eq _ hc hp hcpq
+    (𝓕⁻ σ).continuous.aestronglyMeasurable (Lp.aestronglyMeasurable f)).trans ?_
+  grw [opENorm_lsmul_le, one_mul]
+
 /-- **`Lᵖ` bound for an `L²` multiplier with Schwartz symbol.** For a Schwartz symbol `σ`, every
 `f ∈ L²` and every `1 ≤ p ≤ ∞`, `‖T_σ f‖_p ≤ ‖𝓕⁻ σ‖₁ ‖f‖_p`: `T_σ f` is the convolution of `f`
 with `𝓕⁻ σ`, and Young's inequality applies. Neither side is assumed finite, so `T_σ` maps
@@ -405,16 +428,8 @@ with `𝓕⁻ σ`, and Young's inequality applies. Neither side is assumed finit
 theorem _root_.SchwartzMap.eLpNorm_fourierMultiplierCLM_toLp_le (σ : 𝓢(E, ℂ))
     (f : Lp F 2 (volume : Measure E)) {p : ℝ≥0∞} (hp : 1 ≤ p) :
     eLpNorm (fourierMultiplierCLM F (σ.toLp ∞) f) p volume ≤
-      eLpNorm (𝓕⁻ (σ : E → ℂ)) 1 volume * eLpNorm f p volume := by
-  have hconv : fourierMultiplierCLM F (σ.toLp ∞) f =ᵐ[volume]
-      (𝓕⁻ (σ : E → ℂ) ⋆[lsmul ℂ ℂ, volume] (f : E → F)) := by
-    filter_upwards [σ.coeFn_fourierMultiplierCLM_toLp f] with x hx
-    rw [hx, convolution_lsmul, ← integral_sub_left_eq_self _ volume x]
-    simp_rw [sub_sub_cancel, SchwartzMap.fourierInv_coe]
-  rw [eLpNorm_congr_ae hconv, ← SchwartzMap.fourierInv_coe]
-  refine (eLpNorm_convolution_le _ (𝓕⁻ σ).continuous.aestronglyMeasurable
-    (Lp.aestronglyMeasurable f) hp).trans ?_
-  grw [opENorm_lsmul_le, one_mul]
+      eLpNorm (𝓕⁻ (σ : E → ℂ)) 1 volume * eLpNorm f p volume :=
+  σ.eLpNorm_fourierMultiplierCLM_toLp_le_of_inv_add_inv_eq f le_rfl hp (by rw [inv_one])
 
 /-- **The `L¹ → L^∞` bound** for a multiplier with a Schwartz symbol `σ`: if the kernel `𝓕⁻ σ` is
 bounded by `B`, then `‖T_σ f‖_∞ ≤ B ‖f‖₁` for every integrable `f ∈ L²`. -/
@@ -590,6 +605,43 @@ theorem hasDerivAt_fourierMultiplierCLM_toLp_apply {m : ℝ → E → ℂ}
     simp only [slope_def_module] at this
     rw [hξ, smul_smul, mul_comm]
     exact this
+
+/-! ### Dilations -/
+
+section Dilation
+
+open Measure
+
+/-- The Fourier-side identity behind `MeasureTheory.Lp.fourierMultiplierCLM_dilateLp`. -/
+private theorem coeFn_fourier_dilateLp_aux {r : ℝ} (hr : 0 < r) (m : Lp ℂ ∞ (volume : Measure E))
+    (f : Lp F 2 (volume : Measure E)) :
+    ⇑(m • dilateLp volume ℝ 2 r⁻¹ (inv_pos.2 hr) (𝓕 f) : Lp F 2 (volume : Measure E)) =ᵐ[volume]
+      dilateLp volume ℝ 2 r⁻¹ (inv_pos.2 hr)
+        (dilateLp volume ℝ ∞ r hr m • 𝓕 f : Lp F 2 (volume : Measure E)) := by
+  filter_upwards [coeFn_lpSMul (r := 2) m (dilateLp volume ℝ 2 r⁻¹ (inv_pos.2 hr) (𝓕 f)),
+    coeFn_dilateLp (μ := volume) (𝕜 := ℝ) (p := 2) (inv_pos.2 hr) (𝓕 f),
+    coeFn_dilateLp_of_ae_eq (𝕜 := ℝ) (inv_pos.2 hr)
+      (coeFn_lpSMul (r := 2) (dilateLp volume ℝ ∞ r hr m) (𝓕 f)),
+    (quasiMeasurePreserving_smul (volume : Measure E) (inv_ne_zero (inv_pos.2 hr).ne')).ae_eq_comp
+      (coeFn_dilateLp_top (μ := volume) (𝕜 := ℝ) hr m)] with ξ h₁ h₂ h₃ h₄
+  simp only [Function.comp_apply] at h₄
+  rw [h₁, Pi.smul_apply', h₂, h₃, Pi.smul_apply', h₄, inv_inv, inv_smul_smul₀ hr.ne', smul_comm]
+
+/-- **Conjugating a Fourier multiplier by a dilation dilates its symbol.** For `r > 0`, the
+multiplier with symbol `m` applied after the normalized dilation `D_r` of `L²` is `D_r` applied
+after the multiplier with the dilated symbol `m (r⁻¹ • ·)`, the dilation by `r` on `L^∞`. -/
+theorem fourierMultiplierCLM_dilateLp {r : ℝ} (hr : 0 < r) (m : Lp ℂ ∞ (volume : Measure E))
+    (f : Lp F 2 (volume : Measure E)) :
+    fourierMultiplierCLM F m (dilateLp volume ℝ 2 r hr f) =
+      dilateLp volume ℝ 2 r hr (fourierMultiplierCLM F (dilateLp volume ℝ ∞ r hr m) f) := by
+  have key : 𝓕 (fourierMultiplierCLM F m (dilateLp volume ℝ 2 r hr f)) =
+      𝓕 (dilateLp volume ℝ 2 r hr (fourierMultiplierCLM F (dilateLp volume ℝ ∞ r hr m) f)) := by
+    rw [fourier_fourierMultiplierCLM, fourier_dilateLp, fourier_dilateLp,
+      fourier_fourierMultiplierCLM]
+    exact Lp.ext (coeFn_fourier_dilateLp_aux hr m f)
+  exact (fourierTransformₗᵢ E F).injective key
+
+end Dilation
 
 end MeasureTheory.Lp
 

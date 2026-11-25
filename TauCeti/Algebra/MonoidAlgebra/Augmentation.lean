@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.RingTheory.Ideal.Maps
+public import TauCeti.Algebra.MonoidAlgebra.RightInvariant
 public import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
 
 /-!
@@ -27,10 +28,14 @@ in `TauCeti.Algebra.MonoidAlgebra.Exactness`.
 * `MonoidAlgebra.augmentation_mapDomainRingEquiv`: invariance under monoid isomorphisms.
 * `MonoidAlgebra.augmentation_mapRingHom`: naturality in the coefficients.
 * `MonoidAlgebra.augmentationLinearMap`: the coefficient-sum linear map.
+* `MonoidAlgebra.augmentation_smul`: the augmentation is `R`-linear.
 * `MonoidAlgebra.augmentationLinearMap_surjective`: surjectivity over any semiring.
 * `MonoidAlgebra.ker_augmentationLinearMap`: the linear kernel is the augmentation ideal.
-* `MonoidAlgebra.eq_sum_single_of_mul_single_eq_self`: over an additively torsion-free semiring,
-  an element invariant under every right translation and with augmentation `|G|` is the norm.
+* `MonoidAlgebra.eq_sum_single_of_mul_single_eq_self`: over a semiring in which multiplication by
+  `|G|` is injective, an element invariant under every right translation and with augmentation
+  `|G| • c` is the constant combination `∑ g, single g c`; for `c = 1` this is the norm.
+* `MonoidAlgebra.lift_one_apply`: lifting the trivial character is the augmentation followed by
+  `algebraMap`.
 * `TauCeti.augmentation_subgroupCharSum`: the augmentation of the character sum
   `∑_{h ∈ H} χ(h) h` is `∑_{h ∈ H} χ(h)`, so that of the norm element of `H` is its order.
 
@@ -101,6 +106,12 @@ theorem augmentationLinearMap_apply (x : MonoidAlgebra R K) :
     augmentationLinearMap R K x = augmentation R K x :=
   (rfl)
 
+/-- The coefficient-sum augmentation is `R`-linear. -/
+@[simp]
+theorem augmentation_smul (r : R) (x : MonoidAlgebra R K) :
+    augmentation R K (r • x) = r * augmentation R K x :=
+  (augmentationLinearMap R K).map_smul r x
+
 /-- Over any semiring, the coefficient-sum linear map is surjective. -/
 theorem augmentationLinearMap_surjective :
     Function.Surjective (augmentationLinearMap R K) :=
@@ -112,25 +123,32 @@ theorem ker_augmentationLinearMap :
       (RingHom.ker (augmentation R K)).restrictScalars R := by
   ext; simp [RingHom.mem_ker]
 
-/-- Over an additively torsion-free semiring, an element of a finite group algebra invariant
-under right multiplication by every group element and with augmentation `|G|` is the norm
-element `∑ g, single g 1`. -/
-theorem eq_sum_single_of_mul_single_eq_self {R G : Type*} [Semiring R] [IsAddTorsionFree R]
-    [Group G] [Fintype G] {γ : MonoidAlgebra R G} (hinv : ∀ g, γ * single g 1 = γ)
-    (hε : augmentation R G γ = Fintype.card G) :
-    γ = ∑ g, single g (1 : R) := by
-  classical
-  have hcoeff (g : G) : γ.coeff g = γ.coeff 1 := by
-    simpa using congrArg (fun z : MonoidAlgebra R G ↦ z.coeff 1) (hinv g⁻¹)
-  have hγ1 : γ.coeff 1 = 1 := by
-    have h : augmentation R G γ = Fintype.card G * γ.coeff 1 := by
-      conv_lhs => rw [← sum_coeff_single γ]
-      rw [Finsupp.sum_fintype _ _ (by simp), map_sum]
-      simp [hcoeff]
-    refine ((AddCommute.all _ _).nsmul_right_inj (Fintype.card_ne_zero (α := G))).1 ?_
-    rw [nsmul_eq_mul, nsmul_one, ← h, hε]
-  ext g
-  simp [coeff_sum, coeff_single, Finsupp.single_apply, hcoeff, hγ1]
+/-- Over a semiring in which multiplication by `|G|` is injective (for instance an additively
+torsion-free one, or one of characteristic prime to `|G|`), an element of a finite group algebra
+invariant under right multiplication by every group element and with augmentation `|G| • c` is
+the constant combination `∑ g, single g c`. For `c = 1` it is the norm element
+`∑ g, single g 1`. -/
+theorem eq_sum_single_of_mul_single_eq_self {R G : Type*} [Semiring R] [Group G] [Fintype G]
+    (hG : IsSMulRegular R (Fintype.card G)) {γ : MonoidAlgebra R G} {c : R}
+    (hinv : ∀ g, γ * single g 1 = γ) (hε : augmentation R G γ = Fintype.card G • c) :
+    γ = ∑ g, single g c := by
+  -- Right invariance makes `γ` the constant combination with coefficient `γ.coeff 1`.
+  have hγ := eq_sum_single_coeff_one_of_mul_single_eq_self hinv
+  -- Its augmentation is then `|G| • γ.coeff 1`, so `hε` and `hG` force `γ.coeff 1 = c`.
+  have hγc : γ.coeff 1 = c := hG <| by
+    rw [hγ, map_sum] at hε
+    simpa using hε
+  rw [hγ, hγc]
+
+/-- Lifting the trivial character to an `R`-algebra `A` is the coefficient-sum augmentation
+followed by `algebraMap R A`. -/
+theorem lift_one_apply {R : Type u} [CommSemiring R] {A : Type w} [Semiring A] [Algebra R A]
+    {K : Type v} [Monoid K] (x : MonoidAlgebra R K) :
+    lift R A K 1 x = algebraMap R A (augmentation R K x) := by
+  induction x using induction_linear with
+  | zero => simp
+  | add x y hx hy => simp [hx, hy]
+  | single k r => simp [lift_single, Algebra.smul_def]
 
 end MonoidAlgebra
 
