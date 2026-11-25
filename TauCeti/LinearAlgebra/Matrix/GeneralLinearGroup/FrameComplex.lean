@@ -462,7 +462,7 @@ theorem affineFrameSystem_chainComplex_exactAt_one (hm : 1 < Fintype.card m) :
 /-- Under Bass's stable range condition `HasStableRangeLE R s` (van der Kallen's `SR_(s+1)`), the
 complex of unimodular frames of `Rᵐ` is exact in degree `1`, its `1`-skeleton being connected, as
 soon as `s + 1 ≤ card m`. -/
-theorem frameSystem_chainComplex_exactAt_one {R : Type u} [CommRing R] {s : ℕ}
+theorem frameSystem_chainComplex_exactAt_one {s : ℕ}
     (hR : HasStableRangeLE R s) (hm : s + 1 ≤ Fintype.card m) :
     ((frameSystem R m).chainComplex k).ExactAt 1 := by
   obtain ⟨i₀⟩ : Nonempty m := Fintype.card_pos_iff.mp (by omega)
@@ -477,15 +477,13 @@ theorem frameSystem_chainComplex_exactAt_one {R : Type u} [CommRing R] {s : ℕ}
   rw [show (⟨A, hA⟩ : F.carrier 1) = ⟨_, hvert _ _ hb⟩ from Subtype.ext hA']
   by_cases hj : ∃ j, j ≠ i₀
   · obtain ⟨j, hj⟩ := hj
-    obtain ⟨b, c, hb₀, hc₀, hbc⟩ := hR.exists_add_smul_dotProduct_eq_one hm
-      (Module.isUnimodular_pi_iff.mpr ⟨_, by rwa [← dotProduct, dotProduct_comm]⟩) i₀
-    rw [dotProduct_comm] at hbc
+    obtain ⟨b, c, hb₀, hc₀, hbc⟩ := hR.exists_dotProduct_add_op_smul_eq_one hm ⟨b, hb⟩ i₀
     -- the path `e_i₀ — e_j — e_i₀ - c — v`
     set y : m → R := Pi.single i₀ 1 - c
     set β : m → R := b + (b ⬝ᵥ c) • Pi.single i₀ 1
     have hβv : β ⬝ᵥ v = 1 := by
-      rw [← hbc]
-      simp [β, add_dotProduct, dotProduct_add, dotProduct_smul, smul_eq_mul, mul_comm]
+      rw [← hbc, add_dotProduct, dotProduct_add, smul_dotProduct, single_one_dotProduct]
+      simp [dotProduct, Finset.sum_mul, mul_assoc]
     have hβy : β ⬝ᵥ y = 0 := by
       simp [β, y, add_dotProduct, dotProduct_sub, hb₀, hc₀]
     refine .trans _ ⟨_, hvert (Pi.single j 1) (Pi.single j 1) (by simp)⟩ _

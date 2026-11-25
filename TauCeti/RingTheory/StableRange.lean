@@ -54,6 +54,8 @@ This file develops the ring-theoretic properties of `HasStableRangeLE`:
 * `TauCeti.hasStableRangeLE_prod_iff`: stable range of a product ring `R × S`.
 * `TauCeti.hasStableRangeLE_mop_iff`: `HasStableRangeLE Rᵐᵒᵖ s ↔ HasStableRangeLE R s`
   (Vaserstein).
+* `TauCeti.HasStableRangeLE.exists_dotProduct_add_op_smul_eq_one`: the left-handed form of the
+  coordinate shortening, deduced from the right-handed one through `Rᵐᵒᵖ`.
 
 ## References
 
@@ -405,6 +407,26 @@ theorem hasStableRangeLE_mop_iff {R : Type*} [Ring R] {s : ℕ} :
       map_add' := fun _ _ ↦ rfl }
   exact (hasStableRangeLE_mop_of_hasStableRangeLE h).of_surjective (f := unop₂)
     fun r ↦ ⟨MulOpposite.op (MulOpposite.op r), rfl⟩
+
+/-- The left-handed form of `HasStableRangeLE.exists_add_smul_dotProduct_eq_one`: over a ring of
+stable range at most `s`, a vector `a : ι → R` with a left inverse `b ⬝ᵥ a = 1` and
+`s + 1 ≤ Fintype.card ι` keeps a left inverse `b` vanishing at `i₀` after adding the right
+multiples `c i * a i₀` of its coordinate `i₀` to the others, where `c i₀ = 0`. -/
+theorem HasStableRangeLE.exists_dotProduct_add_op_smul_eq_one {R ι : Type*} [Ring R] [Fintype ι]
+    {s : ℕ} (hR : HasStableRangeLE R s) (hι : s + 1 ≤ Fintype.card ι)
+    {a : ι → R} (ha : ∃ b : ι → R, b ⬝ᵥ a = 1) (i₀ : ι) :
+    ∃ b c : ι → R, b i₀ = 0 ∧ c i₀ = 0 ∧ b ⬝ᵥ (a + MulOpposite.op (a i₀) • c) = 1 := by
+  -- apply the right-handed form over the opposite ring
+  obtain ⟨b, hb⟩ := ha
+  obtain ⟨b', c', hb', hc', h⟩ :=
+    (hasStableRangeLE_mop_iff.mpr hR).exists_add_smul_dotProduct_eq_one hι
+      (a := fun i ↦ MulOpposite.op (a i))
+      (TauCeti.Module.isUnimodular_pi_iff.mpr ⟨fun i ↦ MulOpposite.op (b i), by
+        simpa [dotProduct, ← MulOpposite.op_mul, ← Finset.op_sum] using
+          congrArg MulOpposite.op hb⟩) i₀
+  refine ⟨fun i ↦ (b' i).unop, fun i ↦ (c' i).unop, by simp [hb'], by simp [hc'], ?_⟩
+  simpa [dotProduct, mul_add, Finset.sum_add_distrib] using
+    congrArg MulOpposite.unop h
 
 end TauCeti
 
