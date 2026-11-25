@@ -79,8 +79,6 @@ private theorem abs_fderiv_spectralFunction_sub_le
           prefixSum (k + 1) B'.property.isHermitian.eigenvalues₀) B H| ≤
       ‖H‖ * ∑ j, |fderiv ℝ f B.property.isHermitian.eigenvalues₀ (Pi.single j 1) - y j| := by
   set Y : ℕ → ℝ := Function.extend Fin.val y 0
-  have hY (j : Fin (Fintype.card ι)) : Y j = y j := Fin.val_injective.extend_apply y 0 j
-  have hYN : Y (Fintype.card ι) = 0 := Function.extend_apply' _ _ _ fun ⟨j, hj⟩ ↦ j.isLt.ne hj
   obtain ⟨u, hu⟩ := B.property.isHermitian.exists_orthonormalBasis_mulVec_eq_eigenvalues₀_smul
   set q : Fin (Fintype.card ι) → ℝ :=
     fun j ↦ RCLike.re (star ⇑(u j) ⬝ᵥ ((H : Matrix ι ι 𝕜) *ᵥ ⇑(u j)))
@@ -99,10 +97,8 @@ private theorem abs_fderiv_spectralFunction_sub_le
       · rw [prefixSum_def]
         exact congrArg _
           (fderiv_prefixSum_eigenvalues₀_selfAdjoint_apply (by omega) (hBg k hc) u hu H)
-    have h₂ := sum_smul_by_parts_prefixSum Y q
-    simp only [hY, hYN, smul_eq_mul, zero_mul, add_zero] at h₂
-    rw [h₁, h₂]
-    exact sum_congr rfl fun k _ ↦ by rw [hY]
+    rw [h₁]
+    exact (sum_smul_by_parts_prefixSum_extend y q).symm
   have hq (j : Fin (Fintype.card ι)) : |q j| ≤ ‖H‖ :=
     (RCLike.abs_re_le_norm _).trans <| (norm_star_dotProduct_mulVec_le _ _).trans_eq <| by
       rw [WithLp.toLp_ofLp, u.orthonormal.1 j, one_pow, mul_one, Submodule.norm_coe]

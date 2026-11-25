@@ -187,14 +187,12 @@ theorem hasFDerivAt_sum_mul_eigenvalues₀ (hM : ∀ x, (M x).IsHermitian)
     (∑ a, ∑ b, (star (u j a) * u j b) • fderiv ℝ (fun x ↦ M x a b) x₀)
   -- Extend the weights by zero to `ℕ` and sum by parts into Ky Fan sums.
   set Y : ℕ → ℝ := Function.extend Fin.val y 0
-  have hY (j : Fin (Fintype.card n)) : Y j = y j := Fin.val_injective.extend_apply y 0 j
-  have hYN : Y (Fintype.card n) = 0 := Function.extend_apply' _ _ _ fun ⟨j, hj⟩ ↦ j.isLt.ne hj
   have hsum (x : E) : ∑ j, y j * (hM x).eigenvalues₀ j =
-      ∑ k : Fin (Fintype.card n), (Y k - Y (k + 1)) * prefixSum (k + 1) (hM x).eigenvalues₀ := by
-    simpa [hY, hYN] using sum_smul_by_parts_prefixSum Y (hM x).eigenvalues₀
+      ∑ k : Fin (Fintype.card n), (Y k - Y (k + 1)) * prefixSum (k + 1) (hM x).eigenvalues₀ :=
+    sum_smul_by_parts_prefixSum_extend y (hM x).eigenvalues₀
   have hsumD : ∑ j, y j • D j =
-      ∑ k : Fin (Fintype.card n), (Y k - Y (k + 1)) • prefixSum (k + 1) D := by
-    simpa [hY, hYN] using sum_smul_by_parts_prefixSum Y D
+      ∑ k : Fin (Fintype.card n), (Y k - Y (k + 1)) • prefixSum (k + 1) D :=
+    sum_smul_by_parts_prefixSum_extend y D
   rw [hsumD, funext hsum]
   refine HasFDerivAt.fun_sum fun k _ ↦ ?_
   by_cases hc : Y k - Y (k + 1) = 0
