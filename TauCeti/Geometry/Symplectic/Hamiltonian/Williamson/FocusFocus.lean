@@ -97,14 +97,15 @@ about it used above are public, since the classification of mixed type
 * `focusFocusPoly_def`, `aeval_focusFocusPoly`: `f` and its values
   `((x - a)² + b²)((x + a)² + b²)`;
 * `focusFocusPoly_comp_neg_X`: `f` is even;
-* `isCoprime_focusFocusPoly`, `isCoprime_focusFocusPoly_X_sq_sub_C`: `f` is coprime to its
-  analogue for another point of the open first quadrant, and to every `X² - μ`, `μ` real;
-* `apply_eq_zero_of_mem_maxGenEigenspace_focusFocusPoly`: for `A ∈ sp(V, ω)`, the vectors
+* `isCoprime_focusFocusPoly_comp_neg_X`, `isCoprime_focusFocusPoly_X_sq_sub_C`: `f` is coprime
+  to the reflection `g(-X)` of its analogue `g` for another point of the open first quadrant, and
+  to every `X² - μ`, `μ` real;
+* `apply_eq_zero_of_mem_maxGenEigenspace_aeval_focusFocusPoly`: for `A ∈ sp(V, ω)`, the vectors
   killed by powers of `f(A)` and of its analogue for another point of the open first quadrant are
   `ω`-orthogonal;
 * `aeval_focusFocusPoly_apply_eq_zero`: `f(A)` kills the real part of an eigenvector of `A` for
   `a + bi`;
-* `four_le_finrank_maxGenEigenspace_focusFocusPoly`: for `A ∈ sp(V, ω)` with such an
+* `four_le_finrank_maxGenEigenspace_aeval_focusFocusPoly`: for `A ∈ sp(V, ω)` with such an
   eigenvector, the vectors killed by a power of `f(A)` form a subspace of dimension at least four.
 
 ## References
@@ -378,7 +379,7 @@ private theorem abs_re_eq_and_abs_im_eq_of_aeval_focusFocusPoly_eq_zero {a b : �
 /-- For distinct points `a + bi` and `a' + b'i` of the open first quadrant, the polynomial
 `(X² - 2aX + a² + b²)(X² + 2aX + a² + b²)` and the reflection of its analogue for `(a', b')` are
 coprime. -/
-theorem isCoprime_focusFocusPoly {a b a' b' : ℝ} (ha : 0 < a) (hb : 0 < b) (ha' : 0 < a')
+theorem isCoprime_focusFocusPoly_comp_neg_X {a b a' b' : ℝ} (ha : 0 < a) (hb : 0 < b) (ha' : 0 < a')
     (hb' : 0 < b') (hne : a ≠ a' ∨ b ≠ b') :
     IsCoprime (focusFocusPoly a b) ((focusFocusPoly a' b').comp (-X)) := by
   rw [focusFocusPoly_comp_neg_X]
@@ -416,13 +417,13 @@ omit [FiniteDimensional ℝ V] in
 /-- For `A ∈ sp(V, ω)` and distinct points `z ≠ z'` of the open first quadrant, `ω` pairs the
 vectors killed by a power of `f_z(A)` trivially with those killed by a power of `f_{z'}(A)`, where
 `f_z = (X² - 2 z.re X + |z|²)(X² + 2 z.re X + |z|²)`. -/
-theorem apply_eq_zero_of_mem_maxGenEigenspace_focusFocusPoly {A : Module.End ℝ V}
+theorem apply_eq_zero_of_mem_maxGenEigenspace_aeval_focusFocusPoly {A : Module.End ℝ V}
     (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) {z z' : ℂ} (hz : 0 < z.re ∧ 0 < z.im)
     (hz' : 0 < z'.re ∧ 0 < z'.im) (hne : z ≠ z') {v w : V}
     (hv : v ∈ (aeval A (focusFocusPoly z.re z.im)).maxGenEigenspace 0)
     (hw : w ∈ (aeval A (focusFocusPoly z'.re z'.im)).maxGenEigenspace 0) : ω v w = 0 := by
   refine ((LinearMap.mem_skewAdjointSubmodule A).1 hA).apply_eq_zero_of_mem_maxGenEigenspace_aeval
-    (isCoprime_focusFocusPoly hz.1 hz.2 hz'.1 hz'.2 ?_) hv hw
+    (isCoprime_focusFocusPoly_comp_neg_X hz.1 hz.2 hz'.1 hz'.2 ?_) hv hw
   by_contra! hre
   exact hne (Complex.ext hre.1 hre.2)
 
@@ -470,7 +471,7 @@ theorem aeval_focusFocusPoly_apply_eq_zero {A : Module.End ℝ V} {a b : ℝ} {v
 /-- If `A ∈ sp(V, ω)` has the eigenvalue `a + bi`, `a, b ≠ 0`, with eigenvector `v + iw`, `v ≠ 0`,
 then the subspace of vectors killed by a power of `(A² - 2aA + a² + b²)(A² + 2aA + a² + b²)` has
 dimension at least four. -/
-theorem four_le_finrank_maxGenEigenspace_focusFocusPoly {A : Module.End ℝ V}
+theorem four_le_finrank_maxGenEigenspace_aeval_focusFocusPoly {A : Module.End ℝ V}
     (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) {a b : ℝ} (ha : a ≠ 0) (hb : b ≠ 0)
     {v w : V} (hv : v ≠ 0) (hAv : A v = a • v - b • w) (hAw : A w = b • v + a • w) :
     4 ≤ finrank ℝ ((aeval A (focusFocusPoly a b)).maxGenEigenspace 0) := by
@@ -656,11 +657,11 @@ theorem exists_isDarbouxBasis_span_eq_span_focusFocusBlocks
   have hGs (j : Fin k) : ω.IsSymplectic (G j) :=
     ω.isSymplectic_maxGenEigenspace_aeval hA (focusFocusPoly_comp_neg_X _ _)
   have horth : Pairwise fun j j' ↦ ∀ v ∈ G j, ∀ w ∈ G j', ω v w = 0 := fun j j' hjj' _ hv _ hw ↦
-    apply_eq_zero_of_mem_maxGenEigenspace_focusFocusPoly hA (hs0 _ (e j).property)
+    apply_eq_zero_of_mem_maxGenEigenspace_aeval_focusFocusPoly hA (hs0 _ (e j).property)
       (hs0 _ (e j').property) (fun h ↦ hjj' (e.injective (Subtype.ext h))) hv hw
   have hG4 : ∀ j, finrank ℝ (G j) = 4 := finrank_eq_four_of_four_le hs hGs horth fun j ↦ by
     obtain ⟨v, w, hv, hAv, hAw⟩ := hPs _ (e j).property
-    exact four_le_finrank_maxGenEigenspace_focusFocusPoly hA (ha j).ne' (hc j).ne' hv hAv hAw
+    exact four_le_finrank_maxGenEigenspace_aeval_focusFocusPoly hA (ha j).ne' (hc j).ne' hv hAv hAw
   -- A Darboux basis of each block in which the restricted family spans the focus-focus pair; they
   -- assemble to a Darboux basis of `V`.
   choose b' hb' hspan' using fun j ↦ exists_isDarbouxBasis_block h hP (ha j) (hc j) (hG4 j)

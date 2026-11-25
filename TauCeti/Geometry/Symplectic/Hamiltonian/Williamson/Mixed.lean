@@ -256,11 +256,11 @@ private theorem card_mul_four_le_finrank_maxGenEigenspace_prod_focusFocusPoly
   have hHs (z : s') : ω.IsSymplectic (H z) :=
     ω.isSymplectic_maxGenEigenspace_aeval hA (focusFocusPoly_comp_neg_X _ _)
   have horth : Pairwise fun z z' : s' ↦ ∀ v ∈ H z, ∀ w ∈ H z', ω v w = 0 :=
-    fun z z' hzz' _ hv _ hw ↦ apply_eq_zero_of_mem_maxGenEigenspace_focusFocusPoly hA
+    fun z z' hzz' _ hv _ hw ↦ apply_eq_zero_of_mem_maxGenEigenspace_aeval_focusFocusPoly hA
       (hs'0 _ z.property) (hs'0 _ z'.property) (fun h ↦ hzz' (Subtype.ext h)) hv hw
   have hH4 (z : s') : 4 ≤ finrank ℝ (H z) := by
     obtain ⟨v, w, hv, hAv, hAw⟩ := hAs' z z.property
-    exact four_le_finrank_maxGenEigenspace_focusFocusPoly hA (hs'0 _ z.property).1.ne'
+    exact four_le_finrank_maxGenEigenspace_aeval_focusFocusPoly hA (hs'0 _ z.property).1.ne'
       (hs'0 _ z.property).2.ne' hv hAv hAw
   calc s'.card * 4 = ∑ _z : s', 4 := by simp
     _ ≤ ∑ z, finrank ℝ (H z) := Finset.sum_le_sum fun z _ ↦ hH4 z
@@ -286,20 +286,20 @@ private theorem finrank_maxGenEigenspace_prod_focusFocusPoly_add_card_mul_two_le
   -- Each `G μ` contains an eigenvector of `A²`, so it is a nonzero symplectic subspace.
   have hG2 (μ : s) : 2 ≤ finrank ℝ (G μ) := by
     obtain ⟨x, hx⟩ := (hAs μ μ.property).exists_hasEigenvector
-    exact (isSymplectic_maxGenEigenspace_sq_sub hA μ).two_le_finrank_of_mem
+    exact (isSymplectic_maxGenEigenspace_aeval_X_sq_sub_C hA μ).two_le_finrank_of_mem
       (Module.End.mem_maxGenEigenspace_aeval_X_sq_sub_C (by simpa [sq] using hx.apply_eq_smul))
       hx.2
   set K : Option s → Submodule ℝ V := fun o ↦ o.elim L fun μ ↦ G μ
   have hKs (o : Option s) : ω.IsSymplectic (K o) := by
     rcases o with _ | μ
-    exacts [hL, isSymplectic_maxGenEigenspace_sq_sub hA μ]
+    exacts [hL, isSymplectic_maxGenEigenspace_aeval_X_sq_sub_C hA μ]
   have horth : Pairwise fun o o' : Option s ↦ ∀ v ∈ K o, ∀ w ∈ K o', ω v w = 0 := by
     rintro (_ | μ) (_ | ν) hne v hv w hw
     · exact absurd rfl hne
     · exact apply_eq_zero_of_mem_maxGenEigenspace_prod_focusFocusPoly hA hs'0 ν hv hw
     · rw [← ω.neg_eq,
         apply_eq_zero_of_mem_maxGenEigenspace_prod_focusFocusPoly hA hs'0 μ hw hv, neg_zero]
-    · exact apply_eq_zero_of_mem_maxGenEigenspace_sq_sub hA
+    · exact apply_eq_zero_of_mem_maxGenEigenspace_aeval_X_sq_sub_C hA
         (fun h ↦ hne (congrArg some (Subtype.ext h))) hv hw
   have hsum : finrank ℝ L + ∑ μ : s, finrank ℝ (G μ) ≤ finrank ℝ V := by
     have := (finrank_iSup_eq_sum_finrank_of_iSupIndep
