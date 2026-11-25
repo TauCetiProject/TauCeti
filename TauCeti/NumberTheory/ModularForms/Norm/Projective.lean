@@ -58,6 +58,11 @@ The passage divides the whole native identity by `δ = [±Γ : Γ]`, which is `1
   interior weight is `[±Γ : Γ] · ord_P f / e_P`.
 * `TauCeti.ModularForm.geometricOrderAtCusp_mk`: the geometric order may be read at any
   representative of the cusp.
+* `TauCeti.ModularForm.geometricOrderAtCusp_mk_of_periodic`: at a regular cusp the geometric
+  order is the exponent in `q_h`.
+* `TauCeti.ModularForm.orderAtCuspTranslationOrbit_div_width_eq_geometricOrderAtCusp_div_width`:
+  the native order at a cusp translation orbit of width `m` is `m / h` times the geometric order at
+  the cusp of width `h` below it.
 * `TauCeti.ModularForm.sum_orderAtCuspTranslationOrbit_eq_relIndex_mul_sum_geometricOrderAtCusp`:
   the native cusp terms add up to `[±Γ : Γ]` times the geometric ones.
 * `TauCeti.ModularForm.valence_formula_projective`: **the projective valence formula**.
@@ -388,8 +393,31 @@ theorem geometricOrderAtCusp_mk (f : F) (x : 𝒮ℒ) :
   rw [orderAtCusp_def, h]
   ring
 
+/-- **At a regular cusp the geometric order is the exponent in `q_h`**: if `f ∣[k] x⁻¹` is
+`h`-periodic, for `h` the period of the coset of `±Γ` of `x`, then the geometric order at the cusp
+of that coset is the order of `f ∣[k] x⁻¹` in `q_h`. -/
+theorem geometricOrderAtCusp_mk_of_periodic (f : F) (x : 𝒮ℒ)
+    (hper : Periodic (((⇑f : ℍ → ℂ) ∣[k] (x : GL (Fin 2) ℝ)⁻¹) ∘ ofComplex)
+      (minimalPeriod (TSL • ·)
+        (QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ))) :
+    geometricOrderAtCusp f
+        (⟦(QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ)⟧ :
+          CuspTranslationOrbit (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ))) =
+      qExpansionOrderAtCusp (minimalPeriod (TSL • ·)
+          (QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ))
+        ((⇑f : ℍ → ℂ) ∣[k] (x : GL (Fin 2) ℝ)⁻¹) := by
+  have hbdd := SlashInvariantForm.isBoundedAtImInfty_quotientFunc f
+    (QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ)
+  have hmdiff := SlashInvariantForm.mdifferentiable_quotientFunc f
+    (QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ)
+  rw [_root_.SlashInvariantForm.quotientFunc_mk] at hbdd hmdiff
+  rw [geometricOrderAtCusp_mk,
+    orderAtCusp_eq_qExpansionOrderAtCusp (mod_cast Nat.pos_of_neZero _) hper hbdd hmdiff]
+
 /-- Per unit of width, the order at a cusp translation orbit of `Γ` is the geometric order at the
-cusp below it. -/
+cusp below it, read at a coset `q` of `Γ`
+(`orderAtCuspTranslationOrbit_div_width_eq_geometricOrderAtCusp_div_width` reads it at a
+representative). -/
 private lemma orderAtCuspTranslationOrbit_div_eq (f : F)
     (q : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) :
     (orderAtCuspTranslationOrbit f (⟦q⟧ : CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) :
@@ -409,6 +437,28 @@ private lemma orderAtCuspTranslationOrbit_div_eq (f : F)
   rw [orderAtCuspTranslationOrbit_mk, cuspTranslationOrbitWidth_mk, cuspTranslationOrbitWidth_mk,
     div_eq_div_iff hm.ne' hh.ne']
   linear_combination -hscale / 2
+
+/-- **The native order at a cusp translation orbit of `Γ`, per unit of width, is the geometric
+order at the cusp below it, per unit of width**: at the orbit of the coset of `Γ` of `x`, of width
+`m`, lying over the cusp of the coset of `±Γ` of `x`, of width `h`, the native order is `m / h`
+times the geometric order. -/
+theorem orderAtCuspTranslationOrbit_div_width_eq_geometricOrderAtCusp_div_width (f : F)
+    (x : 𝒮ℒ) :
+    (orderAtCuspTranslationOrbit f
+        (⟦(QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ)⟧ :
+          CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) : ℚ) /
+        cuspTranslationOrbitWidth
+          (⟦(QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ)⟧ :
+            CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) =
+      geometricOrderAtCusp f
+          (⟦(QuotientGroup.mk x :
+              𝒮ℒ ⧸ (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ)⟧ :
+            CuspTranslationOrbit (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ))) /
+        cuspTranslationOrbitWidth
+          (⟦(QuotientGroup.mk x :
+              𝒮ℒ ⧸ (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ)⟧ :
+            CuspTranslationOrbit (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ))) := by
+  rw [orderAtCuspTranslationOrbit_div_eq, Subgroup.quotientMapOfLE_apply_mk]
 
 /-- **The native cusp terms are `[±Γ : Γ]` times the geometric ones**: the orders of `f` at the
 cusp translation orbits of `Γ`, which the general-level valence formula sums, add up to
