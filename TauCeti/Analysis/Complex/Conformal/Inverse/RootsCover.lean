@@ -36,6 +36,8 @@ from the identity germ, which already shows at the third derivative of `J_2`.
 ## Main definitions
 
 * `TauCeti.inverseRatio N u`: the hypergeometric ratio `J_N(u)`.
+* `TauCeti.hypergeometricRatio N x`: the ratio `ρ_N(x)` of the two series, so that
+  `J_N(u) = u ρ_N(u ^ N)`.
 
 ## Main results
 
@@ -80,48 +82,57 @@ theorem inverseRatio_def (N : ℕ) (u : ℂ) :
         ₂F₁ (((N : ℂ) - 1) / (2 * N)) (((N : ℂ) - 1) / (2 * N))
           (2 * (((N : ℂ) - 1) / (2 * N))) (u ^ N) := (rfl)
 
-/-- The ratio of the two series in the variable `x = u ^ N`, so that `J_N(u) = u ρ_N(u ^ N)`. -/
-private noncomputable def seriesRatio (N : ℕ) (x : ℂ) : ℂ :=
+/-- The ratio `ρ_N(x) = ₂F₁(a₊, a₊; 2a₊; x) / ₂F₁(a₋, a₋; 2a₋; x)` of the two series in the
+variable `x = u ^ N`, with `a± = (N ± 1) / (2N)`, so that `J_N(u) = u ρ_N(u ^ N)`. -/
+noncomputable def hypergeometricRatio (N : ℕ) (x : ℂ) : ℂ :=
   ₂F₁ (((N : ℂ) + 1) / (2 * N)) (((N : ℂ) + 1) / (2 * N)) (2 * (((N : ℂ) + 1) / (2 * N))) x /
     ₂F₁ (((N : ℂ) - 1) / (2 * N)) (((N : ℂ) - 1) / (2 * N)) (2 * (((N : ℂ) - 1) / (2 * N)))
       x
 
-private theorem inverseRatio_eq_mul_seriesRatio (N : ℕ) (u : ℂ) :
-    inverseRatio N u = u * seriesRatio N (u ^ N) := by
-  rw [inverseRatio_def, seriesRatio, mul_div_assoc]
+/-- The defining formula of `TauCeti.hypergeometricRatio`. -/
+theorem hypergeometricRatio_def (N : ℕ) (x : ℂ) :
+    hypergeometricRatio N x =
+      ₂F₁ (((N : ℂ) + 1) / (2 * N)) (((N : ℂ) + 1) / (2 * N))
+          (2 * (((N : ℂ) + 1) / (2 * N))) x /
+        ₂F₁ (((N : ℂ) - 1) / (2 * N)) (((N : ℂ) - 1) / (2 * N))
+          (2 * (((N : ℂ) - 1) / (2 * N))) x := (rfl)
 
-private theorem seriesRatio_zero (N : ℕ) : seriesRatio N 0 = 1 := by
-  simp [seriesRatio]
+/-- `J_N(u) = u ρ_N(u ^ N)`. -/
+theorem inverseRatio_eq_mul_hypergeometricRatio (N : ℕ) (u : ℂ) :
+    inverseRatio N u = u * hypergeometricRatio N (u ^ N) := by
+  rw [inverseRatio_def, hypergeometricRatio_def, mul_div_assoc]
+
+/-- `ρ_N(0) = 1`. -/
+@[simp]
+theorem hypergeometricRatio_zero (N : ℕ) : hypergeometricRatio N 0 = 1 := by
+  simp [hypergeometricRatio_def]
 
 /-- Analyticity of `ρ_N` inside the unit disc, away from zeros of its denominator. -/
-private theorem analyticAt_seriesRatio (N : ℕ) {x : ℂ} (hx : ‖x‖ < 1)
+theorem analyticAt_hypergeometricRatio (N : ℕ) {x : ℂ} (hx : ‖x‖ < 1)
     (h : ₂F₁ (((N : ℂ) - 1) / (2 * N)) (((N : ℂ) - 1) / (2 * N))
       (2 * (((N : ℂ) - 1) / (2 * N))) x ≠ 0) :
-    AnalyticAt ℂ (seriesRatio N) x := by
+    AnalyticAt ℂ (hypergeometricRatio N) x := by
   have hx' : x ∈ Metric.ball (0 : ℂ) 1 := mem_ball_zero_iff.mpr hx
   exact (analyticOnNhd_ordinaryHypergeometric ℂ _ _ _ x hx').div
     (analyticOnNhd_ordinaryHypergeometric ℂ _ _ _ x hx') h
 
-private theorem analyticAt_seriesRatio_zero (N : ℕ) : AnalyticAt ℂ (seriesRatio N) 0 :=
-  analyticAt_seriesRatio N (by simp) (by simp)
+/-- `ρ_N` is an analytic germ at `0`. -/
+theorem analyticAt_hypergeometricRatio_zero (N : ℕ) :
+    AnalyticAt ℂ (hypergeometricRatio N) 0 :=
+  analyticAt_hypergeometricRatio N (by simp) (by simp)
 
 /-- By the quotient rule, `ρ_N'(0) = a₊ a₊ / (2a₊) - a₋ a₋ / (2a₋) = a₊ / 2 - a₋ / 2 = 1 / (2N)`,
 where `a a / (2a) = a / 2` also in the totalized case `a = 0`. -/
-private theorem deriv_seriesRatio_zero (N : ℕ) : deriv (seriesRatio N) 0 = 1 / (2 * N) := by
+theorem deriv_hypergeometricRatio_zero (N : ℕ) :
+    deriv (hypergeometricRatio N) 0 = 1 / (2 * N) := by
   have hnum := (analyticOnNhd_ordinaryHypergeometric ℂ (((N : ℂ) + 1) / (2 * N))
     (((N : ℂ) + 1) / (2 * N)) (2 * (((N : ℂ) + 1) / (2 * N))) 0 (by simp)).differentiableAt
   have hden := (analyticOnNhd_ordinaryHypergeometric ℂ (((N : ℂ) - 1) / (2 * N))
     (((N : ℂ) - 1) / (2 * N)) (2 * (((N : ℂ) - 1) / (2 * N))) 0 (by simp)).differentiableAt
-  have hfun : seriesRatio N = fun x ↦
-      ₂F₁ (((N : ℂ) + 1) / (2 * N)) (((N : ℂ) + 1) / (2 * N))
-          (2 * (((N : ℂ) + 1) / (2 * N))) x /
-        ₂F₁ (((N : ℂ) - 1) / (2 * N)) (((N : ℂ) - 1) / (2 * N))
-          (2 * (((N : ℂ) - 1) / (2 * N))) x := rfl
   have hhalf (a : ℂ) : a * a / (2 * a) = a / 2 := by
     rw [div_mul_eq_div_div_swap, mul_self_div_self]
-  rw [hfun, deriv_fun_div hnum hden (by simp), deriv_ordinaryHypergeometric_zero,
-    deriv_ordinaryHypergeometric_zero, hhalf, hhalf, ordinaryHypergeometric_zero,
-    ordinaryHypergeometric_zero]
+  rw [funext (hypergeometricRatio_def N), deriv_fun_div hnum hden (by simp)]
+  simp only [deriv_ordinaryHypergeometric_zero, ordinaryHypergeometric_zero, hhalf]
   rcases eq_or_ne (N : ℂ) 0 with hN | hN
   · simp [hN]
   · field_simp
@@ -136,8 +147,8 @@ theorem inverseRatio_zero (N : ℕ) : inverseRatio N 0 = 0 := by
 `J_N(u) / u` depends only on `u ^ N`. -/
 theorem inverseRatio_mul_of_pow_eq_one {N : ℕ} {ζ : ℂ} (hζ : ζ ^ N = 1) (u : ℂ) :
     inverseRatio N (ζ * u) = ζ * inverseRatio N u := by
-  rw [inverseRatio_eq_mul_seriesRatio, inverseRatio_eq_mul_seriesRatio, mul_pow, hζ, one_mul,
-    mul_assoc]
+  rw [inverseRatio_eq_mul_hypergeometricRatio, inverseRatio_eq_mul_hypergeometricRatio, mul_pow, hζ,
+    one_mul, mul_assoc]
 
 /-- `J_N` is analytic at every `u` with `‖u ^ N‖ < 1` at which the denominator series
 `₂F₁(a₋, a₋; 2a₋; u ^ N)` does not vanish. -/
@@ -145,15 +156,15 @@ theorem analyticAt_inverseRatio {N : ℕ} {u : ℂ} (hu : ‖u ^ N‖ < 1)
     (h : ₂F₁ (((N : ℂ) - 1) / (2 * N)) (((N : ℂ) - 1) / (2 * N))
       (2 * (((N : ℂ) - 1) / (2 * N))) (u ^ N) ≠ 0) :
     AnalyticAt ℂ (inverseRatio N) u := by
-  have hr : AnalyticAt ℂ (fun v : ℂ ↦ seriesRatio N (v ^ N)) u :=
-    (analyticAt_seriesRatio N hu h).comp_of_eq (by fun_prop) rfl
-  rw [funext (inverseRatio_eq_mul_seriesRatio N)]
+  have hr : AnalyticAt ℂ (fun v : ℂ ↦ hypergeometricRatio N (v ^ N)) u :=
+    (analyticAt_hypergeometricRatio N hu h).comp_of_eq (by fun_prop) rfl
+  rw [funext (inverseRatio_eq_mul_hypergeometricRatio N)]
   fun_prop
 
 /-- `J_N` is an analytic germ at `0`. -/
 theorem analyticAt_inverseRatio_zero (N : ℕ) : AnalyticAt ℂ (inverseRatio N) 0 := by
   rcases eq_or_ne N 0 with rfl | hN
-  · rw [funext (inverseRatio_eq_mul_seriesRatio 0)]
+  · rw [funext (inverseRatio_eq_mul_hypergeometricRatio 0)]
     simp only [pow_zero]
     fun_prop
   · exact analyticAt_inverseRatio (by simp [hN]) (by simp [hN])
@@ -164,13 +175,13 @@ theorem analyticAt_inverseRatio_zero (N : ℕ) : AnalyticAt ℂ (inverseRatio N)
 private theorem exists_inverseRatio_eq_add_pow_mul {N : ℕ} (hN : N ≠ 0) :
     ∃ q : ℂ → ℂ, AnalyticAt ℂ q 0 ∧ q 0 = 1 / (2 * N) ∧
       ∀ u, inverseRatio N u = u + u ^ (N + 1) * q u := by
-  refine ⟨fun u ↦ dslope (seriesRatio N) 0 (u ^ N), ?_, ?_, fun u ↦ ?_⟩
-  · refine AnalyticAt.comp (g := dslope (seriesRatio N) 0) ?_ (analyticAt_id.pow N)
-    simpa [hN] using (analyticAt_seriesRatio_zero N).dslope 0
-  · simp [hN, dslope_same, deriv_seriesRatio_zero]
-  · have h := sub_smul_dslope (seriesRatio N) 0 (u ^ N)
-    rw [sub_zero, smul_eq_mul, seriesRatio_zero] at h
-    rw [inverseRatio_eq_mul_seriesRatio, pow_succ', mul_assoc, h]
+  refine ⟨fun u ↦ dslope (hypergeometricRatio N) 0 (u ^ N), ?_, ?_, fun u ↦ ?_⟩
+  · refine AnalyticAt.comp (g := dslope (hypergeometricRatio N) 0) ?_ (analyticAt_id.pow N)
+    simpa [hN] using (analyticAt_hypergeometricRatio_zero N).dslope 0
+  · simp [hN, dslope_same, deriv_hypergeometricRatio_zero]
+  · have h := sub_smul_dslope (hypergeometricRatio N) 0 (u ^ N)
+    rw [sub_zero, smul_eq_mul, hypergeometricRatio_zero] at h
+    rw [inverseRatio_eq_mul_hypergeometricRatio, pow_succ', mul_assoc, h]
     ring
 
 /-- The iterated derivatives of `J_N` at `0` agree with those of `u ↦ u + u ^ (N + 1) q(u)`:
@@ -206,8 +217,7 @@ theorem iteratedDeriv_inverseRatio_zero_eq_zero {N k : ℕ} (hk : 2 ≤ k) (hkN 
     iteratedDeriv k (inverseRatio N) 0 = 0 := by
   obtain ⟨q, hq, -, hJ⟩ := exists_inverseRatio_eq_add_pow_mul (N := N) (by omega)
   rw [iteratedDeriv_inverseRatio_zero_eq hq hJ, Nat.descFactorial_of_lt (by omega)]
-  simp
-  omega
+  simp [show k ≠ 1 by omega]
 
 /-- The derivative of `J_N` of order `N + 1` at `0` is `(N + 1)! / (2N)`: the first correction
 to the identity germ is `u ^ (N + 1) / (2N)`. -/
