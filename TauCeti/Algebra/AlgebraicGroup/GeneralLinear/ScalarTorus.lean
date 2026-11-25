@@ -67,35 +67,26 @@ theorem weightCocharacterPoints_const_one {A : Type w} [CommRing A] [Algebra R A
 cocharacter with weights `w i * m`. -/
 theorem powCocharacter_weightCocharacter (w : Fin n → ℤ) (m : ℤ) :
     (weightCocharacter (R := R) w).powCocharacter m = weightCocharacter (fun i ↦ w i * m) := by
-  let σ : R[T;T⁻¹] →ₐ[R] R[T;T⁻¹] :=
-    AddMonoidAlgebra.mapDomainAlgHom R R (AddMonoidHom.mulRight m)
-  let p : WithConv (R[T;T⁻¹] →ₐ[R] R[T;T⁻¹]) := toConv (AlgHom.id R R[T;T⁻¹])
-  -- Both sides agree at the universal point `T` of `𝔾ₘ`: each is the diagonal point with
-  -- entries `T ^ (w i * m)`.
-  have hσ : MultiplicativeGroup.pointsMulEquiv (toConv σ) =
-      MultiplicativeGroup.pointsMulEquiv p ^ m := by
-    refine Units.ext ?_
-    rw [MultiplicativeGroup.pointsMulEquiv_apply, laurentEvalEquiv_symm_apply,
-      ofConv_toConv, ← (AlgHom.id R R[T;T⁻¹]).apply_laurentPolynomial_T_of_apply_T_one
-        (u := MultiplicativeGroup.pointsMulEquiv p) (by simp [p])]
-    -- `T n` is `single n 1`, on which `mapDomainAlgHom` acts through its domain map.
-    rw [AlgHom.id_apply, LaurentPolynomial.T, LaurentPolynomial.T,
-      AddMonoidAlgebra.mapDomainAlgHom_apply, AddMonoidAlgebra.mapDomain_single,
-      AddMonoidHom.mulRight_apply, one_mul]
-  have hpts : BialgHom.mapDomain (weightCocharacter (R := R) w) (toConv σ) =
-      BialgHom.mapDomain (weightCocharacter (R := R) (N := n) (fun i ↦ w i * m)) p := by
-    rw [mapDomain_weightCocharacter, mapDomain_weightCocharacter]
+  -- Both cocharacters send a unit `u` to the diagonal point with entries `u ^ (w i * m)`.
+  have hpts : ∀ u : (R[T;T⁻¹])ˣ,
+      Cocharacter.pointsHom R[T;T⁻¹] ((weightCocharacter (R := R) w).powCocharacter m) u =
+        Cocharacter.pointsHom R[T;T⁻¹] (weightCocharacter (R := R) (fun i ↦ w i * m)) u := by
+    intro u
+    rw [BialgHom.pointsHom_powCocharacter, Cocharacter.pointsHom_apply,
+      Cocharacter.pointsHom_apply, mapDomain_weightCocharacter, mapDomain_weightCocharacter]
     apply (pointsMulEquiv (R := R) (A := R[T;T⁻¹]) n).injective
-    rw [pointsMulEquiv_weightCocharacterPoints, pointsMulEquiv_weightCocharacterPoints, hσ]
+    rw [pointsMulEquiv_weightCocharacterPoints, pointsMulEquiv_weightCocharacterPoints,
+      ← MultiplicativeGroup.pointsMulEquiv_symm_apply, MulEquiv.apply_symm_apply,
+      ← MultiplicativeGroup.pointsMulEquiv_symm_apply, MulEquiv.apply_symm_apply]
     congr 1
     funext i
     rw [weightDiagonalUnits_apply, weightDiagonalUnits_apply, ← zpow_mul, mul_comm]
+  -- Read off coordinates at the generic point `T` of `𝔾ₘ`.
+  have hgen := congrArg WithConv.ofConv (hpts (LaurentPolynomial.genericUnit R))
+  rw [← Cocharacter.genericPoint_eq_pointsHom, ← Cocharacter.genericPoint_eq_pointsHom,
+    Cocharacter.genericPoint_ofConv, Cocharacter.genericPoint_ofConv] at hgen
   refine BialgHom.ext fun x ↦ ?_
-  have hx := congrArg (fun q ↦ q.ofConv x) hpts
-  simp only [BialgHom.mapDomain_apply_apply, p, σ, AlgHom.id_apply,
-    AddMonoidAlgebra.mapDomainAlgHom_apply, AddMonoidHom.coe_mulRight] at hx
-  rw [BialgHom.powCocharacter_apply]
-  exact hx
+  simpa using congrArg (fun f ↦ f x) hgen
 
 section Field
 
