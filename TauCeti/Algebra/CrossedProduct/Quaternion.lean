@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.CrossedProduct.BrauerClass
 public import TauCeti.Algebra.CrossedProduct.Quadratic
 public import TauCeti.Algebra.Quaternion.BrauerClass
-import TauCeti.FieldTheory.Galois.SquareRoot
+import TauCeti.FieldTheory.Galois.SquareRoot.Basic
 
 /-!
 # Quaternion algebras as crossed products

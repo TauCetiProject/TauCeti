@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Group.Subgroup.Lattice
+public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Data.Finset.Sort
 public import Mathlib.GroupTheory.Perm.Fin
 public import TauCeti.GroupTheory.Perm.Basic
@@ -47,9 +48,10 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
 * `TauCeti.sum_sign_smul_eq_sum_consFin`: reindex a signed permutation sum through ordered
   first-coordinate insertion, including dimension zero.
 * `Equiv.Perm.card_filter_val_lt`: a permutation of `Fin n` maps `min n m` indices below `m`.
-* `Equiv.Perm.eq_one_or_swap_fin_two`, `Equiv.Perm.univ_fin_two`, and
-  `Equiv.Perm.eq_ite_ne_one_fin_two`: every permutation of `Fin 2` is the identity or the
-  transposition, and these form the set of all permutations.
+* `Equiv.Perm.eq_one_or_swap_fin_two`, `Equiv.Perm.univ_fin_two`,
+  `Equiv.Perm.eq_ite_ne_one_fin_two`, and `Equiv.Perm.apply_comp_fin_two`: every permutation of
+  `Fin 2` is the identity or the transposition, these form the set of all permutations, and a
+  swap-invariant function of a pair is permutation-invariant.
 -/
 
 public section
@@ -232,6 +234,20 @@ theorem univ_fin_two :
 theorem eq_ite_ne_one_fin_two (σ : Equiv.Perm (Fin 2)) :
     σ = if σ ≠ 1 then Equiv.swap 0 1 else 1 := by
   rcases σ.eq_one_or_swap_fin_two with rfl | rfl <;> decide
+
+/-- A function of a pair that is unchanged by swapping the two entries is unchanged by every
+permutation of the entries. -/
+theorem apply_comp_fin_two {α β : Type*} (σ : Equiv.Perm (Fin 2)) {f : (Fin 2 → α) → β}
+    (hf : ∀ a b, f ![a, b] = f ![b, a]) (μ : Fin 2 → α) : f (μ ∘ σ) = f μ := by
+  rcases σ.eq_one_or_swap_fin_two with rfl | rfl
+  · rfl
+  · have hswap : μ ∘ Equiv.swap 0 1 = ![μ 1, μ 0] := by
+      ext i
+      fin_cases i <;> simp
+    have hμ : μ = ![μ 0, μ 1] := by
+      ext i
+      fin_cases i <;> simp
+    rw [hswap, ← hf, ← hμ]
 
 end Equiv.Perm
 

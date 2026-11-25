@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.NormedField
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basic
+public import TauCeti.RingTheory.Affinoid.SupSeminorm
 public import TauCeti.RingTheory.Valuation.Spectral
 
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
@@ -83,6 +85,8 @@ the points with maximal support.
 * `TauCeti.ValuationSpectrum.maximalSpectrumToSpa_injective` and
   `TauCeti.ValuationSpectrum.range_maximalSpectrumToSpa`: for `A` topologically of finite type over
   `K`, `Max(A)` embeds into `Spa (A, A°)`, with image the points whose support is maximal.
+* `TauCeti.ValuationSpectrum.maximalSpectrumToSpa_mem_spaBasicOpen_iff`: the classical point at
+  `x` lies in `R(T/s)` exactly when `|s(x)| ≠ 0` and `|t(x)| ≤ |s(x)|` for every `t ∈ T`.
 
 ## References
 
@@ -278,6 +282,24 @@ theorem range_maximalSpectrumToSpa :
   rintro ⟨𝔪, rfl⟩
   rw [Set.mem_ofPred_eq, supp_maximalSpectrumToSpa]
   exact 𝔪.isMaximal
+
+/-- **The classical points of a rational subset.** The classical point of a maximal ideal `x`
+lies in `R(T/s) ⊆ Spa (A, A°)` exactly when `|s(x)| ≠ 0` and `|t(x)| ≤ |s(x)|` for every
+`t ∈ T`. -/
+-- Not `@[simp]`: `mem_spaBasicOpen`, `mem_rationalSubset_iff` and `maximalSpectrumToSpa_vle_iff`
+-- already rewrite the left-hand side.
+theorem maximalSpectrumToSpa_mem_spaBasicOpen_iff (T : Finset A) (s : A) (x : MaximalSpectrum A) :
+    maximalSpectrumToSpa K hA x ∈ spaBasicOpen (powerBoundedSubring A) T s ↔
+      pointNorm K x s ≠ 0 ∧ ∀ t ∈ T, pointNorm K x t ≤ pointNorm K x s := by
+  have h (f : A) : pointNorm K x f =
+      spectralNorm K (A ⧸ x.asIdeal) (Ideal.Quotient.mk x.asIdeal f) :=
+    pointNorm_eq_spectralNorm (ψ := Ideal.Quotient.mkₐ K x.asIdeal)
+      (fun a ha ↦ (Ideal.Quotient.mkₐ_eq_mk K x.asIdeal ▸
+        Ideal.Quotient.eq_zero_iff_mem.mpr ha :)) f
+  rw [mem_spaBasicOpen, mem_rationalSubset_iff]
+  simp only [maximalSpectrumToSpa_vle_iff, map_zero, spectralNorm_zero, Subtype.coe_prop,
+    true_and, h]
+  rw [and_comm, ← h, ← (pointNorm_nonneg (K := K) s).lt_iff_ne', not_le]
 
 end TopologicallyFiniteType
 

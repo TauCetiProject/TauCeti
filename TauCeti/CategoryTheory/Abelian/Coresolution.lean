@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Homology.ExactSequence
 public import TauCeti.Algebra.Homology.ShortComplex.Exact
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.CategoryTheory.Exact.Injective
-public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 public import TauCeti.CategoryTheory.ObjectProperty.Syzygy
 
 /-!

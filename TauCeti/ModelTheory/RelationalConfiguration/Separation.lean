@@ -57,6 +57,8 @@ Two consequences follow directly from uniform separation:
 
 * `TauCeti.RelationalConfiguration.exists_uniform_bfSeparation`: an analytic set of non-isomorphic
   pairs on a countable carrier is uniformly separated at a single countable back-and-forth level.
+* `TauCeti.RelationalConfiguration.exists_uniform_bfSeparation_prod`: two analytic classes with no
+  isomorphic members are separated at a single countable back-and-forth level.
 * `TauCeti.RelationalConfiguration.exists_bfLevel_saturated_of_analyticSet`,
   `TauCeti.RelationalConfiguration.exists_bfLevel_mem_iff_of_analyticSet`, and
   `TauCeti.RelationalConfiguration.exists_bfLevel_mem_iff_of_measurableSet`: asymptotic saturation
@@ -367,6 +369,17 @@ theorem exists_uniform_bfSeparation [Countable V]
     rw [← hβ₀_eq, bfEquivSetoid_lift] at hnot
     rw [bfEquivSetoid_lift] at hbf
     exact hnot hbf
+
+/-- **Uniform back-and-forth separation of two classes.** If `B` and `C` are analytic sets of
+configurations on a countable carrier `V` and no member of `B` is isomorphic to a member of `C`,
+then a single countable ordinal `β < ω₁` makes no member of `B` back-and-forth equivalent at depth
+`β` to a member of `C`. -/
+theorem exists_uniform_bfSeparation_prod [Countable V] {B C : Set (RelationalConfiguration L V)}
+    (hB : AnalyticSet B) (hC : AnalyticSet C) (hdisj : ∀ c ∈ B, ∀ d ∈ C, ¬ isoSetoid L V c d) :
+    ∃ β : Ordinal.{o}, β < ω₁ ∧ ∀ c ∈ B, ∀ d ∈ C, ¬ bfEquivSetoid L V β c d := by
+  obtain ⟨β, hβ, hsep⟩ := exists_uniform_bfSeparation.{u, v, w, o} (hB.prod hC)
+    fun p hp => hdisj p.1 hp.1 p.2 hp.2
+  exact ⟨β, hβ, fun c hc d hd => hsep (c, d) ⟨hc, hd⟩⟩
 
 /-! ### Asymptotic saturation of analytic and Borel splits -/
 
