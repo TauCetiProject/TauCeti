@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Smooth.CompactSupport.OpenClosed
 public import TauCeti.Topology.LocallyConstant.CompactSupport.Filtration
+public import TauCeti.GroupTheory.GroupAction.SubMulAction
 
 /-!
 # The equivariant filtration of compactly supported functions by stable open subsets
@@ -93,15 +94,8 @@ theorem coe_compactlySupportedInIncl_apply (U : SubMulAction G X)
   simp [compactlySupportedInIncl]
 
 theorem compactlySupportedInIncl_injective (U : SubMulAction G X) :
-    Injective (compactlySupportedInIncl (R := R) (M := M) U) := fun f f' h => Subtype.ext <| by
-  simpa using congr_arg (fun F : LocallyConstant.compactlySupported R X M =>
-    (F : LocallyConstant X M)) h
-
-omit [TopologicalSpace X] [ContinuousConstSMul G X] in
-/-- The stratum `W ⊓ Vᶜ` of `G`-stable subsets is the set difference `W \ V`. -/
-theorem coe_inf_compl (V W : SubMulAction G X) :
-    ((W ⊓ Vᶜ : SubMulAction G X) : Set X) = (W : Set X) \ V :=
-  (rfl)
+    Injective (compactlySupportedInIncl (R := R) (M := M) U) :=
+  Submodule.inclusion_injective (LocallyConstant.compactlySupportedIn_le_compactlySupported _)
 
 /-- **Restriction to a stratum is equivariant**: for `G`-stable subsets `V` (open) and `W` of `X`,
 restriction from the functions vanishing off `W` to the stratum `W ∩ Vᶜ` intertwines the
@@ -109,15 +103,15 @@ translation representations. -/
 def compactlySupportedRestrictStratum (V W : SubMulAction G X) (hV : IsOpen (V : Set X)) :
     (compactlySupportedInRep R G M W).IntertwiningMap
       (compactlySupportedRep R G (W ⊓ Vᶜ : SubMulAction G X) M) where
-  toLinearMap := LocallyConstant.restrictStratum R M hV W (coe_inf_compl V W)
+  toLinearMap := LocallyConstant.restrictStratum R M hV W (SubMulAction.coe_inf_compl W V)
   isIntertwining' g := LinearMap.ext fun f => LocallyConstant.compactlySupported.ext fun z => by
-    simp [LocallyConstant.restrictStratum_apply hV (coe_inf_compl V W)]
+    simp [LocallyConstant.restrictStratum_apply hV (SubMulAction.coe_inf_compl W V)]
 
 @[simp]
 theorem toLinearMap_compactlySupportedRestrictStratum (V W : SubMulAction G X)
     (hV : IsOpen (V : Set X)) :
     (compactlySupportedRestrictStratum (R := R) (M := M) V W hV).toLinearMap =
-      LocallyConstant.restrictStratum R M hV W (coe_inf_compl V W) :=
+      LocallyConstant.restrictStratum R M hV W (SubMulAction.coe_inf_compl W V) :=
   (rfl)
 
 end Semiring
@@ -125,8 +119,7 @@ end Semiring
 section Ring
 
 variable {R G X M : Type*} [Ring R] [AddCommGroup M] [Module R M] [Group G]
-  [TopologicalSpace X] [MulAction G X] [ContinuousConstSMul G X] [T2Space X]
-  [WeaklyLocallyCompactSpace X] [TotallyDisconnectedSpace X]
+  [TopologicalSpace X] [MulAction G X] [ContinuousConstSMul G X]
 
 variable (R G M) in
 /-- The functions vanishing off `V` form a subrepresentation of those vanishing off `W`, so the
@@ -138,6 +131,15 @@ def compactlySupportedStratumRep (V W : SubMulAction G X) :
   (compactlySupportedInRep R G M W).quotient _ fun g _ hf =>
     translate_mem_compactlySupportedIn V g hf
 
+@[simp]
+theorem compactlySupportedStratumRep_mk (V W : SubMulAction G X) (g : G)
+    (f : LocallyConstant.compactlySupportedIn R M (W : Set X)) :
+    compactlySupportedStratumRep R G M V W g (Submodule.Quotient.mk f) =
+      Submodule.Quotient.mk (compactlySupportedInRep R G M W g f) :=
+  (rfl)
+
+variable [T2Space X] [WeaklyLocallyCompactSpace X] [TotallyDisconnectedSpace X]
+
 /-- **The successive quotients of the equivariant filtration**: for `G`-stable open subsets `V`
 and `W` of an l-space, restriction identifies the quotient of the functions vanishing off `W` by
 those vanishing off `V` with the translation representation on `C_c^∞(W ∩ Vᶜ, M)`. -/
@@ -145,23 +147,19 @@ def compactlySupportedStratumEquiv (V W : SubMulAction G X) (hV : IsOpen (V : Se
     (hW : IsOpen (W : Set X)) :
     (compactlySupportedStratumRep R G M V W).Equiv
       (compactlySupportedRep R G (W ⊓ Vᶜ : SubMulAction G X) M) :=
-  .mk (LocallyConstant.stratumEquiv R M hV hW (coe_inf_compl V W)) fun g =>
-    Submodule.linearMap_qext _ <| LinearMap.ext fun f => by
-      have h := LinearMap.congr_fun
-        ((compactlySupportedRestrictStratum (R := R) (G := G) (M := M) V W hV).isIntertwining' g) f
-      simp only [LinearMap.comp_apply, toLinearMap_compactlySupportedRestrictStratum] at h
-      have hq : compactlySupportedStratumRep R G M V W g (Submodule.Quotient.mk f) =
-          Submodule.Quotient.mk (compactlySupportedInRep R G M W g f) :=
-        rfl
-      simp only [LinearMap.comp_apply, Submodule.mkQ_apply, LinearEquiv.coe_coe, hq]
-      exact (LocallyConstant.stratumEquiv_mk hV hW _ _).trans
-        (h.trans (congrArg _ (LocallyConstant.stratumEquiv_mk hV hW _ f).symm))
+  .mk (LocallyConstant.stratumEquiv R M hV hW (SubMulAction.coe_inf_compl W V)) fun g =>
+    Submodule.linearMap_qext _ <| LinearMap.ext fun f =>
+      LocallyConstant.compactlySupported.ext fun z => by
+        simp only [LinearMap.comp_apply, Submodule.mkQ_apply, LinearEquiv.coe_coe,
+          compactlySupportedStratumRep_mk]
+        rw [LocallyConstant.stratumEquiv_mk, LocallyConstant.stratumEquiv_mk]
+        simp [LocallyConstant.restrictStratum_apply hV (SubMulAction.coe_inf_compl W V)]
 
 @[simp]
 theorem compactlySupportedStratumEquiv_mk (V W : SubMulAction G X) (hV : IsOpen (V : Set X))
     (hW : IsOpen (W : Set X)) (f : LocallyConstant.compactlySupportedIn R M (W : Set X)) :
     compactlySupportedStratumEquiv (R := R) (M := M) V W hV hW (Submodule.Quotient.mk f) =
-      LocallyConstant.restrictStratum R M hV W (coe_inf_compl V W) f :=
+      LocallyConstant.restrictStratum R M hV W (SubMulAction.coe_inf_compl W V) f :=
   (Representation.Equiv.mk_apply _ _).trans (LocallyConstant.stratumEquiv_mk _ _ _ _)
 
 end Ring

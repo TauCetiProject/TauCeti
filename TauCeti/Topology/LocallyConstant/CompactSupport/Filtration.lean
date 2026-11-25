@@ -15,9 +15,10 @@ import TauCeti.Topology.Spectral.Prespectral
 
 Let `X` be a topological space and `M` an `R`-module. For a subset `U ⊆ X`, the locally constant
 functions `X → M` with compact support that vanish off `U` form a submodule
-`LocallyConstant.compactlySupportedIn R M U` of `C_c^∞(X, M)`; for `U` open in a Hausdorff space
+`LocallyConstant.compactlySupportedIn R M U` of `LocallyConstant X M`, contained in `C_c^∞(X, M)`
+(`LocallyConstant.compactlySupportedIn_le_compactlySupported`); for `U` open in a Hausdorff space
 it is the image of extension by zero `C_c^∞(U, M) → C_c^∞(X, M)`
-(`LocallyConstant.range_extendByZero`).
+(`LocallyConstant.compactlySupported.range_subtype_comp_extendByZero`).
 A filtration of `X` by open subsets `∅ = U₀ ⊆ U₁ ⊆ ⋯ ⊆ Uₙ = X` therefore gives a filtration of
 `C_c^∞(X, M)` running from `0` to the whole module.
 
@@ -43,8 +44,8 @@ out by a compact open subset of `X` contained in `W`
 
 ## Main results
 
-* `LocallyConstant.range_extendByZero`: `C_c^∞(X, M)_U` is the image of extension by zero from an
-  open `U`.
+* `LocallyConstant.compactlySupported.range_subtype_comp_extendByZero`: `C_c^∞(X, M)_U` is the
+  image of extension by zero from an open `U`.
 * `LocallyConstant.compactlySupportedIn_empty`, `LocallyConstant.compactlySupportedIn_univ`,
   `LocallyConstant.compactlySupportedIn_monotone`: the filtration starts at `0`, ends at
   `C_c^∞(X, M)` and is monotone.
@@ -61,28 +62,6 @@ public section
 
 open Function Set Topology TopologicalSpace
 
-namespace TopologicalSpace.CompactOpens
-
-variable {X : Type*} [TopologicalSpace X] [PrespectralSpace X]
-
-/-- In a prespectral space, every compact open subset `K` of a subspace `Z` contained in an open set
-`U` is cut out of `Z` by a compact open subset of `X` contained in `U`. -/
-theorem exists_subset_preimage_subtypeVal_eq {Z U : Set X} (hU : IsOpen U) (hZU : Z ⊆ U)
-    (K : CompactOpens Z) :
-    ∃ W : CompactOpens X, (W : Set X) ⊆ U ∧ Subtype.val ⁻¹' (W : Set X) = (K : Set Z) := by
-  obtain ⟨V, hV, hVK⟩ := isOpen_induced_iff.1 K.isOpen
-  have hKV : Subtype.val '' (K : Set Z) ⊆ V ∩ U := by
-    rintro _ ⟨z, hz, rfl⟩
-    exact ⟨by rw [← hVK] at hz; exact hz, hZU z.property⟩
-  obtain ⟨W, hWc, hWo, hKW, hWV⟩ := PrespectralSpace.exists_isCompact_and_isOpen_between
-    (K.isCompact.image continuous_subtypeVal) (hV.inter hU) hKV
-  refine ⟨⟨⟨W, hWc⟩, hWo⟩, hWV.trans inter_subset_right,
-    Subset.antisymm ?_ (image_subset_iff.1 hKW)⟩
-  rw [← hVK]
-  exact preimage_mono (hWV.trans inter_subset_left)
-
-end TopologicalSpace.CompactOpens
-
 namespace LocallyConstant
 
 variable {R X M : Type*} [TopologicalSpace X]
@@ -94,7 +73,7 @@ variable [Semiring R] [AddCommMonoid M] [Module R M]
 variable (R M) in
 /-- The submodule `C_c^∞(X, M)_U` of locally constant functions `X → M` with compact support that
 vanish off `U`. For `U` open in a Hausdorff space it is the image of `C_c^∞(U, M)` under extension
-by zero (`LocallyConstant.range_extendByZero`). -/
+by zero (`LocallyConstant.compactlySupported.range_subtype_comp_extendByZero`). -/
 def compactlySupportedIn (U : Set X) : Submodule R (LocallyConstant X M) where
   carrier := {f | HasCompactSupport f ∧ ∀ x, x ∉ U → f x = 0}
   add_mem' hf hg := ⟨hf.1.add hg.1, fun x hx => by simp [hf.2 x hx, hg.2 x hx]⟩
@@ -143,9 +122,15 @@ theorem compactlySupportedIn_inter (U V : Set X) :
   · exact hV.2 x fun hxV => hx ⟨hxU, hxV⟩
   · exact hU.2 x hxU
 
+/-- The indicator `1_K • m` of a compact open set `K ⊆ U` lies in `C_c^∞(X, M)_U`. -/
+theorem compactOpenIndicator_mem_compactlySupportedIn [T2Space X] {U : Set X} {K : CompactOpens X}
+    (hKU : (K : Set X) ⊆ U) (m : M) : compactOpenIndicator K m ∈ compactlySupportedIn R M U :=
+  ⟨mem_compactlySupported.1 (compactOpenIndicator_mem_compactlySupported (R := R) K m),
+    fun _ hx => compactOpenIndicator_of_notMem (fun h => hx (hKU h)) m⟩
+
 /-- For an open subset `U` of a Hausdorff space, `C_c^∞(X, M)_U` is the image of extension by zero
 `C_c^∞(U, M) → C_c^∞(X, M)`. -/
-theorem range_extendByZero [T2Space X] {U : Set X} (hU : IsOpen U) :
+theorem compactlySupported.range_subtype_comp_extendByZero [T2Space X] {U : Set X} (hU : IsOpen U) :
     LinearMap.range ((compactlySupported R X M).subtype ∘ₗ
       compactlySupported.extendByZero R M hU) = compactlySupportedIn R M U := by
   ext f
@@ -219,37 +204,17 @@ theorem ker_restrictStratum (hV : IsOpen V) (W : Set X) (hS : S = W \ V) :
     exact compactlySupported.ext fun x => by simpa using hf.2 x x.property.2
 
 /-- In an l-space, restriction from `C_c^∞(X, M)_W` to the stratum `W \ V` is surjective for `W`
-open. -/
+open. A compact open subset of the stratum is cut out by a compact open subset of `X` contained in
+`W`, so the spanning indicators `1_K • m` of `C_c^∞(W \ V, M)` are restrictions. -/
 theorem restrictStratum_surjective [T2Space X] [WeaklyLocallyCompactSpace X]
     [TotallyDisconnectedSpace X] (hV : IsOpen V) {W : Set X} (hW : IsOpen W)
     (hS : S = W \ V) : Surjective (restrictStratum R M hV W hS) := by
-  subst hS
   have : PrespectralSpace X := .of_locallyCompactSpace_of_zeroDimensionalSpace
-  rw [← LinearMap.range_eq_top, eq_top_iff]
-  intro f _
-  have hf : (f : LocallyConstant (W \ V : Set X) M) ∈ Submodule.span R
-      (range fun p : CompactOpens (W \ V : Set X) × M => compactOpenIndicator p.1 p.2) := by
-    rw [← compactlySupported_eq_span]
-    exact f.property
-  suffices h : Submodule.span R
-      (range fun p : CompactOpens (W \ V : Set X) × M => compactOpenIndicator p.1 p.2) ≤
-      (LinearMap.range (restrictStratum R M hV W rfl)).map
-        (compactlySupported R (W \ V : Set X) M).subtype by
-    obtain ⟨g, hg, hgf⟩ := h hf
-    exact Submodule.subtype_injective _ hgf ▸ hg
-  refine Submodule.span_le.2 ?_
-  rintro _ ⟨⟨K, m⟩, rfl⟩
-  obtain ⟨K', hK'W, hK'⟩ := CompactOpens.exists_subset_preimage_subtypeVal_eq hW sdiff_subset K
-  have hmem : compactOpenIndicator K' m ∈ compactlySupportedIn R M W :=
-    ⟨mem_compactlySupported.1 (compactOpenIndicator_mem_compactlySupported (R := R) K' m),
-      fun x hx => by
-      simp [compactOpenIndicator_of_notMem (fun h => hx (hK'W h))]⟩
-  refine ⟨restrictStratum R M hV W rfl ⟨_, hmem⟩, LinearMap.mem_range_self _ _,
-    LocallyConstant.ext fun z => ?_⟩
-  have hzK : (z : X) ∈ (K' : Set X) ↔ z ∈ (K : Set (W \ V : Set X)) := by
-    rw [← hK', mem_preimage]
-  simp only [Submodule.coe_subtype, restrictStratum_apply, coe_compactOpenIndicator]
-  by_cases hz : z ∈ (K : Set (W \ V : Set X)) <;> simp [hz, hzK]
+  refine compactlySupported.surjective_of_forall_compactOpenIndicator _ fun K m => ?_
+  obtain ⟨K', hK'W, hK'⟩ :=
+    CompactOpens.exists_subset_preimage_subtypeVal_eq hW (hS.subset.trans sdiff_subset) K
+  exact ⟨⟨_, compactOpenIndicator_mem_compactlySupportedIn hK'W m⟩,
+    comap_subtypeVal_compactOpenIndicator hK' m⟩
 
 end Stratum
 
