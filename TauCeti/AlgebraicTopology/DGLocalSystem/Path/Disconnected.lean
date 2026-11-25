@@ -117,6 +117,17 @@ def derivedTensorLocalizerMorphism :
       (loopChainAugmentation B (β.point c) R).bimoduleDifferential)
     fun _ ↦ wellFounded_mem_support_semifreeResolution
 
+@[simp]
+theorem derivedTensorLocalizerMorphism_functor :
+    (DGLocalSystemFamily.derivedTensorLocalizerMorphism β R).functor =
+      twistedComplexFunctor
+        (fun c ↦ semifreeResolution (R := R) (A := loopChainAlgebra B (β.point c) R)
+          (cubicalChainGrading (MooreLoopSpace B (β.point c)) R)
+          (cubicalChainDifferential (MooreLoopSpace B (β.point c)) R)
+          (loopChainAugmentation B (β.point c) R).bimoduleGrading
+          (loopChainAugmentation B (β.point c) R).bimoduleDifferential) :=
+  (rfl)
+
 /-- The derived tensor product over the path components sends a family `(𝓕_c)` to the direct sum
 of the derived tensor products `𝓕_c ⊗^L R` (`TauCeti.derivedTensorLocalizerMorphism`) of its
 components. -/
@@ -125,9 +136,8 @@ theorem derivedTensorLocalizerMorphism_functor_obj (𝓕 : DGLocalSystemFamily.{
       ∐ fun c ↦ (TauCeti.derivedTensorLocalizerMorphism (loopChain_isDGAlgebra B (β.point c) R)
         (loopChainAugmentation B (β.point c) R).bimoduleGrading
         (loopChainAugmentation B (β.point c) R).bimoduleDifferential).functor.obj (𝓕 c) := by
-  simp only [TauCeti.derivedTensorLocalizerMorphism_functor,
-    RowFiniteTwistingCocycle.coefficientFunctor_obj]
-  rfl
+  simp only [derivedTensorLocalizerMorphism_functor, twistedComplexFunctor_obj,
+    TauCeti.derivedTensorLocalizerMorphism_functor, RowFiniteTwistingCocycle.coefficientFunctor_obj]
 
 end DGLocalSystemFamily
 

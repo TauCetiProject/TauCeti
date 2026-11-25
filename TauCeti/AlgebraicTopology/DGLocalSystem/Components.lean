@@ -318,10 +318,7 @@ theorem twistedComplexMap_twistedComplexContinuation
     twistedComplexMap m φ ≫ twistedComplexContinuation ν 𝓖 =
       twistedComplexContinuation ν 𝓕 ≫ twistedComplexMap m' φ := by
   refine twistedComplex_hom_ext m fun c ↦ ?_
-  rw [twistedComplexι_twistedComplexMap_assoc, twistedComplexι_twistedComplexContinuation,
-    twistedComplexι_twistedComplexContinuation_assoc, twistedComplexι_twistedComplexMap,
-    ← Category.assoc, ← Category.assoc,
-    RowFiniteContinuationCocycle.coefficientCochainComplexMap_comp_continuationHom]
+  simp [RowFiniteContinuationCocycle.coefficientCochainComplexMap_comp_continuationHom_assoc]
 
 variable {m} in
 /-- The continuation maps of a family of continuation cocycles `ν_c : m_c → m'_c`, as a natural
