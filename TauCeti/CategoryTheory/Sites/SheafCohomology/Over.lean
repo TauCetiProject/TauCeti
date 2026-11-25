@@ -143,9 +143,9 @@ lemma cohomologyPresheafObjIsoOver_resolutionClass {n : ℕ} (s : (K.X n).obj.ob
     (Sheaf.cohomologyPresheafEvaluationIsoFunctorH (J.over U) n
       (Over.mkIdTerminal (X := U))).hom.app (G.obj F)
       (Sheaf.H'.resolutionClass (G.map ι)
-        (map_augmentation_comp_d G K ι hι)
-        (map_augmentation_exact G K ι hι hι')
-        (map_exactAt_succ G K hK)
+        (map_augmentation_comp_d G hι)
+        (map_augmentation_exact G hι')
+        (map_exactAt_succ G hK)
         (Over.mk (𝟙 U)) s hs) := by
   let G := J.overPullback AddCommGrpCat.{v} U
   let KU : CochainComplex _ ℕ := (G.mapHomologicalComplex (.up ℕ)).obj K

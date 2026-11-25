@@ -66,6 +66,10 @@ Homology of complexes commutes with an additive functor preserving homology
 Mathlib's `CategoryTheory.ShortComplex.homologyFunctorIso`, and exactness of a mapped complex in
 degree `i` reduces to exactness of the mapped short complex `(K.sc i).map F`
 (`CategoryTheory.Functor.mapHomologicalComplex_obj_exactAt_iff`).
+A functor preserving homology sends an augmented cochain complex `F ⟶ K⁰ ⟶ K¹ ⟶ ⋯`, exact at
+`K⁰` and in positive degrees, to one with the same properties
+(`CochainComplex.map_augmentation_comp_d`, `CochainComplex.map_augmentation_exact` and
+`CochainComplex.map_exactAt_succ`).
 Every morphism between acyclic complexes is a quasi-isomorphism
 (`HomologicalComplex.quasiIso_of_acyclic`).
 
@@ -553,6 +557,35 @@ lemma mapHomologicalComplexCompHomologyFunctorIso_hom_app (K : HomologicalComple
   (rfl)
 
 end CategoryTheory.Functor
+
+/-! ### Augmented cochain complexes under functors -/
+
+namespace CochainComplex
+
+variable {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
+  (G : C ⥤ D) [G.PreservesZeroMorphisms] {F : C} {K : CochainComplex C ℕ} {ι : F ⟶ K.X 0}
+
+/-- A functor preserving zero morphisms keeps an augmentation `ι : F ⟶ K⁰` with `ι ≫ d⁰ = 0`
+composing to zero with the first differential of the mapped complex. -/
+lemma map_augmentation_comp_d (hι : ι ≫ K.d 0 1 = 0) :
+    G.map ι ≫ ((G.mapHomologicalComplex (.up ℕ)).obj K).d 0 1 = 0 := by
+  rw [Functor.mapHomologicalComplex_obj_d, ← G.map_comp, hι, G.map_zero]
+
+variable [G.PreservesHomology]
+
+/-- A functor preserving homology keeps `F ⟶ K⁰ ⟶ K¹` exact. -/
+lemma map_augmentation_exact {hι : ι ≫ K.d 0 1 = 0}
+    (hι' : (ShortComplex.mk ι (K.d 0 1) hι).Exact) :
+    (ShortComplex.mk _ _ (map_augmentation_comp_d G hι)).Exact :=
+  hι'.map G
+
+/-- A functor preserving homology keeps a cochain complex exact in every positive degree. -/
+lemma map_exactAt_succ (hK : ∀ j, K.ExactAt (j + 1)) (j : ℕ) :
+    ((G.mapHomologicalComplex (.up ℕ)).obj K).ExactAt (j + 1) :=
+  (HomologicalComplex.exactAt_iff' _ j (j + 1) (j + 2) (by simp) (by simp)).2
+    (((HomologicalComplex.exactAt_iff' K j (j + 1) (j + 2) (by simp) (by simp)).1 (hK j)).map G)
+
+end CochainComplex
 
 /-! ### Cycles and homology under exact functors -/
 

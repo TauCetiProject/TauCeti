@@ -40,30 +40,7 @@ variable {C : Type*} [Category* C] [Abelian C] {D : Type*} [Category* D] [Abelia
   (G : C ⥤ D) [G.Additive] [PreservesFiniteLimits G] [PreservesFiniteColimits G]
   {F : C} (K : CochainComplex C ℕ) (ι : F ⟶ K.X 0) [Mono ι] (hι : ι ≫ K.d 0 1 = 0)
   (hι' : (ShortComplex.mk ι (K.d 0 1) hι).Exact) (hK : ∀ j, K.ExactAt (j + 1))
-
-omit [HasExt.{w} C] [HasExt.{w'} D] [PreservesFiniteLimits G] [PreservesFiniteColimits G]
-  [Mono ι] in
-include hι in
-/-- An additive functor preserves the augmentation cycle equation. -/
-lemma map_augmentation_comp_d : G.map ι ≫ ((G.mapHomologicalComplex (.up ℕ)).obj K).d 0 1 = 0 := by
-  rw [Functor.mapHomologicalComplex_obj_d, ← G.map_comp, hι, G.map_zero]
-
-omit [HasExt.{w} C] [HasExt.{w'} D] [PreservesFiniteLimits G] [PreservesFiniteColimits G]
-  [Mono ι] in
-include hι' in
-/-- An exact functor preserves exactness at the augmentation. -/
-lemma map_augmentation_exact [G.PreservesHomology] :
-    (ShortComplex.mk _ _ (map_augmentation_comp_d G K ι hι)).Exact :=
-  hι'.map G
-
-omit [HasExt.{w} C] [HasExt.{w'} D] [PreservesFiniteLimits G] [PreservesFiniteColimits G] in
-include hK in
-/-- An exact functor preserves exactness in every positive resolution degree. -/
-lemma map_exactAt_succ [G.PreservesHomology] (j : ℕ) :
-    ((G.mapHomologicalComplex (.up ℕ)).obj K).ExactAt (j + 1) :=
-  (G.mapHomologicalComplex_obj_exactAt_iff K (j + 1)).2 ((hK j).map G)
-
-variable [Mono (G.map ι)] (hGι : G.map ι ≫ ((G.mapHomologicalComplex _).obj K).d 0 1 = 0)
+  [Mono (G.map ι)] (hGι : G.map ι ≫ ((G.mapHomologicalComplex _).obj K).d 0 1 = 0)
   (hGι' : (ShortComplex.mk (G.map ι) (((G.mapHomologicalComplex _).obj K).d 0 1) hGι).Exact)
   (hGK : ∀ j, ((G.mapHomologicalComplex _).obj K).ExactAt (j + 1))
 
@@ -145,14 +122,14 @@ include hι' hK in
 `f : L(P) ⟶ Kⁿ` to the class in `Extⁿ(P, G(F))` of the adjoint cocycle of `G(K)`. -/
 theorem extEquiv_extMk {P : D} {n : ℕ} (f : L.obj P ⟶ K.X n) (hf : f ≫ K.d n (n + 1) = 0) :
     adj.extEquiv (K.extMk ι hι hι' hK f hf) =
-      extMk (K := (G.mapHomologicalComplex _).obj K) (G.map ι) (map_augmentation_comp_d G K ι hι)
-        (map_augmentation_exact G K ι hι hι') (map_exactAt_succ G K hK)
+      extMk (K := (G.mapHomologicalComplex _).obj K) (G.map ι) (map_augmentation_comp_d G hι)
+        (map_augmentation_exact G hι') (map_exactAt_succ G hK)
         (adj.homEquiv P (K.X n) f) (by rw [Adjunction.homEquiv_unit,
           Functor.mapHomologicalComplex_obj_d, Category.assoc, ← G.map_comp, hf, G.map_zero,
           comp_zero]) := by
   rw [Adjunction.extEquiv_apply, K.mapExactFunctor_extMk G ι hι hι' hK
-    (map_augmentation_comp_d G K ι hι) (map_augmentation_exact G K ι hι hι')
-    (map_exactAt_succ G K hK), mk₀_comp_extMk]
+    (map_augmentation_comp_d G hι) (map_augmentation_exact G hι')
+    (map_exactAt_succ G hK), mk₀_comp_extMk]
   congr 1
 
 end Adjunction

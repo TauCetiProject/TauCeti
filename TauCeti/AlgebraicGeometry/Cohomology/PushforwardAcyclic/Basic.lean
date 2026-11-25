@@ -60,7 +60,7 @@ private def pushforwardResolutionCohomologyIso (P : InjectiveResolution M)
   haveI : Mono (G.map (P.ι.f 0)) := Functor.map_mono _ _
   exact Sheaf.H'.homologyIsoCohomologyPresheaf
     (K := (G.mapHomologicalComplex _).obj P.cocomplex)
-    (G.map (P.ι.f 0)) (P.map_ι_f_zero_comp_d G)
+    (G.map (P.ι.f 0)) (CochainComplex.map_augmentation_comp_d G P.ι_f_zero_comp_complex_d)
     (P.exact₀.map_of_mono_of_preservesKernel G inferInstance inferInstance)
     (fun q ↦ (exactAt_pushforward f P hM q).map (toSheaf Y))
     (fun V j k ↦ Scheme.Modules.subsingleton_cohomologyOn_succ_of_isFlasque
@@ -85,12 +85,12 @@ private lemma pushforwardResolutionCohomologyIso_naturality {N : X.Modules}
   exact Sheaf.H'.homologyMap_comp_homologyIsoCohomologyPresheaf_hom
     (K := (G.mapHomologicalComplex _).obj P.cocomplex)
     (K' := (G.mapHomologicalComplex _).obj Q.cocomplex)
-    (G.map (P.ι.f 0)) (P.map_ι_f_zero_comp_d G)
+    (G.map (P.ι.f 0)) (CochainComplex.map_augmentation_comp_d G P.ι_f_zero_comp_complex_d)
     (P.exact₀.map_of_mono_of_preservesKernel G inferInstance inferInstance)
     (fun q ↦ (exactAt_pushforward f P hM q).map (toSheaf Y))
     (fun V j k ↦ Scheme.Modules.subsingleton_cohomologyOn_succ_of_isFlasque
       ((Scheme.Modules.pushforward f).obj (P.cocomplex.X j)) k V) n
-    (G.map (Q.ι.f 0)) (Q.map_ι_f_zero_comp_d G)
+    (G.map (Q.ι.f 0)) (CochainComplex.map_augmentation_comp_d G Q.ι_f_zero_comp_complex_d)
     (Q.exact₀.map_of_mono_of_preservesKernel G inferInstance inferInstance)
     (fun q ↦ (exactAt_pushforward f Q hN q).map (toSheaf Y))
     (fun V j k ↦ Scheme.Modules.subsingleton_cohomologyOn_succ_of_isFlasque

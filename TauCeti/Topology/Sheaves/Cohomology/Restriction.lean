@@ -149,9 +149,9 @@ lemma cohomologyPresheafObjIsoSheafRestrictH_resolutionClass {n : ℕ} (s : (K.X
       isTerminalTop).hom.app
       (U.sheafRestrict.obj F)
       (Sheaf.H'.resolutionClass (U.sheafRestrict.map ι)
-        (CochainComplex.map_augmentation_comp_d U.sheafRestrict K ι hι)
-        (CochainComplex.map_augmentation_exact U.sheafRestrict K ι hι hι')
-        (CochainComplex.map_exactAt_succ U.sheafRestrict K hK) (⊤ : Opens U)
+        (CochainComplex.map_augmentation_comp_d U.sheafRestrict hι)
+        (CochainComplex.map_augmentation_exact U.sheafRestrict hι')
+        (CochainComplex.map_exactAt_succ U.sheafRestrict hK) (⊤ : Opens U)
         ((K.X n).obj.map (overTopMap U).left.op s)
         (HomologicalComplex.d_app_map_eq_zero
           (((sheafToPresheaf _ AddCommGrpCat.{u}).mapHomologicalComplex (.up ℕ)).obj K)
@@ -159,9 +159,9 @@ lemma cohomologyPresheafObjIsoSheafRestrictH_resolutionClass {n : ℕ} (s : (K.X
   let G := overRestriction U
   let KG := ((G.mapHomologicalComplex (.up ℕ)).obj K)
   let ιG := G.map ι
-  let hG := CochainComplex.map_augmentation_comp_d G K ι hι
-  let hG' := CochainComplex.map_augmentation_exact G K ι hι hι'
-  let hKG := CochainComplex.map_exactAt_succ G K hK
+  let hG := CochainComplex.map_augmentation_comp_d G hι
+  let hG' := CochainComplex.map_augmentation_exact G hι'
+  let hKG := CochainComplex.map_exactAt_succ G hK
   let xG := Sheaf.H'.resolutionClass ιG hG hG' hKG (Over.mk (𝟙 U)) s hs
   let t : (KG.X n).obj.obj (op (overTop U)) := (KG.X n).obj.map (overTopMap U).op s
   have ht : (KG.d n (n + 1)).hom.app (op (overTop U)) t = 0 :=
@@ -179,10 +179,9 @@ lemma cohomologyPresheafObjIsoSheafRestrictH_resolutionClass {n : ℕ} (s : (K.X
     AddCommGrpCat.{u}).functor
   let : Mono ιG := inferInstance
   let y : (E.obj (G.obj F)).H' n (⊤ : Opens U) :=
-    Sheaf.H'.resolutionClass (E.map ιG) (CochainComplex.map_augmentation_comp_d E KG ιG hG)
-      (CochainComplex.map_augmentation_exact E KG ιG hG hG') (CochainComplex.map_exactAt_succ E KG
-        hKG)
-      (⊤ : Opens U) t ht
+    Sheaf.H'.resolutionClass (E.map ιG) (CochainComplex.map_augmentation_comp_d E hG)
+      (CochainComplex.map_augmentation_exact E (K := KG) hG')
+      (CochainComplex.map_exactAt_succ E hKG) (⊤ : Opens U) t ht
   let xS := Sheaf.H'.resolutionClass ιG hG hG' hKG (overTop U) t ht
   let q : (E.obj (G.obj F)).H' n (⊤ : Opens U) ≅ (G.obj F).H' n (overTop U) :=
     (cohomologyPresheafEvaluationIsoSheafCongr (overTopology U) (subspaceTopology U)
