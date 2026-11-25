@@ -17,6 +17,7 @@ import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 public import TauCeti.Topology.Circle.AddCircle
 public import TauCeti.Topology.Circle.Degree
 public import TauCeti.Topology.Circle.Loop
+public import TauCeti.Topology.Homotopy.AddCircle
 
 /-!
 # Fundamental groups of additive and complex circles
@@ -57,6 +58,8 @@ transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
   `AddCircle p` (based at any point with a chosen lift) is `Multiplicative ℤ`.
 * `AddCircle.fundamentalGroupMulEquivZero`: the basepoint-`0` specialisation, using the lift
   `0 : ℝ`.
+* `AddCircle.periodLoop`, `AddCircle.fundamentalGroupMulEquivZero_fromPath_periodLoop`: for
+  `p ≠ 0` the loop `t ↦ t p` is sent to the generator `ofAdd 1`.
 * `AddCircle.fundamentalGroupMulEquiv_eq_windingNumberIso`: for positive periods the
   chosen-lift computation agrees with Mathlib, including the sign of the generator.
 * `Circle.fundamentalGroupMulEquiv`: `π₁(Circle, x) ≃* Multiplicative ℤ`.
@@ -267,6 +270,29 @@ lemma fundamentalGroupMulEquivZero_eq_one_iff (hp : p ≠ 0) (γ : FundamentalGr
       (AddCircle.isCoveringMap_coe p).monodromy γ.toPath ⟨0, by simp⟩ = ⟨0, by simp⟩ := by
   rw [fundamentalGroupMulEquivZero]
   exact fundamentalGroupMulEquiv_eq_one_iff p hp ⟨0, by simp⟩ γ
+
+/-- The loop `t ↦ t p` around `AddCircle p`, based at `0`, whose lift to `ℝ` from `0` ends at
+`p`: the identity map of the circle read as a based loop by `ContinuousMap.toLoop`. -/
+def periodLoop : Path (0 : AddCircle p) 0 :=
+  (ContinuousMap.id (AddCircle p)).toLoop
+
+/-- `AddCircle.periodLoop` sends `t` to the class of `t * p`. -/
+@[simp]
+theorem periodLoop_apply (t : unitInterval) : periodLoop p t = ((t * p : ℝ) : AddCircle p) :=
+  (ContinuousMap.id (AddCircle p)).toLoop_apply t
+
+/-- **The period loop generates the fundamental group.** For `p ≠ 0`, the class of
+`AddCircle.periodLoop` is the generator `1` of `π₁(AddCircle p, 0) ≃* Multiplicative ℤ`. -/
+theorem fundamentalGroupMulEquivZero_fromPath_periodLoop (hp : p ≠ 0) :
+    fundamentalGroupMulEquivZero p hp
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (periodLoop p))) =
+      Multiplicative.ofAdd 1 := by
+  rw [fundamentalGroupMulEquivZero_apply_eq_iff, toAdd_ofAdd, one_smul]
+  have h := (isCoveringMap_coe p).monodromy_eq_apply_one
+    (γ := periodLoop p) (e := ⟨0, by simp⟩)
+    (Γ := ⟨fun t : unitInterval ↦ (t : ℝ) * p, by fun_prop⟩)
+    (by funext t; simp) (by simp)
+  simpa using h
 
 /-- For positive periods, the chosen-lift equivalence agrees with Mathlib's winding-number
 isomorphism. In particular it is independent of the chosen lift and has the same orientation. -/

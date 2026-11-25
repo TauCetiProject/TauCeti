@@ -7,13 +7,16 @@ module
 
 public import Mathlib.Topology.Algebra.Module.LocallyConvex
 public import Mathlib.Topology.Instances.AddCircle.Real
+public import TauCeti.Topology.Algebra.Group.Quotient.LocallyPathConnected
 
 /-!
 # Real additive circles are locally path-connected
 
-For a real period `p`, `AddCircle p` is the quotient of the locally path-connected space `ℝ`, so it
-is locally path-connected (`AddCircle.instLocallyPathConnectedSpaceReal`), by Mathlib's
-`Quotient.locallyPathConnectedSpace`.
+For a real period `p`, `AddCircle p` is the quotient of the locally path-connected group `ℝ` by
+the subgroup `zmultiples p`, so it is locally path-connected
+(`AddCircle.instLocallyPathConnectedSpaceReal`), by
+`QuotientAddGroup.instLocallyPathConnectedSpace`. Instance search does not unfold the definition
+`AddCircle p`, so the instance is restated here.
 -/
 
 public section
@@ -22,6 +25,6 @@ namespace AddCircle
 
 /-- A real additive circle is locally path-connected, as a quotient of `ℝ`. -/
 instance instLocallyPathConnectedSpaceReal (p : ℝ) : LocallyPathConnectedSpace (AddCircle p) :=
-  Quotient.locallyPathConnectedSpace
+  QuotientAddGroup.instLocallyPathConnectedSpace _
 
 end AddCircle
