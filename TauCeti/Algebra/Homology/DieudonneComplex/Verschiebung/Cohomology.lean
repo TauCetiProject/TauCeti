@@ -203,10 +203,9 @@ lemma verschiebungQuotientMap_f_comp_verschiebungQuotientIsoHomology_hom
       (hM.verschiebungQuotientIsoHomology r n).hom ≫ homologyMap (quotSMulTopMap _ f.hom) n := by
   ext y
   obtain ⟨x, rfl⟩ := hM.toVerschiebungQuotient_f_surjective r n y
-  rw [AddCommGrpCat.comp_apply, AddCommGrpCat.comp_apply, verschiebungQuotientMap_f_apply,
-    verschiebungQuotientIsoHomology_hom_apply, verschiebungQuotientIsoHomology_hom_apply,
-    ← AddCommGrpCat.comp_apply _ (homologyMap _ n), homologyπ_naturality, AddCommGrpCat.comp_apply,
-    ← AddCommGrpCat.comp_apply _ (cyclesMap _ n), frobeniusIterateCycles_naturality,
+  simp only [AddCommGrpCat.comp_apply, verschiebungQuotientMap_f_apply,
+    verschiebungQuotientIsoHomology_hom_apply, addCommGrpCat_homologyMap_homologyπ_apply]
+  rw [← AddCommGrpCat.comp_apply _ (cyclesMap _ n), frobeniusIterateCycles_naturality,
     AddCommGrpCat.comp_apply]
 
 /-- The projection `M / pʳ M ⟶ W_r(M)`, which exists because `pʳ x = Vʳ (Fʳ x) ∈ Nʳ M`. -/
@@ -242,7 +241,7 @@ private lemma injective_homologyMap_quotSMulTopToVerschiebungQuotient :
   set Q := M.quotSMulTop (p ^ r)
   refine (injective_iff_map_eq_zero _).2 fun y hy ↦ ?_
   obtain ⟨z, rfl⟩ := Q.addCommGrpCat_homologyπ_surjective n y
-  rw [← AddCommGrpCat.comp_apply, homologyπ_naturality, AddCommGrpCat.comp_apply] at hy
+  rw [addCommGrpCat_homologyMap_homologyπ_apply] at hy
   obtain ⟨y', h⟩ := (addCommGrpCat_homologyπ_eq_zero_iff _ (CochainComplex.prev ℤ n) _).1 hy
   obtain ⟨w', rfl⟩ := hM.toVerschiebungQuotient_f_surjective r (n - 1) y'
   obtain ⟨w, hw, t, ht⟩ := exists_toQuotSMulTop_eq_iCycles (n + 1) z
@@ -269,8 +268,7 @@ private lemma surjective_homologyMap_quotSMulTopToVerschiebungQuotient :
   obtain ⟨x, hx⟩ := hM.toVerschiebungQuotient_f_surjective r n ((W.iCycles n).hom z)
   have hdx : (M.d n (n + 1)).hom x ∈ hM.verschiebungFiltration r (n + 1) := by
     rw [← toVerschiebungQuotient_f_apply_eq_zero_iff,
-      ← verschiebungQuotient_d_toVerschiebungQuotient_f_apply, hx, ← AddCommGrpCat.comp_apply,
-      iCycles_d, AddCommGrpCat.zero_apply]
+      ← verschiebungQuotient_d_toVerschiebungQuotient_f_apply, hx, addCommGrpCat_d_iCycles_apply]
   obtain ⟨y', w, hyw⟩ := (hM.mem_verschiebungFiltration_iff rfl).1 hdx
   obtain ⟨y'', hy''⟩ := hM.exists_pow_smul_eq_V_iterate_iff.2
     ⟨0, by simpa using (congrArg (M.d (n + 1) (n + 1 + 1)).hom hyw).symm⟩
@@ -280,7 +278,7 @@ private lemma surjective_homologyMap_quotSMulTopToVerschiebungQuotient :
       map_nsmul, smul_toQuotSMulTop_f_apply]
   obtain ⟨c, hc⟩ := addCommGrpCat_exists_iCycles_eq _ (CochainComplex.next ℤ n) _ hcyc
   refine ⟨((M.quotSMulTop (p ^ r)).homologyπ n).hom c, ?_⟩
-  rw [← AddCommGrpCat.comp_apply, homologyπ_naturality, AddCommGrpCat.comp_apply]
+  rw [addCommGrpCat_homologyMap_homologyπ_apply]
   refine congrArg _ (W.addCommGrpCat_iCycles_injective n ?_)
   rw [addCommGrpCat_iCycles_cyclesMap_apply, hc,
     quotSMulTopToVerschiebungQuotient_f_apply, ← hx, toVerschiebungQuotient_f_apply_eq_iff,

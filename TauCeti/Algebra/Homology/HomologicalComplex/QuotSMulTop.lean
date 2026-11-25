@@ -119,8 +119,7 @@ lemma exists_toQuotSMulTop_eq_iCycles {n : ι} (m : ι) (z : (K.quotSMulTop a).c
       ∃ t, a • t = (K.d n m).hom w := by
   obtain ⟨w, hw⟩ := K.toQuotSMulTop_f_surjective a n (((K.quotSMulTop a).iCycles n).hom z)
   refine ⟨w, hw, toQuotSMulTop_f_apply_eq_zero_iff.1 ?_⟩
-  rw [← quotSMulTop_d_toQuotSMulTop_f_apply, hw, ← AddCommGrpCat.comp_apply, iCycles_d,
-    AddCommGrpCat.zero_apply]
+  rw [← quotSMulTop_d_toQuotSMulTop_f_apply, hw, addCommGrpCat_d_iCycles_apply]
 
 section Desc
 
