@@ -76,8 +76,8 @@ theorem divX_mem_monicWeightedBox {n : ℕ} {X : ℝ} {f : ℤ[X]}
   have hdeg : f.divX.natDegree = n := by
     rw [natDegree_divX_eq_natDegree_tsub_one, hd, Nat.add_sub_cancel]
   refine ⟨?_, hdeg, fun i hi ↦ ?_⟩
-  · rw [Monic, leadingCoeff, hdeg, coeff_divX, ← hd]
-    exact hm
+  · rw [Monic.def, ← coeff_natDegree, hdeg, coeff_divX, ← hd]
+    exact hm.coeff_natDegree
   · rw [coeff_divX]
     simpa using hc (i + 1) (by omega)
 
@@ -99,7 +99,7 @@ private theorem monicWeightedBox_subset (n : ℕ) (X : ℝ) :
   · rw [← Finset.mem_coe, ← setOf_abs_intCast_lt_eq_Ioo]
     exact hc i hi
   · rw [Finset.mem_singleton, show (i : ℕ) = n by omega, ← hd]
-    exact hm
+    exact hm.coeff_natDegree
 
 /-- The weighted box is finite. -/
 theorem finite_monicWeightedBox (n : ℕ) (X : ℝ) : (monicWeightedBox n X).Finite :=
