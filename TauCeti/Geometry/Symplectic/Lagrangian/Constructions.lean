@@ -321,25 +321,21 @@ theorem Invariant.map_orthogonal (hJ : ω.Invariant J) (W : Submodule ℝ V) :
   hJ.isSymplectomorphism.map_orthogonal W
 
 /-- An `ω`-invariant almost complex structure preserves and reflects isotropic subspaces. -/
-@[simp]
 theorem Invariant.isIsotropic_map_iff (hJ : ω.Invariant J) {W : Submodule ℝ V} :
     ω.IsIsotropic (W.map J.toLinearMap) ↔ ω.IsIsotropic W :=
   hJ.isSymplectomorphism.isIsotropic_map_iff
 
 /-- An `ω`-invariant almost complex structure preserves and reflects coisotropic subspaces. -/
-@[simp]
 theorem Invariant.isCoisotropic_map_iff (hJ : ω.Invariant J) {W : Submodule ℝ V} :
     ω.IsCoisotropic (W.map J.toLinearMap) ↔ ω.IsCoisotropic W :=
   hJ.isSymplectomorphism.isCoisotropic_map_iff
 
 /-- An `ω`-invariant almost complex structure preserves and reflects Lagrangian subspaces. -/
-@[simp]
 theorem Invariant.isLagrangian_map_iff (hJ : ω.Invariant J) {W : Submodule ℝ V} :
     ω.IsLagrangian (W.map J.toLinearMap) ↔ ω.IsLagrangian W :=
   hJ.isSymplectomorphism.isLagrangian_map_iff
 
 /-- An `ω`-invariant almost complex structure preserves and reflects symplectic subspaces. -/
-@[simp]
 theorem Invariant.isSymplectic_map_iff (hJ : ω.Invariant J) {W : Submodule ℝ V} :
     ω.IsSymplectic (W.map J.toLinearMap) ↔ ω.IsSymplectic W :=
   hJ.isSymplectomorphism.isSymplectic_map_iff

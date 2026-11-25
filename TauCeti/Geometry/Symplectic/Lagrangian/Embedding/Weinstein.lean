@@ -40,11 +40,11 @@ with `f = Diffeomorph.refl` in
 
 1. When `Q` is empty, the empty open subsets are vacuously symplectomorphic. When `Q` is nonempty,
    `Q` is compact Hausdorff (`hi.isEmbedding.t2Space`), hence locally compact, so Riesz's theorem on
-   manifolds (`FiniteDimensional.of_locallyCompact_manifold`) gives `FiniteDimensional ℝ F`, and
-   `SymplecticForm.IsLagrangian.finite` gives `FiniteDimensional ℝ E`. Covering the compact image
-   `i(Q)` by finitely many chart domains (`ModelWithCorners.exists_opens_secondCountableTopology`)
-   produces a second-countable open neighborhood `M₀ : Opens M` of `i(Q)` to which `σ` and `i`
-   restrict.
+   manifolds (`FiniteDimensional.of_locallyCompact_manifold`) and
+   `SymplecticForm.IsLagrangian.finite` give `FiniteDimensional ℝ F` and `FiniteDimensional ℝ E`
+   (`IsLagrangianEmbedding.finiteDimensional`). Covering the compact image `i(Q)` by finitely many
+   chart domains (`ChartedSpace.exists_opens_secondCountableTopology`) produces a second-countable
+   open neighborhood `M₀ : Opens M` of `i(Q)` to which `σ` and `i` restrict.
 2. On `M₀`, choose a `σ|_{M₀}`-compatible smooth almost complex structure `J`
    (`SmoothTwoForm.IsNondegenerate.exists_compatible`) and endow `TM₀` with its smooth compatible
    Riemannian metric `g_x(u, w) = σ_x(u, J x w)` (`SmoothTwoForm.Compatible.metric`).
@@ -433,25 +433,6 @@ private theorem exists_cotangent_normalExp_mpullback_eq_along
       (f.mpullback_normalExp_comp_normalBundleDiffeomorph_symm_zeroSection hf hdim q hiso)
       hΨexp
 
-/-- A nonempty compact manifold admitting a Lagrangian embedding into a Hausdorff symplectic
-manifold has finite-dimensional model space, as does the ambient symplectic manifold. -/
-private theorem finiteDimensional_of_isLagrangianEmbedding
-    {E H M F H' Q : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-    {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-    [T2Space M]
-    [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H']
-    {J : ModelWithCorners ℝ F H'} [TopologicalSpace Q] [ChartedSpace H' Q]
-    [CompactSpace Q] [Nonempty Q]
-    {σ : SmoothTwoForm I M} {hσ : σ.IsNondegenerate}
-    {i : Q → M} (hi : hσ.IsLagrangianEmbedding J i) :
-    FiniteDimensional ℝ F ∧ FiniteDimensional ℝ E := by
-  have : T2Space Q := hi.isEmbedding.t2Space
-  have : FiniteDimensional ℝ F := .of_locallyCompact_manifold Q J
-  obtain ⟨q₀⟩ := ‹Nonempty Q›
-  have hL := SmoothTwoForm.IsNondegenerate.isLagrangianMap_iff_forall.1 hi.isLagrangianMap q₀
-  exact ⟨inferInstance, hL.finite⟩
-
 end WeinsteinHelpers
 
 namespace SmoothTwoForm.IsSymplectic
@@ -483,11 +464,13 @@ theorem exists_diffeomorph_opens_cotangent_of_isLagrangianEmbedding
         SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ := by
   by_cases hQ : Nonempty Q
   · have : Nonempty Q := hQ
-    obtain ⟨hF, hE⟩ := finiteDimensional_of_isLagrangianEmbedding hi
+    obtain ⟨hF, hE⟩ := hi.finiteDimensional
     have : FiniteDimensional ℝ F := hF
     have : FiniteDimensional ℝ E := hE
+    have : SecondCountableTopology H := I.secondCountableTopology
     obtain ⟨M₀, hM₀, hM₀sc⟩ :=
-      I.exists_opens_secondCountableTopology (isCompact_range hi.isEmbedding.continuous)
+      ChartedSpace.exists_opens_secondCountableTopology H
+        (isCompact_range hi.isEmbedding.continuous)
     have : SecondCountableTopology M₀ := hM₀sc
     let i₀ : Q → M₀ := fun q ↦ ⟨i q, hM₀ (mem_range_self q)⟩
     have hσ₀ := hσ.mpullback_subtype_val M₀
@@ -515,8 +498,10 @@ theorem exists_diffeomorph_opens_cotangent_of_isLagrangianEmbedding
       exact ⟨hiU, (congrArg (fun z ↦ (φ₀ z : CotangentBundle J Q)) hinc).trans hval₀⟩
     · rw [SmoothForm.mpullback_trans, hform₀, SmoothForm.mpullback_opensImage_symm]
   · have : IsEmpty Q := not_nonempty_iff.1 hQ
-    exact SmoothForm.exists_diffeomorph_opens_of_isEmpty σ (CotangentBundle.symplecticForm J Q) i
-      (fun q ↦ TotalSpace.mk' (F →L[ℝ] ℝ) q 0)
+    have : IsEmpty (⊥ : Opens M) := ⟨fun x ↦ x.property⟩
+    have : IsEmpty (⊥ : Opens (CotangentBundle J Q)) := ⟨fun y ↦ y.property⟩
+    exact ⟨⊥, ⊥, ⟨Equiv.equivOfIsEmpty _ _, fun x ↦ isEmptyElim x, fun y ↦ isEmptyElim y⟩,
+      fun q ↦ isEmptyElim q, Subtype.ext (funext fun x ↦ isEmptyElim x)⟩
 
 /-- **Equivalence of Lagrangian neighborhoods over a diffeomorphism** (Cannas da Silva, Theorem 8.4,
 p. 48). Given a compact boundaryless Lagrangian embedding `i : Q → (M, σ)`, a boundaryless

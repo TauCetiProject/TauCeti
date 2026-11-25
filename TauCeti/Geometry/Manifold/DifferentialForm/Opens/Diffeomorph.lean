@@ -28,8 +28,6 @@ subsets of manifolds:
 * `TauCeti.SmoothForm.exists_diffeomorph_opens_of_le`: shrinking the target of a form-intertwining
   open-subset diffeomorphism `φ : U₁ ≃ₘ V₁` to an open subset `O ≤ V₁` restricts `φ` to an open
   subset `U ≤ U₁` while preserving the pullback identity.
-* `TauCeti.SmoothForm.exists_diffeomorph_opens_of_isEmpty`: vacuous open-neighborhood
-  form-intertwining diffeomorphism `⊥ ≃ₘ ⊥` over an empty index type `Q`.
 -/
 
 public section
@@ -166,27 +164,5 @@ theorem exists_diffeomorph_opens_of_le
     contMDiff_subtypeVal (contMDiff_subtypeVal.comp φ.contMDiff) hcomp,
     ← mpullback_mpullback φ (Subtype.val : V₁ → M') φ.contMDiff contMDiff_subtypeVal,
     hform, mpullback_opensImage_symm]
-
-/-- When `Q` is empty, the empty open subsets `⊥` of `M` and `M'` are vacuously diffeomorphic via a
-diffeomorphism pulling `τ|_⊥` back to `σ|_⊥` and sending `i q` to `j q` for every `q : Q`. -/
-theorem exists_diffeomorph_opens_of_isEmpty {Q : Type*} [IsEmpty Q]
-    (σ : SmoothForm I M F k) (τ : SmoothForm I' M' F k) (i : Q → M) (j : Q → M') :
-    ∃ (U : Opens M) (V : Opens M') (φ : U ≃ₘ⟮I, I'⟯ V),
-      (∀ q, ∃ h : i q ∈ U, (φ ⟨i q, h⟩ : M') = j q) ∧
-      mpullback φ φ.contMDiff
-          (mpullback (Subtype.val : V → M') contMDiff_subtypeVal τ) =
-        mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ := by
-  let U : Opens M := ⊥
-  let V : Opens M' := ⊥
-  have : IsEmpty U := ⟨fun x ↦ x.property⟩
-  have : IsEmpty V := ⟨fun y ↦ y.property⟩
-  let φ : U ≃ₘ⟮I, I'⟯ V :=
-    { toEquiv := Equiv.equivOfIsEmpty U V
-      contMDiff_toFun := fun x ↦ IsEmpty.elim inferInstance x
-      contMDiff_invFun := fun y ↦ IsEmpty.elim inferInstance y }
-  refine ⟨U, V, φ, fun q ↦ IsEmpty.elim ‹IsEmpty Q› q, ?_⟩
-  apply Subtype.ext
-  funext x
-  exact IsEmpty.elim inferInstance x
 
 end TauCeti.SmoothForm
