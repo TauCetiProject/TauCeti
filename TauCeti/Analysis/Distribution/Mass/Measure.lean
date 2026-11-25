@@ -24,7 +24,7 @@ the subtype `Ω`, finite on compact subsets of `Ω`, such that:
   `|T φ|` over the tests `φ` supported in `U` with `‖φ x‖ ≤ 1`; in particular `‖T‖ Ω = mass T`;
 * `|T φ| ≤ ∫ ‖φ‖ d‖T‖` for every test `φ`;
 * `‖T‖` is the least outer regular measure with this domination property; in particular
-  `‖S₁ + S₂‖ ≤ ‖S₁‖ + ‖S₂‖`.
+  `‖S₁ + S₂‖ ≤ ‖S₁‖ + ‖S₂‖` for `S₁`, `S₂` of locally finite mass.
 
 The measure lives on `Ω` and not on `E`: it need not be finite near the frontier of `Ω`. None of
 this uses finite dimension: on an infinite-dimensional space every test function is zero, so
@@ -55,7 +55,8 @@ them by open sets of almost the same measure.
   `L M(T)`.
 * `Distribution.enorm_apply_le_lintegral_massMeasure`: the domination `|T φ| ≤ ∫ ‖φ‖ d‖T‖`.
 * `Distribution.massMeasure_le_of_enorm_apply_le`: minimality among outer regular measures.
-* `Distribution.massMeasure_add_le`, `Distribution.massMeasure_sub_le`: `‖S₁ ± S₂‖ ≤ ‖S₁‖ + ‖S₂‖`.
+* `Distribution.massMeasure_add_le`, `Distribution.massMeasure_sub_le`: `‖S₁ ± S₂‖ ≤ ‖S₁‖ + ‖S₂‖`
+  for `S₁`, `S₂` of locally finite mass.
 * `Distribution.massMeasure_neg`: `‖-S‖ = ‖S‖`.
 
 ## References

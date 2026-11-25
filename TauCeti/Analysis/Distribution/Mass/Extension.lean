@@ -31,8 +31,8 @@ finite mass (`Distribution.massRestrict`). For `T` of locally finite mass, its m
 exactly `‖T‖` restricted to `A`, and its total mass is `‖T‖ A`, even when this value is infinite.
 Thus a Borel restriction of a finite-mass current has finite mass. It vanishes exactly when
 `‖T‖ A = 0`, is additive on disjoint sets, and is `T` itself for `A = Ω`. Its boundary need not
-have locally finite mass. Conversely, a splitting `T = R + R'` into maps whose mass measures are
-`‖T‖ ⌞ A` and `‖T‖ ⌞ Aᶜ` has `R = T ⌞ A`.
+have locally finite mass. Conversely, a splitting `T = R + R'` into maps of locally finite mass
+whose mass measures are `‖T‖ ⌞ A` and `‖T‖ ⌞ Aᶜ` has `R = T ⌞ A`.
 
 ## Main declarations
 
@@ -45,8 +45,8 @@ have locally finite mass. Conversely, a splitting `T = R + R'` into maps whose m
   bounds `M(T ⌞ A) ≤ ‖T‖ A` and `‖T ⌞ A‖ ≤ ‖T‖ ⌞ A`.
 * `Distribution.massMeasure_massRestrict`, `Distribution.mass_massRestrict`: exact mass-measure
   localization and total mass for `T` of locally finite mass.
-* `Distribution.massRestrict_eq_of_massMeasure_eq`: `T = R + R'` with `‖R‖ = ‖T‖ ⌞ A` and
-  `‖R'‖ = ‖T‖ ⌞ Aᶜ` forces `T ⌞ A = R`.
+* `Distribution.massRestrict_eq_of_massMeasure_eq`: `T = R + R'` with `R`, `R'` of locally finite
+  mass, `‖R‖ = ‖T‖ ⌞ A` and `‖R'‖ = ‖T‖ ⌞ Aᶜ` forces `T ⌞ A = R`.
 * `Distribution.massRestrict_eq_zero_iff`: a restriction of `T` of locally finite mass vanishes
   exactly on sets of zero mass measure.
 * `Distribution.massRestrict_apply_eq_zero_of_ae`, `Distribution.massRestrict_apply_eq_apply_of_ae`:
