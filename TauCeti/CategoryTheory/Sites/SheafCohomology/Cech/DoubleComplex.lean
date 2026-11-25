@@ -166,6 +166,13 @@ private lemma cechDoubleComplexToTarget_row (I : CochainComplex (Cᵒᵖ ⥤ A) 
       (opFunctor A (ComplexShape.up ℕ)).map ((cechAugmentationNatTrans U hT).app (I.X q)).op :=
   (rfl)
 
+/-- The component of `cechDoubleComplexToTarget` in bidegree `(0, q)` is the opposite of the
+degree `0` component of the augmentation of the Čech complex `Č(U, Iᵠ)`. -/
+private lemma cechDoubleComplexToTarget_f_zero_f (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (q : ℕ) :
+    ((cechDoubleComplexToTarget U hT I).f 0).f q = ((cechAugmentation U hT (I.X q)).f 0).op := by
+  rw [← cechAugmentationNatTrans_app]
+  rfl
+
 /-- The identification of the column `0` of `cechDoubleComplexTarget T I` with the opposite of the
 complex of sections `I(T)`. -/
 private def cechDoubleComplexTargetXZeroIso (T : C) (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) :
@@ -174,6 +181,14 @@ private def cechDoubleComplexTargetXZeroIso (T : C) (I : CochainComplex (Cᵒᵖ
     (fun q ↦ (HomologicalComplex.singleObjXSelf (ComplexShape.up ℕ) 0
       ((I.X q).obj (op T))).symm.op)
     (fun q q' _ ↦ by simp)
+
+omit [HasFiniteProducts C] [HasProducts.{w} A] in
+/-- The component of `cechDoubleComplexTargetXZeroIso T I` in degree `q` is the opposite of the
+identification of the degree `0` term of the complex placed in degree `0`. -/
+private lemma cechDoubleComplexTargetXZeroIso_hom_f (T : C) (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ)
+    (q : ℕ) : (cechDoubleComplexTargetXZeroIso T I).hom.f q =
+      (HomologicalComplex.singleObjXSelf (ComplexShape.up ℕ) 0 ((I.X q).obj (op T))).inv.op :=
+  (rfl)
 
 omit [HasFiniteProducts C] [HasProducts.{w} A] in
 /-- The columns `p + 1` of `cechDoubleComplexTarget T I` vanish. -/
@@ -206,16 +221,10 @@ lemma presheafCechDoubleComplexAugmentation_f (I : CochainComplex (Cᵒᵖ ⥤ A
     (presheafCechDoubleComplexAugmentation U hT I).f q =
       ((HomologicalComplex.singleObjXSelf (ComplexShape.up ℕ) 0 ((I.X q).obj (op T))).inv ≫
         (cechAugmentation U hT (I.X q)).f 0).op := by
-  simp only [op_X, Functor.mapHomologicalComplex_obj_X, evaluation_obj_obj,
-    presheafCechDoubleComplexAugmentation, cechDoubleComplexToTarget, cechOpAugmentation,
-    cechDoubleComplexTargetXZeroIso, CochainComplex.single₀_obj_zero,
-    CochainComplex.single₀ObjXSelf, Iso.refl_symm, Iso.op_refl, comp_f,
-    HomologicalComplex₂.flip_X_X, Functor.comp_obj, Functor.op_obj, opFunctor_obj,
-    HomologicalComplex₂.flipFunctor_map_f_f, NatTrans.mapHomologicalComplex_app_f,
-    Functor.whiskerRight_app, NatTrans.op_app, cechAugmentationNatTrans_app, opFunctor_map_f,
-    Quiver.Hom.unop_op, Hom.isoOfComponents_hom_f, Iso.refl_hom, Iso.refl_inv, Category.id_comp]
-  -- the remaining identity is that of the degree `0` term of the complex placed in degree `0`
-  exact Category.comp_id _
+  rw [presheafCechDoubleComplexAugmentation, HomologicalComplex.comp_f,
+    cechDoubleComplexToTarget_f_zero_f, cechDoubleComplexTargetXZeroIso_hom_f, op_comp]
+  -- the two sides differ only in how the degree `0` term of the single complex is written
+  rfl
 
 /-- The augmentation of the column `0` vanishes on the image of the horizontal differential. -/
 @[reassoc (attr := simp)]

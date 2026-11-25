@@ -199,14 +199,11 @@ private lemma quasiIso_cechAugmentation_of_quasiIso_prod
     (P := restrictionFunctor P ⋙ (evaluation Cᵒᵖ A).obj (op T))
     (Functor.whiskerLeft (restrictionFunctor P) (cechAugmentationNatTrans V hT)) ?_
     (fun n a ↦ by
-      simpa only [Functor.comp_obj, Functor.op_obj, Functor.opHom_obj,
-        Functor.whiskeringRight_obj_obj, evaluation_obj_obj, prod.functor_obj_obj,
-        Functor.whiskerLeft_app, cechAugmentationNatTrans_app] using hVU n a)
+      rw [Functor.whiskerLeft_app, cechAugmentationNatTrans_app]
+      exact hVU n a)
     fun k ↦ ?_
-  · simpa only [Functor.comp_obj, Functor.op_obj, Functor.opHom_obj,
-      Functor.whiskeringRight_obj_obj, evaluation_obj_obj, prod.functor_obj_obj,
-      Functor.whiskerLeft_app, cechAugmentationNatTrans_app] using
-      (quasiIso_cechAugmentation_iff_of_iso V hT _ (terminalRestrictionIso hT P)).2 hV
+  · rw [Functor.whiskerLeft_app, cechAugmentationNatTrans_app]
+    exact (quasiIso_cechAugmentation_iff_of_iso V hT _ (terminalRestrictionIso hT P)).2 hV
   · rw [quasiIso_cechAugmentation_iff_of_iso U hT _ (cechTermIso P V k)]
     exact quasiIso_cechAugmentation_pi U hT _ fun b ↦
       (quasiIso_cechAugmentation_iff_of_iso U hT _ (restrictionBraidingIso P _)).2 (hUV k b)
