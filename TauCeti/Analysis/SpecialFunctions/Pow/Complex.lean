@@ -10,6 +10,8 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.Calculus.Deriv.Mobius
@@ -111,6 +113,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `Complex.cpow_sub_natCast_mul_sum_mul_pow` -- reversing a finite sum of powers:
   `z^{a−n} ∑_{k<n} f(n − 1 − k) z^k = z^{a−1} ∑_{k<n} f(k) / z^k` for `z ≠ 0`.
 * `Complex.norm_ofReal_cpow_le_exp` -- for `a > 0`, `‖a ^ w‖ ≤ exp (|log a| ‖w‖)`.
+* `Complex.norm_ofReal_cpow_sub_ofReal_cpow_le` -- for `b ≥ 1` and exponents with `re ≤ M`,
+  `‖b ^ z - b ^ w‖ ≤ log b · b ^ M · ‖z - w‖`.
 * `Complex.hasDerivAt_add_cpow_mul_exp_mul` -- the derivative of `w ↦ (w + c) ^ b e^{k w}` where
   `z + c` is in the slit plane.
 * `Complex.norm_one_sub_mul_ofReal_cpow_le` -- for `‖z‖ ≤ 1`, `0 ≤ t < 1`, and any `s : ℂ`,
@@ -809,6 +813,21 @@ theorem norm_ofReal_cpow_le_exp {a : ℝ} (ha : 0 < a) (w : ℂ) :
   exact Real.exp_le_exp.mpr <| (le_abs_self _).trans <| by
     rw [abs_mul]
     exact mul_le_mul_of_nonneg_left (abs_re_le_norm w) (abs_nonneg _)
+
+/-- For a real base `b ≥ 1`, the principal power `b ^ z` is Lipschitz in the exponent on each
+half-plane `re z ≤ M`, with constant `log b · b ^ M`:
+`‖b ^ z - b ^ w‖ ≤ log b · b ^ M · ‖z - w‖` when `re z ≤ M` and `re w ≤ M`. -/
+theorem norm_ofReal_cpow_sub_ofReal_cpow_le {b : ℝ} (hb : 1 ≤ b) {z w : ℂ} {M : ℝ}
+    (hz : z.re ≤ M) (hw : w.re ≤ M) :
+    ‖(b : ℂ) ^ z - (b : ℂ) ^ w‖ ≤ Real.log b * b ^ M * ‖z - w‖ := by
+  have hb0 : 0 < b := zero_lt_one.trans_le hb
+  refine Convex.norm_image_sub_le_of_norm_hasDerivWithin_le (f := fun x : ℂ => (b : ℂ) ^ x)
+    (s := {x : ℂ | x.re ≤ M}) (fun x _ => ((hasStrictDerivAt_const_cpow
+      (Or.inl (ofReal_ne_zero.2 hb0.ne'))).hasDerivAt).hasDerivWithinAt) (fun x hx => ?_)
+    (convex_halfSpace_re_le M) hw hz
+  rw [norm_mul, norm_cpow_eq_rpow_re_of_pos hb0, ← ofReal_log hb0.le, norm_real,
+    Real.norm_of_nonneg (Real.log_nonneg hb), mul_comm]
+  exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_le hb hx) (Real.log_nonneg hb)
 
 /-- On the closed unit disk `‖z‖ ≤ 1` and for `0 ≤ t < 1`, the principal power `(1 - z * t) ^ s`
 has norm at most `exp (π * |s.im|) * (2 ^ s.re + (1 - t) ^ s.re)` for any complex exponent `s`. -/
