@@ -37,6 +37,8 @@ on a CM field the place index may simply be dropped, and any statement about
   `IsCMField.complexConj`.
 * `TauCeti.NumberField.complexConjugationAt_eq_complexConjugationAt`: consequently it does not
   depend on the place.
+* `RingHom.star_comp`: on a CM field, every ring endomorphism of `ℂ` commutes with complex
+  conjugation on embeddings.
 
 ## References
 
@@ -69,5 +71,20 @@ theorem complexConjugationAt_eq_complexConjugationAt (w w' : InfinitePlace K)
   simp
 
 end TauCeti.NumberField
+
+namespace RingHom
+
+variable {K : Type*} [Field K] [CharZero K] [Algebra.IsIntegral ℚ K] [NumberField.IsCMField K]
+
+/-- On a CM field, every ring endomorphism `σ` of `ℂ` commutes with complex conjugation on the
+image of an embedding: `conj ∘ σ ∘ φ = σ ∘ conj ∘ φ` (Milne, *Complex Multiplication*, p.13,
+footnote 3). -/
+theorem star_comp (σ : ℂ →+* ℂ) (φ : K →+* ℂ) : star (σ.comp φ) = σ.comp (star φ) := by
+  ext x
+  have h := NumberField.IsCMField.complexEmbedding_complexConj K (σ.comp φ) x
+  simpa only [star_apply, comp_apply, Complex.star_def,
+    NumberField.IsCMField.complexEmbedding_complexConj K φ x] using h.symm
+
+end RingHom
 
 end

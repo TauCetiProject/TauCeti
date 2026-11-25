@@ -49,6 +49,9 @@ keeps interior points interior and carries null sets to null sets
   read off from those of any other.
 * `TauCeti.BorderedSobolevSection.chartValueL_changeAtlas_ae`: the chart data of
   `changeAtlas h w` are the readings in `A'` of any section of `w`.
+* `TauCeti.BorderedSobolevSection.component_eq_restrictL_changeAtlas`: when a chart of `A'` reads
+  sections as a chart of `A` and its image is larger, the components for `A` are restrictions of
+  those for `A'`.
 * `TauCeti.BorderedSobolevSection.exists_norm_changeAtlas_le`: when sections transfer in both
   directions the norms of the two atlases are equivalent.
 
@@ -163,6 +166,33 @@ theorem changeAtlas_eq_of_ae_eq_halfCoord (h : TransfersTo A A' p k)
       =ᵐ[volume.restrict (A'.halfImage i' : Set ℂ)] A'.halfCoord i' s) :
     changeAtlas h w = w' :=
   eq_of_ae_eq_halfCoord (chartValueL_changeAtlas_ae h hs) hs'
+
+/-- **Components under a change of atlas.** If chart `i'` of `A'` reads sections as chart `i` of `A`
+does and the interior of the image of chart `i` lies in that of chart `i'`, the chart-`i` components
+of an element for `A` are the restrictions of the chart-`i'` components of its image for `A'`. -/
+theorem component_eq_restrictL_changeAtlas (h : TransfersTo A A' p k) {i : Fin A.n}
+    {i' : Fin A'.n} (hcoord : ∀ s : ∀ x, V x, A'.halfCoord i' s = A.halfCoord i s)
+    (hle : A.halfImage i ≤ A'.halfImage i') (w : BorderedSobolevSection A p k)
+    (m : Fin (Module.finrank ℝ F)) :
+    (w : A.halfSectionChartData.SobolevData volume p k) i m =
+      Wkp.restrictL hle k
+        ((changeAtlas h w : A'.halfSectionChartData.SobolevData volume p k) i' m) := by
+  obtain ⟨s, hs⟩ := A.halfSectionChartData.exists_section volume p k w
+  have hs' (j : Fin A.n) := (hs j).trans (A.halfSectionChartData_coord_ae_eq j s)
+  have hg := (SectionChartData.chartValueL_ae_eq_coord_iff _ _ _ _).1
+    ((chartValueL_changeAtlas_ae h hs' i').trans (A'.halfSectionChartData_coord_ae_eq i' s).symm) m
+  refine Wkp.ext k (Lp.ext ?_)
+  filter_upwards [(SectionChartData.chartValueL_ae_eq_coord_iff _ _ _ _).1 (hs i) m,
+    (A.halfSectionChartData_coord_ae_eq i s).fun_comp ((Module.finBasis ℝ F).coord m),
+    ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hle) hg,
+    ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hle)
+      ((A'.halfSectionChartData_coord_ae_eq i' s).fun_comp ((Module.finBasis ℝ F).coord m)),
+    Wkp.value_restrictL_ae hle k
+      ((changeAtlas h w : A'.halfSectionChartData.SobolevData volume p k) i' m)]
+    with z h₁ h₂ h₃ h₄ h₅
+  simp only [Function.comp_apply] at h₂ h₄
+  rw [h₁, h₂, ← hcoord]
+  exact h₄.symm.trans (h₃.symm.trans h₅.symm)
 
 theorem changeAtlas_refl_apply (w : BorderedSobolevSection A p k) :
     changeAtlas (transfersTo_refl (A := A) (p := p) (k := k)) w = w :=

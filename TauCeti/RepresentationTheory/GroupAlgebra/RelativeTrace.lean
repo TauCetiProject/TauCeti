@@ -13,6 +13,7 @@ public import TauCeti.GroupTheory.DoubleCoset.Finite
 public import TauCeti.GroupTheory.Index.Basic
 public import Mathlib.GroupTheory.Sylow
 public import TauCeti.RepresentationTheory.RelativeNorm
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 import TauCeti.Algebra.Group.Subgroup.Pointwise
 import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.GroupTheory.Coset.Basic
@@ -30,13 +31,13 @@ For subgroups `Q ≤ P` with `Q` of finite index in `P`, the **relative trace**
 `Tr_Q^P : R[G]^Q → R[G]^P` sends `a` to `∑_{x ∈ P/Q} x a x⁻¹` (`TauCeti.relTrace`). It is the
 relative norm `Representation.relNorm` of the conjugation representation of `P` at `Q`, and does
 not depend on the transversal (`TauCeti.relTrace_apply_eq_sum_of_bijective`). It is the identity
-for `Q = P`, it multiplies `P`-fixed elements by the index `|P : Q|`, it is transitive along
-`S ≤ Q ≤ P`, and it is a map of `R[G]^P`-bimodules: `Tr_Q^P(a) b = Tr_Q^P(a b)` and
-`b Tr_Q^P(a) = Tr_Q^P(b a)` for `b ∈ R[G]^P`. Its image `R[G]^P_Q` is therefore a two-sided ideal
-of `R[G]^P` (`TauCeti.relTraceIdeal`), decreasing as `Q` shrinks and equal to `R[G]^P` for
-`Q = P`. On the centralizer `C_G(P)` the coefficients of `Tr_Q^P(a)` are `|P : Q|` times those of
-`a`. For `g ∈ G`, the relative trace of `g` from its stabilizer `P ⊓ C_G(g)` is the sum of the
-`P`-conjugates of `g`, each once.
+for `Q = P`, it multiplies `P`-fixed elements, and augmentations, by the index `|P : Q|`, it is
+transitive along `S ≤ Q ≤ P`, and it is a map of `R[G]^P`-bimodules:
+`Tr_Q^P(a) b = Tr_Q^P(a b)` and `b Tr_Q^P(a) = Tr_Q^P(b a)` for `b ∈ R[G]^P`. Its image
+`R[G]^P_Q` is therefore a two-sided ideal of `R[G]^P` (`TauCeti.relTraceIdeal`), decreasing as `Q`
+shrinks and equal to `R[G]^P` for `Q = P`. On the centralizer `C_G(P)` the coefficients of
+`Tr_Q^P(a)` are `|P : Q|` times those of `a`. For `g ∈ G`, the relative trace of `g` from its
+stabilizer `P ⊓ C_G(g)` is the sum of the `P`-conjugates of `g`, each once.
 
 Conjugation by `g ∈ G` is an algebra isomorphism `R[G]^H ≃ R[G]^{gHg⁻¹}`
 (`TauCeti.conjInvariantsEquiv`), and it carries `Tr_Q^P` to `Tr_{gQg⁻¹}^{gPg⁻¹}`. For `T ≤ P`,
@@ -61,6 +62,7 @@ are described through them.
 * `TauCeti.relTrace R Q P`: the relative trace `Tr_Q^P : R[G]^Q → R[G]^P`.
 * `TauCeti.relTraceIdeal R hQP`: its image `R[G]^P_Q`, a two-sided ideal of `R[G]^P`.
 * `TauCeti.conjInvariantsEquiv R g H`: conjugation by `g` as `R[G]^H ≃ₐ R[G]^{gHg⁻¹}`.
+* `TauCeti.conjInvariantsBotEquiv R`: `R[G] ≃ₐ R[G]^1`, each element as a `1`-fixed element.
 
 ## Main results
 
@@ -72,6 +74,7 @@ are described through them.
   `Tr_Q^P(a) = |P : Q| a` for `a ∈ R[G]^P`.
 * `TauCeti.relTrace_relTrace`: transitivity `Tr_Q^P ∘ Tr_S^Q = Tr_S^P`.
 * `TauCeti.relTrace_mul`, `TauCeti.mul_relTrace`: the product formulas.
+* `TauCeti.augmentation_relTrace`: `ε(Tr_Q^P(a)) = |P : Q| ε(a)`.
 * `TauCeti.coeff_relTrace_of_mem_centralizer`: `Tr_Q^P(a)` has coefficient `|P : Q| a_c` at
   `c ∈ C_G(P)`.
 * `TauCeti.coeff_relTrace_single_inf_centralizer`: the relative trace of `g` from its
@@ -162,6 +165,12 @@ theorem conjRepresentation_conjRepresentation (g h : G) (x : MonoidAlgebra R G) 
     conjRepresentation R G g (conjRepresentation R G h x) = conjRepresentation R G (g * h) x := by
   rw [map_mul, mul_apply_eq_comp]
 
+/-- Conjugation preserves the augmentation: `ε(g x g⁻¹) = ε(x)`. -/
+@[simp]
+theorem augmentation_conjRepresentation (g : G) (x : MonoidAlgebra R G) :
+    augmentation R G (conjRepresentation R G g x) = augmentation R G x := by
+  simp [conjRepresentation_apply_eq_mul, of_apply]
+
 variable (R) in
 /-- The subalgebra `R[G]^H` of elements of `R[G]` fixed by conjugation by `H`: the centralizer in
 `R[G]` of the group elements of `H` (`TauCeti.mem_conjInvariants_iff`). -/
@@ -246,6 +255,25 @@ theorem conjInvariants_bot : conjInvariants R (⊥ : Subgroup G) = ⊤ :=
   eq_top_iff.2 fun x _ => mem_conjInvariants_iff.2 fun h hh => by
     rw [Subgroup.mem_bot.1 hh, map_one, one_apply_eq_self]
 
+variable (R) in
+/-- `R[G]` as the subalgebra `R[G]^1` of elements fixed by the trivial subgroup. -/
+noncomputable def conjInvariantsBotEquiv :
+    MonoidAlgebra R G ≃ₐ[R] conjInvariants R (⊥ : Subgroup G) :=
+  Subalgebra.topEquiv.symm.trans (Subalgebra.equivOfEq _ _ conjInvariants_bot.symm)
+
+/-- The isomorphism `R[G] ≃ R[G]^1` is the identity on underlying elements. -/
+@[simp]
+theorem coe_conjInvariantsBotEquiv (x : MonoidAlgebra R G) :
+    (conjInvariantsBotEquiv R x : MonoidAlgebra R G) = x := by
+  simp [conjInvariantsBotEquiv]
+
+/-- The inverse of `R[G] ≃ R[G]^1` forgets that an element is `1`-fixed. -/
+@[simp]
+theorem conjInvariantsBotEquiv_symm_apply (y : conjInvariants R (⊥ : Subgroup G)) :
+    (conjInvariantsBotEquiv R).symm y = (y : MonoidAlgebra R G) := by
+  obtain ⟨x, rfl⟩ := (conjInvariantsBotEquiv R).surjective y
+  simp
+
 end Semiring
 
 section Ring
@@ -293,6 +321,15 @@ theorem coe_relTrace (a : conjInvariants R Q) :
       ∑ q : P ⧸ Q.subgroupOf P, conjRepresentation R G (q.out : G) a :=
   Representation.relNorm_apply _
 
+/-- The relative trace multiplies the augmentation by the index: `ε(Tr_Q^P(a)) = |P : Q| ε(a)`. -/
+@[simp]
+theorem augmentation_relTrace (a : conjInvariants R Q) :
+    augmentation R G (relTrace R Q P a : MonoidAlgebra R G) =
+      (Q.subgroupOf P).index • augmentation R G (a : MonoidAlgebra R G) := by
+  rw [coe_relTrace, map_sum]
+  simp only [augmentation_conjRepresentation, Finset.sum_const, Finset.card_univ,
+    Subgroup.index, Nat.card_eq_fintype_card]
+
 /-- **The relative trace does not depend on the transversal.** For any family `s : ι → P` whose
 cosets enumerate `P/Q` bijectively, `Tr_Q^P(a) = ∑ᵢ sᵢ a sᵢ⁻¹`. -/
 theorem relTrace_apply_eq_sum_of_bijective {ι : Type*} [Fintype ι] (s : ι → P)
@@ -312,6 +349,12 @@ theorem relTrace_apply_of_mem {a : conjInvariants R Q} (ha : (a : MonoidAlgebra 
     conjInvariants R P) : (relTrace R Q P a : MonoidAlgebra R G) = (Q.subgroupOf P).index • a :=
   Representation.relNorm_apply_of_forall_apply_eq _ fun g =>
     mem_conjInvariants_iff.1 ha _ g.property
+
+/-- **The trace from the trivial subgroup.** For finite `P`, `Tr_1^P(a) = ∑_{g ∈ P} g a g⁻¹`. -/
+theorem relTrace_bot_apply [Fintype P] (a : conjInvariants R (⊥ : Subgroup G)) :
+    (relTrace R ⊥ P a : MonoidAlgebra R G) = ∑ g : P, conjRepresentation R G (g : G) a := by
+  refine relTrace_apply_eq_sum_of_bijective id ⟨fun g h hgh => ?_, QuotientGroup.mk_surjective⟩ a
+  rwa [QuotientGroup.eq, Subgroup.bot_subgroupOf, Subgroup.mem_bot, inv_mul_eq_one] at hgh
 
 /-- The coefficient of `Tr_Q^P(a)` at an element of `C_G(P)` is `|P : Q|` times that of `a`. -/
 theorem coeff_relTrace_of_mem_centralizer (a : conjInvariants R Q) {c : G}
