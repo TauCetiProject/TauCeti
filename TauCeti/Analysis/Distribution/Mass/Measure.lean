@@ -23,7 +23,8 @@ the subtype `Ω`, finite on compact subsets of `Ω`, such that:
 * on every open set `U` of `E`, `‖T‖ (Ω ∩ U)` is the local mass of `T` on `U`, the supremum of
   `|T φ|` over the tests `φ` supported in `U` with `‖φ x‖ ≤ 1`; in particular `‖T‖ Ω = mass T`;
 * `|T φ| ≤ ∫ ‖φ‖ d‖T‖` for every test `φ`;
-* `‖T‖` is the least outer regular measure with this domination property.
+* `‖T‖` is the least outer regular measure with this domination property; in particular
+  `‖S₁ + S₂‖ ≤ ‖S₁‖ + ‖S₂‖` for `S₁`, `S₂` of locally finite mass.
 
 The measure lives on `Ω` and not on `E`: it need not be finite near the frontier of `Ω`. None of
 this uses finite dimension: on an infinite-dimensional space every test function is zero, so
@@ -54,6 +55,9 @@ them by open sets of almost the same measure.
   `L M(T)`.
 * `Distribution.enorm_apply_le_lintegral_massMeasure`: the domination `|T φ| ≤ ∫ ‖φ‖ d‖T‖`.
 * `Distribution.massMeasure_le_of_enorm_apply_le`: minimality among outer regular measures.
+* `Distribution.massMeasure_add_le`, `Distribution.massMeasure_sub_le`: `‖S₁ ± S₂‖ ≤ ‖S₁‖ + ‖S₂‖`
+  for `S₁`, `S₂` of locally finite mass.
+* `Distribution.massMeasure_neg`: `‖-S‖ = ‖S‖`.
 
 ## References
 
@@ -398,6 +402,39 @@ theorem eq_massMeasure_of_preimage_coe (hT : HasLocallyFiniteMass T) (ν : Measu
   refine Measure.OuterRegular.ext_isOpen fun U hU => ?_
   obtain ⟨U', hU', rfl⟩ := isOpen_induced_iff.1 hU
   rw [h U' hU', massMeasure_preimage_coe hT hU']
+
+/-- **Subadditivity of the mass measure.** `‖S₁ + S₂‖ ≤ ‖S₁‖ + ‖S₂‖` for continuous linear maps of
+locally finite mass. -/
+theorem massMeasure_add_le {S₁ S₂ : 𝓓^{n}(Ω, F) →L[ℝ] ℝ} (h₁ : HasLocallyFiniteMass S₁)
+    (h₂ : HasLocallyFiniteMass S₂) :
+    massMeasure (S₁ + S₂) ≤ massMeasure S₁ + massMeasure S₂ := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · simp [massMeasure_eq_zero_of_not_finiteDimensional hE]
+  have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
+  have : IsFiniteMeasureOnCompacts (massMeasure S₁ + massMeasure S₂) :=
+    ⟨fun K hK ↦ by simpa using ⟨hK.measure_lt_top, hK.measure_lt_top⟩⟩
+  refine massMeasure_le_of_enorm_apply_le _ fun φ ↦ ?_
+  rw [lintegral_add_measure, add_apply]
+  exact (eNorm_add_le _ _).trans (add_le_add (enorm_apply_le_lintegral_massMeasure h₁ φ)
+    (enorm_apply_le_lintegral_massMeasure h₂ φ))
+
+/-- The mass measure is invariant under negation: `‖-S‖ = ‖S‖`. -/
+@[simp]
+theorem massMeasure_neg (S : 𝓓^{n}(Ω, F) →L[ℝ] ℝ) : massMeasure (-S) = massMeasure S := by
+  by_cases hS : HasLocallyFiniteMass S
+  · have hS' : HasLocallyFiniteMass (-S) := by rw [FunLike.coe_neg]; exact hS.neg
+    refine (eq_massMeasure_of_preimage_coe hS' _ fun U hU ↦ ?_).symm
+    rw [massMeasure_preimage_coe hS hU, FunLike.coe_neg, localMass_neg]
+  · have hS' : ¬HasLocallyFiniteMass (-S) := fun h ↦ hS (by simpa using h.neg)
+    rw [massMeasure_of_not_hasLocallyFiniteMass hS, massMeasure_of_not_hasLocallyFiniteMass hS']
+
+/-- `‖S₁ - S₂‖ ≤ ‖S₁‖ + ‖S₂‖` for continuous linear maps of locally finite mass. -/
+theorem massMeasure_sub_le {S₁ S₂ : 𝓓^{n}(Ω, F) →L[ℝ] ℝ} (h₁ : HasLocallyFiniteMass S₁)
+    (h₂ : HasLocallyFiniteMass S₂) :
+    massMeasure (S₁ - S₂) ≤ massMeasure S₁ + massMeasure S₂ := by
+  have h₂' : HasLocallyFiniteMass (-S₂) := by rw [FunLike.coe_neg]; exact h₂.neg
+  simpa [sub_eq_add_neg] using massMeasure_add_le h₁ h₂'
 
 end Measure
 
