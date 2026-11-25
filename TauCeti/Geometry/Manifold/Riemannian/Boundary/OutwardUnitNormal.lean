@@ -330,16 +330,9 @@ theorem RiemannianIsometry.mfderiv_outwardUnitNormal
       (isOutwardPointing_outwardUnitNormal q)
   · have hw := mfderiv_subtypeVal_mem_boundaryTangentSpace
       (⟨Φ q, Φ.apply_mem_boundary q.property⟩ : (𝓡∂ (n + 1)).boundary M') w
-    have hw' : mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-        (Subtype.val : (𝓡∂ (n + 1)).boundary M' → M') ⟨Φ q, Φ.apply_mem_boundary q.property⟩ w ∈
-        (boundaryTangentSpace q).map (mfderiv (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) Φ q).toLinearMap := by
-      have hmap := map_mfderiv_boundaryTangentSpace (by simp) Φ.toDiffeomorph q
-      simp only [RiemannianIsometry.coe_toDiffeomorph] at hmap
-      rw [hmap]
-      exact hw
-    obtain ⟨u, hu, hu'⟩ := hw'
+    obtain ⟨u, hu, hu'⟩ := (map_mfderiv_boundaryTangentSpace (by simp) Φ.toDiffeomorph q).ge hw
     rw [← hu']
-    simp only [ContinuousLinearMap.coe_coe]
+    simp only [ContinuousLinearMap.coe_coe, RiemannianIsometry.coe_toDiffeomorph]
     rw [Φ.inner_mfderiv, inner_outwardUnitNormal_of_mem_boundaryTangentSpace hu]
 
 end Naturality

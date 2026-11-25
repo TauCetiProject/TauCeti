@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Boundary.SecondFundamentalForm
+public import TauCeti.Geometry.Manifold.Riemannian.Boundary.SecondFundamentalForm.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.LeviCivita
 
 /-!
@@ -15,13 +15,14 @@ An isometry `Φ : M → M'` of Riemannian manifolds with boundary maps `∂M` on
 preserves the second fundamental form of the boundary: if `u, w ∈ T_q∂M` and `u', w' ∈ T_{Φ q}∂M'`
 correspond under `dΦ`, that is `dι' u' = dΦ (dι u)` and `dι' w' = dΦ (dι w)`, then
 `II'_{Φ q}(u', w') = II_q(u, w)`
-(`TauCeti.RiemannianIsometry.boundarySecondFundamentalForm_apply`). In other words
+(`TauCeti.RiemannianIsometry.boundarySecondFundamentalForm_map`). In other words
 `(Φ|∂M)^* II' = II`.
 
 The proof transports the description `II_q(u, w) = -⟨∇_{dι u} W, ν_out(q)⟩` of
 `TauCeti.boundarySecondFundamentalForm_apply_eq_neg_inner_outwardUnitNormal`: a vector field `W'`
 tangent to `∂M'` with `W'(Φ q) = dι' w'` pulls back to a vector field `W` tangent to `∂M` with
-`W(q) = dι w`, the Levi-Civita connection is natural under isometries
+`W(q) = dι w` (`TauCeti.eventually_mpullback_mem_boundaryTangentSpace`), the Levi-Civita
+connection is natural under isometries
 (`TauCeti.IsLocalRiemannianIsometry.mfderiv_leviCivitaConnection_mpullback`), and so is the outward
 unit normal (`TauCeti.RiemannianIsometry.mfderiv_outwardUnitNormal`).
 -/
@@ -50,7 +51,7 @@ variable {n : ℕ} {M M' : Type*} [TopologicalSpace M]
 of Riemannian manifolds with boundary and `q ∈ ∂M`. If `u, w ∈ T_q∂M` and
 `u', w' ∈ T_{Φ q}∂M'` satisfy `dι' u' = dΦ (dι u)` and `dι' w' = dΦ (dι w)`, then
 `II'_{Φ q}(u', w') = II_q(u, w)`. -/
-theorem RiemannianIsometry.boundarySecondFundamentalForm_apply
+theorem RiemannianIsometry.boundarySecondFundamentalForm_map
     (Φ : RiemannianIsometry (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) M M') (q : (𝓡∂ (n + 1)).boundary M)
     (u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q)
     (u' w' : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
@@ -72,26 +73,10 @@ theorem RiemannianIsometry.boundarySecondFundamentalForm_apply
   set W : (y : M) → TangentSpace (𝓡∂ (n + 1)) y := mpullback (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) Φ W'
   have hW : MDiffAt (T% W) (q : M) := hΦ.mdifferentiableAt_mpullback hW'
   have hWq : W q = mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-      (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q w := by
-    apply hΦ.mfderiv_injective (q : M)
-    rw [hΦ.mfderiv_apply_mpullback, ← hw]
-    exact hW'q
-  -- `W` is tangent to the boundary near `q`, since `dΦ` maps `T∂M` onto `T∂M'`.
-  have hbd : Continuous fun p : (𝓡∂ (n + 1)).boundary M ↦
-      (⟨Φ p, Φ.apply_mem_boundary p.property⟩ : (𝓡∂ (n + 1)).boundary M') :=
-    (Φ.continuous.comp continuous_subtypeVal).subtype_mk _
-  have hWt : ∀ᶠ p in 𝓝 q, W p ∈ boundaryTangentSpace p := by
-    filter_upwards [hbd.continuousAt.eventually hW't] with p hp
-    have hmap := map_mfderiv_boundaryTangentSpace (by simp) Φ.toDiffeomorph p
-    simp only [RiemannianIsometry.coe_toDiffeomorph] at hmap
-    rw [← hmap] at hp
-    obtain ⟨v, hv, hv'⟩ := hp
-    have hWp : W p = v := hΦ.mfderiv_injective (p : M) (by
-      simp only [W]
-      rw [hΦ.mfderiv_apply_mpullback]
-      simpa using hv'.symm)
-    rw [hWp]
-    exact hv
+      (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q w :=
+    (hΦ.mpullback_apply_eq_iff W' _).2 (hW'q.trans hw)
+  have hWt : ∀ᶠ p in 𝓝 q, W p ∈ boundaryTangentSpace p :=
+    eventually_mpullback_mem_boundaryTangentSpace (by simp) Φ.toDiffeomorph hW't
   rw [boundarySecondFundamentalForm_apply_eq_neg_inner_outwardUnitNormal q u w hW hWq hWt,
     boundarySecondFundamentalForm_apply_eq_neg_inner_outwardUnitNormal _ u' w' hW' hW'q hW't,
     ← Φ.inner_mfderiv (q : M), hΦ.mfderiv_leviCivitaConnection_mpullback hW',
