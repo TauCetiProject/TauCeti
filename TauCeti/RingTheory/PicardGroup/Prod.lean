@@ -30,9 +30,11 @@ locally determined over a finite clopen partition of `Spec R`.
   invertible `B`-module is an invertible `R`-module.
 * `CommRing.Pic.prodEquivOfBijective`: the isomorphism `Pic R ≃* Pic A × Pic B` given by
   extension of scalars, with `CommRing.Pic.prodEquivOfBijective_symm_mk` computing its inverse.
-* `CommRing.Pic.prodEquiv`: the isomorphism `Pic (A × B) ≃* Pic A × Pic B`.
+* `CommRing.Pic.prodEquiv`: the isomorphism `Pic (A × B) ≃* Pic A × Pic B`, with inverse
+  computed by `CommRing.Pic.prodEquiv_symm_mk`.
 * `CommRing.Pic.prodEquivOfIsIdempotentElem`: for an idempotent `e` of `R`, the isomorphism
-  `Pic R ≃* Pic (R ⧸ span {1 - e}) × Pic (R ⧸ span {e})`.
+  `Pic R ≃* Pic (R ⧸ span {1 - e}) × Pic (R ⧸ span {e})`, with inverse computed by
+  `CommRing.Pic.prodEquivOfIsIdempotentElem_symm_mk`.
 
 ## References
 
@@ -44,8 +46,6 @@ public section
 
 open TensorProduct Module
 
-universe u
-
 section Bijective
 
 variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [CommSemiring B] [Algebra R A]
@@ -54,6 +54,14 @@ variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [CommSemiring B] [Alg
   [AddCommMonoid Q] [Module R Q] [Module B Q] [IsScalarTower R B Q]
 
 include h
+
+/-- If `R → A × B` is bijective, its inverse as an `R`-linear equivalence `A × B ≃ R`. -/
+private noncomputable def prodLinearEquivOfBijective : (A × B) ≃ₗ[R] R :=
+  (LinearEquiv.ofBijective ((Algebra.linearMap R A).prod (Algebra.linearMap R B)) <| by
+    have hf : ⇑((Algebra.linearMap R A).prod (Algebra.linearMap R B)) =
+        ⇑((algebraMap R A).prod (algebraMap R B)) :=
+      funext fun r ↦ by simp [RingHom.prod_apply]
+    rwa [hf]).symm
 
 /-- Given inverses `P'` of `P` over `A` and `Q'` of `Q` over `B`, the product `P' × Q'` is an
 inverse of `P × Q` over `R`. -/
@@ -73,11 +81,9 @@ private noncomputable def tensorProdEquiv {P' Q' : Type*} [AddCommMonoid P'] [Mo
   prodLeft R R P' Q' (P × Q) ≪≫ₗ
     (prodRight R R P' P Q ≪≫ₗ LinearEquiv.prodUnique).prodCongr
       (prodRight R R Q' P Q ≪≫ₗ LinearEquiv.uniqueProd) ≪≫ₗ
-    ((equivOfCompatibleSMul R A R P' P).symm ≪≫ₗ
-        (eP ≪≫ₗ (AlgebraTensorModule.rid R A A).symm).restrictScalars R).prodCongr
-      ((equivOfCompatibleSMul R B R Q' Q).symm ≪≫ₗ
-        (eQ ≪≫ₗ (AlgebraTensorModule.rid R B B).symm).restrictScalars R) ≪≫ₗ
-    (equivProdOfBijective h R).symm
+    ((equivOfCompatibleSMul R A R P' P).symm ≪≫ₗ eP.restrictScalars R).prodCongr
+      ((equivOfCompatibleSMul R B R Q' Q).symm ≪≫ₗ eQ.restrictScalars R) ≪≫ₗ
+    prodLinearEquivOfBijective h
 
 /-- If `R → A × B` is bijective, the product of an invertible `A`-module and an invertible
 `B`-module is an invertible `R`-module. -/
@@ -92,7 +98,7 @@ namespace CommRing.Pic
 
 section Bijective
 
-variable {R A B : Type u} [CommSemiring R] [CommSemiring A] [CommSemiring B] [Algebra R A]
+variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [CommSemiring B] [Algebra R A]
   [Algebra R B] (h : Function.Bijective ((algebraMap R A).prod (algebraMap R B)))
 
 section Modules
@@ -124,7 +130,7 @@ include h
 
 /-- If `R → A × B` is bijective, a Picard class of `R` is determined by its base changes to `A`
 and to `B`. -/
-theorem injective_prod_mapAlgebra_of_bijective :
+theorem prod_mapAlgebra_injective_of_bijective :
     Function.Injective ((mapAlgebra R A).prod (mapAlgebra R B)) := by
   refine (injective_iff_map_eq_one _).mpr fun M hM ↦ ?_
   obtain ⟨hA, hB⟩ := Prod.ext_iff.mp hM
@@ -134,13 +140,11 @@ theorem injective_prod_mapAlgebra_of_bijective :
   obtain ⟨eB⟩ := hB
   rw [← mk_eq_self (M := M), mk_eq_one_iff]
   exact ⟨equivProdOfBijective h M ≪≫ₗ
-    ((eA ≪≫ₗ (AlgebraTensorModule.rid R A A).symm).restrictScalars R).prodCongr
-      ((eB ≪≫ₗ (AlgebraTensorModule.rid R B B).symm).restrictScalars R) ≪≫ₗ
-    (equivProdOfBijective h R).symm⟩
+    (eA.restrictScalars R).prodCongr (eB.restrictScalars R) ≪≫ₗ prodLinearEquivOfBijective h⟩
 
 /-- If `R → A × B` is bijective, every pair of Picard classes of `A` and of `B` comes from a
 Picard class of `R`. -/
-theorem surjective_prod_mapAlgebra_of_bijective :
+theorem prod_mapAlgebra_surjective_of_bijective :
     Function.Surjective ((mapAlgebra R A).prod (mapAlgebra R B)) := by
   rintro ⟨P, Q⟩
   let : Module R P := Module.compHom P (algebraMap R A)
@@ -154,14 +158,14 @@ theorem surjective_prod_mapAlgebra_of_bijective :
 
 /-- If `R → A × B` is bijective, extension of scalars to `A` and to `B` is a bijection
 `Pic R → Pic A × Pic B`. -/
-theorem bijective_prod_mapAlgebra_of_bijective :
+theorem prod_mapAlgebra_bijective_of_bijective :
     Function.Bijective ((mapAlgebra R A).prod (mapAlgebra R B)) :=
-  ⟨injective_prod_mapAlgebra_of_bijective h, surjective_prod_mapAlgebra_of_bijective h⟩
+  ⟨prod_mapAlgebra_injective_of_bijective h, prod_mapAlgebra_surjective_of_bijective h⟩
 
 /-- If `R → A × B` is bijective, then the Picard group of `R` is the product of the Picard
 groups of `A` and `B`, by extension of scalars to each factor. -/
 noncomputable def prodEquivOfBijective : Pic R ≃* Pic A × Pic B :=
-  .ofBijective ((mapAlgebra R A).prod (mapAlgebra R B)) (bijective_prod_mapAlgebra_of_bijective h)
+  .ofBijective ((mapAlgebra R A).prod (mapAlgebra R B)) (prod_mapAlgebra_bijective_of_bijective h)
 
 @[simp]
 theorem prodEquivOfBijective_apply (M : Pic R) :
@@ -183,7 +187,7 @@ end Bijective
 
 section Prod
 
-variable (A B : Type u) [CommSemiring A] [CommSemiring B]
+variable (A B : Type*) [CommSemiring A] [CommSemiring B]
 
 /-- The Picard group of a product of two commutative semirings is the product of their Picard
 groups, by extension of scalars along the two projections. -/
@@ -201,11 +205,31 @@ theorem prodEquiv_apply (M : Pic (A × B)) :
   -- `mapRingHom f` is by definition `mapAlgebra` for the algebra structure `f.toAlgebra`.
   exact prodEquivOfBijective_apply (R := A × B) Function.bijective_id M
 
+/-- The inverse of `prodEquiv` sends the classes of an invertible `A`-module `P` and an invertible
+`B`-module `Q` to the class of `P × Q`, on which `A × B` acts through the two projections. -/
+theorem prodEquiv_symm_mk {P Q : Type*} [AddCommMonoid P] [Module A P] [AddCommMonoid Q]
+    [Module B Q] [Module.Invertible A P] [Module.Invertible B Q] :
+    letI := (RingHom.fst A B).toAlgebra
+    letI := (RingHom.snd A B).toAlgebra
+    letI := Module.compHom P (RingHom.fst A B)
+    letI := Module.compHom Q (RingHom.snd A B)
+    haveI := IsScalarTower.of_compHom (A × B) A P
+    haveI := IsScalarTower.of_compHom (A × B) B Q
+    haveI := Module.Invertible.prod_of_bijective (R := A × B) Function.bijective_id P Q
+    (prodEquiv A B).symm (Pic.mk A P, Pic.mk B Q) = Pic.mk (A × B) (P × Q) := by
+  let := (RingHom.fst A B).toAlgebra
+  let := (RingHom.snd A B).toAlgebra
+  let := Module.compHom P (RingHom.fst A B)
+  let := Module.compHom Q (RingHom.snd A B)
+  have := IsScalarTower.of_compHom (A × B) A P
+  have := IsScalarTower.of_compHom (A × B) B Q
+  exact prodEquivOfBijective_symm_mk (R := A × B) Function.bijective_id
+
 end Prod
 
 section Idempotent
 
-variable {R : Type u} [CommRing R] {e : R}
+variable {R : Type*} [CommRing R] {e : R}
 
 /-- For an idempotent `e`, the Picard group of `R` is the product of the Picard groups of
 `R ⧸ span {1 - e}` and `R ⧸ span {e}`: a Picard class is determined by, and can be prescribed
@@ -213,13 +237,27 @@ arbitrarily on, a clopen subset of `Spec R` and its complement. -/
 noncomputable def prodEquivOfIsIdempotentElem (he : IsIdempotentElem e) :
     Pic R ≃* Pic (R ⧸ Ideal.span {1 - e}) × Pic (R ⧸ Ideal.span {e}) :=
   prodEquivOfBijective <| RingHom.prod_bijective_of_isIdempotentElem he.one_sub he
-    (sub_add_cancel 1 e) (by rw [sub_mul, one_mul, he.eq, sub_self])
+    (sub_add_cancel 1 e) he.one_sub_mul_self
 
 @[simp]
 theorem prodEquivOfIsIdempotentElem_apply (he : IsIdempotentElem e) (M : Pic R) :
     prodEquivOfIsIdempotentElem he M =
       (mapAlgebra R (R ⧸ Ideal.span {1 - e}) M, mapAlgebra R (R ⧸ Ideal.span {e}) M) :=
   prodEquivOfBijective_apply _ M
+
+/-- For an idempotent `e`, the inverse of `prodEquivOfIsIdempotentElem` glues the classes of an
+invertible module `P` over `R ⧸ span {1 - e}` and an invertible module `Q` over `R ⧸ span {e}` to
+the class of `P × Q`. -/
+theorem prodEquivOfIsIdempotentElem_symm_mk (he : IsIdempotentElem e) {P Q : Type*}
+    [AddCommMonoid P] [Module R P] [Module (R ⧸ Ideal.span {1 - e}) P]
+    [IsScalarTower R (R ⧸ Ideal.span {1 - e}) P] [AddCommMonoid Q] [Module R Q]
+    [Module (R ⧸ Ideal.span {e}) Q] [IsScalarTower R (R ⧸ Ideal.span {e}) Q]
+    [Module.Invertible (R ⧸ Ideal.span {1 - e}) P] [Module.Invertible (R ⧸ Ideal.span {e}) Q] :
+    haveI := Module.Invertible.prod_of_bijective (RingHom.prod_bijective_of_isIdempotentElem
+      he.one_sub he (sub_add_cancel 1 e) he.one_sub_mul_self) P Q
+    (prodEquivOfIsIdempotentElem he).symm
+      (Pic.mk (R ⧸ Ideal.span {1 - e}) P, Pic.mk (R ⧸ Ideal.span {e}) Q) = Pic.mk R (P × Q) :=
+  prodEquivOfBijective_symm_mk _
 
 end Idempotent
 

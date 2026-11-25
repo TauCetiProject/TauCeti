@@ -99,8 +99,11 @@ theorem subsingleton_of_bijective_prod {P Q : Type*} [AddCommMonoid P] [Module R
 
 /-- The bijectivity hypothesis, read for the bundled `R`-linear structure maps. -/
 private theorem bijective_linearMap_prod :
-    Function.Bijective ((Algebra.linearMap R A).prod (Algebra.linearMap R B)) :=
-  h
+    Function.Bijective ((Algebra.linearMap R A).prod (Algebra.linearMap R B)) := by
+  have hf : ⇑((Algebra.linearMap R A).prod (Algebra.linearMap R B)) =
+      ⇑((algebraMap R A).prod (algebraMap R B)) :=
+    funext fun r ↦ by simp [RingHom.prod_apply]
+  rwa [hf]
 
 variable (M : Type*) [AddCommMonoid M] [Module R M]
 
