@@ -8,8 +8,9 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Hessian.HalfSpace.IntegrabilityGain
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Analysis.PDE.Regularity.Hessian.ContinuousCoefficient.Regularity
+import TauCeti.Analysis.PDE.Regularity.Hessian.Freezing
 import TauCeti.Analysis.PDE.Regularity.Hessian.HalfSpace.ContinuousCoefficient
+import TauCeti.Analysis.PDE.Regularity.Hessian.HalfSpace.Localization
 import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.Analysis.Sobolev.Wkp.Extension
 import TauCeti.Analysis.Sobolev.Wkp.Leibniz
@@ -113,9 +114,6 @@ private theorem exists_wkp_normalHalfSpace_value_ae_eq_indicator_mul {a : ℝ}
           (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x) (Wkp.value 2 u x) x)
         (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))) := by
   have hΩm : MeasurableSet (Omega : Set (WithLp 2 (ℝ × E))) := Omega.isOpen.measurableSet
-  -- Inside `U`, which contains `K`, the domain `Ω` is the half-space `H`.
-  have hHK : (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) ∩ K ⊆ Omega :=
-    fun x hx => ((hΩU.symm ▸ ⟨hx.1, hKU hx.2⟩ : x ∈ (Omega : Set (WithLp 2 (ℝ × E))) ∩ U)).1
   -- The cutoff `w = ζ u`, with zero boundary values and weak Hessian `ζ D²u + T`.
   obtain ⟨w, hwv⟩ := Wkp.exists_value_ae_eq_mul_of_hasCompactSupport 2 hzeta hcpt u
   have hwD := Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_mul hzeta hwv
@@ -123,69 +121,19 @@ private theorem exists_wkp_normalHalfSpace_value_ae_eq_indicator_mul {a : ℝ}
       x ∉ K → Wkp.value 2 w x = 0 := by
     filter_upwards [hwv] with x hx hxK
     rw [hx, image_eq_zero_of_notMem_tsupport fun h => hxK (htsK h), zero_mul]
-  have hw0 : Wkp.firstOrder 1 w ∈ w1p0Submodule volume Omega p := by
-    obtain ⟨v, hv⟩ := hu0 zeta hzeta hcpt (htsK.trans hKU)
-    have hfo : Wkp.firstOrder 1 w = (v : W1p volume Omega p) := by
-      refine W1p.ext_value (Lp.ext ?_)
-      rw [Wkp.value_firstOrder]
-      exact hwv.trans hv.symm
-    exact hfo ▸ v.property
+  obtain ⟨v, hv⟩ := hu0 zeta hzeta hcpt (htsK.trans hKU)
   -- Its extension `W` by zero to `H` has zero boundary values on `∂H`.
-  obtain ⟨W, hW⟩ := Wkp.exists_value_ae_eq_indicator_of_isClosed (V := normalHalfSpace a)
-    hK.isClosed hHK 2 w hwK
-  refine ⟨W, W1p.mem_w1p0Submodule_of_inter_eq_of_isCompact hΩU hK hKU hw0
-    (by simpa only [Wkp.value_firstOrder] using hwK)
-    (by simpa only [Wkp.value_firstOrder] using hW), ?_, ?_, ?_⟩
+  obtain ⟨W, hW0, hW, hWD⟩ := Wkp.exists_value_ae_eq_indicator_of_inter_eq_normalHalfSpace_inter
+    hΩU hK hKU (Wkp.firstOrder_mem_w1p0Submodule_of_value_ae_eq v.property (hv.trans hwv.symm)) hwK
+  refine ⟨W, hW0, ?_, ?_, Wkp.aestronglyMeasurable_leibnizRemainder_of_value_ae_eq_mul hzeta hwv⟩
   · filter_upwards [hW, ae_restrict_of_ae ((ae_restrict_iff' hΩm).1 hwv)] with x h₁ h₂
     by_cases hx : x ∈ (Omega : Set (WithLp 2 (ℝ × E)))
     · rw [h₁, indicator_of_mem hx, indicator_of_mem hx, h₂ hx]
     · rw [h₁, indicator_of_notMem hx, indicator_of_notMem hx]
-  · filter_upwards [Wkp.iteratedGradient_ae_eq_indicator_of_isClosed hK.isClosed hHK 1 hwK hW,
-      ae_restrict_of_ae ((ae_restrict_iff' hΩm).1 hwD)] with x h₁ h₂
+  · filter_upwards [hWD, ae_restrict_of_ae ((ae_restrict_iff' hΩm).1 hwD)] with x h₁ h₂
     by_cases hx : x ∈ (Omega : Set (WithLp 2 (ℝ × E)))
     · rw [h₁, indicator_of_mem hx, indicator_of_mem hx, h₂ hx]
     · rw [h₁, indicator_of_notMem hx, indicator_of_notMem hx]
-  · refine ((Lp.aestronglyMeasurable (Wkp.iteratedGradient 1 w)).sub
-      (hzeta.continuous.aestronglyMeasurable.smul
-        (Lp.aestronglyMeasurable (Wkp.iteratedGradient 1 u)))).congr ?_
-    filter_upwards [hwD] with x hx
-    simp only [Pi.sub_apply, Pi.smul_apply']
-    rw [hx, add_sub_cancel_left]
-
-/-- **The localized equation.** If `D = 1_Ω (ζ D²u + T)` and `tr (A D²u) = f` on `Ω`, where `ζ`
-vanishes off `K`, then `tr (Ã D) = 1_{Ω ∩ K} (ζ f + tr (A T))` for
-`Ã = A₀ + 1_{Ω ∩ K} (A - A₀)`, which is `A` on `Ω ∩ K` and `A₀` elsewhere. -/
-private theorem ae_traceCLM_comp_eq_indicator {μ : Measure (WithLp 2 (ℝ × E))}
-    {Omega : Opens (WithLp 2 (ℝ × E))}
-    {K : Set (WithLp 2 (ℝ × E))} {zeta : WithLp 2 (ℝ × E) → ℝ} (htsK : tsupport zeta ⊆ K)
-    (A₀ : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))
-    {A : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
-    {u : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2} {f : WithLp 2 (ℝ × E) → ℝ}
-    (htr : ∀ᵐ x ∂μ, x ∈ (Omega : Set (WithLp 2 (ℝ × E))) →
-      traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L Wkp.iteratedGradient 1 u x) = f x)
-    {D : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
-    (hD : ∀ᵐ x ∂μ, D x = (Omega : Set (WithLp 2 (ℝ × E))).indicator (fun x =>
-      zeta x • Wkp.iteratedGradient 1 u x + leibnizRemainder zeta
-        (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x) (Wkp.value 2 u x) x) x) :
-    ∀ᵐ x ∂μ, traceCLM ℝ (WithLp 2 (ℝ × E))
-        ((A₀ + ((Omega : Set (WithLp 2 (ℝ × E))) ∩ K).indicator (fun y => A y - A₀) x) ∘L D x) =
-      ((Omega : Set (WithLp 2 (ℝ × E))) ∩ K).indicator (fun x =>
-        zeta x * f x + traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L leibnizRemainder zeta
-          (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x) (Wkp.value 2 u x) x)) x := by
-  filter_upwards [hD, htr] with x h₁ h₂
-  rw [h₁]
-  by_cases hxΩ : x ∈ (Omega : Set (WithLp 2 (ℝ × E)))
-  · rw [indicator_of_mem hxΩ]
-    by_cases hxK : x ∈ K
-    · have hx : x ∈ (Omega : Set (WithLp 2 (ℝ × E))) ∩ K := ⟨hxΩ, hxK⟩
-      rw [indicator_of_mem hx, indicator_of_mem hx, add_sub_cancel, ContinuousLinearMap.comp_add,
-        ContinuousLinearMap.comp_smul, map_add, map_smul, smul_eq_mul, h₂ hxΩ]
-    · have hx : x ∉ (Omega : Set (WithLp 2 (ℝ × E))) ∩ K := fun h => hxK h.2
-      rw [image_eq_zero_of_notMem_tsupport fun h => hxK (htsK h), zero_smul, zero_add,
-        leibnizRemainder_eq_zero_of_notMem_tsupport (fun h => hxK (htsK h)),
-        ContinuousLinearMap.comp_zero, map_zero, indicator_of_notMem hx]
-  · have hx : x ∉ (Omega : Set (WithLp 2 (ℝ × E))) ∩ K := fun h => hxΩ h.1
-    rw [indicator_of_notMem hxΩ, ContinuousLinearMap.comp_zero, map_zero, indicator_of_notMem hx]
 
 /-- **`W^{2,q}` regularity near a flat boundary portion for continuous principal coefficients**
 (Gilbarg–Trudinger, Lemma 9.16). Let `1 < p, q < ∞`, let `H = {x | a < x.fst}` be a half-space of
@@ -273,8 +221,8 @@ theorem exists_wkp_value_ae_eq_of_traceCLM_comp_eq_of_continuousWithinAt_of_norm
       ((hzetaTop.restrict _).fun_mul huq)).restrict _).ae_eq hWv.symm
   -- The half-space integrability gain for `W`.
   obtain ⟨V, hV, -⟩ := hgain a hlam hA₀ hb.restrict (ae_of_all _ hbδ) W hW0 (hG.restrict _) hWq
-    (ae_traceCLM_comp_eq_indicator htsK A₀ (ae_restrict_of_ae ((ae_restrict_iff' hΩm).1 htr))
-      hWD)
+    (ae_traceCLM_add_indicator_sub_comp_eq_indicator htsK A₀
+      (ae_restrict_of_ae ((ae_restrict_iff' hΩm).1 htr)) hWD)
   -- On `Ω ∩ B(x₀, ρ) ⊆ H`, where `ζ = 1`, the value of `W` is that of `u`.
   set B : Opens (WithLp 2 (ℝ × E)) := Omega ⊓ ⟨ball x₀ ρ, isOpen_ball⟩
   have hBH : B ≤ normalHalfSpace (E := E) a := fun x hx =>

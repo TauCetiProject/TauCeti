@@ -94,30 +94,6 @@ private def reflectCoeff (a : ℝ)
       (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))
 
 omit [MeasurableSpace E] [BorelSpace E] in
-/-- The linear normal reflection, as a continuous linear map, is an involution. -/
-private theorem normalLinearReflection_comp_self :
-    (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L
-      (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) =
-      ContinuousLinearMap.id ℝ _ := by
-  ext x
-  exact normalLinearReflection_normalLinearReflection x
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- Conjugating by the linear normal reflection does not increase the operator norm. -/
-private theorem norm_normalLinearReflection_comp_comp_le
-    (M : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) :
-    ‖(normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L M ∘L
-      (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))‖ ≤ ‖M‖ := by
-  have hR : ‖(normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))‖ ≤ 1 :=
-    (normalLinearReflection E).toLinearIsometry.norm_toContinuousLinearMap_le
-  calc _ ≤ ‖(normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))‖ *
-        (‖M‖ * ‖(normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))‖) :=
-        (ContinuousLinearMap.opNorm_comp_le _ _).trans
-          (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
-    _ ≤ 1 * (‖M‖ * 1) := by gcongr
-    _ = ‖M‖ := by ring
-
-omit [MeasurableSpace E] [BorelSpace E] in
 /-- Conjugating by the linear normal reflection commutes with subtracting the identity. -/
 private theorem normalLinearReflection_comp_comp_sub_id
     (M : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) :
@@ -128,7 +104,7 @@ private theorem normalLinearReflection_comp_comp_sub_id
         (M - ContinuousLinearMap.id ℝ _) ∘L
         (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) := by
   rw [ContinuousLinearMap.sub_comp, ContinuousLinearMap.comp_sub, ContinuousLinearMap.id_comp,
-    normalLinearReflection_comp_self]
+    normalLinearReflection_comp_normalLinearReflection]
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- The trace pairing is invariant under conjugating both factors by the linear normal
@@ -151,8 +127,9 @@ private theorem traceCLM_normalLinearReflection_conj_comp
     rw [← ContinuousLinearMap.comp_assoc
       (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))
       (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)),
-      normalLinearReflection_comp_self, ContinuousLinearMap.id_comp]
-  rw [hRR, ContinuousLinearMap.traceCLM_comp_comp_of_comp_eq_id normalLinearReflection_comp_self]
+      normalLinearReflection_comp_normalLinearReflection, ContinuousLinearMap.id_comp]
+  rw [hRR, ContinuousLinearMap.traceCLM_comp_comp_of_comp_eq_id
+    normalLinearReflection_comp_normalLinearReflection]
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- On the half-space the reflected coefficient is the coefficient itself. -/
@@ -160,10 +137,8 @@ private theorem reflectCoeff_of_mem {a : ℝ}
     (b : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) {x : WithLp 2 (ℝ × E)}
     (hx : x ∈ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E)))) :
     reflectCoeff a b x = b x := by
-  have hρx : normalReflection E a x ∉ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) := by
-    rw [SetLike.mem_coe, normalReflection_mem_normalHalfSpace_iff]
-    exact ((mem_normalHalfSpace a x).1 hx).not_gt
-  rw [reflectCoeff, indicator_of_mem hx, indicator_of_notMem hρx, ContinuousLinearMap.zero_comp,
+  rw [reflectCoeff, indicator_of_mem hx,
+    indicator_of_notMem (normalReflection_notMem_normalHalfSpace hx), ContinuousLinearMap.zero_comp,
     ContinuousLinearMap.comp_zero, add_zero, add_sub_cancel]
 
 omit [MeasurableSpace E] [BorelSpace E] in
@@ -178,7 +153,7 @@ private theorem reflectCoeff_of_mem_normalReflection {a : ℝ}
         (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) := by
   rw [reflectCoeff, indicator_of_notMem hx, indicator_of_mem hρx, add_zero,
     ContinuousLinearMap.sub_comp, ContinuousLinearMap.comp_sub, ContinuousLinearMap.id_comp,
-    normalLinearReflection_comp_self, add_sub_cancel]
+    normalLinearReflection_comp_normalLinearReflection, add_sub_cancel]
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- Off the half-space and its reflection, the reflected coefficient is the identity. -/
@@ -222,8 +197,10 @@ private theorem ae_norm_reflectCoeff_sub_id_le {a δ : ℝ} (hδ : 0 ≤ δ)
   · rw [reflectCoeff_of_mem b hx]
     exact h₁ hx
   · by_cases hρx : normalReflection E a x ∈ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E)))
-    · rw [reflectCoeff_of_mem_normalReflection b hx hρx, normalLinearReflection_comp_comp_sub_id]
-      exact (norm_normalLinearReflection_comp_comp_le _).trans (h₂ hρx)
+    · rw [reflectCoeff_of_mem_normalReflection b hx hρx, normalLinearReflection_comp_comp_sub_id,
+        ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
+        ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
+      exact h₂ hρx
     · rw [reflectCoeff_of_notMem b hx hρx, sub_self, ContinuousLinearMap.opNorm_zero]
       exact hδ
 
@@ -252,21 +229,15 @@ private theorem ae_traceCLM_reflectCoeff_comp_eq {a : ℝ}
   rw [hDx]
   by_cases hx : x ∈ S
   · -- `ρ` maps `H` off itself.
-    have hρx : normalReflection E a x ∉ S := by
-      rw [SetLike.mem_coe, normalReflection_mem_normalHalfSpace_iff]
-      exact ((mem_normalHalfSpace a x).1 hx).not_gt
-    rw [reflectCoeff_of_mem b hx, indicator_of_mem hx, indicator_of_notMem hρx,
-      indicator_of_mem hx, indicator_of_notMem hρx, ContinuousLinearMap.zero_comp,
-      ContinuousLinearMap.comp_zero, sub_zero, sub_zero, h₁ hx]
+    have hρx : normalReflection E a x ∉ S := normalReflection_notMem_normalHalfSpace hx
+    simp only [reflectCoeff_of_mem b hx, indicator_of_mem hx, indicator_of_notMem hρx,
+      ContinuousLinearMap.zero_comp, ContinuousLinearMap.comp_zero, sub_zero, h₁ hx]
   · by_cases hρx : normalReflection E a x ∈ S
-    · rw [reflectCoeff_of_mem_normalReflection b hx hρx, indicator_of_notMem hx,
-        indicator_of_mem hρx, indicator_of_notMem hx, indicator_of_mem hρx, zero_sub, zero_sub,
-        ContinuousLinearMap.comp_neg, map_neg, traceCLM_normalLinearReflection_conj_comp,
-        h₂ hρx]
-    · rw [reflectCoeff_of_notMem b hx hρx, indicator_of_notMem hx, indicator_of_notMem hρx,
-        indicator_of_notMem hx, indicator_of_notMem hρx, ContinuousLinearMap.zero_comp,
-        ContinuousLinearMap.comp_zero, sub_zero, sub_zero, ContinuousLinearMap.comp_zero,
-        map_zero]
+    · simp only [reflectCoeff_of_mem_normalReflection b hx hρx, indicator_of_notMem hx,
+        indicator_of_mem hρx, zero_sub, ContinuousLinearMap.comp_neg, map_neg,
+        traceCLM_normalLinearReflection_conj_comp, h₂ hρx]
+    · simp only [reflectCoeff_of_notMem b hx hρx, indicator_of_notMem hx, indicator_of_notMem hρx,
+        ContinuousLinearMap.zero_comp, ContinuousLinearMap.comp_zero, sub_zero, map_zero]
 
 /-- **Integrability gain on a half-space for coefficients close to the identity.** Let
 `1 < p, r < ∞`. There is `δ > 0`, depending only on `E`, `p` and `r`, with the following property.
@@ -321,10 +292,8 @@ theorem exists_wkp_value_ae_eq_of_traceCLM_comp_eq_of_norm_sub_id_le_of_normalHa
       =ᵐ[(volume : Measure (WithLp 2 (ℝ × E))).restrict S] Wkp.value 2 u := by
     filter_upwards [Wkp.value_restrictL_ae hle 2 v₀, ae_restrict_of_ae hv₀,
       ae_restrict_of_ae hwv, ae_restrict_mem hS] with x h₁ h₂ h₃ hx
-    have hρx : normalReflection E a x ∉ S := by
-      rw [SetLike.mem_coe, normalReflection_mem_normalHalfSpace_iff]
-      exact ((mem_normalHalfSpace a x).1 hx).not_gt
-    rw [h₁, h₂, h₃, indicator_of_mem hx, indicator_of_notMem hρx, sub_zero]
+    rw [h₁, h₂, h₃, indicator_of_mem hx,
+      indicator_of_notMem (normalReflection_notMem_normalHalfSpace hx), sub_zero]
   exact ⟨Wkp.restrictL hle 2 v₀, hv, Wkp.iteratedGradient_ae_eq_of_value_ae_eq 1 hv⟩
 
 end Reflection
@@ -375,8 +344,8 @@ theorem exists_wkp_value_ae_eq_of_traceCLM_comp_eq_of_norm_sub_le_of_normalHalfS
   have hHe : ((normalHalfSpace (E := E) a : Opens (WithLp 2 (ℝ × E))) :
       Set (WithLp 2 (ℝ × E))) = e.symm ⁻¹' (normalHalfSpace (E := E) (a / c)) := by
     rw [hH a]; ext x; simp
-  have hq := quasiMeasurePreserving_restrict_of_coe_eq_preimage (mu := volume) e (hH a)
-  have hq' := quasiMeasurePreserving_restrict_of_coe_eq_preimage (mu := volume) e.symm hHe
+  have hq := e.quasiMeasurePreserving_restrict_of_coe_eq_preimage (mu := volume) (hH a)
+  have hq' := e.symm.quasiMeasurePreserving_restrict_of_coe_eq_preimage (mu := volume) hHe
   have hMN : (e : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L
       (e.symm : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) = ContinuousLinearMap.id ℝ _ := by
     ext x; simp

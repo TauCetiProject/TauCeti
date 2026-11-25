@@ -119,7 +119,8 @@ private theorem compCLE_mem_w1p0Submodule (hp : p ≠ ⊤) (e : E ≃L[ℝ] E)
 /-- A linear automorphism `e` is quasi-measure-preserving from `U = e⁻¹(W)` to `W`, for the
 restrictions of an additive Haar measure: almost-everywhere statements on `W` pull back along `e`
 to `U`. -/
-theorem quasiMeasurePreserving_restrict_of_coe_eq_preimage (e : E ≃L[ℝ] E)
+theorem _root_.ContinuousLinearEquiv.quasiMeasurePreserving_restrict_of_coe_eq_preimage
+    (e : E ≃L[ℝ] E)
     (hUW : (U : Set E) = e ⁻¹' W) :
     QuasiMeasurePreserving e (mu.restrict U) (mu.restrict W) :=
   (Measure.ContinuousLinearMap.quasiMeasurePreserving mu (e : E →L[ℝ] E)
@@ -163,7 +164,7 @@ private theorem inner_gradient_compCLE_ae (hp : p ≠ ⊤) (e : E ≃L[ℝ] E)
       fun x => ⟪((e : E →L[ℝ] E).adjoint ∘L Wkp.iteratedGradient 1 u (e x) ∘L
         (e : E →L[ℝ] E)) f, c⟫_ℝ := by
   filter_upwards [gradient_compCLE_ae hp e hUW d,
-    quasiMeasurePreserving_restrict_of_coe_eq_preimage e hUW |>.ae (hd (e f))] with x h1 h2
+    e.quasiMeasurePreserving_restrict_of_coe_eq_preimage hUW |>.ae (hd (e f))] with x h1 h2
   rw [h1, ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.comp_apply,
     ContinuousLinearEquiv.coe_coe, h2]
@@ -182,7 +183,7 @@ theorem Wkp.exists_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤) (e : 
       (Wkp.firstOrder 1 u ∈ w1p0Submodule mu W p →
         Wkp.firstOrder 1 w ∈ w1p0Submodule mu U p) := by
   set T := compCLE (mu := mu) hp e hUW
-  have hqmp := quasiMeasurePreserving_restrict_of_coe_eq_preimage (mu := mu) e hUW
+  have hqmp := e.quasiMeasurePreserving_restrict_of_coe_eq_preimage (mu := mu) hUW
   set u₁ := Wkp.firstOrder 1 u
   have hgrad : W1p.gradient u₁ = Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) :=
     Wkp.gradient_firstOrder_one u
@@ -269,7 +270,7 @@ theorem Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp {A : E →L[ℝ]
       fun x _ => abs_det_le e x
   have hC' : (ENNReal.ofReal |(e : E →L[ℝ] E).det|)⁻¹ ≠ ⊤ :=
     ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 habs).ne'
-  have hqmp := quasiMeasurePreserving_restrict_of_coe_eq_preimage (mu := mu) e hUW
+  have hqmp := e.quasiMeasurePreserving_restrict_of_coe_eq_preimage (mu := mu) hUW
   -- `v` solves Poisson's equation with forcing term `f ∘ e`
   set f' := Lp.compOfMapLeSmul ℝ e.continuous.aemeasurable hC' hmap f
   have hf'e := Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) e.continuous.aemeasurable hC' hmap f

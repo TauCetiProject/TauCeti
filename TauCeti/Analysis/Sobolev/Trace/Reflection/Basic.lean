@@ -127,6 +127,15 @@ theorem normalLinearReflection_normalLinearReflection (x : WithLp 2 (ℝ × E)) 
 theorem normalLinearReflection_symm : (normalLinearReflection E).symm = normalLinearReflection E :=
   Submodule.reflection_symm
 
+/-- The linear normal reflection, as a continuous linear map, is an involution. Not `@[simp]`: the
+simp normal form of the left-hand side is the coercion of `ContinuousLinearEquiv.trans`. -/
+theorem normalLinearReflection_comp_normalLinearReflection :
+    (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L
+      (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) =
+      ContinuousLinearMap.id ℝ _ := by
+  ext x
+  exact normalLinearReflection_normalLinearReflection x
+
 /-- The linear normal reflection is self-adjoint. -/
 theorem inner_normalLinearReflection_left_eq_right (x y : WithLp 2 (ℝ × E)) :
     inner ℝ (normalLinearReflection E x) y = inner ℝ x (normalLinearReflection E y) := by
@@ -205,6 +214,14 @@ theorem normalReflection_mem_normalHalfSpace_iff (a : ℝ) (x : WithLp 2 (ℝ ×
     normalReflection E a x ∈ normalHalfSpace (E := E) a ↔ x.fst < a := by
   simp only [mem_normalHalfSpace, normalReflection_apply, WithLp.toLp_fst]
   constructor <;> intro h <;> linarith
+
+/-- The normal reflection in `{a} × E` maps the half-space `TauCeti.normalHalfSpace a` off
+itself. -/
+theorem normalReflection_notMem_normalHalfSpace {a : ℝ} {x : WithLp 2 (ℝ × E)}
+    (hx : x ∈ normalHalfSpace (E := E) a) :
+    normalReflection E a x ∉ normalHalfSpace (E := E) a := by
+  rw [normalReflection_mem_normalHalfSpace_iff]
+  exact ((mem_normalHalfSpace a x).1 hx).not_gt
 
 /-- The normal reflection in `{a} × E` is its linear part `TauCeti.normalLinearReflection`
 followed by the translation by `(2a, 0)`. -/
