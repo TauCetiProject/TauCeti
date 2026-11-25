@@ -18,7 +18,8 @@ scheme `G(k, M)` of the module, over `Spec R`
 
 Over the affine open `⊤` of `Spec R` the relative Grassmannian is `G(k, Γ(M~, ⊤))` over
 `Spec Γ(Spec R, ⊤)` (`AlgebraicGeometry.Scheme.Modules.isPullback_grassmannianι_fromSpec`), and
-the inclusion of this part is an isomorphism because `Spec Γ(Spec R, ⊤) ⟶ Spec R` is one. The
+the inclusion of this part is an isomorphism because `Spec R` is affine
+(`AlgebraicGeometry.Scheme.Modules.isIso_grassmannianι_top`). The
 change of base ring along `R ≅ Γ(Spec R, ⊤)` is a base change of modules
 (`AlgebraicGeometry.isBaseChange_tildeToTop`), so the base change morphism
 `IsBaseChange.grassmannianSchemeHom` gives `G(k, Γ(M~, ⊤)) ≅ G(k, M)`.
@@ -41,14 +42,6 @@ open CategoryTheory Limits
 namespace AlgebraicGeometry.Scheme.Modules
 
 variable {R : CommRingCat.{u}} (M : ModuleCat.{u} R) (k : ℕ)
-
-/-- The part of `G(k, M~)` over the affine open `⊤` of `Spec R` is all of it. -/
-instance isIso_grassmannianι_tilde_top :
-    IsIso (grassmannianι (tilde M) k ⟨⊤, isAffineOpen_top _⟩) := by
-  have : IsIso (isAffineOpen_top (Spec R)).fromSpec := by
-    rw [IsAffineOpen.fromSpec_top]
-    infer_instance
-  exact (isPullback_grassmannianι_fromSpec (tilde M) k ⟨⊤, isAffineOpen_top _⟩).isIso_snd_of_isIso
 
 /-- Changing the base ring along `R ≅ Γ(Spec R, ⊤)` is an isomorphism of Grassmannians. -/
 instance isIso_grassmannianSchemeHom_tildeToTop :
