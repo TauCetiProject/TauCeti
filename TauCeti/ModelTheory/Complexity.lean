@@ -137,6 +137,16 @@ theorem isEqualityFree_boundedFormula {l : ℕ} (R : L.Relations l)
     (ts : Fin l → L.Term (α ⊕ Fin n)) : (R.boundedFormula ts).IsEqualityFree :=
   IsEqualityFree.rel R ts
 
+/-- An equation between terms, as a formula, is not equality-free. -/
+@[simp]
+theorem not_isEqualityFree_equal (t₁ t₂ : L.Term α) : ¬(t₁.equal t₂).IsEqualityFree :=
+  not_isEqualityFree_bdEqual _ _
+
+@[simp]
+theorem isEqualityFree_formula {l : ℕ} (R : L.Relations l) (ts : Fin l → L.Term α) :
+    (R.formula ts).IsEqualityFree :=
+  IsEqualityFree.rel R _
+
 /-- An implication is equality-free exactly when its two sides are. -/
 @[simp]
 theorem isEqualityFree_imp_iff : (φ.imp ψ).IsEqualityFree ↔ φ.IsEqualityFree ∧ ψ.IsEqualityFree :=
@@ -234,6 +244,56 @@ theorem IsQF.subst {β : Type*} (h : φ.IsQF) (tf : α → L.Term β) : (φ.subs
   | falsum => exact IsQF.falsum
   | of_isAtomic h => exact (h.subst tf).isQF
   | imp _ _ ih₁ ih₂ => exact ih₁.imp ih₂
+
+/-- Translating an equality-free formula along a language homomorphism gives an equality-free
+formula. -/
+theorem IsEqualityFree.onBoundedFormula (h : φ.IsEqualityFree) (ϕ : L →ᴸ L') :
+    (ϕ.onBoundedFormula φ).IsEqualityFree := by
+  induction h with
+  | falsum => exact IsEqualityFree.falsum
+  | rel R ts => exact IsEqualityFree.rel _ _
+  | imp _ _ ih₁ ih₂ => exact ih₁.imp ih₂
+  | all _ ih => exact ih.all
+
+/-- Mapping the terms and relation symbols of an equality-free formula gives an equality-free
+formula, provided the map `h` applied under each quantifier preserves equality-freeness. -/
+theorem IsEqualityFree.mapTermRel {β : Type*} {g : ℕ → ℕ}
+    {ft : ∀ n, L.Term (α ⊕ Fin n) → L'.Term (β ⊕ Fin (g n))}
+    {fr : ∀ n, L.Relations n → L'.Relations n}
+    {h : ∀ n, L'.BoundedFormula β (g (n + 1)) → L'.BoundedFormula β (g n + 1)}
+    (hh : ∀ n (ψ : L'.BoundedFormula β (g (n + 1))), ψ.IsEqualityFree → (h n ψ).IsEqualityFree)
+    (hφ : φ.IsEqualityFree) : (φ.mapTermRel ft fr h).IsEqualityFree := by
+  induction hφ with
+  | falsum => exact IsEqualityFree.falsum
+  | rel R ts => exact IsEqualityFree.rel _ _
+  | imp _ _ ih₁ ih₂ => exact ih₁.imp ih₂
+  | all _ ih => exact (hh _ _ ih).all
+
+/-- Raising the number of bound positions of an equality-free formula gives an equality-free
+formula. -/
+theorem IsEqualityFree.castLE {m : ℕ} {h : n ≤ m} (hφ : φ.IsEqualityFree) :
+    (φ.castLE h).IsEqualityFree := by
+  induction hφ generalizing m with
+  | falsum => exact IsEqualityFree.falsum
+  | rel R ts => exact IsEqualityFree.rel _ _
+  | imp _ _ ih₁ ih₂ => exact ih₁.imp ih₂
+  | all _ ih => exact ih.all
+
+/-- Relabelling the free variables of an equality-free formula gives an equality-free formula. -/
+theorem IsEqualityFree.relabel {β : Type*} {m : ℕ} (hφ : φ.IsEqualityFree)
+    (g : α → β ⊕ Fin m) : (φ.relabel g).IsEqualityFree :=
+  hφ.mapTermRel fun _ _ h => h.castLE
+
+/-- Shifting the bound variables of an equality-free formula gives an equality-free formula. -/
+theorem IsEqualityFree.liftAt {k m : ℕ} (hφ : φ.IsEqualityFree) :
+    (φ.liftAt k m).IsEqualityFree :=
+  hφ.mapTermRel fun _ _ h => h.castLE
+
+/-- Substituting terms for the free variables of an equality-free formula gives an equality-free
+formula. -/
+theorem IsEqualityFree.subst {β : Type*} (hφ : φ.IsEqualityFree) (tf : α → L.Term β) :
+    (φ.subst tf).IsEqualityFree :=
+  hφ.mapTermRel fun _ _ h => h
 
 /-- Translating a universal formula along a language homomorphism gives a universal formula. -/
 theorem IsUniversal.onBoundedFormula (h : φ.IsUniversal) (ϕ : L →ᴸ L') :

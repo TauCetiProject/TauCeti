@@ -43,7 +43,7 @@ example (t : L.Term ℕ) :
     (t.equal t).IsValid ∧ ¬(disjunction [t.equal t] : L.Formula ℕ).IsTautology := by
   refine ⟨isValid_iff.2 fun _ _ _ => Formula.realize_equal.2 rfl, fun h => ?_⟩
   -- The truth assignment making every formula false falsifies the atom `t = t`.
-  simpa [Term.equal] using isTautology_iff.1 h fun _ _ => False
+  simpa using isTautology_iff.1 h fun _ _ => False
 
 -- The empty disjunction is `⊥`, which is not valid.
 example : disjunction ([] : List (L.Formula ℕ)) = ⊥ ∧

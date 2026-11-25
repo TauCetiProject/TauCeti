@@ -100,6 +100,17 @@ theorem propRealize_boundedFormula {l : ℕ} (R : L.Relations l) (ts : Fin l →
   Iff.rfl
 
 @[simp]
+theorem propRealize_equal (t₁ t₂ : L.Term α) {τ : (m : ℕ) → L.BoundedFormula α m → Prop} :
+    (t₁.equal t₂).PropRealize τ ↔ τ 0 (t₁.equal t₂) :=
+  Iff.rfl
+
+@[simp]
+theorem propRealize_formula {l : ℕ} (R : L.Relations l) (ts : Fin l → L.Term α)
+    {τ : (m : ℕ) → L.BoundedFormula α m → Prop} :
+    (R.formula ts).PropRealize τ ↔ τ 0 (R.formula ts) :=
+  Iff.rfl
+
+@[simp]
 theorem propRealize_imp : (φ.imp ψ).PropRealize τ ↔ (φ.PropRealize τ → ψ.PropRealize τ) :=
   Iff.rfl
 
