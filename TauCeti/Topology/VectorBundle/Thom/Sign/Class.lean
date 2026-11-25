@@ -11,7 +11,7 @@ public import TauCeti.Topology.VectorBundle.Thom.TwistedRankDegreeHomology
 /-!
 # The Thom class with coefficients in the orientation system
 
-Let `E → B` be a real vector bundle of rank `r` over a compact base, with Thom pair `(E, E₀)`,
+Let `E → B` be a real vector bundle of rank `r` over an arbitrary base, with Thom pair `(E, E₀)`,
 `E₀` the complement of the zero section, and let `R` be a commutative ring. Let `π^*o(E)` be the
 orientation local system of `E` pulled back to the total space
 (`TauCeti.thomPairSignLocalSystem`). Every bundle, orientable or not, has a **Thom class with
@@ -36,7 +36,7 @@ The construction is the universal coefficient theorem in the bottom degree. The 
 of the Thom pair vanishes below the rank (`TauCeti.isZero_twistedHomology_thomPair`), so evaluation
 on homology identifies `Hʳ(E, E₀; π^*o(E), M)` with `Hom(Hᵣ(E, E₀; π^*o(E)), M)` for every module of
 values `M` (`TauCeti.thomPairTwistedCohomologyFinrankEquiv`); the fibres of `π^*o(E)` are free of
-rank one, hence projective. Over a compact base `Hᵣ(E, E₀; π^*o(E)) ≅ H₀(B; R)`, sending fibre
+rank one, hence projective. Moreover, `Hᵣ(E, E₀; π^*o(E)) ≅ H₀(B; R)`, sending fibre
 classes to classes of points (`TauCeti.thomPairTwistedHomologyFinrankIso`), so morphisms out of
 it are determined by the fibre classes (`TauCeti.thomPairTwistedHomology_hom_ext`). So a class of
 `Hʳ(E, E₀; π^*o(E), M)` is determined by its values on the fibre classes
@@ -83,7 +83,7 @@ universe w
 
 namespace TauCeti
 
-variable {B : Type w} [TopologicalSpace B] [CompactSpace B] {F : Type w}
+variable {B : Type w} [TopologicalSpace B] {F : Type w}
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] {E : B → Type w}
   [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)]
   [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E] {ι : Type} [Fintype ι]
@@ -93,10 +93,10 @@ section Ext
 
 variable [Ring R] {k : Type*} [Ring k] [Linear k (ModuleCat.{w} R)]
 
-/-- **Classes of the Thom pair in the rank degree are determined on fibre classes.** Over a compact
-base, two classes of `Hʳ(E, E₀; π^*o(E), M)` with the same value on the fibre class over every
-point are equal: evaluation on homology is injective in the rank degree, and the fibre classes
-generate `Hᵣ(E, E₀; π^*o(E)) ≅ H₀(B; R)`. -/
+/-- **Classes of the Thom pair in the rank degree are determined on fibre classes.** Two classes
+of `Hʳ(E, E₀; π^*o(E), M)` with the same value on the fibre class over every point are equal:
+evaluation on homology is injective in the rank degree, and the fibre classes generate
+`Hᵣ(E, E₀; π^*o(E)) ≅ H₀(B; R)`. -/
 theorem twistedCohomology_thomPair_ext {M : ModuleCat.{w} R}
     {u v : (thomPair F E).twistedCohomology (thomPairSignLocalSystem F E R hι) k M (finrank ℝ F)}
     (h : ∀ b : B,
@@ -116,7 +116,7 @@ variable [CommRing R]
 
 variable (F E R) in
 /-- **The Thom class with coefficients in the orientation system** of a real vector bundle `E` of
-rank `r` over a compact base: the class `U ∈ Hʳ(E, E₀; π^*o(E), R)` taking the value `1` on the
+rank `r` over an arbitrary base: the class `U ∈ Hʳ(E, E₀; π^*o(E), R)` taking the value `1` on the
 fibre class over every point (`TauCeti.twistedKronecker_twistedThomClass_thomPairSignFiberClass`),
 the only such class (`TauCeti.eq_twistedThomClass_iff`). It exists for every bundle, orientable or
 not, and is normalized by the orientation `ω` of the model fibre that normalizes the fibre classes.

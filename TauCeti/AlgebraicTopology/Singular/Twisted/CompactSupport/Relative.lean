@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport.Basic
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Functoriality
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Small.Relative
 public import TauCeti.Topology.Category.TopPair
 
 /-!
@@ -74,12 +75,16 @@ section Maps
 
 variable {S T U : Set Y}
 
-/-- The inclusion of pairs `(π⁻¹ S, π⁻¹ S ∩ A) ⟶ (π⁻¹ T, π⁻¹ T ∩ A)` for `S ⊆ T`. -/
-private abbrev restrictPreimagePairInclusion (h : S ⊆ T) :
-    ofInclusion (Set.inter_subset_left : π ⁻¹' S ∩ A ⊆ π ⁻¹' S) ⟶
-      ofInclusion (Set.inter_subset_left : π ⁻¹' T ∩ A ⊆ π ⁻¹' T) :=
-  ofInclusionMap Set.inter_subset_left Set.inter_subset_left
-    (ContinuousMap.inclusion (Set.preimage_mono h)) fun _ hx ↦ ⟨h hx.1, hx.2⟩
+/-- The restriction of `L` to `π⁻¹ S` along `ContinuousMap.subtypeVal` equals its pullback along
+`TopCat.restrictPreimagePairMap`. -/
+lemma pullback_subtypeVal_eq_pullback_restrictPreimagePairMap (S : Set Y) :
+    (LocalCoefficientSystem.pullback (X := TopCat.of ↥(π ⁻¹' S))
+        (ContinuousMap.subtypeVal (π ⁻¹' S))).obj L =
+      (LocalCoefficientSystem.pullback
+        (Hom.fst (TopCat.restrictPreimagePairMap π A S)).hom).obj L := by
+  rw [TopCat.restrictPreimagePairMap_fst]
+  -- `TopCat.ofHom (ContinuousMap.subtypeVal _)` has underlying continuous map `subtypeVal`.
+  rfl
 
 /-- The map of relative twisted chains induced by the inclusion of pairs
 `(π⁻¹ S, π⁻¹ S ∩ A) ⟶ (π⁻¹ T, π⁻¹ T ∩ A)` for `S ⊆ T`, with `L` restricted along the inclusions
@@ -92,13 +97,47 @@ def restrictPreimagePairTwistedChainComplexMap (h : S ⊆ T) :
         ((LocalCoefficientSystem.pullback
           (Hom.fst (TopCat.restrictPreimagePairMap π A T)).hom).obj L) :=
   (ofInclusion _).twistedChainComplexCoefficientMap
-      (eqToHom (congrArg (fun g ↦ (LocalCoefficientSystem.pullback (Hom.fst g).hom).obj L)
-          (TopCat.ofInclusionMap_inclusion_comp_restrictPreimagePairMap π A h).symm) ≫
-        (fstPullbackCompIso (restrictPreimagePairInclusion A π h)
-          (TopCat.restrictPreimagePairMap π A T) L).hom) ≫
-    twistedChainComplexMap (restrictPreimagePairInclusion A π h)
-      ((LocalCoefficientSystem.pullback
-        (Hom.fst (TopCat.restrictPreimagePairMap π A T)).hom).obj L)
+      (eqToHom (pullback_subtypeVal_eq_pullback_restrictPreimagePairMap A L π S).symm) ≫
+    LocalCoefficientSystem.subsetPairTwistedChainComplexMap L Set.inter_subset_left
+      Set.inter_subset_left (Set.preimage_mono h)
+      (Set.inter_subset_inter_left A (Set.preimage_mono h)) ≫
+    (ofInclusion _).twistedChainComplexCoefficientMap
+      (eqToHom (pullback_subtypeVal_eq_pullback_restrictPreimagePairMap A L π T))
+
+/-- Comparing `TauCeti.LocalCoefficientSystem.subsetPairTwistedChainComplexMap` with
+`TopPair.restrictPreimagePairTwistedChainComplexMap` along the equality of coefficient systems. -/
+@[reassoc]
+theorem subsetPairTwistedChainComplexMap_comp_eqToHom (h : S ⊆ T) :
+    LocalCoefficientSystem.subsetPairTwistedChainComplexMap L Set.inter_subset_left
+        Set.inter_subset_left (Set.preimage_mono h)
+        (Set.inter_subset_inter_left A (Set.preimage_mono h)) ≫
+      (ofInclusion _).twistedChainComplexCoefficientMap
+        (eqToHom (pullback_subtypeVal_eq_pullback_restrictPreimagePairMap A L π T)) =
+    (ofInclusion _).twistedChainComplexCoefficientMap
+        (eqToHom (pullback_subtypeVal_eq_pullback_restrictPreimagePairMap A L π S)) ≫
+      restrictPreimagePairTwistedChainComplexMap A L π h := by
+  -- `erw`: `(ofInclusion _).fst` matches `TopCat.of ↥(π ⁻¹' S)` after unfolding `ofInclusion`.
+  erw [restrictPreimagePairTwistedChainComplexMap,
+    ← twistedChainComplexCoefficientMap_comp_assoc, eqToHom_trans, eqToHom_refl,
+    twistedChainComplexCoefficientMap_id, Category.id_comp]
+
+/-- Comparing `TauCeti.LocalCoefficientSystem.subsetPairTwistedHomologyMap` with
+`TopPair.restrictPreimagePairTwistedChainComplexMap` in homology along the equality of coefficient
+systems. -/
+@[reassoc]
+theorem subsetPairTwistedHomologyMap_comp_eqToHom (h : S ⊆ T) (k : ℕ) :
+    LocalCoefficientSystem.subsetPairTwistedHomologyMap L Set.inter_subset_left
+        Set.inter_subset_left (Set.preimage_mono h)
+        (Set.inter_subset_inter_left A (Set.preimage_mono h)) k ≫
+      (ofInclusion _).twistedHomologyCoefficientMap
+        (eqToHom (pullback_subtypeVal_eq_pullback_restrictPreimagePairMap A L π T)) k =
+    (ofInclusion _).twistedHomologyCoefficientMap
+        (eqToHom (pullback_subtypeVal_eq_pullback_restrictPreimagePairMap A L π S)) k ≫
+      HomologicalComplex.homologyMap (restrictPreimagePairTwistedChainComplexMap A L π h) k :=
+  ((HomologicalComplex.homologyMap_comp _ _ k).symm.trans
+    (congrArg (HomologicalComplex.homologyMap · k)
+      (subsetPairTwistedChainComplexMap_comp_eqToHom A L π h))).trans
+    (HomologicalComplex.homologyMap_comp _ _ k)
 
 /-- The map of relative twisted chains induced by `S ⊆ T`, followed by the map induced by the
 inclusion of the pair over `T` into `(X, A)`, is the map induced by the inclusion of the pair over
@@ -108,12 +147,35 @@ lemma restrictPreimagePairTwistedChainComplexMap_comp_twistedChainComplexMap (h 
     restrictPreimagePairTwistedChainComplexMap A L π h ≫
         twistedChainComplexMap (TopCat.restrictPreimagePairMap π A T) L =
       twistedChainComplexMap (TopCat.restrictPreimagePairMap π A S) L := by
-  rw [twistedChainComplexMap_congr L
-      (congrArg Hom.fst (TopCat.ofInclusionMap_inclusion_comp_restrictPreimagePairMap π A h).symm),
-    twistedChainComplexMap_comp (restrictPreimagePairInclusion A π h)
-      (TopCat.restrictPreimagePairMap π A T) L,
-    restrictPreimagePairTwistedChainComplexMap, twistedChainComplexCoefficientMap_comp]
-  simp only [Category.assoc]
+  let f : ofInclusion (Set.inter_subset_left : π ⁻¹' S ∩ A ⊆ π ⁻¹' S) ⟶
+      ofInclusion (Set.inter_subset_left : π ⁻¹' T ∩ A ⊆ π ⁻¹' T) :=
+    TopPair.ofHom (TopCat.ofHom (ContinuousMap.inclusion (Set.preimage_mono h)))
+      (TopCat.ofHom (ContinuousMap.inclusion (Set.inter_subset_inter_left A (Set.preimage_mono h))))
+      rfl
+  have hf : f = ofInclusionMap Set.inter_subset_left Set.inter_subset_left
+      (ContinuousMap.inclusion (Set.preimage_mono h)) fun _ hx ↦ ⟨h hx.1, hx.2⟩ :=
+    TopPair.hom_ext_of_fst _ (ofInclusionMap_fst _ _).symm
+  have hcomp : f ≫ TopCat.restrictPreimagePairMap π A T = TopCat.restrictPreimagePairMap π A S :=
+    (congrArg (· ≫ TopCat.restrictPreimagePairMap π A T) hf).trans
+      (TopCat.ofInclusionMap_inclusion_comp_restrictPreimagePairMap π A h)
+  -- `erw`: `(ofSubset A).fst` is `X` only after unfolding `ofSubset`.
+  erw [restrictPreimagePairTwistedChainComplexMap,
+    LocalCoefficientSystem.subsetPairTwistedChainComplexMap_def, Category.assoc, Category.assoc,
+    Category.assoc, twistedChainComplexMap_naturality_assoc,
+    twistedChainComplexMap_congr L (congrArg Hom.fst hcomp.symm),
+    twistedChainComplexMap_comp f (TopCat.restrictPreimagePairMap π A T) L,
+    ← twistedChainComplexCoefficientMap_comp_assoc, ← twistedChainComplexCoefficientMap_comp_assoc,
+    ← twistedChainComplexCoefficientMap_comp_assoc]
+  refine congrArg (fun η ↦ (ofInclusion _).twistedChainComplexCoefficientMap η ≫ _) ?_
+  ext v : 2
+  -- Each component is either `𝟙 _` (for `pullbackCompIso` / `fstPullbackCompIso`) or an `eqToHom`
+  -- between fibres of `L` at the same point, so both sides agree by proof irrelevance.
+  erw [NatTrans.comp_app, NatTrans.comp_app, NatTrans.comp_app,
+    LocalCoefficientSystem.pullback_map_app, LocalCoefficientSystem.pullbackCompIso_hom_app_app,
+    fstPullbackCompIso_hom_app, eqToHom_app, eqToHom_app, eqToHom_app, Category.comp_id,
+    Category.comp_id, eqToHom_trans]
+  -- Both sides are `eqToHom` between the same fibres of `L`, equal by proof irrelevance.
+  rfl
 
 /-- The inclusion of the pair over `S` into `(X, A)` induces injective maps of relative twisted
 chains. -/
