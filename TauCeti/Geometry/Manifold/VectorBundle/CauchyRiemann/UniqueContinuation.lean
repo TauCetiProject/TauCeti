@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Chart
 import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation.VariableStructure
-import TauCeti.LinearAlgebra.TotallyReal.Complex
+import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
 import Mathlib.Analysis.Normed.Module.Connected
 
 /-!
@@ -69,17 +69,6 @@ variable {M : Type*} [TopologicalSpace M] [T2Space M] [ChartedSpace ℂ M] [IsMa
   (hD : IsRealCauchyRiemannOperator F (ofComplexManifold ℂ M) D)
   (hDs : ContMDiffCovariantDerivativeOn F 0 D univ)
   {s : Π x, V x} (hs : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) 1 (T% s)) (hs0 : D s = 0)
-
-omit [T2Space M] [IsManifold 𝓘(ℂ) ∞ M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)]
-  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)] [∀ x, IsScalarTower ℝ ℂ (V x)]
-  [∀ x, ContinuousSMul ℂ (V x)] [VectorBundle ℂ F V] [∀ x, Module ℂ (V x)] in
-/-- Multiplication by `i` is a complex structure on `F`, as continuous linear maps: the
-continuous form of `TauCeti.lsmul_I_comp_lsmul_I`. -/
-private theorem lsmulL_I_comp_lsmulL_I :
-    (ContinuousLinearMap.lsmul ℝ ℂ Complex.I : F →L[ℝ] F) ∘L
-      ContinuousLinearMap.lsmul ℝ ℂ Complex.I = -ContinuousLinearMap.id ℝ F := by
-  ext v
-  simpa using LinearMap.congr_fun (lsmul_I_comp_lsmul_I (E := F)) v
 
 /-- The coefficient `2 Zᵢ(z)(·)(1)` of the equation of a reading in chart `i`. -/
 private def coeff (i : Fin A.n) (z : ℂ) : F →L[ℝ] F :=
@@ -158,7 +147,9 @@ private theorem eqOn_zero_of_eventually_coord_eq_zero {i : Fin A.n} {y : ℂ} {r
   obtain ⟨hu, hCm, hCb, heq⟩ := coord_equation A hD hDs hs hs0 i
   obtain ⟨t, hts, hto, hzt⟩ := _root_.eventually_nhds_iff.1 h₀
   refine eq_zero_of_coord_eq_zero A (eqOn_zero_of_contDiffOn_of_eqOn_zero_of_complexStructure
-    isOpen_ball isPreconnected_ball contDiffOn_const (fun _ _ ↦ lsmulL_I_comp_lsmulL_I)
+    isOpen_ball isPreconnected_ball contDiffOn_const (fun _ _ ↦ by
+      rw [← ContinuousLinearMap.mul_def, ContinuousLinearMap.lsmul_I_mul_lsmul_I,
+        ContinuousLinearMap.one_def])
     (hu.mono hr) (hCm.mono_set hr) (fun z hz ↦ hCb z (hr hz)) (fun z hz ↦ heq z (hr hz))
     (hto.inter isOpen_ball) ⟨z₀, hzt, hz₀⟩ inter_subset_right fun z hz ↦ hts z hz.1)
 
@@ -212,7 +203,9 @@ theorem IsRealCauchyRiemannOperator.eq_zero_of_forall_isBigO [ConnectedSpace M] 
   obtain ⟨r, hr, hri⟩ := isOpen_iff.1 (A.image i).isOpen _ hy
   obtain ⟨hu, hCm, hCb, heq⟩ := coord_equation A hD hDs hs hs0 i
   have hzero := eqOn_zero_of_contDiffOn_of_forall_isBigO_of_complexStructure isOpen_ball
-    isPreconnected_ball contDiffOn_const (fun _ _ ↦ lsmulL_I_comp_lsmulL_I) (hu.mono hri)
+    isPreconnected_ball contDiffOn_const (fun _ _ ↦ by
+      rw [← ContinuousLinearMap.mul_def, ContinuousLinearMap.lsmul_I_mul_lsmul_I,
+        ContinuousLinearMap.one_def]) (hu.mono hri)
     (hCm.mono_set hri) (fun z hz ↦ hCb z (hri hz)) (fun z hz ↦ heq z (hri hz)) (mem_ball_self hr)
     h₀
   have := A.compactSpace
