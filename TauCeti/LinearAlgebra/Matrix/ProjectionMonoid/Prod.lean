@@ -94,9 +94,15 @@ noncomputable def prodEquiv : ProjectionMonoid (R × S) ≃+ ProjectionMonoid R 
   right_inv y := by simp
   map_add' x y := by simp
 
+/-- The isomorphism `V(R × S) ≃+ V(R) × V(S)` is induced by the two projections. -/
+@[simp]
+theorem prodEquiv_apply (x : ProjectionMonoid (R × S)) :
+    prodEquiv R S x =
+      (map (NonUnitalStarRingHom.fst R S) x, map (NonUnitalStarRingHom.snd R S) x) :=
+  (rfl)
+
 /-- The class in `V(R) × V(S)` of a matrix projection over `R × S` is the pair of the classes of
 its components. -/
-@[simp]
 theorem prodEquiv_mk {p : Matrix m m (R × S)} (hp : IsStarProjection p) :
     prodEquiv R S (mk p hp) =
       (mk (p.map (NonUnitalStarRingHom.fst R S)) (hp.matrix_map _),
