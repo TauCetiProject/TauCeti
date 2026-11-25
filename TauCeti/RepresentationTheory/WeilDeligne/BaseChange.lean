@@ -265,8 +265,9 @@ def baseChangeDualIso [FiniteDimensional E V] :
 
 @[simp]
 theorem baseChangeDualIso_tmul_tmul [FiniteDimensional E V] (a : E') (f : Module.Dual E V)
-    (v : V) : D.baseChangeDualIso E' (a ⊗ₜ f) (1 ⊗ₜ v) = a * algebraMap E E' (f v) :=
-  IsBaseChange.toDualBaseChange_tmul ..
+    (b : E') (v : V) :
+    D.baseChangeDualIso E' (a ⊗ₜ f) (b ⊗ₜ v) = a * b * algebraMap E E' (f v) :=
+  IsBaseChange.toDualBaseChange_tmul_tmul ..
 
 end WeilDeligneParameter
 

@@ -157,6 +157,7 @@ theorem ker_le_ker_baseChange {G : Type*} [Group G] (A : Type v) [Semiring A] [A
 
 /-- Extension of scalars to a faithful algebra does not change the kernel of a representation on a
 flat module, since `v ↦ 1 ⊗ v` is then injective. -/
+@[simp]
 theorem ker_baseChange {G : Type*} [Group G] (A : Type v) [Semiring A] [Algebra R A]
     [FaithfulSMul R A] [Module.Flat R V] (ρ : Representation R G V) :
     (baseChange A ρ).ker = ρ.ker := by
