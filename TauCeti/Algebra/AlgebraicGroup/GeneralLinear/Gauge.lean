@@ -41,16 +41,7 @@ theorem tangentMatrix_pointRightLogDeriv
     (g : WithConv (coordinateHopfAlgebra R n →ₐ[R] B)) :
     tangentMatrix n (D.pointRightLogDeriv g) = D.matrixRightLogDeriv (pointsMulEquiv n g) := by
   ext i j
-  have hconv (f h : WithConv (coordinateHopfAlgebra R n →ₗ[R] B)) :
-      (f * h).ofConv (coordinateHopfAlgebraAlgEquiv R n
-          (coordinateRingMap R n (MvPolynomial.X (i, j)))) =
-        ∑ k : Fin n,
-          f.ofConv (coordinateHopfAlgebraAlgEquiv R n
-              (coordinateRingMap R n (MvPolynomial.X (i, k)))) *
-            h.ofConv (coordinateHopfAlgebraAlgEquiv R n
-              (coordinateRingMap R n (MvPolynomial.X (k, j)))) := by
-    simp
-  rw [tangentMatrix_apply, Derivation.algEquivSelf_pointRightLogDeriv_apply, hconv,
+  rw [tangentMatrix_apply, Derivation.algEquivSelf_pointRightLogDeriv_apply, ofConv_convMul_apply_X,
     Derivation.matrixRightLogDeriv_def, Matrix.mul_apply, ← map_inv]
   refine Finset.sum_congr rfl fun k _ => ?_
   simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply,
