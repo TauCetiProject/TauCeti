@@ -48,7 +48,7 @@ not `(1, 2)` itself. -/
 example : comp (componentCenterUnit profile)⁻¹ false = Multiplicative.ofAdd 2 ∧
     comp (componentCenterUnit profile)⁻¹ true = Multiplicative.ofAdd 1 ∧
     comp (componentCenterUnit profile)⁻¹ true ≠ comp (componentCenterUnit profile) true := by
-  simp only [comp, val_componentCenterUnit, inv_componentCenterUnit, componentCenter_app_snd]
+  simp only [comp, val_componentCenterUnit, val_inv_componentCenterUnit, componentCenter_app_snd]
   decide
 
 /-- **Distinct profiles.** The profiles `(1, 2)` and `(1, 1)` give different centre units,

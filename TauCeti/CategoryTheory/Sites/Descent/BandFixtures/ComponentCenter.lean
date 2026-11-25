@@ -83,6 +83,7 @@ theorem componentCenter_app_snd (a : I → G) (x : Discrete I × SingleObj G) :
   (rfl)
 
 /-- The centre of the pointwise product of profiles is the product of their centres. -/
+@[simp]
 theorem componentCenter_mul (a b : I → G) :
     componentCenter (a * b) = componentCenter a * componentCenter b :=
   catCenter_ext_discrete_prod_singleObj fun x ↦ by
@@ -91,7 +92,8 @@ theorem componentCenter_mul (a b : I → G) :
 /-- The centre of the trivial profile is the identity. -/
 @[simp]
 theorem componentCenter_one : componentCenter (1 : I → G) = 1 :=
-  catCenter_ext_discrete_prod_singleObj fun _ ↦ rfl
+  catCenter_ext_discrete_prod_singleObj fun _ ↦ by
+    simp [CatCenter.app_one, SingleObj.id_as_one]
 
 /-- The **centre unit of a profile** `a`, with inverse the centre of the pointwise inverse
 profile. -/
@@ -103,10 +105,26 @@ def componentCenterUnit (a : I → G) : (CatCenter (Discrete I × SingleObj G))�
 theorem val_componentCenterUnit (a : I → G) : (componentCenterUnit a).val = componentCenter a :=
   (rfl)
 
-@[simp]
-theorem inv_componentCenterUnit (a : I → G) :
+theorem val_inv_componentCenterUnit (a : I → G) :
     (componentCenterUnit a)⁻¹.val = componentCenter a⁻¹ :=
   (rfl)
+
+/-- The inverse of the centre unit of a profile is the centre unit of the inverse profile. -/
+@[simp]
+theorem componentCenterUnit_inv (a : I → G) :
+    (componentCenterUnit a)⁻¹ = componentCenterUnit a⁻¹ :=
+  Units.ext (val_inv_componentCenterUnit a)
+
+/-- The centre unit of the pointwise product of profiles is the product of their centre units. -/
+@[simp]
+theorem componentCenterUnit_mul (a b : I → G) :
+    componentCenterUnit (a * b) = componentCenterUnit a * componentCenterUnit b :=
+  Units.ext (componentCenter_mul a b)
+
+/-- The centre unit of the trivial profile is the identity. -/
+@[simp]
+theorem componentCenterUnit_one : componentCenterUnit (1 : I → G) = 1 :=
+  Units.ext componentCenter_one
 
 variable (I G) in
 /-- **The centre units of `Discrete I × SingleObj G` are the profiles** `I → G`, for a commutative
@@ -115,8 +133,8 @@ def componentCenterEquiv : (I → G) ≃* (CatCenter (Discrete I × SingleObj G)
   toFun := componentCenterUnit
   invFun z i := (z.val.app (⟨i⟩, SingleObj.star G)).2
   left_inv _ := rfl
-  right_inv _ := Units.ext <| catCenter_ext_discrete_prod_singleObj fun _ ↦ rfl
-  map_mul' a b := Units.ext (componentCenter_mul a b)
+  right_inv _ := Units.ext <| catCenter_ext_discrete_prod_singleObj fun ⟨⟨_⟩, ⟨⟩⟩ ↦ rfl
+  map_mul' := componentCenterUnit_mul
 
 @[simp]
 theorem componentCenterEquiv_apply (a : I → G) :
