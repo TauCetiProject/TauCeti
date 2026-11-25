@@ -12,6 +12,7 @@ import TauCeti.Analysis.Analytic.Submanifold.ZeroDimensional
 import TauCeti.Data.Set.Lattice
 import TauCeti.Geometry.RealAnalytic.Semianalytic.Decomposition
 import TauCeti.Topology.Closure
+import TauCeti.Topology.DiscreteSubset
 
 /-!
 # Dimension of semianalytic sets
@@ -69,34 +70,6 @@ variable {n d : ℕ} {s S : Set (Fin n → ℝ)}
 
 /-! ### Dimension of analytic submanifolds -/
 
-/-- Through the first `d` coordinates of an analytic chart of `S` in dimension `d ≤ n`, the part of
-`S` in the source of the chart is homeomorphic to an open subset of `ℝ ^ d`. -/
-private theorem IsAnalyticChart.isOpenEmbedding_firstCoords
-    {e : OpenPartialHomeomorph (Fin n → ℝ) (Fin n → ℝ)} (he : IsAnalyticChart d S e)
-    (hd : d ≤ n) : IsOpenEmbedding fun y : ↥(e.source ∩ S) ↦ firstCoords ℝ n d (e y) := by
-  -- `firstCoords ℝ d n` recovers the chart image of a point of `S` from its first coordinates.
-  have hleft (y : ↥(e.source ∩ S)) : firstCoords ℝ d n (firstCoords ℝ n d (e y)) = e y :=
-    he.firstCoords_firstCoords_apply y.property.1 y.property.2
-  have hemb : IsEmbedding fun y : ↥(e.source ∩ S) ↦ e y :=
-    e.isOpenEmbedding_restrict.isEmbedding.comp (IsEmbedding.inclusion inter_subset_left)
-  refine ⟨.of_comp ((firstCoords ℝ n d).continuous.comp hemb.continuous)
-    (firstCoords ℝ d n).continuous (by simpa only [Function.comp_def, hleft] using hemb), ?_⟩
-  -- The image is the open set of `u` with `(u, 0)` in the target of the chart.
-  suffices h : range (fun y : ↥(e.source ∩ S) ↦ firstCoords ℝ n d (e y)) =
-      firstCoords ℝ d n ⁻¹' e.target by
-    rw [h]
-    exact e.open_target.preimage (firstCoords ℝ d n).continuous
-  ext u
-  refine ⟨?_, fun hu ↦ ?_⟩
-  · rintro ⟨y, rfl⟩
-    rw [mem_preimage, hleft]
-    exact e.map_source y.property.1
-  · have hsource := e.map_target hu
-    refine ⟨⟨e.symm (firstCoords ℝ d n u), hsource, (he.mem_iff hsource).2 fun i hi ↦ ?_⟩, ?_⟩
-    · rw [e.right_inv hu]
-      exact firstCoords_apply_of_le u hi
-    · simp only [e.right_inv hu, firstCoords_firstCoords_of_le hd]
-
 /-- **Dimension of analytic submanifolds.** A `d`-dimensional analytic submanifold of `ℝ ^ n` has
 dimension `d`. -/
 theorem IsAnalyticSubmanifold.semialgebraicDim_eq (hS : IsAnalyticSubmanifold d S) :
@@ -110,8 +83,8 @@ theorem IsAnalyticSubmanifold.semialgebraicDim_eq (hS : IsAnalyticSubmanifold d 
 /-! ### Closures of semianalytic sets -/
 
 /-- **Local dimension of the closure.** Near a point at which `s` is semianalytic, on some
-neighborhood `U` the closure of `s` has dimension at most that of `s ∩ U`, and the points of the
-closure outside `s` have strictly smaller dimension when `s` meets `U`. -/
+neighborhood `U`, `closure s ∩ U` has dimension at most that of `s ∩ U`, and `(closure s \ s) ∩ U`
+has strictly smaller dimension than `s ∩ U` when `s` meets `U`. -/
 theorem SemianalyticAt.exists_mem_nhds_semialgebraicDim_closure_inter {x : Fin n → ℝ}
     (hs : SemianalyticAt s x) :
     ∃ U ∈ 𝓝 x, semialgebraicDim (closure s ∩ U) ≤ semialgebraicDim (s ∩ U) ∧
@@ -196,15 +169,12 @@ theorem IsSemianalytic.semialgebraicDim_le_zero_iff (hs : IsSemianalytic s) :
     semialgebraicDim s ≤ 0 ↔ IsClosed s ∧ IsDiscrete s := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.2.semialgebraicDim_le_zero⟩
   -- It suffices that `s` meets some neighborhood of each point in a finite set.
-  rw [← compl_mem_codiscrete_iff, Filter.codiscrete,
-    codiscreteWithin_iff_locallyFiniteComplementWithin]
-  intro x _
+  refine isClosed_and_isDiscrete_iff_forall_finite_inter.2 fun x ↦ ?_
   obtain ⟨U, 𝒞, hUo, hxU, -, -, h𝒞fin, -, h𝒞cov, h𝒞cell, -⟩ :=
     exists_isAnalyticSubmanifold_partition_subset_or_disjoint (fun _ : Unit ↦ hs.semianalyticAt x)
       univ_mem
   refine ⟨U, hUo.mem_nhds hxU, ?_⟩
-  suffices (s ∩ ⋃₀ 𝒞).Finite by simpa [h𝒞cov, inter_comm] using this
-  rw [← sUnion_sep_subset_eq_inter fun C hC ↦ (h𝒞cell C hC).2.2.2 ()]
+  rw [← h𝒞cov, ← sUnion_sep_subset_eq_inter fun C hC ↦ (h𝒞cell C hC).2.2.2 ()]
   -- Each piece in `s` is a connected zero-dimensional analytic submanifold, hence a point.
   refine (h𝒞fin.subset (sep_subset _ _)).sUnion fun C ⟨hC, hCs⟩ ↦ ?_
   obtain ⟨hCc, -, ⟨d, -, hCd⟩, -⟩ := h𝒞cell C hC
