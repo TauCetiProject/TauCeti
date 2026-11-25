@@ -121,7 +121,8 @@ theorem exists_sobolevIndex_monomialWord_eq {k : ℕ} {w : List (Fin m)}
     rw [← length_monomialWord, monomialWord_count hw]
   refine ⟨⟨fun i ↦ ⟨w.count i, Nat.lt_succ_of_le (List.count_le_length.trans hk)⟩, ?_⟩, ?_⟩
   · simpa [hsum] using hk
-  · exact monomialWord_count hw
+  · refine (congrArg monomialWord (funext fun i ↦ ?_)).trans (monomialWord_count hw)
+    simp only [SobolevIndex.exponent_apply]
 
 end TauCeti
 

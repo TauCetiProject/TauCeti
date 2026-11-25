@@ -107,11 +107,10 @@ theorem norm_wordAction_monomialWord_le_sobolevSeminorm
     (X : Fin m → LeftInvariantDerivation I G) {k : ℕ} (α : SobolevIndex m k)
     (v : lieSmoothVectors I π) :
     ‖(wordAction I π X (monomialWord α.exponent) v : V)‖ ≤ sobolevSeminorm I π X k v := by
-  rw [sobolevSeminorm_apply]
-  refine Real.le_sqrt_of_sq_le ?_
-  exact Finset.single_le_sum (f := fun β : SobolevIndex m k ↦
-    ‖(wordAction I π X (monomialWord β.exponent) v : V)‖ ^ 2)
-    (fun _ _ ↦ sq_nonneg _) (Finset.mem_univ α)
+  rw [← sobolevVector_apply]
+  refine (PiLp.norm_apply_le (sobolevVector I π X k v) α).trans_eq ?_
+  rw [sobolevSeminorm_apply, PiLp.norm_eq_of_L2]
+  simp only [sobolevVector_apply]
 
 /-- **The word seminorm is bounded by a multiple of the Sobolev seminorm.** For a spanning family
 `X₁, …, X_m` of the Lie algebra and every order `k` there is `C_k` with `P_k ≤ C_k Q_k`. -/
