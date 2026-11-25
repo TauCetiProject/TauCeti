@@ -21,7 +21,8 @@ linear trivialization also induces the original fibre equivalence at the image p
 (`Bundle.Trivialization.linearEquivAt_pullback`,
 `Bundle.Trivialization.continuousLinearEquivAt_pullback` and
 `Bundle.Trivialization.continuousLinearMapAt_pullback`), and reads coordinates back into the fibre
-as the original one does (`Bundle.Trivialization.symm_pullback`). Hom coordinates between
+as the original one does (`Bundle.Trivialization.symm_pullback`,
+`Bundle.Trivialization.pullback_symmL_apply`). Hom coordinates between
 pullbacks by two different base maps agree with the original source and target coordinates
 (`ContinuousLinearMap.inCoordinates_pullback_of_mem`).
 -/
@@ -135,6 +136,19 @@ theorem continuousLinearMapAt_pullback (e : Trivialization F (π F V)) [e.IsLine
   simp only [continuousLinearMapAt_apply, linearMapAt_apply, pullback_baseSet, Set.mem_preimage,
     pullback_apply]
   exact ((congrFun (e.continuousLinearMapAt_apply 𝕜 (f x)) v).trans (e.linearMapAt_apply v)).symm
+
+/-- The inverse of a pulled-back continuous linear fibre chart, extended by zero off the base set,
+is the inverse of the original one at the image point. -/
+@[simp]
+theorem pullback_symmL_apply (e : Trivialization F (π F V)) [e.IsLinear 𝕜] (f : K) (x : B')
+    (w : F) : (e.pullback f).symmL 𝕜 x w = e.symmL 𝕜 (f x) w := by
+  by_cases hx : f x ∈ e.baseSet
+  · rw [symmL_apply _ (by rwa [pullback_baseSet]), symmL_apply _ hx]
+    exact symm_pullback e f hx w
+  · rw [symmL_apply_of_notMem _ (by rwa [pullback_baseSet]), symmL_apply_of_notMem _ hx]
+    -- Both sides are zero; the zero of the pullback fibre `(f *ᵖ V) x` is by definition the zero
+    -- of `V (f x)`.
+    rfl
 
 end Bundle.Trivialization
 

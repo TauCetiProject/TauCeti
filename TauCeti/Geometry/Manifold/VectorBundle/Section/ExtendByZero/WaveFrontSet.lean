@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Opens
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ExtendByZero.Topology
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.LocalSobolev
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.WaveFrontSet
-import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
+import TauCeti.Topology.VectorBundle.Pullback
 
 /-!
 # Regularity and wave front set of the restriction to an open subset
@@ -67,55 +68,7 @@ open scoped Manifold ContDiff Distributions Topology CompactConvergenceCLM ENNRe
 
 /-! ### Restricted charts and pulled back frames -/
 
-namespace OpenPartialHomeomorph
-
-variable {𝕜 E H M E' H' N : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  [TopologicalSpace M] [ChartedSpace H M]
-  [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'}
-  [TopologicalSpace N] [ChartedSpace H' N] {n : ℕ∞ω} {e : OpenPartialHomeomorph M N}
-  {U : Opens M}
-
-/-- The restriction `e|_U` of a partial homeomorphism that is `C^n` on its source to an open
-subset `U` is `C^n` on its source. -/
-theorem contMDiffOn_subtypeRestr (hU : Nonempty U) (he : ContMDiffOn I J n e e.source) :
-    ContMDiffOn I J n (e.subtypeRestr hU) (e.subtypeRestr hU).source := by
-  rw [subtypeRestr_coe, subtypeRestr_source]
-  exact he.comp contMDiff_subtypeVal.contMDiffOn fun _ hx ↦ hx
-
-/-- If the inverse of a partial homeomorphism `e` is `C^n` on its target, so is the inverse of its
-restriction `e|_U` to an open subset `U`. -/
-theorem contMDiffOn_subtypeRestr_symm (hU : Nonempty U)
-    (he : ContMDiffOn J I n e.symm e.target) :
-    ContMDiffOn J I n (e.subtypeRestr hU).symm (e.subtypeRestr hU).target := by
-  rw [← TauCeti.ContMDiffOn.subtypeVal_comp_iff]
-  exact (he.mono (e.subtypeRestr_target_subset hU)).congr (e.subtypeRestr_symm_eqOn hU).symm
-
-end OpenPartialHomeomorph
-
 namespace Bundle.Trivialization
-
-section Pullback
-
-variable {R B B' F : Type*} [NontriviallyNormedField R] [TopologicalSpace B] [TopologicalSpace B']
-  [NormedAddCommGroup F] [NormedSpace R F] {E : B → Type*} [∀ x, AddCommGroup (E x)]
-  [∀ x, Module R (E x)] [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace F E)]
-  [FiberBundle F E] {K : Type*} [FunLike K B' B] [ContinuousMapClass K B' B]
-
-/-- The inverse of the pullback of a trivialization `e` along `f` at `y` is the inverse of `e` at
-`f y`, the fibre of the pullback at `y` being the fibre of the bundle at `f y`. -/
-@[simp]
-theorem pullback_symmL_apply (e : Trivialization F (π F E)) [e.IsLinear R] (f : K) (y : B')
-    (w : F) : (e.pullback f).symmL R y w = e.symmL R (f y) w := by
-  by_cases hy : f y ∈ e.baseSet
-  · have hy' : y ∈ (e.pullback f).baseSet := by rwa [pullback_baseSet]
-    rw [symmL_apply _ hy', symmL_apply _ hy, symm_apply _ hy']
-    exact cast_eq _ _
-  · have hy' : y ∉ (e.pullback f).baseSet := by rwa [pullback_baseSet]
-    rw [symmL_apply_of_notMem _ hy', symmL_apply_of_notMem _ hy]
-    rfl
-
-end Pullback
 
 open TauCeti
 
@@ -178,6 +131,8 @@ theorem extendByZeroCLM_chartTestCLM_subtypeRestr
     · erw [t.chartTestCLM_apply_of_notMem c hc hct _ hy,
         (t.pullback (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M))).chartTestCLM_apply_of_notMem
           _ _ _ _ (mt hyc.2 hy)]
+      -- Both sides are zero; the zero of the pullback fibre `(Subtype.val *ᵖ V) ⟨y, hyU⟩` is by
+      -- definition the zero of `V y`.
       rfl
   · rw [BundleTest.extendByZeroCLM_apply_of_notMem _ hyU]
     by_cases hy : y ∈ c.source
@@ -281,35 +236,29 @@ theorem isMicrolocallySmoothAt_restrictDualCLM_iff (T : BundleTest I F V →L_c[
     ((trivializationAt F V (x : M)).subtypeRestr_source_subset_pullback_baseSet hU hct) hxU]
   -- The inverse charts of `U` and of `M` have the same differential at `c x`, so the covector `ξ`
   -- is read as the same vector of `E` in both charts.
-  have hD : ∀ u, mfderiv 𝓘(ℝ, E) I (c.subtypeRestr hU).symm (c x) u =
-      mfderiv 𝓘(ℝ, E) I c.symm (c x) u := by
-    intro u
-    have hev : (Subtype.val ∘ (c.subtypeRestr hU).symm) =ᶠ[𝓝 (c x)] c.symm :=
-      eventuallyEq_of_mem ((c.subtypeRestr hU).open_target.mem_nhds
-        (c.map_subtype_source hU hx)) fun y hy ↦ c.subtypeRestr_symm_apply hU hy
-    rw [← Manifold.mfderiv_subtype_val_comp_apply, hev.mfderiv_eq]
-    -- The two base points `(Subtype.val ∘ (c|_U)⁻¹) (c x)` and `c⁻¹ (c x)` differ syntactically,
-    -- so `mfderiv_eq` inserts a cast between their tangent spaces, which is the identity of `E`.
-    rfl
-  have hξ : (ξ ∘L mfderiv 𝓘(ℝ, E) I (c.subtypeRestr hU).symm (c x)) =
+  have hξ : (ξ ∘L mfderiv 𝓘(ℝ, E) I (c.subtypeRestr hU).symm (c.subtypeRestr hU x) : E →L[ℝ] ℝ) =
       (ξ ∘L (Manifold.tangentSpaceOpenEquiv (I := I) x).symm.toContinuousLinearMap) ∘L
         mfderiv 𝓘(ℝ, E) I c.symm (c x) := by
     ext u
-    exact congrArg ξ ((hD u).trans (Manifold.tangentSpaceOpenEquiv_symm_apply x _).symm)
+    exact congrArg ξ ((c.mfderiv_subtypeRestr_symm_apply hU ((c.subtypeRestr hU).map_source hxU)
+      u).trans (Manifold.tangentSpaceOpenEquiv_symm_apply x _).symm)
   refine forall_congr' fun v ↦ ?_
-  rw [chartComponent_subtypeRestr_restrictDualCLM _ hc hct hU]
-  -- `hξ` is stated at the base point `x : U` of the tangent space, the goal at
-  -- `(c|_U)⁻¹ (c x)`; these agree only after unfolding the restricted chart.
-  erw [hξ]
+  rw [chartComponent_subtypeRestr_restrictDualCLM _ hc hct hU, hξ]
   exact isMicrolocallySmoothAt_restrictCLM_iff (c.subtypeRestr_target_subset hU)
     (c.map_subtype_source hU hx)
 
 /-- **The wave front set of a restriction** is the part of the wave front set over the open
 subset: on a manifold without boundary, a covector of `U` lies in `WF(T|_U)` exactly when its image
 under the inclusion `T*U → T*M` lies in `WF(T)`. -/
+@[simp]
 theorem waveFrontSet_restrictDualCLM (T : BundleTest I F V →L_c[ℝ] ℝ) :
+    dsimp% only [ContinuousMap.coe_mk] (
     waveFrontSet I (restrictDualCLM (I := I) (F := F) (V := V) T) =
-      CotangentBundle.openInclusion U ⁻¹' waveFrontSet I T := by
+      CotangentBundle.openInclusion U ⁻¹' waveFrontSet I T) := by
+  -- The bundle instances of the restriction live on the pullback along the bundled inclusion, so
+  -- the proof works with the statement before `ContinuousMap.coe_mk` unfolds it.
+  change waveFrontSet I (restrictDualCLM (I := I) (F := F) (V := V) T) =
+    CotangentBundle.openInclusion U ⁻¹' waveFrontSet I T
   ext p
   rw [mem_preimage, mem_waveFrontSet_iff, mem_waveFrontSet_iff,
     isMicrolocallySmoothAt_restrictDualCLM_iff]
@@ -328,9 +277,14 @@ variable [MeasurableSpace E] [BorelSpace E]
 /-- **The singular support of a restriction**: on a manifold without boundary, the restriction
 `T|_U` of `T` to an open subset `U` is smooth near `x ∈ U` exactly when `T` is, so
 `singsupp (T|_U) = singsupp T ∩ U`. -/
+@[simp]
 theorem singularSupport_restrictDualCLM (T : BundleTest I F V →L_c[ℝ] ℝ) :
+    dsimp% only [ContinuousMap.coe_mk] (
     singularSupport I (restrictDualCLM (I := I) (F := F) (V := V) (U := U) T) =
-      Subtype.val ⁻¹' singularSupport I T := by
+      Subtype.val ⁻¹' singularSupport I T) := by
+  -- As for `waveFrontSet_restrictDualCLM`, work with the statement before unfolding.
+  change singularSupport I (restrictDualCLM (I := I) (F := F) (V := V) (U := U) T) =
+    Subtype.val ⁻¹' singularSupport I T
   ext x
   rw [mem_preimage, ← not_iff_not, notMem_singularSupport_iff_forall_isMicrolocallySmoothAt,
     notMem_singularSupport_iff_forall_isMicrolocallySmoothAt]
@@ -356,9 +310,14 @@ theorem isLocallySobolevAt_restrictDualCLM_iff {s : ℝ} (T : BundleTest I F V �
 
 /-- On a manifold without boundary, the `H^s` singular support of the restriction `T|_U` of `T` to
 an open subset `U` is the part of the `H^s` singular support of `T` in `U`. -/
+@[simp]
 theorem sobolevSingularSupport_restrictDualCLM (s : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) :
+    dsimp% only [ContinuousMap.coe_mk] (
     sobolevSingularSupport I s (restrictDualCLM (I := I) (F := F) (V := V) (U := U) T) =
-      Subtype.val ⁻¹' sobolevSingularSupport I s T := by
+      Subtype.val ⁻¹' sobolevSingularSupport I s T) := by
+  -- As for `waveFrontSet_restrictDualCLM`, work with the statement before unfolding.
+  change sobolevSingularSupport I s (restrictDualCLM (I := I) (F := F) (V := V) (U := U) T) =
+    Subtype.val ⁻¹' sobolevSingularSupport I s T
   ext x
   rw [mem_preimage, mem_sobolevSingularSupport_iff, mem_sobolevSingularSupport_iff]
   exact (isLocallySobolevAt_restrictDualCLM_iff T x).not
