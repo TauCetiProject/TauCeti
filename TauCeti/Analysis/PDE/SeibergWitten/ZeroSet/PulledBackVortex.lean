@@ -235,8 +235,7 @@ private theorem setIntegral_ball_defect_eq (hX : ContDiff ℝ 2 X)
   congr 2 with u
   rw [abs_of_nonneg (Vortex.one_sub_sq_norm_sectionValue_nonneg hX hsol hlim u)]
 
-/-- For `r ≥ 0` the weight `max (σ² - |u - u₀|² / (2 r)) 0` lies between `σ² - |u - u₀|² / (2 r)`
-and `σ²`. -/
+/-- For `r ≥ 0` the weight `max (σ² - |u - u₀|² / (2 r)) 0` is at most `σ²`. -/
 private theorem max_sub_div_le {r : ℝ} (hr : 0 ≤ r) (σ : ℝ) (u u₀ : ℂ) :
     max (σ ^ 2 - ‖u - u₀‖ ^ 2 / (2 * r)) 0 ≤ σ ^ 2 :=
   max_le (sub_le_self _ (by positivity)) (sq_nonneg σ)
