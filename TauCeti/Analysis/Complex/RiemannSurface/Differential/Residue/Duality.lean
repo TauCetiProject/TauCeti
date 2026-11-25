@@ -336,6 +336,8 @@ theorem exists_residuePairing_flip_eq {φ : Module.Dual ℂ (PrincipalParts D)}
     rw [Module.finrank_prod, finrank_range_dualMap_mittagLefflerConnecting] at this
     omega
   have hker' : α s + β ω = 0 := LinearMap.mem_ker.1 hker
+  -- By definition of `α` and `β`, the underlying functionals of `α s` and `β ω` are
+  -- `φ ∘ₗ meromorphicMul _ (hB s)` and the residue pairing with `e' ω`.
   have hsω : φ ∘ₗ PrincipalParts.meromorphicMul _ (hB s) =
       (PrincipalParts.residuePairing (D - B)).flip (e' (-ω)) :=
     congrArg Subtype.val ((eq_neg_of_add_eq_zero_left hker').trans (map_neg β ω).symm)

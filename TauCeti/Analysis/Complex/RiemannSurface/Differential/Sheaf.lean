@@ -375,7 +375,7 @@ theorem ext_of_eventually_nhdsNE_toOneForm [IsManifold 𝓘(ℂ) 1 X] {s t : dif
     (h : ∀ x, ∀ᶠ y in 𝓝[≠] x, toOneForm D s y = toOneForm D t y) : s = t :=
   ext_of_eventually_nhdsNE fun x ↦
     ((continuous_subtypeVal.continuousAt.tendsto_nhdsNE (x := x) Subtype.val_injective).eventually
-      (h x)).mono fun _ hy ↦ hy
+      (h x)).mono fun _ hy ↦ by simpa only [toOneForm_apply] using hy
 
 end differentialSections
 
