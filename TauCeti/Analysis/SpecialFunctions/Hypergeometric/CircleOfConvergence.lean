@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.OrdinaryHypergeometric
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.CoefficientAsymptotics
 import TauCeti.Analysis.SpecialFunctions.OrdinaryHypergeometric
+import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
@@ -29,7 +31,8 @@ on the circle `|z| = 1` is governed by the real part of `c − a − b` (DLMF §
   integer.
 
 The convergence statements are proved on the closed disk `|z| ≤ 1`, the negative ones for
-`|z| ≥ 1`.
+`|z| ≥ 1`. Absolute convergence carries over to the regularized series `𝐅(a, b; c; z)` for every
+`c`, including the poles of `Γ`, by the shift `c ↦ c + 1` of DLMF 15.5.15 on its coefficients.
 
 Everything follows from the size of the coefficients
 (`TauCeti.Analysis.SpecialFunctions.Hypergeometric.CoefficientAsymptotics`). By Euler's limit
@@ -45,6 +48,8 @@ of the coefficients are `O(s^(Re(a + b − c) − 2))` for all parameters, hence
 
 * `Complex.summable_norm_gaussTerm_of_re_pos`: absolute convergence for `|z| ≤ 1` and
   `Re(c − a − b) > 0`.
+* `Complex.summable_norm_coeff_regularizedGaussHGFunSeries_mul_pow_of_re_pos`: the same for the
+  regularized series `𝐅(a, b; c; z)`, for every `c`.
 * `Complex.exists_tendsto_sum_gaussTerm_of_neg_one_lt_re`: convergence for `|z| ≤ 1`, `z ≠ 1` and
   `Re(c − a − b) > −1`.
 * `Complex.not_summable_norm_gaussTerm_of_re_nonpos`: no absolute convergence for `|z| ≥ 1` and
@@ -92,6 +97,32 @@ theorem summable_norm_gaussTerm_of_re_pos {a b c z : ℂ} (hz : ‖z‖ ≤ 1)
   rw [norm_gaussTerm]
   exact mul_le_of_le_one_right (norm_nonneg _) (pow_le_one₀ (norm_nonneg _) hz)
 
+/-- **Absolute convergence of the regularized series on the closed disk** (DLMF §15.2(i)). On
+`|z| ≤ 1` the series of `𝐅(a, b; c; z) = ∑ (a)ₙ (b)ₙ zⁿ / (n! Γ(c + n))` converges absolutely when
+`Re(c − a − b) > 0`, for every `c`, including the poles `c ∈ {0, −1, −2, …}` of `Γ`. -/
+theorem summable_norm_coeff_regularizedGaussHGFunSeries_mul_pow_of_re_pos {a b c z : ℂ}
+    (hz : ‖z‖ ≤ 1) (h : 0 < (c - a - b).re) :
+    Summable fun n : ℕ => ‖(regularizedGaussHGFunSeries a b c).coeff n * z ^ n‖ := by
+  -- Shift `c` upward with DLMF 15.5.15 until `Re c > 0`, where `𝐅 = ₂F₁ / Γ(c)`.
+  obtain ⟨N, hN⟩ := exists_nat_gt (-c.re)
+  induction N generalizing a c with
+  | zero =>
+    have hc := ne_neg_natCast_of_re_pos (b := c) (by simp only [CharP.cast_eq_zero] at hN; linarith)
+    refine ((summable_norm_gaussTerm_of_re_pos hz h).mul_left ‖(Gamma c)⁻¹‖).congr fun n => ?_
+    rw [← Gamma_inv_mul_ordinaryHypergeometricSeries_eq hc, ordinaryHypergeometricSeries,
+      FormalMultilinearSeries.coeff_ofScalars, mul_assoc, norm_mul (Gamma c)⁻¹, norm_gaussTerm,
+      norm_mul _ (z ^ n), norm_pow]
+  | succ N ih =>
+    have h₁ := ih (a := a) (c := c + 1) (by simp only [sub_re, add_re, one_re] at h ⊢; linarith)
+      (by push_cast at hN; simp only [add_re, one_re]; linarith)
+    have h₂ := ih (a := a + 1) (c := c + 1) (by simp only [sub_re, add_re, one_re] at h ⊢; linarith)
+      (by push_cast at hN; simp only [add_re, one_re]; linarith)
+    refine ((h₁.mul_left ‖c - a‖).add (h₂.mul_left ‖a‖)).of_nonneg_of_le (fun _ => norm_nonneg _)
+      fun n => ?_
+    rw [coeff_regularizedGaussHGFunSeries_eq_sub_mul_add_mul, add_mul, mul_assoc, mul_assoc,
+      ← norm_mul, ← norm_mul]
+    exact norm_add_le _ _
+
 /-- **Convergence on the closed disk away from `1`** (DLMF §15.2(i)). On `|z| ≤ 1`, `z ≠ 1`, the
 partial sums of the Gauss series of `₂F₁(a, b; c; z)` converge when `Re(c − a − b) > −1`. -/
 theorem exists_tendsto_sum_gaussTerm_of_neg_one_lt_re {a b c z : ℂ} (hz : ‖z‖ ≤ 1) (hz₁ : z ≠ 1)
@@ -110,15 +141,8 @@ theorem exists_tendsto_sum_gaussTerm_of_neg_one_lt_re {a b c z : ℂ} (hz : ‖z
       ordinaryHypergeometricCoefficient a b c n‖ :=
     summable_of_isBigO_nat (Real.summable_nat_rpow.mpr (by linarith))
       (isBigO_ordinaryHypergeometricCoefficient_add_one_sub a b c).norm_left
-  have hz0 : 0 < ‖z - 1‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hz₁)
-  have hgeom (n : ℕ) : ‖∑ i ∈ Finset.range n, z ^ i‖ ≤ 2 / ‖z - 1‖ := by
-    rw [geom_sum_eq hz₁, norm_div, div_le_div_iff_of_pos_right hz0]
-    calc ‖z ^ n - 1‖ ≤ ‖z ^ n‖ + ‖(1 : ℂ)‖ := norm_sub_le _ _
-      _ ≤ 2 := by
-        rw [norm_pow, norm_one]
-        linarith [pow_le_one₀ (norm_nonneg z) hz (n := n)]
   obtain ⟨L, hL⟩ := cauchySeq_tendsto_of_complete
-    (hf0.cauchySeq_series_smul_of_summable_norm_sub hvar hgeom)
+    (hf0.cauchySeq_series_smul_of_summable_norm_sub hvar (TauCeti.norm_geom_sum_le hz hz₁))
   exact ⟨L, by simpa only [smul_eq_mul, TauCeti.ordinaryHypergeometricCoefficient_eq_div] using hL⟩
 
 /-- **No absolute convergence on and outside the circle** (DLMF §15.2(i)). On `|z| ≥ 1` the

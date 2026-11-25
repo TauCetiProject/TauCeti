@@ -16,10 +16,13 @@ import TauCeti.Analysis.Convex.StdSimplex.Faces
 
 The *secant map* of a map `f : |K| → E` from the realization of a simplicial complex into a real
 normed space is the map which agrees with `f` at the vertices of `K` and is linear on every closed
-simplex. Secant maps are how Whitehead and Munkres pass from smooth to piecewise-linear maps:
-both the existence of smooth triangulations and their uniqueness up to linearly isomorphic
-subdivisions (Munkres, Theorems 10.5 and 10.6) replace a smooth map, simplex by simplex, by its
-secant map, and use that the secant map is again non-degenerate.
+simplex; it is defined, with its uniqueness and idempotence, in
+`TauCeti.AlgebraicTopology.SimplicialComplex.Realization.LinearExtension`. Secant maps are how
+Whitehead and Munkres pass from smooth to piecewise-linear maps: both the existence of smooth
+triangulations and their uniqueness up to linearly isomorphic subdivisions (Munkres, Theorems
+10.5 and 10.6) replace a simplexwise immersion of class at least `C¹`, simplex by simplex, by its
+secant map, and use that the secant map is again non-degenerate on sufficiently small simplices of
+a subdivision with a uniform fatness bound.
 
 The estimate behind that replacement on a single simplex, in barycentric coordinates, is proved in
 `TauCeti.Analysis.Convex.SecantEstimate`. Let `F : (σ → ℝ) → E` be differentiable within the
@@ -31,21 +34,14 @@ with coordinate sum zero). This file applies the estimate to secant maps. If mor
 so it is an immersion of the simplex. When `F` is `C¹` and `A` is its
 derivative at one point of a small simplex, the first condition holds with small `ε` by uniform
 continuity of the derivative, and the second holds when the simplex is not too thin. This file
-draws that conclusion for an immersion `g` of a simplex into a normed space: for every `t > 0`
-there is `δ > 0` such that the secant map of `g` on every simplex inside it of size `d < δ` which
-is `t`-fat at scale `d` is again an immersion. Applied to the simplices of a fine subdivision
-whose simplices are uniformly fat, this is Munkres' secant approximation theorem.
-
-## Main definitions
-
-* `AbstractSimplicialComplex.secantMap K f`: the secant map of `f : Realization K → E`.
+draws that conclusion for an immersion `g` of a simplex into a normed space of class at least
+`C¹`: for every `t > 0` there is `δ > 0` such that the secant map of `g` on every simplex inside
+it of size `d < δ` which is `t`-fat at scale `d` is again an immersion. Applied to the simplices
+of a fine subdivision whose simplices are uniformly fat, this is Munkres' secant approximation
+theorem.
 
 ## Main results
 
-* `AbstractSimplicialComplex.eq_secantMap`: a map that is linear in barycentric coordinates on
-  every closed simplex, with the same vertex values as `f`, is the secant map of `f`.
-* `AbstractSimplicialComplex.secantMap_eq_self_iff`: a map is its own secant map exactly when it is
-  linear in barycentric coordinates on every closed simplex.
 * `LinearMap.isSimplexImmersion`: a map of a simplex that is linear in barycentric
   coordinates and injective on the directions of the simplex is an immersion of the simplex.
 * `AbstractSimplicialComplex.isSimplexImmersion_secantMap_comp_faceInclusion`: the secant map of
@@ -85,10 +81,10 @@ injective on the directions of the simplex, is a `Cⁿ` immersion of the simplex
 theorem isSimplexImmersion {σ : Finset ι} (L : (σ → ℝ) →ₗ[ℝ] E)
     (hL : ∀ v : σ → ℝ, ∑ a, v a = 0 → L v = 0 → v = 0) :
     TauCeti.IsSimplexImmersion 𝓘(ℝ, E) n fun x : StandardSimplex σ => L fun a => x.val a := by
-  -- The domain of `L` is finite dimensional, so `L` is continuous, and it is its own derivative.
-  let L' : (σ → ℝ) →L[ℝ] E := L.toContinuousLinearMap
-  exact TauCeti.isSimplexImmersion_iff.mpr ⟨L', fun _ => rfl, L'.contMDiff.contMDiffOn,
-    fun _ => ⟨L', L'.hasMFDerivWithinAt, hL⟩⟩
+  -- Follow `L` by the identity of `E`, which is its own derivative.
+  refine L.isSimplexImmersion_comp (mapsTo_univ _ _) (contMDiffOn_id (I := 𝓘(ℝ, E))) fun _ =>
+    ⟨ContinuousLinearMap.id ℝ E, hasMFDerivWithinAt_id _ _, fun v hv hv0 => hL v hv ?_⟩
+  rwa [ContinuousLinearMap.id_apply] at hv0
 
 end LinearMap
 
@@ -97,75 +93,7 @@ end LinearMap
 namespace AbstractSimplicialComplex
 
 variable {ι : Type*} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {n : WithTop ℕ∞}
-  (K : AbstractSimplicialComplex ι)
-
-/-- The secant map of `f : |K| → E`: the map which agrees with `f` at the vertices of `K` and is
-linear in barycentric coordinates on every closed simplex. -/
-def secantMap (f : Realization K → E) (x : Realization K) : E :=
-  Finsupp.linearCombination ℝ (fun v => f (vertex K v)) x.val
-
-variable {K}
-
-/-- The secant map evaluates a point of the realization as the combination, with its
-barycentric coordinates as weights, of the values of `f` at the vertices. -/
-theorem secantMap_apply (f : Realization K → E) (x : Realization K) :
-    K.secantMap f x = x.val.sum fun v t => t • f (vertex K v) :=
-  Finsupp.linearCombination_apply ℝ x.val
-
-/-- The secant map agrees with `f` at every vertex. -/
-@[simp]
-theorem secantMap_vertex (f : Realization K → E) (v : ι) :
-    K.secantMap f (vertex K v) = f (vertex K v) := by
-  simp [secantMap_apply]
-
-/-- On a closed simplex `σ`, the secant map is the combination of the values of `f` at the
-vertices of `σ`, weighted by the barycentric coordinates. -/
-theorem secantMap_faceInclusion (f : Realization K → E) (σ : Face K) (x : StandardSimplex σ.val) :
-    K.secantMap f (faceInclusion K σ x) = ∑ a : σ.val, x.val a • f (vertex K a) := by
-  rw [secantMap_apply, faceInclusion_val, Finsupp.sum_of_support_subset x.val
-    (StandardSimplex.support_subset x) (fun v t => t • f (vertex K v))
-    fun _ _ => zero_smul ℝ _]
-  exact (Finset.sum_coe_sort σ.val fun a => x.val a • f (vertex K a)).symm
-
-/-- The secant map is continuous. -/
-theorem continuous_secantMap (f : Realization K → E) : Continuous (K.secantMap f) := by
-  refine continuous_iff_faceInclusion.mpr fun σ => ?_
-  have hcoord (a : ι) : Continuous fun x : StandardSimplex σ.val => x.val a :=
-    (continuous_apply a).comp continuous_induced_dom
-  simp_rw [comp_def, secantMap_faceInclusion]
-  exact continuous_finsetSum _ fun a _ => (hcoord a).smul continuous_const
-
-/-- Taking secant maps is idempotent: the secant map of a secant map is itself. -/
-@[simp]
-theorem secantMap_secantMap (f : Realization K → E) :
-    K.secantMap (K.secantMap f) = K.secantMap f := by
-  funext x
-  rw [secantMap_apply]
-  simp only [secantMap_vertex]
-  rw [secantMap_apply]
-
-/-- **Uniqueness of secant maps.** A map that is linear in barycentric coordinates on every closed
-simplex, and agrees with `f` at the vertices, is the secant map of `f`. -/
-theorem eq_secantMap {f g : Realization K → E}
-    (hg : ∀ (σ : Face K) (x : StandardSimplex σ.val),
-      g (faceInclusion K σ x) = ∑ a : σ.val, x.val a • g (vertex K a))
-    (hfg : ∀ v : ι, g (vertex K v) = f (vertex K v)) :
-    g = K.secantMap f := by
-  funext x
-  -- Every point of the realization lies in the closed simplex spanned by its carrier.
-  obtain ⟨σ, y, rfl⟩ : ∃ (σ : Face K) (y : StandardSimplex σ.val), faceInclusion K σ y = x :=
-    ⟨carrier K x, ⟨x.val, mem_convexHull_carrier K x⟩, Subtype.ext (faceInclusion_val _ _ _)⟩
-  simp only [hg, secantMap_faceInclusion, hfg]
-
-/-- A map is its own secant map exactly when it is linear in barycentric coordinates on every
-closed simplex. -/
-theorem secantMap_eq_self_iff {g : Realization K → E} :
-    K.secantMap g = g ↔ ∀ (σ : Face K) (x : StandardSimplex σ.val),
-      g (faceInclusion K σ x) = ∑ a : σ.val, x.val a • g (vertex K a) :=
-  ⟨fun h σ x => by
-    conv_lhs => rw [← h]
-    exact secantMap_faceInclusion g σ x,
-   fun hg => (eq_secantMap hg fun _ => rfl).symm⟩
+  {K : AbstractSimplicialComplex ι}
 
 /-- **Non-degeneracy of secant maps.** Let `σ` be a closed simplex of `K`, and let
 `F : (σ → ℝ) → E` take the values of `f` at the vertices of `σ`. If the derivative of `F` within

@@ -50,8 +50,9 @@ This file collects facts used to compare power series to a finite order `m`:
   a ring homomorphism to power series.
 * `PowerSeries.coeff_coe_mul_eq_sum`: `coeff n (p * g) = ∑_{i < N} pᵢ coeff n (Xⁱ g)` for a
   polynomial `p` of degree less than `N`.
-* `PowerSeries.eval_trunc`: the value of the truncation below `n` at `x` is the partial sum
-  `∑_{i < n} cᵢ xⁱ`.
+* `PowerSeries.mk_span_X_pow_eq_sum`: modulo `X ^ n`, a series is `∑_{k < n} cₖ Xᵏ`.
+* `PowerSeries.eval_trunc`, `PowerSeries.aeval_trunc`: the value of the truncation below `n` at
+  `x` is the partial sum `∑_{i < n} cᵢ xⁱ`.
 * `Polynomial.exists_natDegree_le_forall_coeff_eq`: every polynomial agrees up to index `m` with
   one of degree at most `m`.
 * `PowerSeries.aeval_trunc_eq_aeval_of_pow_eq_zero`: at an element with a vanishing `n`th power,
@@ -234,6 +235,12 @@ section CommSemiring
 
 variable {R : Type*} [CommSemiring R]
 
+/-- The value of the truncation below degree `n` at an element `x` of an `R`-algebra is the
+partial sum `∑_{i < n} cᵢ • xⁱ` of the series. -/
+theorem aeval_trunc {A : Type*} [Semiring A] [Algebra R A] (n : ℕ) (f : R⟦X⟧) (x : A) :
+    Polynomial.aeval x (trunc n f) = ∑ i ∈ Finset.range n, coeff i f • x ^ i := by
+  simp [Polynomial.aeval_def, eval₂_trunc_eq_sum_range, Algebra.smul_def]
+
 /-- Evaluation at an element `x` of a possibly noncommutative `R`-algebra with `x ^ n = 0` sees a
 power series only through its coefficients below `n`: any polynomial with the same coefficients
 below `n` has the same value as the truncation. -/
@@ -268,6 +275,15 @@ theorem trunc_val_zpow_mul_derivative_eq_of_trunc_eq {m : ℕ} {u v : R⟦X⟧ˣ
   trunc_mul_eq_of_trunc_eq
     (trunc_val_zpow_eq_of_trunc_eq (trunc_eq_of_trunc_eq_of_le h (Nat.le_succ m)) k)
     (by rw [trunc_derivative, trunc_derivative, h])
+
+/-- Modulo `X ^ n`, a power series is the sum of its first `n` monomials. -/
+theorem mk_span_X_pow_eq_sum (n : ℕ) (p : R⟦X⟧) :
+    Ideal.Quotient.mk (Ideal.span {(X ^ n : R⟦X⟧)}) p =
+      ∑ k : Fin n, coeff k p • Ideal.Quotient.mk _ (X ^ (k : ℕ)) := by
+  simp only [← Ideal.Quotient.mkₐ_eq_mk R, ← map_smul, ← map_sum]
+  simp only [Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq, Ideal.mem_span_singleton, X_pow_dvd_iff]
+  intro m hm
+  simp [Fin.sum_univ_eq_sum_range (fun k ↦ coeff k p • (X ^ k : R⟦X⟧)), coeff_X_pow, hm]
 
 end CommRing
 

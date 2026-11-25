@@ -129,7 +129,7 @@ theorem ext {y z : FiniteSubsetLimit R S} (h : ∀ U, proj U y = proj U z) : y =
 `f ∈ cycloIndex R U` from whose coordinate it is read. -/
 theorem proj_proj_eq {U V : {U : Set ℕ // U ⊆ S ∧ U.Finite}} {f : R[X]}
     (hU : f ∈ cycloIndex R U.val) (hV : f ∈ cycloIndex R V.val) (y : FiniteSubsetLimit R S) :
-    CycloCompletion.proj ⟨f, hU⟩ (proj U y) = CycloCompletion.proj ⟨f, hV⟩ (proj V y) := by
+    PolyFamilyLimit.proj ⟨f, hU⟩ (proj U y) = PolyFamilyLimit.proj ⟨f, hV⟩ (proj V y) := by
   obtain ⟨W, hUW, hVW⟩ : ∃ W : {U : Set ℕ // U ⊆ S ∧ U.Finite}, U.val ⊆ W.val ∧ V.val ⊆ W.val :=
     ⟨⟨_, Set.union_subset U.property.left V.property.left,
       U.property.right.union V.property.right⟩, Set.subset_union_left, Set.subset_union_right⟩
@@ -153,6 +153,8 @@ end FiniteSubsetLimit
 end Limit
 
 section Equiv
+
+open PolyFamilyLimit
 
 variable {R : Type*} [CommRing R] {S : Set ℕ}
 
@@ -178,8 +180,8 @@ private theorem mem_cycloIndex_finiteSubsetOf (f : cycloIndex R S) :
 /-- The residue modulo `f`, read off a finite subset over which `f` is defined. -/
 private noncomputable def projFiniteSubsetOf (f : cycloIndex R S) :
     FiniteSubsetLimit R S →ₐ[R] AdjoinRoot (f : R[X]) :=
-  (proj (⟨f, mem_cycloIndex_finiteSubsetOf f⟩ : cycloIndex R (finiteSubsetOf f).val)).comp
-    (FiniteSubsetLimit.proj (finiteSubsetOf f))
+  (proj (g := fun f : cycloIndex R (finiteSubsetOf f).val ↦ (f : R[X]))
+    ⟨f, mem_cycloIndex_finiteSubsetOf f⟩).comp (FiniteSubsetLimit.proj (finiteSubsetOf f))
 
 /-- The element of `R[q]^S` whose residue modulo `f` is read off a finite subset over which `f` is
 defined. -/
@@ -196,7 +198,8 @@ private noncomputable def ofFiniteSubsetLimit : FiniteSubsetLimit R S →ₐ[R] 
     rw [AlgHom.comp_apply, projFiniteSubsetOf, projFiniteSubsetOf, AlgHom.comp_apply,
       AlgHom.comp_apply, FiniteSubsetLimit.proj_proj_eq (mem_cycloIndex_finiteSubsetOf g) hgW y,
       FiniteSubsetLimit.proj_proj_eq (mem_cycloIndex_finiteSubsetOf f) hfW y]
-    exact algHomOfDvd_proj (S := W.val) (f := ⟨(f : R[X]), hfW⟩) (g := ⟨(g : R[X]), hgW⟩) h _
+    exact algHomOfDvd_proj (g := fun f : cycloIndex R W.val ↦ (f : R[X]))
+      (i := ⟨(f : R[X]), hfW⟩) (j := ⟨(g : R[X]), hgW⟩) h _
 
 private theorem proj_ofFiniteSubsetLimit (f : cycloIndex R S) {U : {U : Set ℕ // U ⊆ S ∧ U.Finite}}
     (hf : (f : R[X]) ∈ cycloIndex R U.val) (y : FiniteSubsetLimit R S) :
@@ -370,7 +373,7 @@ end CycloCompletion
 
 /-! ### Examples -/
 
-open CycloCompletion
+open CycloCompletion PolyFamilyLimit
 
 /-- With no orders the finite-subset limit is the zero ring. -/
 example : Subsingleton (FiniteSubsetLimit ℤ ∅) :=

@@ -10,6 +10,8 @@ public import TauCeti.CategoryTheory.Sites.Continuous
 public import TauCeti.CategoryTheory.Sites.Homology
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.AcyclicResolution
 
+import TauCeti.CategoryTheory.Abelian.RightDerived
+
 /-!
 # Higher direct images along a morphism of sites
 
@@ -19,7 +21,9 @@ resolutions (for instance `A = AddCommGrpCat` on a small site, which is then Gro
 abelian). The pushforward `f_* = u.sheafPushforwardContinuous A J K`, sending a sheaf `F` on `D`
 to `F ∘ u` on `C`, is left exact, and its right derived functors are the higher direct images
 `Rⁱf_* = u.sheafHigherDirectImage A J K i`. In degree zero they recover the pushforward
-(`CategoryTheory.Functor.sheafHigherDirectImageZeroIso`).
+(`CategoryTheory.Functor.sheafHigherDirectImageZeroIso`). When the pushforward is exact, for
+instance along the identity of a site, they vanish in positive degrees
+(`CategoryTheory.Functor.isZero_sheafHigherDirectImage_succ`).
 
 For abelian groups, the higher direct images are sheafified cohomology presheaves: `Rⁱf_* F` is
 the sheafification of the presheaf `V ↦ Hⁱ(u(V), F)` on `C`
@@ -38,6 +42,9 @@ sheaves.
 * `CategoryTheory.Functor.sheafHigherDirectImage`: the higher direct images `Rⁱf_*` of a morphism of
   sites.
 * `CategoryTheory.Functor.sheafHigherDirectImageZeroIso`: `R⁰f_* ≅ f_*`.
+* `CategoryTheory.Functor.isZero_sheafHigherDirectImage_succ`: the higher direct images of an exact
+  pushforward vanish in positive degrees; in particular `R^{i+1} id_* = 0`
+  (`CategoryTheory.Functor.isZero_sheafHigherDirectImage_id_succ`).
 * `CategoryTheory.Functor.sheafPushforwardContinuousHomologyIsoSheafify`: for an acyclic
   resolution `L` of `F`, the homology of `f_* L` is the sheafification of `V ↦ Hⁱ(u(V), F)`.
 * `CategoryTheory.Functor.sheafHigherDirectImageObjIsoSheafify`: `Rⁱf_* F` is the sheafification of
@@ -75,7 +82,31 @@ noncomputable def sheafHigherDirectImageZeroIso :
     u.sheafHigherDirectImage A J K 0 ≅ u.sheafPushforwardContinuous A J K :=
   (u.sheafPushforwardContinuous A J K).rightDerivedZeroIsoSelf
 
+/-- If the pushforward along `u` is exact, the higher direct images vanish in positive degrees. -/
+theorem isZero_sheafHigherDirectImage_succ
+    [(u.sheafPushforwardContinuous A J K).PreservesHomology] (F : Sheaf K A) (i : ℕ) :
+    IsZero ((u.sheafHigherDirectImage A J K (i + 1)).obj F) :=
+  (u.sheafPushforwardContinuous A J K).isZero_rightDerived_succ F i
+
 end General
+
+section Identity
+
+variable (A : Type*) [Category* A] (J : GrothendieckTopology C) [Abelian A] [HasSheafify J A]
+  [HasInjectiveResolutions (Sheaf J A)]
+
+/-- The pushforward along the identity of a site is the identity functor, so it is exact. -/
+instance preservesHomology_sheafPushforwardContinuous_id :
+    ((𝟭 C).sheafPushforwardContinuous A J J).PreservesHomology :=
+  inferInstanceAs (𝟭 (Sheaf J A)).PreservesHomology
+
+/-- The higher direct images along the identity of a site vanish in positive degrees:
+`R^{i+1} id_* F = 0`. -/
+theorem isZero_sheafHigherDirectImage_id_succ (F : Sheaf J A) (i : ℕ) :
+    IsZero (((𝟭 C).sheafHigherDirectImage A J J (i + 1)).obj F) :=
+  isZero_sheafHigherDirectImage_succ (𝟭 C) A J J F i
+
+end Identity
 
 variable (J : GrothendieckTopology C) (K : GrothendieckTopology D) [u.IsContinuous J K]
   [HasSheafify J AddCommGrpCat.{v}] [HasSheafify K AddCommGrpCat.{v}]

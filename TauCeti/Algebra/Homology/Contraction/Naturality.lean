@@ -47,24 +47,8 @@ theorem perturbationSeries_naturality
     (hδ : f ∘ₗ δ = δ' ∘ₗ f)
     (hU : IsUnit (1 + δ * c.homotopy))
     (hU' : IsUnit (1 + δ' * c'.homotopy)) :
-    f ∘ₗ c.perturbationSeries δ = c'.perturbationSeries δ' ∘ₗ f := by
-  have hT : (1 + δ' * c'.homotopy) ∘ₗ f = f ∘ₗ (1 + δ * c.homotopy) := by
-    simp only [Module.End.mul_eq_comp, LinearMap.add_comp, LinearMap.comp_add,
-      Module.End.one_eq_id, LinearMap.id_comp, LinearMap.comp_id]
-    have hh' := hh
-    have hδ' := hδ
-    simp only [LinearMap.ext_iff, LinearMap.comp_apply] at hh' hδ'
-    ext x
-    simp only [LinearMap.add_apply, LinearMap.comp_apply, hh', hδ']
-  have hinj := ((Module.End.isUnit_iff _).mp hU').1
-  ext x
-  apply hinj
-  have hTX := congrArg (fun a ↦ a x) (c.one_add_mul_perturbationSeries δ hU)
-  have hTX' := congrArg (fun a ↦ a (f x)) (c'.one_add_mul_perturbationSeries δ' hU')
-  have hTf := LinearMap.congr_fun hT (c.perturbationSeries δ x)
-  have hδf := LinearMap.congr_fun hδ x
-  simpa only [LinearMap.comp_apply, mul_apply_eq_comp] using hTf.trans
-    ((congrArg f hTX).trans (hδf.trans hTX'.symm))
+    f ∘ₗ c.perturbationSeries δ = c'.perturbationSeries δ' ∘ₗ f :=
+  c.comp_perturbationSeries_eq_comp δ hU f hδ hh (c'.perturbationSeries_mul_one_add δ' hU')
 
 /-- The induced map on retracts commutes with the perturbed differentials. Compatibility with
 the old retract differential is explicit; no chain-map assumption on the large complexes is
@@ -96,10 +80,8 @@ theorem perturb_incl_naturality
     (hh : f ∘ₗ c.homotopy = c'.homotopy ∘ₗ f)
     (hδ : f ∘ₗ δ = δ' ∘ₗ f) :
     f ∘ₗ (c.perturb δ hsq hU).incl = (c'.perturb δ' hsq' hU').incl ∘ₗ g := by
-  have hX := c.perturbationSeries_naturality c' f hh hδ hU hU'
-  simp only [LinearMap.ext_iff, LinearMap.comp_apply] at hi hh hX
-  ext x
-  simp [hi, hh, hX]
+  rw [c.comp_perturb_incl_eq_comp δ hU hsq f g hi hh
+    (c.perturbationSeries_naturality c' f hh hδ hU hU'), perturb_incl]
 
 /-- Compatible maps commute with the projections after perturbation. -/
 theorem perturb_proj_naturality
@@ -107,10 +89,8 @@ theorem perturb_proj_naturality
     (hh : f ∘ₗ c.homotopy = c'.homotopy ∘ₗ f)
     (hδ : f ∘ₗ δ = δ' ∘ₗ f) :
     g ∘ₗ (c.perturb δ hsq hU).proj = (c'.perturb δ' hsq' hU').proj ∘ₗ f := by
-  have hX := c.perturbationSeries_naturality c' f hh hδ hU hU'
-  simp only [LinearMap.ext_iff, LinearMap.comp_apply] at hp hh hX
-  ext x
-  simp [hp, hh, hX]
+  rw [c.comp_perturb_proj_eq_comp δ hU hsq f g hp hh
+    (c.perturbationSeries_naturality c' f hh hδ hU hU'), perturb_proj]
 
 /-- Compatible maps commute with the homotopies after perturbation. -/
 theorem perturb_homotopy_naturality

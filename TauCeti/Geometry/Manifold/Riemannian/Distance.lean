@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 import TauCeti.Geometry.Manifold.ContMDiff.Defs
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 
@@ -31,6 +32,9 @@ is the special case that matters downstream.
 
 * `TauCeti.Manifold.riemannianEDist_le_mul`: a `C¹` map with differential uniformly bounded by
   a positive constant increases Riemannian extended distances by at most that factor.
+* `TauCeti.Manifold.ofReal_mul_eNorm_sub_le_pathELength_comp`: conversely, a map from a normed
+  space whose differential stretches vectors by at least `c` along a `C¹` curve sends it to a curve
+  of length at least `c` times the displacement of the curve.
 * `TauCeti.IsRiemannianManifold.lipschitzWith_of_norm_mfderiv_le`: the corresponding global
   Lipschitz estimate when both ambient extended distances are Riemannian.
 * `TauCeti.Manifold.riemannianEDist_lt_top_iff_mem_connectedComponent`: the Riemannian distance from
@@ -140,6 +144,31 @@ theorem riemannianEDist_le_mul {f : M → N} (hf : ContMDiff I J 1 f) {C : ℝ�
     ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_coe_nnreal,
     ← ENNReal.ofReal_mul C.coe_nonneg]
   exact ENNReal.ofReal_le_ofReal (hC _ _)
+
+/-- A map from a normed space whose differential stretches every vector by at least the factor
+`c` at the points of a `C¹` curve `y` maps it to a curve whose Riemannian length is at least `c`
+times the displacement of `y`. -/
+theorem ofReal_mul_eNorm_sub_le_pathELength_comp {φ : F → M} {y : ℝ → F} {a b c : ℝ}
+    (hab : a ≤ b) (hy : ContDiffOn ℝ 1 y (Icc a b))
+    (hφ : ∀ s ∈ Icc a b, MDifferentiableAt 𝓘(ℝ, F) I φ (y s))
+    (hc : ∀ s ∈ Icc a b, ∀ v : F, c * ‖v‖ ≤ ‖mfderiv 𝓘(ℝ, F) I φ (y s) v‖) :
+    ENNReal.ofReal c * ‖y b - y a‖ₑ ≤ pathELength I (φ ∘ y) a b := by
+  rcases hab.eq_or_lt with rfl | hab'
+  · simp
+  rw [pathELength_eq_lintegral_mfderivWithin_Icc]
+  refine (mul_le_mul_right (eNorm_sub_le_lintegral_derivWithin_Icc_of_contDiffOn_Icc hy hab)
+    _).trans ?_
+  rw [← MeasureTheory.lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  refine MeasureTheory.setLIntegral_mono' measurableSet_Icc fun s hs ↦ ?_
+  -- The velocity of `φ ∘ y` is the image of the velocity of `y` under the differential of `φ`.
+  have hv : mfderivWithin 𝓘(ℝ, ℝ) I (φ ∘ y) (Icc a b) s 1 =
+      curveVelocityWithin I (φ ∘ y) (Icc a b) s :=
+    curveVelocityWithin_apply.symm
+  rw [hv, curveVelocityWithin_map (hφ s hs) (uniqueDiffOn_Icc hab' s hs)
+      (hy.differentiableOn one_ne_zero s hs).mdifferentiableWithinAt,
+    curveVelocityWithin_eq_derivWithin, ← ofReal_norm, ← ofReal_norm,
+    ← ENNReal.ofReal_mul' (norm_nonneg _)]
+  exact ENNReal.ofReal_le_ofReal (hc s hs _)
 
 end Comparison
 
