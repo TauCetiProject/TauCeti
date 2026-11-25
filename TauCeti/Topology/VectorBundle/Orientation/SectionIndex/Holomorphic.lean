@@ -46,8 +46,8 @@ identically has finitely many zeros (`TauCeti.finite_setOf_section_eq_zero_of_ev
 their number is at most the Euler number `⟨e(E), [M]⟩`, which is therefore nonnegative
 (`TauCeti.VectorBundleOrientation.ncard_le_evalFundamentalClass_eulerClass_of_eventually_eq_mul`,
 `TauCeti.VectorBundleOrientation.evalFundamentalClass_eulerClass_nonneg_of_eventually_eq_mul`);
-and a section with more zeros than the Euler number vanishes identically
-(`TauCeti.VectorBundleOrientation.eq_zero_of_eulerClass_lt_ncard_of_eventually_eq_mul`). These
+and a section with more zeros than the Euler number vanishes identically (in the same namespace,
+`eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard_of_eventually_eq_mul`). These
 bound the number of zeros of any section which the similarity principle factors in this way, such
 as solutions of Cauchy–Riemann inequalities
 (`TauCeti.Topology.VectorBundle.Orientation.SectionIndex.CauchyRiemann`).
@@ -77,7 +77,8 @@ holomorphic, has local index `-1` (`TauCeti.VectorBundleOrientation.sectionIndex
   the zero count for a section that is holomorphic up to a unit at its zeros, with
   `TauCeti.finite_setOf_section_eq_zero_of_eventually_eq_mul` (finitely many zeros),
   `TauCeti.VectorBundleOrientation.evalFundamentalClass_eulerClass_nonneg_of_eventually_eq_mul`
-  and `TauCeti.VectorBundleOrientation.eq_zero_of_eulerClass_lt_ncard_of_eventually_eq_mul`.
+  and, in the same namespace,
+  `eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard_of_eventually_eq_mul`.
 
 * `TauCeti.VectorBundleOrientation.sectionIndex_eq_analyticOrderNatAt`: at a zero where the section
   is complex analytic in oriented coordinates, the local index is the order of vanishing.
@@ -523,10 +524,10 @@ and let `s` be a continuous section of an oriented real plane bundle `E → M` w
 Suppose that around every point `z` there are a chart `φ z` and a linear trivialization `e z`,
 oriented compatibly with `E` and `M` near `z`, in which `s`, read as
 `f y = (e z (s ((φ z)⁻¹ y))).2`, is near `φ z z` the product `v * σ` of a function `v` continuous
-and nonzero at `φ z z` and a function `σ` analytic at `φ z z`. If `s` vanishes on a set `S` with
-more elements than the Euler class of `E` evaluated on the fundamental class of `M`, then `s`
+and nonzero at `φ z z` and a function `σ` analytic at `φ z z`. If `s` vanishes on a finite set `S`
+with more elements than the Euler class of `E` evaluated on the fundamental class of `M`, then `s`
 vanishes identically. -/
-theorem eq_zero_of_eulerClass_lt_ncard_of_eventually_eq_mul
+theorem eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard_of_eventually_eq_mul
     (hze : ∀ z, z ∈ (e z).baseSet)
     (ho : ∀ z, ∀ᶠ x in 𝓝 z, ∀ hx : x ∈ (e z).baseSet,
       (e z).mapOrientation (Fin (1 + 1)) hx (o x) = ω z)
