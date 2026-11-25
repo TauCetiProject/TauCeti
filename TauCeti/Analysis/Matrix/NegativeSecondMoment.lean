@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.Gram.Distance
 public import TauCeti.Analysis.InnerProductSpace.SingularValues
 public import TauCeti.Analysis.Matrix.Resolvent.Basic
 
+import TauCeti.Analysis.Matrix.Eigenvalues.Gram
 import TauCeti.Analysis.Matrix.Spectrum
 
 /-!
@@ -48,18 +49,9 @@ theorem re_trace_mul_conjTranspose_self_inv_eq_sum_inv_sq_singularValues
   let hH := isHermitian_mul_conjTranspose_self A
   have htrace := hH.trace_inv_sub_smul_one (spectrum.zero_notMem 𝕜 hA)
   simp only [zero_smul, sub_zero] at htrace
-  have heig (i : Fin (Fintype.card m)) :
-      (toEuclideanLin A).singularValues i ^ 2 = hH.eigenvalues₀ i := by
-    rw [LinearMap.sq_singularValues_eq_eigenvalues_self_comp_adjoint _
-      finrank_euclideanSpace i.isLt]
-    have hop : toEuclideanLin A ∘ₗ (toEuclideanLin A).adjoint =
-        toEuclideanLin (A * Aᴴ) := by
-      rw [← toEuclideanLin_conjTranspose_eq_adjoint]
-      exact (toLpLin_mul_same 2 A Aᴴ).symm
-    exact congrFun (LinearMap.IsSymmetric.eigenvalues_congr hop _ _ _) i
   rw [htrace, map_sum]
   simp only [← RCLike.ofReal_inv, RCLike.ofReal_re]
-  simp_rw [heig]
+  simp_rw [← eigenvalues₀_mul_conjTranspose_self_eq_sq_singularValues]
   exact hH.sum_comp_eigenvalues fun x ↦ x⁻¹
 
 omit [DecidableEq m] in

@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Borel
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 
 import Mathlib.Analysis.InnerProductSpace.NormDet
+import TauCeti.Analysis.Matrix.Eigenvalues.Gram
 
 /-!
 # Empirical singular-value measures
@@ -73,14 +74,8 @@ theorem map_spectralMeasure_conjTranspose_mul_self_sqrt (A : Matrix m n 𝕜) :
     map_empiricalMeasureOfFintype Real.continuous_sqrt.measurable, singularValueMeasure_def]
   congr 1
   funext i
-  rw [LinearMap.singularValues_fin _ finrank_euclideanSpace]
-  congr 1
-  -- Compare the adjoint Gram operator with the matrix Gram operator before taking eigenvalues.
-  apply LinearMap.IsSymmetric.eigenvalues_congr
-    (by
-      classical
-      rw [← toEuclideanLin_conjTranspose_eq_adjoint]
-      exact toLpLin_mul_same 2 Aᴴ A)
+  rw [Function.comp_apply, eigenvalues₀_conjTranspose_mul_self_eq_sq_singularValues,
+    Real.sqrt_sq (LinearMap.singularValues_nonneg _ _)]
 
 /-- Squared singular values, with multiplicity and domain-size normalization, have exactly
 the Gram spectral measure. -/
