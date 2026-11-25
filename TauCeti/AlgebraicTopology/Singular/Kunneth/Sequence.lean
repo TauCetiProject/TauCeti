@@ -13,9 +13,11 @@ import Mathlib.Algebra.Category.ModuleCat.Projective
 import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
 import Mathlib.RingTheory.Flat.CategoryTheory
 import TauCeti.Algebra.Category.ModuleCat.End
+import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Sequence.Left
 import TauCeti.Algebra.Homology.ShortComplex.Splitting
 import TauCeti.CategoryTheory.GradedObject
 import TauCeti.CategoryTheory.Monoidal.Tor.Basic
+import TauCeti.RingTheory.Flat.Extensions
 
 /-!
 # The Künneth short exact sequence for singular homology
@@ -81,9 +83,9 @@ without the splitting the extension would only show that `e²` kills it.
 * `TopCat.singularHomologyKunnethShortComplex` and
   `TopCat.singularHomologyKunnethShortComplex_shortExact`: **the Künneth short exact sequence**.
 * `TopCat.mono_singularHomologyKunneth`: the Künneth map is a monomorphism in every degree when
-  the cycles `Z_q(Y; N)` and the quotients `C_q(Y; N) / Z_q(Y; N)` are flat.
+  the quotients `C_q(Y; N) / Z_q(Y; N)` are flat.
 * `TopCat.isIso_singularHomologyKunneth_of_flat`: it is an isomorphism in every degree when
-  those modules and the homology of the first factor are flat.
+  the homology of the first factor is flat, with no hypothesis on `Y` or `N`.
 * `TopCat.singularHomologyKunnethUnitShortComplex` and
   `TopCat.singularHomologyKunnethUnitShortComplex_shortExact`: its form with coefficients in a
   hereditary commutative ring.
@@ -107,6 +109,7 @@ public section
 noncomputable section
 
 open CategoryTheory Limits MonoidalCategory AlgebraicTopology HomologicalComplex
+open scoped Simplicial
 
 universe w
 
@@ -116,14 +119,151 @@ variable {k : Type w} [CommRing k]
 
 section Flat
 
-variable (X Y : TopCat.{w}) (M N : ModuleCat.{w} k)
-  [∀ q, Module.Flat k (cokernel (((toSSet.obj Y).chainComplex N).iCycles q) : ModuleCat.{w} k)]
-  [∀ q, Module.Flat k (((toSSet.obj Y).chainComplex N).cycles q)]
+/-- An empty space has zero, hence flat, singular chain modules. -/
+private lemma flat_singularChains_of_not_nonempty (X : TopCat.{w}) (hX : ¬ Nonempty X)
+    (M : ModuleCat.{w} k) (p : ℕ) : Module.Flat k (((toSSet.obj X).chainComplex M).X p) := by
+  have hne : Nonempty (SimplexCategory.toTop.{w}.obj ⦋p⦌) := inferInstance
+  have : IsEmpty ((toSSet.obj X) _⦋p⦌) := ⟨fun f ↦ hX ⟨f.down.hom hne.some⟩⟩
+  have : IsZero (((toSSet.obj X).chainComplex M).X p) := by
+    rw [IsZero.iff_id_eq_zero]
+    exact (toSSet.obj X).chainComplex_hom_ext fun x ↦ isEmptyElim x
+  have := ModuleCat.subsingleton_of_isZero this
+  exact Module.Flat.of_free
 
-/-- **The Künneth map is a monomorphism** when the cycles `Z_q(Y; N)` and the quotients
-`C_q(Y; N) / Z_q(Y; N)` are flat, for instance for any projective `N` over a principal ideal
-domain. -/
-theorem mono_singularHomologyKunneth (n : ℕ) : Mono (singularHomologyKunneth X Y M N n) := by
+/-- On a one-point space, each singular chain module `Cₙ(pt; N)` is isomorphic to `N`, and the
+degree-2 differential `d 2 1` is an isomorphism, so `C₂(pt; N) / Z₂(pt; N) ≅ N`. -/
+private def cokernelICyclesTwoPUnitIso (N : ModuleCat.{w} k) :
+    N ≅ cokernel (((toSSet.obj (TopCat.of PUnit.{w + 1})).chainComplex N).iCycles 2) := by
+  let pt : TopCat.{w} := TopCat.of PUnit
+  let c (n : ℕ) : (toSSet.obj pt) _⦋n⦌ := ULift.up (TopCat.ofHom (ContinuousMap.const _ PUnit.unit))
+  have hsub (n : ℕ) (x : (toSSet.obj pt) _⦋n⦌) : x = c n :=
+    ULift.ext (ConcreteCategory.hom_ext _ _ fun _ ↦ rfl)
+  let inv_e (n : ℕ) : ((toSSet.obj pt).chainComplex N).X n ⟶ N :=
+    Cofan.IsColimit.desc ((toSSet.obj pt).isColimitChainComplexXCofan N n) fun _ ↦ 𝟙 N
+  let e (n : ℕ) : N ≅ ((toSSet.obj pt).chainComplex N).X n :=
+    { hom := (toSSet.obj pt).ιChainComplex (c n)
+      inv := inv_e n
+      hom_inv_id := Cofan.IsColimit.fac ((toSSet.obj pt).isColimitChainComplexXCofan N n)
+        (fun _ ↦ 𝟙 N) (c n)
+      inv_hom_id := (toSSet.obj pt).chainComplex_hom_ext fun x ↦ by
+        have hfac : (toSSet.obj pt).ιChainComplex (c n) ≫ inv_e n = 𝟙 N :=
+          Cofan.IsColimit.fac ((toSSet.obj pt).isColimitChainComplexXCofan N n) (fun _ ↦ 𝟙 N) (c n)
+        rw [hsub n x, ← Category.assoc, hfac, Category.id_comp, Category.comp_id] }
+  have hd : IsIso (((toSSet.obj pt).chainComplex N).d 2 1) := by
+    have hdeq : ((toSSet.obj pt).chainComplex N).d 2 1 = (e 2).inv ≫ (e 1).hom := by
+      refine (toSSet.obj pt).chainComplex_hom_ext fun x ↦ ?_
+      rw [hsub 2 x, SSet.ιChainComplex_d]
+      have hδ (j : Fin 3) : (toSSet.obj pt).δ j (c 2) = c 1 := hsub 1 _
+      have hfac : (toSSet.obj pt).ιChainComplex (c 2) ≫ (e 2).inv = 𝟙 N := (e 2).hom_inv_id
+      rw [reassoc_of% hfac]
+      simp [Fin.sum_univ_three, hδ, e]
+    rw [hdeq]
+    exact ((e 2).symm ≪≫ e 1).isIso_hom
+  have hZ0 : IsZero (((toSSet.obj pt).chainComplex N).cycles 2) := by
+    rw [IsZero.iff_id_eq_zero, ← cancel_mono (((toSSet.obj pt).chainComplex N).iCycles 2),
+      ← cancel_mono (((toSSet.obj pt).chainComplex N).d 2 1)]
+    simp [((toSSet.obj pt).chainComplex N).iCycles_d 2 1]
+  have hi0 : ((toSSet.obj pt).chainComplex N).iCycles 2 = 0 := hZ0.eq_of_src _ _
+  exact e 2 ≪≫
+    { hom := cokernel.π _
+      inv := cokernel.desc _ (𝟙 _) (by rw [hi0, zero_comp])
+      hom_inv_id := by simp [pt]
+      inv_hom_id := coequalizer.hom_ext (by simp) }
+
+/-- If `C₂(Y; N) / Z₂(Y; N)` is flat and `Y` is nonempty, then `N` is a retract of
+`C₂(Y; N) / Z₂(Y; N)` via a point of `Y`, hence flat. -/
+private lemma flat_of_flat_cokernel_iCycles_two (Y : TopCat.{w}) (y₀ : Y) (N : ModuleCat.{w} k)
+    [Module.Flat k (cokernel (((toSSet.obj Y).chainComplex N).iCycles 2) : ModuleCat.{w} k)] :
+    Module.Flat k N := by
+  let pt : TopCat.{w} := TopCat.of PUnit
+  let iPt : pt ⟶ Y := TopCat.ofHom (ContinuousMap.const _ y₀)
+  let rPt : Y ⟶ pt := TopCat.ofHom (ContinuousMap.const _ PUnit.unit)
+  let F := (singularChainComplexFunctor (ModuleCat.{w} k)).obj N
+  have hφψ : F.map iPt ≫ F.map rPt = 𝟙 (F.obj pt) := by rw [← F.map_comp]; exact F.map_id pt
+  let ι := (cyclesComplexShortComplexMap (F.map iPt)).τ₃.f 2
+  let ρ := (cyclesComplexShortComplexMap (F.map rPt)).τ₃.f 2
+  have hιρ : ι ≫ ρ = 𝟙 _ :=
+    congrArg (fun m ↦ m.τ₃.f 2)
+      ((cyclesComplexShortComplexMap_comp (F.map iPt) (F.map rPt)).symm.trans
+        (by rw [hφψ, cyclesComplexShortComplexMap_id]))
+  have : Module.Flat k ((F.obj Y).cyclesComplexShortComplex.X₃.X 2) := by
+    rw [cyclesComplexShortComplex_X₃]
+    exact inferInstanceAs (Module.Flat k
+      (cokernel (((toSSet.obj Y).chainComplex N).iCycles 2) : ModuleCat.{w} k))
+  have hflat : Module.Flat k ((F.obj pt).cyclesComplexShortComplex.X₃.X 2) :=
+    Module.Flat.of_retract ι.hom ρ.hom (congrArg ModuleCat.Hom.hom hιρ)
+  rw [cyclesComplexShortComplex_X₃] at hflat
+  have : Module.Flat k (cokernel (((toSSet.obj pt).chainComplex N).iCycles 2) : ModuleCat.{w} k) :=
+    hflat
+  exact Module.Flat.of_linearEquiv (cokernelICyclesTwoPUnitIso N).toLinearEquiv
+
+/-- If `K_q` and `K_q / Z_q(K)` are flat, then `Z_q(K)` is flat. -/
+private lemma flat_cycles_of_flat_X_of_flat_cokernel (K : ChainComplex (ModuleCat.{w} k) ℕ) (q : ℕ)
+    [Module.Flat k (K.X q)] [Module.Flat k (cokernel (K.iCycles q) : ModuleCat.{w} k)] :
+    Module.Flat k (K.cycles q) := by
+  have hS := (shortExact_iff_degreewise_shortExact _).1 K.cyclesComplexShortComplex_shortExact q
+  have : Module.Flat k (K.cyclesComplexShortComplex.map (eval _ _ q)).X₂ := by
+    rw [ShortComplex.map_X₂, eval_obj, cyclesComplexShortComplex_X₂]
+    infer_instance
+  have : Module.Flat k (K.cyclesComplexShortComplex.map (eval _ _ q)).X₃ := by
+    rw [ShortComplex.map_X₃, eval_obj, cyclesComplexShortComplex_X₃]
+    exact inferInstanceAs (Module.Flat k (cokernel (K.iCycles q) : ModuleCat.{w} k))
+  have hX₁ : Module.Flat k (K.cyclesComplexShortComplex.map (eval _ _ q)).X₁ :=
+    Function.Exact.flat_left_of_injective_of_surjective
+      ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hS.exact)
+      hS.moduleCat_injective_f hS.moduleCat_surjective_g
+  rw [ShortComplex.map_X₁, eval_obj, cyclesComplexShortComplex_X₁] at hX₁
+  exact hX₁
+
+/-- In a nonnegative chain complex with flat terms and flat homology, all cycles and cycle
+cokernels are flat by induction on degree. -/
+private lemma flat_cycles_and_cokernel_of_flat_homology (K : ChainComplex (ModuleCat.{w} k) ℕ)
+    [∀ p, Module.Flat k (K.X p)] [∀ p, Module.Flat k (K.homology p)] (p : ℕ) :
+    Module.Flat k (K.cycles p) ∧ Module.Flat k (cokernel (K.iCycles p) : ModuleCat.{w} k) := by
+  induction p with
+  | zero =>
+    have h0 : IsZero (cokernel (K.iCycles 0)) := by
+      have := K.isIso_iCycles 0 _ rfl (K.shape 0 _ (by simp))
+      exact isZero_cokernel_of_epi _
+    have hcok : Module.Flat k (cokernel (K.iCycles 0) : ModuleCat.{w} k) :=
+      have := ModuleCat.subsingleton_of_isZero h0
+      Module.Flat.of_free
+    exact ⟨flat_cycles_of_flat_X_of_flat_cokernel K 0, hcok⟩
+  | succ p ih =>
+    have hcok : Module.Flat k (cokernel (K.iCycles (p + 1)) : ModuleCat.{w} k) := by
+      have hS := K.homologyPresentation_shortExact p
+      have : Module.Flat k (K.homologyPresentation p).X₂ :=
+        have : Module.Flat k (K.cyclesComplexShortComplex.X₁.X p) := by
+          rw [cyclesComplexShortComplex_X₁]
+          exact ih.1
+        Module.Flat.of_linearEquiv (K.cyclesComplexShortComplex.X₁.XIsoHomologyOfDEqZero
+          p (by simp) (by simp)).symm.toLinearEquiv
+      have : Module.Flat k (K.homologyPresentation p).X₁ :=
+        Function.Exact.flat_left_of_injective_of_surjective
+          ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hS.exact)
+          hS.moduleCat_injective_f hS.moduleCat_surjective_g
+      have hX₃ : Module.Flat k (K.cyclesComplexShortComplex.X₃.X (p + 1)) :=
+        Module.Flat.of_linearEquiv (K.cyclesComplexShortComplex.X₃.XIsoHomologyOfDEqZero
+          (p + 1) (by simp) (by simp)).toLinearEquiv
+      rw [cyclesComplexShortComplex_X₃] at hX₃
+      exact hX₃
+    exact ⟨flat_cycles_of_flat_X_of_flat_cokernel K (p + 1), hcok⟩
+
+variable (X Y : TopCat.{w}) (M N : ModuleCat.{w} k)
+
+/-- **The Künneth map is a monomorphism** when the quotients `C_q(Y; N) / Z_q(Y; N)` are flat,
+for instance for any projective `N` over a principal ideal domain. The flatness of the cycles
+`Z_q(Y; N)` follows automatically because `C_q(Y; N)` is flat. -/
+theorem mono_singularHomologyKunneth
+    [∀ q, Module.Flat k (cokernel (((toSSet.obj Y).chainComplex N).iCycles q) : ModuleCat.{w} k)]
+    (n : ℕ) : Mono (singularHomologyKunneth X Y M N n) := by
+  have (q : ℕ) : Module.Flat k (((toSSet.obj Y).chainComplex N).X q) := by
+    by_cases hY : Nonempty Y
+    · have : Module.Flat k N := flat_of_flat_cokernel_iCycles_two Y hY.some N
+      exact SSet.flat_chainComplex_X (toSSet.obj Y) N q
+    · exact flat_singularChains_of_not_nonempty Y hY N q
+  have (q : ℕ) : Module.Flat k (((toSSet.obj Y).chainComplex N).cycles q) :=
+    flat_cycles_of_flat_X_of_flat_cokernel ((toSSet.obj Y).chainComplex N) q
   rw [singularHomologyKunneth_def, ← eilenbergZilberHomotopyEquiv_inv]
   -- The shuffle map is a homotopy inverse of the Alexander–Whitney map.  The instances are passed
   -- explicitly: instance search does not identify the homology instances of the general
@@ -132,19 +272,32 @@ theorem mono_singularHomologyKunneth (n : ℕ) : Mono (singularHomologyKunneth X
     ((toSSet.obj Y).chainComplex N) n) _ (@IsIso.mono_of_iso _ _ _ _ _
     ((eilenbergZilberHomotopyEquiv X Y M N).toHomologyIso n).isIso_inv)
 
-/-- **The Künneth theorem when one factor has flat homology.** If the cycles `Z_q(Y; N)` and the
-quotients `C_q(Y; N) / Z_q(Y; N)` are flat, for instance for any projective `N` over a principal
-ideal domain, and every homology module `Hₚ(X; M)` is flat, then the Künneth map
+/-- **The Künneth theorem when one factor has flat homology.** If every homology module
+`Hₚ(X; M)` is flat, then the Künneth map
 `⨁_{p + q = n} Hₚ(X; M) ⊗ H_q(Y; N) ⟶ Hₙ(X × Y; M ⊗ N)` is an isomorphism in every degree `n`.
-No hypothesis is placed on the homology of `Y`. -/
+No hypothesis is placed on `Y` or `N`. -/
 theorem isIso_singularHomologyKunneth_of_flat
     [hX : ∀ p, Module.Flat k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj M).obj X)]
     (n : ℕ) : IsIso (singularHomologyKunneth X Y M N n) := by
+  have (p : ℕ) : Module.Flat k (((toSSet.obj X).chainComplex M).X p) := by
+    by_cases hne : Nonempty X
+    · have : Module.Flat k (∐ fun _ : ZerothHomotopy X ↦ M : ModuleCat.{w} k) :=
+        Module.Flat.of_linearEquiv (X.singularHomology₀Iso M).symm.toLinearEquiv
+      let i : M ⟶ ∐ fun _ : ZerothHomotopy X ↦ M :=
+        Sigma.ι (fun _ : ZerothHomotopy X ↦ M) (Quot.mk _ hne.some)
+      let r : (∐ fun _ : ZerothHomotopy X ↦ M) ⟶ M := Sigma.desc fun _ ↦ 𝟙 M
+      have : Module.Flat k M :=
+        Module.Flat.of_retract i.hom r.hom (congrArg ModuleCat.Hom.hom (by simp [i, r]))
+      exact SSet.flat_chainComplex_X (toSSet.obj X) M p
+    · exact flat_singularChains_of_not_nonempty X hne M p
   -- `Hₚ(X; M)` is by definition the homology of the singular chain complex `C(X; M)`.
   have (p : ℕ) : Module.Flat k (((toSSet.obj X).chainComplex M).homology p) := hX p
+  have (p : ℕ) : Module.Flat k
+      (cokernel (((toSSet.obj X).chainComplex M).iCycles p) : ModuleCat.{w} k) :=
+    (flat_cycles_and_cokernel_of_flat_homology ((toSSet.obj X).chainComplex M) p).2
   rw [singularHomologyKunneth_def, ← eilenbergZilberHomotopyEquiv_inv]
   -- The instances are passed explicitly, as in `TopCat.mono_singularHomologyKunneth`.
-  exact @IsIso.comp_isIso _ _ _ _ _ _ _ (isIso_homologyKunneth_of_flat_homology
+  exact @IsIso.comp_isIso _ _ _ _ _ _ _ (isIso_homologyKunneth_of_flat_homology_left
     ((toSSet.obj X).chainComplex M) ((toSSet.obj Y).chainComplex N) n)
     ((eilenbergZilberHomotopyEquiv X Y M N).toHomologyIso n).isIso_inv
 

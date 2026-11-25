@@ -9,8 +9,8 @@ public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Homology.HomologicalComplex.Projective.Dimension
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Basic
 public import TauCeti.CategoryTheory.Monoidal.Tor.Basic
-import Mathlib.RingTheory.Flat.Equalizer
 import TauCeti.Algebra.Homology.ShortComplex.Exact
+import TauCeti.Algebra.Homology.ShortComplex.Flat
 
 /-!
 # The Künneth short exact sequence
@@ -123,7 +123,7 @@ lemma homologyPresentation_shortExact (q : I) : (L.homologyPresentation q).Short
 
 /-- The first term `H_{q+1}(L / Z(L))` of `HomologicalComplex.homologyPresentation` is projective
 when `L_{q+1} / Z_{q+1}(L)` is projective. -/
-lemma projective_homologyPresentation_X₁ (q : I) [Projective (cokernel (L.iCycles (q + 1)))] :
+instance projective_homologyPresentation_X₁ (q : I) [Projective (cokernel (L.iCycles (q + 1)))] :
     Projective (L.homologyPresentation q).X₁ :=
   Projective.of_iso
     (L.cyclesComplexShortComplex.X₃.XIsoHomologyOfDEqZero (q + 1) (by simp) (by simp))
@@ -131,18 +131,10 @@ lemma projective_homologyPresentation_X₁ (q : I) [Projective (cokernel (L.iCyc
 
 /-- The middle term `H_q(Z(L))` of `HomologicalComplex.homologyPresentation` is projective when
 `Z_q(L)` is projective. -/
-lemma projective_homologyPresentation_X₂ (q : I) [Projective (L.cycles q)] :
+instance projective_homologyPresentation_X₂ (q : I) [Projective (L.cycles q)] :
     Projective (L.homologyPresentation q).X₂ :=
   Projective.of_iso (L.cyclesComplexShortComplex.X₁.XIsoHomologyOfDEqZero q (by simp) (by simp))
     (by simpa using (inferInstance : Projective (L.cycles q)))
-
-private instance (q : I) [Projective (cokernel (L.iCycles (q + 1)))] :
-    Projective (L.homologyPresentation q).X₁ :=
-  L.projective_homologyPresentation_X₁ q
-
-private instance (q : I) [Projective (L.cycles q)] :
-    Projective (L.homologyPresentation q).X₂ :=
-  L.projective_homologyPresentation_X₂ q
 
 variable {L} {L' : ChainComplex C I}
 
@@ -496,22 +488,13 @@ variable [∀ q, Module.Flat R (cokernel (L.iCycles q) : ModuleCat.{u} R)]
 L_q / Z_q(L) ⟶ 0` is short exact with flat cokernel, so tensoring with `Kₚ` preserves its
 exactness. -/
 private lemma shortExact_tensorLeft_cycles :
-    (tensorLeftShortComplex K L.cyclesComplexShortComplex).ShortExact := by
-  refine shortExact_tensorLeftShortComplex_of_degreewise K fun p q ↦ ?_
-  have hq := (shortExact_iff_degreewise_shortExact _).1 L.cyclesComplexShortComplex_shortExact q
-  have : Module.Flat R (L.cyclesComplexShortComplex.map (eval _ _ q)).X₃ := by
-    change Module.Flat R (L.cyclesComplexShortComplex.X₃.X q)
-    rw [cyclesComplexShortComplex_X₃]
-    exact inferInstanceAs (Module.Flat R (cokernel (L.iCycles q) : ModuleCat.{u} R))
-  have hg := (ModuleCat.epi_iff_surjective _).1 hq.epi_g
-  have hfg := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hq.exact
-  refine ShortComplex.ShortExact.mk' ?_ ?_ ?_
-  · rw [ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
-    exact lTensor_exact (K.X p) hfg hg
-  · rw [ModuleCat.mono_iff_injective]
-    exact LinearMap.lTensor_injective_of_exact_of_flat _ hg _ hq.moduleCat_injective_f hfg (K.X p)
-  · rw [ModuleCat.epi_iff_surjective]
-    exact LinearMap.lTensor_surjective (K.X p) hg
+    (tensorLeftShortComplex K L.cyclesComplexShortComplex).ShortExact :=
+  shortExact_tensorLeftShortComplex_of_degreewise K fun p q ↦
+    have : Module.Flat R (L.cyclesComplexShortComplex.map (eval _ _ q)).X₃ := by
+      rw [ShortComplex.map_X₃, eval_obj, cyclesComplexShortComplex_X₃]
+      exact inferInstanceAs (Module.Flat R (cokernel (L.iCycles q) : ModuleCat.{u} R))
+    ((shortExact_iff_degreewise_shortExact _).1
+      L.cyclesComplexShortComplex_shortExact q).map_tensorLeft_of_flat (K.X p)
 
 /-- The connecting morphism of `K ⊗ Z(L) ⟶ K ⊗ L ⟶ K ⊗ (L / Z(L))`, read through the Künneth
 maps. -/

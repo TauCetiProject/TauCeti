@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Sequence.Basic
-import Mathlib.RingTheory.Flat.Equalizer
 import TauCeti.Algebra.Homology.ShortComplex.Exact
+import TauCeti.Algebra.Homology.ShortComplex.Flat
+import TauCeti.RingTheory.Flat.Extensions
 
 /-!
 # The Künneth short exact sequence with a projective first factor
@@ -61,6 +62,8 @@ its kernel is `Tor'₁(Hₚ(K), H_q(L))` (`CategoryTheory.ShortComplex.ShortExac
 * `HomologicalComplex.homologyTorLeft`: the module `⨁_{p + q = m} Tor'₁(Hₚ(K), H_q(L))`.
 * `HomologicalComplex.mono_homologyKunneth_left`: the Künneth map is a monomorphism in every degree
   when `Z_p(K)` and `K_p / Z_p(K)` are flat.
+* `HomologicalComplex.isIso_homologyKunneth_of_flat_homology_left`: the Künneth map is an
+  isomorphism in every degree when `K_p / Z_p(K)` and `H_p(K)` are flat, with no hypothesis on `L`.
 * `HomologicalComplex.homologyToTorLeft`: the map
   `Hₘ₊₁(K ⊗ L) ⟶ ⨁_{p + q = m} Tor'₁(Hₚ(K), H_q(L))`, induced by the projection of `K` onto
   `K / Z(K)`.
@@ -136,12 +139,6 @@ private lemma tensorShortComplexLeft_exact (x : I × I) :
     (tensorRight (L.homology x.2)) (K.homologyPresentation_shortExact x.1).epi_g inferInstance
 
 variable [∀ p, Projective (cokernel (K.iCycles p))] [∀ p, Projective (K.cycles p)]
-
-private instance (p : I) : Projective (K.homologyPresentation p).X₁ :=
-  K.projective_homologyPresentation_X₁ p
-
-private instance (p : I) : Projective (K.homologyPresentation p).X₂ :=
-  K.projective_homologyPresentation_X₂ p
 
 /-- The summand inclusion `Tor'₁(Hₚ(K), H_q(L)) ⟶ H_{p+1}(K / Z(K)) ⊗ H_q(L)`, identifying `Tor'₁`
 with the kernel of `H_{p+1}(K / Z(K)) ⊗ H_q(L) ⟶ Hₚ(Z(K)) ⊗ H_q(L)` through the projective
@@ -341,25 +338,13 @@ variable [∀ p, Module.Flat R (cokernel (K.iCycles p) : ModuleCat.{u} R)]
 Kₚ / Zₚ(K) ⟶ 0` is short exact with flat cokernel, so tensoring on the right with `L_q` preserves
 its exactness. -/
 private lemma shortExact_tensorRight_cycles :
-    (tensorRightShortComplex L K.cyclesComplexShortComplex).ShortExact := by
-  refine shortExact_tensorRightShortComplex_of_degreewise L fun p q ↦ ?_
-  refine ShortComplex.shortExact_of_iso
-    ((K.cyclesComplexShortComplex.map (eval _ _ p)).mapNatIso
-      (BraidedCategory.tensorLeftIsoTensorRight (L.X q))) ?_
-  have hp := (shortExact_iff_degreewise_shortExact _).1 K.cyclesComplexShortComplex_shortExact p
-  have : Module.Flat R (K.cyclesComplexShortComplex.map (eval _ _ p)).X₃ := by
-    change Module.Flat R (K.cyclesComplexShortComplex.X₃.X p)
-    rw [cyclesComplexShortComplex_X₃]
-    exact inferInstanceAs (Module.Flat R (cokernel (K.iCycles p) : ModuleCat.{u} R))
-  have hg := (ModuleCat.epi_iff_surjective _).1 hp.epi_g
-  have hfg := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hp.exact
-  refine ShortComplex.ShortExact.mk' ?_ ?_ ?_
-  · rw [ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
-    exact lTensor_exact (L.X q) hfg hg
-  · rw [ModuleCat.mono_iff_injective]
-    exact LinearMap.lTensor_injective_of_exact_of_flat _ hg _ hp.moduleCat_injective_f hfg (L.X q)
-  · rw [ModuleCat.epi_iff_surjective]
-    exact LinearMap.lTensor_surjective (L.X q) hg
+    (tensorRightShortComplex L K.cyclesComplexShortComplex).ShortExact :=
+  shortExact_tensorRightShortComplex_of_degreewise L fun p q ↦
+    have : Module.Flat R (K.cyclesComplexShortComplex.map (eval _ _ p)).X₃ := by
+      rw [ShortComplex.map_X₃, eval_obj, cyclesComplexShortComplex_X₃]
+      exact inferInstanceAs (Module.Flat R (cokernel (K.iCycles p) : ModuleCat.{u} R))
+    ((shortExact_iff_degreewise_shortExact _).1
+      K.cyclesComplexShortComplex_shortExact p).map_tensorRight_of_flat (L.X q)
 
 /-- The connecting morphism of `Z(K) ⊗ L ⟶ K ⊗ L ⟶ (K / Z(K)) ⊗ L`, read through the Künneth
 maps. -/
@@ -474,6 +459,57 @@ private lemma homologyKunneth_exact_toTensorQuotientLeft (m : I) :
     ((shortExact_tensorRight_cycles K L).homology_exact₂ (m + 1))
 
 end Flat
+
+/-- **The Künneth theorem when the first factor has flat quotients `Kₚ / Zₚ(K)` and flat
+homology.** Under these hypotheses the cycles `Zₚ(K)` are automatically flat as extensions of
+`Hₚ(K)` by `K_{p+1} / Z_{p+1}(K)`, and the Künneth map
+`⨁_{p + q = n} Hₚ(K) ⊗ H_q(L) ⟶ Hₙ(K ⊗ L)` is an isomorphism in every degree `n`, with no
+hypothesis on `L`. -/
+theorem isIso_homologyKunneth_of_flat_homology_left
+    [∀ p, Module.Flat R (cokernel (K.iCycles p) : ModuleCat.{u} R)]
+    [∀ p, Module.Flat R (K.homology p)] (n : I) :
+    IsIso (homologyKunneth K L n) := by
+  have (p : I) : Module.Flat R (K.cycles p) := by
+    have hS := K.homologyPresentation_shortExact p
+    have : Module.Flat R (K.cyclesComplexShortComplex.X₃.X (p + 1)) := by
+      rw [cyclesComplexShortComplex_X₃]
+      exact inferInstanceAs (Module.Flat R (cokernel (K.iCycles (p + 1)) : ModuleCat.{u} R))
+    have : Module.Flat R (K.homologyPresentation p).X₁ :=
+      Module.Flat.of_linearEquiv (K.cyclesComplexShortComplex.X₃.XIsoHomologyOfDEqZero
+        (p + 1) (by simp) (by simp)).symm.toLinearEquiv
+    have : Module.Flat R (K.homologyPresentation p).X₂ :=
+      Function.Exact.flat_of_injective_of_surjective
+        ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hS.exact)
+        hS.moduleCat_injective_f hS.moduleCat_surjective_g
+    have hX₁ : Module.Flat R (K.cyclesComplexShortComplex.X₁.X p) :=
+      Module.Flat.of_linearEquiv (K.cyclesComplexShortComplex.X₁.XIsoHomologyOfDEqZero
+        p (by simp) (by simp)).toLinearEquiv
+    rw [cyclesComplexShortComplex_X₁] at hX₁
+    exact hX₁
+  have := mono_homologyKunneth_left K L n
+  suffices Epi (homologyKunneth K L n) from isIso_of_mono_of_epi _
+  by_cases hn : ∃ m, m + 1 = n
+  · obtain ⟨m, rfl⟩ := hn
+    have (p q : I) : Mono ((K.homologyPresentation p).f ⊗ₘ 𝟙 (L.homology q)) := by
+      rw [tensorHom_id]
+      exact ((K.homologyPresentation_shortExact p).map_tensorRight_of_flat (L.homology q)).mono_f
+    have : Mono (tensorδLeft K L m) := GradedObject.Monoidal.mono_tensorHom _ _ m
+    have hzero : toTensorQuotientLeft K L m = 0 :=
+      (cancel_mono (tensorδLeft K L m)).1 (by rw [toTensorQuotientLeft_comp_tensorδLeft, zero_comp])
+    exact (homologyKunneth_exact_toTensorQuotientLeft K L m).epi_f hzero
+  · have hX₃ : IsZero ((tensorObj K.cyclesComplexShortComplex.X₃ L).homology n) := by
+      refine IsZero.of_iso ?_ (asIso (homologyKunneth K.cyclesComplexShortComplex.X₃ L n)).symm
+      rw [IsZero.iff_id_eq_zero]
+      refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
+      have hp (p' : I) : p' + 1 ≠ p := fun hp ↦ hn ⟨p' + q, by rw [add_right_comm, hp, h]⟩
+      exact ((tensorRight _).map_isZero
+        (K.isZero_homology_cyclesComplexShortComplex_X₃_of_forall_add_one_ne hp)).eq_of_src _ _
+    have : Epi (homologyMap (tensorRightShortComplex L K.cyclesComplexShortComplex).f n) :=
+      ((shortExact_tensorRight_cycles K L).homology_exact₂ n).epi_f (hX₃.eq_of_tgt _ _)
+    have : Epi (tensorπLeft K L n ≫ homologyKunneth K L n) := by
+      rw [tensorπLeft_comp_homologyKunneth]
+      infer_instance
+    exact epi_of_epi (tensorπLeft K L n) (homologyKunneth K L n)
 
 section Projective
 
