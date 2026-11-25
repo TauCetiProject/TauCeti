@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Symbol.ChartCompression
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
+public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Basic
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Pow
 
@@ -53,6 +54,12 @@ values on compactly supported functions, and hence by its chart compressions.
   the operators on `C^∞(M, ℂ)`.
 * `TauCeti.classicalPseudodifferentialOperators_le`: an operator of order `m - k`, `k ∈ ℕ`, has
   order `m`.
+* `TauCeti.conj_mem_classicalPseudodifferentialOperators_iff`: invariance under diffeomorphisms.
+  For a diffeomorphism `Φ : N → M`, the transport `f ↦ (P (f ∘ Φ⁻¹)) ∘ Φ` of `P` to `N` is a
+  classical pseudodifferential operator of order `m` exactly when `P` is one; proper support is
+  transported by `TauCeti.IsProperlySupported.conj`. Since the class is defined through every
+  chart of the maximal atlas, the chart compressions of the transport are chart compressions of `P`
+  (`OpenPartialHomeomorph.complexChartCompression_conj`).
 * `TauCeti.id_mem_classicalPseudodifferentialOperators` and
   `TauCeti.mulLeft_mem_classicalPseudodifferentialOperators`: the identity and multiplication by a
   smooth function have order `0`.
@@ -175,6 +182,35 @@ theorem IsProperlySupported.of_local
   by_contra h
   exact hx (hP f x (notMem_tsupport_iff_eventuallyEq.1 h))
 
+/-- **Proper support under a diffeomorphism.** Transporting a properly supported operator `P` on
+`M` to `N` along a diffeomorphism `Φ : N → M`, by conjugation `f ↦ (P (f ∘ Φ⁻¹)) ∘ Φ` with the
+pullback, gives a properly supported operator. -/
+theorem IsProperlySupported.conj (hP : IsProperlySupported P) {N : Type*} [TopologicalSpace N]
+    [ChartedSpace (CoordinateSpace n) N]
+    (Φ : N ≃ₘ⟮𝓘(ℝ, CoordinateSpace n), 𝓘(ℝ, CoordinateSpace n)⟯ M) :
+    IsProperlySupported (Φ.compRightComplexAlgEquiv.toLinearEquiv.conj P) := by
+  have hconj (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), N; 𝓘(ℝ, ℂ), ℂ⟯) :
+      ⇑(Φ.compRightComplexAlgEquiv.toLinearEquiv.conj P f) =
+        P (Φ.symm.compRightComplexAlgEquiv f) ∘ Φ.toHomeomorph := by
+    ext x
+    simp
+  have hsymm (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), N; 𝓘(ℝ, ℂ), ℂ⟯) :
+      ⇑(Φ.symm.compRightComplexAlgEquiv f) = f ∘ Φ.symm.toHomeomorph := by
+    rw [Diffeomorph.coe_compRightComplexAlgEquiv_apply, Diffeomorph.coe_toHomeomorph]
+  intro K hK
+  obtain ⟨K', hK', hP₁, hP₂⟩ := hP (Φ '' K) (hK.image Φ.continuous)
+  refine ⟨Φ.symm '' K', hK'.image Φ.symm.continuous, fun f hf ↦ ?_, fun f hf x hx ↦ ?_⟩
+  · have hf' : tsupport (Φ.symm.compRightComplexAlgEquiv f) ⊆ Φ '' K := by
+      rw [hsymm, tsupport_comp_eq_preimage]
+      exact fun z hz ↦ ⟨Φ.symm z, hf hz, Φ.apply_symm_apply z⟩
+    rw [hconj, tsupport_comp_eq_preimage]
+    exact fun x hx ↦ ⟨Φ x, hP₁ _ hf' hx, Φ.symm_apply_apply x⟩
+  · have hf' : ∀ᶠ y in 𝓝ˢ K', Φ.symm.compRightComplexAlgEquiv f y = 0 :=
+      ((Φ.symm.continuous.tendsto_nhdsSet (mapsTo_image _ _)).eventually hf).mono fun y hy ↦ by
+        rwa [Diffeomorph.compRightComplexAlgEquiv_apply]
+    rw [hconj, Function.comp_apply, Diffeomorph.coe_toHomeomorph]
+    exact hP₂ _ hf' (Φ x) (mem_image_of_mem Φ hx)
+
 end ProperSupport
 
 variable [T2Space M]
@@ -236,6 +272,46 @@ theorem classicalPseudodifferentialOperators_le {m m' : ℝ} (k : ℕ) (hk : m' 
     let ⟨a, ha⟩ := hP.2 e he φ ψ
     ⟨ClassicalSymbol.inclusion k hk a, fun u x ↦ by
       rw [ClassicalSymbol.toSymbol_inclusion, Symbol.coefficient_inclusion, ha]⟩⟩
+
+/-! ### Invariance under diffeomorphisms -/
+
+section Diffeomorph
+
+variable {N : Type*} [TopologicalSpace N] [ChartedSpace (CoordinateSpace n) N] [T2Space N]
+
+/-- **Invariance under diffeomorphisms.** Transporting a classical pseudodifferential operator `P`
+of order `m` on `M` to `N` along a diffeomorphism `Φ : N → M`, by conjugation
+`f ↦ (P (f ∘ Φ⁻¹)) ∘ Φ` with the pullback, gives a classical pseudodifferential operator of order
+`m` on `N`. Its chart compression in a chart `e` of `N` is the chart compression of `P` in the
+chart `e ∘ Φ⁻¹` of `M` (`OpenPartialHomeomorph.complexChartCompression_conj`). -/
+theorem conj_mem_classicalPseudodifferentialOperators [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
+    (Φ : N ≃ₘ⟮𝓘(ℝ, CoordinateSpace n), 𝓘(ℝ, CoordinateSpace n)⟯ M) {m : ℝ}
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hP : P ∈ classicalPseudodifferentialOperators m) :
+    Φ.compRightComplexAlgEquiv.toLinearEquiv.conj P ∈ classicalPseudodifferentialOperators m := by
+  rw [mem_classicalPseudodifferentialOperators_iff] at hP ⊢
+  refine ⟨hP.1.conj Φ, fun e he φ ψ ↦ ?_⟩
+  obtain ⟨a, ha⟩ := hP.2 _ (Φ.symm.transOpenPartialHomeomorph_mem_maximalAtlas le_rfl he) φ ψ
+  exact ⟨a, fun u x ↦ (ha u x).trans
+    (DFunLike.congr_fun (LinearMap.congr_fun (e.complexChartCompression_conj he Φ φ ψ P) _) x).symm⟩
+
+/-- **Invariance under diffeomorphisms.** For a diffeomorphism `Φ : N → M`, an operator `P` on `M`
+is a classical pseudodifferential operator of order `m` if and only if its transport
+`f ↦ (P (f ∘ Φ⁻¹)) ∘ Φ` to `N` is one. -/
+theorem conj_mem_classicalPseudodifferentialOperators_iff
+    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ N]
+    (Φ : N ≃ₘ⟮𝓘(ℝ, CoordinateSpace n), 𝓘(ℝ, CoordinateSpace n)⟯ M) {m : ℝ}
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} :
+    Φ.compRightComplexAlgEquiv.toLinearEquiv.conj P ∈ classicalPseudodifferentialOperators m ↔
+      P ∈ classicalPseudodifferentialOperators m := by
+  refine ⟨fun h ↦ ?_, conj_mem_classicalPseudodifferentialOperators Φ⟩
+  have h' := conj_mem_classicalPseudodifferentialOperators Φ.symm h
+  rwa [← Diffeomorph.compRightComplexAlgEquiv_symm, AlgEquiv.toLinearEquiv_symm,
+    LinearEquiv.conj_symm_conj] at h'
+
+end Diffeomorph
 
 /-! ### Multiplication operators -/
 
