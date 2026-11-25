@@ -70,10 +70,10 @@ theorem baseChangeMap_conjCoordinateIso_hom_comp (K : Type max u v) [CommRing K]
   have hψ (x : coordinateHopfAlgebra R n) :
       (coordinateHopfAlgebraBaseChangeIso R K n).hom.hom (1 ⊗ₜ[R] x) = ψ x := by
     simp [ψ]
-  have hG : (genericMatrix R n).map ψ = genericMatrix K n := by
-    ext i j
-    rw [Matrix.map_apply, ← hψ, genericMatrix_apply, genericMatrix_apply,
-      coordinateHopfAlgebraBaseChangeIso_hom_one_tmul_X]
+  -- `ψ` has the same underlying function as the restricted map of
+  -- `coordinateHopfAlgebraBaseChangeIso_hom_genericMatrix`.
+  have hG : (genericMatrix R n).map ψ = genericMatrix K n :=
+    coordinateHopfAlgebraBaseChangeIso_hom_genericMatrix R K n
   have hP (Q : GL (Fin n) R) :
       ((GeneralLinearGroup.map (algebraMap R (coordinateHopfAlgebra R n)) Q :
         Matrix (Fin n) (Fin n) _)).map ψ =
@@ -94,7 +94,7 @@ theorem baseChangeMap_conjCoordinateIso_hom_comp (K : Type max u v) [CommRing K]
   simp only [CommHopfAlgCat.hom_comp, BialgHom.comp_toAlgHom, AlgHom.comp_apply,
     BialgHom.coe_toAlgHom]
   rw [CommHopfAlgCat.baseChangeMap_apply_tmul, coordinateHopfAlgebraBaseChangeIso_hom_one_tmul_X,
-    hR, hL, hψ, ← Matrix.map_apply (f := ψ), Matrix.map_mul, Matrix.map_mul, hG, hP, ← map_inv,
-    ← map_inv, hP, map_inv]
+    hR, hL, hψ, ← Matrix.map_apply (f := ψ)]
+  simp only [Matrix.map_mul, hG, hP, ← map_inv]
 
 end TauCeti.GeneralLinear

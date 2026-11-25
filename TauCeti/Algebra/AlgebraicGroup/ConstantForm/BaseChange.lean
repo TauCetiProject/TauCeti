@@ -10,7 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange
 
 /-!
-# Base change of the constant-form relations
+# Base change of constant-form subgroup schemes
 
 For a morphism of commutative rings `R → K` and constant forms `C` over `R` and `C'` over `K`
 with `C.map (algebraMap R K) = C'`, the general-linear base-change isomorphism
@@ -19,8 +19,9 @@ corresponding entry of `X C' Xᵀ - C'`. Hence it carries the scalar-extended re
 the relation set over `K`, and the base-changed defining Hopf ideal of `C` onto the defining
 Hopf ideal of `C'`.
 
-These are the generator-transport facts that the base-change theorems of the constant-form
-specializations feed into `TauCeti.CommHopfAlgCat.map_baseChangeHopfIdeal_of_toIdeal_eq_span`.
+From this transport of the defining Hopf ideal, the file builds the base-change isomorphism
+from the scalar extension of the coordinate Hopf algebra of the subgroup scheme preserving `C` to
+that of the subgroup scheme preserving `C'`, compatibly with the quotient maps from `O(GLₙ)`.
 
 ## Main declarations
 
@@ -38,9 +39,8 @@ specializations feed into `TauCeti.CommHopfAlgCat.map_baseChangeHopfIdeal_of_toI
 * The Stacks Project, Tags [01JO](https://stacks.math.columbia.edu/tag/01JO) and
   [022W](https://stacks.math.columbia.edu/tag/022W).
 
-The relation transport is the one of `TauCeti.SpecialOrthogonal.coordinateHopfAlgebraBaseChangeIso`
-and `TauCeti.Symplectic.coordinateHopfAlgebraBaseChangeIso`, stated once for an arbitrary
-constant form.
+The symplectic base-change isomorphism `TauCeti.Symplectic.coordinateHopfAlgebraBaseChangeIso`
+is the specialization of this one to `Jₘ`.
 -/
 
 public section

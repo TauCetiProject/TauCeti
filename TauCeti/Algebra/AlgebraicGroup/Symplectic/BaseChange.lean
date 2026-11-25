@@ -32,10 +32,6 @@ subgroup schemes (`TauCeti.ConstantForm.coordinateHopfAlgebraBaseChangeIso`).
 * J. S. Milne, *Basic Theory of Affine Group Schemes*, Chapter IV, §1.8.
 * The Stacks Project, Tags [01JO](https://stacks.math.columbia.edu/tag/01JO) and
   [022W](https://stacks.math.columbia.edu/tag/022W).
-
-The quotient-transport construction follows
-`TauCeti.SpecialLinear.coordinateHopfAlgebraBaseChangeIso`, replacing its determinant relation
-by the symplectic matrix relations.
 -/
 
 public section
