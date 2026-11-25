@@ -741,8 +741,9 @@ private theorem bijective_lapply_comp_subtype_ker_signedMorseBoundaryAt (hn : 2 
       (fun x _ ↦ by simpa using hab x) _ (fun _ _ ↦ by rw [zero_mul]), Finset.sum_pair hba.symm]
   refine ⟨(injective_iff_map_eq_zero _).2 fun ⟨c, hc⟩ ha ↦ ?_, fun r ↦ ?_⟩
   · -- A cycle with `c a = 0` has `c b ε_b = 0`, so it vanishes.
+    rw [LinearMap.comp_apply, Submodule.subtype_apply, Finsupp.lapply_apply] at ha
     have h0 := congr($(LinearMap.mem_ker.1 hc) s)
-    rw [hd, show c a = 0 from ha, zero_mul, zero_add, Finsupp.coe_zero, Pi.zero_apply] at h0
+    rw [hd, ha, zero_mul, zero_add, Finsupp.coe_zero, Pi.zero_apply] at h0
     have hcb : c b = 0 := by rw [← mul_one (c b), ← hsign b, ← mul_assoc, h0, zero_mul]
     refine Subtype.ext (Finsupp.ext fun x ↦ ?_)
     rcases hab x with rfl | rfl
@@ -788,6 +789,10 @@ theorem nonempty_linearEquiv_homology_signedMorseComplex_sphereHeight_sq_add_smu
     hn rfl a
   let ψ : LinearMap.ker (K.d (j + 1 + 1) ((ComplexShape.down ℕ).next (j + 1 + 1))).hom →ₗ[R] R :=
     Finsupp.lapply a ∘ₗ Submodule.subtype _
+  -- The kernels of `K.d` and of the graded boundary live in `K.X (j + 1 + 1)` and in the chain
+  -- module, which agree only by definition (`signedMorseComplex_X`), so they cannot be compared
+  -- by `LinearEquiv.ofEq`. Instead, move cycles between them with `hmem`: on a cycle, `ψ` and the
+  -- map of `hP` both take the coefficient at `a`, so they agree by definition.
   have hψ : Bijective ψ := by
     refine ⟨fun z w h ↦ ?_, fun r ↦ ?_⟩
     · have := hP.1 (a₁ := ⟨z.val, (hmem z.val).1 z.property⟩)
@@ -842,15 +847,11 @@ theorem isZero_homology_signedMorseComplex_sphereHeight_sq_add_smul_sphereHeight
   have hd₁ : LinearMap.range (K.d (j + 1 + 1) (j + 1)).hom = ⊤ :=
     LinearMap.range_eq_top.2 fun y ↦
       (hsurj y).imp fun c hc ↦ (signedMorseComplex_d_apply hsq (j + 1) c).trans hc
-  have hd₀ : (K.d (j + 1) j).hom = 0 := LinearMap.ext fun c ↦
-    (signedMorseComplex_d_apply hsq j c).trans (by
-      rw [signedMorseBoundaryAt_eq_zero_of_add_one_ne huv ht₀ ht₂ hX 𝔬 hf hn (by omega)]
-      -- Both sides are zero; they differ only in being written in the chain module or in the
-      -- term `K.X j`, which is that module by definition (`signedMorseComplex_X`).
-      rfl)
+  have hd₀ := signedMorseComplex_d_eq_zero_of_signedMorseBoundaryAt_eq_zero hsq j
+    (signedMorseBoundaryAt_eq_zero_of_add_one_ne huv ht₀ ht₂ hX 𝔬 hf hn (by omega))
   refine ((K.exactAt_iff_range_eq_ker (ChainComplex.prev ℕ (j + 1))
     (ChainComplex.next_nat_succ j)).2 ?_).isZero_homology
-  rw [hd₁, hd₀, LinearMap.ker_zero]
+  rw [hd₁, hd₀, ModuleCat.hom_zero, LinearMap.ker_zero]
 
 end IsAdaptedPseudoGradient
 
