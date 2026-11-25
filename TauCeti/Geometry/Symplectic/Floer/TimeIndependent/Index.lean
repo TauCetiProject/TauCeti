@@ -14,6 +14,7 @@ import TauCeti.Analysis.Fredholm.Basic
 import TauCeti.Analysis.Fredholm.Prod
 import TauCeti.Analysis.Normed.Operator.MethodOfContinuity
 import TauCeti.Analysis.ODE.DysonSeries
+import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Stationary
 
 /-!
@@ -91,34 +92,17 @@ section Homotopy
 
 /-! ### The homotopy to a quadratic Hamiltonian -/
 
-omit [FiniteDimensional ℂ F] in
-/-- In a unitary trivialization, `ω(v, i w)` is the real part of `⟪v, w⟫`. -/
-private theorem apply_ofComplexModule_eq_re_inner (hω : ∀ v w, ω v w = (inner ℂ v w).im)
-    (v w : F) : ω v (AlmostComplexStructure.ofComplexModule F w) = (inner ℂ v w).re := by
-  rw [hω, AlmostComplexStructure.ofComplexModule_apply, inner_smul_right]
-  simp
-
-/-- Multiplication by `i` has operator norm at most `1`. -/
-private theorem norm_ofComplexModule_le :
-    ‖(AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap‖ ≤ 1 :=
-  opNorm_le_bound _ zero_le_one fun v ↦ by
-    simp [AlmostComplexStructure.ofComplexModule_apply, norm_smul]
-
 /-- In a unitary trivialization, the Hamiltonian vector field of `π ‖v‖² / 2` is `-π i v`. -/
 private theorem hamiltonianVectorField_pi_div_two_mul_norm_sq
     (hω : ∀ v w, ω v w = (inner ℂ v w).im) :
     ω.hamiltonianVectorField (fun v ↦ π / 2 * ‖v‖ ^ 2) =
       ⇑(-(π • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)) := by
-  let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   funext x
-  refine ((ω.eq_hamiltonianVectorField_iff _ x _).2 fun v ↦ ?_).symm
-  have hd : HasFDerivAt (fun v : F ↦ π / 2 * ‖v‖ ^ 2) (π • innerSL ℝ x) x := by
-    convert (hasStrictFDerivAt_norm_sq x).hasFDerivAt.const_mul (π / 2) using 1
-    ext v
-    simp only [smul_apply, innerSL_apply_apply, smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat]
+  have h : (fun v : F ↦ π / 2 * ‖v‖ ^ 2) = fun v ↦ π * (‖v‖ ^ 2 / 2) := by
+    funext v
     ring
-  rw [hd.fderiv, hω, smul_apply, innerSL_apply_apply, real_inner_eq_re_inner]
-  simp [AlmostComplexStructure.ofComplexModule_apply, ← Complex.coe_smul, inner_smul_left]
+  rw [h, hamiltonianVectorField_const_mul, hamiltonianVectorField_half_norm_sq_eq_neg_I_smul hω]
+  simp
 
 /-- The derivative of the Hamiltonian vector field of `π ‖v‖² / 2` is the constant `-π i`. -/
 private theorem fderiv_hamiltonianVectorField_pi_div_two_mul_norm_sq
@@ -131,7 +115,7 @@ private theorem fderiv_hamiltonianVectorField_pi_div_two_mul_norm_sq
 private theorem norm_neg_pi_smul_ofComplexModule_le :
     ‖-(π • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)‖ ≤ π := by
   rw [norm_neg, norm_smul, Real.norm_of_nonneg pi_pos.le]
-  exact mul_le_of_le_one_right pi_pos.le norm_ofComplexModule_le
+  exact mul_le_of_le_one_right pi_pos.le (opNorm_le_bound _ zero_le_one fun v ↦ by simp [norm_smul])
 
 omit [FiniteDimensional ℂ F] in
 /-- The Hamiltonians `(1 - τ) H + τ π ‖v‖² / 2` are `C²`. -/
@@ -355,9 +339,7 @@ private theorem surjective_nonzeroModes (hω : ∀ v w, ω v w = (inner ℂ v w)
     (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a) :
     Surjective (nonzeroModes ω H γ) := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  have hg (v w : F) : ω v (AlmostComplexStructure.ofComplexModule F w) = ⟪v, w⟫ := by
-    rw [real_inner_eq_re_inner]
-    exact apply_ofComplexModule_eq_re_inner hω v w
+  have hg := ω.apply_ofComplexModule_eq_real_inner hω
   set Q : F → ℝ := fun v ↦ π / 2 * ‖v‖ ^ 2
   set L₀ := nonzeroModes ω H γ
   set L₁ := nonzeroModes ω Q γ
@@ -374,15 +356,13 @@ private theorem surjective_nonzeroModes (hω : ∀ v w, ω v w = (inner ℂ v w)
       (fun s ↦ norm_fderiv_hamiltonianVectorField_homotopy_le hω hH hτ (haγ s))
       (sliceAverageL_coe_nonzeroModeSobolev x)
     rw [floerSobolevOperator_homotopy_apply hω hH hγ haγ hτ] at hgap
-    rw [← Submodule.norm_coe x, AffineMap.lineMap_apply_module, add_apply, smul_apply, smul_apply,
-      ← Submodule.norm_coe ((1 - τ) • L₀ x + τ • L₁ x), Submodule.coe_add, Submodule.coe_smul,
-      Submodule.coe_smul, coe_nonzeroModes_apply, coe_nonzeroModes_apply]
+    rw [← Submodule.norm_coe x, ← Submodule.norm_coe (s := nonzeroModeLp F)]
+    simp only [L₀, L₁, Q, AffineMap.lineMap_apply_module, add_apply, smul_apply, Submodule.coe_add,
+      Submodule.coe_smul, coe_nonzeroModes_apply]
     -- Take square roots in `(2π - b)² ‖x‖² ≤ ((2π)² + 1) ‖D x‖²`.
-    have h := Real.sqrt_le_sqrt hgap
-    rw [Real.sqrt_mul (sq_nonneg _), Real.sqrt_mul' _ (sq_nonneg _),
-      Real.sqrt_sq (sub_pos.2 hb).le, Real.sqrt_sq (norm_nonneg _),
-      Real.sqrt_sq (norm_nonneg _)] at h
     rw [div_mul_eq_mul_div, le_div_iff₀ (sub_pos.2 hb)]
+    refine le_of_sq_le_sq ?_ (by positivity)
+    rw [mul_pow, mul_pow, Real.sq_sqrt (by positivity)]
     linarith
   -- At the endpoint the operator is bijective, and the preimages of nonzero modes are nonzero
   -- modes.
@@ -413,9 +393,7 @@ private theorem bijective_nonzeroModes (hω : ∀ v w, ω v w = (inner ℂ v w).
     (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a) :
     Bijective (nonzeroModes ω H γ) := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  have hg (v w : F) : ω v (AlmostComplexStructure.ofComplexModule F w) = ⟪v, w⟫ := by
-    rw [real_inner_eq_re_inner]
-    exact apply_ofComplexModule_eq_re_inner hω v w
+  have hg := ω.apply_ofComplexModule_eq_real_inner hω
   refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ Subtype.ext ?_,
     surjective_nonzeroModes hω hH hγ ha haγ⟩
   -- A kernel element is its own slice average, which vanishes on the nonzero modes.

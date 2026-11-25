@@ -33,7 +33,9 @@ Conversely, on a complex normed space whose norm comes from a real inner product
 Conversely, on a complex inner product space the imaginary part `Im ⟪·, ·⟫` of the inner product,
 when it is given as a symplectic form, is compatible with multiplication by `i`
 (`TauCeti.SymplecticForm.compatible_ofComplexModule_of_forall_eq_im_inner`): its associated metric
-`Im ⟪v, i w⟫` is the real inner product `Re ⟪v, w⟫`.
+`Im ⟪v, i w⟫` is the real inner product `Re ⟪v, w⟫`
+(`TauCeti.SymplecticForm.apply_ofComplexModule_eq_re_inner`,
+`TauCeti.SymplecticForm.apply_ofComplexModule_eq_real_inner`).
 
 This is the usual Hermitian metric associated with an orthogonal complex structure; see
 H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
@@ -220,5 +222,21 @@ theorem compatible_ofComplexModule_of_forall_eq_im_inner (ω : SymplecticForm F)
     ω.Compatible (AlmostComplexStructure.ofComplexModule F) :=
   ω.compatible_of_isInvertible_of_forall_eq_im_inner (Φ := .id ℝ F)
     ⟨.refl ℝ F, rfl⟩ hω fun v ↦ by simp [AlmostComplexStructure.ofComplexModule_apply]
+
+/-- For the symplectic form `Im ⟪·, ·⟫` of a complex inner product space, `ω(v, i w)` is the real
+part `Re ⟪v, w⟫` of the inner product. -/
+theorem apply_ofComplexModule_eq_re_inner (ω : SymplecticForm F)
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) (v w : F) :
+    ω v (AlmostComplexStructure.ofComplexModule F w) = (inner ℂ v w).re := by
+  rw [hω, AlmostComplexStructure.ofComplexModule_apply, inner_smul_right]
+  simp
+
+/-- For the symplectic form `Im ⟪·, ·⟫` of a complex inner product space, the metric `ω(·, i ·)` is
+the underlying real inner product `InnerProductSpace.complexToReal`. -/
+theorem apply_ofComplexModule_eq_real_inner (ω : SymplecticForm F)
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) (v w : F) :
+    letI := InnerProductSpace.complexToReal (G := F)
+    ω v (AlmostComplexStructure.ofComplexModule F w) = inner ℝ v w :=
+  ω.apply_ofComplexModule_eq_re_inner hω v w
 
 end TauCeti.SymplecticForm
