@@ -148,7 +148,7 @@ variable {F}
 /-- A pullback square in `D` with sides `F.map snd` and `g.left`, for `g : (Over.post F).obj a ⟶ B`
 in `Over (F.obj X)`, lifts to a pullback square in `Over (F.obj X)`, with `b` lying over `X`
 through `snd ≫ a.hom`. -/
-lemma isPullback_overPost_homMk {A B : Over (F.obj X)} {f : A ⟶ B} {a : Over X} {b : C}
+lemma IsPullback.overPost_homMk {A B : Over (F.obj X)} {f : A ⟶ B} {a : Over X} {b : C}
     {g : (Over.post F).obj a ⟶ B} {fst : F.obj b ⟶ A.left} {snd : b ⟶ a.left}
     (h : IsPullback fst (F.map snd) f.left g.left) :
     IsPullback (Over.homMk (U := (Over.post F).obj (Over.mk (snd ≫ a.hom))) fst

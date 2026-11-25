@@ -23,9 +23,9 @@ the predicate `IsAlgebraicSpaceOver S`.
 Presheaves on `Over S` are presheaves on schemes lying over `h_S`
 (`TauCeti.overYonedaEquivPresheafOver`), and under this correspondence a presheaf on `Over S` is
 an algebraic space over `S` exactly when the presheaf on schemes is an algebraic space
-(`CategoryTheory.Over.isAlgebraicSpaceOver_iff`). Hence `AlgSpace.overEquiv S` identifies
-algebraic spaces over the algebraic space `h_S` with algebraic spaces over `S` in the sense of the
-Stacks Project.
+(`CategoryTheory.Over.isAlgebraicSpaceOver_overYonedaEquivPresheafOver_iff`). Hence
+`AlgSpace.overEquiv S` identifies algebraic spaces over the algebraic space `h_S` with algebraic
+spaces over `S` in the sense of the Stacks Project.
 
 ## Main definitions
 
@@ -39,9 +39,9 @@ Stacks Project.
 
 ## Main results
 
-* `CategoryTheory.Over.isAlgebraicSpaceOver_iff`: a presheaf `F` on schemes over
-  `h_S` is an algebraic space if and only if the corresponding presheaf on `Over S` is an
-  algebraic space over `S`.
+* `CategoryTheory.Over.isAlgebraicSpaceOver_overYonedaEquivPresheafOver_iff`: a presheaf `F` on
+  schemes over `h_S` is an algebraic space if and only if the corresponding presheaf on `Over S`
+  is an algebraic space over `S`.
 
 ## References
 
@@ -145,7 +145,7 @@ theorem _root_.CategoryTheory.Over.exists_etaleAtlas_overYonedaEquivPresheafOver
 
 /-- A presheaf on schemes lying over `h_S` is an algebraic space exactly when the corresponding
 presheaf on `Over S` is an algebraic space over `S`. -/
-theorem _root_.CategoryTheory.Over.isAlgebraicSpaceOver_iff :
+theorem _root_.CategoryTheory.Over.isAlgebraicSpaceOver_overYonedaEquivPresheafOver_iff :
     IsAlgebraicSpaceOver S ((overYonedaEquivPresheafOver S).functor.obj F) ↔
       IsAlgebraicSpace F.left :=
   ⟨fun h ↦ ⟨F.isSheaf_fppfTopology_overYonedaEquivPresheafOver_iff.1 h.isSheaf,
@@ -167,14 +167,14 @@ noncomputable def overEquiv (S : Scheme.{u}) :
         (IsAlgebraicSpaceOver S : ObjectProperty ((Over S)ᵒᵖ ⥤ Type u)) :=
   (ObjectProperty.overFullSubcategoryEquiv _ (ofScheme.obj S)).trans
     ((overYonedaEquivPresheafOver S).congrFullSubcategory
-      (by ext F; exact F.isAlgebraicSpaceOver_iff))
+      (by ext F; exact F.isAlgebraicSpaceOver_overYonedaEquivPresheafOver_iff))
 
 /-- `overEquiv S` is the comparison of over categories of a full subcategory followed by the
 restriction of `TauCeti.overYonedaEquivPresheafOver S` to algebraic spaces. -/
 theorem overEquiv_def (S : Scheme.{u}) :
     overEquiv S = (ObjectProperty.overFullSubcategoryEquiv _ (ofScheme.obj S)).trans
       ((overYonedaEquivPresheafOver S).congrFullSubcategory
-        (by ext F; exact F.isAlgebraicSpaceOver_iff)) :=
+        (by ext F; exact F.isAlgebraicSpaceOver_overYonedaEquivPresheafOver_iff)) :=
   (rfl)
 
 /-- The algebraic space over `S` attached to an algebraic space `Y` over `h_S` is the presheaf on

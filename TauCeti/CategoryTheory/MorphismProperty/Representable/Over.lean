@@ -58,7 +58,7 @@ theorem Functor.relativelyRepresentable_overPost_iff {A B : Over (F.obj X)} (f :
     exact ⟨b.left, snd.left, fst.left, (isPullback_overPost_iff F).1 hb⟩
   · intro h a g
     obtain ⟨b, snd, fst, hb⟩ := h g.left
-    exact ⟨_, _, _, isPullback_overPost_homMk hb⟩
+    exact ⟨_, _, _, hb.overPost_homMk⟩
 
 /-- For a morphism property `P` of `C`, the relative property with respect to `Over.post F` of
 the inverse image of `P` in `Over X` holds for a morphism of `Over (F.obj X)` exactly when
@@ -69,7 +69,7 @@ theorem MorphismProperty.relative_overPost_iff (P : MorphismProperty C) {A B : O
   refine and_congr (Functor.relativelyRepresentable_overPost_iff f) ⟨?_, ?_⟩
   · intro h a b g fst snd hb
     exact h (Over.postHomMk g) _ _
-      (isPullback_overPost_homMk (g := Over.postHomMk g) (snd := snd) hb)
+      (IsPullback.overPost_homMk (g := Over.postHomMk g) (snd := snd) hb)
   · intro h a b g fst snd hb
     exact h g.left fst.left snd.left ((isPullback_overPost_iff F).1 hb)
 
