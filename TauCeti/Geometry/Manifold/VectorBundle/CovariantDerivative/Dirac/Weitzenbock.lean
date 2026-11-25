@@ -78,7 +78,8 @@ at `x`, such as a geodesic frame: there the Clifford multiplications `c(eᵢ)` p
 * `CovariantDerivative.diracOperator_diracOperator_eq_sum_sum_secondCovariantDerivative`:
   `D² σ = ∑ᵢ ∑ⱼ c(eᵢ) c(eⱼ) ∇²σ(eᵢ, eⱼ)` in an orthonormal frame parallel at the point.
 * `CovariantDerivative.diracOperator_diracOperator_eq_roughLaplacian_add_of_frame`: the
-  Weitzenböck formula in such a frame, for any torsion-free connection on the tangent bundle.
+  Weitzenböck formula in such a frame, for any connection on the tangent bundle whose torsion
+  vanishes at the point.
 
 ## Proof
 
@@ -166,22 +167,53 @@ theorem diracOperator_diracOperator_eq_sum_sum_secondCovariantDerivative
     cov.isCovariantDerivativeOnUniv.sum fun j _ ↦ hdiff j]
   simp only [hb, FunLike.coe_sum, Finset.sum_apply, map_sum, hc, hsecond]
 
-/-- **The Weitzenböck formula in a frame parallel at a point.** Let `∇ᵀ` be a torsion-free
-connection on the tangent bundle and `e₁, …, eₖ` smooth vector fields forming an orthonormal frame
-near `x`, with `∇ᵀ eᵢ = 0` at `x`. Suppose that Clifford multiplication satisfies the Clifford
-relation `c(u) c(w) + c(w) c(u) = -2 ⟪u, w⟫` at `x`, that each `c(eᵢ)` is parallel at `x` on the
-section `∇_{eᵢ} σ`, and that the sections `c(eᵢ) ∇_{eᵢ} σ` are differentiable at `x`. Then for a
-smooth section `σ`,
+/-- The Clifford contraction of the second covariant derivative in an orthonormal basis `eᵢ` of
+`T_x M`: if the torsion of `∇ᵀ` vanishes at `x` and `c(v)² = -⟪v, v⟫` at `x`, then
+`∑ᵢ ∑ⱼ c(eᵢ) c(eⱼ) ∇²σ(eᵢ, eⱼ) = ∇*∇ σ + (1 / 2) ∑ᵢ ∑ⱼ c(eᵢ) c(eⱼ) R(eᵢ, eⱼ) σ`. The symmetric
+part is the negative trace by the Clifford relation, the antisymmetric part the curvature by the
+Ricci identity. -/
+private theorem sum_sum_secondCovariantDerivative_eq (hσ : CMDiff ∞ (T% σ)) {x : M}
+    (htor : covT.torsion x = 0)
+    (hcl : ∀ (v : TangentSpace I x) (s : V x), c x v (c x v s) = -⟪v, v⟫ • s)
+    {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
+    ∑ i, ∑ j, c x (b i) (c x (b j) (cov.secondCovariantDerivative covT σ x (b i) (b j))) =
+      cov.roughLaplacian covT σ x +
+        (2 : ℝ)⁻¹ • ∑ i, ∑ j, c x (b i) (c x (b j) (cov.curvatureTensor x (b i) (b j) (σ x))) := by
+  classical
+  rw [cov.roughLaplacian_eq_sum covT σ x b]
+  -- The antisymmetric part of `∇²σ` is the curvature, by the Ricci identity.
+  have hric (u v : TangentSpace I x) : cov.secondCovariantDerivative covT σ x u v -
+      cov.secondCovariantDerivative covT σ x v u = cov.curvatureTensor x u v (σ x) := by
+    rw [cov.secondCovariantDerivative_sub_swap covT hσ x, htor]
+    simp
+  -- The Clifford multiplications by the basis vectors satisfy the Clifford relations.
+  have hγ (i j : ι) (s : V x) : c x (b i) (c x (b j) s) + c x (b j) (c x (b i) s) =
+      if i = j then -(2 • s) else 0 := by
+    rw [(c x).apply_apply_add_swap_eq_neg_two_inner hcl, b.inner_eq_ite]
+    split_ifs <;> simp [two_smul]
+  -- The symmetric part contracts to the trace, the antisymmetric part to the curvature.
+  have h := TauCeti.two_nsmul_sum_sum_apply_apply_eq (fun i ↦ c x (b i)) hγ
+    (fun i j ↦ cov.secondCovariantDerivative covT σ x (b i) (b j))
+  simp only [hric, ← Nat.cast_smul_eq_nsmul ℝ 2, Nat.cast_ofNat] at h
+  have h2 : (2 : ℝ) ≠ 0 := two_ne_zero
+  rw [← inv_smul_smul₀ h2 (∑ i, ∑ j, _), h, smul_add, smul_neg, inv_smul_smul₀ h2]
+
+/-- **The Weitzenböck formula in a frame parallel at a point.** Let `∇ᵀ` be a connection on the
+tangent bundle whose torsion vanishes at `x`, and `e₁, …, eₖ` smooth vector fields forming an
+orthonormal frame near `x`, with `∇ᵀ eᵢ = 0` at `x`. Suppose that Clifford multiplication
+satisfies the Clifford relation `c(v)² = -⟪v, v⟫` at `x`, that each `c(eᵢ)` is parallel at `x` on
+the section `∇_{eᵢ} σ`, and that the sections `c(eᵢ) ∇_{eᵢ} σ` are differentiable at `x`. Then for
+a smooth section `σ`,
 
 `D (D σ) = ∇*∇ σ + (1 / 2) ∑ᵢ ∑ⱼ c(eᵢ) c(eⱼ) R(eᵢ, eⱼ) σ`
 
 at `x`, where `∇*∇` is the rough Laplacian and `R` the curvature of `∇`. -/
-theorem diracOperator_diracOperator_eq_roughLaplacian_add_of_frame (ht : covT.IsTorsionFree)
+theorem diracOperator_diracOperator_eq_roughLaplacian_add_of_frame
     (hσ : CMDiff ∞ (T% σ)) {ι : Type*} [Fintype ι] (e : ι → Π y : M, TangentSpace I y)
-    (he : ∀ i, CMDiff ∞ (T% (e i))) {x : M}
+    (he : ∀ i, CMDiff ∞ (T% (e i))) {x : M} (htor : covT.torsion x = 0)
     (hframe : ∀ᶠ y in 𝓝 x, ∃ b : OrthonormalBasis ι ℝ (TangentSpace I y), ∀ i, b i = e i y)
     (hpar : ∀ i, covT (e i) x = 0)
-    (hcl : ∀ u w s, c x u (c x w s) + c x w (c x u s) = -(2 * ⟪u, w⟫) • s)
+    (hcl : ∀ (v : TangentSpace I x) (s : V x), c x v (c x v s) = -⟪v, v⟫ • s)
     (hc : ∀ i u, cov (fun y ↦ c y (e i y) (cov σ y (e i y))) x u =
       c x (e i x) (cov (fun y ↦ cov σ y (e i y)) x u))
     (hdiff : ∀ i, MDiffAt (T% (fun y ↦ c y (e i y) (cov σ y (e i y)))) x) :
@@ -189,22 +221,11 @@ theorem diracOperator_diracOperator_eq_roughLaplacian_add_of_frame (ht : covT.Is
       cov.roughLaplacian covT σ x +
         (2 : ℝ)⁻¹ • ∑ i, ∑ j, c x (e i x) (c x (e j x)
           (cov.curvatureTensor x (e i x) (e j x) (σ x))) := by
-  classical
   obtain ⟨b, hb⟩ := hframe.self_of_nhds
-  -- The Clifford multiplications by the frame vectors at `x` satisfy the Clifford relations.
-  have hγ (i j : ι) (s : V x) : c x (e i x) (c x (e j x) s) + c x (e j x) (c x (e i x) s) =
-      if i = j then -(2 • s) else 0 := by
-    rw [hcl, ← hb i, ← hb j, orthonormal_iff_ite.mp b.orthonormal i j]
-    split_ifs <;> simp [two_smul]
-  have h := TauCeti.two_nsmul_sum_sum_apply_apply_eq (fun i ↦ c x (e i x)) hγ
-    (fun i j ↦ cov.secondCovariantDerivative covT σ x (e i x) (e j x))
-  simp only [secondCovariantDerivative_sub_swap_of_isTorsionFree cov covT ht hσ x] at h
   rw [diracOperator_diracOperator_eq_sum_sum_secondCovariantDerivative cov c covT hσ e he hframe
-      hpar hc hdiff, roughLaplacian_eq_sum cov covT σ x b]
-  simp only [hb]
-  simp only [← Nat.cast_smul_eq_nsmul ℝ 2, Nat.cast_ofNat] at h
-  have h2 : (2 : ℝ) ≠ 0 := two_ne_zero
-  rw [← inv_smul_smul₀ h2 (∑ i, ∑ j, _), h, smul_add, smul_neg, inv_smul_smul₀ h2]
+    hpar hc hdiff]
+  simp only [← hb]
+  exact sum_sum_secondCovariantDerivative_eq cov c covT hσ htor hcl b
 
 end ParallelFrame
 
@@ -379,25 +400,9 @@ theorem diracOperator_diracOperator_eq_roughLaplacian_add {ι : Type*} [Fintype 
     cov.diracOperator c (cov.diracOperator c σ) x =
       cov.roughLaplacian covT σ x +
         (2 : ℝ)⁻¹ • ∑ i, ∑ j, c x (b i) (c x (b j) (cov.curvatureTensor x (b i) (b j) (σ x))) := by
-  classical
-  rw [cov.diracOperator_eq_sum c _ x b, cov.roughLaplacian_eq_sum covT σ x b]
+  rw [cov.diracOperator_eq_sum c _ x b]
   simp only [covariantDerivative_diracOperator_apply cov c covT hcovT hσ hcd hcomp b, map_sum]
-  -- The antisymmetric part of `∇²σ` is the curvature, by the Ricci identity.
-  have hric (u v : TangentSpace I x) : cov.secondCovariantDerivative covT σ x u v -
-      cov.secondCovariantDerivative covT σ x v u = cov.curvatureTensor x u v (σ x) := by
-    rw [cov.secondCovariantDerivative_sub_swap covT hσ x, htor]
-    simp
-  -- The Clifford multiplications by the basis vectors satisfy the Clifford relations.
-  have hγ (i j : ι) (s : V x) : c x (b i) (c x (b j) s) + c x (b j) (c x (b i) s) =
-      if i = j then -(2 • s) else 0 := by
-    rw [(c x).apply_apply_add_swap_eq_neg_two_inner hcl, b.inner_eq_ite]
-    split_ifs <;> simp [two_smul]
-  -- The symmetric part contracts to the trace, the antisymmetric part to the curvature.
-  have h := TauCeti.two_nsmul_sum_sum_apply_apply_eq (fun i ↦ c x (b i)) hγ
-    (fun k i ↦ cov.secondCovariantDerivative covT σ x (b k) (b i))
-  simp only [hric, ← Nat.cast_smul_eq_nsmul ℝ 2, Nat.cast_ofNat] at h
-  have h2 : (2 : ℝ) ≠ 0 := two_ne_zero
-  rw [← inv_smul_smul₀ h2 (∑ i, ∑ j, _), h, smul_add, smul_neg, inv_smul_smul₀ h2]
+  exact sum_sum_secondCovariantDerivative_eq cov c covT hσ htor hcl b
 
 /-- **The Weitzenböck formula for the Dirac operator.** Let `∇ᵀ` be metric on all of `M` with
 torsion vanishing at `x` (for instance, the Levi-Civita connection), and let the Clifford
