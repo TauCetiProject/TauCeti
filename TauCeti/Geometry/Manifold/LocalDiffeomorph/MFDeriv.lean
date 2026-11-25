@@ -53,7 +53,7 @@ at `f x`.
 * `OpenPartialHomeomorph.mfderiv_symm_eq_mfderiv_symm_comp_fderiv_symm_trans`: dually, the
   differential of `ψ₁⁻¹` is the derivative of the transition `ψ₂ ∘ ψ₁⁻¹` followed by the
   differential of `ψ₂⁻¹`.
-* `OpenPartialHomeomorph.ring_inverse_fderiv_symm_trans`: the inverse of the derivative of the
+* `OpenPartialHomeomorph.ringInverse_fderiv_symm_trans`: the inverse of the derivative of the
   transition `ψ₂ ∘ ψ₁⁻¹` is the differential of `ψ₂⁻¹` followed by that of `ψ₁`.
 * `PartialDiffeomorph.mfderivWithin_source`: the differential within the source is the differential.
 * `PartialDiffeomorph.mfderiv_symm_apply_mfderiv_apply`: the differential of the inverse undoes the
@@ -263,7 +263,7 @@ homeomorphisms from `M` into a normed space `F`, and let `x` lie in both sources
 are differentiable at `x`, their inverses at `ψ₁ x` and `ψ₂ x`, and the transition `ψ₂ ∘ ψ₁⁻¹` at
 `ψ₁ x`, then the inverse of the derivative of the transition at `ψ₁ x` is the differential of
 `ψ₂⁻¹` at `ψ₂ x` followed by the differential of `ψ₁` at `x`. -/
-theorem ring_inverse_fderiv_symm_trans {ψ₁ ψ₂ : OpenPartialHomeomorph M F} {x : M}
+theorem ringInverse_fderiv_symm_trans {ψ₁ ψ₂ : OpenPartialHomeomorph M F} {x : M}
     (hx₁ : x ∈ ψ₁.source) (hx₂ : x ∈ ψ₂.source) (hψ₁ : MDifferentiableAt I 𝓘(𝕜, F) ψ₁ x)
     (hψ₁s : MDifferentiableAt 𝓘(𝕜, F) I ψ₁.symm (ψ₁ x))
     (hψ₂ : MDifferentiableAt I 𝓘(𝕜, F) ψ₂ x)

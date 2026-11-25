@@ -342,7 +342,7 @@ theorem coefficient_principal_eq_pseudodifferentialPrincipalSymbol
     simp [e.map_source hp, e.left_inv hp, hp₀]
   rw [coefficient_principal_eq_of_transition ha hspec hp hp₀
       ((chartCutoff_eventuallyEq_one p).mono fun _ hz ↦ ⟨hz, hz⟩) η,
-    OpenPartialHomeomorph.ring_inverse_fderiv_symm_trans hp hp₀
+    OpenPartialHomeomorph.ringInverse_fderiv_symm_trans hp hp₀
       (mdifferentiableAt_of_mem_maximalAtlas he1 hp)
       (mdifferentiableAt_symm_of_mem_maximalAtlas he1 (e.map_source hp))
       (mdifferentiableAt_of_mem_maximalAtlas he₀1 hp₀)
