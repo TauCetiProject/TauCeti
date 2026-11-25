@@ -18,6 +18,7 @@ import Mathlib.LinearAlgebra.Matrix.Adjugate
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import TauCeti.LinearAlgebra.Matrix.Determinant.Pencil
 import TauCeti.LinearAlgebra.Matrix.Rank
+import TauCeti.LinearAlgebra.Matrix.Vec
 
 /-!
 # Small integral lifts of a one-dimensional kernel modulo `p`
@@ -256,8 +257,7 @@ theorem exists_primitive_mulVec_vec_eq_zero_of_unique_det_ne_zero {n : Type*} [F
   have hp' : N ! * B ^ N < p :=
     lt_of_le_of_lt (Nat.mul_le_mul_left _ (Nat.pow_le_pow_left (le_max_left B 1) N)) hp
   -- The solutions modulo `p` form the line through `X`; transport it along the vectorization.
-  let e : Matrix n n (ZMod p) ≃ₗ[ZMod p] n × n → ZMod p := LinearEquiv.ofBijective
-    { toFun := vec, map_add' := vec_add, map_smul' := vec_smul } vec_bijective
+  let e : Matrix n n (ZMod p) ≃ₗ[ZMod p] n × n → ZMod p := vecLinearEquiv (ZMod p)
   have hV := (LinearMap.ker (A'.mulVecLin ∘ₗ e)).eq_span_singleton_of_mem_of_det_ne_zero hcard
     (by simpa [e] using hAX) hX fun Y hY hYdet ↦ huniq Y hYdet (by simpa [e] using hY)
   have hker : LinearMap.ker A'.mulVecLin = ZMod p ∙ X.vec := by
@@ -267,11 +267,10 @@ theorem exists_primitive_mulVec_vec_eq_zero_of_unique_det_ne_zero {n : Type*} [F
   have hXvec : X.vec ≠ 0 := fun h ↦ hX (by rw [vec_eq_zero_iff.1 h, det_zero])
   obtain ⟨v, hAv, hprim, hbound, c, hc, hv⟩ :=
     exists_primitive_mulVec_eq_zero_of_ker_map_eq_span A hA hp' hXvec hker
-  let Q : Matrix n n ℤ := (Equiv.ofBijective _ vec_bijective).symm v
-  have hQv : Q.vec = v := Equiv.ofBijective_apply_symm_apply _ vec_bijective v
+  let Q : Matrix n n ℤ := (vecLinearEquiv ℤ).symm v
+  have hQv : Q.vec = v := vec_vecLinearEquiv_symm ℤ v
   -- `vec` is column-major: the entry `Q i j` sits at index `(j, i)` of `v`.
-  have hQij (i j : n) : Q i j = v (j, i) := by
-    rw [← hQv, vec_eq_uncurry, Function.uncurry_apply_pair]
+  have hQij (i j : n) : Q i j = v (j, i) := vecLinearEquiv_symm_apply ℤ v i j
   have hQ : Q.map (Int.castRingHom (ZMod p)) = c • X := by
     rw [← vec_inj, vec_map, hQv, vec_smul, ← hv, Int.coe_castRingHom, Function.comp_def]
   refine ⟨Q, hQv ▸ hAv, fun d hd ↦ hprim d fun ⟨j, i⟩ ↦ by rw [← hQij]; exact hd i j,
