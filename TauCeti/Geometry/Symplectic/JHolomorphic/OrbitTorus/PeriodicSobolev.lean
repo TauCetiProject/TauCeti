@@ -11,6 +11,8 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.ModeSobolev
 import Mathlib.Analysis.Normed.Operator.Prod
 import TauCeti.Data.SignType.Basic
 import TauCeti.LinearAlgebra.LinearMap.RegularRestriction
+import TauCeti.Topology.Algebra.Module.ComplexSmulI
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # The orbit-torus operator on maps periodic along the circle factor
@@ -261,31 +263,31 @@ theorem detLineProdMapLoopOperatorEquiv_eq_trans (hB : B.IsInvertible) :
 the Fredholm operator `J₀ L_S` and an invertible operator. -/
 theorem isFredholm_prodMap_loopOperator (hB : B.IsInvertible) :
     ((I • loopOperator T S).prodMap B).IsFredholm := by
-  have hI : I • loopOperator T S = (ContinuousLinearEquiv.smulLeft (R₁ := ℝ)
-      (M₁ := CircleSobolev 0 F) (Units.mk0 I I_ne_zero) : _ →L[ℝ] _) ∘L loopOperator T S := by
-    ext a
-    simp [Units.smul_def]
   refine ContinuousLinearMap.IsFredholm.prodMap ?_ hB.isFredholm
-  rw [hI, ContinuousLinearMap.isFredholm_equiv_comp]
+  rw [← smulIEquiv_comp, ContinuousLinearMap.isFredholm_equiv_comp]
   exact isFredholm_loopOperator T S
 
-/-- **The asymptotic operator beside an invertible operator has index zero**, as `L_S`, whose
-kernel and cokernel it shares. -/
+/-- **The asymptotic operator beside an invertible operator has index zero**: the index is additive
+under `prodMap`, `J₀ L_S` has the index zero of `L_S`, and the invertible `B` has index zero. -/
 @[simp]
 theorem index_prodMap_loopOperator (hB : B.IsInvertible) :
     ((I • loopOperator T S).prodMap B).index = 0 := by
-  rw [ContinuousLinearMap.index_eq_finrank_sub,
-    (kerProdMapLoopOperatorEquiv T S hB).finrank_eq,
-    (quotientRangeProdMapLoopOperatorEquiv T S hB).finrank_eq,
-    ← ContinuousLinearMap.index_eq_finrank_sub, index_loopOperator]
+  have hL := (isFredholm_loopOperator T S).equiv_comp (smulIEquiv (CircleSobolev 0 F))
+  rw [smulIEquiv_comp] at hL
+  have := hL.finite_ker
+  have := hL.finite_coker
+  have := hB.isFredholm.finite_ker
+  have := hB.isFredholm.finite_coker
+  rw [ContinuousLinearMap.index_prodMap, B.index_eq_zero_of_bijective hB.bijective, add_zero,
+    ← smulIEquiv_comp, ContinuousLinearMap.index_equiv_comp, index_loopOperator]
 
 /-- For an invertible `B`, `(J₀ L_S) ⊕ B` is injective exactly when `L_S` is. -/
 theorem injective_prodMap_loopOperator_iff (hB : B.IsInvertible) :
     Function.Injective ((I • loopOperator T S).prodMap B) ↔
       Function.Injective (loopOperator T S) := by
-  rw [← ContinuousLinearMap.coe_coe, ← ContinuousLinearMap.coe_coe (loopOperator T S),
-    ← LinearMap.ker_eq_bot, ← LinearMap.ker_eq_bot, ← Submodule.subsingleton_iff_eq_bot,
-    ← Submodule.subsingleton_iff_eq_bot, (kerProdMapLoopOperatorEquiv T S hB).subsingleton_congr]
+  rw [ContinuousLinearMap.coe_prodMap', Prod.map_injective, and_iff_left hB.injective,
+    ← smulIEquiv_comp, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe]
+  exact (ContinuousLinearEquiv.injective _).of_comp_iff _
 
 /-- **The Fredholm alternative for the asymptotic operator beside an invertible operator.** For an
 invertible `B`, `(J₀ L_S) ⊕ B` is invertible exactly when `det (1 - Ψ(T)) ≠ 0`, where
@@ -293,13 +295,8 @@ invertible `B`, `(J₀ L_S) ⊕ B` is invertible exactly when `det (1 - Ψ(T)) �
 theorem isInvertible_prodMap_loopOperator_iff_det_ne_zero (hB : B.IsInvertible) :
     ((I • loopOperator T S).prodMap B).IsInvertible ↔
       LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : F →ₗ[ℝ] F)) ≠ 0 := by
-  rw [← isInvertible_loopOperator_iff_det_ne_zero]
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · exact (isFredholm_loopOperator T S).isInvertible_of_injective_of_index_eq_zero
-      ((injective_prodMap_loopOperator_iff T S hB).1 h.injective) (index_loopOperator T S)
-  · exact (isFredholm_prodMap_loopOperator T S hB).isInvertible_of_injective_of_index_eq_zero
-      ((injective_prodMap_loopOperator_iff T S hB).2 h.injective)
-      (index_prodMap_loopOperator T S hB)
+  rw [ContinuousLinearMap.isInvertible_prodMap_iff, and_iff_left hB,
+    ContinuousLinearMap.isInvertible_I_smul_iff, isInvertible_loopOperator_iff_det_ne_zero]
 
 /-- **The determinant line of a nondegenerate asymptotic operator beside an invertible operator.**
 Let `(J₀ L_S) ⊕ B` be bijective, equivalently `det (1 - Ψ(T)) ≠ 0`. Transporting its determinant
