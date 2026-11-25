@@ -52,12 +52,8 @@ theorem neg_one_pow_mul_iteratedDeriv_div_factorial_const_div_sub_pow
     simp only [hneg, Finset.prod_neg, Finset.card_range, ← prod_range_add_add_one_eq, Nat.cast_prod]
   rw [hexp, hprod, zpow_neg, zpow_natCast, Nat.cast_mul]
   have hk : (k.factorial : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr k.factorial_ne_zero
-  rw [div_eq_mul_inv, div_eq_mul_inv]
-  calc
-    (-1 : 𝕜) ^ k * (c * (((-1) ^ k * (↑k.factorial * ↑((k + j).choose j))) *
-        ((z - ρ) ^ (k + j + 1))⁻¹) * (↑k.factorial)⁻¹) =
-        ((-1 : 𝕜) ^ k * (-1) ^ k) * (↑k.factorial * (↑k.factorial)⁻¹) *
-          (↑((k + j).choose j) * c * ((z - ρ) ^ (k + j + 1))⁻¹) := by ring
-    _ = _ := by simp [← mul_pow, hk]
+  have hsq : (-1 : 𝕜) ^ k * (-1) ^ k = 1 := by rw [← mul_pow]; norm_num
+  linear_combination (↑((k + j).choose j) * c / (z - ρ) ^ (k + j + 1) : 𝕜) *
+    ((k.factorial : 𝕜) * (k.factorial : 𝕜)⁻¹ * hsq + mul_inv_cancel₀ hk)
 
 end TauCeti

@@ -78,11 +78,15 @@ theorem exists_norm_neg_one_pow_mul_iteratedDeriv_div_factorial_sub_laurent_le
     hf.sub fun s hs ↦ (hP hs.2).differentiableAt.differentiableWithinAt
   obtain ⟨G, hG, hGeq⟩ := exists_differentiableOn_eqOn_of_analyticAt_nhdsNE
     (compl_singleton_mem_codiscreteWithin ρ) hfP (by
-      rintro a ⟨ha, ha'⟩
-      obtain rfl : a = ρ := ha'
+      rintro a ⟨ha, rfl : a = ρ⟩
       have hfg : (fun s ↦ f s - P s) =ᶠ[𝓝[≠] a] g := heq.mono fun s hs ↦ sub_eq_of_eq_add hs
-      exact ⟨g, analyticAt_of_differentiableOn_sdiff_of_eventuallyEq isOpen_ball ha hfP hg hfg,
-        hfg⟩)
+      refine ⟨g, _root_.Complex.analyticAt_of_differentiable_on_punctured_nhds_of_continuousAt
+        ?_ hg, hfg⟩
+      filter_upwards [eventually_eventually_nhdsWithin.mpr hfg,
+        mem_nhdsWithin_of_mem_nhds (isOpen_ball.mem_nhds ha), self_mem_nhdsWithin] with s hs hsU hsρ
+      rw [isOpen_compl_singleton.nhdsWithin_eq hsρ] at hs
+      exact (hfP s ⟨hsU, hsρ⟩).differentiableAt ((isOpen_ball.sdiff isClosed_singleton).mem_nhds
+        ⟨hsU, hsρ⟩) |>.congr_of_eventuallyEq (hs.mono fun _ h ↦ h.symm))
   have hloc : f =ᶠ[𝓝 z] fun s ↦ G s + P s := by
     filter_upwards [(isOpen_ball.sdiff isClosed_singleton).mem_nhds
       ⟨mem_ball_self (hr'.trans hrr), hzρ⟩] with s hs
@@ -246,7 +250,7 @@ theorem eventually_le_re_neg_one_pow_mul_iteratedDeriv_div_factorial_of_pole
   filter_upwards [ht.eventually_const_lt (half_lt_self hc)] with k hk
   let A := (-1 : ℂ) ^ k * (iteratedDeriv k f x / (k.factorial : ℂ))
   have hreal : ((x : ℂ) - y) ^ (k + m + 1) / (↑((k + m).choose m) : ℂ) =
-      (↑((x - y) ^ (k + m + 1) / ((k + m).choose m : ℝ)) : ℂ) := by push_cast; rfl
+      (↑((x - y) ^ (k + m + 1) / ((k + m).choose m : ℝ)) : ℂ) := by norm_cast
   have hlt : (meromorphicTrailingCoeffAt f y).re / 2 <
       ((x - y) ^ (k + m + 1) / ((k + m).choose m : ℝ)) * A.re := by
     rw [Function.comp_apply, hreal, _root_.Complex.mul_re] at hk
