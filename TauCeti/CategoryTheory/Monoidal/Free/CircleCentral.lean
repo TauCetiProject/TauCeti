@@ -155,12 +155,8 @@ theorem map_eq_map_of_rel ⦃X Y : FreeSelfDualityCat⦄ ⦃f g : X ⟶ Y⦄ (h 
   have hd := (FreeSelfDualityCat.lift_sendsSelfDuality V).coevaluation_comp_evaluation
   have hcentral := ObjectProperty.prop_of_iso (CirclesCommuteAt (η_ V V ≫ ε_ V V))
     (FreeSelfDualityCat.liftObjIso V).symm hc
-  rw [circlesCommuteAt_iff, ← hd] at hcentral
-  simpa only [Functor.map_comp, Functor.Monoidal.map_rightUnitor_inv,
-    Functor.Monoidal.map_whiskerLeft, Functor.Monoidal.map_rightUnitor,
-    Functor.Monoidal.map_leftUnitor_inv, Functor.Monoidal.map_whiskerRight,
-    Functor.Monoidal.map_leftUnitor, whiskerLeft_comp, comp_whiskerRight,
-    Category.assoc, Functor.Monoidal.μ_δ_assoc] using hcentral
+  rw [← hd] at hcentral
+  exact (circlesCommuteAt_map_iff _ _ _).1 hcentral
 
 /-- Interpret the presented self-duality in any monoidal category, provided its circle is
 central at the chosen object `V`. -/
