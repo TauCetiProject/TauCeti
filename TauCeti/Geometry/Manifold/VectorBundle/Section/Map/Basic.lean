@@ -342,6 +342,37 @@ theorem coe_mapCompactlySupportedEquiv_symm (s : compactlySupported I G n W) :
     ((mapCompactlySupportedEquiv e he he').symm s : Cₛ^n⟮I; F, V⟯) =
       (mapEquiv e he he').symm s.val := (rfl)
 
+/-- Fibre transport commutes with the inclusion of a fixed-compact support stage. -/
+@[simp]
+theorem mapCompactlySupportedEquiv_ofSupportedIn (K : TopologicalSpace.Compacts M)
+    (s : supportedIn I F n V K) :
+    mapCompactlySupportedEquiv e he he' (ofSupportedIn K s) =
+      ofSupportedIn K (mapSupportedInEquiv e he he' K s) := by
+  apply Subtype.ext
+  rw [coe_mapCompactlySupportedEquiv, ofSupportedIn_apply, ofSupportedIn_apply,
+    coe_mapSupportedInEquiv]
+
+/-- Inverse transport also commutes with the inclusion of a fixed-compact support stage. -/
+@[simp]
+theorem mapCompactlySupportedEquiv_symm_ofSupportedIn (K : TopologicalSpace.Compacts M)
+    (s : supportedIn I G n W K) :
+    (mapCompactlySupportedEquiv e he he').symm (ofSupportedIn K s) =
+      ofSupportedIn K ((mapSupportedInEquiv e he he' K).symm s) := by
+  apply (mapCompactlySupportedEquiv e he he').injective
+  rw [LinearEquiv.apply_symm_apply, mapCompactlySupportedEquiv_ofSupportedIn,
+    LinearEquiv.apply_symm_apply]
+
+/-- Inverting the fibre equivalences inverts transport of compactly supported sections. -/
+theorem mapCompactlySupportedEquiv_symm :
+    (mapCompactlySupportedEquiv e he he').symm =
+      mapCompactlySupportedEquiv (fun x ↦ (e x).symm) he'
+        (by simpa only [LinearEquiv.symm_symm] using he) := by
+  apply LinearEquiv.ext
+  intro s
+  apply Subtype.ext
+  rw [coe_mapCompactlySupportedEquiv_symm, coe_mapCompactlySupportedEquiv]
+  exact congrArg (fun l ↦ l s.val) (mapEquiv_symm e he he')
+
 end Equivalence
 
 end ContMDiffSection
