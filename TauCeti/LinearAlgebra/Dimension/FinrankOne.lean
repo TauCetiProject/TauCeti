@@ -121,14 +121,23 @@ theorem one_lt_rank_of_finrank_ne_one {K V : Type*} [DivisionRing K] [AddCommGro
 noncomputable def endEquivOfFinrankEqOne {k V : Type*} [Field k] [AddCommGroup V] [Module k V]
     (h : finrank k V = 1) : k ≃ₐ[k] Module.End k V :=
   haveI : FiniteDimensional k V := Module.finite_of_finrank_eq_succ h
-  AlgEquiv.ofBijective (Algebra.ofId k (Module.End k V)) <|
-    Module.Free.bijective_algebraMap_of_finrank_eq_one (by rw [Module.finrank_linearMap, h])
+  AlgEquiv.ofBijective (Algebra.ofId k (Module.End k V)) <| by
+    rw [show ⇑(Algebra.ofId k (Module.End k V)) = algebraMap k (Module.End k V) from
+      funext (Algebra.ofId_apply _)]
+    exact Module.Free.bijective_algebraMap_of_finrank_eq_one (by rw [Module.finrank_linearMap, h])
 
 /-- A scalar `c` acts on a one-dimensional space as multiplication by `c`. -/
 @[simp]
 theorem endEquivOfFinrankEqOne_apply {k V : Type*} [Field k] [AddCommGroup V] [Module k V]
     (h : finrank k V = 1) (c : k) (v : V) : endEquivOfFinrankEqOne h c v = c • v := by
-  rw [endEquivOfFinrankEqOne]
-  exact Module.algebraMap_end_apply k k V c v
+  rw [endEquivOfFinrankEqOne, AlgEquiv.ofBijective_apply, Algebra.ofId_apply,
+    Module.algebraMap_end_apply]
+
+/-- The scalar corresponding to an endomorphism `f` of a one-dimensional space acts as `f`. -/
+@[simp]
+theorem endEquivOfFinrankEqOne_symm_apply_smul {k V : Type*} [Field k] [AddCommGroup V]
+    [Module k V] (h : finrank k V = 1) (f : Module.End k V) (v : V) :
+    (endEquivOfFinrankEqOne h).symm f • v = f v := by
+  rw [← endEquivOfFinrankEqOne_apply h, AlgEquiv.apply_symm_apply]
 
 end TauCeti

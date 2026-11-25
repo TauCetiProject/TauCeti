@@ -9,6 +9,7 @@ public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Algebra.Group.Defs
 public import TauCeti.LinearAlgebra.Dimension.FinrankOne
+public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 
 /-!
 # One-dimensional representations and their characters
@@ -30,6 +31,7 @@ coefficient `g ↦ f (ρ g v)` is continuous, the character is continuous
 * `Representation.lineCharacter_smul`: `ρ g v = lineCharacter ρ h g • v`.
 * `Representation.lineCharacter_eq_of_forall_smul`: the character is determined by this
   property.
+* `Representation.lineCharacter_ofLinearCharacter`: the character of the line of `χ` is `χ`.
 * `Representation.continuous_lineCharacter`: continuous matrix coefficients give a continuous
   character.
 -/
@@ -60,6 +62,14 @@ theorem lineCharacter_eq_of_forall_smul (ρ : Representation k G V) (h : finrank
   have : FiniteDimensional k V := Module.finite_of_finrank_eq_succ h
   obtain ⟨v, hv⟩ := Module.finrank_pos_iff_exists_ne_zero.mp (h ▸ Nat.one_pos : 0 < finrank k V)
   exact smul_left_injective k hv ((ρ.lineCharacter_smul h g v).symm.trans (hχ g v))
+
+/-- The character of the line of a linear character `χ` is `χ`: `lineCharacter` inverts
+`ofLinearCharacter`. -/
+@[simp]
+theorem lineCharacter_ofLinearCharacter (χ : G →* kˣ) :
+    (ofLinearCharacter χ).lineCharacter (Module.finrank_self k) = χ :=
+  MonoidHom.ext fun g ↦ Units.ext <|
+    lineCharacter_eq_of_forall_smul _ _ (fun g x ↦ ofLinearCharacter_apply χ g x) g
 
 /-- A one-dimensional representation whose matrix coefficients `g ↦ f (ρ g v)` are continuous has
 a continuous character. -/
