@@ -33,8 +33,8 @@ an action of `Γ` of this kind by `MulAction.compHom`.
 For a finite set `F` of edges and a configuration `ω`, the *completion set*
 `TauCeti.dimerCompletionSet G F ω` is the set of dimer configurations agreeing with `ω` off `F`.
 It is finite (`TauCeti.dimerCompletionSet_finite`) and contains `ω` when `ω` is a dimer
-configuration. Its members are the gluings `TauCeti.dimerGlue F η ω` of a configuration `η` on `F`
-to `ω` off `F` that cover every endpoint of an edge of `F` exactly once
+configuration. Its members are the gluings `Function.updateFinset ω F η` of a configuration `η` on
+`F` to `ω` off `F` that cover every endpoint of an edge of `F` exactly once
 (`TauCeti.dimerCompletionSet_eq_image`), so the set of their restrictions to `F` depends only on
 the values of `ω` on the edges outside `F` that share a vertex with an edge of `F`
 (`TauCeti.restrict_dimerCompletionSet_eq`).
@@ -181,14 +181,11 @@ theorem isClosed_setOf_isDimerConfiguration [G.LocallyFinite] :
   simp only [IsDimerConfiguration, ofPred_forall]
   refine isClosed_iInter fun v => ?_
   let T := {e : G.edgeSet // v ∈ (e : Sym2 V)}
-  have : Finite T := by
-    have : Finite (G.incidenceSet v) :=
-      (G.incidenceSetEquivNeighborSet v).finite_iff.2 inferInstance
-    exact Finite.of_injective
-      (fun e : T => (⟨e.val.val, e.val.property, e.property⟩ : G.incidenceSet v))
-      fun e e' h => by
-        have := congrArg Subtype.val h
-        exact Subtype.ext (Subtype.ext this)
+  have : Finite T := Finite.of_injective
+    (fun e : T => (⟨e.val.val, e.val.property, e.property⟩ : G.incidenceSet v))
+    fun e e' h => by
+      have := congrArg Subtype.val h
+      exact Subtype.ext (Subtype.ext this)
   let r : (G.edgeSet → Bool) → T → Bool := fun ω e => ω e.val
   have hr : Continuous r := continuous_pi fun e => continuous_apply e.val
   have hs : {ω : G.edgeSet → Bool | ∃! e : G.edgeSet, ω e = true ∧ v ∈ (e : Sym2 V)} =
@@ -256,7 +253,7 @@ theorem mem_dimerCompletionSet_self {F : Finset G.edgeSet} {ω : G.edgeSet → B
 /-- A completion set is finite: its members are determined by their values on `F`. -/
 theorem dimerCompletionSet_finite (F : Finset G.edgeSet) (ω : G.edgeSet → Bool) :
     (dimerCompletionSet G F ω).Finite := by
-  refine Finite.of_finite_image (f := (F : Set G.edgeSet).domRestrict) (toFinite _) ?_
+  refine Finite.of_finite_image (f := F.restrict) (toFinite _) ?_
   intro ω₁ h₁ ω₂ h₂ h
   funext e
   by_cases he : e ∈ F
@@ -264,65 +261,45 @@ theorem dimerCompletionSet_finite (F : Finset G.edgeSet) (ω : G.edgeSet → Boo
   · rw [h₁.2 e he, h₂.2 e he]
 
 open scoped Classical in
-/-- The gluing of a configuration `η` on a finite set `F` of edges to a configuration `ω` off
-`F`. -/
-noncomputable def dimerGlue (F : Finset G.edgeSet) (η : F → Bool) (ω : G.edgeSet → Bool)
-    (e : G.edgeSet) : Bool :=
-  if h : e ∈ F then η ⟨e, h⟩ else ω e
-
-theorem dimerGlue_of_mem {F : Finset G.edgeSet} {η : F → Bool} {ω : G.edgeSet → Bool}
-    {e : G.edgeSet} (h : e ∈ F) : dimerGlue F η ω e = η ⟨e, h⟩ :=
-  dite_eq_left h
-
-theorem dimerGlue_of_notMem {F : Finset G.edgeSet} {η : F → Bool} {ω : G.edgeSet → Bool}
-    {e : G.edgeSet} (h : e ∉ F) : dimerGlue F η ω e = ω e :=
-  dite_eq_right h
-
-theorem restrict_dimerGlue (F : Finset G.edgeSet) (η : F → Bool) (ω : G.edgeSet → Bool) :
-    (F : Set G.edgeSet).domRestrict (dimerGlue F η ω) = η :=
-  funext fun e => dimerGlue_of_mem e.property
-
 /-- The members of the completion set of a dimer configuration `ω` at `F` are the gluings of
 configurations `η` on `F` to `ω` that cover every endpoint of an edge of `F` exactly once. -/
 theorem dimerCompletionSet_eq_image {F : Finset G.edgeSet} {ω : G.edgeSet → Bool}
     (hω : IsDimerConfiguration G ω) :
-    dimerCompletionSet G F ω = (fun η => dimerGlue F η ω) ''
+    dimerCompletionSet G F ω = (fun η => updateFinset ω F η) ''
       {η | ∀ v : V, (∃ e ∈ F, v ∈ (e : Sym2 V)) →
-        ∃! e : G.edgeSet, dimerGlue F η ω e = true ∧ v ∈ (e : Sym2 V)} := by
+        ∃! e : G.edgeSet, updateFinset ω F η e = true ∧ v ∈ (e : Sym2 V)} := by
   ext ω'
   constructor
   · rintro ⟨hω', hoff⟩
-    have hglue : dimerGlue F ((F : Set G.edgeSet).domRestrict ω') ω = ω' := funext fun e => by
-      by_cases he : e ∈ F
-      · exact dimerGlue_of_mem he
-      · rw [dimerGlue_of_notMem he, hoff e he]
+    have hglue : updateFinset ω F (F.restrict ω') = ω' := by
+      ext e; by_cases he : e ∈ F <;> simp [updateFinset, he, hoff]
     exact ⟨_, fun v _ => by rw [hglue]; exact hω' v, hglue⟩
   · rintro ⟨η, hη, rfl⟩
-    refine ⟨fun v => ?_, fun e he => dimerGlue_of_notMem he⟩
+    refine ⟨fun v => ?_, fun e he => dite_eq_right he⟩
     by_cases hv : ∃ e ∈ F, v ∈ (e : Sym2 V)
     · exact hη v hv
     · simp only [not_exists, not_and] at hv
       refine (existsUnique_congr_of_eqOn_incident fun e he => ?_).2 (hω v)
-      exact dimerGlue_of_notMem fun heF => hv e heF he
+      exact dite_eq_right fun heF => hv e heF he
 
+open scoped Classical in
 /-- The restrictions to `F` of the members of a completion set depend only on the values of the
 configuration on the edges outside `F` sharing a vertex with an edge of `F`. -/
 theorem restrict_dimerCompletionSet_eq {F : Finset G.edgeSet} {ω₁ ω₂ : G.edgeSet → Bool}
     (h₁ : IsDimerConfiguration G ω₁) (h₂ : IsDimerConfiguration G ω₂)
     (h : ∀ e ∉ F, (∃ f ∈ F, ∃ v, v ∈ (e : Sym2 V) ∧ v ∈ (f : Sym2 V)) → ω₁ e = ω₂ e) :
-    (F : Set G.edgeSet).domRestrict '' dimerCompletionSet G F ω₁ =
-      (F : Set G.edgeSet).domRestrict '' dimerCompletionSet G F ω₂ := by
+    F.restrict '' dimerCompletionSet G F ω₁ = F.restrict '' dimerCompletionSet G F ω₂ := by
   have key : ∀ η : F → Bool, ∀ v : V, (∃ f ∈ F, v ∈ (f : Sym2 V)) →
-      ((∃! e : G.edgeSet, dimerGlue F η ω₁ e = true ∧ v ∈ (e : Sym2 V)) ↔
-        ∃! e : G.edgeSet, dimerGlue F η ω₂ e = true ∧ v ∈ (e : Sym2 V)) := by
+      ((∃! e : G.edgeSet, updateFinset ω₁ F η e = true ∧ v ∈ (e : Sym2 V)) ↔
+        ∃! e : G.edgeSet, updateFinset ω₂ F η e = true ∧ v ∈ (e : Sym2 V)) := by
     rintro η v ⟨f, hf, hvf⟩
     refine existsUnique_congr_of_eqOn_incident fun e hve => ?_
     by_cases he : e ∈ F
-    · rw [dimerGlue_of_mem he, dimerGlue_of_mem he]
-    · rw [dimerGlue_of_notMem he, dimerGlue_of_notMem he]
+    · simp only [updateFinset, dite_eq_left he]
+    · simp only [updateFinset, dite_eq_right he]
       exact h e he ⟨f, hf, v, hve, hvf⟩
   rw [dimerCompletionSet_eq_image h₁, dimerCompletionSet_eq_image h₂, image_image, image_image]
-  simp only [restrict_dimerGlue, image_id']
+  simp only [restrict_updateFinset, image_id']
   ext η
   exact forall_congr' fun v => forall_congr' fun hv => key η v hv
 
