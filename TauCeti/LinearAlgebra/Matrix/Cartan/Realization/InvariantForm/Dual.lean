@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.BilinearForm.Dual.Form
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.InvariantForm.Basic
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.RootLattice
 
@@ -19,14 +20,15 @@ import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.InvariantForm.Uniqueness
 Given a nondegenerate standard invariant form `B` on a finite-dimensional Cartan realization `R` of
 a symmetrizable generalized Cartan matrix `A`, the musical isomorphism
 `ν = B.form.toDual hB : H ≃ₗ[K] Module.Dual K H` maps each simple coroot `hᵢ` to `αᵢ / d i` and
-transfers `B.form` to a symmetric nondegenerate bilinear form `B.dualForm hB` on `Module.Dual K H`
-satisfying `(αᵢ, μ) = d i * μ(hᵢ)` and `(αᵢ, αⱼ) = d i * a i j`.
+transfers `B.form` to the symmetric nondegenerate bilinear form `B.form.dualForm hB`
+(`LinearMap.BilinForm.dualForm`) on `Module.Dual K H` satisfying `(αᵢ, μ) = d i * μ(hᵢ)` and
+`(αᵢ, αⱼ) = d i * a i j`.
 
-Although `B.dualForm hB` depends on `B` when both arguments lie outside the root span, its values
-whenever at least one argument lies in the root span (or root lattice `R.rootLattice`) are
+Although `B.form.dualForm hB` depends on `B` when both arguments lie outside the root span, its
+values whenever at least one argument lies in the root span (or root lattice `R.rootLattice`) are
 completely independent of the choice of nondegenerate standard invariant form `B`
-(`dualForm_eq_of_mem_rootSpan_left`). Moreover, `B.dualForm hB` is invariant under every simple
-reflection `sᵢ(μ) = μ - μ(hᵢ) • αᵢ` (`Module.reflection`), which takes the metric form
+(`dualForm_eq_of_mem_rootSpan_left`). Moreover, `B.form.dualForm hB` is invariant under every
+simple reflection `sᵢ(μ) = μ - μ(hᵢ) • αᵢ` (`Module.reflection`), which takes the metric form
 `sᵢ(μ) = μ - (2 (μ, αᵢ) / (αᵢ, αᵢ)) • αᵢ`, and `B.form.toDual hB` intertwines the simple
 reflections on `H` and `Module.Dual K H`.
 
@@ -38,12 +40,10 @@ Category `𝒪`, and the Weyl–Kac character formula.
 
 ## Main definitions
 
-* `TauCeti.CartanRealization.InvariantForm.dualForm`: the induced symmetric nondegenerate bilinear
-  form on `Module.Dual K H`.
 * `TauCeti.CartanRealization.InvariantForm.toDualIsometryEquiv`: `B.form.toDual hB` bundled as an
-  isometric equivalence `B.form.IsometryEquiv (B.dualForm hB)`.
+  isometric equivalence `B.form.IsometryEquiv (B.form.dualForm hB)`.
 * `TauCeti.CartanRealization.InvariantForm.dualReflectionIsometryEquiv`: simple reflections on
-  `Module.Dual K H` bundled as isometric equivalences of `B.dualForm hB`.
+  `Module.Dual K H` bundled as isometric equivalences of `B.form.dualForm hB`.
 
 ## Main results
 
@@ -55,7 +55,7 @@ Category `𝒪`, and the Weyl–Kac character formula.
   `(αᵢ, αⱼ) = d i * a i j`.
 * `TauCeti.CartanRealization.InvariantForm.dualForm_eq_of_mem_rootSpan_left`,
   `TauCeti.CartanRealization.InvariantForm.dualForm_eq_of_mem_rootLattice_left`: independence of
-  `B.dualForm hB` from `B` whenever an argument lies in the root span or root lattice.
+  `B.form.dualForm hB` from `B` whenever an argument lies in the root span or root lattice.
 * `TauCeti.CartanRealization.InvariantForm.isOrthogonal_dualForm_reflection`,
   `TauCeti.CartanRealization.InvariantForm.reflection_dual_apply_eq_sub_dualForm`,
   `TauCeti.CartanRealization.InvariantForm.toDual_reflection`: simple-reflection invariance, metric
@@ -101,26 +101,10 @@ theorem toDual_symm_root (i : I) :
   rw [LinearEquiv.symm_apply_eq, map_smul, B.toDual_coroot hB,
     smul_inv_smul₀ (A.symmetrizer_cast_ne_zero i)]
 
-/-- The symmetric nondegenerate bilinear form on `Module.Dual K H` transported from `B.form` along
-`B.form.toDual hB` (Kac, §2.1, eq. (2.1.5)). -/
-noncomputable def dualForm : LinearMap.BilinForm K (Dual K H) := B.form.congr (B.form.toDual hB)
-
-theorem dualForm_def : B.dualForm hB = B.form.congr (B.form.toDual hB) := (rfl)
-
-/-- Evaluating `B.dualForm hB` on `φ, ψ : Dual K H` applies `φ` to `(B.form.toDual hB).symm ψ`. -/
-theorem dualForm_apply (φ ψ : Dual K H) :
-    B.dualForm hB φ ψ = φ ((B.form.toDual hB).symm ψ) := by simp [dualForm]
-
-/-- The dual bilinear form is symmetric. -/
-theorem isSymm_dualForm : (B.dualForm hB).IsSymm := ⟨fun _ _ ↦ B.isSymm.eq _ _⟩
-
-/-- The dual bilinear form is nondegenerate. -/
-theorem nondegenerate_dualForm : (B.dualForm hB).Nondegenerate := hB.congr (B.form.toDual hB)
-
 /-- `B.form.toDual hB` bundled as an isometric equivalence
-`B.form.IsometryEquiv (B.dualForm hB)`. -/
-noncomputable def toDualIsometryEquiv : B.form.IsometryEquiv (B.dualForm hB) :=
-  { B.form.toDual hB with map_app' := fun x y ↦ by simp [dualForm] }
+`B.form.IsometryEquiv (B.form.dualForm hB)`. -/
+noncomputable def toDualIsometryEquiv : B.form.IsometryEquiv (B.form.dualForm hB) :=
+  { B.form.toDual hB with map_app' := fun x y ↦ by simp }
 
 @[simp]
 theorem toDualIsometryEquiv_toLinearEquiv :
@@ -133,29 +117,30 @@ theorem toDualIsometryEquiv_apply (x : H) :
 /-- Pairing a simple root on the left against any weight `μ : Dual K H` gives `d i * μ(hᵢ)`. -/
 @[simp]
 theorem dualForm_root_left (i : I) (μ : Dual K H) :
-    B.dualForm hB (R.root i) μ = A.symmetrizer i * μ (R.coroot i) := by
-  rw [(B.isSymm_dualForm hB).eq, B.dualForm_apply, B.toDual_symm_root, map_smul, smul_eq_mul]
+    B.form.dualForm hB (R.root i) μ = A.symmetrizer i * μ (R.coroot i) := by
+  rw [(B.isSymm.dualForm hB).eq, LinearMap.BilinForm.dualForm_apply_eq, B.toDual_symm_root,
+    map_smul, smul_eq_mul]
 
 /-- Pairing a simple root on the right against any weight `μ : Dual K H` gives `d i * μ(hᵢ)`. -/
 @[simp]
 theorem dualForm_root_right (μ : Dual K H) (i : I) :
-    B.dualForm hB μ (R.root i) = A.symmetrizer i * μ (R.coroot i) := by
-  rw [B.dualForm_apply, B.toDual_symm_root, map_smul, smul_eq_mul]
+    B.form.dualForm hB μ (R.root i) = A.symmetrizer i * μ (R.coroot i) := by
+  rw [LinearMap.BilinForm.dualForm_apply_eq, B.toDual_symm_root, map_smul, smul_eq_mul]
 
-/-- On the simple roots, `B.dualForm hB` realizes the symmetrized Cartan matrix:
+/-- On the simple roots, `B.form.dualForm hB` realizes the symmetrized Cartan matrix:
 `(αᵢ, αⱼ) = d i * a i j`. -/
 theorem dualForm_root_root (i j : I) :
-    B.dualForm hB (R.root i) (R.root j) = A.symmetrizedMatrix i j := by
+    B.form.dualForm hB (R.root i) (R.root j) = A.symmetrizedMatrix i j := by
   rw [B.dualForm_root_left, R.root_coroot, Matrix.map_apply]
   exact_mod_cast (A.symmetrizedMatrix_apply i j).symm
 
 /-- The squared norm of the `i`-th simple root is `2 * d i`. -/
 theorem dualForm_root_self (i : I) :
-    B.dualForm hB (R.root i) (R.root i) = 2 * A.symmetrizer i := by simp [mul_comm]
+    B.form.dualForm hB (R.root i) (R.root i) = 2 * A.symmetrizer i := by simp [mul_comm]
 
-/-- Every simple root is non-isotropic under `B.dualForm hB`. -/
+/-- Every simple root is non-isotropic under `B.form.dualForm hB`. -/
 theorem dualForm_root_self_ne_zero (i : I) :
-    B.dualForm hB (R.root i) (R.root i) ≠ 0 := by
+    B.form.dualForm hB (R.root i) (R.root i) ≠ 0 := by
   rw [B.dualForm_root_self]
   exact mul_ne_zero two_ne_zero (A.symmetrizer_cast_ne_zero i)
 
@@ -165,9 +150,9 @@ whenever the left argument lies in `Submodule.span K (Set.range R.root)`. -/
 theorem dualForm_eq_of_mem_rootSpan_left {B₁ B₂ : InvariantForm A R}
     (hB₁ : B₁.form.Nondegenerate) (hB₂ : B₂.form.Nondegenerate) {φ : Dual K H}
     (hφ : φ ∈ Submodule.span K (Set.range R.root)) (ψ : Dual K H) :
-    B₁.dualForm hB₁ φ ψ = B₂.dualForm hB₂ φ ψ :=
+    B₁.form.dualForm hB₁ φ ψ = B₂.form.dualForm hB₂ φ ψ :=
   LinearMap.congr_fun
-    (LinearMap.eqOn_span (f := B₁.dualForm hB₁) (g := B₂.dualForm hB₂)
+    (LinearMap.eqOn_span (f := B₁.form.dualForm hB₁) (g := B₂.form.dualForm hB₂)
       (by rintro _ ⟨i, rfl⟩; ext μ; rw [B₁.dualForm_root_left, B₂.dualForm_root_left]) hφ)
     ψ
 
@@ -176,8 +161,8 @@ argument lies in `Submodule.span K (Set.range R.root)`. -/
 theorem dualForm_eq_of_mem_rootSpan_right {B₁ B₂ : InvariantForm A R}
     (hB₁ : B₁.form.Nondegenerate) (hB₂ : B₂.form.Nondegenerate) (φ : Dual K H) {ψ : Dual K H}
     (hψ : ψ ∈ Submodule.span K (Set.range R.root)) :
-    B₁.dualForm hB₁ φ ψ = B₂.dualForm hB₂ φ ψ := by
-  rw [(B₁.isSymm_dualForm hB₁).eq, (B₂.isSymm_dualForm hB₂).eq]
+    B₁.form.dualForm hB₁ φ ψ = B₂.form.dualForm hB₂ φ ψ := by
+  rw [(B₁.isSymm.dualForm hB₁).eq, (B₂.isSymm.dualForm hB₂).eq]
   exact dualForm_eq_of_mem_rootSpan_left hB₁ hB₂ hψ φ
 
 /-- Any two nondegenerate standard invariant forms induce the same pairing whenever the left
@@ -185,7 +170,7 @@ argument lies in `R.rootLattice`. -/
 theorem dualForm_eq_of_mem_rootLattice_left {B₁ B₂ : InvariantForm A R}
     (hB₁ : B₁.form.Nondegenerate) (hB₂ : B₂.form.Nondegenerate) {φ : Dual K H}
     (hφ : φ ∈ R.rootLattice) (ψ : Dual K H) :
-    B₁.dualForm hB₁ φ ψ = B₂.dualForm hB₂ φ ψ :=
+    B₁.form.dualForm hB₁ φ ψ = B₂.form.dualForm hB₂ φ ψ :=
   dualForm_eq_of_mem_rootSpan_left hB₁ hB₂
     (Submodule.span_le_restrictScalars ℤ K (Set.range R.root) (R.rootLattice_def ▸ hφ)) ψ
 
@@ -194,26 +179,27 @@ argument lies in `R.rootLattice`. -/
 theorem dualForm_eq_of_mem_rootLattice_right {B₁ B₂ : InvariantForm A R}
     (hB₁ : B₁.form.Nondegenerate) (hB₂ : B₂.form.Nondegenerate) (φ : Dual K H) {ψ : Dual K H}
     (hψ : ψ ∈ R.rootLattice) :
-    B₁.dualForm hB₁ φ ψ = B₂.dualForm hB₂ φ ψ := by
-  rw [(B₁.isSymm_dualForm hB₁).eq, (B₂.isSymm_dualForm hB₂).eq]
+    B₁.form.dualForm hB₁ φ ψ = B₂.form.dualForm hB₂ φ ψ := by
+  rw [(B₁.isSymm.dualForm hB₁).eq, (B₂.isSymm.dualForm hB₂).eq]
   exact dualForm_eq_of_mem_rootLattice_left hB₁ hB₂ hψ φ
 
 /-! ### Invariance under simple reflections on `Dual K H` -/
 
-/-- `B.dualForm hB` is invariant under the simple reflection `μ ↦ μ - μ(hᵢ) • αᵢ`
+/-- `B.form.dualForm hB` is invariant under the simple reflection `μ ↦ μ - μ(hᵢ) • αᵢ`
 (`Module.reflection`). -/
 theorem isOrthogonal_dualForm_reflection (i : I)
     (h : Dual.eval K H (R.coroot i) (R.root i) = 2 := by simp) :
-    (B.dualForm hB).IsOrthogonal (Module.reflection h) := by
+    (B.form.dualForm hB).IsOrthogonal (Module.reflection h) := by
   intro μ ν
   have h' : R.root i (R.coroot i) = 2 := h
   simp only [Module.reflection_apply, Dual.eval_apply, map_sub, map_smul, LinearMap.sub_apply,
     LinearMap.smul_apply, smul_eq_mul, B.dualForm_root_left, B.dualForm_root_right, h']
   ring
 
-/-- The simple reflection on `Dual K H` bundled as an isometric equivalence of `B.dualForm hB`. -/
+/-- The simple reflection on `Dual K H` bundled as an isometric equivalence of
+`B.form.dualForm hB`. -/
 noncomputable def dualReflectionIsometryEquiv (i : I) :
-    (B.dualForm hB).IsometryEquiv (B.dualForm hB) :=
+    (B.form.dualForm hB).IsometryEquiv (B.form.dualForm hB) :=
   { Module.reflection (f := Dual.eval K H (R.coroot i)) (x := R.root i) (by simp) with
     map_app' := B.isOrthogonal_dualForm_reflection hB i }
 
@@ -232,7 +218,8 @@ theorem dualReflectionIsometryEquiv_apply (i : I) (μ : Dual K H) :
 theorem reflection_dual_apply_eq_sub_dualForm (i : I) (μ : Dual K H)
     (h : Dual.eval K H (R.coroot i) (R.root i) = 2 := by simp) :
     Module.reflection h μ =
-      μ - (2 * B.dualForm hB μ (R.root i) / B.dualForm hB (R.root i) (R.root i)) • R.root i := by
+      μ - (2 * B.form.dualForm hB μ (R.root i) / B.form.dualForm hB (R.root i) (R.root i)) •
+        R.root i := by
   have hd : (2 : K) * A.symmetrizer i ≠ 0 :=
     mul_ne_zero two_ne_zero (A.symmetrizer_cast_ne_zero i)
   rw [Module.reflection_apply, Dual.eval_apply, B.dualForm_root_right, B.dualForm_root_self]
@@ -255,14 +242,14 @@ theorem toDual_reflection (i : I) (x : H)
 particular does not depend on the choice of nondegenerate standard invariant form `B`. -/
 theorem dualForm_add_self_sub_eq_sum [Fintype I] {μ lam : Dual K H} (ρ : Dual K H) {c : I → K}
     (hc : ∑ i, c i • R.root i = lam - μ) :
-    B.dualForm hB (lam + ρ) (lam + ρ) - B.dualForm hB (μ + ρ) (μ + ρ) =
+    B.form.dualForm hB (lam + ρ) (lam + ρ) - B.form.dualForm hB (μ + ρ) (μ + ρ) =
       ∑ i, c i * A.symmetrizer i * (lam (R.coroot i) + μ (R.coroot i) + 2 * ρ (R.coroot i)) := by
   have hdiff :
-      B.dualForm hB (lam + ρ) (lam + ρ) - B.dualForm hB (μ + ρ) (μ + ρ) =
-        B.dualForm hB (lam - μ) (lam + μ + (2 : K) • ρ) := by
+      B.form.dualForm hB (lam + ρ) (lam + ρ) - B.form.dualForm hB (μ + ρ) (μ + ρ) =
+        B.form.dualForm hB (lam - μ) (lam + μ + (2 : K) • ρ) := by
     simp only [map_add, map_sub, map_smul, LinearMap.add_apply, LinearMap.sub_apply, smul_eq_mul,
-      (B.isSymm_dualForm hB).eq μ lam, (B.isSymm_dualForm hB).eq ρ lam,
-      (B.isSymm_dualForm hB).eq ρ μ]
+      (B.isSymm.dualForm hB).eq μ lam, (B.isSymm.dualForm hB).eq ρ lam,
+      (B.isSymm.dualForm hB).eq ρ μ]
     ring
   rw [hdiff, ← hc, map_sum, LinearMap.sum_apply]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
@@ -280,7 +267,7 @@ theorem dualForm_add_lt_of_rootLE {I K H : Type*} [Finite I] [Field K] [LinearOr
     (B : InvariantForm A R) (hB : B.form.Nondegenerate) {μ lam ρ : Dual K H}
     (hμlam : R.RootLE μ lam) (hne : μ ≠ lam) (hlam : R.IsDominant lam) (hμ : R.IsDominant μ)
     (hρ : ∀ i, 0 < ρ (R.coroot i)) :
-    B.dualForm hB (μ + ρ) (μ + ρ) < B.dualForm hB (lam + ρ) (lam + ρ) := by
+    B.form.dualForm hB (μ + ρ) (μ + ρ) < B.form.dualForm hB (lam + ρ) (lam + ρ) := by
   let := Fintype.ofFinite I
   obtain ⟨c, hc⟩ := R.mem_posRootCone_iff.mp (R.rootLE_iff.mp hμlam)
   have hcK : ∑ i, (c i : K) • R.root i = lam - μ := by
@@ -338,7 +325,7 @@ example :
     ∃! B : InvariantForm a1Datum a1Minimal,
       B.form (a1Minimal.coroot 0) (a1Minimal.coroot 0) = 2 ∧
         ∃ hB : B.form.Nondegenerate,
-          B.dualForm hB (a1Minimal.root 0) (a1Minimal.root 0) = 2 := by
+          B.form.dualForm hB (a1Minimal.root 0) (a1Minimal.root 0) = 2 := by
   have htop : a1Minimal.corootSpan = ⊤ := eq_top_iff.mpr fun x _ ↦ by
     have hx : x = x 0 • a1Minimal.coroot 0 := by ext i; fin_cases i; simp [a1Minimal]
     exact hx ▸ Submodule.smul_mem _ _ (a1Minimal.coroot_mem_corootSpan 0)
@@ -363,8 +350,9 @@ example :
     ∃ (R : CartanRealization (A.cartan.map (Int.cast : ℤ → ℚ)) (Fin N → ℚ))
       (B : InvariantForm A R) (hB : B.form.Nondegenerate),
       B.form (R.coroot 0) (R.coroot 0) = 2 ∧ B.form (R.coroot 1) (R.coroot 1) = 1 ∧
-        B.dualForm hB (R.root 0) (R.root 0) = 2 ∧ B.dualForm hB (R.root 1) (R.root 1) = 4 ∧
-        B.dualForm hB (R.root 0) (R.root 1) = -2 := by
+        B.form.dualForm hB (R.root 0) (R.root 0) = 2 ∧
+        B.form.dualForm hB (R.root 1) (R.root 1) = 4 ∧
+        B.form.dualForm hB (R.root 0) (R.root 1) = -2 := by
   intro A N
   obtain ⟨R⟩ := Matrix.nonempty_cartanRealization (A.cartan.map (Int.cast : ℤ → ℚ))
   obtain ⟨B, hB⟩ := InvariantForm.exists_nondegenerate A R

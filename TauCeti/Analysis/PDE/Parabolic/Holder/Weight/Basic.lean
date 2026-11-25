@@ -66,6 +66,8 @@ Hölder derivatives of every positive order (`Real.iteratedDeriv_succ_log_one_ad
   identity `w P_w v = P (w v)`, and
   `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_weightedCoeff_eq_iff`: `P_w v = g`
   exactly when `w v` is a classical solution of `P u = w g`.
+* `TauCeti.fderiv_log_one_add_exp_apply` and `TauCeti.fderiv_fderiv_log_one_add_exp_apply`: the
+  first and second derivatives of `log (1 + exp x)` on the line are the sigmoid and its derivative.
 * `TauCeti.contDiff_log_one_add_exp_and_exists_fderiv_eq`: the weight `1 + exp x` on the line
   satisfies the hypotheses of the conjugation identity.
 
@@ -385,6 +387,34 @@ section Line
 
 variable {ι : Type*} [Unique ι]
 
+/-- On the line `ℝ¹ = EuclideanSpace ℝ ι`, the gradient of the logarithm `x ↦ log (1 + exp x)` of
+the weight `1 + exp x` is the sigmoid. -/
+theorem fderiv_log_one_add_exp_apply (x : EuclideanSpace ℝ ι) (i : ι) :
+    fderiv ℝ (fun x : EuclideanSpace ℝ ι ↦ log (1 + exp (x default))) x
+      (EuclideanSpace.single i 1) = sigmoid (x default) := by
+  set P := EuclideanSpace.proj (𝕜 := ℝ) (ι := ι) default
+  have hℓ : HasFDerivAt (fun x : EuclideanSpace ℝ ι ↦ log (1 + exp (x default)))
+      (sigmoid (P x) • P) x :=
+    (hasDerivAt_log_one_add_exp (P x)).comp_hasFDerivAt x P.hasFDerivAt
+  rw [hℓ.fderiv, Subsingleton.elim i default]
+  simp [P]
+
+/-- On the line `ℝ¹ = EuclideanSpace ℝ ι`, the Hessian of the logarithm `x ↦ log (1 + exp x)` of
+the weight `1 + exp x` is the derivative of the sigmoid. -/
+theorem fderiv_fderiv_log_one_add_exp_apply (x : EuclideanSpace ℝ ι) (i j : ι) :
+    fderiv ℝ (fderiv ℝ fun x : EuclideanSpace ℝ ι ↦ log (1 + exp (x default))) x
+      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) = deriv sigmoid (x default) := by
+  set P := EuclideanSpace.proj (𝕜 := ℝ) (ι := ι) default
+  have hfderiv : fderiv ℝ (fun x : EuclideanSpace ℝ ι ↦ log (1 + exp (x default))) =
+      fun x ↦ sigmoid (P x) • P := funext fun x ↦
+    ((hasDerivAt_log_one_add_exp (P x)).comp_hasFDerivAt x P.hasFDerivAt).fderiv
+  have h₂ : HasFDerivAt (fun y ↦ sigmoid (P y) • P)
+      (((sigmoid (P x) * (1 - sigmoid (P x))) • P).smulRight P) x :=
+    ((hasDerivAt_sigmoid (P x)).comp_hasFDerivAt x P.hasFDerivAt).smul_const P
+  rw [hfderiv, h₂.fderiv, Subsingleton.elim i default, Subsingleton.elim j default,
+    (hasDerivAt_sigmoid _).deriv]
+  simp [P]
+
 /-- **The weight `1 + exp x` satisfies the hypotheses of the conjugation identity.** On the line
 `ℝ¹ = EuclideanSpace ℝ ι`, the logarithm `ℓ x = log (1 + exp x)` of the weight `1 + exp x` is
 smooth, and for every `α ≤ 1` its first and second derivatives are bounded `α`-Hölder functions,
@@ -418,20 +448,9 @@ theorem contDiff_log_one_add_exp_and_exists_fderiv_eq (hα : α ≤ 1) :
     simp [P]
   obtain ⟨f₀, hf₀⟩ := hσ 0
   obtain ⟨f₁, hf₁⟩ := hσ 1
-  have hℓ (x : EuclideanSpace ℝ ι) : HasFDerivAt (fun x : EuclideanSpace ℝ ι ↦
-      log (1 + exp (x default))) (sigmoid (P x) • P) x :=
-    (hasDerivAt_log_one_add_exp (P x)).comp_hasFDerivAt x P.hasFDerivAt
-  have hfderiv : fderiv ℝ (fun x : EuclideanSpace ℝ ι ↦ log (1 + exp (x default))) =
-      fun x ↦ sigmoid (P x) • P := funext fun x ↦ (hℓ x).fderiv
   refine ⟨fun _ ↦ f₀, fun _ _ ↦ f₁, fun i x ↦ ?_, fun i j x ↦ ?_⟩
-  · rw [hfderiv, Subsingleton.elim i default, hf₀]
-    simp [P]
-  · have h₂ : HasFDerivAt (fun y ↦ sigmoid (P y) • P)
-        (((sigmoid (P x) * (1 - sigmoid (P x))) • P).smulRight P) x :=
-      ((hasDerivAt_sigmoid (P x)).comp_hasFDerivAt x P.hasFDerivAt).smul_const P
-    rw [hfderiv, h₂.fderiv, Subsingleton.elim i default, Subsingleton.elim j default, hf₁,
-      iteratedDeriv_one, (hasDerivAt_sigmoid _).deriv]
-    simp [P]
+  · rw [fderiv_log_one_add_exp_apply, hf₀, iteratedDeriv_zero]
+  · rw [fderiv_fderiv_log_one_add_exp_apply, hf₁, iteratedDeriv_one]
 
 end Line
 

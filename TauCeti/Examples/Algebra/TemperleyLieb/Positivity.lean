@@ -52,7 +52,7 @@ example : (1 / 2 : ℝ) ∉ jonesLoopParameters ∧ ⌊π / arccos ((1 / 2 : ℝ
       (by norm_num [cos_pi_div_three])⟩
 
 -- At `δ = 1 / 2`, a Markov trace is positive semidefinite on `n` strands iff `n < 2`.
-example [Fact (IsSelfAdjoint ((1 / 2 : ℝ) : ℂ))]
+example
     {tr : ∀ n : ℕ, TemperleyLieb ℂ ((1 / 2 : ℝ) : ℂ) n →ₗ[ℂ] ℂ}
     (htr : IsMarkovTrace ℂ ((1 / 2 : ℝ) : ℂ) tr) (n : ℕ) :
     (∀ x : TemperleyLieb ℂ ((1 / 2 : ℝ) : ℂ) n, 0 ≤ tr n (star x * x)) ↔ n < 2 := by
@@ -65,7 +65,7 @@ example [Fact (IsSelfAdjoint ((1 / 2 : ℝ) : ℂ))]
   rw [htr.forall_map_star_mul_self_nonneg_iff_lt_floor (by norm_num) hJ, hfl]
 
 -- At `δ = 1 / 2`, `f₂ = 1 - 2 • e 0` has negative trace `-3 / 4`.
-example [Fact (IsSelfAdjoint ((1 / 2 : ℝ) : ℂ))]
+example
     {tr : ∀ n : ℕ, TemperleyLieb ℂ ((1 / 2 : ℝ) : ℂ) n →ₗ[ℂ] ℂ}
     (htr : IsMarkovTrace ℂ ((1 / 2 : ℝ) : ℂ) tr) :
     jonesWenzl ((1 / 2 : ℝ) : ℂ) 2 = 1 - (2 : ℂ) • e ((1 / 2 : ℝ) : ℂ) 0 ∧
@@ -100,11 +100,9 @@ example {R : Type*} [CommSemiring R] [PartialOrder R] [StarRing R] [StarOrderedR
 -- In particular, at `δ = 0` (`q = i`), the complex spin-model trace is positive semidefinite on
 -- all strands despite `0 ∉ jonesLoopParameters`.
 example :
-    let _ : Fact (IsSelfAdjoint ((0 : ℝ) : ℂ)) := ⟨Complex.conj_ofReal 0⟩
     (0 : ℝ) ∉ jonesLoopParameters ∧
       ∀ (n : ℕ) (x : TemperleyLieb ℂ ((0 : ℝ) : ℂ) n),
         0 ≤ markovTrace (Units.mk0 Complex.I Complex.I_ne_zero) (by simp) (star x * x) := by
-  intro _
   let qI : ℂˣ := Units.mk0 Complex.I Complex.I_ne_zero
   exact ⟨zero_notMem_jonesLoopParameters, fun n x ↦
     (isMarkovTrace_markovTrace qI (by simp [qI])).map_star_mul_self_nonneg_of_eq_zero
@@ -113,7 +111,7 @@ example :
 -- Every negative real parameter `δ < 0` fails positivity on one strand (`tr 1 (1⋆ * 1) = δ < 0`),
 -- while on zero strands positivity still holds (witnessed for `-2 ≤ δ < 0` by
 -- `⌊π / arccos (δ / 2)⌋ = 1`).
-example {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (hlo : -2 ≤ δ) (hneg : δ < 0)
+example {δ : ℝ} (hlo : -2 ≤ δ) (hneg : δ < 0)
     {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ}
     (htr : IsMarkovTrace ℂ (δ : ℂ) tr) :
     ⌊π / arccos (δ / 2)⌋₊ = 1 ∧
@@ -132,14 +130,12 @@ example {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (hlo : -2 ≤ δ) (hneg : �
 -- `0 < c n` in `mem_jonesLoopParameters_of_pullback`), normalizing by `δ⁻ⁿ` fails to force
 -- admissibility without `0 < δ`.
 example :
-    let _ : Fact (IsSelfAdjoint ((-1 : ℝ) : ℂ)) := ⟨Complex.conj_ofReal (-1)⟩
     ∃ (ρ : ∀ n : ℕ, TemperleyLieb ℂ ((-1 : ℝ) : ℂ) n →⋆ₐ[ℂ] ℂ)
       (φ : StarPositiveFunctional ℂ)
       (tr : ∀ n : ℕ, TemperleyLieb ℂ ((-1 : ℝ) : ℂ) n →ₗ[ℂ] ℂ),
       IsMarkovTrace ℂ ((-1 : ℝ) : ℂ) tr ∧
       (∀ n x, φ (ρ n x) = ((-1 : ℝ) : ℂ)⁻¹ ^ n * tr n x) ∧
       (-1 : ℝ) ∉ jonesLoopParameters := by
-  intro _
   obtain ⟨ρAlg, hρAlg⟩ :
       ∃ f : ∀ n : ℕ, TemperleyLieb ℂ ((-1 : ℝ) : ℂ) n →ₐ[ℂ] ℂ,
         ∀ (n : ℕ) (i : Fin (n - 1)), f n (e ((-1 : ℝ) : ℂ) i) = -1 :=
@@ -182,7 +178,7 @@ example :
 /-! ### Open gap `1 < δ < √2`: first bad level `3` -/
 
 -- Throughout `1 < δ < √2`, positivity holds on `0`, `1`, and `2` strands and fails from `3` on.
-example {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (h1 : 1 < δ) (h2 : δ < √2)
+example {δ : ℝ} (h1 : 1 < δ) (h2 : δ < √2)
     {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ}
     (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (n : ℕ) :
     δ ∉ jonesLoopParameters ∧
@@ -236,7 +232,7 @@ example {δ : ℝ} (h1 : 1 < δ) (h2 : δ < √2)
 
 -- At `δ = √2` (`m = 4`), `⌊π / arccos (√2 / 2)⌋ = 4`, all levels are positive semidefinite, and
 -- `f₃` is a nonzero element of the three-strand trace radical.
-example [Fact (IsSelfAdjoint (√2 : ℂ))]
+example
     {tr : ∀ n : ℕ, TemperleyLieb ℂ (√2 : ℂ) n →ₗ[ℂ] ℂ}
     (htr : IsMarkovTrace ℂ (√2 : ℂ) tr) :
     ⌊π / arccos (√2 / 2)⌋₊ = 4 ∧
@@ -278,7 +274,7 @@ example [Fact (IsSelfAdjoint (√2 : ℂ))]
 -- Without exposing `starPositiveFunctional`, `IsMarkovTrace.quotientStarPositiveFunctional` lives
 -- directly on the canonical trace-radical quotient, composes with
 -- `IsMarkovTrace.quotientStrandIncl`, and is faithful across module boundaries.
-example {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (hδ : δ ∈ jonesLoopParameters)
+example {δ : ℝ} (hδ : δ ∈ jonesLoopParameters)
     {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ}
     (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (n : ℕ)
     (x : TemperleyLieb ℂ (δ : ℂ) (n + 1) ⧸

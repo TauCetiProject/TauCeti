@@ -416,7 +416,7 @@ theorem IsPTypical.coeff_subst_log_eq_zero [Algebra ℚ R] {p : ℕ} {γ : F.Cur
   simpa only [TauCeti.FormalGroupHom.toPowerSeries_mapCurve, logIso_toHom,
     logHom_toPowerSeries] using
     (hγ.mapCurve F.logIso.toHom).coeff_𝔾ₐ_eq_zero
-      (fun _ hq _ ↦ TauCeti.isUnit_natCast_of_ne_zero hq.ne_zero) hk
+      (fun _ hq _ ↦ TauCeti.isUnit_natCast_of_ne_zero ℚ hq.ne_zero) hk
 
 end IsPTypical
 
@@ -443,6 +443,13 @@ theorem pTypicalCurveSubgroup_eq_iInf_ker (F : FormalGroup R) [F.IsComm] (p : �
       ⨅ (q : ℕ) (hq : q.Prime) (_ : q ≠ p), (F.frobeniusCurve q hq.ne_zero).ker := by
   ext γ
   simp [mem_pTypicalCurveSubgroup, Curve.isPTypical_def]
+
+/-- A finite formal-group sum of `p`-typical curves is `p`-typical. -/
+theorem Curve.IsPTypical.sum {F : FormalGroup R} [F.IsComm] {ι : Type*} {p : ℕ}
+    (s : Finset ι) {f : ι → F.Curve} (h : ∀ i ∈ s, (f i).IsPTypical p) :
+    (∑ i ∈ s, f i).IsPTypical p :=
+  (F.mem_pTypicalCurveSubgroup p _).mp <| AddSubgroup.sum_mem _ fun i hi ↦
+    (F.mem_pTypicalCurveSubgroup p _).mpr (h i hi)
 
 section Iso
 

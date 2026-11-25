@@ -55,6 +55,8 @@ truncation changes.
 * `TauCeti.sum_star_mul_le_card_inv_smul_sum_star_mul` and
   `TauCeti.sum_mul_star_le_card_inv_smul_sum_mul_star`: orthogonality of the Rademacher
   coefficients, in column and row form.
+* `TauCeti.norm_sum_star_mul_le_of_norm_le` and `TauCeti.norm_sum_mul_star_le_of_norm_le`: their
+  norm forms, `‖∑ k, yₖ⋆ yₖ‖ ≤ r²` and `‖∑ k, yₖ yₖ⋆‖ ≤ r²` when `‖Φ ε‖ ≤ r` for every `ε`.
 * `TauCeti.norm_card_inv_smul_sum_sum_units_smul_mul_self_mul_mul_self_le`: for self-adjoint
   coefficients in a non-unital C⋆-algebra, `‖𝔼 S⁴‖ ≤ 3 ‖∑ i, xᵢ²‖²`.
 
@@ -211,6 +213,36 @@ theorem sum_mul_star_le_card_inv_smul_sum_mul_star (Φ : (ι → ℤˣ) → A) :
       (Fintype.card (ι → ℤˣ) : ℝ)⁻¹ • ∑ ε, Φ ε * star (Φ ε) := by
   simpa [star_sum, star_smul, Units.smul_def] using
     sum_star_mul_le_card_inv_smul_sum_star_mul fun ε ↦ star (Φ ε)
+
+omit [PartialOrder A] [StarOrderedRing A] in
+/-- A sign-cube average of elements of norm at most `c` has norm at most `c`. -/
+private theorem norm_card_inv_smul_sum_le {z : (ι → ℤˣ) → A} {c : ℝ} (h : ∀ ε, ‖z ε‖ ≤ c) :
+    ‖(Fintype.card (ι → ℤˣ) : ℝ)⁻¹ • ∑ ε, z ε‖ ≤ c := by
+  have hcard : (0 : ℝ) < Fintype.card (ι → ℤˣ) := by positivity
+  rw [norm_smul, norm_inv, Real.norm_natCast, inv_mul_le_iff₀ hcard]
+  simpa using norm_sum_le_of_le univ fun ε _ ↦ h ε
+
+/-- The norm form of `sum_star_mul_le_card_inv_smul_sum_star_mul`: if `‖Φ ε‖ ≤ r` for every sign
+pattern `ε`, the Rademacher coefficients `yₖ = 𝔼 εₖ Φ(ε)` satisfy `‖∑ k, yₖ⋆ yₖ‖ ≤ r²`. -/
+theorem norm_sum_star_mul_le_of_norm_le {Φ : (ι → ℤˣ) → A} {r : ℝ} (h : ∀ ε, ‖Φ ε‖ ≤ r) :
+    ‖∑ k, star ((Fintype.card (ι → ℤˣ) : ℝ)⁻¹ • ∑ ε, ε k • Φ ε) *
+        ((Fintype.card (ι → ℤˣ) : ℝ)⁻¹ • ∑ ε, ε k • Φ ε)‖ ≤ r ^ 2 := by
+  refine (CStarAlgebra.norm_le_norm_of_le_of_nonneg
+    (sum_star_mul_le_card_inv_smul_sum_star_mul Φ)
+    (sum_nonneg fun k _ ↦ star_mul_self_nonneg _)).trans (norm_card_inv_smul_sum_le fun ε ↦ ?_)
+  rw [CStarRing.norm_star_mul_self, ← sq]
+  exact pow_le_pow_left₀ (norm_nonneg _) (h ε) 2
+
+/-- The norm form of `sum_mul_star_le_card_inv_smul_sum_mul_star`: if `‖Φ ε‖ ≤ r` for every sign
+pattern `ε`, the Rademacher coefficients `yₖ = 𝔼 εₖ Φ(ε)` satisfy `‖∑ k, yₖ yₖ⋆‖ ≤ r²`. -/
+theorem norm_sum_mul_star_le_of_norm_le {Φ : (ι → ℤˣ) → A} {r : ℝ} (h : ∀ ε, ‖Φ ε‖ ≤ r) :
+    ‖∑ k, ((Fintype.card (ι → ℤˣ) : ℝ)⁻¹ • ∑ ε, ε k • Φ ε) *
+        star ((Fintype.card (ι → ℤˣ) : ℝ)⁻¹ • ∑ ε, ε k • Φ ε)‖ ≤ r ^ 2 := by
+  refine (CStarAlgebra.norm_le_norm_of_le_of_nonneg
+    (sum_mul_star_le_card_inv_smul_sum_mul_star Φ)
+    (sum_nonneg fun k _ ↦ mul_star_self_nonneg _)).trans (norm_card_inv_smul_sum_le fun ε ↦ ?_)
+  rw [CStarRing.norm_self_mul_star, ← sq]
+  exact pow_le_pow_left₀ (norm_nonneg _) (h ε) 2
 
 end CStarAlgebra
 

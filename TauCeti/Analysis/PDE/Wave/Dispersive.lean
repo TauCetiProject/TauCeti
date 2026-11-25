@@ -13,11 +13,11 @@ import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Fourier.ChangeOfVariables
-import TauCeti.Analysis.Fourier.NonstationaryPhase.Basic
+import TauCeti.Analysis.Fourier.NonstationaryPhase.Quadratic
 import TauCeti.Analysis.PDE.Schrodinger.Dispersive
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
-import TauCeti.MeasureTheory.Function.Lp.Star
+import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
 
 /-!
 # The dispersive estimate for frequency-localized half-wave propagators
@@ -70,7 +70,9 @@ is non-stationary on the support of `a`, so `𝓕 G_t (s) = O(|t|^(-N))`
 * `TauCeti.exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_le`: the `L¹ → L^∞` dispersive
   estimate for `W₊(t)` localized by a multiplier with symbol `ψ (2^{-j} ·)`.
 * `TauCeti.exists_eLpNorm_halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint_le_top`: the
-  same estimate for the time pairings `U(s) U(t)*` of `U(t) = W₊(t) Pⱼ`.
+  same estimate for the time pairings `U(s) U(t)*` of `U(t) = W₊(t) Pⱼ`, which are `W₊(s - t)`
+  localized by the symbol `m • star m` of `Pⱼ Pⱼ*`, the dilate of `|ψ|²`
+  (`MeasureTheory.Lp.smul_star_ae_eq_mul_star`).
 * `ContDiffBump.exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_littlewoodPaley_le`:
   the kernel bound for the dyadic cutoffs, `C 2^{jn} (1 + 2^j |t|)^(-(n - 1)/2)`.
 * `ContDiffBump.exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_littlewoodPaley_le`: the
@@ -544,21 +546,16 @@ theorem exists_eLpNorm_halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoin
         ENNReal.ofReal (C * ((2 : ℝ) ^ j) ^ Module.finrank ℝ E *
           (1 + 2 ^ j * |s - t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2)) *
           eLpNorm g 1 volume := by
-  -- The symbol of `Pⱼ Pⱼ*` is the dilate of the cutoff `|ψ|² = ψ * star ψ`.
-  set ψ' : E → ℂ := fun ξ ↦ ψ ξ * star (ψ ξ)
-  have hψ' : ContDiff ℝ ∞ ψ' := hψ.mul (Complex.conjCLE.contDiff.comp hψ)
-  have hψ'0 : (0 : E) ∉ tsupport ψ' := fun h ↦ hψ0 (tsupport_mul_subset_left h)
-  obtain ⟨C, hC0, hC⟩ :=
-    exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_le hψ' hψc.mul_right hψ'0 (F := ℂ)
+  -- `U(s) U(t)*` is `W₊(s - t)` localized by the dilate of the cutoff `|ψ|² = ψ * star ψ`.
+  obtain ⟨C, hC0, hC⟩ := exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_le (F := ℂ)
+    (hψ.mul (Complex.conjCLE.contDiff.comp hψ)) hψc.mul_right
+    (fun h ↦ hψ0 (tsupport_mul_subset_left h))
   refine ⟨C + 1, by positivity, fun j m hm s t g ↦ ?_⟩
-  have hm' : (m • star m : Lp ℂ ∞ (volume : Measure E)) =ᵐ[volume]
-      fun ξ ↦ ψ' (((2 : ℝ) ^ j)⁻¹ • ξ) := by
-    filter_upwards [Lp.coeFn_lpSMul (r := ∞) m (star m), Lp.coeFn_star m, hm] with ξ h₁ h₂ h₃
-    rw [h₁, Pi.smul_apply', h₂, Pi.star_apply, h₃, smul_eq_mul]
   rw [halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint,
     Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply]
   by_cases hg : MemLp g 1 volume
-  · refine (hC j _ hm' (s - t) g (memLp_one_iff_integrable.1 hg)).trans ?_
+  · refine (hC j _ (Lp.smul_star_ae_eq_mul_star hm) (s - t) g
+      (memLp_one_iff_integrable.1 hg)).trans ?_
     gcongr ?_ * _
     exact ENNReal.ofReal_le_ofReal (by gcongr; linarith)
   · -- Outside `L¹` the right-hand side is infinite.

@@ -187,6 +187,13 @@ theorem homologyPeriodEquiv_apply (c : deRhamCohomology I M 1) :
     homologyPeriodEquiv I M c = homologyPeriod c :=
   (rfl)
 
+/-- The class `(homologyPeriodEquiv I M).symm h` has the periods `h`. -/
+@[simp]
+theorem homologyPeriod_homologyPeriodEquiv_symm_apply
+    (h : ((singularChains ℤ).obj (.of M)).homology 1 →+ ℝ) :
+    homologyPeriod ((homologyPeriodEquiv I M).symm h) = h :=
+  (homologyPeriodEquiv I M).apply_symm_apply h
+
 end deRhamCohomology
 
 /-- **Every integral period homomorphism comes from a gauge transformation.** On a path-connected

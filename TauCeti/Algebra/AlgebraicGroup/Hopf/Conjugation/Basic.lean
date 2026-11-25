@@ -212,7 +212,7 @@ theorem conjugationAlgHom_counit_right :
 /-- **Comultiplying the conjugating variable splits it into the first two universal points.**
 Re-associating after comultiplying the first tensor factor sends the first universal point to the
 convolution product of the first two points of the triple tensor algebra. This is
-`TauCeti.Bialgebra.toConv_comp_comulAlgHom` at the tensor associator. -/
+`AlgHom.toConv_comp_comulAlgHom` at the tensor associator. -/
 private theorem toConv_assoc_comp_map_comul_comp_includeLeft :
     toConv
         ((((Algebra.TensorProduct.assoc R R R H H H).toAlgHom.comp
@@ -231,7 +231,7 @@ private theorem toConv_assoc_comp_map_comul_comp_includeLeft :
         Algebra.TensorProduct.includeLeft : H →ₐ[R] H ⊗[R] (H ⊗[R] H)) =
         up.comp (Bialgebra.comulAlgHom R H) := by
     simp only [up, AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeLeft]
-  rw [hfactor, Bialgebra.toConv_comp_comulAlgHom]
+  rw [hfactor, AlgHom.toConv_comp_comulAlgHom]
   apply congrArg₂ (· * ·)
   · apply congrArg toConv
     ext h
