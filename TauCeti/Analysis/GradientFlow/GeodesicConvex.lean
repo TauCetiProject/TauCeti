@@ -5,25 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Convex.Function.Along
+public import TauCeti.Analysis.Convex.Along
 public import TauCeti.Analysis.GradientFlow.RelaxedSlope
 public import TauCeti.Data.EReal.Operations
 public import TauCeti.Topology.MetricSpace.CATZero
 
+import TauCeti.Analysis.Convex.Function.Along
+
 /-!
 # Geodesic convexity of energies
 
-Let `φ : X → EReal` be an energy on a metric space and `m : ℝ`. The energy is *`m`-convex along*
-a curve `γ` on `[0, 1]` if for every `t ∈ [0, 1]`
+Let `φ : X → EReal` be an energy on a metric space and `m : ℝ`. The predicate
+`TauCeti.ConvexAlong m φ γ` expresses `m`-convexity along a fixed curve `γ` on `[0, 1]`.
+Its stability properties are developed in `TauCeti.Analysis.Convex.Along`.
 
-`φ (γ t) ≤ (1 - t) φ (γ 0) + t φ (γ 1) - (m / 2) t (1 - t) d(γ 0, γ 1)²`.
-
-It is *`m`-geodesically convex* if any two points of its effective domain `{x | φ x ≠ ⊤}` (which
-includes points of energy `⊥`) are joined by a geodesic segment along which it is `m`-convex, and
-*`m`-convex along geodesics* if it is `m`-convex along every geodesic segment joining two points of
-its effective domain. The parameter `m` may be negative, and the
-two notions agree in a uniquely geodesic space. On the Wasserstein space `P_p(X)` these are the
-weak and the strong forms of displacement convexity. Geodesic convexity is the basic structural
+The energy is *`m`-geodesically convex* if any two points of its effective domain `{x | φ x ≠ ⊤}`
+are joined by a geodesic segment along which it is `m`-convex, and *`m`-convex along geodesics* if
+it is `m`-convex along every such segment. The effective domain includes points of energy `⊥`.
+The parameter `m` may be negative, and the two notions agree in a uniquely geodesic space.
+On the Wasserstein space `P_p(X)` these are the weak and the strong forms of displacement
+convexity. Geodesic convexity is the basic structural
 hypothesis of the theory of gradient flows in metric spaces of Ambrosio–Gigli–Savaré; under it the
 descending slope, which drives curves of maximal slope, takes the global form below.
 
@@ -46,17 +47,12 @@ geodesically convex energy is lower semicontinuous on its effective domain `{x |
 (`TauCeti.GeodesicallyConvex.lowerSemicontinuousOn_descendingSlope`), so it is also the relaxed
 slope there (`TauCeti.GeodesicallyConvex.relaxedSlope_eq_descendingSlope`).
 
-The three notions are stable under the usual operations, as far as each allows. Convexity along a
-fixed curve passes to sums (adding the parameters), to nonnegative multiples, to pointwise suprema
-and to pointwise limits whose endpoint values are `≠ ⊤`; it also keeps the effective domain convex
-along the curve and survives reversing the curve. Convexity along every geodesic inherits all of
-these, and restricts to every piece of a geodesic. Geodesic convexity, which only provides some
-geodesic for each pair of points, is stable under positive multiples and under adding an energy
-that is convex along every geodesic; it need not be stable under sums or suprema of two geodesically
-convex energies, whose witnessing geodesics may differ. The sums for convexity along every
-geodesic and for geodesic convexity are taken for energies that never take the value `⊥`, so that
-the effective domain of a sum is the intersection of the effective domains; sums along a fixed
-curve need no such assumption.
+Convexity along every geodesic inherits the stability properties of `TauCeti.ConvexAlong` and
+restricts to every piece of a geodesic. Geodesic convexity, which provides some geodesic for each
+pair of points, is stable under positive multiples and under adding an energy that is convex
+along every geodesic. Two geodesically convex energies may have different witnessing geodesics.
+The sum results for both notions assume that the energies never take the value `⊥`, so the
+effective domain of a sum is the intersection of the effective domains.
 
 ## Main definitions
 
@@ -207,10 +203,8 @@ energy, which is convex along every curve. -/
 theorem ConvexAlongGeodesics.const_mul (h : ConvexAlongGeodesics m φ) {c : ℝ} (hc : 0 ≤ c) :
     ConvexAlongGeodesics (c * m) fun x ↦ (c : EReal) * φ x := by
   rcases hc.eq_or_lt with rfl | hc
-  · intro _ _ _ _ _ _
-    rw [convexAlong_def]
-    intro t _
-    simp
+  · intro _ _ _ _ γ _
+    simpa only [zero_mul, EReal.coe_zero] using (convexAlong_zero (γ := γ))
   exact fun _ _ hx hy _ hγ ↦
     (h (EReal.ne_top_of_coe_mul_ne_top hc hx) (EReal.ne_top_of_coe_mul_ne_top hc hy) hγ).const_mul
       hc.le

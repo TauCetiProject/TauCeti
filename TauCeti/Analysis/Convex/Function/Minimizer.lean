@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Strong
 public import Mathlib.Topology.Semicontinuity.Defs
-public import TauCeti.Analysis.Convex.Function.LowerBound
-public import TauCeti.Analysis.Convex.Function.Uniform
 
-import Mathlib.Analysis.Normed.Affine.AddTorsor
+import TauCeti.Analysis.Convex.Function.LowerBound
+import TauCeti.Analysis.Convex.Function.Uniform
 import TauCeti.Topology.MetricSpace.Pseudo.Cauchy
 import TauCeti.Topology.Order.IsLUB
 import TauCeti.Topology.Semicontinuity.Sequences
@@ -40,36 +40,15 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 domain is Cauchy if the uniform modulus is positive at every positive radius. -/
 theorem UniformConvexOn.cauchySeq_of_tendsto_comp {φ : ℝ → ℝ} (hf : UniformConvexOn s φ f)
     (hφ : ∀ r > 0, 0 < φ r)
-    {a : ℝ} (hlower : ∀ z ∈ s, a ≤ f z) {u : ℕ → E} (hu : ∀ n, u n ∈ s)
+    {ι : Type*} [Nonempty ι] [SemilatticeSup ι]
+    {a : ℝ} (hlower : ∀ z ∈ s, a ≤ f z) {u : ι → E} (hu : ∀ i, u i ∈ s)
     (hlim : Tendsto (f ∘ u) atTop (𝓝 a)) : CauchySeq u := by
   refine TauCeti.cauchySeq_of_le_max_sub (fun ε hε ↦ ?_) hlim
-  refine ⟨φ ε / 4, by positivity [hφ ε hε], fun n k hd ↦ ?_⟩
-  have hgap {x y : E} (hx : x ∈ s) (hy : y ∈ s) (hd : ε ≤ dist x y)
-      (hxy : f x ≤ f y) : φ ε / 4 ≤ f y - a := by
-    have hdpos : 0 < dist x y := hε.trans_le hd
-    let t := ε / dist x y
-    have ht : t ∈ Icc (0 : ℝ) 1 :=
-      ⟨div_nonneg hε.le hdpos.le, (div_le_one hdpos).2 hd⟩
-    let z := AffineMap.lineMap x y t
-    have hz : z ∈ s := hf.1.lineMap_mem hx hy ht
-    have hnorm : ‖x - z‖ = ε := by
-      rw [← dist_eq_norm, dist_left_lineMap, Real.norm_of_nonneg ht.1]
-      exact div_mul_cancel₀ ε hdpos.ne'
-    have hpen : 0 ≤ t * (1 - t) * φ ‖x - y‖ := by
-      apply mul_nonneg (mul_nonneg ht.1 (sub_nonneg.2 ht.2))
-      exact (hφ _ (by simpa only [dist_eq_norm] using hdpos)).le
-    have hzle : f z ≤ f y := by
-      have hseg := hf.map_lineMap_le hx hy ht
-      have hweighted := mul_nonneg (sub_nonneg.2 ht.2) (sub_nonneg.2 hxy)
-      dsimp only [z]
-      nlinarith
-    have hmid := hf.div_four_le_sub hlower hx hz
-    rw [hnorm] at hmid
-    linarith
-  rcases le_total (f (u n)) (f (u k)) with hnk | hkn
-  · simpa only [Function.comp_apply, max_eq_right hnk] using hgap (hu n) (hu k) hd hnk
-  · have hd' : ε ≤ dist (u k) (u n) := by simpa only [dist_comm] using hd
-    simpa only [Function.comp_apply, max_eq_left hkn] using hgap (hu k) (hu n) hd' hkn
+  refine ⟨φ ε / 4, by positivity [hφ ε hε], fun i j hd ↦ ?_⟩
+  have hnorm : 0 < ‖u i - u j‖ := by
+    rw [← dist_eq_norm]
+    exact hε.trans_le hd
+  exact hf.div_four_le_max_sub hlower (hu i) (hu j) (hφ _ hnorm).le hε hd
 
 /-- A bounded-below uniformly convex function attains its minimum uniquely on a nonempty
 complete domain if it is lower semicontinuous there and its modulus is positive at every
@@ -85,8 +64,10 @@ theorem UniformConvexOn.existsUnique_isMinOn_of_bddBelow {φ : ℝ → ℝ} (hf 
   have hmin : IsMinOn f s x :=
     hlsc.seqLowerSemicontinuousOn.isMinOn_of_tendsto hx hu hux
       (fun v hv c hc ↦ hulim.eventually (gt_mem_nhds ((hlower v hv).trans_lt hc)))
-  have hf' : UniformConvexOn s (fun r ↦ φ |r|) f := by
-    simpa only [UniformConvexOn, abs_norm] using hf
+  -- Mathlib's strictness lemma asks for positivity at every nonzero real argument.
+  have hf' : UniformConvexOn s (fun r ↦ φ |r|) f :=
+    ⟨hf.1, fun _ hx _ hy _ _ ha hb hab ↦ by
+      simpa only [abs_norm] using hf.2 hx hy ha hb hab⟩
   have hstrict := hf'.strictConvexOn (fun r hr ↦ hφ |r| (abs_pos.mpr hr))
   exact ⟨x, ⟨hx, hmin⟩, fun y hy ↦ hstrict.eq_of_isMinOn hy.2 hmin hy.1 hx⟩
 

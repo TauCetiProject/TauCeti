@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Convex.Function.Uniform
+public import Mathlib.Analysis.Convex.Strong
 public import TauCeti.Analysis.Convex.Along
+
+import TauCeti.Analysis.Convex.Function.Uniform
 
 /-!
 # Strong convexity along affine segments

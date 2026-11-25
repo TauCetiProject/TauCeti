@@ -101,15 +101,13 @@ theorem ConvexAlong.add (hφ : ConvexAlong m φ γ) (hψ : ConvexAlong m' ψ γ)
 then `c φ` is `(c m)`-convex along it. -/
 theorem ConvexAlong.const_mul (h : ConvexAlong m φ γ) {c : ℝ} (hc : 0 ≤ c) :
     ConvexAlong (c * m) (fun x ↦ (c : EReal) * φ x) γ := by
-  rcases hc.eq_or_lt with rfl | hc
-  · simpa only [zero_mul, EReal.coe_zero] using (convexAlong_zero (γ := γ))
   intro t ht
-  have hc' : (0 : EReal) ≤ c := EReal.coe_nonneg.2 hc.le
+  have hc' : (0 : EReal) ≤ c := EReal.coe_nonneg.2 hc
   calc (c : EReal) * φ (γ t) ≤ (c : EReal) * (((1 - t : ℝ) : EReal) * φ (γ 0) +
         (t : EReal) * φ (γ 1) - ((m / 2 * t * (1 - t) * dist (γ 0) (γ 1) ^ 2 : ℝ) : EReal)) :=
       mul_le_mul_of_nonneg_left (h t ht) hc'
     _ = _ := by
-      rw [EReal.coe_mul_coe_mul_add_coe_mul_sub _ _ hc.le]
+      rw [EReal.coe_mul_coe_mul_add_coe_mul_sub _ _ hc]
       congr 2
       ring
 
@@ -173,11 +171,9 @@ theorem ConvexAlong.mul_dist_sq_div_four_le_sub (h : ConvexAlong m φ γ)
     (m / 2 * dist (γ 0) (γ 1) ^ 2) / 4 ≤ (b + c) / 2 - a := by
   have hmid := hlow.trans (h (1 / 2) (by norm_num))
   rw [hb, hc] at hmid
-  apply div_four_le_sub_of_le_midpoint_sub
   have hr : a ≤ (1 - 1 / 2) * b + (1 / 2) * c -
       m / 2 * (1 / 2) * (1 - 1 / 2) * dist (γ 0) (γ 1) ^ 2 := by
     exact_mod_cast hmid
-  convert hr using 1
-  ring
+  linarith
 
 end TauCeti

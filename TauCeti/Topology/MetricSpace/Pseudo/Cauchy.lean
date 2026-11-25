@@ -11,8 +11,8 @@ import Mathlib.Tactic.Linarith
 /-!
 # A Cauchy criterion from vanishing objective gaps
 
-A sequence is Cauchy when pairs separated by any fixed positive distance force a positive
-objective gap, while the objective values converge to the reference value.
+A sequence is Cauchy if its objective values converge to a reference value and, for every
+`ε > 0`, a single positive gap above it works for all pairs at distance at least `ε`.
 
 ## Main results
 
@@ -25,11 +25,12 @@ open Filter Topology
 
 namespace TauCeti
 
-variable {X : Type*} [PseudoMetricSpace X]
+variable {X ι : Type*} [PseudoMetricSpace X] [Nonempty ι] [SemilatticeSup ι]
 
-/-- A sequence is Cauchy if, for every positive separation, the maximum of the two objective
-values exceeds their limiting value by a fixed positive amount. -/
-theorem cauchySeq_of_le_max_sub {u : ℕ → X} {g : ℕ → ℝ} {a : ℝ}
+/-- Suppose the objective values converge to `a`. If, for each `ε > 0`, one positive gap
+above `a` bounds the maximum objective from below for every pair at distance at least `ε`,
+then the sequence is Cauchy. -/
+theorem cauchySeq_of_le_max_sub {u : ι → X} {g : ι → ℝ} {a : ℝ}
     (hgap : ∀ ε > 0, ∃ c > 0, ∀ n k, ε ≤ dist (u n) (u k) → c ≤ max (g n) (g k) - a)
     (hlim : Tendsto g atTop (𝓝 a)) : CauchySeq u := by
   refine Metric.cauchySeq_iff.2 fun ε hε ↦ ?_

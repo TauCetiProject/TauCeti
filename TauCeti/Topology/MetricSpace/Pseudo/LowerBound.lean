@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Instances.EReal.Lemmas
+public import Mathlib.Data.EReal.Operations
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
-import TauCeti.Algebra.Order.Field.Basic
+import Mathlib.Tactic.Ring
 
 /-!
 # Global lower bounds from local lower bounds
@@ -89,7 +89,14 @@ theorem iInf_ne_bot_of_eventually_le {Ψ : X → EReal} {x₀ : X} {κ L : ℝ}
     refine le_of_mul_le_mul_left ?_ htpos
     have : t * (2 * B * R / δ) = a - L := by dsimp [t, B]; field_simp
     linarith
-  have hquad := sub_div_le_mul_sq (B := B) (R := R) (δ := δ) hκ ht12
+  have hyoung : 2 * B * R / δ ≤ κ / 4 * R ^ 2 + 4 * B ^ 2 / (κ * δ ^ 2) := by
+    convert two_mul_le_add_mul_sq (a := R) (b := B / δ) (ε := κ / 4) (by positivity) using 1
+      <;> field_simp
+  have hquad : κ / 4 * R ^ 2 ≤ κ / 2 * (1 - t) * R ^ 2 := by
+    calc κ / 4 * R ^ 2 = 1 / 4 * (κ * R ^ 2) := by ring
+      _ ≤ (1 - t) / 2 * (κ * R ^ 2) :=
+        mul_le_mul_of_nonneg_right (by linarith) (by positivity)
+      _ = κ / 2 * (1 - t) * R ^ 2 := by ring
   rw [hb]
   exact EReal.coe_le_coe_iff.2 ((min_le_right _ _).trans (by linarith))
 

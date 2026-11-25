@@ -64,14 +64,19 @@ regularization estimate
 energy, this is geometric convergence of the scheme to `v`. These are the a priori estimates on
 which the convergence of minimizing movements to the `EVI_m` flow rests.
 
-In a complete pseudometric space, `(m + 1 / τ)`-convexity of the penalized energy with `1 + m τ > 0`
-also yields existence of resolvent steps and minimizing movement sequences without any compactness
-hypothesis on sublevels (`TauCeti.moreauYosidaResolvent_nonempty_of_convexAlong`,
-`TauCeti.PenalizedConvex.moreauYosidaResolvent_nonempty`,
-`TauCeti.PenalizedConvex.exists_forall_mem_moreauYosidaResolvent`). Moreover, an `m`-geodesically
-convex energy that is lower semicontinuous and finite at a single point `x₀` is automatically
-coercive at every point for `1 + m τ > 0` (`TauCeti.GeodesicallyConvex.moreauYosida_ne_bot`,
-`TauCeti.GeodesicallyConvex.exists_moreauYosida_ne_bot`), via the abstract coercivity criteria
+In a complete pseudometric space, lower semicontinuity, `(m + 1 / τ)`-convexity of the penalized
+energy, `1 + m τ > 0`, and `φ_τ(x) ≠ ⊥` give existence of a resolvent step at `x` without compact
+sublevels (`TauCeti.moreauYosidaResolvent_nonempty_of_convexAlong`,
+`TauCeti.PenalizedConvex.moreauYosidaResolvent_nonempty`). Boundedness below of the penalized energy
+at one base point for a larger time step gives existence of minimizing movement sequences
+(`TauCeti.PenalizedConvex.exists_forall_mem_moreauYosidaResolvent`). On a complete metric space,
+an individual resolvent step is unique under the existence hypotheses if `φ` takes a finite value
+somewhere (`TauCeti.PenalizedConvex.existsUnique_mem_moreauYosidaResolvent`).
+
+An `m`-geodesically convex energy that is lower semicontinuous and finite at a point `x₀`
+has `φ_τ(x) ≠ ⊥` at every base point `x` when `1 + m τ > 0`
+(`TauCeti.GeodesicallyConvex.moreauYosida_ne_bot`,
+`TauCeti.GeodesicallyConvex.exists_moreauYosida_ne_bot`). This follows from the lower-bound criteria
 `TauCeti.iInf_ne_bot_of_eventually_le` and
 `TauCeti.moreauYosida_ne_bot_of_lowerSemicontinuousAt`.
 
@@ -94,25 +99,28 @@ coercive at every point for `1 + m τ > 0` (`TauCeti.GeodesicallyConvex.moreauYo
   `1 + m τ ≥ 0`.
 * `TauCeti.PenalizedConvex.pow_mul_dist_sq_le`: the weighted distance estimate of a minimizing
   movement sequence towards points of smaller energy, when `1 + m τ ≥ 0`.
-* `TauCeti.moreauYosidaResolvent_nonempty_of_convexAlong`,
-  `TauCeti.PenalizedConvex.moreauYosidaResolvent_nonempty`,
-  `TauCeti.PenalizedConvex.existsUnique_mem_moreauYosidaResolvent`, and
-  `TauCeti.PenalizedConvex.exists_forall_mem_moreauYosidaResolvent`: existence and uniqueness of
-  resolvent steps and minimizing movement sequences in complete spaces without compactness of
-  sublevels.
-* `TauCeti.iInf_ne_bot_of_eventually_le` and
-  `TauCeti.moreauYosida_ne_bot_of_lowerSemicontinuousAt`: coercivity (`⨅ z, Ψ z ≠ ⊥` and
-  `φ_τ(x) ≠ ⊥` for `1 + m τ > 0`) from a local real lower bound, respectively pointwise lower
-  semicontinuity at a point of finite energy, and `κ`-convex interpolation with `κ > 0`.
+* `TauCeti.moreauYosidaResolvent_nonempty_of_convexAlong` and
+  `TauCeti.PenalizedConvex.moreauYosidaResolvent_nonempty`: existence of resolvent steps in
+  complete pseudometric spaces under lower semicontinuity and `φ_τ(x) ≠ ⊥`.
+* `TauCeti.PenalizedConvex.existsUnique_mem_moreauYosidaResolvent`: existence and uniqueness of
+  an individual resolvent step in a complete metric space when the energy is finite somewhere.
+* `TauCeti.PenalizedConvex.exists_forall_mem_moreauYosidaResolvent`: existence of minimizing
+  movement sequences given boundedness below of the penalized energy at a larger time step.
+* `TauCeti.moreauYosida_ne_bot_of_lowerSemicontinuousAt`: coercivity (`φ_τ(x) ≠ ⊥` for
+  `1 + m τ > 0`) from lower semicontinuity at a point of finite energy and positively convex
+  interpolation of the penalized energy.
 * `TauCeti.GeodesicallyConvex.penalizedConvex`: penalized convexity of `m`-geodesically convex
   energies on CAT(0) spaces.
-* `TauCeti.GeodesicallyConvex.moreauYosida_ne_bot`,
-  `TauCeti.GeodesicallyConvex.exists_moreauYosida_ne_bot`,
-  `TauCeti.GeodesicallyConvex.moreauYosidaResolvent_nonempty`,
-  `TauCeti.GeodesicallyConvex.existsUnique_mem_moreauYosidaResolvent`, and
-  `TauCeti.GeodesicallyConvex.exists_forall_mem_moreauYosidaResolvent`: coercivity of geodesically
-  convex energies, and existence and uniqueness of resolvent steps and minimizing movement
-  sequences on complete CAT(0) spaces.
+* `TauCeti.GeodesicallyConvex.moreauYosida_ne_bot` and
+  `TauCeti.GeodesicallyConvex.exists_moreauYosida_ne_bot`: coercivity of geodesically convex
+  energies.
+* `TauCeti.GeodesicallyConvex.moreauYosidaResolvent_nonempty` and
+  `TauCeti.GeodesicallyConvex.exists_forall_mem_moreauYosidaResolvent`: existence of resolvent
+  steps and minimizing movement sequences on complete CAT(0) pseudometric spaces for lower
+  semicontinuous energies that never take the value `⊥`.
+* `TauCeti.GeodesicallyConvex.existsUnique_mem_moreauYosidaResolvent`: existence and uniqueness
+  of an individual resolvent step on a complete CAT(0) metric space under lower semicontinuity
+  and finiteness at one point.
 
 ## References
 
@@ -371,9 +379,10 @@ private lemma cauchySeq_of_convexAlong {v : ℕ → X} {M : ℝ}
     (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ)
     (h : ∀ ⦃v₀ v₁ : X⦄, φ v₀ ≠ ⊤ → φ v₁ ≠ ⊤ → ∃ γ : ℝ → X, γ 0 = v₀ ∧ γ 1 = v₁ ∧
       ConvexAlong (m + (τ : ℝ)⁻¹) (fun z ↦ φ z + ((dist x z ^ 2 / (2 * τ) : ℝ) : EReal)) γ)
-    (hbot : moreauYosida φ τ x ≠ ⊥) (hM : moreauYosida φ τ x = M)
+    (hM : moreauYosida φ τ x = M)
     (hv : ∀ n, φ (v n) + (edist x (v n) ^ 2 / (2 * τ) : ℝ≥0∞) <
       ((M + 1 / (n + 1) : ℝ) : EReal)) : CauchySeq v := by
+  have hbot : moreauYosida φ τ x ≠ ⊥ := hM ▸ EReal.coe_ne_bot M
   let energy (n : ℕ) : ℝ := (φ (v n)).toReal + dist x (v n) ^ 2 / (2 * τ)
   have htop (n : ℕ) : φ (v n) ≠ ⊤ := by
     intro hn
@@ -430,7 +439,7 @@ theorem moreauYosidaResolvent_nonempty_of_convexAlong [CompleteSpace X]
       linarith [Nat.one_div_pos_of_nat (α := ℝ) (n := n)]
     simpa only [moreauYosida_eq_iInf, iInf_lt_iff] using hlt
   choose v hv using hseq
-  have hcauchy := cauchySeq_of_convexAlong hτ hmτ h hbot hM hv
+  have hcauchy := cauchySeq_of_convexAlong hτ hmτ h hM hv
   obtain ⟨y, hy⟩ := cauchySeq_tendsto_of_complete hcauchy
   have hliminf := le_liminf_apply_add_edist_sq_div (φ := φ) (τ := τ) (x := x)
     ((((continuous_const.edist continuous_id).tendsto y).comp hy).liminf_eq.ge)
