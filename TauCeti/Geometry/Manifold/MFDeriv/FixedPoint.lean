@@ -82,8 +82,10 @@ otherwise. At a nondegenerate fixed point the Lefschetz sign is `sgn det (1 - df
 (`TauCeti.fixedPointSign_eq_sign`), the contribution of the fixed point to the Lefschetz
 fixed-point formula `∑ₓ sgn det (1 - df_x) = ∑ᵢ (-1) ^ i tr (f_* | Hᵢ(M; ℚ))` and the local
 fixed-point index of `f` at `x` read in a chart (`ContinuousMap.localFixedPointIndex_eq_sign_det`).
-With this convention an attracting fixed point has sign `1`. At a fixed point `fixedPointDet` is
-computed from the fixed-point derivative
+With this convention a fixed point at which every eigenvalue of `df_x` has modulus less than `1`
+(a hyperbolic attracting fixed point) has sign `1`; a degenerate attracting fixed point, such as
+`0` for `x ↦ x - x ^ 3` on `ℝ`, has `fixedPointDet = 0` and sign `-1`. At a fixed point
+`fixedPointDet` is computed from the fixed-point derivative
 (`TauCeti.fixedPointDet_eq_det_id_sub_fixedPointDerivative`), so it can be computed in any chart
 (`TauCeti.fixedPointDet_eq_det_id_sub_fderivWithin_extChartAt`), it is nonzero exactly at
 nondegenerate fixed points (`TauCeti.fixedPointDet_ne_zero_iff`), and it is `det (1 - D ^ n)` for
