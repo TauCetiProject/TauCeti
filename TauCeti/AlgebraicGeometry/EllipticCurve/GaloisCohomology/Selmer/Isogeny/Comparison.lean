@@ -147,13 +147,9 @@ private theorem sum_localPairing_eq_zero (S : Finset (HeightOneSpectrum (𝓞 K)
   apply ZMod.toRatAddCircle_injective φ.degree
   rw [map_sum, map_zero]
   simp only [localPairing_apply, ZMod.toRatAddCircle_ringEquivCongr]
-  rw [Finset.sum_coe_sort S fun v ↦ ZMod.toRatAddCircle (φ.baseChange (v.adicCompletion K)).degree
-    ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
-      (isUnit_natCast_of_ne_zero ℚ (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
-      (φ.kerRes (L := v.adicCompletion K) (τ (.inl v)) c)
-      (φ.dualKerRes (L := v.adicCompletion K) (τ (.inl v)) d))]
-  refine φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero c d (fun v ↦ τ (.inl v))
-    (fun w ↦ τ (.inr w)) S (fun v hv ↦ ?_) (fun v _ ↦ ?_) (fun w ↦ ?_) (fun w ↦ ?_)
+  refine (Finset.sum_coe_sort S _).trans <|
+    φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero c d (fun v ↦ τ (.inl v))
+      (fun w ↦ τ (.inr w)) S (fun v hv ↦ ?_) (fun v _ ↦ ?_) (fun w ↦ ?_) (fun w ↦ ?_)
   · rw [pointRes_kerCoeffIncl]
     exact hc' (.inl v) (by simpa using hv)
   · rw [pointRes_kerCoeffIncl]

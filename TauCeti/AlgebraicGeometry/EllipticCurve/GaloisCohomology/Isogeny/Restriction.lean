@@ -247,12 +247,24 @@ theorem dualKerRes_eq_zero_iff {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dua
     { AddSubgroup.inclusion h.le with map_smul' := fun _ _ ↦ Subtype.ext (by simp) }
   have hf : Function.Bijective f :=
     ⟨AddSubgroup.inclusion_injective h.le, fun y ↦ ⟨⟨y, h.ge y.property⟩, rfl⟩⟩
+  -- On coefficients, `dualKerCoeffBaseChange τ` is `kerCoeffBaseChange τ` of `φ̂` followed by `f`:
+  -- both send `Q` to `pointCoeffBaseChange τ Q`.
+  have hqf : (AddMonoidHom.id (ofIsogeny (φ.baseChange L).dual).KerCoeff).comp
+      (φ.dualKerCoeffBaseChange τ) = f.toAddMonoidHom.comp (φ.dual.kerCoeffBaseChange τ) :=
+    AddMonoidHom.ext fun Q ↦ Subtype.ext <|
+      (φ.coe_dualKerCoeffBaseChange τ Q).trans (φ.dual.coe_kerCoeffBaseChange τ Q).symm
   have hT : φ.dualKerRes τ c =
       explicitCoeff1 _ _ f continuous_of_discreteTopology (φ.dual.kerRes τ c) := by
     refine (DFunLike.congr_fun (explicitCoeff1_id _ _) (φ.dualKerRes τ c)).symm.trans ?_
     rw [explicitCoeff1_eq_explicitMap1, explicitCoeff1_eq_explicitMap1, kerRes_eq_explicitMap1,
       dualKerRes_eq_explicitMap1]
-    exact explicitMap1_explicitMap1_of_comp_eq (hφ := by ext; rfl) (hqf := by ext; rfl) (x := c) ..
+    -- On groups both sides pull back along `absoluteGaloisGroupMap τ` followed by the identity.
+    -- The remaining arguments are the types and the continuity and equivariance proofs of the goal.
+    exact explicitMap1_explicitMap1_of_comp_eq
+      (φ := absoluteGaloisGroupMap τ) (f := φ.dualKerCoeffBaseChange τ)
+      (ψ := ContinuousMonoidHom.id _) (q := AddMonoidHom.id _)
+      (φ' := absoluteGaloisGroupMap τ) (f' := φ.dual.kerCoeffBaseChange τ)
+      (ψ' := ContinuousMonoidHom.id _) (q' := f.toAddMonoidHom) (hφ := rfl) (hqf := hqf) (x := c) ..
   rw [hT]
   exact map_eq_zero_iff _ (explicitCoeff1_bijective _ _ hf).1
 
