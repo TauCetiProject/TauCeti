@@ -87,35 +87,6 @@ namespace RingHom
 
 universe u₁ u₂ v
 
-/-! ## Entrywise maps of vectors -/
-
-section Vector
-
-variable {ι R S : Type*} [Ring R] [Ring S] (f : R →+* S)
-
-/-- Applying a ring homomorphism to the entries of a vector is additive. -/
-private theorem comp_add_eq (v w : ι → R) : f ∘ (v + w) = f ∘ v + f ∘ w :=
-  funext fun _ ↦ map_add f _ _
-
-private theorem comp_zero_eq : f ∘ (0 : ι → R) = 0 :=
-  funext fun _ ↦ map_zero f
-
-private theorem comp_neg_eq (v : ι → R) : f ∘ (-v) = -(f ∘ v) :=
-  funext fun _ ↦ map_neg f _
-
-/-- Applying a ring homomorphism to the entries of a vector commutes with multiplying every entry
-on the right by a scalar. -/
-private theorem comp_op_smul_eq (a : R) (v : ι → R) :
-    f ∘ (MulOpposite.op a • v) = MulOpposite.op (f a) • (f ∘ v) :=
-  funext fun _ ↦ by simp
-
-/-- Applying a ring homomorphism to the entries of `X *ᵥ v` gives `X.map f *ᵥ (f ∘ v)`. -/
-private theorem comp_mulVec_eq [Fintype ι] (X : Matrix ι ι R) (v : ι → R) :
-    f ∘ (X *ᵥ v) = X.map f *ᵥ (f ∘ v) :=
-  funext (f.map_mulVec X v)
-
-end Vector
-
 variable {A₁ : Type u₁} {A₂ : Type u₂} {Q : Type v} [Ring A₁] [Ring A₂] [Ring Q]
   (π₁ : A₁ →+* Q) (π₂ : A₂ →+* Q)
   {n m : Type*} [Fintype n] [DecidableEq n] [Fintype m] [DecidableEq m]
@@ -130,17 +101,22 @@ def patchedSubgroup (u : GL n Q) : AddSubgroup ((n → A₁) × (n → A₂)) wh
   carrier := {x | (u : Matrix n n Q) *ᵥ (π₁ ∘ x.1) = π₂ ∘ x.2}
   add_mem' {x y} hx hy := by
     simp only [Set.mem_ofPred_eq, Prod.fst_add, Prod.snd_add] at hx hy ⊢
-    rw [comp_add_eq π₁, comp_add_eq π₂, mulVec_add, hx, hy]
+    rw [show π₁ ∘ (x.1 + y.1) = π₁ ∘ x.1 + π₁ ∘ y.1 from map_add (π₁.compLeft n) _ _,
+      show π₂ ∘ (x.2 + y.2) = π₂ ∘ x.2 + π₂ ∘ y.2 from map_add (π₂.compLeft n) _ _, mulVec_add, hx,
+      hy]
   zero_mem' := by
     simp only [Set.mem_ofPred_eq, Prod.fst_zero, Prod.snd_zero]
-    rw [comp_zero_eq π₁, comp_zero_eq π₂, mulVec_zero]
+    rw [show π₁ ∘ (0 : n → A₁) = 0 from map_zero (π₁.compLeft n),
+      show π₂ ∘ (0 : n → A₂) = 0 from map_zero (π₂.compLeft n), mulVec_zero]
   neg_mem' {x} hx := by
     simp only [Set.mem_ofPred_eq, Prod.fst_neg, Prod.snd_neg] at hx ⊢
-    rw [comp_neg_eq π₁, comp_neg_eq π₂, mulVec_neg, hx]
+    rw [show π₁ ∘ (-x.1) = -(π₁ ∘ x.1) from map_neg (π₁.compLeft n) _,
+      show π₂ ∘ (-x.2) = -(π₂ ∘ x.2) from map_neg (π₂.compLeft n) _, mulVec_neg, hx]
 
 variable {π₁ π₂}
 
 /-- Membership in the patched module: `(a, b) ∈ M(u)` if and only if `u π₁(a) = π₂(b)`. -/
+@[simp]
 theorem mem_patchedSubgroup {u : GL n Q} {x : (n → A₁) × (n → A₂)} :
     x ∈ π₁.patchedSubgroup π₂ u ↔ (u : Matrix n n Q) *ᵥ (π₁ ∘ x.1) = π₂ ∘ x.2 :=
   Iff.rfl
@@ -152,8 +128,12 @@ theorem op_smul_mem_patchedSubgroup {u : GL n Q} {x : (n → A₁) × (n → A�
     (MulOpposite.op (d : A₁ × A₂).1 • x.1, MulOpposite.op (d : A₁ × A₂).2 • x.2) ∈
       π₁.patchedSubgroup π₂ u := by
   have hd : π₁ (d : A₁ × A₂).1 = π₂ (d : A₁ × A₂).2 := d.property
+  have h₁ : π₁ ∘ (MulOpposite.op (d : A₁ × A₂).1 • x.1) =
+      MulOpposite.op (π₁ (d : A₁ × A₂).1) • (π₁ ∘ x.1) := funext fun _ ↦ by simp
+  have h₂ : π₂ ∘ (MulOpposite.op (d : A₁ × A₂).2 • x.2) =
+      MulOpposite.op (π₂ (d : A₁ × A₂).2) • (π₂ ∘ x.2) := funext fun _ ↦ by simp
   rw [mem_patchedSubgroup] at hx ⊢
-  rw [comp_op_smul_eq, comp_op_smul_eq, mulVec_smul, hx, hd]
+  rw [h₁, h₂, mulVec_smul, hx, hd]
 
 namespace patchedSubgroup
 
@@ -268,6 +248,22 @@ theorem coe_patchedSubgroupProdEquiv_apply (u : GL n Q) (v : GL m Q)
         Sum.elim (x.1 : (n → A₁) × (n → A₂)).2 (x.2 : (m → A₁) × (m → A₂)).2) :=
   (rfl)
 
+@[simp]
+theorem coe_patchedSubgroupProdEquiv_symm_apply_fst (u : GL n Q) (v : GL m Q)
+    (y : π₁.patchedSubgroup π₂ (fromBlocksGL (u, v))) :
+    (((patchedSubgroupProdEquiv π₁ π₂ u v).symm y).1 : (n → A₁) × (n → A₂)) =
+      ((y : (n ⊕ m → A₁) × (n ⊕ m → A₂)).1 ∘ Sum.inl,
+        (y : (n ⊕ m → A₁) × (n ⊕ m → A₂)).2 ∘ Sum.inl) :=
+  (rfl)
+
+@[simp]
+theorem coe_patchedSubgroupProdEquiv_symm_apply_snd (u : GL n Q) (v : GL m Q)
+    (y : π₁.patchedSubgroup π₂ (fromBlocksGL (u, v))) :
+    (((patchedSubgroupProdEquiv π₁ π₂ u v).symm y).2 : (m → A₁) × (m → A₂)) =
+      ((y : (n ⊕ m → A₁) × (n ⊕ m → A₂)).1 ∘ Sum.inr,
+        (y : (n ⊕ m → A₁) × (n ⊕ m → A₂)).2 ∘ Sum.inr) :=
+  (rfl)
+
 /-- Relabelling the indices of `u` along `e : n ≃ m` relabels the patched module. -/
 theorem comp_symm_mem_patchedSubgroup_reindexGL_iff (e : n ≃ m) {u : GL n Q}
     {x : (n → A₁) × (n → A₂)} :
@@ -302,6 +298,13 @@ theorem coe_patchedSubgroupReindexEquiv_apply (e : n ≃ m) (u : GL n Q)
       ((x : (n → A₁) × (n → A₂)).1 ∘ e.symm, (x : (n → A₁) × (n → A₂)).2 ∘ e.symm) :=
   (rfl)
 
+@[simp]
+theorem coe_patchedSubgroupReindexEquiv_symm_apply (e : n ≃ m) (u : GL n Q)
+    (y : π₁.patchedSubgroup π₂ (e.reindexGL Q u)) :
+    ((patchedSubgroupReindexEquiv π₁ π₂ e u).symm y : (n → A₁) × (n → A₂)) =
+      ((y : (m → A₁) × (m → A₂)).1 ∘ e, (y : (m → A₁) × (m → A₂)).2 ∘ e) :=
+  (rfl)
+
 /-! ## Double cosets -/
 
 /-- If `u' π₁(X₁) = π₂(X₂) u` for square matrices `X₁` over `A₁` and `X₂` over `A₂`, then
@@ -310,7 +313,9 @@ theorem mulVec_mem_patchedSubgroup {u u' : GL n Q} {X₁ : Matrix n n A₁} {X�
     (h : (u' : Matrix n n Q) * X₁.map π₁ = X₂.map π₂ * u) {x : (n → A₁) × (n → A₂)}
     (hx : x ∈ π₁.patchedSubgroup π₂ u) : (X₁ *ᵥ x.1, X₂ *ᵥ x.2) ∈ π₁.patchedSubgroup π₂ u' := by
   rw [mem_patchedSubgroup] at hx ⊢
-  rw [comp_mulVec_eq, comp_mulVec_eq, mulVec_mulVec, h, ← mulVec_mulVec, hx]
+  rw [show π₁ ∘ (X₁ *ᵥ x.1) = X₁.map π₁ *ᵥ (π₁ ∘ x.1) from funext (π₁.map_mulVec _ _),
+    show π₂ ∘ (X₂ *ᵥ x.2) = X₂.map π₂ *ᵥ (π₂ ∘ x.2) from funext (π₂.map_mulVec _ _),
+    mulVec_mulVec, h, ← mulVec_mulVec, hx]
 
 /-- The matrix form of a relation `u' π₁(g₁) = π₂(g₂) u` between invertible matrices. -/
 private theorem val_mul_map_eq {u u' : GL n Q} {g₁ : GL n A₁} {g₂ : GL n A₂}
@@ -348,6 +353,15 @@ theorem coe_patchedSubgroupEquivOfMul_apply {u u' : GL n Q} (g₁ : GL n A₁) (
     (patchedSubgroupEquivOfMul π₁ π₂ g₁ g₂ h x : (n → A₁) × (n → A₂)) =
       ((g₁ : Matrix n n A₁) *ᵥ (x : (n → A₁) × (n → A₂)).1,
         (g₂ : Matrix n n A₂) *ᵥ (x : (n → A₁) × (n → A₂)).2) :=
+  (rfl)
+
+@[simp]
+theorem coe_patchedSubgroupEquivOfMul_symm_apply {u u' : GL n Q} (g₁ : GL n A₁) (g₂ : GL n A₂)
+    (h : u' * Units.map (π₁.mapMatrix (m := n)).toMonoidHom g₁ =
+      Units.map (π₂.mapMatrix (m := n)).toMonoidHom g₂ * u) (y : π₁.patchedSubgroup π₂ u') :
+    ((patchedSubgroupEquivOfMul π₁ π₂ g₁ g₂ h).symm y : (n → A₁) × (n → A₂)) =
+      (((g₁⁻¹ : GL n A₁) : Matrix n n A₁) *ᵥ (y : (n → A₁) × (n → A₂)).1,
+        ((g₂⁻¹ : GL n A₂) : Matrix n n A₂) *ᵥ (y : (n → A₁) × (n → A₂)).2) :=
   (rfl)
 
 /-- The patched module of an invertible matrix over `A₁`, sent to `Q`, is free. -/
