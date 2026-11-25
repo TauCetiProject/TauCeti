@@ -12,10 +12,11 @@ import Mathlib.Tactic.FieldSimp
 /-!
 # Triplication of factorials
 
-In any field, the factorials `(3k)!` and `(3k + 1)!` factor through Pochhammer symbols at thirds
-(in characteristic three, `1/3 = 0` and both sides vanish for `k ≥ 1`):
+In any field, the factorials `(3k)!`, `(3k + 1)!` and `(3k + 2)!` factor through Pochhammer
+symbols at thirds (in characteristic three, `1/3 = 0` and both sides vanish for `k ≥ 1`):
 
-`(3k)! = 27^k k! (⅓)_k (⅔)_k`, `(3k + 1)! = 27^k k! (⅔)_k (4/3)_k`.
+`(3k)! = 27^k k! (⅓)_k (⅔)_k`, `(3k + 1)! = 27^k k! (⅔)_k (4/3)_k`,
+`(3k + 2)! = 2 · 27^k k! (4/3)_k (5/3)_k`.
 
 These are the factorial forms of Gauss's multiplication formula for `Γ` at `n = 3`, and they turn
 Gamma-denominator power series in `z³` into hypergeometric form.
@@ -24,6 +25,7 @@ Gamma-denominator power series in `z³` into hypergeometric form.
 
 * `Nat.factorial_three_mul`: `(3k)! = 27^k k! (⅓)_k (⅔)_k`.
 * `Nat.factorial_three_mul_add_one`: `(3k + 1)! = 27^k k! (⅔)_k (4/3)_k`.
+* `Nat.factorial_three_mul_add_two`: `(3k + 2)! = 2 · 27^k k! (4/3)_k (5/3)_k`.
 
 The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
 `DLMF/Airy/Basic/Maclaurin.lean`.
@@ -74,6 +76,27 @@ theorem factorial_three_mul_add_one (k : ℕ) :
     | zero => simp
     | succ k ih =>
       have h : 3 * (k + 1) + 1 = 3 * k + 1 + 2 + 1 := by ring
+      rw [h, Nat.factorial_succ, Nat.factorial_succ, Nat.factorial_succ]
+      push_cast
+      rw [ih, ascPochhammer_succ_eval, ascPochhammer_succ_eval, Nat.factorial_succ]
+      push_cast
+      field_simp
+      ring
+
+/-- Triplication of factorials: `(3k + 2)! = 2 · 27^k k! (4/3)_k (5/3)_k`. -/
+theorem factorial_three_mul_add_two (k : ℕ) :
+    (((3 * k + 2)! : ℕ) : K) =
+      2 * 27 ^ k * k ! * (ascPochhammer K k).eval (4 / 3) * (ascPochhammer K k).eval (5 / 3) := by
+  rcases eq_or_ne (3 : K) 0 with h3 | h3
+  · cases k with
+    | zero => simp
+    | succ k =>
+      simp [cast_factorial_eq_zero_of_le (m := 3) (by norm_num) (by exact_mod_cast h3)
+        (by omega : 3 ≤ 3 * (k + 1) + 2), h3]
+  · induction k with
+    | zero => simp
+    | succ k ih =>
+      have h : 3 * (k + 1) + 2 = 3 * k + 2 + 2 + 1 := by ring
       rw [h, Nat.factorial_succ, Nat.factorial_succ, Nat.factorial_succ]
       push_cast
       rw [ih, ascPochhammer_succ_eval, ascPochhammer_succ_eval, Nat.factorial_succ]
