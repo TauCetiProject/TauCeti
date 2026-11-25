@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.BorelComplete
+import TauCeti.ModelTheory.RelationalConfiguration.BackAndForth
 import Mathlib.Logic.Equiv.Fin.Rotate
 import Mathlib.ModelTheory.Graph
 
@@ -81,19 +82,14 @@ private theorem relabel_fin_zero {L : Language} (e : Fin 0 ≃ Fin 0)
     (c : RelationalConfiguration L (Fin 0)) : relabel e c = c := by
   rw [Subsingleton.elim e (Equiv.refl _), relabel_refl, Homeomorph.refl_apply, id_eq]
 
-/-- Two configurations on the empty carrier are isomorphic only when they are equal. -/
-private theorem isoSetoid_fin_zero_iff {L : Language} [L.IsRelational]
-    {c d : RelationalConfiguration L (Fin 0)} : isoSetoid L (Fin 0) c d ↔ c = d := by
-  rw [isoSetoid_iff_exists_perm_smul_eq]
-  refine ⟨fun ⟨σ, h⟩ => ?_, fun h => ⟨1, by rw [h, one_smul]⟩⟩
-  rwa [← relabel_perm, relabel_fin_zero] at h
-
 /-- On the empty carrier, the classes of `classIso univ` are the codes. -/
 private theorem card_quotient_classIso_univ_fin_zero {L : Language} [L.IsRelational] :
     Nat.card (Quotient (classIso (Set.univ : Set (RelationalConfiguration L (Fin 0))))) =
       Nat.card (RelationalConfiguration L (Fin 0)) :=
-  Nat.card_congr ((Setoid.quotientTrivialEquiv _ fun _ _ h =>
-    Subtype.ext (isoSetoid_fin_zero_iff.1 h)).trans (Equiv.Set.univ _))
+  Nat.card_congr ((Setoid.quotientTrivialEquiv _ fun _ _ h => Subtype.ext
+    (eq_of_bfEquivSetoid_zero
+      ((isoSetoid_iff_bfEquivSetoid_of_isEmpty (α := (0 : Ordinal.{0}))).1 h))).trans
+    (Equiv.Set.univ _))
 
 -- Without nullary symbols there is a single code on `Fin 0`, and a single class.
 example {L : Language} [L.IsRelational] [IsEmpty (L.Relations 0)] :

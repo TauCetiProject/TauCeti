@@ -43,9 +43,9 @@ theorem exists_eq_unaryAtom (a : Atom natPredicateLanguage ℕ) : ∃ i v, a = u
   | h R x =>
     cases R with
     | pred i =>
-      refine ⟨i, x 0, congrArg _ ?_⟩
-      rw [Matrix.vec_single_eq_const]
-      exact funext fun j => congrArg x (Subsingleton.elim j 0)
+      refine ⟨i, x 0, ?_⟩
+      rw [unaryAtom, Matrix.vec_single_eq_const]
+      exact congrArg (atom _) (funext fun j => congrArg x (Subsingleton.elim j 0))
 
 /-- The class of codes of `natPredicateLanguage` on `ℕ` in which each `P_i` is `∅` or `ℕ`. -/
 def constantClass : Set (RelationalConfiguration natPredicateLanguage ℕ) :=
@@ -77,8 +77,8 @@ def ofTruthValues (f : ℕ → Bool) : RelationalConfiguration natPredicateLangu
 @[simp]
 theorem eval_ofTruthValues (f : ℕ → Bool) (i v : ℕ) :
     (ofTruthValues f).eval (unaryAtom i v) = f i := by
-  rw [ofTruthValues, eval_mk]
-  exact congrArg (symbolValue f) (Atom.symbol_atom _ _)
+  rw [ofTruthValues, eval_mk, unaryAtom,
+    Atom.symbol_atom (L := natPredicateLanguage) (NatPredicateRel.pred i), symbolValue]
 
 /-- The truth values of `ofTruthValues f` are `f`. -/
 @[simp]
