@@ -108,13 +108,9 @@ theorem twistPullbackEquiv_toEquiv_inl (g : K) (s : SpinCStructure F V n) (y : Y
         (Extend.inl (spinCGroup.mulCircle _ hQ) (spinCGroup.continuous_mulCircle _ _)
           (P := ((s.pullback g).fiberProd Circle ((g : Y → X) *ᵖ L)).P) (FiberProd.mk p l)) =
       Extend.inl (spinCGroup.mulCircle _ hQ) (spinCGroup.continuous_mulCircle _ _)
-        (P := (s.fiberProd Circle L).P) (FiberProd.mk p l) := by
-  unfold twistPullbackEquiv
-  refine (DFunLike.congr_fun (OrthonormalFrameLift.Equiv.trans_toEquiv _ _ y) _).trans ?_
-  refine (congrArg (((s.fiberProd Circle L).extendPullbackEquiv _ _ _ _ _ g).toEquiv y)
-    ((Equiv.extend_toEquiv_inl _ _ _ _ _ _ y _).trans ?_)).trans
-      ((s.fiberProd Circle L).extendPullbackEquiv_toEquiv_inl _ _ _ _ _ g y _)
-  exact congrArg (Extend.inl _ _ ·) (fiberProdPullbackEquiv_toEquiv_mk s g y p l)
+        (P := (s.fiberProd Circle L).P) (FiberProd.mk p l) :=
+  (congrArg _ (Extend.inl_def _ _ _)).trans
+    ((twistPullbackEquiv_toEquiv_mk g s y p l 1).trans (Extend.inl_def _ _ _).symm)
 
 end SpinCStructure
 
