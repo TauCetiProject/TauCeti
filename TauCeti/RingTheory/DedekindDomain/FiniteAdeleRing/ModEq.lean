@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.CompletedIdeal
+import TauCeti.Algebra.Algebra.NatCast
 
 /-!
 # Congruence of finite adeles
@@ -69,13 +70,15 @@ theorem modEq_zero_iff {x y : FiniteAdeleRing R K} : ModEq 0 x y ↔ x = y := by
 theorem modEq_iff_mul_inv_mem {N : R} (hN : N ≠ 0) {x y : FiniteAdeleRing R K} :
     ModEq N x y ↔
       algebraMap K (FiniteAdeleRing R K) (algebraMap R K N)⁻¹ * (x - y) ∈ integralAdeles R K := by
+  have hN' := TauCeti.algebraMap_mul_algebraMap_inv (A := FiniteAdeleRing R K)
+    ((map_ne_zero_iff _ (IsFractionRing.injective R K)).mpr hN)
   rw [modEq_iff]
   constructor
   · rintro ⟨z, hz, h⟩
-    rwa [h, ← mul_assoc, mul_comm _ (algebraMap R _ N), algebraMap_mul_algebraMap_inv hN, one_mul]
+    rwa [h, ← mul_assoc, mul_comm _ (algebraMap R _ N), hN', one_mul]
   · intro h
     refine ⟨_, h, ?_⟩
-    rw [← mul_assoc, algebraMap_mul_algebraMap_inv hN, one_mul]
+    rw [← mul_assoc, hN', one_mul]
 
 /-- For integral `x` and `y`, congruence modulo `N` is membership of `x - y` in the completion
 `NÔ` of the ideal `(N)`. -/

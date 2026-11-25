@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.FractionalIdeal
+import TauCeti.Algebra.Algebra.NatCast
 
 /-!
 # The completion of an integral ideal in the integral finite adeles
@@ -113,13 +114,6 @@ theorem coe_mem_finiteAdelicIdeal_of_mem_completedIdeal {N : Ideal R} (hN : N �
   have hxJ := hle hx
   rwa [Submodule.mem_comap, Algebra.linearMap_apply, Subalgebra.algebraMap_apply] at hxJ
 
-/-- For `a ≠ 0` in `R`, the diagonal image of `a⁻¹ ∈ K` in the finite adeles is an inverse of the
-diagonal image of `a`. -/
-theorem algebraMap_mul_algebraMap_inv {a : R} (ha : a ≠ 0) :
-    algebraMap R 𝔸ᶠ[R, K] a * algebraMap K 𝔸ᶠ[R, K] (algebraMap R K a)⁻¹ = 1 := by
-  rw [IsScalarTower.algebraMap_apply R K, ← map_mul,
-    mul_inv_cancel₀ ((map_ne_zero_iff _ (IsFractionRing.injective R K)).mpr ha), map_one]
-
 variable (K) in
 /-- For `N ≠ ⊥`, the completion `NÔ` is open in the integral finite adeles. -/
 theorem isOpen_completedIdeal {N : Ideal R} (hN : N ≠ ⊥) :
@@ -136,7 +130,8 @@ theorem isOpen_completedIdeal {N : Ideal R} (hN : N ≠ ⊥) :
     have hy' : y = algebraMap R (integralAdeles R K) a * ⟨_, hy⟩ := by
       refine Subtype.ext ?_
       simp only [Subalgebra.coe_mul, Subalgebra.coe_algebraMap]
-      rw [← mul_assoc, algebraMap_mul_algebraMap_inv ha, one_mul]
+      rw [← mul_assoc, TauCeti.algebraMap_mul_algebraMap_inv
+        ((map_ne_zero_iff _ (IsFractionRing.injective R K)).mpr ha), one_mul]
     rw [SetLike.mem_coe, hy']
     exact Ideal.mul_mem_right _ _ (algebraMap_mem_completedIdeal haN)
   have h0 : (0 : integralAdeles R K) ∈ U := by

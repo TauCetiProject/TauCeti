@@ -41,6 +41,8 @@ as a scalar.
 * `TauCeti.natCast_mul_algebraMap_inv`, `TauCeti.ofNat_mul_algebraMap_inv`: `m · (1 / m) = 1` in a
   `K`-algebra, for a natural number or a numeral `m` with `(m : K) ≠ 0`;
   `TauCeti.algebraMap_inv_mul_ofNat` is the numeral form `(1 / m) · m = 1`.
+* `TauCeti.algebraMap_mul_algebraMap_inv`: `a · (1 / a) = 1` in `A` for `a` in the base `R` of a
+  scalar tower `R → K → A`, when `a` is nonzero in `K`.
 * `TauCeti.nsmul_algebraMap_inv_natCast_smul`, `TauCeti.algebraMap_inv_natCast_smul_nsmul`:
   `m • (1 / m) • a = a` and `(1 / m) • m • a = a` in a module over a `K`-algebra, when
   `(m : K) ≠ 0`.
@@ -90,6 +92,17 @@ semifield `K`, provided `m` is nonzero in `K`. -/
 theorem natCast_mul_algebraMap_inv {K A : Type*} [Semifield K] [Semiring A] [Algebra K A] {m : ℕ}
     (hm : (m : K) ≠ 0) : (m : A) * algebraMap K A (m : K)⁻¹ = 1 := by
   simpa using congrArg (algebraMap K A) (mul_inv_cancel₀ hm)
+
+/-- In a scalar tower `R → K → A` over a semifield `K`, multiplying by the image of `a : R` and by
+the image of `a⁻¹ : K` cancel, provided `a` is nonzero in `K`; `natCast_mul_algebraMap_inv` is the
+case of a natural number. -/
+@[simp]
+theorem algebraMap_mul_algebraMap_inv {R K A : Type*} [CommSemiring R] [Semifield K] [Semiring A]
+    [Algebra R K] [Algebra K A] [Algebra R A] [IsScalarTower R K A] {a : R}
+    (ha : algebraMap R K a ≠ 0) : algebraMap R A a * algebraMap K A (algebraMap R K a)⁻¹ = 1 := by
+  rw [Algebra.algebraMap_eq_smul_one a, ← smul_one_smul K a (1 : A),
+    ← Algebra.algebraMap_eq_smul_one, ← Algebra.algebraMap_eq_smul_one, ← map_mul,
+    mul_inv_cancel₀ ha, map_one]
 
 /-- Multiplying by a numeral `n` and by the image of `n⁻¹ : K` cancel in an algebra over a
 semifield `K`, provided `n` is nonzero in `K`; for instance `2 · (1 / 2) = 1` in a `ℚ`-algebra. -/
