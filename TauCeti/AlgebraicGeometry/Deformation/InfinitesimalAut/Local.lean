@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.Deformation.InfinitesimalAut.Basic
 
 import Mathlib.AlgebraicGeometry.PullbackCarrier
 import TauCeti.AlgebraicGeometry.Morphisms.Thickening
+import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # Infinitesimal automorphisms are determined by their restrictions to an open cover
@@ -60,6 +61,8 @@ is the first step in identifying the infinitesimal automorphisms of `X` with the
   `TauCeti.AlgebraicGeometry.eq_infinitesimalAutRestrict_iff` says this characterizes it.
 * `TauCeti.AlgebraicGeometry.dualNumberDeformationMap_comp`: compatibility of `U[ε] ⟶ X[ε]` with
   composition of open immersions.
+* `TauCeti.AlgebraicGeometry.infinitesimalAutRestrict_infinitesimalAutRestrict`: restricting to
+  `U` and then to `V` is restricting along the composite `V ⟶ U ⟶ X`.
 * `TauCeti.AlgebraicGeometry.infinitesimalAut_ext_of_openCover`: infinitesimal automorphisms with
   the same restrictions to the members of an open cover are equal.
 
@@ -115,11 +118,12 @@ section Restrict
 variable {U : Scheme.{u}} (j : U ⟶ X)
 
 /-- For a morphism `j : U ⟶ X`, the morphism `U[ε] ⟶ X[ε]` of trivial first-order deformations,
-the base change of `j` along `Spec R[ε] ⟶ Spec R`. -/
+the base change of `j` along `Spec R[ε] ⟶ Spec R`: the action of the pullback functor defining
+`dualNumberDeformation` on `j`, viewed as a morphism over `Spec R`. -/
 def dualNumberDeformationMap :
     (dualNumberDeformation (j ≫ f)).left ⟶ (dualNumberDeformation f).left :=
-  pullback.map (j ≫ f) (Spec.map (CommRingCat.ofHom (algebraMap R R[ε]))) f
-    (Spec.map (CommRingCat.ofHom (algebraMap R R[ε]))) j (𝟙 _) (𝟙 _) (by simp) (by simp)
+  ((Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R R[ε])))).map
+    (Over.homMk j rfl : Over.mk (j ≫ f) ⟶ Over.mk f)).left
 
 @[reassoc (attr := simp)]
 theorem dualNumberDeformationMap_fst :
@@ -133,23 +137,27 @@ theorem dualNumberDeformationMap_snd :
     dualNumberDeformationMap f j ≫
         pullback.snd f (Spec.map (CommRingCat.ofHom (algebraMap R R[ε]))) =
       pullback.snd (j ≫ f) (Spec.map (CommRingCat.ofHom (algebraMap R R[ε]))) :=
-  (pullback.lift_snd _ _ _).trans (Category.comp_id _)
+  pullback.lift_snd _ _ _
+
+/-- The morphism `U[ε] ⟶ X[ε]` as a `pullback.map`. -/
+theorem dualNumberDeformationMap_eq_pullbackMap :
+    dualNumberDeformationMap f j =
+      pullback.map (j ≫ f) (Spec.map (CommRingCat.ofHom (algebraMap R R[ε]))) f
+        (Spec.map (CommRingCat.ofHom (algebraMap R R[ε]))) j (𝟙 _) (𝟙 _) (by simp) (by simp) :=
+  pullback.hom_ext (by simp) (by simp)
 
 /-- The morphism `U[ε] ⟶ X[ε]` is the base change of `j : U ⟶ X` along `X[ε] ⟶ X`. -/
 theorem isPullback_dualNumberDeformationMap :
     IsPullback (dualNumberDeformationMap f j)
       (pullback.fst (j ≫ f) (Spec.map (CommRingCat.ofHom (algebraMap R R[ε]))))
-      (pullback.fst f (Spec.map (CommRingCat.ofHom (algebraMap R R[ε])))) j := by
-  refine IsPullback.of_right ?_ (dualNumberDeformationMap_fst f j)
-    (IsPullback.of_hasPullback f (Spec.map (CommRingCat.ofHom (algebraMap R R[ε])))).flip
-  rw [dualNumberDeformationMap_snd]
-  exact (IsPullback.of_hasPullback (j ≫ f) (Spec.map (CommRingCat.ofHom (algebraMap R R[ε])))).flip
+      (pullback.fst f (Spec.map (CommRingCat.ofHom (algebraMap R R[ε])))) j :=
+  Over.isPullback_pullback_map_left _ _
 
 /-- The base change `U[ε] ⟶ X[ε]` of an open immersion is an open immersion. -/
 instance isOpenImmersion_dualNumberDeformationMap [IsOpenImmersion j] :
-    IsOpenImmersion (dualNumberDeformationMap f j) :=
-  MorphismProperty.IsStableUnderBaseChange.of_isPullback
-    (isPullback_dualNumberDeformationMap f j).flip inferInstance
+    IsOpenImmersion (dualNumberDeformationMap f j) := by
+  rw [dualNumberDeformationMap_eq_pullbackMap]
+  infer_instance
 
 /-- The inclusions over `ε ↦ 0` commute with `U[ε] ⟶ X[ε]`. -/
 @[reassoc (attr := simp)]
@@ -248,6 +256,22 @@ theorem eq_infinitesimalAutRestrict_iff {e : infinitesimalAut f} {g : infinitesi
   ⟨by rintro rfl; exact infinitesimalAutRestrict_comp_dualNumberDeformationMap f j e,
     fun h ↦ Subtype.ext <| aut_ext f j <|
       h.trans (infinitesimalAutRestrict_comp_dualNumberDeformationMap f j e).symm⟩
+
+/-- **Transitivity of restriction.** For open immersions `k : V ⟶ U` and `j : U ⟶ X`, restricting
+an infinitesimal automorphism `e` of `X` to `U` and then to `V` gives its restriction along
+`k ≫ j`, up to reindexing along `k ≫ j ≫ f = (k ≫ j) ≫ f`. -/
+theorem infinitesimalAutRestrict_infinitesimalAutRestrict {V : Scheme.{u}} (k : V ⟶ U)
+    [IsOpenImmersion k] (e : infinitesimalAut f) :
+    (infinitesimalAutRestrict (j ≫ f) k (infinitesimalAutRestrict f j e)).val.asIso.hom.left =
+      (pullback.congrHom (Category.assoc k j f).symm rfl).hom ≫
+        (infinitesimalAutRestrict f (k ≫ j) e).val.asIso.hom.left ≫
+          (pullback.congrHom (Category.assoc k j f).symm rfl).inv := by
+  rw [← cancel_mono (dualNumberDeformationMap (j ≫ f) k ≫ dualNumberDeformationMap f j),
+    infinitesimalAutRestrict_comp_dualNumberDeformationMap_assoc,
+    infinitesimalAutRestrict_comp_dualNumberDeformationMap, dualNumberDeformationMap_comp_assoc,
+    dualNumberDeformationMap_comp]
+  simp only [Category.assoc, Iso.inv_hom_id_assoc,
+    infinitesimalAutRestrict_comp_dualNumberDeformationMap]
 
 end Restrict
 
