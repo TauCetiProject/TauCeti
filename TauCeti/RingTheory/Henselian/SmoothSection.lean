@@ -107,7 +107,8 @@ theorem exists_comp_eq_of_free [Algebra.Smooth R A] (σ : A →ₐ[R] R ⧸ I)
   -- `Ω[W⁄R]` for `W = A[1/g]` with `g ≡ 1 (mod J)`.
   let b := Module.Free.chooseBasis (A ⧸ J) (Ω[A⁄R] ⧸ J • (⊤ : Submodule A Ω[A⁄R]))
   have : Finite (Module.Free.ChooseBasisIndex (A ⧸ J) _) := Module.Finite.finite_basis b
-  choose x hxJ hxb using fun i ↦ KaehlerDifferential.exists_mem_and_mk_D_eq J hR (b i)
+  have : Algebra.FormallyUnramified R (A ⧸ J) := .of_surjective (Algebra.ofId R (A ⧸ J)) hR
+  choose x hxJ hxb using fun i ↦ KaehlerDifferential.exists_mem_and_mk_D_eq J (b i)
   obtain ⟨g, hgJ, bW, hbW⟩ :=
     KaehlerDifferential.exists_sub_one_mem_and_basis_localizationAway J b fun i ↦ (hxb i).symm
   let W := Localization.Away g
