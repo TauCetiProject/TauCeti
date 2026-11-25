@@ -51,7 +51,9 @@ perimeter has neither defect (`TauCeti.weightedPerimeter_compl`,
 * `TauCeti.gaussianWeight E`, `TauCeti.gaussianPerimeter U`: the Gaussian weight and the
   Gaussian perimeter.
 * `TauCeti.weightedMeasure W`: the measure `e^{−W} · volume`, absolutely continuous with
-  respect to `volume` (`TauCeti.weightedMeasure_absolutelyContinuous`).
+  respect to `volume` (`TauCeti.weightedMeasure_absolutelyContinuous`), and, for an almost
+  everywhere measurable weight, conversely
+  (`TauCeti.volume_absolutelyContinuous_weightedMeasure`).
 * `LinearIsometryEquiv.gaussianWeight_apply`, `LinearIsometryEquiv.gaussianWeight_comp`: the
   Gaussian weight is invariant under linear isometry equivalences.
 * `TauCeti.weightedVariation_eq_iSup_trace_fderiv`: for a differentiable weight, the weighted
@@ -196,6 +198,14 @@ theorem weightedMeasure_def :
 theorem weightedMeasure_absolutelyContinuous : weightedMeasure W ≪ volume := by
   rw [weightedMeasure_def]
   exact withDensity_absolutelyContinuous _ _
+
+/-- For an almost everywhere measurable weight, `volume` is absolutely continuous with respect to
+the measure of the weight, the density `e^{−W}` being positive. -/
+theorem volume_absolutelyContinuous_weightedMeasure (hW : AEMeasurable W volume) :
+    volume ≪ weightedMeasure W := by
+  rw [weightedMeasure_def]
+  exact withDensity_absolutelyContinuous' hW.neg.exp.ennreal_ofReal
+    (.of_forall fun x => (ENNReal.ofReal_pos.2 (Real.exp_pos _)).ne')
 
 /-! ### Admissible fields -/
 
