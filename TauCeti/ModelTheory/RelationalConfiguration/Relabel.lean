@@ -112,8 +112,9 @@ theorem relabel_relabel_symm (e : α ≃ β) (c : RelationalConfiguration L β) 
     relabel e (relabel e.symm c) = c :=
   (relabel e).apply_symm_apply c
 
-/-- Relabelling along a permutation of the carrier is the logic action. -/
-@[simp]
+/-- Relabelling along a permutation of the carrier is the logic action. Not `@[simp]`: it would
+fire on every `relabel e c` with `e : α ≃ α`, before `relabel_relabel` can simplify round trips,
+so `relabel` stays the simp normal form. -/
 theorem relabel_perm (σ : Equiv.Perm α) (c : RelationalConfiguration L α) :
     relabel σ c = σ • c := by
   rw [perm_smul_def, Equiv.Perm.inv_def, coe_relabel]

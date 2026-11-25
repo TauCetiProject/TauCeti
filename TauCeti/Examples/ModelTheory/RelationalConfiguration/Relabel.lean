@@ -35,6 +35,12 @@ example {L : Language} {α β : Type*} (e : α ≃ β) (c : RelationalConfigurat
     relabel e.symm (relabel e c) = c := by
   simp
 
+-- The same holds along a permutation of one carrier: `relabel` stays the simp normal form, so the
+-- logic action does not hide the round trip.
+example {L : Language} (c : RelationalConfiguration L (Fin 3)) :
+    relabel (finRotate 3).symm (relabel (finRotate 3) c) = c := by
+  simp
+
 -- Isomorphism on any class of configurations on `ℕ` is Borel bireducible with isomorphism on its
 -- relabelling to `ℤ`.
 example {L : Language} [L.IsRelational] (K : Set (RelationalConfiguration L ℕ)) :
