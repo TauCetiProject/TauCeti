@@ -63,7 +63,7 @@ example : componentCenterUnit profile ≠
 example : Nat.card (CatCenter (Discrete Bool × SingleObj C₃))ˣ = 9 := by
   rw [← Nat.card_congr (componentCenterEquiv Bool C₃).toEquiv, Nat.card_eq_fintype_card,
     Fintype.card_fun]
-  rfl
+  simp [Fintype.card_multiplicative, ZMod.card]
 
 /-- **Empty index.** For empty `I` there is one profile, and one centre unit. -/
 example : Subsingleton (CatCenter (Discrete Empty × SingleObj C₃))ˣ :=
