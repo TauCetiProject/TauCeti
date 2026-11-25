@@ -245,6 +245,8 @@ theorem transpose_mul_symplecticForm_two_mul (M : Matrix (Fin 2) (Fin 2) ℂ) :
     Mᵀ * symplecticForm 2 * M = M.det • symplecticForm 2 := by
   have h := mul_JFin_one_mul_transpose_eq_det_smul Mᵀ
   rw [transpose_transpose, det_transpose] at h
+  -- The `JFin` API is stated on `Fin (1 + 1)`; restate the goal there, using that the
+  -- numerals `2` and `1 + 1` are definitionally equal, so its lemmas rewrite the goal.
   change Mᵀ * symplecticForm (1 + 1) * M = M.det • symplecticForm (1 + 1)
   rw [symplecticForm_eq_neg_JFin, Matrix.mul_neg, Matrix.neg_mul, h, smul_neg]
 
