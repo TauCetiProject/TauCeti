@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
-public import TauCeti.AlgebraicGeometry.AlgebraicSpace.EtaleEquivRel
 public import TauCeti.AlgebraicGeometry.AlgebraicSpace.QuotientSheaf
 public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.UnderlyingMap
@@ -19,10 +18,7 @@ Let `s t : R ⟶ U` be an equivalence relation of schemes and `g : U' ⟶ U` an 
 locally of finite presentation and surjective). The restriction `R' = R ×_{U × U} (U' × U')` of
 the relation along `g` (`TauCeti.CategoryTheory.restrictRel g t s`) has the same quotient sheaf:
 `U'/R' ≅ U/R` (Stacks, Lemma 39.20.5 (045Z)). This is
-`TauCeti.CategoryTheory.quotientSheaf.restrictIso` at `J := Scheme.fppfTopology`. For an étale
-equivalence relation and a surjective étale `g`, the restriction is again an étale equivalence
-relation (`TauCeti.AlgebraicGeometry.Spaces.EtaleEquivRel.restrict`) with the same quotient
-sheaf.
+`TauCeti.CategoryTheory.quotientSheaf.restrictIso` at `J := Scheme.fppfTopology`.
 
 ## Main definitions
 
@@ -78,16 +74,5 @@ theorem quotientSheaf.π_restrictIso_inv [IsEquivalenceRelation t s] [Flat g]
       TauCeti.CategoryTheory.quotientSheaf.π Scheme.fppfTopology (restrictRel.snd g t s)
         (restrictRel.fst g t s) :=
   TauCeti.CategoryTheory.quotientSheaf.π_restrictIso_inv _ _ _
-
-variable {s t}
-
-/-- For an étale equivalence relation and a surjective étale morphism `g : U' ⟶ U`, the quotient
-sheaf of the restricted étale equivalence relation (`EtaleEquivRel.restrict`) is the quotient
-sheaf of the relation. -/
-noncomputable def EtaleEquivRel.quotientSheafRestrictIso (h : EtaleEquivRel s t) [Etale g]
-    [Surjective g] :
-    quotientSheaf (restrictRel.snd g t s) (restrictRel.fst g t s) ≅ quotientSheaf s t :=
-  have := h.isEquivalenceRelation
-  quotientSheaf.restrictIso s t g
 
 end TauCeti.AlgebraicGeometry.Spaces

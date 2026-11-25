@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Sites.PreservesLimits
-public import Mathlib.CategoryTheory.Sites.RegularEpi
 public import TauCeti.CategoryTheory.EquivalenceRelation
 public import TauCeti.CategoryTheory.Sites.Canonical
-public import TauCeti.CategoryTheory.Sites.QuotientSheaf
+public import TauCeti.CategoryTheory.Sites.QuotientSheaf.Represented
 
 /-!
 # Restricting an equivalence relation along a covering
@@ -40,7 +39,8 @@ fails (for the empty pre-relation on a point and a two-point covering of it).
 ## Implementation notes
 
 The proof is categorical. Since `Sheaf J (Type _)` is a regular epi category, the epimorphism
-`p : h_{U'} ⟶ h_U ⟶ U/R` is the coequaliser of its kernel pair, which is `h_{R'} ⇉ h_{U'}`: it is
+`p : h_{U'} ⟶ h_U ⟶ U/R` is the coequaliser of its kernel pair
+(`TauCeti.CategoryTheory.quotientSheaf.isIso_desc_of_epi`), which is `h_{R'} ⇉ h_{U'}`: it is
 obtained by pasting the images under `J.uliftYoneda` (which preserves limits) of the two
 pullback squares defining `R'` onto the kernel pair square of `π`.
 
@@ -69,13 +69,9 @@ theorem quotientSheaf.isIso_desc_of_isKernelPair {F : Sheaf J (Type (max v w))}
     (p : J.uliftYoneda.{w}.obj U ⟶ F) [Epi p]
     (hk : IsKernelPair p (J.uliftYoneda.{w}.map t) (J.uliftYoneda.{w}.map s)) :
     IsIso (quotientSheaf.desc p hk.w) := by
-  have := IsRegularEpiCategory.regularEpiOfEpi p
-  have hc := isColimitCoforkOfEffectiveEpi p _ hk.isLimit
-  let ψ := Cofork.IsColimit.desc hc (quotientSheaf.π J s t) (quotientSheaf.condition J s t)
-  have hψ : p ≫ ψ = quotientSheaf.π J s t := Cofork.IsColimit.π_desc hc
-  refine ⟨ψ, quotientSheaf.hom_ext ?_, ?_⟩
-  · rw [quotientSheaf.π_desc_assoc, hψ, Category.comp_id]
-  · rw [← cancel_epi p, reassoc_of% hψ, quotientSheaf.π_desc, Category.comp_id]
+  refine quotientSheaf.isIso_desc_of_epi p hk.w ?_
+  rw [← hk.isoPullback_inv_fst, ← hk.isoPullback_inv_snd, Category.assoc, Category.assoc,
+    quotientSheaf.condition]
 
 end KernelPair
 
