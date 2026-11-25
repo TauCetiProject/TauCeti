@@ -5,33 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import Mathlib.Order.Sym2
-public import TauCeti.Combinatorics.SimpleGraph.Bipartite
+import TauCeti.Combinatorics.SimpleGraph.Bipartite
+import TauCeti.Combinatorics.SimpleGraph.Finite
 
 /-!
-# Symmetric differences, cuts, and ordered edge enumerations of simple graphs
+# Ordered edge enumerations of simple graphs
 
 On a linearly ordered finite vertex type `V`, every edge `e ∈ G.edgeFinset` has a unique strictly
-increasing orientation `(e.inf, e.sup)` with `e.inf < e.sup`. This file establishes the algebra of
-graph symmetric differences with complete-graph cuts together with the bijections identifying edge
-sums, edge counts, and cut-toggled edge counts with sums and filters over strictly increasing pairs.
+increasing orientation `(e.inf, e.sup)` with `e.inf < e.sup`. This file establishes the bijections
+identifying edge products, sums, counts, and cut-toggled edge counts with products, sums, and
+filters over strictly increasing vertex pairs.
 
 ## Main results
 
-* `SimpleGraph.fromRel_adj_self`, `SimpleGraph.fromRel_ite_ne_one`, `SimpleGraph.symmDiff_adj`,
-  `SimpleGraph.edgeSet_symmDiff`, and `SimpleGraph.edgeFinset_symmDiff`: round-trips
-  `fromRel G.Adj = G` and `fromRel (fun u v => (if G.Adj u v then t else 1) ≠ 1) = G`, and
-  adjacency, edge sets, and edge finsets of the symmetric difference `G₁ ∆ G₂`.
-* `SimpleGraph.top_between_compl_adj` and `SimpleGraph.symmDiff_top_between_compl_adj`: adjacency in
-  the complete-graph cut `(⊤ : SimpleGraph V).between S Sᶜ` and in `G ∆ (⊤ : SimpleGraph V).between
-  S Sᶜ` is given unconditionally by `Xor`.
 * `SimpleGraph.prod_edgeFinset_eq_prod_filter_lt`, `SimpleGraph.sum_edgeFinset_eq_sum_filter_lt`,
   `SimpleGraph.prod_filter_lt_adj_eq_prod_edgeFinset`,
-  `SimpleGraph.sum_filter_lt_adj_eq_sum_edgeFinset`,
-  `SimpleGraph.card_filter_lt_adj_eq_card_edgeFinset`, and
-  `SimpleGraph.card_filter_lt_xor_adj_eq_card_symmDiff_edgeFinset`: products, sums, and
-  cardinalities of edges and cut-toggled edges enumerated by strictly increasing pairs `p.1 < p.2`.
+  `SimpleGraph.sum_filter_lt_adj_eq_sum_edgeFinset`: products and sums of unordered or oriented edge
+  weights enumerated by strictly increasing adjacent pairs `p.1 < p.2`.
+* `SimpleGraph.card_filter_lt_adj_eq_card_edgeFinset` and
+  `SimpleGraph.card_filter_lt_xor_adj_eq_card_symmDiff_edgeFinset`: cardinalities of edges and
+  cut-toggled edges enumerated by strictly increasing pairs `p.1 < p.2`.
 -/
 
 public section
@@ -41,65 +36,7 @@ open scoped symmDiff
 
 namespace SimpleGraph
 
-variable {V : Type*}
-
-/-! ### Symmetric differences and complete-graph cuts -/
-
-/-- Constructing a simple graph via `SimpleGraph.fromRel` from its own adjacency relation recovers
-the graph. -/
-@[simp]
-theorem fromRel_adj_self (G : SimpleGraph V) : fromRel G.Adj = G := by
-  ext u v
-  exact ⟨fun ⟨_, h⟩ => h.elim id (G.adj_comm v u).mp, fun h => ⟨G.ne_of_adj h, Or.inl h⟩⟩
-
-/-- Recovering a simple graph from its `{1, t}` edge indicator (`t ≠ 1`) returns the original
-graph. -/
-theorem fromRel_ite_ne_one {M : Type*} [One M] (G : SimpleGraph V) [DecidableRel G.Adj]
-    {t : M} (ht : t ≠ 1) :
-    fromRel (fun u v => (if G.Adj u v then t else 1) ≠ 1) = G := by
-  simp [ht]
-
-/-- Two vertices are adjacent in `G₁ ∆ G₂` if and only if they are adjacent in exactly one of `G₁`
-and `G₂`. -/
-@[simp]
-theorem symmDiff_adj (G₁ G₂ : SimpleGraph V) (u v : V) :
-    (G₁ ∆ G₂).Adj u v ↔ Xor (G₁.Adj u v) (G₂.Adj u v) := by
-  simp only [symmDiff_def, sup_adj, sdiff_adj, Xor]
-
-/-- The edge set of `G₁ ∆ G₂` is the symmetric difference of their edge sets. -/
-@[simp]
-theorem edgeSet_symmDiff (G₁ G₂ : SimpleGraph V) :
-    (G₁ ∆ G₂).edgeSet = G₁.edgeSet ∆ G₂.edgeSet := by
-  simp only [symmDiff_def, edgeSet_sup, edgeSet_sdiff]
-
-/-- The edge finset of `G₁ ∆ G₂` is the symmetric difference of their edge finsets. -/
-@[simp]
-theorem edgeFinset_symmDiff {G₁ G₂ : SimpleGraph V} [Fintype G₁.edgeSet] [Fintype G₂.edgeSet]
-    [Fintype (edgeSet (G₁ ∆ G₂))] [DecidableEq V] :
-    (G₁ ∆ G₂).edgeFinset = G₁.edgeFinset ∆ G₂.edgeFinset := by
-  ext e
-  simp only [mem_edgeFinset, edgeSet_symmDiff, Finset.mem_symmDiff, Set.mem_symmDiff]
-
-/-- Two vertices are adjacent in the complete-graph cut `(⊤ : SimpleGraph V).between S Sᶜ` if and
-only if exactly one of them belongs to `S`. -/
-@[simp]
-theorem top_between_compl_adj (S : Set V) {u v : V} :
-    ((⊤ : SimpleGraph V).between S Sᶜ).Adj u v ↔ Xor (u ∈ S) (v ∈ S) := by
-  rw [between_adj, top_adj, Set.mem_compl_iff, Set.mem_compl_iff, Xor]
-  refine ⟨?_, fun h => ⟨by rintro rfl; tauto, ?_⟩⟩ <;> tauto
-
-/-- Adjacency in `G` after toggling the cut `(⊤ : SimpleGraph V).between S Sᶜ` is given by `Xor`.
--/
-theorem symmDiff_top_between_compl_adj (G : SimpleGraph V) (S : Set V) {u v : V} :
-    (G ∆ (⊤ : SimpleGraph V).between S Sᶜ).Adj u v ↔
-      Xor (G.Adj u v) (Xor (u ∈ S) (v ∈ S)) := by
-  rw [symmDiff_adj, top_between_compl_adj]
-
-/-! ### Ordered-pair enumerations of edges -/
-
-section LinearOrder
-
-variable [Fintype V] [LinearOrder V]
+variable {V : Type*} [Fintype V] [LinearOrder V]
 
 /-- Multiplying a function of unordered edges over `G.edgeFinset` is multiplying over the strictly
 increasing adjacent pairs `p.1 < p.2`. -/
@@ -157,7 +94,5 @@ theorem card_filter_lt_xor_adj_eq_card_symmDiff_edgeFinset (G : SimpleGraph V) [
     refine congrArg card (ext fun p => ?_)
     simp [H, G.symmDiff_top_between_compl_adj S]
   rw [hfilter, H.card_filter_lt_adj_eq_card_edgeFinset, edgeFinset_symmDiff]
-
-end LinearOrder
 
 end SimpleGraph
