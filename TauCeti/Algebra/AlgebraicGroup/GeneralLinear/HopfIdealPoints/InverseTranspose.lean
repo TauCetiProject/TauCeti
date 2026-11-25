@@ -107,19 +107,14 @@ theorem comapOfSurjective_inverseTransposeCoordinateIso_eq_iff_transpose_mem
         (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin n) g).unop ∈
           hopfIdealPointsSubgroup n I A := by
   -- Transpose is inverse transpose of the inverse, and the subgroup is closed under inverses.
-  have key (A : Type u) [CommRing A] (g : Matrix.GeneralLinearGroup (Fin n) A) :
-      (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin n) g).unop =
-        Matrix.GeneralLinearGroup.inverseTranspose g⁻¹ :=
-    Units.ext <| by
-      rw [Matrix.GeneralLinearGroup.coe_unop_transposeMulEquiv,
-        Matrix.GeneralLinearGroup.coe_inverseTranspose, inv_inv]
   rw [comapOfSurjective_inverseTransposeCoordinateIso_eq_iff]
   constructor
   · intro h A _ _ g hg
-    rw [key]
+    rw [Matrix.GeneralLinearGroup.unop_transposeMulEquiv_eq_inverseTranspose_inv]
     exact h A _ (inv_mem hg)
   · intro h A _ _ g hg
-    simpa only [key, inv_inv] using h A _ (inv_mem hg)
+    simpa only [Matrix.GeneralLinearGroup.unop_transposeMulEquiv_eq_inverseTranspose_inv,
+      inv_inv] using h A _ (inv_mem hg)
 
 section GeneralRing
 
