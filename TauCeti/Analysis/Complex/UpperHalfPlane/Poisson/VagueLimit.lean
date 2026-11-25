@@ -120,9 +120,9 @@ theorem abs_integral_upperHalfPlanePoissonKernel_add_mul_I_mul_le
   have hφP : Integrable fun x : ℝ ↦ upperHalfPlanePoissonKernel (x + y * I) t * φ x := by
     have hφM (x : ℝ) : ‖φ x‖ ≤ M :=
       (le_mul_of_one_le_right (abs_nonneg _) (by nlinarith [sq_nonneg x])).trans (hM x)
-    simpa only [mul_comm] using hPint.bdd_mul hφ (.of_forall hφM)
+    exact hPint.mul_bdd hφ (.of_forall hφM)
   have ht : 0 < 1 + t ^ 2 := by positivity
-  rw [le_div_iff₀ ht, mul_comm, ← abs_of_pos ht, ← abs_mul, ← integral_const_mul]
+  rw [le_div_iff₀ ht, mul_comm _ (1 + t ^ 2), ← abs_of_pos ht, ← abs_mul, ← integral_const_mul]
   calc |∫ x : ℝ, (1 + t ^ 2) * (upperHalfPlanePoissonKernel (x + y * I) t * φ x)|
       ≤ ∫ x : ℝ, |(1 + t ^ 2) * (upperHalfPlanePoissonKernel (x + y * I) t * φ x)| :=
         abs_integral_le_integral_abs
@@ -162,6 +162,12 @@ private theorem hasCompactSupport_abs_mul_one_add_sq (hφc : HasCompactSupport �
     HasCompactSupport fun x ↦ |φ x| * (1 + x ^ 2) :=
   (hφc.comp_left abs_zero).mul_right
 
+/-- The weight `|φ(x)| (1 + x ^ 2)` of a continuous compactly supported `φ` is integrable. -/
+private theorem integrable_abs_mul_one_add_sq (hφ : Continuous φ) (hφc : HasCompactSupport φ) :
+    Integrable fun x ↦ |φ x| * (1 + x ^ 2) :=
+  (by fun_prop : Continuous fun x ↦ |φ x| * (1 + x ^ 2)).integrable_of_hasCompactSupport
+    (hasCompactSupport_abs_mul_one_add_sq hφc)
+
 /-- At every height `y`, `(x, t) ↦ P(x + iy, t) φ(x)` is jointly measurable. -/
 private theorem measurable_upperHalfPlanePoissonKernel_add_mul_I_mul (hφ : Measurable φ)
     (y : ℝ) :
@@ -171,9 +177,10 @@ private theorem measurable_upperHalfPlanePoissonKernel_add_mul_I_mul (hφ : Meas
       (hφ.comp measurable_fst)
 
 /-- For `y > 0`, `(x, t) ↦ P(x + iy, t) φ(x)` is integrable for Lebesgue measure times a
-Poisson-finite `ν`, when `φ` is measurable and `|φ(x)| (1 + x ^ 2)` is integrable. -/
+Poisson-finite `ν`, when `φ` is a.e. strongly measurable and `|φ(x)| (1 + x ^ 2)` is integrable. -/
 private theorem integrable_upperHalfPlanePoissonKernel_add_mul_I_mul_prod (hν : IsPoissonFinite ν)
-    (hφ : Measurable φ) (hψ : Integrable fun x ↦ |φ x| * (1 + x ^ 2)) {y : ℝ} (hy : 0 < y) :
+    (hφ : AEStronglyMeasurable φ) (hψ : Integrable fun x ↦ |φ x| * (1 + x ^ 2)) {y : ℝ}
+    (hy : 0 < y) :
     Integrable (fun p : ℝ × ℝ ↦ upperHalfPlanePoissonKernel (p.1 + y * I) p.2 * φ p.1)
       (volume.prod ν) := by
   have := hν.isFiniteMeasureOnCompacts
@@ -181,8 +188,9 @@ private theorem integrable_upperHalfPlanePoissonKernel_add_mul_I_mul_prod (hν :
   set K := 2 * max y y⁻¹ / π
   refine ((hψ.mul_const K).mul_prod ((isPoissonFinite_iff ν).1 hν)).mono' ?_
     (.of_forall fun p ↦ ?_)
-  · exact
-      (measurable_upperHalfPlanePoissonKernel_add_mul_I_mul hφ y).aestronglyMeasurable
+  · exact (measurable_uncurry_upperHalfPlanePoissonKernel.comp
+      (by fun_prop : Measurable fun p : ℝ × ℝ ↦ ((p.1 + y * I : ℂ), p.2))).aestronglyMeasurable.mul
+        hφ.comp_fst
   · have h := upperHalfPlanePoissonKernel_le (z := p.1 + y * I) (by simpa using hy.le) p.2
     have hP := upperHalfPlanePoissonKernel_nonneg (z := p.1 + y * I) (by simpa using hy.le) p.2
     have hre : ((p.1 : ℂ) + y * I).re = p.1 := by simp
@@ -194,27 +202,32 @@ private theorem integrable_upperHalfPlanePoissonKernel_add_mul_I_mul_prod (hν :
           mul_le_mul_of_nonneg_right h (abs_nonneg _)
       _ = ψ p.1 * K * (1 + p.2 ^ 2)⁻¹ := by simp only [ψ, K]; ring
 
-/-- **Fubini for the Poisson integral against a test function.** For `y > 0`, `φ` measurable and
-`|φ(x)| (1 + x ^ 2)` integrable, `∫ φ(x) P[ν](x + iy) dx = ∫ (∫ P(x + iy, t) φ(x) dx) dν(t)`. -/
+/-- **Fubini for the Poisson integral against a test function.** For `y > 0`, `φ` a.e. strongly
+measurable and `|φ(x)| (1 + x ^ 2)` integrable,
+`∫ φ(x) P[ν](x + iy) dx = ∫ (∫ P(x + iy, t) φ(x) dx) dν(t)`. -/
 theorem integral_mul_upperHalfPlanePoissonIntegral_add_mul_I (hν : IsPoissonFinite ν)
-    (hφ : Measurable φ) (hψ : Integrable fun x ↦ |φ x| * (1 + x ^ 2)) {y : ℝ} (hy : 0 < y) :
+    (hφ : AEStronglyMeasurable φ) (hψ : Integrable fun x ↦ |φ x| * (1 + x ^ 2)) {y : ℝ}
+    (hy : 0 < y) :
     ∫ x, φ x * upperHalfPlanePoissonIntegral ν (x + y * I) =
       ∫ t, (∫ x : ℝ, upperHalfPlanePoissonKernel (x + y * I) t * φ x) ∂ν := by
   have := hν.isFiniteMeasureOnCompacts
   rw [← integral_integral_swap
     (integrable_upperHalfPlanePoissonKernel_add_mul_I_mul_prod hν hφ hψ hy)]
-  simp_rw [upperHalfPlanePoissonIntegral_def, integral_mul_const, mul_comm]
+  refine integral_congr_ae (.of_forall fun x ↦ ?_)
+  simp only [upperHalfPlanePoissonIntegral_def, integral_mul_const]
+  exact mul_comm _ _
 
-/-- For `y > 0`, `φ` measurable and `|φ(x)| (1 + x ^ 2)` integrable, `x ↦ φ(x) P[ν](x + iy)` is
-Lebesgue integrable. -/
+/-- For `y > 0`, `φ` a.e. strongly measurable and `|φ(x)| (1 + x ^ 2)` integrable,
+`x ↦ φ(x) P[ν](x + iy)` is Lebesgue integrable. -/
 theorem integrable_mul_upperHalfPlanePoissonIntegral_add_mul_I (hν : IsPoissonFinite ν)
-    (hφ : Measurable φ) (hψ : Integrable fun x ↦ |φ x| * (1 + x ^ 2)) {y : ℝ} (hy : 0 < y) :
+    (hφ : AEStronglyMeasurable φ) (hψ : Integrable fun x ↦ |φ x| * (1 + x ^ 2)) {y : ℝ}
+    (hy : 0 < y) :
     Integrable fun x ↦ φ x * upperHalfPlanePoissonIntegral ν (x + y * I) := by
   have := hν.isFiniteMeasureOnCompacts
-  have h :=
-    (integrable_upperHalfPlanePoissonKernel_add_mul_I_mul_prod hν hφ hψ hy).integral_prod_left
-  simp_rw [integral_mul_const] at h
-  simpa only [upperHalfPlanePoissonIntegral_def, mul_comm] using h
+  refine (integrable_upperHalfPlanePoissonKernel_add_mul_I_mul_prod hν hφ hψ hy)
+    |>.integral_prod_left |>.congr (.of_forall fun x ↦ ?_)
+  simp only [upperHalfPlanePoissonIntegral_def, integral_mul_const]
+  exact mul_comm _ _
 
 /-- **The boundary measure is the vague limit of the Poisson integral.** For a Poisson-finite `ν`
 and `φ` continuous with compact support, `∫ φ(x) P[ν](x + iy) dx → ∫ φ dν` as `y → 0⁺`. -/
@@ -223,10 +236,9 @@ theorem tendsto_integral_mul_upperHalfPlanePoissonIntegral_add_mul_I (hν : IsPo
     Tendsto (fun y : ℝ ↦ ∫ x, φ x * upperHalfPlanePoissonIntegral ν (x + y * I)) (𝓝[>] 0)
       (𝓝 (∫ t, φ t ∂ν)) := by
   have := hν.isFiniteMeasureOnCompacts
-  have hψc : Continuous fun x ↦ |φ x| * (1 + x ^ 2) := by fun_prop
-  have hψs := hasCompactSupport_abs_mul_one_add_sq hφc
-  have hψ : Integrable fun x ↦ |φ x| * (1 + x ^ 2) := hψc.integrable_of_hasCompactSupport hψs
-  obtain ⟨M, hM⟩ := hψc.bounded_above_of_compact_support hψs
+  have hψ := integrable_abs_mul_one_add_sq hφ hφc
+  obtain ⟨M, hM⟩ := (by fun_prop : Continuous fun x ↦ |φ x| * (1 + x ^ 2))
+    |>.bounded_above_of_compact_support (hasCompactSupport_abs_mul_one_add_sq hφc)
   obtain ⟨B, hB⟩ := hφ.bounded_above_of_compact_support hφc
   set C := 2 * (M + ∫ x, |φ x| * (1 + x ^ 2))
   have hM' (x : ℝ) : |φ x| * (1 + x ^ 2) ≤ M := (Real.le_norm_self _).trans (hM x)
@@ -243,7 +255,8 @@ theorem tendsto_integral_mul_upperHalfPlanePoissonIntegral_add_mul_I (hν : IsPo
     exact abs_integral_upperHalfPlanePoissonKernel_add_mul_I_mul_le hφ.aestronglyMeasurable
       hψ hM' hy.1 hy.2 t
   · filter_upwards [self_mem_nhdsWithin] with y hy
-    exact (integral_mul_upperHalfPlanePoissonIntegral_add_mul_I hν hφ.measurable hψ hy).symm
+    exact (integral_mul_upperHalfPlanePoissonIntegral_add_mul_I hν hφ.aestronglyMeasurable hψ
+      hy).symm
 
 /-- **The boundary measure of `c Im + P[ν]` as a vague limit.** If `u = c Im + P[ν]` on the upper
 half-plane, with `c ∈ ℝ` arbitrary and `ν` Poisson-finite, then for `φ` continuous with compact
@@ -261,9 +274,8 @@ theorem tendsto_integral_mul_of_eq_mul_im_add_upperHalfPlanePoissonIntegral {u :
   rw [zero_add] at h
   refine h.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with y hy
-  have hint := integrable_mul_upperHalfPlanePoissonIntegral_add_mul_I hν hφ.measurable
-    ((by fun_prop : Continuous fun x ↦ |φ x| * (1 + x ^ 2)).integrable_of_hasCompactSupport
-      (hasCompactSupport_abs_mul_one_add_sq hφc)) hy
+  have hint := integrable_mul_upperHalfPlanePoissonIntegral_add_mul_I hν
+    hφ.aestronglyMeasurable (integrable_abs_mul_one_add_sq hφ hφc) hy
   have hφi : Integrable φ := hφ.integrable_of_hasCompactSupport hφc
   have hu (x : ℝ) : φ x * u (x + y * I) =
       c * y * φ x + φ x * upperHalfPlanePoissonIntegral ν (x + y * I) := by
