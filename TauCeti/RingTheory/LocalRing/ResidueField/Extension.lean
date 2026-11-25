@@ -13,6 +13,7 @@ import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
 import Mathlib.RingTheory.Flat.EquationalCriterion
 import Mathlib.RingTheory.Flat.Localization
 import TauCeti.RingTheory.LocalRing.Etale
+import TauCeti.RingTheory.LocalRing.Localization
 import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 /-!
@@ -121,20 +122,11 @@ private lemma transcendentalExt_maximalIdeal_eq_map
 /-- Evaluation `TranscendentalExt R ι →+* L` induced by universal property of localization. -/
 private def transcendentalExtToField : TranscendentalExt R ι →+* L :=
   IsLocalization.lift (M := (kerMvEval R ι).primeCompl) (g := mvEval R ι) fun y ↦
-    IsUnit.mk0 _ (mt RingHom.mem_ker.mpr (Ideal.mem_primeCompl_iff.mp y.2))
+    IsUnit.mk0 _ (mt RingHom.mem_ker.mpr (Ideal.mem_primeCompl_iff.mp y.property))
 
-private instance : IsLocalHom (transcendentalExtToField R ι) := by
-  refine ⟨fun x hx ↦ ?_⟩
-  obtain ⟨⟨p, s⟩, hs⟩ := IsLocalization.surj (kerMvEval R ι).primeCompl x
-  have hps : mvEval R ι p ≠ 0 := by
-    intro hp0
-    have hmul : transcendentalExtToField R ι (x * algebraMap _ _ s.1) = 0 := by
-      rw [hs, transcendentalExtToField, IsLocalization.lift_eq, hp0]
-    rw [map_mul, transcendentalExtToField, IsLocalization.lift_eq] at hmul
-    exact hx.ne_zero ((mul_eq_zero.mp hmul).resolve_right s.2)
-  have hp_unit : IsUnit (algebraMap (MvPolynomial σ R) (TranscendentalExt R ι) p) :=
-    IsLocalization.map_units (TranscendentalExt R ι) (⟨p, hps⟩ : (kerMvEval R ι).primeCompl)
-  exact isUnit_of_mul_isUnit_left (hs ▸ hp_unit)
+private instance : IsLocalHom (transcendentalExtToField R ι) :=
+  IsLocalization.AtPrime.isLocalHom_lift (kerMvEval R ι) _ <| by
+    rw [maximalIdeal_eq_bot, ← RingHom.ker_eq_comap_bot]
 
 /-- `L` as an algebra over `ResidueField (TranscendentalExt R ι)`. -/
 private abbrev transcendentalExtResidueAlgebra :
@@ -256,7 +248,7 @@ private lemma isMaximal_map_maximalIdeal_quot [Algebra.IsAlgebraic (ResidueField
   have hsurj : Function.Surjective ψ₀ := fun y ↦ by
     have hy : (y : L) ∈ Set.range s.evalQuot := by
       rw [range_evalQuot]
-      exact y.2
+      exact y.property
     obtain ⟨x, hx⟩ := hy
     exact ⟨x, Subtype.ext hx⟩
   have hker : RingHom.ker ψ₀ = (maximalIdeal R).map (algebraMap R s.Quot) := by
@@ -341,7 +333,7 @@ private lemma exists_mem_chain_of_finset {C : Set (AlgStage R L)} (hC : IsChain 
     exact ⟨s, hs, by simp⟩
   | @insert u F _ ih =>
     obtain ⟨s₁, hs₁, hF⟩ := ih
-    obtain ⟨s₂, hs₂, hu⟩ := Set.mem_iUnion₂.mp u.2
+    obtain ⟨s₂, hs₂, hu⟩ := Set.mem_iUnion₂.mp u.property
     rcases hC.total hs₁ hs₂ with h12 | h21
     · refine ⟨s₂, hs₂, fun v hv ↦ ?_⟩
       rcases Finset.mem_insert.mp hv with rfl | hv
@@ -361,7 +353,7 @@ private lemma exists_rename_of_chain {C : Set (AlgStage R L)} (hC : IsChain (· 
   obtain ⟨s, hs, hvars⟩ := exists_mem_chain_of_finset hC hne p.vars
   have hsub := carrier_subset_chainCarrier hs
   obtain ⟨q, hq⟩ := MvPolynomial.exists_rename_eq_of_vars_subset_range p (Set.inclusion hsub)
-    (Set.inclusion_injective hsub) fun u hu ↦ ⟨⟨u.1, hvars u hu⟩, rfl⟩
+    (Set.inclusion_injective hsub) fun u hu ↦ ⟨⟨u.val, hvars u hu⟩, rfl⟩
   exact ⟨s, hs, q, hq⟩
 
 /-- Ideal over `chainCarrier C` of a nonempty chain. -/
@@ -443,7 +435,7 @@ private lemma flat_chainIdeal {C : Set (AlgStage R L)} (hC : IsChain (· ≤ ·)
   have hp_mem (i : Fin n) : ∀ u ∈ (p i).vars, (u : L) ∈ s.carrier := fun u hu ↦
     hvars u (Finset.mem_biUnion.mpr ⟨i, Finset.mem_univ _, hu⟩)
   choose q hq using fun i ↦ MvPolynomial.exists_rename_eq_of_vars_subset_range (p i)
-    (Set.inclusion hsub) (Set.inclusion_injective hsub) fun u hu ↦ ⟨⟨u.1, hp_mem i u hu⟩, rfl⟩
+    (Set.inclusion hsub) (Set.inclusion_injective hsub) fun u hu ↦ ⟨⟨u.val, hp_mem i u hu⟩, rfl⟩
   let j := chainQuotHom hC hne hs
   have hj_inj : Function.Injective j := by
     rw [← AlgHom.coe_toRingHom, RingHom.injective_iff_ker_eq_bot]
@@ -547,7 +539,7 @@ private def insertPresentation {s : AlgStage R L} (a : L) (g : s.Quot[X]) :
   MvPolynomial.aeval fun x ↦ by
     classical
     exact if hx : (x : L) ∈ s.carrier then
-      algebraMap s.Quot (AdjoinRoot g) (Ideal.Quotient.mk s.ideal (MvPolynomial.X ⟨x.1, hx⟩))
+      algebraMap s.Quot (AdjoinRoot g) (Ideal.Quotient.mk s.ideal (MvPolynomial.X ⟨x.val, hx⟩))
     else
       AdjoinRoot.root g
 
@@ -564,7 +556,7 @@ private lemma insertPresentation_rename {s : AlgStage R L} (a : L) (g : s.Quot[X
   | mul_X f x ih =>
     rw [map_mul, map_mul, ih, MvPolynomial.rename_X, insertPresentation, MvPolynomial.aeval_X]
     have hx : ((Set.inclusion (Set.subset_insert a s.carrier) x :
-        ↥(insert a s.carrier)) : L) ∈ s.carrier := x.2
+        ↥(insert a s.carrier)) : L) ∈ s.carrier := x.property
     rw [dite_eq_left_of_eq_true (eq_true hx)]
     have hx_eq : (⟨(Set.inclusion (Set.subset_insert a s.carrier) x : L), hx⟩ : s.carrier) = x :=
       rfl
@@ -611,7 +603,7 @@ private lemma exists_adjoinRoot_eval [Algebra.IsAlgebraic (ResidueField R) L]
     split_ifs with hx
     · rw [AdjoinRoot.algebraMap_eq, AdjoinRoot.lift_of, evalQuot_mk]
       simp [mvEval]
-    · have hxa : (x : L) = a := (Set.mem_insert_iff.mp x.2).resolve_right hx
+    · have hxa : (x : L) = a := (Set.mem_insert_iff.mp x.property).resolve_right hx
       simp [mvEval, hxa]
 
 private lemma ker_insertPresentation_le [Algebra.IsAlgebraic (ResidueField R) L]
