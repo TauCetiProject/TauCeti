@@ -40,9 +40,9 @@ coordinates in a finite basis, applying the real-valued bounds to each coordinat
 * `TauCeti.MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_inter_setOf_im_nonneg`:
   local derivative and Hölder bounds through the real axis, with constants controlled by the
   open-half-disc Sobolev norm.
-* `MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_inter_setOf_im_nonneg_basis`:
-  the same bounds for values in a finite-dimensional space, by the open-half-disc Sobolev norms of
-  the coordinates in a finite basis.
+* The same bounds for values in a finite-dimensional space, by the open-half-disc Sobolev norms
+  of the coordinates in a finite basis:
+`TauCeti.MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_inter_setOf_im_nonneg_basis`.
 
 ## References
 
@@ -188,31 +188,14 @@ theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_inter_setOf
     simp only [A, ℓ, ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply,
       LinearMap.coe_toContinuousLinearMap', Basis.coord_apply]
     exact (b.sum_repr y).symm
-  have hvl (l : ι) : ‖v l‖₊ ≤ ∑ l', ‖v l'‖₊ :=
-    Finset.single_le_sum (f := fun l' => ‖v l'‖₊) (fun _ _ => zero_le) (Finset.mem_univ l)
-  have hC : ∑ l, ‖A l‖₊ * (K * ∑ l', ‖v l'‖₊) = (∑ l, ‖A l‖₊) * K * ∑ l, ‖v l‖₊ := by
-    rw [← Finset.sum_mul]
-    ring
   refine ⟨v, hv, ⟨⋂ l, V l, isOpen_iInter_of_finite fun l => (V l).isOpen⟩,
     subset_iInter hTV, fun z => ∑ l, A l (g l z), ContDiffOn.sum fun l _ =>
-      (A l).contDiff.comp_contDiffOn ((hg l).mono (iInter_subset _ l)), ?_,
-    fun i hi => ⟨fun z hz => ?_, ?_⟩⟩
+      (A l).contDiff.comp_contDiffOn ((hg l).mono (iInter_subset _ l)), ?_, fun i hi => ?_⟩
   · filter_upwards [ae_all_iff.2 hug] with z hz
     rw [hsum (u z)]
     exact Finset.sum_congr rfl fun l _ => by rw [hz l]
-  · refine (norm_iteratedFDeriv_sum_comp_left_le Finset.univ A fun l _ => hgT l hi z hz).trans ?_
-    calc
-      _ ≤ ∑ l, ‖A l‖ * (K * ∑ l', ‖v l'‖) :=
-        Finset.sum_le_sum fun l _ => mul_le_mul_of_nonneg_left
-          (((hb l i hi).1 z hz).trans (by
-            gcongr
-            simpa using NNReal.coe_le_coe.2 (hvl l))) (norm_nonneg _)
-      _ = _ := by
-        rw [← Finset.sum_mul]
-        push_cast
-        ring
-  · rw [← hC]
-    exact holderOnWith_iteratedFDeriv_sum_comp_left_of_contDiffAt A (fun l => hgT l hi)
-      fun l => (hb l i hi).2.mono_const (mul_le_mul' le_rfl (hvl l))
+  · have h := norm_iteratedFDeriv_le_and_holderOnWith_sum_comp_left A (c := fun l => ‖v l‖₊)
+      (fun l => hgT l hi) fun l => ⟨fun z hz => by simpa using (hb l i hi).1 z hz, (hb l i hi).2⟩
+    exact ⟨fun z hz => by simpa using h.1 z hz, h.2⟩
 
 end TauCeti
