@@ -9,6 +9,10 @@ public import Mathlib.GroupTheory.IsPerfect
 public import TauCeti.Algebra.Colimit.Abelianization
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 
+-- Non-public: the permutation-matrix conjugation formula is used only inside the proof of
+-- `AlgebraicK1.mk_reindexGL`.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
+
 /-!
 # The stable general linear group and algebraic `K₁`
 
@@ -74,6 +78,8 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
 * `TauCeti.StableGeneralLinearGroup.centralizer_elementarySubgroup`,
   `TauCeti.StableGeneralLinearGroup.center_eq_bot`: the centralizer of `E_∞(A)` in `GL_∞(A)`,
   and hence the center of `GL_∞(A)`, is trivial.
+* `TauCeti.AlgebraicK1.mk_reindexGL`: the class in `K₁(A)` of an invertible matrix does not
+  change under relabelling of indices.
 * `TauCeti.AlgebraicK1.mk_eq_one_iff`, `TauCeti.AlgebraicK1.ker_mk`,
   `TauCeti.AlgebraicK1.ker_mk_eq_iSup`: kernel of `AlgebraicK1.mk` at finite size.
 * `TauCeti.AlgebraicK1.mk_eq_one_iff_exists_mem_commutator`: the class of an invertible matrix
@@ -535,6 +541,14 @@ theorem mk_apply (n : ℕ) (u : GL (Fin n) A) :
 theorem mk_stabilizeGL {m n : ℕ} (h : m ≤ n) (u : GL (Fin m) A) :
     mk A n (stabilizeGL A h u) = mk A m u := by
   simp [mk]
+
+/-- The class in `K₁` of an invertible matrix does not change when its indices are relabelled
+along an equivalence `Fin m ≃ Fin n`. -/
+@[simp]
+theorem mk_reindexGL {m n : ℕ} (e : Fin m ≃ Fin n) (g : GL (Fin m) A) :
+    mk A n (e.reindexGL A g) = mk A m g := by
+  obtain rfl : m = n := by simpa using Fintype.card_congr e
+  rw [← permutationGL_mul_mul_inv, map_mul, map_mul, map_inv, mul_inv_cancel_comm]
 
 /-- Every class in algebraic `K₁` is the class of an invertible matrix of some size. -/
 theorem exists_mk (x : AlgebraicK1 A) : ∃ n u, mk A n u = x := by
