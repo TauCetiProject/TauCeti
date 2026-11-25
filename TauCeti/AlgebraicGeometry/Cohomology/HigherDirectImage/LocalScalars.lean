@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Presheaf
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Quasicoherent
 public import TauCeti.AlgebraicGeometry.Cohomology.Pullback.Opens
 import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology
@@ -258,6 +257,7 @@ sections of `Rⁿ f_* M` over `V` in the cohomology `Hⁿ(f⁻¹ V, M|_{f⁻¹ V
 `f⁻¹ V`, through `higherDirectImageSectionsAddEquiv` and `Scheme.Opens.cohomologyOnPullbackι`.
 There a function `r` on `V` acts as its pullback `f^* r`, a global function of `f⁻¹ V`. This is
 the sheaf form of `cohomologyOnPullbackι_higherDirectImagePresheafToPresheafIso_hom_app_smul`. -/
+@[simp]
 theorem cohomologyOnPullbackι_higherDirectImageSectionsAddEquiv_symm_smul [QuasiCompact f]
     [QuasiSeparated f] (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) {V : Y.Opens}
     (hV : IsAffineOpen V) (r : Γ(Y, V)) (y : Γ((f.higherDirectImage n).obj M, V)) :

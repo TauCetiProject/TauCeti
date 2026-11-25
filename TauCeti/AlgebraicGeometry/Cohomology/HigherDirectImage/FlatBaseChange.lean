@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.BaseChange
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
+import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 import TauCeti.AlgebraicGeometry.Cohomology.FlatBaseChange
 import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.LocalScalars
 import TauCeti.AlgebraicGeometry.Cohomology.Pullback.Comp
@@ -27,7 +28,7 @@ Y' --g---> Y
 with `Y` affine, `f` quasi-compact and quasi-separated and `g` flat. This file proves that for
 every quasi-coherent `𝒪_X`-module `M` and every `q`, the base change map
 `TauCeti.AlgebraicGeometry.higherDirectImageBaseChange : g^* R^q f_* M ⟶ R^q f'_* g'^* M` is an
-isomorphism (`TauCeti.AlgebraicGeometry.isIso_higherDirectImageBaseChange_app`). No hypothesis on
+isomorphism (`CategoryTheory.IsPullback.isIso_higherDirectImageBaseChange_app`). No hypothesis on
 `Y'` is needed; the base `Y` is affine because the base change map is constructed over an affine
 base.
 
@@ -43,12 +44,12 @@ the pullback of `M` (`Scheme.Opens.cohomologyOnPullbackι_injective` and
 this embedding, the base change map is pullback on cohomology along `W ⟶ X`
 (`higherDirectImageBaseChange_app_app_pullbackSectionsLE_sectionsAddEquiv`
 and `Scheme.Hom.cohomologyOnPullback_comp`), extended `B`-linearly, which is the flat base change
-isomorphism `B ⊗_A H^q(X, M) ≅ H^q(W, M|_W)` of
+isomorphism `B ⊗_A H^q(X, M) ≅ H^q(W, p^* M)`, where `p : W ↪ X' ⟶ X`, of
 `TauCeti.AlgebraicGeometry.bijective_cohomologyOnBaseChange`.
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.isIso_higherDirectImageBaseChange_app`: **flat base change**, the base
+* `CategoryTheory.IsPullback.isIso_higherDirectImageBaseChange_app`: **flat base change**, the base
   change map `g^* R^q f_* M ⟶ R^q f'_* g'^* M` is an isomorphism for a cartesian square with
   affine `Y`, flat `g`, quasi-compact quasi-separated `f` and quasi-coherent `M`.
 
@@ -71,58 +72,6 @@ namespace TauCeti.AlgebraicGeometry
 open Scheme.Modules Scheme.Hom
 
 variable {X Y X' Y' : Scheme.{u}} {f : X ⟶ Y} {g : Y' ⟶ Y} {f' : X' ⟶ Y'} {g' : X' ⟶ X}
-
-/-- Over an affine base `Y`, the preimage `f'⁻¹ V` of an affine open `V` of `Y'` is the base change
-of `X` along `Spec Γ(Y', V) ⟶ Spec Γ(Y, ⊤)`. -/
-private lemma isPullback_preimage_ι_comp (H : IsPullback g' f' f g) [IsAffine Y] {V : Y'.Opens}
-    (hV : IsAffineOpen V) (hVg : V ≤ g ⁻¹ᵁ ⊤) :
-    IsPullback ((f' ⁻¹ᵁ V).ι ≫ g') (f'.resLE V (f' ⁻¹ᵁ V) le_rfl ≫ hV.isoSpec.hom)
-      (f ≫ Y.toSpecΓ) (Spec.map (g.appLE ⊤ V hVg)) := by
-  have : IsIso V.toSpecΓ := inferInstanceAs (IsIso hV.isoSpec.hom)
-  have hB : IsPullback (V.ι ≫ g) V.toSpecΓ Y.toSpecΓ (Spec.map (g.appLE ⊤ V hVg)) := by
-    refine IsPullback.of_vert_isIso ⟨?_⟩
-    rw [Category.assoc, Scheme.toSpecΓ_naturality,
-      ← Scheme.Opens.toSpecΓ_SpecMap_presheaf_map_top_assoc, ← Spec.map_comp]
-    -- `g.appLE ⊤ V hVg` is by definition `g.appTop` followed by restriction to `V`.
-    rfl
-  have := ((isPullback_morphismRestrict f' V).flip.paste_horiz H).paste_vert hB
-  rwa [← Scheme.Hom.resLE_eq_morphismRestrict] at this
-
-/-- Through `f ≫ Y.toSpecΓ`, a function `r` on an affine `Y` acts on `X` as `f^* r`. -/
-private lemma baseRingToGlobalSections_eq_appTop (f : X ⟶ Y) (r : Γ(Y, ⊤)) :
-    letI : X.Over (Spec (.of Γ(Y, ⊤))) := ⟨f ≫ Y.toSpecΓ⟩
-    baseRingToGlobalSections Γ(Y, ⊤) X r = f.appTop r := by
-  rw [baseRingToGlobalSections_apply]
-  -- The structure morphism of the local `Over` instance is `f ≫ Y.toSpecΓ` by definition.
-  change (f ≫ Y.toSpecΓ).appTop ((Scheme.ΓSpecIso _).inv r) = _
-  simp only [Scheme.Hom.comp_appTop, Scheme.toSpecΓ_appTop, ConcreteCategory.comp_apply,
-    Iso.inv_hom_id_apply]
-
-/-- Through `f'⁻¹ V ⟶ V ≅ Spec Γ(Y', V)`, a function `a` on an affine open `V` acts on the open
-subscheme `f'⁻¹ V` as `f'^* a`. -/
-private lemma baseRingToGlobalSections_preimage (f' : X' ⟶ Y') {V : Y'.Opens}
-    (hV : IsAffineOpen V) (a : Γ(Y', V)) :
-    letI : (f' ⁻¹ᵁ V).toScheme.Over (Spec (.of Γ(Y', V))) :=
-      ⟨f'.resLE V (f' ⁻¹ᵁ V) le_rfl ≫ hV.isoSpec.hom⟩
-    baseRingToGlobalSections Γ(Y', V) (f' ⁻¹ᵁ V) a = (f' ⁻¹ᵁ V).topIso.inv (f'.app V a) := by
-  have := congrArg (fun φ ↦ φ.hom a) (f'.ΓSpecIso_inv_comp_resLE_isoSpec_appLE hV _ le_rfl ⊤)
-  rw [baseRingToGlobalSections_apply, Scheme.Hom.appTop, Scheme.Hom.app_eq_appLE]
-  refine this.trans ?_
-  rw [CommRingCat.comp_apply, Scheme.Hom.appLE_eq_app, Scheme.Opens.ι_appLE]
-  -- Both sides restrict from `f'⁻¹ V` to the image of the top open of the subscheme `f'⁻¹ V`.
-  rfl
-
-/-- Over an affine base `Y`, the identification of the global sections of `R^q f_* M` with
-`H^q(X, M)`, linear over `Γ(Y, ⊤)` acting on `X` through `f`. -/
-private def sectionsTopLinearEquiv (f : X ⟶ Y) [IsAffine Y] [QuasiCompact f] [QuasiSeparated f]
-    (M : X.Modules) [M.IsQuasicoherent] (q : ℕ) :
-    letI : X.Over (Spec (.of Γ(Y, ⊤))) := ⟨f ≫ Y.toSpecΓ⟩
-    Γ((f.higherDirectImage q).obj M, ⊤) ≃ₗ[Γ(Y, ⊤)] cohomologyOn M q (f ⁻¹ᵁ ⊤) :=
-  letI : X.Over (Spec (.of Γ(Y, ⊤))) := ⟨f ≫ Y.toSpecΓ⟩
-  ((f.higherDirectImageSectionsAddEquiv M q (isAffineOpen_top Y)).toLinearEquiv fun r c ↦ by
-    rw [base_smul_cohomologyOn, baseRingToGlobalSections_eq_appTop,
-      higherDirectImageSectionsAddEquiv_appTop_smul, show (⊤ : Y.Opens).leTop = 𝟙 _ from rfl,
-      op_id, CategoryTheory.Functor.map_id, ConcreteCategory.id_apply]).symm
 
 /-- The sections of `R^q f'_* g'^* M` over an affine open `V` of `Y'`, read in the cohomology of the
 open subscheme `f'⁻¹ V` with coefficients in the pullback of `M` along `f'⁻¹ V ⟶ X' ⟶ X`. -/
@@ -151,10 +100,9 @@ private lemma sectionsToCohomologyPreimage_apply
 private lemma injective_sectionsToCohomologyPreimage :
     Function.Injective (sectionsToCohomologyPreimage g' f' M q hV) := by
   have hmap : Function.Injective
-      (cohomologyOnMap ((pullbackComp (f' ⁻¹ᵁ V).ι g').hom.app M) q ⊤) := fun a b hab ↦ by
-    simpa only [← ConcreteCategory.comp_apply, ← cohomologyOnMap_comp, Iso.hom_inv_id_app,
-      cohomologyOnMap_id, ConcreteCategory.id_apply] using
-      congrArg (cohomologyOnMap ((pullbackComp (f' ⁻¹ᵁ V).ι g').inv.app M) q ⊤) hab
+      (cohomologyOnMap ((pullbackComp (f' ⁻¹ᵁ V).ι g').hom.app M) q ⊤) :=
+    (ConcreteCategory.bijective_of_isIso
+      ((cohomologyOnFunctor _ q ⊤).mapIso ((pullbackComp (f' ⁻¹ᵁ V).ι g').app M)).hom).injective
   exact fun y₁ y₂ hy ↦ (f'.higherDirectImageSectionsAddEquiv _ q hV).symm.injective
     ((f' ⁻¹ᵁ V).cohomologyOnPullbackι_injective _ q (hmap hy))
 
@@ -166,11 +114,10 @@ private lemma sectionsToCohomologyPreimage_smul (a : Γ(Y', V))
       ⟨f'.resLE V (f' ⁻¹ᵁ V) le_rfl ≫ hV.isoSpec.hom⟩
     sectionsToCohomologyPreimage g' f' M q hV (a • y) =
       a • sectionsToCohomologyPreimage g' f' M q hV y := by
-  rw [sectionsToCohomologyPreimage_apply,
+  rw [sectionsToCohomologyPreimage_apply, sectionsToCohomologyPreimage_apply,
+    base_smul_cohomologyOn, baseRingToGlobalSections_preimage,
     cohomologyOnPullbackι_higherDirectImageSectionsAddEquiv_symm_smul,
-    ← cohomologyOnMapLinear_apply, LinearMap.map_smul, cohomologyOnMapLinear_apply,
-    ← baseRingToGlobalSections_preimage f' hV a]
-  rfl
+    ← cohomologyOnMapLinear_apply, LinearMap.map_smul, cohomologyOnMapLinear_apply]
 
 /-- On an affine open `V` of `Y'` and for a class `c ∈ H^q(X, M)`, `sectionsToCohomologyPreimage`
 sends the image under the base change map of the pullback of the section defined by `c` to the
@@ -220,7 +167,7 @@ private theorem bijective_higherDirectImageBaseChange_app_app {V : Y'.Opens}
   let : W.toScheme.Over (Spec (.of Γ(Y', V))) := ⟨f'.resLE V W le_rfl ≫ hV.isoSpec.hom⟩
   have H₀ : IsPullback (W.ι ≫ g') (W.toScheme ↘ Spec (.of Γ(Y', V))) (X ↘ Spec (.of Γ(Y, ⊤)))
       (Spec.map (CommRingCat.ofHom (algebraMap Γ(Y, ⊤) Γ(Y', V)))) :=
-    isPullback_preimage_ι_comp H hV hVg
+    H.isPullback_preimage_ι_comp hV hVg
   -- The source: sections of `g^* N` over `V` are `Γ(Y', V) ⊗ Γ(Y, N)`, and `Γ(Y, N) = H^q(X, M)`.
   let : Module Γ(Y, ⊤) Γ((pullback g).obj N, V) := Module.compHom _ (algebraMap Γ(Y, ⊤) Γ(Y', V))
   have : IsScalarTower Γ(Y, ⊤) Γ(Y', V) Γ((pullback g).obj N, V) :=
@@ -234,31 +181,55 @@ private theorem bijective_higherDirectImageBaseChange_app_app {V : Y'.Opens}
   let φV : Γ((pullback g).obj N, V) →ₗ[Γ(Y', V)]
       Γ((f'.higherDirectImage q).obj ((pullback g').obj M), V) :=
     { toFun := φ.app V, map_add' := map_add _, map_smul' := φ.app_smul }
-  let e := sectionsTopLinearEquiv f M q
+  let e₀ : cohomologyOn M q (f ⁻¹ᵁ ⊤) ≃ₗ[Γ(Y, ⊤)] Γ(N, ⊤) :=
+    (f.higherDirectImageSectionsAddEquiv M q hY).toLinearEquiv fun r c ↦ by
+      rw [base_smul_cohomologyOn, baseRingToGlobalSections_eq_appTop,
+        higherDirectImageSectionsAddEquiv_appTop_smul, TopologicalSpace.Opens.leTop, homOfLE_refl,
+        op_id, CategoryTheory.Functor.map_id, ConcreteCategory.id_apply]
+  let e := e₀.symm
+  -- The local linear bundle retains the additive section map; use its own cancellation law.
+  have he (s : Γ(N, ⊤)) : f.higherDirectImageSectionsAddEquiv M q hY (e s) = s :=
+    e₀.apply_symm_apply s
   -- The target: sections of `R^q f'_* g'^* M` over `V` embed `Γ(Y', V)`-linearly into the
   -- cohomology of the open subscheme `W` with coefficients in the pullback of `M` along `W ⟶ X`.
-  let κ := sectionsToCohomologyPreimage g' f' M q hV
+  -- Both target opens are top; align the indexed module structures in the linearity laws.
+  let κ : Γ((f'.higherDirectImage q).obj ((pullback g').obj M), V) →ₗ[Γ(Y', V)]
+      cohomologyOn ((pullback (W.ι ≫ g')).obj M) q ((W.ι ≫ g') ⁻¹ᵁ (f ⁻¹ᵁ ⊤)) :=
+    { toFun := sectionsToCohomologyPreimage g' f' M q hV
+      map_add' := by
+        intro x y
+        convert! (sectionsToCohomologyPreimage g' f' M q hV).map_add x y using 1
+      map_smul' := by
+        intro a y
+        convert! sectionsToCohomologyPreimage_smul g' f' M q hV a y using 1 }
+  let : Module Γ(Y, ⊤)
+      (cohomologyOn ((pullback (W.ι ≫ g')).obj M) q ((W.ι ≫ g') ⁻¹ᵁ (f ⁻¹ᵁ ⊤))) :=
+    Module.compHom _ (algebraMap Γ(Y, ⊤) Γ(Y', V))
+  have : IsScalarTower Γ(Y, ⊤) Γ(Y', V)
+      (cohomologyOn ((pullback (W.ι ≫ g')).obj M) q ((W.ι ≫ g') ⁻¹ᵁ (f ⁻¹ᵁ ⊤))) :=
+    .of_algebraMap_smul fun _ _ ↦ rfl
   -- Read through these, the base change map is the flat base change map on cohomology.
-  have hcomm (z) : κ (φV (hψ₀.equiv z)) = cohomologyOnBaseChange H₀ M q (f ⁻¹ᵁ ⊤)
-      (LinearEquiv.baseChange Γ(Y, ⊤) Γ(Y', V) _ _ e z) := by
-    induction z using TensorProduct.inductionOn with
-    | add z₁ z₂ h₁ h₂ =>
-      simp only [map_add, h₁, h₂]
-      -- the two sides add in `H^q` of `⊤` and of its preimage `(W.ι ≫ g')⁻¹ f⁻¹ ⊤`, the same open
-      rfl
-    | tmul a s =>
-      rw [IsBaseChange.equiv_tmul, LinearMap.map_smul, sectionsToCohomologyPreimage_smul,
-        LinearEquiv.baseChange_tmul, cohomologyOnBaseChange_tmul]
-      refine congrArg (a • ·) (Eq.trans ?_
-        (sectionsToCohomologyPreimage_higherDirectImageBaseChange_app_app g' f' M q hV H.w hVg
-          (e s)))
-      rw [show f.higherDirectImageSectionsAddEquiv M q hY (e s) = s from
-        AddEquiv.apply_symm_apply _ s]
-      -- `φV` and `ψ₀` are `φ.app V` and `g.pullbackSectionsLE` as linear maps
-      rfl
+  have hcomm : κ.comp (φV.comp hψ₀.equiv.toLinearMap) =
+      (cohomologyOnBaseChange H₀ M q (f ⁻¹ᵁ ⊤)).comp
+        (LinearEquiv.baseChange Γ(Y, ⊤) Γ(Y', V) _ _ e).toLinearMap := by
+    apply TensorProduct.AlgebraTensorModule.ext
+    intro a s
+    -- Evaluate the bundled composites to use the pure-tensor computation rules.
+    change κ (φV (hψ₀.equiv (a ⊗ₜ s))) =
+      cohomologyOnBaseChange H₀ M q (f ⁻¹ᵁ ⊤)
+        (LinearEquiv.baseChange Γ(Y, ⊤) Γ(Y', V) _ _ e (a ⊗ₜ s))
+    rw [IsBaseChange.equiv_tmul, LinearMap.map_smul, LinearMap.map_smul,
+      LinearEquiv.baseChange_tmul, cohomologyOnBaseChange_tmul]
+    refine congrArg (a • ·) (Eq.trans ?_
+      (sectionsToCohomologyPreimage_higherDirectImageBaseChange_app_app g' f' M q hV H.w hVg
+        (e s)))
+    rw [he]
+    -- `κ`, `φV` and `ψ₀` bundle the section maps occurring in the comparison lemma.
+    rfl
+  have hcomp : κ ∘ φV ∘ hψ₀.equiv = cohomologyOnBaseChange H₀ M q (f ⁻¹ᵁ ⊤) ∘
+      LinearEquiv.baseChange Γ(Y, ⊤) Γ(Y', V) _ _ e := funext (DFunLike.congr_fun hcomm)
   have hb : Function.Bijective (κ ∘ φV ∘ hψ₀.equiv) := by
-    rw [show κ ∘ φV ∘ hψ₀.equiv = cohomologyOnBaseChange H₀ M q (f ⁻¹ᵁ ⊤) ∘
-      LinearEquiv.baseChange Γ(Y, ⊤) Γ(Y', V) _ _ e from funext hcomm]
+    rw [hcomp]
     exact (bijective_cohomologyOnBaseChange H₀ M (f.isCompact_preimage hY.isCompact)
       (f.isQuasiSeparated_preimage hY.isQuasiSeparated) q).comp (LinearEquiv.bijective _)
   have hL : Function.Bijective (φV ∘ hψ₀.equiv) :=
@@ -270,7 +241,7 @@ private theorem bijective_higherDirectImageBaseChange_app_app {V : Y'.Opens}
 schemes with `Y` affine, `g : Y' ⟶ Y` flat and `f : X ⟶ Y` quasi-compact and quasi-separated. For
 every quasi-coherent `𝒪_X`-module `M` and every `q`, the base change map
 `g^* R^q f_* M ⟶ R^q f'_* g'^* M` is an isomorphism. -/
-theorem isIso_higherDirectImageBaseChange_app :
+theorem _root_.CategoryTheory.IsPullback.isIso_higherDirectImageBaseChange_app :
     IsIso ((higherDirectImageBaseChange H.w q).app M) :=
   Scheme.Modules.Hom.isIso_of_isBasis _ (B := fun V : Y'.affineOpens ↦ (V : Y'.Opens))
     (by rw [Subtype.range_coe]; exact Y'.isBasis_affineOpens) fun V ↦

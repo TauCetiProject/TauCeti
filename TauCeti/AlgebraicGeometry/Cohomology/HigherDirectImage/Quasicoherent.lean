@@ -247,6 +247,7 @@ lemma higherDirectImageSectionsAddEquiv_naturality {M N : X.Modules} [M.IsQuasic
 /-- The identification `higherDirectImageSectionsAddEquiv` of `Hⁿ(f⁻¹ V, M)` with the sections of
 `Rⁿ f_* M` over an affine open `V` is linear over the global functions of `Y`, acting on
 `Hⁿ(f⁻¹ V, M)` through their pullbacks along `f` and on sections through restriction to `V`. -/
+@[simp]
 lemma higherDirectImageSectionsAddEquiv_appTop_smul {V : Y.Opens} (hV : IsAffineOpen V)
     (r : Γ(Y, ⊤)) (c : cohomologyOn M n (f ⁻¹ᵁ V)) :
     f.higherDirectImageSectionsAddEquiv M n hV (f.appTop r • c) =
