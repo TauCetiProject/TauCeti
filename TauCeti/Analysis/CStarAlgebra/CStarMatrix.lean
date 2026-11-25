@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 public import Mathlib.Data.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.Trace
+public import Mathlib.RingTheory.SimpleRing.Matrix
 import Mathlib.Algebra.GroupWithZero.Pi
 import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 import Mathlib.Topology.Instances.Matrix
@@ -51,6 +52,7 @@ diagonal embedding `b ↦ diag(b, …, b)` and the matrix units `eᵢⱼ` of `M_
 
 * `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
+* `CStarMatrix.instIsSimpleRing`: square matrices over a simple ring form a simple ring.
 * `CStarMatrix.instSeparableSpace`: finite matrices over a separable C⋆-algebra form a separable
   space.
 * `CStarMatrix.instModuleFinite`: `CStarMatrix m n A` is a finite module over finite index
@@ -612,6 +614,12 @@ theorem eq_sum_smul_piSingle_ofMatrix_single_one {ι : Type*} [Fintype ι] [Deci
   rw [← Pi.single_smul, smul_of, Matrix.smul_single, smul_eq_mul, mul_one]
 
 end MatrixUnits
+
+/-- Square matrices over a simple ring form a simple ring: their two-sided ideals are the matrices
+over the two-sided ideals of the coefficient ring. -/
+instance instIsSimpleRing {n A : Type*} [Fintype n] [Nonempty n] [Ring A] [IsSimpleRing A] :
+    IsSimpleRing (CStarMatrix n n A) :=
+  inferInstanceAs (IsSimpleRing (Matrix n n A))
 
 /-- A matrix space over a separable C⋆-algebra with finite index types is separable. -/
 instance instSeparableSpace {m n A : Type*} [Finite m] [Finite n] [NonUnitalCStarAlgebra A]
