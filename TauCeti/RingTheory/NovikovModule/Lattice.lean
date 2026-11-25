@@ -57,7 +57,14 @@ not restrict to one on a lattice without a shift of the cutoff.
 ## Main results
 
 * `TauCeti.NovikovModule.single_smul_mem_lattice_iff`:
-  `e^h • a ∈ lattice R hF C ↔ a ∈ lattice R hF (C + N h)`.
+  `e^h • a ∈ lattice R hF C ↔ a ∈ lattice R hF (C + N h)`, and its set-level form
+  `TauCeti.NovikovModule.single_smul_lattice`: `e^h • lattice R hF C = lattice R hF (C - N h)`.
+* `TauCeti.NovikovModule.iUnion_single_neg_smul_lattice`: for monomials of unbounded period, the
+  completed combinations are `⋃ₘ e^(-m) (lattice R hF C)`; in the action-weighted case,
+  `TauCeti.NovikovModule.single_inr_neg_smul_lattice_zero` and
+  `TauCeti.NovikovModule.iUnion_single_inr_neg_smul_lattice_zero` give
+  `T^(-t) (lattice R hF 0) = lattice R hF t` and that the completed combinations are
+  `⋃_(t ≥ 0) T^(-t) (lattice R hF 0)`.
 * `TauCeti.NovikovModule.iUnion_lattice`, `TauCeti.NovikovModule.iInf_lattice`: the lattices
   exhaust the completed combinations and meet in `0`.
 * `TauCeti.NovikovModule.isLocalizedModule_lattice`: the inclusion of a lattice is a localization
@@ -81,6 +88,7 @@ noncomputable section
 namespace TauCeti.NovikovModule
 
 open NovikovSeries
+open scoped Pointwise
 
 section Ring
 
@@ -150,6 +158,34 @@ theorem single_smul_mem_lattice_iff (h : H) :
     rwa [single_smul_apply hF, neg_vadd_vadd, one_mul] at this
   · rintro ha ⟨i, p⟩ hp
     rw [single_smul_apply hF, ha ⟨i, -h +ᵥ p⟩ (by rw [hF, map_neg]; linarith), mul_zero]
+
+/-- **Monomial shifts of lattices.** The monomial `e^h` maps the lattice of cutoff `C` onto that
+of cutoff `C - N h`. -/
+theorem single_smul_lattice (h : H) (C : ℝ) :
+    letI := module (R := R) hF
+    NovikovSeries.single (N := N) h (1 : R) • (lattice R hF C : Set (NovikovModule R F)) =
+      lattice R hF (C - N h) := by
+  let := module (R := R) hF
+  ext a
+  refine ⟨?_, fun ha => ⟨NovikovSeries.single (N := N) (-h) (1 : R) • a, ?_, ?_⟩⟩
+  · rintro ⟨b, hb, rfl⟩
+    exact (single_smul_mem_lattice_iff hF h).2 (by rwa [sub_add_cancel])
+  · exact (single_smul_mem_lattice_iff hF (-h)).2 (by rwa [map_neg, ← sub_eq_add_neg])
+  · simp only [smul_smul, single_mul_single, add_neg_cancel, mul_one, single_zero_one, one_smul]
+
+/-- **The completed module as a union of shifted lattices.** If the monomials `e^m`, `m ∈ M`, have
+periods unbounded above, then every completed combination lies in `e^(-m)` times the lattice of
+cutoff `C` for some `m ∈ M`. -/
+theorem iUnion_single_neg_smul_lattice {M : Set H} (hM : ∀ D : ℝ, ∃ m ∈ M, D ≤ N m) (C : ℝ) :
+    letI := module (R := R) hF
+    ⋃ m ∈ M, NovikovSeries.single (N := N) (-m) (1 : R) •
+      (lattice R hF C : Set (NovikovModule R F)) = Set.univ := by
+  let := module (R := R) hF
+  refine Set.eq_univ_of_forall fun a => ?_
+  obtain ⟨D, hD⟩ := exists_mem_potentialFiltration a
+  obtain ⟨m, hmM, hm⟩ := hM (D - C)
+  simp only [Set.mem_iUnion, single_smul_lattice, map_neg, sub_neg_eq_add]
+  exact ⟨m, hmM, monotone_lattice hF (by linarith) hD⟩
 
 /-- Lifts all of potential `C` identify the lattice of cutoff `C` with `ι → Λ₀`, by their
 coordinates. -/
@@ -248,6 +284,33 @@ theorem finite_lattice (hN : Function.Surjective N) (C : ℝ) :
   choose r hr using fun i => exists_potential_eq hF hN i C
   exact .of_basis (latticeBasis hF r hr)
 
+/-- **Action-weighted shifted lattices.** On the exponent group `G × ℝ` with periods
+`(g, t) ↦ E g + t`, the monomial `T^(-t) = e^(0, -t)` maps the lattice of cutoff `0` onto that of
+cutoff `t`. -/
+theorem single_inr_neg_smul_lattice_zero {G : Type*} [AddGroup G] {E : G →+ ℝ}
+    {P : ι → Type*} [∀ i, AddTorsor (G × ℝ) (P i)] {F : (Σ i, P i) → ℝ}
+    (hF : ∀ i h (p : P i), F ⟨i, h +ᵥ p⟩ = F ⟨i, p⟩ - E.coprod (AddMonoidHom.id ℝ) h) (t : ℝ) :
+    letI := module (R := R) hF
+    NovikovSeries.single (N := E.coprod (AddMonoidHom.id ℝ)) (AddMonoidHom.inr G ℝ (-t)) (1 : R) •
+      (lattice R hF 0 : Set (NovikovModule R F)) = lattice R hF t := by
+  rw [single_smul_lattice]
+  simp
+
+/-- **The action-weighted completed module as a union of shifted lattices.** On the exponent
+group `G × ℝ` with periods `(g, t) ↦ E g + t`, every completed combination lies in
+`T^(-t) (lattice R hF 0)` for some `t ≥ 0`, where `T^(-t) = e^(0, -t)`. -/
+theorem iUnion_single_inr_neg_smul_lattice_zero {G : Type*} [AddGroup G] {E : G →+ ℝ}
+    {P : ι → Type*} [∀ i, AddTorsor (G × ℝ) (P i)] {F : (Σ i, P i) → ℝ}
+    (hF : ∀ i h (p : P i), F ⟨i, h +ᵥ p⟩ = F ⟨i, p⟩ - E.coprod (AddMonoidHom.id ℝ) h) :
+    letI := module (R := R) hF
+    ⋃ t ≥ (0 : ℝ),
+      NovikovSeries.single (N := E.coprod (AddMonoidHom.id ℝ)) (AddMonoidHom.inr G ℝ (-t)) (1 : R) •
+        (lattice R hF 0 : Set (NovikovModule R F)) = Set.univ := by
+  refine Set.eq_univ_of_forall fun a => ?_
+  obtain ⟨D, hD⟩ := exists_mem_potentialFiltration a
+  simp only [Set.mem_iUnion, single_inr_neg_smul_lattice_zero]
+  exact ⟨max D 0, le_max_right _ _, monotone_lattice hF (le_max_left _ _) hD⟩
+
 end Ring
 
 section CommRing
@@ -286,9 +349,9 @@ theorem isLocalizedModule_lattice {M : AddSubmonoid H} (hM : ∀ D : ℝ, ∃ m 
 
 /-- **Action-weighted localization of a lattice.** On the exponent group `G × ℝ` with periods
 `(g, r) ↦ E g + r`, the inclusion of any lattice is a localization at the monomials
-`T^r = e^(0, r)`, `r ≥ 0`. Since `single_smul_mem_lattice_iff` gives
-`T^(-r) (lattice R hF 0) = lattice R hF r`, this says that the completed module is
-`⋃ᵣ T^(-r) (lattice R hF 0)`. -/
+`T^r = e^(0, r)`, `r ≥ 0`. The corresponding set-level identities
+`T^(-r) (lattice R hF 0) = lattice R hF r` and `⋃_(r ≥ 0) T^(-r) (lattice R hF 0) = univ` are
+`single_inr_neg_smul_lattice_zero` and `iUnion_single_inr_neg_smul_lattice_zero`. -/
 theorem isLocalizedModule_lattice_map_inr {G : Type*} [AddCommGroup G] {E : G →+ ℝ}
     {P : ι → Type*} [∀ i, AddTorsor (G × ℝ) (P i)] {F : (Σ i, P i) → ℝ}
     (hF : ∀ i h (p : P i), F ⟨i, h +ᵥ p⟩ = F ⟨i, p⟩ - E.coprod (AddMonoidHom.id ℝ) h) (C : ℝ) :
