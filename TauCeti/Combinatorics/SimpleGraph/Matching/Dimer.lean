@@ -35,7 +35,8 @@ and a homomorphism `τ : Γ →* (G ≃g G)` induces an action of `Γ` of this k
 For a finite set `F` of edges and a configuration `ω`, the *completion set*
 `G.dimerCompletionSet F ω` is the set of dimer configurations agreeing with `ω` off `F`.
 It depends on `ω` only off `F` (`SimpleGraph.dimerCompletionSet_congr`), is finite
-(`SimpleGraph.finite_dimerCompletionSet`) and contains `ω` when `ω` is a dimer configuration.
+(`SimpleGraph.finite_dimerCompletionSet`) and contains `ω` when `ω` is a dimer configuration; at
+`F = ∅` it is then the singleton `{ω}` (`SimpleGraph.dimerCompletionSet_empty`).
 Its members cover the same vertices by edges of `F` of value `true`
 (`SimpleGraph.dimerCoveredVertices`, `SimpleGraph.dimerCoveredVertices_eq`): the endpoints of edges
 of `F` that are not covered by an edge outside `F`
@@ -302,6 +303,15 @@ theorem dimerCoveredVertices_eq [DecidableEq V] {F : Finset G.edgeSet} {ω ω' :
   ext v
   rw [hω.mem_dimerCoveredVertices_iff, hω'.mem_dimerCoveredVertices_iff]
   exact and_congr_right fun _ => forall₂_congr fun e he => by rw [h e he]
+
+/-- The completion set of a dimer configuration at `F = ∅` is the singleton of it. -/
+@[simp]
+theorem dimerCompletionSet_empty {ω : G.edgeSet → Bool} (hω : G.IsDimerConfiguration ω) :
+    G.dimerCompletionSet ∅ ω = {ω} := by
+  ext ω'
+  simp only [mem_dimerCompletionSet, Finset.notMem_empty, not_false_eq_true, forall_const,
+    mem_singleton_iff]
+  exact ⟨fun ⟨_, h⟩ => funext h, by rintro rfl; exact ⟨hω, fun _ => rfl⟩⟩
 
 /-- A completion set is finite: its members are determined by their values on `F`. -/
 theorem finite_dimerCompletionSet (F : Finset G.edgeSet) (ω : G.edgeSet → Bool) :

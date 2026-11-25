@@ -67,6 +67,9 @@ The complementary projection `1 - P_U` has range `Uᗮ`, and more generally `1 -
 A linear map agrees with its composition with the orthogonal projection onto the orthogonal
 complement of its kernel whenever the kernel admits an orthogonal projection.
 
+For `s ⊆ U`, the preimage of `s` under the orthogonal projection onto `U` is the cylinder
+`{y + z | y ∈ s, z ∈ Uᗮ}`.
+
 Conjugating the orthogonal projection onto `V` by a linear isometry equivalence `e` of Hilbert
 spaces gives the orthogonal projection onto `e(V)`.
 
@@ -81,6 +84,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `Submodule.starProjection_starProjection_apply`: `P_U (P_U x) = P_U x`.
 * `Submodule.orthogonalProjectionOnto_comp_subtypeL`: restricting the orthogonal projection
   onto `U` to `U` itself gives the identity map.
+* `Submodule.preimage_orthogonalProjectionOnto_eq`: the preimage of `s ⊆ U` under the
+  orthogonal projection onto `U` is the cylinder `{y + z | y ∈ s, z ∈ Uᗮ}`.
 * `Submodule.adjoint_subtype`: the adjoint of subspace inclusion is orthogonal projection
   onto that subspace.
 * `Submodule.adjoint_orthogonalProjectionOnto_toLinearMap`: the adjoint of restricted
@@ -159,6 +164,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `U.starProjection`, and operators commuting with `U.starProjection` leave `U` invariant.
 * `LinearMap.apply_sub_starProjection_ker`,
   `ContinuousLinearMap.comp_starProjection_orthogonal_ker`: maps ignore their kernel component.
+* `LinearMap.exists_infDist_inf_ker_le`: distance to `P ⊓ ker D` is controlled by distance to `P`
+  plus a multiple of `‖D (P.starProjection w)‖`.
 * `LinearIsometryEquiv.conjStarAlgEquiv_starProjection`: conjugating `P_V` by a linear isometry
   equivalence `e` gives the orthogonal projection onto `e(V)`.
 -/
@@ -420,6 +427,17 @@ theorem orthogonalProjectionOnto_comp_subtypeL :
     U.orthogonalProjectionOnto ∘L U.subtypeL = ContinuousLinearMap.id 𝕜 U := by
   ext u
   exact congrArg Subtype.val (U.orthogonalProjectionOnto_mem_subspace_eq_self u)
+
+/-- The cylinder over `s ⊆ U` along `Uᗮ`, the set `{y + z | y ∈ s, z ∈ Uᗮ}`, is the preimage of
+`s` under the orthogonal projection onto `U`. -/
+theorem preimage_orthogonalProjectionOnto_eq (s : Set U) :
+    U.orthogonalProjectionOnto ⁻¹' s = {x | ∃ y ∈ s, ∃ z ∈ Uᗮ, (y : E) + z = x} := by
+  ext x
+  refine ⟨fun hx => ⟨_, hx, x - U.orthogonalProjectionOnto x,
+    U.sub_starProjection_mem_orthogonal x, add_sub_cancel _ _⟩, ?_⟩
+  rintro ⟨y, hy, z, hz, rfl⟩
+  rwa [Set.mem_preimage, map_add, U.orthogonalProjectionOnto_mem_subspace_eq_self,
+    U.orthogonalProjectionOnto_eq_zero_iff.2 hz, add_zero]
 
 /-- The adjoint of the inclusion `U → E` is the orthogonal projection `E → U`.
 Both maps are regarded as finite-dimensional algebraic linear maps. -/
@@ -850,6 +868,31 @@ theorem apply_sub_starProjection_ker (u : E →ₗ[𝕜] F) [u.ker.HasOrthogonal
   rw [mem_ker] at hx
   simpa only [map_add, hx, add_zero] using
     congrArg u (sub_add_cancel x (u.ker.starProjection x))
+
+/-- **Subspace-kernel distance bound.** For `D : E →ₗ[𝕜] F` on a finite-dimensional inner product
+space and `P ≤ E`, `infDist w (P ⊓ ker D)` is bounded by
+`infDist w P + c * ‖D (P.starProjection w)‖`. -/
+theorem exists_infDist_inf_ker_le {F : Type*} [FiniteDimensional 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] (D : E →ₗ[𝕜] F) (P : Submodule 𝕜 E) :
+    ∃ c : NNReal, 0 < c ∧ ∀ w : E,
+      Metric.infDist w ((P ⊓ LinearMap.ker D : Submodule 𝕜 E) : Set E) ≤
+        Metric.infDist w (P : Set E) + c * ‖D (P.starProjection w)‖ := by
+  set K₀ : Submodule 𝕜 E := P ⊓ LinearMap.ker D; set M : Submodule 𝕜 E := P ⊓ K₀ᗮ
+  have hM_inj : LinearMap.ker (D.comp M.subtype) = ⊥ := by
+    rw [LinearMap.ker_eq_bot]; rintro ⟨m, hmP, hmK⟩ ⟨n, hnP, hnK⟩ hmn; ext
+    have hsub : m - n ∈ K₀ ⊓ K₀ᗮ := ⟨⟨P.sub_mem hmP hnP, LinearMap.mem_ker.mpr (by
+      simpa [map_sub, sub_eq_zero] using hmn)⟩, K₀ᗮ.sub_mem hmK hnK⟩
+    exact sub_eq_zero.mp ((Submodule.mem_bot 𝕜).mp (Submodule.inf_orthogonal_eq_bot K₀ ▸ hsub))
+  obtain ⟨c, hc0, hc_anti⟩ := (D.comp M.subtype).exists_antilipschitzWith hM_inj
+  refine ⟨c, hc0, fun w => ?_⟩
+  let p := P.starProjection w; let q := K₀.starProjection p
+  have hqK : q ∈ K₀ := K₀.starProjection_apply_mem p
+  have hnorm_m : ‖p - q‖ ≤ c * ‖D p‖ := by
+    simpa [Subtype.dist_eq, map_sub, LinearMap.mem_ker.mp hqK.2] using hc_anti.le_mul_dist
+      ⟨p - q, P.sub_mem (P.starProjection_apply_mem w) hqK.1,
+        K₀.sub_starProjection_mem_orthogonal p⟩ 0
+  exact ((Metric.infDist_le_dist_of_mem hqK).trans (dist_triangle w p q)).trans <| by
+    rw [P.dist_starProjection_eq_infDist w, dist_eq_norm]; gcongr
 
 end LinearMap
 

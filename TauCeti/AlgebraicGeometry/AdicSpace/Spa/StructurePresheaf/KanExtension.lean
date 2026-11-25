@@ -18,7 +18,9 @@ limit over presentations, has this property naturally in `V`: it is the pointwis
 extension of its restriction to the rational opens (`rationalOpensFunctor`). Since the rational
 opens form a basis, a right Kan extension along their inclusion of a sheaf for the restricted
 topology is a sheaf, so the sheaf condition on `Spa(A, A⁺)` reduces to the rational opens, as in
-the proof of Wedhorn's Proposition A.4.
+the proof of Wedhorn's Proposition A.4. Since intersections of rational opens are rational, the
+sheaf condition on the rational opens is in turn the gluing condition for covers of rational opens
+by rational opens.
 
 ## Main definitions
 
@@ -34,6 +36,8 @@ the proof of Wedhorn's Proposition A.4.
 * `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_of_isSheaf_rational` :
   `presentationLimitPresheaf` is a sheaf once its restriction to the rational opens is a sheaf for
   the restricted topology.
+* `TauCeti.ValuationSpectrum.isSheaf_rational_comp_of_isSheafFor_ofArrows` : gluing along rational
+  covers of rational opens is the sheaf condition on the basis of rational opens.
 
 ## References
 
@@ -48,7 +52,7 @@ public section
 
 open CategoryTheory CategoryTheory.Limits Opposite TopologicalSpace TauCeti.Huber
 
-universe v
+universe v w
 
 namespace TauCeti.ValuationSpectrum
 
@@ -223,5 +227,25 @@ theorem isSheaf_presentationLimitPresheaf_of_isSheaf_rational (h : Presheaf.IsSh
   TopCat.Presheaf.isSheaf_of_isAdapted_of_isSheaf_restrictedTopology (X := TopCat.of ↥(spa Aplus))
     _ _ (isBasis_spaRationalOpens Aplus)
     (isAdapted_presentationLimitPresheaf (P := P) (Aplus := Aplus)) h
+
+variable (P) in
+/-- **The sheaf condition on the rational basis.** Let `G` be a functor from complete separated
+topological rings into types. If the presentation-limit presheaf followed by `G` satisfies the
+sheaf condition for every cover of a rational open by rational opens, then its restriction to the
+rational opens is a sheaf for the topology restricted from `Spa(A, A⁺)`. Intersections of
+rational opens are rational, which is what lets compatibility on the basis stand in for
+compatibility on pairwise intersections. -/
+theorem isSheaf_rational_comp_of_isSheafFor_ofArrows
+    (G : TopCommRingCat.isCompleteSeparated.{v}.FullSubcategory ⥤ Type w)
+    (hrat : ∀ {W : Opens ↥(spa Aplus)} {ι : Type v} {U : ι → Opens ↥(spa Aplus)},
+      W ∈ spaRationalOpens Aplus → (∀ i, U i ∈ spaRationalOpens Aplus) → ∀ hcov : ⨆ i, U i = W,
+      (Presieve.ofArrows U fun i ↦ homOfLE ((le_iSup U i).trans_eq hcov)).IsSheafFor
+        (presentationLimitPresheaf P Aplus ⋙ G)) :
+    Presieve.IsSheaf
+      ((rationalOpensFunctor Aplus).restrictedTopology (Opens.grothendieckTopology ↥(spa Aplus)))
+      ((rationalOpensFunctor Aplus).op ⋙ presentationLimitPresheaf P Aplus ⋙ G) :=
+  have : IsHuberRing A := ⟨⟨P⟩⟩
+  isSheaf_restrictedTopology_rationalOpens_of_isSheafFor_ofArrows Aplus
+    (presentationLimitPresheaf P Aplus ⋙ G) hrat
 
 end TauCeti.ValuationSpectrum

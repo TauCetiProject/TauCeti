@@ -77,11 +77,9 @@ public section
 
 open CategoryTheory TopologicalSpace TauCeti.Huber TauCeti.Huber.PairOfDefinition
 
-universe v w
+universe v
 
 namespace TauCeti.ValuationSpectrum
-
-section
 
 variable {A : Type v} [CommRing A] [UniformSpace A] [IsTopologicalRing A] [IsTateRing A]
   (P : PairOfDefinition A) {Aplus : Subring A}
@@ -188,15 +186,7 @@ theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_of_laurentGluing
     rw [← hcov]
     exact SetLike.ext fun v ↦ by simp [Opens.mem_iSup]
 
-end
-
 /-! ### The sheaf condition on all opens -/
-
-section
-
-variable {A : Type v} [CommRing A] [UniformSpace A] [IsTopologicalRing A] [IsTateRing A]
-  (P : PairOfDefinition A) {Aplus : Subring A}
-  {C : ∀ (A : Type v) [CommRing A] [UniformSpace A] [IsTopologicalRing A] [IsTateRing A], Prop}
 
 /-- **The structure presheaf of sets is a sheaf under Laurent gluing.** Let `C` be a predicate on
 Tate rings satisfying `LaurentGluing`, and `A` a Tate ring satisfying `C`. If the ring of
@@ -243,7 +233,5 @@ theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq [IsStronglyNoetherian A]
   isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_of_laurentGluing P
     laurentGluing_isStronglyNoetherian (inferInstanceAs (IsStronglyNoetherian A)) hP hAplus hW hU
     hcov
-
-end
 
 end TauCeti.ValuationSpectrum

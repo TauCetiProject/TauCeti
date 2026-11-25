@@ -13,6 +13,7 @@ public import Mathlib.CategoryTheory.Sites.Pullback
 public import Mathlib.CategoryTheory.Sites.SheafCohomology.Basic
 public import TauCeti.Algebra.Homology.Ext.Basic
 
+import Mathlib.Algebra.Category.Grp.Zero
 import TauCeti.CategoryTheory.Sites.FreeYoneda
 
 /-!
@@ -37,7 +38,9 @@ naturally both in the object of the site and in the coefficient sheaf.
 * `TauCeti.CategoryTheory.freeYonedaSheafSectionsEquiv`, the additive equivalence between
   morphisms from that sheaf to `F` and sections of `F` over `U`, and
   `TauCeti.CategoryTheory.freeYonedaSheafCorepresentableBy`, the same universal property phrased
-  as a corepresentation of the sections functor;
+  as a corepresentation of the sections functor, and
+  `TauCeti.CategoryTheory.isZero_freeYonedaSheaf_of_bot_mem`, the vanishing of that sheaf for an
+  object covered by the empty sieve;
 * `TauCeti.CategoryTheory.cohomologyZeroSectionsEquiv F U`, identifying degree-zero cohomology
   over `U` with sections, and `TauCeti.CategoryTheory.cohomologyPresheafZeroIso F`, identifying
   degree-zero cohomology with sections and their restriction maps, and
@@ -151,6 +154,15 @@ lemma freeYonedaSheafSectionsEquiv_naturality_left {U V : C} (i : U ⟶ V)
       F.obj.map i.op (freeYonedaSheafSectionsEquiv J V F f) := by
   exact AddCommGrpCat.adj.freeYonedaSectionsAddEquiv_naturality_left
     (A := 𝟭 AddCommGrpCat) J i F f
+
+/-- The free abelian sheaf on an object `U` covered by the empty sieve is zero: morphisms out of it
+are the sections over `U` of a sheaf, and these are trivial. -/
+lemma isZero_freeYonedaSheaf_of_bot_mem {U : C} (hU : ⊥ ∈ J U) :
+    IsZero ((freeYonedaSheafFunctor J).obj U) := by
+  refine (IsZero.iff_id_eq_zero _).2 ((freeYonedaSheafSectionsEquiv J U _).injective ?_)
+  have := AddCommGrpCat.subsingleton_of_isZero
+    (Sheaf.isTerminalOfBotCover ((freeYonedaSheafFunctor J).obj U) U hU).isZero
+  exact Subsingleton.elim _ _
 
 section
 

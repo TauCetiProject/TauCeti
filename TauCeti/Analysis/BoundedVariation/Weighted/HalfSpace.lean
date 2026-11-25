@@ -24,7 +24,8 @@ For a `C¹` weight `W`, a unit vector `ν` and `c ∈ ℝ`, the weighted perimet
 `(n − 1)`-dimensional Hausdorff measure on the part of the boundary hyperplane in `Ω`
 (`TauCeti.weightedPerimeter_setOf_inner_lt`). For the Gaussian weight this gives
 `P_γ({x | ⟪x, ν⟫ < c}) = φ(c)`, the standard normal density at `c`
-(`TauCeti.gaussianPerimeter_setOf_inner_lt`). Rescaling a nonzero `ν` to unit length, a
+(`TauCeti.gaussianPerimeter_setOf_inner_lt`), and likewise `P_γ({x | c < ⟪x, ν⟫}) = φ(c)`
+(`TauCeti.gaussianPerimeter_setOf_lt_inner`). Rescaling a nonzero `ν` to unit length, a
 half-space of Gaussian measure `v` has Gaussian perimeter `I(v)`, the Gaussian isoperimetric
 function (`TauCeti.gaussianPerimeter_setOf_inner_lt_eq_gaussianIsoperimetricProfile`).
 
@@ -151,5 +152,15 @@ theorem gaussianPerimeter_setOf_inner_lt_eq_gaussianIsoperimetricProfile (ν : E
   rw [gaussianPerimeter_setOf_inner_lt_of_ne_zero hν, setOf_inner_lt_eq_smul_inv_norm hν,
     Probability.measureReal_stdGaussian_setOf_inner_lt (ν := ‖ν‖⁻¹ • ν) (norm_smul_inv_norm hν),
     Probability.gaussianIsoperimetricProfile_cdf]
+
+/-- **The Gaussian perimeter of an upper half-space.** For a unit vector `ν`, the half-space
+`{x | c < ⟪x, ν⟫}` has Gaussian perimeter `φ(c)`, the standard normal density at `c`. -/
+theorem gaussianPerimeter_setOf_lt_inner (hν : ‖ν‖ = 1) (c : ℝ) :
+    gaussianPerimeter {x : E | c < ⟪x, ν⟫} = ENNReal.ofReal (gaussianPDFReal 0 1 c) := by
+  have h : {x : E | c < ⟪x, ν⟫} = {x | ⟪x, -ν⟫ < -c} := by
+    ext x
+    simp [inner_neg_right]
+  rw [h, gaussianPerimeter_setOf_inner_lt (by rwa [norm_neg]) (-c)]
+  simp [gaussianPDFReal_def]
 
 end TauCeti

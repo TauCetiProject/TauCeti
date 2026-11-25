@@ -26,8 +26,8 @@ bases. Conversely, any presentation of `K` as such a union determines its slices
 In a prespectral space, whose compact open sets form a basis of the topology, every compact set
 `K` inside an open set `V` lies in a compact open set between them (Mathlib's
 `PrespectralSpace.exists_isCompact_and_isOpen_between`), and so every compact open subset of a
-subspace `Z` is cut out of `Z` by a compact open subset of the whole space
-(`TopologicalSpace.CompactOpens.exists_preimage_subtypeVal_eq`).
+subspace `Z` contained in an open set `U` is cut out of `Z` by a compact open subset of the whole
+space contained in `U` (`TopologicalSpace.CompactOpens.exists_subset_preimage_subtypeVal_eq`).
 
 ## Main definitions
 
@@ -46,14 +46,15 @@ subspace `Z` is cut out of `Z` by a compact open subset of the whole space
   `TopologicalSpace.CompactOpens.pairwiseDisjoint_sliceFiber`,
   `TopologicalSpace.CompactOpens.eq_finsetSup_sliceFiber_prod`: the decomposition of a compact open
   subset of a product into rectangles with pairwise disjoint bases.
-* `TopologicalSpace.CompactOpens.exists_preimage_subtypeVal_eq`: in a prespectral space, every
-  compact open subset of a subspace is cut out by a compact open subset of the whole space.
+* `TopologicalSpace.CompactOpens.exists_subset_preimage_subtypeVal_eq`: in a prespectral space,
+  every compact open subset of a subspace contained in an open set `U` is cut out by a compact open
+  subset of the whole space contained in `U`.
 
 ## References
 
 * J. Bernstein, *Representations of p-adic groups*, Harvard lectures 1992, written by
   K. Rumelhart, Chapter I, §1.2, Proposition 2, p. 8
-  (for `TopologicalSpace.CompactOpens.exists_preimage_subtypeVal_eq`).
+  (for `TopologicalSpace.CompactOpens.exists_subset_preimage_subtypeVal_eq`).
 -/
 
 public section
@@ -201,17 +202,22 @@ section Prespectral
 
 variable [PrespectralSpace X]
 
-/-- In a prespectral space, every compact open subset `K` of a subspace `Z` is cut out of `Z` by a
-compact open subset of the whole space. -/
-theorem exists_preimage_subtypeVal_eq {Z : Set X}
-    (K : CompactOpens Z) : ∃ W : CompactOpens X, Subtype.val ⁻¹' (W : Set X) = (K : Set Z) := by
+/-- In a prespectral space, every compact open subset `K` of a subspace `Z` contained in an open
+set `U` is cut out of `Z` by a compact open subset of `X` contained in `U`. For `U = univ`, every
+compact open subset of a subspace is cut out by a compact open subset of the whole space. -/
+theorem exists_subset_preimage_subtypeVal_eq {Z U : Set X} (hU : IsOpen U) (hZU : Z ⊆ U)
+    (K : CompactOpens Z) :
+    ∃ W : CompactOpens X, (W : Set X) ⊆ U ∧ Subtype.val ⁻¹' (W : Set X) = (K : Set Z) := by
   obtain ⟨V, hV, hVK⟩ := isOpen_induced_iff.1 K.isOpen
-  have hKV : Subtype.val '' (K : Set Z) ⊆ V := image_subset_iff.2 (by rw [hVK])
+  have hKV : Subtype.val '' (K : Set Z) ⊆ V ∩ U := by
+    rintro _ ⟨z, hz, rfl⟩
+    exact ⟨by rw [← hVK] at hz; exact hz, hZU z.property⟩
   obtain ⟨W, hWc, hWo, hKW, hWV⟩ := PrespectralSpace.exists_isCompact_and_isOpen_between
-    (K.isCompact.image continuous_subtypeVal) hV hKV
-  refine ⟨⟨⟨W, hWc⟩, hWo⟩, Subset.antisymm ?_ (image_subset_iff.1 hKW)⟩
+    (K.isCompact.image continuous_subtypeVal) (hV.inter hU) hKV
+  refine ⟨⟨⟨W, hWc⟩, hWo⟩, hWV.trans inter_subset_right,
+    Subset.antisymm ?_ (image_subset_iff.1 hKW)⟩
   rw [← hVK]
-  exact preimage_mono hWV
+  exact preimage_mono (hWV.trans inter_subset_left)
 
 end Prespectral
 
