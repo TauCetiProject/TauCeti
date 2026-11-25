@@ -32,6 +32,13 @@ theorem index_center : (Subgroup.center (SpecialLinearGroup (Fin 2) (ZMod 3))).i
   rw [natCard_center_sl2_zmod_three, natCard_sl2_zmod_three] at h
   omega
 
+/-- At `1`, row `i` of the certified table, embedded in `ℂ`, is the degree of that row. -/
+private theorem embeddedRow_one (i : SpecialLinearTwoThreeClassIndex) :
+    Cyclotomic.complexEmbedding
+        (specialLinearTwoThreeExactCharacterTable i (specialLinearTwoThreeClassData.index 1)) =
+      specialLinearTwoThreeCharacterDegrees i := by
+  rw [isCyclotomicCharacterTableSpec_specialLinearTwoThree.table_index_one, map_natCast]
+
 /-- The value at `1` of an irreducible character of `SL(2, 3)` is the degree attached to its row
 of the certified table. -/
 private theorem exists_apply_one_eq {χ : SpecialLinearGroup (Fin 2) (ZMod 3) → ℂ}
@@ -39,12 +46,10 @@ private theorem exists_apply_one_eq {χ : SpecialLinearGroup (Fin 2) (ZMod 3) �
     ∃ i, χ 1 = specialLinearTwoThreeCharacterDegrees i := by
   rw [irreducibleCharacters_specialLinearTwoThree] at hχ
   obtain ⟨i, rfl⟩ := hχ
-  refine ⟨i, ?_⟩
-  dsimp only
-  rw [isCyclotomicCharacterTableSpec_specialLinearTwoThree.table_index_one, map_natCast]
+  exact ⟨i, embeddedRow_one i⟩
 
 /-- **The degrees of `SL(2, 3)` are `1`, `2` and `3`.** -/
-theorem apply_one_mem {χ : SpecialLinearGroup (Fin 2) (ZMod 3) → ℂ}
+theorem apply_one_eq_one_or_eq_two_or_eq_three {χ : SpecialLinearGroup (Fin 2) (ZMod 3) → ℂ}
     (hχ : χ ∈ irreducibleCharacters ℂ (SpecialLinearGroup (Fin 2) (ZMod 3))) :
     χ 1 = 1 ∨ χ 1 = 2 ∨ χ 1 = 3 := by
   obtain ⟨i, hi⟩ := exists_apply_one_eq hχ
@@ -59,7 +64,7 @@ example {χ : SpecialLinearGroup (Fin 2) (ZMod 3) → ℂ}
     (hχ : χ ∈ irreducibleCharacters ℂ (SpecialLinearGroup (Fin 2) (ZMod 3))) :
     ∃ d : ℕ, χ 1 = d ∧ d ∣ (Subgroup.center (SpecialLinearGroup (Fin 2) (ZMod 3))).index := by
   rw [index_center]
-  rcases apply_one_mem hχ with h | h | h
+  rcases apply_one_eq_one_or_eq_two_or_eq_three hχ with h | h | h
   · exact ⟨1, by simp [h], by norm_num⟩
   · exact ⟨2, by simp [h], by norm_num⟩
   · exact ⟨3, by simp [h], by norm_num⟩
@@ -80,8 +85,7 @@ example : ∃ χ ∈ irreducibleCharacters ℂ (SpecialLinearGroup (Fin 2) (ZMod
     ⟨3, by decide⟩ (specialLinearTwoThreeClassData.index g)), ?_, ?_, ?_⟩
   · rw [irreducibleCharacters_specialLinearTwoThree]
     exact ⟨_, rfl⟩
-  · dsimp only
-    rw [isCyclotomicCharacterTableSpec_specialLinearTwoThree.table_index_one, map_natCast]
+  · refine (embeddedRow_one _).trans ?_
     rw [specialLinearTwoThreeCharacterDegrees_apply]
     exact_mod_cast (rfl : (![1, 1, 1, 3, 2, 2, 2] : Fin 7 → ℕ) 3 = 3)
   · rw [index_center]

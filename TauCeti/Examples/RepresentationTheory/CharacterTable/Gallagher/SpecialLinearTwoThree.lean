@@ -146,22 +146,29 @@ private theorem sum_mul_θ_inv (ψ : SpecialLinearGroup (Fin 2) (ZMod 3) → ℂ
 theorem χhat_restrict (n : N) : χhat n = θ n :=
   rfl
 
+/-- At `1` and at `-1`, `θ` takes the values of `χhat`. -/
+private theorem θ_one : θ 1 = χhat 1 := by
+  rw [← χhat_restrict, OneMemClass.coe_one]
+
+private theorem θ_negOne : θ negOne = χhat (-1) :=
+  (χhat_restrict negOne).symm
+
 /-- **`θ` is an irreducible character of `Q₈`**: it is a character, and its norm is
 `(2² + 2²)/8 = 1`. -/
 theorem θ_mem : θ ∈ irreducibleCharacters ℂ N := by
   obtain ⟨W, hW⟩ := irreducibleCharacters_subset_range (row_mem ⟨4, by decide⟩)
   have hθW : θ = W.character ∘ N.subtype := by
     rw [hW]
-    rfl
+    exact (funext χhat_restrict).symm
   have hv : θ ∈ virtualCharacters ℂ N :=
     hθW ▸ comp_mem_virtualCharacters N.subtype (character_mem_virtualCharacters W)
   refine mem_irreducibleCharacters_of_characterPairing_self_eq_one
     (f := ⟨θ, virtualCharacters_le_classFunction hv⟩) hv ?_ (n := 2) ?_
-  · rw [ClassFunction.characterPairing_apply]
+  · have h := sum_mul_θ_inv χhat
+    simp only [χhat_restrict] at h
+    rw [ClassFunction.characterPairing_apply]
     dsimp only
-    rw [show (∑ n : N, θ n * θ n⁻¹) = ∑ n : N, χhat n * θ n⁻¹ from rfl, sum_mul_θ_inv,
-      natCard_sl2ZModThreeQuaternionSubgroup]
-    change (8 : ℂ)⁻¹ * (2 * θ 1 - 2 * θ negOne) = 1
+    rw [h, natCard_sl2ZModThreeQuaternionSubgroup, ← θ_one, ← θ_negOne]
     simp only [θ_eq, one_ne_negOne, one_ne_negOne.symm]
     norm_num
   · simp only [θ_eq, one_ne_negOne]
@@ -189,7 +196,7 @@ example : θ ∘ sl2ZModThreeQuaternionEquiv = fun x : QuaternionGroup 2 =>
   rw [← hj, eq_four_of_degree_two j h1']
 
 /-- In the table of `SL(2, 3)`, only the three rows of degree two differ at `1` and `-1`. -/
-private theorem eq_of_table_ne :
+private theorem table_zero_ne_table_one_iff :
     ∀ i : SpecialLinearTwoThreeClassIndex,
       specialLinearTwoThreeExactCharacterTable i ⟨0, by decide⟩ ≠
           specialLinearTwoThreeExactCharacterTable i ⟨1, by decide⟩ ↔
@@ -217,8 +224,8 @@ theorem irreducibleCharactersOver_θ :
   have key (i : SpecialLinearTwoThreeClassIndex) :
       2 * row i 1 - 2 * row i (-1) ≠ 0 ↔
         i = ⟨4, by decide⟩ ∨ i = ⟨5, by decide⟩ ∨ i = ⟨6, by decide⟩ := by
-    rw [← eq_of_table_ne, row_one, row_neg_one, ← mul_sub, ne_eq, mul_eq_zero, sub_eq_zero,
-      Cyclotomic.complexEmbedding_injective.eq_iff]
+    rw [← table_zero_ne_table_one_iff, row_one, row_neg_one, ← mul_sub, ne_eq, mul_eq_zero,
+      sub_eq_zero, Cyclotomic.complexEmbedding_injective.eq_iff]
     simp
   constructor
   · rintro ⟨hψ, hne⟩
