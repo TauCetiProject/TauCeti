@@ -34,7 +34,9 @@ and postcomposition with a semilinear `LinearIsometryEquiv`
 (`LinearIsometryEquiv.nnNorm_comp_toContinuousLinearMap`,
 `LinearIsometryEquiv.nnNorm_toContinuousLinearMap_comp`), removing the `NormedAddCommGroup`
 assumption from `ContinuousLinearMap.opNNNorm_comp_linearIsometryEquiv` and
-`ContinuousLinearMap.opNNNorm_linearIsometryEquiv_comp`.
+`ContinuousLinearMap.opNNNorm_linearIsometryEquiv_comp`. Conjugating an operator by a linear
+isometric equivalence preserves its distance to the identity
+(`LinearIsometryEquiv.norm_comp_comp_symm_sub_id`).
 
 Also defines `SeparationQuotient.liftₗᵢ`, descending any semilinear isometry `E →ₛₗᵢ[σ₁₂] F`
 into a separated normed module `F` to `SeparationQuotient E →ₛₗᵢ[σ₁₂] F`, together with its
@@ -249,6 +251,24 @@ theorem precomp_trans (e₁ : E ≃ₗᵢ[𝕜] F) (e₂ : F ≃ₗᵢ[𝕜] H) 
   simp
 
 end Precomp
+
+end LinearIsometryEquiv
+
+namespace LinearIsometryEquiv
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Conjugating an operator by a linear isometric equivalence preserves its distance to the
+identity: `‖e ∘ B ∘ e⁻¹ - 1‖ = ‖B - 1‖`. -/
+theorem norm_comp_comp_symm_sub_id (e : E ≃ₗᵢ[𝕜] F) (B : E →L[𝕜] E) :
+    ‖(e : E →L[𝕜] F) ∘L B ∘L (e.symm : F →L[𝕜] E) - ContinuousLinearMap.id 𝕜 F‖ =
+      ‖B - ContinuousLinearMap.id 𝕜 E‖ := by
+  have h : (e : E →L[𝕜] F) ∘L B ∘L (e.symm : F →L[𝕜] E) - ContinuousLinearMap.id 𝕜 F =
+      (e : E →L[𝕜] F) ∘L (B - ContinuousLinearMap.id 𝕜 E) ∘L (e.symm : F →L[𝕜] E) := by
+    ext x; simp
+  rw [h, ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
+    ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
 
 end LinearIsometryEquiv
 

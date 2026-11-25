@@ -6,8 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
+public import Mathlib.Algebra.Module.ZMod
 public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.Algebra.Module.Torsion.Basic
+public import TauCeti.RingTheory.QuotSMulTop
+import Mathlib.Algebra.Field.ZMod
+import Mathlib.Data.ZMod.QuotientRing
+import Mathlib.FieldTheory.Finiteness
 
 /-!
 # Torsion and reduction of abelian groups
@@ -15,7 +20,9 @@ public import TauCeti.Algebra.Module.Torsion.Basic
 For an integer `n ≠ 0`, the `n`-torsion of a torsion-free abelian group `M`, such as `ℤ`, is zero,
 and the reduction `M ⧸ nM = QuotSMulTop n M` of a finitely generated abelian group is finite. These
 are recorded as instances, so that such groups meet the finiteness hypotheses of constructions that
-take both the `n`-torsion and the reduction mod `n` of a `ℤ`-module.
+take both the `n`-torsion and the reduction mod `n` of a `ℤ`-module. The reduction `M ⧸ 2M` is
+moreover a vector space over `ZMod 2`, whose dimension is the rank of `M` when `M` is finite free;
+quadratic forms reduced modulo two live on it.
 
 ## Main results
 
@@ -24,6 +31,8 @@ take both the `n`-torsion and the reduction mod `n` of a `ℤ`-module.
 * `TauCeti.subsingleton_torsionBy_int`: the `n`-torsion of a torsion-free abelian group is zero for
   `n ≠ 0`.
 * `TauCeti.finite_quotSMulTop_int`: `M ⧸ nM` is finite for `n ≠ 0` and `M` finitely generated.
+* `TauCeti.instModuleZModTwoQuotSMulTop`: `M ⧸ 2M` is a vector space over `ZMod 2`.
+* `TauCeti.finrank_zmod_quotSMulTop_two`: its dimension is the rank of a finite free `M`.
 * `AddEquiv.isTorsion'_iff`: for a submonoid `S` of `ℤ`, being `S`-torsion is invariant under
   additive equivalences.
 * `TauCeti.span_range_mk_ofMul_eq_top_iff`: a family generates a commutative group modulo torsion
@@ -58,6 +67,26 @@ instance finite_quotSMulTop_int [Module.Finite ℤ M] : Finite (QuotSMulTop n M)
   Module.finite_of_fg_torsion _ fun x ↦
     ⟨⟨n, mem_nonZeroDivisors_of_ne_zero (NeZero.ne n)⟩,
       Module.mem_annihilator.mp (QuotSMulTop.mem_annihilator M n) x⟩
+
+/-- The reduction `M ⧸ 2M` of an abelian group is a vector space over `ZMod 2`, since twice each
+of its elements vanishes. Like every `ZMod 2`-module structure on an abelian group, it is unique,
+and it restricts to the `ℤ`-module structure of the quotient. -/
+instance instModuleZModTwoQuotSMulTop : Module (ZMod 2) (QuotSMulTop (2 : ℤ) M) :=
+  AddCommGroup.zmodModule fun x ↦ by
+    rw [two_nsmul]
+    nth_rewrite 1 [← QuotSMulTop.neg_eq_self x]
+    exact neg_add_cancel x
+
+/-- **The dimension of `M ⧸ 2M`.** For a finite free abelian group `M`, the `ZMod 2`-vector space
+`M ⧸ 2M` has dimension the rank of `M`. -/
+theorem finrank_zmod_quotSMulTop_two [Module.Free ℤ M] [Module.Finite ℤ M] :
+    Module.finrank (ZMod 2) (QuotSMulTop (2 : ℤ) M) = Module.finrank ℤ M := by
+  have h := QuotSMulTop.natCard_eq_pow_finrank (2 : ℤ) M
+  have h2 : Nat.card (ℤ ⧸ Ideal.span {(2 : ℤ)}) = 2 := by
+    rw [Nat.card_congr (Int.quotientSpanEquivZMod 2).toEquiv]
+    simp
+  rw [h2, Module.natCard_eq_pow_finrank (K := ZMod 2), Nat.card_zmod] at h
+  exact Nat.pow_right_injective le_rfl h
 
 /-- An element of a commutative group `G` lies in the torsion submodule of the `ℤ`-module
 `Additive G` exactly when it lies in the torsion subgroup of `G`. -/
