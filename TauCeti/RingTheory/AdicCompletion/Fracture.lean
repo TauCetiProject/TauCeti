@@ -160,24 +160,24 @@ theorem existsUnique_map_localization_lift (h : IsWeaklyRegular R [p, v]) (hv : 
   let ψ : C →ₗ[R] D := (IsScalarTower.toAlgHom R C D).toLinearMap
   let f : R →ₗ[R] L × C := (Algebra.linearMap R L).prod (Algebra.linearMap R C)
   let g : L × C →ₗ[R] D := φ.coprod (-ψ)
-  -- The uncompleted sequence `0 → R → R[1/v] × R̂ → R̂[1/v] → 0` is exact.
-  have hcomm (x : R) : Localization.awayMap (algebraMap R C) v (algebraMap R L x) =
-      algebraMap C D (algebraMap R C x) :=
-    IsLocalization.map_eq (Submonoid.powers v).le_comap_map x
+  -- The uncompleted sequence `0 → R → R[1/v] × R̂ → R̂[1/v] → 0` is the exact square of the
+  -- glueing pair `(R → R̂, v)`, with its factors swapped.
+  let := (Localization.awayMap (algebraMap R C) v).toAlgebra
+  have := Localization.isScalarTower_awayMap C v
+  have hsq := hv.glueingPair_adicCompletion.exactSquare L D
+  have hg_apply (y : L × C) : g y = -(algebraMap C D y.2 - algebraMap L D y.1) := by
+    rw [neg_sub, sub_eq_add_neg]
+    rfl
   have hf : Function.Injective f := fun x y hxy ↦
-    (existsUnique_localization_lift hv _ _ (hcomm x)).unique ⟨rfl, rfl⟩
-      ⟨(congrArg Prod.fst hxy).symm, (congrArg Prod.snd hxy).symm⟩
-  have hfg : Function.Exact f g := by
-    intro y
-    constructor
-    · intro hy
-      obtain ⟨x, hx, -⟩ := existsUnique_localization_lift hv y.1 y.2 (sub_eq_zero.1 hy)
-      exact ⟨x, Prod.ext hx.1 hx.2⟩
-    · rintro ⟨x, rfl⟩
-      exact sub_eq_zero.2 (hcomm x)
+    hsq.injective (Prod.ext congr(($hxy).2) congr(($hxy).1))
+  have hfg : Function.Exact f g := fun y ↦ by
+    rw [hg_apply, neg_eq_zero]
+    refine (hsq.exact (y.2, y.1)).trans ?_
+    exact ⟨fun ⟨x, hx⟩ ↦ ⟨x, Prod.ext congr(($hx).2) congr(($hx).1)⟩,
+        fun ⟨x, hx⟩ ↦ ⟨x, Prod.ext congr(($hx).2) congr(($hx).1)⟩⟩
   have hg : Function.Surjective g := fun z ↦ by
-    obtain ⟨a, b, hab⟩ := exists_localization_sub_completion v z
-    exact ⟨(a, b), hab⟩
+    obtain ⟨⟨b, a⟩, hab⟩ := hsq.surjective (-z)
+    exact ⟨(a, b), (hg_apply _).trans (neg_eq_iff_eq_neg.mpr hab)⟩
   -- Since `p` is regular on `R̂[1/v]`, the sequence stays short exact after `p`-adic completion.
   have hD := isSMulRegular_localization_away h
   have hf' := map_span_singleton_injective_of_isSMulRegular hf hfg hD

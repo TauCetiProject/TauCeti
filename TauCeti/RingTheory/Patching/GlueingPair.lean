@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Localization.Ideal
 public import TauCeti.Algebra.Module.Torsion.Basic
-public import TauCeti.Algebra.Module.Torsion.Localization
 public import TauCeti.RingTheory.Localization.Away.Quotient
 public import TauCeti.RingTheory.Patching.ExactSquare
 import Mathlib.Tactic.LinearCombination
@@ -110,18 +109,15 @@ theorem bijective_quotientMap_iff {f : R} {n : ℕ} :
         (Ideal.span {algebraMap R R' f ^ n}).comap (algebraMap R R') = Ideal.span {f ^ n} := by
   have hJ : (Ideal.span {f ^ n}).map (algebraMap R R') = Ideal.span {algebraMap R R' f ^ n} := by
     simp [Ideal.map_span]
-  rw [← hJ]
-  refine ⟨fun h ↦ ⟨fun y ↦ ?_, le_antisymm (fun x hx ↦ ?_) Ideal.le_comap_map⟩,
-    fun h ↦ ⟨Ideal.quotientMap_injective' h.2.le, fun y ↦ ?_⟩⟩
-  · obtain ⟨x, hx⟩ := h.2 (Ideal.Quotient.mk _ y)
+  rw [← hJ, Function.Bijective, and_comm]
+  refine and_congr ⟨fun h y ↦ ?_, fun h y ↦ ?_⟩ ?_
+  · obtain ⟨x, hx⟩ := h (Ideal.Quotient.mk _ y)
     obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
     exact ⟨x, Ideal.Quotient.eq.mp (hx.symm.trans Ideal.quotientMap_mk)⟩
-  · refine Ideal.Quotient.eq_zero_iff_mem.mp (h.1 ?_)
-    rw [Ideal.quotientMap_mk, map_zero, Ideal.Quotient.eq_zero_iff_mem]
-    exact hx
   · obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective y
-    obtain ⟨x, hx⟩ := h.1 y
+    obtain ⟨x, hx⟩ := h y
     exact ⟨Ideal.Quotient.mk _ x, (Ideal.Quotient.eq.mpr hx).symm⟩
+  · rw [Ideal.quotientMap, Ideal.injective_lift_iff, ← RingHom.comap_ker, Ideal.mk_ker]
 
 /-- `(R → R', f)` is a glueing pair if and only if the canonical maps `R ⧸ (fⁿ) → R' ⧸ (f'ⁿ)` are
 bijective for every `n` and `R → R'` restricts to a bijection `R[f^∞] → R'[f^∞]`. -/
@@ -164,7 +160,7 @@ variable (R' R₂) in
 theorem injective_algebraMap_prod_iff_injOn_torsion' [IsLocalization.Away f R₂] :
     Function.Injective (fun r : R ↦ (algebraMap R R' r, algebraMap R R₂ r)) ↔
       Set.InjOn (algebraMap R R') (Submodule.torsion' R R (Submonoid.powers f)) := by
-  have hz := IsLocalization.algebraMap_eq_zero_iff_mem_torsion' (A := R₂) (Submonoid.powers f)
+  have hz := IsLocalization.map_eq_zero_iff (Submonoid.powers f) R₂
   refine ⟨fun hi x hx y hy hxy ↦ hi ?_, fun hi x y hxy ↦ ?_⟩
   · simp [hxy, (hz x).mpr hx, (hz y).mpr hy]
   · simp only [Prod.mk.injEq] at hxy
@@ -216,7 +212,7 @@ private theorem exists_algebraMap_eq_of_surjOn_torsion' [IsLocalization.Away f R
     simpa [← IsScalarTower.algebraMap_apply] using congr(algebraMap R₂ L $hs)
   have ht : algebraMap R R' f ^ n * r' - algebraMap R R' a ∈
       Submodule.torsion' R' R' (Submonoid.powers (algebraMap R R' f)) := by
-    refine (IsLocalization.algebraMap_eq_zero_iff_mem_torsion' (A := L) _ _).mp ?_
+    refine (IsLocalization.map_eq_zero_iff (Submonoid.powers (algebraMap R R' f)) L _).mp ?_
     simp only [map_sub, map_mul, map_pow, hrs, ← IsScalarTower.algebraMap_apply]
     linear_combination hsL
   -- Correct `a` by a torsion element `t` to make it divisible by `fⁿ`: `a + t = fⁿ c`.
@@ -235,7 +231,7 @@ private theorem exists_algebraMap_eq_of_surjOn_torsion' [IsLocalization.Away f R
   obtain ⟨u, hu, hur⟩ := hsurj hv
   -- The numerators of `c + u` and `s` differ by the torsion element `t + fⁿ u`.
   have h0 : algebraMap R R₂ (t + f ^ n * u) = 0 :=
-    (IsLocalization.algebraMap_eq_zero_iff_mem_torsion' _ _).mpr
+    (IsLocalization.map_eq_zero_iff (Submonoid.powers f) R₂ _).mpr
       (add_mem ht (Submodule.smul_mem _ (f ^ n) hu))
   have hcR₂ := congr(algebraMap R R₂ $hc)
   refine ⟨c + u, by rw [map_add, hur, add_sub_cancel], ?_⟩
@@ -255,9 +251,9 @@ private theorem surjOn_torsion'_of_exact [IsLocalization.Away f R₂]
       (Submodule.torsion' R' R' (Submonoid.powers (algebraMap R R' f))) := by
   intro t ht
   obtain ⟨r, hr⟩ := (he (t, 0)).mp
-    (by simp [(IsLocalization.algebraMap_eq_zero_iff_mem_torsion' (A := L) _ t).mpr ht])
+    (by simp [(IsLocalization.map_eq_zero_iff (Submonoid.powers (algebraMap R R' f)) L t).mpr ht])
   simp only [Prod.mk.injEq] at hr
-  exact ⟨r, (IsLocalization.algebraMap_eq_zero_iff_mem_torsion' (A := R₂) _ r).mp hr.2, hr.1⟩
+  exact ⟨r, (IsLocalization.map_eq_zero_iff (Submonoid.powers f) R₂ r).mp hr.2, hr.1⟩
 
 /-- If every element of `R` whose image is divisible by `f'ⁿ` is divisible by `fⁿ` and
 `R[f^∞] → R'[f^∞]` is surjective, then the patching sequence `R → R' × R_f → R'_f` is exact in
