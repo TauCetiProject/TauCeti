@@ -260,7 +260,7 @@ theorem mollifyCLM_eq_mollify (φ : 𝓓((⊤ : Opens E), F)) :
 theorem norm_mollifyCLM_apply_le (φ : 𝓓((⊤ : Opens E), F)) {C : ℝ} (hC : ∀ y, ‖φ y‖ ≤ C)
     (x : E) : ‖mollifyCLM μ ρ φ x‖ ≤ C := by
   rw [mollifyCLM_apply]
-  exact ρ.norm_normed_convolution_le hC x
+  exact ρ.norm_normed_convolution_le (Eventually.of_forall hC) x
 
 /-- Mollification enlarges supports by at most `r = ρ.rOut`. -/
 theorem tsupport_mollifyCLM_subset (φ : 𝓓((⊤ : Opens E), F)) :

@@ -24,8 +24,11 @@ Fréchet derivatives, and shows that two directional derivatives of a test funct
 `∂_{v} (∂_{w} φ) = ∂_{w} (∂_{v} φ)`, because the second derivative of a smooth function is
 symmetric. Moving derivatives between the two sides of an integration-by-parts identity uses
 exactly this, for instance to show that weak derivatives commute. Summing over an orthonormal basis,
-the Laplacian of a test function commutes with every directional derivative. Multiplication of a
-test function by a function differentiable on `Ω` obeys the classical product rule. On a real inner
+the Laplacian of a test function commutes with every directional derivative. Finally, a test
+function `φ` on `Ω` times a function `g` differentiable on `Ω` obeys the classical product rule
+for its directional derivatives; with `TestFunction.exists_coe_eq_smul_of_contDiffOn`, which makes
+`g φ` a test function, this is what lets a weak derivative be tested against `g φ` when `g` is only
+smooth inside `Ω`. On a real inner
 product space, the directional derivative of a scalar test function is the pairing with its
 gradient, and the product of a scalar test function with a smooth function supported in `Ω` is a
 test function on `Ω` whose gradient obeys the product rule.
@@ -63,8 +66,8 @@ test function on `Ω` whose gradient obeys the product rule.
   directional and iterated directional derivatives of test functions commute.
 * `TestFunction.lineDerivOp_laplacianCLM`: the Laplacian of test functions commutes with
   directional derivatives.
-* `TestFunction.lineDeriv_fun_smul_of_differentiableOn`: the directional derivatives of a product
-  with a function differentiable on `Ω` obey the product rule.
+* `TestFunction.lineDeriv_fun_smul_of_differentiableOn`: the product of a test function on `Ω`
+  with a function differentiable on `Ω` obeys the product rule.
 * `TestFunction.laplacianCLM_apply`: the test-function Laplacian agrees pointwise with the
   classical Laplacian.
 * `TestFunction.integrable_laplacian_smul`: `x ↦ Δφ(x) • u x` is integrable when `u` is locally
@@ -295,7 +298,7 @@ theorem smul_neg_one_pow_iteratedLineDerivOp_sub_apply (φ : 𝓓(Ω, F)) {k : �
   rw [hneg, ContinuousMultilinearMap.map_smul_univ]
   simp [Finset.prod_const]
 
-/-! ### Product rule for a test function times a differentiable function -/
+/-! ### Multiplication by a function differentiable on `Ω` -/
 
 /-- **The product rule for a test function times a function differentiable on `Ω`**:
 `∂_v (g φ) = g ∂_v φ + (∂_v g) φ` at every point of `E`. Off `tsupport φ` both sides vanish, so

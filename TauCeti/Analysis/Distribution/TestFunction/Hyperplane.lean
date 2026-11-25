@@ -10,7 +10,8 @@ public import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Algebra.Module.LinearMap.DivisionRing
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
-import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Distribution.TestFunction.Basic
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Normed.Module.LipschitzHyperplane
 
 /-!
@@ -149,10 +150,7 @@ theorem StrongDual.exists_interpolation_divergence
     refine HasFDerivAt.smoothTransition ?_
     have := ((f.hasFDerivAt (x := x)).sub_const a).const_mul ((n : ℝ) + 1)
     simpa using this
-  let θ (n : ℕ) : 𝓓(Ω, E) :=
-    χ.smulLeftOfContDiffOn Ω.isOpen χ.tsupport_subset (hσ n).contDiffOn
-  have hθ (n : ℕ) : ⇑(θ n) = fun x => σ n x • χ x := funext fun x =>
-    χ.smulLeftOfContDiffOn_apply Ω.isOpen χ.tsupport_subset (hσ n).contDiffOn x
+  choose θ hθ using fun n => exists_coe_eq_smul_of_contDiffOn (hσ n).contDiffOn χ
   refine ⟨fun n => φ + θ n, fun n x => ?_, fun n x => ?_⟩
   · have h0 : 0 ≤ σ n x := Real.smoothTransition.nonneg _
     have h1 : 0 ≤ 1 - σ n x := sub_nonneg.2 (Real.smoothTransition.le_one _)

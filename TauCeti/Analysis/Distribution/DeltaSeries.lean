@@ -52,9 +52,7 @@ private theorem exists_testFunction_eventuallyEq_inv_one_add_two_mul {Ω : Opens
     have hx' : -(1 / 4 : ℝ) < x := hx.2.1
     simp only [id_eq]
     linarith
-  let ψ : 𝓓(U, ℝ) := χ.smulLeftOfContDiffOn U.isOpen χ.tsupport_subset hg
-  have hψ : ⇑ψ = fun x => (1 + 2 * x)⁻¹ * χ x :=
-    funext fun x => χ.smulLeftOfContDiffOn_apply U.isOpen χ.tsupport_subset hg x
+  obtain ⟨ψ, hψ⟩ := TestFunction.exists_coe_eq_smul_of_contDiffOn hg χ
   let φ : 𝓓(Ω, ℝ) := TestFunction.monoCLM ℝ ψ
   have hφ : (φ : ℝ → ℝ) = ψ := by
     simp [φ, TestFunction.monoCLM_apply, hUΩ]
