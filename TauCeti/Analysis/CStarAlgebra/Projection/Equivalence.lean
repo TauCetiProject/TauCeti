@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Block
-public import TauCeti.Analysis.CStarAlgebra.Projection.Homotopy
+public import TauCeti.Analysis.CStarAlgebra.Projection.Perturbation
 public import TauCeti.Algebra.Star.PartialIsometry
 public import TauCeti.LinearAlgebra.Matrix.MurrayVonNeumann
-import Mathlib.Analysis.CStarAlgebra.Unitization
 import Mathlib.LinearAlgebra.Matrix.Hermitian
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Data.Matrix.Block
@@ -147,30 +146,6 @@ theorem map [NonUnitalSemiring B] [StarRing B] {F : Type*} [FunLike F A B]
       Matrix.map_mul, Matrix.conjTranspose_map f hf] using
       congrArg (Matrix.map · f) (congrArg ofMatrix.symm hv')
 
-/-- Padding a projection by a zero block does not change its rectangular equivalence class. -/
-theorem pad_zero (hp : IsStarProjection p) :
-    MurrayVonNeumannEquiv p
-      (ofMatrix (Matrix.fromBlocks (ofMatrix.symm p) 0 0 (0 : Matrix k k A))) := by
-  have hsa : (ofMatrix.symm p)ᴴ = ofMatrix.symm p := by
-    simpa only [ofMatrix_symm_star] using congrArg ofMatrix.symm hp.isSelfAdjoint.star_eq
-  have hid : ofMatrix.symm p * ofMatrix.symm p = ofMatrix.symm p := by
-    simpa only [ofMatrix_symm_mul] using congrArg ofMatrix.symm hp.isIdempotentElem.eq
-  refine ⟨hp, ⟨hp.isIdempotentElem.fromBlocks_zero₁₂_zero₂₁ .zero,
-    hp.isSelfAdjoint.isHermitian.fromBlocks (by simp) Matrix.isHermitian_zero⟩,
-    ofMatrix (Matrix.fromRows (ofMatrix.symm p) (0 : Matrix k m A)), ?_, ?_⟩ <;>
-    apply ofMatrix.symm.injective
-  · simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Equiv.symm_apply_apply,
-      Matrix.conjTranspose_fromRows_eq_fromCols_conjTranspose, Matrix.conjTranspose_zero, hsa]
-    ext i j
-    simpa [Matrix.mul_apply] using congrFun (congrFun hid i) j
-  · simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Equiv.symm_apply_apply,
-      Matrix.conjTranspose_fromRows_eq_fromCols_conjTranspose, Matrix.conjTranspose_zero, hsa]
-    ext (i | i) (j | j)
-    · simpa [Matrix.mul_apply] using congrFun (congrFun hid i) j
-    · simp [Matrix.mul_apply]
-    · simp [Matrix.mul_apply]
-    · simp [Matrix.mul_apply]
-
 /-- A Murray–von Neumann equivalence is implemented by a matrix supported on its initial
 projection. -/
 theorem exists_matrix_mul_eq_self (h : MurrayVonNeumannEquiv p q) :
@@ -286,14 +261,14 @@ theorem murrayVonNeumannEquiv_fromBlocks_zero_right (hp : IsStarProjection p) :
     MurrayVonNeumannEquiv p (fromBlocks p 0 0 (0 : CStarMatrix k k A)) := by
   rw [murrayVonNeumannEquiv_iff_isMurrayVonNeumannEquivalent]
   simpa only [ofMatrix_symm_fromBlocks, ofMatrix_symm_zero] using
-    (isStarProjection_ofMatrix_symm.mpr hp).isMurrayVonNeumannEquivalent_fromBlocks_zero
+    (isStarProjection_ofMatrix_symm_iff.mpr hp).isMurrayVonNeumannEquivalent_fromBlocks_zero
 
 /-- Padding a projection by an upper-left zero block preserves its Murray–von Neumann class. -/
 theorem murrayVonNeumannEquiv_fromBlocks_zero_left (hp : IsStarProjection p) :
     MurrayVonNeumannEquiv p (fromBlocks (0 : CStarMatrix k k A) 0 0 p) := by
   rw [murrayVonNeumannEquiv_iff_isMurrayVonNeumannEquivalent]
   simpa only [ofMatrix_symm_fromBlocks, ofMatrix_symm_zero] using
-    (isStarProjection_ofMatrix_symm.mpr hp).isMurrayVonNeumannEquivalent_zero_fromBlocks
+    (isStarProjection_ofMatrix_symm_iff.mpr hp).isMurrayVonNeumannEquivalent_zero_fromBlocks
 
 /-- Reindexing rows and columns by a bijection `e : m ≃ n` preserves the Murray–von Neumann class,
 even when `A` is non-unital. -/
@@ -302,7 +277,7 @@ theorem murrayVonNeumannEquiv_reindexₐ {R : Type*} [Semiring R] [Module R A]
     MurrayVonNeumannEquiv p (reindexₐ R A e p) := by
   rw [murrayVonNeumannEquiv_iff_isMurrayVonNeumannEquivalent, reindexₐ_eq_reindexₗ,
     ofMatrix_symm_reindexₗ]
-  exact (isStarProjection_ofMatrix_symm.mpr hp).isMurrayVonNeumannEquivalent_reindex e
+  exact (isStarProjection_ofMatrix_symm_iff.mpr hp).isMurrayVonNeumannEquivalent_reindex e
 
 /-- Block-diagonal direct sum is commutative up to Murray–von Neumann equivalence. -/
 theorem murrayVonNeumannEquiv_fromBlocks_zero_comm
@@ -311,7 +286,7 @@ theorem murrayVonNeumannEquiv_fromBlocks_zero_comm
   rw [murrayVonNeumannEquiv_iff_isMurrayVonNeumannEquivalent]
   simpa only [ofMatrix_symm_fromBlocks, ofMatrix_symm_zero] using
     Matrix.isMurrayVonNeumannEquivalent_fromBlocks_comm
-      (isStarProjection_ofMatrix_symm.mpr hp) (isStarProjection_ofMatrix_symm.mpr hq)
+      (isStarProjection_ofMatrix_symm_iff.mpr hp) (isStarProjection_ofMatrix_symm_iff.mpr hq)
 
 /-- Block-diagonal direct sum is associative up to Murray–von Neumann equivalence. -/
 theorem murrayVonNeumannEquiv_fromBlocks_zero_assoc
@@ -321,8 +296,8 @@ theorem murrayVonNeumannEquiv_fromBlocks_zero_assoc
   rw [murrayVonNeumannEquiv_iff_isMurrayVonNeumannEquivalent]
   simpa only [ofMatrix_symm_fromBlocks, ofMatrix_symm_zero] using
     Matrix.isMurrayVonNeumannEquivalent_fromBlocks_assoc
-      (isStarProjection_ofMatrix_symm.mpr hp) (isStarProjection_ofMatrix_symm.mpr hq)
-      (isStarProjection_ofMatrix_symm.mpr hr)
+      (isStarProjection_ofMatrix_symm_iff.mpr hp) (isStarProjection_ofMatrix_symm_iff.mpr hq)
+      (isStarProjection_ofMatrix_symm_iff.mpr hr)
 
 /-- If `p` and `p'` are orthogonal star projections (`p * p' = 0`) in `CStarMatrix m m A`, their
 internal sum `p + p'` is Murray–von Neumann equivalent to their block-diagonal direct sum
@@ -352,11 +327,7 @@ end Algebraic
 theorem murrayVonNeumannEquiv_unitary_conj [Semiring B] [StarRing B] [DecidableEq m]
     {p : CStarMatrix m m B} (hp : IsStarProjection p) (u : unitary (CStarMatrix m m B)) :
     MurrayVonNeumannEquiv p ((u : CStarMatrix m m B) * p * star (u : CStarMatrix m m B)) := by
-  have hq : IsStarProjection ((u : CStarMatrix m m B) * p * star (u : CStarMatrix m m B)) :=
-    ⟨by simp only [IsIdempotentElem, mul_assoc,
-        ← mul_assoc (star (u : CStarMatrix m m B)), Unitary.coe_star_mul_self,
-        one_mul, ← mul_assoc p, hp.isIdempotentElem.eq], hp.isSelfAdjoint.conjugate u⟩
-  refine ⟨hp, hq, (u : CStarMatrix m m B) * p, ?_, ?_⟩
+  refine ⟨hp, hp.star_right_conjugate u, (u : CStarMatrix m m B) * p, ?_, ?_⟩
   · rw [← star_eq_conjTranspose, star_mul, hp.isSelfAdjoint.star_eq]
     simp only [mul_assoc, ← mul_assoc (star (u : CStarMatrix m m B)),
       Unitary.coe_star_mul_self, one_mul, hp.isIdempotentElem.eq]
@@ -382,22 +353,12 @@ theorem murrayVonNeumannEquiv_iff_exists_isSelfAdjoint_unitary_fromBlocks_zero_r
   refine ⟨fun h ↦ ?_, fun ⟨u, _, hconj⟩ ↦ ?_⟩
   · obtain ⟨w, hw_sa, hw_u, hw_conj⟩ :=
       h.exists_isSelfAdjoint_mem_unitary_mul_fromBlocks_mul_star
-    refine ⟨⟨ofMatrix w, ?_⟩, ?_, ?_⟩
-    · rw [Unitary.mem_iff] at hw_u ⊢
-      exact ⟨ofMatrix.symm.injective (by simpa [Matrix.star_eq_conjTranspose] using hw_u.1),
-        ofMatrix.symm.injective (by simpa [Matrix.star_eq_conjTranspose] using hw_u.2)⟩
-    · rw [IsSelfAdjoint]
-      exact ofMatrix.symm.injective <| by simpa [Matrix.star_eq_conjTranspose] using hw_sa.star_eq
-    · exact ofMatrix.symm.injective <| by simpa [Matrix.star_eq_conjTranspose] using hw_conj
-  · have hu₁ := congrArg ofMatrix.symm (Unitary.coe_star_mul_self u)
-    have hu₂ := congrArg ofMatrix.symm (Unitary.coe_mul_star_self u)
-    simp only [ofMatrix_symm_mul, ofMatrix_symm_star, ofMatrix_symm_one] at hu₁ hu₂
-    have hc := congrArg ofMatrix.symm hconj
-    refine Matrix.isMurrayVonNeumannEquivalent_of_mem_unitary_mul_fromBlocks_mul_star
-      (isStarProjection_ofMatrix_symm.mpr hp) (w := ofMatrix.symm (u : CStarMatrix _ _ A)) ?_ ?_
-    · rw [Unitary.mem_iff]
-      exact ⟨by rwa [Matrix.star_eq_conjTranspose], by rwa [Matrix.star_eq_conjTranspose]⟩
-    · simpa [Matrix.star_eq_conjTranspose] using hc
+    exact ⟨⟨ofMatrix w, ofMatrix_mem_unitary_iff.mpr hw_u⟩,
+      isSelfAdjoint_ofMatrix_iff.mpr hw_sa,
+      ofMatrix.symm.injective (by simpa [Matrix.star_eq_conjTranspose] using hw_conj)⟩
+  · exact Matrix.isMurrayVonNeumannEquivalent_of_mem_unitary_mul_fromBlocks_mul_star
+      (isStarProjection_ofMatrix_symm_iff.mpr hp) (ofMatrix_symm_mem_unitary_iff.mpr u.property)
+      (by simpa [Matrix.star_eq_conjTranspose] using congrArg ofMatrix.symm hconj)
 
 end Stabilization
 
@@ -413,45 +374,19 @@ theorem murrayVonNeumannEquiv_of_isStarProjection [NonUnitalRing A] [StarRing A]
   simpa only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose] using
     Matrix.isMurrayVonNeumannEquivalent_of_isStarProjection
       (by simpa only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose] using
-        isStarProjection_ofMatrix_symm.mpr hv)
+        isStarProjection_ofMatrix_symm_iff.mpr hv)
 
 end StarOrderedRing
 
 section CStarAlgebra
-
-private theorem murrayVonNeumannEquiv_of_unitization_unitary_conj [NonUnitalCStarAlgebra A]
-    [PartialOrder A] [StarOrderedRing A] {p q : CStarMatrix n n A} (hp : IsStarProjection p)
-    (u : unitary (Unitization ℂ (CStarMatrix n n A)))
-    (hconj : (u : Unitization ℂ (CStarMatrix n n A)) * (p : Unitization ℂ (CStarMatrix n n A)) *
-      star (u : Unitization ℂ (CStarMatrix n n A)) = (q : Unitization ℂ (CStarMatrix n n A))) :
-    MurrayVonNeumannEquiv p q := by
-  let B := CStarMatrix n n A
-  let v : B := ((u : Unitization ℂ B) * (p : Unitization ℂ B)).snd
-  have hv_inr : (v : Unitization ℂ B) = (u : Unitization ℂ B) * (p : Unitization ℂ B) :=
-    Unitization.ext (by simp) rfl
-  have hv₁ : v.conjTranspose * v = p := Unitization.inr_injective (R := ℂ) <| by
-    rw [← star_eq_conjTranspose, Unitization.inr_mul, Unitization.inr_star, hv_inr, star_mul,
-      hp.inr.isSelfAdjoint.star_eq, mul_assoc, ← mul_assoc (star (u : Unitization ℂ B)),
-      Unitary.coe_star_mul_self, one_mul, hp.inr.isIdempotentElem.eq]
-  have hv₂ : v * v.conjTranspose = q := Unitization.inr_injective (R := ℂ) <| by
-    rw [← star_eq_conjTranspose, Unitization.inr_mul, Unitization.inr_star, hv_inr, star_mul,
-      hp.inr.isSelfAdjoint.star_eq, ← mul_assoc, mul_assoc (u : Unitization ℂ B),
-      hp.inr.isIdempotentElem.eq, hconj]
-  have heq := murrayVonNeumannEquiv_of_isStarProjection (hv₁.symm ▸ hp)
-  rwa [hv₁, hv₂] at heq
 
 /-- Two matrix star projections over a (possibly non-unital) C⋆-algebra at operator-norm distance
 `< 1` are Murray–von Neumann equivalent. -/
 theorem murrayVonNeumannEquiv_of_norm_sub_lt_one [NonUnitalCStarAlgebra A]
     [PartialOrder A] [StarOrderedRing A] {p q : CStarMatrix n n A}
     (hp : IsStarProjection p) (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
-    MurrayVonNeumannEquiv p q := by
-  have h' : ‖(p : Unitization ℂ (CStarMatrix n n A)) -
-      (q : Unitization ℂ (CStarMatrix n n A))‖ < 1 := by
-    rwa [← Unitization.inr_sub, Unitization.norm_inr]
-  exact murrayVonNeumannEquiv_of_unitization_unitary_conj hp
-    (hp.inr.conjUnitaryOfNormSubLtOne hq.inr h')
-    (hp.inr.conjUnitaryOfNormSubLtOne_mul_mul_star hq.inr h')
+    MurrayVonNeumannEquiv p q :=
+  ⟨hp, hq, hp.exists_star_mul_self_eq_of_norm_sub_lt_one hq h⟩
 
 /-- Any norm-continuous path of star projections in `CStarMatrix n n A` over a (possibly non-unital)
 C⋆-algebra has Murray–von Neumann equivalent endpoints. -/
@@ -460,9 +395,9 @@ theorem murrayVonNeumannEquiv_of_path [NonUnitalCStarAlgebra A]
     MurrayVonNeumannEquiv p q := by
   let : PartialOrder A := CStarAlgebra.spectralOrder A
   let : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
-  obtain ⟨u, -, hconj⟩ := IsStarProjection.exists_joined_one_unitary_conj_of_path
-    (γ.map (Unitization.continuous_inr (𝕜 := ℂ))) fun t ↦ (hγ t).inr
-  exact murrayVonNeumannEquiv_of_unitization_unitary_conj (γ.source ▸ hγ 0) u hconj
+  refine ⟨γ.source ▸ hγ 0, γ.target ▸ hγ 1, ?_⟩
+  simpa only [γ.source, γ.target, star_eq_conjTranspose] using
+    γ.continuous.exists_star_mul_self_eq hγ 0 1
 
 /-- **Explicit `2 × 2` rotation path for Murray–von Neumann equivalent projections.** Given matrices
 `p : CStarMatrix m m A`, `q : CStarMatrix n n A`, and `v : CStarMatrix n m A` over a (possibly
@@ -571,7 +506,7 @@ theorem murrayVonNeumannEquiv_iff_exists_joined_one_unitary_fromBlocks_zero_righ
   have hp0 : IsStarProjection (fromBlocks p 0 0 (0 : CStarMatrix n n A)) :=
     isStarProjection_fromBlocks_zero.mpr ⟨hp, .zero _⟩
   rw [murrayVonNeumannEquiv_iff_exists_path_fromBlocks_zero_right_left,
-    hp0.exists_path_iff_exists_joined_one_unitary_conj]
+    hp0.exists_path_iff_exists_joined_one_mul_mul_star_eq]
 
 /-- Over a (possibly non-unital) C⋆-algebra, two matrix elements `p, q : CStarMatrix n n A` are
 Murray–von Neumann equivalent if and only if `fromBlocks p 0 0 0` and `fromBlocks q 0 0 0` are
@@ -609,7 +544,7 @@ theorem murrayVonNeumannEquiv_iff_exists_joined_one_unitary_fromBlocks_zero_righ
   have hp0 : IsStarProjection (fromBlocks p 0 0 (0 : CStarMatrix n n A)) :=
     isStarProjection_fromBlocks_zero.mpr ⟨hp, .zero _⟩
   rw [murrayVonNeumannEquiv_iff_exists_path_fromBlocks_zero_right,
-    hp0.exists_path_iff_exists_joined_one_unitary_conj]
+    hp0.exists_path_iff_exists_joined_one_mul_mul_star_eq]
 
 end CStarAlgebra
 

@@ -9,6 +9,7 @@ public import Mathlib.Data.Matrix.Block
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 import Mathlib.Analysis.CStarAlgebra.Hom
+import TauCeti.Data.Matrix.Block
 
 /-!
 # Block matrices, corner inclusions, and block-diagonal operator norms on `CStarMatrix`
@@ -181,10 +182,9 @@ theorem mapₙₐ_fromBlocks [Fintype n₁] [Fintype n₂] [Semiring R]
     [NonUnitalNonAssocSemiring A] [StarAddMonoid A]
     {p : CStarMatrix n₁ n₁ A} {q : CStarMatrix n₂ n₂ A} :
     IsStarProjection (fromBlocks p 0 0 q) ↔ IsStarProjection p ∧ IsStarProjection q := by
-  simp only [isStarProjection_iff, IsIdempotentElem, IsSelfAdjoint, fromBlocks_multiply,
-    fromBlocks_star, CStarMatrix.mul_zero, CStarMatrix.zero_mul, add_zero, zero_add,
-    conjTranspose_zero, fromBlocks_inj, true_and]
-  tauto
+  rw [← isStarProjection_ofMatrix_symm_iff, ofMatrix_symm_fromBlocks, ofMatrix_symm_zero,
+    ofMatrix_symm_zero, Matrix.isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff,
+    isStarProjection_ofMatrix_symm_iff, isStarProjection_ofMatrix_symm_iff]
 
 /-- Reindexing a square `2 × 2` block matrix by `Equiv.sumComm` via `reindexₐ` swaps both diagonal
 and off-diagonal blocks. -/

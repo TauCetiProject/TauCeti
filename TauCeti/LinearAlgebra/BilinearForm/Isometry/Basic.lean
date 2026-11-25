@@ -22,6 +22,7 @@ lemmas `LinearMap.BilinForm.IsometryEquiv.toLinearEquiv_refl`,
 `LinearMap.BilinForm.IsometryEquiv.toLinearEquiv_symm`,
 `LinearMap.BilinForm.IsometryEquiv.coe_symm_toLinearEquiv`,
 `LinearMap.BilinForm.IsometryEquiv.toLinearEquiv_trans`,
+`LinearMap.BilinForm.IsometryEquiv.refl_apply`,
 `LinearMap.BilinForm.IsometryEquiv.trans_apply`,
 `LinearMap.BilinForm.IsometryEquiv.symm_apply_apply` and
 `LinearMap.BilinForm.IsometryEquiv.apply_symm_apply` for Mathlib's isometric equivalences, which
@@ -53,7 +54,7 @@ Isometric endomorphisms form a monoid, not a group: for the zero form on `ℤ ^ 
 is one. For a finite free `ℤ`-module `V` and a left-separating integral form `Q` an isometric
 endomorphism is automatically invertible (`TauCeti.BilinForm.IsIsometry.toIsometryGroup`), and the
 resulting automorphisms are the arithmetic group `Aut(V, Q)`; see
-`LinearMap.BilinForm.isometryGroup`. -/
+`LinearMap.isometryGroup`. -/
 def IsIsometry (B : BilinForm R M) (f : M →ₗ[R] M) : Prop :=
   ∀ x y, B (f x) (f y) = B x y
 
@@ -182,6 +183,11 @@ their underlying linear equivalences. -/
 @[simp]
 theorem toLinearEquiv_trans (f : B₁.IsometryEquiv B₂) (g : B₂.IsometryEquiv B₃) :
     (f.trans g).toLinearEquiv = f.toLinearEquiv.trans g.toLinearEquiv :=
+  (rfl)
+
+/-- The identity isometric equivalence fixes every vector. -/
+@[simp]
+theorem refl_apply (B : BilinForm R M₁) (x : M₁) : IsometryEquiv.refl B x = x :=
   (rfl)
 
 /-- A composite of isometric equivalences applies the first and then the second. -/
