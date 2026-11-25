@@ -155,9 +155,11 @@ theorem map_ι_mul_self_of_norm_eq_one {v : V} (h : ‖v‖ = 1) : ρ (ι Q v) *
 `-1`, so that `i c(e₁) c(e₂)` is an involution. -/
 theorem map_ι_mul_map_ι_mul_self_of_orthonormal {e₁ e₂ : V} (h₁ : ‖e₁‖ = 1) (h₂ : ‖e₂‖ = 1)
     (h : ⟪e₁, e₂⟫_ℝ = 0) :
-    ρ (ι Q e₁) * ρ (ι Q e₂) * (ρ (ι Q e₁) * ρ (ι Q e₂)) = -1 :=
-  ρ.map_cliffordAlgebraι_mul_map_cliffordAlgebraι_sq_of_orthonormal
-    hρ.apply_eq_neg_norm_sq h₁ h₂ h
+    ρ (ι Q e₁) * ρ (ι Q e₂) * (ρ (ι Q e₁) * ρ (ι Q e₂)) = -1 := by
+  rw [ρ.map_cliffordAlgebraι_mul_map_cliffordAlgebraι_mul_self_of_isOrtho
+    ((QuadraticMap.isOrtho_iff_inner_eq_zero hρ.apply_eq_neg_norm_sq).2 h),
+    hρ.apply_eq_neg_norm_sq, hρ.apply_eq_neg_norm_sq, h₁, h₂]
+  simp
 
 /-- **Polarized Hermitian identity**: combining skew-Hermiticity with the polarized Clifford
 relation gives `⟪c(v) s, c(w) t⟫_ℂ + ⟪c(w) s, c(v) t⟫_ℂ = 2 ⟪v, w⟫_ℝ ⟪s, t⟫_ℂ` without assuming

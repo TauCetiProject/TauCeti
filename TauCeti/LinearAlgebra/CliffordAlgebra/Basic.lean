@@ -10,7 +10,6 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import Mathlib.LinearAlgebra.BilinearForm.Properties
-import Mathlib.Tactic.Module
 import Mathlib.Tactic.NoncommRing
 import Mathlib.LinearAlgebra.QuadraticForm.Basis
 
@@ -20,10 +19,8 @@ import Mathlib.LinearAlgebra.QuadraticForm.Basis
 This file records general scalar properties of a Clifford algebra obtained from Mathlib's
 linear equivalence with the exterior algebra, and the commutation rule
 `CliffordAlgebra.ι_mul_ι_eq_ι_smul_sub_mul_ι` moving a vector past another, together with the
-square of a scalar plus a vector (`CliffordAlgebra.algebraMap_add_ι_mul_self`), planar bivector
-scaling for an orthogonal equal-square pair
-(`CliffordAlgebra.ι_smul_add_smul_mul_ι_neg_smul_add_smul`), and the extensionality of algebra
-equivalences on generators (`CliffordAlgebra.algEquiv_ext_ι`).
+square of a scalar plus a vector (`CliffordAlgebra.algebraMap_add_ι_mul_self`) and the
+extensionality of algebra equivalences on generators (`CliffordAlgebra.algEquiv_ext_ι`).
 A vector squares to its scalar inside a product (`CliffordAlgebra.ι_mul_ι_mul_eq_algebraMap_mul`),
 and `(e f) (f e) = Q e Q f` (`CliffordAlgebra.ι_mul_ι_mul_ι_mul_ι_swap`).
 Rescaling the factors of a product of vectors pulls the scalars out in front
@@ -94,17 +91,6 @@ theorem ι_mul_ι_mul_eq_algebraMap_mul {Q : QuadraticForm R M} (x : M) (y : Cli
 theorem ι_mul_ι_mul_ι_mul_ι_swap {Q : QuadraticForm R M} (e f : M) :
     ι Q e * ι Q f * (ι Q f * ι Q e) = algebraMap R _ (Q e * Q f) := by
   rw [mul_assoc, ι_mul_ι_mul_eq_algebraMap_mul, Algebra.commutes, ← mul_assoc, ι_sq_scalar, map_mul]
-
-/-- For orthogonal vectors `e₁, e₂` with `Q e₁ = Q e₂`, a planar combination
-`(c • e₁ + s • e₂, -s • e₁ + c • e₂)` scales their Clifford product `ι Q e₁ * ι Q e₂` by
-`c ^ 2 + s ^ 2`. -/
-theorem ι_smul_add_smul_mul_ι_neg_smul_add_smul {Q : QuadraticForm R M} {e₁ e₂ : M}
-    (hQ : Q e₁ = Q e₂) (h12 : Q.IsOrtho e₁ e₂) (c s : R) :
-    ι Q (c • e₁ + s • e₂) * ι Q (-s • e₁ + c • e₂) =
-      (c ^ 2 + s ^ 2) • (ι Q e₁ * ι Q e₂) := by
-  simp only [neg_smul, map_add, map_neg, map_smul, add_mul, mul_add, mul_neg, smul_mul_assoc,
-    mul_smul_comm, smul_neg, ι_sq_scalar, hQ, ι_mul_ι_comm_of_isOrtho h12.symm]
-  module
 
 /-- Two algebra equivalences out of a Clifford algebra agree when they agree on the generators:
 the equivalence form of `CliffordAlgebra.hom_ext`. -/

@@ -21,12 +21,10 @@ orthogonality for `Q` is orthogonality for the inner product, so an orthonormal 
 an orthogonal basis for `Q` with `Q (eᵢ) = -1`. The general orthogonal-basis results of
 `TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis` therefore apply to `e`, and the Clifford
 basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
-`(-1) ^ ((|s| + 1).choose 2)`. Under any `ℝ`-algebra homomorphism out of `CliffordAlgebra Q`, the
-bivector `c(e₁) c(e₂)` of an orthonormal pair squares to `-1`.
+`(-1) ^ ((|s| + 1).choose 2)`.
 
 ## Main results
 
-* `QuadraticMap.polar_eq_neg_two_inner`: `polar Q v w = -2 ⟪v, w⟫_ℝ`.
 * `QuadraticMap.isOrtho_iff_inner_eq_zero`: orthogonality for `Q` is orthogonality for the inner
   product.
 * `OrthonormalBasis.isOrthoᵢ_associated`: an orthonormal basis is orthogonal for the polar form
@@ -40,20 +38,19 @@ bivector `c(e₁) c(e₂)` of an orthonormal pair squares to `-1`.
   a Clifford module, `c(bᵢ)² = -1`, and `c(bᵢ)` and `c(bⱼ)` anticommute for `i ≠ j`.
 * `OrthonormalBasis.map_ι_eq_sum`, `OrthonormalBasis.map_ι_apply_eq_sum`: `c(v) = ∑ᵢ ⟪bᵢ, v⟫ c(bᵢ)`,
   in any real algebra receiving the Clifford algebra and applied in a Clifford module.
+* `QuadraticMap.polar_eq_neg_two_inner`: the polar form of `Q` is `-2 ⟪u, v⟫`.
 * `CliffordAlgebra.ι_mul_ι_add_swap_eq_neg_two_inner`, and in the even subalgebra
   `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: the polarized Clifford relation
   `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`.
 * `LinearMap.apply_apply_add_swap_eq_neg_two_inner`: the same polarized relation for a
-  linear map `c : W → End U` satisfying the Clifford relation `c(v)² = -⟪v, v⟫`.
+  linear map `c : W → End U` satisfying the Clifford relation `c(v)² = -⟪v, v⟫`, and
+  `ContinuousLinearMap.apply_apply_add_swap_eq_neg_two_inner` for a continuous bilinear map.
 * `CliffordAlgebra.sum_sum_smul_ι_mul_ι_of_symm`: for a symmetric family of scalars `mᵢⱼ`,
   `∑ᵢⱼ mᵢⱼ c(eᵢ) c(eⱼ) = -∑ᵢ mᵢᵢ`.
 * `TauCeti.two_nsmul_sum_sum_apply_apply_eq`: for additive maps `γᵢ` satisfying the Clifford
   relations `γᵢ γⱼ + γⱼ γᵢ = -2 δᵢⱼ`, the contraction `∑ᵢⱼ γᵢ γⱼ B i j` of a doubly indexed family
   splits into its trace and its antisymmetrization.
 * `CliffordAlgebra.basis_mul_self_of_orthonormal`: `e_s * e_s = (-1) ^ ((|s| + 1).choose 2)`.
-* `AlgHom.map_cliffordAlgebraι_mul_map_cliffordAlgebraι_sq_of_orthonormal`: under an `ℝ`-algebra
-  homomorphism out of `CliffordAlgebra Q`, the bivector `c(e₁) c(e₂)` of an orthonormal pair squares
-  to `-1`.
 
 ## References
 
@@ -94,12 +91,6 @@ end TauCeti
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
   (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 include hQ
-
-/-- For `Q v = -‖v‖²` on a real inner product space, the polar bilinear form is `-2 ⟪u, v⟫_ℝ`. -/
-theorem QuadraticMap.polar_eq_neg_two_inner (u v : V) :
-    QuadraticMap.polar Q u v = -2 * ⟪u, v⟫ := by
-  simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
-  ring
 
 /-- For `Q v = -‖v‖²`, orthogonality for `Q` is orthogonality for the inner product. -/
 theorem QuadraticMap.isOrtho_iff_inner_eq_zero {x y : V} : Q.IsOrtho x y ↔ ⟪x, y⟫ = 0 := by
@@ -181,6 +172,12 @@ end OrthonormalBasis
 
 namespace CliffordAlgebra
 
+/-- For `Q v = -‖v‖²`, the polar form of `Q` is `-2 ⟪u, v⟫`. -/
+theorem _root_.QuadraticMap.polar_eq_neg_two_inner (u v : V) :
+    QuadraticMap.polar Q u v = -2 * ⟪u, v⟫ := by
+  simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
+  ring
+
 /-- **The polarized Clifford relation**: for `Q v = -‖v‖²`,
 `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
 theorem ι_mul_ι_add_swap_eq_neg_two_inner (u v : V) :
@@ -244,23 +241,15 @@ theorem LinearMap.apply_apply_add_swap_eq_neg_two_inner {W U : Type*}
     real_inner_comm u v] at h
   linear_combination (norm := module) h
 
-omit hQ
-
-namespace AlgHom
-
-open CliffordAlgebra
-
-variable {B : Type*} [Ring B] [Algebra ℝ B] (ρ : CliffordAlgebra Q →ₐ[ℝ] B)
-
-/-- For an orthonormal pair `(e₁, e₂)` and `Q v = -‖v‖²`, the bivector `c(e₁) c(e₂)` squares to
-`-1`. -/
-theorem map_cliffordAlgebraι_mul_map_cliffordAlgebraι_sq_of_orthonormal
-    (hQ : ∀ v, Q v = -‖v‖ ^ 2) {e₁ e₂ : V} (he₁ : ‖e₁‖ = 1) (he₂ : ‖e₂‖ = 1)
-    (h12 : ⟪e₁, e₂⟫ = 0) :
-    (ρ (ι Q e₁) * ρ (ι Q e₂)) * (ρ (ι Q e₁) * ρ (ι Q e₂)) = -1 := by
-  rw [← map_mul ρ, ← map_mul ρ,
-    ι_mul_ι_mul_self_of_isOrtho ((QuadraticMap.isOrtho_iff_inner_eq_zero hQ).2 h12),
-    map_neg, AlgHom.commutes, hQ, hQ, he₁, he₂]
-  simp
-
-end AlgHom
+omit hQ in
+/-- **The polarized Clifford relation** for a continuous bilinear map. If
+`c : W →L[ℝ] U →L[ℝ] U` satisfies the Clifford relation `c(v)² = -⟪v, v⟫`, then
+`c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
+theorem ContinuousLinearMap.apply_apply_add_swap_eq_neg_two_inner {W U : Type*}
+    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [AddCommGroup U] [Module ℝ U]
+    [TopologicalSpace U] [IsTopologicalAddGroup U] [ContinuousConstSMul ℝ U]
+    (c : W →L[ℝ] U →L[ℝ] U) (hc : ∀ (v : W) (s : U), c v (c v s) = -⟪v, v⟫ • s)
+    (u v : W) (s : U) :
+    c u (c v s) + c v (c u s) = -(2 * ⟪u, v⟫) • s := by
+  simpa using LinearMap.apply_apply_add_swap_eq_neg_two_inner
+    ((ContinuousLinearMap.coeLM ℝ).comp c.toLinearMap) (by simpa using hc) u v s

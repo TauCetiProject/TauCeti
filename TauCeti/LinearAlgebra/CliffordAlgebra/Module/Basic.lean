@@ -25,8 +25,10 @@ module actions, vectors with `Q v = -1`, and polarized / orthogonal anticommutat
   and acts as negation when applied twice.
 * `AlgHom.map_cliffordAlgebraι_mul_add_swap`,
   `AlgHom.map_cliffordAlgebraι_anticommute_of_isOrtho`,
-  `AlgHom.map_cliffordAlgebraι_apply_anticommute_of_isOrtho`: the polarized anticommutator relation
-  and anticommutation of `Q`-orthogonal vectors along `ρ`.
+  `AlgHom.map_cliffordAlgebraι_apply_anticommute_of_isOrtho`,
+  `AlgHom.map_cliffordAlgebraι_mul_map_cliffordAlgebraι_mul_self_of_isOrtho`: the polarized
+  anticommutator relation, anticommutation of `Q`-orthogonal vectors, and the square of the product
+  of two `Q`-orthogonal vectors along `ρ`.
 
 ## References
 
@@ -91,6 +93,19 @@ theorem map_cliffordAlgebraι_apply_self_of_eq_neg_one
     (ρ : CliffordAlgebra Q →ₐ[K] Module.End K W) {v : M} (hv : Q v = -1) (w : W) :
     ρ (ι Q v) (ρ (ι Q v) w) = -w := by
   simp [hv]
+
+/-- Under any algebra homomorphism out of `CliffordAlgebra Q`, the product
+`ρ (ι Q u) * ρ (ι Q v)` of two `Q`-orthogonal vectors squares to `-algebraMap K A (Q u * Q v)`. -/
+theorem map_cliffordAlgebraι_mul_map_cliffordAlgebraι_mul_self_of_isOrtho
+    (ρ : CliffordAlgebra Q →ₐ[K] A) {u v : M} (huv : Q.IsOrtho u v) :
+    ρ (ι Q u) * ρ (ι Q v) * (ρ (ι Q u) * ρ (ι Q v)) = -algebraMap K A (Q u * Q v) := by
+  have hcomm : ρ (ι Q v) * ρ (ι Q u) = -(ρ (ι Q u) * ρ (ι Q v)) :=
+    eq_neg_of_add_eq_zero_right (ρ.map_cliffordAlgebraι_anticommute_of_isOrtho huv)
+  calc ρ (ι Q u) * ρ (ι Q v) * (ρ (ι Q u) * ρ (ι Q v))
+      = ρ (ι Q u) * (ρ (ι Q v) * ρ (ι Q u)) * ρ (ι Q v) := by simp only [mul_assoc]
+    _ = -((ρ (ι Q u) * ρ (ι Q u)) * (ρ (ι Q v) * ρ (ι Q v))) := by
+        simp only [hcomm, mul_neg, neg_mul, mul_assoc]
+    _ = -algebraMap K A (Q u * Q v) := by simp [map_mul]
 
 end Ring
 

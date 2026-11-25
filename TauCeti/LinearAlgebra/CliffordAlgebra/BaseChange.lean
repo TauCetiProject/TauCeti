@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.BaseChange
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Star
-public import Mathlib.RingTheory.TensorProduct.Maps
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 
@@ -54,9 +53,9 @@ the scalar extension of the grading of `Cℓ(M, Q)`.
 * `CliffordAlgebra.baseChangeCongr_unique` characterizes `CliffordAlgebra.baseChangeCongr`, and it
   commutes with the grade involution, reversal and Clifford conjugation.
 * `CliffordAlgebra.eq_liftBaseChange_iff`, `CliffordAlgebra.eq_liftBaseChange_iff_ι`,
-  `CliffordAlgebra.liftBaseChange_eq_lift`, `CliffordAlgebra.comp_liftBaseChange`,
-  `CliffordAlgebra.liftBaseChange_comp_map`: uniqueness, `Algebra.TensorProduct.lift`
-  factorization, and functoriality of `CliffordAlgebra.liftBaseChange`.
+  `CliffordAlgebra.liftBaseChange_ofBaseChange`, `CliffordAlgebra.comp_liftBaseChange`,
+  `CliffordAlgebra.liftBaseChange_comp_map`: uniqueness, `AlgHom.liftEquiv` factorization on the
+  tensor carrier, and functoriality of `CliffordAlgebra.liftBaseChange`.
 * `CliffordAlgebra.ofBaseChange_map_map` and `CliffordAlgebra.toBaseChange_map`: under
   `CliffordAlgebra.ofBaseChange` and `CliffordAlgebra.toBaseChange`, the algebra map induced by
   the extension `f.baseChange A` of a quadratic isometry `f` corresponds to the scalar extension
@@ -498,18 +497,6 @@ theorem eq_liftBaseChange_iff_ι (Q : QuadraticForm R M) (f : CliffordAlgebra Q 
     g = liftBaseChange A Q f ↔ ∀ v : M, g (ι (Q.baseChange A) (1 ⊗ₜ v)) = f (ι Q v) := by
   rw [baseChange_hom_ext_iff]
   simp
-
-/-- `liftBaseChange A Q f` is `Algebra.TensorProduct.lift` of `Algebra.ofId A B` and `f`,
-precomposed with `CliffordAlgebra.equivBaseChange A Q`. -/
-theorem liftBaseChange_eq_lift (Q : QuadraticForm R M) (f : CliffordAlgebra Q →ₐ[R] B) :
-    liftBaseChange A Q f =
-      (Algebra.TensorProduct.lift (Algebra.ofId A B) f
-        (fun a x ↦ by rw [Algebra.ofId_apply]; exact Algebra.commutes a (f x))).comp
-        (equivBaseChange A Q).toAlgHom := by
-  symm
-  rw [eq_liftBaseChange_iff_ι]
-  intro v
-  simp [equivBaseChange]
 
 /-- Scalar extension of Clifford algebra homomorphisms commutes with postcomposition by an
 `A`-algebra homomorphism. -/
