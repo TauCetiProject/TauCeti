@@ -151,7 +151,8 @@ end Lift
 
 /-- A continuous extension of bilinear data bounds its algebraic linearization by its
 operator norm. -/
-theorem norm_lift_apply_le_of_agrees {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+theorem norm_tensorProductLift_apply_le_opNorm_mul {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℂ F]
     (f : H →ₗ[ℂ] A →ₗ[ℂ] F) (g : HilbertModuleTensorProduct H A →L[ℂ] F)
     (h : ∀ ξ a, g (mk H A ξ a) = f ξ a)
     (x : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A)) :

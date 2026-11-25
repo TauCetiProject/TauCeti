@@ -67,6 +67,18 @@ factor. -/
   rw [CStarModuleUnitary.symm_apply_eq]
   simp
 
+/-- Tensoring the inverse equivalence gives the inverse of the induced unitary. -/
+@[simp] theorem hilbertModuleTensorProductUnitary_symm (f : H ≃ₗᵢ[ℂ] K) :
+    f.symm.hilbertModuleTensorProductUnitary (A := A) =
+      (f.hilbertModuleTensorProductUnitary (A := A)).symm := by
+  apply CStarModuleUnitary.toLinearIsometryEquiv_injective
+  apply LinearIsometryEquiv.toLinearIsometry_injective
+  apply HilbertModuleTensorProduct.ext_linearIsometry
+  intro η a
+  simp only [LinearIsometryEquiv.coe_toLinearIsometry,
+    CStarModuleUnitary.toLinearIsometryEquiv_apply, hilbertModuleTensorProductUnitary_mk,
+    hilbertModuleTensorProductUnitary_symm_mk]
+
 /-- Tensoring the identity equivalence gives the identity unitary on the completed module. -/
 @[simp] theorem hilbertModuleTensorProductUnitary_refl :
     (LinearIsometryEquiv.refl ℂ H).hilbertModuleTensorProductUnitary (A := A) =
