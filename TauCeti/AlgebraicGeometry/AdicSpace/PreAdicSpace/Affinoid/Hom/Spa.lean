@@ -44,7 +44,7 @@ adic space has one, and it is unique.
   source, by gluing over the open affinoid subspaces.
 * `TauCeti.AdicSpace.homSpaEquiv_comp`: naturality in the source. Naturality in the Huber pair is
   `TauCeti.ValuationSpectrum.presentationLimitAppTop_comp_pairComap`.
-* `TauCeti.AdicSpace.subsingleton_homSpa_of_surjective_intCast`: if `ℤ → A` is surjective,
+* `TauCeti.AdicSpace.subsingleton_homSpa_of_intCast_surjective`: if `ℤ → A` is surjective,
   morphisms to `Spa(A, A⁺)` are unique.
 * `TauCeti.AdicSpace.subsingleton_homSpa_of_subsingleton`,
   `TauCeti.AdicSpace.nonempty_homSpa_iff_isEmpty_of_subsingleton`: morphisms to `Spa(0, 0)` are
@@ -213,7 +213,7 @@ theorem homSpaEquiv_comp {W X : AdicSpace.{u}} (h : W ⟶ X)
 
 /-- **Morphisms to `Spa(A, A⁺)` for a quotient of `ℤ`.** If the canonical ring map `ℤ → A` is
 surjective, every adic space has at most one morphism to `Spa(A, A⁺)`. -/
-theorem subsingleton_homSpa_of_surjective_intCast (h : Function.Surjective (Int.castRingHom A))
+theorem subsingleton_homSpa_of_intCast_surjective (h : Function.Surjective (Int.castRingHom A))
     (X : AdicSpace.{u}) :
     Subsingleton (X.obj ⟶ presentationLimitPreAdicSpace P S.plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem hS) :=
@@ -229,7 +229,7 @@ noncomputable def uniqueHomSpaOfRingEquivInt [DiscreteTopology A] (e : A ≃+* �
       S.isRingOfIntegralElements.isPowerBounded_of_mem hS) :=
   -- the only ring map `A → 𝒪_X(X)` is the one through `ℤ`; it is continuous because `A` is
   -- discrete, and it lands in the integral sections because they form a subring
-  haveI := subsingleton_homSpa_of_surjective_intCast P S hS
+  haveI := subsingleton_homSpa_of_intCast_surjective P S hS
     (fun a ↦ ⟨e a, (map_intCast e.symm (e a)).symm.trans (e.symm_apply_apply a)⟩) X
   uniqueOfSubsingleton <| (homSpaEquiv P S hS X).symm
     ⟨(Int.castRingHom _).comp e.toRingHom, continuous_of_discreteTopology,
@@ -240,7 +240,7 @@ most one morphism to `Spa(A, A⁺)`. -/
 theorem subsingleton_homSpa_of_subsingleton [Subsingleton A] (X : AdicSpace.{u}) :
     Subsingleton (X.obj ⟶ presentationLimitPreAdicSpace P S.plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem hS) :=
-  subsingleton_homSpa_of_surjective_intCast P S hS (fun _ ↦ ⟨0, Subsingleton.elim _ _⟩) X
+  subsingleton_homSpa_of_intCast_surjective P S hS (fun _ ↦ ⟨0, Subsingleton.elim _ _⟩) X
 
 /-- **Only the empty adic space maps to `Spa(0, 0)`**: if `A` is the zero ring, an adic space `X`
 has a morphism to `Spa(A, A⁺)` exactly when it is empty. -/
