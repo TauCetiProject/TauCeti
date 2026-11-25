@@ -98,8 +98,7 @@ theorem Integrable.max_zero_mul {X : Type*} [MeasurableSpace X] {μ : Measure X}
     Integrable (fun x ↦ max (g x) 0 * w x) μ := by
   refine (h.sup (integrable_zero _ _ _)).congr ?_
   filter_upwards [hw] with x hx
-  simp only [Pi.sup_apply, max_mul_of_nonneg _ _ hx, zero_mul]
-  rfl
+  simp only [Pi.sup_apply, Pi.zero_apply, max_mul_of_nonneg _ _ hx, zero_mul]
 
 /-- Multiplication by an almost everywhere measurable real coefficient preserves integrability
 exactly when its absolute value does, without assuming measurability of the vector-valued `f`. -/
