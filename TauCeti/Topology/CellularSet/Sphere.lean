@@ -11,6 +11,7 @@ import Mathlib.Topology.Compactification.OnePoint.Sphere
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 import TauCeti.Topology.CellularSet.InverseSet.Sphere
 import TauCeti.Topology.Compactness.Normed
+import TauCeti.Topology.Sphere.Stereographic
 import TauCeti.Topology.Compactification.OnePoint.Collapse
 
 /-!
@@ -49,10 +50,6 @@ is covered twice by `ℝ⁰` but is not `S⁰`, and `ℝᵐ` is covered twice by
   compactification of `U`.
 * `TauCeti.nonempty_homeomorph_sphere_of_two_euclidean_opens`: a compact Hausdorff space covered
   by two open sets homeomorphic to `ℝᵐ`, `m > 0`, is homeomorphic to `Sᵐ`.
-* `TauCeti.nonempty_homeomorph_compl_singleton_sphere`: the sphere `Sᵐ` minus a point is
-  homeomorphic to `ℝᵐ`.
-* `TauCeti.exists_two_euclidean_opens_sphere`: `Sᵐ` is covered by two open sets homeomorphic to
-  `ℝᵐ`.
 * `TauCeti.nonempty_homeomorph_sphere_iff_exists_two_euclidean_opens`: for `m > 0`, a space is
   homeomorphic to `Sᵐ` if and only if it is compact, Hausdorff and covered by two open sets
   homeomorphic to `ℝᵐ`.
@@ -175,44 +172,6 @@ theorem nonempty_homeomorph_sphere_of_two_euclidean_opens [CompactSpace X] [T2Sp
 section Converse
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- **The sphere minus a point is Euclidean.** Let `F` be a real normed space of dimension `m + 1`
-and `E` one of dimension `m`. The complement of any point `p` of the unit sphere of `F` is
-homeomorphic to `E`; in an inner product space this is stereographic projection from `p`. -/
-theorem nonempty_homeomorph_compl_singleton_sphere [FiniteDimensional ℝ E]
-    (hEF : finrank ℝ F = finrank ℝ E + 1) (p : sphere (0 : F) 1) :
-    Nonempty (({p}ᶜ : Set (sphere (0 : F) 1)) ≃ₜ E) := by
-  have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
-  have : Fact (finrank ℝ (EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) = finrank ℝ E + 1) :=
-    ⟨by simp⟩
-  -- Move `p` to the Euclidean sphere and project stereographically from its image.
-  let h : sphere (0 : F) 1 ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) 1 :=
-    sphereHomeomorphOfFinrankEq (by simp [hEF])
-  let σ := stereographic' (finrank ℝ E) (h p)
-  have hsource : h '' {p}ᶜ = σ.source := by
-    rw [stereographic'_source, image_compl_eq h.bijective, image_singleton]
-  exact ⟨(h.image _).trans <| (Homeomorph.setCongr hsource).trans <|
-    σ.toHomeomorphSourceTarget.trans <| (Homeomorph.setCongr (stereographic'_target _)).trans <|
-      (Homeomorph.Set.univ _).trans
-        (ContinuousLinearEquiv.ofFinrankEq (E := EuclideanSpace ℝ (Fin (finrank ℝ E))) (F := E)
-          finrank_euclideanSpace_fin).toHomeomorph⟩
-
-/-- **The sphere is covered by two Euclidean open sets.** The unit sphere `Sᵐ` of a real normed
-space `F` of dimension `m + 1` is the union of the complements of two antipodal points `p` and
-`-p`, its two poles, and each of them is homeomorphic to a real normed space `E` of dimension `m`.
-For `m = 1` these are two open arcs of the circle; for `m = 0` they are the two points of `S⁰`. -/
-theorem exists_two_euclidean_opens_sphere [FiniteDimensional ℝ E]
-    (hEF : finrank ℝ F = finrank ℝ E + 1) :
-    ∃ U V : Set (sphere (0 : F) 1), IsOpen U ∧ IsOpen V ∧ U ∪ V = univ ∧ Nonempty (U ≃ₜ E) ∧
-      Nonempty (V ≃ₜ E) := by
-  have : Nontrivial F := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
-  obtain ⟨p⟩ : Nonempty (sphere (0 : F) 1) :=
-    ((NormedSpace.sphere_nonempty (x := (0 : F))).2 zero_le_one).to_subtype
-  refine ⟨{p}ᶜ, {-p}ᶜ, isOpen_compl_singleton, isOpen_compl_singleton, ?_,
-    nonempty_homeomorph_compl_singleton_sphere hEF p,
-    nonempty_homeomorph_compl_singleton_sphere hEF (-p)⟩
-  rw [← compl_inter, compl_univ_iff, singleton_inter_eq_empty, mem_singleton_iff]
-  exact ne_neg_of_mem_unit_sphere ℝ p
 
 /-- **Recognition of the topological sphere.** A space `X` is homeomorphic to the sphere `Sᵐ`,
 `m > 0`, if and only if it is a compact Hausdorff space covered by two open sets, each
