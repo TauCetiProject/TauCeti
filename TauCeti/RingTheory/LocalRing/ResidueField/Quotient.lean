@@ -20,6 +20,8 @@ is the residue field `κ`. Likewise, any surjective `R₀`-algebra map `ψ : R �
 
 * `TauCeti.isLocalHom_algebraMap_residueField`: `algebraMap R (ResidueField R)` is a local
   homomorphism.
+* `TauCeti.residue_eq_residue_iff`: two elements have the same residue exactly when
+  their difference lies in the maximal ideal.
 * `TauCeti.quotientEquivResidueField`: `R ⧸ 𝔪 ≃ₗ[R] κ` for a maximal ideal `𝔪`,
   sending the class of `r` to `residue R r`.
 * `TauCeti.residueFieldAlgEquivOfSurjective`: `ResidueField R ≃ₐ[R₀] L` induced by a surjective
@@ -41,6 +43,12 @@ variable {R : Type*} [CommRing R] [IsLocalRing R]
 /-- The canonical algebra map `R →+* ResidueField R` of a local ring is a local homomorphism. -/
 instance isLocalHom_algebraMap_residueField : IsLocalHom (algebraMap R (ResidueField R)) :=
   ResidueField.algebraMap_eq (R := R) ▸ inferInstance
+
+/-- Two elements of a local ring have the same residue if and only if their difference lies in
+the maximal ideal. -/
+theorem residue_eq_residue_iff {x y : R} :
+    residue R x = residue R y ↔ x - y ∈ maximalIdeal R := by
+  rw [← sub_eq_zero, ← map_sub, residue_eq_zero_iff]
 
 /-- The quotient of a local ring by a maximal ideal is its residue field, as an `R`-linear
 equivalence sending the class of `r` to `residue R r`. -/
