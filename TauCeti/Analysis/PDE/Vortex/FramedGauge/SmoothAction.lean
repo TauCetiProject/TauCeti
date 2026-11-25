@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.LieGroup
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Quotient
+public import TauCeti.Analysis.PDE.Vortex.FramedGauge.RealChart
 
 /-!
 # The smooth action of the Sobolev gauge group on the framed vortex fields
@@ -63,6 +64,9 @@ makes the slices charts of `A_m^k / G_(k+1)`; that slice theorem is not proved h
   smooth in the affine coordinates of `A_m^k`, and so are its orbit maps.
 * `TauCeti.Vortex.SobolevFieldSpace.contDiff_smulCoord_expGauge`: the action is smooth in
   exponential coordinates, jointly in the phase and the field.
+* `TauCeti.Vortex.SobolevFieldSpace.contDiff_realSubRef_smul_ofRealSubRef`,
+  `TauCeti.Vortex.SobolevFieldSpace.contDiff_realSubRef_expGauge_smul_ofRealSubRef`: the same in
+  the real coordinates `realSubRef` of the fields.
 * `TauCeti.Vortex.SobolevFieldSpace.gaugeDirectionCoord`: the infinitesimal gauge action `d₀` in
   these coordinates, a bounded complex-linear map `H^(k+1)(ℂ) → H^k(ℂ)⁴`.
 * `TauCeti.Vortex.SobolevFieldSpace.hasFDerivAt_smulCoord_expGauge_zero`,
@@ -140,6 +144,32 @@ theorem contDiff_smulCoord_expGauge :
   have hJ := contMDiff_iff_contDiff.1 (contMDiff_imPart.comp (contMDiff_expGauge (hs := hs) ∞))
   exact (contDiff_smulCoord.restrict_scalars ℝ).comp
     ((hR.comp contDiff_fst).prodMk ((hJ.comp contDiff_fst).prodMk contDiff_snd))
+
+/-! ### The action in the real coordinates -/
+
+/-- **A gauge acts smoothly in the real coordinates**: for `u ∈ G_(k+1)`, the real coordinates of
+`u · x` are a smooth function of the real coordinates of `x`. -/
+theorem contDiff_realSubRef_smul_ofRealSubRef (u : SobolevTopologicalGaugeGroup hs) :
+    ContDiff ℝ ∞ fun v : Fin 4 → realSubmodule ℂ (Nat.cast_nonneg k : (0 : ℝ) ≤ k) ↦
+      (u • ofRealSubRef (f := f) (m := m) (by exact_mod_cast (Fact.out : 1 < k)) v).realSubRef
+        (Nat.cast_nonneg k) := by
+  simp_rw [realSubRef_eq_realPartCLM_subRef, subRef_smul, subRef_ofRealSubRef]
+  refine contDiff_pi.2 fun j ↦ (realPartCLM ℂ _).contDiff.comp ((contDiff_apply ℝ _ j).comp
+    ((contDiff_smulCoord.restrict_scalars ℝ).comp
+      (contDiff_const.prodMk (contDiff_const.prodMk (coordInclusion _).contDiff))))
+
+/-- **The action in exponential and real coordinates is smooth**: the real coordinates of
+`exp (i F) · x` are a smooth function of the real phase `F ∈ H^(k+1)` and of the real coordinates
+of `x`. -/
+theorem contDiff_realSubRef_expGauge_smul_ofRealSubRef :
+    ContDiff ℝ ∞ fun p : realSubmodule ℂ (zero_le_one.trans hs.le) ×
+        (Fin 4 → realSubmodule ℂ (Nat.cast_nonneg k : (0 : ℝ) ≤ k)) ↦
+      (expGauge hs p.1 • ofRealSubRef (f := f) (m := m) (by exact_mod_cast (Fact.out : 1 < k))
+        p.2).realSubRef (Nat.cast_nonneg k) := by
+  simp_rw [realSubRef_eq_realPartCLM_subRef, subRef_smul, subRef_ofRealSubRef]
+  refine contDiff_pi.2 fun j ↦ (realPartCLM ℂ _).contDiff.comp ((contDiff_apply ℝ _ j).comp
+    ((contDiff_smulCoord_expGauge (f := f) (m := m)).comp
+      (contDiff_fst.prodMk ((coordInclusion _).contDiff.comp contDiff_snd))))
 
 variable (f m) in
 /-- **The infinitesimal gauge action in the coordinates of `A_m^k`.** At the field `x_m + y`, with
