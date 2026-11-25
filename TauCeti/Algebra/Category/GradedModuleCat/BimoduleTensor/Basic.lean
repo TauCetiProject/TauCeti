@@ -85,9 +85,7 @@ local instance rightGradedSMul [DirectSum.Decomposition Δ.piece]
     [SetLike.GradedOne Γ.piece] (M : GradedModuleCat.{v} (Γ.tensorProduct Δ.opposite).piece) :
     SetLike.GradedSMul (InternalGrading.ofDecomposition Δ.piece).opposite.piece
       M.grading.piece := by
-  have hΔ : InternalGrading.ofDecomposition Δ.piece = Δ :=
-    InternalGrading.ext fun p ↦ by rw [InternalGrading.ofDecomposition_piece]
-  rw [hΔ]
+  rw [Δ.ofDecomposition_piece_eq]
   exact Γ.gradedSMul_moduleRight Δ.opposite M.grading.piece
 
 section ModuleTensor

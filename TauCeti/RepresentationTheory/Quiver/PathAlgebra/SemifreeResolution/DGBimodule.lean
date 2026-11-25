@@ -86,18 +86,12 @@ local instance : SetLike.GradedSMul (Ξ).piece V :=
   (vertexTensorBimodule k Q).subtype.gradedSMul_of_mem_iff (Ξ).piece V (Ξ).piece
     (mem_vertexTensorGrading_piece_iff k Q wt)
 
-private theorem gradedSMul_opposite {M : Type*} [AddCommGroup M] [Module k M] [Module ℰ M]
-    (W : ℤ → Submodule k M) [SetLike.GradedSMul (Ξ).piece W] :
-    SetLike.GradedSMul (Γ).opposite.piece W := by
-  have hΓ : Γ = G := InternalGrading.ext fun p ↦ by rw [InternalGrading.ofDecomposition_piece]
-  rw [hΓ]
-  exact (G).gradedSMul_moduleRight (G).opposite W
-
 local instance : SetLike.GradedSMul (gradeBy k wt) V :=
   (G).gradedSMul_moduleLeft (G).opposite V
 
-local instance : SetLike.GradedSMul (Γ).opposite.piece V :=
-  gradedSMul_opposite (wt := wt) (M := vertexTensorBimodule k Q) V
+local instance : SetLike.GradedSMul (Γ).opposite.piece V := by
+  rw [(G).ofDecomposition_piece_eq]
+  exact (G).gradedSMul_moduleRight (G).opposite V
 
 include hdε
 
@@ -125,8 +119,9 @@ local instance : SetLike.GradedSMul (Ξ).piece U :=
 local instance : SetLike.GradedSMul (gradeBy k wt) U :=
   (G).gradedSMul_moduleLeft (G).opposite U
 
-local instance : SetLike.GradedSMul (Γ).opposite.piece U :=
-  gradedSMul_opposite (wt := wt) (M := arrowTensorBimodule k Q) U
+local instance : SetLike.GradedSMul (Γ).opposite.piece U := by
+  rw [(G).ofDecomposition_piece_eq]
+  exact (G).gradedSMul_moduleRight (G).opposite U
 
 /-- The arrow tensor term as a DG bimodule over the path algebra. -/
 @[expose, implicit_reducible]

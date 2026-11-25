@@ -152,6 +152,11 @@ noncomputable def ofDecomposition (ℳ : ι → Submodule R M) [DirectSum.Decomp
 theorem ofDecomposition_piece (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ] :
     (ofDecomposition ℳ).piece = ℳ := (rfl)
 
+/-- Reconstructing an internal grading from any decomposition of its pieces recovers it. -/
+@[simp]
+theorem ofDecomposition_piece_eq (G : InternalGrading R M ι) [DirectSum.Decomposition G.piece] :
+    ofDecomposition G.piece = G := (rfl)
+
 /-- The decomposition carried by `ofDecomposition ℳ` is the given one, on every component. The two
 instances are not definitionally equal (the one on `(ofDecomposition ℳ).piece` is chosen from
 internality), but decompositions are unique. -/
