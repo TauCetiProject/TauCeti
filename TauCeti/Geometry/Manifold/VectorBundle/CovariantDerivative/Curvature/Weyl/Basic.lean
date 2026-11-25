@@ -203,7 +203,7 @@ theorem IsMetricCompatible.weylTensor_swap_pairs
   have hP := isSymm_iff.mpr (IsMetricCompatible.schoutenTensor_isSymm (cov := cov) hcov ht x)
   rw [weylTensor_apply, weylTensor_apply,
     IsMetricCompatible.riemannCurvatureTensor_swap_pairs (cov := cov) hcov ht x u v w z,
-    hP.kulkarniNomizu_swap_pairs (isSymm_iff.mpr isSymm_inner)]
+    hP.kulkarniNomizu_swap_pairs TauCeti.isSymm_innerₗ]
 
 /-- In dimension `3`, the Weyl tensor of a metric-compatible connection vanishes. -/
 theorem IsMetricCompatible.weylTensor_eq_zero_of_finrank_eq_three

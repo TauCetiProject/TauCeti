@@ -696,9 +696,8 @@ theorem constantCurvature_apply (u v z w : V) :
 
 /-- The constant-curvature tensor is an algebraic curvature tensor. -/
 theorem isAlgebraicCurvature_constantCurvature : IsAlgebraicCurvature (constantCurvature V) :=
-  have hg : LinearMap.BilinForm.IsSymm (innerₗ V) := ⟨fun v w ↦ real_inner_comm w v⟩
   Submodule.smul_mem (algebraicCurvatureSubmodule V) _
-    (isAlgebraicCurvature_kulkarniNomizu hg hg)
+    (isAlgebraicCurvature_kulkarniNomizu isSymm_innerₗ isSymm_innerₗ)
 
 /-- On a pair `(u, v)`, the constant-curvature tensor is the Gram determinant
 `‖u‖² ‖v‖² - ⟪u, v⟫²`. -/

@@ -248,7 +248,7 @@ theorem isAlgebraicCurvature_tracelessRicciPart_of_isSymm_ricci {r : FourTensor 
     (h : (ricci r).IsSymm) : IsAlgebraicCurvature (tracelessRicciPart r) :=
   mem_algebraicCurvatureSubmodule.mp <| Submodule.smul_mem _ _
     (mem_algebraicCurvatureSubmodule.mpr (isAlgebraicCurvature_kulkarniNomizu
-      (isSymm_tracelessRicci_iff.mpr h) (LinearMap.BilinForm.isSymm_iff.mpr isSymm_inner)))
+      (isSymm_tracelessRicci_iff.mpr h) isSymm_innerₗ))
 
 /-- `tracelessRicciPart r` is an algebraic curvature tensor for bivector-symmetric `r`. -/
 theorem IsBivectorSymmetric.isAlgebraicCurvature_tracelessRicciPart {r : FourTensor V}
