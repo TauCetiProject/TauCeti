@@ -38,6 +38,8 @@ a right DG module into a right module over the cohomology algebra.
   boundaries.
 * `TauCeti.IsDGRightModule.op_map_smul_mem_range_of_map_eq_zero`: the differential of an algebra
   element acts by a boundary on a module cycle.
+* `TauCeti.IsDGRightModule.koszulTwist_map`: the differential commutes with the Koszul twist of
+  parameter `n` up to the sign `(-1) ^ n`.
 * `TauCeti.isDGRightModule_zero`: a graded right module with zero differential is a DG right
   module over a graded algebra with zero differential.
 * `TauCeti.IsDGAlgebra.isDGRightModule`: a differential graded algebra is a differential graded
@@ -154,19 +156,49 @@ theorem op_map_smul_mem_range_of_map_eq_zero (hM : IsDGRightModule h ℳ dM) (a 
   rw [hcycle, smul_zero, sub_zero] at key
   exact key
 
+/-- The differential has degree one for the pieces of the grading `ofDecomposition ℳ`. -/
+theorem isHomogeneous_ofDecomposition (hM : IsDGRightModule h ℳ dM) :
+    LinearMap.IsHomogeneous dM (InternalGrading.ofDecomposition ℳ).piece
+      (InternalGrading.ofDecomposition ℳ).piece 1 := by
+  rw [InternalGrading.ofDecomposition_piece]
+  exact hM.isHomogeneous
+
+/-- **The differential commutes with the Koszul twist** `x ↦ (-1) ^ (n |x|) x` up to the sign
+`(-1) ^ n`, since it has degree one. -/
+theorem koszulTwist_map (hM : IsDGRightModule h ℳ dM) (n : ℤ) (x : M) :
+    (InternalGrading.ofDecomposition ℳ).koszulTwist n (dM x) =
+      n.negOnePow • dM ((InternalGrading.ofDecomposition ℳ).koszulTwist n x) := by
+  rw [hM.isHomogeneous_ofDecomposition.koszulTwist_apply n x, mul_one, Units.smul_def,
+    Int.cast_smul_eq_zsmul]
+
 /-- The right action of a cycle of the algebra, twisted by the Koszul sign, anticommutes with the
 differential of the module. -/
 theorem op_smul_koszulTwist_map_eq_neg (hM : IsDGRightModule h ℳ dM) {a : A} (ha : d a = 0)
     (x : M) :
     op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (dM x) =
       -dM (op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 x) := by
-  have hhom : LinearMap.IsHomogeneous dM (InternalGrading.ofDecomposition ℳ).piece
-      (InternalGrading.ofDecomposition ℳ).piece 1 :=
-    LinearMap.isHomogeneous_def.mpr fun p y hy ↦ by
-      rw [InternalGrading.ofDecomposition_piece] at hy ⊢
-      exact hM.isHomogeneous.map_mem hy
-  rw [hhom.koszulTwist_apply 1 x, hM.leibniz_of_map_eq_zero _ ha]
+  rw [hM.koszulTwist_map 1 x, hM.leibniz_of_map_eq_zero _ ha]
   simp
+
+/-- **The right action of a boundary is null-homotopic.** Acting by `d a` is `dM K + K dM` for
+the homotopy `K x = (-1) ^ |x| x · a`, the right action of `a` after the Koszul twist. -/
+theorem op_map_smul_eq_add (hM : IsDGRightModule h ℳ dM) (a : A) (x : M) :
+    op (d a) • x =
+      dM (op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 x) +
+        op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (dM x) := by
+  induction x using DirectSum.Decomposition.inductionOn ℳ with
+  | zero => simp
+  | add x y hx hy =>
+    simp only [smul_add, map_add, hx, hy]
+    abel
+  | @homogeneous q x =>
+    obtain ⟨x, hx⟩ := x
+    rw [InternalGrading.koszulTwist_ofDecomposition_apply_of_mem ℳ hx,
+      InternalGrading.koszulTwist_ofDecomposition_apply_of_mem ℳ (hM.isHomogeneous.map_mem hx),
+      one_mul, one_mul, smul_comm (op a) _ x, smul_comm (op a) _ (dM x), map_smul,
+      hM.op_map_smul_eq_negOnePow_smul_sub hx a]
+    simp only [Int.negOnePow_succ, Units.val_neg, Int.cast_neg, neg_smul, Units.smul_def,
+      Int.cast_smul_eq_zsmul, sub_eq_add_neg, smul_add, smul_neg]
 
 end IsDGRightModule
 

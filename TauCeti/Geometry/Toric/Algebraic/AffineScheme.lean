@@ -69,6 +69,16 @@ noncomputable def affineCoordinateRingMap (hi : IsIntegralLattice i)
   MonoidAlgebra.mapDomainAlgHom ℂ ℂ
     (AddMonoidHom.toMultiplicative (dualSemigroupMap hi hi' f g hfg hστ))
 
+/-- The coordinate-ring map is the monoid-algebra map induced by the dual-semigroup map, written
+multiplicatively. -/
+theorem affineCoordinateRingMap_def (hi : IsIntegralLattice i)
+    (hi' : IsIntegralLattice i') (f : N →+ N') (g : V →ₗ[ℝ] V')
+    (hfg : ∀ n, g (i n) = i' (f n)) (hστ : Set.MapsTo g σ τ) :
+    affineCoordinateRingMap hi hi' f g hfg hστ =
+      MonoidAlgebra.mapDomainAlgHom ℂ ℂ
+        (AddMonoidHom.toMultiplicative (dualSemigroupMap hi hi' f g hfg hστ)) :=
+  (rfl)
+
 /-- The coordinate-ring map sends the monomial of a character to the monomial of its pullback. -/
 @[simp]
 theorem affineCoordinateRingMap_single (hi : IsIntegralLattice i)

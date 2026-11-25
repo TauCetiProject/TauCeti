@@ -21,7 +21,8 @@ This file proves that the resulting stalk maps are local: after composing with a
 ideal-of-definition quotient, they agree with the stalk maps of morphisms of ordinary
 schemes. It also records the compatibility with every quotient thickening and the induced
 map on global sections. The identities `map_id` and `map_comp` make this construction
-contravariantly functorial. No noetherian hypothesis is needed.
+contravariantly functorial, and `mapIso` sends bicontinuous ring isomorphisms to isomorphisms
+of formal spectra. No noetherian hypothesis is needed.
 
 ## References
 
@@ -37,6 +38,8 @@ open CategoryTheory TopologicalSpace Opposite AlgebraicGeometry
 universe u
 
 namespace TauCeti.FormalScheme.Spf
+
+section Map
 
 variable {A B : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   [IsAdicRing A] [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsAdicRing B]
@@ -229,5 +232,28 @@ theorem map_comp : map (φ.comp ψ) (hφ.comp hψ) = map φ hφ ≫ map ψ hψ :
   rw [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.comp_hom,
     TopCat.Sheaf.pushforward_map, TopCat.Sheaf.eqToHom_hom_eq_whiskerRight_of_eq_comp hfg _ _] at h
   exact h
+
+end Map
+
+section MapIso
+
+variable {A B : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A]
+  [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsAdicRing B]
+
+/-- A ring isomorphism `e : A ≃+* B` that is continuous in both directions induces an isomorphism
+of formal spectra `Spf B ≅ Spf A`. -/
+noncomputable def mapIso (e : A ≃+* B) (h₁ : Continuous e) (h₂ : Continuous e.symm) :
+    Spf B ≅ Spf A where
+  hom := map e.toRingHom h₁
+  inv := map e.symm.toRingHom h₂
+  hom_inv_id := by rw [← map_comp e.toRingHom h₁ e.symm.toRingHom h₂]; simp
+  inv_hom_id := by rw [← map_comp e.symm.toRingHom h₂ e.toRingHom h₁]; simp
+
+@[simp] theorem mapIso_hom (e : A ≃+* B) (h₁ : Continuous e) (h₂ : Continuous e.symm) :
+    (mapIso e h₁ h₂).hom = map e.toRingHom h₁ := (rfl)
+@[simp] theorem mapIso_inv (e : A ≃+* B) (h₁ : Continuous e) (h₂ : Continuous e.symm) :
+    (mapIso e h₁ h₂).inv = map e.symm.toRingHom h₂ := (rfl)
+
+end MapIso
 
 end TauCeti.FormalScheme.Spf

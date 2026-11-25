@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.NovikovSeries.Derivation
+public import TauCeti.RingTheory.NovikovSeries.Functoriality
 public import TauCeti.RingTheory.NovikovSeries.TopologicalRing
 public import TauCeti.Topology.Algebra.IsUniformGroup.Subring
 public import TauCeti.Topology.Algebra.TopologicallyNilpotent.ExpLog
+import TauCeti.RingTheory.NovikovSeries.Grading
 
 /-!
 # Exponential and logarithm of Novikov series
@@ -43,8 +45,14 @@ they differentiate the logarithm of a principal unit logarithmically: `u * D (lo
 * `TauCeti.NovikovSeries.coe_exp_nonnegSubring`: the exponential of a series of the nonnegative
   subring does not depend on whether it is computed in the nonnegative subring or in the Novikov
   ring.
+* `TauCeti.NovikovSeries.coe_log_nonnegSubring`: the analogous compatibility for the logarithm.
+* `TauCeti.NovikovSeries.support_exp_subset`, `TauCeti.NovikovSeries.support_log_subset`: the
+  totalized exponential and logarithm preserve support in an additive submonoid or subgroup of
+  the exponent monoid, without a positivity assumption.
 * `TauCeti.NovikovSeries.mul_degreeDerivation_log`: the logarithmic derivative of the logarithm
   along a degree derivation.
+* `TauCeti.NovikovSeries.mapRingHom_exp`: the pushforward along a coefficient map and a
+  period-rescaling exponent map commutes with the exponential of a series of the positive ideal.
 
 ## References
 
@@ -74,6 +82,38 @@ theorem coe_exp_nonnegSubring (a : nonnegSubring K N) :
     NormedSpace.exp_eq_tsum_rat (𝔸 := NovikovSeries K H N)]
   exact (isClosed_nonnegSubring.isClosedEmbedding_subtypeVal.map_tsum
     (g := (nonnegSubring K N).subtype.toAddMonoidHom) _).trans (by simp)
+
+/-- The logarithm of a series of the nonnegative subring is the same whether it is computed in
+the nonnegative subring or in the Novikov ring. -/
+@[simp]
+theorem coe_log_nonnegSubring (a : nonnegSubring K N) :
+    ((NormedSpace.log a : nonnegSubring K N) : NovikovSeries K H N) =
+      NormedSpace.log (a : NovikovSeries K H N) := by
+  rw [NormedSpace.log_eq_tsum ℚ, NormedSpace.log_eq_tsum ℚ]
+  exact (isClosed_nonnegSubring.isClosedEmbedding_subtypeVal.map_tsum
+    (g := (nonnegSubring K N).subtype.toAddMonoidHom) _).trans (by simp)
+
+/-- The exponential of a series supported in an additive submonoid or subgroup is supported in
+that subobject. This holds for the totalized exponential without a positivity assumption. -/
+theorem support_exp_subset (a : NovikovSeries K H N) {M : Type*} [SetLike M H]
+    [AddSubmonoidClass M H] {S : M} (ha : a.support ⊆ S) :
+    (NormedSpace.exp a).support ⊆ S := by
+  exact (mem_supportedSubalgebra ℚ K N).1
+    (NormedSpace.exp_mem (R := ℚ) (s := supportedSubalgebra ℚ K N S)
+      (by simpa only [coe_supportedSubalgebra] using
+        isClosed_setOf_support_subset (N := N) (S : Set H))
+      ((mem_supportedSubalgebra ℚ K N).2 ha))
+
+/-- The logarithm of a series supported in an additive submonoid or subgroup is supported in
+that subobject. This holds for the totalized logarithm without a positivity assumption. -/
+theorem support_log_subset (u : NovikovSeries K H N) {M : Type*} [SetLike M H]
+    [AddSubmonoidClass M H] {S : M} (hu : u.support ⊆ S) :
+    (NormedSpace.log u).support ⊆ S := by
+  exact (mem_supportedSubalgebra ℚ K N).1
+    (NormedSpace.log_mem (R := ℚ) (s := supportedSubalgebra ℚ K N S)
+      (by simpa only [coe_supportedSubalgebra] using
+        isClosed_setOf_support_subset (N := N) (S : Set H))
+      ((mem_supportedSubalgebra ℚ K N).2 hu))
 
 end Ring
 
@@ -105,12 +145,29 @@ theorem coe_expMulEquiv_symm_apply (u : (posIdeal K N).principalUnitGroup) :
 subring logarithmically: `u * D (log u) = D u`, read in the Novikov series. -/
 theorem mul_degreeDerivation_log (ℓ : H →+ K) {u : nonnegSubring K N}
     (hu : u - 1 ∈ posIdeal K N) :
-    (u : NovikovSeries K H N) * degreeDerivation ℓ (NormedSpace.log u : nonnegSubring K N) =
+    (u : NovikovSeries K H N) * degreeDerivation ℓ (NormedSpace.log (u : NovikovSeries K H N)) =
       degreeDerivation ℓ (u : NovikovSeries K H N) := by
   have := congrArg Subtype.val
     ((isTopologicallyNilpotent_of_mem_posIdeal' hu).mul_derivation_log
       (nonnegDegreeDerivation ℓ) (continuous_nonnegDegreeDerivation ℓ))
-  simpa only [Subring.coe_mul, coe_nonnegDegreeDerivation] using this
+  simpa only [Subring.coe_mul, coe_nonnegDegreeDerivation, coe_log_nonnegSubring] using this
+
+section Map
+
+variable {H' K' : Type*} [AddCommMonoid H'] {N' : H' →+ ℝ} [CommRing K'] [Algebra ℚ K']
+
+/-- **Naturality of the exponential.** The pushforward along a ring homomorphism `ρ` of
+coefficients and an exponent homomorphism `φ` rescaling periods commutes with the exponential of
+a series of the positive ideal: `P_(ρ,φ) (exp a) = exp (P_(ρ,φ) a)`. -/
+theorem mapRingHom_exp (ρ : K →+* K') (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
+    {a : nonnegSubring K N} (ha : a ∈ posIdeal K N) :
+    mapRingHom ρ φ hφ (NormedSpace.exp (a : NovikovSeries K H N)) =
+      NormedSpace.exp (mapRingHom ρ φ hφ a) := by
+  rw [← coe_exp_nonnegSubring, mapRingHom_apply, ← coe_mapNonnegSubring,
+    (isTopologicallyNilpotent_of_mem_posIdeal' ha).map_exp _ (continuous_mapNonnegSubring ρ φ hφ),
+    coe_exp_nonnegSubring, coe_mapNonnegSubring, mapRingHom_apply]
+
+end Map
 
 end NovikovSeries
 

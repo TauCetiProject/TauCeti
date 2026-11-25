@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.SkewSymmetric
+public import TauCeti.Analysis.InnerProductSpace.SkewSymmetric.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.VectorField
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.OrthonormalTrivialization
 import TauCeti.Geometry.Manifold.Instances.Sphere
@@ -249,7 +249,7 @@ theorem norm_sphereSkewTangentDiffeomorph_snd {m : ℕ∞ω} {A : Fin n → E �
     (hsq : ∀ i x, A i (A i x) = -x)
     (hanti : ∀ i j, i ≠ j → ∀ x, A i (A j x) + A j (A i x) = 0)
     (p : TangentBundle (𝓡 n) (sphere (0 : E) 1)) :
-    ‖(sphereSkewTangentDiffeomorph (m := m) hskew hsq hanti p).2‖ = ‖p.2‖ :=
+    ‖(sphereSkewTangentDiffeomorph (m := m) hskew hsq hanti p).2‖ = ‖p.snd‖ :=
   norm_orthonormalFrameDiffeomorph_snd _ _ _ p
 
 /-- `TauCeti.sphereSkewTangentDiffeomorph` preserves the round inner product on every tangent
@@ -353,9 +353,9 @@ theorem exists_sphere_tangentBundle_trivialization_mem_maximalAtlas
     fun i ↦ by simpa only [d, sphereSkewOrthonormalBasis_apply] using
       (A i).contMDiff_sphereSkewField (m := m) (hskew i)
   have hcont : ∀ i : Fin n, Continuous fun b : (univ : Set (sphere (0 : E) 1)) ↦
-      TotalSpace.mk' (EuclideanSpace ℝ (Fin n)) (b : sphere (0 : E) 1) (d b.1 i) :=
-    fun i ↦ (hd i).continuous.comp continuous_subtype_val
-  refine ⟨c.bundleTrivialization (E := TangentSpace (𝓡 n)) isOpen_univ (fun b ↦ d b.1) hcont,
+      TotalSpace.mk' (EuclideanSpace ℝ (Fin n)) (b : sphere (0 : E) 1) (d b.val i) :=
+    fun i ↦ (hd i).continuous.comp continuous_subtypeVal
+  refine ⟨c.bundleTrivialization (E := TangentSpace (𝓡 n)) isOpen_univ (fun b ↦ d b.val) hcont,
     inferInstance, c.bundleTrivialization_baseSet (E := TangentSpace (𝓡 n)) isOpen_univ _ hcont,
     fun x v ↦ ?_,
     c.bundleTrivialization_univ_mem_maximalAtlas (E := TangentSpace (𝓡 n)) d hd⟩

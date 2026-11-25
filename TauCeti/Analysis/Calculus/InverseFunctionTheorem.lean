@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
+public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
 public import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
-import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
 
 /-!
 # The inverse function theorem with a `C^n` inverse on a whole open set
@@ -48,6 +48,8 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
 * `HasStrictFDerivAt.contDiffAt_toOpenPartialHomeomorph_symm` and
   `HasStrictFDerivAt.contDiffOn_toOpenPartialHomeomorph_symm`: the local inverse is `C^n` at every
   point of the target, and hence on the target.
+* `OpenPartialHomeomorph.contDiffOn_symm_inter_preimage`: inverse regularity on the part of the
+  target corresponding to an open portion of the source.
 * `OpenPartialHomeomorph.contDiffOn_symm_of_isInvertible_fderiv`: a `C^n` open partial
   homeomorphism from a complete normed space whose derivative is invertible on its source has a
   `C^n` inverse on its target.
@@ -62,9 +64,11 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
   `s` and mapping `s` into `t` maps `interior s` into `interior t`.
 * `TauCeti.exists_contDiffAt_graph_of_isInvertible`: a disc `z ↦ (a z, b z)` whose second
   component has invertible derivative at `z₀` is, near `z₀`, the graph of a map `C^n` at `b z₀`.
-* `HasStrictDerivAt.invFunOn`, `TauCeti.isOpen_image_of_hasStrictDerivAt`,
+* `HasStrictDerivAt.invFunOn`, `HasStrictDerivAt.deriv_invFunOn`, `ContDiffOn.invFunOn`,
+  `TauCeti.isOpen_image_of_hasStrictDerivAt`,
   `TauCeti.continuousOn_invFunOn_of_hasStrictDerivAt`: one-dimensional `Function.invFunOn` strict
-  differentiability, open image, and continuity of the inverse on `f '' s`.
+  differentiability, derivative formula, `C^n` regularity, open image, and continuity of the
+  inverse on `f '' s`.
 
 ## References
 
@@ -184,6 +188,22 @@ theorem OpenPartialHomeomorph.contDiffOn_symm_of_isInvertible_fderiv [CompleteSp
   refine (ψ.contDiffAt_symm hy (f₀' := e) ?_ hat).contDiffWithinAt
   rw [he]
   exact (hat.differentiableAt hn).hasFDerivAt
+
+/-- Regularity and invertibility on a local part of the source give inverse regularity on
+the corresponding part of the target. -/
+theorem OpenPartialHomeomorph.contDiffOn_symm_inter_preimage [CompleteSpace E] {n : ℕ∞ω}
+    (ψ : OpenPartialHomeomorph E F) {s : Set E} (hs : IsOpen s)
+    (hψ : ContDiffOn 𝕜 n ψ (ψ.source ∩ s))
+    (hinv : ∀ x ∈ ψ.source ∩ s, (fderiv 𝕜 ψ x).IsInvertible) :
+    ContDiffOn 𝕜 n ψ.symm (ψ.target ∩ ψ.symm ⁻¹' s) := by
+  have hcoe : ⇑(ψ.restr s) = ψ := ψ.restr_apply s
+  have hsource : (ψ.restr s).source = ψ.source ∩ s := ψ.restr_source' s hs
+  have hC : ContDiffOn 𝕜 n (ψ.restr s) (ψ.restr s).source := by
+    simpa only [hcoe, hsource] using hψ
+  have hInv : ∀ x ∈ (ψ.restr s).source, (fderiv 𝕜 (ψ.restr s) x).IsInvertible := by
+    simpa only [hcoe, hsource] using hinv
+  simpa only [ψ.restr_symm_apply, ψ.restr_target, hs.interior_eq] using
+    (ψ.restr s).contDiffOn_symm_of_isInvertible_fderiv hC hInv
 
 /-- A map that is `C^n` on an open set `s` and approximates a continuous linear equivalence `L`
 there with a constant less than `‖L⁻¹‖⁻¹` restricts to an open partial homeomorphism with source
@@ -306,6 +326,8 @@ end TauCeti
 
 section OneDim
 
+section NormedField
+
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 
 /-- If `f : 𝕜 → 𝕜` has a nonzero strict derivative `f'` at `a` and is injective on a neighbourhood
@@ -314,6 +336,17 @@ theorem HasStrictDerivAt.invFunOn {f : 𝕜 → 𝕜} {f' a : 𝕜} {s : Set �
     (hf : HasStrictDerivAt f f' a) (hf' : f' ≠ 0) (hs : s ∈ 𝓝 a) (hinj : InjOn f s) :
     HasStrictDerivAt (Function.invFunOn f s) f'⁻¹ (f a) :=
   hf.to_local_left_inverse hf' (eventually_of_mem hs fun _ hx ↦ hinj.leftInvOn_invFunOn hx)
+
+/-- If `f : 𝕜 → 𝕜` is injective on a neighbourhood `s` of `Function.invFunOn f s y` and has a
+nonzero strict derivative `f'` there, then at `y ∈ f '' s` the derivative of
+`Function.invFunOn f s` is `(deriv f (Function.invFunOn f s y))⁻¹`. -/
+theorem HasStrictDerivAt.deriv_invFunOn {f : 𝕜 → 𝕜} {f' y : 𝕜} {s : Set 𝕜}
+    (hf : HasStrictDerivAt f f' (Function.invFunOn f s y)) (hy : y ∈ f '' s) (hf' : f' ≠ 0)
+    (hs : s ∈ 𝓝 (Function.invFunOn f s y)) (hinj : InjOn f s) :
+    deriv (Function.invFunOn f s) y = (deriv f (Function.invFunOn f s y))⁻¹ := by
+  have h := hf.invFunOn hf' hs hinj
+  rw [Function.invFunOn_eq hy] at h
+  rw [h.hasDerivAt.deriv, hf.hasDerivAt.deriv]
 
 namespace TauCeti
 
@@ -337,6 +370,28 @@ theorem continuousOn_invFunOn_of_hasStrictDerivAt {f f' : 𝕜 → 𝕜} {s : Se
     |>.continuousWithinAt
 
 end TauCeti
+
+end NormedField
+
+/-- If `f : 𝕂 → 𝕂` is `C^n` (`n ≠ 0`) and injective on an open set `s` with nonvanishing
+derivative on `s`, then `Function.invFunOn f s` is `C^n` on `f '' s`. -/
+theorem ContDiffOn.invFunOn {𝕂 : Type*} [RCLike 𝕂] {f : 𝕂 → 𝕂} {s : Set 𝕂} {n : ℕ∞ω}
+    (hf : ContDiffOn 𝕂 n f s) (hn : n ≠ 0) (hs : IsOpen s) (hinj : InjOn f s)
+    (hd : ∀ x ∈ s, deriv f x ≠ 0) :
+    ContDiffOn 𝕂 n (Function.invFunOn f s) (f '' s) := by
+  rintro _ ⟨x, hx, rfl⟩
+  have hca : ContDiffAt 𝕂 n f x := hf.contDiffAt (hs.mem_nhds hx)
+  have hfd := ((hca.hasStrictDerivAt_deriv hn).hasStrictFDerivAt_equiv (hd x hx)).hasFDerivAt
+  have hloc : ContDiffAt 𝕂 n (hca.localInverse hfd hn) (f x) := hca.to_localInverse hfd hn
+  have hmem : ∀ᶠ y in 𝓝 (f x), hca.localInverse hfd hn y ∈ s :=
+    hloc.continuousAt.preimage_mem_nhds
+      (by rw [hca.localInverse_apply_image hfd hn]; exact hs.mem_nhds hx)
+  have hright : ∀ᶠ y in 𝓝 (f x), f (hca.localInverse hfd hn y) = y :=
+    (hca.hasStrictFDerivAt hfd hn).eventually_right_inverse
+  have heq : Function.invFunOn f s =ᶠ[𝓝 (f x)] hca.localInverse hfd hn := by
+    filter_upwards [hmem, hright] with y hys hyr
+    simpa only [hyr] using hinj.leftInvOn_invFunOn hys
+  exact (hloc.congr_of_eventuallyEq heq).contDiffWithinAt
 
 end OneDim
 

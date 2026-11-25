@@ -386,10 +386,10 @@ open square. -/
 theorem isOpenEmbedding_restrict_cell :
     IsOpenEmbedding ((Ioo 0 1 ×ˢ Ioo 0 1 : Set (I × I)).domRestrict (cell γ i)) := by
   have hT : IsOpen (Ioo 0 1 ×ˢ Ioo 0 1 : Set (I × I)) := isOpen_Ioo.prod isOpen_Ioo
-  refine .of_continuous_injective_isOpenMap ((cell γ i).continuous.comp continuous_subtype_val)
-    (fun q q' h => Subtype.ext ((cell_eq_cell_iff q'.2).1 h).2) fun V hV => ?_
+  refine .of_continuous_injective_isOpenMap ((cell γ i).continuous.comp continuous_subtypeVal)
+    (fun q q' h => Subtype.ext ((cell_eq_cell_iff q'.property).1 h).2) fun V hV => ?_
   rw [domRestrict_eq, image_comp]
-  exact isOpen_image_cell (hT.isOpenMap_subtype_val V hV) (Subtype.coe_image_subset _ _)
+  exact isOpen_image_cell (hT.isOpenMap_subtypeVal V hV) (Subtype.coe_image_subset _ _)
 
 /-- The open cells are simply connected. -/
 theorem isSimplyConnected_image_cell :
@@ -559,7 +559,7 @@ private lemma deform_one_mem_range_incl {z : TwoCellAttachment γ} (hz : z ∉ c
 
 /-- The radial deformation is continuous on the complement of the centres. -/
 private lemma continuous_deform :
-    Continuous fun p : I × ↥(centres γ)ᶜ => deform p.1 p.2.1 := by
+    Continuous fun p : I × ↥(centres γ)ᶜ => deform p.1 p.2.val := by
   have hf := (isQuotientMap_sumElim (γ := γ)).restrictPreimage_isOpen isClosed_centres.isOpen_compl
   refine hf.continuous_lift_prod_right ?_
   simp only [restrictPreimage_coe, sumElim_eq_mk, deform_mk]
@@ -585,19 +585,19 @@ private lemma continuous_deform :
       have hq : q ≠ squareCentre := fun h => ha ⟨i, h ▸ rfl⟩
       exact (continuous_inr.comp continuous_sigmaMk).continuousAt.comp
         (continuousAt_radialPush hq)
-  exact hcont.comp_continuous (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
-    fun p => ⟨trivial, p.2.2⟩
+  exact hcont.comp_continuous (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
+    fun p => ⟨trivial, p.2.property⟩
 
 /-- At time `1` the radial deformation retracts the complement of the centres onto `X`. -/
 private def retraction : C(↥(centres γ)ᶜ, X) :=
   ⟨fun z => isClosedEmbedding_incl.isEmbedding.toHomeomorph.symm
-      ⟨deform 1 z.1, deform_one_mem_range_incl z.2⟩,
+      ⟨deform 1 z.val, deform_one_mem_range_incl z.property⟩,
     isClosedEmbedding_incl.isEmbedding.toHomeomorph.symm.continuous.comp
       ((continuous_deform.comp (continuous_const.prodMk continuous_id)).subtype_mk _)⟩
 
-private lemma incl_retraction (z : ↥(centres γ)ᶜ) : incl γ (retraction z) = deform 1 z.1 :=
+private lemma incl_retraction (z : ↥(centres γ)ᶜ) : incl γ (retraction z) = deform 1 z.val :=
   congrArg Subtype.val
-    (isClosedEmbedding_incl.isEmbedding.toHomeomorph.apply_symm_apply ⟨deform 1 z.1, _⟩)
+    (isClosedEmbedding_incl.isEmbedding.toHomeomorph.apply_symm_apply ⟨deform 1 z.val, _⟩)
 
 private lemma retraction_incl (y : X) (hy : incl γ y ∈ (centres γ)ᶜ) :
     retraction ⟨incl γ y, hy⟩ = y :=
