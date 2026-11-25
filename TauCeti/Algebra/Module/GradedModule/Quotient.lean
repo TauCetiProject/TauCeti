@@ -171,6 +171,11 @@ theorem coe_decompose_ker (p : ι) (z : _root_.LinearMap.ker f) :
       decompose G.piece (z : M) p :=
   G.coe_decompose_submodule (_root_.LinearMap.ker f) hf.isHomogeneous_ker p z
 
+/-- The grading of the kernel of `f` vanishes in every degree in which the grading of `M` does. -/
+theorem ker_piece_eq_bot {p : ι} (hp : G.piece p = ⊥) : (G.ker hf).piece p = ⊥ :=
+  (Submodule.eq_bot_iff _).mpr fun _ hz ↦ Subtype.ext <|
+    (Submodule.eq_bot_iff _).mp hp _ ((G.mem_ker_piece hf).1 hz)
+
 end Ker
 
 section Quotient
@@ -213,6 +218,10 @@ theorem mem_quotient_piece_iff {p : ι} {y : M ⧸ U} :
 theorem mk_mem_quotient_piece {p : ι} {x : M} (hx : x ∈ G.piece p) :
     (Submodule.Quotient.mk x : M ⧸ U) ∈ (G.quotient U hU).piece p :=
   (G.mem_quotient_piece_iff U hU).2 ⟨x, hx, rfl⟩
+
+/-- The grading of the quotient vanishes in every degree in which the grading of `M` does. -/
+theorem quotient_piece_eq_bot {p : ι} (hp : G.piece p = ⊥) : (G.quotient U hU).piece p = ⊥ := by
+  rw [quotient_piece, hp, Submodule.map_bot]
 
 /-- The quotient map by a homogeneous submodule has degree zero. -/
 theorem isHomogeneous_mkQ [AddMonoid ι] :
