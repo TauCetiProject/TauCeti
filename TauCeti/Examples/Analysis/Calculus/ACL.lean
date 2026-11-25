@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Abs
 
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.InnerProductSpace.PiL2
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Checks for `ACL` and `ACL^p` maps
@@ -52,13 +53,6 @@ namespace TauCeti.ACLChecks
 
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 local notation "e" => EuclideanSpace.single
-
-/-- The set of points of `ℝ²` whose `i`-th coordinate lies in a null set is null. -/
-private theorem volume_setOf_apply_mem_eq_zero {s : Set ℝ} (hs : volume s = 0) (i : Fin 2) :
-    volume {x : ℝ² | x i ∈ s} = 0 := by
-  have hpi := Measure.pi_eval_preimage_null (μ := fun _ : Fin 2 ↦ (volume : Measure ℝ)) (i := i) hs
-  rw [← volume_pi] at hpi
-  exact (PiLp.volume_preserving_ofLp (Fin 2)).quasiMeasurePreserving.preimage_null hpi
 
 /-! ### `|x₁|` -/
 
@@ -127,10 +121,7 @@ theorem lineFunction_cantorFst (x : ℝ²) : lineFunction cantorFst x 0 = cantor
 /-- The closed box `[0, 1]²` has measure `1`. -/
 theorem volume_coordinateBox_zero_one :
     volume (coordinateBox (fun _ : Fin 2 ↦ (0 : ℝ)) fun _ ↦ 1) = 1 := by
-  rw [coordinateBox_eq_preimage_Icc, PiLp.coe_continuousLinearEquiv,
-    (PiLp.volume_preserving_ofLp (Fin 2)).measure_preimage measurableSet_Icc.nullMeasurableSet,
-    Real.volume_Icc_pi]
-  simp
+  simp [volume_coordinateBox]
 
 /-- `c(x₁)` is not `ACL` on `ℝ²`: on the box `[0, 1]²`, every line function in the first direction
 is the Cantor function on `[0, 1]`, which is not absolutely continuous. -/
