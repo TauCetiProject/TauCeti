@@ -21,10 +21,12 @@ constant `‖f‖`. It is therefore uniformly continuous, and extends continuous
 `Ω`: its value at a point `x` of the closure is the limit of `f` along `Ω` at `x`, Mathlib's
 `extendFrom Ω f`. These are the boundary values in boundary value problems on `Ω`.
 
-This file defines that extension (`TauCeti.CkHolderSpaceOn.closureExtend`), shows that it agrees
-with `f` on `Ω`, is the limit of `f` at the points of the closure, and is Lipschitz on the closure
-with constant `‖f‖`, and records the value at a point of the closure as a continuous linear map of
-norm at most one (`TauCeti.CkHolderSpaceOn.closureExtendL`). Some condition on `Ω` is needed: on a
+This file defines that extension, for every element of `C^{k,α}(Ω)`
+(`TauCeti.CkHolderSpaceOn.closureExtend`), and shows that it agrees with `f` on `Ω`. For elements
+of `C^{k+1,α}(Ω)` on a convex `Ω`, it shows that the extension is the limit of `f` at the points
+of the closure and is Lipschitz on the closure with constant `‖f‖`, and records the value at a
+point of the closure as a continuous linear map of norm at most one
+(`TauCeti.CkHolderSpaceOn.closureExtendL`). Some condition on `Ω` is needed: on a
 slit annulus in the plane the angle function is in `C^{1,α}` but jumps across the slit, so it has
 no limit at the points of the slit.
 
@@ -59,46 +61,46 @@ namespace TauCeti.CkHolderSpaceOn
 variable {k : ℕ} {α : ℝ≥0} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Opens E}
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- The extension of an element of `C^{k+1,α}(Ω)` to the closure of `Ω`, Mathlib's
+/-- The extension of an element of `C^{k,α}(Ω)` to the closure of `Ω`, Mathlib's
 `extendFrom Ω`. It agrees with the element on `Ω` (`TauCeti.CkHolderSpaceOn.closureExtend_apply`).
 When `Ω` is convex and `F` complete, its value at a point of the closure is the limit of the
 element along `Ω` there (`TauCeti.CkHolderSpaceOn.tendsto_closureExtend`); in general no such limit
 need exist, and its values at the remaining points of the closure, as outside the closure, carry no
 meaning. -/
-def closureExtend (f : CkHolderSpaceOn (k + 1) α Ω F) : E → F :=
+def closureExtend (f : CkHolderSpaceOn k α Ω F) : E → F :=
   extendFrom (Ω : Set E) f.extend
 
-theorem closureExtend_def (f : CkHolderSpaceOn (k + 1) α Ω F) :
+theorem closureExtend_def (f : CkHolderSpaceOn k α Ω F) :
     f.closureExtend = extendFrom (Ω : Set E) f.extend :=
   (rfl)
 
 /-- The extension of `f` to the closure of `Ω` agrees with `f` on `Ω`. -/
 @[simp]
-theorem closureExtend_apply (f : CkHolderSpaceOn (k + 1) α Ω F) (x : Ω) :
+theorem closureExtend_apply (f : CkHolderSpaceOn k α Ω F) (x : Ω) :
     f.closureExtend x = f x := by
   rw [closureExtend_def, extendFrom_extends f.contDiffOn_extend.continuousOn x.val x.property,
     extend_apply]
 
 /-- Near a point of `Ω`, the extension to the closure agrees with the extension by zero; so the
 two have the same derivatives at the points of `Ω`. -/
-theorem closureExtend_eventuallyEq_extend (f : CkHolderSpaceOn (k + 1) α Ω F) (x : Ω) :
+theorem closureExtend_eventuallyEq_extend (f : CkHolderSpaceOn k α Ω F) (x : Ω) :
     f.closureExtend =ᶠ[𝓝 (x : E)] f.extend := by
   filter_upwards [Ω.isOpen.mem_nhds x.property] with y hy
   rw [f.closureExtend_apply ⟨y, hy⟩, f.extend_apply ⟨y, hy⟩]
 
 /-- At a point `x` of the closure of `Ω`, the extension to the closure takes the value at `x` of any
 function that agrees with the element on `Ω` and is continuous within `Ω` at `x`. -/
-theorem closureExtend_eq_of_continuousWithinAt (f : CkHolderSpaceOn (k + 1) α Ω F) {g : E → F}
+theorem closureExtend_eq_of_continuousWithinAt (f : CkHolderSpaceOn k α Ω F) {g : E → F}
     (hg : ∀ y : Ω, g y = f y) {x : E} (hx : x ∈ closure (Ω : Set E))
     (hgx : ContinuousWithinAt g Ω x) : f.closureExtend x = g x := by
   refine extendFrom_eq hx (hgx.tendsto.congr' ?_)
   filter_upwards [self_mem_nhdsWithin] with y hy
   rw [hg ⟨y, hy⟩, f.extend_apply ⟨y, hy⟩]
 
-/-- The extension of the zero element of `C^{k+1,α}(Ω)` vanishes on the closure of `Ω`. -/
+/-- The extension of the zero element of `C^{k,α}(Ω)` vanishes on the closure of `Ω`. -/
 @[simp]
 theorem closureExtend_zero {x : E} (hx : x ∈ closure (Ω : Set E)) :
-    (0 : CkHolderSpaceOn (k + 1) α Ω F).closureExtend x = 0 := by
+    (0 : CkHolderSpaceOn k α Ω F).closureExtend x = 0 := by
   refine extendFrom_eq hx (tendsto_const_nhds.congr' ?_)
   filter_upwards [self_mem_nhdsWithin] with y hy
   rw [extend_apply _ ⟨y, hy⟩, coe_zero, Pi.zero_apply]
