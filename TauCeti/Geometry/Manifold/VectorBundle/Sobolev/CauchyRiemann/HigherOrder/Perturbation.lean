@@ -16,14 +16,15 @@ Let `M` be a closed complex curve and `V → M` a complex vector bundle with a f
 `A`. A real Cauchy–Riemann operator of class `W^{ℓ-1,p}` is `D = D₀ + α`, where `D₀` is a smooth
 real Cauchy–Riemann operator and `α` is a zeroth-order term of class `W^{ℓ-1,p}`, `p > 2`, with
 values in `(0,1)`-forms (McDuff–Salamon, Definition C.1.5). This file realizes such operators for
-`ℓ ≥ 2` at the top order `k = ℓ` of McDuff–Salamon Theorem C.1.10, as bounded operators
+`ℓ ≥ 2` at the top Sobolev order `m = ℓ` of McDuff–Salamon Theorem C.1.10, as bounded operators
 
 `W^{ℓ,q}(Σ, V) → W^{ℓ-1,q}(Σ, Λ^{0,1} ⊗ V)`
 
-for every `1 < q ≤ p`, and shows that `D - D₀` is compact (McDuff–Salamon Lemma C.2.2). Writing
-`ℓ = k + 2`, the coefficient is in `W^{k+1,p}` and the realization goes from `W^{k+2,q}` to
-`W^{k+1,q}`. At `k = ℓ` the admissibility condition `k - 2/q ≤ ℓ - 2/p` of Theorem C.1.10 is
-exactly `q ≤ p`. The case `ℓ = 1` is `TauCeti.IsRealCauchyRiemannOperator.perturbedSobolevL`.
+for every `1 < q ≤ p`, and shows that `D - D₀` is compact (McDuff–Salamon Lemma C.2.2). At the
+top order `m = ℓ`, the admissibility condition `m - 2/q ≤ ℓ - 2/p` of Theorem C.1.10 is `q ≤ p`.
+In the declarations `ℓ = k + 2`: the coefficient is in `W^{k+1,p}` and the realization goes from
+`W^{k+2,q}` to `W^{k+1,q}`. The case `ℓ = 1` is
+`TauCeti.IsRealCauchyRiemannOperator.perturbedSobolevL`.
 
 The Sobolev spaces are those of the Lebesgue measure `volume` on the charts, in which the local
 Sobolev classes behind multiplication by `W^{k+1,p}` coefficients are stated.
@@ -128,9 +129,9 @@ theorem perturbationSuccL_apply (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
         hqp α (A.sectionChartData.lowerOrderL volume q (k + 1) ξ)) :=
   (rfl)
 
-/-- **Compact perturbation** (McDuff–Salamon, Lemma C.2.2, at `k = ℓ ≥ 2`). For a fixed
-`W^{k+1,p}` coefficient with `p > 2`, the zeroth-order term is compact from `W^{k+2,q}` to
-`W^{k+1,q}`, for every `1 < q ≤ p`: it factors through the compact inclusion
+/-- **Compact perturbation** (McDuff–Salamon, Lemma C.2.2, at the top order `ℓ = k + 2 ≥ 2`).
+For a fixed `W^{k+1,p}` coefficient with `p > 2`, the zeroth-order term is compact from
+`W^{k+2,q}` to `W^{k+1,q}`, for every `1 < q ≤ p`: it factors through the compact inclusion
 `W^{k+2,q} → W^{k+1,q}`. -/
 theorem isCompactOperator_perturbationSuccL (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
     (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p
