@@ -101,14 +101,6 @@ variable (K) in
 @[simp]
 theorem mellinConstant_ne_zero : mellinConstant K ≠ 0 := (mellinConstant_pos K).ne'
 
-variable (K) in
-/-- Twice the constant term of the Mellin kernel is `2^(r₁ + r₂) R / w`. -/
-theorem two_mul_mellinConstant :
-    2 * mellinConstant K =
-      2 ^ (nrRealPlaces K + nrComplexPlaces K) * regulator K / torsionOrder K := by
-  rw [mellinConstant_def, ← NumberField.Units.rank_add_one, Nat.add_sub_cancel, pow_succ']
-  ring
-
 /-- Over a unit fundamental domain `D` the constant term `(2^r₂ / w) vol(D)` of the Mellin kernel
 is `a₀ = 2^(r-1) R / w`, independently of `D`. -/
 theorem mellinConstant_eq_mul_surfaceHaar_real {D : Set (realSpace K)}

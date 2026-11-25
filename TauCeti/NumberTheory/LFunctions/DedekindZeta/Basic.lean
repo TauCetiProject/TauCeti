@@ -20,7 +20,7 @@ functions agreeing on a half-plane agree everywhere, so the continued function i
 a number field `K`, a whole-plane meromorphic continuation does exist, so the fallback never
 occurs and `dedekindZetaC K` agrees unconditionally with `ζ_K` on `Re s > 1`
 (`TauCeti.LFunctions.dedekindZetaC_eq_dedekindZeta` in
-`TauCeti.NumberTheory.LFunctions.DedekindZeta.Continuation`).
+`TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed`).
 Every statement about `ζ_K` off the half-plane of convergence, such as a factorization through
 other L-functions, is a statement about `dedekindZetaC K`.
 
@@ -33,9 +33,8 @@ For the comparison of `ζ_ℚ` and `dedekindZetaC ℚ` with `riemannZeta`, see
 
 ## Main results
 
-* `TauCeti.LFunctions.meromorphicNFOn_dedekindZetaC`,
-  `TauCeti.LFunctions.meromorphic_dedekindZetaC`: it is in meromorphic normal form and
-  meromorphic on `ℂ`.
+* `TauCeti.LFunctions.meromorphicNFOn_dedekindZetaC`: it is in meromorphic normal form on `ℂ`.
+* `TauCeti.LFunctions.meromorphic_dedekindZetaC`: it is meromorphic on `ℂ`.
 * `TauCeti.LFunctions.analyticOnNhd_dedekindZetaC`: it is holomorphic on `Re s > 1`.
 
 ## References
@@ -58,7 +57,7 @@ continuation from `Re s > 1` of Mathlib's `NumberField.dedekindZeta K`. Generica
 `TauCeti.meromorphicContinuation` falls back to `0` if no whole-plane meromorphic continuation
 exists; for `dedekindZetaC K`, a continuation exists and unconditional agreement with `ζ_K` on
 `Re s > 1` is proved in `TauCeti.LFunctions.dedekindZetaC_eq_dedekindZeta`
-(`TauCeti.NumberTheory.LFunctions.DedekindZeta.Continuation`). -/
+(`TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed`). -/
 def dedekindZetaC : ℂ → ℂ :=
   meromorphicContinuation 1 (NumberField.dedekindZeta K)
 
@@ -71,7 +70,7 @@ theorem dedekindZetaC_def :
 theorem meromorphicNFOn_dedekindZetaC : MeromorphicNFOn (dedekindZetaC K) univ :=
   meromorphicNFOn_meromorphicContinuation _ _
 
-/-- The continued Dedekind zeta function is meromorphic on `ℂ`. -/
+/-- The continued Dedekind zeta function is meromorphic on the plane. -/
 @[fun_prop]
 theorem meromorphic_dedekindZetaC : Meromorphic (dedekindZetaC K) :=
   meromorphicOn_univ.mp (meromorphicNFOn_dedekindZetaC K).meromorphicOn

@@ -58,6 +58,9 @@ function on the unordered pairs `Sym2 n`, so there are `#R ^ (n (n + 1) / 2)` of
 generally, for an alternating matrix `Q` the solutions `S` of `S - Sᵀ = Q` are determined in the
 same way by their entries on and above the diagonal, in every characteristic.
 
+A symmetric matrix on `ι ⊕ Unit` is the same as a symmetric matrix on `ι` together with a border
+column and a corner, the transpose of the column filling the last row.
+
 ## Main results
 
 * `Matrix.IsSymm.mul_mul_transpose`: a congruence `P A Pᵀ` of a symmetric matrix is symmetric.
@@ -86,6 +89,8 @@ same way by their entries on and above the diagonal, in every characteristic.
   to the scalar `a` by `(a * r) • E` multiplies its determinant by an element of `1 + 2 r R`.
 * `Matrix.natCard_isSymm`: the number of symmetric `n × n` matrices over `R` is
   `Nat.card R ^ (n + 1).choose 2`.
+* `Matrix.isSymmSumUnitEquiv`: a symmetric matrix on `ι ⊕ Unit` is a symmetric matrix on `ι`
+  bordered by a column, its transpose and a corner.
 * `Matrix.subTransposeEqEquiv`: for an alternating `Q`, the solutions of `S - Sᵀ = Q` are
   parametrized by the functions on `Sym2 n`.
 -/
@@ -326,6 +331,59 @@ theorem natCard_isSymm (n R : Type*) [Fintype n] :
     fun M => ?_).trans (Sym2.lift (α := n) (β := R))
   rw [IsSymm.ext_iff]
   exact ⟨fun h a b => h b a, fun h a b => h b a⟩
+
+section SumUnit
+
+variable (α ι : Type*)
+
+/-- A symmetric matrix on `ι ⊕ Unit` is a symmetric matrix on `ι` bordered by a column, its
+transpose and a corner. -/
+def isSymmSumUnitEquiv :
+    {M : Matrix (ι ⊕ Unit) (ι ⊕ Unit) α // M.IsSymm} ≃
+      {S : Matrix ι ι α // S.IsSymm} × (ι → α) × α where
+  toFun M := (⟨M.val.toBlocks₁₁,
+    (isSymm_fromBlocks_iff.mp (M.val.fromBlocks_toBlocks ▸ M.property)).left⟩,
+    fun i => M.val (.inl i) (.inr ()), M.val (.inr ()) (.inr ()))
+  invFun p := ⟨fromBlocks p.1.val (replicateCol Unit p.2.1) (replicateRow Unit p.2.1)
+    (of fun _ _ => p.2.2), p.1.property.fromBlocks (by simp) (by ext; simp)⟩
+  left_inv M := by
+    ext (i | i) (j | _)
+    · simp [toBlocks₁₁]
+    · simp
+    · simpa using (M.property.apply _ _).symm
+    · simp
+  right_inv p := by ext <;> simp [toBlocks₁₁]
+
+variable {α ι}
+
+/-- The symmetric block of a symmetric matrix on `ι ⊕ Unit` is its `ι × ι` block. -/
+@[simp]
+theorem coe_isSymmSumUnitEquiv_apply_fst (M : {M : Matrix (ι ⊕ Unit) (ι ⊕ Unit) α // M.IsSymm}) :
+    ((isSymmSumUnitEquiv α ι M).1 : Matrix ι ι α) = M.val.toBlocks₁₁ :=
+  (rfl)
+
+/-- The border column of a symmetric matrix on `ι ⊕ Unit` is its last column. -/
+@[simp]
+theorem isSymmSumUnitEquiv_apply_snd_fst (M : {M : Matrix (ι ⊕ Unit) (ι ⊕ Unit) α // M.IsSymm}) :
+    (isSymmSumUnitEquiv α ι M).2.1 = fun i => M.val (.inl i) (.inr ()) :=
+  (rfl)
+
+/-- The corner of a symmetric matrix on `ι ⊕ Unit` is its last diagonal entry. -/
+@[simp]
+theorem isSymmSumUnitEquiv_apply_snd_snd (M : {M : Matrix (ι ⊕ Unit) (ι ⊕ Unit) α // M.IsSymm}) :
+    (isSymmSumUnitEquiv α ι M).2.2 = M.val (.inr ()) (.inr ()) :=
+  (rfl)
+
+/-- The symmetric matrix with block `S`, border column `v` and corner `a` is
+`[[S, v], [vᵀ, a]]`. -/
+@[simp]
+theorem coe_isSymmSumUnitEquiv_symm_apply (p : {S : Matrix ι ι α // S.IsSymm} × (ι → α) × α) :
+    ((isSymmSumUnitEquiv α ι).symm p : Matrix (ι ⊕ Unit) (ι ⊕ Unit) α) =
+      fromBlocks p.1.val (replicateCol Unit p.2.1) (replicateRow Unit p.2.1)
+        (of fun _ _ => p.2.2) :=
+  (rfl)
+
+end SumUnit
 
 section SubTranspose
 

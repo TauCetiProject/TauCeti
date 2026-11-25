@@ -9,25 +9,20 @@ public import TauCeti.NumberTheory.LFunctions.Continued.Basic
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Card.Basic
 import TauCeti.Analysis.Meromorphic.NormalForm
-import TauCeti.Analysis.Meromorphic.Order
 
 /-!
-# Meromorphic continuation and analytic properties of the Dedekind zeta function
+# Card continuation, zero behavior, and reflection symmetry of Dedekind zeta
 
 Identifying the continued function `(TauCeti.LFunctions.dedekindZetaData K).continuedL` of the
-Dedekind zeta card with `TauCeti.LFunctions.dedekindZetaC K` yields the global meromorphic
-properties of `dedekindZetaC K` from `TauCeti.LFunctions.completedDedekindZeta K` and the generic
-card-continuation API.
+Dedekind zeta card with `TauCeti.LFunctions.dedekindZetaC K` connects `dedekindZetaC K` with the
+generic card-continuation API and complements
+`TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed`.
 
 Because the reciprocal archimedean factor `|d_K|^(-s/2) Γ_ℝ(s)⁻¹^r₁ Γ_ℂ(s)⁻¹^r₂` is entire and
-vanishes at `s = 0` to order `r₁ + r₂ ≥ 1` while `completedDedekindZeta K` is analytic off `{0, 1}`
-with simple poles at `0` and `1`, the reciprocal archimedean vanishing cancels the simple pole of
-`Λ_K` at `0` in the meromorphic product. Consequently, `dedekindZetaC K` is analytic away from
-`s = 1`, has a simple pole at `s = 1` with residue `NumberField.dedekindZeta_residue K` in the
-full punctured complex neighborhood `𝓝[≠] 1` (taking the canonical normal-form value `0` at `1`),
-and has analytic order `r₁ + r₂ - 1 = NumberField.Units.rank K` at `s = 0` with leading
-coefficient `-h R / w`. In particular, `s = 0` is a zero of `dedekindZetaC K` exactly when the unit
-rank is positive, whereas in unit rank `0` (`ℚ` and imaginary quadratic fields)
+vanishes at `s = 0` to order `r₁ + r₂ ≥ 1` while `completedDedekindZeta K` has a simple pole at `0`,
+`dedekindZetaC K` has analytic order `r₁ + r₂ - 1 = NumberField.Units.rank K` at `s = 0` with
+leading coefficient `-h R / w`. In particular, `s = 0` is a zero of `dedekindZetaC K` exactly
+when the unit rank is positive, whereas in unit rank `0` (`ℚ` and imaginary quadratic fields)
 `dedekindZetaC K 0 = -h R / w`.
 
 ## Main results
@@ -35,24 +30,17 @@ rank is positive, whereas in unit rank `0` (`ℚ` and imaginary quadratic fields
 * `TauCeti.LFunctions.dedekindZetaData_continuedL`:
   `(dedekindZetaData K).continuedL = dedekindZetaC K`.
 * `TauCeti.LFunctions.dedekindZetaC_eventuallyEq_mul_completedDedekindZeta`,
-  `TauCeti.LFunctions.dedekindZetaC_eq_mul_completedDedekindZeta`,
   `TauCeti.LFunctions.completedDedekindZeta_eventuallyEq_mul_dedekindZetaC`,
-  `TauCeti.LFunctions.completedDedekindZeta_eq_mul_dedekindZetaC`: relation between
-  `dedekindZetaC K` and `completedDedekindZeta K`.
-* `TauCeti.LFunctions.dedekindZetaC_eq_dedekindZeta`: agreement with `NumberField.dedekindZeta K` on
-  `Re s > 1`.
-* `TauCeti.LFunctions.analyticAt_dedekindZetaC`,
-  `TauCeti.LFunctions.analyticAt_dedekindZetaC_iff`: analyticity away from `s = 1`.
-* `TauCeti.LFunctions.tendsto_sub_one_mul_dedekindZetaC`,
-  `TauCeti.LFunctions.meromorphicOrderAt_dedekindZetaC_one`,
-  `TauCeti.LFunctions.dedekindZetaC_one`: simple pole, canonical value `0`, and analytic class
-  number formula at `s = 1` in `𝓝[≠] 1`.
+  `TauCeti.LFunctions.completedDedekindZeta_eq_mul_dedekindZetaC`,
+  `TauCeti.LFunctions.dedekindZetaC_eq_mul_completedDedekindZeta_of_ne_zero_or_rank_pos`:
+  relation between `dedekindZetaC K` and `completedDedekindZeta K`.
 * `TauCeti.LFunctions.meromorphicOrderAt_dedekindZetaC_zero`,
   `TauCeti.LFunctions.analyticOrderAt_dedekindZetaC_zero`,
   `TauCeti.LFunctions.tendsto_dedekindZetaC_div_pow_rank_zero`,
   `TauCeti.LFunctions.dedekindZetaC_zero_of_rank_eq_zero`,
   `TauCeti.LFunctions.dedekindZetaC_zero_of_rank_pos`: vanishing order `r₁ + r₂ - 1`, leading
   coefficient `-h R / w`, and value at `s = 0`.
+* `TauCeti.LFunctions.dedekindZetaC_one`: canonical normal-form value `0` at `s = 1`.
 * `TauCeti.LFunctions.dedekindZetaC_conj`: reflection symmetry
   `dedekindZetaC K (conj s) = conj (dedekindZetaC K s)`.
 
@@ -111,15 +99,6 @@ theorem dedekindZetaC_eventuallyEq_mul_completedDedekindZeta (s : ℂ) :
     (dedekindZetaData_hasMeromorphicContinuation K).meromorphic s).trans
     (Eventually.of_forall uncompletedProduct_dedekindZetaData)
 
-/-- On `Re s > 1`, the continued Dedekind zeta function agrees with Mathlib's Dirichlet series
-`NumberField.dedekindZeta K`. -/
-theorem dedekindZetaC_eq_dedekindZeta {s : ℂ} (hs : 1 < s.re) :
-    dedekindZetaC K s = NumberField.dedekindZeta K s := by
-  rw [← dedekindZetaData_continuedL K,
-    (dedekindZetaData_hasDirichletAgreement K).continuedL_eq_LSeries
-      (dedekindZetaData_hasMeromorphicContinuation K).meromorphic hs,
-    funext (dedekindZetaData_coeff K), ← dedekindZeta_eq_LSeries_normCoeff_one K s]
-
 variable (K) in
 /-- At every `s : ℂ`, `completedDedekindZeta K` has the same punctured germ as
 `(|d_K|^(z/2) Γ_ℝ(z)^r₁ Γ_ℂ(z)^r₂) * dedekindZetaC K z`. -/
@@ -173,36 +152,21 @@ theorem meromorphicOrderAt_dedekindZetaC_zero :
   push_cast
   ring
 
-/-- **Holomorphy of the Dedekind zeta function away from `s = 1`**: `dedekindZetaC K` is analytic
-at every `s ≠ 1`, including `s = 0` where the reciprocal archimedean factor
-`|d_K|^(-s/2) Γ_ℝ(s)⁻¹^r₁ Γ_ℂ(s)⁻¹^r₂` vanishes to order `r₁ + r₂ ≥ 1`, cancelling the simple pole
-of `Λ_K` in the meromorphic product. -/
-@[fun_prop]
-theorem analyticAt_dedekindZetaC {s : ℂ} (hs : s ≠ 1) : AnalyticAt ℂ (dedekindZetaC K) s := by
-  rw [← dedekindZetaData_continuedL K]
-  rcases eq_or_ne s 0 with rfl | h0
-  · rw [AnalyticLFunctionData.analyticAt_continuedL_iff, dedekindZetaData_continuedL,
-      meromorphicOrderAt_dedekindZetaC_zero]
-    exact WithTop.coe_nonneg.mpr (Int.natCast_nonneg _)
-  · refine AnalyticLFunctionData.analyticAt_continuedL_of_analyticAt ?_
-    rw [dedekindZetaData_completed]
-    exact analyticAt_completedDedekindZeta h0 hs
-
 variable (K) in
 /-- At `s = 0`, `dedekindZetaC K` has analytic vanishing order equal to the Dirichlet unit rank
 `NumberField.Units.rank K = r₁ + r₂ - 1`. -/
 @[simp]
 theorem analyticOrderAt_dedekindZetaC_zero :
     analyticOrderAt (dedekindZetaC K) 0 = NumberField.Units.rank K := by
-  have h := (analyticAt_dedekindZetaC (K := K) zero_ne_one).meromorphicOrderAt_eq
+  have h := (analyticAt_dedekindZetaC K zero_ne_one).meromorphicOrderAt_eq
   rw [meromorphicOrderAt_dedekindZetaC_zero K, ← ENat.map_natCast] at h
   exact ENat.map_natCast_injective h.symm
 
 private theorem inv_two_pow_mul_completedDedekindZeta_residue
     (K : Type*) [Field K] [NumberField K] :
     (1 : ℂ) * (2 : ℂ)⁻¹ ^ nrRealPlaces K * (2 : ℂ)⁻¹ ^ nrComplexPlaces K *
-        (-((2 ^ (nrRealPlaces K + nrComplexPlaces K) * regulator K * classNumber K /
-          torsionOrder K : ℝ) : ℂ)) =
+        (-(2 ^ (nrRealPlaces K + nrComplexPlaces K) * classNumber K * regulator K /
+          torsionOrder K : ℝ) : ℂ) =
       -(((classNumber K : ℝ) * regulator K / torsionOrder K : ℝ) : ℂ) := by
   have h2 : (2 : ℂ)⁻¹ ^ nrRealPlaces K * (2 : ℂ)⁻¹ ^ nrComplexPlaces K *
       (2 : ℂ) ^ (nrRealPlaces K + nrComplexPlaces K) = 1 := by
@@ -210,7 +174,7 @@ private theorem inv_two_pow_mul_completedDedekindZeta_residue
   push_cast
   calc
     1 * (2 : ℂ)⁻¹ ^ nrRealPlaces K * (2 : ℂ)⁻¹ ^ nrComplexPlaces K *
-        -(2 ^ (nrRealPlaces K + nrComplexPlaces K) * (regulator K : ℂ) * (classNumber K : ℂ) /
+        -(2 ^ (nrRealPlaces K + nrComplexPlaces K) * (classNumber K : ℂ) * (regulator K : ℂ) /
           (torsionOrder K : ℂ))
       = -(((2 : ℂ)⁻¹ ^ nrRealPlaces K * (2 : ℂ)⁻¹ ^ nrComplexPlaces K *
           (2 : ℂ) ^ (nrRealPlaces K + nrComplexPlaces K)) *
@@ -276,7 +240,7 @@ theorem tendsto_dedekindZetaC_div_pow_rank_zero :
 theorem dedekindZetaC_zero_of_rank_eq_zero (hr : NumberField.Units.rank K = 0) :
     dedekindZetaC K 0 = -(((classNumber K : ℝ) * regulator K / torsionOrder K : ℝ) : ℂ) := by
   have hcont : Tendsto (dedekindZetaC K) (𝓝[≠] 0) (𝓝 (dedekindZetaC K 0)) :=
-    (analyticAt_dedekindZetaC (K := K) zero_ne_one).continuousAt.tendsto.mono_left
+    (analyticAt_dedekindZetaC K zero_ne_one).continuousAt.tendsto.mono_left
       nhdsWithin_le_nhds
   have hlim := tendsto_dedekindZetaC_div_pow_rank_zero K
   simp only [hr, pow_zero, div_one] at hlim
@@ -286,14 +250,24 @@ theorem dedekindZetaC_zero_of_rank_eq_zero (hr : NumberField.Units.rank K = 0) :
 theorem dedekindZetaC_zero_of_rank_pos (hr : 0 < NumberField.Units.rank K) :
     dedekindZetaC K 0 = 0 := by
   by_contra hne
-  have hord := (analyticAt_dedekindZetaC (K := K) zero_ne_one).analyticOrderAt_eq_zero.mpr hne
+  have hord := (analyticAt_dedekindZetaC K zero_ne_one).analyticOrderAt_eq_zero.mpr hne
   rw [analyticOrderAt_dedekindZetaC_zero K] at hord
   exact hr.ne' (by exact_mod_cast hord)
+
+variable (K) in
+/-- As a meromorphic normal form, `dedekindZetaC K` takes the canonical value `0` at its pole
+`s = 1`. -/
+@[simp]
+theorem dedekindZetaC_one : dedekindZetaC K 1 = 0 :=
+  (meromorphicNFOn_dedekindZetaC K (mem_univ 1))
+    |>.apply_eq_zero_of_meromorphicOrderAt_ne_zero (by
+      rw [meromorphicOrderAt_dedekindZetaC_one]
+      decide)
 
 /-- Away from `0` (including at `s = 1`, where both sides take the canonical normal-form value
 `0`), or at `s = 0` when `K` has positive unit rank (where both sides vanish), `dedekindZetaC K s`
 equals `|d_K|^(-s/2) Γ_ℝ(s)⁻¹^r₁ Γ_ℂ(s)⁻¹^r₂ Λ_K(s)`. -/
-theorem dedekindZetaC_eq_mul_completedDedekindZeta {s : ℂ}
+theorem dedekindZetaC_eq_mul_completedDedekindZeta_of_ne_zero_or_rank_pos {s : ℂ}
     (hs : s ≠ 0 ∨ 0 < NumberField.Units.rank K) :
     dedekindZetaC K s =
       ((|discr K| : ℤ) : ℂ) ^ (-s / 2) *
@@ -302,80 +276,10 @@ theorem dedekindZetaC_eq_mul_completedDedekindZeta {s : ℂ}
   rcases eq_or_ne s 0 with rfl | h0
   · have hr : 0 < NumberField.Units.rank K := hs.resolve_left (not_not.mpr rfl)
     rw [dedekindZetaC_zero_of_rank_pos hr, completedDedekindZeta_zero, mul_zero]
-  · rw [← dedekindZetaData_continuedL K, ← uncompletedProduct_dedekindZetaData]
-    by_cases h1 : s = 1
+  · by_cases h1 : s = 1
     · subst h1
-      exact (dedekindZetaData_hasMeromorphicContinuation K).continuedL_eq_of_gammaFactor_ne_zero
-        (dedekindZetaData_gammaFactor_ne_zero K (by norm_num))
-    · refine AnalyticLFunctionData.continuedL_eq_uncompletedProduct_of_analyticAt
-        (dedekindZetaData_hasMeromorphicContinuation K).meromorphic
-        (AnalyticLFunctionData.analyticAt_uncompletedProduct ?_)
-      rw [dedekindZetaData_completed]
-      exact analyticAt_completedDedekindZeta h0 h1
-
-/-! ### Simple pole and complex class number formula at `s = 1` -/
-
-/- The simple-pole, analyticity characterization, and canonical pole-value proofs below follow
-the corresponding class-indexed partial-zeta API in
-`TauCeti.NumberTheory.LFunctions.DedekindZeta.CompletedPartialZeta`
-(`meromorphicOrderAt_completedPartialZeta_one`,
-`analyticAt_completedPartialZeta_iff`, and `completedPartialZeta_one`) as their formal
-template. -/
-
-variable (K) in
-/-- The continued Dedekind zeta function has a simple pole at `s = 1`. -/
-@[simp]
-theorem meromorphicOrderAt_dedekindZetaC_one :
-    meromorphicOrderAt (dedekindZetaC K) 1 = (-1 : ℤ) := by
-  rw [← dedekindZetaData_continuedL K,
-    AnalyticLFunctionData.meromorphicOrderAt_continuedL
-      (dedekindZetaData_hasMeromorphicContinuation K).meromorphic 1,
-    dedekindZetaData_completed, meromorphicOrderAt_completedDedekindZeta_one,
-    ((dedekindZetaData K).meromorphicOrderAt_gammaFactor_eq_zero_iff 1).mpr
-      (dedekindZetaData_gammaFactor_ne_zero K (by norm_num)),
-    sub_zero]
-
-variable (K) in
-/-- **Analytic class number formula in the complex plane**:
-`(s - 1) * dedekindZetaC K s → NumberField.dedekindZeta_residue K` as `s → 1` in `𝓝[≠] 1`. -/
-theorem tendsto_sub_one_mul_dedekindZetaC :
-    Tendsto (fun s : ℂ ↦ (s - 1) * dedekindZetaC K s) (𝓝[≠] 1)
-      (𝓝 (NumberField.dedekindZeta_residue K : ℂ)) := by
-  have hlim : Tendsto (fun s : ℂ ↦ (s - 1) * dedekindZetaC K s) (𝓝[≠] 1)
-      (𝓝 (meromorphicTrailingCoeffAt (dedekindZetaC K) 1)) := by
-    have h := (meromorphic_dedekindZetaC K 1).tendsto_nhds_meromorphicTrailingCoeffAt
-    rw [meromorphicOrderAt_dedekindZetaC_one K] at h
-    simpa only [WithTop.untop₀_coe, neg_neg, zpow_one, smul_eq_mul, Pi.mul_def] using h
-  have hreal : Tendsto (fun x : ℝ ↦ (x - 1 : ℂ) * dedekindZetaC K x) (𝓝[>] (1 : ℝ))
-      (𝓝 (meromorphicTrailingCoeffAt (dedekindZetaC K) 1)) := by
-    refine hlim.comp (tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩)
-    · exact Complex.continuous_ofReal.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
-    · filter_upwards [self_mem_nhdsWithin] with x (hx : 1 < x)
-      exact Complex.ofReal_injective.ne hx.ne'
-  have hzeta : Tendsto (fun x : ℝ ↦ (x - 1 : ℂ) * dedekindZetaC K x) (𝓝[>] (1 : ℝ))
-      (𝓝 (NumberField.dedekindZeta_residue K : ℂ)) := by
-    refine (NumberField.tendsto_sub_one_mul_dedekindZeta_nhdsGT K).congr' ?_
-    filter_upwards [self_mem_nhdsWithin] with x (hx : 1 < x)
-    have hre : 1 < (x : ℂ).re := by simpa using hx
-    rw [dedekindZetaC_eq_dedekindZeta hre]
-  rwa [tendsto_nhds_unique hreal hzeta] at hlim
-
-/-- `dedekindZetaC K` is analytic at `s` if and only if `s ≠ 1`. -/
-@[simp]
-theorem analyticAt_dedekindZetaC_iff {s : ℂ} :
-    AnalyticAt ℂ (dedekindZetaC K) s ↔ s ≠ 1 := by
-  refine ⟨fun han ↦ ?_, analyticAt_dedekindZetaC⟩
-  rintro rfl
-  exact TauCeti.not_analyticAt_of_meromorphicOrderAt_eq_neg_one
-    (meromorphicOrderAt_dedekindZetaC_one K) han
-
-variable (K) in
-/-- As a meromorphic normal form, `dedekindZetaC K` takes the canonical value `0` at its pole
-`s = 1`. -/
-@[simp]
-theorem dedekindZetaC_one : dedekindZetaC K 1 = 0 :=
-  (meromorphicNFOn_dedekindZetaC K (mem_univ 1))
-    |>.apply_eq_zero_of_meromorphicOrderAt_ne_zero (by simp)
+      rw [dedekindZetaC_one, completedDedekindZeta_one, mul_zero]
+    · exact dedekindZetaC_eq_mul_completedDedekindZeta K h0 h1
 
 /-! ### Reflection symmetry -/
 

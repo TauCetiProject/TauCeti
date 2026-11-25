@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completion
+public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Rational.Basic
 import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
 
@@ -50,7 +50,7 @@ private theorem completedDedekindZeta_rat_eqOn :
   intro s hs
   have hs_re : 1 < s.re := Set.mem_ofPred_eq.mp hs
   have hs0 : s ≠ 0 := by rintro rfl; norm_num at hs_re
-  rw [completedDedekindZeta_eq_mul_dedekindZeta hs_re, NumberField.discr_rat,
+  rw [completedDedekindZeta_eq_mul_dedekindZeta ℚ hs_re, NumberField.discr_rat,
     InfinitePlace.nrRealPlaces_eq_one_of_finrank_eq_one (Module.finrank_self ℚ),
     InfinitePlace.nrComplexPlaces_eq_zero_of_finrank_eq_one (Module.finrank_self ℚ),
     dedekindZeta_rat_eq_riemannZeta hs_re, riemannZeta_def_of_ne_zero hs0]
@@ -72,7 +72,7 @@ theorem completedDedekindZeta_rat_eq_completedRiemannZeta {s : ℂ} (h0 : s ≠ 
     completedDedekindZeta ℚ s = completedRiemannZeta s :=
   eq_of_meromorphic_of_eqOn_halfPlane (σ := 1)
     (meromorphic_completedDedekindZeta ℚ) meromorphic_completedRiemannZeta
-    completedDedekindZeta_rat_eqOn (analyticAt_completedDedekindZeta h0 h1)
+    completedDedekindZeta_rat_eqOn (analyticAt_completedDedekindZeta ℚ h0 h1)
     (analyticAt_completedRiemannZeta h0 h1)
 
 end TauCeti.LFunctions

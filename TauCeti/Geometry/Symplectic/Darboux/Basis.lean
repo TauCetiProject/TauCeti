@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.SymplecticGroup
 public import TauCeti.Geometry.Symplectic.Prod.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
+import TauCeti.Data.Fin.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
@@ -61,7 +62,7 @@ Darboux bases are carried to Darboux bases by linear symplectomorphisms
 ## Main definitions
 
 * `TauCeti.SymplecticForm.IsDarbouxBasis ω b`: `b` is a Darboux basis of `(V, ω)`.
-* `TauCeti.SymplecticForm.darbouxIndexEquiv n`: the relabelling `Fin n × Fin 2 ≃ Fin n ⊕ Fin n`
+* `TauCeti.SymplecticForm.darbouxIndexEquiv ι`: the relabelling `ι × Fin 2 ≃ ι ⊕ ι`
   between the Darboux and the `Matrix.J` index conventions.
 
 ## References
@@ -129,7 +130,7 @@ theorem IsDarbouxBasis.apply_snd (hb : ω.IsDarbouxBasis b) (i : Fin n) (v : V) 
 /-- The relabelling `(i, 0) ↦ inr i`, `(i, 1) ↦ inl i`, under which a Darboux basis becomes a
 basis in which `ω` has Mathlib's standard symplectic matrix `Matrix.J`
 (`TauCeti.SymplecticForm.isDarbouxBasis_iff_toMatrix_reindex`). -/
-def darbouxIndexEquiv (n : ℕ) : Fin n × Fin 2 ≃ Fin n ⊕ Fin n where
+def darbouxIndexEquiv (ι : Type*) : ι × Fin 2 ≃ ι ⊕ ι where
   toFun p := if p.2 = 0 then Sum.inr p.1 else Sum.inl p.1
   invFun := Sum.elim (fun i ↦ (i, 1)) (fun i ↦ (i, 0))
   left_inv := by
@@ -139,29 +140,31 @@ def darbouxIndexEquiv (n : ℕ) : Fin n × Fin 2 ≃ Fin n ⊕ Fin n where
     rintro (i | i) <;> simp
 
 @[simp]
-theorem darbouxIndexEquiv_apply_zero (i : Fin n) : darbouxIndexEquiv n (i, 0) = Sum.inr i := by
+theorem darbouxIndexEquiv_apply_zero {ι : Type*} (i : ι) :
+    darbouxIndexEquiv ι (i, 0) = Sum.inr i := by
   simp [darbouxIndexEquiv]
 
 @[simp]
-theorem darbouxIndexEquiv_apply_one (i : Fin n) : darbouxIndexEquiv n (i, 1) = Sum.inl i := by
+theorem darbouxIndexEquiv_apply_one {ι : Type*} (i : ι) :
+    darbouxIndexEquiv ι (i, 1) = Sum.inl i := by
   simp [darbouxIndexEquiv]
 
 @[simp]
-theorem darbouxIndexEquiv_symm_inl (i : Fin n) :
-    (darbouxIndexEquiv n).symm (Sum.inl i) = (i, 1) :=
-  (darbouxIndexEquiv n).symm_apply_eq.2 (by simp [darbouxIndexEquiv])
+theorem darbouxIndexEquiv_symm_inl {ι : Type*} (i : ι) :
+    (darbouxIndexEquiv ι).symm (Sum.inl i) = (i, 1) :=
+  (darbouxIndexEquiv ι).symm_apply_eq.2 (by simp [darbouxIndexEquiv])
 
 @[simp]
-theorem darbouxIndexEquiv_symm_inr (i : Fin n) :
-    (darbouxIndexEquiv n).symm (Sum.inr i) = (i, 0) :=
-  (darbouxIndexEquiv n).symm_apply_eq.2 (by simp [darbouxIndexEquiv])
+theorem darbouxIndexEquiv_symm_inr {ι : Type*} (i : ι) :
+    (darbouxIndexEquiv ι).symm (Sum.inr i) = (i, 0) :=
+  (darbouxIndexEquiv ι).symm_apply_eq.2 (by simp [darbouxIndexEquiv])
 
 /-- **The Darboux relations as a Gram matrix.** A family with `qᵢ = v (i, 0)` and `pᵢ = v (i, 1)`
 satisfies `ω(qᵢ, qⱼ) = 0`, `ω(pᵢ, pⱼ) = 0` and `ω(qᵢ, pⱼ) = δᵢⱼ` exactly when, relabelled by
 `darbouxIndexEquiv`, its Gram matrix for `ω` is `Matrix.J`. -/
 theorem apply_darbouxIndexEquiv_symm_eq_J_iff {v : Fin n × Fin 2 → V} :
-    (∀ x y, ω.toBilinForm (v ((darbouxIndexEquiv n).symm x)) (v ((darbouxIndexEquiv n).symm y)) =
-        Matrix.J (Fin n) ℝ x y) ↔
+    (∀ x y, ω.toBilinForm (v ((darbouxIndexEquiv (Fin n)).symm x))
+        (v ((darbouxIndexEquiv (Fin n)).symm y)) = Matrix.J (Fin n) ℝ x y) ↔
       (∀ i j, ω (v (i, 0)) (v (j, 0)) = 0) ∧ (∀ i j, ω (v (i, 1)) (v (j, 1)) = 0) ∧
         ∀ i j, ω (v (i, 0)) (v (j, 1)) = if i = j then 1 else 0 := by
   constructor
@@ -184,7 +187,7 @@ theorem apply_darbouxIndexEquiv_symm_eq_J_iff {v : Fin n × Fin 2 → V} :
 which the matrix of `ω` is `Matrix.J`. -/
 theorem isDarbouxBasis_iff_toMatrix_reindex :
     ω.IsDarbouxBasis b ↔
-      LinearMap.BilinForm.toMatrix (b.reindex (darbouxIndexEquiv n)) ω.toBilinForm =
+      LinearMap.BilinForm.toMatrix (b.reindex (darbouxIndexEquiv (Fin n))) ω.toBilinForm =
         Matrix.J (Fin n) ℝ := by
   simp only [← Matrix.ext_iff, LinearMap.BilinForm.toMatrix_apply, Basis.reindex_apply,
     apply_darbouxIndexEquiv_symm_eq_J_iff]
@@ -193,9 +196,9 @@ theorem isDarbouxBasis_iff_toMatrix_reindex :
 /-- A basis `d` indexed by `Fin n ⊕ Fin n`, relabelled by `darbouxIndexEquiv`, is a Darboux basis
 exactly when the matrix of `ω` in `d` is `Matrix.J`. -/
 theorem isDarbouxBasis_reindex_symm_iff {d : Basis (Fin n ⊕ Fin n) ℝ V} :
-    ω.IsDarbouxBasis (d.reindex (darbouxIndexEquiv n).symm) ↔
+    ω.IsDarbouxBasis (d.reindex (darbouxIndexEquiv (Fin n)).symm) ↔
       LinearMap.BilinForm.toMatrix d ω.toBilinForm = Matrix.J (Fin n) ℝ := by
-  have hd : (d.reindex (darbouxIndexEquiv n).symm).reindex (darbouxIndexEquiv n) = d :=
+  have hd : (d.reindex (darbouxIndexEquiv (Fin n)).symm).reindex (darbouxIndexEquiv (Fin n)) = d :=
     Basis.eq_of_apply_eq fun x ↦ by
       simp only [Basis.reindex_apply, Equiv.symm_symm, Equiv.apply_symm_apply]
   rw [isDarbouxBasis_iff_toMatrix_reindex, hd]
@@ -205,7 +208,7 @@ basis. -/
 theorem exists_isDarbouxBasis [FiniteDimensional ℝ V] (ω : SymplecticForm V) :
     ∃ (n : ℕ) (b : Basis (Fin n × Fin 2) ℝ V), ω.IsDarbouxBasis b := by
   obtain ⟨n, b, hb⟩ := ω.isAlt.exists_basis_toMatrix_eq_J ω.nondegenerate
-  exact ⟨n, b.reindex (darbouxIndexEquiv n).symm, isDarbouxBasis_reindex_symm_iff.2 hb⟩
+  exact ⟨n, b.reindex (darbouxIndexEquiv (Fin n)).symm, isDarbouxBasis_reindex_symm_iff.2 hb⟩
 
 /-- A Darboux basis exists for any prescribed number `n` of pairs with `finrank ℝ V = n * 2`. -/
 theorem exists_isDarbouxBasis_of_finrank_eq [FiniteDimensional ℝ V] (ω : SymplecticForm V)
@@ -225,7 +228,7 @@ independent. -/
 theorem linearIndependent_of_apply_fst_snd {v : Fin n × Fin 2 → V}
     (h₁ : ∀ i j, ω (v (i, 0)) (v (j, 0)) = 0) (h₂ : ∀ i j, ω (v (i, 1)) (v (j, 1)) = 0)
     (h₃ : ∀ i j, ω (v (i, 0)) (v (j, 1)) = if i = j then 1 else 0) : LinearIndependent ℝ v :=
-  (linearIndependent_equiv (darbouxIndexEquiv n).symm).1 <|
+  (linearIndependent_equiv (darbouxIndexEquiv (Fin n)).symm).1 <|
     ω.toBilinForm.linearIndependent_of_apply_eq_J <|
       apply_darbouxIndexEquiv_symm_eq_J_iff.2 ⟨h₁, h₂, h₃⟩
 
@@ -333,12 +336,9 @@ theorem IsDarbouxBasis.prod {ω₁ : SymplecticForm V} {ω₂ : SymplecticForm W
   have hr (i : Fin k) (a : Fin 2) :
       (b.prod c).reindex e (Fin.natAdd m i, a) = (0, c (i, a)) := by
     ext <;> simp [e, Basis.reindex_apply]
-  have hne (i : Fin m) (j : Fin k) : Fin.castAdd k i ≠ Fin.natAdd m j := by
-    simp only [ne_eq, Fin.ext_iff, Fin.val_castAdd, Fin.val_natAdd]
-    omega
   refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩ <;>
     induction i using Fin.addCases <;> induction j using Fin.addCases <;>
-    simp [hl, hr, hne, (hne _ _).symm, hb.apply_fst_fst, hb.apply_snd_snd, hb.apply_fst_snd,
+    simp [hl, hr, hb.apply_fst_fst, hb.apply_snd_snd, hb.apply_fst_snd,
       hc.apply_fst_fst, hc.apply_snd_snd, hc.apply_fst_snd]
 
 end SymplecticForm

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 public import TauCeti.NumberTheory.LFunctions.Data.SimplePoles
-public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completion
+public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed
 import TauCeti.NumberTheory.LFunctions.GammaFactor.Basic
 
 /-!
@@ -156,7 +156,7 @@ theorem dedekindZetaData_hasDirichletAgreement :
   completed_eq s hs := by
     have hcoeff : (dedekindZetaData K).coeff = ⇑(normCoeff K (1 : IdealArithmeticFunction K)) :=
       funext (dedekindZetaData_coeff K)
-    rw [dedekindZetaData_completed, completedDedekindZeta_eq_mul_dedekindZeta hs,
+    rw [dedekindZetaData_completed, completedDedekindZeta_eq_mul_dedekindZeta K hs,
       dedekindZetaData_conductor_cast,
       dedekindZetaData_gammaFactor, hcoeff, dedekindZeta_eq_LSeries_normCoeff_one K s]
     ring
@@ -172,7 +172,7 @@ theorem dedekindZetaData_hasMeromorphicContinuation :
     (by rw [dedekindZetaData_completed]; exact meromorphicOrderAt_completedDedekindZeta_one K)
     fun _ h0 h1 ↦ by
       rw [dedekindZetaData_completed]
-      exact analyticAt_completedDedekindZeta h0 h1
+      exact analyticAt_completedDedekindZeta K h0 h1
 
 /-- The completed Dedekind zeta function satisfies the functional equation `Λ_K(s) = Λ_K(1 - s)`
 with root number `1`. -/

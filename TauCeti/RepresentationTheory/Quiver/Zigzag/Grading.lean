@@ -303,6 +303,12 @@ theorem zigzagIntegerGrade_eq_bot_of_neg {d : ℤ} (hd : d < 0) :
     zigzagIntegerGrade k G d = ⊥ :=
   Graded.extendByZero_of_neg _ hd
 
+/-- The integer extension of the path-length grading vanishes in degrees at least three. -/
+theorem zigzagIntegerGrade_eq_bot_of_three_le {d : ℤ} (hd : 3 ≤ d) :
+    zigzagIntegerGrade k G d = ⊥ := by
+  obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le (by omega : 0 ≤ d)
+  rw [zigzagIntegerGrade_ofNat, zigzagGrade_eq_bot_of_three_le k G (by omega)]
+
 /-- **The integer extension of the path-length grading is an internal direct sum**: the pieces
 in nonnegative degrees are those of `TauCeti.zigzagGrade`, and those in negative degrees vanish. -/
 theorem isInternal_zigzagIntegerGrade : DirectSum.IsInternal (zigzagIntegerGrade k G) :=
