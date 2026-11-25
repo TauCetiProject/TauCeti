@@ -212,6 +212,15 @@ def hochschildBimoduleCochainComplexXIso (n : ℕ) :
       ModuleCat.of R ((Fin n → A) →ₘₗ[R] M) :=
   Iso.refl _
 
+variable {R A M} in
+/-- Two elements of the Hochschild cochain complex are equal exactly when their underlying
+cochains are. -/
+theorem hochschildBimoduleCochainComplex_X_ext_iff {n : ℕ}
+    {x y : (hochschildBimoduleCochainComplex R A M).X n} :
+    x = y ↔ (hochschildBimoduleCochainComplexXIso R A M n).hom x =
+      (hochschildBimoduleCochainComplexXIso R A M n).hom y :=
+  (hochschildBimoduleCochainComplexXIso R A M n).toLinearEquiv.injective.eq_iff.symm
+
 /-- Under the identifications `hochschildBimoduleCochainComplexXIso`, the differential of the
 Hochschild cochain complex is the Hochschild coboundary. -/
 @[reassoc, elementwise]
@@ -221,6 +230,19 @@ theorem hochschildBimoduleCochainComplex_d (n : ℕ) :
       (hochschildBimoduleCochainComplexXIso R A M n).hom ≫
         ModuleCat.ofHom (hochschildBimoduleCoboundary R A M n) := by
   simp [hochschildBimoduleCochainComplex, hochschildBimoduleCochainComplexXIso]
+
+variable {R A M} in
+/-- An element of the Hochschild cochain complex is killed by the differential exactly when its
+underlying cochain is a Hochschild cocycle. -/
+theorem hochschildBimoduleCochainComplex_d_eq_zero_iff {n : ℕ}
+    (y : (hochschildBimoduleCochainComplex R A M).X n) :
+    (hochschildBimoduleCochainComplex R A M).d n (n + 1) y = 0 ↔
+      (hochschildBimoduleCochainComplexXIso R A M n).hom y ∈
+        hochschildBimoduleCocycles R A M n := by
+  rw [mem_hochschildBimoduleCocycles_iff,
+    ← (hochschildBimoduleCochainComplex R A M).moduleCat_d_inv_eq_zero_iff
+      (hochschildBimoduleCoboundary R A M) (hochschildBimoduleCochainComplex_d R A M),
+    Iso.hom_inv_id_apply]
 
 end Complex
 
@@ -234,9 +256,7 @@ private theorem mem_hochschildBimoduleCocycles_iff_complex (n : ℕ)
     ψ ∈ hochschildBimoduleCocycles R A M n ↔
       (hochschildBimoduleCochainComplex R A M).d n (n + 1)
         ((hochschildBimoduleCochainComplexXIso R A M n).inv ψ) = 0 := by
-  rw [mem_hochschildBimoduleCocycles_iff,
-    (hochschildBimoduleCochainComplex R A M).moduleCat_d_inv_eq_zero_iff
-      (hochschildBimoduleCoboundary R A M) (hochschildBimoduleCochainComplex_d R A M)]
+  rw [hochschildBimoduleCochainComplex_d_eq_zero_iff, Iso.inv_hom_id_apply]
 
 private theorem mem_hochschildBimoduleCoboundaries_iff_complex (n : ℕ)
     (ψ : (Fin n → A) →ₘₗ[R] M) :
