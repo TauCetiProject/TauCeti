@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.ChangeOfVariables
 public import TauCeti.Analysis.Sobolev.BesselPotential.Local
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartComponent
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
