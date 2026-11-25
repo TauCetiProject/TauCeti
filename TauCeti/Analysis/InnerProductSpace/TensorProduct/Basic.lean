@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.TensorProduct
 public import TauCeti.Analysis.InnerProductSpace.Dual
+public import TauCeti.Analysis.InnerProductSpace.SesquilinearForm
 public import Mathlib.Analysis.InnerProductSpace.Trace
 
 /-!
@@ -35,6 +36,9 @@ when endomorphisms are identified with tensors, without adding an instance on th
   identity, on either side, is `1`-Lipschitz in the operator.
 * `TauCeti.apply_self_pos_of_apply_tmul_tmul`: the tensor product of two positive definite
   Hermitian forms is positive definite.
+* `LinearMap.sesqTmul`: the tensor product of two sesquilinear forms, Hermitian when both
+  factors are (`LinearMap.IsSymm.sesqTmul`) and positive definite when both factors are
+  (`LinearMap.sesqTmul_apply_self_pos`).
 * `TensorProduct.inner_map_left`: factorwise formal adjoint pairs induce a formal adjoint pair on
   `E ⊗[𝕜] F` and `G ⊗[𝕜] H` without finite-dimensionality or completeness assumptions.
 * `TensorProduct.instCompleteSpaceOfFiniteDimensional`: the tensor product of two
@@ -94,21 +98,6 @@ section Sesquilinear
 
 variable {W₁ W₂ : Type*} [AddCommGroup W₁] [Module 𝕜 W₁] [AddCommGroup W₂] [Module 𝕜 W₂]
 
-/-- The inner product space core of a positive definite Hermitian form. -/
-private noncomputable abbrev coreOfPos (h : W₁ →ₗ⋆[𝕜] W₁ →ₗ[𝕜] 𝕜) (hh : h.IsSymm)
-    (hpos : ∀ x, x ≠ 0 → 0 < h x x) : InnerProductSpace.Core 𝕜 W₁ where
-  inner x y := h x y
-  conj_inner_symm x y := hh.eq y x
-  re_inner_nonneg x := by
-    rcases eq_or_ne x 0 with rfl | hx
-    · simp
-    · exact (RCLike.pos_iff.mp (hpos x hx)).1.le
-  add_left x y z := by simp
-  smul_left x y r := by simp
-  definite x hx := by
-    by_contra hne
-    exact (hpos x hne).ne' hx
-
 /-- **The tensor product of two positive definite Hermitian forms is positive definite.** A
 sesquilinear form `H` on `W₁ ⊗[𝕜] W₂` with `H (a ⊗ b) (c ⊗ d) = h₁ a c * h₂ b d`, for positive
 definite Hermitian forms `h₁` and `h₂`, is positive on every nonzero vector. -/
@@ -119,8 +108,8 @@ theorem apply_self_pos_of_apply_tmul_tmul {h₁ : W₁ →ₗ⋆[𝕜] W₁ →�
     {x : W₁ ⊗[𝕜] W₂} (hx : x ≠ 0) : 0 < H x x := by
   -- Make `h₁` and `h₂` the inner products of `W₁` and `W₂`; then `H` is Mathlib's inner product
   -- on the tensor product, which is positive definite.
-  let c₁ := coreOfPos h₁ hh₁ hpos₁
-  let c₂ := coreOfPos h₂ hh₂ hpos₂
+  let c₁ := hh₁.innerProductCore fun x hx ↦ (RCLike.pos_iff.mp (hpos₁ x hx)).1
+  let c₂ := hh₂.innerProductCore fun x hx ↦ (RCLike.pos_iff.mp (hpos₂ x hx)).1
   let : NormedAddCommGroup W₁ := c₁.toNormedAddCommGroup
   let : NormedAddCommGroup W₂ := c₂.toNormedAddCommGroup
   let : InnerProductSpace 𝕜 W₁ := InnerProductSpace.ofCore c₁.toCore
@@ -132,8 +121,8 @@ theorem apply_self_pos_of_apply_tmul_tmul {h₁ : W₁ →ₗ⋆[𝕜] W₁ →�
       induction z with
       | tmul c d =>
         rw [hH, TensorProduct.inner_tmul]
-        -- The inner products of the two factors are `h₁` and `h₂` by construction.
-        rfl
+        exact congrArg₂ (· * ·) (hh₁.inner_ofCore_innerProductCore _ a c).symm
+          (hh₂.inner_ofCore_innerProductCore _ b d).symm
       | add z z' hz hz' => rw [map_add, hz, hz', inner_add_right]
     | add y y' hy hy' => rw [map_add, LinearMap.add_apply, hy, hy', inner_add_left]
   rw [hinner]
@@ -142,6 +131,52 @@ theorem apply_self_pos_of_apply_tmul_tmul {h₁ : W₁ →ₗ⋆[𝕜] W₁ →�
 end Sesquilinear
 
 end TauCeti
+
+namespace LinearMap
+
+section SesqTmul
+
+variable {R W₁ W₂ : Type*} [CommSemiring R] [StarRing R] [AddCommMonoid W₁] [Module R W₁]
+  [AddCommMonoid W₂] [Module R W₂]
+
+/-- The **tensor product** of two sesquilinear forms `h₁` on `W₁` and `h₂` on `W₂`: the
+sesquilinear form on `W₁ ⊗[R] W₂` determined by `(a ⊗ b, c ⊗ d) ↦ h₁(a, c) h₂(b, d)`. -/
+noncomputable def sesqTmul (h₁ : W₁ →ₗ⋆[R] W₁ →ₗ[R] R) (h₂ : W₂ →ₗ⋆[R] W₂ →ₗ[R] R) :
+    W₁ ⊗[R] W₂ →ₗ⋆[R] W₁ ⊗[R] W₂ →ₗ[R] R :=
+  (TensorProduct.map₂ h₁ h₂).compr₂ₛₗ (TensorProduct.lid R R).toLinearMap
+
+variable {h₁ : W₁ →ₗ⋆[R] W₁ →ₗ[R] R} {h₂ : W₂ →ₗ⋆[R] W₂ →ₗ[R] R}
+
+variable (h₁ h₂) in
+/-- On pure tensors, the tensor product form is `(a ⊗ b, c ⊗ d) ↦ h₁(a, c) h₂(b, d)`. -/
+@[simp]
+theorem sesqTmul_tmul_tmul (a : W₁) (b : W₂) (c : W₁) (d : W₂) :
+    h₁.sesqTmul h₂ (a ⊗ₜ b) (c ⊗ₜ d) = h₁ a c * h₂ b d := by
+  simp [sesqTmul]
+
+/-- The tensor product of two Hermitian forms is Hermitian. -/
+theorem IsSymm.sesqTmul (hh₁ : h₁.IsSymm) (hh₂ : h₂.IsSymm) : (h₁.sesqTmul h₂).IsSymm := by
+  refine isSymm_def.mpr fun x y ↦ ?_
+  induction x using TensorProduct.inductionOn with
+  | add x₁ x₂ hx₁ hx₂ => simp only [map_add, LinearMap.add_apply, hx₁, hx₂]
+  | tmul a b =>
+    induction y using TensorProduct.inductionOn with
+    | add y₁ y₂ hy₁ hy₂ => simp only [map_add, LinearMap.add_apply, hy₁, hy₂]
+    | tmul c d => rw [sesqTmul_tmul_tmul, sesqTmul_tmul_tmul, map_mul, hh₁.eq, hh₂.eq]
+
+end SesqTmul
+
+variable {𝕜 W₁ W₂ : Type*} [RCLike 𝕜] [AddCommGroup W₁] [Module 𝕜 W₁] [AddCommGroup W₂]
+  [Module 𝕜 W₂] {h₁ : W₁ →ₗ⋆[𝕜] W₁ →ₗ[𝕜] 𝕜} {h₂ : W₂ →ₗ⋆[𝕜] W₂ →ₗ[𝕜] 𝕜}
+
+/-- The tensor product of two positive definite Hermitian forms is positive definite: the case
+`H = h₁.sesqTmul h₂` of `TauCeti.apply_self_pos_of_apply_tmul_tmul`. -/
+theorem sesqTmul_apply_self_pos (hh₁ : h₁.IsSymm) (hh₂ : h₂.IsSymm)
+    (hpos₁ : ∀ x, x ≠ 0 → 0 < h₁ x x) (hpos₂ : ∀ x, x ≠ 0 → 0 < h₂ x x) {x : W₁ ⊗[𝕜] W₂}
+    (hx : x ≠ 0) : 0 < h₁.sesqTmul h₂ x x :=
+  TauCeti.apply_self_pos_of_apply_tmul_tmul (sesqTmul_tmul_tmul h₁ h₂) hh₁ hh₂ hpos₁ hpos₂ hx
+
+end LinearMap
 
 namespace TensorProduct
 
@@ -336,8 +371,7 @@ variable (𝕜 E F : Type*) [RCLike 𝕜]
 metric. No norm or inner product instance on the algebraic dual is installed. -/
 noncomputable def tensorDualMetric :
     F ⊗[𝕜] Module.Dual 𝕜 E →ₗ⋆[𝕜] F ⊗[𝕜] Module.Dual 𝕜 E →ₗ[𝕜] 𝕜 :=
-  (TensorProduct.map₂ (innerₛₗ 𝕜) (dualMetric 𝕜 E)).compr₂ₛₗ
-    (TensorProduct.lid 𝕜 𝕜).toLinearMap
+  (innerₛₗ 𝕜).sesqTmul (dualMetric 𝕜 E)
 
 /-- On pure tensors the tensor metric is the product of the two factor metrics. -/
 @[simp]

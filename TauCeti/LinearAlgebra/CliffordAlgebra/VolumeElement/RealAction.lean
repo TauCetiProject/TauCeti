@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import Mathlib.Analysis.InnerProductSpace.TensorProduct
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Prod
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Pauli
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Geometric
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod
 -- Private: tensor-product formal-adjoint identity is used only inside proofs.
@@ -46,8 +46,7 @@ under the geometric convention `ρ_ℂ(Γ)` is symmetric (and self-adjoint in fi
 half-spinor spaces are orthogonal. Moreover, this chirality grading makes the graded tensor product
 `CliffordAlgebra.complexProdTensor` preserve `AlgHom.IsGeometricClifford` on `WithLp 2 (V × W)`.
 These are the forms of `Γ` and `S^±` used for Clifford-module bundles, whose fibres carry real
-Clifford actions. On the concrete 2D negative Pauli plane (`TauCeti.negativePlanePauliAction`), the
-chirality operator for the standard orientation is `-σ₁`.
+Clifford actions.
 
 ## Main results
 
@@ -67,8 +66,6 @@ chirality operator for the standard orientation is `-σ₁`.
   `AlgHom.IsGeometricClifford.isOrtho_eigenspace_liftBaseChange_complexVolume`: `S⁺ ⟂ S⁻`.
 * `AlgHom.IsGeometricClifford.complexProdTensor`: graded tensor product preservation of the
   geometric convention on `WithLp 2 (V × W)`.
-* `TauCeti.liftBaseChange_complexVolume_negativePlanePauliAction`: chirality operator `-σ₁` of the
-  2D negative-Pauli-plane action.
 
 ## References
 
@@ -80,7 +77,7 @@ chirality operator for the standard orientation is `-σ₁`.
 public section
 
 open Module Module.End
-open scoped InnerProductSpace TensorProduct EuclideanSpace
+open scoped InnerProductSpace TensorProduct
 
 namespace CliffordAlgebra
 
@@ -226,7 +223,7 @@ theorem complexProdTensor
     ⟨hQ₁₂, fun x u₁ u₂ ↦ ?_⟩
   obtain ⟨⟨v, w⟩, rfl⟩ := WithLp.toLp_surjective 2 x
   simp only [CliffordAlgebra.complexProdTensor_ι_one_tmul_toLp,
-    CliffordAlgebra.liftBaseChange_ι_one_tmul, LinearMap.add_apply, inner_add_left,
+    CliffordAlgebra.liftBaseChange_ι_tmul, one_smul, LinearMap.add_apply, inner_add_left,
     inner_add_right, neg_add]
   congr 1
   · rw [LinearMap.rTensor_def,
@@ -243,27 +240,3 @@ theorem complexProdTensor
 end TensorProduct
 
 end AlgHom.IsGeometricClifford
-
-/-! ### Chirality on the negative Pauli plane -/
-
-namespace TauCeti
-
-open _root_.CliffordAlgebra
-
-/-- **Chirality on the negative Pauli plane**: for the standard orientation of
-`EuclideanSpace ℝ (Fin 2)`, the chirality operator of `TauCeti.negativePlanePauliAction` is
-`(-σ₁).toEuclideanLin` (`-X`). -/
-theorem liftBaseChange_complexVolume_negativePlanePauliAction
-    {Q : QuadraticForm ℝ (EuclideanSpace ℝ (Fin 2))} (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
-    liftBaseChange ℂ Q (negativePlanePauliAction hQ)
-        (complexVolume Q (EuclideanSpace.basisFun (Fin 2) ℝ).toBasis.orientation) =
-      (-pauli ![1, 0, 0]).toEuclideanLin := by
-  have hlist : List.finRange 2 = [0, 1] := rfl
-  rw [liftBaseChange_complexVolume_eq_of_eq_two_mul _ (negativePlanePauliAction hQ)
-    (EuclideanSpace.basisFun (Fin 2) ℝ) rfl
-    ((EuclideanSpace.basisFun (Fin 2) ℝ).isOrthoᵢ_associated hQ) (ℓ := 1) rfl, hlist]
-  simp only [pow_one, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one,
-    EuclideanSpace.basisFun_apply, negativePlanePauliAction_ι_single_zero_mul_ι_single_one hQ,
-    ← map_smul, smul_smul, Complex.I_mul_I, neg_one_smul]
-
-end TauCeti

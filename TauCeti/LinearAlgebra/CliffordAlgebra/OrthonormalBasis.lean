@@ -25,7 +25,8 @@ an orthogonal basis for `Q` with `Q (eᵢ) = -1`. The general orthogonal-basis r
 basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
 `(-1) ^ ((|s| + 1).choose 2)`. Under any `ℝ`-algebra homomorphism out of `CliffordAlgebra Q`,
 orthogonal vectors anticommute, unit vectors and orthonormal bivectors square to `-1`, and the
-oriented bivector `c(e₁) c(e₂)` of an orthonormal pair is invariant under planar rotations.
+oriented bivector `c(e₁) c(e₂)` of an orthogonal equal-norm pair is invariant under planar
+rotations.
 
 ## Main results
 
@@ -48,6 +49,9 @@ oriented bivector `c(e₁) c(e₂)` of an orthonormal pair is invariant under pl
   `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`.
 * `CliffordAlgebra.sum_sum_smul_ι_mul_ι_of_symm`: for a symmetric family of scalars `mᵢⱼ`,
   `∑ᵢⱼ mᵢⱼ c(eᵢ) c(eⱼ) = -∑ᵢ mᵢᵢ`.
+* `TauCeti.two_nsmul_sum_sum_apply_apply_eq`: for additive maps `γᵢ` satisfying the Clifford
+  relations `γᵢ γⱼ + γⱼ γᵢ = -2 δᵢⱼ`, the contraction `∑ᵢⱼ γᵢ γⱼ B i j` of a doubly indexed family
+  splits into its trace and its antisymmetrization.
 * `CliffordAlgebra.basis_mul_self_of_orthonormal`: `e_s * e_s = (-1) ^ ((|s| + 1).choose 2)`.
 * `AlgHom.map_cliffordAlgebraι_mul_map_cliffordAlgebraι_add_swap_eq_neg_two_inner`,
   `AlgHom.map_cliffordAlgebraι_cos_smul_add_sin_smul_mul_neg_sin_smul_add_cos_smul`:
@@ -62,6 +66,33 @@ oriented bivector `c(e₁) c(e₂)` of an orthonormal pair is invariant under pl
 public section
 
 open scoped RealInnerProductSpace
+
+namespace TauCeti
+
+/-- **Clifford contraction of a doubly indexed family.** Let `γᵢ` be additive maps satisfying the
+Clifford relations `γᵢ γⱼ + γⱼ γᵢ = -2 δᵢⱼ`, such as Clifford multiplication by the vectors of an
+orthonormal basis. Then for every family `B i j`,
+
+`2 ∑ᵢ ∑ⱼ γᵢ γⱼ B i j = -2 ∑ᵢ B i i + ∑ᵢ ∑ⱼ γᵢ γⱼ (B i j - B j i)`.
+
+For `B i j = ∇²σ(eᵢ, eⱼ)` the first term is twice the rough Laplacian and the second is a
+curvature term. -/
+theorem two_nsmul_sum_sum_apply_apply_eq {ι V G : Type*} [Fintype ι] [DecidableEq ι]
+    [AddCommGroup V] [FunLike G V V] [AddMonoidHomClass G V V] (γ : ι → G)
+    (hγ : ∀ i j s, γ i (γ j s) + γ j (γ i s) = if i = j then -(2 • s) else 0)
+    (B : ι → ι → V) :
+    2 • ∑ i, ∑ j, γ i (γ j (B i j)) =
+      -(2 • ∑ i, B i i) + ∑ i, ∑ j, γ i (γ j (B i j - B j i)) := by
+  -- Exchanging the indices and applying the Clifford relation gives
+  -- `∑ᵢ ∑ⱼ γᵢ γⱼ B j i + ∑ᵢ ∑ⱼ γᵢ γⱼ B i j = -2 ∑ᵢ B i i`.
+  have hswap : ∑ i, ∑ j, γ i (γ j (B j i)) + ∑ i, ∑ j, γ i (γ j (B i j)) = -(2 • ∑ i, B i i) := by
+    rw [Finset.sum_comm (f := fun i j ↦ γ i (γ j (B j i))), ← Finset.sum_add_distrib]
+    simp only [← Finset.sum_add_distrib, hγ, Finset.sum_ite_eq', Finset.mem_univ, ite_true,
+      Finset.sum_neg_distrib, Finset.smul_sum]
+  simp only [map_sub, Finset.sum_sub_distrib, eq_sub_of_add_eq hswap]
+  abel
+
+end TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
   (hQ : ∀ v, Q v = -‖v‖ ^ 2)
@@ -219,16 +250,16 @@ theorem map_cliffordAlgebraι_mul_map_cliffordAlgebraι_add_swap_eq_neg_two_inne
   rw [← map_mul ρ, ← map_mul ρ, ← map_add ρ, ι_mul_ι_add_swap_eq_neg_two_inner hQ,
     AlgHom.commutes, Algebra.algebraMap_eq_smul_one]
 
-/-- **2-plane rotation invariance**: rotating an orthonormal pair `(e₁, e₂)` by angle `θ` preserves
-the oriented Clifford product `c(e₁) c(e₂)` when `Q v = -‖v‖²`. -/
+/-- **2-plane rotation invariance**: rotating an orthogonal equal-norm pair `(e₁, e₂)` by angle
+`θ` preserves the oriented Clifford product `c(e₁) c(e₂)` when `Q v = -‖v‖²`. -/
 theorem map_cliffordAlgebraι_cos_smul_add_sin_smul_mul_neg_sin_smul_add_cos_smul
-    (hQ : ∀ v, Q v = -‖v‖ ^ 2) {e₁ e₂ : V} (he₁ : ‖e₁‖ = 1) (he₂ : ‖e₂‖ = 1)
+    (hQ : ∀ v, Q v = -‖v‖ ^ 2) {e₁ e₂ : V} (he : ‖e₁‖ = ‖e₂‖)
     (h12 : ⟪e₁, e₂⟫ = 0) (θ : ℝ) :
     ρ (ι Q (Real.cos θ • e₁ + Real.sin θ • e₂)) *
         ρ (ι Q (-Real.sin θ • e₁ + Real.cos θ • e₂)) =
       ρ (ι Q e₁) * ρ (ι Q e₂) := by
   rw [← map_mul ρ, ι_smul_add_smul_mul_ι_neg_smul_add_smul
-    (by rw [hQ, hQ, he₁, he₂]) ((QuadraticMap.isOrtho_iff_inner_eq_zero hQ).2 h12),
+    (by rw [hQ, hQ, he]) ((QuadraticMap.isOrtho_iff_inner_eq_zero hQ).2 h12),
     Real.cos_sq_add_sin_sq, one_smul, map_mul ρ]
 
 end Semiring

@@ -490,27 +490,6 @@ theorem liftBaseChange_ofBaseChange (Q : QuadraticForm R M) (f : CliffordAlgebra
     liftBaseChange A Q f (ofBaseChange A Q x) = f.liftEquiv R A (CliffordAlgebra Q) B x := by
   simp [liftBaseChange, liftBaseChangeEquiv]
 
-/-- On an embedded vector `1 ⊗ₜ v`, `liftBaseChange A Q f` agrees with `f` on `ι Q v`. -/
-theorem liftBaseChange_ι_one_tmul (Q : QuadraticForm R M) (f : CliffordAlgebra Q →ₐ[R] B)
-    (v : M) : liftBaseChange A Q f (ι (Q.baseChange A) (1 ⊗ₜ v)) = f (ι Q v) := by
-  rw [liftBaseChange_ι_tmul, one_smul]
-
-/-- Restricting `liftBaseChange A Q f` to `R` and precomposing with
-`CliffordAlgebra.ofBaseChangeAux A Q` recovers `f`. -/
-@[simp]
-theorem liftBaseChange_restrictScalars_comp_ofBaseChangeAux (Q : QuadraticForm R M)
-    (f : CliffordAlgebra Q →ₐ[R] B) :
-    ((liftBaseChange A Q f).restrictScalars R).comp (ofBaseChangeAux A Q) = f :=
-  (liftBaseChangeEquiv A Q).left_inv f
-
-/-- Extending the restriction `(g.restrictScalars R).comp (ofBaseChangeAux A Q)` of an `A`-algebra
-map `g` out of `CliffordAlgebra (Q.baseChange A)` recovers `g`. -/
-@[simp]
-theorem liftBaseChange_comp_ofBaseChangeAux (Q : QuadraticForm R M)
-    (g : CliffordAlgebra (Q.baseChange A) →ₐ[A] B) :
-    liftBaseChange A Q ((g.restrictScalars R).comp (ofBaseChangeAux A Q)) = g :=
-  (liftBaseChangeEquiv A Q).right_inv g
-
 /-- **Uniqueness on embedded vectors**: an `A`-algebra homomorphism out of
 `CliffordAlgebra (Q.baseChange A)` equals `liftBaseChange A Q f` if and only if it maps every
 `ι (Q.baseChange A) (1 ⊗ₜ v)` to `f (ι Q v)`. -/

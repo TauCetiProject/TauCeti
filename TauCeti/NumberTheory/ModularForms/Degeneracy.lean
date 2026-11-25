@@ -42,6 +42,12 @@ results go up only.
   `TauCeti.diagGL`.
 * `TauCeti.conjScale`: its conjugation action on an integral matrix whose lower-left entry is
   divisible by `d`, `(a, b; d c, e) ↦ (a, d b; c, e)`.
+* `TauCeti.conjInvScale`: the inverse rearrangement, on an integral matrix whose upper-right entry
+  is divisible by `d`, `(a, d b; c, e) ↦ (a, b; d c, e)`.
+* `TauCeti.conjScaleGamma0 hδ`: for `δ ∣ N`, the homomorphism `Γ₀(N) →* SL(2, ℤ)` sending
+  `(a, b; c, e)` to `(a, δ b; c / δ, e)`, the conjugation by `diag(δ, 1)` when `δ ≠ 0`; it fixes
+  `-1` and sends `Tⁿ` to `T^{δ n}` (`TauCeti.conjScaleGamma0_negOne`,
+  `TauCeti.conjScaleGamma0_T_zpow`).
 * `TauCeti.gamma1Conj q N`: the intersection of `SL(2, ℤ)` with the conjugate
   `diag(q, 1) Γ₁(N) diag(q, 1)⁻¹`, a subgroup of `SL(2, ℤ)` of finite index for `N ≠ 0`; it is the
   whole conjugate when `q ∣ N`.
@@ -80,12 +86,10 @@ results go up only.
   by the conjugate matrix `conjScale d γ` does.
 * `ModularForm.diamondOp_levelRaise`, `TauCeti.CuspForm.diamondOpCusp_levelRaise`: `V_d`
   intertwines diamond operators between a divisor level and any multiple of the raised level.
-* `TauCeti.ModularForm.levelRaise_mem_modFormCharSpace_of_dvd`,
-  `TauCeti.CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd`: the nebentypus transport, stated
-  at every level `N` with `d * M ∣ N`. Since the `diag(d, 1)`-conjugate of a `Γ₀(N)` matrix lies
-  in `Γ₀(M)` with the same lower-right entry, `V_d` carries `M_k(Γ₁(M), χ)` into
-  `M_k(Γ₁(N), χ ∘ ZMod.unitsMap)`, and likewise for `S_k`: the nebentypus of `V_d f` is that of
-  `f` read along `(ZMod N)ˣ → (ZMod M)ˣ`.
+* `TauCeti.slash_scaleGL_mem_functionCharSpace_of_dvd`,
+  `TauCeti.ModularForm.levelRaise_mem_modFormCharSpace_of_dvd`,
+  `TauCeti.CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd`: for `d * M ∣ N`, the slash by
+  `diag(d, 1)` and `V_d` take nebentypus `χ` at level `M` to `χ ∘ ZMod.unitsMap` at level `N`.
 * `TauCeti.ModularForm.restrict_mem_modFormCharSpace`,
   `TauCeti.CuspForm.restrict_mem_cuspFormCharSpace`: the same transport for the degeneracy map
   `V₁` at a divisor. Reading a form of level `M` as a form of level `N` for any `M ∣ N` carries
@@ -168,9 +172,8 @@ variable {k : ℤ} {d : ℕ}
 
 /-! ### The scaling matrix `diag(d, 1)` -/
 
-/-- The diagonal element `!![d, 0; 0, 1]` of `GL(2, ℝ)`, for `d` a nonzero natural number.
-Slashing by it is, up to the normalizing scalar `d ^ (1 - k)`, the level-raising operator
-`V_d`. -/
+/-- The diagonal element `!![d, 0; 0, 1]` of `GL(2, ℝ)`, for `d` a nonzero natural number. Slashing
+by it is, up to the normalizing scalar `d ^ (1 - k)`, the level-raising operator `V_d`. -/
 def scaleGL (d : ℕ) [NeZero d] : GL (Fin 2) ℝ :=
   diagGL ![Units.mk0 (d : ℝ) (Nat.cast_ne_zero.mpr (NeZero.ne d)), 1]
 
@@ -353,8 +356,7 @@ lemma levelRaise_injective [𝒢'.HasDetOne] [NeZero d]
   have := congr($hfg ((scaleGL d)⁻¹ • τ))
   simpa [smul_smul] using this
 
-/-- `V_d` is injective as a `ℂ`-linear map, so its range is a copy of `M_k(𝒢)` inside
-`M_k(𝒢')`. -/
+/-- `V_d` is injective as a `ℂ`-linear map, so its range is a copy of `M_k(𝒢)` inside `M_k(𝒢')`. -/
 lemma levelRaiseₗ_injective [𝒢.HasDetOne] [𝒢'.HasDetOne] {d : ℕ} [NeZero d]
     (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) :
     Injective (levelRaiseₗ (k := k) d h) :=
@@ -530,9 +532,8 @@ end LevelRaise
 
 section Transport
 
-/-- The `diag(d, 1)`-conjugate of an integral matrix whose lower-left entry is `d * c`: the
-entries are rearranged as `(a, b; d c, e) ↦ (a, d b; c, e)`, which is again integral of
-determinant one. -/
+/-- The `diag(d, 1)`-conjugate of an integral matrix whose lower-left entry is `d * c`: the entries
+are rearranged as `(a, b; d c, e) ↦ (a, d b; c, e)`, which is again integral of determinant one. -/
 def conjScale (d : ℕ) (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0 = d * c) : SL(2, ℤ) :=
   .mk !![γ 0 0, (d : ℤ) * γ 0 1; c, γ 1 1] (by
     have hdet : (γ 0 0) * (γ 1 1) - (γ 0 1) * (γ 1 0) = 1 :=
@@ -552,6 +553,31 @@ lemma conjScale_apply_one_one (d : ℕ) (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0
     conjScale d γ c hc 1 1 = γ 1 1 := by
   simp
 
+/-- The `diag(d, 1)⁻¹`-conjugate of an integral matrix whose upper-right entry is `d * b`, the
+inverse rearrangement to `conjScale`: `(a, d b; c, e) ↦ (a, b; d c, e)`, which is again integral
+of determinant one. -/
+def conjInvScale (d : ℕ) (γ : SL(2, ℤ)) (b : ℤ) (hb : γ 0 1 = d * b) : SL(2, ℤ) :=
+  .mk !![γ 0 0, b; d * γ 1 0, γ 1 1] (by
+    rw [Matrix.det_fin_two_of]
+    linear_combination Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ + γ 1 0 * hb)
+
+@[simp]
+lemma coe_conjInvScale (d : ℕ) (γ : SL(2, ℤ)) (b : ℤ) (hb : γ 0 1 = d * b) :
+    ((conjInvScale d γ b hb : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) =
+      !![γ 0 0, b; d * γ 1 0, γ 1 1] := by
+  rw [conjInvScale, Matrix.SpecialLinearGroup.coe_mk]
+
+/-- `conjInvScale` multiplies the lower-left entry by `d`. -/
+lemma conjInvScale_apply_one_zero (d : ℕ) (γ : SL(2, ℤ)) (b : ℤ) (hb : γ 0 1 = d * b) :
+    conjInvScale d γ b hb 1 0 = d * γ 1 0 := by
+  simp
+
+/-- `conjScale` undoes `conjInvScale`. -/
+lemma conjScale_conjInvScale (d : ℕ) (γ : SL(2, ℤ)) (b : ℤ) (hb : γ 0 1 = d * b) :
+    conjScale d (conjInvScale d γ b hb) (γ 1 0) (conjInvScale_apply_one_zero d γ b hb) = γ :=
+  Matrix.SpecialLinearGroup.ext _ _ fun i j ↦ by
+    fin_cases i <;> fin_cases j <;> simp [hb]
+
 /-- Conjugation by `diag(d, 1)` realizes `conjScale`. -/
 lemma mapGL_conjScale [NeZero d] (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0 = d * c) :
     scaleGL d * mapGL ℝ γ * (scaleGL d)⁻¹ = mapGL ℝ (conjScale d γ c hc) := by
@@ -560,6 +586,91 @@ lemma mapGL_conjScale [NeZero d] (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0 = d * 
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [Matrix.mul_apply, Fin.sum_univ_two, hc', mul_comm]
+
+/-- `conjScale` is multiplicative, since it is conjugation by `diag(d, 1)`. -/
+lemma conjScale_mul [NeZero d] (γ γ' : SL(2, ℤ)) {c c' c'' : ℤ} (hc : γ 1 0 = d * c)
+    (hc' : γ' 1 0 = d * c') (hc'' : (γ * γ') 1 0 = d * c'') :
+    conjScale d (γ * γ') c'' hc'' = conjScale d γ c hc * conjScale d γ' c' hc' := by
+  refine mapGL_injective (S := ℝ) ?_
+  rw [map_mul, ← mapGL_conjScale, ← mapGL_conjScale, ← mapGL_conjScale, map_mul]
+  group
+
+/-- `conjScale d γ` sends `d τ` to `d · γ τ`. -/
+lemma conjScale_smul_scaleGL_smul [NeZero d] (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0 = d * c)
+    (τ : ℍ) : conjScale d γ c hc • (scaleGL d • τ) = scaleGL d • (γ • τ) := by
+  rw [MulAction.compHom_smul_def, MulAction.compHom_smul_def, ← mapGL_conjScale, ← mul_smul,
+    ← mul_smul, inv_mul_cancel_right]
+
+/-- The automorphy factor of `conjScale d γ` at `d τ` is that of `γ` at `τ`. -/
+lemma denom_conjScale_scaleGL_smul [NeZero d] (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0 = d * c)
+    (τ : ℍ) :
+    denom (mapGL ℝ (conjScale d γ c hc)) (scaleGL d • τ : ℍ) = denom (mapGL ℝ γ) τ := by
+  calc denom (mapGL ℝ (conjScale d γ c hc)) (scaleGL d • τ : ℍ)
+      = denom (mapGL ℝ (conjScale d γ c hc) * scaleGL d) τ := by
+        rw [denom_cocycle_σ, denom_scaleGL, mul_one, σ_eq_refl_of_det_pos val_det_scaleGL_pos,
+          ContinuousAlgEquiv.refl_apply]
+    _ = denom (scaleGL d * mapGL ℝ γ) τ := by rw [← mapGL_conjScale, inv_mul_cancel_right]
+    _ = denom (mapGL ℝ γ) τ := by rw [denom_cocycle_σ, denom_scaleGL, map_one, one_mul]
+
+/-- For a divisor `δ ∣ N`, the homomorphism `γ ↦ γ_δ = (a, δ b; c / δ, d)` from `Γ₀(N)` to
+`SL(2, ℤ)`, where `γ = (a b; c d)`. For `δ ≠ 0` it is the conjugation
+`conjScale δ γ (c / δ)` by `diag(δ, 1)`, integral since `δ ∣ N ∣ c`. For `δ = 0`, so `N = 0`,
+the matrix `diag(0, 1)` is singular and `γ_0 = (a, 0; 0, d)` is the diagonal part of the upper
+triangular matrix `γ`. -/
+def conjScaleGamma0 {N δ : ℕ} (hδ : δ ∣ N) : Gamma0 N →* SL(2, ℤ) where
+  toFun γ := conjScale δ γ ((γ : SL(2, ℤ)) 1 0 / δ)
+    (Int.mul_ediv_cancel'
+      ((Int.natCast_dvd_natCast.2 hδ).trans (mem_Gamma0_iff_dvd.1 γ.property))).symm
+  map_one' := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp
+  map_mul' γ γ' := by
+    rcases eq_or_ne δ 0 with rfl | hδ0
+    · -- `Γ₀(0)` is upper triangular, and the diagonal parts multiply.
+      obtain rfl := Nat.eq_zero_of_zero_dvd hδ
+      have hγ := mem_Gamma0_iff_dvd.1 γ.property
+      have hγ' := mem_Gamma0_iff_dvd.1 γ'.property
+      ext i j
+      fin_cases i <;> fin_cases j <;> simp_all [Matrix.mul_apply, Fin.sum_univ_two]
+    · have : NeZero δ := ⟨hδ0⟩
+      exact conjScale_mul _ _ _ _ _
+
+/-- `conjScaleGamma0` is `conjScale` at the quotient `c / δ` of the lower-left entry. -/
+lemma conjScaleGamma0_apply {N δ : ℕ} (hδ : δ ∣ N) (γ : Gamma0 N) :
+    conjScaleGamma0 hδ γ = conjScale δ γ ((γ : SL(2, ℤ)) 1 0 / δ)
+      (Int.mul_ediv_cancel'
+        ((Int.natCast_dvd_natCast.2 hδ).trans (mem_Gamma0_iff_dvd.1 γ.property))).symm :=
+  (rfl)
+
+@[simp]
+lemma coe_conjScaleGamma0 {N δ : ℕ} (hδ : δ ∣ N) (γ : Gamma0 N) :
+    ((conjScaleGamma0 hδ γ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) =
+      !![(γ : SL(2, ℤ)) 0 0, (δ : ℤ) * (γ : SL(2, ℤ)) 0 1; (γ : SL(2, ℤ)) 1 0 / δ,
+        (γ : SL(2, ℤ)) 1 1] := by
+  rw [conjScaleGamma0_apply, coe_conjScale]
+
+/-- Every conjugate of `-1 ∈ Γ₀(N)` is `-1`. -/
+@[simp]
+lemma conjScaleGamma0_negOne {N δ : ℕ} (hδ : δ ∣ N) :
+    conjScaleGamma0 hδ (Gamma0.negOne N) = -1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [Gamma0.coe_negOne]
+
+/-- The conjugate of a translation `Tⁿ ∈ Γ₀(N)` by `diag(δ, 1)` is the translation `T^{δ n}`. -/
+@[simp]
+lemma conjScaleGamma0_T_zpow {N δ : ℕ} (hδ : δ ∣ N) (n : ℤ)
+    (h : ModularGroup.T ^ n ∈ Gamma0 N) :
+    conjScaleGamma0 hδ ⟨ModularGroup.T ^ n, h⟩ = ModularGroup.T ^ ((δ : ℤ) * n) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [ModularGroup.coe_T_zpow]
+
+/-- Reading off the lower-left entry: if `diag(d, 1) X = Y diag(d, 1)`, then the lower-left entry
+of `X` is `d` times that of `Y`. -/
+lemma apply_one_zero_eq_of_scaleGL_mul_eq [NeZero d] {X Y : SL(2, ℤ)}
+    (h : scaleGL d * mapGL ℝ X = mapGL ℝ Y * scaleGL d) : X 1 0 = d * Y 1 0 := by
+  have := congrArg (fun g : GL (Fin 2) ℝ ↦ (g : Matrix (Fin 2) (Fin 2) ℝ) 1 0) h
+  exact_mod_cast (by simpa [Matrix.mul_apply, Fin.sum_univ_two, mul_comm] using this :
+    ((X 1 0 : ℤ) : ℝ) = d * Y 1 0)
 
 /-- The `diag(d, 1)`-conjugate of a matrix `γ ∈ Γ₀(N)` lies in `Γ₀(M)` whenever `d * M ∣ N`, and
 the conjugation leaves the lower-right entry alone: the diamond label of `γ` is read along the
@@ -656,12 +767,8 @@ lemma mem_gamma1Conj_iff [NeZero q] {γ : SL(2, ℤ)} :
   have hmul : scaleGL q * mapGL ℝ δ = mapGL ℝ γ * scaleGL q := by
     rw [ConjAct.toConjAct_smul] at hγ
     rw [← hγ]; group
-  have h10 := congrArg (fun g : GL (Fin 2) ℝ ↦ (g : Matrix (Fin 2) (Fin 2) ℝ) 1 0) hmul
-  have hc : δ 1 0 = q * γ 1 0 := by
-    have h10' : (δ 1 0 : ℝ) = γ 1 0 * q := by
-      simpa [Matrix.mul_apply, Fin.sum_univ_two] using h10
-    exact_mod_cast h10'.trans (mul_comm _ _)
-  refine ⟨δ, hδ, γ 1 0, hc, (mapGL_inj (S := ℝ) _ _).mp ?_⟩
+  refine ⟨δ, hδ, γ 1 0, apply_one_zero_eq_of_scaleGL_mul_eq hmul,
+    (mapGL_inj (S := ℝ) _ _).mp ?_⟩
   rw [← mapGL_conjScale, ← hγ, ConjAct.toConjAct_smul]
 
 /-- For `q ∣ N`, the image of `gamma1Conj q N` in `GL(2, ℝ)` is the whole conjugate
@@ -694,20 +801,10 @@ lemma mem_gamma1Conj_of_mem_Gamma1 [NeZero q] {γ : SL(2, ℤ)} (hγ : γ ∈ Ga
     (hq : (q : ℤ) ∣ γ 0 1) : γ ∈ gamma1Conj q N := by
   obtain ⟨b, hb⟩ := hq
   obtain ⟨h10, h11⟩ := mem_Gamma1_iff_dvd_lowerRow.mp hγ
-  have hdet := Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
-  obtain ⟨δ, hδ⟩ : ∃ δ : SL(2, ℤ),
-      (δ : Matrix (Fin 2) (Fin 2) ℤ) = !![γ 0 0, b; q * γ 1 0, γ 1 1] :=
-    ⟨.mk !![γ 0 0, b; q * γ 1 0, γ 1 1] (by
-      rw [Matrix.det_fin_two_of]; rw [hb] at hdet; linear_combination hdet),
-      Matrix.SpecialLinearGroup.coe_mk _⟩
-  have hc : δ 1 0 = q * γ 1 0 := by rw [hδ]; simp
-  have hδN : δ ∈ Gamma1 N := mem_Gamma1_of_dvd_lowerRow (by rw [hc]; exact h10.mul_left _)
-    (by rw [hδ]; simpa using h11)
-  have hγδ : conjScale q δ (γ 1 0) hc = γ :=
-    Matrix.SpecialLinearGroup.ext _ _ fun i j ↦ by
-      rw [coe_conjScale, hδ]
-      fin_cases i <;> fin_cases j <;> simp [hb]
-  exact hγδ ▸ conjScale_mem_gamma1Conj hδN hc
+  have hc := conjInvScale_apply_one_zero q γ b hb
+  have hδN : conjInvScale q γ b hb ∈ Gamma1 N :=
+    mem_Gamma1_of_dvd_lowerRow (by rw [hc]; exact h10.mul_left _) (by simpa using h11)
+  exact conjScale_conjInvScale q γ b hb ▸ conjScale_mem_gamma1Conj hδN hc
 
 /-- For `q * M ∣ N`, the conjugate `gamma1Conj q N` lies in `Γ₁(M)`. -/
 lemma gamma1Conj_le_Gamma1 [NeZero q] (hqM : q * M ∣ N) : gamma1Conj q N ≤ Gamma1 M := by
@@ -869,9 +966,8 @@ lemma ModularForm.coe_levelRaise_slash [𝒢'.HasDetOne] [NeZero d]
   rw [coe_levelRaise, _root_.ModularForm.smul_slash, σ_mapGL_real_eq_refl,
     ContinuousAlgEquiv.refl_apply, slash_scaleGL_slash_mapGL]
 
-/-- Slashing a level-raised cusp form by an integral matrix `γ` whose lower-left entry is
-divisible by `d` is the level-raise of the slash of `f` by the conjugate matrix
-`conjScale d γ`. -/
+/-- Slashing a level-raised cusp form by an integral matrix `γ` whose lower-left entry is divisible
+by `d` is the level-raise of the slash of `f` by the conjugate matrix `conjScale d γ`. -/
 lemma CuspForm.coe_levelRaise_slash [𝒢'.HasDetOne] [NeZero d]
     (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : CuspForm 𝒢 k)
     (γ : SL(2, ℤ)) {c : ℤ} (hc : γ 1 0 = d * c) :
@@ -983,6 +1079,17 @@ theorem CuspForm.diamondOpCusp_levelRaise {M d N : ℕ} [NeZero d]
     CuspForm.coe_levelRaise, coe_diamondOpCusp k _ ⟨conjScale d γ c hc, hm⟩ (heq.trans (by
       rw [hγ]))]
 
+/-- **The nebentypus of a raised function.** For `d * M ∣ N`, the slash by `diag(d, 1)` carries
+`functionCharSpace k χ` at level `M` into that of `χ ∘ (ZMod N)ˣ → (ZMod M)ˣ` at level `N`. -/
+theorem slash_scaleGL_mem_functionCharSpace_of_dvd {M d N : ℕ} [NeZero d] (hdvd : d * M ∣ N)
+    {χ : (ZMod M)ˣ →* ℂˣ} {f : ℍ → ℂ} (hf : f ∈ functionCharSpace k χ) :
+    f ∣[k] scaleGL d ∈
+      functionCharSpace k (χ.comp (ZMod.unitsMap ((Dvd.intro_left d rfl).trans hdvd))) := by
+  refine (mem_functionCharSpace_iff _ _ _).mpr fun γ ↦ ?_
+  obtain ⟨c, hc, hm, heq⟩ := exists_conjScale_mem_Gamma0_of_dvd d M N hdvd γ
+  rw [slash_scaleGL_slash_mapGL f γ hc, slash_mapGL_eq_smul_of_mem_functionCharSpace hf ⟨_, hm⟩,
+    ModularForm.smul_slash_of_det_pos k val_det_scaleGL_pos, heq, MonoidHom.comp_apply]
+
 /-- **The nebentypus of a level-raise.** For `d * M ∣ N`, `V_d` carries `M_k(Γ₁(M), χ)` into
 `M_k(Γ₁(N), χ ∘ (ZMod N)ˣ → (ZMod M)ˣ)`: the character of `V_d f` at level `N` is the character
 of `f` read along the reduction map. The target level is any multiple of `d * M`. -/
@@ -991,11 +1098,9 @@ theorem ModularForm.levelRaise_mem_modFormCharSpace_of_dvd {M d N : ℕ} [NeZero
     {f : ModularForm ((Gamma1 M).map (mapGL ℝ)) k} (hf : f ∈ modFormCharSpace k χ) :
     levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd hdvd) f ∈
       modFormCharSpace k (χ.comp (ZMod.unitsMap ((Dvd.intro_left d rfl).trans hdvd))) := by
-  rw [mem_modFormCharSpace_iff_nebentypus] at hf ⊢
-  intro γ
-  obtain ⟨c, hc, hm, heq⟩ := exists_conjScale_mem_Gamma0_of_dvd d M N hdvd γ
-  rw [MonoidHom.comp_apply, ← heq]
-  exact ModularForm.coe_levelRaise_slash_eq_smul _ f γ hc (hf ⟨_, hm⟩)
+  rw [← coe_mem_functionCharSpace_iff, ModularForm.coe_levelRaise]
+  exact Submodule.smul_mem _ _ (slash_scaleGL_mem_functionCharSpace_of_dvd hdvd
+    ((coe_mem_functionCharSpace_iff k χ f).mpr hf))
 
 /-- **The nebentypus of a level-raise (cusp forms).** For `d * M ∣ N`, `V_d` carries
 `S_k(Γ₁(M), χ)` into `S_k(Γ₁(N), χ ∘ (ZMod N)ˣ → (ZMod M)ˣ)`: the character of `V_d f` at level
@@ -1009,11 +1114,9 @@ theorem CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd {M d N : ℕ} [NeZero d
     {f : CuspForm ((Gamma1 M).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ) :
     levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd hdvd) f ∈
       cuspFormCharSpace k (χ.comp (ZMod.unitsMap ((Dvd.intro_left d rfl).trans hdvd))) := by
-  rw [mem_cuspFormCharSpace_iff_nebentypus] at hf ⊢
-  intro γ
-  obtain ⟨c, hc, hm, heq⟩ := exists_conjScale_mem_Gamma0_of_dvd d M N hdvd γ
-  rw [MonoidHom.comp_apply, ← heq]
-  exact CuspForm.coe_levelRaise_slash_eq_smul _ f γ hc (hf ⟨_, hm⟩)
+  rw [← coe_mem_functionCharSpace_iff_mem_cuspFormCharSpace, CuspForm.coe_levelRaise]
+  exact Submodule.smul_mem _ _ (slash_scaleGL_mem_functionCharSpace_of_dvd hdvd
+    ((coe_mem_functionCharSpace_iff_mem_cuspFormCharSpace k χ f).mpr hf))
 
 /-- **The `T`-factorisation lift carries the label of the element it lifts.** Reduced to a level
 `M ∣ N`, the nebentypus label of a `Γ₀(N)` element `γ` whose lower-right entry differs from that

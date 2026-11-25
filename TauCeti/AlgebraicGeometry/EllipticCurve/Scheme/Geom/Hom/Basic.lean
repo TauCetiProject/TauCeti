@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy
-public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.CommGrp
 
 /-!

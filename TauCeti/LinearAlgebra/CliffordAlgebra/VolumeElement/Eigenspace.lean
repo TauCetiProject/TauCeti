@@ -91,12 +91,6 @@ orientation-reversing isometry exchanges the labels.
   `2 ^ (n / 2 - 1)`.
 * `CliffordAlgebra.finrank_eigenspace_complexVolume_eq_mul_finrank_linearMap`: in positive
   dimension, given a spinor module, `dim E^± = 2 ^ (n / 2 - 1) · dim Hom_Cℓ(S, E)`.
-* `AlgHom.map_mem_eigenspace_complexVolume_neg_of_mem_odd`: in even dimension, an odd element of
-  `CliffordAlgebra (Q.baseChange ℂ)` maps the `μ`-eigenspace of `σ (complexVolume Q o)` into its
-  `-μ`-eigenspace.
-* `AlgHom.eigenspace_complexVolume_positiveOrientation_one` and
-  `AlgHom.eigenspace_complexVolume_positiveOrientation_neg_one`: in rank zero, the `+1`- and
-  `-1`-eigenspaces of `σ (complexVolume Q positiveOrientation)` are `⊤` and `⊥`.
 
 ## References
 
@@ -357,15 +351,8 @@ namespace AlgHom
 open CliffordAlgebra
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-
-section AnyDim
-
-variable {n : ℕ} [Fact (finrank ℝ V = n)] {Q : QuadraticForm ℝ V} {S : Type*} [AddCommGroup S]
-  [Module ℂ S]
-
-section Form
-
-variable (ρ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S)
+  {n : ℕ} [Fact (finrank ℝ V = n)] {Q : QuadraticForm ℝ V} {S : Type*} [AddCommGroup S]
+  [Module ℂ S] (ρ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S)
   (o : Orientation ℝ V (Fin n)) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 include hQ
 
@@ -378,43 +365,5 @@ theorem involutive_complexVolume : Function.Involutive (ρ (complexVolume Q o)) 
 theorem isCompl_eigenspace_complexVolume :
     IsCompl ((ρ (complexVolume Q o)).eigenspace 1) ((ρ (complexVolume Q o)).eigenspace (-1)) :=
   isCompl_eigenspace_one_neg_one two_ne_zero.isUnit (ρ.involutive_complexVolume o hQ)
-
-end Form
-
-/-- In even dimension, an odd element of `CliffordAlgebra (Q.baseChange ℂ)` maps the `μ`-eigenspace
-of `σ (complexVolume Q o)` into its `-μ`-eigenspace. -/
-theorem map_mem_eigenspace_complexVolume_neg_of_mem_odd
-    (σ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S)
-    (o : Orientation ℝ V (Fin n)) (hn : Even n) {x : CliffordAlgebra (Q.baseChange ℂ)}
-    (hx : x ∈ evenOdd (Q.baseChange ℂ) 1) {μ : ℂ} {s : S}
-    (hs : s ∈ Module.End.eigenspace (σ (complexVolume Q o)) μ) :
-    σ x s ∈ Module.End.eigenspace (σ (complexVolume Q o)) (-μ) :=
-  Module.End.mapsTo_genEigenspace_neg_of_anticommute
-    (by rw [← map_mul, ← map_mul, ← map_add, complexVolume_mul_of_mem_odd o hn hx,
-      neg_add_cancel, map_zero]) μ 1 hs
-
-end AnyDim
-
-/-- In rank zero, the `+1`-eigenspace of `σ (complexVolume Q positiveOrientation)` is the whole
-space `⊤`. -/
-theorem eigenspace_complexVolume_positiveOrientation_one
-    [Fact (finrank ℝ V = 0)] {Q : QuadraticForm ℝ V} {S : Type*} [AddCommGroup S] [Module ℂ S]
-    (σ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S) :
-    Module.End.eigenspace
-      (σ (complexVolume Q (positiveOrientation : Orientation ℝ V (Fin 0)))) 1 = ⊤ := by
-  rw [complexVolume_positiveOrientation, map_one, eq_top_iff]
-  intro s _
-  simp
-
-/-- In rank zero, the `-1`-eigenspace of `σ (complexVolume Q positiveOrientation)` is `⊥`. -/
-theorem eigenspace_complexVolume_positiveOrientation_neg_one
-    [Fact (finrank ℝ V = 0)] {Q : QuadraticForm ℝ V} {S : Type*} [AddCommGroup S] [Module ℂ S]
-    (σ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S) :
-    Module.End.eigenspace
-      (σ (complexVolume Q (positiveOrientation : Orientation ℝ V (Fin 0)))) (-1) = ⊥ := by
-  let Γ := σ (complexVolume Q (positiveOrientation : Orientation ℝ V (Fin 0)))
-  have h : Disjoint (Module.End.eigenspace Γ 1) (Module.End.eigenspace Γ (-1)) :=
-    Γ.eigenspaces_iSupIndep.pairwiseDisjoint (by norm_num : (1 : ℂ) ≠ -1)
-  rwa [σ.eigenspace_complexVolume_positiveOrientation_one, top_disjoint] at h
 
 end AlgHom

@@ -24,13 +24,13 @@ modules and Dirac operators on Riemannian manifolds, has two clauses:
 
 This file records it as the predicate `AlgHom.IsGeometricClifford` and derives its first
 consequences: the polarized Clifford relation `c(v) c(w) + c(w) c(v) = -2 ⟪v, w⟫`, the polarized
-Hermitian identity `⟪c(v) s, c(w) t⟫ + ⟪c(w) s, c(v) t⟫ = 2 ⟪v, w⟫ ⟪s, t⟫` and norm-scaling law
-`‖c(v) s‖ = ‖v‖ ‖s‖` without assuming finite-dimensionality, the relations of a unit orthogonal pair
-`e₁, e₂` (`c(eᵢ)² = -1`, `c(e₁) c(e₂) = -c(e₂) c(e₁)` and `(c(e₁) c(e₂))² = -1`), the equivalent
-adjoint forms `c(v)* = -c(v)` and `ρ_ℂ(a)* = ρ_ℂ(conjStar a)` on a finite-dimensional module,
-compatibility with Clifford conjugation `star` and `conjStar` on modules of any dimension, and
-concrete rank-zero and one-dimensional witnesses (`AlgHom.isGeometricClifford_of_subsingleton` and
-`TauCeti.realLineGeometricCliffordAction`).
+Hermitian identity `⟪c(v) s, c(w) t⟫ + ⟪c(w) s, c(v) t⟫ = 2 ⟪v, w⟫ ⟪s, t⟫` and diagonal
+inner-product scaling `⟪c(v) s, c(v) t⟫ = ‖v‖² ⟪s, t⟫` without assuming finite-dimensionality, the
+relations of a unit orthogonal pair `e₁, e₂` (`c(eᵢ)² = -1`, `c(e₁) c(e₂) = -c(e₂) c(e₁)` and
+`(c(e₁) c(e₂))² = -1`), the equivalent adjoint forms `c(v)* = -c(v)` and `ρ_ℂ(a)* = ρ_ℂ(conjStar a)`
+on a finite-dimensional module, compatibility with Clifford conjugation `star` and `conjStar` on
+modules of any dimension, and concrete rank-zero and one-dimensional witnesses
+(`AlgHom.isGeometricClifford_of_subsingleton` and `TauCeti.realLineGeometricCliffordAction`).
 
 The skew-Hermitian clause is stated through inner products, so it makes sense on modules of any
 dimension. The positive convention `c(v)² = +‖v‖²` is excluded by the first clause: for `V = ℝ`
@@ -54,9 +54,8 @@ squares to `+1` and is Hermitian.
   `AlgHom.IsGeometricClifford.map_ι_apply_add_swap`: the polarized Clifford relation
   `c(v) c(w) + c(w) c(v) = -2 ⟪v, w⟫` at operator and vector level.
 * `AlgHom.IsGeometricClifford.inner_map_ι_map_ι_add_swap`,
-  `AlgHom.IsGeometricClifford.inner_map_ι_map_ι`,
-  `AlgHom.IsGeometricClifford.norm_map_ι_apply`: polarized inner-product identity, diagonal
-  inner-product scaling, and norm-scaling law `‖c(v) s‖ = ‖v‖ ‖s‖` without finite-dimensionality.
+  `AlgHom.IsGeometricClifford.inner_map_ι_map_ι`: polarized inner-product identity and diagonal
+  inner-product scaling without finite-dimensionality.
 * `AlgHom.IsGeometricClifford.map_ι_mul_map_ι_mul_self_of_orthonormal`: for a unit orthogonal
   pair, `(c(e₁) c(e₂))² = -1`.
 * `AlgHom.IsGeometricClifford.inner_map_apply_left`,
@@ -89,18 +88,12 @@ variable {V S : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : Qua
 quadratic form is minus the squared norm, `Q v = -‖v‖²`, and Clifford multiplication
 `c(v) = ρ (ι Q v)` by every vector is skew-Hermitian. Then `c(v)² = -‖v‖²` and
 `c(v) c(w) + c(w) c(v) = -2 ⟪v, w⟫` (`AlgHom.IsGeometricClifford.map_ι_mul_map_ι_add_swap`). -/
+@[mk_iff]
 structure IsGeometricClifford (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S) : Prop where
   /-- The quadratic form is minus the squared norm. -/
   apply_eq_neg_norm_sq : ∀ v, Q v = -‖v‖ ^ 2
   /-- Clifford multiplication by a vector is skew-Hermitian. -/
   inner_map_ι_apply_left : ∀ (v : V) (s t : S), ⟪ρ (ι Q v) s, t⟫_ℂ = -⟪s, ρ (ι Q v) t⟫_ℂ
-
-/-- Unfolding characterization of `AlgHom.IsGeometricClifford`. -/
-theorem isGeometricClifford_iff {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S} :
-    ρ.IsGeometricClifford ↔
-      (∀ v, Q v = -‖v‖ ^ 2) ∧
-        ∀ (v : V) (s t : S), ⟪ρ (ι Q v) s, t⟫_ℂ = -⟪s, ρ (ι Q v) t⟫_ℂ :=
-  ⟨fun h ↦ ⟨h.apply_eq_neg_norm_sq, h.inner_map_ι_apply_left⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
 namespace IsGeometricClifford
 
@@ -183,16 +176,6 @@ theorem inner_map_ι_map_ι (v : V) (s t : S) :
   push_cast at h
   linear_combination (1 / 2 : ℂ) * h
 
-/-- Under the geometric convention, Clifford multiplication scales norms by `‖v‖`:
-`‖c(v) s‖ = ‖v‖ * ‖s‖`, without assuming finite-dimensionality of `S`. -/
-theorem norm_map_ι_apply (v : V) (s : S) :
-    ‖ρ (ι Q v) s‖ = ‖v‖ * ‖s‖ := by
-  refine (sq_eq_sq₀ (norm_nonneg _) (by positivity)).1 ?_
-  have h := congrArg RCLike.re (hρ.inner_map_ι_map_ι v s s)
-  simp only [inner_self_eq_norm_sq_to_K, RCLike.ofReal_eq_complex_ofReal, RCLike.re_to_complex,
-    ← Complex.ofReal_pow, ← Complex.ofReal_mul, Complex.ofReal_re] at h
-  linarith
-
 /-- Under the geometric convention, `ρ` respects Clifford conjugation `star` in the inner
 product, on a module of any dimension. -/
 theorem inner_map_apply_left (a : CliffordAlgebra Q) (s t : S) :
@@ -253,9 +236,8 @@ theorem isGeometricClifford_restrictScalars_comp_ofBaseChangeAux_iff
   have happ (v : V) :
       ((σ.restrictScalars ℝ).comp (ofBaseChangeAux ℂ Q)) (ι Q v) =
         σ (ι (Q.baseChange ℂ) (1 ⊗ₜ v)) :=
-    (liftBaseChange_ι_one_tmul Q ((σ.restrictScalars ℝ).comp (ofBaseChangeAux ℂ Q)) v).symm.trans
-      congr($(liftBaseChange_comp_ofBaseChangeAux Q σ) (ι (Q.baseChange ℂ) (1 ⊗ₜ v)))
-  exact isGeometricClifford_iff.trans <|
+    congrArg σ (ofBaseChangeAux_ι ℂ Q v)
+  exact (isGeometricClifford_iff _).trans <|
     and_congr_right' <| forall_congr' fun v ↦ forall₂_congr fun s t ↦
       Eq.to_iff congr(⟪$(happ v) s, t⟫_ℂ = -⟪s, $(happ v) t⟫_ℂ)
 
