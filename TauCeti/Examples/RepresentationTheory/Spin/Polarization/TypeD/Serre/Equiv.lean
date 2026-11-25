@@ -17,8 +17,9 @@ Two checks on the Serre presentation of the quadratic Clifford Lie algebra of ty
 * At the fork node `3`, the presented raising generator goes to `C₃ C₄` and the lowering
   generator to `A₄ A₃` (one-based Clifford indices, `C` creation and `A` contraction). Their
   bracket is `N₃ + N₄ - 1`, which acts on the vacuum `1` of the spinor module by `-1`.
-* The four Cartan generators and the `24` root vectors span the presented algebra, of dimension
-  `28 = dim 𝔰𝔬₈`, the dimension of the split orthogonal matrix algebra.
+* The presented algebra has dimension `28 = dim 𝔰𝔬₈`, computed by transporting along
+  `TauCeti.TypeDStd.serreEquiv` to the split orthogonal algebra of the hyperbolic polarization of
+  `K⁴`.
 -/
 
 public section

@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Serre.Presentation
 public import TauCeti.Algebra.Lie.Presentation.Serre.Automorphism
 public import TauCeti.Algebra.Lie.Presentation.Serre.Injective
 public import TauCeti.Algebra.Lie.Subalgebra.LieSpan
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.SimplyLaced
 
 /-!
 # The type-D Serre presentation of the split orthogonal Lie algebra
@@ -55,8 +56,6 @@ triality permutation `TauCeti.trialityPermD4` gives an automorphism of order div
   `TauCeti.TypeDStd.diagramAut_trans`: the group law of the permutations.
 * `TauCeti.TypeDStd.diagramAut_graphPermD`: for the fork exchange it is the native graph
   involution.
-* `TauCeti.submatrix_cartanMatrix_D4_trialityPermD4`: the triality permutation preserves
-  `CartanMatrix.D 4`.
 * `TauCeti.TypeDStd.trialityAut_trialityAut_trialityAut`: triality has order dividing three.
 
 ## References
@@ -262,15 +261,6 @@ theorem diagramAut_graphPermD
 end Diagram
 
 /-! ### Triality -/
-
-/-- The triality permutation preserves `CartanMatrix.D 4`: the matrix form of
-`TauCeti.cartanMatrix_D4_trialityPermD4`, which is the shape of hypothesis taken by
-`TauCeti.TypeDStd.diagramAut`. -/
-theorem _root_.TauCeti.submatrix_cartanMatrix_D4_trialityPermD4 :
-    (CartanMatrix.D 4).submatrix trialityPermD4 trialityPermD4 = CartanMatrix.D 4 := by
-  ext i j
-  simpa only [Matrix.submatrix_apply, DynkinType.cartanMatrix_D] using
-    cartanMatrix_D4_trialityPermD4 i j
 
 /-- **The triality automorphism of the split orthogonal Lie algebra of type `D₄`**: the diagram
 automorphism cycling the three outer nodes `0 → 2 → 3 → 0` and fixing the central node `1`. -/
