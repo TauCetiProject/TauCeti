@@ -25,7 +25,8 @@ area-preserving twist diffeomorphism of the annulus `(ℝ / ℤ) × [0, 1]`, ext
 `J ⊇ [0, 1]`. This file shows that the twist coordinates `G(x, y) = (x, X(x, y))`
 (`TauCeti.stripTwistCoord`) identify the strip with a *band* in the `(x, X)`-plane, and transports
 functions on the strip, such as the generating function `S` of `TauCeti.stripGeneratingFunction`,
-to functions on the whole band; the latter satisfies the generating equations everywhere.
+to functions on the whole band. When `F` preserves area and the line `y = 0`, the transport of
+that generating function satisfies the generating equations everywhere on the band.
 
 * Each vertical slice `t ↦ X(x, t)` has a derivative of constant sign on `J`, by Darboux's
   theorem, so it is strictly monotone or strictly antitone
