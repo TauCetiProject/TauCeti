@@ -68,10 +68,9 @@ theorem hom_app_eq_of_comp_app_eq {M : ModuleCat.{w} Λ} {F H : Sheaf J (ModuleC
     {Y : C} (h : p.app (op Y) ≫ a.hom.app (op Y) = p.app (op Y) ≫ b.hom.app (op Y))
     {W : C} (g : W ⟶ Y) : a.hom.app (op W) = b.hom.app (op W) := by
   ext s
-  have hsep := ((isSheaf_iff_isSheaf_of_type J _).1
-    ((sheafCompose J (CategoryTheory.forget (ModuleCat.{w} Λ))).obj H).property).isSeparated _
-    (Presheaf.imageSieve_mem J p s)
-  refine hsep.ext fun V f ⟨t, ht⟩ ↦ ?_
+  have := (Presheaf.isLocallySurjective_iff_whisker_forget J p).1 inferInstance
+  refine Presheaf.ext_of_isLocallySurjective J (Functor.whiskerRight p (forget _))
+    (Z := (sheafCompose J (forget _)).obj H) s fun V f t ht ↦ ?_
   have key (c : F ⟶ H) : H.obj.map f.op (c.hom.app (op W) s) =
       H.obj.map (f ≫ g).op (c.hom.app (op Y) (p.app (op Y) t)) := by
     rw [← NatTrans.naturality_apply c.hom, ← NatTrans.naturality_apply c.hom]
@@ -147,25 +146,8 @@ theorem exists_mem_overPullback_map_eq_of_iso {F G : Sheaf J (ModuleCat.{w} Λ)}
       (J.overPullback (ModuleCat.{w} Λ) Z).map φ ≫ (overIsoRestrict eG f).hom =
         (overIsoRestrict eF f).hom ≫
           (J.overPullback (ModuleCat.{w} Λ) Z).map ((constantSheaf J (ModuleCat.{w} Λ)).map g) := by
-  let ηM := toSheafify J ((Functor.const Cᵒᵖ).obj M)
-  let ηN := toSheafify J ((Functor.const Cᵒᵖ).obj N)
-  let iF : (Over.forget Y).op ⋙ sheafify J ((Functor.const Cᵒᵖ).obj M) ⟶ (F.over Y).obj :=
-    eF.inv.hom
-  let iG : (Over.forget Y).op ⋙ sheafify J ((Functor.const Cᵒᵖ).obj N) ⟶ (G.over Y).obj :=
-    eG.inv.hom
-  have : IsIso iF := inferInstanceAs (IsIso ((sheafToPresheaf _ _).map eF.inv))
-  have : IsIso iG := inferInstanceAs (IsIso ((sheafToPresheaf _ _).map eG.inv))
-  let p : (Functor.const (Over Y)ᵒᵖ).obj M ⟶ (F.over Y).obj :=
-    Functor.whiskerLeft (Over.forget Y).op ηM ≫ iF
-  let q : (Functor.const (Over Y)ᵒᵖ).obj N ⟶ (G.over Y).obj :=
-    Functor.whiskerLeft (Over.forget Y).op ηN ≫ iG
-  have := Presheaf.isLocallySurjective_whisker (J.over Y) J (Over.forget Y) ηM
-  have := Presheaf.isLocallySurjective_whisker (J.over Y) J (Over.forget Y) ηN
-  have := Presheaf.isLocallyInjective_whisker (J.over Y) J (Over.forget Y) ηN
-  have : Presheaf.IsLocallySurjective (J.over Y) p := by dsimp only [p]; infer_instance
-  have : Presheaf.IsLocallySurjective (J.over Y) q := by dsimp only [q]; infer_instance
-  have : Presheaf.IsLocallyInjective (J.over Y) q := by dsimp only [q]; infer_instance
-  obtain ⟨R, hR, hRg⟩ := exists_mem_comp_app_eq (J := J.over Y) p q
+  -- Over `Y`, `F` and `G` receive locally bijective maps from the constant presheaves.
+  obtain ⟨R, hR, hRg⟩ := exists_mem_comp_app_eq (J := J.over Y) (constToOver eF) (constToOver eG)
     ((J.overPullback (ModuleCat.{w} Λ) Y).map φ).hom (Over.mk (𝟙 Y))
   refine ⟨Sieve.overEquiv _ R, hR, fun Z f hf ↦ ?_⟩
   rw [Sieve.overEquiv_iff] at hf
@@ -174,26 +156,17 @@ theorem exists_mem_overPullback_map_eq_of_iso {F G : Sheaf J (ModuleCat.{w} Λ)}
   ext W : 3
   simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
     overIsoRestrict_hom_hom_app]
-  refine hom_app_eq_of_comp_app_eq (J := J.over Y) p
+  -- Both sides are determined by their values on the constant sections over `f`.
+  refine hom_app_eq_of_comp_app_eq (J := J.over Y) (constToOver eF)
     (a := (J.overPullback (ModuleCat.{w} Λ) Y).map φ ≫ eG.hom)
     (b := eF.hom ≫ (J.overPullback (ModuleCat.{w} Λ) Y).map
       ((constantSheaf J (ModuleCat.{w} Λ)).map g)) ?_
     (Over.homMk W.unop.hom (by simp) : (Over.map f).obj W.unop ⟶ Over.mk (f ≫ 𝟙 Y))
-  have hη : ηM ≫ ((constantSheaf J (ModuleCat.{w} Λ)).map g).hom =
-      (Functor.const Cᵒᵖ).map g ≫ ηN :=
-    (toSheafify_naturality J ((Functor.const Cᵒᵖ).map g)).symm
-  have hF : iF ≫ eF.hom.hom = 𝟙 _ := congr($(eF.inv_hom_id).hom)
-  have hG : iG ≫ eG.hom.hom = 𝟙 _ := congr($(eG.inv_hom_id).hom)
-  have hF' := congr_app hF (op (Over.mk (f ≫ 𝟙 Y)))
-  have hG' := congr_app hG (op (Over.mk (f ≫ 𝟙 Y)))
-  have hη' := congr_app hη (op Z)
-  simp only [NatTrans.comp_app, NatTrans.id_app] at hF' hG' hη'
+  have hη := congr_app (toSheafify_naturality J ((Functor.const Cᵒᵖ).map g)) (op Z)
   simp only [Over.mk_hom] at hg
-  simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app]
-  rw [reassoc_of% hg]
-  dsimp only [p, q]
-  simp only [NatTrans.comp_app, Functor.whiskerLeft_app, Category.assoc, reassoc_of% hF', hG']
-  exact hη'.symm
+  simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app, reassoc_of% hg]
+  simp only [constToOver_comp_hom_app, constToOver_comp_hom_app_assoc]
+  exact hη
 
 /-- The sieve of morphisms `Y ⟶ X` over which a morphism `φ : F ⟶ G` of sheaves of `Λ`-modules is,
 up to isomorphisms of its source and target, the constant morphism on a linear map of finitely
