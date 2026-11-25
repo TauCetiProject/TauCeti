@@ -50,7 +50,8 @@ arithmetic and geometric means on the `σᵢ²`, `J(A) = σ₁ ⋯ σₙ ≤ (�
   `Orientation.hilbertSchmidtDistortion_comp_linearIsometryEquiv`: the invariances of `q_S`
   under positive scaling (`cⁿ > 0`) and orientation-preserving isometries;
   `Orientation.hilbertSchmidtDistortion_neg_neg` (reversing both orientations) and
-  `Orientation.hilbertSchmidtDistortion_smul_of_pow_neg` (`cⁿ < 0` makes `q_S` infinite).
+  `Orientation.hilbertSchmidtDistortion_smul_of_pow_neg` (`cⁿ < 0` makes `q_S` infinite for
+  nonzero `A` with `J(A) ≥ 0`).
 
 ## References
 
@@ -299,17 +300,8 @@ theorem outerDistortion_lt_mul_hilbertSchmidtDistortion (hn : 2 ≤ n) {A : V �
   have hc := Real.sqrt_natCast_pow_self_pos n
   have hℓ := oV.minimalStretch_pos_of_orientedJacobian_ne_zero oW (by omega) h.ne'
   rw [A.minimalStretch_def, (Fact.out : finrank ℝ V = n)] at hℓ
-  have h1 : 0 < A.singularValues 1 := hℓ.trans_le (A.singularValues_antitone (by omega))
-  have hlt : ‖LinearMap.toContinuousLinearMap A‖ < frobenius ℝ V W A := by
-    rw [A.norm_toContinuousLinearMap_eq_singularValues_zero,
-      A.frobenius_apply_eq_sqrt_sum_range_sq_singularValues, (Fact.out : finrank ℝ V = n),
-      ← Real.sqrt_sq (A.singularValues_nonneg 0)]
-    refine Real.sqrt_lt_sqrt (sq_nonneg _) ?_
-    obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
-    rw [Finset.sum_range_succ', Finset.sum_range_succ']
-    have := Finset.sum_nonneg fun i (_ : i ∈ Finset.range m) ↦ sq_nonneg (A.singularValues (i + 2))
-    simp only [zero_add] at this ⊢
-    nlinarith [pow_pos h1 2]
+  have hlt := A.norm_toContinuousLinearMap_lt_frobenius
+    (hℓ.trans_le (A.singularValues_antitone (by omega)))
   rw [oV.hilbertSchmidtDistortion_of_pos oW h, oV.outerDistortion_of_pos oW h,
     ← ENNReal.ofReal_mul hc.le, ← mul_div_assoc, mul_div_mul_left _ _ hc.ne',
     ENNReal.ofReal_lt_ofReal_iff (div_pos (pow_pos ((norm_nonneg _).trans_lt hlt) n) h)]
