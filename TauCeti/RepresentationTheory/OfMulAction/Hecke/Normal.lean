@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.QuotientGroup.Basic
 public import TauCeti.RepresentationTheory.OfMulAction.Hecke.Level
 
 /-!
@@ -13,12 +14,13 @@ public import TauCeti.RepresentationTheory.OfMulAction.Hecke.Level
 Let `U` be a normal subgroup of a group `G` and `A` a commutative ring. Then `G` acts on the
 quotient group `Q = G ⧸ U` by left multiplication through `G → Q`, the point stabilizers are all
 equal to `U`, and `U` acts trivially on `Q`, so the stabilizer orbits are points
-(`TauCeti.HeckeAlgebraLevel.finiteStabilizerOrbits_of_normal`). An element `h` of the Hecke algebra
+(`TauCeti.FiniteStabilizerOrbits.of_normal`). An element `h` of the Hecke algebra
 of level `U`, `H(G, U; A) = Fun_G(Q × Q, A)` (`TauCeti.HeckeAlgebraLevel`), is determined by its
 first row: `h(x, y) = h(1, x⁻¹ y)` by invariance. The matrix product of two such functions is the
 convolution of their first rows, so `h ↦ ∑_q h(1, q) q` is an isomorphism of `A`-algebras
 `H(G, U; A) ≃ₐ[A] A[G ⧸ U]` (`TauCeti.HeckeAlgebraLevel.toMonoidAlgebraAlgEquiv`). It sends the
-basis element of the double coset `UgU = gU` to `g U`.
+basis element of the double coset `UgU = gU` to `g U`
+(`TauCeti.HeckeAlgebraLevel.toMonoidAlgebraAlgEquiv_indicator_orbit`).
 
 ## Main definitions
 
@@ -27,11 +29,12 @@ basis element of the double coset `UgU = gU` to `g U`.
 
 ## Main results
 
-* the instance `TauCeti.HeckeAlgebraLevel.finiteStabilizerOrbits_of_normal`.
 * `TauCeti.HeckeAlgebraLevel.apply_eq_apply_one_inv_mul`: `h(x, y) = h(1, x⁻¹ y)`.
 * `TauCeti.HeckeAlgebraLevel.coeff_toMonoidAlgebraAlgEquiv_apply`,
   `TauCeti.HeckeAlgebraLevel.toMonoidAlgebraAlgEquiv_symm_apply`: the isomorphism and its inverse
   on coefficients.
+* `TauCeti.HeckeAlgebraLevel.toMonoidAlgebraAlgEquiv_indicator_orbit`: the isomorphism sends the
+  indicator of the diagonal orbit of `(x, y)` to `x⁻¹ y`.
 
 ## References
 
@@ -50,43 +53,27 @@ namespace HeckeAlgebraLevel
 
 variable {G : Type*} [Group G] {U : Subgroup G} [U.Normal] {A : Type*} [CommRing A]
 
-/-- The action of `G` on `G ⧸ U` is left multiplication through `G → G ⧸ U`. -/
-private theorem smul_eq_mul (g : G) (q : G ⧸ U) : g • q = (g : G ⧸ U) * q := by
-  induction q using QuotientGroup.induction_on
-  rfl
-
-/-- For `U` normal, the orbits of the point stabilizers on `G ⧸ U` are points: every stabilizer is
-`U`, which acts trivially on `G ⧸ U`. -/
-instance finiteStabilizerOrbits_of_normal : FiniteStabilizerOrbits G (G ⧸ U) := by
-  refine ⟨fun x y ↦ (Set.finite_singleton y).subset ?_⟩
-  rintro _ ⟨⟨g, hg⟩, rfl⟩
-  have hg' : (g : G ⧸ U) = 1 := by
-    have h : (g : G ⧸ U) * x = x := (smul_eq_mul g x).symm.trans (mem_stabilizer_iff.1 hg)
-    simpa using h
-  change g • y = y
-  rw [smul_eq_mul, hg', one_mul]
-
 /-- An element of the Hecke algebra of a normal level is determined by its first row:
 `h(x, y) = h(1, x⁻¹ y)`. -/
 theorem apply_eq_apply_one_inv_mul (h : HeckeAlgebraLevel G U A) (x y : G ⧸ U) :
     (h : (G ⧸ U) × (G ⧸ U) → A) (x, y) = (h : (G ⧸ U) × (G ⧸ U) → A) (1, x⁻¹ * y) := by
   obtain ⟨a, rfl⟩ := QuotientGroup.mk_surjective x
-  rw [← PermutationHecke.apply_smul h a⁻¹, smul_eq_mul, smul_eq_mul, QuotientGroup.mk_inv,
-    inv_mul_cancel]
+  rw [← PermutationHecke.apply_smul h a⁻¹, QuotientGroup.smul_eq_mk_mul,
+    QuotientGroup.smul_eq_mk_mul, QuotientGroup.mk_inv, inv_mul_cancel]
 
 /-- A finitely supported function `f` on `G ⧸ U` gives the element `(x, y) ↦ f(x⁻¹ y)` of the Hecke
 algebra of level `U`. -/
 private theorem ofMonoidAlgebra_mem (f : MonoidAlgebra A (G ⧸ U)) :
     (fun p : (G ⧸ U) × (G ⧸ U) ↦ f.coeff (p.1⁻¹ * p.2)) ∈ permutationHeckeModule G (G ⧸ U) A := by
   refine PermutationHecke.mem_iff.2 ⟨fun g p ↦ ?_, ?_⟩
-  · simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_inv_rev, mul_assoc,
+  · simp only [Prod.smul_fst, Prod.smul_snd, QuotientGroup.smul_eq_mk_mul, mul_inv_rev, mul_assoc,
       inv_mul_cancel_left]
   refine (f.coeff.support.finite_toSet.image
     fun q ↦ Quotient.mk (orbitRel G ((G ⧸ U) × (G ⧸ U))) (1, q)).subset ?_
   rintro _ ⟨⟨x, y⟩, hxy, rfl⟩
   obtain ⟨a, rfl⟩ := QuotientGroup.mk_surjective x
   refine ⟨(a : G ⧸ U)⁻¹ * y, Finsupp.mem_support_iff.2 hxy, Quotient.sound ⟨a⁻¹, ?_⟩⟩
-  simp [smul_eq_mul]
+  simp [QuotientGroup.smul_eq_mk_mul]
 
 /-- The first row `q ↦ h(1, q)` of an element of the Hecke algebra of a normal level, as an
 element of the group algebra. -/
@@ -100,24 +87,29 @@ private theorem coeff_toMonoidAlgebra (h : HeckeAlgebraLevel G U A) (q : G ⧸ U
     (toMonoidAlgebra h).coeff q = (h : (G ⧸ U) × (G ⧸ U) → A) (1, q) :=
   (rfl)
 
+/-- The element `(x, y) ↦ f(x⁻¹ y)` of the Hecke algebra of level `U`. -/
+private def ofMonoidAlgebra (f : MonoidAlgebra A (G ⧸ U)) : HeckeAlgebraLevel G U A :=
+  ⟨_, ofMonoidAlgebra_mem f⟩
+
+private theorem ofMonoidAlgebra_apply (f : MonoidAlgebra A (G ⧸ U)) (x y : G ⧸ U) :
+    (ofMonoidAlgebra f : (G ⧸ U) × (G ⧸ U) → A) (x, y) = f.coeff (x⁻¹ * y) :=
+  (rfl)
+
 /-- The first row, as an `A`-linear equivalence. -/
 private def toMonoidAlgebraLinearEquiv :
     HeckeAlgebraLevel G U A ≃ₗ[A] MonoidAlgebra A (G ⧸ U) where
   __ := toMonoidAlgebra
-  invFun f := ⟨_, ofMonoidAlgebra_mem f⟩
+  invFun := ofMonoidAlgebra
   left_inv h := Subtype.ext (funext fun p ↦ by
-    change (toMonoidAlgebra h).coeff (p.1⁻¹ * p.2) = _
-    rw [coeff_toMonoidAlgebra, ← apply_eq_apply_one_inv_mul])
+    rw [ofMonoidAlgebra_apply, LinearMap.toFun_eq_coe, coeff_toMonoidAlgebra,
+      ← apply_eq_apply_one_inv_mul])
   right_inv f := MonoidAlgebra.coeff_injective (Finsupp.ext fun q ↦ by
-    change (fun p : (G ⧸ U) × (G ⧸ U) ↦ f.coeff (p.1⁻¹ * p.2)) (1, q) = f.coeff q
-    simp)
+    rw [LinearMap.toFun_eq_coe, coeff_toMonoidAlgebra, ofMonoidAlgebra_apply, inv_one, one_mul])
 
 private theorem toMonoidAlgebra_one : toMonoidAlgebra (1 : HeckeAlgebraLevel G U A) = 1 := by
   classical
   refine MonoidAlgebra.coeff_injective (Finsupp.ext fun q ↦ ?_)
-  rw [coeff_toMonoidAlgebra, PermutationHecke.one_apply, MonoidAlgebra.one_def,
-    MonoidAlgebra.coeff_single, Finsupp.single_apply, Finsupp.single_apply]
-  exact if_congr eq_comm rfl rfl
+  simp [coeff_toMonoidAlgebra, MonoidAlgebra.one_def, Finsupp.single_apply, eq_comm]
 
 private theorem toMonoidAlgebra_mul (h₁ h₂ : HeckeAlgebraLevel G U A) :
     toMonoidAlgebra (h₁ * h₂) = toMonoidAlgebra h₁ * toMonoidAlgebra h₂ := by
@@ -147,6 +139,22 @@ theorem toMonoidAlgebraAlgEquiv_symm_apply (f : MonoidAlgebra A (G ⧸ U)) (x y 
     ((toMonoidAlgebraAlgEquiv G U A).symm f : (G ⧸ U) × (G ⧸ U) → A) (x, y) =
       f.coeff (x⁻¹ * y) :=
   (rfl)
+
+/-- The basis element of the diagonal orbit of `(x, y)`, its indicator, is sent to `x⁻¹ y`. In
+particular the basis element of the double coset `UgU = gU` is sent to `g U`. -/
+@[simp]
+theorem toMonoidAlgebraAlgEquiv_indicator_orbit (x y : G ⧸ U) :
+    toMonoidAlgebraAlgEquiv G U A ⟨_, PermutationHecke.indicator_orbit_mem (x, y)⟩ =
+      MonoidAlgebra.single (x⁻¹ * y) 1 := by
+  classical
+  refine MonoidAlgebra.coeff_injective (Finsupp.ext fun q ↦ ?_)
+  rw [coeff_toMonoidAlgebraAlgEquiv_apply, MonoidAlgebra.coeff_single, Finsupp.single_apply]
+  simp only [Set.indicator_apply, Pi.one_apply]
+  refine if_congr ⟨fun ⟨g, hg⟩ ↦ ?_, fun h ↦ ?_⟩ rfl rfl
+  · simp only [Prod.smul_mk, Prod.mk.injEq, QuotientGroup.smul_eq_mk_mul] at hg
+    rw [← hg.2, eq_inv_of_mul_eq_one_left hg.1]
+  · obtain ⟨a, ha⟩ := QuotientGroup.mk_surjective x⁻¹
+    exact ⟨a, by simp [QuotientGroup.smul_eq_mk_mul, ha, h]⟩
 
 end HeckeAlgebraLevel
 
