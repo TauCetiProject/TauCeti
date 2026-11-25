@@ -257,7 +257,7 @@ theorem exists_aeval_j_eq {f : ℍ → ℂ} (hf : MDiff f)
     (hmer : MeromorphicAt (cuspFunction 1 f) 0)
     (hR : ∀ n ≤ 0, (UpperHalfPlane.laurentQExpansion 1 f).coeff n ∈ (algebraMap R ℂ).range) :
     ∃ P : R[X], ∀ τ, aeval (j τ) P = f τ := by
-  obtain ⟨N, hN⟩ := UpperHalfPlane.exists_neg_natCast_le_meromorphicOrderAt_cuspFunction 1 f
+  obtain ⟨N, hN⟩ := UpperHalfPlane.exists_neg_le_meromorphicOrderAt_cuspFunction 1 f
   obtain ⟨P, -, hP⟩ := exists_natDegree_le_and_aeval_j_eq hf hinv hmer hN hR
   exact ⟨P, hP⟩
 

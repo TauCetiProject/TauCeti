@@ -143,7 +143,7 @@ private theorem analyticAt_and_coeff_zero_prod_siegelPower {N : ℕ} [NeZero N] 
   have hf_mer (v : Fin 2 → ZMod N) : MeromorphicAt (cuspFunction N (f v)) 0 :=
     meromorphicAt_cuspFunction_siegelFunction_zmod_pow_twelve_mul N v
   have hF_mer : MeromorphicAt (cuspFunction N (∏ v ∈ S, f v)) 0 :=
-    meromorphicAt_cuspFunction_prod S fun v _ ↦ hf_mer v
+    meromorphicAt_cuspFunction_prod fun v _ ↦ hf_mer v
   have hfactor_ord (v : Fin 2 → ZMod N) (hv : v ∈ S) :
       meromorphicOrderAt (cuspFunction N (f v)) 0 = siegelPowerCuspExponent N v :=
     meromorphicOrderAt_cuspFunction_siegelFunction_zmod_pow_twelve_mul (Finset.mem_erase.mp hv).1
@@ -155,7 +155,7 @@ private theorem analyticAt_and_coeff_zero_prod_siegelPower {N : ℕ} [NeZero N] 
     (meromorphicOrderAt_cuspFunction_nonneg_iff_analyticAt hF_mer).mp (by simp [hord])
   refine ⟨han, ?_⟩
   have hL : laurentQExpansion N (∏ v ∈ S, f v) = ∏ v ∈ S, laurentQExpansion N (f v) :=
-    laurentQExpansion_prod S fun v _ ↦ hf_mer v
+    laurentQExpansion_prod fun v _ ↦ hf_mer v
   rw [← HahnSeries.order_eq_of_orderTop_eq ((orderTop_laurentQExpansion hF_mer).trans hord),
     ← HahnSeries.leadingCoeff_eq, hL, HahnSeries.leadingCoeff_prod]
   have hfac (v : Fin 2 → ZMod N) (hv : v ∈ S) :

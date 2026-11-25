@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.HalfSpace.Localization
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.PDE.Regularity.Hessian.Freezing
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
@@ -76,39 +77,6 @@ open scoped ENNReal NNReal Gradient ContDiff
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- **Frozen coefficients near a point.** Let `A` be continuous within `Ω` at `x ∈ U`, and elliptic
-at `x` if `x` lies in the closure of `Ω`. Then for every `δ > 0` there are an operator `A₀` with
-`λ ‖ξ‖² ≤ ⟪A₀ ξ, ξ⟫`, `0 < λ`, and a ball `B(x, ρ) ⊆ U` with `‖A y - A₀‖ ≤ δ λ` for every
-`y ∈ Ω ∩ B(x, ρ)`: `A₀ = A x` if `x` lies in the closure of `Ω`, and the identity otherwise, when
-a small ball about `x` misses `Ω`. -/
-private theorem exists_ball_subset_forall_norm_sub_le {Omega U : Set (WithLp 2 (ℝ × E))}
-    (hU : IsOpen U) {A : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
-    {x : WithLp 2 (ℝ × E)} (hxU : x ∈ U) (hcont : ContinuousWithinAt A Omega x)
-    (hell : x ∈ closure Omega → ∃ lam : ℝ, 0 < lam ∧ ∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A x ξ, ξ⟫_ℝ)
-    {δ : ℝ} (hδ : 0 < δ) :
-    ∃ A₀ : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E), ∃ lam : ℝ, 0 < lam ∧
-      (∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A₀ ξ, ξ⟫_ℝ) ∧ ∃ ρ : ℝ, 0 < ρ ∧ ball x ρ ⊆ U ∧
-        ∀ y ∈ Omega, y ∈ ball x ρ → ‖A y - A₀‖ ≤ δ * lam := by
-  obtain ⟨ρ₀, hρ₀, hρ₀U⟩ := Metric.isOpen_iff.1 hU x hxU
-  have hsub (ρ₁ : ℝ) : ball x (min ρ₀ ρ₁) ⊆ U := (ball_subset_ball (min_le_left _ _)).trans hρ₀U
-  by_cases hx : x ∈ closure Omega
-  · obtain ⟨lam, hlam, hA⟩ := hell hx
-    -- `y ↦ ‖A y - A x‖` is continuous within `Ω` at `x`, where it vanishes.
-    have hg : ContinuousWithinAt (fun y => ‖A y - A x‖) Omega x :=
-      ContinuousWithinAt.norm (f := fun y => A y - A x) (hcont.sub continuousWithinAt_const)
-    have h0 : ‖A x - A x‖ ≤ 0 := ContinuousLinearMap.opNorm_le_bound _ le_rfl fun v => by
-      rw [sub_apply, sub_self, norm_zero, zero_mul]
-    have hev := hg.eventually (Iio_mem_nhds (h0.trans_lt (mul_pos hδ hlam)))
-    rw [eventually_nhdsWithin_iff] at hev
-    obtain ⟨ρ₁, hρ₁, hρ₁A⟩ := Metric.eventually_nhds_iff.1 hev
-    exact ⟨A x, lam, hlam, hA, min ρ₀ ρ₁, lt_min hρ₀ hρ₁, hsub ρ₁, fun y hyΩ hy =>
-      (hρ₁A ((mem_ball.1 hy).trans_le (min_le_right _ _)) hyΩ).le⟩
-  · obtain ⟨ρ₁, hρ₁, hρ₁Ω⟩ := Metric.isOpen_iff.1 isClosed_closure.isOpen_compl x hx
-    refine ⟨ContinuousLinearMap.id ℝ _, 1, one_pos, fun ξ => by
-      rw [ContinuousLinearMap.id_apply, real_inner_self_eq_norm_sq, one_mul], min ρ₀ ρ₁,
-      lt_min hρ₀ hρ₁, hsub ρ₁, fun y hyΩ hy => ?_⟩
-    exact absurd (subset_closure hyΩ) (hρ₁Ω (ball_subset_ball (min_le_right _ _) hy))
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 

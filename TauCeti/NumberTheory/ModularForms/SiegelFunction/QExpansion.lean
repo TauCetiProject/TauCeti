@@ -558,7 +558,7 @@ private theorem meromorphicAt_cuspFunction_prod_siegelFunction_div_zpow_smul_of_
     (hF_mdiff.comp γ.mdifferentiable_smul) hper
     (by have := NeZero.pos N; positivity : 0 < 12 * N) ?_
   rw [Pi.pow_def, prod_siegelFunction_div_zpow_pow_twelve_mul N s a m γ]
-  exact meromorphicAt_cuspFunction_prod s fun i _ ↦
+  exact meromorphicAt_cuspFunction_prod fun i _ ↦
     meromorphicAt_cuspFunction_zpow
       (meromorphicAt_cuspFunction_siegelFunction_div_pow_twelve_mul_smul N (a i) γ) (m i)
 

@@ -19,7 +19,7 @@ cusp function is analytic at `0` iff its order at `0` is nonnegative
 (`TauCeti.UpperHalfPlane.meromorphicOrderAt_cuspFunction_nonneg_iff_analyticAt`). Every function on
 `ℍ` admits such a canonical pole-order bound `-(cuspPoleOrder h f : ℤ)` on its cusp order
 (`TauCeti.UpperHalfPlane.neg_cuspPoleOrder_le`,
-`TauCeti.UpperHalfPlane.exists_neg_natCast_le_meromorphicOrderAt_cuspFunction`). Consequently, cusp
+`TauCeti.UpperHalfPlane.exists_neg_le_meromorphicOrderAt_cuspFunction`). Consequently, cusp
 meromorphy descends from any positive power `f ^ n`
 (`TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_of_pow`) and from any positive period multiple
 `d * h` (`TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_of_nat_mul`), without needing Laurent
@@ -37,7 +37,7 @@ series.
   `TauCeti.UpperHalfPlane.cuspPoleOrder_congr`, `TauCeti.UpperHalfPlane.cuspPoleOrder_le_iff`,
   `TauCeti.UpperHalfPlane.cuspPoleOrder_eq_zero_of_analyticAt`,
   `TauCeti.UpperHalfPlane.neg_cuspPoleOrder_le`, and
-  `TauCeti.UpperHalfPlane.exists_neg_natCast_le_meromorphicOrderAt_cuspFunction`: the canonical
+  `TauCeti.UpperHalfPlane.exists_neg_le_meromorphicOrderAt_cuspFunction`: the canonical
   pole order at `i∞`, its characterizing lemmas, and lower bound on the cusp order.
 * `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_of_pow`: cusp meromorphy descends from `f ^ n`
   (`0 < n`) to `f`.
@@ -133,9 +133,9 @@ theorem neg_cuspPoleOrder_le (h : ℝ) (f : ℍ → ℂ) :
     ((-(cuspPoleOrder h f : ℤ) : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (cuspFunction h f) 0 :=
   cuspPoleOrder_le_iff.mp le_rfl
 
-/-- For every function on `ℍ`, the meromorphic order of its cusp function at `0` is bounded below
-by `-(k : ℤ)` for some `k : ℕ`. -/
-theorem exists_neg_natCast_le_meromorphicOrderAt_cuspFunction (h : ℝ) (f : ℍ → ℂ) :
+/-- Some twisting exponent `k` bounds the order of the cusp function of `f` at `0` from below by
+`-k`, so that `𝕢 ^ k * f` has an analytic cusp function when that of `f` is meromorphic. -/
+theorem exists_neg_le_meromorphicOrderAt_cuspFunction (h : ℝ) (f : ℍ → ℂ) :
     ∃ k : ℕ, ((-k : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (cuspFunction h f) 0 :=
   ⟨cuspPoleOrder h f, neg_cuspPoleOrder_le h f⟩
 
@@ -148,7 +148,7 @@ theorem meromorphicAt_cuspFunction_of_pow (hh : 0 < h) (hf : MDiff f)
   set k := cuspPoleOrder h (f ^ n)
   have hk := neg_cuspPoleOrder_le h (f ^ n)
   have htend_pow := tendsto_valueAtInfty hh
-    ((hper.comp (· ^ n)).qParam_pow_mul_comp_ofComplex (f := f ^ n))
+    (periodic_qParam_pow_mul_comp_ofComplex (hper.comp (· ^ n)) k)
     (analyticAt_cuspFunction_qParam_pow_mul hpow hk)
   have hL : Tendsto ((fun τ : ℍ ↦ 𝕢 h τ ^ k * f τ) ^ n) atImInfty
       (𝓝 ((0 : ℂ) ^ ((n - 1) * k) * valueAtInfty fun τ : ℍ ↦ 𝕢 h τ ^ k * (f ^ n) τ)) := by
@@ -179,7 +179,7 @@ theorem meromorphicAt_cuspFunction_of_nat_mul (hh : 0 < h) (hf : MDiff f)
   exact meromorphicAt_cuspFunction_of_qParam_pow_mul_isBigO hh hf hper
     ((tendsto_valueAtInfty (mul_pos (Nat.cast_pos.mpr (NeZero.pos d)) hh)
       (by simpa only [Complex.ofReal_mul, Complex.ofReal_natCast] using
-        hper.qParam_pow_mul_comp_ofComplex.nat_mul d)
+        (periodic_qParam_pow_mul_comp_ofComplex hper k).nat_mul d)
       (hg_eq ▸ analyticAt_cuspFunction_qParam_pow_mul hmer hdk)).isBigO_one ℝ)
 
 /-- The order at `0` of the cusp function of `f ^ n` is `n` times that of `f`. -/

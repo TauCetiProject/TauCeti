@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+public import Mathlib.Algebra.Group.Even
 public import Mathlib.Data.Fintype.Card
+import Mathlib.Algebra.Group.Commute.Units
 
 /-!
 # Collapsing an iterated product of powers into a single product of powers
@@ -29,6 +31,8 @@ allowed to vanish.
 * `Finset.prod_zpow_zpow` and `Finset.prod_zpow_pow`:
   `(∏ i ∈ s, f i ^ m i) ^ n = ∏ i ∈ s, (f i ^ n) ^ m i` for integral and natural outer exponents
   `n` in a division commutative monoid (with additive counterparts).
+* `Finset.prod_zpow_mul_eq_prod_of_sq_eq_one`: for `y ^ 2 = 1` and an even exponent sum, the
+  factors `y ^ e i` drop out of `∏ i ∈ s, y ^ e i * f i`.
 * `Finset.prod_prod_pow`, `Finset.prod_prod_zpow` and `Finset.prod_prod_zpow_pow`: substituting
   monomials into a monomial multiplies the exponent matrices, for the three combinations of
   natural and integral exponents that make sense.
@@ -71,6 +75,15 @@ multiplier past the inner multipliers: `n • ∑ i ∈ s, m i • f i = ∑ i �
 theorem prod_zpow_pow [DivisionCommMonoid α] (s : Finset ι) (f : ι → α) (m : ι → ℤ) (n : ℕ) :
     (∏ i ∈ s, f i ^ m i) ^ n = ∏ i ∈ s, (f i ^ n) ^ m i := by
   simpa only [zpow_natCast] using prod_zpow_zpow s f m n
+
+/-- If `y ^ 2 = 1` and `∑ i ∈ s, e i` is even, the factors `y ^ e i` drop out of
+`∏ i ∈ s, y ^ e i * f i`. -/
+theorem prod_zpow_mul_eq_prod_of_sq_eq_one [DivisionCommMonoid α] (s : Finset ι) {y : α}
+    (hy : y ^ 2 = 1) {e : ι → ℤ} (he : Even (∑ i ∈ s, e i)) (f : ι → α) :
+    ∏ i ∈ s, (y ^ e i * f i) = ∏ i ∈ s, f i := by
+  obtain ⟨k, hk⟩ := he
+  rw [prod_mul_distrib, prod_zpow_eq_zpow_sum_of_isUnit s (.of_pow_eq_one hy two_ne_zero), hk,
+    ← Int.two_mul, zpow_mul, zpow_ofNat, hy, one_zpow, one_mul]
 
 /-- Substituting the monomials `∏ b ∈ t, x b ^ e a b` into the monomial with natural exponents
 `g` produces the monomial whose exponent matrix is the product `∑ a ∈ s, g a * e a b`. -/

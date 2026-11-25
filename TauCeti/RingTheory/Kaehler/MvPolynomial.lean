@@ -7,15 +7,14 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.RingTheory.Kaehler.Basic
-import Mathlib.RingTheory.Kaehler.Polynomial
+import TauCeti.Algebra.MvPolynomial.PDeriv
 
 /-!
 # Coordinate expansion of Kähler differentials for multivariate polynomials
 
-Mathlib's `KaehlerDifferential.mvPolynomialBasis` identifies `Ω[MvPolynomial σ R⁄R]` with the free
-module on `{D (X i) | i : σ}` with coordinates given by `MvPolynomial.pderiv`. This file records the
-resulting coordinate expansion of `KaehlerDifferential.D R (MvPolynomial σ R) p` as a finite sum
-over `p.vars` (valid for arbitrary, possibly infinite variable sets `σ`), together with its
+This file records the coordinate expansion of `KaehlerDifferential.D R (MvPolynomial σ R) p` as a
+finite sum over `p.vars` (valid for arbitrary, possibly infinite variable sets `σ`), the special
+case `D = KaehlerDifferential.D` of `MvPolynomial.derivation_apply_eq_sum_vars`, together with its
 specialization to a `[Fintype σ]` sum, mirroring `KaehlerDifferential.polynomial_D_apply`.
 
 ## Main results
@@ -38,24 +37,8 @@ theorem mvPolynomial_D_apply_eq_sum_vars (p : MvPolynomial σ R) :
     KaehlerDifferential.D R (MvPolynomial σ R) p =
       ∑ i ∈ p.vars,
         MvPolynomial.pderiv i p •
-          KaehlerDifferential.D R (MvPolynomial σ R) (MvPolynomial.X i) := by
-  classical
-  conv_lhs =>
-    rw [← (KaehlerDifferential.mvPolynomialBasis R σ).linearCombination_repr
-      (KaehlerDifferential.D R (MvPolynomial σ R) p)]
-  rw [Finsupp.linearCombination_apply, Finsupp.sum]
-  have hsub : ((KaehlerDifferential.mvPolynomialBasis R σ).repr
-      (KaehlerDifferential.D R (MvPolynomial σ R) p)).support ⊆ p.vars := by
-    intro i hi
-    rw [Finsupp.mem_support_iff, KaehlerDifferential.mvPolynomialBasis_repr_apply] at hi
-    by_contra hni
-    exact hi (MvPolynomial.pderiv_eq_zero_of_notMem_vars hni)
-  rw [Finset.sum_subset hsub]
-  · refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [KaehlerDifferential.mvPolynomialBasis_repr_apply,
-      KaehlerDifferential.mvPolynomialBasis_apply]
-  · intro i _ hni
-    rw [Finsupp.notMem_support_iff.mp hni, zero_smul]
+          KaehlerDifferential.D R (MvPolynomial σ R) (MvPolynomial.X i) :=
+  MvPolynomial.derivation_apply_eq_sum_vars _ p
 
 /-- Over a multivariate polynomial ring on a finite variable set `σ`, the universal Kähler
 differential of `p` is `∑ i : σ, MvPolynomial.pderiv i p • D (X i)`. -/

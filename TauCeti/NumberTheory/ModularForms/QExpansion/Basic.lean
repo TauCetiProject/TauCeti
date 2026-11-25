@@ -87,7 +87,7 @@ expanded through: one multiplies by `q` and divides the expansion of the product
 * `TauCeti.UpperHalfPlane.cuspFunction_pow` and `TauCeti.UpperHalfPlane.qExpansion_pow`: powers of
   functions with analytic cusp functions.
 * `TauCeti.UpperHalfPlane.periodic_qParam_comp_ofComplex`,
-  `Function.Periodic.qParam_pow_mul_comp_ofComplex` (at root),
+  `TauCeti.UpperHalfPlane.periodic_qParam_pow_mul_comp_ofComplex`,
   `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_qParam_zpow`,
   `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_qParam_zpow_mul`,
   `TauCeti.UpperHalfPlane.qExpansion_qParam`,
@@ -174,12 +174,13 @@ theorem UpperHalfPlane.periodic_qParam_comp_ofComplex :
       mul_div_cancel_right₀ _ (Complex.ofReal_ne_zero.mpr hh), Complex.exp_add,
       Complex.exp_two_pi_mul_I, one_mul]
 
-/-- Twisting an `h`-periodic function by a power of the `q`-parameter preserves `h`-periodicity,
-read on `ℂ` through `ofComplex`. -/
-theorem _root_.Function.Periodic.qParam_pow_mul_comp_ofComplex {f : ℍ → ℂ} {k : ℕ}
-    (hper : Function.Periodic (f ∘ ofComplex) h) :
-    Function.Periodic ((fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ k * f τ) ∘ ofComplex) h :=
-  ((UpperHalfPlane.periodic_qParam_comp_ofComplex (h := h)).comp (· ^ k)).mul hper
+/-- Twisting an `h`-periodic function by a power of the `q`-parameter of width `h` keeps it
+`h`-periodic, read on `ℂ` through `ofComplex`. -/
+theorem UpperHalfPlane.periodic_qParam_pow_mul_comp_ofComplex {f : ℍ → ℂ}
+    (hfper : Function.Periodic (f ∘ ofComplex) h) (k : ℕ) :
+    Function.Periodic
+      ((fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ k * f τ) ∘ ofComplex) h := fun z ↦ by
+  simpa using congrArg₂ (fun a b ↦ a ^ k * b) (periodic_qParam_comp_ofComplex z) (hfper z)
 
 section CuspFunction
 
@@ -388,13 +389,18 @@ theorem UpperHalfPlane.meromorphicAt_cuspFunction_const (c : ℂ) :
     MeromorphicAt (cuspFunction h fun _ : ℍ ↦ c) 0 :=
   cuspFunction_const h c ▸ analyticAt_const.meromorphicAt
 
-/-- The cusp function of a finite product of functions is meromorphic at `0` when each factor's
-cusp function is. -/
-theorem UpperHalfPlane.meromorphicAt_cuspFunction_prod {ι : Type*} (s : Finset ι)
-    {f : ι → ℍ → ℂ} (hf : ∀ i ∈ s, MeromorphicAt (cuspFunction h (f i)) 0) :
-    MeromorphicAt (cuspFunction h (∏ i ∈ s, f i)) 0 :=
-  Finset.prod_induction f (fun g ↦ MeromorphicAt (cuspFunction h g) 0)
-    (fun _ _ ↦ meromorphicAt_cuspFunction_mul) (meromorphicAt_cuspFunction_const 1) hf
+/-- The cusp function of a finite product is meromorphic at `0` when all the cusp functions of
+the factors are. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_prod {ι : Type*} {s : Finset ι}
+    {F : ι → ℍ → ℂ} (hF : ∀ i ∈ s, MeromorphicAt (cuspFunction h (F i)) 0) :
+    MeromorphicAt (cuspFunction h (∏ i ∈ s, F i)) 0 := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp [Pi.one_def]
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi]
+    exact meromorphicAt_cuspFunction_mul (hF i (Finset.mem_insert_self i s))
+      (ih fun k hk ↦ hF k (Finset.mem_insert_of_mem hk))
 
 /-- If `𝕢 h ^ k * f` (`h > 0`) has a meromorphic cusp function at `0`, then so does `f`. -/
 theorem UpperHalfPlane.meromorphicAt_cuspFunction_of_qParam_pow_mul (hh : 0 < h) {k : ℕ}
@@ -413,7 +419,7 @@ theorem UpperHalfPlane.meromorphicAt_cuspFunction_of_qParam_pow_mul_isBigO (hh :
     MeromorphicAt (cuspFunction h f) 0 :=
   meromorphicAt_cuspFunction_of_qParam_pow_mul hh
     (_root_.UpperHalfPlane.analyticAt_cuspFunction_zero hh
-      hper.qParam_pow_mul_comp_ofComplex
+      (periodic_qParam_pow_mul_comp_ofComplex hper k)
       (((Function.Periodic.differentiable_qParam.mdifferentiable.comp
         mdifferentiable_coe).pow k).mul hf)
       hbdd).meromorphicAt

@@ -52,8 +52,10 @@ presentation, so the geometric results about `TauCeti.FiniteSlopeData.slopeMulti
   polygon is nonempty.
 * `Polynomial.card_newtonSlopes`: if only zero has infinite valuation, a polynomial of degree
   `d` and order of vanishing `a` at zero has `d - a` finite slopes.
-* `Polynomial.sum_newtonSlopes`: their sum is the difference between the valuations of the
-  leading and trailing coefficients.
+* `Polynomial.newtonSlopes_eq_replicate_of_forall_eq`: a polynomial of degree `d` with nonzero
+  constant coefficient and a single finite slope `m` has slope multiset `d` copies of `m`.
+* `Polynomial.sum_newtonSlopes`: the sum of the finite slopes is the difference between the
+  valuations of the leading and trailing coefficients.
 * `Polynomial.den_dvd_card_newtonSlopes`: for a valuation taking integer values on nonzero
   elements, if every finite slope equals the rational `q`, then the denominator of `q` divides
   the number of finite slopes.
@@ -87,6 +89,8 @@ presentation, so the geometric results about `TauCeti.FiniteSlopeData.slopeMulti
 * `Polynomial.newtonSlopes_X_pow_sub_C` and `Polynomial.newtonSlopes_X_sub_C`: for `c` of finite
   valuation, `X ^ n - C c` has `n` finite slopes all equal to `-v c / n`, and in particular
   `X - C α` has the single finite slope `-v α`.
+* `Polynomial.newtonSlopes_one_sub_C_mul_X`: for `c` of finite valuation, `1 - C c * X` has the
+  single finite slope `v c`.
 * `PowerSeries.finite_finiteEdges_newtonPolygon_iff`: for a power series with
   admissible coefficient heights under a valuation that takes `⊤` only at `0`, the Newton polygon
   has finitely many finite unit edges if and only if the series is a polynomial.
@@ -275,6 +279,16 @@ theorem sum_newtonSlopes (hv : ∀ x, v x = ⊤ → x = 0) :
     FiniteSlopeData.ofIsConvexSeq_start, FiniteSlopeData.ofIsConvexSeq_length,
     Nat.add_sub_cancel' (natTrailingDegree_le_natDegree f), newtonPolygon_natDegree,
     newtonPolygon_natTrailingDegree]
+
+variable {f v} in
+/-- If only zero has infinite valuation, a polynomial of degree `d` with nonzero constant
+coefficient whose finite slopes all equal `m` has the slope `m` with multiplicity `d`. -/
+theorem newtonSlopes_eq_replicate_of_forall_eq (hv : ∀ x, v x = ⊤ → x = 0)
+    (hf : f.coeff 0 ≠ 0) {m : ℝ} (hm : ∀ s ∈ f.newtonSlopes v, s = m) :
+    f.newtonSlopes v = Multiset.replicate f.natDegree m := by
+  refine Multiset.eq_replicate.mpr ⟨?_, hm⟩
+  rw [card_newtonSlopes f v hv,
+    natTrailingDegree_eq_zero_of_constantCoeff_ne_zero (by simpa using hf), Nat.sub_zero]
 
 variable {f v} in
 /-- If the valuation takes integer values on nonzero elements and every finite slope of `f`
@@ -598,6 +612,17 @@ theorem newtonSlopes_X_pow_sub_C (n : ℕ) {c : R} (hc : v c ≠ ⊤) :
 theorem newtonSlopes_X_sub_C {α : R} (hα : v α ≠ ⊤) :
     (X - C α).newtonSlopes v = {-(v α).untop₀} := by
   simpa using newtonSlopes_X_pow_sub_C v 1 hα
+
+/-- The polynomial `1 - C c * X`, whose coefficient `c` has finite valuation, has the single
+finite slope `v c`; over a field its root `c⁻¹` has valuation `-v c`. -/
+theorem newtonSlopes_one_sub_C_mul_X {c : R} (hc : v c ≠ ⊤) :
+    (1 - C c * X).newtonSlopes v = {(v c).untop₀} := by
+  have h₁ : (1 - X : R[X]).newtonSlopes v = {0} := by
+    have h := newtonSlopes_C_mul (X - C 1) v (c := -1) (by simp)
+    rw [newtonSlopes_X_sub_C v (by simp)] at h
+    simpa [sub_eq_neg_add, mul_add, add_comm] using h
+  have h := newtonSlopes_comp_C_mul_X (1 - X) v hc
+  rwa [sub_comp, one_comp, X_comp, h₁, Multiset.map_singleton, zero_add] at h
 
 end Polynomial
 
