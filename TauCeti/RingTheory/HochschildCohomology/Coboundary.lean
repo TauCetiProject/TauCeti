@@ -345,16 +345,16 @@ theorem hochschildBimoduleCoboundary_three_apply (χ : (Fin 3 → A) →ₘₗ[R
         op d • χ ![a, b, c] := by
   have h₀ : Fin.contractNth 0 (· * ·) ![a, b, c, d] = ![a * b, c, d] := by
     ext i
-    fin_cases i <;> rfl
+    fin_cases i <;> simp [Fin.contractNth]
   have h₁ : Fin.contractNth 1 (· * ·) ![a, b, c, d] = ![a, b * c, d] := by
     ext i
-    fin_cases i <;> rfl
+    fin_cases i <;> simp [Fin.contractNth]
   have h₂ : Fin.contractNth 2 (· * ·) ![a, b, c, d] = ![a, b, c * d] := by
     ext i
-    fin_cases i <;> rfl
+    fin_cases i <;> simp [Fin.contractNth]
   have h₃ : Fin.init ![a, b, c, d] = ![a, b, c] := by
     ext i
-    fin_cases i <;> rfl
+    fin_cases i <;> simp [Fin.init]
   rw [hochschildBimoduleCoboundary_apply_eq_add_sum_add, Fin.sum_univ_three]
   simp [h₀, h₁, h₂, h₃, sub_eq_add_neg, add_assoc]
 

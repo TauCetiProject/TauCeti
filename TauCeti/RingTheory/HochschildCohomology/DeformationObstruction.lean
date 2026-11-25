@@ -158,6 +158,7 @@ theorem _root_.MultilinearMap.gerstenhaberComp_zero_right (f : (Fin 2 → A) →
   simp [MultilinearMap.gerstenhaberComp_apply, h, h']
 
 /-- Gerstenhaber's composition is additive in its first argument. -/
+@[simp]
 theorem _root_.MultilinearMap.gerstenhaberComp_add_left (f f' g : (Fin 2 → A) →ₘₗ[R] A) :
     (f + f').gerstenhaberComp g = f.gerstenhaberComp g + f'.gerstenhaberComp g := by
   ext v
@@ -165,6 +166,7 @@ theorem _root_.MultilinearMap.gerstenhaberComp_add_left (f f' g : (Fin 2 → A) 
   abel
 
 /-- Gerstenhaber's composition is additive in its second argument. -/
+@[simp]
 theorem _root_.MultilinearMap.gerstenhaberComp_add_right (f g g' : (Fin 2 → A) →ₘₗ[R] A) :
     f.gerstenhaberComp (g + g') = f.gerstenhaberComp g + f.gerstenhaberComp g' := by
   ext v
@@ -173,6 +175,7 @@ theorem _root_.MultilinearMap.gerstenhaberComp_add_right (f g g' : (Fin 2 → A)
   abel
 
 /-- Gerstenhaber's composition is `R`-linear in its first argument. -/
+@[simp]
 theorem _root_.MultilinearMap.gerstenhaberComp_smul_left (c : R)
     (f g : (Fin 2 → A) →ₘₗ[R] A) :
     (c • f).gerstenhaberComp g = c • f.gerstenhaberComp g := by
@@ -180,6 +183,7 @@ theorem _root_.MultilinearMap.gerstenhaberComp_smul_left (c : R)
   simp only [MultilinearMap.gerstenhaberComp_apply, smul_apply, smul_sub]
 
 /-- Gerstenhaber's composition is `R`-linear in its second argument. -/
+@[simp]
 theorem _root_.MultilinearMap.gerstenhaberComp_smul_right (c : R)
     (f g : (Fin 2 → A) →ₘₗ[R] A) :
     f.gerstenhaberComp (c • g) = c • f.gerstenhaberComp g := by
@@ -284,21 +288,19 @@ variable {R A : Type*} [CommSemiring R] [Ring A] [Algebra R A]
 
 
 /-- The coboundary of a `2`-cochain with coefficients in `A`:
-`(δψ)(a, b, c) = a ψ(b, c) - ψ(ab, c) + ψ(a, bc) - ψ(a, b) c`. This is the case of coefficients
-in `A` of `hochschildBimoduleCoboundary_two_apply` in
-https://github.com/TauCetiProject/TauCeti/pull/45282, kept private here until that lands. -/
+`(δψ)(a, b, c) = a ψ(b, c) - ψ(ab, c) + ψ(a, bc) - ψ(a, b) c`. -/
 private theorem coboundary_two_apply (ψ : (Fin 2 → A) →ₘₗ[R] A) (a b c : A) :
     hochschildBimoduleCoboundary R A A 2 ψ ![a, b, c] =
       a * ψ ![b, c] - ψ ![a * b, c] + ψ ![a, b * c] - ψ ![a, b] * c := by
   have h₀ : Fin.contractNth 0 (· * ·) ![a, b, c] = ![a * b, c] := by
     ext i
-    fin_cases i <;> rfl
+    fin_cases i <;> simp [Fin.contractNth]
   have h₁ : Fin.contractNth 1 (· * ·) ![a, b, c] = ![a, b * c] := by
     ext i
-    fin_cases i <;> rfl
+    fin_cases i <;> simp [Fin.contractNth]
   have h₂ : Fin.init ![a, b, c] = ![a, b] := by
     ext i
-    fin_cases i <;> rfl
+    fin_cases i <;> simp [Fin.init]
   rw [hochschildBimoduleCoboundary_apply_eq_add_sum_add, Fin.sum_univ_two]
   simp [h₀, h₁, h₂, sub_eq_add_neg, add_assoc]
 
@@ -310,7 +312,8 @@ variable {R A : Type*} [CommSemiring R] [Ring A] [Algebra R A]
 
 /-- Composing with the multiplication on either side gives minus the Hochschild coboundary:
 `μ ∘ ψ + ψ ∘ μ = -δψ`. -/
-theorem _root_.MultilinearMap.gerstenhaberComp_mkPiAlgebraFin_add (ψ : (Fin 2 → A) →ₘₗ[R] A) :
+theorem _root_.MultilinearMap.mkPiAlgebraFin_gerstenhaberComp_add_gerstenhaberComp_mkPiAlgebraFin
+    (ψ : (Fin 2 → A) →ₘₗ[R] A) :
     gerstenhaberComp (MultilinearMap.mkPiAlgebraFin R 2 A) ψ +
         gerstenhaberComp ψ (MultilinearMap.mkPiAlgebraFin R 2 A) =
       -hochschildBimoduleCoboundary R A A 2 ψ := by
@@ -391,7 +394,8 @@ theorem deformationAssociator_succ {φ : ℕ → (Fin 2 → A) →ₘₗ[R] A}
       simp [ha, hb, ha', hb']
   rw [deformationAssociator, Finset.sum_congr rfl key, Finset.sum_add_distrib,
     Finset.sum_add_distrib, algebraDeformationObstruction_def, deformationAssociator,
-    sub_eq_add_neg, ← MultilinearMap.gerstenhaberComp_mkPiAlgebraFin_add, ← h₀]
+    sub_eq_add_neg,
+    ← MultilinearMap.mkPiAlgebraFin_gerstenhaberComp_add_gerstenhaberComp_mkPiAlgebraFin, ← h₀]
   simp
 
 /-- **Extending a deformation by one order.** A deformation of order `n` is a deformation of
