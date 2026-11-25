@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.TwistMap.Exact
+public import TauCeti.Dynamics.TwistMap.OpenStrip
 public import Mathlib.MeasureTheory.Group.Prod
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.Deriv.Pow
