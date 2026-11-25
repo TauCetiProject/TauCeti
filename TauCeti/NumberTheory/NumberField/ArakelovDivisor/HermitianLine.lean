@@ -60,6 +60,11 @@ def hermitianMetric (D : ArakelovDivisor K) :
       FractionalIdeal (𝓞 K)⁰ K) :=
   HermitianMetric.fractionalIdeal _ (Units.ne_zero _) fun v ↦ D.infinitePart v / v.mult
 
+theorem hermitianMetric_def (D : ArakelovDivisor K) :
+    D.hermitianMetric =
+      HermitianMetric.fractionalIdeal _ (Units.ne_zero _) fun v ↦ D.infinitePart v / v.mult :=
+  (rfl)
+
 /-- The norms of `O(D)`: `‖x‖_v = e^{-λ_v / mult(v)} |x|_v`. -/
 @[simp]
 theorem placeNorm_hermitianMetric (D : ArakelovDivisor K) (v : InfinitePlace K)
@@ -73,12 +78,8 @@ theorem sectionDegree_hermitianMetric (D : ArakelovDivisor K)
     {s : (((D.finitePart⁻¹ : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) :
       Submodule (𝓞 K) K)}
     (hs : s ≠ 0) : D.hermitianMetric.sectionDegree s = degree K D := by
-  rw [hermitianMetric, HermitianMetric.sectionDegree_fractionalIdeal _ _ hs, degree_apply,
-    Units.val_inv_eq_inv_val, map_inv₀, Rat.cast_inv, Real.log_inv, neg_neg]
-  congr 1
-  refine Finset.sum_congr rfl fun v _ ↦ ?_
-  have : (v.mult : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr mult_ne_zero
-  field_simp
+  rw [hermitianMetric_def, HermitianMetric.sectionDegree_fractionalIdeal _ _ hs, degree_apply]
+  simp [mul_div_cancel₀]
 
 /-- The finite part of `-(D + (f))` is `f⁻¹` times that of `-D`. -/
 theorem coe_finitePart_add_principal_inv (D : ArakelovDivisor K) (f : Kˣ) :
@@ -89,70 +90,41 @@ theorem coe_finitePart_add_principal_inv (D : ArakelovDivisor K) (f : Kˣ) :
   simp only [finitePart_add, finitePart_principal, toMul_ofMul, mul_inv, Units.val_mul,
     Units.val_inv_eq_inv_val, coe_toPrincipalIdeal, spanSingleton_inv, mul_comm]
 
-/-- The underlying module of `O(D + (f))` is `f⁻¹` times that of `O(D)`. -/
-theorem mem_finitePart_add_principal_inv_iff (D : ArakelovDivisor K) (f : Kˣ) {x : K} :
-    x ∈ (((D + principal K (Additive.ofMul f)).finitePart⁻¹ :
-        (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) ↔
-      (f : K) * x ∈ ((D.finitePart⁻¹ : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-        FractionalIdeal (𝓞 K)⁰ K) := by
-  rw [coe_finitePart_add_principal_inv, mem_singleton_mul]
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    rwa [← mul_assoc, mul_inv_cancel₀ f.ne_zero, one_mul]
-  · exact fun h ↦ ⟨_, h, by rw [← mul_assoc, inv_mul_cancel₀ f.ne_zero, one_mul]⟩
-
 /-- **Principal divisors give isometric lines**: multiplication by `f` is an isometry
 `O(D + (f)) ≃ O(D)`. The module of `O(D + (f))` is `f⁻¹ 𝔞⁻¹`, and its norm at `v` is
 `e^{-λ_v / mult(v)} |f|_v |x|_v`, the norm of `f x` in `O(D)`. -/
 def isometryEquivAddPrincipal (D : ArakelovDivisor K) (f : Kˣ) :
     HermitianMetric.IsometryEquiv (D + principal K (Additive.ofMul f)).hermitianMetric
-      D.hermitianMetric where
-  toFun x := ⟨f * x, (mem_finitePart_add_principal_inv_iff D f).mp x.property⟩
-  invFun y := ⟨(f⁻¹ : Kˣ) * y, (mem_finitePart_add_principal_inv_iff D f).mpr (by
-    rw [← mul_assoc, Units.mul_inv, one_mul]; exact y.property)⟩
-  map_add' x y := Subtype.ext (mul_add _ _ _)
-  map_smul' c x := Subtype.ext (mul_left_comm _ _ _)
-  left_inv x := Subtype.ext (by simp)
-  right_inv y := Subtype.ext (by simp)
-  form_tmul σ x y := by
-    simp only [hermitianMetric, HermitianMetric.fractionalIdeal_def,
-      HermitianMetric.ofIsBaseChange_form_tmul, LinearEquiv.coe_mk, LinearMap.coe_mk,
-      AddHom.coe_mk, Submodule.subtype_apply, infinitePart_add, Pi.add_apply,
-      infinitePart_principal, toMul_ofMul, apply, map_mul]
-    have hm : ((InfinitePlace.mk σ).mult : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr mult_ne_zero
-    have hf : 0 < ‖σ f‖ := norm_pos_iff.mpr ((_root_.map_ne_zero _).mpr f.ne_zero)
-    have key : Real.exp (-2 * ((D.infinitePart (InfinitePlace.mk σ) +
-        -((InfinitePlace.mk σ).mult * Real.log ‖σ f‖)) / (InfinitePlace.mk σ).mult)) =
-        Real.exp (-2 * (D.infinitePart (InfinitePlace.mk σ) / (InfinitePlace.mk σ).mult)) *
-          ‖σ f‖ ^ 2 := by
-      rw [show -2 * ((D.infinitePart (InfinitePlace.mk σ) +
-          -((InfinitePlace.mk σ).mult * Real.log ‖σ f‖)) / (InfinitePlace.mk σ).mult) =
-          -2 * (D.infinitePart (InfinitePlace.mk σ) / (InfinitePlace.mk σ).mult) +
-            Real.log (‖σ f‖ ^ 2) by rw [Real.log_pow]; field_simp; ring,
-        Real.exp_add, Real.exp_log (by positivity)]
-    have hn : conj (σ f) * σ f = (‖σ f‖ : ℂ) ^ 2 := Complex.conj_mul' _
-    rw [key, Complex.ofReal_mul, Complex.ofReal_pow]
-    linear_combination (Real.exp (-2 * (D.infinitePart (InfinitePlace.mk σ) /
-      (InfinitePlace.mk σ).mult)) : ℂ) * (conj (σ x) * σ y) * hn
+      D.hermitianMetric :=
+  HermitianMetric.isometryEquivFractionalIdealMul _ _ f (coe_finitePart_add_principal_inv D f)
+    fun v ↦ by
+      rw [infinitePart_add, Pi.add_apply, add_div, infinitePart_principal_div_mult, toMul_ofMul,
+        sub_eq_add_neg]
 
 @[simp]
 theorem coe_isometryEquivAddPrincipal_apply (D : ArakelovDivisor K) (f : Kˣ)
     (x : (((D + principal K (Additive.ofMul f)).finitePart⁻¹ :
         (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K)) :
     (isometryEquivAddPrincipal D f x : K) = f * x :=
-  (rfl)
+  HermitianMetric.coe_isometryEquivFractionalIdealMul_apply _ _ _ _ _ x
+
+@[simp]
+theorem coe_isometryEquivAddPrincipal_symm_apply (D : ArakelovDivisor K) (f : Kˣ)
+    (y : ((D.finitePart⁻¹ : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K)) :
+    ((isometryEquivAddPrincipal D f).symm y : K) = (f : K)⁻¹ * y :=
+  HermitianMetric.coe_isometryEquivFractionalIdealMul_symm_apply _ _ _ _ _ y
 
 /-- **The section `f⁻¹` trivializes `O((f))`**: the line `O((f))` is `f⁻¹ 𝓞 K` with the norms
 `|f|_v |x|_v`, and its section `f⁻¹` has norm one at every infinite place. -/
 theorem placeNorm_hermitianMetric_principal_inv (f : Kˣ) (v : InfinitePlace K) :
     (principal K (Additive.ofMul f)).hermitianMetric.placeNorm v
       ⟨(f : K)⁻¹, by
-        rw [finitePart_principal, toMul_ofMul, Units.val_inv_eq_inv_val, coe_toPrincipalIdeal,
-          spanSingleton_inv]
-        exact mem_spanSingleton_self _ _⟩ = 1 := by
-  have hm : (v.mult : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr mult_ne_zero
+        simp only [finitePart_principal, toMul_ofMul, Units.val_inv_eq_inv_val,
+          coe_toPrincipalIdeal, spanSingleton_inv, mem_coeToSubmodule,
+          mem_spanSingleton_self]⟩ = 1 := by
   have hf : 0 < v (f : K) := pos_iff.mpr f.ne_zero
-  rw [placeNorm_hermitianMetric, infinitePart_principal, toMul_ofMul, neg_div, neg_neg,
-    mul_div_cancel_left₀ _ hm, Real.exp_log hf, map_inv₀, mul_inv_cancel₀ hf.ne']
+  rw [placeNorm_hermitianMetric, infinitePart_principal_div_mult, toMul_ofMul, neg_neg,
+    Real.exp_log hf]
+  simp [hf.ne']
 
 end TauCeti.ArakelovDivisor
