@@ -89,6 +89,12 @@ variable (k : Type u) [CommRing k]
 /-- `B = k[x_0, x_1, …]/(x_j^{j+2} : j ≥ 0)`. -/
 abbrev B : Type u := MvPolynomial ℕ k ⧸ J k
 
+/-- The `k[x_0, x_1, …]`-action on `B` is multiplication of representatives. -/
+private theorem smul_mk (a q : MvPolynomial ℕ k) :
+    a • (Ideal.Quotient.mk (J k) q : B k) = Ideal.Quotient.mk (J k) (a * q) := by
+  rw [← Ideal.Quotient.mk_eq_mk, ← Submodule.Quotient.mk_smul, smul_eq_mul,
+    Ideal.Quotient.mk_eq_mk]
+
 /-- **`B` has no `I`-power torsion.** -/
 theorem primaryComponent_eq_bot : (I k).primaryComponent (B k) = ⊥ := by
   refine eq_bot_iff.2 fun b hb ↦ ?_
@@ -99,9 +105,8 @@ theorem primaryComponent_eq_bot : (I k).primaryComponent (B k) = ⊥ := by
   obtain ⟨j, hj⟩ := X_pow_mul_notMem k hp n
   have hX : X j ^ n ∈ I k ^ n := Ideal.pow_mem_pow (Ideal.subset_span (Set.mem_range_self j)) n
   have h := (Submodule.mem_torsionBySet_iff _ _).1 hn ⟨_, hX⟩
-  apply hj
-  rw [← Ideal.Quotient.eq_zero_iff_mem, map_mul]
-  exact h
+  rw [smul_mk, Ideal.Quotient.eq_zero_iff_mem] at h
+  exact hj h
 
 /-- `B` as a module over `A = k[x_0, x_1, …]`. -/
 noncomputable abbrev Bmod : ModuleCat.{u} (CommRingCat.of (MvPolynomial ℕ k)) :=
@@ -127,8 +132,7 @@ theorem dense_U : Dense (U k : Set (Spec (CommRingCat.of (MvPolynomial ℕ k))))
 private theorem X_pow_smul_eq_zero (j : ℕ) (b : Bmod k) :
     (X j ^ (j + 2) : MvPolynomial ℕ k) • b = 0 := by
   obtain ⟨q, rfl⟩ := Ideal.Quotient.mk_surjective (b : B k)
-  rw [← Ideal.Quotient.mk_eq_mk, ← Submodule.Quotient.mk_smul, smul_eq_mul,
-    Ideal.Quotient.mk_eq_mk, Ideal.Quotient.eq_zero_iff_mem, X_pow_eq_monomial]
+  rw [smul_mk, Ideal.Quotient.eq_zero_iff_mem, X_pow_eq_monomial]
   exact Ideal.mul_mem_right _ _ (Ideal.subset_span ⟨_, ⟨j, rfl⟩, rfl⟩)
 
 /-- The sections of `B~` over any open inside `U` vanish. -/
