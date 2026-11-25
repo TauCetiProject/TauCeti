@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Analysis.Normed.Module.Ball.Radial.Cone
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
 public import TauCeti.Geometry.Diffeomorphism.Sphere
+public import TauCeti.Geometry.Diffeomorphism.Sphere.LocalIsotopy
 public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Basic
 public import TauCeti.Geometry.Manifold.Instances.Icc
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
@@ -39,8 +40,10 @@ diffeomorphism of the closed unit ball `Dⁿ⁺¹` as a manifold with boundary
 (`TauCeti.Diffeotopy.exists_diffeomorph_closedBall_final_mul_unitSphereDiffeomorph`). This is
 Cerf's derivation of `Γ₄ = 0` from his theorem `π₀ Diff⁺(S³) = 0` (`TauCeti.CerfTheorem`): every
 diffeomorphism of `S³` is isotopic to an orthogonal one, and the isotopy, run along the radius,
-extends it over the four-ball. Deriving `Γ₄ = 0` from `TauCeti.CerfTheorem` this way also needs
-the weak Whitney path to the orthogonal map to be replaced by a diffeotopy.
+extends it over the four-ball. A path in the weak Whitney topology is replaced by a diffeotopy
+through `TauCeti.joined_iff_exists_diffeotopy_mul_final_eq`, so for `1 ≤ k ≤ ∞` every `C^k`
+diffeomorphism of `Sⁿ` joined to a linear isometry extends to a `C^k` diffeomorphism of the ball
+(`TauCeti.exists_diffeomorph_closedBall_of_joined_unitSphereDiffeomorph`).
 
 ## Main definitions
 
@@ -60,6 +63,9 @@ the weak Whitney path to the orthogonal map to be replaced by a diffeotopy.
   of the sphere diffeotopic to a linear isometry extends to a norm-preserving diffeomorphism of `E`.
 * `TauCeti.Diffeotopy.exists_diffeomorph_closedBall_final_mul_unitSphereDiffeomorph`: such a
   diffeomorphism is the boundary restriction of a diffeomorphism of the closed unit ball.
+* `TauCeti.exists_diffeomorph_closedBall_of_joined_unitSphereDiffeomorph`: for `1 ≤ k ≤ ∞`, a
+  `C^k` diffeomorphism of the sphere joined to a linear isometry in the weak Whitney topology is the
+  boundary restriction of a `C^k` diffeomorphism of the closed unit ball.
 
 ## References
 
@@ -280,5 +286,26 @@ theorem exists_diffeomorph_closedBall_final_mul_unitSphereDiffeomorph (hk : k �
     rw [_root_.Diffeomorph.coe_restrictUnitClosedBall_apply, hFu]⟩
 
 end Diffeotopy
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
+  [Fact (finrank ℝ E = n + 1)] {k : ℕ∞ω}
+
+open scoped TauCeti.DiffeomorphWeakWhitney in
+/-- **Extension over the disc of a diffeomorphism isotopic to an isometry.** If a `C^k`
+diffeomorphism `f` of the unit sphere `Sⁿ`, `1 ≤ k ≤ ∞`, is joined in the weak Whitney topology to
+the restriction of a linear isometry `e`, then `f` is the restriction to the boundary sphere of a
+`C^k` diffeomorphism of the closed unit ball `Dⁿ⁺¹`. -/
+theorem exists_diffeomorph_closedBall_of_joined_unitSphereDiffeomorph [FiniteDimensional ℝ E]
+    (hk₁ : 1 ≤ k) (hk : k ≤ ∞) (e : E ≃ₗᵢ[ℝ] E) {f : Diff (𝓡 n) (sphere (0 : E) 1) k}
+    (h : Joined (e.unitSphereDiffeomorph k : Diff (𝓡 n) (sphere (0 : E) 1) k) f) :
+    ∃ G : closedBall (0 : E) 1 ≃ₘ^k⟮𝓡∂ (n + 1), 𝓡∂ (n + 1)⟯ closedBall (0 : E) 1,
+      ∀ u : sphere (0 : E) 1, (G ⟨u, sphere_subset_closedBall u.property⟩ : E) = f u := by
+  obtain ⟨Φ, hΦ⟩ := (joined_iff_exists_diffeotopy_mul_final_eq hk₁).1 h
+  -- `e ∘ φ₁` is `(e ∘ φ₁ ∘ e⁻¹) ∘ e`, the final diffeomorphism of the conjugated diffeotopy
+  -- followed by the isometry.
+  obtain ⟨G, hG⟩ := (Φ.transDiffeomorph (e.unitSphereDiffeomorph k)
+    ).exists_diffeomorph_closedBall_final_mul_unitSphereDiffeomorph hk e
+  refine ⟨G, fun u ↦ ?_⟩
+  rw [hG, Diffeotopy.final_transDiffeomorph_eq_mul_mul_inv, inv_mul_cancel_right, hΦ]
 
 end TauCeti

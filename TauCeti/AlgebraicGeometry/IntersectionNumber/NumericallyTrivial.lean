@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Fibers.Composition
-public import TauCeti.AlgebraicGeometry.IntersectionNumber.Basic
+public import TauCeti.AlgebraicGeometry.IntersectionNumber.FieldTower
 public import TauCeti.AlgebraicGeometry.LineBundle.ProjectiveLine
+public import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
 # Numerically trivial line-bundle classes
@@ -38,7 +39,12 @@ the other hand every class pulled back from the base is relatively numerically t
 * `LineBundleClass.numericallyTrivialClasses k x`: for `X` proper over `k`, the subgroup
   `Pic^τ(X/k)` of numerically trivial classes;
 * `LineBundleClass.NumericallyTrivial.pullback_of_isClosedImmersion`: numerical triviality
-  restricts to closed subschemes;
+  restricts to closed subschemes, and pullback along an isomorphism reflects it
+  (`LineBundleClass.numericallyTrivial_pullback_iff_of_isIso`);
+* `LineBundleClass.NumericallyTrivial.restrictScalars` and
+  `LineBundleClass.numericallyTrivial_iff_of_finiteDimensional`: for a field extension `K / k`,
+  numerical triviality over `K` implies numerical triviality over `k`, and the two agree when
+  `K / k` is finite, because restriction of scalars multiplies degrees by `[K : k]`;
 * `LineBundleClass.NumericallyTrivial.eulerDegree_eq_zero`: on an integral curve, a numerically
   trivial class has degree zero;
 * `projectiveLine.numericallyTrivial_iff_eq_one`: on `ℙ¹_k` the numerically trivial classes are
@@ -51,7 +57,11 @@ the other hand every class pulled back from the base is relatively numerically t
   so that `f^* (Pic S) ≤ Pic^τ(X/S)` (`LineBundleClass.range_pullbackHom_le`) and
   `Pic^τ(S/S) = Pic S` (`LineBundleClass.relNumericallyTrivialClasses_id`);
 * `LineBundleClass.RelNumericallyTrivial.pullback_of_isClosedImmersion`: if `a ≡_f 0` and
-  `j : Z ⟶ X` is a closed immersion then `j^* a ≡_{j ≫ f} 0`.
+  `j : Z ⟶ X` is a closed immersion then `j^* a ≡_{j ≫ f} 0`;
+* `LineBundleClass.relNumericallyTrivial_iff_numericallyTrivial`: relative to a structure
+  morphism `x : X ⟶ Spec k`, relative numerical triviality is numerical triviality over `k`,
+  through the identification of `X` with its fibre over the point of `Spec k`; for proper `x` the
+  two subgroups agree (`LineBundleClass.relNumericallyTrivialClasses_eq_numericallyTrivialClasses`).
 
 ## References
 
@@ -156,6 +166,14 @@ theorem NumericallyTrivial.pullback_of_isClosedImmersion {Z : Scheme.{u}} (j : Z
   rw [intersectionNumber_pullback]
   exact ha.intersectionNumber_eq_zero (i ≫ j) (hi.trans (Category.assoc _ _ _).symm) hC
 
+/-- Numerical triviality is invariant under isomorphisms: for an isomorphism `g : Y ⟶ X`, the
+class `g^* a` is numerically trivial over `k` exactly when `a` is. -/
+theorem numericallyTrivial_pullback_iff_of_isIso {Y : Scheme.{u}} (g : Y ⟶ X) [IsIso g]
+    {a : LineBundleClass X} :
+    NumericallyTrivial k (g ≫ x) (pullback g a) ↔ NumericallyTrivial k x a := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.pullback_of_isClosedImmersion g⟩
+  simpa [pullback_comp, pullback_id] using h.pullback_of_isClosedImmersion (inv g)
+
 /-- **Degree on a curve.** A numerically trivial class on an integral `k`-scheme of dimension one
 has degree zero: the scheme is itself one of the test curves. -/
 theorem NumericallyTrivial.eulerDegree_eq_zero [X.Over (Spec (.of k))] [IsIntegral X]
@@ -165,6 +183,43 @@ theorem NumericallyTrivial.eulerDegree_eq_zero [X.Over (Spec (.of k))] [IsIntegr
     ha.intersectionNumber_eq_zero (𝟙 X) (Category.id_comp _).symm hX
 
 end Absolute
+
+section RestrictScalars
+
+variable {k K : Type u} [Field k] [Field K] [Algebra k K] {X : Scheme.{u}}
+  {x : X ⟶ Spec (.of K)} {a : LineBundleClass X}
+
+/-- **Restriction of scalars.** Let `K / k` be a field extension and `x : X ⟶ Spec K`. A class
+numerically trivial over `K` is numerically trivial over `k`, for `X` regarded as a `k`-scheme
+through `Spec K ⟶ Spec k`: an integral closed curve of `X` over `k` lies over `K` through `X`,
+and its degree over `k` is `[K : k]` times its degree over `K`. -/
+theorem NumericallyTrivial.restrictScalars (h : NumericallyTrivial K x a) :
+    NumericallyTrivial k (x ≫ Spec.map (CommRingCat.ofHom (algebraMap k K))) a :=
+  fun C _ _ i _ hi hC ↦ by
+    let : C.Over (Spec (.of K)) := ⟨i ≫ x⟩
+    -- Under the local `Over` instance, `C ↘ Spec K` is by definition `i ≫ x`.
+    have hK : C ↘ Spec (.of K) = i ≫ x := rfl
+    rw [intersectionNumber_eq_finrank_mul (κ := K) i (by rw [hK, hi, Category.assoc]),
+      h.intersectionNumber_eq_zero i hK hC, mul_zero]
+
+/-- **Numerical triviality along a finite extension.** Let `K / k` be a finite field extension and
+`x : X ⟶ Spec K`. A class is numerically trivial over `k` exactly when it is numerically trivial
+over `K`: the integral closed curves of `X` over `k` and over `K` are the same, and their degrees
+over `k` are `[K : k] ≠ 0` times their degrees over `K`. -/
+theorem numericallyTrivial_iff_of_finiteDimensional [FiniteDimensional k K] :
+    NumericallyTrivial k (x ≫ Spec.map (CommRingCat.ofHom (algebraMap k K))) a ↔
+      NumericallyTrivial K x a := by
+  refine ⟨fun h C _ _ i _ hi hC ↦ ?_, NumericallyTrivial.restrictScalars⟩
+  let : C.Over (Spec (.of k)) :=
+    ⟨(C ↘ Spec (.of K)) ≫ Spec.map (CommRingCat.ofHom (algebraMap k K))⟩
+  -- Under the local `Over` instance, `C ↘ Spec k` is by definition `(C ↘ Spec K) ≫ Spec.map _`.
+  have hk : C ↘ Spec (.of k) =
+      (C ↘ Spec (.of K)) ≫ Spec.map (CommRingCat.ofHom (algebraMap k K)) := rfl
+  have h₀ := h.intersectionNumber_eq_zero i (by rw [hk, hi, Category.assoc]) hC
+  rw [intersectionNumber_eq_finrank_mul i rfl] at h₀
+  exact (mul_eq_zero.mp h₀).resolve_left (by exact_mod_cast Module.finrank_pos.ne')
+
+end RestrictScalars
 
 section Relative
 
@@ -264,6 +319,40 @@ theorem RelNumericallyTrivial.pullback_of_isClosedImmersion {f : X ⟶ S} (j : Y
   rw [pullback_comp, ← Scheme.Hom.fiberCompMap_fiberι, ← pullback_comp,
     ← Scheme.Hom.fiberCompMap_fiberToSpecResidueField]
   exact (ha s).pullback_of_isClosedImmersion (j.fiberCompMap f s)
+
+/-- **Comparison with the absolute notion.** Relative to a structure morphism `x : X ⟶ Spec k`, a
+class is relatively numerically trivial exactly when it is numerically trivial over `k`: the
+fibre of `x` over the unique point `s` of `Spec k` is `X` itself, and `κ(s) = k`. -/
+theorem relNumericallyTrivial_iff_numericallyTrivial {k : Type u} [Field k]
+    (x : X ⟶ Spec (.of k)) (a : LineBundleClass X) :
+    RelNumericallyTrivial x a ↔ NumericallyTrivial k x a := by
+  have key (s : Spec (.of k)) :
+      NumericallyTrivial ((Spec (.of k)).residueField s) (x.fiberToSpecResidueField s)
+        (pullback (x.fiberι s) a) ↔ NumericallyTrivial k x a := by
+    -- The structure of `κ(s)` as a `k`-algebra, under which `Spec κ(s) ⟶ Spec k` is the
+    -- isomorphism `Spec κ(s) ⟶ Spec k` from the residue field.
+    let : Algebra k ((Spec (.of k)).residueField s) :=
+      (Spec.preimage ((Spec (.of k)).fromSpecResidueField s)).hom.toAlgebra
+    have he : Spec.map (CommRingCat.ofHom (algebraMap k ((Spec (.of k)).residueField s))) =
+        (Spec (.of k)).fromSpecResidueField s :=
+      Spec.map_preimage _
+    have : IsIso (Spec.map (CommRingCat.ofHom (algebraMap k ((Spec (.of k)).residueField s)))) := by
+      rw [he]; infer_instance
+    have hbij : Function.Bijective (algebraMap k ((Spec (.of k)).residueField s)) :=
+      isIso_SpecMap_iff.mp this
+    have : FiniteDimensional k ((Spec (.of k)).residueField s) :=
+      .of_surjective (Algebra.linearMap k _) hbij.surjective
+    rw [← numericallyTrivial_iff_of_finiteDimensional (k := k), he, ← Scheme.Hom.fiber_fac,
+      numericallyTrivial_pullback_iff_of_isIso]
+  obtain ⟨s⟩ : Nonempty (Spec (.of k)) := inferInstanceAs (Nonempty (PrimeSpectrum k))
+  exact ⟨fun h ↦ (key s).mp (h s), fun h t ↦ (key t).mpr h⟩
+
+/-- Relative to a proper structure morphism `x : X ⟶ Spec k`, the subgroup `Pic^τ(X/Spec k)` is
+the subgroup `Pic^τ(X/k)` of classes numerically trivial over `k`. -/
+theorem relNumericallyTrivialClasses_eq_numericallyTrivialClasses {k : Type u} [Field k]
+    (x : X ⟶ Spec (.of k)) [IsProper x] :
+    relNumericallyTrivialClasses x = numericallyTrivialClasses k x :=
+  Subgroup.ext fun a ↦ relNumericallyTrivial_iff_numericallyTrivial x a
 
 end Relative
 

@@ -258,21 +258,22 @@ private theorem inserted_piece (ω : SymplecticForm V) (hq : q ≠ inf)
         I).mono (prod_mono inter_subset_left le_rfl))).mono
         fun w hw ↦ ⟨hTS hw, hψP hw⟩).integrableOn_compact
       (isCompact_preimage_truncation R)).mono_set hΩT
+  -- `Ω` lies beyond the collar `Re z_∞ ≤ 2 - L` of the inserted end at `∞`.
+  have hsub : Ω ⊆ {w | (Complex.equivRealProdCLM.symm w ≠ 0 ∧
+      Complex.equivRealProdCLM.symm w ≠ 1) ∧
+      2 - L < (inf.endCoord (Complex.equivRealProdCLM.symm w)).re} := fun w hw ↦ by
+    have h := (mem_truncation.1 (hΩT hw)).2.2 inf
+    rw [endSign_inf, neg_one_mul] at h
+    exact ⟨⟨(mem_truncation.1 (hΩT hw)).1, (mem_truncation.1 (hΩT hw)).2.1⟩, by linarith⟩
   refine ⟨hua.mono fun w hw ↦ ⟨hTS (hΩT hw), hψP (hΩT hw)⟩, fun w hw ↦ ?_, hint, ?_⟩
   · -- On the inserted truncation `u ∘ ψ` solves the Floer equation of `S`.
     have h := hfl (ψ w) (hψP (hΩT hw))
     rw [hJΩ w hw] at h
     exact ω.isComplexLinearMap_perturbedFDeriv_comp_realChart_plumbingMap hq hHa hHb
       (fun r ↦ (hHas r).of_le (by norm_num)) (fun r ↦ (hHbs r).of_le (by norm_num)) hab hL4
-      (by linarith) (hΩT hw) ((hu.differentiableOn (by norm_num)).differentiableAt
+      (hsub hw) ((hu.differentiableOn (by norm_num)).differentiableAt
         ((isOpen_plumbedSphere q L).mem_nhds (hψP (hΩT hw)))) h
   · -- The energy of `u ∘ ψ` over `Ω` is the energy of `u` over `ψ(Ω)`.
-    have hsub : Ω ⊆ {w | (Complex.equivRealProdCLM.symm w ≠ 0 ∧
-        Complex.equivRealProdCLM.symm w ≠ 1) ∧
-        2 - L < (inf.endCoord (Complex.equivRealProdCLM.symm w)).re} := fun w hw ↦ by
-      have h := (mem_truncation.1 (hΩT hw)).2.2 inf
-      rw [endSign_inf, neg_one_mul] at h
-      exact ⟨⟨(mem_truncation.1 (hΩT hw)).1, (mem_truncation.1 (hΩT hw)).2.1⟩, by linarith⟩
     rw [← integral_floerEnergyDensity_image_plumbingMap ω hq hHa hHb
       (fun r ↦ (hHas r).of_le (by norm_num)) (fun r ↦ (hHbs r).of_le (by norm_num)) hab hL4
       hΩ.measurableSet hsub (hu.differentiableOn (by norm_num))]

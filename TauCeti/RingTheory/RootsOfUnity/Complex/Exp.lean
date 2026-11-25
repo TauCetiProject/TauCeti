@@ -8,19 +8,21 @@ module
 public import Mathlib.RingTheory.RootsOfUnity.Complex
 
 /-!
-# Compatibility of the complex roots of unity `exp(2πi / m)`
+# Powers and compatibility of the complex roots of unity `exp(2πi / m)`
 
 Mathlib's `Complex.isPrimitiveRoot_exp` says that `exp(2πi / m)` is a primitive `m`-th root of
-unity. This file records that these roots are compatible along the power maps: for `n ∣ m` with
-`m ≠ 0`, `exp(2πi / m) ^ (m / n) = exp(2πi / n)`.
+unity. This file records its `e`-th power `exp(2πi * (e / d))`, compatibility along divisibility
+(`exp(2πi / m) ^ (m / n) = exp(2πi / n)` for `n ∣ m` with `m ≠ 0`), and injectivity on natural
+numbers strictly less than `h`.
 
 ## Main results
 
+* `TauCeti.exp_two_pi_I_div_pow`: `exp(2πi / d) ^ e = exp(2πi * (e / d))`.
 * `TauCeti.exp_two_pi_I_div_pow_div`: `exp(2πi / m) ^ (m / n) = exp(2πi / n)` for `n ∣ m`,
   `m ≠ 0`.
-* `TauCeti.exp_two_pi_I_mul_div`: `exp(2πi k / n) = exp(2πi / n) ^ k`.
-* `TauCeti.eq_of_exp_two_pi_I_mul_div_eq` and `TauCeti.nodup_map_exp_two_pi_I_mul_div`: injectivity
-  of `e ↦ exp(2πi e / h)` on `{e : ℕ | e < h}` and duplicate-freeness of its multiset image.
+* `TauCeti.injOn_exp_two_pi_I_div`: `e ↦ exp(2πi * (e / h))` is injective on `Set.Iio h`.
+* `TauCeti.nodup_map_exp_two_pi_I_div`: distinct natural numbers strictly below `h` map to
+  distinct complex roots of unity `exp(2πi * (e / h))`.
 -/
 
 public section
@@ -29,6 +31,11 @@ open Complex Real
 
 namespace TauCeti
 
+/-- The `e`-th power of `exp(2πi / d)` is `exp(2πi * (e / d))`. -/
+theorem exp_two_pi_I_div_pow (d : ℂ) (e : ℕ) :
+    exp (2 * π * I / d) ^ e = exp (2 * π * I * (e / d)) := by
+  rw [← Complex.exp_natCast_mul, mul_div_left_comm]
+
 /-- The complex numbers `exp(2πi / m)` are compatible along the power maps: for `n ∣ m` with
 `m ≠ 0`, `exp(2πi / m) ^ (m / n) = exp(2πi / n)`. -/
 theorem exp_two_pi_I_div_pow_div {m n : ℕ} (hm : m ≠ 0) (h : n ∣ m) :
@@ -36,29 +43,27 @@ theorem exp_two_pi_I_div_pow_div {m n : ℕ} (hm : m ≠ 0) (h : n ∣ m) :
   obtain ⟨k, rfl⟩ := h
   have hn : n ≠ 0 := left_ne_zero_of_mul hm
   have hk : k ≠ 0 := right_ne_zero_of_mul hm
-  rw [Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero hn), ← Complex.exp_natCast_mul]
+  rw [exp_two_pi_I_div_pow, Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero hn)]
   congr 1
   push_cast
   field_simp
 
-/-- For natural numbers `k` and `n`, `exp(2πi k / n)` is the `k`-th power of `exp(2πi / n)`. -/
-theorem exp_two_pi_I_mul_div (k n : ℕ) :
-    exp (2 * Real.pi * I * (k / n)) = exp (2 * Real.pi * I / n) ^ k := by
-  rw [← Complex.exp_natCast_mul]
-  congr 1
-  ring
+/-- The map `e ↦ exp(2πi * (e / h))` is injective on `{e : ℕ | e < h}`. -/
+theorem injOn_exp_two_pi_I_div (h : ℕ) :
+    Set.InjOn (fun e : ℕ => exp (2 * π * I * ((e : ℂ) / (h : ℂ)))) (Set.Iio h) := by
+  intro a ha b hb hab
+  have hh : h ≠ 0 := by have : a < h := ha; omega
+  have hζ := Complex.isPrimitiveRoot_exp h hh
+  dsimp only at hab
+  rw [← exp_two_pi_I_div_pow, ← exp_two_pi_I_div_pow] at hab
+  exact hζ.pow_inj ha hb hab
 
-/-- The map `e ↦ exp(2πi e / h)` is injective on `{e : ℕ | e < h}`. -/
-theorem eq_of_exp_two_pi_I_mul_div_eq {a b h : ℕ} (ha : a < h) (hb : b < h)
-    (hab : exp (2 * Real.pi * I * (a / h)) = exp (2 * Real.pi * I * (b / h))) : a = b := by
-  rw [exp_two_pi_I_mul_div, exp_two_pi_I_mul_div] at hab
-  exact (isPrimitiveRoot_exp h ((Nat.zero_le a).trans_lt ha).ne').pow_inj ha hb hab
-
-/-- Mapping a duplicate-free multiset of natural numbers `< h` along `e ↦ exp(2πi e / h)` produces a
-duplicate-free multiset. -/
-theorem nodup_map_exp_two_pi_I_mul_div {s : Multiset ℕ} {h : ℕ} (hs : s.Nodup)
-    (hlt : ∀ e ∈ s, e < h) :
-    (s.map fun e : ℕ => exp (2 * Real.pi * I * (e / h))).Nodup :=
-  hs.map_on fun _ ha _ hb => eq_of_exp_two_pi_I_mul_div_eq (hlt _ ha) (hlt _ hb)
+/-- Distinct natural numbers strictly less than `h` map to distinct complex roots of unity
+`exp(2πi * (e / h))`. -/
+theorem nodup_map_exp_two_pi_I_div {h : ℕ} {l : List ℕ} (hnd : l.Nodup)
+    (hlt : ∀ e ∈ l, e < h) :
+    (l.map fun e : ℕ => exp (2 * π * I * ((e : ℂ) / (h : ℂ)))).Nodup :=
+  (List.nodup_map_iff_inj_on hnd).mpr fun _ ha _ hb =>
+    injOn_exp_two_pi_I_div h (hlt _ ha) (hlt _ hb)
 
 end TauCeti

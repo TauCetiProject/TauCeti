@@ -24,9 +24,9 @@ has `t.numRoots` roots and `t.numRoots / 2` positive roots.
 * `TauCeti.HasCartanType.natCard_eq_numRoots`,
   `TauCeti.HasCartanType.two_mul_ncard_posRoots_eq_numRoots`, and
   `TauCeti.HasCartanType.ncard_posRoots_eq_numRoots_div_two`.
-* `TauCeti.natCard_eq_numRoots_classifiedDynkinType`,
-  `TauCeti.two_mul_ncard_posRoots_eq_numRoots_classifiedDynkinType`, and
-  `TauCeti.ncard_posRoots_eq_numRoots_classifiedDynkinType_div_two`.
+* `RootPairing.Base.natCard_eq_numRoots_classifiedDynkinType`,
+  `RootPairing.Base.two_mul_ncard_posRoots_eq_numRoots_classifiedDynkinType`, and
+  `RootPairing.Base.ncard_posRoots_eq_numRoots_classifiedDynkinType_div_two`.
 * `RootPairing.natCard_eq_of_hasCartanType_A` and `RootPairing.ncard_posRoots_of_hasCartanType_A`:
   specializations to type `Aₙ`, including the rank-zero case `n = 0`.
 
@@ -74,7 +74,11 @@ theorem HasCartanType.ncard_posRoots_eq_numRoots_div_two {b : P.Base} {t : Dynki
 
 end HasCartanType
 
-section Classified
+end TauCeti
+
+namespace RootPairing.Base
+
+open TauCeti
 
 variable {ι R M N : Type*} [CommRing R] [IsDomain R] [CharZero R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
@@ -101,9 +105,7 @@ theorem ncard_posRoots_eq_numRoots_classifiedDynkinType_div_two (b : P.Base) :
   (hasCartanType_classifiedDynkinType b).ncard_posRoots_eq_numRoots_div_two
     (valid_classifiedDynkinType b)
 
-end Classified
-
-end TauCeti
+end RootPairing.Base
 
 namespace RootPairing
 

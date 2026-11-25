@@ -9,8 +9,8 @@ public import Mathlib.RingTheory.RootsOfUnity.Complex
 public import TauCeti.GroupTheory.Perm.Coxeter
 public import TauCeti.LinearAlgebra.Charpoly.Permutation
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Standard
-import TauCeti.RingTheory.Polynomial.Cyclotomic.ComplexRoots
-import TauCeti.RingTheory.RootsOfUnity.NthRoots
+import TauCeti.RingTheory.Polynomial.Cyclotomic.Roots
+import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
 
 /-!
 # Eigenvalues of the Coxeter elements of the symmetric group
@@ -114,9 +114,11 @@ theorem roots_charpoly_standardRepresentation_wordProd_permCoxeterSystem_of_isPr
     (hω : ω.Perm (List.finRange (n - 1))) :
     (standardRepresentation K (Fin n) ((permCoxeterSystem n).wordProd ω)).charpoly.roots =
       (Multiset.range (n - 1)).map fun e ↦ ζ ^ (e + 1) := by
-  obtain rfl | hn := eq_or_ne n 0
+  rcases n with _ | m
   · simp [roots_charpoly_standardRepresentation_fin_zero]
-  rw [charpoly_standardRepresentation_wordProd_permCoxeterSystem K hω hn, hζ.roots_geom_sum]
+  · rw [charpoly_standardRepresentation_wordProd_permCoxeterSystem K hω (Nat.succ_ne_zero m),
+      Polynomial.roots_sum_range_X_pow hζ, Nat.add_sub_cancel, ← Multiset.coe_range,
+      Multiset.map_coe]
 
 /-- **The eigenvalues of a Coxeter element of `S_n` on its complex reflection representation** are
 the `exp (2πi e / n)` for the exponents `e = 1, …, n - 1`, each with multiplicity one. -/
@@ -127,8 +129,10 @@ theorem roots_charpoly_standardRepresentation_wordProd_permCoxeterSystem
         fun e : ℕ ↦ Complex.exp (2 * Real.pi * Complex.I * (e + 1 : ℕ) / n) := by
   obtain rfl | hn := eq_or_ne n 0
   · simp [roots_charpoly_standardRepresentation_fin_zero]
-  rw [charpoly_standardRepresentation_wordProd_permCoxeterSystem ℂ hω hn, roots_geom_sum_complex]
-  exact Multiset.map_congr rfl fun e _ ↦ by rw [mul_div_assoc]
+  rw [roots_charpoly_standardRepresentation_wordProd_permCoxeterSystem_of_isPrimitiveRoot
+    (Complex.isPrimitiveRoot_exp n hn) hω]
+  refine Multiset.map_congr rfl fun e _ ↦ ?_
+  rw [exp_two_pi_I_div_pow, ← mul_div_assoc]
 
 /-- **The eigenvalues of a Coxeter element of `S_n` from the invariant degrees.** Let `dᵢ` be the
 degrees of any system of basic invariants of the reflection representation `V₀` of `S_n` over

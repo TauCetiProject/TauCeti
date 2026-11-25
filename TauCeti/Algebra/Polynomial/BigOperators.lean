@@ -24,8 +24,7 @@ A product of monomials over a list is the monomial of the summed degrees and the
 of the coefficients.
 
 This file also groups products of linear factors according to their constant terms, records
-that a sum `∑ j ∈ range N, C (c j) * X ^ (N - j)` has no constant term, gives the coefficients and
-natural degree of `∑ k ∈ range m, X ^ k` over any nontrivial semiring, and computes the degree
+that a sum `∑ j ∈ range N, C (c j) * X ^ (N - j)` has no constant term, and computes the degree
 of geometric sums of mixed powers of equal-degree monic polynomials.
 
 A finite product of powers `(X - a i) ^ m i` of linear factors is monic of degree `∑ i, m i`, and
@@ -62,26 +61,6 @@ theorem coeff_zero_sum_C_mul_X_pow_sub (c : ℕ → R) (N : ℕ) :
   rw [coeff_C_mul_X_pow, ite_eq_right_iff]
   have := mem_range.1 hj
   omega
-
-/-- The coefficients of `1 + X + ⋯ + X ^ (m - 1)` are `1` below `m` and `0` from `m` onwards. -/
-theorem coeff_geom_sum_X (m i : ℕ) :
-    (∑ k ∈ range m, (X : R[X]) ^ k).coeff i = if i < m then 1 else 0 := by
-  simp [coeff_X_pow]
-
-/-- Over a nontrivial semiring, `1 + X + ⋯ + X ^ (m - 1)` has natural degree `m - 1`. -/
-@[simp]
-theorem natDegree_geom_sum_X [Nontrivial R] (m : ℕ) :
-    (∑ k ∈ range m, (X : R[X]) ^ k).natDegree = m - 1 := by
-  rcases m with _ | n
-  · simp
-  exact natDegree_eq_of_le_of_coeff_ne_zero
-    (natDegree_le_iff_coeff_eq_zero.2 fun k hk ↦ by rw [coeff_geom_sum_X, ite_eq_right (by omega)])
-    (by simp [coeff_X_pow])
-
-/-- Over a nontrivial semiring, `1 + X + ⋯ + X ^ n` has natural degree `n`. -/
-theorem natDegree_geom_sum_X_succ [Nontrivial R] (n : ℕ) :
-    (∑ k ∈ range (n + 1), (X : R[X]) ^ k).natDegree = n :=
-  natDegree_geom_sum_X (n + 1)
 
 /-- A product of monomials over a list is the monomial of the summed degrees and the product
 of the coefficients, in the same order. -/
