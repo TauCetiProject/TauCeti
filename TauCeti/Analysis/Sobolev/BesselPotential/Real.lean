@@ -141,8 +141,8 @@ theorem coeFn_inclusionLp_ae_eq_continuousRep (hs : finrank ℝ E < 2 * s) (F : 
 
 /-- Above the Sobolev threshold, the Sobolev embedding of a real element `F` of `H^s(E)` is its
 continuous representative. -/
-theorem toZeroAtInfty_coe_realSubmodule (hs : finrank ℝ E < 2 * s) (F : realSubmodule E h)
-    (z : E) : toZeroAtInfty hs (F : H^{s}(E)) z = (continuousRep F z : ℂ) :=
+theorem toZeroAtInfty_coe_apply_eq_continuousRep (hs : finrank ℝ E < 2 * s)
+    (F : realSubmodule E h) (z : E) : toZeroAtInfty hs (F : H^{s}(E)) z = (continuousRep F z : ℂ) :=
   congrFun ((Continuous.ae_eq_iff_eq volume (toZeroAtInfty hs (F : H^{s}(E))).continuous
     (Complex.continuous_ofReal.comp (continuous_continuousRep hs F))).1
       ((coeFn_inclusionLp_ae_eq_toZeroAtInfty h (F : H^{s}(E))).symm.trans

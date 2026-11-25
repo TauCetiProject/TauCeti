@@ -149,6 +149,11 @@ theorem vortexModuliChartedSpace_chartAt_self (hk : 3 < k) (q : vortexModuli f m
     (vortexModuliChartedSpace (hs := hs) hk).chartAt q q = 0 :=
   (exists_isSmoothVortexModuliChart_apply_eq_zero hk q).choose_spec.2.2
 
+/-- The chart of `vortexModuliChartedSpace` at an orbit is smooth in the field coordinates. -/
+theorem isSmoothVortexModuliChart_chartAt (hk : 3 < k) (q : vortexModuli f m hs) :
+    IsSmoothVortexModuliChart f m hs ((vortexModuliChartedSpace hk).chartAt q) :=
+  (exists_isSmoothVortexModuliChart_apply_eq_zero hk q).choose_spec.1
+
 /-- **The vortex moduli space is a smooth manifold of dimension `2m`.** For `k ≥ 4`, the atlas of
 `vortexModuliChartedSpace` on the vortex moduli space in `A_m^k / G_(k+1)` is smooth: any two charts
 smooth in the field coordinates have a smooth transition map

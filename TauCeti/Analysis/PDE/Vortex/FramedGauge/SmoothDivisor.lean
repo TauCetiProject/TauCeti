@@ -20,7 +20,6 @@ import TauCeti.Analysis.Sobolev.BesselPotential.Real
 import TauCeti.Analysis.Sobolev.BesselPotential.ZeroAtInfty
 import TauCeti.Analysis.PDE.Vortex.Flux.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
-import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
 
 /-!
 # The vortex moduli space is diffeomorphic to the divisor space
@@ -154,15 +153,16 @@ variable {s : ℝ} {h : 0 ≤ s}
 function, real-linear and continuous in `u` (`sectionCLM_apply`). -/
 private def sectionCLM (hs : 1 < s) : (Fin 4 → realSubmodule ℂ h) →L[ℝ] ℂ →ᵇ ℂ :=
   let T : realSubmodule ℂ h →L[ℝ] ℂ →ᵇ ℂ :=
-    (ZeroAtInftyContinuousMap.toBCFₗᵢ ℝ).toContinuousLinearMap.comp
-      (((toZeroAtInfty (finrank_real_complex_lt_two_mul hs)).restrictScalars ℝ).comp
-        (realSubmodule ℂ h).subtypeL)
+    ((toBCF (finrank_real_complex_lt_two_mul hs)).restrictScalars ℝ).comp
+      (realSubmodule ℂ h).subtypeL
   (2 : ℂ) • (T.comp (ContinuousLinearMap.proj 2) + (I : ℂ) • T.comp (ContinuousLinearMap.proj 3))
 
 private theorem sectionCLM_apply (hs : 1 < s) (u : Fin 4 → realSubmodule ℂ h) (z : ℂ) :
     sectionCLM hs u z = sectionValue (continuousRepField u) z := by
-  simp [sectionCLM, sectionValue_apply, toZeroAtInfty_coe_realSubmodule,
-    ZeroAtInftyContinuousMap.toBCFₗᵢ_apply]
+  simp only [sectionCLM, smul_add, add_apply, smul_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.proj_apply, Submodule.coe_subtypeL, Submodule.subtype_apply,
+    ContinuousLinearMap.coe_restrictScalars', coe_toBCF, toZeroAtInfty_coe_apply_eq_continuousRep,
+    smul_eq_mul, sectionValue_apply, continuousRepField_apply]
   ring
 
 /-- The reference section `α_m`, as a bounded continuous function. -/
@@ -275,9 +275,8 @@ private theorem sum_map_pow_eq_zeroMoment {x : ℂ → EuclideanSpace ℝ (Fin 4
 since it tends to the winding phase at infinity. -/
 private theorem exists_forall_le_norm_lt_norm_sectionValue (hs : 1 < s)
     (x : SobolevFieldSpace f m s) : ∃ R, ∀ z : ℂ, R ≤ ‖z‖ → 1 / 2 < ‖sectionValue x z‖ := by
-  have hev := (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow
-    (tendsto_sectionValue_mul_inv_pow hs x.mem_framedFieldSpace x.continuous)).eventually
-      (lt_mem_nhds (by norm_num : (1 / 4 : ℝ) < 1))
+  have hev := (tendsto_normSq_of_mem_framedFieldSpace hs x.mem_framedFieldSpace
+    x.continuous).eventually (lt_mem_nhds (by norm_num : (1 / 4 : ℝ) < 1))
   rw [← Metric.cobounded_eq_cocompact] at hev
   obtain ⟨R, -, hR⟩ := (Metric.hasBasis_cobounded_compl_closedBall (0 : ℂ)).eventually_iff.1 hev
   refine ⟨R + 1, fun z hz ↦ ?_⟩
@@ -390,10 +389,8 @@ theorem contMDiff_vortexModuliHomeomorph_symm_coeffHomeomorph_symm (hk : 3 < k) 
     (Sym.coeffHomeomorph ℂ m).symm.continuous).continuousAt, ?_⟩
   rw [extChartAt_coe, modelWithCornersSelf_coe, Function.id_comp, contMDiffAt_iff_contDiffAt]
   simp_rw [vortexModuliHomeomorph_symm_coeffHomeomorph_symm hm hk]
-  have he := chart_mem_atlas (Fin (2 * m) → ℝ) (⟨Quotient.mk _ (normalizedVortex hm f k c₀),
-    mk_mem_vortexModuli (equation_normalizedVortex hm f k c₀)⟩ : vortexModuli f m hs)
-  rw [show atlas _ _ = _ from vortexModuliChartedSpace_atlas hk] at he
-  exact contDiffAt_chart_mk_normalizedVortex hm he (mem_chart_source _ _)
+  exact contDiffAt_chart_mk_normalizedVortex hm (isSmoothVortexModuliChart_chartAt hk _)
+    (mem_chart_source _ _)
 
 /-- **The divisor coefficients of a vortex orbit are smooth.** For `k ≥ 4`, the coefficients of the
 monic polynomial whose roots are the zero divisor, that is, the divisor homeomorphism read through
@@ -406,9 +403,7 @@ theorem contMDiff_coeffHomeomorph_vortexModuliHomeomorph (hk : 3 < k) :
   let _i := vortexModuliChartedSpace (f := f) (m := m) (hs := hs) hk
   intro q₀
   set e := chartAt (Fin (2 * m) → ℝ) q₀
-  have he : IsSmoothVortexModuliChart f m hs e := by
-    have h := chart_mem_atlas (Fin (2 * m) → ℝ) q₀
-    rwa [show atlas _ _ = _ from vortexModuliChartedSpace_atlas hk] at h
+  have he : IsSmoothVortexModuliChart f m hs e := isSmoothVortexModuliChart_chartAt hk q₀
   rw [contMDiffAt_iff_source, contMDiffWithinAt_iff_contDiffWithinAt, modelWithCornersSelf_coe,
     Set.range_id, contDiffWithinAt_univ, extChartAt_coe_symm, extChartAt_coe]
   simp only [modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, Function.comp_id,
