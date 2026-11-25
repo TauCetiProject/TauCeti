@@ -70,12 +70,12 @@ private theorem mapRingHom_laurentQExpansion_eq {σ σ' : ℂ →+* ℂ}
     (F : modularFunctionField N) :
     HahnSeries.mapRingHom σ (laurentQExpansion (cuspDatumInftyGamma N) F) =
       HahnSeries.mapRingHom σ' (laurentQExpansion (cuspDatumInftyGamma N) F) := by
-  apply mapRingHom_laurentQExpansion_eq_of_mem_coeffSubfield _
-    ((mem_coeffSubfield _).mpr (mem_modularFunctionField.mp F.property))
-  apply RingHom.eqOn_field_closure
-  intro z hz
-  obtain ⟨i, -, rfl⟩ := ZMod.isPrimitiveRoot_stdAddChar_one.eq_pow_of_pow_eq_one hz
-  rw [map_pow, map_pow, h]
+  obtain ⟨d, hd⟩ := σ.toMonoidHom.exists_map_stdAddChar_one_eq (N := N) σ.injective
+  refine mapRingHom_laurentQExpansion_eq_of_mem_coeffSubfield _
+    ((mem_coeffSubfield _).mpr (mem_modularFunctionField.mp F.property)) fun c hc ↦ ?_
+  -- on `ℚ(ζ_N)`, both maps are the cyclotomic conjugation by `d`
+  rw [RingHom.mem_eqLocusField, ← d.coe_cyclotomicConjugate hd ⟨c, hc⟩,
+    ← d.coe_cyclotomicConjugate (h.symm.trans hd) ⟨c, hc⟩]
 
 /-! ### Stability of `F_N` -/
 
@@ -111,19 +111,12 @@ private theorem mapRingHom_mem_fieldRange_expansion (σ : ℂ →+* ℂ)
     (fun G hG ↦ ?_) (modularFunctionField_eq_closure.le F.property)
   rw [SetLike.mem_coe, Subfield.mem_comap, Subfield.mem_comap, RingHom.mem_fieldRange]
   rcases hG with ⟨c, rfl⟩ | rfl | ⟨a, -, rfl⟩
-  · -- `σ` permutes the `N`-th roots of unity, so it maps `ℚ(ζ_N)` into itself
-    have hσc : σ c ∈ Subfield.closure {z : ℂ | z ^ N = 1} := by
-      apply RingHom.field_closure_preimage_le σ {z : ℂ | z ^ N = 1}
-      apply Subfield.closure_mono (fun z hz ↦ ?_) c.property
-      change σ z ^ N = 1
-      rw [← map_pow, hz, map_one]
-    refine ⟨modularFunctionFieldConst N ⟨σ c, hσc⟩, ?_⟩
+  · refine ⟨modularFunctionFieldConst N (d.cyclotomicConjugate c), ?_⟩
     rw [IsScalarTower.algebraMap_apply (Subfield.closure {z : ℂ | z ^ N = 1}) ℂ,
       Subfield.algebraMap_ofSubfield, Subfield.subtype_apply,
-      ← coe_modularFunctionFieldConst_apply]
-    change expansion N (modularFunctionFieldConst N ⟨σ c, hσc⟩) =
-      HahnSeries.mapRingHom σ (expansion N (modularFunctionFieldConst N c))
-    rw [expansion_const, expansion_const, HahnSeries.mapRingHom_apply, HahnSeries.map_C]
+      ← coe_modularFunctionFieldConst_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+      ← expansion_apply, expansion_const, expansion_const, HahnSeries.mapRingHom_apply,
+      HahnSeries.map_C, d.coe_cyclotomicConjugate hσ]
   · refine ⟨⟨_, compactifiedQuotientComap_jMeromorphicFunction_mem_modularFunctionField⟩, ?_⟩
     exact (mapRingHom_laurentQExpansion_of_mem_coeffSubfield_bot _ σ
       (mem_coeffIntermediateField.mp

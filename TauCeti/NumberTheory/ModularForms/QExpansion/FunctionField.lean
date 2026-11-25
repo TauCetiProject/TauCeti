@@ -253,10 +253,11 @@ theorem mapRingHom_laurentQExpansion_eq_of_mem_coeffSubfield {K : Subfield ℂ}
   have heq : σ.eqLocusS σ' = (σ.eqLocusField σ').subtype.rangeS := by
     ext z
     simp
-  exact RingHom.mem_eqLocusS.mp
-    ((HahnSeries.eqLocusS_mapRingHom (Γ := ℤ) heq).symm ▸
-      (show laurentQExpansion D F ∈
-        (HahnSeries.mapRingHom (σ.eqLocusField σ').subtype).rangeS from ⟨φ, hφ⟩))
+  have hmem : laurentQExpansion D F ∈
+      (HahnSeries.mapRingHom (σ.eqLocusField σ').subtype).rangeS :=
+    RingHom.mem_rangeS.mpr ⟨φ, hφ⟩
+  rw [← HahnSeries.eqLocusS_mapRingHom (Γ := ℤ) heq] at hmem
+  exact RingHom.mem_eqLocusS.mp hmem
 
 /-- Every field endomorphism of `ℂ` fixes an expansion with rational coefficients. -/
 theorem mapRingHom_laurentQExpansion_of_mem_coeffSubfield_bot (σ : ℂ →+* ℂ)
