@@ -152,6 +152,14 @@ def equivDiscreteRep : SmoothRep.{w} A G ≌ DiscreteRep.{u, v, w} A G where
     fun _ ↦ rfl
   functor_unitIso_comp _ := rfl
 
+/-- `toDiscreteRep` is an equivalence of categories, with inverse `ofDiscreteRep`. -/
+instance isEquivalence_toDiscreteRep : (toDiscreteRep.{w} A G).IsEquivalence :=
+  (equivDiscreteRep A G).isEquivalence_functor
+
+/-- `ofDiscreteRep` is an equivalence of categories, with inverse `toDiscreteRep`. -/
+instance isEquivalence_ofDiscreteRep : (ofDiscreteRep.{w} A G).IsEquivalence :=
+  (equivDiscreteRep A G).isEquivalence_inverse
+
 /-- **Smooth representations as discrete continuous representations.** Over a discrete ring `A`,
 sending a smooth representation to the same module with the discrete topology and the same action
 is an equivalence between `SmoothRep A G` and the smooth discrete objects of `TopRep A G`. It is
