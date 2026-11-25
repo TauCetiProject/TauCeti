@@ -295,6 +295,7 @@ theorem gardingCone_subset_sum_smul_pderiv [Fintype σ] (hp : IsHyperbolic p m a
 end IsHyperbolic
 
 /-- Multiplying the polynomial by a positive constant does not change hyperbolicity. -/
+@[simp]
 theorem isHyperbolic_smul_left_iff {c : ℝ} (hc : 0 < c) :
     IsHyperbolic (c • p) m a ↔ IsHyperbolic p m a := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.smul_left hc⟩

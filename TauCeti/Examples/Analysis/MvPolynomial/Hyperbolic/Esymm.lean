@@ -57,13 +57,11 @@ theorem eval_esymm_two : eval ![(3 : ℝ), 3, -1] (esymm (Fin 3) ℝ 2) = 3 := b
 /-- `σ₃(3, 3, −1) = −9`. -/
 theorem eval_esymm_three : eval ![(3 : ℝ), 3, -1] (esymm (Fin 3) ℝ 3) = -9 := by
   have h : esymm (Fin 3) ℝ 3 = ∏ i, X i := by simpa using esymm_card (Fin 3) ℝ
-  simp [h, Fin.prod_univ_three]
-  norm_num
+  norm_num [h, Fin.prod_univ_three]
 
 /-- `σ₁(3, 3, −1) = 5`. -/
 theorem eval_esymm_one : eval ![(3 : ℝ), 3, -1] (esymm (Fin 3) ℝ 1) = 5 := by
-  simp [Fin.sum_univ_three]
-  norm_num
+  norm_num [Fin.sum_univ_three]
 
 /-- `(3, 3, −1) ∈ Γ₂`. -/
 theorem mem_gardingCone_esymm_two : ![(3 : ℝ), 3, -1] ∈ gardingCone (esymm (Fin 3) ℝ 2) 1 := by
@@ -95,8 +93,7 @@ theorem neg_one_notMem_gardingCone_esymm_two :
   rw [gardingCone_esymm _]
   intro h
   have := h 1 le_rfl (by norm_num)
-  simp [Fin.sum_univ_three] at this
-  norm_num at this
+  norm_num [Fin.sum_univ_three] at this
 
 /-- `(1, −1/2) ∈ Γ₁` for `n = 2`. -/
 theorem mem_gardingCone_esymm_one_two :
@@ -104,8 +101,7 @@ theorem mem_gardingCone_esymm_one_two :
   rw [gardingCone_esymm _]
   intro j hj1 hj2
   obtain rfl : j = 1 := by omega
-  simp [Fin.sum_univ_two]
-  norm_num
+  norm_num [Fin.sum_univ_two]
 
 /-- `(1, −1/2) ∉ Γ₂` for `n = 2`, since `σ₂(1, −1/2) = −1/2`. -/
 theorem notMem_gardingCone_esymm_two_two :
@@ -114,7 +110,6 @@ theorem notMem_gardingCone_esymm_two_two :
   intro h
   have := h 2 (by norm_num) le_rfl
   have h2 : esymm (Fin 2) ℝ 2 = ∏ i, X i := by simpa using esymm_card (Fin 2) ℝ
-  simp [h2, Fin.prod_univ_two] at this
-  norm_num at this
+  norm_num [h2, Fin.prod_univ_two] at this
 
 end TauCeti.HyperbolicChecks
