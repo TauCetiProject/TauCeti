@@ -52,6 +52,17 @@ namespace TauCeti
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F]
   [IsScalarTower ℝ ℂ F] [FiniteDimensional ℝ F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
+omit [FiniteDimensional ℝ F] [Fact (1 ≤ p)] in
+/-- Composing with a complex-linear map commutes with `∂bar`. -/
+private theorem complexAntilinearPartL_fderiv_comp {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℂ G] (e : F →L[ℂ] G) {u : ℂ → F} {z : ℂ} (hu : DifferentiableAt ℝ u z) :
+    complexAntilinearPartL (fderiv ℝ (fun z ↦ e.restrictScalars ℝ (u z)) z) 1 =
+      e.restrictScalars ℝ (complexAntilinearPartL (fderiv ℝ u z) 1) := by
+  have hf : fderiv ℝ (fun z ↦ e.restrictScalars ℝ (u z)) z = (e.restrictScalars ℝ).comp
+      (fderiv ℝ u z) := ((e.restrictScalars ℝ).hasFDerivAt.comp z hu.hasFDerivAt).fderiv
+  rw [hf, ContinuousLinearMap.complexAntilinearPartL_restrictScalars_comp,
+    ContinuousLinearMap.comp_apply]
+
 omit [Fact (1 ≤ p)] in
 /-- **Interior `W^{k+1,p}` estimate for `∂bar` of `Cᵏ⁺¹` maps.** The interior estimate
 `TauCeti.exists_eLpNormWkp_le_of_hasWeakConjWirtingerDerivOn` for maps that are `C^{k+1}` on a
@@ -80,13 +91,10 @@ theorem exists_eLpNormWkp_succ_le_of_contDiffOn (hp : 1 < p) (hp_top : p ≠ ⊤
   have hdbu' (z : ℂ) : dbu z = complexAntilinearPartL (fderiv ℝ ue z) 1 :=
     conjWirtingerDeriv_apply_eq_complexAntilinearPartL ue z 1
   -- `∂bar (e ∘ u) = e (∂bar u)` on `U`.
-  have hdbu : ∀ z ∈ U, dbu z = eℝ (complexAntilinearPartL (fderiv ℝ u z) 1) := fun z hz ↦ by
-    have hd : DifferentiableAt ℝ u z := ((hu.mono (subset_closure.trans hUO)).differentiableOn
-      (by simp)).differentiableAt (hU.mem_nhds hz)
-    have hf : fderiv ℝ ue z = eℝ.comp (fderiv ℝ u z) :=
-      (eℝ.hasFDerivAt.comp z hd.hasFDerivAt).fderiv
-    rw [hdbu', hf, ContinuousLinearMap.complexAntilinearPartL_restrictScalars_comp,
-      ContinuousLinearMap.comp_apply]
+  have hdbu : ∀ z ∈ U, dbu z = eℝ (complexAntilinearPartL (fderiv ℝ u z) 1) := fun z hz ↦
+    (hdbu' z).trans (complexAntilinearPartL_fderiv_comp (e : F →L[ℂ] Eu)
+      (((hu.mono (subset_closure.trans hUO)).differentiableOn (by simp)).differentiableAt
+        (hU.mem_nhds hz)))
   have hdbuO : ContDiffOn ℝ k dbu O := by
     have hf : ContDiffOn ℝ k (fun z ↦ complexAntilinearPartL (fderiv ℝ ue z) 1) O :=
       (ContinuousLinearMap.apply ℝ Eu (1 : ℂ)).contDiff.comp_contDiffOn
@@ -101,10 +109,8 @@ theorem exists_eLpNormWkp_succ_le_of_contDiffOn (hp : 1 < p) (hp_top : p ≠ ⊤
     (ae_restrict_mem Ω'.isOpen.measurableSet).mono fun z hz ↦ hdbu z (hΩ'U' hz))] at h₁
   have h₂ := eLpNormWkp_clm_comp_le (p := p) (U := Ω') (k := 0) (f := u) eℝ
   rw [eLpNormWkp_zero, eLpNormWkp_zero] at h₂
-  have hu' : eLpNormWkp p W (k + 1) u = eLpNormWkp p W (k + 1) (fun z ↦ sℝ (ue z)) := by
-    congr 1
-    funext z
-    simp [sℝ, ue, eℝ]
+  have hu' : eLpNormWkp p W (k + 1) u = eLpNormWkp p W (k + 1) (fun z ↦ sℝ (ue z)) :=
+    congrArg _ (funext fun z ↦ by simp [sℝ, ue, eℝ])
   refine hu'.trans_le ((eLpNormWkp_clm_comp_le sℝ).trans ?_)
   calc ‖sℝ‖ₑ * eLpNormWkp p W (k + 1) ue
       ≤ ‖sℝ‖ₑ * (C₀ * (‖eℝ‖ₑ * eLpNormWkp p Ω' k (fun z ↦ complexAntilinearPartL
