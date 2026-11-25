@@ -197,8 +197,7 @@ private def crossingFactor (D : PerfectMatching α) (x y : α) : ℤˣ :=
 
 private theorem crossingSign_eq_prod_crossingFactor (D : PerfectMatching α) :
     D.crossingSign = ∏ x : α, ∏ y : α, crossingFactor D x y := by
-  rw [crossingSign_eq_prod, Fintype.prod_prod_type]
-  rfl
+  simp only [crossingSign_eq_prod, Fintype.prod_prod_type, crossingFactor]
 
 /-- Splitting the product defining `crossingSign` into pairs inside `S × S`, pairs inside
 `Sᶜ × Sᶜ`, and mixed pairs between `Sᶜ` and `S`. -/
@@ -218,6 +217,50 @@ private theorem crossingSign_split (D : PerfectMatching α) (S : Finset α) :
   rw [Finset.prod_comm (s := S) (t := Sᶜ)]
   ac_rfl
 
+/-- Locality of `crossingSign`: if `D'` agrees with `D` outside `S` and has the same mixed
+products between `Sᶜ` and `S`, then `D'.crossingSign` differs from `D.crossingSign` by the ratio
+of their `S × S` products. -/
+private theorem crossingSign_eq_of_eq_off (D D' : PerfectMatching α) (S : Finset α)
+    (hoff : ∀ x ∉ S, D'.val x = D.val x)
+    (hmix : ∀ x ∉ S,
+      (∏ y ∈ S, crossingFactor D' x y) * (∏ y ∈ S, crossingFactor D' y x) =
+        (∏ y ∈ S, crossingFactor D x y) * ∏ y ∈ S, crossingFactor D y x) :
+    D'.crossingSign =
+      ((∏ x ∈ S, ∏ y ∈ S, crossingFactor D' x y) /
+        ∏ x ∈ S, ∏ y ∈ S, crossingFactor D x y) * D.crossingSign := by
+  have hoff_off :
+      (∏ x ∈ Sᶜ, ∏ y ∈ Sᶜ, crossingFactor D' x y) =
+        ∏ x ∈ Sᶜ, ∏ y ∈ Sᶜ, crossingFactor D x y :=
+    Finset.prod_congr rfl fun x hx => Finset.prod_congr rfl fun y hy => by
+      simp only [crossingFactor, hoff x (Finset.mem_compl.mp hx),
+        hoff y (Finset.mem_compl.mp hy)]
+  have hmix_prod :
+      (∏ x ∈ Sᶜ, ((∏ y ∈ S, crossingFactor D' x y) * ∏ y ∈ S, crossingFactor D' y x)) =
+        ∏ x ∈ Sᶜ, ((∏ y ∈ S, crossingFactor D x y) * ∏ y ∈ S, crossingFactor D y x) :=
+    Finset.prod_congr rfl fun x hx => hmix x (Finset.mem_compl.mp hx)
+  rw [crossingSign_split D' S, crossingSign_split D S, hoff_off, hmix_prod,
+    ← mul_assoc, ← mul_assoc, div_mul_cancel]
+
+omit [Fintype α] [LinearOrder α] in
+/-- The union `{a, b, D a, D b}` of the arcs at `a` and `b` has complement preserved by `D`. -/
+private theorem apply_notMem_four [DecidableEq α] (D : PerfectMatching α) {a b x : α}
+    (hx : x ∉ ({a, b, D.val a, D.val b} : Finset α)) :
+    D.val x ∉ ({a, b, D.val a, D.val b} : Finset α) := by
+  simp only [Finset.mem_insert, Finset.mem_singleton, Equiv.apply_eq_iff_eq,
+    D.apply_eq_comm] at hx ⊢
+  tauto
+
+omit [Fintype α] [LinearOrder α] in
+/-- When `a ≠ b` and `D a ≠ b`, the four endpoints `a, b, D a, D b` are pairwise distinct. -/
+private theorem prod_four {M : Type*} [CommMonoid M] [DecidableEq α]
+    (D : PerfectMatching α) {a b : α} (hab : a ≠ b) (h : D.val a ≠ b) (g : α → M) :
+    ∏ x ∈ ({a, b, D.val a, D.val b} : Finset α), g x =
+      g a * (g b * (g (D.val a) * g (D.val b))) := by
+  have hva : D.val b ≠ a := fun hv => h (D.apply_eq_of_apply_eq hv)
+  rw [Finset.prod_insert (by simp [hab, (D.apply_ne a).symm, hva.symm]),
+    Finset.prod_insert (by simp [h.symm, (D.apply_ne b).symm]),
+    Finset.prod_pair (D.val.injective.ne hab)]
+
 /-! ### Swapping a covering pair and the Pfaffian sign law -/
 
 omit [Fintype α] in
@@ -229,43 +272,39 @@ private theorem prod_crossingFactor_swap_four [DecidableEq α] (D : PerfectMatch
       -(∏ x ∈ ({a, b, D.val a, D.val b} : Finset α),
           ∏ y ∈ ({a, b, D.val a, D.val b} : Finset α), crossingFactor D x y) := by
   set s := Equiv.swap a b
-  set D' := congr s D
-  set u := D.val a
-  set v := D.val b
-  have hua : u ≠ a := D.apply_ne a
-  have hvb : v ≠ b := D.apply_ne b
-  have hva : v ≠ a := fun hv => h (D.apply_eq_of_apply_eq hv)
-  have huv : u ≠ v := fun huv => hab.lt.ne (D.val.injective huv)
-  have hD's (x : α) : D'.val (s x) = s (D.val x) := congr_val_apply_apply s D x
-  have hsu : s u = u := Equiv.swap_apply_of_ne_of_ne hua h
-  have hsv : s v = v := Equiv.swap_apply_of_ne_of_ne hva hvb
-  have hDu : D.val u = a := D.apply_apply a
-  have hDv : D.val v = b := D.apply_apply b
-  have hD'a : D'.val a = v := by have := hD's b; rwa [Equiv.swap_apply_right, hsv] at this
-  have hD'b : D'.val b = u := by have := hD's a; rwa [Equiv.swap_apply_left, hsu] at this
-  have hD'u : D'.val u = b := by have := hD's u; rwa [hsu, hDu, Equiv.swap_apply_left] at this
-  have hD'v : D'.val v = a := by have := hD's v; rwa [hsv, hDv, Equiv.swap_apply_right] at this
-  have hS_prod (g : α → ℤˣ) :
-      (∏ x ∈ ({a, b, u, v} : Finset α), g x) = g a * (g b * (g u * g v)) := by
-    rw [Finset.prod_insert (by simp [hab.lt.ne, hua.symm, hva.symm]),
-      Finset.prod_insert (by simp [Ne.symm h, hvb.symm]), Finset.prod_pair huv]
-  simp_rw [hS_prod]
-  simp only [crossingFactor, hDu, hDv, hD'a, hD'b, hD'u, hD'v]
-  have ha_lt : ∀ x, x ≠ b → (a < x ↔ b < x) := fun x hxb =>
-    ⟨fun hax => lt_of_le_of_ne (hab.ge_of_gt hax) hxb.symm, fun hbx => lt_trans hab.lt hbx⟩
-  have lt_b : ∀ x, x ≠ a → (x < b ↔ x < a) := fun x hxa =>
-    ⟨fun hxb => lt_of_le_of_ne (hab.le_of_lt hxb) hxa, fun hxa' => lt_trans hxa' hab.lt⟩
-  rcases lt_or_gt_of_ne hua with hua' | hau <;>
-  rcases lt_or_gt_of_ne hvb with hvb' | hbv <;>
-  rcases lt_or_gt_of_ne huv with huv' | hvu'
-  · simp [hab.lt, hua', hvb', (lt_b v hva).mp hvb', lt_trans hua' hab.lt, huv', not_lt_of_gt, u, v]
-  · simp [hab.lt, hua', hvb', (lt_b v hva).mp hvb', lt_trans hua' hab.lt, hvu', not_lt_of_gt, u, v]
-  · simp [hab.lt, hua', hbv, lt_trans hab.lt hbv, lt_trans hua' hab.lt, huv', not_lt_of_gt, u, v]
+  have hva : D.val b ≠ a := fun hv => h (D.apply_eq_of_apply_eq hv)
+  have hsu : s (D.val a) = D.val a := Equiv.swap_apply_of_ne_of_ne (D.apply_ne a) h
+  have hsv : s (D.val b) = D.val b := Equiv.swap_apply_of_ne_of_ne hva (D.apply_ne b)
+  have hD'a : (congr s D).val a = D.val b := by
+    have := congr_val_apply_apply s D b
+    rwa [Equiv.swap_apply_right, hsv] at this
+  have hD'b : (congr s D).val b = D.val a := by
+    have := congr_val_apply_apply s D a
+    rwa [Equiv.swap_apply_left, hsu] at this
+  have hD'u : (congr s D).val (D.val a) = b := by
+    have := congr_val_apply_apply s D (D.val a)
+    rwa [hsu, D.apply_apply, Equiv.swap_apply_left] at this
+  have hD'v : (congr s D).val (D.val b) = a := by
+    have := congr_val_apply_apply s D (D.val b)
+    rwa [hsv, D.apply_apply, Equiv.swap_apply_right] at this
+  simp_rw [D.prod_four hab.ne h]
+  simp only [crossingFactor, D.apply_apply, hD'a, hD'b, hD'u, hD'v]
+  rcases lt_or_gt_of_ne (D.apply_ne a) with hua' | hau <;>
+  rcases lt_or_gt_of_ne (D.apply_ne b) with hvb' | hbv <;>
+  rcases lt_or_gt_of_ne (D.val.injective.ne hab.ne) with huv' | hvu'
+  · simp [hab.lt, hua', hvb', (hab.lt_iff_lt_of_ne_left hva).mp hvb', lt_trans hua' hab.lt,
+      huv', not_lt_of_gt]
+  · simp [hab.lt, hua', hvb', (hab.lt_iff_lt_of_ne_left hva).mp hvb', lt_trans hua' hab.lt,
+      hvu', not_lt_of_gt]
+  · simp [hab.lt, hua', hbv, lt_trans hab.lt hbv, lt_trans hua' hab.lt, huv', not_lt_of_gt]
   · exact (not_lt_of_gt hvu' (lt_trans (lt_trans hua' hab.lt) hbv)).elim
-  · exact (not_lt_of_gt huv' (lt_trans ((lt_b v hva).mp hvb') hau)).elim
-  · simp [hab.lt, hau, (ha_lt u h).mp hau, hvb', (lt_b v hva).mp hvb', hvu', not_lt_of_gt, u, v]
-  · simp [hab.lt, hau, (ha_lt u h).mp hau, hbv, lt_trans hab.lt hbv, huv', not_lt_of_gt, u, v]
-  · simp [hab.lt, hau, (ha_lt u h).mp hau, hbv, lt_trans hab.lt hbv, hvu', not_lt_of_gt, u, v]
+  · exact (not_lt_of_gt huv' (lt_trans ((hab.lt_iff_lt_of_ne_left hva).mp hvb') hau)).elim
+  · simp [hab.lt, hau, (hab.lt_iff_lt_of_ne_right h).mp hau, hvb',
+      (hab.lt_iff_lt_of_ne_left hva).mp hvb', hvu', not_lt_of_gt]
+  · simp [hab.lt, hau, (hab.lt_iff_lt_of_ne_right h).mp hau, hbv, lt_trans hab.lt hbv, huv',
+      not_lt_of_gt]
+  · simp [hab.lt, hau, (hab.lt_iff_lt_of_ne_right h).mp hau, hbv, lt_trans hab.lt hbv, hvu',
+      not_lt_of_gt]
 
 omit [Fintype α] in
 private theorem prod_crossingFactor_swap_mix [DecidableEq α] (D : PerfectMatching α) {a b x : α}
@@ -278,14 +317,10 @@ private theorem prod_crossingFactor_swap_mix [DecidableEq α] (D : PerfectMatchi
       ∏ y ∈ ({a, b, D.val a, D.val b} : Finset α), crossingFactor D y x := by
   set s := Equiv.swap a b
   set S : Finset α := {a, b, D.val a, D.val b}
+  have hDxS : D.val x ∉ S := D.apply_notMem_four hxS
   have hxab : x ≠ a ∧ x ≠ b := by
     simp only [S, Finset.mem_insert, Finset.mem_singleton, not_or] at hxS
     exact ⟨hxS.1, hxS.2.1⟩
-  have hDxS : D.val x ∉ S := by
-    simp only [S, Finset.mem_insert, Finset.mem_singleton, not_or] at hxS ⊢
-    exact ⟨fun e => hxS.2.2.1 (D.val.injective (e.trans (D.apply_apply a).symm)),
-      fun e => hxS.2.2.2 (D.val.injective (e.trans (D.apply_apply b).symm)),
-      fun e => hxS.1 (D.val.injective e), fun e => hxS.2.1 (D.val.injective e)⟩
   have hDxab : D.val x ≠ a ∧ D.val x ≠ b := by
     simp only [S, Finset.mem_insert, Finset.mem_singleton, not_or] at hDxS
     exact ⟨hDxS.1, hDxS.2.1⟩
@@ -332,27 +367,11 @@ theorem crossingSign_congr_swap_of_ne (D : PerfectMatching α) {a b : α} (hab :
     simp only [S, Finset.mem_insert, Finset.mem_singleton, not_or] at hx
     exact Equiv.swap_apply_of_ne_of_ne hx.1 hx.2.1
   have hD'_off : ∀ x ∉ S, (congr s D).val x = D.val x := fun x hx => by
-    have hDx : D.val x ∉ S := by
-      simp only [S, Finset.mem_insert, Finset.mem_singleton, not_or] at hx ⊢
-      exact ⟨fun e => hx.2.2.1 (D.val.injective (e.trans (D.apply_apply a).symm)),
-        fun e => hx.2.2.2 (D.val.injective (e.trans (D.apply_apply b).symm)),
-        fun e => hx.1 (D.val.injective e), fun e => hx.2.1 (D.val.injective e)⟩
     have := congr_val_apply_apply s D x
-    rwa [hs_off x hx, hs_off (D.val x) hDx] at this
-  have hoff_off :
-      (∏ x ∈ Sᶜ, ∏ y ∈ Sᶜ, crossingFactor (congr s D) x y) =
-        ∏ x ∈ Sᶜ, ∏ y ∈ Sᶜ, crossingFactor D x y :=
-    Finset.prod_congr rfl fun x hx => Finset.prod_congr rfl fun y hy => by
-      simp only [crossingFactor, hD'_off x (Finset.mem_compl.mp hx),
-        hD'_off y (Finset.mem_compl.mp hy)]
-  have hmix :
-      (∏ x ∈ Sᶜ, ((∏ y ∈ S, crossingFactor (congr s D) x y) *
-          ∏ y ∈ S, crossingFactor (congr s D) y x)) =
-        ∏ x ∈ Sᶜ, ((∏ y ∈ S, crossingFactor D x y) * ∏ y ∈ S, crossingFactor D y x) :=
-    Finset.prod_congr rfl fun x hx =>
-      prod_crossingFactor_swap_mix D hab h (Finset.mem_compl.mp hx)
-  rw [crossingSign_split (congr s D) S, crossingSign_split D S,
-    prod_crossingFactor_swap_four D hab h, hoff_off, hmix, neg_mul, neg_mul]
+    rwa [hs_off x hx, hs_off (D.val x) (D.apply_notMem_four hx)] at this
+  rw [crossingSign_eq_of_eq_off D (congr s D) S hD'_off
+      (fun x hx => prod_crossingFactor_swap_mix D hab h hx),
+    prod_crossingFactor_swap_four D hab h, neg_div, div_self', neg_one_mul]
 
 /-- The Pfaffian sign-transformation law on `Fin n`, proved by monoid induction along adjacent
 transpositions `Equiv.swap i.castSucc i.succ`. -/
@@ -435,34 +454,18 @@ private theorem prod_crossingFactor_reconnect_top_four [DecidableEq α] (D : Per
       (∏ x ∈ ({a, b, D.val a, D.val b} : Finset α),
         ∏ y ∈ ({a, b, D.val a, D.val b} : Finset α), crossingFactor D x y) =
         if D.val a < D.val b then (-1 : ℤˣ) else 1 := by
-  have ha : ∀ x, x ≠ b → x ≤ a := fun x hxb =>
-    hab.le_of_lt (lt_of_le_of_ne (hb.isTop x) hxb)
-  set D' := D.reconnect a b
-  set u := D.val a
-  set v := D.val b
-  have hua : u ≠ a := D.apply_ne a
-  have hvb : v ≠ b := D.apply_ne b
-  have hva : v ≠ a := fun hv => h (D.apply_eq_of_apply_eq hv)
-  have huv : u ≠ v := fun huv => hab.lt.ne (D.val.injective huv)
-  have hu_lt : u < a := lt_of_le_of_ne (ha u h) hua
-  have hv_lt : v < a := lt_of_le_of_ne (ha v hvb) hva
-  have hDu : D.val u = a := D.apply_apply a
-  have hDv : D.val v = b := D.apply_apply b
-  have hD'a : D'.val a = b := reconnect_val_self hab.lt.ne'
-  have hD'b : D'.val b = a := reconnect_val_right hab.lt.ne'
-  have hD'u : D'.val u = v := reconnect_val_val_self hab.lt.ne'
-  have hD'v : D'.val v = u := reconnect_val_val_right hab.lt.ne'
-  have hS_prod (g : α → ℤˣ) :
-      (∏ y ∈ ({a, b, u, v} : Finset α), g y) = g a * (g b * (g u * g v)) := by
-    rw [Finset.prod_insert (by simp [hab.lt.ne, hua.symm, hva.symm]),
-      Finset.prod_insert (by simp [Ne.symm h, hvb.symm]), Finset.prod_pair huv]
-  simp_rw [hS_prod]
-  simp only [crossingFactor, hDu, hDv, hD'a, hD'b, hD'u, hD'v]
-  rcases lt_or_gt_of_ne huv with huv' | hvu'
-  · simp [hab.lt, hu_lt, hv_lt, lt_trans hu_lt hab.lt, lt_trans hv_lt hab.lt, huv', not_lt_of_gt,
-      u, v]
-  · simp [hab.lt, hu_lt, hv_lt, lt_trans hu_lt hab.lt, lt_trans hv_lt hab.lt, hvu', not_lt_of_gt,
-      u, v]
+  have hlt_a {z : α} (hza : z ≠ a) (hzb : z ≠ b) : z < a :=
+    (hab.lt_iff_lt_of_ne_left hza).mp (lt_of_le_of_ne (hb.isTop z) hzb)
+  have hva : D.val b ≠ a := fun hv => h (D.apply_eq_of_apply_eq hv)
+  have hu_lt : D.val a < a := hlt_a (D.apply_ne a) h
+  have hv_lt : D.val b < a := hlt_a hva (D.apply_ne b)
+  simp_rw [D.prod_four hab.ne h]
+  simp only [crossingFactor, D.apply_apply, reconnect_val_self hab.ne',
+    reconnect_val_right hab.ne', reconnect_val_val_self hab.ne',
+    reconnect_val_val_right hab.ne']
+  rcases lt_or_gt_of_ne (D.val.injective.ne hab.ne) with huv' | hvu'
+  · simp [hab.lt, hu_lt, hv_lt, lt_trans hu_lt hab.lt, lt_trans hv_lt hab.lt, huv', not_lt_of_gt]
+  · simp [hab.lt, hu_lt, hv_lt, lt_trans hu_lt hab.lt, lt_trans hv_lt hab.lt, hvu', not_lt_of_gt]
 
 omit [Fintype α] in
 private theorem prod_crossingFactor_reconnect_top_mix [DecidableEq α] (D : PerfectMatching α)
@@ -472,60 +475,42 @@ private theorem prod_crossingFactor_reconnect_top_mix [DecidableEq α] (D : Perf
       (∏ y ∈ ({a, b, D.val a, D.val b} : Finset α), crossingFactor (D.reconnect a b) y x) =
     (∏ y ∈ ({a, b, D.val a, D.val b} : Finset α), crossingFactor D x y) *
       ∏ y ∈ ({a, b, D.val a, D.val b} : Finset α), crossingFactor D y x := by
-  have ha : ∀ z, z ≠ b → z ≤ a := fun z hzb =>
-    hab.le_of_lt (lt_of_le_of_ne (hb.isTop z) hzb)
-  set D' := D.reconnect a b
-  set u := D.val a
-  set v := D.val b
-  have hua : u ≠ a := D.apply_ne a
-  have hvb : v ≠ b := D.apply_ne b
-  have hva : v ≠ a := fun hv => h (D.apply_eq_of_apply_eq hv)
-  have huv : u ≠ v := fun huv => hab.lt.ne (D.val.injective huv)
-  have hDu : D.val u = a := D.apply_apply a
-  have hDv : D.val v = b := D.apply_apply b
-  have hD'a : D'.val a = b := reconnect_val_self hab.lt.ne'
-  have hD'b : D'.val b = a := reconnect_val_right hab.lt.ne'
-  have hD'u : D'.val u = v := reconnect_val_val_self hab.lt.ne'
-  have hD'v : D'.val v = u := reconnect_val_val_right hab.lt.ne'
-  have hx_ne : x ≠ a ∧ x ≠ b ∧ x ≠ u ∧ x ≠ v := by
-    simpa [Finset.mem_insert, Finset.mem_singleton, not_or, u, v] using hxS
-  have hDx_ne : D.val x ≠ a ∧ D.val x ≠ b ∧ D.val x ≠ u ∧ D.val x ≠ v :=
-    ⟨fun e => hx_ne.2.2.1 (D.val.injective (e.trans hDu.symm)),
-      fun e => hx_ne.2.2.2 (D.val.injective (e.trans hDv.symm)),
-      fun e => hx_ne.1 (D.val.injective e), fun e => hx_ne.2.1 (D.val.injective e)⟩
-  have hxa : x < a := lt_of_le_of_ne (ha x hx_ne.2.1) hx_ne.1
-  have hDxa : D.val x < a := lt_of_le_of_ne (ha _ hDx_ne.2.1) hDx_ne.1
-  have hD'x : D'.val x = D.val x := reconnect_val_of_ne hx_ne.1 hx_ne.2.1 hx_ne.2.2.1 hx_ne.2.2.2
-  have hS_prod (g : α → ℤˣ) :
-      (∏ y ∈ ({a, b, u, v} : Finset α), g y) = g a * (g b * (g u * g v)) := by
-    rw [Finset.prod_insert (by simp [hab.lt.ne, hua.symm, hva.symm]),
-      Finset.prod_insert (by simp [Ne.symm h, hvb.symm]), Finset.prod_pair huv]
+  have hlt_a {z : α} (hza : z ≠ a) (hzb : z ≠ b) : z < a :=
+    (hab.lt_iff_lt_of_ne_left hza).mp (lt_of_le_of_ne (hb.isTop z) hzb)
+  have hDxS := D.apply_notMem_four hxS
+  simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hxS hDxS
+  have hxa : x < a := hlt_a hxS.1 hxS.2.1
+  have hDxa : D.val x < a := hlt_a hDxS.1 hDxS.2.1
+  have hD'x : (D.reconnect a b).val x = D.val x :=
+    reconnect_val_of_ne hxS.1 hxS.2.1 hxS.2.2.1 hxS.2.2.2
   have hinterleave {z w m M : α} (hmM : m < M) (hzm : z ≠ m) (hwM : w ≠ M) :
       (if z < m ∧ m < w ∧ w < M then (-1 : ℤˣ) else 1) *
           (if m < z ∧ z < M ∧ M < w then (-1 : ℤˣ) else 1) =
         (if z < m ∧ m < w then (-1 : ℤˣ) else 1) * (if z < M ∧ M < w then (-1 : ℤˣ) else 1) := by
     simp only [← Set.mem_Ioo_and_notMem_Ioo_iff hmM hwM, ← Set.notMem_Ioo_and_mem_Ioo_iff hmM hzm]
     by_cases hm : m ∈ Set.Ioo z w <;> by_cases hM : M ∈ Set.Ioo z w <;> simp_all [Set.mem_Ioo]
-  simp_rw [hS_prod]
-  simp only [crossingFactor, hDu, hDv, hD'a, hD'b, hD'u, hD'v, hD'x]
+  simp_rw [D.prod_four hab.ne h]
+  simp only [crossingFactor, D.apply_apply, reconnect_val_self hab.ne',
+    reconnect_val_right hab.ne', reconnect_val_val_self hab.ne',
+    reconnect_val_val_right hab.ne', hD'x]
   rcases lt_or_gt_of_ne (D.apply_ne x).symm with _ | hgt
   · simp only [hDxa, lt_trans hDxa hab.lt, not_lt_of_gt hDxa, not_lt_of_gt (lt_trans hDxa hab.lt),
       not_lt_of_gt hxa, not_lt_of_gt (lt_trans hxa hab.lt), and_true, and_false, false_and,
       ite_false, one_mul, mul_one]
-    rcases lt_or_gt_of_ne huv with huv' | hvu'
-    · have hnv : ¬(x < v ∧ v < D.val x ∧ D.val x < u) := fun h' =>
+    rcases lt_or_gt_of_ne (D.val.injective.ne hab.ne) with huv' | hvu'
+    · have hnv : ¬(x < D.val b ∧ D.val b < D.val x ∧ D.val x < D.val a) := fun h' =>
         not_lt_of_gt huv' (lt_trans h'.2.1 h'.2.2)
-      have hnv' : ¬(v < x ∧ x < u ∧ u < D.val x) := fun h' =>
+      have hnv' : ¬(D.val b < x ∧ x < D.val a ∧ D.val a < D.val x) := fun h' =>
         not_lt_of_gt huv' (lt_trans h'.1 h'.2.1)
       simp only [hnv, hnv', ite_false, mul_one]
-      exact hinterleave huv' hx_ne.2.2.1 hDx_ne.2.2.2
-    · have hnu : ¬(x < u ∧ u < D.val x ∧ D.val x < v) := fun h' =>
+      exact hinterleave huv' hxS.2.2.1 hDxS.2.2.2
+    · have hnu : ¬(x < D.val a ∧ D.val a < D.val x ∧ D.val x < D.val b) := fun h' =>
         not_lt_of_gt hvu' (lt_trans h'.2.1 h'.2.2)
-      have hnu' : ¬(u < x ∧ x < v ∧ v < D.val x) := fun h' =>
+      have hnu' : ¬(D.val a < x ∧ x < D.val b ∧ D.val b < D.val x) := fun h' =>
         not_lt_of_gt hvu' (lt_trans h'.1 h'.2.1)
       simp only [hnu, hnu', ite_false, one_mul]
-      rw [mul_comm (if x < u ∧ u < D.val x then (-1 : ℤˣ) else 1)]
-      exact hinterleave hvu' hx_ne.2.2.2 hDx_ne.2.2.1
+      rw [mul_comm (if x < D.val a ∧ D.val a < D.val x then (-1 : ℤˣ) else 1)]
+      exact hinterleave hvu' hxS.2.2.2 hDxS.2.2.1
   · have hn : ∀ y z : α, ¬(x < y ∧ y < D.val x ∧ D.val x < z) := fun _ _ h' =>
       not_lt_of_gt hgt (lt_trans h'.1 h'.2.1)
     have hn' : ∀ y z : α, ¬(y < x ∧ x < z ∧ z < D.val x) := fun _ _ h' =>
@@ -546,19 +531,9 @@ theorem crossingSign_reconnect_top (D : PerfectMatching α) {a b : α} (hab : a 
     simp only [S, Finset.mem_insert, Finset.mem_singleton, not_or] at hx
     exact reconnect_val_of_ne hx.1 hx.2.1 hx.2.2.1 hx.2.2.2
   have ⟨hSS_D', hSS_D⟩ := prod_crossingFactor_reconnect_top_four D hab hb h
-  have hoff_off :
-      (∏ x ∈ Sᶜ, ∏ y ∈ Sᶜ, crossingFactor (D.reconnect a b) x y) =
-        ∏ x ∈ Sᶜ, ∏ y ∈ Sᶜ, crossingFactor D x y :=
-    Finset.prod_congr rfl fun x hx => Finset.prod_congr rfl fun y hy => by
-      simp only [crossingFactor, hD'_off x (Finset.mem_compl.mp hx),
-        hD'_off y (Finset.mem_compl.mp hy)]
-  have hmix :
-      (∏ x ∈ Sᶜ, ((∏ y ∈ S, crossingFactor (D.reconnect a b) x y) *
-          ∏ y ∈ S, crossingFactor (D.reconnect a b) y x)) =
-        ∏ x ∈ Sᶜ, ((∏ y ∈ S, crossingFactor D x y) * ∏ y ∈ S, crossingFactor D y x) :=
-    Finset.prod_congr rfl fun x hx =>
-      prod_crossingFactor_reconnect_top_mix D hab hb h (Finset.mem_compl.mp hx)
-  rw [crossingSign_split (D.reconnect a b) S, crossingSign_split D S, hSS_D', hSS_D, hoff_off, hmix]
+  rw [crossingSign_eq_of_eq_off D (D.reconnect a b) S hD'_off
+      (fun x hx => prod_crossingFactor_reconnect_top_mix D hab hb h hx),
+    hSS_D', hSS_D]
   split_ifs <;> simp
 
 end TauCeti.PerfectMatching

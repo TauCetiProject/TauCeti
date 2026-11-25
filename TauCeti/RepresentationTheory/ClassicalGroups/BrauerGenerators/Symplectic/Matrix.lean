@@ -143,18 +143,9 @@ theorem symplecticBoundaryMatrix_permToBrauer_one_apply (v u : Fin k → ι ⊕ 
       exact not_lt_of_gt (lt_trans hab hba) (finSumFinRevEquiv_inl_lt_inr k k (k + k) rfl i i)
   rw [symplecticBoundaryMatrix_apply, PerfectMatching.crossingSign_of_isNoncrossingMatching hnc]
   simp only [Units.val_one, Int.cast_one, one_mul, PerfectMatching.weight_def]
-  rw [← Fintype.prod_equiv e _ _ fun _ => rfl, Fintype.prod_sum_type]
-  have htop : ∏ j : Fin k,
-      (if e (Sum.inr j) < (PerfectMatching.congr e (permToBrauer 1)).val (e (Sum.inr j)) then
-        Matrix.J ι R (Sum.elim u v (e.symm (e (Sum.inr j))))
-          (Sum.elim u v (e.symm ((PerfectMatching.congr e (permToBrauer 1)).val (e (Sum.inr j)))))
-      else 1) = 1 :=
-    Finset.prod_eq_one fun j _ => by
-      rw [hval_inr j, ite_eq_right (not_finSumFinRevEquiv_inr_lt_inl k k (k + k) rfl j j)]
-  rw [htop, mul_one]
-  refine Finset.prod_congr rfl fun i _ => ?_
-  rw [hval_inl i, ite_eq_left (finSumFinRevEquiv_inl_lt_inr k k (k + k) rfl i i),
-    Equiv.symm_apply_apply, Equiv.symm_apply_apply, Sum.elim_inl, Sum.elim_inr]
+  rw [← Equiv.prod_comp e, Fintype.prod_sum_type]
+  refine (congrArg₂ (· * ·) (Finset.prod_congr rfl fun i _ => ?_)
+    (Finset.prod_eq_one fun j _ => ?_)).trans (mul_one _) <;> simp [e]
 
 variable {R ι} in
 /-- **Boundary-permutation formula for `symplecticBoundaryMatrix`.** For any boundary permutation
@@ -264,51 +255,34 @@ theorem transpose_symplecticBoundaryMatrix (D : BrauerDiagram k) :
     (D.symplecticBoundaryMatrix R ι)ᵀ =
       (-1 : R) ^ k • D.flip.symplecticBoundaryMatrix R ι := by
   let e := finSumFinRevEquiv k k (k + k) rfl
-  have hrev (x : Fin (k + k)) : e.symm (Fin.revPerm x) = (e.symm x).swap := by
-    apply e.injective
-    rw [Equiv.apply_symm_apply, finSumFinRevEquiv_swap rfl, Equiv.apply_symm_apply]
-    rfl
+  have hrev (x : Fin (k + k)) : e.symm (Fin.revPerm x) = (e.symm x).swap :=
+    e.injective <| by
+      rw [Equiv.apply_symm_apply, finSumFinRevEquiv_swap rfl, Equiv.apply_symm_apply,
+        Fin.revPerm_apply]
   have hflip : PerfectMatching.congr e D.flip =
       PerfectMatching.congr Fin.revPerm (PerfectMatching.congr e D) := by
-    refine PerfectMatching.ext fun x => ?_
-    rw [PerfectMatching.congr_val_apply, PerfectMatching.congr_val_apply,
-      PerfectMatching.congr_val_apply, BrauerDiagram.flip_val, finSumFinRevEquiv_swap rfl]
-    have hsymm : Fin.revPerm.symm x = Fin.revPerm x := rfl
-    rw [hsymm, hrev x]
-    rfl
+    have he : (Equiv.sumComm (Fin k) (Fin k)).trans e = e.trans Fin.revPerm :=
+      Equiv.ext fun z => by
+        rw [Equiv.trans_apply, Equiv.sumComm_apply, finSumFinRevEquiv_swap rfl,
+          Equiv.trans_apply, Fin.revPerm_apply]
+    rw [BrauerDiagram.flip_def, PerfectMatching.congr_trans, PerfectMatching.congr_trans, he]
   ext v u
   rw [Matrix.transpose_apply, Matrix.smul_apply, smul_eq_mul,
     symplecticBoundaryMatrix_apply, symplecticBoundaryMatrix_apply, hflip,
     PerfectMatching.crossingSign_congr_revPerm,
     PerfectMatching.weight_congr_strictAnti_of_skew _ Fin.revPerm
       (fun _ _ h => Fin.rev_lt_rev.mpr h) (fun _ _ => Matrix.J_apply_swap ι R _ _)]
-  have hcard : Fintype.card (Fin (k + k)) / 2 = k := by
-    rw [Fintype.card_fin]
-    omega
+  have hcard : Fintype.card (Fin (k + k)) / 2 = k := by simp; omega
   have hw : (fun x y => Matrix.J ι R (Sum.elim u v (e.symm (Fin.revPerm x)))
         (Sum.elim u v (e.symm (Fin.revPerm y)))) =
       (fun x y => Matrix.J ι R (Sum.elim v u (e.symm x)) (Sum.elim v u (e.symm y))) := by
     funext x y
     rw [hrev x, hrev y]
-    cases e.symm x <;> cases e.symm y <;> rfl
-  have hsign : (-1 : R) ^ k * (-1 : R) ^ k = 1 := by
-    rw [← mul_pow]
-    simp
-  rw [hcard, hw]
-  calc
-    (((PerfectMatching.congr e D).crossingSign : ℤ) : R) *
-        (PerfectMatching.congr e D).weight (fun x y =>
-          Matrix.J ι R (Sum.elim v u (e.symm x)) (Sum.elim v u (e.symm y)))
-        = ((-1 : R) ^ k * (-1 : R) ^ k) *
-            ((((PerfectMatching.congr e D).crossingSign : ℤ) : R) *
-              (PerfectMatching.congr e D).weight (fun x y =>
-                Matrix.J ι R (Sum.elim v u (e.symm x)) (Sum.elim v u (e.symm y)))) := by
-          rw [hsign, one_mul]
-    _ = (-1 : R) ^ k *
-          ((((PerfectMatching.congr e D).crossingSign : ℤ) : R) *
-            ((-1 : R) ^ k * (PerfectMatching.congr e D).weight (fun x y =>
-              Matrix.J ι R (Sum.elim v u (e.symm x)) (Sum.elim v u (e.symm y))))) := by
-          ring
+    exact congrArg₂ (Matrix.J ι R)
+      (congrFun (Sum.elim_swap (f := u) (g := v)) _)
+      (congrFun (Sum.elim_swap (f := u) (g := v)) _)
+  have hsign : (-1 : R) ^ k * (-1 : R) ^ k = 1 := by simp [← mul_pow]
+  rw [hcard, hw, ← mul_assoc, ← mul_assoc, mul_right_comm ((-1 : R) ^ k), hsign, one_mul]
 
 /-- **Conjugate-transposing the symplectic boundary matrix reflects the diagram up to
 `(-1) ^ k`.** -/
@@ -329,6 +303,70 @@ section Fintype
 
 variable (R : Type u) [CommRing R] (ι : Type*) [Fintype ι] [DecidableEq ι] {k : ℕ}
 
+/-- Reindexing equivalence sending a boundary labelling `ℓ : Fin k ⊕ Fin k → α` to the family of
+endpoint label pairs `(ℓ (φ (Sum.inl i)), ℓ (φ (Sum.inr i)))` along the `k` arcs of `φ`. -/
+private def arcLabellingEquiv {α : Type*} (φ : Equiv.Perm (Fin k ⊕ Fin k)) :
+    (Fin k ⊕ Fin k → α) ≃ (Fin k → α × α) :=
+  (Equiv.arrowCongr φ (Equiv.refl α)).symm.trans <|
+    (Equiv.sumArrowEquivProdArrow (Fin k) (Fin k) α).trans
+      (Equiv.arrowProdEquivProdArrow (Fin k) (fun _ => α) (fun _ => α)).symm
+
+@[simp]
+private theorem arcLabellingEquiv_apply_fst {α : Type*} (φ : Equiv.Perm (Fin k ⊕ Fin k))
+    (ℓ : Fin k ⊕ Fin k → α) (i : Fin k) :
+    (arcLabellingEquiv φ ℓ i).1 = ℓ (φ (Sum.inl i)) := by
+  simp [arcLabellingEquiv, Equiv.arrowCongr, Equiv.sumArrowEquivProdArrow,
+    Equiv.arrowProdEquivProdArrow]
+
+@[simp]
+private theorem arcLabellingEquiv_apply_snd {α : Type*} (φ : Equiv.Perm (Fin k ⊕ Fin k))
+    (ℓ : Fin k ⊕ Fin k → α) (i : Fin k) :
+    (arcLabellingEquiv φ ℓ i).2 = ℓ (φ (Sum.inr i)) := by
+  simp [arcLabellingEquiv, Equiv.arrowCongr, Equiv.sumArrowEquivProdArrow,
+    Equiv.arrowProdEquivProdArrow]
+
+/-- Combining the double sum over top and bottom strand labellings `(w₁, w₂)` into a single sum
+over boundary labellings `ℓ : Fin k ⊕ Fin k → ι ⊕ ι` via `Equiv.sumArrowEquivProdArrow`. -/
+private theorem sum_kronecker_boundary_terms {R : Type*} [CommRing R]
+    (φ : Equiv.Perm (Fin k ⊕ Fin k))
+    (P : Fin k ⊕ Fin k → Matrix (ι ⊕ ι) (ι ⊕ ι) R) (u v : Fin k → ι ⊕ ι) :
+    (∑ w₁ : Fin k → ι ⊕ ι, ∑ w₂ : Fin k → ι ⊕ ι,
+        (∏ z : Fin k ⊕ Fin k, P z (Sum.elim u v z) (Sum.elim w₂ w₁ z)) *
+          ∏ i : Fin k, Matrix.J ι R
+            (Sum.elim w₂ w₁ (φ (Sum.inl i))) (Sum.elim w₂ w₁ (φ (Sum.inr i)))) =
+      ∑ ℓ : Fin k ⊕ Fin k → ι ⊕ ι,
+        (∏ z : Fin k ⊕ Fin k, P z (Sum.elim u v z) (ℓ z)) *
+          ∏ i : Fin k, Matrix.J ι R (ℓ (φ (Sum.inl i))) (ℓ (φ (Sum.inr i))) := by
+  let g (ℓ : Fin k ⊕ Fin k → ι ⊕ ι) : R :=
+    (∏ z : Fin k ⊕ Fin k, P z (Sum.elim u v z) (ℓ z)) *
+      ∏ i : Fin k, Matrix.J ι R (ℓ (φ (Sum.inl i))) (ℓ (φ (Sum.inr i)))
+  have hsum_elim (ℓ : Fin k ⊕ Fin k → ι ⊕ ι) :
+      Sum.elim (Equiv.sumArrowEquivProdArrow (Fin k) (Fin k) (ι ⊕ ι) ℓ).1
+        (Equiv.sumArrowEquivProdArrow (Fin k) (Fin k) (ι ⊕ ι) ℓ).2 = ℓ := by
+    ext (i | i) <;> simp
+  rw [Finset.sum_comm, ← Fintype.sum_prod_type (f := fun p => g (Sum.elim p.1 p.2))]
+  exact (Fintype.sum_equiv (Equiv.sumArrowEquivProdArrow (Fin k) (Fin k) (ι ⊕ ι)) g
+    (fun p => g (Sum.elim p.1 p.2)) fun ℓ => congrArg g (hsum_elim ℓ).symm).symm
+
+omit [Fintype ι] in
+/-- Grouping the `2 * k` boundary matrix factors with the `k` arc weights `Matrix.J` into one
+factor per arc `(φ (Sum.inl i), φ (Sum.inr i))`. -/
+private theorem prod_boundary_mul_prod_J {R : Type*} [CommRing R]
+    (φ : Equiv.Perm (Fin k ⊕ Fin k))
+    (P : Fin k ⊕ Fin k → Matrix (ι ⊕ ι) (ι ⊕ ι) R)
+    (u v : Fin k → ι ⊕ ι) (ℓ : Fin k ⊕ Fin k → ι ⊕ ι) :
+    (∏ z : Fin k ⊕ Fin k, P z (Sum.elim u v z) (ℓ z)) *
+        (∏ i : Fin k, Matrix.J ι R (ℓ (φ (Sum.inl i))) (ℓ (φ (Sum.inr i)))) =
+      ∏ i : Fin k, P (φ (Sum.inl i)) (Sum.elim u v (φ (Sum.inl i)))
+          (arcLabellingEquiv φ ℓ i).1 *
+        Matrix.J ι R (arcLabellingEquiv φ ℓ i).1 (arcLabellingEquiv φ ℓ i).2 *
+        P (φ (Sum.inr i)) (Sum.elim u v (φ (Sum.inr i))) (arcLabellingEquiv φ ℓ i).2 := by
+  rw [← Equiv.prod_comp φ (fun z => P z (Sum.elim u v z) (ℓ z)), Fintype.prod_sum_type,
+    ← Finset.prod_mul_distrib, ← Finset.prod_mul_distrib]
+  refine Finset.prod_congr rfl fun i _ => ?_
+  rw [arcLabellingEquiv_apply_fst, arcLabellingEquiv_apply_snd]
+  ring
+
 variable {R ι} in
 /-- **Bilinear Kronecker congruence of `symplecticBoundaryMatrix`.** Applying `M₂` to every top
 slot and `M₁` to every bottom slot congruates the `Matrix.J` factor on each arc
@@ -345,6 +383,7 @@ theorem kroneckerPower_mul_symplecticBoundaryMatrix_mul_transpose_apply_of_congr
               (Sum.elim (fun _ => M₁) (fun _ => M₂) (φ (Sum.inr i)))ᵀ)
             (Sum.elim u v (φ (Sum.inl i))) (Sum.elim u v (φ (Sum.inr i))) := by
   let P : Fin k ⊕ Fin k → Matrix (ι ⊕ ι) (ι ⊕ ι) R := Sum.elim (fun _ => M₁) (fun _ => M₂)
+  -- Expand matrix congruence and factor `sign φ` out of the double sum over `(w₁, w₂)`.
   rw [Matrix.mul_mul_transpose_apply]
   have hterm (w₁ w₂ : Fin k → ι ⊕ ι) :
       (M₂.kroneckerPower (Fin k) v w₁ * D.symplecticBoundaryMatrix R ι w₁ w₂ *
@@ -360,55 +399,14 @@ theorem kroneckerPower_mul_symplecticBoundaryMatrix_mul_transpose_apply_of_congr
   rw [Finset.sum_congr rfl fun w₁ _ => Finset.sum_congr rfl fun w₂ _ => hterm w₁ w₂]
   simp_rw [← Finset.mul_sum]
   congr 1
-  rw [Finset.sum_comm,
-    ← Fintype.sum_prod_type (f := fun p : (Fin k → ι ⊕ ι) × (Fin k → ι ⊕ ι) =>
-      (∏ z : Fin k ⊕ Fin k, P z (Sum.elim u v z) (Sum.elim p.1 p.2 z)) *
-        ∏ i : Fin k, Matrix.J ι R (Sum.elim p.1 p.2 (φ (Sum.inl i)))
-          (Sum.elim p.1 p.2 (φ (Sum.inr i)))),
-    ← Fintype.sum_equiv (Equiv.sumArrowEquivProdArrow (Fin k) (Fin k) (ι ⊕ ι))
-      (fun ℓ => (∏ z : Fin k ⊕ Fin k, P z (Sum.elim u v z) (ℓ z)) *
-        ∏ i : Fin k, Matrix.J ι R (ℓ (φ (Sum.inl i))) (ℓ (φ (Sum.inr i))))
-      (fun p => (∏ z : Fin k ⊕ Fin k, P z (Sum.elim u v z) (Sum.elim p.1 p.2 z)) *
-        ∏ i : Fin k, Matrix.J ι R (Sum.elim p.1 p.2 (φ (Sum.inl i)))
-          (Sum.elim p.1 p.2 (φ (Sum.inr i))))
-      (fun ℓ => by
-        have hℓ (z : Fin k ⊕ Fin k) :
-            Sum.elim (ℓ ∘ Sum.inl) (ℓ ∘ Sum.inr) z = ℓ z :=
-          congrFun (Sum.elim_comp_inl_inr ℓ) z
-        have hp : (∏ z : Fin k ⊕ Fin k,
-              P z (Sum.elim u v z) (Sum.elim (ℓ ∘ Sum.inl) (ℓ ∘ Sum.inr) z)) =
-            ∏ z : Fin k ⊕ Fin k, P z (Sum.elim u v z) (ℓ z) :=
-          Finset.prod_congr rfl fun z _ => by rw [hℓ z]
-        have hj : (∏ i : Fin k, Matrix.J ι R
-              (Sum.elim (ℓ ∘ Sum.inl) (ℓ ∘ Sum.inr) (φ (Sum.inl i)))
-              (Sum.elim (ℓ ∘ Sum.inl) (ℓ ∘ Sum.inr) (φ (Sum.inr i)))) =
-            ∏ i : Fin k, Matrix.J ι R (ℓ (φ (Sum.inl i))) (ℓ (φ (Sum.inr i))) :=
-          Finset.prod_congr rfl fun i _ => by rw [hℓ, hℓ]
-        exact congrArg₂ (· * ·) hp.symm hj.symm)]
-  let eArc : (Fin k ⊕ Fin k → ι ⊕ ι) ≃ (Fin k → (ι ⊕ ι) × (ι ⊕ ι)) :=
-    (Equiv.arrowCongr φ (Equiv.refl (ι ⊕ ι))).symm.trans <|
-      (Equiv.sumArrowEquivProdArrow (Fin k) (Fin k) (ι ⊕ ι)).trans
-        (Equiv.arrowProdEquivProdArrow (Fin k) (fun _ => ι ⊕ ι) (fun _ => ι ⊕ ι)).symm
-  have heArc_fst (ℓ : Fin k ⊕ Fin k → ι ⊕ ι) (i : Fin k) :
-      (eArc ℓ i).1 = ℓ (φ (Sum.inl i)) := rfl
-  have heArc_snd (ℓ : Fin k ⊕ Fin k → ι ⊕ ι) (i : Fin k) :
-      (eArc ℓ i).2 = ℓ (φ (Sum.inr i)) := rfl
-  have hfactor (ℓ : Fin k ⊕ Fin k → ι ⊕ ι) :
-      (∏ z : Fin k ⊕ Fin k, P z (Sum.elim u v z) (ℓ z)) *
-          (∏ i : Fin k, Matrix.J ι R (ℓ (φ (Sum.inl i))) (ℓ (φ (Sum.inr i)))) =
-        ∏ i : Fin k, P (φ (Sum.inl i)) (Sum.elim u v (φ (Sum.inl i))) (eArc ℓ i).1 *
-          Matrix.J ι R (eArc ℓ i).1 (eArc ℓ i).2 *
-          P (φ (Sum.inr i)) (Sum.elim u v (φ (Sum.inr i))) (eArc ℓ i).2 := by
-    rw [← Equiv.prod_comp φ (fun z => P z (Sum.elim u v z) (ℓ z)), Fintype.prod_sum_type,
-      ← Finset.prod_mul_distrib, ← Finset.prod_mul_distrib]
-    refine Finset.prod_congr rfl fun i _ => ?_
-    rw [heArc_fst, heArc_snd]
-    ring
-  rw [Finset.sum_congr rfl fun ℓ _ => hfactor ℓ,
-    Fintype.sum_equiv eArc _
+  -- Swap the sums and combine `(w₂, w₁)` into a single boundary labelling `ℓ`.
+  rw [sum_kronecker_boundary_terms ι φ P u v]
+  -- Regroup factors per arc, reindex by `arcLabellingEquiv φ`, and interchange sum and product.
+  rw [Finset.sum_congr rfl fun ℓ _ => prod_boundary_mul_prod_J ι φ P u v ℓ,
+    Equiv.sum_comp (arcLabellingEquiv φ)
       (fun f => ∏ i : Fin k, P (φ (Sum.inl i)) (Sum.elim u v (φ (Sum.inl i))) (f i).1 *
         Matrix.J ι R (f i).1 (f i).2 *
-        P (φ (Sum.inr i)) (Sum.elim u v (φ (Sum.inr i))) (f i).2) (fun _ => rfl),
+        P (φ (Sum.inr i)) (Sum.elim u v (φ (Sum.inr i))) (f i).2),
     ← Fintype.prod_sum (fun (i : Fin k) (q : (ι ⊕ ι) × (ι ⊕ ι)) =>
       P (φ (Sum.inl i)) (Sum.elim u v (φ (Sum.inl i))) q.1 * Matrix.J ι R q.1 q.2 *
         P (φ (Sum.inr i)) (Sum.elim u v (φ (Sum.inr i))) q.2)]
@@ -458,7 +456,8 @@ theorem kroneckerPower_mul_symplecticBoundaryMatrix_mul_transpose
     A.kroneckerPower (Fin k) * D.symplecticBoundaryMatrix R ι * (A.kroneckerPower (Fin k))ᵀ =
       D.symplecticBoundaryMatrix R ι := by
   obtain ⟨φ, hφ⟩ := D.exists_congr_permToBrauer_one
-  have harc (z : Fin k ⊕ Fin k) : Sum.elim (fun _ => A) (fun _ => A) z = A := by cases z <;> rfl
+  have harc (z : Fin k ⊕ Fin k) : Sum.elim (fun _ => A) (fun _ => A) z = A := by
+    rcases z with _ | _ <;> simp
   ext v u
   rw [kroneckerPower_mul_symplecticBoundaryMatrix_mul_transpose_apply_of_congr hφ A A v u,
     symplecticBoundaryMatrix_apply_of_congr hφ]
