@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.MeasurableSpace.Projection
 public import TauCeti.Probability.Process.Filtration.Progressive
 public import Mathlib.Probability.Process.Stopping
 import Mathlib.Topology.Order.Compact
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Debuts of progressive sets and compact-fiber approximations
@@ -204,17 +205,25 @@ theorem debut_iInter_eq_iSup_of_isCompact [T2Space ι] {e : ℕ → Set (ι × �
   cases ha : ⨆ n, debut (e n) ω with
   | top => exact le_top
   | coe t =>
-    let C : ℕ → Set ι := fun n ↦ Iic t ∩ {u | (u, ω) ∈ e n}
-    have hC_closed (n : ℕ) : IsClosed (C n) := isClosed_Iic.inter (hK n).isClosed
-    have hC_ne (n : ℕ) : (C n).Nonempty := by
-      have hle : debut (e n) ω ≤ t := ha ▸ le_iSup (fun k ↦ debut (e k) ω) n
+    -- Restrict the second coordinate to `{ω}` since fiber compactness is assumed only at `ω`.
+    have hK' (n : ℕ) (ω' : Ω) : IsCompact {u : ι | (u, ω') ∈ e n ∩ (Iic t ×ˢ {ω})} := by
+      by_cases hω : ω' = ω
+      · subst hω
+        have heq : {u : ι | (u, ω') ∈ e n ∩ (Iic t ×ˢ {ω'})} = {u | (u, ω') ∈ e n} ∩ Iic t := by
+          ext; simp
+        rw [heq]
+        exact (hK n).inter_right isClosed_Iic
+      · simp [hω]
+    have hmem : ω ∈ ⋂ n, Prod.snd '' (e n ∩ (Iic t ×ˢ {ω})) := mem_iInter.mpr fun n ↦ by
+      have hle : debut (e n) ω ≤ t := by
+        simpa only [ha] using le_iSup (fun k ↦ debut (e k) ω) n
       obtain ⟨u, hut, hu⟩ := (debut_le_coe_iff_of_isCompact (hK n)).mp hle
-      exact ⟨u, hut, hu⟩
-    obtain ⟨u, hu⟩ := IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed C
-      (fun n _ h ↦ ⟨h.1, hanti (Nat.le_succ n) h.2⟩) hC_ne
-      ((hK 0).of_isClosed_subset (hC_closed 0) inter_subset_right) hC_closed
-    exact (debut_le_of_mem (mem_iInter.mpr fun n ↦ (mem_iInter.mp hu n).2)).trans
-      (WithTop.coe_le_coe.mpr (mem_iInter.mp hu 0).1)
+      exact ⟨(u, ω), ⟨hu, hut, rfl⟩, rfl⟩
+    rw [← image_snd_iInter_eq_of_isCompact
+      (fun _ _ h ↦ inter_subset_inter_left _ (hanti h)) hK'] at hmem
+    obtain ⟨⟨u, _⟩, hu, rfl⟩ := hmem
+    exact (debut_le_of_mem (mem_iInter.mpr fun n ↦ (mem_iInter.mp hu n).1)).trans
+      (WithTop.coe_le_coe.mpr (mem_iInter.mp hu 0).2.1)
 
 end CompactFiber
 

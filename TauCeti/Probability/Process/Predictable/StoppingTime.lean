@@ -487,6 +487,16 @@ theorem MeasureTheory.IsStoppingTime.measurableSet_predictable_eq_iff_le
 
 section GenerateFromPredictableRays
 
+private lemma singleton_zero_prod_univ_eq_compl_iUnion {Ω : Type*} :
+    ({(0 : ℝ≥0)} ×ˢ (univ : Set Ω)) =
+      (⋃ k : ℕ, {p : ℝ≥0 × Ω | ((1 / (k + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0) ≤ p.1})ᶜ := by
+  ext ⟨t, _⟩
+  simp only [mem_prod, mem_singleton_iff, mem_univ, and_true, compl_iUnion, mem_iInter,
+    mem_compl_iff, mem_ofPred_eq, WithTop.coe_le_coe, not_le]
+  refine ⟨by rintro rfl k; positivity, fun h ↦ by_contra fun ht ↦ ?_⟩
+  obtain ⟨k, hk⟩ := exists_nat_one_div_lt (pos_iff_ne_zero.mpr ht)
+  exact lt_asymm hk (h k)
+
 private lemma singleton_zero_prod_mem_generateFrom {Ω : Type*} {m : MeasurableSpace Ω}
     (ℱ : Filtration ℝ≥0 m) {A : Set Ω} (hA : MeasurableSet[ℱ 0] A) :
     MeasurableSet[MeasurableSpace.generateFrom
@@ -500,15 +510,7 @@ private lemma singleton_zero_prod_mem_generateFrom {Ω : Type*} {m : MeasurableS
   obtain ⟨τA, hτA, hτA_eq⟩ := TauCeti.IsPredictableTime.exists_setOf_le_eq_univ_prod hA
   have hA_ray : MeasurableSet[G] (univ ×ˢ A) := hτA_eq ▸ hray hτA
   have h0 : MeasurableSet[G] ({(0 : ℝ≥0)} ×ˢ (univ : Set Ω)) := by
-    have heq : ({(0 : ℝ≥0)} ×ˢ (univ : Set Ω)) =
-        (⋃ k : ℕ, {p : ℝ≥0 × Ω | ((1 / (k + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0) ≤ p.1})ᶜ := by
-      ext ⟨t, _⟩
-      have hlt := @NNReal.lt_coe_iff_exists_add_one_div_add_one_le 0 t
-      simp_rw [zero_add, ← WithTop.coe_zero, WithTop.coe_lt_coe, pos_iff_ne_zero] at hlt
-      simp only [mem_prod, mem_singleton_iff, mem_univ, and_true, compl_iUnion, mem_iInter,
-        mem_compl_iff, mem_ofPred_eq]
-      exact not_not.symm.trans (hlt.not.trans not_exists)
-    rw [heq]
+    rw [singleton_zero_prod_univ_eq_compl_iUnion]
     exact (MeasurableSet.iUnion fun _ ↦ hray TauCeti.IsPredictableTime.const).compl
   have hinter : ({(0 : ℝ≥0)} ×ˢ (univ : Set Ω)) ∩ (univ ×ˢ A) = {(0 : ℝ≥0)} ×ˢ A := by
     ext ⟨t, ω⟩; simp

@@ -168,10 +168,10 @@ theorem isPredictableTime_debut_of_mem_predictablePaving {u : Set (ℝ≥0 × Ω
       (⋃ i, {p : ℝ≥0 × Ω | σ i p.2 ≤ p.1 ∧ (p.1 : WithTop ℝ≥0) ≤ τ i p.2}) =
       fun ω ↦ Finset.univ.inf fun i ↦ if σ i ω ≤ τ i ω then σ i ω else ⊤ := by
     ext ω
-    rw [TauCeti.debut_iUnion, iInf_apply, Finset.inf_univ_eq_iInf]
-    refine iInf_congr fun i ↦ ?_
-    rw [TauCeti.debut_setOf_le_and_le]
-    congr
+    simp only [TauCeti.debut_iUnion, iInf_apply, Finset.inf_univ_eq_iInf,
+      TauCeti.debut_setOf_le_and_le]
+    -- Reconcile the `LinearOrder` and `Classical` `Decidable` instances on `σ i ω ≤ τ i ω`.
+    exact iInf_congr fun _ ↦ if_congr Iff.rfl rfl rfl
   rw [heq]
   exact TauCeti.IsPredictableTime.finsetInf fun i _ ↦ (hσ i).ite_le (hτ i)
 
@@ -370,7 +370,8 @@ theorem exists_isPredictableTime_section_lt {E : Set (ℝ≥0 × Ω)}
       Antitone.measure_iInter (fun _ _ h ↦ image_mono (he_anti h))
         (fun k ↦ (ℱ.measurableSet_image_snd_of_mem_predictablePaving (he_mem k)).nullMeasurableSet)
         ⟨0, measure_ne_top P _⟩
-    exact hproj ▸ hmeas ▸ he_lt
+    rw [hproj, hmeas]
+    exact he_lt
 
 /-- **The predictable section theorem** (Dellacherie–Meyer, IV.84; Theodorakopoulos, Theorem 4.4).
 For any predictable set `E`, finite measure `P`, and tolerance `ε ≠ 0` (without completeness or
@@ -410,10 +411,7 @@ private theorem exists_predictable_graph_section
       (∀ ω, τ ω ≤ D ω) ∧ (∀ ω, D ω ≠ ⊤ → D ω = τ ω) ∧
       P {ω | τ ω ≠ ⊤ ∧ D ω = ⊤} ≤ (2⁻¹ : ℝ≥0∞) ^ k := by
   have hproj : Prod.snd '' {p : ℝ≥0 × Ω | τ p.2 = p.1} = {ω | τ ω ≠ ⊤} := by
-    ext ω
-    simp only [mem_image, mem_ofPred_eq, Prod.exists, exists_eq_right]
-    exact ⟨fun ⟨t, ht⟩ ↦ ht ▸ WithTop.coe_ne_top,
-      fun h ↦ let ⟨t, ht⟩ := WithTop.ne_top_iff_exists.mp h; ⟨t, ht.symm⟩⟩
+    rw [TauCeti.image_snd_eq_setOf_debut_ne_top, TauCeti.debut_setOf_eq]
   obtain ⟨D, hD, hsec, hmass⟩ := TauCeti.exists_isPredictableTime_section_le_add hgraph P
     (pow_ne_zero k (by simp : (2⁻¹ : ℝ≥0∞) ≠ 0))
   have hD_eq (ω : Ω) (hne : D ω ≠ ⊤) : D ω = τ ω := by
@@ -421,18 +419,20 @@ private theorem exists_predictable_graph_section
     exact ht.symm.trans (hsec ω t ht.symm).symm
   have hD_ge (ω : Ω) : τ ω ≤ D ω := by
     by_cases hne : D ω = ⊤
-    · exact hne ▸ le_top
+    · simp [hne]
     · exact (hD_eq ω hne).ge
   have hsub : {ω | D ω ≠ ⊤} ⊆ {ω | τ ω ≠ ⊤} := by
     intro ω hne
     simp only [mem_ofPred_eq] at hne ⊢
-    exact hD_eq ω hne ▸ hne
+    rwa [← hD_eq ω hne]
+  rw [hproj] at hmass
   have hsdiff : P ({ω | τ ω ≠ ⊤} \ {ω | D ω ≠ ⊤}) ≤ (2⁻¹ : ℝ≥0∞) ^ k :=
     (measure_sdiff_le_iff_le_add hD.isStoppingTime.measurableSet_eq_top.compl.nullMeasurableSet
-      hsub (measure_ne_top P _)).mpr (hproj ▸ hmass)
+      hsub (measure_ne_top P _)).mpr hmass
   have heq : {ω | τ ω ≠ ⊤} \ {ω | D ω ≠ ⊤} = {ω | τ ω ≠ ⊤ ∧ D ω = ⊤} := by
     ext ω; simp
-  exact ⟨D, hD, hD_ge, hD_eq, heq ▸ hsdiff⟩
+  rw [heq] at hsdiff
+  exact ⟨D, hD, hD_ge, hD_eq, hsdiff⟩
 
 -- Along an announcing sequence, finite-lag failures above tolerance `c > 0` have empty
 -- intersection.
@@ -445,14 +445,17 @@ private theorem iInter_finite_lag_eq_empty {D : Ω → WithTop ℝ≥0} {a : ℕ
   · exact ⟨0, fun h ↦ h.1 htop⟩
   · obtain ⟨t, ht⟩ := WithTop.ne_top_iff_exists.mp htop
     by_cases ht0 : t = 0
-    · exact ⟨0, fun h ↦ not_lt_of_ge (ht ▸ ht0 ▸ bot_le) h.2⟩
-    · have hlt : ((t - c : ℝ≥0) : WithTop ℝ≥0) < D ω :=
-        ht ▸ WithTop.coe_lt_coe.mpr (tsub_lt_self (pos_iff_ne_zero.mpr ht0) hc)
+    · refine ⟨0, fun h ↦ not_lt_of_ge ?_ h.2⟩
+      simp [← ht, ht0]
+    · have hlt : ((t - c : ℝ≥0) : WithTop ℝ≥0) < D ω := by
+        rw [← ht, WithTop.coe_lt_coe]
+        exact tsub_lt_self (pos_iff_ne_zero.mpr ht0) hc
       obtain ⟨m, hm⟩ := ((ha.tendsto ω).eventually (isOpen_Ioi.mem_nhds hlt)).exists
       obtain ⟨u, hu⟩ := WithTop.ne_top_iff_exists.mp (ha.ne_top m ω)
       have hle : D ω ≤ a m ω + (c : WithTop ℝ≥0) := by
         rw [← ht, ← hu, ← WithTop.coe_add, WithTop.coe_le_coe]
-        exact tsub_le_iff_right.mp (WithTop.coe_lt_coe.mp (hu ▸ hm)).le
+        rw [← hu, WithTop.coe_lt_coe] at hm
+        exact tsub_le_iff_right.mp hm.le
       exact ⟨m, fun h ↦ not_lt_of_ge hle h.2⟩
 
 -- Along an announcing sequence, infinite-escape failures below height `k` have empty intersection.
@@ -589,8 +592,9 @@ private theorem biInf_tendsto_and_lt_of_eq_coe {D b : ℕ → Ω → WithTop ℝ
   refine ⟨tendsto_of_tendsto_of_tendsto_of_le_of_le'
     (NNReal.tendsto_coe_tsub_one_div_add_one t) tendsto_const_nhds hge_ev
     (Eventually.of_forall hle_all), fun n hpos ↦ ?_⟩
-  exact (biInf_le (f := fun k ↦ b k ω) (le_max_left n K)).trans_lt
-    (hfin n ▸ hb_lt _ ω ((hfin n).symm ▸ hpos))
+  refine (biInf_le (f := fun k ↦ b k ω) (le_max_left n K)).trans_lt ?_
+  rw [← hfin n] at hpos ⊢
+  exact hb_lt _ ω hpos
 
 -- Combine the `⊤` and finite cases on outcomes eventually outside `graphBadEvent`.
 private theorem biInf_tendsto_and_lt {D b : ℕ → Ω → WithTop ℝ≥0}
