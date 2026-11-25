@@ -459,14 +459,14 @@ private theorem exists_holderOnWith_iteratedFDeriv_normalizer {n : ℕ} {α C : 
   have hH (u : ℂ) : H u = m (conj (b u) - I) := by
     simp [H, T, sub_eq_add_neg]
   have hHinv (u : ℂ) : (H u).inverse = m (conj (b u) - I)⁻¹ := by
-    rw [hH, ContinuousLinearMap.inverse_mul]
+    rw [hH, ContinuousLinearMap.inverse_mul_apply]
   have hinv : (H a).IsInvertible := by
     have h0 : conj (b a) - I ≠ 0 := by
       intro h
       apply hba
       simpa using congrArg conj (sub_eq_zero.mp h)
     rw [hH]
-    exact ContinuousLinearMap.isInvertible_mul h0
+    exact ContinuousLinearMap.isInvertible_mul_apply h0
   have hHc : ContDiffOn ℝ n H s := (T.contDiff.comp_contDiffOn hb).add contDiffOn_const
   obtain ⟨r, hr, hrs, -, hIc, K₂, hK₂⟩ := hHc.exists_holderOnWith_iteratedFDeriv_clm_inverse
       (hs.mem_nhds ha) hα (holderOnWith_iteratedFDeriv_add_const _
@@ -668,14 +668,15 @@ theorem exists_isothermal_chart_ckHolder (ℓ : ℕ) {α H : ℝ≥0} (hα0 : 0 
   have hFc0 : F c = 0 := by simpa [hFval] using heval
   -- Restrict to `V`, then to a neighbourhood of `c` on which the inverse is `C^{ℓ+1,α}`.
   set F₁ := F.restrOpen V hV
+  have hF₁ : ⇑F₁ = ⇑F := F.coe_restrOpen hV
+  have hF₁s : ⇑F₁.symm = ⇑F.symm := F.coe_restrOpen_symm hV
   have hcF₁ : c ∈ F₁.source := ⟨(hFs c).mpr (by simpa using he0), hc⟩
   obtain ⟨E, hE, hcE, hEs, hEsymm, hEH⟩ := F₁.exists_restr_holderOnWith_iteratedFDeriv_symm hcF₁
-    (s := F₁.source) (fun z hz ↦ (hFc z hz.1).contDiffWithinAt) hα1.le
-    (F₁.open_source.mem_nhds hcF₁)
-    (hFH.mono fun z hz ↦ hz.1)
-    (F₁.isInvertible_fderiv hcF₁ ((hFc c hcF₁.1).differentiableAt (by simp))
-      ((hFsc _ (F.map_source hcF₁.1)).differentiableAt (by simp)))
-  refine ⟨E, hcE, ?_, fun z hz ↦ hVU (hEs hz).2, ?_, hEsymm, ?_, hEH, ?_⟩ <;> rw [hE]
+    (s := F₁.source) (by rw [hF₁]; exact fun z hz ↦ (hFc z hz.1).contDiffWithinAt) hα1.le
+    (F₁.open_source.mem_nhds hcF₁) (by rw [hF₁]; exact hFH.mono fun z hz ↦ hz.1)
+    (F₁.isInvertible_fderiv hcF₁ (by rw [hF₁]; exact (hFc c hcF₁.1).differentiableAt (by simp))
+      (by rw [hF₁s, hF₁]; exact (hFsc _ (F.map_source hcF₁.1)).differentiableAt (by simp)))
+  refine ⟨E, hcE, ?_, fun z hz ↦ hVU (hEs hz).2, ?_, hEsymm, ?_, hEH, ?_⟩ <;> rw [hE, hF₁]
   · exact hFc0
   · exact fun z hz ↦ (hFc z (hEs hz).1).contDiffWithinAt
   · exact ⟨_, hFH.mono fun z hz ↦ (hEs hz).1⟩

@@ -208,7 +208,8 @@ private theorem ContMDiffAlmostComplexStructure.mfderiv_trans_apply_of_fderiv_co
     (hed.hasMFDerivAt.comp y hqd.hasMFDerivAt).mfderiv
   rw [hd]
   -- The last step is elaborated late, so that its tangent-space type is read as `ℂ`.
-  calc _ = fderiv ℝ e (q y) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) q y (J y v)) := rfl
+  calc _ = fderiv ℝ e (q y) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) q y (J y v)) :=
+        ContinuousLinearMap.comp_apply _ _ _
     _ = fderiv ℝ e (q y) (J.chartPushforward q (q y) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) q y v)) :=
         congrArg _ (DFunLike.congr_fun hcomm v)
     _ = Complex.I * fderiv ℝ e (q y) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) q y v) := hlin _ hy.2 _
