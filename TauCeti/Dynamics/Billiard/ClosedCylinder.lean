@@ -46,8 +46,10 @@ The extension descends to a homeomorphism `T'` of the closed cylinder `AddCircle
 (`TauCeti.StrictConvexBilliardTable.closedBilliardHomeomorph`) that fixes both boundary circles
 pointwise (`TauCeti.StrictConvexBilliardTable.closedBilliardMap_one`,
 `TauCeti.StrictConvexBilliardTable.closedBilliardMap_neg_one`) and restricts to the billiard map on
-the open cylinder (`TauCeti.StrictConvexBilliardTable.closedBilliardMap_inclusion`). In the angle
-coordinate `δ`, the circle `v = 1` is `δ = 0` and `v = -1` is `δ = π`.
+the open cylinder, which is dense in the closed one
+(`TauCeti.StrictConvexBilliardTable.closedBilliardMap_cylinderInclusion`,
+`TauCeti.StrictConvexBilliardTable.denseRange_cylinderInclusion`). In the angle coordinate `δ`, the
+circle `v = 1` is `δ = 0` and `v = -1` is `δ = π`.
 
 ## Main definitions
 
@@ -60,6 +62,8 @@ coordinate `δ`, the circle `v = 1` is `δ = 0` and `v = -1` is `δ = π`.
 * `TauCeti.StrictConvexBilliardTable.closedBilliardMap`: the billiard map extended to the closed
   cylinder `AddCircle L × [-1, 1]`, and
   `TauCeti.StrictConvexBilliardTable.closedBilliardHomeomorph`, as a homeomorphism.
+* `TauCeti.StrictConvexBilliardTable.cylinderInclusion`: the inclusion of the open cylinder
+  `AddCircle L × (-1, 1)` in the closed cylinder.
 
 ## References
 
@@ -467,21 +471,57 @@ theorem closedBilliardMap_neg_one (θ : AddCircle χ.period) :
   induction θ using QuotientAddGroup.induction_on with | H s => ?_
   ext <;> simp
 
+/-- The inclusion of the open cylinder `AddCircle L × (-1, 1)` in the closed cylinder
+`AddCircle L × [-1, 1]`. -/
+def cylinderInclusion (χ : StrictConvexBilliardTable o) :
+    AddCircle χ.period × Ioo (-1 : ℝ) 1 → AddCircle χ.period × Icc (-1 : ℝ) 1 :=
+  Prod.map id (inclusion Ioo_subset_Icc_self)
+
+/-- The inclusion of the open cylinder keeps the collision parameter and the tangential
+component. -/
+@[simp]
+theorem cylinderInclusion_apply (x : AddCircle χ.period × Ioo (-1 : ℝ) 1) :
+    χ.cylinderInclusion x = (x.1, inclusion Ioo_subset_Icc_self x.2) :=
+  (rfl)
+
+/-- The inclusion of the open cylinder in the closed cylinder is injective. -/
+theorem cylinderInclusion_injective : Injective χ.cylinderInclusion :=
+  injective_id.prodMap (inclusion_injective _)
+
+/-- The image of the open cylinder consists of the points with tangential component in
+`(-1, 1)`. -/
+theorem range_cylinderInclusion :
+    range χ.cylinderInclusion = {p | (p.2 : ℝ) ∈ Ioo (-1) 1} := by
+  simp [cylinderInclusion, range_prodMap, range_inclusion, univ_prod]
+
+/-- The inclusion of the open cylinder in the closed cylinder is continuous. -/
+theorem continuous_cylinderInclusion : Continuous χ.cylinderInclusion :=
+  continuous_id.prodMap (continuous_inclusion Ioo_subset_Icc_self)
+
+/-- The open cylinder is dense in the closed cylinder. -/
+theorem denseRange_cylinderInclusion : DenseRange χ.cylinderInclusion :=
+  denseRange_id.prodMap ((denseRange_inclusion_iff _).2 (closure_Ioo (by norm_num)).symm.subset)
+
 /-- On the open cylinder `AddCircle L × (-1, 1)` the extended billiard map is the billiard map. -/
-theorem closedBilliardMap_inclusion (x : AddCircle χ.period × Ioo (-1 : ℝ) 1) :
-    χ.closedBilliardMap (x.1, inclusion Ioo_subset_Icc_self x.2) =
-      Prod.map id (inclusion Ioo_subset_Icc_self) (χ.billiardMap x) := by
+theorem closedBilliardMap_cylinderInclusion (x : AddCircle χ.period × Ioo (-1 : ℝ) 1) :
+    χ.closedBilliardMap (χ.cylinderInclusion x) = χ.cylinderInclusion (χ.billiardMap x) := by
   obtain ⟨θ, v⟩ := x
   induction θ using QuotientAddGroup.induction_on with | H s => ?_
   ext
   · simp [χ.closedNextParam_of_mem_Ioo v.property]
   · simp [χ.closedNextTangential_of_mem_Ioo v.property]
 
+/-- The inclusion of the open cylinder semiconjugates the billiard map to the extended billiard
+map. -/
+theorem semiconj_cylinderInclusion :
+    Semiconj χ.cylinderInclusion χ.billiardMap χ.closedBilliardMap :=
+  fun x ↦ (χ.closedBilliardMap_cylinderInclusion x).symm
+
 /-- **The closed cylinder.** The billiard map extends to a homeomorphism `T'` of
 the closed cylinder `AddCircle L × [-1, 1]` that fixes both boundary circles pointwise
 (`TauCeti.StrictConvexBilliardTable.closedBilliardMap_one`,
 `TauCeti.StrictConvexBilliardTable.closedBilliardMap_neg_one`) and restricts to the billiard map on
-the open cylinder (`TauCeti.StrictConvexBilliardTable.closedBilliardMap_inclusion`). -/
+the open cylinder (`TauCeti.StrictConvexBilliardTable.closedBilliardMap_cylinderInclusion`). -/
 def closedBilliardHomeomorph :
     AddCircle χ.period × Icc (-1 : ℝ) 1 ≃ₜ AddCircle χ.period × Icc (-1 : ℝ) 1 where
   toEquiv := χ.closedBilliardMap

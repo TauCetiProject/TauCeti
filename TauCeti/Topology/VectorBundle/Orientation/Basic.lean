@@ -179,6 +179,19 @@ theorem mapOrientation_eq_orientation_iff [Fintype ι] [DecidableEq ι]
   rw [mapOrientation_apply, Basis.orientation_map, ← Orientation.map_symm]
   exact (Equiv.eq_symm_apply _).symm
 
+/-- A linear trivialization carries the orientation of the one-vector basis `(v)` of a fibre of a
+line bundle to the orientation of the one-vector basis `(e v)` of the model fibre. -/
+theorem mapOrientation_orientation_basisSingleton [Unique ι] [Fintype ι] [DecidableEq ι]
+    (e : Trivialization F (π F E')) [e.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet)
+    (hE : finrank ℝ (E' b) = 1) (hF : finrank ℝ F = 1) {v : E' b} (hv : v ≠ 0)
+    (hev : (e ⟨b, v⟩).2 ≠ 0) :
+    e.mapOrientation ι hb (FiniteDimensional.basisSingleton ι hE v hv).orientation =
+      (FiniteDimensional.basisSingleton ι hF (e ⟨b, v⟩).2 hev).orientation := by
+  rw [mapOrientation_apply, ← Basis.orientation_map]
+  congr 1
+  exact Basis.eq_of_apply_eq fun i ↦ by
+    simp only [Basis.map_apply, FiniteDimensional.basisSingleton_apply, linearEquivAt_apply]
+
 end AddCommGroup
 
 variable [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E] [Fintype ι]
