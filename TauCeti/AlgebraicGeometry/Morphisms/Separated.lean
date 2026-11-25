@@ -29,6 +29,9 @@ charts, such as the two-chart model of an algebraic function field, is separated
 
 Separated morphisms compose, so a scheme separated over a separated scheme is itself separated;
 in particular a scheme proper over a separated base, such as a field, is a separated scheme.
+Likewise the canonical map `X ×_S Y ⟶ X ×_T Y` over a separated `S ⟶ T` is a closed immersion, so
+`X ×_S Y` is a closed subscheme of `X × Y` (through `AlgebraicGeometry.pullbackToProd`) when `S` is
+a separated scheme.
 A section of a separated morphism is a closed immersion, so a section with dense range is
 surjective.
 
@@ -51,6 +54,8 @@ pointwise with members of a finite group on a dense set of rational points.
   products over the target.
 * `AlgebraicGeometry.Scheme.IsSeparated.of_isSeparated`: the source of a separated morphism to a
   separated scheme is a separated scheme.
+* `AlgebraicGeometry.isClosedImmersion_pullbackMap_id`: the canonical map `X ×_S Y ⟶ X ×_T Y` over
+  a separated `S ⟶ T` is a closed immersion.
 * `AlgebraicGeometry.surjective_of_isDominant_of_comp_eq_id`: a section of a separated morphism
   with dense range is surjective.
 * `AlgebraicGeometry.isAffineHom_hasOfPostcompProperty`: since affine morphisms are separated,
@@ -109,6 +114,25 @@ separated morphism `S ⟶ ⊤_ Scheme`. For instance, a scheme proper over a fie
 theorem Scheme.IsSeparated.of_isSeparated (f : X ⟶ S) [IsSeparated f] [S.IsSeparated] :
     X.IsSeparated :=
   ⟨by rw [← terminal.comp_from f]; infer_instance⟩
+
+/-- **The canonical map `X ×_S Y ⟶ X ×_T Y` over a separated morphism is a closed immersion.**
+Here `i : S ⟶ T` is separated and `f' : X ⟶ T`, `g' : Y ⟶ T` factor as `f ≫ i` and `g ≫ i`.
+Mathlib's instance for `pullback.mapDesc` is the case where `f'` and `g'` are literally `f ≫ i` and
+`g ≫ i`. For instance, `X ×_S Y ⟶ X × Y` is a closed immersion when `S` is a separated scheme. -/
+instance isClosedImmersion_pullbackMap_id {Y T : Scheme.{u}} (f : X ⟶ S) (g : Y ⟶ S)
+    (f' : X ⟶ T) (g' : Y ⟶ T) (i : S ⟶ T) [IsSeparated i] (h₁ : f ≫ i = 𝟙 X ≫ f')
+    (h₂ : g ≫ i = 𝟙 Y ≫ g') :
+    IsClosedImmersion (pullback.map f g f' g' (𝟙 X) (𝟙 Y) i h₁ h₂) := by
+  obtain rfl : f' = f ≫ i := by simpa using h₁.symm
+  obtain rfl : g' = g ≫ i := by simpa using h₂.symm
+  exact inferInstanceAs (IsClosedImmersion (pullback.mapDesc f g i))
+
+/-- The canonical map `X ×_S Y ⟶ X × Y` from the fibre product over `S` to the product, that is,
+the fibre product over the terminal scheme. It is a closed immersion when `S` is a separated
+scheme, by `isClosedImmersion_pullbackMap_id`. -/
+noncomputable abbrev pullbackToProd {Y : Scheme.{u}} (f : X ⟶ S) (g : Y ⟶ S) :
+    pullback f g ⟶ pullback (terminal.from X) (terminal.from Y) :=
+  pullback.map f g _ _ (𝟙 X) (𝟙 Y) (terminal.from S) (terminal.hom_ext _ _) (terminal.hom_ext _ _)
 
 /-- A section of a separated morphism with dense range is surjective: it is a closed immersion,
 so its range is closed as well as dense. -/
