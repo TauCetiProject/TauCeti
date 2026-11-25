@@ -44,23 +44,14 @@ theorem HasWeakFDerivOn.comp_imDilation {c : ℝ} (hc : c ≠ 0) {U V : Opens �
     HasWeakFDerivOn volume U (fun z => g (imDilation c z))
       fun z => (Dg (imDilation c z)).comp (imDilation c) := by
   have := hg.completeSpace
-  set a : ℝ≥0∞ := ENNReal.ofReal |c⁻¹|
+  set a : ℝ≥0∞ := ((‖c⁻¹‖₊ : NNReal) : ℝ≥0∞)
+  have ha_eq : ENNReal.ofReal |c⁻¹| = a := ENNReal.ofReal_eq_coe_nnreal (abs_nonneg _)
   have ha0 : a ≠ 0 := by simp [a, hc]
-  have hatop : a ≠ ∞ := ENNReal.ofReal_ne_top
-  have : (a • (volume : Measure ℂ)).IsAddHaarMeasure := Measure.IsAddHaarMeasure.smul _ ha0 hatop
-  -- Scaling the measure by a finite constant preserves weak derivatives.
-  have hga : HasWeakFDerivOn (a • volume) V g Dg := by
-    refine hasWeakFDerivOn_iff.2 fun v => ?_
-    obtain ⟨hcs, hgi, hDi, hint⟩ :=
-      hasWeakLineDerivOn_iff_testFunction.1 (hasWeakFDerivOn_iff.1 hg v)
-    have hsmul {h : ℂ → F} (hh : LocallyIntegrableOn h V volume) :
-        LocallyIntegrableOn h V (a • volume) := fun x hx => by
-      obtain ⟨t, ht, hti⟩ := hh x hx
-      exact ⟨t, ht, by simpa [IntegrableOn] using hti.smul_measure hatop⟩
-    refine hasWeakLineDerivOn_iff_testFunction.2 ⟨hcs, hsmul hgi, hsmul hDi, fun φ => ?_⟩
-    rw [integral_smul_measure, integral_smul_measure, hint φ, smul_neg]
+  have : (a • (volume : Measure ℂ)).IsAddHaarMeasure :=
+    Measure.IsAddHaarMeasure.smul _ ha0 ENNReal.coe_ne_top
+  have hga : HasWeakFDerivOn (a • volume) V g Dg := hg.smul_measure_nnreal ‖c⁻¹‖₊
   have hΦ : MeasurePreserving (imDilation c) volume (a • volume) :=
-    ⟨(imDilation c).continuous.measurable, map_imDilation_volume hc⟩
+    ⟨(imDilation c).continuous.measurable, ha_eq ▸ map_imDilation_volume hc⟩
   have h := hga.comp_measurePreserving hΦ
     (imDilation c).lipschitzWith.locallyLipschitz.locallyLipschitzOn hUV
   simpa [Function.comp_def, ContinuousLinearMap.fderiv] using h

@@ -10,8 +10,10 @@ public import TauCeti.Analysis.Sobolev.Local.FirstOrder
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.Sobolev.WeakDeriv.Hyperplane
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
+import TauCeti.MeasureTheory.Function.AEStronglyMeasurable
 import TauCeti.MeasureTheory.Function.MemLpLoc.NormInv
 import TauCeti.MeasureTheory.Integral.NormRpow
+import TauCeti.Topology.Algebra.Module.Trace
 
 /-!
 # Membership, counterexamples, and sharpness for `MemW1pLoc`
@@ -28,9 +30,9 @@ local Sobolev class `TauCeti.MemW1pLoc`:
 * **Identity and norm.** The identity belongs to `MemW1pLoc p Ω` (`TauCeti.memW1pLoc_id`) without
   belonging to global `Lᵖ` for `p ≠ 0` on a nontrivial space (`TauCeti.not_memLp_id` in
   `TauCeti.MeasureTheory.Integral.NormRpow`); `x ↦ ‖x‖` belongs to `MemW1pLoc p Ω` for all `p` with
-  `‖fderiv ℝ (‖·‖) x‖ ≤ 1` (`TauCeti.memW1pLoc_norm`, while its classical derivative on `ι → ℝ`
-  with the supremum norm is given by `TauCeti.hasFDerivAt_pi_norm_of_abs_lt` in
-  `TauCeti.Analysis.Calculus.FDeriv.Norm`).
+  `‖fderiv ℝ (‖·‖) x‖ ≤ 1` (`TauCeti.memW1pLoc_norm`, while on `ι → ℝ` with the supremum norm its
+  classical derivative at points where a single nonzero coordinate strictly dominates is given by
+  `TauCeti.hasFDerivAt_pi_norm_of_abs_lt` in `TauCeti.Analysis.Calculus.FDeriv.Norm`).
 * **Unit radial field.** On an inner product space of dimension `d ≥ 2` and an open set `Ω`
   containing `0`, the unit radial map `x ↦ ‖x‖⁻¹ • x` belongs to `MemW1pLoc p Ω` if and only if
   `p < d` (`TauCeti.memW1pLoc_norm_inv_smul_iff`).
@@ -67,6 +69,7 @@ theorem forall_strongDual_memW1pLoc_and_not_memLpLoc_lpSingle (p : ℝ≥0∞) :
   set H := lp (fun _ : ℝ => ℝ) 2
   set u : ℝ → H := fun t => lp.single 2 t (1 : ℝ)
   constructor
+  -- Each `ℓ ∈ H*` is represented by `w ∈ ℓ²(ℝ)` of countable support, so `ℓ ∘ u =ᵐ 0`.
   · intro ℓ
     let w : H := (InnerProductSpace.toDual ℝ H).symm ℓ
     have hw_eval : ∀ t : ℝ, ℓ (u t) = w t := fun t => by
@@ -84,34 +87,16 @@ theorem forall_strongDual_memW1pLoc_and_not_memLpLoc_lpSingle (p : ℝ≥0∞) :
       rw [Pi.zero_apply, hw_eval]
       exact (Function.notMem_support.1 ht).symm
     exact (memW1pLoc_zero (p := p) (Ω := (⊤ : Opens ℝ)) (F := ℝ)).congr_ae hae
+  -- Conversely, `u` sends `[0, 1]` (of positive measure) to pairwise `1`-separated vectors, so `u`
+  -- is not a.e. strongly measurable on `[0, 1]`.
   · intro hu
-    have hmeas : AEStronglyMeasurable u (volume.restrict (Icc (0 : ℝ) 1)) :=
+    refine not_aestronglyMeasurable_restrict_of_pairwise_le_dist (μ := volume)
+      (s := Icc (0 : ℝ) 1) (ε := 1) (by simp [Real.volume_Icc]) one_pos (fun x _ y _ hxy => ?_)
       (memLpLoc_iff.1 hu (Icc 0 1) (subset_univ _) isCompact_Icc).aestronglyMeasurable
-    obtain ⟨t, ht_sep, ht_ae⟩ := hmeas.isSeparable_ae_range
-    have hpair : PairwiseDisjoint (u ⁻¹' t) fun x : ℝ => ball (u x) ((1 : ℝ) / 2) := by
-      intro x _ y _ hxy
-      refine Set.disjoint_left.2 fun z hzx hzy => ?_
-      have hsub : 1 ≤ ‖u x - u y‖ := by
-        have hle : |(u x - u y) x| ≤ ‖u x - u y‖ := lp.norm_apply_le_norm two_ne_zero (u x - u y) x
-        have heval : (u x - u y) x = 1 := by simp [u, lp.single_apply, hxy]
-        simpa [heval] using hle
-      have htri : dist (u x) (u y) ≤ dist (u x) z + dist z (u y) := dist_triangle _ _ _
-      have hdx : dist (u x) z < 1 / 2 := by simpa [dist_comm] using mem_ball.1 hzx
-      have hdy : dist z (u y) < 1 / 2 := mem_ball.1 hzy
-      linarith [dist_eq_norm (u x) (u y)]
-    have hcnt_pre : (u ⁻¹' t).Countable := by
-      have : SeparableSpace t := ht_sep.separableSpace
-      have hpair_t : PairwiseDisjoint (u ⁻¹' t) fun x : ℝ =>
-          ((↑) : t → H) ⁻¹' ball (u x) ((1 : ℝ) / 2) :=
-        fun _ hx _ hy hxy => (hpair hx hy hxy).preimage _
-      exact hpair_t.countable_of_isOpen (fun _ _ => isOpen_ball.preimage continuous_subtypeVal)
-        fun x hx => ⟨⟨u x, hx⟩, Set.mem_preimage.2 (mem_ball_self (by norm_num))⟩
-    have hnull_Icc : volume (Icc (0 : ℝ) 1) = 0 := by
-      have hsub_ae : (Icc (0 : ℝ) 1 : Set ℝ) ≤ᵐ[volume] u ⁻¹' t :=
-        (ae_restrict_iff' measurableSet_Icc).1 ht_ae
-      exact measure_mono_null_ae hsub_ae (hcnt_pre.measure_zero _)
-    have hone : volume (Icc (0 : ℝ) 1) = 1 := by simp [Real.volume_Icc]
-    exact one_ne_zero (hone.symm.trans hnull_Icc)
+    simp only [dist_eq_norm]
+    have hle : |(u x - u y) x| ≤ ‖u x - u y‖ := lp.norm_apply_le_norm two_ne_zero (u x - u y) x
+    have heval : (u x - u y) x = 1 := by simp [u, lp.single_apply, hxy]
+    simpa [heval] using hle
 
 /-- The identity map of a finite-dimensional real normed space belongs to `MemW1pLoc p Ω` on every
 open set and for every exponent `p : ℝ≥0∞`. -/
@@ -122,8 +107,8 @@ theorem memW1pLoc_id {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Fin
   (ContinuousLinearMap.id ℝ E).memW1pLoc
 
 /-- The norm `x ↦ ‖x‖` on any finite-dimensional real normed space belongs to `MemW1pLoc p Ω` for
-every open set `Ω` and every exponent `p`, with weak derivative `fderiv ℝ (‖·‖)` of operator norm at
-most `1` everywhere. -/
+every open set `Ω` and every exponent `p`, and its classical derivative `fderiv ℝ (‖·‖)` has
+operator norm at most `1` everywhere. -/
 theorem memW1pLoc_norm {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
     (p : ℝ≥0∞) (Ω : Opens E) :
@@ -150,15 +135,12 @@ theorem memW1pLoc_norm_inv_smul_iff {E : Type*} [NormedAddCommGroup E] [InnerPro
   constructor
   · intro hu
     have hDLp : MemLpLoc p Ω D μ := hu.memLpLoc_of_hasWeakFDerivOn hweak
-    let trCLM : (E →L[ℝ] E) →L[ℝ] ℝ :=
-      ((LinearMap.trace ℝ E).comp (ContinuousLinearMap.coeLM ℝ)).toContinuousLinearMap
-    have htr : (fun x => trCLM (D x)) =
+    have htr : (fun x => traceCLM ℝ E (D x)) =
         fun x : E => ((Module.finrank ℝ E : ℝ) - 1) * ‖x‖⁻¹ := by
       funext x
-      have h := trace_rpow_smul_id_add_smulRight (-1) x
-      simpa [trCLM, D, Real.rpow_neg_one, sub_eq_add_neg] using h
+      rw [traceCLM_apply, trace_rpow_smul_id_add_smulRight, Real.rpow_neg_one, ← sub_eq_add_neg]
     have hscLp : MemLpLoc p Ω (fun x : E => ((Module.finrank ℝ E : ℝ) - 1) * ‖x‖⁻¹) μ :=
-      htr ▸ hDLp.clm_comp trCLM
+      htr ▸ hDLp.clm_comp (traceCLM ℝ E)
     have hc_ne : ((Module.finrank ℝ E : ℝ) - 1) ≠ 0 := by
       have : (2 : ℝ) ≤ Module.finrank ℝ E := Nat.cast_le.2 hd
       linarith

@@ -172,9 +172,10 @@ weaken them for no gain.
   weak derivative `0`.
 * `TauCeti.HasWeakLineDerivOn.add`, `.neg`, `.sub`, `.const_smul`, `.sum` and their
   `TauCeti.HasWeakFDerivOn` counterparts: linearity in the function.
-* `TauCeti.HasWeakLineDerivOn.smul_measure_nnreal` and
-  `TauCeti.HasWeakFDerivOn.smul_measure_nnreal`: scaling the reference measure by `c : ℝ≥0`
-  preserves weak derivatives.
+* `TauCeti.HasWeakLineDerivOn.smul_measure_nnreal`,
+  `TauCeti.HasWeakFDerivOn.smul_measure_nnreal`, `TauCeti.hasWeakLineDerivOn_smul_measure_iff` and
+  `TauCeti.hasWeakFDerivOn_smul_measure_iff`: scaling the reference measure by `c : ℝ≥0`
+  preserves weak derivatives (and reflects them when `c ≠ 0`).
 * `TauCeti.hasWeakLineDerivOn_iff_of_isAddHaarMeasure` and
   `TauCeti.hasWeakFDerivOn_iff_of_isAddHaarMeasure`: on a finite-dimensional real normed space,
   weak differentiability does not depend on the choice of additive Haar measure.
@@ -454,6 +455,20 @@ theorem HasWeakLineDerivOn.smul_measure_nnreal (h : HasWeakLineDerivOn μ Ω u u
 theorem HasWeakFDerivOn.smul_measure_nnreal {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U)
     (c : ℝ≥0) : HasWeakFDerivOn ((c : ℝ≥0∞) • μ) Ω u U :=
   fun v => (h v).smul_measure_nnreal c
+
+/-- Rescaling the reference measure by any nonzero `c : ℝ≥0` preserves and reflects weak
+directional derivatives. -/
+theorem hasWeakLineDerivOn_smul_measure_iff {c : ℝ≥0} (hc : c ≠ 0) :
+    HasWeakLineDerivOn ((c : ℝ≥0∞) • μ) Ω u u' v ↔ HasWeakLineDerivOn μ Ω u u' v :=
+  ⟨fun h => by
+      simpa only [← ENNReal.smul_def, inv_smul_smul₀ hc] using h.smul_measure_nnreal c⁻¹,
+    fun h => h.smul_measure_nnreal c⟩
+
+/-- Rescaling the reference measure by any nonzero `c : ℝ≥0` preserves and reflects weak Fréchet
+derivatives. -/
+theorem hasWeakFDerivOn_smul_measure_iff {U : E → E →L[ℝ] F} {c : ℝ≥0} (hc : c ≠ 0) :
+    HasWeakFDerivOn ((c : ℝ≥0∞) • μ) Ω u U ↔ HasWeakFDerivOn μ Ω u U :=
+  forall_congr' fun _ => hasWeakLineDerivOn_smul_measure_iff hc
 
 /-- **Haar-measure independence of `HasWeakLineDerivOn`.** On a finite-dimensional real normed
 space, weak directional differentiability does not depend on the choice of additive Haar measure. -/

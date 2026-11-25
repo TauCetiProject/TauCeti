@@ -28,7 +28,7 @@ defaulting to `volume`, as for `MeasureTheory.MemLp`. Strong measurability is pa
 since `MeasureTheory.MemLp` includes it, so for a Banach-valued `f` the class is the Bochner one.
 
 This file supplies the basic API for every source with a measure: restriction to smaller sets,
-a.e. strong measurability on compact and locally closed sets, almost-everywhere and setwise
+a.e. strong measurability on locally closed sets, almost-everywhere and setwise
 congruence, linearity, finite-basis coordinate testing (`Module.Basis.memLpLoc_iff`),
 continuous-linear composition, multiplication by continuous
 factors (with extension by zero for factors supported in `U`, and global `Lᵖ` membership for
@@ -81,12 +81,6 @@ theorem memLpLoc_iff : MemLpLoc p U f μ ↔
 /-- Local `Lᵖ` membership restricts to any smaller set. -/
 theorem MemLpLoc.mono_set (hf : MemLpLoc p U f μ) (hVU : V ⊆ U) : MemLpLoc p V f μ :=
   fun K hK hc => hf K (hK.trans hVU) hc
-
-/-- Local `Lᵖ` membership on `U` gives almost-everywhere strong measurability on every compact
-subset of `U`, for every exponent `p : ℝ≥0∞`. -/
-theorem MemLpLoc.aestronglyMeasurable_of_isCompact (hf : MemLpLoc p U f μ) {K : Set X}
-    (hKU : K ⊆ U) (hK : IsCompact K) : AEStronglyMeasurable f (μ.restrict K) :=
-  (hf K hKU hK).aestronglyMeasurable
 
 /-- On a locally closed subset of a locally compact second-countable space (in particular on every
 open or closed subset), local `Lᵖ` membership implies almost-everywhere strong measurability on the
@@ -151,7 +145,7 @@ theorem MemLpLoc.mono_measure (hνμ : ν ≤ μ) (hf : MemLpLoc p U f μ) : Mem
 theorem memLpLoc_smul_measure_iff {c : NNReal} (hc : c ≠ 0) :
     MemLpLoc p U f ((c : ℝ≥0∞) • μ) ↔ MemLpLoc p U f μ :=
   ⟨MemLpLoc.of_measure_le_smul ENNReal.coe_ne_top <| by
-      rw [smul_smul, ← ENNReal.coe_mul, inv_mul_cancel₀ hc, ENNReal.coe_one, one_smul],
+      rw [← ENNReal.smul_def, ← ENNReal.smul_def, inv_smul_smul₀ hc],
     MemLpLoc.of_measure_le_smul ENNReal.coe_ne_top le_rfl⟩
 
 /-- The zero function belongs to every local `Lᵖ` class. -/

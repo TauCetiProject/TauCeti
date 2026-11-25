@@ -36,9 +36,9 @@ sharpness checks live in `TauCeti.Analysis.Sobolev.Local.FirstOrder.Examples`.
 * **Uniqueness transfer and measurability.** By almost-everywhere uniqueness of weak derivatives
   (`TauCeti.HasWeakFDerivOn.ae_eq`), *every* weak derivative of `u ∈ MemW1pLoc p Ω` on `Ω` belongs
   to `MemLpLoc p Ω` (`TauCeti.MemW1pLoc.memLpLoc_of_hasWeakFDerivOn`). Every member is locally
-  integrable (`TauCeti.MemW1pLoc.locallyIntegrableOn`) and, on locally compact second-countable
-  domains, almost-everywhere strongly measurable (`TauCeti.MemW1pLoc.aestronglyMeasurable_restrict`)
-  for all exponents `p : ℝ≥0∞`.
+  integrable (`TauCeti.MemW1pLoc.locallyIntegrableOn`) and, on second-countable domains,
+  almost-everywhere strongly measurable (`TauCeti.MemW1pLoc.aestronglyMeasurable_restrict`) for all
+  exponents `p : ℝ≥0∞`.
 * **Restriction, monotonicity, and algebraic structure.** `MemW1pLoc` restricts to smaller open
   sets, depends only on almost-everywhere values on `Ω`, decreases in the exponent `p` when compact
   sets have finite measure, and is closed under addition, negation, subtraction, scalar
@@ -49,7 +49,9 @@ sharpness checks live in `TauCeti.Analysis.Sobolev.Local.FirstOrder.Examples`.
   (`DifferentiableOn.memW1pLoc_of_continuousOn_fderiv`), and—when domain and codomain are
   finite-dimensional—locally Lipschitz maps (`LocallyLipschitzOn.memW1pLoc`,
   `LipschitzOnWith.memW1pLoc`, `LipschitzWith.memW1pLoc`) belong to `MemW1pLoc p Ω` for every
-  exponent `p`, with classical Fréchet derivative as weak derivative.
+  exponent `p`; for `u ∈ MemW1pLoc p Ω` agreeing almost everywhere with a `C¹` map `g`, `fderiv ℝ g`
+  is a weak derivative of `u` in `MemLpLoc p Ω`
+  (`TauCeti.MemW1pLoc.hasWeakFDerivOn_fderiv_of_contDiffOn`).
 * **Sheaf property and locality.** On finite-dimensional Borel spaces with complete codomain,
   `MemW1pLoc` satisfies the sheaf condition on arbitrary open covers (`TauCeti.memW1pLoc_iSup_iff`)
   and is detected on open neighbourhoods of each point (`TauCeti.memW1pLoc_iff_locally`).
@@ -130,11 +132,11 @@ theorem MemW1pLoc.locallyIntegrableOn (hu : MemW1pLoc p Ω u μ) :
   obtain ⟨_, hDu, _⟩ := hu.exists_hasWeakFDerivOn
   exact hDu.locallyIntegrableOn
 
-/-- On a locally compact second-countable domain, every member of `MemW1pLoc p Ω` is
-almost-everywhere strongly measurable on `Ω`, for every exponent `p : ℝ≥0∞`. -/
-theorem MemW1pLoc.aestronglyMeasurable_restrict [LocallyCompactSpace E] [SecondCountableTopology E]
+/-- On a second-countable domain, every member of `MemW1pLoc p Ω` is almost-everywhere strongly
+measurable on `Ω`, for every exponent `p : ℝ≥0∞`. -/
+theorem MemW1pLoc.aestronglyMeasurable_restrict [SecondCountableTopology E]
     (hu : MemW1pLoc p Ω u μ) : AEStronglyMeasurable u (μ.restrict Ω) :=
-  hu.memLpLoc.aestronglyMeasurable_restrict Ω.isOpen.isLocallyClosed
+  hu.locallyIntegrableOn.aestronglyMeasurable
 
 /-- `MemW1pLoc` restricts to any smaller open subset. -/
 theorem MemW1pLoc.mono (hu : MemW1pLoc p Ω u μ) (hΩ : Ω' ≤ Ω) : MemW1pLoc p Ω' u μ := by
@@ -241,7 +243,7 @@ theorem _root_.ContinuousLinearEquiv.comp_memW1pLoc_iff [OpensMeasurableSpace E]
 
 /-- **Banach rays.** Scaling a fixed vector `v : F` in a complete space by a scalar function
 `a ∈ MemW1pLoc p Ω` produces a map `x ↦ a x • v` in `MemW1pLoc p Ω`. -/
-theorem MemW1pLoc.smulRight [OpensMeasurableSpace E] [CompleteSpace F] {a : E → ℝ}
+theorem MemW1pLoc.smul_const [OpensMeasurableSpace E] [CompleteSpace F] {a : E → ℝ}
     (ha : MemW1pLoc p Ω a μ) (v : F) : MemW1pLoc p Ω (fun x => a x • v) μ :=
   ha.clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight v)
 
@@ -314,8 +316,7 @@ theorem MemW1pLoc.hasWeakFDerivOn_fderiv_of_contDiffOn [FiniteDimensional ℝ E]
   exact ⟨hg'.congr_ae hug.symm, hu.memLpLoc_of_hasWeakFDerivOn (hg'.congr_ae hug.symm)⟩
 
 /-- **Rademacher's theorem in `MemW1pLoc`.** A map locally Lipschitz on `Ω` between
-finite-dimensional real normed spaces belongs to `MemW1pLoc p Ω` for every exponent `p`, with weak
-derivative `fderiv ℝ u`. -/
+finite-dimensional real normed spaces belongs to `MemW1pLoc p Ω` for every exponent `p`. -/
 theorem _root_.LocallyLipschitzOn.memW1pLoc [FiniteDimensional ℝ E] [BorelSpace E]
     [μ.IsAddHaarMeasure] [FiniteDimensional ℝ F]
     (hu : LocallyLipschitzOn Ω u) : MemW1pLoc p Ω u μ := by
@@ -390,7 +391,7 @@ theorem _root_.Module.Basis.memW1pLoc_iff {E F ι : Type*} [NormedAddCommGroup E
     exact h.clm_comp ((ContinuousLinearMap.proj i).comp b.equivFunL.toContinuousLinearMap)
   · intro h
     have hs : MemW1pLoc p Ω (fun x => ∑ i, b.repr (u x) i • b i) μ :=
-      MemW1pLoc.sum Finset.univ fun i _ => (h i).smulRight (b i)
+      MemW1pLoc.sum Finset.univ fun i _ => (h i).smul_const (b i)
     simpa only [b.sum_repr] using hs
 
 /-- **Domain basis characterization (partial derivatives).** Given a finite basis `b` of `E`,
@@ -435,8 +436,8 @@ theorem _root_.Module.Basis.memW1pLoc_iff_apply {E F ι : Type*} [NormedAddCommG
 
 /-- **Testing `MemW1pLoc` against the continuous dual.** For `1 ≤ p` and a complete codomain `F`,
 once `u : E → F` and a candidate `Du : E → E →L[ℝ] F` already belong to `MemLpLoc p Ω`, testing
-`ℓ ∘ Du` as weak derivative of `ℓ ∘ u` for every `ℓ : StrongDual ℝ F` certifies `MemW1pLoc p Ω u`
-with weak derivative `Du`. Prior `MemLpLoc` membership cannot be dropped in infinite dimensions
+`ℓ ∘ Du` as weak derivative of `ℓ ∘ u` for every `ℓ : StrongDual ℝ F` certifies `MemW1pLoc p Ω u`.
+Prior `MemLpLoc` membership cannot be dropped in infinite dimensions
 (see `TauCeti.forall_strongDual_memW1pLoc_and_not_memLpLoc_lpSingle` in
 `TauCeti.Analysis.Sobolev.Local.FirstOrder.Examples`). -/
 theorem MemLpLoc.memW1pLoc_of_forall_strongDual {E F : Type*} [NormedAddCommGroup E]
@@ -493,17 +494,11 @@ theorem memW1pLoc_smul_measure_iff {E F : Type*} [NormedAddCommGroup E] [NormedS
     [MeasurableSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
     {μ : Measure E} {c : ℝ≥0} (hc : c ≠ 0) {p : ℝ≥0∞} {Ω : Opens E} {u : E → F} :
     MemW1pLoc p Ω u ((c : ℝ≥0∞) • μ) ↔ MemW1pLoc p Ω u μ := by
-  have hderiv : ∀ Du : E → E →L[ℝ] F,
-      HasWeakFDerivOn ((c : ℝ≥0∞) • μ) Ω u Du ↔ HasWeakFDerivOn μ Ω u Du := fun Du => by
-    refine ⟨fun h => ?_, fun h => h.smul_measure_nnreal c⟩
-    have h2 := h.smul_measure_nnreal c⁻¹
-    rwa [smul_smul, ← ENNReal.coe_mul, inv_mul_cancel₀ hc, ENNReal.coe_one, one_smul] at h2
-  simp only [memW1pLoc_iff, memLpLoc_smul_measure_iff hc, hderiv]
+  simp only [memW1pLoc_iff, memLpLoc_smul_measure_iff hc, hasWeakFDerivOn_smul_measure_iff hc]
 
 /-- **Precomposition with a continuous linear equivalence in `MemW1pLoc`.** Any continuous linear
 equivalence `e : E₁ ≃L[ℝ] E` between finite-dimensional real normed spaces carrying Borel additive
-Haar measures pulls `MemW1pLoc p V` back to `MemW1pLoc p U` whenever `MapsTo e U V`, with weak
-derivative `x ↦ Du (e x) ∘L e`. -/
+Haar measures pulls `MemW1pLoc p V` back to `MemW1pLoc p U` whenever `MapsTo e U V`. -/
 theorem MemW1pLoc.comp_continuousLinearEquiv {E₁ E F : Type*}
     [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁]
     [MeasurableSpace E₁] [BorelSpace E₁]
