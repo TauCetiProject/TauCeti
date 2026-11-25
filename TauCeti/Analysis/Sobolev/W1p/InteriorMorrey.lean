@@ -287,32 +287,25 @@ theorem W1p.exists_norm_preciseRepresentative_le (hp : (finrank ℝ E : ℝ≥0�
   set G := (eLpNorm (W1p.gradient u) p (mu.restrict (ball x (2 * r)))).toReal
   have hBΩ : B ⊆ (Omega : Set E) :=
     ball_subset_closedBall.trans ((closedBall_subset_closedBall (by linarith)).trans hxr)
-  -- Pointwise: `|u*(x)| - C ‖∇u‖_{Lᵖ(B(x, 2r))} r^α ≤ |u*(y)|` for `y ∈ B`.
-  have hpt : ∀ y ∈ B, ‖f x‖ - C * G * r ^ α ≤ ‖f y‖ := by
-    intro y hy
-    have hxy : dist x y ≤ r := (dist_comm x y ▸ mem_ball.1 hy).le
+  -- Almost everywhere on `B`: `dist (u*(x)) (u(y)) ≤ C ‖∇u‖_{Lᵖ(B(x, 2r))} r^α`.
+  have hosc : ∀ᵐ y ∂mu.restrict B, dist (f x) (W1p.value u y) ≤ C * G * r ^ α := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset hBΩ (W1p.ae_eq_preciseRepresentative u),
+      ae_restrict_mem measurableSet_ball] with y hy hyB
+    rw [hy]
+    have hxy : dist x y ≤ r := (dist_comm x y ▸ mem_ball.1 hyB).le
     have hsub : closedBall x (2 * dist x y) ⊆ (Omega : Set E) :=
       (closedBall_subset_closedBall (by linarith)).trans hxr
     have hN : (eLpNorm (W1p.gradient u) p (mu.restrict (ball x (2 * dist x y)))).toReal ≤ G :=
       Lp.toReal_eLpNorm_restrict_mono (W1p.gradient u) (ball_subset_ball (by linarith))
         (ball_subset_closedBall.trans hxr)
-    have h : dist (f x) (f y) ≤ C * G * r ^ α :=
-      (hdist u hsub).trans (mul_le_mul (mul_le_mul_of_nonneg_left hN hC.le)
-        (Real.rpow_le_rpow dist_nonneg hxy (NNReal.coe_nonneg _)) (by positivity)
-        (by positivity))
-    rw [dist_eq_norm] at h
-    linarith [norm_le_norm_add_norm_sub' (f x) (f y)]
-  have hae : ∀ᵐ y ∂mu.restrict B, ‖f x‖ - C * G * r ^ α ≤ ‖W1p.value u y‖ := by
-    filter_upwards [ae_restrict_of_ae_restrict_of_subset hBΩ (W1p.ae_eq_preciseRepresentative u),
-      self_mem_ae_restrict measurableSet_ball] with y hy hyB
-    rw [hy]
-    exact hpt y hyB
-  -- Average the pointwise bound over `B`.
-  have havg := le_toReal_eLpNorm_div_of_ae_le
+    exact (hdist u hsub).trans (mul_le_mul (mul_le_mul_of_nonneg_left hN hC.le)
+      (Real.rpow_le_rpow dist_nonneg hxy (NNReal.coe_nonneg _)) (by positivity)
+      (by positivity))
+  -- Average the oscillation bound over `B`.
+  have havg := norm_le_add_toReal_eLpNorm_div_of_ae_dist_le
     (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
-    (fun h => (measure_ball_pos mu x hr).ne' (Measure.restrict_eq_zero.1 h))
-    (by rw [Measure.restrict_apply_univ]; exact measure_ball_lt_top.ne)
-    (W1p.eLpNorm_value_restrict_ne_top u hBΩ) hae
+    (Measure.restrict_eq_zero.not.2 (measure_ball_pos mu x hr).ne')
+    (W1p.eLpNorm_value_restrict_ne_top u hBΩ) hosc
   rw [Measure.restrict_apply_univ, ← measureReal_def] at havg
   linarith
 

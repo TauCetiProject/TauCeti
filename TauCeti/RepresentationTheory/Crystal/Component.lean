@@ -46,6 +46,9 @@ isomorphism (`TauCeti.NormalCrystal.StrictIso.componentIso`): components transpo
 
 ## Main results
 
+* `TauCeti.NormalCrystal.reachable_of_eWord_eq_some` and
+  `TauCeti.NormalCrystal.reachable_of_fWord_eq_some`: elements related by a raising or lowering
+  word are reachable in the crystal graph.
 * `TauCeti.NormalCrystal.connected_component_graph`: each component is a connected crystal.
 * `TauCeti.NormalCrystal.sigmaComponentsIso`: a normal crystal is strictly isomorphic to the
   direct sum of its connected components.

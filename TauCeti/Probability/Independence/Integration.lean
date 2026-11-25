@@ -10,6 +10,7 @@ public import Mathlib.Data.Matrix.Mul
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.Probability.Independence.Integration
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.Data.Finset.Card
 
 /-!
 # Integrability and expectations of products and quadratic forms under independence
@@ -36,7 +37,10 @@ For an independent family `Y`, the expectation of a finite product of functions 
 `Y`, several factors possibly reading the same member, is the product over the members of the
 expectations of the products of the factors reading them
 (`ProbabilityTheory.iIndepFun.integral_fun_prod_comp_fiberwise`). This is the factorization
-used to evaluate expected products of entries of random matrices along trace words.
+used to evaluate expected products of entries of random matrices along trace words. When every
+member read is read at least twice, with moments controlled by the number of readings, the
+expected product is bounded accordingly
+(`ProbabilityTheory.iIndepFun.norm_integral_fun_prod_comp_le_of_no_singleton_fiber`).
 -/
 
 public section
@@ -313,6 +317,43 @@ theorem integral_fun_prod_comp_fiberwise {Ω κ ι β 𝕜 : Type*} [MeasurableS
     ∫ ω, ∏ i, φ i (Y (e i) ω) ∂P = ∏ j, ∫ ω, ∏ i with e i = j, φ i (Y j ω) ∂P :=
   hY.integral_fun_prod_comp_fiberwise_of_maps_to (fun _ _ ↦ Finset.mem_univ _)
     (fun j _ ↦ mY j) (fun i _ ↦ hφ i)
+
+open Finset in
+/-- **Expected products reading each member at least twice.** Let `Y` be an independent family,
+and let the factors `φ i (Y (e i))` of a finite product read each member they read at least
+twice, the members read being almost everywhere measurable and each `φ i` almost everywhere
+strongly measurable for the law of `Y (e i)`. If, for each factor `i`, the product
+of the norms of the `d` factors reading the member `Y (e i)` has integral at most
+`b ^ (d - 2) * c`, then the expected product has norm at most `c ^ m * b ^ (card ι - 2 * m)`,
+where `m` is the number of members read. This bounds the expected words of the moment method for
+random matrices with independent entries. -/
+theorem norm_integral_fun_prod_comp_le_of_no_singleton_fiber {Ω κ ι β 𝕜 : Type*}
+    [MeasurableSpace Ω] [MeasurableSpace β] [RCLike 𝕜] [DecidableEq κ] [Fintype ι]
+    {P : Measure Ω} {Y : κ → Ω → β} (hY : iIndepFun Y P) {e : ι → κ}
+    (mY : ∀ i, AEMeasurable (Y (e i)) P) (he : ∀ i, ∃ i' ≠ i, e i' = e i) {φ : ι → β → 𝕜}
+    (hφ : ∀ i, AEStronglyMeasurable (φ i) (P.map (Y (e i)))) {b c : ℝ}
+    (hmom : ∀ i, ∫ ω, ∏ i' with e i' = e i, ‖φ i' (Y (e i) ω)‖ ∂P ≤
+      b ^ (#{i' | e i' = e i} - 2) * c) :
+    ‖∫ ω, ∏ i, φ i (Y (e i) ω) ∂P‖ ≤
+      c ^ #(univ.image e) * b ^ (Fintype.card ι - 2 * #(univ.image e)) := by
+  rw [hY.integral_fun_prod_comp_fiberwise_of_maps_to (s := univ) (t := univ.image e)
+    (fun i _ ↦ mem_image_of_mem _ (mem_univ i))
+    (fun j hj ↦ (mem_image.mp hj).elim fun i hi ↦ hi.2 ▸ mY i) (fun i _ ↦ hφ i), norm_prod]
+  have hfib := TauCeti.two_le_card_filter_eq_of_no_singleton_fiber he
+  -- The multiplicities of the members read add up to the number of factors.
+  have hsum : ∑ j ∈ univ.image e, (#{i | e i = j} - 2) + 2 * #(univ.image e) =
+      Fintype.card ι := by
+    rw [← card_univ, card_eq_sum_card_image e univ, mul_comm, ← smul_eq_mul, ← sum_const,
+      ← sum_add_distrib]
+    exact sum_congr rfl fun j hj ↦ Nat.sub_add_cancel (hfib j hj)
+  calc _ ≤ ∏ j ∈ univ.image e, b ^ (#{i | e i = j} - 2) * c := by
+        refine prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun j hj ↦ ?_
+        obtain ⟨i₀, -, rfl⟩ := mem_image.mp hj
+        exact (norm_integral_le_integral_norm _).trans (by simpa only [norm_prod] using hmom i₀)
+    _ = _ := by
+        rw [prod_mul_distrib, prod_const, prod_pow_eq_pow_sum, mul_comm]
+        congr 2
+        omega
 
 end ProbabilityTheory.iIndepFun
 

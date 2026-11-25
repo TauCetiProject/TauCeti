@@ -8,7 +8,7 @@ module
 public import TauCeti.KnotTheory.BraidWord.Equivalence
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Equivalence
 import TauCeti.KnotTheory.BraidWord.Cyclic
-import TauCeti.KnotTheory.BraidWord.FreeCancellation.Face
+import TauCeti.KnotTheory.BraidWord.FreeCancellation.Clasp
 
 /-!
 # Braid closures depend only on the braid
@@ -44,20 +44,7 @@ public section
 
 namespace TauCeti.BraidWord
 
-open BraidGroup
-
 variable {n : ℕ}
-
-/-- An inverse pair at the top of a braid word changes the closure only by Reidemeister moves,
-in each of the three cases of which participating positions already meet crossings. -/
-private theorem reidemeisterEquiv_closure_cons_cons (v : BraidWord n) (i : Fin (n - 1))
-    (ε : ℤˣ) :
-    OrientedPDCode.ReidemeisterEquiv v.closure (closure ((i, ε) :: (i, -ε) :: v)) := by
-  by_cases hp : v.crossingsAt (strand i) = []
-  · exact reidemeisterEquiv_closure_cons_cons_freeCancel_of_strand_crossingsAt_eq_nil v i ε hp
-  by_cases hq : v.crossingsAt (strandSucc i) = []
-  · exact reidemeisterEquiv_closure_cons_cons_freeCancel_of_strandSucc_crossingsAt_eq_nil v i ε hq
-  exact (reidemeisterEquiv_closure_cons_cons_freeCancel v i ε hp hq).symm
 
 /-- Inserting an inverse pair anywhere in a braid word gives a Reidemeister-equivalent closure:
 rotate the word so that the pair is at the top. -/
@@ -70,7 +57,8 @@ private theorem reidemeisterEquiv_closure_append_freeCancel (u v : BraidWord n)
   rw [List.rotate_append_length_eq] at hleft hright
   simp only [List.cons_append, List.nil_append] at hright
   rw [List.append_assoc, List.cons_append, List.cons_append, List.nil_append]
-  exact hleft.trans ((reidemeisterEquiv_closure_cons_cons (v ++ u) i ε).trans hright.symm)
+  exact hleft.trans
+    ((reidemeisterEquiv_closure_cons_cons_freeCancel (v ++ u) i ε).trans hright.symm)
 
 /-- A free-cancellation step changes the oriented closure of a braid word only by Reidemeister
 moves. -/

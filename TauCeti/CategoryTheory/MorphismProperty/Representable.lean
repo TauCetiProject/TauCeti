@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.MorphismProperty.Descent
 public import Mathlib.CategoryTheory.MorphismProperty.Representable
+public import TauCeti.CategoryTheory.EquivalenceRelation
 
 /-!
 # Relatively representable morphisms: descent, monomorphisms and diagonals
@@ -16,8 +17,10 @@ to `F`. Mathlib's `MorphismProperty.relative_of_snd` shows that, for `F` full an
 satisfies `P.relative F` once every base change `hf.snd g` along `g : F.obj a ⟶ Y` satisfies `P`.
 This file weakens the hypothesis when `P` descends along `Q`: it suffices that each such base
 change satisfies `P` after a further base change along a morphism satisfying `Q`. It also shows
-that a relatively representable monomorphism is relatively a monomorphism, and computes the base
-changes of a relatively representable diagonal `X ⟶ X ⨯ X`.
+that a relatively representable monomorphism is relatively a monomorphism, computes the base
+changes of a relatively representable diagonal `X ⟶ X ⨯ X`, and shows that the kernel pair
+`U ×_Y U` of a relatively representable `f : F.obj U ⟶ Y` is an internal equivalence relation on
+`U`.
 
 ## Main results
 
@@ -30,6 +33,11 @@ changes of a relatively representable diagonal `X ⟶ X ⨯ X`.
   relatively representable, `b : F.obj V ⟶ X`, and `G : F.obj T ⟶ X ⨯ X` with components
   `F.map u ≫ a` and `F.map v ≫ b`, the base change of the diagonal of `X` along `G` is the base
   change of `(fst, snd) : U ×_X V ⟶ U ⨯ V` along `(u, v) : T ⟶ U ⨯ V`.
+* `CategoryTheory.Functor.relativelyRepresentable.ofPairHom_iff`: for `f : F.obj U ⟶ Y`
+  relatively representable, the kernel pair `U ×_Y U` relates `u` to `v` exactly when
+  `F.map u ≫ f = F.map v ≫ f`.
+* `CategoryTheory.Functor.relativelyRepresentable.isEquivalenceRelation`: the kernel pair
+  `U ×_Y U` of a relatively representable `f : F.obj U ⟶ Y` is an internal equivalence relation.
 -/
 
 public section
@@ -121,6 +129,35 @@ theorem isPullback_diag_snd [F.Full] [F.Faithful] [HasBinaryProduct U V]
     · rw [hX.lift_fst, ht₁]
       simp only [← Functor.map_comp_assoc, reassoc_of% hm₂]
     · simp [hm₂]
+
+end Functor.relativelyRepresentable
+
+namespace Functor.relativelyRepresentable
+
+open TauCeti.CategoryTheory
+
+variable {C : Type*} [Category* C] {D : Type*} [Category* D] {F : C ⥤ D} [F.Full] [F.Faithful]
+  {U : C} {Y : D} {f : F.obj U ⟶ Y} (hf : F.relativelyRepresentable f)
+
+include hf in
+/-- Two morphisms `u, v : T ⟶ U` are related by the kernel pair `U ×_Y U` of a relatively
+representable `f : F.obj U ⟶ Y` exactly when `F.map u ≫ f = F.map v ≫ f`. -/
+theorem ofPairHom_iff {T : C} {u v : T ⟶ U} :
+    Rel.ofPairHom (hf.fst' f) (hf.snd f) T u v ↔ F.map u ≫ f = F.map v ≫ f := by
+  rw [Rel.ofPairHom_iff]
+  refine ⟨?_, fun h ↦ ⟨_, hf.lift'_fst u v h, hf.lift'_snd u v h⟩⟩
+  rintro ⟨r, rfl, rfl⟩
+  simp only [Functor.map_comp, Category.assoc, (hf.isPullback' f).w]
+
+/-- The kernel pair `U ×_Y U` of a relatively representable `f : F.obj U ⟶ Y`, with its two
+projections to `U`, is an internal equivalence relation on `U`. -/
+theorem isEquivalenceRelation [HasPullback (hf.snd f) (hf.fst' f)] :
+    IsEquivalenceRelation (hf.fst' f) (hf.snd f) := by
+  refine isEquivalenceRelation_iff.mpr ⟨⟨fun _ _ _ h₁ h₂ ↦ hf.hom_ext' h₁ h₂⟩, fun T ↦ ?_⟩
+  refine ⟨fun u ↦ hf.ofPairHom_iff.mpr rfl, fun h ↦ hf.ofPairHom_iff.mpr ?_,
+    fun h h' ↦ hf.ofPairHom_iff.mpr ?_⟩
+  · exact (hf.ofPairHom_iff.mp h).symm
+  · exact (hf.ofPairHom_iff.mp h).trans (hf.ofPairHom_iff.mp h')
 
 end Functor.relativelyRepresentable
 

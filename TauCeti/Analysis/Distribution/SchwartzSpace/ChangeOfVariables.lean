@@ -286,10 +286,10 @@ theorem pushforwardCLM_lineDerivOp [IsScalarTower ℝ 𝕜 F] (b : Module.Basis 
       postcompCLM_apply, ← RCLike.real_smul_eq_coe_smul (K := 𝕜), map_smul, smul_eq_mul]
   have hlhs : ℓ (pushforwardCLM 𝕜 φ hφ hψ (∂_{v} f) y) =
       pushforwardCLM ℝ φ hφ hψ (∂_{v} (f.postcompCLM ℓ)) y := by
-    rw [← postcompCLM_apply ℓ, pushforwardCLM_postcompCLM, TauCeti.lineDerivOp_postcompCLM]
+    rw [← postcompCLM_apply ℓ, pushforwardCLM_postcompCLM, lineDerivOp_postcompCLM]
   rw [hlhs, hreal (f.postcompCLM ℓ) v, _root_.sum_apply, _root_.sum_apply, map_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [← postcompCLM_apply ℓ, ← TauCeti.lineDerivOp_postcompCLM, pushforwardCLM_postcompCLM, hsmul]
+  rw [← postcompCLM_apply ℓ, ← lineDerivOp_postcompCLM, pushforwardCLM_postcompCLM, hsmul]
 
 end LineDeriv
 

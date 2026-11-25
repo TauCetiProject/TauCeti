@@ -29,7 +29,6 @@ matrix to the ambient binary-form trace.
 
 * `TauCeti.trace_binaryFormRep_upperTriangular_eq_dickson_eval`: the binary-form trace of an
   upper-triangular matrix.
-* `TauCeti.PopaZagier.weight_upperTriangular`: the unnormalised Popa--Zagier weight.
 * `TauCeti.PopaZagier.upperTriangularCoeff`: the normalised coefficient of `(a b; 0 d)`.
 * `TauCeti.TraceFormulaMatrixModule.coeff_popaZagierElement_upperTriangular`: the coefficient
   of an upper-triangular matrix with positive upper-left entry.
@@ -66,19 +65,6 @@ theorem trace_binaryFormRep_upperTriangular_eq_dickson_eval {R : Type*} [CommRin
     trace_linearSubstRep_upperTriangular w (a : R) (b : R) (d : R)
 
 namespace PopaZagier
-
-/-- The unnormalised Popa--Zagier weight of an upper-triangular matrix `(a b; 0 d)` with `0 < a`.
-The four cases give weights `12`, `2`, `6`, and `0`; division by `12` produces the coefficient of
-the explicit Hecke element. -/
-theorem weight_upperTriangular (a b d : ℤ) (ha : 0 < a) :
-    weight !![a, b; 0, d] =
-      if 0 < b ∧ b < d - a then 12
-      else if a = d ∧ b = 0 then 2
-      else if 0 ≤ b ∧ b ≤ d - a then 6 else 0 := by
-  rw [weight]
-  simp only [Matrix.of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one,
-    Fin.isValue]
-  grind [weight₁, weight₂, weight₃, weight₄, chainWeight₃]
 
 /-- The coefficient of the upper-triangular matrix `(a b; 0 d)` with `0 < a` in
 Popa--Zagier's explicit Hecke element: `1` in the interior of the interval `0 ≤ b ≤ d - a`,

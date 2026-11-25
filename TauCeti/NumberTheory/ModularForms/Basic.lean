@@ -75,6 +75,8 @@ AINTLIB `LeanModularForms` project
 * `TauCeti.ModularForm.SL_slash_neg`, `TauCeti.ModularForm.SL_slash_zpow_eq_self_of_slash_eq`:
   for `A ∈ SL(2, ℤ)`, `f ∣[k] (-A) = (-1)^k • f ∣[k] A`, and invariance under `A` passes to
   every integer power of `A`.
+* `TauCeti.ModularForm.eq_zero_of_slash_neg_one_eq`: in odd weight, a function invariant under the
+  slash action of `-1` vanishes.
 * `TauCeti.ModularForm.SL_slash_S_slash_S`: `(f ∣[k] S) ∣[k] S = (-1)^k • f`, the action of
   `S² = -I`.
 * `Subgroup.IsArithmetic.isCusp_of_isCusp`: any two arithmetic groups have the same cusps.
@@ -213,6 +215,15 @@ theorem SL_slash_neg (k : ℤ) (f : ℍ → ℂ) (A : SL(2, ℤ)) :
     _root_.ModularForm.slash_neg_one]
   -- Mathlib states the `-I` law with the constant function `(-1) ^ k`; as a scalar it is `•`.
   exact ModularForm.SL_smul_slash k A f ((-1 : ℂ) ^ k)
+
+/-- In odd weight, a function invariant under the weight-`k` slash action of `-1` vanishes,
+because `f ∣[k] (-1) = -f`. -/
+theorem eq_zero_of_slash_neg_one_eq (h : f ∣[k] (-1 : SL(2, ℤ)) = f) (hk : Odd k) : f = 0 := by
+  funext τ
+  have hneg : f ∣[k] (-1 : SL(2, ℤ)) = -f := by
+    rw [SL_slash_neg k f 1, SlashAction.slash_one, hk.neg_one_zpow, neg_one_smul]
+  have hτ : -f τ = f τ := congr_fun (hneg.symm.trans h) τ
+  simpa using (by linear_combination -hτ : (2 : ℂ) * f τ = 0)
 
 /-- The inversion `S` of `SL(2, ℤ)` acts twice by `S² = -I`, hence on the weight-`k` slash action
 by the scalar `(-1)^k`. -/

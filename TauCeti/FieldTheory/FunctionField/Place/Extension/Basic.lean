@@ -15,6 +15,8 @@ public import TauCeti.RingTheory.Valuation.Discrete.Normalize
 -- Proof-only: nontriviality survives restriction along an algebraic extension.
 import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 import TauCeti.RingTheory.Valuation.NontrivialComap
+-- Proof-only: a surjective valuation is nontrivial.
+import TauCeti.RingTheory.Valuation.Surjective
 
 /-!
 # Extensions of places: the ramification index and the relative degree
@@ -129,6 +131,9 @@ to the canonical fraction fields used by Mathlib's different API.
   Dedekind, finiteness, and separability properties of the local integral closure `𝒪'_P`.
 * `TauCeti.Place.isIntegral_algebraMap_iff_mem_integers`: the local integral closure `𝒪'_P`
   contracts to `𝒪_P`.
+* `TauCeti.Place.algebraMap_mem_integralClosure` and
+  `TauCeti.Place.algebraConstantsIntegralClosure`: for `k' / k` integral, the constants `k'` lie in
+  `𝒪'_P`, which makes `𝒪'_P` a `k'`-algebra.
 
 ## References
 
@@ -271,6 +276,42 @@ instance isSeparable_fractionRing_integralClosure :
     AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply]
 
 end LocalIntegralClosure
+
+section IntegralConstants
+
+variable (P : Place k F) [Algebra.IsIntegral k k']
+
+attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+
+/-- **The constants `k'` lie in the local model** `𝒪'_P`, the integral closure of `𝒪_P` in `F'`:
+they are integral over `k ⊆ 𝒪_P`. -/
+theorem algebraMap_mem_integralClosure (c : k') :
+    algebraMap k' F' c ∈ integralClosure P.integers F' :=
+  -- The scalar tower `k → 𝒪_P → F'` under `TauCeti.Place.algebraIntegersExtension`.
+  have : IsScalarTower k P.integers F' := .of_algebraMap_eq fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply P.integers F F',
+      ← IsScalarTower.algebraMap_apply k P.integers F, ← IsScalarTower.algebraMap_apply k F F']
+  (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top
+
+/-- The constants `k'` act on the local model `𝒪'_P`, through `F'`.
+
+This is not a global instance. Install it where the `k'`-structure of `𝒪'_P` is needed, together
+with `TauCeti.Place.isScalarTower_constants_integralClosure`. -/
+@[instance_reducible]
+noncomputable def algebraConstantsIntegralClosure :
+    Algebra k' (integralClosure P.integers F') :=
+  ((algebraMap k' F').codRestrict _ (algebraMap_mem_integralClosure P)).toAlgebra
+
+/-- The action `TauCeti.Place.algebraConstantsIntegralClosure` of `k'` on `𝒪'_P` is compatible with
+the inclusion into `F'`. -/
+theorem isScalarTower_constants_integralClosure :
+    letI := algebraConstantsIntegralClosure (k' := k') (F' := F') P
+    IsScalarTower k' (integralClosure P.integers F') F' :=
+  letI := algebraConstantsIntegralClosure (k' := k') (F' := F') P
+  .of_algebraMap_eq fun _ ↦ by
+    rw [Subalgebra.algebraMap_apply, RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply]
+
+end IntegralConstants
 
 section Constants
 
