@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Tiling.Lozenge.CharacteristicFunction
 import TauCeti.Analysis.Fourier.InvAddMulExp
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.ArccosHalf
 import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
@@ -37,18 +38,13 @@ namespace TauCeti.Examples.LozengeCharFun
 theorem isLiquidWeights_one_one_one : IsLiquidWeights 1 1 1 := by
   rw [isLiquidWeights_iff]; norm_num
 
-private theorem arccos_neg_half : Real.arccos (-(1 / 2)) = 2 * Real.pi / 3 := by
-  rw [Real.arccos_neg, ← Real.cos_pi_div_three,
-    Real.arccos_cos (by positivity) (by linarith [Real.pi_pos])]
-  ring
-
 /-- For uniform weights `θ₀ = 2π/3`. -/
 theorem lozengeZeroAngleFst_one_one_one : lozengeZeroAngleFst 1 1 1 = 2 * Real.pi / 3 := by
-  rw [lozengeZeroAngleFst_def, ← arccos_neg_half]; norm_num
+  rw [lozengeZeroAngleFst_def, ← Real.arccos_neg_one_half]; norm_num
 
 /-- For uniform weights `φ₀ = 2π/3`. -/
 theorem lozengeZeroAngleSnd_one_one_one : lozengeZeroAngleSnd 1 1 1 = 2 * Real.pi / 3 := by
-  rw [lozengeZeroAngleSnd_def, ← arccos_neg_half]; norm_num
+  rw [lozengeZeroAngleSnd_def, ← Real.arccos_neg_one_half]; norm_num
 
 /-- For uniform weights the zeros of `P_w` are `±(2π/3, 2π/3)` modulo `2π`. -/
 theorem lozengeCharFun_one_one_one_eq_zero_iff {θ φ : ℝ} :

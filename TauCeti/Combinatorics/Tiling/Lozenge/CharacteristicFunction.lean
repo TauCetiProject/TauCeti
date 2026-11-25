@@ -20,11 +20,12 @@ import TauCeti.Analysis.SpecialFunctions.Trigonometric.TwoMulIntMulPi
 For type weights `w = (w₁, w₂, w₃)` of the lozenge dimer model, the characteristic function is
 `P_w(θ, φ) = w₃ + w₂ e^{iθ} + w₁ e^{−iφ}` (`TauCeti.lozengeCharFun`), and `w` is liquid when the
 strict triangle inequalities hold (`TauCeti.IsLiquidWeights`); liquid weights are positive. For
-`d ∈ ℤ²` the infinite inverse Kasteleyn kernel is
-`G_w(d) = (4π²)⁻¹ ∫∫_{[0,2π]²} e^{i(d₁θ + d₂φ)} / P_w(θ, φ) dθ dφ` (`TauCeti.lozengeKernel`).
-It is a Bochner integral, so it is defined for all `w` and equals `0` when `1 / P_w` is not
-integrable on the torus; it is the inverse Kasteleyn kernel wherever `1 / P_w` is integrable.
-That integrability for liquid weights, where `P_w` has zeros, is not established here.
+`d ∈ ℤ²` the normalized Fourier integral of `1 / P_w` is
+`G_w(d) = (4π²)⁻¹ ∫∫_{[0,2π]²} e^{i(d₁θ + d₂φ)} / P_w(θ, φ) dθ dφ` (`TauCeti.lozengeKernel`),
+the formula by which the references define the infinite inverse Kasteleyn kernel. It is a Bochner
+integral, so it is defined for all `w` and equals `0` when `1 / P_w` is not integrable on the
+torus. This file does not prove the identities making `G_w` an inverse of the Kasteleyn matrix,
+nor the integrability of `1 / P_w` for liquid weights, where `P_w` has zeros.
 
 The main result locates the zeros of `P_w` for liquid `w`
 (`TauCeti.lozengeCharFun_eq_zero_iff`): modulo `2π` in each variable they are exactly
@@ -76,12 +77,14 @@ theorem isLiquidWeights_iff {w₁ w₂ w₃ : ℝ} :
     IsLiquidWeights w₁ w₂ w₃ ↔ w₁ < w₂ + w₃ ∧ w₂ < w₁ + w₃ ∧ w₃ < w₁ + w₂ :=
   Iff.rfl
 
-/-- The infinite inverse Kasteleyn kernel
-`G_w(d) = (4π²)⁻¹ ∫∫_{[0,2π]²} e^{i(d₁θ + d₂φ)} / P_w(θ, φ) dθ dφ`. As a Bochner integral it is
-total: it equals `0` when `1 / P_w` is not integrable on the torus, and it is the inverse
-Kasteleyn kernel wherever `1 / P_w` is integrable, for instance when `P_w` is bounded away from
-`0`, as for `w = (1, 1, 3)`. Integrability of `1 / P_w` for liquid weights, where `P_w` has
-zeros, is not yet established in this library. -/
+/-- The normalized Fourier integral of `1 / P_w`,
+`G_w(d) = (4π²)⁻¹ ∫∫_{[0,2π]²} e^{i(d₁θ + d₂φ)} / P_w(θ, φ) dθ dφ`, the formula by which the
+references define the infinite inverse Kasteleyn kernel. As a Bochner integral it is total: it
+equals `0` when `1 / P_w` is not integrable on the torus, and it is a genuine integral when
+`1 / P_w` is integrable, for instance when `P_w` is bounded away from `0`, as for
+`w = (1, 1, 3)`. The identities making `G_w` an inverse of the Kasteleyn matrix, and the
+integrability of `1 / P_w` for liquid weights, where `P_w` has zeros, are not proved in this
+library. -/
 def lozengeKernel (w₁ w₂ w₃ : ℝ) (d : ℤ × ℤ) : ℂ :=
   ((4 * Real.pi ^ 2)⁻¹ : ℝ) • ∫ p in Ioc 0 (2 * Real.pi) ×ˢ Ioc 0 (2 * Real.pi),
     exp ((d.1 * p.1 + d.2 * p.2 : ℝ) * I) / lozengeCharFun w₁ w₂ w₃ p.1 p.2
