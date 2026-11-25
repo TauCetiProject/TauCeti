@@ -276,12 +276,6 @@ theorem MemWkpLoc.planarReflection_of_eq_zero {p : ℝ≥0∞} (hp : 1 ≤ p) {�
 
 /-! ### Twisted reflection -/
 
-/-- At order one the node dilation of the reflection is conjugation, as a continuous linear map. -/
-theorem imDilation_higherReflectionNode_fin_one_eq_conjCLE (j : Fin 1) :
-    imDilation (higherReflectionNode j) = (conjCLE : ℂ →L[ℝ] ℂ) :=
-  ContinuousLinearMap.ext fun z => by
-    rw [imDilation_higherReflectionNode_fin_one, ContinuousLinearEquiv.coe_coe, conjCLE_apply]
-
 /-- **Weak derivative of a twisted reflection.** On an open set `Ω` whose lower part conjugation
 maps into `Ω`, let `Dg` be the weak derivative of `g` on the upper part of `Ω`, with `g` continuous
 on `Ω ∩ {0 ≤ im}` and `Dg` integrable on compact subsets of `Ω ∩ {0 ≤ im}`, and let `L` be a
