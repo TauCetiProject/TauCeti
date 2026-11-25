@@ -69,6 +69,8 @@ and keep the representation `X.ρ`. -/
 def ofDiscreteRep : DiscreteRep.{u, v, w} A G ⥤ SmoothRep.{w} A G where
   obj X := of X.ρ
   map f := ObjectProperty.homMk (Rep.ofHom f)
+  -- `ObjectProperty.homMk` and `Rep.ofHom` only wrap the intertwining map `f`, so both functor
+  -- laws reduce to those of intertwining maps, which hold definitionally.
   map_id _ := rfl
   map_comp _ _ := rfl
 
@@ -104,7 +106,12 @@ def toDiscreteRep : SmoothRep.{w} A G ⥤ DiscreteRep.{u, v, w} A G where
       continuousSMulRing := ⟨continuous_of_discreteTopology⟩
       continuousSMul := continuousSMul_iff_stabilizer_isOpen.2 fun v ↦
         IsSmooth.isOpen_stabilizer (ρ := V.obj.ρ) v }
+  -- A morphism of `DiscreteRep` is an intertwining map of the representations. The representation
+  -- of `(toDiscreteRep A G).obj V` is `ofDistribMulAction` of `DistribMulAction.compHom V.obj.ρ`,
+  -- which unfolds to `V.obj.ρ` (this is `toDiscreteRep_obj_ρ` below), so `f.hom.hom` has the
+  -- required type up to that definitional unfolding.
   map {V W} f := (f.hom.hom : V.obj.ρ.IntertwiningMap W.obj.ρ)
+  -- `map` is the identity on underlying intertwining maps, so the functor laws hold by `rfl`.
   map_id _ := rfl
   map_comp _ _ := rfl
 
@@ -142,7 +149,17 @@ module by `⊥`. -/
 def equivDiscreteRep : SmoothRep.{w} A G ≌ DiscreteRep.{u, v, w} A G where
   functor := toDiscreteRep A G
   inverse := ofDiscreteRep A G
+  -- `ofDiscreteRep` after `toDiscreteRep` returns `V` itself: the representation it rebuilds
+  -- unfolds to `V.obj.ρ` (`toDiscreteRep_obj_ρ`), and the smoothness proof is a proposition. So
+  -- the unit is `Iso.refl`, and naturality holds because both functors act as the identity on
+  -- underlying linear maps.
   unitIso := NatIso.ofComponents (fun V ↦ Iso.refl V) fun _ ↦ rfl
+  -- The other round trip is not `X` itself: it replaces the topology of `X.V` by `⊥`, which equals
+  -- the discrete topology of `X.V` only propositionally, so `Iso.refl` does not typecheck. It
+  -- rebuilds the action as `DistribMulAction.compHom` of `X.ρ`, which unfolds to the action of `X`.
+  -- Morphisms of `DiscreteRep` are intertwining maps and ignore the topology, so the identity
+  -- intertwining map of `X.ρ` is a morphism in each direction; its two composites, and naturality,
+  -- are identities of intertwining maps by `rfl`.
   counitIso := NatIso.ofComponents
     (fun X ↦
       { hom := (Representation.IntertwiningMap.id X.ρ : X.ρ.IntertwiningMap X.ρ)
@@ -150,6 +167,8 @@ def equivDiscreteRep : SmoothRep.{w} A G ≌ DiscreteRep.{u, v, w} A G where
         hom_inv_id := rfl
         inv_hom_id := rfl })
     fun _ ↦ rfl
+  -- Every component involved is the identity intertwining map, so the triangle identity holds by
+  -- `rfl`.
   functor_unitIso_comp _ := rfl
 
 /-- `toDiscreteRep` is an equivalence of categories, with inverse `ofDiscreteRep`. -/
@@ -244,6 +263,9 @@ def equivSmoothDiscreteTopRepCompForget₂ :
     (equivSmoothDiscreteTopRep A G).functor ⋙ smoothDiscreteι A G ⋙ TopRep.toActionTopModFunc ⋙
         Action.forget (TopModuleCat.{w} A) G ⋙ forget₂ (TopModuleCat.{w} A) (ModuleCat.{w} A) ≅
       ι A G ⋙ forget₂ (Rep.{w} A G) (ModuleCat.{w} A) :=
+  -- Both composites send `V` to its underlying module and a morphism to its underlying linear map:
+  -- each functor in the chain keeps the underlying module and linear map, by unfolding. So the
+  -- components are identities and naturality holds by `rfl`.
   NatIso.ofComponents (fun _ ↦ Iso.refl _) fun _ ↦ rfl
 
 /-- **Compatibility with forgetting.** The equivalence `equivSmoothDiscreteTopRep` commutes with
@@ -252,6 +274,8 @@ the forgetful functors to types, by the identity of underlying sets. -/
 def equivSmoothDiscreteTopRepCompForget :
     (equivSmoothDiscreteTopRep A G).functor ⋙ smoothDiscreteι A G ⋙ forget (TopRep.{w} A G) ≅
       ι A G ⋙ forget (Rep.{w} A G) :=
+  -- Both composites send `V` to the set `V.obj` and a morphism to its underlying function, by
+  -- unfolding, so the components are identities and naturality holds by `rfl`.
   NatIso.ofComponents (fun V ↦ Iso.refl V.obj.V) fun _ ↦ rfl
 
 end SmoothRep
