@@ -14,6 +14,7 @@ public import Mathlib.Tactic.Observe
 public import TauCeti.AlgebraicGeometry.Descent.Affine
 public import TauCeti.AlgebraicGeometry.Descent.AffineMorphism
 import TauCeti.AlgebraicGeometry.Morphisms.Affine.TargetLocal
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.TargetLocal
 
 /-!
 # Affine morphisms satisfy fpqc descent
@@ -177,25 +178,19 @@ instance IsClosedImmersion.descendsAlong_surjective_inf_flat_inf_quasiCompact :
 /-- **Finite morphisms satisfy fpqc descent.** A morphism whose base change along a surjective,
 flat and quasi-compact morphism is finite is finite. -/
 instance IsFinite.descendsAlong_surjective_inf_flat_inf_quasiCompact :
-    DescendsAlong @IsFinite.{u} (@Surjective ⊓ @Flat ⊓ @QuasiCompact) := by
-  -- Mathlib's affine description of finite morphisms is an unnamed instance which instance search
-  -- does not find here, as above.
-  observe hP : HasAffineProperty @IsFinite.{u}
-    (fun X _ f _ ↦ IsAffine X ∧ RingHom.Finite (f.appTop).hom)
-  exact HasAffineProperty.descendsAlong_surjective_inf_flat_inf_quasiCompact (Q := RingHom.Finite)
-    hP RingHom.finite_respectsIso RingHom.Finite.codescendsAlong_faithfullyFlat
+    DescendsAlong @IsFinite.{u} (@Surjective ⊓ @Flat ⊓ @QuasiCompact) :=
+  HasAffineProperty.descendsAlong_surjective_inf_flat_inf_quasiCompact (Q := RingHom.Finite)
+    hasAffineProperty_isFinite RingHom.finite_respectsIso
+    RingHom.Finite.codescendsAlong_faithfullyFlat
 
 /-- **Finite morphisms satisfy fppf descent.** A morphism whose base change along a surjective,
 flat morphism locally of finite presentation is finite is itself finite. -/
 instance IsFinite.descendsAlong_surjective_inf_flat_inf_locallyOfFinitePresentation :
     DescendsAlong @IsFinite.{u} (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation) := by
   -- Mathlib's fpqc-to-fppf instance is stated for a bundled `MorphismProperty`, which instance
-  -- search does not unify with `@IsFinite`, and the target-locality of finite morphisms comes from
-  -- their unnamed affine description, so both inputs are supplied as local instances.
+  -- search does not unify with `@IsFinite`, so the fpqc descent of finite morphisms is supplied
+  -- as a local instance.
   let P : MorphismProperty Scheme.{u} := @IsFinite
-  observe hP : HasAffineProperty @IsFinite.{u}
-    (fun X _ f _ ↦ IsAffine X ∧ RingHom.Finite (f.appTop).hom)
-  have : IsZariskiLocalAtTarget P := @HasAffineProperty.instIsZariskiLocalAtTarget _ _ hP
   have : P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @QuasiCompact) :=
     IsFinite.descendsAlong_surjective_inf_flat_inf_quasiCompact
   exact (inferInstance : P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation))
