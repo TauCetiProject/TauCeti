@@ -16,7 +16,9 @@ equivalence (`Orientation.signBasis_map`). Empty index types are included, so bo
 zero-dimensional orientations retain their sign. Two orientations are equal exactly when they
 agree on whether they are the orientation of a fixed basis
 (`Module.Basis.eq_iff_eq_orientation_iff`). In a line, the basis `(-v)` gives the orientation
-opposite to that of `(v)` (`TauCeti.orientation_basisSingleton_neg`).
+opposite to that of `(v)` (`TauCeti.orientation_basisSingleton_neg`), and two nonzero vectors give
+the same orientation exactly when one is a positive multiple of the other
+(`TauCeti.orientation_basisSingleton_eq_iff`).
 -/
 
 public section
@@ -215,3 +217,40 @@ theorem TauCeti.orientation_basisSingleton_neg {R V ι : Type*} [Field R] [Linea
   refine Module.Basis.eq_of_apply_eq fun i ↦ ?_
   rw [Module.Basis.unitsSMul_apply, Unique.eq_default i, Function.update_self]
   simp [FiniteDimensional.basisSingleton_apply]
+
+/-- In a line, multiplying `v` by a positive scalar does not change the orientation of the basis
+`(v)`. -/
+theorem TauCeti.orientation_basisSingleton_smul_of_pos {R V ι : Type*} [Field R] [LinearOrder R]
+    [IsStrictOrderedRing R] [AddCommGroup V] [Module R V] [Unique ι] [Fintype ι] [DecidableEq ι]
+    (hV : Module.finrank R V = 1) {v : V} {c : R} (hc : 0 < c) (hcv : c • v ≠ 0) :
+    (FiniteDimensional.basisSingleton ι hV (c • v) hcv).orientation =
+      (FiniteDimensional.basisSingleton ι hV v (right_ne_zero_of_smul hcv)).orientation := by
+  -- The basis `(c • v)` is the basis `(v)` with its vector multiplied by the unit `c`.
+  have hb : FiniteDimensional.basisSingleton ι hV (c • v) hcv =
+      (FiniteDimensional.basisSingleton ι hV v (right_ne_zero_of_smul hcv)).unitsSMul
+        fun _ ↦ Units.mk0 c hc.ne' :=
+    Module.Basis.eq_of_apply_eq fun i ↦ by
+      simp [Module.Basis.unitsSMul_apply, FiniteDimensional.basisSingleton_apply]
+  rw [hb, Module.Basis.orientation_unitsSMul, Fintype.prod_unique]
+  exact Module.Ray.units_smul_of_pos _ (by simpa using hc) _
+
+/-- In a line, two nonzero vectors `v` and `w` give the same orientation, as one-vector bases,
+exactly when `w` is a positive multiple of `v`. -/
+theorem TauCeti.orientation_basisSingleton_eq_iff {R V ι : Type*} [Field R] [LinearOrder R]
+    [IsStrictOrderedRing R] [AddCommGroup V] [Module R V] [Unique ι] [Fintype ι] [DecidableEq ι]
+    (hV : Module.finrank R V = 1) {v w : V} (hv : v ≠ 0) (hw : w ≠ 0) :
+    (FiniteDimensional.basisSingleton ι hV w hw).orientation =
+        (FiniteDimensional.basisSingleton ι hV v hv).orientation ↔
+      ∃ c : R, 0 < c ∧ w = c • v := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · -- In a line, `w` is a multiple `c • v`; a negative `c` would reverse the orientation.
+    obtain ⟨c, rfl⟩ := (finrank_eq_one_iff_of_ne_zero' v hv).1 hV w
+    refine ⟨c, lt_of_le_of_ne (not_lt.1 fun hc ↦ ?_) fun hc ↦ hw (by rw [← hc, zero_smul]), rfl⟩
+    have hneg : c • v = (-c) • -v := by rw [smul_neg, neg_smul, neg_neg]
+    have hw' : (-c) • -v ≠ 0 := hneg ▸ hw
+    simp only [hneg] at h
+    rw [TauCeti.orientation_basisSingleton_smul_of_pos hV (neg_pos.2 hc) hw',
+      TauCeti.orientation_basisSingleton_neg hV (right_ne_zero_of_smul hw')] at h
+    exact Module.Ray.ne_neg_self _ h.symm
+  · rintro ⟨c, hc, rfl⟩
+    exact TauCeti.orientation_basisSingleton_smul_of_pos hV hc hw
