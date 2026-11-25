@@ -86,6 +86,12 @@ relative homotopy invariance of cubical homology is transported from the simplic
 * `TopPair.exists_isCubicalRepresentative_of_d_mem`, `TopPair.IsCubicalRepresentative.eq_zero_iff`:
   relative cycles represent relative classes, and represent the zero class exactly when they are
   relative boundaries.
+* `TopPair.exists_isCubicalRepresentative_of_dim_zero`: every chain of dimension `0` represents a
+  relative class.
+* `TopPair.IsCubicalRepresentative.sum`, `TopPair.IsCubicalRepresentative.neg`,
+  `TopPair.IsCubicalRepresentative.smul`, `TopPair.IsCubicalRepresentative.zsmul`,
+  `TopPair.IsCubicalRepresentative.unique`:
+  representatives are linear and determine their class.
 * `TopPair.quasiIsoAt_cubicalChainComplexMap_iff`: a map of pairs induces a quasi-isomorphism of
   relative chains in a degree exactly when, on chains of the ambient spaces, every relative cycle
   of the target is the image of a relative cycle up to a boundary and the chains of the subspace,
@@ -516,6 +522,34 @@ theorem IsCubicalRepresentative.sum {ι : Type*} {s : Finset ι}
     rw [Finset.sum_insert hi, Finset.sum_insert hi]
     exact (h i (Finset.mem_insert_self i s)).add (ih fun j hj ↦ h j (Finset.mem_insert_of_mem hj))
 
+/-- Representatives of relative classes negate. -/
+theorem IsCubicalRepresentative.neg {c : ((normalizedCubicalChainComplex k).obj P.fst).X n}
+    {μ : (P.cubicalChainComplex k).homology n} (h : P.IsCubicalRepresentative k c μ) :
+    P.IsCubicalRepresentative k (-c) (-μ) := by
+  obtain ⟨r, hr, rfl⟩ := h
+  exact ⟨-r, by rw [map_neg, map_neg, hr], map_neg _ _⟩
+
+/-- Representatives of relative classes are compatible with scalar multiplication. -/
+theorem IsCubicalRepresentative.smul {c : ((normalizedCubicalChainComplex k).obj P.fst).X n}
+    {μ : (P.cubicalChainComplex k).homology n} (h : P.IsCubicalRepresentative k c μ) (r : k) :
+    P.IsCubicalRepresentative k (r • c) (r • μ) := by
+  obtain ⟨z, hz, rfl⟩ := h
+  exact ⟨r • z, by rw [map_smul, map_smul, hz], map_smul _ _ _⟩
+
+/-- Representatives of relative classes are compatible with integer multiples. -/
+theorem IsCubicalRepresentative.zsmul {c : ((normalizedCubicalChainComplex k).obj P.fst).X n}
+    {μ : (P.cubicalChainComplex k).homology n} (h : P.IsCubicalRepresentative k c μ) (m : ℤ) :
+    P.IsCubicalRepresentative k (m • c) (m • μ) := by
+  simpa only [Int.cast_smul_eq_zsmul] using h.smul (m : k)
+
+/-- A chain represents at most one relative class. -/
+theorem IsCubicalRepresentative.unique {c : ((normalizedCubicalChainComplex k).obj P.fst).X n}
+    {μ μ' : (P.cubicalChainComplex k).homology n} (h : P.IsCubicalRepresentative k c μ)
+    (h' : P.IsCubicalRepresentative k c μ') : μ = μ' := by
+  obtain ⟨r, hr, rfl⟩ := h
+  obtain ⟨r', hr', rfl⟩ := h'
+  rw [(P.cubicalChainComplex k).moduleCat_iCycles_injective n (hr.symm.trans hr')]
+
 /-- **Relative cycles represent relative classes**: a chain of the ambient space of a pair whose
 boundary is a chain of the subspace represents a class of the relative homology. -/
 theorem exists_isCubicalRepresentative_of_d_mem
@@ -529,6 +563,15 @@ theorem exists_isCubicalRepresentative_of_d_mem
     exact hc
   exact ⟨_, _, ((P.cubicalChainComplex k).iCycles_moduleCatCyclesMk n _ _
     (ChainComplex.next_nat n) hd).symm, rfl⟩
+
+/-- Every chain of dimension `0` of the ambient space of a pair is a relative cycle, so it
+represents a relative class. -/
+theorem exists_isCubicalRepresentative_of_dim_zero
+    (c : ((normalizedCubicalChainComplex k).obj P.fst).X 0) :
+    ∃ μ, P.IsCubicalRepresentative k c μ :=
+  exists_isCubicalRepresentative_of_d_mem c <| by
+    rw [HomologicalComplex.shape _ 0 (0 - 1) (by simp)]
+    exact zero_mem _
 
 /-- **A representative of the zero class is a relative boundary**: a chain represents the zero
 class of the relative homology of a pair exactly when it is the boundary of a chain of the ambient

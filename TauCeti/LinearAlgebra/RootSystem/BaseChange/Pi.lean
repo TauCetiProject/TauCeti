@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import Mathlib.LinearAlgebra.RootSystem.Chain
 public import Mathlib.LinearAlgebra.RootSystem.Reduced
 public import TauCeti.LinearAlgebra.Matrix.Dual
+import TauCeti.Algebra.Algebra.Pi
 
 /-!
 # Base change of a root pairing carried by the standard lattices
@@ -73,11 +74,6 @@ open Submodule (span)
 section Entrywise
 
 variable {κ R : Type*} (S : Type*) [CommSemiring R] [Semiring S] [Algebra R S]
-
-/-- Entrywise base change of the standard lattice reads off entrywise. -/
-theorem piAlgebraMap_apply (x : κ → R) (j : κ) :
-    Pi.algebraMap κ R S x j = algebraMap R S (x j) :=
-  rfl
 
 /-- Entrywise base change along an injective algebra map is injective. -/
 theorem piAlgebraMap_injective [FaithfulSMul R S] : Injective (Pi.algebraMap κ R S) :=

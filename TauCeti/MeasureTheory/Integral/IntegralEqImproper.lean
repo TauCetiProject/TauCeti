@@ -28,7 +28,10 @@ For a real function `g` integrable on `(x, ∞)`, with tail integral
 (`MeasureTheory.IntegrableOn.mul_pow_integral_Ioi`) with integral
 `Ψ x ^ (k + 1) / (k + 1)` (`MeasureTheory.IntegrableOn.integral_Ioi_mul_pow_integral_Ioi`).
 The tail integral of a function nonnegative on `(a, ∞)` is antitone there
-(`MeasureTheory.antitoneOn_integral_Ioi`).
+(`MeasureTheory.antitoneOn_integral_Ioi`). If `f` is continuous from the right at `a` and `f`
+and its derivative `f'` on `(a, ∞)` are both integrable on `(a, ∞)`, then
+`∫ x in Ioi a, f' x = -f a`
+(`MeasureTheory.integral_Ioi_of_hasDerivAt_of_integrableOn`).
 
 For a compactly supported `C¹` map `u` on a real normed space, integrating its derivative along a
 ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`). For general
@@ -194,6 +197,17 @@ theorem antitoneOn_integral_Ioi {f : ℝ → ℝ} {a : ℝ} (hf : ∀ v ∈ Ioi 
     AntitoneOn (fun x ↦ ∫ v in Ioi x, f v) (Ioi a) := fun x (hx : a < x) _ _ hxy ↦
   setIntegral_mono_set (hint x hx) ((ae_restrict_iff' measurableSet_Ioi).2
     (ae_of_all _ fun v hv ↦ hf v (hx.trans hv))) (Ioi_subset_Ioi hxy).eventuallySubset
+
+/-- **Fundamental theorem of calculus on a half-line, with integrable primitive.** If `f` is
+continuous from the right at `a`, has derivative `f'` on `(a, ∞)`, and both `f` and `f'` are
+integrable on `(a, ∞)`, then `∫ x in Ioi a, f' x = -f a`. -/
+theorem integral_Ioi_of_hasDerivAt_of_integrableOn {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {f f' : ℝ → E} {a : ℝ}
+    (hcont : ContinuousWithinAt f (Ici a) a) (hderiv : ∀ x ∈ Ioi a, HasDerivAt f (f' x) x)
+    (f'int : IntegrableOn f' (Ioi a)) (fint : IntegrableOn f (Ioi a)) :
+    ∫ x in Ioi a, f' x = -f a := by
+  rw [integral_Ioi_of_hasDerivAt_of_tendsto hcont hderiv f'int
+    (tendsto_zero_of_hasDerivAt_of_integrableOn_Ioi hderiv f'int fint), zero_sub]
 
 end MeasureTheory
 

@@ -10,7 +10,6 @@ public import TauCeti.Analysis.PDE.Vortex.FramedGauge.FieldTopology
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Sobolev
 public import TauCeti.Analysis.Sobolev.BesselPotential.Real
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
 /-!
@@ -119,12 +118,9 @@ theorem coeFn_inclusionLp_ae_eq_continuousRepField (hs : 1 < s) {h : 0 ≤ s}
 form a `Cⁿ` field. -/
 theorem contDiff_continuousRepField {n : ℕ} (hs : n + 1 < s) {h : 0 ≤ s}
     (u : Fin 4 → realSubmodule ℂ h) : ContDiff ℝ n (continuousRepField u) := by
-  have hs' : (finrank ℝ ℂ : ℝ) + 2 * n < 2 * s := by
-    rw [Complex.finrank_real_complex]
-    push_cast
-    linarith
   exact contDiff_piLp' (p := 2) fun j ↦ by
-    simpa only [continuousRepField_apply] using contDiff_continuousRep hs' (u j)
+    simpa only [continuousRepField_apply] using
+      contDiff_continuousRep (finrank_real_complex_add_two_mul_lt_two_mul hs) (u j)
 
 /-- For `s > 1`, real coordinates are determined by their field of continuous representatives. -/
 theorem continuousRepField_injective (hs : 1 < s) {h : 0 ≤ s} :
@@ -258,12 +254,8 @@ theorem coe_realSubRefHomeomorph_symm (hs : 1 < s) {h : 0 ≤ s} :
   (rfl)
 
 /-- **Fields of `A_m^s` are `Cⁿ` above the threshold** `s > n + 1`. -/
-theorem contDiff {n : ℕ} (hs : n + 1 < s) (x : SobolevFieldSpace f m s) : ContDiff ℝ n x := by
-  have hs₁ : 1 < s := by linarith [show (0 : ℝ) ≤ n from n.cast_nonneg]
-  have h : (0 : ℝ) ≤ s := zero_le_one.trans hs₁.le
-  rw [← ofRealSubRef_realSubRef hs₁ (h := h) x, coe_ofRealSubRef]
-  exact ((contDiff_referenceField f m).of_le (by exact_mod_cast le_top)).add
-    (contDiff_continuousRepField hs _)
+theorem contDiff {n : ℕ} (hs : n + 1 < s) (x : SobolevFieldSpace f m s) : ContDiff ℝ n x :=
+  contDiff_of_mem_framedFieldSpace hs x.continuous x.mem_framedFieldSpace
 
 end SobolevFieldSpace
 
