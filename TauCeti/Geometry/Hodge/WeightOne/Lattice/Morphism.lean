@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Hodge.Morphism
-public import TauCeti.Geometry.Hodge.WeightOne.Lattice
+public import TauCeti.Geometry.Hodge.WeightOne.Lattice.Basic
 
 /-!
 # Morphisms of weight-one Hodge structures from complex-linear lattice maps
@@ -14,15 +14,15 @@ public import TauCeti.Geometry.Hodge.WeightOne.Lattice
 Let `V` and `V'` be integral modules with almost complex structures `J` and `J'` on their
 realifications. An integral linear map `f : V → V'` whose real extension `ℝ ⊗ f` is complex
 linear for `J` and `J'` complexifies to a map intertwining the transported complex structures
-(`TauCeti.AlmostComplexStructure.integralMapToComplex_comp_latticeComplexification`), so it
+(`TauCeti.AlmostComplexStructure.integralMapToComplex_commutes_latticeComplexification`), so it
 carries the `i`-eigenspace of `J` into that of `J'`. It is therefore a morphism of the associated
 weight-one Hodge structures `latticeHodgeStructure`
 (`TauCeti.AlmostComplexStructure.latticeHodgeHom`).
 
 ## Main declarations
 
-* `TauCeti.AlmostComplexStructure.integralMapToComplex_realificationComplexEquiv`: complexifying
-  an integral map is the same as extending its realification to `ℂ`.
+* `TauCeti.AlmostComplexStructure.integralMapToComplex_commutes_latticeComplexification`: the
+  complexification of such a map intertwines the transported complex structures.
 * `TauCeti.AlmostComplexStructure.latticeHodgeHom`: the Hodge morphism
   `latticeHodgeStructure J → latticeHodgeStructure J'` of an integral map with complex-linear real
   extension.
@@ -43,27 +43,10 @@ variable [AddCommGroup V'] [AddCommGroup Vℂ'] [Module ℂ Vℂ']
 variable [AddCommGroup V''] [AddCommGroup Vℂ''] [Module ℂ Vℂ'']
 variable {ιℂ : V →ₗ[ℤ] Vℂ} {ιℂ' : V' →ₗ[ℤ] Vℂ'} {ιℂ'' : V'' →ₗ[ℤ] Vℂ''}
 
-/-- **Complexification through the realification.** The complexification of an integral linear map
-`f : V → V'` agrees, under the realification comparisons, with the complex extension of its real
-extension `ℝ ⊗ f`. -/
-theorem integralMapToComplex_realificationComplexEquiv (hℂ : IsBaseChange ℂ ιℂ)
-    (hℂ' : IsBaseChange ℂ ιℂ') (f : V →ₗ[ℤ] V') (x : ℂ ⊗[ℝ] Hodge.Realification V) :
-    Hodge.integralMapToComplex hℂ ιℂ' f (Hodge.realificationComplexEquiv hℂ x) =
-      Hodge.realificationComplexEquiv hℂ' ((f.baseChange ℝ).baseChange ℂ x) := by
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy => simp only [map_add, hx, hy]
-  | tmul z x =>
-      induction x using TensorProduct.inductionOn with
-      | add x y hx hy => simp only [TensorProduct.tmul_add, map_add, hx, hy]
-      | tmul r v =>
-          rw [Hodge.realificationComplexEquiv_tmul_tmul, LinearMap.baseChange_tmul,
-            LinearMap.baseChange_tmul, Hodge.realificationComplexEquiv_tmul_tmul, map_smul,
-            Hodge.integralMapToComplex_apply_ι]
-
 /-- **Complex-linear lattice maps intertwine the transported complex structures.** If the real
 extension of an integral map `f` is complex linear for `J` and `J'`, its complexification
 intertwines `latticeComplexification J` and `latticeComplexification J'`. -/
-theorem integralMapToComplex_comp_latticeComplexification
+theorem integralMapToComplex_commutes_latticeComplexification
     {J : AlmostComplexStructure (Hodge.Realification V)}
     {J' : AlmostComplexStructure (Hodge.Realification V')} (hℂ : IsBaseChange ℂ ιℂ)
     (hℂ' : IsBaseChange ℂ ιℂ') {f : V →ₗ[ℤ] V'}
@@ -72,8 +55,8 @@ theorem integralMapToComplex_comp_latticeComplexification
       J'.latticeComplexification hℂ' (Hodge.integralMapToComplex hℂ ιℂ' f x) := by
   obtain ⟨y, rfl⟩ := (Hodge.realificationComplexEquiv hℂ).surjective x
   rw [← realificationComplexEquiv_baseChange_apply,
-    integralMapToComplex_realificationComplexEquiv hℂ hℂ',
-    integralMapToComplex_realificationComplexEquiv hℂ hℂ',
+    Hodge.integralMapToComplex_realificationComplexEquiv hℂ hℂ',
+    Hodge.integralMapToComplex_realificationComplexEquiv hℂ hℂ',
     ← realificationComplexEquiv_baseChange_apply J' hℂ',
     ← LinearMap.comp_apply, ← LinearMap.comp_apply, ← LinearMap.baseChange_comp,
     ← LinearMap.baseChange_comp, hf]
@@ -92,7 +75,7 @@ noncomputable def latticeHodgeHom {J : AlmostComplexStructure (Hodge.Realificati
     split_ifs at hx ⊢ with h₀ h₁
     · trivial
     · rw [Module.End.mem_eigenspace_iff] at hx ⊢
-      rw [← integralMapToComplex_comp_latticeComplexification hℂ hℂ' hf, hx, map_smul]
+      rw [← integralMapToComplex_commutes_latticeComplexification hℂ hℂ' hf, hx, map_smul]
     · rw [Submodule.mem_bot] at hx ⊢
       rw [hx, map_zero]
 
@@ -122,6 +105,7 @@ theorem isComplexLinearMap_baseChange_comp {J : AlmostComplexStructure (Hodge.Re
   exact hg.comp hf
 
 /-- The identity of `V` is the identity Hodge morphism of `latticeHodgeStructure J`. -/
+@[simp]
 theorem latticeHodgeHom_id (J : AlmostComplexStructure (Hodge.Realification V))
     (hℂ : IsBaseChange ℂ ιℂ) :
     latticeHodgeHom hℂ hℂ LinearMap.id (isComplexLinearMap_baseChange_id J) =
