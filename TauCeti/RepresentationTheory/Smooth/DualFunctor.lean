@@ -28,8 +28,11 @@ the natural evaluation map `V → V^∨∨` (`Representation.smoothDualEval`).
 
 ## Main results
 
-* `TauCeti.SmoothRep.smoothDualAdjunction_unit_app_hom_hom`: the unit of the adjunction is the
-  evaluation map `V → V^∨∨`.
+* `TauCeti.SmoothRep.smoothDualAdjunction_homEquiv_apply_hom_hom`: the bijection of the adjunction
+  is `Representation.smoothDualHomEquiv`.
+* `TauCeti.SmoothRep.smoothDualAdjunction_unit_app_hom_hom`,
+  `TauCeti.SmoothRep.smoothDualAdjunction_counit_app_unop_hom_hom`: the unit and the counit of the
+  adjunction are the evaluation maps `V → V^∨∨`.
 
 ## References
 
@@ -89,25 +92,58 @@ def smoothDualAdjunction :
             smoothDualHomEquiv V.obj.ρ W.unop.obj.ρ ψ.hom.hom).op
           left_inv φ := Quiver.Hom.unop_inj <| by ext; simp
           right_inv ψ := by
-            apply ObjectProperty.hom_ext
-            apply Rep.hom_ext
-            change smoothDualHomEquiv _ _ (smoothDualHomEquiv _ _ ψ.hom.hom) = ψ.hom.hom
-            rw [← smoothDualHomEquiv_symm, LinearEquiv.symm_apply_apply] }
+            ext v
+            apply Subtype.ext
+            ext
+            simp }
       homEquiv_naturality_left_symm f g := by
         apply Quiver.Hom.unop_inj
-        apply ObjectProperty.hom_ext
-        apply Rep.hom_ext
-        exact smoothDualHomEquiv_comp _ _
+        ext : 2
+        simp [smoothDualHomEquiv_comp]
       homEquiv_naturality_right f g := by
-        apply ObjectProperty.hom_ext
-        apply Rep.hom_ext
-        exact smoothDualHomEquiv_comp _ _ }
+        ext : 2
+        simp [smoothDualHomEquiv_comp] }
+
+/-- The bijection of `smoothDualAdjunction` is `Representation.smoothDualHomEquiv`: a morphism
+`V^∨ ⟶ W` of the opposite category, that is an intertwining map `f : W → V^∨`, goes to the
+intertwining map `V → W^∨`, `v ↦ (w ↦ f w v)`. -/
+@[simp]
+theorem smoothDualAdjunction_homEquiv_apply_hom_hom (V : SmoothRep.{max u w} A G)
+    (W : (SmoothRep.{max u w} A G)ᵒᵖ) (φ : (smoothDualFunctor.{w} A G).obj V ⟶ W) :
+    dsimp% ((smoothDualAdjunction.{w} A G).homEquiv V W φ).hom.hom =
+      smoothDualHomEquiv W.unop.obj.ρ V.obj.ρ φ.unop.hom.hom := by
+  simp only [smoothDualAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
+  simp
+
+/-- The inverse bijection of `smoothDualAdjunction` is also `Representation.smoothDualHomEquiv`. -/
+@[simp]
+theorem smoothDualAdjunction_homEquiv_symm_apply_unop_hom_hom (V : SmoothRep.{max u w} A G)
+    (W : (SmoothRep.{max u w} A G)ᵒᵖ) (ψ : V ⟶ (smoothDualFunctor.{w} A G).leftOp.obj W) :
+    dsimp% (((smoothDualAdjunction.{w} A G).homEquiv V W).symm ψ).unop.hom.hom =
+      smoothDualHomEquiv V.obj.ρ W.unop.obj.ρ ψ.hom.hom := by
+  simp only [smoothDualAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
+  simp
 
 /-- **The unit of the smooth duality adjunction is the evaluation map** `V → V^∨∨`,
 `v ↦ (λ ↦ λ v)`. -/
+@[simp]
 theorem smoothDualAdjunction_unit_app_hom_hom (V : SmoothRep.{max u w} A G) :
     ((smoothDualAdjunction.{w} A G).unit.app V).hom.hom = V.obj.ρ.smoothDualEval := by
-  change smoothDualHomEquiv _ _ (IntertwiningMap.id _) = _
-  exact IntertwiningMap.ext <| LinearMap.ext fun v ↦ Subtype.ext <| LinearMap.ext fun f ↦ by simp
+  rw [← Adjunction.homEquiv_id, smoothDualAdjunction_homEquiv_apply_hom_hom]
+  ext v f
+  simp
+
+/-- **The counit of the smooth duality adjunction is the evaluation map** `W → W^∨∨`, read in the
+opposite category. -/
+@[simp]
+theorem smoothDualAdjunction_counit_app_unop_hom_hom (W : (SmoothRep.{max u w} A G)ᵒᵖ) :
+    ((smoothDualAdjunction.{w} A G).counit.app W).unop.hom.hom = W.unop.obj.ρ.smoothDualEval := by
+  -- After `rw [← Adjunction.homEquiv_symm_id]`, rewriting with the inverse-bijection lemma does
+  -- not match the goal syntactically, so instantiate that lemma at the identity instead.
+  have h := smoothDualAdjunction_homEquiv_symm_apply_unop_hom_hom.{w} _ W (𝟙 _)
+  rw [Adjunction.homEquiv_symm_id] at h
+  rw [h]
+  ext v f
+  simp
 
 end TauCeti.SmoothRep
