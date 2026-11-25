@@ -44,9 +44,9 @@ theorem withDensity_exp_neg_gaussianWeight :
 theorem Real.exp_neg_gaussianWeight (x : ℝ) :
     Real.exp (-gaussianWeight ℝ x) = ProbabilityTheory.gaussianPDFReal 0 1 x := by
   rw [Probability.gaussianPDFReal_zero_one, gaussianWeight_def, Module.finrank_self,
-    Real.norm_eq_abs, sq_abs, neg_add, Real.exp_add, mul_comm, Real.sqrt_eq_rpow,
-    Real.rpow_def_of_pos (by positivity), ← Real.exp_neg]
-  congr 2
+    Real.sqrt_eq_rpow, Real.rpow_def_of_pos (by positivity), ← Real.exp_neg, ← Real.exp_add]
+  congr 1
+  rw [Real.norm_eq_abs, sq_abs]
   ring
 
 end TauCeti
