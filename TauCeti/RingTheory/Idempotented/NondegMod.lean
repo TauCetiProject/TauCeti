@@ -177,7 +177,7 @@ def nondegeneratePartAdjunction :
 theorem coe_nondegeneratePartAdjunction_homEquiv_apply (X : NondegMod.{v} A H)
     (M : ModuleCat.{v} (Unitization A H)) (f : X.obj ⟶ M) (x : X.obj) :
     Subtype.val (((nondegeneratePartAdjunction.{v} A H).homEquiv X M f).hom.hom x) = f.hom x := by
-  unfold nondegeneratePartAdjunction
+  rw [nondegeneratePartAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
   rfl
 
 /-- The inverse hom-equivalence of `TauCeti.nondegeneratePartAdjunction` composes a homomorphism
@@ -186,22 +186,22 @@ theorem nondegeneratePartAdjunction_homEquiv_symm_apply (X : NondegMod.{v} A H)
     (M : ModuleCat.{v} (Unitization A H)) (g : X ⟶ (nondegeneratePartFunctor.{v} A H).obj M) :
     ((nondegeneratePartAdjunction.{v} A H).homEquiv X M).symm g =
       ModuleCat.ofHom ((nondegeneratePart A H M).subtype ∘ₗ g.hom.hom) := by
-  unfold nondegeneratePartAdjunction
+  rw [nondegeneratePartAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
   rfl
 
 /-- The unit of `TauCeti.nondegeneratePartAdjunction` at a nondegenerate module `X` sends `x` to
 itself, viewed in `H • X = X`. -/
 theorem coe_nondegeneratePartAdjunction_unit_app (X : NondegMod.{v} A H) (x : X.obj) :
     Subtype.val (((nondegeneratePartAdjunction.{v} A H).unit.app X).hom.hom x) = x := by
-  unfold nondegeneratePartAdjunction
-  rfl
+  rw [← Adjunction.homEquiv_id, coe_nondegeneratePartAdjunction_homEquiv_apply]
+  simp
 
 /-- The counit of `TauCeti.nondegeneratePartAdjunction` is the inclusion `H • M → M`. -/
 @[simp]
 theorem nondegeneratePartAdjunction_counit_app (M : ModuleCat.{v} (Unitization A H)) :
     (nondegeneratePartAdjunction.{v} A H).counit.app M =
       ModuleCat.ofHom (nondegeneratePart A H M).subtype := by
-  unfold nondegeneratePartAdjunction
+  rw [← Adjunction.homEquiv_symm_id, nondegeneratePartAdjunction_homEquiv_symm_apply]
   rfl
 
 instance : Coreflective (nondegenerateModuleProperty.{v} A H).ι where
