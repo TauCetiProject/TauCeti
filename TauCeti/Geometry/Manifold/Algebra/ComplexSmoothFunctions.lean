@@ -17,7 +17,9 @@ This file equips their native `ContMDiffMap` carrier with the complex algebra st
 induced by constant functions. The native real scalar action agrees with restriction of
 scalars. Real and imaginary parts identify this real vector space with a pair of real
 function spaces, so complex-linear maps out of it are determined on real-valued functions
-(`ContMDiffMap.linearMap_ext_ofReal`), and conjugation is a real algebra involution.
+(`ContMDiffMap.linearMap_ext_ofReal`), a real-linear map between real-valued functions
+complexifies to a complex-linear map between complex-valued ones
+(`ContMDiffMap.complexifyLinearMap`), and conjugation is a real algebra involution.
 Differentiation commutes with real and imaginary parts at every nonzero differentiability
 order. Precomposition with a smooth map is a complex algebra homomorphism
 (`ContMDiffMap.compRightComplexAlgHom`), used to pull back complex-valued differential data.
@@ -347,6 +349,39 @@ theorem ofReal_comp (f : C^n⟮I, M; ℝ⟯) (g : C^n⟮J, N; I, M⟯) :
     ofReal (f.comp g) = (ofReal f).comp g := by
   ext x
   rfl
+
+/-- The complexification of a real-linear map `D` between real-valued smooth functions: the
+complex-linear map acting by `D` on real and imaginary parts, `D (u + i v) = D u + i D v`. -/
+def complexifyLinearMap :
+    (C^n⟮I, M; ℝ⟯ →ₗ[ℝ] C^n⟮J, N; ℝ⟯) →ₗ[ℝ]
+      C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯ where
+  toFun D :=
+    { toFun f := ofReal (D f.re) + Complex.I • ofReal (D f.im)
+      map_add' f g := by
+        simp only [map_add, smul_add]
+        abel
+      map_smul' z f := by
+        ext x
+        apply Complex.ext <;> simp <;> ring }
+  map_add' D₁ D₂ := by
+    ext f x
+    apply Complex.ext <;> simp
+  map_smul' r D := by
+    ext f x
+    apply Complex.ext <;> simp
+
+/-- The complexification of `D` acts on `f` through the real and imaginary parts of `f`. -/
+@[simp]
+theorem complexifyLinearMap_apply (D : C^n⟮I, M; ℝ⟯ →ₗ[ℝ] C^n⟮J, N; ℝ⟯)
+    (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    complexifyLinearMap D f = ofReal (D f.re) + Complex.I • ofReal (D f.im) :=
+  (rfl)
+
+/-- The complexification of `D` extends `D` from real to complex functions. -/
+theorem complexifyLinearMap_ofReal (D : C^n⟮I, M; ℝ⟯ →ₗ[ℝ] C^n⟮J, N; ℝ⟯) (u : C^n⟮I, M; ℝ⟯) :
+    complexifyLinearMap D (ofReal u) = ofReal (D u) := by
+  ext x
+  simp
 
 variable {U V : TopologicalSpace.Opens M}
 
