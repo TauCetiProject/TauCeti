@@ -119,62 +119,33 @@ theorem exists_isOpen_frontier_openUnitSquare_inter_eq {S : Set ℝ} (hSo : IsOp
 
 /-! ### The open left side is admissible -/
 
-/-- The corner chart of the open unit square at `(0, 0)` is a boundary-part chart of the open left
-side over the half-line `(0, ∞)`: on the graph `u = |v|`, the left side is the branch `v > 0`. -/
-private theorem isBoundaryPartChart_unitSquareLeftSide_zero :
+/-- The corner charts of the open unit square at `(0, 0)` and `(0, 1)` are boundary-part charts of
+the open left side over the half-lines `(0, ∞)` and `(-∞, 0)`: on the graph `u = |v|`, the left
+side is the branch `v > 0`, respectively `v < 0`. -/
+private theorem isBoundaryPartChart_unitSquareLeftSide_corner {c : WithLp 2 (ℝ × ℝ)} {β : ℝ}
+    {B : Set ℝ} (hc : c.fst = 0)
+    (hβ : c.snd = 0 ∧ β = (√2)⁻¹ ∧ B = Ioi 0 ∨ c.snd = 1 ∧ β = -(√2)⁻¹ ∧ B = Iio 0)
+    (hαβ : (√2)⁻¹ ^ 2 + β ^ 2 = 1) :
     openUnitSquare.IsBoundaryPartChart (unitSquareLeftSide (Ioo 0 1))
-      (prodRecentredRotation (√2)⁻¹ (√2)⁻¹ Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq 0)
-      (fun s => |s|) 1 (1 / 2) (1 / 2) (Ioi 0) := by
-  refine isLipschitzChartWith_openUnitSquare_zero.toIsLipschitzChart
+      (prodRecentredRotation (√2)⁻¹ β hαβ c) (fun s => |s|) 1 (1 / 2) (1 / 2) B := by
+  refine (isLipschitzChartWith_openUnitSquare_corner (.inl ⟨hc, rfl⟩)
+    (hβ.imp (fun h => ⟨h.1, h.2.1⟩) fun h => ⟨h.1, h.2.1⟩) hαβ).toIsLipschitzChart
     |>.isBoundaryPartChart_of_forall_mem_iff fun z hz => ?_
   have hk0 : (0 : ℝ) < (√2)⁻¹ := by positivity
   have hk1 : (√2)⁻¹ < (1 : ℝ) := inv_lt_one_of_one_lt₀ Real.one_lt_sqrt_two
-  set k : ℝ := (√2)⁻¹
   rw [mem_normalCylinder, Real.norm_eq_abs, abs_lt] at hz
-  simp only [mem_unitSquareLeftSide, prodRecentredRotation_symm_apply_fst,
-    prodRecentredRotation_symm_apply_snd, WithLp.zero_fst, WithLp.zero_snd, zero_add, mem_Ioo,
-    mem_Ioi]
-  constructor
-  · rintro ⟨h1, h2, -⟩
-    have huv : z.fst = z.snd := by
-      rcases mul_eq_zero.1 (show k * (z.fst - z.snd) = 0 by linarith) with h | h
-      · exact absurd h hk0.ne'
-      · linarith
-    have hv : 0 < z.snd := by nlinarith
-    exact ⟨by rw [huv, abs_of_pos hv], hv⟩
-  · rintro ⟨h1, hv⟩
-    rw [abs_of_pos hv] at h1
-    rw [h1]
-    exact ⟨by ring, by positivity, by nlinarith⟩
-
-/-- The corner chart at `(0, 1)` is a boundary-part chart of the open left side over the
-half-line `(-∞, 0)`: on the graph `u = |v|`, the left side is the branch `v < 0`. -/
-private theorem isBoundaryPartChart_unitSquareLeftSide_zero_one :
-    openUnitSquare.IsBoundaryPartChart (unitSquareLeftSide (Ioo 0 1))
-      (prodRecentredRotation (√2)⁻¹ (-(√2)⁻¹) (by rw [neg_sq]; exact
-        Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq) (WithLp.toLp 2 (0, 1)))
-      (fun s => |s|) 1 (1 / 2) (1 / 2) (Iio 0) := by
-  refine isLipschitzChartWith_openUnitSquare_zero_one.toIsLipschitzChart
-    |>.isBoundaryPartChart_of_forall_mem_iff fun z hz => ?_
-  have hk0 : (0 : ℝ) < (√2)⁻¹ := by positivity
-  have hk1 : (√2)⁻¹ < (1 : ℝ) := inv_lt_one_of_one_lt₀ Real.one_lt_sqrt_two
-  set k : ℝ := (√2)⁻¹
-  rw [mem_normalCylinder, Real.norm_eq_abs, abs_lt] at hz
-  simp only [mem_unitSquareLeftSide, prodRecentredRotation_symm_apply_fst,
-    prodRecentredRotation_symm_apply_snd, WithLp.toLp_fst, WithLp.toLp_snd, zero_add, mem_Ioo,
-    mem_Iio]
-  constructor
-  · rintro ⟨h1, -, h2⟩
-    have huv : z.fst = -z.snd := by
-      rcases mul_eq_zero.1 (show k * (z.fst + z.snd) = 0 by linarith) with h | h
-      · exact absurd h hk0.ne'
-      · linarith
-    have hv : z.snd < 0 := by nlinarith
-    exact ⟨by rw [huv, abs_of_neg hv], hv⟩
-  · rintro ⟨h1, hv⟩
-    rw [abs_of_neg hv] at h1
-    rw [h1]
-    exact ⟨by ring, by nlinarith, by nlinarith⟩
+  -- On the left side the first coordinate `(√2)⁻¹ (u ∓ v)` vanishes, so `u = ±v`.
+  rcases hβ with ⟨ht, rfl, rfl⟩ | ⟨ht, rfl, rfl⟩ <;>
+  · simp only [mem_unitSquareLeftSide, prodRecentredRotation_symm_apply_fst,
+      prodRecentredRotation_symm_apply_snd, hc, ht, zero_add, mem_Ioo, mem_Ioi, mem_Iio]
+    constructor
+    · rintro ⟨h1, h2, h3⟩
+      rcases lt_or_ge z.snd 0 with hv | hv <;>
+        [rw [abs_of_neg hv]; rw [abs_of_nonneg hv]] <;> constructor <;> nlinarith
+    · rintro ⟨h1, hv⟩
+      first | rw [abs_of_pos hv] at h1 | rw [abs_of_neg hv] at h1
+      rw [h1]
+      exact ⟨by ring, by nlinarith, by nlinarith⟩
 
 /-- **The open left side of the unit square is an admissible boundary part.** The interfaces in
 the one-dimensional base are modelled on a zero-dimensional `E'`. -/
@@ -190,14 +161,17 @@ theorem isAdmissibleBoundaryPart_unitSquareLeftSide_Ioo {E' : Type*} [NormedAddC
   have hx' : x = WithLp.toLp 2 (0, x.snd) :=
     (WithLp.ext_iff 2).2 (Prod.ext (by simpa using hx0) rfl)
   rcases hx1.eq_or_lt with h | h
-  · refine ⟨_, _, _, _, _, _, isBoundaryPartChart_unitSquareLeftSide_zero,
+  · refine ⟨_, _, _, _, _, _, isBoundaryPartChart_unitSquareLeftSide_corner (c := 0)
+      WithLp.zero_fst (.inl ⟨WithLp.zero_snd, rfl, rfl⟩) Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq,
       isAdmissibleBaseRegion_Ioi 0, ?_⟩
     have hx0' : x = 0 := by
       rw [hx', ← h]
       simp
     rw [hx0', prodRecentredRotation_apply_self]
   rcases hx2.eq_or_lt with h' | h'
-  · refine ⟨_, _, _, _, _, _, isBoundaryPartChart_unitSquareLeftSide_zero_one,
+  · refine ⟨_, _, _, _, _, _, isBoundaryPartChart_unitSquareLeftSide_corner
+      (c := WithLp.toLp 2 (0, 1)) rfl (.inr ⟨rfl, rfl, rfl⟩)
+      (by rw [neg_sq]; exact Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq),
       isAdmissibleBaseRegion_Iio 0, ?_⟩
     rw [hx', h', prodRecentredRotation_apply_self]
   exact absurd ⟨hx0, h, h'⟩ hxn
