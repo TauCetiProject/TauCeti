@@ -162,7 +162,7 @@ theorem insertionTaylor_comp_of_eq_zero_of_m_eq_zero (α : A) {n t : ℕ} (h : �
   · obtain ⟨rfl, rfl⟩ : n = 0 ∧ t = 0 := by omega
     exact LinearMap.ext fun z ↦ by simp [reducedProjection_of_zero]
   · refine LinearMap.ext fun z ↦ ?_
-    obtain ⟨y, hy⟩ := insertions_of_mem_range α t z
+    obtain ⟨y, hy⟩ := insertions_mem_range_of α t ⟨z, rfl⟩
     rw [LinearMap.comp_apply, insertionTaylor_apply, ← hy, LinearMap.zero_apply,
       reducedProjection_of_of_pos R A hpos]
     exact LinearMap.congr_fun (𝒜.taylor_comp_of_eq_zero_of_m_eq_zero ⟨n + t, hpos⟩ h) y

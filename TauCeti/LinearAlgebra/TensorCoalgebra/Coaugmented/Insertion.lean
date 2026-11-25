@@ -254,8 +254,10 @@ theorem map_insertions (f : M →ₗ[R] N) (a : M) (t : ℕ) (w : TensorWords R 
     simp [insertions_cons, map_cons_pow, map_cons, hw]
 
 /-- Inserting `t` letters into a word of length `n` gives a word of length `n + t`. -/
-theorem insertions_of_mem_range (a : M) (t : ℕ) {n : ℕ} (z : TensorPower R n M) :
-    insertions R a t (of R M n z) ∈ LinearMap.range (of R M (n + t)) := by
+theorem insertions_mem_range_of (a : M) (t : ℕ) {n : ℕ} {w : TensorWords R M}
+    (hw : w ∈ LinearMap.range (of R M n)) :
+    insertions R a t w ∈ LinearMap.range (of R M (n + t)) := by
+  obtain ⟨z, rfl⟩ := hw
   induction z using PiTensorProduct.induction_on with
   | smul_tprod r y =>
     rw [map_smul, map_smul]
