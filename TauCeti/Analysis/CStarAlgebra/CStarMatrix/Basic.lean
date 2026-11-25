@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
+public import Mathlib.RingTheory.SimpleRing.Matrix
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.CStarAlgebra.Compression
@@ -41,13 +42,13 @@ The file also collects algebraic and analytic API for `CStarMatrix` that Mathlib
 finite sums and of `1 × 1` matrices, entrywise images under sums and scalar multiples of linear
 maps, unital amplification `CStarMatrix.mapₐ`, finite row-and-column reindexing isometries
 `CStarMatrix.reindexₗᵢ`, rectangular C⋆-norm identities, the transpose as a linear map, the star
-algebra isomorphism `M_m(M_n(A)) ≃ M_{m × n}(A)`, the diagonal embedding `b ↦ diag(b, …, b)` and
-the matrix units `eᵢⱼ` of `M_n(ℂ)`.
+algebra isomorphism `M_m(M_n(A)) ≃ M_{m × n}(A)`, and the diagonal embedding `b ↦ diag(b, …, b)`.
 
 ## Main declarations
 
 * `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
+* `CStarMatrix.instIsSimpleRing`: square matrices over a simple ring form a simple ring.
 * `CStarMatrix.instSeparableSpace`: finite matrices over a separable C⋆-algebra form a separable
   space.
 * `CStarMatrix.instModuleFinite`: `CStarMatrix m n A` is a finite module over finite index
@@ -78,10 +79,6 @@ the matrix units `eᵢⱼ` of `M_n(ℂ)`.
 * `CStarMatrix.norm_map_reindexₐ_linearMap`: reindexing preserves the norm of the entrywise
   image under a linear map.
 * `CStarMatrix.transposeₗ`: the transpose of C⋆-matrices, as a linear map.
-* `CStarMatrix.matrixUnit`: the matrix units `e_ij` of `M_n(ℂ)`, with
-  `CStarMatrix.ofMatrix_symm_matrixUnit`, `CStarMatrix.star_matrixUnit`,
-  `CStarMatrix.matrixUnit_mul_matrixUnit`, `CStarMatrix.isStarProjection_matrixUnit` (`e_ii` is a
-  projection) and `CStarMatrix.norm_matrixUnit`: `‖e_ij‖ = 1`.
 * `CStarMatrix.compStarAlgEquiv`: `Matrix.comp` as a star algebra isomorphism
   `M_m(M_n(A)) ≃ M_{m × n}(A)`.
 * `CStarMatrix.diagonalNonUnitalStarAlgHom`: the diagonal embedding `b ↦ diag(b, …, b)` of `B`
@@ -732,84 +729,17 @@ end FiniteMN
 
 end RectangularNorm
 
+/-- Square matrices over a simple ring form a simple ring: their two-sided ideals are the matrices
+over the two-sided ideals of the coefficient ring. -/
+instance instIsSimpleRing {n A : Type*} [Fintype n] [Nonempty n] [Ring A] [IsSimpleRing A] :
+    IsSimpleRing (CStarMatrix n n A) :=
+  inferInstanceAs (IsSimpleRing (Matrix n n A))
+
 /-- A matrix space over a separable C⋆-algebra with finite index types is separable. -/
 instance instSeparableSpace {m n A : Type*} [Finite m] [Finite n] [NonUnitalCStarAlgebra A]
     [TopologicalSpace.SeparableSpace A] :
     TopologicalSpace.SeparableSpace (CStarMatrix m n A) :=
   inferInstanceAs (TopologicalSpace.SeparableSpace (m → n → A))
-
-section MatrixUnit
-
-variable {n : Type*} [DecidableEq n]
-
-/-- The matrix unit `e_ij` of `M_n(ℂ)`, with entry `1` at `(i, j)` and `0` elsewhere. -/
-def matrixUnit (i j : n) : CStarMatrix n n ℂ :=
-  ofMatrix (Matrix.single i j 1)
-
-/-- Reading `e_ij` as an ordinary matrix gives `Matrix.single i j 1`. -/
-@[simp]
-theorem ofMatrix_symm_matrixUnit (i j : n) :
-    ofMatrix.symm (matrixUnit i j) = Matrix.single i j 1 :=
-  (rfl)
-
-/-- The entries of `e_ij`. -/
-theorem matrixUnit_apply (i j k l : n) :
-    matrixUnit i j k l = if i = k ∧ j = l then 1 else 0 := by
-  simp [matrixUnit, Matrix.single_apply]
-
-/-- The `(i, j)` entry of `e_ij` is `1`. -/
-@[simp]
-theorem matrixUnit_apply_same (i j : n) : matrixUnit i j i j = 1 := by
-  simp [matrixUnit_apply]
-
-/-- The entries of `e_ij` away from `(i, j)` vanish. -/
-@[simp]
-theorem matrixUnit_apply_of_ne {i j k l : n} (h : ¬(i = k ∧ j = l)) : matrixUnit i j k l = 0 := by
-  simp [matrixUnit_apply, h]
-
-/-- The adjoint of `e_ij` is `e_ji`. -/
-@[simp]
-theorem star_matrixUnit (i j : n) : star (matrixUnit i j) = matrixUnit j i := by
-  ext r s
-  simp [matrixUnit_apply, star_apply, and_comm, apply_ite]
-
-variable [Fintype n]
-
-/-- `e_ij` is the image of `Matrix.single i j 1` under `CStarMatrix.ofMatrixStarAlgEquiv`. -/
-theorem matrixUnit_eq_ofMatrixStarAlgEquiv (i j : n) :
-    matrixUnit i j = ofMatrixStarAlgEquiv (Matrix.single i j 1) :=
-  (rfl)
-
-/-- Matrix units multiply as `e_ij e_jk = e_ik`. -/
-@[simp]
-theorem matrixUnit_mul_matrixUnit (i j k : n) :
-    matrixUnit i j * matrixUnit j k = matrixUnit i k := by
-  rw [matrixUnit_eq_ofMatrixStarAlgEquiv, matrixUnit_eq_ofMatrixStarAlgEquiv,
-    matrixUnit_eq_ofMatrixStarAlgEquiv, ← map_mul, single_mul_single_same, one_mul]
-
-/-- Matrix units multiply as `e_ij e_kl = 0` when `j ≠ k`. -/
-@[simp]
-theorem matrixUnit_mul_matrixUnit_of_ne (i : n) {j k : n} (l : n) (h : j ≠ k) :
-    matrixUnit i j * matrixUnit k l = 0 := by
-  rw [matrixUnit_eq_ofMatrixStarAlgEquiv, matrixUnit_eq_ofMatrixStarAlgEquiv, ← map_mul,
-    single_mul_single_of_ne _ _ _ _ h, map_zero]
-
-/-- The diagonal matrix unit `e_ii` is a self-adjoint idempotent. -/
-theorem isStarProjection_matrixUnit (i : n) : IsStarProjection (matrixUnit i i) :=
-  ⟨matrixUnit_mul_matrixUnit i i i, star_matrixUnit i i⟩
-
-open scoped ComplexOrder in
-/-- A matrix unit has norm one: `e_jj` is a nonzero projection and `e_ij⋆ e_ij = e_jj`. -/
-@[simp]
-theorem norm_matrixUnit (i j : n) : ‖matrixUnit i j‖ = 1 := by
-  have hp : ‖matrixUnit j j‖ = 1 :=
-    (isStarProjection_matrixUnit j).norm_eq_one
-      fun h0 => by simpa using congrFun (congrFun h0 j) j
-  have h := CStarRing.norm_star_mul_self (x := matrixUnit i j)
-  rw [star_matrixUnit, matrixUnit_mul_matrixUnit, hp] at h
-  nlinarith [norm_nonneg (matrixUnit i j)]
-
-end MatrixUnit
 
 variable {n A : Type*} [Fintype n] [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 

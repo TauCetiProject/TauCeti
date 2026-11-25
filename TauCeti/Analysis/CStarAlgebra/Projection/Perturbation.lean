@@ -16,7 +16,6 @@ import Mathlib.Topology.Connected.Clopen
 import TauCeti.Algebra.Algebra.Unitization
 import TauCeti.Algebra.Star.Projection.Pair
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
-import TauCeti.Analysis.CStarAlgebra.Unitary.Connected
 
 /-!
 # Nearby and homotopic projections
@@ -36,9 +35,7 @@ unitary in the path component of `1`. In a C⋆-algebra without unit, applying t
 unitization shows that nearby projections, and the values of a continuous family of projections,
 are Murray–von Neumann equivalent. For matrices over a C⋆-algebra this says that matrix projections
 joined by a path of matrix projections are Murray–von Neumann equivalent, so they have the same
-class in the projection monoid `V(A)`. Conversely, over a unital C⋆-algebra, equivalent matrix
-projections `p` and `q` are joined by a path of projections after stabilization, from `p ⊕ 0` to
-`0 ⊕ q`.
+class in the projection monoid `V(A)`.
 
 ## Main statements
 
@@ -58,9 +55,6 @@ projections `p` and `q` are joined by a path of projections after stabilization,
   preconnected space are Murray–von Neumann equivalent.
 * `Continuous.isMurrayVonNeumannEquivalent`: the values of a continuous family of matrix
   projections over a C⋆-algebra are Murray–von Neumann equivalent matrix projections.
-* `Matrix.IsMurrayVonNeumannEquivalent.exists_path_fromBlocks`: over a unital C⋆-algebra,
-  equivalent matrix projections `p` and `q` are joined by a path of projections from `p ⊕ 0` to
-  `0 ⊕ q`.
 
 ## References
 
@@ -312,45 +306,3 @@ theorem Continuous.isMurrayVonNeumannEquivalent {A : Type*} [NonUnitalCStarAlgeb
       Equiv.symm_apply_apply]
 
 end Continuous
-
-/-- **Equivalent projections are homotopic after stabilization.** Murray–von Neumann equivalent
-matrix projections `p` and `q` over a unital C⋆-algebra are joined by a continuous path of
-projections from `p ⊕ 0` to `0 ⊕ q`. -/
-theorem Matrix.IsMurrayVonNeumannEquivalent.exists_path_fromBlocks {A : Type*} [CStarAlgebra A]
-    {m n : Type*} [Fintype m] [Fintype n] {p : Matrix m m A} {q : Matrix n n A}
-    (h : Matrix.IsMurrayVonNeumannEquivalent p q) :
-    ∃ γ : Path (Matrix.fromBlocks p 0 0 0) (Matrix.fromBlocks 0 0 0 q),
-      ∀ t, IsStarProjection (γ t) := by
-  classical
-  -- `CStarMatrix (m ⊕ n) (m ⊕ n) A` is a C⋆-algebra for the spectral order on `A`.
-  let _ := CStarAlgebra.spectralOrder A
-  let _ := CStarAlgebra.spectralOrderedRing A
-  -- The path conjugates `p ⊕ 0` by a path of unitaries from `1` to a self-adjoint unitary `w`
-  -- carrying `p ⊕ 0` to `0 ⊕ q`.
-  obtain ⟨w, hw, hwu, hwpq⟩ := h.exists_isSelfAdjoint_mem_unitary_mul_fromBlocks_mul_star
-  set P := Matrix.fromBlocks p 0 0 (0 : Matrix n n A)
-  have hP : IsStarProjection P := h.isStarProjection_left.fromBlocks_zero₁₂_zero₂₁ (.zero _)
-  -- The unitary `w`, read in the C⋆-algebra `CStarMatrix (m ⊕ n) (m ⊕ n) A`.
-  have hW : CStarMatrix.ofMatrix w ∈ unitary (CStarMatrix (m ⊕ n) (m ⊕ n) A) :=
-    CStarMatrix.ofMatrix_mem_unitary_iff.2 hwu
-  have hWsa : IsSelfAdjoint (CStarMatrix.ofMatrix w) := CStarMatrix.isSelfAdjoint_ofMatrix_iff.2 hw
-  let γ := (Unitary.joined_one_of_isSelfAdjoint ⟨_, hW⟩ hWsa).somePath
-  -- Conjugation of `P` by a unitary, read back as an ordinary matrix.
-  let f : unitary (CStarMatrix (m ⊕ n) (m ⊕ n) A) → Matrix (m ⊕ n) (m ⊕ n) A := fun u ↦
-    CStarMatrix.ofMatrix.symm
-      ((u : CStarMatrix (m ⊕ n) (m ⊕ n) A) * CStarMatrix.ofMatrix P * star (u : CStarMatrix _ _ A))
-  have hf : Continuous f := by
-    have : Continuous (CStarMatrix.ofMatrix.symm : CStarMatrix (m ⊕ n) (m ⊕ n) A → _) :=
-      CStarMatrix.ofMatrixL.symm.continuous
-    exact this.comp (by fun_prop)
-  have hf₁ (u : unitary (CStarMatrix (m ⊕ n) (m ⊕ n) A)) : f u =
-      CStarMatrix.ofMatrix.symm (u : CStarMatrix _ _ A) * P *
-        CStarMatrix.ofMatrix.symm (star (u : CStarMatrix _ _ A)) := by
-    simp only [f, CStarMatrix.ofMatrix_symm_mul, Equiv.symm_apply_apply]
-  refine ⟨(γ.map hf).cast ?_ ?_, fun t ↦ ?_⟩
-  · simp [hf₁]
-  · rw [hf₁, CStarMatrix.ofMatrix_symm_star]
-    simpa [Matrix.star_eq_conjTranspose] using hwpq.symm
-  · have hP' : IsStarProjection (CStarMatrix.ofMatrix P) :=
-      CStarMatrix.isStarProjection_ofMatrix_iff.2 hP
-    exact CStarMatrix.isStarProjection_ofMatrix_symm_iff.2 (hP'.star_right_conjugate (γ t))

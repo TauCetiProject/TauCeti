@@ -168,16 +168,6 @@ theorem fromBlocks_multiply [Fintype n₁] [Fintype n₂] [NonUnitalNonAssocSemi
     fromBlocks (1 : CStarMatrix n₁ n₁ A) 0 0 (1 : CStarMatrix n₂ n₂ A) = 1 :=
   ofMatrix.symm.injective Matrix.fromBlocks_one
 
-/-- Entrywise amplification `mapₙₐ` distributes over `fromBlocks`. -/
-theorem mapₙₐ_fromBlocks [Fintype n₁] [Fintype n₂] [Semiring R]
-    [NonUnitalNonAssocSemiring A] [Module R A] [Star A]
-    [NonUnitalNonAssocSemiring B] [Module R B] [Star B] (f : A →⋆ₙₐ[R] B)
-    (M₁₁ : CStarMatrix n₁ n₁ A) (M₁₂ : CStarMatrix n₁ n₂ A)
-    (M₂₁ : CStarMatrix n₂ n₁ A) (M₂₂ : CStarMatrix n₂ n₂ A) :
-    mapₙₐ f (fromBlocks M₁₁ M₁₂ M₂₁ M₂₂) =
-      fromBlocks (mapₙₐ f M₁₁) (M₁₂.map f) (M₂₁.map f) (mapₙₐ f M₂₂) :=
-  fromBlocks_map M₁₁ M₁₂ M₂₁ M₂₂ f
-
 @[simp] theorem isStarProjection_fromBlocks_zero [Fintype n₁] [Fintype n₂]
     [NonUnitalNonAssocSemiring A] [StarAddMonoid A]
     {p : CStarMatrix n₁ n₁ A} {q : CStarMatrix n₂ n₂ A} :
@@ -277,6 +267,12 @@ def fromRows (M₁ : CStarMatrix m₁ n₁ A) (M₂ : CStarMatrix m₂ n₁ A) :
 theorem ofMatrix_fromRows (M₁ : Matrix m₁ n₁ A) (M₂ : Matrix m₂ n₁ A) :
     ofMatrix (Matrix.fromRows M₁ M₂) = fromRows (ofMatrix M₁) (ofMatrix M₂) := (rfl)
 
+@[simp] theorem fromRows_apply_inl (M₁ : CStarMatrix m₁ n₁ A) (M₂ : CStarMatrix m₂ n₁ A)
+    (i : m₁) (j : n₁) : fromRows M₁ M₂ (.inl i) j = M₁ i j := (rfl)
+
+@[simp] theorem fromRows_apply_inr (M₁ : CStarMatrix m₁ n₁ A) (M₂ : CStarMatrix m₂ n₁ A)
+    (i : m₂) (j : n₁) : fromRows M₁ M₂ (.inr i) j = M₂ i j := (rfl)
+
 /-- Concatenate two `CStarMatrix` blocks with the same row index horizontally into a
 `m₁ × (n₁ ⊕ n₂)` matrix. -/
 def fromCols (M₁ : CStarMatrix m₁ n₁ A) (M₂ : CStarMatrix m₁ n₂ A) : CStarMatrix m₁ (n₁ ⊕ n₂) A :=
@@ -289,6 +285,12 @@ def fromCols (M₁ : CStarMatrix m₁ n₁ A) (M₂ : CStarMatrix m₁ n₂ A) :
 /-- `ofMatrix` sends `Matrix.fromCols` to `CStarMatrix.fromCols`. -/
 theorem ofMatrix_fromCols (M₁ : Matrix m₁ n₁ A) (M₂ : Matrix m₁ n₂ A) :
     ofMatrix (Matrix.fromCols M₁ M₂) = fromCols (ofMatrix M₁) (ofMatrix M₂) := (rfl)
+
+@[simp] theorem fromCols_apply_inl (M₁ : CStarMatrix m₁ n₁ A) (M₂ : CStarMatrix m₁ n₂ A)
+    (i : m₁) (j : n₁) : fromCols M₁ M₂ i (.inl j) = M₁ i j := (rfl)
+
+@[simp] theorem fromCols_apply_inr (M₁ : CStarMatrix m₁ n₁ A) (M₂ : CStarMatrix m₁ n₂ A)
+    (i : m₁) (j : n₂) : fromCols M₁ M₂ i (.inr j) = M₂ i j := (rfl)
 
 /-- The conjugate transpose of a row-stacked `CStarMatrix` is the column-stacked conjugate
 transpose. -/

@@ -132,18 +132,20 @@ variable (A) in
 /-- A permutation as a unitary in `CStarMatrix n n A`: `permutationUnitary A σ` has underlying
 matrix `reindexMatrix A σ⁻¹`, a group homomorphism matching `Matrix.permutationUnitary`. -/
 def permutationUnitary : Equiv.Perm n →* unitary (CStarMatrix n n A) where
-  toFun σ := ⟨reindexMatrix A σ⁻¹, Unitary.mem_iff.mpr
-    ⟨conjTranspose_reindexMatrix_mul σ⁻¹, reindexMatrix_mul_conjTranspose σ⁻¹⟩⟩
-  map_one' := Subtype.ext <| by simp [Equiv.Perm.one_def, Equiv.Perm.inv_def]
-  map_mul' σ τ := Subtype.ext <| by
-    rw [Submonoid.coe_mul, _root_.mul_inv_rev, Equiv.Perm.mul_def]
-    exact reindexMatrix_trans σ⁻¹ τ⁻¹
+  toFun σ := ⟨ofMatrix (Matrix.permutationUnitary (R := A) σ),
+    ofMatrix_mem_unitary_iff.mpr (Matrix.permutationUnitary (R := A) σ).property⟩
+  map_one' := Subtype.ext <| congrArg ofMatrix <|
+    congrArg Subtype.val (map_one (Matrix.permutationUnitary (n := n) (R := A)))
+  map_mul' σ τ := Subtype.ext <| congrArg ofMatrix <|
+    congrArg Subtype.val (map_mul (Matrix.permutationUnitary (n := n) (R := A)) σ τ)
 
 @[simp] theorem coe_permutationUnitary (σ : Equiv.Perm n) :
-    (permutationUnitary A σ : CStarMatrix n n A) = reindexMatrix A σ⁻¹ := (rfl)
+    (permutationUnitary A σ : CStarMatrix n n A) = reindexMatrix A σ⁻¹ :=
+  ofMatrix.symm.injective <| by simp [permutationUnitary]
 
 theorem ofMatrix_symm_coe_permutationUnitary (σ : Equiv.Perm n) :
-    ofMatrix.symm (permutationUnitary A σ : CStarMatrix n n A) = σ⁻¹.permMatrix A := (rfl)
+    ofMatrix.symm (permutationUnitary A σ : CStarMatrix n n A) = σ⁻¹.permMatrix A := by
+  simp
 
 @[simp] theorem star_permutationUnitary (σ : Equiv.Perm n) :
     star (permutationUnitary A σ) = permutationUnitary A σ⁻¹ := by

@@ -22,12 +22,14 @@ their algebraic, amplification, and reindexing identities, the `(i, i)`-corner n
 * `CStarMatrix.single`: the matrix in `CStarMatrix m n A` with `a` at `(i, j)` and `0` elsewhere.
 * `CStarMatrix.singleₙₐ`: the `(i, i)`-corner embedding `a ↦ single i i a` as a non-unital
   `⋆`-algebra homomorphism `A →⋆ₙₐ[R] CStarMatrix n n A`.
+* `CStarMatrix.matrixUnit`: the scalar matrix unit `e_ij = single i j 1` in `CStarMatrix n n ℂ`.
 
 ## Main results
 
 * `CStarMatrix.single_mul_single_same`, `CStarMatrix.single_mul_single_of_ne`: matrix-unit
   multiplication rules.
-* `CStarMatrix.norm_single`: `‖single i j a‖ = ‖a‖`.
+* `CStarMatrix.norm_single`: `‖single i j a‖ = ‖a‖`, with scalar specialization
+  `CStarMatrix.norm_matrixUnit` (`‖matrixUnit i j‖ = 1`).
 
 ## References
 
@@ -156,5 +158,70 @@ theorem norm_single {m n A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [
   rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), ← norm_conjTranspose_mul_self,
     conjTranspose_single, single_mul_single_same, sq, ← CStarRing.norm_star_mul_self]
   exact NonUnitalStarAlgHom.norm_map (singleₙₐ ℂ j) (singleₙₐ_injective j) (star a * a)
+
+section MatrixUnit
+
+variable {n : Type*} [DecidableEq n]
+
+/-- The matrix unit `e_ij` of `M_n(ℂ)`, with entry `1` at `(i, j)` and `0` elsewhere. -/
+def matrixUnit (i j : n) : CStarMatrix n n ℂ :=
+  single i j 1
+
+/-- Reading `e_ij` as an ordinary matrix gives `Matrix.single i j 1`. -/
+@[simp]
+theorem ofMatrix_symm_matrixUnit (i j : n) :
+    ofMatrix.symm (matrixUnit i j) = Matrix.single i j 1 :=
+  (rfl)
+
+/-- The entries of `e_ij`. -/
+theorem matrixUnit_apply (i j k l : n) :
+    matrixUnit i j k l = if i = k ∧ j = l then 1 else 0 :=
+  single_apply i j 1 k l
+
+/-- The `(i, j)` entry of `e_ij` is `1`. -/
+@[simp]
+theorem matrixUnit_apply_same (i j : n) : matrixUnit i j i j = 1 :=
+  single_apply_same i j 1
+
+/-- The entries of `e_ij` away from `(i, j)` vanish. -/
+@[simp]
+theorem matrixUnit_apply_of_ne {i j k l : n} (h : ¬(i = k ∧ j = l)) : matrixUnit i j k l = 0 :=
+  single_apply_of_ne h 1
+
+/-- The adjoint of `e_ij` is `e_ji`. -/
+@[simp]
+theorem star_matrixUnit (i j : n) : star (matrixUnit i j) = matrixUnit j i := by
+  simp [matrixUnit]
+
+variable [Fintype n]
+
+/-- `e_ij` is the image of `Matrix.single i j 1` under `CStarMatrix.ofMatrixStarAlgEquiv`. -/
+theorem matrixUnit_eq_ofMatrixStarAlgEquiv (i j : n) :
+    matrixUnit i j = ofMatrixStarAlgEquiv (Matrix.single i j 1) :=
+  (rfl)
+
+/-- Matrix units multiply as `e_ij e_jk = e_ik`. -/
+@[simp]
+theorem matrixUnit_mul_matrixUnit (i j k : n) :
+    matrixUnit i j * matrixUnit j k = matrixUnit i k := by
+  simp [matrixUnit]
+
+/-- Matrix units multiply as `e_ij e_kl = 0` when `j ≠ k`. -/
+@[simp]
+theorem matrixUnit_mul_matrixUnit_of_ne (i : n) {j k : n} (l : n) (h : j ≠ k) :
+    matrixUnit i j * matrixUnit k l = 0 :=
+  single_mul_single_of_ne i l h 1 1
+
+/-- The diagonal matrix unit `e_ii` is a self-adjoint idempotent. -/
+theorem isStarProjection_matrixUnit (i : n) : IsStarProjection (matrixUnit i i) :=
+  ⟨matrixUnit_mul_matrixUnit i i i, star_matrixUnit i i⟩
+
+open scoped ComplexOrder in
+/-- A matrix unit has norm one. -/
+@[simp]
+theorem norm_matrixUnit (i j : n) : ‖matrixUnit i j‖ = 1 := by
+  simp [matrixUnit]
+
+end MatrixUnit
 
 end CStarMatrix

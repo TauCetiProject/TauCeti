@@ -305,21 +305,16 @@ internal sum `p + p'` is Murray–von Neumann equivalent to their block-diagonal
 theorem add_murrayVonNeumannEquiv_fromBlocks_zero_of_mul_eq_zero {p' : CStarMatrix m m A}
     (hp : IsStarProjection p) (hp' : IsStarProjection p') (hpp' : p * p' = 0) :
     MurrayVonNeumannEquiv (p + p') (fromBlocks p 0 0 p') := by
-  have hp_ct : p.conjTranspose = p := hp.isSelfAdjoint
-  have hp'_ct : p'.conjTranspose = p' := hp'.isSelfAdjoint
-  have hp'p : p' * p = 0 := by
-    simpa only [conjTranspose_mul, hp_ct, hp'_ct, conjTranspose_zero] using
-      congrArg conjTranspose hpp'
-  have hv₁ : (fromRows p p').conjTranspose * fromRows p p' = p + p' := by
-    rw [conjTranspose_fromRows, fromCols_mul_fromRows, hp_ct, hp'_ct, hp.isIdempotentElem.eq,
-      hp'.isIdempotentElem.eq]
-  have hv₂ : fromRows p p' * (fromRows p p').conjTranspose = fromBlocks p 0 0 p' := by
-    rw [conjTranspose_fromRows, fromRows_mul_fromCols, hp_ct, hp'_ct, hp.isIdempotentElem.eq,
-      hp'.isIdempotentElem.eq, hpp', hp'p]
-  have hv : fromRows p p' * (fromRows p p').conjTranspose * fromRows p p' = fromRows p p' := by
-    rw [hv₂, fromBlocks_mul_fromRows, hp.isIdempotentElem.eq, hp'.isIdempotentElem.eq,
-      CStarMatrix.zero_mul, CStarMatrix.zero_mul, add_zero, zero_add]
-  simpa only [hv₁, hv₂] using murrayVonNeumannEquiv_of_mul_conjTranspose_mul_self_eq hv
+  rw [murrayVonNeumannEquiv_iff_isMurrayVonNeumannEquivalent]
+  have hp0 := (isStarProjection_ofMatrix_symm_iff.mpr
+    hp).isMurrayVonNeumannEquivalent_fromBlocks_zero (n := m)
+  have hp'0 := (isStarProjection_ofMatrix_symm_iff.mpr
+    hp').isMurrayVonNeumannEquivalent_zero_fromBlocks (n := m)
+  have hmul : ofMatrix.symm p * ofMatrix.symm p' = 0 := by
+    simpa only [ofMatrix_symm_mul, ofMatrix_symm_zero] using congrArg ofMatrix.symm hpp'
+  simpa only [ofMatrix_symm_add, ofMatrix_symm_fromBlocks, ofMatrix_symm_zero,
+    Matrix.fromBlocks_add, add_zero, zero_add] using
+    hp0.add hp'0 hmul (by simp [Matrix.fromBlocks_multiply])
 
 end Algebraic
 
@@ -327,12 +322,10 @@ end Algebraic
 theorem murrayVonNeumannEquiv_unitary_conj [Semiring B] [StarRing B] [DecidableEq m]
     {p : CStarMatrix m m B} (hp : IsStarProjection p) (u : unitary (CStarMatrix m m B)) :
     MurrayVonNeumannEquiv p ((u : CStarMatrix m m B) * p * star (u : CStarMatrix m m B)) := by
-  refine ⟨hp, hp.star_right_conjugate u, (u : CStarMatrix m m B) * p, ?_, ?_⟩
-  · rw [← star_eq_conjTranspose, star_mul, hp.isSelfAdjoint.star_eq]
-    simp only [mul_assoc, ← mul_assoc (star (u : CStarMatrix m m B)),
-      Unitary.coe_star_mul_self, one_mul, hp.isIdempotentElem.eq]
-  · rw [← star_eq_conjTranspose, star_mul, hp.isSelfAdjoint.star_eq]
-    simp only [mul_assoc, ← mul_assoc p, hp.isIdempotentElem.eq]
+  rw [murrayVonNeumannEquiv_iff_isMurrayVonNeumannEquivalent]
+  simpa [Matrix.star_eq_conjTranspose] using
+    (isStarProjection_ofMatrix_symm_iff.mpr hp).isMurrayVonNeumannEquivalent_mul_mul_star
+      (ofMatrix_symm_mem_unitary_iff.mpr u.property)
 
 section Stabilization
 
@@ -393,12 +386,13 @@ C⋆-algebra has Murray–von Neumann equivalent endpoints. -/
 theorem murrayVonNeumannEquiv_of_path [NonUnitalCStarAlgebra A]
     {p q : CStarMatrix n n A} (γ : Path p q) (hγ : ∀ t, IsStarProjection (γ t)) :
     MurrayVonNeumannEquiv p q := by
-  let : PartialOrder A := CStarAlgebra.spectralOrder A
-  let : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
-  refine ⟨γ.source ▸ hγ 0, γ.target ▸ hγ 1, ?_⟩
-  simpa only [γ.source, γ.target, star_eq_conjTranspose] using
-    γ.continuous.exists_star_mul_self_eq hγ 0 1
+  rw [murrayVonNeumannEquiv_iff_isMurrayVonNeumannEquivalent]
+  have hc : Continuous fun t ↦ ofMatrix.symm (γ t) :=
+    ofMatrixL.symm.continuous.comp γ.continuous
+  simpa only [γ.source, γ.target] using
+    hc.isMurrayVonNeumannEquivalent (fun t ↦ isStarProjection_ofMatrix_symm_iff.mpr (hγ t)) 0 1
 
+omit [Fintype m] [Fintype n] in
 /-- **Explicit `2 × 2` rotation path for Murray–von Neumann equivalent projections.** Given matrices
 `p : CStarMatrix m m A`, `q : CStarMatrix n n A`, and `v : CStarMatrix n m A` over a (possibly
 non-unital) C⋆-algebra `A`, this is the continuous path from `fromBlocks p 0 0 0` to
@@ -414,8 +408,6 @@ noncomputable def stabilizedRotationPath [NonUnitalCStarAlgebra A]
       ((Real.cos (π / 2 * t) * Real.sin (π / 2 * t)) • v)
       (Real.sin (π / 2 * t) ^ 2 • q)
   continuous_toFun := by
-    let : PartialOrder A := CStarAlgebra.spectralOrder A
-    let : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
     have hfun : (fun t : I ↦
         fromBlocks (Real.cos (π / 2 * t) ^ 2 • p)
           ((Real.cos (π / 2 * t) * Real.sin (π / 2 * t)) • v.conjTranspose)
@@ -431,6 +423,7 @@ noncomputable def stabilizedRotationPath [NonUnitalCStarAlgebra A]
   source' := by simp
   target' := by simp
 
+omit [Fintype m] [Fintype n] in
 @[simp] theorem stabilizedRotationPath_apply [NonUnitalCStarAlgebra A]
     (p : CStarMatrix m m A) (q : CStarMatrix n n A) (v : CStarMatrix n m A) (t : I) :
     stabilizedRotationPath p q v t =
