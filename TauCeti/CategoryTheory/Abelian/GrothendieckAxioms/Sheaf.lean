@@ -13,10 +13,10 @@ public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Sheaf
 Mathlib shows that sheaves on a small site with values in a Grothendieck abelian category form a
 Grothendieck abelian category, and transports this to an essentially small site `C` under the
 assumption that presheaves on the small model of `C` can be sheafified
-(`CategoryTheory.Sheaf.isGrothendieckAbelian_of_essentiallySmall`). Here the assumption is
-instead that presheaves on `C` itself can be sheafified, with no condition on the size of the hom
-types of `C`: sheafification transports to the small model, and the conclusion transports back
-along the equivalence of sheaf categories.
+(`CategoryTheory.Sheaf.isGrothendieckAbelian_of_essentiallySmall`), together with a
+`HasLimitsOfShape` hypothesis over `StructuredArrow`s. Here the only assumption is instead that
+presheaves on `C` itself can be sheafified: sheafification transports to the small model, and the
+conclusion transports back along the equivalence of sheaf categories.
 -/
 
 public section
