@@ -78,7 +78,8 @@ theorem mem_closure_range_toBesovSpaceCLM_iff (hq : q ≠ ∞) {u : BesovSpace F
   -- functions and hence lies in the little Besov space `b^{s+1}_{p,∞}`.
   obtain ⟨x, hx⟩ := partialSumCLM_mem_range_inclusionOfLT (lt_add_one s) ∞ m u
   have hxw : x.toDistr = u.lowPass m := by
-    rw [coe_lowPass, ← toDistr_partialSumCLM, ← hx, toDistr_inclusionOfLT]
+    rw [coe_lowPass, littlewoodPaleyLowPass_apply, ← toDistr_partialSumCLM, ← hx,
+      toDistr_inclusionOfLT]
   have hxl := mem_littleBesov_of_toDistr_eq hxw (lowPass_mem_closure_range_toLp hblock m)
     fun k hk ↦ hL u m k hk
   rw [← SetLike.mem_coe, coe_littleBesov] at hxl

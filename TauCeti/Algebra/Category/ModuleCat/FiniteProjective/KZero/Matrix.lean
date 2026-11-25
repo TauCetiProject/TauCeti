@@ -97,7 +97,7 @@ public section
 
 namespace TauCeti
 
-open CategoryTheory Module
+open CategoryTheory _root_.Module
 open scoped Matrix.Module
 
 universe u

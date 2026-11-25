@@ -291,7 +291,7 @@ theorem inner_roughLaplacian_hom_apply_nonpos (hcov : cov.IsMetricCompatible)
     ((contMDiff_const (c := c)).mul hn : ContMDiff I 𝓘(ℝ) 2 fun y ↦ c * ‖s y‖ ^ 2)
   -- `c ‖s‖²` touches `⟪A s, s⟫` from below at `x`.
   have hlap := TauCeti.Manifold.laplaceBeltrami_le_of_eventuallyLE_of_eq hcn.contMDiffAt
-    hf.contMDiffAt hle (by simp [heig, real_inner_smul_left])
+    hf.contMDiffAt BoundarylessManifold.isInteriorPoint hle (by simp [heig, real_inner_smul_left])
   let b := stdOrthonormalBasis ℝ (TangentSpace I x)
   have h0 : ∑ i, ‖(0 : TangentSpace I x →L[ℝ] V x) (b i)‖ ^ 2 = 0 := by simp
   rw [TauCeti.Manifold.laplaceBeltrami_smul I c hn, hcov.laplaceBeltrami_norm_sq hs x b, hs₀, h0,

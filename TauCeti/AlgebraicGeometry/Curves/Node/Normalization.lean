@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.Node.Blowup
+public import TauCeti.AlgebraicGeometry.Curves.Prestable
 public import TauCeti.AlgebraicGeometry.Curves.SingularLocus.Blowup
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 import TauCeti.AlgebraicGeometry.Blowup.ExceptionalDivisor
@@ -38,7 +39,8 @@ incidence data of the dual graph of the curve.
 * `AlgebraicGeometry.Scheme.isFinite_blowupToBase_singularLocus`,
   `AlgebraicGeometry.Scheme.surjective_blowupToBase_singularLocus` and
   `AlgebraicGeometry.Scheme.isRegular_blowup_singularLocus`: blowing up the singular subscheme is
-  a finite surjective morphism from a regular scheme.
+  a finite surjective morphism from a regular scheme; for a prestable curve, regularity is the
+  instance `AlgebraicGeometry.Scheme.isRegular_blowup_singularLocus_of_prestableFamily`.
 * `AlgebraicGeometry.Scheme.natCard_preimage_blowupToBase_singularLocus_eq_two_of_mem_support`:
   over a separably closed field, two points of the blowup lie over each node.
 
@@ -173,6 +175,11 @@ theorem isRegular_blowup_singularLocus
       IsRegular.of_isOpenImmersion (f ∣_ (X ↘ Spec (.of K)).smoothLocus)
     exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion
       (f ⁻¹ᵁ (X ↘ Spec (.of K)).smoothLocus).ι y').mpr inferInstance
+
+/-- The blowup of a prestable curve along its singular subscheme is regular. -/
+instance isRegular_blowup_singularLocus_of_prestableFamily
+    [PrestableFamily (X ↘ Spec (.of K))] : IsRegular (X.singularLocus K).blowup :=
+  X.isRegular_blowup_singularLocus PrestableFamily.atWorstNodalOfRelativeDimensionOne
 
 /-- **Two points of the blowup lie over each node.** Over a separably closed field, the
 points of the blowup of a nodal curve along its singular subscheme lying over a node are the two

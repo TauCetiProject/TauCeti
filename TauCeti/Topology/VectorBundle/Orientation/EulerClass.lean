@@ -29,6 +29,9 @@ Its basic laws follow from those of the Thom class.
   and in odd rank it reverses the orientation of every fibre, so it carries the Thom class to the
   Thom class of the opposite orientation. Hence `e(E, o) = e(E, -o) = -e(E, o)`. The class need not
   vanish integrally.
+* It is the image in `Hⁿ⁺¹(B; ℤ)` of the pull-back `s^* U ∈ Hⁿ⁺¹(B, B ∖ Z; ℤ)` of the Thom
+  class along a continuous section `s` nonzero off `Z`
+  (`TauCeti.VectorBundleOrientation.eulerClass_eq_singularCohomologyπ_thomPairMapOfNeZero`).
 * It vanishes when the bundle has a nowhere-zero continuous section
   (`TauCeti.VectorBundleOrientation.eulerClass_eq_zero_of_forall_ne_zero`).
 * In rank one it vanishes over a normal paracompact base
@@ -106,6 +109,19 @@ theorem two_smul_eulerClass (hn : Even n) : 2 • o.eulerClass hF = 0 := by
   have h := o.eulerClass_neg_eq_of_even hF hn
   rw [eulerClass_neg, neg_eq_iff_add_eq_zero] at h
   rw [two_smul, h]
+
+/-- **The Euler class through a section.** If an oriented real vector bundle has a continuous
+section `s` which is nonzero off a set `Z ⊆ B`, its Euler class is the image in `Hⁿ⁺¹(B; ℤ)` of the
+relative class `s^* U ∈ Hⁿ⁺¹(B, B ∖ Z; ℤ)`, the pull-back of the Thom class along
+`s : (B, B ∖ Z) ⟶ (E, E₀)`. -/
+theorem eulerClass_eq_singularCohomologyπ_thomPairMapOfNeZero {s : ∀ b, E b}
+    (hs : Continuous fun b ↦ TotalSpace.mk' F b (s b)) {Z : Set B} (hs₀ : ∀ b ∉ Z, s b ≠ 0) :
+    o.eulerClass hF = (TopPair.ofSubset (X := TopCat.of B) Zᶜ).singularCohomologyπ _ ℤ _ (n + 1)
+      (TopPair.singularCohomologyMap (thomPairMapOfNeZero ⟨_, hs⟩ hs₀) (n + 1)
+        (o.thomClass hF)) :=
+  (eulerClass_def o hF).trans <| (ConcreteCategory.congr_hom
+    (TauCeti.eulerClass_eq_singularCohomologyMap_thomPairMapOfNeZero F E hs hs₀ (n + 1))
+    (o.thomClass hF)).trans (CategoryTheory.comp_apply _ _ _)
 
 /-- **A nowhere-vanishing section kills the Euler class.** If an oriented real vector bundle has a
 continuous section `s` with `s b ≠ 0` for every `b`, its Euler class vanishes. -/

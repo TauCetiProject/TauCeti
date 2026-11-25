@@ -324,13 +324,8 @@ theorem l1Norm_waldschmidtEntryPolynomial_waldschmidtDeltaOperator_le {N : ℕ} 
     (waldschmidtEntryPolynomial t s (waldschmidtDeltaOperator k σ) F).l1Norm ≤
       2 ^ (σ / k * (N + k + 1) + (N + σ % k + 1)) *
         ∑ μ ∈ F.support, ‖F.coeff μ‖ * ((μ 0 + ‖(s (Fin.last n) : ℚ)‖) ^ μ 0 *
-          ∏ i : Fin n, (‖(s i.castSucc : ℚ)‖ + ‖(s (Fin.last n) : ℚ)‖) ^ μ i.succ) := by
-  refine l1Norm_waldschmidtEntryPolynomial_le (fun κ ↦ ?_) s F
-  have htN : |(t : ℚ)| ≤ N := by
-    rw [← Int.cast_abs, Int.abs_eq_natAbs]
-    exact_mod_cast ht
-  have h := abs_eval_hasseDeriv_waldschmidtDeltaOperator_le htN k σ κ
-  rw [← Rat.norm_cast_real, Real.norm_eq_abs, ← Rat.cast_abs]
-  exact_mod_cast h
+          ∏ i : Fin n, (‖(s i.castSucc : ℚ)‖ + ‖(s (Fin.last n) : ℚ)‖) ^ μ i.succ) :=
+  l1Norm_waldschmidtEntryPolynomial_le
+    (norm_eval_intCast_hasseDeriv_waldschmidtDeltaOperator_le ht k σ) s F
 
 end TauCeti

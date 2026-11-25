@@ -127,6 +127,30 @@ instance : Preadditive (FiniteRankAtlas 𝕜 X) where
 @[simp] theorem fiberMap_zsmul (n : ℤ) (f : A ⟶ D) (x : X) :
     (n • f).fiberMap x = n • f.fiberMap x := (rfl)
 
+@[simp] theorem fiberCLM_zero (x : X) :
+    Hom.fiberCLM (0 : A ⟶ D) x = 0 := by
+  ext; simp
+
+@[simp] theorem fiberCLM_add (f g : A ⟶ D) (x : X) :
+    Hom.fiberCLM (f + g) x = f.fiberCLM x + g.fiberCLM x := by
+  ext; simp
+
+@[simp] theorem fiberCLM_neg (f : A ⟶ D) (x : X) :
+    Hom.fiberCLM (-f) x = -f.fiberCLM x := by
+  ext; simp
+
+@[simp] theorem fiberCLM_sub (f g : A ⟶ D) (x : X) :
+    Hom.fiberCLM (f - g) x = f.fiberCLM x - g.fiberCLM x := by
+  ext; simp
+
+@[simp] theorem fiberCLM_nsmul (n : ℕ) (f : A ⟶ D) (x : X) :
+    Hom.fiberCLM (n • f) x = n • f.fiberCLM x := by
+  ext; simp
+
+@[simp] theorem fiberCLM_zsmul (n : ℤ) (f : A ⟶ D) (x : X) :
+    Hom.fiberCLM (n • f) x = n • f.fiberCLM x := by
+  ext; simp
+
 /-- Evaluation on a fibre preserves the addition of bundle morphisms. -/
 instance (x : X) : (fiberFunctor (𝕜 := 𝕜) x).Additive where
   map_add := by intros; rfl
