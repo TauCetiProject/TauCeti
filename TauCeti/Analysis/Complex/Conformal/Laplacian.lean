@@ -11,7 +11,6 @@ import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Calculus.SecondDerivative
-import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
 # The planar Laplacian under holomorphic maps
