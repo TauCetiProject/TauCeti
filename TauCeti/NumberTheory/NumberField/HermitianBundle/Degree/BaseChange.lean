@@ -78,11 +78,10 @@ theorem sectionDegree_baseChange (s : E) :
     Real.log_pow]
   ring
 
-/-- **The degree of a lattice containing a base change** (the second statement of the degree
-under finite extension). Let `f : 𝓞 L ⊗ E → F` be an injective `𝓞 L`-linear map preserving the
-norms, with `F / f(𝓞 L ⊗ E)` finite. For a section `s` with `E / 𝓞 K s` finite,
-`deg(f (1 ⊗ s)) = [L : K] deg(s) + log #(F / f(𝓞 L ⊗ E))`. When `s` is a nonzero section of a
-hermitian line, this is `deg(F) = [L : K] deg(Ē) + log #(F / f(𝓞 L ⊗ E))`. -/
+/-- **The degree of a lattice containing a base change**. Let `f : 𝓞 L ⊗ E → F` be an injective
+`𝓞 L`-linear map preserving the norms, with `F / f(𝓞 L ⊗ E)` finite. For a section `s` with
+`E / 𝓞 K s` finite, `deg(f (1 ⊗ s)) = [L : K] deg(s) + log #(F / f(𝓞 L ⊗ E))`. When `s` is a
+nonzero section of a hermitian line, this is `deg(F) = [L : K] deg(Ē) + log #(F / f(𝓞 L ⊗ E))`. -/
 theorem sectionDegree_map_baseChange {F : Type*} [AddCommGroup F] [Module (𝓞 L) F]
     {g : HermitianMetric L F} (f : 𝓞 L ⊗[𝓞 K] E →ₗ[𝓞 L] F) (hf : Function.Injective f)
     (hnorm : ∀ τ x, g.norm τ (1 ⊗ₜ f x) = h.baseChange.norm τ (1 ⊗ₜ x)) (s : E)
