@@ -14,6 +14,7 @@ import TauCeti.AlgebraicGeometry.Scheme.StalkSpecializes
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.Kummer.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.MinimalPrime
+import TauCeti.RingTheory.Ideal.Height
 
 /-!
 # Ramification of standard covers in codimension one
@@ -155,10 +156,7 @@ theorem standardTameCover_isUnramifiedInCodimOne_iff [IsNoetherianRing A]
   obtain ⟨𝔪, h𝔪⟩ := (Ideal.span {f}).nonempty_minimalPrimes
     (by rwa [Ne, Ideal.span_singleton_eq_top])
   have : 𝔪.IsPrime := h𝔪.1.1
-  have hht : 𝔪.height = 1 := le_antisymm
-    (Ideal.height_le_one_of_isPrincipal_of_mem_minimalPrimes _ 𝔪 h𝔪)
-    ((Ideal.one_le_height_span_singleton_of_mem_nonZeroDivisors hf).trans
-      (Ideal.height_mono h𝔪.1.2))
+  have hht : 𝔪.height = 1 := Ideal.height_eq_one_of_mem_minimalPrimes_span_singleton hf h𝔪
   let ξ : CodimensionOnePoint (Spec (.of A)) :=
     ⟨⟨𝔪, this⟩, (idealHeight_eq_coheight (.of A) ⟨𝔪, this⟩).symm.trans hht⟩
   have hξ : (ξ : Spec (.of A)) ∉ PrimeSpectrum.basicOpen f := fun h ↦
@@ -168,12 +166,12 @@ theorem standardTameCover_isUnramifiedInCodimOne_iff [IsNoetherianRing A]
   have h𝔭p : 𝔭.IsPrime := h𝔭.1.1
   have hf𝔭 : f ∉ 𝔭 := fun hf𝔭 ↦
     Set.disjoint_left.mp (Ideal.disjoint_nonZeroDivisors_of_mem_minimalPrimes h𝔭) hf𝔭 hf
-  -- The cover is free of positive rank, so some point of it lies over `𝔭`.
-  obtain ⟨hfree, hrank⟩ := standardTameCover_free A f e (Nat.one_le_iff_ne_zero.mpr he)
-  have : Nontrivial (standardTameCover A f e) :=
-    Module.nontrivial_of_finrank_pos (R := A) (by rw [hrank]; exact Nat.pos_of_ne_zero he)
-  obtain ⟨y, hy⟩ := PrimeSpectrum.comap_surjective_of_faithfullyFlat
-    (A := A) (B := standardTameCover A f e) ⟨𝔭, h𝔭p⟩
+  -- The cover is integral and injective, so some point of it lies over `𝔭`.
+  have hmonic := monic_X_pow_sub_C f he
+  have := AdjoinRoot.isIntegral_of_monic hmonic
+  have := AdjoinRoot.faithfulSMul_of_monic_of_degree_pos hmonic
+    (by rw [degree_X_pow_sub_C (Nat.pos_of_ne_zero he)]; exact_mod_cast Nat.pos_of_ne_zero he)
+  obtain ⟨y, hy⟩ := Algebra.IsIntegral.comap_surjective A (standardTameCover A f e) ⟨𝔭, h𝔭p⟩
   let p := Spec.map (CommRingCat.ofHom (algebraMap A (standardTameCover A f e)))
   let U : (Spec (.of A)).Opens := PrimeSpectrum.basicOpen f
   -- `Spec.map_apply` is applied as a term: `rw` cannot find it, as `y` is typed as a prime.

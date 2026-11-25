@@ -8,7 +8,8 @@ module
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.CodimensionOne.StandardTameCover
 
-import Mathlib.RingTheory.Polynomial.Quotient
+import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
+import Mathlib.RingTheory.Polynomial.Ideal
 
 /-!
 # Test: the square root cover of the punctured line over `ℤ[1/2]`
@@ -42,11 +43,11 @@ private theorem square_root_tame (R : Type) [CommRing R] [Nontrivial R] [IsReduc
       PrimeSpectrum.basicOpen X).IsTamelyRamifiedInCodimOne ∧
     ¬ (Spec.map (CommRingCat.ofHom (algebraMap R[X] (standardTameCover R[X] X 2))) ∣_
       PrimeSpectrum.basicOpen X).IsUnramifiedInCodimOne := by
-  -- `R[t] ⧸ (t) ≅ R` is reduced.
+  -- `(t)` is the kernel of `constantCoeff : R[t] → R`, so `R[t] ⧸ (t) ≅ R` is reduced.
   have : IsReduced (R[X] ⧸ Ideal.span {(X : R[X])}) := by
-    have e := quotientSpanXSubCAlgEquiv (0 : R)
-    rw [map_zero, sub_zero] at e
-    exact isReduced_of_injective e e.injective
+    rw [← Ideal.isRadical_iff_quotient_reduced, ← ker_constantCoeff]
+    exact (RingHom.ker_isRadical_iff_reduced_of_surjective
+      (constantCoeff_surjective (R := R))).mpr ‹_›
   have h2X : IsUnit ((2 : ℕ) : R[X]) := by
     simpa only [Nat.cast_ofNat, map_ofNat] using h2.map (C : R →+* R[X])
   -- The arguments are named explicitly: unifying them with the goal times out.
