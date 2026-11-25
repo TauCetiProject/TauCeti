@@ -147,9 +147,7 @@ theorem linearEquiv_symm_apply (μ : ℂ) (hμ : Complex.normSq μ ≠ 1) (z : �
 theorem toMatrix_linearMap (μ : ℂ) :
     LinearMap.toMatrix Complex.basisOneI Complex.basisOneI (linearMap μ).toLinearMap =
       !![1 + μ.re, μ.im; μ.im, 1 - μ.re] := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [LinearMap.toMatrix_apply, Complex.coe_basisOneI, Complex.coe_basisOneI_repr]; ring
+  simp [linearMap_eq_wirtingerPartsCLM, toMatrix_wirtingerPartsCLM]
 
 /-- The affine normalizer has the real Jacobian `1 - |μ|²`. -/
 theorem det_linearMap (μ : ℂ) : (linearMap μ).toLinearMap.det = 1 - Complex.normSq μ := by

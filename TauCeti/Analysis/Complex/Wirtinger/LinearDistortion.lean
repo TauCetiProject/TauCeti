@@ -19,7 +19,8 @@ three quantities of linear distortion of `A` in terms of `a` and `b`:
 
 * the operator norm `‖A‖ = |a| + |b|` (`TauCeti.norm_wirtingerPartsCLM`);
 * the minimal stretch `ℓ(A) = ||a| - |b||` (`TauCeti.minimalStretch_wirtingerPartsCLM`);
-* the Jacobian `J(A) = det A = |a|² - |b|²` (`TauCeti.det_wirtingerPartsCLM`); for the
+* the Jacobian `J(A) = det A = |a|² - |b|²` (`TauCeti.det_wirtingerPartsCLM`), read off from the
+  real matrix of `A` in the basis `(1, i)` (`TauCeti.toMatrix_wirtingerPartsCLM`); for the
   orientation of `ℂ` by the basis `(1, i)`, `Orientation.orientedJacobian_self` identifies the
   oriented Jacobian of `A` with this determinant.
 
@@ -115,17 +116,19 @@ theorem minimalStretch_wirtingerPartsCLM (a b : ℂ) :
       _ ≤ ‖(wirtingerPartsCLM a b : ℂ →ₗ[ℝ] ℂ) z‖ := by
           simpa [sub_neg_eq_add] using abs_norm_sub_norm_le (z * a) (-(conj z * b))
 
+/-- The real matrix of `z ↦ z a + conj z b` in the basis `(1, i)` of `ℂ`. -/
+theorem toMatrix_wirtingerPartsCLM (a b : ℂ) :
+    LinearMap.toMatrix basisOneI basisOneI (wirtingerPartsCLM a b : ℂ →ₗ[ℝ] ℂ) =
+      !![a.re + b.re, b.im - a.im; a.im + b.im, a.re - b.re] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [LinearMap.toMatrix_apply] <;> ring
+
 /-- The determinant of `z ↦ z a + conj z b` is `|a|² - |b|²`. -/
 @[simp]
 theorem det_wirtingerPartsCLM (a b : ℂ) :
     (wirtingerPartsCLM a b : ℂ →ₗ[ℝ] ℂ).det = ‖a‖ ^ 2 - ‖b‖ ^ 2 := by
-  rw [← LinearMap.det_toMatrix Complex.basisOneI, Matrix.det_fin_two]
-  simp only [Fin.isValue, LinearMap.toMatrix_apply, coe_basisOneI, Matrix.cons_val_zero,
-    ContinuousLinearMap.coe_coe, wirtingerPartsCLM_apply, smul_eq_mul, one_mul, map_one, map_add,
-    Finsupp.coe_add, coe_basisOneI_repr, Pi.add_apply, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one, conj_I, neg_mul, map_neg, mul_re, I_re, zero_mul, I_im, zero_sub,
-    mul_im, zero_add, Finsupp.coe_neg, Matrix.neg_cons, neg_neg, Matrix.neg_empty,
-    ← normSq_eq_norm_sq, normSq_apply]
+  rw [← LinearMap.det_toMatrix basisOneI, toMatrix_wirtingerPartsCLM, Matrix.det_fin_two_of,
+    ← normSq_eq_norm_sq, ← normSq_eq_norm_sq, normSq_apply, normSq_apply]
   ring
 
 /-! ### Checks -/
