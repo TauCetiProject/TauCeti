@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
+import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Ortho
 
 /-!
 # Factoring finitely many vectors through orthogonal vectors
@@ -43,24 +43,12 @@ private theorem exists_orthogonal_factor_fin {κ : Type*} [Fintype κ] {n : ℕ}
   have horth (t t' : Fin n) (h : t ≠ t') : ⟪E t', E t⟫_𝕜 = 0 := by
     simp [E, InnerProductSpace.gramSchmidtNormed, inner_smul_left, inner_smul_right,
       InnerProductSpace.gramSchmidt_orthogonal 𝕜 c h.symm]
-  have hnorm (t : Fin n) : ‖E t‖ ^ 2 • E t = E t := by
-    by_cases h : E t = 0
-    · simp [h]
-    · rw [InnerProductSpace.gramSchmidtNormed_unit_length' h, one_pow, one_smul]
   have hrec (r : Fin n) : c r = ∑ t, ⟪E t, c r⟫_𝕜 • E t := by
-    have hmem : c r ∈ Submodule.span 𝕜 (Set.range E) := by
-      rw [InnerProductSpace.span_gramSchmidtNormed_range, InnerProductSpace.span_gramSchmidt]
-      exact Submodule.subset_span ⟨r, rfl⟩
-    obtain ⟨a, ha⟩ := (Submodule.mem_span_range_iff_exists_fun 𝕜).mp hmem
-    have hcoef (t : Fin n) : ⟪E t, c r⟫_𝕜 = a t * ((‖E t‖ ^ 2 : ℝ) : 𝕜) := by
-      rw [← ha, inner_sum, Finset.sum_eq_single t]
-      · rw [inner_smul_right, inner_self_eq_norm_sq_to_K]
-        norm_cast
-      · exact fun t' _ h => by rw [inner_smul_right, horth t' t h, mul_zero]
-      · simp
-    calc c r = ∑ t, a t • E t := ha.symm
-      _ = _ := Finset.sum_congr rfl fun t _ => by
-        rw [hcoef t, mul_smul, ← RCLike.real_smul_eq_coe_smul, hnorm]
+    have h := congrArg (· (c r))
+      (InnerProductSpace.starProjection_eq_sum_rankOne_gramSchmidtNormed (𝕜 := 𝕜) c rfl)
+    simpa [E, Submodule.starProjection_eq_self_iff.2
+      (Submodule.subset_span (Set.mem_range_self r) : c r ∈ Submodule.span 𝕜 (Set.range c))]
+      using h
   have hparseval (r : Fin n) : ∑ t, ‖⟪E t, c r⟫_𝕜‖ ^ 2 = ‖c r‖ ^ 2 := by
     have h := congrArg (fun z => ⟪c r, z⟫_𝕜) (hrec r)
     simp only [inner_sum, inner_smul_right, ← inner_conj_symm (c r) (E _),
