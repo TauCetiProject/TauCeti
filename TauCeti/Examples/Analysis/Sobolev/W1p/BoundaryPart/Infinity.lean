@@ -13,9 +13,8 @@ public import TauCeti.Analysis.Sobolev.W1p.Interval.Trace
 
 On `(0, 1)` with `Γ = {0}`, every generator of `W^{1,∞}_Γ(0, 1)` has derivative `0` near `0`,
 while `u(x) = x` has `u' = 1`; so `u` is at `W^{1,∞}` distance at least `1` from
-`W^{1,∞}_Γ(0, 1)` and does not lie in it, although its trace `u(0)` is `0`. Thus `W^{1,∞}_Γ` is
-strictly smaller than `{u | u = 0 on Γ}`, and the trace characterization of `W^{1,p}_Γ` is for
-finite `p` only.
+`W^{1,∞}_Γ(0, 1)` and does not lie in it, although its trace `u(0)` is `0`. Thus `W^{1,∞}_Γ(0, 1)`
+is strictly smaller than the kernel of the trace at `0`.
 -/
 
 public section

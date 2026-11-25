@@ -13,8 +13,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 
 With `Γ = ∅`, the restriction to `(0, 1)` of a bump on `ℝ` equal to `1` on `[0, 1]` is a
 generator of `W^{1,p}_∅(0, 1)`: a constant with zero weak gradient and nonzero `Lᵖ` norm. So no
-inequality `‖u‖_p ≤ C ‖∇u‖_p` holds on `W^{1,p}_∅(0, 1)`, and the hypothesis `μHE[n] Γ > 0` of
-the Poincaré–Friedrichs inequality is load-bearing.
+inequality `‖u‖_p ≤ C ‖∇u‖_p` holds on `W^{1,p}_∅(0, 1)`.
 -/
 
 public section
@@ -26,8 +25,7 @@ namespace TauCeti.W1pVanishingOnEmptyExamples
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- With `Γ = ∅`, no Poincaré–Friedrichs inequality `‖u‖_p ≤ C ‖∇u‖_p` holds on
-`W^{1,p}_∅(0, 1)`. -/
+/-- With `Γ = ∅`, no inequality `‖u‖_p ≤ C ‖∇u‖_p` holds on `W^{1,p}_∅(0, 1)`. -/
 example : ¬∃ C : ℝ, ∀ u ∈ w1pVanishingOnSubmodule volume ⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩ p ∅,
     ‖value u‖ ≤ C * ‖gradient u‖ := by
   rintro ⟨C, hC⟩

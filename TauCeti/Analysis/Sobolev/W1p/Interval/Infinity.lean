@@ -43,8 +43,7 @@ namespace TauCeti.W1p
 
 /-- **The `W^{1,∞}` distance to `W^{1,∞}_Γ(a,b)` bounds the weak derivative on `closure Γ`.** If
 the weak derivative of `u` has a continuous representative `g` on `[a,b]`, then `|g t| ≤ dist u v`
-for every `v ∈ W^{1,∞}_Γ(a,b)` and every `t ∈ [a,b]` in `closure Γ`: every generator has
-derivative zero near `closure Γ`. -/
+for every `v ∈ W^{1,∞}_Γ(a,b)` and every `t ∈ [a,b]` in `closure Γ`. -/
 theorem abs_gradient_le_dist_of_mem_w1pVanishingOnSubmodule {a b : ℝ} (hab : a < b) {Γ : Set ℝ}
     {u v : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ ⊤} {g : ℝ → ℝ} (hg : ContinuousOn g (Icc a b))
     (hu : gradient u =ᵐ[volume.restrict (Ioo a b)] g)
