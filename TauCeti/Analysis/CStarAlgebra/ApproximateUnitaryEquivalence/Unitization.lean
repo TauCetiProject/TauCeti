@@ -42,6 +42,8 @@ The unitization relation is the one in which approximate unitary equivalence of
 * M. Rørdam, *Classification of nuclear, simple C*-algebras*, in *Classification of Nuclear
   C*-Algebras. Entropy in Operator Algebras*, Encyclopaedia Math. Sci. 126, Springer, 2002,
   Definition 1.1.15.
+* B. Blackadar, *K-Theory for Operator Algebras*, 2nd ed., Cambridge University Press, 1998,
+  Chapter 7 (unitization conventions).
 -/
 
 public section
@@ -89,7 +91,8 @@ theorem unitization_iff {φ ψ : A →⋆ₙₐ[ℂ] B} :
   · intro h
     simpa only [NonUnitalStarAlgHom.id_comp] using
       h.postcomp_of_comp_eq (κ := NonUnitalStarAlgHom.id ℂ B)
-        (Unitization.starLift (NonUnitalStarAlgHom.id ℂ B)) (Unitization.starLift_comp_inr _)
+        (Unitization.starLift (NonUnitalStarAlgHom.id ℂ B)).toNonUnitalStarAlgHom
+        (Unitization.starLift_comp_inr _)
   · intro h
     rw [approximatelyUnitarilyEquivalent_def] at h ⊢
     intro F ε hε
@@ -131,6 +134,6 @@ theorem unitization_postcomp
       ((Unitization.inrNonUnitalStarAlgHom ℂ C).comp (ρ.comp ψ)) := by
   simpa only [NonUnitalStarAlgHom.comp_assoc] using
     h.postcomp_of_comp_eq (κ := (Unitization.inrNonUnitalStarAlgHom ℂ C).comp ρ)
-      (Unitization.starMap ρ) (Unitization.starLift_comp_inr _)
+      (Unitization.starMap ρ).toNonUnitalStarAlgHom (Unitization.starLift_comp_inr _)
 
 end TauCeti.ApproximatelyUnitarilyEquivalent

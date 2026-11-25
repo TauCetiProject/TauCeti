@@ -84,6 +84,13 @@ lemma range_subset_collarPart {t : ℝ} (ht : 0 < t) : range f ⊆ collarPart c 
   rintro _ ⟨y, rfl⟩
   exact ⟨(y, ⟨0, by norm_num⟩), ht, hc.apply_zero y⟩
 
+/-- If `ι` has range the complement of the boundary `f(N)`, then the complement of the collar of
+positive depth lies in the range of `ι`. -/
+lemma compl_collarPart_subset_range {M' : Type*} {ι : M' → M} (hιf : range ι = (range f)ᶜ)
+    {t : ℝ} (ht : 0 < t) : (collarPart c t)ᶜ ⊆ range ι := by
+  rw [hιf]
+  exact compl_subset_compl.2 (hc.range_subset_collarPart ht)
+
 /-- Every point outside the boundary lies outside the collar of some positive depth. -/
 lemma exists_notMem_collarPart {x : M} (hx : x ∉ range f) : ∃ t, 0 < t ∧ x ∉ collarPart c t := by
   by_cases hxc : x ∈ range c

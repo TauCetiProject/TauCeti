@@ -7,10 +7,12 @@ module
 
 public import TauCeti.Analysis.Complex.Pompeiu.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Weyl
+import Mathlib.Analysis.Complex.RemovableSingularity
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
 import TauCeti.Analysis.Complex.CauchyKernel
+import TauCeti.Analysis.Complex.Pompeiu.Pointwise
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -66,6 +68,11 @@ properties of the Cauchy transform.
 * `TauCeti.HasWeakConjWirtingerDerivOn.exists_differentiableOn_ae_eq_cauchyTransform_add`: every
   distributional solution on `Ω` of `bar∂ u = f` with integrable `f` and finite-dimensional
   coefficients agrees a.e. on `Ω` with `T f` plus a holomorphic function.
+* `TauCeti.HasWeakConjWirtingerDerivOn.of_diff_singleton`: **removable points.** A continuous
+  distributional solution of `bar∂ u = g` on a bounded open set punctured at one point, with `g` in
+  `Lᵖ`, `p > 2`, on the whole set, solves the equation on the whole set. The proof subtracts the
+  continuous Cauchy transform of `g`, which leaves a function holomorphic off the point and
+  continuous at it, and applies Riemann's removable singularity theorem.
 
 ## References
 
@@ -190,10 +197,8 @@ theorem integral_conjWirtingerDeriv_smul_cauchyTransform [CompleteSpace F] {f : 
     ∫ w, conjWirtingerDeriv ψ w 1 • cauchyTransform f w = -∫ z, ψ z • f z := by
   -- this is the operator-valued pairing for the maps `a ↦ a • f z`
   let L : F ≃L[ℂ] (ℂ →L[ℂ] F) := ContinuousLinearMap.toSpanSingletonCLE
-  have hT (w : ℂ) : cauchyTransform (fun z ↦ L (f z)) w = L (cauchyTransform f w) := by
-    simp only [cauchyTransform_apply, ← map_smul, L.integral_comp_comm]
   have h := integral_cauchyTransform_apply_conjWirtingerDeriv (L.integrable_comp_iff.2 hf) hc hψ
-  simp only [hT] at h
+  simp only [L.cauchyTransform_comp_comm] at h
   simpa only [L, ContinuousLinearMap.toSpanSingletonCLE_apply_apply] using h
 
 /-- **Integration by parts against the Cauchy transform.** For integrable `f` and a compactly
@@ -368,5 +373,54 @@ theorem HasWeakConjWirtingerDerivOn.exists_differentiableOn_ae_eq_cauchyTransfor
   obtain ⟨v, hv, huv⟩ := h.exists_differentiableOn_ae_eq
   refine ⟨v, hv, huv.mono fun z hz ↦ ?_⟩
   rw [Pi.add_apply, ← hz, Pi.sub_apply, add_sub_cancel]
+
+/-- **Removable points for the weak `bar∂` equation.** Let `Ω` be a bounded open set, `u` continuous
+on `Ω` with finite-dimensional complex values, and `g` in `Lᵖ(Ω)` for some `p` conjugate to `q < 2`,
+so `p > 2`. If `bar∂ u = g` distributionally on `Ω ∖ {z₀}`, then `bar∂ u = g` distributionally on
+all of `Ω`: a continuous solution acquires no point mass at `z₀`. -/
+theorem HasWeakConjWirtingerDerivOn.of_diff_singleton [FiniteDimensional ℂ F] {Ω : Opens ℂ}
+    (hΩ : Bornology.IsBounded (Ω : Set ℂ)) {z₀ : ℂ} {u g : ℂ → F} {p q : ℝ≥0∞}
+    [p.HolderConjugate q] (hq : q < 2) (hu : ContinuousOn u Ω)
+    (hg : MemLp g p (volume.restrict Ω))
+    (h : HasWeakConjWirtingerDerivOn volume
+      ⟨(Ω : Set ℂ) \ {z₀}, Ω.isOpen.sdiff isClosed_singleton⟩ u g) :
+    HasWeakConjWirtingerDerivOn volume Ω u g := by
+  have := FiniteDimensional.completeSpace ℂ F
+  obtain ⟨r, hr⟩ := hΩ.subset_closedBall z₀
+  -- the data extended by zero is supercritical and supported in a closed disc
+  set f : ℂ → F := (Ω : Set ℂ).indicator g
+  have hf : MemLp f p volume :=
+    (memLp_indicator_iff_restrict Ω.isOpen.measurableSet.nullMeasurableSet).2 hg
+  have hfs : support f ⊆ closedBall z₀ r := (support_indicator_subset).trans hr
+  have : IsFiniteMeasure (volume.restrict (Ω : Set ℂ)) :=
+    isFiniteMeasure_restrict.2 hΩ.measure_lt_top.ne
+  have hfi : Integrable f :=
+    (integrable_indicator_iff Ω.isOpen.measurableSet).2
+      (hg.integrable (ENNReal.HolderConjugate.one_le p q))
+  have hT : Continuous (cauchyTransform f) := continuous_cauchyTransform_of_memLp hq hf hfs
+  have hfg : f =ᵐ[volume.restrict (Ω : Set ℂ)] g :=
+    (ae_restrict_iff' Ω.isOpen.measurableSet).2
+      (Eventually.of_forall fun z hz ↦ indicator_of_mem hz g)
+  -- off the point, `u - T f` is a continuous weak solution of `bar∂ = 0`, hence holomorphic
+  set Ω' : Opens ℂ := ⟨(Ω : Set ℂ) \ {z₀}, Ω.isOpen.sdiff isClosed_singleton⟩
+  have hfg' : f =ᵐ[volume.restrict (Ω' : Set ℂ)] g :=
+    (ae_restrict_iff' Ω'.isOpen.measurableSet).2
+      (Eventually.of_forall fun z hz ↦ indicator_of_mem hz.1 g)
+  have h0 : HasWeakConjWirtingerDerivOn volume Ω' (u - cauchyTransform f) 0 := by
+    have h' := h.sub ((hasWeakConjWirtingerDerivOn_cauchyTransform hfi Ω').congr_ae_deriv hfg')
+    rwa [sub_self] at h'
+  have hd' : DifferentiableOn ℂ (u - cauchyTransform f) ((Ω : Set ℂ) \ {z₀}) :=
+    h0.differentiableOn ((hu.mono sdiff_subset).sub hT.continuousOn)
+  -- Riemann's removable singularity theorem fills in the point
+  have hd : DifferentiableOn ℂ (u - cauchyTransform f) Ω := by
+    by_cases hz₀ : z₀ ∈ (Ω : Set ℂ)
+    · exact (Complex.differentiableOn_compl_singleton_and_continuousAt_iff
+        (Ω.isOpen.mem_nhds hz₀)).1
+        ⟨hd', ((hu.continuousAt (Ω.isOpen.mem_nhds hz₀))).sub hT.continuousAt⟩
+    · rwa [sdiff_singleton_eq_self hz₀] at hd'
+  have hsum := hd.hasWeakConjWirtingerDerivOn_zero.add
+    (hasWeakConjWirtingerDerivOn_cauchyTransform hfi Ω)
+  rw [sub_add_cancel, zero_add] at hsum
+  exact hsum.congr_ae_deriv hfg
 
 end TauCeti

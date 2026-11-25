@@ -28,10 +28,16 @@ bands (`ContMDiffMap.exists_isMorse_mem_ball_sub_compl`). The values `c` are reg
 for regular values `a ≤ b` of `f` and a finite-dimensional module `V` over a division ring:
 
 * `Hₙ(M_b, M_a; V)` is finite-dimensional
-  (`TauCeti.finite_singularHomology_sublevelPair_of_contMDiff`);
+  (`TauCeti.finite_singularHomology_sublevelPair_of_contMDiff`), for instance whenever
+  `a < c < b` and `c` is the only possible critical value of `f` in `[a, b]`
+  (`TauCeti.finite_singularHomology_sublevelPair_of_criticalValue`);
 * `Hₙ(M_b, M_a)` vanishes above the dimension of `M`, for any coefficients
   (`TauCeti.isZero_singularHomology_sublevelPair_of_contMDiff`), since the Morse index of every
   critical point of `g` is at most that dimension.
+
+Applied to the constant function `0` on a compact manifold, whose sublevels at the regular values
+`-1` and `1` are `∅` and `M`, the first statement shows that the homology `Hₙ(M; V)` of a compact
+boundaryless manifold is finite-dimensional (`TauCeti.finite_singularHomology_of_compactSpace`).
 
 These are the hypotheses of the Morse inequalities of a filtration
 (`TauCeti.AlgebraicTopology.Singular.Sublevel`). Let `M` be compact, so that every smooth `f` is
@@ -45,19 +51,26 @@ lacunary principle.
 For a Morse–Bott function the critical values are finite in number
 (`TauCeti.IsMorseBottFamily.finite_image_criticalPoints`), so there is a `ℤ`-indexed cut with one
 critical level in each band (`TauCeti.exists_isCriticalBandCut_of_finite_image_criticalPoints`);
-reindexed to the `ℕ`-indexed cut used here, it is a cut as above. Once the homology of each band is
-identified with the homology of the critical submanifolds of its level shifted by their indices,
-with coefficients twisted by the orientations of their negative normal bundles (Bott's attachment
-theorem with the Thom isomorphism, not formalized here), the statements here give the Morse–Bott
-inequalities.
+reindexed, it is a cut as above with each band a critical band
+(`TauCeti.exists_monotone_isCriticalBand_of_finite_image_criticalPoints`). Once the homology of
+each band is identified with the homology of the critical submanifolds of its level shifted by
+their indices, with coefficients twisted by the orientations of their negative normal bundles, the
+statements here give the Morse–Bott inequalities. The module
+`TauCeti.Geometry.Manifold.Morse.Bott.Inequalities` does this when the negative normal bundles
+have Thom classes, for instance when they are oriented, and
+`TauCeti.Geometry.Manifold.Morse.Bott.TwistedInequalities` does it with twisted coefficients over
+every field.
 
 ## Main results
 
 * `TauCeti.exists_isMorse_isRegularValue_sublevel_eq`: a Morse function close to a proper `f`,
   with the same sublevels as `f` at finitely many regular values of `f`.
-* `TauCeti.finite_singularHomology_sublevelPair_of_contMDiff` and
+* `TauCeti.finite_singularHomology_sublevelPair_of_contMDiff`,
+  `TauCeti.finite_singularHomology_sublevelPair_of_criticalValue` and
   `TauCeti.isZero_singularHomology_sublevelPair_of_contMDiff`: finiteness of the relative
   homology of regular sublevels, and its vanishing above the dimension.
+* `TauCeti.finite_singularHomology_of_compactSpace`: finiteness of the homology of a compact
+  boundaryless manifold.
 * `TauCeti.finrank_singularHomology_le_sum_sublevelPair_of_contMDiff`,
   `TauCeti.sum_range_neg_one_pow_mul_finrank_singularHomology_le_sum_sublevelPair_of_contMDiff`,
   `TauCeti.sum_range_neg_one_pow_mul_finrank_singularHomology_eq_sum_sublevelPair_of_contMDiff`,
@@ -183,6 +196,43 @@ theorem finite_singularHomology_sublevelPair_of_contMDiff {k : Type u} [Division
   obtain ⟨g, hg, hcompact, hga, hgb, hgf⟩ := exists_isMorse_sublevelPair_eq hf hp hab ha hb
   rw [← hgf]
   exact hg.finite_singularHomology_sublevelPair V hab hcompact hga hgb n
+
+variable (I M) in
+include I in
+/-- **Finiteness of the homology of a compact manifold.** The singular homology of a compact
+boundaryless manifold, with coefficients in a finite-dimensional module `V` over a division ring,
+is finite-dimensional in every degree. -/
+theorem finite_singularHomology_of_compactSpace [CompactSpace M] {k : Type u} [DivisionRing k]
+    (V : ModuleCat.{u} k) [Module.Finite k V] (n : ℕ) :
+    Module.Finite k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj V).obj
+      (TopCat.of M)) :=
+  -- Apply the finiteness of the homology of regular sublevels to the constant function `0`,
+  -- whose sublevels `{0 ≤ -1} = ∅` and `{0 ≤ 1} = M` are cut at the regular values `±1`.
+  have hreg (c : ℝ) (hc : c ≠ 0) : IsRegularValue I 𝓘(ℝ) (fun _ : M ↦ (0 : ℝ)) c :=
+    isRegularValue_of_notMem_range fun ⟨_, hx⟩ ↦ hc hx.symm
+  have := finite_singularHomology_sublevelPair_of_contMDiff V contMDiff_const
+    continuous_const.isProperMap (neg_one_lt_zero.trans zero_lt_one).le
+    (hreg _ (neg_ne_zero.2 one_ne_zero)) (hreg _ one_ne_zero) n
+  Module.Finite.equiv (singularHomologyIsoSublevelPair (f := fun _ : M ↦ (0 : ℝ))
+    (neg_one_lt_zero.trans zero_lt_one).le (fun _ ↦ neg_one_lt_zero) (fun _ ↦ zero_le_one) V
+    n).symm.toLinearEquiv
+
+/-- **Finiteness of the homology of a band with one critical value.** Let `f` be a smooth proper
+function on a boundaryless manifold and `a < c < b` such that `c` is the only possible critical
+value of `f` in `[a, b]`. Then `a` and `b` are regular values, so the relative singular homology
+`Hₙ({f ≤ b}, {f ≤ a}; V)` with coefficients in a finite-dimensional module `V` is
+finite-dimensional. -/
+theorem finite_singularHomology_sublevelPair_of_criticalValue {k : Type u} [DivisionRing k]
+    (V : ModuleCat.{u} k) [Module.Finite k V] (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hp : IsProperMap f)
+    {a b c : ℝ} (hac : a < c) (hcb : c < b)
+    (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c) (n : ℕ) :
+    Module.Finite k ((sublevelPair f (hac.trans hcb).le).singularHomology V n : ModuleCat k) := by
+  have hreg {t : ℝ} (ht : t ∈ ({a, b} : Set ℝ)) : IsRegularValue I 𝓘(ℝ) f t :=
+    isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨x, hx, hxt⟩ ↦ by
+      have := hcrit x hx (by rcases ht with rfl | rfl <;> simp [hxt, (hac.trans hcb).le])
+      rcases ht with rfl | rfl <;> linarith
+  exact finite_singularHomology_sublevelPair_of_contMDiff V hf hp (hac.trans hcb).le
+    (hreg (by simp)) (hreg (by simp)) n
 
 /-- **Vanishing of the homology of regular sublevels above the dimension.** Let `f` be a smooth
 proper function on a boundaryless manifold and `a ≤ b` regular values of `f`. Then the relative

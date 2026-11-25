@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
@@ -18,15 +18,24 @@ is Hausdorff.
 
 The fibers of a locally injective map are discrete
 (`IsLocallyInjective.isDiscrete_preimage_singleton`), so a compact subset of one fiber is finite
-(`IsLocallyInjective.finite_preimage_singleton_inter`); this needs no topology on the codomain.
+(`IsLocallyInjective.finite_preimage_singleton_inter`), and every fiber of a locally injective map
+out of a compact space is finite (`IsLocallyInjective.finite_preimage_singleton`); this needs no
+topology on the codomain.
 On a Hausdorff space, the neighbourhoods on which a locally injective map is injective can be
 chosen pairwise disjoint over any finite set
 (`IsLocallyInjective.exists_isOpen_injOn_pairwiseDisjoint`).
+For a continuous locally injective map into a Hausdorff space, distinct equal-image pairs
+form a closed set (`IsLocallyInjective.isClosed_setOf_apply_eq_and_ne`).
 A continuous section of a continuous locally injective map over an open set has open image
 (`IsLocallyInjective.isOpen_image_of_leftInvOn`).
 For a separated, locally injective map, such as a covering map or any locally injective map with
 Hausdorff total space, two sections over a preconnected set that are continuous on that set and
 agree at one of its points agree on all of it (`IsSeparatedMap.eqOn_of_leftInvOn`).
+
+## References
+
+* https://github.com/frenzymath/lean-eval-submissions
+* https://github.com/frenzymath/PoincareConjecture
 -/
 
 public section
@@ -51,6 +60,24 @@ section IsLocallyInjective
 
 open Set
 
+/-- For a continuous locally injective map into a Hausdorff space, the set of distinct
+pairs with the same image is closed. No separation assumption on the domain is needed. -/
+theorem IsLocallyInjective.isClosed_setOf_apply_eq_and_ne
+    {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] [T2Space X]
+    {f : E → X} (hinj : IsLocallyInjective f) (hf : Continuous f) :
+    IsClosed {z : E × E | f z.1 = f z.2 ∧ z.1 ≠ z.2} := by
+  have heq : IsClosed {z : E × E | f z.1 = f z.2} :=
+    isClosed_eq (hf.comp continuous_fst) (hf.comp continuous_snd)
+  have hopen : IsOpen {z : {z : E × E | f z.1 = f z.2} | z.val.1 = z.val.2} :=
+    hinj.isOpen_eqLocus (by fun_prop) (by fun_prop) (funext fun z ↦ z.property)
+  convert heq.isClosedMap_subtypeVal _ hopen.isClosed_compl using 1
+  ext z
+  constructor
+  · rintro ⟨hz, hne⟩
+    exact ⟨⟨z, hz⟩, hne, rfl⟩
+  · rintro ⟨w, hne, rfl⟩
+    exact ⟨w.property, hne⟩
+
 variable {E B : Type*} [TopologicalSpace E] {p : E → B}
 
 /-- The fibers of a locally injective map, such as a local homeomorphism, are discrete. -/
@@ -66,6 +93,19 @@ homeomorphism, is finite. -/
 theorem IsLocallyInjective.finite_preimage_singleton_inter (hp : IsLocallyInjective p)
     {s : Set E} {b : B} (hs : IsCompact (p ⁻¹' {b} ∩ s)) : (p ⁻¹' {b} ∩ s).Finite :=
   hs.finite <| (hp.isDiscrete_preimage_singleton b).mono inter_subset_left
+
+/-- Every fiber of a locally injective map out of a compact space, such as a local homeomorphism,
+is finite. -/
+theorem IsLocallyInjective.finite_preimage_singleton [CompactSpace E] (hp : IsLocallyInjective p)
+    (b : B) : (p ⁻¹' {b}).Finite := by
+  -- Finitely many open sets on which `p` is injective cover `E`, and each of them meets the fiber
+  -- in at most one point.
+  choose U hUo hxU hU using hp
+  obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover U hUo fun x _ ↦ mem_iUnion.2 ⟨x, hxU x⟩
+  refine (t.finite_toSet.biUnion fun x _ ↦ Set.Subsingleton.finite (s := U x ∩ p ⁻¹' {b})
+    fun e he e' he' ↦ hU x he.1 he'.1 (he.2.trans he'.2.symm)).subset fun e he ↦ ?_
+  obtain ⟨x, hx, hex⟩ := mem_iUnion₂.1 (ht (mem_univ e))
+  exact mem_iUnion₂.2 ⟨x, hx, hex, he⟩
 
 /-- A locally injective map `p` on a Hausdorff space, such as a local homeomorphism, is injective
 on an open neighbourhood `W e` of each point `e`, and these neighbourhoods can be chosen pairwise

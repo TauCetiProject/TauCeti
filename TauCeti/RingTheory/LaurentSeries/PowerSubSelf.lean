@@ -45,7 +45,7 @@ theorem laurentSeries_leadingCoeff_pow_sub_self_of_order_neg
     (hn : 1 < n) {w : k⸨X⸩} (hw : w.order < 0) :
     (w ^ n - w).leadingCoeff = w.leadingCoeff ^ n := by
   rw [leadingCoeff_sub (laurentSeries_orderTop_pow_lt_orderTop_of_order_neg hn hw),
-    hahnSeries_leadingCoeff_pow]
+    leadingCoeff_pow]
 
 /-- If the coefficient of `a T⁻ⁿ` is not an `n`-th power, subtracting `wⁿ - w` never
 cancels its pole. A pole of `w` of order greater than one only makes the pole worse. -/

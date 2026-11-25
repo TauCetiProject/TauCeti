@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Sphere
 public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
+public import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 import TauCeti.Algebra.Group.ZMultiples
 
 /-!
@@ -35,7 +36,8 @@ suffices to compare them on that loop. On `πₘ(Sᵐ)` the cubical Hurewicz map
 loop generates `Hₘ(Sᵐ; ℤ) ≅ ℤ` (`TauCeti.isIso_hurewicz_sphereGenLoop`,
 `TauCeti.isIso_hurewicz_diskBoundaryGenLoop`). An additive map `ℤ → ℤ` whose image contains a
 generator is multiplication by a unit, so the two maps differ by a unit of `ℤ` on `πₘ(Sᵐ)`, and
-hence everywhere.
+hence everywhere. The unit is `(-1)^(n(n+1)/2)` in degree `n + 1`
+(`HomotopyGroup.hurewicz_hom_one_eq_neg_one_pow_smul_cubicalHurewicz`).
 
 ## Main results
 
@@ -47,6 +49,13 @@ hence everywhere.
   `HomotopyGroup.bijective_hurewicz_ulift`, and `HomotopyGroup.hurewiczUliftAddEquiv`: **the
   Hurewicz theorem**, `πₙ₊₂(X, x) ≅ Hₙ₊₂(X; ℤ)` for an `(n + 1)`-connected space in `Type 0` and
   in an arbitrary universe `u`.
+* `HomotopyGroup.isIso_hurewiczModuleCatHom`: the same theorem for the Hurewicz morphism
+  `HomotopyGroup.hurewiczModuleCatHom` of `ModuleCat ℤ`.
+* `HomotopyGroup.bijective_hurewiczIntHom_of_simplyConnectedSpace`: its degree-two case,
+  `π₂(X, x) ≅ H₂(X; ℤ)` for a simply connected space.
+* `HomotopyGroup.hurewiczLift`, `HomotopyGroup.hurewiczLift_hurewiczIntHom`: on a simply connected
+  space, a family of homomorphisms on `π₂` invariant under base-point change descends to
+  `H₂(X; ℤ)` and agrees with the family on Hurewicz classes.
 * `HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom`,
   `HomotopyGroup.isIso_hurewicz_ulift_iff_bijective_zmultiplesHom`: in that range, the Hurewicz
   class of a generalized loop generates `Hₙ₊₂(X; ℤ)` freely exactly when its homotopy class
@@ -192,6 +201,54 @@ theorem hurewiczAddEquiv_apply_eq_hurewiczIntHom
     (a : Additive (HomotopyGroup (Fin (n + 2)) X x)) :
     hurewiczAddEquiv hX a = hurewiczIntHom X x (n + 1) a :=
   AddEquiv.ofBijective_apply _ _ _
+
+/-- **The Hurewicz theorem in `ModuleCat ℤ`.** If `πₖ(X, x)` is trivial for every `k < n + 2`, then
+the Hurewicz morphism `HomotopyGroup.hurewiczModuleCatHom`, `πₙ₊₂(X, x) ⟶ Hₙ₊₂(X; ℤ)`, is an
+isomorphism. -/
+theorem isIso_hurewiczModuleCatHom (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x)) :
+    IsIso (hurewiczModuleCatHom X x n) :=
+  (ConcreteCategory.isIso_iff_bijective _).2 <| by
+    convert (hurewiczAddEquiv hX).bijective using 1
+    funext a
+    exact (hurewiczModuleCatHom_apply X x n a).trans
+      (hurewiczAddEquiv_apply_eq_hurewiczIntHom hX a).symm
+
+/-- **The Hurewicz theorem in degree two for a simply connected space**: the integral Hurewicz
+homomorphism `π₂(X, x) → H₂(X; ℤ)` is bijective at every base point. -/
+theorem bijective_hurewiczIntHom_of_simplyConnectedSpace [SimplyConnectedSpace X] (x : X) :
+    Function.Bijective (hurewiczIntHom X x 1) := by
+  convert (hurewiczAddEquiv (n := 0) fun _ => subsingleton_homotopyGroup_of_lt_two x).bijective
+    using 1
+  funext a
+  exact (hurewiczAddEquiv_apply_eq_hurewiczIntHom _ a).symm
+
+/-- **A family of homomorphisms on `π₂` descends to `H₂(X; ℤ)`** for a simply connected space
+`X`: the homomorphism `f x₀` at a base point `x₀`, transported along the Hurewicz isomorphism
+`π₂(X, x₀) ≅ H₂(X; ℤ)`. When the family is invariant under base-point change, it agrees with `f x`
+on the Hurewicz class of every sphere, at every base point `x`
+(`HomotopyGroup.hurewiczLift_hurewiczIntHom`). -/
+def hurewiczLift [SimplyConnectedSpace X] {G : Type*} [AddZeroClass G]
+    (f : ∀ x : X, Additive (HomotopyGroup (Fin 2) X x) →+ G) :
+    ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj (TopCat.of X) →+
+      G :=
+  (f (Classical.arbitrary X)).comp
+    (hurewiczAddEquiv (n := 0) fun _ ↦ subsingleton_homotopyGroup_of_lt_two _).symm.toAddMonoidHom
+
+/-- **A family of homomorphisms on `π₂` invariant under base-point change agrees with its descent
+to `H₂(X; ℤ)` on Hurewicz classes**, at every base point. -/
+theorem hurewiczLift_hurewiczIntHom [SimplyConnectedSpace X] {G : Type*} [AddZeroClass G]
+    {f : ∀ x : X, Additive (HomotopyGroup (Fin 2) X x) →+ G}
+    (hf : ∀ {x y : X} (γ : Path x y) (a : HomotopyGroup (Fin 2) X x),
+      f y (Additive.ofMul (homotopyGroupTransport γ a)) = f x (Additive.ofMul a))
+    (x : X) (a : Additive (HomotopyGroup (Fin 2) X x)) :
+    hurewiczLift f (hurewiczIntHom X x 1 a) = f x a := by
+  -- Transport the class to the base point of the definition; both sides are invariant.
+  let γ : Path x (Classical.arbitrary X) := PathConnectedSpace.somePath _ _
+  rw [← ofMul_toMul a, ← hurewiczIntHom_homotopyGroupTransport γ a.toMul,
+    ← hurewiczAddEquiv_apply_eq_hurewiczIntHom (n := 0)
+      fun _ ↦ subsingleton_homotopyGroup_of_lt_two _]
+  -- Keep `hurewiczAddEquiv` folded, so that it cancels against its inverse.
+  simp [hurewiczLift, -hurewiczAddEquiv_apply, hf]
 
 /-- The Hurewicz isomorphism sends the class of a generalized loop `p` to its Hurewicz class
 `GenLoop.hurewicz`, evaluated at `1 : ℤ`. -/

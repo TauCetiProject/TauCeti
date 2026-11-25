@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Set.Prod
+public import Mathlib.Basic.Finite.Defs
 
 /-!
 # Graphs and fibre products of functions
@@ -49,6 +50,13 @@ def Function.Pullback.fstPreimageEquiv (x : X) :
   left_inv y := Subtype.ext (Pullback.ext y.property.symm rfl)
   right_inv _ := rfl
 
+/-- The fibre of the first pullback projection over `x` is finite exactly when the original
+fibre over `f x` is finite. -/
+@[simp]
+theorem Function.Pullback.finite_preimage_fst_singleton_iff (x : X) :
+    Finite ((Pullback.fst : f.Pullback g → X) ⁻¹' {x}) ↔ Finite (g ⁻¹' {f x}) :=
+  (Pullback.fstPreimageEquiv x).finite_iff
+
 @[simp]
 theorem Function.Pullback.fstPreimageEquiv_apply_coe (x : X)
     (y : (Pullback.fst : f.Pullback g → X) ⁻¹' {x}) :
@@ -64,3 +72,13 @@ theorem Function.Pullback.fst_fstPreimageEquiv_symm_apply (x : X) (z : g ⁻¹' 
 theorem Function.Pullback.snd_fstPreimageEquiv_symm_apply (x : X) (z : g ⁻¹' {f x}) :
     ((Pullback.fstPreimageEquiv x).symm z : f.Pullback g).snd = z :=
   (rfl)
+
+/-- The first pullback projection is surjective exactly when the range of the base map is
+contained in the range of the other map. -/
+@[simp]
+theorem Function.Pullback.fst_surjective_iff :
+    Surjective (Pullback.fst : f.Pullback g → X) ↔ Set.range f ⊆ Set.range g := by
+  rw [Set.range_subset_iff]
+  apply forall_congr'
+  intro x
+  simpa [Set.mem_range] using (Pullback.fstPreimageEquiv (f := f) (g := g) x).nonempty_congr
