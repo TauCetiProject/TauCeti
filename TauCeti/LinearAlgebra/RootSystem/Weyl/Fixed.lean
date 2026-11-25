@@ -49,8 +49,9 @@ noncomputable def fixedWeylGroup (σ : P.Aut) : Subgroup P.weylGroup :=
 @[simp]
 theorem mem_fixedWeylGroup (σ : P.Aut) (w : P.weylGroup) :
     w ∈ P.fixedWeylGroup σ ↔ σ * (w : P.Aut) = (w : P.Aut) * σ := by
-  simp only [fixedWeylGroup, Subgroup.mem_comap, Subgroup.coe_subtype,
-    Subgroup.mem_centralizer_singleton_iff, eq_comm]
+  rw [fixedWeylGroup, Subgroup.mem_comap, Subgroup.coe_subtype,
+    Subgroup.mem_centralizer_singleton_iff]
+  exact Commute.symm_iff
 
 /-- Equivalently, conjugation by `σ` fixes the original Weyl automorphism. -/
 theorem mem_fixedWeylGroup_iff_conj_eq (σ : P.Aut) (w : P.weylGroup) :
