@@ -47,7 +47,9 @@ of multiplication by `2` (Silverman X.1.4).
   `((x - e)² - c_T) / ψ₂` of `x(2P) - e` is fixed by translation by `O` and `T`, and changes sign
   under translation by the other two points of order two.
 * `WeierstrassCurve.Affine.Point.two_ne_zero_of_two_lt_card`: more than two points of order
-  dividing two force `2 ≠ 0` (for an elliptic curve).
+  dividing two force `2 ≠ 0` (for an elliptic curve), and
+  `WeierstrassCurve.Affine.Point.two_ne_zero_of_two_lt_card_ker_nsmul_two` is the same for the
+  kernel of multiplication by `2`.
 * `WeierstrassCurve.Affine.Point.xCoord_add_sub`: when `(x - e)² = c_T`, translation by a point
   of order two sends `x - e` to `±(x - e)`, with the same signs.
 
@@ -275,5 +277,16 @@ theorem Point.two_ne_zero_of_two_lt_card [W.IsElliptic] {S : Finset W.Point}
     rfl
   have := Finset.pred_card_le_card_erase (s := S) (a := 0)
   omega
+
+/-- More than two points killed by `2` force `2 ≠ 0` (for an elliptic curve). -/
+theorem Point.two_ne_zero_of_two_lt_card_ker_nsmul_two [W.IsElliptic]
+    (hcard : 2 < Nat.card (nsmulAddMonoidHom (α := W.Point) 2).ker) : (2 : F) ≠ 0 := by
+  set k := (nsmulAddMonoidHom (α := W.Point) 2).ker
+  have : Finite k := Nat.finite_of_card_ne_zero (by lia)
+  let _ := Fintype.ofFinite k
+  refine two_ne_zero_of_two_lt_card (S := (Finset.univ : Finset k).map (.subtype (· ∈ k)))
+    (fun _ hT ↦ ?_) (by rwa [Finset.card_map, Finset.card_univ, ← Nat.card_eq_fintype_card])
+  obtain ⟨⟨T, hT⟩, -, rfl⟩ := Finset.mem_map.mp hT
+  exact neg_eq_of_add_eq_zero_right (by simpa [k, two_nsmul] using hT)
 
 end WeierstrassCurve.Affine

@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChang
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Legendre.Equation
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.TwoTorsion
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TwoTorsion
+import TauCeti.GroupTheory.Index.NSmul
 import TauCeti.RingTheory.Polynomial.Vieta
 
 /-!
@@ -25,7 +26,8 @@ This is a coefficient identity over every commutative ring
 `l = (e₂ - e₀) / (e₁ - e₀)`, so `d ≠ 0`, `l ≠ 0` and `l ≠ 1`.
 
 Over a field `K`, an elliptic curve `E` whose group `E(K)` has exactly four points killed by `2`
-lives in characteristic `≠ 2` (`WeierstrassCurve.Affine.Point.two_ne_zero_of_two_lt_card`), and
+lives in characteristic `≠ 2`
+(`WeierstrassCurve.Affine.Point.two_ne_zero_of_two_lt_card_ker_nsmul_two`), and
 once the square is completed its cubic has three roots in `K`
 (`WeierstrassCurve.Affine.card_ker_nsmul_two`). The translation above then normalizes it:
 some change of coordinates carries `E` to a scaled Legendre equation with `d ≠ 0`, `l ≠ 0` and
@@ -91,39 +93,22 @@ theorem exists_scaledLegendre_of_full_two_torsion {K : Type*} [Field K] [Decidab
     ∃ (C : VariableChange K) (d l : K), d ≠ 0 ∧ l ≠ 0 ∧ l ≠ 1 ∧
       C • E = scaledLegendre d l := by
   -- four points `T` with `-T = T` exclude characteristic `2`
-  have : Finite (nsmulAddMonoidHom (α := E.toAffine.Point) 2).ker :=
-    Nat.finite_of_card_ne_zero (by rw [hE]; norm_num)
-  have hfin :=
-    Set.toFinite ((nsmulAddMonoidHom (α := E.toAffine.Point) 2).ker : Set E.toAffine.Point)
-  have h2 : (2 : K) ≠ 0 := by
-    refine Affine.Point.two_ne_zero_of_two_lt_card (S := hfin.toFinset) (fun T hT ↦ ?_) ?_
-    · rw [Set.Finite.mem_toFinset, SetLike.mem_coe, AddMonoidHom.mem_ker,
-        nsmulAddMonoidHom_apply, two_nsmul] at hT
-      exact neg_eq_of_add_eq_zero_right hT
-    · rw [← Set.ncard_eq_toFinset_card _ hfin, ← Nat.card_coe_set_eq, SetLike.coe_sort_coe, hE]
-      norm_num
-  have : Invertible (2 : K) := invertibleOfNonzero h2
+  have : Invertible (2 : K) :=
+    invertibleOfNonzero (Affine.Point.two_ne_zero_of_two_lt_card_ker_nsmul_two (by rw [hE]; lia))
   set W := E.toCharNeTwoNF • E
   -- completing the square does not change the number of points killed by `2`
   have hW : Nat.card {x : K // W.toAffine.f.eval x = 0} = 3 := by
-    have hker : Nat.card (nsmulAddMonoidHom (α := W.toAffine.Point) 2).ker = 4 := by
-      let φ := Affine.Point.addEquivVariableChange E E.toCharNeTwoNF
-      refine (Nat.card_congr (φ.toEquiv.subtypeEquiv fun P ↦ ?_)).trans hE
-      simp only [AddMonoidHom.mem_ker, nsmulAddMonoidHom_apply, AddEquiv.toEquiv_eq_coe,
-        AddEquiv.coe_toEquiv, ← map_nsmul, AddEquivClass.map_eq_zero_iff]
     have := Affine.card_ker_nsmul_two W.toAffine
+    rw [(Affine.Point.addEquivVariableChange E E.toCharNeTwoNF).card_ker_nsmulAddMonoidHom,
+      hE] at this
     lia
   -- three distinct roots of the monic cubic `f`, which is therefore their product
   have : Finite {x : K // W.toAffine.f.eval x = 0} := Nat.finite_of_card_ne_zero (by lia)
   let e := (Finite.equivFinOfCardEq hW).symm
   have hinj : Function.Injective fun i ↦ (e i).val := Subtype.val_injective.comp e.injective
-  have hf : W.toAffine.f = ∏ i, (X - C (e i).val) := by
-    refine eq_prod_X_sub_C_of_monic_of_roots_eq W.toAffine.monic_f
-      (by simp [W.toAffine.natDegree_f]) (Multiset.eq_of_le_of_card_le ?_ ?_).symm
-    · refine (Multiset.le_iff_subset (Finset.univ.nodup.map hinj)).mpr fun x hx ↦ ?_
-      obtain ⟨i, -, rfl⟩ := Multiset.mem_map.mp hx
-      exact (mem_roots W.toAffine.f_ne_zero).mpr (e i).property
-    · simpa [W.toAffine.natDegree_f] using card_roots' W.toAffine.f
+  have hf : W.toAffine.f = ∏ i, (X - C (e i).val) :=
+    eq_prod_X_sub_C_of_monic_of_isRoot W.toAffine.monic_f (by simp [W.toAffine.natDegree_f])
+      hinj.injOn fun i _ ↦ (e i).property
   rw [Fin.prod_univ_three] at hf
   have h01 : (e 1).val - (e 0).val ≠ 0 := sub_ne_zero.mpr (hinj.ne (by decide))
   refine ⟨⟨1, (e 0).val, 0, 0⟩ * E.toCharNeTwoNF, (e 1).val - (e 0).val,
