@@ -276,7 +276,7 @@ example {α : Type*} {x : Fin 3 → α} :
     (Fin.castLEEmb (by decide))
   have := isProbabilityMeasure_sampleWithReplacement (ι := Fin 2) (Measure.dirac x)
   refine le_antisymm (iSup₂_le fun A hA => ?_) bot_le
-  have hA' : MeasurableSet[⊥] A := MeasurableSpace.pi_bot (X := fun _ : Fin 2 => α) ▸ hA
+  have hA' : MeasurableSet[⊥] A := MeasurableSpace.pi_bot (α := fun _ : Fin 2 => α) ▸ hA
   rcases MeasurableSpace.measurableSet_bot_iff.1 hA' with rfl | rfl <;>
     simp only [measure_empty, measure_univ, tsub_self, le_refl]
 
