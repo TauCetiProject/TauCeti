@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PiTensorProduct.FiberwiseMul
-public import TauCeti.RingTheory.PiTensorProduct.Map
 
 /-!
 # The factorwise action of a product of monoids on an indexed tensor product

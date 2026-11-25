@@ -32,9 +32,8 @@ Each stage embeds in the union (`TauCeti.RowFiniteAugmentedModule.towerOf`), ont
 attached before it, compatibly with the differentials and the augmentations. So every vector of
 the union involving only generators attached before stage `k` comes from stage `k`.
 
-This is the common shape of the semi-free resolution of `TauCeti.semifreeResolution`, which
-attaches all the relative cycles of each stage, and of the cell-filtered semi-free models of
-`TauCeti.exists_semifreeModel_of_filtration`, which attach prescribed cells.
+This is the shape of the semi-free resolution of `TauCeti.semifreeResolution`, which attaches all
+the relative cycles of each stage.
 
 ## References
 

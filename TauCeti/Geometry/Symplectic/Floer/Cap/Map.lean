@@ -219,6 +219,24 @@ theorem novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_comm [Fintyp
   simpa only [novikovMapOfMatrix_mul hF₁ hF₀ hF₀ r₁ r₀ r₀,
     novikovMapOfMatrix_mul hF₁ hF₀ hF₁ r₁ r₀ r₁, LinearMap.comp_apply] using h
 
+/-- The map of the comparison of the identity matrix of class-indexed series is the identity:
+the stationary cylinders act as the identity on the completed capped module. -/
+@[simp]
+theorem novikovMapOfMatrix_coefficientComparison_one_apply [Finite ι₁] [DecidableEq ι₁]
+    {F₁ : (Σ i, P₁ i) → ℝ} (hF₁ : ∀ i γ (D : P₁ i), F₁ ⟨i, γ +ᵥ D⟩ = F₁ ⟨i, D⟩ - (-area ω c) γ)
+    (x : NovikovModule R F₁) :
+    letI := module (R := R) hF₁
+    novikovMapOfMatrix hF₁ hF₁ r₁ r₁
+        (fun i i' => coefficientComparison q hq ((1 : Matrix ι₁ ι₁ (NovikovSeries R G ωG)) i i'))
+        x =
+      x := by
+  let := module (R := R) hF₁
+  have h1 : (fun i i' =>
+      coefficientComparison q hq ((1 : Matrix ι₁ ι₁ (NovikovSeries R G ωG)) i i')) =
+      (1 : Matrix ι₁ ι₁ _) :=
+    Matrix.map_one (coefficientComparison q hq) (map_zero _) (map_one _)
+  rw [h1, novikovMapOfMatrix_one, LinearMap.id_apply]
+
 end ChainMap
 
 section Homotopy
@@ -378,7 +396,7 @@ end Monoid
 
 section Reference
 
-variable {G : Type*} [AddCommGroup G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
+variable {G : Type*} [AddGroup G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
   (hq : ∀ A, area ω c (q A) = ωG A)
 
 /-- **Change of reference caps.** Moving the reference caps to `q gₗ # rₗ` changes the class of a

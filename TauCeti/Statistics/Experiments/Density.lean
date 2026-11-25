@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Measure.WithDensity
 import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 import TauCeti.MeasureTheory.Measure.Decomposition.RNDeriv
+import TauCeti.MeasureTheory.Measure.PiWithDensity
 
 /-!
 # Real densities of statistical models
@@ -24,7 +25,8 @@ The integral transfer `∫ g dP = ∫ f • g dμ` holds for every integrand `g`
 hypothesis, since both sides take the junk value `0` together; integrability transfers in the
 same way. A finite measure has an integrable density, and a probability measure a density of
 integral `1`. A density that factors as `k ∘ φ` through a measurable map `φ` pushes forward to the
-density `k` of `P.map φ` with respect to `μ.map φ`.
+density `k` of `P.map φ` with respect to `μ.map φ`. Densities of the factors of a finite product
+multiply to a density of the product measure.
 
 ## Main definitions
 
@@ -54,6 +56,8 @@ density `k` of `P.map φ` with respect to `μ.map φ`.
 * `TauCeti.HasDensity.map`: a density `k ∘ φ` of `P` gives the density `k` of `P.map φ` with
   respect to `μ.map φ`.
 * `TauCeti.HasDensity.trans`: chaining real densities `P ≪ Q ≪ μ`.
+* `TauCeti.HasDensity.pi`: densities `f i` of `P i` give the product density `∏ i, f i (x i)` of
+  `Measure.pi P` with respect to `Measure.pi μ`.
 
 ## References
 
@@ -260,6 +264,24 @@ theorem trans {Q : Measure X} {g h : X → ℝ} (hPQ : HasDensity P Q g) (hQμ :
   rw [hPQ.eq_withDensity, hQμ.eq_withDensity,
     ← withDensity_mul _ hQμ.measurable.ennreal_ofReal hPQ.measurable.ennreal_ofReal]
   exact withDensity_congr_ae (hae.mono fun _ h ↦ h.2)
+
+/-- **Densities of a finite product.** If `f i` is a density of `P i` with respect to the
+σ-finite measure `μ i` for each `i` in a finite type, then `x ↦ ∏ i, f i (x i)` is a density of
+the product measure `Measure.pi P` with respect to `Measure.pi μ`. -/
+theorem pi {ι : Type*} [Fintype ι] {X : ι → Type*} [∀ i, MeasurableSpace (X i)]
+    {P μ : ∀ i, Measure (X i)} [∀ i, SigmaFinite (μ i)] {f : ∀ i, X i → ℝ}
+    (h : ∀ i, HasDensity (P i) (μ i) (f i)) :
+    HasDensity (Measure.pi P) (Measure.pi μ) fun x ↦ ∏ i, f i (x i) := by
+  have hall : ∀ᵐ x ∂Measure.pi μ, ∀ i, 0 ≤ f i (x i) :=
+    ae_all_iff.2 fun i ↦ Measure.tendsto_eval_ae_ae.eventually (h i).ae_nonneg
+  refine ⟨Finset.measurable_prod _ fun i _ ↦ (h i).measurable.comp (measurable_pi_apply i),
+    hall.mono fun x hx ↦ Finset.prod_nonneg fun i _ ↦ hx i, ?_⟩
+  obtain rfl : P = fun i ↦ (μ i).withDensity fun x ↦ ENNReal.ofReal (f i x) :=
+    funext fun i ↦ (h i).eq_withDensity
+  rw [pi_withDensity μ fun i ↦ (h i).measurable.ennreal_ofReal]
+  refine withDensity_congr_ae ?_
+  filter_upwards [hall] with x hx
+  exact (ENNReal.ofReal_prod_of_nonneg fun i _ ↦ hx i).symm
 
 end HasDensity
 

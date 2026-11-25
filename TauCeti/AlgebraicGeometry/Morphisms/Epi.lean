@@ -10,7 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.OpenImmersion
 public import Mathlib.AlgebraicGeometry.Morphisms.UnderlyingMap
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
-import TauCeti.Geometry.RingedSpace.LocallyRingedSpace
+import TauCeti.Geometry.RingedSpace.LocallyRingedSpace.Basic
 
 /-!
 # Epimorphisms of schemes with injective stalk or section maps

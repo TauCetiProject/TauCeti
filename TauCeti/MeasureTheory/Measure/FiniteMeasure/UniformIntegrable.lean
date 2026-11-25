@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.FiniteMeasure
+import Mathlib.MeasureTheory.Integral.IntegrableOn
 import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 
 /-!
@@ -32,8 +33,10 @@ sufficiency of the tail condition; the necessity needs `∫⁻ g ∂μ ≠ ∞`.
 
 * `TauCeti.tendsto_lintegral_of_forall_exists_setLIntegral_le` — uniformly integrable tails along a
   weakly convergent family give convergence of the integrals;
-* `TauCeti.tendsto_lintegral_of_sq_bound` — an eventual uniform second-moment bound gives
-  convergence of the integrals;
+* `TauCeti.tendsto_lintegral_of_rpow_bound` — an eventual uniform bound on `∫⁻ g ^ p` for some
+  `p > 1`, such as a second-moment bound, gives convergence of the integrals;
+* `TauCeti.tendsto_integral_of_rpow_bound` — the same for the integrals of a continuous real
+  function `f` under an eventual uniform bound on `∫⁻ ‖f‖ₑ ^ p`;
 * `TauCeti.exists_setLIntegral_le_of_tendsto_lintegral` — conversely, convergence of the
   integrals to a finite limit gives uniformly integrable tails;
 * `TauCeti.tendsto_lintegral_iff_forall_exists_setLIntegral_le` — the resulting equivalence.
@@ -163,44 +166,96 @@ theorem tendsto_lintegral_iff_forall_exists_setLIntegral_le (hg : Continuous g)
   ⟨fun hlim _ hε ↦ exists_setLIntegral_le_of_tendsto_lintegral hg h hμ hlim hε,
     tendsto_lintegral_of_forall_exists_setLIntegral_le hg h⟩
 
-/-- A uniform second-moment bound for a continuous nonnegative function gives convergence
-of its integrals along weakly convergent finite measures. -/
-theorem tendsto_lintegral_of_sq_bound (hg : Continuous g)
-    (h : Tendsto μs L (𝓝 μ)) {C : ℝ≥0}
-    (hC : ∀ᶠ i in L, ∫⁻ x, (g x : ℝ≥0∞) ^ 2 ∂(μs i : Measure Ω) ≤ C) :
+/-- A uniform bound on `∫⁻ g ^ p` for some `p > 1`, such as a second-moment bound, gives
+convergence of the integrals of a continuous nonnegative function `g` along weakly convergent
+finite measures: on `{x | R ≤ g x}` the integrand `g` is at most `g ^ p / R ^ (p - 1)`. -/
+theorem tendsto_lintegral_of_rpow_bound (hg : Continuous g)
+    (h : Tendsto μs L (𝓝 μ)) {p : ℝ} (hp : 1 < p) {C : ℝ≥0}
+    (hC : ∀ᶠ i in L, ∫⁻ x, (g x : ℝ≥0∞) ^ p ∂(μs i : Measure Ω) ≤ C) :
     Tendsto (fun i ↦ ∫⁻ x, g x ∂(μs i : Measure Ω)) L
       (𝓝 (∫⁻ x, g x ∂(μ : Measure Ω))) := by
   apply tendsto_lintegral_of_forall_exists_setLIntegral_le hg h
   intro ε hε
   obtain ⟨δ, hδ, hδε⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 hε
-  let R : ℝ≥0 := max (C / δ) 1
+  have hp₁ : 0 < p - 1 := sub_pos.2 hp
+  let R : ℝ≥0 := max ((C / δ) ^ (p - 1)⁻¹) 1
   have hR : 0 < R := lt_of_lt_of_le zero_lt_one (le_max_right _ _)
-  have hCR : R⁻¹ * C ≤ δ := by
-    rw [inv_mul_eq_div, div_le_iff₀ hR]
+  have hCR : (R ^ (p - 1))⁻¹ * C ≤ δ := by
+    rw [inv_mul_eq_div, div_le_iff₀ (NNReal.rpow_pos hR)]
     calc C ≤ C / δ * δ := (div_mul_cancel₀ C (by exact_mod_cast hδ.ne')).ge
-         _ ≤ δ * R := by rw [mul_comm δ]; gcongr; exact le_max_left _ _
+         _ = ((C / δ) ^ (p - 1)⁻¹) ^ (p - 1) * δ := by rw [NNReal.rpow_inv_rpow hp₁.ne']
+         _ ≤ δ * R ^ (p - 1) := by rw [mul_comm δ]; gcongr; exact le_max_left _ _
   refine ⟨R, ?_⟩
   filter_upwards [hC] with i hi
   calc
     ∫⁻ x in {x | R ≤ g x}, g x ∂(μs i : Measure Ω)
-        ≤ ∫⁻ x in {x | R ≤ g x}, (R : ℝ≥0∞)⁻¹ * (g x : ℝ≥0∞) ^ 2
+        ≤ ∫⁻ x in {x | R ≤ g x}, ((R ^ (p - 1))⁻¹ : ℝ≥0) * (g x : ℝ≥0∞) ^ p
             ∂(μs i : Measure Ω) := by
       apply setLIntegral_mono' (measurableSet_le measurable_const hg.measurable)
       intro x hx
-      have hx' : g x ≤ R⁻¹ * g x ^ 2 := by
-        rw [inv_mul_eq_div, le_div_iff₀ hR, pow_two]
-        gcongr
-        exact hx
-      simpa only [ENNReal.coe_mul, ENNReal.coe_inv hR.ne', ENNReal.coe_pow] using
+      have hx' : g x ≤ (R ^ (p - 1))⁻¹ * g x ^ p := by
+        rw [inv_mul_eq_div, le_div_iff₀ (NNReal.rpow_pos hR)]
+        calc g x * R ^ (p - 1) ≤ g x * g x ^ (p - 1) :=
+              mul_le_mul_right (NNReal.rpow_le_rpow hx hp₁.le) _
+          _ = g x ^ p := by
+              rw [← NNReal.rpow_one_add' (by linarith : (0 : ℝ) < 1 + (p - 1)).ne',
+                add_sub_cancel]
+      simpa only [ENNReal.coe_mul, ENNReal.coe_rpow_of_nonneg _ (zero_le_one.trans hp.le)] using
         (ENNReal.coe_le_coe.mpr hx')
-    _ = (R : ℝ≥0∞)⁻¹ * ∫⁻ x in {x | R ≤ g x}, (g x : ℝ≥0∞) ^ 2
+    _ = ((R ^ (p - 1))⁻¹ : ℝ≥0) * ∫⁻ x in {x | R ≤ g x}, (g x : ℝ≥0∞) ^ p
         ∂(μs i : Measure Ω) := by
-      rw [lintegral_const_mul _ (hg.measurable.coe_nnreal_ennreal.pow_const 2)]
-    _ ≤ (R : ℝ≥0∞)⁻¹ * C := by
+      rw [lintegral_const_mul _ (hg.measurable.coe_nnreal_ennreal.pow_const p)]
+    _ ≤ ((R ^ (p - 1))⁻¹ : ℝ≥0) * C := by
       gcongr
       exact (setLIntegral_le_lintegral _ _).trans hi
     _ ≤ (δ : ℝ≥0∞) := by
-      simpa only [ENNReal.coe_mul, ENNReal.coe_inv hR.ne'] using (ENNReal.coe_le_coe.mpr hCR)
+      simpa only [ENNReal.coe_mul] using (ENNReal.coe_le_coe.mpr hCR)
     _ ≤ ε := hδε.le
+
+/-- **Integrals of a real function under a uniform moment bound.** If a continuous
+`f : Ω → ℝ` satisfies an eventual uniform bound `∫⁻ ‖f‖ₑ ^ p ∂μᵢ ≤ C` for some `p > 1`, then
+its integrals converge along weakly convergent finite measures: `∫ f ∂μᵢ → ∫ f ∂μ`. This is
+`TauCeti.tendsto_lintegral_of_rpow_bound` applied to the positive and negative parts of `f`. -/
+theorem tendsto_integral_of_rpow_bound {f : Ω → ℝ} (hf : Continuous f) (h : Tendsto μs L (𝓝 μ))
+    {p : ℝ} (hp : 1 < p) {C : ℝ≥0}
+    (hC : ∀ᶠ i in L, ∫⁻ x, ‖f x‖ₑ ^ p ∂(μs i : Measure Ω) ≤ C) :
+    Tendsto (fun i ↦ ∫ x, f x ∂(μs i : Measure Ω)) L (𝓝 (∫ x, f x ∂(μ : Measure Ω))) := by
+  rcases L.eq_or_neBot with rfl | _
+  · exact tendsto_bot
+  have hp₀ : 0 ≤ p := zero_le_one.trans hp.le
+  -- A finite `p`-th moment makes `f` integrable against a finite measure.
+  have hint {ρ : Measure Ω} [IsFiniteMeasure ρ] (hρ : ∫⁻ x, ‖f x‖ₑ ^ p ∂ρ ≤ C) :
+      Integrable f ρ := by
+    refine MemLp.integrable (q := ENNReal.ofReal p) (by simpa using hp.le) ?_
+    rw [memLp_iff, eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top
+      (by simpa using zero_lt_one.trans hp) ENNReal.ofReal_ne_top hf.aestronglyMeasurable,
+      ENNReal.toReal_ofReal hp₀]
+    exact hρ.trans_lt ENNReal.coe_lt_top
+  -- The limit inherits the bound: the integrals of `‖f‖ₑ ^ p` can only drop in the limit.
+  have hcoe (x : Ω) : ((‖f x‖₊ ^ p : ℝ≥0) : ℝ≥0∞) = ‖f x‖ₑ ^ p := by
+    rw [ENNReal.coe_rpow_of_nonneg _ hp₀, eNorm_eq_nnNorm]
+  have hμ : ∫⁻ x, ‖f x‖ₑ ^ p ∂(μ : Measure Ω) ≤ C := by
+    by_contra! hlt
+    obtain ⟨i, hi, hiC⟩ := ((eventually_lt_lintegral (g := fun x ↦ ‖f x‖₊ ^ p)
+      ((NNReal.continuous_rpow_const hp₀).comp hf.nnNorm) h
+      (by simpa only [hcoe] using hlt)).and hC).exists
+    simp only [hcoe] at hi
+    exact (hi.trans_le hiC).false
+  -- The positive and negative parts are dominated by `|f|`, so their integrals converge.
+  have hpart {g : Ω → ℝ} (hg : Continuous g) (hgf : ∀ x, g x ≤ |f x|) :
+      Tendsto (fun i ↦ ∫⁻ x, ENNReal.ofReal (g x) ∂(μs i : Measure Ω)) L
+        (𝓝 (∫⁻ x, ENNReal.ofReal (g x) ∂(μ : Measure Ω))) := by
+    refine tendsto_lintegral_of_rpow_bound (g := fun x ↦ (g x).toNNReal)
+      (continuous_real_toNNReal.comp hg) h hp
+      (hC.mono fun i hi ↦ (lintegral_mono fun x ↦ ?_).trans hi)
+    rw [Real.eNorm_eq_ofReal_abs]
+    exact ENNReal.rpow_le_rpow (ENNReal.ofReal_le_ofReal (hgf x)) hp₀
+  have hμi := hint hμ
+  rw [integral_eq_lintegral_pos_part_sub_lintegral_neg_part hμi]
+  refine (((ENNReal.tendsto_toReal hμi.lintegral_lt_top.ne).comp
+    (hpart hf fun x ↦ le_abs_self _)).sub ((ENNReal.tendsto_toReal hμi.neg.lintegral_lt_top.ne).comp
+    (hpart hf.neg fun x ↦ neg_le_abs _))).congr' ?_
+  filter_upwards [hC] with i hi
+  exact (integral_eq_lintegral_pos_part_sub_lintegral_neg_part (hint hi)).symm
 
 end TauCeti
