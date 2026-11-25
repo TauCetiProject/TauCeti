@@ -199,6 +199,8 @@ theorem eventually_openHomEquiv_trivializationAt_eq (x : U) :
   simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
     Trivialization.continuousLinearMapAt_apply, Trivialization.linearMapAt_apply,
     ite_eq_left hyDU]
+  -- `hyDM` states membership of `(y : M)`, while the ambient condition displays the base point as
+  -- `⟨Subtype.val, _⟩ y` through the pullback, which `simp` and `rw` do not unfold.
   erw [ite_eq_left hyDM]
   -- Express the Hom coordinate in the density trivialization after fibre evaluation.
   change ((trivializationAt ℝ (TauCeti.DensityBundle I M) (x : M))

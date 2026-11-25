@@ -106,13 +106,10 @@ theorem exists_proper_nested_density_pairing_one :
       (V := inclusion outer *ᵖ (Bundle.Trivial ℝ ℝ)) (U := nestedOpen)
       (TauCeti.BundleDistribution.restrictCLM (I := 𝓘(ℝ, ℝ)) (F := ℝ)
         (V := Bundle.Trivial ℝ ℝ) (U := outer) actualPointMass) s = 1 := by
-    -- The restriction law is stated on the unfolded pullback carriers, while the nested carriers
-    -- here are displayed through the `inclusion` abbreviation, which `rw` does not unfold.
-    erw [TauCeti.BundleDistribution.restrictCLM_apply,
+    rw [TauCeti.BundleDistribution.restrictCLM_apply,
       TauCeti.BundleDistribution.restrictCLM_apply]
     rw [actualPointMass, TauCeti.BundleTest.delta_apply]
-    -- As above, the extension laws see the bundles through `inclusion outer` only after unfolding.
-    erw [TauCeti.BundleDistribution.testExtensionCLM_apply_of_mem _ xD,
+    rw [TauCeti.BundleDistribution.testExtensionCLM_apply_of_mem _ xD,
       TauCeti.BundleDistribution.testExtensionCLM_apply_of_mem s xN, hs]
     -- The two public density-evaluation laws give the actual composed fibre equivalence ψ.
     change coordinateFunctional (ψ (ψ.symm vM)) = 1
