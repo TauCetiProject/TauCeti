@@ -10,8 +10,9 @@ public import TauCeti.Geometry.Euclidean.PolarGraph.Descent
 /-!
 # Failures of adjacent-sheet tests on disconnected polar domains
 
-Two narrow annular sectors separated by two turns have no one-turn overlap. A constant height
-still fails injectivity, and distinct constant heights on the two sectors fail descent.
+Two narrow annular sectors separated by two turns have no one-turn overlap. The graph map of
+a constant height is still noninjective on the two strips, and distinct constant heights on
+the two sectors fail descent.
 -/
 
 public noncomputable section
@@ -31,7 +32,7 @@ def twoStripDomain : Set PolarPoint :=
   Iff.rfl
 
 /-- Neither angular strip meets a one-turn translate of either strip. -/
-theorem overlap_twoStripDomain_one : overlap twoStripDomain 1 = ∅ := by
+@[simp] theorem overlap_twoStripDomain_one : overlap twoStripDomain 1 = ∅ := by
   apply Set.eq_empty_iff_forall_notMem.mpr
   intro p hp
   obtain ⟨⟨_, h₁⟩, _, h₂⟩ := (mem_overlap_iff.trans
@@ -40,7 +41,7 @@ theorem overlap_twoStripDomain_one : overlap twoStripDomain 1 = ∅ := by
   rcases h₁ with h | h <;> rcases h₂ with h' | h' <;> linarith [pi_pos, h.1, h.2, h'.1, h'.2]
 
 /-- The two-turn overlap is exactly the lower angular strip. -/
-theorem overlap_twoStripDomain_two :
+@[simp] theorem overlap_twoStripDomain_two :
     overlap twoStripDomain 2 =
       {p | radius p ∈ Set.Ioo 1 2 ∧ angle p ∈ Set.Ioo 0 (π / 4)} := by
   ext p
@@ -59,8 +60,8 @@ theorem overlap_twoStripDomain_two_nonempty : (overlap twoStripDomain 2).Nonempt
   simp only [Set.mem_ofPred_eq, radius_mk, angle_mk, Set.mem_Ioo]
   exact ⟨⟨by norm_num, by norm_num⟩, by positivity, by linarith [pi_pos]⟩
 
-/-- A constant height is not injective on the two strips, although their one-turn overlap
-is empty. -/
+/-- The graph map of a constant height is noninjective on the two strips, despite their
+empty one-turn overlap. -/
 theorem not_injOn_graph_const_twoStripDomain (c : ℝ) :
     ¬ Set.InjOn (graph (fun _ ↦ c)) twoStripDomain := by
   obtain ⟨p, hp⟩ := overlap_twoStripDomain_two_nonempty
@@ -106,12 +107,12 @@ theorem separation_twoStripHeight_two {p : PolarPoint} (hp : p ∈ overlap twoSt
 
 /-- The step height does not descend, although the one-turn overlap is empty, so the one-turn
 test holds vacuously. -/
-theorem not_exists_height_twoStripHeight :
+theorem not_exists_descended_height_twoStripHeight :
     ¬ ∃ v : projection '' twoStripDomain → ℝ, (fun p : twoStripDomain ↦ twoStripHeight p) =
       v ∘ Set.imageFactorization projection twoStripDomain := by
   rintro ⟨v, hv⟩
   obtain ⟨p, hp⟩ := overlap_twoStripDomain_two_nonempty
-  have h := (exists_height_iff_separation_eq_zero _ _).mp ⟨v, hv⟩ 2 p hp
+  have h := (exists_descended_height_iff_separation_eq_zero _ _).mp ⟨v, hv⟩ 2 p hp
   simp [separation_twoStripHeight_two hp] at h
 
 end TauCeti.PolarGraph
