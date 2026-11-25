@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.HomologicalComplex
 public import Mathlib.LinearAlgebra.Matrix.ToLin
+import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 import TauCeti.LinearAlgebra.Basis.Basic
 
@@ -71,15 +72,13 @@ theorem toMatrix_d_eq_of_cancel_of_invertible {R : Type*} [CommRing R]
         LinearMap.toMatrix ci ci' (C.d i i').hom r.succ 0 *
           ⅟(LinearMap.toMatrix ci ci' (C.d i i').hom 0 0) *
             LinearMap.toMatrix ci ci' (C.d i i').hom 0 k.succ := by
+  let a := LinearMap.toMatrix ci ci' (C.d i i').hom 0 0
+  have ha : ci'.repr ((C.d i i').hom (ci 0)) 0 = a :=
+    (LinearMap.toMatrix_apply ci ci' (C.d i i').hom 0 0).symm
+  -- The coordinate-recovery lemma uses the basis form of the same pivot and inverse.
   let : Invertible (ci'.repr ((C.d i i').hom (ci 0)) 0) :=
-    (inferInstance : Invertible (LinearMap.toMatrix ci ci' (C.d i i').hom 0 0)).copy _
-      (LinearMap.toMatrix_apply ci ci' (C.d i i').hom 0 0).symm
-  have hmul : ci'.repr ((C.d i i').hom (ci 0)) 0 *
-      ⅟(LinearMap.toMatrix ci ci' (C.d i i').hom 0 0) = 1 := by
-    rw [← LinearMap.toMatrix_apply, mul_invOf_self]
-  have hinv : ⅟(ci'.repr ((C.d i i').hom (ci 0)) 0) =
-      ⅟(LinearMap.toMatrix ci ci' (C.d i i').hom 0 0) :=
-    invOf_eq_right_inv hmul
+    (inferInstance : Invertible a).copy _ ha
+  have hmul : ci'.repr ((C.d i i').hom (ci 0)) 0 * ⅟a = 1 := by rw [ha, mul_invOf_self]
   refine Matrix.ext fun r k ↦ ?_
   obtain ⟨t, ht⟩ := Submodule.mem_span_singleton.1 (hφ k)
   have hφe : (φ.f i).hom (ei k) = ci k.succ + t • ci 0 := by rw [ht, add_sub_cancel]
@@ -87,10 +86,9 @@ theorem toMatrix_d_eq_of_cancel_of_invertible {R : Type*} [CommRing R]
     Fin.succ_ne_zero hφ' ((D.d i i').hom (ei k)) r
   have hcomm := (Hom.comm_apply φ i i' (ei k)).symm
   rw [hcomm, hφe] at h
-  simp only [LinearMap.toMatrix_apply, Matrix.of_apply, h, hinv, map_add, map_smul,
+  simp only [LinearMap.toMatrix_apply, Matrix.of_apply, h, map_add, map_smul,
     Finsupp.add_apply, Finsupp.smul_apply, smul_eq_mul]
-  rw [add_mul, add_mul, mul_assoc t, hmul, mul_one]
-  ring
+  linear_combination -t * (ci'.repr ((C.d i i').hom (ci 0)) r.succ) * hmul
 
 /-- **The cancelled differential is the Schur complement, over a field.** Specialization of
 `HomologicalComplex.toMatrix_d_eq_of_cancel_of_invertible` to a field `F`, where invertibility of
