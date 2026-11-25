@@ -61,6 +61,8 @@ global étale algebra with its images in the completions passes through exactly 
   `IsDedekindDomain.HeightOneSpectrum.eq_adicCompletionExtension_of_continuous`: the extension is
   continuous, and is the only continuous ring homomorphism `K_v →+* L_w` extending `K → L`. Together
   these are its universal property, usable without unfolding the definition.
+* `IsDedekindDomain.HeightOneSpectrum.adicCompletionExtension_bijective_of_finrank_eq_one`: when
+  the local degree `[L_w : K_v]` is `1`, the extension is bijective.
 
 ## Motivation
 
@@ -305,6 +307,14 @@ theorem algebraMap_adicCompletionExtensionAlgebra :
     algebraMap (v.adicCompletion K) (w.adicCompletion L) =
       adicCompletionExtension K L v w :=
   RingHom.algebraMap_toAlgebra _
+
+variable {K L} in
+/-- When the local degree `[L_w : K_v]` is `1`, the canonical map `K_v → L_w` is bijective. -/
+theorem adicCompletionExtension_bijective_of_finrank_eq_one
+    (h : Module.finrank (v.adicCompletion K) (w.adicCompletion L) = 1) :
+    Function.Bijective (v.adicCompletionExtension K L w) := by
+  rw [← algebraMap_adicCompletionExtensionAlgebra]
+  exact Algebra.finrank_eq_one_iff_bijective_algebraMap.1 h
 
 /-- Under `toCompletion`, the image of `x` is `UniformSpace.Completion.map` of the algebra map
 applied to `x.toCompletion`. -/

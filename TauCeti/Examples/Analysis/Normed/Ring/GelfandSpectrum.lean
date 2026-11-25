@@ -12,22 +12,22 @@ public import TauCeti.Analysis.Normed.Ring.GelfandSpectrum
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 
 /-!
-# Concrete Gel'fand spectra and checks for Berkovich's spectral formula
+# Concrete Berkovich spectra and checks for Berkovich's spectral formula
 
-We instantiate `TauCeti.GelfandSpectrum` and Berkovich's spectral formula on concrete normed rings:
+We instantiate `TauCeti.Spectrum` and Berkovich's spectral formula on concrete normed rings:
 
-* **`p`-adic numbers `ℚ_[p]`:** the Gel'fand spectrum is a singleton whose unique point evaluates
+* **`p`-adic numbers `ℚ_[p]`:** the Berkovich spectrum is a singleton whose unique point evaluates
   every `x : ℚ_[p]` to its `p`-adic norm `‖x‖`, and `smoothingFun (normRingSeminorm ℚ_[p]) x = ‖x‖`.
 * **Multivariate Tate algebras `K⟨X_σ⟩` at unit polyradius:** over any ultrametric normed
   commutative ring `K` with multiplicative normalized norm (in particular any nonarchimedean normed
-  field), the Gauss norm defines the greatest point `GelfandSpectrum.normPoint` of the Gel'fand
-  spectrum, attaining `sSup {α f | α} = smoothingFun (normRingSeminorm _) f = ‖f‖` for every
+  field), the Gauss norm defines the greatest point `Spectrum.normPoint` of the Berkovich
+  spectrum, attaining `sSup {x f | x} = smoothingFun (normRingSeminorm _) f = ‖f‖` for every
   restricted series `f`.
 * **Trivial square-zero extensions and dual numbers `K[ε]/(ε²)`:** for both Mathlib's `ℓ¹` norm on
   `DualNumber K` and the ultrametric maximum norm on `TauCeti.MaxDualNumber K`, projection to `K`
-  induces a homeomorphism of Gel'fand spectra. Over a normed field `K`, the generator `ε` has
-  `‖ε‖ = 1` while `smoothingFun (normRingSeminorm _) ε = sSup {α ε | α} = 0`, `‖ε * ε‖ ≠ ‖ε‖ * ‖ε‖`,
-  and the ambient norm does not belong to `GelfandSpectrum`.
+  induces a homeomorphism of Berkovich spectra. Over a normed field `K`, the generator `ε` has
+  `‖ε‖ = 1` while `smoothingFun (normRingSeminorm _) ε = sSup {x ε | x} = 0`, `‖ε * ε‖ ≠ ‖ε‖ * ‖ε‖`,
+  and the ambient norm does not belong to `Spectrum`.
 * **Boundary cases, negative control, and functoriality:** emptiness on the zero ring `PUnit`,
   vanishing on square-zero elements, failure of the constant-`1` map (which preserves `1` and `*`
   and satisfies subadditivity) to define a `MulRingSeminorm` because `map_zero` fails, and
@@ -36,7 +36,7 @@ We instantiate `TauCeti.GelfandSpectrum` and Berkovich's spectral formula on con
 
 public section
 
-namespace TauCeti.GelfandSpectrum.Examples
+namespace TauCeti.Spectrum.Examples
 
 /-! ### `p`-adic numbers `ℚ_[p]` -/
 
@@ -44,14 +44,14 @@ section Padic
 
 variable (p : ℕ) [Fact p.Prime]
 
-/-- Every point of the Gel'fand spectrum of `ℚ_[p]` is the `p`-adic norm, `GelfandSpectrum ℚ_[p]`
+/-- Every point of the Berkovich spectrum of `ℚ_[p]` is the `p`-adic norm, `Spectrum ℚ_[p]`
 has a unique point, and the spectral seminorm of `ℚ_[p]` equals the `p`-adic norm. -/
-theorem padic_spectrum (x : ℚ_[p]) :
-    (∀ α : GelfandSpectrum ℚ_[p], α x = ‖x‖) ∧
-      Nonempty (Unique (GelfandSpectrum ℚ_[p])) ∧
-      smoothingFun (normRingSeminorm ℚ_[p]) x = ‖x‖ :=
-  ⟨fun α ↦ α.apply_eq_norm x, ⟨inferInstance⟩,
-    (smoothingFun_eq_sSup x).trans (sSup_range_eval_of_normMulClass x)⟩
+theorem padic_spectrum (a : ℚ_[p]) :
+    (∀ x : Spectrum ℚ_[p], x a = ‖a‖) ∧
+      Nonempty (Unique (Spectrum ℚ_[p])) ∧
+      smoothingFun (normRingSeminorm ℚ_[p]) a = ‖a‖ :=
+  ⟨fun x ↦ by rw [x.eq_normPoint, normPoint_apply], ⟨inferInstance⟩,
+    (smoothingFun_eq_sSup a).trans (sSup_range_eval_of_normMulClass a)⟩
 
 end Padic
 
@@ -64,14 +64,14 @@ open _root_.MvPowerSeries
 variable {σ K : Type*} [NormedCommRing K] [IsUltrametricDist K] [NormMulClass K] [NormOneClass K]
 
 /-- On the unit-radius restricted power series ring `K⟨X_σ⟩`, the Gauss norm defines the top point
-of the Gel'fand spectrum, and both the spectral seminorm and the supremum over the Gel'fand
+of the Berkovich spectrum, and both the spectral seminorm and the supremum over the Berkovich
 spectrum equal the Gauss norm on every series `f`. -/
 theorem gaussNorm_point_tateAlgebra
     (f : IsRestricted.subring (R := K) (fun _ : σ ↦ 1)) :
     let T := IsRestricted.subring (R := K) (fun _ : σ ↦ 1)
-    normPoint T f = gaussNorm norm (fun _ : σ ↦ 1) (f : MvPowerSeries σ K) ∧
-      (∀ α : GelfandSpectrum T, α ≤ normPoint T) ∧
-      sSup (Set.range fun α : GelfandSpectrum T ↦ α f) = ‖f‖ ∧
+    (normPoint : Spectrum T) f = gaussNorm norm (fun _ : σ ↦ 1) (f : MvPowerSeries σ K) ∧
+      (∀ x : Spectrum T, x ≤ normPoint) ∧
+      sSup (Set.range fun x : Spectrum T ↦ x f) = ‖f‖ ∧
       smoothingFun (normRingSeminorm T) f = ‖f‖ :=
   ⟨(normPoint_apply f).trans (norm_eq_gaussNorm f), le_normPoint,
     sSup_range_eval_of_normMulClass f,
@@ -81,48 +81,37 @@ end TateAlgebra
 
 /-! ### Trivial square-zero extensions and dual numbers -/
 
-private theorem spectral_eq_zero_of_isNilpotent {A : Type*} [SeminormedCommRing A] {x : A}
-    (hx : IsNilpotent x) :
-    smoothingFun (normRingSeminorm A) x = 0 ∧
-      sSup (Set.range fun α : GelfandSpectrum A ↦ α x) = 0 := by
-  have hsm : smoothingFun (normRingSeminorm A) x = 0 := by
+private theorem spectral_eq_zero_of_isNilpotent {A : Type*} [SeminormedCommRing A] {a : A}
+    (ha : IsNilpotent a) :
+    smoothingFun (normRingSeminorm A) a = 0 ∧
+      sSup (Set.range fun x : Spectrum A ↦ x a) = 0 := by
+  have hsm : smoothingFun (normRingSeminorm A) a = 0 := by
     rw [← (normRingSeminorm A).smoothing_apply]
-    exact (normRingSeminorm A).smoothing_eq_zero_of_isNilpotent hx
+    exact (normRingSeminorm A).smoothing_eq_zero_of_isNilpotent ha
   exact ⟨hsm, by rw [← smoothingFun_eq_sSup, hsm]⟩
 
-private theorem not_exists_apply_eq_norm_of_isNilpotent {A : Type*} [SeminormedRing A] {x : A}
-    (hx : IsNilpotent x) (hx_norm : ‖x‖ ≠ 0) :
-    ¬∃ α : GelfandSpectrum A, ∀ y, α y = ‖y‖ := by
-  rintro ⟨α, hα⟩
-  exact hx_norm (by rw [← hα x, α.eq_zero_of_isNilpotent hx])
+private theorem not_exists_apply_eq_norm_of_isNilpotent {A : Type*} [SeminormedRing A] {a : A}
+    (ha : IsNilpotent a) (ha_norm : ‖a‖ ≠ 0) :
+    ¬∃ x : Spectrum A, ∀ b, x b = ‖b‖ := by
+  rintro ⟨x, hx⟩
+  exact ha_norm (by rw [← hx a, x.eq_zero_of_isNilpotent ha])
 
-private theorem eps_checks_of_sq_zero_of_norm_one {A : Type*} [SeminormedCommRing A] {x : A}
-    (hx_sq : x * x = 0) (hx_norm : ‖x‖ = 1) :
-    ‖x‖ = 1 ∧
-      smoothingFun (normRingSeminorm A) x = 0 ∧
-      sSup (Set.range fun α : GelfandSpectrum A ↦ α x) = 0 ∧
-      ‖x * x‖ ≠ ‖x‖ * ‖x‖ ∧
-      ¬∃ α : GelfandSpectrum A, ∀ y, α y = ‖y‖ := by
-  have hnil : IsNilpotent x := ⟨2, by rw [sq, hx_sq]⟩
+private theorem eps_checks_of_sq_zero_of_norm_one {A : Type*} [SeminormedCommRing A] {a : A}
+    (ha_sq : a * a = 0) (ha_norm : ‖a‖ = 1) :
+    ‖a‖ = 1 ∧
+      smoothingFun (normRingSeminorm A) a = 0 ∧
+      sSup (Set.range fun x : Spectrum A ↦ x a) = 0 ∧
+      ‖a * a‖ ≠ ‖a‖ * ‖a‖ ∧
+      ¬∃ x : Spectrum A, ∀ b, x b = ‖b‖ := by
+  have hnil : IsNilpotent a := ⟨2, by rw [sq, ha_sq]⟩
   obtain ⟨hsm, hsup⟩ := spectral_eq_zero_of_isNilpotent hnil
-  have hmul : ‖x * x‖ ≠ ‖x‖ * ‖x‖ := by
-    rw [hx_sq, norm_zero, hx_norm, mul_one]
+  have hmul : ‖a * a‖ ≠ ‖a‖ * ‖a‖ := by
+    rw [ha_sq, norm_zero, ha_norm, mul_one]
     exact zero_ne_one
-  exact ⟨hx_norm, hsm, hsup, hmul,
-    not_exists_apply_eq_norm_of_isNilpotent hnil (by rw [hx_norm]; exact one_ne_zero)⟩
+  exact ⟨ha_norm, hsm, hsup, hmul,
+    not_exists_apply_eq_norm_of_isNilpotent hnil (by rw [ha_norm]; exact one_ne_zero)⟩
 
 section TrivSqZeroExt
-
-private theorem trivSqZeroExtFstHom_apply (R M : Type*) [Semiring R]
-    [AddCommMonoid M] [Module R M] [Module Rᵐᵒᵖ M] [SMulCommClass R Rᵐᵒᵖ M]
-    (y : TrivSqZeroExt R M) :
-    (TrivSqZeroExt.fstHom ℕ R M).toRingHom y = y.fst := by
-  simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, TrivSqZeroExt.fstHom_apply]
-
-private theorem fstHom_inlHom (R M : Type*) [Semiring R]
-    [AddCommMonoid M] [Module R M] [Module Rᵐᵒᵖ M] [SMulCommClass R Rᵐᵒᵖ M] (x : R) :
-    (TrivSqZeroExt.fstHom ℕ R M).toRingHom (TrivSqZeroExt.inlHom R M x) = x := by
-  rw [trivSqZeroExtFstHom_apply, TrivSqZeroExt.inlHom_apply, TrivSqZeroExt.fst_inl]
 
 private theorem sub_inlHom_fstHom_isNilpotent (R M : Type*) [Ring R]
     [AddCommGroup M] [Module R M] [Module Rᵐᵒᵖ M] [SMulCommClass R Rᵐᵒᵖ M]
@@ -131,55 +120,37 @@ private theorem sub_inlHom_fstHom_isNilpotent (R M : Type*) [Ring R]
   refine ⟨2, ?_⟩
   have hy : y - TrivSqZeroExt.inl y.fst = TrivSqZeroExt.inr y.snd := by
     ext <;> simp
-  rw [trivSqZeroExtFstHom_apply, TrivSqZeroExt.inlHom_apply, hy, sq, TrivSqZeroExt.inr_mul_inr]
+  simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, TrivSqZeroExt.fstHom_apply,
+    TrivSqZeroExt.inlHom_apply, hy, sq, TrivSqZeroExt.inr_mul_inr]
 
-/-- Projection to the first component gives a homeomorphism between the Gel'fand spectrum of a
-trivial square-zero extension `TrivSqZeroExt R M` (with the `ℓ¹` norm) and `GelfandSpectrum R`. -/
-noncomputable def trivSqZeroExtHomeomorph (R M : Type*) [SeminormedRing R]
+private noncomputable def trivSqZeroExtHomeomorph (R M : Type*) [SeminormedRing R]
     [SeminormedAddCommGroup M] [Module R M] [Module Rᵐᵒᵖ M] [IsBoundedSMul R M]
     [IsBoundedSMul Rᵐᵒᵖ M] [SMulCommClass R Rᵐᵒᵖ M] :
-    GelfandSpectrum (TrivSqZeroExt R M) ≃ₜ GelfandSpectrum R :=
+    Spectrum (TrivSqZeroExt R M) ≃ₜ Spectrum R :=
   retractHomeomorph
     (TrivSqZeroExt.inlHom R M)
     (TrivSqZeroExt.isBounded_inlHom R M)
     (TrivSqZeroExt.fstHom ℕ R M).toRingHom
     (TrivSqZeroExt.isBounded_fstHom ℕ R M)
-    (fstHom_inlHom R M)
+    (fun r ↦ by simp)
     (sub_inlHom_fstHom_isNilpotent R M)
 
-/-- `trivSqZeroExtHomeomorph` evaluates a spectrum point on `TrivSqZeroExt R M` along `inl`. -/
-@[simp]
-theorem trivSqZeroExtHomeomorph_apply {R M : Type*} [SeminormedRing R]
-    [SeminormedAddCommGroup M] [Module R M] [Module Rᵐᵒᵖ M] [IsBoundedSMul R M]
-    [IsBoundedSMul Rᵐᵒᵖ M] [SMulCommClass R Rᵐᵒᵖ M]
-    (β : GelfandSpectrum (TrivSqZeroExt R M)) (r : R) :
-    trivSqZeroExtHomeomorph R M β r = β (TrivSqZeroExt.inl r) := by
-  rw [trivSqZeroExtHomeomorph, retractHomeomorph_apply, TrivSqZeroExt.inlHom_apply]
-
-/-- `(trivSqZeroExtHomeomorph R M).symm` pulls a spectrum point on `R` back along `fst`. -/
-@[simp]
-theorem trivSqZeroExtHomeomorph_symm_apply {R M : Type*} [SeminormedRing R]
-    [SeminormedAddCommGroup M] [Module R M] [Module Rᵐᵒᵖ M] [IsBoundedSMul R M]
-    [IsBoundedSMul Rᵐᵒᵖ M] [SMulCommClass R Rᵐᵒᵖ M]
-    (α : GelfandSpectrum R) (y : TrivSqZeroExt R M) :
-    (trivSqZeroExtHomeomorph R M).symm α y = α y.fst := by
-  rw [trivSqZeroExtHomeomorph, retractHomeomorph_symm_apply, trivSqZeroExtFstHom_apply]
-
-/-- Over a normed division ring `K`, the Gel'fand spectrum of `DualNumber K` has a unique point. -/
+/-- Over a normed division ring `K`, the Berkovich spectrum of `DualNumber K` has a unique
+point. -/
 theorem unique_dualNumber (K : Type*) [NormedDivisionRing K] :
-    Nonempty (Unique (GelfandSpectrum (DualNumber K))) :=
+    Nonempty (Unique (Spectrum (DualNumber K))) :=
   ⟨(trivSqZeroExtHomeomorph K K).toEquiv.unique⟩
 
 /-- Over any normed field `K`, the square-zero generator `ε` of `DualNumber K` has norm `1` while
-both its spectral seminorm and its supremum over `GelfandSpectrum (DualNumber K)` vanish, the norm
-is not multiplicative at `ε`, and no point of `GelfandSpectrum (DualNumber K)` equals the norm. -/
+both its spectral seminorm and its supremum over `Spectrum (DualNumber K)` vanish, the norm
+is not multiplicative at `ε`, and no point of `Spectrum (DualNumber K)` equals the norm. -/
 theorem dualNumber_eps_checks (K : Type*) [NormedField K] :
     let ε : DualNumber K := DualNumber.eps
     ‖ε‖ = 1 ∧
       smoothingFun (normRingSeminorm (DualNumber K)) ε = 0 ∧
-      sSup (Set.range fun α : GelfandSpectrum (DualNumber K) ↦ α ε) = 0 ∧
+      sSup (Set.range fun x : Spectrum (DualNumber K) ↦ x ε) = 0 ∧
       ‖ε * ε‖ ≠ ‖ε‖ * ‖ε‖ ∧
-      ¬∃ α : GelfandSpectrum (DualNumber K), ∀ x, α x = ‖x‖ :=
+      ¬∃ x : Spectrum (DualNumber K), ∀ y, x y = ‖y‖ :=
   eps_checks_of_sq_zero_of_norm_one DualNumber.eps_mul_eps (by
     rw [TrivSqZeroExt.norm_def, DualNumber.fst_eps, DualNumber.snd_eps, norm_zero, norm_one,
       zero_add])
@@ -206,7 +177,7 @@ private theorem maxDualNumberFstHom_apply (K : Type*) [NormedCommRing K] [IsUltr
     (y : MaxDualNumber K) :
     maxDualNumberFstHom K y = (MaxDualNumber.ofDualNumber.symm y).fst := by
   simp only [maxDualNumberFstHom, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
-    RingEquiv.coe_toRingHom, trivSqZeroExtFstHom_apply]
+    AlgHom.toRingHom_eq_coe, RingHom.coe_coe, TrivSqZeroExt.fstHom_apply]
 
 private theorem maxDualNumber_inl_isBounded (K : Type*) [NormedCommRing K] [IsUltrametricDist K] :
     (maxDualNumberInlHom K).IsBounded :=
@@ -233,12 +204,12 @@ private theorem maxDualNumber_sub_inl_fst_isNilpotent (K : Type*) [NormedCommRin
   have hnil := (sub_inlHom_fstHom_isNilpotent K K (MaxDualNumber.ofDualNumber.symm y)).map
     MaxDualNumber.ofDualNumber.toRingHom
   simpa only [map_sub, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-    RingEquiv.apply_symm_apply, TrivSqZeroExt.inlHom_apply, trivSqZeroExtFstHom_apply] using hnil
+    AlgHom.toRingHom_eq_coe, RingHom.coe_coe, TrivSqZeroExt.fstHom_apply,
+    RingEquiv.apply_symm_apply, TrivSqZeroExt.inlHom_apply] using hnil
 
-/-- Projection to the first component gives a homeomorphism between the Gel'fand spectrum of
-`MaxDualNumber K` (with the ultrametric maximum norm) and `GelfandSpectrum K`. -/
-noncomputable def maxDualNumberHomeomorph (K : Type*) [NormedCommRing K] [IsUltrametricDist K] :
-    GelfandSpectrum (MaxDualNumber K) ≃ₜ GelfandSpectrum K :=
+private noncomputable def maxDualNumberHomeomorph (K : Type*) [NormedCommRing K]
+    [IsUltrametricDist K] :
+    Spectrum (MaxDualNumber K) ≃ₜ Spectrum K :=
   retractHomeomorph
     (maxDualNumberInlHom K)
     (maxDualNumber_inl_isBounded K)
@@ -247,33 +218,17 @@ noncomputable def maxDualNumberHomeomorph (K : Type*) [NormedCommRing K] [IsUltr
     (maxDualNumber_fst_inl K)
     (maxDualNumber_sub_inl_fst_isNilpotent K)
 
-/-- `maxDualNumberHomeomorph K` evaluates a spectrum point on `MaxDualNumber K` along the scalar
-inclusion. -/
-@[simp]
-theorem maxDualNumberHomeomorph_apply {K : Type*} [NormedCommRing K] [IsUltrametricDist K]
-    (β : GelfandSpectrum (MaxDualNumber K)) (r : K) :
-    maxDualNumberHomeomorph K β r = β (MaxDualNumber.ofDualNumber (TrivSqZeroExt.inl r)) := by
-  rw [maxDualNumberHomeomorph, retractHomeomorph_apply, maxDualNumberInlHom_apply]
-
-/-- `(maxDualNumberHomeomorph K).symm` pulls a spectrum point on `K` back along the first
-coefficient projection. -/
-@[simp]
-theorem maxDualNumberHomeomorph_symm_apply {K : Type*} [NormedCommRing K] [IsUltrametricDist K]
-    (α : GelfandSpectrum K) (y : MaxDualNumber K) :
-    (maxDualNumberHomeomorph K).symm α y = α (MaxDualNumber.ofDualNumber.symm y).fst := by
-  rw [maxDualNumberHomeomorph, retractHomeomorph_symm_apply, maxDualNumberFstHom_apply]
-
 /-- Over an ultrametric normed field `K`, the ultrametric dual numbers `MaxDualNumber K` have a
-singleton Gel'fand spectrum, while `MaxDualNumber.eps` has norm `1`, spectral seminorm `0`, and
-shows that the ambient ultrametric norm does not lie in `GelfandSpectrum (MaxDualNumber K)`. -/
+singleton Berkovich spectrum, while `MaxDualNumber.eps` has norm `1`, spectral seminorm `0`, and
+shows that the ambient ultrametric norm does not lie in `Spectrum (MaxDualNumber K)`. -/
 theorem maxDualNumber_eps_checks (K : Type*) [NormedField K] [IsUltrametricDist K] :
     let ε : MaxDualNumber K := MaxDualNumber.eps
-    Nonempty (Unique (GelfandSpectrum (MaxDualNumber K))) ∧
+    Nonempty (Unique (Spectrum (MaxDualNumber K))) ∧
       ‖ε‖ = 1 ∧
       smoothingFun (normRingSeminorm (MaxDualNumber K)) ε = 0 ∧
-      sSup (Set.range fun α : GelfandSpectrum (MaxDualNumber K) ↦ α ε) = 0 ∧
+      sSup (Set.range fun x : Spectrum (MaxDualNumber K) ↦ x ε) = 0 ∧
       ‖ε * ε‖ ≠ ‖ε‖ * ‖ε‖ ∧
-      ¬∃ α : GelfandSpectrum (MaxDualNumber K), ∀ x, α x = ‖x‖ :=
+      ¬∃ x : Spectrum (MaxDualNumber K), ∀ y, x y = ‖y‖ :=
   ⟨⟨(maxDualNumberHomeomorph K).toEquiv.unique⟩,
     eps_checks_of_sq_zero_of_norm_one MaxDualNumber.eps_mul_eps MaxDualNumber.norm_eps⟩
 
@@ -281,24 +236,24 @@ end MaxDualNumber
 
 /-! ### Boundary cases, negative control, and functoriality checks -/
 
-/-- On the zero ring `PUnit`, `GelfandSpectrum PUnit` is empty and both sides of Berkovich's
-spectral formula evaluate to `0`. -/
-theorem punit_spectrum_empty (x : PUnit) :
-    IsEmpty (GelfandSpectrum PUnit) ∧
-      smoothingFun (normRingSeminorm PUnit) x = 0 ∧
-      sSup (Set.range fun α : GelfandSpectrum PUnit ↦ α x) = 0 := by
-  have hsup : sSup (Set.range fun α : GelfandSpectrum PUnit ↦ α x) = 0 := by
+/-- On the zero ring `PUnit`, `Spectrum PUnit` is empty and both sides of Berkovich's spectral
+formula evaluate to `0`. -/
+theorem punit_spectrum_empty (a : PUnit) :
+    IsEmpty (Spectrum PUnit) ∧
+      smoothingFun (normRingSeminorm PUnit) a = 0 ∧
+      sSup (Set.range fun x : Spectrum PUnit ↦ x a) = 0 := by
+  have hsup : sSup (Set.range fun x : Spectrum PUnit ↦ x a) = 0 := by
     rw [Set.range_eq_empty, Real.sSup_empty]
-  exact ⟨inferInstance, (smoothingFun_eq_sSup x).trans hsup, hsup⟩
+  exact ⟨inferInstance, (smoothingFun_eq_sSup a).trans hsup, hsup⟩
 
-/-- Every square-zero element vanishes under every point of the Gel'fand spectrum, and over a
+/-- Every square-zero element vanishes under every point of the Berkovich spectrum, and over a
 commutative seminormed ring its supremum over the spectrum is `0`. -/
-theorem sq_zero_apply_and_sSup_eq_zero {A : Type*} [SeminormedCommRing A] {x : A}
-    (hx : x * x = 0) :
-    (∀ α : GelfandSpectrum A, α x = 0) ∧
-      sSup (Set.range fun α : GelfandSpectrum A ↦ α x) = 0 := by
-  have hnil : IsNilpotent x := ⟨2, by rwa [sq]⟩
-  exact ⟨fun α ↦ α.eq_zero_of_isNilpotent hnil, (spectral_eq_zero_of_isNilpotent hnil).2⟩
+theorem sq_zero_apply_and_sSup_eq_zero {A : Type*} [SeminormedCommRing A] {a : A}
+    (ha : a * a = 0) :
+    (∀ x : Spectrum A, x a = 0) ∧
+      sSup (Set.range fun x : Spectrum A ↦ x a) = 0 := by
+  have hnil : IsNilpotent a := ⟨2, by rwa [sq]⟩
+  exact ⟨fun x ↦ x.eq_zero_of_isNilpotent hnil, (spectral_eq_zero_of_isNilpotent hnil).2⟩
 
 /-- **Negative control (dropping `map_zero`).** On any ring `R`, the constant-`1` function
 `fun _ : R ↦ (1 : ℝ)` is nonnegative, even, subadditive, normalized (`f 1 = 1`), and
@@ -317,11 +272,11 @@ theorem const_one_not_mulRingSeminorm (R : Type*) [NonAssocRing R] :
 `RingHom.id`, and composes contravariantly. -/
 theorem comap_checks {A B C : Type*} [SeminormedRing A] [SeminormedRing B] [SeminormedRing C]
     (φ : A →+* B) (hφ : φ.IsBounded) (ψ : B →+* C) (hψ : ψ.IsBounded)
-    (α : GelfandSpectrum A) (β : GelfandSpectrum B) (γ : GelfandSpectrum C) :
-    comap φ hφ β 0 = 0 ∧
-      comap φ hφ β 1 = 1 ∧
-      comap (RingHom.id A) RingHom.isBounded_id α = α ∧
-      comap φ hφ (comap ψ hψ γ) = comap (ψ.comp φ) (hψ.comp hφ) γ :=
-  ⟨map_zero _, map_one _, comap_id α, comap_comp ψ hψ φ hφ γ⟩
+    (x : Spectrum A) (y : Spectrum B) (z : Spectrum C) :
+    comap φ hφ y 0 = 0 ∧
+      comap φ hφ y 1 = 1 ∧
+      comap (RingHom.id A) RingHom.isBounded_id x = x ∧
+      comap φ hφ (comap ψ hψ z) = comap (ψ.comp φ) (hψ.comp hφ) z :=
+  ⟨map_zero _, map_one _, by simp, by rw [comap_comp]; rfl⟩
 
-end TauCeti.GelfandSpectrum.Examples
+end TauCeti.Spectrum.Examples

@@ -17,10 +17,10 @@ of norm `< 1` to be `0` and one within `< 1` of `1` to be `1`), including its fo
 `‖a * b‖ₑ ≤ ‖a‖ₑ * ‖b‖ₑ` for the extended norm (`TauCeti.eNorm_mul_le`), exact positive-power
 norms without `NormOneClass`, an estimate for `‖w - 1‖` with `‖w‖ = 1` when the norm is
 multiplicative, convergence to `0` of finite partial products when factors tend to `0` cofinitely
-(`TauCeti.tendsto_finsetProd_cofinite_zero`), norm bounds for powers of units — including the
+(`TauCeti.tendsto_finsetProd_cofinite_zero`), and norm bounds for powers of units — including the
 shell lemma `Units.exists_lt_norm_zpow_lt` showing that the norms of integer powers of a unit `u`
 with `‖u‖ < 1` in a nontrivial normed ring visit every open interval `(a, b)` with `0 ≤ a` and
-`a * ‖u⁻¹‖ < b` — and basic closure properties of `RingHom.IsBounded` (identity and composition).
+`a * ‖u⁻¹‖ < b`.
 
 The affine estimate `TauCeti.sub_mul_mem_closedBall_of_norm_le` bounds the distance of
 `w₀ - w₁ * u` from `w₀` using a bound on the norm of `u`.
@@ -371,25 +371,6 @@ theorem tendsto_finsetProd_cofinite_zero {ι R : Type*} [SeminormedCommRing R] {
   exact hs.not_gt hprod
 
 end TauCeti
-
-namespace RingHom
-
-/-- The identity ring homomorphism on a seminormed ring is bounded with constant `1`. -/
-@[simp]
-theorem isBounded_id {A : Type*} [SeminormedRing A] : (RingHom.id A).IsBounded :=
-  ⟨1, zero_lt_one, fun x ↦ by simp⟩
-
-/-- The composition of two bounded ring homomorphisms is bounded. -/
-theorem IsBounded.comp {A B C : Type*} [SeminormedRing A] [SeminormedRing B] [SeminormedRing C]
-    {ψ : B →+* C} (hψ : ψ.IsBounded) {φ : A →+* B} (hφ : φ.IsBounded) :
-    (ψ.comp φ).IsBounded := by
-  obtain ⟨C₁, hC₁, h₁⟩ := hψ
-  obtain ⟨C₂, hC₂, h₂⟩ := hφ
-  exact ⟨C₁ * C₂, mul_pos hC₁ hC₂, fun x ↦
-    (h₁ (φ x)).trans
-      ((mul_le_mul_of_nonneg_left (h₂ x) hC₁.le).trans_eq (mul_assoc C₁ C₂ ‖x‖).symm)⟩
-
-end RingHom
 
 namespace IsIdempotentElem
 

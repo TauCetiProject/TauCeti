@@ -8,14 +8,11 @@ module
 public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 import Mathlib.Analysis.Normed.Module.WeakDual
-import Mathlib.Analysis.Complex.Basic
-import Mathlib.Topology.MetricSpace.Sequences
-import TauCeti.Analysis.Convex.Simons
+import TauCeti.Analysis.Normed.Module.Dual.JamesBoundary
 import TauCeti.Analysis.Normed.Module.Dual.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.Normed.Module.WeakSpace.EberleinSmulian
-import TauCeti.Topology.Algebra.Module.WeakSpace
 
 /-!
 # Norm-attaining functionals and reflexivity
@@ -25,11 +22,11 @@ some `x` in the closed unit ball. Every functional on a reflexive space attains 
 the closed unit ball is weakly compact. James's theorem is the converse for Banach spaces. This
 file proves it for separable Banach spaces.
 
-The engine is Simons' inequality (`TauCeti.exists_frequently_sub_lt_of_isMaxOn_tsum`), applied
-to the real parts of a bounded sequence of functionals on the closed unit ball. If every
-functional attains its norm, every σ-convex combination of such a sequence does too, and Simons'
-inequality yields the *Rainwater–Simons theorem*: a bounded sequence of functionals which
-converges weak-star also converges weakly, that is, against every element of the bidual
+If every functional attains its norm, the canonical image of the closed unit ball in the bidual
+is a James boundary of the dual. The Rainwater–Simons theorem for James boundaries
+(`TauCeti.tendsto_toWeakSpace_of_forall_mem_tendsto`, a consequence of Simons' inequality) then
+shows that a bounded sequence of functionals which converges weak-star also converges weakly,
+that is, against every element of the bidual
 (`TauCeti.tendsto_toWeakSpace_of_forall_exists_norm_apply_eq_norm`).
 
 For a separable space the dual closed unit ball is weak-star sequentially compact, so it is then
@@ -83,103 +80,27 @@ theorem exists_norm_apply_eq_norm_of_surjective_inclusionInDoubleDual
   have := hmax ⟨y, mem_closedBall_zero_iff.2 hy.le, rfl⟩
   simpa using this
 
-/-- Simons' inequality on the closed unit ball. If every functional on `E` attains its norm, and
-the real part of a bidual element `Ψ` is bounded below by `θ > 0` on a bounded sequence `h k` of
-functionals, then some vector `x` keeps `re (h k x)` above a positive constant for infinitely
-many `k`. -/
-private lemma exists_frequently_lt_re_apply
-    (hE : ∀ f : StrongDual 𝕜 E, ∃ x, ‖x‖ ≤ 1 ∧ ‖f x‖ = ‖f‖) {h : ℕ → StrongDual 𝕜 E} {C : ℝ}
-    (hC : ∀ k, ‖h k‖ ≤ C) (Ψ : StrongDual 𝕜 (StrongDual 𝕜 E)) {θ : ℝ} (hθ : 0 < θ)
-    (hΨ : ∀ k, θ < re (Ψ (h k))) : ∃ c > 0, ∃ x : E, ∃ᶠ k in atTop, c < re (h k x) := by
-  have hΨ0 : 0 < ‖Ψ‖ := by
-    refine (norm_nonneg Ψ).lt_of_ne fun h0 ↦ ?_
-    have := ((hΨ 0).trans_le (re_le_norm _)).trans_le (Ψ.le_opNorm (h 0))
-    rw [← h0, zero_mul] at this
-    linarith
-  -- The real parts of the `h k` commute with σ-convex combinations of them.
-  have happly : ∀ w : ℕ → ℝ, HasSum w 1 → ∀ b : E,
-      ∑' k, w k * re (h k b) = re ((∑' k, (w k : 𝕜) • h k) b) := fun w hw b ↦ by
-    simpa only [ContinuousLinearMap.apply_apply] using
-      (StrongDual.hasSum_mul_re_apply (ContinuousLinearMap.apply 𝕜 𝕜 b) hw.summable hC).tsum_eq
-  -- Every σ-convex combination `H` of the `h k` has `θ ≤ re (Ψ H) ≤ ‖Ψ‖ ‖H‖`.
-  have hHnorm : ∀ w : ℕ → ℝ, (∀ k, 0 ≤ w k) → HasSum w 1 →
-      θ / ‖Ψ‖ ≤ ‖∑' k, (w k : 𝕜) • h k‖ := fun w hw0 hw ↦ by
-    have hθle : θ ≤ re (Ψ (∑' k, (w k : 𝕜) • h k)) := by
-      simpa only [one_mul] using hasSum_le (fun k ↦ mul_le_mul_of_nonneg_left (hΨ k).le (hw0 k))
-        (hw.mul_right θ) (Ψ.hasSum_mul_re_apply hw.summable hC)
-    rw [div_le_iff₀ hΨ0, mul_comm]
-    exact hθle.trans ((re_le_norm _).trans (Ψ.le_opNorm _))
-  -- Simons' inequality for the real parts of the `h k` on the closed unit ball, where every
-  -- σ-convex combination attains its norm in real part.
-  have hM : ∀ k, ∀ b ∈ closedBall (0 : E) 1, |re (h k b)| ≤ C := fun k b hb ↦
-    (abs_re_le_norm _).trans (((h k).le_opNorm b).trans
-      ((mul_le_of_le_one_right (norm_nonneg _) (mem_closedBall_zero_iff.1 hb)).trans (hC k)))
-  have hmax : ∀ w : ℕ → ℝ, (∀ k, 0 ≤ w k) → HasSum w 1 → ∃ b ∈ closedBall (0 : E) 1,
-      IsMaxOn (fun b ↦ ∑' k, w k * re (h k b)) (closedBall 0 1) b := fun w _ hw ↦ by
-    simpa only [happly w hw] using
-      StrongDual.exists_isMaxOn_re_apply_closedBall_iff.2 (hE (∑' k, (w k : 𝕜) • h k))
-  have hcle : ∀ w : ℕ → ℝ, (∀ k, 0 ≤ w k) → HasSum w 1 → ∃ b ∈ closedBall (0 : E) 1,
-      θ / ‖Ψ‖ ≤ ∑' k, w k * re (h k b) := fun w hw0 hw ↦ by
-    obtain ⟨y, hy, hyre⟩ :=
-      StrongDual.exists_norm_le_one_re_apply_eq_norm_iff.2 (hE (∑' k, (w k : 𝕜) • h k))
-    exact ⟨y, mem_closedBall_zero_iff.2 hy, by rw [happly w hw, hyre]; exact hHnorm w hw0 hw⟩
-  have hc : 0 < θ / ‖Ψ‖ := by positivity
-  obtain ⟨b, -, hfreq⟩ := exists_frequently_sub_lt_of_isMaxOn_tsum hM hmax hcle (half_pos hc)
-  exact ⟨θ / ‖Ψ‖ - θ / ‖Ψ‖ / 2, by linarith, b, hfreq⟩
-
 /-- **The Rainwater–Simons theorem.** If every continuous linear functional on `E` attains its
 norm on the closed unit ball, then every bounded sequence in the dual which converges weak-star
-converges weakly, that is, against every element of the bidual. -/
+converges weakly, that is, against every element of the bidual.
+
+The canonical image of the closed unit ball of `E` in the bidual is then a James boundary of the
+dual, so this is `TauCeti.tendsto_toWeakSpace_of_forall_mem_tendsto` for that boundary. -/
 theorem tendsto_toWeakSpace_of_forall_exists_norm_apply_eq_norm
     (hE : ∀ f : StrongDual 𝕜 E, ∃ x, ‖x‖ ≤ 1 ∧ ‖f x‖ = ‖f‖) {f : ℕ → StrongDual 𝕜 E}
     {g : StrongDual 𝕜 E} (hbdd : IsBounded (range f))
     (hlim : ∀ x, Tendsto (fun n ↦ f n x) atTop (𝓝 (g x))) :
     Tendsto (fun n ↦ toWeakSpace 𝕜 (StrongDual 𝕜 E) (f n)) atTop
       (𝓝 (toWeakSpace 𝕜 (StrongDual 𝕜 E) g)) := by
-  rw [tendsto_toWeakSpace_iff_forall_eval_tendsto]
-  intro Φ
-  by_contra hΦ
-  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.1 hbdd
-  have hfC : ∀ n, ‖f n‖ ≤ C := fun n ↦ hC _ (mem_range_self n)
-  set u : ℕ → 𝕜 := fun n ↦ Φ (f n - g) with hu
-  -- Along a subsequence, `Φ (f n - g)` stays away from zero and converges to some `L ≠ 0`.
-  obtain ⟨ε, hε, hεu⟩ : ∃ ε > 0, ∃ᶠ n in atTop, ε ≤ ‖u n‖ := by
-    have hu0 : ¬ Tendsto u atTop (𝓝 0) := fun h ↦ hΦ (by
-      simpa [hu, sub_eq_add_neg] using (h.add_const (Φ g)))
-    rw [Metric.tendsto_atTop] at hu0
-    push Not at hu0
-    obtain ⟨ε, hε, hN⟩ := hu0
-    exact ⟨ε, hε, frequently_atTop.2 fun N ↦ by simpa using hN N⟩
-  obtain ⟨φ₁, hφ₁, hφ₁ε⟩ := extraction_of_frequently_atTop hεu
-  have huR : ∀ n, u n ∈ closedBall (0 : 𝕜) (‖Φ‖ * (C + ‖g‖)) := fun n ↦ by
-    rw [mem_closedBall_zero_iff]
-    exact (Φ.le_opNorm _).trans (mul_le_mul_of_nonneg_left
-      ((norm_sub_le _ _).trans (by linarith [hfC n])) (norm_nonneg Φ))
-  obtain ⟨L, -, φ₂, hφ₂, hL⟩ := tendsto_subseq_of_bounded isBounded_closedBall
-    fun k ↦ huR (φ₁ k)
-  have hLε : ε ≤ ‖L‖ := ge_of_tendsto (hL.norm) (Eventually.of_forall fun k ↦ hφ₁ε (φ₂ k))
-  have hL0 : L ≠ 0 := norm_pos_iff.1 (hε.trans_le hLε)
-  -- Rotate `Φ` so that its real part is eventually above `‖L‖ / 2` on `f n - g`.
-  obtain ⟨a, -, haL⟩ := exists_norm_eq_mul_self L
-  set Ψ : StrongDual 𝕜 (StrongDual 𝕜 E) := a • Φ with hΨ
-  have hΨlim : Tendsto (fun k ↦ re (Ψ (f (φ₁ (φ₂ k)) - g))) atTop (𝓝 ‖L‖) := by
-    have := (RCLike.continuous_re.tendsto _).comp (hL.const_mul a)
-    simpa only [← haL, RCLike.ofReal_re, hΨ, smul_apply, smul_eq_mul, hu, comp_def] using this
-  obtain ⟨K, hK⟩ := eventually_atTop.1
-    (hΨlim.eventually_const_lt (half_lt_self (norm_pos_iff.2 hL0)))
-  -- Simons' inequality gives `x` with `re ((f n - g) x)` frequently large along the
-  -- subsequence, against weak-star convergence.
-  obtain ⟨c, hc, x, hfreq⟩ := exists_frequently_lt_re_apply hE
-    (h := fun k ↦ f (φ₁ (φ₂ (k + K))) - g) (C := C + ‖g‖)
-    (fun k ↦ (norm_sub_le _ _).trans (by linarith [hfC (φ₁ (φ₂ (k + K)))])) Ψ
-    (half_pos (norm_pos_iff.2 hL0)) fun k ↦ hK (k + K) (by omega)
-  have hz : Tendsto (fun k ↦ re ((f (φ₁ (φ₂ (k + K))) - g) x)) atTop (𝓝 0) := by
-    have hsub : Tendsto (fun k ↦ φ₁ (φ₂ (k + K))) atTop atTop :=
-      (hφ₁.comp hφ₂).tendsto_atTop.comp (tendsto_add_atTop_nat K)
-    have := (RCLike.continuous_re.tendsto _).comp (((hlim x).comp hsub).sub_const (g x))
-    simpa only [sub_self, map_zero, sub_apply, comp_def] using this
-  obtain ⟨k, hk₁, hk₂⟩ := (hfreq.and_eventually (hz.eventually (gt_mem_nhds hc))).exists
-  linarith
+  refine tendsto_toWeakSpace_of_forall_mem_tendsto
+    (B := inclusionInDoubleDual 𝕜 E '' closedBall 0 1) ?_ ?_ hbdd ?_
+  · rintro _ ⟨x, hx, rfl⟩
+    exact (double_dual_bound 𝕜 E x).trans (mem_closedBall_zero_iff.1 hx)
+  · intro φ
+    obtain ⟨x, hx, hφx⟩ := StrongDual.exists_norm_le_one_re_apply_eq_norm_iff.2 (hE φ)
+    exact ⟨_, mem_image_of_mem _ (mem_closedBall_zero_iff.2 hx), by simpa [dual_def] using hφx⟩
+  · rintro _ ⟨x, -, rfl⟩
+    simpa only [dual_def] using hlim x
 
 end Seminormed
 

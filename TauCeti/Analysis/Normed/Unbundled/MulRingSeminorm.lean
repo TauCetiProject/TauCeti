@@ -5,13 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
+public import Mathlib.Topology.Algebra.UniformRing
 public import TauCeti.Analysis.Normed.Unbundled.SmoothingSeminorm
 
 import Mathlib.Analysis.Normed.Unbundled.SeminormFromConst
 import Mathlib.Order.Zorn
 
 /-!
-# Multiplicative ring seminorms below power-multiplicative seminorms
+# Pulling back, completing, and bounding multiplicative ring seminorms
+
+The composite `p ∘ f` of a multiplicative seminorm `p` on `S` with a ring homomorphism
+`f : R →+* S` is a multiplicative seminorm on `R`, `MulRingSeminorm.comp p f`. This is the
+multiplicative analogue of Mathlib's `AddGroupSeminorm.comp`, and it is how a ring homomorphism
+acts contravariantly on spaces of multiplicative seminorms such as Berkovich spectra.
+
+A uniformly continuous multiplicative seminorm on a uniform ring extends by continuity to a
+multiplicative seminorm on the completion, `MulRingSeminorm.completion`, since the seminorm laws
+are closed conditions and the ring is dense in its completion.
 
 Every nonzero power-multiplicative ring seminorm `ρ` on a commutative ring `R` is the pointwise
 maximum of the multiplicative ring seminorms `α : MulRingSeminorm R` bounded above by `ρ`
@@ -25,30 +36,7 @@ shows that a minimal element is multiplicative on all of `R`.
 Combining this representation with `RingSeminorm.smoothing` expresses `smoothingFun μ x`, for any
 ring seminorm `μ` on a commutative ring `R`, as the supremum of `α x` over all multiplicative ring
 seminorms `α ≤ μ`, attained whenever `μ ≠ 0`. This is the unbundled core of Berkovich's spectral
-formula on the Gel'fand spectrum of a normed commutative ring.
-
-## Main definitions
-
-* `MulRingSeminorm.toRingSeminorm`: view a multiplicative ring seminorm as a `RingSeminorm`.
-* `MulRingSeminorm.comp`: composition of a multiplicative ring seminorm with a ring homomorphism.
-* `RingSeminorm.iInfOfDirected`: pointwise infimum of a nonempty downward-directed family of
-  ring seminorms.
-
-## Main results
-
-* `MulRingSeminorm.le_smoothingFun_of_le_mul`: over a commutative ring, a multiplicative seminorm
-  bounded by `C * μ` is bounded by `smoothingFun μ`.
-* `IsPowMul.iInf`: the pointwise infimum of a nonempty family of nonnegative power-multiplicative
-  functions is power-multiplicative.
-* `RingSeminorm.isPowMul_iInfOfDirected`: the pointwise infimum of a nonempty downward-directed
-  family of power-multiplicative ring seminorms is power-multiplicative.
-* `RingSeminorm.exists_mulRingSeminorm_le_and_apply_eq`: for a nonzero power-multiplicative ring
-  seminorm `ρ` on a commutative ring and any `x₀`, some `α : MulRingSeminorm R` satisfies
-  `α ≤ ρ` and `α x₀ = ρ x₀`.
-* `RingSeminorm.eq_sSup_mulRingSeminorm`: every power-multiplicative ring seminorm `ρ` on a
-  commutative ring is the pointwise supremum of the multiplicative ring seminorms below `ρ`.
-* `RingSeminorm.smoothing_eq_sSup_mulRingSeminorm`: `μ.smoothing x` is the supremum of `α x` over
-  multiplicative ring seminorms `α ≤ μ`.
+formula on the Berkovich spectrum of a normed commutative ring.
 
 ## References
 
@@ -60,50 +48,81 @@ formula on the Gel'fand spectrum of a normed commutative ring.
 
 public section
 
+open UniformSpace
+
 namespace MulRingSeminorm
 
-section NonAssocRing
+section comp
 
 variable {R S T : Type*} [NonAssocRing R] [NonAssocRing S] [NonAssocRing T]
 
-/-- Forget multiplicativity and view a `MulRingSeminorm` as a `RingSeminorm`. -/
-def toRingSeminorm (α : MulRingSeminorm R) : RingSeminorm R where
-  __ := α.toAddGroupSeminorm
-  mul_le' x y := (map_mul α x y).le
-
-/-- A ring admitting a multiplicative ring seminorm is nontrivial, since `α 1 = 1 ≠ 0 = α 0`. -/
-theorem nontrivial (α : MulRingSeminorm R) : Nontrivial R :=
-  ⟨⟨1, 0, fun h ↦ one_ne_zero (by rw [← map_one α, h, map_zero])⟩⟩
-
-/-- Composition of a multiplicative ring seminorm with a ring homomorphism `φ : R →+* S`, as a
-multiplicative ring seminorm on `R`. -/
-def comp (α : MulRingSeminorm S) (φ : R →+* S) : MulRingSeminorm R where
-  __ := α.toAddGroupSeminorm.comp φ.toAddMonoidHom
+/-- The composite of a multiplicative seminorm on `S` with a ring homomorphism `R →+* S`. -/
+def comp (p : MulRingSeminorm S) (f : R →+* S) : MulRingSeminorm R where
+  __ := p.toAddGroupSeminorm.comp f.toAddMonoidHom
   map_one' := by simp
   map_mul' x y := by simp
 
-/-- Evaluating `α.comp φ` applies `α` after `φ`. -/
 @[simp]
-theorem comp_apply (α : MulRingSeminorm S) (φ : R →+* S) (x : R) :
-    α.comp φ x = α (φ x) :=
+theorem comp_apply (p : MulRingSeminorm S) (f : R →+* S) (x : R) : p.comp f x = p (f x) :=
   (rfl)
 
-/-- The underlying function of `α.comp φ` is `α ∘ φ`. -/
 @[simp]
-theorem coe_comp (α : MulRingSeminorm S) (φ : R →+* S) :
-    ⇑(α.comp φ) = α ∘ φ :=
+theorem comp_id (p : MulRingSeminorm S) : p.comp (RingHom.id S) = p :=
+  ext fun _ => rfl
+
+theorem comp_comp (p : MulRingSeminorm T) (g : S →+* T) (f : R →+* S) :
+    p.comp (g.comp f) = (p.comp g).comp f :=
+  ext fun _ => rfl
+
+end comp
+
+section completion
+
+variable {R : Type*} [Ring R] [UniformSpace R] [IsUniformAddGroup R] [IsTopologicalRing R]
+
+/-- The extension by continuity of a uniformly continuous multiplicative seminorm on a uniform
+ring to its completion. -/
+noncomputable def completion (p : MulRingSeminorm R) (hp : UniformContinuous p) :
+    MulRingSeminorm (Completion R) where
+  toFun := Completion.extension p
+  map_zero' := by rw [← Completion.coe_zero, Completion.extension_coe hp, map_zero]
+  add_le' a b := by
+    induction a, b using Completion.induction_on₂ with
+    | hp =>
+      exact isClosed_le (by fun_prop) (by fun_prop)
+    | ih a b =>
+      simpa only [← Completion.coe_add, Completion.extension_coe hp] using map_add_le_add p a b
+  neg' a := by
+    induction a using Completion.induction_on with
+    | hp =>
+      exact isClosed_eq (by fun_prop) (by fun_prop)
+    | ih a => simp only [← Completion.coe_neg, Completion.extension_coe hp, map_neg_eq_map]
+  map_one' := by rw [← Completion.coe_one, Completion.extension_coe hp, map_one]
+  map_mul' a b := by
+    induction a, b using Completion.induction_on₂ with
+    | hp =>
+      exact isClosed_eq (by fun_prop) (by fun_prop)
+    | ih a b => simp only [← Completion.coe_mul, Completion.extension_coe hp, map_mul]
+
+theorem coe_completion (p : MulRingSeminorm R) (hp : UniformContinuous p) :
+    ⇑(p.completion hp) = Completion.extension p :=
   (rfl)
 
-/-- Composing with the identity ring homomorphism is the identity. -/
 @[simp]
-theorem comp_id (α : MulRingSeminorm R) :
-    α.comp (RingHom.id R) = α :=
-  ext fun _ ↦ rfl
+theorem completion_coe (p : MulRingSeminorm R) (hp : UniformContinuous p) (a : R) :
+    p.completion hp a = p a := by
+  rw [coe_completion, Completion.extension_coe hp]
 
-/-- Composition of multiplicative ring seminorms with ring homomorphisms is associative. -/
-theorem comp_assoc (α : MulRingSeminorm T) (ψ : S →+* T) (φ : R →+* S) :
-    α.comp (ψ.comp φ) = (α.comp ψ).comp φ :=
-  ext fun _ ↦ rfl
+theorem continuous_completion (p : MulRingSeminorm R) (hp : UniformContinuous p) :
+    Continuous (p.completion hp) := by
+  rw [coe_completion]
+  exact Completion.continuous_extension
+
+end completion
+
+section NonAssocRing
+
+variable {R : Type*} [NonAssocRing R]
 
 /-- Adding an element of seminorm zero leaves a multiplicative ring seminorm unchanged. -/
 theorem map_add_eq_left_of_map_eq_zero (α : MulRingSeminorm R) (x : R) {y : R} (hy : α y = 0) :
@@ -116,26 +135,6 @@ end NonAssocRing
 section Ring
 
 variable {R : Type*} [Ring R]
-
-/-- The underlying function of `α.toRingSeminorm` is `α` itself. -/
-@[simp]
-theorem coe_toRingSeminorm (α : MulRingSeminorm R) :
-    ⇑α.toRingSeminorm = α :=
-  (rfl)
-
-/-- Evaluating `α.toRingSeminorm` agrees with `α`. -/
-@[simp]
-theorem toRingSeminorm_apply (α : MulRingSeminorm R) (x : R) :
-    α.toRingSeminorm x = α x :=
-  (rfl)
-
-/-- `α.toRingSeminorm` is nonzero because `α 1 = 1`. -/
-theorem toRingSeminorm_ne_zero (α : MulRingSeminorm R) : α.toRingSeminorm ≠ 0 :=
-  RingSeminorm.ne_zero_iff.2 ⟨1, by simp⟩
-
-/-- Every multiplicative ring seminorm is power-multiplicative. -/
-theorem isPowMul (α : MulRingSeminorm R) : IsPowMul α :=
-  fun x n _ ↦ map_pow α x n
 
 /-- Every multiplicative ring seminorm vanishes on nilpotent elements. -/
 theorem eq_zero_of_isNilpotent (α : MulRingSeminorm R) {x : R} (hx : IsNilpotent x) : α x = 0 := by
@@ -151,9 +150,12 @@ variable {R : Type*} [CommRing R]
 /-- Over a commutative ring, if `α : MulRingSeminorm R` satisfies `α x ≤ C * μ x` for every `x`,
 then `α x ≤ smoothingFun μ x` for every `x`. -/
 theorem le_smoothingFun_of_le_mul (α : MulRingSeminorm R) {μ : RingSeminorm R} {C : ℝ}
-    (h : ∀ x, α x ≤ C * μ x) (x : R) : α x ≤ smoothingFun μ x :=
-  (smoothingFun_of_powMul α.toRingSeminorm (map_one α).le fun n _ ↦ map_pow α x n).symm.trans_le
-    ((RingHom.id R).smoothingFun_map_le_of_le_mul (ν := α.toRingSeminorm) h x)
+    (h : ∀ x, α x ≤ C * μ x) (x : R) : α x ≤ smoothingFun μ x := by
+  let α' : RingSeminorm R :=
+    { __ := α.toAddGroupSeminorm
+      mul_le' a b := (map_mul α a b).le }
+  exact (smoothingFun_of_powMul α' (map_one α).le fun n _ ↦ map_pow α x n).symm.trans_le
+    ((RingHom.id R).smoothingFun_map_le_of_le_mul (ν := α') h x)
 
 end CommRing
 
@@ -231,14 +233,6 @@ theorem iInfOfDirected_le {ι : Sort*} [Nonempty ι] (p : ι → RingSeminorm R)
     (hp : Directed (· ≥ ·) (fun i ↦ (p i : R → ℝ))) (i : ι) (a : R) :
     iInfOfDirected p hp a ≤ p i a :=
   ciInf_le ⟨0, by rintro _ ⟨j, rfl⟩; exact apply_nonneg (p j) a⟩ i
-
-/-- A real number bounded above by `p i a` for every `i` is bounded above by
-`iInfOfDirected p hp a`. -/
-theorem le_iInfOfDirected {ι : Sort*} [Nonempty ι] (p : ι → RingSeminorm R)
-    (hp : Directed (· ≥ ·) (fun i ↦ (p i : R → ℝ))) {a : R} {c : ℝ}
-    (hc : ∀ i, c ≤ p i a) :
-    c ≤ iInfOfDirected p hp a :=
-  le_ciInf hc
 
 end NonUnitalRing
 

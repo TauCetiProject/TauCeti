@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import TauCeti.LinearAlgebra.Charpoly.Dual
 public import TauCeti.LinearAlgebra.Dimension.Submodule
@@ -49,6 +50,8 @@ odd polynomial, `p(-X) = -p` (`LinearMap.IsSkewAdjoint.aeval_of_comp_neg_X_eq_ne
   `2 μ` a unit the generalized `μ`-eigenspace is isotropic; likewise the vectors killed by powers
   of `p(f)` and of `q(f)` are `B`-orthogonal when `p` and `q(-X)` are coprime
   (`LinearMap.IsSkewAdjoint.apply_eq_zero_of_mem_maxGenEigenspace_aeval`);
+* for a bilinear form `B`, `f` preserves the `B`-orthogonal complement of every submodule it
+  preserves (`LinearMap.IsSkewAdjoint.apply_mem_orthogonal`);
 * for nondegenerate `B`, the maximal generalized `μ`- and `-μ`-eigenspaces are paired
   nondegenerately (`LinearMap.IsSkewAdjoint.nondegenerate_domRestrict₁₂_maxGenEigenspace`);
 * more generally, for any polynomial `p`, `B` pairs the vectors killed by a power of `p(f)`
@@ -317,6 +320,16 @@ theorem apply_eq_zero_of_mem_genEigenspace_self (h : B.IsSkewAdjoint f) {μ : R}
     (hμ : IsUnit (2 * μ)) {k l : ℕ∞} {v w : M} (hv : v ∈ f.genEigenspace μ k)
     (hw : w ∈ f.genEigenspace μ l) : B v w = 0 :=
   h.apply_eq_zero_of_mem_genEigenspace (by rwa [← two_mul]) hv hw
+
+/-- An endomorphism `f` skew-adjoint for a bilinear form `B` preserves the `B`-orthogonal
+complement of every submodule it preserves. -/
+theorem apply_mem_orthogonal {B : LinearMap.BilinForm R M} (h : B.IsSkewAdjoint f)
+    {N : Submodule R M} (hN : ∀ v ∈ N, f v ∈ N) {v : M} (hv : v ∈ B.orthogonal N) :
+    f v ∈ B.orthogonal N :=
+  LinearMap.BilinForm.mem_orthogonal_iff.2 fun y hy ↦ by
+    have := h y v
+    rw [hv _ (hN y hy)] at this
+    simpa using this.symm
 
 section Fitting
 
