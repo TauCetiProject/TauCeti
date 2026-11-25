@@ -150,18 +150,6 @@ theorem principalSubmodule_le_ker_baseChangeIntersectionNumber :
 
 end Pairing
 
-/-- A morphism equal to a composite of proper morphisms is proper. -/
-private lemma isProper_of_eq_comp {C Y S : Scheme.{u}} {f : C ⟶ S} {i : C ⟶ Y} {x : Y ⟶ S}
-    [IsProper i] [IsProper x] (h : f = i ≫ x) : IsProper f := by
-  rw [h]
-  infer_instance
-
-/-- A one-dimensional scheme over a field has relative dimension at most one. -/
-private lemma relativeDimensionLE_one_of_topologicalKrullDim_eq_one {k : Type u} [Field k]
-    {C : Scheme.{u}} (f : C ⟶ Spec (.of k)) (hC : topologicalKrullDim C = 1) :
-    RelativeDimensionLE 1 f :=
-  (relativeDimensionLE_iff_of_field f).mpr hC.le
-
 section Absolute
 
 variable (k : Type u) [Field k] (x : X ⟶ Spec (.of k)) [IsProper x]
@@ -173,8 +161,9 @@ such a curve is proper over `k` of dimension one, which makes the pairing availa
 def NumericallyTrivial (D : K ⊗[ℤ] CartierDivisor X) : Prop :=
   ∀ (C : Scheme.{u}) [IsIntegral C] [C.Over (Spec (.of k))] (i : C ⟶ X) [IsClosedImmersion i]
     (hi : C ↘ Spec (.of k) = i ≫ x) (hC : topologicalKrullDim C = 1),
-    have := isProper_of_eq_comp hi
-    have := relativeDimensionLE_one_of_topologicalKrullDim_eq_one (C ↘ Spec (.of k)) hC
+    have : IsProper (C ↘ Spec (.of k)) := hi ▸ inferInstance
+    have : RelativeDimensionLE 1 (C ↘ Spec (.of k)) :=
+      (relativeDimensionLE_iff_of_field _).mpr hC.le
     baseChangeIntersectionNumber K k i D = 0
 
 variable {K k x}
@@ -187,8 +176,8 @@ theorem numericallyTrivial_iff {D : K ⊗[ℤ] CartierDivisor X} :
       [IsClosedImmersion i], C ↘ Spec (.of k) = i ≫ x → topologicalKrullDim C = 1 →
         baseChangeIntersectionNumber K k i D = 0 := by
   refine ⟨fun h C _ _ _ _ i _ hi hC ↦ h C i hi hC, fun h C _ _ i _ hi hC ↦ ?_⟩
-  have := isProper_of_eq_comp hi
-  have := relativeDimensionLE_one_of_topologicalKrullDim_eq_one (C ↘ Spec (.of k)) hC
+  have : IsProper (C ↘ Spec (.of k)) := hi ▸ inferInstance
+  have : RelativeDimensionLE 1 (C ↘ Spec (.of k)) := (relativeDimensionLE_iff_of_field _).mpr hC.le
   exact h C i hi hC
 
 /-- The pairing of a numerically trivial `K`-Cartier divisor with an integral closed curve
@@ -250,9 +239,9 @@ def RelNumericallyTrivial (D : K ⊗[ℤ] CartierDivisor X) : Prop :=
     (i : C ⟶ f.fiber s) [IsClosedImmersion i]
     (hi : C ↘ Spec (S.residueField s) = i ≫ f.fiberToSpecResidueField s)
     (hC : topologicalKrullDim C = 1),
-    have := isProper_of_eq_comp hi
+    have : IsProper (C ↘ Spec (S.residueField s)) := hi ▸ inferInstance
     have : RelativeDimensionLE 1 (C ↘ Spec (S.residueField s)) :=
-      relativeDimensionLE_one_of_topologicalKrullDim_eq_one _ hC
+      (relativeDimensionLE_iff_of_field _).mpr hC.le
     baseChangeIntersectionNumber K (S.residueField s) (i ≫ f.fiberι s) D = 0
 
 variable {K f}
@@ -267,9 +256,9 @@ theorem relNumericallyTrivial_iff {D : K ⊗[ℤ] CartierDivisor X} :
         topologicalKrullDim C = 1 →
           baseChangeIntersectionNumber K (S.residueField s) (i ≫ f.fiberι s) D = 0 := by
   refine ⟨fun h s C _ _ _ _ i _ hi hC ↦ h s C i hi hC, fun h s C _ _ i _ hi hC ↦ ?_⟩
-  have := isProper_of_eq_comp hi
+  have : IsProper (C ↘ Spec (S.residueField s)) := hi ▸ inferInstance
   have : RelativeDimensionLE 1 (C ↘ Spec (S.residueField s)) :=
-    relativeDimensionLE_one_of_topologicalKrullDim_eq_one _ hC
+    (relativeDimensionLE_iff_of_field _).mpr hC.le
   exact h s C i hi hC
 
 /-- The pairing of a relatively numerically trivial `K`-Cartier divisor with an integral closed
@@ -309,9 +298,9 @@ theorem relNumericallyTrivial_one_tmul_iff [CharZero K] (D : CartierDivisor X) :
   rw [relNumericallyTrivial_iff, LineBundleClass.relNumericallyTrivial_iff]
   refine ⟨fun h s ↦ (LineBundleClass.numericallyTrivial_iff _ _ _).mpr fun C _ _ i _ hi hC ↦ ?_,
     fun h s C _ _ _ _ i _ hi hC ↦ ?_⟩
-  · have := isProper_of_eq_comp hi
+  · have : IsProper (C ↘ Spec (S.residueField s)) := hi ▸ inferInstance
     have : RelativeDimensionLE 1 (C ↘ Spec (S.residueField s)) :=
-      relativeDimensionLE_one_of_topologicalKrullDim_eq_one _ hC
+      (relativeDimensionLE_iff_of_field _).mpr hC.le
     simpa using h s C i hi hC
   · simpa using (h s).intersectionNumber_eq_zero i hi hC
 
