@@ -45,11 +45,15 @@ of `e`, and solves the Reeb-direction equation there
 integral solving the transport equation along the flow-out
 (`TauCeti.exists_mvfderiv_apply_eq_of_flowOut`), applied to the vertical Reeb field.
 
-In the strict neighbourhood theorem for a closed Legendrian submanifold `Λ` (Kriegl–Michor),
-`α_t` is the linear interpolation between two contact forms which agree together with their
-exterior derivatives along `Λ`, and `ι` is a hypersurface containing `Λ` and transverse to the Reeb
-fields. Near `Λ`, a globally smooth extension of the solution `h` of this file serves as the
-function `h_t = α_t(X_t)` of the strict Moser vector field `X_t` there.
+In the strict neighbourhood theorem for a Legendrian submanifold `Λ` (Kriegl–Michor,
+`TauCeti.Geometry.Contact.Legendrian.Neighborhood`), `α_t` is the linear interpolation between the
+model form `dz - λ` on `J¹Λ = T^* Λ × ℝ` and a pulled-back contact form, which agree along the zero
+section and all of whose interpolations are contact there. The hypersurface `ι` is the slice
+`T^* Λ × {0}`, which contains the zero section; the one-form `β = dz` vanishes on the slice and
+equals every `α_t` along the zero section, so `β(R_t) = 1` there and the Reeb fields are transverse
+to the slice near the zero section. Near the zero section, a globally smooth extension of the
+solution `h` of this file serves as the function `h_t = α_t(X_t)` of the strict Moser vector field
+`X_t` there.
 
 ## Main results
 
