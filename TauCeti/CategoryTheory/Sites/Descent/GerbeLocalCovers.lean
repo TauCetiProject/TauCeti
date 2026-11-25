@@ -27,17 +27,23 @@ when `F` is a gerbe for `J` they are `J`-covering. The covering conclusion for `
 does not produce an object over `U`: if `F(U)` is empty, the identity of `U` is not in it.
 
 These covers are where the local objects of a gerbe live: two local objects over different bases
-are compared on their overlap cover.
+are compared on their overlap cover. A member `q : S ⟶ T` of the overlap cover gives a chosen
+isomorphism `F(q ≫ i) x ≅ F(q ≫ j) y` of the direct restrictions (`overlapIso`), and so the overlap
+cover of the refined charts `q ≫ i`, `q ≫ j` is the maximal sieve.
 
 ## Main declarations
 
 In the namespace `CategoryTheory.Pseudofunctor.GerbeLocalCovers`:
 
 * `objectCover`, `objectCover_eq_top_iff`, `objectCover_eq_bot_iff`, `pullback_objectCover`,
-  `objectCover_mem`, `id_notMem_objectCover`.
+  `objectCover_mem`, `inf_objectCover_mem`, `id_notMem_objectCover`.
 * `isomCover`, `isomCover_comm`, `isomCover_congr`, `isomCover_self`, `isomCover_eq_top_of_iso`,
-  `pullback_isomCover`, `isomCover_mem`.
-* `overlapCover`, `overlapCover_comm`, `pullback_overlapCover`, `overlapCover_mem`.
+  `pullback_isomCover`, `isomCover_mem`, `inf_isomCover_mem`.
+* `overlapCover`, `overlapCover_comm`, `pullback_overlapCover`, `overlapCover_mem`,
+  `inf_overlapCover_mem`, `pullback_overlapCover_mem`.
+* `iteratedOverlapIso`, `overlapIso`, `overlapIso_hom`, `overlapIso_inv`: the chosen
+  isomorphisms on a member of the overlap cover.
+* `overlapCover_comp_eq_top`: the overlap cover of the refined charts is maximal.
 
 ## References
 
@@ -91,6 +97,12 @@ theorem pullback_objectCover {U V : C} (f : V ⟶ U) :
 theorem objectCover_mem [F.IsGerbe J] (U : C) : objectCover F U ∈ J U := by
   obtain ⟨R, hR, h⟩ := IsGerbe.exists_covering_nonempty (F := F) (J := J) U
   exact J.superset_covering (fun _ f hf ↦ h f hf) hR
+
+/-- For a gerbe, the common refinement of a covering sieve and the object cover is covering; each
+of its members has a nonempty source fibre. -/
+theorem inf_objectCover_mem [F.IsGerbe J] {U : C} {R : Sieve U} (hR : R ∈ J U) :
+    R ⊓ objectCover F U ∈ J U :=
+  J.intersection_covering hR (objectCover_mem U)
 
 /-- If the fibre over `U` is empty, the identity of `U` is not in the object cover. -/
 theorem id_notMem_objectCover {U : C} (h : IsEmpty (F.obj (.mk (op U)))) :
@@ -153,6 +165,12 @@ theorem isomCover_mem [F.IsGerbe J] {U : C} (x y : F.obj (.mk (op U))) :
   obtain ⟨R, hR, h⟩ := IsGerbe.exists_covering_iso (J := J) x y
   exact J.superset_covering (fun _ f hf ↦ h f hf) hR
 
+/-- For a gerbe, the common refinement of a covering sieve and an isomorphism cover is
+covering. -/
+theorem inf_isomCover_mem [F.IsGerbe J] {U : C} {R : Sieve U} (hR : R ∈ J U)
+    (x y : F.obj (.mk (op U))) : R ⊓ isomCover F x y ∈ J U :=
+  J.intersection_covering hR (isomCover_mem x y)
+
 /-! ### The overlap cover -/
 
 variable (F) in
@@ -191,5 +209,67 @@ bases. -/
 theorem overlapCover_mem [F.IsGerbe J] {T V W : C} (i : T ⟶ V) (j : T ⟶ W)
     (x : F.obj (.mk (op V))) (y : F.obj (.mk (op W))) : overlapCover F i j x y ∈ J T :=
   isomCover_mem _ _
+
+/-- For a gerbe, the common refinement of a covering sieve and an overlap cover is covering. -/
+theorem inf_overlapCover_mem [F.IsGerbe J] {T V W : C} {R : Sieve T} (hR : R ∈ J T)
+    (i : T ⟶ V) (j : T ⟶ W) (x : F.obj (.mk (op V))) (y : F.obj (.mk (op W))) :
+    R ⊓ overlapCover F i j x y ∈ J T :=
+  J.intersection_covering hR (overlapCover_mem i j x y)
+
+/-- For a gerbe, the pullback of an overlap cover along any `q : S ⟶ T` is covering. -/
+theorem pullback_overlapCover_mem [F.IsGerbe J] {S T V W : C} (i : T ⟶ V) (j : T ⟶ W)
+    (x : F.obj (.mk (op V))) (y : F.obj (.mk (op W))) (q : S ⟶ T) :
+    (overlapCover F i j x y).pullback q ∈ J S :=
+  J.pullback_stable q (overlapCover_mem i j x y)
+
+/-! ### The chosen isomorphism on an overlap -/
+
+/-- The chosen isomorphism `F(q) (F(i) x) ≅ F(q) (F(j) y)` of the iterated restrictions, on a
+member `q` of the overlap cover. -/
+noncomputable def iteratedOverlapIso {S T V W : C} {i : T ⟶ V} {j : T ⟶ W}
+    {x : F.obj (.mk (op V))} {y : F.obj (.mk (op W))} {q : S ⟶ T}
+    (hq : overlapCover F i j x y q) :
+    (F.map q.op.toLoc).toFunctor.obj ((F.map i.op.toLoc).toFunctor.obj x) ≅
+      (F.map q.op.toLoc).toFunctor.obj ((F.map j.op.toLoc).toFunctor.obj y) :=
+  ((mem_overlapCover_iff i j x y q).1 hq).some
+
+/-- The **overlap isomorphism** on a member `q : S ⟶ T` of the overlap cover: the isomorphism
+`F(q ≫ i) x ≅ F(q ≫ j) y` of the direct restrictions obtained from a chosen isomorphism
+`F(q) (F(i) x) ≅ F(q) (F(j) y)` of the iterated restrictions (`iteratedOverlapIso`) through the
+comparison isomorphisms of `F` for `q ≫ i` and `q ≫ j`. -/
+noncomputable def overlapIso {S T V W : C} {i : T ⟶ V} {j : T ⟶ W} {x : F.obj (.mk (op V))}
+    {y : F.obj (.mk (op W))} {q : S ⟶ T} (hq : overlapCover F i j x y q) :
+    (F.map (q ≫ i).op.toLoc).toFunctor.obj x ≅ (F.map (q ≫ j).op.toLoc).toFunctor.obj y :=
+  (Cat.Hom.toNatIso (F.mapComp' i.op.toLoc q.op.toLoc (q ≫ i).op.toLoc)).app x ≪≫
+    iteratedOverlapIso hq ≪≫
+      ((Cat.Hom.toNatIso (F.mapComp' j.op.toLoc q.op.toLoc (q ≫ j).op.toLoc)).app y).symm
+
+/-- The forward arrow of the overlap isomorphism: the `i`-side comparison, the chosen isomorphism
+of the iterated restrictions, then the inverse of the `j`-side comparison. -/
+theorem overlapIso_hom {S T V W : C} {i : T ⟶ V} {j : T ⟶ W} {x : F.obj (.mk (op V))}
+    {y : F.obj (.mk (op W))} {q : S ⟶ T} (hq : overlapCover F i j x y q) :
+    (overlapIso hq).hom =
+      ((Cat.Hom.toNatIso (F.mapComp' i.op.toLoc q.op.toLoc (q ≫ i).op.toLoc)).app x).hom ≫
+        (iteratedOverlapIso hq).hom ≫
+          ((Cat.Hom.toNatIso (F.mapComp' j.op.toLoc q.op.toLoc (q ≫ j).op.toLoc)).app y).inv :=
+  (rfl)
+
+/-- The inverse arrow of the overlap isomorphism: the factors of the forward arrow, inverted, in
+the reverse order. -/
+theorem overlapIso_inv {S T V W : C} {i : T ⟶ V} {j : T ⟶ W} {x : F.obj (.mk (op V))}
+    {y : F.obj (.mk (op W))} {q : S ⟶ T} (hq : overlapCover F i j x y q) :
+    (overlapIso hq).inv =
+      ((Cat.Hom.toNatIso (F.mapComp' j.op.toLoc q.op.toLoc (q ≫ j).op.toLoc)).app y).hom ≫
+        (iteratedOverlapIso hq).inv ≫
+          ((Cat.Hom.toNatIso (F.mapComp' i.op.toLoc q.op.toLoc (q ≫ i).op.toLoc)).app x).inv := by
+  simp [overlapIso]
+
+/-- **Refined charts.** If `q` is a member of the overlap cover, the overlap cover of the refined
+charts `q ≫ i` and `q ≫ j` is the maximal sieve: every further `r : R ⟶ S` is a member, through
+the image of `overlapIso` under `F(r)`. -/
+theorem overlapCover_comp_eq_top {S T V W : C} {i : T ⟶ V} {j : T ⟶ W} {x : F.obj (.mk (op V))}
+    {y : F.obj (.mk (op W))} {q : S ⟶ T} (hq : overlapCover F i j x y q) :
+    overlapCover F (q ≫ i) (q ≫ j) x y = ⊤ :=
+  isomCover_eq_top_of_iso (overlapIso hq)
 
 end CategoryTheory.Pseudofunctor.GerbeLocalCovers
