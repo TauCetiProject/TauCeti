@@ -142,6 +142,11 @@ theorem Iso.sym_tprod (f : Iso D₁ D₂) (v : Fin m → V₁) :
   Representation.Equiv.symmetricPower_apply_tprod ..
 
 @[simp]
+theorem Iso.sym_toLinearEquiv (f : Iso D₁ D₂) :
+    (f.sym m).toLinearEquiv = SymmetricPower.congr f.toLinearEquiv :=
+  Representation.Equiv.symmetricPower_toLinearEquiv ..
+
+@[simp]
 theorem Iso.toHom_sym (f : Iso D₁ D₂) : (f.sym m).toHom = f.toHom.sym m := by
   ext1
   rw [Iso.toHom_toLinearMap, Hom.sym_toLinearMap, Iso.toHom_toLinearMap]
@@ -158,15 +163,13 @@ theorem Iso.sym_trans (f : Iso D₁ D₂) (g : Iso D₂ D₃) :
 
 @[simp]
 theorem Iso.sym_symm (f : Iso D₁ D₂) : f.symm.sym m = (f.sym m).symm :=
-  Iso.ext <| LinearEquiv.toLinearMap_injective <| SymmetricPower.ext fun v ↦ by
-    simp [← (f.sym m).injective.eq_iff]
+  Iso.ext <| by simp
 
 /-- **The symmetric power commutes with transport**: `Sym^m (e_* D) = (Sym^m e)_* (Sym^m D)`, where
 `Sym^m e = SymmetricPower.congr e` sends `⨂ₛ v` to `⨂ₛ (e ∘ v)`. -/
 theorem sym_transport (e : V ≃ₗ[E] V₁) :
     (D.transport e).sym m = (D.sym m).transport (SymmetricPower.congr e) := by
-  have h : ((D.transportIso e).sym m).toLinearEquiv = SymmetricPower.congr e :=
-    LinearEquiv.toLinearMap_injective <| SymmetricPower.ext fun v ↦ by simp
+  have h : ((D.transportIso e).sym m).toLinearEquiv = SymmetricPower.congr e := by simp
   exact h ▸ ((D.transportIso e).sym m).eq_transport
 
 /-! ### Low symmetric powers, twists and zero monodromy -/

@@ -138,7 +138,7 @@ theorem map_comp {P : Type*} [AddCommMonoid P] [Module R P] (f : M →ₗ[R] N) 
   simp
 
 /-- A linear equivalence induces a linear equivalence on every symmetric tensor power. -/
-@[expose] noncomputable def congr (e : M ≃ₗ[R] N) : Sym[R] ι M ≃ₗ[R] Sym[R] ι N :=
+noncomputable def congr (e : M ≃ₗ[R] N) : Sym[R] ι M ≃ₗ[R] Sym[R] ι N :=
   LinearEquiv.ofLinearMap (map e.toLinearMap) (map e.symm.toLinearMap)
     (by rw [← map_comp, e.comp_symm, map_id]) (by rw [← map_comp, e.symm_comp, map_id])
 
@@ -149,6 +149,16 @@ theorem congr_toLinearMap (e : M ≃ₗ[R] N) : (congr (ι := ι) e).toLinearMap
 @[simp]
 theorem congr_symm (e : M ≃ₗ[R] N) : (congr (ι := ι) e).symm = congr e.symm :=
   (rfl)
+
+/-- The equivalence induced by the identity is the identity on the symmetric power. -/
+@[simp]
+theorem congr_refl : congr (ι := ι) (LinearEquiv.refl R M) = LinearEquiv.refl R _ :=
+  LinearEquiv.toLinearMap_injective map_id
+
+/-- Symmetric powers preserve composition of linear equivalences. -/
+theorem congr_trans {P : Type*} [AddCommMonoid P] [Module R P] (e : M ≃ₗ[R] N) (f : N ≃ₗ[R] P) :
+    congr (ι := ι) (e.trans f) = (congr e).trans (congr f) :=
+  LinearEquiv.toLinearMap_injective (map_comp e.toLinearMap f.toLinearMap)
 
 /-- The induced equivalence sends a pure tensor to the tensor of the images. -/
 @[simp]

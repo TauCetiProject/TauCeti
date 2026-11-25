@@ -150,7 +150,9 @@ noncomputable def symmetricPower (e : ρ.Equiv σ) (d : ℕ) :
     rw [SymmetricPower.congr_toLinearMap]
     exact (e.toIntertwiningMap.symmetricPower d).isIntertwining' g
 
-private theorem symmetricPower_toLinearEquiv (e : ρ.Equiv σ) (d : ℕ) :
+/-- The underlying linear equivalence is the equivalence induced on symmetric powers. -/
+@[simp]
+theorem symmetricPower_toLinearEquiv (e : ρ.Equiv σ) (d : ℕ) :
     (e.symmetricPower d).toLinearEquiv = SymmetricPower.congr e.toLinearEquiv :=
   toLinearEquiv_mk' _
 
@@ -158,13 +160,14 @@ private theorem symmetricPower_toLinearEquiv (e : ρ.Equiv σ) (d : ℕ) :
 @[simp]
 theorem symmetricPower_toLinearMap (e : ρ.Equiv σ) (d : ℕ) : (e.symmetricPower d).toLinearMap =
       SymmetricPower.map (ι := Fin d) e.toLinearMap :=
-  (rfl)
+  (congrArg LinearEquiv.toLinearMap (symmetricPower_toLinearEquiv e d)).trans
+    (SymmetricPower.congr_toLinearMap _)
 
 /-- The induced equivalence sends a pure symmetric tensor to the tensor of the images. -/
 @[simp]
 theorem symmetricPower_apply_tprod (e : ρ.Equiv σ) (d : ℕ) (m : Fin d → M) :
     e.symmetricPower d (⨂ₛ[R] i, m i) = ⨂ₛ[R] i, e (m i) :=
-  SymmetricPower.map_tprod e.toLinearMap m
+  SymmetricPower.congr_tprod e.toLinearEquiv m
 
 /-- Symmetric powers preserve identity equivalences. -/
 @[simp]
@@ -182,8 +185,8 @@ theorem symmetricPower_symm (e : ρ.Equiv σ) (d : ℕ) :
   have h : (e.symm.symmetricPower d).toLinearMap =
       ((e.symmetricPower d).symm).toLinearMap := by
     rw [symmetricPower_toLinearMap, toLinearMap_symm (e.symmetricPower d),
-      symmetricPower_toLinearEquiv, SymmetricPower.congr_symm, SymmetricPower.congr_toLinearMap]
-    rfl
+      symmetricPower_toLinearEquiv, SymmetricPower.congr_symm, toLinearMap_symm e,
+      SymmetricPower.congr_toLinearMap]
   exact Equiv.ext (funext fun x => LinearMap.congr_fun h x)
 
 /-- Symmetric powers preserve composition of equivalences. -/
