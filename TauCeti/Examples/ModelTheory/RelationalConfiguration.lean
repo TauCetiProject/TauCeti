@@ -11,6 +11,8 @@ import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
 import TauCeti.ModelTheory.Infinitary.Infinite
 import Mathlib.ModelTheory.Order
 import Mathlib.ModelTheory.Graph
+import TauCeti.MeasureTheory.Constructions.Cylinder.FullShift
+import TauCeti.Dynamics.SymbolicDynamics.Basic
 
 /-!
 # Spaces of structures on finite, infinite and empty carriers

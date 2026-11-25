@@ -10,8 +10,6 @@ public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.SetTheory.Cardinal.Continuum
 public import TauCeti.Topology.Algebra.Group.Perm
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.Perm
-public import TauCeti.MeasureTheory.Constructions.Cylinder.FullShift
-public import TauCeti.Dynamics.SymbolicDynamics.Basic
 
 /-!
 # Topology of relational configurations
