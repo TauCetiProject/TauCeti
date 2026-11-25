@@ -85,19 +85,12 @@ private theorem idempotent_ne_zero_of_basis_eq {I : Type uI} {e : I → A}
       (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)))
     (i : I)
     (hbi : bP i = LaurentK0.of.{uA} _
-      ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i})
-          (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩),
-        gradedFiniteProjectiveModules_ofIdeal_span_singleton (he i)
-          (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩)⟩) :
+      (gradedIdempotentProjective (he i) (he₀ i))) :
     e i ≠ 0 := by
   intro h0
   apply bP.ne_zero i
   rw [hbi]
-  let P : (gradedFiniteProjectiveModules 𝒜).FullSubcategory :=
-    ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i})
-        (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩),
-      gradedFiniteProjectiveModules_ofIdeal_span_singleton (he i)
-        (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩)⟩
+  let P := gradedIdempotentProjective (he i) (he₀ i)
   have hval (x : P.obj) : (x : A) = 0 := by
     obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp x.property
     rw [← ha, h0, mul_zero]
@@ -117,10 +110,7 @@ theorem gradedProjectiveExtEulerTarget_eq_mul_invert_repr
     (bP : Module.Basis I (LaurentPolynomial ℤ)
       (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)))
     (hbP : ∀ i, bP i = LaurentK0.of.{uA} _
-      ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i})
-          (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩),
-        gradedFiniteProjectiveModules_ofIdeal_span_singleton (he i)
-          (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩)⟩)
+      (gradedIdempotentProjective (he i) (he₀ i)))
     (x : LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜))
     (M : GradedModuleCat.{uA} 𝒜) [Module.Finite k M] (i : I)
     (hne : ∀ j, j ≠ i → M.smulGradedDimension (e j) = 0) :
@@ -142,10 +132,7 @@ theorem gradedProjectiveExtEuler_of_right_eq_mul_invert_repr
     (bP : Module.Basis I (LaurentPolynomial ℤ)
       (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)))
     (hbP : ∀ i, bP i = LaurentK0.of.{uA} _
-      ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i})
-          (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩),
-        gradedFiniteProjectiveModules_ofIdeal_span_singleton (he i)
-          (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩)⟩)
+      (gradedIdempotentProjective (he i) (he₀ i)))
     (x : LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜))
     (M : (gradedFiniteModules 𝒜).FullSubcategory) (i : I)
     (hne : ∀ j, j ≠ i → M.obj.smulGradedDimension (e j) = 0) :
@@ -197,10 +184,7 @@ theorem gradedProjectiveExtEuler_injective
     (bP : Module.Basis I (LaurentPolynomial ℤ)
       (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)))
     (hbP : ∀ i, bP i = LaurentK0.of.{uA} _
-      ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i})
-          (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩),
-        gradedFiniteProjectiveModules_ofIdeal_span_singleton (he i)
-          (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩)⟩) :
+      (gradedIdempotentProjective (he i) (he₀ i))) :
     Function.Injective (gradedProjectiveExtEuler 𝒜) := by
   intro x y hxy
   apply bP.ext_elem
@@ -238,10 +222,7 @@ theorem gradedProjectiveExtEuler_nondegenerate
     (bP : Module.Basis I (LaurentPolynomial ℤ)
       (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)))
     (hbP : ∀ i, bP i = LaurentK0.of.{uA} _
-      ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i})
-          (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩),
-        gradedFiniteProjectiveModules_ofIdeal_span_singleton (he i)
-          (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩)⟩)
+      (gradedIdempotentProjective (he i) (he₀ i)))
     (hS : IsExhaustiveGradedSimpleFamily S) :
     (gradedProjectiveExtEuler 𝒜).Nondegenerate := by
   constructor
@@ -259,10 +240,7 @@ section Bijective
 variable (bP : Module.Basis I (LaurentPolynomial ℤ)
     (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)))
   (hbP : ∀ i, bP i = LaurentK0.of.{uA} _
-    ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i})
-        (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩),
-      gradedFiniteProjectiveModules_ofIdeal_span_singleton (he i)
-        (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩)⟩)
+    (gradedIdempotentProjective (he i) (he₀ i)))
   (hS : IsExhaustiveGradedSimpleFamily S)
 
 include hne hbP hS in
@@ -361,10 +339,7 @@ theorem gradedProjectiveExtEuler_basis_eq_dualBasis [Finite I] [DecidableEq I]
     (hS : IsExhaustiveGradedSimpleFamily S) (i : I) :
     gradedProjectiveExtEuler 𝒜
         (LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
-          ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i})
-              (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩),
-            gradedFiniteProjectiveModules_ofIdeal_span_singleton (he i)
-              (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩)⟩) =
+          (gradedIdempotentProjective (he i) (he₀ i))) =
       (gradedSimpleClassBasis S he he₀ hne hself hS).dualBasis i := by
   ext y
   rw [gradedProjectiveExtEuler_ofIdeal_span_singleton_eq_repr S he he₀

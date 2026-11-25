@@ -581,10 +581,7 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
   (bP : Module.Basis I (LaurentPolynomial ℤ)
     (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)))
   (hbP : ∀ i, bP i = LaurentK0.of.{uA} _
-    ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i})
-        (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩),
-      gradedFiniteProjectiveModules_ofIdeal_span_singleton (he i)
-        (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩)⟩)
+    (gradedIdempotentProjective (he i) (he₀ i)))
 
 namespace GradedProjectiveResolution
 
@@ -633,10 +630,7 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
   (bP : Module.Basis I (LaurentPolynomial ℤ)
     (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)))
   (hbP : ∀ i, bP i = LaurentK0.of.{uA} _
-    ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i})
-        (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩),
-      gradedFiniteProjectiveModules_ofIdeal_span_singleton (he i)
-        (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩)⟩)
+    (gradedIdempotentProjective (he i) (he₀ i)))
 
 namespace GradedProjectiveResolution
 
@@ -917,10 +911,7 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
   (bP : Module.Basis I (LaurentPolynomial ℤ)
     (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)))
   (hbP : ∀ i, bP i = LaurentK0.of.{uA} _
-    ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i})
-        (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩),
-      gradedFiniteProjectiveModules_ofIdeal_span_singleton (he i)
-        (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩)⟩)
+    (gradedIdempotentProjective (he i) (he₀ i)))
   (hconc : ∀ i p, p ≠ 0 → (S i).obj.grading.piece p = ⊥)
 
 namespace GradedProjectiveResolution

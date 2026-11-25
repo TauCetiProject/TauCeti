@@ -182,10 +182,7 @@ variable {I : Type uI} {e : I → A} (he : ∀ i, IsIdempotentElem (e i)) (he₀
   (bP : Module.Basis I (LaurentPolynomial ℤ)
     (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)))
   (hbP : ∀ i, bP i = LaurentK0.of.{uA} _
-    ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i})
-        (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩),
-      gradedFiniteProjectiveModules_ofIdeal_span_singleton (he i)
-        (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩)⟩)
+    (gradedIdempotentProjective (he i) (he₀ i)))
 
 include hbP in
 /-- **Evaluating `gradedHomShiftCoordinate M` in an idempotent projective basis.** For a
