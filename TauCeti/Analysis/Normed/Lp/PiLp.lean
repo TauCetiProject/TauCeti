@@ -459,6 +459,16 @@ theorem piMap_comp (S : ∀ i, F i →L[𝕜] G i) (T : ∀ i, E i →L[𝕜] F 
     piMap p (fun i ↦ S i ∘L T i) = piMap p S ∘L piMap p T :=
   (rfl)
 
+/-- A block-diagonal operator maps the `i`-th coordinate inclusion through its `i`-th block. -/
+@[simp]
+theorem piMap_comp_singleCLM [DecidableEq ι] (T : ∀ i, E i →L[𝕜] F i) (i : ι) :
+    piMap p T ∘L singleCLM p 𝕜 E i = singleCLM p 𝕜 F i ∘L T i := by
+  ext x j
+  by_cases h : j = i
+  · subst h
+    simp
+  · simp [h]
+
 end PiLp
 
 namespace PiLp
@@ -473,16 +483,6 @@ coordinate. -/
 theorem proj_comp_piMap (T : ∀ i, E i →L[𝕜] F i) (i : ι) :
     proj p F i ∘L piMap p T = T i ∘L proj p E i :=
   (rfl)
-
-/-- A block-diagonal operator maps the `i`-th coordinate inclusion through its `i`-th block. -/
-@[simp]
-theorem piMap_comp_singleCLM [DecidableEq ι] (T : ∀ i, E i →L[𝕜] F i) (i : ι) :
-    piMap p T ∘L singleCLM p 𝕜 E i = singleCLM p 𝕜 F i ∘L T i := by
-  ext x j
-  by_cases h : j = i
-  · subst h
-    simp
-  · simp [h]
 
 end PiLp
 
