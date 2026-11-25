@@ -38,6 +38,9 @@ times the density of the Poisson measure:
 ## Main declarations
 
 * `TauCeti.upperHalfPlanePoissonIntegralFun`: the Poisson integral `P[h]` of a complex function.
+* `TauCeti.upperHalfPlanePoissonIntegralFun_const`: `P[c] = c` on the upper half-plane.
+* `TauCeti.enorm_upperHalfPlanePoissonIntegralFun_le`: `P[h]` is dominated by the Poisson integral
+  of the measure `|h| dx`.
 * `TauCeti.integrable_upperHalfPlanePoissonKernel_smul`: for `h ∈ L¹(Π)` the integrand of `P[h]` is
   integrable.
 * `TauCeti.re_upperHalfPlanePoissonIntegralFun`, `TauCeti.im_upperHalfPlanePoissonIntegralFun`:
@@ -88,6 +91,12 @@ theorem upperHalfPlanePoissonIntegralFun_def (h : ℝ → ℂ) (z : ℂ) :
     upperHalfPlanePoissonIntegralFun h z = ∫ x, upperHalfPlanePoissonKernel z x • h x := by
   rw [upperHalfPlanePoissonIntegralFun]
 
+/-- **The Poisson integral reproduces constants**: `P[c](z) = c` on the upper half-plane. -/
+theorem upperHalfPlanePoissonIntegralFun_const (c : ℂ) {z : ℂ} (hz : 0 < z.im) :
+    upperHalfPlanePoissonIntegralFun (fun _ ↦ c) z = c := by
+  rw [upperHalfPlanePoissonIntegralFun_def, integral_smul_const,
+    integral_upperHalfPlanePoissonKernel hz, one_smul]
+
 /-- For `h` integrable for the Poisson measure, the measure `|h(x)| dx` is Poisson-finite. -/
 theorem isPoissonFinite_withDensity_enorm {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {h : ℝ → E} (hh : Integrable h upperHalfPlanePoissonMeasure) :
@@ -100,6 +109,27 @@ theorem isPoissonFinite_withDensity_enorm {E : Type*} [NormedAddCommGroup E] [No
   dsimp only
   rw [norm_smul, Real.norm_of_nonneg (by positivity), NNReal.smul_def, smul_eq_mul, coe_nnNorm,
     mul_comm]
+
+/-- **`P[h]` is dominated by the Poisson integral of `|h| dx`.** On the open upper half-plane,
+`‖P[h](z)‖ₑ ≤ ∫ P(z, x) |h(x)| dx`. -/
+theorem enorm_upperHalfPlanePoissonIntegralFun_le (h : ℝ → ℂ) {z : ℂ} (hz : 0 < z.im) :
+    ‖upperHalfPlanePoissonIntegralFun h z‖ₑ ≤
+      upperHalfPlanePoissonLIntegral (volume.withDensity fun s => ‖h s‖ₑ) z := by
+  by_cases hint : Integrable fun s => upperHalfPlanePoissonKernel z s • h s
+  · -- `h` is recovered from the integrand by dividing by the positive kernel.
+    have hmeas : AEStronglyMeasurable h := by
+      refine (((measurable_upperHalfPlanePoissonKernel z).inv.aestronglyMeasurable).smul
+        hint.aestronglyMeasurable).congr (.of_forall fun s => ?_)
+      simp only [Pi.smul_apply', Pi.inv_apply]
+      rw [smul_smul, inv_mul_cancel₀ (upperHalfPlanePoissonKernel_pos hz s).ne', one_smul]
+    rw [upperHalfPlanePoissonIntegralFun_def, upperHalfPlanePoissonLIntegral_def,
+      lintegral_withDensity_eq_lintegral_mul₀ hmeas.eNorm
+        (measurable_upperHalfPlanePoissonKernel z).ennreal_ofReal.aemeasurable]
+    refine (eNorm_integral_le_lintegral_eNorm _).trans_eq (lintegral_congr fun s => ?_)
+    rw [eNorm_smul, Real.eNorm_of_nonneg (upperHalfPlanePoissonKernel_nonneg hz.le s),
+      Pi.mul_apply, mul_comm]
+  · rw [upperHalfPlanePoissonIntegralFun_def, integral_undef hint, eNorm_zero]
+    exact zero_le
 
 /-- **The Poisson integral of an `L¹(Π)` function converges**: for `h` integrable for the Poisson
 measure, `x ↦ P(z, x) h(x)` is integrable for every pole `z`. -/

@@ -27,6 +27,10 @@ factors. The Bochner integral is rescaled by the same factor, for all factors
 (`TauCeti.integral_comp_mul_pi`), by the linear change of variables
 `MeasureTheory.Measure.integral_comp_linearMap` for the diagonal matrix.
 
+On the plane `ℝ × ℝ`, the Bochner case `MeasureTheory.Measure.setIntegral_comp_smul` of a set
+integral is restated with its Jacobian computed: substituting `z = c • z'` contributes the factor
+`c * c`.
+
 ## Main declarations
 
 * `MeasureTheory.Measure.lintegral_comp_smul`:
@@ -40,6 +44,8 @@ factors. The Bochner integral is rescaled by the same factor, for all factors
 * `MeasureTheory.Measure.map_mul_pi_addHaar_eq_smul`: the image of an additive Haar measure on
   `ℝ^ι` under `x ↦ (cᵢ xᵢ)ᵢ` is the measure scaled by `|∏ᵢ cᵢ|⁻¹`.
 * `TauCeti.integral_comp_mul_pi`: `∫ x, F (fun i ↦ cᵢ xᵢ) = |∏ᵢ cᵢ|⁻¹ • ∫ y, F y` on `ℝ^ι`.
+* `MeasureTheory.Measure.setIntegral_prod_eq_mul_smul_setIntegral_comp_smul`:
+  `∫ z in s, f z = (c * c) • ∫ z in c⁻¹ • s, f (c • z)` on the plane `ℝ × ℝ`.
 -/
 
 public section
@@ -113,6 +119,19 @@ theorem map_mul_pi_addHaar_eq_smul {ι : Type*} [Fintype ι] (μ : Measure (ι �
   rw [mul_pi_eq_toLin'_diagonal, Measure.map_linearMap_addHaar_eq_smul_addHaar μ
     (det_toLin'_diagonal c ▸ Finset.prod_ne_zero_iff.2 fun i _ ↦ hc i), det_toLin'_diagonal,
     abs_inv]
+
+open scoped Pointwise in
+/-- **Dilation of a set integral over the plane.** For `c ≠ 0`, substituting `z = c • z'` in an
+integral over a set `s ⊆ ℝ × ℝ` against a product of additive Haar measures contributes the
+Jacobian `c * c`. This is `MeasureTheory.Measure.setIntegral_comp_smul` on `ℝ × ℝ`, where
+`|(c ^ 2)⁻¹|` cancels against `c * c`. -/
+theorem setIntegral_prod_eq_mul_smul_setIntegral_comp_smul {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (μ ν : Measure ℝ) [μ.IsAddHaarMeasure] [ν.IsAddHaarMeasure]
+    (f : ℝ × ℝ → F) {c : ℝ} (hc : c ≠ 0) (s : Set (ℝ × ℝ)) :
+    ∫ z in s, f z ∂μ.prod ν = (c * c) • ∫ z in c⁻¹ • s, f (c • z) ∂μ.prod ν := by
+  rw [setIntegral_comp_smul (μ.prod ν) f _ hc, smul_inv_smul₀ hc, smul_smul]
+  -- `finrank ℝ (ℝ × ℝ) = 2`, so the factor is `(c * c) * |(c ^ 2)⁻¹| = 1`.
+  simp [finrank_prod, hc, ← sq]
 
 end MeasureTheory.Measure
 

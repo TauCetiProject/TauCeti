@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.NumberTheory.GaloisRepresentation.Unramified
+import TauCeti.NumberTheory.GaloisRepresentation.Unramified.Basic
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Cyclotomic
 import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff

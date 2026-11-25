@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow
+public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow.Basic
 
 /-!
 # Wedge products of two real two-forms

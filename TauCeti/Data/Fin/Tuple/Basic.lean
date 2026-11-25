@@ -77,6 +77,8 @@ set of the earlier ones.
   consecutive entries is contracting them in the whole tuple.
 * `Fin.insertNth_apply_zero_of_ne_zero`, `Fin.insertNth_apply_last_of_ne_last`: inserting away
   from the first (last) position keeps the first (last) entry.
+* `Fin.insertNth_apply_of_ne_fin_two`: in a pair, inserting at one position puts the single entry
+  of the tuple at the other one.
 * `Fin.contractNth_castSucc_insertNth_succ_castSucc`: contracting the two steps of a path that
   meet at an inserted vertex.
 * `Fin.removeNth_succ_cons`: deleting an entry of `Fin.cons x a` other than the first deletes
@@ -410,6 +412,12 @@ theorem insertNth_apply_last_of_ne_last {β : Type*} {n : ℕ} {p : Fin (n + 2)}
     (hp : p ≠ last (n + 1)) (v : β) (x : Fin (n + 1) → β) :
     insertNth (α := fun _ => β) p v x (last (n + 1)) = x (last n) := by
   rw [← succAbove_ne_last_last hp, insertNth_apply_succAbove]
+
+/-- In a pair, inserting at one position puts the single entry of the tuple at the other one. -/
+theorem insertNth_apply_of_ne_fin_two {β : Type*} {i j : Fin 2} (h : i ≠ j) (v : β)
+    (x : Fin 1 → β) : insertNth (α := fun _ => β) i v x j = x 0 := by
+  obtain ⟨k, rfl⟩ := exists_succAbove_eq h.symm
+  rw [insertNth_apply_succAbove, Subsingleton.elim k 0]
 
 /-- **Contracting along a path with an inserted vertex.** Let `f k` be a function of the two
 endpoints of the `k`-th step of a path. Along the path obtained from `x` by inserting `v` after
