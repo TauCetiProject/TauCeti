@@ -262,16 +262,12 @@ theorem reflection_mem_discreteSeries_iff {k : ℕ} {v : CompactWeightModule (k 
 /-- **The reflection interchanges the two rays** `D_k^+(μ)` and `D_k^-(μ)`. -/
 theorem reflection_mem_negativeDiscreteSeries_iff {k : ℕ} {v : CompactWeightModule (k : ℂ) μ} :
     reflection (k : ℂ) μ v ∈ negativeDiscreteSeries k μ ↔ v ∈ positiveDiscreteSeries k μ :=
-  reflection_mem_weightLieSubmodule_iff fun ℓ ↦ by
-    simp only [mem_negativeDiscreteSeriesWeights, mem_positiveDiscreteSeriesWeights]
-    omega
+  reflection_mem_weightLieSubmodule_iff fun _ ↦ neg_mem_negativeDiscreteSeriesWeights_iff
 
 /-- The reflection maps the negative ray onto the positive ray. -/
 theorem reflection_mem_positiveDiscreteSeries_iff {k : ℕ} {v : CompactWeightModule (k : ℂ) μ} :
     reflection (k : ℂ) μ v ∈ positiveDiscreteSeries k μ ↔ v ∈ negativeDiscreteSeries k μ :=
-  reflection_mem_weightLieSubmodule_iff fun ℓ ↦ by
-    simp only [mem_negativeDiscreteSeriesWeights, mem_positiveDiscreteSeriesWeights]
-    omega
+  reflection_mem_weightLieSubmodule_iff fun _ ↦ neg_mem_positiveDiscreteSeriesWeights_iff
 
 end CompactWeightModule
 
