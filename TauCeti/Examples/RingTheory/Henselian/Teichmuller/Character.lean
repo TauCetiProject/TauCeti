@@ -22,7 +22,9 @@ principal units `1 + pℤ_p`. The lift of the trivial character is trivial.
 
 public section
 
-open IsLocalRing TauCeti
+namespace TauCeti.Examples.TeichmullerCharacter
+
+open IsLocalRing
 
 variable (p : ℕ) [Fact p.Prime]
 
@@ -64,3 +66,5 @@ example (σ : Field.absoluteGaloisGroup ℚ) :
 example : teichmullerCharacter ℤ_[p] (1 : Field.absoluteGaloisGroup ℚ →* (ResidueField ℤ_[p])ˣ) =
     1 :=
   teichmullerCharacter_one _
+
+end TauCeti.Examples.TeichmullerCharacter
