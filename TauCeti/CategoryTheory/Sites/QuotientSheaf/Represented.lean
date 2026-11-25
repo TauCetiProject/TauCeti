@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Sites.PreservesLimits
 public import Mathlib.CategoryTheory.Sites.RegularEpi
+public import TauCeti.CategoryTheory.Sites.EpiMono
 public import TauCeti.CategoryTheory.Sites.QuotientSheaf
 
 /-!
@@ -51,37 +52,36 @@ universe w v u
 
 variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
 
-/-- The map of representable sheaves induced by a morphism `q : U ⟶ M` whose singleton sieve is
-`J`-covering is `J`-locally surjective: every `T`-point of `M` lifts to `U` on a covering sieve
-of `T`. -/
-theorem isLocallySurjective_uliftYoneda_map_of_mem [J.Subcanonical] {U M : C} {q : U ⟶ M}
-    (hq : Sieve.generate (Presieve.singleton q) ∈ J M) :
-    Sheaf.IsLocallySurjective (J.uliftYoneda.{w}.map q) where
-  imageSieve_mem {T} x := by
-    refine J.superset_covering ?_ (J.pullback_stable x.down hq)
-    rintro T' g ⟨W, a, b, ⟨⟩, hab⟩
-    exact ⟨ULift.up a, by
-      change ULift.up (a ≫ q) = ULift.up (g ≫ x.down)
-      rw [hab]⟩
+variable [J.Subcanonical] {R U M : C} {s t : R ⟶ U} {q : U ⟶ M}
 
 /-- An invariant map `q : U ⟶ M` induces an invariant map `h_U ⟶ h_M` of representable sheaves. -/
-theorem quotientSheaf.uliftYoneda_map_condition [J.Subcanonical] {R U M : C} {s t : R ⟶ U}
-    {q : U ⟶ M} (hq : t ≫ q = s ≫ q) :
+theorem quotientSheaf.uliftYoneda_map_condition (hq : t ≫ q = s ≫ q) :
     J.uliftYoneda.{w}.map t ≫ J.uliftYoneda.{w}.map q =
       J.uliftYoneda.{w}.map s ≫ J.uliftYoneda.{w}.map q := by
   rw [← Functor.map_comp, ← Functor.map_comp, hq]
 
-variable [HasSheafify J (Type (max v w))] [J.Subcanonical] {R U M : C} {s t : R ⟶ U}
-  {q : U ⟶ M}
-
 variable (J) in
 /-- The comparison map `h_R ⟶ h_U ×_{h_M} h_U` of a pre-relation `(t, s)` with an invariant map
 `q : U ⟶ M`, the pair `(h t, h s)` into the kernel pair of `h q`. -/
-noncomputable abbrev quotientSheaf.toKernelPair (hq : t ≫ q = s ≫ q) :
+noncomputable def quotientSheaf.toKernelPair (hq : t ≫ q = s ≫ q) :
     J.uliftYoneda.{w}.obj R ⟶
       pullback (J.uliftYoneda.{w}.map q) (J.uliftYoneda.{w}.map q) :=
   pullback.lift (J.uliftYoneda.{w}.map t) (J.uliftYoneda.{w}.map s)
-    (by rw [← Functor.map_comp, ← Functor.map_comp, hq])
+    (quotientSheaf.uliftYoneda_map_condition hq)
+
+/-- The first component of `h_R ⟶ h_U ×_{h_M} h_U` is `h t`. -/
+@[reassoc (attr := simp)]
+theorem quotientSheaf.toKernelPair_fst (hq : t ≫ q = s ≫ q) :
+    quotientSheaf.toKernelPair.{w} J hq ≫ pullback.fst _ _ = J.uliftYoneda.{w}.map t :=
+  pullback.lift_fst _ _ _
+
+/-- The second component of `h_R ⟶ h_U ×_{h_M} h_U` is `h s`. -/
+@[reassoc (attr := simp)]
+theorem quotientSheaf.toKernelPair_snd (hq : t ≫ q = s ≫ q) :
+    quotientSheaf.toKernelPair.{w} J hq ≫ pullback.snd _ _ = J.uliftYoneda.{w}.map s :=
+  pullback.lift_snd _ _ _
+
+variable [HasSheafify J (Type (max v w))]
 
 /-- **Stacks, Lemma 39.20.3 (03C5).** Let `q : U ⟶ M` be invariant for the pre-relation `(t, s)`.
 If `h_U ⟶ h_M` and `h_R ⟶ h_U ×_{h_M} h_U` are `J`-locally surjective, then the factorisation
@@ -96,8 +96,8 @@ theorem quotientSheaf.isIso_desc_of_isLocallySurjective (hq : t ≫ q = s ≫ q)
       quotientSheaf.π J s t =
         pullback.snd (J.uliftYoneda.{w}.map q) (J.uliftYoneda.{w}.map q) ≫
           quotientSheaf.π J s t := by
-    rw [← cancel_epi (quotientSheaf.toKernelPair.{w} J hq), pullback.lift_fst_assoc,
-      pullback.lift_snd_assoc, quotientSheaf.condition]
+    rw [← cancel_epi (quotientSheaf.toKernelPair.{w} J hq), quotientSheaf.toKernelPair_fst_assoc,
+      quotientSheaf.toKernelPair_snd_assoc, quotientSheaf.condition]
   have hc := isColimitCoforkOfEffectiveEpi (J.uliftYoneda.{w}.map q) _ (pullback.isLimit _ _)
   let ψ := Cofork.IsColimit.desc hc (quotientSheaf.π J s t) key
   have hψ : J.uliftYoneda.{w}.map q ≫ ψ = quotientSheaf.π J s t := Cofork.IsColimit.π_desc hc
@@ -109,7 +109,7 @@ theorem quotientSheaf.isIso_desc_of_isLocallySurjective (hq : t ≫ q = s ≫ q)
 /-- **Stacks, Lemma 39.20.3 (03C5).** For an invariant map `q : U ⟶ M` such that `h_U ⟶ h_M` and
 `h_R ⟶ h_U ×_{h_M} h_U` are `J`-locally surjective, the quotient sheaf `U/R` is the representable
 sheaf `h_M`. -/
-@[expose] noncomputable def quotientSheaf.isoOfIsLocallySurjective (hq : t ≫ q = s ≫ q)
+noncomputable def quotientSheaf.isoOfIsLocallySurjective (hq : t ≫ q = s ≫ q)
     (hU : Sheaf.IsLocallySurjective (J.uliftYoneda.{w}.map q))
     (hR : Sheaf.IsLocallySurjective (quotientSheaf.toKernelPair.{w} J hq)) :
     quotientSheaf.{w} J s t ≅ J.uliftYoneda.{w}.obj M :=
@@ -124,7 +124,7 @@ theorem quotientSheaf.isoOfIsLocallySurjective_hom (hq : t ≫ q = s ≫ q)
     (hR : Sheaf.IsLocallySurjective (quotientSheaf.toKernelPair.{w} J hq)) :
     (quotientSheaf.isoOfIsLocallySurjective hq hU hR).hom =
       quotientSheaf.desc (J.uliftYoneda.{w}.map q)
-        (quotientSheaf.uliftYoneda_map_condition hq) :=
+        (quotientSheaf.uliftYoneda_map_condition hq) := by
   rfl
 
 /-- The projection onto the quotient sheaf, followed by `U/R ≅ h_M`, is the map `h q`. -/
@@ -145,7 +145,7 @@ theorem quotientSheaf.isIso_desc_kernelPair [HasPullback q q]
     IsIso (quotientSheaf.desc (J.uliftYoneda.{w}.map q)
       (quotientSheaf.uliftYoneda_map_condition (pullback.condition (f := q) (g := q)))) := by
   refine quotientSheaf.isIso_desc_of_isLocallySurjective pullback.condition
-    (isLocallySurjective_uliftYoneda_map_of_mem hq) ?_
+    (Sheaf.isLocallySurjective_uliftYoneda_map_of_mem hq) ?_
   have : quotientSheaf.toKernelPair.{w} J (pullback.condition (f := q) (g := q)) =
       pullbackComparison J.uliftYoneda.{w} q q := by
     ext1 <;> simp

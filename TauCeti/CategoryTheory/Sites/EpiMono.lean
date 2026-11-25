@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.Limits.Types.Pullbacks
 public import Mathlib.CategoryTheory.MorphismProperty.Limits
 public import Mathlib.CategoryTheory.Sites.EpiMono
 public import Mathlib.CategoryTheory.Sites.Limits
+public import Mathlib.CategoryTheory.Sites.Subcanonical
 
 /-!
 # Epimorphisms and monomorphisms of sheaves: preservation and base-change stability
@@ -48,11 +49,15 @@ sheaf topoi.
 Finally, a monomorphism of sheaves with values in a concrete category whose forgetful functor
 preserves pullbacks is injective on the sections over every object
 (`CategoryTheory.Sheaf.injective_app_of_mono`).
+
+For a subcanonical topology, the map of representable sheaves induced by a morphism whose
+singleton sieve is covering is locally surjective
+(`CategoryTheory.Sheaf.isLocallySurjective_uliftYoneda_map_of_mem`).
 -/
 
 public section
 
-universe w
+universe w v u
 
 open CategoryTheory Limits
 
@@ -177,5 +182,23 @@ theorem injective_app_of_mono (f : F ⟶ G) [Mono f] (W : Dᵒᵖ) :
   exact ConcreteCategory.injective_of_mono_of_preservesPullback (f.hom.app W)
 
 end Mono
+
+section Representable
+
+variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
+
+/-- The map of representable sheaves induced by a morphism `q : U ⟶ M` whose singleton sieve is
+`J`-covering is `J`-locally surjective: every `T`-point of `M` lifts to `U` on a covering sieve
+of `T`. -/
+theorem isLocallySurjective_uliftYoneda_map_of_mem [J.Subcanonical] {U M : C} {q : U ⟶ M}
+    (hq : Sieve.generate (Presieve.singleton q) ∈ J M) :
+    IsLocallySurjective (J.uliftYoneda.{w}.map q) where
+  imageSieve_mem {T} x := by
+    refine J.superset_covering ?_ (J.pullback_stable x.down hq)
+    rintro T' g ⟨W, a, b, ⟨⟩, hab⟩
+    -- sections of `h_M` over `T'` are `ULift`-wrapped morphisms `T' ⟶ M`
+    exact ⟨ULift.up a, congrArg ULift.up hab⟩
+
+end Representable
 
 end CategoryTheory.Sheaf

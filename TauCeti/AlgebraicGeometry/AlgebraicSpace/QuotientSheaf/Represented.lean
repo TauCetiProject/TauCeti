@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import TauCeti.AlgebraicGeometry.AlgebraicSpace.QuotientSheaf
+public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
+public import TauCeti.AlgebraicGeometry.Morphisms.UnderlyingMap
 public import TauCeti.CategoryTheory.Sites.QuotientSheaf.Represented
 
 /-!
@@ -27,8 +28,8 @@ surjective) with its kernel pair `R = U ×_M U`: then `h_R ⟶ h_U ×_{h_M} h_U`
 
 * `TauCeti.AlgebraicGeometry.Spaces.quotientSheaf.kernelPairIso`: for an fppf covering
   `q : U ⟶ M`, the quotient sheaf of the kernel pair of `q` is `h_M`.
-* `TauCeti.AlgebraicGeometry.Spaces.quotientSheaf.foldKernelPairIso`: the quotient sheaf of the
-  kernel pair of the fold map `∐_{i : ι} U ⟶ U`, for a nonempty index type `ι`, is `h_U`.
+* `TauCeti.AlgebraicGeometry.Spaces.quotientSheaf.sigmaDescIdKernelPairIso`: the quotient sheaf
+  of the kernel pair of the fold map `∐_{i : ι} U ⟶ U`, for a nonempty index type `ι`, is `h_U`.
 
 ## References
 
@@ -47,12 +48,6 @@ universe u
 
 variable {R U M : Scheme.{u}} {s t : R ⟶ U}
 
-/-- The singleton sieve of an fppf covering morphism `q : U ⟶ M` covers `M` for the fppf
-topology. -/
-theorem generate_singleton_mem_fppfTopology (q : U ⟶ M) [Flat q] [LocallyOfFinitePresentation q]
-    [Surjective q] : Sieve.generate (Presieve.singleton q) ∈ Scheme.fppfTopology M :=
-  Precoverage.generate_mem_toGrothendieck q.singleton_mem_fppfPrecoverage
-
 /-- For an fppf covering `q : U ⟶ M` (flat, locally of finite presentation and surjective), the
 factorisation of `q` through the quotient sheaf of its kernel pair `U ×_M U ⇉ U` is an
 isomorphism. -/
@@ -63,7 +58,7 @@ instance quotientSheaf.isIso_desc_kernelPair (q : U ⟶ M) [Flat q]
       (TauCeti.CategoryTheory.quotientSheaf.uliftYoneda_map_condition
         (pullback.condition (f := q) (g := q)))) :=
   TauCeti.CategoryTheory.quotientSheaf.isIso_desc_kernelPair q
-    (generate_singleton_mem_fppfTopology q)
+    (Precoverage.generate_mem_toGrothendieck q.singleton_mem_fppfPrecoverage)
 
 /-- For an fppf covering `q : U ⟶ M` (flat, locally of finite presentation and surjective), the
 quotient sheaf of the kernel pair `U ×_M U ⇉ U` is the representable sheaf `h_M`. -/
@@ -88,25 +83,11 @@ theorem quotientSheaf.π_kernelPairIso_hom (q : U ⟶ M) [Flat q]
 
 section Fold
 
-variable (U) (ι : Type) [Nonempty ι]
-
-/-- The fold map `∐_{i : ι} U ⟶ U` is locally of finite presentation. -/
-instance locallyOfFinitePresentation_sigmaDesc_id :
-    LocallyOfFinitePresentation (Sigma.desc fun _ : ι ↦ 𝟙 U) :=
-  have : IsZariskiLocalAtSource @LocallyOfFinitePresentation.{u} :=
-    HasRingHomProperty.instIsZariskiLocalAtSource (Q := @RingHom.FinitePresentation)
-  IsZariskiLocalAtSource.sigmaDesc fun _ ↦ inferInstance
-
-/-- The fold map `∐_{i : ι} U ⟶ U` is surjective for a nonempty index type `ι`. -/
-instance surjective_sigmaDesc_id : Surjective (Sigma.desc fun _ : ι ↦ 𝟙 U) :=
-  Surjective.sigmaDesc_of_union_range_eq_univ <| by
-    obtain ⟨i⟩ := ‹Nonempty ι›
-    exact Set.eq_univ_of_forall fun x ↦ Set.mem_iUnion.2 ⟨i, x, rfl⟩
+variable (U) (ι : Type*) [Small.{u} ι] [Nonempty ι]
 
 /-- For a nonempty index type `ι`, the quotient sheaf of the kernel pair of the fold map
-`∐_{i : ι} U ⟶ U` is `h_U` (for `ι` with two elements, `(U ⊔ U)/(fold kernel pair) ≅ h_U`, a
-SchemeAndStackFoundations §1.6 Check). -/
-noncomputable def quotientSheaf.foldKernelPairIso :
+`∐_{i : ι} U ⟶ U` is `h_U` (for `ι` with two elements, `(U ⊔ U)/(fold kernel pair) ≅ h_U`). -/
+noncomputable def quotientSheaf.sigmaDescIdKernelPairIso :
     quotientSheaf (pullback.snd (Sigma.desc fun _ : ι ↦ 𝟙 U) (Sigma.desc fun _ : ι ↦ 𝟙 U))
         (pullback.fst (Sigma.desc fun _ : ι ↦ 𝟙 U) (Sigma.desc fun _ : ι ↦ 𝟙 U)) ≅
       Scheme.fppfTopology.uliftYoneda.{u + 1}.obj U :=
