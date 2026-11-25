@@ -74,15 +74,6 @@ variable {X₀ X₁ V : Type*}
 
 section Coefficient
 
-/-- The multiplier `b ^ ((z - θ) s)` is bounded on the closed strip by `exp |s log b|`. -/
-private theorem norm_cpow_le {b : ℝ} (hb : 0 < b) (hθ : θ ∈ Icc 0 1) (s : ℝ) {z : ℂ}
-    (hz : z ∈ verticalClosedStrip 0 1) :
-    ‖(b : ℂ) ^ ((z - θ) * s)‖ ≤ Real.exp |s * Real.log b| := by
-  rw [cpow_def_of_ne_zero (ofReal_ne_zero.2 hb.ne'), ← ofReal_log hb.le,
-    show (Real.log b : ℂ) * ((z - θ) * s) = (z - θ) * ((s * Real.log b : ℝ) : ℂ) by
-      push_cast; ring]
-  exact Complex.HadamardThreeLines.norm_exp_sub_mul_le hθ _ hz
-
 /-- On a boundary line, the multiplier turns a bound `c` with `c = N b` into `N b ^ r` for the
 exponent `r = a + 1`. -/
 private theorem rpow_mul_le_mul_rpow {b N c : ℝ} (hb : 0 < b) (hc : c = N * b) {a r : ℝ}
@@ -176,7 +167,7 @@ private theorem exists_sumSpaceEmbed_toSum_eq_and_norm_le_of_lt (hθ : θ ∈ Ic
         (((hm k).continuous).comp (by fun_prop)).smul (g k).2.continuous)
       N hG₁
   have hΦ := isBoundedStripFunction_sum_sumSingle_smul (G := (G₀, G₁)) hF hm
-    (fun k _ hz => norm_cpow_le (hb k) hθ (r₁ - r₀) hz)
+    (fun k _ hz => Complex.HadamardThreeLines.norm_ofReal_cpow_sub_mul_le (hb k) hθ (r₁ - r₀) hz)
     (fun _ => rfl) (fun _ => rfl)
   obtain ⟨v, hv⟩ :=
     (ComplexMethodSpace.exists_toSum_eq_iff_isBoundedStripFunction hθ).2 ⟨_, _, hΦ, rfl⟩
