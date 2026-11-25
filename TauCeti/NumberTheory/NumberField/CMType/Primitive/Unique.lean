@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.CMType.Primitive
+public import TauCeti.NumberTheory.NumberField.CMType.Primitive.Basic
 public import Mathlib.NumberTheory.NumberField.Basic
 import TauCeti.FieldTheory.Galois.FixedField
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
@@ -35,6 +35,8 @@ embeddings of `E` agreeing on `F₁ ⊓ F₂` have extensions differing by an el
   extension of `ℚ` containing `E`.
 * `TauCeti.CMType.exists_induced_inf_eq`: a CM type induced from `F₁` and from `F₂` is induced
   from `F₁ ⊓ F₂`.
+* `TauCeti.CMType.le_of_isPrimitive_of_exists_induced_eq`: a subfield carrying a primitive type
+  that induces `Φ` lies in every subfield from which `Φ` is induced.
 * `TauCeti.CMType.existsUnique_isPrimitive_induced_eq`: the subfield of the primitive pair
   inducing a CM type is unique; the primitive type on it is then unique by
   `TauCeti.CMType.induced_algebraMap_injective`.
@@ -141,6 +143,18 @@ theorem exists_induced_restrict_inf_eq {Φ : CMType E} {F F' : IntermediateField
   rw [← hΦ₀, mem_induced, mem_induced, hφ, hψ] at key
   exact key
 
+/-- A subfield carrying a primitive CM type that induces `Φ` lies in every subfield from which
+`Φ` is induced. -/
+theorem le_of_isPrimitive_of_exists_induced_eq {Φ : CMType E} {F F' : IntermediateField ℚ E}
+    {Φ₀ : CMType F} (hΦ₀ : Φ₀.induced (algebraMap F E) = Φ) (hprim : Φ₀.IsPrimitive)
+    (h' : ∃ Φ₁ : CMType F', Φ₁.induced (algebraMap F' E) = Φ) : F ≤ F' := by
+  -- `F ⊓ F'` is all of `F`, by primitivity of `Φ₀`.
+  have htop := (isPrimitive_iff _).mp hprim _ (exists_induced_restrict_inf_eq hΦ₀ h')
+  intro x hx
+  have : (⟨x, hx⟩ : F) ∈ IntermediateField.restrict (inf_le_left : F ⊓ F' ≤ F) :=
+    htop ▸ IntermediateField.mem_top
+  exact ((IntermediateField.mem_restrict _ _).mp this).2
+
 /-- **Uniqueness of the primitive pair.** A CM type on a number field is induced from a primitive
 CM type on exactly one subfield. The primitive type on that subfield is unique as well, by
 `TauCeti.CMType.induced_algebraMap_injective`. -/
@@ -149,15 +163,7 @@ theorem existsUnique_isPrimitive_induced_eq (Φ : CMType E) :
       Φ₀.induced (algebraMap F E) = Φ ∧ Φ₀.IsPrimitive := by
   obtain ⟨F, Φ₀, hΦ₀, hprim⟩ := Φ.exists_isPrimitive_induced_eq
   refine ⟨F, ⟨Φ₀, hΦ₀, hprim⟩, fun F' ⟨Φ₁, hΦ₁, hprim'⟩ ↦ ?_⟩
-  -- `F ⊓ F'` is all of `F` and all of `F'`, by primitivity of the two types.
-  have hle {F F' : IntermediateField ℚ E} {Φ₀ : CMType F} (hΦ₀ : Φ₀.induced (algebraMap F E) = Φ)
-      (hprim : Φ₀.IsPrimitive) (h' : ∃ Φ₁ : CMType F', Φ₁.induced (algebraMap F' E) = Φ) :
-      F ≤ F' := by
-    have htop := (isPrimitive_iff _).mp hprim _ (exists_induced_restrict_inf_eq hΦ₀ h')
-    intro x hx
-    have : (⟨x, hx⟩ : F) ∈ IntermediateField.restrict (inf_le_left : F ⊓ F' ≤ F) :=
-      htop ▸ IntermediateField.mem_top
-    exact ((IntermediateField.mem_restrict _ _).mp this).2
-  exact le_antisymm (hle hΦ₁ hprim' ⟨Φ₀, hΦ₀⟩) (hle hΦ₀ hprim ⟨Φ₁, hΦ₁⟩)
+  exact le_antisymm (le_of_isPrimitive_of_exists_induced_eq hΦ₁ hprim' ⟨Φ₀, hΦ₀⟩)
+    (le_of_isPrimitive_of_exists_induced_eq hΦ₀ hprim ⟨Φ₁, hΦ₁⟩)
 
 end TauCeti.CMType
