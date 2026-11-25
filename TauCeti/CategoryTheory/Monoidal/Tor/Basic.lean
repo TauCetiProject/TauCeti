@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
 public import Mathlib.CategoryTheory.Monoidal.Tor
 public import TauCeti.CategoryTheory.Abelian.LeftDerived
+public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
 import Mathlib.CategoryTheory.Abelian.Exact
 import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.HomologyFunctorAccessible
 import TauCeti.CategoryTheory.Monoidal.Preadditive
@@ -25,7 +26,10 @@ sequence with `P₁` and `P₀` projective. Then
   such presentations, sending the homology class of a cycle of `X ⊗ -` applied to the resolution
   to that cycle;
 * `Torₙ(X, M)` vanishes for `n ≥ 2`
-  (`CategoryTheory.ShortComplex.ShortExact.isZero_Tor_add_two`).
+  (`CategoryTheory.ShortComplex.ShortExact.isZero_Tor_add_two`);
+  in particular `Torₙ(X, Y)` vanishes for `n ≥ 2` whenever `Y` has projective dimension at most
+  one (`CategoryTheory.isZero_Tor_add_two_of_hasProjectiveDimensionLE_one`), as computed on the
+  presentation `0 ⟶ ker π ⟶ P ⟶ Y ⟶ 0`, whose kernel is then projective.
 
 Symmetrically, `Tor'₁(M, X)`, for Mathlib's `CategoryTheory.Tor'` deriving the first variable, is
 the kernel of `S.f ▷ X : P₁ ⊗ X ⟶ P₀ ⊗ X`
@@ -139,6 +143,16 @@ lemma Tor_obj_map_comp_torOneIsoKernel_hom (X : C) (φ : S ⟶ S') :
   leftDerived_map_comp_leftDerivedOneIsoKernel_hom _ hS' φ
 
 end ShortComplex.ShortExact
+
+/-- **`Tor` against an object of projective dimension at most one** vanishes in degrees `≥ 2`. -/
+lemma isZero_Tor_add_two_of_hasProjectiveDimensionLE_one (X Y : C) [EnoughProjectives C]
+    [HasProjectiveDimensionLE Y 1] (n : ℕ) : IsZero (((Tor C (n + 2)).obj X).obj Y) :=
+  -- the kernel of the projective cover `P ⟶ Y` has projective dimension `< 1`, as `P` is projective
+  -- and `Y` has projective dimension `< 2`
+  have : HasProjectiveDimensionLT (Projective.kernelShortComplex Y).X₁ 1 :=
+    (Projective.kernelShortComplex_shortExact Y).hasProjectiveDimensionLT_X₁ 1
+      inferInstance ‹_›
+  (Projective.kernelShortComplex_shortExact Y).isZero_Tor_add_two X n
 
 /-- If a natural number `e` kills `X`, in the sense that `e • 𝟙 X = 0`, then it kills every
 `Torₙ(X, Y)`. -/

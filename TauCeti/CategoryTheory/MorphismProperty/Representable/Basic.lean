@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.MorphismProperty.Descent
 public import Mathlib.CategoryTheory.MorphismProperty.Representable
+public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Map
 public import TauCeti.CategoryTheory.EquivalenceRelation
 
 /-!
@@ -20,7 +21,8 @@ change satisfies `P` after a further base change along a morphism satisfying `Q`
 that a relatively representable monomorphism is relatively a monomorphism, computes the base
 changes of a relatively representable diagonal `X ⟶ X ⨯ X`, and shows that the kernel pair
 `U ×_Y U` of a relatively representable `f : F.obj U ⟶ Y` is an internal equivalence relation on
-`U`.
+`U`. Finally, relative representability is unchanged when the target is replaced through an
+equivalence `e : D ≌ D'` and `F` by a functor `F'` with `F ⋙ e.functor ≅ F'`.
 
 ## Main results
 
@@ -38,9 +40,14 @@ changes of a relatively representable diagonal `X ⟶ X ⨯ X`, and shows that t
   `F.map u ≫ f = F.map v ≫ f`.
 * `CategoryTheory.Functor.relativelyRepresentable.isEquivalenceRelation`: the kernel pair
   `U ×_Y U` of a relatively representable `f : F.obj U ⟶ Y` is an internal equivalence relation.
+* `CategoryTheory.Functor.relativelyRepresentable_equivalence_map_iff` and
+  `CategoryTheory.MorphismProperty.relative_equivalence_map_iff`: transport along an equivalence
+  of target categories.
 -/
 
 public section
+
+universe v₁ v₂ v₃ u₁ u₂ u₃
 
 namespace CategoryTheory
 
@@ -160,5 +167,43 @@ theorem isEquivalenceRelation [HasPullback (hf.snd f) (hf.fst' f)] :
   · exact (hf.ofPairHom_iff.mp h).trans (hf.ofPairHom_iff.mp h')
 
 end Functor.relativelyRepresentable
+
+section Equivalence
+
+variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+  {D' : Type u₃} [Category.{v₃} D'] {F : C ⥤ D} {F' : C ⥤ D'} {e : D ≌ D'}
+  (i : F ⋙ e.functor ≅ F')
+
+include i
+
+/-- Relative representability is invariant under replacing the target category through an
+equivalence `e : D ≌ D'`, the functor `F` by `F'` with `F ⋙ e.functor ≅ F'`. -/
+theorem Functor.relativelyRepresentable_equivalence_map_iff {X Y : D} (f : X ⟶ Y) :
+    F'.relativelyRepresentable (e.functor.map f) ↔ F.relativelyRepresentable f := by
+  constructor
+  · intro h a g
+    obtain ⟨b, snd, fst', hb⟩ := h (i.inv.app a ≫ e.functor.map g)
+    refine ⟨b, snd, e.functor.preimage (i.hom.app b ≫ fst'), ?_⟩
+    rw [← isPullback_equivalence_map_iff i]
+    simpa using hb
+  · intro h a g'
+    obtain ⟨b, snd, fst, hb⟩ := h (e.functor.preimage (i.hom.app a ≫ g'))
+    refine ⟨b, snd, i.inv.app b ≫ e.functor.map fst, ?_⟩
+    simpa using (isPullback_equivalence_map_iff i).2 hb
+
+/-- The morphism property `P.relative` is invariant under replacing the target category through
+an equivalence `e : D ≌ D'`, the functor `F` by `F'` with `F ⋙ e.functor ≅ F'`. -/
+theorem MorphismProperty.relative_equivalence_map_iff (P : MorphismProperty C) {X Y : D}
+    (f : X ⟶ Y) : P.relative F' (e.functor.map f) ↔ P.relative F f := by
+  refine and_congr (Functor.relativelyRepresentable_equivalence_map_iff i f) ⟨?_, ?_⟩
+  · intro h a b g fst snd hb
+    exact h (i.inv.app a ≫ e.functor.map g) _ snd ((isPullback_equivalence_map_iff i).2 hb)
+  · intro h a b g' fst' snd hb
+    refine h (e.functor.preimage (i.hom.app a ≫ g')) (e.functor.preimage (i.hom.app b ≫ fst'))
+      snd ?_
+    rw [← isPullback_equivalence_map_iff i]
+    simpa using hb
+
+end Equivalence
 
 end CategoryTheory
