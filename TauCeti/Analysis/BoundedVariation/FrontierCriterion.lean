@@ -246,4 +246,10 @@ theorem perimeter_le_euclideanHausdorffMeasure_frontier_inter (hn : 2 ≤ finran
   exact measure_mono (subset_inter (reducedBoundary_subset_frontier.trans frontier_interior_subset)
     reducedBoundary_subset)
 
+/-- **The perimeter is at most the Hausdorff measure of the frontier, in the whole space.** In
+dimension `n ≥ 2`, every set `s`, measurable or not, has `P(s) ≤ Hⁿ⁻¹(∂s)`. -/
+theorem perimeter_le_euclideanHausdorffMeasure_frontier (hn : 2 ≤ finrank ℝ E) (s : Set E) :
+    perimeter volume ⊤ s ≤ μHE[finrank ℝ E - 1] (frontier s) := by
+  simpa using perimeter_le_euclideanHausdorffMeasure_frontier_inter hn ⊤ s
+
 end TauCeti
