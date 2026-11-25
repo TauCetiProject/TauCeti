@@ -16,18 +16,20 @@ import TauCeti.NumberTheory.LSeries.SmoothedSum.ContourEstimate
 /-!
 # Ingham's transfer theorem
 
-Let `η` be a zero-free width: continuous and nonincreasing on `[3, ∞)`, with `0 < η ≤ 1/2` and
-`η(t) ≥ a₀ (log t)^{-A}` there. Let `‖a(n)‖ ≤ B log(n + 1)` and let the L-series of `a` agree on
-`Re s > 1` with `G(s) + r/(s - 1)`, where `G` is holomorphic on an open set containing the region
-`R_η = {s : 1 - η(|Im s| + 3) ≤ Re s}` and `‖G(s)‖ ≤ C₀ log(|Im s| + 3)^{B'}` on `R_η`. Then there
-are `c > 0` and `C'` with
+Let `η` be a zero-free width: continuous and nonincreasing on `[3, ∞)`, with
+`η(t) ≥ a₀ (log t)^{-A}` there for some `a₀ > 0`. Let `‖a(n)‖ ≤ B log(n + 1)` and let the L-series
+of `a` agree on `Re s > 1` with `G(s) + r/(s - 1)`, where `G` is holomorphic on a set containing
+the region `R_η = {s : 1 - η(|Im s| + 3) ≤ Re s}` and `‖G(s)‖ ≤ C₀ log(|Im s| + 3)^{B'}` on
+`R_η`. Then there are `c > 0` and `C'` with
 
 `‖∑_{n ≤ x} a(n) - r x‖ ≤ C' x exp(-c ω_η(x))` for every `x ≥ 3`,
 
 where `ω_η` is the Ingham exponent `TauCeti.inghamExponent`. For `η(t) = c₀ / log t` the error is
 the classical `x exp(-c √(log x))`.
 
-The proof smooths the sum with the cutoff `χ_ε = smoothCutoff ν ε` of a fixed smooth bump `ν`.
+The proof first replaces `η` by `min η (1/2)`, which is at least `κ η` for a constant
+`κ ∈ (0, 1]`, so that `ω_η` changes by at most the factor `κ` (`TauCeti.mul_inghamExponent_le`).
+It then smooths the sum with the cutoff `χ_ε = smoothCutoff ν ε` of a fixed smooth bump `ν`.
 At the height `T` of `TauCeti.exists_rpow_eq_and_inghamExponent_le`, the rectangle
 `[1 - η(T + 3), 1 + 1/log x] ×ℂ [-T, T]` lies in `R_η`, and
 `TauCeti.LSeries.norm_tsum_mul_smoothCutoff_sub_residue_le_of_norm_le_mul_log` bounds the smoothed
@@ -35,7 +37,7 @@ sum minus `r · 𝓜χ_ε(1) · x`. With `ε = T^{-1/2}`, the comparison with th
 from `𝓜χ_ε(1)` to `1` and the contour bound are each `O(x (log x)^k T^{-1/2})`, and
 `T^{-1/2} ≤ 2 exp(-ω_η(x)/4)`; the powers of `log x` are absorbed by
 `TauCeti.exists_log_pow_mul_exp_neg_inghamExponent_le`. For `x` too small to choose `T`, the
-trivial bound `(B log(x + 1) + ‖r‖) x` suffices. The constant `c = 1/8` is absolute.
+trivial bound `(B log(x + 1) + ‖r‖) x` suffices. For `η ≤ 1/2` the constant is `c = 1/8`.
 
 ## Main results
 
@@ -60,6 +62,11 @@ open Set Complex
 open scoped Real
 
 namespace TauCeti.LSeries
+
+/-- A lower bound `η(t) ≥ a₀ (log t)^{-A}` on `[3, ∞)` with `a₀ > 0` makes `η` positive there. -/
+private lemma pos_of_mul_log_rpow_neg_le {η : ℝ → ℝ} {a₀ A : ℝ} (ha₀ : 0 < a₀)
+    (hηlow : ∀ t, 3 ≤ t → a₀ * Real.log t ^ (-A) ≤ η t) {t : ℝ} (ht : 3 ≤ t) : 0 < η t :=
+  (mul_pos ha₀ (Real.rpow_pos_of_pos (Real.log_pos (by linarith)) _)).trans_le (hηlow t ht)
 
 /-- If `η` is nonincreasing on `[3, ∞)`, the rectangle `[1 - η(T + 3), σ] ×ℂ [-T, T]` lies in
 the region `1 - η(|Im s| + 3) ≤ Re s`. -/
@@ -270,7 +277,7 @@ private lemma norm_sum_sub_mul_le_of_log_three_le {ν : ℝ → ℝ} (hν : Cont
     (hC : ∀ ε : ℝ, 0 < ε → ε ≤ 1 → ∀ s : ℂ, 1 / 2 ≤ s.re → s.re ≤ 2 →
       ‖mellin (fun x ↦ (smoothCutoff ν ε x : ℂ)) s‖ ≤ C / (‖s‖ * (1 + ε * ‖s‖)))
     {η : ℝ → ℝ} (hηc : ContinuousOn η (Ici 3)) (hηa : AntitoneOn η (Ici 3))
-    (hηpos : ∀ t, 3 ≤ t → 0 < η t) (hηhalf : ∀ t, 3 ≤ t → η t ≤ 1 / 2) {a₀ A : ℝ} (ha₀ : 0 < a₀)
+    (hηhalf : ∀ t, 3 ≤ t → η t ≤ 1 / 2) {a₀ A : ℝ} (ha₀ : 0 < a₀)
     (hηlow : ∀ t, 3 ≤ t → a₀ * Real.log t ^ (-A) ≤ η t) {a : ℕ → ℂ} {B : ℝ}
     (ha : ∀ n : ℕ, 1 ≤ n → ‖a n‖ ≤ B * Real.log (n + 1)) {r : ℂ} {U : Set ℂ}
     (hRU : {s : ℂ | 1 - η (|s.im| + 3) ≤ s.re} ⊆ U) {G : ℂ → ℂ} (hG : DifferentiableOn ℂ G U)
@@ -285,6 +292,7 @@ private lemma norm_sum_sub_mul_le_of_log_three_le {ν : ℝ → ℝ} (hν : Cont
       Real.exp (-(1 / 8) * inghamExponent η x) := by
   obtain ⟨T, hT, hxT, hω⟩ := exists_rpow_eq_and_inghamExponent_le hηc hηa hx h6
   have hT3 : (3 : ℝ) ≤ T + 3 := by linarith
+  have hηT := pos_of_mul_log_rpow_neg_le ha₀ hηlow hT3
   have hTx : T ^ 2 ≤ x := by
     rw [← hxT, ← Real.rpow_natCast, ← Real.rpow_mul (by linarith)]
     simpa using Real.rpow_le_rpow_of_exponent_le hx
@@ -292,11 +300,11 @@ private lemma norm_sum_sub_mul_le_of_log_three_le {ν : ℝ → ℝ} (hν : Cont
   have hTL : Real.log (T + 3) ≤ Real.log x := Real.log_le_log (by linarith) (by nlinarith)
   have hL1 : 1 ≤ Real.log (T + 3) :=
     (Real.le_log_iff_exp_le (by linarith)).2 (by linarith [Real.exp_one_lt_d9])
-  have hK := add_div_le_of_mul_rpow_neg_le |C₀| (norm_nonneg r) ha₀ (hηpos _ hT3) hL1
+  have hK := add_div_le_of_mul_rpow_neg_le |C₀| (norm_nonneg r) ha₀ hηT hL1
     (P := Real.log x ^ N)
     ((Real.rpow_le_rpow_of_exponent_le hL1 hAN).trans (by rw [Real.rpow_natCast]; gcongr))
     (hηlow _ hT3)
-  have h := norm_sum_sub_mul_le_of_height hν hν0 hνs hνm hC ha hT (hηpos _ hT3) (hηhalf _ hT3)
+  have h := norm_sum_sub_mul_le_of_height hν hν0 hνs hνm hC ha hT hηT (hηhalf _ hT3)
     hxT hTx (hG.mono fun s hs ↦ hRU (le_re_of_mem_reProdIm hηa hs))
     (fun s hs ↦ norm_le_of_mem_reProdIm hηa hGb hB'N (by nlinarith) hs)
     (fun s hs ↦ hLG s (by rw [hs]; linarith [inv_pos.2 (zero_lt_one.trans_le (hL1.trans hTL))]))
@@ -377,18 +385,12 @@ private lemma norm_sum_sub_mul_le_of_lt_log_three {η : ℝ → ℝ} (hηpos : �
           (norm_nonneg r)) hx0) hexp
     _ = _ := by ring
 
-/-- **Ingham's transfer theorem.** Let `η` be continuous and nonincreasing on `[3, ∞)` with
-`0 < η ≤ 1/2` and `η(t) ≥ a₀ (log t)^{-A}` there, `a₀ > 0`, `A ≥ 0`. Let `‖a(n)‖ ≤ B log(n + 1)`
-for `n ≥ 1`, let `U` be open and contain `R_η = {s : 1 - η(|Im s| + 3) ≤ Re s}`, and let `G` be
-holomorphic on `U` with `L(a, s) = G(s) + r/(s - 1)` for `Re s > 1` and
-`‖G(s)‖ ≤ C₀ log(|Im s| + 3)^{B'}` on `R_η`. Then there are `c > 0` and `C'` with
-`‖∑_{n ≤ x} a(n) - r x‖ ≤ C' x exp(-c ω_η(x))` for every `x ≥ 3`, where `ω_η` is the Ingham
-exponent `TauCeti.inghamExponent`. -/
-theorem norm_sum_sub_mul_le_of_zeroFreeRegion {η : ℝ → ℝ} (hηc : ContinuousOn η (Ici 3))
-    (hηa : AntitoneOn η (Ici 3)) (hηpos : ∀ t, 3 ≤ t → 0 < η t)
-    (hηhalf : ∀ t, 3 ≤ t → η t ≤ 1 / 2) {a₀ A : ℝ} (ha₀ : 0 < a₀) (_hA : 0 ≤ A)
+/-- **The transfer theorem for `η ≤ 1/2`**, with `c = 1/8`. -/
+private lemma norm_sum_sub_mul_le_of_zeroFreeRegion_of_le_half {η : ℝ → ℝ}
+    (hηc : ContinuousOn η (Ici 3)) (hηa : AntitoneOn η (Ici 3))
+    (hηhalf : ∀ t, 3 ≤ t → η t ≤ 1 / 2) {a₀ A : ℝ} (ha₀ : 0 < a₀)
     (hηlow : ∀ t, 3 ≤ t → a₀ * Real.log t ^ (-A) ≤ η t) {a : ℕ → ℂ} {B : ℝ}
-    (ha : ∀ n : ℕ, 1 ≤ n → ‖a n‖ ≤ B * Real.log (n + 1)) {r : ℂ} {U : Set ℂ} (_hU : IsOpen U)
+    (ha : ∀ n : ℕ, 1 ≤ n → ‖a n‖ ≤ B * Real.log (n + 1)) {r : ℂ} {U : Set ℂ}
     (hRU : {s : ℂ | 1 - η (|s.im| + 3) ≤ s.re} ⊆ U) {G : ℂ → ℂ} (hG : DifferentiableOn ℂ G U)
     (hLG : ∀ s : ℂ, 1 < s.re → LSeries a s = G s + r / (s - 1)) {C₀ B' : ℝ}
     (hGb : ∀ s : ℂ, 1 - η (|s.im| + 3) ≤ s.re → ‖G s‖ ≤ C₀ * Real.log (|s.im| + 3) ^ B') :
@@ -411,15 +413,75 @@ theorem norm_sum_sub_mul_le_of_zeroFreeRegion {η : ℝ → ℝ} (hηc : Continu
   refine ⟨1 / 8, by norm_num, max (2 * D * D') E, fun x hx ↦ ?_⟩
   have hx1 : 1 ≤ x := by linarith
   by_cases h6 : Real.log 3 ≤ η 6 * Real.log x
-  · refine (norm_sum_sub_mul_le_of_log_three_le hν1 (fun y _ ↦ hν0 y) hνs' hνm hC hηc hηa hηpos
+  · refine (norm_sum_sub_mul_le_of_log_three_le hν1 (fun y _ ↦ hν0 y) hνs' hνm hC hηc hηa
       hηhalf ha₀ hηlow ha hRU hG hLG hGb ((le_max_left _ _).trans hN)
       ((le_max_right _ _).trans hN) hD' hx1 h6).trans ?_
     rw [← hD]
     gcongr
     exact le_max_left _ _
-  · refine (norm_sum_sub_mul_le_of_lt_log_three hηpos hηhalf ha r hx1 h6).trans ?_
+  · refine (norm_sum_sub_mul_le_of_lt_log_three
+    (fun _ ↦ pos_of_mul_log_rpow_neg_le ha₀ hηlow) hηhalf ha r hx1 h6).trans ?_
     rw [← hE]
     gcongr
     exact le_max_right _ _
+
+
+/-- For `t ≥ 3`, `a₀ (log t)^{-A} ≤ η(t)` gives
+`min a₀ (1/2) · (log t)^{-max A 0} ≤ min (η t) (1/2)`, since `log t ≥ 1`. -/
+private lemma mul_log_rpow_neg_le_min {η : ℝ → ℝ} {a₀ A : ℝ} (ha₀ : 0 < a₀)
+    (hηlow : ∀ t, 3 ≤ t → a₀ * Real.log t ^ (-A) ≤ η t) {t : ℝ} (ht : 3 ≤ t) :
+    min a₀ (1 / 2) * Real.log t ^ (-max A 0) ≤ min (η t) (1 / 2) := by
+  have hl : 1 ≤ Real.log t :=
+    (Real.le_log_iff_exp_le (by linarith)).2 (by linarith [Real.exp_one_lt_d9])
+  have h0 : 0 ≤ Real.log t ^ (-max A 0) := Real.rpow_nonneg (by linarith) _
+  refine le_min ((mul_le_mul (min_le_left _ _) (Real.rpow_le_rpow_of_exponent_le hl
+    (neg_le_neg (le_max_left _ _))) h0 ha₀.le).trans (hηlow t ht)) ?_
+  exact (mul_le_of_le_one_right (le_min ha₀.le one_half_pos.le)
+    (Real.rpow_le_one_of_one_le_of_nonpos hl (neg_nonpos.2 (le_max_right _ _)))).trans
+    (min_le_right _ _)
+
+/-- **Ingham's transfer theorem.** Let `η` be continuous and nonincreasing on `[3, ∞)` with
+`η(t) ≥ a₀ (log t)^{-A}` there, `a₀ > 0`. Let `‖a(n)‖ ≤ B log(n + 1)` for `n ≥ 1`, let `U` contain
+`R_η = {s : 1 - η(|Im s| + 3) ≤ Re s}`, and let `G` be holomorphic on `U` with
+`L(a, s) = G(s) + r/(s - 1)` for `Re s > 1` and `‖G(s)‖ ≤ C₀ log(|Im s| + 3)^{B'}` on `R_η`. Then
+there are `c > 0` and `C'` with `‖∑_{n ≤ x} a(n) - r x‖ ≤ C' x exp(-c ω_η(x))` for every `x ≥ 3`,
+where `ω_η` is the Ingham exponent `TauCeti.inghamExponent`. -/
+theorem norm_sum_sub_mul_le_of_zeroFreeRegion {η : ℝ → ℝ} (hηc : ContinuousOn η (Ici 3))
+    (hηa : AntitoneOn η (Ici 3)) {a₀ A : ℝ} (ha₀ : 0 < a₀)
+    (hηlow : ∀ t, 3 ≤ t → a₀ * Real.log t ^ (-A) ≤ η t) {a : ℕ → ℂ} {B : ℝ}
+    (ha : ∀ n : ℕ, 1 ≤ n → ‖a n‖ ≤ B * Real.log (n + 1)) {r : ℂ} {U : Set ℂ}
+    (hRU : {s : ℂ | 1 - η (|s.im| + 3) ≤ s.re} ⊆ U) {G : ℂ → ℂ} (hG : DifferentiableOn ℂ G U)
+    (hLG : ∀ s : ℂ, 1 < s.re → LSeries a s = G s + r / (s - 1)) {C₀ B' : ℝ}
+    (hGb : ∀ s : ℂ, 1 - η (|s.im| + 3) ≤ s.re → ‖G s‖ ≤ C₀ * Real.log (|s.im| + 3) ^ B') :
+    ∃ c > 0, ∃ C' : ℝ, ∀ x : ℝ, 3 ≤ x →
+      ‖∑ n ∈ Finset.Icc 1 ⌊x⌋₊, a n - r * x‖ ≤ C' * x * Real.exp (-c * inghamExponent η x) := by
+  -- apply the case `η ≤ 1/2` to `min η (1/2)`, whose region lies inside `R_η`
+  have hsub : {s : ℂ | 1 - min (η (|s.im| + 3)) (1 / 2) ≤ s.re} ⊆
+      {s : ℂ | 1 - η (|s.im| + 3) ≤ s.re} :=
+    ofPred_subset_ofPred.2 fun _ hs ↦ (sub_le_sub_left (min_le_left _ _) 1).trans hs
+  obtain ⟨c, hc, C', hC'⟩ := norm_sum_sub_mul_le_of_zeroFreeRegion_of_le_half
+    (η := fun t ↦ min (η t) (1 / 2)) (hηc.inf continuousOn_const)
+    (fun _ hs _ ht hst ↦ min_le_min_right _ (hηa hs ht hst)) (fun _ _ ↦ min_le_right _ _)
+    (lt_min ha₀ one_half_pos) (fun _ ↦ mul_log_rpow_neg_le_min ha₀ hηlow) ha (hsub.trans hRU) hG
+    hLG fun s hs ↦ hGb s (hsub hs)
+  -- `min η (1/2) ≥ κ η` with `κ = min 1 (1 / (2 η(3)))`, since `η ≤ η(3)`
+  have hη3 := pos_of_mul_log_rpow_neg_le ha₀ hηlow le_rfl
+  have hκ : 0 < min 1 (1 / (2 * η 3)) := lt_min one_pos (by positivity)
+  have hle (t : ℝ) (ht : 3 ≤ t) : min 1 (1 / (2 * η 3)) * η t ≤ min (η t) (1 / 2) := by
+    have hηt := (pos_of_mul_log_rpow_neg_le ha₀ hηlow ht).le
+    refine le_min (mul_le_of_le_one_left hηt (min_le_left _ _)) ?_
+    calc min 1 (1 / (2 * η 3)) * η t ≤ 1 / (2 * η 3) * η 3 :=
+          mul_le_mul (min_le_right _ _) (hηa (mem_Ici.2 le_rfl) (mem_Ici.2 ht) ht) hηt
+            (by positivity)
+      _ = 1 / 2 := by field_simp
+  refine ⟨c * min 1 (1 / (2 * η 3)), mul_pos hc hκ, max C' 0, fun x hx ↦ (hC' x hx).trans ?_⟩
+  have hω := mul_inghamExponent_le hκ.le (min_le_left _ _)
+    (fun t ht ↦ (pos_of_mul_log_rpow_neg_le ha₀ hηlow ht).le) hle (by linarith : (1 : ℝ) ≤ x)
+  calc _ ≤ max C' 0 * x * Real.exp (-c * inghamExponent (fun t ↦ min (η t) (1 / 2)) x) := by
+        gcongr
+        exact le_max_left _ _
+    _ ≤ _ := by
+        refine mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 ?_) (by positivity)
+        linarith [mul_le_mul_of_nonneg_left hω hc.le]
 
 end TauCeti.LSeries
