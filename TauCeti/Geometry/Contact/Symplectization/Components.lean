@@ -115,7 +115,8 @@ theorem not_connectedSpace_annihilatorPunctured {α : SmoothForm I M ℝ 1} (hα
       (SmoothForm.symplectizationToAnnihilator_snd_ne_zero hαξ hα.apply_ne_zero _)⟩,
       SmoothForm.proj_symplectizationToAnnihilator hαξ _⟩)
     ((FiberBundle.continuous_proj _ _).comp continuous_subtypeVal)
-  obtain ⟨o⟩ := hξ.nonempty_vectorBundleOrientation_of_isContactForm hα hαξ
+  obtain ⟨o⟩ := hξ.isContMDiffDistribution.nonempty_vectorBundleOrientation_of_smoothForm_ker_eq
+    hξ.finrank_sub_one_add_one (hξ.isContactForm_and_kerDistribution_eq_iff.1 ⟨hα, hαξ⟩)
   exact ((connectedSpace_zeroSectionCompl_iff_isEmpty_vectorBundleOrientation
     (finrank_fin_fun ℝ)).1
       (hξ.connectedSpace_annihilatorPunctured_iff_connectedSpace_zeroSectionCompl.1 h)).false o
