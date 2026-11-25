@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Monoid.Defs
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 import Mathlib.Topology.UniformSpace.UniformApproximation
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Locally uniform limits of translates along a strip
@@ -21,7 +22,8 @@ convergence is uniform on each window and the limit is continuous there
 (`TauCeti.tendstoUniformlyOn_Icc_prod_comp_add_and_continuousOn`). A relation
 `u i (r + s_i, t₀) = u i (r + s_i, t₁)` holding eventually passes to the limit
 (`TauCeti.apply_eq_apply_of_tendstoLocallyUniformlyOn_comp_add`), as for boundary conditions
-along the end.
+along the end. Uniform convergence of the slices `v (s, ·)` as `s → ∞` is invariant under
+translation in `s` (`TauCeti.tendstoUniformly_atTop_of_eq_comp_add`).
 
 This is the setting of translates along a cylindrical end, as for Floer cylinders: of a single
 map `u i = u`, or of a sequence of solutions translated along their necks.
@@ -75,5 +77,15 @@ theorem apply_eq_apply_of_tendstoLocallyUniformlyOn_comp_add [l.NeBot] [T2Space 
     (hv.tendsto_at ⟨mem_univ r, ht₁⟩)
   filter_upwards [hper] with i hi
   simpa using hi
+
+omit [TopologicalSpace β] in
+/-- If `v'` is the translate `z ↦ v (z + (δ, 0))` of `v` and the slices `v' (s, ·)` converge
+uniformly to `x` as `s → ∞`, so do the slices `v (s, ·)`. -/
+theorem tendstoUniformly_atTop_of_eq_comp_add {v' : ℝ × β → γ} {x : β → γ} {δ : ℝ}
+    (hv : ∀ z, v' z = v (z + (δ, 0))) (h : TendstoUniformly (fun s t ↦ v' (s, t)) x atTop) :
+    TendstoUniformly (fun s t ↦ v (s, t)) x atTop := by
+  rw [← tendstoUniformlyOn_univ] at h ⊢
+  simpa [Function.comp_def, hv] using
+    h.comp_tendsto (tendsto_atTop_add_const_right atTop (-δ) tendsto_id)
 
 end TauCeti

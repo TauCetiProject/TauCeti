@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Compactness.SmallEnergy
 public import TauCeti.Geometry.Symplectic.Floer.Rescaling.Bubble
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Geometry.Symplectic.Floer.CylindricalEnd
+import TauCeti.Geometry.Symplectic.Floer.Translation.Basic
 import TauCeti.Geometry.Symplectic.JHolomorphic.Regularity
 
 /-!
@@ -206,7 +207,8 @@ theorem exists_forall_norm_fderiv_le_of_setLIntegral_floerEnergyDensity_le (ω :
       exact bot_le
   have h := hM (u := fun w ↦ u (w + (z.1, 0)))
     ((hu.comp (contDiff_id.add contDiff_const)).contDiffOn)
-    (fun w _ ↦ huK _) (fun w _ ↦ isComplexLinearMap_perturbedFDeriv_comp_add_right hfl z.1 w) hE3
+    (fun w _ ↦ huK _) (fun w _ ↦ isComplexLinearMap_perturbedFDeriv_comp_add_right z.1
+      (by rw [show w.2 = (w + (z.1, 0)).2 by rw [Prod.snd_add, add_zero]]; exact hfl _)) hE3
     ((0 : ℝ), t) (by
       simp only [mem_closedBall, Prod.dist_eq, Real.dist_eq, sub_self, abs_zero, max_le_iff,
         abs_le]
