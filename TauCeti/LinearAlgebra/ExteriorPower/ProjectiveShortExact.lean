@@ -90,7 +90,7 @@ private theorem ιMulti_comp_mul_ι_eq_zero (u : M) :
       (ExteriorAlgebra.ι_mem_exteriorPower_one u)
   have h0 : ExteriorAlgebra.ιMulti R n v * ExteriorAlgebra.ι R u = 0 :=
     congrArg Subtype.val (Subsingleton.elim (⟨_, hmem⟩ : ⋀[R]^(n + 1) M) 0)
-  rw [← ExteriorAlgebra.map_apply_ιMulti, ← ExteriorAlgebra.map_apply_ι, ← map_mul, h0, map_zero]
+  simpa using congrArg (ExteriorAlgebra.map f) h0
 
 /-- If `⋀ⁿ⁺¹ M = 0`, a wedge `f v₁ ∧ ⋯ ∧ f vₙ ∧ z₁ ∧ ⋯ ∧ zᵣ` in which some `zⱼ` lies in the
 image of `f` vanishes. -/
@@ -222,8 +222,7 @@ theorem shortExactEquivOfProjective_tmul_ιMulti (v : Fin n → M) (z : Fin r �
   -- The splitting lifts `q ∘ z` to `s ∘ q ∘ z`, with the section `s = e.symm ∘ inr`.
   have hcomp : e.symm ∘ (Fin.append (LinearMap.inl R M P ∘ v) (LinearMap.inr R M P ∘ (q ∘ z)) ∘
       Fin.cast rfl) = Fin.append (f ∘ v) (e.symm ∘ LinearMap.inr R M P ∘ q ∘ z) := by
-    rw [Fin.cast_refl, Function.comp_id, Fin.comp_append, hfe, LinearMap.coe_comp,
-      LinearEquiv.coe_coe, Function.comp_assoc]
+    simp [Fin.comp_append, hfe, Function.comp_assoc]
   rw [hcomp]
   refine ιMulti_append_eq_of_sub_mem_range f v fun j ↦ (he _).1 ?_
   have hqs : q (e.symm (0, q (z j))) = q (z j) := by simp [hqe]
@@ -275,9 +274,10 @@ theorem map_comp_shortExactEquivOfProjective {M' N' P' : Type*} [AddCommGroup M'
     _root_.exteriorPower.linearMap_ext (AlternatingMap.ext fun w ↦ ?_)))
   obtain ⟨z, rfl⟩ := hq.comp_left w
   have hγz : γ ∘ (q ∘ z) = q' ∘ (β ∘ z) := funext fun j ↦ (LinearMap.congr_fun hγ (z j)).symm
+  have hα' (x : M) : β (f x) = f' (α x) := LinearMap.congr_fun hα x
   have hβ : β ∘ Fin.append (f ∘ v) z = Fin.append (f' ∘ (α ∘ v)) (β ∘ z) := by
-    rw [Fin.comp_append, ← Function.comp_assoc, ← LinearMap.coe_comp, hα, LinearMap.coe_comp,
-      Function.comp_assoc]
+    rw [Fin.comp_append]
+    simp [Function.comp_def, hα']
   simp [hγz, hβ]
 
 /-- The determinant comparison commutes with base change along any commutative `R`-algebra `A`:
@@ -298,38 +298,28 @@ theorem shortExactEquivOfProjective_baseChange (A : Type*) [CommRing A] [Algebra
         ((equivBaseChange A n).symm (1 ⊗ₜ a) ⊗ₜ[A] (equivBaseChange A r).symm (1 ⊗ₜ b)) =
       (equivBaseChange A (n + r)).symm
         (1 ⊗ₜ shortExactEquivOfProjective hf he hq hM hP (a ⊗ₜ b)) := by
-  have ha : a ∈ Submodule.span R (Set.range (_root_.exteriorPower.ιMulti R n)) := by
-    rw [_root_.exteriorPower.ιMulti_span]
-    trivial
-  have hb : b ∈ Submodule.span R (Set.range (_root_.exteriorPower.ιMulti R r)) := by
-    rw [_root_.exteriorPower.ιMulti_span]
-    trivial
-  -- Both sides are additive and `R`-linear in `a` and `b`, so it suffices to check wedges.
-  induction ha using Submodule.span_induction generalizing b with
-  | zero => simp
-  | add x y _ _ hx hy =>
-    simp only [TensorProduct.add_tmul, TensorProduct.tmul_add, map_add, hx b hb, hy b hb]
-  | smul c x _ hx =>
-    simp only [← TensorProduct.smul_tmul', TensorProduct.tmul_smul, ← algebraMap_smul A c,
-      map_smul, hx b hb]
-  | mem x hx =>
-    obtain ⟨v, rfl⟩ := hx
-    induction hb using Submodule.span_induction with
-    | zero => simp
-    | add y y' _ _ hy hy' => simp only [TensorProduct.tmul_add, map_add, hy, hy']
-    | smul c y _ hy =>
-      simp only [TensorProduct.tmul_smul, ← algebraMap_smul A c, map_smul, hy]
-    | mem y hy =>
-      obtain ⟨w, rfl⟩ := hy
-      obtain ⟨z, rfl⟩ := hq.comp_left w
-      have hz : (fun j ↦ (1 : A) ⊗ₜ[R] (q ∘ z) j) = q.baseChange A ∘ fun j ↦ 1 ⊗ₜ z j :=
-        funext fun j ↦ by simp
-      have happ : Fin.append (f.baseChange A ∘ fun i ↦ (1 : A) ⊗ₜ[R] v i) (fun j ↦ 1 ⊗ₜ z j) =
-          fun i ↦ 1 ⊗ₜ Fin.append (f ∘ v) z i := by
-        rw [← Function.comp_def (fun x ↦ (1 : A) ⊗ₜ[R] x) (Fin.append (f ∘ v) z), Fin.comp_append]
-        simp [Function.comp_def]
-      simp only [equivBaseChange_symm_tmul_ιMulti, one_smul, hz, happ,
-        shortExactEquivOfProjective_tmul_ιMulti]
+  -- Both sides are `R`-linear in `a ⊗ b`, so it suffices to compare them on wedges. The three
+  -- exactness proofs of the base-changed comparison are unified from the goal.
+  refine LinearMap.congr_fun (M := ⋀[R]^n M ⊗[R] ⋀[R]^r P)
+    (f := ((shortExactEquivOfProjective (f := f.baseChange A) (q := q.baseChange A) _ _ _
+        (fun p ↦ (rankAtStalk_baseChange p).trans (hM _))
+        (fun p ↦ (rankAtStalk_baseChange p).trans (hP _))).toLinearMap ∘ₗ
+      TensorProduct.map (equivBaseChange A n).symm.toLinearMap
+        (equivBaseChange A r).symm.toLinearMap ∘ₗ
+      (AlgebraTensorModule.distribBaseChange R A _ _).toLinearMap).restrictScalars R ∘ₗ
+      TensorProduct.mk R A _ 1)
+    (g := ((equivBaseChange A (n + r)).symm.toLinearMap.restrictScalars R ∘ₗ
+      TensorProduct.mk R A _ 1) ∘ₗ (shortExactEquivOfProjective hf he hq hM hP).toLinearMap)
+    ?_ (a ⊗ₜ b)
+  refine TensorProduct.ext (_root_.exteriorPower.linearMap_ext (AlternatingMap.ext fun v ↦
+    _root_.exteriorPower.linearMap_ext (AlternatingMap.ext fun w ↦ ?_)))
+  obtain ⟨z, rfl⟩ := hq.comp_left w
+  have hz : (fun j ↦ (1 : A) ⊗ₜ[R] q (z j)) = q.baseChange A ∘ fun j ↦ 1 ⊗ₜ z j :=
+    funext fun j ↦ by simp
+  have happ : (fun i ↦ (1 : A) ⊗ₜ[R] Fin.append (f ∘ v) z i) =
+      Fin.append (f.baseChange A ∘ fun i ↦ 1 ⊗ₜ v i) fun j ↦ 1 ⊗ₜ z j := by
+    simpa [Function.comp_def] using Fin.comp_append ((1 : A) ⊗ₜ[R] ·) (f ∘ v) z
+  simp [hz, happ]
 
 /-- For the split sequence `0 → M → M × P → P → 0`, the determinant comparison is the wedge product
 `⋀ⁿ M ⊗ ⋀ʳ P → ⋀ⁿ⁺ʳ (M × P)` of the ordered sum, `a ⊗ b ↦ a ∧ b` with the factor of `M` first. -/
