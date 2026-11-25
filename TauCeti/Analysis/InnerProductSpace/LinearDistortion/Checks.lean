@@ -102,9 +102,11 @@ example :
     congr 1
     ext i j
     fin_cases i <;> fin_cases j <;> simp [diagonal]
-  · exact e.toBasis.orientation.innerDistortion_linearIsometryEquiv
-      e.toBasis.orientation (LinearIsometryEquiv.refl ℝ E)
-      e.toBasis.orientation.orientedJacobian_id
+  · have hid : (LinearIsometryEquiv.refl ℝ E : E →ₗ[ℝ] E) = LinearMap.id :=
+      LinearMap.ext fun _ ↦ by simp
+    rw [← hid]
+    exact e.toBasis.orientation.innerDistortion_linearIsometryEquiv e.toBasis.orientation _
+      (by rw [hid, Orientation.orientedJacobian_id])
   · rw [Orientation.innerDistortion_of_nonpos _ _ (by simp), zero_mul]
 
 /-- `-id` on the plane has outer distortion `1`: `J(-id) = (-1)² = 1`. -/
@@ -112,9 +114,11 @@ example : e.toBasis.orientation.outerDistortion e.toBasis.orientation
     (-(LinearMap.id : E →ₗ[ℝ] E)) = 1 := by
   rw [← neg_one_smul ℝ (LinearMap.id : E →ₗ[ℝ] E),
     Orientation.outerDistortion_smul _ _ (by norm_num)]
-  exact e.toBasis.orientation.outerDistortion_linearIsometryEquiv
-    e.toBasis.orientation (LinearIsometryEquiv.refl ℝ E)
-      e.toBasis.orientation.orientedJacobian_id
+  have hid : (LinearIsometryEquiv.refl ℝ E : E →ₗ[ℝ] E) = LinearMap.id :=
+    LinearMap.ext fun _ ↦ by simp
+  rw [← hid]
+  exact e.toBasis.orientation.outerDistortion_linearIsometryEquiv e.toBasis.orientation _
+    (by rw [hid, Orientation.orientedJacobian_id])
 
 /-- `-id` on an oriented space of dimension `3` has outer distortion `∞`: `J(-id) = (-1)³ = -1`. -/
 example {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
