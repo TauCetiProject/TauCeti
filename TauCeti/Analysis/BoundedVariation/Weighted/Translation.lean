@@ -9,6 +9,7 @@ public import TauCeti.Analysis.BoundedVariation.Weighted.GaussGreen
 public import TauCeti.Analysis.BoundedVariation.Weighted.Gaussian
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Probability.Distributions.Gaussian.Fernique
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # The derivative of the Gaussian measure of a translated set
@@ -31,11 +32,8 @@ Gauss–Green formula for bounded fields
 (`TauCeti.integral_weightedDivergence_eq_integral_reducedBoundary_of_bounded`) applied to the
 constant field `w`, whose Gaussian divergence is `−⟨x, w⟩`.
 
-Along the way: the derivative `⟨x, ·⟩` of the Gaussian weight
-(`TauCeti.hasFDerivAt_gaussianWeight`), the translation rule
-`e^{−W(y + v)} = e^{−⟨y, v⟩ − ‖v‖² / 2} e^{−W(y)}` (`TauCeti.exp_neg_gaussianWeight_add`), and
-integrability against `γ` as Lebesgue integrability after multiplication by `e^{−W}`
-(`TauCeti.integrable_stdGaussian_iff`).
+The first step is `TauCeti.measureReal_stdGaussian_vadd`; the derivative `⟨x, ·⟩` of the
+Gaussian weight is `TauCeti.fderiv_gaussianWeight`.
 
 ## References
 
@@ -54,55 +52,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The Gaussian weight has derivative `⟨x, ·⟩` at `x`. -/
-theorem hasFDerivAt_gaussianWeight (x : E) :
-    HasFDerivAt (gaussianWeight E) (innerSL ℝ x) x := by
-  have h : gaussianWeight E = fun x =>
-      ‖x‖ ^ 2 / 2 + (Module.finrank ℝ E : ℝ) / 2 * Real.log (2 * Real.pi) :=
-    funext gaussianWeight_def
-  rw [h]
-  have h2 : HasFDerivAt (fun x : E => ‖x‖ ^ 2) (2 • innerSL ℝ x) x :=
-    (hasStrictFDerivAt_norm_sq x).hasFDerivAt
-  convert (h2.mul_const (1 / 2 : ℝ)).add_const
-    ((Module.finrank ℝ E : ℝ) / 2 * Real.log (2 * Real.pi)) using 1
-  · funext y; ring
-  · ext v; simp
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- Translating the argument of the Gaussian density by `v` multiplies it by
-`e^{−⟨y, v⟩ − ‖v‖² / 2}`. -/
-theorem exp_neg_gaussianWeight_add (y v : E) :
-    Real.exp (-gaussianWeight E (y + v)) =
-      Real.exp (-(⟪y, v⟫ + ‖v‖ ^ 2 / 2)) * Real.exp (-gaussianWeight E y) := by
-  rw [← Real.exp_add, gaussianWeight_def, gaussianWeight_def, norm_add_sq_real]
-  congr 1
-  ring
-
-/-- The Gaussian measure of a set as the Lebesgue integral of the Gaussian density over it. -/
-private theorem measureReal_stdGaussian_eq_setIntegral (A : Set E) :
-    (stdGaussian E).real A = ∫ x in A, Real.exp (-gaussianWeight E x) := by
-  have hm : Measurable fun x : E => ENNReal.ofReal (Real.exp (-gaussianWeight E x)) :=
-    (contDiff_gaussianWeight (n := 0)).continuous.neg.rexp.measurable.ennreal_ofReal
-  rw [← mul_one ((stdGaussian E).real A), ← smul_eq_mul, ← setIntegral_const,
-    ← withDensity_exp_neg_gaussianWeight,
-    setIntegral_withDensity_eq_setIntegral_toReal_smul₀' A hm.aemeasurable
-      (Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
-  refine integral_congr_ae (Eventually.of_forall fun x => ?_)
-  simp [ENNReal.toReal_ofReal (Real.exp_pos _).le]
-
-/-- The Gaussian measure of a translate `v + A`, as an integral over `A`. -/
-private theorem measureReal_stdGaussian_vadd (v : E) (A : Set E) :
-    (stdGaussian E).real (v +ᵥ A) =
-      ∫ y in A, Real.exp (-(⟪y, v⟫ + ‖v‖ ^ 2 / 2)) * Real.exp (-gaussianWeight E y) := by
-  rw [measureReal_stdGaussian_eq_setIntegral]
-  have hpre : (fun y : E => y + v) ⁻¹' (v +ᵥ A) = A := by
-    ext y
-    simp [Set.mem_vadd_set, add_comm]
-  rw [← (measurePreserving_add_right volume v).setIntegral_preimage_emb
-    (MeasurableEquiv.addRight v).measurableEmbedding, hpre]
-  exact integral_congr_ae (Eventually.of_forall fun y => exp_neg_gaussianWeight_add y v)
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- An elementary bound: for `|t| ≤ 1`,
@@ -140,16 +89,6 @@ private theorem abs_inner_mul_exp_le {c : ℝ} (hc : 0 < c) (y w : E) {t : ℝ} 
     _ = a * (1 + a) * Real.exp ((a + 1) ^ 2 / (4 * c)) * Real.exp (c * r ^ 2) := by
       rw [Real.exp_add]; ring
 
-/-- Integrability against the standard Gaussian measure is Lebesgue integrability after
-multiplication by the Gaussian density `e^{−W}`. -/
-theorem integrable_stdGaussian_iff {g : E → ℝ} :
-    Integrable g (stdGaussian E) ↔ Integrable fun x => g x * Real.exp (-gaussianWeight E x) := by
-  have hm : Measurable fun x : E => ENNReal.ofReal (Real.exp (-gaussianWeight E x)) :=
-    (contDiff_gaussianWeight (n := 0)).continuous.neg.rexp.measurable.ennreal_ofReal
-  rw [← withDensity_exp_neg_gaussianWeight, integrable_withDensity_iff hm
-    (Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
-  simp_rw [ENNReal.toReal_ofReal (Real.exp_pos _).le]
-
 /-- By Fernique's theorem, the `t`-derivatives of `e^{−t ⟨y, w⟩ − t² ‖w‖² / 2} e^{−W(y)}` for
 `|t| ≤ 1` have a common Lebesgue-integrable bound. -/
 private theorem exists_integrable_bound (w : E) :
@@ -157,9 +96,13 @@ private theorem exists_integrable_bound (w : E) :
       |⟪y + t • w, w⟫| * Real.exp (-(t * ⟪y, w⟫ + t ^ 2 * ‖w‖ ^ 2 / 2)) *
         Real.exp (-gaussianWeight E y) ≤ bound y := by
   obtain ⟨c, hc, hci⟩ := IsGaussian.exists_integrable_exp_sq (stdGaussian E)
+  rw [← withDensity_exp_neg_gaussianWeight, MeasureTheory.integrable_withDensity_ofReal_iff
+    continuous_exp_neg_gaussianWeight.aemeasurable
+    (ae_of_all _ fun _ => (Real.exp_pos _).le)] at hci
   refine ⟨fun y => ‖w‖ * (1 + ‖w‖) * Real.exp ((‖w‖ + 1) ^ 2 / (4 * c)) *
     Real.exp (c * ‖y‖ ^ 2) * Real.exp (-gaussianWeight E y),
-    integrable_stdGaussian_iff.1 (hci.const_mul _), fun t ht y => ?_⟩
+    (hci.const_mul (‖w‖ * (1 + ‖w‖) * Real.exp ((‖w‖ + 1) ^ 2 / (4 * c)))).congr
+      (ae_of_all _ fun y => by simp only [smul_eq_mul]; ring), fun t ht y => ?_⟩
   exact mul_le_mul_of_nonneg_right (abs_inner_mul_exp_le hc y w ht) (Real.exp_pos _).le
 
 /-- Differentiation under the integral sign of `t ↦ ∫_s e^{−t ⟨y, w⟩ − t² ‖w‖² / 2} e^{−W(y)} dy`
@@ -169,10 +112,8 @@ private theorem hasDerivAt_setIntegral_exp (s : Set E) (w : E) :
         Real.exp (-(t * ⟪y, w⟫ + t ^ 2 * ‖w‖ ^ 2 / 2)) * Real.exp (-gaussianWeight E y))
       (∫ y in s, -⟪y, w⟫ * Real.exp (-gaussianWeight E y)) 0 := by
   obtain ⟨bound, hbound, hle⟩ := exists_integrable_bound w
-  have hφc : Continuous fun y => Real.exp (-gaussianWeight E y) :=
-    (contDiff_gaussianWeight (n := 0)).continuous.neg.rexp
-  have hφi : Integrable fun y => Real.exp (-gaussianWeight E y) := by
-    simpa using integrable_stdGaussian_iff.1 (integrable_const (1 : ℝ))
+  -- `fun_prop` uses this for the continuity side goals below
+  have hφc := continuous_exp_neg_gaussianWeight (E := E)
   have hd := hasDerivAt_integral_of_dominated_loc_of_deriv_le (μ := volume.restrict s)
     (x₀ := (0 : ℝ)) (bound := bound)
     (F := fun t y => Real.exp (-(t * ⟪y, w⟫ + t ^ 2 * ‖w‖ ^ 2 / 2)) *
@@ -180,7 +121,7 @@ private theorem hasDerivAt_setIntegral_exp (s : Set E) (w : E) :
     (F' := fun t y => Real.exp (-(t * ⟪y, w⟫ + t ^ 2 * ‖w‖ ^ 2 / 2)) * (-⟪y + t • w, w⟫) *
       Real.exp (-gaussianWeight E y)) (Metric.ball_mem_nhds 0 one_pos)
     (Eventually.of_forall fun t => (by fun_prop : Continuous _).aestronglyMeasurable)
-    (by simpa using (hφi.integrableOn (s := s)).integrable)
+    (by simpa using (integrable_exp_neg_gaussianWeight.integrableOn (s := s)).integrable)
     ((by fun_prop : Continuous _).aestronglyMeasurable)
     (Eventually.of_forall fun y t ht => by
       rw [Metric.mem_ball, dist_zero_right, Real.norm_eq_abs] at ht
@@ -214,30 +155,27 @@ theorem hasDerivAt_measureReal_stdGaussian_smul_vadd (hn : 2 ≤ finrank ℝ E) 
   have hFeq : (fun t : ℝ => (stdGaussian E).real ((t • w) +ᵥ s)) = fun t => ∫ y in s,
       Real.exp (-(t * ⟪y, w⟫ + t ^ 2 * ‖w‖ ^ 2 / 2)) * Real.exp (-gaussianWeight E y) := by
     funext t
-    rw [measureReal_stdGaussian_vadd]
+    rw [measureReal_stdGaussian_vadd _ hs]
     refine integral_congr_ae (Eventually.of_forall fun y => ?_)
     simp only [inner_smul_right, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
   rw [hFeq]
   convert hasDerivAt_setIntegral_exp s w using 1
   -- identify the derivative with the weighted Gauss–Green flux of the constant field `w`
-  have hfd (x : E) : fderiv ℝ (gaussianWeight E) x w = ⟪x, w⟫ := by
-    simp [(hasFDerivAt_gaussianWeight x).fderiv]
   have hWX : Integrable fun x =>
       fderiv ℝ (gaussianWeight E) x w * Real.exp (-gaussianWeight E x) := by
     obtain ⟨bound, hbound, hle⟩ := exists_integrable_bound w
-    have hφc : Continuous fun y => Real.exp (-gaussianWeight E y) :=
-      (contDiff_gaussianWeight (n := 0)).continuous.neg.rexp
     refine hbound.mono' (by
-      simp_rw [hfd]
-      exact ((continuous_id.inner continuous_const).mul hφc).aestronglyMeasurable)
+      simp only [fderiv_gaussianWeight, innerSL_apply_apply]
+      exact ((continuous_id.inner continuous_const).mul
+        continuous_exp_neg_gaussianWeight).aestronglyMeasurable)
       (Eventually.of_forall fun x => ?_)
-    simpa [hfd, abs_mul, abs_of_pos (Real.exp_pos _)] using hle 0 (by simp) x
+    simpa [abs_mul, abs_of_pos (Real.exp_pos _)] using hle 0 (by simp) x
   rw [← integral_weightedDivergence_eq_integral_reducedBoundary_of_bounded
     (W := gaussianWeight E) (X := fun _ => w) contDiff_gaussianWeight hn
-    (by simpa using integrable_stdGaussian_iff.1 (integrable_const (1 : ℝ))) hs
+    integrable_exp_neg_gaussianWeight hs
     (gaussianPerimeter_def (s := s) ▸ hP) contDiff_const (C := ‖w‖) (C' := 0)
     (fun _ => le_rfl) (fun x => by simp) hWX, ← integral_indicator₀ hs]
   refine integral_congr_ae (Eventually.of_forall fun x => ?_)
-  by_cases hx : x ∈ s <;> simp [hx, hfd]
+  by_cases hx : x ∈ s <;> simp [hx]
 
 end TauCeti
