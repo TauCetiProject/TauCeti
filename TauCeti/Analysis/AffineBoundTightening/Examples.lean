@@ -582,39 +582,28 @@ theorem zero_rows_feasible_assignments (A : Matrix (Fin 0) (Fin 1) ℝ) :
       (IsFeasible A q₀ (canonical A q₀) ∧ objective (canonical A q₀) = 2) ∧
       ¬ Function.IsFixedPt (step A q₀) q₃ ∧ ¬ IsFeasible A q₀ (canonical A q₃) := by
   intro q₀ q₁ q₂ q₃
+  obtain ⟨h1, h2, h3⟩ := zero_rows_fixed_and_nonfixed A
   have hfeas : ∀ q : Raw 1 0, q.1 ≤ q.2 → Within q q₀ → IsFeasible A q₀ (canonical A q) :=
     fun q hq hw => isFeasible_canonical_iff.mpr ⟨hq, (isFixedPt_step_zero_rows_iff A q₀ q).mpr hw⟩
-  have h3 : ¬ Function.IsFixedPt (step A q₀) q₃ := fun h => by
-    have hle := ((isFixedPt_step_zero_rows_iff A q₀ q₃).mp h).le_snd (.inl 0)
-    norm_num [q₀, q₃] at hle
-  refine ⟨⟨hfeas q₁ (fun _ => by norm_num [q₁])
-        (within_iff.mpr ⟨fun _ => le_rfl, fun _ => by norm_num [q₀, q₁]⟩),
+  refine ⟨⟨hfeas q₁ (fun _ => by norm_num [q₁]) (rawRun_zero A q₀ ▸ h1 0),
       by simp [q₁, objective_eq_sum_add_sum]⟩,
-    ⟨hfeas q₂ (fun _ => by norm_num [q₂])
-        (within_iff.mpr ⟨fun _ => by norm_num [q₀, q₂], fun _ => le_rfl⟩),
+    ⟨hfeas q₂ (fun _ => by norm_num [q₂]) (rawRun_zero A q₀ ▸ h2 0),
       by norm_num [q₂, objective_eq_sum_add_sum]⟩,
     ⟨hfeas q₀ (fun _ => by norm_num [q₀]) Within.rfl, by simp [q₀, objective_eq_sum_add_sum]⟩,
     h3, fun h => h3 (isFeasible_canonical_iff.mp h).2⟩
 
-/-- A zero row with row bounds `[1, 1]` admits no feasible assignment and no ordered fixed tuple;
-with zero variables and row bounds `[1, 1]`, no graph point lies in the initial box and the program
-is again infeasible. -/
+/-- A zero row with row bounds `[1, 1]` admits no feasible assignment, since by
+`conflicting_row_no_fixed` it has no ordered fixed tuple; with zero variables and row bounds
+`[1, 1]`, no graph point lies in the initial box and the program is again infeasible. -/
 theorem zero_row_conflict_infeasible (A₀ : Matrix (Fin 1) (Fin 0) ℝ) :
     let A : Matrix (Fin 1) (Fin 1) ℝ := 0
     let q₀ : Raw 1 1 := (Sum.elim ![0] ![1], Sum.elim ![1] ![1])
     let r₀ : Raw 0 1 := (fun _ => 1, fun _ => 1)
-    ((¬ ∃ p, IsFeasible A q₀ p) ∧
-        ¬ ∃ q : Raw 1 1, q.1 ≤ q.2 ∧ Function.IsFixedPt (step A q₀) q) ∧
+    (¬ ∃ p, IsFeasible A q₀ p) ∧
       (∀ x, graph A₀ x ∉ Icc r₀.1 r₀.2) ∧ ¬ ∃ p, IsFeasible A₀ r₀ p := by
   intro A q₀ r₀
-  have hA : ¬ ∃ p, IsFeasible A q₀ p := fun ⟨p, h⟩ => by
-    have hu := h.le_sum_zU 0
-    have hw := h.within.fst_le (.inr 0)
-    have ho := h.fst_le_snd (.inr 0)
-    simp only [h.zU_eq, A, zHi_zero, Finset.sum_const_zero] at hu
-    simp only [q₀, Sum.elim_inr, Matrix.cons_val_fin_one] at hw
-    linarith
-  refine ⟨⟨hA, exists_isFeasible_iff.not.mp hA⟩, fun x hx => ?_, fun ⟨p, h⟩ => ?_⟩
+  refine ⟨exists_isFeasible_iff.not.mpr conflicting_row_no_fixed.2, fun x hx => ?_,
+    fun ⟨p, h⟩ => ?_⟩
   · have h0 := hx.1 (.inr 0)
     simp [r₀, Matrix.mulVec, dotProduct] at h0
     norm_num at h0
