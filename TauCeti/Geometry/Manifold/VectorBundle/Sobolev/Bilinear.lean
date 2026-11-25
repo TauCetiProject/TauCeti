@@ -113,6 +113,7 @@ variable {C₃ C₁ C₂ b e₁ e₂}
   (hb : C₃.HasAeProducts C₁ C₂ b e₁ e₂ μ p₁ p₂ p₃ k₁ k₂ k₃)
 
 omit [FiniteDimensional ℝ F₃] in
+@[simp]
 theorem chartProduct_apply (x : C₁.sobolevSections μ p₁ k₁) (y : C₂.sobolevSections μ p₂ k₂)
     (i : Fin C₃.n) (t : E) : C₃.chartProduct C₁ C₂ b e₁ e₂ x y i t =
       b (C₁.chartValueL μ p₁ k₁ (e₁ i) x t) (C₂.chartValueL μ p₂ k₂ (e₂ i) y t) :=
@@ -143,42 +144,58 @@ private theorem eq_mulAux {x : C₁.sobolevSections μ p₁ k₁} {y : C₂.sobo
     z = mulAux hb x y :=
   eq_of_chartValueL_ae_eq fun i ↦ (hz i).trans (chartValueL_mulAux hb x y i).symm
 
+/-- **Linearity of the chosen product.** If the chart products of `x` and `y` are the combination
+`c • (x₁ ⬝ y₁) + d • (x₂ ⬝ y₂)` of two chart products, the chosen products combine in the same
+way. -/
+private theorem mulAux_eq_smul_add_smul {x x₁ x₂ : C₁.sobolevSections μ p₁ k₁}
+    {y y₁ y₂ : C₂.sobolevSections μ p₂ k₂} (c d : ℝ)
+    (h : ∀ i, C₃.chartProduct C₁ C₂ b e₁ e₂ x y i =ᵐ[μ.restrict (C₃.image i)]
+      c • C₃.chartProduct C₁ C₂ b e₁ e₂ x₁ y₁ i + d • C₃.chartProduct C₁ C₂ b e₁ e₂ x₂ y₂ i) :
+    mulAux hb x y = c • mulAux hb x₁ y₁ + d • mulAux hb x₂ y₂ :=
+  (eq_mulAux hb fun i ↦ by
+    filter_upwards [h i, chartValueL_mulAux hb x₁ y₁ i, chartValueL_mulAux hb x₂ y₂ i,
+      Lp.coeFn_add (c • C₃.chartValueL μ p₃ k₃ i (mulAux hb x₁ y₁))
+        (d • C₃.chartValueL μ p₃ k₃ i (mulAux hb x₂ y₂)),
+      Lp.coeFn_smul c (C₃.chartValueL μ p₃ k₃ i (mulAux hb x₁ y₁)),
+      Lp.coeFn_smul d (C₃.chartValueL μ p₃ k₃ i (mulAux hb x₂ y₂))] with t ht h₁ h₂ hadd hs₁ hs₂
+    simp only [Submodule.coe_add, Submodule.coe_smul, map_add, map_smul, hadd, Pi.add_apply, hs₁,
+      hs₂, Pi.smul_apply, h₁, h₂, ht]).symm
+
 include h₁ h₂
 
-/-- The chosen product, as a bilinear map. -/
+/-- The chosen product, as a bilinear map. Each linearity law is
+`mulAux_eq_smul_add_smul`, from the corresponding law of the chart data. -/
 private def mulₗ : C₁.sobolevSections μ p₁ k₁ →ₗ[ℝ] C₂.sobolevSections μ p₂ k₂ →ₗ[ℝ]
     C₃.sobolevSections μ p₃ k₃ :=
   LinearMap.mk₂ ℝ (mulAux hb)
-    (fun x x' y ↦ (eq_mulAux hb fun i ↦ by
-      filter_upwards [Lp.coeFn_add (C₃.chartValueL μ p₃ k₃ i (mulAux hb x y))
-          (C₃.chartValueL μ p₃ k₃ i (mulAux hb x' y)), chartValueL_mulAux hb x y i,
-        chartValueL_mulAux hb x' y i, ae_restrict_of_ae_restrict_of_subset (h₁ i)
-          (Lp.coeFn_add (C₁.chartValueL μ p₁ k₁ (e₁ i) x) (C₁.chartValueL μ p₁ k₁ (e₁ i) x'))]
-        with t hadd hx hx' h
-      rw [Submodule.coe_add, map_add, hadd, Pi.add_apply, hx, hx', chartProduct, chartProduct,
-        chartProduct, Submodule.coe_add, map_add, h, Pi.add_apply, map_add,
-        add_apply]).symm)
-    (fun c x y ↦ (eq_mulAux hb fun i ↦ by
-      filter_upwards [Lp.coeFn_smul c (C₃.chartValueL μ p₃ k₃ i (mulAux hb x y)),
-        chartValueL_mulAux hb x y i, ae_restrict_of_ae_restrict_of_subset (h₁ i)
-          (Lp.coeFn_smul c (C₁.chartValueL μ p₁ k₁ (e₁ i) x))] with t hsmul hx h
-      rw [Submodule.coe_smul, map_smul, hsmul, Pi.smul_apply, hx, chartProduct, chartProduct,
-        Submodule.coe_smul, map_smul, h, Pi.smul_apply, map_smul,
-        smul_apply]).symm)
-    (fun x y y' ↦ (eq_mulAux hb fun i ↦ by
-      filter_upwards [Lp.coeFn_add (C₃.chartValueL μ p₃ k₃ i (mulAux hb x y))
-          (C₃.chartValueL μ p₃ k₃ i (mulAux hb x y')), chartValueL_mulAux hb x y i,
-        chartValueL_mulAux hb x y' i, ae_restrict_of_ae_restrict_of_subset (h₂ i)
-          (Lp.coeFn_add (C₂.chartValueL μ p₂ k₂ (e₂ i) y) (C₂.chartValueL μ p₂ k₂ (e₂ i) y'))]
-        with t hadd hy hy' h
-      rw [Submodule.coe_add, map_add, hadd, Pi.add_apply, hy, hy', chartProduct, chartProduct,
-        chartProduct, Submodule.coe_add, map_add, h, Pi.add_apply, map_add]).symm)
-    (fun c x y ↦ (eq_mulAux hb fun i ↦ by
-      filter_upwards [Lp.coeFn_smul c (C₃.chartValueL μ p₃ k₃ i (mulAux hb x y)),
-        chartValueL_mulAux hb x y i, ae_restrict_of_ae_restrict_of_subset (h₂ i)
-          (Lp.coeFn_smul c (C₂.chartValueL μ p₂ k₂ (e₂ i) y))] with t hsmul hy h
-      rw [Submodule.coe_smul, map_smul, hsmul, Pi.smul_apply, hy, chartProduct, chartProduct,
-        Submodule.coe_smul, map_smul, h, Pi.smul_apply, map_smul]).symm)
+    (fun x x' y ↦ by
+      simpa using mulAux_eq_smul_add_smul hb (x₁ := x) (x₂ := x') (y₁ := y) (y₂ := y) 1 1
+        fun i ↦ by
+          filter_upwards [ae_restrict_of_ae_restrict_of_subset (h₁ i) (Lp.coeFn_add
+            (C₁.chartValueL μ p₁ k₁ (e₁ i) x) (C₁.chartValueL μ p₁ k₁ (e₁ i) x'))] with t ht
+          simp only [chartProduct_apply, Submodule.coe_add, map_add, ht, Pi.add_apply,
+            add_apply, one_smul])
+    (fun c x y ↦ by
+      simpa using mulAux_eq_smul_add_smul hb (x₁ := x) (x₂ := x) (y₁ := y) (y₂ := y) c 0
+        fun i ↦ by
+          filter_upwards [ae_restrict_of_ae_restrict_of_subset (h₁ i)
+            (Lp.coeFn_smul c (C₁.chartValueL μ p₁ k₁ (e₁ i) x))] with t ht
+          simp only [chartProduct_apply, Submodule.coe_smul, map_smul, ht, Pi.smul_apply,
+            smul_apply, zero_smul, add_zero])
+    (fun x y y' ↦ by
+      simpa using mulAux_eq_smul_add_smul hb (x₁ := x) (x₂ := x) (y₁ := y) (y₂ := y') 1 1
+        fun i ↦ by
+          filter_upwards [ae_restrict_of_ae_restrict_of_subset (h₂ i) (Lp.coeFn_add
+            (C₂.chartValueL μ p₂ k₂ (e₂ i) y) (C₂.chartValueL μ p₂ k₂ (e₂ i) y'))] with t ht
+          simp only [chartProduct_apply, Submodule.coe_add, map_add, ht, Pi.add_apply,
+            one_smul])
+    (fun c x y ↦ by
+      simpa using mulAux_eq_smul_add_smul hb (x₁ := x) (x₂ := x) (y₁ := y) (y₂ := y) c 0
+        fun i ↦ by
+          filter_upwards [ae_restrict_of_ae_restrict_of_subset (h₂ i)
+            (Lp.coeFn_smul c (C₂.chartValueL μ p₂ k₂ (e₂ i) y))] with t ht
+          simp only [chartProduct_apply, Submodule.coe_smul, map_smul, ht, Pi.smul_apply,
+            zero_smul, add_zero])
 
 private theorem mulₗ_apply (x : C₁.sobolevSections μ p₁ k₁) (y : C₂.sobolevSections μ p₂ k₂) :
     mulₗ h₁ h₂ hb x y = mulAux hb x y :=

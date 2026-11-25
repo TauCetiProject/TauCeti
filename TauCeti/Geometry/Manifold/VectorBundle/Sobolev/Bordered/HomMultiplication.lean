@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
-public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.HalfPlane.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bilinear
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Atlas.Transfer
 import TauCeti.Analysis.Sobolev.Local.Multiplication.HalfDisc.Supercritical
@@ -84,29 +84,14 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M] 
 
 omit [FiniteDimensional ℝ F₁] [FiniteDimensional ℝ F₂] [IsManifold closedUpperHalfPlaneModel n M]
   [ContMDiffVectorBundle n F₁ V₁ closedUpperHalfPlaneModel]
-  [ContMDiffVectorBundle n F₂ V₂ closedUpperHalfPlaneModel] in
-/-- **Hom sections act chartwise.** At the points of the image of chart `i`, applying the reading
-of a section `φ` of the hom bundle to the reading of a section `s` of `V₁` gives the reading of the
-section `x ↦ φ x (s x)` of `V₂`. -/
-theorem halfCoord_hom_apply (i : Fin A.n) (φ : ∀ x, V₁ x →L[ℝ] V₂ x) (s : ∀ x, V₁ x) {z : ℂ}
-    (hz : closedUpperHalfPlaneModel.symm z ∈ A.image i) :
-    (A.hom (𝕜 := ℝ) h).halfCoord i φ z (A.halfCoord i s z) =
-      (A.ofBaseSet h).halfCoord i (fun x ↦ φ x (s x)) z := by
-  rw [halfCoord_def A i s z, halfCoord_def (A.ofBaseSet h) i _ z]
-  exact (congrArg (· (A.coord i s (closedUpperHalfPlaneModel.symm z)))
-    (halfCoord_def (A.hom (𝕜 := ℝ) h) i φ z)).trans (A.coord_hom_apply h i φ s hz)
-
-omit [FiniteDimensional ℝ F₁] [FiniteDimensional ℝ F₂] [IsManifold closedUpperHalfPlaneModel n M]
-  [ContMDiffVectorBundle n F₁ V₁ closedUpperHalfPlaneModel]
-  [ContMDiffVectorBundle n F₂ V₂ closedUpperHalfPlaneModel] in
-/-- The hom atlas has the interiors of the chart images of `A`. -/
-@[simp]
-theorem halfImage_hom (i : Fin A.n) : (A.hom (𝕜 := ℝ) h).halfImage i = A.halfImage i :=
-  A.halfImage_ofBaseSet i
+  [ContMDiffVectorBundle n F₂ V₂ closedUpperHalfPlaneModel] [Fact (1 ≤ (p : ℝ≥0∞))] in
+/-- `kp > 2` forces `k ≥ 1`, so `k ≤ n` gives `1 ≤ n`. -/
+private theorem one_le_of_two_lt_mul (hkn : k ≤ n) (hkp : 2 < (k : ℝ≥0) * p) : 1 ≤ n :=
+  (Nat.one_le_iff_ne_zero.2 fun hk ↦ by simp [hk] at hkp).trans hkn
 
 /-- In chart `j`, the reading of `x ↦ φ x (s x)` has `W^{k,p}` components on the interior of the
 chart image, when the readings of `φ` and `s` are the chart data of Sobolev sections. -/
-private theorem exists_wkp_coord_hom_apply (hn : 1 ≤ n) (hkn : k ≤ n) (hp : 1 < p)
+private theorem exists_wkp_coord_hom_apply (hkn : k ≤ n) (hp : 1 < p)
     (hkp : 2 < (k : ℝ≥0) * p) {α : BorderedSobolevSection (A.hom (𝕜 := ℝ) h) p k}
     {ξ : BorderedSobolevSection A p k} {φ : ∀ x, V₁ x →L[ℝ] V₂ x} {s : ∀ x, V₁ x}
     (hφ : ∀ i, (A.hom (𝕜 := ℝ) h).halfSectionChartData.chartValueL volume p k i α
@@ -119,13 +104,14 @@ private theorem exists_wkp_coord_hom_apply (hn : 1 ≤ n) (hkn : k ≤ n) (hp : 
         fun z ↦ (finBasis ℝ F₂).coord m
           ((A.ofBaseSet h).halfSectionChartData.coord j (fun x ↦ φ x (s x)) z) := by
   rw [A.halfImage_ofBaseSet]
+  have hn := one_le_of_two_lt_mul hkn hkp
   -- Both readings are in the local classes over the base sets of both bundle charts.
   set e := extChartAt closedUpperHalfPlaneModel (A.center j)
   obtain ⟨Ω, hΩ, hΩe⟩ := exists_isOpen_extChartAt_target_inter_preimage (A.center j)
     ((A.triv j).open_baseSet.inter (trivializationAt F₂ V₂ (A.center j)).open_baseSet)
   have hα := ((A.hom (𝕜 := ℝ) h).memWkpLoc_halfCoord_extChartAt_target (A.hom (𝕜 := ℝ) h) hn hkn
     (memWkpLoc_halfCoord α hφ) j).congr_mono (fun _ _ ↦ rfl) (hΩe.symm.trans (by
-      rw [hom_trivializationAt_baseSet]; rfl)).le
+      rw [triv, hom_trivializationAt_baseSet, hom_center])).le
   have hξ := (A.memWkpLoc_halfCoord_extChartAt_target A hn hkn (memWkpLoc_halfCoord ξ hs)
     j).congr_mono (fun _ _ ↦ rfl) (hΩe.ge.trans
       (inter_subset_inter_right _ (preimage_mono inter_subset_left)))
@@ -146,7 +132,7 @@ private theorem exists_wkp_coord_hom_apply (hn : 1 ≤ n) (hkn : k ≤ n) (hp : 
   filter_upwards [ae_restrict_of_ae_restrict_of_subset hle hv,
     ae_restrict_mem (A.halfImage j).isOpen.measurableSet] with z hz hzj
   rw [hz, (A.ofBaseSet h).halfSectionChartData_coord_of_mem _ ((A.halfImage_ofBaseSet j).ge hzj),
-    ← halfCoord_hom_apply A h j φ s (A.mem_halfImage.1 hzj).1,
+    ← A.halfCoord_hom_apply h j φ s (A.mem_halfImage.1 hzj).1,
     LinearMap.coe_toContinuousLinearMap']
 
 omit [FiniteDimensional ℝ F₁] [FiniteDimensional ℝ F₂] [IsManifold closedUpperHalfPlaneModel n M]
@@ -154,7 +140,7 @@ omit [FiniteDimensional ℝ F₁] [FiniteDimensional ℝ F₂] [IsManifold close
   [ContMDiffVectorBundle n F₂ V₂ closedUpperHalfPlaneModel] in
 private theorem subset_hom (i : Fin A.n) :
     ((A.ofBaseSet h).halfImage i : Set ℂ) ⊆ (A.hom (𝕜 := ℝ) h).halfImage i :=
-  SetLike.coe_subset_coe.2 ((A.halfImage_ofBaseSet i).trans (halfImage_hom A h i).symm).le
+  SetLike.coe_subset_coe.2 ((A.halfImage_ofBaseSet i).trans (A.halfImage_hom h i).symm).le
 
 omit [NormedSpace ℝ F₁] [FiniteDimensional ℝ F₁] [∀ x, AddCommGroup (V₁ x)]
   [∀ x, Module ℝ (V₁ x)] [VectorBundle ℝ F₁ V₁] [NormedSpace ℝ F₂] [∀ x, AddCommGroup (V₂ x)]
@@ -167,11 +153,26 @@ private theorem subset_self (i : Fin A.n) :
     ((A.ofBaseSet h).halfImage i : Set ℂ) ⊆ A.halfImage i :=
   SetLike.coe_subset_coe.2 (A.halfImage_ofBaseSet i).le
 
-/-- **Products lie in `W^{k,p}`.** For `1 < p`, orders `1 ≤ k ≤ n` with `kp > 2`, a `W^{k,p}`
+omit [IsManifold closedUpperHalfPlaneModel n M]
+  [ContMDiffVectorBundle n F₁ V₁ closedUpperHalfPlaneModel]
+  [ContMDiffVectorBundle n F₂ V₂ closedUpperHalfPlaneModel] in
+/-- The chart product of the hom action is the application of the chart data. -/
+private theorem chartProduct_hom (α : BorderedSobolevSection (A.hom (𝕜 := ℝ) h) p k)
+    (ξ : BorderedSobolevSection A p k) (i : Fin A.n) (z : ℂ) :
+    (A.ofBaseSet h).halfSectionChartData.chartProduct (A.hom (𝕜 := ℝ) h).halfSectionChartData
+      A.halfSectionChartData (ContinuousLinearMap.id ℝ (F₁ →L[ℝ] F₂)) (fun i ↦ i) (fun i ↦ i)
+      α ξ i z = (A.hom (𝕜 := ℝ) h).halfSectionChartData.chartValueL volume p k i α z
+        (A.halfSectionChartData.chartValueL volume p k i ξ z) :=
+  -- `ContinuousLinearMap.id` applies as the identity.
+  SectionChartData.chartProduct_apply (C₃ := (A.ofBaseSet h).halfSectionChartData)
+    (C₁ := (A.hom (𝕜 := ℝ) h).halfSectionChartData) (C₂ := A.halfSectionChartData)
+    (b := ContinuousLinearMap.id ℝ (F₁ →L[ℝ] F₂)) (e₁ := fun i ↦ i) (e₂ := fun i ↦ i) α ξ i z
+
+/-- **Products lie in `W^{k,p}`.** For `1 < p`, orders `k ≤ n` with `kp > 2`, a `W^{k,p}`
 section `α` of the hom bundle and a `W^{k,p}` section `ξ` of `V₁`, some `W^{k,p}` section of `V₂`
 has, in every chart, chart data equal almost everywhere to the pointwise application of the chart
 data of `α` to those of `ξ`. -/
-theorem hasAeProducts_hom (hn : 1 ≤ n) (hkn : k ≤ n) (hp : 1 < p) (hkp : 2 < (k : ℝ≥0) * p) :
+theorem hasAeProducts_hom (hkn : k ≤ n) (hp : 1 < p) (hkp : 2 < (k : ℝ≥0) * p) :
     (A.ofBaseSet h).halfSectionChartData.HasAeProducts (A.hom (𝕜 := ℝ) h).halfSectionChartData
       A.halfSectionChartData (ContinuousLinearMap.id ℝ (F₁ →L[ℝ] F₂)) (fun i ↦ i) (fun i ↦ i)
       volume p p p k k k := by
@@ -182,7 +183,7 @@ theorem hasAeProducts_hom (hn : 1 ≤ n) (hkn : k ≤ n) (hp : 1 < p) (hkp : 2 <
   have hs' (i : Fin A.n) := (hs i).trans (A.halfSectionChartData_coord_ae_eq i s)
   obtain ⟨w, hw⟩ := exists_chartValueL_ae_eq_halfCoord_of_forall_exists_wkp
     (A := A.ofBaseSet h) (s := fun x ↦ φ x (s x))
-    (exists_wkp_coord_hom_apply A h hn hkn hp hkp hφ' hs')
+    (exists_wkp_coord_hom_apply A h hkn hp hkp hφ' hs')
   refine ⟨w, fun i ↦ (hw i).trans ?_⟩
   have h₁ := subset_hom A h i
   have h₂ := subset_self A h i
@@ -193,66 +194,60 @@ theorem hasAeProducts_hom (hn : 1 ≤ n) (hkn : k ≤ n) (hp : 1 < p) (hkp : 2 <
     with z hφz hsz hz
   -- `ContinuousLinearMap.id` applies as the identity, so the product is `φ z (s z)`.
   exact ((congrArg₂ (fun (f : F₁ →L[ℝ] F₂) (v : F₁) ↦ f v) hφz hsz).trans
-    (halfCoord_hom_apply A h i φ s (A.mem_halfImage.1 hz).1)).symm.trans
-      (SectionChartData.chartProduct_apply
-        (C₃ := (A.ofBaseSet h).halfSectionChartData) (C₁ := (A.hom (𝕜 := ℝ) h).halfSectionChartData)
-        (C₂ := A.halfSectionChartData) (b := ContinuousLinearMap.id ℝ (F₁ →L[ℝ] F₂))
-        (e₁ := fun i ↦ i) (e₂ := fun i ↦ i) α ξ i z).symm
+    (A.halfCoord_hom_apply h i φ s (A.mem_halfImage.1 hz).1)).symm.trans
+      (chartProduct_hom A h α ξ i z).symm
 
 omit [ContMDiffVectorBundle n F₁ V₁ closedUpperHalfPlaneModel]
   [ContMDiffVectorBundle n F₂ V₂ closedUpperHalfPlaneModel] in
 private theorem isManifold_one (hn : 1 ≤ n) : IsManifold closedUpperHalfPlaneModel 1 M :=
   IsManifold.of_le (n := n) (by exact_mod_cast hn)
 
-/-- **Multiplication by `W^{k,p}` coefficients.** For `1 < p`, orders `1 ≤ k ≤ n` with `kp > 2`,
+/-- **Multiplication by `W^{k,p}` coefficients.** For `1 < p`, orders `k ≤ n` with `kp > 2`,
 applying `W^{k,p}` sections of the bundle `x ↦ V₁ x →L[ℝ] V₂ x` to `W^{k,p}` sections of `V₁`
 pointwise is a continuous bilinear map into the `W^{k,p}` sections of `V₂`. -/
-def homMulL (hn : 1 ≤ n) (hkn : k ≤ n) (hp : 1 < p) (hkp : 2 < (k : ℝ≥0) * p) :
+def homMulL (hkn : k ≤ n) (hp : 1 < p) (hkp : 2 < (k : ℝ≥0) * p) :
     BorderedSobolevSection (A.hom (𝕜 := ℝ) h) p k →L[ℝ] BorderedSobolevSection A p k →L[ℝ]
       BorderedSobolevSection (A.ofBaseSet h) p k :=
-  letI := isManifold_one (M := M) hn
+  letI := isManifold_one (M := M) (one_le_of_two_lt_mul hkn hkp)
   SectionChartData.bilinOfAeEq (subset_hom A h) (subset_self A h)
-    (hasAeProducts_hom A h hn hkn hp hkp)
+    (hasAeProducts_hom A h hkn hp hkp)
 
 /-- The chart data of `homMulL α ξ` are the pointwise application of the chart data of `α` to
 those of `ξ`. -/
-theorem chartValueL_homMulL_ae (hn : 1 ≤ n) (hkn : k ≤ n) (hp : 1 < p)
+theorem chartValueL_homMulL_ae (hkn : k ≤ n) (hp : 1 < p)
     (hkp : 2 < (k : ℝ≥0) * p) (α : BorderedSobolevSection (A.hom (𝕜 := ℝ) h) p k)
     (ξ : BorderedSobolevSection A p k) (j : Fin A.n) :
-    (A.ofBaseSet h).halfSectionChartData.chartValueL volume p k j (homMulL A h hn hkn hp hkp α ξ)
+    (A.ofBaseSet h).halfSectionChartData.chartValueL volume p k j (homMulL A h hkn hp hkp α ξ)
       =ᵐ[volume.restrict (A.halfImage j : Set ℂ)] fun z ↦
         (A.hom (𝕜 := ℝ) h).halfSectionChartData.chartValueL volume p k j α z
           (A.halfSectionChartData.chartValueL volume p k j ξ z) :=
-  letI := isManifold_one (M := M) hn
+  letI := isManifold_one (M := M) (one_le_of_two_lt_mul hkn hkp)
   ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 (A.halfImage_ofBaseSet j).ge)
     ((SectionChartData.chartValueL_bilinOfAeEq_ae (subset_hom A h) (subset_self A h)
-      (hasAeProducts_hom A h hn hkn hp hkp) α ξ j).trans
-        (Eventually.of_forall fun z ↦ SectionChartData.chartProduct_apply
-        (C₃ := (A.ofBaseSet h).halfSectionChartData) (C₁ := (A.hom (𝕜 := ℝ) h).halfSectionChartData)
-        (C₂ := A.halfSectionChartData) (b := ContinuousLinearMap.id ℝ (F₁ →L[ℝ] F₂))
-        (e₁ := fun i ↦ i) (e₂ := fun i ↦ i) α ξ j z))
+      (hasAeProducts_hom A h hkn hp hkp) α ξ j).trans
+        (Eventually.of_forall fun z ↦ chartProduct_hom A h α ξ j z))
 
 /-- **Sections.** If the chart data of `α` and `ξ` are the readings of sections `φ` and `s`, those
 of `homMulL α ξ` are the readings of `x ↦ φ x (s x)`. -/
-theorem chartValueL_homMulL_ae_halfCoord (hn : 1 ≤ n) (hkn : k ≤ n) (hp : 1 < p)
+theorem chartValueL_homMulL_ae_halfCoord (hkn : k ≤ n) (hp : 1 < p)
     (hkp : 2 < (k : ℝ≥0) * p) {α : BorderedSobolevSection (A.hom (𝕜 := ℝ) h) p k}
     {ξ : BorderedSobolevSection A p k} {φ : ∀ x, V₁ x →L[ℝ] V₂ x} {s : ∀ x, V₁ x} {j : Fin A.n}
     (hφ : (A.hom (𝕜 := ℝ) h).halfSectionChartData.chartValueL volume p k j α
       =ᵐ[volume.restrict (A.halfImage j : Set ℂ)] (A.hom (𝕜 := ℝ) h).halfCoord j φ)
     (hs : A.halfSectionChartData.chartValueL volume p k j ξ
       =ᵐ[volume.restrict (A.halfImage j : Set ℂ)] A.halfCoord j s) :
-    (A.ofBaseSet h).halfSectionChartData.chartValueL volume p k j (homMulL A h hn hkn hp hkp α ξ)
+    (A.ofBaseSet h).halfSectionChartData.chartValueL volume p k j (homMulL A h hkn hp hkp α ξ)
       =ᵐ[volume.restrict (A.halfImage j : Set ℂ)] (A.ofBaseSet h).halfCoord j
         (fun x ↦ φ x (s x)) := by
-  filter_upwards [chartValueL_homMulL_ae A h hn hkn hp hkp α ξ j, hφ, hs,
+  filter_upwards [chartValueL_homMulL_ae A h hkn hp hkp α ξ j, hφ, hs,
     ae_restrict_mem (A.halfImage j).isOpen.measurableSet] with z hz hφz hsz hzj
-  rw [hz, hφz, hsz, halfCoord_hom_apply A h j φ s (A.mem_halfImage.1 hzj).1]
+  rw [hz, hφz, hsz, A.halfCoord_hom_apply h j φ s (A.mem_halfImage.1 hzj).1]
 
 /-- **Bound.** There is a constant `C` with `‖homMulL α ξ‖ ≤ C ‖α‖ ‖ξ‖`. -/
-theorem exists_norm_homMulL_apply_le (hn : 1 ≤ n) (hkn : k ≤ n) (hp : 1 < p)
+theorem exists_norm_homMulL_apply_le (hkn : k ≤ n) (hp : 1 < p)
     (hkp : 2 < (k : ℝ≥0) * p) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ (α : BorderedSobolevSection (A.hom (𝕜 := ℝ) h) p k)
-      (ξ : BorderedSobolevSection A p k), ‖homMulL A h hn hkn hp hkp α ξ‖ ≤ C * ‖α‖ * ‖ξ‖ := by
+      (ξ : BorderedSobolevSection A p k), ‖homMulL A h hkn hp hkp α ξ‖ ≤ C * ‖α‖ * ‖ξ‖ := by
   -- The operator norm uses the norms of the three Sobolev spaces of sections.
   let _ : NormedAddCommGroup (BorderedSobolevSection (A.hom (𝕜 := ℝ) h) p k) := inferInstance
   let _ : NormedSpace ℝ (BorderedSobolevSection (A.hom (𝕜 := ℝ) h) p k) := inferInstance
@@ -264,7 +259,7 @@ theorem exists_norm_homMulL_apply_le (hn : 1 ≤ n) (hkn : k ≤ n) (hp : 1 < p)
     BorderedSobolevSection (A.ofBaseSet h) p k) := inferInstance
   let _ : NormedSpace ℝ (BorderedSobolevSection A p k →L[ℝ]
     BorderedSobolevSection (A.ofBaseSet h) p k) := inferInstance
-  exact ⟨‖homMulL A h hn hkn hp hkp‖, norm_nonneg _, (homMulL A h hn hkn hp hkp).le_opNorm₂⟩
+  exact ⟨‖homMulL A h hkn hp hkp‖, norm_nonneg _, (homMulL A h hkn hp hkp).le_opNorm₂⟩
 
 end BorderedSobolevSection
 
