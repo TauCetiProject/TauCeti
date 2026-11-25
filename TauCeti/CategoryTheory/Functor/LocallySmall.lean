@@ -15,7 +15,7 @@ Mathlib shows that functors from a small category to a `w`-locally small categor
 `w`-small type, with no condition on its hom types: whiskering with `fromSkeleton` identifies
 natural transformations between functors on `C` with natural transformations between their
 restrictions to the skeleton of `C`, and these are determined by their components
-(`CategoryTheory.locallySmall_functor_of_small_skeleton`). In particular this applies to a
+(`TauCeti.locallySmall_functor_of_small_skeleton`). In particular this applies to a
 `w`-essentially small source.
 
 Automorphism groups in a `w`-locally small category are `w`-small (`TauCeti.small_aut`). Together,
@@ -27,7 +27,9 @@ public section
 
 universe w v₁ v₂ u₁ u₂
 
-namespace CategoryTheory
+namespace TauCeti
+
+open CategoryTheory
 
 /-- Functors from a category whose isomorphism classes form a `w`-small type to a `w`-locally
 small category form a `w`-locally small category. -/
@@ -38,4 +40,4 @@ instance locallySmall_functor_of_small_skeleton {C : Type u₁} [Category.{v₁}
     ⟨fun _ _ ↦ small_of_injective (f := NatTrans.app) fun _ _ ↦ NatTrans.ext⟩
   locallySmall_of_faithful (skeletonEquivalence C).congrLeft.inverse
 
-end CategoryTheory
+end TauCeti

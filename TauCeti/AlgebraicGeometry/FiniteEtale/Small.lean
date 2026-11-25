@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.CommAlgCat.FiniteEtale
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber
 public import TauCeti.CategoryTheory.Aut.Basic
 public import TauCeti.CategoryTheory.Functor.LocallySmall
+public import TauCeti.RingTheory.Etale.Small
 
 /-!
 # Smallness of finite étale covers and of étale fundamental groups
@@ -18,7 +18,7 @@ automorphism group `Aut (TauCeti.FiniteEtaleScheme.fiber x)` of a geometric fibr
 étale fundamental group at `x`. This file shows that the group has a model in `Type u` whenever
 the finite étale covers of `S` form an essentially small category, and that they do over an
 affine base (`TauCeti.FiniteEtaleScheme.essentiallySmall_of_isAffine`). The first statement is
-found by instance search, through `CategoryTheory.locallySmall_functor_of_small_skeleton` and
+found by instance search, through `TauCeti.locallySmall_functor_of_small_skeleton` and
 `TauCeti.small_aut`, so `Small.{u} (Aut (fiber x))` needs no named theorem; an `example` below
 records it.
 
@@ -27,7 +27,7 @@ global functions (`TauCeti.FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteE
 transported along `AlgebraicGeometry.Scheme.isoSpec`). Finite étale algebras are of finite type,
 so they form an essentially small category by Mathlib's essential smallness of finitely generated
 algebras (`TauCeti.essentiallySmall_commAlgCatFiniteEtale`, in
-`TauCeti.Algebra.Category.CommAlgCat.FiniteEtale`).
+`TauCeti.RingTheory.Etale.Small`).
 
 ## Main results
 
