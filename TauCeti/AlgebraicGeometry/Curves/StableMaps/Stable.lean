@@ -66,7 +66,8 @@ In the namespace `TauCeti.AlgebraicGeometry.PrestableMap`:
   quasi-finite and universally injective cases.
 * `isStableFiber_iff_of_iso` and `isStableMap_iff_of_iso`: being a stable fibre and being stable
   are invariant under isomorphism of prestable maps: over a field, the isomorphism of dual graphs
-  `dualGraphIsoOfIso` matches the contracted vertices and their log-canonical degrees.
+  `PointedPrestableFamily.dualGraphIsoOfIso` of the source curves matches the contracted vertices
+  and their log-canonical degrees.
 * `IsStableMap.pullback`: the base change of a stable map along any morphism of bases is stable.
 
 ## References
@@ -158,9 +159,12 @@ variable {F} {G : PrestableMap q n}
 /-- Being a stable fibre is invariant under isomorphism of prestable maps. -/
 theorem IsStableFiber.of_iso (e : F ≅ G) (hF : F.IsStableFiber) : G.IsStableFiber := by
   intro w hw
-  obtain ⟨v, rfl⟩ := (dualGraphIsoOfIso e).vertexEquiv.surjective w
+  -- Naming the curves keeps the vertices typed by `G.curve.dualGraph` rather than by the
+  -- unreduced `(toCurve.obj G).dualGraph`, which `rw` cannot match against the goal.
+  obtain ⟨v, rfl⟩ := (PointedPrestableFamily.dualGraphIsoOfIso (P := F.curve) (Q := G.curve)
+    (toCurve.mapIso e)).vertexEquiv.surjective w
   rw [DualGraph.Iso.logCanonicalDegree_vertexEquiv]
-  exact hF v ((isContractedVertex_dualGraphIsoOfIso_vertexEquiv_iff e v).mp hw)
+  exact hF v ((isContractedVertex_dualGraphIsoOfIso_vertexEquiv_iff _ e.hom.hom_comp_map v).mp hw)
 
 /-- Isomorphic prestable maps over a separably closed field are stable fibres simultaneously. -/
 theorem isStableFiber_iff_of_iso (e : F ≅ G) : F.IsStableFiber ↔ G.IsStableFiber :=

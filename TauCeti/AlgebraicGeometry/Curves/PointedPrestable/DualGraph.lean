@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.Node.DualGraph.Basic
-public import TauCeti.AlgebraicGeometry.Curves.PointedPrestable.Basic
+public import TauCeti.AlgebraicGeometry.Curves.Node.DualGraph.Iso
+public import TauCeti.AlgebraicGeometry.Curves.PointedPrestable.Category
 
 /-!
 # The dual graph of a pointed prestable curve
@@ -21,6 +21,8 @@ prestable curve over `K`, the markings are the values of its sections at the poi
 
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.dualGraph`: the dual graph of a pointed
   prestable curve over a separably closed field, with its markings.
+* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.dualGraphIsoOfIso`: the isomorphism of dual
+  graphs induced by an isomorphism of pointed prestable curves.
 
 ## Main results
 
@@ -56,6 +58,15 @@ theorem dualGraph_reindex [IsSepClosed K] (e : Fin m ↪ Fin n) :
   rw [dualGraph, show (P.reindex e).markingPoint = P.markingPoint ∘ e from
     funext (P.markingPoint_reindex e)]
   exact P.total.dualGraph_comp P.markingPoint e
+
+/-- An isomorphism of pointed prestable curves over a separably closed field induces an
+isomorphism of their dual graphs: the isomorphism `AlgebraicGeometry.Scheme.dualGraphIsoOfIso`
+induced by the isomorphism of total spaces, which lies over `Spec K` and matches the markings. -/
+@[expose]
+def dualGraphIsoOfIso [IsSepClosed K] {P Q : PointedPrestableFamily (Spec (.of K)) n}
+    (e : P ≅ Q) : P.dualGraph.Iso Q.dualGraph :=
+  Scheme.dualGraphIsoOfIso (K := K) (totalIso e) e.hom.hom_comp_toBase _ _
+    (totalIso_hom_markingPoint e)
 
 end PointedPrestableFamily
 
