@@ -26,7 +26,7 @@ The range of a locally constant function on the quasi-compact space `Spec R` is 
 (`IsLocallyConstant.range_finite`), so a finite set of values containing it always exists. The main
 example is the rank `Module.rankAtStalk M` of a finite projective module, whose fibre idempotents
 split `M` into pieces of constant rank; see
-`TauCeti.RingTheory.Spectrum.Prime.RankDecomposition`.
+`TauCeti.RingTheory.Spectrum.Prime.Rank.Decomposition`.
 
 ## Main declarations
 
