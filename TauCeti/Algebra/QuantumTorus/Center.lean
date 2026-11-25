@@ -358,15 +358,8 @@ theorem _root_.Units.coeff_quantumTorusCenterEquivAddMonoidAlgebra
     (a : (u.quantumTorusCentralExponents Λ).toIntSubmodule) :
     (u.quantumTorusCenterEquivAddMonoidAlgebra Λ ht f).coeff a =
       (basis u Λ).repr f.val (a : L) := by
-  classical
-  let e := u.quantumTorusCenterEquivAddMonoidAlgebra Λ ht
-  have hc (g : AddMonoidAlgebra R (u.quantumTorusCentralExponents Λ).toIntSubmodule) :
-      (basis u Λ).repr (e.symm g : QuantumTorus R L u Λ) (a : L) = g.coeff a := by
-    induction g using AddMonoidAlgebra.induction_linear with
-    | zero => simp
-    | add g₁ g₂ h₁ h₂ => simpa using congrArg₂ (· + ·) h₁ h₂
-    | single b r => simp [e, Finsupp.single_apply]
-  simpa only [AlgEquiv.symm_apply_apply] using (hc (e f)).symm
+  rw [Units.quantumTorusCenterEquivAddMonoidAlgebra, AlgEquiv.trans_apply,
+    coeff_untwistedEquiv, Units.basis_repr_quantumTorusCenterEquiv_symm_apply]
 
 private def centralRadicalEquiv (hΛ : Λ.IsAlt) (hu : ¬ IsOfFinOrder (u ^ 2)) :
     (u.quantumTorusCentralExponents Λ).toIntSubmodule ≃+

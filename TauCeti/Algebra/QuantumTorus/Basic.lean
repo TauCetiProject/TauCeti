@@ -292,6 +292,22 @@ theorem untwistedEquiv_symm_single (h : ∀ a b, u ^ (Λ a b) = 1) (a : L) (r : 
   congr 1
   exact (untwistedEquiv u Λ h).symm_apply_eq.mpr (untwistedEquiv_monomial h a).symm
 
+/-- Untwisting preserves the coefficient at each exponent of the normalized monomial basis. -/
+@[simp]
+theorem coeff_untwistedEquiv (h : ∀ a b, u ^ (Λ a b) = 1)
+    (f : QuantumTorus R L u Λ) (a : L) :
+    (untwistedEquiv u Λ h f).coeff a = (basis u Λ).repr f a := by
+  have he : (AddMonoidAlgebra.coeffLinearEquiv R).toLinearMap.comp
+      (untwistedEquiv u Λ h).toLinearMap = (basis u Λ).repr.toLinearMap := by
+    apply (basis u Λ).ext
+    intro b
+    simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, LinearEquiv.coe_coe,
+      basis_apply, untwistedEquiv_monomial, AddMonoidAlgebra.coeffLinearEquiv_apply,
+      AddMonoidAlgebra.coeff_single, basis_repr_monomial]
+  simpa only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, LinearEquiv.coe_coe,
+    AddMonoidAlgebra.coeffLinearEquiv_apply] using
+      congrArg (fun c : L →₀ R ↦ c a) (LinearMap.congr_fun he f)
+
 end QuantumTorus
 
 end TauCeti
