@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Zero
 import TauCeti.Algebra.MvPolynomial.Supported
-import Mathlib.Algebra.Algebra.Subalgebra.Directed
 import TauCeti.RingTheory.TraceFunctional.Radical
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.RingTheory.MvPolynomial.Basic
@@ -35,11 +34,12 @@ Conversely, the normalization, traciality and the Markov property with parameter
 the trace: every normalized tracial Markov functional with parameter `η` is the Bernoulli trace
 (`TauCeti.BalancedProjectionAlgebra.eq_bernoulliTrace`). The proof uses that the stage of the
 first `n + 2` strands is spanned by the stage `A` of the first `n + 1` strands and the products
-`a * e n * b` with `a, b ∈ A`. The algebraic presentation at `τ = 0` is not commutative, but its
-representations by projections in a ring with a proper star, such as a C⋆-algebra, have
-commutative image (`TauCeti.BalancedProjectionAlgebra.commute_map_of_zero`). Consequently a
-normalized Markov functional through a representation with commuting generators, in particular
-through a representation by projections, is the Bernoulli trace
+`a * e n * b` with `a, b ∈ A` (`TauCeti.BalancedProjectionAlgebra.toSubmodule_stage_add_two`).
+The algebraic presentation at `τ = 0` is not commutative, but its representations by projections
+in a ring with a proper star, such as a C⋆-algebra, have commutative image
+(`TauCeti.BalancedProjectionAlgebra.commute_map_of_zero`). Consequently a normalized Markov
+functional through a representation with commuting generators, in particular through a
+representation by projections, is the Bernoulli trace
 (`TauCeti.BalancedProjectionAlgebra.apply_map_eq_bernoulliTrace`,
 `TauCeti.BalancedProjectionAlgebra.apply_map_eq_bernoulliTrace_of_isStarProjection`). The two
 scalar characters are the Bernoulli traces with `η = 1` and `η = 0`.
@@ -316,154 +316,6 @@ theorem bernoulliTrace_eq_sum {N : ℕ} {x : BalancedProjectionAlgebra R (0 : R)
 
 end Trace
 
-/-! ### The stage decomposition -/
-
-section Decomposition
-
-/-- An element of the stage of the first `n` strands commutes with every projection `e j` with
-`n ≤ j`. -/
-private theorem commute_e_of_mem_stage {n j : ℕ} (hj : n ≤ j)
-    {x : BalancedProjectionAlgebra R (0 : R)} (hx : x ∈ stage R 0 n) : Commute x (e 0 j) := by
-  have h : stage R 0 n ≤ Subalgebra.centralizer R {e 0 j} :=
-    stage_le_iff.2 fun i hi ↦ (Subalgebra.mem_centralizer_iff R).2 fun y hy ↦ by
-      rw [Set.mem_singleton_iff.1 hy]
-      exact (commute_e (Or.inr (by omega))).eq
-  exact ((Subalgebra.mem_centralizer_iff R).1 (h hx) _ (Set.mem_singleton _)).symm
-
-variable (R) in
-/-- The span of the stage of the first `n + 1` strands and of the products `a * e n * b` of the
-projection `e n` with two elements of this stage. -/
-private noncomputable def stageSpan (n : ℕ) : Submodule R (BalancedProjectionAlgebra R (0 : R)) :=
-  Submodule.span R ((stage R 0 (n + 1) : Set (BalancedProjectionAlgebra R (0 : R))) ∪
-    {y | ∃ a ∈ stage R 0 (n + 1), ∃ b ∈ stage R 0 (n + 1), a * e 0 n * b = y})
-
-private theorem mem_stageSpan_of_mem_stage {n : ℕ} {x : BalancedProjectionAlgebra R (0 : R)}
-    (hx : x ∈ stage R 0 (n + 1)) : x ∈ stageSpan R n :=
-  Submodule.subset_span (Or.inl hx)
-
-private theorem mul_e_mul_mem_stageSpan {n : ℕ} {a b : BalancedProjectionAlgebra R (0 : R)}
-    (ha : a ∈ stage R 0 (n + 1)) (hb : b ∈ stage R 0 (n + 1)) : a * e 0 n * b ∈ stageSpan R n :=
-  Submodule.subset_span (Or.inr ⟨a, ha, b, hb, rfl⟩)
-
-/-- The span `TauCeti.BalancedProjectionAlgebra.stageSpan R n` is a bimodule over the stage of the
-first `n + 1` strands. -/
-private theorem mul_mul_mem_stageSpan {n : ℕ} {a b x : BalancedProjectionAlgebra R (0 : R)}
-    (ha : a ∈ stage R 0 (n + 1)) (hb : b ∈ stage R 0 (n + 1)) (hx : x ∈ stageSpan R n) :
-    a * x * b ∈ stageSpan R n := by
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-    rcases hx with hx | ⟨c, hc, d, hd, rfl⟩
-    · exact mem_stageSpan_of_mem_stage (mul_mem (mul_mem ha hx) hb)
-    · simpa only [mul_assoc] using mul_e_mul_mem_stageSpan (mul_mem ha hc) (mul_mem hd hb)
-  | zero => simp
-  | add x y _ _ hx hy => rw [mul_add, add_mul]; exact add_mem hx hy
-  | smul r x _ hx => rw [mul_smul_comm, smul_mul_assoc]; exact Submodule.smul_mem _ r hx
-
-/-- Sandwiching an element of the stage of the first strand between two copies of `e 0` stays in
-`TauCeti.BalancedProjectionAlgebra.stageSpan R 0`. -/
-private theorem e_mul_mul_e_mem_stageSpan_zero {c : BalancedProjectionAlgebra R (0 : R)}
-    (hc : c ∈ stage R 0 1) : e 0 0 * c * e 0 0 ∈ stageSpan R 0 := by
-  have hbot : stage R 0 1 ≤ ⊥ := stage_le_iff.2 fun i hi ↦ absurd hi (by omega)
-  obtain ⟨r, rfl⟩ := Algebra.mem_bot.1 (hbot hc)
-  have he : e (R := R) 0 0 ∈ stageSpan R 0 := by
-    simpa using mul_e_mul_mem_stageSpan (n := 0) (one_mem _) (one_mem _)
-  rw [← Algebra.commutes, mul_assoc, e_mul_self, ← Algebra.smul_def]
-  exact Submodule.smul_mem _ r he
-
-/-- If the stage of the first `k + 2` strands lies in
-`TauCeti.BalancedProjectionAlgebra.stageSpan R k`, then sandwiching one of its elements between
-two copies of `e (k + 1)` stays in `TauCeti.BalancedProjectionAlgebra.stageSpan R (k + 1)`. This
-uses the balanced relation `e (k + 1) * e k * e (k + 1) = e k * e (k + 1) * e k` at `τ = 0`. -/
-private theorem e_mul_mul_e_mem_stageSpan_succ {k : ℕ}
-    (hk : ∀ {x : BalancedProjectionAlgebra R (0 : R)}, x ∈ stage R 0 (k + 2) → x ∈ stageSpan R k)
-    {c : BalancedProjectionAlgebra R (0 : R)} (hc : c ∈ stage R 0 (k + 2)) :
-    e 0 (k + 1) * c * e 0 (k + 1) ∈ stageSpan R (k + 1) := by
-  have hle : stage R 0 (k + 1) ≤ stage R 0 (k + 2) := stage_mono (by omega)
-  have hc' := hk hc
-  clear hc
-  induction hc' using Submodule.span_induction with
-  | mem c hc =>
-    rcases hc with hc | ⟨a, ha, b, hb, rfl⟩
-    · rw [mul_assoc, (commute_e_of_mem_stage le_rfl hc).eq, ← mul_assoc, e_mul_self]
-      simpa using mul_e_mul_mem_stageSpan (one_mem _) (hle hc)
-    · have hbal : e 0 (k + 1) * e 0 k * e 0 (k + 1) = e (R := R) 0 k * e 0 (k + 1) * e 0 k := by
-        simpa using (e_balanced (R := R) (τ := 0) k).symm
-      have hae := (commute_e_of_mem_stage (n := k + 1) (j := k + 1) le_rfl ha).eq
-      have hbe := (commute_e_of_mem_stage (n := k + 1) (j := k + 1) le_rfl hb).eq
-      have h : e 0 (k + 1) * (a * e 0 k * b) * e 0 (k + 1) =
-          a * e 0 k * e 0 (k + 1) * (e 0 k * b) := by
-        calc e 0 (k + 1) * (a * e 0 k * b) * e 0 (k + 1)
-            = (e 0 (k + 1) * a) * e 0 k * (b * e 0 (k + 1)) := by simp only [mul_assoc]
-          _ = a * (e 0 (k + 1) * e 0 k * e 0 (k + 1)) * b := by
-            rw [← hae, hbe]; simp only [mul_assoc]
-          _ = a * e 0 k * e 0 (k + 1) * (e 0 k * b) := by rw [hbal]; simp only [mul_assoc]
-      rw [h]
-      exact mul_e_mul_mem_stageSpan (mul_mem (hle ha) (e_mem_stage (by omega)))
-        (mul_mem (e_mem_stage (by omega)) (hle hb))
-  | zero => simp
-  | add x y _ _ hx hy => rw [mul_add, add_mul]; exact add_mem hx hy
-  | smul r x _ hx => rw [mul_smul_comm, smul_mul_assoc]; exact Submodule.smul_mem _ r hx
-
-/-- If sandwiching elements of the stage of the first `n + 1` strands between two copies of `e n`
-stays in `TauCeti.BalancedProjectionAlgebra.stageSpan R n`, then this span contains the stage of
-the first `n + 2` strands. -/
-private theorem mem_stageSpan_of_e_mul_mul_e_mem {n : ℕ}
-    (hkey : ∀ {c : BalancedProjectionAlgebra R (0 : R)}, c ∈ stage R 0 (n + 1) →
-      e 0 n * c * e 0 n ∈ stageSpan R n)
-    {x : BalancedProjectionAlgebra R (0 : R)} (hx : x ∈ stage R 0 (n + 2)) : x ∈ stageSpan R n := by
-  have he {z : BalancedProjectionAlgebra R (0 : R)} (hz : z ∈ stageSpan R n) :
-      e 0 n * z ∈ stageSpan R n := by
-    induction hz using Submodule.span_induction with
-    | mem z hz =>
-      rcases hz with hz | ⟨c, hc, d, hd, rfl⟩
-      · simpa using mul_e_mul_mem_stageSpan (one_mem _) hz
-      · simpa only [one_mul, mul_assoc] using mul_mul_mem_stageSpan (one_mem _) hd (hkey hc)
-    | zero => simp
-    | add x y _ _ hx hy => rw [mul_add]; exact add_mem hx hy
-    | smul r x _ hx => rw [mul_smul_comm]; exact Submodule.smul_mem _ r hx
-  let T : Subalgebra R (BalancedProjectionAlgebra R (0 : R)) :=
-    (stageSpan R n).toSubalgebra (mem_stageSpan_of_mem_stage (one_mem _)) fun x y hx hy ↦ by
-      induction hx using Submodule.span_induction with
-      | mem x hx =>
-        rcases hx with hx | ⟨a, ha, b, hb, rfl⟩
-        · simpa using mul_mul_mem_stageSpan hx (one_mem _) hy
-        · have hby := he (by simpa using mul_mul_mem_stageSpan hb (one_mem _) hy)
-          simpa only [mul_assoc, mul_one] using mul_mul_mem_stageSpan ha (one_mem _) hby
-      | zero => simp
-      | add x z _ _ hx hz => rw [add_mul]; exact add_mem hx hz
-      | smul r x _ hx => rw [smul_mul_assoc]; exact Submodule.smul_mem _ r hx
-  have hT : stage R 0 (n + 2) ≤ T := stage_le_iff.2 fun i hi ↦ by
-    rw [Submodule.mem_toSubalgebra]
-    rcases Nat.lt_or_ge i n with hin | hin
-    · exact mem_stageSpan_of_mem_stage (e_mem_stage (by omega))
-    · simpa [show i = n by omega] using mul_e_mul_mem_stageSpan (n := n) (one_mem _) (one_mem _)
-  exact Submodule.mem_toSubalgebra.1 (hT hx)
-
-/-- The stage of the first `n + 2` strands is spanned by the stage `A` of the first `n + 1` strands
-and the products `a * e n * b` with `a, b ∈ A`. -/
-private theorem mem_stageSpan {n : ℕ} {x : BalancedProjectionAlgebra R (0 : R)}
-    (hx : x ∈ stage R 0 (n + 2)) : x ∈ stageSpan R n := by
-  induction n generalizing x with
-  | zero => exact mem_stageSpan_of_e_mul_mul_e_mem e_mul_mul_e_mem_stageSpan_zero hx
-  | succ k ih => exact mem_stageSpan_of_e_mul_mul_e_mem (e_mul_mul_e_mem_stageSpan_succ ih) hx
-
-/-- Every element of the balanced projection algebra lies in some stage. -/
-private theorem exists_mem_stage (x : BalancedProjectionAlgebra R (0 : R)) :
-    ∃ n, x ∈ stage R 0 (n + 1) := by
-  have hdir : Directed (· ≤ ·) fun n ↦ stage R (0 : R) (n + 1) :=
-    Monotone.directed_le fun _ _ h ↦ stage_mono (by omega)
-  have h : (⊤ : Subalgebra R (BalancedProjectionAlgebra R (0 : R))) ≤
-      ⨆ n, stage R 0 (n + 1) := by
-    rw [← adjoin_range_e, Algebra.adjoin_le_iff]
-    rintro _ ⟨i, rfl⟩
-    rw [SetLike.mem_coe, ← SetLike.mem_coe, Subalgebra.coe_iSup_of_directed hdir]
-    exact Set.mem_iUnion.2 ⟨i + 1, e_mem_stage (by omega)⟩
-  have hx := h (Algebra.mem_top (x := x))
-  rw [← SetLike.mem_coe, Subalgebra.coe_iSup_of_directed hdir] at hx
-  exact Set.mem_iUnion.1 hx
-
-end Decomposition
-
 /-! ### Uniqueness -/
 
 section Uniqueness
@@ -480,22 +332,15 @@ private theorem eqOn_stage_of_markov {ν : BalancedProjectionAlgebra R (0 : R) �
   induction n with
   | zero =>
     intro x hx
-    have hbot : stage R 0 (0 + 1) ≤ ⊥ := stage_le_iff.2 fun i hi ↦ absurd hi (by omega)
-    obtain ⟨r, rfl⟩ := Algebra.mem_bot.1 (hbot hx)
+    obtain ⟨r, rfl⟩ := Algebra.mem_bot.1 (stage_eq_bot_of_le_one (R := R) (τ := 0) le_rfl ▸ hx)
     rw [Algebra.algebraMap_eq_smul_one, map_smul, map_smul, h1, h1']
   | succ n ih =>
-    intro x hx
-    have hx' := mem_stageSpan hx
-    clear hx
-    induction hx' using Submodule.span_induction with
-    | mem y hy =>
-      rcases hy with hy | ⟨a, ha, b, hb, rfl⟩
-      · exact ih hy
-      · rw [htrace, htrace', ← mul_assoc, hmarkov (mul_mem hb ha), hmarkov' (mul_mem hb ha),
-          ih (mul_mem hb ha)]
-    | zero => simp
-    | add y z _ _ hy hz => rw [map_add, map_add, hy, hz]
-    | smul r y _ hy => rw [map_smul, map_smul, hy]
+    have h : Subalgebra.toSubmodule (stage R 0 (n + 2)) ≤ LinearMap.eqLocus μ ν :=
+      toSubmodule_stage_add_two_le_iff.2 ⟨fun y hy ↦ LinearMap.mem_eqLocus.2 (ih hy),
+        fun a ha b hb ↦ LinearMap.mem_eqLocus.2 <| by
+          rw [htrace, htrace', ← mul_assoc, hmarkov (mul_mem hb ha), hmarkov' (mul_mem hb ha),
+            ih (mul_mem hb ha)]⟩
+    exact fun x hx ↦ LinearMap.mem_eqLocus.1 (h hx)
 
 /-- **Uniqueness of the Bernoulli trace.** A normalized tracial functional with the Markov property
 for the parameter `η` is the Bernoulli trace. -/
@@ -505,7 +350,7 @@ theorem eq_bernoulliTrace (h1 : μ 1 = 1) (htrace : ∀ x y, μ (x * y) = μ (y 
   ext x
   obtain ⟨n, hn⟩ := exists_mem_stage x
   exact eqOn_stage_of_markov h1 htrace hmarkov (bernoulliTrace_one η) (bernoulliTrace_mul_comm η)
-    (bernoulliTrace_mul_e η) n hn
+    (bernoulliTrace_mul_e η) n (stage_mono n.le_succ hn)
 
 variable {A F M : Type*} [Semiring A] [Algebra R A]
   [FunLike F (BalancedProjectionAlgebra R (0 : R)) A]

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.MarkovTrace
+import Mathlib.Algebra.Algebra.Subalgebra.Directed
+import Mathlib.Algebra.Algebra.Subalgebra.Pointwise
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 import TauCeti.Algebra.Algebra.Subalgebra.Lattice
@@ -70,6 +72,10 @@ no such change of generators, is not treated.
 ## Main results
 
 * `TauCeti.BalancedProjectionAlgebra.adjoin_range_e`: the generators generate the algebra.
+* `TauCeti.BalancedProjectionAlgebra.iSup_stage`: the stages exhaust the algebra.
+* `TauCeti.BalancedProjectionAlgebra.toSubmodule_stage_add_two`: the stage of the first `n + 2`
+  strands is spanned by the stage `A` of the first `n + 1` strands and the products `a * e n * b`
+  with `a, b ∈ A`.
 * `TauCeti.BalancedProjectionAlgebra.commute_map_of_commute_map_e_succ`: a representation sending
   adjacent generators to commuting elements has commutative image.
 * `IsIdempotentElem.sub_pow_three_eq_smul`: `(p - q) ^ 3 = (1 - τ) • (p - q)` for idempotents
@@ -271,6 +277,18 @@ theorem stage_le_iff {n : ℕ} {S : Subalgebra R (BalancedProjectionAlgebra R τ
 theorem stage_mono : Monotone (stage R τ) :=
   fun _ _ hmn ↦ stage_le_iff.2 fun _ hi ↦ e_mem_stage (by omega)
 
+/-- On at most one strand there are no projections, so the stage consists of the scalars. -/
+theorem stage_eq_bot_of_le_one {n : ℕ} (h : n ≤ 1) : stage R τ n = ⊥ :=
+  le_bot_iff.1 <| stage_le_iff.2 fun _ hi ↦ absurd hi (by omega)
+
+/-- A projection commutes with the stage of the first `n` strands when it touches none of the
+strands `0, …, n - 1`. -/
+theorem commute_e_of_mem_stage {i n : ℕ} (h : n ≤ i) {x : BalancedProjectionAlgebra R τ}
+    (hx : x ∈ stage R τ n) : Commute (e τ i) x :=
+  Algebra.commute_of_mem_adjoin_of_forall_mem_commute hx <| by
+    rintro _ ⟨j, rfl⟩
+    exact commute_e (Or.inr (by omega))
+
 end Stage
 
 section Generation
@@ -282,6 +300,18 @@ theorem adjoin_range_e : Algebra.adjoin R (Set.range (e (R := R) τ)) = ⊤ := b
     simp only [← Set.range_comp, Function.comp_def, mkAlgHom_ι]
   rw [h, Algebra.adjoin_image_eq_range _ (FreeAlgebra.adjoin_range_ι R _), AlgHom.range_eq_top]
   exact mkAlgHom_surjective
+
+/-- The stages exhaust the balanced projection algebra. -/
+theorem iSup_stage : ⨆ n, stage R τ n = ⊤ := by
+  rw [eq_top_iff, ← adjoin_range_e, Algebra.adjoin_le_iff, Set.range_subset_iff]
+  exact fun i ↦ le_iSup (stage R τ) (i + 2) (e_mem_stage (by omega))
+
+/-- Every element of the balanced projection algebra lies in some finite stage. -/
+theorem exists_mem_stage (x : BalancedProjectionAlgebra R τ) : ∃ n, x ∈ stage R τ n := by
+  have hx : x ∈ ((⨆ n, stage R τ n : Subalgebra R _) : Set (BalancedProjectionAlgebra R τ)) := by
+    rw [iSup_stage]
+    trivial
+  rwa [Subalgebra.coe_iSup_of_directed stage_mono.directed_le, Set.mem_iUnion] at hx
 
 /-- The range of an algebra map out of the balanced projection algebra is the subalgebra generated
 by the images of the generators. -/
@@ -333,6 +363,172 @@ theorem commute_map_of_commute_map_e_succ (hφ : ∀ i, Commute (φ (e τ i)) (�
 end CommuteMap
 
 end Generation
+
+section Decomposition
+
+/-! ### The decomposition `Aₙ₊₂ = Aₙ₊₁ + Aₙ₊₁ eₙ Aₙ₊₁` of the stages -/
+
+variable (R τ) in
+/-- The submodule `Aₙ₊₁ + Aₙ₊₁ eₙ Aₙ₊₁` spanned by the stage of the first `n + 1` strands and
+the products `a * e n * b` with `a`, `b` in that stage. -/
+private def stageSplit (n : ℕ) : Submodule R (BalancedProjectionAlgebra R τ) :=
+  Subalgebra.toSubmodule (stage R τ (n + 1)) ⊔
+    Subalgebra.toSubmodule (stage R τ (n + 1)) * (R ∙ e τ n) *
+      Subalgebra.toSubmodule (stage R τ (n + 1))
+
+private theorem mul_e_mul_mem_stageSplit {n : ℕ} {a b : BalancedProjectionAlgebra R τ}
+    (ha : a ∈ stage R τ (n + 1)) (hb : b ∈ stage R τ (n + 1)) :
+    a * e τ n * b ∈ stageSplit R τ n :=
+  Submodule.mem_sup_right <| Submodule.mul_mem_mul
+    (Submodule.mul_mem_mul ha (Submodule.mem_span_singleton_self _)) hb
+
+private theorem stageSplit_le_iff {n : ℕ} {P : Submodule R (BalancedProjectionAlgebra R τ)} :
+    stageSplit R τ n ≤ P ↔ Subalgebra.toSubmodule (stage R τ (n + 1)) ≤ P ∧
+      ∀ a ∈ stage R τ (n + 1), ∀ b ∈ stage R τ (n + 1), a * e τ n * b ∈ P := by
+  refine sup_le_iff.trans <| and_congr_right fun _ ↦
+    ⟨fun h a ha b hb ↦ h (Submodule.mul_mem_mul
+      (Submodule.mul_mem_mul ha (Submodule.mem_span_singleton_self _)) hb), fun h ↦ ?_⟩
+  refine Submodule.mul_le.2 fun y hy b hb ↦ ?_
+  obtain ⟨a, ha, rfl⟩ := Submodule.mem_mul_span_singleton.1 hy
+  exact h a ha b hb
+
+/-- `Aₙ₊₁ + Aₙ₊₁ eₙ Aₙ₊₁` is stable under left multiplication by the stage `n + 1`. -/
+private theorem toSubmodule_stage_mul_stageSplit (n : ℕ) :
+    Subalgebra.toSubmodule (stage R τ (n + 1)) * stageSplit R τ n = stageSplit R τ n := by
+  simp only [stageSplit, Submodule.mul_sup, ← mul_assoc,
+    (Subalgebra.isIdempotentElem_toSubmodule (stage R τ (n + 1))).eq]
+
+/-- `Aₙ₊₁ + Aₙ₊₁ eₙ Aₙ₊₁` is stable under right multiplication by the stage `n + 1`. -/
+private theorem stageSplit_mul_toSubmodule_stage (n : ℕ) :
+    stageSplit R τ n * Subalgebra.toSubmodule (stage R τ (n + 1)) = stageSplit R τ n := by
+  simp only [stageSplit, Submodule.sup_mul, mul_assoc,
+    (Subalgebra.isIdempotentElem_toSubmodule (stage R τ (n + 1))).eq]
+
+/-- `Aₙ₊₁ + Aₙ₊₁ eₙ Aₙ₊₁` is stable under left multiplication by the last projection `eₙ` as
+soon as `eₙ Aₙ₊₁ eₙ` lies in it. -/
+private theorem e_mul_mem_stageSplit_of_forall {n : ℕ}
+    (he : ∀ a ∈ stage R τ (n + 1), e τ n * a * e τ n ∈ stageSplit R τ n)
+    {m : BalancedProjectionAlgebra R τ} (hm : m ∈ stageSplit R τ n) :
+    e τ n * m ∈ stageSplit R τ n := by
+  obtain ⟨m₁, hm₁, m₂, hm₂, rfl⟩ := Submodule.mem_sup.1 hm
+  clear hm
+  rw [mul_add]
+  refine add_mem ?_ ?_
+  · simpa only [one_mul] using mul_e_mul_mem_stageSplit (one_mem _) hm₁
+  · induction hm₂ using Submodule.mul_induction_on' with
+    | mem_mul_mem y hy b hb =>
+      obtain ⟨a, ha, rfl⟩ := Submodule.mem_mul_span_singleton.1 hy
+      rw [← stageSplit_mul_toSubmodule_stage, ← mul_assoc, ← mul_assoc]
+      exact Submodule.mul_mem_mul (he a ha) hb
+    | add y _ y' _ hy hy' =>
+      rw [mul_add]
+      exact add_mem hy hy'
+
+/-- The stage `n + 2` lies in `Aₙ₊₁ + Aₙ₊₁ eₙ Aₙ₊₁` as soon as `eₙ Aₙ₊₁ eₙ` does. -/
+private theorem toSubmodule_stage_add_two_le_stageSplit {n : ℕ}
+    (he : ∀ a ∈ stage R τ (n + 1), e τ n * a * e τ n ∈ stageSplit R τ n) :
+    Subalgebra.toSubmodule (stage R τ (n + 2)) ≤ stageSplit R τ n := by
+  -- Hence it is stable under left multiplication by the stage `n + 2`, and contains `1`.
+  intro x hx
+  rw [Subalgebra.mem_toSubmodule, stage] at hx
+  suffices key : ∀ m ∈ stageSplit R τ n, x * m ∈ stageSplit R τ n by
+    simpa only [mul_one] using key 1 (Submodule.mem_sup_left (one_mem (stage R τ (n + 1))))
+  induction hx using Algebra.adjoin_induction with
+  | mem x hx =>
+    obtain ⟨i, rfl⟩ := hx
+    dsimp only
+    rcases (show (i : ℕ) < n ∨ (i : ℕ) = n by omega) with hi | hi
+    · intro m hm
+      rw [← toSubmodule_stage_mul_stageSplit]
+      exact Submodule.mul_mem_mul (e_mem_stage (by omega)) hm
+    · intro m hm
+      rw [hi]
+      exact e_mul_mem_stageSplit_of_forall he hm
+  | algebraMap r =>
+    intro m hm
+    rw [← Algebra.smul_def]
+    exact Submodule.smul_mem _ r hm
+  | add x y _ _ hx hy =>
+    intro m hm
+    rw [add_mul]
+    exact add_mem (hx m hm) (hy m hm)
+  | mul x y _ _ hx hy =>
+    intro m hm
+    rw [mul_assoc]
+    exact hx _ (hy m hm)
+
+/-- The balanced relation moves `eₘ₊₁` past `d * eₘ * f` when `d` and `f` commute with
+`eₘ₊₁`. -/
+private theorem e_succ_mul_mul_e_succ (m : ℕ) {d f : BalancedProjectionAlgebra R τ}
+    (hd : e τ (m + 1) * d = d * e τ (m + 1)) (hf : e τ (m + 1) * f = f * e τ (m + 1)) :
+    e τ (m + 1) * (d * e τ m * f) * e τ (m + 1) =
+      d * e τ m * e τ (m + 1) * (e τ m * f) - τ • (d * e τ m * f) +
+        τ • (d * e τ (m + 1) * f) := by
+  have hbal : e τ (m + 1) * e τ m * e τ (m + 1) =
+      e τ m * e τ (m + 1) * e τ m - τ • e τ m + τ • e τ (m + 1) := by
+    rw [← sub_eq_iff_eq_add]
+    exact (e_balanced m).symm
+  calc _ = e τ (m + 1) * d * e τ m * (f * e τ (m + 1)) := by simp only [mul_assoc]
+    _ = d * (e τ (m + 1) * e τ m * e τ (m + 1)) * f := by
+      rw [hd, ← hf]
+      simp only [mul_assoc]
+    _ = _ := by
+      rw [hbal]
+      simp only [mul_add, mul_sub, add_mul, sub_mul, mul_smul_comm, smul_mul_assoc, mul_assoc]
+
+/-- **The bimodule decomposition of the stages.** As a submodule, the stage of the first `n + 2`
+strands is `Aₙ₊₁ + Aₙ₊₁ eₙ Aₙ₊₁`: it is spanned by the stage `Aₙ₊₁` of the first `n + 1` strands
+together with the products `a * e n * b` of the last projection with elements `a`, `b` of `Aₙ₊₁`.
+This is the decomposition along which Markov functionals are determined recursively. -/
+theorem toSubmodule_stage_add_two (n : ℕ) :
+    Subalgebra.toSubmodule (stage R τ (n + 2)) =
+      Subalgebra.toSubmodule (stage R τ (n + 1)) ⊔
+        Subalgebra.toSubmodule (stage R τ (n + 1)) * (R ∙ e τ n) *
+          Subalgebra.toSubmodule (stage R τ (n + 1)) := by
+  refine le_antisymm ?_ <| stageSplit_le_iff.2 ⟨fun x hx ↦ stage_mono (by omega) hx,
+    fun a ha b hb ↦ (Subalgebra.mem_toSubmodule _).2 <| mul_mem
+      (mul_mem (stage_mono (by omega) ha) (e_mem_stage (by omega))) (stage_mono (by omega) hb)⟩
+  induction n with
+  | zero =>
+    refine toSubmodule_stage_add_two_le_stageSplit fun a ha ↦ ?_
+    rw [stage_eq_bot_of_le_one le_rfl, Algebra.mem_bot] at ha
+    obtain ⟨r, rfl⟩ := ha
+    rw [← Algebra.commutes, mul_assoc, ← Algebra.smul_def, e_mul_self]
+    exact Submodule.smul_mem _ r <| by
+      simpa only [one_mul, mul_one] using mul_e_mul_mem_stageSplit (one_mem _) (one_mem _)
+  | succ m ih =>
+    -- Split `a ∈ Aₘ₊₂` as `Aₘ₊₁ + Aₘ₊₁ eₘ Aₘ₊₁`; then `eₘ₊₁` commutes past `Aₘ₊₁`.
+    refine toSubmodule_stage_add_two_le_stageSplit fun a ha ↦ ?_
+    let P : Submodule R (BalancedProjectionAlgebra R τ) := (stageSplit R τ (m + 1)).comap
+      (LinearMap.mulLeftRight R (e τ (m + 1), e τ (m + 1)))
+    have hP : ∀ a, a ∈ P ↔ e τ (m + 1) * a * e τ (m + 1) ∈ stageSplit R τ (m + 1) :=
+      fun _ ↦ by rw [Submodule.mem_comap, LinearMap.mulLeftRight_apply]
+    refine (hP a).1 <| (ih.trans (stageSplit_le_iff.2 ⟨fun d hd ↦ (hP d).2 ?_,
+      fun d hd f hf ↦ (hP _).2 ?_⟩)) ha
+    · rw [(commute_e_of_mem_stage le_rfl hd).eq, mul_assoc, e_mul_self]
+      simpa only [mul_one] using mul_e_mul_mem_stageSplit (stage_mono (by omega) hd) (one_mem _)
+    · rw [e_succ_mul_mul_e_succ m (commute_e_of_mem_stage le_rfl hd).eq
+        (commute_e_of_mem_stage le_rfl hf).eq]
+      refine add_mem (sub_mem ?_ (Submodule.smul_mem _ _ (Submodule.mem_sup_left ?_)))
+        (Submodule.smul_mem _ _ ?_)
+      · exact mul_e_mul_mem_stageSplit
+          (mul_mem (stage_mono (by omega) hd) (e_mem_stage (by omega)))
+          (mul_mem (e_mem_stage (by omega)) (stage_mono (by omega) hf))
+      · exact (Subalgebra.mem_toSubmodule _).2 <| mul_mem
+          (mul_mem (stage_mono (by omega) hd) (e_mem_stage (by omega))) (stage_mono (by omega) hf)
+      · exact mul_e_mul_mem_stageSplit (stage_mono (by omega) hd) (stage_mono (by omega) hf)
+
+/-- To show that the stage of the first `n + 2` strands lies in a submodule, it suffices to check
+the stage of the first `n + 1` strands and the products `a * e n * b` with `a`, `b` in it. -/
+theorem toSubmodule_stage_add_two_le_iff {n : ℕ}
+    {P : Submodule R (BalancedProjectionAlgebra R τ)} :
+    Subalgebra.toSubmodule (stage R τ (n + 2)) ≤ P ↔
+      Subalgebra.toSubmodule (stage R τ (n + 1)) ≤ P ∧
+        ∀ a ∈ stage R τ (n + 1), ∀ b ∈ stage R τ (n + 1), a * e τ n * b ∈ P := by
+  rw [toSubmodule_stage_add_two]
+  exact stageSplit_le_iff
+
+end Decomposition
 
 /-! ### Scalar characters -/
 
