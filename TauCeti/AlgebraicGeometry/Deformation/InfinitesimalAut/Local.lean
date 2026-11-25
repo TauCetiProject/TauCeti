@@ -252,15 +252,15 @@ theorem eq_infinitesimalAutRestrict_iff {e : infinitesimalAut f} {g : infinitesi
 end Restrict
 
 /-- The open cover of `X[ε]` by the deformations `U_i[ε] ⟶ X[ε]` of the members `U_i ⟶ X` of an
-open cover `𝒰` of `X`. -/
+open cover `𝒰` of `X`: the pullback of `𝒰` along `X[ε] ⟶ X`, with its members identified with the
+`U_i[ε]` by `isPullback_dualNumberDeformationMap`. -/
 @[expose]
 def dualNumberDeformationOpenCover (𝒰 : X.OpenCover) : (dualNumberDeformation f).left.OpenCover :=
-  Scheme.Cover.mkOfCovers 𝒰.I₀ _ (fun i ↦ dualNumberDeformationMap f (𝒰.f i)) fun x ↦ by
-    obtain ⟨y, rfl⟩ := (dualNumberDeformationι f).surjective x
-    obtain ⟨i, z, rfl⟩ := 𝒰.exists_eq y
-    exact ⟨i, dualNumberDeformationι (𝒰.f i ≫ f) z, by
-      rw [← Scheme.Hom.comp_apply, dualNumberDeformationι_dualNumberDeformationMap,
-        Scheme.Hom.comp_apply]⟩
+  Scheme.Cover.copy
+    (𝒰.pullback₁ (pullback.fst f (Spec.map (CommRingCat.ofHom (algebraMap R R[ε]))))) 𝒰.I₀ _
+    (fun i ↦ dualNumberDeformationMap f (𝒰.f i)) (Equiv.refl _)
+    (fun i ↦ (isPullback_dualNumberDeformationMap f (𝒰.f i)).isoPullback)
+    fun i ↦ ((isPullback_dualNumberDeformationMap f (𝒰.f i)).isoPullback_hom_fst).symm
 
 @[simp]
 theorem dualNumberDeformationOpenCover_f (𝒰 : X.OpenCover) (i : 𝒰.I₀) :
