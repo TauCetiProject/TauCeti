@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Normed.Module.ContinuousInverse
 import TauCeti.Dynamics.Flow.Translation
+import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 
 /-!
 # Regular points of Floer trajectories
@@ -280,9 +281,8 @@ theorem hasFDerivAt_fst_of_floerOperator_eq_zero {ω : SymplecticForm V} [Finite
   -- Subtracting the Floer equations at `z` and at `(φ z, z.2)`, where the data agree, gives
   -- `(l - 1) a + m J a = 0`. As `a ≠ 0` and `J² = -1`, `a` and `J a` are independent.
   let Jc : AlmostComplexStructure V :=
-    ⟨(J z.2 (u z) : V →ₗ[ℝ] V), LinearMap.ext fun v ↦ by simpa using congr($hJJ v)⟩
-  -- `Jc` applies `J z.2 (u z)`, through the coercions to linear maps.
-  have hJc (v : V) : Jc v = J z.2 (u z) v := rfl
+    AlmostComplexStructure.ofContinuousLinearMap (J z.2 (u z)) fun v ↦ congr($hJJ v)
+  have hJc (v : V) : Jc v = J z.2 (u z) v := AlmostComplexStructure.ofContinuousLinearMap_apply ..
   have hkey : (l - 1) • a + m • Jc a = 0 := by
     rw [SymplecticForm.floerOperator_def] at hFz hFφ
     simp only [heq.self_of_nhds] at hFφ

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.EndomorphismLieDeriv
 public import TauCeti.Geometry.Manifold.Complex.Family.Block
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Finrank
 import Mathlib.Tactic.Module
 
@@ -213,8 +214,9 @@ theorem verticalTerm_eq_zero_of_finrank_le_two [FiniteDimensional ℝ V]
   have hsq_deriv (h z : V) : fderiv ℝ j p (0, h) (j p z) + j p (fderiv ℝ j p (0, h) z) = 0 := by
     simpa [lieDerivEndomorphism_apply, fderiv_const, jf, Prod.mk.eta, fderiv_fiber_apply hj] using
       congrArg (· z) (lieDerivEndomorphism_comp_add_comp_eq_zero (V := fun _ ↦ h) hjf hsq_ev)
-  let Jp : AlmostComplexStructure V := ⟨(j p).toLinearMap, LinearMap.ext hj_sq.self_of_nhds⟩
-  have hJp_apply (z : V) : Jp z = j p z := rfl
+  let Jp : AlmostComplexStructure V :=
+    AlmostComplexStructure.ofContinuousLinearMap (j p) hj_sq.self_of_nhds
+  have hJp_apply (z : V) : Jp z = j p z := AlmostComplexStructure.ofContinuousLinearMap_apply ..
   let D : V →L[ℝ] V →L[ℝ] V := (fderiv ℝ j p).comp (ContinuousLinearMap.inr ℝ B V)
   let Nf : V →ₗ[ℝ] V →ₗ[ℝ] V := LinearMap.mk₂ ℝ
     (fun x y ↦ D (j p x) y - D (j p y) x + j p (D y x) - j p (D x y))

@@ -150,11 +150,7 @@ exactly when Clifford multiplication turns `J` into `i` on it, `c(J v) ψ = i c(
 theorem cliffordProjection_kahlerForm_apply_eq_self_iff {ψ : positiveHalfSpinors o ρ} :
     cliffordProjection o ρ J.kahlerForm ψ = ψ ↔
       ∀ v, ρ (ι Q (J v)) ψ = Complex.I • ρ (ι Q v) ψ := by
-  obtain ⟨e₀, he₀⟩ := J.exists_adapted_orthonormalBasis (J.norm_apply hJ) 2
-    ((Fact.out : finrank ℝ V = 4).trans (by norm_num))
-  let e : OrthonormalBasis (Fin 4) ℝ V := e₀.reindex (finCongr (by norm_num))
-  have h₀ : J (e 0) = e 1 := by simpa [e] using (he₀ 0).symm
-  have h₂ : J (e 2) = e 3 := by simpa [e] using (he₀ 1).symm
+  obtain ⟨e, h₀, h₂⟩ := J.exists_adapted_orthonormalBasis_finFour (J.norm_apply hJ)
   refine ⟨fun hψ ↦ AlmostComplexStructure.ι_apply_apply_of_bivectorExterior_apply hQ h₀ h₂
     (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hψ), fun h ↦
     cliffordProjection_apply_eq_self_of_bivectorExterior_apply o ρ
@@ -175,11 +171,7 @@ every `v`. -/
 theorem cliffordProjection_kahlerForm_apply_eq_zero_iff {β : positiveHalfSpinors o ρ} :
     cliffordProjection o ρ J.kahlerForm β = 0 ↔
       ∀ v, ρ (ι Q (J v)) β = -Complex.I • ρ (ι Q v) β := by
-  obtain ⟨e₀, he₀⟩ := J.exists_adapted_orthonormalBasis (J.norm_apply hJ) 2
-    ((Fact.out : finrank ℝ V = 4).trans (by norm_num))
-  let e : OrthonormalBasis (Fin 4) ℝ V := e₀.reindex (finCongr (by norm_num))
-  have h₀ : J (e 0) = e 1 := by simpa [e] using (he₀ 0).symm
-  have h₂ : J (e 2) = e 3 := by simpa [e] using (he₀ 1).symm
+  obtain ⟨e, h₀, h₂⟩ := J.exists_adapted_orthonormalBasis_finFour (J.norm_apply hJ)
   refine ⟨fun hβ v ↦ ?_, fun h ↦ ?_⟩
   · have h := AlmostComplexStructure.two_smul_ι_apply_apply_of_bivectorExterior_apply_eq_smul
       hQ h₀ h₂ (by simp) (bivectorExterior_apply_of_cliffordProjection_apply_eq_zero o ρ hβ) v
@@ -276,11 +268,7 @@ theorem sum_apply_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self
     {e : OrthonormalBasis κ ℝ V} {ψ : positiveHalfSpinors o ρ}
     (hψ : cliffordProjection o ρ J.kahlerForm ψ = ψ) (L : V →ₗ[ℝ] ℂ) :
     ∑ k, L (e k) • ρ (ι Q (e k)) ψ = 0 ↔ (ψ : W) = 0 ∨ ∀ v, L (J v) = Complex.I * L v := by
-  obtain ⟨b₀, hb₀⟩ := J.exists_adapted_orthonormalBasis (J.norm_apply hJ) 2
-    ((Fact.out : finrank ℝ V = 4).trans (by norm_num))
-  let b : OrthonormalBasis (Fin 4) ℝ V := b₀.reindex (finCongr (by norm_num))
-  have h₀ : J (b 0) = b 1 := by simpa [b] using (hb₀ 0).symm
-  have h₂ : J (b 2) = b 3 := by simpa [b] using (hb₀ 1).symm
+  obtain ⟨b, h₀, h₂⟩ := J.exists_adapted_orthonormalBasis_finFour (J.norm_apply hJ)
   -- The contraction `∑ₖ L(eₖ) c(eₖ) ψ` is the metric trace of `ρ.cliffordPairing (v ↦ L v • ψ)`,
   -- hence independent of the orthonormal basis `e`.
   have hsum : ∑ k, L (e k) • ρ (ι Q (e k)) ψ = ∑ j, L (b j) • ρ (ι Q (b j)) ψ := by

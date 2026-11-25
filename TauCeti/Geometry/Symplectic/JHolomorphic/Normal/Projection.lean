@@ -119,12 +119,8 @@ private theorem exists_isComplexLinear_fderiv_fst {A : ℂ × N →L[ℝ] ℂ ×
     ∃ Jb : AlmostComplexStructure ℂ, Jb 1 = (A (1, 0)).1 ∧
       IsComplexLinear (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap Jb.toLinearMap
         (fderiv ℝ (fun y ↦ (u y).1) x).toLinearMap := by
-  let JA : AlmostComplexStructure (ℂ × N) :=
-    ⟨A.toLinearMap, LinearMap.ext fun w ↦ by
-      simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, hsq, LinearMap.neg_apply,
-        LinearMap.id_apply]⟩
-  -- By construction `JA` acts as `A`.
-  have hJA (w : ℂ × N) : JA w = A w := rfl
+  let JA : AlmostComplexStructure (ℂ × N) := AlmostComplexStructure.ofContinuousLinearMap A hsq
+  have hJA (w : ℂ × N) : JA w = A w := AlmostComplexStructure.ofContinuousLinearMap_apply ..
   have hV' : ∀ v : ℂ × N, v.1 = 0 → (JA v).1 = 0 := by
     rintro ⟨v₁, v₂⟩ (rfl : v₁ = 0)
     rw [hJA]
