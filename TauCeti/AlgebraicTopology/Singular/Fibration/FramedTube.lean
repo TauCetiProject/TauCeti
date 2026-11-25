@@ -85,8 +85,6 @@ The trivialization over the tube is read as a product with the ball through
 * `TauCeti.TopCat.not_isOfFinAddOrder_singularHomologyComplPreimageCoreIso`,
   `not_isOfFinAddOrder_singularHomologyComplPreimageCoreIso_of_subsingleton_homotopyGroup`:
   classes of infinite order along the core.
-* `TauCeti.IsFramedTube.tubeBallTrivialization`: a trivialization of `p` over the tube, read as a
-  product with the ball compatibly with the normal coordinate.
 * `TauCeti.IsFundamentalClass.singularHomologyComplPreimageCoreIso_hom_singularHomologyπ`: the
   shriek map of the core sends fundamental classes to fundamental classes.
 
@@ -159,15 +157,6 @@ lemma isoOfHomeo_coreHomeomorph_hom {S : Type u} {V : Type*} [TopologicalSpace S
   rw [coe_coreHom_apply]
   -- The morphism `(TopCat.isoOfHomeo h).hom` applies `h` itself.
   exact hτ.coe_coreHomeomorph_apply x
-
-/-- If near `b'` the normal coordinate of `s` is a chart at `b'`, then `s b'` lies on the core. -/
-lemma apply_mem_range_of_chartBall {V B B' S : Type*} [SeminormedAddCommGroup V]
-    [TopologicalSpace B] [TopologicalSpace B'] [TopologicalSpace S] {f : S → B} {τ : S × V → B}
-    (hτ : IsFramedTube f τ) {s : B' → B} (e : OpenPartialHomeomorph B' V) {b' : B'}
-    (hb : b' ∈ e.source) {ε : ℝ} (hs : ∀ x ∈ e.chartBall b' ε, ∃ y, τ (y, e x - e b') = s x)
-    (hε₀ : 0 < ε) : s b' ∈ range f := by
-  obtain ⟨y, hy⟩ := hs b' (e.mem_chartBall_self hb hε₀)
-  exact ⟨y, by rw [← hτ.apply_zero, ← hy, sub_self]⟩
 
 end IsFramedTube
 
@@ -541,47 +530,6 @@ end Transverse
 end TopCat
 
 /-! ### Fundamental classes along the core -/
-
-namespace IsFramedTube
-
-variable {V E B S Y : Type*} [NormedAddCommGroup V] [TopologicalSpace E] [TopologicalSpace B]
-  [TopologicalSpace S] [TopologicalSpace Y] {p : E → B} {f : S → B} {τ : S × V → B}
-  (hτ : IsFramedTube f τ) {ε : ℝ} (T : Bundle.Trivialization Y p) (hT : tubeBall τ ε ⊆ T.baseSet)
-
-/-- Over the part `τ(S × D)` of a framed tube over the ball `D` of radius `ε` about `0`, a
-trivialization of `p` over a base set containing `τ(S × D)` identifies the part of `E` over it with
-`D × (S × Y)`: a point goes to the normal coordinate of its image, the coordinate of its image along
-the core, and its fibre coordinate. -/
-def tubeBallTrivialization : p ⁻¹' tubeBall τ ε ≃ₜ ball (0 : V) ε × (S × Y) :=
-  (T.preimageHomeomorph hT).trans <|
-    (((hτ.tubeBallHomeomorph ε).symm.trans (.prodComm _ _)).prodCongr (.refl Y)).trans
-      (.prodAssoc _ _ _)
-
-/-- The first coordinate of `TauCeti.IsFramedTube.tubeBallTrivialization` is the normal coordinate
-of `p z` (`TauCeti.IsFramedTube.normalCoordinate`), which agrees with
-`TauCeti.TopCat.normalCoordinateProj` when `p` is a morphism in `TopCat`. -/
-@[simp]
-lemma tubeBallTrivialization_apply_fst (z : p ⁻¹' tubeBall τ ε) :
-    (hτ.tubeBallTrivialization T hT z).1 = hτ.normalCoordinate ε ⟨p z, z.property⟩ := by
-  simp [tubeBallTrivialization, T.preimageHomeomorph_apply, Homeomorph.prodAssoc]
-
-/-- The second coordinate of `TauCeti.IsFramedTube.tubeBallTrivialization` is the coordinate along
-the core given by the tube, together with the fibre coordinate of `T`. -/
-@[simp]
-lemma tubeBallTrivialization_apply_snd (z : p ⁻¹' tubeBall τ ε) :
-    (hτ.tubeBallTrivialization T hT z).2 =
-      (((hτ.tubeBallHomeomorph ε).symm ⟨p z, z.property⟩).1, (T z.val).2) := by
-  simp [tubeBallTrivialization, T.preimageHomeomorph_apply, Homeomorph.prodAssoc]
-
-/-- The inverse of `TauCeti.IsFramedTube.tubeBallTrivialization` is the inverse of `T` after reading
-the normal coordinate and the coordinate along the core back in `B` through the framed tube. -/
-@[simp]
-lemma coe_tubeBallTrivialization_symm_apply (x : ball (0 : V) ε × (S × Y)) :
-    ((hτ.tubeBallTrivialization T hT).symm x : E) =
-      T.toOpenPartialHomeomorph.symm (τ (x.2.1, x.1), x.2.2) := by
-  simp [tubeBallTrivialization, Homeomorph.prodAssoc]
-
-end IsFramedTube
 
 /-- **The shriek map of a framed submanifold sends fundamental classes to fundamental classes.**
 Let `τ : S × V → B` be a framed tube around `f : S → B` with closed core `f(S)`, where `V` is a
