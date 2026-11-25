@@ -106,9 +106,7 @@ theorem castGLPadic_mem_padicIntEntries_of_mem_posDetInt {g : GL (Fin n) ℚ}
 
 private theorem castGLPadic_natDiagGL_primePowDiag (e : Fin n → ℕ) :
     castGLPadic (Fin n) p (natDiagGL n (primePowDiag n p e)) = padicNatPowDiagGL n p e := by
-  rw [padicNatPowDiagGL_def]
-  exact congrArg (fun a ↦ castGLPadic (Fin n) p (natDiagGL n a))
-    (funext (primePowDiag_apply n p e))
+  rw [padicNatPowDiagGL_def, primePowDiag_eq]
 
 end GlobalToPadicEmbedding
 
@@ -486,9 +484,7 @@ theorem padicPolynomialRingEquiv_X (k : Fin n) :
 @[simp]
 theorem degree_padicNatPowDiagCoset_const (k : ℕ) :
     (padicNatPowDiagCoset n p (fun _ ↦ k)).degree = 1 := by
-  have hp : primePowDiag n p (fun _ ↦ k) = fun _ ↦ p ^ k :=
-    funext fun i ↦ primePowDiag_apply n p (fun _ ↦ k) i
-  rw [degree_padicNatPowDiagCoset_eq_degree_diagCoset, hp]
+  rw [degree_padicNatPowDiagCoset_eq_degree_diagCoset, primePowDiag_eq]
   exact degree_diagCoset_const n (p ^ k)
 
 end IntegralPadicComparison

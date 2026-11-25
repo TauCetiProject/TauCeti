@@ -30,7 +30,10 @@ embeds the first into the second by enlarging the submonoid.
 These are the local counterparts of the global rings `HeckeRing.GLn.IntegralHeckeRing` and
 `HeckeRing.GLn.FullHeckeRing`. Rhodes and Shemanske compare the `p`-primary part of the integral
 Hecke ring of `GL_n` over `ℤ` with the integral local ring, by sending a `p`-primary lattice to its
-`ℤ_p`-completion; that comparison is not made here. The central scalar `p I` lies in `Δ_p` while
+`ℤ_p`-completion; that comparison is carried out in
+`TauCeti.NumberTheory.HeckeRing.GLn.Padic.IntegralComparison`
+(`HeckeRing.GLn.pLocalToPadicIntegralRingEquiv`), and the double-coset classification is in
+`TauCeti.NumberTheory.HeckeRing.GLn.Padic.Cosets`. The central scalar `p I` lies in `Δ_p` while
 `p⁻¹ I` does not, and its double coset becomes a unit of the rational local ring
 (`HeckeRing.GLn.padicScalarUnit`).
 

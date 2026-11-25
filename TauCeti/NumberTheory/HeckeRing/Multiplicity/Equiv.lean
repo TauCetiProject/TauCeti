@@ -87,14 +87,6 @@ noncomputable def decompQuotientEquivMap (e : G ≃* K) (H₁ H₂ : Subgroup G)
   exact (decompQuotientEquivMapOfInjective_mk _ _ _ _ _ x).trans
     (congrArg QuotientGroup.mk (Subtype.ext (by simp)))
 
-/-- The chosen representative after transport differs from the transported representative by
-an element of the stabilizer. -/
-lemma decompQuotientEquivMap_out (e : G ≃* K) (H₁ H₂ : Subgroup G) (g : G)
-    (i : DecompQuotient H₁ H₂ g) :
-    ((e : G →* K) g)⁻¹ * (((decompQuotientEquivMap e H₁ H₂ g i).out : K)⁻¹ *
-      (e : G →* K) (i.out : G)) * (e : G →* K) g ∈ H₂.map (e : G →* K) :=
-  decompQuotientEquivMapOfInjective_out (e : G →* K) e.injective H₁ H₂ g i
-
 /-- Shimura's multiplicity is unchanged when all of its data are transported along a group
 equivalence, without any finiteness hypothesis. -/
 @[simp] theorem multiplicity_map_equiv (e : G ≃* K) (H₁ H₂ H₃ : Subgroup G) (g h d : G) :

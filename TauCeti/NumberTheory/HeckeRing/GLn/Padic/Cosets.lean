@@ -8,10 +8,7 @@ module
 public import TauCeti.NumberTheory.HeckeRing.GLn.Diagonal.Basic
 public import TauCeti.NumberTheory.HeckeRing.GLn.Padic
 
-import TauCeti.Data.Int.Shift
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.DoubleCoset
-import TauCeti.NumberTheory.Padics.Matrix
-import TauCeti.NumberTheory.Padics.SmithNormalForm
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Cartan.DiscreteValuationRing
 
 /-!
 # Double-coset classification for the local `p`-adic `GL_n` Hecke rings
@@ -22,17 +19,14 @@ For a prime `p`, let `TauCeti.GLPadicInt (Fin n) p` be the integral subgroup `GL
 `TauCeti.NumberTheory.HeckeRing.GLn.Padic`). Following Rhodes–Shemanske (1998, §3.1) and
 [Rhodes–Shemanske][rhodes1999] §2, this file establishes:
 
-1. Invariance of `GL_n(ℤ_p)` double cosets under negation (`doubleCoset_neg_GLPadicInt`) and under
-   left or right scaling by diagonal `ℤ_pˣ`-matrices (`doubleCoset_diagGL_units_mul_GLPadicInt`,
-   `doubleCoset_mul_diagGL_units_GLPadicInt`).
-2. Using the `p`-adic Smith normal form (`Matrix.exists_padic_smith_normal_form` and
-   `Matrix.padic_smith_normal_form_unique`, whereby every nonsingular matrix in `M_n(ℤ_p)` is
-   `GL_n(ℤ_p)`-equivalent to `diag(p ^ e₁, …, p ^ eₙ)` for a unique monotone tuple
-   `e : Fin n → ℕ`), every matrix in `padicIntEntries (Fin n) p` is `GL_n(ℤ_p)`-equivalent to
-   `diag(p ^ e₁, …, p ^ eₙ)` for a unique monotone tuple `e : Fin n → ℕ`, and every matrix in
-   `GL_n(ℚ_p)` is `GL_n(ℤ_p)`-equivalent to `diag(p ^ e₁, …, p ^ eₙ)` for a unique monotone tuple
-   `e : Fin n → ℤ` (Cartan decomposition).
-3. The resulting monotone exponent double-coset parametrizations (`padicNatPowDiagCosetEquiv`,
+1. Specializing the discrete-valuation-ring Cartan decomposition
+   (`TauCeti.exists_monotone_mem_doubleCoset_diagGL_zpow` and
+   `TauCeti.eq_of_monotone_of_mem_doubleCoset_diagGL_zpow` in
+   `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Cartan.DiscreteValuationRing`) to `ℤ_[p]` and
+   `ℚ_[p]`, every matrix in `GL_n(ℚ_p)` is `GL_n(ℤ_p)`-equivalent to `diag(p ^ e₁, …, p ^ eₙ)` for a
+   unique monotone tuple `e : Fin n → ℤ`, and every matrix in `padicIntEntries (Fin n) p` has
+   nonnegative Cartan exponents, giving a unique monotone tuple `e : Fin n → ℕ`.
+2. The resulting monotone exponent double-coset parametrizations (`padicNatPowDiagCosetEquiv`,
    `padicIntPowDiagCosetEquiv`) for `PadicIntegralHeckeRing n p` and `PadicRationalHeckeRing n p`,
    together with the rank-`1` bijections with `ℕ` and `ℤ` (`padicIntegralCosetEquivNat`,
    `padicRationalCosetEquivInt`).
@@ -66,42 +60,6 @@ open scoped Pointwise HeckeCosetModule
 namespace HeckeRing.GLn
 
 variable (n p : ℕ) [Fact p.Prime]
-
-section DoubleCosetInvariance
-
-/-- Every `GL_n(ℤ_p)` double coset is invariant under negation `g ↦ -g`. -/
-@[simp]
-theorem doubleCoset_neg_GLPadicInt (g : GL (Fin n) ℚ_[p]) :
-    doubleCoset (-g) (GLPadicInt (Fin n) p) (GLPadicInt (Fin n) p) =
-      doubleCoset g (GLPadicInt (Fin n) p) (GLPadicInt (Fin n) p) :=
-  DoubleCoset.doubleCoset_neg_of_neg_one_mem_left (GLPadicInt.neg_one_mem (Fin n) p) g
-
-/-- Left multiplication by a diagonal matrix of `ℤ_pˣ`-units preserves `GL_n(ℤ_p)` double cosets. -/
-@[simp]
-theorem doubleCoset_diagGL_units_mul_GLPadicInt (u : Fin n → ℤ_[p]ˣ) (g : GL (Fin n) ℚ_[p]) :
-    doubleCoset
-        (TauCeti.diagGL
-          (fun i ↦ Units.map (PadicInt.Coe.ringHom (p := p) : ℤ_[p] →* ℚ_[p]) (u i)) * g)
-        (GLPadicInt (Fin n) p) (GLPadicInt (Fin n) p) =
-      doubleCoset g (GLPadicInt (Fin n) p) (GLPadicInt (Fin n) p) :=
-  (DoubleCoset.doubleCoset_eq_of_mem (DoubleCoset.mem_doubleCoset.mpr
-    ⟨_, (GLPadicInt (Fin n) p).inv_mem (GLPadicInt.diagGL_map_mem u), 1, one_mem _,
-      by rw [inv_mul_cancel_left, mul_one]⟩)).symm
-
-/-- Right multiplication by a diagonal matrix of `ℤ_pˣ`-units preserves `GL_n(ℤ_p)` double
-cosets. -/
-@[simp]
-theorem doubleCoset_mul_diagGL_units_GLPadicInt (g : GL (Fin n) ℚ_[p]) (u : Fin n → ℤ_[p]ˣ) :
-    doubleCoset
-        (g * TauCeti.diagGL
-          (fun i ↦ Units.map (PadicInt.Coe.ringHom (p := p) : ℤ_[p] →* ℚ_[p]) (u i)))
-        (GLPadicInt (Fin n) p) (GLPadicInt (Fin n) p) =
-      doubleCoset g (GLPadicInt (Fin n) p) (GLPadicInt (Fin n) p) :=
-  (DoubleCoset.doubleCoset_eq_of_mem (DoubleCoset.mem_doubleCoset.mpr
-    ⟨1, one_mem _, _, (GLPadicInt (Fin n) p).inv_mem (GLPadicInt.diagGL_map_mem u),
-      by rw [one_mul, mul_inv_cancel_right]⟩)).symm
-
-end DoubleCosetInvariance
 
 section PadicDiagonal
 
@@ -176,33 +134,6 @@ theorem padicIntPowDiagGL_neg (e : Fin n → ℤ) :
     padicIntPowDiagGL n p (-e) = (padicIntPowDiagGL n p e)⁻¹ := by
   simp only [padicIntPowDiagGL_def, intPowDiagGL_neg, map_inv]
 
-/-- Negative constant exponent tuple `fun _ ↦ -(k : ℤ)` gives the inverse of
-`padicNatPowDiagGL n p (fun _ ↦ k)`. -/
-theorem padicIntPowDiagGL_const_neg (k : ℕ) :
-    padicIntPowDiagGL n p (fun _ ↦ -(k : ℤ)) = (padicNatPowDiagGL n p (fun _ ↦ k))⁻¹ := by
-  rw [← Pi.neg_def, padicIntPowDiagGL_neg, padicIntPowDiagGL_natCast]
-
-/-- Scalar `p`-adic diagonal matrices `padicIntPowDiagGL n p (fun _ ↦ k)` are central in
-`GL_n(ℚ_p)`. -/
-theorem padicIntPowDiagGL_const_comm (k : ℤ) (g : GL (Fin n) ℚ_[p]) :
-    padicIntPowDiagGL n p (fun _ ↦ k) * g = g * padicIntPowDiagGL n p (fun _ ↦ k) :=
-  Units.ext (by ext i j; simp [padicIntPowDiagGL_coe, Matrix.diagonal_mul, Matrix.mul_diagonal,
-    mul_comm])
-
-/-- Scalar `p`-adic diagonal matrices `padicNatPowDiagGL n p (fun _ ↦ k)` are central in
-`GL_n(ℚ_p)`. -/
-theorem padicNatPowDiagGL_const_comm (k : ℕ) (g : GL (Fin n) ℚ_[p]) :
-    padicNatPowDiagGL n p (fun _ ↦ k) * g = g * padicNatPowDiagGL n p (fun _ ↦ k) := by
-  rw [← padicIntPowDiagGL_natCast]; exact padicIntPowDiagGL_const_comm n p k g
-
-/-- Every central `p`-power diagonal matrix `padicIntPowDiagGL n p (fun _ ↦ k)` normalizes
-`GL_n(ℤ_p)`. -/
-theorem padicIntPowDiagGL_const_mem_normalizer (k : ℤ) :
-    padicIntPowDiagGL n p (fun _ ↦ k) ∈
-      Subgroup.normalizer (GLPadicInt (Fin n) p : Set (GL (Fin n) ℚ_[p])) :=
-  Subgroup.mem_normalizer_iff.mpr fun h ↦ by
-    rw [padicIntPowDiagGL_const_comm n p k h, mul_inv_cancel_right]
-
 /-- Every `padicNatPowDiagGL n p e` has `ℤ_p`-entries. -/
 theorem padicNatPowDiagGL_mem_padicIntEntries (e : Fin n → ℕ) :
     padicNatPowDiagGL n p e ∈ padicIntEntries (Fin n) p :=
@@ -220,16 +151,47 @@ theorem padicIntMatrix_padicNatPowDiagGL (e : Fin n → ℕ) :
   rw [padicIntMatrix_eq_iff, padicNatPowDiagGL_coe]
   ext i j; by_cases hij : i = j <;> simp [hij]
 
-/-- Entrywise coercion of `diag(p ^ e₁, …, p ^ eₙ)` from `M_n(ℤ_p)` to `M_n(ℚ_p)` is the matrix of
-`padicNatPowDiagGL n p e`. -/
-theorem map_diagonal_padicInt_pow (e : Fin n → ℕ) :
-    (Matrix.diagonal fun i ↦ (p : ℤ_[p]) ^ e i).map (PadicInt.Coe.ringHom (p := p)) =
-      (↑(padicNatPowDiagGL n p e) : Matrix (Fin n) (Fin n) ℚ_[p]) := by
-  rw [← padicIntMatrix_padicNatPowDiagGL n p e, map_padicIntMatrix]
-
 end PadicDiagonal
 
 section PadicDoubleCosets
+
+private lemma range_map_algebraMap_padicInt_eq :
+    (GeneralLinearGroup.map (n := Fin n) (algebraMap ℤ_[p] ℚ_[p])).range =
+      GLPadicInt (Fin n) p := by
+  have halg : algebraMap ℤ_[p] ℚ_[p] = PadicInt.Coe.ringHom (p := p) := RingHom.ext fun _ ↦ rfl
+  ext g
+  rw [halg, MonoidHom.mem_range, GLPadicInt.mem_iff_exists_map]
+
+private lemma diagGL_p_zpow_eq (e : Fin n → ℤ) :
+    (TauCeti.diagGL fun i ↦
+        Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero) ^ e i) =
+      padicIntPowDiagGL n p e :=
+  Units.ext (by simp [padicIntPowDiagGL_coe])
+
+/-- Every `g ∈ GL_n(ℚ_p)` lies in the `GL_n(ℤ_p)` double coset of `padicIntPowDiagGL n p e` for a
+monotone tuple `e : Fin n → ℤ`. -/
+theorem exists_padicIntPowDiagGL_mem_doubleCoset (g : GL (Fin n) ℚ_[p]) :
+    ∃ e : Fin n → ℤ, Monotone e ∧
+      g ∈ doubleCoset (padicIntPowDiagGL n p e) (GLPadicInt (Fin n) p) (GLPadicInt (Fin n) p) := by
+  let π : ℚ_[p]ˣ := Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
+  obtain ⟨e, he, hg⟩ := TauCeti.exists_monotone_mem_doubleCoset_diagGL_zpow
+    (PadicInt.irreducible_p (p := p)) (π := π) (by simp [π]) g
+  rw [range_map_algebraMap_padicInt_eq, diagGL_p_zpow_eq] at hg
+  exact ⟨e, he, hg⟩
+
+/-- Distinct monotone tuples `e₁, e₂ : Fin n → ℤ` define disjoint `GL_n(ℤ_p)` double cosets. -/
+theorem eq_of_padicIntPowDiagGL_mem_doubleCoset {e₁ e₂ : Fin n → ℤ}
+    (he₁ : Monotone e₁) (he₂ : Monotone e₂)
+    (h : padicIntPowDiagGL n p e₂ ∈
+      doubleCoset (padicIntPowDiagGL n p e₁) (GLPadicInt (Fin n) p) (GLPadicInt (Fin n) p)) :
+    e₁ = e₂ := by
+  let π : ℚ_[p]ˣ := Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
+  refine TauCeti.eq_of_monotone_of_mem_doubleCoset_diagGL_zpow
+    (PadicInt.irreducible_p (p := p)) (π := π) (by simp [π]) he₁ he₂
+    (g := padicIntPowDiagGL n p e₂) ?_ ?_
+  · rw [range_map_algebraMap_padicInt_eq, diagGL_p_zpow_eq]; exact h
+  · rw [range_map_algebraMap_padicInt_eq, diagGL_p_zpow_eq]
+    exact DoubleCoset.mem_doubleCoset_self _ _ _
 
 /-- Every `g ∈ padicIntEntries (Fin n) p` lies in the `GL_n(ℤ_p)` double coset of
 `padicNatPowDiagGL n p e` for a monotone tuple `e : Fin n → ℕ`. -/
@@ -238,17 +200,24 @@ theorem exists_padicNatPowDiagGL_mem_doubleCoset {g : GL (Fin n) ℚ_[p]}
     ∃ e : Fin n → ℕ, Monotone e ∧
       g ∈ doubleCoset (padicNatPowDiagGL n p e)
         (GLPadicInt (Fin n) p) (GLPadicInt (Fin n) p) := by
-  obtain ⟨U₁, U₂, e, he, hU⟩ := Matrix.exists_padic_smith_normal_form n p
-    (padicIntMatrix (Fin n) p ⟨g, hg⟩) (det_padicIntMatrix_ne_zero ⟨g, hg⟩)
-  refine ⟨e, he, DoubleCoset.mem_doubleCoset.mpr
-    ⟨GeneralLinearGroup.map (PadicInt.Coe.ringHom (p := p)) U₁⁻¹, GLPadicInt.map_mem _,
-     GeneralLinearGroup.map (PadicInt.Coe.ringHom (p := p)) U₂⁻¹, GLPadicInt.map_mem _, ?_⟩⟩
-  have hmap := congrArg (Matrix.map · (PadicInt.Coe.ringHom (p := p))) hU
-  simp only [Matrix.map_mul, map_padicIntMatrix, map_diagonal_padicInt_pow] at hmap
-  have hgl : GeneralLinearGroup.map (PadicInt.Coe.ringHom (p := p)) U₁ * g *
-      GeneralLinearGroup.map (PadicInt.Coe.ringHom (p := p)) U₂ = padicNatPowDiagGL n p e :=
-    Units.ext (by simpa only [Units.val_mul, GLPadicInt.map_coe] using hmap)
-  rw [← hgl]; simp [mul_assoc]
+  obtain ⟨a, ha, hcos⟩ := exists_padicIntPowDiagGL_mem_doubleCoset n p g
+  obtain ⟨u₁, hu₁, u₂, hu₂, hmul⟩ := DoubleCoset.mem_doubleCoset.mp hcos
+  have hdiag_mem : padicIntPowDiagGL n p a ∈ padicIntEntries (Fin n) p := by
+    have heq : padicIntPowDiagGL n p a = u₁⁻¹ * g * u₂⁻¹ := by rw [hmul]; simp [mul_assoc]
+    rw [heq]
+    exact (padicIntEntries (Fin n) p).mul_mem
+      ((padicIntEntries (Fin n) p).mul_mem
+        (glPadicInt_le_padicIntEntries ((GLPadicInt (Fin n) p).inv_mem hu₁)) hg)
+      (glPadicInt_le_padicIntEntries ((GLPadicInt (Fin n) p).inv_mem hu₂))
+  have hnonneg (i : Fin n) : 0 ≤ a i := by
+    have hnorm := mem_padicIntEntries_iff_norm_le_one.mp hdiag_mem i i
+    rw [padicIntPowDiagGL_coe, Matrix.diagonal_apply_eq, norm_zpow, Padic.norm_p,
+      _root_.inv_zpow'] at hnorm
+    exact neg_nonpos.mp
+      ((zpow_le_one_iff_right₀ (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)).mp hnorm)
+  refine ⟨fun i ↦ (a i).toNat, fun _ _ hij ↦ Int.toNat_le_toNat (ha hij), ?_⟩
+  rwa [← padicIntPowDiagGL_natCast,
+    show (fun i ↦ ((a i).toNat : ℤ)) = a from funext fun i ↦ Int.toNat_of_nonneg (hnonneg i)]
 
 /-- Distinct monotone tuples `e₁, e₂ : Fin n → ℕ` define disjoint `GL_n(ℤ_p)` double cosets. -/
 theorem eq_of_padicNatPowDiagGL_mem_doubleCoset {e₁ e₂ : Fin n → ℕ}
@@ -256,67 +225,11 @@ theorem eq_of_padicNatPowDiagGL_mem_doubleCoset {e₁ e₂ : Fin n → ℕ}
     (h : padicNatPowDiagGL n p e₂ ∈
       doubleCoset (padicNatPowDiagGL n p e₁) (GLPadicInt (Fin n) p) (GLPadicInt (Fin n) p)) :
     e₁ = e₂ := by
-  obtain ⟨u₁, hu₁, u₂, hu₂, hu⟩ := DoubleCoset.mem_doubleCoset.mp h
-  obtain ⟨U₁, rfl⟩ := GLPadicInt.mem_iff_exists_map.mp hu₁
-  obtain ⟨U₂, rfl⟩ := GLPadicInt.mem_iff_exists_map.mp hu₂
-  apply Matrix.padic_smith_normal_form_unique n p he₁ he₂ U₁ U₂
-  apply Matrix.map_injective (f := PadicInt.Coe.ringHom (p := p)) Subtype.val_injective
-  simpa only [Matrix.map_mul, map_diagonal_padicInt_pow, Units.val_mul, GLPadicInt.map_coe] using
-    congrArg Units.val hu.symm
-
-/-- **Clearing denominators in `GL_n(ℚ_p)`**: for every `g ∈ GL_n(ℚ_p)` there exists `k : ℕ` such
-that `padicNatPowDiagGL n p (fun _ ↦ k) * g` has `ℤ_p`-entries. -/
-theorem exists_padicNatPowDiagGL_const_mul_mem_padicIntEntries (g : GL (Fin n) ℚ_[p]) :
-    ∃ k : ℕ, padicNatPowDiagGL n p (fun _ ↦ k) * g ∈ padicIntEntries (Fin n) p := by
-  obtain ⟨k, A, hA⟩ :=
-    Matrix.exists_map_padicInt_eq_pow_smul (p := p) (g : Matrix (Fin n) (Fin n) ℚ_[p])
-  refine ⟨k, mem_padicIntEntries_iff.mpr ⟨A, ?_⟩⟩
-  rw [hA, Units.val_mul, padicNatPowDiagGL_coe]
-  ext i j; simp [Matrix.diagonal_mul]
-
-/-- Every `g ∈ GL_n(ℚ_p)` lies in the `GL_n(ℤ_p)` double coset of `padicIntPowDiagGL n p e` for a
-monotone tuple `e : Fin n → ℤ`. -/
-theorem exists_padicIntPowDiagGL_mem_doubleCoset (g : GL (Fin n) ℚ_[p]) :
-    ∃ e : Fin n → ℤ, Monotone e ∧
-      g ∈ doubleCoset (padicIntPowDiagGL n p e) (GLPadicInt (Fin n) p) (GLPadicInt (Fin n) p) := by
-  obtain ⟨k, hk⟩ := exists_padicNatPowDiagGL_const_mul_mem_padicIntEntries n p g
-  obtain ⟨e', he', hcos⟩ := exists_padicNatPowDiagGL_mem_doubleCoset n p hk
-  obtain ⟨u₁, hu₁, u₂, hu₂, hmul⟩ := DoubleCoset.mem_doubleCoset.mp hcos
-  refine ⟨fun i ↦ (e' i : ℤ) - k, fun i j hij ↦ sub_le_sub_right (Nat.cast_le.mpr (he' hij)) _,
-    DoubleCoset.mem_doubleCoset.mpr ⟨u₁, hu₁, u₂, hu₂, ?_⟩⟩
-  have hsub : (fun i : Fin n ↦ (e' i : ℤ) - k) = (fun _ ↦ -(k : ℤ)) + fun i ↦ (e' i : ℤ) :=
-    funext fun i ↦ sub_eq_neg_add _ _
-  rw [hsub, padicIntPowDiagGL_add, padicIntPowDiagGL_const_neg, padicIntPowDiagGL_natCast]
-  apply mul_left_cancel (a := padicNatPowDiagGL n p (fun _ ↦ k))
-  rw [hmul, ← mul_assoc, ← mul_assoc, padicNatPowDiagGL_const_comm n p k u₁]
-  simp only [mul_assoc, mul_inv_cancel_left]
-
-/-- Distinct monotone tuples `e₁, e₂ : Fin n → ℤ` define disjoint `GL_n(ℤ_p)` double cosets. -/
-theorem eq_of_padicIntPowDiagGL_mem_doubleCoset {e₁ e₂ : Fin n → ℤ}
-    (he₁ : Monotone e₁) (he₂ : Monotone e₂)
-    (h : padicIntPowDiagGL n p e₂ ∈
-      doubleCoset (padicIntPowDiagGL n p e₁) (GLPadicInt (Fin n) p) (GLPadicInt (Fin n) p)) :
-    e₁ = e₂ := by
-  obtain ⟨M, f, hf⟩ := TauCeti.exists_natCast_eq_add_natCast (Sum.elim e₁ e₂)
-  let f₁ : Fin n → ℕ := f ∘ Sum.inl
-  let f₂ : Fin n → ℕ := f ∘ Sum.inr
-  have hf₁ : ∀ i, (f₁ i : ℤ) = e₁ i + M := fun i ↦ hf (Sum.inl i)
-  have hf₂ : ∀ i, (f₂ i : ℤ) = e₂ i + M := fun i ↦ hf (Sum.inr i)
-  obtain ⟨u₁, hu₁, u₂, hu₂, hmul⟩ := DoubleCoset.mem_doubleCoset.mp h
-  have hshift : padicNatPowDiagGL n p f₂ ∈
-      doubleCoset (padicNatPowDiagGL n p f₁) (GLPadicInt (Fin n) p) (GLPadicInt (Fin n) p) := by
-    refine DoubleCoset.mem_doubleCoset.mpr ⟨u₁, hu₁, u₂, hu₂, ?_⟩
-    rw [← padicIntPowDiagGL_natCast, ← padicIntPowDiagGL_natCast,
-      show (fun i ↦ (f₂ i : ℤ)) = (fun _ ↦ (M : ℤ)) + e₂ from
-        funext fun i ↦ by rw [hf₂, Pi.add_apply, add_comm],
-      show (fun i ↦ (f₁ i : ℤ)) = (fun _ ↦ (M : ℤ)) + e₁ from
-        funext fun i ↦ by rw [hf₁, Pi.add_apply, add_comm],
-      padicIntPowDiagGL_add, padicIntPowDiagGL_add, hmul]
-    simp only [← mul_assoc, padicIntPowDiagGL_const_comm n p M u₁]
-  have hfeq := eq_of_padicNatPowDiagGL_mem_doubleCoset n p
-    (fun i j hij ↦ by rw [← Int.ofNat_le, hf₁, hf₁]; linarith [he₁ hij])
-    (fun i j hij ↦ by rw [← Int.ofNat_le, hf₂, hf₂]; linarith [he₂ hij]) hshift
-  funext i; have := congrArg (fun g : Fin n → ℕ ↦ (g i : ℤ)) hfeq; linarith [hf₁ i, hf₂ i]
+  rw [← padicIntPowDiagGL_natCast, ← padicIntPowDiagGL_natCast] at h
+  have heq := eq_of_padicIntPowDiagGL_mem_doubleCoset n p
+    (fun _ _ hij ↦ Int.ofNat_le.mpr (he₁ hij))
+    (fun _ _ hij ↦ Int.ofNat_le.mpr (he₂ hij)) h
+  exact funext fun i ↦ Int.ofNat.inj (congrFun heq i)
 
 end PadicDoubleCosets
 

@@ -153,10 +153,9 @@ theorem intPowDiagElem_mul_scalarUnit_pow (p : ℕ) (e : Fin n → ℤ) (k : ℕ
 theorem intPowDiagElem_natCast (p : ℕ) (e : Fin n → ℕ) :
     intPowDiagElem n p (fun i ↦ (e i : ℤ)) =
       integralToRational n (diagElem (primePowDiag n p e)) := by
-  rw [intPowDiagElem_def, intPowDiagCoset_def, integralToRational_diagElem]
+  rw [intPowDiagElem_def, intPowDiagCoset_def, integralToRational_diagElem, primePowDiag_eq]
   exact congrArg (HeckeCosetModule.single ℤ · 1)
-    (HeckeCoset.mk_congr_val ((intPowDiagGL_natCast n p e).trans
-      (congrArg (natDiagGL n) (funext fun i ↦ (primePowDiag_apply n p e i).symm))))
+    (HeckeCoset.mk_congr_val (intPowDiagGL_natCast n p e))
 
 /-- The integral `p`-local subring maps into `pLocalRationalSubring n p` under
 `integralToRational`. -/

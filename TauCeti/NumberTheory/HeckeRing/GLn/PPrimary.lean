@@ -131,8 +131,7 @@ theorem exists_primePowDiag_mem_doubleCoset {g : GL (Fin n) ℚ} (hg : g ∈ pPr
     (Nat.dvd_prime_pow (Fact.out : p.Prime)).mp
       (hprod ▸ Finset.dvd_prod_of_mem a (Finset.mem_univ i))
   choose e _ he using ha_pow
-  have ha_eq : a = primePowDiag n p e :=
-    funext fun i ↦ (he i).trans (primePowDiag_apply n p e i).symm
+  have ha_eq : a = primePowDiag n p e := (funext he).trans (primePowDiag_eq n p e).symm
   have he_mono : Monotone e := fun i j hij ↦ by
     have hd : p ^ e i ∣ p ^ e j := he i ▸ he j ▸ isDvdChain_iff.mp ha_dvd hij
     exact (Nat.pow_dvd_pow_iff_le_right (Fact.out : p.Prime).one_lt).mp hd
@@ -192,11 +191,8 @@ private theorem inv_mem_pLocalPosGL_aux {g : GL (Fin n) ℚ} (hg : g ∈ Matrix.
       (B.det : ℚ) = (↑(natDiagGL n (fun _ ↦ p ^ m) * g⁻¹) : Matrix (Fin n) (Fin n) ℚ).det := by
     rw [hBmat, Int.cast_det]
   have hBdet_pos : 0 < B.det := by exact_mod_cast hBdet_Q ▸ hdet_pos
-  have hdvd : B.det.natAbs ∣ p ^ ((m + k) * n) := by
-    have hdvdZ : B.det ∣ (p : ℤ) ^ ((m + k) * n) := by
-      simpa [Fintype.card_fin, pow_mul] using Matrix.det_dvd_pow_card_of_mul_eq_smul_one hBA
-    simpa [Int.natAbs_pow, Int.natAbs_natCast] using Int.natAbs_dvd_natAbs.mpr hdvdZ
-  obtain ⟨r, -, hr⟩ := (Nat.dvd_prime_pow (Fact.out : p.Prime)).mp hdvd
+  obtain ⟨r, -, hr⟩ :=
+    Matrix.exists_natAbs_det_eq_pow_of_mul_eq_pow_smul_one (Fact.out : p.Prime) hBA
   refine ⟨m, ⟨(mem_posDetInt_iff n).mpr ⟨(hasIntEntries_iff n).mpr ⟨B, hBmat⟩, hdet_pos⟩, r, ?_⟩⟩
   rw [← hBdet_Q, show B.det = (p : ℤ) ^ r from by
     rw [← Int.natAbs_of_nonneg hBdet_pos.le, hr, Nat.cast_pow]]
@@ -250,11 +246,9 @@ theorem intPowDiagGL_mem_pLocalPosGL (e : Fin n → ℤ) :
   refine ⟨intPowDiagGL_mem_glpos n p e, ?_⟩
   obtain ⟨k, f, hf⟩ := TauCeti.exists_natCast_eq_add_natCast e
   have hf_fun : (fun i ↦ e i + (k : ℤ)) = fun i ↦ (f i : ℤ) := funext fun i ↦ (hf i).symm
-  have hpp : (fun i ↦ p ^ f i) = primePowDiag n p f :=
-    funext fun i ↦ (primePowDiag_apply n p f i).symm
   refine ⟨k, ?_⟩
   rw [natDiagGL_const_comm n (p ^ k), intPowDiagGL_mul_natDiagGL_const, hf_fun,
-    intPowDiagGL_natCast, hpp]
+    intPowDiagGL_natCast, ← primePowDiag_eq]
   exact natDiagGL_primePowDiag_mem_pPrimaryPosDetInt n p f
 
 omit [Fact p.Prime] in
