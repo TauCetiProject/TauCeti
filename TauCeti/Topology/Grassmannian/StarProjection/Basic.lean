@@ -11,6 +11,8 @@ public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Analysis.InnerProductSpace.Projection.Trace
 public import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
 public import TauCeti.Topology.Grassmannian.Tautological
+import TauCeti.LinearAlgebra.Dimension.Submodule
+import TauCeti.Topology.Algebra.Module.Trace
 
 /-!
 # The Grassmannian of an inner product space in projection form
@@ -59,7 +61,19 @@ This is the Grassmannian `G(E, k)` that carries the varifolds of a Euclidean spa
 * `Euclidean.isClosed_grassmannian`, `Euclidean.isCompact_grassmannian`: `G(E, k)` is closed and
   compact.
 * `Euclidean.grassmannian.norm_trace_comp_le`: the tangential trace satisfies
-  `‖tr (P ∘ A)‖ ≤ k ‖A‖` for `P ∈ G(E, k)`.
+  `‖tr (P ∘ A)‖ ≤ k ‖A‖` for `P ∈ G(E, k)`, and `Euclidean.grassmannian.continuous_trace_comp`:
+  it is continuous in `P`.
+* `Euclidean.grassmannian.forall_range_le_iff_eq_top`: for `1 ≤ k ≤ rank E` (the rank may be
+  infinite), a subspace containing the plane of every point of `G(E, k)` is all of `E`. For a
+  linear map `f : E → F`, for instance a linear isometry, the planes of `G(F, k)` all lie in
+  `range f` exactly when `f` is surjective (`LinearMap.forall_range_le_range_iff_surjective`).
+  For `k = 0` this fails: `G(F, 0)` is `{0}`, whose plane lies in every subspace.
+* `Euclidean.grassmannian.finiteGrassmannianHomeomorph_trans_apply` and
+  `Euclidean.grassmannian.finiteGrassmannianHomeomorph_trans_symm_apply`: changing the
+  coordinates `e` to `O ∘ e` precomposes `finiteGrassmannianHomeomorph` with `S ↦ O⁻¹(S)` and
+  postcomposes its inverse with `S ↦ O(S)`, where `TauCeti.finiteGrassmannian.mapEuclidean`
+  moves a point of the finite Grassmannian by a linear automorphism of
+  `EuclideanSpace 𝕜 (Fin N)`.
 * `Euclidean.grassmannian_zero`, `Euclidean.grassmannian_finrank` and
   `Euclidean.grassmannian_eq_empty`: `G(E, 0) = {0}`, `G(E, dim E) = {1}`, and `G(E, k)` is
   empty for `k > dim E`.
@@ -220,7 +234,51 @@ theorem toEuclidean_finiteGrassmannianHomeomorph_symm (e : E ≃ₗᵢ[𝕜] Euc
     Submodule.map_symm_eq_iff] at h
   exact h.symm
 
+/-- Changing the coordinates `e` to `O ∘ e`, for a linear isometry `O` of
+`EuclideanSpace 𝕜 (Fin N)`, postcomposes the inverse of `finiteGrassmannianHomeomorph k e` with
+`S ↦ O(S)`. -/
+theorem finiteGrassmannianHomeomorph_trans_symm_apply
+    (e : E ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N))
+    (O : EuclideanSpace 𝕜 (Fin N) ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N)) (P : grassmannian 𝕜 E k) :
+    (finiteGrassmannianHomeomorph k (e.trans O)).symm P =
+      ((finiteGrassmannianHomeomorph k e).symm P).mapEuclidean O.toLinearEquiv :=
+  finiteGrassmannian.toEuclidean_injective <| by
+    simp [toEuclidean_finiteGrassmannianHomeomorph_symm, ← Submodule.map_comp]
+
+/-- Changing the coordinates `e` to `O ∘ e`, for a linear isometry `O` of
+`EuclideanSpace 𝕜 (Fin N)`, precomposes `finiteGrassmannianHomeomorph k e` with `S ↦ O⁻¹(S)`. -/
+theorem finiteGrassmannianHomeomorph_trans_apply (e : E ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N))
+    (O : EuclideanSpace 𝕜 (Fin N) ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N))
+    (S : finiteGrassmannian 𝕜 k N) :
+    finiteGrassmannianHomeomorph k (e.trans O) S =
+      finiteGrassmannianHomeomorph k e (S.mapEuclidean O.toLinearEquiv.symm) := by
+  apply (finiteGrassmannianHomeomorph k (e.trans O)).symm.injective
+  rw [Homeomorph.symm_apply_apply, finiteGrassmannianHomeomorph_trans_symm_apply,
+    Homeomorph.symm_apply_apply, finiteGrassmannian.mapEuclidean_mapEuclidean_symm]
+
 end FiniteGrassmannian
+
+/-- For `1 ≤ k ≤ rank E`, a subspace `S` of `E` contains the plane of every point of `G(E, k)`
+only when `S` is all of `E`. The rank of `E` may be infinite. -/
+theorem forall_range_le_iff_eq_top {S : Submodule 𝕜 E} (hk : k ≠ 0)
+    (hkE : (k : Cardinal) ≤ Module.rank 𝕜 E) :
+    (∀ Q : grassmannian 𝕜 E k, (Q : E →L[𝕜] E).range ≤ S) ↔ S = ⊤ := by
+  refine ⟨fun h ↦ ?_, fun h _ ↦ h ▸ le_top⟩
+  by_contra hS
+  obtain ⟨v, -, hvS⟩ := IsConcreteLE.exists_of_lt (lt_top_iff_ne_top.2 hS)
+  obtain ⟨T, hvT, hT⟩ := Submodule.exists_mem_rank_eq v hk hkE
+  have : FiniteDimensional 𝕜 T := Module.finite_of_rank_eq_nat hT
+  refine hvS <| h ⟨T.starProjection, starProjection_mem (finrank_eq_of_rank_eq hT)⟩ ?_
+  rwa [Submodule.range_starProjection]
+
+/-- For an endomorphism `A` of `E`, the tangential trace `P ↦ tr (P ∘ A)` is continuous on
+`G(E, k)`; it is the restriction of a linear functional of `P`. When `E` is
+infinite-dimensional, `LinearMap.trace` is the zero map, so this expression is the tangential
+trace along `range P` only for finite-dimensional `E`. -/
+theorem continuous_trace_comp (A : E →L[𝕜] E) :
+    Continuous fun P : grassmannian 𝕜 E k ↦
+      LinearMap.trace 𝕜 E ((P : E →L[𝕜] E) ∘L A : E →L[𝕜] E) :=
+  continuous_trace.comp (continuous_subtypeVal.clm_comp continuous_const)
 
 end grassmannian
 
@@ -469,3 +527,21 @@ theorem grassmannianCongr_trans (U : E ≃ₗᵢ[𝕜] F) (V : F ≃ₗᵢ[𝕜]
   simp [grassmannianCongr, conjStarAlgEquiv_trans]
 
 end LinearIsometryEquiv
+
+namespace LinearMap
+
+open Euclidean
+
+variable {𝕜 : Type*} [RCLike 𝕜] {E F : Type*} [AddCommGroup E] [Module 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] {k : ℕ}
+
+/-- For `1 ≤ k ≤ rank F` and a linear map `f : E → F`, the plane of every point of `G(F, k)` lies
+in `range f` exactly when `f` is surjective. The rank of `F` may be infinite. For a linear
+isometry `U`, apply it to `U.toLinearMap`. -/
+theorem forall_range_le_range_iff_surjective (f : E →ₗ[𝕜] F) (hk : k ≠ 0)
+    (hkF : (k : Cardinal) ≤ Module.rank 𝕜 F) :
+    (∀ Q : grassmannian 𝕜 F k, (Q : F →L[𝕜] F).range ≤ LinearMap.range f) ↔
+      Function.Surjective f := by
+  rw [grassmannian.forall_range_le_iff_eq_top hk hkF, LinearMap.range_eq_top]
+
+end LinearMap
