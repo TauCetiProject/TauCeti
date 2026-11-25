@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.RepresentationTheory.Continuous.ContinuousRep.DualTwist
+import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Operations
 
 /-!
 # Examples: the contragredient of a character line
