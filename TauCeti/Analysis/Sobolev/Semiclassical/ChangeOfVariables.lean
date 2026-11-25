@@ -52,7 +52,9 @@ The proof differentiates `f ∘ Φ` by Faà di Bruno's formula. Weighted by the 
 partitions `π` of `i` (`ContDiffAt.pow_mul_norm_iteratedFDeriv_comp_le_sum`), since the block sizes
 of `π` add up to `i`. Each term is then pulled back in `L²` by the change of variables formula,
 which costs the factor `c^(-1/2)`
-(`TauCeti.Wkp.IsChangeOfVariables.ofReal_pow_mul_eLpNorm_iteratedFDeriv_comp_le`).
+(`TauCeti.Wkp.IsChangeOfVariables.ofReal_pow_mul_eLpNorm_iteratedFDeriv_comp_le`), and is bounded
+by the whole sum `∑_{j ≤ k} hʲ ‖Dʲ f‖₂`
+(`TauCeti.Wkp.IsChangeOfVariables.ofReal_pow_mul_eLpNorm_iteratedFDeriv_comp_le_of_le`).
 
 ## References
 
@@ -79,7 +81,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-- The derivatives of order `i ≤ k` of `f ∘ Φ`, for a chart `Φ` at scale `h`, are square
 integrable, and `hⁱ ‖Dⁱ (f ∘ Φ)‖₂` is bounded by
-`c^(-1/2) max 1 L ^ i #{ordered partitions of i} ∑_{j ≤ k} hʲ ‖Dʲ f‖₂`. -/
+`max 1 L ^ i #{ordered partitions of i} c^(-1/2) ∑_{j ≤ k} hʲ ‖Dʲ f‖₂`. -/
 private theorem memLp_and_pow_mul_lpNorm_iteratedFDeriv_comp_le (hf : ContDiff ℝ k f)
     (hfm : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) 2) (hΦ : ContDiff ℝ k Φ)
     (hΦd : Differentiable ℝ Φ) (hinj : Injective Φ) (hh : 0 < h)
@@ -87,7 +89,7 @@ private theorem memLp_and_pow_mul_lpNorm_iteratedFDeriv_comp_le (hf : ContDiff �
     (hdet : ∀ x, c ≤ |(fderiv ℝ Φ x).det|) {i : ℕ} (hi : i ≤ k) :
     MemLp (iteratedFDeriv ℝ i (f ∘ Φ)) 2 ∧
       h ^ i * lpNorm (iteratedFDeriv ℝ i (f ∘ Φ)) 2 volume ≤
-        c⁻¹ ^ (1 / (2 : ℝ≥0∞)).toReal * (max 1 L ^ i * Fintype.card (OrderedFinpartition i)) *
+        max 1 L ^ i * Fintype.card (OrderedFinpartition i) * c⁻¹ ^ (1 / (2 : ℝ≥0∞)).toReal *
           ∑ j ∈ Finset.range (k + 1), h ^ j * lpNorm (iteratedFDeriv ℝ j f) 2 volume := by
   -- `Φ` is a change of variables of order `0` of the whole space.
   have hcv : Wkp.IsChangeOfVariables 0 ⊤ ⊤ Φ 0 c :=
@@ -98,46 +100,26 @@ private theorem memLp_and_pow_mul_lpNorm_iteratedFDeriv_comp_le (hf : ContDiff �
       norm_iteratedFDeriv_le := fun _ h1 h0 ↦ by omega
       pos := hc
       le_abs_det := fun x _ ↦ hdet x }
-  have hFdB := hcv.ofReal_pow_mul_eLpNorm_iteratedFDeriv_comp_le (mu := volume) (p := 2)
+  have hS : 0 ≤ ∑ j ∈ Finset.range (k + 1), h ^ j * lpNorm (iteratedFDeriv ℝ j f) 2 volume :=
+    Finset.sum_nonneg fun j _ ↦ mul_nonneg (pow_nonneg hh.le j) lpNorm_nonneg
+  -- Each weighted derivative `hʲ ‖Dʲ f‖₂` with `j ≤ i` is one term of the sum.
+  have hle := hcv.ofReal_pow_mul_eLpNorm_iteratedFDeriv_comp_le_of_le (mu := volume) (p := 2)
     hΦ.contDiffOn hh.le (fun j hj1 hjk x _ ↦ hL j hj1 hjk x) hf.contDiffOn hi
-  simp only [Opens.coe_top, Measure.restrict_univ] at hFdB
-  set S := ∑ j ∈ Finset.range (k + 1), h ^ j * lpNorm (iteratedFDeriv ℝ j f) 2 volume
-  have hC : (ENNReal.ofReal c)⁻¹ ^ (1 / (2 : ℝ≥0∞)).toReal =
-      ENNReal.ofReal (c⁻¹ ^ (1 / (2 : ℝ≥0∞)).toReal) := by
-    rw [← ENNReal.ofReal_inv_of_pos hc,
-      ENNReal.ofReal_rpow_of_nonneg (inv_nonneg.2 hc.le) ENNReal.toReal_nonneg]
-  have hc' : 0 ≤ c⁻¹ ^ (1 / (2 : ℝ≥0∞)).toReal := by positivity
-  have hM : 0 ≤ max 1 L ^ i := pow_nonneg (zero_le_one.trans (le_max_left _ _)) i
-  -- Each term of the Faà di Bruno sum is at most `c^(-1/2) S`.
-  have hle : ENNReal.ofReal (h ^ i) * eLpNorm (iteratedFDeriv ℝ i (f ∘ Φ)) 2 volume ≤
-      ENNReal.ofReal (c⁻¹ ^ (1 / (2 : ℝ≥0∞)).toReal *
-        (max 1 L ^ i * Fintype.card (OrderedFinpartition i)) * S) := by
-    refine hFdB.trans ?_
-    calc ENNReal.ofReal (max 1 L ^ i) * ∑ π : OrderedFinpartition i,
-          (ENNReal.ofReal c)⁻¹ ^ (1 / (2 : ℝ≥0∞)).toReal * (ENNReal.ofReal (h ^ π.length) *
-            eLpNorm (iteratedFDeriv ℝ π.length f) 2 volume)
-        ≤ ENNReal.ofReal (max 1 L ^ i) * ∑ _π : OrderedFinpartition i,
-            ENNReal.ofReal (c⁻¹ ^ (1 / (2 : ℝ≥0∞)).toReal * S) := by
-          gcongr with π
-          rw [hC, ← ofReal_lpNorm (hfm _ (π.length_le.trans hi)),
-            ← ENNReal.ofReal_mul (pow_nonneg hh.le _), ← ENNReal.ofReal_mul hc']
-          gcongr
-          exact Finset.single_le_sum (f := fun j ↦ h ^ j * lpNorm (iteratedFDeriv ℝ j f) 2 volume)
-            (fun j _ ↦ mul_nonneg (pow_nonneg hh.le j) lpNorm_nonneg)
-            (Finset.mem_range.2 (Nat.lt_succ_of_le (π.length_le.trans hi)))
-      _ = _ := by
-          rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← ENNReal.ofReal_natCast,
-            ← ENNReal.ofReal_mul (Nat.cast_nonneg _), ← ENNReal.ofReal_mul hM]
-          congr 1
-          ring
+    (fun j hj ↦ by
+      rw [Opens.coe_top, Measure.restrict_univ]
+      exact hfm j (hj.trans hi))
+    (fun j hj ↦ by
+      rw [Opens.coe_top, Measure.restrict_univ]
+      exact Finset.single_le_sum (f := fun j ↦ h ^ j * lpNorm (iteratedFDeriv ℝ j f) 2 volume)
+        (fun j _ ↦ mul_nonneg (pow_nonneg hh.le j) lpNorm_nonneg)
+        (Finset.mem_range.2 (Nat.lt_succ_of_le (hj.trans hi))))
+  simp only [Opens.coe_top, Measure.restrict_univ] at hle
   have hfin : eLpNorm (iteratedFDeriv ℝ i (f ∘ Φ)) 2 volume < ⊤ :=
     ENNReal.lt_top_of_mul_ne_top_right (hle.trans_lt ENNReal.ofReal_lt_top).ne
       (ENNReal.ofReal_pos.2 (pow_pos hh i)).ne'
   refine ⟨hfin, ?_⟩
   rw [← toReal_eLpNorm, ← ENNReal.toReal_ofReal (pow_nonneg hh.le i), ← ENNReal.toReal_mul]
-  exact ENNReal.toReal_le_of_le_ofReal
-    (mul_nonneg (mul_nonneg hc' (mul_nonneg hM (Nat.cast_nonneg _)))
-      (Finset.sum_nonneg fun j _ ↦ mul_nonneg (pow_nonneg hh.le j) lpNorm_nonneg)) hle
+  exact ENNReal.toReal_le_of_le_ofReal (mul_nonneg (by positivity) hS) hle
 
 /-- **Pullbacks along charts stay square integrable.** Let `Φ : E → E` be `Cᵏ`, differentiable and
 injective, with derivatives of orders `1` through `k` bounded by `L` and Jacobian determinant at
@@ -170,11 +152,11 @@ theorem semiclassicalSobolevNorm_comp_le (hf : ContDiff ℝ k f)
   refine mul_le_mul_of_nonneg_left ?_ (Real.rpow_nonneg hh.le _)
   calc ∑ i ∈ Finset.range (k + 1), h ^ i * lpNorm (iteratedFDeriv ℝ i (f ∘ Φ)) 2 volume
       ≤ ∑ i ∈ Finset.range (k + 1),
-          c⁻¹ ^ (1 / (2 : ℝ≥0∞)).toReal * (max 1 L ^ i * Fintype.card (OrderedFinpartition i)) *
+          max 1 L ^ i * Fintype.card (OrderedFinpartition i) * c⁻¹ ^ (1 / (2 : ℝ≥0∞)).toReal *
             ∑ j ∈ Finset.range (k + 1), h ^ j * lpNorm (iteratedFDeriv ℝ j f) 2 volume :=
         Finset.sum_le_sum fun i hi ↦ (memLp_and_pow_mul_lpNorm_iteratedFDeriv_comp_le hf hfm hΦ
           hΦd hinj hh hL hc hdet (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi))).2
-    _ = _ := by rw [← Finset.sum_mul, ← Finset.mul_sum]
+    _ = _ := by rw [← Finset.sum_mul, ← Finset.sum_mul, mul_comm (∑ i ∈ _, _)]
 
 /-- **Change of a fixed chart in the semiclassical norm.** For `0 < h ≤ 1` and a `Cᵏ`,
 differentiable, injective `Φ : E → E` with derivatives of orders `1` through `k` bounded by `L`
