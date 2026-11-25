@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.TotalVariation
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.Lebesgue.Indicator
 
 /-!
 # The perimeter of a set in an open set
@@ -316,12 +317,7 @@ theorem perimeter_le_liminf [OpensMeasurableSpace E] [IsLocallyFiniteMeasure μ]
     locallyIntegrableOn_indicator_const (ht.mono Measure.restrict_le_self) 1
   refine totalVariationOn_le_liminf (hs.mono fun i hi => hli hi) (hli hs₀) fun K hK hKΩ => ?_
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h K hK hKΩ)
-    (fun _ => zero_le) fun i => ?_
-  have hpt : ∀ x, ‖(s i).indicator (1 : E → ℝ) x - s₀.indicator 1 x‖ₑ =
-      (s i ∆ s₀).indicator 1 x := fun x => by
-    by_cases h₁ : x ∈ s i <;> by_cases h₂ : x ∈ s₀ <;> simp [mem_symmDiff, h₁, h₂]
-  simp_rw [hpt]
-  exact (lintegral_indicator_one_le _).trans
-    (Measure.restrict_apply' hK.isClosed.measurableSet).le
+    (fun _ => zero_le) fun _ =>
+      μ.setLIntegral_enorm_indicator_one_sub_le _ _ hK.isClosed.nullMeasurableSet
 
 end TauCeti

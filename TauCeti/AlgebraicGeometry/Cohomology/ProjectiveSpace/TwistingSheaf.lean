@@ -12,10 +12,10 @@ public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.GlobalS
 /-!
 # Zeroth cohomology of the twisting sheaves on projective space
 
-Let `M` be a free `R`-module with a basis `b` indexed by a type `κ` with at least two elements, and
-let `A = Sym M ≅ R[Xᵢ | i ∈ κ]`, so that `Proj A` is projective space over `R`. This file computes
+Let `M` be a free `R`-module with a basis `b` indexed by a type `κ`, and let
+`A = Sym M ≅ R[Xᵢ | i ∈ κ]`, so that `Proj A` is projective space over `R`. This file computes
 the zeroth cohomology of the twisting sheaves `𝒪(n)` on `Proj A` as an `R`-module, over any
-commutative ring `R`:
+commutative ring `R`. When `κ` has at least two elements:
 
 * for `j : ℕ`, `H⁰(Proj A, 𝒪(j)) ≅ A_j`, the forms of degree `j`, which is free with the basis of
   monomials of degree `j` in the coordinates, indexed by the degree-`j` multisets of `κ`;
@@ -26,6 +26,10 @@ finite, of rank `(card κ).multichoose j` for `n = j ≥ 0`. On the projective l
 rank `max (n + 1) 0`. This is the `H⁰` part of Hartshorne, Theorem III.5.1, and follows from the
 computation of global sections (`TauCeti.SymmetricAlgebra.bijective_toTwistingSheaf_top`) through
 the identification of zeroth cohomology with global sections.
+
+Projective space of dimension zero, `M` free of rank one, is the exception to the vanishing for
+`n < 0`: the coordinate is invertible there, so every twisting sheaf has a nonzero global section;
+in particular `H⁰(ℙ⁰_R, 𝒪(-1)) ≠ 0`.
 
 ## Main definitions
 
@@ -43,6 +47,8 @@ the identification of zeroth cohomology with global sections.
   every `n`, and finitely generated when `κ` is finite.
 * `TauCeti.SymmetricAlgebra.finrank_cohomology_zero_twistingSheaf`: its rank is
   `(card κ).multichoose j` in degree `j : ℕ`.
+* `TauCeti.SymmetricAlgebra.nontrivial_cohomology_zero_twistingSheaf_of_unique`: on projective
+  space of dimension zero over a nonzero ring, `H⁰(Proj A, 𝒪(m)) ≠ 0` for every `m : ℤ`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.finrank_cohomology_zero_twistingSheaf`: on the
   projective line, `H⁰(ℙ¹_R, 𝒪(n))` is free of rank `max (n + 1) 0` for every `n : ℤ`.
 
@@ -136,6 +142,34 @@ theorem finrank_cohomology_zero_twistingSheaf [Nontrivial R] (j : ℕ) (b : Modu
   classical
   rw [Module.finrank_eq_card_basis (cohomologyZeroTwistingSheafBasis j b),
     Sym.card_sym_eq_multichoose]
+
+/-- **Twisting sheaves on projective space of dimension zero have nonzero sections.** For `M` free
+of rank one over a nonzero ring `R`, `H⁰(Proj (Sym M), 𝒪(m))` is nontrivial for every `m : ℤ`.
+In particular `H⁰(ℙ⁰_R, 𝒪(-1)) ≠ 0`. -/
+theorem nontrivial_cohomology_zero_twistingSheaf_of_unique [Nontrivial R] [Unique κ]
+    (b : Module.Basis κ R M) (m : ℤ) :
+    Nontrivial (Cohomology (Proj.twistingSheaf 𝒜 m) 0) := by
+  set x := _root_.SymmetricAlgebra.ι R M (b default)
+  have hx : x ∈ 𝒜 1 := ι_mem_homogeneousSubmodule R M _
+  -- The coordinate `x` does not vanish anywhere on `Proj (Sym M) = D₊(x)`, so `xᵐ = xʲ / xᵏ`
+  -- with `j = k + m` is a global section; it is nonzero since `x` is a nonzerodivisor.
+  obtain ⟨k, j, hkj⟩ : ∃ k j : ℕ, (j : ℤ) = k + m := ⟨m.natAbs, (m.natAbs + m).toNat, by omega⟩
+  have hxk : x ^ k ∈ 𝒜 k := by simpa using SetLike.pow_mem_graded k hx
+  have hxj : x ^ j ∈ 𝒜 j := by simpa using SetLike.pow_mem_graded j hx
+  have hspan : Submodule.span R {b default} = ⊤ := by simpa [Set.range_unique] using b.span_eq
+  let s := Proj.twistingSheaf.const hkj (x ^ j) (x ^ k) hxj hxk ⊤
+    ((basicOpen_ι_eq_top R M hspan).ge.trans (Proj.le_basicOpen_pow 𝒜 x k))
+  have hs : s ≠ 0 := by
+    intro h0
+    have h := congrArg ((Proj.twistingSheaf 𝒜 m).presheaf.map
+      (homOfLE (le_top : Proj.basicOpen 𝒜 x ≤ ⊤)).op) h0
+    rw [map_zero, Proj.twistingSheaf.res_const, Proj.twistingSheaf.const_eq_zero_iff
+      (HomogeneousIdeal.mem_irrelevant_of_mem 𝒜 one_pos hx)] at h
+    obtain ⟨N, hN⟩ := h
+    rw [← pow_add] at hN
+    exact ((_root_.SymmetricAlgebra.isRegular_ι_basis b default).pow (N + j)).ne_zero hN
+  have : Nontrivial Γ(Proj.twistingSheaf 𝒜 m, ⊤) := nontrivial_of_ne s 0 hs
+  exact (cohomologyZeroBaseLinearEquiv R _ _).toEquiv.nontrivial
 
 end TauCeti.SymmetricAlgebra
 

@@ -9,7 +9,6 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 -- Private: the ordered-product, square and even-relation formulas are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
-import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
@@ -43,7 +42,9 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
 * `CliffordAlgebra.ι_mul_ι_add_swap_eq_neg_two_inner`, and in the even subalgebra
   `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: the polarized Clifford relation
   `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`.
-* `CliffordAlgebra.ι_mul_ι_of_inner_eq_zero`, `CliffordAlgebra.ι_mul_ι_sq_of_orthonormal`,
+* `LinearMap.apply_apply_add_swap_eq_neg_two_inner`: the same polarized relation for a
+  linear map `c : W → End U` satisfying the Clifford relation `c(v)² = -⟪v, v⟫`.
+* `CliffordAlgebra.ι_mul_ι_comm_of_inner_eq_zero`, `CliffordAlgebra.ι_mul_ι_sq_of_orthonormal`,
   `CliffordAlgebra.ι_smul_add_smul_mul_ι_neg_smul_add_smul_of_orthonormal`,
   `CliffordAlgebra.ι_cos_sin_mul_of_orthonormal`: orthogonal anticommutation, unit-bivector
   squaring `(ι e₁ * ι e₂)² = -1`, and `SO(2)` rotation invariance of `ι e₁ * ι e₂`.
@@ -122,7 +123,7 @@ theorem even_ι_bilin_add_swap_eq_neg_two_inner (u v : V) :
 
 /-- In `CliffordAlgebra Q` with `Q v = -‖v‖²`, orthogonal vectors anticommute:
 `⟪e₁, e₂⟫ = 0 → ι e₁ * ι e₂ = -(ι e₂ * ι e₁)`. -/
-theorem ι_mul_ι_of_inner_eq_zero {e₁ e₂ : V} (h₁₂ : ⟪e₁, e₂⟫ = 0) :
+theorem ι_mul_ι_comm_of_inner_eq_zero {e₁ e₂ : V} (h₁₂ : ⟪e₁, e₂⟫ = 0) :
     ι Q e₁ * ι Q e₂ = -(ι Q e₂ * ι Q e₁) :=
   ι_mul_ι_comm_of_isOrtho ((QuadraticMap.isOrtho_iff_inner_eq_zero hQ).2 h₁₂)
 
@@ -143,7 +144,7 @@ theorem ι_smul_add_smul_mul_ι_neg_smul_add_smul_of_orthonormal {e₁ e₂ : V}
   have h1 : ι Q e₁ * ι Q e₁ = -1 := by simp [ι_sq_scalar, hQ, he₁]
   have h2 : ι Q e₂ * ι Q e₂ = -1 := by simp [ι_sq_scalar, hQ, he₂]
   have h21 : ι Q e₂ * ι Q e₁ = -(ι Q e₁ * ι Q e₂) :=
-    ι_mul_ι_of_inner_eq_zero hQ (by rw [real_inner_comm, h₁₂])
+    ι_mul_ι_comm_of_inner_eq_zero hQ (by rw [real_inner_comm, h₁₂])
   simp only [map_add, map_smul, add_mul, mul_add, smul_mul_smul_comm, h1, h2, h21, smul_neg]
   calc
     _ = (c ^ 2 + s ^ 2) • (ι Q e₁ * ι Q e₂) + (c * s - s * c) • (1 : CliffordAlgebra Q) := by
@@ -220,13 +221,14 @@ theorem map_ι_apply_eq_sum {S W : Type*} [Semiring S] [SMul ℝ S] [AddCommGrou
 
 section Module
 
-variable {W : Type*} [AddCommGroup W] [Module ℂ W] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W)
+variable {K W : Type*} [Semiring K] [AddCommGroup W] [Module K W] [Algebra ℝ (Module.End K W)]
+  (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End K W)
 
 /-- For `Q v = -‖v‖²`, Clifford multiplication by an orthonormal basis vector squares to `-1`:
 `c(bᵢ) (c(bᵢ) ψ) = -ψ`. -/
 theorem map_ι_apply_map_ι_apply (i : ι) (ψ : W) :
     ρ (CliffordAlgebra.ι Q (b i)) (ρ (CliffordAlgebra.ι Q (b i)) ψ) = -ψ := by
-  rw [CliffordAlgebra.map_ι_apply_map_ι_apply ρ, hQ, b.orthonormal.1 i]
+  rw [← mul_apply_eq_comp, ← map_mul, CliffordAlgebra.ι_sq_scalar, hQ, b.orthonormal.1 i]
   simp
 
 /-- For `Q v = -‖v‖²`, Clifford multiplications by distinct orthonormal basis vectors
@@ -282,3 +284,16 @@ theorem basis_mul_self_of_orthonormal {ι : Type*} [Fintype ι] [LinearOrder ι]
 end CliffordAlgebra
 
 end Normed
+
+/-- **The polarized Clifford relation.** If a linear map `c : W → End U` from a real inner product
+space satisfies the Clifford relation `c(v)² = -⟪v, v⟫`, then
+`c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
+theorem LinearMap.apply_apply_add_swap_eq_neg_two_inner {W U : Type*}
+    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [AddCommGroup U] [Module ℝ U]
+    (c : W →ₗ[ℝ] Module.End ℝ U) (hc : ∀ (v : W) (s : U), c v (c v s) = -⟪v, v⟫ • s)
+    (u v : W) (s : U) :
+    c u (c v s) + c v (c u s) = -(2 * ⟪u, v⟫) • s := by
+  have h := hc (u + v) s
+  simp only [map_add, LinearMap.add_apply, hc, inner_add_left, inner_add_right,
+    real_inner_comm u v] at h
+  linear_combination (norm := module) h

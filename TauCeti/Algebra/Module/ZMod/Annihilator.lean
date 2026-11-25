@@ -18,6 +18,9 @@ kernel of the restricted pairing `e.compl₂ H.subtype`. Its `Nat.card` equals t
 requires finiteness. The first gives zero on both sides when `H` has infinite index; the
 second gives zero on both sides whenever `N` (and hence `M`) is infinite.
 
+Consequently, when `M` is finite, a subgroup `U ≤ M` orthogonal to `H` satisfies
+`Nat.card U * Nat.card H ≤ Nat.card M`.
+
 When `N` is finite, an arbitrary subgroup `U ≤ M` equals this annihilator if and only if
 it is orthogonal to `H` and `Nat.card U * Nat.card H = Nat.card M`. This counting criterion
 upgrades orthogonality and order computations to equality of local conditions under finite
@@ -65,6 +68,16 @@ theorem natCard_ker_compl₂_subtype_mul_natCard_zmod (he : Function.Bijective e
     Nat.card (e.compl₂ H.subtype).ker * Nat.card H = Nat.card M := by
   rw [e.natCard_ker_compl₂_subtype_eq_index_zmod he hN, H.index_mul_card,
     Nat.card_congr (Equiv.ofBijective e he), TauCeti.natCard_addMonoidHom_zmod hN]
+
+/-- If `n ≠ 0`, `N` is killed by `n`, the left adjoint `e` is bijective and `M` is finite, then
+orthogonal subgroups `U ≤ M` and `H ≤ N` satisfy `Nat.card U * Nat.card H ≤ Nat.card M`. -/
+theorem natCard_mul_natCard_le_zmod [Finite M] (he : Function.Bijective e)
+    (hN : ∀ y : N, n • y = 0) {U : AddSubgroup M} {H : AddSubgroup N}
+    (horth : ∀ x ∈ U, ∀ y ∈ H, e x y = 0) : Nat.card U * Nat.card H ≤ Nat.card M := by
+  rw [← e.natCard_ker_compl₂_subtype_mul_natCard_zmod he hN H]
+  refine Nat.mul_le_mul_right _ (AddSubgroup.card_le_of_le fun x hx ↦ ?_)
+  ext ⟨y, hy⟩
+  exact horth x hx y hy
 
 /-- For finite `N` killed by `n ≠ 0` and bijective left adjoint `e`, a subgroup `U ≤ M`
 equals the annihilator of `H` if and only if `U` is orthogonal to `H` and
