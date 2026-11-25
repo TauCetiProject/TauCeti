@@ -316,29 +316,6 @@ theorem of_inter_preimage_eq {Γ' : Set F} (hc : IsBoundaryPartChart Ω Γ' e γ
 
 end IsBoundaryPartChart
 
-/-- A Lipschitz chart centred at `x` restricts to a cylinder whose preimage lies in any given
-neighbourhood of `x`. -/
-theorem IsLipschitzChart.exists_preimage_normalCylinder_subset {Ω : Set F}
-    {e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {γ : E → ℝ} {K : ℝ≥0} {h r : ℝ}
-    (hc : IsLipschitzChart Ω e γ K h r) {x : F} (hex : e x = 0) {V : Set F} (hV : V ∈ 𝓝 x) :
-    ∃ ρ : ℝ, IsLipschitzChart Ω e γ K ρ ρ ∧ e ⁻¹' normalCylinder ρ ρ ⊆ V := by
-  have hW : e.symm ⁻¹' V ∈ 𝓝 (0 : WithLp 2 (ℝ × E)) :=
-    e.symm.continuous.continuousAt.preimage_mem_nhds (by rwa [← hex, e.symm_apply_apply])
-  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 hW
-  have hρ : 0 < min (ε / 2) (min h r) :=
-    lt_min (half_pos hε) (lt_min hc.height_pos hc.radius_pos)
-  refine ⟨_, hc.mono hρ hρ ((min_le_right _ _).trans (min_le_left _ _))
-    ((min_le_right _ _).trans (min_le_right _ _)), fun y hy => ?_⟩
-  rw [mem_preimage, mem_normalCylinder] at hy
-  have h1 : ‖(e y).fst‖ < ε / 2 := by
-    rw [Real.norm_eq_abs, abs_lt]
-    exact ⟨by linarith [min_le_left (ε / 2) (min h r)], hy.2.1.trans_le (min_le_left _ _)⟩
-  have h2 : ‖(e y).snd‖ < ε / 2 := hy.2.2.trans_le (min_le_left _ _)
-  have hy' : e y ∈ ball 0 ε := by
-    rw [mem_ball_zero_iff, WithLp.prod_norm_eq_of_L2, Real.sqrt_lt' hε]
-    nlinarith [norm_nonneg (e y).fst, norm_nonneg (e y).snd]
-  simpa using hball hy'
-
 /-- A Lipschitz chart centred at `x` gives a boundary-part chart of `(Ω, Γ)` over the empty base
 region as soon as `Γ` misses a neighbourhood of `x`. -/
 theorem IsLipschitzChart.exists_isBoundaryPartChart_empty {Ω Γ : Set F}
@@ -532,10 +509,8 @@ theorem isAdmissibleBoundaryPart_normalHalfSpace :
 
 /-! ### One-dimensional bases -/
 
-/-- **Admissible base regions on a line are order-connected.** For a one-dimensional base `ℝ`, an
-admissible base region is all of `ℝ`, empty, or an open half-line: a linear isometry
-`ℝ ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E')` forces `E'` to be zero, so the region above a graph over `E'` is
-the set where a nonzero multiple of the coordinate exceeds a constant. -/
+/-- **Admissible base regions on a line are order-connected.** For a one-dimensional base `ℝ`,
+every admissible base region is order-connected. -/
 theorem IsAdmissibleBaseRegion.ordConnected {B : Set ℝ} (hB : B.IsAdmissibleBaseRegion E') :
     B.OrdConnected := by
   obtain rfl | rfl | ⟨f, β, K, -, rfl⟩ := hB
@@ -543,6 +518,8 @@ theorem IsAdmissibleBaseRegion.ordConnected {B : Set ℝ} (hB : B.IsAdmissibleBa
   · exact ordConnected_empty
   have hf (s : ℝ) : f s = s • f 1 := by rw [← map_smul, smul_eq_mul, mul_one]
   have hfst (s : ℝ) : (f s).fst = s * (f 1).fst := by rw [hf, WithLp.smul_fst, smul_eq_mul]
+  -- A linear isometry `ℝ ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E')` forces `E'` to be zero, so the region above a
+  -- graph over `E'` is the set where a nonzero multiple of the coordinate exceeds a constant.
   -- The first coordinate of `f 1` is nonzero, since `f` reaches `(1, 0)`.
   have ha : (f 1).fst ≠ 0 := fun ha => by
     obtain ⟨s, hs⟩ := f.surjective (WithLp.toLp 2 (1, 0))
@@ -587,8 +564,7 @@ theorem isAdmissibleBaseRegion_Iio [Subsingleton E'] (c : ℝ) :
 If the boundary charts have a one-dimensional base, then every frontier point `x` has a
 neighbourhood `U` such that for every continuous injective path `c` on `[a, b]` running through
 `frontier Ω ∩ U`, the parameters `t` with `c t ∈ Γ` form an order-connected set: if both ends
-lie in `Γ`, so does every point between. In the chart, the base coordinate along `c` is
-continuous and injective, hence monotone, and the base region is order-connected. -/
+lie in `Γ`, so does every point between. -/
 theorem IsAdmissibleBoundaryPart.exists_mem_nhds_forall_mem_of_mapsTo {Ω Γ : Set F}
     (hΓ : Ω.IsAdmissibleBoundaryPart Γ ℝ E') {x : F} (hx : x ∈ frontier Ω) :
     ∃ U ∈ 𝓝 x, ∀ (c : ℝ → F) {a b : ℝ}, a ≤ b → ContinuousOn c (Icc a b) →
@@ -599,6 +575,8 @@ theorem IsAdmissibleBoundaryPart.exists_mem_nhds_forall_mem_of_mapsTo {Ω Γ : S
   refine ⟨e ⁻¹' normalCylinder h r, ((isOpen_normalCylinder h r).preimage e.continuous).mem_nhds
     (by rw [mem_preimage, hex]; exact zero_mem_normalCylinder hC.height_pos hC.radius_pos),
     fun c a b hab hcc hci hcm hca hcb t ht => ?_⟩
+  -- In the chart, the base coordinate along `c` is continuous and injective, hence monotone, and
+  -- the base region is order-connected.
   set φ : ℝ → ℝ := fun t => (e (c t)).snd
   have hφc : ContinuousOn φ (Icc a b) :=
     (WithLp.sndL 2 ℝ ℝ ℝ).continuous.comp_continuousOn (e.continuous.comp_continuousOn hcc)

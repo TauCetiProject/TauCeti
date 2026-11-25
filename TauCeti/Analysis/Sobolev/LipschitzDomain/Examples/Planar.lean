@@ -199,13 +199,19 @@ private theorem exists_isLipschitzChartWith_openUnitSquare_corner {c : WithLp 2 
     (hs : c.fst = 0 ∨ c.fst = 1) (ht : c.snd = 0 ∨ c.snd = 1) :
     ∃ (α β : ℝ) (hαβ : α ^ 2 + β ^ 2 = 1), openUnitSquare.IsLipschitzChartWith 1
       (prodRecentredRotation α β hαβ c) (fun s => |s|) (1 / 2) (1 / 2) := by
-  have hk0 := Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq
-  have hk : (-(√2)⁻¹ : ℝ) ^ 2 + ((√2)⁻¹ : ℝ) ^ 2 = 1 := by rw [neg_sq]; exact hk0
-  have hk' : ((√2)⁻¹ : ℝ) ^ 2 + (-(√2)⁻¹ : ℝ) ^ 2 = 1 := by rw [neg_sq]; exact hk0
-  have hk'' : (-(√2)⁻¹ : ℝ) ^ 2 + (-(√2)⁻¹ : ℝ) ^ 2 = 1 := by rw [neg_sq]; exact hk0
-  rcases hs with hs | hs <;> rcases ht with ht | ht <;>
-    [refine ⟨_, _, hk0, ?_⟩; refine ⟨_, _, hk', ?_⟩; refine ⟨_, _, hk, ?_⟩;
-      refine ⟨_, _, hk'', ?_⟩] <;>
+  rcases hs with hs | hs
+  · -- The corners `(0, 0)` and `(0, 1)` have their own charts.
+    rcases ht with ht | ht
+    · obtain rfl : c = 0 := WithLp.ofLp_injective 2 (Prod.ext (by simp [hs]) (by simp [ht]))
+      exact ⟨_, _, _, isLipschitzChartWith_openUnitSquare_zero⟩
+    · obtain rfl : c = WithLp.toLp 2 (0, 1) :=
+        WithLp.ofLp_injective 2 (Prod.ext (by simp [hs]) (by simp [ht]))
+      exact ⟨_, _, _, isLipschitzChartWith_openUnitSquare_zero_one⟩
+  have hk : (-(√2)⁻¹ : ℝ) ^ 2 + ((√2)⁻¹ : ℝ) ^ 2 = 1 := by
+    rw [neg_sq]; exact Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq
+  have hk' : (-(√2)⁻¹ : ℝ) ^ 2 + (-(√2)⁻¹ : ℝ) ^ 2 = 1 := by
+    rw [neg_sq]; exact Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq
+  rcases ht with ht | ht <;> [refine ⟨_, _, hk, ?_⟩; refine ⟨_, _, hk', ?_⟩] <;>
   · refine isLipschitzChartWith_openUnitSquare_of_forall_mem_iff c _ (by norm_num) (by norm_num)
       abs_zero (lipschitzWith_one_norm (E := ℝ)) fun u v hu hv => ?_
     refine Iff.trans ?_ (corner_iff hu hv)

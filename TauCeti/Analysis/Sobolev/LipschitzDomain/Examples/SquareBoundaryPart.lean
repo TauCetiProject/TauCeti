@@ -21,8 +21,8 @@ of the frontier (`TauCeti.squareLeftPart S`). For open `S` it is relatively open
   and `(0, 1)` the charts are the rotations by `π / 4` and `-π / 4` with graph `|s|`, in which
   the side is the graph over one side of the base point.
 * `{0} × ⋃ₖ (1/(2k+3), 1/(2k+2))` is not admissible
-  (`TauCeti.not_isAdmissibleBoundaryPart_squareLeftPart_gaps`): near the corner `(0, 0)` it
-  alternates infinitely often.
+  (`TauCeti.not_isAdmissibleBoundaryPart_squareLeftPart_alternatingIntervals`): near the corner
+  `(0, 0)` it alternates infinitely often.
 * `{0} × ((0, 1) ∖ {1/2})` is not admissible
   (`TauCeti.not_isAdmissibleBoundaryPart_squareLeftPart_punctured`), although it has the closure
   of `{0} × (0, 1)` and hence the same `W^{1,p}_Γ`
@@ -56,6 +56,11 @@ theorem mem_squareLeftPart {S : Set ℝ} {x : WithLp 2 (ℝ × ℝ)} :
     x ∈ squareLeftPart S ↔ x.fst = 0 ∧ x.snd ∈ S :=
   Iff.rfl
 
+/-- The point `(0, s)` lies in `{0} × S` exactly when `s ∈ S`. -/
+theorem toLp_zero_prod_mem_squareLeftPart {S : Set ℝ} {s : ℝ} :
+    WithLp.toLp 2 ((0 : ℝ), s) ∈ squareLeftPart S ↔ s ∈ S :=
+  and_iff_right rfl
+
 /-- The left side `{0} × S` is the image of `S` under `s ↦ (0, s)`. -/
 theorem squareLeftPart_eq_image (S : Set ℝ) :
     squareLeftPart S = (fun s : ℝ => WithLp.toLp 2 ((0 : ℝ), s)) '' S := by
@@ -63,7 +68,7 @@ theorem squareLeftPart_eq_image (S : Set ℝ) :
   refine ⟨fun hx => ⟨x.snd, hx.2, WithLp.ofLp_injective 2 (Prod.ext (by simp [hx.1]) (by simp))⟩,
     ?_⟩
   rintro ⟨s, hs, rfl⟩
-  exact ⟨rfl, hs⟩
+  exact toLp_zero_prod_mem_squareLeftPart.2 hs
 
 /-- The path `s ↦ (0, s)` along the left side is continuous. -/
 private theorem continuous_toLp_zero_prod : Continuous fun s : ℝ => WithLp.toLp 2 ((0 : ℝ), s) :=
@@ -102,7 +107,7 @@ theorem not_isAdmissibleBoundaryPart_squareLeftPart {E' : Type*} [NormedAddCommG
   -- An admissible part lies in the frontier, so `S ⊆ [0, 1]`, and `y ∈ [0, 1]` is a limit of `S`.
   have hS (s : ℝ) (hs : s ∈ S) : s ∈ Icc 0 1 :=
     (mem_Icc_of_mem_frontier_openUnitSquare
-      (hΓ.subset_frontier (show WithLp.toLp 2 (0, s) ∈ squareLeftPart S from ⟨rfl, hs⟩))).2
+      (hΓ.subset_frontier (toLp_zero_prod_mem_squareLeftPart.2 hs))).2
   have hy : y ∈ Icc 0 1 := by
     refine ⟨not_lt.1 fun hy0 => ?_, not_lt.1 fun hy1 => ?_⟩
     · obtain ⟨a, t, b, -, -, -, hb, -, hbS, -⟩ := h (-y) (by linarith)
@@ -110,38 +115,47 @@ theorem not_isAdmissibleBoundaryPart_squareLeftPart {E' : Type*} [NormedAddCommG
     · obtain ⟨a, t, b, -, -, ha, -, haS, -, -⟩ := h (y - 1) (by linarith)
       linarith [(hS a haS).2]
   obtain ⟨U, hU, hmain⟩ := hΓ.exists_mem_nhds_forall_mem_of_mapsTo
-    (mem_frontier_openUnitSquare_of_fst_eq_zero (x := WithLp.toLp 2 (0, y)) rfl hy)
+    (squareLeftPart_subset_frontier subset_rfl (toLp_zero_prod_mem_squareLeftPart.2 hy))
   obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 hU
   obtain ⟨a, t, b, hat, htb, ha, hb, haS, hbS, htS⟩ := h ε hε
   have hab := hat.trans htb
-  refine htS (hmain (fun s => WithLp.toLp 2 (0, s)) hab continuous_toLp_zero_prod.continuousOn
-    (fun s _ u _ hsu => congrArg WithLp.snd hsu) (fun s hs => ⟨?_, hball ?_⟩) ⟨rfl, haS⟩
-    ⟨rfl, hbS⟩ t ⟨hat, htb⟩).2
-  · exact mem_frontier_openUnitSquare_of_fst_eq_zero rfl
-      ⟨(hS a haS).1.trans hs.1, hs.2.trans (hS b hbS).2⟩
+  refine htS (toLp_zero_prod_mem_squareLeftPart.1 (hmain (fun s => WithLp.toLp 2 (0, s)) hab
+    continuous_toLp_zero_prod.continuousOn
+    (fun s _ u _ hsu => (Prod.mk.inj (WithLp.toLp_injective 2 hsu)).2)
+    (fun s hs => ⟨?_, hball ?_⟩) (toLp_zero_prod_mem_squareLeftPart.2 haS)
+    (toLp_zero_prod_mem_squareLeftPart.2 hbS) t ⟨hat, htb⟩))
+  · exact squareLeftPart_subset_frontier subset_rfl (toLp_zero_prod_mem_squareLeftPart.2
+      ⟨(hS a haS).1.trans hs.1, hs.2.trans (hS b hbS).2⟩)
   · rw [mem_ball, WithLp.prod_dist_eq_of_L2, Real.sqrt_lt' hε]
     simp only [WithLp.toLp_fst, WithLp.toLp_snd, dist_self, Real.dist_eq]
     have : |s - y| < ε := abs_lt.2 ⟨by linarith [hs.1], by linarith [hs.2]⟩
     nlinarith [abs_nonneg (s - y)]
 
 /-- The union `⋃ₖ (1/(2k+3), 1/(2k+2))` of the intervals `(1/3, 1/2), (1/5, 1/4), …`. -/
-def squareGaps : Set ℝ :=
+def alternatingIntervals : Set ℝ :=
   ⋃ k : ℕ, Ioo (1 / (2 * k + 3)) (1 / (2 * k + 2))
 
-/-- The intervals of `TauCeti.squareGaps` lie in `(0, 1)`. -/
-theorem squareGaps_subset_Ioo : squareGaps ⊆ Ioo 0 1 := by
+/-- Membership in `⋃ₖ (1/(2k+3), 1/(2k+2))`. -/
+@[simp]
+theorem mem_alternatingIntervals {x : ℝ} :
+    x ∈ alternatingIntervals ↔ ∃ k : ℕ, x ∈ Ioo (1 / (2 * (k : ℝ) + 3)) (1 / (2 * k + 2)) :=
+  mem_iUnion
+
+/-- The intervals of `TauCeti.alternatingIntervals` lie in `(0, 1)`. -/
+theorem alternatingIntervals_subset_Ioo : alternatingIntervals ⊆ Ioo 0 1 := by
   refine iUnion_subset fun k x hx => ⟨(by positivity : (0 : ℝ) < 1 / (2 * k + 3)).trans hx.1,
     hx.2.trans ?_⟩
   rw [div_lt_one (by positivity)]
   linarith [k.cast_nonneg (α := ℝ)]
 
-/-- `TauCeti.squareGaps` is open. -/
-theorem isOpen_squareGaps : IsOpen squareGaps :=
+/-- `TauCeti.alternatingIntervals` is open. -/
+theorem isOpen_alternatingIntervals : IsOpen alternatingIntervals :=
   isOpen_iUnion fun _ => isOpen_Ioo
 
-/-- The left endpoint `1/(2k+3)` of an interval of `TauCeti.squareGaps` is not in it. -/
-theorem one_div_notMem_squareGaps (k : ℕ) : 1 / (2 * (k : ℝ) + 3) ∉ squareGaps := by
-  simp only [squareGaps, mem_iUnion, mem_Ioo, not_exists, not_and]
+/-- The left endpoint `1/(2k+3)` of an interval of `TauCeti.alternatingIntervals` is not in it. -/
+theorem one_div_notMem_alternatingIntervals (k : ℕ) :
+    1 / (2 * (k : ℝ) + 3) ∉ alternatingIntervals := by
+  simp only [mem_alternatingIntervals, mem_Ioo, not_exists, not_and]
   intro i h1 h2
   rw [one_div_lt_one_div (by positivity) (by positivity)] at h1 h2
   have hki : k < i := by exact_mod_cast (by linarith : (k : ℝ) < i)
@@ -151,14 +165,14 @@ theorem one_div_notMem_squareGaps (k : ℕ) : 1 / (2 * (k : ℝ) + 3) ∉ square
 /-- **`{0} × ⋃ₖ (1/(2k+3), 1/(2k+2))` is not admissible**: near the corner `(0, 0)` it
 alternates infinitely often, so no chart at the corner sees it over all, none, or one side of
 its base point. -/
-theorem not_isAdmissibleBoundaryPart_squareLeftPart_gaps {E' : Type*} [NormedAddCommGroup E']
-    [NormedSpace ℝ E'] :
-    ¬ openUnitSquare.IsAdmissibleBoundaryPart (squareLeftPart squareGaps) ℝ E' := by
+theorem not_isAdmissibleBoundaryPart_squareLeftPart_alternatingIntervals {E' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] :
+    ¬ openUnitSquare.IsAdmissibleBoundaryPart (squareLeftPart alternatingIntervals) ℝ E' := by
   refine not_isAdmissibleBoundaryPart_squareLeftPart (y := 0) fun δ hδ => ?_
   obtain ⟨k, hk⟩ := exists_nat_one_div_lt hδ
   -- `a` lies in the interval of index `k + 1`, `b` in that of index `k`, and `t` between them.
   refine ⟨2 / (4 * k + 9), 1 / (2 * k + 3), 2 / (4 * k + 5), ?_, ?_, ?_, ?_, ?_, ?_,
-    one_div_notMem_squareGaps k⟩
+    one_div_notMem_alternatingIntervals k⟩
   · rw [div_le_div_iff₀ (by positivity) (by positivity)]
     linarith
   · rw [div_le_div_iff₀ (by positivity) (by positivity)]
@@ -167,9 +181,9 @@ theorem not_isAdmissibleBoundaryPart_squareLeftPart_gaps {E' : Type*} [NormedAdd
   · refine lt_of_lt_of_le ?_ (by linarith : 1 / ((k : ℝ) + 1) ≤ 0 + δ)
     rw [div_lt_div_iff₀ (by positivity) (by positivity)]
     linarith
-  · refine mem_iUnion.2 ⟨k + 1, ?_, ?_⟩ <;> push_cast <;>
+  · refine mem_alternatingIntervals.2 ⟨k + 1, ?_, ?_⟩ <;> push_cast <;>
       rw [div_lt_div_iff₀ (by positivity) (by positivity)] <;> linarith
-  · refine mem_iUnion.2 ⟨k, ?_, ?_⟩ <;>
+  · refine mem_alternatingIntervals.2 ⟨k, ?_, ?_⟩ <;>
       rw [div_lt_div_iff₀ (by positivity) (by positivity)] <;> linarith
 
 /-- **`{0} × ((0, 1) ∖ {1/2})` is not admissible**: at `(0, 1/2)` it lies over both sides of the
