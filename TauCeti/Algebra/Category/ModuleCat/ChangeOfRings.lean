@@ -23,7 +23,7 @@ The counit of restriction of scalars along a ring equivalence, and its inverse, 
 identity on the underlying elements.
 Restriction of scalars along an isomorphism of `R`-algebras keeps the endomorphism algebra of a
 module (`ModuleCat.moduleEndRestrictScalarsAlgEquiv`). Along a ring isomorphism it keeps finitely
-generated projective-injective modules (`ModuleCat.finite_projective_injective_restrictScalars`).
+generated projective-injective modules.
 
 It also records three facts about Mathlib's extension of scalars `ModuleCat.extendScalars`.
 
@@ -142,36 +142,6 @@ theorem moduleEndRestrictScalarsAlgEquiv_symm_apply (ψ : Module.End Γ' W) (w :
   (rfl)
 
 end ModuleEnd
-
-/-- **Projective-injective modules along a ring isomorphism.** A finitely generated, projective and
-injective module, with its scalars restricted along a ring isomorphism, is still finitely generated,
-projective and injective. -/
-theorem finite_projective_injective_restrictScalars {Γ Γ' : Type*} [Ring Γ] [Ring Γ']
-    (σ : Γ ≃+* Γ') (W : Type v) [AddCommGroup W] [Module Γ' W] [Module.Finite Γ' W]
-    [Module.Projective Γ' W] [Module.Injective Γ' W] :
-    Module.Finite Γ ((restrictScalarsEquivalenceOfRingEquiv σ).functor.obj (ModuleCat.of Γ' W)) ∧
-      Module.Projective Γ ((restrictScalarsEquivalenceOfRingEquiv σ).functor.obj
-        (ModuleCat.of Γ' W)) ∧
-      Module.Injective Γ ((restrictScalarsEquivalenceOfRingEquiv σ).functor.obj
-        (ModuleCat.of Γ' W)) := by
-  refine ⟨(σ.toRingHom.finite_restrictScalars_iff σ.surjective _).2 inferInstance,
-    (σ.projective_restrictScalars_iff _).2 inferInstance, ⟨fun X Y _ _ _ _ f hf g ↦ ?_⟩⟩
-  -- Make the test modules `Γ'`-modules along `σ.symm`, extend there, and restrict back.
-  let : Module Γ' X := Module.compHom X σ.symm.toRingHom
-  let : Module Γ' Y := Module.compHom Y σ.symm.toRingHom
-  let f' : X →ₗ[Γ'] Y :=
-    { toFun := f
-      map_add' := f.map_add
-      map_smul' := fun c x ↦ f.map_smul (σ.symm c) x }
-  let g' : X →ₗ[Γ'] W :=
-    { toFun := g
-      map_add' := g.map_add
-      map_smul' := fun c x ↦ (g.map_smul (σ.symm c) x).trans
-        (congrArg (fun γ : Γ' ↦ γ • show W from g x) (σ.apply_symm_apply c)) }
-  obtain ⟨h, hh⟩ := Module.Injective.out f' hf g'
-  refine ⟨{ toFun := h, map_add' := h.map_add, map_smul' := fun c y ↦ ?_ }, hh⟩
-  exact (congrArg h (by rw [σ.symm_apply_apply] : c • y = σ.symm (σ c) • y)).trans
-    (h.map_smul (σ c) y)
 
 section Additive
 

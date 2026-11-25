@@ -142,6 +142,9 @@ theorem exists_moritaEquivalence_moduleEnd_of_comp_eq_id {m n : ℕ}
     fun c x ↦ by rw [AlgEquiv.symm_symm]; exact smulTopRetractAddEquiv_smul R hX c x
   obtain ⟨I₂⟩ := nonempty_ofAlgEquiv_functor_obj_iso R (cornerEndRetractAlgEquiv R hY)
     (Z := eY.cornerFunctor.obj N) (W := ModuleCat.of _ Y) (smulTopRetractAddEquiv hY).symm
+    -- `by exact` elaborates the term against the expected type, where `eY.cornerFunctor.obj N`
+    -- is already unfolded to the `smulTop` subtype; passed as a plain term, unifying the two
+    -- carriers times out at `whnf`.
     fun g z ↦ by exact smulTopRetractAddEquiv_symm_smul R hY g z
   -- The corner equivalences, built directly so that their functors stay `V ↦ eV`.
   let Cp : MoritaEquivalence R (Module.End A (X × Y)) eX.Corner :=

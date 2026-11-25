@@ -107,6 +107,7 @@ theorem exists_comp_eq_id_pi_restrictScalars {A : Type*} [Ring A] {Γ Γ' : Type
   exact exists_comp_eq_id_pi_of_projective_of_injective A _ P
 
 variable (M M') in
+attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm in
 /-- **The Morita-Tachikawa correspondence on all modules.** If two generator-cogenerators `M` and
 `M'`, of `mod A` and `mod A'`, have `R`-algebra isomorphic endomorphism rings, a Morita equivalence
 between `A` and `A'` carries `M` to `M'`. -/
@@ -122,7 +123,21 @@ theorem exists_moritaEquivalence_functor_obj_iso_of_algEquiv_end
   have := hc'.injective_end R
   let Y := (ModuleCat.restrictScalarsEquivalenceOfRingEquiv e.toRingEquiv).functor.obj
     (ModuleCat.of (Module.End A' M'.obj) M'.obj)
-  obtain ⟨_, _, _⟩ := ModuleCat.finite_projective_injective_restrictScalars e.toRingEquiv M'.obj
+  -- `Y` is `M'` with scalars restricted along `e`, so it is still finitely generated, projective
+  -- and injective. The identity of `M'` is `e.symm`-semilinear onto `Y`, whose action of `γ` is
+  -- that of `e γ` by definition.
+  have : Module.Finite (Module.End A M.obj) Y :=
+    (e.toRingEquiv.toRingHom.finite_restrictScalars_iff e.toRingEquiv.surjective _).2 inferInstance
+  have : Module.Projective (Module.End A M.obj) Y :=
+    (e.toRingEquiv.projective_restrictScalars_iff _).2 inferInstance
+  have : Module.Injective (Module.End A M.obj) Y :=
+    Module.Injective.of_ringEquiv e.toRingEquiv.symm
+      { toFun := fun w ↦ w
+        invFun := fun w ↦ w
+        map_add' := fun _ _ ↦ rfl
+        map_smul' := fun c w ↦ (congrArg (· • w) (e.apply_symm_apply c)).symm
+        left_inv := fun _ ↦ rfl
+        right_inv := fun _ ↦ rfl : M'.obj ≃ₛₗ[RingHomClass.toRingHom e.toRingEquiv.symm] Y }
   -- Each of `M` and `Y` is a retract of a finite power of the other, over `Γ = Module.End A M`.
   obtain ⟨m, s, r, hrs⟩ := exists_comp_eq_id_pi_of_projective_of_injective
     (Γ := Module.End A M.obj) A M.obj Y
