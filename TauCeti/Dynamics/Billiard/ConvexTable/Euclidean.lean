@@ -12,27 +12,33 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 /-!
 # Convex tables in Euclidean coordinates
 
-The periodic-orbit theorem `TauCeti.exists_billiard_periodic_reflection` (SymplecticGeometry's
-convex billiards) is stated for curves in `EuclideanSpace ℝ (Fin 2)`. This file transports a
-convex table `γ : ℝ → ℂ` along the linear isometry `Complex.orthonormalBasisOneI.repr`, which
-sends `z` to its coordinates `(Re z, Im z)`, to the curve `χ = (Re γ, Im γ)`
-(`TauCeti.ConvexTable.toEuclidean`), and checks the hypotheses: `χ` is of the class of `γ`,
-`ℓ`-periodic, of unit speed and injective on every interval `[a, a + ℓ)`; it is positively
-oriented, `χ'₀(s) (χ₁(t) − χ₁(s)) − χ'₁(s) (χ₀(t) − χ₀(s)) > 0` for `t ≢ s`, this being the cross
-product `τ(s) × (γ t − γ s)` of the table; and it meets each tangent line `{χ(s) + c χ'(s)}` only at
-`χ(s)`. Consequently every convex table has periodic billiard trajectories with `N` bounces for
-every `N ≥ 2` (`TauCeti.ConvexTable.exists_periodic_reflection`).
+This file transports a convex table `γ : ℝ → ℂ` along the linear isometry
+`Complex.orthonormalBasisOneI.repr`, which sends `z` to its coordinates `(Re z, Im z)`, to the
+curve `χ = (Re γ, Im γ)` in `EuclideanSpace ℝ (Fin 2)` (`TauCeti.ConvexTable.toEuclidean`), and
+states the hypotheses of a strictly convex planar billiard curve in these coordinates: `χ` is of
+the class of `γ`, `ℓ`-periodic, of unit speed and injective on every interval `[a, a + ℓ)`; it is
+positively oriented, with the explicit cross product
+`χ'₀(s) (χ₁(t) − χ₁(s)) − χ'₁(s) (χ₀(t) − χ₀(s)) > 0` for `t ≢ s`, this being the cross product
+`τ(s) × (γ t − γ s)` of the table; and it meets each tangent line `{χ(s) + c χ'(s)}` only at
+`χ(s)`. Applying `TauCeti.exists_billiard_periodic_reflection` to `χ`, every convex table has, for
+every `N ≥ 2`, closed billiard trajectories with `N` bounces whose least period divides `N`
+(`TauCeti.ConvexTable.exists_periodic_reflection`).
 
 ## Main declarations
 
 * `TauCeti.ConvexTable.toEuclidean`: the table in Euclidean coordinates.
 * `TauCeti.ConvexTable.contDiff_toEuclidean`, `periodic_toEuclidean`,
   `norm_deriv_toEuclidean`, `injOn_Ico_toEuclidean`, `cross_deriv_toEuclidean_pos`,
-  `eq_of_toEuclidean_eq_add_smul_deriv`: the hypotheses of the convex billiards of
-  SymplecticGeometry/CotangentLagrangian.
+  `eq_of_toEuclidean_eq_add_smul_deriv`: the hypotheses of a strictly convex planar billiard
+  curve, in Euclidean coordinates.
 * `TauCeti.ConvexTable.exists_periodic_reflection`: periodic billiard trajectories.
 * `TauCeti.ConvexTable.toEuclidean_circle`: the circle of radius `R` is
   `s ↦ (R cos (s / R), R sin (s / R))`.
+
+## References
+
+* M. Bialy and A. E. Mironov, *The Birkhoff–Poritsky conjecture for centrally-symmetric billiard
+  tables*, Ann. of Math. 196 (2022), Section 2.
 -/
 
 public section
@@ -90,14 +96,6 @@ theorem toEuclidean_eq_toEuclidean_iff {s t : ℝ} :
 theorem injOn_Ico_toEuclidean (a : ℝ) : InjOn T.toEuclidean (Ico a (a + ℓ)) := fun _ hs _ ht h =>
   T.injOn_Ico a hs ht (Complex.orthonormalBasisOneI.repr.injective h)
 
-/-- The cross product of `ℂ` in Euclidean coordinates: `Im (conj a * b) = a₀ b₁ − a₁ b₀`. -/
-private theorem im_conj_mul_eq (a b : ℂ) : (conj a * b).im =
-    Complex.orthonormalBasisOneI.repr a 0 * Complex.orthonormalBasisOneI.repr b 1 -
-      Complex.orthonormalBasisOneI.repr a 1 * Complex.orthonormalBasisOneI.repr b 0 := by
-  simp only [Complex.orthonormalBasisOneI_repr_apply, mul_im, conj_re, conj_im]
-  simp
-  ring
-
 /-- **Positive orientation in Euclidean coordinates.** Every point `χ(t)` with `t ≢ s` lies
 strictly to the left of the tangent line at `χ(s)`:
 `χ'₀(s) (χ₁(t) − χ₁(s)) − χ'₁(s) (χ₀(t) − χ₀(s)) > 0`. -/
@@ -105,8 +103,9 @@ theorem cross_deriv_toEuclidean_pos {s t : ℝ} (h : (s : AddCircle ℓ) ≠ t) 
     0 < deriv T.toEuclidean s 0 * (T.toEuclidean t 1 - T.toEuclidean s 1) -
       deriv T.toEuclidean s 1 * (T.toEuclidean t 0 - T.toEuclidean s 0) := by
   have := T.im_conj_deriv_mul_sub_pos h
-  rw [im_conj_mul_eq] at this
-  simpa [deriv_toEuclidean, toEuclidean_apply] using this
+  simp only [mul_im, conj_re, conj_im, sub_re, sub_im] at this
+  simp [deriv_toEuclidean, toEuclidean_apply]
+  linarith
 
 /-- **A table meets each tangent line only at the point of tangency**, in Euclidean
 coordinates: if `χ(t) = χ(s) + c χ'(s)`, then `χ(t) = χ(s)`. -/
@@ -123,8 +122,9 @@ theorem eq_of_toEuclidean_eq_add_smul_deriv {s t c : ℝ}
 /-- **Periodic billiard trajectories in a convex table.** For every `N ≥ 2` there are parameters
 `s_k`, `k ∈ ℤ/N`, with consecutive points `γ(s_k) ≠ γ(s_(k+1))` and the equal-angle reflection law
 `⟨u_(k−1), τ(s_k)⟩ = ⟨u_k, τ(s_k)⟩` at every vertex, where `u_k` is the unit vector from `γ(s_k)`
-to `γ(s_(k+1))`. This is `TauCeti.exists_billiard_periodic_reflection` for
-`TauCeti.ConvexTable.toEuclidean`. -/
+to `γ(s_(k+1))`. These are closed billiard trajectories with `N` bounces whose least period
+divides `N`: for even `N` the polygon can be a double normal traversed `N / 2` times. This is
+`TauCeti.exists_billiard_periodic_reflection` for `TauCeti.ConvexTable.toEuclidean`. -/
 theorem exists_periodic_reflection {N : ℕ} (hN : 2 ≤ N) :
     ∃ s : ZMod N → ℝ, ∀ k, T.toEuclidean (s (k + 1)) ≠ T.toEuclidean (s k) ∧
       ⟪‖T.toEuclidean (s k) - T.toEuclidean (s (k - 1))‖⁻¹ •
