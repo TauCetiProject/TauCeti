@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Lie.Subgroup.Atlas
 public import TauCeti.Geometry.Lie.Subgroup.Immersion
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
 # Embedded Lie subgroups and the closed-subgroup theorem
@@ -108,21 +109,6 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type v} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type w} [TopologicalSpace G] [ChartedSpace H G] [Group G]
 
-/-- A subgroup of a Hausdorff topological group that is locally compact in its subspace topology
-is closed: a compact neighbourhood of `1` in the subgroup is closed in the ambient group, so the
-subgroup is locally closed at `1`. -/
-private theorem isClosed_of_locallyCompactSpace {G : Type*} [TopologicalSpace G] [Group G]
-    [IsTopologicalGroup G] [T2Space G] (K : Subgroup G) [LocallyCompactSpace K] :
-    IsClosed (K : Set G) := by
-  obtain ⟨C, hC, hC1⟩ := exists_compact_mem_nhds (1 : K)
-  obtain ⟨U, hU, hUC⟩ := (mem_nhds_subtype _ _ _).mp hC1
-  refine K.isClosed_of_isLocallyClosedAt K.one_mem
-    ⟨U, hU, _, (hC.image continuous_subtypeVal).isClosed, Set.Subset.antisymm ?_ ?_⟩
-  · rintro x ⟨hxU, hxK⟩
-    exact ⟨hxU, ⟨x, hxK⟩, hUC hxU, rfl⟩
-  · rintro _ ⟨hxU, ⟨x, -, rfl⟩⟩
-    exact ⟨hxU, x.property⟩
-
 namespace EmbeddedLieSubgroupData
 
 variable {K : Subgroup G} {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
@@ -201,7 +187,8 @@ theorem injective_mfderiv_mul_left_subtypeVal [ContMDiffMul I ∞ G]
 
 /-- **An embedded Lie subgroup is closed.** The differential of the inclusion at `1` is injective,
 so the model space of `K` is finite-dimensional and `K` is locally compact in its subspace
-topology; a locally compact subgroup of a Hausdorff topological group is closed. -/
+topology; a locally compact subgroup of a `T0` topological group is closed
+(`Subgroup.isClosed_of_weaklyLocallyCompactSpace`). -/
 theorem isClosed [FiniteDimensional ℝ E] [IsTopologicalGroup G]
     (d : EmbeddedLieSubgroupData I K E') : IsClosed (K : Set G) := by
   let _ := d.chartedSpace
@@ -211,7 +198,7 @@ theorem isClosed [FiniteDimensional ℝ E] [IsTopologicalGroup G]
       (mfderiv 𝓘(ℝ, E') I (fun x : K ↦ (x : G)) 1 : E' →L[ℝ] E).toLinearMap
       (d.injective_mfderiv_subtypeVal 1)
   have : LocallyCompactSpace K := ChartedSpace.locallyCompactSpace E' K
-  exact isClosed_of_locallyCompactSpace K
+  exact Subgroup.isClosed_of_weaklyLocallyCompactSpace K
 
 end EmbeddedLieSubgroupData
 
