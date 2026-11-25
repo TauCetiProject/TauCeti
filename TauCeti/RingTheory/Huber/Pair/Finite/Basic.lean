@@ -132,15 +132,6 @@ theorem IsFinite.isIntegral_restrict {φ : Hom S U} (hφ : φ.IsFinite) :
   rw [← Subring.coe_subtype, Polynomial.hom_eval₂]
   simpa using hp
 
-/-- **A finite morphism whose ring map is the identity does not enlarge the plus ring.** Thus
-`(K, K⁺) → (K, K°)` is not finite when `K⁺ ⊊ K°`, although its ring map is. -/
-theorem IsFinite.plus_eq_of_toRingHom_eq_id {S' : Pair A} {φ : Hom S S'} (hφ : φ.IsFinite)
-    (h : φ.toRingHom = RingHom.id A) : S'.plus = S.plus := by
-  refine le_antisymm (fun a ha ↦ ?_) fun a ha ↦ by simpa [h] using φ.map_mem_plus a ha
-  have hint := hφ.isIntegral_plus a ha
-  rw [h, Subring.map_id] at hint
-  exact Subring.isIntegrallyClosedIn_iff.mp S.isRingOfIntegralElements.isIntegrallyClosedIn hint
-
 /-- **A finite morphism with injective ring map reflects the plus ring**: if `φ a ∈ B⁺` then
 `a ∈ A⁺`, since `a` is then integral over `A⁺` and `A⁺` is integrally closed in `A`. -/
 theorem IsFinite.mem_plus_of_injective {φ : Hom S U} (hφ : φ.IsFinite)
@@ -154,6 +145,15 @@ theorem IsFinite.mem_plus_of_injective {φ : Hom S U} (hφ : φ.IsFinite)
   rw [Polynomial.hom_eval₂, ← hcomp, map_zero]
   simpa only [Polynomial.hom_eval₂, map_zero, Subring.subtype_apply] using
     congrArg U.plus.subtype hq
+
+/-- **A finite morphism whose ring map is the identity does not enlarge the plus ring.** Thus
+`(K, K⁺) → (K, K°)` is not finite when `K⁺ ⊊ K°`, although its ring map is. -/
+theorem IsFinite.plus_eq_of_toRingHom_eq_id {S' : Pair A} {φ : Hom S S'} (hφ : φ.IsFinite)
+    (h : φ.toRingHom = RingHom.id A) : S'.plus = S.plus :=
+  le_antisymm
+    (fun a ha ↦ hφ.mem_plus_of_injective (by rw [h]; exact Function.injective_id)
+      (by simpa [h] using ha))
+    fun a ha ↦ by simpa [h] using φ.map_mem_plus a ha
 
 end Hom
 
