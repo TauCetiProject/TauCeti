@@ -15,8 +15,8 @@ Let `0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` and `0 ⟶ N₁ ⟶ N₂ ⟶ N₃ ⟶ 0
 with Bockstein homomorphisms `β` (`TopCat.singularCohomologyBockstein`), and let
 `μ : M₂ ⊗ N₂ ⟶ L` be a pairing and `g : L ⟶ L'` a morphism such that, after `g`, `μ` restricted to
 `M₁ ⊗ N₂` factors through a pairing `μ₁₃ : M₁ ⊗ N₃ ⟶ L'` and `μ` restricted to `M₂ ⊗ N₁` factors
-through a pairing `μ₃₁ : M₃ ⊗ N₁ ⟶ L'`. Let `R`, `S`, `T` be projective objects with a map
-`u : T ⟶ R ⊗ S`. Then for every space `X`, `a ∈ Hᵖ(X; R, M₃)` and `b ∈ H^q(X; S, N₃)`,
+through a pairing `μ₃₁ : M₃ ⊗ N₁ ⟶ L'`. Let `R`, `S` be projective objects and `T` any object,
+with a map `u : T ⟶ R ⊗ S`. Then for every space `X`, `a ∈ Hᵖ(X; R, M₃)` and `b ∈ H^q(X; S, N₃)`,
 
 `β a ⌣ b = (-1)^(p + 1) • a ⌣ β b`   in `H^(p + q + 1)(X; T, L')`,
 

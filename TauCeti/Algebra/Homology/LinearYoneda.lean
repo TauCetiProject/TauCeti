@@ -66,7 +66,7 @@ singular cohomology is obtained from the one of chain complexes.
 * `ChainComplex.shortExact_map_linearYonedaObjFunctor`: for `X` with projective terms, `Hom(X, -)`
   preserves short exact sequences.
 * `TauCeti.ChainComplex.exists_d_comp_eq_of_δ_eq`: cochain representatives of the connecting
-  morphism of a coefficient sequence, for `X` indexed by `ℕ` with projective terms.
+  morphism of a coefficient sequence, for `X` with projective terms.
 * `TauCeti.ChainComplex.linearYonedaObjSingle₀Iso`: `Hom(-, Y)` sends the chain complex `X[0]`
   concentrated in degree zero to the cochain complex `Hom(X, Y)[0]`. It follows the unmerged Tau
   Ceti pull request https://github.com/TauCetiProject/TauCeti/pull/20882.
@@ -456,28 +456,29 @@ end CoefficientSequence
 
 section Lift
 
-variable {X : _root_.ChainComplex C ℕ} [∀ i, Projective (X.X i)] {S : ShortComplex C}
+variable {X : _root_.ChainComplex C α} [∀ i, Projective (X.X i)] {S : ShortComplex C}
   (hS : S.ShortExact)
 
 /-- **Cochain representatives of the connecting morphism of a coefficient sequence.** Let
 `0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` be a short exact sequence of coefficients and `X` a chain complex with
-projective terms. If the cocycle `α` of `Hom(X, M₁)` represents the image of `x ∈ Hᵖ(Hom(X, M₃))`
-under the connecting morphism, then `x` is represented by a cocycle `a` which lifts to a cochain
-`φ : X_p ⟶ M₂` whose coboundary is `α` followed by `M₁ ⟶ M₂`, on the nose. -/
-lemma exists_d_comp_eq_of_δ_eq (p : ℕ) (x : (X.linearYonedaObj k S.X₃).homology p)
-    (α : (X.linearYonedaObj k S.X₁).cycles (p + 1))
-    (hα : (X.linearYonedaObj k S.X₁).homologyπ (p + 1) α =
-      (X.shortExact_map_linearYonedaObjFunctor k hS).δ p (p + 1) rfl x) :
+projective terms. If the cocycle `z` of `Hom(X, M₁)` in degree `p'` represents the image of
+`x ∈ Hᵖ(Hom(X, M₃))` under the connecting morphism, where `p + 1 = p'`, then `x` is represented by
+a cocycle `a` which lifts to a cochain `φ : X_p ⟶ M₂` whose coboundary is `z` followed by
+`M₁ ⟶ M₂`, on the nose. -/
+lemma exists_d_comp_eq_of_δ_eq (p p' : α) (hp : p + 1 = p')
+    (x : (X.linearYonedaObj k S.X₃).homology p) (z : (X.linearYonedaObj k S.X₁).cycles p')
+    (hz : (X.linearYonedaObj k S.X₁).homologyπ p' z =
+      (X.shortExact_map_linearYonedaObjFunctor k hS).δ p p' hp x) :
     ∃ (φ : X.X p ⟶ S.X₂) (a : (X.linearYonedaObj k S.X₃).cycles p),
-      X.d (p + 1) p ≫ φ = (X.linearYonedaObj k S.X₁).iCycles (p + 1) α ≫ S.f ∧
+      X.d p' p ≫ φ = (X.linearYonedaObj k S.X₁).iCycles p' z ≫ S.f ∧
         φ ≫ S.g = (X.linearYonedaObj k S.X₃).iCycles p a ∧
           (X.linearYonedaObj k S.X₃).homologyπ p a = x := by
   obtain ⟨φ, a, hφ, ha, hx⟩ :=
-    (X.shortExact_map_linearYonedaObjFunctor k hS).moduleCat_exists_d_eq_of_δ_eq p (p + 1) rfl x α
-      hα.symm
+    (X.shortExact_map_linearYonedaObjFunctor k hS).moduleCat_exists_d_eq_of_δ_eq p p' hp x z
+      hz.symm
   -- The maps of the coefficient sequence of cochain complexes are postcomposition.
   refine ⟨φ, a, ?_, ?_, hx⟩
-  · exact hφ.trans (X.linearYonedaObjMap_f_hom_apply k S.f (p + 1) _)
+  · exact hφ.trans (X.linearYonedaObjMap_f_hom_apply k S.f p' _)
   · exact (X.linearYonedaObjMap_f_hom_apply k S.g p φ).symm.trans ha
 
 end Lift

@@ -283,10 +283,10 @@ theorem cup_δ_eq_zsmul (hμ₁₃ : (S.f ▷ S'.X₂) ≫ μ ≫ g = (S.X₁ �
   -- nose; likewise `δ y`, `β` and `ψ`.
   obtain ⟨α, hα⟩ := (A.linearYonedaObj k S.X₁).moduleCat_homologyπ_surjective (p + 1)
     ((A.shortExact_map_linearYonedaObjFunctor k hS).δ p (p + 1) rfl x)
-  obtain ⟨φ, a, hφ, ha, rfl⟩ := exists_d_comp_eq_of_δ_eq k hS p x α hα
+  obtain ⟨φ, a, hφ, ha, rfl⟩ := exists_d_comp_eq_of_δ_eq k hS p (p + 1) rfl x α hα
   obtain ⟨β, hβ⟩ := (B.linearYonedaObj k S'.X₁).moduleCat_homologyπ_surjective (q + 1)
     ((B.shortExact_map_linearYonedaObjFunctor k hS').δ q (q + 1) rfl y)
-  obtain ⟨ψ, b, hψ, hb, rfl⟩ := exists_d_comp_eq_of_δ_eq k hS' q y β hβ
+  obtain ⟨ψ, b, hψ, hb, rfl⟩ := exists_d_comp_eq_of_δ_eq k hS' q (q + 1) rfl y β hβ
   -- The coboundary of `(φ ⌣ ψ) ≫ g` is `α ⌣ b + (-1)ᵖ a ⌣ β`, by the Leibniz rule.
   have key : cupCycles k D μ₁₃ (p + 1) q (p + q + 1) h₁ α b +
       ((-1 : ℤ) ^ p) • cupCycles k D μ₃₁ p (q + 1) (p + q + 1) h₂ a β =
