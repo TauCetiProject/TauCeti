@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Basic
 
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 import TauCeti.MeasureTheory.OptimalTransport.Entropic.CyclicPerturbation
 
 /-!
@@ -153,12 +154,9 @@ theorem IsCoupling.integrable_and_integrable_of_eq_withDensity_exp_add
     filter_upwards [exp_llr_of_ac' R P hμνR, Measure.rnDeriv_lt_top R P] with z hexp hlt
     rw [Pi.mul_apply, exp_add, ENNReal.ofReal_mul (exp_pos _).le, hexp,
       ENNReal.ofReal_toReal hlt.ne, mul_comm]
-  have hexp_int : Integrable (fun z ↦ exp (φ z.1 + ψ z.2 + llr R P z)) P := by
-    refine (lintegral_ofReal_ne_top_iff_integrable
-      (f := fun z ↦ exp (φ z.1 + ψ z.2 + llr R P z)) (by fun_prop)
-      (ae_of_all _ fun _ ↦ (exp_pos _).le)).1 ?_
-    rw [← setLIntegral_univ, ← withDensity_apply _ MeasurableSet.univ, hπ_P]
-    exact measure_ne_top π univ
+  have hexp_int : Integrable (fun z ↦ exp (φ z.1 + ψ z.2 + llr R P z)) P :=
+    MeasureTheory.integrable_of_eq_withDensity hπ_P.symm (by fun_prop)
+      (ae_of_all _ fun _ ↦ (exp_pos _).le)
   refine hπ.integrable_and_integrable_of_integrable_add_of_integrable_max
     hφ.aestronglyMeasurable hψ.aestronglyMeasurable ((integrable_congr hllr_eq).1 hllr_πR) ?_
   refine (hexp_int.add hllr.abs).mono' (by fun_prop) (ae_of_all _ fun z ↦ ?_)

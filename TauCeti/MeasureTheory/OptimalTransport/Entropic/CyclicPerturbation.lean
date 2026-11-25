@@ -241,10 +241,7 @@ private theorem withDensity_add_mul_eq_withDensity_fourPointDelta
       (μ.prod ν).withDensity fun z ↦
         ENNReal.ofReal (Z z * (R.rnDeriv (μ.prod ν) z).toReal + t * fourPointDelta μ ν W z) := by
   set P := μ.prod ν
-  have hR_eq : P.withDensity (fun z ↦ ENNReal.ofReal (R.rnDeriv P z).toReal) = R :=
-    (withDensity_congr_ae <| (Measure.rnDeriv_lt_top R P).mono fun _ hz ↦
-      ENNReal.ofReal_toReal hz.ne).trans (Measure.withDensity_rnDeriv_eq R P hRμν)
-  conv_lhs => rw [← hR_eq]
+  conv_lhs => rw [← Measure.withDensity_ofReal_toReal_rnDeriv_eq R P hRμν]
   rw [← withDensity_mul _ (by fun_prop) (by fun_prop)]
   congr 1; funext z
   rw [Pi.mul_apply, ← ENNReal.ofReal_mul ENNReal.toReal_nonneg]
@@ -279,10 +276,8 @@ private theorem isCoupling_withDensity_add_mul_fourPointDelta
         (fun z ↦ ENNReal.ofReal (γ.rnDeriv R z).toReal) := funext fun z ↦ by
       rw [Pi.mul_apply, ← ENNReal.ofReal_mul ENNReal.toReal_nonneg, mul_comm]
     rw [hmul, withDensity_mul _ (by fun_prop) (by fun_prop),
-      withDensity_congr_ae ((Measure.rnDeriv_lt_top R P).mono fun _ h ↦ ENNReal.ofReal_toReal h.ne),
-      Measure.withDensity_rnDeriv_eq R P hRμν,
-      withDensity_congr_ae ((Measure.rnDeriv_lt_top γ R).mono fun _ h ↦ ENNReal.ofReal_toReal h.ne),
-      Measure.withDensity_rnDeriv_eq γ R hγR]
+      Measure.withDensity_ofReal_toReal_rnDeriv_eq R P hRμν,
+      Measure.withDensity_ofReal_toReal_rnDeriv_eq γ R hγR]
   have hp_int : Integrable p P := MeasureTheory.integrable_of_eq_withDensity hγ_P.symm
     (by fun_prop) (ae_of_all _ fun _ ↦ mul_nonneg ENNReal.toReal_nonneg ENNReal.toReal_nonneg)
   have hΔ_int : Integrable (fourPointDelta μ ν W) P := integrable_fourPointDelta hW hWB
@@ -420,6 +415,14 @@ private theorem measurableSet_rnZeroSet (n : ℕ) : MeasurableSet (rnZeroSet μ 
   (measurableSet_rnAnnulus n).inter
     (measurableSet_eq_fun (Measure.measurable_rnDeriv γ R).ennreal_toReal measurable_const)
 
+private theorem rnDeriv_pos_of_mem_rnAnnulus {n : ℕ} {z : X × Y}
+    (hz : z ∈ rnAnnulus μ ν R n) : 0 < (R.rnDeriv (μ.prod ν) z).toReal :=
+  (by positivity : (0 : ℝ) < ((n : ℝ) + 1)⁻¹).trans_le hz.1
+
+private theorem rnDeriv_pos_of_mem_jointAnnulus {n : ℕ} {z : X × Y}
+    (hz : z ∈ jointAnnulus μ ν R γ n) : 0 < (γ.rnDeriv R z).toReal :=
+  (by positivity : (0 : ℝ) < ((n : ℝ) + 1)⁻¹).trans_le hz.2.1
+
 private theorem monotone_rnAnnulus : Monotone (rnAnnulus μ ν R) := fun m n hmn _ hz ↦ by
   have hmn' : (m : ℝ) + 1 ≤ (n : ℝ) + 1 := by exact_mod_cast Nat.add_le_add_right hmn 1
   exact ⟨(inv_anti₀ (by positivity) hmn').trans hz.1, hz.2.trans hmn'⟩
@@ -463,7 +466,7 @@ private theorem abs_indicator_llr_jointAnnulus_le (n : ℕ) (z : X × Y) :
   by_cases hz : z ∈ jointAnnulus μ ν R γ n
   · simp only [indicator_of_mem hz, llr_def]
     exact abs_le.2 ⟨by rw [← log_inv]; exact log_le_log (by positivity) hz.2.1,
-      log_le_log ((by positivity : (0 : ℝ) < ((n : ℝ) + 1)⁻¹).trans_le hz.2.1) hz.2.2⟩
+      log_le_log (rnDeriv_pos_of_mem_jointAnnulus hz) hz.2.2⟩
   · simp only [indicator_of_notMem hz, abs_zero]
     exact log_nonneg (by linarith : (1 : ℝ) ≤ (n : ℝ) + 1)
 
@@ -474,9 +477,7 @@ private theorem klFun_add_mul_sub_klFun_le_of_jointAnnulus {n : ℕ} {z : X × Y
       s * ((jointAnnulus μ ν R γ n).indicator (llr γ R) z * u) +
         s ^ 2 * (((n : ℝ) + 1) * B ^ 2) := by
   by_cases hz : z ∈ jointAnnulus μ ν R γ n
-  · have hZp : 0 < (γ.rnDeriv R z).toReal :=
-      (by positivity : (0 : ℝ) < ((n : ℝ) + 1)⁻¹).trans_le hz.2.1
-    have hquad := klFun_sub_klFun_sub_le_sq_div hZp hZs
+  · have hquad := klFun_sub_klFun_sub_le_sq_div (rnDeriv_pos_of_mem_jointAnnulus hz) hZs
     rw [add_sub_cancel_left] at hquad
     have h1 := div_le_div_of_nonneg_left (sq_nonneg (s * u)) (by positivity) hz.2.1
     have h2 : (s * u) ^ 2 / ((n : ℝ) + 1)⁻¹ = s ^ 2 * ((n : ℝ) + 1) * u ^ 2 := by
@@ -614,9 +615,7 @@ private theorem exists_measure_pos_fourPointZeroConfig [IsFiniteMeasure μ] [IsF
 
 private theorem disjoint_rnZeroSet_jointAnnulus (n : ℕ) :
     Disjoint (rnZeroSet μ ν R γ n) (jointAnnulus μ ν R γ n) :=
-  Set.disjoint_left.2 fun z hzGN hzH ↦ by
-    have h0 : (γ.rnDeriv R z).toReal = 0 := hzGN.2
-    linarith [h0, hzH.2.1, (by positivity : (0 : ℝ) < ((n : ℝ) + 1)⁻¹)]
+  Set.disjoint_left.2 fun _ hzGN hzH ↦ (rnDeriv_pos_of_mem_jointAnnulus hzH).ne' hzGN.2
 
 private theorem nonneg_and_pos_setIntegral_scaledFourPointDelta_rnZeroSet
     [IsFiniteMeasure μ] [IsFiniteMeasure ν] [IsFiniteMeasure R] (hRμν : R ≪ μ.prod ν) {n : ℕ}
@@ -649,8 +648,8 @@ private theorem nonneg_and_pos_setIntegral_scaledFourPointDelta_rnZeroSet
       (hGN_le hz)) ENNReal.toReal_nonneg
   -- Change of measure from `R` to `P = μ ⊗ ν` using `δZ * dR/dP = fourPointDelta`.
   have hδZr (z : X × Y) : δZ z * (R.rnDeriv P z).toReal = fourPointDelta μ ν W z :=
-    scaledFourPointDelta_mul_rnDeriv (fun _ (hw : _ ∈ GN ∪ H) ↦
-      (by positivity : (0 : ℝ) < ((n : ℝ) + 1)⁻¹).trans_le (hw.elim And.left And.left).1)
+    scaledFourPointDelta_mul_rnDeriv
+      (fun _ (hw : _ ∈ GN ∪ H) ↦ rnDeriv_pos_of_mem_rnAnnulus (hw.elim And.left And.left))
       (indicator_one_eq_zero_of_notMem_quad M (fourPointZeroConfig_subset_quad n)) z
   have hα_eq : ∫ z in GN, δZ z ∂R = ∫ z in GN, fourPointDelta μ ν W z ∂P := by
     have hmul (f : X × Y → ℝ) : GN.indicator f = fun z ↦ GN.indicator 1 z * f z :=
@@ -844,8 +843,7 @@ private theorem integral_indicator_llr_mul_scaledFourPointDelta_eq
           ((posDefectConfig μ ν R γ n).indicator (1 : (X × Y) × (X × Y) → ℝ)) z ∂R =
       ∫ q in posDefectConfig μ ν R γ n, llrCrossDiff γ R q ∂((μ.prod ν).prod (μ.prod ν)) := by
   have hδZr (z : X × Y) := scaledFourPointDelta_mul_rnDeriv (R := R)
-    (fun _ (hw : _ ∈ jointAnnulus μ ν R γ n) ↦
-      (by positivity : (0 : ℝ) < ((n : ℝ) + 1)⁻¹).trans_le hw.1.1)
+    (fun _ (hw : _ ∈ jointAnnulus μ ν R γ n) ↦ rnDeriv_pos_of_mem_rnAnnulus hw.1)
     (indicator_one_eq_zero_of_notMem_quad (posDefectConfig μ ν R γ n) fun _ hm ↦ hm.2) z
   rw [integral_mul_eq_integral_mul_fourPointDelta hRμν hδZr,
     integral_mul_fourPointDelta (measurable_one.indicator (measurableSet_posDefectConfig n))

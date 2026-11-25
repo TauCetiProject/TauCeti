@@ -9,6 +9,7 @@ public import Mathlib.InformationTheory.KullbackLeibler.Basic
 public import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue
 
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
+import TauCeti.InformationTheory.KullbackLeibler.Variational
 
 /-!
 # Basic properties of Kullback–Leibler divergence
@@ -114,22 +115,12 @@ theorem klDiv_withDensity_ofReal_eq [IsFiniteMeasure ν] {g : α → ℝ}
     (hkl : Integrable (fun x ↦ klFun (g x)) ν) :
     klDiv (ν.withDensity fun x ↦ ENNReal.ofReal (g x)) ν =
       ENNReal.ofReal (∫ x, klFun (g x) ∂ν) := by
-  have hg_le (u : ℝ) (hu : 0 ≤ u) : u ≤ Real.exp 2 + klFun u := by
-    by_cases h : u ≤ Real.exp 2
-    · linarith [klFun_nonneg hu]
-    · have hlt : Real.exp 2 < u := not_le.1 h
-      have hlog : 2 < Real.log u := (Real.lt_log_iff_exp_lt ((Real.exp_pos 2).trans hlt)).2 hlt
-      have hexp : 0 ≤ Real.exp 2 := (Real.exp_pos 2).le
-      simp only [klFun]
-      nlinarith
   have hg_int : Integrable g ν := by
-    refine ((integrable_const (Real.exp 2)).add hkl).mono' hg.aestronglyMeasurable ?_
+    refine (hkl.add (integrable_const (Real.exp 1 - 1))).mono' hg.aestronglyMeasurable ?_
     filter_upwards [hg0] with x hx0
-    rw [Real.norm_eq_abs, abs_of_nonneg hx0]
-    exact hg_le (g x) hx0
-  have : IsFiniteMeasure (ν.withDensity fun x ↦ ENNReal.ofReal (g x)) :=
-    isFiniteMeasure_withDensity ((lintegral_ofReal_ne_top_iff_integrable hg.aestronglyMeasurable
-      hg0).2 hg_int)
+    rw [Real.norm_eq_abs, abs_of_nonneg hx0, Pi.add_apply]
+    linarith [mul_sub_exp_sub_one_le_klFun hx0 1]
+  have := isFiniteMeasure_withDensity_ofReal hg_int.2
   rw [klDiv_eq_lintegral_klFun_of_ac (withDensity_absolutelyContinuous _ _),
     ofReal_integral_eq_lintegral_ofReal hkl (hg0.mono fun _ ↦ klFun_nonneg)]
   refine lintegral_congr_ae ?_
