@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import Mathlib.RingTheory.TensorProduct.Basic
+import TauCeti.RingTheory.Localization.Normal
 
 /-!
 # Geometrically normal algebras
@@ -70,13 +71,9 @@ variable {k : Type u} {A : Type v} [Field k] [CommRing A] [Algebra k A]
 theorem _root_.Ideal.isDomain_and_isIntegrallyClosed_atPrime_of_isGeometricallyNormal
     [IsGeometricallyNormal k A] (q : Ideal A)
     [q.IsPrime] :
-    IsDomain (Localization.AtPrime q) ∧ IsIntegrallyClosed (Localization.AtPrime q) := by
-  let e : k ⊗[k] A ≃+* A := (TensorProduct.lid k A).toRingEquiv
-  obtain ⟨_, _⟩ := forall_isDomain_and_isIntegrallyClosed (A := A) k (q.comap e)
-  let e' : Localization.AtPrime (q.comap e) ≃+* Localization.AtPrime q :=
-    Localization.localRingEquiv (q.comap e) q e rfl
-  exact ⟨e'.symm.toMulEquiv.isDomain _,
-    IsIntegrallyClosed.of_equiv (R := Localization.AtPrime (q.comap e)) e'⟩
+    IsDomain (Localization.AtPrime q) ∧ IsIntegrallyClosed (Localization.AtPrime q) :=
+  (TensorProduct.lid k A).toRingEquiv.forall_isDomain_and_isIntegrallyClosed
+    (fun P _ ↦ forall_isDomain_and_isIntegrallyClosed (A := A) k P) q
 
 end IsGeometricallyNormal
 
