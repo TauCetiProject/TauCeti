@@ -41,7 +41,8 @@ example : stripBandGeneratingFunction shear univ (fun p => p.2 ^ 2 / 2) (1, 2) =
 example : HasFDerivAt (stripBandGeneratingFunction shear univ fun p => p.2 ^ 2 / 2)
     (ContinuousLinearMap.snd ℝ ℝ ℝ - ContinuousLinearMap.fst ℝ ℝ ℝ) (1, 2) := by
   have h := (isMonotoneTwistMap_shiftedShear 0).hasFDerivAt_stripBandGeneratingFunction
-    (g := fun p => p.2) (p := (1, 1)) ⟨mem_univ _, mem_univ _⟩ (hasFDerivAt_primitive (1, 1))
+    (g := fun p => p.2) (p := (1, 1)) ⟨mem_univ _, mem_univ _⟩
+    (hasFDerivAt_primitive_shiftedShear_zero (1, 1))
   rw [stripTwistCoord_apply] at h
   norm_num [shiftedShear_apply] at h
   exact h
