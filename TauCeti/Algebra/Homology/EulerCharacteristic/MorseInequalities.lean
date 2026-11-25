@@ -43,6 +43,9 @@ Conversely, the strong inequalities together with the Euler--Poincaré equality 
 polynomial identity, which is how it is obtained when no chain complex is at hand.  For sequences
 of natural numbers `b` and `c`:
 
+* `TauCeti.le_of_forall_sum_range_neg_one_pow_mul_le`: the strong inequalities give `b ≤ c`.
+* `TauCeti.sum_range_neg_one_pow_mul_eq_of_le_succ`: the bounds in adjacent degrees give equality
+  of the Euler sums through `n` when `c (n + 1) ≤ b (n + 1)`.
 * `TauCeti.exists_sum_range_monomial_eq_add_mul`: if the strong inequalities hold below degree
   `n` and the Euler--Poincaré equality holds in degree `n`, then
   `∑ᵢ₌₀ⁿ cᵢ tⁱ = ∑ᵢ₌₀ⁿ bᵢ tⁱ + (1 + t) Q(t)` with `Q ∈ ℕ[t]`, and the coefficient of `tⁱ` in `Q`
@@ -81,6 +84,38 @@ private theorem strongGap_succ (b c : ℕ → ℕ) (m : ℕ) :
   rw [strongGap, strongGap, sum_range_succ_neg_one_pow_sub_mul,
     sum_range_succ_neg_one_pow_sub_mul]
   abel
+
+/-- Bounds on all alternating partial sums imply the componentwise weak Morse inequalities. -/
+theorem le_of_forall_sum_range_neg_one_pow_mul_le {b c : ℕ → ℕ}
+    (h : ∀ m, ∑ i ∈ Finset.range (m + 1), (-1 : ℤ) ^ (m - i) * b i ≤
+      ∑ i ∈ Finset.range (m + 1), (-1 : ℤ) ^ (m - i) * c i) : b ≤ c := by
+  have hgap (m : ℕ) : 0 ≤ strongGap b c m := sub_nonneg.2 (h m)
+  intro n
+  cases n with
+  | zero =>
+    have hzero := hgap 0
+    rw [strongGap_zero] at hzero
+    exact_mod_cast sub_nonneg.mp hzero
+  | succ n =>
+    have hnext := hgap (n + 1)
+    rw [strongGap_succ] at hnext
+    have hle : (b (n + 1) : ℤ) ≤ c (n + 1) := by linarith [hgap n]
+    exact_mod_cast hle
+
+/-- If consecutive alternating partial sums satisfy the strong inequalities and the next term
+of the upper sequence is at most that of the lower sequence, the Euler sums agree. -/
+theorem sum_range_neg_one_pow_mul_eq_of_le_succ {b c : ℕ → ℕ} {n : ℕ}
+    (h : ∀ m ∈ ({n, n + 1} : Finset ℕ), ∑ i ∈ Finset.range (m + 1), (-1 : ℤ) ^ (m - i) * b i ≤
+      ∑ i ∈ Finset.range (m + 1), (-1 : ℤ) ^ (m - i) * c i) (hs : c (n + 1) ≤ b (n + 1)) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * b i =
+      ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * c i := by
+  have h₀ : 0 ≤ strongGap b c n := sub_nonneg.2 (h n (by simp))
+  have h₁ : 0 ≤ strongGap b c (n + 1) := sub_nonneg.2 (h (n + 1) (by simp))
+  rw [strongGap_succ] at h₁
+  have heq : strongGap b c n = 0 := by omega
+  rw [strongGap, sub_eq_zero, sum_range_neg_one_pow_sub_mul,
+    sum_range_neg_one_pow_sub_mul] at heq
+  exact (mul_left_cancel₀ (pow_ne_zero n (neg_ne_zero.2 one_ne_zero)) heq).symm
 
 /-- **The Morse polynomial identity from the strong inequalities.**  Let `b` and `c` be sequences
 of natural numbers satisfying the strong Morse inequalities
