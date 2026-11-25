@@ -59,13 +59,10 @@ theorem exists_integral_thresholdTest_quantile_eq {P : Measure X} [IsProbability
   set ν := P.map T with hν
   set c := ν.quantile (1 - β)
   have hlt : ν.real (Iio c) ≤ 1 - β := ν.measureReal_Iio_quantile_le (by linarith [hβ.2])
-  have hle : 1 - β ≤ ν.real (Iic c) := by
-    rw [← cdf_eq_real]
-    exact ν.le_cdf_quantile (by linarith [hβ.1])
-  have hgt : ν.real (Ioi c) = 1 - ν.real (Iic c) := by
-    rw [← compl_Iic, probReal_compl_eq_one_sub measurableSet_Iic]
-  have heq : ν.real (Iic c) = ν.real (Iio c) + ν.real {c} := by
-    rw [← Iio_union_right, measureReal_union (by simp) (measurableSet_singleton c)]
+  have hle : 1 - β ≤ cdf ν c := ν.le_cdf_quantile (by linarith [hβ.1])
+  have hgt := ν.measureReal_Ioi_eq_one_sub_cdf c
+  have heq : cdf ν c = ν.real (Iio c) + ν.real {c} := by
+    rw [cdf_eq_real, ← Iio_union_right, measureReal_union (by simp) (measurableSet_singleton c)]
   -- The integral is `f γ` for the affine function `f γ = ν(T > c) + γ ν(T = c)`.
   have hint (γ : ℝ) : ∫ x, thresholdTest T c γ x ∂P = ν.real (Ioi c) + γ * ν.real {c} := by
     rw [integral_thresholdTest (hT.nullMeasurableSet_preimage measurableSet_Ioi)

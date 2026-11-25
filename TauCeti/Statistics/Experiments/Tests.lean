@@ -68,7 +68,8 @@ threshold and interval tests are evaluated by `simp` lemmas such as `thresholdTe
 
 The definitions and lemmas are adapted from the lean-CKSD project
 (<https://github.com/bjbraams/lean-CKSD>), files `CKSD/Inference/Basic.lean`,
-`CKSD/Inference/Model.lean` and `CKSD/Inference/Testing.lean`.
+`CKSD/Inference/Model.lean`, `CKSD/Inference/Testing.lean` and
+`CKSD/Inference/NeymanPearson.lean`.
 -/
 
 public section
