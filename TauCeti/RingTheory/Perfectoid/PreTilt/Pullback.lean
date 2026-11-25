@@ -135,7 +135,7 @@ theorem toPullback_surjective [IsAdicComplete (span {(p : A)}) A]
   refine ⟨x, Subtype.ext (Prod.ext (ext fun n ↦ ?_) (ext fun n ↦ ?_))⟩
   all_goals
     rw [coe_toPullback, coeff_map, hx, ModP.map_mk, coeff_eq_mk_untilt_iterate]
-    rfl
+    simp [c]
 
 variable (p f g)
 
@@ -167,7 +167,7 @@ theorem coe_untilt_pullbackEquiv_symm (y : (map p f).pullback (map p g)) :
   obtain ⟨x, rfl⟩ := (pullbackEquiv p f g).surjective y
   rw [RingEquiv.symm_apply_apply, pullbackEquiv_apply, coe_toPullback, untilt_natural,
     untilt_natural]
-  rfl
+  simp
 
 variable (p f g)
 
@@ -202,6 +202,6 @@ theorem coe_fontaineTheta_wittVectorPullbackEquiv_symm
           (v : WittVector p (PreTilt A p) × WittVector p (PreTilt B p)).2) := by
   obtain ⟨w, rfl⟩ := (wittVectorPullbackEquiv p f g).surjective v
   simp only [RingEquiv.symm_apply_apply, coe_wittVectorPullbackEquiv, WittVector.theta_natural]
-  rfl
+  simp
 
 end PreTilt
