@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Derivation.Basic
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.RingTheory.Ideal.Colon
+import TauCeti.Algebra.MvPolynomial.PDeriv
 import TauCeti.RingTheory.MvPolynomial.Ideal.Derivative
 
 /-!
@@ -28,11 +29,11 @@ let `N` be a submodule with `L N ⊆ N`. Then the annihilator of `M ⧸ N` is `�
 
 *Dual coordinates.* Let `k` be a field, `R` a `k`-algebra, and `xⱼ ∈ R`, `δᵢ` `k`-derivations of
 `R` with `δᵢ xⱼ = δᵢⱼ` (Kronecker delta). Then `δᵢ (p(x)) = (∂p/∂Xᵢ)(x)` for every polynomial `p`
-over `k`, so the preimage of a `δᵢ`-stable ideal `P` under `p ↦ p(x)` is stable under every
-partial derivative. In characteristic zero such an ideal of the polynomial ring is `⊥` or `⊤`
-(`Ideal.derivativeIdeal_le_self_iff`); so if `P` is proper, the images of the `xⱼ` in `R ⧸ P` are
-algebraically independent over `k`. Characteristic zero is needed: in `𝔽_p[x]` the ideal `(xᵖ)`
-is stable under `d/dx`, while `x` is algebraic modulo it.
+over `k` (`Derivation.map_aeval_eq_aeval_pderiv`), so the preimage of a `δᵢ`-stable ideal `P`
+under `p ↦ p(x)` is stable under every partial derivative. In characteristic zero such an ideal
+of the polynomial ring is `⊥` or `⊤` (`Ideal.derivativeIdeal_le_self_iff`); so if `P` is proper,
+the images of the `xⱼ` in `R ⧸ P` are algebraically independent over `k`. Characteristic zero is
+needed: in `𝔽_p[x]` the ideal `(xᵖ)` is stable under `d/dx`, while `x` is algebraic modulo it.
 
 Together with the stability of minimal primes over a stable ideal in characteristic zero
 (`Derivation.apply_mem_of_mem_minimalPrimes`), these give the transcendence-degree bound in the
@@ -44,8 +45,6 @@ coordinates.
 
 * `Derivation.apply_mem_annihilator_quotient`: the annihilator of `M ⧸ N` is stable under `δ`
   when `N` is stable under an operator obeying the Leibniz rule along `δ`.
-* `Derivation.map_aeval_eq_aeval_pderiv`: a derivation dual to `x` along the index `i` acts on
-  `p(x)` as the partial derivative `∂/∂Xᵢ`.
 * `TauCeti.algebraicIndependent_mk_of_forall_apply_mem`: in characteristic zero, elements with
   dual derivations stay algebraically independent modulo every proper stable ideal.
 
@@ -75,20 +74,6 @@ theorem apply_mem_annihilator_quotient {k S M : Type*} [CommSemiring k] [CommRin
   intro m _
   rw [eq_sub_of_add_eq (hL a m).symm]
   exact N.sub_mem (hN _ (ha m trivial)) (ha _ trivial)
-
-variable {k R σ : Type*} [CommSemiring k] [CommSemiring R] [Algebra k R] [DecidableEq σ]
-
-/-- **A derivation dual to a family of elements acts as a partial derivative.** If
-`D (x j) = 1` for `j = i` and `D (x j) = 0` otherwise, then `D (p(x)) = (∂p/∂Xᵢ)(x)` for every
-polynomial `p`. -/
-theorem map_aeval_eq_aeval_pderiv (D : Derivation k R R) {x : σ → R} {i : σ}
-    (hx : ∀ j, D (x j) = if i = j then 1 else 0) (p : MvPolynomial σ k) :
-    D (aeval x p) = aeval x (pderiv i p) := by
-  induction p using MvPolynomial.induction_on with
-  | C c => simp
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p j hp =>
-    by_cases h : i = j <;> simp [leibniz, hp, hx, h, mul_comm, add_comm]
 
 end Derivation
 
