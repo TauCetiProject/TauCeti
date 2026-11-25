@@ -73,6 +73,20 @@ theorem mulInvariantExpAddMonoidHom_apply (v : E) :
     LeftInvariantDerivation.evalAt_one_tangentToLeftInvariantDerivation (I := I) (G := G) v,
     pointDerivationEquivTangentSpace_tangentToPointDerivation (I := I) (1 : G) _ v]
 
+/-- `mulInvariantExpAddMonoidHom` is `mulInvariantExp`, viewed as a map into `Additive G`. -/
+theorem coe_mulInvariantExpAddMonoidHom :
+    ⇑(mulInvariantExpAddMonoidHom I G) =
+      Additive.ofMul ∘ fun v : E ↦ mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G) :=
+  funext mulInvariantExpAddMonoidHom_apply
+
+/-- Membership in the kernel `Λ` of `mulInvariantExp`. -/
+theorem mem_ker_mulInvariantExpAddMonoidHom {v : E} :
+    v ∈ (mulInvariantExpAddMonoidHom I G).ker ↔
+      mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G) = 1 := by
+  -- Not a `simp` lemma: `simp` already proves it from `AddMonoidHom.mem_ker`,
+  -- `mulInvariantExpAddMonoidHom_apply` and `ofMul_eq_zero`.
+  rw [AddMonoidHom.mem_ker, mulInvariantExpAddMonoidHom_apply, ofMul_eq_zero]
+
 /-- `mulInvariantExp` is continuous. -/
 @[fun_prop]
 theorem continuous_mulInvariantExpAddMonoidHom :
