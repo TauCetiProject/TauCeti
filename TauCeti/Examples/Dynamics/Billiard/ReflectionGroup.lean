@@ -40,7 +40,7 @@ def squareDirections : Set Circle :=
 theorem natCard_reflectionGroup_square : Nat.card (reflectionGroup squareDirections) = 4 := by
   have h : orderOf (Circle.exp (2 * (π / 2))) = 2 := by
     refine orderOf_eq_prime ?_ ?_
-    · exact_mod_cast Circle.exp_two_mul_pi_div_pow 2
+    · exact (Circle.exp_pow_eq_one_iff two_ne_zero).2 ⟨1, by push_cast; ring⟩
     · rw [mul_div_cancel₀ _ two_ne_zero]; exact Circle.exp_pi_ne_one
   rw [squareDirections, natCard_reflectionGroup_exp _ (by simp) (by simp), h]
 
@@ -54,7 +54,7 @@ theorem natCard_reflectionGroup_equilateral :
   have : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
   have h : orderOf (Circle.exp (2 * (π / 3))) = 3 := by
     refine orderOf_eq_prime ?_ ?_
-    · exact_mod_cast Circle.exp_two_mul_pi_div_pow 3
+    · exact (Circle.exp_pow_eq_one_iff three_ne_zero).2 ⟨1, by push_cast; ring⟩
     · rw [Ne, Circle.exp_eq_one]
       rintro ⟨n, hn⟩
       have : (3 * n : ℝ) = 1 := by nlinarith [pi_pos]
@@ -73,19 +73,8 @@ theorem infinite_reflectionGroup_pi_div_sqrt_two :
     finite_iff_finite_rotationSubgroup,
     rotationSubgroup_reflectionGroup_exp _ (by simp) (by simp)]
   intro hfin
-  obtain ⟨n, hn, hpow⟩ := isOfFinOrder_iff_pow_eq_one.1 (finite_zpowers.1 hfin)
-  rw [← Circle.exp_natCast_mul, Circle.exp_eq_one] at hpow
-  obtain ⟨m, hm⟩ := hpow
-  have key : (n : ℝ) = m * √2 := by
-    have h2 : (n : ℝ) * (2 * (π / √2)) * √2 = m * (2 * π) * √2 := by rw [hm]
-    field_simp at h2
-    linear_combination h2
-  have hm0 : (m : ℝ) ≠ 0 := by
-    rintro h
-    rw [h, zero_mul, Nat.cast_eq_zero] at key
-    exact hn.ne' key
-  refine irrational_sqrt_two.ne_rational n m ?_
-  rw [Int.cast_natCast, key]
-  field_simp
+  rw [show 2 * (π / √2) = 2 * π * (√2)⁻¹ by ring] at hfin
+  exact Circle.isOfFinOrder_exp_two_pi_mul_iff.1 (finite_zpowers.1 hfin)
+    (irrational_inv_iff.2 irrational_sqrt_two)
 
 end TauCeti.Examples.ReflectionGroup

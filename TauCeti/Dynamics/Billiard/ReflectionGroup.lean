@@ -175,7 +175,7 @@ theorem two_le_natCard_rotationSubgroup_reflectionGroup [Finite (reflectionGroup
 
 /-- **A finite reflection group is dihedral.** If the reflection group of `D` is finite and `D`
 contains two directions that are not parallel, it is isomorphic to the dihedral group of order
-`2N` for some `N ≥ 2`, the order of its rotation subgroup. -/
+`2N` for some `N ≥ 2`. -/
 theorem exists_mulEquiv_dihedralGroup_reflectionGroup [Finite (reflectionGroup D)] {d e : Circle}
     (hd : d ∈ D) (he : e ∈ D) (hde : d ≠ e) (hde' : d ≠ -e) :
     ∃ N, 2 ≤ N ∧ Nonempty (reflectionGroup D ≃* DihedralGroup N) :=

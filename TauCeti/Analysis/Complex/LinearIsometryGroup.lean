@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Isometry
 public import Mathlib.GroupTheory.SpecificGroups.Dihedral
 import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
-import Mathlib.RingTheory.IntegralDomain
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
 
 /-!
@@ -36,7 +36,7 @@ square root of `b`, and studies subgroups `G` of `ℂ ≃ₗᵢ[ℝ] ℂ` throug
   `conjReflection c`, its elements are the rotations by the rotation subgroup and the reflections
   `conjReflection (a c)` for `a` in the rotation subgroup.
 * `TauCeti.Complex.finite_iff_finite_rotationSubgroup`: `G` is finite exactly when its rotation
-  subgroup is; a finite rotation subgroup is cyclic (`isCyclic_rotationSubgroup`).
+  subgroup is; a finite rotation subgroup is cyclic, by `Circle.isCyclic_of_finite`.
 * `TauCeti.Complex.nonempty_mulEquiv_dihedralGroup`: **a finite group of isometries containing a
   reflection is dihedral**, `G ≃* DihedralGroup N` for `N` the order of its rotation subgroup,
   so `Nat.card G = 2 N` (`natCard_eq_two_mul_natCard_rotationSubgroup`).
@@ -175,11 +175,6 @@ theorem mem_iff_of_conjReflection_mem {c : Circle} (hc : conjReflection c ∈ G)
 
 instance finite_rotationSubgroup [Finite G] : Finite (rotationSubgroup G) :=
   Finite.of_injective _ (rotation.subgroupComap_injective G rotation_injective)
-
-/-- A finite rotation subgroup is cyclic: it is a finite group of units of `ℂ`. -/
-instance isCyclic_rotationSubgroup [Finite (rotationSubgroup G)] : IsCyclic (rotationSubgroup G) :=
-  isCyclic_of_injective_ringHom (Circle.coeHom.comp (rotationSubgroup G).subtype)
-    fun _ _ h => Subtype.ext (Circle.coe_injective h)
 
 /-- A group of real linear isometries of `ℂ` is finite exactly when its rotation subgroup is: its
 reflections, if any, are `conjReflection (a c)` for a fixed reflection `conjReflection c` and `a`
