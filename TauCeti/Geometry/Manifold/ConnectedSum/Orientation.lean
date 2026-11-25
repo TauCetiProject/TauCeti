@@ -156,7 +156,7 @@ def orientation (he₁ : ∀ v ≠ 0, IsOrientationPreservingAt oE o₁ e₁ v)
   letI := chartedSpace (H := H) h₁ h₂
   haveI := isManifold (n := 1) h₁ h₂ d₁ d₂
   glue (isLocalDiffeomorph_inl h₁ h₂ d₁ d₂) (isLocalDiffeomorph_inr h₁ h₂ d₁ d₂)
-    (inl_injective h₁.injective h₂.injective) (inr_injective h₁.injective h₂.injective)
+    (inl_injective h₂.injective) (inr_injective h₁.injective)
     (range_inl_union_range_inr e₁ e₂) (map_orientationAt_inl_eq_inr h₁ h₂ d₁ d₂ o₁ o₂ oE he₁ he₂)
 
 variable {o₁ o₂ oE} (he₁ : ∀ v ≠ 0, IsOrientationPreservingAt oE o₁ e₁ v)
@@ -181,8 +181,8 @@ theorem isOrientationPreservingAt_inl {o : Manifold.Orientation I (puncture e₁
         (isOrientationPreservingAt_restrict o₁ _ x)).symm
   obtain ⟨D', hD', hD'o⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 <|
     isOrientationPreservingAt_glue_left (isLocalDiffeomorph_inl h₁ h₂ d₁ d₂)
-    (isLocalDiffeomorph_inr h₁ h₂ d₁ d₂) (inl_injective h₁.injective h₂.injective)
-    (inr_injective h₁.injective h₂.injective) (range_inl_union_range_inr e₁ e₂)
+    (isLocalDiffeomorph_inr h₁ h₂ d₁ d₂) (inl_injective h₂.injective)
+    (inr_injective h₁.injective) (range_inl_union_range_inr e₁ e₂)
     (map_orientationAt_inl_eq_inr h₁ h₂ d₁ d₂ o₁ o₂ oE he₁ he₂) x
   exact (isOrientationPreservingAt_iff _ _ _ _).2 ⟨D', hD', hx ▸ hD'o⟩
 
@@ -205,8 +205,8 @@ theorem isOrientationPreservingAt_inr {o : Manifold.Orientation I (puncture e₂
         (isOrientationPreservingAt_restrict o₂ _ y)).symm
   obtain ⟨D', hD', hD'o⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 <|
     isOrientationPreservingAt_glue_right (isLocalDiffeomorph_inl h₁ h₂ d₁ d₂)
-    (isLocalDiffeomorph_inr h₁ h₂ d₁ d₂) (inl_injective h₁.injective h₂.injective)
-    (inr_injective h₁.injective h₂.injective) (range_inl_union_range_inr e₁ e₂)
+    (isLocalDiffeomorph_inr h₁ h₂ d₁ d₂) (inl_injective h₂.injective)
+    (inr_injective h₁.injective) (range_inl_union_range_inr e₁ e₂)
     (map_orientationAt_inl_eq_inr h₁ h₂ d₁ d₂ o₁ o₂ oE he₁ he₂) y
   exact (isOrientationPreservingAt_iff _ _ _ _).2 ⟨D', hD', hy ▸ hD'o⟩
 

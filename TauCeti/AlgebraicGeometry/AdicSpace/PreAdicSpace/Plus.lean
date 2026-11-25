@@ -185,6 +185,12 @@ theorem plusSubring_le_comap (V : Opens Y) :
   exact Subring.mem_comap.mpr (mem_plusSubring_iff.mpr fun x hx ↦
     (f.vle_germ_c_app_iff V x hx s).mpr (mem_plusSubring_iff.mp hs (f.base x) hx))
 
+/-- The global-sections map of a morphism carries integral sections to integral sections. -/
+theorem appTop_mem_plusSubring {s : (Y.toPresheafedSpace.presheaf.obj (op ⊤)).obj}
+    (hs : s ∈ Y.plusSubring ⊤) : f.appTop s ∈ X.plusSubring ⊤ := by
+  rw [appTop_def]
+  exact f.plusSubring_le_comap ⊤ hs
+
 /-- **Over the image of a morphism, integrality is detected after pullback**: if the open `V ⊆ Y`
 lies in the image of `f : X ⟶ Y`, a section of `𝒪_Y` over `V` is integral exactly when its pullback
 to `f⁻¹V` is. This applies to an isomorphism, and to an open immersion over an open of its

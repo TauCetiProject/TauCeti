@@ -75,7 +75,9 @@ attached only to doubles along the complement of `TauCeti.borderedInterior M`.
   `TauCeti.DoubleAlong`.
 * `TauCeti.SchottkyDouble.doubleChart_swap` and
   `TauCeti.SchottkyDouble.writtenInExtChartAt_swap_eventuallyEq_conj`: the swap reads as
-  `z ↦ conj z` in every doubled chart.
+  `z ↦ conj z` in every doubled chart, so it is real smooth (`contMDiff_swap`).
+* `TauCeti.SchottkyDouble.contMDiffAt_fold_inl` and `TauCeti.SchottkyDouble.contMDiffAt_fold_inr`:
+  the fold of the double onto `M` is real smooth at both copies of every interior point.
 * `TauCeti.DoubleAlong.swap_swap` and `TauCeti.DoubleAlong.fixed_locus` apply directly: the swap
   is an involution whose fixed set is the boundary on the first copy.
 * `TauCeti.SchottkyDouble.isOpenEmbedding_interiorInl` and
@@ -422,6 +424,16 @@ theorem writtenInExtChartAt_swap_eventuallyEq_conj (z : SchottkyDouble M) :
   simp only [Function.comp_apply]
   rw [doubleChart_swap _ hsrc, hw]
 
+/-- The sheet swap of the Schottky double is real `C^n` for every `n`: it reads as `z ↦ conj z` in
+the doubled charts. -/
+theorem contMDiff_swap {n : ℕ∞ω} :
+    ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) n (DoubleAlong.swap (borderedInterior M : Set M)ᶜ) := by
+  intro z
+  refine contMDiffAt_iff.2 ⟨(DoubleAlong.swap _).continuous.continuousAt, ?_⟩
+  rw [modelWithCornersSelf_coe, range_id, contDiffWithinAt_univ]
+  exact Complex.conjCLE.contDiff.contDiffAt.congr_of_eventuallyEq
+    (writtenInExtChartAt_swap_eventuallyEq_conj z)
+
 /-- A chart change between the doubled charts of two charts of `M` whose chart change is bordered
 holomorphic is holomorphic. -/
 private theorem doubleChart_symm_trans_mem_contDiffGroupoid
@@ -666,6 +678,41 @@ theorem disjoint_range_interiorInr_image_inl_compl :
   rintro _ ⟨u, rfl⟩ ⟨y, _, heq⟩
   rw [interiorInr_apply, DoubleAlong.inl_eq_inr_iff] at heq
   exact heq.2 (heq.1 ▸ u.property)
+
+/-- Near the first copy of an interior point, the fold of the double onto `M` is real `C^n`: it is
+the identity in the doubled chart and the chart of `M`. -/
+theorem contMDiffAt_fold_inl {n : ℕ∞ω} {x : M} (hx : x ∈ borderedInterior M) :
+    ContMDiffAt 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel n (DoubleAlong.fold A)
+      (DoubleAlong.inl A x) := by
+  refine contMDiffAt_iff.2 ⟨(DoubleAlong.fold A).continuous.continuousAt, ?_⟩
+  rw [modelWithCornersSelf_coe, range_id, contDiffWithinAt_univ]
+  set e := chartAt ClosedUpperHalfPlane x
+  have he : e ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M :=
+    IsManifold.chart_mem_maximalAtlas x
+  have hxe : x ∈ e.source := mem_chart_source _ x
+  have hpos : 0 < (e x : ℂ).im := (mem_borderedInterior_iff_im_pos he hxe).1 hx
+  have htarget : (doubleChart e he).target ∈ 𝓝 (e x : ℂ) := by
+    refine (doubleChart e he).open_target.mem_nhds ?_
+    simpa [ClosedUpperHalfPlane.fold_coe] using e.map_source hxe
+  refine contDiffAt_id.congr_of_eventuallyEq ?_
+  simp only [extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
+    modelWithCornersSelf_coe_symm, chartAt_inl, doubleChart_inl, DoubleAlong.fold_inl,
+    Function.comp_id, Function.id_comp]
+  filter_upwards [htarget, continuous_im.continuousAt.eventually (lt_mem_nhds hpos)]
+    with w hw hw'
+  simp only [Function.comp_apply, fold_doubleChart_symm, id_eq]
+  rw [doubleChart_target, mem_preimage] at hw
+  rw [e.right_inv hw, closedUpperHalfPlaneModel_apply,
+    ClosedUpperHalfPlane.coe_fold_of_im_nonneg hw'.le]
+
+/-- Near the second copy of an interior point, the fold of the double onto `M` is real `C^n`: it is
+the fold of the first copy composed with the sheet swap. -/
+theorem contMDiffAt_fold_inr {n : ℕ∞ω} {x : M} (hx : x ∈ borderedInterior M) :
+    ContMDiffAt 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel n (DoubleAlong.fold A)
+      (DoubleAlong.inr A x) := by
+  have h := (contMDiffAt_fold_inl (n := n) hx).comp_of_eq (contMDiff_swap.contMDiffAt)
+    (DoubleAlong.swap_inr A x)
+  exact h.congr_of_eventuallyEq (Eventually.of_forall fun z ↦ (DoubleAlong.fold_swap A z).symm)
 
 end ChartSides
 

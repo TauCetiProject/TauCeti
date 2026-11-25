@@ -357,7 +357,7 @@ end Field
 
 section RightMultiplication
 
-open Module
+open _root_.Module
 
 section Semiring
 

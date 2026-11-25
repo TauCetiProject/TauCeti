@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Quotient
 public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.Topology.CategoryTheory.Etale
+public import TauCeti.Topology.CategoryTheory.FullSubcategory
 public import TauCeti.Topology.CategoryTheory.Functor.IsomorphismClasses
 public import TauCeti.Topology.CategoryTheory.Groupoid.Basic
 
@@ -48,6 +49,8 @@ For the action groupoid of a discrete group acting on a space, these notions are
 ## Main declarations
 
 * `TauCeti.ineffectiveArrows C`: the arrows near which source and target agree.
+* `TauCeti.mem_ineffectiveArrows_fullSubcategory_of_mem`: an arrow of a full subcategory which is
+  ineffective in the ambient category is ineffective in the full subcategory.
 * `TauCeti.ineffectiveKernel hs x`: the normal subgroup of ineffective automorphisms of `x`.
 * `TauCeti.map_autMulEquivOfIso_ineffectiveKernel`: isomorphisms transport ineffective kernels.
 * `TauCeti.EffectiveQuotient C`: the quotient of `C` by the germ relation `TauCeti.germRel C`,
@@ -126,6 +129,24 @@ theorem mem_ineffectiveArrows_iff_eventually_right_eq [TopologicalSpace C]
       _ = b.right := by rw [hσbb]
 
 end Quiver
+
+section FullSubcategory
+
+variable {C : Type*} [Category C] [TopologicalSpace (Quiver.Total C)] {P : ObjectProperty C}
+
+/-- An arrow of a full subcategory which is ineffective in the ambient category is ineffective
+in the full subcategory, whose arrows carry the subspace topology. The converse fails in general:
+the reflection arrow of the line at its fixed point is effective, but it is ineffective in the
+full subcategory on that point. -/
+theorem mem_ineffectiveArrows_fullSubcategory_of_mem {a : Quiver.Total P.FullSubcategory}
+    (ha : (⟨a.left.obj, a.right.obj, a.hom.hom⟩ : Quiver.Total C) ∈ ineffectiveArrows C) :
+    a ∈ ineffectiveArrows P.FullSubcategory := by
+  rw [mem_ineffectiveArrows_iff] at ha ⊢
+  filter_upwards [(isEmbedding_total_fullSubcategory.continuous.tendsto a).eventually ha]
+    with b hb
+  exact ObjectProperty.FullSubcategory.ext hb
+
+end FullSubcategory
 
 section Groupoid
 

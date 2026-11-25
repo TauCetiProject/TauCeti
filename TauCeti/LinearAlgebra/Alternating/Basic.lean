@@ -8,20 +8,57 @@ module
 public import Mathlib.LinearAlgebra.Alternating.Basic
 
 /-!
-# Alternating maps in degree one
+# Basic lemmas on alternating maps
 
-For a subsingleton index type `ι` and `i : ι`, `AlternatingMap.ofSubsingleton` identifies linear
-maps `M →ₗ[R] N` with alternating maps `M [⋀^ι]→ₗ[R] N`. This file upgrades that bijection to an
-`S`-linear equivalence `AlternatingMap.ofSubsingletonₗ` for any commuting scalar action of `S` on
-`N`, matching `MultilinearMap.ofSubsingletonₗ`, records scalar linearity on constant tuples
-(`AlternatingMap.apply_const_smul`), and shows that over a nonempty subsingleton index
-type an alternating map `ω : R [⋀^ι]→ₗ[R] N` vanishes iff `ω (fun _ ↦ 1) = 0`
-(`AlternatingMap.apply_const_one_eq_zero`, `AlternatingMap.apply_const_one_ne_zero`).
+This file collects basic constructions and lemmas on `AlternatingMap`:
+
+* **Coefficient extraction:** Putting a linear combination `∑ j ∈ s, e j • v j` in place of the
+  `i`-th argument `v i` of an alternating map, for `i ∈ s`, multiplies its value on `v` by `e i`:
+  every other term of the sum repeats an argument, so its contribution vanishes. Over a basis, this
+  reads off the `i`-th coordinate of a vector put in place of the `i`-th basis vector.
+* **Alternating maps in degree one:** For a subsingleton index type `ι` and `i : ι`,
+  `AlternatingMap.ofSubsingleton` identifies linear maps `M →ₗ[R] N` with alternating maps
+  `M [⋀^ι]→ₗ[R] N`. We upgrade that bijection to an `S`-linear equivalence
+  `AlternatingMap.ofSubsingletonₗ` for any commuting scalar action of `S` on `N` (matching
+  `MultilinearMap.ofSubsingletonₗ`), record scalar linearity on constant tuples, and show that over
+  a nonempty subsingleton index type an alternating map `ω : R [⋀^ι]→ₗ[R] N` vanishes iff
+  `ω (fun _ ↦ 1) = 0`.
+
+## Main definitions
+
+* `AlternatingMap.ofSubsingletonₗ`: `AlternatingMap.ofSubsingleton` upgraded to an `S`-linear
+  equivalence.
+
+## Main results
+
+* `AlternatingMap.map_update_sum_smul`: putting `∑ j ∈ s, e j • v j` in place of `v i`, for
+  `i ∈ s`, multiplies the value of an alternating map by `e i`.
+* `AlternatingMap.apply_const_smul`: an alternating map of degree one commutes with scalar
+  multiplication on constant tuples.
+* `AlternatingMap.apply_const_one_eq_zero`, `AlternatingMap.apply_const_one_ne_zero`: over a
+  nonempty subsingleton index type, `ω : R [⋀^ι]→ₗ[R] N` vanishes on `fun _ ↦ 1` iff `ω = 0`.
 -/
 
 public section
 
 namespace AlternatingMap
+
+section UpdateSumSmul
+
+variable {R M N ι : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
+  [Module R N]
+
+/-- Putting the linear combination `∑ j ∈ s, e j • v j` in place of `v i`, for `i ∈ s`, multiplies
+the value of an alternating map by `e i`: every other term repeats an argument. -/
+@[simp]
+theorem map_update_sum_smul [DecidableEq ι] (f : M [⋀^ι]→ₗ[R] N) (v : ι → M) {s : Finset ι}
+    {i : ι} (hi : i ∈ s) (e : ι → R) :
+    f (Function.update v i (∑ j ∈ s, e j • v j)) = e i • f v := by
+  rw [f.map_update_sum, Finset.sum_eq_single_of_mem i hi fun j _ hji ↦ by
+    rw [f.map_update_smul, f.map_update_self _ hji.symm, smul_zero], f.map_update_smul,
+    Function.update_eq_self]
+
+end UpdateSumSmul
 
 section OfSubsingleton
 
@@ -77,5 +114,3 @@ theorem apply_const_one_ne_zero {ω : R [⋀^ι]→ₗ[R] N} (hω : ω ≠ 0) : 
 end ConstOne
 
 end AlternatingMap
-
-end

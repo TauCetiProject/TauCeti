@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
+public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Coproduct
 
 import Mathlib.AlgebraicGeometry.Morphisms.UniversallyOpen
 import TauCeti.AlgebraicGeometry.Morphisms.Dominant
+import TauCeti.AlgebraicGeometry.Noetherian
 import TauCeti.Topology.Irreducible
 import TauCeti.Topology.Sober
 
@@ -22,9 +24,17 @@ monomorphism. Maximal domination is equivalent to admitting a unique commuting m
 the schemes of generic points. If every irreducible component of the source has nonempty
 interior, maximal domination is also equivalent to the first projection from the pullback of
 the target's scheme of generic points having dense image in the source. In particular, this
-equivalence holds when the source has finitely many irreducible components. The implication
+equivalence holds when the source has finitely many irreducible components or is locally
+Noetherian. The implication
 from maximal domination to density holds for every source. Dominance alone permits vertical
 components of the source whose generic points do not map to component-generic points of the target.
+
+Maximal domination is local on the source and on the target, so it passes to the restriction
+`f ∣_ U` over an open `U` of the target by `IsZariskiLocalAtTarget.restrict`, and it descends
+along composition with an open immersion. For an
+irreducible source it says that the generic point maps to a component-generic point, so dominant
+morphisms from irreducible schemes are maximally dominating. The residue-field point
+`Spec κ(y) ⟶ Y` is maximally dominating exactly when `y` is a component-generic point.
 
 This follows M. Temkin, *Tame distillation and desingularization by p-alterations* (2017),
 §4.1.1. The construction uses Mathlib's `genericPoints`, scheme coproducts, and canonical
@@ -169,5 +179,79 @@ theorem isMaximallyDominating_iff_isDominant [IrreducibleSpace X] [IrreducibleSp
     (f : X ⟶ Y) : IsMaximallyDominating f ↔ IsDominant f := by
   rw [isMaximallyDominating_iff, genericPoints_eq_singleton, genericPoints_eq_singleton]
   simp only [mem_singleton_iff, forall_eq, isDominant_iff_genericPoint_eq]
+
+/-- If the source is locally Noetherian, maximal domination is equivalent to the projection from
+the generic fibre having dense image. -/
+theorem
+    isMaximallyDominating_iff_isDominant_pullback_fst_fromGenericPointScheme_of_isLocallyNoetherian
+    (f : X ⟶ Y) [IsLocallyNoetherian X] :
+    f.IsMaximallyDominating ↔ IsDominant (pullback.fst f Y.fromGenericPointScheme) :=
+  f.isMaximallyDominating_iff_isDominant_pullback_fst_fromGenericPointScheme
+    fun _ hC ↦ TauCeti.AlgebraicGeometry.nonempty_interior_of_mem_irreducibleComponents hC
+
+/-- A morphism from the empty scheme is maximally dominating. -/
+theorem isMaximallyDominating_of_isEmpty (f : X ⟶ Y) [IsEmpty X] : f.IsMaximallyDominating :=
+  fun x ↦ isEmptyElim x
+
+/-- If the composite of `f` with an open immersion is maximally dominating, then so is `f`: a
+point of `Y` is component-generic exactly when its image under the open immersion is. -/
+theorem IsMaximallyDominating.of_comp_of_isOpenImmersion {f : X ⟶ Y} {g : Y ⟶ Z}
+    [IsOpenImmersion g] (h : (f ≫ g).IsMaximallyDominating) : f.IsMaximallyDominating :=
+  fun x hx ↦ by
+    rw [← g.isOpenEmbedding.mem_genericPoints_iff, ← Hom.comp_apply]
+    exact h hx
+
+/-- Composing with an open immersion neither creates nor destroys maximal domination. -/
+@[simp]
+theorem isMaximallyDominating_comp_iff_of_isOpenImmersion (f : X ⟶ Y) (g : Y ⟶ Z)
+    [IsOpenImmersion g] : (f ≫ g).IsMaximallyDominating ↔ f.IsMaximallyDominating :=
+  ⟨.of_comp_of_isOpenImmersion, g.isMaximallyDominating_of_isOpenImmersion.comp⟩
+
+instance isMultiplicative_isMaximallyDominating :
+    MorphismProperty.IsMultiplicative @IsMaximallyDominating where
+  id_mem X := X.isMaximallyDominating_id
+  comp_mem _ _ hf hg := hg.comp hf
+
+instance respectsIso_isMaximallyDominating :
+    MorphismProperty.RespectsIso @IsMaximallyDominating :=
+  have := isMultiplicative_isMaximallyDominating.toIsStableUnderComposition
+  MorphismProperty.respectsIso_of_isStableUnderComposition fun _ _ f (_ : IsIso f) ↦
+    f.isMaximallyDominating_of_isOpenImmersion
+
+/-- Maximal domination is local on the source: a component-generic point of the source is a
+component-generic point of every open subscheme containing it. -/
+instance isZariskiLocalAtSource_isMaximallyDominating :
+    IsZariskiLocalAtSource @IsMaximallyDominating :=
+  IsZariskiLocalAtSource.mk' (fun _ U hf ↦ hf.restrictSource U) fun _ _ U hU hf x hx ↦ by
+    obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (hU ▸ trivial : x ∈ iSup U)
+    obtain ⟨a, rfl⟩ : x ∈ range (U i).ι := by rwa [Scheme.Opens.range_ι]
+    rw [← Hom.comp_apply]
+    exact hf i (((U i).ι.isOpenEmbedding.mem_genericPoints_iff a).mp hx)
+
+/-- Maximal domination is local on the target. -/
+instance isZariskiLocalAtTarget_isMaximallyDominating :
+    IsZariskiLocalAtTarget @IsMaximallyDominating :=
+  IsZariskiLocalAtSource.isZariskiLocalAtTarget fun _ _ _ h ↦ h.of_comp_of_isOpenImmersion
+
+/-- A morphism from an irreducible scheme is maximally dominating exactly when it maps the generic
+point of the source to a component-generic point of the target. -/
+theorem isMaximallyDominating_iff_genericPoint_mem [IrreducibleSpace X] (f : X ⟶ Y) :
+    f.IsMaximallyDominating ↔ f (genericPoint X) ∈ genericPoints Y := by
+  rw [IsMaximallyDominating, genericPoints_eq_singleton, mapsTo_singleton]
+
+/-- A dominant morphism from an irreducible scheme is maximally dominating; its target is then
+irreducible as well. -/
+theorem isMaximallyDominating_of_isDominant [IrreducibleSpace X] (f : X ⟶ Y) [IsDominant f] :
+    f.IsMaximallyDominating :=
+  have := f.irreducibleSpace_of_isDominant
+  (isMaximallyDominating_iff_isDominant f).mpr inferInstance
+
+/-- The canonical morphism `Spec κ(y) ⟶ Y` from the spectrum of the residue field at `y` is
+maximally dominating exactly when `y` is a component-generic point of `Y`. For instance the
+inclusion of the origin of the affine line over a field is not maximally dominating. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.isMaximallyDominating_fromSpecResidueField_iff (y : Y) :
+    (Y.fromSpecResidueField y).IsMaximallyDominating ↔ y ∈ genericPoints Y := by
+  rw [isMaximallyDominating_iff_genericPoint_mem, Scheme.fromSpecResidueField_apply]
 
 end AlgebraicGeometry.Scheme.Hom
