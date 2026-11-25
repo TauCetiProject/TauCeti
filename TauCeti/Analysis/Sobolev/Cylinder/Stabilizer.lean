@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Sobolev.Cylinder.Gluing
 import Mathlib.Analysis.Normed.Lp.SmoothApprox
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.Topology.Algebra.Order.Floor
-import TauCeti.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.Fredholm.Stabilization
 
 /-!
 # Smooth compactly supported stabilizers on the cylinder
@@ -40,8 +40,9 @@ This file constructs stabilizers spanned by smooth sections supported in a compa
   in `smoothSectionLp W T` for some `T`
   (`TauCeti.CylinderSobolev.exists_le_smoothSectionLp_isTopCompl_range`): the stabilizer can be
   chosen inside any dense subspace of the target
-  (`Submodule.exists_le_isTopCompl_of_dense`), and its finitely many generators are supported in
-  a common compact piece. Then `(ξ, σ) ↦ D ξ + σ` is onto, with kernel `ker D × {0}`.
+  (`ContinuousLinearMap.IsFredholm.exists_le_isTopCompl_range_of_dense`), and its finitely
+  many generators are supported in a common compact piece. Then `(ξ, σ) ↦ D ξ + σ` is onto,
+  with kernel `ker D × {0}`.
 * **Stabilized gluing of Fredholm pieces.** For two first-order operators `D₁` and `D₂` on the
   cylinder with matching ends that are Fredholm, the stabilized operators `D₁ + ι₁` and
   `D₂ + ι₂` with such stabilizers have bounded right inverses
@@ -136,7 +137,7 @@ theorem exists_periodic_of_mem_smoothSectionLp {T : ℝ} {η : Lp W 2 stripMeasu
     · exact ⟨1, one_pos, by simp [h]⟩
     obtain ⟨z₀, hz₀, hmax⟩ := hK.exists_isMaxOn h continuous_snd.continuousOn
     exact ⟨(1 - z₀.2) / 2, by linarith [(hξs hz₀).2.2], fun z hz ↦ by
-      linarith [show z.2 ≤ z₀.2 from hmax hz, (hξs hz₀).2.2]⟩
+      linarith [isMaxOn_iff.1 hmax z hz, (hξs hz₀).2.2]⟩
   -- Hence `ξ` vanishes, and so is periodic, on `ℝ × (-ε, 0)`.
   have hper (s : ℝ) {t : ℝ} (ht : -ε < t) (ht0 : t < 0) : ξ (s, t + 1) = ξ (s, t) := by
     rw [hξ0 fun h ↦ (hεK _ h).not_ge (by dsimp; linarith),
@@ -231,21 +232,6 @@ theorem dense_iUnion_smoothSectionLp :
   · filter_upwards [ae_mem_openStrip] with z hz
     simpa using (tendsto_boundaryCutoff hz.2).smul_const (g z)
 
-/-- A finite-dimensional space of sections inside the span of all the
-`TauCeti.CylinderSobolev.smoothSectionLp W T` lies in one of them. -/
-theorem exists_le_smoothSectionLp_of_le_iSup {S : Submodule ℝ (Lp W 2 stripMeasure)}
-    [FiniteDimensional ℝ S] (hS : S ≤ ⨆ T, smoothSectionLp W T) :
-    ∃ T, S ≤ smoothSectionLp W T := by
-  obtain ⟨s, hs⟩ := Submodule.fg_iff_finiteDimensional S |>.2 inferInstance
-  have hmem (x : s) : ∃ T, (x : Lp W 2 stripMeasure) ∈ smoothSectionLp W T :=
-    (Submodule.mem_iSup_of_directed _ smoothSectionLp_mono.directed_le).1
-      (hS (hs ▸ Submodule.subset_span x.property))
-  choose T hT using hmem
-  obtain ⟨T₀, hT₀⟩ := Finset.exists_le (s.attach.image T)
-  refine ⟨T₀, hs ▸ Submodule.span_le.2 fun x hx ↦ ?_⟩
-  exact smoothSectionLp_mono (hT₀ _ (Finset.mem_image_of_mem T (s.mem_attach ⟨x, hx⟩)))
-    (hT ⟨x, hx⟩)
-
 /-! ### Stabilizers of Fredholm operators -/
 
 /-- **Smooth compactly supported stabilizers.** For every Fredholm operator `D` with values in
@@ -258,22 +244,18 @@ theorem exists_le_smoothSectionLp_isTopCompl_range {X : Type*} [AddCommGroup X] 
       FiniteDimensional ℝ S ∧ IsTopCompl D.range S ∧
       Function.Surjective (D.coprod S.subtypeL) ∧
       (D.coprod S.subtypeL).ker = D.ker.prod ⊥ := by
-  have := hD.finite_coker
   have hdense :
       Dense ((⨆ T, smoothSectionLp W T : Submodule ℝ _) : Set (Lp W 2 stripMeasure)) :=
     (dense_iUnion_smoothSectionLp W).mono
       (iUnion_subset fun T ↦ SetLike.coe_subset_coe.2 (le_iSup (smoothSectionLp W) T))
-  obtain ⟨S, hSD, hS⟩ := Submodule.exists_le_isTopCompl_of_dense hD.isClosed_range hdense
-  have : FiniteDimensional ℝ S :=
-    (D.range.quotientEquivOfIsCompl S hS.isCompl).finiteDimensional
-  obtain ⟨T, hT⟩ := exists_le_smoothSectionLp_of_le_iSup hSD
-  refine ⟨T, S, hT, inferInstance, hS, ?_, ?_⟩
-  · apply LinearMap.range_eq_top.mp
-    rw [ContinuousLinearMap.range_coprod, Submodule.toLinearMap_subtypeL, Submodule.range_subtype]
-    exact hS.isCompl.sup_eq_top
-  · rw [ContinuousLinearMap.ker_coprod_of_disjoint_range (by
-      rw [Submodule.toLinearMap_subtypeL, Submodule.range_subtype]; exact hS.isCompl.disjoint),
-      Submodule.toLinearMap_subtypeL, Submodule.ker_subtype]
+  obtain ⟨S, hSD, hSfin, hS, hsurj, hker⟩ := hD.exists_le_isTopCompl_range_of_dense hdense
+  -- `S` is finitely generated, hence a compact element of the lattice of submodules, so it lies
+  -- below one member of the directed family `smoothSectionLp W T`.
+  obtain ⟨_, ⟨T, rfl⟩, hT⟩ := (isCompactElement_iff_le_of_directed_sSup_le _).1
+    ((Submodule.fg_iff_compact S).1 ((Submodule.fg_iff_finiteDimensional S).2 hSfin))
+    (range (smoothSectionLp W)) (range_nonempty _)
+    smoothSectionLp_mono.directed_le.directedOn_range (by rwa [sSup_range])
+  exact ⟨T, S, hT, hSfin, hS, hsurj, hker⟩
 
 /-! ### Stabilized gluing of Fredholm operators -/
 
@@ -298,6 +280,7 @@ theorem exists_forall_ge_exists_rightInverse_coprod_jetOperator_gluedCoeff_of_is
     (hD₂ : ((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).IsFredholm) :
     ∃ T, ∃ S₁ S₂ : Submodule ℝ (Lp W 2 stripMeasure),
       S₁ ≤ smoothSectionLp W T ∧ S₂ ≤ smoothSectionLp W T ∧
+      FiniteDimensional ℝ S₁ ∧ FiniteDimensional ℝ S₂ ∧
       IsTopCompl ((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).range S₁ ∧
       IsTopCompl ((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).range S₂ ∧
       ∃ C R₀ : ℝ, ∀ R ≥ R₀, ∃ Q : Lp W 2 stripMeasure →L[ℝ] H1 V × (S₁ × S₂),
@@ -306,8 +289,8 @@ theorem exists_forall_ge_exists_rightInverse_coprod_jetOperator_gluedCoeff_of_is
             (H1 V).subtypeL).coprod (gluedStabilizer S₁.subtypeL S₂.subtypeL R)).comp Q =
             ContinuousLinearMap.id ℝ _ ∧
           ‖Q‖ ≤ C := by
-  obtain ⟨T₁, S₁, hS₁T, -, hS₁, hsurj₁, -⟩ := exists_le_smoothSectionLp_isTopCompl_range hD₁
-  obtain ⟨T₂, S₂, hS₂T, -, hS₂, hsurj₂, -⟩ := exists_le_smoothSectionLp_isTopCompl_range hD₂
+  obtain ⟨T₁, S₁, hS₁T, hS₁fin, hS₁, hsurj₁, -⟩ := exists_le_smoothSectionLp_isTopCompl_range hD₁
+  obtain ⟨T₂, S₂, hS₂T, hS₂fin, hS₂, hsurj₂, -⟩ := exists_le_smoothSectionLp_isTopCompl_range hD₂
   -- Both stabilizers are supported in `[-T, T] × (0, 1)` for `T = max T₁ T₂`.
   set T := max T₁ T₂
   have hS₁T' := hS₁T.trans (smoothSectionLp_mono (le_max_left T₁ T₂))
@@ -322,6 +305,6 @@ theorem exists_forall_ge_exists_rightInverse_coprod_jetOperator_gluedCoeff_of_is
       hz (by linarith [neg_le_abs z.1]))
     (ContinuousLinearMap.ext hQ₁.rightInverse_rightInverse)
     (ContinuousLinearMap.ext hQ₂.rightInverse_rightInverse)
-  exact ⟨T, S₁, S₂, hS₁T', hS₂T', hS₁, hS₂, _, R₀, hR₀⟩
+  exact ⟨T, S₁, S₂, hS₁T', hS₂T', hS₁fin, hS₂fin, hS₁, hS₂, _, R₀, hR₀⟩
 
 end TauCeti.CylinderSobolev
