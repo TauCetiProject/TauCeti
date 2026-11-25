@@ -9,7 +9,7 @@ public import Mathlib.Data.Finset.Sort
 public import Mathlib.Order.ConditionallyCompleteLattice.Finset
 public import TauCeti.Algebra.AddCircle
 public import TauCeti.Algebra.BigOperators.Group.List
-public import TauCeti.Algebra.Order.BigOperators.Group.List
+public import TauCeti.Algebra.Order.Group.List
 public import TauCeti.Data.List.Sort
 public import TauCeti.Data.List.Zip
 public import TauCeti.NumberTheory.Real.Irrational
@@ -64,7 +64,7 @@ built from. The statements about lists of consecutive differences that the proof
 `List.sum_zipWith_sub_append_singleton_cons` and
 `List.pos_of_mem_zipWith_sub_tail_append_singleton` (in
 `TauCeti/Algebra/BigOperators/Group/List.lean` and
-`TauCeti/Algebra/Order/BigOperators/Group/List.lean`), and
+`TauCeti/Algebra/Order/Group/List.lean`), and
 `List.getElem_zipWith_sub_tail_append_singleton` (in `TauCeti/Data/List/Zip.lean`),
 `List.SortedLT.isLeast_inter_Ioi_getElem_succ` and
 `List.SortedLT.isGreatest_getElem_of_not_succ_lt` (in `TauCeti/Data/List/Sort.lean`).
