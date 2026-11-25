@@ -59,6 +59,8 @@ the matrix `M * (1 + ½ A⁻¹ E)` is a solution, since all quadratic terms in t
   to congruence by invertible matrices.
 * `Matrix.transpose_mul_mul_add_eq_zero_iff`: if `Yᵀ * A * Y` is invertible, the linear equation
   `Yᵀ * A * Z + D = 0` has a unique solution `Z`.
+* `Matrix.mul_one_add_mem_isometryMatrices_of_sq_eq_bot`: the explicit correction of a matrix
+  preserving `A` modulo a square-zero ideal.
 * `Matrix.exists_map_eq_of_mem_isometryMatrices_map`: solutions lift across a surjection with
   square-zero kernel.
 * `Matrix.isometryMatricesFiberEquiv`: the solutions congruent to a given one modulo a
@@ -308,6 +310,51 @@ section SquareZero
 
 variable {f : R →+* S}
 
+/-- **The explicit square-zero correction of a matrix preserving a Gram matrix modulo an ideal.**
+Let `2` be invertible, let `A` be symmetric with unit determinant, and let `M` preserve `A` modulo
+an ideal `I` with `I ^ 2 = ⊥`: the error `E = A - Mᵀ * A * M` has entries in `I`. Then
+`M * (1 + ⅟2 • (A⁻¹ * E))` preserves `A`, and the correction term `⅟2 • (A⁻¹ * E)` has entries in
+`I`, so the corrected matrix agrees with `M` modulo `I`. -/
+theorem mul_one_add_mem_isometryMatrices_of_sq_eq_bot [Invertible (2 : R)] {I : Ideal R}
+    (hI : I ^ 2 = ⊥) {A M : Matrix n n R} (hA : Aᵀ = A) (hdet : IsUnit A.det)
+    (hM : ∀ i j, (A - Mᵀ * A * M) i j ∈ I) :
+    M * (1 + (⅟2 : R) • (A⁻¹ * (A - Mᵀ * A * M))) ∈ isometryMatrices A ∧
+      ∀ i j, ((⅟2 : R) • (A⁻¹ * (A - Mᵀ * A * M))) i j ∈ I := by
+  set E : Matrix n n R := A - Mᵀ * A * M with hE_def
+  have hEt : Eᵀ = E := by
+    rw [hE_def, transpose_sub, transpose_mul, transpose_mul, transpose_transpose, hA,
+      mul_assoc]
+  set Z : Matrix n n R := (⅟2 : R) • (A⁻¹ * E) with hZ_def
+  have hZ : ∀ i j, Z i j ∈ I := fun i j => by
+    rw [hZ_def, Matrix.smul_apply, smul_eq_mul]
+    exact I.mul_mem_left _ ((I.matrix n).mul_mem_left A⁻¹ hM i j)
+  have hcE : ∀ i j, ((⅟2 : R) • E) i j ∈ I := fun i j => by
+    rw [Matrix.smul_apply, smul_eq_mul]
+    exact I.mul_mem_left _ (hM i j)
+  have hAZ : A * Z = (⅟2 : R) • E := by
+    rw [hZ_def, Matrix.mul_smul, ← mul_assoc, mul_nonsing_inv A hdet, one_mul]
+  have hZA : Zᵀ * A = (⅟2 : R) • E :=
+    calc Zᵀ * A = (A * Z)ᵀ := by rw [transpose_mul, hA]
+      _ = (⅟2 : R) • E := by rw [hAZ, transpose_smul, hEt]
+  have hEE : (⅟2 : R) • E + (⅟2 : R) • E = E := by
+    rw [← add_smul, ← two_mul, mul_invOf_self, one_smul]
+  have hZt : ∀ i j, Zᵀ i j ∈ I := fun i j => hZ j i
+  rw [sq] at hI
+  have h₁ : Zᵀ * (A * Z) = 0 := by rw [hAZ]; exact mul_eq_zero_of_mul_eq_bot hI hZt hcE
+  have h₂ : E * Z = 0 := mul_eq_zero_of_mul_eq_bot hI hM hZ
+  have h₃ : Zᵀ * E = 0 := mul_eq_zero_of_mul_eq_bot hI hZt hM
+  refine ⟨?_, hZ⟩
+  rw [mem_isometryMatrices]
+  have hME : Mᵀ * A * M = A - E := by rw [hE_def, sub_sub_cancel]
+  calc (M * (1 + Z))ᵀ * A * (M * (1 + Z))
+      = (1 + Zᵀ) * (Mᵀ * A * M) * (1 + Z) := by
+        simp only [transpose_mul, transpose_add, transpose_one, mul_assoc]
+    _ = A - E + A * Z + Zᵀ * A + Zᵀ * (A * Z) - E * Z - Zᵀ * E - Zᵀ * E * Z := by
+        rw [hME]; noncomm_ring
+    _ = A := by
+        rw [h₁, hAZ, hZA, h₂, h₃, zero_mul, add_assoc (A - E), hEE]
+        abel
+
 /-- **Matrices preserving a Gram matrix lift across a square-zero extension.** Let `f` be a
 surjective ring homomorphism whose kernel squares to zero, let `2` be a unit, and let `A` be
 symmetric with unit determinant. Then every solution of `Yᵀ * A * Y = A` over the target is the
@@ -318,46 +365,14 @@ theorem exists_map_eq_of_mem_isometryMatrices_map (hf : Function.Surjective f)
     ∃ X ∈ isometryMatrices A, X.map f = Y := by
   obtain ⟨M, rfl⟩ : ∃ M : Matrix n n R, M.map f = Y :=
     ⟨of fun i j => (hf (Y i j)).choose, by ext i j; exact (hf (Y i j)).choose_spec⟩
-  obtain ⟨c, hc⟩ : ∃ c : R, c * 2 = 1 := ⟨↑h2.unit⁻¹, h2.val_inv_mul⟩
-  set E : Matrix n n R := A - Mᵀ * A * M with hE_def
-  have hE : ∀ i j, E i j ∈ RingHom.ker f := by
-    rw [forall_mem_ker_iff_map_eq_zero, hE_def, Matrix.map_sub f (map_sub f), Matrix.map_mul,
+  let := h2.invertible
+  have hE : ∀ i j, (A - Mᵀ * A * M) i j ∈ RingHom.ker f := by
+    rw [forall_mem_ker_iff_map_eq_zero, Matrix.map_sub f (map_sub f), Matrix.map_mul,
       Matrix.map_mul, transpose_map, mem_isometryMatrices.mp hY, sub_self]
-  have hEt : Eᵀ = E := by
-    rw [hE_def, transpose_sub, transpose_mul, transpose_mul, transpose_transpose, hA,
-      mul_assoc]
-  set Z : Matrix n n R := c • (A⁻¹ * E) with hZ_def
-  have hZ : ∀ i j, Z i j ∈ RingHom.ker f := fun i j => by
-    rw [hZ_def, Matrix.smul_apply, smul_eq_mul]
-    exact Ideal.mul_mem_left _ _ (((RingHom.ker f).matrix n).mul_mem_left A⁻¹ hE i j)
-  have hcE : ∀ i j, (c • E) i j ∈ RingHom.ker f := fun i j => by
-    rw [Matrix.smul_apply, smul_eq_mul]
-    exact Ideal.mul_mem_left _ _ (hE i j)
-  have hAZ : A * Z = c • E := by
-    rw [hZ_def, Matrix.mul_smul, ← mul_assoc, mul_nonsing_inv A hdet, one_mul]
-  have hZA : Zᵀ * A = c • E :=
-    calc Zᵀ * A = (A * Z)ᵀ := by rw [transpose_mul, hA]
-      _ = c • E := by rw [hAZ, transpose_smul, hEt]
-  have hEE : c • E + c • E = E := by
-    rw [← add_smul, ← two_mul, mul_comm, hc, one_smul]
-  have hZt : ∀ i j, Zᵀ i j ∈ RingHom.ker f := fun i j => hZ j i
-  rw [sq] at hker
-  have h₁ : Zᵀ * (A * Z) = 0 := by rw [hAZ]; exact mul_eq_zero_of_mul_eq_bot hker hZt hcE
-  have h₂ : E * Z = 0 := mul_eq_zero_of_mul_eq_bot hker hE hZ
-  have h₃ : Zᵀ * E = 0 := mul_eq_zero_of_mul_eq_bot hker hZt hE
-  refine ⟨M * (1 + Z), ?_, ?_⟩
-  · rw [mem_isometryMatrices]
-    have hME : Mᵀ * A * M = A - E := by rw [hE_def, sub_sub_cancel]
-    calc (M * (1 + Z))ᵀ * A * (M * (1 + Z))
-        = (1 + Zᵀ) * (Mᵀ * A * M) * (1 + Z) := by
-          simp only [transpose_mul, transpose_add, transpose_one, mul_assoc]
-      _ = A - E + A * Z + Zᵀ * A + Zᵀ * (A * Z) - E * Z - Zᵀ * E - Zᵀ * E * Z := by
-          rw [hME]; noncomm_ring
-      _ = A := by
-          rw [h₁, hAZ, hZA, h₂, h₃, zero_mul, add_assoc (A - E), hEE]
-          abel
-  · rw [Matrix.map_mul, Matrix.map_add f (map_add f), Matrix.map_one f f.map_zero f.map_one,
-      forall_mem_ker_iff_map_eq_zero.mp hZ, add_zero, mul_one]
+  obtain ⟨hX, hZ⟩ := mul_one_add_mem_isometryMatrices_of_sq_eq_bot hker hA hdet hE
+  refine ⟨_, hX, ?_⟩
+  rw [Matrix.map_mul, Matrix.map_add f (map_add f), Matrix.map_one f f.map_zero f.map_one,
+    forall_mem_ker_iff_map_eq_zero.mp hZ, add_zero, mul_one]
 
 /-- **The solutions congruent to a given one modulo a square-zero ideal form a torsor under the
 skew-symmetric matrices with entries in the ideal.** Let `A` be symmetric with unit determinant

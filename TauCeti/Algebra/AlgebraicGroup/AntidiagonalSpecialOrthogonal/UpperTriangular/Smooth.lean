@@ -10,6 +10,8 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.SmoothConnected
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.CommHopfAlgCat
 public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 import TauCeti.LinearAlgebra.Matrix.IdealEntries
+import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Basic
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Smoothness of the upper triangular subgroup of `SO_l^J`
@@ -20,13 +22,15 @@ Let `J_l` be the antidiagonal matrix and `B ⊆ SO_l^J` the subgroup of upper tr
 algebra is smooth.
 
 The infinitesimal lifting criterion reduces this to lifting matrices across a square-zero
-quotient `S → S / I`. Lift the entries of an upper triangular `ḡ` on and above the diagonal to an
-upper triangular `g₀`. The error `ε = g₀ J_l g₀ᵀ - J_l` is symmetric with entries in `I`, and it
-vanishes at `(i, k)` with `i + k ≥ l`, as `g₀ J_l g₀ᵀ` and `J_l` do for upper triangular `g₀`.
-So `δ = -½ ε J_l`, whose entry at `(i, j)` is `-½ ε_{i, l - 1 - j}`, is upper triangular, and
-`g = (1 + δ) g₀` is upper triangular with `g J_l gᵀ = J_l + ε + δ J_l + J_l δᵀ = J_l`, the terms
-quadratic in `I` vanishing. Its determinant squares to one and is congruent to one modulo `I`, so
-it is one since `2` is invertible.
+quotient `S → S / I`. Lift the entries of an upper triangular point `G` over `S / I` on and
+above the diagonal to an upper triangular `g₀`. The error `ε = g₀ J_l g₀ᵀ - J_l` is symmetric
+with entries in `I`, and it vanishes at `(i, k)` with `i + k ≥ l`, as `g₀ J_l g₀ᵀ` and `J_l` do for
+upper triangular `g₀`.
+Since `J_l` is symmetric with `J_l⁻¹ = J_l`, the square-zero correction of `g₀ᵀ`
+(`Matrix.mul_one_add_mem_isometryMatrices_of_sq_eq_bot`), transposed, is `g = (1 + δ) g₀` with
+`δ = -½ ε J_l`, whose entry at `(i, j)` is `-½ ε_{i, l - 1 - j}`. So `δ` is upper triangular, and
+`g` is upper triangular with `g J_l gᵀ = J_l`. Its determinant squares to one and is congruent to
+one modulo `I`, so it is one since `2` is invertible (`Ideal.eq_one_of_sq_eq_one_of_sub_one_mem`).
 
 ## Main declarations
 
@@ -40,8 +44,8 @@ it is one since `2` is invertible.
 
 * The Stacks Project, Tags 00TH and 00TN, for formal smoothness and smooth algebras.
 
-The infinitesimal lifting follows `TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Smooth` and
-`Matrix.exists_map_eq_of_mem_isometryMatrices_map`, with the correction kept upper triangular.
+The infinitesimal lifting follows `TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Smooth`, and
+the correction is `Matrix.mul_one_add_mem_isometryMatrices_of_sq_eq_bot`, kept upper triangular.
 -/
 
 public section
@@ -60,15 +64,6 @@ section Lift
 
 variable {l : ℕ} {S : Type*} [CommRing S]
 
-/-- Right multiplication by `J_l` reverses the columns. -/
-private theorem mul_formMatrix_apply (M : Matrix (Fin l) (Fin l) S) (i j : Fin l) :
-    (M * formMatrix S l) i j = M i (Fin.rev j) := by
-  rw [Matrix.mul_apply, Finset.sum_eq_single (Fin.rev j)]
-  · simp [formMatrix_apply]
-  · intro x _ hx
-    rw [formMatrix_apply, ite_eq_right (fun h ↦ hx (by rw [h, Fin.rev_rev])), mul_zero]
-  · simp
-
 /-- For upper triangular `g`, the entry of `g J_l gᵀ` at `(i, k)` vanishes when `i + k ≥ l`. -/
 private theorem mul_formMatrix_mul_transpose_apply_eq_zero {g : Matrix (Fin l) (Fin l) S}
     (hg : g.IsUpperTriangular) {i k : Fin l} (hik : l ≤ (i : ℕ) + k) :
@@ -84,77 +79,40 @@ private theorem mul_formMatrix_mul_transpose_apply_eq_zero {g : Matrix (Fin l) (
     rw [hg hkj, mul_zero]
   · rw [show g i j.rev = 0 from hg (not_le.mp hij), zero_mul]
 
-/-- The entry of `J_l` at `(i, k)` vanishes when `i + k ≥ l`. -/
-private theorem formMatrix_apply_eq_zero {i k : Fin l} (hik : l ≤ (i : ℕ) + k) :
-    formMatrix S l i k = 0 := by
-  rw [formMatrix_apply, ite_eq_right]
-  rintro rfl
-  rw [Fin.val_rev] at hik
-  omega
-
-/-- **The linear correction.** If `g₀` is upper triangular and `g₀ J_l g₀ᵀ - J_l` has entries in
-a square-zero ideal `I`, then `(1 + δ) g₀` with `δ = -½ (g₀ J_l g₀ᵀ - J_l) J_l` is upper
-triangular and preserves `J_l`, and `δ` has entries in `I`. -/
-private theorem exists_correction [Invertible (2 : S)] {I : Ideal S} (hI : I * I = ⊥)
+/-- **The upper triangular correction.** If `g₀` is upper triangular and `J_l - g₀ J_l g₀ᵀ` has
+entries in a square-zero ideal `I`, then the transpose of the square-zero correction of `g₀ᵀ`
+(`Matrix.mul_one_add_mem_isometryMatrices_of_sq_eq_bot`) is upper triangular, preserves `J_l` and
+is congruent to `g₀` modulo `I`. -/
+private theorem exists_correction [Invertible (2 : S)] {I : Ideal S} (hI : I ^ 2 = ⊥)
     {g₀ : Matrix (Fin l) (Fin l) S} (hg₀ : g₀.IsUpperTriangular)
-    (hε : ∀ i j, (g₀ * formMatrix S l * g₀ᵀ - formMatrix S l) i j ∈ I) :
-    ∃ δ : Matrix (Fin l) (Fin l) S, (∀ i j, δ i j ∈ I) ∧ ((1 + δ) * g₀).IsUpperTriangular ∧
-      (1 + δ) * g₀ * formMatrix S l * ((1 + δ) * g₀)ᵀ = formMatrix S l := by
-  set J := formMatrix S l with hJ_def
-  set ε := g₀ * J * g₀ᵀ - J with hε_def
-  have hεt : εᵀ = ε := by
-    rw [hε_def, transpose_sub, transpose_mul, transpose_mul, transpose_transpose, hJ_def,
-      transpose_formMatrix, mul_assoc]
-  have hε_zero {i k : Fin l} (hik : l ≤ (i : ℕ) + k) : ε i k = 0 := by
-    rw [hε_def, Matrix.sub_apply, mul_formMatrix_mul_transpose_apply_eq_zero hg₀ hik, hJ_def,
-      formMatrix_apply_eq_zero hik, sub_zero]
-  set δ := -(⅟2 : S) • (ε * J) with hδ_def
-  have hδ : ∀ i j, δ i j ∈ I := fun i j ↦ by
-    rw [hδ_def, Matrix.smul_apply, smul_eq_mul]
-    exact I.mul_mem_left _ (mul_apply_mem_right hε J i j)
-  have hδ_upper : δ.IsUpperTriangular := fun i j hji ↦ by
-    rw [hδ_def, Matrix.smul_apply, mul_formMatrix_apply, hε_zero, smul_zero]
-    rw [Fin.val_rev]
-    simp only [id, Fin.lt_def] at hji
-    omega
-  have hJJ : J * J = 1 := formMatrix_mul_self
-  have hδJ : δ * J = -(⅟2 : S) • ε := by
-    rw [hδ_def, smul_mul_assoc, mul_assoc, hJJ, mul_one]
-  have hJδ : J * δᵀ = -(⅟2 : S) • ε :=
-    calc J * δᵀ = (δ * J)ᵀ := by rw [transpose_mul, hJ_def, transpose_formMatrix]
-      _ = -(⅟2 : S) • ε := by rw [hδJ, transpose_smul, hεt]
-  have h₁ : δ * ε = 0 := mul_eq_zero_of_mul_eq_bot hI hδ hε
-  have h₂ : ε * δᵀ = 0 := mul_eq_zero_of_mul_eq_bot hI hε fun i j ↦ hδ j i
-  have h₃ : δ * (J * δᵀ) = 0 := by
-    rw [hJδ]
-    exact mul_eq_zero_of_mul_eq_bot hI hδ fun i j ↦ by
-      rw [Matrix.smul_apply, smul_eq_mul]; exact I.mul_mem_left _ (hε i j)
-  have hhalf : (⅟2 : S) • ε + (⅟2 : S) • ε = ε := by
-    rw [← add_smul, ← two_mul, mul_invOf_self, one_smul]
-  refine ⟨δ, hδ, (Matrix.blockTriangular_one.add hδ_upper).mul hg₀, ?_⟩
-  calc (1 + δ) * g₀ * J * ((1 + δ) * g₀)ᵀ = (1 + δ) * (g₀ * J * g₀ᵀ) * (1 + δᵀ) := by
-        simp only [transpose_mul, transpose_add, transpose_one, mul_assoc]
-    _ = J + ε + δ * J + J * δᵀ + δ * ε + ε * δᵀ + δ * (J * δᵀ) + δ * ε * δᵀ := by
-        rw [show g₀ * J * g₀ᵀ = J + ε by rw [hε_def, add_sub_cancel]]
-        noncomm_ring
-    _ = J + (ε - ((⅟2 : S) • ε + (⅟2 : S) • ε)) := by
-        rw [h₃, h₁, h₂, zero_mul, hδJ, hJδ, neg_smul]
-        abel
-    _ = J := by rw [hhalf, sub_self, add_zero]
-
-/-- An element congruent to `1` modulo a square-zero ideal whose square is `1` is `1`, when `2`
-is invertible. -/
-private theorem eq_one_of_sq_eq_one [Invertible (2 : S)] {I : Ideal S} (hI : I * I = ⊥) {x : S}
-    (hx : x - 1 ∈ I) (hx2 : x ^ 2 = 1) : x = 1 := by
-  have hsq : (x - 1) ^ 2 = 0 := by
-    rw [← Ideal.mem_bot, ← hI, pow_two]
-    exact Ideal.mul_mem_mul hx hx
-  have htwo : (2 : S) * (x - 1) = 0 :=
-    calc (2 : S) * (x - 1) = x ^ 2 - 1 - (x - 1) ^ 2 := by ring
-      _ = 0 := by rw [hx2, hsq]; ring
-  apply sub_eq_zero.mp
-  apply (isUnit_of_invertible (2 : S)).mul_left_cancel
-  simpa only [mul_zero] using htwo
+    (hE : ∀ i j, (formMatrix S l - g₀ * formMatrix S l * g₀ᵀ) i j ∈ I) :
+    ∃ g : Matrix (Fin l) (Fin l) S, g.IsUpperTriangular ∧
+      g * formMatrix S l * gᵀ = formMatrix S l ∧
+      g.map (Ideal.Quotient.mk I) = g₀.map (Ideal.Quotient.mk I) := by
+  obtain ⟨hX, hZ⟩ := mul_one_add_mem_isometryMatrices_of_sq_eq_bot hI (transpose_formMatrix S l)
+    (isUnit_iff_exists_inv.mpr ⟨_, by rw [← det_mul, formMatrix_mul_self, det_one]⟩)
+    (by rwa [transpose_transpose])
+  rw [transpose_transpose, inv_eq_left_inv formMatrix_mul_self] at hX hZ
+  set Z : Matrix (Fin l) (Fin l) S :=
+    (⅟2 : S) • (formMatrix S l * (formMatrix S l - g₀ * formMatrix S l * g₀ᵀ)) with hZ_def
+  -- The correction stays upper triangular, as the error vanishes at `(i, k)` with `i + k ≥ l`.
+  have hZ_upper : Zᵀ.IsUpperTriangular := fun i j hji ↦ by
+    have hle : l ≤ ((Fin.rev j : Fin l) : ℕ) + i := by
+      rw [Fin.val_rev]
+      simp only [id, Fin.lt_def] at hji
+      omega
+    rw [transpose_apply, hZ_def, Matrix.smul_apply, formMatrix_mul_apply, Matrix.sub_apply,
+      mul_formMatrix_mul_transpose_apply_eq_zero hg₀ hle, formMatrix_apply_eq_zero hle,
+      sub_zero, smul_zero]
+  refine ⟨(g₀ᵀ * (1 + Z))ᵀ, ?_, ?_, ?_⟩
+  · rw [transpose_mul, transpose_transpose, transpose_add, transpose_one]
+    exact (blockTriangular_one.add hZ_upper).mul hg₀
+  · rw [transpose_transpose]
+    exact mem_isometryMatrices.mp hX
+  · rw [← Ideal.mk_ker (I := I)] at hZ
+    rw [transpose_map, Matrix.map_mul, Matrix.map_add _ (map_add _),
+      Matrix.map_one _ (map_zero _) (map_one _), forall_mem_ker_iff_map_eq_zero.mp hZ, add_zero,
+      mul_one, transpose_map, transpose_transpose]
 
 /-- **Upper triangular points of `SO_l^J` lift across square-zero quotients** when `2` is
 invertible. -/
@@ -163,7 +121,6 @@ theorem map_quotient_mk_surjective_of_sq_eq_bot [Invertible (2 : S)] (I : Ideal 
     Function.Surjective (pointsSubgroupMap (l := l) (Ideal.Quotient.mk I)) := by
   classical
   intro g
-  rw [sq] at hI
   obtain ⟨hSO, hUT⟩ := (UpperTriangular.mem_pointsSubgroup_iff _).mp g.property
   obtain ⟨hdet, hJ⟩ := (AntidiagonalSpecialOrthogonal.mem_pointsSubgroup_iff _).mp hSO
   set G : Matrix (Fin l) (Fin l) (S ⧸ I) :=
@@ -181,28 +138,26 @@ theorem map_quotient_mk_surjective_of_sq_eq_bot [Invertible (2 : S)] (I : Ideal 
     · exact ha i j
     · rw [map_zero]
       exact (hUT (not_le.mp hij)).symm
-  have hε : ∀ i j, (g₀ * formMatrix S l * g₀ᵀ - formMatrix S l) i j ∈ I := by
+  have hE : ∀ i j, (formMatrix S l - g₀ * formMatrix S l * g₀ᵀ) i j ∈ I := by
     rw [← Ideal.mk_ker (I := I), forall_mem_ker_iff_map_eq_zero, Matrix.map_sub _ (map_sub _),
       Matrix.map_mul, Matrix.map_mul, transpose_map, hg₀_map,
       map_formMatrix S l _ (map_zero _) (map_one _), hJ, sub_self]
   -- Correct it.
-  obtain ⟨δ, hδ, hg₁_upper, hg₁J⟩ := exists_correction hI hg₀ hε
-  have hg₁_map : ((1 + δ) * g₀).map (Ideal.Quotient.mk I) = G := by
-    rw [← Ideal.mk_ker (I := I)] at hδ
-    rw [Matrix.map_mul, Matrix.map_add _ (map_add _), Matrix.map_one _ (map_zero _) (map_one _),
-      forall_mem_ker_iff_map_eq_zero.mp hδ, add_zero, one_mul, hg₀_map]
-  have hdet_sq : ((1 + δ) * g₀).det ^ 2 = 1 := by
+  obtain ⟨g₁, hg₁_upper, hg₁J, hg₁_map⟩ := exists_correction hI hg₀ hE
+  rw [hg₀_map] at hg₁_map
+  -- Its determinant squares to one and is one modulo `I`, hence one.
+  have hdet_sq : g₁.det ^ 2 = 1 := by
     have h := congrArg Matrix.det hg₁J
     rw [det_mul, det_mul, det_transpose] at h
     have hJJ : (formMatrix S l).det * (formMatrix S l).det = 1 := by
       rw [← det_mul, formMatrix_mul_self, det_one]
     apply (isUnit_iff_exists_inv.mpr ⟨_, hJJ⟩).mul_left_cancel
     linear_combination h
-  have hdet₁ : ((1 + δ) * g₀).det = 1 := by
-    refine eq_one_of_sq_eq_one hI ?_ hdet_sq
+  have hdet₁ : g₁.det = 1 := by
+    refine Ideal.eq_one_of_sq_eq_one_of_sub_one_mem hI (isUnit_of_invertible 2) ?_ hdet_sq
     rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, RingHom.map_det, RingHom.mapMatrix_apply,
       hg₁_map, hdet, map_one, sub_self]
-  refine ⟨⟨Matrix.GeneralLinearGroup.mk'' ((1 + δ) * g₀) (by rw [hdet₁]; exact isUnit_one),
+  refine ⟨⟨Matrix.GeneralLinearGroup.mk'' g₁ (by rw [hdet₁]; exact isUnit_one),
     (UpperTriangular.mem_pointsSubgroup_iff _).mpr
       ⟨(AntidiagonalSpecialOrthogonal.mem_pointsSubgroup_iff _).mpr ⟨hdet₁, hg₁J⟩,
         hg₁_upper⟩⟩, ?_⟩
